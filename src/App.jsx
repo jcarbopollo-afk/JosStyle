@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft } from 'lucide-react';
-import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS } from './tokens';
+import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar } from 'lucide-react';
+import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO } from './tokens';
 import { getSession, onAuthChange, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, hexToRgba } from './lib/helpers';
@@ -8,6 +8,7 @@ import { extractPdfText } from './lib/pdfText';
 import { prediccionObjetivo } from './lib/predicciones';
 import { verificarBiometria } from './lib/biometria';
 import { calcularResumenModulo } from './lib/resumenesHub';
+import { eventosDerivados } from './lib/calendarioIntegracion';
 import { PinGate, SuggestionsButton, UniversalSearchModal } from './components/ui';
 import HubView from './views/HubView';
 import Auth from './components/Auth';
@@ -21,6 +22,7 @@ import EstudiosView from './views/EstudiosView';
 import BusinessView from './views/BusinessView';
 import ProductivityView from './views/ProductivityView';
 import ObjectivesView from './views/ObjectivesView';
+import CalendarView from './views/CalendarView';
 import DiaryView from './views/DiaryView';
 import LibraryView from './views/LibraryView';
 import RelationView from './views/RelationView';
@@ -43,11 +45,21 @@ import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el 
 // (Fase 19) para reordenar/ocultar/cambiar icono — ahora incluye también sueno/entreno/nutricion
 // (antes exentos por vivir fijos en la barra inferior; ya no hay razón para esa excepción, ver
 // HANDOFF.md). AREAS_NAV agrupa esos mismos ids en las 4 pestañas, sin duplicar su definición.
+//
+// Fase 1 del Calendario Universal — "calendario" se suma como un módulo más de MORE_NAV/AREAS_NAV,
+// nunca como una sexta pestaña (el propio prompt del Calendario lo deja explícito: la barra
+// inferior no crece, los módulos nuevos entran dentro de un área ya existente). Vive en "Vida"
+// (junto a Estudios/Productividad/Objetivos/Diario/Biblioteca, las áreas con más dimensión
+// temporal) y en primera posición, dado que su vocación es ser el eje temporal transversal de
+// toda la app — ver HANDOFF.md para el resto de la arquitectura (origen/origenId por evento,
+// preparada para que una Fase 2 futura conecte aquí Objetivos/Hábitos/Estudios/etc. sin duplicar
+// datos).
 const MORE_NAV = [
   { id: 'salud', label: 'Salud', icon: HeartPulse },
   { id: 'sueno', label: 'Sueño', icon: Moon },
   { id: 'nutricion', label: 'Nutrición', icon: Apple },
   { id: 'entreno', label: 'Entrenamiento', icon: Dumbbell },
+  { id: 'calendario', label: 'Calendario', icon: Calendar },
   { id: 'estudios', label: 'Estudios', icon: GraduationCap },
   { id: 'negocio', label: 'Negocio', icon: Briefcase },
   { id: 'productividad', label: 'Productividad', icon: ListTodo },
@@ -66,7 +78,7 @@ const MORE_NAV = [
 
 const AREAS_NAV = [
   { id: 'area-salud', label: 'Salud', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno'] },
-  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['estudios', 'productividad', 'objetivos', 'diario', 'biblioteca'] },
+  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['calendario', 'estudios', 'productividad', 'objetivos', 'diario', 'biblioteca'] },
   { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['economia', 'negocio'] },
   { id: 'area-mas', label: 'Más', icon: MoreHorizontal, modulos: ['relacion', 'fe', 'bienestar', 'estadisticas', 'predicciones', 'logros', 'ajustes'] },
 ];
@@ -166,6 +178,9 @@ export default function App() {
   const [negocio, setNegocio] = useState(DEFAULT_NEGOCIO);
   const [productividad, setProductividad] = useState(DEFAULT_PRODUCTIVIDAD);
   const [objetivos, setObjetivos] = useState(DEFAULT_OBJETIVOS);
+  // Fase 1 del Calendario Universal — texto puro (sin archivos, sin PIN), mismo criterio que
+  // Diario/Objetivos: clave de Supabase propia ('calendario'), pasa por snapshotAndSave/deshacer.
+  const [calendario, setCalendario] = useState(DEFAULT_CALENDARIO);
   const [diario, setDiario] = useState(DEFAULT_DIARIO);
   const [biblioteca, setBiblioteca] = useState(DEFAULT_BIBLIOTECA);
   const [bibliotecaArchivos, setBibliotecaArchivos] = useState([]); // metadatos; el archivo vive en Supabase Storage
@@ -200,7 +215,7 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h] = await Promise.all([
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h] = await Promise.all([
         loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
@@ -215,6 +230,7 @@ export default function App() {
         loadData(uidUser, 'negocio', DEFAULT_NEGOCIO),
         loadData(uidUser, 'productividad', DEFAULT_PRODUCTIVIDAD),
         loadData(uidUser, 'objetivos', DEFAULT_OBJETIVOS),
+        loadData(uidUser, 'calendario', DEFAULT_CALENDARIO),
         loadData(uidUser, 'diario', DEFAULT_DIARIO),
         loadData(uidUser, 'biblioteca', DEFAULT_BIBLIOTECA),
         loadData(uidUser, 'bibliotecaArchivos', []),
@@ -254,6 +270,10 @@ export default function App() {
       setNegocio(neg);
       setProductividad(prod);
       setObjetivos(obj);
+      // Fase 1 del Calendario Universal: solo nos aseguramos de que `eventos` sea de verdad un
+      // array (mismo criterio que `temasGuardados`), por si `calendario` no existe todavía en
+      // Supabase para un usuario que ya tenía cuenta antes de esta fase.
+      setCalendario({ ...DEFAULT_CALENDARIO, ...cal, eventos: Array.isArray(cal?.eventos) ? cal.eventos : [] });
       setDiario(dia);
       setBiblioteca(bib);
       setBibliotecaArchivos(bibArch);
@@ -482,6 +502,7 @@ export default function App() {
     negocio: { label: 'Negocio', default: DEFAULT_NEGOCIO, setter: setNegocio },
     productividad: { label: 'Productividad', default: DEFAULT_PRODUCTIVIDAD, setter: setProductividad },
     objetivos: { label: 'Objetivos', default: DEFAULT_OBJETIVOS, setter: setObjetivos },
+    calendario: { label: 'Calendario', default: DEFAULT_CALENDARIO, setter: setCalendario },
     diario: { label: 'Diario', default: DEFAULT_DIARIO, setter: setDiario },
     biblioteca: { label: 'Biblioteca (apuntes y enlaces)', default: DEFAULT_BIBLIOTECA, setter: setBiblioteca },
     relacion: { label: 'Relación', default: DEFAULT_RELACION, setter: setRelacion },
@@ -553,7 +574,7 @@ export default function App() {
   };
 
   const snapshotAndSave = (patch) => {
-    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, diario, biblioteca, relacion, fe, bienestar };
+    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar };
     const nextHist = [...history, snapshot].slice(-10);
     setHistory(nextHist);
     saveData(uidUser, 'historial', nextHist);
@@ -567,6 +588,7 @@ export default function App() {
     if (patch.negocio) { setNegocio(patch.negocio); saveData(uidUser, 'negocio', patch.negocio); }
     if (patch.productividad) { setProductividad(patch.productividad); saveData(uidUser, 'productividad', patch.productividad); }
     if (patch.objetivos) { setObjetivos(patch.objetivos); saveData(uidUser, 'objetivos', patch.objetivos); }
+    if (patch.calendario) { setCalendario(patch.calendario); saveData(uidUser, 'calendario', patch.calendario); }
     if (patch.diario) { setDiario(patch.diario); saveData(uidUser, 'diario', patch.diario); }
     if (patch.biblioteca) { setBiblioteca(patch.biblioteca); saveData(uidUser, 'biblioteca', patch.biblioteca); }
     if (patch.relacion) { setRelacion(patch.relacion); saveData(uidUser, 'relacion', patch.relacion); }
@@ -642,6 +664,12 @@ export default function App() {
     setObjetivos(next);
     saveData(uidUser, 'objetivos', next);
   };
+
+  // Fase 1 del Calendario Universal — texto puro, sin PIN, así que pasa por snapshotAndSave/
+  // deshacer como el resto de módulos de datos de la app (mismo criterio que Objetivos/Diario).
+  const addEvento = (ev) => snapshotAndSave({ calendario: { ...calendario, eventos: [...calendario.eventos, ev] } });
+  const updateEvento = (ev) => snapshotAndSave({ calendario: { ...calendario, eventos: calendario.eventos.map((x) => (x.id === ev.id ? ev : x)) } });
+  const deleteEvento = (id) => snapshotAndSave({ calendario: { ...calendario, eventos: calendario.eventos.filter((x) => x.id !== id) } });
 
   const addEntradaDiario = (e) => snapshotAndSave({ diario: { ...diario, entradas: [...diario.entradas, e] } });
   const updateEntradaDiario = (e) => snapshotAndSave({ diario: { ...diario, entradas: diario.entradas.map((x) => (x.id === e.id ? e : x)) } });
@@ -756,6 +784,7 @@ export default function App() {
     setNegocio(last.negocio || DEFAULT_NEGOCIO); saveData(uidUser, 'negocio', last.negocio || DEFAULT_NEGOCIO);
     setProductividad(last.productividad || DEFAULT_PRODUCTIVIDAD); saveData(uidUser, 'productividad', last.productividad || DEFAULT_PRODUCTIVIDAD);
     setObjetivos(last.objetivos || DEFAULT_OBJETIVOS); saveData(uidUser, 'objetivos', last.objetivos || DEFAULT_OBJETIVOS);
+    setCalendario(last.calendario || DEFAULT_CALENDARIO); saveData(uidUser, 'calendario', last.calendario || DEFAULT_CALENDARIO);
     setDiario(last.diario || DEFAULT_DIARIO); saveData(uidUser, 'diario', last.diario || DEFAULT_DIARIO);
     setBiblioteca(last.biblioteca || DEFAULT_BIBLIOTECA); saveData(uidUser, 'biblioteca', last.biblioteca || DEFAULT_BIBLIOTECA);
     setRelacion(last.relacion || DEFAULT_RELACION); saveData(uidUser, 'relacion', last.relacion || DEFAULT_RELACION);
@@ -769,7 +798,7 @@ export default function App() {
   // los vídeos de Calistenia no se incluyen en el export por ser sensibles/binarios. fe y
   // bienestar sí se incluyen: ninguno lleva PIN ni archivos, mismo criterio que diario o
   // biblioteca (texto puro, sin protección).
-  const currentState = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, diario, biblioteca, fe, bienestar };
+  const currentState = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, fe, bienestar };
 
   // Fase 19 — Personalización total: MORE_NAV es la lista canónica (id/label/icono por defecto);
   // "ajustes" queda siempre fuera de la personalización (ver motivo en tokens.js). El orden
@@ -797,7 +826,7 @@ export default function App() {
   // Resúmenes de todas las tarjetas, recalculados en cada render — son cálculos baratos (sumas,
   // últimas fechas) sobre datos que ya están en memoria, mismo criterio que calcularMetricas().
   const resumenesTodos = Object.fromEntries(
-    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar })])
+    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar })])
   );
 
   // Fase 19 — métricas favoritas del panel "Hoy": se calculan aquí (no en DashboardView) porque
@@ -852,6 +881,13 @@ export default function App() {
       bienestar,
     })}. Da como máximo 2 sugerencias breves y concretas de algo a lo que Josué podría prestar atención hoy o esta semana, basadas solo en estos datos. Si no ves nada claro que sugerir, dilo abiertamente en vez de forzar una.`;
 
+  // Fase 2 del Calendario Universal — eventos de solo lectura calculados en cada render a partir
+  // de Objetivos/Estudios/Entrenamiento/Productividad (ver calendarioIntegracion.js — Relación
+  // queda fuera a propósito, por privacidad: es el único módulo protegido de principio a fin en
+  // toda la app y el Calendario no pide PIN para abrirse). Mismo criterio de cálculo barato que
+  // `resumenesTodos`/`metricasCalculadas`: nunca se guarda, se recalcula solo.
+  const derivadosCalendario = eventosDerivados({ objetivos, estudios, calistenia, futbol, productividad });
+
   const renderContent = () => {
     // Fase N1 — hubs de área: al pulsar Salud/Vida/Gestión/Más en la barra inferior se llega
     // aquí primero, nunca directo a un módulo (ver AREAS_NAV arriba). Las tarjetas llaman a
@@ -874,6 +910,7 @@ export default function App() {
             relacion={relacion} favoritas={favoritasResueltas}
             productividad={productividad} estudios={estudios} modo={personalizacion.modo}
             notificaciones={notificaciones}
+            calendario={calendario} derivadosCalendario={derivadosCalendario} onAbrirCalendario={() => setTab('calendario')}
             accent={accent}
           />
         );
@@ -933,6 +970,15 @@ export default function App() {
           <ObjectivesView
             objetivos={objetivos} onAdd={addObjetivo} onUpdate={updateObjetivo} onDelete={deleteObjetivo}
             onRevisionHecha={marcarRevisionHecha} accent={accent}
+          />
+        );
+      case 'calendario':
+        return (
+          <CalendarView
+            calendario={calendario} derivados={derivadosCalendario}
+            onAdd={addEvento} onUpdate={updateEvento} onDelete={deleteEvento}
+            onAbrirModulo={setTab}
+            accent={accent}
           />
         );
       case 'diario':

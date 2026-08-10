@@ -489,6 +489,56 @@ export const CATEGORIAS_NOTIFICACION = [
   { value: 'sistema', label: 'Sistema' },
 ];
 
+// Fase 1 del Calendario Universal (arquitectura preparada para Fase 2/3 — ver HANDOFF.md).
+// `eventos` es la única fuente editable a mano por Josué en esta fase. `origen`/`origenId` en
+// cada evento (ver más abajo) identifican de qué módulo procede — hoy el único origen posible es
+// 'calendario' (creado aquí mismo); una fase futura podrá inyectar eventos de solo lectura desde
+// otros módulos (Estudios, Productividad, Objetivos...) sin duplicar el dato, distinguibles por
+// ese campo, sin tener que rehacer este modelo. Texto puro, sin archivos ni PIN — mismo criterio
+// que Diario o los apuntes de Biblioteca, así que pasa por snapshotAndSave/deshacer en App.jsx.
+export const DEFAULT_CALENDARIO = { eventos: [] };
+
+// Tipos de evento del Calendario Universal (spec del Prompt Maestro del Calendario, apartado 2).
+// El color NO se guarda por evento — se resolvería como un hex "congelado" que dejaría de seguir
+// el tema/acento si Josué los cambia después. En su lugar cada tipo apunta a un `colorToken` que
+// se resuelve en cada render contra los tokens VIVOS (`colorDeTipoEvento`, abajo): cuatro tipos
+// usan los roles de "Estados" ya fijos y curados por tema (positive/warning/negative/info, mismo
+// criterio que el resto de la app — un color de categoría no debería cambiar con la personalización
+// visual, igual que un error no cambia de rojo); dos usan los roles de marca derivados del acento
+// (secondary/tertiary, ver colorEngine.js) para tener variedad real sin inventar un sistema de
+// color paralelo; "Recordatorio" usa el acento principal tal cual; "Personal" usa `textMuted`, el
+// mismo gris neutro que ya usa el resto de la UI para "sin categorizar".
+export const TIPOS_EVENTO_CALENDARIO = [
+  { id: 'objetivo', label: 'Objetivo', labelPlural: 'objetivos', colorToken: 'info' },
+  { id: 'habito', label: 'Hábito', labelPlural: 'hábitos', colorToken: 'positive' },
+  { id: 'rutina', label: 'Rutina', labelPlural: 'rutinas', colorToken: 'secondary' },
+  { id: 'estudio', label: 'Estudio', labelPlural: 'estudios', colorToken: 'tertiary' },
+  { id: 'entrenamiento', label: 'Entrenamiento', labelPlural: 'entrenamientos', colorToken: 'warning' },
+  { id: 'fecha_importante', label: 'Fecha importante', labelPlural: 'fechas importantes', colorToken: 'negative' },
+  { id: 'recordatorio', label: 'Recordatorio', labelPlural: 'recordatorios', colorToken: 'accent' },
+  { id: 'personal', label: 'Personal', labelPlural: 'personales', colorToken: 'textMuted' },
+];
+
+export function colorDeTipoEvento(tipoId, accent) {
+  const tipo = TIPOS_EVENTO_CALENDARIO.find((t) => t.id === tipoId) || TIPOS_EVENTO_CALENDARIO[TIPOS_EVENTO_CALENDARIO.length - 1];
+  return tipo.colorToken === 'accent' ? accent : (COLORS[tipo.colorToken] || accent);
+}
+
+// Fase 3 del Calendario Universal (primera pasada) — recurrencia real. Un evento recurrente
+// guarda una única fila (`calendario.eventos`, sin una copia por repetición) con `recurrencia:
+// { frecuencia, hasta }`; `hasta: null` significa "sin fecha de fin" — las ocurrencias se generan
+// al vuelo, acotadas siempre por la ventana que se esté mirando (mes visible, "Próximamente",
+// búsqueda...), nunca de verdad "para siempre" en memoria. Ver `expandirRecurrentes` en
+// `lib/calendario.js`. Sin intervalo personalizado ("cada 2 semanas") ni excepciones por fecha
+// ("saltar este día") en esta primera pasada — editar o eliminar un evento recurrente afecta a
+// toda la serie, no a una ocurrencia suelta; dicho así de claro en el propio editor.
+export const FRECUENCIAS_RECURRENCIA = [
+  { value: 'diaria', label: 'Cada día' },
+  { value: 'semanal', label: 'Cada semana' },
+  { value: 'mensual', label: 'Cada mes' },
+  { value: 'anual', label: 'Cada año' },
+];
+
 // Fase 2 del Sistema de Personalización Visual Extrema — historial de colores del `ColorPicker`
 // (recientes: los últimos usados, sin duplicados, más nuevo primero; favoritos: marcados a mano
 // por Josué). Clave de Supabase propia (`historialColor`), guardado directo sin pasar por

@@ -171,3 +171,23 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
 .nav-tab-icon, .nav-tab-label {
   transition: color 200ms var(--ease-premium);
 }
+
+/* Fase 1 del Calendario Universal — dos animaciones discretas y funcionales (spec apartado 16:
+   "transición al cambiar de mes", "apertura/cierre del formulario"), reutilizando --ease-premium
+   (Fase N1/N2) en vez de definir una curva propia — mismo lenguaje de movimiento que el resto de
+   la navegación, sin montar un segundo sistema de animaciones. Respetan "Reducir movimiento"/
+   "Desactivadas" automáticamente, gracias a la regla global de arriba (líneas 58-62). */
+@keyframes calendarMonthIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.calendar-month-grid {
+  animation: calendarMonthIn 220ms var(--ease-premium) both;
+}
+@keyframes calendarSheetIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.calendar-sheet {
+  animation: calendarSheetIn 240ms var(--ease-premium) both;
+}

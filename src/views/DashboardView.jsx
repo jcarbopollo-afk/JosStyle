@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { Heart, Flame, GraduationCap, Plane } from 'lucide-react';
+import { Heart, Flame, GraduationCap, Plane, Calendar, ChevronRight } from 'lucide-react';
 import { COLORS, MODOS_APP } from '../tokens';
 import { calcularDuracion, hexToRgba, diasHasta, formatFecha, todayISO, addDays } from '../lib/helpers';
+import { resumenDelDia } from '../lib/calendario';
 import { Card, AIPanel, ScoreGauge } from '../components/ui';
 // Fase A4 — Notificaciones reales: los tres avisos automáticos de "Hoy" (Fase 20) son el primer
 // caso de uso real de src/lib/notificaciones.js — si Josué activa el permiso del sistema y la
@@ -26,6 +27,30 @@ function RecordatorioPareja({ relacion, accent }) {
         <span className="font-semibold">{proxima.etiqueta}</span> {cuando} <span style={{ color: COLORS.textMuted }}>({formatFecha(proxima.fecha)})</span>
       </p>
     </Card>
+  );
+}
+
+// Fase 1 del Calendario Universal — acceso secundario discreto desde "Hoy" (spec: "el calendario
+// también debe poder tener accesos secundarios discretos desde otras zonas de la aplicación...
+// pero nunca debe convertirse en un elemento invasivo"). Una sola línea, sin tarjeta grande: el
+// resumen de hoy si hay algo, o una invitación breve si no — mismo criterio de honestidad que
+// RecordatorioPareja, nunca inventa urgencia. Abre el Calendario vía `onAbrirCalendario` (App.jsx
+// hace `setTab('calendario')`), sin duplicar aquí ninguna lógica de fechas propia.
+function AccesoCalendario({ calendario, derivadosCalendario, accent, onAbrir }) {
+  // Fase 2 — mismo criterio que CalendarView.jsx: unión de eventos propios + derivados de solo
+  // lectura (Objetivos/Estudios/Entrenamiento/Productividad), calculada en cada render.
+  const eventos = [...(calendario?.eventos || []), ...(derivadosCalendario || [])];
+  const resumen = calendario ? resumenDelDia(eventos, todayISO()) : null;
+  return (
+    <button onClick={onAbrir} className="w-full text-left">
+      <Card className="flex items-center gap-3" style={{ padding: '0.85rem 1.1rem' }}>
+        <Calendar size={16} style={{ color: accent, flexShrink: 0 }} />
+        <p className="text-sm flex-1" style={{ color: COLORS.text }}>
+          {resumen ? <>Hoy: <span className="font-semibold">{resumen}</span></> : 'Sin nada en el calendario hoy'}
+        </p>
+        <ChevronRight size={15} style={{ color: COLORS.textMuted, flexShrink: 0 }} />
+      </Card>
+    </button>
   );
 }
 
@@ -134,7 +159,7 @@ function ModoBanner({ modo, accent }) {
   );
 }
 
-export default function DashboardView({ perfil, sueno, calistenia, futbol, economia, relacion, favoritas, productividad, estudios, modo, notificaciones, accent }) {
+export default function DashboardView({ perfil, sueno, calistenia, futbol, economia, relacion, favoritas, productividad, estudios, modo, notificaciones, calendario, derivadosCalendario, onAbrirCalendario, accent }) {
   const hora = new Date().getHours();
   const saludo = hora < 6 ? 'Buenas noches' : hora < 12 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
   const fechaHoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -169,6 +194,7 @@ export default function DashboardView({ perfil, sueno, calistenia, futbol, econo
       </Card>
 
       <ModoBanner modo={modo} accent={accent} />
+      <AccesoCalendario calendario={calendario} derivadosCalendario={derivadosCalendario} accent={accent} onAbrir={onAbrirCalendario} />
       <RecordatorioPareja relacion={relacion} accent={accent} />
       <AvisoSuenoCorto ultimoSueno={ultimoSueno} accent={accent} notificaciones={notificaciones} />
       <AvisoRachaEnRiesgo productividad={productividad} accent={accent} notificaciones={notificaciones} />

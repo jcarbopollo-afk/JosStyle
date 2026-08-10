@@ -14,6 +14,8 @@
 // pueda estar vacío o no — Estadísticas, Predicciones, Logros, Ajustes — sin punto).
 import { calcularDuracion, diasHasta, todayISO, addDays } from './helpers';
 import { ESTADOS_ANIMO } from '../tokens';
+import { resumenDelDia, eventosFuturos } from './calendario';
+import { eventosDerivados } from './calendarioIntegracion';
 
 function ultimoPorFecha(lista) {
   if (!lista || lista.length === 0) return null;
@@ -66,6 +68,22 @@ export function calcularResumenModulo(id, s) {
         linea1: activas > 0 ? `${activas} ${plural(activas, 'habilidad activa', 'habilidades activas')}` : `${partidos} ${plural(partidos, 'partido registrado', 'partidos registrados')}`,
         linea2: dias !== null ? (dias === 0 ? 'Última sesión hoy' : `Última sesión hace ${dias} ${plural(dias, 'día', 'días')}`) : 'Toca para ver el detalle',
         estado: 'activo',
+      };
+    }
+    // Fase 1 del Calendario Universal — mismo criterio honesto que el resto: nunca inventa
+    // urgencia. `linea1` es el resumen de hoy (resumenDelDia, el mismo motor que usa
+    // CalendarView.jsx); `linea2` cuenta lo que viene en los próximos 7 días (sin contar hoy) o
+    // invita a abrirlo si no hay nada, para que la tarjeta no se quede en blanco de más.
+    case 'calendario': {
+      // Fase 2 — mismo criterio que CalendarView.jsx/AccesoCalendario: unión de eventos propios
+      // + derivados de solo lectura, calculada al vuelo (Relación queda fuera, por privacidad).
+      const eventos = [...(s.calendario?.eventos || []), ...eventosDerivados(s)];
+      const resumenHoy = resumenDelDia(eventos, todayISO());
+      const proximos = eventosFuturos(eventos, addDays(todayISO(), 1), 6).length;
+      return {
+        linea1: resumenHoy || 'Sin eventos hoy',
+        linea2: proximos > 0 ? `${proximos} ${plural(proximos, 'evento próximo', 'eventos próximos')} esta semana` : 'Toca para ver el mes',
+        estado: eventos.length > 0 ? 'activo' : 'vacio',
       };
     }
     case 'estudios': {

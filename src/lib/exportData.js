@@ -14,7 +14,7 @@ function downloadBlob(filename, content, mime) {
   URL.revokeObjectURL(url);
 }
 
-function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, diario, biblioteca, fe, bienestar }) {
+function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, fe, bienestar }) {
   const rows = [];
   sueno.forEach((e) =>
     rows.push({
@@ -123,6 +123,24 @@ function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion
     objetivos.lista.forEach((o) =>
       rows.push({ modulo: 'Objetivos', fecha: o.fechaCreacion || '', detalle: o.texto, valor: o.cumplido ? 'cumplido' : 'activo', extra: o.plazo })
     );
+  }
+
+  // Fase 1 del Calendario Universal — texto puro, sin PIN, mismo criterio que Objetivos/Diario:
+  // se exporta entero. Solo los eventos creados a mano en esta fase (origen 'calendario'); una
+  // Fase 2 futura que traiga eventos de solo lectura de otros módulos no debería duplicarlos aquí
+  // (ya se exportan desde su propio módulo de origen).
+  if (calendario) {
+    calendario.eventos
+      .filter((e) => e.origen === 'calendario')
+      .forEach((e) =>
+        rows.push({
+          modulo: 'Calendario',
+          fecha: e.fecha,
+          detalle: `${e.titulo} (${e.tipo})`,
+          valor: e.todoElDia ? 'Todo el día' : (e.horaInicio || ''),
+          extra: [e.ubicacion, e.notas].filter(Boolean).join(' — '),
+        })
+      );
   }
 
   if (diario) {
