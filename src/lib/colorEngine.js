@@ -120,6 +120,20 @@ export function hsvToRgb({ h, s, v }) {
 export function hexToHsv(hex) { return rgbToHsv(hexToRgb(hex)); }
 export function hsvToHex(hsv) { return rgbToHex(hsvToRgb(hsv)); }
 
+// Fase 3 — "genera automáticamente una familia de colores compatibles a partir de uno solo"
+// (apartado 9 de la especificación maestra, ejemplo literal: "🔵 azul elegido → 15-30 colores
+// compatibles"). Esquema análogo (±35° de tono, misma saturación/brillo) — se eligió análogo en
+// vez de complementario (+180°) porque para "Secundario"/"Terciario" de una marca, un tono
+// cercano suele leerse como una familia coherente; un complementario a menudo choca visualmente
+// en UI. Usado por `tokens.js` para derivar Secundario/Terciario del Principal cuando Josué no
+// los ha personalizado a mano (ver DEFAULT_TEMA_PERSONALIZADO).
+export function rotateHue(hex, degrees) {
+  const { h, s, v } = hexToHsv(hex);
+  let nuevoH = (h + degrees) % 360;
+  if (nuevoH < 0) nuevoH += 360;
+  return hsvToHex({ h: nuevoH, s, v });
+}
+
 // Mezcla lineal simple en sRGB entre dos colores (0 = hexA, 1 = hexB). Se usa para variantes
 // secundarias derivadas de un tono base (bordes, divisores, texto terciario/deshabilitado) donde
 // no hace falta la precisión perceptual de OKLCH — es una mezcla hacia el fondo del tema, no una

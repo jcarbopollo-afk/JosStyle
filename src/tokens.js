@@ -1,4 +1,4 @@
-import { buildRolesFromAccent } from './lib/colorEngine';
+import { buildRolesFromAccent, rotateHue, generateScale, bestReadableText, ensureContrast } from './lib/colorEngine';
 
 // Fase 1 del Sistema de Personalización Visual Extrema — `warning`/`info` se suman aquí a los
 // ya existentes `positive`/`negative` (mismo criterio: colores de "Estados" fijos y curados por
@@ -61,6 +61,18 @@ export const COLORS_CLARO = {
 export const CONTRASTE_ALTO_OSCURO = { textMuted: '#C4C9D2', border: '#3A4250' };
 export const CONTRASTE_ALTO_CLARO = { textMuted: '#33383F', border: '#B9C0CB' };
 
+// Fase 3 del Sistema de Personalización Visual Extrema — Constructor de temas. El "tema
+// personalizado" de Josué es un objeto de overrides: cada campo en `null`/vacío significa
+// "automático" (se deriva del tema claro/oscuro y del Principal, como hacía la app antes de esta
+// fase); un hex significa "personalizado a mano". `estados` va aparte porque son 4 campos propios
+// (positive/warning/negative/info) — mismos nombres internos que ya usa `COLORS`, para no meter
+// una capa de traducción de nombres entre este objeto y los tokens reales.
+export const DEFAULT_TEMA_PERSONALIZADO = {
+  secundario: null, terciario: null,
+  fondo: null, superficie: null, texto: null, bordes: null,
+  estados: { positive: null, warning: null, negative: null, info: null },
+};
+
 // Fase 1 del Sistema de Personalización Visual Extrema — `aplicarTema` gana un tercer parámetro,
 // `accentHex`: además de mutar `COLORS` con la paleta base del tema (como ya hacía desde la Fase
 // A3), ahora también calcula y añade los roles derivados del acento (escala de marca, texto
@@ -68,11 +80,55 @@ export const CONTRASTE_ALTO_CLARO = { textMuted: '#33383F', border: '#B9C0CB' };
 // `buildRolesFromAccent` en `src/lib/colorEngine.js`). Sigue siendo el mismo patrón de mutación
 // en el sitio sobre el objeto singleton `COLORS` que ya leen por referencia ~20 vistas — ningún
 // archivo existente necesita cambiar de import para heredar estos tokens nuevos.
-export function aplicarTema(nombreResuelto, altoContraste, accentHex) {
+//
+// Fase 3 añade un cuarto parámetro, `temaPersonalizado` (ver `DEFAULT_TEMA_PERSONALIZADO` arriba):
+// 1) Secundario/Terciario: si Josué no los ha fijado a mano, se derivan del Principal por rotación
+//    de tono (±35°, esquema análogo) — así siempre hay una paleta de marca completa y coherente,
+//    nunca solo "un color". Ambos ganan su propia escala de 11 pasos y su propio texto legible
+//    encima, igual que ya tenía el acento desde la Fase 1.
+// 2) Fondo/Superficie/Texto/Bordes: si Josué los personaliza, sobrescriben el valor del tema base.
+// 3) Red de seguridad de contraste (apartado 10): se recalcula `text`/`textMuted` contra el `bg`
+//    EFECTIVO (ya con overrides aplicados) con `ensureContrast`, siempre, haya o no personalización
+//    — así ninguna combinación de Fondo+Texto personalizados a mano puede dejar la app realmente
+//    ilegible, sin que Josué tenga que pensar en contraste él mismo.
+// 4) Estados: si Josué los personaliza (opción "avanzada", con aviso en la UI — ver
+//    TemaBuilder.jsx), sustituyen el valor fijo curado por tema; si no, se quedan como siempre.
+export function aplicarTema(nombreResuelto, altoContraste, accentHex, temaPersonalizado) {
   const base = nombreResuelto === 'claro' ? COLORS_CLARO : COLORS_OSCURO;
   Object.assign(COLORS, base);
   if (altoContraste) Object.assign(COLORS, nombreResuelto === 'claro' ? CONTRASTE_ALTO_CLARO : CONTRASTE_ALTO_OSCURO);
   if (accentHex) Object.assign(COLORS, buildRolesFromAccent(accentHex, COLORS));
+
+  const tp = temaPersonalizado || DEFAULT_TEMA_PERSONALIZADO;
+
+  if (accentHex) {
+    const secundarioHex = tp.secundario || rotateHue(accentHex, 35);
+    const terciarioHex = tp.terciario || rotateHue(accentHex, -35);
+    Object.assign(COLORS, {
+      secondary: secundarioHex,
+      secondaryScale: generateScale(secundarioHex),
+      textOnSecondary: bestReadableText(secundarioHex),
+      tertiary: terciarioHex,
+      tertiaryScale: generateScale(terciarioHex),
+      textOnTertiary: bestReadableText(terciarioHex),
+    });
+  }
+
+  if (tp.fondo) COLORS.bg = tp.fondo;
+  if (tp.superficie) COLORS.surface = tp.superficie;
+  if (tp.texto) COLORS.text = tp.texto;
+  if (tp.bordes) COLORS.border = tp.bordes;
+  if (tp.estados) {
+    if (tp.estados.positive) COLORS.positive = tp.estados.positive;
+    if (tp.estados.warning) COLORS.warning = tp.estados.warning;
+    if (tp.estados.negative) COLORS.negative = tp.estados.negative;
+    if (tp.estados.info) COLORS.info = tp.estados.info;
+  }
+
+  // Red de seguridad de contraste — siempre, última operación de la función, para que ningún
+  // override de arriba pueda dejar texto ilegible sobre el fondo efectivo.
+  COLORS.text = ensureContrast(COLORS.text, COLORS.bg, 4.5);
+  COLORS.textMuted = ensureContrast(COLORS.textMuted, COLORS.bg, 3);
 }
 
 export const DEFAULT_APARIENCIA = {
@@ -83,21 +139,58 @@ export const DEFAULT_APARIENCIA = {
   animaciones: 'completa', // 'completa' | 'reducida' | 'minima' | 'desactivadas'
   reducirMovimiento: false,
   altoContraste: false, // Fase A7 — Accesibilidad
+  // Fase 4 del Sistema de Personalización Visual Extrema — "modo sencillo" (por defecto) muestra
+  // solo el acento y la galería de paletas predefinidas, como ya existía; "modo avanzado" revela
+  // además el Constructor de temas (Fase 3) y la gestión completa de temas guardados propios
+  // (crear/renombrar/duplicar/eliminar/exportar/importar). Nadie ve un constructor de 10 campos
+  // por accidente — hay que pedirlo explícitamente una vez.
+  modoColorAvanzado: false,
 };
 
 // Fase A7 — apartado 86: paletas predefinidas. Con la arquitectura real de la app (un tema
 // claro/oscuro + un acento, no un sistema de colores derivados independiente), la forma honesta
 // de ofrecer "paletas completas" es una combinación fija de tema + acento aplicados juntos de un
 // toque — no un sistema de color paralelo nuevo.
+//
+// Fase 4 del Sistema de Personalización Visual Extrema — cada paleta gana un campo
+// `temaPersonalizado`: `null` significa "totalmente automático" (Secundario/Terciario por
+// rotación de tono desde el acento, Fondo/Superficie/Texto/Bordes del tema Claro/Oscuro tal
+// cual) — así es como ya se comportaban todas estas paletas desde la Fase A7, no cambia nada
+// para ellas. Las tres paletas nuevas (Monocromático/Neón/Pastel) sí traen overrides explícitos,
+// porque un estilo realmente distinto (no solo "el mismo esquema con otro acento") necesita tocar
+// más que el Principal — es la razón por la que este sistema tiene un `temaPersonalizado` en
+// primer lugar. 'clasico' lleva `esOficial: true`: es el mismo azul metálico que ya traía la app
+// por defecto desde el principio, elevado a preset oficial tal y como pidió el contexto maestro
+// ("preserva el actual dark/metallic-blue como preset por defecto") — nunca se borra ni se puede
+// dejar de ofrecer como opción de "restablecer".
 export const PALETAS_PREDEFINIDAS = [
-  { id: 'clasico', label: 'Clásico', tema: 'oscuro', accent: '#5C7E9A' },
-  { id: 'oceano', label: 'Océano', tema: 'oscuro', accent: '#4F9494' },
-  { id: 'bosque', label: 'Bosque', tema: 'oscuro', accent: '#5E8C6A' },
-  { id: 'medianoche', label: 'Medianoche', tema: 'oscuro', accent: '#7A6A9E' },
-  { id: 'grafito', label: 'Grafito', tema: 'oscuro', accent: '#7C8592' },
-  { id: 'arena', label: 'Arena', tema: 'claro', accent: '#C9A24B' },
-  { id: 'aurora', label: 'Aurora', tema: 'claro', accent: '#B37A93' },
+  { id: 'clasico', label: 'Clásico', tema: 'oscuro', accent: '#5C7E9A', temaPersonalizado: null, esOficial: true },
+  { id: 'oceano', label: 'Océano', tema: 'oscuro', accent: '#4F9494', temaPersonalizado: null },
+  { id: 'bosque', label: 'Bosque', tema: 'oscuro', accent: '#5E8C6A', temaPersonalizado: null },
+  { id: 'medianoche', label: 'Medianoche', tema: 'oscuro', accent: '#7A6A9E', temaPersonalizado: null },
+  { id: 'grafito', label: 'Grafito', tema: 'oscuro', accent: '#7C8592', temaPersonalizado: null },
+  { id: 'arena', label: 'Arena', tema: 'claro', accent: '#C9A24B', temaPersonalizado: null },
+  { id: 'aurora', label: 'Aurora', tema: 'claro', accent: '#B37A93', temaPersonalizado: null },
+  {
+    id: 'monocromatico', label: 'Monocromático', tema: 'oscuro', accent: '#8A93A3',
+    temaPersonalizado: { ...DEFAULT_TEMA_PERSONALIZADO, secundario: '#6C7482', terciario: '#AAB2C0' },
+  },
+  {
+    id: 'neon', label: 'Neón', tema: 'oscuro', accent: '#00E5C7',
+    temaPersonalizado: { ...DEFAULT_TEMA_PERSONALIZADO, fondo: '#05070A', superficie: '#0B0F14' },
+  },
+  {
+    id: 'pastel', label: 'Pastel', tema: 'claro', accent: '#B7A6D9',
+    temaPersonalizado: { ...DEFAULT_TEMA_PERSONALIZADO, fondo: '#FAF7FC', superficie: '#FFFFFF' },
+  },
 ];
+
+// Fase 4 — temas guardados por Josué (crear/renombrar/duplicar/eliminar/exportar/importar), más
+// allá de las paletas predefinidas de arriba. Cada uno es una foto completa y lista para aplicar
+// de un toque: mismo shape que se le pasa a `aplicarConjuntoTema()` en App.jsx.
+// { id, nombre, tema: 'oscuro'|'claro', accent: hex, temaPersonalizado, creadoEn: ISO }
+export const DEFAULT_TEMAS_GUARDADOS = [];
+export const MAX_TEMAS_GUARDADOS = 12;
 
 export const TEMAS_DISPONIBLES = [
   { value: 'oscuro', label: 'Oscuro' },

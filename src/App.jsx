@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft } from 'lucide-react';
-import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS } from './tokens';
+import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS } from './tokens';
 import { getSession, onAuthChange, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, hexToRgba } from './lib/helpers';
@@ -179,6 +179,13 @@ export default function App() {
   // Fase 2 del Sistema de Personalización Visual Extrema — historial del ColorPicker (recientes/
   // favoritos), clave propia en Supabase, mismo criterio que `notificaciones`.
   const [historialColor, setHistorialColor] = useState(DEFAULT_HISTORIAL_COLOR);
+  // Fase 3 del Sistema de Personalización Visual Extrema — Constructor de temas: overrides de
+  // Secundario/Terciario/Fondo/Superficie/Texto/Bordes/Estados, clave propia en Supabase.
+  const [temaPersonalizado, setTemaPersonalizado] = useState(DEFAULT_TEMA_PERSONALIZADO);
+  // Fase 4 del Sistema de Personalización Visual Extrema — temas completos guardados por Josué
+  // (tema + accent + temaPersonalizado, foto lista para aplicar de un toque), clave propia en
+  // Supabase, mismo criterio de guardado directo sin deshacer que historialColor/temaPersonalizado.
+  const [temasGuardados, setTemasGuardados] = useState(DEFAULT_TEMAS_GUARDADOS);
   const [history, setHistory] = useState([]);
   const [showSearch, setShowSearch] = useState(false); // Fase 18 — buscador universal
 
@@ -193,7 +200,7 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, h] = await Promise.all([
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h] = await Promise.all([
         loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
@@ -217,6 +224,8 @@ export default function App() {
         loadData(uidUser, 'personalizacion', DEFAULT_PERSONALIZACION),
         loadData(uidUser, 'notificaciones', DEFAULT_NOTIFICACIONES),
         loadData(uidUser, 'historialColor', DEFAULT_HISTORIAL_COLOR),
+        loadData(uidUser, 'temaPersonalizado', DEFAULT_TEMA_PERSONALIZADO),
+        loadData(uidUser, 'temasGuardados', DEFAULT_TEMAS_GUARDADOS),
         loadData(uidUser, 'historial', []),
       ]);
       if (cancelled) return;
@@ -259,6 +268,12 @@ export default function App() {
       // mismo motivo que notificaciones — un registro inexistente o guardado antes de esta fase
       // no debe dejar `recientes`/`favoritos` en `undefined`.
       setHistorialColor({ ...DEFAULT_HISTORIAL_COLOR, ...hcol });
+      // Fase 3: merge con DEFAULT_TEMA_PERSONALIZADO, mismo motivo que notificaciones/historialColor
+      // — un registro inexistente o guardado antes de esta fase no debe dejar `estados` a medias.
+      setTemaPersonalizado({ ...DEFAULT_TEMA_PERSONALIZADO, ...tp, estados: { ...DEFAULT_TEMA_PERSONALIZADO.estados, ...(tp.estados || {}) } });
+      // Fase 4: sin merge de objeto (es una lista, no un objeto de campos) — solo nos aseguramos
+      // de que sea de verdad un array, por si `temasGuardados` no existe todavía en Supabase.
+      setTemasGuardados(Array.isArray(temGuard) ? temGuard : DEFAULT_TEMAS_GUARDADOS);
       setHistory(h);
       setLoaded(true);
     })();
@@ -278,7 +293,9 @@ export default function App() {
   // corrige una inconsistencia que llevaba desde la Fase A7 (Accesibilidad): `altoContraste` no
   // se estaba pasando nunca a `aplicarTema`, así que el interruptor de alto contraste guardaba
   // la preferencia pero no llegaba a aplicarse — con esta línea sí tiene efecto real.
-  aplicarTema(temaResuelto, apariencia.altoContraste, accent);
+  // Fase 3: cuarto parámetro, `temaPersonalizado` — overrides de Secundario/Terciario/Fondo/
+  // Superficie/Texto/Bordes/Estados (ver tokens.js). `null`/vacío en cada campo = automático.
+  aplicarTema(temaResuelto, apariencia.altoContraste, accent, temaPersonalizado);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -366,6 +383,86 @@ export default function App() {
       saveData(uidUser, 'historialColor', siguiente);
       return siguiente;
     });
+  };
+  // Fase 3 — Constructor de temas. `setTemaPersonalizado` sirve también de vista previa (llamado
+  // desde el ColorPicker anidado en cada fila del constructor, sin escribir en Supabase todavía);
+  // `updateTemaPersonalizado` es el guardado real, mismo patrón preview/commit que el acento.
+  const updateTemaPersonalizado = async (next) => { setTemaPersonalizado(next); await saveData(uidUser, 'temaPersonalizado', next); };
+
+  // Fase 4 del Sistema de Personalización Visual Extrema — Presets + gestión de temas.
+  //
+  // `aplicarConjuntoTema` es la única función que cambia tema+accent+temaPersonalizado A LA VEZ
+  // (al tocar un preset o un tema guardado). Construye el payload de 'ajustes' con el accent y el
+  // tema NUEVOS explícitos en vez de encadenar `updateAccent`+`updateApariencia` (que existen para
+  // cambios sueltos, cada una desde su propia tarjeta): cada una guarda el paquete 'ajustes'
+  // completo leyendo el resto de campos del closure de React, y dos llamadas seguidas en la misma
+  // función no ven todavía el `setState` de la anterior (React no re-renderiza a mitad de una
+  // función) — la segunda pisaría a la primera con un valor desactualizado. Construyendo el
+  // payload a mano con los valores nuevos explícitos, ese problema no puede pasar.
+  const aplicarConjuntoTema = async ({ tema: temaNombre, accent: accentHex, temaPersonalizado: tp }) => {
+    const tpFinal = tp || DEFAULT_TEMA_PERSONALIZADO;
+    const aparienciaSiguiente = { ...apariencia, tema: temaNombre };
+    setAccent(accentHex);
+    setApariencia(aparienciaSiguiente);
+    setTemaPersonalizado(tpFinal);
+    await saveData(uidUser, 'ajustes', { accent: accentHex, pin, apariencia: aparienciaSiguiente, seguridad });
+    await saveData(uidUser, 'temaPersonalizado', tpFinal);
+  };
+
+  // Aplica la paleta predefinida marcada `esOficial` (el azul metálico original de la app) —
+  // sirve como "Restablecer al tema oficial" desde la gestión de temas.
+  const restablecerTemaOficial = () => {
+    const oficial = PALETAS_PREDEFINIDAS.find((p) => p.esOficial) || PALETAS_PREDEFINIDAS[0];
+    aplicarConjuntoTema(oficial);
+  };
+
+  const guardarTemaComoNuevo = (nombre) => {
+    if (temasGuardados.length >= MAX_TEMAS_GUARDADOS) return false;
+    const nuevo = {
+      id: uid(), nombre: nombre.trim() || 'Tema sin nombre',
+      tema: apariencia.tema === 'automatico' ? temaResuelto : apariencia.tema,
+      accent, temaPersonalizado, creadoEn: new Date().toISOString(),
+    };
+    const siguiente = [...temasGuardados, nuevo];
+    setTemasGuardados(siguiente);
+    saveData(uidUser, 'temasGuardados', siguiente);
+    return true;
+  };
+
+  const renombrarTemaGuardado = (id, nombre) => {
+    const siguiente = temasGuardados.map((t) => (t.id === id ? { ...t, nombre: nombre.trim() || t.nombre } : t));
+    setTemasGuardados(siguiente);
+    saveData(uidUser, 'temasGuardados', siguiente);
+  };
+
+  const duplicarTemaGuardado = (id) => {
+    if (temasGuardados.length >= MAX_TEMAS_GUARDADOS) return false;
+    const original = temasGuardados.find((t) => t.id === id);
+    if (!original) return false;
+    const copia = { ...original, id: uid(), nombre: `${original.nombre} (copia)`, creadoEn: new Date().toISOString() };
+    const siguiente = [...temasGuardados, copia];
+    setTemasGuardados(siguiente);
+    saveData(uidUser, 'temasGuardados', siguiente);
+    return true;
+  };
+
+  const eliminarTemaGuardado = (id) => {
+    const siguiente = temasGuardados.filter((t) => t.id !== id);
+    setTemasGuardados(siguiente);
+    saveData(uidUser, 'temasGuardados', siguiente);
+  };
+
+  // El archivo ya viene validado (hex válidos, campos esperados) por quien llama — ver
+  // GestionTemas.jsx. Un tema importado se añade a la lista, nunca se aplica solo: Josué decide
+  // si lo activa después de verlo, mismo criterio que "Importar apariencia" (Fase A3), que pide
+  // confirmación explícita antes de aplicar nada.
+  const importarTemaGuardado = (temaImportado) => {
+    if (temasGuardados.length >= MAX_TEMAS_GUARDADOS) return false;
+    const nuevo = { ...temaImportado, id: uid(), creadoEn: new Date().toISOString() };
+    const siguiente = [...temasGuardados, nuevo];
+    setTemasGuardados(siguiente);
+    saveData(uidUser, 'temasGuardados', siguiente);
+    return true;
   };
 
   // Fase A6 — Privacidad (apartado 195: "Eliminación de datos específicos", categorías concretas
@@ -917,6 +1014,16 @@ export default function App() {
             perfil={perfil} onUpdatePerfil={updatePerfil} accent={accent} onUpdateAccent={updateAccent}
             onPreviewAccent={setAccent}
             historialColor={historialColor} onRegistrarColorReciente={registrarColorReciente} onToggleFavoritoColor={toggleFavoritoColor}
+            temaPersonalizado={temaPersonalizado} onUpdateTemaPersonalizado={updateTemaPersonalizado}
+            onPreviewTemaPersonalizado={setTemaPersonalizado}
+            temasGuardados={temasGuardados}
+            onAplicarConjuntoTema={aplicarConjuntoTema}
+            onRestablecerTemaOficial={restablecerTemaOficial}
+            onGuardarTemaComoNuevo={guardarTemaComoNuevo}
+            onRenombrarTemaGuardado={renombrarTemaGuardado}
+            onDuplicarTemaGuardado={duplicarTemaGuardado}
+            onEliminarTemaGuardado={eliminarTemaGuardado}
+            onImportarTemaGuardado={importarTemaGuardado}
             apariencia={apariencia} onUpdateApariencia={updateApariencia}
             notificaciones={notificaciones} onUpdateNotificaciones={updateNotificaciones}
             seguridad={seguridad} onUpdateSeguridad={updateSeguridad} userId={uidUser}

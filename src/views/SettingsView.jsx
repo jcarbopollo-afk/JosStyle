@@ -20,6 +20,8 @@ import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
 import { Card, Field, TextInput, Select, GhostBtn, PinSetter, SectionTitle } from '../components/ui';
 import PersonalizationView from './PersonalizationView';
 import ColorPicker from '../components/ColorPicker';
+import TemaBuilder from '../components/TemaBuilder';
+import GestionTemas from '../components/GestionTemas';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Fase A1 — Ajustes: arquitectura general (Entrega 1 de la especificación
@@ -209,6 +211,10 @@ function OpcionesFila({ opciones, valor, onChange, accent }) {
 export default function SettingsView({
   perfil, onUpdatePerfil, accent, onUpdateAccent, onPreviewAccent,
   historialColor, onRegistrarColorReciente, onToggleFavoritoColor,
+  temaPersonalizado, onUpdateTemaPersonalizado, onPreviewTemaPersonalizado,
+  temasGuardados, onAplicarConjuntoTema, onRestablecerTemaOficial,
+  onGuardarTemaComoNuevo, onRenombrarTemaGuardado, onDuplicarTemaGuardado,
+  onEliminarTemaGuardado, onImportarTemaGuardado,
   apariencia, onUpdateApariencia,
   notificaciones, onUpdateNotificaciones,
   seguridad, onUpdateSeguridad, userId,
@@ -224,8 +230,10 @@ export default function SettingsView({
   const [open, setOpen] = useState(null); // id de categoría abierta, o null = lista
   const [query, setQuery] = useState('');
   // Fase 2 del Sistema de Personalización Visual Extrema — editor de color avanzado, abierto desde
-  // "Color de acento" (por ahora el único rol personalizable; la Fase 3 lo extenderá a más roles).
+  // "Color de acento" (el rol Principal). Fase 3 añade el constructor de temas para el resto de
+  // roles (Secundario/Terciario/Fondo/Superficie/Texto/Bordes/Estados).
   const [colorPickerAbierto, setColorPickerAbierto] = useState(false);
+  const [temaBuilderAbierto, setTemaBuilderAbierto] = useState(false);
 
   const categorias = useCategorias();
 
@@ -669,6 +677,52 @@ export default function SettingsView({
               />
             )}
 
+            {/* Fase 4 del Sistema de Personalización Visual Extrema — Presets + gestión de temas:
+                galería de temas predefinidos (siempre visible) y, en modo avanzado, gestión
+                completa de temas propios (crear/renombrar/duplicar/eliminar/exportar/importar) +
+                el interruptor de modo avanzado en sí. Ver GestionTemas.jsx. */}
+            <GestionTemas
+              accent={accent}
+              apariencia={apariencia}
+              onUpdateApariencia={onUpdateApariencia}
+              temasGuardados={temasGuardados}
+              onAplicarConjuntoTema={onAplicarConjuntoTema}
+              onRestablecerTemaOficial={onRestablecerTemaOficial}
+              onGuardarTemaComoNuevo={onGuardarTemaComoNuevo}
+              onRenombrarTemaGuardado={onRenombrarTemaGuardado}
+              onDuplicarTemaGuardado={onDuplicarTemaGuardado}
+              onEliminarTemaGuardado={onEliminarTemaGuardado}
+              onImportarTemaGuardado={onImportarTemaGuardado}
+            />
+
+            {/* Fase 3 del Sistema de Personalización Visual Extrema — Constructor de temas: el
+                resto de roles (Secundario/Terciario/Fondo/Superficie/Texto/Bordes, y Estados en
+                una sección aparte con aviso). Ver TemaBuilder.jsx. Solo en modo avanzado (Fase 4)
+                — un componente de 10 campos no debería verse por accidente. */}
+            {apariencia.modoColorAvanzado && (
+              <Card>
+                <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Constructor de temas</p>
+                <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
+                  Personaliza el resto de la paleta más allá del acento: colores secundarios, fondo, superficie, texto
+                  y bordes. Cada uno es automático hasta que lo cambias a mano.
+                </p>
+                <GhostBtn onClick={() => setTemaBuilderAbierto(true)} icon={Palette}>Abrir constructor de temas</GhostBtn>
+              </Card>
+            )}
+
+            {temaBuilderAbierto && apariencia.modoColorAvanzado && (
+              <TemaBuilder
+                accent={accent}
+                temaPersonalizado={temaPersonalizado}
+                onPreviewTemaPersonalizado={onPreviewTemaPersonalizado}
+                onUpdateTemaPersonalizado={onUpdateTemaPersonalizado}
+                onClose={() => setTemaBuilderAbierto(false)}
+                historialColor={historialColor}
+                onRegistrarColorReciente={onRegistrarColorReciente}
+                onToggleFavoritoColor={onToggleFavoritoColor}
+              />
+            )}
+
             <Card>
               <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Tamaño de texto</p>
               <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Escala todo el texto de la app de golpe (también iconos y botones, al ser proporcional).</p>
@@ -743,7 +797,7 @@ export default function SettingsView({
             </Card>
 
             <InfoOnly>
-              Lo que queda pendiente de esta categoría (apartados 86-108 de la especificación): paletas de color predefinidas completas, transparencias/materiales translúcidos, estilos de icono alternativos y fondos con degradado/textura son personalización puramente decorativa — quedan para una fase futura. La reordenación y visibilidad de tarjetas del Dashboard ya está construida en "Pantalla principal" (Fase 19/20), no se duplica aquí.
+              Lo que queda pendiente de esta categoría (apartados 86-108 de la especificación): transparencias/materiales translúcidos, estilos de icono alternativos y fondos con degradado/textura son personalización puramente decorativa — quedan para una fase futura. Las paletas de color predefinidas completas ya están construidas (ver "Temas predefinidos" arriba, Fase 4 del Sistema de Personalización Visual Extrema). La reordenación y visibilidad de tarjetas del Dashboard ya está construida en "Pantalla principal" (Fase 19/20), no se duplica aquí.
             </InfoOnly>
           </>
         )}
