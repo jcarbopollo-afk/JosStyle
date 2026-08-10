@@ -63,7 +63,7 @@ export default function Auth() {
           onClick={submit}
           disabled={loading || !email || !password}
           className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold mb-3 disabled:opacity-60"
-          style={{ background: ACCENTS[0].value, color: '#080A0D' }}
+          style={{ background: ACCENTS[0].value, color: COLORS.textOnAccent }}
         >
           {loading ? 'Cargando…' : mode === 'signin' ? 'Entrar' : 'Crear cuenta'}
         </button>

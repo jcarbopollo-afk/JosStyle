@@ -19,6 +19,7 @@ import { permisoNotificaciones, pedirPermisoNotificaciones } from '../lib/notifi
 import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
 import { Card, Field, TextInput, Select, GhostBtn, PinSetter, SectionTitle } from '../components/ui';
 import PersonalizationView from './PersonalizationView';
+import ColorPicker from '../components/ColorPicker';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Fase A1 — Ajustes: arquitectura general (Entrega 1 de la especificación
@@ -115,7 +116,7 @@ function DeportesChips({ value, onChange, accent }) {
             onClick={() => toggle(d)}
             className="text-xs font-semibold px-3 py-1.5 rounded-full"
             style={activo
-              ? { background: accent, color: '#080A0D' }
+              ? { background: accent, color: COLORS.textOnAccent }
               : { background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}
           >
             {d}
@@ -194,7 +195,7 @@ function OpcionesFila({ opciones, valor, onChange, accent }) {
             onClick={() => onChange(op.value)}
             className="px-3 py-2 rounded-xl text-xs font-semibold"
             style={activo
-              ? { background: accent, color: '#080A0D' }
+              ? { background: accent, color: COLORS.textOnAccent }
               : { background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}
           >
             {op.label}
@@ -206,7 +207,8 @@ function OpcionesFila({ opciones, valor, onChange, accent }) {
 }
 
 export default function SettingsView({
-  perfil, onUpdatePerfil, accent, onUpdateAccent,
+  perfil, onUpdatePerfil, accent, onUpdateAccent, onPreviewAccent,
+  historialColor, onRegistrarColorReciente, onToggleFavoritoColor,
   apariencia, onUpdateApariencia,
   notificaciones, onUpdateNotificaciones,
   seguridad, onUpdateSeguridad, userId,
@@ -221,6 +223,9 @@ export default function SettingsView({
   useEffect(() => { setLocal(perfil); }, [perfil]);
   const [open, setOpen] = useState(null); // id de categoría abierta, o null = lista
   const [query, setQuery] = useState('');
+  // Fase 2 del Sistema de Personalización Visual Extrema — editor de color avanzado, abierto desde
+  // "Color de acento" (por ahora el único rol personalizable; la Fase 3 lo extenderá a más roles).
+  const [colorPickerAbierto, setColorPickerAbierto] = useState(false);
 
   const categorias = useCategorias();
 
@@ -618,7 +623,7 @@ export default function SettingsView({
 
             <Card>
               <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Color de acento</p>
-              <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Toca un color para aplicarlo a toda la app al instante.</p>
+              <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Toca un color para aplicarlo a toda la app al instante, o abre el editor avanzado para elegir cualquier color.</p>
               <div className="flex flex-wrap gap-3">
                 {ACCENTS.map((a) => (
                   <button
@@ -632,11 +637,37 @@ export default function SettingsView({
                     }}
                   />
                 ))}
+                {/* Fase 2 del Sistema de Personalización Visual Extrema — abre el editor avanzado
+                    (ColorPicker.jsx): espectro completo, no limitado a estos 12 preestablecidos. */}
+                <button
+                  onClick={() => setColorPickerAbierto(true)}
+                  aria-label="Color personalizado"
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-90"
+                  style={{
+                    background: 'conic-gradient(from 0deg, red, yellow, lime, cyan, blue, magenta, red)',
+                    boxShadow: !ACCENTS.some((a) => a.value === accent) ? `0 0 0 2px ${COLORS.bg}, 0 0 0 4px ${accent}` : 'none',
+                  }}
+                >
+                  <span className="w-4 h-4 rounded-full" style={{ background: COLORS.surface }} />
+                </button>
               </div>
               <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>
                 El acento nunca se usa en estados críticos (error/aviso/éxito) — esos mantienen su color fijo en toda la app.
               </p>
             </Card>
+
+            {colorPickerAbierto && (
+              <ColorPicker
+                initialHex={accent}
+                accent={accent}
+                onPreview={onPreviewAccent}
+                onCommit={(hex) => { onUpdateAccent(hex); onRegistrarColorReciente(hex); }}
+                onClose={() => setColorPickerAbierto(false)}
+                recientes={historialColor.recientes}
+                favoritos={historialColor.favoritos}
+                onToggleFavorito={onToggleFavoritoColor}
+              />
+            )}
 
             <Card>
               <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Tamaño de texto</p>

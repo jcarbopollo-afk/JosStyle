@@ -254,7 +254,7 @@ function AguaTab({ agua, onSetAgua, accent }) {
           <button
             onClick={() => onSetAgua(hoy, mlHoy + VASO_ML)}
             className="w-11 h-11 rounded-full flex items-center justify-center"
-            style={{ background: accent, color: '#080A0D' }}
+            style={{ background: accent, color: COLORS.textOnAccent }}
           >
             <Plus size={18} strokeWidth={2.5} />
           </button>
@@ -275,7 +275,7 @@ function FavoritosTab({ favoritos, onRegistrar, onEliminar, accent }) {
             <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{f.calorias} kcal · {round1(f.proteinas)}g prot.</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => onRegistrar(f)} className="rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ background: accent, color: '#080A0D' }}>
+            <button onClick={() => onRegistrar(f)} className="rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ background: accent, color: COLORS.textOnAccent }}>
               Registrar hoy
             </button>
             <button onClick={() => onEliminar(f.id)} aria-label="Eliminar favorito">

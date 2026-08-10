@@ -1,3 +1,11 @@
+import { buildRolesFromAccent } from './lib/colorEngine';
+
+// Fase 1 del Sistema de Personalización Visual Extrema — `warning`/`info` se suman aquí a los
+// ya existentes `positive`/`negative` (mismo criterio: colores de "Estados" fijos y curados por
+// tema, no derivados del acento del usuario — un error que cambiara de color con la personalización
+// sería una regresión de usabilidad). `warning` reutiliza el mismo dorado (#C9A24B) que ya estaba
+// hardcodeado en varios sitios (HealthView, TrainingView) — al convertirlo en token no cambia
+// nada visualmente hoy, solo deja de estar repetido y sin nombre.
 export const COLORS = {
   bg: '#0A0C10',
   surface: '#12151B',
@@ -7,6 +15,8 @@ export const COLORS = {
   textMuted: '#8891A3',
   positive: '#7CB88F',
   negative: '#C77C7C',
+  warning: '#C9A24B',
+  info: '#6C99C9',
 };
 
 export const ACCENTS = [
@@ -41,6 +51,8 @@ export const COLORS_CLARO = {
   textMuted: '#5B6472',
   positive: '#2F7D4F',
   negative: '#B23D3D',
+  warning: '#8A6516',
+  info: '#3D6FA3',
 };
 
 // Fase A7 — cierre de Ajustes (Accesibilidad): alto contraste. Solo ajusta `textMuted` y `border`
@@ -49,10 +61,18 @@ export const COLORS_CLARO = {
 export const CONTRASTE_ALTO_OSCURO = { textMuted: '#C4C9D2', border: '#3A4250' };
 export const CONTRASTE_ALTO_CLARO = { textMuted: '#33383F', border: '#B9C0CB' };
 
-export function aplicarTema(nombreResuelto, altoContraste) {
+// Fase 1 del Sistema de Personalización Visual Extrema — `aplicarTema` gana un tercer parámetro,
+// `accentHex`: además de mutar `COLORS` con la paleta base del tema (como ya hacía desde la Fase
+// A3), ahora también calcula y añade los roles derivados del acento (escala de marca, texto
+// legible sobre el acento, bordes/texto secundarios, estados de interacción, efectos — ver
+// `buildRolesFromAccent` en `src/lib/colorEngine.js`). Sigue siendo el mismo patrón de mutación
+// en el sitio sobre el objeto singleton `COLORS` que ya leen por referencia ~20 vistas — ningún
+// archivo existente necesita cambiar de import para heredar estos tokens nuevos.
+export function aplicarTema(nombreResuelto, altoContraste, accentHex) {
   const base = nombreResuelto === 'claro' ? COLORS_CLARO : COLORS_OSCURO;
   Object.assign(COLORS, base);
   if (altoContraste) Object.assign(COLORS, nombreResuelto === 'claro' ? CONTRASTE_ALTO_CLARO : CONTRASTE_ALTO_OSCURO);
+  if (accentHex) Object.assign(COLORS, buildRolesFromAccent(accentHex, COLORS));
 }
 
 export const DEFAULT_APARIENCIA = {
@@ -375,3 +395,12 @@ export const CATEGORIAS_NOTIFICACION = [
   { value: 'objetivos', label: 'Objetivos' },
   { value: 'sistema', label: 'Sistema' },
 ];
+
+// Fase 2 del Sistema de Personalización Visual Extrema — historial de colores del `ColorPicker`
+// (recientes: los últimos usados, sin duplicados, más nuevo primero; favoritos: marcados a mano
+// por Josué). Clave de Supabase propia (`historialColor`), guardado directo sin pasar por
+// snapshotAndSave/deshacer — mismo criterio que `notificaciones`/`personalizacion`: es
+// configuración/preferencia, no un dato de un módulo que tenga sentido deshacer.
+export const DEFAULT_HISTORIAL_COLOR = { recientes: [], favoritos: [] };
+export const MAX_COLORES_RECIENTES = 12;
+export const MAX_COLORES_FAVORITOS = 24;

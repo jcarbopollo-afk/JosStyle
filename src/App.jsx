@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft } from 'lucide-react';
-import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO } from './tokens';
+import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS } from './tokens';
 import { getSession, onAuthChange, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, hexToRgba } from './lib/helpers';
@@ -110,7 +110,7 @@ function BloqueoAutomaticoGate({ pin, accent, seguridad, onUnlock }) {
           onClick={intentarBiometria}
           disabled={verificando}
           className="px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
-          style={{ background: accent, color: '#080A0D' }}
+          style={{ background: accent, color: COLORS.textOnAccent }}
         >
           {verificando ? 'Verificando…' : 'Desbloquear con Face ID / Touch ID'}
         </button>
@@ -176,6 +176,9 @@ export default function App() {
   // Fase A4 — Notificaciones reales: clave propia en Supabase (no dentro de 'ajustes'), guardada
   // directa, sin pasar por snapshotAndSave/deshacer — es configuración, no un dato de un módulo.
   const [notificaciones, setNotificaciones] = useState(DEFAULT_NOTIFICACIONES);
+  // Fase 2 del Sistema de Personalización Visual Extrema — historial del ColorPicker (recientes/
+  // favoritos), clave propia en Supabase, mismo criterio que `notificaciones`.
+  const [historialColor, setHistorialColor] = useState(DEFAULT_HISTORIAL_COLOR);
   const [history, setHistory] = useState([]);
   const [showSearch, setShowSearch] = useState(false); // Fase 18 — buscador universal
 
@@ -190,7 +193,7 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, dia, bib, bibArch, rel, feData, bien, pers, notif, h] = await Promise.all([
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, h] = await Promise.all([
         loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
@@ -213,6 +216,7 @@ export default function App() {
         loadData(uidUser, 'bienestar', DEFAULT_BIENESTAR),
         loadData(uidUser, 'personalizacion', DEFAULT_PERSONALIZACION),
         loadData(uidUser, 'notificaciones', DEFAULT_NOTIFICACIONES),
+        loadData(uidUser, 'historialColor', DEFAULT_HISTORIAL_COLOR),
         loadData(uidUser, 'historial', []),
       ]);
       if (cancelled) return;
@@ -251,6 +255,10 @@ export default function App() {
       // Fase A4: merge con DEFAULT_NOTIFICACIONES, mismo motivo que perfil/apariencia — un
       // registro guardado antes de esta fase (o inexistente) no debe dejar `categorias` a medias.
       setNotificaciones({ ...DEFAULT_NOTIFICACIONES, ...notif, categorias: { ...DEFAULT_NOTIFICACIONES.categorias, ...(notif.categorias || {}) } });
+      // Fase 2 del Sistema de Personalización Visual Extrema: merge con DEFAULT_HISTORIAL_COLOR,
+      // mismo motivo que notificaciones — un registro inexistente o guardado antes de esta fase
+      // no debe dejar `recientes`/`favoritos` en `undefined`.
+      setHistorialColor({ ...DEFAULT_HISTORIAL_COLOR, ...hcol });
       setHistory(h);
       setLoaded(true);
     })();
@@ -265,7 +273,12 @@ export default function App() {
   // de carga y la de login también respeten el tema, y para no romper el orden de los Hooks
   // (los `useEffect` de aquí abajo tienen que ejecutarse siempre, nunca solo a veces).
   const temaResuelto = apariencia.tema === 'automatico' ? (temaSistemaOscuro ? 'oscuro' : 'claro') : apariencia.tema;
-  aplicarTema(temaResuelto);
+  // Fase 1 del Sistema de Personalización Visual Extrema: `aplicarTema` ahora recibe también el
+  // acento activo, para calcular los roles derivados (ver tokens.js/colorEngine.js). De paso se
+  // corrige una inconsistencia que llevaba desde la Fase A7 (Accesibilidad): `altoContraste` no
+  // se estaba pasando nunca a `aplicarTema`, así que el interruptor de alto contraste guardaba
+  // la preferencia pero no llegaba a aplicarse — con esta línea sí tiene efecto real.
+  aplicarTema(temaResuelto, apariencia.altoContraste, accent);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -332,6 +345,28 @@ export default function App() {
   const updateApariencia = async (next) => { setApariencia(next); await saveData(uidUser, 'ajustes', { accent, pin, apariencia: next, seguridad }); };
   const updateSeguridad = async (next) => { setSeguridad(next); await saveData(uidUser, 'ajustes', { accent, pin, apariencia, seguridad: next }); };
   const updatePerfil = async (next) => { setPerfil(next); await saveData(uidUser, 'perfil', next); };
+
+  // Fase 2 del Sistema de Personalización Visual Extrema — historial del ColorPicker (recientes/
+  // favoritos). Guardado directo, sin snapshotAndSave/deshacer, mismo criterio que notificaciones/
+  // personalizacion: es una preferencia de la app, no un dato de módulo con sentido de "deshacer".
+  const registrarColorReciente = (hexColor) => {
+    setHistorialColor((prev) => {
+      const siguiente = { ...prev, recientes: [hexColor, ...prev.recientes.filter((c) => c !== hexColor)].slice(0, MAX_COLORES_RECIENTES) };
+      saveData(uidUser, 'historialColor', siguiente);
+      return siguiente;
+    });
+  };
+  const toggleFavoritoColor = (hexColor) => {
+    setHistorialColor((prev) => {
+      const yaEsta = prev.favoritos.includes(hexColor);
+      const favoritosSiguientes = yaEsta
+        ? prev.favoritos.filter((c) => c !== hexColor)
+        : [hexColor, ...prev.favoritos].slice(0, MAX_COLORES_FAVORITOS);
+      const siguiente = { ...prev, favoritos: favoritosSiguientes };
+      saveData(uidUser, 'historialColor', siguiente);
+      return siguiente;
+    });
+  };
 
   // Fase A6 — Privacidad (apartado 195: "Eliminación de datos específicos", categorías concretas
   // sin afectar al resto). Perfil queda fuera de este mapa a propósito — ya tiene su propio
@@ -880,6 +915,8 @@ export default function App() {
         return (
           <SettingsView
             perfil={perfil} onUpdatePerfil={updatePerfil} accent={accent} onUpdateAccent={updateAccent}
+            onPreviewAccent={setAccent}
+            historialColor={historialColor} onRegistrarColorReciente={registrarColorReciente} onToggleFavoritoColor={toggleFavoritoColor}
             apariencia={apariencia} onUpdateApariencia={updateApariencia}
             notificaciones={notificaciones} onUpdateNotificaciones={updateNotificaciones}
             seguridad={seguridad} onUpdateSeguridad={updateSeguridad} userId={uidUser}
@@ -949,7 +986,25 @@ export default function App() {
   }
 
   return (
-    <div style={{ '--accent': accent, background: COLORS.bg, minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
+    <div
+      style={{
+        '--accent': accent,
+        // Fase 1 del Sistema de Personalización Visual Extrema — variables CSS que reflejan los
+        // tokens ya resueltos de `COLORS` (que solo viven como objeto JS) para que `index.css`
+        // también pueda consumir tokens en vez de colores sueltos (apartado 15 de la
+        // especificación: "los componentes deben consumir tokens semánticos", incluido CSS puro,
+        // no solo `style={{}}` en línea). Se recalculan en cada render junto con `COLORS`, así
+        // que siguen el tema/acento activos igual de en vivo que el resto de la app.
+        '--color-bg': COLORS.bg,
+        '--color-surface': COLORS.surface,
+        '--color-border': COLORS.border,
+        '--color-text': COLORS.text,
+        '--color-text-muted': COLORS.textMuted,
+        background: COLORS.bg,
+        minHeight: '100vh',
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
       <style>{`*:focus-visible { outline: 2px solid ${accent}; outline-offset: 2px; }`}</style>
 
       {/* Fase 18 — panel de sugerencias fijo arriba a la izquierda y buscador universal en

@@ -9,11 +9,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Fase 1 del Sistema de Personalización Visual Extrema — antes fijo en `#222834` (el gris del
+   borde del tema oscuro original): en tema claro el track del slider se quedaba siempre oscuro,
+   sin adaptarse. `--color-border` lo pone App.jsx en cada render con el valor real de `COLORS.border`
+   del tema activo (ver el `style` del contenedor raíz) — el `#222834` que queda aquí es solo el
+   valor por defecto de respaldo, por si esta regla se evaluara antes de que React monte. */
 input[type='range'] {
   height: 4px;
   border-radius: 4px;
   -webkit-appearance: none;
-  background: #222834;
+  background: var(--color-border, #222834);
 }
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;

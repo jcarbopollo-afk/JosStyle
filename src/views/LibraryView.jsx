@@ -25,7 +25,7 @@ function FiltroPill({ children, active, onClick, accent }) {
       onClick={onClick}
       className="rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap flex-shrink-0"
       style={active
-        ? { background: accent, color: '#080A0D' }
+        ? { background: accent, color: COLORS.textOnAccent }
         : { background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}
     >
       {children}
@@ -139,7 +139,7 @@ function AnadirArchivo({ tipo, onAdd, accent }) {
       <label className="block">
         <div
           className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full cursor-pointer"
-          style={{ background: accent, color: '#080A0D', opacity: subiendo ? 0.6 : 1 }}
+          style={{ background: accent, color: COLORS.textOnAccent, opacity: subiendo ? 0.6 : 1 }}
         >
           <Upload size={16} strokeWidth={2.5} />
           {subiendo ? (tipo === 'pdf' ? 'Subiendo y leyendo el PDF…' : 'Subiendo…') : `Subir ${meta.label.toLowerCase()}`}

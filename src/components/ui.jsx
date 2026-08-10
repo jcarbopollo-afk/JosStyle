@@ -78,7 +78,7 @@ export function PrimaryButton({ children, onClick, accent, disabled, icon: Icon 
       onClick={onClick}
       disabled={disabled}
       className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-transform active:scale-95 disabled:opacity-60 w-full"
-      style={{ background: accent, color: '#080A0D' }}
+      style={{ background: accent, color: COLORS.textOnAccent }}
     >
       {Icon && <Icon size={16} strokeWidth={2.5} />}
       {children}
@@ -105,7 +105,7 @@ export function ToggleTab({ children, active, onClick, accent }) {
       onClick={onClick}
       className="flex-1 rounded-xl px-3 py-2 text-sm font-semibold"
       style={active
-        ? { background: accent, color: '#080A0D' }
+        ? { background: accent, color: COLORS.textOnAccent }
         : { background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}
     >
       {children}
@@ -384,7 +384,7 @@ export function UniversalSearchModal({ accent, onClose, buildContext }) {
             style={{ width: 44, height: 42, background: accent }}
             aria-label="Buscar"
           >
-            {loading ? <Loader2 size={16} className="animate-spin" style={{ color: '#080A0D' }} /> : <Search size={16} style={{ color: '#080A0D' }} />}
+            {loading ? <Loader2 size={16} className="animate-spin" style={{ color: COLORS.textOnAccent }} /> : <Search size={16} style={{ color: COLORS.textOnAccent }} />}
           </button>
         </div>
         {errorMsg && <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>{errorMsg}</p>}

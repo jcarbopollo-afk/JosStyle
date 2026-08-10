@@ -152,7 +152,7 @@ function SesionesTab({ data, onUpdate, accent }) {
     <div className="space-y-3">
       {racha >= RACHA_AVISO && (
         <div className="rounded-2xl p-3 flex items-start gap-2" style={{ background: 'rgba(180,160,80,0.08)', border: '1px solid rgba(180,160,80,0.25)' }}>
-          <AlertTriangle size={16} style={{ color: '#C9A24B', flexShrink: 0, marginTop: 1 }} />
+          <AlertTriangle size={16} style={{ color: COLORS.warning, flexShrink: 0, marginTop: 1 }} />
           <p className="text-xs" style={{ color: COLORS.textMuted }}>
             Llevas {racha} días seguidos entrenando esta habilidad sin descansar. Puede ser buen momento para un día de descanso.
           </p>
@@ -244,7 +244,7 @@ function VideosTab({ skill, videos, onAddVideo, onDeleteVideo, onSetVideoFeedbac
           <TextInput value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej: segundo intento del día" />
         </Field>
         <label className="block">
-          <div className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full cursor-pointer" style={{ background: accent, color: '#080A0D', opacity: subiendo ? 0.6 : 1 }}>
+          <div className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full cursor-pointer" style={{ background: accent, color: COLORS.textOnAccent, opacity: subiendo ? 0.6 : 1 }}>
             <Video size={16} strokeWidth={2.5} />
             {subiendo ? 'Subiendo…' : `Subir vídeo de ${skill}`}
           </div>

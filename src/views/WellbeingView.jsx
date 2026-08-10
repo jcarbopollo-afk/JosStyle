@@ -189,7 +189,7 @@ function ConcentracionTab({ sesiones, onCompletar, accent }) {
           <button
             onClick={() => { if (segundos === 0) reiniciar(); setCorriendo((c) => !c); }}
             className="w-14 h-14 rounded-full flex items-center justify-center"
-            style={{ background: accent, color: '#080A0D' }}
+            style={{ background: accent, color: COLORS.textOnAccent }}
           >
             {corriendo ? <Pause size={22} /> : <Play size={22} />}
           </button>

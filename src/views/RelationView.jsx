@@ -131,7 +131,7 @@ function EspecialesTab({ fechas, onAdd, accent }) {
             onClick={() => { setSeleccionado(d); setFecha(''); }}
             className="rounded-full px-3 py-1.5 text-xs font-medium"
             style={seleccionado === d
-              ? { background: accent, color: '#080A0D' }
+              ? { background: accent, color: COLORS.textOnAccent }
               : { background: COLORS.surface2, color: yaAñadidos.has(d) ? COLORS.textMuted : COLORS.text, border: `1px solid ${COLORS.border}` }}
           >
             {d}{yaAñadidos.has(d) ? ' ✓' : ''}

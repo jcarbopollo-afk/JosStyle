@@ -14,7 +14,7 @@ function IconoPicker({ moduloId, iconoActual, onSetIcono, accent }) {
       <button
         onClick={() => onSetIcono(moduloId, null)}
         className="text-xs px-2 py-1 rounded-lg font-medium"
-        style={{ background: !iconoActual ? accent : COLORS.surface2, color: !iconoActual ? '#080A0D' : COLORS.textMuted }}
+        style={{ background: !iconoActual ? accent : COLORS.surface2, color: !iconoActual ? COLORS.textOnAccent : COLORS.textMuted }}
       >
         Original
       </button>
@@ -29,7 +29,7 @@ function IconoPicker({ moduloId, iconoActual, onSetIcono, accent }) {
             style={{ background: activo ? accent : COLORS.surface2, border: `1px solid ${activo ? accent : COLORS.border}` }}
             aria-label={key}
           >
-            <Icon size={14} style={{ color: activo ? '#080A0D' : COLORS.textMuted }} />
+            <Icon size={14} style={{ color: activo ? COLORS.textOnAccent : COLORS.textMuted }} />
           </button>
         );
       })}
@@ -90,7 +90,7 @@ function FilaModulo({ modulo, index, total, personalizacion, onMove, onToggleOcu
             <button
               onClick={() => { onToggleOculto(modulo.id); setConfirmandoOcultar(false); }}
               className="text-xs font-semibold px-2 py-1 rounded-lg"
-              style={{ background: accent, color: '#080A0D' }}
+              style={{ background: accent, color: COLORS.textOnAccent }}
             >
               Ocultar
             </button>
@@ -168,7 +168,7 @@ function ModoAppSection({ modo, onSetModo, accent }) {
               key={m.id}
               onClick={() => onSetModo(m.id)}
               className="text-xs px-3 py-2 rounded-xl font-semibold"
-              style={{ background: activo ? accent : COLORS.surface2, color: activo ? '#080A0D' : COLORS.textMuted, border: `1px solid ${activo ? accent : COLORS.border}` }}
+              style={{ background: activo ? accent : COLORS.surface2, color: activo ? COLORS.textOnAccent : COLORS.textMuted, border: `1px solid ${activo ? accent : COLORS.border}` }}
             >
               {m.label}
             </button>

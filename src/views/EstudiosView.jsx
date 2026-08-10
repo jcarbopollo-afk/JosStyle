@@ -329,7 +329,7 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onAddAsig
       <div className="flex items-center gap-2">
         <TextInput value={nuevaAsignatura} onChange={(e) => setNuevaAsignatura(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && anadirAsignatura()} placeholder={`Nueva asignatura en ${programa?.nombre || ''}`} />
         <button onClick={anadirAsignatura} className="p-2.5 rounded-xl" style={{ background: accent, flexShrink: 0 }} aria-label="Añadir asignatura">
-          <Plus size={16} color="#080A0D" />
+          <Plus size={16} color={COLORS.textOnAccent} />
         </button>
       </div>
 

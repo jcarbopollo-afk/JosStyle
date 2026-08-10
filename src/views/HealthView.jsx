@@ -30,7 +30,7 @@ function MedidasTab({ medidas, onAdd, accent }) {
     <div className="space-y-4">
       {sinRegistroReciente && (
         <div className="rounded-2xl p-3 flex items-start gap-2" style={{ background: 'rgba(180,160,80,0.08)', border: '1px solid rgba(180,160,80,0.25)' }}>
-          <AlertCircle size={16} style={{ color: '#C9A24B', flexShrink: 0, marginTop: 1 }} />
+          <AlertCircle size={16} style={{ color: COLORS.warning, flexShrink: 0, marginTop: 1 }} />
           <p className="text-xs" style={{ color: COLORS.textMuted }}>
             {ultima ? `Hace ${diasDesde(ultima.fecha)} días que no registras tus medidas.` : 'Todavía no has registrado ninguna medida.'} Un registro rápido ayuda a la IA a ver tu evolución real.
           </p>
@@ -185,7 +185,7 @@ function FotosTab({ fotos, onAddFoto, onDeleteFoto, accent }) {
         <label className="block">
           <div
             className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full cursor-pointer"
-            style={{ background: accent, color: '#080A0D', opacity: uploading ? 0.6 : 1 }}
+            style={{ background: accent, color: COLORS.textOnAccent, opacity: uploading ? 0.6 : 1 }}
           >
             <Camera size={16} strokeWidth={2.5} />
             {uploading ? 'Subiendo…' : 'Añadir foto de progreso'}

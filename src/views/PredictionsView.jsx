@@ -8,7 +8,13 @@ import {
 } from '../lib/predicciones';
 import { Card, SectionTitle } from '../components/ui';
 
-const COLOR_RIESGO = { bajo: COLORS.positive, medio: '#C9A24B', alto: COLORS.negative };
+// Fase 1 del Sistema de Personalización Visual Extrema — antes era un objeto fijo calculado una
+// sola vez al cargar el módulo (`{ bajo: COLORS.positive, ... }`), lo que copiaba el valor de
+// `COLORS` en ese instante y se quedaba "congelado" si el tema cambiaba después (COLORS es un
+// singleton mutable, no una referencia reactiva). Convertido en función para leer `COLORS` en
+// cada render, igual que hace el resto de la app. De paso, `medio` deja de estar hardcodeado en
+// '#C9A24B' y pasa a `COLORS.warning`, el mismo token nuevo que ya usan HealthView/TrainingView.
+const colorRiesgo = (riesgo) => ({ bajo: COLORS.positive, medio: COLORS.warning, alto: COLORS.negative }[riesgo]);
 
 function TarjetaPrediccion({ icon: Icon, titulo, suficientesDatos, resumenFalta, children }) {
   return (
@@ -75,7 +81,7 @@ function HabitosTarjeta({ productividad }) {
               <span className="text-xs" style={{ color: COLORS.textMuted }}>{p.tasa}% últimos {p.ventana}d</span>
               <span
                 className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                style={{ color: COLOR_RIESGO[p.riesgo], background: `${COLOR_RIESGO[p.riesgo]}22` }}
+                style={{ color: colorRiesgo(p.riesgo), background: `${colorRiesgo(p.riesgo)}22` }}
               >
                 {p.riesgo}
               </span>
