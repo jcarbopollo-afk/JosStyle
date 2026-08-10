@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, X, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock } from 'lucide-react';
+import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft } from 'lucide-react';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO } from './tokens';
 import { getSession, onAuthChange, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
@@ -7,7 +7,9 @@ import { uid, todayISO, hexToRgba } from './lib/helpers';
 import { extractPdfText } from './lib/pdfText';
 import { prediccionObjetivo } from './lib/predicciones';
 import { verificarBiometria } from './lib/biometria';
+import { calcularResumenModulo } from './lib/resumenesHub';
 import { PinGate, SuggestionsButton, UniversalSearchModal } from './components/ui';
+import HubView from './views/HubView';
 import Auth from './components/Auth';
 import DashboardView from './views/DashboardView';
 import SleepView from './views/SleepView';
@@ -34,14 +36,18 @@ import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el 
 // A partir de la Fase 4: 4 accesos rápidos + "Más", que lista el resto. Cada módulo nuevo futuro
 // se añade a MORE_NAV, no a la barra — así la barra nunca vuelve a ir apretada. Estudios (Fase 6),
 // Negocio (Fase 7), Productividad (Fase 8) y Objetivos (Fase 9) siguen ese mismo criterio.
-const PRIMARY_NAV = [
-  { id: 'hoy', label: 'Hoy', icon: Home },
-  { id: 'sueno', label: 'Sueño', icon: Moon },
-  { id: 'entreno', label: 'Entreno', icon: Dumbbell },
-  { id: 'nutricion', label: 'Nutrición', icon: Apple },
-];
+// Fase N1 — Nueva navegación por áreas (sustituye la barra de 4 accesos + "Más" plano por 5
+// pestañas fijas: Inicio directo + 4 áreas que abren primero un "hub" de tarjetas, nunca el
+// módulo directo). "hoy" sigue siendo un caso aparte, fuera de toda área, igual que antes.
+// MORE_NAV sigue siendo el catálogo plano id → label/icono por defecto que ya usa Personalización
+// (Fase 19) para reordenar/ocultar/cambiar icono — ahora incluye también sueno/entreno/nutricion
+// (antes exentos por vivir fijos en la barra inferior; ya no hay razón para esa excepción, ver
+// HANDOFF.md). AREAS_NAV agrupa esos mismos ids en las 4 pestañas, sin duplicar su definición.
 const MORE_NAV = [
   { id: 'salud', label: 'Salud', icon: HeartPulse },
+  { id: 'sueno', label: 'Sueño', icon: Moon },
+  { id: 'nutricion', label: 'Nutrición', icon: Apple },
+  { id: 'entreno', label: 'Entrenamiento', icon: Dumbbell },
   { id: 'estudios', label: 'Estudios', icon: GraduationCap },
   { id: 'negocio', label: 'Negocio', icon: Briefcase },
   { id: 'productividad', label: 'Productividad', icon: ListTodo },
@@ -56,6 +62,13 @@ const MORE_NAV = [
   { id: 'logros', label: 'Logros', icon: Trophy },
   { id: 'economia', label: 'Economía', icon: Wallet },
   { id: 'ajustes', label: 'Ajustes', icon: Settings },
+];
+
+const AREAS_NAV = [
+  { id: 'area-salud', label: 'Salud', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno'] },
+  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['estudios', 'productividad', 'objetivos', 'diario', 'biblioteca'] },
+  { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['economia', 'negocio'] },
+  { id: 'area-mas', label: 'Más', icon: MoreHorizontal, modulos: ['relacion', 'fe', 'bienestar', 'estadisticas', 'predicciones', 'logros', 'ajustes'] },
 ];
 
 function LoadingScreen() {
@@ -164,7 +177,6 @@ export default function App() {
   // directa, sin pasar por snapshotAndSave/deshacer — es configuración, no un dato de un módulo.
   const [notificaciones, setNotificaciones] = useState(DEFAULT_NOTIFICACIONES);
   const [history, setHistory] = useState([]);
-  const [showMore, setShowMore] = useState(false);
   const [showSearch, setShowSearch] = useState(false); // Fase 18 — buscador universal
 
   useEffect(() => {
@@ -632,7 +644,6 @@ export default function App() {
   // guardado es una lista de ids — cualquier módulo nuevo que una fase futura añada a MORE_NAV y
   // que Josué no haya reordenado todavía aparece al final, en su posición original.
   const moreNavPersonalizables = MORE_NAV.filter((m) => m.id !== 'ajustes');
-  const ajustesNavItem = MORE_NAV.find((m) => m.id === 'ajustes');
   const ordenIds = personalizacion.orden.length
     ? [...personalizacion.orden.filter((id) => moreNavPersonalizables.some((m) => m.id === id)),
        ...moreNavPersonalizables.filter((m) => !personalizacion.orden.includes(m.id)).map((m) => m.id)]
@@ -641,7 +652,21 @@ export default function App() {
     .map((id) => moreNavPersonalizables.find((m) => m.id === id))
     .filter(Boolean)
     .map((m) => ({ ...m, icon: ICONOS_PERSONALIZABLES_MAP[personalizacion.iconos[m.id]] || m.icon }));
-  const moreNavVisible = [...moreNavOrdenadoConIconos.filter((m) => !personalizacion.ocultos.includes(m.id)), ajustesNavItem];
+
+  // Fase N1 — catálogo con iconos ya resueltos (igual que moreNavOrdenadoConIconos, pero indexado
+  // por id) para que HubView pinte el icono personalizado de cada tarjeta sin recalcularlo.
+  const catalogoConIconos = Object.fromEntries(
+    MORE_NAV.map((m) => [m.id, { ...m, icon: ICONOS_PERSONALIZABLES_MAP[personalizacion.iconos[m.id]] || m.icon }])
+  );
+  // A qué área pertenece un módulo (para el botón "volver" y para resaltar el icono correcto de
+  // la barra inferior mientras se está dentro de un módulo, no solo en el propio hub).
+  const areaDeModulo = (id) => AREAS_NAV.find((a) => a.modulos.includes(id));
+  const areaActual = tab.startsWith('area-') ? AREAS_NAV.find((a) => a.id === tab) : areaDeModulo(tab);
+  // Resúmenes de todas las tarjetas, recalculados en cada render — son cálculos baratos (sumas,
+  // últimas fechas) sobre datos que ya están en memoria, mismo criterio que calcularMetricas().
+  const resumenesTodos = Object.fromEntries(
+    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar })])
+  );
 
   // Fase 19 — métricas favoritas del panel "Hoy": se calculan aquí (no en DashboardView) porque
   // combinan datos de varios módulos, mismo criterio que ya usan Estadísticas/Predicciones —
@@ -696,6 +721,19 @@ export default function App() {
     })}. Da como máximo 2 sugerencias breves y concretas de algo a lo que Josué podría prestar atención hoy o esta semana, basadas solo en estos datos. Si no ves nada claro que sugerir, dilo abiertamente en vez de forzar una.`;
 
   const renderContent = () => {
+    // Fase N1 — hubs de área: al pulsar Salud/Vida/Gestión/Más en la barra inferior se llega
+    // aquí primero, nunca directo a un módulo (ver AREAS_NAV arriba). Las tarjetas llaman a
+    // setTab(id) con el id del módulo real, que sigue resolviendo exactamente igual que siempre
+    // en el resto de este switch, sin tocar ninguna vista existente.
+    if (tab.startsWith('area-')) {
+      const area = AREAS_NAV.find((a) => a.id === tab);
+      return (
+        <HubView
+          area={area} modulos={catalogoConIconos} personalizacion={personalizacion}
+          resumenes={resumenesTodos} accent={accent} onOpenModulo={setTab}
+        />
+      );
+    }
     switch (tab) {
       case 'hoy':
         return (
@@ -871,7 +909,33 @@ export default function App() {
   // Fase 19: además de Relación (siempre protegida, Fase 12), cualquier módulo que Josué haya
   // marcado en Personalización avanzada (personalizacion.pinExtra) pasa por el mismo PinGate.
   const necesitaPin = tab === 'relacion' || personalizacion.pinExtra.includes(tab);
-  const renderTab = () => (necesitaPin ? <PinGate pin={pin} accent={accent}>{renderContent()}</PinGate> : renderContent());
+  // Fase N1/N2 — si `tab` es un módulo (no "hoy" ni un hub), se llegó ahí desde un hub de área:
+  // se añade una barra "volver a {Área}" arriba y una entrada con deslizamiento suave. `key={tab}`
+  // fuerza que la animación se repita cada vez que cambias de módulo (si no, React reutiliza el
+  // mismo nodo del DOM y la animación CSS solo se ve la primera vez). Fase N2: la barra "volver"
+  // lleva además su propia animación más corta (`back-bar`) por encima de la del contenedor
+  // (`module-enter`) — ambas se combinan porque son transforms independientes de padre e hijo —
+  // para que se sienta como una capa que ya estaba fija ahí, no como si arrastrara con el resto.
+  const esHub = tab.startsWith('area-');
+  const enModulo = tab !== 'hoy' && !esHub;
+  const renderTab = () => {
+    const contenido = necesitaPin ? <PinGate pin={pin} accent={accent}>{renderContent()}</PinGate> : renderContent();
+    if (!enModulo || !areaActual) return contenido;
+    return (
+      <div key={tab} className="module-enter">
+        {/* Fase N4 — pasa de texto suelto a una píldora "glass" (fondo tenue + borde apenas
+            visible), coherente con el resto del lenguaje visual del hub del que viene. */}
+        <button
+          onClick={() => setTab(areaActual.id)}
+          className="back-bar inline-flex items-center gap-1.5 mb-4 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold active:opacity-60"
+          style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
+        >
+          <ArrowLeft size={16} /> {areaActual.label}
+        </button>
+        {contenido}
+      </div>
+    );
+  };
 
   // Fase A5: bloqueo automático por inactividad, por encima de todo lo demás (incluida la propia
   // navegación) — solo puede ocurrir si hay PIN configurado (ver el useEffect de arriba).
@@ -907,68 +971,31 @@ export default function App() {
         {renderTab()}
       </div>
 
+      {/* Fase N1 — barra inferior fija de 5 pestañas (Inicio + 4 áreas). Pulsar un área siempre
+          lleva a su hub (nunca directo a un módulo); el icono se resalta también mientras se está
+          dentro de un módulo de esa área (areaActual), no solo en el propio hub. Nunca añadir una
+          sexta pestaña — los módulos nuevos van dentro de un área existente (AREAS_NAV arriba). */}
       <nav
         className="fixed bottom-0 left-0 right-0 flex justify-center"
         style={{ background: 'rgba(5,6,10,0.75)', backdropFilter: 'blur(20px)', borderTop: `1px solid ${COLORS.border}` }}
       >
         <div className="max-w-md w-full flex px-2 py-2">
-          {PRIMARY_NAV.map((item) => {
-            const Icon = item.icon;
-            const active = tab === item.id;
+          <button onClick={() => setTab('hoy')} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
+            <Home size={20} strokeWidth={tab === 'hoy' ? 2.4 : 1.8} className="nav-tab-icon" style={{ color: tab === 'hoy' ? accent : COLORS.textMuted }} />
+            <span className="nav-tab-label" style={{ fontSize: 10, fontWeight: 500, color: tab === 'hoy' ? accent : COLORS.textMuted }}>Inicio</span>
+          </button>
+          {AREAS_NAV.map((area) => {
+            const Icon = area.icon;
+            const active = areaActual?.id === area.id;
             return (
-              <button key={item.id} onClick={() => setTab(item.id)} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
-                <Icon size={20} strokeWidth={active ? 2.4 : 1.8} style={{ color: active ? accent : COLORS.textMuted }} />
-                <span style={{ fontSize: 10, fontWeight: 500, color: active ? accent : COLORS.textMuted }}>{item.label}</span>
+              <button key={area.id} onClick={() => setTab(area.id)} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
+                <Icon size={20} strokeWidth={active ? 2.4 : 1.8} className="nav-tab-icon" style={{ color: active ? accent : COLORS.textMuted }} />
+                <span className="nav-tab-label" style={{ fontSize: 10, fontWeight: 500, color: active ? accent : COLORS.textMuted }}>{area.label}</span>
               </button>
             );
           })}
-          <button
-            onClick={() => setShowMore(true)}
-            className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl"
-          >
-            <MoreHorizontal
-              size={20}
-              strokeWidth={MORE_NAV.some((m) => m.id === tab) ? 2.4 : 1.8}
-              style={{ color: MORE_NAV.some((m) => m.id === tab) ? accent : COLORS.textMuted }}
-            />
-            <span style={{ fontSize: 10, fontWeight: 500, color: MORE_NAV.some((m) => m.id === tab) ? accent : COLORS.textMuted }}>Más</span>
-          </button>
         </div>
       </nav>
-
-      {showMore && (
-        <div className="fixed inset-0 z-40 flex items-end" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setShowMore(false)}>
-          <div
-            className="w-full rounded-t-3xl p-4"
-            style={{ background: COLORS.surface, borderTop: `1px solid ${COLORS.border}`, paddingBottom: 28 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Más secciones</p>
-              <button onClick={() => setShowMore(false)} className="p-1.5 rounded-full" style={{ background: COLORS.surface2 }} aria-label="Cerrar">
-                <X size={14} style={{ color: COLORS.text }} />
-              </button>
-            </div>
-            <div className="space-y-1">
-              {moreNavVisible.map((item) => {
-                const Icon = item.icon;
-                const active = tab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => { setTab(item.id); setShowMore(false); }}
-                    className="w-full flex items-center gap-3 rounded-xl px-3 py-3"
-                    style={{ background: active ? hexToRgba(accent, 0.1) : 'transparent' }}
-                  >
-                    <Icon size={18} style={{ color: active ? accent : COLORS.textMuted }} />
-                    <span className="text-sm font-medium" style={{ color: active ? accent : COLORS.text }}>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

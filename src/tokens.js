@@ -43,18 +43,41 @@ export const COLORS_CLARO = {
   negative: '#B23D3D',
 };
 
-export function aplicarTema(nombreResuelto) {
-  Object.assign(COLORS, nombreResuelto === 'claro' ? COLORS_CLARO : COLORS_OSCURO);
+// Fase A7 — cierre de Ajustes (Accesibilidad): alto contraste. Solo ajusta `textMuted` y `border`
+// — los dos valores de la paleta con menos contraste por diseño — nunca `text`/`bg` (ya son el
+// máximo contraste posible) ni `positive`/`negative` (colores semánticos fijos, apartado 84).
+export const CONTRASTE_ALTO_OSCURO = { textMuted: '#C4C9D2', border: '#3A4250' };
+export const CONTRASTE_ALTO_CLARO = { textMuted: '#33383F', border: '#B9C0CB' };
+
+export function aplicarTema(nombreResuelto, altoContraste) {
+  const base = nombreResuelto === 'claro' ? COLORS_CLARO : COLORS_OSCURO;
+  Object.assign(COLORS, base);
+  if (altoContraste) Object.assign(COLORS, nombreResuelto === 'claro' ? CONTRASTE_ALTO_CLARO : CONTRASTE_ALTO_OSCURO);
 }
 
 export const DEFAULT_APARIENCIA = {
   tema: 'oscuro', // 'oscuro' | 'claro' | 'automatico'
   tamanoTexto: 'predeterminado', // 'pequeno' | 'predeterminado' | 'grande'
-  densidad: 'estandar', // 'compacta' | 'estandar' | 'comoda' — guardada; ver nota de alcance en SettingsView
+  densidad: 'estandar', // 'compacta' | 'estandar' | 'comoda' — Fase A7: ya tiene efecto visual real (ver index.css)
   radioBorde: 'redondeado', // 'recto' | 'suave' | 'redondeado'
   animaciones: 'completa', // 'completa' | 'reducida' | 'minima' | 'desactivadas'
   reducirMovimiento: false,
+  altoContraste: false, // Fase A7 — Accesibilidad
 };
+
+// Fase A7 — apartado 86: paletas predefinidas. Con la arquitectura real de la app (un tema
+// claro/oscuro + un acento, no un sistema de colores derivados independiente), la forma honesta
+// de ofrecer "paletas completas" es una combinación fija de tema + acento aplicados juntos de un
+// toque — no un sistema de color paralelo nuevo.
+export const PALETAS_PREDEFINIDAS = [
+  { id: 'clasico', label: 'Clásico', tema: 'oscuro', accent: '#5C7E9A' },
+  { id: 'oceano', label: 'Océano', tema: 'oscuro', accent: '#4F9494' },
+  { id: 'bosque', label: 'Bosque', tema: 'oscuro', accent: '#5E8C6A' },
+  { id: 'medianoche', label: 'Medianoche', tema: 'oscuro', accent: '#7A6A9E' },
+  { id: 'grafito', label: 'Grafito', tema: 'oscuro', accent: '#7C8592' },
+  { id: 'arena', label: 'Arena', tema: 'claro', accent: '#C9A24B' },
+  { id: 'aurora', label: 'Aurora', tema: 'claro', accent: '#B37A93' },
+];
 
 export const TEMAS_DISPONIBLES = [
   { value: 'oscuro', label: 'Oscuro' },

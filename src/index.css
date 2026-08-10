@@ -55,3 +55,114 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
   animation-duration: 0.01ms !important;
   transition-duration: 0.01ms !important;
 }
+
+/* Fase N1/N2 — Nueva navegación por áreas. Curva de easing compartida por todas las transiciones
+   de este sistema de navegación: una "deceleración enfática" (arranca con más velocidad, frena
+   suave al final, sin rebote) — el mismo tipo de curva que usan las transiciones de pantalla de
+   iOS, elegida en la Fase N2 para que la app entera se sienta consistente y "premium" en vez de
+   cada animación con su propio ritmo. Respeta "Reducir movimiento"/"Desactivadas" automáticamente
+   gracias a la regla de arriba, que ya fuerza `animation-duration: 0.01ms` sobre cualquier
+   animación de toda la app, todas las de aquí abajo incluidas. */
+:root {
+  --ease-premium: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Entrada en cascada de las tarjetas de un hub (Salud, Vida, Gestión, Más), 80ms de retraso entre
+   cada una (aplicado inline por índice en HubView.jsx, sin tocar en N2). Fase N2 añade un ligerísimo
+   escalado (0.97→1) junto al desplazamiento vertical — hace que cada tarjeta se sienta como si
+   "asentara" en su sitio en vez de solo deslizar, y alarga un poco la duración para que la curva
+   de deceleración se note bien sin llegar a sentirse lenta. */
+@keyframes hubCardIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.hub-card {
+  animation: hubCardIn 420ms var(--ease-premium) both;
+}
+
+/* Fase N2 — el título del área ("Salud", "Vida"...) entra con un fundido rápido y sutil justo
+   antes que las tarjetas, para que el hub no aparezca de golpe: primero el encabezado, luego la
+   cascada de tarjetas debajo (clase aplicada en HubView.jsx). */
+@keyframes hubHeaderIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hub-header {
+  animation: hubHeaderIn 320ms var(--ease-premium) both;
+}
+
+/* Transición de pantalla al entrar en un módulo desde un hub: fundido + deslizamiento horizontal
+   + un ligerísimo escalado (0.98→1), para que la vista nueva se sienta como si "entrara" en primer
+   plano en vez de solo desplazarse por encima — aplicada por App.jsx a la vista del módulo activo. */
+@keyframes moduleSlideIn {
+  from { opacity: 0; transform: translateX(26px) scale(0.98); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+.module-enter {
+  animation: moduleSlideIn 340ms var(--ease-premium) both;
+}
+
+/* Fase N2 — la barra "← {Área}" entra con un fundido lateral corto y más rápido que el contenido
+   de debajo, para que se sienta como una capa fija que ya estaba ahí, no como si arrastrara con
+   el resto de la pantalla. */
+@keyframes backBarIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.back-bar {
+  animation: backBarIn 220ms var(--ease-premium) both;
+}
+
+/* Fase N3 — microinteracción al pulsar una tarjeta de hub (HubView.jsx), en dos tiempos:
+   1) mientras el dedo/cursor está encima (:active, puramente CSS, sin JS): la tarjeta se encoge
+      un poco, se aclara (brightness) y gana una sombra más marcada — sensación táctil inmediata.
+   2) al soltar, `handleAbrir` en HubView.jsx marca esa tarjeta como "expandiendo" (JS, porque la
+      navegación real tiene que esperar a que se vea el gesto): la tarjeta crece ligeramente por
+      encima de su tamaño normal, se eleva por delante de las demás (z-index) y solo entonces,
+      cuando `EXPAND_MS` termina, se navega — la sensación es la de "entrar" en la tarjeta, no un
+      salto brusco a la pantalla siguiente. Las demás tarjetas del hub retroceden levemente
+      (`.hub-card-receding`) para que quede claro que el foco está en la que se pulsó. */
+.hub-card {
+  transition: transform 160ms var(--ease-premium), box-shadow 160ms var(--ease-premium), filter 160ms var(--ease-premium), opacity 160ms var(--ease-premium);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+.hub-card:active:not(:disabled) {
+  transform: scale(0.97);
+  filter: brightness(1.1);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.32);
+}
+@keyframes hubCardExpand {
+  0% { transform: scale(0.97); filter: brightness(1.1); box-shadow: 0 10px 26px rgba(0,0,0,0.32); }
+  100% { transform: scale(1.03); filter: brightness(1.16); box-shadow: 0 18px 40px rgba(0,0,0,0.4); }
+}
+.hub-card-expanding {
+  position: relative;
+  z-index: 5;
+  animation: hubCardExpand 190ms var(--ease-premium) forwards;
+}
+.hub-card-receding {
+  opacity: 0.45;
+  transform: scale(0.98);
+}
+
+/* Fase N4 — el círculo del icono (dentro de .hub-card) responde también al mismo gesto: un
+   pellizco de escala extra sobre el de la tarjeta, para que se sienta como una pieza propia con
+   algo de "peso" en vez de un dibujo plano pegado encima. */
+.hub-card-icon {
+  transition: transform 160ms var(--ease-premium);
+}
+.hub-card:active:not(:disabled) .hub-card-icon,
+.hub-card-expanding .hub-card-icon {
+  transform: scale(1.08);
+}
+
+/* Fase N4 — pulido visual final del bloque de navegación (cierra N1-N4): la barra "← {Área}"
+   pasa de texto suelto a una píldora con fondo tenue (visualmente coherente con el resto del
+   lenguaje "glass" de esta pantalla), y los botones de la barra inferior ganan una transición de
+   color suave al cambiar de pestaña activa en vez de un cambio brusco. */
+.back-bar {
+  transition: opacity 140ms var(--ease-premium), background-color 140ms var(--ease-premium);
+}
+.nav-tab-icon, .nav-tab-label {
+  transition: color 200ms var(--ease-premium);
+}

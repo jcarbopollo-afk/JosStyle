@@ -1,5 +1,83 @@
 # CHANGELOG.md
 
+## Fase N4 — Pulido visual final (v1.10.0) — cierra el bloque de navegación (N1-N4)
+
+### Añadido / cambiado
+- `src/lib/resumenesHub.js`: cada resumen gana un campo `estado` (`'activo'` | `'vacio'` | `'info'`) — el "indicador de estado" que pedía la especificación original de las tarjetas (icono, nombre, resumen, indicador de estado) y que no se había construido en N1. `'activo'` cuando el módulo tiene datos reales que enseñar hoy/recientes, `'vacio'` cuando todavía no hay nada, `'info'` para los módulos de solo lectura/configuración (Estadísticas, Predicciones, Logros, Ajustes) que no tienen un "vacío" real que señalar. Ningún estado inventa una urgencia que no existe — es descriptivo, no una alarma.
+- `src/views/HubView.jsx`: las tarjetas pasan de superficie sólida a "cristal" — fondo translúcido + `backdrop-filter: blur(18px)` (con el prefijo `-webkit-` necesario para Safari/iOS) + un brillo diagonal casi imperceptible, borde semitransparente. Nuevo punto de estado junto al nombre del módulo (color de acento si `'activo'`, apagado si `'vacio'`, ausente si `'info'`). Jerarquía tipográfica más marcada: la primera línea de resumen pasa a usar el color de texto principal (antes iba en `textMuted`, igual que la segunda línea — ahora se distingue mejor cuál es el dato y cuál el contexto). El encabezado "Área" pasa a mayúsculas con tracking amplio (estilo "eyebrow"), separado del título por más aire. Círculo del icono gana borde propio con el color de acento.
+- `src/index.css`: nueva regla para `.hub-card-icon` — el círculo del icono gana su propio pellizco de escala (encima del de la tarjeta) durante el gesto de pulsación/expansión de la Fase N3, para sentirse como una pieza con peso propio. Nuevas reglas `.nav-tab-icon`/`.nav-tab-label` (transición de color suave al cambiar de pestaña activa en la barra inferior) y `.back-bar` gana una transición de fondo, para acompañar su nuevo estilo de píldora.
+- `src/App.jsx`: la barra "← {Área}" pasa de texto suelto a una píldora con fondo tenue (coherente con el lenguaje "glass" del resto de la pantalla). Los iconos/etiquetas de la barra inferior ganan las clases `nav-tab-icon`/`nav-tab-label` para la transición de color suave.
+
+### Decisiones
+- **Con esta fase se cierra el bloque completo de navegación por áreas (N1 a N4)** — misma lógica que cuando A6 cerró el bloque Ajustes: documentado aquí y en HANDOFF.md, sin usar versión mayor (sigue el mismo patrón de incrementos menores `1.x.0` que todas las fases anteriores).
+- El indicador de estado usa solo dos señales honestas (`'activo'`/`'vacio'`) en vez de un semáforo de 3+ colores con significados que esta app no puede respaldar con datos reales (ej. "en riesgo", "urgente") — mismo criterio de "nunca simular algo que no existe" de toda la Entrega 1.
+- El efecto de cristal (`backdrop-filter`) es puramente estético: como las tarjetas no tienen contenido visual detrás salvo el fondo plano de la app, el "desenfoque" en sí apenas se nota, pero la transparencia + el brillo diagonal sí dan la sensación de superficie de vidrio pedida en la especificación original ("mucho glass/blur"). No se ha podido comprobar el rendimiento real de `backdrop-filter` en Safari/iOS con varias tarjetas a la vez (puede ser más costoso ahí que en Chrome de escritorio) — a vigilar si Josué nota lag al abrir un hub.
+- No se tocó nada de estructura (N1), timing de transición de pantalla (N2) ni la secuencia de pulsación de tarjeta (N3) — cambio acotado a superficie visual y al indicador de estado que faltaba.
+
+### Verificado en este entorno
+- **No se ha podido ejecutar `esbuild`.** Verificación manual: balance de paréntesis/llaves/corchetes por script en los cuatro archivos tocados (`App.jsx`, `HubView.jsx`, `index.css`, `resumenesHub.js`) — todos OK.
+- Cruzados los 18 `case` de `resumenesHub.js` uno a uno: todos devuelven ahora `estado` (ninguno se quedó con solo `linea1`/`linea2`), y el `default` también lo incluye para no romper `HubView.jsx` si algún día aparece un id sin caso propio.
+- **Pendiente de confirmación real:** el "tacto" del cristal/blur y el punto de estado solo se pueden juzgar de verdad viéndolos en un móvil, no en el código.
+
+## Fase N3 — Microinteracciones de tarjeta (v1.9.0)
+
+### Añadido / cambiado
+- `src/views/HubView.jsx`: al pulsar una tarjeta ya no se navega al instante. Nuevo estado local `expandingId` + `handleAbrir(id)`: marca esa tarjeta como "expandiendo", dispara su animación (`.hub-card-expanding`) y solo tras `EXPAND_MS` (190ms) llama a `onOpenModulo(id)` (la navegación real). Mientras una tarjeta expande, el resto del hub queda deshabilitado (`disabled`) y retrocede levemente (`.hub-card-receding`, opacidad y escala reducidas) para que quede claro dónde está el foco. `useEffect` de limpieza que cancela el `setTimeout` pendiente si el hub se desmonta a medio gesto (ej. Josué toca otra pestaña de la barra inferior mientras la tarjeta sigue expandiendo) — evita que la navegación retrasada aterrice sobre una pantalla distinta a la que se pulsó.
+- `src/index.css`: `.hub-card` gana un estado `:active` puramente CSS (sin esperar a JS) — al tocarla se encoge un poco, se aclara (`brightness`) y gana sombra, para la respuesta táctil inmediata. Nueva animación `hubCardExpand` (`.hub-card-expanding`): continúa desde ese mismo estado hacia una escala ligeramente mayor (1.03), más brillo y una sombra más profunda, con `z-index` propio para que se "eleve" por delante de las demás tarjetas. Nueva clase `.hub-card-receding` para las tarjetas no pulsadas mientras una está expandiendo.
+
+### Decisiones
+- **Secuencia exacta pedida por Josué:** escala hacia abajo al presionar → brillo/sombra → "elevación" → breve expansión → solo entonces la pantalla nueva desliza (la propia `.module-enter` de N1/N2 ya se encarga de esa parte, sin tocarla en esta fase).
+- `EXPAND_MS` (190ms) elegido para que se note el gesto sin sentirse lento — coincide con la duración de la animación `hubCardExpand` en CSS, ambos números deben moverse juntos si se ajustan en el futuro.
+- El retraso de navegación es un `setTimeout` fijo, no ligado al ajuste "Reducir movimiento"/"Animaciones desactivadas" de Apariencia (Fase A3) — con esos ajustes activados, la parte visual se neutraliza igual que el resto de la app (la regla global ya fuerza `animation-duration`/`transition-duration` a 0.01ms), pero la espera de 190ms antes de navegar se mantiene. Se documenta como un matiz menor conocido, no un fallo: 190ms es lo bastante corto para no notarse como un retraso real.
+- No se tocó nada de N1/N2 (estructura, datos de las tarjetas, transición de pantalla) — cambio acotado a la interacción de pulsación.
+
+### Verificado en este entorno
+- **No se ha podido ejecutar `esbuild`.** Verificación manual: balance de paréntesis/llaves/corchetes por script en los dos archivos tocados (`HubView.jsx`, `index.css`) — OK. Import de `useState`/`useRef`/`useEffect` añadido correctamente a la cabecera de `HubView.jsx`.
+- Revisado a propósito el orden de los Hooks (con el error real de la Fase A3 todavía como referencia): `useState`/`useRef`/`useEffect` están todos al principio del componente, antes de cualquier `return`/cálculo condicional — no hay ningún `return` temprano en `HubView.jsx`, así que no aplica el riesgo de ese bug aquí, pero se revisó igualmente.
+- Confirmado que `animationDelay` del estilo en línea (usado para el retraso de 80ms de la cascada de entrada) se pone a `0ms` en la tarjeta que expande, para que no herede sin querer el retraso de la animación de entrada y la expansión arranque al instante.
+- **Pendiente de confirmación real:** que 190ms se sienta bien en un dedo real sobre una pantalla táctil — es un número de partida razonable, pero solo se puede ajustar con certeza probándolo en el móvil de Josué.
+
+## Fase N2 — Pulido de transiciones de pantalla (v1.8.0)
+
+### Añadido / cambiado
+- `src/index.css`: nueva variable `--ease-premium: cubic-bezier(0.32, 0.72, 0, 1)` (curva de "deceleración enfática" tipo iOS), usada ahora por las cuatro animaciones del sistema de navegación para que se sientan consistentes entre sí. `hubCardIn` gana un ligero escalado (0.97→1) además del desplazamiento vertical, y pasa de 340ms a 420ms. `moduleSlideIn` gana el mismo escalado (0.98→1) y pasa de 260ms a 340ms. Dos animaciones nuevas: `hubHeaderIn` (el título del área, ej. "Salud", entra con un fundido corto justo antes que las tarjetas) y `backBarIn` (la barra "← {Área}" entra con su propio fundido lateral, más corto y rápido que el contenido de debajo, para sentirse como una capa fija en vez de arrastrar con el resto).
+- `src/views/HubView.jsx`: el encabezado del hub (`<div>` con "Área" + nombre) gana `className="hub-header"` y `key={area.id}` — el `key` fuerza que el fundido se repita cada vez que se entra a un área distinta, no solo la primera vez que se monta el componente.
+- `src/App.jsx`: el botón "← {Área}" gana `className="back-bar ..."` — su propia animación se combina con la del contenedor `module-enter` que lo envuelve (son transforms independientes de padre e hijo, se suman sin conflicto), dando un efecto de capas en vez de un solo bloque moviéndose entero.
+
+### Decisiones
+- **No se tocó el stagger de 80ms entre tarjetas** (lo pidió Josué explícitamente en la especificación original) — solo se refinó la curva y duración de cada tarjeta individual, no el ritmo entre ellas.
+- **No se tocaron las microinteracciones de pulsación de tarjeta** (`active:scale-[0.98]` ya existente desde N1) — eso es explícitamente el alcance de la Fase N3 (escala + brillo + sombra + elevación + expansión antes de navegar), no de esta fase.
+- Curva `cubic-bezier(0.32, 0.72, 0, 1)` elegida por ser la misma familia de curva de "deceleración enfática" que usan las transiciones de pantalla nativas de iOS — encaja con la referencia visual que dio Josué (Apple, Cal AI, Symmetry) sin necesitar ninguna librería de animación nueva (seguimos sin acceso al registro de npm en este entorno).
+- Nada de esto cambia comportamiento ni datos — es puramente visual, cero riesgo de romper algo funcional.
+
+### Verificado en este entorno
+- **No se ha podido ejecutar `esbuild`.** Verificación manual: balance de paréntesis/llaves/corchetes por script en los tres archivos tocados (`App.jsx`, `HubView.jsx`, `index.css`) — todos OK.
+- Confirmado que las nuevas animaciones siguen dentro de las reglas `html[data-animaciones='desactivadas']`/`html[data-reducir-movimiento='true']` ya existentes (aplican a `*`, sin excepción), por lo que "Reducir movimiento" las sigue neutralizando igual que a las de la Fase N1.
+- **Pendiente de confirmación real:** que la curva y duraciones elegidas se sientan bien en un móvil real (a diferencia del código, el "tacto" de una animación solo se puede juzgar viéndola correr de verdad).
+
+## Fase N1 — Nueva navegación por áreas (v1.7.0)
+
+### Añadido / cambiado
+- `src/App.jsx`: la barra inferior de 4 accesos rápidos + "Más" (hoja plana con todos los módulos en lista) se sustituye por 5 pestañas fijas: 🏠 Inicio, ❤️ Salud, 📚 Vida, 💼 Gestión, ☰ Más. Nuevo array `AREAS_NAV` (4 áreas, cada una con su lista de ids de módulo) junto al ya existente `MORE_NAV` (catálogo plano, ahora con 18 entradas — se le añaden `sueno`, `nutricion` y `entreno`, antes exentos por vivir fijos en la barra vieja). Tocar Inicio va directo al panel "Hoy" como siempre; tocar cualquiera de las otras 4 pestañas abre primero un "hub" de esa área — nunca se entra directo a un módulo. `renderContent()` intercepta los tabs `area-*` antes del switch de siempre y delega en `HubView`; todos los `case` de módulo del switch quedan intactos, sin tocar ni una vista existente.
+- `src/views/HubView.jsx` (nuevo): pantalla de hub — tarjetas grandes (no botones pequeños), una por módulo del área, con icono, nombre, resumen real de 2 líneas y flecha. Respeta el orden/ocultos/iconos personalizados de Josué (Fase 19) filtrando la lista fija de cada área con ese mismo modelo de datos, sin cambiarlo. "Ajustes" sigue fijo al final dentro del hub "Más", fuera de la personalización, mismo motivo de siempre (que nunca desaparezca la forma de deshacer un cambio).
+- `src/lib/resumenesHub.js` (nuevo): calcula el resumen de 2 líneas de cada tarjeta a partir de datos reales ya guardados (último peso, horas de sueño, kcal de hoy, racha de hábitos, saldo, etc.) — nunca una cifra inventada; si un módulo no tiene datos todavía, la tarjeta lo dice abiertamente ("Sin registros todavía, toca para añadir el primero").
+- `src/App.jsx`: al entrar a un módulo desde un hub aparece una barra "← {Área}" arriba (vuelve al hub, no al Inicio) y la vista entra con un deslizamiento horizontal suave (`module-enter` en `index.css`). Las tarjetas de un hub entran en cascada, con 80ms de retraso entre una y la siguiente (`hub-card` en `index.css`).
+- `src/index.css`: nuevas animaciones `hubCardIn` (entrada en cascada de tarjetas) y `moduleSlideIn` (entrada de módulo) — ambas respetan automáticamente "Reducir movimiento"/"Animaciones desactivadas" de la Fase A3, que ya fuerza `animation-duration: 0.01ms` sobre cualquier animación de toda la app.
+- Limpieza: se retira el estado `showMore`/`setShowMore` y la hoja modal "Más secciones" (ya no existe una lista plana — la sustituye el hub por área), y la variable `moreNavVisible`/`ajustesNavItem` que solo esa hoja usaba.
+
+### Decisiones
+- **Fase 1 de 4 (N1-N4), tal y como se acordó antes de escribir código.** Esta entrega es la N1: estructura de navegación + datos reales + animación de entrada mínima pero presente. Pendientes para fases futuras (N2-N4, solo si Josué pide continuar): refinar el timing de la cascada y el deslizamiento, microinteracciones de pulsación de tarjeta (escala + brillo + sombra + "elevación" antes de la transición), y pulido visual de cristal/blur/tipografía.
+- **Ningún módulo cambia de contenido ni de ruta interna** — la reestructuración es solo de "cómo se llega", nunca de "qué se ve dentro". Esto reduce el riesgo de romper algo en 20+ vistas ya construidas.
+- **La tarjeta 🤖 IA que Josué listó dentro de "Más" no está incluida todavía** en `AREAS_NAV.area-mas.modulos`: no existe hoy un módulo `ia` real en la app (AXION sigue pendiente de la conversación de diseño aparte). Se deja fuera en vez de simular una tarjeta que no lleva a ningún sitio real — se retoma en cuanto se diseñe AXION.
+- Versión saltada de 1.6.0 a 1.7.0 (incremento menor, mismo criterio que las fases A1-A6) — es un cambio grande de UX pero no rompe datos ni rutas de Supabase.
+
+### Verificado en este entorno
+- **No se ha podido ejecutar `esbuild`.** Verificación manual: balance de paréntesis/llaves/corchetes por script en los cuatro archivos tocados (`App.jsx`, `HubView.jsx`, `resumenesHub.js`, `index.css`) — todos OK.
+- Cruce manual de las 18 entradas de `MORE_NAV` contra las 4 áreas de `AREAS_NAV`: los 18 ids aparecen exactamente una vez cada uno (ninguno duplicado, ninguno huérfano).
+- Props de `<HubView />` cruzadas contra su firma (`area, modulos, personalizacion, resumenes, accent, onOpenModulo`) — coinciden.
+- Grep final sin resultados para `PRIMARY_NAV` y `showMore` en todo `src/App.jsx`, confirmando que no queda ninguna referencia rota a la navegación anterior.
+- **Pendiente de confirmación real:** que la sensación de "entrar" en el módulo (deslizamiento + barra de volver) se sienta natural en un móvil real y no solo en la vista de escritorio.
+
 ## Fase A6 — Privacidad (v1.6.0) — cierra el bloque Ajustes (A1-A6)
 
 ### Añadido / cambiado
