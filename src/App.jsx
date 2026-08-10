@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, X, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy } from 'lucide-react';
-import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP } from './tokens';
+import React, { useState, useEffect, useRef } from 'react';
+import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, X, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock } from 'lucide-react';
+import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO } from './tokens';
 import { getSession, onAuthChange, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, hexToRgba } from './lib/helpers';
 import { extractPdfText } from './lib/pdfText';
 import { prediccionObjetivo } from './lib/predicciones';
+import { verificarBiometria } from './lib/biometria';
 import { PinGate, SuggestionsButton, UniversalSearchModal } from './components/ui';
 import Auth from './components/Auth';
 import DashboardView from './views/DashboardView';
@@ -27,7 +28,7 @@ import StatsView from './views/StatsView';
 import PredictionsView from './views/PredictionsView';
 import AchievementsView from './views/AchievementsView';
 import SettingsView from './views/SettingsView';
-import PersonalizationView, { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView';
+import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // Con Salud y Nutrición ya son 7 secciones — demasiadas para una sola barra inferior cómoda.
 // A partir de la Fase 4: 4 accesos rápidos + "Más", que lista el resto. Cada módulo nuevo futuro
@@ -65,12 +66,80 @@ function LoadingScreen() {
   );
 }
 
+// Fase A5 — Seguridad avanzada: pantalla de bloqueo automático (apartado 146), con desbloqueo
+// rápido por biometría (si Josué la activó, apartado 145 — prioridad biometría/PIN respaldo) y
+// PIN como respaldo siempre disponible. Distinta del PinGate por sección (Fase 2/12/19): esta
+// bloquea la app entera tras un periodo de inactividad, no una sección concreta al navegar a ella.
+function BloqueoAutomaticoGate({ pin, accent, seguridad, onUnlock }) {
+  const [value, setValue] = useState('');
+  const [error, setError] = useState('');
+  const [verificando, setVerificando] = useState(false);
+  const biometriaLista = seguridad.biometriaActiva && !!seguridad.biometriaCredencialId;
+
+  const intentarBiometria = async () => {
+    setVerificando(true);
+    setError('');
+    const ok = await verificarBiometria(seguridad.biometriaCredencialId);
+    setVerificando(false);
+    if (ok) onUnlock(); else setError('No se ha podido verificar. Prueba de nuevo o usa el PIN.');
+  };
+  const tryUnlock = () => {
+    if (value === pin) onUnlock();
+    else { setError('PIN incorrecto'); setValue(''); }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-8" style={{ background: COLORS.bg }}>
+      <Lock size={28} style={{ color: accent }} />
+      <p className="text-sm text-center" style={{ color: COLORS.textMuted }}>App bloqueada por inactividad</p>
+      {biometriaLista && (
+        <button
+          onClick={intentarBiometria}
+          disabled={verificando}
+          className="px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
+          style={{ background: accent, color: '#080A0D' }}
+        >
+          {verificando ? 'Verificando…' : 'Desbloquear con Face ID / Touch ID'}
+        </button>
+      )}
+      <div className="flex items-center gap-2">
+        <input
+          type="password" inputMode="numeric" maxLength={6} placeholder="PIN"
+          value={value} onChange={(e) => { setValue(e.target.value.replace(/\D/g, '')); setError(''); }}
+          onKeyDown={(e) => e.key === 'Enter' && tryUnlock()}
+          className="rounded-xl px-3 py-2.5 text-sm outline-none text-center"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text, maxWidth: 120 }}
+        />
+        <button
+          onClick={tryUnlock} disabled={value.length < 4}
+          className="px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
+          style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+        >
+          Entrar
+        </button>
+      </div>
+      {error && <p className="text-xs" style={{ color: COLORS.negative }}>{error}</p>}
+    </div>
+  );
+}
+
 export default function App() {
   const [session, setSession] = useState(undefined); // undefined = comprobando, null = sin sesión
   const [tab, setTab] = useState('hoy');
   const [loaded, setLoaded] = useState(false);
   const [accent, setAccent] = useState(ACCENTS[0].value);
   const [pin, setPin] = useState(null);
+  // Fase A3 — Apariencia avanzada: tema (claro/oscuro/automático), tamaño de texto, densidad,
+  // radios de borde y animaciones. `temaSistemaOscuro` solo se usa para resolver "automático".
+  const [apariencia, setApariencia] = useState(DEFAULT_APARIENCIA);
+  const [temaSistemaOscuro, setTemaSistemaOscuro] = useState(
+    () => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : true)
+  );
+  // Fase A5 — Seguridad avanzada: bloqueo automático + biometría. `bloqueado` es el estado de la
+  // pantalla de bloqueo completa (distinta del PinGate por sección que ya existía).
+  const [seguridad, setSeguridad] = useState(DEFAULT_SEGURIDAD);
+  const [bloqueado, setBloqueado] = useState(false);
+  const inactivityTimer = useRef(null);
   const [perfil, setPerfil] = useState(DEFAULT_PERFIL);
   const [sueno, setSueno] = useState([]);
   const [calistenia, setCalistenia] = useState(DEFAULT_CALISTENIA);
@@ -91,6 +160,9 @@ export default function App() {
   const [fe, setFe] = useState(DEFAULT_FE);
   const [bienestar, setBienestar] = useState(DEFAULT_BIENESTAR);
   const [personalizacion, setPersonalizacion] = useState(DEFAULT_PERSONALIZACION);
+  // Fase A4 — Notificaciones reales: clave propia en Supabase (no dentro de 'ajustes'), guardada
+  // directa, sin pasar por snapshotAndSave/deshacer — es configuración, no un dato de un módulo.
+  const [notificaciones, setNotificaciones] = useState(DEFAULT_NOTIFICACIONES);
   const [history, setHistory] = useState([]);
   const [showMore, setShowMore] = useState(false);
   const [showSearch, setShowSearch] = useState(false); // Fase 18 — buscador universal
@@ -106,8 +178,8 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, dia, bib, bibArch, rel, feData, bien, pers, h] = await Promise.all([
-        loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null }),
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, dia, bib, bibArch, rel, feData, bien, pers, notif, h] = await Promise.all([
+        loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
         loadData(uidUser, 'calistenia', DEFAULT_CALISTENIA),
@@ -128,12 +200,23 @@ export default function App() {
         loadData(uidUser, 'fe', DEFAULT_FE),
         loadData(uidUser, 'bienestar', DEFAULT_BIENESTAR),
         loadData(uidUser, 'personalizacion', DEFAULT_PERSONALIZACION),
+        loadData(uidUser, 'notificaciones', DEFAULT_NOTIFICACIONES),
         loadData(uidUser, 'historial', []),
       ]);
       if (cancelled) return;
       setAccent(a.accent || ACCENTS[0].value);
       setPin(a.pin || null);
-      setPerfil(p);
+      // Fase A3: merge con DEFAULT_APARIENCIA, mismo motivo que el merge de perfil de la Fase A2 —
+      // un registro `ajustes` guardado antes de esta fase no tiene la clave `apariencia` todavía.
+      setApariencia({ ...DEFAULT_APARIENCIA, ...(a.apariencia || {}) });
+      // Fase A5: mismo motivo que apariencia — un registro `ajustes` guardado antes de esta fase
+      // no tiene la clave `seguridad` todavía.
+      setSeguridad({ ...DEFAULT_SEGURIDAD, ...(a.seguridad || {}) });
+      // Fase A2: merge con DEFAULT_PERFIL para que un perfil guardado antes de esta fase
+      // (sin los campos nuevos: apellidos, sexo, deportesPracticados, idioma, unidades...)
+      // no se quede con esos campos en `undefined` — mismo patrón que ya se usaba en
+      // Calistenia (Fase 5) para no romper datos antiguos al añadir campos nuevos.
+      setPerfil({ ...DEFAULT_PERFIL, ...p });
       setSueno(s);
       setCalistenia(c);
       setFutbol(f);
@@ -153,11 +236,68 @@ export default function App() {
       setFe(feData);
       setBienestar(bien);
       setPersonalizacion(pers);
+      // Fase A4: merge con DEFAULT_NOTIFICACIONES, mismo motivo que perfil/apariencia — un
+      // registro guardado antes de esta fase (o inexistente) no debe dejar `categorias` a medias.
+      setNotificaciones({ ...DEFAULT_NOTIFICACIONES, ...notif, categorias: { ...DEFAULT_NOTIFICACIONES.categorias, ...(notif.categorias || {}) } });
       setHistory(h);
       setLoaded(true);
     })();
     return () => { cancelled = true; };
   }, [session]);
+
+  // Fase A3: tema realmente aplicado (resuelve "automático" contra el sistema operativo) y
+  // aplicado de forma síncrona aquí mismo, antes de generar el JSX de esta misma pasada de
+  // render — así los componentes hijos (renderizados justo después, en el mismo render) ya
+  // leen los colores correctos de `COLORS`, sin esperar a un efecto ni a un re-render extra.
+  // Se calcula y aplica ANTES de los `return` condicionales de más abajo para que la pantalla
+  // de carga y la de login también respeten el tema, y para no romper el orden de los Hooks
+  // (los `useEffect` de aquí abajo tienen que ejecutarse siempre, nunca solo a veces).
+  const temaResuelto = apariencia.tema === 'automatico' ? (temaSistemaOscuro ? 'oscuro' : 'claro') : apariencia.tema;
+  aplicarTema(temaResuelto);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e) => setTemaSistemaOscuro(e.matches);
+    if (mq.addEventListener) mq.addEventListener('change', handler); else mq.addListener(handler);
+    return () => { if (mq.removeEventListener) mq.removeEventListener('change', handler); else mq.removeListener(handler); };
+  }, []);
+
+  useEffect(() => {
+    const tam = TAMANOS_TEXTO.find((t) => t.value === apariencia.tamanoTexto) || TAMANOS_TEXTO[1];
+    document.documentElement.style.fontSize = `${tam.px}px`;
+    document.documentElement.dataset.radio = apariencia.radioBorde;
+    document.documentElement.dataset.animaciones = apariencia.animaciones;
+    document.documentElement.dataset.reducirMovimiento = String(apariencia.reducirMovimiento);
+  }, [apariencia.tamanoTexto, apariencia.radioBorde, apariencia.animaciones, apariencia.reducirMovimiento]);
+
+  // Fase A5 — Bloqueo automático (apartado 146): sin PIN no hay nada que auto-bloquear; con
+  // "nunca" (por defecto) tampoco se arma ningún temporizador. Reinicia el temporizador con
+  // cualquier interacción — mismo criterio que un móvil real.
+  useEffect(() => {
+    const opcion = OPCIONES_BLOQUEO_AUTOMATICO.find((o) => o.value === seguridad.bloqueoAutomatico);
+    if (!pin || !opcion || opcion.ms === null) return;
+    const reiniciar = () => {
+      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+      inactivityTimer.current = setTimeout(() => setBloqueado(true), opcion.ms);
+    };
+    const eventos = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+    eventos.forEach((ev) => window.addEventListener(ev, reiniciar));
+    reiniciar();
+    return () => {
+      eventos.forEach((ev) => window.removeEventListener(ev, reiniciar));
+      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    };
+  }, [pin, seguridad.bloqueoAutomatico]);
+
+  // "Inmediatamente" además bloquea en cuanto la pestaña/app pasa a segundo plano, no solo tras
+  // el margen corto de inactividad de arriba — más fiel al apartado 146 ("Inmediatamente").
+  useEffect(() => {
+    if (!pin || seguridad.bloqueoAutomatico !== 'inmediato') return;
+    const onVisibility = () => { if (document.hidden) setBloqueado(true); };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [pin, seguridad.bloqueoAutomatico]);
 
   if (session === undefined) return <LoadingScreen />;
   if (!session) return <Auth />;
@@ -165,13 +305,58 @@ export default function App() {
 
   const uidUser = session.user.id;
 
-  const updateAccent = async (color) => { setAccent(color); await saveData(uidUser, 'ajustes', { accent: color, pin }); };
-  const updatePin = async (newPin) => { setPin(newPin); await saveData(uidUser, 'ajustes', { accent, pin: newPin }); };
+  // Fase A3/A5: `saveData` sobrescribe el valor entero de la clave 'ajustes' (upsert, no fusiona)
+  // — las cuatro funciones deben mandar siempre el paquete completo (accent + pin + apariencia +
+  // seguridad) o se perderían entre sí. Antes de la Fase A3 'ajustes' solo tenía accent/pin.
+  const updateAccent = async (color) => { setAccent(color); await saveData(uidUser, 'ajustes', { accent: color, pin, apariencia, seguridad }); };
+  // Apartado 145: el PIN es el respaldo obligatorio de la biometría — si Josué borra el PIN,
+  // la biometría se desactiva sola en el mismo guardado (nunca queda biometría sin PIN de apoyo).
+  const updatePin = async (newPin) => {
+    setPin(newPin);
+    const seguridadSiguiente = !newPin && seguridad.biometriaActiva ? { ...seguridad, biometriaActiva: false } : seguridad;
+    if (seguridadSiguiente !== seguridad) setSeguridad(seguridadSiguiente);
+    await saveData(uidUser, 'ajustes', { accent, pin: newPin, apariencia, seguridad: seguridadSiguiente });
+  };
+  const updateApariencia = async (next) => { setApariencia(next); await saveData(uidUser, 'ajustes', { accent, pin, apariencia: next, seguridad }); };
+  const updateSeguridad = async (next) => { setSeguridad(next); await saveData(uidUser, 'ajustes', { accent, pin, apariencia, seguridad: next }); };
   const updatePerfil = async (next) => { setPerfil(next); await saveData(uidUser, 'perfil', next); };
+
+  // Fase A6 — Privacidad (apartado 195: "Eliminación de datos específicos", categorías concretas
+  // sin afectar al resto). Perfil queda fuera de este mapa a propósito — ya tiene su propio
+  // "Restablecer perfil" en la categoría Perfil desde la Fase A2, no se duplica aquí. Los tres
+  // módulos con archivos en Supabase Storage (saludFotos, calisteniaVideos, bibliotecaArchivos)
+  // también quedan fuera a propósito: borrar solo el registro dejaría los archivos huérfanos en
+  // Storage — habría que borrar cada archivo uno a uno primero, fuera de alcance de esta fase.
+  const RESET_MODULOS = {
+    sueno: { label: 'Sueño', default: [], setter: setSueno },
+    calistenia: { label: 'Calistenia', default: DEFAULT_CALISTENIA, setter: setCalistenia },
+    futbol: { label: 'Fútbol', default: [], setter: setFutbol },
+    economia: { label: 'Economía', default: DEFAULT_ECONOMIA, setter: setEconomia },
+    salud: { label: 'Salud (medidas e historial médico)', default: DEFAULT_SALUD, setter: setSalud },
+    nutricion: { label: 'Nutrición', default: DEFAULT_NUTRICION, setter: setNutricion },
+    estudios: { label: 'Estudios', default: DEFAULT_ESTUDIOS, setter: setEstudios },
+    negocio: { label: 'Negocio', default: DEFAULT_NEGOCIO, setter: setNegocio },
+    productividad: { label: 'Productividad', default: DEFAULT_PRODUCTIVIDAD, setter: setProductividad },
+    objetivos: { label: 'Objetivos', default: DEFAULT_OBJETIVOS, setter: setObjetivos },
+    diario: { label: 'Diario', default: DEFAULT_DIARIO, setter: setDiario },
+    biblioteca: { label: 'Biblioteca (apuntes y enlaces)', default: DEFAULT_BIBLIOTECA, setter: setBiblioteca },
+    relacion: { label: 'Relación', default: DEFAULT_RELACION, setter: setRelacion },
+    fe: { label: 'Fe', default: DEFAULT_FE, setter: setFe },
+    bienestar: { label: 'Bienestar digital', default: DEFAULT_BIENESTAR, setter: setBienestar },
+  };
+  const borrarDatosModulo = async (id) => {
+    const cfg = RESET_MODULOS[id];
+    if (!cfg) return;
+    cfg.setter(cfg.default);
+    await saveData(uidUser, id, cfg.default);
+  };
 
   // Fase 19 — Personalización total: igual que `ajustes` (accent/pin), es configuración de cómo
   // se ve/organiza la app, no "datos" — se guarda directo, sin pasar por snapshotAndSave/deshacer.
   const updatePersonalizacion = (next) => { setPersonalizacion(next); saveData(uidUser, 'personalizacion', next); };
+  // Fase A4 — Notificaciones reales: mismo criterio que personalización (configuración, no un
+  // dato de módulo), clave propia en Supabase, sin pasar por snapshotAndSave/deshacer.
+  const updateNotificaciones = (next) => { setNotificaciones(next); saveData(uidUser, 'notificaciones', next); };
   const moverModuloNav = (id, dir) => {
     const orden = personalizacion.orden.length ? personalizacion.orden : moreNavPersonalizables.map((m) => m.id);
     const idx = orden.indexOf(id);
@@ -518,6 +703,7 @@ export default function App() {
             perfil={perfil} sueno={sueno} calistenia={calistenia} futbol={futbol} economia={economia}
             relacion={relacion} favoritas={favoritasResueltas}
             productividad={productividad} estudios={estudios} modo={personalizacion.modo}
+            notificaciones={notificaciones}
             accent={accent}
           />
         );
@@ -649,29 +835,33 @@ export default function App() {
       case 'economia':
         return <FinanceView economia={economia} onAddMovimiento={addMovimiento} onUpdateHucha={updateHucha} accent={accent} />;
       case 'ajustes':
+        // Fase A1 — Ajustes pasa a ser un único centro de categorías (ver SettingsView.jsx):
+        // ya no se apilan SettingsView + PersonalizationView, SettingsView reenvía las props
+        // de personalización a la categoría interna "Pantalla principal" que envuelve
+        // PersonalizationView sin tocarla.
         return (
-          <div className="space-y-4">
-            <SettingsView
-              perfil={perfil} onUpdatePerfil={updatePerfil} accent={accent} onUpdateAccent={updateAccent}
-              onExportCSV={() => exportCSV(currentState)} onExportXLSX={() => exportXLSX(currentState)}
-              onUndo={undo} canUndo={history.length > 0}
-              pin={pin} onSetPin={updatePin}
-              onSignOut={signOut}
-            />
-            <PersonalizationView
-              modulos={moreNavOrdenadoConIconos}
-              personalizacion={personalizacion}
-              onMove={moverModuloNav}
-              onToggleOculto={toggleOcultoModulo}
-              onSetIcono={setIconoModulo}
-              onTogglePinExtra={togglePinExtraModulo}
-              onToggleFavorita={toggleFavoritaMetrica}
-              onMoveFavorita={moverFavoritaMetrica}
-              modo={personalizacion.modo}
-              onSetModo={setModoApp}
-              accent={accent}
-            />
-          </div>
+          <SettingsView
+            perfil={perfil} onUpdatePerfil={updatePerfil} accent={accent} onUpdateAccent={updateAccent}
+            apariencia={apariencia} onUpdateApariencia={updateApariencia}
+            notificaciones={notificaciones} onUpdateNotificaciones={updateNotificaciones}
+            seguridad={seguridad} onUpdateSeguridad={updateSeguridad} userId={uidUser}
+            modulosBorrables={Object.entries(RESET_MODULOS).map(([id, cfg]) => ({ id, label: cfg.label }))}
+            onBorrarDatosModulo={borrarDatosModulo}
+            onExportCSV={() => exportCSV(currentState)} onExportXLSX={() => exportXLSX(currentState)}
+            onUndo={undo} canUndo={history.length > 0}
+            pin={pin} onSetPin={updatePin}
+            onSignOut={signOut}
+            modulos={moreNavOrdenadoConIconos}
+            personalizacion={personalizacion}
+            onMove={moverModuloNav}
+            onToggleOculto={toggleOcultoModulo}
+            onSetIcono={setIconoModulo}
+            onTogglePinExtra={togglePinExtraModulo}
+            onToggleFavorita={toggleFavoritaMetrica}
+            onMoveFavorita={moverFavoritaMetrica}
+            modo={personalizacion.modo}
+            onSetModo={setModoApp}
+          />
         );
       default:
         return null;
@@ -682,6 +872,17 @@ export default function App() {
   // marcado en Personalización avanzada (personalizacion.pinExtra) pasa por el mismo PinGate.
   const necesitaPin = tab === 'relacion' || personalizacion.pinExtra.includes(tab);
   const renderTab = () => (necesitaPin ? <PinGate pin={pin} accent={accent}>{renderContent()}</PinGate> : renderContent());
+
+  // Fase A5: bloqueo automático por inactividad, por encima de todo lo demás (incluida la propia
+  // navegación) — solo puede ocurrir si hay PIN configurado (ver el useEffect de arriba).
+  if (bloqueado && pin) {
+    return (
+      <BloqueoAutomaticoGate
+        pin={pin} accent={accent} seguridad={seguridad}
+        onUnlock={() => setBloqueado(false)}
+      />
+    );
+  }
 
   return (
     <div style={{ '--accent': accent, background: COLORS.bg, minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>

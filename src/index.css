@@ -30,3 +30,28 @@ input[type='range']::-webkit-slider-thumb {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Fase A3 — Apariencia avanzada (apartados 92 y 95-98 de la especificación extendida).
+   Radios de borde: override global sobre las clases de Tailwind ya usadas en toda la app
+   (rounded-3xl en Card, rounded-xl en botones/campos, rounded-2xl/rounded-lg puntuales).
+   "Redondeado" es el valor por defecto que ya tenía la app — sin override, para no arriesgar
+   nada visualmente ahí. rounded-full (avatares, selector de acento) se deja siempre intacto. */
+html[data-radio='recto'] .rounded-3xl,
+html[data-radio='recto'] .rounded-2xl,
+html[data-radio='recto'] .rounded-xl,
+html[data-radio='recto'] .rounded-lg {
+  border-radius: 0.375rem !important;
+}
+html[data-radio='suave'] .rounded-3xl { border-radius: 1.25rem !important; }
+html[data-radio='suave'] .rounded-2xl { border-radius: 0.85rem !important; }
+html[data-radio='suave'] .rounded-xl { border-radius: 0.5rem !important; }
+html[data-radio='suave'] .rounded-lg { border-radius: 0.4rem !important; }
+
+/* Animaciones: "Desactivadas" o "Reducir movimiento" (interruptor aparte del nivel) tienen
+   efecto real hoy — el resto de niveles (Completa/Reducida/Mínima) se guardan como preferencia
+   pero se ven igual porque la app todavía tiene muy pocas animaciones propias que graduar. */
+html[data-animaciones='desactivadas'] *, html[data-animaciones='desactivadas'] *::before, html[data-animaciones='desactivadas'] *::after,
+html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::before, html[data-reducir-movimiento='true'] *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}

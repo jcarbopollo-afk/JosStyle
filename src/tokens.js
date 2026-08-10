@@ -24,11 +24,104 @@ export const ACCENTS = [
   { name: 'Gris grafito', value: '#7C8592' },
 ];
 
+// Fase A3 — Apariencia avanzada (Entrega 1 de la especificación extendida, apartados 79-110):
+// sistema de temas real. COLORS sigue siendo el mismo objeto que ya usan por referencia unas
+// 20 vistas (`COLORS.texto`, etc.) — en vez de sustituirlo por un hook/contexto y tocar cada
+// archivo, se muta en el sitio con Object.assign() al cambiar de tema y App.jsx llama a
+// aplicarTema() de forma síncrona en cada render (antes de que se generen los estilos de los
+// componentes hijos), así ningún archivo existente necesita cambiar para heredar el tema.
+export const COLORS_OSCURO = { ...COLORS };
+
+export const COLORS_CLARO = {
+  bg: '#F3F4F7',
+  surface: '#FFFFFF',
+  surface2: '#EAEDF1',
+  border: '#DBE0E7',
+  text: '#161A21',
+  textMuted: '#5B6472',
+  positive: '#2F7D4F',
+  negative: '#B23D3D',
+};
+
+export function aplicarTema(nombreResuelto) {
+  Object.assign(COLORS, nombreResuelto === 'claro' ? COLORS_CLARO : COLORS_OSCURO);
+}
+
+export const DEFAULT_APARIENCIA = {
+  tema: 'oscuro', // 'oscuro' | 'claro' | 'automatico'
+  tamanoTexto: 'predeterminado', // 'pequeno' | 'predeterminado' | 'grande'
+  densidad: 'estandar', // 'compacta' | 'estandar' | 'comoda' — guardada; ver nota de alcance en SettingsView
+  radioBorde: 'redondeado', // 'recto' | 'suave' | 'redondeado'
+  animaciones: 'completa', // 'completa' | 'reducida' | 'minima' | 'desactivadas'
+  reducirMovimiento: false,
+};
+
+export const TEMAS_DISPONIBLES = [
+  { value: 'oscuro', label: 'Oscuro' },
+  { value: 'claro', label: 'Claro' },
+  { value: 'automatico', label: 'Automático' },
+];
+
+export const TAMANOS_TEXTO = [
+  { value: 'pequeno', label: 'Pequeño', px: 14 },
+  { value: 'predeterminado', label: 'Predeterminado', px: 16 },
+  { value: 'grande', label: 'Grande', px: 18 },
+];
+
+export const DENSIDADES_INTERFAZ = [
+  { value: 'compacta', label: 'Compacta' },
+  { value: 'estandar', label: 'Estándar' },
+  { value: 'comoda', label: 'Cómoda' },
+];
+
+export const RADIOS_BORDE = [
+  { value: 'recto', label: 'Recto' },
+  { value: 'suave', label: 'Suave' },
+  { value: 'redondeado', label: 'Redondeado' },
+];
+
+export const NIVELES_ANIMACION = [
+  { value: 'completa', label: 'Completa' },
+  { value: 'reducida', label: 'Reducida' },
+  { value: 'minima', label: 'Mínima' },
+  { value: 'desactivadas', label: 'Desactivadas' },
+];
+
 export const SKILLS = ['Handstand', 'Front Lever', 'Back Lever', 'Planche', 'Human Flag', 'Muscle Up', 'L-Sit'];
 
 export const ACTIVIDAD_FACTORES = { sedentario: 1.2, ligero: 1.375, moderado: 1.55, intenso: 1.725 };
 
-export const DEFAULT_PERFIL = { nombre: 'Josué', fechaNacimiento: '2010-07-29', altura: 187, peso: 72, actividad: 'moderado' };
+// Fase A2 — Perfil expandido (Entrega 1 de la especificación extendida, apartados 49-78):
+// campos nuevos añadidos a DEFAULT_PERFIL sin tocar los que ya existían (nombre, fechaNacimiento,
+// altura, peso, actividad). App.jsx hace merge con este default al cargar (`{ ...DEFAULT_PERFIL,
+// ...p }`) para que un perfil ya guardado antes de esta fase no se quede sin estos campos nuevos.
+export const DEFAULT_PERFIL = {
+  nombre: 'Josué', fechaNacimiento: '2010-07-29', altura: 187, peso: 72, actividad: 'moderado',
+  apellidos: '', nombreMostrado: '', sexo: '', pronombres: '', manoDominante: '',
+  pesoObjetivo: null, objetivoPrincipal: '', deportesPracticados: [], nivelDeportivo: '',
+  aniosExperiencia: '', lesiones: [],
+  nivelEducativo: '', estudiosActuales: '', profesion: '',
+  idioma: 'es', zonaHorariaAutomatica: true, zonaHorariaManual: '', pais: '', region: '', sistemaUnidades: 'metrico',
+};
+
+export const SEXOS_PERFIL = ['Masculino', 'Femenino', 'Otro', 'Prefiero no decirlo'];
+export const MANOS_DOMINANTES = ['Diestra', 'Zurda', 'Ambidiestra'];
+export const OBJETIVOS_PRINCIPALES = [
+  'Ganar masa muscular', 'Perder grasa', 'Mantener peso', 'Mejorar rendimiento',
+  'Salud general', 'Calistenia', 'Fútbol', 'Productividad', 'Bienestar',
+];
+export const DEPORTES_DISPONIBLES = [
+  'Calistenia', 'Fútbol', 'Running', 'Gimnasio', 'Natación', 'Ciclismo', 'Escalada', 'Baloncesto',
+];
+export const NIVELES_DEPORTIVOS = ['Principiante', 'Intermedio', 'Avanzado', 'Experto'];
+export const ANIOS_EXPERIENCIA_OPCIONES = ['Menos de 1 año', '1-2 años', '3-5 años', '5-10 años', 'Más de 10 años'];
+export const ESTADOS_LESION = ['Activa', 'En recuperación', 'Histórica'];
+export const NIVELES_EDUCATIVOS = ['Educación Secundaria', 'Bachillerato', 'Formación Profesional', 'Universidad', 'Máster', 'Doctorado', 'Otros'];
+export const IDIOMAS_DISPONIBLES = [{ value: 'es', label: 'Español' }]; // único disponible hoy — arquitectura lista para más (apartado 68), sin i18n real construido todavía
+export const SISTEMAS_UNIDADES = [
+  { value: 'metrico', label: 'Métrico (cm, kg)' },
+  { value: 'imperial', label: 'Imperial (ft/in, lb)' },
+]; // Fase A2 solo guarda la preferencia — la conversión real en el resto de la app (Salud, Nutrición...) queda pendiente, no prometerla como ya activa.
 export const DEFAULT_ECONOMIA = { saldoInicial: 0, hucha: 0, movimientos: [] };
 // Fase 5 — Calistenia a fondo: cada habilidad ya no es solo un "nivel 0-100", ahora también
 // lleva su propia progresión (pasos, editables a mano y/o generados por IA), PRs (récords
@@ -206,4 +299,56 @@ export const MODOS_APP = [
       'Si el estrés sube, el Diario o el módulo de Fe pueden ayudarte a ordenar la cabeza.',
     ],
   },
+];
+
+// Fase A4 — Notificaciones reales (Entrega 1 de la especificación extendida, apartados 111-138).
+// Alcance real: sin servidor de Web Push (exigiría Service Worker con push, tabla de
+// suscripciones en Supabase y otra función serverless en Vercel — infraestructura nueva, no una
+// ampliación de esto), así que las notificaciones del sistema solo llegan mientras la PWA está
+// abierta en el navegador, usando la Notification API directamente (ver src/lib/notificaciones.js).
+// "categorias" apagado por defecto en 'sistema' desactivado da igual — lo que manda es la doble
+// puerta activadas + categoria + permiso concedido, todas deben cumplirse.
+export const DEFAULT_NOTIFICACIONES = {
+  activadas: false, // apagado hasta que Josué conceda el permiso y lo active a propósito
+  categorias: {
+    salud: true, sueno: true, entrenamiento: true, nutricion: true, economia: true,
+    estudios: true, productividad: true, ia: true, objetivos: true, sistema: true,
+  },
+  horarioDescansoActivo: false,
+  horarioDescansoInicio: '23:00',
+  horarioDescansoFin: '07:00',
+};
+
+// Fase A5 — Seguridad avanzada (Entrega 1, apartados 139-172). `seguridad` vive dentro de la
+// misma clave 'ajustes' que accent/pin/apariencia/notificaciones... no, notificaciones tiene
+// clave propia (Fase A4) — `seguridad` sí va dentro de 'ajustes' porque está directamente ligada
+// al PIN que ya vive ahí (biometría es un método de desbloqueo alternativo del mismo candado).
+// `biometriaCredencialId` es el id (en base64) de la credencial WebAuthn creada en este
+// dispositivo — ver src/lib/biometria.js para el límite honesto de qué tan "segura" es esto.
+export const DEFAULT_SEGURIDAD = {
+  bloqueoAutomatico: 'nunca', // 'inmediato' | '30s' | '1min' | '5min' | '15min' | 'nunca'
+  biometriaActiva: false,
+  biometriaCredencialId: null,
+};
+
+export const OPCIONES_BLOQUEO_AUTOMATICO = [
+  { value: 'inmediato', label: 'Inmediatamente', ms: 3000 },
+  { value: '30s', label: '30 segundos', ms: 30000 },
+  { value: '1min', label: '1 minuto', ms: 60000 },
+  { value: '5min', label: '5 minutos', ms: 300000 },
+  { value: '15min', label: '15 minutos', ms: 900000 },
+  { value: 'nunca', label: 'Nunca (no recomendado)', ms: null },
+];
+
+export const CATEGORIAS_NOTIFICACION = [
+  { value: 'salud', label: 'Salud' },
+  { value: 'sueno', label: 'Sueño' },
+  { value: 'entrenamiento', label: 'Entrenamiento' },
+  { value: 'nutricion', label: 'Nutrición' },
+  { value: 'economia', label: 'Economía' },
+  { value: 'estudios', label: 'Estudios' },
+  { value: 'productividad', label: 'Productividad' },
+  { value: 'ia', label: 'Inteligencia Artificial' },
+  { value: 'objetivos', label: 'Objetivos' },
+  { value: 'sistema', label: 'Sistema' },
 ];

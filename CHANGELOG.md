@@ -1,5 +1,179 @@
 # CHANGELOG.md
 
+## Fase A6 — Privacidad (v1.6.0) — cierra el bloque Ajustes (A1-A6)
+
+### Añadido / cambiado
+- `src/App.jsx`: `RESET_MODULOS` (mapa de 14 módulos: sueño, calistenia, fútbol, economía, salud, nutrición, estudios, negocio, productividad, objetivos, diario, biblioteca, relación, fe, bienestar — con su label, valor por defecto y setter) y `borrarDatosModulo(id)`, que resetea ese módulo tanto en estado local como en Supabase. Perfil queda fuera (ya tiene su propio restablecimiento desde la Fase A2) y los tres módulos con archivos en Storage (saludFotos, calisteniaVideos, bibliotecaArchivos) quedan fuera a propósito (borrar solo el registro dejaría archivos huérfanos).
+- `src/views/SettingsView.jsx`: categoría "Privacidad" pasa de "no construida" a 4 bloques — Panel de transparencia (PIN/biometría/bloqueo automático/notificaciones/sincronización/integraciones de un vistazo), nota sobre qué usa la IA, nota sobre permisos de dispositivo (no aplican — la app no usa cámara/micro/ubicación), y Eliminar datos por categoría (14 filas con confirmación inline por módulo, mismo patrón `confirmandoX` indexado por id).
+
+### Decisiones
+- Confirmado por `grep` en todo `src/` que no hay ni un solo `getUserMedia`/`mediaDevices`/`navigator.geolocation` — las fotos/vídeos usan el selector de archivos nativo del sistema (`<input type="file">`), no la cámara en vivo. Por eso el panel de permisos de dispositivo (apartados 178-184 de la especificación) se documenta como "no aplica" en vez de simular toggles de permisos que no existen de verdad.
+- Eliminación de cuenta completa (apartado 197) queda fuera: borrar el login (no solo los datos) requiere una función serverless con permisos de administrador de Supabase que no existe en este proyecto. Se documenta como pendiente real, sin promesas.
+- El panel de transparencia reutiliza datos ya presentes como props en `SettingsView` (accent, pin, seguridad, notificaciones) — no se guarda ningún dato nuevo, es puramente una vista agregada de lo que ya existe.
+
+### Verificado en este entorno
+- **No se ha podido ejecutar `esbuild`.** Verificación manual: balance de paréntesis/llaves/corchetes por script (OK). Los ids usados en `modulosBorrables` (`SettingsView.jsx`) cruzados uno a uno contra las claves reales `loadData`/`saveData` de `App.jsx` para confirmar que cada botón "Borrar" apunta a la clave de Supabase correcta.
+- **Con esta fase se cierra el bloque completo Ajustes (Fases A1 a A6)** de la Entrega 1 de la especificación extendida. Lo único que queda de esa entrega es el bloque AXION (apartados 203-1300), pendiente de una conversación de diseño con Josué antes de escribir ningún código (ver sección 0bis y sección 16 de HANDOFF.md).
+
+## Fase A5 — Seguridad avanzada (v1.5.0)
+
+### Añadido / cambiado
+- `src/lib/biometria.js` (nuevo): `biometriaSoportada()`, `registrarBiometria(userId, nombre)` y `verificarBiometria(credencialId)` — WebAuthn (`navigator.credentials`) del navegador, sin servidor de verificación (documentado como límite honesto en el propio archivo: mismo nivel de confianza que el PIN, no una autenticación remota).
+- `src/tokens.js`: `DEFAULT_SEGURIDAD` (`bloqueoAutomatico`, `biometriaActiva`, `biometriaCredencialId`) y `OPCIONES_BLOQUEO_AUTOMATICO` (Inmediatamente/30s/1min/5min/15min/Nunca, con su duración en ms).
+- `src/App.jsx`: nuevo estado `seguridad` (vive dentro de la clave `ajustes`, junto a accent/pin/apariencia — las cuatro funciones de guardado mandan siempre el paquete completo). Nuevo `bloqueado` + temporizador de inactividad (`mousedown`/`keydown`/`touchstart`/`scroll` lo reinician) que bloquea toda la app, no solo una sección; caso especial para "Inmediatamente" que además bloquea al pasar a segundo plano (`visibilitychange`). Nuevo componente `BloqueoAutomaticoGate` (pantalla completa, desbloqueo por biometría si está activada + PIN siempre como respaldo). `updatePin` desactiva la biometría sola si Josué borra el PIN (apartado 145: PIN = respaldo obligatorio).
+- `src/views/SettingsView.jsx`: categoría "Seguridad" gana tarjeta Biometría (activar/desactivar, con los tres estados: sin PIN / no soportado / activa / inactiva) y tarjeta Bloqueo automático (`OpcionesFila` sobre `OPCIONES_BLOQUEO_AUTOMATICO`).
+
+### Decisiones
+- Biometría como "gesto de desbloqueo rápido local" en vez de intentar simular una autenticación remota real sin tener backend para ello — decisión explícita para no sobre-prometer seguridad que esta arquitectura no puede dar.
+- Bloqueo automático por defecto en "Nunca" — no se activa solo, Josué decide si lo quiere y con qué margen.
+- `useEffect` de bloqueo automático colocados explícitamente antes de los `return` condicionales de `App.jsx`, con el error de orden de Hooks de la Fase A3 todavía fresco — se revisó a propósito antes de dar la fase por cerrada.
+
+### Verificado en este entorno
+- **No se ha podido ejecutar `esbuild`.** Verificación manual: balance de paréntesis/llaves/corchetes por script en los tres archivos tocados (`tokens.js`, `App.jsx`, `SettingsView.jsx`, más el nuevo `biometria.js`) — todos OK.
+- **Pendiente de confirmación real:** que WebAuthn funcione en iOS Safari como PWA instalada (soporte variable según versión), y que el bloqueo automático no resulte intrusivo en el uso diario real.
+
+## Fase A4 — Notificaciones reales (v1.4.0)
+
+### Añadido / cambiado
+- `src/lib/notificaciones.js` (nuevo): `permisoNotificaciones()` / `pedirPermisoNotificaciones()` (Notification API nativa del navegador) y `notificarSiCorresponde(notificaciones, categoria, clave, titulo, cuerpo)` — comprueba interruptor global, categoría, permiso concedido y horario de descanso (soporta franjas que cruzan medianoche) antes de mostrar nada; evita repetir el mismo aviso el mismo día con una marca en `localStorage` (a propósito no en Supabase — detalle de dispositivo, no dato a sincronizar).
+- `src/tokens.js`: `DEFAULT_NOTIFICACIONES` (`activadas`, `categorias` — 10 booleanos, `horarioDescansoActivo/Inicio/Fin`) y `CATEGORIAS_NOTIFICACION` (lista de labels para las 10 categorías: Salud, Sueño, Entrenamiento, Nutrición, Economía, Estudios, Productividad, IA, Objetivos, Sistema).
+- `src/App.jsx`: nuevo estado `notificaciones`, nueva clave de Supabase `'notificaciones'` (guardada directa vía `updateNotificaciones`, sin `snapshotAndSave`/deshacer, mismo criterio que `personalizacion`), merge con `DEFAULT_NOTIFICACIONES` al cargar (incluyendo `categorias` anidado). Prop `notificaciones` pasada a `DashboardView` y a `SettingsView`.
+- `src/views/DashboardView.jsx`: los tres avisos automáticos de la Fase 20 (`AvisoSuenoCorto`, `AvisoRachaEnRiesgo`, `AvisoExamenSinHoras`) ganan un `useEffect` que llama a `notificarSiCorresponde` con la categoría correspondiente (`sueno`, `productividad`, `estudios`) — primer caso de uso real del sistema de notificaciones.
+- `src/views/SettingsView.jsx`: categoría "Notificaciones" pasa de "no construida" a 5 tarjetas — Permiso del sistema (estado en vivo + botón para pedirlo), Activación global, Categorías (10 interruptores), Horario de descanso (franja horaria), Acciones (exportar/importar/restablecer JSON, mismo patrón que Perfil/Apariencia).
+
+### Decisiones
+- **Sin Web Push de verdad, a propósito y dicho claro:** implementar notificaciones con la app cerrada del todo exige Service Worker con listener `push`, tabla de suscripciones en Supabase y otra función serverless en Vercel que las dispare — se documenta como pendiente real en vez de simularlo o prometerlo. Lo construido (Notification API mientras la app está abierta) es honesto y útil, no una simulación.
+- `notificaciones` vive en su propia clave de Supabase, no dentro de `ajustes` — evita agrandar más el objeto que `updateAccent`/`updatePin`/`updateApariencia` ya tienen que reenviar completo en cada guardado.
+- Los tres avisos del Dashboard son el "banco de pruebas" elegido para demostrar que el mecanismo funciona de extremo a extremo, en vez de dejar la categoría de Notificaciones construida pero sin ningún disparador real conectado.
+
+### Verificado en este entorno
+- **No se ha podido ejecutar `esbuild`** (sigue sin acceso al registro de npm). Verificación manual: balance de paréntesis/llaves/corchetes por script en los cuatro archivos tocados (`tokens.js`, `App.jsx`, `DashboardView.jsx`, `SettingsView.jsx`, más el nuevo `notificaciones.js`) — todos OK.
+- **Cuidado explícito con el orden de los Hooks** (tras el error real detectado y corregido en la Fase A3): los `useEffect` nuevos de `AvisoSuenoCorto`/`AvisoRachaEnRiesgo`/`AvisoExamenSinHoras` se escribieron desde el principio antes de los `return` condicionales de cada componente, recalculando las condiciones de forma segura ante datos ausentes (`ultimoSueno`/`productividad`/`estudios` nulos) para no romper las reglas de Hooks de React.
+- **Pendiente de confirmación real:** que el permiso de notificaciones se pueda pedir y conceder de verdad en iOS Safari como PWA instalada (el soporte de Notification API en iOS es limitado y depende de la versión del sistema — puede que Josué no vea el botón funcionar igual que en un navegador de escritorio), y que una notificación llegue de verdad al cumplirse alguna de las tres condiciones de los avisos del Dashboard.
+
+## Fase A3 — Apariencia avanzada (v1.3.0)
+
+### Añadido / cambiado
+- `src/tokens.js`: `COLORS` sigue siendo el mismo objeto singleton que ya usan por referencia (nunca desestructurado) unas 20 vistas — se añaden `COLORS_OSCURO` (copia de los valores originales) y `COLORS_CLARO` (paleta nueva: fondo `#F3F4F7`, superficie blanca, texto `#161A21`, etc.) y una función `aplicarTema(nombreResuelto)` que hace `Object.assign(COLORS, ...)` para mutar la paleta activa en el sitio. También `DEFAULT_APARIENCIA` (`tema`, `tamanoTexto`, `densidad`, `radioBorde`, `animaciones`, `reducirMovimiento`) y las listas `TEMAS_DISPONIBLES`, `TAMANOS_TEXTO` (con `px` por opción), `DENSIDADES_INTERFAZ`, `RADIOS_BORDE`, `NIVELES_ANIMACION`.
+- `src/App.jsx`: nuevo estado `apariencia` (+ `temaSistemaOscuro` para resolver "automático" contra `window.matchMedia('(prefers-color-scheme: dark)')`, con listener en vivo). `temaResuelto` se calcula y se aplica llamando a `aplicarTema()` de forma **síncrona en el cuerpo del componente**, antes de los `return` condicionales de sesión/carga — así los hijos ya leen el tema correcto en la misma pasada de render, sin esperar a un efecto. Un segundo `useEffect` traduce `apariencia` a atributos reales del DOM: `document.documentElement.style.fontSize` (tamaño de texto — como Tailwind usa `rem`, escala toda la app sola) y `data-radio`/`data-animaciones`/`data-reducir-movimiento` en `<html>`, leídos por CSS en `index.css`. `ajustes` (clave de Supabase) gana el campo `apariencia`; `updateAccent`/`updatePin`/`updateApariencia` mandan siempre el paquete completo (`accent` + `pin` + `apariencia`) porque `saveData` sobrescribe el valor entero, no lo fusiona.
+- `src/index.css`: reglas nuevas gateadas por `html[data-radio=...]` que sobrescriben `.rounded-3xl/.rounded-2xl/.rounded-xl/.rounded-lg` con `!important` para Recto/Suave (Redondeado = valores por defecto ya usados, sin override) — nunca toca `.rounded-full`. Reglas gateadas por `html[data-animaciones='desactivadas']`/`html[data-reducir-movimiento='true']` que matan `transition`/`animation` en toda la app, mismo mecanismo que el `@media (prefers-reduced-motion: reduce)` que ya existía.
+- `src/views/SettingsView.jsx`: categoría "Apariencia" pasa de 1 tarjeta (solo acento) a 7 — Tema (ToggleTab de pastilla nuevo, `OpcionesFila`), Color de acento (sin cambios), Tamaño de texto, Densidad de interfaz, Bordes, Animaciones (nivel + interruptor "Reducir movimiento" aparte) y Acciones (exportar/importar/restablecer apariencia en JSON, mismo patrón `confirmandoX` que Perfil en la Fase A2). Categoría "Preferencias generales" pasa de "no construida" a informativa (`InfoOnly`): aclara que idioma/zona horaria/país/unidades ya viven en Perfil desde la Fase A2.
+- Componente nuevo reutilizable en el propio archivo: `OpcionesFila({ opciones, valor, onChange, accent })` — fila de pastillas de selección única, mismo estilo visual que `DeportesChips` pero exclusivo en vez de múltiple.
+
+### Decisiones
+- **Tema real, no solo guardado:** era la pieza que Josué confirmó explícitamente, así que se priorizó que funcionara de verdad (mutación en sitio de `COLORS` + aplicación síncrona) en vez de dejarlo como preferencia decorativa.
+- **Densidad de interfaz se guarda pero no tiene efecto visual todavía:** aplicarla de verdad exigiría revisar el espaciado (`p-*`, `gap-*`, `space-y-*`) de las ~20 vistas una por una — demasiado riesgo de romper algo visualmente para esta pasada. Se avisa explícitamente en la propia UI, mismo criterio que "Sistema de unidades" en la Fase A2 (nunca simular una función que no existe de verdad).
+- **Animaciones:** de los 4 niveles del apartado 95, solo "Desactivadas" (y el interruptor aparte "Reducir movimiento") tienen efecto real hoy, porque la app tiene muy pocas animaciones propias que graduar entre Completa/Reducida/Mínima. Anotado igual de honesto en la UI.
+- **Radios de borde:** override CSS global por atributo en vez de tocar cada `className` de cada vista — más barato y sin riesgo de regresión, a costa de ser un mecanismo "de fuerza bruta" (por eso se limita a las clases de radio, nunca toca tamaño/color/espaciado, y excluye `.rounded-full` a propósito).
+- Paletas de color predefinidas (apartado 86), transparencias/materiales (93), estilos de icono alternativos (100-101), fondos con degradado/textura (102) quedan fuera de esta fase — personalización decorativa de bajo valor frente al resto, documentada como pendiente futura en la propia categoría.
+- Personalización de widgets del Dashboard (103-106) no se duplica: ya está cubierta por "Pantalla principal" / `PersonalizationView.jsx` desde la Fase 19/20.
+
+### Corrección de compatibilidad hacia atrás
+- `updateAccent`/`updatePin` en `App.jsx` guardaban `ajustes` como `{ accent, pin }`, sin `apariencia`. Como `saveData` hace upsert del valor entero de la clave (sobrescribe, no fusiona los campos), cambiar el acento o el PIN después de haber tocado Apariencia habría borrado silenciosamente la apariencia ya guardada. Corregido: las tres funciones (`updateAccent`, `updatePin`, `updateApariencia`) mandan siempre el paquete `{ accent, pin, apariencia }` completo.
+- `loadData(uidUser, 'ajustes', ...)` con fallback ampliado a `{ accent, pin, apariencia: DEFAULT_APARIENCIA }`, y `setApariencia({ ...DEFAULT_APARIENCIA, ...(a.apariencia || {}) })` al cargar — mismo patrón de merge que ya se usó para `DEFAULT_PERFIL` en la Fase A2, para que un registro `ajustes` guardado antes de esta fase no cargue con `apariencia` en `undefined`.
+
+### Verificado en este entorno
+- **No se ha podido ejecutar `esbuild`** (sigue sin acceso al registro de npm). Verificación manual: balance de paréntesis/llaves/corchetes por script en `tokens.js`, `App.jsx` y `SettingsView.jsx` (los tres OK). Confirmado por `grep` que ningún archivo de `src/` hace `const { ... } = COLORS` — condición necesaria para que la mutación en sitio de `COLORS` se refleje en todas las vistas sin tocarlas.
+- **Corrección de un error real detectado en este mismo turno, antes de entregar:** los dos `useEffect` nuevos de `App.jsx` se habían escrito primero después de los `return` condicionales de sesión/carga — eso rompe el orden de los Hooks de React (error "Rendered more hooks than during the previous render" al pasar de la pantalla de carga a la app cargada). Detectado al revisar el propio código antes de darlo por terminado y movido antes de los `return`, junto con la llamada a `aplicarTema()`.
+- **Pendiente de confirmación real:** que el cambio de tema se vea correctamente en Vercel, que "Automático" seguido del sistema operativo funcione de verdad en iOS Safari (PWA instalada, no solo Chrome de escritorio), y que el contraste del tema claro sea cómodo en pantalla real — los colores de `COLORS_CLARO` se eligieron a ojo, sin poder renderizar nada en este entorno.
+
+## Fase A2 — Perfil expandido (v1.2.0)
+
+### Añadido / cambiado
+- `src/tokens.js`: `DEFAULT_PERFIL` ampliado con `apellidos`, `nombreMostrado`, `sexo`, `pronombres`, `manoDominante`, `pesoObjetivo`, `objetivoPrincipal`, `deportesPracticados` (array), `nivelDeportivo`, `aniosExperiencia`, `lesiones` (array de `{ id, zona, estado, fecha, notas }`), `nivelEducativo`, `estudiosActuales`, `profesion`, `idioma`, `zonaHorariaAutomatica`/`zonaHorariaManual`, `pais`, `region`, `sistemaUnidades` — todos los campos anteriores intactos. Nuevas listas de opciones: `SEXOS_PERFIL`, `MANOS_DOMINANTES`, `OBJETIVOS_PRINCIPALES`, `DEPORTES_DISPONIBLES`, `NIVELES_DEPORTIVOS`, `ANIOS_EXPERIENCIA_OPCIONES`, `ESTADOS_LESION`, `NIVELES_EDUCATIVOS`, `IDIOMAS_DISPONIBLES` (solo español por ahora), `SISTEMAS_UNIDADES` (solo se guarda la preferencia, sin conversión real todavía).
+- `src/views/SettingsView.jsx`: categoría "Perfil" reescrita, pasa de 1 tarjeta mínima a 7: **Datos básicos** (nombre, apellidos, nombre mostrado, fecha de nacimiento editable, sexo, pronombres), **Información física** (altura, peso, peso objetivo, mano dominante, nivel de actividad), **Información deportiva** (objetivo principal, `DeportesChips` — selector múltiple de pastillas sobre `DEPORTES_DISPONIBLES`, nivel deportivo, años de experiencia, `LesionesEditor` — alta/baja de lesiones con zona/estado/fecha/notas), **Información académica** (nivel educativo, estudios actuales, profesión), **Información general** (idioma, zona horaria automática/manual, país, región, sistema de unidades), **Cálculos corporales** (sin cambios) y **Acciones** (exportar perfil a JSON, importar desde JSON con confirmación inline antes de sobrescribir, restablecer perfil completo con confirmación inline).
+- Dos componentes nuevos en el propio `SettingsView.jsx`: `DeportesChips({ value, onChange, accent })` y `LesionesEditor({ value, onChange, accent })`.
+- `src/App.jsx`: el efecto que carga el perfil guardado cambia de `setPerfil(p)` a `setPerfil({ ...DEFAULT_PERFIL, ...p })`.
+
+### Decisiones
+- El patrón de confirmación inline para importar/restablecer reutiliza el mismo `confirmandoX` + caja `COLORS.surface2` ya establecido en `PersonalizationView.jsx` (`confirmandoOcultar`), no uno nuevo.
+- Importar perfil hace `{ ...DEFAULT_PERFIL, ...pendingImport }`: un JSON incompleto no deja campos en `undefined`.
+- Zona horaria y sistema de unidades solo se guardan como preferencia en esta fase — no hay lógica de conversión de unidades ni de horario en el resto de la app todavía; queda anotado en la propia UI para no sugerir algo que no está activo.
+
+### Corrección de compatibilidad hacia atrás
+- `App.jsx` cargaba el perfil con `setPerfil(p)` directo. Como `loadData()` no fusiona con el valor por defecto, el perfil real de Josué (guardado antes de esta fase) habría cargado con todos los campos nuevos en `undefined` — rompiendo por ejemplo `.includes()` sobre `deportesPracticados`. Corregido a `setPerfil({ ...DEFAULT_PERFIL, ...p })`, mismo patrón que ya se usó para Calistenia en la Fase 5.
+
+### Verificado en este entorno
+- **No se ha podido ejecutar `esbuild`** (sigue sin acceso al registro de npm en este entorno). Verificación manual: balance de paréntesis/llaves/corchetes comprobado con script sobre `SettingsView.jsx` completo (OK, 617 líneas). Cruzado uno a uno contra el código real: `GhostBtn` acepta prop `icon` y la renderiza (`components/ui.jsx`), `COLORS.negative` existe en `tokens.js`, `TextInput` pasa `{...rest}` (acepta `disabled`, `type`, etc. sin problema), `Field`/`Select` sin cambios de firma.
+- **Pendiente de confirmación real:** que el perfil de Josué ya guardado en Supabase sigue cargando bien con los campos nuevos, que exportar/importar/restablecer perfil funcionan de verdad, y que `DeportesChips`/`LesionesEditor` se ven y funcionan correctamente en pantalla.
+
+## Fase A1 — Ajustes: arquitectura general (v1.1.0)
+
+### Añadido / cambiado
+- `src/views/SettingsView.jsx` reescrito por completo: pasa de ser una única pantalla larga a un centro de categorías (cabecera + buscador de categorías, tarjetas con icono/título/descripción/flecha, pantalla propia por categoría con botón atrás), siguiendo el orden fijo del apartado 4 de `ESPECIFICACION_AJUSTES_ENTREGA1.md`: Perfil, Apariencia, Pantalla principal, Preferencias generales, Notificaciones, IA, Seguridad, Privacidad, Datos, Sincronización, Integraciones, Accesibilidad, Funciones experimentales, Información.
+- Categorías con contenido real (todo el contenido anterior reubicado, nada eliminado): **Perfil** (nombre/altura/peso/actividad + cálculos corporales, igual que antes), **Apariencia** (selector de color de acento, igual que antes), **Pantalla principal** (envuelve `PersonalizationView.jsx` sin tocarla, ahora como categoría en vez de estar siempre apilada), **Seguridad** (PIN + nota sobre biometría pendiente + botón de cerrar sesión, movido aquí), **Datos** (exportar CSV/Excel + deshacer).
+- **Sincronización** e **Integraciones**: tarjeta informativa honesta en vez de un "próximamente" vacío — explican el estado real (sincronización automática con Supabase ya activa; sin integraciones todavía).
+- Resto de categorías (Preferencias generales, Notificaciones, IA, Privacidad, Accesibilidad, Funciones experimentales): aviso de "todavía no construida" con la fase donde está planificada — nunca un control decorativo que no hace nada.
+- `src/App.jsx`: el `case 'ajustes'` ya no renderiza `<SettingsView/>` + `<PersonalizationView/>` apiladas — `SettingsView` recibe también las props de personalización y las reenvía a su categoría interna "Pantalla principal". Import de `PersonalizationView` en `App.jsx` reducido a solo el named export `ICONOS_PERSONALIZABLES_MAP`, que es lo único que sigue usando directamente.
+- Versión mostrada en la nueva categoría "Información" leída de verdad de `package.json` (import JSON nativo de Vite), no hardcodeada.
+
+### Decisiones
+- El buscador de esta fase filtra tarjetas de categoría (nombre + descripción), no ajustes individuales dentro de cada categoría — eso tiene sentido cuando haya más categorías con contenido real (A2 en adelante).
+- Ninguna categoría sin construir muestra controles: mismo criterio que el resto de la app (nunca simular una función que no existe).
+- Modo claro/oscuro (Fase A3) y biometría (Fase A5) quedan anotadas explícitamente como confirmadas por Josué dentro de sus categorías correspondientes, para que la siguiente IA no vuelva a preguntarlo.
+
+### Verificado en este entorno
+- **No se ha podido ejecutar `esbuild`** (sin acceso al registro de npm en este entorno, igual que en el turno anterior). Verificación manual: balance de paréntesis/llaves/corchetes comprobado con un script, y las firmas de props de `PersonalizationView` (`export default function PersonalizationView({ modulos, personalizacion, onMove, onToggleOculto, onSetIcono, onTogglePinExtra, onToggleFavorita, onMoveFavorita, modo, onSetModo, accent })`) y de `hexToRgba` (`src/lib/helpers.js`) verificadas contra el código real antes de usarlas en `SettingsView.jsx`.
+- **Pendiente de confirmación real:** que las 5 categorías con contenido (Perfil, Apariencia, Pantalla principal, Seguridad, Datos) abren y funcionan igual que antes, que el PIN sigue creándose/protegiendo, y que Pantalla principal sigue reordenando/ocultando módulos correctamente.
+
+## Decisiones de Josué sobre la Entrega 1 (documentación, sin código)
+
+### Confirmado por Josué
+- **Modo claro y modo oscuro, ambos disponibles** (Fase A3) — hasta ahora la app era "solo modo oscuro" (Fase 1). Implica crear un set de tokens de color para el tema claro además del oscuro ya existente en `tokens.js`.
+- **Biometría sí** (Fase A5) — Face ID/Touch ID/huella como método adicional de desbloqueo, con el PIN como respaldo obligatorio. Deroga la regla antigua "No implementar biometría — solo PIN" (HANDOFF sección 17, actualizada).
+
+### Actualizado en HANDOFF.md
+- Sección 0bis (plan de fases), sección 2 (filosofía), sección 17 (reglas) e instrucciones finales — las tres menciones de "solo modo oscuro" y "no biometría" quedan corregidas para que ninguna IA futura las bloquee por error.
+
+### Sin cambios de código todavía
+- Estas son decisiones de alcance, no implementación — las Fases A3 y A5 siguen sin construirse.
+
+## Corrección de contexto — Josué no usa Replit, despliega vía Vercel (documentación, sin código)
+
+### Corregido
+- `HANDOFF.md`: eliminadas/corregidas todas las referencias a "Replit" como entorno de trabajo de Josué (banner inicial, secciones 9, 11, 12, 16, 18 e instrucciones finales). Josué ha confirmado que no usa Replit — trabaja desde el iPhone y despliega vía **Vercel**. El antiguo "problema abierto de exponer el puerto en Replit" nunca fue real para su flujo y queda marcado como obsoleto, para que ninguna IA futura vuelva a intentar depurarlo.
+- Se deja explícito que no se conoce el detalle exacto de cómo Josué edita/sube código desde el iPhone hacia Vercel (repositorio Git con auto-deploy, dashboard de Vercel u otro mecanismo) — no asumirlo, preguntarlo si hace falta para depurar un problema de despliegue real.
+
+### Sin cambios de código
+- Solo documentación. Ningún archivo de `src/`, `api/`, `supabase/` ni `package.json` tocado en este turno.
+
+## Alcance nuevo (post-Prompt Maestro) — Especificación extendida "Ajustes / AXION", Entrega 1 (documentación, sin código)
+
+### Añadido
+- `ESPECIFICACION_AJUSTES_ENTREGA1.md` (nuevo, en la raíz del proyecto): transcripción de la especificación funcional que Josué pegó en el chat ("SISTEMA OPERATIVO PERSONAL — ESPECIFICACIÓN FUNCIONAL — MÓDULO AJUSTES — ENTREGA 1"), 1300 apartados. Apartados 1–202 (arquitectura de Ajustes, Perfil, Apariencia, Notificaciones, Seguridad, Privacidad) transcritos íntegros. Apartados 203–1300 (bloque "AXION", el motor de IA descrito por esta especificación) resumidos por bloques temáticos por su extensión (~1100 apartados) — el detalle literal vive en el propio chat si hace falta releerlo.
+- `HANDOFF.md` sección **"0bis. Especificación extendida (post-v1.0)"**: plan de fases propuesto (Fase A1–A6 para el bloque Ajustes, realista con la arquitectura actual) y análisis de viabilidad del bloque AXION (arquitectura de IA de nivel empresarial — multiagente, bus de eventos, multi-proveedor, presupuestos, observabilidad — que excede con mucho la arquitectura real del proyecto, una PWA con una sola función serverless proxy a un único proveedor de IA). Se documenta como visión a largo plazo, no como fase inmediata; se propone un "AXION Lite" pragmático como alternativa realista.
+- Conflicto detectado y documentado: la especificación pide biometría (Face ID/Touch ID/huella) como método de desbloqueo; la regla vigente del proyecto (HANDOFF sección 17) prohíbe explícitamente implementar biometría. Pendiente de que Josué aclare cuál prevalece antes de tocar Seguridad avanzada.
+
+### Decisiones
+- No se ha escrito ni modificado ningún archivo de código en este turno — es puramente intake y planificación de una especificación nueva, muy por encima en volumen de cualquier fase anterior.
+- Se resume (no se transcribe íntegro) el bloque AXION por pura extensión práctica, no por decisión de recortar contenido — está señalado explícitamente en el propio archivo para que ninguna IA futura lo confunda con la especificación completa.
+- Se etiqueta todo como "Entrega 1" porque el propio documento de Josué se autotitula así — se esperan más entregas de esta misma memoria de ~1200 apartados para otros módulos.
+
+### Pendiente
+- Confirmar con Josué el conflicto de biometría antes de construir Fase A5.
+- Confirmar con Josué si abrir modo claro/automático (Fase A3) contradice o sustituye la decisión de "solo modo oscuro" de la Fase 1.
+- Confirmar con Josué si quiere el subconjunto "AXION Lite" propuesto o construir la especificación AXION literal (con la advertencia honesta de complejidad ya documentada).
+- Recibir la Entrega 2 (y siguientes) de la memoria de ~1200 apartados.
+
+## Alcance nuevo (post-Prompt Maestro) — Iconos PWA (v1.0.1)
+
+### Añadido
+- `public/icon-192.png` y `public/icon-512.png`: iconos de la PWA que `public/manifest.json` referenciaba desde la Fase 2 pero que no existían todavía (pendiente de la sección 18 del HANDOFF).
+- Diseño: tres anillos concéntricos al estilo "anillos de actividad" (Apple Fitness/Symmetry — coherente con la referencia de diseño premium del proyecto, sección 2 del HANDOFF), usando los tres primeros colores de `ACCENTS` (`src/tokens.js`): azul metálico `#5C7E9A`, dorado `#C9A24B`, verde salvia `#5E8C6A`, sobre fondo oscuro `#0A0C10` con degradado sutil hacia `#12151B`, esquinas redondeadas. Generados con Pillow a 4x y reescalados con antialiasing (script puntual, no forma parte del proyecto Vite).
+
+### Decisiones
+- No es una fase del Prompt Maestro (ya cerrado en v1.0.0) — se trata como alcance nuevo/tarea práctica pendiente, tal como indica la sección 16 del HANDOFF.
+- Colores tomados directamente de `ACCENTS`/`COLORS` en `tokens.js`, sin introducir ningún color fuera del sistema de tokens ya establecido.
+- Sin dependencias npm nuevas — los iconos se generaron fuera del proyecto (Python/Pillow) y se copiaron ya terminados a `public/`.
+
+### Verificado en este entorno
+- Los dos PNG se generaron y se revisaron visualmente a tamaño real (192 y 512 px).
+- **No se pudo ejecutar el chequeo habitual de `esbuild`**: este entorno concreto no tiene acceso al registro de npm (`403 Forbidden` al intentar instalarlo), a diferencia de turnos anteriores. No se ha tocado ningún archivo `.js`/`.jsx`, solo se añadieron los dos PNG y se actualizó `manifest.json`... (sin cambios reales, ya apuntaba a las rutas correctas) y `package.json` (versión). Riesgo de regresión mínimo, pero queda registrado para la siguiente IA.
+
+### Pendiente
+- Que Josué instale la PWA de verdad en su iPhone y confirme si el diseño del icono le convence, o si prefiere otro (es una elección de la IA, no algo que él especificara).
+- Todo lo demás de la sección 9/18 del HANDOFF (Vercel, ejecución real de las Fases 8-21, importaciones, exportación a PDF) sigue pendiente.
+
 ## Fase 21 (cierre) — Pulido final y QA: repaso visual/contraste real, módulo por módulo (v1.0.0 — Prompt Maestro completo)
 
 ### Revisado

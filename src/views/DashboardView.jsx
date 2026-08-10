@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Heart, Flame, GraduationCap, Plane } from 'lucide-react';
 import { COLORS, MODOS_APP } from '../tokens';
 import { calcularDuracion, hexToRgba, diasHasta, formatFecha, todayISO, addDays } from '../lib/helpers';
 import { Card, AIPanel, ScoreGauge } from '../components/ui';
+// Fase A4 — Notificaciones reales: los tres avisos automáticos de "Hoy" (Fase 20) son el primer
+// caso de uso real de src/lib/notificaciones.js — si Josué activa el permiso del sistema y la
+// categoría correspondiente en Ajustes, además de la tarjeta de dentro de la app llega una
+// notificación real del navegador. `notificarSiCorresponde` ya comprueba todo lo demás
+// (activación global, categoría, horario de descanso, no repetir el mismo aviso el mismo día).
+import { notificarSiCorresponde } from '../lib/notificaciones';
 
 // Fase 12 — Relación: recordatorio en pantalla principal de la próxima fecha importante.
 // Se muestra directo, sin pedir el PIN otra vez — es solo la etiqueta y la cuenta atrás,
@@ -27,9 +33,14 @@ function RecordatorioPareja({ relacion, accent }) {
 // genérico "si X entonces Y" todavía, solo esta regla concreta): si dormiste menos de 7h,
 // sugiere una sesión más suave hoy y adelantar la hora de dormir esta noche. Se calcula al
 // vuelo a partir de datos que ya existen — no guarda nada nuevo.
-function AvisoSuenoCorto({ ultimoSueno, accent }) {
+function AvisoSuenoCorto({ ultimoSueno, accent, notificaciones }) {
+  const horas = ultimoSueno ? calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar) : null;
+  const activo = !!ultimoSueno && horas < 7;
+  useEffect(() => {
+    if (!activo) return;
+    notificarSiCorresponde(notificaciones, 'sueno', 'sueno-corto', 'Dormiste poco esta noche', `${horas} h — hoy quizá compense una sesión de entreno más suave.`);
+  }, [activo]);
   if (!ultimoSueno) return null;
-  const horas = calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar);
   if (horas >= 7) return null;
   return (
     <Card style={{ border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
@@ -44,13 +55,19 @@ function AvisoSuenoCorto({ ultimoSueno, accent }) {
 // marcado ni hoy ni ayer, un tercer día sin marcar la rompería a 1 (ver alternarHabitoHoy en
 // ProductivityView.jsx) — aviso discreto para que le dé tiempo a decidir si la marca hoy.
 // Calculado al vuelo sobre productividad.habitos, nada nuevo que guardar.
-function AvisoRachaEnRiesgo({ productividad, accent }) {
-  if (!productividad) return null;
+function AvisoRachaEnRiesgo({ productividad, accent, notificaciones }) {
   const hoy = todayISO();
   const ayer = addDays(hoy, -1);
-  const enRiesgo = productividad.habitos
-    .filter((h) => (h.rachaActual || 0) >= 3 && !h.historial[hoy] && !h.historial[ayer])
-    .sort((a, b) => (b.rachaActual || 0) - (a.rachaActual || 0))[0];
+  const enRiesgo = productividad
+    ? productividad.habitos
+        .filter((h) => (h.rachaActual || 0) >= 3 && !h.historial[hoy] && !h.historial[ayer])
+        .sort((a, b) => (b.rachaActual || 0) - (a.rachaActual || 0))[0]
+    : null;
+  useEffect(() => {
+    if (!enRiesgo) return;
+    notificarSiCorresponde(notificaciones, 'productividad', `racha-riesgo-${enRiesgo.id || enRiesgo.nombre}`, 'Una racha está en riesgo', `"${enRiesgo.nombre}" (${enRiesgo.rachaActual} días) se rompe si no la marcas hoy.`);
+  }, [enRiesgo && enRiesgo.id, enRiesgo && enRiesgo.nombre]);
+  if (!productividad) return null;
   if (!enRiesgo) return null;
   return (
     <Card style={{ border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
@@ -65,18 +82,27 @@ function AvisoRachaEnRiesgo({ productividad, accent }) {
 // Fase 20 — tercera automatización fija: examen dentro de los próximos 3 días sin ninguna hora
 // de estudio registrada en los últimos 7 días para esa misma asignatura. Calculado al vuelo
 // sobre estudios.examenes/horas, sin guardar nada nuevo — mismo criterio que AvisoSuenoCorto.
-function AvisoExamenSinHoras({ estudios, accent }) {
-  if (!estudios) return null;
+function AvisoExamenSinHoras({ estudios, accent, notificaciones }) {
   const cutoff7 = addDays(todayISO(), -7);
   const diasHastaFecha = (fechaISO) => Math.ceil((new Date(fechaISO + 'T00:00:00').getTime() - Date.now()) / 86400000);
-  const proximo = estudios.examenes
-    .map((ex) => ({ ex, dias: diasHastaFecha(ex.fecha) }))
-    .filter((x) => x.dias >= 0 && x.dias <= 3)
-    .sort((a, b) => a.dias - b.dias)[0];
+  const proximo = estudios
+    ? estudios.examenes
+        .map((ex) => ({ ex, dias: diasHastaFecha(ex.fecha) }))
+        .filter((x) => x.dias >= 0 && x.dias <= 3)
+        .sort((a, b) => a.dias - b.dias)[0]
+    : null;
+  const horasRecientes = proximo
+    ? estudios.horas
+        .filter((h) => h.asignaturaId === proximo.ex.asignaturaId && h.fecha >= cutoff7)
+        .reduce((s, h) => s + Number(h.horas || 0), 0)
+    : 0;
+  const activo = !!proximo && horasRecientes === 0;
+  useEffect(() => {
+    if (!activo) return;
+    notificarSiCorresponde(notificaciones, 'estudios', `examen-sin-horas-${proximo.ex.id || proximo.ex.tema || proximo.ex.fecha}`, 'Examen próximo sin horas registradas', `Examen${proximo.ex.tema ? ` de "${proximo.ex.tema}"` : ''} ${proximo.dias === 0 ? 'hoy' : `en ${proximo.dias} días`} — no has registrado horas de estudio esta semana.`);
+  }, [activo]);
+  if (!estudios) return null;
   if (!proximo) return null;
-  const horasRecientes = estudios.horas
-    .filter((h) => h.asignaturaId === proximo.ex.asignaturaId && h.fecha >= cutoff7)
-    .reduce((s, h) => s + Number(h.horas || 0), 0);
   if (horasRecientes > 0) return null;
   return (
     <Card style={{ border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
@@ -108,7 +134,7 @@ function ModoBanner({ modo, accent }) {
   );
 }
 
-export default function DashboardView({ perfil, sueno, calistenia, futbol, economia, relacion, favoritas, productividad, estudios, modo, accent }) {
+export default function DashboardView({ perfil, sueno, calistenia, futbol, economia, relacion, favoritas, productividad, estudios, modo, notificaciones, accent }) {
   const hora = new Date().getHours();
   const saludo = hora < 6 ? 'Buenas noches' : hora < 12 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
   const fechaHoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -144,9 +170,9 @@ export default function DashboardView({ perfil, sueno, calistenia, futbol, econo
 
       <ModoBanner modo={modo} accent={accent} />
       <RecordatorioPareja relacion={relacion} accent={accent} />
-      <AvisoSuenoCorto ultimoSueno={ultimoSueno} accent={accent} />
-      <AvisoRachaEnRiesgo productividad={productividad} accent={accent} />
-      <AvisoExamenSinHoras estudios={estudios} accent={accent} />
+      <AvisoSuenoCorto ultimoSueno={ultimoSueno} accent={accent} notificaciones={notificaciones} />
+      <AvisoRachaEnRiesgo productividad={productividad} accent={accent} notificaciones={notificaciones} />
+      <AvisoExamenSinHoras estudios={estudios} accent={accent} notificaciones={notificaciones} />
 
       {favoritas && favoritas.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
