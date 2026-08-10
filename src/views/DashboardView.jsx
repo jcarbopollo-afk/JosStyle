@@ -1,9 +1,14 @@
-import React, { useEffect } from 'react';
-import { Heart, Flame, GraduationCap, Plane, Calendar, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  Heart, Flame, GraduationCap, Calendar, ChevronDown,
+  Moon, Dumbbell, Target, Wallet, Apple, ListTodo, HeartPulse,
+  BookOpen, Briefcase, Library, Church, Smartphone,
+  Plane, Sun, Home, ClipboardList,
+} from 'lucide-react';
 import { COLORS, MODOS_APP } from '../tokens';
 import { calcularDuracion, hexToRgba, diasHasta, formatFecha, todayISO, addDays } from '../lib/helpers';
-import { resumenDelDia } from '../lib/calendario';
-import { Card, AIPanel, ScoreGauge } from '../components/ui';
+import { resumenDelDia, eventosDelDia } from '../lib/calendario';
+import { Card, AIPanel, ScoreGauge, DashboardModuleCard, MiniAccessCard, QuickActionButton } from '../components/ui';
 // Fase A4 — Notificaciones reales: los tres avisos automáticos de "Hoy" (Fase 20) son el primer
 // caso de uso real de src/lib/notificaciones.js — si Josué activa el permiso del sistema y la
 // categoría correspondiente en Ajustes, además de la tarjeta de dentro de la app llega una
@@ -30,27 +35,44 @@ function RecordatorioPareja({ relacion, accent }) {
   );
 }
 
-// Fase 1 del Calendario Universal — acceso secundario discreto desde "Hoy" (spec: "el calendario
-// también debe poder tener accesos secundarios discretos desde otras zonas de la aplicación...
-// pero nunca debe convertirse en un elemento invasivo"). Una sola línea, sin tarjeta grande: el
-// resumen de hoy si hay algo, o una invitación breve si no — mismo criterio de honestidad que
-// RecordatorioPareja, nunca inventa urgencia. Abre el Calendario vía `onAbrirCalendario` (App.jsx
-// hace `setTab('calendario')`), sin duplicar aquí ninguna lógica de fechas propia.
-function AccesoCalendario({ calendario, derivadosCalendario, accent, onAbrir }) {
+// Ampliación del Dashboard — Acceso a Agenda: Calendario y Agenda pasan a ser dos accesos
+// independientes desde "Hoy" (apartado 1/3/4 del paréntesis de la especificación — "Dashboard →
+// Agenda", nunca "Dashboard → Calendario → Agenda" como sub-apartado). No se ha creado ningún
+// módulo de datos ni pestaña nueva para Agenda: sigue siendo el mismo toggle Mes/Agenda que ya
+// vive dentro de `CalendarView.jsx` desde la Fase 3 del Calendario Universal — lo que cambia es
+// que ahora se puede llegar directamente a la vista Agenda de un solo toque desde "Hoy", vía el
+// mismo mecanismo de `foco` ya usado por el resto del Dashboard (`{ vista: 'agenda' }`), sin
+// tener que entrar primero al Calendario y tocar el interruptor a mano. Se muestran juntos, en
+// dos mitades de una misma fila — mismo criterio de "acceso discreto, nunca invasivo" que ya
+// tenía el antiguo `AccesoCalendario`, ahora repartido en dos en vez de uno solo, sin ocupar más
+// alto que antes.
+function AccesoCalendarioYAgenda({ calendario, derivadosCalendario, accent, onNavegar }) {
   // Fase 2 — mismo criterio que CalendarView.jsx: unión de eventos propios + derivados de solo
-  // lectura (Objetivos/Estudios/Entrenamiento/Productividad), calculada en cada render.
+  // lectura (Objetivos/Estudios/Entrenamiento/Productividad), calculada en cada render. Mismo
+  // límite ya aceptado desde entonces: no expande recurrencias aquí (cálculo barato de Dashboard,
+  // igual que el resto de resúmenes de esta pantalla) — una serie recurrente cuenta en su fecha
+  // ancla, no en cada ocurrencia futura; el propio Calendario/Agenda sí las expande de verdad.
   const eventos = [...(calendario?.eventos || []), ...(derivadosCalendario || [])];
-  const resumen = calendario ? resumenDelDia(eventos, todayISO()) : null;
+  const resumenHoy = calendario ? resumenDelDia(eventos, todayISO()) : null;
+  const pendientesHoy = eventosDelDia(eventos, todayISO()).length;
+  const cardStyle = { background: COLORS.surface, border: `1px solid ${COLORS.border}`, padding: '0.75rem 0.9rem' };
   return (
-    <button onClick={onAbrir} className="w-full text-left">
-      <Card className="flex items-center gap-3" style={{ padding: '0.85rem 1.1rem' }}>
-        <Calendar size={16} style={{ color: accent, flexShrink: 0 }} />
-        <p className="text-sm flex-1" style={{ color: COLORS.text }}>
-          {resumen ? <>Hoy: <span className="font-semibold">{resumen}</span></> : 'Sin nada en el calendario hoy'}
+    <div className="grid grid-cols-2 gap-2">
+      <button onClick={() => onNavegar('calendario')} className="w-full text-left rounded-3xl transition-transform active:scale-[0.96]" style={cardStyle}>
+        <p className="text-xs font-semibold flex items-center gap-1.5 mb-0.5" style={{ color: COLORS.textMuted }}>
+          <Calendar size={13} style={{ color: accent, flexShrink: 0 }} /> Calendario
         </p>
-        <ChevronRight size={15} style={{ color: COLORS.textMuted, flexShrink: 0 }} />
-      </Card>
-    </button>
+        <p className="text-xs truncate" style={{ color: COLORS.text }}>{resumenHoy || 'Nada hoy'}</p>
+      </button>
+      <button onClick={() => onNavegar('calendario', { vista: 'agenda' })} className="w-full text-left rounded-3xl transition-transform active:scale-[0.96]" style={cardStyle}>
+        <p className="text-xs font-semibold flex items-center gap-1.5 mb-0.5" style={{ color: COLORS.textMuted }}>
+          <ClipboardList size={13} style={{ color: accent, flexShrink: 0 }} /> Agenda
+        </p>
+        <p className="text-xs truncate" style={{ color: COLORS.text }}>
+          {pendientesHoy > 0 ? `${pendientesHoy} ${pendientesHoy === 1 ? 'cosa pendiente' : 'cosas pendientes'} hoy` : 'Nada pendiente hoy'}
+        </p>
+      </button>
+    </div>
   );
 }
 
@@ -139,27 +161,82 @@ function AvisoExamenSinHoras({ estudios, accent, notificaciones }) {
   );
 }
 
-// Fase 20 — modos "viaje/vacaciones/exámenes": aviso discreto con 2-3 recordatorios de texto
-// fijo (MODOS_APP en tokens.js) mientras el modo esté activo. Se activa/desactiva desde Ajustes
-// → Personalización avanzada; nunca cambia nada más de la app por sí solo.
-function ModoBanner({ modo, accent }) {
-  const m = MODOS_APP.find((x) => x.id === modo);
-  if (!m) return null;
+// Ajuste del indicador de contexto — Viaje/Vacaciones/Exámenes: antes `ModoBanner` mostraba
+// siempre (cuando había un modo activo) un bloque de 2-4 líneas con todos los consejos a la vez,
+// empujando el resto del Dashboard hacia abajo. Ahora es un indicador compacto tipo acordeón,
+// cerrado por defecto (apartado 2: icono + estado + indicador de expansión, nada más) — igual de
+// alto que cualquier otra fila compacta del Dashboard cuando está cerrado (apartado 6), y solo
+// crece cuando el propio usuario lo pide (apartado 7). Mismo componente para los tres modos y
+// para "Rutina normal" (apartado 5: el indicador está siempre visible, no solo cuando hay un modo
+// especial activo — "Rutina normal" es un estado más, no la ausencia del componente).
+const MODO_ICONOS = { viaje: Plane, vacaciones: Sun, examenes: GraduationCap };
+
+function IndicadorContexto({ modo, accent }) {
+  const [expandido, setExpandido] = useState(false);
+  const activo = MODOS_APP.find((m) => m.id === modo);
+  const Icono = activo ? (MODO_ICONOS[activo.id] || Plane) : Home;
+  const etiqueta = activo ? activo.label : 'Rutina normal';
+  const consejos = activo ? activo.tips : [];
+
   return (
-    <Card style={{ padding: '0.85rem 1.1rem', border: `1px solid ${hexToRgba(accent, 0.3)}` }}>
-      <p className="text-xs font-semibold mb-1.5 flex items-center gap-1.5" style={{ color: accent }}>
-        <Plane size={13} /> Modo {m.label} activo
-      </p>
-      <ul className="space-y-0.5">
-        {m.tips.map((t, i) => (
-          <li key={i} className="text-xs" style={{ color: COLORS.textMuted }}>· {t}</li>
-        ))}
-      </ul>
-    </Card>
+    <button
+      onClick={() => setExpandido((s) => !s)}
+      className="w-full text-left rounded-3xl transition-transform active:scale-[0.98]"
+      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, padding: '0.8rem 1.1rem' }}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-2 text-sm font-semibold min-w-0" style={{ color: COLORS.text }}>
+          <Icono size={16} style={{ color: accent, flexShrink: 0 }} />
+          <span className="truncate">{etiqueta}</span>
+        </span>
+        {/* Apartado 9: la flecha rota al expandir/cerrar — mismo icono y misma transición que ya
+            usan SkillCard/RutinaCard/AsignaturaCard/ExamenItem en el resto de la app, para que
+            este indicador se sienta parte del mismo lenguaje visual, no un componente añadido
+            después (apartado 11). */}
+        <ChevronDown size={16} style={{ color: COLORS.textMuted, flexShrink: 0, transform: expandido ? 'rotate(180deg)' : 'none', transition: 'transform 220ms var(--ease-premium)' }} />
+      </div>
+      {/* Apartado 4: transición suave de altura + opacity, no un "aparece/desaparece" brusco —
+          truco de `grid-template-rows` 0fr↔1fr, sin medir alturas a mano ni añadir dependencias. */}
+      <div style={{ display: 'grid', gridTemplateRows: expandido ? '1fr' : '0fr', transition: 'grid-template-rows 300ms var(--ease-premium)' }}>
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{ opacity: expandido ? 1 : 0, transition: `opacity ${expandido ? '260ms 60ms' : '120ms'} ease`, paddingTop: '0.75rem' }}>
+            {consejos.length > 0 ? (
+              <ul className="space-y-1">
+                {consejos.map((t, i) => (
+                  <li key={i} className="text-xs leading-relaxed" style={{ color: COLORS.textMuted }}>· {t}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>Sin modificaciones especiales.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </button>
   );
 }
 
-export default function DashboardView({ perfil, sueno, calistenia, futbol, economia, relacion, favoritas, productividad, estudios, modo, notificaciones, calendario, derivadosCalendario, onAbrirCalendario, accent }) {
+// Ampliación del Dashboard — Centro de Control: a qué módulo pertenece cada id de "métrica
+// favorita" (Fase 19) — se usa solo para que las tarjetas de favoritas, que ya existían, también
+// se puedan pulsar (apartado 3: "siempre que una tarjeta represente una funcionalidad existente,
+// debe poder pulsarse") sin tener que rehacer esa fase entera.
+const MODULO_DE_FAVORITA = {
+  peso: 'salud', hucha: 'economia', racha_habito: 'productividad',
+  proximo_objetivo: 'objetivos', animo_medio: 'diario', sesiones_concentracion: 'bienestar',
+};
+
+function ultimoPorFechaLocal(lista) {
+  if (!lista || lista.length === 0) return null;
+  return [...lista].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))[0];
+}
+
+export default function DashboardView({
+  perfil, sueno, calistenia, futbol, economia, relacion, favoritas, productividad, estudios, modo, notificaciones,
+  calendario, derivadosCalendario,
+  // Ampliación del Dashboard — Centro de Control
+  salud, objetivos, nutricion, negocio, diario, biblioteca, fe, bienestar, resumenes, dashboardOcultos, onNavegar,
+  accent,
+}) {
   const hora = new Date().getHours();
   const saludo = hora < 6 ? 'Buenas noches' : hora < 12 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
   const fechaHoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -174,6 +251,58 @@ export default function DashboardView({ perfil, sueno, calistenia, futbol, econo
   if (economia.movimientos.length > 0) score += 20;
   score = Math.min(100, score);
 
+  // Ampliación del Dashboard — Centro de Control: "arquitectura preparada para personalización"
+  // (apartado 10/11) — cada módulo del Dashboard es una entrada de este mapa (id → si está
+  // oculto), filtrable por `dashboardOcultos` (tokens.js, todavía sin editor real en Ajustes,
+  // documentado como pendiente). `oculto(id)` es la única función que consulta esa lista —
+  // activar un editor en el futuro es solo escribir la UI que rellene `dashboardOcultos`, sin
+  // tocar nada de aquí abajo.
+  const ocultos = dashboardOcultos || [];
+  const oculto = (id) => ocultos.includes(id);
+
+  // ---------- Nivel 1: lo que Josué necesita saber nada más abrir la app ----------
+  // Objetivo más próximo sin cumplir (apartado 4/6/22: "Dashboard → Objetivo específico", no solo
+  // al módulo) — mismo orden que ya usa ObjectivesView (orden de creación), no se inventa una
+  // prioridad nueva.
+  const objetivoDestacado = (objetivos?.lista || []).find((o) => !o.cumplido) || null;
+  const totalObjetivos = objetivos?.lista?.length || 0;
+  const objetivosCumplidos = objetivos?.lista?.filter((o) => o.cumplido).length || 0;
+
+  // Examen más próximo (apartado 6: "Examen de Biología — 3 días → abrir directamente el examen").
+  const examenDestacado = (estudios?.examenes || [])
+    .map((ex) => ({ ex, dias: Math.ceil((new Date(`${ex.fecha}T00:00:00`).getTime() - Date.now()) / 86400000) }))
+    .filter((x) => x.dias >= 0)
+    .sort((a, b) => a.dias - b.dias)[0] || null;
+
+  // Habilidad destacada de calistenia: la entrenada más recientemente; si ninguna tiene sesiones
+  // todavía, la de mayor progreso (apartado 6: "Handstand — 72% → abrir directamente Handstand").
+  const skillsConSesion = Object.entries(calistenia)
+    .map(([skill, data]) => ({ skill, data, ultima: ultimoPorFechaLocal(data.sesiones) }))
+    .filter((x) => x.ultima)
+    .sort((a, b) => (a.ultima.fecha < b.ultima.fecha ? 1 : -1));
+  const skillDestacada = skillsConSesion[0]
+    || Object.entries(calistenia).map(([skill, data]) => ({ skill, data }))
+      .filter((x) => x.data.nivel > 0)
+      .sort((a, b) => b.data.nivel - a.data.nivel)[0]
+    || null;
+
+  // ---------- Nivel 2: relevante pero no crítico ----------
+  // Tarea pendiente más próxima (apartado 6: "Trabajo de Biología pendiente → abrir esa tarea").
+  const tareaDestacada = (productividad?.tareas || [])
+    .filter((t) => !t.hecha)
+    .sort((a, b) => (a.fechaLimite || '9999').localeCompare(b.fechaLimite || '9999'))[0] || null;
+
+  // Salud: peso/IMC — misma fórmula exacta que ya usa SettingsView (categoría Perfil, "Cálculos
+  // corporales"), con el peso más reciente de Salud si existe, o el del Perfil si todavía no hay
+  // ninguna medida registrada.
+  const ultimaMedida = ultimoPorFechaLocal(salud?.medidas);
+  const pesoActual = ultimaMedida?.peso || perfil?.peso;
+  const alturaM = (perfil?.altura || 0) / 100;
+  const imc = pesoActual && alturaM ? pesoActual / (alturaM * alturaM) : null;
+
+  const rEconomia = resumenes?.economia;
+  const rNutricion = resumenes?.nutricion;
+
   return (
     <div className="space-y-4 pb-4">
       <div>
@@ -182,6 +311,13 @@ export default function DashboardView({ perfil, sueno, calistenia, futbol, econo
           {saludo}, {perfil.nombre.split(' ')[0]}
         </h1>
       </div>
+
+      {/* Ajuste del indicador de contexto — Viaje/Vacaciones/Exámenes/Rutina normal: cerrado por
+          defecto, altura mínima y consistente con el resto de filas compactas del Dashboard
+          (apartado 6) — vive fuera del grupo de avisos condicionales de abajo porque, a
+          diferencia de ellos, está SIEMPRE visible (apartado 5: "Rutina normal" es un estado más,
+          no la ausencia del componente). */}
+      <IndicadorContexto modo={modo} accent={accent} />
 
       <Card className="flex items-center gap-5" style={{ background: `radial-gradient(circle at 25% 20%, ${hexToRgba(accent, 0.16)}, ${COLORS.surface} 65%)` }}>
         <ScoreGauge value={score} accent={accent} />
@@ -198,35 +334,149 @@ export default function DashboardView({ perfil, sueno, calistenia, futbol, econo
           resto de la pantalla (`space-y-4`), y cada tarjeta usa un padding más compacto — mismo
           contenido y mismas acciones, menos aire entre una y otra. */}
       <div className="space-y-2">
-        <ModoBanner modo={modo} accent={accent} />
-        <AccesoCalendario calendario={calendario} derivadosCalendario={derivadosCalendario} accent={accent} onAbrir={onAbrirCalendario} />
+        <AccesoCalendarioYAgenda calendario={calendario} derivadosCalendario={derivadosCalendario} accent={accent} onNavegar={onNavegar} />
         <RecordatorioPareja relacion={relacion} accent={accent} />
         <AvisoSuenoCorto ultimoSueno={ultimoSueno} accent={accent} notificaciones={notificaciones} />
         <AvisoRachaEnRiesgo productividad={productividad} accent={accent} notificaciones={notificaciones} />
         <AvisoExamenSinHoras estudios={estudios} accent={accent} notificaciones={notificaciones} />
       </div>
 
-      {/* Optimización de navegación/scroll — las métricas favoritas (Fase 19, hasta 4) y las dos
-          estadísticas fijas (sueño/saldo) vivían en dos rejillas de 2 columnas separadas, con su
-          propio hueco vertical entre ellas; ahora es una única rejilla — mismo contenido, una
-          rejilla menos que apilar. */}
-      <div className="grid grid-cols-2 gap-3">
-        {favoritas && favoritas.map((f) => (
-          <Card key={f.id}>
-            <p className="text-xs" style={{ color: COLORS.textMuted }}>{f.label}</p>
-            <p className="text-lg font-bold mt-1 truncate" style={{ color: COLORS.text }}>{f.valor}</p>
-          </Card>
-        ))}
-        <Card>
-          <p className="text-xs" style={{ color: COLORS.textMuted }}>Sueño anoche</p>
-          <p className="text-xl font-bold mt-1" style={{ color: COLORS.text }}>
-            {ultimoSueno ? `${calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar)} h` : '—'}
-          </p>
-        </Card>
-        <Card>
-          <p className="text-xs" style={{ color: COLORS.textMuted }}>Saldo cuenta</p>
-          <p className="text-xl font-bold mt-1" style={{ color: COLORS.text }}>{saldo.toFixed(2)} €</p>
-        </Card>
+      {/* Ampliación del Dashboard — Centro de Control (Nivel 1, apartado 9): sueño, entreno,
+          objetivos y estudios — lo primero que Josué necesita ver, cada tarjeta pulsable y con
+          deep-link al elemento concreto cuando lo hay (apartados 3-6). Rejilla de 2 columnas,
+          nunca una tarjeta grande por fila (apartado 8: "no todo tiene que ser una tarjeta
+          grande"). */}
+      {(!oculto('sueno') || !oculto('entreno') || !oculto('objetivos') || !oculto('estudios')) && (
+        <div className="grid grid-cols-2 gap-3">
+          {!oculto('sueno') && (
+            <DashboardModuleCard
+              icon={Moon} accent={accent} titulo="Sueño"
+              vacio={!ultimoSueno}
+              valor={ultimoSueno ? `${calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar)} h` : undefined}
+              sub={ultimoSueno ? `Calidad ${ultimoSueno.calidad}/5` : 'Toca para registrar tu primera noche'}
+              onClick={() => onNavegar('sueno')}
+            />
+          )}
+          {!oculto('entreno') && (
+            <DashboardModuleCard
+              icon={Dumbbell} accent={accent} titulo="Entreno"
+              vacio={!skillDestacada}
+              valor={skillDestacada ? `${skillDestacada.skill}: ${skillDestacada.data.nivel}%` : undefined}
+              sub={skillDestacada ? 'Toca para abrir esta habilidad' : 'Toca para empezar a registrar'}
+              onClick={() => onNavegar('entreno', skillDestacada ? { skill: skillDestacada.skill } : undefined)}
+            />
+          )}
+          {!oculto('objetivos') && (
+            <DashboardModuleCard
+              icon={Target} accent={accent} titulo="Objetivos"
+              vacio={!objetivoDestacado}
+              valor={objetivoDestacado ? objetivoDestacado.texto : undefined}
+              sub={objetivoDestacado
+                ? `${objetivoDestacado.plazo}${totalObjetivos ? ` · ${Math.round((objetivosCumplidos / totalObjetivos) * 100)}% completado` : ''}`
+                : 'Toca para crear tu primer objetivo'}
+              onClick={() => onNavegar('objetivos', objetivoDestacado ? { id: objetivoDestacado.id } : undefined)}
+            />
+          )}
+          {!oculto('estudios') && (
+            <DashboardModuleCard
+              icon={GraduationCap} accent={accent} titulo="Estudios"
+              vacio={!examenDestacado}
+              valor={examenDestacado ? (examenDestacado.ex.tema || 'Examen') : undefined}
+              sub={examenDestacado
+                ? (examenDestacado.dias === 0 ? 'Hoy' : `En ${examenDestacado.dias} ${examenDestacado.dias === 1 ? 'día' : 'días'}`)
+                : 'Sin exámenes próximos'}
+              onClick={() => onNavegar('estudios', examenDestacado ? { examenId: examenDestacado.ex.id } : undefined)}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Optimización de navegación/scroll — las métricas favoritas (Fase 19, hasta 4) ahora
+          también son pulsables (apartado 3), cada una lleva a su módulo de origen. */}
+      {favoritas && favoritas.length > 0 && (
+        <div className="grid grid-cols-2 gap-3">
+          {favoritas.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => onNavegar(MODULO_DE_FAVORITA[f.id] || 'hoy')}
+              className="w-full text-left rounded-3xl p-5 transition-transform active:scale-[0.96]"
+              style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+            >
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>{f.label}</p>
+              <p className="text-lg font-bold mt-1 truncate" style={{ color: COLORS.text }}>{f.valor}</p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Ampliación del Dashboard — Centro de Control (Nivel 2, apartado 9): relevante pero no
+          crítico — Economía y Nutrición reutilizan el mismo resumen ya calculado para los hubs
+          (resumenesHub.js), sin duplicar ese cálculo; Productividad y Salud llevan su propio
+          deep-link (tarea concreta / peso e IMC). */}
+      {(!oculto('economia') || !oculto('nutricion') || !oculto('productividad') || !oculto('salud')) && (
+        <div className="grid grid-cols-2 gap-3">
+          {!oculto('economia') && rEconomia && (
+            <DashboardModuleCard
+              icon={Wallet} accent={accent} titulo="Economía"
+              vacio={rEconomia.estado === 'vacio'}
+              valor={rEconomia.linea1} sub={rEconomia.linea2}
+              onClick={() => onNavegar('economia')}
+            />
+          )}
+          {!oculto('nutricion') && rNutricion && (
+            <DashboardModuleCard
+              icon={Apple} accent={accent} titulo="Nutrición"
+              vacio={rNutricion.estado === 'vacio'}
+              valor={rNutricion.linea1} sub={rNutricion.linea2}
+              onClick={() => onNavegar('nutricion')}
+            />
+          )}
+          {!oculto('productividad') && (
+            <DashboardModuleCard
+              icon={ListTodo} accent={accent} titulo="Productividad"
+              vacio={!tareaDestacada}
+              valor={tareaDestacada ? tareaDestacada.texto : undefined}
+              sub={tareaDestacada
+                ? (tareaDestacada.fechaLimite ? `Antes del ${tareaDestacada.fechaLimite.split('-').reverse().join('/')}` : 'Sin fecha límite')
+                : 'Sin tareas pendientes'}
+              onClick={() => onNavegar('productividad', tareaDestacada ? { sub: 'tareas', tareaId: tareaDestacada.id } : { sub: 'tareas' })}
+            />
+          )}
+          {!oculto('salud') && (
+            <DashboardModuleCard
+              icon={HeartPulse} accent={accent} titulo="Salud"
+              vacio={!pesoActual}
+              valor={pesoActual ? `${pesoActual} kg` : undefined}
+              sub={imc ? `IMC ${imc.toFixed(1)}` : 'Toca para registrar una medida'}
+              onClick={() => onNavegar('salud')}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Ampliación del Dashboard — Centro de Control (Nivel 3, apartado 9): accesos discretos a
+          módulos secundarios — solo icono + etiqueta, sin resumen (Relación incluida a propósito:
+          es solo el acceso, nunca sus datos, que siguen detrás del PinGate de siempre). */}
+      <div className="grid grid-cols-3 gap-2.5">
+        {!oculto('diario') && <MiniAccessCard icon={BookOpen} label="Diario" accent={accent} onClick={() => onNavegar('diario')} />}
+        {!oculto('negocio') && <MiniAccessCard icon={Briefcase} label="Negocio" accent={accent} onClick={() => onNavegar('negocio')} />}
+        {!oculto('relacion') && <MiniAccessCard icon={Heart} label="Relación" accent={accent} onClick={() => onNavegar('relacion')} />}
+        {!oculto('biblioteca') && <MiniAccessCard icon={Library} label="Biblioteca" accent={accent} onClick={() => onNavegar('biblioteca')} />}
+        {!oculto('fe') && <MiniAccessCard icon={Church} label="Fe" accent={accent} onClick={() => onNavegar('fe')} />}
+        {!oculto('bienestar') && <MiniAccessCard icon={Smartphone} label="Bienestar" accent={accent} onClick={() => onNavegar('bienestar')} />}
+      </div>
+
+      {/* Ampliación del Dashboard — Centro de Control, apartado 13/14: "Acciones rápidas" —
+          distinta a propósito de pulsar una tarjeta (esto abre un formulario, no navega a mirar un
+          resumen), en su propia fila con scroll horizontal si hiciera falta en un móvil pequeño. */}
+      <div>
+        <p className="text-xs font-semibold mb-2 px-1" style={{ color: COLORS.textMuted }}>Acciones rápidas</p>
+        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          <QuickActionButton icon={Moon} label="Sueño" accent={accent} onClick={() => onNavegar('sueno', { accion: 'registrar' })} />
+          <QuickActionButton icon={Wallet} label="Gasto" accent={accent} onClick={() => onNavegar('economia', { accion: 'nuevoMovimiento' })} />
+          <QuickActionButton icon={ListTodo} label="Tarea" accent={accent} onClick={() => onNavegar('productividad', { sub: 'tareas', accion: 'nueva' })} />
+          <QuickActionButton icon={Target} label="Objetivo" accent={accent} onClick={() => onNavegar('objetivos', { accion: 'nuevo' })} />
+        </div>
       </div>
 
       <AIPanel

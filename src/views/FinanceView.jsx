@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { uid, formatFecha, todayISO } from '../lib/helpers';
 import { Card, ListCard, ListRow, SectionTitle, Field, TextInput, Select, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
 
-export default function FinanceView({ economia, onAddMovimiento, onUpdateHucha, accent }) {
+export default function FinanceView({ economia, onAddMovimiento, onUpdateHucha, accent, foco, onFocoConsumido }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ tipo: 'gasto', concepto: '', cantidad: '' });
+
+  // Ampliación del Dashboard — Centro de Control: la acción rápida "+ Gasto" llega aquí como
+  // `foco.accion === 'nuevoMovimiento'` — abre el mismo formulario de siempre.
+  useEffect(() => {
+    if (foco?.accion === 'nuevoMovimiento') {
+      setShowForm(true);
+      onFocoConsumido && onFocoConsumido();
+    }
+  }, [foco]);
 
   const saldo = economia.saldoInicial + economia.movimientos.reduce((a, m) => a + (m.tipo === 'ingreso' ? m.cantidad : -m.cantidad), 0);
   const esteMes = economia.movimientos.filter((m) => m.fecha.slice(0, 7) === todayISO().slice(0, 7));

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, ChevronDown, Sparkles, Loader2, Video, Trash2, AlertTriangle, CheckCircle2, Circle, Plus } from 'lucide-react';
 import { COLORS, SKILLS } from '../tokens';
 import { uid, formatFecha, todayISO } from '../lib/helpers';
@@ -313,13 +313,26 @@ function VideosTab({ skill, videos, onAddVideo, onDeleteVideo, onSetVideoFeedbac
 // están colegidas (`gridColumn` normal) y la que se toca pasa a ocupar el ancho completo
 // (`gridColumn: '1 / -1'`) para tener sitio de sobra para las 4 subpestañas — mismo contenido,
 // mismas acciones, sin perder ni una función, solo menos alto cuando no hay ninguna abierta.
-function SkillCard({ skill, data, onUpdate, videos, onAddVideo, onDeleteVideo, onSetVideoFeedback, accent }) {
+function SkillCard({ skill, data, onUpdate, videos, onAddVideo, onDeleteVideo, onSetVideoFeedback, accent, foco, onFocoConsumido }) {
   const [expanded, setExpanded] = useState(false);
   const [sub, setSub] = useState('progresion');
   const full = { nivel: 0, progresion: [], prs: [], sesiones: [], ...data };
 
+  // Ampliación del Dashboard — Centro de Control (apartado 6: "Handstand — 72% → abrir
+  // directamente Handstand"): si el deep-link pendiente apunta a esta habilidad, se autoexpande y
+  // hace scroll hasta ella — cada `SkillCard` decide esto sola, sin que el padre tenga que
+  // levantar el estado `expanded` de las 7 (mismo criterio ya usado para la rejilla 2x2).
+  useEffect(() => {
+    if (foco?.skill === skill) {
+      setExpanded(true);
+      const el = document.getElementById(`skill-${skill}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      onFocoConsumido && onFocoConsumido();
+    }
+  }, [foco]);
+
   return (
-    <Card style={{ gridColumn: expanded ? '1 / -1' : undefined, padding: expanded ? undefined : '0.9rem' }}>
+    <Card id={`skill-${skill}`} style={{ gridColumn: expanded ? '1 / -1' : undefined, padding: expanded ? undefined : '0.9rem' }}>
       <button className="w-full" onClick={() => setExpanded((s) => !s)}>
         <div className="flex items-center justify-between gap-2 mb-2">
           <p className="text-sm font-semibold flex items-center gap-1.5 min-w-0 truncate" style={{ color: COLORS.text }}>
@@ -363,9 +376,15 @@ function SkillCard({ skill, data, onUpdate, videos, onAddVideo, onDeleteVideo, o
   );
 }
 
-export default function TrainingView({ calistenia, onUpdateSkill, futbol, onAddPartido, videos, onAddVideo, onDeleteVideo, onSetVideoFeedback, accent }) {
+export default function TrainingView({ calistenia, onUpdateSkill, futbol, onAddPartido, videos, onAddVideo, onDeleteVideo, onSetVideoFeedback, accent, foco, onFocoConsumido }) {
   const [sub, setSub] = useState('calistenia');
   const [nota, setNota] = useState('');
+
+  // Si el deep-link apunta a una habilidad de calistenia y la subpestaña activa era Fútbol,
+  // cambia a Calistenia primero — la propia SkillCard se encarga de expandirse y hacer scroll.
+  useEffect(() => {
+    if (foco?.skill) setSub('calistenia');
+  }, [foco]);
 
   return (
     <div className="space-y-4 pb-4">
@@ -382,7 +401,7 @@ export default function TrainingView({ calistenia, onUpdateSkill, futbol, onAddP
             <SkillCard
               key={skill} skill={skill} data={calistenia[skill]} onUpdate={onUpdateSkill}
               videos={videos} onAddVideo={onAddVideo} onDeleteVideo={onDeleteVideo} onSetVideoFeedback={onSetVideoFeedback}
-              accent={accent}
+              accent={accent} foco={foco} onFocoConsumido={onFocoConsumido}
             />
           ))}
         </div>

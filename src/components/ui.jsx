@@ -1,20 +1,87 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail } from 'lucide-react';
+import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail, Plus } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba, shade, fileToBase64 } from '../lib/helpers';
 import { askAI, askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { extractPdfText } from '../lib/pdfText';
 import { verificarPin } from '../lib/pin';
 
-export function Card({ children, style, className = '' }) {
+export function Card({ children, style, className = '', id }) {
   return (
     <div
+      id={id}
       className={`rounded-3xl p-5 ${className}`}
       style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, ...style }}
     >
       {children}
     </div>
+  );
+}
+
+// Ampliación del Dashboard — Centro de Control: tarjeta reutilizable para cualquier módulo del
+// nuevo "Hoy" interactivo — icono + título arriba, valor destacado + línea secundaria debajo,
+// toda la tarjeta es un único `<button>` (apartado 3: "siempre que una tarjeta represente una
+// funcionalidad existente, debe poder pulsarse", apartado 14: "pulsación normal → abrir módulo").
+// `vacio` cambia el cuerpo por el texto de invitación del estado vacío (apartado 12) sin dejar de
+// ser pulsable — nunca una tarjeta "rota" sin nada que hacer. Sin botón de acción propio a
+// propósito (apartado 13/14: la fila de "Acciones rápidas" del Dashboard cubre eso aparte, para no
+// mezclar dos comportamientos distintos en el mismo elemento).
+export function DashboardModuleCard({ icon: Icon, titulo, valor, sub, vacio = false, accent, onClick, style, className = '' }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left rounded-3xl transition-transform active:scale-[0.96] ${className}`}
+      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, padding: '0.9rem 1rem', ...style }}
+    >
+      <p className="text-xs font-semibold flex items-center gap-1.5 mb-1.5 min-w-0" style={{ color: COLORS.textMuted }}>
+        {Icon && <Icon size={13} style={{ color: accent, flexShrink: 0 }} />}
+        <span className="truncate">{titulo}</span>
+      </p>
+      {vacio ? (
+        <p className="text-sm leading-snug" style={{ color: COLORS.textMuted }}>{sub}</p>
+      ) : (
+        <>
+          <p className="text-base font-bold leading-snug truncate" style={{ color: COLORS.text }}>{valor}</p>
+          {sub && <p className="text-xs mt-0.5 truncate" style={{ color: COLORS.textMuted }}>{sub}</p>}
+        </>
+      )}
+    </button>
+  );
+}
+
+// Ampliación del Dashboard — mini-acceso compacto para los módulos de Nivel 3 (Diario, Negocio,
+// Relación, Biblioteca, Fe, Bienestar): solo icono + etiqueta, sin resumen de datos — deliberado,
+// para que la fila quepa en un móvil pequeño sin desbordar ni necesitar scroll horizontal, y para
+// no mostrar de refilón nada de Relación (protegida por PIN) fuera de su propia pantalla.
+export function MiniAccessCard({ icon: Icon, label, accent, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center justify-center gap-1.5 rounded-2xl py-3 px-1 transition-transform active:scale-95 w-full"
+      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+    >
+      {Icon && <Icon size={17} style={{ color: accent }} />}
+      <span className="text-[11px] font-medium truncate w-full text-center leading-none" style={{ color: COLORS.textMuted }}>{label}</span>
+    </button>
+  );
+}
+
+// Ampliación del Dashboard — botón de la fila "Acciones rápidas" (apartado 13/14): distinto a
+// propósito de `DashboardModuleCard` (icono "+" en un círculo en vez de una tarjeta rectangular)
+// para que se note de un vistazo que esto ABRE UN FORMULARIO, no navega a mirar un resumen.
+export function QuickActionButton({ icon: Icon, label, accent, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 rounded-full pl-2.5 pr-3.5 py-2 flex-shrink-0 transition-transform active:scale-95"
+      style={{ background: hexToRgba(accent, 0.12), border: `1px solid ${hexToRgba(accent, 0.3)}` }}
+    >
+      <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 20, height: 20, background: accent, color: COLORS.textOnAccent }}>
+        {Icon ? <Icon size={12} strokeWidth={2.5} /> : <Plus size={12} strokeWidth={2.5} />}
+      </span>
+      <span className="text-xs font-semibold whitespace-nowrap" style={{ color: accent }}>{label}</span>
+    </button>
   );
 }
 

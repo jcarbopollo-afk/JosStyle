@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ChevronLeft, ChevronRight, Plus, X, Trash2, Clock, MapPin, Lock, ExternalLink, Search,
@@ -384,7 +384,7 @@ function BuscadorEventos({ eventos, accent, onSeleccionar, onCerrar }) {
   );
 }
 
-export default function CalendarView({ calendario, derivados, onAdd, onUpdate, onDelete, onAbrirModulo, accent }) {
+export default function CalendarView({ calendario, derivados, onAdd, onUpdate, onDelete, onAbrirModulo, accent, foco, onFocoConsumido }) {
   const hoy = todayISO();
   const [cursor, setCursor] = useState(() => ({ anio: Number(hoy.slice(0, 4)), mes: Number(hoy.slice(5, 7)) - 1 }));
   const [seleccionado, setSeleccionado] = useState(hoy);
@@ -393,6 +393,18 @@ export default function CalendarView({ calendario, derivados, onAdd, onUpdate, o
   const [vista, setVista] = useState('mes'); // Fase 3: 'mes' | 'agenda'
   const [tiposOcultos, setTiposOcultos] = useState([]); // Fase 3: filtros por tipo
   const [buscando, setBuscando] = useState(false); // Fase 3: buscador
+
+  // Paréntesis — Acceso directo a Agenda desde el Dashboard: `foco.vista === 'agenda'` llega
+  // desde `navegarDesdeHoy('calendario', { vista: 'agenda' })` — cambia el mismo toggle Mes/
+  // Agenda que ya existía a mano desde la Fase 3, sin duplicar nada. Un solo toque desde "Hoy"
+  // aterriza ya en la Agenda, en vez de obligar a entrar primero al Calendario y tocar el
+  // interruptor.
+  useEffect(() => {
+    if (foco?.vista === 'agenda') {
+      setVista('agenda');
+      onFocoConsumido && onFocoConsumido();
+    }
+  }, [foco]);
 
   // Fase 2/3 — unión de eventos propios (editables) + derivados de otros módulos (solo lectura,
   // calculados en cada render por App.jsx — ver calendarioIntegracion.js), con los tipos ocultos

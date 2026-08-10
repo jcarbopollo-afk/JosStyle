@@ -400,7 +400,14 @@ export const MAX_METRICAS_FAVORITAS = 4;
 // forzado de Relación (Fase 12) — aquí Josué elige voluntariamente qué otros módulos proteger
 // con el mismo PIN, así que nunca incluye 'relacion' (ya protegido siempre, sin poder quitarlo).
 // "modo" (Fase 20) es el modo "viaje/vacaciones/exámenes" activo — null si ninguno.
-export const DEFAULT_PERSONALIZACION = { orden: [], ocultos: [], iconos: {}, pinExtra: [], favoritas: [], modo: null };
+// Ampliación del Dashboard — Centro de Control: `dashboardOcultos` deja preparada la
+// arquitectura para que un futuro editor en Ajustes permita elegir qué módulos del nuevo
+// Dashboard interactivo mostrar (apartado 10 de la especificación: "la arquitectura debe quedar
+// preparada... no significa que haya que implementar obligatoriamente un editor completo en esta
+// fase"). Por ahora la lista siempre está vacía y ningún módulo se oculta — DashboardView.jsx ya
+// filtra por esta lista, así que activar el editor en el futuro es solo añadir la UI que la rellene,
+// sin tocar DashboardView.jsx. Mismo patrón exacto que `ocultos` (Fase 19, para "Más").
+export const DEFAULT_PERSONALIZACION = { orden: [], ocultos: [], iconos: {}, pinExtra: [], favoritas: [], modo: null, dashboardOcultos: [] };
 
 // Fase 20 — Modos "viaje/vacaciones/exámenes": Josué pidió esto como plantillas ligeras, no un
 // motor genérico de modos configurables. Cada modo es solo un aviso discreto en el Dashboard

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GraduationCap, BookOpen, Calendar, Clock, Plus, Trash2, ChevronDown, ChevronUp, HelpCircle, TrendingUp, Loader2, Sparkles } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { uid, formatFecha, todayISO } from '../lib/helpers';
@@ -137,12 +137,24 @@ function PlanRepaso({ examen, onUpdatePlan, accent }) {
   );
 }
 
-function ExamenItem({ examen, onUpdate, onDelete, accent }) {
+function ExamenItem({ examen, onUpdate, onDelete, accent, forzarAbierta, onFocoConsumido }) {
   const [abierto, setAbierto] = useState(false);
   const dias = diasHasta(examen.fecha);
 
+  // Ampliación del Dashboard — Centro de Control (apartado 6: "Examen de Biología — 3 días →
+  // abrir directamente el examen") — `forzarAbierta` lo decide el padre (AsignaturaCard), que ya
+  // sabe si el deep-link pendiente apunta a este examen en concreto.
+  useEffect(() => {
+    if (forzarAbierta) {
+      setAbierto(true);
+      const el = document.getElementById(`examen-${examen.id}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      onFocoConsumido && onFocoConsumido();
+    }
+  }, [forzarAbierta]);
+
   return (
-    <Card style={{ padding: '0.9rem' }}>
+    <Card id={`examen-${examen.id}`} style={{ padding: '0.9rem' }}>
       <button onClick={() => setAbierto((a) => !a)} className="w-full flex items-center justify-between text-left">
         <div>
           <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{examen.tema || 'Examen'}</p>
@@ -172,11 +184,18 @@ function ExamenItem({ examen, onUpdate, onDelete, accent }) {
   );
 }
 
-function AsignaturaCard({ asignatura, examenes, horas, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteAsignatura, accent }) {
+function AsignaturaCard({ asignatura, examenes, horas, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteAsignatura, accent, focoExamenId, onFocoConsumido }) {
   const [abierto, setAbierto] = useState(false);
   const [showExamenForm, setShowExamenForm] = useState(false);
   const [examenForm, setExamenForm] = useState({ tema: '', fecha: todayISO(), notaObjetivo: '' });
   const [horasHoy, setHorasHoy] = useState('');
+
+  // Ampliación del Dashboard — Centro de Control: si el examen destacado pertenece a esta
+  // asignatura, se despliega sola (el `ExamenItem` concreto se abre él mismo con `forzarAbierta`).
+  const contieneFoco = !!focoExamenId && examenes.some((e) => e.id === focoExamenId);
+  useEffect(() => {
+    if (contieneFoco) setAbierto(true);
+  }, [contieneFoco]);
 
   const totalSemana = horas
     .filter((h) => diasHasta(h.fecha) > -7 && diasHasta(h.fecha) <= 0)
@@ -199,7 +218,7 @@ function AsignaturaCard({ asignatura, examenes, horas, onAddExamen, onUpdateExam
   const examenesOrdenados = [...examenes].sort((a, b) => (a.fecha > b.fecha ? 1 : -1));
 
   return (
-    <Card>
+    <Card id={`asignatura-${asignatura.id}`}>
       <button onClick={() => setAbierto((a) => !a)} className="w-full flex items-center justify-between text-left">
         <div className="flex items-center gap-2">
           <BookOpen size={16} style={{ color: accent }} />
@@ -246,7 +265,10 @@ function AsignaturaCard({ asignatura, examenes, horas, onAddExamen, onUpdateExam
 
           {examenesOrdenados.length === 0 && <EmptyHint text="Todavía no hay exámenes en esta asignatura." />}
           {examenesOrdenados.map((ex) => (
-            <ExamenItem key={ex.id} examen={ex} onUpdate={onUpdateExamen} onDelete={onDeleteExamen} accent={accent} />
+            <ExamenItem
+              key={ex.id} examen={ex} onUpdate={onUpdateExamen} onDelete={onDeleteExamen} accent={accent}
+              forzarAbierta={focoExamenId === ex.id} onFocoConsumido={onFocoConsumido}
+            />
           ))}
 
           <button onClick={() => onDeleteAsignatura(asignatura.id)} className="text-xs" style={{ color: COLORS.negative }}>Borrar asignatura</button>
@@ -278,11 +300,21 @@ function CorrelacionEstudio({ sueno, horas, accent }) {
   );
 }
 
-export default function EstudiosView({ estudios, sueno, onAddPrograma, onAddAsignatura, onDeleteAsignatura, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, accent }) {
+export default function EstudiosView({ estudios, sueno, onAddPrograma, onAddAsignatura, onDeleteAsignatura, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, accent, foco, onFocoConsumido }) {
   const [programaActivo, setProgramaActivo] = useState(estudios.programas[0]?.id);
   const [nuevaAsignatura, setNuevaAsignatura] = useState('');
   const [showNuevoPrograma, setShowNuevoPrograma] = useState(false);
   const [nuevoPrograma, setNuevoPrograma] = useState('');
+
+  // Ampliación del Dashboard — Centro de Control (apartado 6): el examen destacado puede vivir en
+  // un programa que no sea el activo — cambia de pestaña de programa primero; AsignaturaCard y
+  // ExamenItem se encargan de desplegarse y hacer scroll hasta el examen en sí.
+  useEffect(() => {
+    if (!foco?.examenId) return;
+    const ex = estudios.examenes.find((e) => e.id === foco.examenId);
+    const asig = ex && estudios.asignaturas.find((a) => a.id === ex.asignaturaId);
+    if (asig) setProgramaActivo(asig.programaId);
+  }, [foco]);
 
   const programa = estudios.programas.find((p) => p.id === programaActivo) || estudios.programas[0];
   const asignaturasPrograma = estudios.asignaturas.filter((a) => a.programaId === programa?.id);
@@ -347,6 +379,7 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onAddAsig
             onAddHoras={onAddHoras}
             onDeleteAsignatura={onDeleteAsignatura}
             accent={accent}
+            focoExamenId={foco?.examenId} onFocoConsumido={onFocoConsumido}
           />
         ))}
       </div>

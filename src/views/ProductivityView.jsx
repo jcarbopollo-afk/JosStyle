@@ -228,9 +228,28 @@ function PomodoroTab({ hoyCount, onCompletar, accent }) {
 }
 
 /* ---------- Tareas ---------- */
-function TareasTab({ tareas, onAdd, onToggle, onDelete, accent }) {
+function TareasTab({ tareas, onAdd, onToggle, onDelete, accent, foco, onFocoConsumido }) {
   const [texto, setTexto] = useState('');
   const [fecha, setFecha] = useState('');
+  // Ampliación del Dashboard — Centro de Control: resalta brevemente la tarea a la que se ha
+  // llegado por deep-link (apartado 6: "Trabajo de Biología pendiente → abrir esa tarea").
+  const [destacadoId, setDestacadoId] = useState(null);
+
+  useEffect(() => {
+    if (!foco) return;
+    if (foco.accion === 'nueva') {
+      document.getElementById('nueva-tarea-input')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.getElementById('nueva-tarea-input')?.querySelector('input')?.focus();
+      onFocoConsumido && onFocoConsumido();
+    } else if (foco.tareaId) {
+      const el = document.getElementById(`tarea-${foco.tareaId}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setDestacadoId(foco.tareaId);
+      onFocoConsumido && onFocoConsumido();
+      const t = setTimeout(() => setDestacadoId(null), 2200);
+      return () => clearTimeout(t);
+    }
+  }, [foco]);
 
   const pendientes = [...tareas].filter((t) => !t.hecha).sort((a, b) => (a.fechaLimite || '9999').localeCompare(b.fechaLimite || '9999'));
   const hechas = tareas.filter((t) => t.hecha);
@@ -244,7 +263,7 @@ function TareasTab({ tareas, onAdd, onToggle, onDelete, accent }) {
 
   return (
     <div className="space-y-3">
-      <Card>
+      <Card id="nueva-tarea-input">
         <Field label="Tarea">
           <TextInput value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !fecha && submit()} placeholder="Ej. preparar la mochila" />
         </Field>
@@ -256,7 +275,10 @@ function TareasTab({ tareas, onAdd, onToggle, onDelete, accent }) {
 
       {pendientes.length === 0 && hechas.length === 0 && <EmptyHint text="Sin tareas pendientes." />}
       {pendientes.map((t) => (
-        <Card key={t.id} className="flex items-center justify-between">
+        <Card
+          key={t.id} id={`tarea-${t.id}`} className="flex items-center justify-between"
+          style={{ transition: 'box-shadow 0.3s ease', boxShadow: destacadoId === t.id ? `0 0 0 2px ${accent}` : 'none' }}
+        >
           <button onClick={() => onToggle(t.id)} className="flex items-center gap-3 flex-1 text-left">
             <Circle size={18} style={{ color: COLORS.textMuted }} />
             <div>
@@ -344,10 +366,16 @@ function MetasTab({ metas, onAdd, onUpdate, onDelete, accent }) {
 }
 
 /* ---------- Vista principal ---------- */
-export default function ProductivityView({ productividad, onAddHabito, onUpdateHabito, onDeleteHabito, onAddRutina, onUpdateRutina, onDeleteRutina, onAddTarea, onToggleTarea, onDeleteTarea, onAddMeta, onUpdateMeta, onDeleteMeta, onCompletarPomodoro, accent }) {
+export default function ProductivityView({ productividad, onAddHabito, onUpdateHabito, onDeleteHabito, onAddRutina, onUpdateRutina, onDeleteRutina, onAddTarea, onToggleTarea, onDeleteTarea, onAddMeta, onUpdateMeta, onDeleteMeta, onCompletarPomodoro, accent, foco, onFocoConsumido }) {
   const [sub, setSub] = useState('habitos');
   const hoy = todayISO();
   const pomodorosHoy = productividad.pomodoros[hoy] || 0;
+
+  // Ampliación del Dashboard — Centro de Control: la tarjeta de Productividad y la acción rápida
+  // "+ Tarea" llegan con `foco.sub === 'tareas'` — cambia a esa subpestaña sola.
+  useEffect(() => {
+    if (foco?.sub) setSub(foco.sub);
+  }, [foco]);
 
   return (
     <div className="space-y-4 pb-4">
@@ -364,7 +392,12 @@ export default function ProductivityView({ productividad, onAddHabito, onUpdateH
       {sub === 'habitos' && <HabitosTab habitos={productividad.habitos} onAdd={onAddHabito} onUpdate={onUpdateHabito} onDelete={onDeleteHabito} accent={accent} />}
       {sub === 'rutinas' && <RutinasTab rutinas={productividad.rutinas} onAdd={onAddRutina} onUpdate={onUpdateRutina} onDelete={onDeleteRutina} accent={accent} />}
       {sub === 'pomodoro' && <PomodoroTab hoyCount={pomodorosHoy} onCompletar={onCompletarPomodoro} accent={accent} />}
-      {sub === 'tareas' && <TareasTab tareas={productividad.tareas} onAdd={onAddTarea} onToggle={onToggleTarea} onDelete={onDeleteTarea} accent={accent} />}
+      {sub === 'tareas' && (
+        <TareasTab
+          tareas={productividad.tareas} onAdd={onAddTarea} onToggle={onToggleTarea} onDelete={onDeleteTarea} accent={accent}
+          foco={foco} onFocoConsumido={onFocoConsumido}
+        />
+      )}
       {sub === 'metas' && <MetasTab metas={productividad.metas} onAdd={onAddMeta} onUpdate={onUpdateMeta} onDelete={onDeleteMeta} accent={accent} />}
     </div>
   );

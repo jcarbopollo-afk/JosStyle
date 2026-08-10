@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Target, Plus, Trash2, CheckCircle2, Circle, CalendarClock, Sparkles, Loader2 } from 'lucide-react';
 import { COLORS, PLAZOS_OBJETIVO, DIAS_ENTRE_REVISIONES } from '../tokens';
 import { uid, todayISO } from '../lib/helpers';
@@ -71,9 +71,29 @@ function RevisionBanner({ ultimaRevision, objetivos, accent, onRevisionHecha }) 
   );
 }
 
-export default function ObjectivesView({ objetivos, onAdd, onUpdate, onDelete, onRevisionHecha, accent }) {
+export default function ObjectivesView({ objetivos, onAdd, onUpdate, onDelete, onRevisionHecha, accent, foco, onFocoConsumido }) {
   const [texto, setTexto] = useState('');
   const [plazo, setPlazo] = useState(PLAZOS_OBJETIVO[0]);
+  // Ampliación del Dashboard — Centro de Control: `destacadoId` resalta brevemente (apartado 4/6:
+  // "Dashboard → Objetivo específico") el objetivo al que se ha llegado por deep-link, para que
+  // Josué vea de un vistazo cuál es sin tener que leer toda la lista.
+  const [destacadoId, setDestacadoId] = useState(null);
+
+  useEffect(() => {
+    if (!foco) return;
+    if (foco.accion === 'nuevo') {
+      document.getElementById('nuevo-objetivo-input')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.getElementById('nuevo-objetivo-input')?.querySelector('input')?.focus();
+      onFocoConsumido && onFocoConsumido();
+    } else if (foco.id) {
+      const el = document.getElementById(`objetivo-${foco.id}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setDestacadoId(foco.id);
+      onFocoConsumido && onFocoConsumido();
+      const t = setTimeout(() => setDestacadoId(null), 2200);
+      return () => clearTimeout(t);
+    }
+  }, [foco]);
 
   const submit = () => {
     if (!texto.trim()) return;
@@ -87,7 +107,7 @@ export default function ObjectivesView({ objetivos, onAdd, onUpdate, onDelete, o
 
       <RevisionBanner ultimaRevision={objetivos.ultimaRevision} objetivos={objetivos.lista} accent={accent} onRevisionHecha={onRevisionHecha} />
 
-      <Card>
+      <Card id="nuevo-objetivo-input">
         <Field label="Objetivo">
           <TextInput value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Ej. sacar Bachillerato con buena nota" />
         </Field>
@@ -108,7 +128,10 @@ export default function ObjectivesView({ objetivos, onAdd, onUpdate, onDelete, o
           <div key={p} className="space-y-2">
             <p className="text-xs font-semibold px-1" style={{ color: COLORS.textMuted }}>{p.toUpperCase()}</p>
             {delPlazo.map((o) => (
-              <Card key={o.id} className="flex items-center justify-between" style={{ padding: '1rem' }}>
+              <Card
+                key={o.id} id={`objetivo-${o.id}`} className="flex items-center justify-between"
+                style={{ padding: '1rem', transition: 'box-shadow 0.3s ease', boxShadow: destacadoId === o.id ? `0 0 0 2px ${accent}` : 'none' }}
+              >
                 <button onClick={() => onUpdate({ ...o, cumplido: !o.cumplido })} className="flex items-center gap-3 flex-1 text-left">
                   {o.cumplido ? <CheckCircle2 size={19} style={{ color: accent }} /> : <Circle size={19} style={{ color: COLORS.textMuted }} />}
                   <p className="text-sm" style={{ color: o.cumplido ? COLORS.textMuted : COLORS.text, textDecoration: o.cumplido ? 'line-through' : 'none' }}>

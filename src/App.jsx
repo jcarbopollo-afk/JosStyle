@@ -217,6 +217,17 @@ export default function App() {
   const [temasGuardados, setTemasGuardados] = useState(DEFAULT_TEMAS_GUARDADOS);
   const [history, setHistory] = useState([]);
   const [showSearch, setShowSearch] = useState(false); // Fase 18 — buscador universal
+  // Ampliación del Dashboard — Centro de Control: `dashboardFoco` es el único estado nuevo que
+  // necesita el deep-linking (apartado 5/6 de la especificación: "cada tarjeta debe conocer cuál
+  // es su destino", "siempre que sea técnicamente posible, una tarjeta debe poder llevar al
+  // elemento exacto que representa"). No es un router paralelo (apartado 23 lo prohíbe
+  // explícitamente) — reutiliza `setTab`, el mecanismo de navegación que ya existe desde la Fase
+  // N1, y añade solo el elemento concreto a enfocar dentro de esa pestaña: `{ modulo, id/skill/
+  // examenId/tareaId/accion... }`. Cada vista de destino consume su propio `foco` una única vez
+  // (scroll + resaltado temporal, o abrir el formulario correspondiente) y llama a
+  // `onFocoConsumido`, que lo limpia — así volver a esa pestaña más tarde por la navegación normal
+  // no vuelve a saltar solo al mismo elemento.
+  const [dashboardFoco, setDashboardFoco] = useState(null);
 
   useEffect(() => {
     getSession().then(setSession);
@@ -333,7 +344,12 @@ export default function App() {
       setRelacion(rel);
       setFe(feData);
       setBienestar(bien);
-      setPersonalizacion(pers);
+      // Ampliación del Dashboard — Centro de Control: `personalizacion` nunca se fusionaba con su
+      // valor por defecto (a diferencia de notificaciones/historialColor/temaPersonalizado, que sí
+      // lo hacen) — un registro guardado antes de esta fase se habría quedado con
+      // `dashboardOcultos` en `undefined`. Corrección de compatibilidad hacia atrás hecha a la vez,
+      // mismo criterio que el resto de fases: merge con el default, nunca sobrescribir sin más.
+      setPersonalizacion({ ...DEFAULT_PERSONALIZACION, ...pers });
       // Fase A4: merge con DEFAULT_NOTIFICACIONES, mismo motivo que perfil/apariencia — un
       // registro guardado antes de esta fase (o inexistente) no debe dejar `categorias` a medias.
       setNotificaciones({ ...DEFAULT_NOTIFICACIONES, ...notif, categorias: { ...DEFAULT_NOTIFICACIONES.categorias, ...(notif.categorias || {}) } });
@@ -453,6 +469,21 @@ export default function App() {
   const updateApariencia = async (next) => { setApariencia(next); await saveData(uidUser, 'ajustes', { accent, pin: null, apariencia: next, seguridad }); };
   const updateSeguridad = async (next) => { setSeguridad(next); await saveData(uidUser, 'ajustes', { accent, pin: null, apariencia, seguridad: next }); };
   const updatePerfil = async (next) => { setPerfil(next); await saveData(uidUser, 'perfil', next); };
+
+  // ---------- Ampliación del Dashboard — Centro de Control ----------
+  // Única función de navegación con deep-link de toda la app (apartado 5: "utiliza la
+  // arquitectura existente... no quiero un sistema de routing paralelo") — por dentro es
+  // `setTab`, ni más ni menos; `foco` es opcional y solo lo usan los módulos que ya saben
+  // interpretarlo (ver cada vista). Sin segundo argumento se comporta exactamente igual que
+  // pulsar la pestaña correspondiente en la barra inferior.
+  const navegarDesdeHoy = (modulo, foco) => {
+    setDashboardFoco(foco ? { modulo, ...foco } : null);
+    setTab(modulo);
+  };
+  const consumirFoco = () => setDashboardFoco(null);
+  // Cada vista de destino solo necesita saber si el foco pendiente es "el suyo" — así ninguna
+  // vista tiene que conocer la forma de `dashboardFoco` de las demás.
+  const focoPara = (modulo) => (dashboardFoco && dashboardFoco.modulo === modulo ? dashboardFoco : null);
 
   // ---------- Fase de Seguridad Centralizada ----------
   // Único sistema de autenticación que controla todas las zonas protegidas (apartado 8/9 de la
@@ -1071,12 +1102,22 @@ export default function App() {
             relacion={relacion} favoritas={favoritasResueltas}
             productividad={productividad} estudios={estudios} modo={personalizacion.modo}
             notificaciones={notificaciones}
-            calendario={calendario} derivadosCalendario={derivadosCalendario} onAbrirCalendario={() => setTab('calendario')}
+            calendario={calendario} derivadosCalendario={derivadosCalendario}
+            // Ampliación del Dashboard — Centro de Control: datos adicionales que el Dashboard
+            // anterior no necesitaba (Salud, Objetivos, Nutrición) más los módulos de Nivel 3
+            // (Diario, Negocio, Biblioteca, Fe, Bienestar — Relación ya se pasaba, solo para el
+            // recordatorio discreto de siempre, nunca sus datos completos). `resumenes` reutiliza
+            // el mismo cálculo ya hecho para los hubs (HubView), sin duplicar lógica ninguna.
+            salud={salud} objetivos={objetivos} nutricion={nutricion}
+            negocio={negocio} diario={diario} biblioteca={biblioteca} fe={fe} bienestar={bienestar}
+            resumenes={resumenesTodos}
+            dashboardOcultos={personalizacion.dashboardOcultos}
+            onNavegar={navegarDesdeHoy}
             accent={accent}
           />
         );
       case 'sueno':
-        return <SleepView sueno={sueno} onAdd={addSueno} accent={accent} />;
+        return <SleepView sueno={sueno} onAdd={addSueno} accent={accent} foco={focoPara('sueno')} onFocoConsumido={consumirFoco} />;
       case 'entreno':
         return (
           <TrainingView
@@ -1084,6 +1125,7 @@ export default function App() {
             futbol={futbol} onAddPartido={addPartido}
             videos={calisteniaVideos} onAddVideo={addVideo} onDeleteVideo={deleteVideo} onSetVideoFeedback={setVideoFeedback}
             accent={accent}
+            foco={focoPara('entreno')} onFocoConsumido={consumirFoco}
           />
         );
       case 'salud':
@@ -1119,6 +1161,7 @@ export default function App() {
             onAddPrograma={addPrograma} onAddAsignatura={addAsignatura} onDeleteAsignatura={deleteAsignatura}
             onAddExamen={addExamen} onUpdateExamen={updateExamen} onDeleteExamen={deleteExamen}
             onAddHoras={addHoras} accent={accent}
+            foco={focoPara('estudios')} onFocoConsumido={consumirFoco}
           />
         );
       case 'negocio':
@@ -1133,6 +1176,7 @@ export default function App() {
             onAddMeta={addMeta} onUpdateMeta={updateMeta} onDeleteMeta={deleteMeta}
             onCompletarPomodoro={completarPomodoro}
             accent={accent}
+            foco={focoPara('productividad')} onFocoConsumido={consumirFoco}
           />
         );
       case 'objetivos':
@@ -1140,6 +1184,7 @@ export default function App() {
           <ObjectivesView
             objetivos={objetivos} onAdd={addObjetivo} onUpdate={updateObjetivo} onDelete={deleteObjetivo}
             onRevisionHecha={marcarRevisionHecha} accent={accent}
+            foco={focoPara('objetivos')} onFocoConsumido={consumirFoco}
           />
         );
       case 'calendario':
@@ -1149,6 +1194,7 @@ export default function App() {
             onAdd={addEvento} onUpdate={updateEvento} onDelete={deleteEvento}
             onAbrirModulo={setTab}
             accent={accent}
+            foco={focoPara('calendario')} onFocoConsumido={consumirFoco}
           />
         );
       case 'diario':
@@ -1219,7 +1265,12 @@ export default function App() {
           />
         );
       case 'economia':
-        return <FinanceView economia={economia} onAddMovimiento={addMovimiento} onUpdateHucha={updateHucha} accent={accent} />;
+        return (
+          <FinanceView
+            economia={economia} onAddMovimiento={addMovimiento} onUpdateHucha={updateHucha} accent={accent}
+            foco={focoPara('economia')} onFocoConsumido={consumirFoco}
+          />
+        );
       case 'ajustes': {
         // Fase A1 — Ajustes pasa a ser un único centro de categorías (ver SettingsView.jsx):
         // ya no se apilan SettingsView + PersonalizationView, SettingsView reenvía las props

@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
 import { COLORS } from '../tokens';
 import { uid, calcularDuracion, formatFecha, todayISO } from '../lib/helpers';
 import { Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
 
-export default function SleepView({ sueno, onAdd, accent }) {
+export default function SleepView({ sueno, onAdd, accent, foco, onFocoConsumido }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ horaDormir: '23:00', horaDespertar: '07:00', calidad: 3, interrupciones: 0, siesta: 0 });
+
+  // Ampliación del Dashboard — Centro de Control: la acción rápida "+ Sueño" llega aquí como
+  // `foco.accion === 'registrar'` — abre el mismo formulario de siempre, sin inventar uno nuevo.
+  useEffect(() => {
+    if (foco?.accion === 'registrar') {
+      setShowForm(true);
+      onFocoConsumido && onFocoConsumido();
+    }
+  }, [foco]);
 
   const ultimos = sueno.slice(-7);
   const chartData = ultimos.map((e) => ({ fecha: formatFecha(e.fecha), horas: calcularDuracion(e.horaDormir, e.horaDespertar) }));
