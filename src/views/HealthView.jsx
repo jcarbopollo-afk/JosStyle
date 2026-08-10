@@ -220,7 +220,13 @@ function FotosTab({ fotos, onAddFoto, onDeleteFoto, accent }) {
   );
 }
 
-export default function HealthView({ salud, fotos, onAddMedida, onAddHistorial, onAddFoto, onDeleteFoto, pin, accent }) {
+// Fase de Seguridad Centralizada — "Ver fotos privadas" pasa de protección fija (siempre, sin
+// opción) a protección de FUNCIÓN configurable (apartado 2): `protegidoFotos` viene de
+// `seguridad.protectedActions.includes('fotos_privadas')` en vez de "siempre true". Si Josué la
+// desactiva desde Seguridad, esta pestaña se ve directo, sin PinGate — el resto de props
+// (`pinHash`/`pinSalt`/`desbloqueadoFotos`/`onDesbloquearFotos`/`onOlvidoPin`) vienen de App.jsx,
+// que es quien de verdad decide y guarda el estado de protección (un único sistema).
+export default function HealthView({ salud, fotos, onAddMedida, onAddHistorial, onAddFoto, onDeleteFoto, protegidoFotos, pinHash, pinSalt, desbloqueadoFotos, onDesbloquearFotos, onOlvidoPin, accent }) {
   const [sub, setSub] = useState('medidas');
 
   return (
@@ -238,9 +244,16 @@ export default function HealthView({ salud, fotos, onAddMedida, onAddHistorial, 
       {sub === 'medidas' && <MedidasTab medidas={salud.medidas} onAdd={onAddMedida} accent={accent} />}
       {sub === 'historial' && <HistorialTab historial={salud.historial} onAdd={onAddHistorial} accent={accent} />}
       {sub === 'fotos' && (
-        <PinGate pin={pin} accent={accent}>
+        protegidoFotos ? (
+          <PinGate
+            pinHash={pinHash} pinSalt={pinSalt} accent={accent}
+            desbloqueado={desbloqueadoFotos} onDesbloquear={onDesbloquearFotos} onOlvidoPin={onOlvidoPin}
+          >
+            <FotosTab fotos={fotos} onAddFoto={onAddFoto} onDeleteFoto={onDeleteFoto} accent={accent} />
+          </PinGate>
+        ) : (
           <FotosTab fotos={fotos} onAddFoto={onAddFoto} onDeleteFoto={onDeleteFoto} accent={accent} />
-        </PinGate>
+        )
       )}
 
       <AIPanel

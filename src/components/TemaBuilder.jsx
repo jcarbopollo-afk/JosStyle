@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
@@ -120,7 +121,11 @@ export default function TemaBuilder({
     { label: 'Terciario', escala: COLORS.tertiaryScale },
   ].filter((e) => e.escala);
 
-  return (
+  // Optimización de navegación/scroll — mismo motivo que ColorPicker.jsx: sin `createPortal`, este
+  // panel quedaba "fixed" respecto al contenedor `.module-enter` (que tiene un `transform` activo
+  // permanente por su animación de entrada) en vez del viewport real, apareciendo muy por debajo
+  // de "Constructor de temas" en vez de superpuesto de inmediato.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
       <div
         className="w-full max-w-md rounded-t-3xl p-4 max-h-[90vh] overflow-y-auto"
@@ -194,6 +199,7 @@ export default function TemaBuilder({
           />
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

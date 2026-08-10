@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba, shade, fileToBase64 } from '../lib/helpers';
 import { askAI, askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { extractPdfText } from '../lib/pdfText';
+import { verificarPin } from '../lib/pin';
 
 export function Card({ children, style, className = '' }) {
   return (
@@ -13,6 +15,34 @@ export function Card({ children, style, className = '' }) {
     >
       {children}
     </div>
+  );
+}
+
+// Optimización de navegación/scroll — sustituye al patrón repetido de "una Card suelta por cada
+// fila de una lista" (registros de sueño, movimientos de economía, partidos, PRs...): antes cada
+// fila pagaba su propio borde+esquinas+`space-y-2` entre ellas, sumando bastante alto en vertical
+// cuando había varias; `ListCard` es una única tarjeta con las filas separadas por un borde fino
+// interior — mismo contenido, mismo orden, la mitad (o menos) del espacio vertical. No es un
+// componente nuevo de verdad: por dentro sigue siendo `Card`, solo cambia cómo se agrupan las
+// filas — nada de esto quita información, solo la compacta (spec: "no eliminar funcionalidades").
+export function ListCard({ children, style, className = '' }) {
+  return (
+    <Card className={`p-0 overflow-hidden ${className}`} style={style}>
+      {children}
+    </Card>
+  );
+}
+
+export function ListRow({ children, onClick, style, className = '', last = false }) {
+  const Tag = onClick ? 'button' : 'div';
+  return (
+    <Tag
+      onClick={onClick}
+      className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left ${className}`}
+      style={{ borderBottom: last ? 'none' : `1px solid ${COLORS.border}`, ...style }}
+    >
+      {children}
+    </Tag>
   );
 }
 
@@ -121,69 +151,240 @@ export function EmptyHint({ text }) {
   );
 }
 
-export function PinSetter({ pin, onSetPin, accent }) {
+// Fase de Seguridad Centralizada — sustituye a PinSetter/PinGate en texto plano. `EntradaPin` es
+// el único input numérico de PIN de toda la app: lo usan PinGate, VerificacionPinModal y (desde
+// App.jsx) BloqueoAutomaticoGate, para que las tres pantallas que piden un PIN se vean y se
+// comporten exactamente igual (apartado 8/9 de la especificación: un único sistema, nunca varios
+// repartidos por la app). Verifica siempre contra el hash (src/lib/pin.js) — el PIN en claro nunca
+// sale del propio input hasta que se descarta tras comprobarlo.
+export function EntradaPin({ accent, onSubmit, cargando, error, autoFocus }) {
   const [value, setValue] = useState('');
+  const submit = () => { if (value.length >= 4 && !cargando) onSubmit(value); };
   return (
     <div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 justify-center">
         <TextInput
-          type="password" inputMode="numeric" maxLength={6}
-          placeholder={pin ? 'PIN actual: ••••' : 'Nuevo PIN (4-6 dígitos)'}
+          type="password" inputMode="numeric" maxLength={6} placeholder="PIN" autoFocus={autoFocus}
           value={value} onChange={(e) => setValue(e.target.value.replace(/\D/g, ''))}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+          style={{ textAlign: 'center', maxWidth: 120 }}
         />
-        <div style={{ width: 92, flexShrink: 0 }}>
-          <PrimaryButton accent={accent} disabled={value.length < 4} onClick={() => { onSetPin(value); setValue(''); }}>
-            {pin ? 'Cambiar' : 'Crear'}
+        <div style={{ width: 84, flexShrink: 0 }}>
+          <PrimaryButton accent={accent} disabled={value.length < 4 || cargando} onClick={submit}>
+            {cargando ? '…' : 'Entrar'}
           </PrimaryButton>
         </div>
       </div>
-      {pin && <p className="text-xs mt-2 flex items-center gap-1" style={{ color: COLORS.positive }}><ShieldCheck size={12} /> PIN activo</p>}
+      {error && <p className="text-xs mt-2 text-center" style={{ color: COLORS.negative }}>{error}</p>}
     </div>
   );
 }
 
-// Envuelve contenido privado y pide el PIN ya configurado en Ajustes antes de mostrarlo.
-// Si el usuario todavía no ha creado un PIN, lo avisa en vez de bloquear con un PIN vacío.
-export function PinGate({ pin, accent, children }) {
-  const [unlocked, setUnlocked] = useState(false);
-  const [value, setValue] = useState('');
+// Envuelve contenido protegido por PIN — protección "de sección", a la entrada (apartado 2).
+// Componente controlado desde App.jsx: `desbloqueado` refleja el mapa centralizado de sesiones
+// temporales (apartado 6), así que da igual si la sección se protegió desde Seguridad o desde
+// Personalización — es el mismo desbloqueo, no dos sistemas distintos. Mensaje discreto y sin
+// alarmismo si el PIN falla (apartado 5); nunca revela nada del contenido protegido.
+export function PinGate({ pinHash, pinSalt, accent, desbloqueado, onDesbloquear, onOlvidoPin, children }) {
   const [error, setError] = useState('');
+  const [verificando, setVerificando] = useState(false);
 
-  if (unlocked) return children;
+  if (desbloqueado) return children;
 
-  if (!pin) {
+  if (!pinHash) {
     return (
       <div className="text-center py-8 rounded-2xl" style={{ border: `1px dashed ${COLORS.border}` }}>
         <Lock size={20} style={{ color: COLORS.textMuted, margin: '0 auto 8px' }} />
         <p className="text-sm px-6" style={{ color: COLORS.textMuted }}>
-          Todavía no has creado un PIN. Ve a Ajustes → "PIN de secciones privadas" para proteger esta sección.
+          Todavía no has creado un PIN. Ve a Ajustes → Seguridad → "Protección mediante PIN" para proteger esta sección.
         </p>
       </div>
     );
   }
 
-  const tryUnlock = () => {
-    if (value === pin) { setUnlocked(true); setError(''); }
-    else { setError('PIN incorrecto'); setValue(''); }
+  const intentar = async (valor) => {
+    setVerificando(true);
+    const ok = await verificarPin(valor, pinHash, pinSalt);
+    setVerificando(false);
+    if (ok) { setError(''); onDesbloquear(); } else setError('PIN incorrecto');
   };
 
   return (
     <div className="text-center py-8 rounded-2xl" style={{ border: `1px dashed ${COLORS.border}` }}>
       <Lock size={20} style={{ color: accent, margin: '0 auto 10px' }} />
       <p className="text-sm mb-3" style={{ color: COLORS.textMuted }}>Sección protegida por PIN</p>
-      <div className="flex items-center gap-2 justify-center px-6">
-        <TextInput
-          type="password" inputMode="numeric" maxLength={6} placeholder="PIN"
-          value={value} onChange={(e) => { setValue(e.target.value.replace(/\D/g, '')); setError(''); }}
-          onKeyDown={(e) => e.key === 'Enter' && tryUnlock()}
-          style={{ textAlign: 'center', maxWidth: 120 }}
-        />
-        <div style={{ width: 84 }}>
-          <PrimaryButton accent={accent} disabled={value.length < 4} onClick={tryUnlock}>Entrar</PrimaryButton>
+      <EntradaPin accent={accent} onSubmit={intentar} cargando={verificando} error={error} />
+      {onOlvidoPin && (
+        <button onClick={onOlvidoPin} className="text-xs mt-3 font-medium" style={{ color: COLORS.textMuted }}>
+          ¿No recuerdas tu PIN?
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Modal de confirmación reutilizado por TODA acción sensible: cambiar el PIN, desactivarlo, o
+// quitar protección de una sección/función (apartado 3, el caso crítico de Seguridad). Al ser un
+// único componente, cualquier sitio nuevo que en el futuro necesite "pedir el PIN antes de hacer
+// algo" lo reutiliza en vez de inventar su propia pantalla de verificación.
+export function VerificacionPinModal({ seguridad, accent, motivo, onSuccess, onCancel, onOlvidoPin }) {
+  const [error, setError] = useState('');
+  const [verificando, setVerificando] = useState(false);
+
+  const intentar = async (valor) => {
+    setVerificando(true);
+    const ok = await verificarPin(valor, seguridad.pinHash, seguridad.pinSalt);
+    setVerificando(false);
+    if (ok) onSuccess(); else setError('PIN incorrecto');
+  };
+
+  // Optimización de navegación/scroll — `createPortal` saca el modal fuera de cualquier árbol con
+  // `.module-enter` (transform permanente por su animación de entrada, ver App.jsx/index.css) para
+  // que `fixed inset-0` se ancle siempre al viewport real, no a un contenedor de página larga.
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCancel}>
+      <div
+        className="w-full max-w-sm rounded-3xl p-6 text-center"
+        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <ShieldCheck size={22} style={{ color: accent, margin: '0 auto 10px' }} />
+        <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Confirma tu PIN</p>
+        <p className="text-xs mb-4 px-2" style={{ color: COLORS.textMuted }}>{motivo}</p>
+        <EntradaPin accent={accent} onSubmit={intentar} cargando={verificando} error={error} autoFocus />
+        <div className="flex items-center justify-center gap-5 mt-4">
+          <button onClick={onCancel} className="text-xs font-medium" style={{ color: COLORS.textMuted }}>Cancelar</button>
+          {onOlvidoPin && (
+            <button onClick={onOlvidoPin} className="text-xs font-medium" style={{ color: COLORS.textMuted }}>¿No recuerdas tu PIN?</button>
+          )}
         </div>
       </div>
-      {error && <p className="text-xs mt-2" style={{ color: COLORS.negative }}>{error}</p>}
-    </div>
+    </div>,
+    document.body
+  );
+}
+
+// Modal de creación/cambio de PIN — en dos pasos (nuevo → confirmar) para evitar que un error de
+// tecleo deje a Josué con un PIN distinto al que cree que puso. Se usa tanto para crear el primer
+// PIN, como para cambiarlo (tras confirmar el actual con VerificacionPinModal) y como paso final
+// de la recuperación por correo — en los tres casos es la misma pantalla, coherente con el resto.
+export function CrearPinModal({ accent, titulo, onGuardar, onCancel, permitirCancelar = true }) {
+  const [paso, setPaso] = useState(1);
+  const [nuevo, setNuevo] = useState('');
+  const [valor, setValor] = useState('');
+  const [error, setError] = useState('');
+
+  const continuar = () => {
+    if (valor.length < 4) return;
+    if (paso === 1) {
+      setNuevo(valor); setValor(''); setError(''); setPaso(2);
+    } else if (valor !== nuevo) {
+      setError('No coincide con el PIN anterior. Empieza de nuevo.');
+      setPaso(1); setNuevo(''); setValor('');
+    } else {
+      onGuardar(nuevo);
+    }
+  };
+
+  // Optimización de navegación/scroll — mismo motivo que VerificacionPinModal: portal para anclar
+  // siempre al viewport real, no a un `.module-enter` con transform permanente.
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
+      <div className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
+        <Lock size={22} style={{ color: accent, margin: '0 auto 10px' }} />
+        <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>{titulo || 'Crea tu PIN'}</p>
+        <p className="text-xs mb-4" style={{ color: COLORS.textMuted }}>
+          {paso === 1 ? 'Elige un PIN de 4 a 6 dígitos.' : 'Repite el mismo PIN para confirmarlo.'}
+        </p>
+        <div className="flex items-center gap-2 justify-center">
+          <TextInput
+            type="password" inputMode="numeric" maxLength={6} placeholder="PIN" autoFocus
+            value={valor} onChange={(e) => setValor(e.target.value.replace(/\D/g, ''))}
+            onKeyDown={(e) => e.key === 'Enter' && continuar()}
+            style={{ textAlign: 'center', maxWidth: 120 }}
+          />
+          <div style={{ width: 92, flexShrink: 0 }}>
+            <PrimaryButton accent={accent} disabled={valor.length < 4} onClick={continuar}>
+              {paso === 1 ? 'Siguiente' : 'Guardar'}
+            </PrimaryButton>
+          </div>
+        </div>
+        {error && <p className="text-xs mt-2" style={{ color: COLORS.negative }}>{error}</p>}
+        {permitirCancelar && (
+          <button onClick={onCancel} className="text-xs font-medium mt-4" style={{ color: COLORS.textMuted }}>Cancelar</button>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// "¿No recuerdas tu PIN?" — verificación de identidad real vía el sistema de recuperación de
+// Supabase (nunca solo con el correo: hace falta abrir el enlace que llega a esa bandeja). Nunca
+// pide ni guarda la contraseña de la cuenta de correo — solo compara el email introducido con el
+// de la cuenta ya autenticada, como paso previo para no enviar el enlace a un correo cualquiera.
+export function RecuperarPinModal({ accent, emailCuenta, onEnviar, onCancel }) {
+  const [email, setEmail] = useState('');
+  const [estado, setEstado] = useState('form'); // 'form' | 'enviando' | 'enviado'
+  const [error, setError] = useState('');
+
+  const enviar = async () => {
+    setError('');
+    if (email.trim().toLowerCase() !== (emailCuenta || '').toLowerCase()) {
+      setError('Ese correo no coincide con el de tu cuenta.');
+      return;
+    }
+    setEstado('enviando');
+    try {
+      await onEnviar(email.trim());
+      setEstado('enviado');
+    } catch (e) {
+      setError(e.message || 'No se ha podido enviar el correo. Prueba de nuevo.');
+      setEstado('form');
+    }
+  };
+
+  // Optimización de navegación/scroll — mismo motivo que el resto de modales de esta fase.
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCancel}>
+      <div
+        className="w-full max-w-sm rounded-3xl p-6"
+        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-center mb-1">
+          <Mail size={22} style={{ color: accent, margin: '0 auto 10px' }} />
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Recuperar PIN</p>
+        </div>
+        {estado === 'enviado' ? (
+          <p className="text-xs text-center mt-3 px-1" style={{ color: COLORS.textMuted }}>
+            Te hemos enviado un enlace a {email}. Ábrelo desde este dispositivo — al hacerlo podrás crear un PIN nuevo aquí mismo, sin que se muestre el anterior.
+          </p>
+        ) : (
+          <>
+            <p className="text-xs text-center mb-4 px-1" style={{ color: COLORS.textMuted }}>
+              Introduce el correo de tu cuenta. Te enviaremos un enlace de verificación real — nunca se te pedirá la contraseña de tu correo.
+            </p>
+            <TextInput
+              type="email" placeholder="tu@correo.com" autoFocus
+              value={email} onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && enviar()}
+              style={{ textAlign: 'center' }}
+            />
+            {error && <p className="text-xs mt-2 text-center" style={{ color: COLORS.negative }}>{error}</p>}
+            <div style={{ marginTop: 12 }}>
+              <PrimaryButton accent={accent} disabled={!email.trim() || estado === 'enviando'} onClick={enviar}>
+                {estado === 'enviando' ? 'Enviando…' : 'Enviar enlace'}
+              </PrimaryButton>
+            </div>
+          </>
+        )}
+        <button onClick={onCancel} className="text-xs font-medium mt-4 w-full text-center" style={{ color: COLORS.textMuted }}>
+          {estado === 'enviado' ? 'Cerrar' : 'Cancelar'}
+        </button>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -355,7 +556,8 @@ export function UniversalSearchModal({ accent, onClose, buildContext }) {
     }
   };
 
-  return (
+  // Optimización de navegación/scroll — portal, mismo motivo que el resto de modales de esta fase.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
       <div
         className="w-full max-w-md rounded-3xl p-4"
@@ -395,7 +597,8 @@ export function UniversalSearchModal({ accent, onClose, buildContext }) {
           </p>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
 import { COLORS } from '../tokens';
 import { uid, calcularDuracion, formatFecha, todayISO } from '../lib/helpers';
-import { Card, SectionTitle, Field, TextInput, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
+import { Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
 
 export default function SleepView({ sueno, onAdd, accent }) {
   const [showForm, setShowForm] = useState(false);
@@ -64,17 +64,18 @@ export default function SleepView({ sueno, onAdd, accent }) {
         </Card>
       )}
 
-      <div className="space-y-2">
-        {sueno.length === 0 && <EmptyHint text="Todavía no has registrado ninguna noche." />}
-        {[...sueno].reverse().slice(0, 6).map((e) => (
-          <Card key={e.id} style={{ padding: '1rem' }} className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{formatFecha(e.fecha)} · {calcularDuracion(e.horaDormir, e.horaDespertar)} h</p>
-              <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{e.horaDormir} – {e.horaDespertar} · calidad {e.calidad}/5</p>
-            </div>
-          </Card>
-        ))}
-      </div>
+      {sueno.length === 0
+        ? <EmptyHint text="Todavía no has registrado ninguna noche." />
+        : (
+          <ListCard>
+            {[...sueno].reverse().slice(0, 6).map((e, i, arr) => (
+              <ListRow key={e.id} last={i === arr.length - 1}>
+                <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{formatFecha(e.fecha)} · {calcularDuracion(e.horaDormir, e.horaDespertar)} h</p>
+                <p className="text-xs flex-shrink-0" style={{ color: COLORS.textMuted }}>{e.horaDormir}–{e.horaDespertar} · {e.calidad}/5</p>
+              </ListRow>
+            ))}
+          </ListCard>
+        )}
 
       <AIPanel
         label="Analizar mi sueño"

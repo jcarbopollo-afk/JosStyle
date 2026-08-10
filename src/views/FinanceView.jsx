@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { uid, formatFecha, todayISO } from '../lib/helpers';
-import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
+import { Card, ListCard, ListRow, SectionTitle, Field, TextInput, Select, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
 
 export default function FinanceView({ economia, onAddMovimiento, onUpdateHucha, accent }) {
   const [showForm, setShowForm] = useState(false);
@@ -29,6 +29,8 @@ export default function FinanceView({ economia, onAddMovimiento, onUpdateHucha, 
         </div>
       </div>
 
+      {/* Optimización de navegación/scroll — "Hucha" pasa de tarjeta propia a una fila dentro de
+          la misma Card de "Cuenta principal": mismo contenido, una tarjeta menos apilada. */}
       <Card>
         <p className="text-xs" style={{ color: COLORS.textMuted }}>Cuenta principal</p>
         <p className="text-3xl font-extrabold mt-1" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{saldo.toFixed(2)} €</p>
@@ -36,11 +38,10 @@ export default function FinanceView({ economia, onAddMovimiento, onUpdateHucha, 
           <span style={{ color: COLORS.positive }} className="flex items-center gap-1"><TrendingUp size={13} /> +{ingresosMes.toFixed(2)} € este mes</span>
           <span style={{ color: COLORS.negative }} className="flex items-center gap-1"><TrendingDown size={13} /> -{gastosMes.toFixed(2)} € este mes</span>
         </div>
-      </Card>
-
-      <Card className="flex items-center justify-between">
-        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Hucha</p>
-        <TextInput type="number" value={economia.hucha} onChange={(e) => onUpdateHucha(Number(e.target.value))} style={{ width: 100, textAlign: 'right' }} />
+        <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Hucha</p>
+          <TextInput type="number" value={economia.hucha} onChange={(e) => onUpdateHucha(Number(e.target.value))} style={{ width: 100, textAlign: 'right' }} />
+        </div>
       </Card>
 
       {showForm && (
@@ -61,20 +62,23 @@ export default function FinanceView({ economia, onAddMovimiento, onUpdateHucha, 
         </Card>
       )}
 
-      <div className="space-y-2">
-        {economia.movimientos.length === 0 && <EmptyHint text="Todavía no has registrado ningún movimiento." />}
-        {[...economia.movimientos].reverse().slice(0, 8).map((m) => (
-          <Card key={m.id} style={{ padding: '0.9rem 1.1rem' }} className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{m.concepto}</p>
-              <p className="text-xs" style={{ color: COLORS.textMuted }}>{formatFecha(m.fecha)}</p>
-            </div>
-            <p className="text-sm font-bold" style={{ color: m.tipo === 'ingreso' ? COLORS.positive : COLORS.negative }}>
-              {m.tipo === 'ingreso' ? '+' : '-'}{m.cantidad.toFixed(2)} €
-            </p>
-          </Card>
-        ))}
-      </div>
+      {economia.movimientos.length === 0
+        ? <EmptyHint text="Todavía no has registrado ningún movimiento." />
+        : (
+          <ListCard>
+            {[...economia.movimientos].reverse().slice(0, 8).map((m, i, arr) => (
+              <ListRow key={m.id} last={i === arr.length - 1}>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{m.concepto}</p>
+                  <p className="text-xs" style={{ color: COLORS.textMuted }}>{formatFecha(m.fecha)}</p>
+                </div>
+                <p className="text-sm font-bold flex-shrink-0" style={{ color: m.tipo === 'ingreso' ? COLORS.positive : COLORS.negative }}>
+                  {m.tipo === 'ingreso' ? '+' : '-'}{m.cantidad.toFixed(2)} €
+                </p>
+              </ListRow>
+            ))}
+          </ListCard>
+        )}
 
       <AIPanel
         label="Consejo financiero"

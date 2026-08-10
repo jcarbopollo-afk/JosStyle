@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import { X, Loader2 } from 'lucide-react';
 import { COLORS } from '../tokens';
@@ -40,7 +41,11 @@ export default function BarcodeScanner({ onDetected, onClose, accent }) {
     };
   }, [onDetected]);
 
-  return (
+  // Optimización de navegación/scroll — sin `createPortal`, este escáner "fixed" quedaba anclado
+  // al contenedor `.module-enter` de Nutrición (con `transform` permanente por su animación de
+  // entrada, ver App.jsx/index.css) en vez del viewport real: en vez de cubrir toda la pantalla,
+  // podía quedar cortado o desplazado según la altura del contenido de esa vista.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#000' }}>
       <div className="flex items-center justify-between p-4" style={{ background: 'rgba(5,6,10,0.85)' }}>
         <p className="text-sm font-semibold text-white">Apunta al código de barras</p>
@@ -68,6 +73,7 @@ export default function BarcodeScanner({ onDetected, onClose, accent }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

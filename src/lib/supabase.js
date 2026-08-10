@@ -28,9 +28,29 @@ export function onAuthChange(callback) {
   return () => sub.subscription.unsubscribe();
 }
 
+// Fase de Seguridad Centralizada — recuperación de PIN. Suscripción aparte de onAuthChange (no la
+// sustituye: App.jsx sigue usando esa para la sesión general) que expone también el propio evento,
+// para poder detectar específicamente 'PASSWORD_RECOVERY' — el momento en que Josué ha pulsado el
+// enlace de recuperación que le llegó por correo. Supabase permite varias suscripciones a la vez
+// sin conflicto entre ellas.
+export function onAuthEvent(callback) {
+  const { data: sub } = supabase.auth.onAuthStateChange((event, session) => callback(event, session));
+  return () => sub.subscription.unsubscribe();
+}
+
 export async function getSession() {
   const { data } = await supabase.auth.getSession();
   return data.session;
+}
+
+// Envía el correo de recuperación de Supabase — se usa como verificación real de identidad para
+// "¿No recuerdas tu PIN?" (nunca para tocar la contraseña de la cuenta: no se pide ni se guarda en
+// ningún momento). Al abrir el enlace desde el correo, Supabase arranca una sesión de recuperación
+// en el propio dispositivo y dispara el evento 'PASSWORD_RECOVERY' que escucha onAuthEvent — solo
+// entonces la app deja crear un PIN nuevo.
+export async function sendPasswordReset(email, redirectTo) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) throw error;
 }
 
 /* ---------- Datos: una fila por usuario + "clave" (misma idea que las claves de window.storage) ---------- */

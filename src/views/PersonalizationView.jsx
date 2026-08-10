@@ -37,13 +37,18 @@ function IconoPicker({ moduloId, iconoActual, onSetIcono, accent }) {
   );
 }
 
-function FilaModulo({ modulo, index, total, personalizacion, onMove, onToggleOculto, onSetIcono, onTogglePinExtra, accent }) {
+// Fase de Seguridad Centralizada — `protectedAreas` viene de `seguridad.protectedAreas` (App.jsx),
+// ya no de `personalizacion.pinExtra`: este candado y la lista completa de "Protección mediante
+// PIN" en Ajustes → Seguridad son la misma fuente de datos (apartado 8/9, un único sistema). El
+// toggle sigue siendo `onTogglePinExtra`, mismo nombre de prop de siempre, pero ahora llama a
+// `toggleAreaProtegida` — que pide el PIN actual si lo que se está haciendo es quitar protección.
+function FilaModulo({ modulo, index, total, personalizacion, protectedAreas, onMove, onToggleOculto, onSetIcono, onTogglePinExtra, accent }) {
   const [pickerAbierto, setPickerAbierto] = useState(false);
   const [confirmandoOcultar, setConfirmandoOcultar] = useState(false);
 
   const oculto = personalizacion.ocultos.includes(modulo.id);
   const esRelacion = modulo.id === 'relacion';
-  const protegidoExtra = esRelacion || personalizacion.pinExtra.includes(modulo.id);
+  const protegidoExtra = esRelacion || protectedAreas.includes(modulo.id);
   const IconoBase = modulo.icon;
   const IconoElegido = ICONOS_PERSONALIZABLES_MAP[personalizacion.iconos[modulo.id]];
   const Icono = IconoElegido || IconoBase;
@@ -179,7 +184,7 @@ function ModoAppSection({ modo, onSetModo, accent }) {
   );
 }
 
-export default function PersonalizationView({ modulos, personalizacion, onMove, onToggleOculto, onSetIcono, onTogglePinExtra, onToggleFavorita, onMoveFavorita, modo, onSetModo, accent }) {
+export default function PersonalizationView({ modulos, personalizacion, protectedAreas, onMove, onToggleOculto, onSetIcono, onTogglePinExtra, onToggleFavorita, onMoveFavorita, modo, onSetModo, accent }) {
   return (
     <div className="space-y-4">
       <ModoAppSection modo={modo} onSetModo={onSetModo} accent={accent} />
@@ -198,6 +203,7 @@ export default function PersonalizationView({ modulos, personalizacion, onMove, 
               index={i}
               total={modulos.length}
               personalizacion={personalizacion}
+              protectedAreas={protectedAreas}
               onMove={onMove}
               onToggleOculto={onToggleOculto}
               onSetIcono={onSetIcono}

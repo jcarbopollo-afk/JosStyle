@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ChevronLeft, ChevronRight, Plus, X, Trash2, Clock, MapPin, Lock, ExternalLink, Search,
   Target, Flame, Repeat, GraduationCap, Dumbbell, Star, Bell, Circle,
@@ -159,7 +160,11 @@ function EditorEvento({ base, accent, onGuardar, onEliminar, onCerrar }) {
     });
   };
 
-  return (
+  // Optimización de navegación/scroll — `createPortal` saca el editor fuera del árbol de
+  // `.module-enter` (que tiene un `transform` permanente por su animación de entrada, ver
+  // App.jsx/index.css), para que `fixed inset-0` se ancle siempre al viewport real y el editor
+  // aparezca superpuesto de inmediato, nunca "abajo del todo" de una vista larga del calendario.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ background: 'rgba(0,0,0,0.6)' }}
@@ -274,7 +279,8 @@ function EditorEvento({ base, accent, onGuardar, onEliminar, onCerrar }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -284,7 +290,8 @@ function EditorEvento({ base, accent, onGuardar, onEliminar, onCerrar }) {
 // originó cada evento... si procede, poder abrir el elemento original desde el calendario").
 function DetalleEventoDerivado({ evento, accent, onAbrirModulo, onCerrar }) {
   const nombreOrigen = NOMBRES_ORIGEN[evento.origen] || evento.origen;
-  return (
+  // Optimización de navegación/scroll — mismo motivo que el editor de eventos, arriba.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ background: 'rgba(0,0,0,0.6)' }}
@@ -322,7 +329,8 @@ function DetalleEventoDerivado({ evento, accent, onAbrirModulo, onCerrar }) {
           Abrir en {nombreOrigen}
         </PrimaryButton>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -337,7 +345,8 @@ function BuscadorEventos({ eventos, accent, onSeleccionar, onCerrar }) {
     .sort((a, b) => a.fecha.localeCompare(b.fecha))
     .slice(0, 30);
 
-  return (
+  // Optimización de navegación/scroll — mismo motivo que el editor de eventos, arriba.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCerrar}>
       <div
         className="calendar-sheet w-full max-w-md rounded-3xl p-4 max-h-[75vh] flex flex-col"
@@ -370,7 +379,8 @@ function BuscadorEventos({ eventos, accent, onSeleccionar, onCerrar }) {
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

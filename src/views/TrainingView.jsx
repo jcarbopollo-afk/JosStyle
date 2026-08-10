@@ -5,7 +5,7 @@ import { uid, formatFecha, todayISO } from '../lib/helpers';
 import { askAI, askAIWithImages, AI_SYSTEM } from '../lib/ai';
 import { extractFramesFromSrc } from '../lib/videoFrames';
 import { getSignedVideoUrl } from '../lib/supabase';
-import { Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
+import { Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
 
 // Cuántos días seguidos (incluyendo hoy) hay que llevar entrenando la misma habilidad
 // para que aparezca el aviso de "descanso recomendado".
@@ -124,16 +124,21 @@ function PRsTab({ data, onUpdate, accent }) {
         </Field>
         <PrimaryButton accent={accent} onClick={submit}>Guardar PR</PrimaryButton>
       </Card>
-      {prs.length === 0 && <EmptyHint text="Todavía no has registrado ningún PR para esta habilidad." />}
-      {[...prs].reverse().map((pr) => (
-        <Card key={pr.id} style={{ padding: '0.9rem' }}>
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold" style={{ color: accent }}>{pr.valor}</p>
-            <p className="text-xs" style={{ color: COLORS.textMuted }}>{formatFecha(pr.fecha)}</p>
-          </div>
-          {pr.nota && <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{pr.nota}</p>}
-        </Card>
-      ))}
+      {prs.length === 0
+        ? <EmptyHint text="Todavía no has registrado ningún PR para esta habilidad." />
+        : (
+          <ListCard>
+            {[...prs].reverse().map((pr, i, arr) => (
+              <ListRow key={pr.id} last={i === arr.length - 1} style={{ display: 'block' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold" style={{ color: accent }}>{pr.valor}</p>
+                  <p className="text-xs" style={{ color: COLORS.textMuted }}>{formatFecha(pr.fecha)}</p>
+                </div>
+                {pr.nota && <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{pr.nota}</p>}
+              </ListRow>
+            ))}
+          </ListCard>
+        )}
     </div>
   );
 }
@@ -302,21 +307,27 @@ function VideosTab({ skill, videos, onAddVideo, onDeleteVideo, onSetVideoFeedbac
   );
 }
 
+// Optimización de navegación/scroll — las 7 habilidades de calistenia vivían apiladas en una
+// columna (7 tarjetas × icono+nombre+%+slider, ~90px cada una sin ni siquiera desplegar nada:
+// más de 600px solo para verlas todas). Ahora se colocan en una rejilla de 2 columnas mientras
+// están colegidas (`gridColumn` normal) y la que se toca pasa a ocupar el ancho completo
+// (`gridColumn: '1 / -1'`) para tener sitio de sobra para las 4 subpestañas — mismo contenido,
+// mismas acciones, sin perder ni una función, solo menos alto cuando no hay ninguna abierta.
 function SkillCard({ skill, data, onUpdate, videos, onAddVideo, onDeleteVideo, onSetVideoFeedback, accent }) {
   const [expanded, setExpanded] = useState(false);
   const [sub, setSub] = useState('progresion');
   const full = { nivel: 0, progresion: [], prs: [], sesiones: [], ...data };
 
   return (
-    <Card>
+    <Card style={{ gridColumn: expanded ? '1 / -1' : undefined, padding: expanded ? undefined : '0.9rem' }}>
       <button className="w-full" onClick={() => setExpanded((s) => !s)}>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.text }}>
-            <Trophy size={16} style={{ color: accent }} /> {skill}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <p className="text-sm font-semibold flex items-center gap-1.5 min-w-0 truncate" style={{ color: COLORS.text }}>
+            <Trophy size={15} style={{ color: accent, flexShrink: 0 }} /> <span className="truncate">{skill}</span>
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className="text-xs font-bold" style={{ color: accent }}>{full.nivel}%</span>
-            <ChevronDown size={16} style={{ color: COLORS.textMuted, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+            <ChevronDown size={15} style={{ color: COLORS.textMuted, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
           </div>
         </div>
       </button>
@@ -366,7 +377,7 @@ export default function TrainingView({ calistenia, onUpdateSkill, futbol, onAddP
       </div>
 
       {sub === 'calistenia' && (
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
           {SKILLS.map((skill) => (
             <SkillCard
               key={skill} skill={skill} data={calistenia[skill]} onUpdate={onUpdateSkill}
@@ -387,13 +398,18 @@ export default function TrainingView({ calistenia, onUpdateSkill, futbol, onAddP
               Registrar partido de hoy
             </PrimaryButton>
           </Card>
-          {futbol.length === 0 && <EmptyHint text="Todavía no has registrado ningún partido." />}
-          {[...futbol].reverse().map((p) => (
-            <Card key={p.id} style={{ padding: '1rem' }}>
-              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{formatFecha(p.fecha)}</p>
-              {p.nota && <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{p.nota}</p>}
-            </Card>
-          ))}
+          {futbol.length === 0
+            ? <EmptyHint text="Todavía no has registrado ningún partido." />
+            : (
+              <ListCard>
+                {[...futbol].reverse().map((p, i, arr) => (
+                  <ListRow key={p.id} last={i === arr.length - 1} style={{ display: 'block' }}>
+                    <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{formatFecha(p.fecha)}</p>
+                    {p.nota && <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{p.nota}</p>}
+                  </ListRow>
+                ))}
+              </ListCard>
+            )}
         </div>
       )}
 

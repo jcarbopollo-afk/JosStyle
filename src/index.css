@@ -106,6 +106,17 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
 .module-enter {
   animation: moduleSlideIn 340ms var(--ease-premium) both;
 }
+/* Nota para quien toque esto — Optimización de navegación/scroll: `animation-fill-mode: both`
+   deja aplicado el `transform` del último fotograma (scale(1) translateX(0)) para siempre después
+   de que la animación termine, y CUALQUIER `transform` distinto de `none` (aunque sea "visualmente
+   igual a nada") convierte a este `<div>` en el "containing block" de sus descendientes con
+   `position: fixed` — es decir, un modal `fixed inset-0` anidado aquí dentro ya NO se ancla al
+   viewport real, sino al tamaño de ESTE contenedor (que puede ser mucho más alto que la pantalla
+   si la vista tiene scroll). Por eso todos los overlays `fixed inset-0` de la app (ColorPicker,
+   TemaBuilder, los modales de Seguridad, el editor del Calendario, el escáner de código de barras)
+   se montan con `createPortal(..., document.body)` — evita este problema por construcción, sin
+   tocar esta animación. Si en el futuro se añade un nuevo overlay `fixed`, debe montarse igual,
+   con portal, o reaparecerá el mismo bug. */
 
 /* Fase N2 — la barra "← {Área}" entra con un fundido lateral corto y más rápido que el contenido
    de debajo, para que se sienta como una capa fija que ya estaba ahí, no como si arrastrara con

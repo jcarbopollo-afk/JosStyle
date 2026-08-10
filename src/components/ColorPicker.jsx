@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Star } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
@@ -139,7 +140,15 @@ export default function ColorPicker({
     </label>
   );
 
-  return (
+  // Optimización de navegación/scroll — el editor debe aparecer pegado al botón que lo abre, nunca
+  // "abajo del todo" de una pantalla larga de Ajustes. `position: fixed` solo se posiciona contra
+  // el viewport real si NINGÚN ancestro tiene `transform`/`filter`/`will-change` activo — pero
+  // `.module-enter` (la animación de entrada de cada pantalla, App.jsx/index.css) sí lo tiene
+  // (`animation-fill-mode: both` deja aplicado `transform: scale(1)` para siempre tras la
+  // animación), así que sin portal este panel quedaba "fixed" respecto a ese contenedor larguísimo
+  // en vez del propio viewport — apareciendo mucho más abajo de lo esperado. `createPortal` lo saca
+  // fuera de ese árbol, directo a `document.body`, donde `fixed` sí se ancla siempre a la pantalla.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
       <div
         className="w-full max-w-md rounded-t-3xl p-4 max-h-[90vh] overflow-y-auto"
@@ -274,6 +283,7 @@ export default function ColorPicker({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -68,7 +68,7 @@ function AvisoSuenoCorto({ ultimoSueno, accent, notificaciones }) {
   if (!ultimoSueno) return null;
   if (horas >= 7) return null;
   return (
-    <Card style={{ border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
+    <Card style={{ padding: '0.85rem 1.1rem', border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
       <p className="text-sm" style={{ color: COLORS.text }}>
         Anoche dormiste <span className="font-semibold">{horas} h</span> — hoy quizá compense una sesión de entreno más suave, y esta noche adelantar un poco la hora de dormir.
       </p>
@@ -95,7 +95,7 @@ function AvisoRachaEnRiesgo({ productividad, accent, notificaciones }) {
   if (!productividad) return null;
   if (!enRiesgo) return null;
   return (
-    <Card style={{ border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
+    <Card style={{ padding: '0.85rem 1.1rem', border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
       <p className="text-sm flex items-center gap-2" style={{ color: COLORS.text }}>
         <Flame size={15} style={{ color: accent, flexShrink: 0 }} />
         Tu racha de <span className="font-semibold">"{enRiesgo.nombre}"</span> ({enRiesgo.rachaActual} días) se rompe si no la marcas hoy.
@@ -130,7 +130,7 @@ function AvisoExamenSinHoras({ estudios, accent, notificaciones }) {
   if (!proximo) return null;
   if (horasRecientes > 0) return null;
   return (
-    <Card style={{ border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
+    <Card style={{ padding: '0.85rem 1.1rem', border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
       <p className="text-sm flex items-center gap-2" style={{ color: COLORS.text }}>
         <GraduationCap size={15} style={{ color: accent, flexShrink: 0 }} />
         Examen{proximo.ex.tema ? ` de "${proximo.ex.tema}"` : ''} {proximo.dias === 0 ? 'hoy' : `en ${proximo.dias} días`} — todavía no has registrado horas de estudio de esa asignatura esta semana.
@@ -146,11 +146,11 @@ function ModoBanner({ modo, accent }) {
   const m = MODOS_APP.find((x) => x.id === modo);
   if (!m) return null;
   return (
-    <Card style={{ border: `1px solid ${hexToRgba(accent, 0.3)}` }}>
-      <p className="text-xs font-semibold mb-2 flex items-center gap-1.5" style={{ color: accent }}>
+    <Card style={{ padding: '0.85rem 1.1rem', border: `1px solid ${hexToRgba(accent, 0.3)}` }}>
+      <p className="text-xs font-semibold mb-1.5 flex items-center gap-1.5" style={{ color: accent }}>
         <Plane size={13} /> Modo {m.label} activo
       </p>
-      <ul className="space-y-1">
+      <ul className="space-y-0.5">
         {m.tips.map((t, i) => (
           <li key={i} className="text-xs" style={{ color: COLORS.textMuted }}>· {t}</li>
         ))}
@@ -193,25 +193,30 @@ export default function DashboardView({ perfil, sueno, calistenia, futbol, econo
         </div>
       </Card>
 
-      <ModoBanner modo={modo} accent={accent} />
-      <AccesoCalendario calendario={calendario} derivadosCalendario={derivadosCalendario} accent={accent} onAbrir={onAbrirCalendario} />
-      <RecordatorioPareja relacion={relacion} accent={accent} />
-      <AvisoSuenoCorto ultimoSueno={ultimoSueno} accent={accent} notificaciones={notificaciones} />
-      <AvisoRachaEnRiesgo productividad={productividad} accent={accent} notificaciones={notificaciones} />
-      <AvisoExamenSinHoras estudios={estudios} accent={accent} notificaciones={notificaciones} />
+      {/* Optimización de navegación/scroll — este grupo de avisos (varios de ellos condicionales,
+          nunca todos a la vez salvo mala suerte) va en su propio `space-y-2` más apretado que el
+          resto de la pantalla (`space-y-4`), y cada tarjeta usa un padding más compacto — mismo
+          contenido y mismas acciones, menos aire entre una y otra. */}
+      <div className="space-y-2">
+        <ModoBanner modo={modo} accent={accent} />
+        <AccesoCalendario calendario={calendario} derivadosCalendario={derivadosCalendario} accent={accent} onAbrir={onAbrirCalendario} />
+        <RecordatorioPareja relacion={relacion} accent={accent} />
+        <AvisoSuenoCorto ultimoSueno={ultimoSueno} accent={accent} notificaciones={notificaciones} />
+        <AvisoRachaEnRiesgo productividad={productividad} accent={accent} notificaciones={notificaciones} />
+        <AvisoExamenSinHoras estudios={estudios} accent={accent} notificaciones={notificaciones} />
+      </div>
 
-      {favoritas && favoritas.length > 0 && (
-        <div className="grid grid-cols-2 gap-3">
-          {favoritas.map((f) => (
-            <Card key={f.id}>
-              <p className="text-xs" style={{ color: COLORS.textMuted }}>{f.label}</p>
-              <p className="text-lg font-bold mt-1 truncate" style={{ color: COLORS.text }}>{f.valor}</p>
-            </Card>
-          ))}
-        </div>
-      )}
-
+      {/* Optimización de navegación/scroll — las métricas favoritas (Fase 19, hasta 4) y las dos
+          estadísticas fijas (sueño/saldo) vivían en dos rejillas de 2 columnas separadas, con su
+          propio hueco vertical entre ellas; ahora es una única rejilla — mismo contenido, una
+          rejilla menos que apilar. */}
       <div className="grid grid-cols-2 gap-3">
+        {favoritas && favoritas.map((f) => (
+          <Card key={f.id}>
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>{f.label}</p>
+            <p className="text-lg font-bold mt-1 truncate" style={{ color: COLORS.text }}>{f.valor}</p>
+          </Card>
+        ))}
         <Card>
           <p className="text-xs" style={{ color: COLORS.textMuted }}>Sueño anoche</p>
           <p className="text-xl font-bold mt-1" style={{ color: COLORS.text }}>

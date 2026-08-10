@@ -461,10 +461,27 @@ export const DEFAULT_NOTIFICACIONES = {
 // al PIN que ya vive ahí (biometría es un método de desbloqueo alternativo del mismo candado).
 // `biometriaCredencialId` es el id (en base64) de la credencial WebAuthn creada en este
 // dispositivo — ver src/lib/biometria.js para el límite honesto de qué tan "segura" es esto.
+// Fase de Seguridad Centralizada — sustituye el PIN en texto plano (`ajustes.pin`) y las zonas
+// protegidas dispersas (`personalizacion.pinExtra`, el caso especial hardcodeado de 'relacion')
+// por un único sistema: `pinHash`/`pinSalt` (ver src/lib/pin.js, nunca texto plano) y dos listas
+// centralizadas, `protectedAreas` (protección de sección, a la entrada) y `protectedActions`
+// (protección de función, solo al realizar la acción concreta — ver ACCIONES_PROTEGIBLES). Ningún
+// módulo futuro necesita tocar este archivo para volverse "protegible": basta con que su id exista
+// en MORE_NAV (App.jsx) para aparecer solo en la lista de "Protección mediante PIN" de Seguridad.
+// `migradoAreas`/`migradoAcciones` son banderas internas de una sola vez (ver App.jsx) para que la
+// migración desde el sistema antiguo no vuelva a "resucitar" secciones que Josué ya desprotegió
+// a mano tras la migración — no son campos pensados para tocarse desde la UI.
 export const DEFAULT_SEGURIDAD = {
   bloqueoAutomatico: 'nunca', // 'inmediato' | '30s' | '1min' | '5min' | '15min' | 'nunca'
   biometriaActiva: false,
   biometriaCredencialId: null,
+  pinHash: null,
+  pinSalt: null,
+  protectedAreas: [],
+  protectedActions: [],
+  sessionTimeoutMin: 5, // minutos que una sección/función queda desbloqueada tras acertar el PIN; 0 = pedir siempre
+  migradoAreas: false,
+  migradoAcciones: false,
 };
 
 export const OPCIONES_BLOQUEO_AUTOMATICO = [
@@ -474,6 +491,29 @@ export const OPCIONES_BLOQUEO_AUTOMATICO = [
   { value: '5min', label: '5 minutos', ms: 300000 },
   { value: '15min', label: '15 minutos', ms: 900000 },
   { value: 'nunca', label: 'Nunca (no recomendado)', ms: null },
+];
+
+// Cuánto dura una sección/función "desbloqueada temporalmente" tras acertar el PIN una vez, antes
+// de tener que volver a pedirlo (apartado 6 de la especificación de Seguridad). 0 = sin sesión
+// temporal: se pide el PIN cada vez que se entra de nuevo en la sección (pero no a media visita).
+export const OPCIONES_SESION_PIN = [
+  { value: 1, label: '1 minuto' },
+  { value: 5, label: '5 minutos' },
+  { value: 15, label: '15 minutos' },
+  { value: 30, label: '30 minutos' },
+  { value: 0, label: 'Pedir siempre' },
+];
+
+// Catálogo de acciones protegibles a nivel de función (no de pantalla entera) — apartado 2 de la
+// especificación: "proteger acciones sensibles concretas, no solo pantallas". `defecto: true` en
+// 'fotos_privadas' porque HealthView ya protegía esa pestaña siempre, de forma fija, antes de esta
+// fase — la migración (App.jsx) la activa sola para no cambiar el comportamiento de nadie que ya
+// tuviera PIN configurado. El resto se cataloga preparado pero empieza desactivado (no existían
+// antes, así que activarlas es una mejora opcional, nunca una sorpresa para quien ya usaba la app).
+export const ACCIONES_PROTEGIBLES = [
+  { id: 'fotos_privadas', label: 'Ver fotos privadas de Salud', defecto: true },
+  { id: 'exportar_datos', label: 'Exportar datos (CSV / Excel)', defecto: false },
+  { id: 'eliminar_datos', label: 'Eliminar datos por categoría', defecto: false },
 ];
 
 export const CATEGORIAS_NOTIFICACION = [

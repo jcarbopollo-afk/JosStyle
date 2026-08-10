@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar } from 'lucide-react';
-import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO } from './tokens';
-import { getSession, onAuthChange, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo } from './lib/supabase';
+import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO } from './tokens';
+import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, hexToRgba } from './lib/helpers';
 import { extractPdfText } from './lib/pdfText';
 import { prediccionObjetivo } from './lib/predicciones';
 import { verificarBiometria } from './lib/biometria';
+import { crearPinHash, verificarPin } from './lib/pin';
 import { calcularResumenModulo } from './lib/resumenesHub';
 import { eventosDerivados } from './lib/calendarioIntegracion';
-import { PinGate, SuggestionsButton, UniversalSearchModal } from './components/ui';
+import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal } from './components/ui';
 import HubView from './views/HubView';
 import Auth from './components/Auth';
 import DashboardView from './views/DashboardView';
@@ -83,6 +84,14 @@ const AREAS_NAV = [
   { id: 'area-mas', label: 'Más', icon: MoreHorizontal, modulos: ['relacion', 'fe', 'bienestar', 'estadisticas', 'predicciones', 'logros', 'ajustes'] },
 ];
 
+// Fase de Seguridad Centralizada — catálogo de "áreas protegibles" (apartado 1 de la
+// especificación: "no debe limitarse a los módulos actuales, cualquier módulo futuro debe poder
+// declararse protegible"). Se construye a partir de MORE_NAV, el mismo catálogo plano que ya usa
+// Personalización — así un módulo nuevo que se añada ahí en el futuro aparece solo en la lista de
+// "Protección mediante PIN" de Seguridad, sin tocar este archivo. 'hoy' se añade aparte porque
+// vive fuera de MORE_NAV (es la pestaña fija de inicio) pero también puede querer protegerse.
+const AREAS_PROTEGIBLES = [{ id: 'hoy', label: 'Hoy', icon: Home }, ...MORE_NAV];
+
 function LoadingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: COLORS.bg }}>
@@ -95,8 +104,9 @@ function LoadingScreen() {
 // rápido por biometría (si Josué la activó, apartado 145 — prioridad biometría/PIN respaldo) y
 // PIN como respaldo siempre disponible. Distinta del PinGate por sección (Fase 2/12/19): esta
 // bloquea la app entera tras un periodo de inactividad, no una sección concreta al navegar a ella.
-function BloqueoAutomaticoGate({ pin, accent, seguridad, onUnlock }) {
-  const [value, setValue] = useState('');
+// Fase de Seguridad Centralizada: verifica contra el hash (nunca en claro) y comparte el mismo
+// EntradaPin que el resto de pantallas que piden PIN; añade "¿No recuerdas tu PIN?".
+function BloqueoAutomaticoGate({ seguridad, accent, onUnlock, onOlvidoPin }) {
   const [error, setError] = useState('');
   const [verificando, setVerificando] = useState(false);
   const biometriaLista = seguridad.biometriaActiva && !!seguridad.biometriaCredencialId;
@@ -108,9 +118,11 @@ function BloqueoAutomaticoGate({ pin, accent, seguridad, onUnlock }) {
     setVerificando(false);
     if (ok) onUnlock(); else setError('No se ha podido verificar. Prueba de nuevo o usa el PIN.');
   };
-  const tryUnlock = () => {
-    if (value === pin) onUnlock();
-    else { setError('PIN incorrecto'); setValue(''); }
+  const intentarPin = async (valor) => {
+    setVerificando(true);
+    const ok = await verificarPin(valor, seguridad.pinHash, seguridad.pinSalt);
+    setVerificando(false);
+    if (ok) onUnlock(); else setError('PIN incorrecto');
   };
 
   return (
@@ -127,23 +139,12 @@ function BloqueoAutomaticoGate({ pin, accent, seguridad, onUnlock }) {
           {verificando ? 'Verificando…' : 'Desbloquear con Face ID / Touch ID'}
         </button>
       )}
-      <div className="flex items-center gap-2">
-        <input
-          type="password" inputMode="numeric" maxLength={6} placeholder="PIN"
-          value={value} onChange={(e) => { setValue(e.target.value.replace(/\D/g, '')); setError(''); }}
-          onKeyDown={(e) => e.key === 'Enter' && tryUnlock()}
-          className="rounded-xl px-3 py-2.5 text-sm outline-none text-center"
-          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text, maxWidth: 120 }}
-        />
-        <button
-          onClick={tryUnlock} disabled={value.length < 4}
-          className="px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40"
-          style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
-        >
-          Entrar
+      <EntradaPin accent={accent} onSubmit={intentarPin} cargando={verificando} error={error} />
+      {onOlvidoPin && (
+        <button onClick={onOlvidoPin} className="text-xs font-medium" style={{ color: COLORS.textMuted }}>
+          ¿No recuerdas tu PIN?
         </button>
-      </div>
-      {error && <p className="text-xs" style={{ color: COLORS.negative }}>{error}</p>}
+      )}
     </div>
   );
 }
@@ -153,7 +154,6 @@ export default function App() {
   const [tab, setTab] = useState('hoy');
   const [loaded, setLoaded] = useState(false);
   const [accent, setAccent] = useState(ACCENTS[0].value);
-  const [pin, setPin] = useState(null);
   // Fase A3 — Apariencia avanzada: tema (claro/oscuro/automático), tamaño de texto, densidad,
   // radios de borde y animaciones. `temaSistemaOscuro` solo se usa para resolver "automático".
   const [apariencia, setApariencia] = useState(DEFAULT_APARIENCIA);
@@ -162,8 +162,22 @@ export default function App() {
   );
   // Fase A5 — Seguridad avanzada: bloqueo automático + biometría. `bloqueado` es el estado de la
   // pantalla de bloqueo completa (distinta del PinGate por sección que ya existía).
+  // Fase de Seguridad Centralizada: `seguridad` pasa a ser también el único sitio con el PIN
+  // (hasheado, ver src/lib/pin.js) y las zonas/funciones protegidas — ya no existe un estado
+  // `pin` en claro aparte. `desbloqueosPin` es el mapa de sesiones temporales del apartado 6
+  // (clave `area:<id>` o `accion:<id>` → timestamp de expiración), solo en memoria: al cerrar o
+  // recargar la app se pierde por sí solo, sin necesitar lógica extra (apartado 7). `verificacion`
+  // es la petición de PIN pendiente para confirmar una acción sensible (apartado 3): cambiar PIN,
+  // desactivarlo o quitar protección a una sección/función — un único modal para las tres, en vez
+  // de repetir la pantalla de verificación en cada sitio. `flujoNuevoPin` controla el modal de
+  // crear/cambiar PIN ('primero' | 'cambio' | 'recuperacion' | null) y `recuperandoPin` el modal
+  // de "¿No recuerdas tu PIN?".
   const [seguridad, setSeguridad] = useState(DEFAULT_SEGURIDAD);
   const [bloqueado, setBloqueado] = useState(false);
+  const [desbloqueosPin, setDesbloqueosPin] = useState({});
+  const [verificacion, setVerificacion] = useState(null); // { motivo, onSuccess }
+  const [flujoNuevoPin, setFlujoNuevoPin] = useState(null); // 'primero' | 'cambio' | 'recuperacion' | null
+  const [recuperandoPin, setRecuperandoPin] = useState(false);
   const inactivityTimer = useRef(null);
   const [perfil, setPerfil] = useState(DEFAULT_PERFIL);
   const [sueno, setSueno] = useState([]);
@@ -246,13 +260,52 @@ export default function App() {
       ]);
       if (cancelled) return;
       setAccent(a.accent || ACCENTS[0].value);
-      setPin(a.pin || null);
+      // Fase de Seguridad Centralizada — migración desde el sistema antiguo (apartado 11 de la
+      // especificación, obligatorio y en este orden): (1) partimos de lo que ya hubiera en
+      // `seguridad` (bloqueoAutomatico/biometría, sin tocar); (2) si existía un PIN en texto
+      // plano (`a.pin`, Fase A5 y anteriores) y todavía no hay `pinHash`, se hashea una sola vez
+      // — el texto plano se descarta en el guardado de abajo y no vuelve a escribirse nunca más;
+      // (3) si `personalizacion.pinExtra` (Fase 19) tenía secciones protegidas y esta cuenta
+      // todavía no pasó por esta migración, se vuelcan en `protectedAreas` (unión, 'relacion'
+      // sigue aparte, siempre protegida, igual que antes); (4) 'fotos_privadas' se activa sola en
+      // `protectedActions` la primera vez, porque HealthView ya protegía esa pestaña siempre, sin
+      // opción, desde antes de esta fase — así nadie pierde protección que ya tenía. Las banderas
+      // `migradoAreas`/`migradoAcciones` aseguran que esto pase una única vez: si más adelante
+      // Josué desprotege algo a mano, un recargado no debe "resucitarlo" releyendo `pinExtra`.
+      let seguridadCargada = { ...DEFAULT_SEGURIDAD, ...(a.seguridad || {}) };
+      let migracionPendiente = false;
+      if (!seguridadCargada.pinHash && a.pin) {
+        const { pinHash, pinSalt } = await crearPinHash(a.pin);
+        seguridadCargada = { ...seguridadCargada, pinHash, pinSalt };
+        migracionPendiente = true;
+      }
+      if (!seguridadCargada.migradoAreas) {
+        const pinExtraAntiguo = Array.isArray(pers?.pinExtra) ? pers.pinExtra : [];
+        const areasIniciales = Array.from(new Set([...(seguridadCargada.protectedAreas || []), ...pinExtraAntiguo.filter((id) => id !== 'relacion')]));
+        seguridadCargada = { ...seguridadCargada, protectedAreas: areasIniciales, migradoAreas: true };
+        migracionPendiente = true;
+      }
+      if (!seguridadCargada.migradoAcciones) {
+        seguridadCargada = {
+          ...seguridadCargada,
+          protectedActions: Array.from(new Set([...(seguridadCargada.protectedActions || []), 'fotos_privadas'])),
+          migradoAcciones: true,
+        };
+        migracionPendiente = true;
+      }
+      setSeguridad(seguridadCargada);
+      if (migracionPendiente) {
+        // Persiste la migración y descarta el PIN en texto plano de una vez por todas (`pin:
+        // null`) — de aquí en adelante `ajustes.pin` no vuelve a usarse en ningún guardado.
+        saveData(uidUser, 'ajustes', {
+          accent: a.accent || ACCENTS[0].value, pin: null,
+          apariencia: { ...DEFAULT_APARIENCIA, ...(a.apariencia || {}) },
+          seguridad: seguridadCargada,
+        });
+      }
       // Fase A3: merge con DEFAULT_APARIENCIA, mismo motivo que el merge de perfil de la Fase A2 —
       // un registro `ajustes` guardado antes de esta fase no tiene la clave `apariencia` todavía.
       setApariencia({ ...DEFAULT_APARIENCIA, ...(a.apariencia || {}) });
-      // Fase A5: mismo motivo que apariencia — un registro `ajustes` guardado antes de esta fase
-      // no tiene la clave `seguridad` todavía.
-      setSeguridad({ ...DEFAULT_SEGURIDAD, ...(a.seguridad || {}) });
       // Fase A2: merge con DEFAULT_PERFIL para que un perfil guardado antes de esta fase
       // (sin los campos nuevos: apellidos, sexo, deportesPracticados, idioma, unidades...)
       // no se quede con esos campos en `undefined` — mismo patrón que ya se usaba en
@@ -335,10 +388,13 @@ export default function App() {
 
   // Fase A5 — Bloqueo automático (apartado 146): sin PIN no hay nada que auto-bloquear; con
   // "nunca" (por defecto) tampoco se arma ningún temporizador. Reinicia el temporizador con
-  // cualquier interacción — mismo criterio que un móvil real.
+  // cualquier interacción — mismo criterio que un móvil real. Fase de Seguridad Centralizada:
+  // ahora se arma con `seguridad.pinHash` (nunca hubo PIN en claro que consultar) — mismo criterio
+  // exacto que antes, ni un comportamiento nuevo, solo la fuente de verdad correcta (apartado 7:
+  // "si ya existe bloqueo automático, intégralo, no dupliques sistemas").
   useEffect(() => {
     const opcion = OPCIONES_BLOQUEO_AUTOMATICO.find((o) => o.value === seguridad.bloqueoAutomatico);
-    if (!pin || !opcion || opcion.ms === null) return;
+    if (!seguridad.pinHash || !opcion || opcion.ms === null) return;
     const reiniciar = () => {
       if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
       inactivityTimer.current = setTimeout(() => setBloqueado(true), opcion.ms);
@@ -350,16 +406,38 @@ export default function App() {
       eventos.forEach((ev) => window.removeEventListener(ev, reiniciar));
       if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
     };
-  }, [pin, seguridad.bloqueoAutomatico]);
+  }, [seguridad.pinHash, seguridad.bloqueoAutomatico]);
 
   // "Inmediatamente" además bloquea en cuanto la pestaña/app pasa a segundo plano, no solo tras
   // el margen corto de inactividad de arriba — más fiel al apartado 146 ("Inmediatamente").
   useEffect(() => {
-    if (!pin || seguridad.bloqueoAutomatico !== 'inmediato') return;
+    if (!seguridad.pinHash || seguridad.bloqueoAutomatico !== 'inmediato') return;
     const onVisibility = () => { if (document.hidden) setBloqueado(true); };
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, [pin, seguridad.bloqueoAutomatico]);
+  }, [seguridad.pinHash, seguridad.bloqueoAutomatico]);
+
+  // Fase de Seguridad Centralizada (apartado 7 — integrar con el bloqueo existente, no duplicar):
+  // en cuanto el bloqueo automático de arriba salta, se limpian también todas las sesiones
+  // temporales de sección/función (apartado 6) — volver a entrar en cualquier zona protegida tras
+  // un bloqueo pide el PIN de nuevo, sin excepción.
+  useEffect(() => {
+    if (bloqueado) setDesbloqueosPin({});
+  }, [bloqueado]);
+
+  // Recuperación de PIN — escucha el evento 'PASSWORD_RECOVERY' que Supabase dispara al abrir,
+  // desde este dispositivo, el enlace del correo de recuperación (ver sendPasswordReset más abajo
+  // y RecuperarPinModal). Solo entonces se deja crear un PIN nuevo: la identidad ya quedó
+  // verificada por el propio mecanismo de Supabase, no por haber escrito un correo cualquiera.
+  useEffect(() => {
+    const unsub = onAuthEvent((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setRecuperandoPin(false);
+        setFlujoNuevoPin('recuperacion');
+      }
+    });
+    return unsub;
+  }, []);
 
   if (session === undefined) return <LoadingScreen />;
   if (!session) return <Auth />;
@@ -368,20 +446,103 @@ export default function App() {
   const uidUser = session.user.id;
 
   // Fase A3/A5: `saveData` sobrescribe el valor entero de la clave 'ajustes' (upsert, no fusiona)
-  // — las cuatro funciones deben mandar siempre el paquete completo (accent + pin + apariencia +
-  // seguridad) o se perderían entre sí. Antes de la Fase A3 'ajustes' solo tenía accent/pin.
-  const updateAccent = async (color) => { setAccent(color); await saveData(uidUser, 'ajustes', { accent: color, pin, apariencia, seguridad }); };
-  // Apartado 145: el PIN es el respaldo obligatorio de la biometría — si Josué borra el PIN,
-  // la biometría se desactiva sola en el mismo guardado (nunca queda biometría sin PIN de apoyo).
-  const updatePin = async (newPin) => {
-    setPin(newPin);
-    const seguridadSiguiente = !newPin && seguridad.biometriaActiva ? { ...seguridad, biometriaActiva: false } : seguridad;
-    if (seguridadSiguiente !== seguridad) setSeguridad(seguridadSiguiente);
-    await saveData(uidUser, 'ajustes', { accent, pin: newPin, apariencia, seguridad: seguridadSiguiente });
-  };
-  const updateApariencia = async (next) => { setApariencia(next); await saveData(uidUser, 'ajustes', { accent, pin, apariencia: next, seguridad }); };
-  const updateSeguridad = async (next) => { setSeguridad(next); await saveData(uidUser, 'ajustes', { accent, pin, apariencia, seguridad: next }); };
+  // — las funciones deben mandar siempre el paquete completo (accent + apariencia + seguridad) o
+  // se perderían entre sí. `pin: null` se manda siempre a partir de ahora — el campo en claro
+  // queda descartado para siempre desde la migración de carga, más arriba.
+  const updateAccent = async (color) => { setAccent(color); await saveData(uidUser, 'ajustes', { accent: color, pin: null, apariencia, seguridad }); };
+  const updateApariencia = async (next) => { setApariencia(next); await saveData(uidUser, 'ajustes', { accent, pin: null, apariencia: next, seguridad }); };
+  const updateSeguridad = async (next) => { setSeguridad(next); await saveData(uidUser, 'ajustes', { accent, pin: null, apariencia, seguridad: next }); };
   const updatePerfil = async (next) => { setPerfil(next); await saveData(uidUser, 'perfil', next); };
+
+  // ---------- Fase de Seguridad Centralizada ----------
+  // Único sistema de autenticación que controla todas las zonas protegidas (apartado 8/9 de la
+  // especificación) — todo lo demás (PinGate por sección, HealthView por acción, Personalización,
+  // Seguridad) llama a estas mismas funciones, nunca reimplementa su propia comprobación.
+
+  // "Pide el PIN actual antes de..." — el único punto por el que pasan las tres acciones críticas
+  // del apartado 3: cambiar el PIN, desactivarlo, o quitar protección a una sección/función. Si
+  // todavía no hay PIN configurado no hay nada que verificar — `onExito` se llama directo (p. ej.
+  // proteger una sección por primera vez nunca necesita el PIN, solo quitarle protección).
+  const pedirVerificacionPin = (motivo, onExito) => {
+    if (!seguridad.pinHash) { onExito(); return; }
+    setVerificacion({ motivo, onSuccess: () => { setVerificacion(null); onExito(); } });
+  };
+
+  // Crea el hash+salt nuevos (src/lib/pin.js) y los guarda — nunca el PIN en claro. Se llama tras
+  // el paso de verificación (cambio) o directamente (primera vez / recuperación por correo).
+  const cambiarPin = async (nuevoPin) => {
+    const { pinHash, pinSalt } = await crearPinHash(nuevoPin);
+    const next = { ...seguridad, pinHash, pinSalt };
+    setSeguridad(next);
+    await saveData(uidUser, 'ajustes', { accent, pin: null, apariencia, seguridad: next });
+    setFlujoNuevoPin(null);
+  };
+
+  // Apartado 145 (ya existente): el PIN es el respaldo obligatorio de la biometría, así que
+  // desactivar el PIN desactiva también la biometría en el mismo guardado. Al no quedar PIN,
+  // tampoco tiene sentido mantener zonas/funciones "protegidas" sin nada que las proteja — se
+  // limpian también `protectedAreas`/`protectedActions` (apartado 4: sin esto, la app se quedaría
+  // con secciones marcadas como protegidas mostrando el aviso de "crea un PIN" para siempre).
+  const desactivarPin = async () => {
+    const next = { ...seguridad, pinHash: null, pinSalt: null, protectedAreas: [], protectedActions: [], biometriaActiva: false, biometriaCredencialId: null };
+    setSeguridad(next);
+    setDesbloqueosPin({});
+    await saveData(uidUser, 'ajustes', { accent, pin: null, apariencia, seguridad: next });
+  };
+
+  const iniciarCreacionPin = () => setFlujoNuevoPin('primero');
+  const iniciarCambioPin = () => pedirVerificacionPin('Confirma tu PIN actual para cambiarlo.', () => setFlujoNuevoPin('cambio'));
+  const iniciarDesactivarPin = () => pedirVerificacionPin('Confirma tu PIN para desactivarlo. Se perderá la protección de todas las secciones y funciones.', desactivarPin);
+
+  // Apartado 1/2/3/9 — añadir protección nunca pide PIN (subir la seguridad no es una acción de
+  // riesgo); quitarla siempre pasa por `pedirVerificacionPin`, "especialmente cuando la
+  // modificación reduzca la protección". Estas dos funciones son el único sitio que toca
+  // `protectedAreas`/`protectedActions` — tanto la nueva sección de Seguridad como el toggle ya
+  // existente en Personalización llaman aquí (ver App.jsx más abajo y SettingsView.jsx).
+  const toggleAreaProtegida = (id) => {
+    const protegidaAhora = seguridad.protectedAreas.includes(id);
+    if (protegidaAhora) {
+      pedirVerificacionPin(`Vas a quitar la protección PIN de "${(AREAS_PROTEGIBLES.find((a) => a.id === id) || {}).label || id}".`, () => {
+        updateSeguridad({ ...seguridad, protectedAreas: seguridad.protectedAreas.filter((x) => x !== id) });
+      });
+    } else {
+      updateSeguridad({ ...seguridad, protectedAreas: [...seguridad.protectedAreas, id] });
+    }
+  };
+  const toggleAccionProtegida = (id) => {
+    const protegidaAhora = seguridad.protectedActions.includes(id);
+    if (protegidaAhora) {
+      pedirVerificacionPin(`Vas a quitar la protección PIN de "${(ACCIONES_PROTEGIBLES.find((a) => a.id === id) || {}).label || id}".`, () => {
+        updateSeguridad({ ...seguridad, protectedActions: seguridad.protectedActions.filter((x) => x !== id) });
+      });
+    } else {
+      updateSeguridad({ ...seguridad, protectedActions: [...seguridad.protectedActions, id] });
+    }
+  };
+
+  // Sesión temporal de desbloqueo (apartado 6): tras acertar el PIN una vez, la sección/función
+  // queda desbloqueada `seguridad.sessionTimeoutMin` minutos, en memoria — nunca en Supabase, para
+  // que cerrar/reabrir la app la vuelva a pedir sola (apartado 7/8 de las comprobaciones). Con
+  // sessionTimeoutMin=0 ("pedir siempre") no se registra nada: el PinGate se queda desbloqueado
+  // mientras la pantalla siga montada (no re-pregunta a media visita) pero vuelve a pedirlo la
+  // siguiente vez que se entre en la sección.
+  const registrarDesbloqueo = (key) => {
+    const minutos = seguridad.sessionTimeoutMin ?? 5;
+    if (minutos <= 0) return;
+    setDesbloqueosPin((prev) => ({ ...prev, [key]: Date.now() + minutos * 60000 }));
+  };
+  const estaDesbloqueado = (key) => !!desbloqueosPin[key] && desbloqueosPin[key] > Date.now();
+
+  // Recuperación de PIN (apartado añadido a la especificación) — nunca se pide ni se guarda la
+  // contraseña del correo: `sendPasswordReset` usa el flujo propio de Supabase, y solo tras el
+  // evento 'PASSWORD_RECOVERY' (ver el useEffect de arriba) se deja crear un PIN nuevo.
+  const enviarRecuperacionPin = (email) => sendPasswordReset(email, window.location.origin);
+  const guardarPinTrasFlujo = async (nuevoPin) => {
+    await cambiarPin(nuevoPin);
+    // Tras cambiar el PIN (creación, cambio normal o recuperación) no tiene sentido dejar la app
+    // bloqueada pidiendo el PIN que se acaba de teclear un segundo antes.
+    setBloqueado(false);
+  };
 
   // Fase 2 del Sistema de Personalización Visual Extrema — historial del ColorPicker (recientes/
   // favoritos). Guardado directo, sin snapshotAndSave/deshacer, mismo criterio que notificaciones/
@@ -425,7 +586,7 @@ export default function App() {
     setAccent(accentHex);
     setApariencia(aparienciaSiguiente);
     setTemaPersonalizado(tpFinal);
-    await saveData(uidUser, 'ajustes', { accent: accentHex, pin, apariencia: aparienciaSiguiente, seguridad });
+    await saveData(uidUser, 'ajustes', { accent: accentHex, pin: null, apariencia: aparienciaSiguiente, seguridad });
     await saveData(uidUser, 'temaPersonalizado', tpFinal);
   };
 
@@ -543,12 +704,12 @@ export default function App() {
     if (iconKey) iconos[id] = iconKey; else delete iconos[id];
     updatePersonalizacion({ ...personalizacion, iconos });
   };
-  const togglePinExtraModulo = (id) => {
-    const pinExtra = personalizacion.pinExtra.includes(id)
-      ? personalizacion.pinExtra.filter((x) => x !== id)
-      : [...personalizacion.pinExtra, id];
-    updatePersonalizacion({ ...personalizacion, pinExtra });
-  };
+  // Fase de Seguridad Centralizada: el candado de Personalización (Fase 19) ya no escribe en
+  // `personalizacion.pinExtra` — llama a la misma `toggleAreaProtegida` que la nueva lista de
+  // Seguridad, así hay un único sitio que decide qué está protegido (apartado 8/9) y quitar
+  // protección desde aquí también pide el PIN actual (apartado 3). `personalizacion.pinExtra` se
+  // conserva en el estado tal cual quedó por compatibilidad de datos antiguos, pero ya no se lee
+  // ni se escribe — la migración de carga, más arriba, la volcó una única vez en `protectedAreas`.
   const toggleFavoritaMetrica = (id) => {
     const favoritas = personalizacion.favoritas.includes(id)
       ? personalizacion.favoritas.filter((x) => x !== id)
@@ -926,12 +1087,21 @@ export default function App() {
           />
         );
       case 'salud':
+        // Fase de Seguridad Centralizada — "Ver fotos privadas de Salud" es la primera protección
+        // de FUNCIÓN real (apartado 2), no de pantalla entera: antes HealthView protegía la
+        // pestaña de fotos siempre, sin opción; ahora depende de `protectedActions`, con la
+        // migración de carga activándola sola para no cambiar nada a quien ya tenía PIN.
         return (
           <HealthView
             salud={salud} fotos={saludFotos}
             onAddMedida={addMedida} onAddHistorial={addHistorialMedico}
             onAddFoto={addFoto} onDeleteFoto={deleteFoto}
-            pin={pin} accent={accent}
+            protegidoFotos={seguridad.protectedActions.includes('fotos_privadas')}
+            pinHash={seguridad.pinHash} pinSalt={seguridad.pinSalt}
+            desbloqueadoFotos={estaDesbloqueado('accion:fotos_privadas')}
+            onDesbloquearFotos={() => registrarDesbloqueo('accion:fotos_privadas')}
+            onOlvidoPin={() => setRecuperandoPin(true)}
+            accent={accent}
           />
         );
       case 'nutricion':
@@ -1050,11 +1220,29 @@ export default function App() {
         );
       case 'economia':
         return <FinanceView economia={economia} onAddMovimiento={addMovimiento} onUpdateHucha={updateHucha} accent={accent} />;
-      case 'ajustes':
+      case 'ajustes': {
         // Fase A1 — Ajustes pasa a ser un único centro de categorías (ver SettingsView.jsx):
         // ya no se apilan SettingsView + PersonalizationView, SettingsView reenvía las props
         // de personalización a la categoría interna "Pantalla principal" que envuelve
         // PersonalizationView sin tocarla.
+        // Fase de Seguridad Centralizada — 'exportar_datos' y 'eliminar_datos' son las otras dos
+        // acciones protegibles ya cableadas de verdad (apartado 2): si Josué las activa en
+        // Seguridad, exportar o borrar datos por categoría pide primero el PIN actual, igual que
+        // cualquier otra acción sensible — mismo `pedirVerificacionPin` que usa todo lo demás.
+        const exportarProtegido = seguridad.protectedActions.includes('exportar_datos');
+        const eliminarProtegido = seguridad.protectedActions.includes('eliminar_datos');
+        const exportarCSVProtegido = () => {
+          const ejecutar = () => exportCSV(currentState);
+          if (exportarProtegido) pedirVerificacionPin('Confirma tu PIN para exportar tus datos.', ejecutar); else ejecutar();
+        };
+        const exportarXLSXProtegido = () => {
+          const ejecutar = () => exportXLSX(currentState);
+          if (exportarProtegido) pedirVerificacionPin('Confirma tu PIN para exportar tus datos.', ejecutar); else ejecutar();
+        };
+        const borrarDatosModuloProtegido = (id) => {
+          const ejecutar = () => borrarDatosModulo(id);
+          if (eliminarProtegido) pedirVerificacionPin('Confirma tu PIN para eliminar estos datos.', ejecutar); else ejecutar();
+        };
         return (
           <SettingsView
             perfil={perfil} onUpdatePerfil={updatePerfil} accent={accent} onUpdateAccent={updateAccent}
@@ -1073,32 +1261,42 @@ export default function App() {
             apariencia={apariencia} onUpdateApariencia={updateApariencia}
             notificaciones={notificaciones} onUpdateNotificaciones={updateNotificaciones}
             seguridad={seguridad} onUpdateSeguridad={updateSeguridad} userId={uidUser}
+            areasProtegibles={AREAS_PROTEGIBLES}
+            onToggleAreaProtegida={toggleAreaProtegida}
+            onToggleAccionProtegida={toggleAccionProtegida}
+            onIniciarCrearPin={iniciarCreacionPin}
+            onIniciarCambioPin={iniciarCambioPin}
+            onIniciarDesactivarPin={iniciarDesactivarPin}
             modulosBorrables={Object.entries(RESET_MODULOS).map(([id, cfg]) => ({ id, label: cfg.label }))}
-            onBorrarDatosModulo={borrarDatosModulo}
-            onExportCSV={() => exportCSV(currentState)} onExportXLSX={() => exportXLSX(currentState)}
+            onBorrarDatosModulo={borrarDatosModuloProtegido}
+            onExportCSV={exportarCSVProtegido} onExportXLSX={exportarXLSXProtegido}
             onUndo={undo} canUndo={history.length > 0}
-            pin={pin} onSetPin={updatePin}
             onSignOut={signOut}
             modulos={moreNavOrdenadoConIconos}
             personalizacion={personalizacion}
             onMove={moverModuloNav}
             onToggleOculto={toggleOcultoModulo}
             onSetIcono={setIconoModulo}
-            onTogglePinExtra={togglePinExtraModulo}
+            onTogglePinExtra={toggleAreaProtegida}
             onToggleFavorita={toggleFavoritaMetrica}
             onMoveFavorita={moverFavoritaMetrica}
             modo={personalizacion.modo}
             onSetModo={setModoApp}
           />
         );
+      }
       default:
         return null;
     }
   };
 
-  // Fase 19: además de Relación (siempre protegida, Fase 12), cualquier módulo que Josué haya
-  // marcado en Personalización avanzada (personalizacion.pinExtra) pasa por el mismo PinGate.
-  const necesitaPin = tab === 'relacion' || personalizacion.pinExtra.includes(tab);
+  // Fase de Seguridad Centralizada — sustituye a "Fase 19: Relación siempre + personalizacion.
+  // pinExtra" por la lista única `seguridad.protectedAreas` (más 'relacion', que sigue especial,
+  // siempre protegida, sin poder quitarla — ni siquiera pasa por `toggleAreaProtegida`). La clave
+  // `area:<tab>` del mapa de sesiones temporales identifica esta sección en `desbloqueosPin`
+  // (apartado 6); sin PIN configurado nada se pide, exactamente igual que con el sistema anterior.
+  const areaProtegida = tab === 'relacion' || seguridad.protectedAreas.includes(tab);
+  const necesitaPin = !!seguridad.pinHash && areaProtegida && !estaDesbloqueado(`area:${tab}`);
   // Fase N1/N2 — si `tab` es un módulo (no "hoy" ni un hub), se llegó ahí desde un hub de área:
   // se añade una barra "volver a {Área}" arriba y una entrada con deslizamiento suave. `key={tab}`
   // fuerza que la animación se repita cada vez que cambias de módulo (si no, React reutiliza el
@@ -1109,7 +1307,16 @@ export default function App() {
   const esHub = tab.startsWith('area-');
   const enModulo = tab !== 'hoy' && !esHub;
   const renderTab = () => {
-    const contenido = necesitaPin ? <PinGate pin={pin} accent={accent}>{renderContent()}</PinGate> : renderContent();
+    const contenido = necesitaPin ? (
+      <PinGate
+        pinHash={seguridad.pinHash} pinSalt={seguridad.pinSalt} accent={accent}
+        desbloqueado={estaDesbloqueado(`area:${tab}`)}
+        onDesbloquear={() => registrarDesbloqueo(`area:${tab}`)}
+        onOlvidoPin={() => setRecuperandoPin(true)}
+      >
+        {renderContent()}
+      </PinGate>
+    ) : renderContent();
     if (!enModulo || !areaActual) return contenido;
     return (
       <div key={tab} className="module-enter">
@@ -1127,14 +1334,42 @@ export default function App() {
     );
   };
 
+  // Modales globales de Seguridad (recuperación de PIN y creación/cambio) — pueden dispararse
+  // tanto desde la pantalla de bloqueo automático (más abajo) como desde cualquier PinGate o desde
+  // Seguridad, así que se declaran una sola vez y se reutilizan en ambos `return` de este
+  // componente (apartado 8: un único sistema, nunca una pantalla distinta según de dónde se venga).
+  const modalesRecuperacion = (
+    <>
+      {recuperandoPin && (
+        <RecuperarPinModal
+          accent={accent} emailCuenta={session.user.email}
+          onEnviar={enviarRecuperacionPin} onCancel={() => setRecuperandoPin(false)}
+        />
+      )}
+      {flujoNuevoPin && (
+        <CrearPinModal
+          accent={accent}
+          titulo={flujoNuevoPin === 'recuperacion' ? 'Crea tu PIN nuevo' : flujoNuevoPin === 'cambio' ? 'Cambia tu PIN' : 'Crea tu PIN'}
+          onGuardar={guardarPinTrasFlujo}
+          onCancel={() => setFlujoNuevoPin(null)}
+          permitirCancelar={flujoNuevoPin !== 'recuperacion'}
+        />
+      )}
+    </>
+  );
+
   // Fase A5: bloqueo automático por inactividad, por encima de todo lo demás (incluida la propia
   // navegación) — solo puede ocurrir si hay PIN configurado (ver el useEffect de arriba).
-  if (bloqueado && pin) {
+  if (bloqueado && seguridad.pinHash) {
     return (
-      <BloqueoAutomaticoGate
-        pin={pin} accent={accent} seguridad={seguridad}
-        onUnlock={() => setBloqueado(false)}
-      />
+      <>
+        <BloqueoAutomaticoGate
+          seguridad={seguridad} accent={accent}
+          onUnlock={() => setBloqueado(false)}
+          onOlvidoPin={() => setRecuperandoPin(true)}
+        />
+        {modalesRecuperacion}
+      </>
     );
   }
 
@@ -1174,6 +1409,18 @@ export default function App() {
       {showSearch && (
         <UniversalSearchModal accent={accent} onClose={() => setShowSearch(false)} buildContext={() => currentState} />
       )}
+
+      {/* Fase de Seguridad Centralizada — el modal de "confirma tu PIN" (cambiar/desactivar PIN,
+          quitar protección de una sección o función) flota por encima de cualquier pantalla desde
+          la que se dispare, Seguridad incluida. */}
+      {verificacion && (
+        <VerificacionPinModal
+          seguridad={seguridad} accent={accent} motivo={verificacion.motivo}
+          onSuccess={verificacion.onSuccess} onCancel={() => setVerificacion(null)}
+          onOlvidoPin={() => { setVerificacion(null); setRecuperandoPin(true); }}
+        />
+      )}
+      {modalesRecuperacion}
 
       <div className="max-w-md mx-auto px-4 pt-16" style={{ paddingBottom: 100 }}>
         {renderTab()}

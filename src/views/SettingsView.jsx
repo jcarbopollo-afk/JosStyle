@@ -12,12 +12,12 @@ import {
   IDIOMAS_DISPONIBLES, SISTEMAS_UNIDADES,
   DEFAULT_APARIENCIA, TEMAS_DISPONIBLES, TAMANOS_TEXTO, DENSIDADES_INTERFAZ, RADIOS_BORDE, NIVELES_ANIMACION,
   DEFAULT_NOTIFICACIONES, CATEGORIAS_NOTIFICACION,
-  OPCIONES_BLOQUEO_AUTOMATICO,
+  OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, OPCIONES_SESION_PIN,
 } from '../tokens';
 import { calcularEdad, shade, hexToRgba, uid, todayISO } from '../lib/helpers';
 import { permisoNotificaciones, pedirPermisoNotificaciones } from '../lib/notificaciones';
 import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
-import { Card, Field, TextInput, Select, GhostBtn, PinSetter, SectionTitle } from '../components/ui';
+import { Card, Field, TextInput, Select, GhostBtn, SectionTitle } from '../components/ui';
 import PersonalizationView from './PersonalizationView';
 import ColorPicker from '../components/ColorPicker';
 import TemaBuilder from '../components/TemaBuilder';
@@ -218,9 +218,14 @@ export default function SettingsView({
   apariencia, onUpdateApariencia,
   notificaciones, onUpdateNotificaciones,
   seguridad, onUpdateSeguridad, userId,
+  // Fase de Seguridad Centralizada — catálogo de zonas protegibles (App.jsx, a partir de MORE_NAV
+  // + 'hoy') y las funciones que de verdad tocan `seguridad.protectedAreas`/`protectedActions` o
+  // el PIN, todas centralizadas en App.jsx (apartado 8/9: un único sistema, nunca varios).
+  areasProtegibles, onToggleAreaProtegida, onToggleAccionProtegida,
+  onIniciarCrearPin, onIniciarCambioPin, onIniciarDesactivarPin,
   modulosBorrables, onBorrarDatosModulo,
   onExportCSV, onExportXLSX, onUndo, canUndo,
-  pin, onSetPin, onSignOut,
+  onSignOut,
   // Props de PersonalizationView (Fase 19/20), reenviadas tal cual a la categoría "Pantalla principal"
   modulos, personalizacion, onMove, onToggleOculto, onSetIcono, onTogglePinExtra,
   onToggleFavorita, onMoveFavorita, modo, onSetModo,
@@ -806,6 +811,7 @@ export default function SettingsView({
           <PersonalizationView
             modulos={modulos}
             personalizacion={personalizacion}
+            protectedAreas={seguridad.protectedAreas}
             onMove={onMove}
             onToggleOculto={onToggleOculto}
             onSetIcono={onSetIcono}
@@ -820,18 +826,130 @@ export default function SettingsView({
 
         {actual.id === 'seguridad' && (
           <>
+            {/* Fase de Seguridad Centralizada — sustituye a "PIN de secciones privadas" (PinSetter,
+                comparación en texto plano). El PIN se guarda hasheado (src/lib/pin.js); cambiarlo
+                o desactivarlo siempre pide primero el PIN actual (apartado 3, el caso crítico de
+                Seguridad) — por eso estos botones no hacen nada aquí mismo, solo abren el flujo
+                centralizado de App.jsx (`onIniciarCambioPin`/`onIniciarDesactivarPin`), que decide
+                si hace falta verificar y muestra el modal correspondiente. */}
             <Card>
               <p className="text-sm font-semibold mb-1 flex items-center gap-2" style={{ color: COLORS.text }}>
-                <Lock size={16} style={{ color: accent }} /> PIN de secciones privadas
+                <Lock size={16} style={{ color: accent }} /> PIN
               </p>
-              <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Protege Relación y cualquier otra sección que marques en Pantalla principal.</p>
-              <PinSetter pin={pin} onSetPin={onSetPin} accent={accent} />
+              <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
+                {seguridad.pinHash
+                  ? 'Protege las zonas y funciones que actives más abajo. Cambiarlo o desactivarlo pide siempre el PIN actual.'
+                  : 'Crea un PIN para poder proteger cualquier sección o función sensible de la app.'}
+              </p>
+              {seguridad.pinHash ? (
+                <>
+                  <p className="text-xs mb-3 flex items-center gap-1" style={{ color: COLORS.positive }}>
+                    <ShieldCheck size={12} /> PIN activo
+                  </p>
+                  <div className="flex gap-2">
+                    <GhostBtn onClick={onIniciarCambioPin} icon={RefreshCw}>Cambiar PIN</GhostBtn>
+                    <GhostBtn onClick={onIniciarDesactivarPin} icon={Lock}>Desactivar</GhostBtn>
+                  </div>
+                </>
+              ) : (
+                <GhostBtn onClick={onIniciarCrearPin} icon={Lock}>Crear PIN</GhostBtn>
+              )}
             </Card>
+
+            {/* "Protección mediante PIN" (apartado 1) — catálogo completo de zonas protegibles, no
+                solo los módulos actuales: `areasProtegibles` viene de MORE_NAV en App.jsx, así que
+                cualquier módulo futuro aparece aquí solo, sin tocar este archivo. Quitar protección
+                a una que ya la tenga pasa por `onToggleAreaProtegida`, que pide el PIN actual antes
+                (apartado 3). 'Relación' sigue igual que siempre: protegida sin poder quitarla. */}
+            <Card>
+              <p className="text-sm font-semibold mb-1 flex items-center gap-2" style={{ color: COLORS.text }}>
+                <ShieldCheck size={16} style={{ color: accent }} /> Protección mediante PIN
+              </p>
+              <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
+                {seguridad.pinHash
+                  ? 'Elige qué secciones piden el PIN al entrar. Quitarle protección a una que ya la tenga vuelve a pedir tu PIN actual.'
+                  : 'Crea un PIN arriba para poder activar esto.'}
+              </p>
+              {seguridad.pinHash && (
+                <div>
+                  {areasProtegibles.map((a) => {
+                    const esRelacion = a.id === 'relacion';
+                    const activo = esRelacion || seguridad.protectedAreas.includes(a.id);
+                    const Icono = a.icon;
+                    return (
+                      <div key={a.id} className="flex items-center justify-between py-2" style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                        <span className="text-sm flex items-center gap-2" style={{ color: COLORS.text }}>
+                          {Icono && <Icono size={14} style={{ color: COLORS.textMuted }} />} {a.label}
+                        </span>
+                        <button
+                          onClick={() => (esRelacion ? null : onToggleAreaProtegida(a.id))}
+                          disabled={esRelacion}
+                          aria-label={activo ? `Quitar protección de ${a.label}` : `Proteger ${a.label} con PIN`}
+                          title={esRelacion ? 'Relación siempre está protegida' : undefined}
+                          className="w-11 h-6 rounded-full relative flex-shrink-0 disabled:opacity-60"
+                          style={{ background: activo ? accent : COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+                        >
+                          <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all" style={{ background: '#fff', left: activo ? 22 : 2 }} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+
+            {/* Protección de función (apartado 2) — más granular que la de arriba: no bloquea toda
+                una sección, solo la acción concreta. Todavía cubre solo las que ya están cableadas
+                de verdad (ver HealthView.jsx y App.jsx); el resto del catálogo del apartado 2 queda
+                preparado en el modelo de datos pero sin una pantalla real que proteger todavía. */}
+            <Card>
+              <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Protección de funciones</p>
+              <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
+                {seguridad.pinHash
+                  ? 'Acciones concretas que piden el PIN aunque la sección donde viven no esté protegida entera.'
+                  : 'Crea un PIN arriba para poder activar esto.'}
+              </p>
+              {seguridad.pinHash && (
+                <div>
+                  {ACCIONES_PROTEGIBLES.map((a) => {
+                    const activo = seguridad.protectedActions.includes(a.id);
+                    return (
+                      <div key={a.id} className="flex items-center justify-between py-2" style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                        <span className="text-sm" style={{ color: COLORS.text }}>{a.label}</span>
+                        <button
+                          onClick={() => onToggleAccionProtegida(a.id)}
+                          aria-label={activo ? `Quitar protección de ${a.label}` : `Proteger ${a.label} con PIN`}
+                          className="w-11 h-6 rounded-full relative flex-shrink-0"
+                          style={{ background: activo ? accent : COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+                        >
+                          <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all" style={{ background: '#fff', left: activo ? 22 : 2 }} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+
+            {/* Sesión temporal de desbloqueo (apartado 6) — no hace falta verificación para
+                cambiarla: no reduce ni amplía qué está protegido, solo cuánto dura desbloqueado. */}
+            <Card>
+              <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Sesión de desbloqueo</p>
+              <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
+                Cuánto tiempo queda desbloqueada una sección o función tras acertar el PIN una vez, antes de volver a pedirlo.
+              </p>
+              {seguridad.pinHash ? (
+                <OpcionesFila opciones={OPCIONES_SESION_PIN} valor={seguridad.sessionTimeoutMin} onChange={(v) => onUpdateSeguridad({ ...seguridad, sessionTimeoutMin: v })} accent={accent} />
+              ) : (
+                <p className="text-xs" style={{ color: COLORS.textMuted }}>Crea un PIN arriba para poder activar esto.</p>
+              )}
+            </Card>
+
             <Card>
               <p className="text-sm font-semibold mb-1 flex items-center gap-2" style={{ color: COLORS.text }}>
                 <ShieldCheck size={16} style={{ color: accent }} /> Biometría
               </p>
-              {!pin ? (
+              {!seguridad.pinHash ? (
                 <p className="text-xs leading-relaxed" style={{ color: COLORS.textMuted }}>
                   Crea primero un PIN arriba — la biometría necesita el PIN como respaldo obligatorio (si falla Face ID/Touch ID, o cambias de dispositivo, el PIN sigue funcionando).
                 </p>
@@ -865,9 +983,9 @@ export default function SettingsView({
             <Card>
               <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Bloqueo automático</p>
               <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
-                {pin ? 'Bloquea toda la app (no solo Relación) tras un rato sin usarla — con biometría activada, se desbloquea rápido sin escribir el PIN.' : 'Crea un PIN arriba para poder activar esto.'}
+                {seguridad.pinHash ? 'Bloquea toda la app (no solo las zonas protegidas) tras un rato sin usarla — con biometría activada, se desbloquea rápido sin escribir el PIN.' : 'Crea un PIN arriba para poder activar esto.'}
               </p>
-              {pin && (
+              {seguridad.pinHash && (
                 <OpcionesFila opciones={OPCIONES_BLOQUEO_AUTOMATICO} valor={seguridad.bloqueoAutomatico} onChange={(v) => onUpdateSeguridad({ ...seguridad, bloqueoAutomatico: v })} accent={accent} />
               )}
             </Card>
@@ -877,7 +995,7 @@ export default function SettingsView({
             </button>
 
             <InfoOnly>
-              Lo que queda pendiente de esta categoría (apartados 147-172 de la especificación): cambio de contraseña/correo de la cuenta, lista de dispositivos autorizados, gestión de sesiones activas en otros dispositivos, historial de accesos, códigos de recuperación y auditoría de eventos de seguridad. Todo eso necesita permisos de administrador de Supabase gestionados desde un servidor — no algo que el propio navegador pueda hacer de forma segura, así que queda fuera de esta fase.
+              Lo que queda pendiente de esta categoría (apartados 147-172 de la especificación, más lo señalado en el apartado 2 de la especificación de Seguridad Centralizada): cambio de contraseña/correo de la cuenta, lista de dispositivos autorizados, gestión de sesiones activas en otros dispositivos, historial de accesos, auditoría de eventos de seguridad, y el resto de acciones del catálogo de protección de funciones que todavía no tienen una pantalla real que proteger (modificar datos sensibles, restaurar copia de seguridad — no existe todavía como función — y "Ajustes"/"Seguridad" como sub-zona independiente de "Ajustes": hoy comparten protección con el resto de Ajustes si activas esa área arriba, en vez de tener un candado propio, porque Ajustes es una única pantalla con categorías internas, no rutas separadas). Todo lo que necesita permisos de administrador de Supabase gestionados desde un servidor queda fuera de esta fase, igual que antes.
             </InfoOnly>
           </>
         )}
@@ -906,7 +1024,7 @@ export default function SettingsView({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between py-1">
                   <span className="text-sm" style={{ color: COLORS.textMuted }}>PIN</span>
-                  <span className="text-sm font-semibold" style={{ color: pin ? COLORS.positive : COLORS.textMuted }}>{pin ? 'Activo' : 'No creado'}</span>
+                  <span className="text-sm font-semibold" style={{ color: seguridad.pinHash ? COLORS.positive : COLORS.textMuted }}>{seguridad.pinHash ? `Activo · ${seguridad.protectedAreas.length + 1} zona(s) protegida(s)` : 'No creado'}</span>
                 </div>
                 <div className="flex items-center justify-between py-1">
                   <span className="text-sm" style={{ color: COLORS.textMuted }}>Biometría</span>
