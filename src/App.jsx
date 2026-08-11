@@ -879,6 +879,7 @@ export default function App() {
   // que el resto de módulos de datos (mismo criterio que Diario y los apuntes de Biblioteca).
   const updateNombrePareja = (nombre) => snapshotAndSave({ relacion: { ...relacion, nombre } });
   const addFechaImportante = (f) => snapshotAndSave({ relacion: { ...relacion, fechas: [...relacion.fechas, f] } });
+  const updateFechaImportante = (f) => snapshotAndSave({ relacion: { ...relacion, fechas: relacion.fechas.map((x) => (x.id === f.id ? f : x)) } });
   const deleteFechaImportante = (id) => snapshotAndSave({ relacion: { ...relacion, fechas: relacion.fechas.filter((x) => x.id !== id) } });
 
   // Fase 14 — Fe: cuatro sub-áreas de texto puro, todas sin PIN (Josué no pidió privacidad
@@ -1074,11 +1075,23 @@ export default function App() {
     })}. Da como máximo 2 sugerencias breves y concretas de algo a lo que Josué podría prestar atención hoy o esta semana, basadas solo en estos datos. Si no ves nada claro que sugerir, dilo abiertamente en vez de forzar una.`;
 
   // Fase 2 del Calendario Universal — eventos de solo lectura calculados en cada render a partir
-  // de Objetivos/Estudios/Entrenamiento/Productividad (ver calendarioIntegracion.js — Relación
-  // queda fuera a propósito, por privacidad: es el único módulo protegido de principio a fin en
-  // toda la app y el Calendario no pide PIN para abrirse). Mismo criterio de cálculo barato que
-  // `resumenesTodos`/`metricasCalculadas`: nunca se guarda, se recalcula solo.
-  const derivadosCalendario = eventosDerivados({ objetivos, estudios, calistenia, futbol, productividad });
+  // de Objetivos/Estudios/Entrenamiento/Productividad/Relación (ver calendarioIntegracion.js).
+  // Mismo criterio de cálculo barato que `resumenesTodos`/`metricasCalculadas`: nunca se guarda,
+  // se recalcula solo.
+  //
+  // Finalización del Calendario — Relación es el único módulo protegido de principio a fin en
+  // toda la app, y el Calendario (igual que el Dashboard) no pide PIN para abrirse. Para que sus
+  // fechas puedan aparecer en el Calendario sin ser una regresión de privacidad, solo se le pasan
+  // los datos reales de Relación a `eventosDerivados` cuando el propio PIN de Relación ya está
+  // desbloqueado en esta sesión (`estaDesbloqueado('area:relacion')`, el mismo comprobado más
+  // abajo para abrir la pestaña) o cuando no existe ningún PIN configurado (en ese caso Relación
+  // tampoco pide PIN para abrirse, así que no hay nada que proteger). Sin desbloquear, se pasa
+  // `null` y ni un solo indicador de esas fechas llega al Calendario o al Dashboard.
+  const relacionDesbloqueadaParaCalendario = !seguridad.pinHash || estaDesbloqueado('area:relacion');
+  const derivadosCalendario = eventosDerivados({
+    objetivos, estudios, calistenia, futbol, productividad,
+    relacion: relacionDesbloqueadaParaCalendario ? relacion : null,
+  });
 
   const renderContent = () => {
     // Fase N1 — hubs de área: al pulsar Salud/Vida/Gestión/Más en la barra inferior se llega
@@ -1231,6 +1244,7 @@ export default function App() {
             relacion={relacion}
             onUpdateNombre={updateNombrePareja}
             onAddFecha={addFechaImportante}
+            onUpdateFecha={updateFechaImportante}
             onDeleteFecha={deleteFechaImportante}
             accent={accent}
           />

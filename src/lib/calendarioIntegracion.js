@@ -12,10 +12,11 @@
 // campos que consumen `eventosDelDia`/`tiposDelDia`/`resumenDelDia`/`eventosFuturos` de
 // calendario.js, así que no hace falta tocar ese motor) más `soloLectura: true` y `origen`/
 // `origenId` apuntando al dato real — `origen` coincide a propósito con el id de pestaña real de
-// App.jsx (`objetivos`/`estudios`/`entreno`/`productividad`), así CalendarView puede abrir el
-// módulo de origen con el mismo `setTab` que ya usa el resto de la navegación, sin una tabla de
-// traducción aparte.
+// App.jsx (`objetivos`/`estudios`/`entreno`/`productividad`/`relacion`), así CalendarView puede
+// abrir el módulo de origen con el mismo `setTab` que ya usa el resto de la navegación, sin una
+// tabla de traducción aparte.
 import { prediccionObjetivo } from './predicciones';
+import { TIPOS_FECHA_RELACION } from '../tokens';
 
 // Objetivos con plazo estimable (prediccionObjetivo, Fase 17) y todavía no cumplidos — un
 // objetivo ya marcado como cumplido no aporta nada al calendario, solo ruido. El plazo es una
@@ -138,6 +139,48 @@ function eventosDeTareas(productividad) {
     }));
 }
 
+// Fechas importantes de Relación (cumpleaños, aniversario...) — a diferencia del resto de fuentes
+// de este archivo, cada fecha puede llevar `repetir: true`, así que aquí no se genera un evento
+// puntual sino uno con `recurrencia: { frecuencia: 'anual', hasta: null }`: se reutiliza tal cual
+// el mismo motor de recurrencia que ya usa el propio Calendario para sus eventos manuales
+// (`expandirRecurrentes`, lib/calendario.js) — CalendarView lo llama sobre TODOS los eventos
+// (propios + derivados) sin distinguir su origen, así que un derivado con `recurrencia` se expande
+// gratis, sin tocar ese motor ni CalendarView.jsx. `origenId` sigue apuntando al `id` real de la
+// fecha en `relacion.fechas` (nunca se duplica el dato), y el título ya incluye el nombre de la
+// pareja para cumpleaños (spec: "🎂 Cumpleaños de María") sin guardar ese nombre por separado.
+//
+// **Privacidad**: esta función recibe `relacion` ya decidido por quien la llama (App.jsx) — si
+// Relación está protegida por PIN y no se ha desbloqueado en la sesión actual, App.jsx pasa
+// `relacion: null` y aquí no se genera ningún evento, ni siquiera el indicador discreto del día.
+// Así se respeta exactamente el mismo límite de autorización que ya protege la pestaña Relación,
+// en vez de duplicar o reinventar la comprobación aquí.
+function eventosDeRelacion(relacion) {
+  if (!relacion) return [];
+  const nombrePareja = relacion.nombre?.trim();
+  return (relacion.fechas || []).map((f) => {
+    const tipo = TIPOS_FECHA_RELACION.find((t) => t.id === f.tipo) || TIPOS_FECHA_RELACION[TIPOS_FECHA_RELACION.length - 1];
+    const titulo = tipo.id === 'cumpleanos' && nombrePareja
+      ? `${tipo.emoji} Cumpleaños de ${nombrePareja}`
+      : `${tipo.emoji} ${f.etiqueta}`;
+    const evento = {
+      id: `relacion:${f.id}`,
+      titulo,
+      fecha: f.fecha,
+      todoElDia: true,
+      horaInicio: null,
+      horaFin: null,
+      tipo: 'fecha_importante',
+      notas: '',
+      ubicacion: '',
+      origen: 'relacion',
+      origenId: f.id,
+      soloLectura: true,
+    };
+    if (f.repetir) evento.recurrencia = { frecuencia: 'anual', hasta: null };
+    return evento;
+  });
+}
+
 // Fuentes deliberadamente NO integradas en esta fase, documentado con la misma honestidad que el
 // resto del proyecto (nunca simular algo que el modelo de datos actual no sostiene de verdad):
 //
@@ -145,29 +188,21 @@ function eventosDeTareas(productividad) {
 //   ninguno de los dos tiene una fecha ni una periodicidad propia en el modelo de datos real —
 //   un hábito es "historial: {fecha: true}" (marcas de cuándo SE HIZO, no de cuándo TOCA) y una
 //   rutina no tiene fecha en absoluto. Mapearlos exigiría o bien inventar una fecha (falso: se
-//   verían "programados" un día que nadie eligió) o construir un motor de recurrencia real
-//   (repetir cada día/semana/mes) — eso es explícitamente trabajo de Fase 3 ("eventos recurrentes
-//   avanzados"), no de esta fase. En su lugar se han incluido las Tareas de Productividad
-//   (`eventosDeTareas`), que sí tienen una fecha límite real y son el dato de ese módulo más
-//   cercano en espíritu a "algo con fecha propia que quieres ver en el calendario".
+//   verían "programados" un día que nadie eligió) o decidir una periodicidad que la rutina no
+//   declara hoy. En su lugar se han incluido las Tareas de Productividad (`eventosDeTareas`), que
+//   sí tienen una fecha límite real y son el dato de ese módulo más cercano en espíritu a "algo
+//   con fecha propia que quieres ver en el calendario".
 // - Metas de Productividad (distintas de Objetivos): tampoco tienen fecha, solo un periodo
 //   (Diaria/Semanal/Mensual/Anual) y un progreso — mismo motivo que Hábitos/Rutinas.
 // - Recordatorios: no existen como módulo propio en la app — ya están cubiertos desde la Fase 1,
 //   Josué los crea directamente en el calendario (tipo "Recordatorio").
-// - Fechas importantes de Relación: **excluidas a propósito por privacidad**, no por limitación
-//   técnica. Relación es el único módulo protegido por PIN de principio a fin en toda la app (ver
-//   HANDOFF.md, currentState/exportData en App.jsx) — el Calendario, tal y como está construido,
-//   no pide PIN para abrirse. Traer esas fechas aquí sin PIN sería una regresión de privacidad
-//   real (cualquiera que abra el calendario vería el nombre de la pareja y sus fechas), así que
-//   se ha dejado fuera aunque el prompt del Calendario lo pida explícitamente. Si Josué quiere
-//   verlo igualmente, la vía honesta es una fase futura que proteja específicamente esas entradas
-//   con el mismo PinGate, no mezclarlas sin más con el resto de eventos.
-export function eventosDerivados({ objetivos, estudios, calistenia, futbol, productividad }) {
+export function eventosDerivados({ objetivos, estudios, calistenia, futbol, productividad, relacion }) {
   return [
     ...eventosDeObjetivos(objetivos),
     ...eventosDeEstudios(estudios),
     ...eventosDeEntrenamiento(calistenia, futbol),
     ...eventosDeTareas(productividad),
+    ...eventosDeRelacion(relacion),
   ];
 }
 
@@ -178,4 +213,5 @@ export const NOMBRES_ORIGEN = {
   estudios: 'Estudios',
   entreno: 'Entrenamiento',
   productividad: 'Productividad',
+  relacion: 'Relación',
 };

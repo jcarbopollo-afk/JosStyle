@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   User, Download, Upload, RotateCcw, Undo2, Lock, LogOut, ArrowLeft, Search, ChevronRight,
-  Palette, LayoutGrid, SlidersHorizontal, Bell, Sparkles, ShieldCheck,
-  Database, RefreshCw, Puzzle, Accessibility, FlaskConical, Info, EyeOff, Plus, Trash2,
+  Palette, LayoutGrid, SlidersHorizontal, Bell, ShieldCheck,
+  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2,
 } from 'lucide-react';
 import pkg from '../../package.json';
 import {
@@ -31,17 +31,13 @@ import GestionTemas from '../components/GestionTemas';
 // propia por categoría, con botón atrás. Sigue sin haber botones "Guardar":
 // cada campo sigue confirmando al vuelo (onBlur/onChange), igual que antes.
 //
-// Categorías construidas de verdad en esta fase (reutilizan contenido que ya
-// existía, solo reorganizado): Perfil, Apariencia (color de acento — el
-// selector de tema claro/oscuro llega en la Fase A3), Pantalla principal
-// (envuelve PersonalizationView, Fase 19/20, sin tocarla), Seguridad (PIN +
-// cerrar sesión) y Datos (exportar/deshacer). El resto de categorías del
-// orden fijo de la especificación (Preferencias generales, Notificaciones,
-// IA, Privacidad, Sincronización, Integraciones, Accesibilidad, Funciones
-// experimentales) todavía no tienen fase construida — se muestran con un
-// aviso honesto de "todavía no" en vez de controles que no hacen nada
-// (mismo criterio que el resto de la app: nunca simular una función que no
-// existe). Información es nueva: versión real leída de package.json.
+// Cada categoría de `useCategorias()` renderiza su propio contenido real más
+// abajo (nunca un aviso genérico de "todavía no" — mismo criterio que el
+// resto de la app: nunca simular una función que no existe, y nunca explicar
+// dentro de la propia app en qué fase de construcción está algo). Las
+// categorías puramente informativas (Preferencias, Sincronización,
+// Integraciones, Accesibilidad) redirigen a dónde vive de verdad ese control
+// en vez de duplicarlo. Información lee la versión real de package.json.
 // ─────────────────────────────────────────────────────────────────────────
 
 // Orden estable a propósito (apartado 4 de la especificación) — nunca reordenar automáticamente.
@@ -52,14 +48,12 @@ function useCategorias() {
     { id: 'pantalla-principal', label: 'Pantalla principal', desc: 'Qué ves en "Hoy" y en el menú "Más".', icon: LayoutGrid, listo: true },
     { id: 'preferencias', label: 'Preferencias generales', desc: 'Idioma, zona horaria, país y unidades.', icon: SlidersHorizontal, listo: true, soloInfo: true },
     { id: 'notificaciones', label: 'Notificaciones', desc: 'Permiso, categorías y horario de descanso.', icon: Bell, listo: true },
-    { id: 'ia', label: 'Inteligencia Artificial', desc: 'Cómo y cuándo te ayuda la IA.', icon: Sparkles, listo: false, fase: 'AXION (aparte)' },
     { id: 'seguridad', label: 'Seguridad', desc: 'PIN, biometría y cierre de sesión.', icon: Lock, listo: true },
     { id: 'privacidad', label: 'Privacidad', desc: 'Transparencia, qué usa la IA y borrado por categoría.', icon: EyeOff, listo: true },
     { id: 'datos', label: 'Datos', desc: 'Copia de seguridad y exportación.', icon: Database, listo: true },
     { id: 'sincronizacion', label: 'Sincronización', desc: 'Tus datos entre dispositivos.', icon: RefreshCw, listo: true, soloInfo: true },
     { id: 'integraciones', label: 'Integraciones', desc: 'Conexiones con otros servicios.', icon: Puzzle, listo: true, soloInfo: true },
-    { id: 'accesibilidad', label: 'Accesibilidad', desc: 'Tamaño de texto y reducir movimiento ya están en Apariencia.', icon: Accessibility, listo: false, fase: 'resto: futura' },
-    { id: 'experimental', label: 'Funciones experimentales', desc: 'Funciones en pruebas, antes de llegar a todos.', icon: FlaskConical, listo: false, fase: 'futura' },
+    { id: 'accesibilidad', label: 'Accesibilidad', desc: 'Tamaño de texto y reducir movimiento ya están en Apariencia.', icon: Accessibility, listo: true, soloInfo: true },
     { id: 'informacion', label: 'Información', desc: 'Versión, créditos e información técnica.', icon: Info, listo: true },
   ]), []);
 }
@@ -80,16 +74,6 @@ function CategoryHeader({ label, desc, onBack }) {
         {desc && <p className="text-sm mt-0.5" style={{ color: COLORS.textMuted }}>{desc}</p>}
       </div>
     </div>
-  );
-}
-
-function ComingSoon({ fase }) {
-  return (
-    <Card>
-      <p className="text-sm leading-relaxed" style={{ color: COLORS.textMuted }}>
-        Todavía no está construida. {fase ? `Está planificada para ${fase}.` : ''} No hay controles aquí porque no hacen nada todavía — mejor eso que botones decorativos.
-      </p>
-    </Card>
   );
 }
 
@@ -800,10 +784,6 @@ export default function SettingsView({
                 </div>
               )}
             </Card>
-
-            <InfoOnly>
-              Lo que queda pendiente de esta categoría (apartados 86-108 de la especificación): transparencias/materiales translúcidos, estilos de icono alternativos y fondos con degradado/textura son personalización puramente decorativa — quedan para una fase futura. Las paletas de color predefinidas completas ya están construidas (ver "Temas predefinidos" arriba, Fase 4 del Sistema de Personalización Visual Extrema). La reordenación y visibilidad de tarjetas del Dashboard ya está construida en "Pantalla principal" (Fase 19/20), no se duplica aquí.
-            </InfoOnly>
           </>
         )}
 
@@ -993,10 +973,6 @@ export default function SettingsView({
             <button onClick={onSignOut} className="flex items-center justify-center gap-2 text-xs font-semibold w-full py-2" style={{ color: COLORS.textMuted }}>
               <LogOut size={14} /> Cerrar sesión
             </button>
-
-            <InfoOnly>
-              Lo que queda pendiente de esta categoría (apartados 147-172 de la especificación, más lo señalado en el apartado 2 de la especificación de Seguridad Centralizada): cambio de contraseña/correo de la cuenta, lista de dispositivos autorizados, gestión de sesiones activas en otros dispositivos, historial de accesos, auditoría de eventos de seguridad, y el resto de acciones del catálogo de protección de funciones que todavía no tienen una pantalla real que proteger (modificar datos sensibles, restaurar copia de seguridad — no existe todavía como función — y "Ajustes"/"Seguridad" como sub-zona independiente de "Ajustes": hoy comparten protección con el resto de Ajustes si activas esa área arriba, en vez de tener un candado propio, porque Ajustes es una única pantalla con categorías internas, no rutas separadas). Todo lo que necesita permisos de administrador de Supabase gestionados desde un servidor queda fuera de esta fase, igual que antes.
-            </InfoOnly>
           </>
         )}
 
@@ -1083,16 +1059,12 @@ export default function SettingsView({
                 ))}
               </div>
             </Card>
-
-            <InfoOnly>
-              Lo que queda pendiente de esta categoría (apartados 185-199 de la especificación): registro versionado de consentimientos, historial de accesos a datos sensibles, eliminación completa de la cuenta (borrar también el login, no solo los datos) y auditoría de privacidad detallada. La eliminación de cuenta en concreto necesita una función con permisos de administrador de Supabase que no existe todavía — hoy puedes borrar tus datos categoría por categoría desde aquí, pero la cuenta (email/contraseña) sigue activa hasta que se construya esa pieza.
-            </InfoOnly>
           </>
         )}
 
         {actual.id === 'preferencias' && (
           <InfoOnly>
-            Idioma, zona horaria, país/región y sistema de unidades ya se guardan y editan desde Perfil → "Información general" (Fase A2) — no se duplican aquí. Español es hoy el único idioma disponible.
+            Idioma, zona horaria, país/región y sistema de unidades se guardan y editan desde Perfil → "Información general" — no se duplican aquí. Español es hoy el único idioma disponible.
           </InfoOnly>
         )}
 
@@ -1205,20 +1177,26 @@ export default function SettingsView({
             </Card>
 
             <InfoOnly>
-              Hoy las notificaciones solo llegan mientras tienes la app abierta en el navegador — no hay "Web Push" con servidor todavía, así que no llegan con la app cerrada del todo (eso exigiría un Service Worker con push, una tabla de suscripciones en Supabase y otra función serverless en Vercel: infraestructura nueva, no una ampliación de esto). Ya están conectadas a los tres avisos automáticos de "Hoy" (sueño corto, racha en riesgo, examen sin horas): si activas el permiso y la categoría correspondiente, además del aviso dentro de la app recibirás una notificación real del sistema. Sonidos, vibración, posponer, resumen inteligente agrupado, historial y adaptación automática al comportamiento (apartados 120-133 de la especificación) quedan pendientes.
+              Las notificaciones llegan mientras tienes la app abierta en el navegador — no hay "Web Push" con servidor, así que no llegan con la app cerrada del todo. Ya están conectadas a los tres avisos automáticos de "Hoy" (sueño corto, racha en riesgo, examen sin horas): si activas el permiso y la categoría correspondiente, además del aviso dentro de la app recibirás una notificación real del sistema.
             </InfoOnly>
           </>
         )}
 
         {actual.id === 'sincronizacion' && (
           <InfoOnly>
-            Tus datos se guardan y sincronizan automáticamente con Supabase en cuanto hay conexión — no hay nada que configurar todavía. Si trabajas sin conexión, los cambios se guardan localmente y se sincronizan solos al recuperarla.
+            Tus datos se guardan y sincronizan automáticamente con Supabase en cuanto hay conexión — no hay nada que configurar. Si trabajas sin conexión, los cambios se guardan localmente y se sincronizan solos al recuperarla.
           </InfoOnly>
         )}
 
         {actual.id === 'integraciones' && (
           <InfoOnly>
-            Todavía no hay ninguna integración externa conectada a tu cuenta. Cuando exista alguna (por ejemplo, importar movimientos del banco), aparecerá aquí.
+            No hay ninguna integración externa conectada a tu cuenta ahora mismo.
+          </InfoOnly>
+        )}
+
+        {actual.id === 'accesibilidad' && (
+          <InfoOnly>
+            El tamaño de texto, reducir movimiento y el alto contraste se controlan desde Apariencia — no se duplican aquí.
           </InfoOnly>
         )}
 
@@ -1233,10 +1211,6 @@ export default function SettingsView({
               <span className="text-sm" style={{ color: COLORS.text }}>Josué</span>
             </div>
           </Card>
-        )}
-
-        {!['perfil', 'apariencia', 'pantalla-principal', 'seguridad', 'datos', 'preferencias', 'notificaciones', 'privacidad', 'sincronizacion', 'integraciones', 'informacion'].includes(actual.id) && (
-          <ComingSoon fase={actual.fase} />
         )}
       </div>
     );

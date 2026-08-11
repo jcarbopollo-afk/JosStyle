@@ -102,7 +102,7 @@ function TiempoUsoTab({ registros, onAdd, onDelete, accent }) {
           </Field>
         </div>
         <PrimaryButton accent={accent} icon={Plus} onClick={submit}>Registrar tiempo</PrimaryButton>
-        <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>Entrada manual — la importación automática del Tiempo de Uso queda pendiente.</p>
+        <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>Entrada manual — un navegador no puede leer el tiempo de uso real del sistema operativo, así que lo registras tú.</p>
       </Card>
 
       {ordenados.length === 0 ? (

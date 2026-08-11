@@ -343,7 +343,23 @@ export const DEFAULT_BIBLIOTECA = { apuntes: [], enlaces: [] };
 // de Salud (PinGate). Solo nombre + lista de fechas importantes, entrada manual, sin IA (no la
 // pide el Prompt Maestro para esta fase). "fechas" son texto puro, así que pasan por
 // snapshotAndSave/deshacer como el resto de módulos de datos (Diario, Biblioteca-apuntes...).
-export const DEFAULT_RELACION = { nombre: '', fechas: [] }; // fechas: [{ id, etiqueta, fecha }]
+//
+// Fase "Finalización del Calendario" — cada fecha gana dos campos opcionales: `tipo` (para el
+// icono/emoji y el título que se genera cuando la fecha se muestra en el Calendario) y `repetir`
+// (booleano — si es `true`, la fecha se expande como evento anual recurrente en el Calendario,
+// reutilizando tal cual `expandirRecurrentes` de lib/calendario.js con `recurrencia: { frecuencia:
+// 'anual', hasta: null }`, ver lib/calendarioIntegracion.js). Ambos campos son opcionales a
+// propósito — las fechas ya existentes antes de esta fase no los tienen (`tipo` se trata como
+// 'otro', `repetir` como `false`) y no se migran solas: activar la repetición es una decisión que
+// toma Josué al editar cada fecha, nunca un cambio de comportamiento silencioso.
+export const DEFAULT_RELACION = { nombre: '', fechas: [] }; // fechas: [{ id, etiqueta, fecha, tipo?, repetir? }]
+
+export const TIPOS_FECHA_RELACION = [
+  { id: 'cumpleanos', label: 'Cumpleaños', emoji: '🎂' },
+  { id: 'aniversario', label: 'Aniversario', emoji: '💍' },
+  { id: 'fecha_importante', label: 'Fecha importante', emoji: '📌' },
+  { id: 'otro', label: 'Otro', emoji: '❤️' },
+];
 
 // Fase 14 — Fe y vida espiritual: cuatro sub-áreas independientes (servicio, calendario, diario
 // espiritual, objetivos), todas de entrada manual y sin PIN (Josué no pidió privacidad extra
