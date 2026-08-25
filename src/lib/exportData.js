@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
-import { calcularDuracion, todayISO } from './helpers';
+import { calcularDuracion, formatHoras, todayISO } from './helpers';
 
 function downloadBlob(filename, content, mime) {
   const blob = new Blob([content], { type: mime });
@@ -21,7 +21,7 @@ function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion
       modulo: 'Sueño',
       fecha: e.fecha,
       detalle: `Dormir ${e.horaDormir} - Despertar ${e.horaDespertar}`,
-      valor: `${calcularDuracion(e.horaDormir, e.horaDespertar)} h`,
+      valor: `${formatHoras(calcularDuracion(e.horaDormir, e.horaDespertar))} h`,
       extra: `calidad ${e.calidad}/5, interrupciones ${e.interrupciones}, siesta ${e.siesta}min`,
     })
   );

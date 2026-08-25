@@ -24,13 +24,30 @@ export function calcularEdad(fechaNacimiento) {
   return edad;
 }
 
+// Devuelve las horas dormidas entre dos "HH:MM", cruzando medianoche cuando toca.
+//
+// Devuelve `null` si falta cualquiera de las dos horas o no tienen el formato esperado.
+// Sin esa comprobación, un registro de sueño incompleto —guardado por una versión
+// anterior, o a medias— hacía reventar con "Cannot read properties of undefined
+// (reading 'split')" a las CUATRO pantallas que llaman a esta función (Hoy, Sueño,
+// Estadísticas y las tarjetas de hub), dejándolas en blanco. Quien la llama ya trataba
+// el caso "sin datos", así que devolver null encaja con lo que esperan.
 export function calcularDuracion(horaDormir, horaDespertar) {
+  if (typeof horaDormir !== 'string' || typeof horaDespertar !== 'string') return null;
   const [h1, m1] = horaDormir.split(':').map(Number);
   const [h2, m2] = horaDespertar.split(':').map(Number);
+  if ([h1, m1, h2, m2].some((n) => !Number.isFinite(n))) return null;
   let start = h1 * 60 + m1;
   let end = h2 * 60 + m2;
   if (end <= start) end += 24 * 60;
   return Math.round(((end - start) / 60) * 10) / 10;
+}
+
+// Presentación de un resultado de `calcularDuracion`. Existe para que un registro de sueño
+// incompleto se vea como "— h" y no como el literal "null h" en las cuatro pantallas que
+// muestran horas dormidas.
+export function formatHoras(horas) {
+  return horas === null || horas === undefined ? '—' : String(horas);
 }
 
 export function formatFecha(iso) {

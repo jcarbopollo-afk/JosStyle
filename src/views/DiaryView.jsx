@@ -72,12 +72,18 @@ function EntradaCard({ entrada, accent, onDelete }) {
 export default function DiaryView({ diario, onAdd, onUpdate, onDelete, accent }) {
   const hoy = todayISO();
   const entradaHoy = diario.entradas.find((e) => e.fecha === hoy);
-  const [form, setForm] = useState(entradaHoy || FORM_VACIO);
+  const [form, setForm] = useState({ ...FORM_VACIO, ...entradaHoy });
 
   // Si ya existe una entrada de hoy (p.ej. al reabrir la app), precargarla para poder
   // completarla o corregirla en vez de crear una segunda entrada para el mismo día.
+  //
+  // La fusión con FORM_VACIO no es cosmética: una entrada guardada a la que le falte
+  // cualquiera de los tres campos de texto (por venir de una versión anterior, o por
+  // haberse guardado a medias) dejaría el formulario con `undefined` y el `.trim()` de
+  // abajo reventaría, dejando el Diario en blanco. Mismo patrón `{ ...DEFAULT, ...guardado }`
+  // que ya se aplicó a DEFAULT_PERFIL (A2), a `apariencia` (A3) y a `personalizacion`.
   useEffect(() => {
-    setForm(entradaHoy || FORM_VACIO);
+    setForm({ ...FORM_VACIO, ...entradaHoy });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entradaHoy?.id]);
 

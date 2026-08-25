@@ -37,8 +37,12 @@ export function correlacionSuenoEstudio(sueno, horas) {
     horas, 'fecha', (h) => Number(h.horas),
     sueno, 'fecha', (s) => calcularDuracion(s.horaDormir, s.horaDespertar)
   );
-  const buenSueno = pares.filter((p) => p.b >= 7);
-  const suenoCorto = pares.filter((p) => p.b < 7);
+  // Se descartan los registros de sueño sin horas válidas: `null < 7` es `true` en
+  // JavaScript, así que sin este filtro un registro incompleto se contaría como una
+  // noche corta y falsearía la correlación entera.
+  const conHoras = pares.filter((p) => p.b !== null);
+  const buenSueno = conHoras.filter((p) => p.b >= 7);
+  const suenoCorto = conHoras.filter((p) => p.b < 7);
   const media = (arr) => (arr.length ? Math.round((arr.reduce((s, p) => s + p.a, 0) / arr.length) * 10) / 10 : null);
 
   return {
@@ -61,8 +65,12 @@ export function correlacionSuenoAnimo(sueno, entradasDiario) {
     entradasDiario, 'fecha', (e) => Number(e.animo),
     sueno, 'fecha', (s) => calcularDuracion(s.horaDormir, s.horaDespertar)
   );
-  const buenSueno = pares.filter((p) => p.b >= 7);
-  const suenoCorto = pares.filter((p) => p.b < 7);
+  // Se descartan los registros de sueño sin horas válidas: `null < 7` es `true` en
+  // JavaScript, así que sin este filtro un registro incompleto se contaría como una
+  // noche corta y falsearía la correlación entera.
+  const conHoras = pares.filter((p) => p.b !== null);
+  const buenSueno = conHoras.filter((p) => p.b >= 7);
+  const suenoCorto = conHoras.filter((p) => p.b < 7);
   const media = (arr) => (arr.length ? Math.round((arr.reduce((s, p) => s + p.a, 0) / arr.length) * 10) / 10 : null);
 
   return {

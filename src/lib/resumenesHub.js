@@ -12,7 +12,7 @@
 // de acento), 'vacio' (el módulo todavía no tiene nada que mostrar hoy — punto apagado, del
 // color del borde), 'info' (módulos de solo lectura/configuración sin un "dato propio" que
 // pueda estar vacío o no — Estadísticas, Predicciones, Logros, Ajustes — sin punto).
-import { calcularDuracion, diasHasta, todayISO, addDays } from './helpers';
+import { calcularDuracion, formatHoras, diasHasta, todayISO, addDays } from './helpers';
 import { ESTADOS_ANIMO } from '../tokens';
 import { resumenDelDia, eventosFuturos } from './calendario';
 import { eventosDerivados } from './calendarioIntegracion';
@@ -47,7 +47,7 @@ export function calcularResumenModulo(id, s) {
       const ultimo = ultimoPorFecha(s.sueno);
       if (!ultimo) return { linea1: 'Sin registros todavía', linea2: 'Toca para registrar cómo dormiste', estado: 'vacio' };
       const horas = calcularDuracion(ultimo.horaDormir, ultimo.horaDespertar);
-      return { linea1: `${horas} h dormidas`, linea2: `Calidad ${ultimo.calidad}/5`, estado: 'activo' };
+      return { linea1: `${formatHoras(horas)} h dormidas`, linea2: `Calidad ${ultimo.calidad}/5`, estado: 'activo' };
     }
     case 'nutricion': {
       const hoy = todayISO();

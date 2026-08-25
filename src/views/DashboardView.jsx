@@ -6,8 +6,9 @@ import {
   Plane, Sun, Home, ClipboardList,
 } from 'lucide-react';
 import { COLORS, MODOS_APP } from '../tokens';
-import { calcularDuracion, hexToRgba, diasHasta, formatFecha, todayISO, addDays } from '../lib/helpers';
+import { calcularDuracion, formatHoras, hexToRgba, diasHasta, formatFecha, todayISO, addDays } from '../lib/helpers';
 import { resumenDelDia, eventosDelDia } from '../lib/calendario';
+import { puntuacionDelDia, mensajePuntuacion } from '../lib/puntuacion';
 import { Card, AIPanel, ScoreGauge, DashboardModuleCard, MiniAccessCard, QuickActionButton } from '../components/ui';
 // Fase A4 — Notificaciones reales: los tres avisos automáticos de "Hoy" (Fase 20) son el primer
 // caso de uso real de src/lib/notificaciones.js — si Josué activa el permiso del sistema y la
@@ -82,13 +83,15 @@ function AccesoCalendarioYAgenda({ calendario, derivadosCalendario, accent, onNa
 // vuelo a partir de datos que ya existen — no guarda nada nuevo.
 function AvisoSuenoCorto({ ultimoSueno, accent, notificaciones }) {
   const horas = ultimoSueno ? calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar) : null;
-  const activo = !!ultimoSueno && horas < 7;
+  // `horas !== null` es imprescindible, no defensivo de más: en JavaScript `null < 7` es
+  // `true`, así que un registro de sueño sin horas habría mostrado "Dormiste poco esta
+  // noche · null h" y, peor, disparado una notificación real por un dato que no existe.
+  const activo = horas !== null && horas < 7;
   useEffect(() => {
     if (!activo) return;
     notificarSiCorresponde(notificaciones, 'sueno', 'sueno-corto', 'Dormiste poco esta noche', `${horas} h — hoy quizá compense una sesión de entreno más suave.`);
   }, [activo]);
-  if (!ultimoSueno) return null;
-  if (horas >= 7) return null;
+  if (!activo) return null;
   return (
     <Card style={{ padding: '0.85rem 1.1rem', border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
       <p className="text-sm" style={{ color: COLORS.text }}>
@@ -216,6 +219,75 @@ function IndicadorContexto({ modo, accent }) {
   );
 }
 
+// Puntuación del día. Sustituye a la tarjeta anterior, que mostraba un número fijo sin relación
+// con el día actual (ver src/lib/puntuacion.js). Tres diferencias que importan:
+//
+//   1. El número cambia cada día de verdad, y sale de áreas que Josué realmente usa.
+//   2. Se puede desplegar para ver EXACTAMENTE de dónde sale — misma regla de honestidad que
+//      rige los paneles de IA ("cita en qué dato te apoyas"). Un número sin explicación en la
+//      pantalla principal es justo lo que este proyecto evita en todas partes.
+//   3. Cuando todavía no hay datos no enseña un 0 desmotivador: lo dice y ya está.
+//
+// Sin puntos acumulables, sin niveles y sin premios: es una foto del día que se reinicia sola
+// cada mañana y no se guarda en ningún sitio (reglas 33/34 — no sobregamificar).
+function TarjetaPuntuacion({ puntuacion, mensaje, accent }) {
+  const [expandido, setExpandido] = useState(false);
+  const fondo = { background: `radial-gradient(circle at 25% 20%, ${hexToRgba(accent, 0.16)}, ${COLORS.surface} 65%)` };
+
+  // Usuario sin datos todavía: una sola línea honesta, sin rueda ni cifra inventada.
+  if (!puntuacion.hayDatos) {
+    return (
+      <Card style={fondo}>
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Tu día</p>
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{mensaje}</p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card style={{ ...fondo, padding: 0, overflow: 'hidden' }}>
+      <button
+        onClick={() => setExpandido((s) => !s)}
+        className="w-full text-left transition-transform active:scale-[0.99]"
+        style={{ padding: '1.1rem 1.25rem' }}
+      >
+        <div className="flex items-center gap-5">
+          <ScoreGauge value={puntuacion.valor} accent={accent} />
+          <div className="min-w-0 flex-1">
+            <p className="text-3xl font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+              {puntuacion.valor}<span className="text-base font-medium" style={{ color: COLORS.textMuted }}>/100</span>
+            </p>
+            <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{mensaje}</p>
+            <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: COLORS.textMuted, opacity: 0.75 }}>
+              {puntuacion.hechos} de {puntuacion.total} hoy
+              <ChevronDown size={13} style={{ transform: expandido ? 'rotate(180deg)' : 'none', transition: 'transform 220ms var(--ease-premium)' }} />
+            </p>
+          </div>
+        </div>
+        {/* Mismo acordeón de `grid-template-rows` 0fr↔1fr que IndicadorContexto y el resto de
+            tarjetas desplegables de la app — ni una técnica de animación nueva. */}
+        <div style={{ display: 'grid', gridTemplateRows: expandido ? '1fr' : '0fr', transition: 'grid-template-rows 300ms var(--ease-premium)' }}>
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ opacity: expandido ? 1 : 0, transition: `opacity ${expandido ? '260ms 60ms' : '120ms'} ease`, paddingTop: '0.9rem' }}>
+              <ul className="space-y-1">
+                {puntuacion.detalle.map((d) => (
+                  <li key={d.id} className="text-xs flex items-center gap-2" style={{ color: d.hecho ? COLORS.text : COLORS.textMuted }}>
+                    <span style={{ color: d.hecho ? COLORS.positive : COLORS.textMuted, flexShrink: 0 }}>{d.hecho ? '✓' : '·'}</span>
+                    {d.etiqueta}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs mt-2.5 leading-relaxed" style={{ color: COLORS.textMuted, opacity: 0.8 }}>
+                Solo cuentan las áreas en las que ya registras cosas. Se reinicia cada día.
+              </p>
+            </div>
+          </div>
+        </div>
+      </button>
+    </Card>
+  );
+}
+
 // Ampliación del Dashboard — Centro de Control: a qué módulo pertenece cada id de "métrica
 // favorita" (Fase 19) — se usa solo para que las tarjetas de favoritas, que ya existían, también
 // se puedan pulsar (apartado 3: "siempre que una tarjeta represente una funcionalidad existente,
@@ -242,14 +314,17 @@ export default function DashboardView({
   const fechaHoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
   const ultimoSueno = sueno[sueno.length - 1];
-  const saldo = economia.saldoInicial + economia.movimientos.reduce((a, m) => a + (m.tipo === 'ingreso' ? m.cantidad : -m.cantidad), 0);
   const habilidadesActivas = Object.values(calistenia).filter((s) => s.nivel > 0).length;
 
-  let score = 30;
-  if (ultimoSueno) score += 25;
-  if (habilidadesActivas > 0 || futbol.length > 0) score += 25;
-  if (economia.movimientos.length > 0) score += 20;
-  score = Math.min(100, score);
+  // Puntuación del día — ver src/lib/puntuacion.js para el porqué del cambio. Resumido: la
+  // fórmula anterior sumaba puntos por tener datos "alguna vez", así que se quedaba clavada en
+  // 100 para siempre mientras la etiqueta seguía diciendo "de hoy". Ahora es el porcentaje de
+  // las áreas que Josué realmente usa que ha registrado HOY, y viene con su desglose para poder
+  // explicarlo en vez de mostrar un número a secas.
+  const puntuacion = puntuacionDelDia(
+    { sueno, calistenia, futbol, nutricion, productividad, diario, estudios, salud },
+  );
+  const mensajeScore = mensajePuntuacion(puntuacion);
 
   // Ampliación del Dashboard — Centro de Control: "arquitectura preparada para personalización"
   // (apartado 10/11) — cada módulo del Dashboard es una entrada de este mapa (id → si está
@@ -319,15 +394,7 @@ export default function DashboardView({
           no la ausencia del componente). */}
       <IndicadorContexto modo={modo} accent={accent} />
 
-      <Card className="flex items-center gap-5" style={{ background: `radial-gradient(circle at 25% 20%, ${hexToRgba(accent, 0.16)}, ${COLORS.surface} 65%)` }}>
-        <ScoreGauge value={score} accent={accent} />
-        <div>
-          <p className="text-3xl font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-            {score}<span className="text-base font-medium" style={{ color: COLORS.textMuted }}>/100</span>
-          </p>
-          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>Puntuación de hoy — orientativa, mejora según registres más datos</p>
-        </div>
-      </Card>
+      <TarjetaPuntuacion puntuacion={puntuacion} mensaje={mensajeScore} accent={accent} />
 
       {/* Optimización de navegación/scroll — este grupo de avisos (varios de ellos condicionales,
           nunca todos a la vez salvo mala suerte) va en su propio `space-y-2` más apretado que el
@@ -352,7 +419,7 @@ export default function DashboardView({
             <DashboardModuleCard
               icon={Moon} accent={accent} titulo="Sueño"
               vacio={!ultimoSueno}
-              valor={ultimoSueno ? `${calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar)} h` : undefined}
+              valor={ultimoSueno ? `${formatHoras(calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar))} h` : undefined}
               sub={ultimoSueno ? `Calidad ${ultimoSueno.calidad}/5` : 'Toca para registrar tu primera noche'}
               onClick={() => onNavegar('sueno')}
             />
@@ -482,7 +549,7 @@ export default function DashboardView({
       <AIPanel
         label="Consejo del día"
         accent={accent}
-        buildPrompt={() => `Datos de hoy de Josué — sueño: ${ultimoSueno ? `${calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar)}h, calidad ${ultimoSueno.calidad}/5` : 'sin registrar'}; habilidades de calistenia con progreso: ${habilidadesActivas}; partidos de fútbol registrados: ${futbol.length}; movimientos económicos registrados: ${economia.movimientos.length}. Dame un consejo breve y accionable para hoy.`}
+        buildPrompt={() => `Datos de hoy de Josué — sueño: ${ultimoSueno ? `${formatHoras(calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar))}h, calidad ${ultimoSueno.calidad}/5` : 'sin registrar'}; habilidades de calistenia con progreso: ${habilidadesActivas}; partidos de fútbol registrados: ${futbol.length}; movimientos económicos registrados: ${economia.movimientos.length}. Dame un consejo breve y accionable para hoy.`}
       />
     </div>
   );
