@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, ChevronDown, ChevronUp, Loader2, Copy, Check, Layers } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { getSignedPrendaUrl } from '../lib/supabase';
@@ -8,9 +8,12 @@ import {
   CATEGORIAS_ARMARIO, COLORES_ARMARIO, ESTADOS_PRENDA, TEMPORADAS_PRENDA,
   prendasVisibles, marcasDe, conteoPorCategoria, ordenesDisponibles,
   categoriaDe, colorDe, estadoDe,
+  ZONAS_OUTFIT, OCASIONES_OUTFIT, ESTACIONES_OUTFIT, zonaDeCategoria,
+  outfitsVisibles, ordenesOutfitsDisponibles, lugaresDe, prendasDeOutfit,
+  composicionPorZonas, outfitsConPrenda,
 } from '../lib/armario';
 import {
-  Card, SectionTitle, Field, TextInput, Textarea, PrimaryButton, GhostBtn, EmptyHint, SelectInput,
+  Card, SectionTitle, Field, TextInput, Textarea, PrimaryButton, GhostBtn, EmptyHint, SelectInput, ToggleTab,
 } from '../components/ui';
 
 /* ---------- Miniatura ----------
@@ -357,6 +360,356 @@ function PanelFiltros({ filtros, setFiltros, marcas, accent, orden, setOrden, or
         <Star size={13} style={filtros.soloFavoritas ? { color: accent, fill: accent } : undefined} /> Solo favoritas
       </button>
     </Card>
+  );
+}
+
+/* ===========================================================================
+   Entrega 2 · AR Fase 2 — Outfits
+   =========================================================================== */
+
+/* Vista previa (apartado 8): las prendas agrupadas por zona del cuerpo. La
+   especificación es explícita en que NO hace falta una silueta ni una
+   representación fotográfica del cuerpo — lo que importa es ver de qué se compone.
+   Con fotos, la composición se ve sola. */
+function ComposicionOutfit({ outfit, prendas, accent, onPulsarPrenda }) {
+  const grupos = composicionPorZonas(outfit, prendas);
+  if (grupos.length === 0) {
+    return <EmptyHint text="Este outfit todavía no tiene prendas." />;
+  }
+  return (
+    <div className="space-y-2.5">
+      {grupos.map(({ zona, prendas: lista }) => (
+        <div key={zona.id}>
+          <p className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>
+            {zona.label}
+          </p>
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            {lista.map((p) => (
+              /* Apartado 17: pulsar una prenda dentro del outfit abre SU detalle, el
+                 mismo de la Fase 1. No hay una segunda pantalla de prenda. */
+              <button
+                key={p.id}
+                onClick={() => onPulsarPrenda && onPulsarPrenda(p)}
+                className="rounded-xl overflow-hidden flex-shrink-0 text-left transition-transform active:scale-95"
+                style={{ width: 84, background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+              >
+                <MiniaturaPrenda prenda={p} alto={64} />
+                <p className="text-[11px] px-1.5 py-1 truncate" style={{ color: COLORS.text }}>{p.nombre}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* Tarjeta de outfit: un mosaico con las cuatro primeras prendas. Si el outfit tiene
+   foto propia, manda ella (apartado 9). */
+function TarjetaOutfit({ outfit, prendas, accent, onAbrir }) {
+  const suyas = prendasDeOutfit(outfit, prendas);
+  const ocasion = OCASIONES_OUTFIT.find((o) => o.id === outfit.ocasion);
+  return (
+    <button
+      onClick={() => onAbrir(outfit)}
+      className="text-left rounded-2xl overflow-hidden transition-transform active:scale-[0.97]"
+      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+    >
+      <div className="relative">
+        {outfit.fotoPath ? (
+          <MiniaturaPrenda prenda={{ fotoPath: outfit.fotoPath, nombre: outfit.nombre, color: 'otro', categoria: 'otros' }} alto={112} />
+        ) : suyas.length === 0 ? (
+          <div className="w-full flex items-center justify-center" style={{ height: 112, background: COLORS.surface2 }}>
+            <Layers size={20} style={{ color: COLORS.textMuted }} />
+          </div>
+        ) : (
+          /* Mosaico de hasta 4 prendas. Con una sola, ocupa el ancho entero en vez de
+             dejar tres huecos vacíos. */
+          <div className="grid" style={{ height: 112, gridTemplateColumns: suyas.length === 1 ? '1fr' : '1fr 1fr', gap: 1, background: COLORS.border }}>
+            {suyas.slice(0, 4).map((p) => (
+              <MiniaturaPrenda key={p.id} prenda={p} alto={suyas.length <= 2 ? 112 : 55.5} />
+            ))}
+          </div>
+        )}
+        {outfit.favorito && (
+          <span className="absolute rounded-full p-1" style={{ top: 6, right: 6, background: hexToRgba(COLORS.bg, 0.65) }}>
+            <Star size={11} style={{ color: accent, fill: accent }} />
+          </span>
+        )}
+      </div>
+      <div className="px-2.5 py-2">
+        <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{outfit.nombre || 'Sin nombre'}</p>
+        <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
+          {suyas.length} {suyas.length === 1 ? 'prenda' : 'prendas'}{ocasion ? ` · ${ocasion.label}` : ''}
+        </p>
+      </div>
+    </button>
+  );
+}
+
+/* Selector de prendas (apartados 5, 6 y 7).
+
+   Reutiliza `prendasVisibles` de la Fase 1 tal cual — la especificación pide
+   expresamente no crear un segundo sistema de búsqueda. Y no limita cuántas prendas
+   de la misma zona se pueden meter: dos camisetas o tres accesorios son un outfit
+   perfectamente válido. */
+function SelectorPrendas({ prendas, seleccion, onToggle, accent }) {
+  const [consulta, setConsulta] = useState('');
+  const [zona, setZona] = useState('');
+
+  const visibles = useMemo(() => {
+    const base = prendasVisibles(prendas, { consulta, orden: 'recientes' });
+    if (!zona) return base;
+    return base.filter((p) => zonaDeCategoria(p.categoria) === zona);
+  }, [prendas, consulta, zona]);
+
+  return (
+    <div>
+      <div className="relative mb-2">
+        <Search size={14} style={{ color: COLORS.textMuted, position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
+        <TextInput
+          value={consulta}
+          onChange={(e) => setConsulta(e.target.value)}
+          placeholder="Buscar entre tus prendas…"
+          style={{ paddingLeft: 30 }}
+        />
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1 mb-2" style={{ scrollbarWidth: 'none' }}>
+        <button
+          onClick={() => setZona('')}
+          className="text-xs px-3 py-1.5 rounded-full font-semibold flex-shrink-0"
+          style={{ background: !zona ? accent : COLORS.surface2, color: !zona ? COLORS.textOnAccent : COLORS.textMuted, border: `1px solid ${!zona ? accent : COLORS.border}` }}
+        >
+          Todas
+        </button>
+        {ZONAS_OUTFIT.map((z) => {
+          const activa = zona === z.id;
+          return (
+            <button
+              key={z.id}
+              onClick={() => setZona(activa ? '' : z.id)}
+              className="text-xs px-3 py-1.5 rounded-full font-semibold flex-shrink-0"
+              style={{ background: activa ? accent : COLORS.surface2, color: activa ? COLORS.textOnAccent : COLORS.textMuted, border: `1px solid ${activa ? accent : COLORS.border}` }}
+            >
+              {z.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {visibles.length === 0 ? (
+        <EmptyHint text={consulta || zona ? 'Ninguna prenda coincide.' : 'Añade prendas al armario para poder combinarlas.'} />
+      ) : (
+        <div className="grid grid-cols-3 gap-2" style={{ maxHeight: '40vh', overflowY: 'auto' }}>
+          {visibles.map((p) => {
+            const elegida = seleccion.includes(p.id);
+            return (
+              <button
+                key={p.id}
+                onClick={() => onToggle(p.id)}
+                aria-pressed={elegida}
+                className="relative rounded-xl overflow-hidden text-left transition-transform active:scale-95"
+                style={{ background: COLORS.surface2, border: `2px solid ${elegida ? accent : COLORS.border}` }}
+              >
+                <MiniaturaPrenda prenda={p} alto={62} />
+                <p className="text-[11px] px-1.5 py-1 truncate" style={{ color: COLORS.text }}>{p.nombre}</p>
+                {elegida && (
+                  <span className="absolute rounded-full p-0.5" style={{ top: 4, right: 4, background: accent }}>
+                    <Check size={10} style={{ color: COLORS.textOnAccent }} strokeWidth={3} />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const FORM_OUTFIT_VACIO = {
+  nombre: '', descripcion: '', prendaIds: [], ocasion: 'diario',
+  estacion: 'todo_el_ano', lugar: '', personas: [], favorito: false,
+};
+
+/* Apartado 25: crear un outfit tiene que ser rápido. Nombre → prendas → guardar.
+   Lo demás (ocasión, estación, lugar, personas, descripción) va plegado. */
+function FormularioOutfit({ inicial, prendas, accent, guardando, errorFoto, fotoPendiente, onFoto, onGuardar, onCancelar }) {
+  const [form, setForm] = useState({ ...FORM_OUTFIT_VACIO, ...(inicial || {}) });
+  const [masInfo, setMasInfo] = useState(false);
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const toggle = (id) => setForm((f) => ({
+    ...f,
+    prendaIds: f.prendaIds.includes(id) ? f.prendaIds.filter((x) => x !== id) : [...f.prendaIds, id],
+  }));
+  const puedeGuardar = form.nombre.trim().length > 0 && !guardando;
+
+  return (
+    <Card>
+      <Field label="Nombre del outfit">
+        <TextInput
+          value={form.nombre} autoFocus
+          onChange={(e) => set('nombre', e.target.value)}
+          placeholder="Ej: Casual gris"
+        />
+      </Field>
+
+      <p className="text-xs font-semibold mb-1.5" style={{ color: COLORS.textMuted }}>
+        Prendas {form.prendaIds.length > 0 && `· ${form.prendaIds.length} elegidas`}
+      </p>
+      <SelectorPrendas prendas={prendas} seleccion={form.prendaIds} onToggle={toggle} accent={accent} />
+
+      <label className="flex items-center gap-2 text-xs font-semibold mt-3 mb-3 cursor-pointer" style={{ color: accent }}>
+        <Camera size={14} />
+        {fotoPendiente ? `Foto elegida: ${fotoPendiente}` : 'Foto del outfit (opcional)'}
+        <input type="file" accept="image/*" className="hidden" onChange={(e) => onFoto(e.target.files?.[0] || null)} />
+      </label>
+      {errorFoto && <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>{errorFoto}</p>}
+
+      <button
+        onClick={() => setMasInfo((m) => !m)}
+        className="flex items-center gap-1.5 text-xs font-semibold mb-3"
+        style={{ color: COLORS.textMuted }}
+        aria-expanded={masInfo}
+      >
+        {masInfo ? <ChevronUp size={13} /> : <ChevronDown size={13} />} Más información
+      </button>
+
+      {masInfo && (
+        <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Ocasión">
+              <SelectInput value={form.ocasion} onChange={(e) => set('ocasion', e.target.value)}>
+                {OCASIONES_OUTFIT.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+              </SelectInput>
+            </Field>
+            <Field label="Estación">
+              <SelectInput value={form.estacion} onChange={(e) => set('estacion', e.target.value)}>
+                {ESTACIONES_OUTFIT.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+              </SelectInput>
+            </Field>
+          </div>
+          <Field label="Lugar"><TextInput value={form.lugar} onChange={(e) => set('lugar', e.target.value)} placeholder="Instituto, gimnasio…" /></Field>
+          {/* Apartado 11: personas es texto libre separado por comas, no un sistema
+              social — el propio apartado dice que no se construya uno. */}
+          <Field label="Personas">
+            <TextInput
+              value={(form.personas || []).join(', ')}
+              onChange={(e) => set('personas', e.target.value.split(',').map((x) => x.trim()).filter(Boolean))}
+              placeholder="Amigos, familia…"
+            />
+          </Field>
+          <Field label="Descripción"><Textarea value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)} rows={2} /></Field>
+          <button
+            onClick={() => set('favorito', !form.favorito)}
+            className="flex items-center gap-1.5 text-xs font-semibold mb-3"
+            style={{ color: form.favorito ? accent : COLORS.textMuted }}
+            aria-pressed={form.favorito}
+          >
+            <Star size={13} style={form.favorito ? { color: accent, fill: accent } : undefined} />
+            {form.favorito ? 'Es uno de tus favoritos' : 'Marcar como favorito'}
+          </button>
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <PrimaryButton accent={accent} onClick={() => onGuardar(form)} disabled={!puedeGuardar}>
+          {guardando ? 'Guardando…' : 'Guardar outfit'}
+        </PrimaryButton>
+        <div style={{ width: 100, flexShrink: 0 }}>
+          <GhostBtn onClick={onCancelar}>Cancelar</GhostBtn>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/* Detalle del outfit (apartado 16): todo lo que tenga, y editar / duplicar / eliminar. */
+function DetalleOutfit({ outfit, prendas, accent, onCerrar, onEditar, onDuplicar, onEliminar, onAbrirPrenda }) {
+  const [confirmando, setConfirmando] = useState(false);
+  const ocasion = OCASIONES_OUTFIT.find((o) => o.id === outfit.ocasion);
+  const estacion = ESTACIONES_OUTFIT.find((o) => o.id === outfit.estacion);
+  const filas = [
+    ['Ocasión', ocasion?.label],
+    ['Estación', estacion?.label],
+    ['Lugar', outfit.lugar],
+    ['Personas', (outfit.personas || []).join(', ')],
+  ].filter(([, v]) => v);
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCerrar}>
+      <div
+        className="w-full max-w-md rounded-3xl overflow-hidden"
+        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, maxHeight: '86vh' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ maxHeight: '86vh', overflowY: 'auto' }}>
+          <div className="flex items-start justify-between gap-3 p-4 pb-2">
+            <div className="min-w-0">
+              <p className="text-lg font-bold flex items-center gap-2" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+                <span className="truncate">{outfit.nombre || 'Sin nombre'}</span>
+                {outfit.favorito && <Star size={15} style={{ color: accent, fill: accent, flexShrink: 0 }} />}
+              </p>
+            </div>
+            <button onClick={onCerrar} className="rounded-full p-1.5 flex-shrink-0" style={{ background: COLORS.surface2 }} aria-label="Cerrar outfit">
+              <X size={14} style={{ color: COLORS.text }} />
+            </button>
+          </div>
+
+          <div className="px-4 pb-4">
+            {outfit.fotoPath && (
+              <div className="rounded-2xl overflow-hidden mb-3">
+                <MiniaturaPrenda prenda={{ fotoPath: outfit.fotoPath, nombre: outfit.nombre, color: 'otro', categoria: 'otros' }} alto={180} />
+              </div>
+            )}
+
+            <ComposicionOutfit outfit={outfit} prendas={prendas} accent={accent} onPulsarPrenda={onAbrirPrenda} />
+
+            {filas.length > 0 && (
+              <div className="mt-3 space-y-1.5">
+                {filas.map(([k, v]) => (
+                  <div key={k} className="flex items-baseline justify-between gap-3">
+                    <span className="text-xs flex-shrink-0" style={{ color: COLORS.textMuted }}>{k}</span>
+                    <span className="text-sm text-right min-w-0 truncate" style={{ color: COLORS.text }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {outfit.descripcion && (
+              <p className="text-sm mt-3 leading-relaxed" style={{ color: COLORS.textMuted }}>{outfit.descripcion}</p>
+            )}
+
+            <div className="flex gap-2 mt-4">
+              <PrimaryButton accent={accent} onClick={() => onEditar(outfit)} icon={Pencil}>Editar</PrimaryButton>
+              <div style={{ width: 118, flexShrink: 0 }}>
+                <GhostBtn icon={Copy} onClick={() => onDuplicar(outfit)}>Duplicar</GhostBtn>
+              </div>
+            </div>
+
+            {confirmando ? (
+              <div className="mt-3 rounded-2xl p-3" style={{ background: COLORS.surface2 }}>
+                {/* Apartado 15, dicho en la propia interfaz para que no dé miedo: borrar
+                    el outfit no borra ninguna prenda. */}
+                <p className="text-xs mb-2" style={{ color: COLORS.text }}>
+                  ¿Eliminar este outfit? Tus prendas se quedan en el armario; solo desaparece la combinación.
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={() => onEliminar(outfit)} className="text-xs font-semibold" style={{ color: COLORS.negative }}>Sí, eliminar</button>
+                  <button onClick={() => setConfirmando(false)} className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>Cancelar</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmando(true)} className="text-xs font-semibold mt-3" style={{ color: COLORS.negative }}>
+                Eliminar outfit
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

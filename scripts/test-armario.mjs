@@ -44,7 +44,7 @@ console.log('\n═══ AR Fase 1 — armario digital ═══\n');
   const esperados = [
     'id', 'nombre', 'categoria', 'subcategoria', 'color', 'colorSecundario', 'marca', 'talla',
     'fotoPath', 'temporada', 'material', 'notas', 'precio', 'fechaCompra', 'estado', 'favorita',
-    'usos', 'ultimoUso', 'outfits', 'creadaEn', 'actualizadaEn',
+    'usos', 'ultimoUso', 'creadaEn', 'actualizadaEn',
   ];
   for (const campo of esperados) {
     comprobar(`La prenda nace con "${campo}"`, campo in p);
@@ -52,7 +52,11 @@ console.log('\n═══ AR Fase 1 — armario digital ═══\n');
   comprobar('El nombre llega recortado', p.nombre === 'Vaquero gris');
   comprobar('Sin foto, fotoPath es una cadena vacía (no undefined)', p.fotoPath === '');
   comprobar('Los campos de uso empiezan a cero, listos para la Fase 3',
-    p.usos === 0 && p.ultimoUso === null && Array.isArray(p.outfits) && p.outfits.length === 0);
+    p.usos === 0 && p.ultimoUso === null);
+  // AR Fase 2 quitó `prenda.outfits`: la relación la manda `outfit.prendaIds`, y dos
+  // listas para el mismo vínculo es como se desincronizan los datos. Se comprueba que
+  // NO vuelva a colarse, porque el error natural es "prepararlo por si acaso".
+  comprobar('La prenda NO guarda su lista de outfits (una sola fuente de verdad)', !('outfits' in p));
   comprobar('El precio vacío es null, no NaN', crearPrenda({ precio: '' }).precio === null);
   comprobar('El precio escrito se guarda como número', crearPrenda({ precio: '39.90' }).precio === 39.9);
   comprobar('Sin categoría cae en "otros"', crearPrenda({}).categoria === 'otros');
@@ -63,14 +67,13 @@ console.log('\n═══ AR Fase 1 — armario digital ═══\n');
 
 // --- Edición (apartado 8) ---
 {
-  const p = { ...crearPrenda({ nombre: 'Camiseta', categoria: 'camisetas', color: 'negro' }), usos: 12, ultimoUso: '2026-08-01', outfits: ['o1'] };
+  const p = { ...crearPrenda({ nombre: 'Camiseta', categoria: 'camisetas', color: 'negro' }), usos: 12, ultimoUso: '2026-08-01' };
   const editada = actualizarPrenda(p, { nombre: 'Camiseta negra', talla: 'M', color: 'blanco' });
 
   comprobar('Editar cambia lo que se le pide', editada.nombre === 'Camiseta negra' && editada.talla === 'M' && editada.color === 'blanco');
   comprobar('...y conserva lo que no se toca', editada.categoria === 'camisetas');
   comprobar('...y mantiene el id', editada.id === p.id);
   comprobar('Editar NO borra el historial de uso', editada.usos === 12 && editada.ultimoUso === '2026-08-01');
-  comprobar('...ni los outfits en los que aparece', editada.outfits.length === 1);
   comprobar('Editar conserva la fecha de creación', editada.creadaEn === p.creadaEn);
   // Aunque alguien intente colarlo desde el formulario, `usos` no se sobrescribe:
   // una edición de la talla no puede reescribir cuántas veces te has puesto la prenda.

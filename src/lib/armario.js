@@ -8,15 +8,22 @@
 // explícitamente "no diseñar una estructura que obligue a rehacer las prendas".
 //
 // POR QUÉ HAY CAMPOS QUE HOY NO SE USAN
-// `usos`, `ultimoUso`, `outfits` y `favorita` están desde el primer día y vacíos.
-// No son adorno: la Fase 3 (calendario e historial) y la Fase 4 (anti-repetición)
-// necesitan responder a "¿cuándo la usé por última vez?" y "¿cuánto lleva sin
-// usarse?", y si esos campos aparecen después, todas las prendas ya guardadas se
-// quedan sin ellos — y `loadData` NO fusiona con el valor por defecto (regla 5),
-// así que arreglarlo luego exige una migración manual prenda a prenda.
+// `usos`, `ultimoUso` y `favorita` están desde el primer día y vacíos. No son
+// adorno: la Fase 3 (calendario e historial) y la Fase 4 (anti-repetición) necesitan
+// responder a "¿cuándo la usé por última vez?" y "¿cuánto lleva sin usarse?", y si
+// esos campos aparecen después, todas las prendas ya guardadas se quedan sin ellos —
+// y `loadData` NO fusiona con el valor por defecto (regla 5), así que arreglarlo
+// luego exige una migración manual prenda a prenda.
 //
-// Lo que NO se hace aquí, a propósito (apartado 24): ni outfits, ni calendario,
-// ni recomendaciones, ni estadísticas. Solo la estructura que las hará posibles.
+// UN CAMPO QUE SE QUITÓ AL LLEGAR LA FASE 2
+// La Fase 1 dejó también un `prenda.outfits`, pensando que haría falta. Al construir
+// la Fase 2 quedó claro que no: la relación la manda el outfit (`outfit.prendaIds`,
+// que es la estructura que pide el apartado 19), y mantener además la lista al revés
+// dentro de cada prenda son DOS fuentes de verdad para el mismo dato — que es
+// exactamente como se desincronizan las cosas: basta con que un borrado toque una y
+// no la otra. Se deriva con `outfitsConPrenda()`, que siempre acierta porque lee la
+// única lista que existe. Las prendas guardadas antes conservan el campo; nadie lo
+// lee, y no estorba.
 //
 // Este archivo es PURO: ni React, ni Supabase, ni acceso al DOM. Por eso se puede
 // probar entero con Node.
@@ -133,10 +140,9 @@ export function crearPrenda(datos = {}) {
     fechaCompra: datos.fechaCompra || '',
     estado: datos.estado || 'disponible',
     favorita: !!datos.favorita,
-    // --- Preparado para las fases 2, 3 y 4 (apartados 14 y 15). Vacío hoy. ---
+    // --- Preparado para las fases 3 y 4 (apartados 14 y 15). Vacío hoy. ---
     usos: 0,
     ultimoUso: null,
-    outfits: [],
     creadaEn: datos.creadaEn || ahora,
     actualizadaEn: ahora,
   };
@@ -151,11 +157,10 @@ export function actualizarPrenda(prenda, cambios = {}) {
     ...prenda,
     ...cambios,
     precio,
-    // Estos tres NO se dejan sobrescribir desde el formulario: son historia, y una
-    // edición de la talla no puede borrar cuántas veces se ha puesto la prenda.
+    // Estos NO se dejan sobrescribir desde el formulario: son historia, y una edición
+    // de la talla no puede borrar cuántas veces se ha puesto la prenda.
     usos: prenda.usos,
     ultimoUso: prenda.ultimoUso,
-    outfits: prenda.outfits,
     creadaEn: prenda.creadaEn,
     actualizadaEn: new Date().toISOString(),
   };
@@ -286,3 +291,246 @@ export function resumenArmario(armario) {
   };
 }
 
+
+// ===========================================================================
+// Entrega 2 · AR Fase 2 — Outfits
+//
+// LA REGLA QUE MANDA (apartados 1 y 19)
+// Un outfit REFERENCIA prendas, nunca las copia. Guarda `prendaIds`, no objetos.
+// Si Josué le cambia el nombre a una prenda o le pone una foto, el outfit sigue
+// apuntando a la misma prenda y se entera del cambio solo. Copiar los datos
+// dentro del outfit sería justo lo que la especificación prohíbe.
+//
+// Y AL REVÉS NO SE GUARDA NADA
+// La relación vive en un único sitio: `outfit.prendaIds`. No hay una lista de
+// outfits dentro de cada prenda, porque dos listas para la misma relación es como
+// se desincronizan los datos. `outfitsConPrenda()` la deriva cuando hace falta.
+// ===========================================================================
+
+// Apartado 5 — el selector agrupa las prendas por ZONA del cuerpo, no por las 14
+// categorías: elegir "parte superior" es como se piensa al vestirse. Es una vista
+// sobre las categorías que ya existen, no una segunda clasificación que Josué
+// tenga que rellenar.
+export const ZONAS_OUTFIT = [
+  { id: 'superior', label: 'Parte superior', categorias: ['camisetas', 'camisas', 'polos', 'sudaderas', 'jerseis'] },
+  { id: 'inferior', label: 'Parte inferior', categorias: ['pantalones', 'shorts', 'chandal'] },
+  { id: 'calzado', label: 'Calzado', categorias: ['zapatillas', 'zapatos'] },
+  { id: 'abrigo', label: 'Abrigo', categorias: ['chaquetas', 'abrigos'] },
+  { id: 'accesorios', label: 'Accesorios', categorias: ['accesorios'] },
+  { id: 'otros', label: 'Otros', categorias: ['otros'] },
+];
+
+export function zonaDeCategoria(categoriaId) {
+  const z = ZONAS_OUTFIT.find((x) => x.categorias.includes(categoriaId));
+  return z ? z.id : 'otros';
+}
+
+export const OCASIONES_OUTFIT = [
+  { id: 'diario', label: 'Diario' },
+  { id: 'casual', label: 'Casual' },
+  { id: 'deporte', label: 'Deporte' },
+  { id: 'estudios', label: 'Universidad/estudios' },
+  { id: 'trabajo', label: 'Trabajo' },
+  { id: 'cena', label: 'Cena' },
+  { id: 'fiesta', label: 'Fiesta' },
+  { id: 'evento', label: 'Evento' },
+  { id: 'formal', label: 'Formal' },
+  { id: 'viaje', label: 'Viaje' },
+  { id: 'otro', label: 'Otro' },
+];
+
+// Las estaciones del apartado 10 son cinco y no coinciden con las cuatro
+// temporadas de una prenda: una prenda es "de invierno", un outfit se lleva "en
+// otoño". Se dejan separadas a propósito en vez de forzar una lista común.
+export const ESTACIONES_OUTFIT = [
+  { id: 'todo_el_ano', label: 'Todo el año' },
+  { id: 'primavera', label: 'Primavera' },
+  { id: 'verano', label: 'Verano' },
+  { id: 'otono', label: 'Otoño' },
+  { id: 'invierno', label: 'Invierno' },
+];
+
+export const ORDENES_OUTFITS = [
+  { id: 'recientes', label: 'Creados recientemente' },
+  { id: 'antiguos', label: 'Creados hace más tiempo' },
+  { id: 'az', label: 'Nombre A-Z' },
+  { id: 'za', label: 'Nombre Z-A' },
+  { id: 'favoritos', label: 'Favoritos primero' },
+  { id: 'mas_usados', label: 'Más usados', requiereUso: true },
+  { id: 'menos_usados', label: 'Menos usados', requiereUso: true },
+  { id: 'sin_usar', label: 'Más tiempo sin usar', requiereUso: true },
+];
+
+/** Crea un outfit. Solo el nombre es obligatorio (apartado 25: rápido). */
+export function crearOutfit(datos = {}) {
+  const ahora = new Date().toISOString();
+  return {
+    id: uid(),
+    nombre: (datos.nombre || '').trim(),
+    descripcion: (datos.descripcion || '').trim(),
+    // Referencias, nunca copias (apartados 1 y 19). Sin duplicados: añadir dos veces
+    // la misma prenda a un outfit no significa nada.
+    prendaIds: [...new Set(datos.prendaIds || [])],
+    fotoPath: datos.fotoPath || '',
+    ocasion: datos.ocasion || 'diario',
+    estacion: datos.estacion || 'todo_el_ano',
+    // Apartados 10 y 11: `lugar` y `personas` se guardan desde ya porque la Fase 3
+    // los necesita para el historial ("¿dónde lo usé? ¿con quién?"). `personas` es
+    // una lista de texto libre, no un sistema social: eso lo prohíbe el apartado 11.
+    lugar: (datos.lugar || '').trim(),
+    personas: Array.isArray(datos.personas) ? datos.personas.filter(Boolean) : [],
+    favorito: !!datos.favorito,
+    // --- Apartado 18: preparado para la Fase 3. Vacío hoy. ---
+    usos: 0,
+    ultimoUso: null,
+    creadoEn: datos.creadoEn || ahora,
+    actualizadoEn: ahora,
+  };
+}
+
+export function actualizarOutfit(outfit, cambios = {}) {
+  return {
+    ...outfit,
+    ...cambios,
+    prendaIds: cambios.prendaIds ? [...new Set(cambios.prendaIds)] : outfit.prendaIds,
+    // Historia: no se sobrescribe desde el formulario.
+    usos: outfit.usos,
+    ultimoUso: outfit.ultimoUso,
+    creadoEn: outfit.creadoEn,
+    actualizadoEn: new Date().toISOString(),
+  };
+}
+
+/**
+ * Apartado 14 — duplicar. La copia es independiente pero **usa las mismas prendas**,
+ * y arranca con el historial a cero: es un outfit nuevo, no se ha llevado nunca.
+ */
+export function duplicarOutfit(outfit) {
+  return crearOutfit({
+    ...outfit,
+    nombre: `${outfit.nombre} (copia)`,
+    prendaIds: [...outfit.prendaIds],
+    personas: [...outfit.personas],
+    creadoEn: undefined,
+  });
+}
+
+/** Las prendas de un outfit, en el orden en que se añadieron. Ignora las que ya no existen. */
+export function prendasDeOutfit(outfit, prendas) {
+  const porId = new Map((prendas || []).map((p) => [p.id, p]));
+  return (outfit?.prendaIds || []).map((id) => porId.get(id)).filter(Boolean);
+}
+
+/**
+ * Apartado 22 — "Outfits que utilizan el vaquero gris". Se deriva de `prendaIds`,
+ * que es la única lista que existe, así que nunca puede estar desincronizada.
+ */
+export function outfitsConPrenda(outfits, prendaId) {
+  return (outfits || []).filter((o) => (o.prendaIds || []).includes(prendaId));
+}
+
+/**
+ * Apartado 23 — búsqueda. El ejemplo de la especificación es el que manda: buscar
+ * "negro" tiene que encontrar un outfit llamado "Total Black" **si contiene una
+ * prenda negra**, aunque su nombre no lleve esa palabra. Por eso la búsqueda mira
+ * también el texto de las prendas que lo componen.
+ */
+export function buscarOutfits(outfits, prendas, consulta) {
+  const q = norm(consulta).trim();
+  if (!q) return outfits || [];
+  return (outfits || []).filter((o) => {
+    const propio = [
+      o.nombre, o.descripcion, o.lugar,
+      (OCASIONES_OUTFIT.find((x) => x.id === o.ocasion) || {}).label,
+      (ESTACIONES_OUTFIT.find((x) => x.id === o.estacion) || {}).label,
+      ...(o.personas || []),
+    ].map(norm).join(' ');
+    if (propio.includes(q)) return true;
+    return prendasDeOutfit(o, prendas).some((p) =>
+      [p.nombre, p.marca, categoriaDe(p.categoria).label, colorDe(p.color).label].map(norm).join(' ').includes(q));
+  });
+}
+
+/** Apartado 22 — filtros combinables, incluido "los que llevan esta prenda". */
+export function filtrarOutfits(outfits, filtros = {}) {
+  const { ocasion, estacion, lugar, prendaId, soloFavoritos } = filtros;
+  return (outfits || []).filter((o) => {
+    if (ocasion && o.ocasion !== ocasion) return false;
+    if (estacion && o.estacion !== estacion) return false;
+    if (lugar && norm(o.lugar) !== norm(lugar)) return false;
+    if (prendaId && !(o.prendaIds || []).includes(prendaId)) return false;
+    if (soloFavoritos && !o.favorito) return false;
+    return true;
+  });
+}
+
+/** Apartado 24 — ordenación. Devuelve una copia. */
+export function ordenarOutfits(outfits, orden = 'recientes') {
+  const lista = [...(outfits || [])];
+  const porNombre = (a, b) => norm(a.nombre).localeCompare(norm(b.nombre), 'es');
+  switch (orden) {
+    case 'antiguos': return lista.sort((a, b) => String(a.creadoEn).localeCompare(String(b.creadoEn)));
+    case 'az': return lista.sort(porNombre);
+    case 'za': return lista.sort((a, b) => porNombre(b, a));
+    case 'favoritos': return lista.sort((a, b) => (b.favorito ? 1 : 0) - (a.favorito ? 1 : 0) || String(b.creadoEn).localeCompare(String(a.creadoEn)));
+    case 'mas_usados': return lista.sort((a, b) => (b.usos || 0) - (a.usos || 0) || porNombre(a, b));
+    case 'menos_usados': return lista.sort((a, b) => (a.usos || 0) - (b.usos || 0) || porNombre(a, b));
+    case 'sin_usar': return lista.sort((a, b) => {
+      if (!a.ultimoUso && !b.ultimoUso) return porNombre(a, b);
+      if (!a.ultimoUso) return -1;
+      if (!b.ultimoUso) return 1;
+      return String(a.ultimoUso).localeCompare(String(b.ultimoUso));
+    });
+    case 'recientes':
+    default: return lista.sort((a, b) => String(b.creadoEn).localeCompare(String(a.creadoEn)));
+  }
+}
+
+export function outfitsVisibles(outfits, prendas, { consulta = '', filtros = {}, orden = 'recientes' } = {}) {
+  return ordenarOutfits(filtrarOutfits(buscarOutfits(outfits, prendas, consulta), filtros), orden);
+}
+
+/** Mismo criterio que en prendas: sin uso registrado no se ofrece ordenar por uso. */
+export function ordenesOutfitsDisponibles(outfits) {
+  const hayUso = (outfits || []).some((o) => (o.usos || 0) > 0);
+  return ORDENES_OUTFITS.filter((o) => !o.requiereUso || hayUso);
+}
+
+/** Lugares que Josué ha escrito de verdad, para el desplegable de filtro. */
+export function lugaresDe(outfits) {
+  const vistos = new Map();
+  for (const o of outfits || []) {
+    const l = (o.lugar || '').trim();
+    if (l && !vistos.has(norm(l))) vistos.set(norm(l), l);
+  }
+  return [...vistos.values()].sort((a, b) => a.localeCompare(b, 'es'));
+}
+
+/**
+ * Las prendas de un outfit repartidas por zona, para la vista previa del apartado 8.
+ * Solo devuelve las zonas que tienen algo: una fila "Calzado" vacía no aporta nada.
+ */
+export function composicionPorZonas(outfit, prendas) {
+  const lista = prendasDeOutfit(outfit, prendas);
+  return ZONAS_OUTFIT
+    .map((z) => ({ zona: z, prendas: lista.filter((p) => zonaDeCategoria(p.categoria) === z.id) }))
+    .filter((g) => g.prendas.length > 0);
+}
+
+/**
+ * Apartado 15 — al borrar una prenda, los outfits que la usaban se quedan con una
+ * referencia rota. No se borra el outfit (las prendas pertenecen al armario, los
+ * outfits solo las referencian): se le quita esa prenda y punto.
+ *
+ * Devuelve la lista de outfits ya limpia, o la misma si no había nada que limpiar
+ * — así quien llama puede saltarse el guardado cuando no hace falta.
+ */
+export function limpiarPrendaDeOutfits(outfits, prendaId) {
+  let cambio = false;
+  const siguiente = (outfits || []).map((o) => {
+    if (!(o.prendaIds || []).includes(prendaId)) return o;
+    cambio = true;
+    return { ...o, prendaIds: o.prendaIds.filter((x) => x !== prendaId), actualizadoEn: new Date().toISOString() };
+  });
+  return cambio ? siguiente : outfits;
+}
