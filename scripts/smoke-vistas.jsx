@@ -31,6 +31,7 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
+import ArmarioView from '../src/views/ArmarioView.jsx';
 
 import {
   DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION,
@@ -39,6 +40,7 @@ import {
   DEFAULT_NOTIFICACIONES, DEFAULT_CALENDARIO, ACCENTS,
 } from '../src/tokens.js';
 import { DEFAULT_PAPELERA } from '../src/lib/papelera.js';
+import { DEFAULT_ARMARIO, crearPrenda } from '../src/lib/armario.js';
 import { calcularResumenModulo } from '../src/lib/resumenesHub.js';
 
 const accent = ACCENTS[0].value;
@@ -54,10 +56,18 @@ const vacio = {
   relacion: DEFAULT_RELACION, fe: DEFAULT_FE, bienestar: DEFAULT_BIENESTAR,
   calendario: DEFAULT_CALENDARIO, personalizacion: DEFAULT_PERSONALIZACION,
   notificaciones: DEFAULT_NOTIFICACIONES, papelera: DEFAULT_PAPELERA,
+  armario: DEFAULT_ARMARIO,
 };
 
 const lleno = {
   ...vacio,
+  armario: {
+    ...DEFAULT_ARMARIO,
+    prendas: [
+      { ...crearPrenda({ nombre: 'Vaquero gris', categoria: 'pantalones', color: 'gris', marca: "Levi's", talla: '30' }), creadaEn: '2026-01-01T00:00:00Z' },
+      { ...crearPrenda({ nombre: 'Sudadera Nike', categoria: 'sudaderas', color: 'negro', marca: 'Nike', favorita: true, estado: 'lavanderia' }), creadaEn: '2026-02-01T00:00:00Z' },
+    ],
+  },
   sueno: [{ id: '1', fecha: HOY, horaDormir: '23:30', horaDespertar: '07:00', calidad: 4, notas: '' }],
   calistenia: { ...DEFAULT_CALISTENIA, Planche: { nivel: 35, progresion: [{ id: 'p', texto: 'Tuck', hecho: true }], prs: [{ id: 'r', fecha: HOY, valor: '20s' }], sesiones: [{ id: 's', fecha: HOY }] } },
   futbol: [{ id: 'f', fecha: HOY, resultado: '3-2' }],
@@ -112,6 +122,10 @@ const CASOS = [
   ['AchievementsView', AchievementsView, (e) => ({ ...e, accent })],
   ['WellbeingView', WellbeingView, (e) => ({ bienestar: e.bienestar, onAdd: noop, onDelete: noop, onAddReflexion: noop, onCompletarSesion: noop, accent })],
   ['BusinessView', BusinessView, (e) => ({ negocio: e.negocio, onAdd: noop, onUpdate: noop, onDelete: noop, accent })],
+  ['ArmarioView', ArmarioView, (e) => ({
+    armario: e.armario, onAddPrenda: noop, onUpdatePrenda: noop, onDeletePrenda: noop,
+    onSubirFoto: async () => '', accent,
+  })],
   ['PersonalizationView', PersonalizationView, (e) => ({
     areas: AREAS_PRUEBA,
     modulos: MODULOS_PRUEBA,
@@ -151,6 +165,10 @@ const parcial = {
   bienestar: { registros: [{ id: 'b', fecha: HOY }], reflexiones: [], sesiones: [] },
   negocio: { proyectos: [{ id: 'n' }] },
   relacion: { nombre: '', fechas: [{ id: 'r', fecha: HOY }] },
+  // Entrega 2 · AR Fase 1 — una prenda a medio rellenar: sin marca, sin talla y sin foto.
+  // Es el caso normal de verdad, porque la especificación insiste en que añadir una prenda
+  // tiene que poder hacerse en segundos con solo tres campos.
+  armario: { ...DEFAULT_ARMARIO, prendas: [{ id: 'pr', nombre: 'Camiseta', categoria: 'camisetas', color: 'negro', estado: 'disponible' }] },
 };
 
 // Cuarto escenario: con módulos desactivados desde el centro de módulos (Entrega 2 · ME Fase 1).

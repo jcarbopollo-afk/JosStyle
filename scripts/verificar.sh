@@ -74,6 +74,12 @@ else
   fallo "Fallan pruebas del buscador de funciones"; grep '✗' /tmp/jc_busc.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-armario.mjs >/tmp/jc_arm.log 2>&1; then
+  ok "Armario (AR F1) — $(grep -c '✓' /tmp/jc_arm.log) comprobaciones"
+else
+  fallo "Fallan pruebas del armario"; grep '✗' /tmp/jc_arm.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else
@@ -107,10 +113,17 @@ fi
 #   · tokens.js      — es la definición del sistema de tokens
 #   · colorEngine.js — es el motor de color; sus candidatos de texto SON el sistema
 #   · #EDEFF2        — icono de borrar foto sobre un scrim oscuro fijo, intencionado
+#   · armario.js      — el color de una PRENDA no es un color de interfaz: una camiseta
+#                       negra es negra en tema claro y en tema oscuro, así que no puede
+#                       salir del sistema de temas. Es un dato de la prenda, como su talla,
+#                       y solo se usa para pintar su muestra cuando no hay fotografía.
+#                       La exclusión es del archivo entero a propósito: si mañana hace falta
+#                       un color nuevo, tiene que poder añadirse ahí y en ningún otro sitio.
 #   · líneas de comentario — mencionar un hex al explicar una decisión no es usarlo
 HEX=$(grep -rEn "#[0-9A-Fa-f]{6}" src/ --include=*.jsx --include=*.js \
       | grep -v '^src/tokens.js:' \
       | grep -v '^src/lib/colorEngine.js:' \
+      | grep -v '^src/lib/armario.js:' \
       | grep -v '#EDEFF2' \
       | grep -vE ':[0-9]+:[[:space:]]*(//|\*|/\*)' \
       || true)

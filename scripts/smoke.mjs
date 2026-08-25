@@ -25,12 +25,33 @@ await build({
     // entiende. Para una prueba de humo de RENDERIZADO no hacen falta: se
     // sustituyen por stubs vacíos. Si alguna vista dependiera de ellos para
     // pintarse, el propio render fallaría y la prueba lo detectaría.
+    //
+    // `lib/supabase.js` se stubea por un motivo distinto: lee `import.meta.env`
+    // al cargarse, y eso solo existe dentro de Vite. Apareció al añadir
+    // ArmarioView (AR Fase 1), la primera vista del smoke que toca Storage.
+    // Stubearlo es además lo correcto: `renderToString` no ejecuta los efectos,
+    // así que una vista NUNCA debería necesitar la red para pintarse — si alguna
+    // lo intentara, es un fallo de diseño y esta prueba lo destaparía.
     name: 'stub-solo-navegador',
     setup(b) {
       const soloNavegador = /(^pdfjs-dist|^@zxing\/library|\?url$)/;
       b.onResolve({ filter: soloNavegador }, (args) => ({ path: args.path, namespace: 'stub' }));
+      b.onResolve({ filter: /lib\/supabase(\.js)?$/ }, (args) => ({ path: args.path, namespace: 'stub-supabase' }));
       b.onLoad({ filter: /.*/, namespace: 'stub' }, () => ({
         contents: 'export default {}; export const getDocument = () => ({ promise: Promise.resolve({ numPages: 0 }) }); export const GlobalWorkerOptions = {}; export class BrowserMultiFormatReader {}',
+        loader: 'js',
+      }));
+      b.onLoad({ filter: /.*/, namespace: 'stub-supabase' }, () => ({
+        contents: `
+          export const supabase = {};
+          const nada = async () => null;
+          export const getSession = nada, onAuthChange = nada, onAuthEvent = nada;
+          export const sendPasswordReset = nada, loadData = nada, saveData = nada, signOut = nada;
+          export const uploadProgressPhoto = nada, deleteProgressPhoto = nada, getSignedPhotoUrl = nada;
+          export const uploadTrainingVideo = nada, deleteTrainingVideo = nada, getSignedVideoUrl = nada;
+          export const uploadBibliotecaArchivo = nada, deleteBibliotecaArchivo = nada, getSignedArchivoUrl = nada;
+          export const uploadPrendaFoto = nada, deletePrendaFoto = nada, getSignedPrendaUrl = nada;
+        `,
         loader: 'js',
       }));
     },

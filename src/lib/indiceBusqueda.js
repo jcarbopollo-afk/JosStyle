@@ -125,6 +125,7 @@ export const PALABRAS_MODULOS = {
   predicciones: ['futuro', 'proyeccion', 'estimacion', 'prevision'],
   logros: ['insignias', 'medallas', 'trofeos', 'conseguidos'],
   economia: ['dinero', 'gastos', 'ahorro', 'hucha', 'saldo', 'presupuesto', 'finanzas', 'gastar', 'ingresos'],
+  armario: ['ropa', 'prendas', 'vestir', 'camiseta', 'pantalon', 'zapatillas', 'outfit', 'closet', 'que me pongo'],
   ajustes: ['configuracion', 'opciones', 'preferencias', 'settings'],
 };
 
@@ -153,6 +154,7 @@ export const SINONIMOS_MODULOS = {
   predicciones: ['tendencia', 'que pasara'],
   logros: ['recompensas', 'hitos', 'progreso'],
   economia: ['pagar', 'cobrar', 'euros', 'cuenta', 'economico'],
+  armario: ['estilo', 'moda', 'vestuario', 'looks'],
   ajustes: ['ajuste', 'configurar', 'cambiar'],
 };
 

@@ -64,6 +64,7 @@ export const CATALOGO_PAPELERA = {
   'estudios.asignaturas': { modulo: 'estudios', coleccion: 'asignaturas', tipo: 'Asignatura', campos: ['nombre'], icono: 'estudios' },
   'estudios.examenes': { modulo: 'estudios', coleccion: 'examenes', tipo: 'Examen', campos: ['tema'], icono: 'estudios' },
   'estudios.horas': { modulo: 'estudios', coleccion: 'horas', tipo: 'Horas de estudio', campos: ['fecha'], icono: 'estudios' },
+  'armario.prendas': { modulo: 'armario', coleccion: 'prendas', tipo: 'Prenda', campos: ['nombre'], icono: 'armario' },
   'negocio.proyectos': { modulo: 'negocio', coleccion: 'proyectos', tipo: 'Proyecto', campos: ['nombre'], icono: 'negocio' },
   'productividad.habitos': { modulo: 'productividad', coleccion: 'habitos', tipo: 'Hábito', campos: ['nombre'], icono: 'productividad' },
   'productividad.rutinas': { modulo: 'productividad', coleccion: 'rutinas', tipo: 'Rutina', campos: ['nombre'], icono: 'productividad' },

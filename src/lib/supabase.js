@@ -143,3 +143,29 @@ export async function deleteBibliotecaArchivo(path) {
   const { error } = await supabase.storage.from('biblioteca').remove([path]);
   if (error) console.error('No se pudo borrar el archivo de biblioteca', path, error);
 }
+
+/* ---------- Storage: fotos de prendas (bucket privado "armario") ----------
+   Entrega 2 · AR Fase 1. Mismo patrón que las fotos de Salud y los vídeos de Calistenia:
+   bucket privado, una carpeta por usuario, URL firmada de corta duración para verlas.
+
+   La foto es OPCIONAL por diseño (apartado 4 de la especificación: "no obligar al usuario a
+   fotografiar sus prendas"), así que si el bucket todavía no existe en Supabase el armario
+   sigue funcionando entero — solo falla subir una imagen, y con un mensaje que lo explica. */
+export async function uploadPrendaFoto(userId, file) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from('armario').upload(path, file);
+  if (error) throw error;
+  return path;
+}
+
+export async function getSignedPrendaUrl(path) {
+  const { data, error } = await supabase.storage.from('armario').createSignedUrl(path, 3600);
+  if (error) { console.error('No se pudo firmar la foto de la prenda', path, error); return null; }
+  return data.signedUrl;
+}
+
+export async function deletePrendaFoto(path) {
+  const { error } = await supabase.storage.from('armario').remove([path]);
+  if (error) console.error('No se pudo borrar la foto de la prenda', path, error);
+}

@@ -3537,8 +3537,82 @@ Motor temporal y de planificación: horario configurable, pantalla HOY conscient
 
 Armario digital, constructor de outfits, calendario e historial de uso, y sistema inteligente anti-repetición. **Estilo de Hombre lo da por construido** (su apartado 16 dice literalmente *"NO rehacer el armario"*), así que debe existir antes que EH.
 
-#### AR · Fase 1/4 — ARMARIO DIGITAL + GESTIÓN DE PRENDAS
-- [ ] *(sin apartados numerados extraídos — leer la fase completa en la especificación)*
+#### AR · Fase 1/4 — ARMARIO DIGITAL + GESTIÓN DE PRENDAS ✅ COMPLETADA (v1.32.0)
+
+*(La extracción automática no encontró apartados numerados en esta fase; el desglose de abajo sale
+de leer la especificación entera, apartado a apartado.)*
+
+- [x] **1 · Acceso** — Gestión → Armario, con la navegación y los componentes de siempre. Dado de
+      alta en `MORE_NAV`, `AREAS_NAV`, su `case` de `renderTab`, `DESCRIPCIONES_MODULOS`,
+      `PALABRAS_MODULOS`, `SINONIMOS_MODULOS`, `CATALOGO_PAPELERA` y `resumenesHub`.
+- [x] **2 · Pantalla principal** — cabecera con el contador de prendas, buscador, filtros y botón
+      de añadir.
+- [x] **3 · Categorías** — las 14 de la especificación, en una lista ampliable. Una categoría
+      desconocida no rompe la prenda: cae en "Otros".
+- [x] **4 · Añadir prenda** — nombre, categoría, color y foto **opcional**.
+- [x] **5 · Información adicional** — temporada, material, color secundario, notas, precio, fecha de
+      compra y estado, todo detrás de "Más información".
+- [x] **6 · Tarjeta de prenda** — con foto si la hay; si no, un degradado del color de la prenda con
+      su categoría. **Del mismo alto en los dos casos**, para que la rejilla no se desalinee según
+      quién tenga fotografía.
+- [x] **7 · Detalle** — todos los campos que tenga, editar y eliminar con confirmación.
+- [x] **8 · Edición** — todo modificable. `usos`, `ultimoUso` y `outfits` NO se dejan sobrescribir
+      desde el formulario: editar la talla no puede borrar cuántas veces te has puesto la prenda.
+- [x] **9 · Búsqueda** — explícitamente no solo por nombre: "gris" encuentra por color y "Nike" por
+      marca. También por categoría, talla, estado y notas, sin acentos ni mayúsculas.
+- [x] **10 · Filtros combinables** — categoría, color, marca, temporada, estado y favoritas. El
+      ejemplo literal de la especificación ("Pantalones + Gris + Nike") está en las pruebas.
+- [x] **11 · Ordenación** — cinco activas. Las tres que dependen del uso están **escritas y
+      probadas**, pero la interfaz no las ofrece mientras no haya ni un uso registrado: un
+      "Más usadas" sobre un armario sin usos sería un control decorativo (regla 8).
+- [x] **12 · Favoritos** — el modelo lo soporta y la tarjeta ya lo marca.
+- [x] **13 · Estados** — los cinco. Solo "Disponible" cambia algo hoy; el resto existen porque la
+      Fase 2 los necesita para no proponer una prenda que está en la lavadora.
+- [x] **14 · Arquitectura de datos** — los 21 campos, **todos desde el primer día**.
+- [x] **15 · Futuro sistema de uso** — `usos`, `ultimoUso` y `outfits` ya están, vacíos.
+- [x] **16 · Experiencia de añadir** — cuatro campos visibles y el resto plegado. El objetivo de la
+      especificación es "añadir una prenda en pocos segundos", y eso es lo que manda en la pantalla.
+- [x] **17 · Diseño visual** — tokens, tipografía y componentes de siempre. La foto manda cuando
+      existe.
+- [x] **18 · Móvil** — rejilla de dos columnas, filtros plegables, categorías con scroll
+      horizontal. ⚠️ Comprobación real en iPhone: pendiente de Josué (**R1**).
+- [x] **19 · Datos vacíos** — "Tu armario está esperando" con su botón, no una pantalla en blanco.
+- [x] **20 · Rendimiento** — búsqueda, filtro y orden memoizados; la URL de cada foto se firma una
+      vez por prenda y dura una hora.
+- [x] **21 · Persistencia** — clave `armario` en la tabla `app_data` de siempre. **Ninguna segunda
+      base de datos.**
+- [x] **22 · Seguridad** — RLS de `app_data` heredada, y el bucket `armario` con las mismas
+      políticas por carpeta de usuario que `progreso` y `entrenamiento-videos`.
+- [x] **23 · Compatibilidad con futuras fases** — `outfits` y `usos` ya declarados en
+      `DEFAULT_ARMARIO`.
+- [x] **24 · No implementar todavía** — respetado: ni outfits, ni calendario, ni recomendaciones,
+      ni anti-repetición, ni estadísticas.
+- [x] **25 · Calidad** — 87 comprobaciones automáticas + 4 casos de renderizado.
+- [x] **26 · No romper nada** — 443 comprobaciones en verde.
+
+**Decisión que hubo que tomar, y su porqué:** la eliminación de una prenda **sí pide confirmación**,
+a diferencia del resto de la app, donde ME Fase 3 la quitó porque la papelera lo hace todo
+reversible. No es una excepción caprichosa: la papelera guarda el objeto de la prenda, pero **la
+fotografía vive en Supabase Storage y no vuelve** — igual que las fotos de Salud y los vídeos de
+Calistenia, excluidos de la papelera desde ME Fase 3. Borrar una prenda con foto es en parte
+irreversible, y eso es justo lo que la regla del proyecto reserva para la confirmación. El texto de
+la confirmación lo dice: cambia según la prenda tenga foto o no.
+
+**Dos cosas nuevas que hicieron falta:**
+
+1. **`SelectInput`** — el proyecto no tenía ni un `<select>`: todas las elecciones se hacían con
+   filas de botones, que funcionan con 3 o 4 opciones. El Armario tiene 14 categorías y 13 colores,
+   y catorce pastillas en fila no caben en un iPhone. Un desplegable nativo abre además la rueda de
+   iOS, que se maneja con el pulgar mucho mejor.
+2. **El bucket `armario`** en `supabase/schema.sql`. ⚠️ **Josué tiene que ejecutar ese bloque en el
+   SQL Editor de Supabase.** Hasta que lo haga, el Armario funciona **entero sin fotos** — la
+   fotografía es opcional por diseño; lo único que fallará es subir una imagen, y la prenda se
+   guarda igual con un aviso en vez de perder lo escrito.
+
+**Un fallo que destapó el smoke test:** `ArmarioView` es la primera vista de la prueba de
+renderizado que toca Storage, y `lib/supabase.js` lee `import.meta.env` al cargarse — algo que solo
+existe dentro de Vite. Ahora está stubeado, y de paso queda comprobado algo que importa: ninguna
+vista debe necesitar la red para pintarse.
 
 #### AR · Fase 2/4 — CONSTRUCTOR Y GESTIÓN DE OUTFITS
 - [ ] Armario digital

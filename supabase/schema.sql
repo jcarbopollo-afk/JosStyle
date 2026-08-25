@@ -107,3 +107,32 @@ using (bucket_id = 'biblioteca' and (storage.foldername(name))[1] = auth.uid()::
 
 -- Igual que antes: si ya ejecutaste las fases anteriores, pega y ejecuta SOLO este
 -- bloque de la Fase 11 — no hace falta repetir nada de lo de arriba.
+
+
+-- ============================================================
+-- Entrega 2 · AR Fase 1 — Armario: bucket de Storage privado para las fotos de
+-- las prendas.
+--
+-- Mismo patrón exacto que 'progreso' (fotos de Salud) y 'entrenamiento-videos':
+-- bucket privado, una carpeta por usuario, y URLs firmadas de corta duración
+-- desde el cliente. Nunca una URL pública fija.
+--
+-- Josué: si ya ejecutaste los bloques anteriores, pega y ejecuta SOLO este.
+-- Hasta que lo hagas, el Armario funciona entero **sin fotos** — la fotografía es
+-- opcional por diseño; lo único que fallará es subir una imagen.
+-- ============================================================
+insert into storage.buckets (id, name, public)
+values ('armario', 'armario', false)
+on conflict (id) do nothing;
+
+create policy "Subir prendas propias"
+on storage.objects for insert
+with check (bucket_id = 'armario' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Ver prendas propias"
+on storage.objects for select
+using (bucket_id = 'armario' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Borrar prendas propias"
+on storage.objects for delete
+using (bucket_id = 'armario' and (storage.foldername(name))[1] = auth.uid()::text);

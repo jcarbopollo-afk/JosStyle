@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar } from 'lucide-react';
+import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt } from 'lucide-react';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
-import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo } from './lib/supabase';
+import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, hexToRgba } from './lib/helpers';
 import { extractPdfText } from './lib/pdfText';
@@ -34,6 +34,8 @@ import PredictionsView from './views/PredictionsView';
 import AchievementsView from './views/AchievementsView';
 import SettingsView from './views/SettingsView';
 import { construirIndice } from './lib/indiceBusqueda';
+import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda } from './lib/armario';
+import ArmarioView from './views/ArmarioView';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // Con Salud y Nutrición ya son 7 secciones — demasiadas para una sola barra inferior cómoda.
@@ -75,6 +77,7 @@ const MORE_NAV = [
   { id: 'predicciones', label: 'Predicciones', icon: TrendingUp },
   { id: 'logros', label: 'Logros', icon: Trophy },
   { id: 'economia', label: 'Economía', icon: Wallet },
+  { id: 'armario', label: 'Armario', icon: Shirt },
   { id: 'ajustes', label: 'Ajustes', icon: Settings },
 ];
 
@@ -85,7 +88,7 @@ const MAX_RECIENTES_BUSQUEDA = 4;
 const AREAS_NAV = [
   { id: 'area-salud', label: 'Salud', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno'] },
   { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['calendario', 'estudios', 'productividad', 'objetivos', 'diario', 'biblioteca'] },
-  { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['economia', 'negocio'] },
+  { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['economia', 'negocio', 'armario'] },
   { id: 'area-mas', label: 'Más', icon: MoreHorizontal, modulos: ['relacion', 'fe', 'bienestar', 'estadisticas', 'predicciones', 'logros', 'ajustes'] },
 ];
 
@@ -234,6 +237,7 @@ export default function App() {
   // (scroll + resaltado temporal, o abrir el formulario correspondiente) y llama a
   // `onFocoConsumido`, que lo limpia — así volver a esa pestaña más tarde por la navegación normal
   // no vuelve a saltar solo al mismo elemento.
+  const [armario, setArmario] = useState(DEFAULT_ARMARIO);
   const [dashboardFoco, setDashboardFoco] = useState(null);
   // BI Fase 4 · apartado 11 — de dónde vino Josué al abrir algo desde el buscador.
   const [vueltaBusqueda, setVueltaBusqueda] = useState(null);
@@ -249,7 +253,7 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap] = await Promise.all([
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm] = await Promise.all([
         loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
@@ -278,6 +282,7 @@ export default function App() {
         loadData(uidUser, 'temasGuardados', DEFAULT_TEMAS_GUARDADOS),
         loadData(uidUser, 'historial', []),
         loadData(uidUser, 'papelera', DEFAULT_PAPELERA),
+        loadData(uidUser, 'armario', DEFAULT_ARMARIO),
       ]);
       if (cancelled) return;
       setAccent(a.accent || ACCENTS[0].value);
@@ -381,6 +386,10 @@ export default function App() {
       if (pap && papeleraCargada.elementos.length !== (pap.elementos || []).length) {
         saveData(uidUser, 'papelera', papeleraCargada);
       }
+      // Entrega 2 · AR Fase 1 — fusión con el valor por defecto obligatoria (regla 5): `loadData`
+      // no fusiona, así que sin esto un armario guardado antes de que existieran `outfits` y
+      // `usos` llegaría con esos campos en `undefined` y las fases 2 y 3 reventarían al leerlos.
+      setArmario({ ...DEFAULT_ARMARIO, ...(arm || {}) });
       setLoaded(true);
     })();
     return () => { cancelled = true; };
@@ -858,6 +867,7 @@ export default function App() {
     objetivos: [objetivos, setObjetivos], calendario: [calendario, setCalendario],
     diario: [diario, setDiario], biblioteca: [biblioteca, setBiblioteca],
     relacion: [relacion, setRelacion], fe: [fe, setFe], bienestar: [bienestar, setBienestar],
+    armario: [armario, setArmario],
   };
 
   const eliminarConPapelera = (modulo, coleccion, id) => {
@@ -922,6 +932,24 @@ export default function App() {
   const deleteComida = (id) => eliminarConPapelera('nutricion', 'comidas', id);
   const deleteHorasEstudio = (id) => eliminarConPapelera('estudios', 'horas', id);
 
+  // ---------- Entrega 2 · AR Fase 1 — Armario ----------
+  // `crearPrenda` y `actualizarPrenda` viven en lib/armario.js, no aquí: son puras y por
+  // eso se pueden probar con Node sin montar React.
+  const addPrenda = (datos) => snapshotAndSave({ armario: { ...armario, prendas: [...armario.prendas, crearPrenda(datos)] } });
+  const updatePrenda = (id, cambios) => snapshotAndSave({
+    armario: { ...armario, prendas: armario.prendas.map((p) => (p.id === id ? actualizarPrenda(p, cambios) : p)) },
+  });
+  // Va por la papelera como todo lo demás (ME Fase 3), pero con un matiz: la fotografía
+  // vive en Storage y NO vuelve al restaurar, igual que las fotos de Salud y los vídeos de
+  // Calistenia. Por eso se borra el fichero aquí y la vista pide confirmación cuando hay
+  // foto — la única parte irreversible del borrado.
+  const deletePrenda = (id) => {
+    const prenda = armario.prendas.find((p) => p.id === id);
+    if (prenda && prenda.fotoPath) deletePrendaFoto(prenda.fotoPath);
+    eliminarConPapelera('armario', 'prendas', id);
+  };
+  const subirFotoPrenda = (file) => uploadPrendaFoto(uidUser, file);
+
   const setIconoModulo = (id, iconKey) => {
     const iconos = { ...personalizacion.iconos };
     if (iconKey) iconos[id] = iconKey; else delete iconos[id];
@@ -962,7 +990,7 @@ export default function App() {
   // al restaurarse duplicaría el elemento. Con la papelera dentro del snapshot, deshacer revierte
   // las dos cosas a la vez y los dos sistemas de recuperación no se pisan.
   const snapshotAndSave = (patch) => {
-    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera };
+    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario };
     const nextHist = [...history, snapshot].slice(-10);
     setHistory(nextHist);
     saveData(uidUser, 'historial', nextHist);
@@ -983,6 +1011,7 @@ export default function App() {
     if (patch.fe) { setFe(patch.fe); saveData(uidUser, 'fe', patch.fe); }
     if (patch.bienestar) { setBienestar(patch.bienestar); saveData(uidUser, 'bienestar', patch.bienestar); }
     if (patch.papelera) { setPapelera(patch.papelera); saveData(uidUser, 'papelera', patch.papelera); }
+    if (patch.armario) { setArmario(patch.armario); saveData(uidUser, 'armario', patch.armario); }
   };
 
   const addSueno = (entry) => snapshotAndSave({ sueno: [...sueno, entry] });
@@ -1215,6 +1244,7 @@ export default function App() {
     setFe(last.fe || DEFAULT_FE); saveData(uidUser, 'fe', last.fe || DEFAULT_FE);
     setBienestar(last.bienestar || DEFAULT_BIENESTAR); saveData(uidUser, 'bienestar', last.bienestar || DEFAULT_BIENESTAR);
     setPapelera(last.papelera || DEFAULT_PAPELERA); saveData(uidUser, 'papelera', last.papelera || DEFAULT_PAPELERA);
+    setArmario(last.armario || DEFAULT_ARMARIO); saveData(uidUser, 'armario', last.armario || DEFAULT_ARMARIO);
     setHistory(rest); saveData(uidUser, 'historial', rest);
   };
 
@@ -1413,6 +1443,15 @@ export default function App() {
             onAddExamen={addExamen} onUpdateExamen={updateExamen} onDeleteExamen={deleteExamen}
             onAddHoras={addHoras} onDeleteHoras={deleteHorasEstudio} accent={accent}
             foco={focoPara('estudios')} onFocoConsumido={consumirFoco}
+          />
+        );
+      case 'armario':
+        return (
+          <ArmarioView
+            armario={armario}
+            onAddPrenda={addPrenda} onUpdatePrenda={updatePrenda} onDeletePrenda={deletePrenda}
+            onSubirFoto={subirFotoPrenda}
+            accent={accent}
           />
         );
       case 'negocio':

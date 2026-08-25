@@ -1,5 +1,74 @@
 # CHANGELOG.md
 
+## Entrega 2 · AR Fase 1 — Armario digital (v1.32.0)
+
+**El primer módulo genuinamente nuevo de la Entrega 2.** ME y BI ampliaban cosas que ya existían;
+esto no existía en ninguna forma. Vive en **Gestión → Armario**.
+
+### La decisión que más pesa: el modelo de datos
+El apartado 23 dice que la arquitectura tiene que aguantar tres fases más sin rehacerse. Por eso
+cada prenda nace con **los 21 campos**, aunque cuatro estén vacíos: `usos`, `ultimoUso`, `outfits` y
+`favorita`.
+
+No es adorno. Las fases 3 y 4 tienen que responder a *"¿cuándo la usé por última vez?"* y *"¿cuánto
+lleva sin usarse?"*, y `loadData` **no fusiona con el valor por defecto** (regla 5 del proyecto): un
+campo que aparezca en la Fase 3 no lo tendrán las prendas ya guardadas, y arreglarlo entonces exige
+una migración manual prenda a prenda. La prueba lo comprueba hoy, campo por campo.
+
+Las tres ordenaciones por uso (*Más usadas*, *Menos usadas*, *Más tiempo sin usar*) **ya están
+escritas y probadas**, pero la interfaz no las ofrece mientras no haya ni un uso registrado. Un
+"Más usadas" sobre un armario sin usos sería un control decorativo, y eso es la regla 8.
+
+### Añadir una prenda en segundos
+El apartado 16 es tajante: *"no quiero que el usuario tenga que rellenar 15 campos cada vez que
+añade una camiseta"*. Por defecto solo se ven **nombre, categoría, color y foto opcional**; los ocho
+campos restantes están detrás de "Más información".
+
+Y la foto es opcional de verdad: sin ella la tarjeta pinta un degradado del color de la prenda con
+su categoría, **del mismo alto que una foto**, para que la rejilla no se desalinee según quién tenga
+fotografía y quién no.
+
+### Buscar por lo que uno recuerda, no por el nombre exacto
+La especificación lo pide explícitamente: "gris" encuentra prendas grises y "Nike" prendas de Nike.
+La búsqueda mira nombre, marca, talla, notas, material, categoría, color, estado y temporada — y
+sobre las **etiquetas**, no los ids: Josué escribe "marrón", no "marron".
+
+### Confirmación al eliminar: una excepción con motivo
+Desde ME Fase 3, borrar no pide confirmación en ninguna parte de la app, porque la papelera lo hace
+reversible. Aquí **sí la pide**, y no es capricho: la papelera guarda el objeto de la prenda, pero
+**la fotografía vive en Supabase Storage y no vuelve** — igual que las fotos de Salud y los vídeos
+de Calistenia, excluidos de la papelera desde entonces. Borrar una prenda con foto es en parte
+irreversible, y eso es justo lo que la regla reserva para la confirmación. El texto lo dice, y
+cambia según la prenda tenga foto o no.
+
+### Dos cosas nuevas que hicieron falta
+- **`SelectInput`**: el proyecto no tenía ni un `<select>`. Todas las elecciones se hacían con filas
+  de botones, que funcionan con 3 o 4 opciones; el Armario tiene 14 categorías y 13 colores, y
+  catorce pastillas en fila no caben en un iPhone. Un desplegable nativo abre además la rueda de
+  iOS, que se maneja con el pulgar mucho mejor.
+- **El bucket `armario`** en `supabase/schema.sql`, con las mismas políticas por carpeta de usuario
+  que `progreso` y `entrenamiento-videos`.
+
+### ⚠️ Algo que Josué tiene que hacer
+**Ejecutar el bloque nuevo de `supabase/schema.sql` en el SQL Editor de Supabase** (solo ese bloque,
+está marcado). Hasta entonces el Armario funciona **entero sin fotos**: la fotografía es opcional
+por diseño, y si la subida falla, la prenda **se guarda igual** con un aviso — perder lo escrito por
+un fallo de red sería mucho peor.
+
+### Un fallo que destapó la prueba de renderizado
+`ArmarioView` es la primera vista del smoke test que toca Storage, y `lib/supabase.js` lee
+`import.meta.env` al cargarse — algo que solo existe dentro de Vite. Ahora está stubeado, y de paso
+queda comprobado algo que importa por sí mismo: **ninguna vista debe necesitar la red para
+pintarse**.
+
+### Verificación
+`bash scripts/verificar.sh` → **443 comprobaciones en verde**, 87 de ellas del armario, más 4 casos
+de renderizado (vacío, con datos, datos parciales y con el módulo desactivado).
+
+⚠️ **Pendiente de Josué (R1):** subir una foto de verdad y ver la rejilla en un iPhone.
+
+---
+
 ## Entrega 2 · BI Fase 4 — Buscar y preguntar dejan de ser dos cosas (v1.31.0)
 
 Cierra el bloque BI (4/4). Josué ya no tiene que decidir si lo suyo es una búsqueda o una pregunta:

@@ -147,6 +147,24 @@ export function calcularResumenModulo(id, s) {
       if ((s.negocio?.proyectos || []).length === 0) return { linea1: 'Sin proyectos todavía', linea2: 'Toca para añadir el primero', estado: 'vacio' };
       return { linea1: `${enMarcha} ${plural(enMarcha, 'proyecto en marcha', 'proyectos en marcha')}`, linea2: `Balance: ${balance.toFixed(2)} €`, estado: 'activo' };
     }
+    // Entrega 2 · AR Fase 1 — Armario. La segunda línea cambia según lo que aporte más:
+    // con pocas prendas, cuántas categorías tienes; con muchas, cuántas están disponibles
+    // de verdad (lo que la Fase 2 necesitará para proponer outfits).
+    case 'armario': {
+      const prendas = s.armario?.prendas || [];
+      if (prendas.length === 0) {
+        return { linea1: 'Tu armario está vacío', linea2: 'Toca para añadir tu primera prenda', estado: 'vacio' };
+      }
+      const disponibles = prendas.filter((p) => p.estado === 'disponible').length;
+      const categorias = new Set(prendas.map((p) => p.categoria)).size;
+      return {
+        linea1: `${prendas.length} ${plural(prendas.length, 'prenda', 'prendas')}`,
+        linea2: disponibles < prendas.length
+          ? `${disponibles} ${plural(disponibles, 'disponible', 'disponibles')}`
+          : `${categorias} ${plural(categorias, 'categoría', 'categorías')}`,
+        estado: 'activo',
+      };
+    }
     case 'relacion': {
       if (!s.relacion?.fechas?.length) return { linea1: s.relacion?.nombre || 'Sin configurar', linea2: 'Toca para añadir una fecha importante', estado: 'vacio' };
       const proxima = [...s.relacion.fechas].sort((a, b) => diasHasta(a.fecha) - diasHasta(b.fecha))[0];

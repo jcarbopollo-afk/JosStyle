@@ -139,8 +139,9 @@ escribir código.
 | v1.29.0 | **BI F2** | Buscador de funciones: escribir "colores" abre Apariencia. Índice derivado de `MORE_NAV`, con la lupa mudada arriba a la izquierda |
 | v1.30.0 | **BI F3** | El motor de verdad: sinónimos, plurales, erratas (Damerau), acciones directas, sugerencias y recientes. Dos bugs de ranking encontrados por las pruebas |
 | v1.31.0 | **BI F4** | Intención del usuario: navegación / pregunta / **acción**. Cierra el bloque BI. Arreglada la vuelta atrás desde el buscador |
+| v1.32.0 | **AR F1** | Armario digital: el primer módulo **nuevo** de la Entrega 2. 21 campos por prenda desde el día uno, para que las fases 2-4 no exijan migración |
 
-🔒 **Bloques ME (4/4) y BI (4/4) cerrados.** Quedan 98 fases de la Entrega 2.
+🔒 **Bloques ME (4/4) y BI (4/4) cerrados**, AR va por 1/4. Quedan 97 fases de la Entrega 2.
 
 ---
 
@@ -361,7 +362,7 @@ R10 AXION — aplazado por decisión de Josué (D2-06) hasta terminar la Entrega
 E2-0  Verificación de la base                    ✅ COMPLETADO (v1.23.0, bloque R0)
 E2-1  ME · Módulos activables + Eliminados (4)   ✅ COMPLETADO (v1.24.0 → v1.27.0)
 E2-2  BI · Buscador + IA + Inicio (4)            ✅ COMPLETADO (v1.28.0 → v1.31.0)
-E2-3  AR · Armario (4)                          ← SIGUIENTE
+E2-3  AR · Armario (4)                          ← EN CURSO (F1 ✅, siguiente F2)
 E2-4  FO · Fondos y Fotografías (12)
 E2-5  SO · Sonido (5)  +  RA · Rachas (4)        ← dos módulos separados (D2-01)
 E2-6  HT · Horario Top (12)

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail, Plus, Trash2, ChevronRight, CornerDownLeft } from 'lucide-react';
+import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail, Plus, Trash2, ChevronRight, CornerDownLeft, ChevronDown } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba, shade, fileToBase64 } from '../lib/helpers';
 import { resolverConsulta, sugerenciasIniciales } from '../lib/indiceBusqueda';
@@ -172,6 +172,43 @@ export const TextInput = React.forwardRef(function TextInput(props, ref) {
     />
   );
 });
+
+// Entrega 2 · AR Fase 1 — primer desplegable de verdad del proyecto.
+//
+// Hasta ahora no había ni un `<select>`: todas las elecciones se hacían con filas de
+// botones, que funcionan bien con 3 o 4 opciones. El Armario tiene 14 categorías y 13
+// colores, y catorce botones en fila son una alfombra de pastillas que no cabe en un
+// iPhone. Un desplegable nativo, además, abre la rueda de iOS, que se maneja con el
+// pulgar mucho mejor que una rejilla.
+//
+// Visualmente es un `TextInput`: mismo fondo, mismo borde, mismo radio. Solo cambia
+// la flecha, que se dibuja aquí porque `appearance: none` quita la del sistema —sin
+// eso, cada navegador pone la suya y el control desentona.
+export function SelectInput({ children, style, className = '', ...rest }) {
+  return (
+    <div className="relative">
+      <select
+        {...rest}
+        className={`w-full rounded-xl px-3 py-2.5 text-sm outline-none ${className}`}
+        style={{
+          background: COLORS.surface2,
+          border: `1px solid ${COLORS.border}`,
+          color: COLORS.text,
+          appearance: 'none',
+          WebkitAppearance: 'none',
+          paddingRight: 30,
+          ...style,
+        }}
+      >
+        {children}
+      </select>
+      <ChevronDown
+        size={14}
+        style={{ color: COLORS.textMuted, position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+      />
+    </div>
+  );
+}
 
 // Fase 10 — Diario: primera vez que se necesita texto libre de varias líneas (hasta ahora
 // TextInput cubría inputs de una sola línea). Mismo estilo visual que TextInput para que no
