@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail, Plus, Trash2, ChevronRight, CornerDownLeft } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba, shade, fileToBase64 } from '../lib/helpers';
-import { buscar, pareceUnaPregunta, sugerenciaDeErrata, sugerenciasIniciales } from '../lib/indiceBusqueda';
+import { resolverConsulta, sugerenciasIniciales } from '../lib/indiceBusqueda';
 import { askAI, askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { extractPdfText } from '../lib/pdfText';
 import { verificarPin } from '../lib/pin';
@@ -748,13 +748,14 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
   // Apartado 7: los resultados aparecen mientras escribe. Es una búsqueda local sobre un
   // índice de unas treinta entradas — instantánea, sin red y sin debounce que la retrase
   // (apartado 13: "VELOCIDAD > EFECTOS").
-  const resultados = useMemo(() => buscar(indice, query), [indice, query]);
-  const esPregunta = pareceUnaPregunta(query);
+  // BI Fase 4 — toda la decisión (qué enseñar y en qué orden) vive en el motor, no
+  // aquí: así los ocho casos del apartado 20 se prueban sin renderizar nada, y este
+  // componente solo tiene que pintar lo que le dicen.
+  const { intencion, resultados, iaPrimero, sugerencia: quizas } = useMemo(
+    () => resolverConsulta(indice, query),
+    [indice, query],
+  );
   const hayTexto = query.trim().length > 0;
-
-  // BI Fase 3 · apartado 18 — "¿Quizá buscas «Colores»?". Solo se calcula, y solo se
-  // enseña, cuando lo único que ha salido ha salido por una errata.
-  const quizas = useMemo(() => (hayTexto ? sugerenciaDeErrata(indice, query) : null), [indice, query, hayTexto]);
 
   // Apartado 17 — con el buscador vacío, atajos a funciones REALES. Salen del índice,
   // así que un módulo desactivado no puede aparecer aquí.
@@ -780,7 +781,13 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
       const text = await askAI(AI_SYSTEM, prompt);
       setResponse(text || 'No he encontrado nada relevante para eso en tus datos.');
     } catch (e) {
-      setErrorMsg(e.message || 'No he podido conectar con la IA ahora mismo.');
+      // Apartado 15 — nada de "500 Internal Server Error". `askAI` ya devuelve
+      // mensajes escritos para una persona en los casos previstos (sin clave, modelo
+      // desconocido, sin conexión); cualquier otra cosa es un fallo interno y se
+      // resume en una frase, sin código ni traza.
+      const m = e && typeof e.message === 'string' ? e.message : '';
+      const parecetecnico = !m || /\b(\d{3}|error|failed|fetch|network|undefined|null)\b/i.test(m);
+      setErrorMsg(parecetecnico ? 'No he podido responder ahora mismo.' : m);
     } finally {
       setLoading(false);
     }
@@ -813,7 +820,7 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
                 // Enter abre el primer resultado si lo hay; si no, pregunta a la IA. Es el
                 // atajo que hace que "colores" + Enter sea todo el recorrido (apartado 12).
                 if (e.key !== 'Enter') return;
-                if (resultados.length > 0 && !esPregunta) abrir(resultados[0]);
+                if (resultados.length > 0 && !iaPrimero) abrir(resultados[0]);
                 else handleSearch();
               }}
               style={{ paddingRight: hayTexto ? 34 : undefined }}
@@ -846,7 +853,7 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
         <div style={{ maxHeight: '46vh', overflowY: 'auto' }}>
           {/* Apartado 11: si parece una pregunta, la IA va primero — pero los resultados
               siguen debajo, no se le obliga a elegir. */}
-          {hayTexto && esPregunta && !response && !loading && (
+          {hayTexto && iaPrimero && !response && !loading && (
             <BotonPreguntarIA query={query} accent={accent} onClick={handleSearch} />
           )}
 
@@ -866,8 +873,16 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
             </ul>
           )}
 
+          {/* Apartado 7 — con una función encontrada, la función manda y la IA queda
+              debajo como segundo camino: "si el usuario quiere hacerlo directamente,
+              Abrir; si quiere una explicación, IA". Usar la IA para algo que la app
+              resuelve sola sería absurdo. */}
+          {hayTexto && !iaPrimero && resultados.length > 0 && !response && !loading && (
+            <BotonPreguntarIA query={query} accent={accent} onClick={handleSearch} />
+          )}
+
           {/* Apartado 9: sin coincidencias no se deja una pantalla vacía — se ofrece la IA. */}
-          {hayTexto && resultados.length === 0 && !esPregunta && !response && !loading && (
+          {hayTexto && resultados.length === 0 && !iaPrimero && !response && !loading && (
             <div className="mt-3">
               <p className="text-sm font-semibold" style={{ color: COLORS.text }}>No hemos encontrado esa función</p>
               <p className="text-xs mt-1 mb-2" style={{ color: COLORS.textMuted }}>
@@ -877,7 +892,23 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
             </div>
           )}
 
-          {errorMsg && <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>{errorMsg}</p>}
+          {/* Apartado 14 — estado de carga con nombre, no una rueda a secas. */}
+          {loading && (
+            <p className="text-sm mt-3 flex items-center gap-2" style={{ color: COLORS.textMuted }}>
+              <Loader2 size={14} className="animate-spin" /> Pensando…
+            </p>
+          )}
+
+          {/* Apartado 15 — un error no enseña nada técnico y SIEMPRE deja reintentar,
+              con el buscador intacto detrás. */}
+          {errorMsg && (
+            <div className="mt-3">
+              <p className="text-sm" style={{ color: COLORS.text }}>{errorMsg}</p>
+              <button onClick={handleSearch} className="text-xs font-semibold mt-1.5" style={{ color: accent }}>
+                Reintentar
+              </button>
+            </div>
+          )}
           {response && !errorMsg && <p className="text-sm mt-3 leading-relaxed" style={{ color: COLORS.text }}>{response}</p>}
           {!hayTexto && !response && !errorMsg && !loading && (
             <>

@@ -504,10 +504,126 @@ const ARRANQUES_DE_PREGUNTA = [
 ];
 
 export function pareceUnaPregunta(texto) {
+  return analizarIntencion(texto) === 'pregunta';
+}
+
+// ---------------------------------------------------------------------------
+// BI Fase 4 — intención del usuario
+//
+// El apartado 5 pide TRES categorías, no dos:
+//
+//   NAVEGACION — "colores", "sueño". Quiere llegar a un sitio.
+//   PREGUNTA   — "¿cómo puedo mejorar?". Quiere que alguien le conteste.
+//   ACCION     — "quiero cambiar los colores". Quiere HACER algo.
+//
+// La diferencia entre ACCION y PREGUNTA es la que decide el orden en pantalla
+// (apartado 7): con una acción, la función que la resuelve va primero y la IA
+// debajo — usar la IA para algo que la app hace sola sería absurdo. Con una
+// pregunta abierta manda la IA (apartado 8).
+//
+// El apartado 6 avisa expresamente de no fiarse solo del signo '¿': "cambiar
+// colores" no lo lleva y es claramente una acción. Por eso se miran verbos,
+// arranques de frase y longitud, no un único carácter.
+// ---------------------------------------------------------------------------
+
+// Verbos con los que Josué expresa "quiero hacer esto". En infinitivo y en
+// primera persona, que es como se escribe de verdad.
+const VERBOS_DE_ACCION = [
+  'quiero', 'necesito', 'me gustaria', 'voy a', 'deja', 'dejame', 'quisiera',
+  'cambiar', 'cambia', 'poner', 'pon', 'activar', 'activa', 'desactivar', 'desactiva',
+  'anadir', 'anade', 'agregar', 'agrega', 'crear', 'crea', 'nuevo', 'nueva',
+  'registrar', 'registra', 'apuntar', 'apunta', 'anotar', 'anota', 'borrar', 'borra',
+  'eliminar', 'elimina', 'abrir', 'abre', 'ver', 'ir a', 'llevame', 'ajustar', 'configurar',
+  'editar', 'modificar', 'guardar',
+];
+
+// Palabras de relleno que solo estorban al buscar en el índice: quitarlas es lo
+// que hace que "quiero añadir un objetivo" encuentre la acción de crear objetivo.
+const RELLENO = new Set([
+  'quiero', 'necesito', 'quisiera', 'me', 'gustaria', 'voy', 'a', 'deja', 'dejame',
+  'un', 'una', 'unos', 'unas', 'el', 'la', 'los', 'las', 'de', 'del', 'mi', 'mis',
+  'por', 'favor', 'como', 'que', 'donde', 'esta', 'estan', 'puedo', 'hago', 'se',
+  'llevame', 'ir', 'para', 'en', 'y', 'o', 'al', 'lo',
+]);
+
+/**
+ * Clasifica la intención: 'pregunta' | 'accion' | 'navegacion'.
+ *
+ * El orden de las comprobaciones importa. Una frase puede llevar un verbo de
+ * acción Y un signo de interrogación ("¿cómo cambio los colores?"): eso es una
+ * pregunta sobre cómo hacer algo, y el apartado 4 pide enseñar las dos salidas,
+ * así que gana 'pregunta' y la interfaz muestra igualmente la función.
+ */
+export function analizarIntencion(texto) {
+  const crudo = String(texto || '');
+  const t = normalizar(crudo);
+  if (!t) return 'navegacion';
+
+  if (/[¿?]/.test(crudo)) return 'pregunta';
+  if (ARRANQUES_DE_PREGUNTA.some((a) => t.startsWith(a))) return 'pregunta';
+
+  const palabras = t.split(' ');
+  if (VERBOS_DE_ACCION.some((v) => t.startsWith(v + ' ') || t === v || palabras.includes(v))) {
+    return 'accion';
+  }
+
+  // Una frase larga sin verbo de acción ni forma de pregunta rara vez es el nombre
+  // de una pantalla: es alguien contando algo. Va a la IA.
+  if (palabras.length >= 5) return 'pregunta';
+  return 'navegacion';
+}
+
+/**
+ * Quita el envoltorio de intención y deja lo que de verdad hay que buscar.
+ *
+ * "quiero añadir un objetivo" → "anadir objetivo"
+ * "¿cómo cambio los colores?" → "cambio colores"
+ *
+ * Sin esto, el apartado 7 no se puede cumplir: buscar la frase entera en el
+ * índice no encuentra nada, porque ninguna entrada contiene la palabra "quiero".
+ * Si al quitar el relleno no queda nada, se devuelve el texto original — vale más
+ * una búsqueda pobre que ninguna.
+ */
+export function nucleoDeConsulta(texto) {
   const t = normalizar(texto);
-  if (!t) return false;
-  if (t.includes('?') || t.includes('¿')) return true;
-  if (ARRANQUES_DE_PREGUNTA.some((a) => t.startsWith(a))) return true;
-  // Una frase larga rara vez es el nombre de una pantalla.
-  return t.split(/\s+/).length >= 5;
+  if (!t) return '';
+  const utiles = t.split(' ').filter((p) => p && !RELLENO.has(p));
+  return utiles.length ? utiles.join(' ') : t;
+}
+
+
+/**
+ * BI Fase 4 · apartados 1 a 8 — la decisión completa, en un solo sitio.
+ *
+ * Devuelve qué enseñar y en qué orden, para que la interfaz solo tenga que
+ * pintarlo. Estar aquí y no en el componente tiene una ventaja concreta: se
+ * puede probar sin renderizar nada, y los ocho casos del apartado 20 son ocho
+ * llamadas a esta función.
+ *
+ *   { intencion, resultados, iaPrimero, sugerencia }
+ *
+ *   iaPrimero — true cuando la IA debe ir arriba (pregunta), false cuando manda
+ *               la función (acción o navegación, apartado 7).
+ */
+export function resolverConsulta(indice, consulta, limite = 8) {
+  const intencion = analizarIntencion(consulta);
+  const q = normalizar(consulta);
+  if (!q) return { intencion, resultados: [], iaPrimero: false, sugerencia: null };
+
+  // Se busca la frase entera y, si no da nada, su núcleo sin relleno. En ese
+  // orden: la frase entera es más específica, y solo se afloja si hace falta.
+  let resultados = buscar(indice, consulta, limite);
+  if (resultados.length === 0) {
+    const nucleo = nucleoDeConsulta(consulta);
+    if (nucleo && nucleo !== q) resultados = buscar(indice, nucleo, limite);
+  }
+
+  return {
+    intencion,
+    resultados,
+    // Apartado 7: si hay función y la intención no es preguntar, la función manda.
+    // Apartado 8: una pregunta abierta sin función que la resuelva es cosa de la IA.
+    iaPrimero: intencion === 'pregunta',
+    sugerencia: resultados.length === 0 ? sugerenciaDeErrata(indice, consulta) : null,
+  };
 }

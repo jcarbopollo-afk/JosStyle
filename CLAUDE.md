@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.30.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.31.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
-Armario, Fondos, Buscador+IA, Módulos activables ✅, Sonido y Rachas — **106 fases**; el bloque
-**ME** está terminado y **BI** va por 3/4, quedan 99) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+Armario, Fondos, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
+bloques **ME** y **BI** están terminados, quedan 98) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -104,10 +104,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 265 pruebas unitarias con Node, 5 de auditoría, 52 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **322 comprobaciones**.
+Vite, 295 pruebas unitarias con Node, 5 de auditoría, 52 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **352 comprobaciones**.
 
-Eso ya ha encontrado **dieciocho bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **diecinueve bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript) y ocho módulos que dejaban crear y no borrar.
 
 ⚠️ **Lo que las pruebas NO cubren, y sigue pendiente de que lo mire Josué (R1):** Supabase real, la
@@ -128,16 +128,17 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase: BI · Fase 4/4 — integración final: buscador + IA + intención del usuario.**
-Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_BUSCADOR_E_IA.md`.
-Con ella se cierra el bloque BI y toca **E2-3 · AR · Armario**.
+**Siguiente bloque: E2-3 · AR — Armario (4 fases).**
+Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_ARMARIO.md`.
 
-Dos avisos antes de escribir código ahí:
+Tres avisos antes de escribir código ahí:
 
-- El motor **ya existe y está probado**: `src/lib/indiceBusqueda.js` con 99 comprobaciones. La
-  Fase 4 afina **cuándo navegar y cuándo responder**, no reescribe el motor.
-- Decisión **D2-07**: Inicio, Buscador y Módulos son un solo sistema. El índice se **deriva** de
-  `MORE_NAV` a propósito; mantenlo así.
+- Es el **primer módulo genuinamente nuevo** de la Entrega 2: prendas, outfits, historial de uso y
+  anti-repetición. ME y BI ampliaban cosas que ya existían; esto no.
+- **AR Fase 3 (calendario de uso) se conecta al Calendario Universal como fuente derivada**, nunca
+  duplicando datos (regla 11).
+- Al crearlo hay que darlo de alta en `MORE_NAV`, en `AREAS_NAV`, en su `case` de `renderTab`, en
+  `DESCRIPCIONES_MODULOS` y en `PALABRAS_MODULOS` — `scripts/verificar.sh` falla si falta alguno.
 
 El bloque **R0** ya está completo (v1.23.0) y **C-11** —el modelo de IA obsoleto— está resuelto:
 `api/ask-ai.js` lee `ANTHROPIC_MODEL` y por defecto usa un modelo vigente.

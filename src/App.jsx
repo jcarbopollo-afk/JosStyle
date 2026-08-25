@@ -235,6 +235,8 @@ export default function App() {
   // `onFocoConsumido`, que lo limpia — así volver a esa pestaña más tarde por la navegación normal
   // no vuelve a saltar solo al mismo elemento.
   const [dashboardFoco, setDashboardFoco] = useState(null);
+  // BI Fase 4 · apartado 11 — de dónde vino Josué al abrir algo desde el buscador.
+  const [vueltaBusqueda, setVueltaBusqueda] = useState(null);
 
   useEffect(() => {
     getSession().then(setSession);
@@ -498,6 +500,15 @@ export default function App() {
   };
   const consumirFoco = () => setDashboardFoco(null);
 
+  // BI Fase 4 · apartado 11 — el rastro de "vuelve a donde estabas" solo vale para el
+  // módulo al que llevó el buscador. En cuanto Josué navega a cualquier otro sitio se
+  // borra, para que no reaparezca días después si vuelve a ese módulo por la barra de
+  // abajo. Un único efecto cubre TODAS las formas de navegar; ponerlo en cada botón
+  // habría dejado fuera la que se añada mañana.
+  useEffect(() => {
+    setVueltaBusqueda((v) => (v && v.hacia !== tab ? null : v));
+  }, [tab]);
+
   // ---------- Entrega 2 · BI Fase 2 — buscador de funciones ----------
   // El índice se construye a partir de MORE_NAV, así que un módulo que una fase futura añada
   // ahí aparece solo en el buscador (apartado 17). Se recalcula cuando cambia la lista de
@@ -517,6 +528,11 @@ export default function App() {
   const irAResultado = (entrada) => {
     if (!entrada) return;
     const foco = entrada.foco || (entrada.ajuste ? { categoria: entrada.ajuste } : undefined);
+    // BI Fase 4 · apartado 11 — "al volver, regresar al punto lógico anterior". Sin esto,
+    // buscar "colores" desde Inicio y pulsar atrás dejaba a Josué en el hub de "Más",
+    // que no es de donde venía. Se recuerda de dónde salió y adónde fue; en cuanto
+    // navegue a cualquier otro sitio, el rastro se borra solo (ver `renderConVuelta`).
+    if (entrada.tab !== tab) setVueltaBusqueda({ desde: tab, hacia: entrada.tab });
     navegarDesdeHoy(entrada.tab, foco);
   };
 
@@ -1615,16 +1631,29 @@ export default function App() {
       </PinGate>
     ) : renderContent();
     if (!enModulo || !areaActual) return contenido;
+    // BI Fase 4 · apartado 11 — si Josué llegó aquí desde el buscador, "atrás" lo
+    // devuelve a donde estaba, no al hub del área (que puede no haber pisado nunca).
+    // El rastro solo vale para el módulo al que le llevó el buscador; en cuanto se
+    // mueve a otro sitio deja de aplicarse.
+    const vueltaValida = vueltaBusqueda && vueltaBusqueda.hacia === tab ? vueltaBusqueda : null;
+    const destinoVuelta = vueltaValida ? vueltaValida.desde : areaActual.id;
+    const etiquetaVuelta = vueltaValida
+      ? (vueltaValida.desde === 'hoy'
+        ? 'Inicio'
+        : (AREAS_NAV.find((a) => a.id === vueltaValida.desde)?.label
+          || MORE_NAV.find((m) => m.id === vueltaValida.desde)?.label
+          || 'Atrás'))
+      : areaActual.label;
     return (
       <div key={tab} className="module-enter">
         {/* Fase N4 — pasa de texto suelto a una píldora "glass" (fondo tenue + borde apenas
             visible), coherente con el resto del lenguaje visual del hub del que viene. */}
         <button
-          onClick={() => setTab(areaActual.id)}
+          onClick={() => { setVueltaBusqueda(null); setTab(destinoVuelta); }}
           className="back-bar inline-flex items-center gap-1.5 mb-4 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold active:opacity-60"
           style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
         >
-          <ArrowLeft size={16} /> {areaActual.label}
+          <ArrowLeft size={16} /> {etiquetaVuelta}
         </button>
         {contenido}
       </div>

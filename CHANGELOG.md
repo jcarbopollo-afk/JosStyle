@@ -1,5 +1,64 @@
 # CHANGELOG.md
 
+## Entrega 2 · BI Fase 4 — Buscar y preguntar dejan de ser dos cosas (v1.31.0)
+
+Cierra el bloque BI (4/4). Josué ya no tiene que decidir si lo suyo es una búsqueda o una pregunta:
+escribe, y JosStyle decide qué es más útil enseñarle.
+
+### Tres intenciones, no dos
+El apartado 5 pide **navegación**, **pregunta** y **acción**. Hasta ahora solo había un booleano
+"¿es pregunta?". La tercera es la que cambia el comportamiento:
+
+| Escribe | Intención | Qué sale primero |
+|---|---|---|
+| `colores` | navegación | Colores y tema |
+| `¿cómo puedo mejorar mi planche?` | pregunta | la IA |
+| `¿cómo cambio los colores?` | pregunta | la IA **y** Colores debajo |
+| `cambiar colores` | **acción** | **Colores y tema**, la IA debajo |
+| `quiero añadir un objetivo` | **acción** | **Crear un objetivo** |
+
+Y no depende del signo `¿`, que es de lo que avisa el apartado 6: "cambiar colores" no lo lleva y es
+claramente una acción. Se miran verbos, arranque de frase y longitud.
+
+### Lo que hacía falta para cumplir el apartado 7, y no era obvio
+"Cuando exista una función claramente relacionada, debe tener prioridad." El problema: **buscar la
+frase entera no encontraba nada**. "quiero añadir un objetivo" no coincide con ninguna entrada,
+porque ninguna contiene la palabra "quiero". Sin quitar ese envoltorio, la prioridad de la función
+sobre la IA era imposible de cumplir — no había función que priorizar.
+
+`nucleoDeConsulta` quita el relleno y deja "anadir objetivo", que sí encuentra la acción. Pero solo
+**si la frase entera no ha dado nada**: aflojar una búsqueda que ya era precisa habría empeorado los
+casos normales para arreglar los raros.
+
+### Toda la decisión en un sitio que se puede probar
+`resolverConsulta(indice, texto)` devuelve qué enseñar y en qué orden. Vive en el motor, no en el
+componente, y por eso **los ocho casos de la prueba final del apartado 20 son ocho llamadas a una
+función**, comprobadas sin renderizar nada.
+
+### Un hueco real de navegación, arreglado
+Buscar "colores" desde Inicio y pulsar atrás dejaba a Josué en el hub de **Más** — un sitio en el
+que no había estado. Ahora vuelve a donde estaba. El rastro se borra en cuanto navega a cualquier
+otro sitio, mediante un único efecto sobre `tab`: ponerlo en cada botón habría dejado fuera el que
+se añada mañana.
+
+### Errores y carga (apartados 14 y 15)
+- "Pensando…" con su rueda, sin bloquear el resto de la app.
+- Un mensaje de error con pinta de código o número de estado se sustituye por **"No he podido
+  responder ahora mismo"**, con **Reintentar** y el buscador intacto detrás. Nada de
+  `500 Internal Server Error` en pantalla.
+
+### Lo que no se ha tocado
+Los paneles de IA de cada módulo siguen exactamente donde estaban: el apartado 23 pide
+expresamente que el buscador nuevo **no rompa el acceso inferior existente**. Y `api/ask-ai.js` no
+se ha modificado — ninguna clave llega al frontend.
+
+### Verificación
+`bash scripts/verificar.sh` → **352 comprobaciones en verde**, 129 de ellas del buscador.
+
+⚠️ **Pendiente de Josué (R1):** el recorrido completo en un iPhone real, con el teclado abierto.
+
+---
+
 ## Entrega 2 · BI Fase 3 — El motor de búsqueda de verdad (v1.30.0)
 
 La Fase 2 hizo el acceso y un índice que funcionaba. Esta lo convierte en un motor: sinónimos,

@@ -2516,260 +2516,58 @@ error ni aviso. Ahora usa `forwardRef`. Es aditivo: ninguno de los ~60 usos ante
 encuentra. Las transposiciones son con diferencia la errata más común escribiendo deprisa en un
 móvil — y es justo el ejemplo que pone la especificación.
 
-#### BI · Fase 4/4 — INTEGRACIÓN FINAL: BUSCADOR + IA + INTENCIÓN DEL USUARIO
-- [ ] Interfaz del buscador.
-- [ ] Motor de búsqueda interno.
-- [ ] Inteligencia artificial.
-- [ ] EXPERIENCIA PRINCIPAL
-- [ ] CASO: EL USUARIO BUSCA UNA FUNCIÓN
-- [ ] CASO: EL USUARIO HACE UNA PREGUNTA
-- [ ] CASO: EXISTEN LAS DOS POSIBILIDADES
-- [ ] DETECCIÓN DE INTENCIÓN
-- [ ] DETECCIÓN HÍBRIDA
-- [ ] PRIORIDAD
-- [ ] PREGUNTAS ABIERTAS
-- [ ] RESPUESTA DE LA IA
-- [ ] CONTEXTO DE JC FITNESS
-- [ ] NAVEGACIÓN DE VUELTA
-- [ ] CIERRE DEL SISTEMA
-- [ ] ESTADOS DE LA INTERFAZ
-- [ ] ESTADO DE CARGA
-- [ ] ERRORES DE IA
-- [ ] SEGURIDAD DE LA IA
-- [ ] RENDIMIENTO
-- [ ] DISEÑO MÓVIL
-- [ ] MICROINTERACCIONES
-- [ ] PRUEBAS COMPLETAS
-- [ ] PRUEBA DE NO REGRESIÓN
-- [ ] NO SOBREDISEÑAR
-- [ ] RESULTADO FINAL
-- [ ] CRITERIO DEFINITIVO DE ÉXITO
-- [ ] No crear nuevas fases automáticamente.
-- [ ] No modificar otros módulos sin necesidad.
-- [ ] Realizar una prueba completa del sistema.
-- [ ] Comprobar móvil.
-- [ ] Comprobar rendimiento.
-- [ ] Comprobar navegación.
-- [ ] Comprobar IA.
-- [ ] Comprobar seguridad.
-- [ ] Comprobar que las cuatro fases funcionan conjuntamente.
+#### BI · Fase 4/4 — INTEGRACIÓN FINAL: BUSCADOR + IA + INTENCIÓN ✅ COMPLETADA (v1.31.0)
+- [x] EXPERIENCIA PRINCIPAL — un solo sistema desde la lupa. Josué no tiene que decidir si busca o
+      pregunta: escribe y JosStyle decide.
+- [x] CASO: EL USUARIO BUSCA UNA FUNCIÓN — resultado + abrir directo, sin pantallas intermedias.
+- [x] CASO: EL USUARIO HACE UNA PREGUNTA — la IA arriba, con la pregunta ya escrita.
+- [x] CASO: EXISTEN LAS DOS POSIBILIDADES — "¿Cómo cambio los colores?" enseña **las dos**.
+- [x] DETECCIÓN DE INTENCIÓN — las tres categorías del apartado 5: navegación, pregunta y **acción**.
+- [x] DETECCIÓN HÍBRIDA — no depende del signo '¿'. "cambiar colores" se detecta como acción por el
+      verbo; una frase larga sin verbo ni interrogación va a la IA.
+- [x] PRIORIDAD — con una función encontrada y una intención que no sea preguntar, **la función va
+      primero** y la IA queda debajo. No se gasta una llamada a la IA en algo que la app hace sola.
+- [x] PREGUNTAS ABIERTAS — "¿Qué ejercicios para mejorar mi planche?" → la IA manda.
+- [x] RESPUESTA DE LA IA — dentro del mismo modal, con los mismos tokens, tipografía y bordes. No
+      hay una segunda experiencia visual.
+- [x] CONTEXTO DE JOSSTYLE — se mantiene el `buildContext` de siempre; ni más datos ni menos.
+- [x] NAVEGACIÓN DE VUELTA — **arreglado un hueco real**: buscar "colores" desde Inicio y pulsar
+      atrás dejaba a Josué en el hub de "Más", donde no había estado. Ahora vuelve a donde estaba.
+- [x] CIERRE DEL SISTEMA — cerrar no toca ningún dato ni ejecuta nada.
+- [x] ESTADOS DE LA INTERFAZ — los ocho:
+  - [x] 1 cerrado · [x] 2 abierto sin texto (recientes + sugerencias) · [x] 3 escribiendo
+  - [x] 4 con resultados · [x] 5 pregunta detectada · [x] 6 sin resultados
+  - [x] 7 respuesta de la IA · [x] 8 error con reintentar
+- [x] ESTADO DE CARGA — "Pensando…" con su rueda; el resto de la app sigue viva.
+- [x] ERRORES DE IA — **nada técnico**: un mensaje con pinta de código o número de estado se
+      sustituye por "No he podido responder ahora mismo", con **Reintentar** y el buscador intacto.
+- [x] SEGURIDAD DE LA IA — sigue pasando por `api/ask-ai.js`; ninguna clave en el frontend.
+- [x] RENDIMIENTO — la búsqueda es local e instantánea; la IA solo cuando se pulsa.
+- [x] DISEÑO MÓVIL — lista con scroll propio, campo siempre visible con el teclado abierto.
+      ⚠️ Comprobación real en iPhone: pendiente de Josué (**R1**).
+- [x] MICROINTERACCIONES — solo las que pide el apartado: pulsación, apertura, selección, cierre.
+- [x] PRUEBAS COMPLETAS — **los ocho casos del apartado 20, literales**, en
+      `scripts/test-buscador.mjs`.
+- [x] PRUEBA DE NO REGRESIÓN — 352 comprobaciones en verde: build, 52 casos de renderizado de las
+      13 vistas y las 9 reglas invariantes.
+- [x] NO SOBREDISEÑAR — un campo, una lista, un botón de IA. Sin menús ni pestañas dentro.
+- [x] RESULTADO FINAL — lupa arriba a la izquierda, sugerencias arriba a la derecha, y **los paneles
+      de IA de cada módulo intactos**: el apartado 23 pide expresamente que el buscador nuevo no
+      rompa el acceso inferior existente.
+- [x] CRITERIO DEFINITIVO DE ÉXITO — "no sé dónde está algo" → lupa → "colores" → abrir → allí.
+
+**Lo que hacía falta para cumplir el apartado 7, y no era obvio:** buscar la frase entera no
+encontraba nada. "quiero añadir un objetivo" no coincide con ninguna entrada, porque ninguna
+contiene la palabra "quiero". Sin quitar ese envoltorio, la prioridad de la función sobre la IA era
+imposible de cumplir: no había función que priorizar. Ahora `nucleoDeConsulta` deja "anadir
+objetivo" y el resultado sale — pero solo **si la frase entera no ha encontrado nada**, para no
+aflojar una búsqueda que ya era precisa.
+
+**La decisión sobre toda la lógica de intención:** vive en `indiceBusqueda.js`, no en el componente.
+Así los ocho casos del apartado 20 son ocho llamadas a `resolverConsulta()` que se prueban sin
+renderizar nada, y la interfaz solo pinta lo que le dicen.
 
 ---
-
-## ME · LIBERTAD DE APARTADOS + ELIMINADOS RECIENTEMENTE — 4 fases
-
-Sistema global de módulos activables/desactivables, personalización y papelera universal con recuperación. **Las fases 1 y 2 se solapan casi por completo con `PersonalizationView` y `personalizacion.ocultos` (Fase 19), ya construidos** — aquí el trabajo real es la papelera (fase 3) y la auditoría de integración global (fase 4).
-
-#### ME · Fase 1/4 — SISTEMA DE MÓDULOS ACTIVABLES/DESACTIVABLES ✅ **COMPLETADA (v1.24.0)**
-
-> **Qué se construyó:** "Personalizar mi sistema" en Ajustes → Pantalla principal — centro de
-> módulos agrupado por área, con icono, nombre, **descripción**, estado e **interruptor ON/OFF**
-> real (nuevo componente `Switch` compartido). Confirmación al desactivar que insiste en que los
-> datos se conservan; ninguna al reactivar.
->
-> **La parte importante:** desactivar ahora **reconstruye de verdad la interfaz**. Antes de esta
-> fase `personalizacion.ocultos` solo filtraba los hubs, así que un módulo desactivado seguía
-> apareciendo en "Hoy". Ahora desaparece también de las tarjetas de Nivel 1/2/3, de los avisos, de
-> los accesos a Calendario y Agenda, del recordatorio de Relación, de las acciones rápidas (y la
-> fila entera se va si no queda ninguna) y **de la puntuación diaria** — si has dicho que no usas
-> Sueño, no te baja la nota por no registrarlo.
->
-> **Verificado con 16 pruebas de comportamiento** sobre el HTML renderizado (`scripts/test-modulos.jsx`),
-> no solo "no revienta": se comprueba que lo desactivado *desaparece* y que lo demás sigue ahí.
-
-**Objetivo**
-- [x] El usuario puede decidir qué apartados quiere utilizar
-
-**Centro de módulos**
-- [x] Apartado dentro de Ajustes: "Personalizar mi sistema"
-- [x] Aparecen todos los módulos disponibles
-- [x] Cada módulo con **icono**
-- [x] Cada módulo con **nombre**
-- [x] Cada módulo con **descripción** (nueva constante `DESCRIPCIONES_MODULOS`, ≤80 caracteres)
-- [x] Cada módulo con **estado** visible
-- [x] Cada módulo con **interruptor ON/OFF** (nuevo componente `Switch`, accesible por teclado)
-- [x] Agrupado por áreas, como muestra la especificación
-- [x] Contador de cuántos módulos están activos
-
-**Desactivar no significa eliminar**
-- [x] Desactivar **NO borra los datos**
-- [x] Deja de aparecer en navegación
-- [x] Deja de aparecer en el Dashboard
-- [x] Deja de aparecer en accesos rápidos
-- [x] Deja de ocupar espacio visual (la fila entera se retira si queda vacía)
-- [x] Deja de mostrarse como módulo activo
-- [x] Al reactivarlo, todo sigue ahí
-- [x] Confirmación al desactivar que dice explícitamente que no se borra nada
-- [x] Sin confirmación al reactivar (acción segura y reversible)
-
-**Navegación dinámica**
-- [x] Hubs de área (ya funcionaba desde la Fase 19)
-- [x] Dashboard — tarjetas de Nivel 1, 2 y 3
-- [x] Avisos automáticos (sueño corto, racha en riesgo, examen sin horas)
-- [x] Accesos a Calendario y Agenda
-- [x] Recordatorio de Relación
-- [x] Acciones rápidas
-- [x] Puntuación diaria (un módulo desactivado no cuenta ni penaliza)
-- [x] "Ajustes" nunca se puede desactivar (regla 40 — sin él no habría vuelta atrás)
-- [-] Menú lateral — no existe en esta app (la navegación es de 5 pestañas + hubs)
-- [ ] Buscador universal — sigue buscando sobre datos, no sobre funciones. Se aborda en **BI Fase 3**, que es donde se construye el índice de funciones
-- [ ] Estadísticas — `StatsView` calcula correlaciones sobre datos, no muestra módulos; se revisará si al construir **ME Fase 2** aparece un caso real
-
-#### ME · Fase 2/4 — PERSONALIZACIÓN TOTAL ✅ **COMPLETADA (v1.25.0)**
-
-**Orden de módulos**
-- [x] Permitir cambiar el orden (flechas arriba/abajo, ya existentes desde la Fase 19)
-- [ ] **Drag & drop** — decisión documentada: el apartado 103 de Ajustes admite explícitamente
-      "controles accesibles equivalentes", y las flechas lo son. Pendiente solo si Josué lo pide
-
-**Dashboard personalizable ("Mi pantalla de inicio")**
-- [x] Elegir qué información se ve en la pantalla principal
-- [x] Lista de módulos con casilla/interruptor por cada uno
-- [x] **Módulo activado ≠ necesariamente visible en Dashboard** (dos listas separadas)
-- [x] Contador de cuántos están visibles
-- [x] Solo se listan módulos activos (no ofrecer un control que no haría nada)
-- [x] Estado vacío honesto si no hay ningún módulo activo
-
-**Navegación personalizable**
-- [x] El contenido de cada hub respeta orden, iconos y módulos activos
-- [-] Accesos principales configurables — **choca con una regla del propio Josué** (barra inferior
-      de exactamente 5 pestañas, nunca una sexta, repetida en dos prompts). Requiere que él decida
-
-**Configuraciones predefinidas**
-- [x] Perfil **Completo** (todos los módulos activados)
-- [x] Perfil **Estudiante** (Estudios + Productividad + Salud)
-- [x] Perfil **Fitness** (Entrenamiento + Nutrición + Sueño + Salud)
-- [x] Perfil **Minimalista** (solo lo esencial)
-- [x] Los perfiles **NO bloquean** la personalización posterior
-- [x] Confirmación previa que dice cuántos apartados quedarán activos
-- [x] Un perfil solo cambia qué módulos están activos, nunca el orden/iconos/PIN/favoritas
-
-**Guardado de la personalización**
-- [x] Asociada a la cuenta (clave `personalizacion` en Supabase, ya existente)
-- [x] Se mantiene al cerrar sesión y volver a entrar
-- [x] Se mantiene al cambiar de dispositivo o navegador
-- [x] Se mantiene al instalar la PWA
-- [x] Sincronizada por la arquitectura actual, sin backend nuevo
-
-**Dependencias entre módulos**
-- [x] Modeladas explícitamente (`DEPENDENCIAS_MODULOS`) y verificables por script
-- [x] Aviso al desactivar un módulo del que dependen otros activos
-- [x] El aviso nombra los módulos afectados
-- [x] Nunca deja la app en un estado roto: avisa, no bloquea ni desactiva en cascada
-- [x] No avisa de dependientes que Josué ya tiene desactivados (sería ruido)
-
-#### ME · Fase 3/4 — SISTEMA DE ELIMINADOS RECIENTEMENTE ✅ **COMPLETADA (v1.26.0)**
-
-**Objetivo**
-- [x] Al eliminar, el elemento NO desaparece para siempre: pasa a la papelera
-- [x] Apartado "🗑️ Eliminados recientemente" dentro de Ajustes
-- [x] Sistema **global y reutilizable**, no una solución por módulo (26 colecciones)
-
-**Contenido de la papelera**
-- [x] Cada elemento muestra información suficiente para identificarlo
-- [x] Tipo de elemento visible ("Tarea", "Examen", "Movimiento"...)
-- [x] Cuánto hace que se eliminó ("hace 2 horas", "ayer", "hace 3 días")
-- [x] Datos relevantes según el tipo de elemento
-- [x] Cuántos días le quedan antes de borrarse solo
-
-**Acciones**
-- [x] **Recuperar** — devuelve el elemento exactamente donde estaba
-- [x] **Eliminar definitivamente** — permanente
-- [x] Confirmación previa: "¿Eliminar definitivamente? Este elemento no podrá recuperarse después"
-- [x] **Vaciar papelera** con su propia confirmación
-
-**Recuperación (los 7 puntos de la especificación)**
-- [x] 1. El elemento vuelve a su módulo original
-- [x] 2. Recupera sus datos (el objeto íntegro, no una copia nueva)
-- [x] 3. Recupera sus relaciones cuando es posible (cascada asignatura → exámenes + horas)
-- [x] 4. Vuelve a aparecer en estadísticas (al volver a su módulo, los cálculos lo recogen solos)
-- [x] 5. Vuelve a aparecer en el Dashboard si correspondía
-- [x] 6. Se sincroniza con la cuenta (clave `papelera` en Supabase)
-- [x] 7. Desaparece de Eliminados recientemente
-- [x] **Es una recuperación REAL**, no volver a mostrar una copia — verificado comprobando que el
-      estado restaurado es idéntico al de partida
-
-**Tiempo de retención**
-- [x] Sistema preparado para establecer un tiempo de retención
-- [x] 30 días por defecto
-- [x] Fácil de cambiar (constante + selector en la interfaz)
-- [x] Opción "Conservar hasta que yo lo elimine definitivamente"
-- [x] La purga se aplica al abrir la app y al acortar el plazo
-
-**Información del elemento eliminado (metadatos)**
-- [x] ID original
-- [x] Tipo de elemento
-- [x] Módulo (y colección)
-- [x] Fecha de creación
-- [x] Fecha de eliminación
-- [x] Datos necesarios para la recuperación (el objeto completo)
-- [x] Usuario propietario (implícito: la clave vive bajo su `user_id` con RLS)
-- [x] Relaciones necesarias (`relacionados`, para el borrado en cascada)
-- [x] Información de posición/origen (`indice`)
-- [x] **NO se almacena simplemente una etiqueta de "eliminado"**
-
-**Decisiones y límites**
-- [x] La papelera entra en el snapshot del deshacer, para que los dos sistemas no se pisen
-- [x] Borrado definitivo y vaciado quedan fuera del deshacer (sería contradictorio)
-- [x] Privacidad: las entradas de Relación se ocultan mientras el módulo esté bloqueado
-- [-] Fotos, vídeos y archivos de Biblioteca — fuera, igual que ya lo estaban del deshacer:
-      viven en Storage y mandarlos a la papelera dejaría ficheros huérfanos
-
-#### ME · Fase 4/4 — INTEGRACIÓN GLOBAL ✅ COMPLETADA (v1.27.0)
-- [x] Analiza la arquitectura actual. — 21 módulos de datos en `app_data`, sin router, 5 pestañas.
-- [x] Identifica los módulos existentes. — 19 en `MORE_NAV`, 4 áreas, 20 `case` de `renderTab`.
-- [x] Identifica cómo se almacenan. — `saveData` sobrescribe, `loadData` no fusiona; 22 claves.
-- [x] Identifica las relaciones entre datos. — dos cascadas reales: programa → asignatura →
-      exámenes/horas. Ninguna otra colección referencia ids de otra.
-- [x] Identifica la navegación. — comprobada automáticamente por `scripts/comprobar-navegacion.mjs`.
-- [x] Identifica el Dashboard. — respeta `dashboardOcultos` y `modulosDesactivados` desde ME F1/F2.
-- [x] Identifica los sistemas actuales de eliminación. — eran 22 `.filter()` repetidos; hoy hay
-      **uno**: `eliminarConPapelera(modulo, coleccion, id)`, más 2 cascadas.
-- [x] PRINCIPIO FUNDAMENTAL — todo lo que Josué crea, Josué lo puede borrar. Verificado por
-      `scripts/auditar-modulos.mjs` (P3), no a ojo.
-- [x] PAPELERA / BOTÓN DE ELIMINAR — `BotonBorrar` en `components/ui.jsx`, mismo control en todas
-      las listas.
-- [x] CONFIRMACIÓN DE ELIMINACIÓN — deliberadamente **no** la pide el borrado normal (es
-      reversible vía papelera); sí la piden el borrado definitivo y vaciar la papelera.
-- [x] ELIMINACIÓN PERMANENTE — `eliminarDefinitivo` + `vaciarPapelera` + purga por retención.
-- [x] El elemento debe desaparecer inmediatamente de la interfaz. — estado local + `snapshotAndSave`.
-- [x] Debe eliminarse también de la base de datos/estado correspondiente. — misma llamada.
-- [x] Debe mantenerse sincronizado en todos los dispositivos. — va por `app_data`, como el resto.
-- [x] No debe reaparecer después de recargar la página.
-- [x] No debe reaparecer después de cerrar y abrir la aplicación.
-- [x] No debe quedar como un elemento “fantasma” en otra sección. — las cascadas se llevan los
-      hijos; comprobado por P5 de la auditoría.
-- [x] Las estadísticas relacionadas deben actualizarse correctamente. — todas se derivan del estado,
-      no se guardan agregados.
-- [x] CUIDADO CON LAS RELACIONES — `conArrastrados` guarda los hijos en la MISMA entrada de
-      papelera, así que restaurar devuelve el árbol entero (asignatura → exámenes + horas;
-      programa → asignaturas + exámenes + horas).
-- [x] ELIMINAR ELEMENTOS PERSONALIZADOS — temas de color guardados y favoritos de Nutrición tienen
-      su propio borrado; documentado por qué no van a la papelera.
-- [x] EDITAR + ELIMINAR — conviven en la misma fila, sin menú intermedio.
-- [x] COMPONENTE REUTILIZABLE — `BotonBorrar`.
-- [x] MENÚ DE ACCIONES — **descartado a propósito**: con una sola acción destructiva por fila, un
-      menú de tres puntos añade un toque sin añadir nada (regla 8).
-- [x] BORRADO EN TODOS LOS MÓDULOS — **la auditoría encontró 7 huecos reales** y se taparon los 7:
-  - [x] Sueño — registros de noche
-  - [x] Economía — movimientos
-  - [x] Salud — medidas
-  - [x] Salud — historial médico
-  - [x] Nutrición — comidas
-  - [x] Fútbol — partidos
-  - [x] Estudios — horas de estudio
-  - [x] Estudios — **programas** (lo encontró el script, no la revisión a mano)
-- [x] DATOS HISTÓRICOS — nada se borra en cascada "por antigüedad"; solo la purga de la papelera.
-- [x] ELIMINACIÓN Y ESTADÍSTICAS — ver arriba: derivadas, se recalculan solas.
-- [x] PAPELERA / UNDO — los dos sistemas conviven: `papelera` entra en el snapshot de deshacer, así
-      que no pueden desincronizarse.
-- [x] SEGURIDAD — lo borrado de Relación se enmascara en la papelera mientras el módulo esté
-      bloqueado (`describirEntrada` + `privado: true`).
-- [x] FUTURAS FUNCIONALIDADES — añadir un módulo a la papelera es **una línea** en
-      `CATALOGO_PAPELERA`; la auditoría avisa si alguien olvida ponerla.
-- [x] NO ROMPER NADA EXISTENTE — 205 comprobaciones verdes (`bash scripts/verificar.sh`).
-- [x] AUDITORÍA FINAL — **ejecutable**, no un documento: `scripts/auditar-modulos.mjs` responde las
-      preguntas P3, P5, P7, P7b y P9 en cada verificación.
 
 ---
 

@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Entrega 2 · BI Fases 2 y 3 — pruebas del índice y del motor de búsqueda.
+// Entrega 2 · BI Fases 2, 3 y 4 — pruebas del índice, el motor y la intención.
 //
 // El apartado 19 de la especificación trae su propio control de calidad: nueve
 // búsquedas concretas que tienen que funcionar. Están todas aquí, literales,
@@ -11,7 +11,7 @@
 // rota, así que la prueba comprueba lo contrario: que no aparecen.
 // ---------------------------------------------------------------------------
 import { readFileSync } from 'node:fs';
-import { construirIndice, buscar, pareceUnaPregunta, normalizar, normalizarRaiz, sugerenciaDeErrata, sugerenciasIniciales } from '../src/lib/indiceBusqueda.js';
+import { construirIndice, buscar, pareceUnaPregunta, normalizar, normalizarRaiz, sugerenciaDeErrata, sugerenciasIniciales, analizarIntencion, nucleoDeConsulta, resolverConsulta } from '../src/lib/indiceBusqueda.js';
 
 // Copia de MORE_NAV (App.jsx). Solo id y label: el icono no se usa en el motor.
 const MODULOS = [
@@ -37,7 +37,7 @@ const indice = construirIndice(MODULOS);
 const primero = (q) => buscar(indice, q)[0];
 const titulos = (q) => buscar(indice, q).map((r) => r.titulo);
 
-console.log('\n═══ BI Fases 2 y 3 — buscador de funciones ═══\n');
+console.log('\n═══ BI Fases 2, 3 y 4 — buscador, motor e intención ═══\n');
 
 // --- Índice ---
 {
@@ -235,6 +235,100 @@ console.log('\n═══ BI Fases 2 y 3 — buscador de funciones ═══\n');
   const fuente = readFileSync(new URL('../src/lib/indiceBusqueda.js', import.meta.url), 'utf8');
   comprobar('El motor no importa la IA', !/from '\.\/ai'|askAI/.test(fuente));
   comprobar('El motor no hace peticiones de red', !/fetch\(|XMLHttpRequest/.test(fuente));
+}
+
+// ═══ BI Fase 4 — intención del usuario ═══
+
+// --- Apartado 5: las TRES categorías, no dos ---
+{
+  for (const q of ['colores', 'sueño', 'economía']) {
+    comprobar(`"${q}" → navegación`, analizarIntencion(q) === 'navegacion', analizarIntencion(q));
+  }
+  for (const q of ['¿cómo puedo mejorar?', '¿qué debería hacer?', '¿por qué?', '¿cómo hago esto?']) {
+    comprobar(`"${q}" → pregunta`, analizarIntencion(q) === 'pregunta', analizarIntencion(q));
+  }
+  for (const q of ['quiero cambiar los colores', 'quiero añadir un objetivo', 'quiero registrar un entrenamiento']) {
+    comprobar(`"${q}" → acción`, analizarIntencion(q) === 'accion', analizarIntencion(q));
+  }
+}
+
+// --- Apartado 6: detección híbrida, no solo el signo '¿' ---
+{
+  comprobar('"cambiar colores" es acción aunque no lleve ¿', analizarIntencion('cambiar colores') === 'accion');
+  comprobar('"anotar un gasto" es acción', analizarIntencion('anotar un gasto') === 'accion');
+  comprobar('Una frase larga sin verbo ni ¿ va a la IA',
+    analizarIntencion('ultimamente me cuesta mucho concentrarme por las tardes') === 'pregunta');
+  // Una pregunta sobre CÓMO hacer algo sigue siendo pregunta, aunque lleve un verbo
+  // de acción: el apartado 4 quiere que se enseñen las dos salidas, no solo la función.
+  comprobar('"¿cómo cambio los colores?" gana pregunta sobre acción',
+    analizarIntencion('¿cómo cambio los colores?') === 'pregunta');
+}
+
+// --- El núcleo de la consulta: sin esto el apartado 7 no se puede cumplir ---
+{
+  comprobar('El núcleo quita el relleno', nucleoDeConsulta('quiero añadir un objetivo') === 'anadir objetivo',
+    nucleoDeConsulta('quiero añadir un objetivo'));
+  comprobar('...y no deja la consulta vacía si todo era relleno',
+    nucleoDeConsulta('quiero un') === 'quiero un', nucleoDeConsulta('quiero un'));
+}
+
+// --- Apartado 20: los ocho casos de la prueba final, literales ---
+{
+  const caso = (q) => resolverConsulta(indice, q);
+
+  const c1 = caso('colores');
+  comprobar('Caso 1 · "colores" → Colores', c1.resultados[0]?.id === 'ajuste:apariencia' && !c1.iaPrimero);
+
+  const c2 = caso('dormir');
+  comprobar('Caso 2 · "dormir" → Sueño', c2.resultados[0]?.tab === 'sueno' && !c2.iaPrimero);
+
+  const c3 = caso('¿Cómo cambio los colores?');
+  comprobar('Caso 3 · "¿Cómo cambio los colores?" → Colores Y la IA',
+    c3.iaPrimero && c3.resultados.some((r) => r.id === 'ajuste:apariencia'),
+    `${c3.intencion} / ${c3.resultados.map((r) => r.titulo).join(', ') || 'sin resultados'}`);
+
+  const c4 = caso('¿Cómo puedo mejorar mi planche?');
+  comprobar('Caso 4 · "¿Cómo puedo mejorar mi planche?" → la IA manda', c4.iaPrimero);
+
+  // Casos 5 y 6: "si existe". Sonido y Rachas son fases futuras — no se fingen.
+  const c5 = caso('sonidos');
+  comprobar('Caso 5 · "sonidos" → no inventa un módulo Sonidos',
+    !c5.resultados.some((r) => normalizar(r.titulo).includes('sonido')));
+  const c6 = caso('racha');
+  comprobar('Caso 6 · "racha" → no inventa un módulo Rachas',
+    !c6.resultados.some((r) => normalizar(r.titulo) === 'rachas'));
+
+  const c7 = caso('quiero añadir un objetivo');
+  comprobar('Caso 7 · "quiero añadir un objetivo" → Objetivos',
+    c7.resultados.length > 0 && c7.resultados[0].tab === 'objetivos' && !c7.iaPrimero,
+    `${c7.intencion} / ${c7.resultados.map((r) => r.titulo).join(', ') || 'sin resultados'}`);
+
+  const c8 = caso('asdfghjkl');
+  comprobar('Caso 8 · "asdfghjkl" → sin resultados, queda la IA', c8.resultados.length === 0);
+}
+
+// --- Apartado 7: con función encontrada, la función manda ---
+{
+  const r = resolverConsulta(indice, 'cambiar colores');
+  comprobar('"cambiar colores" → la función va primero, no la IA',
+    !r.iaPrimero && r.resultados[0]?.id === 'ajuste:apariencia', `${r.intencion} / ${r.resultados[0]?.titulo}`);
+  const r2 = resolverConsulta(indice, 'quiero anotar un gasto');
+  comprobar('"quiero anotar un gasto" → abre el movimiento nuevo',
+    r2.resultados[0]?.foco?.accion === 'nuevoMovimiento', r2.resultados[0]?.titulo || 'sin resultados');
+}
+
+// --- Apartado 8: pregunta abierta sin función que la resuelva ---
+{
+  const r = resolverConsulta(indice, '¿Qué ejercicios puedo hacer para mejorar mi planche?');
+  comprobar('Una pregunta abierta manda a la IA', r.iaPrimero && r.intencion === 'pregunta');
+}
+
+// --- Consultas vacías y basura, también por la vía nueva ---
+{
+  const r = resolverConsulta(indice, '');
+  comprobar('resolverConsulta con texto vacío no revienta', r.resultados.length === 0 && !r.iaPrimero);
+  comprobar('resolverConsulta con null no revienta', resolverConsulta(indice, null).resultados.length === 0);
+  comprobar('resolverConsulta sin índice no revienta', resolverConsulta(null, 'colores').resultados.length === 0);
 }
 
 console.log(fallos === 0 ? '\n  Todo correcto.\n' : `\n  ${fallos} fallo(s).\n`);
