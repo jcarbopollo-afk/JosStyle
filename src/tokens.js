@@ -134,7 +134,7 @@ export function aplicarTema(nombreResuelto, altoContraste, accentHex, temaPerson
 export const DEFAULT_APARIENCIA = {
   tema: 'oscuro', // 'oscuro' | 'claro' | 'automatico'
   tamanoTexto: 'predeterminado', // 'pequeno' | 'predeterminado' | 'grande'
-  densidad: 'estandar', // 'compacta' | 'estandar' | 'comoda' — Fase A7: ya tiene efecto visual real (ver index.css)
+  densidad: 'estandar', // 'compacta' | 'estandar' | 'comoda' — efecto real: reglas html[data-densidad] en index.css
   radioBorde: 'redondeado', // 'recto' | 'suave' | 'redondeado'
   animaciones: 'completa', // 'completa' | 'reducida' | 'minima' | 'desactivadas'
   reducirMovimiento: false,
@@ -412,9 +412,14 @@ export const METRICAS_FAVORITAS_DISPONIBLES = [
 ];
 export const MAX_METRICAS_FAVORITAS = 4;
 
-// orden/ocultos/iconos/pinExtra usan ids de MORE_NAV (App.jsx). "pinExtra" es aparte del PIN
-// forzado de Relación (Fase 12) — aquí Josué elige voluntariamente qué otros módulos proteger
-// con el mismo PIN, así que nunca incluye 'relacion' (ya protegido siempre, sin poder quitarlo).
+// orden/ocultos/iconos usan ids de MORE_NAV (App.jsx).
+//
+// ⚠️ `pinExtra` es VESTIGIAL: ya no se escribe nunca. La Seguridad Centralizada lo sustituyó por
+// `seguridad.protectedAreas`, que es hoy la única fuente de verdad de qué módulos piden PIN. El
+// campo se conserva por un único motivo: `App.jsx` lo lee UNA sola vez durante la migración de
+// una cuenta que todavía no la haya hecho (con las banderas `migradoAreas`/`migradoAcciones`
+// evitando que se repita). Borrarlo dejaría a esas cuentas sin migrar. No escribir aquí.
+//
 // "modo" (Fase 20) es el modo "viaje/vacaciones/exámenes" activo — null si ninguno.
 // Ampliación del Dashboard — Centro de Control: `dashboardOcultos` deja preparada la
 // arquitectura para que un futuro editor en Ajustes permita elegir qué módulos del nuevo

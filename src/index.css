@@ -52,6 +52,33 @@ html[data-radio='suave'] .rounded-2xl { border-radius: 0.85rem !important; }
 html[data-radio='suave'] .rounded-xl { border-radius: 0.5rem !important; }
 html[data-radio='suave'] .rounded-lg { border-radius: 0.4rem !important; }
 
+/* Densidad de interfaz (apartado 91 de la especificación extendida: Compacta / Estándar /
+   Cómoda). Se resuelve con el mismo mecanismo de override global por atributo que ya se usa
+   arriba para los radios de borde, en vez de tocar el espaciado de las ~22 vistas una por una.
+
+   Se ajustan dos cosas, que son las que de verdad se perciben como "densidad":
+
+     · el ritmo vertical entre tarjetas (space-y-*), y
+     · el padding interior de las tarjetas (Card usa p-5).
+
+   Deliberadamente NO se tocan `gap-*` ni el padding horizontal: el gap afecta también al eje
+   horizontal, y encogerlo o agrandarlo puede provocar que una fila de píldoras o una rejilla
+   de 2 columnas se parta de forma distinta según el contenido. El objetivo es cambiar la
+   sensación de aire, no arriesgar el layout.
+
+   "Estándar" no lleva override: es exactamente lo que la app ya era. */
+html[data-densidad='compacta'] .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.7rem !important; }
+html[data-densidad='compacta'] .space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.55rem !important; }
+html[data-densidad='compacta'] .space-y-2 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.35rem !important; }
+html[data-densidad='compacta'] .p-5 { padding: 0.9rem !important; }
+html[data-densidad='compacta'] .p-4 { padding: 0.7rem !important; }
+
+html[data-densidad='comoda'] .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.4rem !important; }
+html[data-densidad='comoda'] .space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.05rem !important; }
+html[data-densidad='comoda'] .space-y-2 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.7rem !important; }
+html[data-densidad='comoda'] .p-5 { padding: 1.6rem !important; }
+html[data-densidad='comoda'] .p-4 { padding: 1.3rem !important; }
+
 /* Animaciones: "Desactivadas" o "Reducir movimiento" (interruptor aparte del nivel) tienen
    efecto real hoy — el resto de niveles (Completa/Reducida/Mínima) se guardan como preferencia
    pero se ven igual porque la app todavía tiene muy pocas animaciones propias que graduar. */

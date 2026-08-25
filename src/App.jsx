@@ -398,9 +398,10 @@ export default function App() {
     const tam = TAMANOS_TEXTO.find((t) => t.value === apariencia.tamanoTexto) || TAMANOS_TEXTO[1];
     document.documentElement.style.fontSize = `${tam.px}px`;
     document.documentElement.dataset.radio = apariencia.radioBorde;
+    document.documentElement.dataset.densidad = apariencia.densidad;
     document.documentElement.dataset.animaciones = apariencia.animaciones;
     document.documentElement.dataset.reducirMovimiento = String(apariencia.reducirMovimiento);
-  }, [apariencia.tamanoTexto, apariencia.radioBorde, apariencia.animaciones, apariencia.reducirMovimiento]);
+  }, [apariencia.tamanoTexto, apariencia.radioBorde, apariencia.densidad, apariencia.animaciones, apariencia.reducirMovimiento]);
 
   // Fase A5 — Bloqueo automático (apartado 146): sin PIN no hay nada que auto-bloquear; con
   // "nunca" (por defecto) tampoco se arma ningún temporizador. Reinicia el temporizador con

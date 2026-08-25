@@ -2,6 +2,8 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **✅ ACTUALIZACIÓN (v1.23.0 — Bloque R0: correcciones críticas + verificación automática):** primer turno en el que **el entorno de desarrollo tiene acceso a npm**, así que por primera vez desde la v1.0.1 se ha podido ejecutar `npm install` y `npm run build` de verdad: **el proyecto compila sin errores (2604 módulos)**. Sobre esa base se ha construido `scripts/verificar.sh`, que en cada fase comprueba build + pruebas + ocho reglas invariantes del proyecto (nadie desestructura `COLORS`, ningún hex suelto fuera de `tokens.js`, todo overlay `fixed inset-0` con `createPortal`, sin notas internas visibles, `relacion` fuera del export, PIN de Relación intacto, 5 pestañas exactas, navegación coherente y todo ajuste de Apariencia con efecto CSS real), más `scripts/smoke.mjs`, que **renderiza 11 vistas de verdad** con `react-dom/server` en tres escenarios (vacío, con datos, datos parciales). **(1) Modelo de IA obsoleto (crítico):** `api/ask-ai.js` usaba `claude-sonnet-4-6`, que ya no existe — al activar `ANTHROPIC_API_KEY` habrían fallado las 13 secciones con IA, el buscador universal, el panel de sugerencias, el escaneo de comida y el análisis de vídeo, y el síntoma habría sido un genérico "la IA no funciona". Ahora el modelo se lee de `ANTHROPIC_MODEL` (por defecto `claude-sonnet-5`) y un 404 devuelve un mensaje que dice exactamente qué pasa y dónde cambiarlo. **(2) Puntuación diaria:** la fórmula anterior sumaba puntos por tener datos "alguna vez" y nunca miraba la fecha, así que se quedaba clavada en 100 para siempre mientras la etiqueta decía "Puntuación de hoy". Nuevo `src/lib/puntuacion.js`: porcentaje de las áreas que Josué **realmente usa** (un área solo cuenta si ya tiene datos, así que no penaliza por módulos que no utiliza) registradas **hoy**, con desglose desplegable para ver de dónde sale cada punto. Sin puntos acumulables, niveles ni monedas. **(3) Densidad de interfaz:** `tokens.js` afirmaba en un comentario que ya funcionaba, `index.css` no tenía ni una regla y la propia UI le decía a Josué que no hacía nada. Implementada de verdad con el mismo mecanismo de override global por atributo que ya usaban los radios (`html[data-densidad]`), tocando solo el ritmo vertical y el relleno de las tarjetas — nunca `gap-*`, para no arriesgar que una rejilla se parta distinto. **Cinco bugs reales encontrados por las pruebas nuevas y corregidos:** `calcularDuracion()` reventaba con un registro de sueño incompleto y dejaba en blanco **cuatro** pantallas; `AvisoSuenoCorto` mostraba "null h" y **disparaba una notificación falsa** (en JavaScript `null < 7` es `true`); las dos correlaciones de sueño contaban un registro incompleto como noche corta; la media de `SleepView` se volvía `NaN`; y `DiaryView` cargaba la entrada guardada sin fusionarla con el formulario vacío, dejando el Diario en blanco. También se han añadido `.gitignore` y `.env.example`, que **faltaban en el repositorio** (solo estaban en el zip). `package.json` → **v1.23.0**.
+>
 > **✅ ACTUALIZACIÓN (Finalización del Calendario + eliminación de notas internas, construida):** dos frentes pedidos en el mismo turno. **(1) Auditoría y limpieza de notas internas** — se revisó toda la interfaz en busca de texto dirigido a un desarrollador ("Fase X", "apartados X-X", "queda pendiente", "todavía no está construida") que se hubiera colado en pantallas que sí ve Josué; encontrado casi todo en `SettingsView.jsx`, acumulado fase a fase. Eliminado el componente `ComingSoon` y su único uso; retiradas de `useCategorias()` las categorías "Inteligencia Artificial" (AXION, iniciativa aparte de más de 1.000 apartados, sin sitio en esta fase) y "Funciones experimentales" (nunca tuvo contenido real); "Accesibilidad" pasa de `listo: false` a `listo: true, soloInfo: true` con un aviso real que redirige a Apariencia, donde ya viven esos controles. Cinco bloques `InfoOnly` que citaban literalmente "apartados X-X de la especificación" (Apariencia, Seguridad, Privacidad) eliminados por completo; el resto de `InfoOnly` (qué usa la IA, permisos de dispositivo, idioma/zona horaria, notificaciones, sincronización, integraciones) se conserva pero reescrito sin lenguaje de hoja de ruta interna — la información honesta sobre limitaciones reales se mantiene, solo se quita el "queda pendiente"/"apartados X-X". `WellbeingView.jsx`: el aviso de Tiempo de Uso pasó de sonar a función a medio construir a explicar el motivo real y permanente (un navegador no puede leer el tiempo de uso del sistema operativo). **(2) Calendario — fechas recurrentes de Relación**, el caso estrella pedido explícitamente: un cumpleaños añadido en Relación con "repetir cada año" debe reaparecer solo, cada año, en el Calendario. `tokens.js`: cada fecha de `relacion.fechas` gana `tipo` (`cumpleanos`/`aniversario`/`fecha_importante`/`otro`, nueva constante `TIPOS_FECHA_RELACION` con emoji) y `repetir` (booleano) — opcionales, las fechas ya guardadas no se migran solas. `RelationView.jsx`: selector de Tipo + interruptor "Repetir cada año" en el formulario de alta (mismo lenguaje visual que el interruptor "Todo el día" del editor de eventos del Calendario), y edición real por primera vez (antes solo se podía borrar y recrear). `calendarioIntegracion.js`: nueva `eventosDeRelacion(relacion)` sumada a `eventosDerivados()` — cada fecha con `repetir: true` se convierte en un evento derivado con `recurrencia: { frecuencia: 'anual', hasta: null }`, reutilizando tal cual el motor `expandirRecurrentes` que el Calendario ya tenía desde su Fase 3 (aplicado indistintamente a eventos propios y derivados desde siempre, así que no hizo falta tocar `CalendarView.jsx` ni `lib/calendario.js` para nada de esto). El título se genera en el momento ("🎂 Cumpleaños de {nombre}") a partir de `relacion.nombre` ya existente — nunca se guarda el nombre por segunda vez. **Privacidad, la pieza más delicada:** hasta esta fase, Relación estaba excluida del todo de `eventosDerivados()` por decisión explícita de una fase anterior (el Calendario no pide PIN para abrirse, así que traer esas fechas sin más habría sido una regresión de privacidad real). Ahora `App.jsx` solo pasa los datos reales de `relacion` a `eventosDerivados()` cuando Relación está desbloqueada en la sesión actual (`estaDesbloqueado('area:relacion')`, la misma comprobación que ya protege la propia pestaña) o cuando no hay ningún PIN configurado; si no, pasa `null` y ninguna fecha de Relación llega al Calendario ni al Dashboard, ni siquiera el indicador discreto del día — la exclusión total se sustituye por una inclusión condicionada a la misma autorización que ya existía, sin inventar un segundo sistema de permisos. Tocar el evento en el Calendario abre el mismo `DetalleEventoDerivado` de solo lectura que ya usan Objetivos/Estudios/Entrenamiento/Productividad (con "relacion" añadido a `NOMBRES_ORIGEN`), con botón "Abrir en Relación". **Decisión de alcance explícita:** no se ha construido un sistema de múltiples personas/contactos en Relación — el modelo de datos real sigue siendo una sola pareja (`relacion.nombre`, un único string); se ha tratado a esa única persona ya modelada como "la persona" del caso de uso descrito, en vez de construir una agenda de contactos no pedida explícitamente. Editar o eliminar una fecha recurrente afecta a toda la serie automáticamente (la recurrencia se calcula al vuelo desde una única fecha ancla, nunca se guarda una copia por año) — no hace falta ningún código de limpieza adicional al borrar. `package.json` → **v1.22.0**. **No se ha podido verificar con `esbuild`** en este entorno (sin acceso al registro de npm, `403`, mismo límite de siempre) — revisado a mano: balance de paréntesis/llaves/corchetes por script en los seis archivos tocados (OK); `LibraryView.jsx`, sin tocar en esta fase, dio un falso positivo del propio script de verificación por un literal de expresión regular con barras escapadas — revisado el archivo entero a mano, está bien formado. **Pendiente, documentado sin rodeos:** no se ha podido probar en un navegador real el recorrido completo (crear cumpleaños → verlo en Calendario → editarlo → borrarlo → recargar) — se ha verificado trazando el código a mano contra el motor de recurrencia y las condiciones de privacidad ya existentes, línea a línea, no ejecutando la app.
 >
 > **✅ ACTUALIZACIÓN (Ajuste del indicador de contexto + acceso directo a Agenda, construida):** dos ajustes puntuales sobre el Dashboard ampliado de la fase anterior. **(1) Indicador de contexto compacto**: el `ModoBanner` de Viaje/Vacaciones/Exámenes ocupaba demasiado alto cuando había un modo activo (2-4 líneas de consejos siempre visibles) — sustituido por `IndicadorContexto`, un acordeón cerrado por defecto (icono+etiqueta+flecha en una línea, mismo alto que cualquier fila compacta del Dashboard) que se expande in-place al pulsarlo con una transición real de altura+opacity (técnica `grid-template-rows` 0fr↔1fr, sin dependencias nuevas ni medir nada a mano) y la flecha rotando 180° — mismo patrón exacto que `SkillCard`/`RutinaCard`/`AsignaturaCard`/`ExamenItem` ya usan en el resto de la app, para que se sienta parte del diseño original y no un añadido. A diferencia de antes, el indicador está siempre visible: "Rutina normal" (icono `Home`) es un estado más, no la desaparición del componente sin modo activo. El contenido expandido muestra los consejos que ya existían en `MODOS_APP` (tokens.js) — deliberadamente NO se han inventado fechas de viaje/vacaciones ni "objetivos adaptados" como sugería el mockup de la especificación, porque ese dato nunca ha existido en el modelo (solo `id`/`label`/`tips` de texto fijo) y añadirlo habría exigido una pantalla de captura nueva, fuera de "conserva la funcionalidad actual, modifica solo su presentación". **(2) Acceso directo a Agenda desde "Hoy"**: `AccesoCalendario` (una fila ancha) pasa a `AccesoCalendarioYAgenda` — dos tarjetas compactas en la misma fila (mismo alto total que antes), "Calendario" (resumen de hoy, sin cambios) y "Agenda" nueva (número de eventos de hoy). Tocar "Agenda" navega directo a la vista Agenda que ya existía dentro de `CalendarView.jsx` desde la Fase 3 del Calendario Universal (el mismo `ToggleTab` Mes/Agenda, ni una línea de lógica duplicada) — usando el mismo mecanismo de `foco`/deep-link de la fase anterior (`CalendarView` ahora acepta `foco`/`onFocoConsumido`, `foco.vista === 'agenda'` cambia el toggle). **Decisión clave, explícita en la propia especificación del usuario**: Agenda NO es un módulo de datos nuevo ni una pestaña nueva — sigue siendo exactamente el mismo motor/eventos/tope de 50 elementos en 60 días de siempre; lo único que cambia es el punto de entrada (antes: Calendario → tocar el interruptor a mano; ahora: "Hoy → Agenda" en un solo toque). Esto satisface a la vez "Dashboard → Agenda debe ser directo" y "no dupliques Agenda dentro de Calendario" sin crear una segunda implementación. **Verificación de iconos nuevos, hecha con cuidado**: antes de usar `Sun` y `ClipboardList` (nunca usados antes en esta app) se comprobó contra la documentación pública de Lucide que ambos son nombres estables desde versiones muy anteriores a la `0.383.0` de este proyecto — se descartó a propósito `Palmtree` para "Vacaciones" al descubrir que es un alias antiguo renombrado a `TreePalm` en una versión intermedia de Lucide, para no arriesgar un import roto sin poder instalar el paquete de verdad en este entorno. `package.json` → **v1.21.0**. **No se ha podido verificar con `esbuild`** en este entorno (sin acceso al registro de npm, `403`, mismo límite de siempre) — revisado a mano: balance de paréntesis/llaves/corchetes por script en los tres archivos tocados (`App.jsx`, `DashboardView.jsx`, `CalendarView.jsx`, OK). **Pendiente, documentado sin rodeos:** no se ha podido comprobar visualmente la animación de expansión del indicador en un navegador real — la técnica CSS es estándar y bien documentada, pero su aspecto final no se ha podido renderizar en este entorno; tampoco se ha añadido un botón "Ver detalles" en el indicador (previsto por la propia especificación solo "si en el futuro hay mucha más información") porque con 2-3 consejos de texto no hace falta resumir todavía.
@@ -191,10 +193,14 @@ El proyecto se construye en **21 fases secuenciales** (ver sección 10 y el Prom
 
 ---
 
-## 3. Arquitectura actual (Fase 21, CERRADA — Prompt Maestro completo, v1.0.0)
+## 3. Arquitectura actual (v1.23.0)
+
+> **Aviso:** esta sección describe el estado VIGENTE. Los detalles concretos de cada fase
+> histórica viven en `CHANGELOG.md` y en `docs/`, no aquí — así esta sección no vuelve a quedarse
+> congelada como estuvo entre la v0.21.0 y la v1.22.0.
 
 - **Tipo de aplicación:** proyecto real Vite + React con estructura de carpetas (sección 5).
-- **Routing:** `PRIMARY_NAV` (Hoy, Sueño, Entreno, Nutrición, fijo, no personalizable) + hoja "Más" (`MORE_NAV`: Salud, Estudios, Negocio, Productividad, Objetivos, Diario, Fe, Biblioteca, Relación, Bienestar, Estadísticas, Predicciones, **Logros (Fase 20)**, Economía — reordenable/ocultable/con icono propio — y Ajustes, fijo al final, no personalizable).
+- **Routing:** barra inferior de **5 pestañas** (Inicio · Salud · Vida · Gestión · Más) desde la Fase N1 — `PRIMARY_NAV` y la hoja plana "Más" **ya no existen**. `AREAS_NAV` agrupa en 4 áreas los 19 módulos de `MORE_NAV` ( Salud, Estudios, Negocio, Productividad, Objetivos, Diario, Fe, Biblioteca, Relación, Bienestar, Estadísticas, Predicciones, **Logros (Fase 20)**, Economía — reordenable/ocultable/con icono propio — y Ajustes, fijo al final, no personalizable).
 - **`src/views/DashboardView.jsx` (Fase 20):** además de `AvisoSuenoCorto`, ahora también `AvisoRachaEnRiesgo` (Productividad) y `AvisoExamenSinHoras` (Estudios) — mismo patrón calculado al vuelo — y `ModoBanner` (recordatorios del modo "viaje/vacaciones/exámenes" activo, si hay alguno). Recibe `productividad`, `estudios` y `modo` como props nuevas.
 - **`src/lib/logros.js` + `src/views/AchievementsView.jsx` (Fase 20):** Centro de logros (12 insignias, solo lectura) y Mapa de vida (línea de tiempo de Objetivos), sin datos propios — ver actualización de arriba.
 - **`personalizacion.modo` (Fase 20):** modo "viaje/vacaciones/exámenes" activo (o `null`), guardado directo como el resto de `personalizacion` (Fase 19). Chips en `PersonalizationView.jsx`; `onSetModo` en `App.jsx` hace toggle (tocar el modo activo lo desactiva).
@@ -213,11 +219,17 @@ Sin dependencias npm nuevas desde la Fase 13 (tampoco en la 18, 19, 20 ni en est
 
 ---
 
-## 5. Estructura de carpetas (real, ampliada en la Fase 20)
+## 5. Estructura de carpetas
+
+> El árbol de abajo es el de la Fase 20 y **está incompleto**: faltan los 8 archivos de `lib/` y
+> las 5 vistas creados después (calendario, calendarioIntegracion, colorEngine, notificaciones,
+> pin, biometria, puntuacion, resumenesHub; CalendarView, HubView, PersonalizationView,
+> ColorPicker, TemaBuilder, GestionTemas), más `scripts/`, `docs/` y `especificaciones/`.
+> **El árbol completo y al día está en `docs/04_INVENTARIO_ESTADO_ACTUAL.md`.**
 
 ```
 sistema-personal-app/
-├── package.json (v0.21.0), vite.config.js, tailwind.config.js, postcss.config.js
+├── package.json (v1.23.0), vite.config.js, tailwind.config.js, postcss.config.js
 ├── index.html
 ├── .env.example, .env (con credenciales reales de Josué)
 ├── SETUP.md, CHANGELOG.md
@@ -337,7 +349,7 @@ Todas las decisiones de fases anteriores siguen vigentes sin cambios.
 
 ## 8. Funcionalidades implementadas
 
-### Nuevas en esta fase (Fase 19 — Personalización total)
+### Nuevas en la Fase 19 — Personalización total
 - Reordenar cualquier sección de "Más" con flechas arriba/abajo.
 - Ocultar/mostrar cualquier sección — ocultar pide confirmación inline, mostrar de nuevo no.
 - Cambiar el icono de cualquier sección desde un catálogo de 8 alternativas, o volver al original.
@@ -369,6 +381,10 @@ Ver tabla de la sección 10 para el estado exacto de verificación real de cada 
 
 ## 9. Funcionalidades pendientes
 
+> **Desactualizada.** Personalización total, Funciones transversales y Pulido final ya están
+> construidas. La lista de pendientes viva y completa está en `docs/02_ORDEN_DE_FASES.md`
+> (bloques R0–R10) y en `docs/07_CHECKLIST_ENTREGA2.md` (106 fases de la Entrega 2).
+
 - **Probar de verdad las Fases 8 a 19** — ninguna tiene confirmación de ejecución real todavía.
 - `ANTHROPIC_API_KEY` en producción sigue sin activarse, por decisión consciente de Josué.
 - Confirmar despliegue real en Vercel (Josué despliega ahí, no en Replit — ver corrección al inicio del documento), importación CSV del banco, detección de duplicados, exportación a PDF. (Iconos PWA generados — ver actualización arriba, pendiente solo confirmación visual de Josué.)
@@ -378,6 +394,10 @@ Ver tabla de la sección 10 para el estado exacto de verificación real de cada 
 ---
 
 ## 10. Estado exacto de cada fase
+
+> **La tabla de abajo se quedó en la Fase 19.** Las Fases 20 y 21 están cerradas (v1.0.0), y
+> después llegaron A1–A7, N1–N4, V1–V4, C1–C3, Seguridad Centralizada, Optimización móvil y
+> Dashboard Centro de Control. **Estado real y completo: `docs/02_ORDEN_DE_FASES.md`.**
 
 | Fase | Contenido | Estado |
 |---|---|---|
@@ -409,7 +429,7 @@ Ver tabla de la sección 10 para el estado exacto de verificación real de cada 
 - Entrena calistenia y juega fútbol informal.
 - Practica una fe cristiana con servicio activo — módulo ya construido en la Fase 14 (Servicio, Calendario, Diario espiritual, Objetivos), tratado con respeto, sin autoridad doctrinal.
 - Tiene pareja — módulo privado con PIN, ya construido en la Fase 12 (nombre + fechas importantes + recordatorio en el Dashboard) y ampliado en la Fase 13 (Días especiales: chips con nombres preestablecidos).
-- No usa Face ID — solo PIN, ya en uso real. Desde la Fase 19, Josué puede proteger con ese mismo PIN cualquier otra sección además de Relación, desde Ajustes → Personalización avanzada.
+- **Biometría confirmada y construida** (Fase A5, WebAuthn local): Face ID/Touch ID como desbloqueo rápido, con el PIN como respaldo obligatorio. La regla antigua "no usa Face ID, solo PIN" quedó derogada por decisión explícita suya. Desde la Fase 19, Josué puede proteger con ese mismo PIN cualquier otra sección además de Relación, desde Ajustes → Personalización avanzada.
 - La paleta de colores es la fuente de verdad — no rediseñarla sin petición explícita.
 - Bienestar digital ya construido en la Fase 15 (índices de productividad/distracción/equilibrio, Tiempo de uso manual, Concentración simulada, Reflexión manual), sin PIN — recordar que no puede interceptar apps reales del móvil.
 - Estadísticas (Fase 16) y Predicciones (Fase 17) ya construidas, ambas de solo lectura sobre datos de otros módulos, sin datos propios ni exportación.
@@ -434,13 +454,13 @@ Ver tabla de la sección 10 para el estado exacto de verificación real de cada 
 - **Problema (Fase 1→2, cerrado):** dependencia de mecanismos exclusivos de Artifacts. **Solución:** migración a Supabase + proxy serverless.
 - **Problema (cerrado): Josué no tiene ordenador.** Solución: trabaja/despliega desde el iPhone vía **Vercel** (no Replit — corrección reciente).
 - **Problema (OBSOLETO, ya no aplica):** las versiones antiguas de este documento describían un atasco exponiendo el puerto del servidor de desarrollo en Replit. Josué ha confirmado que no usa Replit, así que este problema nunca fue real para su flujo — no reabrirlo ni investigarlo si lo menciona; si tiene un problema de despliegue, será sobre Vercel, y hay que pedirle el error exacto que ve ahí.
-- **Recordatorio permanente:** ninguna fase se ha podido ejecutar de verdad en este entorno de desarrollo (sin red) — se mitiga con verificación `esbuild` (bundle completo, dependencias npm externas), pero no sustituye una ejecución real.
+- **Actualizado en v1.23.0:** el entorno de desarrollo de Claude **ya tiene acceso a npm**. `npm install` y `npm run build` funcionan, y existe `scripts/verificar.sh` (build + pruebas + reglas invariantes) y `scripts/smoke.mjs` (renderiza 11 vistas en 3 escenarios con react-dom/server). Sigue sin sustituir a probar la app en un iPhone real, pero ya no es cierto que "solo se pueda revisar el código a mano".
 
 ---
 
 ## 13. Dependencias y configuraciones
 
-`package.json` en v0.21.0. Sin dependencias npm nuevas desde la Fase 13 (ni en la 14 a la 21). El resto sin cambios respecto a la Fase 11.
+`package.json` en **v1.23.0**. Sin dependencias npm nuevas desde la Fase 13. El resto sin cambios respecto a la Fase 11.
 
 ---
 
@@ -451,6 +471,9 @@ Sin cambios: `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` ya en `.env`. `ANTHR
 ---
 
 ## 15. Archivos importantes y para qué sirve cada uno
+
+> **Congelada en la Fase 20.** El inventario completo y al día, archivo por archivo y clave de
+> datos por clave de datos, está en `docs/04_INVENTARIO_ESTADO_ACTUAL.md`.
 
 Ver árbol completo en la sección 5. Nuevos/modificados en la Fase 20 (completa esta fase):
 - `src/lib/logros.js` — nuevo, `calcularLogros()`, 12 insignias binarias sobre datos de 10 módulos, solo lectura.

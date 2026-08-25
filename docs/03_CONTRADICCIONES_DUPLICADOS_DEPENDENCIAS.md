@@ -1,9 +1,13 @@
 # JC Fitness — CONTRADICCIONES, DUPLICADOS Y DEPENDENCIAS
 
 > Resultado del cruce sistemático de `HANDOFF.md` × `CHANGELOG.md` ×
-> `ESPECIFICACION_AJUSTES_ENTREGA1.md` × el código real de v1.22.0.
+> `ESPECIFICACION_AJUSTES_ENTREGA1.md` × el código real.
 >
 > **Leer antes de tocar Ajustes, Seguridad, Calendario, IA o el Dashboard.**
+>
+> **Actualizado en v1.23.0 (bloque R0):** resueltas **C-01, C-02, C-05, C-06, C-11, C-12 y C-20**;
+> **C-22** parcialmente (falta la revisión periódica). El texto de cada una se conserva tal cual
+> para que quede constancia del problema y de cómo se resolvió — no se borra, se marca.
 
 ---
 
@@ -15,7 +19,7 @@ Severidad: 🔴 rompe algo hoy · 🟠 engaña a quien lea la documentación · 
 
 ---
 
-### 🔴 C-01 — La densidad de interfaz dice que funciona y no funciona
+### ✅ C-01 — RESUELTA (v1.23.0) — La densidad de interfaz decía que funcionaba y no funcionaba
 
 - `src/tokens.js:137` afirma: *"densidad: 'estandar' — **Fase A7: ya tiene efecto visual real
   (ver index.css)**"*.
@@ -34,7 +38,7 @@ de él y dará el apartado 91 por cerrado.
 
 ---
 
-### 🔴 C-02 — Existe una Fase A7 construida que no figura en ningún registro de fases
+### ✅ C-02 — RESUELTA (v1.23.0) — Fase A7 construida sin registrar
 
 - El código la cita **6 veces**: `tokens.js:58` (alto contraste), `:137` (densidad), `:141`
   (`altoContraste`), `:150` y `:158` (paletas predefinidas), y `GestionTemas.jsx:10`.
@@ -71,7 +75,7 @@ posiciones relativas, así que reinsertar es trivial.
 
 ---
 
-### 🔴 C-11 — El modelo de IA configurado está obsoleto
+### ✅ C-11 — RESUELTA (v1.23.0) — El modelo de IA configurado estaba obsoleto
 
 `api/ask-ai.js:47` → `model: 'claude-sonnet-4-6'`.
 
@@ -89,7 +93,7 @@ entorno (`ANTHROPIC_MODEL`) para que un cambio futuro no requiera tocar código.
 
 ---
 
-### 🔴 C-12 — La "Puntuación de hoy" no es de hoy
+### ✅ C-12 — RESUELTA (v1.23.0) — La "Puntuación de hoy" no era de hoy
 
 `DashboardView.jsx:248-252`:
 
@@ -117,7 +121,7 @@ acumulables, niveles ni monedas — mismo espíritu "no sobregamificar" que rige
 
 ---
 
-### 🟠 C-20 — `HANDOFF.md` se contradice a sí mismo: banners actuales vs. secciones fósiles
+### ✅ C-20 — RESUELTA (v1.23.0) — `HANDOFF.md` se contradecía a sí mismo
 
 Es la contradicción con más impacto práctico, porque `HANDOFF.md` es **el documento que Josué pasa
 de una conversación a otra**.
@@ -144,7 +148,7 @@ pendiente y que la navegación es la vieja.
 
 ---
 
-### 🟠 C-05 — `personalizacion.pinExtra` sigue vivo en el modelo y en la documentación
+### ✅ C-05 — RESUELTA (v1.23.0) — `personalizacion.pinExtra` vestigial
 
 - La Seguridad Centralizada (v1.18.0) migró todo a `seguridad.protectedAreas` y **abandonó**
   `pinExtra`; `PersonalizationView` lee y escribe `protectedAreas`.
@@ -162,7 +166,7 @@ menciones de `HANDOFF.md`.
 
 ---
 
-### 🟠 C-06 — "Josué no usa Face ID — solo PIN"
+### ✅ C-06 — RESUELTA (v1.23.0) — "Josué no usa Face ID — solo PIN"
 
 `HANDOFF.md` §11 sigue diciéndolo. Está **derogado dos veces**:
 1. Josué confirmó explícitamente que **sí quiere biometría** (documentado en §0bis y en el
@@ -279,7 +283,7 @@ esto es un **hueco declarado**, no un incumplimiento.
 
 ---
 
-### 🟡 C-22 — La Fase 20 se cerró sin dos de sus cinco piezas
+### 🟡 C-22 — PARCIALMENTE RESUELTA (v1.23.0) — La Fase 20 se cerró sin dos de sus cinco piezas
 
 El Prompt Maestro pedía cinco cosas para la Fase 20. Se entregaron tres:
 
@@ -287,7 +291,7 @@ El Prompt Maestro pedía cinco cosas para la Fase 20. Se entregaron tres:
 |---|---|
 | Centro de logros y mapa de vida | ✅ |
 | **Revisión automática semanal/mensual/anual** | ❌ **nunca construida** |
-| **Sistema de puntuación diaria** | ❌ **nunca construido** (ver C-12) |
+| **Sistema de puntuación diaria** | ✅ **construido en v1.23.0** |
 | Motor de automatizaciones empezando por 2-3 fijas | ✅ (3 fijas; el "motor" no existe, pero el texto decía "empezando por") |
 | Plantillas y modos viaje/vacaciones/exámenes | ✅ |
 

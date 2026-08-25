@@ -16,7 +16,7 @@ Personalización Visual y Calendario), y una "Fase 3" del Calendario que no tien
 | Track | Nombre | Origen | Numeración | Estado |
 |---|---|---|---|---|
 | **M** | Prompt Maestro | Josué, pegado en el chat de la Fase 11 | Fases 1–21 | ✅ **CERRADO** (v1.0.0) |
-| **A** | Ajustes / Entrega 1 | `ESPECIFICACION_AJUSTES_ENTREGA1.md`, apartados 1–202 | Fases A1–A6 (**+A7 no documentada**) | ✅ **CERRADO** (v1.6.0 + A7) |
+| **A** | Ajustes / Entrega 1 | `ESPECIFICACION_AJUSTES_ENTREGA1.md`, apartados 1–202 | Fases A1–A7 | ✅ **CERRADO** (v1.6.0 + A7) |
 | **X** | AXION | Misma especificación, apartados 203–1300 | — | ⛔ **BLOQUEADO** — requiere conversación de diseño |
 | **N** | Navegación por áreas | Prompt propio de Josué | Fases N1–N4 | ✅ **CERRADO** (v1.10.0) |
 | **V** | Personalización Visual Extrema | "Contexto maestro" propio de Josué | Fases 1–4 (aquí V1–V4) | ✅ **CERRADO** (v1.14.0) |
@@ -82,7 +82,7 @@ módulo de Relación · constructor de módulos arbitrarios desde cero.
 | **A4** | 111–138 | v1.4.0 | 🟡 Notificaciones reales (sin Web Push) |
 | **A5** | 139–172 | v1.5.0 | 🟡 Biometría WebAuthn + bloqueo automático |
 | **A6** | 173–202 | v1.6.0 | 🟡 Privacidad: transparencia + borrado por categoría |
-| **A7** | (ap. 43, 86, 91) | *sin versión propia registrada* | ⚠️ **CONSTRUIDA PERO NO DOCUMENTADA** — alto contraste (`altoContraste`, `CONTRASTE_ALTO_*`), las 7 paletas predefinidas originales, y un cambio de densidad que **no llegó a funcionar**. Ver **C-02** y **C-01** |
+| **A7** | (ap. 43, 86, 91) | registrada retroactivamente en v1.23.0 | ✅ Alto contraste, las 7 paletas predefinidas originales y la densidad — esta última **no llegó a funcionar hasta el bloque R0** (v1.23.0). Ver **C-02** y **C-01**, ambas resueltas |
 
 ### Track N — Navegación por áreas
 
@@ -138,18 +138,27 @@ escribir código.
 
 ---
 
-### 🔴 R0 — Desbloqueo y correcciones críticas *(antes que nada)*
+### ✅ R0 — Desbloqueo y correcciones críticas — **COMPLETADO (v1.23.0)**
 
-Son baratas, no añaden alcance y desbloquean todo lo demás.
+Completado el 25/08/2026. Además de las seis tareas, este bloque trajo algo que el proyecto no
+había tenido nunca: **el entorno de desarrollo ya tiene acceso a npm**, así que `npm install` y
+`npm run build` funcionan y existe una suite de verificación automática (`scripts/verificar.sh`).
+El proyecto **compila sin errores: 2604 módulos**.
+
+Las pruebas nuevas destaparon además **cinco bugs reales** que no se habrían visto compilando —
+todos corregidos: `calcularDuracion()` dejaba en blanco cuatro pantallas con un registro de sueño
+incompleto; `AvisoSuenoCorto` mostraba "null h" y disparaba una notificación falsa; las dos
+correlaciones de sueño contaban un registro incompleto como noche corta; la media de `SleepView`
+se volvía `NaN`; y `DiaryView` dejaba el Diario en blanco con una entrada incompleta.
 
 | # | Tarea | Por qué es lo primero | Riesgo |
 |---|---|---|---|
-| R0.1 | **Actualizar el modelo de IA** en `api/ask-ai.js` (`claude-sonnet-4-6` → un ID actual) | En cuanto Josué active `ANTHROPIC_API_KEY`, **las 13 secciones con IA fallarán**. Es una línea | Nulo |
-| R0.2 | **Arreglar la puntuación diaria** del Dashboard (**C-12**) | Hoy dice "Puntuación de hoy" pero mide "he registrado algo alguna vez" → se queda en 100 para siempre. Es un dato visiblemente falso en la pantalla principal | Bajo |
-| R0.3 | **Resolver la densidad de interfaz** (**C-01**): o implementarla de verdad, o corregir el comentario mentiroso de `tokens.js` | Un comentario del código afirma que funciona y la UI dice al usuario que no. Cualquier IA futura se fiará del comentario | Bajo (comentario) / Medio (implementarla) |
-| R0.4 | **Registrar la Fase A7** en `CHANGELOG.md`/`HANDOFF.md` (**C-02**) | Hay una fase entera construida que no figura en ningún registro | Nulo |
-| R0.5 | **Sanear `HANDOFF.md`**: las secciones numeradas 3, 5, 8, 9, 10, 13 y 15 describen el estado en v0.21.0/v1.0.0 y contradicen los banners de arriba (**C-20**, **C-19**) | Es el documento que Josué pasa de una conversación a otra. Hoy engaña a quien lo lea de arriba abajo | Nulo |
-| R0.6 | **Retirar `personalizacion.pinExtra`** o marcarlo explícitamente como vestigial (**C-05**, **D-08**) | Campo muerto que la documentación todavía presenta como el mecanismo vigente | Bajo |
+| ✅ R0.1 | **Actualizar el modelo de IA** en `api/ask-ai.js` (`claude-sonnet-4-6` → un ID actual) | En cuanto Josué active `ANTHROPIC_API_KEY`, **las 13 secciones con IA fallarán**. Es una línea | Nulo |
+| ✅ R0.2 | **Arreglar la puntuación diaria** del Dashboard (**C-12**) | Hoy dice "Puntuación de hoy" pero mide "he registrado algo alguna vez" → se queda en 100 para siempre. Es un dato visiblemente falso en la pantalla principal | Bajo |
+| ✅ R0.3 | **Densidad de interfaz implementada de verdad** (**C-01**): o implementarla de verdad, o corregir el comentario mentiroso de `tokens.js` | Un comentario del código afirma que funciona y la UI dice al usuario que no. Cualquier IA futura se fiará del comentario | Bajo (comentario) / Medio (implementarla) |
+| ✅ R0.4 | **Fase A7 registrada** en `CHANGELOG.md`/`HANDOFF.md` (**C-02**) | Hay una fase entera construida que no figura en ningún registro | Nulo |
+| ✅ R0.5 | **`HANDOFF.md` saneado**: las secciones numeradas 3, 5, 8, 9, 10, 13 y 15 describen el estado en v0.21.0/v1.0.0 y contradicen los banners de arriba (**C-20**, **C-19**) | Es el documento que Josué pasa de una conversación a otra. Hoy engaña a quien lo lea de arriba abajo | Nulo |
+| ✅ R0.6 | **`pinExtra` marcado vestigial** o marcarlo explícitamente como vestigial (**C-05**, **D-08**) | Campo muerto que la documentación todavía presenta como el mecanismo vigente | Bajo |
 
 ---
 
@@ -315,7 +324,7 @@ Dos piezas quedan **enganchadas a esta decisión**:
 ## PARTE D — Resumen ejecutivo del orden
 
 ```
-R0  Correcciones críticas + saneado documental   ← EMPEZAR AQUÍ (barato, desbloquea todo)
+R0  Correcciones críticas + saneado documental   ✅ COMPLETADO (v1.23.0)
 R1  Verificación real en el dispositivo de Josué ← en paralelo, depende de él
 R2  Cerrar Calendario Fase 3
 R3  Pendientes baratos de Ajustes (empezando por el editor de dashboardOcultos)

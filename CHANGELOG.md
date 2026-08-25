@@ -1,5 +1,123 @@
 # CHANGELOG.md
 
+## Bloque R0 — Correcciones críticas y verificación automática (v1.23.0)
+
+### Alcance de esta fase, dicho primero
+Primer turno con **acceso real a npm** en el entorno de desarrollo. Eso cambia una premisa que
+llevaba vigente desde la v1.0.1: ya no es cierto que "Claude solo pueda revisar el código a mano".
+`npm install` y `npm run build` funcionan, y **el proyecto compila sin errores (2604 módulos)** —
+la primera verificación real en 22 incrementos de versión. Sobre esa base se han corregido las tres
+incoherencias críticas del bloque R0 y se ha construido una suite de verificación reutilizable.
+
+### Verificación automática (`scripts/`, nuevo)
+- **`verificar.sh`** — build + pruebas + nueve reglas invariantes del proyecto, que hasta ahora se
+  comprobaban a mano fase a fase: nadie desestructura `COLORS`, ningún hex suelto fuera de
+  `tokens.js`, todo overlay `fixed inset-0` con `createPortal`, sin notas internas de desarrollo
+  visibles, `relacion` fuera de la exportación, PIN de Relación intacto, exactamente 5 pestañas,
+  navegación coherente, y **todo ajuste de Apariencia con efecto CSS real**.
+- **`smoke.mjs` + `smoke-vistas.jsx`** — renderizan 11 vistas con `react-dom/server` en tres
+  escenarios: vacío, con datos y **datos parciales** (campos que faltan, como los que dejaría una
+  versión anterior). 33 casos. Compilar no detecta un `undefined.map()`; esto sí.
+- **`test-puntuacion.mjs`** — 22 comprobaciones de la puntuación nueva.
+- **`resolver-vite.mjs`** — hook de resolución que permite ejecutar con Node los módulos de `src/`
+  tal y como están escritos (imports sin extensión), sin cambiar la convención del proyecto.
+- **`comprobar-navegacion.mjs`** — cruza `MORE_NAV`, `AREAS_NAV` y los `case` del switch para
+  detectar módulos huérfanos (navegables sin pantalla, o pantallas inalcanzables).
+
+### R0.1 — Modelo de IA obsoleto (`api/ask-ai.js`)
+- `model: 'claude-sonnet-4-6'` ya no existe. En cuanto Josué activara `ANTHROPIC_API_KEY`, habrían
+  fallado **las 13 secciones con `AIPanel`, el buscador universal, el panel de sugerencias, el
+  escaneo de comida por foto y el análisis de vídeo de calistenia** — y el síntoma habría sido un
+  genérico "la IA no funciona", sin pista de la causa. Había pasado desapercibido precisamente
+  porque la clave nunca se ha activado: la función devuelve `503` antes de llamar a Anthropic.
+- El modelo se lee ahora de `ANTHROPIC_MODEL` (por defecto `claude-sonnet-5`), así que cambiarlo
+  no exige tocar código ni volver a subir el proyecto: se cambia en el panel de Vercel.
+- Un `404` de modelo devuelve un mensaje que dice exactamente qué pasa y dónde arreglarlo.
+
+### R0.2 — Puntuación diaria (`src/lib/puntuacion.js`, nuevo)
+- La fórmula anterior vivía suelta en `DashboardView` y sumaba puntos por tener datos *alguna vez*:
+  `sueno[último]`, `nivel > 0`, `movimientos.length > 0`. Ninguna miraba la fecha. Resultado: en
+  cuanto había un dato de cada, **se quedaba en 100 para siempre** mientras la etiqueta decía
+  "Puntuación de hoy". Era un dato falso en la pantalla principal.
+- Ahora es el **porcentaje de las áreas que Josué realmente usa que ha registrado hoy**. Un área
+  solo entra en el cálculo si ya tiene datos, así que no penaliza por módulos que no utiliza —
+  mide constancia real, no cuántos módulos tiene abiertos.
+- Ocho áreas: Sueño (acepta el registro de anoche), Entrenamiento, Nutrición, Hábitos (exige
+  marcarlos todos), Tareas vencidas, Diario, Estudio y Salud (ventana de 7 días, no diaria).
+- Desplegable para ver **de dónde sale cada punto** — misma regla de honestidad que rige los
+  paneles de IA. Sin datos todavía, no muestra un 0 desmotivador: lo dice y ya está.
+- Sin puntos acumulables, sin niveles, sin monedas: se reinicia sola cada día y no se guarda en
+  ningún sitio (reglas 33/34, no sobregamificar).
+- Cierra el TODO heredado de la sección 18 del HANDOFF ("revisar si la puntuación diaria debería
+  basarse en el día calendario real") y una de las dos piezas que la Fase 20 dejó sin construir.
+
+### R0.3 — Densidad de interfaz (`src/index.css`, `src/App.jsx`)
+- Situación de partida: `tokens.js` afirmaba en un comentario que ya funcionaba, `index.css` no
+  tenía **ni una sola regla** `data-densidad`, y la propia interfaz le decía a Josué que las tres
+  densidades se veían igual. Un comentario del código mintiendo es peor que la función faltante:
+  la siguiente sesión se fía de él y da el apartado 91 por cerrado.
+- Implementada de verdad con el mismo mecanismo de override global por atributo que ya usaban los
+  radios de borde desde la Fase A3. Se ajustan el ritmo vertical entre tarjetas (`space-y-*`) y el
+  relleno interior (`p-5`/`p-4`).
+- **No se tocan `gap-*` a propósito**: el gap afecta también al eje horizontal y cambiarlo puede
+  hacer que una fila de píldoras o una rejilla de 2 columnas se parta distinto según el contenido.
+  El objetivo es cambiar la sensación de aire, no arriesgar el layout.
+- "Estándar" no lleva override: es exactamente lo que la app ya era.
+
+### Cinco bugs reales encontrados por las pruebas nuevas
+Ninguno se habría detectado compilando. Los cinco dejaban pantallas en blanco o mostraban datos
+falsos:
+1. **`calcularDuracion()`** reventaba con un registro de sueño sin horas y dejaba en blanco
+   **cuatro** pantallas a la vez (Hoy, Sueño, Estadísticas y las tarjetas de hub). Ahora devuelve
+   `null`, y hay un `formatHoras()` compartido que lo presenta como "— h".
+2. **`AvisoSuenoCorto`** mostraba "null h" y **disparaba una notificación real** por un dato
+   inexistente: en JavaScript `null < 7` es `true`.
+3. **Las dos correlaciones de sueño** contaban un registro incompleto como noche corta, falseando
+   el resultado entero.
+4. **La media de `SleepView`** se volvía `NaN` con un solo registro incompleto.
+5. **`DiaryView`** cargaba la entrada guardada sin fusionarla con el formulario vacío; una entrada
+   incompleta hacía reventar el `.trim()` y dejaba el Diario en blanco. Corregido con el patrón
+   `{ ...DEFAULT, ...guardado }`, el mismo que ya se aplicó en A2, A3 y en el Dashboard.
+
+### Saneado documental (R0.4 / R0.5 / R0.6)
+- **Fase A7 registrada** (ver la entrada de abajo): existía en el código y en ningún changelog.
+- **`HANDOFF.md`**: las secciones 3, 5, 9, 10, 11, 13 y 15 describían el estado en v0.21.0/v1.0.0 y
+  contradecían los banners de arriba — decían que la Fase 20 estaba pendiente y que la navegación
+  era `PRIMARY_NAV` + hoja "Más", eliminada en la Fase N1. Corregidas o marcadas con un aviso que
+  remite a `docs/`.
+- **`personalizacion.pinExtra`** marcado explícitamente como **vestigial**: ya no se escribe nunca,
+  solo se lee una vez durante la migración a `seguridad.protectedAreas`. Se conserva porque
+  borrarlo dejaría sin migrar a las cuentas que aún no lo hayan hecho.
+
+### Añadido lo que faltaba en el repositorio
+- **`.gitignore`** y **`.env.example`** solo existían dentro del zip, no versionados. Sin el
+  primero, `node_modules/` (193 paquetes) y `dist/` eran candidatos a acabar en el repositorio.
+- `.env.example` documenta ahora también `ANTHROPIC_MODEL`.
+
+### Pendiente (documentado, no implementado en esta fase)
+- Sigue sin probarse en un iPhone real: renderizar con `react-dom/server` detecta errores de
+  ejecución, pero no layout, ni gestos, ni Safari.
+- La segunda pieza que la Fase 20 dejó sin construir — la **revisión automática semanal/mensual/
+  anual** — sigue pendiente (bloque R4.2).
+
+## Fase A7 — Accesibilidad, paletas predefinidas y densidad (registrada retroactivamente)
+
+> **Esta fase se construyó pero nunca se registró.** El código la cita seis veces (`tokens.js`
+> líneas 58, 137, 141, 150 y 158; `GestionTemas.jsx` línea 10), pero no existía ninguna entrada en
+> este archivo y `HANDOFF.md` declaraba que el bloque Ajustes "se cierra con A1-A6". Se documenta
+> ahora para que una auditoría futura de qué apartados de Ajustes están cubiertos no dé un
+> resultado equivocado.
+
+### Añadido / cambiado
+- **Alto contraste** (apartado 43, Accesibilidad): `apariencia.altoContraste` +
+  `CONTRASTE_ALTO_OSCURO`/`CONTRASTE_ALTO_CLARO` en `tokens.js`. Solo ajusta `textMuted` y `border`
+  — deliberadamente conservador, para no rehacer la paleta entera.
+- **Paletas predefinidas** (apartado 86): las 7 originales de `PALETAS_PREDEFINIDAS`, ampliadas
+  después a 10 en la Fase V4 con Monocromático, Neón y Pastel.
+- **Densidad de interfaz** (apartado 91): la opción y su modelo de datos. ⚠️ **Nunca llegó a tener
+  efecto visual** — se completó en el bloque R0 (v1.23.0), ver arriba.
+
+
 ## Finalización del Calendario + eliminación de notas internas (v1.22.0)
 
 ### Alcance de esta fase, dicho primero

@@ -129,6 +129,21 @@ else
   fallo "AREAS_NAV tiene $AREAS áreas (deberían ser 4, para 5 pestañas con Inicio)"
 fi
 
+# --- Coherencia: todo ajuste de Apariencia que se guarda como atributo data-* del <html>
+#     tiene que tener reglas CSS que lo usen. Sin esta comprobación se puede dar (y se dio,
+#     con la densidad) el caso de un ajuste que se guarda, se anuncia como funcional en un
+#     comentario del código y no hace absolutamente nada.
+SIN_CSS=""
+for attr in radio densidad animaciones; do
+  grep -q "dataset\.$attr" src/App.jsx || { SIN_CSS="$SIN_CSS $attr(no-se-aplica)"; continue; }
+  grep -q "data-$attr" src/index.css   || SIN_CSS="$SIN_CSS $attr(sin-CSS)"
+done
+if [ -n "$SIN_CSS" ]; then
+  fallo "Ajustes de apariencia sin efecto real:$SIN_CSS"
+else
+  ok "Todos los ajustes de apariencia tienen efecto CSS real"
+fi
+
 # --- Coherencia: todo case de renderTab tiene entrada de navegación y viceversa ---
 node scripts/comprobar-navegacion.mjs || FALLOS=$((FALLOS+1))
 

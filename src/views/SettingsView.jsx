@@ -723,7 +723,7 @@ export default function SettingsView({
               <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Compacta (más información), Estándar (recomendada) o Cómoda (más espacio).</p>
               <OpcionesFila opciones={DENSIDADES_INTERFAZ} valor={apariencia.densidad} onChange={(v) => onUpdateApariencia({ ...apariencia, densidad: v })} accent={accent} />
               <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>
-                Se guarda tu preferencia, pero cambiar de verdad el espaciado de cada pantalla es trabajo pendiente — hoy las tres densidades se ven igual.
+                Cambia el aire entre tarjetas y su relleno interior. No afecta al tamaño del texto: eso se ajusta arriba.
               </p>
             </Card>
 

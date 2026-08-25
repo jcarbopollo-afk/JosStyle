@@ -24,7 +24,7 @@
 - [x] Módulo Economía (saldo, movimientos, hucha)
 - [x] Modo oscuro con paleta azul metálica
 - [x] Selector de color de acento
-- [~] Puntuación diaria — **existe pero está rota** (ver **C-12**, tarea **R0.2/R4.1**)
+- [x] Puntuación diaria — **rehecha en v1.23.0**: mide el día real, solo cuenta las áreas que Josué usa, con desglose explicable (`src/lib/puntuacion.js`, 22 pruebas)
 
 ### A.2 Fase 2 — Backend real
 - [x] Supabase: registro, inicio y cierre de sesión con email/contraseña
@@ -253,7 +253,7 @@
 - [x] Automatización 3: `AvisoExamenSinHoras`
 - [x] Modos viaje / vacaciones / exámenes (3 plantillas fijas)
 - [x] Modos que no ocultan ni reordenan módulos
-- [ ] 🔴 **Sistema de puntuación diaria** ("punto intermedio entre informativo y juego") → **R4.1**
+- [x] 🔴 **Sistema de puntuación diaria** ("punto intermedio entre informativo y juego") — construido en v1.23.0
 - [ ] 🔴 **Revisión automática semanal / mensual / anual** → **R4.2**
 - [ ] Motor de automatizaciones más allá de las 3 fijas → **R4.3**, solo si Josué lo pide
 - [-] Editor visual de automatizaciones — pospuesto indefinidamente
@@ -393,7 +393,7 @@
 - [x] 88 — Familia tipográfica única, nunca sustituible desde Apariencia
 - [~] 89 — Tamaño de texto (**3 opciones**; la especificación pide **5**: Muy pequeño → Muy grande)
 - [ ] 90 — **Escalado inteligente** que adapte también iconos, botones, campos, listas y barras → **R6.2**
-- [~] 91 — 🔴 **Densidad de interfaz** — se guarda, **no tiene efecto visual** (**C-01**) → **R6.1**
+- [x] 91 — **Densidad de interfaz** — efecto visual real desde v1.23.0 (`html[data-densidad]` sobre ritmo vertical y relleno de tarjetas)
 - [x] 92 — Radios de borde consumidos globalmente
 - [ ] 93 — **Transparencias y materiales** opcionales con desactivación por rendimiento → **R6.4**
 - [x] 94 — Animaciones que comunican, nunca decorativas
@@ -787,9 +787,9 @@
 - [ ] Los 6 deep-links del Dashboard aterrizan donde deben
 
 ### Z.4 Verificación técnica que la IA no ha podido hacer
-- [ ] `esbuild` — bundle completo sin errores desde v1.0.1
-- [ ] `npm run build` real
-- [ ] Renderizado en un navegador
+- [x] **Build real verificado** — `npm install` + `vite build` funcionan; 2604 módulos sin errores (v1.23.0)
+- [x] `npm run build` real — pasa
+- [~] Renderizado — 11 vistas × 3 escenarios con `react-dom/server` (`scripts/smoke.mjs`). No sustituye a un navegador real
 - [ ] Pruebas de exportación / offline / sincronización de extremo a extremo
 - [ ] Comportamiento con datos reales de volumen (no listas vacías)
 
