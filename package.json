@@ -1,7 +1,7 @@
 {
-  "name": "sistema-personal-josue",
+  "name": "josstyle",
   "private": true,
-  "version": "1.22.0",
+  "version": "1.32.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

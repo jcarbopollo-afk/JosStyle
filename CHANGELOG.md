@@ -1,5 +1,729 @@
 # CHANGELOG.md
 
+## Entrega 2 · AR Fase 1 — Armario digital (v1.32.0)
+
+**El primer módulo genuinamente nuevo de la Entrega 2.** ME y BI ampliaban cosas que ya existían;
+esto no existía en ninguna forma. Vive en **Gestión → Armario**.
+
+### La decisión que más pesa: el modelo de datos
+El apartado 23 dice que la arquitectura tiene que aguantar tres fases más sin rehacerse. Por eso
+cada prenda nace con **los 21 campos**, aunque cuatro estén vacíos: `usos`, `ultimoUso`, `outfits` y
+`favorita`.
+
+No es adorno. Las fases 3 y 4 tienen que responder a *"¿cuándo la usé por última vez?"* y *"¿cuánto
+lleva sin usarse?"*, y `loadData` **no fusiona con el valor por defecto** (regla 5 del proyecto): un
+campo que aparezca en la Fase 3 no lo tendrán las prendas ya guardadas, y arreglarlo entonces exige
+una migración manual prenda a prenda. La prueba lo comprueba hoy, campo por campo.
+
+Las tres ordenaciones por uso (*Más usadas*, *Menos usadas*, *Más tiempo sin usar*) **ya están
+escritas y probadas**, pero la interfaz no las ofrece mientras no haya ni un uso registrado. Un
+"Más usadas" sobre un armario sin usos sería un control decorativo, y eso es la regla 8.
+
+### Añadir una prenda en segundos
+El apartado 16 es tajante: *"no quiero que el usuario tenga que rellenar 15 campos cada vez que
+añade una camiseta"*. Por defecto solo se ven **nombre, categoría, color y foto opcional**; los ocho
+campos restantes están detrás de "Más información".
+
+Y la foto es opcional de verdad: sin ella la tarjeta pinta un degradado del color de la prenda con
+su categoría, **del mismo alto que una foto**, para que la rejilla no se desalinee según quién tenga
+fotografía y quién no.
+
+### Buscar por lo que uno recuerda, no por el nombre exacto
+La especificación lo pide explícitamente: "gris" encuentra prendas grises y "Nike" prendas de Nike.
+La búsqueda mira nombre, marca, talla, notas, material, categoría, color, estado y temporada — y
+sobre las **etiquetas**, no los ids: Josué escribe "marrón", no "marron".
+
+### Confirmación al eliminar: una excepción con motivo
+Desde ME Fase 3, borrar no pide confirmación en ninguna parte de la app, porque la papelera lo hace
+reversible. Aquí **sí la pide**, y no es capricho: la papelera guarda el objeto de la prenda, pero
+**la fotografía vive en Supabase Storage y no vuelve** — igual que las fotos de Salud y los vídeos
+de Calistenia, excluidos de la papelera desde entonces. Borrar una prenda con foto es en parte
+irreversible, y eso es justo lo que la regla reserva para la confirmación. El texto lo dice, y
+cambia según la prenda tenga foto o no.
+
+### Dos cosas nuevas que hicieron falta
+- **`SelectInput`**: el proyecto no tenía ni un `<select>`. Todas las elecciones se hacían con filas
+  de botones, que funcionan con 3 o 4 opciones; el Armario tiene 14 categorías y 13 colores, y
+  catorce pastillas en fila no caben en un iPhone. Un desplegable nativo abre además la rueda de
+  iOS, que se maneja con el pulgar mucho mejor.
+- **El bucket `armario`** en `supabase/schema.sql`, con las mismas políticas por carpeta de usuario
+  que `progreso` y `entrenamiento-videos`.
+
+### ⚠️ Algo que Josué tiene que hacer
+**Ejecutar el bloque nuevo de `supabase/schema.sql` en el SQL Editor de Supabase** (solo ese bloque,
+está marcado). Hasta entonces el Armario funciona **entero sin fotos**: la fotografía es opcional
+por diseño, y si la subida falla, la prenda **se guarda igual** con un aviso — perder lo escrito por
+un fallo de red sería mucho peor.
+
+### Un fallo que destapó la prueba de renderizado
+`ArmarioView` es la primera vista del smoke test que toca Storage, y `lib/supabase.js` lee
+`import.meta.env` al cargarse — algo que solo existe dentro de Vite. Ahora está stubeado, y de paso
+queda comprobado algo que importa por sí mismo: **ninguna vista debe necesitar la red para
+pintarse**.
+
+### Verificación
+`bash scripts/verificar.sh` → **443 comprobaciones en verde**, 87 de ellas del armario, más 4 casos
+de renderizado (vacío, con datos, datos parciales y con el módulo desactivado).
+
+⚠️ **Pendiente de Josué (R1):** subir una foto de verdad y ver la rejilla en un iPhone.
+
+---
+
+## Entrega 2 · BI Fase 4 — Buscar y preguntar dejan de ser dos cosas (v1.31.0)
+
+Cierra el bloque BI (4/4). Josué ya no tiene que decidir si lo suyo es una búsqueda o una pregunta:
+escribe, y JosStyle decide qué es más útil enseñarle.
+
+### Tres intenciones, no dos
+El apartado 5 pide **navegación**, **pregunta** y **acción**. Hasta ahora solo había un booleano
+"¿es pregunta?". La tercera es la que cambia el comportamiento:
+
+| Escribe | Intención | Qué sale primero |
+|---|---|---|
+| `colores` | navegación | Colores y tema |
+| `¿cómo puedo mejorar mi planche?` | pregunta | la IA |
+| `¿cómo cambio los colores?` | pregunta | la IA **y** Colores debajo |
+| `cambiar colores` | **acción** | **Colores y tema**, la IA debajo |
+| `quiero añadir un objetivo` | **acción** | **Crear un objetivo** |
+
+Y no depende del signo `¿`, que es de lo que avisa el apartado 6: "cambiar colores" no lo lleva y es
+claramente una acción. Se miran verbos, arranque de frase y longitud.
+
+### Lo que hacía falta para cumplir el apartado 7, y no era obvio
+"Cuando exista una función claramente relacionada, debe tener prioridad." El problema: **buscar la
+frase entera no encontraba nada**. "quiero añadir un objetivo" no coincide con ninguna entrada,
+porque ninguna contiene la palabra "quiero". Sin quitar ese envoltorio, la prioridad de la función
+sobre la IA era imposible de cumplir — no había función que priorizar.
+
+`nucleoDeConsulta` quita el relleno y deja "anadir objetivo", que sí encuentra la acción. Pero solo
+**si la frase entera no ha dado nada**: aflojar una búsqueda que ya era precisa habría empeorado los
+casos normales para arreglar los raros.
+
+### Toda la decisión en un sitio que se puede probar
+`resolverConsulta(indice, texto)` devuelve qué enseñar y en qué orden. Vive en el motor, no en el
+componente, y por eso **los ocho casos de la prueba final del apartado 20 son ocho llamadas a una
+función**, comprobadas sin renderizar nada.
+
+### Un hueco real de navegación, arreglado
+Buscar "colores" desde Inicio y pulsar atrás dejaba a Josué en el hub de **Más** — un sitio en el
+que no había estado. Ahora vuelve a donde estaba. El rastro se borra en cuanto navega a cualquier
+otro sitio, mediante un único efecto sobre `tab`: ponerlo en cada botón habría dejado fuera el que
+se añada mañana.
+
+### Errores y carga (apartados 14 y 15)
+- "Pensando…" con su rueda, sin bloquear el resto de la app.
+- Un mensaje de error con pinta de código o número de estado se sustituye por **"No he podido
+  responder ahora mismo"**, con **Reintentar** y el buscador intacto detrás. Nada de
+  `500 Internal Server Error` en pantalla.
+
+### Lo que no se ha tocado
+Los paneles de IA de cada módulo siguen exactamente donde estaban: el apartado 23 pide
+expresamente que el buscador nuevo **no rompa el acceso inferior existente**. Y `api/ask-ai.js` no
+se ha modificado — ninguna clave llega al frontend.
+
+### Verificación
+`bash scripts/verificar.sh` → **352 comprobaciones en verde**, 129 de ellas del buscador.
+
+⚠️ **Pendiente de Josué (R1):** el recorrido completo en un iPhone real, con el teclado abierto.
+
+---
+
+## Entrega 2 · BI Fase 3 — El motor de búsqueda de verdad (v1.30.0)
+
+La Fase 2 hizo el acceso y un índice que funcionaba. Esta lo convierte en un motor: sinónimos,
+plurales, erratas, acciones directas, sugerencias y recientes.
+
+### Lo que ahora encuentra y antes no
+| Escribe | Antes | Ahora |
+|---|---|---|
+| `colo`, `entren`, `dormi` | ya funcionaba | igual |
+| `color` (singular de "colores") | nada | Colores y tema |
+| `colroes` (errata) | nada | Colores y tema + *"¿Quizá buscas Colores y tema?"* |
+| `religion`, `musculo`, `diseno` | nada | Fe, Entrenamiento, Colores — por sinónimo |
+| `modo oscuro` | Colores y tema | **Modo oscuro o claro**, con entrada propia |
+| `nueva tarea` | Productividad | **abre el formulario de tarea nueva** |
+
+### Tres tipos de destino, no solo pantallas
+El apartado 11 pide que el índice no quede limitado a páginas. Ahora hay `pantalla`, `ajuste` (abre
+su categoría de Ajustes) y `accion` (abre un formulario). Las cuatro acciones directas son
+**exactamente** las que el Dashboard ya tiene en su fila de acciones rápidas, con el mismo `foco`:
+no se ha inventado ninguna.
+
+### Sinónimos y palabras clave son cosas distintas
+El apartado 3 los separa y el 8 los ordena. Una **palabra clave** es como Josué llamaría a la
+función ("dinero" → Economía); un **sinónimo** es un término vecino que debe encontrarla sin
+adelantar a la función cuyo nombre es esa palabra. Por eso "concentracion" lleva a Bienestar —lo
+tiene como palabra clave— y no a Productividad, que solo lo tiene como sinónimo.
+
+### Dos bugs reales que encontraron las pruebas
+1. **El plural atropellaba palabras clave literales.** "pantallas" abría *Pantalla principal* (que
+   solo coincide tras quitarle la 's') en vez de Bienestar, que tiene "pantallas" escrito tal cual.
+   La causa era estructural: `puntuar` devolvía el primer acierto por campos, así que una
+   coincidencia floja en el título ganaba a una fuerte en las palabras clave. Ahora se evalúan
+   todos los escalones y se coge el mayor, y el plural tiene su propio escalón, por debajo.
+2. **La raíz destrozaba palabras cortas acabadas en 's'**: "tres" → "tre", "mes" → "me". El umbral
+   pasó de 3 a 4 letras.
+
+### Damerau, no Levenshtein
+Con Levenshtein a secas, "colroes" está a **2** errores de "colores" (dos sustituciones) y con la
+tolerancia razonable que pide la especificación no se encontraba. Contando el intercambio de dos
+letras seguidas como **un** error, se encuentra. Las transposiciones son con diferencia la errata
+más común escribiendo deprisa en un móvil, y es justo el ejemplo que pone el apartado 18.
+
+Las erratas puntúan por debajo de todo lo demás, así que **nunca desplazan a un acierto real**, y
+solo se aplican a consultas de una sola palabra: sobre una frase entera la distancia de edición deja
+de significar nada y empieza a devolver cosas al azar, que es lo que prohíbe el apartado 7.
+
+### Historial reciente, con cuidado
+Cuatro accesos, con botón de limpiar. Dos decisiones deliberadas:
+- **Guarda ids de funciones, no el texto escrito.** Una búsqueda puede ser una pregunta personal
+  ("por qué me encuentro mal"); un historial de funciones abiertas, no.
+- **Vive en `localStorage`, no en Supabase.** El apartado 16 lo pide, y además no es un dato que
+  merezca sincronizarse entre dispositivos ni entrar en la copia de seguridad. Se resuelve contra el
+  índice actual, así que un reciente cuyo módulo se desactive después desaparece solo.
+
+### Privacidad (apartado 21)
+Escribir "colores" **no sale del dispositivo**. La prueba no se fía de que esté bien escrito: lee el
+propio archivo del motor y comprueba que no importa `askAI` ni hace `fetch`.
+
+### Verificación
+`bash scripts/verificar.sh` → **322 comprobaciones en verde**, 99 de ellas del buscador, incluidas
+las seis categorías de pruebas obligatorias del apartado 22.
+
+---
+
+## Entrega 2 · BI Fase 2 — Buscar funciones y abrirlas directamente (v1.29.0)
+
+### El problema, en una frase
+Para cambiar un color, Josué tenía que acordarse de que eso vive en **Más → Ajustes → Apariencia →
+Colores**. Ahora escribe "colores" y pulsa el resultado.
+
+### Por qué es el mismo modal y no uno nuevo
+El buscador que ya existía (Fase 18) busca en los **datos**: *"¿cuántas horas dormí de media?"*. Lo
+que pide esta fase es buscar **funciones, pantallas y ajustes**. Son cosas distintas, pero el
+apartado 20 es explícito: *"BUSCAR → ENCONTRAR → ABRIR y también PREGUNTAR → IA → RESPUESTA. Todo
+desde el mismo acceso"*, y el apartado 16 prohíbe duplicar la IA existente. Así que se amplía el
+modal de siempre en vez de poner un segundo buscador al lado.
+
+### El índice no está escrito: se construye
+El apartado 17 pide que añadir un módulo sea *"añadir una entrada"*, no tocar la lógica del buscador.
+Los 19 módulos **no** están escritos en `indiceBusqueda.js`: se derivan de `MORE_NAV` —el catálogo
+que ya usan la navegación, Personalización y Seguridad— más `DESCRIPCIONES_MODULOS`. Un módulo que
+una fase futura añada ahí aparece solo en el buscador.
+
+Lo único escrito a mano son las palabras clave, porque no se pueden derivar de nada: "dinero" no
+aparece en ninguna parte del código, y es como se busca Economía. Para que eso no se quede atrás,
+`comprobar-navegacion.mjs` ahora falla si alguien añade un módulo sin palabras clave — o deja
+palabras clave de uno que ya no existe.
+
+### Buscar y preguntar no son excluyentes
+El apartado 11 lo dice mejor que un resumen: *"esto es mejor que obligar al usuario a elegir entre
+búsqueda o IA desde el principio"*. Escribir `¿cómo cambio los colores?` saca **las dos cosas**: el
+botón de preguntar a la IA arriba y el resultado de Apariencia debajo. La pregunta le llega a la IA
+ya escrita; no hay que repetirla.
+
+### Añadido / cambiado
+- **`src/lib/indiceBusqueda.js`** (nuevo): índice + motor. `construirIndice`, `buscar`,
+  `pareceUnaPregunta`, `normalizar`, `PALABRAS_MODULOS` y las 14 funciones de dentro de Ajustes.
+  Los pesos del orden por relevancia están lo bastante separados como para que ninguna suma de
+  coincidencias débiles adelante a una fuerte — es el ejemplo del propio apartado 8: buscando
+  "color", "Colores" gana a cualquier entrada que solo mencione la palabra de pasada.
+- **La lupa se muda arriba a la izquierda** (apartado 1) y el panel de sugerencias se va a la
+  derecha. **Se intercambian, no se elimina ninguno**: son cosas distintas y la especificación
+  prohíbe quitar funcionalidad existente.
+- **Pulsar un resultado abre el sitio exacto**, categoría de Ajustes incluida, reutilizando el
+  `navegarDesdeHoy` que ya existía. `SettingsView` acepta el mismo `foco` que Sueño, Entreno,
+  Objetivos, Estudios, Productividad y Economía ya aceptaban.
+- Sin coincidencias no queda una pantalla vacía: se ofrece la IA con lo que ya escribió.
+- Campo con foco automático, botón de limpiar, y la lista scrollea dentro de `46vh` para que con el
+  teclado abierto en un iPhone el campo siga visible.
+- **`scripts/test-buscador.mjs`** (nuevo): 58 comprobaciones, entre ellas las nueve del control de
+  calidad del apartado 19.
+
+### Dos cosas que se han decidido no hacer, y por qué
+- **No se han inventado Rachas ni Sonidos.** El control de calidad los pide *"si el módulo existe"*,
+  y son fases futuras. "racha" lleva a Productividad —que es donde están hoy las rachas de hábitos
+  de verdad— y "sonidos" no devuelve nada. Fingirlos habría roto la regla 8.
+- **Sin animación de entrada por resultado.** El apartado 13 dice "VELOCIDAD > EFECTOS", y animar
+  una lista que cambia con cada tecla la haría parecer más lenta, no más premium.
+
+### Un fallo silencioso corregido de paso
+`TextInput` era un componente de función normal, así que **se tragaba la `ref` sin decir nada**: el
+foco automático del campo simplemente no habría ocurrido, sin error ni aviso en consola. Ahora usa
+`forwardRef`. Es aditivo — ninguno de los ~60 usos anteriores pasa `ref`.
+
+### Seguridad (apartado 18)
+El índice es de funciones: **no contiene ni un dato de Josué**. Relación se encuentra como pantalla
+—ya aparece en el menú "Más", no es un secreto—, pero abrirla sigue pasando por su PIN: el buscador
+navega, no salta protecciones. Y un módulo desactivado en Personalización no se puede encontrar.
+
+### Verificación
+`bash scripts/verificar.sh` → **281 comprobaciones en verde**.
+
+⚠️ **Pendiente de Josué (R1):** el comportamiento real con el teclado del iPhone abierto.
+
+---
+
+## Entrega 2 · BI Fase 1 — El desplegable de situación de Inicio (v1.28.0)
+
+### Lo que ya estaba, y por qué no se ha rehecho
+La especificación pide un componente colapsable con animación fluida, cerrado por defecto y
+compacto. Eso **ya existía** desde v1.21.0: `IndicadorContexto` usa `grid-template-rows` 0fr↔1fr,
+arranca cerrado y el chevron rota. Rehacerlo por rehacerlo habría sido gastar una fase en algo que
+funciona.
+
+### El hueco real
+El apartado 5 pide que al abrirlo aparezcan **las opciones** de Vacaciones, Exámenes y las demás
+situaciones. El componente solo dejaba **leer consejos**: para cambiar de situación había que salir
+de Inicio, ir a Más → Personalización y buscar el selector. El estado final que dibuja el apartado
+14 es justo lo contrario.
+
+Ahora las tres situaciones se activan desde el propio desplegable. **Sin un solo dato nuevo**:
+misma clave `personalizacion.modo`, mismo `setModoApp` de `App.jsx` —el que ya hacía el toggle— y
+mismos textos de `MODOS_APP`. Desde Inicio y desde Personalización se toca el mismo interruptor,
+que es lo que exige la decisión **D2-07** ("integrar, no hacer tres sistemas distintos").
+
+### El fallo silencioso que apareció al hacerlo
+El componente entero era un `<button>`. Meter dentro los selectores de situación habría dado
+**botones anidados**: HTML inválido que no rompe el render, no da ningún error en consola y que en
+iOS hace que el toque del botón interior se lo coma el exterior — un botón que simplemente no
+responde, sin pista de por qué.
+
+Ahora la cabecera es el botón y el contenido es su hermano. Y como es un fallo fácil de repetir,
+`scripts/smoke-vistas.jsx` lo comprueba en **las 13 vistas × 4 escenarios**, no solo aquí.
+
+### Añadido / cambiado
+- **Accesibilidad real** (apartado 10): `aria-expanded` en la cabecera, `aria-controls` apuntando a
+  un id que **existe de verdad** (uno colgando es peor que no ponerlo), `role="region"` con nombre y
+  `aria-pressed` en cada situación, porque son interruptores y no navegación.
+- La animación gana un desplazamiento de 4px además de la opacidad, para que el contenido entre en
+  lugar de aparecer.
+- Sin situación activa el panel ya no dice "Sin modificaciones especiales", que no explicaba nada:
+  dice para qué sirve.
+- Personalización menciona que el modo también se cambia desde Inicio, para que no parezcan dos
+  ajustes distintos.
+- **`scripts/test-inicio.jsx`** (nuevo): 18 comprobaciones — arranca cerrado, `aria-controls`
+  resuelve, ningún botón anidado, las tres situaciones presentes, la activa marcada y sus consejos
+  intactos.
+
+### Lo que NO se ha tocado
+Buscador, lupa, IA, rachas y sonidos: son fases posteriores y el apartado 11 lo prohíbe
+expresamente.
+
+### Verificación
+`bash scripts/verificar.sh` → **223 comprobaciones en verde**.
+
+⚠️ **Pendiente de Josué (R1):** cómo se ve y se siente en un iPhone de verdad, y el aspecto en tema
+claro. El componente solo usa tokens de `COLORS`, así que sigue el tema por construcción, pero eso
+es un argumento, no una comprobación.
+
+---
+
+## Entrega 2 · ME Fase 4 — Integración global, auditoría y renombrado a JosStyle (v1.27.0)
+
+Cierra el bloque ME (4/4). La especificación no pide construir nada nuevo aquí: pide **revisar todos
+los módulos con las mismas 10 preguntas** y arreglar lo que no las pase. Hacerlo en serio dio ocho
+huecos reales.
+
+### El hallazgo: ocho colecciones dejaban CREAR y no BORRAR
+La pregunta 3 de la auditoría es *"¿sus elementos creados por el usuario se pueden eliminar?"*.
+Siete módulos contestaban que no:
+
+| Módulo | Qué no se podía borrar | Consecuencia real |
+|---|---|---|
+| Sueño | registros de noche | una noche mal tecleada distorsionaba la media para siempre |
+| Economía | movimientos | un gasto duplicado no se podía quitar del balance |
+| Salud | medidas | un peso mal puesto rompía la gráfica de evolución |
+| Salud | historial médico | — |
+| Nutrición | comidas | un escaneo erróneo se quedaba en el total del día |
+| Fútbol | partidos | — |
+| Estudios | horas de estudio | un "8" en vez de un "0.8" inflaba la semana entera |
+
+Y el octavo lo encontró el script, no la revisión a mano: **los programas de Estudios**. Se podían
+crear ("Idiomas", "Selectividad") y no había forma de quitarlos de la barra de pestañas.
+
+### Por qué la auditoría es un script y no un documento
+Un documento que diga "revisado, todo correcto" no vale nada dentro de seis fases. Tres de las diez
+preguntas de la especificación se pueden comprobar solas, y son justo las que fallaron:
+
+- **`scripts/auditar-modulos.mjs`** (nuevo) responde P3 (todo lo creable es borrable), P5 (ningún
+  borrado se salta la papelera), P7/P7b (el catálogo y el código dicen lo mismo, en los dos
+  sentidos) y P9 (toda entrada del catálogo se puede nombrar en la papelera).
+- Entra en `scripts/verificar.sh`, así que **cada módulo nuevo de las 102 fases restantes pasa por
+  ella automáticamente**. Si alguien añade una colección y olvida su borrado, la verificación falla.
+
+### Añadido / cambiado
+- **`BotonBorrar`** en `src/components/ui.jsx`: un único control de borrado para toda la app. No
+  pide confirmación a propósito — desde ME F3 lo borrado va a la papelera y es recuperable; la
+  confirmación se reserva para el borrado definitivo, que sí es irreversible.
+- **Ocho handlers nuevos** en `App.jsx`, todos por papelera. Siete son de una línea; el octavo,
+  `deletePrograma`, es la **segunda cascada** de la app: se lleva sus asignaturas y, con ellas, sus
+  exámenes y sus horas, todo en la **misma** entrada de papelera — restaurar el programa devuelve
+  el árbol entero, no un programa vacío.
+- **`estudios.programas`** entra en `CATALOGO_PAPELERA` (27 colecciones).
+- **Horas de estudio visibles**: hasta ahora se sumaban a un total y no había forma de ver ni
+  corregir un registro concreto. Ahora la asignatura desplegada lista las últimas cinco, con su
+  borrado.
+- **`EstudiosView` sin programas** ya no dice "todavía no has añadido ninguna asignatura a este
+  programa" cuando no hay programa ninguno: dice qué hacer.
+
+### El renombrado: el proyecto se llama JosStyle
+Josué ha cerrado la contradicción **C-21**, abierta desde el primer análisis: el nombre oficial y
+definitivo es **JosStyle**; *JC Fitness*, *JC Lifestyle* y *JC STYLE* quedan como referencias
+históricas.
+
+- Renombrado: pantalla de acceso, `<title>`, nombre en la pantalla de inicio de iOS,
+  `manifest.json` y el campo `name` de `package.json`. La interfaz, curiosamente, no usaba ninguno
+  de los cinco nombres — se presentaba como *"Mi Sistema Personal"*.
+- **No** renombrado, y por qué: el proyecto en Vercel y su URL (cambiarlos afecta a cómo entra
+  Josué a la app), el `start_url` del manifiesto (desvincularía la PWA instalada de sus datos), las
+  citas literales de `especificaciones/` (intocables) y el histórico de este mismo archivo.
+- ⚠️ **Efecto que verá Josué:** el icono que ya tiene en la pantalla de inicio del iPhone
+  **seguirá con el nombre viejo** hasta que lo borre y lo vuelva a añadir. iOS no renombra accesos
+  directos ya creados. No se pierde ningún dato al hacerlo.
+
+### Decisiones de Josué registradas
+Sus ocho respuestas quedan en `docs/06_ENTREGA2_ANALISIS.md` §7 como **D2-01 … D2-08**, y resuelven
+E2-C-01 (gamificación), E2-C-03 (Amazon), E2-C-05 (contenido educativo), E2-C-06 (parte de Inicio) y
+C-21 (nombre). Se añade la **regla 49**: una contradicción nueva entre especificaciones no se
+resuelve por cuenta propia — se pregunta, deteniendo la fase afectada y no la sesión.
+
+### Verificación
+`bash scripts/verificar.sh` → **205 comprobaciones en verde**: build (2606 módulos), 148 pruebas
+unitarias, 5 de auditoría, 52 casos de renderizado y 9 reglas invariantes.
+
+---
+
+## Entrega 2 · ME Fase 3 — Eliminados recientemente (v1.26.0)
+
+### Alcance de esta fase, dicho primero
+Una papelera de verdad. Hasta ahora borrar algo lo borraba: existía el deshacer de 10 pasos, pero
+es un histórico compartido por toda la app — si borras una tarea y después registras tres cosas
+más, ya no puedes recuperarla.
+
+### Por qué es un sistema global y no uno por módulo
+La especificación es tajante: *"debe construirse como un sistema global y reutilizable, no como una
+solución aislada para los módulos actuales"*. Al revisar los 22 handlers de borrado de `App.jsx`
+resultó que **todos seguían exactamente el mismo patrón**:
+
+```js
+MODULO.COLECCION.filter((x) => x.id !== id)
+```
+
+Así que la papelera se modela sobre esa forma: **módulo + colección + id**. Los 19 handlers de una
+línea se han reducido a `eliminarConPapelera('modulo', 'coleccion', id)`. Añadir un módulo futuro
+a la papelera es añadir una entrada a `CATALOGO_PAPELERA` — sin tocar el motor ni la interfaz.
+
+### Añadido / cambiado
+- **`src/lib/papelera.js`** (nuevo): motor puro. `prepararEliminacion`, `prepararRestauracion`,
+  `conArrastrados`, `purgarCaducados`, `describirEntrada`, `tiempoDesde`, `diasRestantes`,
+  `ordenarPapelera` + el catálogo de **26 colecciones**.
+- **Cada entrada guarda el objeto íntegro**, no una etiqueta de "borrado" (requisito explícito):
+  id original, tipo, módulo, colección, fecha de creación, fecha de eliminación, **la posición que
+  ocupaba en la lista** y los datos completos. Por eso la recuperación es real: el elemento vuelve
+  a su sitio, en su orden y con su id — no se recrea una copia.
+- **`src/views/PapeleraView.jsx`** (nuevo) y nueva categoría en Ajustes: lista ordenada por
+  cuándo se borró, con tipo, cuánto hace ("hace 2 horas", "ayer", "hace 3 días" — como los
+  ejemplos de la especificación) y cuántos días le quedan. Recuperar y eliminar definitivamente
+  por elemento, vaciar papelera, y retención configurable.
+- **Retención**: 7 / 30 / 90 días o **"hasta que yo lo borre"**. Se aplica al abrir la app y al
+  acortar el plazo, y solo escribe si de verdad ha cambiado algo.
+- **Borrado en cascada resuelto**: borrar una asignatura se lleva sus exámenes y sus horas. Si la
+  papelera guardara solo la asignatura, recuperarla devolvería una asignatura vacía y los exámenes
+  se habrían perdido. `conArrastrados` mete en la misma entrada lo que cayó con ella y restaurar
+  devuelve las tres cosas (*"recupera sus relaciones cuando sea posible"*).
+
+### Decisiones
+- **La papelera entra en el snapshot del deshacer.** Sin eso, deshacer un borrado devolvería el
+  elemento a su módulo pero dejaría su entrada en la papelera: un fantasma que al restaurarse
+  duplicaría el elemento. Con la papelera dentro, los dos sistemas de recuperación no se pisan.
+- **Borrado definitivo y vaciado NO pasan por el deshacer**: meter en el histórico una acción cuyo
+  sentido es "esto ya no se puede recuperar" sería contradictorio.
+- **Privacidad de Relación.** Es el único módulo protegido de principio a fin, y la papelera se
+  abre desde Ajustes sin pedir PIN. Enseñar ahí "Aniversario con María" sería una fuga real. Sus
+  entradas se marcan `privado`: bloqueadas se muestran como "Elemento privado" y no se pueden
+  restaurar; los datos siguen guardados. Mismo mecanismo (`estaDesbloqueado('area:relacion')`) y
+  mismo criterio que ya se aplicó al integrar Relación en el Calendario.
+- **Fotos, vídeos y archivos de Biblioteca quedan fuera**, igual que ya estaban fuera del
+  deshacer: sus datos viven en Supabase Storage, y mandarlos a la papelera exigiría no borrar el
+  archivo, dejando ficheros huérfanos si después se vacía desde otro dispositivo. Documentado como
+  límite, no como olvido.
+- **Restaurar algo que ya volvió por otra vía no duplica**: la entrada sale igualmente de la
+  papelera, para no dejar un fantasma imposible de quitar.
+
+### Comprobado
+- **73 pruebas** del motor (`scripts/test-papelera.mjs`): que restaurar devuelve el elemento a su
+  posición exacta con todos sus campos y su id original (y que el resultado es **idéntico** al
+  estado de partida), el borrado en cascada de ida y vuelta, la retención con fechas corruptas,
+  la privacidad de Relación bloqueada y desbloqueada, y los casos límite de restaurar sobre una
+  lista que ha encogido o que ya contiene el elemento.
+- **52 casos de renderizado**, ahora incluyendo `PapeleraView`.
+- Total en verde: 148 comprobaciones + 52 casos.
+
+### Pendiente (documentado, no implementado en esta fase)
+- Archivos en Storage (ver Decisiones).
+- La auditoría de que **todos** los puntos de borrado de la app pasan por la papelera es
+  explícitamente el trabajo de **ME Fase 4** ("integración global + auditoría").
+- Sin probar en un iPhone real.
+
+
+## Entrega 2 · ME Fase 2 — Personalización total (v1.25.0)
+
+### Alcance de esta fase, dicho primero
+Cuatro piezas: orden de módulos, Dashboard personalizable, navegación personalizable y perfiles
+predefinidos. Más la gestión de dependencias entre módulos.
+
+### Añadido / cambiado
+- **`src/tokens.js` → `PERFILES_MODULOS`**: los cuatro perfiles que pide la especificación —
+  **Completo**, **Estudiante**, **Fitness** y **Minimalista**. Cada uno declara qué módulos deja
+  activos; el resto se desactivan.
+- **`src/tokens.js` → `DEPENDENCIAS_MODULOS`**: qué módulos se alimentan de qué otros. Solo se
+  modela la dependencia **real de datos**, la que hace que un módulo se quede sin nada que
+  mostrar: Estadísticas, Predicciones, Logros y (parcialmente) Calendario.
+- **`PerfilesRapidos`**: cuatro tarjetas con confirmación que dice cuántos apartados quedarán
+  activos y recuerda que no se borra nada.
+- **`MiDashboard`** — "Mi pantalla de inicio": el editor de `dashboardOcultos` que llevaba
+  pendiente desde que el Dashboard se amplió a Centro de Control. El modelo y el filtrado ya
+  existían; faltaba la interfaz. Solo lista módulos activos: ofrecer un interruptor de "ver en
+  Hoy" para algo desactivado sería un control que no hace nada.
+- **Aviso de dependencias** dentro de la confirmación de desactivar: si el módulo alimenta a otros
+  que están activos, se dice cuáles y que tendrán menos que mostrar. **No se bloquea ni se
+  desactiva nada en cascada** — la especificación pide gestionar la dependencia y no dejar la app
+  rota, no decidir por el usuario.
+- **`src/App.jsx`**: `toggleDashboardModulo` y `aplicarPerfilModulos`. El segundo solo toca
+  `ocultos`: el orden, los iconos, el PIN y las métricas favoritas se respetan tal cual — un
+  perfil decide QUÉ usas, no cómo lo tienes colocado. Si el perfil desactiva la pestaña abierta,
+  se vuelve a "Hoy".
+
+### Decisiones
+- **El reordenar se queda con flechas, no con drag & drop.** La especificación pide DnD "cuando
+  tenga sentido, especialmente en móvil", pero el apartado 103 de la especificación de Ajustes
+  ofrece explícitamente la alternativa: *"interacción directa (drag&drop) **o controles accesibles
+  equivalentes**"*. Las flechas ya funcionan, son accesibles por teclado y para lectores de
+  pantalla, y no necesitan una librería nueva ni gestos táctiles que compiten con el scroll de la
+  página. Documentado como decisión, no como olvido: si Josué prefiere DnD de verdad, es una
+  petición concreta y acotada.
+- **La navegación principal sigue siendo de 5 pestañas fijas.** La especificación pide "permitir
+  que el usuario decida qué módulos aparecen como accesos principales, siempre que sea
+  técnicamente viable" — pero la regla de que la barra inferior tiene **exactamente 5 pestañas,
+  nunca una sexta** es del propio Josué y se repite en dos prompts distintos. Lo que sí es
+  personalizable, y ya lo era, es el contenido de cada hub. Si quiere cambiar eso, es una decisión
+  suya que contradice una regla suya: hay que preguntárselo, no resolverlo por él.
+- **No se guarda "qué perfil tienes puesto".** En cuanto Josué cambie un solo interruptor esa
+  etiqueta sería mentira, y la especificación insiste en que los perfiles no deben bloquear la
+  personalización posterior.
+- **Las dos listas de ocultación se mantienen separadas**, y la especificación lo respalda
+  literalmente: *"Módulo activado ≠ necesariamente visible en Dashboard"*.
+
+### Comprobado
+- **28 pruebas** de la lógica de perfiles y dependencias (`scripts/test-personalizacion.mjs`):
+  que ningún perfil referencia módulos inexistentes, que ninguno toca "ajustes", que las
+  dependencias declaradas existen, que ningún módulo depende de sí mismo, y que el aviso solo
+  menciona dependientes que estén activos.
+- **4 pruebas nuevas de comportamiento** sobre el HTML: quitar algo de Hoy sin desactivarlo
+  funciona, y ambas listas conviven aplicando cada una su efecto.
+- Total en verde: 27 + 28 + 20 comprobaciones + 48 casos de renderizado.
+
+### Pendiente (documentado, no implementado en esta fase)
+- Drag & drop real para reordenar (ver Decisiones).
+- Accesos principales configurables (choca con la regla de las 5 pestañas — decisión de Josué).
+- Sin probar en un iPhone real.
+
+
+## Entrega 2 · ME Fase 1 — Sistema de módulos activables/desactivables (v1.24.0)
+
+### Alcance de esta fase, dicho primero
+Primera fase de la Entrega 2. La especificación pide que el usuario decida qué apartados quiere
+usar, que desactivar **nunca** borre datos, y que "la interfaz se reconstruya automáticamente según
+los módulos activos".
+
+**Análisis primero, como manda la regla de oro de la propia especificación** ("¿esto ya existe en
+JC Fitness? → CONECTAR / INTEGRAR / REUTILIZAR / CREAR"): `PersonalizationView` (Fase 19) ya
+permitía ocultar módulos con `personalizacion.ocultos`. Así que **no se ha creado un sistema
+paralelo**: se ha ampliado el existente. Lo que faltaba de verdad no era el modelo de datos, era
+que ocultar **hiciera algo más allá de los hubs**.
+
+### El hueco real que se ha cerrado
+`personalizacion.ocultos` solo se consultaba en `HubView`. Un módulo "desactivado" seguía
+apareciendo en "Hoy" con su tarjeta, su aviso y su acción rápida. El Dashboard tenía además su
+propia lista (`dashboardOcultos`), sin editor. Es decir: dos sistemas de ocultación y ninguno
+completo.
+
+Ahora hay una distinción clara entre dos cosas que un usuario quiere poder hacer por separado:
+- **`personalizacion.ocultos`** — "no uso este apartado". Afecta a TODA la app.
+- **`dashboardOcultos`** — "sí lo uso, pero no quiero verlo en Hoy". Preferencia de pantalla.
+
+### Añadido / cambiado
+- **`src/components/ui.jsx`**: nuevo `Switch` — interruptor ON/OFF accesible (`role="switch"`,
+  `aria-checked`, navegable por teclado). El apartado 8 de la especificación de Ajustes lo lista
+  como componente permitido y el apartado 14 exige que una misma configuración se represente
+  siempre igual; hasta ahora cada sitio resolvía el activado/desactivado a su manera.
+- **`src/tokens.js`**: `DESCRIPCIONES_MODULOS` — una descripción por módulo, ≤80 caracteres,
+  describiendo el efecto y no cómo se usa el control (apartado 11).
+- **`src/views/PersonalizationView.jsx`**: nuevo `CentroModulos` — "Personalizar mi sistema",
+  agrupado por las cuatro áreas que ya existen en la barra inferior (no se inventa una taxonomía
+  nueva). Cada fila: icono, nombre, descripción e interruptor. Contador de activos.
+  Confirmación al desactivar que insiste en que **no se borra nada**; ninguna al reactivar.
+- **`src/views/PersonalizationView.jsx`**: retirado el botón de ojo de la lista de reordenación —
+  tener dos controles distintos para la misma configuración es justo lo que prohíbe el apartado 14.
+  Esa lista se queda con lo suyo: orden, icono y PIN. Los desactivados se marcan con una etiqueta.
+- **`src/views/DashboardView.jsx`**: `oculto(id)` consulta ahora las dos listas. Se filtran las
+  tarjetas de Nivel 1/2/3, los tres avisos automáticos, el acceso a Calendario y Agenda, el
+  recordatorio de Relación y las acciones rápidas (que pasan a ser un catálogo filtrable; si no
+  queda ninguna, desaparece también el encabezado).
+- **`src/lib/puntuacion.js`**: acepta la lista de desactivados. Si Josué ha dicho que no usa Sueño,
+  que le baje la nota por no registrarlo sería exactamente lo contrario de lo que pidió.
+- **`src/App.jsx` / `src/views/SettingsView.jsx`**: `AREAS_NAV` y `personalizacion.ocultos` se
+  reenvían a donde hacen falta.
+
+### Decisiones
+- **Ampliar en vez de crear**, siguiendo la regla de la propia especificación. El modelo de datos
+  (`personalizacion.ocultos`) no cambia: cualquier cuenta existente sigue funcionando sin migración.
+- **Agrupado por las áreas ya existentes** en vez de por las categorías del ejemplo de la
+  especificación (Salud/Deporte/Productividad): son las que Josué ya conoce de navegar la app, y
+  además el script `comprobar-navegacion.mjs` ya garantiza que ese reparto es completo y sin
+  duplicados.
+- **"Ajustes" nunca es desactivable** — `moreNavPersonalizables` ya lo excluía. Sin él, Josué no
+  tendría forma de volver a activar lo que desactivó.
+- **Relación se puede desactivar, pero eso no la desprotege**: desactivar y proteger con PIN son
+  cosas distintas. Con Relación desactivada, además, deja de asomar el recordatorio de la pareja
+  en la pantalla principal.
+
+### Comprobado
+- **16 pruebas de comportamiento** (`scripts/test-modulos.jsx`) sobre el HTML realmente renderizado:
+  que lo desactivado desaparece, que lo demás sigue ahí, que desactivarlo todo no rompe nada ni
+  deja encabezados huérfanos, que renderizar no muta los datos, y que todas las descripciones
+  existen y respetan el límite de 80 caracteres.
+- **48 casos de renderizado** (`scripts/smoke.mjs`), ahora con un cuarto escenario: "todo
+  desactivado".
+- Build limpio, y las nueve reglas invariantes del proyecto en verde.
+
+### Pendiente (documentado, no implementado en esta fase)
+- **Buscador universal**: sigue buscando sobre datos, no sobre funciones. Filtrar funciones de
+  módulos desactivados corresponde a **BI Fase 3**, que es donde se construye el índice.
+- **Menú lateral**: la especificación lo menciona, pero esta app no tiene (navega con 5 pestañas
+  y hubs). No aplica.
+- Sin probar en un iPhone real.
+
+
+## Bloque R0 — Correcciones críticas y verificación automática (v1.23.0)
+
+### Alcance de esta fase, dicho primero
+Primer turno con **acceso real a npm** en el entorno de desarrollo. Eso cambia una premisa que
+llevaba vigente desde la v1.0.1: ya no es cierto que "Claude solo pueda revisar el código a mano".
+`npm install` y `npm run build` funcionan, y **el proyecto compila sin errores (2604 módulos)** —
+la primera verificación real en 22 incrementos de versión. Sobre esa base se han corregido las tres
+incoherencias críticas del bloque R0 y se ha construido una suite de verificación reutilizable.
+
+### Verificación automática (`scripts/`, nuevo)
+- **`verificar.sh`** — build + pruebas + nueve reglas invariantes del proyecto, que hasta ahora se
+  comprobaban a mano fase a fase: nadie desestructura `COLORS`, ningún hex suelto fuera de
+  `tokens.js`, todo overlay `fixed inset-0` con `createPortal`, sin notas internas de desarrollo
+  visibles, `relacion` fuera de la exportación, PIN de Relación intacto, exactamente 5 pestañas,
+  navegación coherente, y **todo ajuste de Apariencia con efecto CSS real**.
+- **`smoke.mjs` + `smoke-vistas.jsx`** — renderizan 11 vistas con `react-dom/server` en tres
+  escenarios: vacío, con datos y **datos parciales** (campos que faltan, como los que dejaría una
+  versión anterior). 33 casos. Compilar no detecta un `undefined.map()`; esto sí.
+- **`test-puntuacion.mjs`** — 22 comprobaciones de la puntuación nueva.
+- **`resolver-vite.mjs`** — hook de resolución que permite ejecutar con Node los módulos de `src/`
+  tal y como están escritos (imports sin extensión), sin cambiar la convención del proyecto.
+- **`comprobar-navegacion.mjs`** — cruza `MORE_NAV`, `AREAS_NAV` y los `case` del switch para
+  detectar módulos huérfanos (navegables sin pantalla, o pantallas inalcanzables).
+
+### R0.1 — Modelo de IA obsoleto (`api/ask-ai.js`)
+- `model: 'claude-sonnet-4-6'` ya no existe. En cuanto Josué activara `ANTHROPIC_API_KEY`, habrían
+  fallado **las 13 secciones con `AIPanel`, el buscador universal, el panel de sugerencias, el
+  escaneo de comida por foto y el análisis de vídeo de calistenia** — y el síntoma habría sido un
+  genérico "la IA no funciona", sin pista de la causa. Había pasado desapercibido precisamente
+  porque la clave nunca se ha activado: la función devuelve `503` antes de llamar a Anthropic.
+- El modelo se lee ahora de `ANTHROPIC_MODEL` (por defecto `claude-sonnet-5`), así que cambiarlo
+  no exige tocar código ni volver a subir el proyecto: se cambia en el panel de Vercel.
+- Un `404` de modelo devuelve un mensaje que dice exactamente qué pasa y dónde arreglarlo.
+
+### R0.2 — Puntuación diaria (`src/lib/puntuacion.js`, nuevo)
+- La fórmula anterior vivía suelta en `DashboardView` y sumaba puntos por tener datos *alguna vez*:
+  `sueno[último]`, `nivel > 0`, `movimientos.length > 0`. Ninguna miraba la fecha. Resultado: en
+  cuanto había un dato de cada, **se quedaba en 100 para siempre** mientras la etiqueta decía
+  "Puntuación de hoy". Era un dato falso en la pantalla principal.
+- Ahora es el **porcentaje de las áreas que Josué realmente usa que ha registrado hoy**. Un área
+  solo entra en el cálculo si ya tiene datos, así que no penaliza por módulos que no utiliza —
+  mide constancia real, no cuántos módulos tiene abiertos.
+- Ocho áreas: Sueño (acepta el registro de anoche), Entrenamiento, Nutrición, Hábitos (exige
+  marcarlos todos), Tareas vencidas, Diario, Estudio y Salud (ventana de 7 días, no diaria).
+- Desplegable para ver **de dónde sale cada punto** — misma regla de honestidad que rige los
+  paneles de IA. Sin datos todavía, no muestra un 0 desmotivador: lo dice y ya está.
+- Sin puntos acumulables, sin niveles, sin monedas: se reinicia sola cada día y no se guarda en
+  ningún sitio (reglas 33/34, no sobregamificar).
+- Cierra el TODO heredado de la sección 18 del HANDOFF ("revisar si la puntuación diaria debería
+  basarse en el día calendario real") y una de las dos piezas que la Fase 20 dejó sin construir.
+
+### R0.3 — Densidad de interfaz (`src/index.css`, `src/App.jsx`)
+- Situación de partida: `tokens.js` afirmaba en un comentario que ya funcionaba, `index.css` no
+  tenía **ni una sola regla** `data-densidad`, y la propia interfaz le decía a Josué que las tres
+  densidades se veían igual. Un comentario del código mintiendo es peor que la función faltante:
+  la siguiente sesión se fía de él y da el apartado 91 por cerrado.
+- Implementada de verdad con el mismo mecanismo de override global por atributo que ya usaban los
+  radios de borde desde la Fase A3. Se ajustan el ritmo vertical entre tarjetas (`space-y-*`) y el
+  relleno interior (`p-5`/`p-4`).
+- **No se tocan `gap-*` a propósito**: el gap afecta también al eje horizontal y cambiarlo puede
+  hacer que una fila de píldoras o una rejilla de 2 columnas se parta distinto según el contenido.
+  El objetivo es cambiar la sensación de aire, no arriesgar el layout.
+- "Estándar" no lleva override: es exactamente lo que la app ya era.
+
+### Cinco bugs reales encontrados por las pruebas nuevas
+Ninguno se habría detectado compilando. Los cinco dejaban pantallas en blanco o mostraban datos
+falsos:
+1. **`calcularDuracion()`** reventaba con un registro de sueño sin horas y dejaba en blanco
+   **cuatro** pantallas a la vez (Hoy, Sueño, Estadísticas y las tarjetas de hub). Ahora devuelve
+   `null`, y hay un `formatHoras()` compartido que lo presenta como "— h".
+2. **`AvisoSuenoCorto`** mostraba "null h" y **disparaba una notificación real** por un dato
+   inexistente: en JavaScript `null < 7` es `true`.
+3. **Las dos correlaciones de sueño** contaban un registro incompleto como noche corta, falseando
+   el resultado entero.
+4. **La media de `SleepView`** se volvía `NaN` con un solo registro incompleto.
+5. **`DiaryView`** cargaba la entrada guardada sin fusionarla con el formulario vacío; una entrada
+   incompleta hacía reventar el `.trim()` y dejaba el Diario en blanco. Corregido con el patrón
+   `{ ...DEFAULT, ...guardado }`, el mismo que ya se aplicó en A2, A3 y en el Dashboard.
+
+### Saneado documental (R0.4 / R0.5 / R0.6)
+- **Fase A7 registrada** (ver la entrada de abajo): existía en el código y en ningún changelog.
+- **`HANDOFF.md`**: las secciones 3, 5, 9, 10, 11, 13 y 15 describían el estado en v0.21.0/v1.0.0 y
+  contradecían los banners de arriba — decían que la Fase 20 estaba pendiente y que la navegación
+  era `PRIMARY_NAV` + hoja "Más", eliminada en la Fase N1. Corregidas o marcadas con un aviso que
+  remite a `docs/`.
+- **`personalizacion.pinExtra`** marcado explícitamente como **vestigial**: ya no se escribe nunca,
+  solo se lee una vez durante la migración a `seguridad.protectedAreas`. Se conserva porque
+  borrarlo dejaría sin migrar a las cuentas que aún no lo hayan hecho.
+
+### Añadido lo que faltaba en el repositorio
+- **`.gitignore`** y **`.env.example`** solo existían dentro del zip, no versionados. Sin el
+  primero, `node_modules/` (193 paquetes) y `dist/` eran candidatos a acabar en el repositorio.
+- `.env.example` documenta ahora también `ANTHROPIC_MODEL`.
+
+### Pendiente (documentado, no implementado en esta fase)
+- Sigue sin probarse en un iPhone real: renderizar con `react-dom/server` detecta errores de
+  ejecución, pero no layout, ni gestos, ni Safari.
+- La segunda pieza que la Fase 20 dejó sin construir — la **revisión automática semanal/mensual/
+  anual** — sigue pendiente (bloque R4.2).
+
+## Fase A7 — Accesibilidad, paletas predefinidas y densidad (registrada retroactivamente)
+
+> **Esta fase se construyó pero nunca se registró.** El código la cita seis veces (`tokens.js`
+> líneas 58, 137, 141, 150 y 158; `GestionTemas.jsx` línea 10), pero no existía ninguna entrada en
+> este archivo y `HANDOFF.md` declaraba que el bloque Ajustes "se cierra con A1-A6". Se documenta
+> ahora para que una auditoría futura de qué apartados de Ajustes están cubiertos no dé un
+> resultado equivocado.
+
+### Añadido / cambiado
+- **Alto contraste** (apartado 43, Accesibilidad): `apariencia.altoContraste` +
+  `CONTRASTE_ALTO_OSCURO`/`CONTRASTE_ALTO_CLARO` en `tokens.js`. Solo ajusta `textMuted` y `border`
+  — deliberadamente conservador, para no rehacer la paleta entera.
+- **Paletas predefinidas** (apartado 86): las 7 originales de `PALETAS_PREDEFINIDAS`, ampliadas
+  después a 10 en la Fase V4 con Monocromático, Neón y Pastel.
+- **Densidad de interfaz** (apartado 91): la opción y su modelo de datos. ⚠️ **Nunca llegó a tener
+  efecto visual** — se completó en el bloque R0 (v1.23.0), ver arriba.
+
+
 ## Finalización del Calendario + eliminación de notas internas (v1.22.0)
 
 ### Alcance de esta fase, dicho primero
