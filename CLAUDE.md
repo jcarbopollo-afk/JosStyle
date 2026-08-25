@@ -1,4 +1,4 @@
-# CLAUDE.md — JC Fitness
+# CLAUDE.md — JosStyle
 
 > Punto de entrada para cualquier sesión de Claude Code en este proyecto. **Léelo entero antes de
 > escribir código.**
@@ -10,12 +10,39 @@ nutrición, calistenia, fútbol, estudios, negocio, economía, productividad, ob
 biblioteca, relación de pareja (privada), bienestar digital, fe, calendario, estadísticas,
 predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 
-**Estado:** `package.json` **v1.22.0**. Vite + React 18 + Tailwind + Supabase + una función
+**El nombre oficial y definitivo es JosStyle.** *JC Fitness*, *JC Lifestyle* y *JC STYLE* son nombres
+históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
+transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
+
+**Estado:** `package.json` **v1.27.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
-Armario, Fondos, Buscador+IA, Módulos activables, Sonido y Rachas — **106 fases, nada implementado**)
-y el bloque **AXION** de la Entrega 1 (≈1100 apartados, bloqueado hasta una conversación de diseño).
+Armario, Fondos, Buscador+IA, Módulos activables ✅, Sonido y Rachas — **106 fases**; el bloque
+**ME** está terminado, quedan 102) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+por decisión de Josué hasta terminar la Entrega 2).
+
+## Decisiones cerradas de Josué (no reabrir)
+
+Las contestó él por escrito al empezar la Entrega 2. Están desarrolladas en
+`docs/06_ENTREGA2_ANALISIS.md` §7 como **D2-01 … D2-08**. En corto:
+
+| | Decisión |
+|---|---|
+| **D2-01** | **Sonido y Rachas son DOS módulos independientes.** No mezclar sus especificaciones ni su numeración. |
+| **D2-02** | **La regla de "no sobregamificar" NO se deroga.** Nada de puntos, niveles ni monedas en Bienestar. XP y niveles solo dentro de Sonido/Rachas, sin salir de ahí. |
+| **D2-03** | **Amazon: arquitectura sí, afiliación no.** Ni catálogo, ni productos, ni API, ni cuenta de afiliados inventados. |
+| **D2-04** | **Contenido educativo: estructura ahora, contenido después.** Ninguna fase se bloquea por falta de artículos. |
+| **D2-05** | **Orden confirmado**, con Estilo de Hombre al final. |
+| **D2-06** | **AXION se aplaza** y no bloquea las 106 fases. |
+| **D2-07** | **Inicio, Buscador y Módulos son un solo sistema.** Prohibido crear una cuarta lista de "qué se ve en Inicio". |
+| **D2-08** | **El proyecto se llama JosStyle.** |
+
+⚠️ **Regla 49 (nueva, de Josué):** *"Si encuentras cualquier otra contradicción entre las 100
+prompts, no la resuelvas por tu cuenta: detente y pregúntamela antes de implementar esa parte."*
+Detiene **la fase afectada, no la sesión**: se anota en `docs/03` como ⏸ PENDIENTE DE JOSUÉ, se sigue
+con lo que no dependa de ella y se le pregunta al cerrar el turno. No aplica a las contradicciones ya
+listadas con decisión tomada.
 
 ## Documentación: qué leer y en qué orden
 

@@ -836,6 +836,18 @@ export default function App() {
     saveData(uidUser, 'papelera', siguiente);
   };
 
+  // Entrega 2 · ME Fase 4 — borrados que faltaban. La auditoría de esta fase encontró seis
+  // colecciones donde el usuario podía crear pero no borrar: registros de sueño, movimientos de
+  // economía, medidas y entradas médicas de Salud, comidas, partidos de fútbol y horas de
+  // estudio. Todos entran por la papelera, como el resto.
+  const deleteRegistroSueno = (id) => eliminarConPapelera('sueno', null, id);
+  const deletePartido = (id) => eliminarConPapelera('futbol', null, id);
+  const deleteMovimiento = (id) => eliminarConPapelera('economia', 'movimientos', id);
+  const deleteMedida = (id) => eliminarConPapelera('salud', 'medidas', id);
+  const deleteHistorialMedico = (id) => eliminarConPapelera('salud', 'historial', id);
+  const deleteComida = (id) => eliminarConPapelera('nutricion', 'comidas', id);
+  const deleteHorasEstudio = (id) => eliminarConPapelera('estudios', 'horas', id);
+
   const setIconoModulo = (id, iconKey) => {
     const iconos = { ...personalizacion.iconos };
     if (iconKey) iconos[id] = iconKey; else delete iconos[id];
@@ -914,6 +926,32 @@ export default function App() {
   const setAgua = (fecha, ml) => snapshotAndSave({ nutricion: { ...nutricion, agua: { ...nutricion.agua, [fecha]: ml } } });
 
   const addPrograma = (p) => snapshotAndSave({ estudios: { ...estudios, programas: [...estudios.programas, p] } });
+  // Segundo borrado en cascada, encontrado por la auditoría de ME Fase 4: un programa se podía
+  // crear y no quitar, así que un "Idiomas" creado por probar se quedaba en la barra para siempre.
+  // Arrastra sus asignaturas y, con ellas, los exámenes y las horas de cada una — todo en la misma
+  // entrada de papelera, para que restaurar el programa devuelva el árbol entero.
+  const deletePrograma = (id) => {
+    const resultado = prepararEliminacion(estudios, 'estudios', 'programas', id, new Date().toISOString());
+    if (!resultado) return;
+    const asignaturas = estudios.asignaturas.filter((a) => a.programaId === id);
+    const idsAsignatura = asignaturas.map((a) => a.id);
+    const examenes = estudios.examenes.filter((e) => idsAsignatura.includes(e.asignaturaId));
+    const horas = estudios.horas.filter((h) => idsAsignatura.includes(h.asignaturaId));
+    const entrada = conArrastrados(resultado.entrada, [
+      { coleccion: 'asignaturas', elementos: asignaturas },
+      { coleccion: 'examenes', elementos: examenes },
+      { coleccion: 'horas', elementos: horas },
+    ]);
+    snapshotAndSave({
+      estudios: {
+        ...resultado.moduloActualizado,
+        asignaturas: estudios.asignaturas.filter((a) => a.programaId !== id),
+        examenes: estudios.examenes.filter((e) => !idsAsignatura.includes(e.asignaturaId)),
+        horas: estudios.horas.filter((h) => !idsAsignatura.includes(h.asignaturaId)),
+      },
+      papelera: { ...papelera, elementos: [...papelera.elementos, entrada] },
+    });
+  };
   const addAsignatura = (a) => snapshotAndSave({ estudios: { ...estudios, asignaturas: [...estudios.asignaturas, a] } });
   // Único borrado en cascada de la app: quitar una asignatura se lleva por delante sus exámenes
   // y sus horas de estudio, para no dejar registros huérfanos apuntando a algo que ya no existe.
@@ -1251,12 +1289,12 @@ export default function App() {
           />
         );
       case 'sueno':
-        return <SleepView sueno={sueno} onAdd={addSueno} accent={accent} foco={focoPara('sueno')} onFocoConsumido={consumirFoco} />;
+        return <SleepView sueno={sueno} onAdd={addSueno} onDelete={deleteRegistroSueno} accent={accent} foco={focoPara('sueno')} onFocoConsumido={consumirFoco} />;
       case 'entreno':
         return (
           <TrainingView
             calistenia={calistenia} onUpdateSkill={updateSkill}
-            futbol={futbol} onAddPartido={addPartido}
+            futbol={futbol} onAddPartido={addPartido} onDeletePartido={deletePartido}
             videos={calisteniaVideos} onAddVideo={addVideo} onDeleteVideo={deleteVideo} onSetVideoFeedback={setVideoFeedback}
             accent={accent}
             foco={focoPara('entreno')} onFocoConsumido={consumirFoco}
@@ -1271,6 +1309,7 @@ export default function App() {
           <HealthView
             salud={salud} fotos={saludFotos}
             onAddMedida={addMedida} onAddHistorial={addHistorialMedico}
+            onDeleteMedida={deleteMedida} onDeleteHistorial={deleteHistorialMedico}
             onAddFoto={addFoto} onDeleteFoto={deleteFoto}
             protegidoFotos={seguridad.protectedActions.includes('fotos_privadas')}
             pinHash={seguridad.pinHash} pinSalt={seguridad.pinSalt}
@@ -1283,7 +1322,7 @@ export default function App() {
       case 'nutricion':
         return (
           <NutritionView
-            nutricion={nutricion} onAddComida={addComida} onAddFavorito={addFavorito}
+            nutricion={nutricion} onAddComida={addComida} onDeleteComida={deleteComida} onAddFavorito={addFavorito}
             onRegistrarFavorito={registrarFavorito} onEliminarFavorito={eliminarFavorito}
             onSetAgua={setAgua} accent={accent}
           />
@@ -1292,9 +1331,10 @@ export default function App() {
         return (
           <EstudiosView
             estudios={estudios} sueno={sueno}
-            onAddPrograma={addPrograma} onAddAsignatura={addAsignatura} onDeleteAsignatura={deleteAsignatura}
+            onAddPrograma={addPrograma} onDeletePrograma={deletePrograma}
+            onAddAsignatura={addAsignatura} onDeleteAsignatura={deleteAsignatura}
             onAddExamen={addExamen} onUpdateExamen={updateExamen} onDeleteExamen={deleteExamen}
-            onAddHoras={addHoras} accent={accent}
+            onAddHoras={addHoras} onDeleteHoras={deleteHorasEstudio} accent={accent}
             foco={focoPara('estudios')} onFocoConsumido={consumirFoco}
           />
         );

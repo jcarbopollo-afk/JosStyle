@@ -1,4 +1,4 @@
-# JC Fitness — Documentación maestra consolidada
+# JosStyle — Documentación maestra consolidada
 
 > **Qué es esto.** El resultado de analizar, en una sola pasada, TODA la documentación de fases,
 > prompts y especificaciones que existía repartida en `HANDOFF.md` (586 líneas / ~164 KB),
@@ -49,21 +49,22 @@ navegador real.**
 
 ---
 
-## Nota de nomenclatura (leer una vez)
+## Nota de nomenclatura (leer una vez) — RESUELTA
 
-El proyecto recibe **cuatro nombres distintos** según la fuente:
+El proyecto llegó a acumular **cinco nombres**: *JC Fitness*, *JC Lifestyle*, *JC STYLE*, *JosStyle*
+y *Sistema Operativo Personal de Josué*; la interfaz, para rematarlo, no usaba ninguno de los cinco
+y se presentaba como *"Mi Sistema Personal"*.
 
-- **"JC Fitness"** — como lo llama Josué hoy (mensaje de esta sesión).
-- **"JosStyle"** — nombre del repositorio de GitHub y único contenido de `README.md`.
-- **"Sistema Operativo Personal de Josué"** — título de `HANDOFF.md` y de la especificación.
-- **`sistema-personal-josue`** — campo `name` de `package.json`; `sistema-personal-app` es el
-  nombre de la carpeta dentro del zip.
+**Josué lo ha decidido (v1.27.0): el nombre oficial y definitivo es *JosStyle*.** Los demás quedan
+como referencias históricas. Se usa en la interfaz, en esta documentación y en el desarrollo, salvo
+que una especificación concreta indique expresamente otro nombre.
 
-**No es una contradicción de producto, pero sí una decisión pendiente de Josué.** Ver
-`03_CONTRADICCIONES...` → **C-21**. Hasta que él decida, esta documentación usa **JC Fitness**
-como nombre de proyecto y conserva los identificadores técnicos existentes sin tocarlos (renombrar
-`package.json`, el repo o el `manifest.json` es un cambio con efectos reales sobre el despliegue en
-Vercel y sobre la PWA ya instalada, no una edición cosmética).
+Qué se renombró y qué se dejó como estaba (el despliegue en Vercel y el icono ya instalado en el
+iPhone tienen efectos reales que el código no debe cambiar solo): ver `03_CONTRADICCIONES...` →
+**C-21**, y la decisión literal en `06_ENTREGA2_ANALISIS.md` → **D2-08**.
+
+Dentro de `especificaciones/` siguen apareciendo los nombres antiguos: es la transcripción literal
+de lo que escribió Josué y **no se toca** (regla 47).
 
 ---
 

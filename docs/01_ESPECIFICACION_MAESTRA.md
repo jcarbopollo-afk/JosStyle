@@ -1,4 +1,4 @@
-# JC Fitness — ESPECIFICACIÓN MAESTRA CONSOLIDADA
+# JosStyle — ESPECIFICACIÓN MAESTRA CONSOLIDADA
 
 > Documento único de referencia funcional y técnica. Integra, sin recortar, todo lo definido en:
 > el **Prompt Maestro de 21 fases** (HANDOFF §0), la **Especificación funcional de Ajustes /
@@ -1254,6 +1254,11 @@ El resto queda documentado como **visión a largo plazo**, no como trabajo pendi
 46. Actualizar `HANDOFF.md` y `CHANGELOG.md` al terminar cada fase — nunca generarlos de cero.
 47. Entregar siempre el zip actualizado; nunca dejar un turno sin él.
 48. Verificar con `esbuild` antes de entregar (cuando el entorno lo permita).
+49. **Una contradicción nueva entre especificaciones no se resuelve por cuenta propia: se pregunta.**
+    Regla añadida por Josué al empezar la Entrega 2. Detiene *la fase afectada*, no la sesión: se
+    anota en `docs/03` como **⏸ PENDIENTE DE JOSUÉ**, se sigue con las fases que no dependan de ella
+    y la pregunta se le hace al cerrar el turno, corta y con opciones concretas. No aplica a las
+    contradicciones ya listadas con decisión tomada — esas están cerradas y no se reabren.
 
 ---
 

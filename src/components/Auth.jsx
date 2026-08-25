@@ -39,7 +39,7 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center px-6" style={{ background: COLORS.bg }}>
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-extrabold mb-1" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-          Mi Sistema Personal
+          JosStyle
         </h1>
         <p className="text-sm mb-6" style={{ color: COLORS.textMuted }}>
           {mode === 'signin' ? 'Inicia sesión para continuar' : 'Crea tu cuenta'}

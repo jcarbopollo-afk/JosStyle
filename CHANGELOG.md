@@ -1,5 +1,80 @@
 # CHANGELOG.md
 
+## Entrega 2 · ME Fase 4 — Integración global, auditoría y renombrado a JosStyle (v1.27.0)
+
+Cierra el bloque ME (4/4). La especificación no pide construir nada nuevo aquí: pide **revisar todos
+los módulos con las mismas 10 preguntas** y arreglar lo que no las pase. Hacerlo en serio dio ocho
+huecos reales.
+
+### El hallazgo: ocho colecciones dejaban CREAR y no BORRAR
+La pregunta 3 de la auditoría es *"¿sus elementos creados por el usuario se pueden eliminar?"*.
+Siete módulos contestaban que no:
+
+| Módulo | Qué no se podía borrar | Consecuencia real |
+|---|---|---|
+| Sueño | registros de noche | una noche mal tecleada distorsionaba la media para siempre |
+| Economía | movimientos | un gasto duplicado no se podía quitar del balance |
+| Salud | medidas | un peso mal puesto rompía la gráfica de evolución |
+| Salud | historial médico | — |
+| Nutrición | comidas | un escaneo erróneo se quedaba en el total del día |
+| Fútbol | partidos | — |
+| Estudios | horas de estudio | un "8" en vez de un "0.8" inflaba la semana entera |
+
+Y el octavo lo encontró el script, no la revisión a mano: **los programas de Estudios**. Se podían
+crear ("Idiomas", "Selectividad") y no había forma de quitarlos de la barra de pestañas.
+
+### Por qué la auditoría es un script y no un documento
+Un documento que diga "revisado, todo correcto" no vale nada dentro de seis fases. Tres de las diez
+preguntas de la especificación se pueden comprobar solas, y son justo las que fallaron:
+
+- **`scripts/auditar-modulos.mjs`** (nuevo) responde P3 (todo lo creable es borrable), P5 (ningún
+  borrado se salta la papelera), P7/P7b (el catálogo y el código dicen lo mismo, en los dos
+  sentidos) y P9 (toda entrada del catálogo se puede nombrar en la papelera).
+- Entra en `scripts/verificar.sh`, así que **cada módulo nuevo de las 102 fases restantes pasa por
+  ella automáticamente**. Si alguien añade una colección y olvida su borrado, la verificación falla.
+
+### Añadido / cambiado
+- **`BotonBorrar`** en `src/components/ui.jsx`: un único control de borrado para toda la app. No
+  pide confirmación a propósito — desde ME F3 lo borrado va a la papelera y es recuperable; la
+  confirmación se reserva para el borrado definitivo, que sí es irreversible.
+- **Ocho handlers nuevos** en `App.jsx`, todos por papelera. Siete son de una línea; el octavo,
+  `deletePrograma`, es la **segunda cascada** de la app: se lleva sus asignaturas y, con ellas, sus
+  exámenes y sus horas, todo en la **misma** entrada de papelera — restaurar el programa devuelve
+  el árbol entero, no un programa vacío.
+- **`estudios.programas`** entra en `CATALOGO_PAPELERA` (27 colecciones).
+- **Horas de estudio visibles**: hasta ahora se sumaban a un total y no había forma de ver ni
+  corregir un registro concreto. Ahora la asignatura desplegada lista las últimas cinco, con su
+  borrado.
+- **`EstudiosView` sin programas** ya no dice "todavía no has añadido ninguna asignatura a este
+  programa" cuando no hay programa ninguno: dice qué hacer.
+
+### El renombrado: el proyecto se llama JosStyle
+Josué ha cerrado la contradicción **C-21**, abierta desde el primer análisis: el nombre oficial y
+definitivo es **JosStyle**; *JC Fitness*, *JC Lifestyle* y *JC STYLE* quedan como referencias
+históricas.
+
+- Renombrado: pantalla de acceso, `<title>`, nombre en la pantalla de inicio de iOS,
+  `manifest.json` y el campo `name` de `package.json`. La interfaz, curiosamente, no usaba ninguno
+  de los cinco nombres — se presentaba como *"Mi Sistema Personal"*.
+- **No** renombrado, y por qué: el proyecto en Vercel y su URL (cambiarlos afecta a cómo entra
+  Josué a la app), el `start_url` del manifiesto (desvincularía la PWA instalada de sus datos), las
+  citas literales de `especificaciones/` (intocables) y el histórico de este mismo archivo.
+- ⚠️ **Efecto que verá Josué:** el icono que ya tiene en la pantalla de inicio del iPhone
+  **seguirá con el nombre viejo** hasta que lo borre y lo vuelva a añadir. iOS no renombra accesos
+  directos ya creados. No se pierde ningún dato al hacerlo.
+
+### Decisiones de Josué registradas
+Sus ocho respuestas quedan en `docs/06_ENTREGA2_ANALISIS.md` §7 como **D2-01 … D2-08**, y resuelven
+E2-C-01 (gamificación), E2-C-03 (Amazon), E2-C-05 (contenido educativo), E2-C-06 (parte de Inicio) y
+C-21 (nombre). Se añade la **regla 49**: una contradicción nueva entre especificaciones no se
+resuelve por cuenta propia — se pregunta, deteniendo la fase afectada y no la sesión.
+
+### Verificación
+`bash scripts/verificar.sh` → **205 comprobaciones en verde**: build (2606 módulos), 148 pruebas
+unitarias, 5 de auditoría, 52 casos de renderizado y 9 reglas invariantes.
+
+---
+
 ## Entrega 2 · ME Fase 3 — Eliminados recientemente (v1.26.0)
 
 ### Alcance de esta fase, dicho primero

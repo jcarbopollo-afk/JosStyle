@@ -1,4 +1,4 @@
-# JC FITNESS — CHECKLIST GLOBAL · ENTREGA 2 (7 MÓDULOS NUEVOS, 106 FASES)
+# JosStyle — CHECKLIST GLOBAL · ENTREGA 2 (7 MÓDULOS NUEVOS, 106 FASES)
 
 > **Qué es esto.** El desglose verificable de la segunda tanda de especificaciones que Josué ha
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
@@ -2623,38 +2623,61 @@ Sistema global de módulos activables/desactivables, personalización y papelera
 - [-] Fotos, vídeos y archivos de Biblioteca — fuera, igual que ya lo estaban del deshacer:
       viven en Storage y mandarlos a la papelera dejaría ficheros huérfanos
 
-#### ME · Fase 4/4 — INTEGRACIÓN GLOBAL
-- [ ] Analiza la arquitectura actual.
-- [ ] Identifica los módulos existentes.
-- [ ] Identifica cómo se almacenan.
-- [ ] Identifica las relaciones entre datos.
-- [ ] Identifica la navegación.
-- [ ] Identifica el Dashboard.
-- [ ] Identifica los sistemas actuales de eliminación.
-- [ ] PRINCIPIO FUNDAMENTAL
-- [ ] PAPELERA / BOTÓN DE ELIMINAR
-- [ ] CONFIRMACIÓN DE ELIMINACIÓN
-- [ ] ELIMINACIÓN PERMANENTE
-- [ ] El elemento debe desaparecer inmediatamente de la interfaz.
-- [ ] Debe eliminarse también de la base de datos/estado correspondiente.
-- [ ] Debe mantenerse sincronizado en todos los dispositivos.
-- [ ] No debe reaparecer después de recargar la página.
-- [ ] No debe reaparecer después de cerrar y abrir la aplicación.
-- [ ] No debe quedar como un elemento “fantasma” en otra sección.
-- [ ] Las estadísticas relacionadas deben actualizarse correctamente.
-- [ ] CUIDADO CON LAS RELACIONES
-- [ ] ELIMINAR ELEMENTOS PERSONALIZADOS
-- [ ] EDITAR + ELIMINAR
-- [ ] COMPONENTE REUTILIZABLE
-- [ ] MENÚ DE ACCIONES
-- [ ] BORRADO EN TODOS LOS MÓDULOS
-- [ ] DATOS HISTÓRICOS
-- [ ] ELIMINACIÓN Y ESTADÍSTICAS
-- [ ] PAPELERA / UNDO
-- [ ] SEGURIDAD
-- [ ] FUTURAS FUNCIONALIDADES
-- [ ] NO ROMPER NADA EXISTENTE
-- [ ] AUDITORÍA FINAL
+#### ME · Fase 4/4 — INTEGRACIÓN GLOBAL ✅ COMPLETADA (v1.27.0)
+- [x] Analiza la arquitectura actual. — 21 módulos de datos en `app_data`, sin router, 5 pestañas.
+- [x] Identifica los módulos existentes. — 19 en `MORE_NAV`, 4 áreas, 20 `case` de `renderTab`.
+- [x] Identifica cómo se almacenan. — `saveData` sobrescribe, `loadData` no fusiona; 22 claves.
+- [x] Identifica las relaciones entre datos. — dos cascadas reales: programa → asignatura →
+      exámenes/horas. Ninguna otra colección referencia ids de otra.
+- [x] Identifica la navegación. — comprobada automáticamente por `scripts/comprobar-navegacion.mjs`.
+- [x] Identifica el Dashboard. — respeta `dashboardOcultos` y `modulosDesactivados` desde ME F1/F2.
+- [x] Identifica los sistemas actuales de eliminación. — eran 22 `.filter()` repetidos; hoy hay
+      **uno**: `eliminarConPapelera(modulo, coleccion, id)`, más 2 cascadas.
+- [x] PRINCIPIO FUNDAMENTAL — todo lo que Josué crea, Josué lo puede borrar. Verificado por
+      `scripts/auditar-modulos.mjs` (P3), no a ojo.
+- [x] PAPELERA / BOTÓN DE ELIMINAR — `BotonBorrar` en `components/ui.jsx`, mismo control en todas
+      las listas.
+- [x] CONFIRMACIÓN DE ELIMINACIÓN — deliberadamente **no** la pide el borrado normal (es
+      reversible vía papelera); sí la piden el borrado definitivo y vaciar la papelera.
+- [x] ELIMINACIÓN PERMANENTE — `eliminarDefinitivo` + `vaciarPapelera` + purga por retención.
+- [x] El elemento debe desaparecer inmediatamente de la interfaz. — estado local + `snapshotAndSave`.
+- [x] Debe eliminarse también de la base de datos/estado correspondiente. — misma llamada.
+- [x] Debe mantenerse sincronizado en todos los dispositivos. — va por `app_data`, como el resto.
+- [x] No debe reaparecer después de recargar la página.
+- [x] No debe reaparecer después de cerrar y abrir la aplicación.
+- [x] No debe quedar como un elemento “fantasma” en otra sección. — las cascadas se llevan los
+      hijos; comprobado por P5 de la auditoría.
+- [x] Las estadísticas relacionadas deben actualizarse correctamente. — todas se derivan del estado,
+      no se guardan agregados.
+- [x] CUIDADO CON LAS RELACIONES — `conArrastrados` guarda los hijos en la MISMA entrada de
+      papelera, así que restaurar devuelve el árbol entero (asignatura → exámenes + horas;
+      programa → asignaturas + exámenes + horas).
+- [x] ELIMINAR ELEMENTOS PERSONALIZADOS — temas de color guardados y favoritos de Nutrición tienen
+      su propio borrado; documentado por qué no van a la papelera.
+- [x] EDITAR + ELIMINAR — conviven en la misma fila, sin menú intermedio.
+- [x] COMPONENTE REUTILIZABLE — `BotonBorrar`.
+- [x] MENÚ DE ACCIONES — **descartado a propósito**: con una sola acción destructiva por fila, un
+      menú de tres puntos añade un toque sin añadir nada (regla 8).
+- [x] BORRADO EN TODOS LOS MÓDULOS — **la auditoría encontró 7 huecos reales** y se taparon los 7:
+  - [x] Sueño — registros de noche
+  - [x] Economía — movimientos
+  - [x] Salud — medidas
+  - [x] Salud — historial médico
+  - [x] Nutrición — comidas
+  - [x] Fútbol — partidos
+  - [x] Estudios — horas de estudio
+  - [x] Estudios — **programas** (lo encontró el script, no la revisión a mano)
+- [x] DATOS HISTÓRICOS — nada se borra en cascada "por antigüedad"; solo la purga de la papelera.
+- [x] ELIMINACIÓN Y ESTADÍSTICAS — ver arriba: derivadas, se recalculan solas.
+- [x] PAPELERA / UNDO — los dos sistemas conviven: `papelera` entra en el snapshot de deshacer, así
+      que no pueden desincronizarse.
+- [x] SEGURIDAD — lo borrado de Relación se enmascara en la papelera mientras el módulo esté
+      bloqueado (`describirEntrada` + `privado: true`).
+- [x] FUTURAS FUNCIONALIDADES — añadir un módulo a la papelera es **una línea** en
+      `CATALOGO_PAPELERA`; la auditoría avisa si alguien olvida ponerla.
+- [x] NO ROMPER NADA EXISTENTE — 205 comprobaciones verdes (`bash scripts/verificar.sh`).
+- [x] AUDITORÍA FINAL — **ejecutable**, no un documento: `scripts/auditar-modulos.mjs` responde las
+      preguntas P3, P5, P7, P7b y P9 en cada verificación.
 
 ---
 

@@ -1,4 +1,4 @@
-# JC Fitness — LÍNEAS DE TRABAJO, HISTORIA Y ORDEN DE EJECUCIÓN
+# JosStyle — LÍNEAS DE TRABAJO, HISTORIA Y ORDEN DE EJECUCIÓN
 
 > Este documento responde a tres preguntas: **¿qué fases existen y de dónde vienen?**,
 > **¿qué está construido de verdad?** y **¿en qué orden hay que hacer lo que queda?**
@@ -125,6 +125,18 @@ escribir código.
 | v1.20.0 | **D** | Dashboard Centro de Control: 3 niveles, deep-link en 6 vistas, acciones rápidas, `dashboardOcultos` |
 | v1.21.0 | **D** | `IndicadorContexto` acordeón + acceso directo a Agenda |
 | v1.22.0 | **L** + **C** | Limpieza de notas internas + fechas recurrentes de Relación |
+
+### Track E2 — Entrega 2 (7 módulos nuevos, 106 fases)
+
+| Versión | Bloque | Contenido |
+|---|---|---|
+| v1.23.0 | **R0** | Modelo de IA vigente, puntuación diaria real, densidad de interfaz real, saneado documental. **Además: `npm` volvió a funcionar** — desde aquí todo se compila y se prueba de verdad (`scripts/verificar.sh`) |
+| v1.24.0 | **ME F1** | Módulos activables/desactivables: catálogo con descripciones, dependencias, aviso reforzado, y el Dashboard respetando por fin lo desactivado |
+| v1.25.0 | **ME F2** | Personalización total: **"Mi pantalla de inicio"** (cierra **R3.1**), perfiles rápidos (Completo/Estudiante/Fitness/Minimalista) |
+| v1.26.0 | **ME F3** | Papelera global "Eliminados recientemente": 26 colecciones, retención configurable, restauración en su posición original, Relación enmascarada mientras esté bloqueada |
+| v1.27.0 | **ME F4** | Integración global y **auditoría ejecutable**. Tapó 8 huecos de borrado que nadie había visto, añadió la 27ª colección a la papelera (programas de Estudios) y aplicó el **renombrado a JosStyle** |
+
+🔒 **El bloque ME (4/4) está cerrado.** Quedan 102 fases de la Entrega 2.
 
 ---
 
@@ -323,18 +335,33 @@ Dos piezas quedan **enganchadas a esta decisión**:
 
 ## PARTE D — Resumen ejecutivo del orden
 
+**Entrega 1 — lo que queda:**
+
 ```
 R0  Correcciones críticas + saneado documental   ✅ COMPLETADO (v1.23.0)
 R1  Verificación real en el dispositivo de Josué ← en paralelo, depende de él
 R2  Cerrar Calendario Fase 3
-R3  Pendientes baratos de Ajustes (empezando por el editor de dashboardOcultos)
+R3  Pendientes baratos de Ajustes                ✅ R3.1 hecho en v1.25.0
 R4  Terminar de verdad la Fase 20 del Prompt Maestro
 R5  Perfil, unidades, i18n
 R6  Apariencia y accesibilidad avanzadas
 R7  Notificaciones a fondo
 R8  Seguridad y privacidad avanzadas (lo posible sin servidor)
 R9  Bloqueado por infraestructura
-R10 AXION — requiere conversación de diseño primero
+R10 AXION — aplazado por decisión de Josué (D2-06) hasta terminar la Entrega 2
+```
+
+**Entrega 2 — el orden que Josué ha confirmado (D2-05):**
+
+```
+E2-0  Verificación de la base                    ✅ COMPLETADO (v1.23.0, bloque R0)
+E2-1  ME · Módulos activables + Eliminados (4)   ✅ COMPLETADO (v1.24.0 → v1.27.0)
+E2-2  BI · Buscador + IA + Inicio (4)            ← SIGUIENTE
+E2-3  AR · Armario (4)
+E2-4  FO · Fondos y Fotografías (12)
+E2-5  SO · Sonido (5)  +  RA · Rachas (4)        ← dos módulos separados (D2-01)
+E2-6  HT · Horario Top (12)
+E2-7  EH · Estilo de Hombre (65)                 ← el último, por dependencias
 ```
 
 **Si Josué pide algo concreto, eso manda sobre este orden.** Este es el orden por defecto para

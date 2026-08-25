@@ -4,13 +4,13 @@ import { Camera, Trash2, AlertCircle, HeartPulse } from 'lucide-react';
 import { COLORS, TIPOS_HISTORIAL_MEDICO } from '../tokens';
 import { uid, formatFecha, todayISO } from '../lib/helpers';
 import { getSignedPhotoUrl } from '../lib/supabase';
-import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, ToggleTab, EmptyHint, AIPanel, PinGate } from '../components/ui';
+import { BotonBorrar, Card, SectionTitle, Field, TextInput, Select, PrimaryButton, ToggleTab, EmptyHint, AIPanel, PinGate } from '../components/ui';
 
 function diasDesde(fechaISO) {
   return Math.floor((Date.now() - new Date(fechaISO + 'T00:00:00').getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function MedidasTab({ medidas, onAdd, accent }) {
+function MedidasTab({ medidas, onAdd, accent , onDeleteMedida }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ peso: '', grasaCorporal: '', frecuenciaCardiaca: '', tensionSistolica: '', tensionDiastolica: '', notas: '' });
 
@@ -88,7 +88,10 @@ function MedidasTab({ medidas, onAdd, accent }) {
         {medidas.length === 0 && <EmptyHint text="Todavía no has registrado ninguna medida." />}
         {[...medidas].reverse().slice(0, 6).map((e) => (
           <Card key={e.id} style={{ padding: '1rem' }}>
-            <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{formatFecha(e.fecha)}</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{formatFecha(e.fecha)}</p>
+              <BotonBorrar onClick={() => onDeleteMedida(e.id)} label="Eliminar medida" />
+            </div>
             <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
               {[e.peso && `${e.peso} kg`, e.grasaCorporal && `${e.grasaCorporal}% grasa`, e.frecuenciaCardiaca && `${e.frecuenciaCardiaca} ppm`, e.tensionSistolica && `${e.tensionSistolica}/${e.tensionDiastolica || '?'} tensión`].filter(Boolean).join(' · ') || 'Sin valores numéricos'}
             </p>
@@ -100,7 +103,7 @@ function MedidasTab({ medidas, onAdd, accent }) {
   );
 }
 
-function HistorialTab({ historial, onAdd, accent }) {
+function HistorialTab({ historial, onAdd, accent , onDeleteHistorial }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ tipo: TIPOS_HISTORIAL_MEDICO[0], descripcion: '' });
 
@@ -135,9 +138,12 @@ function HistorialTab({ historial, onAdd, accent }) {
         {historial.length === 0 && <EmptyHint text="Todavía no hay nada en tu historial médico." />}
         {[...historial].reverse().map((e) => (
           <Card key={e.id} style={{ padding: '1rem' }}>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{e.tipo}</p>
-              <p className="text-xs" style={{ color: COLORS.textMuted }}>{formatFecha(e.fecha)}</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold min-w-0 truncate" style={{ color: COLORS.text }}>{e.tipo}</p>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <p className="text-xs" style={{ color: COLORS.textMuted }}>{formatFecha(e.fecha)}</p>
+                <BotonBorrar onClick={() => onDeleteHistorial(e.id)} label="Eliminar entrada médica" />
+              </div>
             </div>
             <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{e.descripcion}</p>
           </Card>
@@ -226,7 +232,7 @@ function FotosTab({ fotos, onAddFoto, onDeleteFoto, accent }) {
 // desactiva desde Seguridad, esta pestaña se ve directo, sin PinGate — el resto de props
 // (`pinHash`/`pinSalt`/`desbloqueadoFotos`/`onDesbloquearFotos`/`onOlvidoPin`) vienen de App.jsx,
 // que es quien de verdad decide y guarda el estado de protección (un único sistema).
-export default function HealthView({ salud, fotos, onAddMedida, onAddHistorial, onAddFoto, onDeleteFoto, protegidoFotos, pinHash, pinSalt, desbloqueadoFotos, onDesbloquearFotos, onOlvidoPin, accent }) {
+export default function HealthView({ salud, fotos, onAddMedida, onDeleteMedida, onAddHistorial, onDeleteHistorial, onAddFoto, onDeleteFoto, protegidoFotos, pinHash, pinSalt, desbloqueadoFotos, onDesbloquearFotos, onOlvidoPin, accent }) {
   const [sub, setSub] = useState('medidas');
 
   return (
@@ -241,8 +247,8 @@ export default function HealthView({ salud, fotos, onAddMedida, onAddHistorial, 
         <ToggleTab active={sub === 'fotos'} onClick={() => setSub('fotos')} accent={accent}>Fotos</ToggleTab>
       </div>
 
-      {sub === 'medidas' && <MedidasTab medidas={salud.medidas} onAdd={onAddMedida} accent={accent} />}
-      {sub === 'historial' && <HistorialTab historial={salud.historial} onAdd={onAddHistorial} accent={accent} />}
+      {sub === 'medidas' && <MedidasTab medidas={salud.medidas} onAdd={onAddMedida} accent={accent} onDeleteMedida={onDeleteMedida} />}
+      {sub === 'historial' && <HistorialTab historial={salud.historial} onAdd={onAddHistorial} accent={accent} onDeleteHistorial={onDeleteHistorial} />}
       {sub === 'fotos' && (
         protegidoFotos ? (
           <PinGate

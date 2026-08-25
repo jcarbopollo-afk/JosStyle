@@ -1,4 +1,4 @@
-# JC FITNESS — ENTREGA 2: ANÁLISIS DE ALCANCE, SOLAPAMIENTOS Y VIABILIDAD
+# JosStyle — ENTREGA 2: ANÁLISIS DE ALCANCE, SOLAPAMIENTOS Y VIABILIDAD
 
 > Análisis de la segunda tanda de especificaciones (7 módulos, 106 fases, 50 016 líneas) frente al
 > proyecto real en v1.22.0.
@@ -109,7 +109,7 @@ Estos no tienen equivalente y son trabajo real de creación:
 Estas chocan con reglas que Josué mismo estableció antes. **Ninguna se resuelve sola: hay que
 preguntárselo.**
 
-### E2-C-01 · 🔴 Gamificación sonora vs. "no sobregamificar"
+### ✅ E2-C-01 · Gamificación sonora vs. "no sobregamificar" — **RESUELTA** (ver D2-02 en §7)
 
 **Choque:** SR pide *"XP, recompensas, niveles, logros, rachas, milestones, récords personales"* con
 identidad sonora propia y un "Centro de Rachas" con progresión.
@@ -137,7 +137,7 @@ fase futura lo indique expresamente"), y las fases 56–61 son esas fases. **Per
 las fases 7–55 deben construirse **sin IA**, con reglas y datos, tal y como pide el apartado 6. Meter
 IA antes de la fase 56 sería romper la especificación.
 
-### E2-C-03 · 🟠 Sistema de productos con afiliación de Amazon
+### ✅ E2-C-03 · Sistema de productos con afiliación de Amazon — **RESUELTA** (ver D2-03 en §7)
 
 **Novedad sin precedente:** EH introduce un sistema transversal de productos con **enlaces de
 afiliado**, packs, lista de compra, comparaciones y tiendas.
@@ -161,13 +161,13 @@ iOS no puede leer HealthKit. La regla de la propia especificación resuelve el c
 dispositivo, esas funciones simplemente no aparecen"*), pero conviene decirlo claro: **con la
 arquitectura actual, no aparecerán nunca.**
 
-### E2-C-05 · 🟡 "Contenido educativo integrado en la aplicación"
+### ✅ E2-C-05 · "Contenido educativo integrado en la aplicación" — **RESUELTA** (ver D2-04 en §7)
 
 EH pide una biblioteca de guías, artículos y tutoriales *"preparado e integrado en la aplicación"*,
 sin IA. Eso significa **escribir y mantener contenido editorial** — decenas o cientos de artículos.
 No es trabajo de programación. ❓ Preguntar quién los escribe.
 
-### E2-C-06 · 🟡 Cuatro sistemas de "ocultar cosas"
+### 🟡 E2-C-06 · Cuatro sistemas de "ocultar cosas" — **resuelta en su parte de Inicio** (D2-07)
 
 Si se implementa todo tal cual, la app tendría: `personalizacion.ocultos` (módulos de "Más"),
 `personalizacion.dashboardOcultos` (tarjetas del Dashboard), los módulos activables de **ME**, y las
@@ -229,25 +229,107 @@ algo falle, no se sabrá si el fallo es de lo nuevo o de lo que ya había.
 
 ---
 
-## 7. Preguntas que hay que hacerle a Josué antes de empezar
+## 7. Decisiones de Josué — RESUELTAS
 
-Ninguna de estas la puede decidir la IA sin inventarse su criterio:
+Las ocho preguntas de esta sección se le plantearon antes de empezar y **las ha contestado todas**.
+Sus respuestas son vinculantes y están recogidas aquí en su forma operativa. Ninguna se reabre.
 
-1. **¿Sonido y Rachas son uno o dos módulos?** (bloqueante para E2-5)
-2. **¿Se deroga la regla de "no sobregamificar"?** XP, niveles y milestones contradicen dos reglas
-   vigentes (E2-C-01).
-3. **Sistema de productos con afiliación**: ¿de dónde sale el catálogo, quién lo mantiene, tiene
-   cuenta de afiliados? (E2-C-03)
-4. **Contenido educativo**: ¿quién escribe las guías y artículos? (E2-C-05)
-5. **¿En qué orden los quiere?** El propuesto en §6 es por dependencia técnica; si él prefiere
-   empezar por Estilo de Hombre porque es lo que más le ilusiona, es su decisión — pero conviene que
-   sepa que habrá que rehacer partes.
-6. **¿Qué pasa con AXION?** Sigue pendiente y bloqueado desde la Entrega 1, y ahora compite por
-   prioridad con 106 fases nuevas.
-7. **El rediseño de la pantalla de Inicio** que menciona al final del contexto de EH: ¿es la BI ·
-   Fase 1, es ME · Fase 2, o es una petición aparte? Se solapan las tres.
-8. **Nombre del proyecto**: la Entrega 2 introduce un cuarto nombre, **"JC Lifestyle"**, usado en AR
-   y SR junto a "JC Fitness". Ya eran cuatro (**C-21**); ahora son cinco.
+### D2-01 · Sonido y Rachas son **dos módulos independientes**
+
+> *"Son dos módulos independientes, aunque estén relacionados. Cada uno debe mantener su propia
+> estructura y fases. No mezclar especificaciones."*
+
+**Consecuencia:** el bloque E2-5 se parte en dos — **SO · Sonido** (5 fases) y **RA · Rachas**
+(4 fases), con su propia numeración, su propia checklist y su propia clave en `app_data`. La
+numeración solapada que describe §5 se resuelve así, no fusionando. Ver también E2-C-01.
+
+### D2-02 · La regla de "no sobregamificar" **NO se deroga**
+
+> *"No se deroga la regla de no sobregamificar. Nada de puntos, niveles ni monedas en Bienestar. Si
+> Sonido necesita XP/niveles/recompensas, debe quedar limitado exclusivamente al sistema de
+> Rachas/Sonido y no contaminar el resto de la app."*
+
+**Consecuencia:** **E2-C-01 queda resuelta.** La regla 34 sigue vigente sin excepciones en Bienestar
+Digital. XP, niveles y recompensas existen **únicamente dentro de Sonido y Rachas** y no pueden:
+aparecer en el Dashboard como puntuación global, sumar a la puntuación diaria, mostrarse en hubs de
+otras áreas, ni convertirse en moneda que se gaste en ningún sitio. Es una frontera, no un permiso.
+
+### D2-03 · Amazon: **arquitectura sí, afiliación no**
+
+> *"Por ahora NO implementar afiliación ni catálogo comercial real. Dejar el sistema
+> preparado/arquitecturado para poder añadirlo posteriormente. No inventar productos, API, cuenta de
+> afiliados ni catálogo."*
+
+**Consecuencia:** **E2-C-03 queda resuelta.** Se construye la capa de datos y la interfaz que un
+catálogo usaría, con **cero productos dentro**. Prohibido explícitamente: inventar productos, URLs
+de afiliado, precios o valoraciones. Donde la especificación pida "recomendaciones de productos", la
+pantalla dice en una frase que todavía no hay catálogo — nunca un listado de ejemplo (regla 8).
+
+### D2-04 · Contenido educativo: **estructura ahora, contenido después**
+
+> *"El contenido lo definiremos/generaremos nosotros progresivamente. De momento, crear la
+> estructura preparada para introducir guías y artículos, sin bloquear el desarrollo por tener todo
+> el contenido escrito."*
+
+**Consecuencia:** **E2-C-05 queda resuelta.** Las guías y artículos van en un módulo de datos
+separado del código de la vista, para poder añadirlos sin tocar componentes. Una sección sin
+artículos todavía **no se muestra vacía con un "próximamente"**: o no aparece, o dice en una frase
+qué contendrá. Ninguna fase se da por bloqueada por falta de contenido.
+
+### D2-05 · El orden de §6 se acepta
+
+> *"Estoy de acuerdo. Estilo de Hombre debe ir de los últimos, respetando sus dependencias con
+> Armario, Fotos, Calendario y módulos activables."*
+
+**Consecuencia:** el orden E2-0 → E2-7 de §6 queda confirmado, con EH al final.
+
+### D2-06 · AXION sigue pendiente, y **no bloquea**
+
+> *"Mantenerlo pendiente, pero no dejar que bloquee las 106 fases actuales. Prioridad: completar
+> primero el desarrollo actual; AXION se retomará después."*
+
+**Consecuencia:** el bloque X de `docs/02_ORDEN_DE_FASES.md` se queda donde está, después de la
+Entrega 2 completa. No se avanza en él ni se usa como excusa para no avanzar en lo demás.
+
+### D2-07 · Inicio: **un solo sistema, no tres**
+
+> *"Sí, hay solapamiento. No hacer tres sistemas distintos. Integrar el rediseño de Inicio con el
+> Buscador, Módulos y dashboardOcultos, reutilizando lo existente y evitando duplicaciones."*
+
+**Consecuencia:** **E2-C-06 queda resuelta en su parte de Inicio.** El rediseño de la pantalla de
+Inicio **no es un módulo nuevo**: es trabajo dentro de BI (E2-2), y debe apoyarse en lo que ME ya
+construyó — `personalizacion.dashboardOcultos`, `personalizacion.ocultos` y el catálogo de acciones
+rápidas. Prohibido crear una cuarta lista de "qué se ve en Inicio".
+
+### D2-08 · El nombre oficial es **JosStyle**
+
+> *"El nombre oficial y definitivo del proyecto será JosStyle. JC Fitness, JC Lifestyle y JC STYLE
+> quedan como nombres anteriores o referencias históricas. A partir de ahora, utiliza JosStyle como
+> nombre principal del proyecto, tanto en la interfaz como en la documentación y desarrollo, salvo
+> que una especificación concreta indique expresamente otro nombre."*
+
+**Consecuencia:** **C-21 queda resuelta.** Ver la nota de aplicación en `docs/03` (C-21) para qué se
+ha renombrado y qué se ha dejado intencionadamente como está.
+
+---
+
+## 7.bis Regla de trabajo añadida por Josué
+
+> *"Si encuentras cualquier otra contradicción entre las 100 prompts, no la resuelvas por tu cuenta:
+> detente y pregúntamela antes de implementar esa parte."*
+
+Esto **cambia el protocolo de ejecución automática**. Hasta ahora, encontrar una contradicción se
+resolvía documentándola y eligiendo la lectura más conservadora. A partir de ahora:
+
+1. Una contradicción **nueva** entre especificaciones (no una ya listada en `docs/03` con decisión
+   tomada) **detiene la fase afectada**, no la sesión entera.
+2. Se anota en `docs/03_CONTRADICCIONES_DUPLICADOS_DEPENDENCIAS.md` con su identificador y se marca
+   **⏸ PENDIENTE DE JOSUÉ**.
+3. Se sigue con las fases que **no** dependan de ella. Pararlo todo por una contradicción de un
+   módulo sería justo lo contrario de lo que Josué ha pedido.
+4. La pregunta se le hace en el mensaje de cierre del turno, corta y con las opciones concretas.
+
+Esta regla queda incorporada como **regla 49** en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 ---
 
@@ -264,5 +346,6 @@ Tres cosas harían el proceso mucho más sólido:
    nuevas encima de código nunca ejecutado.
 2. **Empezar por los módulos pequeños que amplían lo existente** (ME, BI) en lugar de por el más
    grande. Dan resultado visible pronto y validan que la integración con lo ya construido funciona.
-3. **Resolver las 8 preguntas de §7 primero.** Varias son decisiones de producto que, tomadas mal,
+3. ~~**Resolver las 8 preguntas de §7 primero.**~~ ✅ Hecho: Josué las ha contestado todas y sus
+   decisiones están en §7 como D2-01 … D2-08. Varias son decisiones de producto que, tomadas mal,
    cuestan semanas de trabajo rehecho.

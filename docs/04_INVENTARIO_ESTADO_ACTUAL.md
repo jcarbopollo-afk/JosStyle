@@ -1,4 +1,4 @@
-# JC Fitness — INVENTARIO DEL ESTADO ACTUAL
+# JosStyle — INVENTARIO DEL ESTADO ACTUAL
 
 > Qué existe hoy (v1.22.0), archivo por archivo y clave por clave, con la etiqueta de qué hay que
 > hacer con cada pieza para el trabajo pendiente.
@@ -97,7 +97,7 @@ Animaciones del sistema de navegación, `--ease-premium`, reglas `html[data-radi
 
 ---
 
-## 4. `src/lib/` — 18 módulos
+## 4. `src/lib/` — 20 módulos
 
 | Archivo | Exports | Estado |
 |---|---|---|
@@ -120,7 +120,8 @@ Animaciones del sistema de navegación, `--ease-premium`, reglas `html[data-radi
 | `videoFrames.js` | `extractFramesFromSrc` | **EXISTE**. 4 fotogramas con `<video>` + `<canvas>` |
 | — | **`i18n.js`** | ⬜ **CREAR** (R5.6) |
 | — | **`unidades.js`** | ⬜ **CREAR** (R5.3) — conversión cm/ft-in, kg/lb, °C/°F, km/mi con unidad base interna |
-| — | **`puntuacion.js`** | ⬜ **CREAR** (R4.1) — puntuación diaria real sobre el día calendario |
+| `puntuacion.js` | `puntuacionDelDia`, `mensajePuntuacion`, `AREAS_PUNTUACION` | ✅ **CREADO** (v1.23.0, R0.2). Puro y probado con Node — 27 comprobaciones |
+| `papelera.js` | `CATALOGO_PAPELERA` (27 colecciones), `claveCatalogo`, `prepararEliminacion`, `prepararRestauracion`, `conArrastrados`, `purgarCaducados`, `describirEntrada`, `tiempoDesde`, `diasRestantes`, `ordenarPapelera`, `OPCIONES_RETENCION`, `DEFAULT_PAPELERA` | ✅ **CREADO** (v1.26.0, ME F3). Puro y probado con Node — 73 comprobaciones |
 | — | **`revisionPeriodica.js`** | ⬜ **CREAR** (R4.2) — revisión semanal/mensual/anual, solo lectura sobre correlaciones/predicciones/logros |
 
 ---
@@ -183,18 +184,20 @@ Animaciones del sistema de navegación, `--ease-premium`, reglas `html[data-radi
 
 ---
 
-## 7. Estado de las 22 claves de datos
+## 7. Estado de las 23 claves de datos
 
 Ver `01_ESPECIFICACION_MAESTRA.md` §4.1 para la tabla completa. Resumen de las que **cambiarán**:
 
 | Clave | Cambio pendiente | Tarea |
 |---|---|---|
-| `personalizacion` | Marcar `pinExtra` vestigial; unificar `ocultos` / `dashboardOcultos` en una sola pantalla | R0.6, R3.1 |
+| `personalizacion` | ✅ `pinExtra` marcado vestigial (R0.6). ✅ `ocultos` y `dashboardOcultos` editables desde una sola pantalla (Personalización, ME F1+F2) — **siguen siendo dos listas a propósito**: desactivar saca de todas partes, ocultar solo saca de Inicio | ✅ hecho |
 | `productividad` | **Añadir periodicidad** a hábitos y rutinas | R2.1 |
 | `perfil` | Añadir `fotoPath`; sincronización de `peso` con Salud | R5.1, R5.2 |
 | `notificaciones` | Se amplía mucho: prioridades, tipos, horarios por día, sonidos, historial | R7 |
 | `seguridad` | Ampliar `ACCIONES_PROTEGIBLES`; longitud de PIN; intentos fallidos; códigos de recuperación | R8 |
 | `ajustes.apariencia` | `densidad` con efecto real | R6.1 |
+| `papelera` | ✅ **CREADA** (v1.26.0): `{ elementos: [], retencionDias: 30 }`. Es la clave 22ª → **hoy son 23**. Entra en el snapshot de deshacer, para que papelera y undo no puedan desincronizarse | ✅ hecho |
+| `estudios` | ✅ `programas` ya se puede borrar (v1.27.0), con cascada a asignaturas → exámenes → horas | ✅ hecho |
 | — | ⬜ **CREAR** `configBackup` (copia de seguridad versionada de configuración) | R3.4 |
 | — | ⬜ **CREAR** `auditoria` (registro de cambios de configuración y eventos de seguridad) | R3.12, R8.7 |
 
@@ -207,12 +210,31 @@ Ver `01_ESPECIFICACION_MAESTRA.md` §4.1 para la tabla completa. Resumen de las 
 | **Fases 1–7** | ✅ **Probadas de verdad por Josué en su dispositivo** |
 | **Fases 8–21** | 🟡 Código completo + **bundle `esbuild` sin errores**. Nunca ejecutadas |
 | **v1.0.1 → v1.22.0** (todo A, N, V, C, S, U, D, L) | 🟡 **Ni siquiera `esbuild`.** Solo: balance de paréntesis/llaves por script, cruce manual de imports contra firmas reales, y —en V1/V2/V3/V4— **ejecución real con Node** de las funciones puras del motor de color |
-| **Ninguna versión** | ❌ Nunca se ha renderizado la app en un navegador dentro del entorno de la IA |
+| **v1.23.0 → v1.27.0** (R0 + bloque ME) | ✅ **`npm` volvió a funcionar.** `vite build` real (2606 módulos), 148 pruebas unitarias con Node, 5 comprobaciones de auditoría, **52 casos de renderizado real** con `react-dom/server` y 9 reglas invariantes — 205 en total, todas verdes |
+| **Ninguna versión** | ❌ Nunca se ha abierto la app en un navegador de verdad, con Supabase y con los dedos de Josué |
 
-**Lo que esto significa en la práctica:** todo lo construido en los últimos 22 incrementos es
-**código cuidadosamente revisado a mano, no código probado**. La primera ejecución real de casi todo
-sigue pendiente (**R1**). Cuando Josué reporte un fallo, **pedirle el mensaje exacto** — es la única
-fuente de verdad disponible.
+**Lo que esto significa en la práctica:** hasta v1.22.0, todo era **código cuidadosamente revisado a
+mano, no probado**. Desde v1.23.0 el proyecto **compila y se prueba de verdad en cada fase**
+(`bash scripts/verificar.sh`), y eso ya ha encontrado **catorce bugs reales** que la revisión a mano
+no vio — cinco en R0 (entre ellos una notificación falsa: en JavaScript `null < 7` es `true`), uno
+en ME F1 y ocho huecos de borrado en ME F4.
+
+Lo que las pruebas **no** cubren, y sigue pendiente de **R1**: el comportamiento con Supabase real,
+la sincronización entre dispositivos, los permisos del navegador, el aspecto en un iPhone y el
+recorrido completo tocando la pantalla. Cuando Josué reporte un fallo, **pedirle el mensaje exacto**
+— sigue siendo la única fuente de verdad para todo eso.
+
+### `scripts/` — infraestructura de verificación (creada en v1.23.0, ampliada después)
+
+| Archivo | Qué hace |
+|---|---|
+| `verificar.sh` | Punto de entrada: build + 5 suites de pruebas + 9 reglas invariantes. Sale con código 1 si algo falla |
+| `resolver-vite.mjs` | Hook de resolución ESM: deja ejecutar los módulos de `src/` con Node sin cambiar la convención de imports del proyecto |
+| `smoke.mjs` | Compila un script JSX con esbuild y lo ejecuta; stubs de `pdfjs-dist`, `@zxing/library` e imports `?url` |
+| `smoke-vistas.jsx` | Renderiza 13 vistas × 4 escenarios (vacío / con datos / datos parciales / todo desactivado) |
+| `comprobar-navegacion.mjs` | Cruza `MORE_NAV` × `AREAS_NAV` × los `case` de `renderTab` |
+| `auditar-modulos.mjs` | **Auditoría de ME F4**: todo lo creable es borrable, nada se salta la papelera, el catálogo y el código coinciden |
+| `test-puntuacion.mjs` · `test-personalizacion.mjs` · `test-papelera.mjs` · `test-modulos.jsx` | 27 + 28 + 73 + 20 comprobaciones |
 
 **Lo único verificado ejecutándolo:** `colorEngine.js` y `aplicarTema()` con Node (round-trips
 exactos, contraste AA garantizado en los 24 casos de acento × tema, casos límite de fondo/texto casi

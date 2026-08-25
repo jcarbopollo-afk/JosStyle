@@ -4,7 +4,7 @@ import { COLORS } from '../tokens';
 import { uid, formatFecha, todayISO } from '../lib/helpers';
 import { askAI, AI_SYSTEM } from '../lib/ai';
 import { correlacionSuenoEstudio } from '../lib/correlaciones';
-import { Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
+import { Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, BotonBorrar, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
 
 function diasHasta(fechaISO) {
   return Math.ceil((new Date(fechaISO + 'T00:00:00').getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -184,7 +184,7 @@ function ExamenItem({ examen, onUpdate, onDelete, accent, forzarAbierta, onFocoC
   );
 }
 
-function AsignaturaCard({ asignatura, examenes, horas, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteAsignatura, accent, focoExamenId, onFocoConsumido }) {
+function AsignaturaCard({ asignatura, examenes, horas, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, onDeleteAsignatura, accent, focoExamenId, onFocoConsumido }) {
   const [abierto, setAbierto] = useState(false);
   const [showExamenForm, setShowExamenForm] = useState(false);
   const [examenForm, setExamenForm] = useState({ tema: '', fecha: todayISO(), notaObjetivo: '' });
@@ -200,6 +200,8 @@ function AsignaturaCard({ asignatura, examenes, horas, onAddExamen, onUpdateExam
   const totalSemana = horas
     .filter((h) => diasHasta(h.fecha) > -7 && diasHasta(h.fecha) <= 0)
     .reduce((acc, h) => acc + Number(h.horas || 0), 0);
+
+  const horasRecientes = [...horas].sort((a, b) => (a.fecha > b.fecha ? -1 : 1)).slice(0, 5);
 
   const submitExamen = () => {
     if (!examenForm.tema.trim()) return;
@@ -238,6 +240,26 @@ function AsignaturaCard({ asignatura, examenes, horas, onAddExamen, onUpdateExam
               <PrimaryButton accent={accent} disabled={!horasHoy} onClick={registrarHoras} icon={Clock}>Sumar</PrimaryButton>
             </div>
           </div>
+
+          {/* Entrega 2 · ME Fase 4 — hasta ahora las horas se sumaban y no había forma de ver ni
+              corregir un registro concreto: un "8" tecleado por error se quedaba dentro del total
+              para siempre. Se listan las últimas, con su borrado, sin convertir la tarjeta en una
+              tabla: el dato principal sigue siendo el total de la semana. */}
+          {horasRecientes.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold mb-1.5" style={{ color: COLORS.textMuted }}>Horas registradas</p>
+              <div className="space-y-1.5">
+                {horasRecientes.map((h) => (
+                  <div key={h.id} className="flex items-center justify-between gap-2">
+                    <p className="text-xs min-w-0 truncate" style={{ color: COLORS.text }}>
+                      {formatFecha(h.fecha)} · {h.horas}h
+                    </p>
+                    <BotonBorrar onClick={() => onDeleteHoras(h.id)} label="Eliminar horas de estudio" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>Exámenes</p>
@@ -300,7 +322,7 @@ function CorrelacionEstudio({ sueno, horas, accent }) {
   );
 }
 
-export default function EstudiosView({ estudios, sueno, onAddPrograma, onAddAsignatura, onDeleteAsignatura, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, accent, foco, onFocoConsumido }) {
+export default function EstudiosView({ estudios, sueno, onAddPrograma, onDeletePrograma, onAddAsignatura, onDeleteAsignatura, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
   const [programaActivo, setProgramaActivo] = useState(estudios.programas[0]?.id);
   const [nuevaAsignatura, setNuevaAsignatura] = useState('');
   const [showNuevoPrograma, setShowNuevoPrograma] = useState(false);
@@ -347,6 +369,17 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onAddAsig
         <GhostBtn icon={Plus} onClick={() => setShowNuevoPrograma((s) => !s)}>Programa</GhostBtn>
       </div>
 
+      {/* Entrega 2 · ME Fase 4 — borrar el programa abierto. Se lleva sus asignaturas (y con ellas
+          exámenes y horas) a la papelera en una sola entrada, así que restaurarlo lo devuelve entero. */}
+      {programa && (
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs min-w-0 truncate" style={{ color: COLORS.textMuted }}>
+            Programa abierto: {programa.nombre} · {asignaturasPrograma.length} {asignaturasPrograma.length === 1 ? 'asignatura' : 'asignaturas'}
+          </p>
+          <BotonBorrar onClick={() => onDeletePrograma(programa.id)} label={`Eliminar el programa ${programa.nombre}`} />
+        </div>
+      )}
+
       {showNuevoPrograma && (
         <Card>
           <div className="flex items-center gap-2">
@@ -358,15 +391,19 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onAddAsig
 
       <ExplicarConcepto accent={accent} />
 
-      <div className="flex items-center gap-2">
-        <TextInput value={nuevaAsignatura} onChange={(e) => setNuevaAsignatura(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && anadirAsignatura()} placeholder={`Nueva asignatura en ${programa?.nombre || ''}`} />
-        <button onClick={anadirAsignatura} className="p-2.5 rounded-xl" style={{ background: accent, flexShrink: 0 }} aria-label="Añadir asignatura">
-          <Plus size={16} color={COLORS.textOnAccent} />
-        </button>
-      </div>
+      {!programa ? (
+        <EmptyHint text="Crea un programa para empezar a añadir asignaturas." />
+      ) : (
+        <div className="flex items-center gap-2">
+          <TextInput value={nuevaAsignatura} onChange={(e) => setNuevaAsignatura(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && anadirAsignatura()} placeholder={`Nueva asignatura en ${programa.nombre}`} />
+          <button onClick={anadirAsignatura} className="p-2.5 rounded-xl" style={{ background: accent, flexShrink: 0 }} aria-label="Añadir asignatura">
+            <Plus size={16} color={COLORS.textOnAccent} />
+          </button>
+        </div>
+      )}
 
       <div className="space-y-3">
-        {asignaturasPrograma.length === 0 && <EmptyHint text="Todavía no has añadido ninguna asignatura a este programa." />}
+        {programa && asignaturasPrograma.length === 0 && <EmptyHint text="Todavía no has añadido ninguna asignatura a este programa." />}
         {asignaturasPrograma.map((a) => (
           <AsignaturaCard
             key={a.id}
@@ -377,6 +414,7 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onAddAsig
             onUpdateExamen={onUpdateExamen}
             onDeleteExamen={onDeleteExamen}
             onAddHoras={onAddHoras}
+            onDeleteHoras={onDeleteHoras}
             onDeleteAsignatura={onDeleteAsignatura}
             accent={accent}
             focoExamenId={foco?.examenId} onFocoConsumido={onFocoConsumido}

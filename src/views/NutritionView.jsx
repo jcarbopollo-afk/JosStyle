@@ -4,7 +4,7 @@ import { COLORS, VASO_ML } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { buscarProductoPorCodigoBarras } from '../lib/openFoodFacts';
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
-import { Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
+import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
 import BarcodeScanner from '../components/BarcodeScanner';
 
 const emptyForm = () => ({ nombre: '', calorias: '', proteinas: '', carbohidratos: '', grasas: '', fibra: '' });
@@ -183,7 +183,7 @@ function MealForm({ onSave, onSaveFavorite, accent }) {
   );
 }
 
-function ComidasTab({ comidas, onAdd, onAddFavorito, accent }) {
+function ComidasTab({ comidas, onAdd, onAddFavorito, onDeleteComida, accent }) {
   const hoy = todayISO();
   const deHoy = comidas.filter((c) => c.fecha === hoy);
   const totales = deHoy.reduce(
@@ -216,9 +216,12 @@ function ComidasTab({ comidas, onAdd, onAddFavorito, accent }) {
         {deHoy.length === 0 && <EmptyHint text="Todavía no has registrado ninguna comida hoy." />}
         {[...deHoy].reverse().map((c) => (
           <Card key={c.id} style={{ padding: '1rem' }}>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{c.nombre}</p>
-              <p className="text-sm font-bold" style={{ color: COLORS.text }}>{c.calorias} kcal</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold min-w-0 truncate" style={{ color: COLORS.text }}>{c.nombre}</p>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <p className="text-sm font-bold" style={{ color: COLORS.text }}>{c.calorias} kcal</p>
+                <BotonBorrar onClick={() => onDeleteComida(c.id)} label="Eliminar comida" />
+              </div>
             </div>
             <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
               {round1(c.proteinas)}g prot. · {round1(c.carbohidratos)}g carb. · {round1(c.grasas)}g grasa · {round1(c.fibra)}g fibra
@@ -288,7 +291,7 @@ function FavoritosTab({ favoritos, onRegistrar, onEliminar, accent }) {
   );
 }
 
-export default function NutritionView({ nutricion, onAddComida, onAddFavorito, onRegistrarFavorito, onEliminarFavorito, onSetAgua, accent }) {
+export default function NutritionView({ nutricion, onAddComida, onDeleteComida, onAddFavorito, onRegistrarFavorito, onEliminarFavorito, onSetAgua, accent }) {
   const [sub, setSub] = useState('comidas');
 
   return (
@@ -301,7 +304,7 @@ export default function NutritionView({ nutricion, onAddComida, onAddFavorito, o
         <ToggleTab active={sub === 'favoritos'} onClick={() => setSub('favoritos')} accent={accent}>Favoritos</ToggleTab>
       </div>
 
-      {sub === 'comidas' && <ComidasTab comidas={nutricion.comidas} onAdd={onAddComida} onAddFavorito={onAddFavorito} accent={accent} />}
+      {sub === 'comidas' && <ComidasTab comidas={nutricion.comidas} onAdd={onAddComida} onAddFavorito={onAddFavorito} accent={accent} onDeleteComida={onDeleteComida} />}
       {sub === 'agua' && <AguaTab agua={nutricion.agua} onSetAgua={onSetAgua} accent={accent} />}
       {sub === 'favoritos' && (
         <FavoritosTab favoritos={nutricion.favoritos} onRegistrar={onRegistrarFavorito} onEliminar={onEliminarFavorito} accent={accent} />

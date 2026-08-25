@@ -60,6 +60,7 @@ export const CATALOGO_PAPELERA = {
   'salud.medidas': { modulo: 'salud', coleccion: 'medidas', tipo: 'Medida', campos: ['fecha'], icono: 'salud' },
   'salud.historial': { modulo: 'salud', coleccion: 'historial', tipo: 'Entrada médica', campos: ['descripcion', 'tipo'], icono: 'salud' },
   'nutricion.comidas': { modulo: 'nutricion', coleccion: 'comidas', tipo: 'Comida', campos: ['nombre'], icono: 'nutricion' },
+  'estudios.programas': { modulo: 'estudios', coleccion: 'programas', tipo: 'Programa de estudios', campos: ['nombre'], icono: 'estudios' },
   'estudios.asignaturas': { modulo: 'estudios', coleccion: 'asignaturas', tipo: 'Asignatura', campos: ['nombre'], icono: 'estudios' },
   'estudios.examenes': { modulo: 'estudios', coleccion: 'examenes', tipo: 'Examen', campos: ['tema'], icono: 'estudios' },
   'estudios.horas': { modulo: 'estudios', coleccion: 'horas', tipo: 'Horas de estudio', campos: ['fecha'], icono: 'estudios' },

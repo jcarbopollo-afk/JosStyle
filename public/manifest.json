@@ -1,6 +1,6 @@
 {
-  "name": "Mi Sistema Personal",
-  "short_name": "Sistema",
+  "name": "JosStyle",
+  "short_name": "JosStyle",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0A0C10",

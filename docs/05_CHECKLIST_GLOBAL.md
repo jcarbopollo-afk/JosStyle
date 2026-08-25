@@ -1,4 +1,4 @@
-# JC Fitness — CHECKLIST GLOBAL
+# JosStyle — CHECKLIST GLOBAL
 
 > Instrumento de verificación exhaustivo. Cubre **todo** lo especificado en el Prompt Maestro
 > (21 fases), la Especificación de Ajustes (apartados 1–202), el resumen de AXION (203–1300), los

@@ -5,7 +5,7 @@ import { uid, formatFecha, todayISO } from '../lib/helpers';
 import { askAI, askAIWithImages, AI_SYSTEM } from '../lib/ai';
 import { extractFramesFromSrc } from '../lib/videoFrames';
 import { getSignedVideoUrl } from '../lib/supabase';
-import { Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
+import { BotonBorrar, Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
 
 // Cuántos días seguidos (incluyendo hoy) hay que llevar entrenando la misma habilidad
 // para que aparezca el aviso de "descanso recomendado".
@@ -376,7 +376,7 @@ function SkillCard({ skill, data, onUpdate, videos, onAddVideo, onDeleteVideo, o
   );
 }
 
-export default function TrainingView({ calistenia, onUpdateSkill, futbol, onAddPartido, videos, onAddVideo, onDeleteVideo, onSetVideoFeedback, accent, foco, onFocoConsumido }) {
+export default function TrainingView({ calistenia, onUpdateSkill, futbol, onAddPartido, onDeletePartido, videos, onAddVideo, onDeleteVideo, onSetVideoFeedback, accent, foco, onFocoConsumido }) {
   const [sub, setSub] = useState('calistenia');
   const [nota, setNota] = useState('');
 
@@ -422,9 +422,12 @@ export default function TrainingView({ calistenia, onUpdateSkill, futbol, onAddP
             : (
               <ListCard>
                 {[...futbol].reverse().map((p, i, arr) => (
-                  <ListRow key={p.id} last={i === arr.length - 1} style={{ display: 'block' }}>
-                    <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{formatFecha(p.fecha)}</p>
-                    {p.nota && <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{p.nota}</p>}
+                  <ListRow key={p.id} last={i === arr.length - 1}>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{formatFecha(p.fecha)}</p>
+                      {p.nota && <p className="text-xs mt-0.5 truncate" style={{ color: COLORS.textMuted }}>{p.nota}</p>}
+                    </div>
+                    <BotonBorrar onClick={() => onDeletePartido(p.id)} label="Eliminar partido" />
                   </ListRow>
                 ))}
               </ListCard>

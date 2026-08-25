@@ -68,6 +68,12 @@ else
   fallo "Fallan pruebas del sistema de módulos"; grep '✗' /tmp/jc_mod.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/auditar-modulos.mjs >/tmp/jc_aud.log 2>&1; then
+  ok "Auditoría de integración (ME F4) — $(grep -c '✓' /tmp/jc_aud.log) comprobaciones"
+else
+  fallo "La auditoría de integración encuentra huecos"; grep '✗' /tmp/jc_aud.log
+fi
+
 if node scripts/smoke.mjs >/tmp/jc_smoke.log 2>&1; then
   ok "Renderizado de vistas — $(grep -c '✓' /tmp/jc_smoke.log) casos (vacío / con datos / parciales)"
 else

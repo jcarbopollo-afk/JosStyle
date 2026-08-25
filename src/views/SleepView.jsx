@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
 import { COLORS } from '../tokens';
 import { uid, calcularDuracion, formatHoras, formatFecha, todayISO } from '../lib/helpers';
-import { Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
+import { Card, ListCard, ListRow, BotonBorrar, SectionTitle, Field, TextInput, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
 
-export default function SleepView({ sueno, onAdd, accent, foco, onFocoConsumido }) {
+export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFocoConsumido }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ horaDormir: '23:00', horaDespertar: '07:00', calidad: 3, interrupciones: 0, siesta: 0 });
 
@@ -86,8 +86,11 @@ export default function SleepView({ sueno, onAdd, accent, foco, onFocoConsumido 
           <ListCard>
             {[...sueno].reverse().slice(0, 6).map((e, i, arr) => (
               <ListRow key={e.id} last={i === arr.length - 1}>
-                <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{formatFecha(e.fecha)} · {formatHoras(calcularDuracion(e.horaDormir, e.horaDespertar))} h</p>
-                <p className="text-xs flex-shrink-0" style={{ color: COLORS.textMuted }}>{e.horaDormir}–{e.horaDespertar} · {e.calidad}/5</p>
+                <p className="text-sm font-semibold min-w-0 truncate" style={{ color: COLORS.text }}>{formatFecha(e.fecha)} · {formatHoras(calcularDuracion(e.horaDormir, e.horaDespertar))} h</p>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <p className="text-xs" style={{ color: COLORS.textMuted }}>{e.horaDormir}–{e.horaDespertar} · {e.calidad}/5</p>
+                  <BotonBorrar onClick={() => onDelete(e.id)} label="Eliminar registro de sueño" />
+                </div>
               </ListRow>
             ))}
           </ListCard>

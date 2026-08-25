@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { uid, formatFecha, todayISO } from '../lib/helpers';
-import { Card, ListCard, ListRow, SectionTitle, Field, TextInput, Select, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
+import { Card, ListCard, ListRow, BotonBorrar, SectionTitle, Field, TextInput, Select, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
 
-export default function FinanceView({ economia, onAddMovimiento, onUpdateHucha, accent, foco, onFocoConsumido }) {
+export default function FinanceView({ economia, onAddMovimiento, onDeleteMovimiento, onUpdateHucha, accent, foco, onFocoConsumido }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ tipo: 'gasto', concepto: '', cantidad: '' });
 
@@ -81,9 +81,12 @@ export default function FinanceView({ economia, onAddMovimiento, onUpdateHucha, 
                   <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{m.concepto}</p>
                   <p className="text-xs" style={{ color: COLORS.textMuted }}>{formatFecha(m.fecha)}</p>
                 </div>
-                <p className="text-sm font-bold flex-shrink-0" style={{ color: m.tipo === 'ingreso' ? COLORS.positive : COLORS.negative }}>
-                  {m.tipo === 'ingreso' ? '+' : '-'}{m.cantidad.toFixed(2)} €
-                </p>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <p className="text-sm font-bold" style={{ color: m.tipo === 'ingreso' ? COLORS.positive : COLORS.negative }}>
+                    {m.tipo === 'ingreso' ? '+' : '-'}{m.cantidad.toFixed(2)} €
+                  </p>
+                  <BotonBorrar onClick={() => onDeleteMovimiento(m.id)} label="Eliminar movimiento" />
+                </div>
               </ListRow>
             ))}
           </ListCard>

@@ -1,4 +1,4 @@
-# JC Fitness — CONTRADICCIONES, DUPLICADOS Y DEPENDENCIAS
+# JosStyle — CONTRADICCIONES, DUPLICADOS Y DEPENDENCIAS
 
 > Resultado del cruce sistemático de `HANDOFF.md` × `CHANGELOG.md` ×
 > `ESPECIFICACION_AJUSTES_ENTREGA1.md` × el código real.
@@ -334,19 +334,44 @@ numeración 1–21. Referencia cruzada obsoleta, sin impacto.
 
 ---
 
-### ⚪ C-21 — Cuatro nombres para el mismo proyecto
+### ✅ C-21 — Cuatro nombres para el mismo proyecto · **RESUELTA por Josué**
 
-| Nombre | Dónde |
-|---|---|
-| **JC Fitness** | Como lo llama Josué hoy |
-| **JosStyle** | Repositorio de GitHub y `README.md` (que solo contiene esa línea) |
-| **Sistema Operativo Personal de Josué** | Título de `HANDOFF.md` y de la especificación |
-| `sistema-personal-josue` / `sistema-personal-app` | `package.json` y carpeta del zip |
+El proyecto llegó a acumular cinco nombres: **JC Fitness** (como lo llamaba él), **JC Lifestyle** y
+**JC STYLE** (en las especificaciones de la Entrega 2), **JosStyle** (repositorio de GitHub) y
+**Sistema Operativo Personal de Josué** / `sistema-personal-josue` (documentación y `package.json`).
+Para rematarlo, la interfaz no usaba ninguno de los cinco: se presentaba como *"Mi Sistema Personal"*.
 
-**No es una contradicción de producto, es una decisión pendiente de Josué.** Renombrar tiene efectos
-reales (nombre en Vercel, `manifest.json` de una PWA ya instalada, URL del repo), así que **no se
-toca nada sin que él lo pida**. Lo único que sí merece la pena hacer sin preguntar es **escribir un
-`README.md` de verdad** — hoy es una sola línea.
+**Decisión de Josué (D2-08 en `docs/06`):** el nombre oficial y definitivo es **JosStyle**. Los demás
+quedan como referencias históricas. Se usa en la interfaz, la documentación y el desarrollo, *salvo
+que una especificación concreta indique expresamente otro nombre*.
+
+**Qué se renombró** (v1.27.0):
+
+| Sitio | Antes | Ahora |
+|---|---|---|
+| Pantalla de acceso (`Auth.jsx`) | Mi Sistema Personal | **JosStyle** |
+| `<title>` de `index.html` | Mi Sistema Personal | **JosStyle** |
+| Nombre en la pantalla de inicio de iOS | Mi Sistema | **JosStyle** |
+| `manifest.json` (`name`, `short_name`) | Mi Sistema Personal / Sistema | **JosStyle** |
+| `package.json` (`name`) | `sistema-personal-josue` | `josstyle` |
+
+**Qué NO se ha tocado, y por qué:**
+
+- **El nombre del proyecto en Vercel y la URL de despliegue.** Cambiarlos cambia la dirección con la
+  que Josué entra a la app y puede dejar fuera de servicio la PWA que ya tiene instalada. Es una
+  acción suya en el panel de Vercel, no del código.
+- **El nombre del repositorio.** Ya es `JosStyle`; no hace falta tocarlo.
+- **`start_url` del manifiesto.** Sigue siendo `/`: cambiarlo desvincularía la app instalada de sus
+  datos guardados en el navegador.
+- **Las citas literales dentro de `especificaciones/`.** Es la especificación original de Josué y es
+  intocable (regla 47); allí siguen apareciendo "JC Fitness" y "JC Lifestyle" tal cual él los
+  escribió.
+- **El histórico de `CHANGELOG.md`.** Es historia, no documentación viva.
+
+**Efecto visible para Josué:** la próxima vez que abra la app en el navegador verá "JosStyle" en la
+pantalla de acceso y en la pestaña. **El icono que ya tiene en la pantalla de inicio del iPhone
+seguirá con el nombre viejo** hasta que lo borre y lo vuelva a añadir — iOS no renombra los accesos
+directos ya creados. No pierde ningún dato al hacerlo.
 
 ---
 

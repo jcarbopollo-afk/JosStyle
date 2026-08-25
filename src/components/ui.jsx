@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail, Plus } from 'lucide-react';
+import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail, Plus, Trash2 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba, shade, fileToBase64 } from '../lib/helpers';
 import { askAI, askAIWithImage, AI_SYSTEM } from '../lib/ai';
@@ -97,6 +97,31 @@ export function ListCard({ children, style, className = '' }) {
     <Card className={`p-0 overflow-hidden ${className}`} style={style}>
       {children}
     </Card>
+  );
+}
+
+// Entrega 2 · ME Fase 4 — botón de borrar reutilizable.
+//
+// La auditoría de esta fase encontró que varios módulos dejaban CREAR pero no BORRAR (Sueño,
+// Economía, Salud, Nutrición, partidos de fútbol y horas de estudio). Al añadirles el borrado
+// hacía falta un control común: el apartado 14 de la especificación de Ajustes exige que una
+// misma acción se represente siempre igual, y "eliminar un elemento de una lista" aparece ya en
+// media docena de pantallas.
+//
+// No pide confirmación a propósito: desde ME Fase 3 lo borrado va a la papelera y se puede
+// recuperar, así que una confirmación aquí sería fricción para algo reversible. La confirmación
+// se reserva para el borrado definitivo, que sí es irreversible.
+export function BotonBorrar({ onClick, label = 'Eliminar' }) {
+  return (
+    <button
+      onClick={onClick}
+      className="p-1.5 rounded-lg flex-shrink-0 transition-transform active:scale-90"
+      style={{ background: COLORS.surface2 }}
+      aria-label={label}
+      title={label}
+    >
+      <Trash2 size={13} style={{ color: COLORS.textMuted }} />
+    </button>
   );
 }
 
