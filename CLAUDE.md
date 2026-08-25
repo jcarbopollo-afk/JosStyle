@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.27.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.28.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario, Fondos, Buscador+IA, Módulos activables ✅, Sonido y Rachas — **106 fases**; el bloque
-**ME** está terminado, quedan 102) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+**ME** está terminado y **BI** va por 1/4, quedan 101) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -87,7 +87,7 @@ listadas con decisión tomada.
 12. **Josué despliega vía Vercel, no Replit.** Las menciones a Replit en `CHANGELOG.md` son historia
     obsoleta: no investigarlas ni reabrirlas.
 
-La lista completa (48 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
+La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 ## Contexto operativo de Josué
 
@@ -100,15 +100,22 @@ La lista completa (48 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 - **Lo que más le importa es recibir la entrega actualizada cuanto antes.** Priorizarlo sobre
   explicaciones largas; nunca dejar un turno a medias sin entregarla.
 
-## Aviso de verificación
+## Verificación: qué está probado y qué no
 
-**Nada posterior a la v1.0.1 se ha podido verificar con `esbuild`, `npm install` ni ejecutando la
-app** — el entorno de la IA no tiene acceso al registro de npm (`403`). Todo lo construido desde
-entonces es **código revisado a mano, no código probado**. Cuando Josué reporte un fallo, **pedirle
-el mensaje de error exacto** antes de asumir nada.
+**Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
+entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
+Vite, 166 pruebas unitarias con Node, 5 de auditoría, 52 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **223 comprobaciones**.
 
-Lo único verificado ejecutándolo de verdad: las funciones puras de `colorEngine.js` y `aplicarTema()`
-con Node.
+Eso ya ha encontrado **quince bugs reales** que la revisión a mano no vio, entre ellos una
+notificación falsa (`null < 7` es `true` en JavaScript) y ocho módulos que dejaban crear y no borrar.
+
+⚠️ **Lo que las pruebas NO cubren, y sigue pendiente de que lo mire Josué (R1):** Supabase real, la
+sincronización entre dispositivos, los permisos del navegador, el aspecto en un iPhone y el
+recorrido completo tocando la pantalla. Para todo eso, cuando reporte un fallo, **pedirle el mensaje
+de error exacto** antes de asumir nada.
+
+⚠️ Lo anterior a v1.22.0 sigue siendo **código revisado a mano, nunca ejecutado**.
 
 ## Al terminar una fase
 
@@ -121,7 +128,15 @@ con Node.
 
 ## Lo primero que conviene hacer
 
-El bloque **R0** de `docs/02_ORDEN_DE_FASES.md`: seis correcciones baratas que desbloquean el resto.
-La más urgente es **C-11** — `api/ask-ai.js` usa un identificador de modelo obsoleto
-(`claude-sonnet-4-6`), así que en cuanto Josué active `ANTHROPIC_API_KEY` **toda la IA de la app
-fallará**.
+**Siguiente fase: BI · Fase 2/4 — el acceso de búsqueda/IA arriba a la izquierda.**
+Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_BUSCADOR_E_IA.md`.
+
+Dos avisos antes de escribir código ahí:
+
+- Ya existe `UniversalSearchModal` (Fase 18) y `SuggestionsButton`. La fase pide **ampliar** eso a
+  buscar *funciones, pantallas y ajustes* con índice y ranking — **no** un buscador nuevo al lado.
+- Decisión **D2-07**: Inicio, Buscador y Módulos son un solo sistema. Reutiliza `MORE_NAV`,
+  `DESCRIPCIONES_MODULOS`, `personalizacion.ocultos` y `dashboardOcultos` para el índice.
+
+El bloque **R0** ya está completo (v1.23.0) y **C-11** —el modelo de IA obsoleto— está resuelto:
+`api/ask-ai.js` lee `ANTHROPIC_MODEL` y por defecto usa un modelo vigente.

@@ -68,6 +68,12 @@ else
   fallo "Fallan pruebas del sistema de módulos"; grep '✗' /tmp/jc_mod.log
 fi
 
+if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
+  ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
+else
+  fallo "Falla el desplegable de situación de Inicio"; grep '✗' /tmp/jc_inicio.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/auditar-modulos.mjs >/tmp/jc_aud.log 2>&1; then
   ok "Auditoría de integración (ME F4) — $(grep -c '✓' /tmp/jc_aud.log) comprobaciones"
 else

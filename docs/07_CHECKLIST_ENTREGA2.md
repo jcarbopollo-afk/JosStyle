@@ -2338,33 +2338,55 @@ Amplía el sistema de apariencia ya existente para permitir usar una fotografía
 
 Rediseña el desplegable de Inicio y convierte el botón superior izquierdo en un acceso único de búsqueda + IA. **Amplía `UniversalSearchModal` y `SuggestionsButton` (Fase 18), no los sustituye.** La Fase 1 se solapa con el `IndicadorContexto` del Dashboard ya construido.
 
-#### BI · Fase 1/4 — REDISEÑO DEL DESPLEGABLE DE INICIO: VACACIONES, EXÁMENES Y SITUACIONES
-- [ ] COMPORTAMIENTO PRINCIPAL
-- [ ] ESTADO ABIERTO
-- [ ] ANIMACIÓN DE APERTURA
-- [ ] BOTÓN DE EXPANSIÓN
-- [ ] CONTENIDO DEL DESPLEGABLE
-- [ ] DISEÑO VISUAL
-- [ ] PRIORIDAD: ESPACIO EN PANTALLA
-- [ ] RESPONSIVE / MÓVIL
-- [ ] ESTADO Y PERSISTENCIA
-- [ ] ACCESIBILIDAD Y USABILIDAD
-- [ ] NO ROMPER NADA EXISTENTE
-- [ ] Localiza cómo está implementado actualmente.
-- [ ] Identifica todos los estados relacionados.
-- [ ] Identifica todos los datos que utiliza.
-- [ ] Identifica todas las acciones que ejecuta.
-- [ ] Mantén esas funcionalidades.
-- [ ] Cambia únicamente la presentación y el comportamiento necesario para conseguir el nuevo sistema desplegable.
-- [ ] CONTROL DE CALIDAD
-- [ ] REGLA IMPORTANTE
-- [ ] RESULTADO FINAL ESPERADO
-- [ ] Comprueba que no se ha roto ninguna funcionalidad existente.
-- [ ] Comprueba el comportamiento en móvil.
-- [ ] Comprueba apertura y cierre repetidos.
-- [ ] Comprueba modo oscuro/claro si ambos existen.
-- [ ] Comprueba que no quedan espacios vacíos al cerrar.
-- [ ] No avances automáticamente a la Fase 2.
+#### BI · Fase 1/4 — REDISEÑO DEL DESPLEGABLE DE INICIO ✅ COMPLETADA (v1.28.0)
+- [x] COMPORTAMIENTO PRINCIPAL — cerrado por defecto, una sola fila de alto.
+- [x] ESTADO ABIERTO — muestra las tres situaciones **y sus consejos**.
+- [x] ANIMACIÓN DE APERTURA — `grid-template-rows` 0fr↔1fr + opacidad + desplazamiento de 4px,
+      con `--ease-premium`. **No** es `display:none → block`.
+- [x] BOTÓN DE EXPANSIÓN — chevron que rota 180° con transición; **toda la cabecera** es pulsable,
+      no solo el icono.
+- [x] CONTENIDO DEL DESPLEGABLE — **este era el hueco real de la fase.** Antes solo se podían LEER
+      consejos; para cambiar de situación había que salir a Personalización. Ahora las tres
+      situaciones se activan desde el propio desplegable.
+- [x] DISEÑO VISUAL — mismo lenguaje que el resto: `COLORS.surface`, borde de 1px, `rounded-3xl`,
+      sin sombras ni adornos nuevos.
+- [x] PRIORIDAD: ESPACIO EN PANTALLA — el alto cambia **físicamente**; cerrado no reserva nada.
+- [x] RESPONSIVE / MÓVIL — zona táctil de fila completa, chips con `flex-wrap`, `truncate` en la
+      etiqueta. ⚠️ El aspecto final en un iPhone real sigue pendiente de Josué (**R1**).
+- [x] ESTADO Y PERSISTENCIA — un único `expandido` local. **No se guarda en Supabase**: la
+      especificación dice que no se creen datos innecesarios, y abrir/cerrar no es una preferencia.
+- [x] ACCESIBILIDAD Y USABILIDAD — `aria-expanded`, `aria-controls` apuntando a un id que existe de
+      verdad, `role="region"` con nombre, y `aria-pressed` en cada situación (son interruptores).
+- [x] NO ROMPER NADA EXISTENTE
+  - [x] Localiza cómo está implementado actualmente. — `IndicadorContexto` en `DashboardView.jsx`.
+  - [x] Identifica todos los estados relacionados. — `personalizacion.modo` y el `expandido` local.
+  - [x] Identifica todos los datos que utiliza. — `MODOS_APP` de `tokens.js`. Nada más.
+  - [x] Identifica todas las acciones que ejecuta. — `setModoApp` (toggle) en `App.jsx`.
+  - [x] Mantén esas funcionalidades. — cero datos nuevos; el selector de Personalización sigue ahí
+        y toca el mismo interruptor (decisión **D2-07**: integrar, no duplicar).
+  - [x] Cambia únicamente la presentación y el comportamiento necesario. — un solo componente
+        tocado, más la prop `onSetModo` que lo alimenta.
+- [x] CONTROL DE CALIDAD — 18 comprobaciones automáticas (`scripts/test-inicio.jsx`), en
+      `verificar.sh`.
+- [x] REGLA IMPORTANTE — el espacio ocupado cambia de verdad, no es una tarjeta grande que recorta
+      contenido.
+- [x] RESULTADO FINAL ESPERADO — cerrado: `Situación · etiqueta ⌄`. Abierto: las tres situaciones
+      con sus opciones y consejos.
+- [x] Comprueba que no se ha roto ninguna funcionalidad existente. — 223 comprobaciones en verde.
+- [ ] Comprueba el comportamiento en móvil. — ⚠️ **solo lo puede hacer Josué** (R1).
+- [x] Comprueba apertura y cierre repetidos. — es un booleano con transición CSS, sin estado
+      acumulado que se pueda desincronizar.
+- [ ] Comprueba modo oscuro/claro si ambos existen. — ⚠️ **pendiente de verificación visual**. El
+      componente solo usa tokens de `COLORS`, así que sigue el tema por construcción.
+- [x] Comprueba que no quedan espacios vacíos al cerrar. — el contenedor colapsa a 0fr; el padding
+      inferior vive **dentro** del panel, no en el contenedor.
+- [x] No avances automáticamente a la Fase 2. — respetado: BI F2 va en su propio turno.
+
+**Hallazgo de esta fase, apuntado para no repetirlo:** el componente entero era un `<button>`. Meter
+dentro los selectores de situación habría dado **botones anidados** — HTML inválido que no rompe el
+render y que en iOS hace que el toque interior se lo coma el exterior. Ahora la cabecera es el botón
+y el contenido su hermano, y `scripts/smoke-vistas.jsx` comprueba lo mismo en **las 13 vistas × 4
+escenarios**, para que no vuelva a colarse en ningún sitio.
 
 #### BI · Fase 2/4 — Nuevo acceso superior izquierdo: búsqueda/IA
 - [ ] Buscar cualquier función, pantalla, ajuste u opción existente dentro de JC Fitness.

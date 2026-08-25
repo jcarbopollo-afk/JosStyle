@@ -1271,7 +1271,10 @@ export default function App() {
           <DashboardView
             perfil={perfil} sueno={sueno} calistenia={calistenia} futbol={futbol} economia={economia}
             relacion={relacion} favoritas={favoritasResueltas}
-            productividad={productividad} estudios={estudios} modo={personalizacion.modo}
+            productividad={productividad} estudios={estudios}
+            // BI Fase 1 — el desplegable de situación de "Hoy" cambia el modo desde ahí mismo.
+            // Es el MISMO interruptor que Personalización, no un segundo sistema (decisión D2-07).
+            modo={personalizacion.modo} onSetModo={setModoApp}
             notificaciones={notificaciones}
             calendario={calendario} derivadosCalendario={derivadosCalendario}
             // Ampliación del Dashboard — Centro de Control: datos adicionales que el Dashboard

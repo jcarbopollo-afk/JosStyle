@@ -166,12 +166,26 @@ const desactivados = {
   },
 };
 
+// Un `<button>` dentro de otro `<button>` es HTML inválido, no revienta el render y en iOS
+// hace que el toque del botón interior se lo coma el exterior. Se encontró en BI Fase 1, al
+// meter los selectores de situación dentro de un indicador que era él mismo un botón. Como es
+// un fallo silencioso y fácil de repetir, se comprueba en todas las vistas y escenarios.
+function botonesAnidados(html) {
+  let profundidad = 0;
+  for (const etiqueta of html.match(/<\/?button\b/g) || []) {
+    if (etiqueta === '<button') { profundidad++; if (profundidad > 1) return true; }
+    else profundidad--;
+  }
+  return false;
+}
+
 let fallos = 0;
 for (const [nombre, Componente, props] of CASOS) {
   for (const [etiqueta, estado] of [['vacío', vacio], ['con datos', lleno], ['datos parciales', parcial], ['todo desactivado', desactivados]]) {
     try {
       const html = renderToString(React.createElement(Componente, props(estado)));
       if (typeof html !== 'string' || html.length === 0) throw new Error('render vacío');
+      if (botonesAnidados(html)) throw new Error('tiene un <button> dentro de otro <button>');
       console.log(`  ✓ ${nombre} (${etiqueta})`);
     } catch (e) {
       console.error(`  ✗ ${nombre} (${etiqueta}) → ${e.message}`);

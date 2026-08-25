@@ -174,48 +174,116 @@ function AvisoExamenSinHoras({ estudios, accent, notificaciones }) {
 // especial activo — "Rutina normal" es un estado más, no la ausencia del componente).
 const MODO_ICONOS = { viaje: Plane, vacaciones: Sun, examenes: GraduationCap };
 
-function IndicadorContexto({ modo, accent }) {
+// Entrega 2 · BI Fase 1 — Rediseño del desplegable de situación.
+//
+// EL HUECO REAL QUE TENÍA
+// El acordeón (cerrado por defecto, altura mínima, transición de `grid-template-rows` 0fr↔1fr)
+// ya estaba desde v1.21.0, así que la parte de "compacto → expandido con animación fluida" no
+// hacía falta rehacerla. Lo que fallaba era otra cosa, y es lo que pide el apartado 5 de la
+// especificación: **al abrirlo solo se podían LEER consejos**. Para cambiar de situación había
+// que salir de Inicio, ir a Más → Personalización y buscar el selector de modo. El estado
+// esperado del apartado 14 muestra justo lo contrario: cada situación con sus opciones dentro
+// del propio desplegable.
+//
+// QUÉ SE REUTILIZA (decisión D2-07: integrar, no crear un sistema nuevo)
+// Ni un dato nuevo. Misma clave `personalizacion.modo`, mismo `setModoApp` de App.jsx —el que
+// ya hace el toggle— y mismos textos de `MODOS_APP` en tokens.js. Desde aquí y desde
+// Personalización se toca exactamente el mismo interruptor.
+//
+// POR QUÉ EL BOTÓN DEJA DE ENVOLVERLO TODO
+// Antes el componente entero era un `<button>`. Al meter dentro los botones de situación eso
+// habría dado botones anidados: HTML inválido, y en iOS el toque interior se lo come el
+// exterior. Ahora la cabecera es el botón (con `aria-expanded`/`aria-controls`, apartado 10) y
+// el contenido es un hermano.
+function IndicadorContexto({ modo, onSetModo, accent }) {
   const [expandido, setExpandido] = useState(false);
   const activo = MODOS_APP.find((m) => m.id === modo);
   const Icono = activo ? (MODO_ICONOS[activo.id] || Plane) : Home;
   const etiqueta = activo ? activo.label : 'Rutina normal';
   const consejos = activo ? activo.tips : [];
+  const idPanel = 'panel-situacion-actual';
 
   return (
-    <button
-      onClick={() => setExpandido((s) => !s)}
-      className="w-full text-left rounded-3xl transition-transform active:scale-[0.98]"
-      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, padding: '0.8rem 1.1rem' }}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-2 text-sm font-semibold min-w-0" style={{ color: COLORS.text }}>
-          <Icono size={16} style={{ color: accent, flexShrink: 0 }} />
-          <span className="truncate">{etiqueta}</span>
-        </span>
-        {/* Apartado 9: la flecha rota al expandir/cerrar — mismo icono y misma transición que ya
-            usan SkillCard/RutinaCard/AsignaturaCard/ExamenItem en el resto de la app, para que
-            este indicador se sienta parte del mismo lenguaje visual, no un componente añadido
-            después (apartado 11). */}
-        <ChevronDown size={16} style={{ color: COLORS.textMuted, flexShrink: 0, transform: expandido ? 'rotate(180deg)' : 'none', transition: 'transform 220ms var(--ease-premium)' }} />
-      </div>
-      {/* Apartado 4: transición suave de altura + opacity, no un "aparece/desaparece" brusco —
-          truco de `grid-template-rows` 0fr↔1fr, sin medir alturas a mano ni añadir dependencias. */}
-      <div style={{ display: 'grid', gridTemplateRows: expandido ? '1fr' : '0fr', transition: 'grid-template-rows 300ms var(--ease-premium)' }}>
+    <div className="rounded-3xl overflow-hidden" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
+      <button
+        onClick={() => setExpandido((s) => !s)}
+        aria-expanded={expandido}
+        aria-controls={idPanel}
+        className="w-full text-left transition-transform active:scale-[0.98]"
+        style={{ padding: '0.8rem 1.1rem' }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="flex items-center gap-2 text-sm font-semibold min-w-0" style={{ color: COLORS.text }}>
+            <Icono size={16} style={{ color: accent, flexShrink: 0 }} />
+            <span className="truncate">{etiqueta}</span>
+          </span>
+          {/* Apartado 4: la flecha rota, no cambia de golpe — mismo icono y misma transición que
+              ya usan SkillCard/RutinaCard/AsignaturaCard/ExamenItem, para que esto se sienta
+              parte del lenguaje visual de siempre y no un componente pegado después. */}
+          <ChevronDown size={16} style={{ color: COLORS.textMuted, flexShrink: 0, transform: expandido ? 'rotate(180deg)' : 'none', transition: 'transform 220ms var(--ease-premium)' }} />
+        </div>
+      </button>
+
+      {/* Apartado 3 y 13: el espacio ocupado cambia FÍSICAMENTE. `grid-template-rows` 0fr↔1fr
+          anima la altura real sin medirla a mano ni reservar de antemano el alto del estado
+          abierto; cerrado no queda ni un píxel de hueco. */}
+      <div
+        id={idPanel}
+        role="region"
+        aria-label="Opciones de la situación actual"
+        style={{ display: 'grid', gridTemplateRows: expandido ? '1fr' : '0fr', transition: 'grid-template-rows 300ms var(--ease-premium)' }}
+      >
         <div style={{ overflow: 'hidden' }}>
-          <div style={{ opacity: expandido ? 1 : 0, transition: `opacity ${expandido ? '260ms 60ms' : '120ms'} ease`, paddingTop: '0.75rem' }}>
-            {consejos.length > 0 ? (
-              <ul className="space-y-1">
-                {consejos.map((t, i) => (
-                  <li key={i} className="text-xs leading-relaxed" style={{ color: COLORS.textMuted }}>· {t}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs" style={{ color: COLORS.textMuted }}>Sin modificaciones especiales.</p>
-            )}
+          <div
+            style={{
+              opacity: expandido ? 1 : 0,
+              transform: expandido ? 'none' : 'translateY(-4px)',
+              transition: `opacity ${expandido ? '260ms 60ms' : '120ms'} ease, transform 260ms var(--ease-premium)`,
+              padding: '0 1.1rem 0.9rem',
+            }}
+          >
+            <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.8rem' }}>
+              {/* Apartado 5: las opciones que ya existían, aquí dentro. Tocar la situación activa
+                  la desactiva (vuelve a Rutina normal) — es el mismo toggle de Personalización,
+                  no una segunda regla. `aria-pressed` porque son interruptores, no navegación. */}
+              <div className="flex gap-2 flex-wrap">
+                {MODOS_APP.map((m) => {
+                  const esActivo = modo === m.id;
+                  const IconoModo = MODO_ICONOS[m.id] || Plane;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => onSetModo(m.id)}
+                      aria-pressed={esActivo}
+                      className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl font-semibold transition-transform active:scale-95"
+                      style={{
+                        background: esActivo ? accent : COLORS.surface2,
+                        color: esActivo ? COLORS.textOnAccent : COLORS.textMuted,
+                        border: `1px solid ${esActivo ? accent : COLORS.border}`,
+                      }}
+                    >
+                      <IconoModo size={12} /> {m.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {consejos.length > 0 ? (
+                <ul className="space-y-1 mt-3">
+                  {consejos.map((t, i) => (
+                    <li key={i} className="text-xs leading-relaxed" style={{ color: COLORS.textMuted }}>· {t}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>
+                  Estás en tu rutina normal. Activa una situación si estos días son distintos.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -303,7 +371,7 @@ function ultimoPorFechaLocal(lista) {
 }
 
 export default function DashboardView({
-  perfil, sueno, calistenia, futbol, economia, relacion, favoritas, productividad, estudios, modo, notificaciones,
+  perfil, sueno, calistenia, futbol, economia, relacion, favoritas, productividad, estudios, modo, onSetModo, notificaciones,
   calendario, derivadosCalendario,
   // Ampliación del Dashboard — Centro de Control
   salud, objetivos, nutricion, negocio, diario, biblioteca, fe, bienestar, resumenes, dashboardOcultos, modulosDesactivados, onNavegar,
@@ -415,7 +483,7 @@ export default function DashboardView({
           (apartado 6) — vive fuera del grupo de avisos condicionales de abajo porque, a
           diferencia de ellos, está SIEMPRE visible (apartado 5: "Rutina normal" es un estado más,
           no la ausencia del componente). */}
-      <IndicadorContexto modo={modo} accent={accent} />
+      <IndicadorContexto modo={modo} onSetModo={onSetModo} accent={accent} />
 
       <TarjetaPuntuacion puntuacion={puntuacion} mensaje={mensajeScore} accent={accent} />
 

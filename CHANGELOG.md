@@ -1,5 +1,60 @@
 # CHANGELOG.md
 
+## Entrega 2 · BI Fase 1 — El desplegable de situación de Inicio (v1.28.0)
+
+### Lo que ya estaba, y por qué no se ha rehecho
+La especificación pide un componente colapsable con animación fluida, cerrado por defecto y
+compacto. Eso **ya existía** desde v1.21.0: `IndicadorContexto` usa `grid-template-rows` 0fr↔1fr,
+arranca cerrado y el chevron rota. Rehacerlo por rehacerlo habría sido gastar una fase en algo que
+funciona.
+
+### El hueco real
+El apartado 5 pide que al abrirlo aparezcan **las opciones** de Vacaciones, Exámenes y las demás
+situaciones. El componente solo dejaba **leer consejos**: para cambiar de situación había que salir
+de Inicio, ir a Más → Personalización y buscar el selector. El estado final que dibuja el apartado
+14 es justo lo contrario.
+
+Ahora las tres situaciones se activan desde el propio desplegable. **Sin un solo dato nuevo**:
+misma clave `personalizacion.modo`, mismo `setModoApp` de `App.jsx` —el que ya hacía el toggle— y
+mismos textos de `MODOS_APP`. Desde Inicio y desde Personalización se toca el mismo interruptor,
+que es lo que exige la decisión **D2-07** ("integrar, no hacer tres sistemas distintos").
+
+### El fallo silencioso que apareció al hacerlo
+El componente entero era un `<button>`. Meter dentro los selectores de situación habría dado
+**botones anidados**: HTML inválido que no rompe el render, no da ningún error en consola y que en
+iOS hace que el toque del botón interior se lo coma el exterior — un botón que simplemente no
+responde, sin pista de por qué.
+
+Ahora la cabecera es el botón y el contenido es su hermano. Y como es un fallo fácil de repetir,
+`scripts/smoke-vistas.jsx` lo comprueba en **las 13 vistas × 4 escenarios**, no solo aquí.
+
+### Añadido / cambiado
+- **Accesibilidad real** (apartado 10): `aria-expanded` en la cabecera, `aria-controls` apuntando a
+  un id que **existe de verdad** (uno colgando es peor que no ponerlo), `role="region"` con nombre y
+  `aria-pressed` en cada situación, porque son interruptores y no navegación.
+- La animación gana un desplazamiento de 4px además de la opacidad, para que el contenido entre en
+  lugar de aparecer.
+- Sin situación activa el panel ya no dice "Sin modificaciones especiales", que no explicaba nada:
+  dice para qué sirve.
+- Personalización menciona que el modo también se cambia desde Inicio, para que no parezcan dos
+  ajustes distintos.
+- **`scripts/test-inicio.jsx`** (nuevo): 18 comprobaciones — arranca cerrado, `aria-controls`
+  resuelve, ningún botón anidado, las tres situaciones presentes, la activa marcada y sus consejos
+  intactos.
+
+### Lo que NO se ha tocado
+Buscador, lupa, IA, rachas y sonidos: son fases posteriores y el apartado 11 lo prohíbe
+expresamente.
+
+### Verificación
+`bash scripts/verificar.sh` → **223 comprobaciones en verde**.
+
+⚠️ **Pendiente de Josué (R1):** cómo se ve y se siente en un iPhone de verdad, y el aspecto en tema
+claro. El componente solo usa tokens de `COLORS`, así que sigue el tema por construcción, pero eso
+es un argumento, no una comprobación.
+
+---
+
 ## Entrega 2 · ME Fase 4 — Integración global, auditoría y renombrado a JosStyle (v1.27.0)
 
 Cierra el bloque ME (4/4). La especificación no pide construir nada nuevo aquí: pide **revisar todos

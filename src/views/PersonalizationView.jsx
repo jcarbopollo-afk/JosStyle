@@ -381,6 +381,7 @@ function ModoAppSection({ modo, onSetModo, accent }) {
       </p>
       <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
         Activa un modo para ver recordatorios relevantes en "Hoy" durante unos días. Vuelve a tocarlo para desactivarlo.
+        También puedes cambiarlo desde el desplegable de situación de la pantalla de inicio.
       </p>
       <div className="flex gap-2 flex-wrap">
         {MODOS_APP.map((m) => {
