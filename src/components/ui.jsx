@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail, Plus, Trash2, ChevronRight, CornerDownLeft } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba, shade, fileToBase64 } from '../lib/helpers';
-import { buscar, pareceUnaPregunta } from '../lib/indiceBusqueda';
+import { buscar, pareceUnaPregunta, sugerenciaDeErrata, sugerenciasIniciales } from '../lib/indiceBusqueda';
 import { askAI, askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { extractPdfText } from '../lib/pdfText';
 import { verificarPin } from '../lib/pin';
@@ -665,6 +665,36 @@ export function SuggestionsButton({ accent, buildPrompt, lado = 'izquierda' }) {
   );
 }
 
+// Fila de resultado. Se usa igual para los resultados de la búsqueda, para las
+// sugerencias iniciales y para los accesos recientes: son la misma cosa (una entrada
+// del índice que se puede abrir), así que se ven igual.
+function FilaResultado({ entrada, accent, onClick }) {
+  const Icono = entrada.icono;
+  const ubicacion = entrada.tipo === 'ajuste' ? 'Ajustes'
+    : entrada.tipo === 'accion' ? 'Acción rápida'
+    : 'Módulo';
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-transform active:scale-[0.98]"
+      style={{ background: COLORS.surface2 }}
+    >
+      {Icono
+        ? <Icono size={15} style={{ color: accent, flexShrink: 0 }} />
+        : entrada.tipo === 'accion'
+          ? <Plus size={15} style={{ color: accent, flexShrink: 0 }} />
+          : <Search size={15} style={{ color: accent, flexShrink: 0 }} />}
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold truncate" style={{ color: COLORS.text }}>{entrada.titulo}</span>
+        <span className="block text-xs truncate" style={{ color: COLORS.textMuted }}>
+          {ubicacion}{entrada.descripcion ? ` · ${entrada.descripcion}` : ''}
+        </span>
+      </span>
+      <ChevronRight size={14} style={{ color: COLORS.textMuted, flexShrink: 0 }} />
+    </button>
+  );
+}
+
 // Apartado 10: la pregunta que ya ha escrito se le pasa tal cual a la IA. No se le pide
 // que la vuelva a escribir, que es justo lo que la especificación prohíbe.
 function BotonPreguntarIA({ query, accent, onClick }) {
@@ -704,7 +734,7 @@ function BotonPreguntarIA({ query, accent, onClick }) {
 // No obliga a elegir entre "buscar" o "preguntar". Mientras escribe salen los resultados
 // del índice; si además el texto parece una pregunta, la opción de preguntar a la IA sube
 // arriba del todo. "¿cómo cambio los colores?" enseña las dos cosas.
-export function UniversalSearchModal({ accent, onClose, buildContext, indice, onIr }) {
+export function UniversalSearchModal({ accent, onClose, buildContext, indice, onIr, recientes = [], onRecordar, onLimpiarRecientes }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState('');
@@ -722,7 +752,16 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
   const esPregunta = pareceUnaPregunta(query);
   const hayTexto = query.trim().length > 0;
 
+  // BI Fase 3 · apartado 18 — "¿Quizá buscas «Colores»?". Solo se calcula, y solo se
+  // enseña, cuando lo único que ha salido ha salido por una errata.
+  const quizas = useMemo(() => (hayTexto ? sugerenciaDeErrata(indice, query) : null), [indice, query, hayTexto]);
+
+  // Apartado 17 — con el buscador vacío, atajos a funciones REALES. Salen del índice,
+  // así que un módulo desactivado no puede aparecer aquí.
+  const sugerencias = useMemo(() => sugerenciasIniciales(indice), [indice]);
+
   const abrir = (entrada) => {
+    onRecordar && onRecordar(entrada);
     onIr && onIr(entrada);
     onClose();
   };
@@ -811,31 +850,19 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
             <BotonPreguntarIA query={query} accent={accent} onClick={handleSearch} />
           )}
 
+          {/* Apartado 18 — se avisa de la errata en vez de dejarle pensando por qué sale
+              algo que no ha escrito. */}
+          {hayTexto && quizas && (
+            <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>
+              ¿Quizá buscas <span style={{ color: COLORS.text, fontWeight: 600 }}>{quizas}</span>?
+            </p>
+          )}
+
           {hayTexto && resultados.length > 0 && (
             <ul className="mt-3 space-y-1">
-              {resultados.map((r) => {
-                const IconoR = r.icono;
-                return (
-                  <li key={r.id}>
-                    <button
-                      onClick={() => abrir(r)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-transform active:scale-[0.98]"
-                      style={{ background: COLORS.surface2 }}
-                    >
-                      {IconoR
-                        ? <IconoR size={15} style={{ color: accent, flexShrink: 0 }} />
-                        : <Search size={15} style={{ color: accent, flexShrink: 0 }} />}
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold truncate" style={{ color: COLORS.text }}>{r.titulo}</span>
-                        <span className="block text-xs truncate" style={{ color: COLORS.textMuted }}>
-                          {r.categoria === 'Ajustes' ? 'Ajustes' : 'Módulo'}{r.descripcion ? ` · ${r.descripcion}` : ''}
-                        </span>
-                      </span>
-                      <ChevronRight size={14} style={{ color: COLORS.textMuted, flexShrink: 0 }} />
-                    </button>
-                  </li>
-                );
-              })}
+              {resultados.map((r) => (
+                <li key={r.id}><FilaResultado entrada={r} accent={accent} onClick={() => abrir(r)} /></li>
+              ))}
             </ul>
           )}
 
@@ -853,9 +880,40 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
           {errorMsg && <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>{errorMsg}</p>}
           {response && !errorMsg && <p className="text-sm mt-3 leading-relaxed" style={{ color: COLORS.text }}>{response}</p>}
           {!hayTexto && !response && !errorMsg && !loading && (
-            <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>
-              Escribe el nombre de una pantalla o un ajuste para abrirlo — "colores", "dormir", "dinero" —, o haz una pregunta sobre tus datos guardados.
-            </p>
+            <>
+              {/* Apartado 16 — accesos recientes. Son ids de funciones, nunca texto que
+                  Josué haya escrito: un historial de búsquedas podría guardar una pregunta
+                  personal, y esto no. Viven solo en este dispositivo. */}
+              {recientes.length > 0 && (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>Recientes</p>
+                    <button onClick={onLimpiarRecientes} className="text-xs" style={{ color: COLORS.textMuted }}>Limpiar</button>
+                  </div>
+                  <ul className="space-y-1">
+                    {recientes.map((r) => (
+                      <li key={r.id}><FilaResultado entrada={r} accent={accent} onClick={() => abrir(r)} /></li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Apartado 17 — atajos a funciones reales, sacadas del índice. */}
+              {sugerencias.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold mb-1.5" style={{ color: COLORS.textMuted }}>Ir rápido a</p>
+                  <ul className="space-y-1">
+                    {sugerencias.map((r) => (
+                      <li key={r.id}><FilaResultado entrada={r} accent={accent} onClick={() => abrir(r)} /></li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>
+                Escribe el nombre de una pantalla o un ajuste para abrirlo — "colores", "dormir", "dinero" —, o haz una pregunta sobre tus datos guardados.
+              </p>
+            </>
           )}
         </div>
       </div>

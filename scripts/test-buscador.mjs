@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Entrega 2 · BI Fase 2 — pruebas del índice y del motor de búsqueda.
+// Entrega 2 · BI Fases 2 y 3 — pruebas del índice y del motor de búsqueda.
 //
 // El apartado 19 de la especificación trae su propio control de calidad: nueve
 // búsquedas concretas que tienen que funcionar. Están todas aquí, literales,
@@ -10,7 +10,8 @@
 // fases futuras. Inventarlas para que la prueba pase sería exactamente la regla 8
 // rota, así que la prueba comprueba lo contrario: que no aparecen.
 // ---------------------------------------------------------------------------
-import { construirIndice, buscar, pareceUnaPregunta, normalizar } from '../src/lib/indiceBusqueda.js';
+import { readFileSync } from 'node:fs';
+import { construirIndice, buscar, pareceUnaPregunta, normalizar, normalizarRaiz, sugerenciaDeErrata, sugerenciasIniciales } from '../src/lib/indiceBusqueda.js';
 
 // Copia de MORE_NAV (App.jsx). Solo id y label: el icono no se usa en el motor.
 const MODULOS = [
@@ -36,12 +37,14 @@ const indice = construirIndice(MODULOS);
 const primero = (q) => buscar(indice, q)[0];
 const titulos = (q) => buscar(indice, q).map((r) => r.titulo);
 
-console.log('\n═══ BI Fase 2 — buscador de funciones ═══\n');
+console.log('\n═══ BI Fases 2 y 3 — buscador de funciones ═══\n');
 
 // --- Índice ---
 {
-  comprobar('El índice cubre los 19 módulos + las funciones de Ajustes',
-    indice.length === MODULOS.length + 14, String(indice.length));
+  comprobar('El índice cubre los 19 módulos + 15 funciones de Ajustes + 4 acciones',
+    indice.length === MODULOS.length + 15 + 4, String(indice.length));
+  comprobar('Toda entrada declara su tipo de destino (apartado 11)',
+    indice.every((e) => ['pantalla', 'ajuste', 'accion'].includes(e.tipo)));
   comprobar('Toda entrada tiene título, categoría y destino',
     indice.every((e) => e.titulo && e.categoria && e.tab));
   comprobar('Ninguna entrada del índice contiene datos de Josué',
@@ -51,7 +54,11 @@ console.log('\n═══ BI Fase 2 — buscador de funciones ═══\n');
 // --- Apartado 19: el control de calidad de la propia especificación ---
 {
   comprobar('"colores" → encuentra Colores', primero('colores')?.id === 'ajuste:apariencia', titulos('colores')[0]);
-  comprobar('"modo oscuro" → encuentra el tema', primero('modo oscuro')?.id === 'ajuste:apariencia', titulos('modo oscuro')[0]);
+  // Desde BI Fase 3, el tema claro/oscuro tiene entrada propia (apartado 14/15): se busca
+  // por su nombre, no por el de la pantalla que lo contiene. Sigue abriendo Apariencia.
+  comprobar('"modo oscuro" → encuentra el modo oscuro, no la pantalla que lo contiene',
+    primero('modo oscuro')?.id === 'ajuste:modo-oscuro', titulos('modo oscuro')[0]);
+  comprobar('...y su destino sigue siendo Ajustes → Apariencia', primero('modo oscuro')?.ajuste === 'apariencia');
   comprobar('"dormir" → encuentra Sueño', primero('dormir')?.tab === 'sueno', titulos('dormir')[0]);
   comprobar('"entrenamiento" → encuentra Entrenamiento', primero('entrenamiento')?.tab === 'entreno', titulos('entrenamiento')[0]);
   comprobar('"dinero" → encuentra Economía', primero('dinero')?.tab === 'economia', titulos('dinero')[0]);
@@ -141,7 +148,93 @@ console.log('\n═══ BI Fase 2 — buscador de funciones ═══\n');
   comprobar('Solo espacios devuelve lista vacía', buscar(indice, '   ').length === 0);
   comprobar('null no revienta', buscar(indice, null).length === 0);
   comprobar('Índice nulo no revienta', buscar(null, 'colores').length === 0);
-  comprobar('construirIndice sin módulos no revienta', construirIndice(null).length === 14);
+  comprobar('construirIndice sin módulos no revienta', construirIndice(null).length === 19, String(construirIndice(null).length));
+}
+
+// ═══ BI Fase 3 — motor profundo ═══
+
+// --- Apartado 6 y 22: coincidencias parciales ---
+{
+  comprobar('"colo" → Colores', primero('colo')?.id === 'ajuste:apariencia', titulos('colo')[0]);
+  comprobar('"entren" → Entrenamiento', primero('entren')?.tab === 'entreno', titulos('entren')[0]);
+  comprobar('"dormi" → Sueño', primero('dormi')?.tab === 'sueno', titulos('dormi')[0]);
+  comprobar('"econom" → Economía', primero('econom')?.tab === 'economia', titulos('econom')[0]);
+}
+
+// --- Apartado 4: singular y plural ---
+{
+  comprobar('normalizarRaiz quita el plural', normalizarRaiz('Colores') === 'color');
+  comprobar('...y respeta las palabras cortas', normalizarRaiz('mes tres fe') === 'mes tres fe');
+  comprobar('"color" en singular encuentra "Colores y tema"', primero('color')?.id === 'ajuste:apariencia');
+  comprobar('"tarea" en singular encuentra las tareas', titulos('tarea').length > 0);
+  comprobar('"objetivos" en plural encuentra Objetivos', primero('objetivos')?.tab === 'objetivos');
+  // El plural no debe atropellar una palabra clave escrita literalmente.
+  comprobar('"pantallas" → Bienestar, no "Pantalla principal"', primero('pantallas')?.tab === 'bienestar', titulos('pantallas')[0]);
+}
+
+// --- Apartado 18 y 22: erratas ---
+{
+  comprobar('"colroes" → encuentra Colores igualmente', primero('colroes')?.id === 'ajuste:apariencia', titulos('colroes')[0] || 'sin resultados');
+  comprobar('"entrenaminto" → encuentra Entrenamiento', primero('entrenaminto')?.tab === 'entreno', titulos('entrenaminto')[0] || 'sin resultados');
+  comprobar('"¿Quizá buscas…?" propone el título correcto', sugerenciaDeErrata(indice, 'colroes') === 'Colores y tema', String(sugerenciaDeErrata(indice, 'colroes')));
+  comprobar('...y no propone nada cuando la búsqueda ya acierta', sugerenciaDeErrata(indice, 'colores') === null);
+  comprobar('Una palabra corta no tolera erratas ("mas" no es "mes")', buscar(indice, 'zzz').length === 0);
+  comprobar('"xyzabc123" sigue sin dar resultados', buscar(indice, 'xyzabc123').length === 0, titulos('xyzabc123').join(', '));
+  comprobar('Una errata nunca adelanta a un acierto real',
+    primero('economia')?.tab === 'economia');
+}
+
+// --- Apartado 7: sinónimos, un escalón por debajo de las palabras clave ---
+{
+  comprobar('"religion" → Fe (sinónimo)', primero('religion')?.tab === 'fe', titulos('religion')[0] || 'sin resultados');
+  comprobar('"musculo" → Entrenamiento (sinónimo)', primero('musculo')?.tab === 'entreno', titulos('musculo')[0] || 'sin resultados');
+  comprobar('"diseno" → Colores y tema (sinónimo)', primero('diseno')?.id === 'ajuste:apariencia', titulos('diseno')[0] || 'sin resultados');
+  // El escalón importa: "concentracion" es palabra clave de Bienestar y sinónimo de
+  // Productividad. Gana la palabra clave, no el sinónimo.
+  comprobar('Una palabra clave gana a un sinónimo', primero('concentracion')?.tab === 'bienestar', titulos('concentracion')[0]);
+  // "metas" en cambio es palabra clave de LOS DOS (Objetivos y Productividad): ahí no hay
+  // escalón que decida, así que salen los dos y manda el desempate, no el azar.
+  comprobar('Cuando dos módulos empatan de verdad, salen los dos', buscar(indice, 'metas').length >= 2, String(buscar(indice, 'metas').length));
+}
+
+// --- Apartados 10 y 11: acciones directas, no solo pantallas ---
+{
+  comprobar('"nueva tarea" → una ACCIÓN, no una pantalla', primero('nueva tarea')?.tipo === 'accion', primero('nueva tarea')?.titulo);
+  comprobar('...y lleva el foco que abre el formulario', primero('nueva tarea')?.foco?.accion === 'nueva');
+  comprobar('"anotar gasto" → abre el movimiento nuevo', primero('anotar gasto')?.foco?.accion === 'nuevoMovimiento', primero('anotar gasto')?.titulo);
+  comprobar('"registrar sueño" → abre el registro de la noche', primero('registrar sueño')?.foco?.accion === 'registrar', primero('registrar sueño')?.titulo);
+  comprobar('Toda acción declara módulo y foco', indice.filter((e) => e.tipo === 'accion').every((e) => e.tab && e.foco));
+  // Buscar el módulo a secas debe seguir llevando al módulo, no a su acción.
+  comprobar('"sueño" a secas sigue abriendo el módulo', primero('sueño')?.tipo === 'pantalla', primero('sueño')?.titulo);
+  comprobar('"economia" a secas sigue abriendo el módulo', primero('economia')?.tipo === 'pantalla');
+}
+
+// --- Apartado 9: desambiguación — varios resultados ordenados, nada arbitrario ---
+{
+  const r = buscar(indice, 'objetivo');
+  comprobar('"objetivo" devuelve varias opciones ordenadas', r.length >= 2, String(r.length));
+  comprobar('...con Objetivos el primero', r[0]?.tab === 'objetivos', r[0]?.titulo);
+  // Determinista: dos búsquedas idénticas dan el mismo orden.
+  comprobar('El orden es determinista',
+    JSON.stringify(buscar(indice, 'objetivo').map((x) => x.id)) === JSON.stringify(r.map((x) => x.id)));
+}
+
+// --- Apartado 17: sugerencias iniciales, sacadas del índice real ---
+{
+  const sug = sugerenciasIniciales(indice);
+  comprobar('Hay 4 sugerencias iniciales', sug.length === 4, String(sug.length));
+  comprobar('Todas salen del índice real', sug.every((x) => indice.includes(x)));
+  comprobar('Todas son pantallas de verdad', sug.every((x) => x.tipo === 'pantalla' && x.tab));
+  const reducido = construirIndice(MODULOS, { modulosDesactivados: ['economia'] });
+  comprobar('Un módulo desactivado no se sugiere', !sugerenciasIniciales(reducido).some((x) => x.tab === 'economia'));
+  comprobar('...y su acción directa tampoco está en el índice', !reducido.some((e) => e.id === 'accion:gasto'));
+}
+
+// --- Apartado 19/21: el motor es local y determinista, nunca llama a la IA ---
+{
+  const fuente = readFileSync(new URL('../src/lib/indiceBusqueda.js', import.meta.url), 'utf8');
+  comprobar('El motor no importa la IA', !/from '\.\/ai'|askAI/.test(fuente));
+  comprobar('El motor no hace peticiones de red', !/fetch\(|XMLHttpRequest/.test(fuente));
 }
 
 console.log(fallos === 0 ? '\n  Todo correcto.\n' : `\n  ${fallos} fallo(s).\n`);

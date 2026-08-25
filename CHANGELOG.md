@@ -1,5 +1,69 @@
 # CHANGELOG.md
 
+## Entrega 2 · BI Fase 3 — El motor de búsqueda de verdad (v1.30.0)
+
+La Fase 2 hizo el acceso y un índice que funcionaba. Esta lo convierte en un motor: sinónimos,
+plurales, erratas, acciones directas, sugerencias y recientes.
+
+### Lo que ahora encuentra y antes no
+| Escribe | Antes | Ahora |
+|---|---|---|
+| `colo`, `entren`, `dormi` | ya funcionaba | igual |
+| `color` (singular de "colores") | nada | Colores y tema |
+| `colroes` (errata) | nada | Colores y tema + *"¿Quizá buscas Colores y tema?"* |
+| `religion`, `musculo`, `diseno` | nada | Fe, Entrenamiento, Colores — por sinónimo |
+| `modo oscuro` | Colores y tema | **Modo oscuro o claro**, con entrada propia |
+| `nueva tarea` | Productividad | **abre el formulario de tarea nueva** |
+
+### Tres tipos de destino, no solo pantallas
+El apartado 11 pide que el índice no quede limitado a páginas. Ahora hay `pantalla`, `ajuste` (abre
+su categoría de Ajustes) y `accion` (abre un formulario). Las cuatro acciones directas son
+**exactamente** las que el Dashboard ya tiene en su fila de acciones rápidas, con el mismo `foco`:
+no se ha inventado ninguna.
+
+### Sinónimos y palabras clave son cosas distintas
+El apartado 3 los separa y el 8 los ordena. Una **palabra clave** es como Josué llamaría a la
+función ("dinero" → Economía); un **sinónimo** es un término vecino que debe encontrarla sin
+adelantar a la función cuyo nombre es esa palabra. Por eso "concentracion" lleva a Bienestar —lo
+tiene como palabra clave— y no a Productividad, que solo lo tiene como sinónimo.
+
+### Dos bugs reales que encontraron las pruebas
+1. **El plural atropellaba palabras clave literales.** "pantallas" abría *Pantalla principal* (que
+   solo coincide tras quitarle la 's') en vez de Bienestar, que tiene "pantallas" escrito tal cual.
+   La causa era estructural: `puntuar` devolvía el primer acierto por campos, así que una
+   coincidencia floja en el título ganaba a una fuerte en las palabras clave. Ahora se evalúan
+   todos los escalones y se coge el mayor, y el plural tiene su propio escalón, por debajo.
+2. **La raíz destrozaba palabras cortas acabadas en 's'**: "tres" → "tre", "mes" → "me". El umbral
+   pasó de 3 a 4 letras.
+
+### Damerau, no Levenshtein
+Con Levenshtein a secas, "colroes" está a **2** errores de "colores" (dos sustituciones) y con la
+tolerancia razonable que pide la especificación no se encontraba. Contando el intercambio de dos
+letras seguidas como **un** error, se encuentra. Las transposiciones son con diferencia la errata
+más común escribiendo deprisa en un móvil, y es justo el ejemplo que pone el apartado 18.
+
+Las erratas puntúan por debajo de todo lo demás, así que **nunca desplazan a un acierto real**, y
+solo se aplican a consultas de una sola palabra: sobre una frase entera la distancia de edición deja
+de significar nada y empieza a devolver cosas al azar, que es lo que prohíbe el apartado 7.
+
+### Historial reciente, con cuidado
+Cuatro accesos, con botón de limpiar. Dos decisiones deliberadas:
+- **Guarda ids de funciones, no el texto escrito.** Una búsqueda puede ser una pregunta personal
+  ("por qué me encuentro mal"); un historial de funciones abiertas, no.
+- **Vive en `localStorage`, no en Supabase.** El apartado 16 lo pide, y además no es un dato que
+  merezca sincronizarse entre dispositivos ni entrar en la copia de seguridad. Se resuelve contra el
+  índice actual, así que un reciente cuyo módulo se desactive después desaparece solo.
+
+### Privacidad (apartado 21)
+Escribir "colores" **no sale del dispositivo**. La prueba no se fía de que esté bien escrito: lee el
+propio archivo del motor y comprueba que no importa `askAI` ni hace `fetch`.
+
+### Verificación
+`bash scripts/verificar.sh` → **322 comprobaciones en verde**, 99 de ellas del buscador, incluidas
+las seis categorías de pruebas obligatorias del apartado 22.
+
+---
+
 ## Entrega 2 · BI Fase 2 — Buscar funciones y abrirlas directamente (v1.29.0)
 
 ### El problema, en una frase

@@ -69,7 +69,7 @@ else
 fi
 
 if node --import ./scripts/resolver-vite.mjs scripts/test-buscador.mjs >/tmp/jc_busc.log 2>&1; then
-  ok "Buscador de funciones (BI F2) — $(grep -c '✓' /tmp/jc_busc.log) comprobaciones"
+  ok "Buscador de funciones (BI F2+F3) — $(grep -c '✓' /tmp/jc_busc.log) comprobaciones"
 else
   fallo "Fallan pruebas del buscador de funciones"; grep '✗' /tmp/jc_busc.log
 fi

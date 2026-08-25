@@ -78,6 +78,10 @@ const MORE_NAV = [
   { id: 'ajustes', label: 'Ajustes', icon: Settings },
 ];
 
+// BI Fase 3 · apartado 16 — "limitar el número de elementos". Cuatro caben sin empujar
+// las sugerencias fuera de la pantalla en un móvil.
+const MAX_RECIENTES_BUSQUEDA = 4;
+
 const AREAS_NAV = [
   { id: 'area-salud', label: 'Salud', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno'] },
   { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['calendario', 'estudios', 'productividad', 'objetivos', 'diario', 'biblioteca'] },
@@ -506,10 +510,46 @@ export default function App() {
   // Apartado 12: pulsar un resultado abre el sitio exacto, no la lista de Ajustes para que lo
   // busque él. Reutiliza el mismo `navegarDesdeHoy` del deep-link del Dashboard — ni un sistema
   // de navegación nuevo (apartado 16 y regla 10).
+  //
+  // BI Fase 3 · apartado 11 — tres tipos de destino, un solo camino: una pantalla no lleva foco,
+  // un ajuste lleva su categoría, y una acción lleva el foco que abre el formulario. El `foco` de
+  // las acciones sale del propio índice, que copia el de las acciones rápidas del Dashboard.
   const irAResultado = (entrada) => {
     if (!entrada) return;
-    navegarDesdeHoy(entrada.tab, entrada.ajuste ? { categoria: entrada.ajuste } : undefined);
+    const foco = entrada.foco || (entrada.ajuste ? { categoria: entrada.ajuste } : undefined);
+    navegarDesdeHoy(entrada.tab, foco);
   };
+
+  // BI Fase 3 · apartado 16 — accesos recientes del buscador.
+  //
+  // Se guardan los IDS de las funciones abiertas, nunca el texto que Josué escribió: un
+  // historial de búsquedas podría acabar guardando una pregunta personal ("por qué me
+  // encuentro mal"), y eso no tiene por qué quedarse en ninguna parte.
+  //
+  // Y viven en `localStorage`, NO en `app_data`: el apartado lo pide explícitamente
+  // ("guardarlo localmente si corresponde, no enviarlo innecesariamente al servidor"), y
+  // además no es un dato de Josué que merezca sincronizarse entre dispositivos ni entrar
+  // en la copia de seguridad. Si el navegador lo borra, no se pierde nada que importe.
+  const [recientesBusqueda, setRecientesBusqueda] = useState(() => {
+    try {
+      const guardado = JSON.parse(localStorage.getItem('josstyle:busquedas-recientes') || '[]');
+      return Array.isArray(guardado) ? guardado.slice(0, MAX_RECIENTES_BUSQUEDA) : [];
+    } catch { return []; }
+  });
+  const guardarRecientes = (ids) => {
+    setRecientesBusqueda(ids);
+    try { localStorage.setItem('josstyle:busquedas-recientes', JSON.stringify(ids)); } catch { /* modo privado */ }
+  };
+  const recordarBusqueda = (entrada) => {
+    if (!entrada) return;
+    guardarRecientes([entrada.id, ...recientesBusqueda.filter((x) => x !== entrada.id)].slice(0, MAX_RECIENTES_BUSQUEDA));
+  };
+  // Se resuelven contra el índice ACTUAL, así que un reciente cuyo módulo se haya
+  // desactivado después desaparece solo, sin necesidad de limpiar nada.
+  const entradasRecientes = useMemo(
+    () => recientesBusqueda.map((id) => indiceBusqueda.find((e) => e.id === id)).filter(Boolean),
+    [recientesBusqueda, indiceBusqueda],
+  );
   // Cada vista de destino solo necesita saber si el foco pendiente es "el suyo" — así ninguna
   // vista tiene que conocer la forma de `dashboardFoco` de las demás.
   const focoPara = (modulo) => (dashboardFoco && dashboardFoco.modulo === modulo ? dashboardFoco : null);
@@ -1670,6 +1710,8 @@ export default function App() {
         <UniversalSearchModal
           accent={accent} onClose={() => setShowSearch(false)} buildContext={() => currentState}
           indice={indiceBusqueda} onIr={irAResultado}
+          recientes={entradasRecientes} onRecordar={recordarBusqueda}
+          onLimpiarRecientes={() => guardarRecientes([])}
         />
       )}
 

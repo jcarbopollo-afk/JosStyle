@@ -35,7 +35,72 @@ export function normalizar(texto) {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    // BI Fase 3 · apartado 4 — "gestionar caracteres especiales". Los signos de
+    // interrogación y la puntuación no deben impedir una coincidencia; se quitan
+    // aquí y no en la detección de intención, que sí los necesita.
+    .replace(/[¿?¡!.,;:()"']/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
+}
+
+// BI Fase 3 · apartado 4 — "evitar diferencias entre singular y plural cuando sea
+// posible". Deliberadamente tonto: quitar una 's' o 'es' final cubre el 95% del
+// español cotidiano ("colores"→"color", "tareas"→"tarea") sin meter un lematizador
+// entero. Solo se aplica a palabras de más de 3 letras, para no destrozar "mes",
+// "tres" o "fe".
+function raiz(palabra) {
+  if (palabra.length > 4 && palabra.endsWith('es')) return palabra.slice(0, -2);
+  // Umbral de 4, no de 3: con 3 se destrozaban palabras cortas que acaban en 's'
+  // por derecho propio — "tres" se quedaba en "tre", "mes" en "me", "gas" en "ga".
+  if (palabra.length > 4 && palabra.endsWith('s')) return palabra.slice(0, -1);
+  return palabra;
+}
+
+/** Normaliza y además reduce cada palabra a su raíz singular. */
+export function normalizarRaiz(texto) {
+  return normalizar(texto).split(' ').map(raiz).join(' ');
+}
+
+// BI Fase 3 · apartado 18 — tolerancia a errores de escritura ("colroes" → "Colores").
+//
+// Distancia de Damerau-Levenshtein, no Levenshtein a secas: cuenta el intercambio de
+// dos letras seguidas como UN error, no dos. Es la diferencia entre encontrar "colroes"
+// y no encontrarlo, y las transposiciones son con mucho la errata más común al escribir
+// deprisa en un móvil — que es exactamente el ejemplo que pone la especificación.
+//
+// Con corte temprano: en cuanto la fila entera supera el máximo aceptable se abandona,
+// que es lo que evita recorrer palabras largas enteras para nada. La especificación
+// pide "una tolerancia razonable", no un corrector ortográfico.
+function distancia(a, b, maximo) {
+  if (Math.abs(a.length - b.length) > maximo) return maximo + 1;
+  const filas = [Array.from({ length: b.length + 1 }, (_, i) => i)];
+  for (let i = 1; i <= a.length; i++) {
+    const fila = new Array(b.length + 1);
+    fila[0] = i;
+    let minimoFila = i;
+    for (let j = 1; j <= b.length; j++) {
+      const coste = a[i - 1] === b[j - 1] ? 0 : 1;
+      fila[j] = Math.min(filas[i - 1][j] + 1, fila[j - 1] + 1, filas[i - 1][j - 1] + coste);
+      // Transposición: "colroes" ↔ "colores" son un solo error, no dos.
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        fila[j] = Math.min(fila[j], filas[i - 2][j - 2] + 1);
+      }
+      if (fila[j] < minimoFila) minimoFila = fila[j];
+    }
+    filas.push(fila);
+    if (minimoFila > maximo) return maximo + 1;
+  }
+  return filas[a.length][b.length];
+}
+
+// Cuántas letras de diferencia se toleran. Una palabra corta no puede permitirse
+// ninguna —"mes" y "mas" son palabras distintas, no un error de dedo— y una larga
+// aguanta dos sin volverse impredecible (apartado 7: "no convertirlo en un sistema
+// impredecible").
+function margenErratas(q) {
+  if (q.length < 5) return 0;
+  if (q.length < 8) return 1;
+  return 2;
 }
 
 // Palabras con las que Josué buscaría cada módulo sin acordarse de su nombre
@@ -63,6 +128,34 @@ export const PALABRAS_MODULOS = {
   ajustes: ['configuracion', 'opciones', 'preferencias', 'settings'],
 };
 
+// BI Fase 3 · apartado 3 — `synonyms` es un campo aparte de `keywords`, y el
+// apartado 8 lo coloca un escalón por debajo en el ranking. La diferencia práctica:
+// una PALABRA CLAVE es como Josué llamaría a la función ("dinero" → Economía); un
+// SINÓNIMO es un término vecino, más vago, que debe encontrarla pero sin adelantar
+// a la función cuyo nombre es esa palabra ("salud" también evoca Nutrición, pero
+// "Salud" el módulo tiene que ganar).
+export const SINONIMOS_MODULOS = {
+  salud: ['bienestar fisico', 'estado fisico', 'forma'],
+  sueno: ['cansancio', 'energia', 'madrugar', 'trasnochar'],
+  nutricion: ['alimento', 'nutrientes', 'proteina', 'hidratacion'],
+  entreno: ['fuerza', 'musculo', 'rutina de entreno', 'sesion'],
+  calendario: ['horario', 'dia', 'semana', 'organizacion'],
+  estudios: ['colegio', 'universidad', 'academico', 'aprender'],
+  negocio: ['trabajo', 'dinero extra', 'facturar'],
+  productividad: ['eficiencia', 'concentracion', 'foco', 'planificar'],
+  objetivos: ['objetivo', 'ambicion', 'lograr', 'progreso'],
+  diario: ['pensamientos', 'sentimientos', 'desahogo'],
+  fe: ['religion', 'creencias', 'gratitud'],
+  biblioteca: ['recursos', 'material', 'lectura', 'guardado'],
+  relacion: ['amor', 'citas'],
+  bienestar: ['descanso mental', 'salud mental', 'adiccion', 'uso del movil'],
+  estadisticas: ['informes', 'metricas', 'resumen'],
+  predicciones: ['tendencia', 'que pasara'],
+  logros: ['recompensas', 'hitos', 'progreso'],
+  economia: ['pagar', 'cobrar', 'euros', 'cuenta', 'economico'],
+  ajustes: ['ajuste', 'configurar', 'cambiar'],
+};
+
 // Funciones que viven DENTRO de Ajustes y no tienen entrada propia en ninguna
 // lista de navegación. `ajuste` es el id de categoría que abre `SettingsView`,
 // así que pulsar un resultado abre esa categoría directamente — no deja a Josué
@@ -71,72 +164,130 @@ export const FUNCIONES_AJUSTES = [
   {
     id: 'ajuste:apariencia', titulo: 'Colores y tema', ajuste: 'apariencia',
     descripcion: 'Color de acento, tema oscuro o claro y temas guardados.',
-    palabras: ['colores', 'color', 'tema', 'acento', 'apariencia', 'paleta', 'modo oscuro', 'modo claro', 'modo noche', 'oscuro', 'claro', 'personalizar colores'],
+    palabras: ['colores', 'color', 'tema', 'acento', 'apariencia', 'paleta', 'personalizar colores'],
+    sinonimos: ['diseno', 'estilo', 'aspecto', 'look'],
+  },
+  // Apartado 15 — "funciones profundas": el tema claro/oscuro vive DENTRO de Apariencia,
+  // pero Josué lo busca por su nombre, no por el de la pantalla que lo contiene. Entrada
+  // propia, mismo destino. Es el ejemplo literal del apartado 14.
+  {
+    id: 'ajuste:modo-oscuro', titulo: 'Modo oscuro o claro', ajuste: 'apariencia',
+    descripcion: 'Cambia entre el tema oscuro y el claro.',
+    palabras: ['modo oscuro', 'modo claro', 'modo noche', 'oscuro', 'claro', 'noche', 'dia', 'tema oscuro', 'tema claro'],
+    sinonimos: ['brillo', 'fondo negro', 'fondo blanco'],
   },
   {
     id: 'ajuste:texto', titulo: 'Tamaño de texto y densidad', ajuste: 'apariencia',
     descripcion: 'Texto más grande o más pequeño, bordes y espaciado de la interfaz.',
     palabras: ['texto', 'letra', 'tamano', 'fuente', 'grande', 'pequeno', 'densidad', 'espaciado', 'bordes', 'redondeo', 'animaciones', 'ver mejor'],
+    sinonimos: ['legibilidad', 'zoom', 'interfaz'],
   },
   {
     id: 'ajuste:pantalla-principal', titulo: 'Pantalla principal', ajuste: 'pantalla-principal',
     descripcion: 'Qué módulos usas, qué ves en Hoy y en qué orden aparece el menú.',
     palabras: ['personalizar', 'personalizacion', 'inicio', 'hoy', 'dashboard', 'modulos', 'activar modulo', 'desactivar modulo', 'ocultar', 'orden', 'reordenar', 'favoritas', 'perfiles'],
+    sinonimos: ['pantalla principal', 'menu', 'que veo', 'esconder'],
   },
   {
     id: 'ajuste:notificaciones', titulo: 'Notificaciones', ajuste: 'notificaciones',
     descripcion: 'Permiso, categorías de aviso y horario de descanso.',
     palabras: ['notificaciones', 'avisos', 'alertas', 'recordatorios', 'silenciar', 'no molestar', 'horario de descanso'],
+    sinonimos: ['permiso', 'push', 'me avise'],
   },
   {
     id: 'ajuste:seguridad', titulo: 'Seguridad y PIN', ajuste: 'seguridad',
     descripcion: 'PIN de acceso, biometría y qué secciones se protegen.',
     palabras: ['pin', 'seguridad', 'contrasena', 'clave', 'bloquear', 'biometria', 'face id', 'huella', 'proteger', 'cerrar sesion'],
+    sinonimos: ['candado', 'privado', 'acceso', 'salir'],
   },
   {
     id: 'ajuste:privacidad', titulo: 'Privacidad', ajuste: 'privacidad',
     descripcion: 'Qué usa la inteligencia artificial y borrado por categoría.',
     palabras: ['privacidad', 'datos privados', 'que usa la ia', 'borrar categoria', 'transparencia'],
+    sinonimos: ['ia', 'inteligencia artificial', 'mis datos'],
   },
   {
     id: 'ajuste:datos', titulo: 'Copia de seguridad y exportar', ajuste: 'datos',
     descripcion: 'Descargar tus datos y hacer una copia de seguridad.',
     palabras: ['exportar', 'descargar', 'copia de seguridad', 'backup', 'csv', 'excel', 'importar', 'guardar datos'],
+    sinonimos: ['respaldo', 'sacar datos', 'fichero'],
   },
   {
     id: 'ajuste:papelera', titulo: 'Eliminados recientemente', ajuste: 'papelera',
     descripcion: 'Recupera algo que hayas borrado por error.',
     palabras: ['papelera', 'eliminados', 'borrado', 'recuperar', 'restaurar', 'deshacer borrado', 'basura'],
+    sinonimos: ['se me borro', 'volver atras', 'reciclaje'],
   },
   {
     id: 'ajuste:perfil', titulo: 'Tu perfil', ajuste: 'perfil',
     descripcion: 'Nombre, fecha de nacimiento, altura, peso y nivel de actividad.',
     palabras: ['perfil', 'mis datos', 'nombre', 'edad', 'altura', 'cuenta'],
+    sinonimos: ['quien soy', 'usuario'],
   },
   {
     id: 'ajuste:preferencias', titulo: 'Idioma, zona horaria y unidades', ajuste: 'preferencias',
     descripcion: 'Preferencias generales de la aplicación.',
     palabras: ['idioma', 'lengua', 'zona horaria', 'unidades', 'kilos', 'pais', 'formato'],
+    sinonimos: ['español', 'metrico', 'hora'],
   },
   {
     id: 'ajuste:accesibilidad', titulo: 'Accesibilidad', ajuste: 'accesibilidad',
     descripcion: 'Dónde están el tamaño de texto y reducir movimiento.',
     palabras: ['accesibilidad', 'contraste', 'alto contraste', 'reducir movimiento', 'lector de pantalla'],
+    sinonimos: ['ver mejor', 'mareo'],
   },
   {
     id: 'ajuste:sincronizacion', titulo: 'Sincronización', ajuste: 'sincronizacion',
     descripcion: 'Cómo viajan tus datos entre dispositivos.',
     palabras: ['sincronizacion', 'sincronizar', 'dispositivos', 'nube', 'supabase', 'otro movil'],
+    sinonimos: ['cloud', 'copia en linea', 'ordenador'],
   },
   {
     id: 'ajuste:integraciones', titulo: 'Integraciones', ajuste: 'integraciones',
     descripcion: 'Conexiones con otros servicios.',
     palabras: ['integraciones', 'conectar', 'apps', 'reloj', 'wearable'],
+    sinonimos: ['enlazar', 'servicios'],
   },
   {
     id: 'ajuste:informacion', titulo: 'Información y versión', ajuste: 'informacion',
     descripcion: 'Versión de la aplicación, créditos e información técnica.',
     palabras: ['version', 'informacion', 'acerca de', 'creditos', 'ayuda'],
+    sinonimos: ['sobre la app', 'soporte'],
+  },
+];
+
+// BI Fase 3 · apartados 10 y 11 — "el índice debe poder manejar distintos tipos de
+// destino: no queda limitado únicamente a páginas". Estas entradas no abren una
+// pantalla a mirar: abren directamente el formulario de alta.
+//
+// Son EXACTAMENTE las cuatro acciones rápidas que el Dashboard ya tiene, con el mismo
+// `foco` — no se inventa ninguna. Si un módulo no tiene un alta de un solo paso sin
+// ambigüedad de qué crear, no entra aquí (misma regla que se aplicó al construir la
+// fila de acciones rápidas).
+export const ACCIONES_DIRECTAS = [
+  {
+    id: 'accion:sueno', titulo: 'Registrar sueño', tab: 'sueno', foco: { accion: 'registrar' },
+    descripcion: 'Abre el formulario para anotar la noche de hoy.',
+    palabras: ['registrar sueno', 'anotar sueno', 'apuntar sueno', 'nueva noche', 'he dormido'],
+    sinonimos: ['dormir', 'noche'],
+  },
+  {
+    id: 'accion:gasto', titulo: 'Anotar un gasto', tab: 'economia', foco: { accion: 'nuevoMovimiento' },
+    descripcion: 'Abre el formulario de un movimiento nuevo.',
+    palabras: ['anotar gasto', 'nuevo gasto', 'apuntar gasto', 'he gastado', 'nuevo movimiento', 'ingreso'],
+    sinonimos: ['dinero', 'pagar', 'compra'],
+  },
+  {
+    id: 'accion:tarea', titulo: 'Crear una tarea', tab: 'productividad', foco: { sub: 'tareas', accion: 'nueva' },
+    descripcion: 'Abre el formulario de una tarea nueva.',
+    palabras: ['nueva tarea', 'crear tarea', 'anadir tarea', 'apuntar tarea', 'pendiente nuevo'],
+    sinonimos: ['recordar', 'to do', 'hacer'],
+  },
+  {
+    id: 'accion:objetivo', titulo: 'Crear un objetivo', tab: 'objetivos', foco: { accion: 'nuevo' },
+    descripcion: 'Abre el formulario de un objetivo nuevo.',
+    palabras: ['nuevo objetivo', 'crear objetivo', 'anadir objetivo', 'proponerme'],
+    sinonimos: ['meta', 'reto'],
   },
 ];
 
@@ -159,9 +310,15 @@ export function construirIndice(modulos, { modulosDesactivados = [] } = {}) {
       titulo: m.label,
       descripcion: DESCRIPCIONES_MODULOS[m.id] || '',
       palabras: PALABRAS_MODULOS[m.id] || [],
+      sinonimos: SINONIMOS_MODULOS[m.id] || [],
       categoria: 'Módulo',
       icono: m.icon,
       tab: m.id,
+      // Apartado 11 — abre una pantalla.
+      tipo: 'pantalla',
+      // Apartado 3 — a igualdad de puntos, un módulo entero pesa más que un ajuste
+      // suelto: es un destino más ancho y casi siempre lo que Josué quería.
+      prioridad: 2,
     });
   }
 
@@ -170,16 +327,27 @@ export function construirIndice(modulos, { modulosDesactivados = [] } = {}) {
   // por si una fase futura cambia esa regla.
   if (!apagados.has('ajustes')) {
     for (const f of FUNCIONES_AJUSTES) {
-      entradas.push({ ...f, categoria: 'Ajustes', tab: 'ajustes' });
+      entradas.push({ ...f, categoria: 'Ajustes', tab: 'ajustes', tipo: 'ajuste', prioridad: 1 });
     }
   }
 
-  // Se normaliza una sola vez, al construir, no en cada tecla.
+  // Las acciones directas solo aparecen si su módulo sigue activo: ofrecer "Anotar
+  // un gasto" con Economía desactivada llevaría a una pantalla que Josué apagó.
+  for (const a of ACCIONES_DIRECTAS) {
+    if (apagados.has(a.tab)) continue;
+    entradas.push({ ...a, categoria: 'Acción', tipo: 'accion', prioridad: 0 });
+  }
+
+  // Se normaliza una sola vez, al construir, no en cada tecla. `_raiz*` es la versión
+  // sin plurales, que es la que usa la coincidencia tolerante.
   return entradas.map((e) => ({
     ...e,
     _titulo: normalizar(e.titulo),
+    _tituloRaiz: normalizarRaiz(e.titulo),
     _descripcion: normalizar(e.descripcion),
     _palabras: (e.palabras || []).map(normalizar),
+    _palabrasRaiz: (e.palabras || []).map(normalizarRaiz),
+    _sinonimos: (e.sinonimos || []).map(normalizar),
   }));
 }
 
@@ -195,50 +363,130 @@ const PUNTOS = {
   PALABRA_EXACTA: 500,
   PALABRA_EMPIEZA: 400,
   PALABRA_CONTIENE: 300,
+  // BI Fase 3 · apartado 8 — los sinónimos van justo por debajo de las palabras
+  // clave: deben encontrar la función, pero nunca adelantar a aquella cuyo nombre
+  // o palabra clave es literalmente lo que se ha escrito.
+  SINONIMO_EXACTO: 250,
+  SINONIMO_PARCIAL: 200,
+  // El singular/plural es una AYUDA, no una coincidencia real, así que su escalón va
+  // por debajo de una palabra clave literal. Sin esto, buscar "pantallas" abría
+  // "Pantalla principal" (que solo coincide tras quitarle la 's') en vez de Bienestar,
+  // que tiene "pantallas" escrito tal cual entre sus palabras clave.
+  TITULO_EMPIEZA_RAIZ: 450,
+  PALABRA_RAIZ: 350,
   DESCRIPCION: 150,
   TODAS_LAS_PALABRAS: 80,
+  // Última red de todas: se ha escrito mal. Por debajo de cualquier acierto real,
+  // para que una errata nunca desplace a una coincidencia legítima.
+  ERRATA: 40,
 };
 
-function puntuar(entrada, q) {
-  if (entrada._titulo === q) return PUNTOS.TITULO_EXACTO;
-  if (entrada._titulo.startsWith(q)) return PUNTOS.TITULO_EMPIEZA;
-  if (entrada._titulo.includes(q)) return PUNTOS.TITULO_CONTIENE;
-
+// Se evalúan TODOS los escalones y se coge el mayor, en vez de ir devolviendo el
+// primero que acierte por campos. La diferencia importa: con los `return` tempranos,
+// una coincidencia floja en el título (por ejemplo tras quitar un plural) ganaba a
+// una palabra clave escrita literalmente, y el resultado era el equivocado.
+function puntuar(entrada, q, qRaiz, margen) {
   let mejor = 0;
+  const sube = (n) => { if (n > mejor) mejor = n; };
+
+  if (entrada._titulo === q) return PUNTOS.TITULO_EXACTO;
+  // El plural cuenta como exacto: "colores" y "color" son la misma intención.
+  if (entrada._tituloRaiz === qRaiz) return PUNTOS.TITULO_EXACTO;
+  if (entrada._titulo.startsWith(q)) sube(PUNTOS.TITULO_EMPIEZA);
+  else if (entrada._tituloRaiz.startsWith(qRaiz)) sube(PUNTOS.TITULO_EMPIEZA_RAIZ);
+  if (entrada._titulo.includes(q)) sube(PUNTOS.TITULO_CONTIENE);
+
   for (const p of entrada._palabras) {
-    if (p === q) mejor = Math.max(mejor, PUNTOS.PALABRA_EXACTA);
-    else if (p.startsWith(q)) mejor = Math.max(mejor, PUNTOS.PALABRA_EMPIEZA);
-    else if (p.includes(q) || q.includes(p)) mejor = Math.max(mejor, PUNTOS.PALABRA_CONTIENE);
+    if (p === q) sube(PUNTOS.PALABRA_EXACTA);
+    else if (p.startsWith(q)) sube(PUNTOS.PALABRA_EMPIEZA);
+    else if (p.includes(q) || q.includes(p)) sube(PUNTOS.PALABRA_CONTIENE);
   }
+  for (const p of entrada._palabrasRaiz) {
+    if (p === qRaiz || p.startsWith(qRaiz)) sube(PUNTOS.PALABRA_RAIZ);
+  }
+
+  for (const sin of entrada._sinonimos) {
+    if (sin === q) sube(PUNTOS.SINONIMO_EXACTO);
+    else if (sin.startsWith(q) || sin.includes(q)) sube(PUNTOS.SINONIMO_PARCIAL);
+  }
+
+  if (entrada._descripcion.includes(q)) sube(PUNTOS.DESCRIPCION);
   if (mejor) return mejor;
 
-  if (entrada._descripcion.includes(q)) return PUNTOS.DESCRIPCION;
-
-  // Última red: cada palabra suelta de la consulta aparece en alguna parte de la
-  // entrada. Es lo que hace que "cambiar colores" encuentre "Colores y tema"
-  // aunque la frase entera no aparezca en ningún sitio.
-  const trozos = q.split(/\s+/).filter((t) => t.length > 2);
+  // Cada palabra suelta de la consulta aparece en alguna parte de la entrada. Es lo
+  // que hace que "cambiar colores" encuentre "Colores y tema" aunque la frase entera
+  // no aparezca en ningún sitio.
+  const trozos = q.split(' ').filter((t) => t.length > 2);
   if (trozos.length > 1) {
-    const todo = `${entrada._titulo} ${entrada._descripcion} ${entrada._palabras.join(' ')}`;
+    const todo = `${entrada._titulo} ${entrada._descripcion} ${entrada._palabras.join(' ')} ${entrada._sinonimos.join(' ')}`;
     if (trozos.every((t) => todo.includes(t))) return PUNTOS.TODAS_LAS_PALABRAS;
+  }
+
+  // Apartado 18 — tolerancia a erratas. Solo con una consulta de una sola palabra:
+  // sobre una frase entera la distancia de edición deja de significar nada y empieza
+  // a devolver cosas al azar, que es justo lo que prohíbe el apartado 7.
+  if (margen > 0 && !q.includes(' ')) {
+    const candidatos = [entrada._titulo, ...entrada._palabras];
+    for (const c of candidatos) {
+      if (c.includes(' ')) continue;
+      if (distancia(q, c, margen) <= margen) return PUNTOS.ERRATA;
+    }
   }
   return 0;
 }
 
 /**
  * Busca en el índice. Devuelve las entradas con puntuación > 0, de mayor a menor.
- * A igualdad de puntos gana el título más corto: "Colores y tema" antes que una
- * entrada larga que casualmente empate.
+ *
+ * Desempates, en orden (apartado 9 — desambiguación: no elegir arbitrariamente):
+ *   1. Puntuación.
+ *   2. `prioridad` — un módulo entero pesa más que un ajuste suelto o una acción.
+ *   3. Título más corto — "Colores y tema" antes que una entrada larga que empate.
+ * Es determinista: la misma consulta devuelve siempre el mismo orden.
  */
 export function buscar(indice, consulta, limite = 8) {
   const q = normalizar(consulta);
   if (!q) return [];
+  const qRaiz = normalizarRaiz(consulta);
+  const margen = margenErratas(q);
   return (indice || [])
-    .map((e) => ({ entrada: e, puntos: puntuar(e, q) }))
+    .map((e) => ({ entrada: e, puntos: puntuar(e, q, qRaiz, margen) }))
     .filter((r) => r.puntos > 0)
-    .sort((a, b) => b.puntos - a.puntos || a.entrada._titulo.length - b.entrada._titulo.length)
+    .sort((a, b) =>
+      b.puntos - a.puntos
+      || (b.entrada.prioridad || 0) - (a.entrada.prioridad || 0)
+      || a.entrada._titulo.length - b.entrada._titulo.length)
     .slice(0, limite)
     .map((r) => r.entrada);
+}
+
+/**
+ * Apartado 18 — "¿Quizá buscas «Colores»?".
+ *
+ * Devuelve el título sugerido solo cuando el ÚNICO motivo por el que algo ha
+ * aparecido es una errata. Si la búsqueda ha encontrado algo de verdad no hay nada
+ * que sugerir, y decirlo igualmente sería ruido.
+ */
+export function sugerenciaDeErrata(indice, consulta) {
+  const q = normalizar(consulta);
+  const margen = margenErratas(q);
+  if (!q || q.includes(' ') || margen === 0) return null;
+  const qRaiz = normalizarRaiz(consulta);
+  const hayAcierto = (indice || []).some((e) => puntuar(e, q, qRaiz, 0) > 0);
+  if (hayAcierto) return null;
+  const conErrata = buscar(indice, consulta, 1);
+  return conErrata.length ? conErrata[0].titulo : null;
+}
+
+/**
+ * Apartado 17 — sugerencias con el buscador vacío.
+ *
+ * Salen del índice real, nunca de una lista escrita aparte: si un módulo está
+ * desactivado no aparece, y no puede sugerirse un acceso que no existe.
+ */
+export function sugerenciasIniciales(indice, ids = ['sueno', 'entreno', 'economia', 'ajustes'], limite = 4) {
+  const porTab = new Map((indice || []).filter((e) => e.tipo === 'pantalla').map((e) => [e.tab, e]));
+  return ids.map((id) => porTab.get(id)).filter(Boolean).slice(0, limite);
 }
 
 // Apartado 11 — detectar la intención. No es adivinar: son las formas concretas

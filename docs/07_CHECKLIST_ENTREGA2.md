@@ -2453,31 +2453,68 @@ sus módulos *"si el módulo existen"*. Rachas y Sonido son fases futuras y **no
 se tragaba la `ref` sin decir nada — el foco automático del campo simplemente no habría ocurrido, sin
 error ni aviso. Ahora usa `forwardRef`. Es aditivo: ninguno de los ~60 usos anteriores pasa `ref`.
 
-#### BI · Fase 3/4 — MOTOR DE BÚSQUEDA GLOBAL E ÍNDICE INTELIGENTE DE JC FITNESS
-- [ ] PRINCIPIO FUNDAMENTAL
-- [ ] ÍNDICE GLOBAL
-- [ ] INFORMACIÓN DE CADA FUNCIÓN
-- [ ] NORMALIZACIÓN DE TEXTO
-- [ ] COINCIDENCIA EXACTA
-- [ ] COINCIDENCIA PARCIAL
-- [ ] PALABRAS RELACIONADAS
-- [ ] RANKING DE RESULTADOS
-- [ ] DESAMBIGUACIÓN
-- [ ] ACCIONES DIRECTAS
-- [ ] FUNCIONES SIN RUTA
-- [ ] ÍNDICE POR CATEGORÍAS
-- [ ] ACTUALIZACIÓN DEL ÍNDICE
-- [ ] BÚSQUEDA DE AJUSTES
-- [ ] BÚSQUEDA DE FUNCIONES PROFUNDAS
-- [ ] HISTORIAL RECIENTE
-- [ ] SUGERENCIAS INICIALES
-- [ ] TOLERANCIA A ERRORES
-- [ ] RENDIMIENTO
-- [ ] IA COMO FALLBACK
-- [ ] PRIVACIDAD
-- [ ] PRUEBAS OBLIGATORIAS
-- [ ] CRITERIO DE ÉXITO
-- [ ] REGLA FINAL
+#### BI · Fase 3/4 — MOTOR DE BÚSQUEDA GLOBAL E ÍNDICE INTELIGENTE ✅ COMPLETADA (v1.30.0)
+- [x] PRINCIPIO FUNDAMENTAL — el flujo del apartado 1, entero y **local**: normalizar → analizar →
+      índice → relevancia → resultados → acción. La IA no interviene para encontrar una función.
+- [x] ÍNDICE GLOBAL — `src/lib/indiceBusqueda.js`, una única fuente de verdad.
+- [x] INFORMACIÓN DE CADA FUNCIÓN — `id`, `titulo`, `descripcion`, `categoria`, `palabras`,
+      `sinonimos`, `icono`, `tab`, `foco`, `tipo` y `prioridad`. Los once campos del apartado 3,
+      con nombres en castellano como el resto del proyecto.
+- [x] NORMALIZACIÓN DE TEXTO — minúsculas, tildes, espacios, signos de puntuación y **singular /
+      plural**. "Configuración" y "configuracion" son lo mismo; "colores" y "color", también.
+- [x] COINCIDENCIA EXACTA — máxima prioridad, por delante de cualquier descripción.
+- [x] COINCIDENCIA PARCIAL — "colo" → Colores, "entren" → Entrenamiento, "dormi" → Sueño.
+- [x] PALABRAS RELACIONADAS — palabras clave **y** sinónimos, en dos escalones distintos.
+      Controlado y escrito a mano; nada de asociaciones automáticas impredecibles.
+- [x] RANKING DE RESULTADOS — nueve escalones, del título exacto (1000) a la errata (40).
+- [x] DESAMBIGUACIÓN — "objetivo" devuelve varias opciones ordenadas, con Objetivos primero. No
+      elige arbitrariamente, y el orden es **determinista**: la misma consulta da siempre lo mismo.
+- [x] ACCIONES DIRECTAS — "nueva tarea" no abre Productividad para que Josué busque el botón: abre
+      el formulario.
+- [x] FUNCIONES SIN RUTA — tres tipos de destino: `pantalla`, `ajuste` (abre su categoría) y
+      `accion` (abre un formulario). El buscador ya no está limitado a páginas.
+- [x] ÍNDICE POR CATEGORÍAS — Módulo / Ajustes / Acción. **Sin inventar Rachas ni Sonidos**, que
+      todavía no existen (lo dice el propio apartado 12).
+- [x] ACTUALIZACIÓN DEL ÍNDICE — los módulos se **derivan de `MORE_NAV`**, así que uno nuevo
+      aparece solo. Y `comprobar-navegacion.mjs` falla si se añade sin palabras clave: el índice no
+      puede quedarse desconectado de la aplicación, que es lo que el apartado 13 quiere evitar.
+- [x] BÚSQUEDA DE AJUSTES — 15 entradas de configuración, cada una abriendo su categoría.
+- [x] BÚSQUEDA DE FUNCIONES PROFUNDAS — el ejemplo literal del apartado 15: "modo oscuro" tiene
+      entrada propia aunque viva dentro de Apariencia, y abre directamente ahí.
+- [x] HISTORIAL RECIENTE — 4 accesos, con botón de limpiar. **Guarda ids de funciones, nunca el
+      texto escrito** (una búsqueda puede ser una pregunta personal) y vive en `localStorage`, no
+      en Supabase: no es un dato que merezca sincronizarse ni entrar en la copia de seguridad.
+- [x] SUGERENCIAS INICIALES — Sueño, Entrenamiento, Economía y Ajustes, **sacadas del índice real**;
+      un módulo desactivado no se sugiere.
+- [x] TOLERANCIA A ERRORES — "colroes" encuentra Colores y avisa con "¿Quizá buscas…?".
+- [x] RENDIMIENTO — todo local sobre ~38 entradas normalizadas una sola vez al construir el índice.
+      Ni red, ni IA, ni debounce.
+- [x] IA COMO FALLBACK — el flujo del apartado 20 exacto: si hay función, se muestra; si no la hay
+      o es una pregunta, se ofrece la IA. Y si hay las dos cosas, se enseñan las dos.
+- [x] PRIVACIDAD — escribir "colores" **no sale del dispositivo**. La prueba lo comprueba leyendo
+      el propio archivo del motor: no importa `askAI` ni hace `fetch`.
+- [x] PRUEBAS OBLIGATORIAS — las seis categorías del apartado 22 (exactas, parciales, sinónimos,
+      erratas, preguntas y sin resultados), en `scripts/test-buscador.mjs` — 99 comprobaciones.
+- [x] CRITERIO DE ÉXITO — los nueve puntos del apartado 23.
+- [x] REGLA FINAL — añadir una función al buscador es **una entrada** en el índice; un módulo nuevo
+      en `MORE_NAV` ni eso.
+
+**Dos bugs reales que encontraron las pruebas de esta fase:**
+
+1. **El singular/plural atropellaba palabras clave escritas literalmente.** Buscar "pantallas"
+   abría *Pantalla principal* (que solo coincide después de quitarle la 's') en vez de Bienestar,
+   que tiene "pantallas" tal cual entre sus palabras. La causa era estructural: `puntuar` iba
+   devolviendo el primer acierto por campos, así que una coincidencia floja en el título ganaba a
+   una fuerte en las palabras clave. Ahora se evalúan todos los escalones y se coge el mayor, y el
+   plural tiene su propio escalón por debajo de la coincidencia literal.
+2. **La raíz destrozaba palabras cortas acabadas en 's'**: "tres" se quedaba en "tre", "mes" en
+   "me". El umbral pasó de 3 a 4 letras.
+
+**Y una decisión de diseño que salió de una prueba fallida:** la distancia de edición es de
+**Damerau**-Levenshtein, no Levenshtein a secas. Con Levenshtein, "colroes" está a 2 errores de
+"colores" y no se encontraba; contando el intercambio de dos letras seguidas como UN error, se
+encuentra. Las transposiciones son con diferencia la errata más común escribiendo deprisa en un
+móvil — y es justo el ejemplo que pone la especificación.
 
 #### BI · Fase 4/4 — INTEGRACIÓN FINAL: BUSCADOR + IA + INTENCIÓN DEL USUARIO
 - [ ] Interfaz del buscador.
