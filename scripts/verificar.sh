@@ -50,6 +50,12 @@ else
   fallo "Fallan pruebas de puntuacion.js"; grep '✗' /tmp/jc_test.log
 fi
 
+if node scripts/smoke.mjs test-modulos.jsx >/tmp/jc_mod.log 2>&1; then
+  ok "Módulos activables (ME F1) — $(grep -c '✓' /tmp/jc_mod.log) comprobaciones"
+else
+  fallo "Fallan pruebas del sistema de módulos"; grep '✗' /tmp/jc_mod.log
+fi
+
 if node scripts/smoke.mjs >/tmp/jc_smoke.log 2>&1; then
   ok "Renderizado de vistas — $(grep -c '✓' /tmp/jc_smoke.log) casos (vacío / con datos / parciales)"
 else

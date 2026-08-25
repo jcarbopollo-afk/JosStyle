@@ -135,6 +135,23 @@ console.log('\n═══ puntuacionDelDia ═══\n');
   comprobar('No lanza excepción con datos nulos/corruptos', robusto);
 }
 
+// 12. Módulos desactivados (Entrega 2 · ME Fase 1) no cuentan para la puntuación.
+{
+  const estado = {
+    sueno: [{ fecha: HACE_UN_MES }],   // usa Sueño, pero no lo ha registrado hoy
+    diario: { entradas: [{ fecha: HOY }] },
+  };
+  comprobar('Sin desactivar nada → 50 (1 de 2)', puntuacionDelDia(estado, HOY).valor === 50);
+  comprobar('Con Sueño desactivado → 100 (ya no penaliza)',
+    puntuacionDelDia(estado, HOY, ['sueno']).valor === 100);
+  comprobar('...y el desglose deja de mencionarlo',
+    !puntuacionDelDia(estado, HOY, ['sueno']).detalle.some((d) => d.id === 'sueno'));
+  comprobar('Desactivándolo todo → null, no 0',
+    puntuacionDelDia(estado, HOY, ['sueno', 'diario']).valor === null);
+  comprobar('Un valor no-array en desactivados se ignora sin romper',
+    puntuacionDelDia(estado, HOY, null).valor === 50);
+}
+
 console.log('');
 if (fallos) { console.error(`═══ ${fallos} PRUEBA(S) FALLIDA(S) ═══\n`); process.exit(1); }
 console.log('═══ TODAS LAS PRUEBAS PASAN ═══\n');

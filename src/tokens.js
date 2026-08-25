@@ -412,6 +412,35 @@ export const METRICAS_FAVORITAS_DISPONIBLES = [
 ];
 export const MAX_METRICAS_FAVORITAS = 4;
 
+// Entrega 2 · ME Fase 1 — Centro de módulos: cada módulo se presenta con "icono; nombre;
+// descripción; estado; interruptor ON/OFF". Faltaba la descripción: la lista de Personalización
+// solo mostraba el nombre, y un nombre suelto ("Bienestar", "Logros") no basta para decidir si
+// quieres usar ese apartado o no.
+//
+// Longitud máxima recomendada: 80 caracteres (apartado 11 de la especificación de Ajustes).
+// Describen el EFECTO de tener el módulo activo, nunca cómo se usa el interruptor.
+export const DESCRIPCIONES_MODULOS = {
+  salud: 'Peso, medidas, tensión, historial médico y fotos de progreso.',
+  sueno: 'Cuántas horas duermes y con qué calidad.',
+  nutricion: 'Comidas, macros y agua, con escaneo por código de barras.',
+  entreno: 'Calistenia por habilidad, progresiones, récords y fútbol.',
+  calendario: 'Tus eventos y los que salen solos del resto de módulos.',
+  estudios: 'Asignaturas, exámenes, horas de estudio y planes de repaso.',
+  negocio: 'Ideas y proyectos personales, con ingresos y gastos.',
+  productividad: 'Hábitos con racha, rutinas, tareas, metas y Pomodoro.',
+  objetivos: 'Lo que quieres conseguir, de 30 días a 10 años.',
+  diario: 'Una entrada al día: cómo estás y qué has aprendido.',
+  fe: 'Servicio, calendario, diario espiritual y objetivos de fe.',
+  biblioteca: 'PDFs, vídeos, apuntes y enlaces, con búsqueda dentro de los PDFs.',
+  relacion: 'Fechas importantes de tu relación. Siempre protegido con PIN.',
+  bienestar: 'Tiempo de uso, concentración y reflexión, todo a mano.',
+  estadisticas: 'Relaciones entre tu sueño, tu ánimo, tu estudio y tu entreno.',
+  predicciones: 'Hacia dónde apuntan tus datos: peso, ahorro, notas y hábitos.',
+  logros: 'Insignias conseguidas y tu mapa de vida.',
+  economia: 'Saldo, movimientos y hucha.',
+  ajustes: 'La configuración de toda la app.',
+};
+
 // orden/ocultos/iconos usan ids de MORE_NAV (App.jsx).
 //
 // ⚠️ `pinExtra` es VESTIGIAL: ya no se escribe nunca. La Seguridad Centralizada lo sustituyó por

@@ -1,5 +1,81 @@
 # CHANGELOG.md
 
+## Entrega 2 · ME Fase 1 — Sistema de módulos activables/desactivables (v1.24.0)
+
+### Alcance de esta fase, dicho primero
+Primera fase de la Entrega 2. La especificación pide que el usuario decida qué apartados quiere
+usar, que desactivar **nunca** borre datos, y que "la interfaz se reconstruya automáticamente según
+los módulos activos".
+
+**Análisis primero, como manda la regla de oro de la propia especificación** ("¿esto ya existe en
+JC Fitness? → CONECTAR / INTEGRAR / REUTILIZAR / CREAR"): `PersonalizationView` (Fase 19) ya
+permitía ocultar módulos con `personalizacion.ocultos`. Así que **no se ha creado un sistema
+paralelo**: se ha ampliado el existente. Lo que faltaba de verdad no era el modelo de datos, era
+que ocultar **hiciera algo más allá de los hubs**.
+
+### El hueco real que se ha cerrado
+`personalizacion.ocultos` solo se consultaba en `HubView`. Un módulo "desactivado" seguía
+apareciendo en "Hoy" con su tarjeta, su aviso y su acción rápida. El Dashboard tenía además su
+propia lista (`dashboardOcultos`), sin editor. Es decir: dos sistemas de ocultación y ninguno
+completo.
+
+Ahora hay una distinción clara entre dos cosas que un usuario quiere poder hacer por separado:
+- **`personalizacion.ocultos`** — "no uso este apartado". Afecta a TODA la app.
+- **`dashboardOcultos`** — "sí lo uso, pero no quiero verlo en Hoy". Preferencia de pantalla.
+
+### Añadido / cambiado
+- **`src/components/ui.jsx`**: nuevo `Switch` — interruptor ON/OFF accesible (`role="switch"`,
+  `aria-checked`, navegable por teclado). El apartado 8 de la especificación de Ajustes lo lista
+  como componente permitido y el apartado 14 exige que una misma configuración se represente
+  siempre igual; hasta ahora cada sitio resolvía el activado/desactivado a su manera.
+- **`src/tokens.js`**: `DESCRIPCIONES_MODULOS` — una descripción por módulo, ≤80 caracteres,
+  describiendo el efecto y no cómo se usa el control (apartado 11).
+- **`src/views/PersonalizationView.jsx`**: nuevo `CentroModulos` — "Personalizar mi sistema",
+  agrupado por las cuatro áreas que ya existen en la barra inferior (no se inventa una taxonomía
+  nueva). Cada fila: icono, nombre, descripción e interruptor. Contador de activos.
+  Confirmación al desactivar que insiste en que **no se borra nada**; ninguna al reactivar.
+- **`src/views/PersonalizationView.jsx`**: retirado el botón de ojo de la lista de reordenación —
+  tener dos controles distintos para la misma configuración es justo lo que prohíbe el apartado 14.
+  Esa lista se queda con lo suyo: orden, icono y PIN. Los desactivados se marcan con una etiqueta.
+- **`src/views/DashboardView.jsx`**: `oculto(id)` consulta ahora las dos listas. Se filtran las
+  tarjetas de Nivel 1/2/3, los tres avisos automáticos, el acceso a Calendario y Agenda, el
+  recordatorio de Relación y las acciones rápidas (que pasan a ser un catálogo filtrable; si no
+  queda ninguna, desaparece también el encabezado).
+- **`src/lib/puntuacion.js`**: acepta la lista de desactivados. Si Josué ha dicho que no usa Sueño,
+  que le baje la nota por no registrarlo sería exactamente lo contrario de lo que pidió.
+- **`src/App.jsx` / `src/views/SettingsView.jsx`**: `AREAS_NAV` y `personalizacion.ocultos` se
+  reenvían a donde hacen falta.
+
+### Decisiones
+- **Ampliar en vez de crear**, siguiendo la regla de la propia especificación. El modelo de datos
+  (`personalizacion.ocultos`) no cambia: cualquier cuenta existente sigue funcionando sin migración.
+- **Agrupado por las áreas ya existentes** en vez de por las categorías del ejemplo de la
+  especificación (Salud/Deporte/Productividad): son las que Josué ya conoce de navegar la app, y
+  además el script `comprobar-navegacion.mjs` ya garantiza que ese reparto es completo y sin
+  duplicados.
+- **"Ajustes" nunca es desactivable** — `moreNavPersonalizables` ya lo excluía. Sin él, Josué no
+  tendría forma de volver a activar lo que desactivó.
+- **Relación se puede desactivar, pero eso no la desprotege**: desactivar y proteger con PIN son
+  cosas distintas. Con Relación desactivada, además, deja de asomar el recordatorio de la pareja
+  en la pantalla principal.
+
+### Comprobado
+- **16 pruebas de comportamiento** (`scripts/test-modulos.jsx`) sobre el HTML realmente renderizado:
+  que lo desactivado desaparece, que lo demás sigue ahí, que desactivarlo todo no rompe nada ni
+  deja encabezados huérfanos, que renderizar no muta los datos, y que todas las descripciones
+  existen y respetan el límite de 80 caracteres.
+- **48 casos de renderizado** (`scripts/smoke.mjs`), ahora con un cuarto escenario: "todo
+  desactivado".
+- Build limpio, y las nueve reglas invariantes del proyecto en verde.
+
+### Pendiente (documentado, no implementado en esta fase)
+- **Buscador universal**: sigue buscando sobre datos, no sobre funciones. Filtrar funciones de
+  módulos desactivados corresponde a **BI Fase 3**, que es donde se construye el índice.
+- **Menú lateral**: la especificación lo menciona, pero esta app no tiene (navega con 5 pestañas
+  y hubs). No aplica.
+- Sin probar en un iPhone real.
+
+
 ## Bloque R0 — Correcciones críticas y verificación automática (v1.23.0)
 
 ### Alcance de esta fase, dicho primero

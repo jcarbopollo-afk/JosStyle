@@ -306,7 +306,7 @@ export default function DashboardView({
   perfil, sueno, calistenia, futbol, economia, relacion, favoritas, productividad, estudios, modo, notificaciones,
   calendario, derivadosCalendario,
   // Ampliación del Dashboard — Centro de Control
-  salud, objetivos, nutricion, negocio, diario, biblioteca, fe, bienestar, resumenes, dashboardOcultos, onNavegar,
+  salud, objetivos, nutricion, negocio, diario, biblioteca, fe, bienestar, resumenes, dashboardOcultos, modulosDesactivados, onNavegar,
   accent,
 }) {
   const hora = new Date().getHours();
@@ -323,17 +323,40 @@ export default function DashboardView({
   // explicarlo en vez de mostrar un número a secas.
   const puntuacion = puntuacionDelDia(
     { sueno, calistenia, futbol, nutricion, productividad, diario, estudios, salud },
+    undefined,
+    // Un módulo desactivado no cuenta para la puntuación (Entrega 2 · ME Fase 1): si Josué ha
+    // dicho que no usa Sueño, bajarle la nota por no registrarlo sería justo lo contrario.
+    modulosDesactivados || [],
   );
   const mensajeScore = mensajePuntuacion(puntuacion);
 
-  // Ampliación del Dashboard — Centro de Control: "arquitectura preparada para personalización"
-  // (apartado 10/11) — cada módulo del Dashboard es una entrada de este mapa (id → si está
-  // oculto), filtrable por `dashboardOcultos` (tokens.js, todavía sin editor real en Ajustes,
-  // documentado como pendiente). `oculto(id)` es la única función que consulta esa lista —
-  // activar un editor en el futuro es solo escribir la UI que rellene `dashboardOcultos`, sin
-  // tocar nada de aquí abajo.
+  // Qué módulos se ven en "Hoy". `oculto(id)` es el único sitio que lo decide, y consulta DOS
+  // listas distintas que responden a preguntas distintas:
+  //
+  //   · `modulosDesactivados` (`personalizacion.ocultos`) — "no uso este apartado". Lo decide el
+  //     centro de módulos (Entrega 2 · ME Fase 1) y afecta a TODA la app: hubs, Dashboard,
+  //     accesos rápidos. Antes de esta fase solo filtraba los hubs, así que un módulo desactivado
+  //     seguía apareciendo aquí — justo lo que la especificación prohíbe ("la interfaz debe
+  //     reconstruirse automáticamente según los módulos activos").
+  //
+  //   · `dashboardOcultos` — "sí uso este apartado, pero no quiero verlo en Hoy". Es una
+  //     preferencia de pantalla, más fina, y sigue teniendo sentido por separado.
+  //
+  // Se mantienen separadas a propósito: fusionarlas obligaría a elegir entre "desactivar de todo"
+  // y "quitar solo de Hoy", y son dos cosas que un usuario quiere poder hacer por separado.
   const ocultos = dashboardOcultos || [];
-  const oculto = (id) => ocultos.includes(id);
+  const desactivados = modulosDesactivados || [];
+  const oculto = (id) => ocultos.includes(id) || desactivados.includes(id);
+
+  // Catálogo de acciones rápidas, filtrado por los módulos activos. Solo entran las cuatro que
+  // tienen un formulario de alta de un paso y sin ambigüedad sobre qué se crea (a diferencia de,
+  // por ejemplo, "+ Entreno", que exigiría elegir antes entre 7 habilidades o un partido).
+  const accionesRapidas = [
+    { id: 'sueno', modulo: 'sueno', icon: Moon, label: 'Sueño', foco: { accion: 'registrar' } },
+    { id: 'gasto', modulo: 'economia', icon: Wallet, label: 'Gasto', foco: { accion: 'nuevoMovimiento' } },
+    { id: 'tarea', modulo: 'productividad', icon: ListTodo, label: 'Tarea', foco: { sub: 'tareas', accion: 'nueva' } },
+    { id: 'objetivo', modulo: 'objetivos', icon: Target, label: 'Objetivo', foco: { accion: 'nuevo' } },
+  ].filter((a) => !oculto(a.modulo));
 
   // ---------- Nivel 1: lo que Josué necesita saber nada más abrir la app ----------
   // Objetivo más próximo sin cumplir (apartado 4/6/22: "Dashboard → Objetivo específico", no solo
@@ -401,11 +424,16 @@ export default function DashboardView({
           resto de la pantalla (`space-y-4`), y cada tarjeta usa un padding más compacto — mismo
           contenido y mismas acciones, menos aire entre una y otra. */}
       <div className="space-y-2">
-        <AccesoCalendarioYAgenda calendario={calendario} derivadosCalendario={derivadosCalendario} accent={accent} onNavegar={onNavegar} />
-        <RecordatorioPareja relacion={relacion} accent={accent} />
-        <AvisoSuenoCorto ultimoSueno={ultimoSueno} accent={accent} notificaciones={notificaciones} />
-        <AvisoRachaEnRiesgo productividad={productividad} accent={accent} notificaciones={notificaciones} />
-        <AvisoExamenSinHoras estudios={estudios} accent={accent} notificaciones={notificaciones} />
+        {/* Entrega 2 · ME Fase 1 — cada aviso solo aparece si su módulo sigue activo. Un aviso de
+            un módulo desactivado sería justo el "sigue ocupando espacio visual" que la
+            especificación pide eliminar; y en el caso de Relación, además, seguiría asomando el
+            nombre de la pareja en la pantalla principal de alguien que ya dijo que no usa ese
+            apartado. */}
+        {!oculto('calendario') && <AccesoCalendarioYAgenda calendario={calendario} derivadosCalendario={derivadosCalendario} accent={accent} onNavegar={onNavegar} />}
+        {!oculto('relacion') && <RecordatorioPareja relacion={relacion} accent={accent} />}
+        {!oculto('sueno') && <AvisoSuenoCorto ultimoSueno={ultimoSueno} accent={accent} notificaciones={notificaciones} />}
+        {!oculto('productividad') && <AvisoRachaEnRiesgo productividad={productividad} accent={accent} notificaciones={notificaciones} />}
+        {!oculto('estudios') && <AvisoExamenSinHoras estudios={estudios} accent={accent} notificaciones={notificaciones} />}
       </div>
 
       {/* Ampliación del Dashboard — Centro de Control (Nivel 1, apartado 9): sueño, entreno,
@@ -536,15 +564,20 @@ export default function DashboardView({
       {/* Ampliación del Dashboard — Centro de Control, apartado 13/14: "Acciones rápidas" —
           distinta a propósito de pulsar una tarjeta (esto abre un formulario, no navega a mirar un
           resumen), en su propia fila con scroll horizontal si hiciera falta en un móvil pequeño. */}
-      <div>
-        <p className="text-xs font-semibold mb-2 px-1" style={{ color: COLORS.textMuted }}>Acciones rápidas</p>
-        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-          <QuickActionButton icon={Moon} label="Sueño" accent={accent} onClick={() => onNavegar('sueno', { accion: 'registrar' })} />
-          <QuickActionButton icon={Wallet} label="Gasto" accent={accent} onClick={() => onNavegar('economia', { accion: 'nuevoMovimiento' })} />
-          <QuickActionButton icon={ListTodo} label="Tarea" accent={accent} onClick={() => onNavegar('productividad', { sub: 'tareas', accion: 'nueva' })} />
-          <QuickActionButton icon={Target} label="Objetivo" accent={accent} onClick={() => onNavegar('objetivos', { accion: 'nuevo' })} />
+      {/* Entrega 2 · ME Fase 1 — las acciones rápidas también respetan los módulos desactivados:
+          la especificación las nombra explícitamente en la lista de sitios de los que un módulo
+          desactivado debe desaparecer. Si Josué desactiva los cuatro, la fila entera se va en vez
+          de dejar un encabezado "Acciones rápidas" vacío. */}
+      {accionesRapidas.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold mb-2 px-1" style={{ color: COLORS.textMuted }}>Acciones rápidas</p>
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            {accionesRapidas.map((a) => (
+              <QuickActionButton key={a.id} icon={a.icon} label={a.label} accent={accent} onClick={() => onNavegar(a.modulo, a.foco)} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <AIPanel
         label="Consejo del día"

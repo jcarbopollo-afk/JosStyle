@@ -2468,8 +2468,60 @@ Rediseña el desplegable de Inicio y convierte el botón superior izquierdo en u
 
 Sistema global de módulos activables/desactivables, personalización y papelera universal con recuperación. **Las fases 1 y 2 se solapan casi por completo con `PersonalizationView` y `personalizacion.ocultos` (Fase 19), ya construidos** — aquí el trabajo real es la papelera (fase 3) y la auditoría de integración global (fase 4).
 
-#### ME · Fase 1/4 — SISTEMA DE MÓDULOS ACTIVABLES/DESACTIVABLES
-- [ ] *(sin apartados numerados extraídos — leer la fase completa en la especificación)*
+#### ME · Fase 1/4 — SISTEMA DE MÓDULOS ACTIVABLES/DESACTIVABLES ✅ **COMPLETADA (v1.24.0)**
+
+> **Qué se construyó:** "Personalizar mi sistema" en Ajustes → Pantalla principal — centro de
+> módulos agrupado por área, con icono, nombre, **descripción**, estado e **interruptor ON/OFF**
+> real (nuevo componente `Switch` compartido). Confirmación al desactivar que insiste en que los
+> datos se conservan; ninguna al reactivar.
+>
+> **La parte importante:** desactivar ahora **reconstruye de verdad la interfaz**. Antes de esta
+> fase `personalizacion.ocultos` solo filtraba los hubs, así que un módulo desactivado seguía
+> apareciendo en "Hoy". Ahora desaparece también de las tarjetas de Nivel 1/2/3, de los avisos, de
+> los accesos a Calendario y Agenda, del recordatorio de Relación, de las acciones rápidas (y la
+> fila entera se va si no queda ninguna) y **de la puntuación diaria** — si has dicho que no usas
+> Sueño, no te baja la nota por no registrarlo.
+>
+> **Verificado con 16 pruebas de comportamiento** sobre el HTML renderizado (`scripts/test-modulos.jsx`),
+> no solo "no revienta": se comprueba que lo desactivado *desaparece* y que lo demás sigue ahí.
+
+**Objetivo**
+- [x] El usuario puede decidir qué apartados quiere utilizar
+
+**Centro de módulos**
+- [x] Apartado dentro de Ajustes: "Personalizar mi sistema"
+- [x] Aparecen todos los módulos disponibles
+- [x] Cada módulo con **icono**
+- [x] Cada módulo con **nombre**
+- [x] Cada módulo con **descripción** (nueva constante `DESCRIPCIONES_MODULOS`, ≤80 caracteres)
+- [x] Cada módulo con **estado** visible
+- [x] Cada módulo con **interruptor ON/OFF** (nuevo componente `Switch`, accesible por teclado)
+- [x] Agrupado por áreas, como muestra la especificación
+- [x] Contador de cuántos módulos están activos
+
+**Desactivar no significa eliminar**
+- [x] Desactivar **NO borra los datos**
+- [x] Deja de aparecer en navegación
+- [x] Deja de aparecer en el Dashboard
+- [x] Deja de aparecer en accesos rápidos
+- [x] Deja de ocupar espacio visual (la fila entera se retira si queda vacía)
+- [x] Deja de mostrarse como módulo activo
+- [x] Al reactivarlo, todo sigue ahí
+- [x] Confirmación al desactivar que dice explícitamente que no se borra nada
+- [x] Sin confirmación al reactivar (acción segura y reversible)
+
+**Navegación dinámica**
+- [x] Hubs de área (ya funcionaba desde la Fase 19)
+- [x] Dashboard — tarjetas de Nivel 1, 2 y 3
+- [x] Avisos automáticos (sueño corto, racha en riesgo, examen sin horas)
+- [x] Accesos a Calendario y Agenda
+- [x] Recordatorio de Relación
+- [x] Acciones rápidas
+- [x] Puntuación diaria (un módulo desactivado no cuenta ni penaliza)
+- [x] "Ajustes" nunca se puede desactivar (regla 40 — sin él no habría vuelta atrás)
+- [-] Menú lateral — no existe en esta app (la navegación es de 5 pestañas + hubs)
+- [ ] Buscador universal — sigue buscando sobre datos, no sobre funciones. Se aborda en **BI Fase 3**, que es donde se construye el índice de funciones
+- [ ] Estadísticas — `StatsView` calcula correlaciones sobre datos, no muestra módulos; se revisará si al construir **ME Fase 2** aparece un caso real
 
 #### ME · Fase 2/4 — PERSONALIZACIÓN TOTAL
 - [ ] *(sin apartados numerados extraídos — leer la fase completa en la especificación)*

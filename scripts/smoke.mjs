@@ -1,13 +1,15 @@
-// Compila scripts/smoke-vistas.jsx con esbuild (Node no entiende JSX) y lo ejecuta.
-//   node scripts/smoke.mjs
+// Compila un script JSX con esbuild (Node no entiende JSX) y lo ejecuta.
+//   node scripts/smoke.mjs                     → prueba de humo de las vistas
+//   node scripts/smoke.mjs test-modulos.jsx    → cualquier otro script JSX de scripts/
 import { build } from 'esbuild';
 import { pathToFileURL } from 'node:url';
 import { rmSync } from 'node:fs';
 
+const script = process.argv[2] || 'smoke-vistas.jsx';
 const salida = new URL('../node_modules/.cache/jc-smoke.mjs', import.meta.url);
 
 await build({
-  entryPoints: [new URL('./smoke-vistas.jsx', import.meta.url).pathname],
+  entryPoints: [new URL(`./${script}`, import.meta.url).pathname],
   outfile: salida.pathname,
   bundle: true,
   format: 'esm',

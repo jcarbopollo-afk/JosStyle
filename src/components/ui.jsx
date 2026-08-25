@@ -196,6 +196,43 @@ export function GhostBtn({ children, onClick, icon: Icon }) {
   );
 }
 
+// Interruptor ON/OFF. El apartado 8 de la especificación de Ajustes lista el Switch como uno de
+// los componentes permitidos, y el apartado 14 exige que un mismo tipo de configuración se
+// represente siempre igual en toda la app — hasta ahora cada sitio resolvía el "activado/
+// desactivado" a su manera (iconos de ojo, píldoras, casillas), justo lo que esa regla prohíbe.
+//
+// Accesible por teclado y para lectores de pantalla: es un <button> real con role="switch" y
+// aria-checked, no un div con onClick.
+export function Switch({ checked, onChange, accent, disabled = false, label }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => !disabled && onChange(!checked)}
+      className="relative flex-shrink-0 rounded-full disabled:opacity-40"
+      style={{
+        width: 44, height: 26,
+        background: checked ? accent : COLORS.surface2,
+        border: `1px solid ${checked ? accent : COLORS.border}`,
+        transition: 'background 200ms var(--ease-premium), border-color 200ms var(--ease-premium)',
+      }}
+    >
+      <span
+        className="absolute rounded-full"
+        style={{
+          width: 18, height: 18, top: 3,
+          left: checked ? 22 : 3,
+          background: checked ? COLORS.textOnAccent : COLORS.textMuted,
+          transition: 'left 200ms var(--ease-premium), background 200ms var(--ease-premium)',
+        }}
+      />
+    </button>
+  );
+}
+
 export function ToggleTab({ children, active, onClick, accent }) {
   return (
     <button

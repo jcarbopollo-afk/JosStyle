@@ -1126,6 +1126,7 @@ export default function App() {
             negocio={negocio} diario={diario} biblioteca={biblioteca} fe={fe} bienestar={bienestar}
             resumenes={resumenesTodos}
             dashboardOcultos={personalizacion.dashboardOcultos}
+            modulosDesactivados={personalizacion.ocultos}
             onNavegar={navegarDesdeHoy}
             accent={accent}
           />
@@ -1338,6 +1339,7 @@ export default function App() {
             onExportCSV={exportarCSVProtegido} onExportXLSX={exportarXLSXProtegido}
             onUndo={undo} canUndo={history.length > 0}
             onSignOut={signOut}
+            areas={AREAS_NAV}
             modulos={moreNavOrdenadoConIconos}
             personalizacion={personalizacion}
             onMove={moverModuloNav}

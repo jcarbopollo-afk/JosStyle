@@ -137,14 +137,21 @@ function construirAreas(estado, hoy) {
  *
  * @param   {object} estado  Los módulos tal y como viven en App.jsx.
  * @param   {string} [hoyISO] Día a calcular (por defecto, hoy). Sirve para probarlo.
+ * @param   {string[]} [desactivados] Ids de módulos que Josué ha desactivado en el centro de
+ *          módulos (Entrega 2 · ME Fase 1). Un módulo desactivado no cuenta para la puntuación:
+ *          si has dicho que no usas Sueño, que te baje la nota por no registrar el sueño sería
+ *          exactamente lo contrario de lo que pediste.
  * @returns {{ valor:number|null, hechos:number, total:number, detalle:Array, hayDatos:boolean }}
  *          `valor` es 0-100, o `null` cuando todavía no hay ningún área en uso —
  *          en ese caso la interfaz debe decirlo, nunca enseñar un 0 desmotivador
  *          a alguien que acaba de instalar la app.
  */
-export function puntuacionDelDia(estado, hoyISO) {
+export function puntuacionDelDia(estado, hoyISO, desactivados) {
   const hoy = hoyISO || todayISO();
-  const areas = construirAreas(estado, hoy);
+  const off = Array.isArray(desactivados) ? desactivados : [];
+  // Los ids de área coinciden con los de módulo salvo 'entreno', que en la navegación se llama
+  // así y aquí también, y 'estudios'/'salud'/'diario', que coinciden tal cual.
+  const areas = construirAreas(estado, hoy).filter((a) => !off.includes(a.id));
   const enUso = areas.filter((a) => a.usa);
 
   if (enUso.length === 0) {

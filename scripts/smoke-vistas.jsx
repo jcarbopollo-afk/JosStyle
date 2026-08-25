@@ -29,6 +29,7 @@ import AchievementsView from '../src/views/AchievementsView.jsx';
 import HubView from '../src/views/HubView.jsx';
 import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
+import PersonalizationView from '../src/views/PersonalizationView.jsx';
 
 import {
   DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION,
@@ -76,9 +77,23 @@ function propsDashboard(e) {
       'productividad', 'objetivos', 'diario', 'biblioteca', 'economia', 'negocio', 'relacion', 'fe',
       'bienestar', 'estadisticas', 'predicciones', 'logros', 'ajustes']
       .map((id) => [id, calcularResumenModulo(id, e)])),
-    dashboardOcultos: [], onNavegar: noop, accent,
+    dashboardOcultos: [], modulosDesactivados: e.personalizacion.ocultos || [], onNavegar: noop, accent,
   };
 }
+
+// Catálogo reducido de módulos y áreas, con la misma forma que MORE_NAV/AREAS_NAV de App.jsx.
+const MODULOS_PRUEBA = [
+  { id: 'salud', label: 'Salud', icon: () => null },
+  { id: 'sueno', label: 'Sueño', icon: () => null },
+  { id: 'nutricion', label: 'Nutrición', icon: () => null },
+  { id: 'economia', label: 'Economía', icon: () => null },
+  { id: 'relacion', label: 'Relación', icon: () => null },
+];
+const AREAS_PRUEBA = [
+  { id: 'area-salud', label: 'Salud', modulos: ['salud', 'sueno', 'nutricion'] },
+  { id: 'area-gestion', label: 'Gestión', modulos: ['economia'] },
+  { id: 'area-mas', label: 'Más', modulos: ['relacion'] },
+];
 
 const CASOS = [
   ['DashboardView', DashboardView, propsDashboard],
@@ -91,6 +106,14 @@ const CASOS = [
   ['AchievementsView', AchievementsView, (e) => ({ ...e, accent })],
   ['WellbeingView', WellbeingView, (e) => ({ bienestar: e.bienestar, onAdd: noop, onDelete: noop, onAddReflexion: noop, onCompletarSesion: noop, accent })],
   ['BusinessView', BusinessView, (e) => ({ negocio: e.negocio, onAdd: noop, onUpdate: noop, onDelete: noop, accent })],
+  ['PersonalizationView', PersonalizationView, (e) => ({
+    areas: AREAS_PRUEBA,
+    modulos: MODULOS_PRUEBA,
+    personalizacion: e.personalizacion,
+    protectedAreas: [], onMove: noop, onToggleOculto: noop, onSetIcono: noop,
+    onTogglePinExtra: noop, onToggleFavorita: noop, onMoveFavorita: noop,
+    modo: e.personalizacion.modo, onSetModo: noop, accent,
+  })],
   ['HubView', HubView, (e) => ({
     area: { id: 'area-salud', label: 'Salud', modulos: ['salud', 'sueno'] },
     modulos: [{ id: 'salud', label: 'Salud', icon: () => null }, { id: 'sueno', label: 'Sueño', icon: () => null }],
@@ -119,9 +142,22 @@ const parcial = {
   relacion: { nombre: '', fechas: [{ id: 'r', fecha: HOY }] },
 };
 
+// Cuarto escenario: con módulos desactivados desde el centro de módulos (Entrega 2 · ME Fase 1).
+// Es el comportamiento central de esa fase: la interfaz debe reconstruirse sola, sin dejar
+// encabezados vacíos ni tarjetas huérfanas, y sin reventar por quedarse sin nada que pintar.
+const desactivados = {
+  ...lleno,
+  personalizacion: {
+    ...DEFAULT_PERSONALIZACION,
+    ocultos: ['sueno', 'economia', 'productividad', 'objetivos', 'relacion', 'nutricion',
+              'salud', 'estudios', 'entreno', 'calendario', 'diario', 'negocio',
+              'biblioteca', 'fe', 'bienestar', 'estadisticas', 'predicciones', 'logros'],
+  },
+};
+
 let fallos = 0;
 for (const [nombre, Componente, props] of CASOS) {
-  for (const [etiqueta, estado] of [['vacío', vacio], ['con datos', lleno], ['datos parciales', parcial]]) {
+  for (const [etiqueta, estado] of [['vacío', vacio], ['con datos', lleno], ['datos parciales', parcial], ['todo desactivado', desactivados]]) {
     try {
       const html = renderToString(React.createElement(Componente, props(estado)));
       if (typeof html !== 'string' || html.length === 0) throw new Error('render vacío');
