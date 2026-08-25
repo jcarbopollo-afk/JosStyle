@@ -1,0 +1,220 @@
+# JC Fitness — INVENTARIO DEL ESTADO ACTUAL
+
+> Qué existe hoy (v1.22.0), archivo por archivo y clave por clave, con la etiqueta de qué hay que
+> hacer con cada pieza para el trabajo pendiente.
+>
+> **EXISTE** = está construido y no hay que tocarlo salvo que una tarea concreta lo pida.
+> **MODIFICAR** = existe pero alguna tarea pendiente lo va a cambiar.
+> **CREAR** = no existe todavía.
+
+---
+
+## 1. Archivos de configuración y raíz
+
+| Archivo | Estado | Qué es / qué le falta |
+|---|---|---|
+| `package.json` | **MODIFICAR** | v1.22.0. 9 dependencias de producción, 5 de desarrollo. Sin dependencias nuevas desde la Fase 13. Se incrementa la versión menor en cada fase |
+| `vite.config.js` · `tailwind.config.js` · `postcss.config.js` | **EXISTE** | Sin cambios previstos |
+| `index.html` | **EXISTE** | |
+| `README.md` | **CREAR (contenido)** | Hoy contiene **una sola línea**: `# JosStyle`. Merece un README real (qué es, cómo arrancar, dónde está la documentación) |
+| `SETUP.md` | **MODIFICAR** | Guía de puesta en marcha de Supabase + local + Vercel. Tiene pasos 5 y 8 para los buckets y un paso sobre permisos de cámara. Añadir un paso por cada bucket nuevo |
+| `HANDOFF.md` | 🔴 **MODIFICAR (urgente)** | Documento portátil entre conversaciones. Banners al día, **secciones numeradas 3/5/8/9/10/13/15 fósiles** — ver C-19, C-20 |
+| `CHANGELOG.md` | **MODIFICAR** | Registro histórico turno a turno. **Falta la entrada de la Fase A7** (C-02) |
+| `ESPECIFICACION_AJUSTES_ENTREGA1.md` | 🔒 **INTOCABLE** | Transcripción literal de lo que pegó Josué. Nunca resumir ni recortar. Apartados 203–1300 solo resumidos: **el literal vive en el chat original** |
+| `docs/` | **EXISTE** | Esta carpeta |
+| `CLAUDE.md` | **EXISTE** | Punto de entrada automático para sesiones de Claude Code |
+| `.env.example` · `.gitignore` | **EXISTE** (en el zip, no en el árbol del repo) | ⚠️ Comprobar que están versionados |
+
+---
+
+## 2. Backend y serverless
+
+| Archivo | Estado | Detalle |
+|---|---|---|
+| `api/ask-ai.js` | 🔴 **MODIFICAR** | Proxy único a Anthropic. Acepta `{ system, prompt, image?, images? }`. **`model: 'claude-sonnet-4-6'` obsoleto → romperá todo al activar la clave (C-11)**. Considerar leer el modelo de una variable de entorno |
+| `supabase/schema.sql` | **MODIFICAR** (solo si aparece un bucket nuevo) | Tabla `app_data` + RLS con 4 políticas + 3 buckets privados (`progreso`, `entrenamiento-videos`, `biblioteca`) con sus políticas por carpeta de usuario. Escrito en **bloques independientes** para poder ejecutar solo el nuevo |
+| `public/manifest.json` | **EXISTE** | PWA instalable desde Safari |
+| `public/icon-192.png` · `icon-512.png` | **EXISTE** | Tres anillos concéntricos con los 3 primeros colores de `ACCENTS` sobre `COLORS.bg`. ⬜ Falta que Josué confirme que le gustan |
+
+---
+
+## 3. Núcleo de la aplicación
+
+### `src/App.jsx` — **MODIFICAR** (1521 líneas)
+
+El archivo más grande y el más delicado. Contiene:
+
+- **`MORE_NAV`** (19 módulos) y **`AREAS_NAV`** (4 áreas). `AREAS_PROTEGIBLES = ['hoy', ...MORE_NAV]`.
+- **Carga inicial**: 21 `loadData()` en paralelo. ⚠️ Los que tienen campos añadidos después deben
+  cargarse con `{ ...DEFAULT_X, ...guardado }`.
+- **`aplicarTema(temaResuelto, apariencia.altoContraste, accent, temaPersonalizado)`** — llamada
+  **síncrona en el cuerpo**, antes de los `return` condicionales.
+- **Estado de temas**: `apariencia`, `accent`, `temaPersonalizado`, `temasGuardados`,
+  `historialColor`, `temaSistemaOscuro` (con listener de `matchMedia`).
+- **Guardado de `ajustes`**: 4 funciones (`updateAccent`, `updateApariencia`, `updateSeguridad`,
+  `aplicarConjuntoTema`) que **siempre mandan el paquete completo** con `pin: null`.
+- **CRUD de temas**: `guardarTemaComoNuevo`, `renombrarTemaGuardado`, `duplicarTemaGuardado`,
+  `eliminarTemaGuardado`, `importarTemaGuardado`, `restablecerTemaOficial` — todos con el límite de
+  12 y **sin borrar nada en silencio**.
+- **Seguridad**: `pedirVerificacionPin`, `toggleAreaProtegida`, `toggleAccionProtegida`,
+  `desbloqueosPin` (memoria), `registrarDesbloqueo`, `estaDesbloqueado`, `enviarRecuperacionPin`,
+  `guardarPinTrasFlujo`, migración de PIN en claro y de `pinExtra`, `BloqueoAutomaticoGate`,
+  temporizador de inactividad.
+- **Deshacer**: `snapshotAndSave(patch)`, `undo()`, `historial` de 10 pasos.
+- **Navegación**: `tab`/`setTab`, `renderContent()` (intercepta `area-*` → `HubView`),
+  `renderTab()` (envuelve en `PinGate` si procede), `navegarDesdeHoy`, `dashboardFoco`, `focoPara`,
+  `consumirFoco`.
+- **Cálculos**: `calcularMetricas()` (6 métricas favoritas), `favoritasResueltas`,
+  `resumenesTodos`, `derivadosCalendario`, `currentState`.
+- **Personalización**: `moreNavPersonalizables` → `ordenIds` → `moreNavOrdenadoConIconos` →
+  `moreNavVisible`.
+- **`RESET_MODULOS`** (14 módulos) + `borrarDatosModulo(id)`.
+- **Elementos fijos**: `SuggestionsButton` (z-30) y buscador universal (z-50), fuera de
+  `renderTab()`.
+
+> ⚠️ **Regla dura al tocar este archivo:** todos los `useEffect` y la llamada a `aplicarTema()` van
+> **antes** de los `return` condicionales de sesión/carga. Ya se cometió y corrigió el error
+> "Rendered more hooks than during the previous render" en A3.
+
+**Le tocan:** R0.1(no) · R0.2 · R0.6 · R2.1 · R2.2 · R3.1 · R4.1 · R4.2 · R5.1 · R5.2 · R8.1
+
+### `src/tokens.js` — **MODIFICAR** (612 líneas)
+
+Toda la configuración normativa: paletas, `aplicarTema()`, los `DEFAULT_*` de cada módulo y ~45
+constantes de opciones. Es el punto de entrada de casi cualquier fase.
+
+🔴 **Corregir ya:** el comentario de la línea 137 sobre la densidad (C-01) y marcar `pinExtra` como
+vestigial (C-05).
+
+### `src/index.css` — **MODIFICAR** (204 líneas)
+
+Animaciones del sistema de navegación, `--ease-premium`, reglas `html[data-radio]`,
+`html[data-animaciones]`, `html[data-reducir-movimiento]`, y el **comentario de advertencia junto a
+`.module-enter`** sobre el bug de `containing block`.
+⬜ **Le falta:** todo el bloque `html[data-densidad]` (C-01 / R6.1).
+
+### `src/main.jsx` — **EXISTE**
+
+---
+
+## 4. `src/lib/` — 18 módulos
+
+| Archivo | Exports | Estado |
+|---|---|---|
+| `ai.js` | `AI_SYSTEM`, `askAI`, `askAIWithImage`, `askAIWithImages` | **EXISTE** |
+| `biometria.js` | `biometriaSoportada`, `registrarBiometria`, `verificarBiometria` | **EXISTE**. WebAuthn sin servidor — límite documentado en el propio archivo |
+| `calendario.js` | `diasDelMes`, `primerDiaSemanaMes`, `isoDeFecha`, `celdasMes`, `eventosDelDia`, `tiposDelDia`, `resumenDelDia`, `eventosFuturos`, `expandirRecurrentes` | **MODIFICAR** (R2.3, R2.4: intervalo y excepciones) |
+| `calendarioIntegracion.js` | `eventosDerivados`, `NOMBRES_ORIGEN` | **MODIFICAR** (R2.1 hábitos/rutinas, R2.2 Fe) |
+| `colorEngine.js` | 23 funciones puras | **EXISTE**. Verificado ejecutándolo con Node |
+| `correlaciones.js` | `cruzarPorFecha`, `correlacionSuenoEstudio`, `correlacionSuenoAnimo`, `correlacionEntrenoAnimo` | **EXISTE**. `cruzarPorFecha` es genérica y reutilizable para pares nuevos |
+| `exportData.js` | `exportCSV`, `exportXLSX` | **MODIFICAR** (R8.8: exportación completa y PDF) |
+| `helpers.js` | `uid`, `hexToRgba`, `shade`, `calcularEdad`, `calcularDuracion`, `formatFecha`, `todayISO`, `addDays`, `proximaOcurrencia`, `diasHasta`, `fileToBase64` | **MODIFICAR** (D-07: extraer aquí la fórmula de IMC) |
+| `logros.js` | `calcularLogros` | **EXISTE**. 12 insignias binarias, solo lectura |
+| `notificaciones.js` | `permisoNotificaciones`, `pedirPermisoNotificaciones`, `notificarSiCorresponde` | **MODIFICAR** (todo el bloque R7) |
+| `openFoodFacts.js` | consulta por código de barras | **EXISTE** |
+| `pdfText.js` | `extractPdfText` | **EXISTE**. Usa `pdfjs-dist` en el navegador |
+| `pin.js` | `generarSalt`, `crearPinHash`, `verificarPin` | **MODIFICAR** (R8.2: longitud configurable, límite de intentos) |
+| `predicciones.js` | 6 funciones | **EXISTE**. ⚠️ Del que depende el Calendario (DEP-01) |
+| `resumenesHub.js` | `calcularResumenModulo` | **MODIFICAR** al añadir cualquier módulo. 18 `case` + `default`, todos con `{ linea1, linea2, estado }` |
+| `supabase.js` | `supabase`, `onAuthChange`, `onAuthEvent`, `loadData`, `saveData`, `sendPasswordReset`, y los 3 tríos de Storage | **EXISTE** |
+| `videoFrames.js` | `extractFramesFromSrc` | **EXISTE**. 4 fotogramas con `<video>` + `<canvas>` |
+| — | **`i18n.js`** | ⬜ **CREAR** (R5.6) |
+| — | **`unidades.js`** | ⬜ **CREAR** (R5.3) — conversión cm/ft-in, kg/lb, °C/°F, km/mi con unidad base interna |
+| — | **`puntuacion.js`** | ⬜ **CREAR** (R4.1) — puntuación diaria real sobre el día calendario |
+| — | **`revisionPeriodica.js`** | ⬜ **CREAR** (R4.2) — revisión semanal/mensual/anual, solo lectura sobre correlaciones/predicciones/logros |
+
+---
+
+## 5. `src/components/` — 6 archivos
+
+### `ui.jsx` — **MODIFICAR** (695 líneas, 23 componentes exportados)
+
+`Card` (acepta `id` opcional) · `DashboardModuleCard` · `MiniAccessCard` · `QuickActionButton` ·
+`ListCard` · `ListRow` · `SectionTitle` · `Field` · `TextInput` · `Textarea` · `Select` ·
+`PrimaryButton` · `GhostBtn` · `ToggleTab` · `EmptyHint` · `EntradaPin` · `PinGate` ·
+`VerificacionPinModal` · `CrearPinModal` · `RecuperarPinModal` · `AIPanel` · `SuggestionsButton` ·
+`UniversalSearchModal` · `ScoreGauge`.
+
+> ⚠️ **`ScoreGauge` usa un id de gradiente SVG fijo (`gaugeGrad`)** — renderizarlo dos veces en la
+> misma pantalla rompe el degradado de todos menos uno. Si alguna vez hace falta, **pasarle el id
+> como prop antes de reutilizarlo**.
+>
+> ⚠️ Los 4 modales de este archivo se montan con `createPortal`. Cualquier overlay nuevo, también.
+>
+> ⚠️ **La firma `buildPrompt()` sin argumentos de `AIPanel` la usan 13 vistas.** No romperla.
+
+⬜ **Componentes que faltarán:** `Toast`/`UndoToast` (R3.11) · `Avatar` con iniciales (R5.1) ·
+`Badge`/`IndicadorEstado` para las tarjetas de categoría (R3.10).
+
+| Archivo | Estado |
+|---|---|
+| `Auth.jsx` | **EXISTE** — registro / inicio / cierre de sesión con Supabase |
+| `BarcodeScanner.jsx` | **EXISTE** — `@zxing/library`, cámara trasera, montado con `createPortal` |
+| `ColorPicker.jsx` | **EXISTE** — espectro 2D HSV, tono, HEX/RGB/HSL, favoritos/recientes, cuentagotas con detección de función. Separación **preview/commit** |
+| `TemaBuilder.jsx` | **EXISTE** — bottom-sheet con una fila por rol; abre el `ColorPicker` anidado |
+| `GestionTemas.jsx` | **EXISTE** — galería de 10 presets + CRUD de temas propios tras `modoColorAvanzado` |
+
+---
+
+## 6. `src/views/` — 22 vistas
+
+| Vista | Estado | Notas y qué tarea la toca |
+|---|---|---|
+| `DashboardView.jsx` (489 l.) | 🔴 **MODIFICAR** | 3 niveles + acciones rápidas + 3 avisos + `IndicadorContexto` + `AccesoCalendarioYAgenda` + métricas favoritas + `ScoreGauge`. **R0.2 / R4.1** (puntuación), **R3.1** (filtrado por `dashboardOcultos`), **R4.2** (revisión periódica) |
+| `SettingsView.jsx` (1268 l.) | 🔴 **MODIFICAR** | 12 categorías. La vista más grande después de `App.jsx`. **Casi todo R3, R5, R6, R7, R8 pasa por aquí**. Contiene `OpcionesFila`, `DeportesChips`, `LesionesEditor`, `InfoOnly` |
+| `CalendarView.jsx` (694 l.) | **MODIFICAR** | Mes/Agenda, recurrencia, filtros por tipo, búsqueda, `FilaEvento`, `DetalleEventoDerivado`, 3 modales con `createPortal`. **R2.3–R2.6** |
+| `TrainingView.jsx` (442 l.) | **EXISTE** | 7 `SkillCard` en rejilla 2×2, 4 subpestañas cada una, fútbol, vídeos. ⬜ `VideosTab` sin compactar a propósito |
+| `ProductivityView.jsx` (404 l.) | **MODIFICAR** | **R2.1**: añadir periodicidad al modelo de hábitos y rutinas |
+| `EstudiosView.jsx` (402 l.) | **EXISTE** | Programas → asignaturas → exámenes, con deep-link en cascada |
+| `NutritionView.jsx` (322 l.) | **EXISTE** | |
+| `FaithView.jsx` (297 l.) | **MODIFICAR** | **R2.2**: exponer `fe.eventos` a `eventosDerivados()`. 🔒 Conservar `AVISO_DOCTRINAL` |
+| `WellbeingView.jsx` (288 l.) | **EXISTE** | 🔒 Conservar los avisos de limitación real |
+| `LibraryView.jsx` (285 l.) | **EXISTE** | ⚠️ Contiene un literal de regex con barras escapadas que da **falso positivo** en el verificador de balance de llaves. El archivo está bien formado |
+| `RelationView.jsx` (272 l.) | **EXISTE** | 🔒 Nunca fuera del `PinGate`, nunca en el export |
+| `HealthView.jsx` (271 l.) | **MODIFICAR** | **R5.2** (sincronizar peso con Perfil), **D-07** (IMC compartido). ⚠️ El `color: '#EDEFF2'` del icono de borrar foto es **intencionado** (va sobre scrim oscuro fijo) — no "arreglarlo" |
+| `PersonalizationView.jsx` (220 l.) | **MODIFICAR** | **R3.1** + **D-09**: aquí debe vivir también el editor de `dashboardOcultos`. Exporta `ICONOS_PERSONALIZABLES_MAP` |
+| `PredictionsView.jsx` (208 l.) | **EXISTE** | ⚠️ `colorRiesgo()` es una **función**, no un objeto — un objeto congelaba los colores al cambiar de tema (bug real ya corregido). No volver a convertirlo |
+| `ObjectivesView.jsx` (158 l.) | **EXISTE** | |
+| `DiaryView.jsx` (158 l.) | **EXISTE** | 🔒 Sin PIN |
+| `HubView.jsx` (137 l.) | **EXISTE** | Tarjetas de cristal, cascada 80 ms, `EXPAND_MS` 190 ms |
+| `AchievementsView.jsx` (115 l.) | **EXISTE** | 🔒 Insignias binarias |
+| `StatsView.jsx` (104 l.) | **EXISTE** | 🔒 Solo lectura |
+| `SleepView.jsx` · `FinanceView.jsx` · `BusinessView.jsx` | **EXISTE** | Finance: ⬜ importación CSV y detección de duplicados |
+
+---
+
+## 7. Estado de las 22 claves de datos
+
+Ver `01_ESPECIFICACION_MAESTRA.md` §4.1 para la tabla completa. Resumen de las que **cambiarán**:
+
+| Clave | Cambio pendiente | Tarea |
+|---|---|---|
+| `personalizacion` | Marcar `pinExtra` vestigial; unificar `ocultos` / `dashboardOcultos` en una sola pantalla | R0.6, R3.1 |
+| `productividad` | **Añadir periodicidad** a hábitos y rutinas | R2.1 |
+| `perfil` | Añadir `fotoPath`; sincronización de `peso` con Salud | R5.1, R5.2 |
+| `notificaciones` | Se amplía mucho: prioridades, tipos, horarios por día, sonidos, historial | R7 |
+| `seguridad` | Ampliar `ACCIONES_PROTEGIBLES`; longitud de PIN; intentos fallidos; códigos de recuperación | R8 |
+| `ajustes.apariencia` | `densidad` con efecto real | R6.1 |
+| — | ⬜ **CREAR** `configBackup` (copia de seguridad versionada de configuración) | R3.4 |
+| — | ⬜ **CREAR** `auditoria` (registro de cambios de configuración y eventos de seguridad) | R3.12, R8.7 |
+
+---
+
+## 8. Estado de verificación — la verdad incómoda
+
+| Rango | Verificación disponible |
+|---|---|
+| **Fases 1–7** | ✅ **Probadas de verdad por Josué en su dispositivo** |
+| **Fases 8–21** | 🟡 Código completo + **bundle `esbuild` sin errores**. Nunca ejecutadas |
+| **v1.0.1 → v1.22.0** (todo A, N, V, C, S, U, D, L) | 🟡 **Ni siquiera `esbuild`.** Solo: balance de paréntesis/llaves por script, cruce manual de imports contra firmas reales, y —en V1/V2/V3/V4— **ejecución real con Node** de las funciones puras del motor de color |
+| **Ninguna versión** | ❌ Nunca se ha renderizado la app en un navegador dentro del entorno de la IA |
+
+**Lo que esto significa en la práctica:** todo lo construido en los últimos 22 incrementos es
+**código cuidadosamente revisado a mano, no código probado**. La primera ejecución real de casi todo
+sigue pendiente (**R1**). Cuando Josué reporte un fallo, **pedirle el mensaje exacto** — es la única
+fuente de verdad disponible.
+
+**Lo único verificado ejecutándolo:** `colorEngine.js` y `aplicarTema()` con Node (round-trips
+exactos, contraste AA garantizado en los 24 casos de acento × tema, casos límite de fondo/texto casi
+negro y casi blanco recuperados por `ensureContrast`, límite de temas guardados bloqueando en el
+tope).
