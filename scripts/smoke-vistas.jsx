@@ -30,6 +30,7 @@ import HubView from '../src/views/HubView.jsx';
 import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
+import PapeleraView from '../src/views/PapeleraView.jsx';
 
 import {
   DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION,
@@ -37,6 +38,7 @@ import {
   DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION,
   DEFAULT_NOTIFICACIONES, DEFAULT_CALENDARIO, ACCENTS,
 } from '../src/tokens.js';
+import { DEFAULT_PAPELERA } from '../src/lib/papelera.js';
 import { calcularResumenModulo } from '../src/lib/resumenesHub.js';
 
 const accent = ACCENTS[0].value;
@@ -51,7 +53,7 @@ const vacio = {
   objetivos: DEFAULT_OBJETIVOS, diario: DEFAULT_DIARIO, biblioteca: DEFAULT_BIBLIOTECA,
   relacion: DEFAULT_RELACION, fe: DEFAULT_FE, bienestar: DEFAULT_BIENESTAR,
   calendario: DEFAULT_CALENDARIO, personalizacion: DEFAULT_PERSONALIZACION,
-  notificaciones: DEFAULT_NOTIFICACIONES,
+  notificaciones: DEFAULT_NOTIFICACIONES, papelera: DEFAULT_PAPELERA,
 };
 
 const lleno = {
@@ -68,6 +70,10 @@ const lleno = {
   relacion: { nombre: 'A', fechas: [{ id: 'r', etiqueta: 'Aniversario', fecha: HOY, tipo: 'aniversario', repetir: true }] },
   bienestar: { registros: [{ id: 'b', fecha: HOY, categoria: 'productivo', minutos: 60 }], reflexiones: [], sesiones: [{ id: 'z', fecha: HOY, minutos: 25 }] },
   negocio: { proyectos: [{ id: 'n', nombre: 'Idea', estado: 'Idea', notas: '', ingresos: 0, gastos: 0 }] },
+  papelera: { retencionDias: 30, elementos: [
+    { id: 'p1', modulo: 'productividad', coleccion: 'tareas', tipo: 'Tarea', icono: 'productividad', idOriginal: 't9', indice: 0, eliminadoEn: new Date().toISOString(), datos: { id: 't9', texto: 'Algo borrado' } },
+    { id: 'p2', modulo: 'relacion', coleccion: 'fechas', tipo: 'Fecha importante', icono: 'relacion', privado: true, idOriginal: 'f9', indice: 0, eliminadoEn: new Date().toISOString(), datos: { id: 'f9', etiqueta: 'Privado' } },
+  ] },
 };
 
 function propsDashboard(e) {
@@ -114,6 +120,10 @@ const CASOS = [
     onAplicarPerfil: noop, onSetIcono: noop,
     onTogglePinExtra: noop, onToggleFavorita: noop, onMoveFavorita: noop,
     modo: e.personalizacion.modo, onSetModo: noop, accent,
+  })],
+  ['PapeleraView', PapeleraView, (e) => ({
+    papelera: e.papelera, relacionDesbloqueada: false,
+    onRestaurar: noop, onEliminarDefinitivo: noop, onVaciar: noop, onSetRetencion: noop, accent,
   })],
   ['HubView', HubView, (e) => ({
     area: { id: 'area-salud', label: 'Salud', modulos: ['salud', 'sueno'] },

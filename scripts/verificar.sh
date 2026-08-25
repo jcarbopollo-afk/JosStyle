@@ -56,6 +56,12 @@ else
   fallo "Fallan pruebas de personalización"; grep '✗' /tmp/jc_pers.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-papelera.mjs >/tmp/jc_pap.log 2>&1; then
+  ok "Papelera (ME F3) — $(grep -c '✓' /tmp/jc_pap.log) comprobaciones"
+else
+  fallo "Fallan pruebas de la papelera"; grep '✗' /tmp/jc_pap.log
+fi
+
 if node scripts/smoke.mjs test-modulos.jsx >/tmp/jc_mod.log 2>&1; then
   ok "Módulos activables (ME F1) — $(grep -c '✓' /tmp/jc_mod.log) comprobaciones"
 else

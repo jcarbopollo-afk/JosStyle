@@ -215,6 +215,8 @@ export default function App() {
   // (tema + accent + temaPersonalizado, foto lista para aplicar de un toque), clave propia en
   // Supabase, mismo criterio de guardado directo sin deshacer que historialColor/temaPersonalizado.
   const [temasGuardados, setTemasGuardados] = useState(DEFAULT_TEMAS_GUARDADOS);
+  // Entrega 2 · ME Fase 3 — papelera global ("Eliminados recientemente").
+  const [papelera, setPapelera] = useState(DEFAULT_PAPELERA);
   const [history, setHistory] = useState([]);
   const [showSearch, setShowSearch] = useState(false); // Fase 18 — buscador universal
   // Ampliación del Dashboard — Centro de Control: `dashboardFoco` es el único estado nuevo que
@@ -240,7 +242,7 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h] = await Promise.all([
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap] = await Promise.all([
         loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
@@ -268,6 +270,7 @@ export default function App() {
         loadData(uidUser, 'temaPersonalizado', DEFAULT_TEMA_PERSONALIZADO),
         loadData(uidUser, 'temasGuardados', DEFAULT_TEMAS_GUARDADOS),
         loadData(uidUser, 'historial', []),
+        loadData(uidUser, 'papelera', DEFAULT_PAPELERA),
       ]);
       if (cancelled) return;
       setAccent(a.accent || ACCENTS[0].value);
@@ -364,6 +367,13 @@ export default function App() {
       // de que sea de verdad un array, por si `temasGuardados` no existe todavía en Supabase.
       setTemasGuardados(Array.isArray(temGuard) ? temGuard : DEFAULT_TEMAS_GUARDADOS);
       setHistory(h);
+      // Entrega 2 · ME Fase 3 — la retención se aplica al abrir la app: lo que haya vencido se
+      // borra definitivamente aquí, una sola vez, y solo se escribe si de verdad cambió algo.
+      const papeleraCargada = purgarCaducados({ ...DEFAULT_PAPELERA, ...(pap || {}) }, new Date().toISOString());
+      setPapelera(papeleraCargada);
+      if (pap && papeleraCargada.elementos.length !== (pap.elementos || []).length) {
+        saveData(uidUser, 'papelera', papeleraCargada);
+      }
       setLoaded(true);
     })();
     return () => { cancelled = true; };
@@ -759,6 +769,73 @@ export default function App() {
     if (ocultos.includes(tab)) setTab('hoy');
   };
 
+  // ---------------------------------------------------------------------------
+  // Entrega 2 · ME Fase 3 — Papelera global.
+  //
+  // `eliminarConPapelera` sustituye al `snapshotAndSave({ X: { ...X, lista: lista.filter(...) } })`
+  // que repetían los 22 handlers de borrado. Es una sola función porque todos seguían
+  // exactamente el mismo patrón: módulo + colección + id. Añadir un módulo futuro a la
+  // papelera es añadirlo a CATALOGO_PAPELERA — aquí no hay que tocar nada.
+  // ---------------------------------------------------------------------------
+  const MODULOS_PAPELERA = {
+    sueno: [sueno, setSueno], futbol: [futbol, setFutbol], economia: [economia, setEconomia],
+    salud: [salud, setSalud], nutricion: [nutricion, setNutricion], estudios: [estudios, setEstudios],
+    negocio: [negocio, setNegocio], productividad: [productividad, setProductividad],
+    objetivos: [objetivos, setObjetivos], calendario: [calendario, setCalendario],
+    diario: [diario, setDiario], biblioteca: [biblioteca, setBiblioteca],
+    relacion: [relacion, setRelacion], fe: [fe, setFe], bienestar: [bienestar, setBienestar],
+  };
+
+  const eliminarConPapelera = (modulo, coleccion, id) => {
+    const entradaModulo = MODULOS_PAPELERA[modulo];
+    if (!entradaModulo) return;
+    const resultado = prepararEliminacion(entradaModulo[0], modulo, coleccion, id, new Date().toISOString());
+    if (!resultado) return;
+    // Un único snapshotAndSave con las dos cosas: el módulo sin el elemento y la papelera con él.
+    // Así el deshacer de 10 pasos revierte ambas a la vez y nunca quedan desincronizadas.
+    snapshotAndSave({
+      [modulo]: resultado.moduloActualizado,
+      papelera: { ...papelera, elementos: [...papelera.elementos, resultado.entrada] },
+    });
+  };
+
+  const restaurarDePapelera = (entradaId) => {
+    const entrada = papelera.elementos.find((e) => e.id === entradaId);
+    if (!entrada) return;
+    const entradaModulo = MODULOS_PAPELERA[entrada.modulo];
+    if (!entradaModulo) return;
+    const resultado = prepararRestauracion(entradaModulo[0], entrada);
+    if (!resultado) return;
+    // La entrada sale de la papelera tanto si se ha insertado como si el elemento ya había
+    // vuelto por otra vía (un deshacer): en ambos casos deja de tener sentido tenerla ahí.
+    snapshotAndSave({
+      [entrada.modulo]: resultado.moduloActualizado,
+      papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
+    });
+  };
+
+  // Borrado definitivo y vaciado NO pasan por snapshotAndSave: meter en el histórico de deshacer
+  // una acción cuyo sentido es "esto ya no se puede recuperar" sería contradictorio.
+  const eliminarDefinitivo = (entradaId) => {
+    const siguiente = { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) };
+    setPapelera(siguiente);
+    saveData(uidUser, 'papelera', siguiente);
+  };
+
+  const vaciarPapelera = () => {
+    const siguiente = { ...papelera, elementos: [] };
+    setPapelera(siguiente);
+    saveData(uidUser, 'papelera', siguiente);
+  };
+
+  const setRetencionPapelera = (dias) => {
+    // Al acortar la retención puede haber elementos que ya estén fuera de plazo: se purgan en el
+    // momento, para que la lista que ve Josué coincida con la regla que acaba de elegir.
+    const siguiente = purgarCaducados({ ...papelera, retencionDias: dias }, new Date().toISOString());
+    setPapelera(siguiente);
+    saveData(uidUser, 'papelera', siguiente);
+  };
+
   const setIconoModulo = (id, iconKey) => {
     const iconos = { ...personalizacion.iconos };
     if (iconKey) iconos[id] = iconKey; else delete iconos[id];
@@ -794,8 +871,12 @@ export default function App() {
     updatePersonalizacion({ ...personalizacion, modo });
   };
 
+  // `papelera` entra en el snapshot desde la Entrega 2 · ME Fase 3. Sin esto, deshacer un borrado
+  // devolvería el elemento a su módulo pero dejaría su entrada en la papelera: un fantasma que
+  // al restaurarse duplicaría el elemento. Con la papelera dentro del snapshot, deshacer revierte
+  // las dos cosas a la vez y los dos sistemas de recuperación no se pisan.
   const snapshotAndSave = (patch) => {
-    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar };
+    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera };
     const nextHist = [...history, snapshot].slice(-10);
     setHistory(nextHist);
     saveData(uidUser, 'historial', nextHist);
@@ -815,6 +896,7 @@ export default function App() {
     if (patch.relacion) { setRelacion(patch.relacion); saveData(uidUser, 'relacion', patch.relacion); }
     if (patch.fe) { setFe(patch.fe); saveData(uidUser, 'fe', patch.fe); }
     if (patch.bienestar) { setBienestar(patch.bienestar); saveData(uidUser, 'bienestar', patch.bienestar); }
+    if (patch.papelera) { setPapelera(patch.papelera); saveData(uidUser, 'papelera', patch.papelera); }
   };
 
   const addSueno = (entry) => snapshotAndSave({ sueno: [...sueno, entry] });
@@ -833,39 +915,52 @@ export default function App() {
 
   const addPrograma = (p) => snapshotAndSave({ estudios: { ...estudios, programas: [...estudios.programas, p] } });
   const addAsignatura = (a) => snapshotAndSave({ estudios: { ...estudios, asignaturas: [...estudios.asignaturas, a] } });
-  const deleteAsignatura = (id) =>
+  // Único borrado en cascada de la app: quitar una asignatura se lleva por delante sus exámenes
+  // y sus horas de estudio, para no dejar registros huérfanos apuntando a algo que ya no existe.
+  //
+  // Por eso no puede usar `eliminarConPapelera` tal cual: si la papelera guardara solo la
+  // asignatura, recuperarla devolvería una asignatura vacía y los exámenes se habrían perdido
+  // para siempre. `conArrastrados` mete en la misma entrada lo que cayó con ella, y restaurar
+  // devuelve las tres cosas a la vez (especificación: "recupera sus relaciones cuando sea posible").
+  const deleteAsignatura = (id) => {
+    const resultado = prepararEliminacion(estudios, 'estudios', 'asignaturas', id, new Date().toISOString());
+    if (!resultado) return;
+    const examenesArrastrados = estudios.examenes.filter((e) => e.asignaturaId === id);
+    const horasArrastradas = estudios.horas.filter((h) => h.asignaturaId === id);
+    const entrada = conArrastrados(resultado.entrada, [
+      { coleccion: 'examenes', elementos: examenesArrastrados },
+      { coleccion: 'horas', elementos: horasArrastradas },
+    ]);
     snapshotAndSave({
       estudios: {
-        ...estudios,
-        asignaturas: estudios.asignaturas.filter((a) => a.id !== id),
-        // Borrar una asignatura borra también sus exámenes y horas — evita dejar registros
-        // huérfanos apuntando a una asignatura que ya no existe.
+        ...resultado.moduloActualizado,
         examenes: estudios.examenes.filter((e) => e.asignaturaId !== id),
         horas: estudios.horas.filter((h) => h.asignaturaId !== id),
       },
+      papelera: { ...papelera, elementos: [...papelera.elementos, entrada] },
     });
+  };
   const addExamen = (ex) => snapshotAndSave({ estudios: { ...estudios, examenes: [...estudios.examenes, ex] } });
   const updateExamen = (ex) => snapshotAndSave({ estudios: { ...estudios, examenes: estudios.examenes.map((e) => (e.id === ex.id ? ex : e)) } });
-  const deleteExamen = (id) => snapshotAndSave({ estudios: { ...estudios, examenes: estudios.examenes.filter((e) => e.id !== id) } });
+  const deleteExamen = (id) => eliminarConPapelera('estudios', 'examenes', id);
   const addHoras = (h) => snapshotAndSave({ estudios: { ...estudios, horas: [...estudios.horas, h] } });
 
   const addProyecto = (p) => snapshotAndSave({ negocio: { ...negocio, proyectos: [...negocio.proyectos, p] } });
   const updateProyecto = (p) => snapshotAndSave({ negocio: { ...negocio, proyectos: negocio.proyectos.map((x) => (x.id === p.id ? p : x)) } });
-  const deleteProyecto = (id) => snapshotAndSave({ negocio: { ...negocio, proyectos: negocio.proyectos.filter((x) => x.id !== id) } });
-
+  const deleteProyecto = (id) => eliminarConPapelera('negocio', 'proyectos', id);
   const addHabito = (h) => snapshotAndSave({ productividad: { ...productividad, habitos: [...productividad.habitos, h] } });
   const updateHabito = (h) => snapshotAndSave({ productividad: { ...productividad, habitos: productividad.habitos.map((x) => (x.id === h.id ? h : x)) } });
-  const deleteHabito = (id) => snapshotAndSave({ productividad: { ...productividad, habitos: productividad.habitos.filter((x) => x.id !== id) } });
+  const deleteHabito = (id) => eliminarConPapelera('productividad', 'habitos', id);
   const addRutina = (r) => snapshotAndSave({ productividad: { ...productividad, rutinas: [...productividad.rutinas, r] } });
   const updateRutina = (r) => snapshotAndSave({ productividad: { ...productividad, rutinas: productividad.rutinas.map((x) => (x.id === r.id ? r : x)) } });
-  const deleteRutina = (id) => snapshotAndSave({ productividad: { ...productividad, rutinas: productividad.rutinas.filter((x) => x.id !== id) } });
+  const deleteRutina = (id) => eliminarConPapelera('productividad', 'rutinas', id);
   const addTarea = (t) => snapshotAndSave({ productividad: { ...productividad, tareas: [...productividad.tareas, t] } });
   const toggleTarea = (id) =>
     snapshotAndSave({ productividad: { ...productividad, tareas: productividad.tareas.map((x) => (x.id === id ? { ...x, hecha: !x.hecha } : x)) } });
-  const deleteTarea = (id) => snapshotAndSave({ productividad: { ...productividad, tareas: productividad.tareas.filter((x) => x.id !== id) } });
+  const deleteTarea = (id) => eliminarConPapelera('productividad', 'tareas', id);
   const addMeta = (m) => snapshotAndSave({ productividad: { ...productividad, metas: [...productividad.metas, m] } });
   const updateMeta = (m) => snapshotAndSave({ productividad: { ...productividad, metas: productividad.metas.map((x) => (x.id === m.id ? m : x)) } });
-  const deleteMeta = (id) => snapshotAndSave({ productividad: { ...productividad, metas: productividad.metas.filter((x) => x.id !== id) } });
+  const deleteMeta = (id) => eliminarConPapelera('productividad', 'metas', id);
   // El contador de pomodoros no pasa por snapshotAndSave (no tiene sentido "deshacer" un
   // pomodoro completado) — se guarda directo, igual de ligero que un simple contador diario.
   const completarPomodoro = () => {
@@ -877,7 +972,7 @@ export default function App() {
 
   const addObjetivo = (o) => snapshotAndSave({ objetivos: { ...objetivos, lista: [...objetivos.lista, o] } });
   const updateObjetivo = (o) => snapshotAndSave({ objetivos: { ...objetivos, lista: objetivos.lista.map((x) => (x.id === o.id ? o : x)) } });
-  const deleteObjetivo = (id) => snapshotAndSave({ objetivos: { ...objetivos, lista: objetivos.lista.filter((x) => x.id !== id) } });
+  const deleteObjetivo = (id) => eliminarConPapelera('objetivos', 'lista', id);
   // La fecha de la última revisión tampoco pasa por el snapshot — es un dato de "seguimiento",
   // no algo que tenga sentido deshacer, igual que el contador de pomodoros.
   const marcarRevisionHecha = () => {
@@ -890,47 +985,42 @@ export default function App() {
   // deshacer como el resto de módulos de datos de la app (mismo criterio que Objetivos/Diario).
   const addEvento = (ev) => snapshotAndSave({ calendario: { ...calendario, eventos: [...calendario.eventos, ev] } });
   const updateEvento = (ev) => snapshotAndSave({ calendario: { ...calendario, eventos: calendario.eventos.map((x) => (x.id === ev.id ? ev : x)) } });
-  const deleteEvento = (id) => snapshotAndSave({ calendario: { ...calendario, eventos: calendario.eventos.filter((x) => x.id !== id) } });
-
+  const deleteEvento = (id) => eliminarConPapelera('calendario', 'eventos', id);
   const addEntradaDiario = (e) => snapshotAndSave({ diario: { ...diario, entradas: [...diario.entradas, e] } });
   const updateEntradaDiario = (e) => snapshotAndSave({ diario: { ...diario, entradas: diario.entradas.map((x) => (x.id === e.id ? e : x)) } });
-  const deleteEntradaDiario = (id) => snapshotAndSave({ diario: { ...diario, entradas: diario.entradas.filter((x) => x.id !== id) } });
-
+  const deleteEntradaDiario = (id) => eliminarConPapelera('diario', 'entradas', id);
   // Fase 11 — Biblioteca. Apuntes y enlaces son texto puro, así que sí pasan por
   // snapshotAndSave/deshacer, igual que el resto de módulos de datos de la app.
   const addApunte = (a) => snapshotAndSave({ biblioteca: { ...biblioteca, apuntes: [...biblioteca.apuntes, a] } });
-  const deleteApunte = (id) => snapshotAndSave({ biblioteca: { ...biblioteca, apuntes: biblioteca.apuntes.filter((x) => x.id !== id) } });
+  const deleteApunte = (id) => eliminarConPapelera('biblioteca', 'apuntes', id);
   const addEnlace = (e) => snapshotAndSave({ biblioteca: { ...biblioteca, enlaces: [...biblioteca.enlaces, e] } });
-  const deleteEnlace = (id) => snapshotAndSave({ biblioteca: { ...biblioteca, enlaces: biblioteca.enlaces.filter((x) => x.id !== id) } });
-
+  const deleteEnlace = (id) => eliminarConPapelera('biblioteca', 'enlaces', id);
   // Fase 12 — Relación: módulo privado (PinGate en el render, ver renderTab). Nombre y fechas
   // importantes son texto puro, sin archivos, así que pasan por snapshotAndSave/deshacer igual
   // que el resto de módulos de datos (mismo criterio que Diario y los apuntes de Biblioteca).
   const updateNombrePareja = (nombre) => snapshotAndSave({ relacion: { ...relacion, nombre } });
   const addFechaImportante = (f) => snapshotAndSave({ relacion: { ...relacion, fechas: [...relacion.fechas, f] } });
   const updateFechaImportante = (f) => snapshotAndSave({ relacion: { ...relacion, fechas: relacion.fechas.map((x) => (x.id === f.id ? f : x)) } });
-  const deleteFechaImportante = (id) => snapshotAndSave({ relacion: { ...relacion, fechas: relacion.fechas.filter((x) => x.id !== id) } });
-
+  const deleteFechaImportante = (id) => eliminarConPapelera('relacion', 'fechas', id);
   // Fase 14 — Fe: cuatro sub-áreas de texto puro, todas sin PIN (Josué no pidió privacidad
   // extra aquí), así que las cuatro pasan por snapshotAndSave/deshacer como el resto de módulos
   // de datos de la app.
   const addServicioFe = (s) => snapshotAndSave({ fe: { ...fe, servicio: [...fe.servicio, s] } });
-  const deleteServicioFe = (id) => snapshotAndSave({ fe: { ...fe, servicio: fe.servicio.filter((x) => x.id !== id) } });
+  const deleteServicioFe = (id) => eliminarConPapelera('fe', 'servicio', id);
   const addEventoFe = (ev) => snapshotAndSave({ fe: { ...fe, eventos: [...fe.eventos, ev] } });
-  const deleteEventoFe = (id) => snapshotAndSave({ fe: { ...fe, eventos: fe.eventos.filter((x) => x.id !== id) } });
+  const deleteEventoFe = (id) => eliminarConPapelera('fe', 'eventos', id);
   const addDiarioFe = (d) => snapshotAndSave({ fe: { ...fe, diario: [...fe.diario, d] } });
-  const deleteDiarioFe = (id) => snapshotAndSave({ fe: { ...fe, diario: fe.diario.filter((x) => x.id !== id) } });
+  const deleteDiarioFe = (id) => eliminarConPapelera('fe', 'diario', id);
   const addObjetivoFe = (o) => snapshotAndSave({ fe: { ...fe, objetivos: [...fe.objetivos, o] } });
   const updateObjetivoFe = (o) => snapshotAndSave({ fe: { ...fe, objetivos: fe.objetivos.map((x) => (x.id === o.id ? o : x)) } });
-  const deleteObjetivoFe = (id) => snapshotAndSave({ fe: { ...fe, objetivos: fe.objetivos.filter((x) => x.id !== id) } });
-
+  const deleteObjetivoFe = (id) => eliminarConPapelera('fe', 'objetivos', id);
   // Fase 15 — Bienestar digital: las tres sub-áreas son texto puro (sin archivos, sin PIN), así
   // que pasan por snapshotAndSave/deshacer como el resto de módulos de datos de la app — mismo
   // criterio que Fe o los apuntes/enlaces de Biblioteca.
   const addRegistroTiempoUso = (r) => snapshotAndSave({ bienestar: { ...bienestar, registros: [...bienestar.registros, r] } });
-  const deleteRegistroTiempoUso = (id) => snapshotAndSave({ bienestar: { ...bienestar, registros: bienestar.registros.filter((x) => x.id !== id) } });
+  const deleteRegistroTiempoUso = (id) => eliminarConPapelera('bienestar', 'registros', id);
   const addReflexionBienestar = (r) => snapshotAndSave({ bienestar: { ...bienestar, reflexiones: [...bienestar.reflexiones, r] } });
-  const deleteReflexionBienestar = (id) => snapshotAndSave({ bienestar: { ...bienestar, reflexiones: bienestar.reflexiones.filter((x) => x.id !== id) } });
+  const deleteReflexionBienestar = (id) => eliminarConPapelera('bienestar', 'reflexiones', id);
   const completarSesionConcentracion = (minutos) =>
     snapshotAndSave({ bienestar: { ...bienestar, sesiones: [...bienestar.sesiones, { id: uid(), minutos, fecha: todayISO() }] } });
 
@@ -1012,6 +1102,7 @@ export default function App() {
     setRelacion(last.relacion || DEFAULT_RELACION); saveData(uidUser, 'relacion', last.relacion || DEFAULT_RELACION);
     setFe(last.fe || DEFAULT_FE); saveData(uidUser, 'fe', last.fe || DEFAULT_FE);
     setBienestar(last.bienestar || DEFAULT_BIENESTAR); saveData(uidUser, 'bienestar', last.bienestar || DEFAULT_BIENESTAR);
+    setPapelera(last.papelera || DEFAULT_PAPELERA); saveData(uidUser, 'papelera', last.papelera || DEFAULT_PAPELERA);
     setHistory(rest); saveData(uidUser, 'historial', rest);
   };
 
@@ -1372,6 +1463,12 @@ export default function App() {
             personalizacion={personalizacion}
             onMove={moverModuloNav}
             onToggleOculto={toggleOcultoModulo}
+            papelera={papelera}
+            relacionDesbloqueada={!seguridad.pinHash || estaDesbloqueado('area:relacion')}
+            onRestaurarPapelera={restaurarDePapelera}
+            onEliminarDefinitivo={eliminarDefinitivo}
+            onVaciarPapelera={vaciarPapelera}
+            onSetRetencionPapelera={setRetencionPapelera}
             onToggleDashboard={toggleDashboardModulo}
             onAplicarPerfil={aplicarPerfilModulos}
             onSetIcono={setIconoModulo}

@@ -2566,14 +2566,62 @@ Sistema global de módulos activables/desactivables, personalización y papelera
 - [x] Nunca deja la app en un estado roto: avisa, no bloquea ni desactiva en cascada
 - [x] No avisa de dependientes que Josué ya tiene desactivados (sería ruido)
 
-#### ME · Fase 3/4 — SISTEMA DE ELIMINADOS RECIENTEMENTE
-- [ ] El elemento vuelve a su módulo original.
-- [ ] Recupera sus datos.
-- [ ] Recupera sus relaciones cuando sea posible.
-- [ ] Vuelve a aparecer en estadísticas.
-- [ ] Vuelve a aparecer en Dashboard si correspondía.
-- [ ] Se sincroniza con la cuenta.
-- [ ] Desaparece de Eliminados recientemente.
+#### ME · Fase 3/4 — SISTEMA DE ELIMINADOS RECIENTEMENTE ✅ **COMPLETADA (v1.26.0)**
+
+**Objetivo**
+- [x] Al eliminar, el elemento NO desaparece para siempre: pasa a la papelera
+- [x] Apartado "🗑️ Eliminados recientemente" dentro de Ajustes
+- [x] Sistema **global y reutilizable**, no una solución por módulo (26 colecciones)
+
+**Contenido de la papelera**
+- [x] Cada elemento muestra información suficiente para identificarlo
+- [x] Tipo de elemento visible ("Tarea", "Examen", "Movimiento"...)
+- [x] Cuánto hace que se eliminó ("hace 2 horas", "ayer", "hace 3 días")
+- [x] Datos relevantes según el tipo de elemento
+- [x] Cuántos días le quedan antes de borrarse solo
+
+**Acciones**
+- [x] **Recuperar** — devuelve el elemento exactamente donde estaba
+- [x] **Eliminar definitivamente** — permanente
+- [x] Confirmación previa: "¿Eliminar definitivamente? Este elemento no podrá recuperarse después"
+- [x] **Vaciar papelera** con su propia confirmación
+
+**Recuperación (los 7 puntos de la especificación)**
+- [x] 1. El elemento vuelve a su módulo original
+- [x] 2. Recupera sus datos (el objeto íntegro, no una copia nueva)
+- [x] 3. Recupera sus relaciones cuando es posible (cascada asignatura → exámenes + horas)
+- [x] 4. Vuelve a aparecer en estadísticas (al volver a su módulo, los cálculos lo recogen solos)
+- [x] 5. Vuelve a aparecer en el Dashboard si correspondía
+- [x] 6. Se sincroniza con la cuenta (clave `papelera` en Supabase)
+- [x] 7. Desaparece de Eliminados recientemente
+- [x] **Es una recuperación REAL**, no volver a mostrar una copia — verificado comprobando que el
+      estado restaurado es idéntico al de partida
+
+**Tiempo de retención**
+- [x] Sistema preparado para establecer un tiempo de retención
+- [x] 30 días por defecto
+- [x] Fácil de cambiar (constante + selector en la interfaz)
+- [x] Opción "Conservar hasta que yo lo elimine definitivamente"
+- [x] La purga se aplica al abrir la app y al acortar el plazo
+
+**Información del elemento eliminado (metadatos)**
+- [x] ID original
+- [x] Tipo de elemento
+- [x] Módulo (y colección)
+- [x] Fecha de creación
+- [x] Fecha de eliminación
+- [x] Datos necesarios para la recuperación (el objeto completo)
+- [x] Usuario propietario (implícito: la clave vive bajo su `user_id` con RLS)
+- [x] Relaciones necesarias (`relacionados`, para el borrado en cascada)
+- [x] Información de posición/origen (`indice`)
+- [x] **NO se almacena simplemente una etiqueta de "eliminado"**
+
+**Decisiones y límites**
+- [x] La papelera entra en el snapshot del deshacer, para que los dos sistemas no se pisen
+- [x] Borrado definitivo y vaciado quedan fuera del deshacer (sería contradictorio)
+- [x] Privacidad: las entradas de Relación se ocultan mientras el módulo esté bloqueado
+- [-] Fotos, vídeos y archivos de Biblioteca — fuera, igual que ya lo estaban del deshacer:
+      viven en Storage y mandarlos a la papelera dejaría ficheros huérfanos
 
 #### ME · Fase 4/4 — INTEGRACIÓN GLOBAL
 - [ ] Analiza la arquitectura actual.

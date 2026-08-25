@@ -1,5 +1,78 @@
 # CHANGELOG.md
 
+## Entrega 2 · ME Fase 3 — Eliminados recientemente (v1.26.0)
+
+### Alcance de esta fase, dicho primero
+Una papelera de verdad. Hasta ahora borrar algo lo borraba: existía el deshacer de 10 pasos, pero
+es un histórico compartido por toda la app — si borras una tarea y después registras tres cosas
+más, ya no puedes recuperarla.
+
+### Por qué es un sistema global y no uno por módulo
+La especificación es tajante: *"debe construirse como un sistema global y reutilizable, no como una
+solución aislada para los módulos actuales"*. Al revisar los 22 handlers de borrado de `App.jsx`
+resultó que **todos seguían exactamente el mismo patrón**:
+
+```js
+MODULO.COLECCION.filter((x) => x.id !== id)
+```
+
+Así que la papelera se modela sobre esa forma: **módulo + colección + id**. Los 19 handlers de una
+línea se han reducido a `eliminarConPapelera('modulo', 'coleccion', id)`. Añadir un módulo futuro
+a la papelera es añadir una entrada a `CATALOGO_PAPELERA` — sin tocar el motor ni la interfaz.
+
+### Añadido / cambiado
+- **`src/lib/papelera.js`** (nuevo): motor puro. `prepararEliminacion`, `prepararRestauracion`,
+  `conArrastrados`, `purgarCaducados`, `describirEntrada`, `tiempoDesde`, `diasRestantes`,
+  `ordenarPapelera` + el catálogo de **26 colecciones**.
+- **Cada entrada guarda el objeto íntegro**, no una etiqueta de "borrado" (requisito explícito):
+  id original, tipo, módulo, colección, fecha de creación, fecha de eliminación, **la posición que
+  ocupaba en la lista** y los datos completos. Por eso la recuperación es real: el elemento vuelve
+  a su sitio, en su orden y con su id — no se recrea una copia.
+- **`src/views/PapeleraView.jsx`** (nuevo) y nueva categoría en Ajustes: lista ordenada por
+  cuándo se borró, con tipo, cuánto hace ("hace 2 horas", "ayer", "hace 3 días" — como los
+  ejemplos de la especificación) y cuántos días le quedan. Recuperar y eliminar definitivamente
+  por elemento, vaciar papelera, y retención configurable.
+- **Retención**: 7 / 30 / 90 días o **"hasta que yo lo borre"**. Se aplica al abrir la app y al
+  acortar el plazo, y solo escribe si de verdad ha cambiado algo.
+- **Borrado en cascada resuelto**: borrar una asignatura se lleva sus exámenes y sus horas. Si la
+  papelera guardara solo la asignatura, recuperarla devolvería una asignatura vacía y los exámenes
+  se habrían perdido. `conArrastrados` mete en la misma entrada lo que cayó con ella y restaurar
+  devuelve las tres cosas (*"recupera sus relaciones cuando sea posible"*).
+
+### Decisiones
+- **La papelera entra en el snapshot del deshacer.** Sin eso, deshacer un borrado devolvería el
+  elemento a su módulo pero dejaría su entrada en la papelera: un fantasma que al restaurarse
+  duplicaría el elemento. Con la papelera dentro, los dos sistemas de recuperación no se pisan.
+- **Borrado definitivo y vaciado NO pasan por el deshacer**: meter en el histórico una acción cuyo
+  sentido es "esto ya no se puede recuperar" sería contradictorio.
+- **Privacidad de Relación.** Es el único módulo protegido de principio a fin, y la papelera se
+  abre desde Ajustes sin pedir PIN. Enseñar ahí "Aniversario con María" sería una fuga real. Sus
+  entradas se marcan `privado`: bloqueadas se muestran como "Elemento privado" y no se pueden
+  restaurar; los datos siguen guardados. Mismo mecanismo (`estaDesbloqueado('area:relacion')`) y
+  mismo criterio que ya se aplicó al integrar Relación en el Calendario.
+- **Fotos, vídeos y archivos de Biblioteca quedan fuera**, igual que ya estaban fuera del
+  deshacer: sus datos viven en Supabase Storage, y mandarlos a la papelera exigiría no borrar el
+  archivo, dejando ficheros huérfanos si después se vacía desde otro dispositivo. Documentado como
+  límite, no como olvido.
+- **Restaurar algo que ya volvió por otra vía no duplica**: la entrada sale igualmente de la
+  papelera, para no dejar un fantasma imposible de quitar.
+
+### Comprobado
+- **73 pruebas** del motor (`scripts/test-papelera.mjs`): que restaurar devuelve el elemento a su
+  posición exacta con todos sus campos y su id original (y que el resultado es **idéntico** al
+  estado de partida), el borrado en cascada de ida y vuelta, la retención con fechas corruptas,
+  la privacidad de Relación bloqueada y desbloqueada, y los casos límite de restaurar sobre una
+  lista que ha encogido o que ya contiene el elemento.
+- **52 casos de renderizado**, ahora incluyendo `PapeleraView`.
+- Total en verde: 148 comprobaciones + 52 casos.
+
+### Pendiente (documentado, no implementado en esta fase)
+- Archivos en Storage (ver Decisiones).
+- La auditoría de que **todos** los puntos de borrado de la app pasan por la papelera es
+  explícitamente el trabajo de **ME Fase 4** ("integración global + auditoría").
+- Sin probar en un iPhone real.
+
+
 ## Entrega 2 · ME Fase 2 — Personalización total (v1.25.0)
 
 ### Alcance de esta fase, dicho primero

@@ -19,6 +19,7 @@ import { permisoNotificaciones, pedirPermisoNotificaciones } from '../lib/notifi
 import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
 import { Card, Field, TextInput, Select, GhostBtn, SectionTitle } from '../components/ui';
 import PersonalizationView from './PersonalizationView';
+import PapeleraView from './PapeleraView';
 import ColorPicker from '../components/ColorPicker';
 import TemaBuilder from '../components/TemaBuilder';
 import GestionTemas from '../components/GestionTemas';
@@ -51,6 +52,7 @@ function useCategorias() {
     { id: 'seguridad', label: 'Seguridad', desc: 'PIN, biometría y cierre de sesión.', icon: Lock, listo: true },
     { id: 'privacidad', label: 'Privacidad', desc: 'Transparencia, qué usa la IA y borrado por categoría.', icon: EyeOff, listo: true },
     { id: 'datos', label: 'Datos', desc: 'Copia de seguridad y exportación.', icon: Database, listo: true },
+    { id: 'papelera', label: 'Eliminados recientemente', desc: 'Recupera lo que hayas borrado por error.', icon: Trash2, listo: true },
     { id: 'sincronizacion', label: 'Sincronización', desc: 'Tus datos entre dispositivos.', icon: RefreshCw, listo: true, soloInfo: true },
     { id: 'integraciones', label: 'Integraciones', desc: 'Conexiones con otros servicios.', icon: Puzzle, listo: true, soloInfo: true },
     { id: 'accesibilidad', label: 'Accesibilidad', desc: 'Tamaño de texto y reducir movimiento ya están en Apariencia.', icon: Accessibility, listo: true, soloInfo: true },
@@ -212,6 +214,8 @@ export default function SettingsView({
   onSignOut,
   // Props de PersonalizationView (Fase 19/20), reenviadas tal cual a la categoría "Pantalla principal"
   areas, modulos, personalizacion, onMove, onToggleOculto, onToggleDashboard, onAplicarPerfil, onSetIcono, onTogglePinExtra,
+  // Entrega 2 · ME Fase 3 — papelera global
+  papelera, relacionDesbloqueada, onRestaurarPapelera, onEliminarDefinitivo, onVaciarPapelera, onSetRetencionPapelera,
   onToggleFavorita, onMoveFavorita, modo, onSetModo,
 }) {
   const [local, setLocal] = useState(perfil);
@@ -994,6 +998,21 @@ export default function SettingsView({
               <Undo2 size={14} /> Deshacer último cambio
             </button>
           </Card>
+        )}
+
+        {/* Entrega 2 · ME Fase 3 — la papelera es una vista propia porque tiene bastante
+            contenido (lista, acciones por elemento, retención, vaciado con confirmación) y
+            porque conviene poder reutilizarla si en el futuro se abre desde otro sitio. */}
+        {actual.id === 'papelera' && (
+          <PapeleraView
+            papelera={papelera}
+            relacionDesbloqueada={relacionDesbloqueada}
+            onRestaurar={onRestaurarPapelera}
+            onEliminarDefinitivo={onEliminarDefinitivo}
+            onVaciar={onVaciarPapelera}
+            onSetRetencion={onSetRetencionPapelera}
+            accent={accent}
+          />
         )}
 
         {actual.id === 'privacidad' && (
