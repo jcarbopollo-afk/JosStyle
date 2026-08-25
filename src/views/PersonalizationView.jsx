@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import {
-  ChevronUp, ChevronDown, Lock, Unlock, Palette, LayoutGrid,
+  ChevronUp, ChevronDown, Lock, Unlock, Palette, LayoutGrid, Home,
   Star, Zap, Flame, Sparkles, Compass, Gem, Anchor, Feather, Plane,
 } from 'lucide-react';
-import { COLORS, ICONOS_PERSONALIZABLES_IDS, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DESCRIPCIONES_MODULOS } from '../tokens';
+import {
+  COLORS, ICONOS_PERSONALIZABLES_IDS, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS,
+  MODOS_APP, DESCRIPCIONES_MODULOS, DEPENDENCIAS_MODULOS, PERFILES_MODULOS,
+} from '../tokens';
 import { Card, Switch } from '../components/ui';
 
 export const ICONOS_PERSONALIZABLES_MAP = { star: Star, zap: Zap, flame: Flame, sparkles: Sparkles, compass: Compass, gem: Gem, anchor: Anchor, feather: Feather };
@@ -117,6 +120,12 @@ function CentroModulos({ areas, modulos, personalizacion, onToggleOculto, accent
     const Icono = IconoElegido || modulo.icon;
     const confirmandoEste = confirmando === modulo.id;
 
+    // Módulos que se alimentan de este y que además están activos ahora mismo: avisar de uno
+    // que Josué ya tiene desactivado sería ruido.
+    const dependientes = Object.entries(DEPENDENCIAS_MODULOS)
+      .filter(([id, fuentes]) => fuentes.includes(modulo.id) && !personalizacion.ocultos.includes(id))
+      .map(([id]) => (porId[id] ? porId[id].label : id));
+
     return (
       <div className="py-2.5" style={{ borderBottom: ultimo ? 'none' : `1px solid ${COLORS.border}` }}>
         <div className="flex items-start gap-3">
@@ -150,6 +159,18 @@ function CentroModulos({ areas, modulos, personalizacion, onToggleOculto, accent
               Dejará de aparecer en la app, pero <span className="font-semibold">no se borra nada</span>.
               Si lo vuelves a activar, seguirá todo como lo dejaste.
             </p>
+            {/* Entrega 2 · ME Fase 2 — dependencias: si este módulo alimenta a otros que ya están
+                activos, se avisa. No se bloquea nada ni se desactiva nada en cascada: la
+                especificación pide "gestionar la dependencia" y "nunca dejar la app en un estado
+                roto", no decidir por el usuario. Los módulos afectados seguirán funcionando, solo
+                con menos datos que cruzar — y ahora Josué lo sabe antes de tocar el interruptor. */}
+            {dependientes.length > 0 && (
+              <p className="text-xs mt-2 leading-relaxed" style={{ color: COLORS.warning }}>
+                {dependientes.length === 1
+                  ? `${dependientes[0]} usa sus datos y tendrá menos que mostrar.`
+                  : `${dependientes.slice(0, -1).join(', ')} y ${dependientes[dependientes.length - 1]} usan sus datos y tendrán menos que mostrar.`}
+              </p>
+            )}
             <div className="flex gap-2 justify-end mt-2">
               <button onClick={() => setConfirmando(null)} className="text-xs font-semibold px-2.5 py-1.5" style={{ color: COLORS.textMuted }}>Cancelar</button>
               <button
@@ -191,6 +212,114 @@ function CentroModulos({ areas, modulos, personalizacion, onToggleOculto, accent
             {delArea.map((m, i) => (
               <Fila key={m.id} modulo={m} ultimo={i === delArea.length - 1} />
             ))}
+          </div>
+        );
+      })}
+    </Card>
+  );
+}
+
+// Entrega 2 · ME Fase 2 — Perfiles rápidos.
+//
+// Un punto de partida para no tener que tocar 18 interruptores uno a uno, nunca una jaula: la
+// especificación es explícita en que "estos perfiles NO deben bloquear la personalización".
+// Por eso se aplican y ya está — no se guarda "qué perfil tienes puesto", porque en cuanto Josué
+// cambie un solo interruptor esa etiqueta sería mentira.
+function PerfilesRapidos({ modulos, onAplicarPerfil, accent }) {
+  const [confirmando, setConfirmando] = useState(null);
+  const perfil = PERFILES_MODULOS.find((p) => p.id === confirmando);
+
+  const cuentaActivos = (p) => (p.activos === null
+    ? modulos.length
+    : modulos.filter((m) => p.activos.includes(m.id)).length);
+
+  return (
+    <Card>
+      <p className="text-sm font-semibold mb-1 flex items-center gap-2" style={{ color: COLORS.text }}>
+        <Sparkles size={16} style={{ color: accent }} /> Perfiles rápidos
+      </p>
+      <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
+        Un punto de partida. Después puedes seguir activando y desactivando lo que quieras.
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        {PERFILES_MODULOS.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => setConfirmando(p.id)}
+            className="text-left rounded-xl p-2.5 transition-transform active:scale-[0.97]"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+          >
+            <p className="text-xs font-semibold" style={{ color: COLORS.text }}>{p.label}</p>
+            <p className="text-xs mt-0.5 leading-snug" style={{ color: COLORS.textMuted }}>{p.desc}</p>
+          </button>
+        ))}
+      </div>
+
+      {perfil && (
+        <div className="mt-3 px-3 py-2.5 rounded-xl" style={{ background: COLORS.surface2 }}>
+          <p className="text-xs leading-relaxed" style={{ color: COLORS.text }}>
+            ¿Aplicar el perfil <span className="font-semibold">{perfil.label}</span>?
+          </p>
+          <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.textMuted }}>
+            Dejará <span className="font-semibold">{cuentaActivos(perfil)} de {modulos.length}</span> apartados activos.
+            No se borra ningún dato, y puedes cambiarlo después uno a uno.
+          </p>
+          <div className="flex gap-2 justify-end mt-2">
+            <button onClick={() => setConfirmando(null)} className="text-xs font-semibold px-2.5 py-1.5" style={{ color: COLORS.textMuted }}>Cancelar</button>
+            <button
+              onClick={() => { onAplicarPerfil(perfil.id); setConfirmando(null); }}
+              className="text-xs font-semibold px-2.5 py-1.5 rounded-lg"
+              style={{ background: accent, color: COLORS.textOnAccent }}
+            >
+              Aplicar
+            </button>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// Entrega 2 · ME Fase 2 — "Mi Dashboard": qué se ve en la pantalla principal.
+//
+// Cierra el pendiente que arrastraba el Dashboard desde que se amplió a Centro de Control: el
+// modelo (`dashboardOcultos`) y el filtrado existían, faltaba la interfaz que lo rellenara.
+//
+// La especificación lo justifica mejor que ninguna explicación técnica:
+// "Módulo activado ≠ necesariamente visible en Dashboard."
+// Son dos preguntas distintas — "¿uso esto?" y "¿quiero verlo nada más abrir la app?" — y por eso
+// esto vive en su propia tarjeta, separado del centro de módulos.
+function MiDashboard({ modulos, personalizacion, onToggleDashboard, accent }) {
+  // Un módulo desactivado del todo no puede "verse en Hoy": no se lista, para no ofrecer un
+  // interruptor que no haría nada.
+  const disponibles = modulos.filter((m) => !personalizacion.ocultos.includes(m.id));
+  const ocultosDash = personalizacion.dashboardOcultos || [];
+  const visibles = disponibles.filter((m) => !ocultosDash.includes(m.id)).length;
+
+  return (
+    <Card>
+      <p className="text-sm font-semibold mb-1 flex items-center gap-2" style={{ color: COLORS.text }}>
+        <Home size={16} style={{ color: accent }} /> Mi pantalla de inicio
+      </p>
+      <p className="text-xs mb-1" style={{ color: COLORS.textMuted }}>
+        Elige qué apartados quieres ver nada más abrir la app. Seguirán activos y accesibles desde su área.
+      </p>
+      <p className="text-xs mb-3" style={{ color: COLORS.textMuted, opacity: 0.75 }}>
+        {visibles} de {disponibles.length} visibles en "Hoy"
+      </p>
+
+      {disponibles.length === 0 ? (
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>
+          No tienes ningún apartado activo. Actívalos arriba y aquí podrás elegir cuáles ves en "Hoy".
+        </p>
+      ) : disponibles.map((m, i) => {
+        const visible = !ocultosDash.includes(m.id);
+        const Icono = ICONOS_PERSONALIZABLES_MAP[personalizacion.iconos[m.id]] || m.icon;
+        return (
+          <div key={m.id} className="flex items-center gap-3 py-2" style={{ borderBottom: i < disponibles.length - 1 ? `1px solid ${COLORS.border}` : 'none' }}>
+            <Icono size={15} style={{ color: visible ? accent : COLORS.textMuted, flexShrink: 0 }} />
+            <p className="text-sm flex-1 min-w-0 truncate" style={{ color: visible ? COLORS.text : COLORS.textMuted }}>{m.label}</p>
+            <Switch checked={visible} onChange={() => onToggleDashboard(m.id)} accent={accent} label={`${visible ? 'Quitar de' : 'Mostrar en'} Hoy: ${m.label}`} />
           </div>
         );
       })}
@@ -272,14 +401,20 @@ function ModoAppSection({ modo, onSetModo, accent }) {
   );
 }
 
-export default function PersonalizationView({ areas, modulos, personalizacion, protectedAreas, onMove, onToggleOculto, onSetIcono, onTogglePinExtra, onToggleFavorita, onMoveFavorita, modo, onSetModo, accent }) {
+export default function PersonalizationView({ areas, modulos, personalizacion, protectedAreas, onMove, onToggleOculto, onToggleDashboard, onAplicarPerfil, onSetIcono, onTogglePinExtra, onToggleFavorita, onMoveFavorita, modo, onSetModo, accent }) {
   return (
     <div className="space-y-4">
       <ModoAppSection modo={modo} onSetModo={onSetModo} accent={accent} />
 
       {/* Entrega 2 · ME Fase 1 — el centro de módulos va primero: decidir QUÉ usas es previo a
           decidir cómo ordenarlo. */}
+      <PerfilesRapidos modulos={modulos} onAplicarPerfil={onAplicarPerfil} accent={accent} />
+
       <CentroModulos areas={areas} modulos={modulos} personalizacion={personalizacion} onToggleOculto={onToggleOculto} accent={accent} />
+
+      {/* Entrega 2 · ME Fase 2 — "Módulo activado ≠ necesariamente visible en Dashboard": son dos
+          preguntas distintas, así que van en dos tarjetas distintas. */}
+      <MiDashboard modulos={modulos} personalizacion={personalizacion} onToggleDashboard={onToggleDashboard} accent={accent} />
       <Card>
         <p className="text-sm font-semibold mb-1 flex items-center gap-2" style={{ color: COLORS.text }}>
           <Palette size={16} style={{ color: accent }} /> Personalización avanzada

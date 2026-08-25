@@ -205,7 +205,7 @@ Piezas con el modelo de datos ya listo, que solo necesitan interfaz. Alto valor,
 
 | # | Tarea | Estado del modelo |
 |---|---|---|
-| R3.1 | **Editor de `dashboardOcultos`** en Ajustes → Pantalla principal | ✅ modelo + filtrado listos, **solo falta la UI** |
+| ✅ R3.1 | **Editor de `dashboardOcultos`** — construido en v1.25.0 como "Mi pantalla de inicio" (Entrega 2 · ME Fase 2) | ✅ completo |
 | R3.2 | **Buscador de ajustes individuales** (ap. 32), no solo de categorías — con palabras clave y sinónimos | ⬜ |
 | R3.3 | **Restablecer todas las configuraciones** (ap. 35) con resumen previo y copia de seguridad automática | 🟡 existe por categoría |
 | R3.4 | **Copia de seguridad unificada y versionada de la configuración** (ap. 36) — sustituye/engloba los 4 exports JSON sueltos | 🟡 |

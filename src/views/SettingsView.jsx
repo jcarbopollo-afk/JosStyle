@@ -211,7 +211,7 @@ export default function SettingsView({
   onExportCSV, onExportXLSX, onUndo, canUndo,
   onSignOut,
   // Props de PersonalizationView (Fase 19/20), reenviadas tal cual a la categoría "Pantalla principal"
-  areas, modulos, personalizacion, onMove, onToggleOculto, onSetIcono, onTogglePinExtra,
+  areas, modulos, personalizacion, onMove, onToggleOculto, onToggleDashboard, onAplicarPerfil, onSetIcono, onTogglePinExtra,
   onToggleFavorita, onMoveFavorita, modo, onSetModo,
 }) {
   const [local, setLocal] = useState(perfil);
@@ -795,6 +795,8 @@ export default function SettingsView({
             protectedAreas={seguridad.protectedAreas}
             onMove={onMove}
             onToggleOculto={onToggleOculto}
+            onToggleDashboard={onToggleDashboard}
+            onAplicarPerfil={onAplicarPerfil}
             onSetIcono={onSetIcono}
             onTogglePinExtra={onTogglePinExtra}
             onToggleFavorita={onToggleFavorita}

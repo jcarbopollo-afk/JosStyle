@@ -50,6 +50,12 @@ else
   fallo "Fallan pruebas de puntuacion.js"; grep '✗' /tmp/jc_test.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-personalizacion.mjs >/tmp/jc_pers.log 2>&1; then
+  ok "Personalización (ME F2) — $(grep -c '✓' /tmp/jc_pers.log) comprobaciones"
+else
+  fallo "Fallan pruebas de personalización"; grep '✗' /tmp/jc_pers.log
+fi
+
 if node scripts/smoke.mjs test-modulos.jsx >/tmp/jc_mod.log 2>&1; then
   ok "Módulos activables (ME F1) — $(grep -c '✓' /tmp/jc_mod.log) comprobaciones"
 else

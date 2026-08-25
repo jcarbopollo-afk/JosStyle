@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar } from 'lucide-react';
-import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO } from './tokens';
+import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
 import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, hexToRgba } from './lib/helpers';
@@ -731,6 +731,34 @@ export default function App() {
     updatePersonalizacion({ ...personalizacion, ocultos });
     if (tab === id && !personalizacion.ocultos.includes(id)) setTab('hoy'); // se acaba de ocultar la pestaña activa
   };
+  // Entrega 2 · ME Fase 2 — "Mi pantalla de inicio". `dashboardOcultos` responde a una pregunta
+  // distinta de `ocultos`: "sí uso este apartado, pero no quiero verlo nada más abrir la app"
+  // (la especificación es explícita: "Módulo activado ≠ necesariamente visible en Dashboard").
+  const toggleDashboardModulo = (id) => {
+    const actual = personalizacion.dashboardOcultos || [];
+    const dashboardOcultos = actual.includes(id) ? actual.filter((x) => x !== id) : [...actual, id];
+    updatePersonalizacion({ ...personalizacion, dashboardOcultos });
+  };
+
+  // Entrega 2 · ME Fase 2 — Perfiles rápidos. Un punto de partida, nunca una jaula: aplica el
+  // conjunto de activos del perfil y ya está. No se guarda "qué perfil tienes puesto" porque en
+  // cuanto Josué cambie un interruptor esa etiqueta sería mentira.
+  //
+  // Solo toca `ocultos`: el orden, los iconos, el PIN y las métricas favoritas se respetan tal y
+  // como los tuviera. Un perfil decide QUÉ usas, no cómo lo tienes colocado.
+  const aplicarPerfilModulos = (perfilId) => {
+    const perfil = PERFILES_MODULOS.find((p) => p.id === perfilId);
+    if (!perfil) return;
+    const personalizables = MORE_NAV.filter((m) => m.id !== 'ajustes').map((m) => m.id);
+    const ocultos = perfil.activos === null
+      ? []
+      : personalizables.filter((id) => !perfil.activos.includes(id));
+    updatePersonalizacion({ ...personalizacion, ocultos });
+    // Si el perfil acaba de desactivar la pestaña abierta, volver a "Hoy" para no dejar a Josué
+    // mirando una pantalla de un módulo que ya no está activo.
+    if (ocultos.includes(tab)) setTab('hoy');
+  };
+
   const setIconoModulo = (id, iconKey) => {
     const iconos = { ...personalizacion.iconos };
     if (iconKey) iconos[id] = iconKey; else delete iconos[id];
@@ -1344,6 +1372,8 @@ export default function App() {
             personalizacion={personalizacion}
             onMove={moverModuloNav}
             onToggleOculto={toggleOcultoModulo}
+            onToggleDashboard={toggleDashboardModulo}
+            onAplicarPerfil={aplicarPerfilModulos}
             onSetIcono={setIconoModulo}
             onTogglePinExtra={toggleAreaProtegida}
             onToggleFavorita={toggleFavoritaMetrica}

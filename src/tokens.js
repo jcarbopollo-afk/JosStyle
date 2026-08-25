@@ -459,6 +459,62 @@ export const DESCRIPCIONES_MODULOS = {
 // sin tocar DashboardView.jsx. Mismo patrón exacto que `ocultos` (Fase 19, para "Más").
 export const DEFAULT_PERSONALIZACION = { orden: [], ocultos: [], iconos: {}, pinExtra: [], favoritas: [], modo: null, dashboardOcultos: [] };
 
+// Entrega 2 · ME Fase 2 — Dependencias entre módulos.
+//
+// Algunos módulos no tienen datos propios: se alimentan de otros. Si Josué desactiva todas sus
+// fuentes, se quedan vacíos y la app le enseña una pantalla sin contenido sin explicarle por qué.
+// La especificación pide gestionarlo ("si un módulo depende de otro... nunca dejar la aplicación
+// en un estado roto").
+//
+// Se modela solo la dependencia REAL de datos, la que hace que un módulo no tenga nada que
+// mostrar. No se bloquea nada: es un aviso, y Josué decide. Mantener la lista aquí (y no dispersa
+// por las vistas) permite comprobarla con un script.
+export const DEPENDENCIAS_MODULOS = {
+  // Correlaciona sueño con estudio, ánimo del Diario y entrenamiento.
+  estadisticas: ['sueno', 'estudios', 'diario', 'entreno'],
+  // Proyecta objetivos, hábitos, peso, constancia de entreno, ahorro y notas.
+  predicciones: ['objetivos', 'productividad', 'salud', 'entreno', 'economia', 'estudios'],
+  // Las 12 insignias se calculan sobre datos de otros diez módulos.
+  logros: ['productividad', 'diario', 'objetivos', 'bienestar', 'fe', 'nutricion', 'salud', 'entreno', 'economia', 'sueno'],
+  // Los eventos derivados de solo lectura vienen de estos módulos (el Calendario sigue siendo
+  // útil sin ellos, porque tiene sus propios eventos manuales — por eso solo avisa, no bloquea).
+  calendario: ['objetivos', 'estudios', 'entreno', 'productividad'],
+};
+
+// Entrega 2 · ME Fase 2 — Perfiles rápidos de configuración.
+//
+// Un punto de partida, nunca una jaula: aplicar uno cambia qué módulos están activos y después
+// Josué puede seguir tocando lo que quiera ("estos perfiles NO deben bloquear la personalización").
+//
+// Cada perfil declara qué módulos deja ACTIVOS; el resto se desactivan. "Ajustes" nunca aparece
+// porque nunca es desactivable.
+export const PERFILES_MODULOS = [
+  {
+    id: 'completo',
+    label: 'Completo',
+    desc: 'Todos los apartados activados.',
+    activos: null, // null = todos
+  },
+  {
+    id: 'estudiante',
+    label: 'Estudiante',
+    desc: 'Estudios, productividad y salud.',
+    activos: ['estudios', 'productividad', 'objetivos', 'salud', 'sueno', 'calendario', 'diario'],
+  },
+  {
+    id: 'fitness',
+    label: 'Fitness',
+    desc: 'Entrenamiento, nutrición, sueño y salud.',
+    activos: ['entreno', 'nutricion', 'sueno', 'salud', 'objetivos', 'estadisticas'],
+  },
+  {
+    id: 'minimalista',
+    label: 'Minimalista',
+    desc: 'Solo lo esencial.',
+    activos: ['sueno', 'economia', 'productividad'],
+  },
+];
+
 // Fase 20 — Modos "viaje/vacaciones/exámenes": Josué pidió esto como plantillas ligeras, no un
 // motor genérico de modos configurables. Cada modo es solo un aviso discreto en el Dashboard
 // con 2-3 recordatorios de texto fijo relevantes a esa situación — no oculta ni reordena ningún

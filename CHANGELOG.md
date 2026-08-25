@@ -1,5 +1,68 @@
 # CHANGELOG.md
 
+## Entrega 2 · ME Fase 2 — Personalización total (v1.25.0)
+
+### Alcance de esta fase, dicho primero
+Cuatro piezas: orden de módulos, Dashboard personalizable, navegación personalizable y perfiles
+predefinidos. Más la gestión de dependencias entre módulos.
+
+### Añadido / cambiado
+- **`src/tokens.js` → `PERFILES_MODULOS`**: los cuatro perfiles que pide la especificación —
+  **Completo**, **Estudiante**, **Fitness** y **Minimalista**. Cada uno declara qué módulos deja
+  activos; el resto se desactivan.
+- **`src/tokens.js` → `DEPENDENCIAS_MODULOS`**: qué módulos se alimentan de qué otros. Solo se
+  modela la dependencia **real de datos**, la que hace que un módulo se quede sin nada que
+  mostrar: Estadísticas, Predicciones, Logros y (parcialmente) Calendario.
+- **`PerfilesRapidos`**: cuatro tarjetas con confirmación que dice cuántos apartados quedarán
+  activos y recuerda que no se borra nada.
+- **`MiDashboard`** — "Mi pantalla de inicio": el editor de `dashboardOcultos` que llevaba
+  pendiente desde que el Dashboard se amplió a Centro de Control. El modelo y el filtrado ya
+  existían; faltaba la interfaz. Solo lista módulos activos: ofrecer un interruptor de "ver en
+  Hoy" para algo desactivado sería un control que no hace nada.
+- **Aviso de dependencias** dentro de la confirmación de desactivar: si el módulo alimenta a otros
+  que están activos, se dice cuáles y que tendrán menos que mostrar. **No se bloquea ni se
+  desactiva nada en cascada** — la especificación pide gestionar la dependencia y no dejar la app
+  rota, no decidir por el usuario.
+- **`src/App.jsx`**: `toggleDashboardModulo` y `aplicarPerfilModulos`. El segundo solo toca
+  `ocultos`: el orden, los iconos, el PIN y las métricas favoritas se respetan tal cual — un
+  perfil decide QUÉ usas, no cómo lo tienes colocado. Si el perfil desactiva la pestaña abierta,
+  se vuelve a "Hoy".
+
+### Decisiones
+- **El reordenar se queda con flechas, no con drag & drop.** La especificación pide DnD "cuando
+  tenga sentido, especialmente en móvil", pero el apartado 103 de la especificación de Ajustes
+  ofrece explícitamente la alternativa: *"interacción directa (drag&drop) **o controles accesibles
+  equivalentes**"*. Las flechas ya funcionan, son accesibles por teclado y para lectores de
+  pantalla, y no necesitan una librería nueva ni gestos táctiles que compiten con el scroll de la
+  página. Documentado como decisión, no como olvido: si Josué prefiere DnD de verdad, es una
+  petición concreta y acotada.
+- **La navegación principal sigue siendo de 5 pestañas fijas.** La especificación pide "permitir
+  que el usuario decida qué módulos aparecen como accesos principales, siempre que sea
+  técnicamente viable" — pero la regla de que la barra inferior tiene **exactamente 5 pestañas,
+  nunca una sexta** es del propio Josué y se repite en dos prompts distintos. Lo que sí es
+  personalizable, y ya lo era, es el contenido de cada hub. Si quiere cambiar eso, es una decisión
+  suya que contradice una regla suya: hay que preguntárselo, no resolverlo por él.
+- **No se guarda "qué perfil tienes puesto".** En cuanto Josué cambie un solo interruptor esa
+  etiqueta sería mentira, y la especificación insiste en que los perfiles no deben bloquear la
+  personalización posterior.
+- **Las dos listas de ocultación se mantienen separadas**, y la especificación lo respalda
+  literalmente: *"Módulo activado ≠ necesariamente visible en Dashboard"*.
+
+### Comprobado
+- **28 pruebas** de la lógica de perfiles y dependencias (`scripts/test-personalizacion.mjs`):
+  que ningún perfil referencia módulos inexistentes, que ninguno toca "ajustes", que las
+  dependencias declaradas existen, que ningún módulo depende de sí mismo, y que el aviso solo
+  menciona dependientes que estén activos.
+- **4 pruebas nuevas de comportamiento** sobre el HTML: quitar algo de Hoy sin desactivarlo
+  funciona, y ambas listas conviven aplicando cada una su efecto.
+- Total en verde: 27 + 28 + 20 comprobaciones + 48 casos de renderizado.
+
+### Pendiente (documentado, no implementado en esta fase)
+- Drag & drop real para reordenar (ver Decisiones).
+- Accesos principales configurables (choca con la regla de las 5 pestañas — decisión de Josué).
+- Sin probar en un iPhone real.
+
+
 ## Entrega 2 · ME Fase 1 — Sistema de módulos activables/desactivables (v1.24.0)
 
 ### Alcance de esta fase, dicho primero

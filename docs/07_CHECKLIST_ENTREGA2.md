@@ -2523,8 +2523,48 @@ Sistema global de módulos activables/desactivables, personalización y papelera
 - [ ] Buscador universal — sigue buscando sobre datos, no sobre funciones. Se aborda en **BI Fase 3**, que es donde se construye el índice de funciones
 - [ ] Estadísticas — `StatsView` calcula correlaciones sobre datos, no muestra módulos; se revisará si al construir **ME Fase 2** aparece un caso real
 
-#### ME · Fase 2/4 — PERSONALIZACIÓN TOTAL
-- [ ] *(sin apartados numerados extraídos — leer la fase completa en la especificación)*
+#### ME · Fase 2/4 — PERSONALIZACIÓN TOTAL ✅ **COMPLETADA (v1.25.0)**
+
+**Orden de módulos**
+- [x] Permitir cambiar el orden (flechas arriba/abajo, ya existentes desde la Fase 19)
+- [ ] **Drag & drop** — decisión documentada: el apartado 103 de Ajustes admite explícitamente
+      "controles accesibles equivalentes", y las flechas lo son. Pendiente solo si Josué lo pide
+
+**Dashboard personalizable ("Mi pantalla de inicio")**
+- [x] Elegir qué información se ve en la pantalla principal
+- [x] Lista de módulos con casilla/interruptor por cada uno
+- [x] **Módulo activado ≠ necesariamente visible en Dashboard** (dos listas separadas)
+- [x] Contador de cuántos están visibles
+- [x] Solo se listan módulos activos (no ofrecer un control que no haría nada)
+- [x] Estado vacío honesto si no hay ningún módulo activo
+
+**Navegación personalizable**
+- [x] El contenido de cada hub respeta orden, iconos y módulos activos
+- [-] Accesos principales configurables — **choca con una regla del propio Josué** (barra inferior
+      de exactamente 5 pestañas, nunca una sexta, repetida en dos prompts). Requiere que él decida
+
+**Configuraciones predefinidas**
+- [x] Perfil **Completo** (todos los módulos activados)
+- [x] Perfil **Estudiante** (Estudios + Productividad + Salud)
+- [x] Perfil **Fitness** (Entrenamiento + Nutrición + Sueño + Salud)
+- [x] Perfil **Minimalista** (solo lo esencial)
+- [x] Los perfiles **NO bloquean** la personalización posterior
+- [x] Confirmación previa que dice cuántos apartados quedarán activos
+- [x] Un perfil solo cambia qué módulos están activos, nunca el orden/iconos/PIN/favoritas
+
+**Guardado de la personalización**
+- [x] Asociada a la cuenta (clave `personalizacion` en Supabase, ya existente)
+- [x] Se mantiene al cerrar sesión y volver a entrar
+- [x] Se mantiene al cambiar de dispositivo o navegador
+- [x] Se mantiene al instalar la PWA
+- [x] Sincronizada por la arquitectura actual, sin backend nuevo
+
+**Dependencias entre módulos**
+- [x] Modeladas explícitamente (`DEPENDENCIAS_MODULOS`) y verificables por script
+- [x] Aviso al desactivar un módulo del que dependen otros activos
+- [x] El aviso nombra los módulos afectados
+- [x] Nunca deja la app en un estado roto: avisa, no bloquea ni desactiva en cascada
+- [x] No avisa de dependientes que Josué ya tiene desactivados (sería ruido)
 
 #### ME · Fase 3/4 — SISTEMA DE ELIMINADOS RECIENTEMENTE
 - [ ] El elemento vuelve a su módulo original.

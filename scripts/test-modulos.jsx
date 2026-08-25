@@ -48,12 +48,12 @@ const base = {
   notificaciones: DEFAULT_NOTIFICACIONES,
 };
 
-function render(ocultos) {
-  const estado = { ...base, personalizacion: { ...DEFAULT_PERSONALIZACION, ocultos } };
+function render(ocultos, dashboardOcultos = []) {
+  const estado = { ...base, personalizacion: { ...DEFAULT_PERSONALIZACION, ocultos, dashboardOcultos } };
   return renderToString(React.createElement(DashboardView, {
     ...estado, favoritas: [], modo: null, derivadosCalendario: [],
     resumenes: Object.fromEntries(Object.keys(DESCRIPCIONES_MODULOS).map((id) => [id, calcularResumenModulo(id, estado)])),
-    dashboardOcultos: [], modulosDesactivados: ocultos, onNavegar: noop, accent,
+    dashboardOcultos, modulosDesactivados: ocultos, onNavegar: noop, accent,
   }));
 }
 
@@ -109,6 +109,24 @@ console.log('\n═══ ME Fase 1 — módulos activables/desactivables ══�
   const antes = JSON.stringify(base);
   render(['sueno', 'diario', 'relacion']);
   comprobar('Renderizar con módulos desactivados no muta los datos', JSON.stringify(base) === antes);
+}
+
+// 6bis. ME Fase 2 — "Mi pantalla de inicio": quitar de Hoy sin desactivar el módulo.
+{
+  const activo = render([]);
+  comprobar('Con Diario visible en Hoy, aparece', activo.includes('>Diario<'));
+
+  const quitadoDeHoy = render([], ['diario']);
+  comprobar('Quitado solo de Hoy, desaparece de la pantalla principal',
+    !quitadoDeHoy.includes('>Diario<'), 'sigue apareciendo');
+
+  // La diferencia con desactivarlo: sigue siendo un módulo activo, así que sigue contando
+  // para la puntuación diaria y navegable desde su área. Se comprueba que ambas listas se
+  // aplican por separado y que combinarlas no rompe nada.
+  const ambas = render(['sueno'], ['diario']);
+  comprobar('Ambas listas conviven sin romper nada', ambas.length > 0);
+  comprobar('...y cada una hace su efecto',
+    !ambas.includes('>Diario<') && !ambas.includes('>Sueño<'));
 }
 
 // 7. Toda entrada de navegación tiene descripción en el centro de módulos.
