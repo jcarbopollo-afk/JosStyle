@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar } from 'lucide-react';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
 import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo } from './lib/supabase';
@@ -33,6 +33,7 @@ import StatsView from './views/StatsView';
 import PredictionsView from './views/PredictionsView';
 import AchievementsView from './views/AchievementsView';
 import SettingsView from './views/SettingsView';
+import { construirIndice } from './lib/indiceBusqueda';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // Con Salud y Nutrición ya son 7 secciones — demasiadas para una sola barra inferior cómoda.
@@ -492,6 +493,23 @@ export default function App() {
     setTab(modulo);
   };
   const consumirFoco = () => setDashboardFoco(null);
+
+  // ---------- Entrega 2 · BI Fase 2 — buscador de funciones ----------
+  // El índice se construye a partir de MORE_NAV, así que un módulo que una fase futura añada
+  // ahí aparece solo en el buscador (apartado 17). Se recalcula cuando cambia la lista de
+  // módulos desactivados: lo que Josué ha apagado no debe poder encontrarse (decisión D2-07 —
+  // Inicio, Buscador y Módulos son un solo sistema, no tres).
+  const indiceBusqueda = useMemo(
+    () => construirIndice(MORE_NAV, { modulosDesactivados: personalizacion.ocultos }),
+    [personalizacion.ocultos],
+  );
+  // Apartado 12: pulsar un resultado abre el sitio exacto, no la lista de Ajustes para que lo
+  // busque él. Reutiliza el mismo `navegarDesdeHoy` del deep-link del Dashboard — ni un sistema
+  // de navegación nuevo (apartado 16 y regla 10).
+  const irAResultado = (entrada) => {
+    if (!entrada) return;
+    navegarDesdeHoy(entrada.tab, entrada.ajuste ? { categoria: entrada.ajuste } : undefined);
+  };
   // Cada vista de destino solo necesita saber si el foco pendiente es "el suyo" — así ninguna
   // vista tiene que conocer la forma de `dashboardFoco` de las demás.
   const focoPara = (modulo) => (dashboardFoco && dashboardFoco.modulo === modulo ? dashboardFoco : null);
@@ -1474,6 +1492,7 @@ export default function App() {
         };
         return (
           <SettingsView
+            foco={focoPara('ajustes')} onFocoConsumido={consumirFoco}
             perfil={perfil} onUpdatePerfil={updatePerfil} accent={accent} onUpdateAccent={updateAccent}
             onPreviewAccent={setAccent}
             historialColor={historialColor} onRegistrarColorReciente={registrarColorReciente} onToggleFavoritoColor={toggleFavoritoColor}
@@ -1633,19 +1652,25 @@ export default function App() {
     >
       <style>{`*:focus-visible { outline: 2px solid ${accent}; outline-offset: 2px; }`}</style>
 
-      {/* Fase 18 — panel de sugerencias fijo arriba a la izquierda y buscador universal en
-          lenguaje natural arriba a la derecha; ninguno de los dos se dispara solo. */}
-      <SuggestionsButton accent={accent} buildPrompt={buildSuggestionsPrompt} />
+      {/* Fase 18 + BI Fase 2 — dos accesos fijos, ninguno de los dos se dispara solo.
+          La lupa pasa a la IZQUIERDA en esta fase porque el apartado 1 la sitúa ahí, y el panel
+          de sugerencias se va a la derecha. Se intercambian de sitio en vez de quitar uno: son
+          cosas distintas (buscar/preguntar vs. sugerencias del día) y la especificación prohíbe
+          expresamente eliminar funcionalidad existente. */}
       <button
         onClick={() => setShowSearch(true)}
-        className="fixed z-30 w-9 h-9 rounded-full flex items-center justify-center"
-        style={{ top: 14, right: 14, background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: 'blur(8px)' }}
-        aria-label="Buscar en tus datos"
+        className="fixed z-30 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
+        style={{ top: 14, left: 14, background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: 'blur(8px)' }}
+        aria-label="Buscar funciones o preguntar a la IA"
       >
         <Search size={16} style={{ color: accent }} />
       </button>
+      <SuggestionsButton accent={accent} buildPrompt={buildSuggestionsPrompt} lado="derecha" />
       {showSearch && (
-        <UniversalSearchModal accent={accent} onClose={() => setShowSearch(false)} buildContext={() => currentState} />
+        <UniversalSearchModal
+          accent={accent} onClose={() => setShowSearch(false)} buildContext={() => currentState}
+          indice={indiceBusqueda} onIr={irAResultado}
+        />
       )}
 
       {/* Fase de Seguridad Centralizada — el modal de "confirma tu PIN" (cambiar/desactivar PIN,

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Verificación automática de JC Fitness.
+# Verificación automática de JosStyle.
 #
 # Comprueba dos cosas distintas:
 #   1. Que el proyecto COMPILA (vite build) y que la función serverless es
@@ -66,6 +66,12 @@ if node scripts/smoke.mjs test-modulos.jsx >/tmp/jc_mod.log 2>&1; then
   ok "Módulos activables (ME F1) — $(grep -c '✓' /tmp/jc_mod.log) comprobaciones"
 else
   fallo "Fallan pruebas del sistema de módulos"; grep '✗' /tmp/jc_mod.log
+fi
+
+if node --import ./scripts/resolver-vite.mjs scripts/test-buscador.mjs >/tmp/jc_busc.log 2>&1; then
+  ok "Buscador de funciones (BI F2) — $(grep -c '✓' /tmp/jc_busc.log) comprobaciones"
+else
+  fallo "Fallan pruebas del buscador de funciones"; grep '✗' /tmp/jc_busc.log
 fi
 
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
@@ -175,7 +181,7 @@ else
 fi
 
 # --- Coherencia: todo case de renderTab tiene entrada de navegación y viceversa ---
-node scripts/comprobar-navegacion.mjs || FALLOS=$((FALLOS+1))
+node --import ./scripts/resolver-vite.mjs scripts/comprobar-navegacion.mjs || FALLOS=$((FALLOS+1))
 
 echo ""
 if [ "$FALLOS" -eq 0 ]; then

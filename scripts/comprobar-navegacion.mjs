@@ -5,6 +5,9 @@
 //   2. Todo módulo de MORE_NAV tiene un `case` en el switch de renderContent.
 //   3. Todo `case` del switch (salvo 'hoy', que vive en la pestaña Inicio)
 //      está declarado en MORE_NAV.
+//   4. Todo módulo de MORE_NAV es buscable: tiene palabras clave en
+//      `indiceBusqueda.js` (BI Fase 2). Sin ellas el módulo solo se encuentra
+//      escribiendo su nombre exacto, que es justo lo que la fase vino a evitar.
 //
 // Existe porque estas tres cosas se han comprobado a mano fase a fase desde la
 // Fase N1, y es justo el tipo de comprobación que un script hace mejor que una
@@ -12,6 +15,7 @@
 // error silencioso: no rompe el build, solo deja una pantalla en blanco.
 // ---------------------------------------------------------------------------
 import { readFileSync } from 'node:fs';
+import { PALABRAS_MODULOS } from '../src/lib/indiceBusqueda.js';
 
 const src = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 const fallos = [];
@@ -60,8 +64,25 @@ for (const id of cases) {
   }
 }
 
+// 5. Cada módulo es buscable por sinónimos. Se comprueba contra el MORE_NAV real de
+//    App.jsx, no contra una copia, para que un módulo nuevo no pueda entrar en la
+//    navegación y quedarse fuera del buscador sin que nadie se entere.
+for (const id of moreNav) {
+  const palabras = PALABRAS_MODULOS[id];
+  if (!palabras || palabras.length === 0) {
+    fallos.push(`'${id}' es navegable pero no tiene palabras clave en indiceBusqueda.js (solo se encontrará por su nombre exacto)`);
+  }
+}
+
+// 6. Y al revés: palabras clave de un módulo que ya no existe son ruido en el índice.
+for (const id of Object.keys(PALABRAS_MODULOS)) {
+  if (!moreNav.includes(id)) {
+    fallos.push(`indiceBusqueda.js tiene palabras clave para '${id}', que no está en MORE_NAV`);
+  }
+}
+
 if (fallos.length) {
   for (const f of fallos) console.error(`  ✗ ${f}`);
   process.exit(1);
 }
-console.log(`  ✓ Navegación coherente (${moreNav.length} módulos, ${cases.length} cases, 4 áreas)`);
+console.log(`  ✓ Navegación coherente (${moreNav.length} módulos, ${cases.length} cases, 4 áreas, todos buscables)`);

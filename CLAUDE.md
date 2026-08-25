@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.28.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.29.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario, Fondos, Buscador+IA, Módulos activables ✅, Sonido y Rachas — **106 fases**; el bloque
-**ME** está terminado y **BI** va por 1/4, quedan 101) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+**ME** está terminado y **BI** va por 2/4, quedan 100) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -104,10 +104,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 166 pruebas unitarias con Node, 5 de auditoría, 52 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **223 comprobaciones**.
+Vite, 224 pruebas unitarias con Node, 5 de auditoría, 52 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **281 comprobaciones**.
 
-Eso ya ha encontrado **quince bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **dieciséis bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript) y ocho módulos que dejaban crear y no borrar.
 
 ⚠️ **Lo que las pruebas NO cubren, y sigue pendiente de que lo mire Josué (R1):** Supabase real, la
@@ -128,15 +128,16 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase: BI · Fase 2/4 — el acceso de búsqueda/IA arriba a la izquierda.**
+**Siguiente fase: BI · Fase 3/4 — motor de búsqueda global e índice profundo.**
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_BUSCADOR_E_IA.md`.
 
 Dos avisos antes de escribir código ahí:
 
-- Ya existe `UniversalSearchModal` (Fase 18) y `SuggestionsButton`. La fase pide **ampliar** eso a
-  buscar *funciones, pantallas y ajustes* con índice y ranking — **no** un buscador nuevo al lado.
-- Decisión **D2-07**: Inicio, Buscador y Módulos son un solo sistema. Reutiliza `MORE_NAV`,
-  `DESCRIPCIONES_MODULOS`, `personalizacion.ocultos` y `dashboardOcultos` para el índice.
+- El índice y el motor **ya existen**: `src/lib/indiceBusqueda.js` (BI F2). La Fase 3 los **amplía**
+  (más entradas, tolerancia a errores de escritura, acciones además de pantallas) — no se empieza
+  otro.
+- Decisión **D2-07**: Inicio, Buscador y Módulos son un solo sistema. El índice se **deriva** de
+  `MORE_NAV` a propósito; mantenlo así.
 
 El bloque **R0** ya está completo (v1.23.0) y **C-11** —el modelo de IA obsoleto— está resuelto:
 `api/ask-ai.js` lee `ANTHROPIC_MODEL` y por defecto usa un modelo vigente.

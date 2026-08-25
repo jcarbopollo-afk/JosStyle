@@ -217,10 +217,21 @@ export default function SettingsView({
   // Entrega 2 · ME Fase 3 — papelera global
   papelera, relacionDesbloqueada, onRestaurarPapelera, onEliminarDefinitivo, onVaciarPapelera, onSetRetencionPapelera,
   onToggleFavorita, onMoveFavorita, modo, onSetModo,
+  // Entrega 2 · BI Fase 2 — deep-link desde el buscador de funciones
+  foco, onFocoConsumido,
 }) {
   const [local, setLocal] = useState(perfil);
   useEffect(() => { setLocal(perfil); }, [perfil]);
   const [open, setOpen] = useState(null); // id de categoría abierta, o null = lista
+
+  // Entrega 2 · BI Fase 2 — el buscador manda aquí con la categoría ya elegida ("colores" abre
+  // Apariencia directamente, apartado 12). Mismo mecanismo de `foco` que ya usan Sueño, Entreno,
+  // Objetivos, Estudios, Productividad y Economía desde el Dashboard — no un sistema nuevo.
+  useEffect(() => {
+    if (!foco?.categoria) return;
+    setOpen(foco.categoria);
+    onFocoConsumido && onFocoConsumido();
+  }, [foco]);
   const [query, setQuery] = useState('');
   // Fase 2 del Sistema de Personalización Visual Extrema — editor de color avanzado, abierto desde
   // "Color de acento" (el rol Principal). Fase 3 añade el constructor de temas para el resto de

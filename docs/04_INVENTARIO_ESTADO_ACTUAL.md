@@ -97,7 +97,7 @@ Animaciones del sistema de navegación, `--ease-premium`, reglas `html[data-radi
 
 ---
 
-## 4. `src/lib/` — 20 módulos
+## 4. `src/lib/` — 21 módulos
 
 | Archivo | Exports | Estado |
 |---|---|---|
@@ -122,6 +122,7 @@ Animaciones del sistema de navegación, `--ease-premium`, reglas `html[data-radi
 | — | **`unidades.js`** | ⬜ **CREAR** (R5.3) — conversión cm/ft-in, kg/lb, °C/°F, km/mi con unidad base interna |
 | `puntuacion.js` | `puntuacionDelDia`, `mensajePuntuacion`, `AREAS_PUNTUACION` | ✅ **CREADO** (v1.23.0, R0.2). Puro y probado con Node — 27 comprobaciones |
 | `papelera.js` | `CATALOGO_PAPELERA` (27 colecciones), `claveCatalogo`, `prepararEliminacion`, `prepararRestauracion`, `conArrastrados`, `purgarCaducados`, `describirEntrada`, `tiempoDesde`, `diasRestantes`, `ordenarPapelera`, `OPCIONES_RETENCION`, `DEFAULT_PAPELERA` | ✅ **CREADO** (v1.26.0, ME F3). Puro y probado con Node — 73 comprobaciones |
+| `indiceBusqueda.js` | `construirIndice`, `buscar`, `pareceUnaPregunta`, `normalizar`, `PALABRAS_MODULOS`, `FUNCIONES_AJUSTES` | ✅ **CREADO** (v1.29.0, BI F2). Índice de **funciones**, nunca de datos. Se deriva de `MORE_NAV`, así que un módulo nuevo aparece solo. 58 comprobaciones |
 | — | **`revisionPeriodica.js`** | ⬜ **CREAR** (R4.2) — revisión semanal/mensual/anual, solo lectura sobre correlaciones/predicciones/logros |
 
 ---
@@ -228,12 +229,14 @@ recorrido completo tocando la pantalla. Cuando Josué reporte un fallo, **pedirl
 
 | Archivo | Qué hace |
 |---|---|
-| `verificar.sh` | Punto de entrada: build + 5 suites de pruebas + 9 reglas invariantes. Sale con código 1 si algo falla |
+| `verificar.sh` | Punto de entrada: build + 7 suites de pruebas + 9 reglas invariantes. Sale con código 1 si algo falla |
 | `resolver-vite.mjs` | Hook de resolución ESM: deja ejecutar los módulos de `src/` con Node sin cambiar la convención de imports del proyecto |
 | `smoke.mjs` | Compila un script JSX con esbuild y lo ejecuta; stubs de `pdfjs-dist`, `@zxing/library` e imports `?url` |
 | `smoke-vistas.jsx` | Renderiza 13 vistas × 4 escenarios (vacío / con datos / datos parciales / todo desactivado) |
-| `comprobar-navegacion.mjs` | Cruza `MORE_NAV` × `AREAS_NAV` × los `case` de `renderTab` |
+| `comprobar-navegacion.mjs` | Cruza `MORE_NAV` × `AREAS_NAV` × los `case` de `renderTab` × las palabras clave del buscador |
 | `auditar-modulos.mjs` | **Auditoría de ME F4**: todo lo creable es borrable, nada se salta la papelera, el catálogo y el código coinciden |
+| `test-inicio.jsx` | **BI F1**: el desplegable de situación — cerrado por defecto, sin botones anidados, las tres situaciones activables |
+| `test-buscador.mjs` | **BI F2**: las nueve búsquedas del control de calidad, el orden por relevancia y la detección de intención |
 | `test-puntuacion.mjs` · `test-personalizacion.mjs` · `test-papelera.mjs` · `test-modulos.jsx` | 27 + 28 + 73 + 20 comprobaciones |
 
 **Lo único verificado ejecutándolo:** `colorEngine.js` y `aplicarTema()` con Node (round-trips

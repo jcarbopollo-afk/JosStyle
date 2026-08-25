@@ -136,8 +136,9 @@ escribir código.
 | v1.26.0 | **ME F3** | Papelera global "Eliminados recientemente": 26 colecciones, retención configurable, restauración en su posición original, Relación enmascarada mientras esté bloqueada |
 | v1.27.0 | **ME F4** | Integración global y **auditoría ejecutable**. Tapó 8 huecos de borrado que nadie había visto, añadió la 27ª colección a la papelera (programas de Estudios) y aplicó el **renombrado a JosStyle** |
 | v1.28.0 | **BI F1** | Desplegable de situación de Inicio: las tres situaciones se activan desde ahí, en vez de solo leerse. Descubrió el fallo de **botones anidados**, ahora comprobado en las 13 vistas |
+| v1.29.0 | **BI F2** | Buscador de funciones: escribir "colores" abre Apariencia. Índice derivado de `MORE_NAV`, con la lupa mudada arriba a la izquierda |
 
-🔒 **El bloque ME (4/4) está cerrado.** BI va por 1/4. Quedan 101 fases de la Entrega 2.
+🔒 **El bloque ME (4/4) está cerrado.** BI va por 2/4. Quedan 100 fases de la Entrega 2.
 
 ---
 
@@ -357,7 +358,7 @@ R10 AXION — aplazado por decisión de Josué (D2-06) hasta terminar la Entrega
 ```
 E2-0  Verificación de la base                    ✅ COMPLETADO (v1.23.0, bloque R0)
 E2-1  ME · Módulos activables + Eliminados (4)   ✅ COMPLETADO (v1.24.0 → v1.27.0)
-E2-2  BI · Buscador + IA + Inicio (4)            ← EN CURSO (F1 ✅, siguiente F2)
+E2-2  BI · Buscador + IA + Inicio (4)            ← EN CURSO (F1 ✅ F2 ✅, siguiente F3)
 E2-3  AR · Armario (4)
 E2-4  FO · Fondos y Fotografías (12)
 E2-5  SO · Sonido (5)  +  RA · Rachas (4)        ← dos módulos separados (D2-01)

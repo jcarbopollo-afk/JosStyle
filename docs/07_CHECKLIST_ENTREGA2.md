@@ -2388,37 +2388,70 @@ render y que en iOS hace que el toque interior se lo coma el exterior. Ahora la 
 y el contenido su hermano, y `scripts/smoke-vistas.jsx` comprueba lo mismo en **las 13 vistas × 4
 escenarios**, para que no vuelva a colarse en ningún sitio.
 
-#### BI · Fase 2/4 — Nuevo acceso superior izquierdo: búsqueda/IA
-- [ ] Buscar cualquier función, pantalla, ajuste u opción existente dentro de JC Fitness.
-- [ ] Encontrar opciones aunque el usuario no escriba exactamente su nombre.
-- [ ] Acceder directamente al resultado encontrado.
-- [ ] Hacer preguntas a la IA cuando no esté buscando una función concreta.
-- [ ] Mantener una experiencia rápida, limpia y premium.
-- [ ] BOTÓN SUPERIOR IZQUIERDO
-- [ ] APERTURA DEL BUSCADOR
-- [ ] CAMPO DE BÚSQUEDA
-- [ ] DOS TIPOS DE BÚSQUEDA
-- [ ] BÚSQUEDA INTELIGENTE
-- [ ] ÍNDICE INTERNO DE FUNCIONES
-- [ ] RESULTADOS
-- [ ] ORDEN DE RESULTADOS
-- [ ] Coincidencia exacta.
-- [ ] Coincidencia con el nombre.
-- [ ] Coincidencia con palabras clave.
-- [ ] Coincidencia con descripción.
-- [ ] Coincidencias semánticamente relacionadas.
-- [ ] RESULTADO SIN COINCIDENCIAS
-- [ ] IA
-- [ ] DIFERENCIACIÓN ENTRE BÚSQUEDA Y PREGUNTA
-- [ ] ACCESO DIRECTO
-- [ ] ANIMACIONES
-- [ ] MÓVIL
-- [ ] CIERRE
-- [ ] NO MODIFICAR LA IA ACTUAL SIN NECESIDAD
-- [ ] ARQUITECTURA PREPARADA PARA CRECER
-- [ ] SEGURIDAD
-- [ ] CONTROL DE CALIDAD
-- [ ] REGLA FUNDAMENTAL
+#### BI · Fase 2/4 — Acceso superior izquierdo: búsqueda/IA ✅ COMPLETADA (v1.29.0)
+- [x] Buscar cualquier función, pantalla, ajuste u opción existente. — 19 módulos + 14 funciones
+      de dentro de Ajustes.
+- [x] Encontrar opciones aunque el usuario no escriba exactamente su nombre. — "dinero" → Economía,
+      "dormir" → Sueño, "modo noche" → Colores y tema. Sin tildes y sin mayúsculas también.
+- [x] Acceder directamente al resultado encontrado. — pulsar abre el sitio exacto, categoría de
+      Ajustes incluida; no deja a Josué en la lista para que la busque él.
+- [x] Hacer preguntas a la IA cuando no esté buscando una función concreta.
+- [x] Mantener una experiencia rápida, limpia y premium. — búsqueda local sobre ~33 entradas, sin
+      red y sin debounce.
+- [x] BOTÓN SUPERIOR IZQUIERDO — la lupa se muda a la izquierda; el panel de sugerencias se va a la
+      derecha. **Se intercambian, no se elimina ninguno**: son cosas distintas y la especificación
+      prohíbe quitar funcionalidad.
+- [x] APERTURA DEL BUSCADOR — el mismo modal con `createPortal` de siempre (regla 3).
+- [x] CAMPO DE BÚSQUEDA — icono, campo, botón de limpiar, botón de cerrar y foco automático al
+      abrirse.
+- [x] DOS TIPOS DE BÚSQUEDA — funciones (índice local) y preguntas (IA sobre los datos).
+- [x] BÚSQUEDA INTELIGENTE — nombre, descripción y palabras clave, con sinónimos escritos a mano
+      porque no se pueden derivar de nada ("dinero" no aparece en ningún sitio del código).
+- [x] ÍNDICE INTERNO DE FUNCIONES — `src/lib/indiceBusqueda.js`, con `id/titulo/descripcion/
+      palabras/categoria/tab/icono`, tal cual pide el apartado 6.
+- [x] RESULTADOS — aparecen mientras escribe, con icono, nombre, ubicación y descripción.
+- [x] ORDEN DE RESULTADOS — los cinco escalones del apartado 8, con los pesos lo bastante separados
+      como para que ninguna suma de coincidencias débiles adelante a una fuerte:
+  - [x] Coincidencia exacta. (1000)
+  - [x] Coincidencia con el nombre. (800 empieza / 600 contiene)
+  - [x] Coincidencia con palabras clave. (500 / 400 / 300)
+  - [x] Coincidencia con descripción. (150)
+  - [x] Coincidencias semánticamente relacionadas. (80 — todas las palabras sueltas presentes)
+- [x] RESULTADO SIN COINCIDENCIAS — "No hemos encontrado esa función" + ofrecer la IA. Nunca una
+      pantalla vacía.
+- [x] IA — recibe el texto ya escrito; no se le pide que lo repita.
+- [x] DIFERENCIACIÓN ENTRE BÚSQUEDA Y PREGUNTA — detecta la intención y, cuando hay las dos cosas,
+      **enseña las dos**. "¿cómo cambio los colores?" saca la IA arriba y Apariencia debajo.
+- [x] ACCESO DIRECTO — reutiliza `navegarDesdeHoy`, el deep-link que ya existía. Ni un sistema de
+      navegación nuevo.
+- [x] ANIMACIONES — `active:scale` en la lupa y en cada resultado. Sin efectos de entrada por
+      resultado: el apartado 13 dice "VELOCIDAD > EFECTOS" y animar una lista que cambia con cada
+      tecla la haría parecer más lenta, no más premium.
+- [x] MÓVIL — la lista de resultados scrollea dentro de `46vh`, así que con el teclado abierto el
+      campo sigue visible y los resultados no quedan detrás. ⚠️ Comprobación real en iPhone:
+      pendiente de Josué (**R1**).
+- [x] CIERRE — botón X, toque fuera del panel, y el estado temporal se va con el modal.
+- [x] NO MODIFICAR LA IA ACTUAL SIN NECESIDAD — se **amplía** `UniversalSearchModal`; `askAI` y la
+      función serverless no se tocan, y ninguna clave sale al frontend.
+- [x] ARQUITECTURA PREPARADA PARA CRECER — el índice se **deriva de `MORE_NAV`**, así que un módulo
+      que una fase futura añada ahí aparece solo. Y `comprobar-navegacion.mjs` falla si alguien
+      añade un módulo sin palabras clave, o deja palabras de uno que ya no existe.
+- [x] SEGURIDAD — el índice es de funciones, **no contiene ni un dato de Josué**. Relación se
+      encuentra como pantalla, pero abrirla sigue pasando por su PIN: el buscador navega, no salta
+      protecciones.
+- [x] CONTROL DE CALIDAD — las nueve búsquedas del apartado 19, automatizadas en
+      `scripts/test-buscador.mjs` (58 comprobaciones).
+- [x] REGLA FUNDAMENTAL — BUSCAR → ENCONTRAR → ABRIR, y PREGUNTAR → IA → RESPUESTA, desde el mismo
+      acceso.
+
+**Decisión de honestidad, apuntada:** el control de calidad pide que "racha" y "sonidos" encuentren
+sus módulos *"si el módulo existen"*. Rachas y Sonido son fases futuras y **no se han fingido**
+(regla 8). "racha" lleva a Productividad, que es donde están hoy las rachas de hábitos de verdad;
+"sonidos" no devuelve nada. La prueba comprueba justo eso: que no aparezca un módulo inventado.
+
+**Un fallo silencioso corregido de paso:** `TextInput` era un componente de función normal, así que
+se tragaba la `ref` sin decir nada — el foco automático del campo simplemente no habría ocurrido, sin
+error ni aviso. Ahora usa `forwardRef`. Es aditivo: ninguno de los ~60 usos anteriores pasa `ref`.
 
 #### BI · Fase 3/4 — MOTOR DE BÚSQUEDA GLOBAL E ÍNDICE INTELIGENTE DE JC FITNESS
 - [ ] PRINCIPIO FUNDAMENTAL

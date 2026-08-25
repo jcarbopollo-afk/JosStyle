@@ -1,5 +1,77 @@
 # CHANGELOG.md
 
+## Entrega 2 · BI Fase 2 — Buscar funciones y abrirlas directamente (v1.29.0)
+
+### El problema, en una frase
+Para cambiar un color, Josué tenía que acordarse de que eso vive en **Más → Ajustes → Apariencia →
+Colores**. Ahora escribe "colores" y pulsa el resultado.
+
+### Por qué es el mismo modal y no uno nuevo
+El buscador que ya existía (Fase 18) busca en los **datos**: *"¿cuántas horas dormí de media?"*. Lo
+que pide esta fase es buscar **funciones, pantallas y ajustes**. Son cosas distintas, pero el
+apartado 20 es explícito: *"BUSCAR → ENCONTRAR → ABRIR y también PREGUNTAR → IA → RESPUESTA. Todo
+desde el mismo acceso"*, y el apartado 16 prohíbe duplicar la IA existente. Así que se amplía el
+modal de siempre en vez de poner un segundo buscador al lado.
+
+### El índice no está escrito: se construye
+El apartado 17 pide que añadir un módulo sea *"añadir una entrada"*, no tocar la lógica del buscador.
+Los 19 módulos **no** están escritos en `indiceBusqueda.js`: se derivan de `MORE_NAV` —el catálogo
+que ya usan la navegación, Personalización y Seguridad— más `DESCRIPCIONES_MODULOS`. Un módulo que
+una fase futura añada ahí aparece solo en el buscador.
+
+Lo único escrito a mano son las palabras clave, porque no se pueden derivar de nada: "dinero" no
+aparece en ninguna parte del código, y es como se busca Economía. Para que eso no se quede atrás,
+`comprobar-navegacion.mjs` ahora falla si alguien añade un módulo sin palabras clave — o deja
+palabras clave de uno que ya no existe.
+
+### Buscar y preguntar no son excluyentes
+El apartado 11 lo dice mejor que un resumen: *"esto es mejor que obligar al usuario a elegir entre
+búsqueda o IA desde el principio"*. Escribir `¿cómo cambio los colores?` saca **las dos cosas**: el
+botón de preguntar a la IA arriba y el resultado de Apariencia debajo. La pregunta le llega a la IA
+ya escrita; no hay que repetirla.
+
+### Añadido / cambiado
+- **`src/lib/indiceBusqueda.js`** (nuevo): índice + motor. `construirIndice`, `buscar`,
+  `pareceUnaPregunta`, `normalizar`, `PALABRAS_MODULOS` y las 14 funciones de dentro de Ajustes.
+  Los pesos del orden por relevancia están lo bastante separados como para que ninguna suma de
+  coincidencias débiles adelante a una fuerte — es el ejemplo del propio apartado 8: buscando
+  "color", "Colores" gana a cualquier entrada que solo mencione la palabra de pasada.
+- **La lupa se muda arriba a la izquierda** (apartado 1) y el panel de sugerencias se va a la
+  derecha. **Se intercambian, no se elimina ninguno**: son cosas distintas y la especificación
+  prohíbe quitar funcionalidad existente.
+- **Pulsar un resultado abre el sitio exacto**, categoría de Ajustes incluida, reutilizando el
+  `navegarDesdeHoy` que ya existía. `SettingsView` acepta el mismo `foco` que Sueño, Entreno,
+  Objetivos, Estudios, Productividad y Economía ya aceptaban.
+- Sin coincidencias no queda una pantalla vacía: se ofrece la IA con lo que ya escribió.
+- Campo con foco automático, botón de limpiar, y la lista scrollea dentro de `46vh` para que con el
+  teclado abierto en un iPhone el campo siga visible.
+- **`scripts/test-buscador.mjs`** (nuevo): 58 comprobaciones, entre ellas las nueve del control de
+  calidad del apartado 19.
+
+### Dos cosas que se han decidido no hacer, y por qué
+- **No se han inventado Rachas ni Sonidos.** El control de calidad los pide *"si el módulo existe"*,
+  y son fases futuras. "racha" lleva a Productividad —que es donde están hoy las rachas de hábitos
+  de verdad— y "sonidos" no devuelve nada. Fingirlos habría roto la regla 8.
+- **Sin animación de entrada por resultado.** El apartado 13 dice "VELOCIDAD > EFECTOS", y animar
+  una lista que cambia con cada tecla la haría parecer más lenta, no más premium.
+
+### Un fallo silencioso corregido de paso
+`TextInput` era un componente de función normal, así que **se tragaba la `ref` sin decir nada**: el
+foco automático del campo simplemente no habría ocurrido, sin error ni aviso en consola. Ahora usa
+`forwardRef`. Es aditivo — ninguno de los ~60 usos anteriores pasa `ref`.
+
+### Seguridad (apartado 18)
+El índice es de funciones: **no contiene ni un dato de Josué**. Relación se encuentra como pantalla
+—ya aparece en el menú "Más", no es un secreto—, pero abrirla sigue pasando por su PIN: el buscador
+navega, no salta protecciones. Y un módulo desactivado en Personalización no se puede encontrar.
+
+### Verificación
+`bash scripts/verificar.sh` → **281 comprobaciones en verde**.
+
+⚠️ **Pendiente de Josué (R1):** el comportamiento real con el teclado del iPhone abierto.
+
+---
+
 ## Entrega 2 · BI Fase 1 — El desplegable de situación de Inicio (v1.28.0)
 
 ### Lo que ya estaba, y por qué no se ha rehecho

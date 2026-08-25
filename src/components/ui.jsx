@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail, Plus, Trash2 } from 'lucide-react';
+import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail, Plus, Trash2, ChevronRight, CornerDownLeft } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba, shade, fileToBase64 } from '../lib/helpers';
+import { buscar, pareceUnaPregunta } from '../lib/indiceBusqueda';
 import { askAI, askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { extractPdfText } from '../lib/pdfText';
 import { verificarPin } from '../lib/pin';
@@ -156,16 +157,21 @@ export function Field({ label, children }) {
   );
 }
 
-export function TextInput(props) {
+// `forwardRef` desde BI Fase 2: el buscador necesita enfocar el campo al abrirse (apartado 3),
+// y un componente de función normal se traga la `ref` en silencio — el foco simplemente no
+// ocurriría, sin error ni aviso. Es aditivo: ningún uso anterior pasa `ref`, así que nada cambia
+// para los ~60 TextInput que ya había.
+export const TextInput = React.forwardRef(function TextInput(props, ref) {
   const { style, className, ...rest } = props;
   return (
     <input
       {...rest}
+      ref={ref}
       className={`w-full rounded-xl px-3 py-2.5 text-sm outline-none ${className || ''}`}
       style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text, ...style }}
     />
   );
-}
+});
 
 // Fase 10 — Diario: primera vez que se necesita texto libre de varias líneas (hasta ahora
 // TextInput cubría inputs de una sola línea). Mismo estilo visual que TextInput para que no
@@ -592,7 +598,10 @@ export function AIPanel({ label, accent, buildPrompt }) {
 // Fase 18 — panel de sugerencias fijo arriba a la izquierda. Nunca se dispara solo (mismo
 // criterio que el resto de la IA en toda la app): el icono solo abre/cierra el panel, y dentro
 // hace falta un toque explícito en "Generar sugerencias" para llamar a la IA la primera vez.
-export function SuggestionsButton({ accent, buildPrompt }) {
+// `lado` desde BI Fase 2: la lupa se queda con la esquina izquierda (apartado 1), así que este
+// panel se va a la derecha. El desplegable se alinea al mismo lado que su botón para no salirse
+// de la pantalla en un móvil estrecho.
+export function SuggestionsButton({ accent, buildPrompt, lado = 'izquierda' }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState('');
@@ -614,19 +623,20 @@ export function SuggestionsButton({ accent, buildPrompt }) {
   };
 
   return (
-    <div className="fixed z-30" style={{ top: 14, left: 14 }}>
+    <div className="fixed z-30" style={lado === 'derecha' ? { top: 14, right: 14 } : { top: 14, left: 14 }}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-9 h-9 rounded-full flex items-center justify-center"
+        className="w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
         style={{ background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: 'blur(8px)' }}
+        aria-expanded={open}
         aria-label="Sugerencias de la IA"
       >
         <Lightbulb size={16} style={{ color: accent }} />
       </button>
       {open && (
         <div
-          className="mt-2 rounded-2xl p-3"
-          style={{ width: 252, background: COLORS.surface, border: `1px solid ${COLORS.border}`, boxShadow: '0 12px 28px rgba(0,0,0,0.45)' }}
+          className="mt-2 rounded-2xl p-3 absolute"
+          style={{ width: 252, background: COLORS.surface, border: `1px solid ${COLORS.border}`, boxShadow: '0 12px 28px rgba(0,0,0,0.45)', ...(lado === 'derecha' ? { right: 0 } : { left: 0 }) }}
         >
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold" style={{ color: COLORS.text }}>Sugerencias</p>
@@ -655,15 +665,67 @@ export function SuggestionsButton({ accent, buildPrompt }) {
   );
 }
 
-// Fase 18 — buscador universal en lenguaje natural. Se abre a mano desde el icono fijo de
-// App.jsx, nunca automático. La IA responde solo con lo que encuentre en el contexto de datos
-// que se le pasa (buildContext) y dice abiertamente si no puede responder algo, mismo criterio
-// honesto que Estadísticas y Predicciones.
-export function UniversalSearchModal({ accent, onClose, buildContext }) {
+// Apartado 10: la pregunta que ya ha escrito se le pasa tal cual a la IA. No se le pide
+// que la vuelva a escribir, que es justo lo que la especificación prohíbe.
+function BotonPreguntarIA({ query, accent, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left mt-3 transition-transform active:scale-[0.98]"
+      style={{ background: hexToRgba(accent, 0.12), border: `1px solid ${hexToRgba(accent, 0.28)}` }}
+    >
+      <Sparkles size={15} style={{ color: accent, flexShrink: 0 }} />
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold" style={{ color: COLORS.text }}>Preguntar a la IA</span>
+        <span className="block text-xs truncate" style={{ color: COLORS.textMuted }}>{query}</span>
+      </span>
+      <CornerDownLeft size={14} style={{ color: COLORS.textMuted, flexShrink: 0 }} />
+    </button>
+  );
+}
+
+// Fase 18 + Entrega 2 · BI Fase 2 — el acceso único de búsqueda e IA.
+//
+// LO QUE HACÍA (Fase 18)
+// Buscar en los DATOS de Josué preguntando a la IA: "¿cuántas horas dormí de media?".
+// Eso sigue funcionando exactamente igual, y sigue disparándose solo a un toque.
+//
+// LO QUE AÑADE BI FASE 2
+// Buscar FUNCIONES, PANTALLAS Y AJUSTES y abrirlos directo. Antes, para cambiar un color,
+// Josué tenía que recordar que eso vive en Más → Ajustes → Apariencia. Ahora escribe
+// "colores" y pulsa el resultado.
+//
+// POR QUÉ ES EL MISMO MODAL Y NO UNO NUEVO
+// El apartado 20 lo pide literalmente: "BUSCAR → ENCONTRAR → ABRIR y también PREGUNTAR →
+// IA → RESPUESTA. Todo desde el mismo acceso". Y el apartado 16 prohíbe duplicar la IA que
+// ya existe. Así que se amplía este componente en vez de poner un segundo buscador al lado.
+//
+// CÓMO DECIDE QUÉ ENSEÑAR (apartado 11)
+// No obliga a elegir entre "buscar" o "preguntar". Mientras escribe salen los resultados
+// del índice; si además el texto parece una pregunta, la opción de preguntar a la IA sube
+// arriba del todo. "¿cómo cambio los colores?" enseña las dos cosas.
+export function UniversalSearchModal({ accent, onClose, buildContext, indice, onIr }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const inputRef = useRef(null);
+
+  // Apartado 3: el campo recibe el foco al abrirse. En iOS eso además levanta el teclado,
+  // que es lo que Josué quiere si ha pulsado la lupa a propósito.
+  useEffect(() => { inputRef.current && inputRef.current.focus(); }, []);
+
+  // Apartado 7: los resultados aparecen mientras escribe. Es una búsqueda local sobre un
+  // índice de unas treinta entradas — instantánea, sin red y sin debounce que la retrase
+  // (apartado 13: "VELOCIDAD > EFECTOS").
+  const resultados = useMemo(() => buscar(indice, query), [indice, query]);
+  const esPregunta = pareceUnaPregunta(query);
+  const hayTexto = query.trim().length > 0;
+
+  const abrir = (entrada) => {
+    onIr && onIr(entrada);
+    onClose();
+  };
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -695,36 +757,107 @@ export function UniversalSearchModal({ accent, onClose, buildContext }) {
       >
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: COLORS.text }}>
-            <Search size={15} /> Buscar en tus datos
+            <Search size={15} /> Buscar o preguntar
           </p>
           <button onClick={onClose} className="p-1.5 rounded-full" style={{ background: COLORS.surface2 }} aria-label="Cerrar buscador">
             <X size={14} style={{ color: COLORS.text }} />
           </button>
         </div>
         <div className="flex items-center gap-2">
-          <TextInput
-            placeholder="Ej: ¿cuántas horas dormí de media esta semana?"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          />
+          <div className="relative flex-1 min-w-0">
+            <TextInput
+              ref={inputRef}
+              placeholder="Buscar funciones, ajustes o preguntar…"
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setResponse(''); setErrorMsg(''); }}
+              onKeyDown={(e) => {
+                // Enter abre el primer resultado si lo hay; si no, pregunta a la IA. Es el
+                // atajo que hace que "colores" + Enter sea todo el recorrido (apartado 12).
+                if (e.key !== 'Enter') return;
+                if (resultados.length > 0 && !esPregunta) abrir(resultados[0]);
+                else handleSearch();
+              }}
+              style={{ paddingRight: hayTexto ? 34 : undefined }}
+            />
+            {/* Apartado 3: botón para limpiar. Solo aparece si hay algo que limpiar. */}
+            {hayTexto && (
+              <button
+                onClick={() => { setQuery(''); setResponse(''); setErrorMsg(''); inputRef.current && inputRef.current.focus(); }}
+                className="absolute rounded-full flex items-center justify-center"
+                style={{ right: 8, top: '50%', transform: 'translateY(-50%)', width: 20, height: 20, background: COLORS.surface2 }}
+                aria-label="Limpiar búsqueda"
+              >
+                <X size={11} style={{ color: COLORS.textMuted }} />
+              </button>
+            )}
+          </div>
           <button
             onClick={handleSearch}
-            disabled={loading || !query.trim()}
+            disabled={loading || !hayTexto}
             className="rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-60"
             style={{ width: 44, height: 42, background: accent }}
-            aria-label="Buscar"
+            aria-label="Preguntar a la IA"
           >
-            {loading ? <Loader2 size={16} className="animate-spin" style={{ color: COLORS.textOnAccent }} /> : <Search size={16} style={{ color: COLORS.textOnAccent }} />}
+            {loading ? <Loader2 size={16} className="animate-spin" style={{ color: COLORS.textOnAccent }} /> : <Sparkles size={16} style={{ color: COLORS.textOnAccent }} />}
           </button>
         </div>
-        {errorMsg && <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>{errorMsg}</p>}
-        {response && !errorMsg && <p className="text-sm mt-3 leading-relaxed" style={{ color: COLORS.text }}>{response}</p>}
-        {!response && !errorMsg && !loading && (
-          <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>
-            Pregunta lo que sea sobre datos ya guardados — sueño, entreno, economía, estudios, hábitos, objetivos, diario, y el resto de módulos.
-          </p>
-        )}
+
+        {/* Apartado 14: con el teclado abierto en un iPhone queda poca altura. La lista scrollea
+            ella sola en vez de empujar el modal fuera de la pantalla. */}
+        <div style={{ maxHeight: '46vh', overflowY: 'auto' }}>
+          {/* Apartado 11: si parece una pregunta, la IA va primero — pero los resultados
+              siguen debajo, no se le obliga a elegir. */}
+          {hayTexto && esPregunta && !response && !loading && (
+            <BotonPreguntarIA query={query} accent={accent} onClick={handleSearch} />
+          )}
+
+          {hayTexto && resultados.length > 0 && (
+            <ul className="mt-3 space-y-1">
+              {resultados.map((r) => {
+                const IconoR = r.icono;
+                return (
+                  <li key={r.id}>
+                    <button
+                      onClick={() => abrir(r)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-transform active:scale-[0.98]"
+                      style={{ background: COLORS.surface2 }}
+                    >
+                      {IconoR
+                        ? <IconoR size={15} style={{ color: accent, flexShrink: 0 }} />
+                        : <Search size={15} style={{ color: accent, flexShrink: 0 }} />}
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold truncate" style={{ color: COLORS.text }}>{r.titulo}</span>
+                        <span className="block text-xs truncate" style={{ color: COLORS.textMuted }}>
+                          {r.categoria === 'Ajustes' ? 'Ajustes' : 'Módulo'}{r.descripcion ? ` · ${r.descripcion}` : ''}
+                        </span>
+                      </span>
+                      <ChevronRight size={14} style={{ color: COLORS.textMuted, flexShrink: 0 }} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {/* Apartado 9: sin coincidencias no se deja una pantalla vacía — se ofrece la IA. */}
+          {hayTexto && resultados.length === 0 && !esPregunta && !response && !loading && (
+            <div className="mt-3">
+              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>No hemos encontrado esa función</p>
+              <p className="text-xs mt-1 mb-2" style={{ color: COLORS.textMuted }}>
+                Puedes preguntárselo a la IA sobre tus propios datos.
+              </p>
+              <BotonPreguntarIA query={query} accent={accent} onClick={handleSearch} />
+            </div>
+          )}
+
+          {errorMsg && <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>{errorMsg}</p>}
+          {response && !errorMsg && <p className="text-sm mt-3 leading-relaxed" style={{ color: COLORS.text }}>{response}</p>}
+          {!hayTexto && !response && !errorMsg && !loading && (
+            <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>
+              Escribe el nombre de una pantalla o un ajuste para abrirlo — "colores", "dormir", "dinero" —, o haz una pregunta sobre tus datos guardados.
+            </p>
+          )}
+        </div>
       </div>
     </div>,
     document.body
