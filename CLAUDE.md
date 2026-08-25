@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.32.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.33.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario, Fondos, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME** y **BI** están terminados y **AR** va por 1/4, quedan 97) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME** y **BI** están terminados y **AR** va por 2/4, quedan 96) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,8 +107,8 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 382 pruebas unitarias con Node, 5 de auditoría, 56 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **443 comprobaciones**.
+Vite, 480 pruebas unitarias con Node, 5 de auditoría, 60 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **545 comprobaciones**.
 
 Eso ya ha encontrado **diecinueve bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript) y ocho módulos que dejaban crear y no borrar.
@@ -131,17 +131,18 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase: AR · Fase 2/4 — Constructor de Outfits.**
+**Siguiente fase: AR · Fase 3/4 — Calendario + historial de uso.**
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_ARMARIO.md`.
 
 Tres avisos antes de escribir código ahí:
 
-- **`armario.outfits` ya existe y está vacío**, declarado en `DEFAULT_ARMARIO` desde la Fase 1. Y
-  cada prenda ya tiene un array `outfits`. No hay que migrar nada: solo llenarlos.
-- Los **estados de prenda** (`lavanderia`, `reparacion`…) existen precisamente para esta fase: un
-  outfit no debería proponer una prenda que está en la lavadora.
-- **AR Fase 3 (calendario de uso) se conectará al Calendario Universal como fuente derivada**,
-  nunca duplicando datos (regla 11). Tenlo en cuenta al modelar los usos.
+- **`armario.usos` ya existe y está vacío**, declarado desde la Fase 1. Cada uso tiene que ser un
+  **registro independiente** (fecha, hora, lugar, personas, evento), no una fecha dentro del
+  outfit: el mismo outfit puede usarse el 1, el 5 y el 12 de agosto.
+- `prenda.usos`, `prenda.ultimoUso`, `outfit.usos` y `outfit.ultimoUso` están a **cero a
+  propósito**. Es esta fase la que empieza a llenarlos; hasta ahora nadie los ha tocado.
+- **Se conecta al Calendario Universal como fuente DERIVADA** (`eventosDerivados()`), nunca
+  duplicando datos — regla 11. Mira cómo lo hacen Estudios y Relación.
 
 ⚠️ **Recordatorio para Josué, si aún no lo ha hecho:** ejecutar el bloque del bucket `armario` de
 `supabase/schema.sql` en el SQL Editor de Supabase. Sin eso, todo funciona menos subir fotos.

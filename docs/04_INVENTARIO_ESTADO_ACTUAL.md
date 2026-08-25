@@ -122,7 +122,7 @@ Animaciones del sistema de navegación, `--ease-premium`, reglas `html[data-radi
 | — | **`unidades.js`** | ⬜ **CREAR** (R5.3) — conversión cm/ft-in, kg/lb, °C/°F, km/mi con unidad base interna |
 | `puntuacion.js` | `puntuacionDelDia`, `mensajePuntuacion`, `AREAS_PUNTUACION` | ✅ **CREADO** (v1.23.0, R0.2). Puro y probado con Node — 27 comprobaciones |
 | `papelera.js` | `CATALOGO_PAPELERA` (27 colecciones), `claveCatalogo`, `prepararEliminacion`, `prepararRestauracion`, `conArrastrados`, `purgarCaducados`, `describirEntrada`, `tiempoDesde`, `diasRestantes`, `ordenarPapelera`, `OPCIONES_RETENCION`, `DEFAULT_PAPELERA` | ✅ **CREADO** (v1.26.0, ME F3). Puro y probado con Node — 73 comprobaciones |
-| `armario.js` | `CATEGORIAS_ARMARIO`, `COLORES_ARMARIO`, `ESTADOS_PRENDA`, `TEMPORADAS_PRENDA`, `ORDENES_ARMARIO`, `DEFAULT_ARMARIO`, `crearPrenda`, `actualizarPrenda`, `buscarPrendas`, `filtrarPrendas`, `ordenarPrendas`, `prendasVisibles`, `marcasDe`, `conteoPorCategoria`, `ordenesDisponibles`, `resumenArmario` | ✅ **CREADO** (v1.32.0, AR F1). Motor puro del Armario. Cada prenda nace con los **21 campos**, incluidos los cuatro que llenarán las fases 2-4: si aparecieran después, las prendas ya guardadas se quedarían sin ellos (regla 5). 87 comprobaciones |
+| `armario.js` | `CATEGORIAS_ARMARIO`, `COLORES_ARMARIO`, `ESTADOS_PRENDA`, `TEMPORADAS_PRENDA`, `ORDENES_ARMARIO`, `DEFAULT_ARMARIO`, `crearPrenda`, `actualizarPrenda`, `buscarPrendas`, `filtrarPrendas`, `ordenarPrendas`, `prendasVisibles`, `marcasDe`, `conteoPorCategoria`, `ordenesDisponibles`, `resumenArmario`, y desde AR F2: `ZONAS_OUTFIT`, `crearOutfit`, `actualizarOutfit`, `duplicarOutfit`, `prendasDeOutfit`, `composicionDeOutfit`, `noDisponiblesDeOutfit`, `outfitsConPrenda`, `usoEnOutfits`, `buscarOutfits`, `filtrarOutfits`, `ordenarOutfits`, `outfitsVisibles` | ✅ **CREADO** (v1.32.0, AR F1) y **ampliado con outfits** (v1.33.0, AR F2). Motor puro del Armario. Una prenda nace con 20 campos y un outfit con 14; el outfit guarda **`prendaIds`, nunca copias**. 185 comprobaciones |
 | `indiceBusqueda.js` | `construirIndice`, `buscar`, `pareceUnaPregunta`, `sugerenciaDeErrata`, `sugerenciasIniciales`, `analizarIntencion`, `nucleoDeConsulta`, `resolverConsulta`, `normalizar`, `normalizarRaiz`, `PALABRAS_MODULOS`, `SINONIMOS_MODULOS`, `FUNCIONES_AJUSTES`, `ACCIONES_DIRECTAS` | ✅ **CREADO** (v1.29.0, BI F2) y **ampliado a motor completo** (v1.30.0, BI F3): sinónimos, plurales, erratas (Damerau-Levenshtein) y tres tipos de destino. **BI F4** (v1.31.0) le añade la capa de intención: `resolverConsulta` decide qué enseñar y en qué orden, así que los ocho casos de la prueba final son ocho llamadas a una función. Índice de **funciones**, nunca de datos; local, sin red ni IA. Se deriva de `MORE_NAV`, así que un módulo nuevo aparece solo. 129 comprobaciones |
 | — | **`revisionPeriodica.js`** | ⬜ **CREAR** (R4.2) — revisión semanal/mensual/anual, solo lectura sobre correlaciones/predicciones/logros |
 
@@ -199,7 +199,7 @@ Ver `01_ESPECIFICACION_MAESTRA.md` §4.1 para la tabla completa. Resumen de las 
 | `seguridad` | Ampliar `ACCIONES_PROTEGIBLES`; longitud de PIN; intentos fallidos; códigos de recuperación | R8 |
 | `ajustes.apariencia` | `densidad` con efecto real | R6.1 |
 | `papelera` | ✅ **CREADA** (v1.26.0): `{ elementos: [], retencionDias: 30 }`. Es la clave 22ª → **hoy son 23**. Entra en el snapshot de deshacer, para que papelera y undo no puedan desincronizarse | ✅ hecho |
-| `armario` | ✅ **CREADA** (v1.32.0): `{ prendas: [], outfits: [], usos: [] }`. Es la clave 24ª. `outfits` y `usos` están declarados y vacíos a propósito, para que las fases 2 y 3 no exijan migración | ✅ hecho |
+| `armario` | ✅ **CREADA** (v1.32.0): `{ prendas: [], outfits: [], usos: [] }`. Es la clave 24ª. `outfits` se llenó en v1.33.0 (AR F2); `usos` sigue vacío, esperando a la Fase 3 — cada uso será un **registro independiente**, no una fecha dentro del outfit | ✅ hecho |
 | `estudios` | ✅ `programas` ya se puede borrar (v1.27.0), con cascada a asignaturas → exámenes → horas | ✅ hecho |
 | — | ⬜ **CREAR** `configBackup` (copia de seguridad versionada de configuración) | R3.4 |
 | — | ⬜ **CREAR** `auditoria` (registro de cambios de configuración y eventos de seguridad) | R3.12, R8.7 |
@@ -234,11 +234,11 @@ recorrido completo tocando la pantalla. Cuando Josué reporte un fallo, **pedirl
 | `verificar.sh` | Punto de entrada: build + 8 suites de pruebas + 9 reglas invariantes. Sale con código 1 si algo falla |
 | `resolver-vite.mjs` | Hook de resolución ESM: deja ejecutar los módulos de `src/` con Node sin cambiar la convención de imports del proyecto |
 | `smoke.mjs` | Compila un script JSX con esbuild y lo ejecuta; stubs de `pdfjs-dist`, `@zxing/library` e imports `?url` |
-| `smoke-vistas.jsx` | Renderiza 14 vistas × 4 escenarios (vacío / con datos / datos parciales / todo desactivado), y comprueba que ninguna anida botones |
+| `smoke-vistas.jsx` | Renderiza 15 vistas × 4 escenarios (vacío / con datos / datos parciales / todo desactivado), y comprueba que ninguna anida botones |
 | `comprobar-navegacion.mjs` | Cruza `MORE_NAV` × `AREAS_NAV` × los `case` de `renderTab` × las palabras clave del buscador |
 | `auditar-modulos.mjs` | **Auditoría de ME F4**: todo lo creable es borrable, nada se salta la papelera, el catálogo y el código coinciden |
 | `test-inicio.jsx` | **BI F1**: el desplegable de situación — cerrado por defecto, sin botones anidados, las tres situaciones activables |
-| `test-armario.mjs` | **AR F1**: el modelo de 21 campos, la búsqueda por color y marca, los filtros combinados y el orden |
+| `test-armario.mjs` | **AR F1+F2**: el modelo de datos, la búsqueda por color y marca, los filtros, el orden, y las pruebas obligatorias de outfits — duplicar sin tocar el original, eliminar sin borrar prendas, y una prenda borrada que no rompe nada |
 | `test-buscador.mjs` | **BI F2+F3+F4**: las nueve búsquedas del control de calidad, las seis categorías obligatorias del apartado 22, el ranking, la desambiguación, los ocho casos de la prueba final del apartado 20 y que el motor no toca la red |
 | `test-puntuacion.mjs` · `test-personalizacion.mjs` · `test-papelera.mjs` · `test-modulos.jsx` | 27 + 28 + 73 + 20 comprobaciones |
 

@@ -10,7 +10,8 @@ import {
   categoriaDe, colorDe, estadoDe,
   ZONAS_OUTFIT, OCASIONES_OUTFIT, ESTACIONES_OUTFIT, zonaDeCategoria,
   outfitsVisibles, ordenesOutfitsDisponibles, lugaresDe, prendasDeOutfit,
-  composicionPorZonas, outfitsConPrenda,
+  composicionPorZonas, outfitsConPrenda, usoEnOutfits, composicionDeOutfit,
+  noDisponiblesDeOutfit, crearOutfit,
 } from '../lib/armario';
 import {
   Card, SectionTitle, Field, TextInput, Textarea, PrimaryButton, GhostBtn, EmptyHint, SelectInput, ToggleTab,
@@ -217,8 +218,10 @@ function FormularioPrenda({ inicial, accent, guardando, errorFoto, onGuardar, on
    los vídeos de Calistenia, excluidos de la papelera desde ME Fase 3. Borrar una
    prenda con foto es, en parte, irreversible, y eso es exactamente lo que la regla
    del proyecto reserva para la confirmación. */
-function DetallePrenda({ prenda, accent, onCerrar, onEditar, onEliminar }) {
+function DetallePrenda({ prenda, outfits, accent, onCerrar, onEditar, onEliminar }) {
   const [confirmando, setConfirmando] = useState(false);
+  // Apartado 10 de la continuación: no se impide borrar, pero sí se avisa.
+  const enOutfits = usoEnOutfits(outfits, prenda.id);
   const color = colorDe(prenda.color);
   const filas = [
     ['Categoría', categoriaDe(prenda.categoria).label],
@@ -284,6 +287,7 @@ function DetallePrenda({ prenda, accent, onCerrar, onEditar, onEliminar }) {
                   {prenda.fotoPath
                     ? 'Se eliminará la prenda y su fotografía. La foto no se puede recuperar.'
                     : '¿Eliminar esta prenda? Podrás recuperarla desde Eliminados recientemente.'}
+                  {enOutfits > 0 && ` Está en ${enOutfits} ${enOutfits === 1 ? 'outfit' : 'outfits'}, que seguirán existiendo y la marcarán como no disponible.`}
                 </p>
                 <div className="flex gap-2">
                   <button onClick={() => onEliminar(prenda)} className="text-xs font-semibold" style={{ color: COLORS.negative }}>Sí, eliminar</button>
@@ -371,10 +375,24 @@ function PanelFiltros({ filtros, setFiltros, marcas, accent, orden, setOrden, or
    especificación es explícita en que NO hace falta una silueta ni una
    representación fotográfica del cuerpo — lo que importa es ver de qué se compone.
    Con fotos, la composición se ve sola. */
-function ComposicionOutfit({ outfit, prendas, accent, onPulsarPrenda }) {
+function ComposicionOutfit({ outfit, prendas, accent, onPulsarPrenda, onAnadirPrendas }) {
   const grupos = composicionPorZonas(outfit, prendas);
-  if (grupos.length === 0) {
-    return <EmptyHint text="Este outfit todavía no tiene prendas." />;
+  // Apartado 4 del cierre técnico: una prenda borrada no puede dejar una tarjeta vacía
+  // ni reventar la pantalla. Se dice que ya no está, y punto.
+  const faltan = composicionDeOutfit(outfit, prendas).filter((c) => !c.prenda).length;
+
+  // Apartado 5 del cierre: un outfit sin prendas tiene su propio estado, con salida.
+  if (grupos.length === 0 && faltan === 0) {
+    return (
+      <div>
+        <EmptyHint text="Este outfit todavía no tiene prendas." />
+        {onAnadirPrendas && (
+          <button onClick={onAnadirPrendas} className="text-xs font-semibold mt-2" style={{ color: accent }}>
+            Añadir prendas
+          </button>
+        )}
+      </div>
+    );
   }
   return (
     <div className="space-y-2.5">
@@ -400,50 +418,88 @@ function ComposicionOutfit({ outfit, prendas, accent, onPulsarPrenda }) {
           </div>
         </div>
       ))}
+      {faltan > 0 && (
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>
+          {faltan === 1
+            ? 'Una prenda de este outfit ya no está en tu armario. Si la recuperas desde Eliminados recientemente, volverá aquí sola.'
+            : `${faltan} prendas de este outfit ya no están en tu armario. Si las recuperas desde Eliminados recientemente, volverán aquí solas.`}
+        </p>
+      )}
     </div>
   );
 }
 
-/* Tarjeta de outfit: un mosaico con las cuatro primeras prendas. Si el outfit tiene
-   foto propia, manda ella (apartado 9). */
-function TarjetaOutfit({ outfit, prendas, accent, onAbrir }) {
+/* Tarjeta de outfit.
+   Apartados 8 y 9 del pulido: editar y duplicar tienen que estar a un toque desde la
+   propia tarjeta, sin entrar en dos pantallas. Y el favorito se marca desde aquí
+   (apartado 11).
+
+   La tarjeta NO es un botón: es un contenedor con un botón grande arriba (abrir) y una
+   fila de acciones debajo. Un botón dentro de otro es HTML inválido y en iOS el toque
+   interior se lo come el exterior — el mismo fallo silencioso que apareció en BI Fase 1
+   y que `smoke-vistas.jsx` comprueba ahora en todas las vistas. */
+function TarjetaOutfit({ outfit, prendas, accent, onAbrir, onEditar, onDuplicar, onFavorito }) {
   const suyas = prendasDeOutfit(outfit, prendas);
   const ocasion = OCASIONES_OUTFIT.find((o) => o.id === outfit.ocasion);
+  const noDisponibles = noDisponiblesDeOutfit(outfit, prendas);
+
   return (
-    <button
-      onClick={() => onAbrir(outfit)}
-      className="text-left rounded-2xl overflow-hidden transition-transform active:scale-[0.97]"
-      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-    >
-      <div className="relative">
-        {outfit.fotoPath ? (
-          <MiniaturaPrenda prenda={{ fotoPath: outfit.fotoPath, nombre: outfit.nombre, color: 'otro', categoria: 'otros' }} alto={112} />
-        ) : suyas.length === 0 ? (
-          <div className="w-full flex items-center justify-center" style={{ height: 112, background: COLORS.surface2 }}>
-            <Layers size={20} style={{ color: COLORS.textMuted }} />
-          </div>
-        ) : (
-          /* Mosaico de hasta 4 prendas. Con una sola, ocupa el ancho entero en vez de
-             dejar tres huecos vacíos. */
-          <div className="grid" style={{ height: 112, gridTemplateColumns: suyas.length === 1 ? '1fr' : '1fr 1fr', gap: 1, background: COLORS.border }}>
-            {suyas.slice(0, 4).map((p) => (
-              <MiniaturaPrenda key={p.id} prenda={p} alto={suyas.length <= 2 ? 112 : 55.5} />
-            ))}
-          </div>
-        )}
-        {outfit.favorito && (
-          <span className="absolute rounded-full p-1" style={{ top: 6, right: 6, background: hexToRgba(COLORS.bg, 0.65) }}>
-            <Star size={11} style={{ color: accent, fill: accent }} />
-          </span>
-        )}
+    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
+      <button
+        onClick={() => onAbrir(outfit)}
+        className="text-left transition-transform active:scale-[0.97]"
+        aria-label={`Abrir el outfit ${outfit.nombre}`}
+      >
+        <div className="relative">
+          {outfit.fotoPath ? (
+            <MiniaturaPrenda prenda={{ fotoPath: outfit.fotoPath, nombre: outfit.nombre, color: 'otro', categoria: 'otros' }} alto={112} />
+          ) : suyas.length === 0 ? (
+            <div className="w-full flex items-center justify-center" style={{ height: 112, background: COLORS.surface2 }}>
+              <Layers size={20} style={{ color: COLORS.textMuted }} />
+            </div>
+          ) : (
+            /* Apartado 6 del pulido: sin foto propia, la composición se hace con las
+               prendas. Con una sola, ocupa el ancho entero en vez de dejar tres huecos. */
+            <div className="grid" style={{ height: 112, gridTemplateColumns: suyas.length === 1 ? '1fr' : '1fr 1fr', gap: 1, background: COLORS.border }}>
+              {suyas.slice(0, 4).map((p) => (
+                <MiniaturaPrenda key={p.id} prenda={p} alto={suyas.length <= 2 ? 112 : 55.5} />
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="px-2.5 pt-2">
+          <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{outfit.nombre || 'Sin nombre'}</p>
+          <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
+            {suyas.length} {suyas.length === 1 ? 'prenda' : 'prendas'}{ocasion ? ` · ${ocasion.label}` : ''}
+          </p>
+          {/* Apartado 14 del pulido — indicador discreto, sin impedir nada. */}
+          {noDisponibles > 0 && (
+            <p className="text-[11px] mt-0.5 truncate" style={{ color: COLORS.textMuted }}>
+              {noDisponibles} {noDisponibles === 1 ? 'prenda no disponible' : 'prendas no disponibles'}
+            </p>
+          )}
+        </div>
+      </button>
+
+      <div className="flex items-center gap-1 px-2 py-1.5 mt-auto">
+        <button
+          onClick={() => onFavorito(outfit)}
+          className="p-1.5 rounded-lg transition-transform active:scale-90"
+          aria-pressed={!!outfit.favorito}
+          aria-label={outfit.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}
+        >
+          <Star size={13} style={outfit.favorito ? { color: accent, fill: accent } : { color: COLORS.textMuted }} />
+        </button>
+        <button onClick={() => onEditar(outfit)} className="p-1.5 rounded-lg transition-transform active:scale-90" aria-label={`Editar ${outfit.nombre}`}>
+          <Pencil size={13} style={{ color: COLORS.textMuted }} />
+        </button>
+        <button onClick={() => onDuplicar(outfit)} className="p-1.5 rounded-lg transition-transform active:scale-90" aria-label={`Duplicar ${outfit.nombre}`}>
+          <Copy size={13} style={{ color: COLORS.textMuted }} />
+        </button>
+        {/* Apartado 10 del pulido: eliminar NO va aquí, junto a editar. Vive solo dentro
+            del detalle y con confirmación, para que no se pulse sin querer. */}
       </div>
-      <div className="px-2.5 py-2">
-        <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{outfit.nombre || 'Sin nombre'}</p>
-        <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
-          {suyas.length} {suyas.length === 1 ? 'prenda' : 'prendas'}{ocasion ? ` · ${ocasion.label}` : ''}
-        </p>
-      </div>
-    </button>
+    </div>
   );
 }
 
@@ -626,7 +682,7 @@ function FormularioOutfit({ inicial, prendas, accent, guardando, errorFoto, foto
 }
 
 /* Detalle del outfit (apartado 16): todo lo que tenga, y editar / duplicar / eliminar. */
-function DetalleOutfit({ outfit, prendas, accent, onCerrar, onEditar, onDuplicar, onEliminar, onAbrirPrenda }) {
+function DetalleOutfit({ outfit, prendas, accent, onCerrar, onEditar, onDuplicar, onEliminar, onFavorito, onAbrirPrenda }) {
   const [confirmando, setConfirmando] = useState(false);
   const ocasion = OCASIONES_OUTFIT.find((o) => o.id === outfit.ocasion);
   const estacion = ESTACIONES_OUTFIT.find((o) => o.id === outfit.estacion);
@@ -647,11 +703,20 @@ function DetalleOutfit({ outfit, prendas, accent, onCerrar, onEditar, onDuplicar
         <div style={{ maxHeight: '86vh', overflowY: 'auto' }}>
           <div className="flex items-start justify-between gap-3 p-4 pb-2">
             <div className="min-w-0">
-              <p className="text-lg font-bold flex items-center gap-2" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-                <span className="truncate">{outfit.nombre || 'Sin nombre'}</span>
-                {outfit.favorito && <Star size={15} style={{ color: accent, fill: accent, flexShrink: 0 }} />}
+              <p className="text-lg font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+                {outfit.nombre || 'Sin nombre'}
               </p>
             </div>
+            {/* Apartado 11 del pulido: marcar/desmarcar favorito sin salir de aquí. */}
+            <button
+              onClick={() => onFavorito(outfit)}
+              className="rounded-full p-1.5 flex-shrink-0 transition-transform active:scale-90"
+              style={{ background: COLORS.surface2 }}
+              aria-pressed={!!outfit.favorito}
+              aria-label={outfit.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}
+            >
+              <Star size={14} style={outfit.favorito ? { color: accent, fill: accent } : { color: COLORS.textMuted }} />
+            </button>
             <button onClick={onCerrar} className="rounded-full p-1.5 flex-shrink-0" style={{ background: COLORS.surface2 }} aria-label="Cerrar outfit">
               <X size={14} style={{ color: COLORS.text }} />
             </button>
@@ -664,7 +729,11 @@ function DetalleOutfit({ outfit, prendas, accent, onCerrar, onEditar, onDuplicar
               </div>
             )}
 
-            <ComposicionOutfit outfit={outfit} prendas={prendas} accent={accent} onPulsarPrenda={onAbrirPrenda} />
+            <ComposicionOutfit
+              outfit={outfit} prendas={prendas} accent={accent}
+              onPulsarPrenda={onAbrirPrenda}
+              onAnadirPrendas={() => onEditar(outfit)}
+            />
 
             {filas.length > 0 && (
               <div className="mt-3 space-y-1.5">
@@ -713,8 +782,11 @@ function DetalleOutfit({ outfit, prendas, accent, onCerrar, onEditar, onDuplicar
   );
 }
 
-export default function ArmarioView({ armario, onAddPrenda, onUpdatePrenda, onDeletePrenda, onSubirFoto, accent }) {
-  const prendas = armario?.prendas || [];
+/* ---------- Pestaña PRENDAS ----------
+   Es la pantalla entera de la Fase 1, ahora como una de las dos pestañas del Armario
+   (apartado 2 de la Fase 2). No ha cambiado nada de su funcionamiento: solo recibe
+   `outfits` para poder avisar, al borrar una prenda, de en cuántas combinaciones está. */
+function PanelPrendas({ prendas, outfits, onAddPrenda, onUpdatePrenda, onDeletePrenda, onSubirFoto, accent, prendaFoco, onFocoConsumido }) {
   const [consulta, setConsulta] = useState('');
   const [filtros, setFiltros] = useState({});
   const [orden, setOrden] = useState('recientes');
@@ -739,6 +811,16 @@ export default function ArmarioView({ armario, onAddPrenda, onUpdatePrenda, onDe
   useEffect(() => {
     if (!ordenes.some((o) => o.id === orden)) setOrden('recientes');
   }, [ordenes, orden]);
+
+  // Apartado 17 de la Fase 2: pulsar una prenda dentro de un outfit abre SU detalle.
+  // El outfit cambia a esta pestaña y deja aquí el id; se consume una sola vez, igual
+  // que el deep-link del Dashboard, para que no se vuelva a abrir al volver.
+  useEffect(() => {
+    if (!prendaFoco) return;
+    const p = prendas.find((x) => x.id === prendaFoco);
+    if (p) setDetalle(p);
+    onFocoConsumido && onFocoConsumido();
+  }, [prendaFoco]);
 
   const hayFiltros = Object.values(filtros).some(Boolean) || consulta.trim().length > 0;
 
@@ -898,10 +980,308 @@ export default function ArmarioView({ armario, onAddPrenda, onUpdatePrenda, onDe
 
       {detalle && (
         <DetallePrenda
-          prenda={detalle} accent={accent}
+          prenda={detalle} outfits={outfits} accent={accent}
           onCerrar={() => setDetalle(null)}
           onEditar={abrirEdicion}
           onEliminar={eliminar}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ---------- Pestaña OUTFITS ----------
+   Se exporta con nombre además de usarse aquí dentro: `renderToString` no puede pulsar
+   una pestaña, así que sin esto el panel de outfits nunca llegaría a renderizarse en la
+   prueba de humo — y es justo donde vive la mitad de esta fase. */
+export function PanelOutfits({ outfits, prendas, onAddOutfit, onUpdateOutfit, onDeleteOutfit, onDuplicarOutfit, onSubirFoto, onAbrirPrenda, accent }) {
+  const [consulta, setConsulta] = useState('');
+  const [filtros, setFiltros] = useState({});
+  const [orden, setOrden] = useState('recientes');
+  const [verFiltros, setVerFiltros] = useState(false);
+  const [formAbierto, setFormAbierto] = useState(false);
+  const [editando, setEditando] = useState(null);
+  const [detalle, setDetalle] = useState(null);
+  const [archivoFoto, setArchivoFoto] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+  const [errorFoto, setErrorFoto] = useState('');
+  const [aviso, setAviso] = useState('');
+
+  const lugares = useMemo(() => lugaresDe(outfits), [outfits]);
+  const ordenes = useMemo(() => ordenesOutfitsDisponibles(outfits), [outfits]);
+  const visibles = useMemo(
+    () => outfitsVisibles(outfits, prendas, { consulta, filtros, orden }),
+    [outfits, prendas, consulta, filtros, orden],
+  );
+
+  useEffect(() => {
+    if (!ordenes.some((o) => o.id === orden)) setOrden('recientes');
+  }, [ordenes, orden]);
+
+  // Apartado 13 del pulido — el aviso de "guardado ✓" se va solo. Nada de `alert()`.
+  useEffect(() => {
+    if (!aviso) return;
+    const t = setTimeout(() => setAviso(''), 2600);
+    return () => clearTimeout(t);
+  }, [aviso]);
+
+  // El detalle abierto tiene que reflejar los cambios en cuanto se guardan (apartado 7
+  // de la continuación: "después de guardar, los cambios deben reflejarse
+  // inmediatamente"). Se relee del array en vez de guardar una copia en el estado, que
+  // se quedaría vieja.
+  const detalleVivo = detalle ? outfits.find((o) => o.id === detalle.id) || null : null;
+  useEffect(() => {
+    if (detalle && !detalleVivo) setDetalle(null);
+  }, [detalle, detalleVivo]);
+
+  const hayFiltros = Object.values(filtros).some(Boolean) || consulta.trim().length > 0;
+
+  const abrirNuevo = () => { setEditando(null); setArchivoFoto(null); setErrorFoto(''); setFormAbierto(true); };
+  const abrirEdicion = (o) => { setEditando(o); setArchivoFoto(null); setErrorFoto(''); setDetalle(null); setFormAbierto(true); };
+  const cerrarForm = () => { setFormAbierto(false); setEditando(null); setArchivoFoto(null); setErrorFoto(''); };
+
+  const guardar = async (form) => {
+    setGuardando(true);
+    setErrorFoto('');
+    let fotoPath = editando ? editando.fotoPath : '';
+    if (archivoFoto) {
+      try {
+        fotoPath = await onSubirFoto(archivoFoto);
+      } catch {
+        // Apartado 19 del pulido: no perder en silencio lo que ya había escrito.
+        setErrorFoto('No se ha podido subir la foto. El outfit se ha guardado sin ella.');
+        fotoPath = editando ? editando.fotoPath : '';
+      }
+    }
+    if (editando) { onUpdateOutfit(editando.id, { ...form, fotoPath }); setAviso('Outfit actualizado'); }
+    else { onAddOutfit({ ...form, fotoPath }); setAviso('Outfit guardado'); }
+    setGuardando(false);
+    setFormAbierto(false);
+    setEditando(null);
+    setArchivoFoto(null);
+  };
+
+  const duplicar = (o) => { onDuplicarOutfit(o.id); setDetalle(null); setAviso('Outfit duplicado'); };
+  const eliminar = (o) => { onDeleteOutfit(o.id); setDetalle(null); setAviso('Outfit eliminado'); };
+  const alternarFavorito = (o) => onUpdateOutfit(o.id, { favorito: !o.favorito });
+
+  return (
+    <div className="space-y-4 pb-4">
+      <div className="flex items-start justify-between gap-3">
+        <SectionTitle sub={outfits.length ? `${outfits.length} ${outfits.length === 1 ? 'outfit' : 'outfits'}` : 'Combina tus prendas y crea tu propio estilo'}>
+          <span className="flex items-center gap-2"><Layers size={18} style={{ color: accent }} /> Mis outfits</span>
+        </SectionTitle>
+        {outfits.length > 0 && (
+          <button
+            onClick={abrirNuevo}
+            className="p-2.5 rounded-xl flex-shrink-0 transition-transform active:scale-90"
+            style={{ background: accent }}
+            aria-label="Crear outfit"
+          >
+            <Plus size={16} color={COLORS.textOnAccent} />
+          </button>
+        )}
+      </div>
+
+      {/* Apartado 20 del pulido: feedback breve, con el sistema visual de la propia app. */}
+      {aviso && (
+        <div className="rounded-2xl px-3 py-2 flex items-center gap-2" style={{ background: hexToRgba(accent, 0.12), border: `1px solid ${hexToRgba(accent, 0.28)}` }}>
+          <Check size={14} style={{ color: accent }} strokeWidth={3} />
+          <span className="text-xs font-semibold" style={{ color: COLORS.text }}>{aviso}</span>
+        </div>
+      )}
+
+      {/* Apartado 27: estado vacío que invita, con el texto exacto de la especificación. */}
+      {outfits.length === 0 && !formAbierto && (
+        <Card>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Todavía no tienes outfits</p>
+          <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>
+            Combina tus prendas y guarda tus looks favoritos para tenerlos siempre preparados.
+          </p>
+          {prendas.length === 0 ? (
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>
+              Antes necesitas alguna prenda en el armario: añádelas en la pestaña Prendas.
+            </p>
+          ) : (
+            <PrimaryButton accent={accent} onClick={abrirNuevo} icon={Plus}>Crear mi primer outfit</PrimaryButton>
+          )}
+        </Card>
+      )}
+
+      {formAbierto && (
+        <FormularioOutfit
+          inicial={editando}
+          prendas={prendas}
+          accent={accent}
+          guardando={guardando}
+          errorFoto={errorFoto}
+          fotoPendiente={archivoFoto ? archivoFoto.name : null}
+          onFoto={setArchivoFoto}
+          onGuardar={guardar}
+          onCancelar={cerrarForm}
+        />
+      )}
+
+      {outfits.length > 0 && (
+        <>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Search size={14} style={{ color: COLORS.textMuted, position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
+              <TextInput
+                value={consulta}
+                onChange={(e) => setConsulta(e.target.value)}
+                placeholder="Buscar por nombre, ocasión o prenda…"
+                style={{ paddingLeft: 30, paddingRight: consulta ? 30 : undefined }}
+              />
+              {consulta && (
+                <button
+                  onClick={() => setConsulta('')}
+                  className="absolute rounded-full flex items-center justify-center"
+                  style={{ right: 8, top: '50%', transform: 'translateY(-50%)', width: 20, height: 20, background: COLORS.surface2 }}
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X size={11} style={{ color: COLORS.textMuted }} />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setVerFiltros((v) => !v)}
+              className="p-2.5 rounded-xl flex-shrink-0"
+              style={{ background: verFiltros ? hexToRgba(accent, 0.16) : COLORS.surface2, border: `1px solid ${verFiltros ? accent : COLORS.border}` }}
+              aria-label="Filtros y orden de outfits"
+              aria-expanded={verFiltros}
+            >
+              <SlidersHorizontal size={16} style={{ color: verFiltros ? accent : COLORS.textMuted }} />
+            </button>
+          </div>
+
+          {verFiltros && (
+            <Card style={{ background: COLORS.surface2 }}>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Ocasión">
+                  <SelectInput value={filtros.ocasion || ''} onChange={(e) => setFiltros((f) => ({ ...f, ocasion: e.target.value || undefined }))}>
+                    <option value="">Todas</option>
+                    {OCASIONES_OUTFIT.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                  </SelectInput>
+                </Field>
+                <Field label="Estación">
+                  <SelectInput value={filtros.estacion || ''} onChange={(e) => setFiltros((f) => ({ ...f, estacion: e.target.value || undefined }))}>
+                    <option value="">Todas</option>
+                    {ESTACIONES_OUTFIT.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                  </SelectInput>
+                </Field>
+                {/* Solo se ofrece si Josué ha escrito algún lugar: un desplegable vacío
+                    es un control que no hace nada (regla 8). */}
+                {lugares.length > 0 && (
+                  <Field label="Lugar">
+                    <SelectInput value={filtros.lugar || ''} onChange={(e) => setFiltros((f) => ({ ...f, lugar: e.target.value || undefined }))}>
+                      <option value="">Todos</option>
+                      {lugares.map((l) => <option key={l} value={l}>{l}</option>)}
+                    </SelectInput>
+                  </Field>
+                )}
+                {/* Apartado 22 — "outfits que utilizan el vaquero gris". */}
+                {prendas.length > 0 && (
+                  <Field label="Con la prenda">
+                    <SelectInput value={filtros.prendaId || ''} onChange={(e) => setFiltros((f) => ({ ...f, prendaId: e.target.value || undefined }))}>
+                      <option value="">Cualquiera</option>
+                      {[...prendas].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map((p) => (
+                        <option key={p.id} value={p.id}>{p.nombre}</option>
+                      ))}
+                    </SelectInput>
+                  </Field>
+                )}
+                <Field label="Ordenar por">
+                  <SelectInput value={orden} onChange={(e) => setOrden(e.target.value)}>
+                    {ordenes.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                  </SelectInput>
+                </Field>
+              </div>
+              <button
+                onClick={() => setFiltros((f) => ({ ...f, soloFavoritos: !f.soloFavoritos }))}
+                className="flex items-center gap-1.5 text-xs font-semibold"
+                style={{ color: filtros.soloFavoritos ? accent : COLORS.textMuted }}
+                aria-pressed={!!filtros.soloFavoritos}
+              >
+                <Star size={13} style={filtros.soloFavoritos ? { color: accent, fill: accent } : undefined} /> Solo favoritos
+              </button>
+            </Card>
+          )}
+
+          {visibles.length === 0 ? (
+            <EmptyHint text={hayFiltros ? 'Ningún outfit coincide con lo que has buscado.' : 'Todavía no hay outfits aquí.'} />
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {visibles.map((o) => (
+                <TarjetaOutfit
+                  key={o.id} outfit={o} prendas={prendas} accent={accent}
+                  onAbrir={setDetalle}
+                  onEditar={abrirEdicion}
+                  onDuplicar={duplicar}
+                  onFavorito={alternarFavorito}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {detalleVivo && (
+        <DetalleOutfit
+          outfit={detalleVivo} prendas={prendas} accent={accent}
+          onCerrar={() => setDetalle(null)}
+          onEditar={abrirEdicion}
+          onDuplicar={duplicar}
+          onEliminar={eliminar}
+          onFavorito={alternarFavorito}
+          onAbrirPrenda={(p) => { setDetalle(null); onAbrirPrenda(p.id); }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ---------- La pantalla del Armario: dos pestañas ----------
+   Apartado 2: "debe quedar claro en todo momento si el usuario está viendo sus prendas
+   o sus outfits". Se usa el mismo `ToggleTab` que ya separa Mes/Agenda en el Calendario
+   y las subpestañas de Productividad — nada de un sistema de navegación nuevo. */
+export default function ArmarioView({
+  armario, onAddPrenda, onUpdatePrenda, onDeletePrenda, onSubirFoto,
+  onAddOutfit, onUpdateOutfit, onDeleteOutfit, onDuplicarOutfit, accent,
+}) {
+  const prendas = armario?.prendas || [];
+  const outfits = armario?.outfits || [];
+  const [pestana, setPestana] = useState('prendas');
+  const [prendaFoco, setPrendaFoco] = useState(null);
+
+  // Apartado 17: desde un outfit se abre la prenda. Cambia de pestaña y deja el id;
+  // `PanelPrendas` lo consume y abre su detalle.
+  const abrirPrenda = (id) => { setPrendaFoco(id); setPestana('prendas'); };
+
+  return (
+    <div>
+      <div className="flex gap-2 mb-4">
+        <ToggleTab active={pestana === 'prendas'} onClick={() => setPestana('prendas')} accent={accent}>
+          Prendas{prendas.length > 0 ? ` ${prendas.length}` : ''}
+        </ToggleTab>
+        <ToggleTab active={pestana === 'outfits'} onClick={() => setPestana('outfits')} accent={accent}>
+          Outfits{outfits.length > 0 ? ` ${outfits.length}` : ''}
+        </ToggleTab>
+      </div>
+
+      {pestana === 'prendas' ? (
+        <PanelPrendas
+          prendas={prendas} outfits={outfits}
+          onAddPrenda={onAddPrenda} onUpdatePrenda={onUpdatePrenda} onDeletePrenda={onDeletePrenda}
+          onSubirFoto={onSubirFoto} accent={accent}
+          prendaFoco={prendaFoco} onFocoConsumido={() => setPrendaFoco(null)}
+        />
+      ) : (
+        <PanelOutfits
+          outfits={outfits} prendas={prendas}
+          onAddOutfit={onAddOutfit} onUpdateOutfit={onUpdateOutfit}
+          onDeleteOutfit={onDeleteOutfit} onDuplicarOutfit={onDuplicarOutfit}
+          onSubirFoto={onSubirFoto} onAbrirPrenda={abrirPrenda} accent={accent}
         />
       )}
     </div>

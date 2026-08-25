@@ -422,6 +422,44 @@ export function prendasDeOutfit(outfit, prendas) {
 }
 
 /**
+ * QUÉ PASA CUANDO SE BORRA UNA PRENDA QUE ESTÁ EN UN OUTFIT
+ *
+ * La especificación deja elegir entre tres salidas (apartado 10 de la continuación):
+ * impedir el borrado, conservar una referencia histórica, o mostrarla como no
+ * disponible. Aquí se elige **conservar la referencia y mostrarla como no
+ * disponible**, y el motivo es concreto:
+ *
+ * Desde ME Fase 3 borrar una prenda la manda a la papelera, así que **se puede
+ * restaurar**. Si al borrarla le quitáramos su id a todos los outfits, restaurar la
+ * prenda dejaría los outfits rotos para siempre — el dato volvería pero el vínculo
+ * no. Conservando la referencia, restaurar la prenda **cura los outfits solos**, sin
+ * ningún código de reparación.
+ *
+ * Mientras la prenda no esté, el outfit lo dice ("1 prenda no disponible") en vez de
+ * fingir que tiene una prenda menos. Y `deletePrenda` avisa antes de borrar si la
+ * prenda está en algún outfit.
+ *
+ * Devuelve la composición COMPLETA en su orden: `{ id, prenda }`, con `prenda: null`
+ * para las que ya no están.
+ */
+export function composicionDeOutfit(outfit, prendas) {
+  const porId = new Map((prendas || []).map((p) => [p.id, p]));
+  return (outfit?.prendaIds || []).map((id) => ({ id, prenda: porId.get(id) || null }));
+}
+
+/**
+ * Cuántas prendas del outfit no se pueden usar hoy: las que ya no están en el
+ * armario y las que están en la lavadora, en reparación o marcadas como no
+ * disponibles (apartado 14 del pulido, y apartado 6 del cierre técnico: la Fase 4
+ * necesitará este dato para no recomendar un outfit imposible de ponerse).
+ */
+export function noDisponiblesDeOutfit(outfit, prendas) {
+  return composicionDeOutfit(outfit, prendas)
+    .filter(({ prenda }) => !prenda || prenda.estado !== 'disponible')
+    .length;
+}
+
+/**
  * Apartado 22 — "Outfits que utilizan el vaquero gris". Se deriva de `prendaIds`,
  * que es la única lista que existe, así que nunca puede estar desincronizada.
  */
@@ -518,9 +556,22 @@ export function composicionPorZonas(outfit, prendas) {
 }
 
 /**
- * Apartado 15 — al borrar una prenda, los outfits que la usaban se quedan con una
- * referencia rota. No se borra el outfit (las prendas pertenecen al armario, los
- * outfits solo las referencian): se le quita esa prenda y punto.
+ * Apartado 22 del cierre técnico, dicho al revés: cuántas veces se ha usado cada
+ * prenda EN OUTFITS. No es "cuántas veces me la he puesto" —eso llega en la Fase 3
+ * con el historial— sino en cuántas combinaciones aparece. Se deriva de `prendaIds`,
+ * así que no hay contador que mantener ni que pueda desincronizarse.
+ */
+export function usoEnOutfits(outfits, prendaId) {
+  return outfitsConPrenda(outfits, prendaId).length;
+}
+
+/**
+ * Quita una prenda de todos los outfits que la usen.
+ *
+ * OJO: esto NO se llama al borrar una prenda — ver `composicionDeOutfit` para el
+ * porqué (la papelera hace el borrado reversible, y quitar la referencia impediría
+ * que restaurarla curase los outfits). Queda para el día en que exista un borrado
+ * de verdad definitivo que haga imposible la vuelta atrás.
  *
  * Devuelve la lista de outfits ya limpia, o la misma si no había nada que limpiar
  * — así quien llama puede saltarse el guardado cuando no hace falta.

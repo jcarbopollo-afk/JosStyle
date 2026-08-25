@@ -1,5 +1,73 @@
 # CHANGELOG.md
 
+## Entrega 2 · AR Fase 2 — Constructor de Outfits (v1.33.0)
+
+Las prendas dejan de ser elementos sueltos. **Gestión → Armario** tiene ahora dos pestañas:
+**Prendas** y **Outfits**.
+
+### La regla que manda: referencias, nunca copias
+La especificación lo repite en cuatro apartados distintos, así que se ha respetado al pie de la
+letra: un outfit guarda **`prendaIds`**, no objetos de prenda. Cambiarle el nombre, el color o la
+foto a una prenda se ve al instante en todos sus outfits, porque no hay ninguna copia que
+actualizar. Una prenda usada en tres outfits sigue siendo **una prenda y tres relaciones**.
+
+### Qué pasa al borrar una prenda que está en un outfit
+La especificación dejaba elegir entre tres salidas. Se ha elegido **conservar la referencia y
+mostrarla como no disponible**, por un motivo concreto:
+
+Desde ME Fase 3, borrar una prenda la manda a la papelera — **se puede restaurar**. Si al borrarla
+le quitáramos su id a todos los outfits, restaurarla dejaría los outfits rotos para siempre: el dato
+volvería, pero el vínculo no. Conservando la referencia, **restaurar la prenda cura los outfits
+solos**, sin una línea de código de reparación.
+
+Mientras tanto el outfit no miente: dice *"1 prenda no disponible"* y su detalle explica que vuelve
+sola si la recuperas. Y la confirmación de borrar una prenda avisa antes: *"está en 2 outfits"*.
+
+### Cómo se eligen las prendas
+Por **zona del cuerpo** (superior, inferior, calzado, abrigo, accesorios, otros), no por las 14
+categorías: es como se piensa uno al vestirse. Es una vista sobre las categorías que ya existen, no
+una segunda clasificación que rellenar.
+
+Y **sin límite**: camiseta + camiseta interior + sudadera + pantalón + zapatillas + reloj + cadena es
+un outfit perfectamente válido. El buscador de dentro **es el de la Fase 1 tal cual** — la
+especificación pide expresamente no crear un segundo sistema.
+
+### "negro" encuentra "Total Black"
+El ejemplo literal del apartado 23, funcionando: buscar "negro" encuentra un outfit llamado *Total
+Black* **porque contiene una prenda negra**, aunque su nombre no lleve esa palabra. La búsqueda mira
+también el nombre, la marca, la categoría y el color de las prendas que lo componen.
+
+### Duplicar sin heredar lo que no toca
+Duplicar un outfit crea una entidad independiente con **las mismas prendas**, y modificar la copia no
+roza el original. Lo que la especificación subraya dos veces: la copia **empieza con el historial a
+cero**. Es un outfit nuevo; no se ha llevado nunca.
+
+### Lo que se ha pulido
+Contador de selección; quitar una prenda volviendo a pulsar su tarjeta entera; aviso de *"Outfit
+guardado ✓"* que se va solo (nada de `alert()`); editar y duplicar **a un toque desde la tarjeta**;
+**eliminar separado de esas dos** y solo dentro del detalle con confirmación, para que no se pulse
+sin querer; y el detalle releyéndose de la lista, para que un cambio se vea al instante.
+
+### Lo que NO se ha hecho, a propósito
+Ni calendario, ni historial de uso, ni recomendaciones, ni anti-repetición. `usos` y `ultimoUso`
+existen y **están a cero**: el apartado 8 del cierre es explícito — *"no inventes datos"*. La Fase 3
+los llenará, y `armario.usos` ya está declarado como lista para que cada uso sea **un registro
+independiente**, no una sola fecha.
+
+### Un fallo mío, cazado por las pruebas
+Al escribir el detalle del outfit dejé un `</div>` de más y el proyecto dejó de compilar.
+`scripts/smoke.mjs` lo detectó antes de llegar a ninguna parte.
+
+### Verificación
+`bash scripts/verificar.sh` → **545 comprobaciones en verde**, 185 del armario y 60 casos de
+renderizado. Entre ellos, los dos casos límite que la especificación subraya: **un outfit con una
+prenda borrada** y **un outfit sin ninguna prenda**, que tienen que pintarse sin reventar.
+
+⚠️ **Pendiente de Josué (R1):** el recorrido completo en un iPhone y la persistencia real en
+Supabase.
+
+---
+
 ## Entrega 2 · AR Fase 1 — Armario digital (v1.32.0)
 
 **El primer módulo genuinamente nuevo de la Entrega 2.** ME y BI ampliaban cosas que ya existían;

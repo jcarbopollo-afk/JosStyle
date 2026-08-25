@@ -3833,167 +3833,76 @@ renderizado que toca Storage, y `lib/supabase.js` lee `import.meta.env` al carga
 existe dentro de Vite. Ahora está stubeado, y de paso queda comprobado algo que importa: ninguna
 vista debe necesitar la red para pintarse.
 
-#### AR · Fase 2/4 — CONSTRUCTOR Y GESTIÓN DE OUTFITS
-- [ ] Armario digital
-- [ ] Constructor de Outfits ← ESTAMOS AQUÍ
-- [ ] Calendario + historial de uso
-- [ ] Sistema inteligente anti-repetición + estadísticas
-- [ ] OBJETIVO
-- [ ] ACCESO
-- [ ] PANTALLA DE OUTFITS
-- [ ] CREAR OUTFIT
-- [ ] SELECCIÓN DE PRENDAS
-- [ ] BUSCADOR DE PRENDAS
-- [ ] SELECCIÓN VISUAL
-- [ ] VISTA PREVIA DEL OUTFIT
-- [ ] FOTO DEL OUTFIT
-- [ ] INFORMACIÓN DEL OUTFIT
-- [ ] PERSONAS
-- [ ] FAVORITOS
-- [ ] EDITAR OUTFIT
-- [ ] DUPLICAR OUTFIT
-- [ ] ELIMINAR
-- [ ] DETALLE DE OUTFIT
-- [ ] ACCESO DIRECTO A LAS PRENDAS
-- [ ] INFORMACIÓN DE USO — PREPARACIÓN
-- [ ] MODELO DE DATOS
-- [ ] USUARIO
-- [ ] IMÁGENES
-- [ ] FILTROS DE OUTFITS
-- [ ] BÚSQUEDA
-- [ ] ORDENACIÓN
-- [ ] EXPERIENCIA RÁPIDA
-- [ ] DISEÑO
-- [ ] ESTADO VACÍO
-- [ ] COMPATIBILIDAD CON FASE 3
-- [ ] COMPATIBILIDAD CON FASE 4
-- [ ] NO ROMPER NADA
-- [ ] PRUEBAS OBLIGATORIAS
-- [ ] REGLA FINAL
-- [ ] AUDITORÍA
-- [ ] COMPROBAR CREACIÓN
-- [ ] SELECTOR DE PRENDAS
-- [ ] EXPERIENCIA DE USUARIO
-- [ ] VISTA DEL OUTFIT
-- [ ] DETALLE
-- [ ] EDICIÓN
-- [ ] DUPLICACIÓN
-- [ ] Crear Outfit A.
-- [ ] Duplicarlo.
-- [ ] Crear Outfit B.
-- [ ] Modificar B.
-- [ ] Comprobar que A permanece intacto.
-- [ ] ELIMINACIÓN
-- [ ] PRENDAS ELIMINADAS
-- [ ] BÚSQUEDA Y FILTROS
-- [ ] RENDIMIENTO
-- [ ] MÓVIL
-- [ ] ESTADOS
-- [ ] BASE DE DATOS
-- [ ] SEGURIDAD
-- [ ] PREPARACIÓN PARA HISTORIAL
-- [ ] PREPARACIÓN PARA INTELIGENCIA
-- [ ] REVISIÓN VISUAL FINAL
-- [ ] PRUEBA FINAL COMPLETA
-- [ ] Entrar en Armario.
-- [ ] Entrar en Outfits.
-- [ ] Crear Outfit.
-- [ ] Seleccionar 5 prendas.
-- [ ] Añadir información.
-- [ ] Guardar.
-- [ ] Abrirlo.
-- [ ] Editarlo.
-- [ ] Añadir una prenda.
-- [ ] Quitar otra.
-- [ ] Modificar la copia.
-- [ ] Buscarlo.
-- [ ] Filtrarlo.
-- [ ] Marcarlo favorito.
-- [ ] Desmarcarlo.
-- [ ] Eliminar la copia.
-- [ ] Comprobar que el original sigue intacto.
-- [ ] Comprobar que todas las prendas siguen en el Armario.
-- [ ] Recargar.
-- [ ] Comprobar persistencia.
-- [ ] CRITERIO DE FINALIZACIÓN
-- [ ] INFORME FINAL
-- [ ] NO SUPONGAS QUE ESTÁ TERMINADO
-- [ ] INTEGRIDAD ENTRE PRENDAS Y OUTFITS
-- [ ] CAMBIOS EN PRENDAS
-- [ ] Crear una prenda.
-- [ ] Utilizarla en un Outfit.
-- [ ] Cambiar el nombre de la prenda.
-- [ ] Cambiar su fotografía.
-- [ ] Volver al Outfit.
-- [ ] ELIMINACIÓN DE PRENDAS
-- [ ] OUTFITS SIN PRENDAS
-- [ ] PRENDAS NO DISPONIBLES
-- [ ] OUTFIT DUPLICADO
-- [ ] FUTURO HISTORIAL
-- [ ] DATOS DE LUGAR Y PERSONAS
-- [ ] MODELO PREPARADO PARA EVENTOS
-- [ ] EXPERIENCIA DE CREACIÓN
-- [ ] AUTOGUARDADO Y CANCELACIÓN
-- [ ] FEEDBACK
-- [ ] ESTADOS DE CARGA
-- [ ] OFFLINE / CONEXIÓN
-- [ ] SEGURIDAD MULTIUSUARIO
-- [ ] ACCESIBILIDAD
-- [ ] COMPATIBILIDAD CON EL DISEÑO ACTUAL
-- [ ] PREPARACIÓN PARA LA FASE 3
-- [ ] PREPARACIÓN PARA LA FASE 4
-- [ ] LIMPIEZA DEL CÓDIGO
-- [ ] ERROR CHECK FINAL
-- [ ] PRUEBA DE USUARIO REAL
-- [ ] CRITERIO DEFINITIVO DE CIERRE
-- [ ] REVISIÓN DE LA EXPERIENCIA COMPLETA
-- [ ] SELECTOR DE PRENDAS MEJORADO
-- [ ] CONTADOR DE SELECCIÓN
-- [ ] SELECCIÓN RÁPIDA
-- [ ] RESUMEN ANTES DE GUARDAR
-- [ ] OUTFIT SIN FOTO
-- [ ] ORDEN DE LAS PRENDAS
-- [ ] ACCESO RÁPIDO A EDITAR
-- [ ] DUPLICAR DESDE TARJETA
-- [ ] ACCIONES DESTRUCTIVAS
-- [ ] FILTROS PERSISTENTES
-- [ ] BÚSQUEDA INTELIGENTE
-- [ ] OUTFITS CON PRENDAS NO DISPONIBLES
-- [ ] ESTADÍSTICAS BÁSICAS
-- [ ] RESPONSIVE
-- [ ] ANIMACIONES
-- [ ] MANEJO DE ERRORES
-- [ ] CONFIRMACIÓN DE GUARDADO
-- [ ] DATOS
-- [ ] NO DUPLICAR PRENDAS
-- [ ] PREPARACIÓN PARA EL CALENDARIO
-- [ ] PREPARACIÓN PARA LA REPETICIÓN
-- [ ] PRUEBA FINAL DE EXPERIENCIA
-- [ ] Buscar una prenda.
-- [ ] Crear un Outfit.
-- [ ] Seleccionar rápidamente 6 prendas.
-- [ ] Guardarlo.
-- [ ] Cambiar una prenda.
-- [ ] Filtrar favoritos.
-- [ ] Volver al Armario.
-- [ ] OPTIMIZACIÓN FINAL
-- [ ] INFORME
-- [ ] Constructor de Outfits
-- [ ] PANTALLA PRINCIPAL DEL ARMARIO
-- [ ] CATEGORÍAS
-- [ ] AÑADIR PRENDA
-- [ ] INFORMACIÓN ADICIONAL
-- [ ] TARJETA DE PRENDA
-- [ ] DETALLE DE PRENDA
-- [ ] FILTROS
-- [ ] ESTADOS DE LAS PRENDAS
-- [ ] ARQUITECTURA DE DATOS
-- [ ] FUTURO SISTEMA DE USO
-- [ ] EXPERIENCIA DE AÑADIR PRENDAS
-- [ ] DISEÑO VISUAL
-- [ ] DATOS VACÍOS
-- [ ] PERSISTENCIA
-- [ ] COMPATIBILIDAD CON FUTURAS FASES
+#### AR · Fase 2/4 — CONSTRUCTOR Y GESTIÓN DE OUTFITS ✅ COMPLETADA (v1.33.0)
+
+- [x] **1 · Objetivo** — un outfit es una entidad propia que **referencia** prendas. Cambiar el
+      nombre, el color o la foto de una prenda se ve en todos sus outfits, sin tocarlos.
+- [x] **2 · Acceso** — pestañas **Prendas | Outfits** dentro de Gestión → Armario, con el mismo
+      `ToggleTab` que ya separa Mes/Agenda en el Calendario. Con el contador en cada pestaña.
+- [x] **3 · Pantalla de outfits** — título, subtítulo, total, buscador, filtros y botón de crear.
+- [x] **4 · Crear outfit** — nombre editable, con su flujo propio.
+- [x] **5 · Selección de prendas** — agrupadas por **zona del cuerpo** (superior, inferior, calzado,
+      abrigo, accesorios, otros), no por las 14 categorías: es como se piensa al vestirse. **Sin
+      límite de prendas** ni por outfit ni por zona — camiseta + camiseta + sudadera es válido.
+- [x] **6 · Buscador de prendas** — **reutiliza `prendasVisibles` de la Fase 1 tal cual**. Ni un
+      segundo sistema de búsqueda.
+- [x] **7 · Selección visual** — mismo fallback de la Fase 1 sin foto; borde de acento y ✓ en la
+      esquina al elegirla; volver a pulsar la quita.
+- [x] **8 · Vista previa** — las prendas agrupadas por zona mientras se construye. Sin silueta
+      artificial: la especificación dice expresamente que no hace falta.
+- [x] **9 · Foto del outfit** — opcional. Sin ella, la portada se compone con las fotos de sus
+      prendas.
+- [x] **10 · Información** — nombre (obligatorio), descripción, ocasión (11), estación (5) y lugar.
+- [x] **11 · Personas** — lista de texto libre, **no un sistema social** (lo prohíbe el apartado).
+      Se guarda como array para que la Fase 3 pueda preguntar "¿qué outfit usé con esta persona?".
+- [x] **12 · Favoritos** — marcables desde la tarjeta y desde el detalle, y filtrables.
+- [x] **13 · Editar** — los nueve campos.
+- [x] **14 · Duplicar** — desde la tarjeta y desde el detalle.
+- [x] **15 · Eliminar** — con confirmación, y **sin tocar ninguna prenda**. La interfaz lo dice.
+- [x] **16 · Detalle** — todo lo que tenga, más editar / duplicar / eliminar / favorito.
+- [x] **17 · Acceso directo a las prendas** — pulsar una prenda dentro del outfit cambia a la
+      pestaña Prendas y abre **su** detalle, el mismo de la Fase 1.
+- [x] **18 · Información de uso** — `usos` y `ultimoUso` existen, vacíos. **No se tocan** en esta
+      fase (apartado 8 del cierre: "no inventes datos").
+- [x] **19 · Modelo de datos** — los 14 campos, con `prendaIds` como única relación.
+- [x] **20 · Usuario** — clave `armario` en `app_data`, con la RLS por `user_id` de siempre.
+- [x] **21 · Imágenes** — bucket `armario`, URLs firmadas de una hora. **La foto de una prenda no
+      se copia dentro del outfit**: se reutiliza la de la prenda.
+- [x] **22 · Filtros** — favoritos, ocasión, estación, lugar y **prenda utilizada**.
+- [x] **23 · Búsqueda** — con el ejemplo literal funcionando: **"negro" encuentra "Total Black"**
+      porque contiene una prenda negra, aunque su nombre no lleve esa palabra.
+- [x] **24 · Ordenación** — 5 activas; las 3 que dependen del uso están escritas y probadas pero
+      no se ofrecen hasta que haya un uso registrado (regla 8).
+- [x] **25 · Experiencia rápida** — nombre → prendas → guardar. Todo lo demás, plegado.
+- [x] **26 · Diseño** — mismos componentes, tokens y tarjetas que la pestaña de Prendas.
+- [x] **27 · Estado vacío** — con el texto exacto de la especificación.
+- [x] **28 · Compatibilidad con Fase 3** — `armario.usos` ya está declarado como lista: cada uso
+      será **un registro independiente** con fecha, lugar, personas y evento. Un outfit podrá
+      tener muchos usos, no una sola fecha.
+- [x] **29 · Compatibilidad con Fase 4** — nada de lo necesario se pierde: `prendaIds` permite
+      contar prendas más repetidas, y `usos`/`ultimoUso` esperan a la Fase 3 sin datos inventados.
+- [x] **30 · No romper nada** — 545 comprobaciones en verde.
+- [x] **31 · Pruebas obligatorias** — las de crear, editar, relaciones, duplicar, eliminar y
+      búsqueda están automatizadas (185 comprobaciones del armario). Las de responsive y
+      persistencia real en Supabase siguen siendo de Josué (**R1**).
+
+**La decisión que la especificación dejaba abierta (apartado 10 de la continuación): qué pasa al
+borrar una prenda que está en un outfit.** De las tres salidas posibles se elige **conservar la
+referencia y mostrarla como no disponible**, y el motivo es concreto: desde ME Fase 3 borrar una
+prenda la manda a la papelera, así que **se puede restaurar**. Si al borrarla le quitáramos su id a
+todos los outfits, restaurarla dejaría los outfits rotos para siempre — el dato volvería pero el
+vínculo no. Conservando la referencia, **restaurar la prenda cura los outfits solos**, sin ningún
+código de reparación. Mientras tanto el outfit lo dice, y el detalle explica que se recupera desde
+Eliminados recientemente. Además, la confirmación de borrado avisa: *"está en 2 outfits"*.
+
+**Del pulido final (los tres bloques de la fase):** contador de selección, quitar una prenda
+volviendo a pulsarla, aviso de "Outfit guardado ✓" que se va solo, editar y duplicar a un toque
+desde la tarjeta, eliminar **separado** de esas dos y solo dentro del detalle con confirmación,
+indicador de "1 prenda no disponible" (que cuenta tanto la lavadora como una prenda borrada), y el
+detalle releyéndose del array para que un cambio se vea al instante sin recargar.
+
+**Un fallo mío corregido durante la fase:** al escribir el detalle del outfit dejé un `</div>` de
+más, y el proyecto dejó de compilar. Lo cazó `scripts/smoke.mjs` antes de llegar a ninguna parte.
 
 #### AR · Fase 3/4 — CALENDARIO + HISTORIAL DE USO DEL ARMARIO
 - [ ] CONCEPTO PRINCIPAL

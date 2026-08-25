@@ -28,7 +28,7 @@ console.log('\n═══ ME Fase 3 — papelera global ═══\n');
 {
   // 27 desde ME Fase 4 (la auditoría añadió `estudios.programas`, que se podía crear y
   // no borrar) y 28 desde AR Fase 1, con las prendas del Armario.
-  comprobar('El catálogo cubre 28 colecciones', Object.keys(CATALOGO_PAPELERA).length === 28,
+  comprobar('El catálogo cubre 29 colecciones', Object.keys(CATALOGO_PAPELERA).length === 29,
     String(Object.keys(CATALOGO_PAPELERA).length));
   comprobar('Toda entrada declara módulo, tipo y campos',
     Object.values(CATALOGO_PAPELERA).every((c) => c.modulo && c.tipo && Array.isArray(c.campos)));

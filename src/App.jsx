@@ -34,7 +34,7 @@ import PredictionsView from './views/PredictionsView';
 import AchievementsView from './views/AchievementsView';
 import SettingsView from './views/SettingsView';
 import { construirIndice } from './lib/indiceBusqueda';
-import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda } from './lib/armario';
+import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda, crearOutfit, actualizarOutfit, duplicarOutfit } from './lib/armario';
 import ArmarioView from './views/ArmarioView';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
@@ -950,6 +950,25 @@ export default function App() {
   };
   const subirFotoPrenda = (file) => uploadPrendaFoto(uidUser, file);
 
+  // ---------- AR Fase 2 — Outfits ----------
+  // Un outfit REFERENCIA prendas (`prendaIds`), nunca las copia: si Josué le cambia el
+  // nombre o la foto a una prenda, el outfit se entera solo. Por eso aquí no hay ni una
+  // línea que sincronice nada entre las dos listas.
+  const addOutfit = (datos) => snapshotAndSave({ armario: { ...armario, outfits: [...armario.outfits, crearOutfit(datos)] } });
+  const updateOutfit = (id, cambios) => snapshotAndSave({
+    armario: { ...armario, outfits: armario.outfits.map((o) => (o.id === id ? actualizarOutfit(o, cambios) : o)) },
+  });
+  const duplicarUnOutfit = (id) => {
+    const original = armario.outfits.find((o) => o.id === id);
+    if (!original) return;
+    snapshotAndSave({ armario: { ...armario, outfits: [...armario.outfits, duplicarOutfit(original)] } });
+  };
+  // Borrar un outfit NO toca ninguna prenda (apartado 15): las prendas son del armario,
+  // los outfits solo las referencian. Tampoco borra su foto de portada aquí, porque va
+  // a la papelera y podría restaurarse — el fichero se queda, igual que en el resto de
+  // la app con lo recuperable.
+  const deleteOutfit = (id) => eliminarConPapelera('armario', 'outfits', id);
+
   const setIconoModulo = (id, iconKey) => {
     const iconos = { ...personalizacion.iconos };
     if (iconKey) iconos[id] = iconKey; else delete iconos[id];
@@ -1451,6 +1470,8 @@ export default function App() {
             armario={armario}
             onAddPrenda={addPrenda} onUpdatePrenda={updatePrenda} onDeletePrenda={deletePrenda}
             onSubirFoto={subirFotoPrenda}
+            onAddOutfit={addOutfit} onUpdateOutfit={updateOutfit}
+            onDeleteOutfit={deleteOutfit} onDuplicarOutfit={duplicarUnOutfit}
             accent={accent}
           />
         );

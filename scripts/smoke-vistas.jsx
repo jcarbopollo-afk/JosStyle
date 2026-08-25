@@ -31,7 +31,7 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
-import ArmarioView from '../src/views/ArmarioView.jsx';
+import ArmarioView, { PanelOutfits } from '../src/views/ArmarioView.jsx';
 
 import {
   DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION,
@@ -40,7 +40,7 @@ import {
   DEFAULT_NOTIFICACIONES, DEFAULT_CALENDARIO, ACCENTS,
 } from '../src/tokens.js';
 import { DEFAULT_PAPELERA } from '../src/lib/papelera.js';
-import { DEFAULT_ARMARIO, crearPrenda } from '../src/lib/armario.js';
+import { DEFAULT_ARMARIO, crearPrenda, crearOutfit } from '../src/lib/armario.js';
 import { calcularResumenModulo } from '../src/lib/resumenesHub.js';
 
 const accent = ACCENTS[0].value;
@@ -61,13 +61,22 @@ const vacio = {
 
 const lleno = {
   ...vacio,
-  armario: {
-    ...DEFAULT_ARMARIO,
-    prendas: [
-      { ...crearPrenda({ nombre: 'Vaquero gris', categoria: 'pantalones', color: 'gris', marca: "Levi's", talla: '30' }), creadaEn: '2026-01-01T00:00:00Z' },
-      { ...crearPrenda({ nombre: 'Sudadera Nike', categoria: 'sudaderas', color: 'negro', marca: 'Nike', favorita: true, estado: 'lavanderia' }), creadaEn: '2026-02-01T00:00:00Z' },
-    ],
-  },
+  armario: (() => {
+    const p1 = { ...crearPrenda({ nombre: 'Vaquero gris', categoria: 'pantalones', color: 'gris', marca: "Levi's", talla: '30' }), creadaEn: '2026-01-01T00:00:00Z' };
+    const p2 = { ...crearPrenda({ nombre: 'Sudadera Nike', categoria: 'sudaderas', color: 'negro', marca: 'Nike', favorita: true, estado: 'lavanderia' }), creadaEn: '2026-02-01T00:00:00Z' };
+    return {
+      ...DEFAULT_ARMARIO,
+      prendas: [p1, p2],
+      outfits: [
+        { ...crearOutfit({ nombre: 'Casual gris', prendaIds: [p1.id, p2.id], ocasion: 'casual', lugar: 'Instituto', personas: ['Amigos'], favorito: true, descripcion: 'El de todos los días' }), creadoEn: '2026-03-01T00:00:00Z' },
+        // Un outfit con una prenda que YA NO EXISTE y otro sin ninguna: los dos casos
+        // límite del apartado 4 y del 5 del cierre técnico, que tienen que pintarse sin
+        // reventar ni dejar un hueco vacío.
+        { ...crearOutfit({ nombre: 'Con prenda borrada', prendaIds: [p1.id, 'fantasma'] }), creadoEn: '2026-03-02T00:00:00Z' },
+        { ...crearOutfit({ nombre: 'Sin prendas', prendaIds: [] }), creadoEn: '2026-03-03T00:00:00Z' },
+      ],
+    };
+  })(),
   sueno: [{ id: '1', fecha: HOY, horaDormir: '23:30', horaDespertar: '07:00', calidad: 4, notas: '' }],
   calistenia: { ...DEFAULT_CALISTENIA, Planche: { nivel: 35, progresion: [{ id: 'p', texto: 'Tuck', hecho: true }], prs: [{ id: 'r', fecha: HOY, valor: '20s' }], sesiones: [{ id: 's', fecha: HOY }] } },
   futbol: [{ id: 'f', fecha: HOY, resultado: '3-2' }],
@@ -124,7 +133,15 @@ const CASOS = [
   ['BusinessView', BusinessView, (e) => ({ negocio: e.negocio, onAdd: noop, onUpdate: noop, onDelete: noop, accent })],
   ['ArmarioView', ArmarioView, (e) => ({
     armario: e.armario, onAddPrenda: noop, onUpdatePrenda: noop, onDeletePrenda: noop,
-    onSubirFoto: async () => '', accent,
+    onSubirFoto: async () => '', onAddOutfit: noop, onUpdateOutfit: noop,
+    onDeleteOutfit: noop, onDuplicarOutfit: noop, accent,
+  })],
+  // La pestaña de outfits aparte: `renderToString` no puede pulsar una pestaña, así que
+  // sin esto la mitad de AR Fase 2 no se renderizaría nunca en las pruebas.
+  ['ArmarioView · Outfits', PanelOutfits, (e) => ({
+    outfits: e.armario.outfits, prendas: e.armario.prendas,
+    onAddOutfit: noop, onUpdateOutfit: noop, onDeleteOutfit: noop, onDuplicarOutfit: noop,
+    onSubirFoto: async () => '', onAbrirPrenda: noop, accent,
   })],
   ['PersonalizationView', PersonalizationView, (e) => ({
     areas: AREAS_PRUEBA,
