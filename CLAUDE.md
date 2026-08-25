@@ -96,7 +96,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
   — preguntárselo si hace falta para depurar un despliegue, no asumirlo.
 - **Rota entre varias cuentas de Claude**, pasando `HANDOFF.md` + zip. Puede haber resuelto en otra
   conversación algo que aquí parece pendiente.
-- **Pide encadenar fases sin esperar confirmación real de cada una.**
+- ⚠️ **UNA FASE POR TURNO, y se para.** Josué cambió el modo de trabajo: él pasa la fase, se
+  construye entera y verificada, se le avisa con `PushNotification` y **se espera**. No encadenar
+  fases ni adelantar la siguiente aunque parezca obvia cuál es. (Antes pedía lo contrario; ya no.)
+- **Al terminar, decirle siempre dos cosas:** qué se ha hecho y hasta dónde se ha llegado.
 - **Lo que más le importa es recibir la entrega actualizada cuanto antes.** Priorizarlo sobre
   explicaciones largas; nunca dejar un turno a medias sin entregarla.
 
