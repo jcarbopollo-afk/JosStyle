@@ -1,0 +1,4198 @@
+# JC FITNESS — CHECKLIST GLOBAL · ENTREGA 2 (7 MÓDULOS NUEVOS, 106 FASES)
+
+> **Qué es esto.** El desglose verificable de la segunda tanda de especificaciones que Josué ha
+> entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
+> especificaciones de módulo independientes**, con **106 fases** en total.
+>
+> **Estado de todo lo que hay aquí: ⬜ NADA IMPLEMENTADO.** Ninguna de estas 106 fases se ha
+> construido. Esta checklist es el inventario de partida, no un registro de progreso.
+>
+> **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
+> original sin tocar en `especificaciones/ORIGINAL_JC_FITNESS_ESTILO_DE_HOMBRE.txt`.
+>
+> **Leyenda:** `[ ]` pendiente · `[x]` construido y verificado en código · `[~]` parcial ·
+> `[-]` descartado o imposible · `[?]` construido sin verificar en ejecución real.
+
+---
+
+## Cómo leer esta checklist
+
+Cada casilla corresponde a un **apartado numerado** de la especificación original. Las casillas se
+han extraído automáticamente del texto y **conservan su redacción literal**, así que algunas son
+títulos de bloque ("PRUEBAS OBLIGATORIAS") y otras son requisitos concretos ("Desactivar un módulo
+NO elimine sus datos"). Ambas cosas son verificables.
+
+⚠️ **Una casilla marcada no significa "he leído el apartado", significa "está implementado,
+comprobado y no rompe nada anterior".** Antes de marcar cualquier casilla hay que **leer la fase
+completa en `especificaciones/`** — la checklist es el índice, no la especificación.
+
+---
+
+## Los 7 módulos, de un vistazo
+
+| Cód. | Módulo | Fases | Líneas | Especificación | Naturaleza |
+|---|---|---|---|---|---|
+| **EH** | **Estilo de Hombre** | 65 | 19 527 | `ESPECIFICACION_ESTILO_DE_HOMBRE.md` | Módulo nuevo enorme: central de salud, cuidado, bienestar y estilo masculino |
+| **FO** | **Fondos y Fotografías** (Aspecto) | 12 | 5 967 | `ESPECIFICACION_FONDOS_Y_FOTOGRAFIAS.md` | Amplía el sistema de apariencia existente con fondos fotográficos y color derivado de la foto |
+| **BI** | **Buscador global + IA + Inicio** | 4 | 1 668 | `ESPECIFICACION_BUSCADOR_E_IA.md` | Rediseña el desplegable de Inicio y convierte el botón superior izquierdo en buscador + IA |
+| **ME** | **Módulos activables + Eliminados** | 4 | 1 008 | `ESPECIFICACION_MODULOS_Y_ELIMINADOS.md` | Libertad total de apartados + papelera universal con recuperación |
+| **HT** | **Horario Top** | 12 | 11 601 | `ESPECIFICACION_HORARIO_TOP.md` | Motor temporal y de planificación: horario, HOY, mochila, planificador, analítica |
+| **AR** | **Armario JC Lifestyle** | 4 | 3 747 | `ESPECIFICACION_ARMARIO.md` | Armario digital, outfits, historial de uso y sistema anti-repetición |
+| **SR** | **Sonido y Rachas** | 5 + 4 | 6 498 | `ESPECIFICACION_SONIDO_Y_RACHAS.md` | Identidad sonora propia + sistema de rachas reutilizable |
+
+**Total: 106 fases · 3 761 casillas verificables.**
+
+---
+
+## ⚠️ Cinco avisos antes de empezar a implementar
+
+### 1. Esto no es una continuación del Prompt Maestro — es un proyecto varias veces mayor
+
+Para dimensionarlo con honestidad: el Prompt Maestro completo (las 21 fases que construyeron
+Dashboard, Sueño, Salud, Nutrición, Calistenia, Estudios, Negocio, Productividad, Objetivos, Diario,
+Biblioteca, Relación, Fe, Bienestar, Estadísticas, Predicciones, IA y Personalización) cabía en
+**~40 líneas de especificación**. Estas 106 fases ocupan **50 016**.
+
+**Estilo de Hombre por sí solo (65 fases) es más grande que todo JC Fitness construido hasta hoy.**
+No es una crítica a la ambición del proyecto — es el dato que hace falta para planificar. Ver
+`docs/06_ENTREGA2_ANALISIS.md` para el análisis de viabilidad.
+
+### 2. El documento original está en orden inverso y mezcla conversación con especificación
+
+Dentro de cada módulo, **la última fase aparece primero** (Estilo de Hombre empieza por la Fase
+65/65 y termina por la 1/65). Además hay fragmentos de conversación de Josué intercalados entre
+fases, y algunas fases aparecen duplicadas o parcialmente repetidas.
+
+Esta checklist ya está **reordenada ascendentemente** (Fase 1 → Fase N). La especificación original
+se conserva tal cual, sin reordenar, porque reordenarla sería editarla.
+
+### 3. El bloque SR mezcla DOS especificaciones con numeración solapada
+
+`ESPECIFICACION_SONIDO_Y_RACHAS.md` contiene en realidad **dos sistemas distintos**:
+
+- **Sistema de Sonido** — 5 fases (Base · Motor de sonido · Eventos/feedback/recompensas · Diseño de
+  los sonidos · Producción/integración/test).
+- **Sistema de Rachas** — 4 fases (Arquitectura y lógica · Base de datos/Supabase/seguridad ·
+  Gamificación/hitos/logros · UI/Centro de rachas).
+
+Sus números de fase **colisionan** ("Fase 2" existe en los dos), y en el documento original están
+intercalados. La checklist los ha fusionado bajo el código `SR` porque no hay forma automática de
+separarlos con certeza.
+
+> **❓ Pregunta abierta para Josué:** ¿son dos módulos independientes que quieres construir por
+> separado, o un único sistema "Sonido + Rachas" de 5 fases? **Antes de tocar este bloque hay que
+> aclararlo** — construirlos mezclados sería un error caro de deshacer.
+
+### 4. Hay solapamiento fuerte con lo que JC Fitness YA tiene
+
+La propia especificación de Estilo de Hombre insiste en ello (sus apartados 4 y 5 son literalmente
+*"JC Fitness ya tiene muchas funciones"* y *"regla absoluta contra duplicaciones"*). Los solapamientos
+detectados están catalogados en `docs/06_ENTREGA2_ANALISIS.md`, pero los cuatro más grandes son:
+
+| Especificación nueva | Ya existe en JC Fitness |
+|---|---|
+| **ME** · módulos activables + personalización | `PersonalizationView` + `personalizacion.ocultos` (Fase 19) |
+| **BI** · buscador global + IA | `UniversalSearchModal` + `SuggestionsButton` (Fase 18) |
+| **FO** · sistema de color derivado de foto | Motor de color completo `colorEngine.js` + `TemaBuilder` + `GestionTemas` (V1–V4) |
+| **HT** · calendario, HOY, tareas, exámenes | Calendario Universal (C1–C3) + Productividad + Estudios + Dashboard Centro de Control |
+
+🔒 **La regla es CONECTAR / INTEGRAR / REUTILIZAR antes que CREAR.** Está escrita por Josué en la
+propia especificación. Implementar estos módulos ignorando lo que ya existe crearía sistemas
+duplicados que después habría que fusionar.
+
+### 5. Nada de lo construido hasta hoy está verificado en ejecución real
+
+Las Fases 8–21 del Prompt Maestro y **todo** lo posterior (v1.1.0 → v1.22.0) siguen sin haberse
+ejecutado nunca en un navegador. Añadir 106 fases encima de una base sin verificar multiplica el
+riesgo: cuando algo falle, no se sabrá si el fallo es de lo nuevo o de lo que ya había.
+
+> **Recomendación:** ejecutar el bloque **R0** (correcciones críticas) y al menos parte de **R1**
+> (verificación real) de `docs/02_ORDEN_DE_FASES.md` **antes** de empezar la Entrega 2.
+
+---
+
+## Orden de ejecución propuesto para la Entrega 2
+
+Este orden **no** es el orden en que aparecen en el documento. Está ordenado por **dependencia
+técnica** y por **cuánto desbloquea cada módulo**:
+
+```
+E2-0  R0 + R1 de la Entrega 1        ← arreglar lo roto y verificar la base ANTES de añadir
+E2-1  ME · Módulos activables + Eliminados (4)    ← la infraestructura que EH da por supuesta
+E2-2  BI · Buscador + IA + Inicio (4)             ← amplía lo que ya existe, no lo duplica
+E2-3  AR · Armario (4)                            ← EH lo da por construido ("NO rehacer el armario")
+E2-4  FO · Fondos y Fotografías (12)              ← se apoya en el motor de color ya existente
+E2-5  SR · Sonido y Rachas (5+4)   ⚠️ aclarar primero si son uno o dos módulos
+E2-6  HT · Horario Top (12)                       ← el más acoplado al Calendario existente
+E2-7  EH · Estilo de Hombre (65)                  ← el mayor; depende de casi todos los anteriores
+```
+
+**Por qué EH va el último aunque sea el que Josué entregó primero:** su propia especificación
+declara que depende del armario ya construido (ap. 16), del sistema de fotos existente (ap. 17), del
+calendario y recordatorios globales (ap. 11), del sistema de módulos activables (ap. 2) y del sistema
+de productos transversal (ap. 10). Construirlo antes que sus dependencias obligaría a rehacerlo.
+
+---
+
+## Reglas transversales que TODAS estas fases comparten
+
+Extraídas de los cuatro documentos de contexto general. Son de Josué, no interpretaciones:
+
+1. **Una fase por turno.** No avanzar hasta que la anterior esté implementada, comprobada y
+   funcionando. *(Se repite literalmente en los 4 contextos generales.)*
+2. **Comprobar primero si JC Fitness ya lo tiene.** CONECTAR → INTEGRAR → REUTILIZAR → CREAR, en ese
+   orden. Nunca duplicar por comodidad de implementación.
+3. **Todo es modular y opcional.** El usuario decide qué usa. **Desactivar un módulo NUNCA elimina
+   sus datos.**
+4. **Interfaz limpia por fuera, compleja por dentro.** Plaquitas pequeñas en la pantalla principal;
+   la complejidad vive dentro de cada módulo.
+5. **La IA queda prácticamente fuera de Estilo de Hombre.** Las recomendaciones salen de datos,
+   formularios, preferencias y reglas integradas — no de preguntarle a un modelo cada vez.
+   *(En HT y BI la IA sí participa, pero siempre sobre datos reales y sin inventar.)*
+6. **El usuario tiene el control.** Recomendar, nunca obligar. Poder elegir, rechazar, cambiar,
+   ocultar, activar, desactivar.
+7. **No preguntar dos veces lo mismo.** Lo que el usuario ya ha dicho se guarda y se reutiliza.
+8. **Sistemas transversales únicos**: un solo sistema de productos, un solo calendario, un solo
+   sistema de recordatorios, un solo sistema de fotos. Nunca uno por módulo.
+9. **Nada de diagnósticos médicos automáticos.** Cuando algo requiera atención profesional, decirlo
+   claramente.
+10. **Funciones dependientes de wearables solo aparecen si hay dispositivo conectado.** Nunca datos
+    inventados ni campos para simularlos.
+11. **Móvil primero**, diseño premium, rápido y coherente con lo existente.
+12. **No romper nada.** Cada fase deja el proyecto funcionando y preparado para la siguiente.
+13. **No implementar fases futuras** aunque aparezcan mencionadas en el contexto general.
+14. **Si una funcionalidad necesita arquitectura adicional, se construye esa arquitectura** — no se
+    simplifica por comodidad *(regla explícita de HT)*.
+
+---
+
+## Peticiones sueltas detectadas fuera de las 106 fases
+
+Al final del contexto de Estilo de Hombre hay una petición de Josué **que no está formalizada como
+fase** y que conviene no perder:
+
+- ⬜ **Rediseño de la pantalla de Inicio.** Literal: *"la veo muy cargada… quiero que la pantalla de
+  inicio se pueda tocar un montón, poner la acción que quiera —por ejemplo un ingreso, un gasto, una
+  fecha importante— y que se pueda quitar… que cada uno se ajuste la experiencia como la quiera"*.
+  Marcado en el propio documento como **"ESTÀ EN CHAT Y ES REDISEÑAR PANTALLA DE INICIO"**.
+  → Se solapa fuertemente con **BI · Fase 1** y con **ME · Fase 2**, y con el editor de
+  `dashboardOcultos` ya pendiente (**R3.1** de la Entrega 1). **Unificar las cuatro cosas en una
+  sola conversación antes de construir.**
+
+---
+
+# LAS 106 FASES
+
+
+## EH · ESTILO DE HOMBRE — 65 fases
+
+El módulo más grande de todo el proyecto. Una central personal de salud, cuidado, bienestar, físico y estilo masculino, completamente modular: el usuario elige qué apartados usa y el resto no ocupa espacio. **Fases 1–6** son la arquitectura base; **7–29** los módulos de contenido (pelo, peluquería, skincare, cuerpo, barba, manos, higiene bucal, perfumes, accesorios, gustos, objetivos, perfil de estilo); **30–39** organización, recomendaciones e integración; **40–55** calidad, rendimiento, datos y producción; **56–61** IA e insights; **62–65** accesibilidad, seguridad y cierre.
+
+#### EH · Fase 1/65 — ARQUITECTURA BASE Y SISTEMA MODULAR
+- [ ] Se pueda entrar en Estilo de hombre.
+- [ ] Aparezca una pantalla inicial limpia.
+- [ ] Se pueda configurar qué módulos quiere utilizar el usuario.
+- [ ] Los módulos seleccionados aparezcan como plaquitas.
+- [ ] Los módulos no seleccionados no ocupen espacio.
+- [ ] Se puedan activar/desactivar posteriormente.
+- [ ] Desactivar un módulo NO elimine sus datos.
+- [ ] La configuración permanezca guardada.
+- [ ] La arquitectura permita añadir decenas de módulos posteriormente sin rehacer este sistema.
+- [ ] CREAR LA ESTRUCTURA PRINCIPAL
+- [ ] PANTALLA PRINCIPAL
+- [ ] PRIMERA CONFIGURACIÓN
+- [ ] SELECCIÓN DE MÓDULOS
+- [ ] PLAQUITAS
+- [ ] GESTIONAR APARTADOS
+- [ ] DESACTIVACIÓN
+- [ ] DATOS Y CONFIGURACIÓN
+- [ ] ORDEN DE LOS MÓDULOS
+- [ ] Skincare
+- [ ] Pelo
+- [ ] Hábitos
+- [ ] Fitness
+- [ ] CONEXIÓN CON JC FITNESS
+- [ ] SISTEMA PREPARADO PARA CRECER
+- [ ] RESPONSIVE
+- [ ] ESTADOS VACÍOS
+- [ ] NO IMPLEMENTAR TODAVÍA
+- [ ] PRUEBAS OBLIGATORIAS
+- [ ] OBJETIVO GENERAL
+- [ ] PRINCIPIO FUNDAMENTAL: TODO ES MODULAR
+- [ ] INTERFAZ: PEQUEÑAS PLAQUITAS
+- [ ] JC FITNESS YA TIENE MUCHAS FUNCIONES
+- [ ] REGLA ABSOLUTA CONTRA DUPLICACIONES
+- [ ] IA: PRÁCTICAMENTE FUERA DE ESTE APARTADO
+- [ ] EL USUARIO TIENE EL CONTROL
+- [ ] FORMULARIOS Y PREFERENCIAS
+- [ ] SISTEMA DE RECOMENDACIONES
+- [ ] SISTEMA DE PRODUCTOS
+- [ ] CALENDARIO Y RECORDATORIOS
+- [ ] EDUCACIÓN Y GUÍAS
+- [ ] SALUD
+- [ ] DISPOSITIVOS WEARABLES
+- [ ] MÓDULOS ESPECIALMENTE IMPORTANTES
+- [ ] ESTILO Y ARMARIO
+- [ ] FOTOS
+- [ ] PRIVACIDAD
+- [ ] DESACTIVACIÓN DE MÓDULOS IMPORTANTES
+- [ ] ARQUITECTURA DE DESARROLLO
+- [ ] REGLA DE ORO DURANTE TODAS LAS FASES
+- [ ] OBJETIVO FINAL
+
+#### EH · Fase 2/65 — SISTEMA DE GESTIÓN Y PERSONALIZACIÓN DE MÓDULOS
+- [ ] ACCESO A “GESTIONAR APARTADOS”
+- [ ] LISTADO COMPLETO
+- [ ] AGRUPACIÓN
+- [ ] ACTIVAR UN MÓDULO
+- [ ] El módulo pasa a estar activo.
+- [ ] Aparece en la pantalla principal.
+- [ ] Se guarda automáticamente.
+- [ ] No es necesario volver a realizar la configuración inicial.
+- [ ] DESACTIVAR UN MÓDULO
+- [ ] AVISO AL DESACTIVAR
+- [ ] REACTIVACIÓN
+- [ ] FILTRO DE MÓDULOS ACTIVOS
+- [ ] REORDENACIÓN
+- [ ] ESTADO VACÍO
+- [ ] MÓDULOS RECOMENDADOS
+- [ ] BÚSQUEDA DE MÓDULOS
+- [ ] INFORMACIÓN DEL MÓDULO
+- [ ] CONFIGURACIÓN PERSISTENTE
+- [ ] NO CREAR BASES DE DATOS DUPLICADAS
+- [ ] PREPARACIÓN PARA FUTUROS MÓDULOS
+- [ ] CASOS LÍMITE
+- [ ] PRUEBAS
+
+#### EH · Fase 3/65 — SISTEMA DE PRIMERA CONFIGURACIÓN Y PERFIL DE USUARIO
+- [ ] PRIMERA ENTRADA
+- [ ] EXPLICACIÓN BREVE
+- [ ] SELECCIÓN INICIAL
+- [ ] CONTADOR
+- [ ] PODER SALTAR
+- [ ] NO PREGUNTAR LO QUE YA SABEMOS
+- [ ] FORMULARIOS PROGRESIVOS
+- [ ] CADA MÓDULO ES INDEPENDIENTE
+- [ ] INFORMACIÓN OPCIONAL
+- [ ] PREFERENCIAS
+- [ ] REUTILIZACIÓN DE INFORMACIÓN
+- [ ] MODIFICAR INFORMACIÓN
+- [ ] COMPLETAR CONFIGURACIÓN
+- [ ] CONFIGURACIÓN PARCIAL
+- [ ] VOLVER A CONFIGURAR
+- [ ] NO CREAR TODAVÍA LOS FORMULARIOS INTERNOS
+- [ ] PRUEBAS
+
+#### EH · Fase 4/65 — SISTEMA DE DATOS, PERFIL Y REUTILIZACIÓN GLOBAL
+- [ ] CREAR UNA CAPA DE DATOS COMPARTIDOS
+- [ ] COMPROBAR QUÉ EXISTE YA
+- [ ] FUENTE ÚNICA DE VERDAD
+- [ ] DATOS PROPIOS DE ESTILO DE HOMBRE
+- [ ] PREFERENCIAS
+- [ ] INFORMACIÓN DESCONOCIDA
+- [ ] NO PREGUNTAR DOS VECES
+- [ ] DATOS MODIFICABLES
+- [ ] HISTORIAL CUANDO SEA NECESARIO
+- [ ] FECHA DE ACTUALIZACIÓN
+- [ ] CONSENTIMIENTO Y PRIVACIDAD
+- [ ] ELIMINACIÓN
+- [ ] DESACTIVAR NO ES ELIMINAR
+- [ ] DEPENDENCIAS
+- [ ] DATOS FALTANTES
+- [ ] SINCRONIZACIÓN
+- [ ] COMPATIBILIDAD FUTURA
+- [ ] PRUEBAS
+
+#### EH · Fase 5/65 — ESTILO + ARMARIO: INTEGRACIÓN CON EL SISTEMA EXISTENTE
+- [ ] CONECTAR EL ARMARIO EXISTENTE
+- [ ] MANTENER LOS DATOS EXISTENTES
+- [ ] TALLAS
+- [ ] INFORMACIÓN DEL PERFIL
+- [ ] PREFERENCIAS DE ESTILO
+- [ ] RECOMENDACIONES
+- [ ] EL USUARIO DECIDE
+- [ ] INFORMACIÓN FALTANTE
+- [ ] ARMARIO COMO FUENTE DE INFORMACIÓN
+- [ ] ACTIVACIÓN/DESACTIVACIÓN
+- [ ] NO CREAR IA DE ESTILO
+- [ ] CONEXIÓN FUTURA CON PRODUCTOS
+- [ ] CONEXIÓN CON OCASIONES
+- [ ] CONEXIÓN CON EL PERFIL FÍSICO
+- [ ] PRUEBAS DE INTEGRACIÓN
+
+#### EH · Fase 6/65 — PERFIL DE ESTILO Y PREFERENCIAS PERSONALES
+- [ ] ACCESO
+- [ ] PRIORIDADES
+- [ ] COLORES
+- [ ] MARCAS
+- [ ] OCASIONES
+- [ ] COSAS QUE LE GUSTAN
+- [ ] COSAS QUE LE GUSTARÍA HACER
+- [ ] IMAGEN PERSONAL
+- [ ] NIVELES
+- [ ] RECOMENDACIONES
+- [ ] EL USUARIO SIEMPRE PUEDE CAMBIARLO
+- [ ] NO OBLIGAR A COMPLETAR TODO
+- [ ] CONEXIÓN CON EL ARMARIO
+- [ ] PRIVACIDAD
+- [ ] PRUEBAS
+
+#### EH · Fase 7/65 — PELO: PERFIL CAPILAR Y NECESIDADES
+- [ ] ENTRADA AL MÓDULO
+- [ ] TIPO DE PELO
+- [ ] GROSOR
+- [ ] DENSIDAD
+- [ ] LONGITUD ACTUAL
+- [ ] CUERO CABELLUDO
+- [ ] NECESIDADES
+- [ ] PREFERENCIAS
+- [ ] PEINADO
+- [ ] TIEMPO DISPONIBLE
+- [ ] PRODUCTOS
+- [ ] BARBERÍA / PELUQUERÍA
+- [ ] FRECUENCIA DE CORTE
+- [ ] DATOS DESCONOCIDOS
+- [ ] EDITAR INFORMACIÓN
+- [ ] CONEXIÓN CON EL SISTEMA DE DATOS
+- [ ] RECOMENDACIONES FUTURAS
+- [ ] PRUEBAS
+
+#### EH · Fase 8/65 — PELO: RUTINA, CUIDADOS Y SEGUIMIENTO
+- [ ] PANEL PRINCIPAL DE PELO
+- [ ] RUTINA CAPILAR
+- [ ] CREAR UNA RUTINA
+- [ ] FRECUENCIAS
+- [ ] SIN RECORDATORIOS OBLIGATORIOS
+- [ ] CHECKLIST
+- [ ] NO CASTIGAR AL USUARIO
+- [ ] HISTORIAL
+- [ ] CAMBIOS
+- [ ] FOTOS
+- [ ] PRODUCTOS UTILIZADOS
+- [ ] PRODUCTOS SIN REGISTRAR
+- [ ] RECOMENDACIONES
+- [ ] PERSONALIZACIÓN
+- [ ] ACTIVAR/DESACTIVAR COMPONENTES
+- [ ] DATOS CONSERVADOS
+- [ ] INTEGRACIÓN CON CALENDARIO
+- [ ] PRUEBAS
+
+#### EH · Fase 9/65 — PELO: SISTEMA DE RECOMENDACIONES
+- [ ] ZONA DE RECOMENDACIONES
+- [ ] UTILIZAR TODA LA INFORMACIÓN DISPONIBLE
+- [ ] REGLAS INTERNAS
+- [ ] RECOMENDACIONES NO OBLIGATORIAS
+- [ ] MOSTRAR EL MOTIVO
+- [ ] NIVEL DE RECOMENDACIÓN
+- [ ] CANTIDAD
+- [ ] DESCARTAR
+- [ ] GUARDAR
+- [ ] NO MODIFICAR AUTOMÁTICAMENTE LA RUTINA
+- [ ] PRODUCTOS
+- [ ] INFORMACIÓN INSUFICIENTE
+- [ ] ACTUALIZACIÓN
+- [ ] EVITAR REPETICIONES
+- [ ] CONEXIÓN CON EL RESTO DE ESTILO DE HOMBRE
+- [ ] PRIVACIDAD
+- [ ] PRUEBAS
+- [ ] Usuario con perfil completo → recomendaciones personalizadas.
+- [ ] Perfil incompleto → recomendaciones básicas.
+- [ ] Cambiar tipo de pelo → recomendaciones actualizadas.
+- [ ] Ignorar → no insistir inmediatamente.
+- [ ] Guardar → aparece en guardados.
+- [ ] Añadir recomendación a rutina → solo si el usuario lo confirma.
+- [ ] Desactivar recomendaciones → desaparecen.
+- [ ] Reactivar → configuración conservada.
+- [ ] No utilizar IA.
+- [ ] No crear datos duplicados.
+
+#### EH · Fase 10/65 — PELO: PRODUCTOS, CATÁLOGO Y RECOMENDACIONES
+- [ ] SECCIÓN DE PRODUCTOS
+- [ ] CATEGORÍAS
+- [ ] FICHA DE PRODUCTO
+- [ ] PRODUCTOS RECOMENDADOS
+- [ ] MOTIVO DE LA RECOMENDACIÓN
+- [ ] COMPARAR
+- [ ] FAVORITOS
+- [ ] PRODUCTOS QUE YA UTILIZA
+- [ ] AÑADIR PRODUCTO PERSONAL
+- [ ] PRODUCTOS NO DISPONIBLES
+- [ ] AMAZON
+- [ ] AFILIACIÓN
+- [ ] OTRAS TIENDAS
+- [ ] PACKS
+- [ ] PACK PERSONALIZADO
+- [ ] Producto A
+- [ ] Producto B
+- [ ] Producto C
+- [ ] PRECIO
+- [ ] VALORACIÓN PERSONAL
+- [ ] RECOMENDACIONES CONTROLADAS
+- [ ] NO COMPRAR AUTOMÁTICAMENTE
+- [ ] PRUEBAS
+
+#### EH · Fase 11/65 — PELUQUERÍA: CALENDARIO Y SEGUIMIENTO DE CORTES
+- [ ] PLAQUITA DE PELUQUERÍA
+- [ ] REGISTRAR ÚLTIMO CORTE
+- [ ] PRÓXIMO CORTE
+- [ ] FRECUENCIA
+- [ ] RECORDATORIOS
+- [ ] CALENDARIO GENERAL
+- [ ] CANCELAR / CAMBIAR
+- [ ] REGISTRAR CORTE REALIZADO
+- [ ] HISTORIAL
+- [ ] NOTAS
+- [ ] PREFERENCIAS DEL CORTE
+- [ ] PELUQUERÍA / BARBERÍA
+- [ ] RECORDATORIOS DESACTIVADOS
+- [ ] DESACTIVAR PELUQUERÍA
+- [ ] ELIMINAR EVENTO
+- [ ] PRÓXIMO CORTE INTELIGENTE
+- [ ] PRUEBAS
+- [ ] Registrar último corte.
+- [ ] Elegir próximo corte.
+- [ ] Crear frecuencia.
+- [ ] Modificar frecuencia.
+- [ ] Crear recordatorio.
+- [ ] Desactivar recordatorio.
+- [ ] Marcar corte realizado.
+- [ ] Ver historial.
+- [ ] Editar evento.
+- [ ] Eliminar evento.
+- [ ] Integrarlo con calendario general.
+- [ ] Desactivar Peluquería.
+- [ ] Reactivarla.
+- [ ] Confirmar que todos los datos permanecen.
+
+#### EH · Fase 12/65 — PELUQUERÍA: CORTES, PREFERENCIAS Y RECOMENDACIONES
+- [ ] PERFIL DE CORTE
+- [ ] LONGITUD
+- [ ] ESTILO DE CORTE
+- [ ] CÓMO QUIERE PEINARLO
+- [ ] TIEMPO PARA PEINARSE
+- [ ] MANTENIMIENTO
+- [ ] RECOMENDACIONES DE CORTE
+- [ ] EXPLICACIÓN
+- [ ] COMPARACIÓN
+- [ ] FAVORITOS
+- [ ] CORTE ACTUAL
+- [ ] CORTE QUE QUIERE PROBAR
+- [ ] HISTORIAL
+- [ ] VALORACIÓN
+- [ ] RECOMENDACIONES BASADAS EN HISTORIAL
+- [ ] CONEXIÓN CON PELO
+- [ ] CONEXIÓN CON ESTILO
+- [ ] USUARIO SIEMPRE DECIDE
+- [ ] PRUEBAS
+
+#### EH · Fase 13/65 — SKINCARE: PERFIL DE PIEL Y CONFIGURACIÓN INICIAL
+- [ ] ENTRADA A SKINCARE
+- [ ] FORMULARIO
+- [ ] TIPO DE PIEL
+- [ ] NECESIDADES
+- [ ] SENSIBILIDAD
+- [ ] ZONAS
+- [ ] OBJETIVO PRINCIPAL
+- [ ] TIEMPO DISPONIBLE
+- [ ] COMPLEJIDAD
+- [ ] PRODUCTOS ACTUALES
+- [ ] PREFERENCIAS DE PRODUCTOS
+- [ ] PRESUPUESTO
+- [ ] PROTECCIÓN SOLAR
+- [ ] FORMULARIO ADAPTATIVO
+- [ ] INFORMACIÓN EXISTENTE
+- [ ] DATOS EDITABLES
+- [ ] PRIVACIDAD
+- [ ] PRUEBAS
+- [ ] Usuario que completa todo.
+- [ ] Usuario que responde parcialmente.
+- [ ] Usuario que pulsa “No lo sé”.
+- [ ] Usuario que salta el formulario.
+- [ ] Usuario con información existente.
+- [ ] Usuario sin productos.
+- [ ] Usuario con productos.
+- [ ] Cambiar preferencias.
+- [ ] Cambiar nivel.
+- [ ] Desactivar Skincare.
+- [ ] Reactivar Skincare.
+- [ ] Comprobar que no se pierde información.
+- [ ] Probar móvil.
+
+#### EH · Fase 14/65 — SKINCARE: RUTINAS Y CUIDADO DIARIO
+- [ ] PANEL DE SKINCARE
+- [ ] CREAR RUTINA
+- [ ] Limpieza
+- [ ] Hidratación
+- [ ] Protección solar
+- [ ] MAÑANA Y NOCHE
+- [ ] PASOS
+- [ ] ORDEN
+- [ ] PRODUCTOS
+- [ ] FRECUENCIA
+- [ ] RECORDATORIOS
+- [ ] CHECKLIST
+- [ ] OMITIR PASOS
+- [ ] CAMBIAR RUTINA
+- [ ] RUTINAS PREDEFINIDAS
+- [ ] PERSONALIZACIÓN
+- [ ] NIVELES
+- [ ] SEGUIMIENTO
+- [ ] HISTORIAL
+- [ ] CONEXIÓN CON CALENDARIO
+- [ ] ACTIVAR/DESACTIVAR
+- [ ] NO DUPLICAR
+- [ ] PRUEBAS
+- [ ] Crear rutina.
+- [ ] Crear rutina mañana.
+- [ ] Crear rutina noche.
+- [ ] Añadir pasos.
+- [ ] Cambiar orden.
+- [ ] Asociar productos.
+- [ ] Cambiar frecuencia.
+- [ ] Activar/desactivar recordatorios.
+- [ ] Marcar pasos.
+- [ ] Omitir rutina.
+- [ ] Editar rutina.
+- [ ] Eliminar rutina.
+- [ ] Consultar historial.
+- [ ] Conectar con calendario.
+- [ ] Desactivar módulo.
+- [ ] Reactivarlo.
+- [ ] Comprobar que no existen duplicados.
+
+#### EH · Fase 15/65 — SKINCARE: SEGUIMIENTO Y EVOLUCIÓN
+- [ ] PLAQUITA DE SEGUIMIENTO
+- [ ] VALORACIÓN RÁPIDA
+- [ ] ASPECTOS CONCRETOS
+- [ ] NOTA PERSONAL
+- [ ] REGISTRO DE PRODUCTOS
+- [ ] CAMBIOS DE RUTINA
+- [ ] EVOLUCIÓN
+- [ ] PERIODOS
+- [ ] NO OBLIGAR A REGISTRAR CADA DÍA
+- [ ] FOTOS
+- [ ] CONEXIÓN CON EL DIARIO
+- [ ] CONEXIÓN CON PRODUCTOS
+- [ ] ELIMINAR REGISTROS
+- [ ] EXPORTACIÓN
+- [ ] DESACTIVAR
+- [ ] PRUEBAS
+- [ ] Crear valoración.
+- [ ] Editarla.
+- [ ] Eliminarla.
+- [ ] Añadir nota.
+- [ ] Asociar producto.
+- [ ] Registrar cambio de rutina.
+- [ ] Consultar evolución.
+- [ ] Cambiar periodo.
+- [ ] Sin registros suficientes.
+- [ ] Desactivar seguimiento.
+- [ ] Reactivarlo.
+- [ ] Comprobar que no se crea otro diario.
+- [ ] Comprobar integración con eliminados recientemente.
+- [ ] Comprobar móvil.
+
+#### EH · Fase 16/65 — SKINCARE: MOTOR DE RECOMENDACIONES
+- [ ] PLAQUITA
+- [ ] PRIORIDADES
+- [ ] REGLAS
+- [ ] RECOMENDACIONES DE RUTINA
+- [ ] RECOMENDACIONES DE PRODUCTOS
+- [ ] EXPLICACIÓN
+- [ ] NIVEL
+- [ ] CANTIDAD
+- [ ] DESCARTAR
+- [ ] GUARDAR
+- [ ] AÑADIR A RUTINA
+- [ ] AÑADIR PRODUCTO
+- [ ] INFORMACIÓN INSUFICIENTE
+- [ ] ACTUALIZACIÓN
+- [ ] HISTORIAL DE RECOMENDACIONES
+- [ ] NO IA
+- [ ] DESACTIVAR
+- [ ] PRUEBAS
+
+#### EH · Fase 17/65 — SKINCARE: SISTEMA DE PRODUCTOS, FARMACIA, AMAZON Y PACKS
+- [ ] PLAQUITA DE PRODUCTOS
+- [ ] CATEGORÍAS
+- [ ] FICHA DEL PRODUCTO
+- [ ] AMAZON
+- [ ] FARMACIA
+- [ ] SI NO ESTÁ EN AMAZON
+- [ ] AFILIACIÓN
+- [ ] PRODUCTOS RECOMENDADOS
+- [ ] MOTIVO
+- [ ] FILTROS
+- [ ] BUSCADOR
+- [ ] FAVORITOS
+- [ ] PRODUCTOS QUE YA TIENE
+- [ ] PRODUCTOS PERSONALIZADOS
+- [ ] COMPARACIÓN
+- [ ] PACKS
+- [ ] PACK PERSONALIZADO
+- [ ] ALTERNATIVAS
+- [ ] PRECIO
+- [ ] VALORACIÓN PERSONAL
+- [ ] DESACTIVAR PRODUCTOS
+- [ ] NO COMPRA AUTOMÁTICA
+- [ ] PRUEBAS
+
+#### EH · Fase 18/65 — CUERPO E HIGIENE MASCULINA: CONFIGURACIÓN Y PERFIL
+- [ ] ACTIVACIÓN INICIAL
+- [ ] FORMULARIO
+- [ ] HIGIENE DIARIA
+- [ ] PREFERENCIAS
+- [ ] TIPO DE PRODUCTO
+- [ ] FRAGANCIAS
+- [ ] SENSIBILIDAD
+- [ ] NECESIDADES ESPECÍFICAS
+- [ ] TIEMPO
+- [ ] NIVEL
+- [ ] PRODUCTOS EXISTENTES
+- [ ] RUTINAS
+- [ ] RECORDATORIOS
+- [ ] RECOMENDACIONES
+- [ ] PRODUCTOS
+- [ ] FARMACIA Y TIENDAS
+- [ ] ACTIVAR Y DESACTIVAR CADA PARTE
+- [ ] NO DUPLICAR CON OTROS MÓDULOS
+- [ ] ELIMINACIÓN
+- [ ] PRUEBAS
+- [ ] Entrar sin configurar.
+- [ ] Saltar formulario.
+- [ ] Activar solo una sección.
+- [ ] Activar varias.
+- [ ] Desactivar una.
+- [ ] Reactivarla.
+- [ ] Crear rutina.
+- [ ] Editarla.
+- [ ] Asociar productos existentes.
+- [ ] Añadir un producto nuevo.
+- [ ] Activar/desactivar recordatorios.
+- [ ] Ver recomendaciones.
+- [ ] Utilizar productos de farmacia.
+- [ ] Utilizar productos de Amazon.
+- [ ] Comprobar que no existen catálogos duplicados.
+- [ ] Comprobar que los datos permanecen al desactivar módulos.
+- [ ] Probar todo en móvil.
+
+#### EH · Fase 19/65 — CUERPO E HIGIENE: RUTINAS Y RECOMENDACIONES
+- [ ] PLAQUITA «MI RUTINA»
+- [ ] RUTINA BÁSICA
+- [ ] RUTINAS PERSONALIZADAS
+- [ ] PEQUEÑAS PLAQUITAS
+- [ ] CHECKLIST
+- [ ] FRECUENCIA
+- [ ] RECORDATORIOS
+- [ ] RECOMENDACIONES
+- [ ] RECOMENDACIONES SEGÚN PERFIL
+- [ ] RECOMENDACIONES DE PRODUCTOS
+- [ ] PRODUCTOS QUE YA TIENE
+- [ ] ALTERNATIVAS
+- [ ] PACKS
+- [ ] NIVEL
+- [ ] EDITAR
+- [ ] OMITIR
+- [ ] DESACTIVAR
+- [ ] CONEXIONES GLOBALES
+- [ ] PRUEBAS
+- [ ] Crear rutina.
+- [ ] Usar plantilla.
+- [ ] Personalizar plantilla.
+- [ ] Crear desde cero.
+- [ ] Añadir pasos.
+- [ ] Reordenarlos.
+- [ ] Asociar productos.
+- [ ] Cambiar frecuencia.
+- [ ] Activar/desactivar recordatorio.
+- [ ] Marcar rutina.
+- [ ] Omitir paso.
+- [ ] Recibir recomendación.
+- [ ] Ignorar recomendación.
+- [ ] Guardar producto.
+- [ ] Crear pack.
+- [ ] Desactivar módulos.
+- [ ] Reactivarlos.
+- [ ] Comprobar persistencia.
+
+#### EH · Fase 20/65 — BARBA Y AFEITADO: PERFIL Y CONFIGURACIÓN
+- [ ] ACTIVACIÓN
+- [ ] QUÉ UTILIZA
+- [ ] TIPO DE BARBA
+- [ ] LONGITUD
+- [ ] ESTILO
+- [ ] OBJETIVO
+- [ ] AFEITADO
+- [ ] FRECUENCIA
+- [ ] PREFERENCIAS
+- [ ] SENSIBILIDAD
+- [ ] PROBLEMAS PERCIBIDOS
+- [ ] PRODUCTOS ACTUALES
+- [ ] NIVEL
+- [ ] RUTINA
+- [ ] RECORDATORIOS
+- [ ] ACTIVAR/DESACTIVAR
+- [ ] CONEXIONES
+- [ ] PRUEBAS
+- [ ] Activar módulo.
+- [ ] Saltarlo.
+- [ ] Elegir barba.
+- [ ] Elegir afeitado.
+- [ ] Configurar ambos.
+- [ ] Editar preferencias.
+- [ ] Añadir productos existentes.
+- [ ] Crear rutina.
+- [ ] Desactivar recordatorios.
+- [ ] Desactivar módulo.
+- [ ] Reactivarlo.
+- [ ] Comprobar que todo sigue guardado.
+- [ ] Comprobar que no existen datos duplicados.
+
+#### EH · Fase 21/65 — BARBA Y AFEITADO: RUTINAS Y SEGUIMIENTO
+- [ ] PLAQUITA «MI RUTINA»
+- [ ] RUTINA DE AFEITADO
+- [ ] Preparación.
+- [ ] Afeitado.
+- [ ] Limpieza.
+- [ ] Cuidado posterior.
+- [ ] RUTINA DE BARBA
+- [ ] PERFILADO
+- [ ] RUTINAS PERSONALIZADAS
+- [ ] CHECKLIST
+- [ ] OMITIR
+- [ ] RECORDATORIOS
+- [ ] SEGUIMIENTO
+- [ ] VALORACIÓN DEL AFEITADO
+- [ ] NOTAS
+- [ ] HISTORIAL
+- [ ] PRODUCTOS
+- [ ] CALENDARIO
+- [ ] RECOMENDACIONES BÁSICAS
+- [ ] GUARDAR COMO FAVORITA
+- [ ] DESACTIVAR SEGUIMIENTO
+- [ ] DESACTIVAR TODO
+- [ ] ELIMINAR
+- [ ] PRUEBAS
+
+#### EH · Fase 22/65 — MANOS, UÑAS Y PIES: CONFIGURACIÓN
+- [ ] ACTIVACIÓN
+- [ ] UÑAS
+- [ ] LONGITUD
+- [ ] MANOS
+- [ ] PIES
+- [ ] FRECUENCIA
+- [ ] RECORDATORIOS
+- [ ] RUTINAS
+- [ ] CHECKLIST
+- [ ] CALENDARIO
+- [ ] PRODUCTOS
+- [ ] SEGUIMIENTO
+- [ ] NOTAS
+- [ ] DESACTIVACIÓN INDIVIDUAL
+- [ ] DATOS CONSERVADOS
+- [ ] ELIMINADOS RECIENTEMENTE
+- [ ] PRUEBAS
+- [ ] Activar uñas.
+- [ ] Activar manos.
+- [ ] Activar pies.
+- [ ] Activar solo una.
+- [ ] Crear rutina.
+- [ ] Configurar frecuencia.
+- [ ] Crear recordatorio.
+- [ ] Añadir producto.
+- [ ] Registrar seguimiento.
+- [ ] Editar.
+- [ ] Eliminar.
+- [ ] Recuperar.
+- [ ] Desactivar individualmente.
+- [ ] Reactivar.
+- [ ] Comprobar que no existen duplicados.
+
+#### EH · Fase 23/65 — HIGIENE BUCAL Y SONRISA
+- [ ] ACTIVACIÓN
+- [ ] HIGIENE DIARIA
+- [ ] PRODUCTOS
+- [ ] FRECUENCIA
+- [ ] RECORDATORIOS
+- [ ] CAMBIO DE CEPILLO
+- [ ] REVISIONES DENTALES
+- [ ] RECORDATORIO DE REVISIÓN
+- [ ] SEGUIMIENTO
+- [ ] RACHAS
+- [ ] CONSEJOS
+- [ ] PRODUCTOS RECOMENDADOS
+- [ ] COMPRAS
+- [ ] DESACTIVAR
+- [ ] CALENDARIO
+- [ ] ELIMINACIÓN
+- [ ] PRUEBAS
+- [ ] Activar higiene.
+- [ ] Crear rutina.
+- [ ] Editar pasos.
+- [ ] Registrar productos.
+- [ ] Programar cambio de cepillo.
+- [ ] Crear revisión.
+- [ ] Añadir recordatorio.
+- [ ] Añadir evento al calendario.
+- [ ] Activar/desactivar seguimiento.
+- [ ] Utilizar rachas globales.
+- [ ] Desactivar cada plaquita individualmente.
+- [ ] Reactivar.
+- [ ] Eliminar.
+- [ ] Recuperar.
+- [ ] Comprobar que no hay calendarios/productos/rachas duplicados.
+
+#### EH · Fase 24/65 — PERFUMES Y FRAGANCIAS: PERFIL PERSONAL
+- [ ] ACTIVACIÓN
+- [ ] PERFIL DE FRAGANCIA
+- [ ] AROMAS QUE NO LE GUSTAN
+- [ ] INTENSIDAD
+- [ ] DURACIÓN
+- [ ] OCASIONES
+- [ ] ESTACIONES
+- [ ] PRESUPUESTO
+- [ ] PERFUMES QUE YA TIENE
+- [ ] FAVORITOS
+- [ ] VALORACIÓN
+- [ ] PERFUME ACTUAL
+- [ ] PERFUME PARA CADA OCASIÓN
+- [ ] PERFUMES QUE QUIERE PROBAR
+- [ ] HISTORIAL
+- [ ] RECOMENDACIONES
+- [ ] PRODUCTOS
+- [ ] DESACTIVACIÓN
+- [ ] PRUEBAS
+- [ ] Activar módulo.
+- [ ] Configurar gustos.
+- [ ] Configurar disgustos.
+- [ ] Añadir perfume.
+- [ ] Marcar favorito.
+- [ ] Valorar.
+- [ ] Asignar ocasión.
+- [ ] Asignar temporada.
+- [ ] Crear lista “Quiero probar”.
+- [ ] Configurar perfume actual.
+- [ ] Consultar historial.
+- [ ] Ver recomendaciones.
+- [ ] Desactivar partes.
+- [ ] Reactivar.
+- [ ] Comprobar que no se duplica el catálogo de productos.
+
+#### EH · Fase 25/65 — PERFUMES: RECOMENDACIONES, OCASIONES Y COLECCIÓN
+- [ ] PLAQUITA «MIS PERFUMES»
+- [ ] AÑADIR PERFUME
+- [ ] DISPONIBILIDAD
+- [ ] PERFUME ACTIVO
+- [ ] OCASIONES
+- [ ] TEMPORADA
+- [ ] RECOMENDACIÓN
+- [ ] OTRA OPCIÓN
+- [ ] COMPARACIÓN
+- [ ] ROTACIÓN
+- [ ] NO REPETIR
+- [ ] PERFUMES FAVORITOS
+- [ ] QUIERO PROBAR
+- [ ] RECOMENDACIONES DE COMPRA
+- [ ] ALTERNATIVAS
+- [ ] HISTORIAL
+- [ ] ESTADÍSTICAS
+- [ ] DESACTIVACIÓN
+- [ ] PRUEBAS
+- [ ] Añadir perfume.
+- [ ] Añadir manualmente.
+- [ ] Marcar favorito.
+- [ ] Seleccionar actual.
+- [ ] Asignar ocasión.
+- [ ] Asignar temporada.
+- [ ] Recomendar.
+- [ ] Pedir otra opción.
+- [ ] Comparar.
+- [ ] Activar rotación.
+- [ ] Evitar repetición.
+- [ ] Gestionar colección.
+- [ ] Añadir “Quiero probar”.
+- [ ] Ver alternativas.
+- [ ] Consultar historial.
+- [ ] Desactivar partes.
+- [ ] Reactivar.
+- [ ] Comprobar integración con catálogo global.
+
+#### EH · Fase 26/65 — ACCESORIOS Y ESTILO PERSONAL
+- [ ] ACTIVACIÓN
+- [ ] QUÉ QUIERE GESTIONAR
+- [ ] IMPORTANTE: CONEXIÓN CON ARMARIO
+- [ ] AÑADIR ACCESORIO
+- [ ] ESTILO
+- [ ] OCASIONES
+- [ ] FAVORITOS
+- [ ] ACCESORIO ACTUAL
+- [ ] COMBINACIONES
+- [ ] RECOMENDACIONES
+- [ ] QUÉ NO HACEMOS
+- [ ] PRODUCTOS
+- [ ] LISTA DE DESEADOS
+- [ ] DESACTIVACIÓN INDIVIDUAL
+- [ ] PRUEBAS
+- [ ] Activar accesorios.
+- [ ] Seleccionar categorías.
+- [ ] Añadir accesorio.
+- [ ] Editarlo.
+- [ ] Añadir preferencias.
+- [ ] Marcar favorito.
+- [ ] Añadir a deseos.
+- [ ] Asociarlo al catálogo.
+- [ ] Comprobar duplicados con Armario.
+- [ ] Desactivar una categoría.
+- [ ] Reactivarla.
+- [ ] Desactivar todo.
+- [ ] Reactivar.
+- [ ] Comprobar persistencia.
+- [ ] Probar móvil.
+
+#### EH · Fase 27/65 — GUSTOS, INTERESES Y COSAS QUE QUIERO HACER
+- [ ] PLAQUITA PRINCIPAL
+- [ ] CATEGORÍAS
+- [ ] PRIORIDAD
+- [ ] ESTADO
+- [ ] FECHA
+- [ ] LUGARES
+- [ ] FAVORITOS
+- [ ] NOTAS
+- [ ] CONEXIÓN CON EL RESTO DE JC FITNESS
+- [ ] EJEMPLO
+- [ ] DESACTIVAR
+- [ ] ELIMINAR
+- [ ] PRUEBAS
+- [ ] Añadir gusto.
+- [ ] Editarlo.
+- [ ] Eliminarlo.
+- [ ] Recuperarlo.
+- [ ] Añadir interés.
+- [ ] Añadir algo que quiere hacer.
+- [ ] Cambiar estado.
+- [ ] Añadir fecha.
+- [ ] Conectarlo con calendario.
+- [ ] Añadir favorito.
+- [ ] Añadir nota.
+- [ ] Abrir nota extensa en Diario.
+- [ ] Desactivar cada plaquita.
+- [ ] Reactivar.
+- [ ] Comprobar persistencia.
+
+#### EH · Fase 28/65 — OBJETIVOS Y EXPERIENCIAS PERSONALES
+- [ ] DESDE «QUIERO HACER»
+- [ ] UTILIZAR OBJETIVOS GLOBAL
+- [ ] INFORMACIÓN
+- [ ] EXPERIENCIAS
+- [ ] COMPLETADO
+- [ ] DIARIO
+- [ ] FOTOS
+- [ ] CALENDARIO
+- [ ] RECORDATORIOS
+- [ ] PROGRESO
+- [ ] FAVORITOS
+- [ ] DESACTIVACIÓN
+- [ ] ELIMINACIÓN
+- [ ] PRUEBAS
+- [ ] Crear “Quiero hacer”.
+- [ ] Convertirlo en objetivo.
+- [ ] Abrir Objetivos global.
+- [ ] Añadir fecha.
+- [ ] Añadir calendario.
+- [ ] Crear recordatorio.
+- [ ] Completar objetivo.
+- [ ] Actualizar automáticamente “Ya lo hice”.
+- [ ] Abrir Diario.
+- [ ] Añadir fotos mediante sistema existente.
+- [ ] Desactivar módulo.
+- [ ] Reactivarlo.
+- [ ] Comprobar que no se duplican objetivos, tareas, calendario, diario ni fotos.
+
+#### EH · Fase 29/65 — PERFIL DE ESTILO PERSONAL
+- [ ] PLAQUITA «MI ESTILO»
+- [ ] PERFIL VISUAL
+- [ ] PREFERENCIAS GENERALES
+- [ ] COLORES
+- [ ] ESTILO DE ROPA
+- [ ] CUIDADO PERSONAL
+- [ ] PERFUMES
+- [ ] ACCESORIOS
+- [ ] GUSTOS
+- [ ] COMPLETAMENTE OPCIONAL
+- [ ] PERSONALIZACIÓN
+- [ ] ORDEN
+- [ ] Skincare.
+- [ ] Pelo.
+- [ ] Perfumes.
+- [ ] Barba.
+- [ ] Armario.
+- [ ] Accesorios.
+- [ ] ESTADO DE CONFIGURACIÓN
+- [ ] NO CREAR UN «TEST DE ESTILO»
+- [ ] PRIVACIDAD Y CONTROL
+- [ ] PRUEBAS
+- [ ] Entrar sin datos.
+- [ ] Entrar con un solo módulo.
+- [ ] Activar varios.
+- [ ] Mostrar resumen.
+- [ ] Cambiar preferencias.
+- [ ] Comprobar actualización automática.
+- [ ] Reordenar plaquitas.
+- [ ] Ocultar una.
+- [ ] Reactivarla.
+- [ ] Desactivar “Mi estilo”.
+- [ ] Comprobar que los módulos originales siguen intactos.
+- [ ] Verificar que no existen datos duplicados.
+
+#### EH · Fase 30/65 — PANTALLA PRINCIPAL Y ORGANIZACIÓN
+- [ ] CABECERA
+- [ ] PLAQUITAS PRINCIPALES
+- [ ] DISEÑO DE PLAQUITAS
+- [ ] ESTADO
+- [ ] ORDEN PERSONALIZABLE
+- [ ] MENOS ES MÁS
+- [ ] ACCESO RÁPIDO
+- [ ] PERSONALIZACIÓN TOTAL
+- [ ] REORDENAR
+- [ ] ANIMACIONES
+- [ ] VACÍO INICIAL
+- [ ] PROGRESIVIDAD
+- [ ] NO DUPLICAR INFORMACIÓN
+- [ ] CONFIGURACIÓN GLOBAL
+- [ ] ELIMINACIÓN
+- [ ] PRUEBAS DE UX
+- [ ] Usuario nuevo.
+- [ ] Usuario con un módulo.
+- [ ] Usuario con 5 módulos.
+- [ ] Usuario con todos.
+- [ ] Ocultar.
+- [ ] Mostrar.
+- [ ] Reordenar.
+- [ ] Añadir.
+- [ ] Quitar.
+- [ ] Accesos rápidos.
+- [ ] Modo oscuro.
+- [ ] Pantallas pequeñas.
+- [ ] Pantallas grandes.
+- [ ] Rotación.
+- [ ] Animaciones.
+- [ ] Persistencia.
+
+#### EH · Fase 31/65 — PERSONALIZACIÓN PROFUNDA DE LAS PLAQUITAS
+- [ ] MODO «PERSONALIZAR»
+- [ ] CADA PLAQUITA
+- [ ] ARRASTRAR
+- [ ] TAMAÑO
+- [ ] CONTENIDO
+- [ ] ACCESOS RÁPIDOS
+- [ ] LÍMITE DE ACCESOS
+- [ ] OCULTAR
+- [ ] RECUPERAR
+- [ ] RESTABLECER
+- [ ] CONFIGURACIÓN POR USUARIO
+- [ ] NO AFECTAR A OTROS MÓDULOS
+- [ ] DATOS CONSERVADOS
+- [ ] ANIMACIONES
+- [ ] MÓVIL
+- [ ] PREVENIR ERRORES
+- [ ] PERSONALIZACIÓN RÁPIDA
+- [ ] PRUEBAS
+- [ ] Mover.
+- [ ] Ocultar.
+- [ ] Mostrar.
+- [ ] Cambiar tamaño.
+- [ ] Cambiar contenido.
+- [ ] Crear acceso rápido.
+- [ ] Eliminar acceso rápido.
+- [ ] Restablecer.
+- [ ] Salir y volver a entrar.
+- [ ] Cerrar sesión y volver.
+- [ ] Probar otro dispositivo.
+- [ ] Modo oscuro.
+- [ ] Pantalla pequeña.
+- [ ] Comprobar que los datos internos no cambian.
+
+#### EH · Fase 32/65 — RECOMENDACIONES GENERALES DE ESTILO
+- [ ] PLAQUITA
+- [ ] TIPO DE CONSEJO
+- [ ] NO REPETIR
+- [ ] ACCIONES
+- [ ] FRECUENCIA
+- [ ] CONSEJO EXPLICADO
+- [ ] PERSONALIZACIÓN
+- [ ] CONSEJOS SUBJETIVOS
+- [ ] CONSEJOS DE PRODUCTOS
+- [ ] CONSEJOS DE OUTFITS
+- [ ] CONSEJOS DE RUTINA
+- [ ] DIARIO
+- [ ] GUARDAR CONSEJO
+- [ ] OCULTAR SISTEMA
+- [ ] PRIVACIDAD
+- [ ] PRUEBAS
+- [ ] Activar recomendaciones.
+- [ ] Recibir sugerencia.
+- [ ] Ver motivo.
+- [ ] Marcar “me interesa”.
+- [ ] Marcar “no me interesa”.
+- [ ] Marcar “ya lo hago”.
+- [ ] Guardar.
+- [ ] Abrir módulo relacionado.
+- [ ] Abrir Diario.
+- [ ] Desactivar recomendaciones.
+- [ ] Reactivarlas.
+- [ ] Comprobar que no se repiten innecesariamente.
+- [ ] Comprobar que no aparecen recomendaciones contradictorias.
+
+#### EH · Fase 33/65 — DESCUBRIR E INSPIRACIÓN
+- [ ] PLAQUITA «DESCUBRIR»
+- [ ] QUÉ PUEDE DESCUBRIR
+- [ ] TARJETAS PEQUEÑAS
+- [ ] PERSONALIZACIÓN
+- [ ] FILTROS
+- [ ] GUARDAR
+- [ ] ABRIR MÓDULO
+- [ ] PRODUCTOS
+- [ ] SIN COMPRAS FORZADAS
+- [ ] FRECUENCIA
+- [ ] OCULTAR
+- [ ] CONTENIDO REPETIDO
+- [ ] CONTENIDO SUBJETIVO
+- [ ] SIN RED SOCIAL
+- [ ] PRUEBAS
+- [ ] Activar Descubrir.
+- [ ] Mostrar tarjetas.
+- [ ] Filtrar categorías.
+- [ ] Guardar.
+- [ ] Descartar.
+- [ ] Abrir módulo.
+- [ ] Abrir producto.
+- [ ] Cambiar frecuencia.
+- [ ] Ocultar.
+- [ ] Reactivar.
+- [ ] Comprobar que no aparecen categorías desactivadas.
+- [ ] Comprobar que no se duplican favoritos ni productos.
+
+#### EH · Fase 34/65 — PERFIL Y PREFERENCIAS AVANZADAS
+- [ ] PLAQUITA «MIS PREFERENCIAS»
+- [ ] CATEGORÍAS
+- [ ] EDITAR
+- [ ] RESUMEN
+- [ ] INFORMACIÓN NO CONFIGURADA
+- [ ] PREFERENCIAS UTILIZADAS
+- [ ] CONTROL DE RECOMENDACIONES
+- [ ] BORRAR UNA PREFERENCIA
+- [ ] RESTABLECER CATEGORÍA
+- [ ] BORRAR TODO ESTILO
+- [ ] PRIVACIDAD
+- [ ] DESACTIVACIÓN
+- [ ] REACTIVACIÓN
+- [ ] EXPORTACIÓN
+- [ ] SIN DUPLICADOS
+- [ ] PRUEBAS
+- [ ] Ver preferencias.
+- [ ] Editarlas.
+- [ ] Eliminar una.
+- [ ] Restablecer categoría.
+- [ ] Desactivar recomendaciones.
+- [ ] Ocultar módulo.
+- [ ] Reactivar módulo.
+- [ ] Eliminar datos.
+- [ ] Exportar.
+- [ ] Comprobar que no se modifican otros módulos.
+- [ ] Comprobar que no existen duplicados.
+
+#### EH · Fase 35/65 — ESTADÍSTICAS Y PROGRESO DE ESTILO
+- [ ] PLAQUITA «PROGRESO»
+- [ ] NO PUNTUAR AL USUARIO
+- [ ] RESUMEN
+- [ ] PERIODOS
+- [ ] GRÁFICOS
+- [ ] OBJETIVOS
+- [ ] RACHAS
+- [ ] COMPARACIONES
+- [ ] DATOS INCOMPLETOS
+- [ ] PERSONALIZACIÓN
+- [ ] DESACTIVACIÓN
+- [ ] HISTORIAL
+- [ ] PRIVACIDAD
+- [ ] PRUEBAS
+- [ ] Registrar rutina.
+- [ ] Registrar afeitado.
+- [ ] Registrar perfume.
+- [ ] Ver estadísticas.
+- [ ] Cambiar periodo.
+- [ ] Ocultar una métrica.
+- [ ] Ocultar todo.
+- [ ] Reactivar.
+- [ ] Comprobar datos sin registros.
+- [ ] Comprobar integración con rachas.
+- [ ] Comprobar integración con objetivos.
+- [ ] Verificar que las estadísticas no duplican datos.
+
+#### EH · Fase 36/65 — GESTIÓN GLOBAL DE MÓDULOS
+- [ ] CENTRO «GESTIONAR ESTILO»
+- [ ] CADA MÓDULO
+- [ ] OCULTAR
+- [ ] DESACTIVAR
+- [ ] ELIMINAR
+- [ ] RECUPERACIÓN
+- [ ] REACTIVAR
+- [ ] RESTABLECER
+- [ ] ACTIVACIÓN POR PARTES
+- [ ] MÓDULOS OBLIGATORIOS
+- [ ] DEPENDENCIAS
+- [ ] NO BORRAR POR DESACTIVAR
+- [ ] CONFIGURACIÓN POR DEFECTO
+- [ ] BÚSQUEDA
+- [ ] ORDEN
+- [ ] INDICADOR DE ESTADO
+- [ ] PRUEBAS CRÍTICAS
+- [ ] Ocultar módulo.
+- [ ] Volver a mostrarlo.
+- [ ] Desactivarlo.
+- [ ] Reactivarlo.
+- [ ] Eliminarlo.
+- [ ] Recuperarlo.
+- [ ] Eliminarlo definitivamente.
+- [ ] Restablecer diseño.
+- [ ] Comprobar que los datos no se pierden al ocultar.
+- [ ] Comprobar que no se pierden al desactivar.
+- [ ] Comprobar dependencias.
+- [ ] Comprobar móvil.
+- [ ] Cerrar sesión.
+- [ ] Volver a entrar.
+- [ ] Comprobar persistencia.
+
+#### EH · Fase 37/65 — BUSCADOR Y NAVEGACIÓN INTERNA
+- [ ] BUSCADOR
+- [ ] RESULTADOS AGRUPADOS
+- [ ] BÚSQUEDA RÁPIDA
+- [ ] SIN RESULTADOS
+- [ ] ACCESOS RECIENTES
+- [ ] FAVORITOS
+- [ ] NAVEGACIÓN INTERNA
+- [ ] BREADCRUMBS MÓVILES
+- [ ] BOTÓN «VOLVER»
+- [ ] ENLACES ENTRE MÓDULOS
+- [ ] BÚSQUEDA GLOBAL
+- [ ] RESULTADOS CONTEXTUALES
+- [ ] MÓDULOS OCULTOS
+- [ ] MÓDULOS DESACTIVADOS
+- [ ] ELIMINADOS
+- [ ] RENDIMIENTO
+- [ ] PRUEBAS
+- [ ] Buscar módulo.
+- [ ] Buscar elemento.
+- [ ] Buscar producto.
+- [ ] Buscar favorito.
+- [ ] Buscar un módulo oculto.
+- [ ] Buscar uno desactivado.
+- [ ] Buscar elemento eliminado.
+- [ ] Búsqueda sin resultados.
+- [ ] Resultados parciales.
+- [ ] Abrir resultado.
+- [ ] Volver atrás.
+- [ ] Mantener posición anterior.
+- [ ] Probar teclado móvil.
+- [ ] Probar modo oscuro.
+- [ ] Comprobar que no se duplican resultados.
+
+#### EH · Fase 38/65 — NOTIFICACIONES Y RECORDATORIOS
+- [ ] CENTRO DE NOTIFICACIONES
+- [ ] TIPOS DE AVISO
+- [ ] NADA AUTOMÁTICO SIN PERMISO
+- [ ] CREAR RECORDATORIO
+- [ ] REPETICIÓN
+- [ ] SILENCIAR
+- [ ] HORARIO DE SILENCIO
+- [ ] LÍMITE DE NOTIFICACIONES
+- [ ] NOTIFICACIONES INTELIGENTES
+- [ ] RECOMENDACIONES
+- [ ] CONTROL GLOBAL
+- [ ] DESACTIVACIÓN TOTAL
+- [ ] HISTORIAL
+- [ ] ACCIÓN DESDE LA NOTIFICACIÓN
+- [ ] PRUEBAS
+- [ ] Activar aviso.
+- [ ] Crear recordatorio.
+- [ ] Programarlo.
+- [ ] Recibirlo.
+- [ ] Abrirlo.
+- [ ] Comprobar que lleva al módulo correcto.
+- [ ] Silenciar categoría.
+- [ ] Desactivar todo.
+- [ ] Reactivar.
+- [ ] Probar repetición.
+- [ ] Probar varios avisos.
+- [ ] Comprobar agrupación.
+- [ ] Comprobar horario de silencio.
+- [ ] Comprobar persistencia.
+
+#### EH · Fase 39/65 — INTEGRACIÓN CON EL RESTO DE JC FITNESS
+- [ ] CALENDARIO 📅
+- [ ] OBJETIVOS 🎯
+- [ ] TAREAS ✅
+- [ ] RECORDATORIOS 🔔
+- [ ] FAVORITOS ❤️
+- [ ] PRODUCTOS 🛒
+- [ ] ARMARIO 👕
+- [ ] DIARIO 📝
+- [ ] FOTOS 📷
+- [ ] RACHAS 🔥
+- [ ] SONIDOS 🔊
+- [ ] ELIMINADOS 🗑️
+- [ ] BÚSQUEDA 🔍
+- [ ] NOTIFICACIONES 🔔
+- [ ] AJUSTES ⚙️
+- [ ] AUTENTICACIÓN 👤
+- [ ] SINCRONIZACIÓN ☁️
+- [ ] FUENTE ÚNICA DE VERDAD
+- [ ] ELIMINACIÓN EN CASCADA
+- [ ] DESACTIVACIÓN
+- [ ] PRUEBA MAESTRA
+
+#### EH · Fase 40/65 — PRIMER USO Y CONFIGURACIÓN INICIAL
+- [ ] PRIMERA ENTRADA
+- [ ] SALTAR
+- [ ] CONFIGURACIÓN PROGRESIVA
+- [ ] NADA DE «PERFIL 100%»
+- [ ] PANTALLA RESULTANTE
+- [ ] RECOMENDACIONES INICIALES
+- [ ] APRENDER CON EL USO
+- [ ] VOLVER A CONFIGURAR
+- [ ] USUARIO QUE YA TIENE DATOS
+- [ ] IMPORTAR
+- [ ] USUARIO QUE NO QUIERE NADA
+- [ ] VOLVER MÁS TARDE
+- [ ] TUTORIAL
+- [ ] Plaquitas.
+- [ ] Personalización.
+- [ ] Conexiones con otros módulos.
+- [ ] Cómo ocultar/desactivar.
+- [ ] RECORDAR EL ESTADO
+- [ ] PRUEBAS
+- [ ] Usuario nuevo.
+- [ ] Empezar.
+- [ ] Seleccionar un módulo.
+- [ ] Seleccionar varios.
+- [ ] Saltar.
+- [ ] Salir.
+- [ ] Volver.
+- [ ] Añadir posteriormente módulos.
+- [ ] Usuario con datos existentes.
+- [ ] Importar referencias.
+- [ ] Comprobar que no hay duplicados.
+- [ ] Repetir tutorial.
+- [ ] Saltar tutorial.
+- [ ] Comprobar persistencia.
+
+#### EH · Fase 41/65 — ESTADOS VACÍOS, CARGA, ERRORES Y RECUPERACIÓN
+- [ ] SIN DATOS
+- [ ] PRIMERA VEZ
+- [ ] CARGANDO
+- [ ] ERROR DE CONEXIÓN
+- [ ] MODO SIN CONEXIÓN
+- [ ] ERROR DE GUARDADO
+- [ ] EVITAR PÉRDIDA DE DATOS
+- [ ] SINCRONIZACIÓN
+- [ ] CONFLICTOS
+- [ ] MÓDULO DESACTIVADO
+- [ ] ELEMENTO ELIMINADO
+- [ ] PERMISO DENEGADO
+- [ ] ERROR IRRECUPERABLE
+- [ ] DATOS CORRUPTOS
+- [ ] ACCIONES DESTRUCTIVAS
+- [ ] FEEDBACK VISUAL
+- [ ] PRUEBAS
+- [ ] Sin datos.
+- [ ] Sin conexión.
+- [ ] Con conexión lenta.
+- [ ] Error de servidor.
+- [ ] Error de guardado.
+- [ ] Sincronización.
+- [ ] Conflicto.
+- [ ] Permiso denegado.
+- [ ] Elemento eliminado.
+- [ ] Módulo desactivado.
+- [ ] Recuperación.
+- [ ] Reintento.
+- [ ] Cierre durante guardado.
+- [ ] Volver a abrir.
+- [ ] Comprobar que no se pierden datos.
+
+#### EH · Fase 42/65 — ACCESIBILIDAD Y USABILIDAD
+- [ ] BOTONES
+- [ ] PLAQUITAS
+- [ ] TEXTO
+- [ ] ICONOS
+- [ ] CONTRASTE
+- [ ] COLOR
+- [ ] ANIMACIONES
+- [ ] NAVEGACIÓN
+- [ ] SCROLL
+- [ ] TECLADO
+- [ ] FORMULARIOS
+- [ ] ERRORES
+- [ ] CONFIRMACIONES
+- [ ] ACCESIBILIDAD DEL TEXTO
+- [ ] TAMAÑO DE FUENTE
+- [ ] ORIENTACIÓN
+- [ ] DISPOSITIVOS
+- [ ] RENDIMIENTO
+- [ ] PRUEBAS
+- [ ] Modo claro.
+- [ ] Modo oscuro.
+- [ ] Texto grande.
+- [ ] Lector de pantalla.
+- [ ] Teclado abierto.
+- [ ] Pantalla pequeña.
+- [ ] Pantalla grande.
+- [ ] Scroll.
+- [ ] Arrastrar plaquitas.
+- [ ] Formularios.
+- [ ] Errores.
+- [ ] Confirmaciones.
+- [ ] Animaciones.
+- [ ] Rotación.
+- [ ] Rendimiento.
+
+#### EH · Fase 43/65 — SEGURIDAD, PRIVACIDAD Y CONTROL DE DATOS
+- [ ] DATOS PRIVADOS
+- [ ] CUENTA
+- [ ] ACCESO
+- [ ] PRIVACIDAD POR MÓDULO
+- [ ] DATOS SENSIBLES
+- [ ] ELIMINAR
+- [ ] RECUPERAR
+- [ ] ELIMINACIÓN DEFINITIVA
+- [ ] EXPORTAR
+- [ ] SINCRONIZACIÓN SEGURA
+- [ ] PRODUCTOS Y AFILIACIÓN
+- [ ] ANALÍTICA
+- [ ] BORRADO DE CUENTA
+- [ ] COPIAS DE SEGURIDAD
+- [ ] SESIONES
+- [ ] PRUEBAS
+- [ ] Crear datos.
+- [ ] Cerrar sesión.
+- [ ] Iniciar sesión.
+- [ ] Verificar recuperación.
+- [ ] Probar otro dispositivo.
+- [ ] Eliminar.
+- [ ] Recuperar.
+- [ ] Eliminar definitivamente.
+- [ ] Exportar.
+- [ ] Comprobar permisos.
+- [ ] Comprobar privacidad.
+- [ ] Eliminar cuenta en entorno de pruebas.
+- [ ] Verificar que no quedan datos accesibles.
+
+#### EH · Fase 44/65 — RENDIMIENTO Y OPTIMIZACIÓN
+- [ ] CARGAR SOLO LO NECESARIO
+- [ ] CARGA PROGRESIVA
+- [ ] LISTAS GRANDES
+- [ ] FOTOS
+- [ ] CACHÉ
+- [ ] DATOS LOCALES
+- [ ] SINCRONIZACIÓN EFICIENTE
+- [ ] DEBOUNCE
+- [ ] ANIMACIONES
+- [ ] MEMORIA
+- [ ] COMPONENTES
+- [ ] DATOS DUPLICADOS
+- [ ] ACTUALIZACIONES
+- [ ] ERROR DE RENDIMIENTO
+- [ ] DISPOSITIVOS ANTIGUOS
+- [ ] PRUEBAS DE CARGA
+- [ ] PRUEBAS DE RED
+- [ ] PRUEBAS DE MEMORIA
+
+#### EH · Fase 45/65 — ESTRUCTURA INTERNA DE DATOS
+- [ ] USUARIO
+- [ ] MÓDULOS
+- [ ] CONFIGURACIÓN DE PLAQUITAS
+- [ ] PREFERENCIAS
+- [ ] GUSTOS
+- [ ] EXPERIENCIAS
+- [ ] RELACIONES
+- [ ] ELIMINACIÓN
+- [ ] HISTORIAL
+- [ ] FECHAS
+- [ ] SINCRONIZACIÓN
+- [ ] CONFLICTOS
+- [ ] SEGURIDAD
+- [ ] ESCALABILIDAD
+- [ ] NO SOBREDISEÑAR
+- [ ] PRUEBAS
+- [ ] Crear registro.
+- [ ] Modificarlo.
+- [ ] Eliminarlo.
+- [ ] Recuperarlo.
+- [ ] Sincronizarlo.
+- [ ] Abrirlo desde otro dispositivo.
+- [ ] Relacionarlo con otro módulo.
+- [ ] Eliminar la relación.
+- [ ] Comprobar permisos.
+- [ ] Comprobar que no existen duplicados.
+
+#### EH · Fase 46/65 — MIGRACIÓN Y COMPATIBILIDAD
+- [ ] NO REHACER LA APP
+- [ ] ANALIZAR ANTES DE MODIFICAR
+- [ ] MAPEAR DATOS EXISTENTES
+- [ ] MIGRACIÓN
+- [ ] BACKUP ANTES DE MIGRAR
+- [ ] COMPATIBILIDAD
+- [ ] FUNCIONES ANTIGUAS
+- [ ] DUPLICADOS
+- [ ] VERSIONADO
+- [ ] MIGRACIONES FUTURAS
+- [ ] USUARIO ANTIGUO
+- [ ] USUARIO NUEVO
+- [ ] MIGRACIÓN PARCIAL
+- [ ] DATOS INCOMPATIBLES
+- [ ] PRUEBAS
+- [ ] FALLA DURANTE MIGRACIÓN
+- [ ] DESPLIEGUE
+- [ ] COMPATIBILIDAD CON SUPABASE
+- [ ] COMPATIBILIDAD ENTRE VERSIONES
+- [ ] PRUEBA FINAL
+
+#### EH · Fase 47/65 — PRUEBAS INTEGRALES
+- [ ] PRUEBA DE ENTRADA
+- [ ] PRUEBA DE PLAQUITAS
+- [ ] PRUEBA DE ACTIVACIÓN
+- [ ] PRUEBA DE ELIMINACIÓN
+- [ ] PRUEBA DE OBJETIVOS
+- [ ] PRUEBA DE CALENDARIO
+- [ ] PRUEBA DE DIARIO
+- [ ] PRUEBA DE FAVORITOS
+- [ ] PRUEBA DE PRODUCTOS
+- [ ] PRUEBA DE NOTIFICACIONES
+- [ ] PRUEBA DE RECOMENDACIONES
+- [ ] PRUEBA DE BÚSQUEDA
+- [ ] PRUEBA DE PERFIL
+- [ ] PRUEBA DE ESTADÍSTICAS
+- [ ] PRUEBA DE DESCONEXIÓN
+- [ ] PRUEBA DE DOS DISPOSITIVOS
+- [ ] PRUEBA DE CONFLICTO
+- [ ] PRUEBA DE CUENTA
+- [ ] PRUEBA DE USUARIO NUEVO
+- [ ] PRUEBA DE USUARIO AVANZADO
+- [ ] PRUEBA DE INTERFAZ
+- [ ] PRUEBA DE ACCESIBILIDAD
+- [ ] PRUEBA DE ERRORES
+- [ ] PRUEBA DE RENDIMIENTO
+- [ ] PRUEBA DE DATOS
+- [ ] PRUEBA DE SEGURIDAD
+- [ ] PRUEBA DE MIGRACIÓN
+- [ ] PRUEBA DE ACTUALIZACIÓN
+- [ ] PRUEBA DE DESINSTALACIÓN / REINSTALACIÓN
+- [ ] PRUEBA FINAL DEL USUARIO
+
+#### EH · Fase 48/65 — AUDITORÍA FINAL DE FUNCIONES Y DUPLICADOS
+- [ ] INVENTARIO COMPLETO
+- [ ] CLASIFICAR CADA FUNCIÓN
+- [ ] REVISAR DUPLICADOS
+- [ ] PLAQUITAS DUPLICADAS
+- [ ] PREFERENCIAS DUPLICADAS
+- [ ] DATOS DUPLICADOS
+- [ ] SISTEMAS QUE DEBEN SALIR DE ESTILO
+- [ ] SISTEMAS QUE DEBEN QUEDARSE
+- [ ] REVISAR EL FLUJO
+- [ ] REVISAR NAVEGACIÓN
+- [ ] REVISAR NOMBRES
+- [ ] REVISAR ICONOS
+- [ ] REVISAR ACCIONES
+- [ ] REVISAR CONFIGURACIÓN
+- [ ] REVISAR ELIMINACIÓN
+- [ ] REVISAR RECOMENDACIONES
+- [ ] REVISAR ESTADÍSTICAS
+- [ ] REVISAR NOTIFICACIONES
+- [ ] REVISAR PANTALLA PRINCIPAL
+- [ ] DOCUMENTAR DECISIONES
+- [ ] NO AÑADIR FUNCIONES DURANTE LA AUDITORÍA
+- [ ] RESULTADO FINAL
+
+#### EH · Fase 49/65 — REVISIÓN VISUAL FINAL Y COHERENCIA
+- [ ] IDENTIDAD JC FITNESS
+- [ ] PERSONALIDAD PROPIA
+- [ ] PLAQUITAS
+- [ ] JERARQUÍA
+- [ ] ESPACIO
+- [ ] ICONOS
+- [ ] MODO OSCURO
+- [ ] ANIMACIONES
+- [ ] ESTADOS
+- [ ] BOTONES
+- [ ] MODALES
+- [ ] FORMULARIOS
+- [ ] NAVEGACIÓN
+- [ ] ICONO Y TÍTULO
+- [ ] MICRODETALLES
+- [ ] RESPONSIVE
+- [ ] NO SOBREDECORAR
+- [ ] REVISIÓN VISUAL COMPLETA
+- [ ] COMPARACIÓN CON JC FITNESS
+- [ ] RESULTADO
+
+#### EH · Fase 50/65 — MICROINTERACCIONES Y ANIMACIONES
+- [ ] TOCAR UNA PLAQUITA
+- [ ] MANTENER PULSADO
+- [ ] ARRASTRAR
+- [ ] AÑADIR
+- [ ] OCULTAR
+- [ ] DESACTIVAR
+- [ ] RECUPERAR
+- [ ] GUARDAR
+- [ ] ELIMINAR
+- [ ] CAMBIAR TAMAÑO
+- [ ] ABRIR MÓDULO
+- [ ] VOLVER
+- [ ] BUSCADOR
+- [ ] FILTROS
+- [ ] CHECKBOX / SELECTORES
+- [ ] SLIDERS
+- [ ] ERRORES
+- [ ] ÉXITO
+- [ ] CARGA
+- [ ] REDUCIR ANIMACIONES
+- [ ] VELOCIDAD
+- [ ] CONSISTENCIA
+- [ ] SIN ANIMACIONES GRATUITAS
+- [ ] PRUEBA DE MICROINTERACCIONES
+
+#### EH · Fase 51/65 — CONTROL DE CALIDAD DE LA EXPERIENCIA REAL
+- [ ] PRUEBA DEL PRIMER DÍA
+- [ ] PRUEBA DEL TERCER DÍA
+- [ ] PRUEBA DE USO RÁPIDO
+- [ ] PRUEBA DE DESCUBRIMIENTO
+- [ ] PRUEBA DE SOBRECARGA
+- [ ] PRUEBA DE USUARIO SIMPLE
+- [ ] PRUEBA DE USUARIO AVANZADO
+- [ ] PRUEBA DE PERSONALIZACIÓN
+- [ ] PRUEBA DE «NO QUIERO ESTO»
+- [ ] PRUEBA DE «QUIERO RECUPERARLO»
+- [ ] PRUEBA DE ERRORES HUMANOS
+- [ ] PRUEBA DE VELOCIDAD
+- [ ] PRUEBA DE NOTIFICACIONES
+- [ ] PRUEBA DE RECOMENDACIONES
+- [ ] PRUEBA DE CONFIANZA
+- [ ] PRUEBA DE COHERENCIA
+- [ ] PRUEBA DE «¿REALMENTE HACE FALTA?»
+- [ ] LISTA DE FALLOS
+- [ ] PRUEBA FINAL SIN INSTRUCCIONES
+
+#### EH · Fase 52/65 — PREPARACIÓN PARA PRODUCCIÓN
+- [ ] SEPARAR ENTORNOS
+- [ ] VARIABLES Y SECRETOS
+- [ ] BASE DE DATOS
+- [ ] BACKUP
+- [ ] MIGRACIONES
+- [ ] DATOS EXISTENTES
+- [ ] CUENTA NUEVA
+- [ ] CUENTA EXISTENTE
+- [ ] PRODUCCIÓN MÓVIL
+- [ ] RENDIMIENTO REAL
+- [ ] MONITORIZACIÓN
+- [ ] RECUPERACIÓN
+- [ ] DESPLIEGUE GRADUAL
+- [ ] PLAN DE RETROCESO
+- [ ] CHECKLIST DE PUBLICACIÓN
+- [ ] DESPUÉS DE PUBLICAR
+- [ ] SI APARECE UN ERROR
+- [ ] NO AÑADIR FUNCIONES POST-LANZAMIENTO SIN CONTROL
+
+#### EH · Fase 53/65 — DOCUMENTACIÓN TÉCNICA Y MANTENIMIENTO
+- [ ] DOCUMENTO DEL MÓDULO
+- [ ] MAPA DE MÓDULOS
+- [ ] SISTEMAS GLOBALES UTILIZADOS
+- [ ] FUENTE DE CADA DATO
+- [ ] ESTADOS
+- [ ] ELIMINACIÓN
+- [ ] ESTRUCTURA DE DATOS
+- [ ] MIGRACIONES
+- [ ] COMPONENTES REUTILIZABLES
+- [ ] REGLAS DE DISEÑO
+- [ ] REGLAS DE UX
+- [ ] NOTIFICACIONES
+- [ ] PRIVACIDAD
+- [ ] PRUEBAS
+- [ ] CAMBIOS FUTUROS
+- [ ] BACKLOG
+- [ ] REGLA PARA CLAUDE
+- [ ] DOCUMENTACIÓN PARA MANTENIMIENTO
+
+#### EH · Fase 54/65 — BACKUP, RESTAURACIÓN Y RECUPERACIÓN AVANZADA
+- [ ] BACKUP GLOBAL
+- [ ] COPIAS AUTOMÁTICAS
+- [ ] BACKUP ANTES DE CAMBIOS IMPORTANTES
+- [ ] RESTAURACIÓN
+- [ ] NO RESTAURAR TODA LA APP SIN NECESIDAD
+- [ ] RECUPERACIÓN DE UN ELEMENTO
+- [ ] RECUPERACIÓN DE UN MÓDULO
+- [ ] RESTAURACIÓN COMPLETA
+- [ ] HISTORIAL DE CAMBIOS
+- [ ] RECUPERACIÓN DE CONFIGURACIÓN
+- [ ] RESTAURACIÓN Y SINCRONIZACIÓN
+- [ ] CONFLICTOS DE RESTAURACIÓN
+- [ ] SEGURIDAD
+- [ ] EXPORTACIÓN
+- [ ] IMPORTACIÓN
+- [ ] PRUEBA DE RESTAURACIÓN
+- [ ] PRUEBA DE DESASTRE
+- [ ] REGISTRO
+
+#### EH · Fase 55/65 — ESCALABILIDAD Y FUTURAS FUNCIONES
+- [ ] MÓDULOS MODULARES
+- [ ] NUEVAS PLAQUITAS
+- [ ] FUNCIONES FUTURAS
+- [ ] SISTEMA DE PLUGINS NO NECESARIO
+- [ ] DATOS EXTENSIBLES
+- [ ] CATEGORÍAS
+- [ ] CONFIGURACIÓN
+- [ ] INTEGRACIONES
+- [ ] IA
+- [ ] PERSONALIZACIÓN
+- [ ] COMPATIBILIDAD
+- [ ] VERSIONADO
+- [ ] RENDIMIENTO
+- [ ] CONTROL DE COMPLEJIDAD
+- [ ] BACKLOG
+- [ ] PRIORIDADES
+- [ ] PRUEBA DE CRECIMIENTO
+
+#### EH · Fase 56/65 — INTEGRACIÓN PROFUNDA CON LA IA
+- [ ] CONTEXTO PERSONAL
+- [ ] RECOMENDACIONES PERSONALIZADAS
+- [ ] APRENDER DE LAS RESPUESTAS
+- [ ] NO REPETIR
+- [ ] CONTEXTO
+- [ ] CONEXIÓN CON OTROS MÓDULOS
+- [ ] OBJETIVOS
+- [ ] IA CONVERSACIONAL
+- [ ] EXPLICACIONES
+- [ ] NIVEL DE CONFIANZA
+- [ ] PRIVACIDAD
+- [ ] CONTROL DEL USUARIO
+- [ ] MEMORIA DE LA IA
+- [ ] CORRECCIÓN DEL USUARIO
+- [ ] EVITAR AUTOMATISMOS
+- [ ] ACCIONES SUGERIDAS
+- [ ] APRENDIZAJE PROGRESIVO
+- [ ] PRUEBAS DE IA
+
+#### EH · Fase 57/65 — APRENDIZAJE Y PERSONALIZACIÓN PROGRESIVA
+- [ ] APRENDER DE FORMA NATURAL
+- [ ] PREFERENCIAS EXPLÍCITAS
+- [ ] PREFERENCIAS INFERIDAS
+- [ ] CONFIRMACIÓN
+- [ ] NIVEL DE CONFIANZA
+- [ ] CAMBIO DE GUSTOS
+- [ ] PREFERENCIAS ACTUALES
+- [ ] CONTRADICCIONES
+- [ ] EXPLICAR RECOMENDACIONES
+- [ ] CORREGIR EL SISTEMA
+- [ ] CONTROL DE MEMORIA
+- [ ] BORRAR APRENDIZAJE
+- [ ] NO PERFILAR EN EXCESO
+- [ ] NO TOMAR DECISIONES IMPORTANTES
+- [ ] APRENDIZAJE ENTRE MÓDULOS
+- [ ] PRIVACIDAD
+- [ ] PRUEBAS
+
+#### EH · Fase 58/65 — INSIGHTS Y RESÚMENES INTELIGENTES
+- [ ] RESUMEN PERSONAL
+- [ ] EVOLUCIÓN
+- [ ] CAMBIOS DESTACADOS
+- [ ] HÁBITOS
+- [ ] PREFERENCIAS
+- [ ] OBJETIVOS
+- [ ] RECOMENDACIÓN INTELIGENTE
+- [ ] INSIGHTS PEQUEÑOS
+- [ ] NO INVENTAR PATRONES
+- [ ] CONFIDENCIALIDAD
+- [ ] CONTROL DE FRECUENCIA
+- [ ] INSIGHT → ACCIÓN
+- [ ] HISTORIAL
+- [ ] OCULTAR INSIGHTS
+- [ ] ESTADÍSTICAS AVANZADAS
+- [ ] IA + INSIGHTS
+- [ ] COMPARACIONES
+- [ ] DATOS VACÍOS
+
+#### EH · Fase 59/65 — RESUMEN SEMANAL Y MENSUAL
+- [ ] RESUMEN SEMANAL
+- [ ] RESUMEN MENSUAL
+- [ ] SIN INFORMACIÓN INNECESARIA
+- [ ] PERSONALIZACIÓN
+- [ ] CONFIGURACIÓN
+- [ ] PRIVACIDAD
+- [ ] NOTIFICACIÓN
+- [ ] RESUMEN DENTRO DE LA APP
+- [ ] ESTRUCTURA
+- [ ] COMPARACIÓN
+- [ ] IA
+- [ ] CORRECCIONES
+- [ ] COMPARTIR
+- [ ] HISTORIAL
+- [ ] RENDIMIENTO
+- [ ] PRUEBAS
+
+#### EH · Fase 60/65 — RECOMENDACIONES CONTEXTUALES
+- [ ] CONTEXTO TEMPORAL
+- [ ] CONTEXTO DE EVENTOS
+- [ ] CONTEXTO DE RUTINA
+- [ ] CONTEXTO CLIMÁTICO
+- [ ] CONTEXTO DE VIAJE
+- [ ] CONTEXTO DE OCASIONES
+- [ ] NO ASUMIR
+- [ ] FRECUENCIA
+- [ ] PRIORIZACIÓN
+- [ ] RECHAZAR
+- [ ] GUARDAR
+- [ ] CONVERTIR EN OBJETIVO
+- [ ] CONVERTIR EN TAREA
+- [ ] IA
+- [ ] PRIVACIDAD
+- [ ] MODO SILENCIOSO
+- [ ] PRUEBA DE RELEVANCIA
+
+#### EH · Fase 61/65 — ACCIONES RÁPIDAS E INTELIGENTES
+- [ ] ACCIONES RÁPIDAS PRINCIPALES
+- [ ] ACCESO RÁPIDO
+- [ ] BOTÓN +
+- [ ] ACCIONES CONTEXTUALES
+- [ ] DESLIZAR
+- [ ] MANTENER PULSADO
+- [ ] ATAJOS
+- [ ] ACCIONES DESDE RECOMENDACIONES
+- [ ] ACCIONES DESDE INSIGHTS
+- [ ] ACCIONES GLOBALES
+- [ ] CONFIRMACIONES
+- [ ] DESHACER
+- [ ] ACCIONES EN LOTE
+- [ ] ACCIONES INTELIGENTES
+- [ ] VELOCIDAD
+- [ ] ACCESIBILIDAD
+- [ ] PRUEBA
+
+#### EH · Fase 62/65 — ACCESIBILIDAD Y USABILIDAD AVANZADA
+- [ ] TAMAÑO DEL TEXTO
+- [ ] CONTRASTE
+- [ ] ZONAS TÁCTILES
+- [ ] ICONOS
+- [ ] ESTADOS
+- [ ] REDUCIR MOVIMIENTO
+- [ ] NAVEGACIÓN
+- [ ] TECLADO
+- [ ] FORMULARIOS
+- [ ] MENSAJES
+- [ ] GESTOS
+- [ ] USO CON UNA MANO
+- [ ] ORIENTACIÓN
+- [ ] PANTALLAS PEQUEÑAS
+- [ ] ESTADOS VACÍOS
+- [ ] ERRORES DE RED
+- [ ] LECTORES DE PANTALLA
+- [ ] ORDEN DE LECTURA
+- [ ] PRUEBA REAL
+
+#### EH · Fase 63/65 — SEGURIDAD, PRIVACIDAD Y CONTROL DE DATOS
+- [ ] INVENTARIO DE DATOS
+- [ ] DATOS SENSIBLES
+- [ ] ACCESO
+- [ ] AUTENTICACIÓN
+- [ ] AUTORIZACIÓN
+- [ ] IA
+- [ ] MEMORIA
+- [ ] ELIMINACIÓN
+- [ ] ELIMINACIÓN DEFINITIVA
+- [ ] EXPORTACIÓN
+- [ ] PRIVACIDAD DE IA
+- [ ] DATOS LOCALES
+- [ ] LOGS
+- [ ] SEGURIDAD DE API
+- [ ] VALIDACIÓN
+- [ ] INYECCIONES Y ENTRADAS MALICIOSAS
+- [ ] BORRADO DE CUENTA
+- [ ] COPIAS DE SEGURIDAD
+- [ ] AUDITORÍA
+- [ ] PRUEBA FINAL
+
+#### EH · Fase 64/65 — PRUEBA INTEGRAL END-TO-END
+- [ ] USUARIO NUEVO
+- [ ] USUARIO EXISTENTE
+- [ ] NAVEGACIÓN COMPLETA
+- [ ] PERSONALIZACIÓN
+- [ ] DATOS
+- [ ] ELIMINACIÓN
+- [ ] IA
+- [ ] RECOMENDACIONES
+- [ ] INSIGHTS
+- [ ] RESUMEN SEMANAL
+- [ ] RESUMEN MENSUAL
+- [ ] CONTEXTO
+- [ ] ACCIONES RÁPIDAS
+- [ ] OFFLINE
+- [ ] SINCRONIZACIÓN
+- [ ] CONFLICTOS
+- [ ] MÓVIL
+- [ ] MODO OSCURO
+- [ ] ACCESIBILIDAD
+- [ ] SEGURIDAD
+- [ ] RENDIMIENTO
+- [ ] DATOS MASIVOS
+- [ ] ERRORES
+- [ ] BACKUP
+- [ ] PRUEBA DE REGRESIÓN
+- [ ] PRUEBA FINAL DEL USUARIO
+
+#### EH · Fase 65/65 — CIERRE, CONGELACIÓN Y ENTREGA FINAL
+- [ ] CONGELAR FUNCIONALIDADES
+- [ ] INVENTARIO FINAL
+- [ ] COMPROBAR QUE NO HAYA DUPLICADOS
+- [ ] REVISIÓN DE DISEÑO
+- [ ] REVISIÓN DE UX
+- [ ] REVISIÓN DE DATOS
+- [ ] REVISIÓN DE IA
+- [ ] REVISIÓN DE SEGURIDAD
+- [ ] REVISIÓN MULTIDISPOSITIVO
+- [ ] RENDIMIENTO FINAL
+- [ ] BACKUP FINAL
+- [ ] ETIQUETAR VERSIÓN
+- [ ] DOCUMENTACIÓN FINAL
+- [ ] BACKLOG FUTURO
+- [ ] NO ROMPER LO TERMINADO
+- [ ] INTEGRACIÓN CON JC FITNESS
+- [ ] CRITERIO DE ENTREGA
+- [ ] INFORME FINAL PARA EL PROYECTO
+
+---
+
+## FO · FONDOS Y FOTOGRAFÍAS (ASPECTO) — 12 fases
+
+Amplía el sistema de apariencia ya existente para permitir usar una fotografía como fondo y derivar de ella una paleta coherente. **Se apoya directamente en `colorEngine.js`, `ColorPicker`, `TemaBuilder` y `GestionTemas` (fases V1–V4, ya construidas): no debe crear un segundo motor de color.**
+
+#### FO · Fase 1/12 — SISTEMA BASE DE FONDOS Y FOTOGRAFÍAS
+- [ ] OBJETIVO DE ESTA FASE
+- [ ] PRINCIPIO FUNDAMENTAL
+- [ ] TIPOS DE FONDO
+- [ ] MODELO CENTRAL DEL FONDO
+- [ ] SISTEMA ÚNICO DE APARIENCIA
+- [ ] PRIORIDAD DEL FONDO
+- [ ] PREPARACIÓN PARA FOTOGRAFÍAS
+- [ ] PREPARACIÓN PARA COLORES
+- [ ] PREPARACIÓN PARA RECOMENDACIONES
+- [ ] COMPATIBILIDAD CON MODO OSCURO Y CLARO
+- [ ] COMPONENTE CENTRALIZADO
+- [ ] PERSISTENCIA
+- [ ] CAMBIO DE FONDO
+- [ ] RESTABLECER
+- [ ] PREPARACIÓN PARA LAS SIGUIENTES FASES
+
+#### FO · Fase 2/12 — GALERÍA Y SELECCIÓN DE FOTOGRAFÍAS
+- [ ] OBJETIVO
+- [ ] ACCESO A LA GALERÍA
+- [ ] SELECCIÓN DE IMAGEN
+- [ ] VISTA PREVIA
+- [ ] ADAPTACIÓN A LA PANTALLA
+- [ ] ENCUADRE INICIAL
+- [ ] FOTOGRAFÍA ACTIVA
+- [ ] CAMBIAR DE FOTOGRAFÍA
+- [ ] ELIMINAR FONDO FOTOGRÁFICO
+- [ ] ESTADO SIN FOTOGRAFÍA
+- [ ] INFORMACIÓN DE LA FOTO
+- [ ] OPTIMIZACIÓN INICIAL
+- [ ] PERSISTENCIA
+- [ ] CAMBIO ENTRE TIPOS DE FONDO
+- [ ] EXPERIENCIA DE USUARIO
+- [ ] TRANSICIÓN VISUAL
+- [ ] COMPATIBILIDAD CON EL SISTEMA ACTUAL
+- [ ] PREPARACIÓN PARA LA FASE 3
+- [ ] CRITERIOS DE FINALIZACIÓN
+- [ ] REGLA PARA CLAUDE
+
+#### FO · Fase 3/12 — EDITOR DE FOTOGRAFÍAS
+- [ ] OBJETIVO
+- [ ] REGLA PRINCIPAL
+- [ ] VISTA PREVIA EN TIEMPO REAL
+- [ ] ZOOM
+- [ ] POSICIÓN HORIZONTAL
+- [ ] POSICIÓN VERTICAL
+- [ ] ENCUADRE
+- [ ] DESENFOQUE
+- [ ] OSCURECIMIENTO
+- [ ] ACLARADO
+- [ ] OPACIDAD
+- [ ] OVERLAY
+- [ ] RESTABLECER AJUSTES
+- [ ] CANCELAR CAMBIOS
+- [ ] APLICAR CAMBIOS
+- [ ] CAMBIAR DE FOTO DESDE EL EDITOR
+- [ ] INTERFAZ DEL EDITOR
+- [ ] EXPERIENCIA MÓVIL
+- [ ] RENDIMIENTO
+- [ ] GUARDADO DE CONFIGURACIÓN
+- [ ] COMPATIBILIDAD CON LAS FASES ANTERIORES
+- [ ] PREPARACIÓN PARA LA FASE 4
+- [ ] CRITERIOS DE FINALIZACIÓN
+- [ ] REGLA PARA CLAUDE
+
+#### FO · Fase 4/12 — SISTEMA AVANZADO DE COLORES
+- [ ] OBJETIVO
+- [ ] ESTRUCTURA DE LA PERSONALIZACIÓN
+- [ ] COLOR PRINCIPAL
+- [ ] COLOR SECUNDARIO
+- [ ] COLOR DE ACENTO
+- [ ] COLORES DE BOTONES
+- [ ] COLORES DE TARJETAS
+- [ ] COLORES DE TEXTO
+- [ ] ICONOS
+- [ ] NAVEGACIÓN
+- [ ] DEGRADADOS
+- [ ] TRANSPARENCIA
+- [ ] SELECTOR DE COLOR
+- [ ] COLORES PREDETERMINADOS
+- [ ] RESTABLECER COLORES
+- [ ] GUARDADO INDEPENDIENTE
+- [ ] COMBINACIÓN FOTO + COLOR
+- [ ] VISTA PREVIA
+- [ ] CANCELAR CAMBIOS
+- [ ] APLICAR
+- [ ] COMPATIBILIDAD CON EL FONDO
+- [ ] MODO OSCURO Y CLARO
+- [ ] SISTEMA CENTRALIZADO
+- [ ] PREPARACIÓN PARA EL DETECTOR
+- [ ] PREPARACIÓN PARA «RECOMENDADO»
+- [ ] CRITERIOS DE FINALIZACIÓN
+- [ ] REGLA PARA CLAUDE
+
+#### FO · Fase 5/12 — DETECTOR INTELIGENTE DE COLORES
+- [ ] OBJETIVO
+- [ ] CUÁNDO ANALIZAR LA FOTOGRAFÍA
+- [ ] COLORES DOMINANTES
+- [ ] PALETA ESTRUCTURADA
+- [ ] DETECCIÓN DE TONOS CLAROS Y OSCUROS
+- [ ] SATURACIÓN
+- [ ] NEUTROS
+- [ ] COLORES DESTACABLES
+- [ ] DISTRIBUCIÓN DEL COLOR
+- [ ] ANÁLISIS OPTIMIZADO
+- [ ] RESULTADO DEL ANÁLISIS
+- [ ] REPRESENTACIÓN VISUAL
+- [ ] ACTUALIZACIÓN DEL ANÁLISIS
+- [ ] CACHÉ DEL ANÁLISIS
+- [ ] NO MODIFICAR AUTOMÁTICAMENTE LOS COLORES
+- [ ] INTEGRACIÓN CON EL SISTEMA DE COLORES
+- [ ] ERROR Y FOTOGRAFÍAS PROBLEMÁTICAS
+- [ ] FOTOGRAFÍAS MONOCROMÁTICAS
+- [ ] PRIVACIDAD
+- [ ] RENDIMIENTO
+- [ ] PREPARACIÓN PARA LA FASE 6
+- [ ] CRITERIOS DE FINALIZACIÓN
+- [ ] REGLA PARA CLAUDE
+
+#### FO · Fase 6/12 — SISTEMA «RECOMENDADO» | JC FITNESS
+- [ ] OBJETIVO
+- [ ] BOTÓN «RECOMENDADO»
+- [ ] NO GENERAR UNA ÚNICA PROPUESTA
+- [ ] COMBINACIÓN COMPLETA
+- [ ] UTILIZAR LA FOTOGRAFÍA COMO BASE
+- [ ] ARMONÍA CROMÁTICA
+- [ ] CONTRASTE
+- [ ] PROPUESTAS DIFERENTES
+- [ ] PREVISUALIZACIÓN
+- [ ] APLICAR PROPUESTA
+- [ ] PREVISUALIZAR SIN APLICAR
+- [ ] CANCELAR
+- [ ] GENERAR NUEVAS PROPUESTAS
+- [ ] FAVORITO
+- [ ] MODO AUTOMÁTICO
+- [ ] RESPETAR LA LIBERTAD MANUAL
+- [ ] COMPATIBILIDAD CON EL EDITOR FOTOGRÁFICO
+- [ ] RECOMENDACIÓN PARA DIFERENTES TIPOS DE FONDO
+- [ ] NOMBRE DE LAS PROPUESTAS
+- [ ] SISTEMA DE PUNTUACIÓN INTERNA
+- [ ] EVITAR RECOMENDACIONES ABSURDAS
+- [ ] PERSISTENCIA
+- [ ] NO SOBRESCRIBIR INFORMACIÓN INNECESARIA
+- [ ] EXPERIENCIA PREMIUM
+- [ ] PREPARACIÓN PARA LA FASE 7
+- [ ] CRITERIOS DE FINALIZACIÓN
+- [ ] REGLA PARA CLAUDE
+
+#### FO · Fase 7/12 — PERSONALIZACIÓN MANUAL AVANZADA | JC FITNESS
+- [ ] OBJETIVO
+- [ ] ACCESO AL EDITOR COMPLETO
+- [ ] ESTRUCTURA DEL EDITOR
+- [ ] LIBERTAD TOTAL SOBRE LOS COLORES
+- [ ] EDICIÓN DE UNA RECOMENDACIÓN
+- [ ] CONTROL INDIVIDUAL
+- [ ] COLOR MANUAL
+- [ ] TRANSPARENCIA
+- [ ] OVERLAY
+- [ ] BORDES
+- [ ] SOMBRAS
+- [ ] DEGRADADOS
+- [ ] MODIFICAR LA NAVEGACIÓN
+- [ ] MODIFICAR TARJETAS
+- [ ] MODIFICAR BOTONES
+- [ ] MODIFICAR ICONOS
+- [ ] MODIFICAR TEXTOS
+- [ ] VISTA PREVIA GLOBAL
+- [ ] DESHACER
+- [ ] REHACER
+- [ ] CANCELAR
+- [ ] APLICAR
+- [ ] RESTABLECER
+- [ ] BLOQUEO DE RECOMENDACIONES
+- [ ] INDICADOR DE CAMBIOS MANUALES
+- [ ] COPIAR CONFIGURACIÓN
+- [ ] NO DESTRUIR LA CONFIGURACIÓN ANTERIOR
+- [ ] COMPATIBILIDAD CON FOTO
+- [ ] COMPATIBILIDAD CON RECOMENDADO
+- [ ] PREPARACIÓN PARA PRESETS
+- [ ] CRITERIOS DE FINALIZACIÓN
+- [ ] REGLA PARA CLAUDE
+
+#### FO · Fase 8/12 — PRESETS Y CONFIGURACIONES GUARDADAS
+- [ ] OBJETIVO
+- [ ] QUÉ ES UN PRESET
+- [ ] CREAR PRESET
+- [ ] NOMBRES PERSONALIZADOS
+- [ ] LISTA DE PRESETS
+- [ ] PRESET ACTIVO
+- [ ] CAMBIAR DE PRESET
+- [ ] VISTA PREVIA
+- [ ] DUPLICAR PRESET
+- [ ] EDITAR PRESET
+- [ ] GUARDAR COMO NUEVO
+- [ ] ELIMINAR PRESET
+- [ ] PRESETS PREDETERMINADOS
+- [ ] NO MODIFICAR PRESETS OFICIALES
+- [ ] FAVORITOS
+- [ ] ORDEN
+- [ ] Activo.
+- [ ] Favoritos.
+- [ ] Recientes.
+- [ ] Resto.
+- [ ] PRESETS RECIENTES
+- [ ] CONFIGURACIÓN COMPLETA
+- [ ] INDEPENDENCIA ENTRE PRESETS
+- [ ] FOTOGRAFÍAS Y PRESETS
+- [ ] PERSISTENCIA
+- [ ] EXPERIENCIA DE CAMBIO
+- [ ] LÍMITE DE PRESETS
+- [ ] EXPORTACIÓN FUTURA
+- [ ] PREPARACIÓN PARA LA FASE 9
+- [ ] CRITERIOS DE FINALIZACIÓN
+- [ ] REGLA PARA CLAUDE
+
+#### FO · Fase 9/12 — LEGIBILIDAD Y CONTRASTE INTELIGENTE
+- [ ] OBJETIVO
+- [ ] COMPROBACIÓN AUTOMÁTICA
+- [ ] TEXTO SOBRE FOTOGRAFÍAS
+- [ ] TEXTO SOBRE COLORES
+- [ ] INDICADOR DE LEGIBILIDAD
+- [ ] PROPUESTA DE CORRECCIÓN
+- [ ] NO CAMBIAR SIN PERMISO
+- [ ] MODO AUTOMÁTICO
+- [ ] CONTROL MANUAL
+- [ ] OVERLAY INTELIGENTE
+- [ ] DESENFOQUE COMO RECURSO
+- [ ] TARJETAS Y SUPERFICIES
+- [ ] NAVEGACIÓN
+- [ ] BOTONES
+- [ ] ICONOS
+- [ ] CONTRASTE LOCAL
+- [ ] DIFERENCIACIÓN ENTRE ELEMENTOS
+- [ ] ESTADOS ACTIVOS
+- [ ] MODO CLARO Y OSCURO
+- [ ] AVISOS NO INTRUSIVOS
+- [ ] RESUMEN DE PROBLEMAS
+- [ ] NIVEL DE SEGURIDAD VISUAL
+- [ ] INTEGRACIÓN CON «RECOMENDADO»
+- [ ] INTEGRACIÓN CON PRESETS
+- [ ] INTEGRACIÓN CON PERSONALIZACIÓN MANUAL
+- [ ] ACCESIBILIDAD
+- [ ] RENDIMIENTO
+- [ ] CRITERIOS DE FINALIZACIÓN
+- [ ] REGLA PARA CLAUDE
+
+#### FO · Fase 10/12 — INTEGRACIÓN COMPLETA EN ASPECTO | JC FITNESS
+- [ ] OBJETIVO
+- [ ] ESTRUCTURA PRINCIPAL
+- [ ] NO SATURAR LA PANTALLA
+- [ ] FONDO ACTUAL
+- [ ] ACCESO RÁPIDO
+- [ ] VISTA PREVIA GLOBAL
+- [ ] NAVEGACIÓN ENTRE EDITORES
+- [ ] FLUJO COMPLETO
+- [ ] CAMBIAR DE FONDO SIN PERDER CONFIGURACIONES
+- [ ] CAMBIAR COLORES SIN CAMBIAR FOTO
+- [ ] RECOMENDADO COMO OPCIÓN, NO COMO OBLIGACIÓN
+- [ ] PERSONALIZACIÓN MANUAL COMO ÚLTIMO NIVEL
+- [ ] SISTEMA DE ESTADOS
+- [ ] PRESETS Y PERSONALIZACIÓN
+- [ ] LEGIBILIDAD INTEGRADA
+- [ ] MODO OSCURO/CLARO
+- [ ] CONFIGURACIÓN PREDETERMINADA
+- [ ] CONFIRMACIÓN INTELIGENTE
+- [ ] EXPERIENCIA MÓVIL
+- [ ] ANIMACIONES
+- [ ] COHERENCIA VISUAL
+- [ ] SISTEMA CENTRAL
+- [ ] ACTUALIZACIÓN EN TIEMPO REAL
+- [ ] PERSISTENCIA
+- [ ] MANEJO DE ERRORES
+- [ ] ACCESIBILIDAD
+- [ ] RENDIMIENTO
+- [ ] CRITERIOS DE FINALIZACIÓN
+- [ ] REGLA PARA CLAUDE
+
+#### FO · Fase 11/12 — RENDIMIENTO, OPTIMIZACIÓN Y EXPERIENCIA
+- [ ] OBJETIVO
+- [ ] PRINCIPIO FUNDAMENTAL
+- [ ] OPTIMIZACIÓN DE FOTOGRAFÍAS
+- [ ] DIFERENTES VERSIONES DE UNA FOTO
+- [ ] CARGA DIFERIDA
+- [ ] CACHÉ
+- [ ] CACHÉ DEL DETECTOR DE COLORES
+- [ ] PREVISUALIZACIÓN OPTIMIZADA
+- [ ] APLICACIÓN FINAL
+- [ ] EFECTOS VISUALES
+- [ ] ANIMACIONES
+- [ ] RENDERIZADO
+- [ ] ESTADO CENTRALIZADO
+- [ ] APERTURA DE ASPECTO
+- [ ] APERTURA DE PRESETS
+- [ ] USO DE MEMORIA
+- [ ] COMPATIBILIDAD CON IPHONE
+- [ ] COMPATIBILIDAD CON ANDROID
+- [ ] RED
+- [ ] FUNCIONAMIENTO OFFLINE
+- [ ] SEGURIDAD Y VALIDACIÓN
+- [ ] LÍMITES RAZONABLES
+- [ ] RECUPERACIÓN DE ERRORES
+- [ ] CAMBIOS RÁPIDOS
+- [ ] CAMBIOS RÁPIDOS DE COLORES
+- [ ] GENERACIÓN DE RECOMENDACIONES
+- [ ] PERSISTENCIA EFICIENTE
+- [ ] PRUEBAS
+- [ ] PRUEBAS DE REGRESIÓN
+- [ ] MÉTRICAS
+- [ ] OBJETIVO DE EXPERIENCIA
+- [ ] CRITERIOS DE FINALIZACIÓN
+- [ ] REGLA PARA CLAUDE
+
+#### FO · Fase 12/12 — ELIMINADOS RECIENTEMENTE, RECUPERACIÓN Y CIERRE DEL SISTEMA
+- [ ] OBJETIVO
+- [ ] INFORMACIÓN DEL ELEMENTO
+- [ ] RECUPERAR
+- [ ] ELIMINAR DEFINITIVAMENTE
+- [ ] VACIAR ELIMINADOS RECIENTEMENTE
+- [ ] TIEMPO DE RETENCIÓN
+- [ ] NO ELIMINAR EL FONDO ACTIVO ACCIDENTALMENTE
+- [ ] PRESETS QUE UTILIZAN FOTOGRAFÍAS
+- [ ] RECUPERACIÓN DE DEPENDENCIAS
+- [ ] ELIMINAR UN PRESET
+- [ ] ELIMINAR UNA FOTOGRAFÍA
+- [ ] SUSTITUIR FOTOGRAFÍA
+- [ ] CONFIRMACIÓN INTELIGENTE
+- [ ] RECUPERAR CONFIGURACIÓN COMPLETA
+- [ ] RECUPERACIÓN DE FOTOGRAFÍAS
+- [ ] ESTADOS
+- [ ] PROTECCIÓN CONTRA DUPLICADOS
+- [ ] SINCRONIZACIÓN FUTURA
+- [ ] SEGURIDAD
+- [ ] COPIAS Y RESTAURACIÓN
+- [ ] EXPERIENCIA VISUAL
+- [ ] ELEMENTOS VACÍOS
+- [ ] CIERRE DEL SISTEMA
+- [ ] PRUEBA FINAL OBLIGATORIA
+- [ ] CRITERIOS DE FINALIZACIÓN
+- [ ] RESULTADO FINAL DE LAS 12 FASES
+- [ ] NO romper funcionalidades existentes.
+- [ ] NO eliminar módulos actuales.
+- [ ] NO implementar las 12 fases de golpe.
+- [ ] Ejecutar únicamente la fase que yo indique.
+- [ ] Mantener compatibilidad con las fases anteriores.
+- [ ] Preparar las estructuras necesarias para fases posteriores sin implementar prematuramente toda su funcionalidad.
+- [ ] El usuario siempre debe conservar control manual.
+- [ ] Recomendado nunca debe sobrescribir modificaciones manuales.
+- [ ] Las fotografías originales no deben modificarse destructivamente.
+- [ ] Los presets deben conservar configuraciones completas.
+- [ ] Las eliminaciones importantes deben poder recuperarse.
+- [ ] La interfaz debe seguir siendo premium y sencilla.
+- [ ] Todo debe funcionar correctamente en móvil/PWA.
+- [ ] Optimizar antes de introducir efectos innecesariamente pesados.
+- [ ] Si existe una funcionalidad ya implementada que puede reutilizarse, reutilizarla en lugar de duplicarla.
+- [ ] Si una fase requiere modificar arquitectura existente, hacerlo de forma compatible y segura.
+- [ ] Antes de terminar una fase, comprobar que las funcionalidades existentes siguen funcionando.
+- [ ] RESTRICCIONES IMPORTANTES
+- [ ] REGLA PRINCIPAL PARA CLAUDE
+
+---
+
+## BI · BUSCADOR GLOBAL + IA + DESPLEGABLE DE INICIO — 4 fases
+
+Rediseña el desplegable de Inicio y convierte el botón superior izquierdo en un acceso único de búsqueda + IA. **Amplía `UniversalSearchModal` y `SuggestionsButton` (Fase 18), no los sustituye.** La Fase 1 se solapa con el `IndicadorContexto` del Dashboard ya construido.
+
+#### BI · Fase 1/4 — REDISEÑO DEL DESPLEGABLE DE INICIO: VACACIONES, EXÁMENES Y SITUACIONES
+- [ ] COMPORTAMIENTO PRINCIPAL
+- [ ] ESTADO ABIERTO
+- [ ] ANIMACIÓN DE APERTURA
+- [ ] BOTÓN DE EXPANSIÓN
+- [ ] CONTENIDO DEL DESPLEGABLE
+- [ ] DISEÑO VISUAL
+- [ ] PRIORIDAD: ESPACIO EN PANTALLA
+- [ ] RESPONSIVE / MÓVIL
+- [ ] ESTADO Y PERSISTENCIA
+- [ ] ACCESIBILIDAD Y USABILIDAD
+- [ ] NO ROMPER NADA EXISTENTE
+- [ ] Localiza cómo está implementado actualmente.
+- [ ] Identifica todos los estados relacionados.
+- [ ] Identifica todos los datos que utiliza.
+- [ ] Identifica todas las acciones que ejecuta.
+- [ ] Mantén esas funcionalidades.
+- [ ] Cambia únicamente la presentación y el comportamiento necesario para conseguir el nuevo sistema desplegable.
+- [ ] CONTROL DE CALIDAD
+- [ ] REGLA IMPORTANTE
+- [ ] RESULTADO FINAL ESPERADO
+- [ ] Comprueba que no se ha roto ninguna funcionalidad existente.
+- [ ] Comprueba el comportamiento en móvil.
+- [ ] Comprueba apertura y cierre repetidos.
+- [ ] Comprueba modo oscuro/claro si ambos existen.
+- [ ] Comprueba que no quedan espacios vacíos al cerrar.
+- [ ] No avances automáticamente a la Fase 2.
+
+#### BI · Fase 2/4 — Nuevo acceso superior izquierdo: búsqueda/IA
+- [ ] Buscar cualquier función, pantalla, ajuste u opción existente dentro de JC Fitness.
+- [ ] Encontrar opciones aunque el usuario no escriba exactamente su nombre.
+- [ ] Acceder directamente al resultado encontrado.
+- [ ] Hacer preguntas a la IA cuando no esté buscando una función concreta.
+- [ ] Mantener una experiencia rápida, limpia y premium.
+- [ ] BOTÓN SUPERIOR IZQUIERDO
+- [ ] APERTURA DEL BUSCADOR
+- [ ] CAMPO DE BÚSQUEDA
+- [ ] DOS TIPOS DE BÚSQUEDA
+- [ ] BÚSQUEDA INTELIGENTE
+- [ ] ÍNDICE INTERNO DE FUNCIONES
+- [ ] RESULTADOS
+- [ ] ORDEN DE RESULTADOS
+- [ ] Coincidencia exacta.
+- [ ] Coincidencia con el nombre.
+- [ ] Coincidencia con palabras clave.
+- [ ] Coincidencia con descripción.
+- [ ] Coincidencias semánticamente relacionadas.
+- [ ] RESULTADO SIN COINCIDENCIAS
+- [ ] IA
+- [ ] DIFERENCIACIÓN ENTRE BÚSQUEDA Y PREGUNTA
+- [ ] ACCESO DIRECTO
+- [ ] ANIMACIONES
+- [ ] MÓVIL
+- [ ] CIERRE
+- [ ] NO MODIFICAR LA IA ACTUAL SIN NECESIDAD
+- [ ] ARQUITECTURA PREPARADA PARA CRECER
+- [ ] SEGURIDAD
+- [ ] CONTROL DE CALIDAD
+- [ ] REGLA FUNDAMENTAL
+
+#### BI · Fase 3/4 — MOTOR DE BÚSQUEDA GLOBAL E ÍNDICE INTELIGENTE DE JC FITNESS
+- [ ] PRINCIPIO FUNDAMENTAL
+- [ ] ÍNDICE GLOBAL
+- [ ] INFORMACIÓN DE CADA FUNCIÓN
+- [ ] NORMALIZACIÓN DE TEXTO
+- [ ] COINCIDENCIA EXACTA
+- [ ] COINCIDENCIA PARCIAL
+- [ ] PALABRAS RELACIONADAS
+- [ ] RANKING DE RESULTADOS
+- [ ] DESAMBIGUACIÓN
+- [ ] ACCIONES DIRECTAS
+- [ ] FUNCIONES SIN RUTA
+- [ ] ÍNDICE POR CATEGORÍAS
+- [ ] ACTUALIZACIÓN DEL ÍNDICE
+- [ ] BÚSQUEDA DE AJUSTES
+- [ ] BÚSQUEDA DE FUNCIONES PROFUNDAS
+- [ ] HISTORIAL RECIENTE
+- [ ] SUGERENCIAS INICIALES
+- [ ] TOLERANCIA A ERRORES
+- [ ] RENDIMIENTO
+- [ ] IA COMO FALLBACK
+- [ ] PRIVACIDAD
+- [ ] PRUEBAS OBLIGATORIAS
+- [ ] CRITERIO DE ÉXITO
+- [ ] REGLA FINAL
+
+#### BI · Fase 4/4 — INTEGRACIÓN FINAL: BUSCADOR + IA + INTENCIÓN DEL USUARIO
+- [ ] Interfaz del buscador.
+- [ ] Motor de búsqueda interno.
+- [ ] Inteligencia artificial.
+- [ ] EXPERIENCIA PRINCIPAL
+- [ ] CASO: EL USUARIO BUSCA UNA FUNCIÓN
+- [ ] CASO: EL USUARIO HACE UNA PREGUNTA
+- [ ] CASO: EXISTEN LAS DOS POSIBILIDADES
+- [ ] DETECCIÓN DE INTENCIÓN
+- [ ] DETECCIÓN HÍBRIDA
+- [ ] PRIORIDAD
+- [ ] PREGUNTAS ABIERTAS
+- [ ] RESPUESTA DE LA IA
+- [ ] CONTEXTO DE JC FITNESS
+- [ ] NAVEGACIÓN DE VUELTA
+- [ ] CIERRE DEL SISTEMA
+- [ ] ESTADOS DE LA INTERFAZ
+- [ ] ESTADO DE CARGA
+- [ ] ERRORES DE IA
+- [ ] SEGURIDAD DE LA IA
+- [ ] RENDIMIENTO
+- [ ] DISEÑO MÓVIL
+- [ ] MICROINTERACCIONES
+- [ ] PRUEBAS COMPLETAS
+- [ ] PRUEBA DE NO REGRESIÓN
+- [ ] NO SOBREDISEÑAR
+- [ ] RESULTADO FINAL
+- [ ] CRITERIO DEFINITIVO DE ÉXITO
+- [ ] No crear nuevas fases automáticamente.
+- [ ] No modificar otros módulos sin necesidad.
+- [ ] Realizar una prueba completa del sistema.
+- [ ] Comprobar móvil.
+- [ ] Comprobar rendimiento.
+- [ ] Comprobar navegación.
+- [ ] Comprobar IA.
+- [ ] Comprobar seguridad.
+- [ ] Comprobar que las cuatro fases funcionan conjuntamente.
+
+---
+
+## ME · LIBERTAD DE APARTADOS + ELIMINADOS RECIENTEMENTE — 4 fases
+
+Sistema global de módulos activables/desactivables, personalización y papelera universal con recuperación. **Las fases 1 y 2 se solapan casi por completo con `PersonalizationView` y `personalizacion.ocultos` (Fase 19), ya construidos** — aquí el trabajo real es la papelera (fase 3) y la auditoría de integración global (fase 4).
+
+#### ME · Fase 1/4 — SISTEMA DE MÓDULOS ACTIVABLES/DESACTIVABLES
+- [ ] *(sin apartados numerados extraídos — leer la fase completa en la especificación)*
+
+#### ME · Fase 2/4 — PERSONALIZACIÓN TOTAL
+- [ ] *(sin apartados numerados extraídos — leer la fase completa en la especificación)*
+
+#### ME · Fase 3/4 — SISTEMA DE ELIMINADOS RECIENTEMENTE
+- [ ] El elemento vuelve a su módulo original.
+- [ ] Recupera sus datos.
+- [ ] Recupera sus relaciones cuando sea posible.
+- [ ] Vuelve a aparecer en estadísticas.
+- [ ] Vuelve a aparecer en Dashboard si correspondía.
+- [ ] Se sincroniza con la cuenta.
+- [ ] Desaparece de Eliminados recientemente.
+
+#### ME · Fase 4/4 — INTEGRACIÓN GLOBAL
+- [ ] Analiza la arquitectura actual.
+- [ ] Identifica los módulos existentes.
+- [ ] Identifica cómo se almacenan.
+- [ ] Identifica las relaciones entre datos.
+- [ ] Identifica la navegación.
+- [ ] Identifica el Dashboard.
+- [ ] Identifica los sistemas actuales de eliminación.
+- [ ] PRINCIPIO FUNDAMENTAL
+- [ ] PAPELERA / BOTÓN DE ELIMINAR
+- [ ] CONFIRMACIÓN DE ELIMINACIÓN
+- [ ] ELIMINACIÓN PERMANENTE
+- [ ] El elemento debe desaparecer inmediatamente de la interfaz.
+- [ ] Debe eliminarse también de la base de datos/estado correspondiente.
+- [ ] Debe mantenerse sincronizado en todos los dispositivos.
+- [ ] No debe reaparecer después de recargar la página.
+- [ ] No debe reaparecer después de cerrar y abrir la aplicación.
+- [ ] No debe quedar como un elemento “fantasma” en otra sección.
+- [ ] Las estadísticas relacionadas deben actualizarse correctamente.
+- [ ] CUIDADO CON LAS RELACIONES
+- [ ] ELIMINAR ELEMENTOS PERSONALIZADOS
+- [ ] EDITAR + ELIMINAR
+- [ ] COMPONENTE REUTILIZABLE
+- [ ] MENÚ DE ACCIONES
+- [ ] BORRADO EN TODOS LOS MÓDULOS
+- [ ] DATOS HISTÓRICOS
+- [ ] ELIMINACIÓN Y ESTADÍSTICAS
+- [ ] PAPELERA / UNDO
+- [ ] SEGURIDAD
+- [ ] FUTURAS FUNCIONALIDADES
+- [ ] NO ROMPER NADA EXISTENTE
+- [ ] AUDITORÍA FINAL
+
+---
+
+## HT · HORARIO TOP — 12 fases
+
+Motor temporal y de planificación: horario configurable, pantalla HOY consciente del tiempo real, mochila inteligente, planificador de huecos, notificaciones contextuales y analítica de uso del tiempo. **Es el módulo más acoplado a lo existente**: Calendario Universal (C1–C3), Productividad, Estudios y el Dashboard Centro de Control cubren ya parte de su superficie.
+
+#### HT · Fase 1/12 — ARQUITECTURA GENERAL DEL SISTEMA
+- [ ] OBJETIVO DE ESTA FASE
+- [ ] PRINCIPIO FUNDAMENTAL
+- [ ] ESTRUCTURA GENERAL
+- [ ] TIPOS DE HORARIO
+- [ ] HORARIO RECURRENTE VS. HORARIO REAL
+- [ ] DISEÑO DE LA CUADRÍCULA
+- [ ] COLUMNAS
+- [ ] FILAS
+- [ ] BLOQUES VISUALES
+- [ ] PERSONALIZACIÓN VISUAL
+- [ ] IDENTIDAD DE LAS ACTIVIDADES
+- [ ] SISTEMA DE ENTIDADES
+- [ ] CONEXIÓN CON EL SISTEMA PERSONAL
+- [ ] EL SISTEMA “HOY”
+- [ ] SISTEMA DE PRIORIDADES
+- [ ] PREPARACIÓN PARA LA MOCHILA
+- [ ] PREPARACIÓN PARA NOTIFICACIONES
+- [ ] PREPARACIÓN PARA IA
+- [ ] PREPARACIÓN PARA SUPABASE
+- [ ] SINCRONIZACIÓN
+- [ ] OFFLINE
+- [ ] ESCALABILIDAD
+- [ ] PERIODOS Y SEMANAS
+- [ ] CAMBIO DE HORARIO
+- [ ] PRINCIPIO DE NO DUPLICACIÓN
+- [ ] EXPERIENCIA DE USUARIO
+- [ ] DISEÑO MOBILE-FIRST
+- [ ] ARQUITECTURA MODULAR
+- [ ] EVENTOS DEL SISTEMA
+- [ ] FUTURO SISTEMA DE AUTOMATIZACIONES
+- [ ] RESULTADO ESPERADO DE ESTA FASE
+
+#### HT · Fase 2/12 — MODELO DE DATOS + CLOUD + SUPABASE
+- [ ] OBJETIVO
+- [ ] PRINCIPIO DE LA BASE DE DATOS
+- [ ] USUARIO
+- [ ] IDENTIFICADORES
+- [ ] TABLA
+- [ ] HORARIOS SIMULTÁNEOS
+- [ ] PERIODOS DE VALIDEZ
+- [ ] NO LIMITAR LAS FILAS
+- [ ] TIPOS DE ACTIVIDAD
+- [ ] BLOQUES CON DURACIONES DIFERENTES
+- [ ] COLOR GLOBAL VS COLOR DEL BLOQUE
+- [ ] ICONOS
+- [ ] TIPOS DE EXCEPCIÓN
+- [ ] REGLA DE PRIORIDAD
+- [ ] CALENDARIO
+- [ ] EVITAR DUPLICACIONES
+- [ ] RECURRENCIA
+- [ ] RELACIÓN ACTIVIDAD ↔ MATERIAL
+- [ ] PREPARACIÓN DE LA MOCHILA
+- [ ] RECORDATORIOS
+- [ ] NOTIFICACIONES FUTURAS
+- [ ] VISTA
+- [ ] EJEMPLO DE GENERACIÓN DE HOY
+- [ ] SUPABASE
+- [ ] ROW LEVEL SECURITY
+- [ ] SEGURIDAD
+- [ ] ÍNDICES
+- [ ] SOFT DELETE
+- [ ] SINCRONIZACIÓN MULTIDISPOSITIVO
+- [ ] CONFLICTOS
+- [ ] CACHE LOCAL
+- [ ] DATOS MÍNIMOS VS DATOS AVANZADOS
+- [ ] CONFIGURACIÓN DEL USUARIO
+- [ ] HISTORIAL
+- [ ] ESTRUCTURA RELACIONAL GENERAL
+- [ ] FLUJO DE INFORMACIÓN
+- [ ] PREPARACIÓN PARA IA AVANZADA
+- [ ] Obtiene fecha.
+- [ ] Consulta horarios activos.
+- [ ] Calcula recurrencias.
+- [ ] Aplica excepciones.
+- [ ] Obtiene eventos.
+- [ ] Obtiene tareas.
+- [ ] Obtiene recordatorios.
+- [ ] Obtiene material.
+- [ ] Construye contexto.
+- [ ] Genera respuesta.
+- [ ] FUTURA CAPA DE ACCIONES DE IA
+- [ ] VALIDACIONES
+- [ ] PREPARACIÓN PARA ESCALABILIDAD
+- [ ] REGLA DE COMPATIBILIDAD CON EL SISTEMA PERSONAL
+- [ ] RESULTADO DE LA FASE 2
+- [ ] LO QUE NO SE IMPLEMENTA TODAVÍA
+- [ ] SIGUIENTE FASE
+
+#### HT · Fase 3/12 — EDITOR VISUAL DE HORARIOS
+- [ ] OBJETIVO DE LA FASE
+- [ ] ENTRADA AL EDITOR
+- [ ] PLANTILLAS INICIALES
+- [ ] PRIMERA VISTA
+- [ ] PRINCIPIO MOBILE-FIRST
+- [ ] NAVEGACIÓN HORIZONTAL
+- [ ] COLUMNA DE HORAS FIJA
+- [ ] AÑADIR COLUMNAS
+- [ ] ELIMINAR COLUMNAS
+- [ ] REORDENAR COLUMNAS
+- [ ] AÑADIR FILAS
+- [ ] ELIMINAR FILAS
+- [ ] EDITAR HORAS
+- [ ] FRANJAS IRREGULARES
+- [ ] CREAR UN BLOQUE
+- [ ] CREACIÓN RÁPIDA
+- [ ] Buscar si ya existe Matemáticas.
+- [ ] Si existe, reutilizarla.
+- [ ] Si no existe, crearla.
+- [ ] Asignar el bloque.
+- [ ] Aplicar automáticamente su color.
+- [ ] Guardar.
+- [ ] AUTOCOMPLETADO
+- [ ] ASIGNATURAS EXISTENTES
+- [ ] CREAR NUEVA ACTIVIDAD
+- [ ] EDICIÓN DE BLOQUES
+- [ ] DUPLICAR BLOQUES
+- [ ] COPIAR Y PEGAR
+- [ ] COPIAR DÍA COMPLETO
+- [ ] LIMPIAR DÍA
+- [ ] ARRASTRAR BLOQUES
+- [ ] CONTROL TÁCTIL
+- [ ] REDIMENSIONAR BLOQUES
+- [ ] PREVENCIÓN DE SOLAPAMIENTOS
+- [ ] DETECCIÓN VISUAL DE CONFLICTOS
+- [ ] COLORES
+- [ ] CONSISTENCIA DE COLORES
+- [ ] ICONOS
+- [ ] INFORMACIÓN COMPACTA
+- [ ] VISTA PREVISUALIZADA
+- [ ] MODO EDICIÓN VS MODO CONSULTA
+- [ ] GUARDADO
+- [ ] SINCRONIZACIÓN VISUAL
+- [ ] DESHACER
+- [ ] REHACER
+- [ ] CONFIRMACIONES INTELIGENTES
+- [ ] MENÚ CONTEXTUAL
+- [ ] ACCIONES RÁPIDAS
+- [ ] EDICIÓN MASIVA
+- [ ] SELECCIÓN MÚLTIPLE
+- [ ] CAMBIO DE SEMANA
+- [ ] MODO SEMANA COMPLETA
+- [ ] MODO DÍA
+- [ ] MODO AGENDA
+- [ ] CAMBIO ENTRE VISTAS
+- [ ] MODO HOY
+- [ ] NAVEGACIÓN POR FECHAS
+- [ ] EDICIÓN DE UNA FECHA CONCRETA
+- [ ] OPCIONES AL MODIFICAR
+- [ ] INFORMACIÓN DE AULA
+- [ ] INFORMACIÓN DEL PROFESOR
+- [ ] ETIQUETAS
+- [ ] FILTROS
+- [ ] VISIBILIDAD DE HORARIOS
+- [ ] MODO SOLO CONSULTA
+- [ ] ACCESIBILIDAD
+- [ ] MODO OSCURO
+- [ ] DISEÑO PREMIUM
+- [ ] ANIMACIONES
+- [ ] RENDIMIENTO
+- [ ] ESTADO LOCAL
+- [ ] MANEJO DE ERRORES
+- [ ] CAMBIOS SIMULTÁNEOS
+- [ ] IMPORTACIÓN FUTURA
+- [ ] IMPORTACIÓN MEDIANTE IA
+- [ ] PREVISUALIZACIÓN ANTES DE IMPORTAR
+- [ ] AUTOGUARDADO
+- [ ] ESTADO DE SINCRONIZACIÓN
+- [ ] CREACIÓN ULTRARRÁPIDA
+- [ ] EJEMPLO COMPLETO
+- [ ] RESULTADO ESPERADO
+- [ ] CRITERIOS DE ACEPTACIÓN
+- [ ] RESULTADO TÉCNICO DE LA FASE
+- [ ] CONEXIÓN CON LAS SIGUIENTES FASES
+
+#### HT · Fase 4/12 — CONFIGURACIÓN AVANZADA DE COLUMNAS, FILAS Y BLOQUES
+- [ ] OBJETIVO
+- [ ] PRINCIPIO DE FLEXIBILIDAD
+- [ ] CONFIGURADOR DEL HORARIO
+- [ ] CONFIGURACIÓN DE COLUMNAS
+- [ ] TIPOS DE COLUMNAS
+- [ ] COLUMNAS ESPECIALES
+- [ ] OCULTAR COLUMNAS
+- [ ] BLOQUEAR COLUMNAS
+- [ ] AGRUPACIÓN DE COLUMNAS
+- [ ] SEMANAS A/B
+- [ ] CICLOS PERSONALIZADOS
+- [ ] FILAS AVANZADAS
+- [ ] FILAS SIN HORA
+- [ ] FILAS DE SEPARACIÓN
+- [ ] BLOQUES MULTIFILA
+- [ ] BLOQUES MULTICOLUMNA
+- [ ] BLOQUES FLOTANTES
+- [ ] BLOQUES ANIDADOS
+- [ ] DENSIDAD DE INFORMACIÓN
+- [ ] TAMAÑO DE LAS FILAS
+- [ ] TAMAÑO DE COLUMNAS
+- [ ] ZOOM
+- [ ] AJUSTE AUTOMÁTICO
+- [ ] REORDENACIÓN MASIVA
+- [ ] DUPLICAR ESTRUCTURA
+- [ ] PLANTILLAS PERSONALIZADAS
+- [ ] PLANTILLAS DEL SISTEMA
+- [ ] CONFIGURACIÓN DE INTERVALOS
+- [ ] HORARIOS SIN INTERVALOS REGULARES
+- [ ] CAMBIOS DE ESTRUCTURA CON DATOS EXISTENTES
+- [ ] PREVISUALIZACIÓN DE CAMBIOS
+- [ ] MIGRACIÓN AUTOMÁTICA
+- [ ] VALIDACIÓN ESTRUCTURAL
+- [ ] HORAS SOLAPADAS
+- [ ] MODO LIBRE
+- [ ] REGLAS SEGÚN TIPO DE HORARIO
+- [ ] METADATOS DEL HORARIO
+- [ ] COLOR DEL HORARIO
+- [ ] FILTROS POR HORARIO
+- [ ] FILTROS POR ACTIVIDAD
+- [ ] BÚSQUEDA
+- [ ] ATAJOS
+- [ ] SISTEMA DE SELECCIÓN
+- [ ] ACCIONES SOBRE SELECCIÓN
+- [ ] ELIMINACIÓN SEGURA
+- [ ] RESTAURACIÓN
+- [ ] VERSIONADO FUTURO
+- [ ] IMPORTACIÓN DE ESTRUCTURAS
+- [ ] EXPORTACIÓN
+- [ ] HORARIO PARA IMPRIMIR
+- [ ] VISTA PARA COMPARTIR
+- [ ] PRIVACIDAD
+- [ ] ZONA HORARIA
+- [ ] CAMBIO DE HORA
+- [ ] CAMBIOS DE CURSO
+- [ ] ARCHIVAR HORARIOS
+- [ ] RECUPERACIÓN
+- [ ] CONFIGURACIÓN POR USUARIO
+- [ ] CONFIGURACIÓN LOCAL VS CLOUD
+- [ ] RENDIMIENTO DE GRANDES HORARIOS
+- [ ] ARQUITECTURA PREPARADA PARA FUTUROS MÓDULOS
+- [ ] EXPERIENCIA FINAL ESPERADA
+- [ ] REGLA DE DISEÑO
+- [ ] CRITERIOS DE ACEPTACIÓN
+- [ ] PREPARACIÓN PARA LA FASE 5
+
+#### HT · Fase 5/12 — ASIGNATURAS, ACTIVIDADES, COLORES, ICONOS Y CONTEXTO
+- [ ] OBJETIVO DE LA FASE
+- [ ] CONCEPTO DE ACTIVIDAD
+- [ ] ASIGNATURA COMO TIPO DE ACTIVIDAD
+- [ ] IDENTIDAD DE LA ACTIVIDAD
+- [ ] NOMBRE
+- [ ] NOMBRE CORTO
+- [ ] ALIAS
+- [ ] TIPO
+- [ ] ICONO
+- [ ] ICONOS PERSONALIZADOS
+- [ ] COLOR PRINCIPAL
+- [ ] PALETA PREDEFINIDA
+- [ ] COLOR AUTOMÁTICO
+- [ ] COLOR PERSONALIZADO
+- [ ] COLOR DEL BLOQUE VS ACTIVIDAD
+- [ ] SISTEMA DE ESTADOS
+- [ ] ARCHIVADO
+- [ ] REUTILIZACIÓN
+- [ ] PROFESOR
+- [ ] PROFESOR COMO ENTIDAD FUTURA
+- [ ] AULA
+- [ ] UBICACIÓN COMO ENTIDAD
+- [ ] DESCRIPCIÓN
+- [ ] ETIQUETAS
+- [ ] FAVORITOS
+- [ ] ACTIVIDADES RECIENTES
+- [ ] BUSCADOR DE ACTIVIDADES
+- [ ] CREACIÓN DESDE EL HORARIO
+- [ ] PANEL DE DETALLES
+- [ ] ACTIVIDAD COMO CENTRO DE INFORMACIÓN
+- [ ] TAREAS ASOCIADAS
+- [ ] EXÁMENES ASOCIADOS
+- [ ] ARCHIVOS
+- [ ] MATERIAL
+- [ ] MOCHILA
+- [ ] REQUERIDO VS OPCIONAL
+- [ ] CANTIDAD
+- [ ] CONTEXTO TEMPORAL
+- [ ] ACTIVIDADES ESPECIALES
+- [ ] ENTRENAMIENTOS
+- [ ] ESTUDIO
+- [ ] ACTIVIDADES RECURRENTES
+- [ ] CAMBIO GLOBAL
+- [ ] CAMBIO LOCAL
+- [ ] ESTADÍSTICAS FUTURAS
+- [ ] TIEMPO SEMANAL
+- [ ] DETECCIÓN DE CARGA
+- [ ] PRIORIDADES
+- [ ] ESTADO DE ACTIVIDAD
+- [ ] VISIBILIDAD
+- [ ] REGLAS DE VISIBILIDAD
+- [ ] NOTAS PRIVADAS
+- [ ] CONTEXTO PARA IA
+- [ ] IA COMO ASISTENTE DEL HORARIO
+- [ ] CREACIÓN MEDIANTE IA
+- [ ] DETECCIÓN DE DUPLICADOS
+- [ ] ACTIVIDADES PARECIDAS
+- [ ] ELIMINACIÓN
+- [ ] ARCHIVADO INTELIGENTE
+- [ ] RESTAURACIÓN
+- [ ] DUPLICAR ACTIVIDAD
+- [ ] RELACIONES ENTRE ACTIVIDADES
+- [ ] ACTIVIDADES PADRE E HIJAS
+- [ ] AGRUPACIONES
+- [ ] COLORES DE GRUPO
+- [ ] SISTEMA DE FILTROS
+- [ ] BÚSQUEDA GLOBAL
+- [ ] ACCESO DESDE HOY
+- [ ] ACCESO DESDE CALENDARIO
+- [ ] ACCESO DESDE MOCHILA
+- [ ] ACCESO DESDE TAREAS
+- [ ] SISTEMA DE CONTEXTO
+- [ ] PRIVACIDAD
+- [ ] PREPARACIÓN PARA CLOUD
+- [ ] PREPARACIÓN PARA OFFLINE
+- [ ] CACHÉ INTELIGENTE
+- [ ] DISEÑO DE LA FICHA
+- [ ] ACCIONES RÁPIDAS DESDE LA FICHA
+- [ ] RESUMEN DE ACTIVIDAD
+- [ ] SISTEMA DE COLORES CONSISTENTE
+- [ ] CONTRASTE Y ACCESIBILIDAD
+- [ ] PERSONALIZACIÓN GLOBAL
+- [ ] ORDEN DE ACTIVIDADES
+- [ ] Favoritas.
+- [ ] Recientes.
+- [ ] Más utilizadas.
+- [ ] Alfabéticamente.
+- [ ] ACTIVIDADES MÁS UTILIZADAS
+- [ ] INTELIGENCIA CONTEXTUAL
+- [ ] SUGERENCIAS
+- [ ] RECONOCIMIENTO DE PATRONES
+- [ ] INTEGRACIÓN CON OBJETIVOS
+- [ ] INTEGRACIÓN CON HÁBITOS
+- [ ] INTEGRACIÓN CON PRODUCTIVIDAD
+- [ ] INTEGRACIÓN CON ENTRENAMIENTO
+- [ ] PRINCIPIO DE REFERENCIA ÚNICA
+- [ ] EJEMPLO
+- [ ] EVENTOS EXTERNOS
+- [ ] NO DUPLICAR IMPORTACIONES
+- [ ] HISTORIAL DE ACTIVIDAD
+- [ ] ELIMINACIÓN LÓGICA
+- [ ] SEGURIDAD
+- [ ] IA Y PERMISOS
+- [ ] RESULTADO DE LA FASE
+- [ ] CRITERIOS DE ACEPTACIÓN
+- [ ] SIGUIENTE FASE
+
+#### HT · Fase 6/12 — CALENDARIO + AGENDA + SISTEMA «HOY»
+- [ ] EL CENTRO: «HOY»
+- [ ] LÍNEA TEMPORAL DEL DÍA
+- [ ] BLOQUE ACTUAL
+- [ ] PRÓXIMO BLOQUE
+- [ ] TIEMPO RESTANTE
+- [ ] ESTADO DEL DÍA
+- [ ] AGENDA DEL DÍA
+- [ ] VISTA DIARIA
+- [ ] VISTA SEMANAL
+- [ ] VISTA MENSUAL
+- [ ] VISTA ANUAL
+- [ ] NAVEGACIÓN TEMPORAL
+- [ ] BOTÓN «VOLVER A HOY»
+- [ ] SELECCIÓN DE FECHA
+- [ ] CALENDARIO COMO CAPA
+- [ ] DIFERENCIA ENTRE HORARIO Y EVENTO
+- [ ] TAREAS
+- [ ] FECHA DE INICIO Y FECHA LÍMITE
+- [ ] TAREAS PROGRAMADAS
+- [ ] EXÁMENES
+- [ ] CUENTA ATRÁS
+- [ ] EVENTOS
+- [ ] EVENTOS DE TODO EL DÍA
+- [ ] RECURRENCIA
+- [ ] EXCEPCIONES
+- [ ] CANCELACIONES
+- [ ] CAMBIOS TEMPORALES
+- [ ] SUSTITUCIONES
+- [ ] REPROGRAMACIÓN
+- [ ] ARRASTRAR BLOQUES
+- [ ] CONFIRMACIÓN DE CAMBIOS
+- [ ] HOY + TAREAS
+- [ ] TAREAS VENCIDAS
+- [ ] REPROGRAMACIÓN RÁPIDA
+- [ ] COMPLETAR DESDE HOY
+- [ ] PRIORIDADES
+- [ ] PUNTUACIÓN DEL DÍA
+- [ ] CARGA DEL DÍA
+- [ ] DETECCIÓN DE CONFLICTOS
+- [ ] CONFLICTOS INTELIGENTES
+- [ ] MOCHILA
+- [ ] MOCHILA AUTOMÁTICA
+- [ ] MOCHILA POR DÍA
+- [ ] MOCHILA MANUAL
+- [ ] ELEMENTOS TEMPORALES
+- [ ] MOCHILA INTELIGENTE
+- [ ] RECORDATORIOS
+- [ ] RECORDATORIOS CONTEXTUALES
+- [ ] RECORDATORIOS DE SALIDA
+- [ ] UBICACIÓN
+- [ ] TIEMPO DE DESPLAZAMIENTO
+- [ ] ZONAS
+- [ ] HÁBITOS
+- [ ] OBJETIVOS
+- [ ] RELACIÓN OBJETIVO → TAREA
+- [ ] ENTRENAMIENTO
+- [ ] CONTEXTO DEL ENTRENAMIENTO
+- [ ] ESTUDIO
+- [ ] AUTOMATIZACIÓN DEL ESTUDIO
+- [ ] RESUMEN INTELIGENTE
+- [ ] IA PROACTIVA
+- [ ] APROBACIÓN
+- [ ] PREGUNTAS RÁPIDAS
+- [ ] RESPUESTA CONTEXTUAL
+- [ ] TIEMPO LIBRE
+- [ ] USO DEL TIEMPO LIBRE
+- [ ] PLANIFICACIÓN RÁPIDA
+- [ ] BLOQUES DE DESCANSO
+- [ ] DÍA SIN ACTIVIDADES
+- [ ] FIN DE SEMANA
+- [ ] VACACIONES
+- [ ] FESTIVOS
+- [ ] CALENDARIO ACADÉMICO
+- [ ] EXCEPCIONES ACADÉMICAS
+- [ ] IMPORTACIÓN FUTURA
+- [ ] SINCRONIZACIÓN CLOUD
+- [ ] CONFLICTOS DE SINCRONIZACIÓN
+- [ ] OFFLINE
+- [ ] ESTADO DE SINCRONIZACIÓN
+- [ ] NOTIFICACIONES
+- [ ] NOTIFICACIONES INTELIGENTES
+- [ ] PRIORIDAD DE NOTIFICACIONES
+- [ ] CENTRO DE NOTIFICACIONES
+- [ ] PERSONALIZACIÓN
+- [ ] VISTA «MAÑANA»
+- [ ] VISTA «ESTA SEMANA»
+- [ ] RESUMEN SEMANAL
+- [ ] RESUMEN DEL FIN DE SEMANA
+- [ ] DISEÑO MOBILE FIRST
+- [ ] INFORMACIÓN PROGRESIVA
+- [ ] TARJETAS EXPANDIBLES
+- [ ] PERSONALIZAR HOY
+- [ ] ORDEN PERSONALIZABLE
+- [ ] Horario
+- [ ] Mochila
+- [ ] Tareas
+- [ ] Entrenamiento
+- [ ] Objetivos
+- [ ] MODO MÍNIMO
+- [ ] MODO COMPLETO
+- [ ] MODO ESTUDIO
+- [ ] MODO ENTRENAMIENTO
+- [ ] SISTEMA DE CONTEXTO
+- [ ] MOTOR DE CONTEXTO TEMPORAL
+- [ ] FUENTE ÚNICA DE VERDAD
+- [ ] RENDIMIENTO
+- [ ] DATOS CLOUD
+- [ ] SEGURIDAD
+- [ ] AUDITORÍA
+- [ ] DESHACER
+- [ ] ACCIONES RÁPIDAS
+- [ ] COMANDO RÁPIDO
+- [ ] INTELIGENCIA SIN AUTOMATISMOS PELIGROSOS
+- [ ] EJEMPLO COMPLETO
+- [ ] CRITERIOS DE ACEPTACIÓN
+- [ ] PREPARACIÓN PARA LA FASE 7
+
+#### HT · Fase 7/12 — MOCHILA INTELIGENTE + MATERIALES + PREPARACIÓN AUTOMÁTICA
+- [ ] OBJETIVO PRINCIPAL
+- [ ] LA MOCHILA COMO ENTIDAD
+- [ ] ELEMENTO DE MOCHILA
+- [ ] TIPOS DE MATERIAL
+- [ ] MATERIAL PERSONALIZADO
+- [ ] MATERIAL ASOCIADO A ACTIVIDAD
+- [ ] MATERIAL OPCIONAL
+- [ ] MATERIAL TEMPORAL
+- [ ] MATERIAL POR FECHA
+- [ ] MATERIAL POR EVENTO
+- [ ] MATERIAL POR EXAMEN
+- [ ] MATERIAL DE ENTRENAMIENTO
+- [ ] MATERIAL DE ENTRENAMIENTO ESPECÍFICO
+- [ ] MOCHILA DE HOY
+- [ ] MOCHILA DE MAÑANA
+- [ ] PREPARACIÓN
+- [ ] MARCAR COMO PREPARADO
+- [ ] PROGRESO DE MOCHILA
+- [ ] MOCHILA COMPLETA
+- [ ] MOCHILA INCOMPLETA
+- [ ] DIFERENCIAR OBLIGATORIO
+- [ ] PREPARAR TODO
+- [ ] DESMARCAR TODO
+- [ ] ELEMENTOS PERSISTENTES
+- [ ] ELEMENTOS NO PERSISTENTES
+- [ ] MOCHILA BASE
+- [ ] MOCHILA ESCOLAR
+- [ ] MOCHILA DEPORTIVA
+- [ ] OTRAS MOCHILAS
+- [ ] SELECCIÓN DE MOCHILA
+- [ ] MATERIAL COMPARTIDO
+- [ ] INVENTARIO
+- [ ] CANTIDAD DISPONIBLE
+- [ ] MATERIAL PRESTADO
+- [ ] MATERIAL PERDIDO
+- [ ] MATERIAL ROTO
+- [ ] DISPONIBILIDAD
+- [ ] ALERTA DE DISPONIBILIDAD
+- [ ] COMPARTIR MATERIAL
+- [ ] UBICACIÓN DEL MATERIAL
+- [ ] UBICACIONES DE ALMACENAMIENTO
+- [ ] CAMBIO DE UBICACIÓN
+- [ ] HISTORIAL
+- [ ] PREPARACIÓN AUTOMÁTICA
+- [ ] GENERACIÓN ANTICIPADA
+- [ ] HORA DE PREPARACIÓN
+- [ ] RECORDATORIO
+- [ ] RECORDATORIO INTELIGENTE
+- [ ] RECORDATORIO CON FALTANTES
+- [ ] PRIORIDAD DEL MATERIAL
+- [ ] MATERIAL CRÍTICO
+- [ ] MATERIAL RECOMENDADO
+- [ ] EXCEPCIONES
+- [ ] DÍA ESPECIAL
+- [ ] CAMBIO DE HORARIO
+- [ ] CANCELACIÓN
+- [ ] NO BORRAR MATERIAL MANUAL
+- [ ] ORIGEN DEL ELEMENTO
+- [ ] EXPLICACIÓN
+- [ ] MATERIAL DUPLICADO
+- [ ] CANTIDADES INTELIGENTES
+- [ ] CONSUMIBLES
+- [ ] INVENTARIO BAJO
+- [ ] LISTA DE COMPRA
+- [ ] CONEXIÓN CON ECONOMÍA
+- [ ] CONEXIÓN CON TAREAS
+- [ ] CONEXIÓN CON RECORDATORIOS
+- [ ] MOCHILA + HOY
+- [ ] MOCHILA + CALENDARIO
+- [ ] MOCHILA + SEMANA
+- [ ] ESTADO DE PREPARACIÓN SEMANAL
+- [ ] PREPARACIÓN DE VARIOS DÍAS
+- [ ] PLANIFICACIÓN ANTICIPADA
+- [ ] MOCHILA POR PERFIL
+- [ ] REGLAS
+- [ ] REGLAS CON CONDICIONES
+- [ ] REGLAS TEMPORALES
+- [ ] REGLAS POR DÍA
+- [ ] REGLAS POR UBICACIÓN
+- [ ] IA PARA CONFIGURAR REGLAS
+- [ ] EXPLICABILIDAD
+- [ ] IA PARA DETECTAR PATRONES
+- [ ] PREDICCIÓN
+- [ ] NIVELES DE CERTEZA
+- [ ] MOCHILA MANUAL + AUTOMÁTICA
+- [ ] EVITAR SOBRESCRITURA
+- [ ] BLOQUEO MANUAL
+- [ ] BLOQUEO TEMPORAL
+- [ ] REGLA GLOBAL
+- [ ] PREPARACIÓN FÍSICA
+- [ ] ESCÁNER FUTURO
+- [ ] FOTO DEL MATERIAL
+- [ ] RECONOCIMIENTO VISUAL FUTURO
+- [ ] MATERIAL DIGITAL
+- [ ] DISPOSITIVOS
+- [ ] CARGADORES
+- [ ] DEPENDENCIAS
+- [ ] KIT
+- [ ] KIT DEPORTIVO
+- [ ] KIT PERSONALIZADO
+- [ ] PREPARACIÓN POR KITS
+- [ ] HISTORIAL DE PREPARACIÓN
+- [ ] ESTADÍSTICAS
+- [ ] DETECCIÓN DE OLVIDOS
+- [ ] SIN CASTIGO
+- [ ] RACHAS FUTURAS
+- [ ] GAMIFICACIÓN OPCIONAL
+- [ ] DISEÑO VISUAL
+- [ ] INDICADORES
+- [ ] GESTOS MÓVILES
+- [ ] WIDGET FUTURO
+- [ ] LOCK SCREEN FUTURO
+- [ ] CLOUD
+- [ ] OFFLINE
+- [ ] SEGURIDAD
+- [ ] RENDIMIENTO
+- [ ] MOTOR DE CÁLCULO
+- [ ] EJEMPLO REAL COMPLETO
+- [ ] EJEMPLO CON EXCEPCIÓN
+- [ ] EJEMPLO CON MATERIAL NO DISPONIBLE
+- [ ] EJEMPLO CON EXAMEN
+- [ ] EJEMPLO CON IA
+- [ ] CRITERIOS DE ACEPTACIÓN DE LA FASE 7
+- [ ] SIGUIENTE FASE
+- [ ] Arquitectura general	✅
+- [ ] Datos + Cloud + Supabase	✅
+- [ ] Editor visual	✅
+- [ ] Configuración avanzada	✅
+- [ ] Actividades y contexto	✅
+- [ ] Calendario + Agenda + HOY	✅
+- [ ] Mochila inteligente	⏳
+- [ ] Reglas y automatizaciones	⏳
+- [ ] IA del horario	⏳
+- [ ] Notificaciones y contexto	⏳
+- [ ] Integraciones y sincronización avanzada	⏳
+- [ ] Optimización, seguridad y acabado final	⏳
+
+#### HT · Fase 8/12 — MOTOR TEMPORAL + REGLAS + AUTOMATIZACIONES INTELIGENTES
+- [ ] OBJETIVO
+- [ ] ESTADOS DE UNA ACTIVIDAD
+- [ ] PROGRAMADA
+- [ ] PRÓXIMA
+- [ ] EN CURSO
+- [ ] PASADA
+- [ ] COMPLETADA
+- [ ] CONFIRMACIÓN OPCIONAL
+- [ ] CLASES ESCOLARES
+- [ ] TAREAS
+- [ ] EVENTOS
+- [ ] RECORDATORIOS
+- [ ] EXÁMENES
+- [ ] EL TABLÓN DE HOY
+- [ ] BOTÓN «VER PASADO»
+- [ ] HISTORIAL DEL DÍA
+- [ ] LÍNEA DE TIEMPO DINÁMICA
+- [ ] INDICADOR DE HORA ACTUAL
+- [ ] ACTUALIZACIÓN AUTOMÁTICA
+- [ ] CAMBIO DE HORA
+- [ ] CAMBIO DE DÍA
+- [ ] NO DEPENDER DE ABRIR LA APP
+- [ ] REANUDACIÓN
+- [ ] ZONA HORARIA
+- [ ] HORARIO DE VERANO
+- [ ] ACTIVIDADES SIN HORA
+- [ ] ACTIVIDADES CON RANGO
+- [ ] ACTIVIDADES DE TODO EL DÍA
+- [ ] ACTIVIDADES FLEXIBLES
+- [ ] BLOQUES FLEXIBLES
+- [ ] AUTOMATIZACIONES
+- [ ] EJEMPLO 1
+- [ ] EJEMPLO 2
+- [ ] EJEMPLO 3
+- [ ] EJEMPLO 4
+- [ ] EJEMPLO 5
+- [ ] EJEMPLO 6
+- [ ] EJEMPLO 7
+- [ ] EJEMPLO 8
+- [ ] EJEMPLO 9
+- [ ] EJEMPLO 10
+- [ ] MOTOR DE REGLAS
+- [ ] MÚLTIPLES CONDICIONES
+- [ ] PRIORIDADES ENTRE REGLAS
+- [ ] REGLAS Y EXCEPCIONES
+- [ ] ACTIVAR/DESACTIVAR
+- [ ] EJECUCIÓN MANUAL
+- [ ] REGISTRO DE AUTOMATIZACIONES
+- [ ] HISTORIAL DE ACCIONES
+- [ ] DESHACER AUTOMATIZACIÓN
+- [ ] EXPLICACIÓN
+- [ ] AUTOMATIZACIONES SEGURAS
+- [ ] IA + AUTOMATIZACIONES
+- [ ] IA NO ES EL MOTOR
+- [ ] MOTOR TEMPORAL + IA
+- [ ] OBJETIVO FINAL DE ESTA FASE
+- [ ] EJEMPLO FINAL
+- [ ] CRITERIOS DE ACEPTACIÓN
+
+#### HT · Fase 9/12 — IA DE HORARIO + PLANIFICADOR PERSONAL INTELIGENTE
+- [ ] OBJETIVO
+- [ ] CONTEXTO TEMPORAL REAL
+- [ ] PREGUNTAS NATURALES
+- [ ] PLANIFICACIÓN AUTOMÁTICA
+- [ ] EJEMPLO
+- [ ] NUNCA SOBREESCRIBIRÁ SIN PERMISO
+- [ ] ACEPTAR PLAN
+- [ ] MODIFICAR PLAN
+- [ ] REPLANIFICACIÓN
+- [ ] REPLANIFICACIÓN INTELIGENTE
+- [ ] DURACIÓN
+- [ ] TIEMPO DISPONIBLE
+- [ ] HUECOS
+- [ ] HUECOS ADECUADOS
+- [ ] BLOQUES DE ESTUDIO
+- [ ] EXÁMENES
+- [ ] PLAN DE ESTUDIO
+- [ ] PLAN ADAPTATIVO
+- [ ] NO CASTIGAR
+- [ ] PRIORIDADES
+- [ ] PUNTUACIÓN DE PRIORIDAD
+- [ ] TAREAS GRANDES
+- [ ] DESCOMPOSICIÓN INTELIGENTE
+- [ ] DEPENDENCIAS
+- [ ] OBJETIVOS
+- [ ] ENTRENAMIENTO
+- [ ] DESCANSO
+- [ ] TIEMPO DE TRANSICIÓN
+- [ ] TIEMPO DE DESPLAZAMIENTO
+- [ ] MARGEN
+- [ ] PREFERENCIAS DE PLANIFICACIÓN
+- [ ] PLANIFICACIÓN PERSONALIZADA
+- [ ] MODO «TENGO MUCHO QUE HACER»
+- [ ] CARGA SEMANAL
+- [ ] MAPA DE CARGA
+- [ ] DETECCIÓN DE SOBRECARGA
+- [ ] NO DECIDIRÁ POR TI
+- [ ] ELEMENTOS BLOQUEADOS
+- [ ] INTELIGENCIA SOBRE BLOQUES FIJOS
+- [ ] PLANIFICACIÓN POR CAPAS
+- [ ] PLANIFICACIÓN POR COMANDOS
+- [ ] MÚLTIPLES CONDICIONES
+- [ ] RESTRICCIONES
+- [ ] PREFERENCIAS PERMANENTES
+- [ ] PREFERENCIAS TEMPORALES
+- [ ] CHAT CONTEXTUAL
+- [ ] ACCIONES RÁPIDAS
+- [ ] RESPUESTAS CONTEXTUALES
+- [ ] CONSULTA DE DATOS
+- [ ] NO MANDAR TODO A LA IA
+- [ ] RESPUESTAS BASADAS EN DATOS
+- [ ] MOTOR DETERMINISTA + IA
+- [ ] ACCIONES DE LA IA
+- [ ] VALIDACIÓN
+- [ ] CONFIRMACIÓN
+- [ ] PREVISUALIZACIÓN
+- [ ] DESHACER
+- [ ] HISTORIAL
+- [ ] MODO MANUAL
+- [ ] MODO IA
+- [ ] NIVEL DE AUTONOMÍA
+- [ ] PRIVACIDAD
+- [ ] PERMISOS
+- [ ] DATOS SENSIBLES
+- [ ] MEMORIA DE IA
+- [ ] EJEMPLO DE PREFERENCIA
+- [ ] EXPLICACIÓN DEL PLAN
+- [ ] PLAN ALTERNATIVO
+- [ ] COMPARACIÓN
+- [ ] PLANIFICACIÓN SEMANAL
+- [ ] PLANIFICACIÓN DIARIA
+- [ ] PLANIFICACIÓN DE UN PROYECTO
+- [ ] FECHA LÍMITE
+- [ ] MARGEN DE SEGURIDAD
+- [ ] IMPREVISTOS
+- [ ] PLAN ORIGINAL
+- [ ] CAMBIOS
+- [ ] OBJETIVOS A LARGO PLAZO
+- [ ] PROGRESIÓN
+- [ ] CONEXIÓN CON EL RESTO DEL SISTEMA PERSONAL
+- [ ] EJEMPLO REAL
+- [ ] PLANIFICADOR PROACTIVO
+- [ ] PERO SIN SPAM
+- [ ] CENTRO DE SUGERENCIAS
+- [ ] ACCIONES DESDE SUGERENCIAS
+- [ ] APRENDIZAJE DE PREFERENCIAS
+- [ ] SISTEMA DE FEEDBACK
+- [ ] PLANES FALLIDOS
+- [ ] CALIDAD DEL PLAN
+- [ ] REGLA DE ORO
+- [ ] CRITERIOS DE ACEPTACIÓN
+
+#### HT · Fase 10/12 — NOTIFICACIONES + RECORDATORIOS + CONTEXTO PROACTIVO
+- [ ] OBJETIVO PRINCIPAL
+- [ ] TIPOS DE NOTIFICACIÓN
+- [ ] PRIORIDADES
+- [ ] NO TODO DEBE NOTIFICAR
+- [ ] MOTOR DE DECISIÓN
+- [ ] NOTIFICACIÓN CONTEXTUAL
+- [ ] CAMBIOS EN TIEMPO REAL
+- [ ] EVITAR DUPLICADOS
+- [ ] RECORDATORIOS PERSONALIZADOS
+- [ ] VARIOS RECORDATORIOS
+- [ ] NOTIFICACIÓN DE INICIO
+- [ ] NOTIFICACIÓN DE FINALIZACIÓN
+- [ ] ACTIVIDADES PASADAS
+- [ ] TAREAS
+- [ ] TAREAS VENCIDAS
+- [ ] RECORDATORIO DE TAREA PENDIENTE
+- [ ] EXÁMENES
+- [ ] INTELIGENCIA DE EXÁMENES
+- [ ] PROPUESTA
+- [ ] MOCHILA
+- [ ] MOCHILA INCOMPLETA
+- [ ] MATERIAL CRÍTICO
+- [ ] CAMBIO DE NECESIDADES
+- [ ] NUEVA NECESIDAD
+- [ ] NOTIFICACIONES DE CAMBIOS
+- [ ] CAMBIO IMPORTANTE
+- [ ] CANCELACIÓN
+- [ ] CONFLICTOS
+- [ ] RESOLUCIÓN
+- [ ] RECORDATORIOS DE EVENTOS
+- [ ] RECORDATORIOS DE PREPARACIÓN
+- [ ] LISTA DE PREPARACIÓN
+- [ ] NOTIFICACIONES DE HÁBITOS
+- [ ] NO CREAR CIENTOS DE RECORDATORIOS
+- [ ] RESUMEN INTELIGENTE
+- [ ] RESUMEN DE MAÑANA
+- [ ] RESUMEN NOCTURNO
+- [ ] RESUMEN MATUTINO
+- [ ] NO MOLESTAR
+- [ ] EXCEPCIONES
+- [ ] FINES DE SEMANA
+- [ ] VACACIONES
+- [ ] DÍAS ESPECIALES
+- [ ] CONTEXTO DE UBICACIÓN
+- [ ] CONTEXTO DE DISPOSITIVO
+- [ ] NOTIFICACIONES OFFLINE
+- [ ] PUSH CLOUD
+- [ ] SINCRONIZACIÓN
+- [ ] MULTIDISPOSITIVO
+- [ ] ESTADO DE NOTIFICACIÓN
+- [ ] HISTORIAL
+- [ ] CANCELACIÓN AUTOMÁTICA
+- [ ] REPETICIÓN INTELIGENTE
+- [ ] SNOOZE
+- [ ] POSPONER
+- [ ] MARCAR COMO HECHO
+- [ ] ACCIONES RÁPIDAS
+- [ ] DEEP LINKS
+- [ ] NOTIFICACIONES DE IA
+- [ ] LA IA NO PODRÁ SPAMEAR
+- [ ] COOLDOWN
+- [ ] AGRUPACIÓN
+- [ ] SISTEMA DE IMPORTANCIA
+- [ ] DECISIÓN FINAL
+- [ ] PREVENCIÓN DE NOTIFICACIONES OBSOLETAS
+- [ ] EJEMPLO COMPLETO
+- [ ] OTRO EJEMPLO
+- [ ] MOCHILA + NOTIFICACIONES + HORARIO
+- [ ] TAREAS + HORARIO
+- [ ] EXAMEN + ESTUDIO
+- [ ] CONEXIÓN CON HOY
+- [ ] CENTRO DE NOTIFICACIONES INTERNO
+- [ ] LEÍDO / NO LEÍDO
+- [ ] ARCHIVAR
+- [ ] FILTROS
+- [ ] CONFIGURACIÓN GLOBAL
+- [ ] CONFIGURACIÓN POR MÓDULO
+- [ ] CONFIGURACIÓN POR IMPORTANCIA
+- [ ] CONFIGURACIÓN POR HORARIO
+- [ ] PERSONALIZACIÓN VISUAL
+- [ ] SONIDO
+- [ ] VIBRACIÓN
+- [ ] MODO SILENCIOSO
+- [ ] ACCESIBILIDAD
+- [ ] CLOUD
+- [ ] LOCAL + CLOUD
+- [ ] CONFLICTOS DE SINCRONIZACIÓN
+- [ ] SEGURIDAD
+- [ ] AUDITORÍA
+- [ ] CRITERIOS DE ACEPTACIÓN
+
+#### HT · Fase 11/12 — ANALÍTICA PERSONAL + CARGA + PROGRESO + APRENDIZAJE DEL SISTEMA
+- [ ] *(sin apartados numerados extraídos — leer la fase completa en la especificación)*
+
+#### HT · Fase 12/12 — CLOUD + SUPABASE + SINCRONIZACIÓN + ARQUITECTURA DEFINITIVA
+- [ ] ARQUITECTURA GENERAL
+- [ ] FUENTE CENTRAL DE VERDAD
+- [ ] AUTENTICACIÓN
+- [ ] USUARIO
+- [ ] AISLAMIENTO DE DATOS
+- [ ] TABLA DE HORARIOS
+- [ ] MÚLTIPLES HORARIOS
+- [ ] HORARIO ACTIVO
+- [ ] PERIODOS DE VALIDEZ
+- [ ] CURSO ESCOLAR
+- [ ] COLUMNAS
+- [ ] FILAS
+- [ ] BLOQUES DE HORARIO
+- [ ] HORAS
+- [ ] HORARIO RECURRENTE
+- [ ] EXCEPCIONES
+- [ ] CAMBIO TEMPORAL
+- [ ] MATERIAS
+- [ ] COLORES
+- [ ] IDENTIDAD VISUAL
+- [ ] TAREAS
+- [ ] EXÁMENES
+- [ ] EVENTOS
+- [ ] RECURRENCIA
+- [ ] MOCHILA
+- [ ] REGLAS DE MOCHILA
+- [ ] MOTOR DE REGLAS
+- [ ] EJEMPLO
+- [ ] VENTAJA
+- [ ] MOTOR TEMPORAL
+- [ ] ZONA HORARIA
+- [ ] CAMBIO DE HORA
+- [ ] ESTADO DE ACTIVIDAD
+- [ ] REGLA DE PASADO
+- [ ] HOY
+- [ ] TABLÓN DE HOY
+- [ ] CAMBIO AUTOMÁTICO
+- [ ] SIN REFRESCAR MANUALMENTE
+- [ ] CALENDARIO
+- [ ] IA
+- [ ] CAPA IA
+- [ ] TOOLS DE IA
+- [ ] PERMISOS
+- [ ] ACCIONES PELIGROSAS
+- [ ] TRANSACCIONES
+- [ ] EVITAR DATOS A MEDIAS
+- [ ] NOTIFICACIONES
+- [ ] NOTIFICACIONES PROGRAMADAS
+- [ ] IDEMPOTENCIA
+- [ ] SINCRONIZACIÓN
+- [ ] CAMBIOS LOCALES
+- [ ] COLA OFFLINE
+- [ ] AL VOLVER INTERNET
+- [ ] CONFLICTOS
+- [ ] RESOLUCIÓN
+- [ ] INDICADOR DE SINCRONIZACIÓN
+- [ ] OFFLINE
+- [ ] CLOUD COMO RESPALDO
+- [ ] BACKUPS
+- [ ] MIGRACIONES
+- [ ] ÍNDICES
+- [ ] RENDIMIENTO
+- [ ] CONSULTAS POR RANGO
+- [ ] PAGINACIÓN
+- [ ] CACHÉ
+- [ ] SEGURIDAD DE CLAVES
+- [ ] CLAUDE API
+- [ ] CONTROL DE USO DE IA
+- [ ] COSTES
+- [ ] CONTEXTO MÍNIMO
+- [ ] LOGS
+- [ ] MONITORIZACIÓN
+- [ ] RECUPERACIÓN
+- [ ] OPERACIONES SEGURAS
+- [ ] BORRADO
+- [ ] ARCHIVADO
+- [ ] RESTAURACIÓN
+- [ ] IMPORTACIÓN
+- [ ] EXPORTACIÓN
+- [ ] DUPLICAR HORARIO
+- [ ] PLANTILLAS
+- [ ] MOTOR DE RECURRENCIA
+- [ ] CALENDARIO ESCOLAR
+- [ ] IMPORTACIÓN DE CALENDARIO
+- [ ] FUTURAS INTEGRACIONES
+- [ ] API INTERNA
+- [ ] SEPARACIÓN DE RESPONSABILIDADES
+- [ ] COMPONENTES DE UI
+- [ ] DISEÑO RESPONSIVE
+- [ ] MÓVIL COMO PRIORIDAD
+- [ ] GRID
+- [ ] ACCESIBILIDAD
+- [ ] ANIMACIONES
+- [ ] MODO OSCURO
+- [ ] DISEÑO PREMIUM
+- [ ] ARQUITECTURA FINAL
+- [ ] RESULTADO FINAL
+- [ ] EL SISTEMA COMPLETO
+- [ ] CRITERIOS DE FINALIZACIÓN DE HORARIO TOP
+- [ ] Y LO MÁS IMPORTANTE
+
+---
+
+## AR · ARMARIO JC LIFESTYLE — 4 fases
+
+Armario digital, constructor de outfits, calendario e historial de uso, y sistema inteligente anti-repetición. **Estilo de Hombre lo da por construido** (su apartado 16 dice literalmente *"NO rehacer el armario"*), así que debe existir antes que EH.
+
+#### AR · Fase 1/4 — ARMARIO DIGITAL + GESTIÓN DE PRENDAS
+- [ ] *(sin apartados numerados extraídos — leer la fase completa en la especificación)*
+
+#### AR · Fase 2/4 — CONSTRUCTOR Y GESTIÓN DE OUTFITS
+- [ ] Armario digital
+- [ ] Constructor de Outfits ← ESTAMOS AQUÍ
+- [ ] Calendario + historial de uso
+- [ ] Sistema inteligente anti-repetición + estadísticas
+- [ ] OBJETIVO
+- [ ] ACCESO
+- [ ] PANTALLA DE OUTFITS
+- [ ] CREAR OUTFIT
+- [ ] SELECCIÓN DE PRENDAS
+- [ ] BUSCADOR DE PRENDAS
+- [ ] SELECCIÓN VISUAL
+- [ ] VISTA PREVIA DEL OUTFIT
+- [ ] FOTO DEL OUTFIT
+- [ ] INFORMACIÓN DEL OUTFIT
+- [ ] PERSONAS
+- [ ] FAVORITOS
+- [ ] EDITAR OUTFIT
+- [ ] DUPLICAR OUTFIT
+- [ ] ELIMINAR
+- [ ] DETALLE DE OUTFIT
+- [ ] ACCESO DIRECTO A LAS PRENDAS
+- [ ] INFORMACIÓN DE USO — PREPARACIÓN
+- [ ] MODELO DE DATOS
+- [ ] USUARIO
+- [ ] IMÁGENES
+- [ ] FILTROS DE OUTFITS
+- [ ] BÚSQUEDA
+- [ ] ORDENACIÓN
+- [ ] EXPERIENCIA RÁPIDA
+- [ ] DISEÑO
+- [ ] ESTADO VACÍO
+- [ ] COMPATIBILIDAD CON FASE 3
+- [ ] COMPATIBILIDAD CON FASE 4
+- [ ] NO ROMPER NADA
+- [ ] PRUEBAS OBLIGATORIAS
+- [ ] REGLA FINAL
+- [ ] AUDITORÍA
+- [ ] COMPROBAR CREACIÓN
+- [ ] SELECTOR DE PRENDAS
+- [ ] EXPERIENCIA DE USUARIO
+- [ ] VISTA DEL OUTFIT
+- [ ] DETALLE
+- [ ] EDICIÓN
+- [ ] DUPLICACIÓN
+- [ ] Crear Outfit A.
+- [ ] Duplicarlo.
+- [ ] Crear Outfit B.
+- [ ] Modificar B.
+- [ ] Comprobar que A permanece intacto.
+- [ ] ELIMINACIÓN
+- [ ] PRENDAS ELIMINADAS
+- [ ] BÚSQUEDA Y FILTROS
+- [ ] RENDIMIENTO
+- [ ] MÓVIL
+- [ ] ESTADOS
+- [ ] BASE DE DATOS
+- [ ] SEGURIDAD
+- [ ] PREPARACIÓN PARA HISTORIAL
+- [ ] PREPARACIÓN PARA INTELIGENCIA
+- [ ] REVISIÓN VISUAL FINAL
+- [ ] PRUEBA FINAL COMPLETA
+- [ ] Entrar en Armario.
+- [ ] Entrar en Outfits.
+- [ ] Crear Outfit.
+- [ ] Seleccionar 5 prendas.
+- [ ] Añadir información.
+- [ ] Guardar.
+- [ ] Abrirlo.
+- [ ] Editarlo.
+- [ ] Añadir una prenda.
+- [ ] Quitar otra.
+- [ ] Modificar la copia.
+- [ ] Buscarlo.
+- [ ] Filtrarlo.
+- [ ] Marcarlo favorito.
+- [ ] Desmarcarlo.
+- [ ] Eliminar la copia.
+- [ ] Comprobar que el original sigue intacto.
+- [ ] Comprobar que todas las prendas siguen en el Armario.
+- [ ] Recargar.
+- [ ] Comprobar persistencia.
+- [ ] CRITERIO DE FINALIZACIÓN
+- [ ] INFORME FINAL
+- [ ] NO SUPONGAS QUE ESTÁ TERMINADO
+- [ ] INTEGRIDAD ENTRE PRENDAS Y OUTFITS
+- [ ] CAMBIOS EN PRENDAS
+- [ ] Crear una prenda.
+- [ ] Utilizarla en un Outfit.
+- [ ] Cambiar el nombre de la prenda.
+- [ ] Cambiar su fotografía.
+- [ ] Volver al Outfit.
+- [ ] ELIMINACIÓN DE PRENDAS
+- [ ] OUTFITS SIN PRENDAS
+- [ ] PRENDAS NO DISPONIBLES
+- [ ] OUTFIT DUPLICADO
+- [ ] FUTURO HISTORIAL
+- [ ] DATOS DE LUGAR Y PERSONAS
+- [ ] MODELO PREPARADO PARA EVENTOS
+- [ ] EXPERIENCIA DE CREACIÓN
+- [ ] AUTOGUARDADO Y CANCELACIÓN
+- [ ] FEEDBACK
+- [ ] ESTADOS DE CARGA
+- [ ] OFFLINE / CONEXIÓN
+- [ ] SEGURIDAD MULTIUSUARIO
+- [ ] ACCESIBILIDAD
+- [ ] COMPATIBILIDAD CON EL DISEÑO ACTUAL
+- [ ] PREPARACIÓN PARA LA FASE 3
+- [ ] PREPARACIÓN PARA LA FASE 4
+- [ ] LIMPIEZA DEL CÓDIGO
+- [ ] ERROR CHECK FINAL
+- [ ] PRUEBA DE USUARIO REAL
+- [ ] CRITERIO DEFINITIVO DE CIERRE
+- [ ] REVISIÓN DE LA EXPERIENCIA COMPLETA
+- [ ] SELECTOR DE PRENDAS MEJORADO
+- [ ] CONTADOR DE SELECCIÓN
+- [ ] SELECCIÓN RÁPIDA
+- [ ] RESUMEN ANTES DE GUARDAR
+- [ ] OUTFIT SIN FOTO
+- [ ] ORDEN DE LAS PRENDAS
+- [ ] ACCESO RÁPIDO A EDITAR
+- [ ] DUPLICAR DESDE TARJETA
+- [ ] ACCIONES DESTRUCTIVAS
+- [ ] FILTROS PERSISTENTES
+- [ ] BÚSQUEDA INTELIGENTE
+- [ ] OUTFITS CON PRENDAS NO DISPONIBLES
+- [ ] ESTADÍSTICAS BÁSICAS
+- [ ] RESPONSIVE
+- [ ] ANIMACIONES
+- [ ] MANEJO DE ERRORES
+- [ ] CONFIRMACIÓN DE GUARDADO
+- [ ] DATOS
+- [ ] NO DUPLICAR PRENDAS
+- [ ] PREPARACIÓN PARA EL CALENDARIO
+- [ ] PREPARACIÓN PARA LA REPETICIÓN
+- [ ] PRUEBA FINAL DE EXPERIENCIA
+- [ ] Buscar una prenda.
+- [ ] Crear un Outfit.
+- [ ] Seleccionar rápidamente 6 prendas.
+- [ ] Guardarlo.
+- [ ] Cambiar una prenda.
+- [ ] Filtrar favoritos.
+- [ ] Volver al Armario.
+- [ ] OPTIMIZACIÓN FINAL
+- [ ] INFORME
+- [ ] Constructor de Outfits
+- [ ] PANTALLA PRINCIPAL DEL ARMARIO
+- [ ] CATEGORÍAS
+- [ ] AÑADIR PRENDA
+- [ ] INFORMACIÓN ADICIONAL
+- [ ] TARJETA DE PRENDA
+- [ ] DETALLE DE PRENDA
+- [ ] FILTROS
+- [ ] ESTADOS DE LAS PRENDAS
+- [ ] ARQUITECTURA DE DATOS
+- [ ] FUTURO SISTEMA DE USO
+- [ ] EXPERIENCIA DE AÑADIR PRENDAS
+- [ ] DISEÑO VISUAL
+- [ ] DATOS VACÍOS
+- [ ] PERSISTENCIA
+- [ ] COMPATIBILIDAD CON FUTURAS FASES
+
+#### AR · Fase 3/4 — CALENDARIO + HISTORIAL DE USO DEL ARMARIO
+- [ ] CONCEPTO PRINCIPAL
+- [ ] CALENDARIO
+- [ ] VISTA MENSUAL
+- [ ] DÍA CON OUTFIT
+- [ ] VARIOS OUTFITS EN UN MISMO DÍA
+- [ ] REGISTRAR USO
+- [ ] REGISTRAR DESDE EL OUTFIT
+- [ ] REGISTRAR DESDE EL CALENDARIO
+- [ ] FECHA Y HORA
+- [ ] LUGAR
+- [ ] PERSONAS
+- [ ] EVENTO / OCASIÓN
+- [ ] NOTAS
+- [ ] HISTORIAL
+- [ ] HISTORIAL DE CADA PRENDA
+- [ ] CONTADOR DE USOS DE PRENDA
+- [ ] ÚLTIMO USO DE PRENDA
+- [ ] DETALLE DE UN DÍA
+- [ ] EDITAR UN USO
+- [ ] ELIMINAR UN USO
+- [ ] CAMBIO DE FECHA
+- [ ] CALENDARIO COMO CENTRO VISUAL
+- [ ] VISTA DE LISTA
+- [ ] FILTROS DEL HISTORIAL
+- [ ] RANGO DE FECHAS
+- [ ] OUTFITS SIN HISTORIAL
+- [ ] PRENDAS SIN HISTORIAL
+- [ ] RELACIÓN CON PRENDAS
+- [ ] MODELO DE DATOS
+- [ ] SEGURIDAD
+- [ ] BORRADO DE OUTFIT
+- [ ] EDICIÓN DE PRENDA
+- [ ] RENDIMIENTO
+- [ ] MÓVIL
+- [ ] ACCESO RÁPIDO
+- [ ] INTEGRACIÓN CON FASE 1 Y FASE 2
+- [ ] PREPARACIÓN PARA FASE 4
+- [ ] EXPERIENCIA FINAL
+- [ ] PRUEBAS OBLIGATORIAS
+- [ ] PRUEBA CRÍTICA
+- [ ] ERRORES
+- [ ] NO HACER
+
+#### AR · Fase 4/4 — SISTEMA INTELIGENTE ANTI-REPETICIÓN + ESTADÍSTICAS + RECOMENDACIONES
+- [ ] OBJETIVO PRINCIPAL
+- [ ] PANEL INTELIGENTE
+- [ ] NO HACER RECOMENDACIONES ALEATORIAS
+- [ ] SISTEMA ANTI-REPETICIÓN
+- [ ] DISTANCIA TEMPORAL
+- [ ] OUTFITS “OLVIDADOS”
+- [ ] Outfit Verano → 61 días
+- [ ] Casual Azul → 47 días
+- [ ] Cena Negra → 39 días
+- [ ] PRENDAS “OLVIDADAS”
+- [ ] PRENDAS MUY REPETIDAS
+- [ ] NIVEL DE REPETICIÓN
+- [ ] PUNTUACIÓN DE DIVERSIDAD
+- [ ] COBERTURA DEL ARMARIO
+- [ ] OUTFITS SIN USAR
+- [ ] RECOMENDACIÓN POR OCASIÓN
+- [ ] RECOMENDACIÓN POR TEMPORADA
+- [ ] DISPONIBILIDAD
+- [ ] RECOMENDACIÓN POR HISTORIAL
+- [ ] PENALIZACIÓN POR REPETICIÓN
+- [ ] RECOMENDACIONES EXPLICABLES
+- [ ] EVITAR REPETICIONES CON PERSONAS
+- [ ] EVITAR REPETICIONES POR LUGAR
+- [ ] MODO “NO REPETIR”
+- [ ] AJUSTE DE SENSIBILIDAD
+- [ ] ESTADÍSTICAS
+- [ ] PERÍODOS
+- [ ] GRÁFICOS
+- [ ] RANKING
+- [ ] PRIVACIDAD
+- [ ] RENDIMIENTO
+- [ ] CONSISTENCIA DE DATOS
+- [ ] IA
+- [ ] BOTÓN “SORPRÉNDEME”
+- [ ] REGISTRO DESDE LA RECOMENDACIÓN
+- [ ] APRENDIZAJE DEL COMPORTAMIENTO
+- [ ] INTEGRACIÓN CON EL RESTO DE JC LIFESTYLE
+- [ ] NO ROMPER FUNCIONALIDADES
+- [ ] PRUEBA COMPLETA DEL SISTEMA
+- [ ] Registrar varios usos.
+- [ ] Crear una nueva utilización reciente.
+- [ ] Comprobar que cambian las recomendaciones.
+- [ ] Eliminar un uso.
+- [ ] Comprobar que se recalculan.
+- [ ] Cambiar la fecha de un uso.
+- [ ] Comprobar estadísticas.
+- [ ] Marcar una prenda como no disponible.
+- [ ] Comprobar que baja su prioridad.
+- [ ] Activar modo no repetir.
+- [ ] Generar recomendación.
+- [ ] Utilizar la recomendación.
+- [ ] Comprobar que el calendario recibe el nuevo uso.
+- [ ] Comprobar que el historial se actualiza.
+- [ ] CASO CLAVE
+- [ ] CALIDAD DEL ALGORITMO
+- [ ] TRANSPARENCIA
+- [ ] SEGURIDAD
+- [ ] EXPERIENCIA MÓVIL
+- [ ] CRITERIO DE FINALIZACIÓN
+- [ ] NO DEJAR MAQUETAS
+- [ ] AUDITORÍA FINAL
+- [ ] INFORME FINAL
+- [ ] NO IMPLEMENTAR TODAVÍA
+- [ ] CALIDAD
+- [ ] REGLA FUNDAMENTAL
+- [ ] ENTREGA
+
+---
+
+## SR · SONIDO Y RACHAS — 5 + 4 fases
+
+⚠️ **Este bloque contiene DOS especificaciones con numeración solapada** (Sistema de Sonido, 5 fases; Sistema de Rachas, 4 fases). La checklist las fusiona porque no hay forma automática de separarlas con certeza. **Aclarar con Josué si son uno o dos módulos antes de tocar nada** — ver aviso 3 arriba.
+
+#### SR · Fase 1/5+4 — ARQUITECTURA + MOTOR GLOBAL DE AUDIO
+- [ ] OBJETIVO PRINCIPAL
+- [ ] CONCEPTO FUNDAMENTAL
+- [ ] TIPOS DE RACHAS
+- [ ] REGLA DE DÍA
+- [ ] QUÉ SIGNIFICA “COMPLETAR UN DÍA”
+- [ ] EVENTOS DE RACHA
+- [ ] RACHA ACTUAL
+- [ ] NO PENALIZAR PREMATURAMENTE
+- [ ] MEJOR RACHA
+- [ ] HISTORIAL
+- [ ] DÍAS PERDIDOS
+- [ ] FUTURA FLEXIBILIDAD
+- [ ] GRACIAS A ESTO, EL SISTEMA PODRÁ CRECER
+- [ ] RACHAS FUTURAS PERSONALIZADAS
+- [ ] SUPABASE
+- [ ] SEGURIDAD
+- [ ] CONSISTENCIA
+- [ ] IDEMPOTENCIA
+- [ ] SINCRONIZACIÓN
+- [ ] OFFLINE
+- [ ] CASOS EXTREMOS
+- [ ] NO QUIERO GAMIFICACIÓN TODAVÍA
+- [ ] RESULTADO ESPERADO DE ESTA FASE
+- [ ] REGLA FUNDAMENTAL PARA IMPLEMENTARLO
+- [ ] ANTES DE MODIFICAR EL PROYECTO
+- [ ] DOCUMENTACIÓN DE LA IMPLEMENTACIÓN
+- [ ] Qué has encontrado en el proyecto.
+- [ ] Qué arquitectura has elegido.
+- [ ] Qué archivos has creado o modificado.
+- [ ] Qué lógica de rachas has implementado.
+- [ ] Qué queda preparado para futuras fases.
+- [ ] Qué NO has implementado porque corresponde a fases posteriores.
+- [ ] Cómo puedo probar que el motor funciona correctamente.
+- [ ] CRITERIO DE FINALIZACIÓN
+- [ ] PRIMERO: INSPECCIONA LA APP ACTUAL
+- [ ] PRINCIPIO MOBILE-FIRST
+- [ ] RACHA PRINCIPAL EN DASHBOARD
+- [ ] TARJETA DE RACHA
+- [ ] ESTADOS VISUALES
+- [ ] CENTRO DE RACHAS
+- [ ] JERARQUÍA
+- [ ] DETALLE DE UNA RACHA
+- [ ] CALENDARIO DE RACHA
+- [ ] NO HACER UN CALENDARIO GIGANTE
+- [ ] PROGRESO HACIA EL SIGUIENTE HITO
+- [ ] RÉCORD PERSONAL
+- [ ] LOGROS
+- [ ] DETALLE DE LOGRO
+- [ ] CELEBRACIONES
+- [ ] NIVELES DE CELEBRACIÓN
+- [ ] ANIMACIONES
+- [ ] FEEDBACK AL COMPLETAR
+- [ ] NO DUPLICAR FEEDBACK
+- [ ] SONIDO
+- [ ] HAPTICS
+- [ ] COLORES
+- [ ] DARK MODE
+- [ ] ACCESIBILIDAD
+- [ ] EMPTY STATES
+- [ ] PRIMER DÍA
+- [ ] RACHA ROTA
+- [ ] RECUPERACIÓN
+- [ ] RECORDATORIO VISUAL
+- [ ] MÓVIL
+- [ ] RENDIMIENTO
+- [ ] COMPONENTES
+- [ ] NAVEGACIÓN
+- [ ] MICROINTERACCIONES
+- [ ] NO SOBRECARCAR
+- [ ] PRUEBAS VISUALES
+- [ ] NO AVANCES A SONIDO
+- [ ] INFORME FINAL
+- [ ] Componentes creados/modificados.
+- [ ] Pantallas creadas/modificadas.
+- [ ] Integración con Dashboard.
+- [ ] Sistema de estados.
+- [ ] Calendario.
+- [ ] Logros.
+- [ ] Celebraciones.
+- [ ] Animaciones.
+- [ ] Adaptación móvil.
+- [ ] Accesibilidad.
+- [ ] Pruebas realizadas.
+- [ ] Qué queda para la Fase 5.
+
+#### SR · Fase 2/5+4 — BASE DE DATOS + SUPABASE + SEGURIDAD + SINCRONIZACIÓN
+- [ ] OBJETIVO
+- [ ] BIBLIOTECA CENTRAL
+- [ ] CATEGORÍAS
+- [ ] BIBLIOTECA INICIAL
+- [ ] FILOSOFÍA DEL SONIDO
+- [ ] JERARQUÍA SONORA
+- [ ] DURACIÓN
+- [ ] NO HACER LOUDNESS EXCESIVO
+- [ ] ASIGNACIONES
+- [ ] NO CODIFICAR ASIGNACIONES EN COMPONENTES
+- [ ] SONIDO PREDETERMINADO
+- [ ] FALLBACK
+- [ ] PREPARACIÓN PARA PERSONALIZACIÓN
+- [ ] METADATA
+- [ ] PRESETS
+- [ ] PACK PREDETERMINADO
+- [ ] SONIDOS DE RACHA
+- [ ] PROGRESIÓN SONORA
+- [ ] RÉCORD
+- [ ] LOGRO
+- [ ] RUPTURA DE RACHA
+- [ ] VOLUMEN POR CATEGORÍA
+- [ ] MUTE
+- [ ] VOLUMEN 0
+- [ ] MEMORIA
+- [ ] CONCURRENCIA
+- [ ] COLA DE SONIDOS
+- [ ] INTERRUPCIÓN
+- [ ] TEST DE BIBLIOTECA
+- [ ] ESTRUCTURA DE ARCHIVOS
+- [ ] SUPABASE
+- [ ] CACHE/PWA
+- [ ] COMPATIBILIDAD
+- [ ] NO AÑADIR SONIDOS A TODO
+- [ ] CRITERIO DE FINALIZACIÓN
+- [ ] NO IMPLEMENTAR TODAVÍA
+- [ ] INFORME FINAL
+- [ ] Biblioteca creada.
+- [ ] Categorías.
+- [ ] Eventos conectados.
+- [ ] Asignaciones.
+- [ ] Prioridades.
+- [ ] Fallback.
+- [ ] Control de volumen.
+- [ ] Gestión de concurrencia.
+- [ ] Compatibilidad PWA/iOS.
+- [ ] Pruebas.
+- [ ] Problemas encontrados.
+- [ ] Qué queda para la Fase 3.
+
+#### SR · Fase 3/5+4 — MOTOR DE EVENTOS, FEEDBACK Y RECOMPENSAS SONORAS
+- [ ] OBJETIVO DE LA FASE
+- [ ] PRINCIPIO FUNDAMENTAL
+- [ ] CATEGORÍAS DE EVENTOS SONOROS
+- [ ] PRIORIDAD DE LOS SONIDOS
+- [ ] REGLA DE NO SATURACIÓN
+- [ ] COOLDOWN SONORO
+- [ ] SISTEMA DE EVENTOS
+- [ ] EVENTOS COMPUESTOS
+- [ ] SISTEMA ESPECIAL DE RACHA
+- [ ] RACHA NORMAL VS. MILESTONE
+- [ ] RÉCORD PERSONAL
+- [ ] RACHA EN RIESGO
+- [ ] RECUPERACIÓN DE RACHA
+- [ ] PROTECCIÓN DE RACHA
+- [ ] RECOMPENSAS
+- [ ] XP
+- [ ] NIVELES
+- [ ] INSIGNIAS
+- [ ] OBJETIVOS
+- [ ] VIBRACIÓN + SONIDO
+- [ ] CONFIGURACIÓN DEL USUARIO
+- [ ] MODOS DE SONIDO
+- [ ] MODO PERSONALIZADO
+- [ ] REGLA DE PRIORIDAD DEL VOLUMEN
+- [ ] PREVISUALIZACIÓN
+- [ ] SISTEMA DE SILENCIO INTELIGENTE
+- [ ] SONIDOS DURANTE SESIONES
+- [ ] IDENTIDAD SONORA
+- [ ] ESTRUCTURA TÉCNICA RECOMENDADA
+- [ ] REGISTRO CENTRAL DE SONIDOS
+- [ ] COLA DE SONIDOS
+- [ ] PERSISTENCIA
+- [ ] SEGURIDAD Y ROBUSTEZ
+- [ ] CARGA DE AUDIO
+- [ ] PRIMER ARRANQUE
+- [ ] EVENTO DE PRIMERA INTERACCIÓN
+- [ ] REGLA DE ACCESIBILIDAD
+- [ ] CRITERIOS DE ACEPTACIÓN
+- [ ] RESULTADO FINAL DE LA FASE
+- [ ] PRIMERO: INSPECCIONA EL PROYECTO
+- [ ] OBJETIVO
+- [ ] MODELO DE DATOS
+- [ ] USER_ID
+- [ ] ROW LEVEL SECURITY
+- [ ] INTEGRIDAD DE DATOS
+- [ ] FECHAS
+- [ ] ZONA HORARIA
+- [ ] CREACIÓN DE RACHAS
+- [ ] REGISTRAR CUMPLIMIENTO
+- [ ] NO CONFÍES EN EL CLIENTE
+- [ ] CONTADORES DERIVADOS
+- [ ] SERVICIO DE RECÁLCULO
+- [ ] SINCRONIZACIÓN
+- [ ] CACHE LOCAL
+- [ ] OFFLINE
+- [ ] CONFLICTOS
+- [ ] ELIMINACIÓN O MODIFICACIÓN DE EVENTOS
+- [ ] EVENT SOURCE
+- [ ] AUDITORÍA BÁSICA
+- [ ] MIGRACIONES
+- [ ] TIPOS TYPESCRIPT
+- [ ] HOOK CENTRAL
+- [ ] RENDIMIENTO
+- [ ] PREPARACIÓN PARA NOTIFICACIONES
+- [ ] PREPARACIÓN PARA GAMIFICACIÓN
+- [ ] PRUEBAS
+- [ ] NO IMPLEMENTAR TODAVÍA
+- [ ] CRITERIO DE FINALIZACIÓN
+- [ ] INFORME FINAL
+- [ ] Arquitectura utilizada.
+- [ ] Tablas/migraciones creadas o modificadas.
+- [ ] Políticas RLS implementadas.
+- [ ] Servicios/hooks creados.
+- [ ] Sistema de sincronización.
+- [ ] Pruebas realizadas.
+- [ ] Problemas encontrados.
+- [ ] Qué queda pendiente para la Fase 3.
+
+#### SR · Fase 4 — DISEÑO Y ESPECIFICACIÓN DE LOS SONIDOS INDIVIDUALES
+- [ ] OBJETIVO
+- [ ] IDENTIDAD SONORA DE JC LIFESTYLE
+- [ ] REGLA DE DURACIÓN
+- [ ] FAMILIAS SONORAS
+- [ ] FAMILIA UI
+- [ ] FAMILIA FEEDBACK
+- [ ] FAMILIA PROGRESS
+- [ ] XP
+- [ ] LEVEL UP
+- [ ] RECOMPENSA
+- [ ] INSIGNIAS
+- [ ] OBJETIVO COMPLETADO
+- [ ] SISTEMA DE RACHA
+- [ ] STREAK_START
+- [ ] STREAK_INCREMENT
+- [ ] STREAK MILESTONES
+- [ ] MILESTONE 3
+- [ ] MILESTONE 7
+- [ ] MILESTONE 14
+- [ ] MILESTONE 21
+- [ ] MILESTONE 30
+- [ ] MILESTONE 50
+- [ ] MILESTONE 75
+- [ ] MILESTONE 100
+- [ ] MILESTONE 180
+- [ ] MILESTONE 365
+- [ ] RÉCORD PERSONAL
+- [ ] RACHA EN RIESGO
+- [ ] STREAK FREEZE
+- [ ] STREAK RECOVERED
+- [ ] ACHIEVEMENT
+- [ ] GRAND ACHIEVEMENT
+- [ ] SONIDOS DE SISTEMA
+- [ ] HAPTICS
+- [ ] DISEÑO DE LA ESCALA SONORA
+- [ ] MOTIVO SONORO DE JC LIFESTYLE
+- [ ] REGLA DE NO REPETICIÓN
+- [ ] VARIANTES
+- [ ] REGLA PARA LA ALEATORIEDAD
+- [ ] TRANSICIONES
+- [ ] MASTERING
+- [ ] FORMATO
+- [ ] NOMENCLATURA
+- [ ] REGISTRO DEFINITIVO
+- [ ] TESTING
+- [ ] TEST DE SATURACIÓN
+- [ ] TEST DE EVENTOS SIMULTÁNEOS
+- [ ] OBJETIVO FINAL
+- [ ] CRITERIOS DE ACEPTACIÓN DE LA FASE 4
+- [ ] RESULTADO
+- [ ] INSPECCIONA PRIMERO EL PROYECTO
+- [ ] NO REPRODUCIR AUDIO DIRECTAMENTE
+- [ ] EVENTOS DE AUDIO
+- [ ] EVENTO ≠ SONIDO
+- [ ] AUDIO ENGINE
+- [ ] CONFIGURACIÓN GLOBAL
+- [ ] CATEGORÍAS
+- [ ] PRIORIDADES
+- [ ] COLISIONES
+- [ ] COOLDOWN
+- [ ] SONIDOS DE INTERFAZ
+- [ ] SONIDOS DE IMPORTANCIA
+- [ ] WEB AUDIO / HTML AUDIO
+- [ ] PWA;
+- [ ] RESTRICCIONES DE IOS
+- [ ] AUDIO CONTEXT
+- [ ] PRELOAD
+- [ ] CACHE
+- [ ] ARCHIVOS DE AUDIO
+- [ ] FORMATOS
+- [ ] SONIDOS DEL SISTEMA
+- [ ] SONIDOS PERSONALIZADOS
+- [ ] METADATA
+- [ ] ASIGNACIONES
+- [ ] FALLBACK
+- [ ] ERROR HANDLING
+- [ ] AJUSTES FUTUROS
+- [ ] PREFERENCIAS PERSISTENTES
+- [ ] SINCRONIZACIÓN
+- [ ] EVENT BUS
+- [ ] DESACOPLAMIENTO
+- [ ] TEST MODE
+- [ ] PRUEBAS
+- [ ] RENDIMIENTO
+- [ ] ACCESIBILIDAD
+- [ ] PRIVACIDAD
+- [ ] SEGURIDAD FUTURA
+- [ ] NO IMPLEMENTAR TODAVÍA
+- [ ] CRITERIO DE FINALIZACIÓN
+- [ ] INFORME FINAL
+- [ ] Arquitectura elegida.
+- [ ] Tecnología de audio utilizada y por qué.
+- [ ] Archivos creados/modificados.
+- [ ] Eventos soportados.
+- [ ] Sistema de prioridades.
+- [ ] Sistema de volumen.
+- [ ] Sistema de fallback.
+- [ ] Gestión de iOS/PWA.
+- [ ] Preparación para sonidos personalizados.
+- [ ] Pruebas realizadas.
+- [ ] Problemas encontrados.
+- [ ] Qué queda para la Fase 2.
+- [ ] REGLA PRINCIPAL
+- [ ] SISTEMA DE HITOS
+- [ ] MÚLTIPLES TIPOS DE RACHA
+- [ ] LOGROS
+- [ ] LOGROS DESBLOQUEADOS
+- [ ] NO REPETIR RECOMPENSAS
+- [ ] HITO ≠ LOGRO
+- [ ] PROGRESIÓN
+- [ ] RÉCORD SUPERADO
+- [ ] EVENTOS DE GAMIFICACIÓN
+- [ ] RECOMPENSAS
+- [ ] NIVELES
+- [ ] PUNTOS / XP
+- [ ] RACHAS ESPECIALES
+- [ ] LOGROS OCULTOS
+- [ ] ESTADOS
+- [ ] PROGRESO HACIA LOGROS
+- [ ] ESTADÍSTICAS
+- [ ] CALENDARIO FUTURO
+- [ ] RACHAS GLOBALES
+- [ ] FILOSOFÍA DE GAMIFICACIÓN
+- [ ] CELEBRACIONES
+- [ ] PREPARACIÓN PARA SONIDOS
+- [ ] PREPARACIÓN PARA NOTIFICACIONES
+- [ ] ANTI-EXPLOIT
+- [ ] RECÁLCULO
+- [ ] MODELO DE DATOS
+- [ ] TIPADO
+- [ ] SERVICIO CENTRAL
+- [ ] HOOK
+- [ ] PRUEBAS OBLIGATORIAS
+- [ ] Resume qué has implementado.
+- [ ] Indica las tablas/migraciones nuevas.
+- [ ] Indica los servicios/hooks.
+- [ ] Indica los eventos creados.
+- [ ] Indica los logros/hitos configurados.
+- [ ] Indica las pruebas realizadas.
+- [ ] Explica brevemente cualquier decisión arquitectónica importante.
+- [ ] Indica qué queda para la Fase 4.
+
+#### SR · Fase 5/5+4 — PRODUCCIÓN, INTEGRACIÓN Y TEST FINAL
+- [ ] Implementa realmente todo lo correspondiente a esa fase.
+- [ ] Comprueba que funciona.
+- [ ] Comprueba que no has roto funcionalidades existentes.
+- [ ] Explícame brevemente qué has hecho.
+- [ ] Indica claramente:
+- [ ] Analiza la arquitectura existente.
+- [ ] Identifica cómo están organizados actualmente los módulos.
+- [ ] No reemplaces funcionalidades existentes innecesariamente.
+- [ ] No elimines código funcional.
+- [ ] No cambies diseños que no estén relacionados con esta implementación.
+- [ ] Mantén compatibilidad con los módulos existentes.
+- [ ] Integra el sistema de sonido de forma modular.
+- [ ] Qué has implementado.
+- [ ] Qué archivos/componentes has creado o modificado.
+- [ ] Qué has comprobado.
+- [ ] Qué porcentaje llevamos.
+- [ ] Qué fase toca después.
+- [ ] OBJETIVO
+- [ ] ESTRUCTURA DE ARCHIVOS
+- [ ] NOMBRES DE ARCHIVO
+- [ ] FORMATOS DE AUDIO
+- [ ] CALIDAD
+- [ ] OPTIMIZACIÓN
+- [ ] PRELOAD
+- [ ] CACHE
+- [ ] SOUND ENGINE
+- [ ] API DEL MOTOR
+- [ ] HOOK DE REACT
+- [ ] NO ACOPLAR UI Y AUDIO
+- [ ] EVENT BUS
+- [ ] ORDEN DE PROCESAMIENTO
+- [ ] SISTEMA DE PRIORIDADES
+- [ ] SISTEMA DE INTERRUPCIÓN
+- [ ] SISTEMA DE SECUENCIAS
+- [ ] RACHA + RECOMPENSA
+- [ ] RÉCORD + MILESTONE
+- [ ] MULTITAREA
+- [ ] MODO SILENCIOSO
+- [ ] HAPTICS INDEPENDIENTES
+- [ ] CONTROL DE VOLUMEN
+- [ ] AJUSTES
+- [ ] PERFILES
+- [ ] BOTONES DE PRUEBA
+- [ ] INDICADOR DE VOLUMEN
+- [ ] ACCESIBILIDAD
+- [ ] PRIMERA INTERACCIÓN
+- [ ] ERROR DE AUDIO
+- [ ] FALLBACK
+- [ ] TELEMETRÍA
+- [ ] TEST AUTOMÁTICO
+- [ ] TEST DE RACHA
+- [ ] TEST DE RÉCORD
+- [ ] TEST DE RACHA EN RIESGO
+- [ ] TEST DE RECUPERACIÓN
+- [ ] TEST DE MODO SILENCIOSO
+- [ ] TEST DE HAPTICS
+- [ ] TEST DE CAMBIO DE VOLUMEN
+- [ ] TEST DE CAMBIO DE PERFIL
+- [ ] TEST EN MÓVIL
+- [ ] TEST DE AURICULARES
+- [ ] TEST DE INTERRUPCIÓN
+- [ ] TEST DE CARGA
+- [ ] CRITERIO DE CALIDAD
+- [ ] CONTROL DE VERSIONES
+- [ ] SISTEMA DE REEMPLAZO
+- [ ] CHECKLIST FINAL DE PRODUCCIÓN
+- [ ] ARQUITECTURA FINAL
+- [ ] RESULTADO
+- [ ] ESTADO FINAL DEL SISTEMA DE SONIDO

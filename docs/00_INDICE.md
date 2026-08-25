@@ -22,12 +22,24 @@ Léela en este orden la primera vez. Después, entra directo al documento que ne
 | 03 | [`03_CONTRADICCIONES_DUPLICADOS_DEPENDENCIAS.md`](03_CONTRADICCIONES_DUPLICADOS_DEPENDENCIAS.md) | 22 contradicciones detectadas (con cuál gana y por qué), 14 duplicados (deliberados vs. reales) y 24 dependencias entre fases y bloqueos técnicos. | Antes de implementar cualquier cosa que toque Ajustes, Seguridad, Calendario, IA o el Dashboard. |
 | 04 | [`04_INVENTARIO_ESTADO_ACTUAL.md`](04_INVENTARIO_ESTADO_ACTUAL.md) | Qué existe hoy, archivo por archivo y clave de datos por clave de datos, con la etiqueta **EXISTE / MODIFICAR / CREAR** para cada pieza del trabajo pendiente. | Al empezar a escribir código de una fase concreta. |
 | 05 | [`05_CHECKLIST_GLOBAL.md`](05_CHECKLIST_GLOBAL.md) | ~470 casillas verificables que cubren absolutamente todo lo especificado en cualquiera de las tres fuentes, marcadas ✅ hecho / 🟡 parcial / ⬜ pendiente / ⛔ imposible o descartado. | Para comprobar que no falta nada, en cualquier momento. |
+| 06 | [`06_ENTREGA2_ANALISIS.md`](06_ENTREGA2_ANALISIS.md) | **Entrega 2**: análisis de los 7 módulos nuevos (106 fases, 50 016 líneas) — dimensión real, solapamientos con lo ya construido, 7 contradicciones nuevas, orden de ejecución propuesto y **8 preguntas bloqueantes para Josué**. | Antes de empezar cualquier fase de la Entrega 2. |
+| 07 | [`07_CHECKLIST_ENTREGA2.md`](07_CHECKLIST_ENTREGA2.md) | **3 761 casillas** de la Entrega 2, reordenadas ascendentemente por fase, con las reglas transversales de los 7 módulos. Todo ⬜: nada implementado. | Al implementar cualquier fase de la Entrega 2. |
+
+---
+
+### Especificaciones en bruto
+
+`especificaciones/` contiene la **transcripción íntegra e intocable** de la Entrega 2, dividida por
+módulo, más el archivo original completo sin editar
+(`ORIGINAL_JC_FITNESS_ESTILO_DE_HOMBRE.txt`). Nunca se resume ni se recorta ahí; las conclusiones
+van en `docs/`. La Entrega 1 sigue en `ESPECIFICACION_AJUSTES_ENTREGA1.md`, en la raíz.
 
 ---
 
 ## Estado del proyecto en una línea
 
-`package.json` **v1.22.0**. El Prompt Maestro de 21 fases está **cerrado**; los bloques Ajustes (A1–A7),
+`package.json` **v1.22.0**. **Entrega 2 recibida: 7 módulos, 106 fases, nada implementado todavía.**
+El Prompt Maestro de 21 fases está **cerrado**; los bloques Ajustes (A1–A7),
 Navegación por áreas (N1–N4) y Personalización Visual Extrema (V1–V4) están **cerrados**; el
 Calendario Universal está en **Fase 3 parcial**; Seguridad Centralizada, Dashboard–Centro de Control
 y Optimización móvil están **construidos con pendientes documentados**; **AXION (≈1100 apartados) no

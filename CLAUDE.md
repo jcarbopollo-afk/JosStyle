@@ -13,6 +13,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 **Estado:** `package.json` **v1.22.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
+**Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
+Armario, Fondos, Buscador+IA, Módulos activables, Sonido y Rachas — **106 fases, nada implementado**)
+y el bloque **AXION** de la Entrega 1 (≈1100 apartados, bloqueado hasta una conversación de diseño).
+
 ## Documentación: qué leer y en qué orden
 
 | Necesitas... | Lee |
@@ -22,6 +26,8 @@ serverless en Vercel que hace de proxy a Anthropic.
 | Evitar romper algo o repetir un debate ya cerrado | **`docs/03_CONTRADICCIONES_DUPLICADOS_DEPENDENCIAS.md`** |
 | Saber qué archivo tocar | **`docs/04_INVENTARIO_ESTADO_ACTUAL.md`** |
 | Comprobar que no falta nada | **`docs/05_CHECKLIST_GLOBAL.md`** |
+| Trabajar en la **Entrega 2** (7 módulos nuevos, 106 fases) | **`docs/06_ENTREGA2_ANALISIS.md`** y **`docs/07_CHECKLIST_ENTREGA2.md`** |
+| La especificación literal de la Entrega 2 | `especificaciones/` 🔒 **intocable** |
 | El contexto histórico turno a turno | `CHANGELOG.md` |
 | El documento que Josué pasa entre conversaciones | `HANDOFF.md` ⚠️ *sus secciones numeradas están desactualizadas — ver C-20* |
 | La especificación literal de Ajustes | `ESPECIFICACION_AJUSTES_ENTREGA1.md` 🔒 **intocable** |
