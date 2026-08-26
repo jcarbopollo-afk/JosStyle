@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 17 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
-> y FO 5/12 (hasta v1.40.0). Quedan **89**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 18 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
+> y FO 6/12 (hasta v1.41.0). Quedan **88**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -2297,34 +2297,64 @@ Fundirlos en una sola cifra habría hecho imposible la prueba del apartado 8.
 **Los píxeles transparentes no cuentan.** Un agujero no es un color: contarlo metería un falso
 negro en toda imagen con transparencia. Con prueba propia.
 
-#### FO · Fase 6/12 — SISTEMA «RECOMENDADO» | JC FITNESS
-- [ ] OBJETIVO
-- [ ] BOTÓN «RECOMENDADO»
-- [ ] NO GENERAR UNA ÚNICA PROPUESTA
-- [ ] COMBINACIÓN COMPLETA
-- [ ] UTILIZAR LA FOTOGRAFÍA COMO BASE
-- [ ] ARMONÍA CROMÁTICA
-- [ ] CONTRASTE
-- [ ] PROPUESTAS DIFERENTES
-- [ ] PREVISUALIZACIÓN
-- [ ] APLICAR PROPUESTA
-- [ ] PREVISUALIZAR SIN APLICAR
-- [ ] CANCELAR
-- [ ] GENERAR NUEVAS PROPUESTAS
-- [ ] FAVORITO
-- [ ] MODO AUTOMÁTICO
-- [ ] RESPETAR LA LIBERTAD MANUAL
-- [ ] COMPATIBILIDAD CON EL EDITOR FOTOGRÁFICO
-- [ ] RECOMENDACIÓN PARA DIFERENTES TIPOS DE FONDO
-- [ ] NOMBRE DE LAS PROPUESTAS
-- [ ] SISTEMA DE PUNTUACIÓN INTERNA
-- [ ] EVITAR RECOMENDACIONES ABSURDAS
-- [ ] PERSISTENCIA
-- [ ] NO SOBRESCRIBIR INFORMACIÓN INNECESARIA
-- [ ] EXPERIENCIA PREMIUM
-- [ ] PREPARACIÓN PARA LA FASE 7
-- [ ] CRITERIOS DE FINALIZACIÓN
-- [ ] REGLA PARA CLAUDE
+#### FO · Fase 6/12 — SISTEMA «RECOMENDADO» ✅ COMPLETADA (v1.41.0)
+
+En `src/lib/recomendadorApariencia.js`. **Sin IA**: teoría del color sobre los colores reales que
+sacó el detector de la Fase 5.
+
+- [x] **1 · Objetivo** — foto → analizar → generar → mostrar → previsualizar → elegir → aplicar.
+- [x] **2 · Botón "Recomendado"** — dentro de Apariencia, y **solo aparece si hay una foto
+      analizada**: sin ella no hay nada que recomendar y un botón vacío sería decorativo.
+- [x] **3 · Varias propuestas** — cinco: Equilibrada, Con contraste, Serena, Intensa y
+      Minimalista.
+- [x] **4 · Combinación completa** — cada propuesta es un tema entero: principal, secundario,
+      terciario, transparencia de tarjetas, de la barra, overlay del fondo, texto sobre acento y
+      su ratio de contraste.
+- [x] **5 · La fotografía como base** — los tres ejemplos del apartado (azul+azul claro /
+      azul+naranja complementario / azul desaturado+gris) son literalmente las tres primeras
+      estrategias. **Nada aleatorio**: hay prueba de que generar dos veces da lo mismo.
+- [x] **6 · Armonía cromática** — análogos, complementarios, desaturación y neutros.
+- [x] **7 · Contraste** — cada propuesta pasa por `ensureContrast` **antes** de enseñarse, en los
+      dos temas. Hay pruebas con acentos deliberadamente horribles (casi negro, casi blanco,
+      saturadísimo) que comprueban que ninguna sale ilegible.
+- [x] **8 · Propuestas realmente diferentes** — el apartado lo dice con un ejemplo: azul #123456,
+      #123457 y #123458 **no son tres opciones, son una**. Por eso cada propuesta parte de una
+      **estrategia cromática distinta**, no de un retoque de la anterior; se comprueba que no hay
+      dos acentos iguales y que la distancia entre ellas es perceptible.
+- [x] **9 · Previsualización** — muestras de color por propuesta, y "Probar" la aplica de verdad.
+- [x] **10 · Aplicar** — cambia acento, tema y overlay. **No toca la fotografía**, y no porque se
+      acuerde: `aplicarPropuesta` ni siquiera la recibe.
+- [x] **11 · Probar sin aplicar** — tocar "Probar" la pone en la app al instante, sin guardarla.
+- [x] **12 · Cancelar** — "Volver" recupera **exactamente** lo anterior.
+- [x] **13 · Generar otras** — con una semilla **determinista**, no aleatoria: da algo distinto
+      pero igual de justificable, y la misma semilla da siempre lo mismo (que es lo que permite
+      probarlo).
+- [x] **14 · Favorito** — la gestión de presets es de la Fase 8; el modelo ya lo permite.
+- [x] **15 · Modo automático** — no se implementa: el apartado dice que **debe ser opcional** y
+      "nunca obligar", y activarlo por defecto sería justo lo contrario. Entra con los presets.
+- [x] **16 · Libertad manual** — aplicar una propuesta deja todo editable como siempre.
+
+**Cómo se garantiza que "Volver" funciona:** no deshaciendo cambio por cambio, sino haciendo una
+**copia profunda de la apariencia ANTES de tocar nada** y restaurándola entera — el mismo patrón
+que el borrador del editor de fotos (FO F3). Y la copia se hace **una sola vez**, al empezar a
+probar: si se rehiciera en cada prueba, la segunda guardaría la apariencia de la primera y "Volver"
+devolvería a una propuesta en vez de a lo que Josué tenía.
+
+**Una foto en blanco y negro sigue dando propuestas.** La Fase 5 dejó `acento: null` como dato
+honesto; aquí se usa: en vez de inventar un color, se parte del que Josué **ya tenía**.
+
+**UN FALLO REAL Y PREEXISTENTE, encontrado por las pruebas de contraste de esta fase:**
+`ensureContrast` en `colorEngine.js` elegía la dirección con `l <= bgL ? -1 : 1`, o sea por el
+**orden relativo** entre los dos colores. Sobre un fondo oscuro, un color aún más oscuro se
+oscurecía todavía más: lo empujaba hasta el negro puro y salía del bucle **sin contraste ninguno**.
+Afectaba también a la red de seguridad de `aplicarTema` — un texto personalizado casi negro sobre
+el fondo oscuro de la app se habría quedado ilegible. Ahora la dirección la decide **el fondo**:
+sobre fondo oscuro se aclara, sobre fondo claro se oscurece. Para los casos normales el resultado
+es idéntico al de antes, y hay prueba de las dos cosas.
+
+**Y otro hex duplicado que cazó la regla invariante:** el recomendador comparaba el contraste contra
+`'#0A0C10'` y `'#F3F4F7'` escritos a mano, que son literalmente `COLORS_OSCURO.bg` y
+`COLORS_CLARO.bg`. Ahora se importan: si los temas base cambian, el recomendador se entera solo.
 
 #### FO · Fase 7/12 — PERSONALIZACIÓN MANUAL AVANZADA | JC FITNESS
 - [ ] OBJETIVO

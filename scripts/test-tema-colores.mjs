@@ -13,6 +13,7 @@
 // pero no se aplica.
 // ---------------------------------------------------------------------------
 import { COLORS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_APARIENCIA, aplicarTema } from '../src/tokens.js';
+import { ensureContrast, contrastRatio } from '../src/lib/colorEngine.js';
 import {
   CAMPOS_COLOR, CAMPOS_ALFA, normalizarTema, restablecerColores,
   tieneColoresPersonalizados, aplicarPresetColor, coloresYFondoSonIndependientes,
@@ -121,6 +122,24 @@ const ACENTO = '#4C8DFF';
   comprobar('Un texto secundario del color del fondo NO se queda invisible',
     COLORS.textMuted !== '#0A0C10', COLORS.textMuted);
   comprobar('El texto principal sigue teniendo contraste', COLORS.text !== COLORS.bg);
+}
+
+/* --- ensureContrast: la dirección la decide el FONDO, no el orden relativo --- */
+{
+  // Este era un fallo preexistente de `colorEngine.js` que destapó FO F6: con
+  // `l <= bgL ? -1 : 1`, un color más oscuro que un fondo YA oscuro se oscurecía
+  // todavía más, hasta el negro puro, y salía del bucle sin contraste ninguno.
+  const casiNegro = ensureContrast('#050508', '#0A0C10', 3);
+  comprobar('Un color casi negro sobre fondo oscuro se ACLARA, no se oscurece',
+    contrastRatio(casiNegro, '#0A0C10') >= 2.9, `${casiNegro} → ${contrastRatio(casiNegro, '#0A0C10').toFixed(2)}`);
+  const casiBlanco = ensureContrast('#FAFAFF', '#F3F4F7', 3);
+  comprobar('Un color casi blanco sobre fondo claro se OSCURECE',
+    contrastRatio(casiBlanco, '#F3F4F7') >= 2.9, `${casiBlanco} → ${contrastRatio(casiBlanco, '#F3F4F7').toFixed(2)}`);
+  // Y los casos normales tienen que seguir comportándose igual que siempre.
+  comprobar('Un texto claro sobre fondo oscuro se queda como está',
+    ensureContrast('#EDEFF2', '#0A0C10', 4.5) === '#EDEFF2');
+  comprobar('Un texto oscuro sobre fondo claro también',
+    ensureContrast('#161A21', '#F3F4F7', 4.5) === '#161A21');
 }
 
 /* --- Apartado 15: restablecer colores SIN tocar el fondo --- */

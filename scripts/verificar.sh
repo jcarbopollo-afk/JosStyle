@@ -104,6 +104,12 @@ else
   fallo "Fallan pruebas del detector de colores"; grep '✗' /tmp/jc_det.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-recomendador-apariencia.mjs >/tmp/jc_reco.log 2>&1; then
+  ok "Sistema Recomendado (FO F6) — $(grep -c '✓' /tmp/jc_reco.log) comprobaciones"
+else
+  fallo "Fallan pruebas del recomendador de apariencia"; grep '✗' /tmp/jc_reco.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

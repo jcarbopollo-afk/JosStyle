@@ -148,8 +148,9 @@ escribir código.
 | v1.38.0 | **FO F3** | Editor de fotografía: zoom, encuadre libre, desenfoque, luz y tinte, sobre un borrador para que Cancelar funcione de verdad |
 | v1.39.0 | **FO F4** | Colores avanzados: **transparencia de tarjetas y barra**, la pieza sin la cual poner una foto de fondo no servía de nada |
 | v1.40.0 | **FO F5** | Detector de colores en el dispositivo, sin IA. Frecuencia ≠ utilidad: el color que más ocupa no es el mejor acento |
+| v1.41.0 | **FO F6** | Sistema Recomendado: cinco apariencias completas sacadas de la foto, con probar y volver. Destapó un fallo real en `ensureContrast` |
 
-🔒 **Bloques ME (4/4), BI (4/4) y AR (4/4) cerrados**, FO va por 5/12. Quedan 89 fases de la Entrega 2.
+🔒 **Bloques ME (4/4), BI (4/4) y AR (4/4) cerrados**, FO va por 6/12. Quedan 88 fases de la Entrega 2.
 
 ---
 

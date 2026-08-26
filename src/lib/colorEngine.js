@@ -230,7 +230,18 @@ const CANDIDATO_TEXTO_CLARO = '#F5F6F8';
 export function ensureContrast(fgHex, bgHex, minRatio = 4.5, maxSteps = 60) {
   let { l, c, h } = hexToOklch(fgHex);
   const bgL = hexToOklch(bgHex).l;
-  const direction = l <= bgL ? -1 : 1;
+  // La dirección la decide EL FONDO, no el orden relativo entre los dos colores.
+  //
+  // Antes era `l <= bgL ? -1 : 1`: si el color de delante ya era más oscuro que el
+  // de detrás, se oscurecía todavía más. Sobre un fondo oscuro eso es imposible de
+  // resolver —lo empujaba hasta el negro puro y salía del bucle sin contraste—, y
+  // era justo el caso de un acento casi negro en tema oscuro, o de un texto
+  // personalizado casi negro sobre el fondo oscuro de la app.
+  //
+  // Sobre un fondo oscuro la única salida es aclarar; sobre uno claro, oscurecer.
+  // Para los casos normales (texto claro sobre fondo oscuro, texto oscuro sobre
+  // fondo claro) el resultado es exactamente el mismo que antes.
+  const direction = bgL < 0.5 ? 1 : -1;
   let current = fgHex;
   for (let i = 0; i < maxSteps; i++) {
     if (contrastRatio(current, bgHex) >= minRatio) return current;

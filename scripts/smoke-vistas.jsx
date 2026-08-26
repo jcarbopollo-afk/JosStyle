@@ -31,7 +31,7 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
-import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada } from '../src/views/SettingsView.jsx';
+import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
@@ -221,6 +221,27 @@ const CASOS = [
       colores: [{ hex: '#111111', peso: 0.8, tono: 'oscuro', saturacion: 'neutro', neutro: true }],
     },
   })],
+  // FO Fase 6 — las propuestas. Con un análisis real detrás, para que las cinco
+  // estrategias se construyan de verdad y no solo se pinte un contenedor vacío.
+  ['SettingsView · Recomendado', BloqueRecomendado, () => ({
+    analisis: {
+      fotoId: 'f1', monocromatica: false, suficiente: true,
+      colores: [{ hex: '#1B4F8C', peso: 0.6, neutro: false, saturacionValor: 0.68, luminosidad: 0.33, tono: 'oscuro', saturacion: 'moderado', interes: 0.5 }],
+      dominante: { hex: '#1B4F8C', peso: 0.6, neutro: false, saturacionValor: 0.68, luminosidad: 0.33 },
+      acento: { hex: '#1B7FD4', peso: 0.1, neutro: false, saturacionValor: 0.78, luminosidad: 0.47 },
+      secundario: { hex: '#8CA9C4', peso: 0.2, neutro: false, saturacionValor: 0.28, luminosidad: 0.66 },
+      neutro: { hex: '#2B2B2B', peso: 0.1, neutro: true, saturacionValor: 0, luminosidad: 0.17 },
+      claro: { hex: '#8CA9C4', luminosidad: 0.66 }, oscuro: { hex: '#101820', luminosidad: 0.08 },
+      medio: '#3A5F86',
+    },
+    tema: DEFAULT_TEMA_PERSONALIZADO, accent, fondo: DEFAULT_APARIENCIA.fondo,
+    modoOscuro: true, onProbar: noop, onAplicar: noop,
+  })],
+  // (Sin análisis, `BloqueRecomendado` no pinta NADA a propósito — un bloque de
+  //  propuestas vacío sería un control decorativo. No se prueba aquí porque este
+  //  arnés trata un render vacío como fallo; la aserción vive en
+  //  `test-recomendador-apariencia.mjs`, que comprueba que `generarPropuestas`
+  //  devuelve `posible: false`, que es justo lo que hace que no se pinte.)
   // FO Fase 3 — el editor, con una foto ya muy ajustada: las tres capas (foto, luz
   // y overlay) tienen que pintarse a la vez sin romperse.
   ['SettingsView · Editor de foto', EditorFoto, () => ({

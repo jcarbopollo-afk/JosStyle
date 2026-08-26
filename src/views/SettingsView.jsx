@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   User, Download, Upload, RotateCcw, Undo2, Lock, LogOut, ArrowLeft, Search, ChevronRight,
   Palette, LayoutGrid, SlidersHorizontal, Bell, ShieldCheck,
-  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2,
+  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles,
 } from 'lucide-react';
 import pkg from '../../package.json';
 import {
@@ -29,6 +29,7 @@ import {
 } from '../lib/fondos';
 import { normalizarTema, restablecerColores, tieneColoresPersonalizados } from '../lib/temaColores';
 import { analizarImagen, analisisValidoPara, sellarAnalisis, describirColor } from '../lib/detectorColores';
+import { generarPropuestas, aplicarPropuesta, guardarApariencia } from '../lib/recomendadorApariencia';
 import ColorPicker from '../components/ColorPicker';
 import TemaBuilder from '../components/TemaBuilder';
 import GestionTemas from '../components/GestionTemas';
@@ -639,6 +640,116 @@ export function PaletaDetectada({ fondo, urlFoto, accent, analisis, onAnalisis }
         Solo te los enseño: tus colores no cambian solos. Toca uno para copiarlo.
       </p>
     </div>
+  );
+}
+
+/* ---------- FO Fase 6 — "Recomendado" ----------
+   Propone apariencias completas a partir de los colores de la foto. Tres cosas
+   que la especificación pide y que gobiernan este componente:
+
+   · Varias propuestas, no una (apartado 3), y realmente distintas (apartado 8):
+     cada una parte de una estrategia cromática diferente.
+   · PROBAR antes de aplicar (apartado 11): tocar una la pone en la app de verdad,
+     al instante, sin guardarla.
+   · VOLVER recupera exactamente lo anterior (apartado 12). Y no porque se
+     acuerde de deshacer cada cambio: se hace una copia ANTES de tocar nada y se
+     restaura entera, igual que el borrador del editor de fotos. */
+export function BloqueRecomendado({ analisis, tema, accent, fondo, modoOscuro, onProbar, onAplicar }) {
+  const [semilla, setSemilla] = useState(0);
+  const [probando, setProbando] = useState(null);
+  // La copia de seguridad se hace UNA vez, al empezar a probar. Si se rehiciera en
+  // cada prueba, la segunda guardaría la apariencia de la primera y "volver"
+  // devolvería a una propuesta en lugar de a lo que Josué tenía.
+  const previo = useRef(null);
+
+  const resultado = useMemo(
+    () => generarPropuestas(analisis, tema, { semilla, modoOscuro }),
+    [analisis, tema, semilla, modoOscuro],
+  );
+
+  const probar = (p) => {
+    if (!previo.current) {
+      previo.current = guardarApariencia({ accent, tema, overlay: fondo?.overlay });
+    }
+    setProbando(p.id);
+    onProbar(aplicarPropuesta(p));
+  };
+
+  const volver = () => {
+    if (previo.current) onProbar(previo.current);
+    previo.current = null;
+    setProbando(null);
+  };
+
+  const aplicar = (p) => {
+    onAplicar(aplicarPropuesta(p));
+    previo.current = null;
+    setProbando(null);
+  };
+
+  if (!resultado.posible) return null;
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: COLORS.text }}>
+          <Sparkles size={14} style={{ color: accent }} /> Recomendado
+        </p>
+        {/* Apartado 13 — generar otras. Determinista, no aleatorio: la misma
+            semilla da siempre lo mismo. */}
+        <button onClick={() => { setSemilla((n) => n + 1); volver(); }} className="text-xs font-semibold" style={{ color: accent }}>
+          Otras
+        </button>
+      </div>
+      <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
+        Combinaciones sacadas de los colores de tu foto. Pruébalas antes de decidir.
+      </p>
+
+      <div className="space-y-2">
+        {resultado.propuestas.map((p) => (
+          <div
+            key={p.id}
+            className="rounded-2xl p-3"
+            style={{
+              background: probando === p.id ? hexToRgba(accent, 0.12) : COLORS.surface2,
+              border: `1px solid ${probando === p.id ? accent : COLORS.border}`,
+            }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{p.nombre}</p>
+                <p className="text-[11px] truncate" style={{ color: COLORS.textMuted }}>{p.descripcion}</p>
+              </div>
+              {/* Apartado 9 — la representación de la propuesta. */}
+              <div className="flex gap-1 flex-shrink-0">
+                {p.muestras.map((hex, i) => (
+                  <span key={i} className="rounded-full" style={{ width: 18, height: 18, background: hex, border: `1px solid ${COLORS.border}` }} />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-2">
+              {probando === p.id ? (
+                <>
+                  <PrimaryButton accent={accent} onClick={() => aplicar(p)}>Me gusta, aplicar</PrimaryButton>
+                  <div style={{ width: 100, flexShrink: 0 }}>
+                    <GhostBtn onClick={volver}>Volver</GhostBtn>
+                  </div>
+                </>
+              ) : (
+                <GhostBtn onClick={() => probar(p)}>Probar</GhostBtn>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {probando && (
+        <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
+          Estás probando una propuesta. Nada se ha guardado todavía: con "Volver" recuperas lo que tenías.
+        </p>
+      )}
+    </Card>
   );
 }
 
@@ -1267,6 +1378,18 @@ export default function SettingsView({
               fondoActivo={!!apariencia.fondo?.activo}
               accent={accent}
               onCambiar={onUpdateTemaPersonalizado}
+            />
+
+            {/* FO Fase 6 — solo aparece si hay una foto analizada: sin ella no hay
+                nada de lo que recomendar, y un botón vacío sería decorativo. */}
+            <BloqueRecomendado
+              analisis={apariencia.fondo?.analisis}
+              tema={temaPersonalizado}
+              accent={accent}
+              fondo={apariencia.fondo}
+              modoOscuro={apariencia.tema !== 'claro'}
+              onProbar={(c) => { onUpdateAccent(c.accent); onUpdateTemaPersonalizado(c.tema); onUpdateApariencia({ ...apariencia, fondo: { ...apariencia.fondo, overlay: c.overlay } }); }}
+              onAplicar={(c) => { onUpdateAccent(c.accent); onUpdateTemaPersonalizado(c.tema); onUpdateApariencia({ ...apariencia, fondo: { ...apariencia.fondo, overlay: c.overlay } }); }}
             />
 
             <Card>

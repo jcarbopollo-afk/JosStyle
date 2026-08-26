@@ -1,5 +1,57 @@
 # CHANGELOG.md
 
+## Entrega 2 · FO Fase 6 — Sistema "Recomendado" (v1.41.0)
+
+JosStyle propone **cinco apariencias completas** sacadas de los colores de tu foto: Equilibrada,
+Con contraste, Serena, Intensa y Minimalista. Sin IA — teoría del color sobre lo que el detector
+de la Fase 5 encontró de verdad.
+
+### Cinco propuestas, y distintas de verdad
+El apartado 8 lo dice con un ejemplo: azul #123456, #123457 y #123458 **no son tres opciones, son
+una**. Por eso cada propuesta parte de una **estrategia cromática distinta** —el mismo tono, el
+complementario, el mismo desaturado, subido de intensidad, casi todo neutro— y no de un retoque de
+la anterior. Hay prueba de que no hay dos acentos iguales y de que la distancia entre ellas es
+perceptible.
+
+Cada una es un tema entero: principal, secundario, terciario, transparencia de tarjetas y barra, y
+overlay del fondo. No un color suelto.
+
+### Probar antes de decidir
+"Probar" la pone en la app de verdad, al instante, **sin guardarla**. "Volver" recupera exactamente
+lo que tenías.
+
+Y eso funciona porque se hace una **copia profunda de la apariencia antes de tocar nada** y se
+restaura entera — no se deshace cambio por cambio. La copia se hace **una sola vez**, al empezar a
+probar: si se rehiciera en cada prueba, la segunda guardaría la apariencia de la primera y "Volver"
+devolvería a una propuesta en lugar de a lo tuyo.
+
+### Aplicar no toca la fotografía
+Y no porque se acuerde de no hacerlo: `aplicarPropuesta` **ni siquiera la recibe**. Cambia acento,
+tema y overlay, y nada más.
+
+### Una foto en blanco y negro sigue dando propuestas
+La Fase 5 dejó `acento: null` como dato honesto cuando la foto no tiene color. Aquí se usa: en vez
+de inventar uno, se parte del que **ya tenías**.
+
+### Un fallo real y preexistente, encontrado por las pruebas de contraste
+`ensureContrast` elegía la dirección con `l <= bgL ? -1 : 1`, o sea por el **orden relativo** entre
+los dos colores. Sobre un fondo oscuro, un color aún más oscuro se oscurecía **todavía más**: lo
+empujaba hasta el negro puro y salía sin contraste ninguno.
+
+No era solo cosa de esta fase: afectaba a la red de seguridad de `aplicarTema`, así que un texto
+personalizado casi negro sobre el fondo oscuro de la app se habría quedado ilegible. Ahora la
+dirección la decide **el fondo** —sobre fondo oscuro se aclara, sobre claro se oscurece— y para los
+casos normales el resultado es idéntico al de antes.
+
+### Y otro hex duplicado que cazó la regla invariante
+El recomendador comparaba el contraste contra `'#0A0C10'` y `'#F3F4F7'` escritos a mano, que son
+literalmente `COLORS_OSCURO.bg` y `COLORS_CLARO.bg`. Ahora se importan.
+
+### Verificación
+**1193 comprobaciones en verde** (antes 1143): 46 del recomendador y 104 casos de renderizado.
+
+---
+
 ## Entrega 2 · FO Fase 5 — Detector de colores (v1.40.0)
 
 JosStyle mira tu foto de fondo y te dice de qué colores es. **Sin IA y sin que la foto salga del
