@@ -4,8 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 23 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
-> y FO 11/12 (hasta v1.46.0). Quedan **83**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 24 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
+> y **FO 12/12 (cerrado)** (hasta v1.47.0). Quedan **82**, todas de módulos aún sin empezar:
+> SR (5+4), HT (12) y EH (65) — en ese orden (E2-5 → E2-6 → E2-7). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -2588,52 +2589,104 @@ tiempo, para no dar una firma que expire mientras la imagen se está descargando
 **Y se aplicó también a las fotos de prenda del Armario**, que tenían exactamente el mismo problema:
 ~4 MB para pintar una miniatura de 150 px en una rejilla.
 
-#### FO · Fase 12/12 — ELIMINADOS RECIENTEMENTE, RECUPERACIÓN Y CIERRE DEL SISTEMA
-- [ ] OBJETIVO
-- [ ] INFORMACIÓN DEL ELEMENTO
-- [ ] RECUPERAR
-- [ ] ELIMINAR DEFINITIVAMENTE
-- [ ] VACIAR ELIMINADOS RECIENTEMENTE
-- [ ] TIEMPO DE RETENCIÓN
-- [ ] NO ELIMINAR EL FONDO ACTIVO ACCIDENTALMENTE
-- [ ] PRESETS QUE UTILIZAN FOTOGRAFÍAS
-- [ ] RECUPERACIÓN DE DEPENDENCIAS
-- [ ] ELIMINAR UN PRESET
-- [ ] ELIMINAR UNA FOTOGRAFÍA
-- [ ] SUSTITUIR FOTOGRAFÍA
-- [ ] CONFIRMACIÓN INTELIGENTE
-- [ ] RECUPERAR CONFIGURACIÓN COMPLETA
-- [ ] RECUPERACIÓN DE FOTOGRAFÍAS
-- [ ] ESTADOS
-- [ ] PROTECCIÓN CONTRA DUPLICADOS
-- [ ] SINCRONIZACIÓN FUTURA
-- [ ] SEGURIDAD
-- [ ] COPIAS Y RESTAURACIÓN
-- [ ] EXPERIENCIA VISUAL
-- [ ] ELEMENTOS VACÍOS
-- [ ] CIERRE DEL SISTEMA
-- [ ] PRUEBA FINAL OBLIGATORIA
-- [ ] CRITERIOS DE FINALIZACIÓN
-- [ ] RESULTADO FINAL DE LAS 12 FASES
-- [ ] NO romper funcionalidades existentes.
-- [ ] NO eliminar módulos actuales.
-- [ ] NO implementar las 12 fases de golpe.
-- [ ] Ejecutar únicamente la fase que yo indique.
-- [ ] Mantener compatibilidad con las fases anteriores.
-- [ ] Preparar las estructuras necesarias para fases posteriores sin implementar prematuramente toda su funcionalidad.
-- [ ] El usuario siempre debe conservar control manual.
-- [ ] Recomendado nunca debe sobrescribir modificaciones manuales.
-- [ ] Las fotografías originales no deben modificarse destructivamente.
-- [ ] Los presets deben conservar configuraciones completas.
-- [ ] Las eliminaciones importantes deben poder recuperarse.
-- [ ] La interfaz debe seguir siendo premium y sencilla.
-- [ ] Todo debe funcionar correctamente en móvil/PWA.
-- [ ] Optimizar antes de introducir efectos innecesariamente pesados.
-- [ ] Si existe una funcionalidad ya implementada que puede reutilizarse, reutilizarla en lugar de duplicarla.
-- [ ] Si una fase requiere modificar arquitectura existente, hacerlo de forma compatible y segura.
-- [ ] Antes de terminar una fase, comprobar que las funcionalidades existentes siguen funcionando.
-- [ ] RESTRICCIONES IMPORTANTES
-- [ ] REGLA PRINCIPAL PARA CLAUDE
+#### FO · Fase 12/12 — ELIMINADOS RECIENTEMENTE, RECUPERACIÓN Y CIERRE DEL SISTEMA ✅ COMPLETADA (v1.47.0)
+
+**La fase entera se apoya en un hecho del que nadie se había dado cuenta: en Apariencia no se borra
+nada.** Cambiar de fotografía no borra la anterior de Storage. Quitar el fondo tampoco. Y eso
+cambia el sentido de "eliminados recientemente" aquí: en Salud o Calistenia la papelera guarda el
+registro treinta días mientras el archivo desaparece; aquí el archivo **sigue estando**, así que
+recuperar no es restaurar una copia — es volver a apuntar a algo que nunca se fue.
+
+Por eso la fase no monta una papelera nueva. Reutiliza la de ME F3 para lo que sí se borra (los
+presets) y añade una lista de fotografías sustituidas dentro del propio fondo para lo que no.
+
+- [x] **1 · Objetivo** — que ninguna acción de Apariencia pierda nada de forma definitiva sin
+      decirlo primero.
+- [x] **2 · Información del elemento** — cada fotografía anterior enseña su miniatura, cuándo se
+      sustituyó y sus medidas. Si la ficha es de antes de esta fase y no las tiene, dice
+      "Fotografía anterior" y no se inventa una fecha (`describirFotoAnterior`, regla 8).
+- [x] **3 · Recuperar** — `recuperarFoto` devuelve la imagen **con sus ajustes de entonces**
+      (encuadre, zoom, luz, overlay), que `ajustesPorFoto` ya guardaba desde F3. Y la que estaba
+      puesta pasa a la lista, así que recuperar tampoco pierde nada.
+- [x] **4 · Eliminar definitivamente** — los presets, por la papelera de ME F3 (`eliminarPreset`);
+      las fotografías anteriores, con `olvidarFotoAnterior`, que sí es irreversible y por eso pide
+      confirmación.
+- [x] **5 · Vaciar eliminados recientemente** — el de siempre, en Ajustes → Eliminados
+      recientemente. No se ha creado una segunda pantalla.
+- [x] **6 · Tiempo de retención** — el mismo ajustable de ME F3 (30 días por defecto) para los
+      presets. Las fotografías anteriores no caducan: el archivo sigue en Storage, así que ponerles
+      un reloj sería inventar un vencimiento que no existe.
+- [x] **7 · No eliminar el fondo activo accidentalmente** — `recordarFotoAnterior` solo guarda
+      fichas de fotos que **ya no están puestas**; la activa nunca entra en la lista, así que no
+      hay ningún botón que pueda quitarla desde ahí.
+- [x] **8 · Presets que utilizan fotografías** — se detecta la dependencia y **se marca**: la
+      miniatura de un preset con foto lleva su icono. Sin eso parecía un degradado cualquiera,
+      porque la miniatura no firma URLs (serían varias firmas a la vez para un recuadro de 44 px).
+- [x] **9 · Recuperación de dependencias** — no hace falta ninguna reparación: como la foto nunca
+      se borra, un preset que la use sigue funcionando siempre.
+- [x] **10 · Eliminar un preset** — no toca la fotografía. Va a la papelera, así que se recupera.
+- [x] **11 · Eliminar una fotografía** — no toca los presets que la usen.
+- [x] **12 · Sustituir fotografía** — la sustituida se recuerda en vez de desaparecer. Este era el
+      agujero real: hasta ahora cambiar de foto dejaba el archivo en Storage y ninguna forma de
+      volver a él.
+- [x] **13 · Confirmación inteligente** — solo lo irreversible la pide. Borrar un preset no
+      (vuelve de la papelera); olvidar una fotografía anterior sí. Mismo criterio que ME F3.
+- [x] **14 · Recuperar configuración completa** — un preset restaurado vuelve con tema, acento,
+      colores y fondo enteros, porque `crearPreset` guarda copia profunda desde F8.
+- [x] **15 · Recuperación de fotografías** — hasta **8** (`MAX_FOTOS_ANTERIORES`). No más: la
+      lista viaja entera en cada `saveData`, como `ajustesPorFoto`.
+- [x] **16 · Estados** — sin fotografías anteriores el bloque no se dibuja; mientras se firma cada
+      miniatura se ve su hueco con icono, nunca un `img` roto.
+- [x] **17 · Protección contra duplicados** — una foto que va y vuelve se mueve al frente de la
+      lista, no se duplica.
+- [x] **18 · Sincronización futura** — todo vive dentro de `ajustes.apariencia.fondo`, que ya
+      sincroniza. No hay ninguna tabla ni clave nueva.
+- [x] **19 · Seguridad** — el bucket `fondos` es privado y sus políticas RLS son por carpeta de
+      usuario (F2). Las miniaturas se firman una a una y solo al montarse; nadie puede pedir la
+      ruta de otro.
+- [x] **20 · Copias y restauración** — la exportación de apariencia ya incluye el fondo entero.
+- [x] **21 · Experiencia visual** — filas con miniatura, texto y dos acciones. Se esconde mientras
+      hay una foto pendiente o el editor abierto: ahí Josué está decidiendo sobre UNA imagen y una
+      lista de otras solo estorba.
+- [x] **22 · Elementos vacíos** — sin lista no hay bloque; sin ficha completa, texto neutro.
+- [x] **23 · Cierre del sistema** — el bloque FO queda cerrado, 12 de 12.
+- [x] **24 · Prueba final obligatoria** — 1414 comprobaciones y 9 reglas invariantes, todas en
+      verde, con el build de Vite incluido.
+- [x] **25 · Criterios de finalización** — los doce.
+- [x] **26 · Resultado final de las 12 fases** — fondo, fotografía, editor, colores, detector,
+      recomendado, personalización manual, presets, legibilidad, integración, rendimiento y
+      recuperación.
+- [x] NO romper funcionalidades existentes.
+- [x] NO eliminar módulos actuales.
+- [x] NO implementar las 12 fases de golpe.
+- [x] Ejecutar únicamente la fase que yo indique.
+- [x] Mantener compatibilidad con las fases anteriores.
+- [x] Preparar las estructuras necesarias para fases posteriores sin implementar prematuramente toda su funcionalidad.
+- [x] El usuario siempre debe conservar control manual.
+- [x] Recomendado nunca debe sobrescribir modificaciones manuales.
+- [x] Las fotografías originales no deben modificarse destructivamente.
+- [x] Los presets deben conservar configuraciones completas.
+- [x] Las eliminaciones importantes deben poder recuperarse.
+- [x] La interfaz debe seguir siendo premium y sencilla.
+- [x] Todo debe funcionar correctamente en móvil/PWA.
+- [x] Optimizar antes de introducir efectos innecesariamente pesados.
+- [x] Si existe una funcionalidad ya implementada que puede reutilizarse, reutilizarla en lugar de duplicarla.
+- [x] Si una fase requiere modificar arquitectura existente, hacerlo de forma compatible y segura.
+- [x] Antes de terminar una fase, comprobar que las funcionalidades existentes siguen funcionando.
+- [x] RESTRICCIONES IMPORTANTES
+- [x] REGLA PRINCIPAL PARA CLAUDE
+
+**Lo que esta fase arregló sin buscarlo:** los presets se podían crear y no borrar. El botón
+existía, pero se limitaba a filtrarlos de la lista y se perdían para siempre. Ahora pasan por la
+papelera de ME F3 como todo lo demás — es el noveno módulo con ese mismo fallo desde que existe la
+verificación automática.
+
+**Un error de test que valió la pena:** la comprobación de que la lista conserva las más recientes
+fallaba por uno. La `h12` es la foto **activa**, así que la primera de las *anteriores* es la
+`h11`, no la `h12`. El código estaba bien; la expectativa, mal.
+
+⚠️ **Recordatorio para Josué:** el bucket `fondos` de `supabase/schema.sql` sigue pendiente de
+ejecutar en el SQL Editor. Sin él, subir fotos de fondo no funciona (todo lo demás sí).
 
 ---
 

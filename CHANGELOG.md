@@ -1,5 +1,55 @@
 # CHANGELOG.md
 
+## Entrega 2 · FO Fase 12 — Eliminados, recuperación y cierre del bloque (v1.47.0)
+
+### En Apariencia no se borra nada, y eso cambia el sentido de la fase
+Cambiar de fotografía no borra la anterior de Storage. Quitar el fondo tampoco. En Salud o
+Calistenia la papelera guarda el registro treinta días mientras el archivo desaparece; aquí el
+archivo **sigue estando**, así que recuperar no es restaurar una copia — es volver a apuntar a algo
+que nunca se fue.
+
+Por eso esta fase no monta una papelera nueva. Reutiliza la de ME F3 para lo que sí se borra (los
+presets) y añade una lista de fotografías sustituidas dentro del propio fondo para lo que no.
+
+### Las fotografías sustituidas ya no se pierden
+Hasta ahora, cambiar de foto dejaba el archivo en el bucket y **ninguna forma de volver a él**.
+Ahora se guarda su ficha (hasta ocho, `MAX_FOTOS_ANTERIORES`) y aparecen en Ajustes → Apariencia →
+Fondo con su miniatura, su fecha y sus medidas.
+
+Recuperar una devuelve también **sus ajustes de entonces** —encuadre, zoom, luz, overlay— porque
+`ajustesPorFoto` ya los guardaba desde la Fase 3. Y la que estaba puesta pasa a la lista, así que
+recuperar tampoco pierde nada.
+
+Olvidar una sí es irreversible, y es lo único de esta pantalla que pide confirmación.
+
+### Los presets se podían crear y no borrar
+El botón existía, pero se limitaba a filtrarlos de la lista: se perdían para siempre. Ahora pasan
+por la papelera universal como todo lo demás. Es el noveno módulo con ese mismo fallo desde que
+existe la verificación automática.
+
+### Un preset con fotografía ahora lo dice
+La miniatura de un preset se pinta sin firmar la URL de la foto (serían varias firmas a la vez para
+un recuadro de 44 px), así que uno con fotografía enseñaba el fondo de respaldo y parecía un
+degradado cualquiera. Ahora lleva su icono encima. Es la "dependencia detectada" que pide el
+apartado 8: nada se rompe en silencio.
+
+Borrar un preset no borra su fotografía, y olvidar una fotografía no borra los presets que la usen.
+
+### Un error de test que valió la pena
+La comprobación de que la lista conserva las más recientes fallaba por uno. La `h12` es la foto
+**activa**, así que la primera de las *anteriores* es la `h11`. El código estaba bien; la
+expectativa, mal.
+
+### Verificación
+**1414 comprobaciones y 9 reglas invariantes en verde**, build de Vite incluido. `package.json` →
+**v1.47.0**.
+
+**Con esto el bloque FO queda cerrado: 12 de 12.** Van 24 de las 106 fases de la Entrega 2; quedan
+82, todas de módulos aún sin empezar — SR (5+4), HT (12) y EH (65).
+
+⚠️ Siguen pendientes en el SQL Editor de Supabase los bloques de los buckets `armario` (AR F1) y
+`fondos` (FO F2).
+
 ## Entrega 2 · FO Fase 11 — Rendimiento y optimización (v1.46.0)
 
 ### El problema real no era ninguno de los que uno se imagina

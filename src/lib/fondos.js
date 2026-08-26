@@ -141,6 +141,15 @@ export const DEFAULT_FONDO = {
   // volver a una imagen ya usada recupere su encuadre en vez de heredar el de otra.
   ajustesPorFoto: {},
 
+  // FO Fase 12 — las fotografías que se han ido sustituyendo.
+  //
+  // Hasta ahora, elegir otra foto hacía desaparecer la referencia a la anterior:
+  // el archivo seguía en Storage (nunca se borra) pero ya no había forma de
+  // volver a él. Aquí se guarda su ficha para poder recuperarla, que es lo que
+  // pide el apartado 4 — y funciona de verdad **porque el archivo nunca se
+  // borró**: recuperar no es recrear nada, es volver a apuntar a lo que sigue ahí.
+  fotosAnteriores: [],
+
   analisis: null,           // Fase 5: colores detectados en la fotografía
   paleta: null,             // Fase 4/5: paleta derivada
   recomendacion: null,      // Fase 6: apariencia completa recomendada para este fondo
@@ -193,6 +202,7 @@ export function normalizarFondo(guardado) {
       intensidad: acotar(g.overlay ? g.overlay.intensidad : g.velo, 0, 0, 90),
     },
     ajustesPorFoto: f.ajustesPorFoto && typeof f.ajustesPorFoto === 'object' ? f.ajustesPorFoto : {},
+    fotosAnteriores: Array.isArray(f.fotosAnteriores) ? f.fotosAnteriores : [],
     // FO Fase 5 — el análisis se conserva tal cual. Va sellado con el id de su
     // fotografía (`analisisValidoPara`), así que no hace falta invalidarlo aquí:
     // si la foto cambia, el sello deja de coincidir y se vuelve a analizar solo.
@@ -671,7 +681,10 @@ export function recordarAjustes(fondo) {
  * Y si esa foto concreta ya tenía ajustes guardados (apartado 20), mandan esos.
  */
 export function aplicarFotoConAjustes(fondo, foto) {
-  const previo = recordarAjustes(fondo);          // no se pierde lo de la foto anterior
+  // Se recuerdan las dos cosas de la foto que se va: sus AJUSTES (FO F3) y su
+  // FICHA (FO F12). Sin lo segundo, cambiar de foto hacía desaparecer la
+  // referencia a la anterior aunque el archivo siguiera en Storage.
+  const previo = recordarFotoAnterior(recordarAjustes(fondo));
   const datos = { ...DEFAULT_FONDO.foto, ...(foto || {}) };
   const recordados = previo.ajustesPorFoto?.[datos.id];
 
@@ -686,6 +699,81 @@ export function aplicarFotoConAjustes(fondo, foto) {
     tipo: 'foto',
     activo: true,
   });
+}
+
+/* ===========================================================================
+   FO Fase 12 — RECUPERAR UNA FOTOGRAFÍA SUSTITUIDA
+   =========================================================================== */
+
+// Cuántas se recuerdan. Como `ajustesPorFoto`, esto se guarda entero en cada
+// `saveData`, así que no puede crecer sin fin.
+export const MAX_FOTOS_ANTERIORES = 8;
+
+/**
+ * Guarda la ficha de la fotografía que se va, para poder volver a ella.
+ *
+ * No mueve ni copia el archivo: **el archivo nunca se borra de Storage**, así
+ * que basta con conservar su ruta. Eso hace que recuperar funcione de verdad, a
+ * diferencia de las fotos de Salud o los vídeos de Calistenia, donde la papelera
+ * guarda el objeto pero el fichero sí se borra.
+ */
+export function recordarFotoAnterior(fondo) {
+  const f = normalizarFondo(fondo);
+  if (!f.foto.path) return f;
+  const ficha = { ...f.foto, sustituidaEn: new Date().toISOString() };
+  // Si ya estaba en la lista (se recuperó y se volvió a sustituir) se mueve al
+  // frente en vez de duplicarse.
+  const sinDuplicar = f.fotosAnteriores.filter((x) => x.path !== ficha.path);
+  return { ...f, fotosAnteriores: [ficha, ...sinDuplicar].slice(0, MAX_FOTOS_ANTERIORES) };
+}
+
+/**
+ * Apartado 4 — recuperar. Vuelve a la fotografía y **conserva sus ajustes**: el
+ * encuadre, el zoom y el resto se recuperan de `ajustesPorFoto`, que ya los
+ * guardaba desde FO F3. Y la que estaba puesta pasa a la lista de anteriores, así
+ * que recuperar nunca pierde nada.
+ */
+export function recuperarFoto(fondo, id) {
+  const f = normalizarFondo(fondo);
+  const ficha = f.fotosAnteriores.find((x) => x.id === id);
+  if (!ficha) return f;
+  const previo = recordarFotoAnterior(f);
+  const sinLaRecuperada = previo.fotosAnteriores.filter((x) => x.id !== id);
+  const recordados = previo.ajustesPorFoto?.[id];
+  return normalizarFondo({
+    ...previo,
+    ...(recordados || encuadreInicial(ficha)),
+    foto: { ...ficha },
+    fotosAnteriores: sinLaRecuperada,
+    tipo: 'foto',
+    activo: true,
+  });
+}
+
+/** Apartado 5 — quitarla de la lista para siempre. Esto sí es irreversible. */
+export function olvidarFotoAnterior(fondo, id) {
+  const f = normalizarFondo(fondo);
+  return { ...f, fotosAnteriores: f.fotosAnteriores.filter((x) => x.id !== id) };
+}
+
+/**
+ * La línea que acompaña a cada miniatura de la lista de anteriores.
+ *
+ * Regla 8: no se inventa nada. Si la ficha no guardó fecha ni medidas —una foto
+ * elegida antes de esta fase, por ejemplo— devuelve el texto neutro en vez de
+ * una fecha falsa o un "0 × 0".
+ */
+export function describirFotoAnterior(ficha) {
+  const f = ficha || {};
+  const partes = [];
+  if (f.sustituidaEn) {
+    const d = new Date(f.sustituidaEn);
+    if (!Number.isNaN(d.getTime())) {
+      partes.push(`Sustituida el ${d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}`);
+    }
+  }
+  if (f.ancho > 0 && f.alto > 0) partes.push(`${f.ancho} × ${f.alto}`);
+  return partes.length ? partes.join(' · ') : 'Fotografía anterior';
 }
 
 /** ¿Hay una fotografía elegida, esté activa o no? */

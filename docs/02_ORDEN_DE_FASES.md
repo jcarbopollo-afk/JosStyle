@@ -154,8 +154,10 @@ escribir código.
 | v1.44.0 | **FO F9** | Legibilidad inteligente: el fondo efectivo se **compone** capa a capa y se mide por zona. Detectar no es corregir |
 | v1.45.0 | **FO F10** | Aspecto ordenado: vista previa global y seis secciones plegables. No añade funciones, ordena las que ya había |
 | v1.46.0 | **FO F11** | Rendimiento: la foto se sube optimizada (4 MB → ~400 KB) y las URLs firmadas se cachean. El coste real estaba ahí, no en los efectos |
+| v1.47.0 | **FO F12** | Eliminados y recuperación. **Cierra el bloque FO.** En Apariencia no se borra nada: la foto sustituida sigue en Storage, así que recuperar es volver a apuntar a ella, no restaurar una copia |
 
-🔒 **Bloques ME (4/4), BI (4/4) y AR (4/4) cerrados**, FO va por 11/12. Quedan 83 fases de la Entrega 2.
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4) y FO (12/12) cerrados.** Quedan **82** fases de la
+Entrega 2, todas de módulos aún sin empezar: SR (5+4), HT (12) y EH (65) — en ese orden (E2-5 → E2-6 → E2-7).
 
 ---
 

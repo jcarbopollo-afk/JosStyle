@@ -70,6 +70,15 @@ export const CATALOGO_PAPELERA = {
   // borrarlo cambia las estadísticas del armario entero (una prenda pasa de "usada 12
   // veces" a 11), y eso tiene que poder deshacerse.
   'armario.usos': { modulo: 'armario', coleccion: 'usos', tipo: 'Uso', campos: ['fecha'], icono: 'armario' },
+  // FO Fase 12 — las apariencias guardadas. Es una lista PLANA (`coleccion: null`),
+  // como `sueno` o `futbol`: `temasGuardados` es un array de primer nivel, no una
+  // colección dentro de un módulo. La papelera ya lo soportaba desde ME F3.
+  //
+  // Va aquí y no en un sistema propio de eliminados porque el apartado 2 pide
+  // "Ajustes → Eliminados recientemente" — que ya existe y ya tiene retención,
+  // recuperación, borrado definitivo y vaciado con confirmación. Crear otro al lado
+  // habría dejado dos papeleras en la misma pantalla de Ajustes.
+  'temasGuardados': { modulo: 'temasGuardados', coleccion: null, tipo: 'Apariencia guardada', campos: ['nombre'], icono: 'ajustes' },
   'negocio.proyectos': { modulo: 'negocio', coleccion: 'proyectos', tipo: 'Proyecto', campos: ['nombre'], icono: 'negocio' },
   'productividad.habitos': { modulo: 'productividad', coleccion: 'habitos', tipo: 'Hábito', campos: ['nombre'], icono: 'productividad' },
   'productividad.rutinas': { modulo: 'productividad', coleccion: 'rutinas', tipo: 'Rutina', campos: ['nombre'], icono: 'productividad' },

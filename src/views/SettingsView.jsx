@@ -25,7 +25,7 @@ import {
   restablecerFondo, describirFondo, tieneFondoGuardado, resolverFondo, estilosDeFondo,
   estilosDeVelo, datosDeFoto, validarFotoFondo, aplicarFoto, quitarFoto, tieneFoto,
   orientacionDeFoto, estilosDeLuminosidad, restablecerAjustes, tieneAjustes,
-  aplicarFotoConAjustes,
+  aplicarFotoConAjustes, recuperarFoto, olvidarFotoAnterior, describirFotoAnterior,
 } from '../lib/fondos';
 import { normalizarTema, restablecerColores, tieneColoresPersonalizados } from '../lib/temaColores';
 import { analizarImagen, analisisValidoPara, sellarAnalisis, describirColor } from '../lib/detectorColores';
@@ -33,7 +33,7 @@ import { generarPropuestas, aplicarPropuesta, guardarApariencia } from '../lib/r
 import { optimizarImagen, ahorroDe } from '../lib/imagenes';
 import {
   MAX_PRESETS, crearPreset, aplicarPreset, listaPresets, presetActivo,
-  duplicarPreset, actualizarPreset, alternarFavorito, esEditable,
+  duplicarPreset, actualizarPreset, alternarFavorito, esEditable, presetTieneFoto,
 } from '../lib/presetsApariencia';
 import {
   revisarLegibilidad, propuestasSobreFoto, correccionesDe, hayCorrecciones, resumenLegibilidad,
@@ -256,7 +256,7 @@ function Deslizador({ label, valor, min, max, sufijo = '%', accent, onChange }) 
    cada foto que Josué mirara y descartara dejaría un archivo huérfano en su
    bucket para siempre. La vista previa se hace con `URL.createObjectURL`, que es
    local e instantánea — no hay que esperar a la red para ver cómo queda. */
-function SelectorFoto({ fondo, accent, urlFotoActual, onSubirFoto, onCambiar }) {
+function SelectorFoto({ fondo, accent, urlFotoActual, onSubirFoto, onCambiar, onFirmarFoto }) {
   const inputRef = useRef(null);
   const [pendiente, setPendiente] = useState(null);   // { file, url, ancho, alto }
   const [error, setError] = useState('');
@@ -395,7 +395,137 @@ function SelectorFoto({ fondo, accent, urlFotoActual, onSubirFoto, onCambiar }) 
       )}
 
       {error && <p className="text-xs mt-2" style={{ color: COLORS.negative }}>{error}</p>}
+
+      {/* FO Fase 12 — las fotografías sustituidas. Se esconde mientras hay una foto
+          pendiente o el editor abierto: en esos dos momentos Josué está decidiendo
+          sobre UNA imagen concreta y una lista de otras solo estorba. */}
+      {!pendiente && !editando && (
+        <FotosAnteriores fondo={fondo} accent={accent} onCambiar={onCambiar} onFirmarFoto={onFirmarFoto} />
+      )}
     </div>
+  );
+}
+
+/* ---------- FO Fase 12 — fotografías sustituidas ----------
+   El archivo NUNCA se borra de Storage al cambiar de foto, así que "recuperar"
+   aquí es de verdad: se vuelve a apuntar a lo que sigue estando. Por eso esta
+   lista no vive en la papelera de ME F3 —que borra de verdad a los 30 días— sino
+   dentro del propio fondo.
+
+   Recuperar conserva los ajustes de esa foto (encuadre, zoom, luz, overlay),
+   porque `ajustesPorFoto` los guarda desde FO F3. */
+function FotosAnteriores({ fondo, accent, onCambiar, onFirmarFoto }) {
+  const [olvidando, setOlvidando] = useState(null);
+  const lista = fondo?.fotosAnteriores || [];
+  if (!lista.length) return null;
+
+  return (
+    <div className="mt-4">
+      <p className="text-xs font-semibold mb-1" style={{ color: COLORS.text }}>Fotografías anteriores</p>
+      <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+        Las que has sustituido siguen guardadas. Recuperar una devuelve también su encuadre.
+      </p>
+
+      <div className="space-y-2">
+        {lista.map((ficha) => (
+          <div
+            key={ficha.id}
+            className="flex items-center gap-3 rounded-xl p-2"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+          >
+            <MiniaturaAnterior ficha={ficha} onFirmarFoto={onFirmarFoto} />
+
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] truncate" style={{ color: COLORS.textMuted }}>
+                {describirFotoAnterior(ficha)}
+              </p>
+
+              {olvidando === ficha.id ? (
+                <div className="flex items-center gap-3 mt-1">
+                  <button
+                    onClick={() => { onCambiar(olvidarFotoAnterior(fondo, ficha.id)); setOlvidando(null); }}
+                    className="text-[11px] font-semibold"
+                    style={{ color: COLORS.negative }}
+                  >
+                    Sí, quitarla
+                  </button>
+                  <button
+                    onClick={() => setOlvidando(null)}
+                    className="text-[11px] font-semibold"
+                    style={{ color: COLORS.textMuted }}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 mt-1">
+                  <button
+                    onClick={() => onCambiar(recuperarFoto(fondo, ficha.id))}
+                    className="text-[11px] font-semibold"
+                    style={{ color: accent }}
+                  >
+                    Recuperar
+                  </button>
+                  <button
+                    onClick={() => setOlvidando(ficha.id)}
+                    className="text-[11px] font-semibold"
+                    style={{ color: COLORS.textMuted }}
+                  >
+                    Quitar de la lista
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {olvidando && (
+        <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
+          Quitarla de la lista no se puede deshacer.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* La miniatura firma su propia ruta y solo cuando se monta. Hacerlo aquí y no en
+   App evita firmar de golpe ocho URLs que quizá nadie mire; `urlFirmada` guarda
+   la firma en caché, así que volver a esta pantalla no repite la petición.
+
+   Mientras no hay URL —o si la firma falla— se pinta el hueco con su icono. Nunca
+   un `img` roto, que es lo que se vería si se montara la etiqueta sin `src`. */
+function MiniaturaAnterior({ ficha, onFirmarFoto }) {
+  const [url, setUrl] = useState(null);
+
+  useEffect(() => {
+    if (!onFirmarFoto || !ficha?.path) return undefined;
+    let vivo = true;
+    Promise.resolve(onFirmarFoto(ficha.path))
+      .then((u) => { if (vivo) setUrl(u || null); })
+      .catch(() => { if (vivo) setUrl(null); });
+    return () => { vivo = false; };
+  }, [ficha?.path, onFirmarFoto]);
+
+  const base = {
+    width: 44, height: 44, flexShrink: 0, borderRadius: 10,
+    border: `1px solid ${COLORS.border}`, background: COLORS.surface,
+  };
+
+  if (!url) {
+    return (
+      <div style={base} className="flex items-center justify-center" aria-hidden="true">
+        <ImageIcon size={16} style={{ color: COLORS.textMuted }} />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{ ...base, backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      role="img"
+      aria-label="Fotografía anterior"
+    />
   );
 }
 
@@ -787,7 +917,7 @@ export function BloqueRecomendado({ analisis, tema, accent, fondo, modoOscuro, o
    Los oficiales van al final de la lista y no al principio: son cuatro y siempre
    están, así que arriba ocuparían la primera pantalla entera y empujarían fuera
    lo que Josué se ha molestado en crear. */
-export function BloquePresets({ presets, apariencia, accent, temaPersonalizado, onGuardar, onCambiarPresets, onAplicar }) {
+export function BloquePresets({ presets, apariencia, accent, temaPersonalizado, onGuardar, onCambiarPresets, onAplicar, onEliminar }) {
   const [nombre, setNombre] = useState('');
   const [creando, setCreando] = useState(false);
 
@@ -880,7 +1010,10 @@ export function BloquePresets({ presets, apariencia, accent, temaPersonalizado, 
                       <Star size={13} style={p.favorito ? { color: accent, fill: accent } : { color: COLORS.textMuted }} />
                     </button>
                     <div className="ml-auto">
-                      <BotonBorrar onClick={() => onCambiarPresets((presets || []).filter((x) => x.id !== p.id))} label={`Eliminar ${p.nombre}`} />
+                      {/* FO Fase 12 — va por la papelera, así que se puede recuperar
+                          desde Ajustes → Eliminados recientemente. Por eso no pide
+                          confirmación: desde ME F3, lo reversible no la necesita. */}
+                      <BotonBorrar onClick={() => onEliminar(p.id)} label={`Eliminar ${p.nombre}`} />
                     </div>
                   </>
                 )}
@@ -899,6 +1032,12 @@ export function BloquePresets({ presets, apariencia, accent, temaPersonalizado, 
 function MiniaturaPreset({ preset }) {
   const resuelto = resolverFondo(preset.fondo, { urlFoto: null });
   const estilo = estilosDeFondo(resuelto, COLORS);
+  // FO Fase 12 — *"si un preset utiliza una fotografía, no romperlo silenciosamente:
+  // debe detectarse la dependencia"*. La miniatura se pinta sin firmar la URL (son
+  // varias y estarían todas pidiendo firma a la vez), así que un preset con foto
+  // enseñaría aquí el fondo de respaldo y parecería un degradado cualquiera. El
+  // icono dice que ahí debajo hay una fotografía.
+  const conFoto = presetTieneFoto(preset);
   return (
     <span
       className="rounded-lg overflow-hidden relative flex-shrink-0"
@@ -906,6 +1045,11 @@ function MiniaturaPreset({ preset }) {
       aria-hidden="true"
     >
       {estilo && <span className="absolute inset-0" style={estilo} />}
+      {conFoto && (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <ImageIcon size={13} style={{ color: COLORS.textOnAccent }} />
+        </span>
+      )}
       {preset.accent && (
         <span className="absolute rounded-full" style={{ width: 10, height: 10, bottom: 4, right: 4, background: preset.accent }} />
       )}
@@ -1098,7 +1242,7 @@ function Seccion({ titulo, sub, icono: Icono, accent, defecto = false, children 
   );
 }
 
-export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFondo, analisisFoto, onAnalisisFoto }) {
+export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFondo, analisisFoto, onAnalisisFoto, onFirmarFoto }) {
   const [abierto, setAbierto] = useState(false);
   const disponibles = TIPOS_FONDO.filter((t) => t.implementado);
   const activo = fondo?.activo ? fondo.tipo : 'ninguno';
@@ -1124,7 +1268,7 @@ export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFond
         <>
           <SelectorFoto
             fondo={fondo} accent={accent} urlFotoActual={urlFotoFondo}
-            onSubirFoto={onSubirFoto} onCambiar={onCambiar}
+            onSubirFoto={onSubirFoto} onCambiar={onCambiar} onFirmarFoto={onFirmarFoto}
           />
           {onAnalisisFoto && (
             <PaletaDetectada
@@ -1274,8 +1418,8 @@ export default function SettingsView({
   temasGuardados, onAplicarConjuntoTema, onRestablecerTemaOficial,
   onGuardarTemaComoNuevo, onRenombrarTemaGuardado, onDuplicarTemaGuardado,
   onEliminarTemaGuardado, onImportarTemaGuardado,
-  apariencia, onUpdateApariencia, onSubirFotoFondo, urlFotoFondo,
-  onGuardarPreset, onCambiarPresets, onAplicarPreset,
+  apariencia, onUpdateApariencia, onSubirFotoFondo, urlFotoFondo, onFirmarFotoFondo,
+  onGuardarPreset, onCambiarPresets, onAplicarPreset, onEliminarPreset,
   notificaciones, onUpdateNotificaciones,
   seguridad, onUpdateSeguridad, userId,
   // Fase de Seguridad Centralizada — catálogo de zonas protegibles (App.jsx, a partir de MORE_NAV
@@ -1724,6 +1868,7 @@ export default function SettingsView({
               onCambiar={(f) => onUpdateApariencia({ ...apariencia, fondo: f })}
               onSubirFoto={onSubirFotoFondo}
               urlFotoFondo={urlFotoFondo}
+              onFirmarFoto={onFirmarFotoFondo}
               analisisFoto={apariencia.fondo?.analisis}
               onAnalisisFoto={(a) => onUpdateApariencia({ ...apariencia, fondo: { ...apariencia.fondo, analisis: a } })}
             />
@@ -1860,6 +2005,7 @@ export default function SettingsView({
               onGuardar={onGuardarPreset}
               onCambiarPresets={onCambiarPresets}
               onAplicar={onAplicarPreset}
+              onEliminar={onEliminarPreset}
             />
 
             </Seccion>

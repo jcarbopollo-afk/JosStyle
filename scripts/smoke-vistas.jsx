@@ -188,6 +188,21 @@ const CASOS = [
     fondo: { ...DEFAULT_APARIENCIA.fondo, tipo: 'foto', activo: true },
     accent, onCambiar: noop, onSubirFoto: async () => '', urlFotoFondo: null,
   })],
+  // FO Fase 12 — la lista de fotografías sustituidas. Se prueba con una ficha completa
+  // y otra a medias (una foto elegida antes de esta fase, sin fecha ni medidas): ahí es
+  // donde se vería una fecha inventada o un "0 × 0" si el texto no se cuidara.
+  ['SettingsView · Fondo con anteriores', BloqueFondo, () => ({
+    fondo: {
+      ...DEFAULT_APARIENCIA.fondo, tipo: 'foto', activo: true,
+      foto: { ...DEFAULT_APARIENCIA.fondo.foto, id: 'a', path: 'u/2.jpg', ancho: 1920, alto: 1080, proporcion: 1.7778 },
+      fotosAnteriores: [
+        { id: 'b', path: 'u/1.jpg', ancho: 1080, alto: 1920, sustituidaEn: '2026-08-01T10:00:00.000Z' },
+        { id: 'c', path: 'u/0.jpg' },
+      ],
+    },
+    accent, onCambiar: noop, onSubirFoto: async () => '', urlFotoFondo: 'https://ejemplo/x.jpg',
+    onFirmarFoto: async () => 'https://ejemplo/mini.jpg',
+  })],
   // FO Fase 4 — la transparencia, en sus dos extremos: opaca (como siempre) y muy
   // translúcida, que es cuando el aviso de legibilidad tiene que aparecer.
   ['SettingsView · Legibilidad', BloqueLegibilidad, () => ({
@@ -251,17 +266,23 @@ const CASOS = [
       accent: '#C77C3A', temaPersonalizado: { ...DEFAULT_TEMA_PERSONALIZADO, superficieAlfa: 70 },
       fondo: { ...DEFAULT_APARIENCIA.fondo, tipo: 'predeterminado', activo: true, incluido: 'profundidad' },
     };
+    // FO Fase 12 — uno de ellos lleva fotografía: la miniatura tiene que decirlo, o
+    // parecería un degradado cualquiera (la miniatura no firma URLs).
+    const conFoto = {
+      ...mio, id: 'p3', nombre: 'Playa', favorito: false,
+      fondo: { ...DEFAULT_APARIENCIA.fondo, tipo: 'foto', activo: true, foto: { ...DEFAULT_APARIENCIA.fondo.foto, id: 'z', path: 'u/9.jpg' } },
+    };
     return {
-      presets: [mio, { ...mio, id: 'p2', nombre: 'Gym', favorito: false }],
+      presets: [mio, { ...mio, id: 'p2', nombre: 'Gym', favorito: false }, conFoto],
       apariencia: { ...DEFAULT_APARIENCIA, tema: 'oscuro', fondo: mio.fondo },
       accent: '#C77C3A', temaPersonalizado: mio.temaPersonalizado,
-      onGuardar: noop, onCambiarPresets: noop, onAplicar: noop,
+      onGuardar: noop, onCambiarPresets: noop, onAplicar: noop, onEliminar: noop,
     };
   }],
   // Y sin ninguno propio: solo los oficiales, que nunca dejan la lista vacía.
   ['SettingsView · Presets solo oficiales', BloquePresets, () => ({
     presets: [], apariencia: DEFAULT_APARIENCIA, accent, temaPersonalizado: DEFAULT_TEMA_PERSONALIZADO,
-    onGuardar: noop, onCambiarPresets: noop, onAplicar: noop,
+    onGuardar: noop, onCambiarPresets: noop, onAplicar: noop, onEliminar: noop,
   })],
   // FO Fase 9 — legibilidad: el caso limpio (sin avisos) y el caso roto (texto
   // casi del color de la tarjeta, sobre una foto clara), que es donde se pintan

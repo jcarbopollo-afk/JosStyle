@@ -40,6 +40,12 @@ import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda, crearOutfit, actualizar
 import ArmarioView from './views/ArmarioView';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
+// FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.
+// Lo necesitan las miniaturas de "Fotografías anteriores". Vive fuera del componente
+// a propósito: si se definiera dentro, sería una función nueva en cada render y el
+// `useEffect` de cada miniatura volvería a dispararse sin parar.
+const firmarFotoFondo = (path) => urlFirmada(path, getSignedFondoUrl);
+
 // Con Salud y Nutrición ya son 7 secciones — demasiadas para una sola barra inferior cómoda.
 // A partir de la Fase 4: 4 accesos rápidos + "Más", que lista el resto. Cada módulo nuevo futuro
 // se añade a MORE_NAV, no a la barra — así la barra nunca vuelve a ir apretada. Estudios (Fase 6),
@@ -462,7 +468,7 @@ export default function App() {
     const yaFirmada = urlEnCache(rutaFotoFondo);
     if (yaFirmada) { setUrlFotoFondo(yaFirmada); return undefined; }
     let cancelado = false;
-    urlFirmada(rutaFotoFondo, getSignedFondoUrl).then((url) => { if (!cancelado) setUrlFotoFondo(url); });
+    firmarFotoFondo(rutaFotoFondo).then((url) => { if (!cancelado) setUrlFotoFondo(url); });
     return () => { cancelado = true; };
   }, [rutaFotoFondo]);
 
@@ -792,6 +798,11 @@ export default function App() {
     setTemasGuardados(lista);
     saveData(uidUser, 'temasGuardados', lista);
   };
+  // FO Fase 12 — borrar una apariencia guardada va por la papelera, no se pierde.
+  // Antes se filtraba la lista directamente y desaparecía para siempre: una
+  // apariencia que costó configurar es exactamente lo que la filosofía del apartado
+  // 1 quiere proteger ("nada importante debería desaparecer accidentalmente").
+  const eliminarPreset = (id) => eliminarConPapelera('temasGuardados', null, id);
   // Aplicar toca CUATRO cosas a la vez: tema, acento, colores y fondo.
   //
   // Y por eso NO se encadenan `updateAccent` + `updateTemaPersonalizado` +
@@ -961,6 +972,9 @@ export default function App() {
     diario: [diario, setDiario], biblioteca: [biblioteca, setBiblioteca],
     relacion: [relacion, setRelacion], fe: [fe, setFe], bienestar: [bienestar, setBienestar],
     armario: [armario, setArmario],
+    // FO Fase 12 — las apariencias guardadas entran en la papelera universal. Es una
+    // lista plana, como `sueno` o `futbol`; el motor de ME F3 ya lo soportaba.
+    temasGuardados: [temasGuardados, setTemasGuardados],
   };
 
   const eliminarConPapelera = (modulo, coleccion, id) => {
@@ -1731,7 +1745,9 @@ export default function App() {
             onImportarTemaGuardado={importarTemaGuardado}
             apariencia={apariencia} onUpdateApariencia={updateApariencia}
             onSubirFotoFondo={subirFotoFondo} urlFotoFondo={urlFotoFondo}
+            onFirmarFotoFondo={firmarFotoFondo}
             onGuardarPreset={guardarPreset} onCambiarPresets={cambiarPresets} onAplicarPreset={aplicarPresetCompleto}
+            onEliminarPreset={eliminarPreset}
             notificaciones={notificaciones} onUpdateNotificaciones={updateNotificaciones}
             seguridad={seguridad} onUpdateSeguridad={updateSeguridad} userId={uidUser}
             areasProtegibles={AREAS_PROTEGIBLES}

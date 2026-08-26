@@ -19,6 +19,7 @@ import {
   aplicarFoto, quitarFoto, tieneFoto, MAX_PESO_FONDO,
   AJUSTES_PRESENTACION, ajustesPorDefecto, ajustesDe, restablecerAjustes, tieneAjustes,
   recordarAjustes, aplicarFotoConAjustes, estilosDeLuminosidad, MAX_AJUSTES_RECORDADOS,
+  MAX_FOTOS_ANTERIORES, recordarFotoAnterior, recuperarFoto, olvidarFotoAnterior, describirFotoAnterior,
 } from '../src/lib/fondos.js';
 
 let fallos = 0;
@@ -491,6 +492,74 @@ const FOTO_H = datosDeFoto({ path: 'u/h.jpg', ancho: 1920, alto: 1080 });   // h
     DEFAULT_FONDO.overlay.intensidad === 0);
   const extraidos = ajustesDe(ajustarFondo(DEFAULT_FONDO, { escala: 150 }));
   comprobar('ajustesDe extrae solo la presentación', extraidos.escala === 150 && !('tipo' in extraidos) && !('foto' in extraidos));
+}
+
+/* ===========================================================================
+   FO FASE 12 — RECUPERAR UNA FOTOGRAFÍA SUSTITUIDA
+   =========================================================================== */
+console.log('\n═══ FO Fase 12 — eliminados y recuperación ═══\n');
+{
+  const f1 = datosDeFoto({ path: 'u/1.jpg', ancho: 1080, alto: 1920 });
+  const f2 = datosDeFoto({ path: 'u/2.jpg', ancho: 1920, alto: 1080 });
+
+  const con1 = ajustarFondo(aplicarFotoConAjustes(DEFAULT_FONDO, f1), { escala: 220, encuadre: { x: 70, y: 20 } });
+  const con2 = aplicarFotoConAjustes(con1, f2);
+
+  // ESTO es lo que la fase arregla: antes, cambiar de foto hacía desaparecer la
+  // referencia a la anterior aunque el archivo siguiera en Storage.
+  comprobar('CLAVE · Al sustituir una foto, la anterior se recuerda', con2.fotosAnteriores.length === 1);
+  comprobar('...con su ruta, que es lo que permite volver a ella', con2.fotosAnteriores[0].path === 'u/1.jpg');
+  comprobar('...y cuándo se sustituyó', !!con2.fotosAnteriores[0].sustituidaEn);
+  comprobar('La foto activa es la nueva', con2.foto.path === 'u/2.jpg');
+
+  // Apartado 4 — recuperar conserva los ajustes que tenía.
+  const vuelta = recuperarFoto(con2, f1.id);
+  comprobar('Recuperar devuelve la fotografía', vuelta.foto.path === 'u/1.jpg');
+  comprobar('...activa', vuelta.tipo === 'foto' && vuelta.activo === true);
+  comprobar('CLAVE · ...CON sus ajustes de entonces', vuelta.escala === 220 && vuelta.encuadre.x === 70);
+  // Y la que estaba puesta pasa a la lista: recuperar nunca pierde nada.
+  comprobar('...y la que estaba puesta pasa a anteriores', vuelta.fotosAnteriores.some((x) => x.path === 'u/2.jpg'));
+  comprobar('...saliendo la recuperada de la lista', !vuelta.fotosAnteriores.some((x) => x.path === 'u/1.jpg'));
+
+  // Recuperar algo que no está no rompe nada.
+  comprobar('Recuperar un id inexistente no cambia nada', recuperarFoto(con2, 'zzz').foto.path === 'u/2.jpg');
+
+  // Apartado 5 — olvidarla sí es irreversible.
+  const olvidada = olvidarFotoAnterior(con2, f1.id);
+  comprobar('Olvidar una anterior la quita de la lista', olvidada.fotosAnteriores.length === 0);
+  comprobar('...sin tocar la activa', olvidada.foto.path === 'u/2.jpg');
+
+  // No puede crecer sin fin: se guarda entera en cada `saveData`.
+  let acumulado = DEFAULT_FONDO;
+  for (let i = 0; i < MAX_FOTOS_ANTERIORES + 5; i++) {
+    acumulado = aplicarFotoConAjustes(acumulado, datosDeFoto({ path: `u/h${i}.jpg`, ancho: 100, alto: 100 }));
+  }
+  comprobar('La lista de anteriores está acotada', acumulado.fotosAnteriores.length <= MAX_FOTOS_ANTERIORES,
+    String(acumulado.fotosAnteriores.length));
+  // La h12 es la ACTIVA, así que la más reciente de las *anteriores* es la h11.
+  comprobar('...y conserva las más recientes', acumulado.fotosAnteriores[0].path.includes('h11'), acumulado.fotosAnteriores[0].path);
+  comprobar('...descartando las más viejas', !acumulado.fotosAnteriores.some((x) => x.path.includes('h0.')));
+
+  // Sustituir por una que ya estaba en la lista no la duplica.
+  const ida = aplicarFotoConAjustes(recuperarFoto(con2, f1.id), f2);
+  comprobar('Una foto que va y vuelve no se duplica en la lista',
+    ida.fotosAnteriores.filter((x) => x.path === 'u/1.jpg').length === 1);
+
+  comprobar('Sin foto activa no se recuerda nada', recordarFotoAnterior(DEFAULT_FONDO).fotosAnteriores.length === 0);
+  // Y sobrevive a guardar y cargar.
+  const tras = normalizarFondo(JSON.parse(JSON.stringify(con2)));
+  comprobar('La lista sobrevive a guardar y volver a cargar', tras.fotosAnteriores.length === 1);
+  comprobar('Un fondo antiguo sin la lista no revienta', normalizarFondo({ tipo: 'color' }).fotosAnteriores.length === 0);
+
+  // El texto de cada miniatura. Regla 8: nunca inventa.
+  const linea = describirFotoAnterior(con2.fotosAnteriores[0]);
+  comprobar('La línea de una anterior dice cuándo se sustituyó', linea.startsWith('Sustituida el '), linea);
+  comprobar('...y sus medidas', linea.includes('1080 × 1920'), linea);
+  comprobar('CLAVE · Una ficha sin fecha ni medidas no se las inventa',
+    describirFotoAnterior({ path: 'u/x.jpg' }) === 'Fotografía anterior');
+  comprobar('...ni con medidas a cero', !describirFotoAnterior({ ancho: 0, alto: 0 }).includes('0 ×'));
+  comprobar('...ni con una fecha ilegible', !describirFotoAnterior({ sustituidaEn: 'ayer' }).includes('Sustituida'));
+  comprobar('Sin ficha tampoco revienta', describirFotoAnterior(null) === 'Fotografía anterior');
 }
 
 console.log(fallos === 0 ? '\n  Todo correcto.\n' : `\n  ${fallos} fallo(s).\n`);
