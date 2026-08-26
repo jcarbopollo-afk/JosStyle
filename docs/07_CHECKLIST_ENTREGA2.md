@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 19 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
-> y FO 7/12 (hasta v1.42.0). Quedan **87**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 20 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
+> y FO 8/12 (hasta v1.43.0). Quedan **86**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -2395,38 +2395,55 @@ regresión visual.
 **Y el que evita un coste inútil:** sin sombra, `cardShadow` es `'none'`, no una sombra de opacidad
 cero. Una sombra invisible sigue costando pintado en cada tarjeta, y hay muchas por pantalla.
 
-#### FO · Fase 8/12 — PRESETS Y CONFIGURACIONES GUARDADAS
-- [ ] OBJETIVO
-- [ ] QUÉ ES UN PRESET
-- [ ] CREAR PRESET
-- [ ] NOMBRES PERSONALIZADOS
-- [ ] LISTA DE PRESETS
-- [ ] PRESET ACTIVO
-- [ ] CAMBIAR DE PRESET
-- [ ] VISTA PREVIA
-- [ ] DUPLICAR PRESET
-- [ ] EDITAR PRESET
-- [ ] GUARDAR COMO NUEVO
-- [ ] ELIMINAR PRESET
-- [ ] PRESETS PREDETERMINADOS
-- [ ] NO MODIFICAR PRESETS OFICIALES
-- [ ] FAVORITOS
-- [ ] ORDEN
-- [ ] Activo.
-- [ ] Favoritos.
-- [ ] Recientes.
-- [ ] Resto.
-- [ ] PRESETS RECIENTES
-- [ ] CONFIGURACIÓN COMPLETA
-- [ ] INDEPENDENCIA ENTRE PRESETS
-- [ ] FOTOGRAFÍAS Y PRESETS
-- [ ] PERSISTENCIA
-- [ ] EXPERIENCIA DE CAMBIO
-- [ ] LÍMITE DE PRESETS
-- [ ] EXPORTACIÓN FUTURA
-- [ ] PREPARACIÓN PARA LA FASE 9
-- [ ] CRITERIOS DE FINALIZACIÓN
-- [ ] REGLA PARA CLAUDE
+#### FO · Fase 8/12 — PRESETS Y CONFIGURACIONES GUARDADAS ✅ COMPLETADA (v1.43.0)
+
+**Reutiliza `temasGuardados` (fase V4) tal cual**: misma clave de Supabase, mismo estado, mismo
+límite. Lo único que cambia es QUÉ se guarda dentro — ahora también **el fondo**. Crear un segundo
+almacén al lado habría dejado dos listas de apariencias guardadas en Ajustes.
+
+- [x] **1 · Objetivo** — crear estilos y cambiar entre ellos de un toque.
+- [x] **2 · Qué es un preset** — la configuración **completa**: tema, acento, colores,
+      transparencias, sombras, bordes, degradado, overlay **y la fotografía con sus ajustes**.
+      Guardar solo los colores, que es lo que hacía el sistema anterior, deja media configuración.
+- [x] **3 · Crear preset** — "Guardar la de ahora", con su nombre.
+- [x] **4 · Nombres personalizados** — libres, sin nombres técnicos impuestos.
+- [x] **5 · Lista visual** — cada preset con su miniatura, pintada con **las mismas funciones que
+      pintan el fondo de verdad**: una imitación acabaría divergiendo y enseñaría algo que no es
+      lo que se va a aplicar.
+- [x] **6 · Preset activo** — con ✓, y **comparando lo que se ve, no ids** (ver abajo).
+- [x] **7 · Cambiar de preset** — "Usar", y se aplica entero.
+- [x] **8 · Vista previa** — la miniatura, y la vuelta atrás la da el sistema de FO F6.
+- [x] **9 · Duplicar** — copia independiente de verdad (copia profunda, con prueba).
+- [x] **10 · Editar** — "Actualizar" recoge la apariencia actual sin crear otro.
+- [x] **11 · Guardar como nuevo** — "Guardar la de ahora" con otro nombre.
+- [x] **12 · Eliminar** — con `BotonBorrar`; la conexión con Eliminados recientes es de la F12.
+- [x] **13 · Presets incluidos** — JosStyle, Profundo, Claro y Minimal. **Ninguno trae una
+      fotografía**: una foto es de quien la hizo, y un preset de fábrica con una imagen de archivo
+      sería contenido inventado (regla 8).
+- [x] **14 · No modificar los oficiales** — `esEditable` lo decide en un solo sitio. Intentar
+      actualizar uno **no hace nada** en vez de fallar, y duplicarlo da un preset **tuyo**, que es
+      la vía que da el propio apartado para personalizarlo.
+- [x] **15 · Favoritos** — marcables, y arriba de la lista.
+- [x] **16 · Orden** — favoritos primero, y **los oficiales al final**: son cuatro y siempre están,
+      así que arriba ocuparían la primera pantalla y empujarían fuera lo que Josué ha creado.
+
+**"Activo" tiene que decir la verdad, y por eso no se compara por id.** El id no dice nada: Josué
+puede aplicar un preset y luego cambiar un color a mano, y entonces ya no está usando ese preset
+aunque fuera el último que tocó. Se compara una **huella de lo que se ve** — y de ahí quedan fuera
+el historial de ajustes por foto y el análisis de colores, porque no se ven y no deberían
+desactivar un preset.
+
+**`accent: null` en los oficiales significa "no toques el acento", no "ponlo a null".** Es lo que
+permite que "JosStyle" devuelva la app a su estado de fábrica sin imponerle a Josué un color que él
+no eligió. Con prueba propia.
+
+**UN FALLO QUE HABRÍA APARECIDO SEGURO, evitado por un aviso que dejó la fase V4:** aplicar un
+preset cambia cuatro cosas a la vez (tema, acento, colores y fondo), y encadenar
+`updateAccent` + `updateTemaPersonalizado` + `updateApariencia` **habría perdido el fondo o el
+tema sin dar ningún error** — cada una guarda el paquete `ajustes` entero leyendo el resto del
+closure, y dos llamadas seguidas en la misma función no ven el `setState` de la anterior. El
+payload se construye a mano con los valores nuevos explícitos, igual que ya hacía
+`aplicarConjuntoTema`.
 
 #### FO · Fase 9/12 — LEGIBILIDAD Y CONTRASTE INTELIGENTE
 - [ ] OBJETIVO

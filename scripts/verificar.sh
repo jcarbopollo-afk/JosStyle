@@ -110,6 +110,12 @@ else
   fallo "Fallan pruebas del recomendador de apariencia"; grep '✗' /tmp/jc_reco.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-presets-apariencia.mjs >/tmp/jc_pre.log 2>&1; then
+  ok "Presets de apariencia (FO F8) — $(grep -c '✓' /tmp/jc_pre.log) comprobaciones"
+else
+  fallo "Fallan pruebas de los presets"; grep '✗' /tmp/jc_pre.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   User, Download, Upload, RotateCcw, Undo2, Lock, LogOut, ArrowLeft, Search, ChevronRight,
   Palette, LayoutGrid, SlidersHorizontal, Bell, ShieldCheck,
-  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles,
+  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star,
 } from 'lucide-react';
 import pkg from '../../package.json';
 import {
@@ -17,7 +17,7 @@ import {
 import { calcularEdad, shade, hexToRgba, uid, todayISO } from '../lib/helpers';
 import { permisoNotificaciones, pedirPermisoNotificaciones } from '../lib/notificaciones';
 import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
-import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton } from '../components/ui';
+import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton, BotonBorrar } from '../components/ui';
 import PersonalizationView from './PersonalizationView';
 import PapeleraView from './PapeleraView';
 import {
@@ -30,6 +30,10 @@ import {
 import { normalizarTema, restablecerColores, tieneColoresPersonalizados } from '../lib/temaColores';
 import { analizarImagen, analisisValidoPara, sellarAnalisis, describirColor } from '../lib/detectorColores';
 import { generarPropuestas, aplicarPropuesta, guardarApariencia } from '../lib/recomendadorApariencia';
+import {
+  MAX_PRESETS, crearPreset, aplicarPreset, listaPresets, presetActivo,
+  duplicarPreset, actualizarPreset, alternarFavorito, esEditable,
+} from '../lib/presetsApariencia';
 import ColorPicker from '../components/ColorPicker';
 import TemaBuilder from '../components/TemaBuilder';
 import GestionTemas from '../components/GestionTemas';
@@ -763,6 +767,140 @@ export function BloqueRecomendado({ analisis, tema, accent, fondo, modoOscuro, o
   );
 }
 
+/* ---------- FO Fase 8 — apariencias guardadas ----------
+   Un preset es la apariencia COMPLETA: tema, acento, colores, transparencias,
+   sombras Y FONDO, fotografía incluida (apartado 2). Guardar solo los colores,
+   que es lo que hacía el sistema anterior, deja media configuración.
+
+   Los oficiales van al final de la lista y no al principio: son cuatro y siempre
+   están, así que arriba ocuparían la primera pantalla entera y empujarían fuera
+   lo que Josué se ha molestado en crear. */
+export function BloquePresets({ presets, apariencia, accent, temaPersonalizado, onGuardar, onCambiarPresets, onAplicar }) {
+  const [nombre, setNombre] = useState('');
+  const [creando, setCreando] = useState(false);
+
+  const actual = { tema: apariencia.tema, accent, temaPersonalizado, fondo: apariencia.fondo };
+  const lista = useMemo(() => listaPresets(presets), [presets]);
+  const activo = useMemo(() => presetActivo(lista, actual), [lista, apariencia, accent, temaPersonalizado]);
+
+  const guardar = () => {
+    onGuardar(crearPreset({ nombre, ...actual }));
+    setNombre('');
+    setCreando(false);
+  };
+
+  const sustituir = (id, nuevo) => onCambiarPresets((presets || []).map((p) => (p.id === id ? nuevo : p)));
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Apariencias guardadas</p>
+        {(presets || []).length < MAX_PRESETS && !creando && (
+          <button onClick={() => setCreando(true)} className="text-xs font-semibold" style={{ color: accent }}>
+            Guardar la de ahora
+          </button>
+        )}
+      </div>
+      <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
+        Guarda tus colores y tu fondo juntos, y cambia entre ellos de un toque.
+      </p>
+
+      {creando && (
+        <div className="mb-3">
+          <Field label="Nombre">
+            <TextInput value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Mi estilo, Gym, Verano…" />
+          </Field>
+          <div className="flex gap-2 mt-2">
+            <PrimaryButton accent={accent} onClick={guardar}>Guardar</PrimaryButton>
+            <div style={{ width: 110, flexShrink: 0 }}>
+              <GhostBtn onClick={() => { setCreando(false); setNombre(''); }}>Cancelar</GhostBtn>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {lista.map((p) => {
+          const esActivo = activo && activo.id === p.id;
+          const editable = esEditable(p);
+          return (
+            <div
+              key={p.id}
+              className="rounded-2xl p-3"
+              style={{
+                background: esActivo ? hexToRgba(accent, 0.1) : COLORS.surface2,
+                border: `1px solid ${esActivo ? accent : COLORS.border}`,
+              }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>
+                    {esActivo ? '✓ ' : ''}{p.nombre}
+                    {!editable && <span className="text-[10px] ml-1.5" style={{ color: COLORS.textMuted }}>incluida</span>}
+                  </p>
+                  <p className="text-[11px] truncate" style={{ color: COLORS.textMuted }}>
+                    {p.descripcion || describirFondo(p.fondo)}
+                  </p>
+                </div>
+                {/* Apartado 5 — la miniatura, para reconocerlo de un vistazo. */}
+                <MiniaturaPreset preset={p} />
+              </div>
+
+              <div className="flex items-center gap-1 mt-2">
+                {!esActivo && (
+                  <button onClick={() => onAplicar(aplicarPreset(p, { accentActual: accent }))}
+                    className="text-xs font-semibold px-2.5 py-1.5 rounded-lg"
+                    style={{ background: accent, color: COLORS.textOnAccent }}>
+                    Usar
+                  </button>
+                )}
+                {/* Apartado 14 — un oficial se personaliza duplicándolo, no
+                    editándolo: así el original nunca se pierde. */}
+                <button onClick={() => onGuardar(duplicarPreset(p))} className="p-1.5 rounded-lg" aria-label={`Duplicar ${p.nombre}`}>
+                  <Copy size={13} style={{ color: COLORS.textMuted }} />
+                </button>
+                {editable && (
+                  <>
+                    <button onClick={() => sustituir(p.id, actualizarPreset(p, actual))} className="text-[11px] font-semibold px-2 py-1.5" style={{ color: accent }}>
+                      Actualizar
+                    </button>
+                    <button onClick={() => sustituir(p.id, alternarFavorito(p))} className="p-1.5 rounded-lg" aria-pressed={!!p.favorito} aria-label={p.favorito ? 'Quitar de favoritas' : 'Marcar favorita'}>
+                      <Star size={13} style={p.favorito ? { color: accent, fill: accent } : { color: COLORS.textMuted }} />
+                    </button>
+                    <div className="ml-auto">
+                      <BotonBorrar onClick={() => onCambiarPresets((presets || []).filter((x) => x.id !== p.id))} label={`Eliminar ${p.nombre}`} />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+/* La miniatura de un preset: sus colores y su fondo, en pequeño. Se pinta con las
+   mismas funciones que pintan el fondo de verdad — una imitación acabaría
+   divergiendo y enseñaría algo que no es lo que se va a aplicar. */
+function MiniaturaPreset({ preset }) {
+  const resuelto = resolverFondo(preset.fondo, { urlFoto: null });
+  const estilo = estilosDeFondo(resuelto, COLORS);
+  return (
+    <span
+      className="rounded-lg overflow-hidden relative flex-shrink-0"
+      style={{ width: 44, height: 30, background: COLORS.bg, border: `1px solid ${COLORS.border}` }}
+      aria-hidden="true"
+    >
+      {estilo && <span className="absolute inset-0" style={estilo} />}
+      {preset.accent && (
+        <span className="absolute rounded-full" style={{ width: 10, height: 10, bottom: 4, right: 4, background: preset.accent }} />
+      )}
+    </span>
+  );
+}
+
 export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFondo, analisisFoto, onAnalisisFoto }) {
   const [abierto, setAbierto] = useState(false);
   const disponibles = TIPOS_FONDO.filter((t) => t.implementado);
@@ -940,6 +1078,7 @@ export default function SettingsView({
   onGuardarTemaComoNuevo, onRenombrarTemaGuardado, onDuplicarTemaGuardado,
   onEliminarTemaGuardado, onImportarTemaGuardado,
   apariencia, onUpdateApariencia, onSubirFotoFondo, urlFotoFondo,
+  onGuardarPreset, onCambiarPresets, onAplicarPreset,
   notificaciones, onUpdateNotificaciones,
   seguridad, onUpdateSeguridad, userId,
   // Fase de Seguridad Centralizada — catálogo de zonas protegibles (App.jsx, a partir de MORE_NAV
@@ -1388,6 +1527,16 @@ export default function SettingsView({
               fondoActivo={!!apariencia.fondo?.activo}
               accent={accent}
               onCambiar={onUpdateTemaPersonalizado}
+            />
+
+            <BloquePresets
+              presets={temasGuardados}
+              apariencia={apariencia}
+              accent={accent}
+              temaPersonalizado={temaPersonalizado}
+              onGuardar={onGuardarPreset}
+              onCambiarPresets={onCambiarPresets}
+              onAplicar={onAplicarPreset}
             />
 
             {/* FO Fase 6 — solo aparece si hay una foto analizada: sin ella no hay

@@ -1,5 +1,43 @@
 # CHANGELOG.md
 
+## Entrega 2 · FO Fase 8 — Presets de apariencia (v1.43.0)
+
+Guardar tus colores **y tu fondo juntos**, y cambiar entre ellos de un toque.
+
+### Un preset es la apariencia completa
+Tema, acento, colores, transparencias, sombras, bordes, overlay **y la fotografía con sus
+ajustes**. El sistema anterior (fase V4) guardaba solo los colores: media configuración. Aquí se
+reutiliza ese mismo sistema —misma clave de Supabase, mismo estado, mismo límite— y lo único que
+cambia es qué se guarda dentro.
+
+### "Activo" dice la verdad
+No se compara por id, porque el id no dice nada: puedes aplicar un preset y luego cambiar un color
+a mano, y entonces **ya no estás usando ese preset** aunque fuera el último que tocaste. Se compara
+una huella de lo que se ve — y de ahí quedan fuera el historial de encuadres y el análisis de
+colores, porque no se ven.
+
+### Los incluidos no se tocan, se duplican
+JosStyle, Profundo, Claro y Minimal. Intentar actualizar uno **no hace nada** en vez de fallar, y
+duplicarlo da un preset tuyo, editable: es la vía que da el propio apartado 14 para personalizarlos
+sin perder el original.
+
+Ninguno trae fotografía: una foto es de quien la hizo, y un preset de fábrica con una imagen de
+archivo sería contenido inventado.
+
+Y `accent: null` en ellos significa **"no toques el acento"**, no "ponlo a null": aplicar "JosStyle"
+devuelve la app a su estado de fábrica **sin imponerte un color que no elegiste**.
+
+### Un fallo que habría aparecido seguro
+Aplicar un preset cambia cuatro cosas a la vez, y encadenar los tres setters existentes **habría
+perdido el fondo o el tema sin dar ningún error**: cada uno guarda el paquete de ajustes entero
+leyendo el resto del closure, y dos llamadas seguidas en la misma función no ven el `setState` de
+la anterior. Lo evitó un aviso que la fase V4 había dejado escrito justo al lado.
+
+### Verificación
+**1277 comprobaciones en verde** (antes 1209): 60 de los presets y 112 casos de renderizado.
+
+---
+
 ## Entrega 2 · FO Fase 7 — Personalización manual avanzada (v1.42.0)
 
 Cierra un hueco que las fases anteriores habían abierto: **FO F4 metió en el modelo el texto

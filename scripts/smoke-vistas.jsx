@@ -31,7 +31,7 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
-import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado } from '../src/views/SettingsView.jsx';
+import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
@@ -242,6 +242,27 @@ const CASOS = [
   //  arnés trata un render vacío como fallo; la aserción vive en
   //  `test-recomendador-apariencia.mjs`, que comprueba que `generarPropuestas`
   //  devuelve `posible: false`, que es justo lo que hace que no se pinte.)
+  // FO Fase 8 — presets: uno propio favorito, uno propio normal, y los oficiales
+  // que siempre están. Con la apariencia actual igual a la del primero, para que
+  // se pinte también el estado "activo".
+  ['SettingsView · Presets', BloquePresets, () => {
+    const mio = {
+      id: 'p1', nombre: 'Mi estilo', oficial: false, favorito: true, tema: 'oscuro',
+      accent: '#C77C3A', temaPersonalizado: { ...DEFAULT_TEMA_PERSONALIZADO, superficieAlfa: 70 },
+      fondo: { ...DEFAULT_APARIENCIA.fondo, tipo: 'predeterminado', activo: true, incluido: 'profundidad' },
+    };
+    return {
+      presets: [mio, { ...mio, id: 'p2', nombre: 'Gym', favorito: false }],
+      apariencia: { ...DEFAULT_APARIENCIA, tema: 'oscuro', fondo: mio.fondo },
+      accent: '#C77C3A', temaPersonalizado: mio.temaPersonalizado,
+      onGuardar: noop, onCambiarPresets: noop, onAplicar: noop,
+    };
+  }],
+  // Y sin ninguno propio: solo los oficiales, que nunca dejan la lista vacía.
+  ['SettingsView · Presets solo oficiales', BloquePresets, () => ({
+    presets: [], apariencia: DEFAULT_APARIENCIA, accent, temaPersonalizado: DEFAULT_TEMA_PERSONALIZADO,
+    onGuardar: noop, onCambiarPresets: noop, onAplicar: noop,
+  })],
   // FO Fase 3 — el editor, con una foto ya muy ajustada: las tres capas (foto, luz
   // y overlay) tienen que pintarse a la vez sin romperse.
   ['SettingsView · Editor de foto', EditorFoto, () => ({

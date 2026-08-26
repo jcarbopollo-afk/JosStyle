@@ -770,6 +770,45 @@ export default function App() {
     aplicarConjuntoTema(oficial);
   };
 
+  // ---------- FO Fase 8 — presets de apariencia ----------
+  // Se reutiliza `temasGuardados` (fase V4) tal cual: misma clave de Supabase, mismo
+  // estado, mismo límite. Lo único que cambia es QUÉ se guarda dentro — ahora también
+  // el fondo (apartado 2). Crear un segundo almacén de presets al lado habría dejado
+  // dos listas de apariencias guardadas en Ajustes, que es exactamente lo que la regla
+  // de "no duplicar sistemas" evita.
+  const guardarPreset = (preset) => {
+    if (!preset || temasGuardados.length >= MAX_TEMAS_GUARDADOS) return;
+    const siguiente = [...temasGuardados, preset];
+    setTemasGuardados(siguiente);
+    saveData(uidUser, 'temasGuardados', siguiente);
+  };
+  const cambiarPresets = (lista) => {
+    setTemasGuardados(lista);
+    saveData(uidUser, 'temasGuardados', lista);
+  };
+  // Aplicar toca CUATRO cosas a la vez: tema, acento, colores y fondo.
+  //
+  // Y por eso NO se encadenan `updateAccent` + `updateTemaPersonalizado` +
+  // `updateApariencia`: es exactamente el fallo que documenta `aplicarConjuntoTema`
+  // justo aquí arriba. Cada una guarda el paquete 'ajustes' entero leyendo el resto
+  // de campos del closure, y dos llamadas seguidas en la misma función no ven el
+  // `setState` de la anterior (React no re-renderiza a mitad de una función), así
+  // que la segunda pisaría a la primera con un valor viejo. Al aplicar un preset se
+  // habrían perdido el fondo o el tema sin dar ningún error.
+  //
+  // Se construye el payload a mano con los valores nuevos explícitos, igual que
+  // hace `aplicarConjuntoTema`.
+  const aplicarPresetCompleto = async (cambios) => {
+    if (!cambios) return;
+    const accentFinal = cambios.accent || accent;
+    const aparienciaSiguiente = { ...apariencia, tema: cambios.tema, fondo: cambios.fondo };
+    setAccent(accentFinal);
+    setApariencia(aparienciaSiguiente);
+    setTemaPersonalizado(cambios.temaPersonalizado);
+    await saveData(uidUser, 'ajustes', { accent: accentFinal, pin: null, apariencia: aparienciaSiguiente, seguridad });
+    await saveData(uidUser, 'temaPersonalizado', cambios.temaPersonalizado);
+  };
+
   const guardarTemaComoNuevo = (nombre) => {
     if (temasGuardados.length >= MAX_TEMAS_GUARDADOS) return false;
     const nuevo = {
@@ -1686,6 +1725,7 @@ export default function App() {
             onImportarTemaGuardado={importarTemaGuardado}
             apariencia={apariencia} onUpdateApariencia={updateApariencia}
             onSubirFotoFondo={subirFotoFondo} urlFotoFondo={urlFotoFondo}
+            onGuardarPreset={guardarPreset} onCambiarPresets={cambiarPresets} onAplicarPreset={aplicarPresetCompleto}
             notificaciones={notificaciones} onUpdateNotificaciones={updateNotificaciones}
             seguridad={seguridad} onUpdateSeguridad={updateSeguridad} userId={uidUser}
             areasProtegibles={AREAS_PROTEGIBLES}
