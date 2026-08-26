@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 13 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
-> y FO 1/12 (hasta v1.36.0). Quedan **93**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 14 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
+> y FO 2/12 (hasta v1.37.0). Quedan **92**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -2038,27 +2038,67 @@ Ahora su bloque de fondo sí, con cuatro escenarios — incluido **un fondo guar
 anterior, sin los campos nuevos**, que es exactamente lo que devuelve `loadData` y lo que la regla
 5 obliga a soportar.
 
-#### FO · Fase 2/12 — GALERÍA Y SELECCIÓN DE FOTOGRAFÍAS
-- [ ] OBJETIVO
-- [ ] ACCESO A LA GALERÍA
-- [ ] SELECCIÓN DE IMAGEN
-- [ ] VISTA PREVIA
-- [ ] ADAPTACIÓN A LA PANTALLA
-- [ ] ENCUADRE INICIAL
-- [ ] FOTOGRAFÍA ACTIVA
-- [ ] CAMBIAR DE FOTOGRAFÍA
-- [ ] ELIMINAR FONDO FOTOGRÁFICO
-- [ ] ESTADO SIN FOTOGRAFÍA
-- [ ] INFORMACIÓN DE LA FOTO
-- [ ] OPTIMIZACIÓN INICIAL
-- [ ] PERSISTENCIA
-- [ ] CAMBIO ENTRE TIPOS DE FONDO
-- [ ] EXPERIENCIA DE USUARIO
-- [ ] TRANSICIÓN VISUAL
-- [ ] COMPATIBILIDAD CON EL SISTEMA ACTUAL
-- [ ] PREPARACIÓN PARA LA FASE 3
-- [ ] CRITERIOS DE FINALIZACIÓN
-- [ ] REGLA PARA CLAUDE
+#### FO · Fase 2/12 — GALERÍA Y SELECCIÓN DE FOTOGRAFÍAS ✅ COMPLETADA (v1.37.0)
+
+- [x] **1 · Objetivo** — el flujo completo: Ajustes → Apariencia → Fondo → Foto → galería →
+      vista previa → aplicar.
+- [x] **2 · Acceso a la galería** — `<input type="file" accept="image/*">`, que en iPhone abre
+      la galería nativa y en escritorio el selector del sistema. **No pide ningún permiso**: el
+      navegador solo entrega el archivo que el usuario elige.
+- [x] **3 · Selección** — la foto **NO se aplica al elegirla**. Primero la vista previa, después
+      "Aplicar". Y la subida a Storage ocurre al APLICAR, no al elegir: si subiera al elegir,
+      cada foto que Josué mirara y descartara dejaría un archivo huérfano en su bucket para
+      siempre. La previa se hace con `URL.createObjectURL`, local e instantánea.
+- [x] **4 · Vista previa** — la foto **dentro de una representación de JosStyle**, con una
+      tarjeta y su texto secundario encima. Un rectángulo con la foto solo enseña la foto; lo
+      que hay que poder juzgar es si el contenido se sigue leyendo.
+- [x] **5 · Adaptación a la pantalla** — `cover` siempre, así que **la imagen nunca se deforma**.
+      Verticales, horizontales, cuadradas y panorámicas, deducidas de las medidas reales.
+- [x] **6 · Encuadre inicial** — no es "centrar y ya": una foto muy vertical se ancla **arriba**,
+      que es donde está el cielo o el rostro en la inmensa mayoría de fotos de móvil, en vez de
+      cortar por la cintura. El resto se centran.
+- [x] **7 · Fotografía activa** — al aplicar, el tipo pasa a `foto` y queda registrada cuál es.
+- [x] **8 · Cambiar de fotografía** — sin tener que quitar la anterior primero.
+- [x] **9 · Quitar foto** — vuelve al fondo anterior (el color o el degradado que hubiera, y si
+      no, al fondo normal), y **la fotografía no se elimina**: se conserva en el modelo para la
+      recuperación de la Fase 12. La interfaz lo dice.
+- [x] **10 · Estado sin fotografía** — con el texto de la especificación y un botón. Ni un hueco
+      ni un elemento roto.
+- [x] **11 · Información de la foto** — id, ruta, origen, formato, ancho, alto, proporción, peso
+      y fecha. La proporción **se calcula**, no se pide.
+- [x] **12 · Optimización inicial** — se rechaza lo que no es imagen y lo que pesa más de 12 MB,
+      diciendo cuánto pesa y cuál es el máximo. Un archivo sin `type` declarado **no** se rechaza
+      por formato: algunos navegadores no lo rellenan, y rechazar una foto válida por eso es peor
+      que aceptar una rara. La optimización avanzada es de la Fase 11.
+- [x] **13 · Persistencia** — el `saveData` de la Fase 1. Hay prueba que simula el viaje entero:
+      guardar → JSON → cargar → normalizar.
+- [x] **14 · Cambio entre tipos** — y lo que importa: **elegir una foto NO borra el color ni el
+      degradado** que hubiera configurados. Comprobado con prueba propia.
+- [x] **15 · Experiencia** — los cinco tipos en una fila, con el activo marcado.
+- [x] **16 · Transición visual** — mientras la URL se firma, `resolverFondo` baja al fondo
+      incluido, así que **nunca se ve la pantalla sin fondo** mientras carga la imagen.
+- [x] **17 · Compatibilidad** — 941 comprobaciones en verde; ninguna pantalla existente tocada.
+- [x] **18 · Preparado para la Fase 3** — zoom, posición, encuadre, desenfoque, oscurecimiento y
+      overlay ya existen en el modelo y en `estilosDeFondo`; la Fase 3 les pone controles.
+- [x] **19 · Criterios de finalización** — los catorce.
+- [x] **20 · Regla para Claude** — no es un selector de archivos: la foto entra en el sistema de
+      la Fase 1, con su encuadre, su validación, su persistencia y su cadena de prioridad.
+
+**Bucket nuevo `fondos` en `supabase/schema.sql`**, con las tres políticas RLS por carpeta de
+usuario, mismo patrón que `armario`. Va en su propio bucket y no dentro de `armario` a propósito:
+son cosas con ciclos de vida distintos (una prenda se borra con la prenda; el fondo se sustituye
+al elegir otra foto), y mezclarlas obligaría a distinguirlas por convenio de nombre de archivo,
+que es el tipo de acuerdo implícito que se rompe solo.
+⚠️ **Josué tiene que ejecutar ese bloque en el SQL Editor.** Hasta entonces funciona todo menos
+la fotografía — color, degradado e incluidos no tocan Storage.
+
+**Dos detalles que no son evidentes y estaban mal si no se piensan:**
+
+1. **`URL.createObjectURL` sin `revokeObjectURL` es memoria retenida** hasta recargar la página.
+   Se suelta al desmontar y cada vez que se sustituye por otra foto.
+2. **Una firma en vuelo puede pisar a la siguiente.** Si Josué cambia de foto mientras la URL
+   anterior se estaba firmando, la respuesta lenta de la vieja llegaría después y sobrescribiría
+   a la nueva. El efecto lleva una bandera `cancelado` que descarta el resultado obsoleto.
 
 #### FO · Fase 3/12 — EDITOR DE FOTOGRAFÍAS
 - [ ] OBJETIVO

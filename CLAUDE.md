@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.36.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.37.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI** y **AR** están terminados y **FO** va por 1/12, quedan 93) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI** y **AR** están terminados y **FO** va por 2/12, quedan 92) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,8 +107,8 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 805 pruebas unitarias con Node, 5 de auditoría, 72 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **882 comprobaciones**.
+Vite, 856 pruebas unitarias con Node, 5 de auditoría, 80 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **941 comprobaciones**.
 
 Eso ya ha encontrado **veinticinco bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), ocho módulos que dejaban crear y no borrar,
@@ -133,25 +133,25 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase: FO · Fase 2/12 — Galería y selección de fotografías.** La arquitectura ya está
-(`src/lib/fondos.js`, v1.36.0); esta fase la llena.
+**Siguiente fase: FO · Fase 3/12 — Editor de fotografías.** La arquitectura y la foto ya están
+(v1.37.0); esta fase les pone controles.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_FONDOS_Y_FOTOGRAFIAS.md`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
 Tres avisos para cuando toque:
 
-- **El modelo ya la contempla.** `fondo.foto` declara id, ruta, origen, ancho, alto y proporción,
-  y `resolverFondo` ya sabe qué hacer cuando la foto no está: baja al fondo incluido en vez de
-  dejar un hueco. No hay que añadir campos ni rehacer nada.
-- **Ya existe subida a Storage con URL firmada** (Salud, Calistenia, Armario). Se reutiliza el
-  patrón; no se inventa otro. El bucket nuevo va en `supabase/schema.sql`, con su RLS por carpeta
-  de usuario, igual que el de `armario`.
-- **El tipo `foto` está marcado `implementado: false`** en `TIPOS_FONDO` y por eso Ajustes no lo
-  ofrece todavía. Esta fase le cambia esa marca; es el interruptor pensado para ello.
+- **Zoom, posición, desenfoque, opacidad y velo YA existen** en el modelo (`fondo.escala`,
+  `posicion`, `desenfoque`, `opacidad`, `velo`) y `estilosDeFondo` ya los pinta. La Fase 3 les
+  pone controles y un encuadre arrastrable; no hay que añadir campos.
+- **`cover` no es negociable.** El apartado 5 de la Fase 2 dice que la imagen nunca debe
+  deformarse. Cualquier control de encuadre tiene que respetar la proporción.
+- **El velo va en su propia capa**, y tiene que seguir así: si se desenfocara con la foto
+  dejaría de proteger la lectura, que es para lo que existe.
 
-⚠️ **Recordatorio para Josué, si aún no lo ha hecho:** ejecutar el bloque del bucket `armario` de
-`supabase/schema.sql` en el SQL Editor de Supabase. Sin eso, todo funciona menos subir fotos.
+⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
+de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin
+ellos todo funciona menos subir fotos de prenda y fotos de fondo.
 
 El bloque **R0** ya está completo (v1.23.0) y **C-11** —el modelo de IA obsoleto— está resuelto:
 `api/ask-ai.js` lee `ANTHROPIC_MODEL` y por defecto usa un modelo vigente.

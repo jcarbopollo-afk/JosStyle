@@ -44,7 +44,7 @@ export const TIPOS_FONDO = [
   { id: 'ninguno', label: 'Sin fondo', descripcion: 'El fondo normal de JosStyle.', implementado: true },
   { id: 'color', label: 'Color sólido', descripcion: 'Un color liso a tu gusto.', implementado: true },
   { id: 'degradado', label: 'Degradado', descripcion: 'Dos colores fundidos.', implementado: true },
-  { id: 'foto', label: 'Fotografía', descripcion: 'Una foto tuya.', implementado: false, fase: 2 },
+  { id: 'foto', label: 'Fotografía', descripcion: 'Una foto tuya.', implementado: true },
   { id: 'predeterminado', label: 'Incluido', descripcion: 'Uno de los fondos de JosStyle.', implementado: true },
 ];
 
@@ -97,14 +97,17 @@ export const DEFAULT_FONDO = {
   color: '',                // hex, cuando tipo === 'color'
   degradado: { de: '', a: '', angulo: 160 },
 
-  // --- La fotografía (apartado 7). Se llena en la Fase 2; hoy nace vacía. ---
+  // --- La fotografía (apartado 7 de la Fase 1, apartado 11 de la Fase 2) ---
   foto: {
     id: '',                 // identificador de la fotografía
     path: '',               // ruta en Storage, como las fotos de Salud y Armario
-    origen: '',             // 'galeria' | 'camara' | 'incluido'
+    origen: '',             // 'galeria' | 'camara'
+    formato: '',            // tipo MIME, tal cual lo declara el archivo
     ancho: 0,
     alto: 0,
-    proporcion: 0,          // ancho/alto, para saber si es vertical, horizontal o cuadrada
+    proporcion: 0,          // ancho/alto: <1 vertical, =1 cuadrada, >1 horizontal
+    peso: 0,                // bytes
+    anadidaEn: '',          // ISO, para poder ordenar y para la Fase 12
   },
 
   // --- Cómo se muestra (apartado 4) ---
@@ -352,6 +355,134 @@ export function tieneFondoGuardado(fondo) {
   const f = normalizarFondo(fondo);
   return !!(f.color || f.foto.path || (f.degradado.de && f.degradado.a));
 }
+
+/* ===========================================================================
+   FO Fase 2 — LA FOTOGRAFÍA
+   =========================================================================== */
+
+// Apartado 5: verticales, horizontales, cuadradas y panorámicas. La proporción
+// no es una etiqueta que se guarde: se deduce de las medidas reales, que es lo
+// único que no puede mentir.
+export const ORIENTACIONES_FOTO = [
+  { id: 'vertical', label: 'Vertical' },
+  { id: 'cuadrada', label: 'Cuadrada' },
+  { id: 'horizontal', label: 'Horizontal' },
+  { id: 'panoramica', label: 'Panorámica' },
+];
+
+export function orientacionDeFoto(foto) {
+  const p = Number(foto?.proporcion);
+  if (!Number.isFinite(p) || p <= 0) return null;   // sin medidas no se inventa una
+  if (p >= 2) return 'panoramica';
+  if (p > 1.05) return 'horizontal';
+  if (p < 0.95) return 'vertical';
+  return 'cuadrada';
+}
+
+/**
+ * Los datos de una fotografía recién elegida (apartado 11).
+ *
+ * `ancho`/`alto` los mide quien llama con la imagen ya cargada — aquí no se
+ * toca el DOM para que el motor siga siendo puro y probable con Node.
+ */
+export function datosDeFoto({ path, origen = 'galeria', formato = '', ancho = 0, alto = 0, peso = 0 } = {}) {
+  const a = Number(ancho) || 0;
+  const h = Number(alto) || 0;
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    path: path || '',
+    origen,
+    formato,
+    ancho: a,
+    alto: h,
+    proporcion: h > 0 ? Number((a / h).toFixed(4)) : 0,
+    peso: Number(peso) || 0,
+    anadidaEn: new Date().toISOString(),
+  };
+}
+
+/**
+ * Apartado 6 — el encuadre inicial razonable, calculado a partir de la foto.
+ *
+ * No es "centrar y ya": una foto panorámica centrada en una pantalla de móvil
+ * (muy vertical) deja fuera casi todo, y una foto muy vertical centrada corta
+ * exactamente por donde suele estar lo importante. Así que:
+ *
+ *   · panorámica → centrada, porque el sujeto suele estar en medio y a lo ancho;
+ *   · muy vertical → anclada ARRIBA, que es donde está el cielo/el rostro en la
+ *     inmensa mayoría de fotos de móvil, en vez de cortar por la cintura;
+ *   · el resto → centrada.
+ *
+ * `cover` siempre: el apartado 5 dice que la imagen NUNCA debe deformarse.
+ * Por eso la escala inicial es 100, que en `estilosDeFondo` significa `cover`.
+ */
+export function encuadreInicial(foto) {
+  const orientacion = orientacionDeFoto(foto);
+  return {
+    posicion: orientacion === 'vertical' ? 'arriba' : 'centro',
+    escala: 100,
+  };
+}
+
+/**
+ * Apartado 12 — no cargar una imagen gigantesca si no hace falta.
+ *
+ * Esto NO es la optimización avanzada (esa es la Fase 11): es la comprobación
+ * mínima honesta para no dejar que un archivo de 40 MB entre en el sistema y
+ * bloquee un iPhone. Devuelve el motivo en texto para poder decírselo al
+ * usuario en vez de fallar en silencio.
+ */
+export const MAX_PESO_FONDO = 12 * 1024 * 1024;   // 12 MB
+export const FORMATOS_FONDO = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+
+export function validarFotoFondo(file) {
+  if (!file) return { ok: false, motivo: 'No se ha elegido ninguna imagen.' };
+  // El tipo puede venir vacío en algunos navegadores; entonces no se rechaza por
+  // formato, porque rechazar una foto válida es peor que aceptar una rara.
+  if (file.type && !FORMATOS_FONDO.includes(file.type)) {
+    return { ok: false, motivo: 'Ese archivo no es una imagen que pueda usar de fondo.' };
+  }
+  if (file.size > MAX_PESO_FONDO) {
+    const mb = (file.size / 1024 / 1024).toFixed(1);
+    return { ok: false, motivo: `La imagen pesa ${mb} MB y el máximo son 12 MB. Prueba con otra.` };
+  }
+  return { ok: true, motivo: null };
+}
+
+/**
+ * Apartado 7 — aplicar la fotografía. Es `seleccionarFondo('foto')` más el
+ * encuadre inicial del apartado 6, en una sola operación para que no se pueda
+ * aplicar una foto sin encuadrar.
+ *
+ * Apartado 14, y es la parte que importa: **NO borra el color ni el degradado**.
+ * Elegir una foto no puede tirar la configuración de color que Josué tenía, y
+ * `seleccionarFondo` ya conserva todo lo que no se le pide cambiar.
+ */
+export function aplicarFoto(fondo, foto) {
+  const datos = { ...DEFAULT_FONDO.foto, ...(foto || {}) };
+  return seleccionarFondo(fondo, 'foto', { foto: datos, ...encuadreInicial(datos) });
+}
+
+/**
+ * Apartado 9 — "Quitar foto".
+ *
+ * Vuelve al fondo anterior según la lógica de la Fase 1, y **la fotografía no
+ * se elimina definitivamente**: se conserva en el modelo por si la Fase 12
+ * implementa recuperación, exactamente como pide el apartado. Lo que cambia es
+ * qué está activo.
+ *
+ * Si había un color o un degradado configurados, se vuelve a ellos —eso es "el
+ * fondo anterior"—; si no había nada, al fondo normal de JosStyle.
+ */
+export function quitarFoto(fondo) {
+  const f = normalizarFondo(fondo);
+  if (f.color) return seleccionarFondo(f, 'color');
+  if (f.degradado.de && f.degradado.a) return seleccionarFondo(f, 'degradado');
+  return restablecerFondo(f);
+}
+
+/** ¿Hay una fotografía elegida, esté activa o no? */
+export const tieneFoto = (fondo) => !!normalizarFondo(fondo).foto.path;
 
 /** Resumen de una línea para Ajustes. Nunca inventa: si no hay fondo, lo dice. */
 export function describirFondo(fondo) {

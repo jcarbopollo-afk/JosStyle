@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt } from 'lucide-react';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
-import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto } from './lib/supabase';
+import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, hexToRgba } from './lib/helpers';
 import { extractPdfText } from './lib/pdfText';
@@ -10,7 +10,7 @@ import { verificarBiometria } from './lib/biometria';
 import { crearPinHash, verificarPin } from './lib/pin';
 import { calcularResumenModulo } from './lib/resumenesHub';
 import { eventosDerivados } from './lib/calendarioIntegracion';
-import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo } from './lib/fondos';
+import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, tieneFoto } from './lib/fondos';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal } from './components/ui';
 import HubView from './views/HubView';
 import Auth from './components/Auth';
@@ -171,6 +171,9 @@ export default function App() {
   // Fase A3 — Apariencia avanzada: tema (claro/oscuro/automático), tamaño de texto, densidad,
   // radios de borde y animaciones. `temaSistemaOscuro` solo se usa para resolver "automático".
   const [apariencia, setApariencia] = useState(DEFAULT_APARIENCIA);
+  // FO Fase 2 — la URL firmada de la foto de fondo. Vive en estado y no se calcula al vuelo
+  // porque firmar es una llamada de red: hacerlo en cada render sería una petición por render.
+  const [urlFotoFondo, setUrlFotoFondo] = useState(null);
   const [temaSistemaOscuro, setTemaSistemaOscuro] = useState(
     () => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : true)
   );
@@ -433,11 +436,25 @@ export default function App() {
   // previous render"), aunque esto no sea un Hook: mantener junto todo lo que decide la
   // apariencia evita que la pantalla de carga y la de login queden fuera del sistema.
   //
-  // La URL firmada de la fotografía llega en la Fase 2. Hoy siempre es null, y `resolverFondo`
-  // ya sabe qué hacer con eso: baja al fondo incluido en vez de dejar un hueco (apartado 6).
-  const fondoResuelto = resolverFondo(apariencia.fondo, { urlFoto: null });
+  // FO Fase 2 — la URL firmada de la fotografía. Mientras se está firmando es null, y
+  // `resolverFondo` ya sabe qué hacer con eso: baja al fondo incluido en vez de dejar un
+  // hueco (apartado 6). Eso además da la transición suave que pide el apartado 16 — nunca
+  // se ve la pantalla sin fondo mientras carga la imagen.
+  const fondoResuelto = resolverFondo(apariencia.fondo, { urlFoto: urlFotoFondo });
   const estiloFondo = estilosDeFondo(fondoResuelto, COLORS);
   const estiloVelo = estilosDeVelo(fondoResuelto, COLORS);
+
+  // Firma la foto de fondo cuando cambia la ruta, y solo entonces. La URL dura una hora,
+  // igual que las de Salud y Armario. `cancelado` evita escribir el resultado de una firma
+  // que ya no interesa si Josué cambia de foto mientras la anterior seguía en vuelo — sin
+  // eso, la respuesta lenta de la foto vieja pisaría a la nueva.
+  const rutaFotoFondo = apariencia.fondo?.foto?.path || '';
+  useEffect(() => {
+    if (!rutaFotoFondo) { setUrlFotoFondo(null); return undefined; }
+    let cancelado = false;
+    getSignedFondoUrl(rutaFotoFondo).then((url) => { if (!cancelado) setUrlFotoFondo(url); });
+    return () => { cancelado = true; };
+  }, [rutaFotoFondo]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -976,6 +993,8 @@ export default function App() {
     eliminarConPapelera('armario', 'prendas', id);
   };
   const subirFotoPrenda = (file) => uploadPrendaFoto(uidUser, file);
+  // FO Fase 2 — la foto de fondo, al bucket 'fondos'. Mismo patrón que todo lo demás.
+  const subirFotoFondo = (file) => uploadFondoFoto(uidUser, file);
 
   // ---------- AR Fase 2 — Outfits ----------
   // Un outfit REFERENCIA prendas (`prendaIds`), nunca las copia: si Josué le cambia el
@@ -1662,6 +1681,7 @@ export default function App() {
             onEliminarTemaGuardado={eliminarTemaGuardado}
             onImportarTemaGuardado={importarTemaGuardado}
             apariencia={apariencia} onUpdateApariencia={updateApariencia}
+            onSubirFotoFondo={subirFotoFondo} urlFotoFondo={urlFotoFondo}
             notificaciones={notificaciones} onUpdateNotificaciones={updateNotificaciones}
             seguridad={seguridad} onUpdateSeguridad={updateSeguridad} userId={uidUser}
             areasProtegibles={AREAS_PROTEGIBLES}

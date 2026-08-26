@@ -174,7 +174,20 @@ const CASOS = [
   // FO Fase 1 — el bloque de fondo de Ajustes. Se renderiza aparte porque SettingsView
   // entera pide ~40 props; lo que hay que comprobar aquí es que el fondo se pinta con
   // cualquier configuración, incluida una guardada por una versión anterior.
-  ['SettingsView · Fondo', BloqueFondo, (e) => ({ fondo: e.apariencia.fondo, accent, onCambiar: noop })],
+  ['SettingsView · Fondo', BloqueFondo, (e) => ({
+    fondo: e.apariencia.fondo, accent, onCambiar: noop,
+    onSubirFoto: async () => '', urlFotoFondo: null,
+  })],
+  // FO Fase 2 — el estado con fotografía elegida, y el estado SIN foto todavía (apartado 10),
+  // que es donde más fácil sería dejar un hueco roto.
+  ['SettingsView · Fondo con foto', BloqueFondo, () => ({
+    fondo: { ...DEFAULT_APARIENCIA.fondo, tipo: 'foto', activo: true, foto: { ...DEFAULT_APARIENCIA.fondo.foto, path: 'u/1.jpg', ancho: 1080, alto: 1920, proporcion: 0.5625 } },
+    accent, onCambiar: noop, onSubirFoto: async () => '', urlFotoFondo: 'https://ejemplo/x.jpg',
+  })],
+  ['SettingsView · Fondo foto sin elegir', BloqueFondo, () => ({
+    fondo: { ...DEFAULT_APARIENCIA.fondo, tipo: 'foto', activo: true },
+    accent, onCambiar: noop, onSubirFoto: async () => '', urlFotoFondo: null,
+  })],
   ['PersonalizationView', PersonalizationView, (e) => ({
     areas: AREAS_PRUEBA,
     modulos: MODULOS_PRUEBA,

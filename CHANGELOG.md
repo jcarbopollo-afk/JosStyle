@@ -1,5 +1,63 @@
 # CHANGELOG.md
 
+## Entrega 2 · FO Fase 2 — Galería y selección de fotografías (v1.37.0)
+
+Ya se puede poner una foto propia de fondo. **Ajustes → Apariencia → Fondo → Foto.**
+
+### La foto no se aplica al elegirla
+El apartado 3 lo pide expresamente: primero la vista previa, después "Aplicar". Así nadie tiene
+que aceptar una configuración que no le gusta y deshacerla después.
+
+Y la **subida a Storage ocurre al aplicar, no al elegir**. Si subiera al elegir, cada foto que
+Josué mirara y descartara dejaría un archivo huérfano en su bucket para siempre. La vista previa
+se hace con `URL.createObjectURL`, que es local e instantánea: no hay que esperar a la red para
+ver cómo queda.
+
+### La vista previa enseña la interfaz, no solo la foto
+La foto se pinta **dentro de una representación de JosStyle**, con una tarjeta y su texto
+secundario encima. Un rectángulo con la foto solo enseña la foto; lo que hay que poder juzgar es
+si el contenido se sigue leyendo.
+
+### El encuadre inicial no es "centrar y ya"
+Una foto muy vertical se ancla **arriba** — que es donde está el cielo o el rostro en la inmensa
+mayoría de fotos de móvil — en vez de cortar por la cintura. Las horizontales, panorámicas y
+cuadradas se centran. Siempre `cover`, así que **la imagen nunca se deforma** (apartado 5).
+
+### Quitar la foto no la borra
+Vuelve al fondo anterior —el color o el degradado que hubiera, y si no, al fondo normal— y **la
+fotografía se conserva** para la recuperación de la Fase 12, como pide el apartado 9. La interfaz
+lo dice para que nadie evite el botón.
+
+Y al revés: **elegir una foto no borra el color ni el degradado** que hubiera configurados
+(apartado 14). Hay prueba propia.
+
+### Nunca la pantalla sin fondo
+Mientras la URL de la foto se está firmando, `resolverFondo` baja al fondo incluido. Eso da gratis
+la transición suave del apartado 16: no hay parpadeo ni un instante sin fondo.
+
+### Bucket nuevo `fondos`
+Con sus tres políticas RLS por carpeta de usuario, mismo patrón que `armario`, `progreso` y
+`entrenamiento-videos`. Va en su propio bucket a propósito: una foto de prenda se borra con la
+prenda, un fondo se sustituye al elegir otro, y mezclarlos obligaría a distinguirlos por convenio
+de nombre de archivo — el tipo de acuerdo implícito que se rompe solo.
+
+⚠️ **Josué tiene que ejecutar ese bloque de `supabase/schema.sql` en el SQL Editor.** Hasta
+entonces funciona todo menos la fotografía: color, degradado e incluidos no tocan Storage.
+
+### Dos detalles que estaban mal si no se piensan
+1. **`URL.createObjectURL` sin `revokeObjectURL` es memoria retenida** hasta recargar la página.
+   Se suelta al desmontar y cada vez que se sustituye por otra foto.
+2. **Una firma en vuelo puede pisar a la siguiente.** Si Josué cambia de foto mientras la URL
+   anterior se firmaba, la respuesta lenta de la vieja llegaría después y sobrescribiría a la
+   nueva. El efecto lleva una bandera que descarta el resultado obsoleto.
+
+### Verificación
+**941 comprobaciones en verde** (antes 882): 152 del sistema de fondos y 80 casos de renderizado,
+incluidos el estado con foto y el estado sin foto todavía, que es donde más fácil sería dejar un
+hueco roto.
+
+---
+
 ## Entrega 2 · FO Fase 1 — Arquitectura del sistema de fondos (v1.36.0)
 
 Empieza el bloque **FO (Fondos y Fotografías)**. Esta fase no añade una foto de fondo: construye

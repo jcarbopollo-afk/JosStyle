@@ -169,3 +169,28 @@ export async function deletePrendaFoto(path) {
   const { error } = await supabase.storage.from('armario').remove([path]);
   if (error) console.error('No se pudo borrar la foto de la prenda', path, error);
 }
+
+// ---------------------------------------------------------------------------
+// Entrega 2 · FO Fase 2 — la fotografía de fondo.
+//
+// Mismo patrón que las fotos de prenda, de Salud y los vídeos de Calistenia:
+// bucket privado, carpeta por usuario, URL firmada de una hora. Nunca pública.
+// ---------------------------------------------------------------------------
+export async function uploadFondoFoto(userId, file) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from('fondos').upload(path, file);
+  if (error) throw error;
+  return path;
+}
+
+export async function getSignedFondoUrl(path) {
+  const { data, error } = await supabase.storage.from('fondos').createSignedUrl(path, 3600);
+  if (error) { console.error('No se pudo firmar la foto de fondo', path, error); return null; }
+  return data.signedUrl;
+}
+
+export async function deleteFondoFoto(path) {
+  const { error } = await supabase.storage.from('fondos').remove([path]);
+  if (error) console.error('No se pudo borrar la foto de fondo', path, error);
+}

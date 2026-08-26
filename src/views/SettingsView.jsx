@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   User, Download, Upload, RotateCcw, Undo2, Lock, LogOut, ArrowLeft, Search, ChevronRight,
   Palette, LayoutGrid, SlidersHorizontal, Bell, ShieldCheck,
-  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2,
+  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon,
 } from 'lucide-react';
 import pkg from '../../package.json';
 import {
@@ -17,13 +17,14 @@ import {
 import { calcularEdad, shade, hexToRgba, uid, todayISO } from '../lib/helpers';
 import { permisoNotificaciones, pedirPermisoNotificaciones } from '../lib/notificaciones';
 import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
-import { Card, Field, TextInput, Select, GhostBtn, SectionTitle } from '../components/ui';
+import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton } from '../components/ui';
 import PersonalizationView from './PersonalizationView';
 import PapeleraView from './PapeleraView';
 import {
   TIPOS_FONDO, FONDOS_INCLUIDOS, POSICIONES_FONDO, seleccionarFondo, ajustarFondo,
   restablecerFondo, describirFondo, tieneFondoGuardado, resolverFondo, estilosDeFondo,
-  estilosDeVelo,
+  estilosDeVelo, datosDeFoto, validarFotoFondo, aplicarFoto, quitarFoto, tieneFoto,
+  orientacionDeFoto,
 } from '../lib/fondos';
 import ColorPicker from '../components/ColorPicker';
 import TemaBuilder from '../components/TemaBuilder';
@@ -186,14 +187,14 @@ function LesionesEditor({ value, onChange, accent }) {
    La vista previa se pinta con las MISMAS funciones que pintan el fondo de verdad
    (`resolverFondo` + `estilosDeFondo`), no con una imitación: si algún día divergieran,
    Josué elegiría una cosa y vería otra. */
-function VistaPreviaFondo({ fondo, accent }) {
-  const resuelto = resolverFondo(fondo, { urlFoto: null });
+function VistaPreviaFondo({ fondo, accent, urlFoto = null, alto = 96 }) {
+  const resuelto = resolverFondo(fondo, { urlFoto });
   const estilo = estilosDeFondo(resuelto, COLORS);
   const velo = estilosDeVelo(resuelto, COLORS);
   return (
     <div
       className="rounded-2xl overflow-hidden relative mb-3"
-      style={{ height: 96, background: COLORS.bg, border: `1px solid ${COLORS.border}` }}
+      style={{ height: alto, background: COLORS.bg, border: `1px solid ${COLORS.border}` }}
     >
       {estilo && <div className="absolute inset-0" style={estilo} />}
       {velo && <div className="absolute inset-0" style={velo} />}
@@ -228,7 +229,155 @@ function Deslizador({ label, valor, min, max, sufijo = '%', accent, onChange }) 
   );
 }
 
-export function BloqueFondo({ fondo, accent, onCambiar }) {
+/* ---------- FO Fase 2 — elegir una fotografía ----------
+   El flujo del apartado 3, en este orden y no en otro:
+
+       elegir → VISTA PREVIA → aplicar
+
+   La foto NO se aplica al elegirla. El apartado lo pide expresamente para que
+   nadie tenga que aceptar una configuración que no le gusta y deshacerla después.
+
+   Y la subida a Storage ocurre al APLICAR, no al elegir. Si subiera al elegir,
+   cada foto que Josué mirara y descartara dejaría un archivo huérfano en su
+   bucket para siempre. La vista previa se hace con `URL.createObjectURL`, que es
+   local e instantánea — no hay que esperar a la red para ver cómo queda. */
+function SelectorFoto({ fondo, accent, urlFotoActual, onSubirFoto, onCambiar }) {
+  const inputRef = useRef(null);
+  const [pendiente, setPendiente] = useState(null);   // { file, url, ancho, alto }
+  const [error, setError] = useState('');
+  const [subiendo, setSubiendo] = useState(false);
+
+  // Un `objectURL` que no se revoca es memoria retenida hasta recargar la página.
+  // Se suelta al desmontar y cada vez que se sustituye por otro.
+  useEffect(() => () => { if (pendiente?.url) URL.revokeObjectURL(pendiente.url); }, [pendiente]);
+
+  const elegir = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';                    // permite reelegir el MISMO archivo
+    if (!file) return;
+    setError('');
+
+    const validacion = validarFotoFondo(file);
+    if (!validacion.ok) { setError(validacion.motivo); return; }
+
+    // Se miden las dimensiones reales antes de nada: de ahí salen la proporción,
+    // la orientación y el encuadre inicial del apartado 6.
+    const url = URL.createObjectURL(file);
+    try {
+      const { ancho, alto } = await medirImagen(url);
+      if (pendiente?.url) URL.revokeObjectURL(pendiente.url);
+      setPendiente({ file, url, ancho, alto });
+    } catch {
+      URL.revokeObjectURL(url);
+      setError('No he podido leer esa imagen. Prueba con otra.');
+    }
+  };
+
+  const cancelar = () => {
+    if (pendiente?.url) URL.revokeObjectURL(pendiente.url);
+    setPendiente(null);
+    setError('');
+  };
+
+  const aplicar = async () => {
+    if (!pendiente) return;
+    setSubiendo(true);
+    setError('');
+    try {
+      const path = await onSubirFoto(pendiente.file);
+      onCambiar(aplicarFoto(fondo, datosDeFoto({
+        path,
+        origen: 'galeria',
+        formato: pendiente.file.type,
+        ancho: pendiente.ancho,
+        alto: pendiente.alto,
+        peso: pendiente.file.size,
+      })));
+      cancelar();
+    } catch {
+      // Honestidad, no un mensaje genérico: lo más probable es que falte el
+      // bucket, y decirlo ahorra media hora de búsqueda.
+      setError('No he podido subir la imagen. Comprueba tu conexión y que el almacenamiento esté configurado.');
+    } finally {
+      setSubiendo(false);
+    }
+  };
+
+  const hayFoto = tieneFoto(fondo);
+
+  return (
+    <div className="mt-3">
+      <input ref={inputRef} type="file" accept="image/*" onChange={elegir} className="hidden" aria-hidden="true" tabIndex={-1} />
+
+      {/* Apartado 3: mientras hay una foto pendiente, manda la vista previa. */}
+      {pendiente ? (
+        <>
+          <VistaPreviaFondo
+            fondo={{ ...fondo, tipo: 'foto', activo: true, foto: { ...fondo.foto, proporcion: pendiente.alto ? pendiente.ancho / pendiente.alto : 0 } }}
+            urlFoto={pendiente.url}
+            accent={accent}
+            alto={150}
+          />
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+            Así quedará. Todavía no se ha aplicado.
+          </p>
+          <div className="flex gap-2">
+            <PrimaryButton accent={accent} onClick={aplicar} disabled={subiendo}>
+              {subiendo ? 'Aplicando…' : 'Aplicar'}
+            </PrimaryButton>
+            <div style={{ width: 110, flexShrink: 0 }}>
+              <GhostBtn onClick={cancelar} disabled={subiendo}>Cancelar</GhostBtn>
+            </div>
+          </div>
+        </>
+      ) : hayFoto ? (
+        <>
+          <VistaPreviaFondo fondo={fondo} urlFoto={urlFotoActual} accent={accent} alto={150} />
+          <div className="flex gap-2">
+            <PrimaryButton accent={accent} icon={ImageIcon} onClick={() => inputRef.current?.click()}>
+              Cambiar foto
+            </PrimaryButton>
+            <div style={{ width: 110, flexShrink: 0 }}>
+              {/* Apartado 9: quitar la foto NO la borra del sistema. */}
+              <GhostBtn onClick={() => onCambiar(quitarFoto(fondo))}>Quitar foto</GhostBtn>
+            </div>
+          </div>
+          <p className="text-[11px] mt-1.5" style={{ color: COLORS.textMuted }}>
+            Quitarla no la borra: vuelve al fondo que tenías antes.
+          </p>
+        </>
+      ) : (
+        /* Apartado 10 — el estado sin fotografía. Ni un hueco ni un elemento roto. */
+        <div className="rounded-2xl p-4 text-center" style={{ border: `1px dashed ${COLORS.border}` }}>
+          <ImageIcon size={20} style={{ color: COLORS.textMuted }} className="mx-auto mb-2" />
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Fondo fotográfico</p>
+          <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>
+            Personaliza JosStyle con una foto de tu galería.
+          </p>
+          <PrimaryButton accent={accent} icon={ImageIcon} onClick={() => inputRef.current?.click()}>
+            Elegir foto
+          </PrimaryButton>
+        </div>
+      )}
+
+      {error && <p className="text-xs mt-2" style={{ color: COLORS.negative }}>{error}</p>}
+    </div>
+  );
+}
+
+/* Mide una imagen sin montarla en el documento. Hace falta para la proporción,
+   la orientación y el encuadre inicial (apartados 5, 6 y 11), y para no aceptar
+   un archivo que dice ser imagen y no se puede decodificar. */
+function medirImagen(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ ancho: img.naturalWidth, alto: img.naturalHeight });
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFondo }) {
   const [abierto, setAbierto] = useState(false);
   const disponibles = TIPOS_FONDO.filter((t) => t.implementado);
   const activo = fondo?.activo ? fondo.tipo : 'ninguno';
@@ -249,6 +398,14 @@ export function BloqueFondo({ fondo, accent, onCambiar }) {
 
       {/* Cada tipo enseña SOLO sus controles. Un selector de color cuando has elegido
           "degradado" no sirve para nada y confunde. */}
+      {/* FO Fase 2 — la fotografía, con su flujo propio de elegir → previsualizar → aplicar. */}
+      {activo === 'foto' && (
+        <SelectorFoto
+          fondo={fondo} accent={accent} urlFotoActual={urlFotoFondo}
+          onSubirFoto={onSubirFoto} onCambiar={onCambiar}
+        />
+      )}
+
       {activo === 'predeterminado' && (
         <div className="flex flex-wrap gap-2 mt-3">
           {FONDOS_INCLUIDOS.map((f) => (
@@ -388,7 +545,7 @@ export default function SettingsView({
   temasGuardados, onAplicarConjuntoTema, onRestablecerTemaOficial,
   onGuardarTemaComoNuevo, onRenombrarTemaGuardado, onDuplicarTemaGuardado,
   onEliminarTemaGuardado, onImportarTemaGuardado,
-  apariencia, onUpdateApariencia,
+  apariencia, onUpdateApariencia, onSubirFotoFondo, urlFotoFondo,
   notificaciones, onUpdateNotificaciones,
   seguridad, onUpdateSeguridad, userId,
   // Fase de Seguridad Centralizada — catálogo de zonas protegibles (App.jsx, a partir de MORE_NAV
@@ -826,6 +983,8 @@ export default function SettingsView({
               fondo={apariencia.fondo}
               accent={accent}
               onCambiar={(f) => onUpdateApariencia({ ...apariencia, fondo: f })}
+              onSubirFoto={onSubirFotoFondo}
+              urlFotoFondo={urlFotoFondo}
             />
 
             <Card>

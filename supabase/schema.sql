@@ -136,3 +136,38 @@ using (bucket_id = 'armario' and (storage.foldername(name))[1] = auth.uid()::tex
 create policy "Borrar prendas propias"
 on storage.objects for delete
 using (bucket_id = 'armario' and (storage.foldername(name))[1] = auth.uid()::text);
+
+
+-- ============================================================
+-- Entrega 2 · FO Fase 2 — Fondos: bucket de Storage privado para la fotografía
+-- que el usuario usa como fondo de la aplicación.
+--
+-- Mismo patrón exacto que 'armario', 'progreso' y 'entrenamiento-videos': bucket
+-- privado, una carpeta por usuario, y URLs firmadas de corta duración desde el
+-- cliente. Nunca una URL pública fija.
+--
+-- Va en su propio bucket y no dentro de 'armario' a propósito: son cosas
+-- distintas con ciclos de vida distintos (una prenda se borra con la prenda; el
+-- fondo se sustituye al elegir otra foto), y mezclarlas obligaría a distinguirlas
+-- por convenio de nombre de archivo, que es exactamente el tipo de acuerdo
+-- implícito que se rompe solo.
+--
+-- Josué: si ya ejecutaste los bloques anteriores, pega y ejecuta SOLO este.
+-- Hasta que lo hagas, los fondos funcionan enteros **menos la fotografía** — el
+-- color, el degradado y los fondos incluidos no tocan Storage para nada.
+-- ============================================================
+insert into storage.buckets (id, name, public)
+values ('fondos', 'fondos', false)
+on conflict (id) do nothing;
+
+create policy "Subir fondos propios"
+on storage.objects for insert
+with check (bucket_id = 'fondos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Ver fondos propios"
+on storage.objects for select
+using (bucket_id = 'fondos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Borrar fondos propios"
+on storage.objects for delete
+using (bucket_id = 'fondos' and (storage.foldername(name))[1] = auth.uid()::text);

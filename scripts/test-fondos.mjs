@@ -15,6 +15,8 @@ import {
   POSICIONES_FONDO, posicionDeFondo, normalizarFondo, resolverFondo, estilosDeFondo,
   estilosDeVelo, seleccionarFondo, ajustarFondo, restablecerFondo, tieneFondoGuardado,
   describirFondo,
+  ORIENTACIONES_FOTO, orientacionDeFoto, datosDeFoto, encuadreInicial, validarFotoFondo,
+  aplicarFoto, quitarFoto, tieneFoto, MAX_PESO_FONDO,
 } from '../src/lib/fondos.js';
 
 let fallos = 0;
@@ -35,11 +37,8 @@ const COLORES = { bg: '#0B0D12', surface: '#151922', surface2: '#1E2430', accent
     ['ninguno', 'color', 'degradado', 'foto', 'predeterminado'].every((id) => TIPOS_FONDO.some((t) => t.id === id)));
   comprobar('Todos tienen etiqueta y descripción', TIPOS_FONDO.every((t) => t.label && t.descripcion));
   comprobar('Un tipo desconocido cae en "Sin fondo"', tipoDeFondo('inventado').id === 'ninguno');
-  // La fotografía es de la Fase 2: existe en el modelo pero no se ofrece todavía.
-  comprobar('La fotografía está declarada pero marcada como no implementada',
-    tipoDeFondo('foto').implementado === false && tipoDeFondo('foto').fase === 2);
-  comprobar('Los otros cuatro sí están implementados',
-    TIPOS_FONDO.filter((t) => t.id !== 'foto').every((t) => t.implementado === true));
+  // FO Fase 2 encendió la fotografía. Los cinco tipos están ya implementados.
+  comprobar('Los cinco tipos están implementados', TIPOS_FONDO.every((t) => t.implementado === true));
   comprobar('Hay fondos incluidos (apartado 3-E)', FONDOS_INCLUIDOS.length >= 3);
   comprobar('Un incluido desconocido no revienta', fondoIncluido('zzz').id === FONDOS_INCLUIDOS[0].id);
   // Los incluidos se definen con TOKENS, no con hex: siguen el tema y el acento.
@@ -55,7 +54,7 @@ const COLORES = { bg: '#0B0D12', surface: '#151922', surface2: '#1E2430', accent
     'escala', 'opacidad', 'desenfoque', 'velo', 'analisis', 'paleta', 'recomendacion'];
   for (const campo of esperados) comprobar(`El modelo declara "${campo}"`, campo in DEFAULT_FONDO);
   // Apartado 7: la fotografía tiene que poder identificarse por completo.
-  for (const campo of ['id', 'path', 'origen', 'ancho', 'alto', 'proporcion']) {
+  for (const campo of ['id', 'path', 'origen', 'formato', 'ancho', 'alto', 'proporcion', 'peso', 'anadidaEn']) {
     comprobar(`La fotografía declara "${campo}"`, campo in DEFAULT_FONDO.foto);
   }
   // Apartados 8 y 9: preparado para colores y recomendaciones, vacío hoy.
@@ -218,6 +217,123 @@ const COLORES = { bg: '#0B0D12', surface: '#151922', surface2: '#1E2430', accent
   comprobar('El mismo fondo se pinta distinto en cada tema', enOscuro.background !== enClaro.background);
   comprobar('...usando el fondo de cada tema', enClaro.background.includes(claro.bg));
   comprobar('...y la configuración guardada no cambia', normalizarFondo(fondo).incluido === 'acento_suave');
+}
+
+/* ===========================================================================
+   FO FASE 2 — GALERÍA Y SELECCIÓN DE FOTOGRAFÍAS
+   =========================================================================== */
+console.log('\n═══ FO Fase 2 — la fotografía de fondo ═══\n');
+
+/* --- Apartados 5 y 11: la foto y su orientación --- */
+{
+  comprobar('Las 4 orientaciones del apartado 5', ORIENTACIONES_FOTO.length === 4);
+  // La orientación se DEDUCE de las medidas reales; no es una etiqueta guardada.
+  comprobar('Una foto de móvil (1080x1920) es vertical', orientacionDeFoto({ proporcion: 1080 / 1920 }) === 'vertical');
+  comprobar('Una foto apaisada (1920x1080) es horizontal', orientacionDeFoto({ proporcion: 1920 / 1080 }) === 'horizontal');
+  comprobar('Una foto cuadrada es cuadrada', orientacionDeFoto({ proporcion: 1 }) === 'cuadrada');
+  comprobar('Casi cuadrada sigue siendo cuadrada', orientacionDeFoto({ proporcion: 1.02 }) === 'cuadrada');
+  comprobar('Una panorámica (3:1) es panorámica', orientacionDeFoto({ proporcion: 3 }) === 'panoramica');
+  // Sin medidas NO se inventa una orientación.
+  comprobar('Sin proporción no se inventa orientación', orientacionDeFoto({ proporcion: 0 }) === null);
+  comprobar('Una foto nula tampoco revienta', orientacionDeFoto(null) === null);
+
+  const d = datosDeFoto({ path: 'u/1.jpg', formato: 'image/jpeg', ancho: 1080, alto: 1920, peso: 2048 });
+  comprobar('Los datos de la foto traen todo lo del apartado 11',
+    d.id && d.path === 'u/1.jpg' && d.formato === 'image/jpeg' && d.peso === 2048 && d.anadidaEn);
+  comprobar('La proporción se calcula, no se pide', Math.abs(d.proporcion - 0.5625) < 0.001, String(d.proporcion));
+  comprobar('Dos fotos nunca comparten id', datosDeFoto({}).id !== datosDeFoto({}).id);
+  // Una foto sin medidas no puede dividir por cero.
+  comprobar('Sin alto, la proporción es 0 y no NaN', datosDeFoto({ ancho: 100, alto: 0 }).proporcion === 0);
+  comprobar('El origen por defecto es la galería', datosDeFoto({}).origen === 'galeria');
+}
+
+/* --- Apartado 6: el encuadre inicial --- */
+{
+  // Una foto muy vertical se ancla ARRIBA: centrada cortaría justo por donde
+  // suele estar lo importante en una foto de móvil.
+  comprobar('Una foto vertical se ancla arriba', encuadreInicial({ proporcion: 0.5625 }).posicion === 'arriba');
+  comprobar('Una horizontal se centra', encuadreInicial({ proporcion: 1.77 }).posicion === 'centro');
+  comprobar('Una panorámica se centra', encuadreInicial({ proporcion: 3 }).posicion === 'centro');
+  comprobar('Una cuadrada se centra', encuadreInicial({ proporcion: 1 }).posicion === 'centro');
+  // Apartado 5: la imagen NUNCA debe deformarse. Escala 100 = `cover`.
+  comprobar('El encuadre inicial es siempre cover, para no deformar', encuadreInicial({ proporcion: 3 }).escala === 100);
+  comprobar('Sin medidas, el encuadre no revienta', encuadreInicial(null).posicion === 'centro');
+}
+
+/* --- Apartado 12: no dejar entrar una imagen imposible --- */
+{
+  comprobar('Un JPEG normal vale', validarFotoFondo({ type: 'image/jpeg', size: 1024 * 1024 }).ok === true);
+  comprobar('Un PNG vale', validarFotoFondo({ type: 'image/png', size: 500 }).ok === true);
+  comprobar('Un HEIC de iPhone vale', validarFotoFondo({ type: 'image/heic', size: 500 }).ok === true);
+  comprobar('Un PDF no vale', validarFotoFondo({ type: 'application/pdf', size: 500 }).ok === false);
+  comprobar('...y lo dice en castellano', validarFotoFondo({ type: 'application/pdf', size: 500 }).motivo.includes('no es una imagen'));
+  const gorda = validarFotoFondo({ type: 'image/jpeg', size: MAX_PESO_FONDO + 1 });
+  comprobar('Una imagen de más de 12 MB se rechaza', gorda.ok === false);
+  comprobar('...diciendo cuánto pesa y cuál es el máximo', gorda.motivo.includes('MB') && gorda.motivo.includes('12 MB'));
+  comprobar('Sin archivo lo dice, no revienta', validarFotoFondo(null).ok === false);
+  // Algunos navegadores no rellenan `type`. Rechazar una foto válida por eso
+  // sería peor que aceptar una rara.
+  comprobar('Un archivo sin tipo declarado NO se rechaza por formato', validarFotoFondo({ type: '', size: 500 }).ok === true);
+}
+
+/* --- Apartados 7 y 14: aplicar la foto SIN perder lo anterior --- */
+{
+  // Esta es LA prueba del apartado 14: elegir una foto no puede tirar el color
+  // que Josué tenía configurado.
+  const conColor = seleccionarFondo(DEFAULT_FONDO, 'color', { color: '#123456' });
+  const conFoto = aplicarFoto(conColor, datosDeFoto({ path: 'u/1.jpg', ancho: 1080, alto: 1920 }));
+  comprobar('Aplicar una foto la deja activa', conFoto.tipo === 'foto' && conFoto.activo === true);
+  comprobar('...con su ruta guardada', conFoto.foto.path === 'u/1.jpg');
+  comprobar('...y el encuadre inicial ya calculado', conFoto.posicion === 'arriba' && conFoto.escala === 100);
+  comprobar('APLICAR UNA FOTO NO BORRA EL COLOR ANTERIOR', conFoto.color === '#123456');
+
+  const conDeg = seleccionarFondo(DEFAULT_FONDO, 'degradado', { degradado: { de: '#FF0000', a: '#00FF00', angulo: 90 } });
+  const conFoto2 = aplicarFoto(conDeg, datosDeFoto({ path: 'u/2.jpg', ancho: 1920, alto: 1080 }));
+  comprobar('...ni el degradado', conFoto2.degradado.de === '#FF0000' && conFoto2.degradado.a === '#00FF00');
+  comprobar('Una foto horizontal se centra al aplicarla', conFoto2.posicion === 'centro');
+  comprobar('tieneFoto lo detecta', tieneFoto(conFoto) === true && tieneFoto(DEFAULT_FONDO) === false);
+
+  // Apartado 8: cambiar de foto sin quitar la anterior primero.
+  const cambiada = aplicarFoto(conFoto, datosDeFoto({ path: 'u/3.jpg', ancho: 1000, alto: 1000 }));
+  comprobar('Cambiar de foto sustituye la ruta', cambiada.foto.path === 'u/3.jpg');
+  comprobar('...recalculando su encuadre', cambiada.posicion === 'centro');
+  comprobar('...y sigue sin perder el color', cambiada.color === '#123456');
+}
+
+/* --- Apartado 9: quitar la foto --- */
+{
+  const base = seleccionarFondo(DEFAULT_FONDO, 'color', { color: '#123456' });
+  const conFoto = aplicarFoto(base, datosDeFoto({ path: 'u/1.jpg', ancho: 1080, alto: 1920 }));
+
+  const quitada = quitarFoto(conFoto);
+  // "Vuelve al fondo anterior según la lógica de la FASE 1" — había un color.
+  comprobar('Quitar la foto vuelve al color que había', quitada.tipo === 'color' && quitada.activo === true);
+  // Y lo que el apartado subraya: la foto NO se elimina definitivamente.
+  comprobar('QUITAR LA FOTO NO LA BORRA DEL SISTEMA', quitada.foto.path === 'u/1.jpg');
+  comprobar('...así que se puede recuperar en la Fase 12', tieneFoto(quitada) === true);
+
+  // Sin color ni degradado previos, se vuelve al fondo normal.
+  const soloFoto = aplicarFoto(DEFAULT_FONDO, datosDeFoto({ path: 'u/9.jpg', ancho: 100, alto: 100 }));
+  const sinNada = quitarFoto(soloFoto);
+  comprobar('Sin nada anterior, se vuelve al fondo normal', sinNada.tipo === 'ninguno' && sinNada.activo === false);
+  comprobar('...y la foto tampoco se pierde', sinNada.foto.path === 'u/9.jpg');
+
+  // Con degradado previo, se vuelve al degradado.
+  const conDeg = aplicarFoto(seleccionarFondo(DEFAULT_FONDO, 'degradado', { degradado: { de: '#FF0000', a: '#00FF00' } }),
+    datosDeFoto({ path: 'u/4.jpg', ancho: 100, alto: 100 }));
+  comprobar('Con degradado previo, se vuelve al degradado', quitarFoto(conDeg).tipo === 'degradado');
+}
+
+/* --- Apartado 13: la foto sobrevive a cerrar y abrir --- */
+{
+  // Se simula el viaje real: guardar → JSON → cargar → normalizar.
+  const original = aplicarFoto(DEFAULT_FONDO, datosDeFoto({ path: 'u/1.jpg', formato: 'image/jpeg', ancho: 1080, alto: 1920, peso: 999 }));
+  const vuelta = normalizarFondo(JSON.parse(JSON.stringify(original)));
+  comprobar('La foto sobrevive a guardar y volver a cargar', vuelta.foto.path === 'u/1.jpg');
+  comprobar('...con sus medidas', vuelta.foto.ancho === 1080 && vuelta.foto.alto === 1920);
+  comprobar('...su formato y su peso', vuelta.foto.formato === 'image/jpeg' && vuelta.foto.peso === 999);
+  comprobar('...y su encuadre', vuelta.posicion === 'arriba');
+  comprobar('...y sigue siendo el fondo activo', vuelta.tipo === 'foto' && vuelta.activo === true);
 }
 
 console.log(fallos === 0 ? '\n  Todo correcto.\n' : `\n  ${fallos} fallo(s).\n`);
