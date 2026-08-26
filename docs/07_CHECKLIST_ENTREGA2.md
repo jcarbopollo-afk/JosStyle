@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 36 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 7/12** y **SO 1/5** (hasta v1.59.0). Quedan
-> **70**: HT (5), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 37 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 8/12** y **SO 1/5** (hasta v1.60.0). Quedan
+> **69**: HT (4), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -3775,65 +3775,60 @@ añadido tú, en qué estado está cada cosa y dónde la tienes.
 **Lo que sigue sin estar probado, y hay que decirlo:** la pantalla, los gestos y el recordatorio de
 las 21:00 (que es de la Fase 10). Como todo desde R1.
 
-#### HT · Fase 8/12 — MOTOR TEMPORAL + REGLAS + AUTOMATIZACIONES INTELIGENTES
-- [ ] OBJETIVO
-- [ ] ESTADOS DE UNA ACTIVIDAD
-- [ ] PROGRAMADA
-- [ ] PRÓXIMA
-- [ ] EN CURSO
-- [ ] PASADA
-- [ ] COMPLETADA
-- [ ] CONFIRMACIÓN OPCIONAL
-- [ ] CLASES ESCOLARES
-- [ ] TAREAS
-- [ ] EVENTOS
-- [ ] RECORDATORIOS
-- [ ] EXÁMENES
-- [ ] EL TABLÓN DE HOY
-- [ ] BOTÓN «VER PASADO»
-- [ ] HISTORIAL DEL DÍA
-- [ ] LÍNEA DE TIEMPO DINÁMICA
-- [ ] INDICADOR DE HORA ACTUAL
-- [ ] ACTUALIZACIÓN AUTOMÁTICA
-- [ ] CAMBIO DE HORA
-- [ ] CAMBIO DE DÍA
-- [ ] NO DEPENDER DE ABRIR LA APP
-- [ ] REANUDACIÓN
-- [ ] ZONA HORARIA
-- [ ] HORARIO DE VERANO
-- [ ] ACTIVIDADES SIN HORA
-- [ ] ACTIVIDADES CON RANGO
-- [ ] ACTIVIDADES DE TODO EL DÍA
-- [ ] ACTIVIDADES FLEXIBLES
-- [ ] BLOQUES FLEXIBLES
-- [ ] AUTOMATIZACIONES
-- [ ] EJEMPLO 1
-- [ ] EJEMPLO 2
-- [ ] EJEMPLO 3
-- [ ] EJEMPLO 4
-- [ ] EJEMPLO 5
-- [ ] EJEMPLO 6
-- [ ] EJEMPLO 7
-- [ ] EJEMPLO 8
-- [ ] EJEMPLO 9
-- [ ] EJEMPLO 10
-- [ ] MOTOR DE REGLAS
-- [ ] MÚLTIPLES CONDICIONES
-- [ ] PRIORIDADES ENTRE REGLAS
-- [ ] REGLAS Y EXCEPCIONES
-- [ ] ACTIVAR/DESACTIVAR
-- [ ] EJECUCIÓN MANUAL
-- [ ] REGISTRO DE AUTOMATIZACIONES
-- [ ] HISTORIAL DE ACCIONES
-- [ ] DESHACER AUTOMATIZACIÓN
-- [ ] EXPLICACIÓN
-- [ ] AUTOMATIZACIONES SEGURAS
-- [ ] IA + AUTOMATIZACIONES
-- [ ] IA NO ES EL MOTOR
-- [ ] MOTOR TEMPORAL + IA
-- [ ] OBJETIVO FINAL DE ESTA FASE
-- [ ] EJEMPLO FINAL
-- [ ] CRITERIOS DE ACEPTACIÓN
+#### HT · Fase 8/12 — MOTOR TEMPORAL + REGLAS + AUTOMATIZACIONES INTELIGENTES ✅ COMPLETADA (v1.60.0)
+
+*"La aplicación dejará de ser una agenda estática. Será un sistema temporal vivo."* (apartado 1)
+
+Dos cosas en `src/lib/automatizaciones.js` (74 comprobaciones), porque la segunda depende de la
+primera: **el estado temporal de cada actividad** y **el motor de reglas**.
+
+⚠️ **La distinción que sostiene la fase (apartados 6, 7 y 8): PASADA no es COMPLETADA.** *"La hora
+terminó"* y *"la actividad se realizó"* son cosas distintas, y confundirlas rompe el histórico: una
+clase a la que no fuiste terminó igual, pero no la hiciste. Por eso **"pasada" se calcula del reloj y
+"completada" se guarda** — y es lo único que se guarda de todo esto.
+
+- [x] **2-9 · Los cinco estados** — programada → próxima → en curso → pasada → completada. ⚠️ El
+      estado **se calcula**: guardarlo dejaría de ser verdad en un minuto, y a las 23:59 media app
+      diría "en curso" de algo de por la mañana. Confirmar es **siempre opcional** (apartado 9).
+- [x] **15-17 · El tablón y "ver pasado"** — lo terminado **sale del tablón principal** pero se
+      consulta con un toque, y el día lleva su contador de cuántas se hicieron de verdad.
+- [x] **18-20 · Línea dinámica y actualización automática** — el tic de un minuto de HT F6 sirve para
+      las dos cosas: el contador que baja y el estado que cambia al pasar la hora.
+- [x] **22-24 · Cambio de día y reanudación** — ⚠️ **no hay proceso de fondo en una PWA**, así que el
+      "cambio de día" es comparar la fecha que la pantalla creía con la de ahora. Es honesto y
+      funciona; un temporizador toda la noche no existe en iOS.
+- [x] **27-29 · Actividades sin hora y de todo el día** — ⚠️ una actividad **sin hora no está ni en
+      curso ni pasada**: no tiene reloj al que agarrarse, y decir que "terminó" sería inventarlo.
+- [x] **43-44 · El motor de reglas** — trigger → condiciones → acción, con **todas** las condiciones
+      exigidas. Cuatro triggers, cinco condiciones y cuatro acciones: deliberadamente cerrado, porque
+      un motor abierto sería un lenguaje de programación dentro de una app de instituto y nadie
+      podría depurar por qué apareció una bata.
+- [x] **45-46 · Prioridades y excepciones** — ⚠️ **la excepción gana a la regla**: *"añadir bata"* y
+      *"no llevar bata el 15"* conviven, y el 15 no se lleva bata. Sin esto, una regla general no se
+      podría matizar nunca.
+- [x] **47-48 · Activar, desactivar y ejecutar a mano** — y **previsualizar sin escribir nada**,
+      igual que los `impacto*()` de HT F4.
+- [x] **49-52 · Registro, historial, deshacer y explicación** — *"21:00 → Añadida bata automáticamente
+      por Biología"*, con su hora y su botón. ⚠️ **Deshacer un aviso ya dado no revierte nada** — no
+      se puede "no avisar" —, así que se marca y se dice que no tuvo efecto, en vez de fingirlo.
+- [x] **53 · Automatizaciones seguras** — informativa, reversible e importante. ⚠️ **No hay acciones
+      críticas**: nada de lo que puede hacer una regla borra datos, y lo importante **no se ejecuta
+      sin confirmar** — ni siquiera dentro de un "hacerlo todo", donde se queda fuera y se pregunta.
+- [x] **55 · La IA no es el motor** — el motor es determinista y se prueba entero con Node. La IA,
+      cuando llegue (Fase 9), **propondrá** reglas para que las apruebe Josué.
+- [x] **59 · Criterios de aceptación** — en `scripts/test-automatizaciones.mjs`.
+
+**Lo que NO se ha construido, y por qué (regla 8):**
+
+- [-] **21, 25-26 · Cambio de hora y zona horaria** — el cambio de hora español no mueve las clases:
+      a las 8:00 sigue habiendo clase a las 8:00. La zona horaria se guarda desde HT F4.
+- [-] **30-31 · Bloques flexibles** — *"a alguna hora de la tarde"* necesita un planificador que
+      decida cuándo, y eso es la Fase 9.
+- [-] **54, 56 · IA + automatizaciones** — Fase 9. Aquí está el motor que ejecutará lo que ella
+      proponga, y **la IA nunca se dispara sola** (regla 7).
+
+**Lo que sigue sin estar probado, y hay que decirlo:** que la pantalla se refresque sola al pasar la
+hora y el cambio de día con la app cerrada. Como todo desde R1.
 
 #### HT · Fase 9/12 — IA DE HORARIO + PLANIFICADOR PERSONAL INTELIGENTE
 - [ ] OBJETIVO

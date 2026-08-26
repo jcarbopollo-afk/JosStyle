@@ -29,6 +29,9 @@ import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
 import { mochilaDeFecha, progresoMochila, marcarEstado } from '../src/lib/mochila.js';
+import {
+  tablonDelDia, crearAutomatizacion, previsualizar, ejecutar, historialDe, marcarCompletada,
+} from '../src/lib/automatizaciones.js';
 import { crearMaterial, crearEnlaceMaterial } from '../src/lib/horarioDatos.js';
 import { contextoTemporal, opcionesReprogramar } from '../src/lib/hoy.js';
 import { fichaActividad, impactoEliminarActividad, editarActividad, crearActividadUnica } from '../src/lib/actividades.js';
@@ -387,6 +390,36 @@ const CASOS = [
                 ...propsHoy(perdida, { productividad: tareas }),
                 mochilaHoy: paquete(perdida, HOY), mochilaManana: paquete(perdida, addDays(HOY, 1)),
                 accionesMochila: acciones,
+              })],
+            ];
+          })(),
+          /* HT Fase 8 — el tablón con estados temporales y las
+             automatizaciones. Lo que más importa es la distinción entre PASADA
+             y COMPLETADA: las dos salen apagadas, pero la completada lleva su
+             marca y la pasada sigue teniendo casilla. */
+          ...(() => {
+            const bata = crearAutomatizacion({
+              nombre: 'Bata', accion: 'anadir_material', valor: 'Bata',
+              condiciones: [{ tipo: 'actividad', valor: lleno.actividades[0]?.nombre || 'X' }],
+            });
+            const conAuto = { ...lleno, automatizaciones: [bata] };
+            const hecho = ejecutar(conAuto, previsualizar(conAuto, HOY)[0] || { accion: 'avisar', valor: 'X' }, { fecha: HOY, ahora: '21:00' }).estado;
+            const conHecha = marcarCompletada(lleno, { bloqueId: lleno.bloques[0].id }, HOY);
+            const auto = (e) => ({
+              propuestas: previsualizar(e, HOY), historial: historialDe(e).filter((h) => h.fecha === HOY),
+              ejecutar: noop, ejecutarTodo: noop, deshacer: noop,
+            });
+            return [
+              ['HoyView · con tablón y automatizaciones', HoyView, () => ({
+                ...propsHoy(hecho, { productividad: tareas }),
+                tablon: tablonDelDia(hecho, HOY, { hoy: HOY, ahora: '10:30' }),
+                automatizaciones: auto(hecho), onCompletar: noop,
+              })],
+              // Una clase confirmada y otra solo terminada, a la vez.
+              ['HoyView · pasada vs completada', HoyView, () => ({
+                ...propsHoy(conHecha),
+                tablon: tablonDelDia(conHecha, HOY, { hoy: HOY, ahora: '23:00' }),
+                onCompletar: noop,
               })],
             ];
           })(),

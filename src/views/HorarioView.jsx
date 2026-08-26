@@ -65,6 +65,10 @@ import {
   mochilaDeFecha, progresoMochila, marcarPreparado, prepararTodo, vaciarPreparacion,
   anadirAMano, quitarDeMochila,
 } from '../lib/mochila';
+import {
+  tablonDelDia, marcarCompletada, previsualizar, ejecutar, deshacer, ejecutarTodo,
+  historialDe, explicarAccion, puedeDeshacerse, resumenAutomatizaciones,
+} from '../lib/automatizaciones';
 
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
 const fechaCorta = (iso) => iso.split('-').reverse().slice(0, 2).join('/');
@@ -561,6 +565,105 @@ function PanelFranjas({ horario, estado, accent, onAnadir, onEditar, onEliminar 
    LA PANTALLA
    =========================================================================== */
 /* ===========================================================================
+   UNA FILA DEL TABLÓN (HT F8 · apartados 2-9, 15 y 19)
+   ===========================================================================
+   ⚠️ **PASADA no es COMPLETADA.** *"La hora terminó"* y *"la actividad se
+   realizó"* son cosas distintas: una clase a la que no fuiste terminó igual.
+
+   Por eso lo pasado sale apagado pero **con una casilla**, no tachado: se puede
+   confirmar después. Y confirmarlo es siempre opcional (apartado 9) — nada
+   obliga a marcar nada. */
+function FilaTablon({ ev, accent, onCompletar }) {
+  const hecha = ev.estadoTemporal === 'completada';
+  const pasada = ev.estadoTemporal === 'pasada';
+  const enCurso = ev.estadoTemporal === 'en_curso';
+  const proxima = ev.estadoTemporal === 'proxima';
+
+  return (
+    <div className="flex items-center gap-2 py-0.5">
+      <span className="text-[11px] font-semibold" style={{ color: COLORS.textMuted, width: 40 }}>{ev.inicio}</span>
+      {onCompletar && (pasada || hecha || enCurso) ? (
+        <button onClick={() => onCompletar(ev, !hecha)} className="flex-shrink-0"
+          aria-label={`${hecha ? 'Desmarcar' : 'Marcar como hecha'} ${ev.titulo}`}>
+          <span className="block w-3.5 h-3.5 rounded flex items-center justify-center"
+            style={{ border: `1.5px solid ${hecha ? accent : COLORS.border}`, background: hecha ? accent : 'transparent' }}>
+            {hecha && <Check size={9} style={{ color: COLORS.textOnAccent }} />}
+          </span>
+        </button>
+      ) : <span className="w-3.5 flex-shrink-0" aria-hidden="true" />}
+      <span className="text-xs flex-1 truncate"
+        style={{ color: enCurso ? accent : (pasada && !hecha) ? COLORS.textMuted : COLORS.text }}>
+        {ev.titulo}
+      </span>
+      {enCurso && <span className="text-[10px] flex-shrink-0" style={{ color: accent }}>ahora</span>}
+      {proxima && <span className="text-[10px] flex-shrink-0" style={{ color: COLORS.textMuted }}>enseguida</span>}
+    </div>
+  );
+}
+
+/* ===========================================================================
+   LAS AUTOMATIZACIONES DEL DÍA (HT F8 · apartados 48-53)
+   ===========================================================================
+   *"Añadida bata automáticamente por Biología."*
+
+   Tres cosas y ninguna más: qué haría hoy, qué ha hecho, y deshacerlo.
+
+   ⚠️ **Lo que necesita confirmación se pregunta** (apartado 53). Ejecutarlo
+   "porque estaba en el lote" sería saltarse la regla por comodidad. */
+function PanelAutomatizaciones({ propuestas, historial, accent, onEjecutar, onEjecutarTodo, onDeshacer }) {
+  const auto = propuestas.filter((p) => !p.confirmar);
+  const preguntar = propuestas.filter((p) => p.confirmar);
+
+  if (!propuestas.length && !historial.length) return null;
+
+  return (
+    <Card>
+      <p className="text-[10px] font-semibold tracking-wide mb-1" style={{ color: COLORS.textMuted }}>AUTOMÁTICO</p>
+
+      {auto.length > 0 && (
+        <>
+          {auto.map((p) => (
+            <p key={p.automatizacionId} className="text-[11px] py-0.5" style={{ color: COLORS.text }}>
+              {p.valor} <span style={{ color: COLORS.textMuted }}>— por {p.porQue}</span>
+            </p>
+          ))}
+          {onEjecutarTodo && <div className="mt-1.5"><Accion icono={Check} label="Hacerlo" onClick={onEjecutarTodo} /></div>}
+        </>
+      )}
+
+      {/* Apartado 53 — lo importante se pregunta, una por una. */}
+      {preguntar.map((p) => (
+        <div key={p.automatizacionId} className="rounded-xl p-2 mt-2" style={{ background: COLORS.surface2 }}>
+          <p className="text-[11px]" style={{ color: COLORS.text }}>
+            ¿{p.valor}? <span style={{ color: COLORS.textMuted }}>Por {p.porQue}.</span>
+          </p>
+          <div className="flex gap-2 mt-1.5">
+            <button onClick={() => onEjecutar?.(p, true)} className="text-[11px] font-semibold" style={{ color: accent }}>Sí</button>
+            <button className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>Ahora no</button>
+          </div>
+        </div>
+      ))}
+
+      {/* Apartados 50, 51 y 52 — qué pasó, cuándo, y deshacerlo. */}
+      {historial.slice(0, 4).map((h) => (
+        <div key={h.id} className="flex items-center gap-2 py-0.5">
+          <span className="text-[10px] flex-shrink-0" style={{ color: COLORS.textMuted, width: 34 }}>{h.hora}</span>
+          <span className="text-[11px] flex-1"
+            style={{ color: h.deshecha ? COLORS.textMuted : COLORS.text, textDecoration: h.deshecha ? 'line-through' : 'none' }}>
+            {explicarAccion(h)}
+          </span>
+          {puedeDeshacerse(h) && onDeshacer && (
+            <button onClick={() => onDeshacer(h.id)} className="text-[10px] font-semibold flex-shrink-0" style={{ color: accent }}>
+              Deshacer
+            </button>
+          )}
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+/* ===========================================================================
    LA MOCHILA (HT F7 · apartados 14-23, 38, 57, 59 y 108)
    ===========================================================================
    *"Día → actividades → materiales → excepciones → mochila."*
@@ -727,9 +830,12 @@ export function HoyView({
   // HT F7 — la mochila de HOY y la de MAÑANA, que es la que de verdad importa
   // por la noche (apartado 15).
   mochilaHoy = null, mochilaManana = null, accionesMochila = null,
+  // HT F8 — el tablón con estados temporales y las automatizaciones del día.
+  tablon = null, onCompletar = null, automatizaciones = null,
 }) {
   const { dia, ahora, siguiente: prox, pendientes: pend, libre, conflictos, manana, agenda } = contexto;
   const [reprogramando, setReprogramando] = useState(null);
+  const [verPasado, setVerPasado] = useState(false);
   const completo = modo === 'completo';
 
   return (
@@ -845,6 +951,15 @@ export function HoyView({
         </Card>
       )}
 
+      {/* HT F8 · apartados 48-52 — qué haría hoy solo, y qué ya ha hecho. */}
+      {automatizaciones && (
+        <PanelAutomatizaciones
+          propuestas={automatizaciones.propuestas} historial={automatizaciones.historial} accent={accent}
+          onEjecutar={automatizaciones.ejecutar} onEjecutarTodo={automatizaciones.ejecutarTodo}
+          onDeshacer={automatizaciones.deshacer}
+        />
+      )}
+
       {/* HT F7 · apartado 14 — la mochila de hoy. */}
       {mochilaHoy && !mochilaHoy.progreso.vacia && (
         <PanelMochila
@@ -869,25 +984,35 @@ export function HoyView({
 
       {completo && (
         <>
-          {/* La línea del día (apartado 2), con lo pasado apagado. */}
-          {agenda.eventos.length > 0 && (
+          {/* HT F8 · apartados 15 y 16 — el tablón. Lo terminado SALE del
+              tablón principal y se consulta aparte, porque a las 20:00 lo que
+              importa no es la clase de las 8. */}
+          {(agenda.eventos.length > 0 || agenda.todoElDia.length > 0) && (
             <Card>
-              <p className="text-[10px] font-semibold tracking-wide mb-1" style={{ color: COLORS.textMuted }}>EL DÍA</p>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <p className="text-[10px] font-semibold tracking-wide" style={{ color: COLORS.textMuted }}>EL DÍA</p>
+                {tablon && tablon.pasados.length > 0 && (
+                  <button onClick={() => setVerPasado(!verPasado)} className="text-[10px] font-semibold" style={{ color: accent }}>
+                    {verPasado ? 'Ocultar lo pasado' : `Ver lo pasado (${tablon.pasados.length})`}
+                  </button>
+                )}
+              </div>
               {agenda.todoElDia.map((ev) => (
                 <p key={ev.id} className="text-xs py-0.5" style={{ color: COLORS.text }}>
                   <span style={{ color: COLORS.textMuted }}>Todo el día · </span>{ev.titulo}
                 </p>
               ))}
-              {agenda.eventos.map((ev, i) => (
-                <div key={ev.bloqueId || ev.id || i} className="flex items-center gap-2 py-0.5">
-                  <span className="text-[11px] font-semibold" style={{ color: COLORS.textMuted, width: 40 }}>{ev.inicio}</span>
-                  <span className="text-xs flex-1 truncate"
-                    style={{ color: ahora && ev.bloqueId === ahora.bloqueId ? accent : COLORS.text }}>
-                    {ev.titulo}
-                  </span>
-                  {ev.soloLectura && <span className="text-[10px]" style={{ color: COLORS.textMuted }}>{ev.origen}</span>}
-                </div>
+              {(verPasado ? tablon?.todos || [] : tablon?.activos || []).map((ev, i) => (
+                <FilaTablon key={ev.clave || i} ev={ev} accent={accent} onCompletar={onCompletar} />
               ))}
+              {/* Apartado 17 — el historial del día, en una línea. */}
+              {tablon && tablon.terminadas > 0 && (
+                <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+                  {tablon.completadas > 0
+                    ? `${tablon.completadas} de ${tablon.terminadas} ${plural(tablon.terminadas, 'terminada', 'terminadas')} confirmada${tablon.completadas === 1 ? '' : 's'}.`
+                    : `${tablon.terminadas} ${plural(tablon.terminadas, 'ya terminó', 'ya terminaron')}.`}
+                </p>
+              )}
             </Card>
           )}
 
@@ -1446,6 +1571,28 @@ export default function HorarioView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [estado, fecha, fechaManana, asignaturas]);
 
+  /* HT F8 — el tablón y las automatizaciones. `minuto` está en las
+     dependencias porque el estado temporal se CALCULA del reloj: sin él, a las
+     11:01 la clase de las 10 seguiría diciendo "ahora". */
+  const tablon = useMemo(
+    () => tablonDelDia(estado, fecha, { asignaturas, hoy }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [estado, fecha, asignaturas, hoy, minuto],
+  );
+  const automatizaciones = useMemo(() => {
+    const propuestas = previsualizar(estado, fecha, { asignaturas });
+    const historial = historialDe(estado).filter((h) => h.fecha === fecha);
+    if (!propuestas.length && !historial.length) return null;
+    return {
+      propuestas,
+      historial,
+      ejecutar: (p, confirmada) => aplicarResultado(ejecutar(estado, p, { fecha, confirmada })),
+      ejecutarTodo: () => aplicar(ejecutarTodo(estado, fecha, { asignaturas }).estado),
+      deshacer: (id) => aplicarResultado(deshacer(estado, id)),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estado, fecha, asignaturas]);
+
   const contexto = useMemo(
     () => contextoTemporal(estado, { fecha, hoy, asignaturas, estudios, productividad, calendario, horarioId: activo?.id || null }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1621,6 +1768,8 @@ export default function HorarioView({
           onAbrirBloque={(ev) => setBloque({ ...ev, id: ev.bloqueId })}
           onIrAFecha={(f) => { setFecha(f); setVista('dia'); }}
           mochilaHoy={mochilaHoy} mochilaManana={mochilaManana} accionesMochila={accionesMochila}
+          tablon={tablon} automatizaciones={automatizaciones}
+          onCompletar={(ev, v) => aplicar(marcarCompletada(estado, ev, fecha, v))}
         />
       )}
 

@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.59.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.60.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados, **Horario Top** va por 7/12 y **Sonido** por 1/5, quedan 70) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados, **Horario Top** va por 8/12 y **Sonido** por 1/5, quedan 69) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,8 +107,8 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 2491 pruebas unitarias con Node, 5 de auditoría, 276 casos de renderizado real con
-`react-dom/server` y 10 reglas invariantes — **2772 comprobaciones**.
+Vite, 2565 pruebas unitarias con Node, 5 de auditoría, 284 casos de renderizado real con
+`react-dom/server` y 10 reglas invariantes — **2854 comprobaciones**.
 
 Eso ya ha encontrado **cuarenta y seis bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -133,8 +133,8 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase candidata: HT · Fase 8/12 — Motor temporal, reglas y automatizaciones
-inteligentes.** Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
+**Siguiente fase candidata: HT · Fase 9/12 — IA de horario y planificador personal inteligente.**
+Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
@@ -176,6 +176,10 @@ Seis cosas que conviene tener presentes al retomar:
   releer esa prueba antes.
 - **Nada de la actividad que se pueda derivar se guarda** (HT F5): usos, tiempo semanal, recientes,
   más usadas y carga por día salen de los bloques. Lo único guardado es "favorita", que la pone él.
+- ⚠️ **PASADA no es COMPLETADA** (HT F8): lo primero se calcula del reloj, lo segundo lo confirma
+  Josué y es lo único que se guarda. Nunca guardar un estado temporal: miente en un minuto.
+- ⚠️ **La excepción gana a la regla** (HT F8, apartado 45), y **nada importante se ejecuta sin
+  confirmar** — ni dentro de un "hacerlo todo".
 - ⚠️ **La mochila es DERIVADA** (HT F7) y lo añadido a mano lleva `manual: true` por escrito: es lo
   único que impide que el recálculo lo borre (apartado 57). Nunca quitar ese campo.
 - ⚠️ **`src/lib/hoy.js` NO GUARDA NADA** (HT F6, apartado 102): es una función de lectura sobre las

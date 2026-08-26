@@ -179,6 +179,10 @@ export const DEFAULT_HORARIO_DATOS = {
   kits: [],
   dependencias: {},
   reglas: [],
+  // HT F8 — actividades hechas de verdad, reglas y su historial.
+  completadas: [],
+  automatizaciones: [],
+  historialAuto: [],
   config: DEFAULT_CONFIG_HORARIO,
 };
 

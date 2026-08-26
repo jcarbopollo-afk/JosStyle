@@ -1,5 +1,76 @@
 # CHANGELOG.md
 
+## Entrega 2 · HT Fase 8 — Motor temporal y automatizaciones inteligentes (v1.60.0)
+
+### "Pasada" no es "completada"
+Es la distinción que sostiene la fase entera. *"La hora terminó"* y *"la actividad se realizó"* son
+cosas distintas: una clase a la que no fuiste terminó igual, pero no la hiciste.
+
+Confundirlas rompe el histórico, así que:
+
+- **"Pasada" se calcula del reloj.** Guardarlo dejaría de ser verdad en un minuto, y a las 23:59
+  media app estaría diciendo "en curso" de algo de por la mañana.
+- **"Completada" se guarda**, porque no hay forma de deducir del reloj si fuiste a clase. Y es lo
+  único que se guarda de todo esto.
+
+Confirmar es siempre opcional. Nada obliga a marcar nada.
+
+### El tablón se vacía solo
+Lo terminado **sale del tablón principal** y se consulta con un toque: a las 20:00 lo que importa no
+es la clase de las 8.
+
+Debajo, el día lleva su cuenta: *"2 de 3 terminadas confirmadas"*. Las completadas cuentan también
+como terminadas — contarlas aparte daría totales que no suman.
+
+### El cambio de día, dicho con honestidad
+No hay proceso de fondo en una PWA. Un temporizador que corriera toda la noche no existe en iOS.
+
+Así que el "cambio de día" es lo que sí se puede hacer: comparar la fecha que la pantalla creía con
+la de ahora, y recalcular si no coinciden. Funciona, y no finge un servicio que no está corriendo.
+
+### La excepción gana a la regla
+El motor es trigger → condiciones → acción, con **todas** las condiciones exigidas.
+
+Y el apartado 45 pone el caso: *"añadir bata"* como regla general, *"no llevar bata el 15 de
+septiembre"* como excepción. **El 15 no se lleva bata.** Sin esto, una regla general no se podría
+matizar nunca, y la única salida sería borrarla y volver a crearla.
+
+El motor es **deliberadamente cerrado**: cuatro triggers, cinco condiciones y cuatro acciones. Uno
+abierto sería un lenguaje de programación dentro de una app de instituto, y nadie podría depurar por
+qué apareció una bata.
+
+### Nada crítico se ejecuta solo
+Las acciones tienen nivel: informativa, reversible e importante. **No hay críticas** — nada de lo
+que puede hacer una regla borra datos.
+
+Y lo importante **no se ejecuta sin confirmar**, ni siquiera dentro de un "hacerlo todo": ahí se
+queda fuera del lote y se pregunta aparte. Ejecutarlo "porque estaba en el lote" sería saltarse el
+apartado 53 por comodidad.
+
+### Todo lo automático se explica y se deshace
+*"21:00 → Añadida bata automáticamente por Biología."* Con su hora, su motivo y un botón.
+
+⚠️ Y **deshacer un aviso ya dado no revierte nada** — no se puede "no avisar". Así que se marca en el
+historial y se dice que no tuvo efecto, en vez de fingir que sí.
+
+Lo que pone una regla en la mochila **no se marca como manual** a propósito: si lo hiciera, sería
+eterno y el motor de la mochila no podría recalcularlo nunca.
+
+### La IA no es el motor
+El apartado 55 lo dice y aquí se cumple: el motor es determinista y se prueba entero con Node. La IA,
+cuando llegue en la Fase 9, **propondrá** reglas para que Josué las apruebe — no las ejecutará.
+
+### Verificación
+**2854 comprobaciones y 10 reglas invariantes en verde** (antes 2772), 74 del motor temporal y 284
+casos de renderizado. `package.json` → **v1.60.0**.
+
+⚠️ Sin probar: que la pantalla se refresque sola al pasar la hora y el cambio de día con la app
+cerrada. Como todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
 ## Entrega 2 · HT Fase 7 — Mochila inteligente, materiales y preparación automática (v1.59.0)
 
 ### La mochila es una consecuencia, no una lista

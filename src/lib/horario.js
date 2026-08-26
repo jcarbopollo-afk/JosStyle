@@ -250,6 +250,11 @@ export const DEFAULT_HORARIO_TOP = {
   kits: [],
   dependencias: {},
   reglas: [],
+  // HT F8 — el estado temporal se CALCULA; lo único que se guarda es qué
+  // hiciste de verdad, y qué han hecho las automatizaciones.
+  completadas: [],
+  automatizaciones: [],
+  historialAuto: [],
 };
 
 /* ---------------------------------------------------------------------------
@@ -719,6 +724,9 @@ export function normalizarHorarioTop(guardado) {
     kits: Array.isArray(g.kits) ? g.kits : [],
     dependencias: g.dependencias && typeof g.dependencias === 'object' ? g.dependencias : {},
     reglas: Array.isArray(g.reglas) ? g.reglas : [],
+    completadas: Array.isArray(g.completadas) ? g.completadas.filter((x) => typeof x === 'string') : [],
+    automatizaciones: Array.isArray(g.automatizaciones) ? g.automatizaciones : [],
+    historialAuto: Array.isArray(g.historialAuto) ? g.historialAuto : [],
   };
 }
 

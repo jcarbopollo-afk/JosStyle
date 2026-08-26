@@ -194,6 +194,12 @@ else
   fallo "Falla la mochila inteligente"; grep '✗' /tmp/jc_horario7.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-automatizaciones.mjs >/tmp/jc_horario8.log 2>&1; then
+  ok "Motor temporal y automatizaciones (HT F8) — $(grep -c '✓' /tmp/jc_horario8.log) comprobaciones"
+else
+  fallo "Falla el motor temporal"; grep '✗' /tmp/jc_horario8.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else
