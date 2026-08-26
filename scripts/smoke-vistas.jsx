@@ -31,7 +31,7 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
-import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto } from '../src/views/SettingsView.jsx';
+import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
@@ -279,6 +279,20 @@ const CASOS = [
       dominante: { hex: '#EFEADF', peso: 0.7, zona: 'centro' },
     },
     tema: DEFAULT_TEMA_PERSONALIZADO, accent, auto: true, onSetAuto: noop, onCorregir: noop,
+  })],
+  // FO Fase 10 — la vista previa global, en sus dos extremos: sin fondo (la app
+  // tal cual) y con una foto muy ajustada y tarjetas translúcidas, que es donde
+  // se juntan todas las capas a la vez.
+  ['SettingsView · Vista previa global', VistaPreviaGlobal, () => ({
+    fondo: DEFAULT_APARIENCIA.fondo, urlFoto: null, accent,
+  })],
+  ['SettingsView · Vista previa con foto', VistaPreviaGlobal, () => ({
+    fondo: {
+      ...DEFAULT_APARIENCIA.fondo, tipo: 'foto', activo: true,
+      foto: { ...DEFAULT_APARIENCIA.fondo.foto, id: 'f1', path: 'u/1.jpg' },
+      escala: 140, desenfoque: 6, luminosidad: -35, overlay: { color: '', intensidad: 20 },
+    },
+    urlFoto: 'https://ejemplo/x.jpg', accent,
   })],
   // FO Fase 3 — el editor, con una foto ya muy ajustada: las tres capas (foto, luz
   // y overlay) tienen que pintarse a la vez sin romperse.

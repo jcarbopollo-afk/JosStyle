@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.44.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.45.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI** y **AR** están terminados y **FO** va por 9/12, quedan 85) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI** y **AR** están terminados y **FO** va por 10/12, quedan 84) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,8 +107,8 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 1207 pruebas unitarias con Node, 5 de auditoría, 120 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **1332 comprobaciones**.
+Vite, 1207 pruebas unitarias con Node, 5 de auditoría, 128 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **1340 comprobaciones**.
 
 Eso ya ha encontrado **treinta y dos bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), ocho módulos que dejaban crear y no borrar,
@@ -133,20 +133,20 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase: FO · Fase 10/12 — Integración completa en Aspecto.**
+**Siguiente fase: FO · Fase 11/12 — Rendimiento y optimización.**
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_FONDOS_Y_FOTOGRAFIAS.md`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
 Tres avisos para cuando toque:
 
-- **Ajustes → Apariencia ya tiene siete bloques nuevos** (Fondo, Tarjetas/bordes/barra,
-  Legibilidad, Apariencias guardadas, Recomendado, Paleta detectada, Editor de foto). F10 es
-  sobre todo **ordenarlos**, no añadir más.
-- **En un iPhone eso es mucho scroll.** El trabajo real de esta fase es que se encuentre lo que
-  se busca, no meter funciones nuevas.
-- **No romper el orden que ya existe** — tema, acento, texto, densidad, radio y animaciones
-  llevan ahí desde la Fase A3 y Josué ya sabe dónde están.
+- **Lo caro ya está acotado.** El análisis va sobre una miniatura de 96 px (F5) y las capas del
+  fondo son CSS puro, no canvas. Lo que queda por mirar es la **imagen que se descarga**: hoy se
+  sube y se sirve el archivo original.
+- **`backdropFilter` es lo más caro que hay en pantalla** — está en cada tarjeta translúcida y en
+  la barra. Si algo va lento en el iPhone, empezar por ahí.
+- **Medir antes de optimizar.** La regla 8 prohíbe simular; una "optimización" sin una medida que
+  la respalde es exactamente eso.
 
 ⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
 de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin

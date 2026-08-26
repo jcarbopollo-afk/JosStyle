@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   User, Download, Upload, RotateCcw, Undo2, Lock, LogOut, ArrowLeft, Search, ChevronRight,
   Palette, LayoutGrid, SlidersHorizontal, Bell, ShieldCheck,
-  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star,
+  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star, ChevronUp, Type,
 } from 'lucide-react';
 import pkg from '../../package.json';
 import {
@@ -997,6 +997,98 @@ export function BloqueLegibilidadAuto({ colors, fondo, analisis, tema, accent, a
   );
 }
 
+/* ---------- FO Fase 10 — la vista previa global ----------
+   Apartados 4 y 6: una representación de JosStyle con el fondo, una tarjeta, un
+   botón, texto, iconos y la barra inferior. No hace falta enseñar la app entera;
+   hace falta poder juzgar si la combinación funciona **sin salir de Ajustes**.
+
+   Se pinta con las mismas funciones y los mismos tokens que la app de verdad
+   (`resolverFondo`, `estilosDeFondo`, `COLORS.surfaceAlpha`, `COLORS.navBgAlpha`).
+   Una imitación acabaría divergiendo y enseñaría algo que no es lo que se aplica. */
+export function VistaPreviaGlobal({ fondo, urlFoto, accent }) {
+  const resuelto = resolverFondo(fondo, { urlFoto });
+  const estilo = estilosDeFondo(resuelto, COLORS);
+  const luz = estilosDeLuminosidad(resuelto);
+  const velo = estilosDeVelo(resuelto, COLORS);
+
+  return (
+    <div
+      className="rounded-3xl overflow-hidden relative"
+      style={{ height: 172, background: COLORS.bg, border: `1px solid ${COLORS.border}` }}
+    >
+      {/* Las tres capas del fondo, en el mismo orden que en la app. */}
+      {estilo && <div className="absolute inset-0" style={estilo} />}
+      {luz && <div className="absolute inset-0" style={luz} />}
+      {velo && <div className="absolute inset-0" style={velo} />}
+
+      <div className="absolute inset-0 flex flex-col justify-between p-3">
+        {/* Una tarjeta con su texto principal y su secundario. */}
+        <div
+          className="rounded-2xl p-2.5"
+          style={{
+            background: COLORS.surfaceAlpha || COLORS.surface,
+            border: `1px solid ${COLORS.borderAlpha || COLORS.border}`,
+            boxShadow: COLORS.cardShadow !== 'none' ? COLORS.cardShadow : undefined,
+            backdropFilter: COLORS.surfaceAlpha !== COLORS.surface ? 'blur(12px)' : undefined,
+          }}
+        >
+          <p className="text-xs font-semibold" style={{ color: COLORS.text }}>Una tarjeta</p>
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>y su texto secundario</p>
+          <span
+            className="inline-block text-[10px] font-semibold px-2 py-1 rounded-lg mt-1.5"
+            style={{ background: accent, color: COLORS.textOnAccent }}
+          >
+            Un botón
+          </span>
+        </div>
+
+        {/* Y la barra inferior, con un icono activo y dos apagados. */}
+        <div
+          className="rounded-xl flex items-center justify-around py-1.5"
+          style={{
+            background: COLORS.navBgAlpha || COLORS.surface,
+            border: `1px solid ${COLORS.borderAlpha || COLORS.border}`,
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <Palette size={13} style={{ color: COLORS.iconActive || accent }} />
+          <LayoutGrid size={13} style={{ color: COLORS.iconMuted || COLORS.textMuted }} />
+          <User size={13} style={{ color: COLORS.iconMuted || COLORS.textMuted }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Una sección plegable de Ajustes.
+   Apartado 3: "aunque existan muchas opciones, no mostrar absolutamente todo al
+   mismo tiempo". Apariencia había llegado a trece tarjetas seguidas, que en un
+   iPhone es una pantalla de scroll para encontrar cualquier cosa. */
+function Seccion({ titulo, sub, icono: Icono, accent, defecto = false, children }) {
+  const [abierta, setAbierta] = useState(defecto);
+  return (
+    <Card style={{ padding: '0.9rem' }}>
+      <button
+        onClick={() => setAbierta((v) => !v)}
+        className="w-full flex items-center justify-between gap-2"
+        aria-expanded={abierta}
+      >
+        <span className="flex items-center gap-2 min-w-0 text-left">
+          {Icono && <Icono size={15} style={{ color: accent }} className="flex-shrink-0" />}
+          <span className="min-w-0">
+            <span className="text-sm font-semibold block truncate" style={{ color: COLORS.text }}>{titulo}</span>
+            {sub && <span className="text-[11px] block truncate" style={{ color: COLORS.textMuted }}>{sub}</span>}
+          </span>
+        </span>
+        {abierta
+          ? <ChevronUp size={15} style={{ color: COLORS.textMuted }} className="flex-shrink-0" />
+          : <ChevronRight size={15} style={{ color: COLORS.textMuted }} className="flex-shrink-0" />}
+      </button>
+      {abierta && <div className="mt-3 space-y-4">{children}</div>}
+    </Card>
+  );
+}
+
 export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFondo, analisisFoto, onAnalisisFoto }) {
   const [abierto, setAbierto] = useState(false);
   const disponibles = TIPOS_FONDO.filter((t) => t.implementado);
@@ -1600,6 +1692,14 @@ export default function SettingsView({
 
         {actual.id === 'apariencia' && (
           <>
+            {/* FO Fase 10, apartados 4 y 6 — la vista previa global, arriba del todo y
+                siempre visible: es la referencia contra la que se juzga cualquier
+                cambio de los que hay debajo. */}
+            <VistaPreviaGlobal fondo={apariencia.fondo} urlFoto={urlFotoFondo} accent={accent} />
+
+            {/* Modo claro/oscuro: fuera de las secciones plegables a propósito. Es lo
+                que más se toca, y llevaba aquí desde la Fase A3 — Josué ya sabe dónde
+                está y esta fase no puede moverlo. */}
             <Card>
               <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Tema</p>
               <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Claro, Oscuro o Automático (sigue al sistema, sin reiniciar la app).</p>
@@ -1608,6 +1708,7 @@ export default function SettingsView({
 
             {/* FO Fase 1 — el fondo, dentro de Apariencia y no en una pantalla aparte: el
                 apartado 5 pide que se integre con el sistema que ya existe, no que compita. */}
+            <Seccion titulo="Fondo" sub={describirFondo(apariencia.fondo)} icono={ImageIcon} accent={accent} defecto>
             <BloqueFondo
               fondo={apariencia.fondo}
               accent={accent}
@@ -1618,48 +1719,14 @@ export default function SettingsView({
               onAnalisisFoto={(a) => onUpdateApariencia({ ...apariencia, fondo: { ...apariencia.fondo, analisis: a } })}
             />
 
+            </Seccion>
+
+            <Seccion titulo="Colores" sub="Acento, paletas, tarjetas y bordes" icono={Palette} accent={accent}>
             <BloqueLegibilidad
               tema={temaPersonalizado}
               fondoActivo={!!apariencia.fondo?.activo}
               accent={accent}
               onCambiar={onUpdateTemaPersonalizado}
-            />
-
-            <BloqueLegibilidadAuto
-              colors={COLORS}
-              fondo={apariencia.fondo}
-              analisis={apariencia.fondo?.analisis}
-              tema={temaPersonalizado}
-              accent={accent}
-              auto={!!apariencia.legibilidadAuto}
-              onSetAuto={(v) => onUpdateApariencia({ ...apariencia, legibilidadAuto: v })}
-              onCorregir={(c) => {
-                if (c.accent) onUpdateAccent(c.accent);
-                if (Object.keys(c.tema).length) onUpdateTemaPersonalizado({ ...temaPersonalizado, ...c.tema });
-                if (Object.keys(c.fondo).length) onUpdateApariencia({ ...apariencia, fondo: { ...apariencia.fondo, ...c.fondo } });
-              }}
-            />
-
-            <BloquePresets
-              presets={temasGuardados}
-              apariencia={apariencia}
-              accent={accent}
-              temaPersonalizado={temaPersonalizado}
-              onGuardar={onGuardarPreset}
-              onCambiarPresets={onCambiarPresets}
-              onAplicar={onAplicarPreset}
-            />
-
-            {/* FO Fase 6 — solo aparece si hay una foto analizada: sin ella no hay
-                nada de lo que recomendar, y un botón vacío sería decorativo. */}
-            <BloqueRecomendado
-              analisis={apariencia.fondo?.analisis}
-              tema={temaPersonalizado}
-              accent={accent}
-              fondo={apariencia.fondo}
-              modoOscuro={apariencia.tema !== 'claro'}
-              onProbar={(c) => { onUpdateAccent(c.accent); onUpdateTemaPersonalizado(c.tema); onUpdateApariencia({ ...apariencia, fondo: { ...apariencia.fondo, overlay: c.overlay } }); }}
-              onAplicar={(c) => { onUpdateAccent(c.accent); onUpdateTemaPersonalizado(c.tema); onUpdateApariencia({ ...apariencia, fondo: { ...apariencia.fondo, overlay: c.overlay } }); }}
             />
 
             <Card>
@@ -1756,6 +1823,57 @@ export default function SettingsView({
               />
             )}
 
+            </Seccion>
+
+            {/* FO Fase 6 — `BloqueRecomendado` no pinta nada si no hay una foto
+                analizada: sin ella no hay nada que recomendar y un bloque vacío sería
+                un control decorativo (regla 8). La sección se queda plegada y vacía,
+                que es honesto: la opción existe, pero todavía no puede hacer nada. */}
+            <Seccion titulo="Recomendado" sub="Apariencias sacadas de tu foto" icono={Sparkles} accent={accent}>
+            <BloqueRecomendado
+              analisis={apariencia.fondo?.analisis}
+              tema={temaPersonalizado}
+              accent={accent}
+              fondo={apariencia.fondo}
+              modoOscuro={apariencia.tema !== 'claro'}
+              onProbar={(c) => { onUpdateAccent(c.accent); onUpdateTemaPersonalizado(c.tema); onUpdateApariencia({ ...apariencia, fondo: { ...apariencia.fondo, overlay: c.overlay } }); }}
+              onAplicar={(c) => { onUpdateAccent(c.accent); onUpdateTemaPersonalizado(c.tema); onUpdateApariencia({ ...apariencia, fondo: { ...apariencia.fondo, overlay: c.overlay } }); }}
+            />
+
+            </Seccion>
+
+            <Seccion titulo="Apariencias guardadas" sub="Tus estilos y los incluidos" icono={LayoutGrid} accent={accent}>
+            <BloquePresets
+              presets={temasGuardados}
+              apariencia={apariencia}
+              accent={accent}
+              temaPersonalizado={temaPersonalizado}
+              onGuardar={onGuardarPreset}
+              onCambiarPresets={onCambiarPresets}
+              onAplicar={onAplicarPreset}
+            />
+
+            </Seccion>
+
+            <Seccion titulo="Legibilidad" sub="Que todo se lea sobre tu fondo" icono={ShieldCheck} accent={accent}>
+            <BloqueLegibilidadAuto
+              colors={COLORS}
+              fondo={apariencia.fondo}
+              analisis={apariencia.fondo?.analisis}
+              tema={temaPersonalizado}
+              accent={accent}
+              auto={!!apariencia.legibilidadAuto}
+              onSetAuto={(v) => onUpdateApariencia({ ...apariencia, legibilidadAuto: v })}
+              onCorregir={(c) => {
+                if (c.accent) onUpdateAccent(c.accent);
+                if (Object.keys(c.tema).length) onUpdateTemaPersonalizado({ ...temaPersonalizado, ...c.tema });
+                if (Object.keys(c.fondo).length) onUpdateApariencia({ ...apariencia, fondo: { ...apariencia.fondo, ...c.fondo } });
+              }}
+            />
+
+            </Seccion>
+
+            <Seccion titulo="Texto y movimiento" sub="Tamaño, densidad, bordes y animaciones" icono={Type} accent={accent}>
             <Card>
               <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Tamaño de texto</p>
               <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Escala todo el texto de la app de golpe (también iconos y botones, al ser proporcional).</p>
@@ -1796,6 +1914,8 @@ export default function SettingsView({
                 Hoy la app tiene pocas animaciones propias, así que el efecto real más notable es "Desactivadas" o el interruptor de arriba: eliminan transiciones y animaciones CSS en toda la app. También se respeta automáticamente si tu sistema operativo tiene activado "Reducir movimiento".
               </p>
             </Card>
+
+            </Seccion>
 
             <Card>
               <p className="text-sm font-semibold mb-3" style={{ color: COLORS.text }}>Acciones</p>

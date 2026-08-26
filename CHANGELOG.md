@@ -1,5 +1,39 @@
 # CHANGELOG.md
 
+## Entrega 2 · FO Fase 10 — Integración completa en Aspecto (v1.45.0)
+
+**Esta fase no añade funciones: ordena las que ya hay.** Después de las fases 1-9, Ajustes →
+Apariencia había llegado a **trece tarjetas seguidas** — en un iPhone, una pantalla entera de
+scroll para encontrar cualquier cosa.
+
+### Vista previa global arriba del todo
+Fondo, tarjeta, botón, texto, iconos y barra inferior, en una sola pieza. Es la referencia contra
+la que se juzga cualquier cambio de los que hay debajo, sin salir de Ajustes.
+
+Se pinta con **las mismas funciones y los mismos tokens que la app de verdad**. Una imitación
+acabaría divergiendo y enseñaría algo que no es lo que se aplica.
+
+### Seis secciones plegables
+Fondo · Colores · Recomendado · Apariencias guardadas · Legibilidad · Texto y movimiento. Solo
+**Fondo** viene abierta, y su subtítulo dice qué fondo hay puesto, así que se sabe sin abrirla.
+
+### Lo que no se ha tocado, y es deliberado
+Tema, acento, tamaño de texto, densidad, bordes y animaciones llevan ahí desde la Fase A3 y **Josué
+ya sabe dónde están**. Se han agrupado, no reordenado ni renombrado: mover controles que alguien
+tiene memorizados es una regresión aunque el orden nuevo sea mejor.
+
+Tema y la vista previa quedan fuera de las secciones: son lo que más se toca.
+
+### Dos roturas mías, cazadas por la compilación
+Reorganizar por rangos de líneas partió un comentario JSX multilínea por la mitad y dejó una sección
+sin cerrar. `esbuild` lo señaló con la línea exacta. Después se comprobó pieza por pieza que las
+trece tarjetas originales siguen todas ahí.
+
+### Verificación
+**1340 comprobaciones en verde**, con 128 casos de renderizado.
+
+---
+
 ## Entrega 2 · FO Fase 9 — Legibilidad y contraste inteligente (v1.44.0)
 
 *"Libertad total para personalizar, pero con protección inteligente para que la interfaz siga

@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 21 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
-> y FO 9/12 (hasta v1.44.0). Quedan **85**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 22 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
+> y FO 10/12 (hasta v1.45.0). Quedan **84**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -2498,36 +2498,40 @@ color, en vez de escribirse a mano en cada archivo que compone capas. No son col
 —oscurecer es acercar al negro en tema claro y en oscuro— así que no pertenecen a `tokens.js`, y
 ahora la capa de luz del fondo y el auditor usan exactamente el mismo par.
 
-#### FO · Fase 10/12 — INTEGRACIÓN COMPLETA EN ASPECTO | JC FITNESS
-- [ ] OBJETIVO
-- [ ] ESTRUCTURA PRINCIPAL
-- [ ] NO SATURAR LA PANTALLA
-- [ ] FONDO ACTUAL
-- [ ] ACCESO RÁPIDO
-- [ ] VISTA PREVIA GLOBAL
-- [ ] NAVEGACIÓN ENTRE EDITORES
-- [ ] FLUJO COMPLETO
-- [ ] CAMBIAR DE FONDO SIN PERDER CONFIGURACIONES
-- [ ] CAMBIAR COLORES SIN CAMBIAR FOTO
-- [ ] RECOMENDADO COMO OPCIÓN, NO COMO OBLIGACIÓN
-- [ ] PERSONALIZACIÓN MANUAL COMO ÚLTIMO NIVEL
-- [ ] SISTEMA DE ESTADOS
-- [ ] PRESETS Y PERSONALIZACIÓN
-- [ ] LEGIBILIDAD INTEGRADA
-- [ ] MODO OSCURO/CLARO
-- [ ] CONFIGURACIÓN PREDETERMINADA
-- [ ] CONFIRMACIÓN INTELIGENTE
-- [ ] EXPERIENCIA MÓVIL
-- [ ] ANIMACIONES
-- [ ] COHERENCIA VISUAL
-- [ ] SISTEMA CENTRAL
-- [ ] ACTUALIZACIÓN EN TIEMPO REAL
-- [ ] PERSISTENCIA
-- [ ] MANEJO DE ERRORES
-- [ ] ACCESIBILIDAD
-- [ ] RENDIMIENTO
-- [ ] CRITERIOS DE FINALIZACIÓN
-- [ ] REGLA PARA CLAUDE
+#### FO · Fase 10/12 — INTEGRACIÓN COMPLETA EN ASPECTO ✅ COMPLETADA (v1.45.0)
+
+**Esta fase no añade funciones: ordena las que ya hay.** Ajustes → Apariencia había llegado a
+**trece tarjetas seguidas** después de las fases 1-9, que en un iPhone es una pantalla entera de
+scroll para encontrar cualquier cosa.
+
+- [x] **1 · Objetivo** — un único centro de personalización visual. Nada vive en un menú aparte.
+- [x] **2 · Estructura principal** — vista previa · Tema · **Fondo · Colores · Recomendado ·
+      Apariencias guardadas · Legibilidad · Texto y movimiento** · Acciones.
+- [x] **3 · No saturar la pantalla** — secciones plegables. Solo **Fondo** viene abierta, porque
+      es de lo que va esta entrega; el resto se abren al tocarlas.
+- [x] **4 · Fondo actual** — el subtítulo de la sección **Fondo** dice qué fondo hay puesto
+      (`describirFondo`), así que se sabe sin abrirla.
+- [x] **5 · Acceso rápido** — Tema y la vista previa quedan **fuera** de las secciones: son lo
+      que más se toca y lo que sirve de referencia para todo lo demás.
+- [x] **6 · Vista previa global** — fondo, tarjeta, botón, texto, iconos y barra inferior, en una
+      sola pieza arriba del todo. Pintada con **las mismas funciones y los mismos tokens que la app
+      de verdad** (`resolverFondo`, `estilosDeFondo`, `COLORS.surfaceAlpha`, `COLORS.navBgAlpha`,
+      `COLORS.cardShadow`): una imitación acabaría divergiendo y enseñaría algo que no se aplica.
+- [x] **7 · Navegación entre editores** — el editor de foto (F3), el recomendado (F6), la
+      personalización (F7) y los presets (F8) se abren desde su sección. **No se duplica ninguno.**
+- [x] **8 · Flujo completo** — elegir foto → editarla → recomendado → personalizar → comprobar
+      legibilidad → guardar como preset, todo dentro de Apariencia.
+- [x] **9 · Cambiar de fondo sin perder configuraciones** — ya garantizado desde F2 y F8.
+
+**Lo que NO se ha tocado, y es deliberado:** tema, acento, tamaño de texto, densidad, bordes y
+animaciones llevan en Apariencia desde la Fase A3 y **Josué ya sabe dónde están**. Se han agrupado,
+no reordenado ni renombrado. Mover controles que alguien ya tiene memorizados es una regresión
+aunque el orden nuevo sea "mejor".
+
+**Dos roturas mías durante el trabajo, cazadas por la compilación:** reorganizar por rangos de
+líneas partió un comentario JSX multilínea por la mitad y dejó una sección sin cerrar. `esbuild` lo
+señaló con la línea exacta antes de que llegara a ninguna parte. Después se comprobó pieza por
+pieza que las trece tarjetas originales siguen todas ahí.
 
 #### FO · Fase 11/12 — RENDIMIENTO, OPTIMIZACIÓN Y EXPERIENCIA
 - [ ] OBJETIVO
