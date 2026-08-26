@@ -218,6 +218,12 @@ else
   fallo "Falla la analítica del horario"; grep '✗' /tmp/jc_horario11.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-horario-top.mjs >/tmp/jc_horario12.log 2>&1; then
+  ok "Cierre y auditoría de Horario Top (HT F12) — $(grep -c '✓' /tmp/jc_horario12.log) comprobaciones"
+else
+  fallo "Falla el cierre de Horario Top"; grep '✗' /tmp/jc_horario12.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

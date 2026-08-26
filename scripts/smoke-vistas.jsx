@@ -478,6 +478,11 @@ const CASOS = [
           ['HoyView · con un choque', HoyView, () => propsHoy(conChoque)],
         ];
       })(),
+      // HT Fase 12 — el panel avanzado ahora tiene la pestaña de copia.
+      ['PanelAvanzado · con copia', PanelAvanzado, () => ({
+        estado: lleno, horario: base.horario, accent, asignaturas: [],
+        visual: normalizarVisual(null), hoy: HOY, onVisual: noop, onCambiar: noop, onResultado: noop,
+      })],
       ['PanelAvanzado · horario sin días', PanelAvanzado, () => {
         const vacio = crearDesdePlantilla(DEFAULT_HORARIO_TOP, { nombre: 'Mío', plantillaId: 'vacio', hoy: HOY });
         return {

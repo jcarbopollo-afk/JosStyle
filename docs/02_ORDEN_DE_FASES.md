@@ -188,8 +188,10 @@ escribir código.
 
 | v1.63.0 | **HT F11** | Analítica personal **sin caja negra**: cada cifra con su origen, los patrones como frases con sus números dentro, y **sin datos no se inventa una tendencia**. Describe, no juzga |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 11/12 y SO por
-1/5. Quedan **66** fases de la Entrega 2: HT (1), SO (4) y EH (61).
+| v1.64.0 | **HT F12** | **Cierra el bloque HT (12/12).** Una sola puerta al módulo, exportar/importar idempotente y **una auditoría comprobada contra el código**: si alguien borra una función, falla sola |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y AHORA TAMBIÉN HT (12/12)
+cerrados.** SO va por 1/5. Quedan **65** fases de la Entrega 2: SO (4) y EH (61).
 
 ✅ **C-23 resuelta a medias:** Josué pasó el texto que faltaba de la Fase 1 del Sonido (v1.54.0).
 ⏸ **Sigue pendiente lo de los archivos de audio**, que él dará *"cuando la web ya tenga todos los

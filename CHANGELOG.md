@@ -1,5 +1,65 @@
 # CHANGELOG.md
 
+## Entrega 2 · HT Fase 12 — Cloud, sincronización y arquitectura definitiva (v1.64.0) 🔒 CIERRA HORARIO TOP
+
+Con esta fase **el bloque HT queda cerrado: 12 de 12**.
+
+### Una sola puerta
+Once archivos de horario no pueden ser once puntos de entrada. `diaCompleto()`, `resumenModulo()` y
+`contextoCompletoIA()` son la única puerta desde fuera; cada archivo sigue siendo dueño de lo suyo
+(apartados 90 y 91).
+
+### Exportar sin llevarse lo que no es
+Se exporta la estructura y los datos: horarios, asignaturas, clases, materiales, mochilas, kits,
+reglas y automatizaciones.
+
+**No viajan** lo que confirmaste que hiciste, los avisos que ya se dieron ni lo que metiste en la
+mochila cada día. Son de este curso y de este aparato — llevárselos daría un histórico que no
+ocurrió. Y está escrito **por qué**, para que nadie los añada sin pensarlo.
+
+### Importar dos veces no duplica el curso
+Es la propiedad que evita el desastre, y es la misma idempotencia de RA F2: se compara por id, así
+que pegar el mismo archivo dos veces no crea cuarenta clases repetidas.
+
+Antes de escribir se revisa y se dice **cuánto traería y qué no va a traer**. Un archivo de otro
+módulo se rechaza; uno de una versión más nueva también, en vez de intentar adivinarlo.
+
+Y sustituir el horario entero **no borra lo que confirmaste**: eso sigue siendo de este dispositivo.
+
+### La auditoría es código, no un documento
+El apartado 103 enumera cincuenta y tres cosas que Horario Top tiene que saber hacer. Las 38
+comprobables **están atadas a una función que tiene que existir**.
+
+Si alguien borra una, la prueba falla sola. Un documento que dice "está todo" se desactualiza en la
+primera fase que venga después; esto no puede.
+
+Es la misma decisión que HT F1 tomó al construir un módulo probado en vez de un documento de
+arquitectura.
+
+Y **lo que la auditoría no puede comprobar, lo dice ella misma**: el responsive, la accesibilidad
+real con lector de pantalla, el modo oscuro en pantalla, el diseño, los backups de Supabase (son de
+la consola) y las Edge Functions (infraestructura que el proyecto no tiene). Decir que están porque
+hay una clase de CSS sería mentir.
+
+### Cloud, RLS y multidispositivo: ya estaban
+No se ha rehecho nada. **Se resolvieron en HT F2**, y con la decisión más importante del módulo: el
+apartado 51 obliga a *"adaptarse a la arquitectura global"*, así que el horario vive en `app_data`
+con RLS por usuario — **sin una tabla propia y sin un SQL que Josué tenga que ejecutar**.
+
+La auditoría lo comprueba de verdad: **no hay `user_id` que falsear** en el modelo.
+
+### Lo que queda montado
+`Horario → Estudios → Mochila → Tareas → Objetivos → Entrenamiento → Productividad → IA →
+Notificaciones → Analítica`, entero, y cada eslabón **lee** del dueño del dato en vez de copiarlo.
+
+### Verificación
+**3115 comprobaciones y 10 reglas invariantes en verde** (antes 3066), 45 del cierre y 308 casos de
+renderizado. `package.json` → **v1.64.0**.
+
+⚠️ **Ningún SQL nuevo, en las doce fases del módulo.** Siguen los dos bloques pendientes de siempre,
+que son de otras fases: bucket `armario` (AR F1) y bucket `fondos` (FO F2).
+
+
 ## Entrega 2 · HT Fase 11 — Analítica personal, carga, progreso y aprendizaje (v1.63.0)
 
 ### La frase que decidió cómo construir la fase

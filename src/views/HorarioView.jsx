@@ -78,6 +78,7 @@ import {
   marcarTodosLeidos, posponer, MINUTOS_SNOOZE, tipoAviso, resumenNocturno,
 } from '../lib/avisosHorario';
 import { informe, recomendaciones } from '../lib/analiticaHorario';
+import { exportarHorario, revisarImportacion, importarHorario, estadoDelModulo } from '../lib/horarioTop';
 import { notificarSiCorresponde } from '../lib/notificaciones';
 
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
@@ -1555,6 +1556,15 @@ export function PanelAvanzado({ estado, horario, accent, asignaturas, visual, ho
   const [fr, setFr] = useState({ desde: '08:00', hasta: '14:00', intervalo: 60, descanso: 0 });
   const [aviso, setAviso] = useState(null);
   const [confirmando, setConfirmando] = useState(null);
+  const [pegado, setPegado] = useState('');
+
+  /* HT F12 · apartado 82 — se revisa ANTES de escribir, como todo desde F4.
+     Un JSON mal pegado no puede reventar la pantalla, así que el `parse` va
+     dentro de un try. */
+  const revisionImportar = useMemo(() => {
+    if (!pegado.trim()) return null;
+    try { return revisarImportacion(JSON.parse(pegado)); } catch { return { valido: false, error: 'Eso no parece un horario copiado.' }; }
+  }, [pegado]);
 
   const resultados = useMemo(
     () => (busqueda.trim() ? buscarEnHorario(estado, busqueda, { asignaturas }) : []),
@@ -1570,6 +1580,7 @@ export function PanelAvanzado({ estado, horario, accent, asignaturas, visual, ho
     { id: 'ciclo', label: 'Semanas A/B' },
     { id: 'franjas', label: 'Franjas' },
     { id: 'horario', label: 'El horario' },
+    { id: 'copia', label: 'Copia' },
   ];
 
   const aplicarFranjas = (forzar) => {
@@ -1700,6 +1711,54 @@ export function PanelAvanzado({ estado, horario, accent, asignaturas, visual, ho
           {!aviso && nuevasFranjas.length > 0 && (
             <PrimaryButton accent={accent} onClick={() => aplicarFranjas(false)}>Crear las franjas</PrimaryButton>
           )}
+        </>
+      )}
+
+      {abierto === 'copia' && (
+        <>
+          {/* HT F12 · apartados 82 y 83 — llevarse el horario y traerlo.
+              ⚠️ Lo que confirmaste, los avisos ya dados y la mochila de cada día
+              NO viajan: son de este curso y de este aparato. Llevárselos daría
+              un histórico que no ocurrió. */}
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+            Copia tu horario para guardarlo o pasarlo a otro sitio. Se lleva los días, las asignaturas y
+            las reglas; no se lleva lo que ya hiciste ni los avisos que ya te dio.
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            <Accion icono={Copy} label="Copiar al portapapeles" onClick={() => {
+              const texto = JSON.stringify(exportarHorario(estado, { nombre: horario.nombre }));
+              try { navigator.clipboard?.writeText(texto); setAviso({ copiado: true }); } catch { setAviso({ copiado: false }); }
+            }} />
+          </div>
+          {aviso?.copiado === true && <p className="text-[11px] mt-2" style={{ color: accent }}>Copiado. Pégalo donde quieras guardarlo.</p>}
+          {aviso?.copiado === false && <p className="text-[11px] mt-2" style={{ color: COLORS.negative }}>Este navegador no ha dejado copiarlo.</p>}
+
+          <Field label="Pegar un horario copiado">
+            <TextInput value={pegado} onChange={(e) => { setPegado(e.target.value); setAviso(null); }} placeholder="Pega aquí el texto" />
+          </Field>
+          {revisionImportar && (
+            revisionImportar.valido ? (
+              <div className="rounded-xl p-2 mb-2" style={{ background: COLORS.surface2 }}>
+                <p className="text-[11px]" style={{ color: COLORS.text }}>
+                  «{revisionImportar.nombre}»: {revisionImportar.cuenta.horarios} {plural(revisionImportar.cuenta.horarios, 'horario', 'horarios')},
+                  {' '}{revisionImportar.cuenta.actividades} {plural(revisionImportar.cuenta.actividades, 'asignatura', 'asignaturas')} y
+                  {' '}{revisionImportar.cuenta.bloques} {plural(revisionImportar.cuenta.bloques, 'clase', 'clases')}.
+                </p>
+                <p className="text-[10px] mt-1 mb-2" style={{ color: COLORS.textMuted }}>
+                  Se añadirá a lo que ya tienes. Si pegas lo mismo dos veces no se duplica nada.
+                </p>
+                <PrimaryButton accent={accent} onClick={() => {
+                  const r = importarHorario(estado, JSON.parse(pegado));
+                  if (!r.error) { onCambiar(r.estado); setPegado(''); setAviso({ importado: true }); }
+                }}>
+                  Añadirlo a mi horario
+                </PrimaryButton>
+              </div>
+            ) : (
+              <p className="text-[11px] mb-2" style={{ color: COLORS.negative }}>{revisionImportar.error}</p>
+            )
+          )}
+          {aviso?.importado && <p className="text-[11px]" style={{ color: accent }}>Añadido.</p>}
         </>
       )}
 

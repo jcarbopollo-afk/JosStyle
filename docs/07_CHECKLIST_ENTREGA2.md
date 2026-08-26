@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 40 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 11/12** y **SO 1/5** (hasta v1.63.0). Quedan
-> **66**: HT (1), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 41 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)** y **SO 1/5** (hasta
+> v1.64.0). Quedan **65**: SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -4001,113 +4001,53 @@ comprueba que no hay ni puntos, ni niveles, ni rachas.
 
 **Lo que sigue sin estar probado, y hay que decirlo:** la pantalla del informe. Como todo desde R1.
 
-#### HT · Fase 12/12 — CLOUD + SUPABASE + SINCRONIZACIÓN + ARQUITECTURA DEFINITIVA
-- [ ] ARQUITECTURA GENERAL
-- [ ] FUENTE CENTRAL DE VERDAD
-- [ ] AUTENTICACIÓN
-- [ ] USUARIO
-- [ ] AISLAMIENTO DE DATOS
-- [ ] TABLA DE HORARIOS
-- [ ] MÚLTIPLES HORARIOS
-- [ ] HORARIO ACTIVO
-- [ ] PERIODOS DE VALIDEZ
-- [ ] CURSO ESCOLAR
-- [ ] COLUMNAS
-- [ ] FILAS
-- [ ] BLOQUES DE HORARIO
-- [ ] HORAS
-- [ ] HORARIO RECURRENTE
-- [ ] EXCEPCIONES
-- [ ] CAMBIO TEMPORAL
-- [ ] MATERIAS
-- [ ] COLORES
-- [ ] IDENTIDAD VISUAL
-- [ ] TAREAS
-- [ ] EXÁMENES
-- [ ] EVENTOS
-- [ ] RECURRENCIA
-- [ ] MOCHILA
-- [ ] REGLAS DE MOCHILA
-- [ ] MOTOR DE REGLAS
-- [ ] EJEMPLO
-- [ ] VENTAJA
-- [ ] MOTOR TEMPORAL
-- [ ] ZONA HORARIA
-- [ ] CAMBIO DE HORA
-- [ ] ESTADO DE ACTIVIDAD
-- [ ] REGLA DE PASADO
-- [ ] HOY
-- [ ] TABLÓN DE HOY
-- [ ] CAMBIO AUTOMÁTICO
-- [ ] SIN REFRESCAR MANUALMENTE
-- [ ] CALENDARIO
-- [ ] IA
-- [ ] CAPA IA
-- [ ] TOOLS DE IA
-- [ ] PERMISOS
-- [ ] ACCIONES PELIGROSAS
-- [ ] TRANSACCIONES
-- [ ] EVITAR DATOS A MEDIAS
-- [ ] NOTIFICACIONES
-- [ ] NOTIFICACIONES PROGRAMADAS
-- [ ] IDEMPOTENCIA
-- [ ] SINCRONIZACIÓN
-- [ ] CAMBIOS LOCALES
-- [ ] COLA OFFLINE
-- [ ] AL VOLVER INTERNET
-- [ ] CONFLICTOS
-- [ ] RESOLUCIÓN
-- [ ] INDICADOR DE SINCRONIZACIÓN
-- [ ] OFFLINE
-- [ ] CLOUD COMO RESPALDO
-- [ ] BACKUPS
-- [ ] MIGRACIONES
-- [ ] ÍNDICES
-- [ ] RENDIMIENTO
-- [ ] CONSULTAS POR RANGO
-- [ ] PAGINACIÓN
-- [ ] CACHÉ
-- [ ] SEGURIDAD DE CLAVES
-- [ ] CLAUDE API
-- [ ] CONTROL DE USO DE IA
-- [ ] COSTES
-- [ ] CONTEXTO MÍNIMO
-- [ ] LOGS
-- [ ] MONITORIZACIÓN
-- [ ] RECUPERACIÓN
-- [ ] OPERACIONES SEGURAS
-- [ ] BORRADO
-- [ ] ARCHIVADO
-- [ ] RESTAURACIÓN
-- [ ] IMPORTACIÓN
-- [ ] EXPORTACIÓN
-- [ ] DUPLICAR HORARIO
-- [ ] PLANTILLAS
-- [ ] MOTOR DE RECURRENCIA
-- [ ] CALENDARIO ESCOLAR
-- [ ] IMPORTACIÓN DE CALENDARIO
-- [ ] FUTURAS INTEGRACIONES
-- [ ] API INTERNA
-- [ ] SEPARACIÓN DE RESPONSABILIDADES
-- [ ] COMPONENTES DE UI
-- [ ] DISEÑO RESPONSIVE
-- [ ] MÓVIL COMO PRIORIDAD
-- [ ] GRID
-- [ ] ACCESIBILIDAD
-- [ ] ANIMACIONES
-- [ ] MODO OSCURO
-- [ ] DISEÑO PREMIUM
-- [ ] ARQUITECTURA FINAL
-- [ ] RESULTADO FINAL
-- [ ] EL SISTEMA COMPLETO
-- [ ] CRITERIOS DE FINALIZACIÓN DE HORARIO TOP
-- [ ] Y LO MÁS IMPORTANTE
+#### HT · Fase 12/12 — CLOUD + SUPABASE + SINCRONIZACIÓN + ARQUITECTURA DEFINITIVA ✅ COMPLETADA (v1.64.0) 🔒 **CIERRA EL BLOQUE HT: 12/12**
 
----
+*"HORARIO TOP queda preparado para crecer. No lo vamos a diseñar como «una tabla para ver las
+clases»: lo estamos diseñando como un motor temporal del Sistema Operativo Personal."* (apartado 104)
 
-## AR · ARMARIO JC LIFESTYLE — 4 fases
+`src/lib/horarioTop.js` (45 comprobaciones) hace tres cosas y cierra el módulo.
 
-Armario digital, constructor de outfits, calendario e historial de uso, y sistema inteligente anti-repetición. **Estilo de Hombre lo da por construido** (su apartado 16 dice literalmente *"NO rehacer el armario"*), así que debe existir antes que EH.
+- [x] **90-91 · API interna y separación de responsabilidades** — once archivos de horario no pueden
+      ser once puertas de entrada. `diaCompleto()`, `resumenModulo()` y `contextoCompletoIA()` son
+      la única puerta desde fuera; cada archivo sigue siendo dueño de lo suyo.
+- [x] **82-83 · Exportar e importar** — ⚠️ se exporta **la estructura y los datos, no el histórico de
+      uso**: lo confirmado, los avisos ya dados y la mochila de cada día **no viajan**, porque son de
+      este curso y de este aparato — llevárselos daría un histórico que no ocurrió. Y está escrito
+      **por qué** no viajan, para que nadie los añada sin pensarlo.
+- [x] **82 · Importar sin romper nada** — se **revisa antes de escribir** (como todo desde HT F4),
+      diciendo cuánto traería y **qué no va a traer**. ⚠️ **Importar dos veces el mismo archivo no
+      duplica el curso**: es la misma idempotencia de RA F2. Un archivo de una versión más nueva se
+      rechaza en vez de intentar adivinarlo.
+- [x] **103 · La auditoría, comprobada contra el código** — ⚠️ **las 38 capacidades comprobables
+      están atadas a una función que tiene que existir.** Si alguien borra una, la prueba falla —
+      que es justo lo que un documento no hace. Es la misma decisión de HT F1: código probado en vez
+      de un documento de arquitectura.
+- [x] **Cloud, Supabase, RLS, offline, multidispositivo y seguridad** — ⚠️ **resueltos desde HT F2**,
+      y con la decisión más importante del módulo: el apartado 51 obliga a *"adaptarse a la
+      arquitectura global"*, así que el horario vive en `app_data` con RLS por usuario, **sin una
+      tabla propia y sin un SQL que Josué tenga que ejecutar**. La auditoría comprueba de verdad que
+      **no hay `user_id` que falsear**.
+- [x] **104 · Preparado para crecer** — la cadena `Horario → Estudios → Mochila → Tareas → Objetivos
+      → Entrenamiento → Productividad → IA → Notificaciones → Analítica` está construida entera, y
+      cada eslabón **lee** del dueño del dato en vez de copiarlo.
+
+⚠️ **Lo que la auditoría NO da por bueno, y lo dice ella misma:** el responsive y el móvil (93-95),
+la accesibilidad real con lector de pantalla (96), las animaciones y el modo oscuro en pantalla
+(97-98), el diseño premium (99), los backups y migraciones de Supabase (son de la consola, no del
+código) y las Edge Functions y la monitorización (infraestructura que el proyecto no tiene). Decir
+que están porque hay una clase de CSS sería mentir — misma honestidad que R1.
+
+**Lo que NO se ha construido, y por qué (regla 8):**
+
+- [-] **88 · Importar un calendario escolar externo** — necesita un formato que Josué no tiene. Lo
+      que sí está es el importador, listo para cuando lo haya.
+- [-] **89 · Futuras integraciones** — la propia especificación las llama *"futuras"*.
+- [-] **Edge Functions, backups y monitorización** — infraestructura de Supabase y Vercel, no código
+      de la app. Y añadir una Edge Function sería otra cosa que desplegar desde el iPhone.
+
+**Lo que sigue sin estar probado, y hay que decirlo:** todo lo de la lista de arriba. Como siempre
+desde R1.
 
 #### AR · Fase 1/4 — ARMARIO DIGITAL + GESTIÓN DE PRENDAS ✅ COMPLETADA (v1.32.0)
 
