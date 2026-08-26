@@ -183,6 +183,7 @@ export const DEFAULT_HORARIO_DATOS = {
   completadas: [],
   automatizaciones: [],
   historialAuto: [],
+  avisos: [],
   config: DEFAULT_CONFIG_HORARIO,
 };
 

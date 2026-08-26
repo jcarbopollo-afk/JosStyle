@@ -33,6 +33,7 @@ import {
   tablonDelDia, crearAutomatizacion, previsualizar, ejecutar, historialDe, marcarCompletada,
 } from '../src/lib/automatizaciones.js';
 import { detectarSobrecarga } from '../src/lib/planificador.js';
+import { registrarEnviado, centroDeAvisos } from '../src/lib/avisosHorario.js';
 import { crearMaterial, crearEnlaceMaterial } from '../src/lib/horarioDatos.js';
 import { contextoTemporal, opcionesReprogramar } from '../src/lib/hoy.js';
 import { fichaActividad, impactoEliminarActividad, editarActividad, crearActividadUnica } from '../src/lib/actividades.js';
@@ -441,6 +442,19 @@ const CASOS = [
               })],
               ['HoyView · examen que es hoy', HoyView, () => ({
                 ...propsHoy(lleno), planificador: plani(HOY),
+              })],
+            ];
+          })(),
+          /* HT Fase 10 — el centro de avisos. Con uno sin leer y otro leído, que
+             es donde se ve que los sin leer van primero. */
+          ...(() => {
+            let conAvisos = registrarEnviado(lleno, { clave: 'k1', tipo: 'mochila', prioridad: 'alta', titulo: 'Prepara la mochila', cuerpo: 'Falta la bata' }, { ahora: '21:00', fecha: HOY });
+            conAvisos = registrarEnviado(conAvisos, { clave: 'k2', tipo: 'estudio', prioridad: 'critica', titulo: 'Examen de Biología', cuerpo: 'Es mañana.' }, { ahora: '21:05', fecha: HOY });
+            return [
+              ['HoyView · con centro de avisos', HoyView, () => ({
+                ...propsHoy(conAvisos, { productividad: tareas }),
+                centroAvisos: centroDeAvisos(conAvisos),
+                accionesAvisos: { leer: noop, archivar: noop, todosLeidos: noop },
               })],
             ];
           })(),

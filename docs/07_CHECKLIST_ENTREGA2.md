@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 38 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 9/12** y **SO 1/5** (hasta v1.61.0). Quedan
-> **68**: HT (3), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 39 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 10/12** y **SO 1/5** (hasta v1.62.0). Quedan
+> **67**: HT (2), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -3892,97 +3892,63 @@ mismo plan, y se prueba entero con Node.
 **Lo que sigue sin estar probado, y hay que decirlo:** la respuesta real de la IA (que llega por
 `api/ask-ai.js`) y la pantalla. Como todo desde R1.
 
-#### HT · Fase 10/12 — NOTIFICACIONES + RECORDATORIOS + CONTEXTO PROACTIVO
-- [ ] OBJETIVO PRINCIPAL
-- [ ] TIPOS DE NOTIFICACIÓN
-- [ ] PRIORIDADES
-- [ ] NO TODO DEBE NOTIFICAR
-- [ ] MOTOR DE DECISIÓN
-- [ ] NOTIFICACIÓN CONTEXTUAL
-- [ ] CAMBIOS EN TIEMPO REAL
-- [ ] EVITAR DUPLICADOS
-- [ ] RECORDATORIOS PERSONALIZADOS
-- [ ] VARIOS RECORDATORIOS
-- [ ] NOTIFICACIÓN DE INICIO
-- [ ] NOTIFICACIÓN DE FINALIZACIÓN
-- [ ] ACTIVIDADES PASADAS
-- [ ] TAREAS
-- [ ] TAREAS VENCIDAS
-- [ ] RECORDATORIO DE TAREA PENDIENTE
-- [ ] EXÁMENES
-- [ ] INTELIGENCIA DE EXÁMENES
-- [ ] PROPUESTA
-- [ ] MOCHILA
-- [ ] MOCHILA INCOMPLETA
-- [ ] MATERIAL CRÍTICO
-- [ ] CAMBIO DE NECESIDADES
-- [ ] NUEVA NECESIDAD
-- [ ] NOTIFICACIONES DE CAMBIOS
-- [ ] CAMBIO IMPORTANTE
-- [ ] CANCELACIÓN
-- [ ] CONFLICTOS
-- [ ] RESOLUCIÓN
-- [ ] RECORDATORIOS DE EVENTOS
-- [ ] RECORDATORIOS DE PREPARACIÓN
-- [ ] LISTA DE PREPARACIÓN
-- [ ] NOTIFICACIONES DE HÁBITOS
-- [ ] NO CREAR CIENTOS DE RECORDATORIOS
-- [ ] RESUMEN INTELIGENTE
-- [ ] RESUMEN DE MAÑANA
-- [ ] RESUMEN NOCTURNO
-- [ ] RESUMEN MATUTINO
-- [ ] NO MOLESTAR
-- [ ] EXCEPCIONES
-- [ ] FINES DE SEMANA
-- [ ] VACACIONES
-- [ ] DÍAS ESPECIALES
-- [ ] CONTEXTO DE UBICACIÓN
-- [ ] CONTEXTO DE DISPOSITIVO
-- [ ] NOTIFICACIONES OFFLINE
-- [ ] PUSH CLOUD
-- [ ] SINCRONIZACIÓN
-- [ ] MULTIDISPOSITIVO
-- [ ] ESTADO DE NOTIFICACIÓN
-- [ ] HISTORIAL
-- [ ] CANCELACIÓN AUTOMÁTICA
-- [ ] REPETICIÓN INTELIGENTE
-- [ ] SNOOZE
-- [ ] POSPONER
-- [ ] MARCAR COMO HECHO
-- [ ] ACCIONES RÁPIDAS
-- [ ] DEEP LINKS
-- [ ] NOTIFICACIONES DE IA
-- [ ] LA IA NO PODRÁ SPAMEAR
-- [ ] COOLDOWN
-- [ ] AGRUPACIÓN
-- [ ] SISTEMA DE IMPORTANCIA
-- [ ] DECISIÓN FINAL
-- [ ] PREVENCIÓN DE NOTIFICACIONES OBSOLETAS
-- [ ] EJEMPLO COMPLETO
-- [ ] OTRO EJEMPLO
-- [ ] MOCHILA + NOTIFICACIONES + HORARIO
-- [ ] TAREAS + HORARIO
-- [ ] EXAMEN + ESTUDIO
-- [ ] CONEXIÓN CON HOY
-- [ ] CENTRO DE NOTIFICACIONES INTERNO
-- [ ] LEÍDO / NO LEÍDO
-- [ ] ARCHIVAR
-- [ ] FILTROS
-- [ ] CONFIGURACIÓN GLOBAL
-- [ ] CONFIGURACIÓN POR MÓDULO
-- [ ] CONFIGURACIÓN POR IMPORTANCIA
-- [ ] CONFIGURACIÓN POR HORARIO
-- [ ] PERSONALIZACIÓN VISUAL
-- [ ] SONIDO
-- [ ] VIBRACIÓN
-- [ ] MODO SILENCIOSO
-- [ ] ACCESIBILIDAD
-- [ ] CLOUD
-- [ ] LOCAL + CLOUD
-- [ ] CONFLICTOS DE SINCRONIZACIÓN
-- [ ] SEGURIDAD
-- [ ] AUDITORÍA
-- [ ] CRITERIOS DE ACEPTACIÓN
+#### HT · Fase 10/12 — NOTIFICACIONES + RECORDATORIOS + CONTEXTO PROACTIVO ✅ COMPLETADA (v1.62.0)
+
+*"La idea no es llenar el móvil de avisos. La idea es que el sistema se adelante a lo que necesitas,
+pero sin molestarte."*
+
+⚠️ **El proyecto YA tiene quien manda notificaciones:** `notificaciones.js`, de la Fase A4, con el
+permiso, el interruptor global, las categorías y el horario de descanso. Un segundo emisor daría dos
+avisos por lo mismo.
+
+Así que lo construido es **la otra mitad**, la que faltaba: `src/lib/avisosHorario.js` (71
+comprobaciones) **decide** qué avisar, cuándo y con qué prioridad; `notificaciones.js` **manda**. Es
+el mismo reparto de SO F1 (`audio.js` decide, `audioEngine.js` suena), y por el mismo motivo: la
+decisión es donde están los errores que importan, y la decisión sí se puede probar.
+
+- [x] **1-3 · El motor, los tipos y las prioridades** — siete tipos y cuatro prioridades, y **cada
+      tipo apunta a una categoría de las que ya existían** en la Fase A4.
+- [x] **4-5 · No todo debe notificar** — ⚠️ *"que exista un evento no significa automáticamente que
+      haya que enviar una notificación"*. Es la regla fundamental, y por eso hay un motor con seis
+      preguntas en vez de un `if`. Y **cada rechazo tiene su motivo por escrito**: sin eso, contestar
+      "¿por qué no me ha avisado?" sería adivinar.
+- [x] **9-16 · Recordatorios de clases y tareas** — los minutos antes son configurables, y las tareas
+      vencidas se avisan **diciendo cuál**, no solo cuántas.
+- [x] **17-19 · Exámenes** — ⚠️ **un examen mañana es lo único que sube a crítica solo.** Uno de
+      dentro de tres días es alta, y uno de dentro de un mes **no avisa todavía**.
+- [x] **20-22 · Mochila** — ⚠️ **si la mochila está completa NO se avisa** (apartado 4 en acción), y
+      **que falte material no es crítico**: crítico es un examen mañana. Confundirlos hace que lo
+      crítico deje de serlo.
+- [x] **34-38 · No crear cientos de recordatorios y resúmenes** — ⚠️ **tres avisos se convierten en
+      uno**, con lo más importante primero. Y el resumen nocturno **calla si mañana no hay nada**: uno
+      que dice "mañana no tienes nada" todas las noches de vacaciones es justo el ruido a evitar.
+- [x] **39-43 · No molestar** — ⚠️ **se respeta siempre, también con lo crítico.** Un aviso de mochila
+      a las 3 de la mañana no es más útil por ser urgente. Tiene su propia prueba.
+- [x] **51-57 · Historial, snooze, posponer y acciones rápidas** — posponer vive en la sesión, no se
+      guarda: es una decisión de este rato, no un dato.
+- [x] **52 · Cancelación automática** — ⚠️ **un aviso caduca.** Si la clase ya pasó o la tarea ya está
+      hecha, no se manda: avisar de algo que ya no aplica es peor que no avisar. Y con más de dos
+      horas de retraso tampoco, porque solo haría ruido.
+- [x] **72-75 · Centro de avisos, leído/no leído, archivar y filtros** — los **sin leer salen
+      primero**, y archivar da por leído: nadie archiva algo sin mirarlo.
+- [x] **76-80 · Configuración** — ⚠️ **no hay un segundo interruptor global.** El de la Fase A4 sigue
+      mandando; esto solo añade lo que es del horario y no cabía allí.
+
+**Lo que NO se ha construido, y por qué (regla 8):**
+
+- [-] **44-45 · Contexto de ubicación y de dispositivo** — necesita GPS, que el proyecto no tiene ni
+      ha pedido.
+- [-] **47-49 · Push Cloud y multidispositivo** — **Web Push de verdad** (con la app cerrada) exige
+      un Service Worker que escuche `push`, una tabla de suscripciones y otra función serverless. Es
+      infraestructura nueva, ya documentada como fuera de alcance desde la Fase A4, y añadiría un
+      tercer bloque de SQL a los dos que Josué ya tiene pendientes.
+- [-] **82-84 · Sonido y vibración** — el sonido es **SO · Sonido**, que tiene su propio motor
+      (`audioEngine.js`) y su regla invariante. Meterlo aquí sería el segundo sistema que esa regla
+      impide.
+- [-] **86-88 · Cloud y conflictos de sincronización** — resuelto desde HT F2: todo en `app_data`.
+
+**Lo que sigue sin estar probado, y hay que decirlo:** que la notificación llegue de verdad al
+iPhone, el permiso del navegador y Web Push con la app cerrada. Como todo desde R1 y la Fase A4.
 
 #### HT · Fase 11/12 — ANALÍTICA PERSONAL + CARGA + PROGRESO + APRENDIZAJE DEL SISTEMA
 - [ ] *(sin apartados numerados extraídos — leer la fase completa en la especificación)*

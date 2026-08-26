@@ -255,6 +255,9 @@ export const DEFAULT_HORARIO_TOP = {
   completadas: [],
   automatizaciones: [],
   historialAuto: [],
+  // HT F10 — el historial de avisos. Lo que se decide NO se guarda: se calcula
+  // cada vez. Lo que se guarda es lo que YA se avisó, para no repetirlo.
+  avisos: [],
 };
 
 /* ---------------------------------------------------------------------------
@@ -727,6 +730,7 @@ export function normalizarHorarioTop(guardado) {
     completadas: Array.isArray(g.completadas) ? g.completadas.filter((x) => typeof x === 'string') : [],
     automatizaciones: Array.isArray(g.automatizaciones) ? g.automatizaciones : [],
     historialAuto: Array.isArray(g.historialAuto) ? g.historialAuto : [],
+    avisos: Array.isArray(g.avisos) ? g.avisos : [],
   };
 }
 

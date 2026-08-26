@@ -206,6 +206,12 @@ else
   fallo "Falla el planificador"; grep '✗' /tmp/jc_horario9.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-avisos-horario.mjs >/tmp/jc_horario10.log 2>&1; then
+  ok "Motor de avisos del horario (HT F10) — $(grep -c '✓' /tmp/jc_horario10.log) comprobaciones"
+else
+  fallo "Falla el motor de avisos"; grep '✗' /tmp/jc_horario10.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

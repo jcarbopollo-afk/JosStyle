@@ -1,5 +1,82 @@
 # CHANGELOG.md
 
+## Entrega 2 · HT Fase 10 — Notificaciones, recordatorios y contexto proactivo (v1.62.0)
+
+### La mitad que faltaba: decidir, no mandar
+El proyecto **ya tiene** quien manda notificaciones: `notificaciones.js`, de la Fase A4, con el
+permiso del navegador, el interruptor global, las categorías y el horario de descanso. Un segundo
+emisor daría dos avisos por lo mismo.
+
+Así que lo construido es la otra mitad:
+
+- **`avisosHorario.js` decide** qué avisar, cuándo y con qué prioridad. Puro, se prueba con Node.
+- **`notificaciones.js` manda.** Toca el navegador.
+
+Es el mismo reparto de SO F1 (`audio.js` decide, `audioEngine.js` suena), y por el mismo motivo: la
+decisión es donde están los errores que importan, y la decisión sí se puede probar.
+
+### Que exista un evento no significa que haya que avisar
+Es la regla fundamental de la fase (apartado 4). Por eso hay un motor con las seis preguntas del
+apartado 5 en vez de un `if`:
+
+¿Es importante? → ¿Está configurado? → ¿Es el momento? → ¿Ya se avisó? → ¿Sigue valiendo? → Enviar.
+
+Y **cada rechazo lleva su motivo por escrito**: "todavía no toca", "ya se avisó de esto", "estás en
+horas de descanso". Sin eso, contestar *"¿por qué no me ha avisado?"* sería adivinar.
+
+### Tres avisos se convierten en uno
+Seis clases un martes no son seis notificaciones (apartado 34). Cuando hay más de uno que mandar a la
+vez, se junta en uno solo — *"3 cosas hoy: Examen, Mates, Biología"* — con **lo más importante
+primero**.
+
+Y el resumen nocturno **calla si mañana no hay nada**. Uno que dice "mañana no tienes nada" todas las
+noches de las vacaciones es exactamente el ruido que el apartado quiere evitar.
+
+### No molestar se respeta también con lo crítico
+Un aviso de mochila a las 3 de la mañana **no es más útil por ser urgente**. Así que las horas de
+descanso ganan a todo, incluida la prioridad crítica. Tiene su propia prueba.
+
+### Un aviso caduca
+Si la clase ya pasó o la tarea ya está hecha, el aviso programado **no se manda** (apartado 52).
+Avisar de algo que ya no aplica es peor que no avisar.
+
+Y con más de dos horas de retraso tampoco: avisar a las 12 de una clase de las 8 solo hace ruido.
+
+### Lo crítico es lo crítico
+Un examen **mañana** es lo único que sube a crítica solo. Uno de dentro de tres días es alta. Uno de
+dentro de un mes no avisa todavía.
+
+Y **que falte material en la mochila no es crítico**: es importante. Confundirlos hace que lo crítico
+deje de serlo, que es cómo se acaba ignorando el aviso que sí importaba.
+
+Si la mochila está completa, no se avisa. Si no hay tareas vencidas, no se avisa de tareas.
+
+### El centro de avisos
+Lo que se ha avisado, con los **sin leer primero**, y las tres acciones del apartado 57: posponer, dar
+por leído y archivar. Archivar da por leído — nadie archiva algo sin mirarlo.
+
+Posponer vive en la sesión, no se guarda: es una decisión de este rato, no un dato.
+
+### Lo que no se ha construido, y por qué
+- **Push Cloud con la app cerrada** (47-49): exige un Service Worker que escuche `push`, una tabla de
+  suscripciones y otra función serverless. Es infraestructura nueva —ya documentada como fuera de
+  alcance desde la Fase A4— y añadiría un tercer bloque de SQL a los dos que Josué tiene pendientes.
+- **Ubicación y contexto de dispositivo** (44-45): necesita GPS.
+- **Sonido y vibración** (82-84): el sonido es **SO · Sonido**, con su motor y su regla invariante.
+  Meterlo aquí sería el segundo sistema que esa regla impide.
+- **Cloud y conflictos** (86-88): resuelto desde HT F2.
+
+### Verificación
+**3009 comprobaciones y 10 reglas invariantes en verde** (antes 2934), 71 del motor de avisos y 296
+casos de renderizado. `package.json` → **v1.62.0**.
+
+⚠️ Sin probar: que la notificación llegue de verdad al iPhone, el permiso del navegador y Web Push
+con la app cerrada. Como todo desde R1 y la Fase A4.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
 ## Entrega 2 · HT Fase 9 — IA de horario y planificador personal (v1.61.0)
 
 ### Dónde está la IA en la arquitectura

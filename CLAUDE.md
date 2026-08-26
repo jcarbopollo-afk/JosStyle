@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.61.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.62.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados, **Horario Top** va por 9/12 y **Sonido** por 1/5, quedan 68) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados, **Horario Top** va por 10/12 y **Sonido** por 1/5, quedan 67) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,8 +107,8 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 2637 pruebas unitarias con Node, 5 de auditoría, 292 casos de renderizado real con
-`react-dom/server` y 10 reglas invariantes — **2934 comprobaciones**.
+Vite, 2708 pruebas unitarias con Node, 5 de auditoría, 296 casos de renderizado real con
+`react-dom/server` y 10 reglas invariantes — **3009 comprobaciones**.
 
 Eso ya ha encontrado **cuarenta y seis bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -133,8 +133,8 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase candidata: HT · Fase 10/12 — Notificaciones, recordatorios y contexto proactivo.**
-Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
+**Siguiente fase candidata: HT · Fase 11/12 — Analítica personal, carga, progreso y aprendizaje del
+sistema.** Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
@@ -176,6 +176,8 @@ Seis cosas que conviene tener presentes al retomar:
   releer esa prueba antes.
 - **Nada de la actividad que se pueda derivar se guarda** (HT F5): usos, tiempo semanal, recientes,
   más usadas y carga por día salen de los bloques. Lo único guardado es "favorita", que la pone él.
+- ⚠️ **`avisosHorario.js` DECIDE, `notificaciones.js` MANDA** (HT F10). Nunca añadir un segundo
+  emisor: el interruptor global, las categorías y el horario de descanso son de la Fase A4.
 - ⚠️ **`aplicarPlan` sin `confirmado` no hace nada** (HT F9): es la regla 7 en código, no una
   comprobación defensiva. Nunca darle un valor por defecto.
 - ⚠️ **`contextoParaIA` nunca lleva notas privadas ni nada de Relación** (HT F9), con pruebas. Si

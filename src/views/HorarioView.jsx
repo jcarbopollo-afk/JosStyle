@@ -73,6 +73,11 @@ import {
   ordenarPorPrioridad, planDeEstudio, explicarPlan, planAlternativo, compararPlanes,
   huecosParaMover, detectarSobrecarga, aplicarPlan, previsualizarPlan, describirAccion,
 } from '../lib/planificador';
+import {
+  avisosAMandar, registrarEnviado, centroDeAvisos, marcarLeido, archivarAviso,
+  marcarTodosLeidos, posponer, MINUTOS_SNOOZE, tipoAviso, resumenNocturno,
+} from '../lib/avisosHorario';
+import { notificarSiCorresponde } from '../lib/notificaciones';
 
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
 const fechaCorta = (iso) => iso.split('-').reverse().slice(0, 2).join('/');
@@ -569,6 +574,56 @@ function PanelFranjas({ horario, estado, accent, onAnadir, onEditar, onEliminar 
    LA PANTALLA
    =========================================================================== */
 /* ===========================================================================
+   EL CENTRO DE AVISOS (HT F10 · apartados 51, 54-57, 72-75)
+   ===========================================================================
+   Lo que se ha avisado, sin leer primero, con las tres acciones del apartado
+   57: posponer, dar por hecho y archivar.
+
+   ⚠️ **Esta pantalla no manda notificaciones.** Las manda `notificaciones.js`
+   desde la Fase A4, con su permiso, su interruptor y su horario de descanso.
+   Aquí solo se ve lo que ya pasó. */
+function PanelAvisos({ centro, accent, onLeer, onArchivar, onTodosLeidos, onPosponer }) {
+  const [abierto, setAbierto] = useState(false);
+  if (!centro.total) return null;
+
+  return (
+    <Card>
+      <button onClick={() => setAbierto(!abierto)} className="w-full flex items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold tracking-wide" style={{ color: COLORS.textMuted }}>
+          AVISOS{centro.sinLeer > 0 ? ` · ${centro.sinLeer} sin leer` : ''}
+        </p>
+        <span className="text-[10px]" style={{ color: accent }}>{abierto ? 'Cerrar' : 'Ver'}</span>
+      </button>
+
+      {abierto && (
+        <>
+          {centro.avisos.slice(0, 8).map((a) => (
+            <div key={a.id} className="py-1" style={{ opacity: a.leido ? 0.6 : 1 }}>
+              <div className="flex items-start gap-2">
+                <span className="text-xs leading-none mt-0.5" aria-hidden="true">{tipoAviso(a.tipo).icono}</span>
+                <button onClick={() => onLeer?.(a.id)} className="flex-1 text-left min-w-0">
+                  <p className="text-xs truncate" style={{ color: COLORS.text }}>{a.titulo}</p>
+                  {a.cuerpo && <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>{a.cuerpo}</p>}
+                </button>
+                <span className="text-[10px] flex-shrink-0" style={{ color: COLORS.textMuted }}>{a.hora}</span>
+                <button onClick={() => onArchivar?.(a.id)} className="p-0.5 flex-shrink-0" aria-label={`Archivar ${a.titulo}`}>
+                  <X size={11} style={{ color: COLORS.textMuted }} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {centro.sinLeer > 0 && onTodosLeidos && (
+            <button onClick={onTodosLeidos} className="text-[11px] font-semibold mt-1" style={{ color: accent }}>
+              Marcar todos como leídos
+            </button>
+          )}
+        </>
+      )}
+    </Card>
+  );
+}
+
+/* ===========================================================================
    EL PLANIFICADOR (HT F9 · apartados 6, 7, 16-19, 36, 37 y 56)
    ===========================================================================
    La arquitectura del apartado 52 puesta en pantalla:
@@ -955,6 +1010,8 @@ export function HoyView({
   tablon = null, onCompletar = null, automatizaciones = null,
   // HT F9 — el planificador. Propone; escribe solo cuando Josué confirma.
   planificador = null,
+  // HT F10 — el centro de avisos.
+  centroAvisos = null, accionesAvisos = null,
 }) {
   const { dia, ahora, siguiente: prox, pendientes: pend, libre, conflictos, manana, agenda } = contexto;
   const [reprogramando, setReprogramando] = useState(null);
@@ -1072,6 +1129,15 @@ export function HoyView({
             </div>
           ))}
         </Card>
+      )}
+
+      {/* HT F10 · apartados 72-75 — qué se ha avisado. */}
+      {completo && centroAvisos && (
+        <PanelAvisos
+          centro={centroAvisos} accent={accent}
+          onLeer={accionesAvisos?.leer} onArchivar={accionesAvisos?.archivar}
+          onTodosLeidos={accionesAvisos?.todosLeidos} onPosponer={accionesAvisos?.posponer}
+        />
       )}
 
       {/* HT F9 · apartados 16-19 y 56 — el plan de estudio, propuesto. */}
@@ -1608,6 +1674,10 @@ export default function HorarioView({
   // HT F5 — se LEEN, nunca se escriben: los exámenes son de Estudios y las
   // tareas de Productividad (apartado 92, "referencia única").
   estudios = null, productividad = null, calendario = null,
+  // HT F10 — los ajustes de notificaciones de la Fase A4. Se LEEN: el
+  // interruptor global, las categorías y el horario de descanso siguen siendo
+  // suyos, y un segundo sistema daría dos avisos por lo mismo.
+  notificaciones = null,
   // HT F6 · apartados 34 y 35 — completar y reprogramar SIN abrir Productividad.
   // La tarea sigue siendo suya: aquí solo se pide el cambio.
   onCompletarTarea = null, onReprogramarTarea = null,
@@ -1762,6 +1832,41 @@ export default function HorarioView({
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [estado, examenesProximos, hoy, asignaturas, estudios, productividad, activo]);
+
+  /* HT F10 — qué habría que avisar ahora, y el centro de lo ya avisado.
+     `minuto` está en las dependencias porque la decisión depende de la hora. */
+  const porAvisar = useMemo(
+    () => avisosAMandar(estado, {
+      fecha: hoy, asignaturas, estudios, productividad, hoy,
+      ajustes: estado?.ajustesAvisos || null,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [estado, hoy, asignaturas, estudios, productividad, minuto],
+  );
+  const centroAvisos = useMemo(() => centroDeAvisos(estado), [estado]);
+
+  /* ⚠️ El envío pasa por `notificarSiCorresponde`, que es el emisor de la Fase
+     A4: él comprueba el permiso, el interruptor global, la categoría y las
+     horas de descanso. Aquí solo se decide QUÉ, nunca si se puede. */
+  useEffect(() => {
+    if (!porAvisar.mandar.length) return;
+    let nuevo = estado;
+    let cambio = false;
+    for (const av of porAvisar.mandar) {
+      notificarSiCorresponde(notificaciones, tipoAviso(av.tipo).categoria, av.clave, av.titulo, av.cuerpo);
+      nuevo = registrarEnviado(nuevo, av, { fecha: hoy });
+      cambio = true;
+    }
+    if (cambio) onCambiar(nuevo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [porAvisar]);
+
+  const accionesAvisos = useMemo(() => ({
+    leer: (id) => aplicar(marcarLeido(estado, id)),
+    archivar: (id) => aplicar(archivarAviso(estado, id)),
+    todosLeidos: () => aplicar(marcarTodosLeidos(estado)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [estado]);
 
   const contexto = useMemo(
     () => contextoTemporal(estado, { fecha, hoy, asignaturas, estudios, productividad, calendario, horarioId: activo?.id || null }),
@@ -1939,6 +2044,7 @@ export default function HorarioView({
           onIrAFecha={(f) => { setFecha(f); setVista('dia'); }}
           mochilaHoy={mochilaHoy} mochilaManana={mochilaManana} accionesMochila={accionesMochila}
           tablon={tablon} automatizaciones={automatizaciones} planificador={planificador}
+          centroAvisos={centroAvisos} accionesAvisos={accionesAvisos}
           onCompletar={(ev, v) => aplicar(marcarCompletada(estado, ev, fecha, v))}
         />
       )}

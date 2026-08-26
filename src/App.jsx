@@ -1727,6 +1727,7 @@ export default function App() {
             horarioTop={horarioTop}
             asignaturas={estudios.asignaturas || []}
             estudios={estudios} productividad={productividad} calendario={calendario}
+            notificaciones={notificaciones}
             onCompletarTarea={toggleTarea}
             onReprogramarTarea={(id, fecha) => snapshotAndSave({
               productividad: { ...productividad, tareas: productividad.tareas.map((t) => (t.id === id ? { ...t, fecha } : t)) },

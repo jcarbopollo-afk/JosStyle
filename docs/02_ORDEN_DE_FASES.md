@@ -184,8 +184,10 @@ escribir código.
 
 | v1.61.0 | **HT F9** | El planificador: **determinista, y la IA va después de él y antes de la confirmación**. Sin confirmar no se escribe nada, el contexto lleva los números ya calculados y **nunca salen las notas privadas** |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 9/12 y SO por
-1/5. Quedan **68** fases de la Entrega 2: HT (3), SO (4) y EH (61).
+| v1.62.0 | **HT F10** | El motor de DECISIÓN de avisos, separado del emisor que ya existía. **Que exista un evento no significa avisar**, tres avisos se agrupan en uno y **no molestar se respeta también con lo crítico** |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 10/12 y SO por
+1/5. Quedan **67** fases de la Entrega 2: HT (2), SO (4) y EH (61).
 
 ✅ **C-23 resuelta a medias:** Josué pasó el texto que faltaba de la Fase 1 del Sonido (v1.54.0).
 ⏸ **Sigue pendiente lo de los archivos de audio**, que él dará *"cuando la web ya tenga todos los
