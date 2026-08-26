@@ -158,6 +158,12 @@ else
   fallo "Falla el modelo de datos de Horario Top"; grep '✗' /tmp/jc_horario2.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-audio.mjs >/tmp/jc_audio.log 2>&1; then
+  ok "Sistema global de sonido (SO F1) — $(grep -c '✓' /tmp/jc_audio.log) comprobaciones"
+else
+  fallo "Falla el sistema global de sonido"; grep '✗' /tmp/jc_audio.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else
@@ -184,6 +190,23 @@ if grep -rEn 'const[[:space:]]*\{[^}]*\}[[:space:]]*=[[:space:]]*COLORS' src/ >/
   fallo "Alguien desestructura COLORS (rompe el sistema de temas):"; cat /tmp/jc_r2.log
 else
   ok "Nadie desestructura COLORS"
+fi
+
+# --- Regla 10 (SO F1): el audio SOLO se toca en audioEngine.js ---
+# El apartado 3 de la especificación de Sonido lo dice literalmente: "Queda
+# prohibido crear lógica como `new Audio(...)` repartida por la aplicación...
+# Todo debe pasar por un servicio central". Sin esta regla, el primer botón que
+# quiera sonar se traerá su propio `new Audio()` y el motor dejará de ser central:
+# el volumen por categoría, el cooldown y las colisiones no se le aplicarían.
+# Se miran LÍNEAS DE CÓDIGO, no comentarios: `audio.js` explica en su cabecera
+# que el motor es el único que puede tocar un AudioContext, y esa frase no es
+# una violación de la regla. Un `new Audio()` de verdad sí lo sería.
+if grep -rEn 'new Audio\(|AudioContext|webkitAudioContext' src/ --include=*.js --include=*.jsx \
+   | grep -v 'src/lib/audioEngine.js' \
+   | grep -vE ':[[:space:]]*(//|\*|/\*)' >/tmp/jc_r10.log 2>&1; then
+  fallo "Alguien toca el audio fuera de audioEngine.js:"; cat /tmp/jc_r10.log
+else
+  ok "El audio solo se toca en audioEngine.js"
 fi
 
 # --- Regla 3: ningún color hexadecimal suelto fuera de tokens.js ---

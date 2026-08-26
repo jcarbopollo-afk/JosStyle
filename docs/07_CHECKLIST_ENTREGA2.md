@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 30 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)** y **HT 2/12** (hasta v1.53.0). Quedan **76**:
-> HT (10), SO · Sonido (5) y EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 31 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 2/12** y **SO 1/5** (hasta v1.54.0). Quedan
+> **75**: HT (10), SO (4) y EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -4959,10 +4959,120 @@ scroll. Como todo lo demás desde R1.
 
 ---
 
-#### SR · Fase 1/5+4 — ARQUITECTURA + MOTOR GLOBAL DE AUDIO
+### SO · SONIDO — 5 fases
 
-⚠️ **Los apartados de abajo NO son de audio.** Son los de Rachas F1 (ya completados arriba) y los de
-Rachas F4. Ver **C-23**. Se dejan tal cual porque la checklist conserva la redacción literal.
+#### SO · Fase 1/5 — ARQUITECTURA Y MOTOR GLOBAL DE AUDIO ✅ COMPLETADA (v1.54.0)
+
+✅ **C-23 queda resuelta a medias:** Josué pasó el texto que faltaba. El orden de los dos módulos ya
+no importa —Rachas está entero— y esta es la Fase 1 real del Sonido.
+
+**Lo primero que hay que decir: no hay ni un archivo de audio en el proyecto**, y el apartado 38
+prohíbe crearlos (*"En esta fase NO quiero: biblioteca completa de sonidos"*). El 21 lo remata:
+*"NO es necesario crear todavía una biblioteca completa. Esta fase solo necesita dejar la
+arquitectura lista."* Así que el motor está entero y **hoy no suena nada, porque no hay nada que
+sonar** — que es exactamente el camino de fallback del apartado 25 (*"si tampoco existe: silencio"*).
+En cuanto Josué deje los archivos en `public/sonidos/`, suena sin tocar una línea.
+
+Y **el interruptor de sonido está apagado de fábrica**, a propósito: encenderlo sin biblioteca daría
+un control que dice "Sonidos: sí" y no suena nunca — lo que prohíbe la regla 8.
+
+- [x] **1 · Inspeccionar primero** — hecho: **no había audio, ni EventBus, ni preferencias de
+      sonido.** De ahí salen las tres piezas.
+- [x] **2 · Objetivo** — la cadena entera: componente → evento → motor → preferencias → sonido.
+- [x] **3 · Nada de audio suelto** — ⚠️ **hay una regla invariante nueva en `verificar.sh` que falla
+      si `new Audio(` o un contexto de audio aparecen fuera de `audioEngine.js`**, aunque sea en un
+      comentario. Sin ella, el primer botón que quiera sonar se traería el suyo y el motor dejaría
+      de ser central: no se le aplicarían ni el volumen por categoría, ni el cooldown, ni las
+      colisiones. Ya me cazó a mí dos veces mientras escribía esta fase.
+- [x] **4 · Catálogo de eventos** — los once mínimos y los seis preparados, **sin conectar** los
+      módulos que aún no toca.
+- [x] **5 · Evento ≠ sonido** — tres saltos: evento → asignación → sonido → archivo. Cambiar el
+      sonido de un hito es escribir una asignación, no editar código.
+- [x] **6 · La interfaz del motor** — `reproducir`, `silenciar`, `activar`, `ajustarVolumen`,
+      `pausar`, `reanudar`, `precargar`, `detener`. Un componente no sabe qué archivo suena.
+- [x] **7 · Configuración global** — si está apagado, **ningún** evento suena, y la comprobación está
+      en un sitio.
+- [x] **8 · Categorías** — siete, con volumen propio. Es lo que permite bajar los clics sin
+      renunciar al sonido de un récord.
+- [x] **9 · Prioridades** — cuatro. `UI_CLICK` es LOW, `STREAK_MILESTONE` y `NEW_RECORD` HIGH.
+- [x] **10 · Colisiones** — *"nunca como una máquina tragaperras"*. Completar algo dispara
+      `ACTION_COMPLETED` + `STREAK_CONTINUED` + `SUCCESS` a la vez, y **suena una sola vez**: hay
+      una prueba con ese caso exacto.
+- [x] **11 · Cooldown** — **veinte toques rapidísimos dan un sonido, no veinte.** Probado.
+- [x] **12 · Sonidos de interfaz** — los más discretos, con el cooldown más corto.
+- [x] **13 · Sonidos de importancia** — los reservados llevan el cooldown más largo: un récord que
+      sonara dos veces dejaría de ser un récord.
+- [x] **14 · Tecnología** — ⚠️ **Web Audio API con `HTMLAudioElement` de respaldo**, y sin librería.
+      Con un `<audio>` solo se pierde una prioridad de las siete, pero es la que sostiene el apartado
+      8: **un elemento tiene un `volume` y nada más**, así que "Interfaz al 30 % y Rachas al 90 %"
+      habría que calcularlo a mano en cada reproducción. Con Web Audio es un `GainNode` por
+      categoría, que es la forma exacta del problema. Además iOS limita los `<audio>` simultáneos.
+- [x] **15 · Restricciones de iOS** — el motor se engancha al primer gesto y se desbloquea ahí.
+      **Hasta entonces no falla: simplemente no suena.** No se intenta saltar nada.
+- [x] **16 · AudioContext** — **uno solo**, creado en el primer toque y no antes: crearlo al arrancar
+      lo dejaría suspendido y ocupando memoria si Josué nunca enciende el sonido.
+- [x] **17 · Preload** — solo lo crítico: interfaz y confirmaciones, que son las que tienen que
+      sonar **en el mismo instante** del gesto. Un clic con 200 ms de retraso se siente roto; un
+      logro con 200 ms, no.
+- [x] **18 · Cache** — la del navegador y la del service worker de la PWA. *"No construyas un sistema
+      paralelo"*, así que no hay caché propia. Y **apagado no se descarga nada**.
+- [x] **19 · Archivos** — `public/sonidos/{ui,feedback,streak,achievements}/`. Los del usuario irán a
+      Storage, en su carpeta: **no se mezclan**.
+- [x] **20 · Formatos** — WebM/Opus primero, con MP3/M4A/WAV admitidos. Nada pesado por defecto.
+- [x] **21 · Sonidos del sistema** — nueve definidos **por nombre**. Ninguno existe todavía.
+- [x] **22 · Sonidos personalizados** — la abstracción `origen: system | custom`. El motor recibe
+      cualquiera de los dos por el mismo camino. La subida es de otra fase.
+- [x] **23 · Metadata** — id, nombre, categoría, duración, formato, tamaño, origen, fecha. Y nada
+      más.
+- [x] **24 · Asignaciones** — `evento → sonido`, cambiables sin tocar componentes.
+- [x] **25 · Fallback** — asignación de Josué → asignación de fábrica → **silencio**. Probado con un
+      sonido borrado.
+- [x] **26 · Error handling** — un fallo de audio se apunta y se sigue. **Y el bus garantiza que un
+      suscriptor que revienta no tumba al emisor**: si el motor falla, el entrenamiento queda
+      guardado igual.
+- [x] **27 · Ajustes futuros** — el motor ya consume esas preferencias. **La pantalla no se ha
+      construido** (apartado 38).
+- [x] **28 · Preferencias persistentes** — en `app_data`, clave `audio`. ⚠️ **No dentro del paquete
+      `ajustes`**: ese se guarda entero en cada escritura (regla 5), así que un `saveData` que se
+      olvidara del audio lo borraría.
+- [x] **29 · Sincronización** — la de siempre, por `app_data`.
+- [x] **30 · Event Bus** — no había, así que se ha creado uno ligero (`eventos.js`). ⚠️ **No define
+      ni un evento propio de rachas**: los de RA F3 llegan con sus nombres y se traducen con dos
+      alias. Redefinirlos sería el "sistema de eventos paralelo" que el apartado prohíbe.
+- [x] **31 · Desacoplamiento** — Rachas no sabe que existe el audio, y el audio no sabe qué es una
+      racha. Haptics, notificaciones y analítica se enganchan al mismo bus cuando toque.
+- [x] **32 · Test mode** — `probarSonidos()`, que además **dice por qué no ha sonado** — hoy siempre
+      "no hay archivo", y así se ve de un vistazo en vez de parecer que el motor está roto.
+- [x] **33 · Pruebas** — las nueve que se pueden comprobar sin navegador: activado, desactivado,
+      volumen 0/50/100, evento inexistente, archivo inexistente, spam y dos eventos simultáneos.
+      ⚠️ **Las cuatro que no —iOS, Android, PWA y escritorio— se dicen en la propia salida de las
+      pruebas en vez de darlas por buenas.**
+- [x] **34 · Rendimiento** — un contexto, un nodo por categoría, buffers que se sueltan al apagar y
+      oyentes que se quitan al desmontar.
+- [x] **35 · Accesibilidad** — *"el sonido nunca debe ser la única forma de comunicar algo"*. Se
+      impone **no dándole al motor ninguna forma de suprimir la interfaz**: la decisión solo dice si
+      suena y por qué. Hay una prueba que falla si aparece un campo que pudiera usarse para ocultar
+      algo.
+- [x] **36-37 · Privacidad y seguridad futura** — los sonidos de Josué en su carpeta, y las reglas de
+      validación **en código y no solo documentadas**: MIME primero, porque la extensión la pone
+      quien quiera. Un ejecutable llamado `.webm` se rechaza — probado.
+- [x] **38 · No implementar todavía** — ni biblioteca, ni subida, ni editor, ni pantalla de Ajustes,
+      ni vibración, ni notificaciones sonoras.
+- [x] **39 · Criterio de finalización** — evento → resolver → preferencias → volumen →
+      prioridad/cooldown → reproducir → fallback, sin que ningún módulo sepa nada de audio.
+- [x] **40 · Informe final** — los doce puntos, en `CHANGELOG.md` y `HANDOFF.md`.
+
+**Lo que queda para la Fase 2:** la biblioteca de sonidos, sus categorías y las asignaciones — que es
+justo lo que necesita los archivos que Josué dará *"cuando la web ya tenga todos los botones
+activos"*.
+
+---
+
+#### SR · Fase 1/5+4 — ARQUITECTURA + MOTOR GLOBAL DE AUDIO (encabezado antiguo)
+
+⚠️ **Los apartados de abajo NO son de audio.** Son los de Rachas F1 y F4, que la extracción
+automática colocó bajo este encabezado. Ver **C-23**. Se dejan tal cual porque la checklist conserva
+la redacción literal — el trabajo real está arriba, en los bloques RA y SO.
 - [ ] OBJETIVO PRINCIPAL
 - [ ] CONCEPTO FUNDAMENTAL
 - [ ] TIPOS DE RACHAS

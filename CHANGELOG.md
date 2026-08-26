@@ -1,5 +1,74 @@
 # CHANGELOG.md
 
+## Entrega 2 · SO Fase 1 — Sistema global de sonido (v1.54.0)
+
+### Lo primero: hoy no suena nada, y está dicho
+**No hay ni un archivo de audio en el proyecto**, y el apartado 38 prohíbe crearlos: *"En esta fase
+NO quiero: biblioteca completa de sonidos…"*. El 21 lo remata: *"Esta fase solo necesita dejar la
+arquitectura lista."*
+
+Así que el motor está entero y no suena — que es exactamente el camino de fallback del apartado 25
+(*"si tampoco existe: silencio"*), no una función a medias. En cuanto los archivos estén en
+`public/sonidos/`, suena sin tocar una línea de código.
+
+Y **el sonido está apagado de fábrica**, a propósito: encenderlo sin biblioteca daría un interruptor
+que dice "Sonidos: sí" y no suena nunca.
+
+### Una regla invariante nueva
+*"Queda prohibido crear lógica como `new Audio(...)` repartida por la aplicación."*
+
+`verificar.sh` ahora **falla si `new Audio(` o un contexto de audio aparecen fuera de
+`audioEngine.js`**, aunque sea dentro de un comentario. Sin ella, el primer botón que quiera sonar se
+traería el suyo y el motor dejaría de ser central: no se le aplicarían ni el volumen por categoría,
+ni el cooldown, ni las colisiones. Me cazó a mí dos veces escribiendo esta misma fase.
+
+### Nunca como una máquina tragaperras
+Completar un entrenamiento puede disparar `ACTION_COMPLETED`, `STREAK_CONTINUED` y `SUCCESS` casi a
+la vez. Suena **una** vez: dentro de una ventana de 180 ms solo pasa lo más importante.
+
+Y veinte toques rapidísimos en un botón dan **un** sonido, no veinte. Las dos cosas tienen su prueba
+con ese caso exacto.
+
+### Web Audio API, y por qué
+Con un `<audio>` solo se pierde una de las siete prioridades que pide la especificación — pero es la
+que sostiene el apartado 8: **un elemento tiene un `volume` y nada más**. "Interfaz al 30 % y Rachas
+al 90 %" habría que calcularlo a mano en cada reproducción, y no habría forma de bajar una categoría
+entera de golpe. Con Web Audio es un `GainNode` por categoría, que es la forma exacta del problema.
+
+Además iOS limita cuántos `<audio>` suenan a la vez. Sin librerías: hacen falta un contexto, un nodo
+por categoría y un `fetch`.
+
+### iOS no se intenta esquivar
+Safari crea el contexto suspendido y no deja reanudarlo sin un gesto. El motor se engancha al primer
+toque y se desbloquea ahí. Hasta entonces **no falla: simplemente no suena**. Y hay **un solo
+contexto**, creado en ese primer toque y no al arrancar.
+
+### El bus, y lo que deliberadamente no hace
+No había Event Bus en el proyecto, así que se ha creado uno ligero. **No define ni un evento propio
+de rachas**: los de RA F3 llegan con sus nombres y se traducen con dos alias. Redefinirlos habría
+dejado dos catálogos separándose con cada fase.
+
+Rachas no sabe que existe el audio, y el audio no sabe qué es una racha. Cuando lleguen haptics,
+notificaciones o analítica, se enganchan al mismo bus.
+
+Y un suscriptor que revienta **no tumba al emisor**: si el motor de audio falla, el entrenamiento
+queda guardado igual.
+
+### El sonido nunca es el único canal
+El apartado 35 lo pide, y no se puede imponer con una comprobación… salvo **no dándole al motor
+ninguna forma de suprimir la interfaz**. La decisión solo dice si suena y por qué. Hay una prueba que
+falla si aparece un campo que pudiera usarse para ocultar algo.
+
+### Verificación
+**2176 comprobaciones y 10 reglas invariantes en verde**. `package.json` → **v1.54.0**. Van 31 de las
+106 fases; quedan 75.
+
+⚠️ **Lo que no se ha podido comprobar aquí, y se dice en la propia salida de las pruebas:** iOS,
+Android, PWA y navegador de escritorio. Son del navegador real.
+
+✅ **C-23 queda resuelta a medias:** Josué pasó el texto que faltaba. ⏸ Siguen faltando **los archivos
+de audio**, que él dará *"cuando la web ya tenga todos los botones activos"*.
+
 ## Entrega 2 · HT Fase 2 — Modelo de datos, Cloud y Supabase (v1.53.0)
 
 ### Ni una tabla nueva, ni un SQL que ejecutar

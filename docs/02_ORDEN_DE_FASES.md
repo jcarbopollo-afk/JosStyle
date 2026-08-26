@@ -168,11 +168,14 @@ escribir código.
 
 | v1.53.0 | **HT F2** | Modelo de datos: **el apartado 51 obliga a adaptarse al proyecto**, así que ni una tabla nueva ni un SQL pendiente. Materiales como entidades, mochila derivada y detección de conflictos entre dispositivos |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 2/12. Quedan
-**76** fases de la Entrega 2: HT (10), SO · Sonido (5) y EH (65).
+| v1.54.0 | **SO F1** | Sistema global de sonido: motor central, bus de eventos y **regla invariante nueva** que impide tocar el audio fuera de él. Hoy no suena nada porque no hay archivos, y eso está dicho |
 
-⏸ **SO · Sonido sigue bloqueado a la espera de Josué (C-23):** su Fase 1 no aparece en la
-especificación, y además necesita archivos de audio que él dará más adelante.
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 2/12 y SO por
+1/5. Quedan **75** fases de la Entrega 2: HT (10), SO (4) y EH (65).
+
+✅ **C-23 resuelta a medias:** Josué pasó el texto que faltaba de la Fase 1 del Sonido (v1.54.0).
+⏸ **Sigue pendiente lo de los archivos de audio**, que él dará *"cuando la web ya tenga todos los
+botones activos"* — sin ellos el motor está entero pero no suena nada, y así está dicho.
 
 ⏸ **El orden dentro de E2-5 está pendiente de Josué (C-23):** en la especificación, el encabezado de
 la Fase 1 de Sonido va seguido del texto de la Fase 4 de Rachas, así que no se sabe dónde está el

@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.53.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.54.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados y **Horario Top** va por 2/12, quedan 76) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados **Horario Top** va por 2/12 y **Sonido** por 1/5, quedan 75) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,8 +107,8 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 1879 pruebas unitarias con Node, 5 de auditoría, 192 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **2085 comprobaciones**.
+Vite, 1970 pruebas unitarias con Node, 5 de auditoría, 192 casos de renderizado real con
+`react-dom/server` y 10 reglas invariantes — **2176 comprobaciones**.
 
 Eso ya ha encontrado **cuarenta y un bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -133,51 +133,30 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-⏸ **PREGÚNTALE A JOSUÉ ANTES DE SEGUIR (regla 49, ficha C-23 en `docs/03`).** El bloque RA está
-cerrado (4/4) y el siguiente del orden confirmado sería **SO · Sonido**, pero **su Fase 1 no se
-encuentra en la especificación**: donde debería estar el encabezado *"FASE 1 — Arquitectura + motor
-global de audio"* va seguido del texto de *"FASE 4 · Sistema de Rachas: interfaz"*. Hay que
-preguntarle:
+**Siguiente fase candidata: HT · Fase 3/12 — Editor visual de horarios**, la primera de HT con
+pantalla. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
 
-1. **¿Dónde está el texto real de la Fase 1 del Sonido?**
-2. **¿En qué orden van los dos módulos**, Sonido y Rachas?
+⚠️ **No empezarla sin que Josué pase la fase.**
 
-Y hay un límite real, aparte de la contradicción: **el módulo de Sonido necesita archivos de audio
-que no existen en el proyecto.** Él mismo lo escribió dentro de la especificación — *"esto lo voy a
-hacer cuando la web ya tenga todos los botones activos"*. Sin los sonidos, un motor de audio sería un
-control decorativo (regla 8).
+⏸ **SO · Fase 2 (biblioteca de sonidos) está bloqueada, y por un motivo real:** no hay ni un archivo
+de audio en el proyecto. Josué escribió en la especificación que los daría *"cuando la web ya tenga
+todos los botones activos"*, y F2 es literalmente la fase que los necesita. El motor de F1 está
+entero y funciona; lo único que falta son los sonidos.
 
-**Mientras tanto se sigue por HT · Horario Top, que no depende de nada de esto.** F1 y F2 están
-hechas (v1.53.0); **la siguiente candidata es HT · Fase 3/12 — Editor visual de horarios**, la
-primera de HT con interfaz.
-Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
+Seis cosas que conviene tener presentes al retomar:
 
-⚠️ **No empezar ninguna sin que Josué pase la fase.**
-
-Cinco cosas que conviene tener presentes al retomar:
-
-- **D2-01: Sonido y Rachas son DOS módulos independientes** (5 fases + 4). No mezclar sus
-  especificaciones ni su numeración, aunque compartan archivo.
-- **D2-02 sigue en pie: no sobregamificar.** XP y niveles solo dentro de Sonido/Rachas, sin salir
-  de ahí. Nada de puntos ni monedas en Bienestar ni en ningún otro módulo.
+- **D2-01: Sonido y Rachas son DOS módulos independientes** (5 fases + 4). Rachas está cerrado 4/4;
+  Sonido va por 1/5.
+- **D2-02 sigue en pie: no sobregamificar.** XP y niveles solo dentro de Sonido/Rachas.
 - **El motor de rachas no guarda ni un contador** (`src/lib/rachas.js`, RA F1). Todo se deriva del
-  historial. Si una fase futura pide "guardar la racha", es que hay que releer el apartado 24.
-- **`src/lib/rachasServicio.js` es el ÚNICO sitio que escribe rachas** (RA F2). Ninguna pantalla
-  toca Supabase ni recalcula por su cuenta; se pasa por `useRachas`. Y las rachas viven en
-  `app_data`, **sin tabla ni SQL propios** — ver el comentario en `supabase/schema.sql`.
-- **El horario es una REGLA, no una lista de eventos** (HT F1, `src/lib/horario.js`).
-  `resolverDia()` compone bloques y excepciones al vuelo y **no materializa ni uno**. Si una fase
-  futura pide "generar los eventos del curso", es que hay que releer el apartado 5.
-- **Las asignaturas del horario son las de Estudios** (HT F1, apartado 25): una actividad escolar
-  guarda `asignaturaId`, nunca el nombre. Nunca crear una segunda lista de asignaturas.
-- **El horario no tiene tablas propias en Supabase** (HT F2, apartado 51): vive en `app_data` con la
-  clave `horarioTop`, con la RLS que ya existe. Si una fase pide crear `schedules`, releer el 51.
+  historial. Si una fase futura pide "guardar la racha", hay que releer el apartado 24.
+- **`src/lib/rachasServicio.js` es el ÚNICO sitio que escribe rachas** (RA F2), y
+  **`src/lib/audioEngine.js` el ÚNICO que toca el audio** (SO F1, con regla invariante que lo
+  comprueba). Ninguna pantalla toca Supabase ni reproduce sonido por su cuenta.
+- **El horario es una REGLA, no una lista de eventos** (HT F1), **no tiene tablas propias en
+  Supabase** (HT F2, apartado 51) y **sus asignaturas son las de Estudios** (apartado 25).
 - ⚠️ **Un normalizador que no conoce un campo lo BORRA en el siguiente guardado.** Pasó en HT F2 con
-  `visible` de las columnas: `crearColumna` lo escribía y `normalizarHorarioObj` no. Al añadir un
-  campo a una entidad, añadirlo también a su normalizador — siempre.
-- **La gamificación no tiene XP ni niveles, a propósito** (RA F3), y **los logros de racha viven en
-  el Centro de Rachas, no en la pantalla de Logros** (RA F4): los doce de la Fase 20 son de toda la
-  app; estos son por racha y pueden ser muchos. Si Josué los prefiere juntos, es mover una lista.
+  `visible` de las columnas. Al añadir un campo a una entidad, añadirlo también a su normalizador.
 
 ⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
 de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin

@@ -13,6 +13,9 @@ import { eventosDerivados } from './lib/calendarioIntegracion';
 import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
 import { urlFirmada, urlEnCache } from './lib/imagenes';
 import { resumenHabito } from './lib/rachas';
+import { DEFAULT_AUDIO, normalizarAudio } from './lib/audio';
+import { iniciarAudio, conectarAlBus, actualizarPreferencias as actualizarAudio, detener as detenerAudio } from './lib/audioEngine';
+import { emitir } from './lib/eventos';
 import { ESTADO_INICIAL, normalizarEstado, crearRacha as crearRachaServicio, completarDia as completarDiaServicio, deshacerDia as deshacerDiaServicio, eliminarRacha as eliminarRachaServicio } from './lib/rachasServicio';
 import { GAMIFICACION_INICIAL, normalizarGamificacion, evaluar as evaluarRachas, olvidarRacha as olvidarRachaGamificacion } from './lib/rachasGamificacion';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal } from './components/ui';
@@ -260,6 +263,11 @@ export default function App() {
   // no vuelve a saltar solo al mismo elemento.
   const [armario, setArmario] = useState(DEFAULT_ARMARIO);
   const [rachas, setRachas] = useState(ESTADO_INICIAL);
+  // SO Fase 1 — las preferencias de sonido, en su propia clave de `app_data` como
+  // `notificaciones`. NO dentro del paquete `ajustes`: ese se guarda entero en
+  // cada escritura (regla 5), así que un `saveData` que se olvidara del audio lo
+  // borraría. Y de fábrica está apagado, porque todavía no hay sonidos.
+  const [audio, setAudio] = useState(DEFAULT_AUDIO);
   // RA Fase 3 — los logros y los hitos ya anunciados, en su propia clave. Van
   // aparte de `rachas` porque son cosas distintas (apartado 7: hito ≠ logro) y
   // porque un logro conseguido NO se revoca al corregir el historial (apartado 28).
@@ -279,7 +287,7 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam] = await Promise.all([
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud] = await Promise.all([
         loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
@@ -314,6 +322,7 @@ export default function App() {
         // políticas RLS de `app_data` ya garantizan el aislamiento del apartado 5.
         loadData(uidUser, 'rachas', ESTADO_INICIAL),
         loadData(uidUser, 'gamificacionRachas', GAMIFICACION_INICIAL),
+        loadData(uidUser, 'audio', DEFAULT_AUDIO),
       ]);
       if (cancelled) return;
       setAccent(a.accent || ACCENTS[0].value);
@@ -431,6 +440,7 @@ export default function App() {
       // pegados o cumplimientos huérfanos entra limpio.
       setRachas(normalizarEstado(rach));
       setGamificacion(normalizarGamificacion(gam));
+      setAudio(normalizarAudio(aud));
       setLoaded(true);
     })();
     return () => { cancelled = true; };
@@ -491,6 +501,23 @@ export default function App() {
     firmarFotoFondo(rutaFotoFondo).then((url) => { if (!cancelado) setUrlFotoFondo(url); });
     return () => { cancelado = true; };
   }, [rutaFotoFondo]);
+
+  /* SO Fase 1 — el motor de audio. Se arranca una vez y se suelta al desmontar:
+     el enganche del primer gesto (iOS) dejaría oyentes pegados al documento si
+     nadie los quitara. Aquí NO se crea el contexto de audio: eso espera al primer
+     toque, que es lo que exige Safari, y por eso el motor es el único que lo toca.
+     (La regla invariante 10 falla si esta palabra aparece fuera de él, aunque sea
+     en un comentario: así no se puede colar por descuido.) */
+  useEffect(() => {
+    const soltar = iniciarAudio({ prefs: audio });
+    const desconectar = conectarAlBus();
+    return () => { soltar?.(); desconectar?.(); detenerAudio(); };
+    // Solo al montar: cambiar el volumen no puede reiniciar el motor ni volver a
+    // pedir permiso. Las preferencias entran por el efecto de abajo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => { actualizarAudio(audio); }, [audio]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -1140,7 +1167,17 @@ export default function App() {
   const evaluarGamificacion = () => {
     const { gamificacion: nuevo, eventos } = evaluarRachas(rachas, gamificacion);
     if (eventos.length) { setGamificacion(nuevo); saveData(uidUser, 'gamificacionRachas', nuevo); }
+    // SO Fase 1 · apartados 30 y 31 — se emiten al bus, y quien quiera reacciona.
+    // Rachas NO sabe que existe el audio, y el audio no sabe qué es una racha:
+    // los eventos llegan con SUS nombres y el motor los traduce.
+    for (const ev of eventos) emitir(ev.tipo, ev);
     return eventos;
+  };
+
+  const updateAudio = async (next) => {
+    const limpio = normalizarAudio(next);
+    setAudio(limpio);
+    await saveData(uidUser, 'audio', limpio);
   };
 
   const setIconoModulo = (id, iconKey) => {

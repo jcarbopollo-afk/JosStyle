@@ -375,7 +375,7 @@ directos ya creados. No pierde ningún dato al hacerlo.
 
 ---
 
-### ⏸ C-23 — PENDIENTE DE JOSUÉ (regla 49) — En `ESPECIFICACION_SONIDO_Y_RACHAS.md` los títulos de fase no coinciden con su contenido
+### 🟡 C-23 — RESUELTA A MEDIAS (v1.54.0) — En `ESPECIFICACION_SONIDO_Y_RACHAS.md` los títulos de fase no coinciden con su contenido
 
 **Encontrada al empezar el bloque SR (v1.48.0).** D2-01 ya decidió lo importante —Sonido y Rachas
 son **dos módulos independientes**, 5 fases y 4— pero eso no dice **qué texto pertenece a cada
@@ -405,7 +405,11 @@ depende de resolver nada de esto. Se ha implementado como **RA · Fase 1/4** (v1
    alternándose? Sonido F3 ("eventos, feedback y recompensas sonoras") **necesita** el motor de
    rachas, así que Rachas parece ir antes, pero eso es deducción mía, no una decisión suya.
 
-**Y un aviso aparte, que no es contradicción sino límite real:** el módulo de Sonido necesita
+**✅ Contestado por Josué (v1.54.0).** Pasó el texto que faltaba de la Fase 1 del Sonido —el que la
+especificación no contenía— así que las dos preguntas quedan resueltas: el texto existe, y el orden
+ya no importa porque Rachas está entero (4/4). **SO F1 está construida.**
+
+**⏸ Lo que sigue pendiente, y no es una contradicción sino un límite real:** el módulo de Sonido necesita
 **archivos de audio** que no existen en el proyecto. El propio Josué lo escribió dentro de la
 especificación: *"esto lo voy a hacer cuando la web ya tenga todos los botones activos y todo, no te
 lo voy a dar aún"*. Sin los sonidos, un motor de audio sería un control decorativo — justo lo que
