@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 25 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)** y **RA 1/4** (hasta v1.48.0). Quedan **81**: RA (3), SO (5), HT (12) y
+> **Estado: 26 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)** y **RA 2/4** (hasta v1.49.0). Quedan **80**: RA (2), SO (5), HT (12) y
 > EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
@@ -4530,6 +4530,99 @@ desaparecieron por lo mismo los contadores de uso del Armario.
 encabezado *"FASE 1 — Arquitectura + motor global de audio"* va seguido del texto de *"FASE 4 ·
 Sistema de Rachas: interfaz"*. Falta saber **dónde está la Fase 1 real del Sonido** y **en qué orden
 van los dos módulos**. Nada de eso bloquea esta fase, que ya está cerrada.
+
+#### RA · Fase 2/4 — PERSISTENCIA, SUPABASE, SEGURIDAD Y SINCRONIZACIÓN ✅ COMPLETADA (v1.49.0)
+
+**La decisión que define la fase.** El apartado 3 propone tablas `streaks` y `streak_days`, y acto
+seguido dice: *"No copies estos nombres obligatoriamente si el proyecto ya utiliza otra
+convención"*. El apartado 1 lo remata: *"No dupliques sistemas existentes."*
+
+La convención de JosStyle es **una sola tabla `app_data`**, una fila por usuario y clave, con RLS
+por `auth.uid()`, que usan los veinte módulos. Las rachas entran ahí, con la clave `rachas`. Montar
+tablas propias habría sido el segundo sistema de persistencia del proyecto **y un tercer bloque de
+SQL que Josué tendría que ejecutar a mano desde el iPhone** —ya tiene dos pendientes— sin el cual las
+rachas no funcionarían. Así no hay nada que ejecutar.
+
+- [x] **1 · Inspeccionar primero** — se hizo, y de ahí sale la decisión de arriba.
+- [x] **2 · Objetivo** — la racha sobrevive a cerrar sesión, cerrar la PWA, cambiar de dispositivo,
+      reinstalar y perder la conexión, porque vive donde vive todo lo demás.
+- [x] **3 · Modelo de datos** — `Racha` (estable) y `Cumplimiento` (histórico), separados, con la
+      convención del proyecto y no con la de la especificación, como ella misma permite.
+- [x] **4 · user_id** — **el modelo no tiene campo `user_id`.** El cliente no puede elegir el de
+      otro porque no manda ninguno. Hay una prueba que comprueba que la palabra no aparece.
+- [x] **5 · Row Level Security** — las cuatro políticas de `app_data` (SELECT/INSERT/UPDATE/DELETE)
+      con `auth.uid() = user_id`. Ninguna del tipo permisivo `auth.uid() IS NOT NULL` que el
+      apartado prohíbe expresamente.
+- [x] **6 · Integridad** — el `UNIQUE(streak_id, local_date)` se aplica en el servicio, que es el
+      único sitio del proyecto que escribe cumplimientos. El apartado lo admite: *"siempre que
+      encaje con el modelo final"*.
+- [x] **7 · Fechas** — día lógico local (decide) y timestamp UTC (solo desempata), separados desde
+      RA F1.
+- [x] **8 · Zona horaria** — la fecha lógica se fija **antes de persistir**, en el dispositivo.
+      Nunca la deduce el servidor de un timestamp: ese es el fallo de "completar a las 00:30 y que
+      se archive ayer", que este proyecto ya sufrió de verdad y corrigió en AR F3.
+- [x] **9 · Creación de rachas** — `crearRacha()` valida tipo, regla y nombre repetido, y **no
+      permite cumplimientos huérfanos**: completar una racha inexistente devuelve error y no
+      escribe nada. Una regla de mínimo sin objetivo se rechaza, porque ningún día podría cumplirse.
+- [x] **10 · Registrar cumplimiento** — `completarDia()`, idempotente por `racha + día`.
+- [x] **11 · No confiar en el cliente** — mandar `{currentStreak: 9999}` **no tiene dónde
+      aterrizar**: no se guarda ningún contador. Probado: el número inyectado no cambia nada.
+- [x] **12 · Contadores derivados** — no hay caché de contadores. La fuente de verdad es el
+      historial, siempre.
+- [x] **13 · Servicio de recálculo** — `recalcularRacha()` reconstruye `currentStreak`,
+      `longestStreak`, `currentStartDate` y `lastCompletedDate`. Aquí recalcular no es una
+      reparación excepcional: es la única forma de saber el número.
+- [x] **14 · Sincronización por capas** — `src/lib/rachasServicio.js` es **el único sitio que
+      escribe rachas**. Ningún componente llama a `supabase.from(...)` ni recalcula por su cuenta,
+      y los hábitos de Productividad también se consultan por aquí.
+- [x] **15 · Cache local** — el de siempre: estado en React, `saveData` detrás. El cache **no** es
+      la fuente de verdad.
+- [x] **16 · Offline** — cola pequeña (`encolar` / `vaciarCola`), como pide el apartado (*"no
+      construyas un sistema offline gigantesco"*). Funciona por una sola razón: **reintentar es
+      idempotente**. Cinco reintentos siguen siendo un día — probado.
+- [x] **17 · Conflictos** — iPhone y ordenador completando el mismo día dan **un** día.
+- [x] **18 · Eliminación de eventos de origen** — `invalidarPorOrigen()`. Al borrar el
+      entrenamiento que sostenía la racha, su día desaparece y **el número se corrige solo**,
+      porque nunca estuvo guardado. El acoplamiento con Entrenamiento es de otra fase, como pide
+      el apartado; aquí queda el mecanismo.
+- [x] **19 · Event source** — `origen` + `origenId` en cada cumplimiento. Permite responder a
+      "¿por qué se completó esta racha?" e invalidarla si la actividad desaparece.
+- [x] **20 · Auditoría básica** — `registradoEn`, `origen`, `origenId`, y nada más. Hay una prueba
+      que **falla si un cumplimiento crece con campos innecesarios**.
+- [x] **21 · Migraciones** — `supabase/schema.sql`, la estructura reproducible que ya existe,
+      documenta por qué las rachas no añaden nada. Cero cambios manuales irreproducibles.
+- [x] **22 · Tipos** — ⚠️ **el proyecto no usa TypeScript**: es JavaScript con Vite y no hay un solo
+      `.ts` en `src/`. Meterlo por un módulo obligaría a configurar el compilador para el resto, que
+      es el "duplicar sistemas" del apartado 1. El equivalente honesto es lo que se ha hecho:
+      `@typedef` para `Racha`, `Regla`, `Cumplimiento` y `EstadoRachas` —que el editor sí lee— y
+      **normalizadores que se ejecutan de verdad**. Un typedef avisa; un normalizador impide.
+- [x] **23 · Hook central** — `src/hooks/useRachas.js`. El proyecto no tenía carpeta `hooks/`
+      (lógica pura en `lib/`, estado en `App.jsx`); ese reparto no se toca. El hook **no añade
+      lógica**: envuelve el servicio y memoiza lo caro.
+- [x] **24 · Rendimiento** — el panel se calcula una vez por cambio real de estado, no una por
+      render, y no hay ni una consulta: los datos ya están en memoria.
+- [x] **25 · Preparación para notificaciones** — `eventosDeRacha()` emite `streak_at_risk`,
+      `streak_completed`, `streak_broken` y `streak_milestone`. **Describe, no notifica**: llamarlo
+      dos veces no produce dos avisos. Y con hoy pendiente emite "en riesgo", nunca "rota".
+- [x] **26 · Preparación para gamificación** — los hitos (7, 14, 30, 50, 100, 365) son números de
+      referencia, no logros: sin XP, sin nivel, sin medalla. Prueba que **falla si aparecen**.
+      Pasado el último, `siguienteHito()` devuelve `null` en vez de inventarse uno.
+- [x] **27 · Pruebas** — **los diez casos, uno por uno y marcados como tales**, más lo que sostiene
+      cada uno. 104 comprobaciones.
+- [x] **28 · No implementar todavía** — ni Centro de Rachas, ni animaciones, ni confeti, ni sonidos,
+      ni logros, ni niveles, ni recompensas, ni rankings.
+- [x] **29 · Criterio de finalización** — crear → registrar → persistir → sincronizar → recuperar →
+      calcular racha → calcular récord → evitar duplicados → aislar usuarios. Los nueve.
+- [x] **30 · Informe final** — los ocho puntos, en `CHANGELOG.md` y `HANDOFF.md`.
+
+**Un fallo mío, cazado por su propia prueba (el caso 10):** la revisión de integridad buscaba los
+contadores corruptos **después** de normalizar, y `normalizarRacha` ya los había descartado al pasar.
+Que el motor sea inmune a ellos es bueno; que la revisión no pudiera avisar de que venían, no. Ahora
+se miran en el estado crudo.
+
+**Lo que todavía no tiene pantalla, y es deliberado:** no hay forma de crear una racha desde la
+interfaz. El apartado 28 prohíbe expresamente el Centro de Rachas en esta fase; llega en RA F4. Lo
+que sí funciona hoy de punta a punta son los hábitos, que ya consultan por el servicio central.
 
 ---
 

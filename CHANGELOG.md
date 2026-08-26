@@ -1,5 +1,70 @@
 # CHANGELOG.md
 
+## Entrega 2 · RA Fase 2 — Persistencia, seguridad y sincronización (v1.49.0)
+
+### Ni una tabla nueva, ni un SQL que ejecutar
+La especificación propone tablas `streaks` y `streak_days` en Supabase, y acto seguido dice: *"No
+copies estos nombres obligatoriamente si el proyecto ya utiliza otra convención"*, y *"No dupliques
+sistemas existentes"*.
+
+JosStyle tiene una convención: **una sola tabla `app_data`**, una fila por usuario y clave, con RLS
+por `auth.uid()`, que usan los veinte módulos. Las rachas entran ahí. Montar tablas propias habría
+sido el segundo sistema de persistencia del proyecto **y un tercer bloque de SQL que Josué tendría
+que ejecutar a mano desde el iPhone** —ya tiene dos pendientes— sin el cual las rachas no
+funcionarían.
+
+Lo que en la especificación son políticas RLS y una restricción `UNIQUE`, aquí es:
+
+- **Aislamiento entre usuarios** → las cuatro políticas de `app_data`, ya vigentes.
+- **`UNIQUE(streak_id, local_date)`** → la clave lógica `racha + día`, aplicada en el servicio, que
+  es el único sitio del proyecto que escribe cumplimientos.
+- **Contadores no manipulables** → no existen. Mandar `{currentStreak: 9999}` no tiene dónde
+  aterrizar, porque no se guarda ningún contador.
+
+Y algo más fuerte que "no confiar en el `user_id` del cliente": **el modelo no tiene campo
+`user_id`.** No hay ninguno que falsear. Hay una prueba que comprueba que la palabra no aparece.
+
+### Un solo sitio escribe rachas
+`src/lib/rachasServicio.js`. Dashboard, Productividad y lo que venga después llaman ahí; ninguno
+toca Supabase ni recalcula por su cuenta. Los hábitos, que guardan su historial en su propio módulo
+desde la Fase 8, también se consultan por el servicio: no se ha migrado su dato —es de Josué y
+moverlo no aporta nada— pero sí su camino.
+
+Con él llega `src/hooks/useRachas.js`, el hook central. No añade lógica: envuelve el servicio y
+memoiza lo caro, para que el panel se calcule una vez por cambio real de estado y no una por render.
+
+### La cola offline funciona por una sola razón
+Reintentar es idempotente. Un cumplimiento que se reenvía cinco veces sigue siendo **un** día — hay
+una prueba que lo hace. Sin esa propiedad, una cola offline infla rachas; con ella, no puede.
+
+### Cuando se borra la actividad que sostenía la racha
+Es el caso que la especificación describe con detalle: un entrenamiento genera un cumplimiento, la
+racha llega a 15, y después se borra ese entrenamiento. Con contadores guardados habría que
+acordarse de decrementar. Aquí basta con que desaparezca el día: **el número se corrige solo**,
+porque nunca estuvo guardado. Lo que faltaba era poder encontrar el cumplimiento a partir de su
+actividad, y para eso cada uno guarda ahora `origen` y `origenId`.
+
+### Sobre TypeScript, con honestidad
+El apartado 22 pide tipos y evitar `any`. **El proyecto no usa TypeScript**: es JavaScript con Vite
+y no hay un solo `.ts` en `src/`. Meterlo por un módulo obligaría a configurar el compilador para el
+resto. El equivalente honesto es lo que se ha hecho: `@typedef` para las cuatro entidades —que el
+editor sí lee— y, sobre todo, **normalizadores que se ejecutan de verdad**. Un typedef avisa; un
+normalizador impide.
+
+### Un fallo mío, cazado por su propia prueba
+La revisión de integridad buscaba los contadores corruptos **después** de normalizar, y el
+normalizador ya los había descartado al pasar. Que el motor sea inmune a ellos es bueno; que la
+revisión no pudiera avisar de que venían, no.
+
+### Lo que todavía no tiene pantalla, y es deliberado
+No hay forma de crear una racha desde la interfaz: el apartado 28 prohíbe expresamente el Centro de
+Rachas en esta fase, que llega en RA F4. Lo que sí funciona hoy de punta a punta son los hábitos.
+
+### Verificación
+Los **diez casos que pide el apartado 27**, uno por uno y marcados como tales, más lo que sostiene
+cada uno. **1660 comprobaciones y 9 reglas invariantes en verde**, build incluido. `package.json` →
+**v1.49.0**. Van 26 de las 106 fases; quedan 80.
+
 ## Entrega 2 · RA Fase 1 — Motor de rachas (v1.48.0)
 
 ### El apartado 24 describía el código que ya teníamos

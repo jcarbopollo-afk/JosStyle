@@ -13,6 +13,7 @@ import { eventosDerivados } from './lib/calendarioIntegracion';
 import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
 import { urlFirmada, urlEnCache } from './lib/imagenes';
 import { resumenHabito } from './lib/rachas';
+import { ESTADO_INICIAL, normalizarEstado } from './lib/rachasServicio';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal } from './components/ui';
 import HubView from './views/HubView';
 import Auth from './components/Auth';
@@ -255,6 +256,7 @@ export default function App() {
   // `onFocoConsumido`, que lo limpia — así volver a esa pestaña más tarde por la navegación normal
   // no vuelve a saltar solo al mismo elemento.
   const [armario, setArmario] = useState(DEFAULT_ARMARIO);
+  const [rachas, setRachas] = useState(ESTADO_INICIAL);
   const [dashboardFoco, setDashboardFoco] = useState(null);
   // BI Fase 4 · apartado 11 — de dónde vino Josué al abrir algo desde el buscador.
   const [vueltaBusqueda, setVueltaBusqueda] = useState(null);
@@ -270,7 +272,7 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm] = await Promise.all([
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach] = await Promise.all([
         loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
@@ -300,6 +302,10 @@ export default function App() {
         loadData(uidUser, 'historial', []),
         loadData(uidUser, 'papelera', DEFAULT_PAPELERA),
         loadData(uidUser, 'armario', DEFAULT_ARMARIO),
+        // RA Fase 2 — las rachas viven en `app_data`, la misma tabla por usuario que
+        // todo lo demás. Sin tabla nueva y sin SQL que Josué tenga que ejecutar: las
+        // políticas RLS de `app_data` ya garantizan el aislamiento del apartado 5.
+        loadData(uidUser, 'rachas', ESTADO_INICIAL),
       ]);
       if (cancelled) return;
       setAccent(a.accent || ACCENTS[0].value);
@@ -412,6 +418,10 @@ export default function App() {
       // no fusiona, así que sin esto un armario guardado antes de que existieran `outfits` y
       // `usos` llegaría con esos campos en `undefined` y las fases 2 y 3 reventarían al leerlos.
       setArmario({ ...DEFAULT_ARMARIO, ...(arm || {}) });
+      // RA Fase 2 — `normalizarEstado` hace de fusión con el default (regla 5) y a la
+      // vez de saneado: un estado restaurado de una copia vieja con contadores
+      // pegados o cumplimientos huérfanos entra limpio.
+      setRachas(normalizarEstado(rach));
       setLoaded(true);
     })();
     return () => { cancelled = true; };
@@ -1130,7 +1140,7 @@ export default function App() {
   // al restaurarse duplicaría el elemento. Con la papelera dentro del snapshot, deshacer revierte
   // las dos cosas a la vez y los dos sistemas de recuperación no se pisan.
   const snapshotAndSave = (patch) => {
-    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario };
+    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas };
     const nextHist = [...history, snapshot].slice(-10);
     setHistory(nextHist);
     saveData(uidUser, 'historial', nextHist);
@@ -1152,6 +1162,7 @@ export default function App() {
     if (patch.bienestar) { setBienestar(patch.bienestar); saveData(uidUser, 'bienestar', patch.bienestar); }
     if (patch.papelera) { setPapelera(patch.papelera); saveData(uidUser, 'papelera', patch.papelera); }
     if (patch.armario) { setArmario(patch.armario); saveData(uidUser, 'armario', patch.armario); }
+    if (patch.rachas) { setRachas(patch.rachas); saveData(uidUser, 'rachas', patch.rachas); }
   };
 
   const addSueno = (entry) => snapshotAndSave({ sueno: [...sueno, entry] });
@@ -1385,6 +1396,7 @@ export default function App() {
     setBienestar(last.bienestar || DEFAULT_BIENESTAR); saveData(uidUser, 'bienestar', last.bienestar || DEFAULT_BIENESTAR);
     setPapelera(last.papelera || DEFAULT_PAPELERA); saveData(uidUser, 'papelera', last.papelera || DEFAULT_PAPELERA);
     setArmario(last.armario || DEFAULT_ARMARIO); saveData(uidUser, 'armario', last.armario || DEFAULT_ARMARIO);
+    setRachas(last.rachas || ESTADO_INICIAL); saveData(uidUser, 'rachas', last.rachas || ESTADO_INICIAL);
     setHistory(rest); saveData(uidUser, 'historial', rest);
   };
 

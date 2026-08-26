@@ -158,8 +158,10 @@ escribir código.
 
 | v1.48.0 | **RA F1** | Motor de rachas: **todo derivado del historial, ni un contador guardado**. Destapó que el récord de los hábitos se podía inflar desmarcando y volviendo a marcar el mismo día |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4) y FO (12/12) cerrados**, RA va por 1/4. Quedan **81**
-fases de la Entrega 2: RA (3), SO · Sonido (5), HT (12) y EH (65).
+| v1.49.0 | **RA F2** | Persistencia y servicio central: las rachas en `app_data` en vez de tablas propias, **sin un solo SQL nuevo que ejecutar**. Cola offline idempotente e invalidación por origen |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4) y FO (12/12) cerrados**, RA va por 2/4. Quedan **80**
+fases de la Entrega 2: RA (2), SO · Sonido (5), HT (12) y EH (65).
 
 ⏸ **El orden dentro de E2-5 está pendiente de Josué (C-23):** en la especificación, el encabezado de
 la Fase 1 de Sonido va seguido del texto de la Fase 4 de Rachas, así que no se sabe dónde está el

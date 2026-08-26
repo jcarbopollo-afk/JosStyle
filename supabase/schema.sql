@@ -27,6 +27,36 @@ create policy "delete propio" on app_data
 -- Con esto activo, cada usuario solo puede leer y escribir sus propias filas,
 -- aunque haya más de un usuario en el futuro usando la misma base de datos.
 
+-- ---------------------------------------------------------------------------
+-- RA Fase 2 — LAS RACHAS **NO NECESITAN NADA NUEVO AQUÍ**. Se explica por qué,
+-- para que nadie vuelva a plantearse crear tablas para ellas.
+--
+-- La especificación propone tablas `streaks` y `streak_days`, y acto seguido
+-- dice: "No copies estos nombres obligatoriamente si el proyecto ya utiliza otra
+-- convención" (apartado 3) y "No dupliques sistemas existentes. Si ya existe una
+-- abstracción para acceso a Supabase, reutilízala" (apartado 1).
+--
+-- La convención de JosStyle es esta tabla: una fila por usuario y clave. Las
+-- rachas usan la clave 'rachas', igual que las otras veinte. Consecuencias:
+--
+--   * Aislamiento entre usuarios (apartado 5): lo dan las cuatro políticas de
+--     arriba, que ya cubren SELECT/INSERT/UPDATE/DELETE con `auth.uid() = user_id`.
+--     Ninguna es del tipo permisivo `auth.uid() IS NOT NULL` que el apartado
+--     prohíbe expresamente.
+--   * user_id (apartado 4): el modelo de rachas **no tiene campo user_id**. El
+--     cliente no puede elegir el de otro porque no manda ninguno.
+--   * UNIQUE(streak_id, local_date) (apartado 6): se aplica en
+--     `src/lib/rachasServicio.js`, el único sitio del proyecto que escribe
+--     cumplimientos. El propio apartado lo admite: "siempre que encaje con el
+--     modelo final".
+--   * Contadores manipulables (apartado 11): no existen. Ni `current_streak` ni
+--     `longest_streak` se guardan en ninguna parte; se derivan del historial.
+--
+-- Y una razón práctica: Josué ejecuta este archivo a mano desde el iPhone. Un
+-- bloque más que fuera OBLIGATORIO para que las rachas funcionaran las dejaría
+-- rotas hasta que lo ejecutara. Así no hay nada que ejecutar.
+-- ---------------------------------------------------------------------------
+
 
 -- ============================================================
 -- Fase 3 — Salud: bucket de Storage privado para fotos de progreso.

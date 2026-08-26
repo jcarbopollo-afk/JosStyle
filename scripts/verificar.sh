@@ -134,6 +134,12 @@ else
   fallo "Falla el motor de rachas"; grep '✗' /tmp/jc_rachas.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-rachas-servicio.mjs >/tmp/jc_rachas2.log 2>&1; then
+  ok "Persistencia y servicio de rachas (RA F2) — $(grep -c '✓' /tmp/jc_rachas2.log) comprobaciones"
+else
+  fallo "Falla la capa persistente de rachas"; grep '✗' /tmp/jc_rachas2.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else
