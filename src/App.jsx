@@ -1726,7 +1726,11 @@ export default function App() {
           <HorarioView
             horarioTop={horarioTop}
             asignaturas={estudios.asignaturas || []}
-            estudios={estudios} productividad={productividad}
+            estudios={estudios} productividad={productividad} calendario={calendario}
+            onCompletarTarea={toggleTarea}
+            onReprogramarTarea={(id, fecha) => snapshotAndSave({
+              productividad: { ...productividad, tareas: productividad.tareas.map((t) => (t.id === id ? { ...t, fecha } : t)) },
+            })}
             accent={accent}
             onCambiar={(nuevo) => snapshotAndSave({ horarioTop: nuevo })}
             onCrearHorario={(nuevo) => snapshotAndSave({ horarioTop: nuevo })}

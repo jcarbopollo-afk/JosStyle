@@ -1,5 +1,95 @@
 # CHANGELOG.md
 
+## Entrega 2 · HT Fase 6 — Calendario, agenda y sistema HOY (v1.58.0)
+
+### HOY es ahora la primera pantalla del horario
+Cuatro tarjetas, en el orden de las preguntas que uno se hace al abrir la app:
+
+**AHORA** (qué estoy haciendo, y cuánto le queda) · **SIGUIENTE** (qué viene, y en cuántos minutos) ·
+**PENDIENTE** (qué se me olvida) · **MAÑANA** (qué preparo esta noche).
+
+Es una vista más dentro del módulo Horario, la primera y la que sale por defecto. **La barra inferior
+sigue teniendo cinco pestañas**: un módulo nuevo entra en un área existente, nunca en la barra.
+
+### No guarda una copia de nada
+El apartado 102 decide la forma del archivo entero: *"HOY no almacenará una copia independiente de
+todo. Consultará las entidades originales."*
+
+Así que `hoy.js` es una función de lectura y nada más. Completar una tarea desde Productividad cambia
+HOY sin que HOY se entere, y hay una prueba que lo demuestra. Si guardara "las cosas de hoy" habría
+dos verdades, y la copia empieza a mentir en cuanto se toca la original.
+
+### El 90 % del trabajo fue no volver a construir
+La especificación describe HOY como si el proyecto empezara de cero. No empieza:
+
+- **Los eventos de otros módulos** ya los reúne `eventosDerivados`, del Calendario, con exámenes,
+  tareas, entrenamientos y objetivos. Se lee de ahí; no hay un segundo recolector.
+- **La línea del día, los huecos, los conflictos y los avisos** ya estaban en `horario.js` desde
+  HT F1.
+- **La puntuación del día** (apartado 37) ya es `puntuacion.js`, la del Dashboard. Una segunda daría
+  dos números distintos para el mismo día, que es peor que no tener ninguno.
+
+Lo que faltaba de verdad era **la pregunta**: qué pasa ahora, cuánto queda, qué viene, qué está
+pendiente y en qué orden. Eso es `contextoTemporal()`, que responde las ocho preguntas del apartado
+101 en una sola llamada — porque si cada tarjeta preguntara por su cuenta, acabarían diciendo cosas
+distintas.
+
+### Una tarea vencida no desaparece
+El apartado 33 es explícito. Sigue arriba del todo, diciendo cuántos días lleva, y con las dos cosas
+que hacen falta a un toque:
+
+- **Completar sin abrir Productividad** (apartado 35).
+- **Reprogramar en un toque** (apartado 34): mañana, este fin de semana o la semana que viene.
+
+Y "este fin de semana" pedido un domingo por la tarde es el sábado **que viene**, no el de ayer.
+
+### Un día sin nada no es una pantalla rota
+El apartado 69 lo pide con esas palabras. Un domingo vacío dice que no hay nada programado y ofrece
+montar el día; un festivo dice que es día libre. Los dos casos tienen su prueba de renderizado.
+
+Y un domingo **no dice "clase pendiente"** si el horario escolar es de lunes a viernes (apartado 70).
+
+### El contador baja solo
+*"El contador deberá actualizarse automáticamente sin recargar la página."* (apartado 5)
+
+Un tic de un minuto basta, porque el número se dice en minutos. Sin él, "empieza en 42 min" se
+queda congelado y sigue diciendo 42 cuando la clase empezó hace diez.
+
+### Los avisos se agrupan en uno
+*"No se debe bombardear al usuario."* (apartado 81) Un mensaje —"tienes 3 cosas importantes hoy"— en
+vez de tres avisos, con las tres prioridades del apartado 82: una tarea vencida y un examen mañana
+son altas; algo de dentro de una semana, baja.
+
+Aquí se **describen**. Mandarlas es la Fase 10, y el proyecto ya tiene su emisor: dos darían dos
+avisos por lo mismo.
+
+### Un bug que dejaba la pantalla en blanco
+`lineaDelDia` devuelve el día entero —eventos, en curso, festivo, total, minutos—, no una lista.
+Tratarlo como un array reventaba con `linea.map is not a function`. Lo cazó su propia prueba antes
+de llegar a ninguna pantalla.
+
+### Lo que no se ha construido, y por qué
+- **Arrastrar bloques** (30-31): misma decisión que HT F3 — en móvil manda "Mover a…".
+- **Recordatorios, ubicación y tiempo de desplazamiento** (47-52): los recordatorios son la Fase 10;
+  el desplazamiento necesita mapas, que el proyecto no tiene ni ha pedido.
+- **IA proactiva y planificar desde un hueco** (59, 61, 66-67): es la Fase 9. Aquí está el contexto
+  que la alimentará, y la IA nunca se dispara sola (regla 7).
+- **Centro de notificaciones** (83): ya existe uno. Un segundo historial sería la duplicación que el
+  apartado 102 prohíbe.
+- **Comando rápido** (108-109): el buscador global de BI F3-F4 ya es exactamente eso, y D2-07
+  prohíbe una cuarta lista.
+
+### Verificación
+**2679 comprobaciones y 10 reglas invariantes en verde** (antes 2596), 83 del motor temporal y 268
+casos de renderizado. `package.json` → **v1.58.0**.
+
+⚠️ Sin probar: el contador que baja solo en pantalla, el aspecto en un iPhone y el recorrido tocando.
+Como todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
 ## Entrega 2 · HT Fase 5 — Asignaturas, actividades, colores, iconos y contexto (v1.57.0)
 
 ### "Biología" deja de ser una palabra dentro de una celda

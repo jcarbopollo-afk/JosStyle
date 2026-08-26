@@ -30,7 +30,7 @@
 //   la misma función `moverBloque`.
 // ============================================================================
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, ArrowLeft, Trash2, Copy,
   Pencil, Eye, EyeOff, AlertTriangle, Check, MoveRight, X, GripVertical, Star,
@@ -60,6 +60,7 @@ import {
   editarActividad, alternarFavorita, archivarActividad, duplicarActividad,
   eliminarActividadDefinitiva, actividadesOrdenadas, gruposDe as gruposDeActividades,
 } from '../lib/actividades';
+import { contextoTemporal, describirMinutos, opcionesReprogramar, modoHoy } from '../lib/hoy';
 
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
 const fechaCorta = (iso) => iso.split('-').reverse().slice(0, 2).join('/');
@@ -556,6 +557,223 @@ function PanelFranjas({ horario, estado, accent, onAnadir, onEditar, onEliminar 
    LA PANTALLA
    =========================================================================== */
 /* ===========================================================================
+   HOY (HT F6 · apartados 1-7, 32-36, 65, 69 y 85)
+   ===========================================================================
+   *"HOY no será simplemente la fecha actual. Será una vista agregadora."*
+
+   Todo lo que se pinta aquí sale de `contextoTemporal`, que **no guarda nada**:
+   consulta las entidades originales (apartado 102). Completar una tarea desde
+   Productividad cambia esta pantalla sin que esta pantalla se entere.
+
+   ── LO QUE SE VE, EN ESTE ORDEN ────────────────────────────────────────────
+   AHORA · SIGUIENTE · PENDIENTE · MAÑANA. Es el ejemplo del apartado 1, tal
+   cual, porque ese orden es el de las preguntas que uno se hace: qué estoy
+   haciendo, qué viene, qué se me olvida, qué preparo esta noche.
+
+   ⚠️ **Un día sin nada NO es una pantalla rota** (apartado 69): dice que no hay
+   nada programado y ofrece planificar, en vez de quedarse en blanco.
+
+   ⚠️ **El contador de "termina en 23 min" se actualiza solo** (apartado 5), con
+   un `setInterval` de un minuto. Sin él, el número se congela en cuanto la
+   pantalla lleva un rato abierta, y decir "empieza en 42 min" cuando empezó
+   hace diez es peor que no decir nada. */
+export function HoyView({ contexto, accent, modo = 'completo', onModo, onCompletarTarea, onReprogramar, onAbrirBloque, onIrAFecha, opcionesFecha = [] }) {
+  const { dia, ahora, siguiente: prox, pendientes: pend, libre, conflictos, manana, agenda } = contexto;
+  const [reprogramando, setReprogramando] = useState(null);
+  const completo = modo === 'completo';
+
+  return (
+    <div className="space-y-3">
+      {/* Apartado 6 — el resumen de arriba: la carga del día de un vistazo. */}
+      <Card>
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold" style={{ color: COLORS.text }}>
+              {dia.nombreDia} {fechaCorta(dia.fecha)}
+            </p>
+            <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+              {dia.diaLibre ? 'Día libre'
+                : dia.vacio ? 'Nada programado'
+                  : `${dia.actividades} ${plural(dia.actividades, 'actividad', 'actividades')}${dia.pendientes ? ` · ${dia.pendientes} ${plural(dia.pendientes, 'pendiente', 'pendientes')}` : ''}`}
+            </p>
+          </div>
+          {onModo && (
+            <button onClick={() => onModo(completo ? 'minimo' : 'completo')}
+              className="text-[11px] font-semibold flex-shrink-0" style={{ color: accent }}>
+              {completo ? 'Ver lo justo' : 'Ver todo'}
+            </button>
+          )}
+        </div>
+      </Card>
+
+      {/* Apartado 39 — un choque se ve arriba, no escondido. */}
+      {conflictos.length > 0 && (
+        <Card style={{ border: `1px solid ${COLORS.negative}` }}>
+          <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: COLORS.negative }}>
+            <AlertTriangle size={12} /> {conflictos.length} {plural(conflictos.length, 'choque', 'choques')} de horario
+          </p>
+        </Card>
+      )}
+
+      {/* AHORA (apartados 3 y 5). */}
+      {ahora && (
+        <Card style={{ border: `1px solid ${ahora.color || accent}` }}>
+          <p className="text-[10px] font-semibold tracking-wide" style={{ color: COLORS.textMuted }}>AHORA</p>
+          <button onClick={() => ahora.bloqueId && onAbrirBloque?.(ahora)} className="text-left w-full">
+            <p className="text-sm font-semibold mt-0.5" style={{ color: COLORS.text }}>{ahora.titulo}</p>
+          </button>
+          <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>
+            {ahora.inicio}–{ahora.fin} · termina en {describirMinutos(ahora.minutosRestantes)}
+          </p>
+          {ahora.ubicacion && <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{ahora.ubicacion}</p>}
+        </Card>
+      )}
+
+      {/* SIGUIENTE (apartado 4). */}
+      {prox && (
+        <Card>
+          <p className="text-[10px] font-semibold tracking-wide" style={{ color: COLORS.textMuted }}>SIGUIENTE</p>
+          <p className="text-sm font-semibold mt-0.5" style={{ color: COLORS.text }}>{prox.titulo}</p>
+          <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>
+            {prox.esHoy
+              ? `${prox.inicio} · empieza en ${describirMinutos(prox.minutosPara)}`
+              : `${prox.inicio} · ${fechaCorta(prox.fecha)}`}
+          </p>
+        </Card>
+      )}
+
+      {/* PENDIENTE (apartados 32-35). */}
+      {pend.length > 0 && (
+        <Card>
+          <p className="text-[10px] font-semibold tracking-wide mb-1" style={{ color: COLORS.textMuted }}>PENDIENTE</p>
+          {pend.map((p, i) => (
+            <div key={p.id} style={{ borderBottom: i === pend.length - 1 ? 'none' : `1px solid ${COLORS.border}` }} className="py-1.5">
+              <div className="flex items-center gap-2">
+                {/* Apartado 35 — completar sin abrir Productividad. Solo las
+                    tareas: un examen no se "completa", llega. */}
+                {p.tipo === 'tarea' && onCompletarTarea ? (
+                  <button onClick={() => onCompletarTarea(p.refId)} className="flex-shrink-0" aria-label={`Completar ${p.titulo}`}>
+                    <span className="block w-4 h-4 rounded-md" style={{ border: `1.5px solid ${COLORS.border}` }} />
+                  </button>
+                ) : (
+                  <span className="w-4 flex-shrink-0 text-center text-[10px]" aria-hidden="true">📝</span>
+                )}
+                <span className="text-xs flex-1 truncate" style={{ color: COLORS.text }}>{p.titulo}</span>
+                {/* Apartado 33 — vencida, con cuántos días lleva. No desaparece. */}
+                {p.estado === 'vencida' && (
+                  <span className="text-[10px] flex-shrink-0" style={{ color: COLORS.negative }}>
+                    Vencida hace {p.diasDeRetraso} {plural(p.diasDeRetraso, 'día', 'días')}
+                  </span>
+                )}
+                {p.estado === 'proxima' && p.fecha && (
+                  <span className="text-[10px] flex-shrink-0" style={{ color: COLORS.textMuted }}>{fechaCorta(p.fecha)}</span>
+                )}
+              </div>
+              {/* Apartado 34 — reprogramar en pocos toques. */}
+              {p.tipo === 'tarea' && onReprogramar && (
+                <div className="pl-6">
+                  {reprogramando === p.id ? (
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {opcionesFecha.map((o) => (
+                        <button key={o.id} onClick={() => { onReprogramar(p.refId, o.fecha); setReprogramando(null); }}
+                          className="px-2 py-1 rounded-lg text-[10px] font-semibold"
+                          style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}>
+                          {o.label}
+                        </button>
+                      ))}
+                      <button onClick={() => setReprogramando(null)} className="text-[10px]" style={{ color: COLORS.textMuted }}>Cancelar</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setReprogramando(p.id)} className="text-[10px] mt-0.5" style={{ color: accent }}>
+                      Reprogramar
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Apartado 69 — un día sin nada NO es una pantalla rota. */}
+      {dia.vacio && pend.length === 0 && (
+        <Card className="text-center">
+          <Calendar size={20} style={{ color: accent }} className="mx-auto mb-2" />
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>
+            {dia.diaLibre ? 'Hoy es día libre' : 'No tienes nada programado'}
+          </p>
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+            {dia.diaLibre ? 'Disfrútalo.' : 'Puedes montar tu día desde la cuadrícula de la semana.'}
+          </p>
+        </Card>
+      )}
+
+      {completo && (
+        <>
+          {/* La línea del día (apartado 2), con lo pasado apagado. */}
+          {agenda.eventos.length > 0 && (
+            <Card>
+              <p className="text-[10px] font-semibold tracking-wide mb-1" style={{ color: COLORS.textMuted }}>EL DÍA</p>
+              {agenda.todoElDia.map((ev) => (
+                <p key={ev.id} className="text-xs py-0.5" style={{ color: COLORS.text }}>
+                  <span style={{ color: COLORS.textMuted }}>Todo el día · </span>{ev.titulo}
+                </p>
+              ))}
+              {agenda.eventos.map((ev, i) => (
+                <div key={ev.bloqueId || ev.id || i} className="flex items-center gap-2 py-0.5">
+                  <span className="text-[11px] font-semibold" style={{ color: COLORS.textMuted, width: 40 }}>{ev.inicio}</span>
+                  <span className="text-xs flex-1 truncate"
+                    style={{ color: ahora && ev.bloqueId === ahora.bloqueId ? accent : COLORS.text }}>
+                    {ev.titulo}
+                  </span>
+                  {ev.soloLectura && <span className="text-[10px]" style={{ color: COLORS.textMuted }}>{ev.origen}</span>}
+                </div>
+              ))}
+            </Card>
+          )}
+
+          {/* Tiempo libre (apartado 65) y descanso (68), que no es lo mismo. */}
+          {libre.minutos > 0 && !dia.vacio && (
+            <Card>
+              <p className="text-xs" style={{ color: COLORS.text }}>{libre.texto}</p>
+              {libre.huecos.slice(0, 3).map((h) => (
+                <p key={`${h.inicio}-${h.fin}`} className="text-[11px]" style={{ color: COLORS.textMuted }}>
+                  {h.inicio}–{h.fin}
+                </p>
+              ))}
+              {libre.minutosDescanso > 0 && (
+                <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+                  Más {describirMinutos(libre.minutosDescanso)} de descanso ya planificados.
+                </p>
+              )}
+            </Card>
+          )}
+
+          {/* MAÑANA (apartado 85) — para preparar la mochila por la noche. */}
+          <Card>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] font-semibold tracking-wide" style={{ color: COLORS.textMuted }}>MAÑANA</p>
+              {onIrAFecha && (
+                <button onClick={() => onIrAFecha(manana.fecha)} className="text-[10px] font-semibold" style={{ color: accent }}>Ver el día</button>
+              )}
+            </div>
+            <p className="text-xs mt-0.5" style={{ color: COLORS.text }}>
+              {manana.dia.vacio ? 'Nada programado'
+                : `${manana.dia.actividades} ${plural(manana.dia.actividades, 'actividad', 'actividades')}`}
+            </p>
+            {manana.material.length > 0 && (
+              <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+                🎒 {manana.material.map((m) => m.nombre || m).join(', ')}
+              </p>
+            )}
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ===========================================================================
    LA FICHA DE UNA ACTIVIDAD (HT F5 · apartados 29, 30, 77, 79 y 100)
    ===========================================================================
    *"«Biología» dejará de ser texto dentro de una celda: será una entidad
@@ -967,12 +1185,17 @@ export default function HorarioView({
   horarioTop, asignaturas = [], accent, hoy = todayISO(),
   // HT F5 — se LEEN, nunca se escriben: los exámenes son de Estudios y las
   // tareas de Productividad (apartado 92, "referencia única").
-  estudios = null, productividad = null,
+  estudios = null, productividad = null, calendario = null,
+  // HT F6 · apartados 34 y 35 — completar y reprogramar SIN abrir Productividad.
+  // La tarea sigue siendo suya: aquí solo se pide el cambio.
+  onCompletarTarea = null, onReprogramarTarea = null,
   onCambiar, onCrearHorario,
 }) {
   const estado = horarioTop;
   const [horarioId, setHorarioId] = useState(null);
-  const [vista, setVista] = useState('semana');
+  // HT F6 · apartado 1 — HOY es la vista por defecto: es la pregunta que se
+  // hace al abrir la app.
+  const [vista, setVista] = useState('hoy');
   const [edicion, setEdicion] = useState(false);
   const [creando, setCreando] = useState(false);
   const [celda, setCelda] = useState(null);
@@ -983,6 +1206,15 @@ export default function HorarioView({
   const [avanzado, setAvanzado] = useState(false);
   const [actividadId, setActividadId] = useState(null);
   const [listaActividades, setListaActividades] = useState(false);
+  const [modoHoyId, setModoHoyId] = useState('completo');
+  /* HT F6 · apartado 5 — *"el contador deberá actualizarse automáticamente sin
+     recargar la página"*. Un minuto basta: el número se dice en minutos, así
+     que refrescar más a menudo solo gastaría batería. */
+  const [minuto, setMinuto] = useState(() => new Date().getMinutes());
+  useEffect(() => {
+    const t = setInterval(() => setMinuto(new Date().getMinutes()), 60000);
+    return () => clearInterval(t);
+  }, []);
   // Apartado 59 — las preferencias de vista son de este aparato, así que se leen
   // de `localStorage` una vez y se guardan al cambiarlas. Nunca van a Supabase.
   const [visual, setVisual] = useState(() => leerVisual());
@@ -1016,6 +1248,16 @@ export default function HorarioView({
   const actividades = useMemo(
     () => actividadesOrdenadas(estado, { asignaturas, incluirArchivadas: true }),
     [estado, asignaturas],
+  );
+
+  /* HT F6 · apartado 101 — UNA sola llamada responde las ocho preguntas. Si
+     cada tarjeta preguntara por su cuenta, acabarían diciendo cosas distintas.
+     `minuto` está en las dependencias a propósito: es lo que hace que
+     "termina en 23 min" baje solo. */
+  const contexto = useMemo(
+    () => contextoTemporal(estado, { fecha, hoy, asignaturas, estudios, productividad, calendario, horarioId: activo?.id || null }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [estado, fecha, hoy, asignaturas, estudios, productividad, calendario, activo, minuto],
   );
 
   // Apartado 25 — sin ningún horario, no una pantalla vacía.
@@ -1175,6 +1417,17 @@ export default function HorarioView({
             horarios: estado.horarios.map((h) => (h.id === activo.id ? { ...h, columnas: h.columnas.filter((c) => c.id !== id) } : h)),
             bloques: estado.bloques.filter((b) => b.columnaId !== id),
           })}
+        />
+      )}
+
+      {vista === 'hoy' && (
+        <HoyView
+          contexto={contexto} accent={accent} modo={modoHoyId} onModo={setModoHoyId}
+          opcionesFecha={opcionesReprogramar(hoy)}
+          onCompletarTarea={onCompletarTarea}
+          onReprogramar={onReprogramarTarea}
+          onAbrirBloque={(ev) => setBloque({ ...ev, id: ev.bloqueId })}
+          onIrAFecha={(f) => { setFecha(f); setVista('dia'); }}
         />
       )}
 

@@ -522,6 +522,10 @@ export function vaciarDia(estado, horarioId, columnaId) {
    guarda nada suyo. Cambiar una clase la cambia en las tres. */
 
 export const VISTAS_HORARIO = [
+  // HT F6 · apartado 1 — HOY va PRIMERO y es la vista por defecto: es la
+  // pregunta que Josué se hace al abrir la app, y la cuadrícula es la que se
+  // mira una vez al mes para montar el curso.
+  { id: 'hoy', label: 'Hoy' },
   { id: 'semana', label: 'Semana' },
   { id: 'dia', label: 'Día' },
   { id: 'agenda', label: 'Agenda' },

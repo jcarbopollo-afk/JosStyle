@@ -336,7 +336,10 @@ console.log('\n═══ Semana, día y agenda: una sola fuente ═══\n');
   let { estado, horario, col, fila } = conMates();
   estado = crearBloqueRapido(estado, { horarioId: horario.id, columnaId: col(2).id, filaId: fila(1).id, texto: 'Biología', hoy: HOY }).estado;
 
-  comprobar('Las tres vistas del apartado 49', VISTAS_HORARIO.length === 3);
+  // HT F6 · apartado 1 añadió HOY como cuarta vista, y la puso la primera:
+  // es la pregunta que Josué se hace al abrir la app.
+  comprobar('Las cuatro vistas (tres del apartado 49 + HOY de F6)', VISTAS_HORARIO.length === 4);
+  comprobar('CLAVE · HOY va la primera', VISTAS_HORARIO[0].id === 'hoy');
 
   const rej = rejillaSemana(estado, horario.id);
   comprobar('CRITERIO · Existe el modo semana', rej.columnas.length === 5 && rej.filas.length === 6);

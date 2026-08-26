@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 34 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 5/12** y **SO 1/5** (hasta v1.57.0). Quedan
-> **72**: HT (7), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 35 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 6/12** y **SO 1/5** (hasta v1.58.0). Quedan
+> **71**: HT (6), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -3627,123 +3627,86 @@ apartado 58 usa para decidir si una actividad se borra o se archiva.
 **Lo que sigue sin estar probado, y hay que decirlo:** la ficha en pantalla, el selector de iconos y
 el recorrido tocando en un iPhone. Como todo desde R1.
 
-#### HT · Fase 6/12 — CALENDARIO + AGENDA + SISTEMA «HOY»
-- [ ] EL CENTRO: «HOY»
-- [ ] LÍNEA TEMPORAL DEL DÍA
-- [ ] BLOQUE ACTUAL
-- [ ] PRÓXIMO BLOQUE
-- [ ] TIEMPO RESTANTE
-- [ ] ESTADO DEL DÍA
-- [ ] AGENDA DEL DÍA
-- [ ] VISTA DIARIA
-- [ ] VISTA SEMANAL
-- [ ] VISTA MENSUAL
-- [ ] VISTA ANUAL
-- [ ] NAVEGACIÓN TEMPORAL
-- [ ] BOTÓN «VOLVER A HOY»
-- [ ] SELECCIÓN DE FECHA
-- [ ] CALENDARIO COMO CAPA
-- [ ] DIFERENCIA ENTRE HORARIO Y EVENTO
-- [ ] TAREAS
-- [ ] FECHA DE INICIO Y FECHA LÍMITE
-- [ ] TAREAS PROGRAMADAS
-- [ ] EXÁMENES
-- [ ] CUENTA ATRÁS
-- [ ] EVENTOS
-- [ ] EVENTOS DE TODO EL DÍA
-- [ ] RECURRENCIA
-- [ ] EXCEPCIONES
-- [ ] CANCELACIONES
-- [ ] CAMBIOS TEMPORALES
-- [ ] SUSTITUCIONES
-- [ ] REPROGRAMACIÓN
-- [ ] ARRASTRAR BLOQUES
-- [ ] CONFIRMACIÓN DE CAMBIOS
-- [ ] HOY + TAREAS
-- [ ] TAREAS VENCIDAS
-- [ ] REPROGRAMACIÓN RÁPIDA
-- [ ] COMPLETAR DESDE HOY
-- [ ] PRIORIDADES
-- [ ] PUNTUACIÓN DEL DÍA
-- [ ] CARGA DEL DÍA
-- [ ] DETECCIÓN DE CONFLICTOS
-- [ ] CONFLICTOS INTELIGENTES
-- [ ] MOCHILA
-- [ ] MOCHILA AUTOMÁTICA
-- [ ] MOCHILA POR DÍA
-- [ ] MOCHILA MANUAL
-- [ ] ELEMENTOS TEMPORALES
-- [ ] MOCHILA INTELIGENTE
-- [ ] RECORDATORIOS
-- [ ] RECORDATORIOS CONTEXTUALES
-- [ ] RECORDATORIOS DE SALIDA
-- [ ] UBICACIÓN
-- [ ] TIEMPO DE DESPLAZAMIENTO
-- [ ] ZONAS
-- [ ] HÁBITOS
-- [ ] OBJETIVOS
-- [ ] RELACIÓN OBJETIVO → TAREA
-- [ ] ENTRENAMIENTO
-- [ ] CONTEXTO DEL ENTRENAMIENTO
-- [ ] ESTUDIO
-- [ ] AUTOMATIZACIÓN DEL ESTUDIO
-- [ ] RESUMEN INTELIGENTE
-- [ ] IA PROACTIVA
-- [ ] APROBACIÓN
-- [ ] PREGUNTAS RÁPIDAS
-- [ ] RESPUESTA CONTEXTUAL
-- [ ] TIEMPO LIBRE
-- [ ] USO DEL TIEMPO LIBRE
-- [ ] PLANIFICACIÓN RÁPIDA
-- [ ] BLOQUES DE DESCANSO
-- [ ] DÍA SIN ACTIVIDADES
-- [ ] FIN DE SEMANA
-- [ ] VACACIONES
-- [ ] FESTIVOS
-- [ ] CALENDARIO ACADÉMICO
-- [ ] EXCEPCIONES ACADÉMICAS
-- [ ] IMPORTACIÓN FUTURA
-- [ ] SINCRONIZACIÓN CLOUD
-- [ ] CONFLICTOS DE SINCRONIZACIÓN
-- [ ] OFFLINE
-- [ ] ESTADO DE SINCRONIZACIÓN
-- [ ] NOTIFICACIONES
-- [ ] NOTIFICACIONES INTELIGENTES
-- [ ] PRIORIDAD DE NOTIFICACIONES
-- [ ] CENTRO DE NOTIFICACIONES
-- [ ] PERSONALIZACIÓN
-- [ ] VISTA «MAÑANA»
-- [ ] VISTA «ESTA SEMANA»
-- [ ] RESUMEN SEMANAL
-- [ ] RESUMEN DEL FIN DE SEMANA
-- [ ] DISEÑO MOBILE FIRST
-- [ ] INFORMACIÓN PROGRESIVA
-- [ ] TARJETAS EXPANDIBLES
-- [ ] PERSONALIZAR HOY
-- [ ] ORDEN PERSONALIZABLE
-- [ ] Horario
-- [ ] Mochila
-- [ ] Tareas
-- [ ] Entrenamiento
-- [ ] Objetivos
-- [ ] MODO MÍNIMO
-- [ ] MODO COMPLETO
-- [ ] MODO ESTUDIO
-- [ ] MODO ENTRENAMIENTO
-- [ ] SISTEMA DE CONTEXTO
-- [ ] MOTOR DE CONTEXTO TEMPORAL
-- [ ] FUENTE ÚNICA DE VERDAD
-- [ ] RENDIMIENTO
-- [ ] DATOS CLOUD
-- [ ] SEGURIDAD
-- [ ] AUDITORÍA
-- [ ] DESHACER
-- [ ] ACCIONES RÁPIDAS
-- [ ] COMANDO RÁPIDO
-- [ ] INTELIGENCIA SIN AUTOMATISMOS PELIGROSOS
-- [ ] EJEMPLO COMPLETO
-- [ ] CRITERIOS DE ACEPTACIÓN
-- [ ] PREPARACIÓN PARA LA FASE 7
+#### HT · Fase 6/12 — CALENDARIO + AGENDA + SISTEMA «HOY» ✅ COMPLETADA (v1.58.0)
+
+*"Se deberá crear un servicio central que pueda responder: ¿qué está ocurriendo ahora? ¿qué viene
+después? ¿qué tengo hoy? ¿qué está pendiente? ¿qué es importante?"* (apartado 101)
+
+El motor está en `src/lib/hoy.js` (83 comprobaciones) y la pantalla es **una cuarta vista dentro de
+Horario**, la primera y la que sale por defecto. La barra inferior sigue con cinco pestañas.
+
+⚠️ **El apartado 102 decide la forma del archivo entero:** *"HOY no almacenará una copia
+independiente de todo. Consultará las entidades originales."* Así que `hoy.js` **no guarda nada**.
+Completar una tarea desde Productividad cambia HOY sin que HOY se entere, y hay una prueba que lo
+demuestra.
+
+⚠️ **Y el 90 % del trabajo fue NO volver a construir lo que ya existía.** La especificación describe
+HOY como si el proyecto empezara de cero, y no empieza: `eventosDerivados` ya reúne exámenes, tareas
+y entrenamientos desde el Calendario; `lineaDelDia`, `huecosDelDia`, `conflictosDelDia` y
+`avisosDelDia` ya están desde HT F1; y **la puntuación del día (apartado 37) ya es `puntuacion.js`**,
+del Dashboard. Una segunda puntuación daría dos números distintos para el mismo día.
+
+- [x] **1-7 · HOY, línea temporal, ahora, siguiente, tiempo restante, estado y agenda** — el orden de
+      la pantalla es el del ejemplo del apartado 1: AHORA · SIGUIENTE · PENDIENTE · MAÑANA, que es el
+      orden de las preguntas que uno se hace. ⚠️ **El contador se actualiza solo** (apartado 5), con
+      un tic de un minuto: decir "empieza en 42 min" cuando empezó hace diez es peor que no decirlo.
+- [x] **8-14 · Vistas y navegación temporal** — HOY, semana, día y agenda, con "Hoy" y navegación por
+      días, que ya venían de HT F3.
+- [x] **15-16 · El calendario como capa** — horario + eventos + tareas + exámenes + entrenamientos →
+      HOY. ⚠️ **Horario y evento no se confunden**: el horario es una regla ("los lunes a las 8"), el
+      evento es un hecho ("el examen el 15"). Es la distinción de HT F1, y aquí se ve en que los
+      eventos de otros módulos llegan como **solo lectura**.
+- [x] **17-21, 32-35 · Tareas, exámenes y lo pendiente** — el orden del apartado 32 (vencidas → hoy →
+      próximas → sin fecha). ⚠️ **Una tarea vencida NO desaparece** (apartado 33): sigue arriba, con
+      cuántos días lleva. Se puede **completar sin abrir Productividad** (35) y **reprogramar en un
+      toque** (34): mañana, este fin de semana o la semana que viene.
+- [x] **36 · Prioridades** — un examen pesa siempre: es la única fecha que no se puede mover.
+- [x] **38 · Carga del día** — cuatro niveles. ⚠️ **Describe, no riñe**: el apartado 37 dice
+      expresamente *"no deberá convertirse en una obligación ni penalizar al usuario injustamente"*.
+- [x] **39-40 · Conflictos** — se ven arriba del todo, no escondidos.
+- [x] **41-46 · Mochila** — `materialDelDia` ya la deriva desde HT F1 y F2, y **la de mañana sale en
+      HOY**, que es cuando hace falta: por la noche.
+- [x] **65-68 · Tiempo libre y descanso** — ⚠️ **el descanso es una actividad válida**, no tiempo
+      perdido (apartado 68), así que un hueco entre clases y un bloque de descanso se cuentan aparte.
+- [x] **69 · Día sin actividades** — ⚠️ *"la pantalla no deberá parecer rota o vacía"*. Dice que no
+      hay nada programado y ofrece montar el día. Tiene su propia prueba de renderizado.
+- [x] **70-72 · Fin de semana, vacaciones y festivos** — un domingo **no dice "clase pendiente"** si
+      el horario es de lunes a viernes, y un festivo se declara una vez (HT F1) en vez de cancelar
+      seis clases a mano.
+- [x] **80-84 · Notificaciones agrupadas** — ⚠️ *"no se debe bombardear al usuario"*: **un mensaje**
+      ("tienes 3 cosas importantes hoy"), con las tres prioridades del apartado 82. Aquí se
+      **describen**; mandarlas es la Fase 10, y el proyecto ya tiene su emisor.
+- [x] **85 · Vista «mañana»** — con su material, que es lo que hace falta para la mochila.
+- [x] **101 · El motor de contexto temporal** — `contextoTemporal()` responde las ocho preguntas en
+      una llamada. Si cada tarjeta preguntara por su cuenta, acabarían diciendo cosas distintas.
+- [x] **102 · Fuente única de verdad** — el archivo entero es una función de lectura.
+- [x] **104-107 · Cloud, seguridad y deshacer** — resueltos desde antes: `app_data` con RLS, sin
+      `user_id` que falsear (HT F2), y cada cambio entra por `snapshotAndSave`, que ya alimenta el
+      "Deshacer" global.
+- [x] **110 · Inteligencia sin automatismos peligrosos** — nada se mueve solo. El contexto para la IA
+      **describe el día y no lo cambia**, y no incluye notas privadas (HT F5).
+- [x] **112 · Criterios de aceptación** — los comprobables sin navegador, en `scripts/test-hoy.mjs`.
+
+**Lo que NO se ha construido, y por qué (regla 8):**
+
+- [-] **30-31 · Arrastrar bloques** — misma decisión que HT F3: el apartado 26 de esa fase exige que
+      en móvil exista igualmente "Mover a…", y eso es lo que Josué usa desde el iPhone.
+- [-] **37 · Puntuación del día** — **ya existe** (`puntuacion.js`, Dashboard). Una segunda daría dos
+      números distintos para el mismo día.
+- [-] **47-52 · Recordatorios, ubicación y tiempo de desplazamiento** — los recordatorios son la Fase
+      10; el tiempo de desplazamiento necesita mapas, que el proyecto no tiene ni ha pedido.
+- [-] **59, 61, 66-67 · Automatización del estudio, IA proactiva y planificación desde un hueco** —
+      todo eso es la Fase 9. Aquí está el contexto que la alimentará, y **la IA nunca se dispara
+      sola** (regla 7).
+- [-] **75-79 · Importación y sincronización** — resuelto desde HT F2 (`app_data`) o aplazado a la
+      Fase 12.
+- [-] **83 · Centro de notificaciones** — el proyecto ya tiene su sistema de notificaciones; un
+      segundo historial sería la duplicación que el apartado 102 prohíbe.
+- [-] **108-109 · Acciones rápidas y comando rápido** — el buscador global de BI F3-F4 ya es
+      exactamente eso, y D2-07 prohíbe una cuarta lista.
+
+**Lo que sigue sin estar probado, y hay que decirlo:** el contador que baja solo en pantalla, el
+aspecto en un iPhone y el recorrido tocando. Como todo desde R1.
 
 #### HT · Fase 7/12 — MOCHILA INTELIGENTE + MATERIALES + PREPARACIÓN AUTOMÁTICA
 - [ ] OBJETIVO PRINCIPAL

@@ -27,7 +27,8 @@ import StatsView from '../src/views/StatsView.jsx';
 import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
-import HorarioView, { PanelAvanzado, FichaActividad } from '../src/views/HorarioView.jsx';
+import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
+import { contextoTemporal, opcionesReprogramar } from '../src/lib/hoy.js';
 import { fichaActividad, impactoEliminarActividad, editarActividad, crearActividadUnica } from '../src/lib/actividades.js';
 import { archivarHorario, guardarCiclo, normalizarVisual } from '../src/lib/horarioEstructura.js';
 import { DEFAULT_HORARIO_TOP } from '../src/lib/horario.js';
@@ -332,6 +333,30 @@ const CASOS = [
         estudios: { asignaturas: [], examenes: [{ id: 'x1', asignaturaId: null, fecha: '2026-09-03', tema: 'Tema 3' }] },
         productividad: { tareas: [{ id: 't1', texto: 'Repasar Matemáticas', hecha: false }] },
       })],
+      /* HT Fase 6 — HOY. Los cuatro estados que tiene que saber pintar, y el
+         que más importa es el último: un día sin nada NO puede parecer una
+         pantalla rota (apartado 69). */
+      ...(() => {
+        const propsHoy = (estado, extra = {}) => ({
+          contexto: contextoTemporal(estado, { fecha: HOY, hoy: HOY, ahora: '09:30', ...extra }),
+          accent, modo: 'completo', onModo: noop, opcionesFecha: opcionesReprogramar(HOY),
+          onCompletarTarea: noop, onReprogramar: noop, onAbrirBloque: noop, onIrAFecha: noop,
+        });
+        const tareas = {
+          tareas: [
+            { id: 't1', texto: 'Vencida hace días', fecha: '2026-01-01', hecha: false },
+            { id: 't2', texto: 'Para hoy', fecha: HOY, hecha: false },
+            { id: 't3', texto: 'Sin fecha', hecha: false },
+          ],
+        };
+        return [
+          ['HoyView · con clases y pendientes', HoyView, () => propsHoy(lleno, { productividad: tareas })],
+          ['HoyView · modo mínimo', HoyView, () => ({ ...propsHoy(lleno, { productividad: tareas }), modo: 'minimo' })],
+          // El caso del apartado 69: nada programado. Y el del 39: un choque.
+          ['HoyView · día sin nada', HoyView, () => propsHoy(DEFAULT_HORARIO_TOP)],
+          ['HoyView · con un choque', HoyView, () => propsHoy(conChoque)],
+        ];
+      })(),
       ['PanelAvanzado · horario sin días', PanelAvanzado, () => {
         const vacio = crearDesdePlantilla(DEFAULT_HORARIO_TOP, { nombre: 'Mío', plantillaId: 'vacio', hoy: HOY });
         return {

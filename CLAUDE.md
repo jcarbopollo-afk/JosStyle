@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.57.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.58.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados, **Horario Top** va por 5/12 y **Sonido** por 1/5, quedan 72) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados, **Horario Top** va por 6/12 y **Sonido** por 1/5, quedan 71) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,10 +107,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 2339 pruebas unitarias con Node, 5 de auditoría, 252 casos de renderizado real con
-`react-dom/server` y 10 reglas invariantes — **2596 comprobaciones**.
+Vite, 2406 pruebas unitarias con Node, 5 de auditoría, 268 casos de renderizado real con
+`react-dom/server` y 10 reglas invariantes — **2679 comprobaciones**.
 
-Eso ya ha encontrado **cuarenta y cuatro bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **cuarenta y cinco bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -133,9 +133,8 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase candidata: HT · Fase 6/12 — Calendario, agenda y sistema HOY**, que la propia
-especificación llama *"una de las fases más importantes de todo HORARIO TOP"*.
-Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
+**Siguiente fase candidata: HT · Fase 7/12 — Mochila inteligente, materiales y preparación
+automática.** Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
@@ -177,6 +176,10 @@ Seis cosas que conviene tener presentes al retomar:
   releer esa prueba antes.
 - **Nada de la actividad que se pueda derivar se guarda** (HT F5): usos, tiempo semanal, recientes,
   más usadas y carga por día salen de los bloques. Lo único guardado es "favorita", que la pone él.
+- ⚠️ **`src/lib/hoy.js` NO GUARDA NADA** (HT F6, apartado 102): es una función de lectura sobre las
+  entidades originales. Si una fase futura quiere "guardar lo de hoy", es una copia y va a mentir.
+- ⚠️ **Antes de construir algo de HOY, mirar si ya existe.** El 90 % de HT F6 fue no duplicar:
+  `eventosDerivados`, `lineaDelDia`, `huecosDelDia` y `puntuacion.js` ya estaban.
 - ⚠️ **Las tareas NO se enlazan con una asignatura**: Productividad no tiene ese campo, así que se
   buscan por mención y la pantalla lo dice. Si algún día se le añade `asignaturaId` a las tareas,
   `tareasQueMencionan` deja de hacer falta.
