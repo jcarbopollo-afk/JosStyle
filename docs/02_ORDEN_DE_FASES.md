@@ -170,8 +170,10 @@ escribir código.
 
 | v1.54.0 | **SO F1** | Sistema global de sonido: motor central, bus de eventos y **regla invariante nueva** que impide tocar el audio fuera de él. Hoy no suena nada porque no hay archivos, y eso está dicho |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 2/12 y SO por
-1/5. Quedan **75** fases de la Entrega 2: HT (10), SO (4) y EH (65).
+| v1.55.0 | **HT F3** | Editor visual: módulo nuevo con cuadrícula, día y agenda. Tocar celda + escribir crea y **reutiliza** la asignatura, y "solo este lunes" no puede cargarse todos los lunes |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 3/12 y SO por
+1/5. Quedan **74** fases de la Entrega 2: HT (9), SO (4) y EH (65).
 
 ✅ **C-23 resuelta a medias:** Josué pasó el texto que faltaba de la Fase 1 del Sonido (v1.54.0).
 ⏸ **Sigue pendiente lo de los archivos de audio**, que él dará *"cuando la web ya tenga todos los

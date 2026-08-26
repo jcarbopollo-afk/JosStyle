@@ -1,5 +1,70 @@
 # CHANGELOG.md
 
+## Entrega 2 · HT Fase 3 — Editor visual de horarios (v1.55.0)
+
+### Un módulo nuevo: Horario
+En el área Vida, junto al Calendario. La barra inferior sigue con cinco pestañas.
+
+Dentro: cuadrícula de la semana, vista de día, agenda, acceso a HOY, y un interruptor entre **modo
+consulta y modo edición** — que en un iPhone no es estética: los controles de añadir, mover y borrar
+ocupan media pantalla, y el 95 % de las veces solo se quiere mirar qué toca ahora.
+
+### Montar un horario tiene que ser minutos, no media hora
+Tocar una celda, escribir "Matemáticas", Enter. El sistema busca si ya existe, la reutiliza si sí, la
+crea si no, le pone un color automático y guarda.
+
+El paso que importa es **reutilizar**: escribir "Matemáticas" otro día usa la misma actividad, con su
+mismo color. Sin eso habría cuatro Matemáticas de cuatro colores, y no habría forma de cambiar el
+color de la asignatura de una vez.
+
+Y el autocompletado sugiere también **las asignaturas de Estudios que aún no están en el horario** —
+sin eso, apuntar a Estudios en vez de duplicarlas no serviría de nada en la práctica.
+
+### "Solo este lunes" no puede cargarse todos los lunes
+Es lo más delicado de la fase. Cambiar la hora de Matemáticas porque hoy hubo un cambio de aula no
+puede modificar todos los lunes del curso.
+
+Se resuelve con dos alcances, y **sin valor por defecto**: si no se dice cuál, no se escribe nada. Un
+defecto silencioso sería justo el error que el apartado quiere evitar, y sería irreversible sin darse
+cuenta. "Solo este día" crea una excepción; el horario base no se toca.
+
+### Cuatro cosas que no se han construido porque ya existían
+Autoguardado, sincronización, deshacer y rehacer. Cada operación entra por `snapshotAndSave`, que
+guarda y alimenta el "Deshacer" global — y ese cubre literalmente la lista del apartado 38: eliminar
+bloque, mover bloque, cambiar color, eliminar fila, eliminar columna. Un segundo autoguardado daría
+dos sistemas escribiendo la misma clave.
+
+### Sin drag & drop, y es una decisión
+El apartado 25 lo pide *"en dispositivos compatibles"*; el 26 exige que en móvil exista igualmente
+"Mover a…". Se ha construido lo segundo, que es lo que Josué va a usar desde el iPhone. El arrastre se
+añade encima sin tocar nada, porque acabaría en la misma función.
+
+Y mover **conserva la duración**: arrastrar una clase de una hora a otro sitio no puede convertirla en
+una de diez minutos.
+
+### Detalles que evitan perder cosas
+- **Eliminar una franja no borra los bloques que caen en ella.** Las filas son la rejilla visual; los
+  bloques guardan sus propias horas. Quitar la fila de las 10:00 no puede hacer desaparecer la clase
+  de las 10:00.
+- **Duplicar un día sobre otro que ya tiene clases se rechaza**, con el número. Forzar sustituye, no
+  acumula: es lo que espera quien dice "haz el martes igual que el lunes".
+- **Un conflicto se detecta antes de escribir.** Forzar existe, pero hay que pedirlo.
+- **Importar exige revisar**: la previsualización no escribe nada y aplicar solo acepta lo que salió
+  de ella. Y avisa de las actividades que ya existen, para no crear una segunda Matemáticas.
+
+### La columna de horas se queda fija
+Con siete días no caben en 390 px. La hora vive **fuera** del contenedor que hace scroll, no con
+`position: sticky`: en iOS, `sticky` dentro de un scroll horizontal es irregular, y aquí la solución
+simple es además la robusta.
+
+### Verificación
+**2308 comprobaciones y 10 reglas invariantes en verde**, con 224 casos de renderizado. Los veinte
+criterios de aceptación comprobables tienen prueba propia. `package.json` → **v1.55.0**. Van 32 de
+las 106 fases; quedan 74.
+
+⚠️ **Lo que sigue sin probarse, y se dice en la propia salida:** el aspecto en un iPhone, los gestos
+y el modo oscuro.
+
 ## Entrega 2 · SO Fase 1 — Sistema global de sonido (v1.54.0)
 
 ### Lo primero: hoy no suena nada, y está dicho

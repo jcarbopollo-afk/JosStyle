@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.54.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.55.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados **Horario Top** va por 2/12 y **Sonido** por 1/5, quedan 75) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados **Horario Top** va por 3/12 y **Sonido** por 1/5, quedan 74) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,8 +107,8 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 1970 pruebas unitarias con Node, 5 de auditoría, 192 casos de renderizado real con
-`react-dom/server` y 10 reglas invariantes — **2176 comprobaciones**.
+Vite, 2079 pruebas unitarias con Node, 5 de auditoría, 224 casos de renderizado real con
+`react-dom/server` y 10 reglas invariantes — **2308 comprobaciones**.
 
 Eso ya ha encontrado **cuarenta y un bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -133,8 +133,8 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase candidata: HT · Fase 3/12 — Editor visual de horarios**, la primera de HT con
-pantalla. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
+**Siguiente fase candidata: HT · Fase 4/12 — Configuración avanzada de columnas, filas y bloques.**
+Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
@@ -155,6 +155,9 @@ Seis cosas que conviene tener presentes al retomar:
   comprueba). Ninguna pantalla toca Supabase ni reproduce sonido por su cuenta.
 - **El horario es una REGLA, no una lista de eventos** (HT F1), **no tiene tablas propias en
   Supabase** (HT F2, apartado 51) y **sus asignaturas son las de Estudios** (apartado 25).
+- ⚠️ **`ALCANCES` no tiene valor por defecto** (HT F3, apartados 52-53): editar un bloque sin decir
+  si el cambio es de un día o de todos **no escribe nada**. Nunca ponerle un defecto: cambiar la
+  hora "porque hoy hubo un cambio" se cargaría todos los lunes del curso, y sin avisar.
 - ⚠️ **Un normalizador que no conoce un campo lo BORRA en el siguiente guardado.** Pasó en HT F2 con
   `visible` de las columnas. Al añadir un campo a una entidad, añadirlo también a su normalizador.
 

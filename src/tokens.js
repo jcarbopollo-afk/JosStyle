@@ -556,6 +556,7 @@ export const DESCRIPCIONES_MODULOS = {
   logros: 'Insignias conseguidas y tu mapa de vida.',
   armario: 'Prendas, outfits, historial de uso y recomendaciones.',
   rachas: 'Días seguidos cumpliendo, hitos, récords y logros.',
+  horario: 'Tu horario de clases, con franjas, días y cambios puntuales.',
   economia: 'Saldo, movimientos y hucha.',
   ajustes: 'La configuración de toda la app.',
 };

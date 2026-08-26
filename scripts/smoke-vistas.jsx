@@ -27,6 +27,9 @@ import StatsView from '../src/views/StatsView.jsx';
 import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
+import HorarioView from '../src/views/HorarioView.jsx';
+import { DEFAULT_HORARIO_TOP } from '../src/lib/horario.js';
+import { crearDesdePlantilla, crearBloqueRapido, editarBloque, ALCANCES } from '../src/lib/horarioEditor.js';
 import AchievementsView from '../src/views/AchievementsView.jsx';
 import HubView from '../src/views/HubView.jsx';
 import WellbeingView from '../src/views/WellbeingView.jsx';
@@ -232,6 +235,48 @@ const CASOS = [
         ],
         accent, onCerrar: noop,
       })],
+    ];
+  })(),
+
+  /* HT Fase 3 · apartado 76 — los estados del editor que hay que poder pintar.
+     Se montan con el editor real, no con datos escritos a mano. */
+  ...(() => {
+    const props = (estado, extra = {}) => ({
+      horarioTop: estado, asignaturas: [{ id: 'a1', nombre: 'Física' }], accent, hoy: HOY,
+      onCambiar: noop, onCrearHorario: noop, ...extra,
+    });
+    const base = crearDesdePlantilla(DEFAULT_HORARIO_TOP, { nombre: 'Instituto', plantillaId: 'colegio', hoy: HOY });
+    const col = (d) => base.horario.columnas.find((c) => c.dia === d);
+    const fila = (i) => base.horario.filas[i];
+
+    let lleno = base.estado;
+    for (const [dia, f, nombre] of [[1, 0, 'Matemáticas'], [1, 1, 'Biología'], [2, 0, 'Inglés'], [3, 2, 'Matemáticas']]) {
+      lleno = crearBloqueRapido(lleno, { horarioId: base.horario.id, columnaId: col(dia).id, filaId: fila(f).id, texto: nombre, hoy: HOY }).estado;
+    }
+    // Un choque, para que se vea la marca de conflicto.
+    const conChoque = crearBloqueRapido(lleno, {
+      horarioId: base.horario.id, columnaId: col(1).id, inicio: '08:30', fin: '09:30', texto: 'Física', forzar: true, hoy: HOY,
+    }).estado;
+    // Y un cambio de un solo día, para que la vista de día lo marque.
+    const conExcepcion = editarBloque(lleno, lleno.bloques[0].id, { inicio: '10:00', fin: '11:00' },
+      { alcance: ALCANCES.SOLO_ESTE_DIA, fecha: HOY }).estado;
+    const semanaCompleta = crearDesdePlantilla(DEFAULT_HORARIO_TOP, { nombre: 'Todo', plantillaId: 'semana', hoy: HOY }).estado;
+
+    return [
+      ['HorarioView · sin horario', HorarioView, () => props(DEFAULT_HORARIO_TOP)],
+      ['HorarioView · recién creado', HorarioView, () => props(base.estado)],
+      ['HorarioView · con clases', HorarioView, () => props(lleno)],
+      ['HorarioView · con un choque', HorarioView, () => props(conChoque)],
+      ['HorarioView · con un cambio de un día', HorarioView, () => props(conExcepcion)],
+      // Siete columnas: es donde la cuadrícula tiene que hacer scroll sin perder
+      // la columna de horas.
+      ['HorarioView · semana completa', HorarioView, () => props(semanaCompleta)],
+      // "Desde cero": ni columnas ni filas. No puede quedar un hueco roto.
+      ['HorarioView · vacío del todo', HorarioView, () =>
+        props(crearDesdePlantilla(DEFAULT_HORARIO_TOP, { nombre: 'Mío', plantillaId: 'vacio', hoy: HOY }).estado)],
+      // Dos horarios a la vez: sale el selector.
+      ['HorarioView · dos horarios', HorarioView, () =>
+        props(crearDesdePlantilla(lleno, { nombre: 'Gimnasio', tipo: 'entrenamiento', plantillaId: 'tarde', hoy: HOY }).estado)],
     ];
   })(),
 

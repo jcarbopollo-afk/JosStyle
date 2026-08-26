@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt, Flame } from 'lucide-react';
+import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt, Flame, CalendarClock } from 'lucide-react';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
 import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
@@ -45,6 +45,8 @@ import { construirIndice } from './lib/indiceBusqueda';
 import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda, crearOutfit, actualizarOutfit, duplicarOutfit, crearUso, actualizarUso } from './lib/armario';
 import ArmarioView from './views/ArmarioView';
 import RachasView, { ResumenRachaHoy } from './views/RachasView';
+import HorarioView from './views/HorarioView';
+import { DEFAULT_HORARIO_TOP, normalizarHorarioTop } from './lib/horario';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.
@@ -94,6 +96,7 @@ const MORE_NAV = [
   { id: 'economia', label: 'Economía', icon: Wallet },
   { id: 'armario', label: 'Armario', icon: Shirt },
   { id: 'rachas', label: 'Rachas', icon: Flame },
+  { id: 'horario', label: 'Horario', icon: CalendarClock },
   { id: 'ajustes', label: 'Ajustes', icon: Settings },
 ];
 
@@ -103,7 +106,7 @@ const MAX_RECIENTES_BUSQUEDA = 4;
 
 const AREAS_NAV = [
   { id: 'area-salud', label: 'Salud', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno'] },
-  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['calendario', 'estudios', 'productividad', 'rachas', 'objetivos', 'diario', 'biblioteca'] },
+  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['calendario', 'horario', 'estudios', 'productividad', 'rachas', 'objetivos', 'diario', 'biblioteca'] },
   { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['economia', 'negocio', 'armario'] },
   { id: 'area-mas', label: 'Más', icon: MoreHorizontal, modulos: ['relacion', 'fe', 'bienestar', 'estadisticas', 'predicciones', 'logros', 'ajustes'] },
 ];
@@ -268,6 +271,7 @@ export default function App() {
   // cada escritura (regla 5), así que un `saveData` que se olvidara del audio lo
   // borraría. Y de fábrica está apagado, porque todavía no hay sonidos.
   const [audio, setAudio] = useState(DEFAULT_AUDIO);
+  const [horarioTop, setHorarioTop] = useState(DEFAULT_HORARIO_TOP);
   // RA Fase 3 — los logros y los hitos ya anunciados, en su propia clave. Van
   // aparte de `rachas` porque son cosas distintas (apartado 7: hito ≠ logro) y
   // porque un logro conseguido NO se revoca al corregir el historial (apartado 28).
@@ -287,7 +291,7 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud] = await Promise.all([
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud, hor] = await Promise.all([
         loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
@@ -323,6 +327,7 @@ export default function App() {
         loadData(uidUser, 'rachas', ESTADO_INICIAL),
         loadData(uidUser, 'gamificacionRachas', GAMIFICACION_INICIAL),
         loadData(uidUser, 'audio', DEFAULT_AUDIO),
+        loadData(uidUser, 'horarioTop', DEFAULT_HORARIO_TOP),
       ]);
       if (cancelled) return;
       setAccent(a.accent || ACCENTS[0].value);
@@ -441,6 +446,7 @@ export default function App() {
       setRachas(normalizarEstado(rach));
       setGamificacion(normalizarGamificacion(gam));
       setAudio(normalizarAudio(aud));
+      setHorarioTop(normalizarHorarioTop(hor));
       setLoaded(true);
     })();
     return () => { cancelled = true; };
@@ -1220,7 +1226,7 @@ export default function App() {
   // al restaurarse duplicaría el elemento. Con la papelera dentro del snapshot, deshacer revierte
   // las dos cosas a la vez y los dos sistemas de recuperación no se pisan.
   const snapshotAndSave = (patch) => {
-    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion };
+    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion, horarioTop };
     const nextHist = [...history, snapshot].slice(-10);
     setHistory(nextHist);
     saveData(uidUser, 'historial', nextHist);
@@ -1244,6 +1250,7 @@ export default function App() {
     if (patch.armario) { setArmario(patch.armario); saveData(uidUser, 'armario', patch.armario); }
     if (patch.rachas) { setRachas(patch.rachas); saveData(uidUser, 'rachas', patch.rachas); }
     if (patch.gamificacion) { setGamificacion(patch.gamificacion); saveData(uidUser, 'gamificacionRachas', patch.gamificacion); }
+    if (patch.horarioTop) { setHorarioTop(patch.horarioTop); saveData(uidUser, 'horarioTop', patch.horarioTop); }
   };
 
   const addSueno = (entry) => snapshotAndSave({ sueno: [...sueno, entry] });
@@ -1479,6 +1486,7 @@ export default function App() {
     setArmario(last.armario || DEFAULT_ARMARIO); saveData(uidUser, 'armario', last.armario || DEFAULT_ARMARIO);
     setRachas(last.rachas || ESTADO_INICIAL); saveData(uidUser, 'rachas', last.rachas || ESTADO_INICIAL);
     setGamificacion(last.gamificacion || GAMIFICACION_INICIAL); saveData(uidUser, 'gamificacionRachas', last.gamificacion || GAMIFICACION_INICIAL);
+    setHorarioTop(last.horarioTop || DEFAULT_HORARIO_TOP); saveData(uidUser, 'horarioTop', last.horarioTop || DEFAULT_HORARIO_TOP);
     setHistory(rest); saveData(uidUser, 'historial', rest);
   };
 
@@ -1517,8 +1525,8 @@ export default function App() {
   // RA Fase 4 — el resumen de Rachas SÍ es caro (recorre historiales día a día), así que a
   // partir de aquí esto va memoizado. Es el apartado 31: *"evita cálculos repetidos"*.
   const resumenesTodos = useMemo(() => Object.fromEntries(
-    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas })])
-  ), [sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas]);
+    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop })])
+  ), [sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop]);
 
   // Fase 19 — métricas favoritas del panel "Hoy": se calculan aquí (no en DashboardView) porque
   // combinan datos de varios módulos, mismo criterio que ya usan Estadísticas/Predicciones —
@@ -1708,6 +1716,19 @@ export default function App() {
             onDeshacerDia={deshacerDiaRacha}
             onEliminarRacha={borrarRacha}
             onEvaluar={evaluarGamificacion}
+          />
+        );
+      // HT Fase 3 — el editor de horarios. Cada operación entra por
+      // `snapshotAndSave`, así que guarda sola y el "Deshacer" global la cubre:
+      // el editor no monta ni autoguardado ni historial propios.
+      case 'horario':
+        return (
+          <HorarioView
+            horarioTop={horarioTop}
+            asignaturas={estudios.asignaturas || []}
+            accent={accent}
+            onCambiar={(nuevo) => snapshotAndSave({ horarioTop: nuevo })}
+            onCrearHorario={(nuevo) => snapshotAndSave({ horarioTop: nuevo })}
           />
         );
       case 'negocio':

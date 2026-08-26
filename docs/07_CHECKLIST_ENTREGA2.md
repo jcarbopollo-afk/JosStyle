@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 31 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 2/12** y **SO 1/5** (hasta v1.54.0). Quedan
-> **75**: HT (10), SO (4) y EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 32 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 3/12** y **SO 1/5** (hasta v1.55.0). Quedan
+> **74**: HT (9), SO (4) y EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -3370,91 +3370,93 @@ que se ejecutan de verdad.
 clave `horarioTop`. **Sin tabla nueva y sin SQL que Josué tenga que ejecutar**, y con el aislamiento
 por usuario que ya dan las políticas existentes.
 
-#### HT · Fase 3/12 — EDITOR VISUAL DE HORARIOS
-- [ ] OBJETIVO DE LA FASE
-- [ ] ENTRADA AL EDITOR
-- [ ] PLANTILLAS INICIALES
-- [ ] PRIMERA VISTA
-- [ ] PRINCIPIO MOBILE-FIRST
-- [ ] NAVEGACIÓN HORIZONTAL
-- [ ] COLUMNA DE HORAS FIJA
-- [ ] AÑADIR COLUMNAS
-- [ ] ELIMINAR COLUMNAS
-- [ ] REORDENAR COLUMNAS
-- [ ] AÑADIR FILAS
-- [ ] ELIMINAR FILAS
-- [ ] EDITAR HORAS
-- [ ] FRANJAS IRREGULARES
-- [ ] CREAR UN BLOQUE
-- [ ] CREACIÓN RÁPIDA
-- [ ] Buscar si ya existe Matemáticas.
-- [ ] Si existe, reutilizarla.
-- [ ] Si no existe, crearla.
-- [ ] Asignar el bloque.
-- [ ] Aplicar automáticamente su color.
-- [ ] Guardar.
-- [ ] AUTOCOMPLETADO
-- [ ] ASIGNATURAS EXISTENTES
-- [ ] CREAR NUEVA ACTIVIDAD
-- [ ] EDICIÓN DE BLOQUES
-- [ ] DUPLICAR BLOQUES
-- [ ] COPIAR Y PEGAR
-- [ ] COPIAR DÍA COMPLETO
-- [ ] LIMPIAR DÍA
-- [ ] ARRASTRAR BLOQUES
-- [ ] CONTROL TÁCTIL
-- [ ] REDIMENSIONAR BLOQUES
-- [ ] PREVENCIÓN DE SOLAPAMIENTOS
-- [ ] DETECCIÓN VISUAL DE CONFLICTOS
-- [ ] COLORES
-- [ ] CONSISTENCIA DE COLORES
-- [ ] ICONOS
-- [ ] INFORMACIÓN COMPACTA
-- [ ] VISTA PREVISUALIZADA
-- [ ] MODO EDICIÓN VS MODO CONSULTA
-- [ ] GUARDADO
-- [ ] SINCRONIZACIÓN VISUAL
-- [ ] DESHACER
-- [ ] REHACER
-- [ ] CONFIRMACIONES INTELIGENTES
-- [ ] MENÚ CONTEXTUAL
-- [ ] ACCIONES RÁPIDAS
-- [ ] EDICIÓN MASIVA
-- [ ] SELECCIÓN MÚLTIPLE
-- [ ] CAMBIO DE SEMANA
-- [ ] MODO SEMANA COMPLETA
-- [ ] MODO DÍA
-- [ ] MODO AGENDA
-- [ ] CAMBIO ENTRE VISTAS
-- [ ] MODO HOY
-- [ ] NAVEGACIÓN POR FECHAS
-- [ ] EDICIÓN DE UNA FECHA CONCRETA
-- [ ] OPCIONES AL MODIFICAR
-- [ ] INFORMACIÓN DE AULA
-- [ ] INFORMACIÓN DEL PROFESOR
-- [ ] ETIQUETAS
-- [ ] FILTROS
-- [ ] VISIBILIDAD DE HORARIOS
-- [ ] MODO SOLO CONSULTA
-- [ ] ACCESIBILIDAD
-- [ ] MODO OSCURO
-- [ ] DISEÑO PREMIUM
-- [ ] ANIMACIONES
-- [ ] RENDIMIENTO
-- [ ] ESTADO LOCAL
-- [ ] MANEJO DE ERRORES
-- [ ] CAMBIOS SIMULTÁNEOS
-- [ ] IMPORTACIÓN FUTURA
-- [ ] IMPORTACIÓN MEDIANTE IA
-- [ ] PREVISUALIZACIÓN ANTES DE IMPORTAR
-- [ ] AUTOGUARDADO
-- [ ] ESTADO DE SINCRONIZACIÓN
-- [ ] CREACIÓN ULTRARRÁPIDA
-- [ ] EJEMPLO COMPLETO
-- [ ] RESULTADO ESPERADO
-- [ ] CRITERIOS DE ACEPTACIÓN
-- [ ] RESULTADO TÉCNICO DE LA FASE
-- [ ] CONEXIÓN CON LAS SIGUIENTES FASES
+#### HT · Fase 3/12 — EDITOR VISUAL DE HORARIOS ✅ COMPLETADA (v1.55.0)
+
+**Un módulo nuevo, "Horario"**, en el área Vida junto al Calendario. La barra inferior sigue con
+cinco pestañas.
+
+*"El usuario ve una cuadrícula sencilla. El sistema se encarga de toda la complejidad."* Toda la
+complejidad está en `src/lib/horarioEditor.js`, que es puro y tiene 132 comprobaciones; la pantalla
+no calcula ni un solape.
+
+- [x] **1-4 · Objetivo, entrada, plantillas y primera vista** — cuatro plantillas (Colegio, Semana
+      completa, Tardes, Desde cero) que son **solo un punto de partida**: en cuanto se crea el
+      horario dejan de existir.
+- [x] **5-7 · Mobile-first, scroll y columna de horas fija** — ⚠️ **la hora vive FUERA del
+      contenedor que hace scroll**, no con `position: sticky`: en iOS, `sticky` dentro de un scroll
+      horizontal es irregular, y aquí la solución simple es además la robusta. Con siete días la
+      cuadrícula se desplaza y la franja sigue visible.
+- [x] **8-10 · Columnas** — añadir, editar, ocultar, mover y eliminar. **Ocultar no borra**, y
+      mover en el borde no saca la columna de la lista.
+- [x] **11-14 · Filas** — añadir (que **continúa a la última sola**, con su misma duración), editar,
+      eliminar y franjas irregulares. ⚠️ **Eliminar una franja NO borra los bloques que caen en
+      ella**: las filas son la rejilla visual, los bloques guardan sus propias horas (HT F2). Quitar
+      la fila de las 10:00 no puede hacer desaparecer la clase de las 10:00.
+- [x] **15-19 · Crear un bloque** — ⚠️ **la creación rápida es lo que decide si montar un horario son
+      minutos o media hora**: tocar celda → escribir → Enter hace los seis pasos del apartado 16 en
+      una llamada. Y el que importa es **reutilizar**: escribir "Matemáticas" otro día usa la misma
+      actividad, con su mismo color. Sin eso habría cuatro Matemáticas de cuatro colores.
+- [x] **17-18 · Autocompletado** — sugiere lo que ya existe **y las asignaturas de Estudios que aún
+      no están en el horario**. Sin eso, el apartado 25 de HT F1 no serviría de nada en la práctica.
+- [x] **20-22 · Editar, duplicar, copiar** — duplicar reutiliza la **misma** actividad, que es lo
+      que hace que cambiar el color de Matemáticas lo cambie en los cuatro días a la vez.
+- [x] **23-24 · Duplicar y vaciar día** — duplicar sobre un día que ya tiene clases **se rechaza**
+      con el número; forzar **sustituye, no acumula**. Vaciar dice cuántos se van antes de hacerlo.
+- [x] **25-27 · Mover y redimensionar** — ⚠️ **no hay drag & drop, y es una decisión**: el apartado
+      25 lo pide *"en dispositivos compatibles"* y el 26 exige que en móvil exista igualmente "Mover
+      a…". Se ha construido **lo segundo**, que es lo que Josué usará desde el iPhone; el arrastre se
+      añade encima sin tocar nada porque acaba en la misma función. Y **mover conserva la
+      duración**: arrastrar una clase de una hora no puede convertirla en una de diez minutos.
+- [x] **28-29 · Conflictos** — se detectan **antes** de escribir y la opción por defecto los evita;
+      forzar existe pero hay que pedirlo. La celda en conflicto se marca en la cuadrícula.
+- [x] **30-32 · Colores e iconos** — **color automático**: que Josué tenga que elegir uno por
+      asignatura convertiría seis clases en seis decisiones antes de haber escrito nada. La paleta
+      es un dato de la asignatura, no de interfaz — misma exclusión documentada que `armario.js`.
+- [x] **33 · Información compacta** — en la cuadrícula, el nombre. Aula, profesor y material al
+      abrirlo: con cinco días delante, una celda de cuatro líneas es ilegible.
+- [x] **35 · Modo edición vs consulta** — en un iPhone no es estética: los controles ocupan media
+      pantalla y el 95 % de las veces solo se quiere mirar qué toca ahora.
+- [x] **36-39 · Guardado, sincronización, deshacer y rehacer** — ⚠️ **no se ha construido ninguno de
+      los cuatro, porque los cuatro ya existen.** Cada operación entra por `snapshotAndSave`, que
+      guarda y alimenta el "Deshacer" global — que cubre literalmente la lista del apartado 38.
+      Montar un segundo autoguardado daría dos sistemas escribiendo la misma clave.
+- [x] **40 · Confirmaciones inteligentes** — una columna con bloques pregunta; una vacía se borra sin
+      ceremonia. El editor da el número, así que la pantalla puede distinguirlo.
+- [x] **41-44 · Menús, gestos y edición masiva** — menú por bloque y por columna, en panel táctil.
+      La selección múltiple es de la Fase 4.
+- [x] **45-51 · Vistas, HOY y fechas** — semana, día y agenda, **de la misma fuente**: hay una
+      prueba que comprueba que las tres devuelven el mismo id de bloque. Acceso a HOY y navegación
+      por días.
+- [x] **52-53 · Solo este día vs todos** — ⚠️ **lo más delicado de la fase.** Cambiar la hora porque
+      hoy hubo un cambio no puede cargarse todos los lunes del curso. Se resuelve con `ALCANCES`, y
+      **sin valor por defecto**: si no se dice, no se escribe. Un defecto silencioso sería justo el
+      error que el apartado quiere evitar, y sería irreversible sin darse cuenta.
+- [x] **54-56 · Aula, profesor y etiquetas** — solo si existen. Nada de filas vacías.
+- [x] **57-59 · Filtros, visibilidad y bloqueo** — visibilidad por columna y por horario; el modo
+      consulta es el "bloquear edición" del apartado 59.
+- [x] **60-63 · Accesibilidad, dark mode y diseño** — `aria-label` en celdas, bloques y flechas;
+      **el color nunca identifica solo** (siempre hay nombre); y **ni un color propio de interfaz**,
+      así que claro y oscuro funcionan solos. El color de la asignatura va tintado al 16 % detrás
+      del texto del tema, que es lo que mantiene la legibilidad en los dos.
+- [x] **64-67 · Rendimiento, estado local y errores** — la cuadrícula va en `useMemo`; el estado
+      local es inmediato porque ninguna operación toca la red; y los conflictos entre dispositivos
+      los cubre `detectarConflicto` de HT F2.
+- [x] **68-70 · Importación** — ⚠️ **no se construye, pero su puerta sí, y de forma que no se pueda
+      saltar la revisión**: `previsualizarImportacion` no escribe nada y `aplicarImportacion` solo
+      acepta lo que salió de ella. *"Nunca se deberá permitir que una importación automática
+      modifique el horario sin revisión."* Y avisa de las actividades que ya existen, para que
+      importar no cree una segunda Matemáticas.
+- [x] **71-72 · Autoguardado y estado de sincronización** — el de la app.
+- [x] **73-75 · Creación ultrarrápida** — plantilla → tocar celda → escribir → duplicar. El ejemplo
+      completo del apartado 74 funciona tal cual.
+- [x] **76 · Criterios de aceptación** — los veinticuatro. Los veinte comprobables tienen prueba
+      marcada `CRITERIO`; ⚠️ **los cuatro que no —móvil, dark mode y rapidez percibida— se dicen en
+      la propia salida de las pruebas** en vez de darse por buenos.
+- [x] **77-78 · Resultado y conexión** — el editor queda listo para que la Fase 4 añada estructuras
+      personalizables y semanas A/B, que ya tienen su hueco desde HT F2.
+
+**Lo que sigue sin estar probado, y hay que decirlo:** el aspecto real en un iPhone, los gestos, el
+arrastre y el modo oscuro. Como todo desde R1.
 
 #### HT · Fase 4/12 — CONFIGURACIÓN AVANZADA DE COLUMNAS, FILAS Y BLOQUES
 - [ ] OBJETIVO

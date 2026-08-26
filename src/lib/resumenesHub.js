@@ -19,6 +19,7 @@ import { eventosDerivados } from './calendarioIntegracion';
 import { resumenHistorial } from './armario';
 import { resumenHabito } from './rachas';
 import { panelRachas, panelHabitos } from './rachasServicio';
+import { resumenHorario } from './horario';
 
 function ultimoPorFecha(lista) {
   if (!lista || lista.length === 0) return null;
@@ -174,6 +175,19 @@ export function calcularResumenModulo(id, s) {
           ? `${vivas} rachas en marcha`
           : mejor.actual > 0 ? `Tu mejor: ${mejor.record} ${plural(mejor.record, 'día', 'días')}` : 'Hoy puedes empezar una nueva',
         estado: mejor.actual > 0 ? 'activo' : 'vacio',
+      };
+    }
+    // HT Fase 3 — el resumen del horario. Lo que interesa de un vistazo es qué
+    // hay HOY, no cuántos bloques tiene el curso entero.
+    case 'horario': {
+      const r = resumenHorario(s.horarioTop, { asignaturas: s.estudios?.asignaturas || [] });
+      if (!r.horarios) {
+        return { linea1: 'Todavía no tienes horario', linea2: 'Toca para montarlo en unos minutos', estado: 'vacio' };
+      }
+      return {
+        linea1: r.hoy > 0 ? `${r.hoy} ${plural(r.hoy, 'clase hoy', 'clases hoy')}` : 'Hoy no tienes clase',
+        linea2: r.hoy > 0 ? `${Math.round(r.minutosHoy / 60)} h en total` : `${r.bloques} ${plural(r.bloques, 'bloque', 'bloques')} en la semana`,
+        estado: r.hoy > 0 ? 'activo' : 'vacio',
       };
     }
     case 'armario': {

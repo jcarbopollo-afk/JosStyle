@@ -164,6 +164,12 @@ else
   fallo "Falla el sistema global de sonido"; grep '✗' /tmp/jc_audio.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
+  ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
+else
+  fallo "Falla el editor visual de horarios"; grep '✗' /tmp/jc_horario3.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else
@@ -220,11 +226,18 @@ fi
 #                       y solo se usa para pintar su muestra cuando no hay fotografía.
 #                       La exclusión es del archivo entero a propósito: si mañana hace falta
 #                       un color nuevo, tiene que poder añadirse ahí y en ningún otro sitio.
+#   · horarioEditor.js — MISMO CASO que armario.js: el color de una ASIGNATURA es un
+#                       dato suyo, como su profesor o su aula, no un color de interfaz.
+#                       Matemáticas es azul en tema claro y en tema oscuro; si saliera del
+#                       sistema de temas cambiaría al cambiar el tema y dejaría de
+#                       identificar la asignatura. Se usa tintado al 16 % detrás del texto
+#                       del tema, así que la legibilidad la sigue dando `COLORS`.
 #   · líneas de comentario — mencionar un hex al explicar una decisión no es usarlo
 HEX=$(grep -rEn "#[0-9A-Fa-f]{6}" src/ --include=*.jsx --include=*.js \
       | grep -v '^src/tokens.js:' \
       | grep -v '^src/lib/colorEngine.js:' \
       | grep -v '^src/lib/armario.js:' \
+      | grep -v '^src/lib/horarioEditor.js:' \
       | grep -v '#EDEFF2' \
       | grep -vE ':[0-9]+:[[:space:]]*(//|\*|/\*)' \
       || true)
