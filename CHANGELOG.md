@@ -1,5 +1,85 @@
 # CHANGELOG.md
 
+## Entrega 2 · HT Fase 9 — IA de horario y planificador personal (v1.61.0)
+
+### Dónde está la IA en la arquitectura
+El apartado 52 lo dibuja así:
+
+    DATOS → MOTOR TEMPORAL → MOTOR DE PLANIFICACIÓN → IA → PROPUESTA → CONFIRMACIÓN → CAMBIOS
+
+La IA está **después del planificador y antes de la confirmación**. No calcula y no escribe. Lo que
+se ha construido es el motor que va antes: `planificador.js`, **determinista** — los mismos datos dan
+el mismo plan, y se prueba entero con Node.
+
+### Sin confirmar no se escribe nada
+`aplicarPlan` sin `confirmado: true` **no hace nada**. No es una comprobación defensiva: es la regla
+7 del proyecto puesta en código, para que sea imposible que una respuesta de la IA cambie el horario
+sola.
+
+Y el botón dice exactamente qué va a pasar: *"se van a crear 4 sesiones en tu horario; puedes
+cambiarlas o borrarlas después como cualquier otra clase"*.
+
+### Los números salen del motor, no de una estimación
+*"Tienes 1 h 20 min libres"* lo dice el motor temporal (apartado 51). Por eso el contexto que se le
+manda a la IA lleva los huecos, la carga y las prioridades **ya calculados**.
+
+Y **no se manda toda la base de datos** (apartado 50): solo lo relevante. Nunca las notas privadas de
+una actividad, nunca una palabra del módulo de Relación. Hay pruebas de las dos cosas.
+
+### Un hueco de 35 minutos no sirve para una sesión de 30
+Hay que levantarse, llegar y sentarse. Por eso el planificador descuenta margen y transición, y el
+hueco propuesto **empieza después de la transición**, no pegado a la clase anterior.
+
+Y *"no estudiar después de entrenar"* funciona de verdad: lo que se pidió evitar **no sale en la
+lista**, no se ordena al final. Si saliera, acabaría eligiéndose un día con prisa.
+
+### La víspera es repaso, no materia nueva
+El plan reparte el temario entre los días que quedan y **deja la víspera para repasar**. Meter el
+último tema el día antes es exactamente lo que hace llegar al examen sin haberlo visto dos veces.
+
+El día del examen no se estudia. Y si el examen es hoy, lo dice y desea suerte — no propone nada.
+
+### No castiga
+El apartado 19 se titula así. Si el martes no estudiaste, el plan **no dice "has fallado"**: dice
+*"te quedan dos sesiones antes del examen, el plan se reajusta así"*.
+
+Hay una prueba que falla si aparece "has fallado", "mal", "deberías" o "penalización".
+
+### Ninguna acción de la IA borra nada
+Cuatro acciones estructuradas y cerradas: crear una sesión de estudio, crear una tarea, mover un
+bloque, añadir algo a la mochila. **Ninguna borra.** Una IA que pueda proponer un borrado acabará
+proponiéndolo el día que no te fijes.
+
+Se validan antes de tocar nada —fecha, horas coherentes, que el bloque exista— y se previsualizan sin
+escribir, igual que los `impacto*()` de HT F4.
+
+Y una tarea **no se escribe aquí**: se devuelve marcada para Productividad, que es su dueña.
+
+### El número de prioridad no se enseña
+El cálculo existe (apartado 21) y es determinista: vencido, hoy, examen, prioridad y días de margen.
+Pero "esto vale 87 puntos" no le dice nada a nadie. Lo que se enseña es **el orden y el motivo**:
+*"se pasó hace 1 día"*, *"es mañana"*, *"faltan 3 días"*.
+
+### Lo que no se ha construido, y por qué
+- **Chat contextual** (3, 41, 46-48): el proyecto **ya tiene** buscador con IA (BI F3-F4) y el proxy
+  de `api/ask-ai.js`. Un segundo chat sería la cuarta lista que D2-07 prohíbe. Lo que faltaba —el
+  contexto que se le manda— es lo que está hecho.
+- **Descomponer tareas grandes** (22-24): trocear "hacer el trabajo de Historia" exige entender el
+  trabajo, no el horario.
+- **Tiempo de desplazamiento** (29): necesita mapas.
+- **Memoria de IA** (65): guardar preferencias aprendidas sin que Josué las vea sería justo lo que la
+  regla 7 evita. Las preferencias **se declaran**, no se deducen.
+
+### Verificación
+**2934 comprobaciones y 10 reglas invariantes en verde** (antes 2854), 72 del planificador y 292
+casos de renderizado. `package.json` → **v1.61.0**.
+
+⚠️ Sin probar: la respuesta real de la IA y la pantalla. Como todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
 ## Entrega 2 · HT Fase 8 — Motor temporal y automatizaciones inteligentes (v1.60.0)
 
 ### "Pasada" no es "completada"

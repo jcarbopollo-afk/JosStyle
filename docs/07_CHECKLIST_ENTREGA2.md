@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 37 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 8/12** y **SO 1/5** (hasta v1.60.0). Quedan
-> **69**: HT (4), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 38 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 9/12** y **SO 1/5** (hasta v1.61.0). Quedan
+> **68**: HT (3), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -3830,98 +3830,67 @@ clase a la que no fuiste terminó igual, pero no la hiciste. Por eso **"pasada" 
 **Lo que sigue sin estar probado, y hay que decirlo:** que la pantalla se refresque sola al pasar la
 hora y el cambio de día con la app cerrada. Como todo desde R1.
 
-#### HT · Fase 9/12 — IA DE HORARIO + PLANIFICADOR PERSONAL INTELIGENTE
-- [ ] OBJETIVO
-- [ ] CONTEXTO TEMPORAL REAL
-- [ ] PREGUNTAS NATURALES
-- [ ] PLANIFICACIÓN AUTOMÁTICA
-- [ ] EJEMPLO
-- [ ] NUNCA SOBREESCRIBIRÁ SIN PERMISO
-- [ ] ACEPTAR PLAN
-- [ ] MODIFICAR PLAN
-- [ ] REPLANIFICACIÓN
-- [ ] REPLANIFICACIÓN INTELIGENTE
-- [ ] DURACIÓN
-- [ ] TIEMPO DISPONIBLE
-- [ ] HUECOS
-- [ ] HUECOS ADECUADOS
-- [ ] BLOQUES DE ESTUDIO
-- [ ] EXÁMENES
-- [ ] PLAN DE ESTUDIO
-- [ ] PLAN ADAPTATIVO
-- [ ] NO CASTIGAR
-- [ ] PRIORIDADES
-- [ ] PUNTUACIÓN DE PRIORIDAD
-- [ ] TAREAS GRANDES
-- [ ] DESCOMPOSICIÓN INTELIGENTE
-- [ ] DEPENDENCIAS
-- [ ] OBJETIVOS
-- [ ] ENTRENAMIENTO
-- [ ] DESCANSO
-- [ ] TIEMPO DE TRANSICIÓN
-- [ ] TIEMPO DE DESPLAZAMIENTO
-- [ ] MARGEN
-- [ ] PREFERENCIAS DE PLANIFICACIÓN
-- [ ] PLANIFICACIÓN PERSONALIZADA
-- [ ] MODO «TENGO MUCHO QUE HACER»
-- [ ] CARGA SEMANAL
-- [ ] MAPA DE CARGA
-- [ ] DETECCIÓN DE SOBRECARGA
-- [ ] NO DECIDIRÁ POR TI
-- [ ] ELEMENTOS BLOQUEADOS
-- [ ] INTELIGENCIA SOBRE BLOQUES FIJOS
-- [ ] PLANIFICACIÓN POR CAPAS
-- [ ] PLANIFICACIÓN POR COMANDOS
-- [ ] MÚLTIPLES CONDICIONES
-- [ ] RESTRICCIONES
-- [ ] PREFERENCIAS PERMANENTES
-- [ ] PREFERENCIAS TEMPORALES
-- [ ] CHAT CONTEXTUAL
-- [ ] ACCIONES RÁPIDAS
-- [ ] RESPUESTAS CONTEXTUALES
-- [ ] CONSULTA DE DATOS
-- [ ] NO MANDAR TODO A LA IA
-- [ ] RESPUESTAS BASADAS EN DATOS
-- [ ] MOTOR DETERMINISTA + IA
-- [ ] ACCIONES DE LA IA
-- [ ] VALIDACIÓN
-- [ ] CONFIRMACIÓN
-- [ ] PREVISUALIZACIÓN
-- [ ] DESHACER
-- [ ] HISTORIAL
-- [ ] MODO MANUAL
-- [ ] MODO IA
-- [ ] NIVEL DE AUTONOMÍA
-- [ ] PRIVACIDAD
-- [ ] PERMISOS
-- [ ] DATOS SENSIBLES
-- [ ] MEMORIA DE IA
-- [ ] EJEMPLO DE PREFERENCIA
-- [ ] EXPLICACIÓN DEL PLAN
-- [ ] PLAN ALTERNATIVO
-- [ ] COMPARACIÓN
-- [ ] PLANIFICACIÓN SEMANAL
-- [ ] PLANIFICACIÓN DIARIA
-- [ ] PLANIFICACIÓN DE UN PROYECTO
-- [ ] FECHA LÍMITE
-- [ ] MARGEN DE SEGURIDAD
-- [ ] IMPREVISTOS
-- [ ] PLAN ORIGINAL
-- [ ] CAMBIOS
-- [ ] OBJETIVOS A LARGO PLAZO
-- [ ] PROGRESIÓN
-- [ ] CONEXIÓN CON EL RESTO DEL SISTEMA PERSONAL
-- [ ] EJEMPLO REAL
-- [ ] PLANIFICADOR PROACTIVO
-- [ ] PERO SIN SPAM
-- [ ] CENTRO DE SUGERENCIAS
-- [ ] ACCIONES DESDE SUGERENCIAS
-- [ ] APRENDIZAJE DE PREFERENCIAS
-- [ ] SISTEMA DE FEEDBACK
-- [ ] PLANES FALLIDOS
-- [ ] CALIDAD DEL PLAN
-- [ ] REGLA DE ORO
-- [ ] CRITERIOS DE ACEPTACIÓN
+#### HT · Fase 9/12 — IA DE HORARIO + PLANIFICADOR PERSONAL INTELIGENTE ✅ COMPLETADA (v1.61.0)
+
+La arquitectura del apartado 52, que decide todo lo demás:
+
+    DATOS → MOTOR TEMPORAL → **MOTOR DE PLANIFICACIÓN** → IA → PROPUESTA → CONFIRMACIÓN → CAMBIOS
+
+⚠️ **Fíjate dónde está la IA: después del planificador y antes de la confirmación.** No calcula y no
+escribe. `src/lib/planificador.js` (72 comprobaciones) es **determinista**: los mismos datos dan el
+mismo plan, y se prueba entero con Node.
+
+- [x] **2, 49-51 · Contexto temporal real** — ⚠️ *"tienes 1 h 20 min libres"* lo dice el motor, **no
+      la IA**. El contexto lleva los números **ya calculados**, así que la respuesta sale de los
+      datos y no de una estimación.
+- [x] **6, 7, 55, 56 · Nunca sobrescribe sin permiso** — ⚠️ **`aplicarPlan` sin `confirmado` no hace
+      nada.** No es una comprobación defensiva: es la **regla 7 del proyecto puesta en código**, para
+      que sea imposible que una respuesta de la IA cambie el horario sola. Y el botón dice
+      exactamente qué va a pasar.
+- [x] **10, 13, 14, 28, 30 · Huecos adecuados** — ⚠️ un hueco de 35 minutos **no sirve** para una
+      sesión de 30: hay que levantarse, llegar y sentarse. Por eso hay margen y transición, y el
+      hueco empieza **después** de la transición, no pegado a la clase.
+- [x] **16-18 · Plan de estudio y plan adaptativo** — ⚠️ **la víspera es repaso, no materia nueva**:
+      meter el último tema el día antes es lo que hace llegar al examen sin haberlo visto dos veces.
+      Y el día del examen no se estudia.
+- [x] **19 · No castigar** — ⚠️ el apartado se titula así. Si el plan hay que rehacerlo, dice *"el
+      plan necesita reajustarse"* y **cuántas sesiones quedan**. Hay una prueba que falla si aparece
+      "has fallado", "mal", "deberías" o "penalización".
+- [x] **20-21 · Prioridades y puntuación** — determinista: vencido, hoy, examen, prioridad y días de
+      margen. ⚠️ **El número no se enseña**: "esto vale 87 puntos" no le dice nada a nadie. Lo que se
+      enseña es el orden y el motivo.
+- [x] **9, 34-36 · Replanificar, mapa de carga y sobrecarga** — *"he encontrado dos huecos"*. ⚠️ **Da
+      opciones, no una decisión** (apartado 37), y el aviso de sobrecarga **informa sin reñir**.
+- [x] **31, 44-45 · Preferencias** — ⚠️ *"no estudiar después de entrenar"* funciona de verdad: lo
+      que se pidió evitar **no sale en la lista**, no se ordena al final. Si saliera, acabaría
+      eligiéndose un día con prisa.
+- [x] **50, 62, 64 · No mandar todo a la IA** — solo el contexto relevante. ⚠️ **Nunca las notas
+      privadas** (HT F5) **ni una palabra de Relación**, con pruebas de las dos cosas.
+- [x] **52-57 · Motor determinista + IA, acciones, validación y previsualización** — cuatro acciones
+      estructuradas y cerradas. ⚠️ **Ninguna borra nada**: una IA que pueda proponer un borrado
+      acabará proponiéndolo el día que no te fijes. Se validan antes de tocar nada y se previsualizan
+      sin escribir.
+- [x] **61 · Nivel de autonomía** — ⚠️ existen los niveles, pero **ninguno permite ejecutar sin
+      confirmar**: gana la regla 7. Lo que cambia es cuánto trabajo hace antes de preguntar.
+- [x] **67-69 · Explicación, plan alternativo y comparación** — el mismo temario repartido de otra
+      forma, con los minutos de cada opción.
+- [x] **80 · Conexión con el resto del sistema** — ⚠️ una tarea **no se escribe aquí**: se devuelve
+      marcada para Productividad, que es su dueña (apartado 92 de F5).
+
+**Lo que NO se ha construido, y por qué (regla 8):**
+
+- [-] **3, 41, 46-48 · Chat contextual y comandos** — el proyecto **ya tiene** buscador con IA
+      (BI F3-F4) y el proxy de `api/ask-ai.js`. Un segundo chat sería la cuarta lista que D2-07
+      prohíbe. Lo que faltaba —el contexto que se le manda— es lo que está hecho.
+- [-] **22-24 · Descomposición de tareas grandes y dependencias** — trocear "hacer el trabajo de
+      Historia" exige entender el trabajo, no el horario. Es la IA quien lo propondría, y aquí solo
+      se construye el motor.
+- [-] **29 · Tiempo de desplazamiento** — necesita mapas, que el proyecto no tiene ni ha pedido.
+- [-] **65 · Memoria de IA** — guardar preferencias aprendidas sin que Josué las vea sería
+      exactamente lo que la regla 7 evita. Las preferencias **se declaran**, no se deducen.
+
+**Lo que sigue sin estar probado, y hay que decirlo:** la respuesta real de la IA (que llega por
+`api/ask-ai.js`) y la pantalla. Como todo desde R1.
 
 #### HT · Fase 10/12 — NOTIFICACIONES + RECORDATORIOS + CONTEXTO PROACTIVO
 - [ ] OBJETIVO PRINCIPAL

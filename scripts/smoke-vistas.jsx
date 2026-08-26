@@ -32,6 +32,7 @@ import { mochilaDeFecha, progresoMochila, marcarEstado } from '../src/lib/mochil
 import {
   tablonDelDia, crearAutomatizacion, previsualizar, ejecutar, historialDe, marcarCompletada,
 } from '../src/lib/automatizaciones.js';
+import { detectarSobrecarga } from '../src/lib/planificador.js';
 import { crearMaterial, crearEnlaceMaterial } from '../src/lib/horarioDatos.js';
 import { contextoTemporal, opcionesReprogramar } from '../src/lib/hoy.js';
 import { fichaActividad, impactoEliminarActividad, editarActividad, crearActividadUnica } from '../src/lib/actividades.js';
@@ -420,6 +421,26 @@ const CASOS = [
                 ...propsHoy(conHecha),
                 tablon: tablonDelDia(conHecha, HOY, { hoy: HOY, ahora: '23:00' }),
                 onCompletar: noop,
+              })],
+            ];
+          })(),
+          /* HT Fase 9 — el planificador. Los dos casos: con un examen que
+             planificar, y con uno que ya no da tiempo a planificar (que no
+             puede reñir ni quedarse en blanco). */
+          ...(() => {
+            const plani = (fechaExamen) => ({
+              estado: lleno,
+              examenes: [{ id: 'x1', fecha: fechaExamen, tema: 'Tema 1, Tema 2', asignatura: 'Biología' }],
+              hoy: HOY, asignaturas: [],
+              sobrecarga: detectarSobrecarga(lleno, { desde: HOY, dias: 7, hoy: HOY }),
+              aplicar: () => ({ error: null }),
+            });
+            return [
+              ['HoyView · con plan de estudio', HoyView, () => ({
+                ...propsHoy(lleno, { productividad: tareas }), planificador: plani(addDays(HOY, 4)),
+              })],
+              ['HoyView · examen que es hoy', HoyView, () => ({
+                ...propsHoy(lleno), planificador: plani(HOY),
               })],
             ];
           })(),

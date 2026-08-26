@@ -69,6 +69,10 @@ import {
   tablonDelDia, marcarCompletada, previsualizar, ejecutar, deshacer, ejecutarTodo,
   historialDe, explicarAccion, puedeDeshacerse, resumenAutomatizaciones,
 } from '../lib/automatizaciones';
+import {
+  ordenarPorPrioridad, planDeEstudio, explicarPlan, planAlternativo, compararPlanes,
+  huecosParaMover, detectarSobrecarga, aplicarPlan, previsualizarPlan, describirAccion,
+} from '../lib/planificador';
 
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
 const fechaCorta = (iso) => iso.split('-').reverse().slice(0, 2).join('/');
@@ -565,6 +569,123 @@ function PanelFranjas({ horario, estado, accent, onAnadir, onEditar, onEliminar 
    LA PANTALLA
    =========================================================================== */
 /* ===========================================================================
+   EL PLANIFICADOR (HT F9 · apartados 6, 7, 16-19, 36, 37 y 56)
+   ===========================================================================
+   La arquitectura del apartado 52 puesta en pantalla:
+
+     DATOS → MOTOR TEMPORAL → PLANIFICADOR → **PROPUESTA** → CONFIRMACIÓN
+
+   ⚠️ **Nada de esto escribe hasta que Josué toca "Ponlo en mi horario".** Es la
+   regla 7 del proyecto: la IA —y el planificador, que es su motor— proponen; el
+   cambio lo hace él. El botón dice exactamente lo que va a pasar.
+
+   ⚠️ **Y no castiga** (apartado 19): si el plan hay que rehacerlo, se dice que
+   *"necesita reajustarse"*, nunca que se ha fallado. */
+function PanelPlan({ estado, examenes, accent, hoy, asignaturas, sobrecarga, onAplicar }) {
+  const [examenId, setExamenId] = useState(examenes[0]?.id || '');
+  const [alternativo, setAlternativo] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+  const [hecho, setHecho] = useState('');
+
+  const examen = examenes.find((x) => x.id === examenId) || null;
+  const opciones = useMemo(() => ({
+    examenFecha: examen?.fecha,
+    temas: (examen?.tema || '').split(/[,;]/).map((t) => t.trim()).filter(Boolean),
+    titulo: examen?.asignatura || 'Estudiar',
+    hoy, asignaturas,
+  }), [examen, hoy, asignaturas]);
+
+  const plan = useMemo(
+    () => (examen ? (alternativo ? planAlternativo(estado, opciones) : planDeEstudio(estado, opciones)) : null),
+    [estado, examen, alternativo, opciones],
+  );
+  const comparativa = useMemo(
+    () => (examen ? compararPlanes(planDeEstudio(estado, opciones), planAlternativo(estado, opciones)) : null),
+    [estado, examen, opciones],
+  );
+
+  if (!examenes.length && !sobrecarga?.hay) return null;
+
+  return (
+    <Card>
+      <p className="text-[10px] font-semibold tracking-wide mb-1" style={{ color: COLORS.textMuted }}>PLANIFICAR</p>
+
+      {/* Apartado 36 — se dice, y se ofrece la alternativa. Nada más. */}
+      {sobrecarga?.hay && (
+        <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>{sobrecarga.mensaje}</p>
+      )}
+
+      {examenes.length > 0 && (
+        <>
+          {examenes.length > 1 && (
+            <Field label="¿Para qué examen?">
+              <Select value={examenId} onChange={(e) => { setExamenId(e.target.value); setHecho(''); }}>
+                {examenes.map((x) => (
+                  <option key={x.id} value={x.id}>{x.asignatura || 'Examen'} · {fechaCorta(x.fecha)}</option>
+                ))}
+              </Select>
+            </Field>
+          )}
+
+          {plan?.imposible && <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>{plan.aviso}</p>}
+
+          {plan && !plan.imposible && (
+            <>
+              {plan.sesiones.map((s) => (
+                <div key={`${s.fecha}-${s.inicio}`} className="flex items-center gap-2 py-0.5">
+                  <span className="text-[11px] font-semibold" style={{ color: COLORS.textMuted, width: 62 }}>
+                    {s.dia.slice(0, 3)} {s.inicio}
+                  </span>
+                  <span className="text-xs flex-1 truncate" style={{ color: COLORS.text }}>{s.titulo}</span>
+                </div>
+              ))}
+              <p className="text-[11px] mt-1.5" style={{ color: COLORS.textMuted }}>{explicarPlan(plan)}</p>
+              {plan.aviso && <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{plan.aviso}</p>}
+
+              {/* Apartados 68 y 69 — otra forma de repartirlo, para comparar. */}
+              {comparativa && (
+                <button onClick={() => setAlternativo(!alternativo)} className="text-[11px] font-semibold mt-1.5" style={{ color: accent }}>
+                  {alternativo
+                    ? `Ver el plan largo (${comparativa.a.sesiones} sesiones de más rato)`
+                    : `Ver otro reparto (${comparativa.b.sesiones} sesiones más cortas)`}
+                </button>
+              )}
+
+              {/* ⚠️ Aquí y solo aquí se escribe, y solo tras confirmar. */}
+              {!hecho && (
+                confirmando ? (
+                  <div className="rounded-xl p-2 mt-2" style={{ background: COLORS.surface2 }}>
+                    <p className="text-[11px] mb-2" style={{ color: COLORS.text }}>
+                      Se van a crear {plan.sesiones.length} {plural(plan.sesiones.length, 'sesión', 'sesiones')} en tu horario.
+                      Puedes cambiarlas o borrarlas después como cualquier otra clase.
+                    </p>
+                    <div className="flex gap-2">
+                      <PrimaryButton accent={accent} onClick={() => {
+                        const r = onAplicar(plan.sesiones);
+                        setConfirmando(false);
+                        setHecho(r?.error ? '' : `Listo: ${plan.sesiones.length} ${plural(plan.sesiones.length, 'sesión añadida', 'sesiones añadidas')}.`);
+                      }}>
+                        Ponlo en mi horario
+                      </PrimaryButton>
+                      <div style={{ width: 110, flexShrink: 0 }}>
+                        <GhostBtn onClick={() => setConfirmando(false)}>Cancelar</GhostBtn>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2"><Accion icono={Check} label="Ponlo en mi horario" onClick={() => setConfirmando(true)} /></div>
+                )
+              )}
+              {hecho && <p className="text-[11px] mt-2" style={{ color: accent }}>{hecho}</p>}
+            </>
+          )}
+        </>
+      )}
+    </Card>
+  );
+}
+
+/* ===========================================================================
    UNA FILA DEL TABLÓN (HT F8 · apartados 2-9, 15 y 19)
    ===========================================================================
    ⚠️ **PASADA no es COMPLETADA.** *"La hora terminó"* y *"la actividad se
@@ -832,6 +953,8 @@ export function HoyView({
   mochilaHoy = null, mochilaManana = null, accionesMochila = null,
   // HT F8 — el tablón con estados temporales y las automatizaciones del día.
   tablon = null, onCompletar = null, automatizaciones = null,
+  // HT F9 — el planificador. Propone; escribe solo cuando Josué confirma.
+  planificador = null,
 }) {
   const { dia, ahora, siguiente: prox, pendientes: pend, libre, conflictos, manana, agenda } = contexto;
   const [reprogramando, setReprogramando] = useState(null);
@@ -949,6 +1072,15 @@ export function HoyView({
             </div>
           ))}
         </Card>
+      )}
+
+      {/* HT F9 · apartados 16-19 y 56 — el plan de estudio, propuesto. */}
+      {completo && planificador && (
+        <PanelPlan
+          estado={planificador.estado} examenes={planificador.examenes} accent={accent}
+          hoy={planificador.hoy} asignaturas={planificador.asignaturas}
+          sobrecarga={planificador.sobrecarga} onAplicar={planificador.aplicar}
+        />
       )}
 
       {/* HT F8 · apartados 48-52 — qué haría hoy solo, y qué ya ha hecho. */}
@@ -1593,6 +1725,44 @@ export default function HorarioView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estado, fecha, asignaturas]);
 
+  /* HT F9 — los exámenes que vienen y la sobrecarga. Todo derivado; el plan
+     se calcula dentro del panel, que es quien sabe cuál está mirando. */
+  const examenesProximos = useMemo(() => (estudios?.examenes || [])
+    .filter((x) => x.fecha && x.fecha >= hoy)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .slice(0, 5)
+    .map((x) => ({
+      id: x.id,
+      fecha: x.fecha,
+      tema: x.tema || '',
+      asignatura: (estudios?.asignaturas || []).find((a) => a.id === x.asignaturaId)?.nombre || '',
+    })), [estudios, hoy]);
+
+  const planificador = useMemo(() => ({
+    estado,
+    examenes: examenesProximos,
+    hoy,
+    asignaturas,
+    sobrecarga: detectarSobrecarga(estado, { desde: hoy, dias: 7, hoy, asignaturas, estudios, productividad }),
+    /* ⚠️ ESTE es el único camino por el que un plan llega al horario, y exige
+       `confirmado: true`. La pantalla lo pide con un botón que dice qué va a
+       pasar (regla 7). */
+    aplicar: (sesiones) => {
+      if (!activo) return { error: 'No hay horario donde ponerlo.' };
+      const columnaDe = (fecha) => (activo.columnas || []).find((c) => c.dia === diaDeFecha(fecha));
+      let d = estado;
+      for (const s of sesiones) {
+        const col = columnaDe(s.fecha);
+        if (!col) continue;
+        d = aplicarPlan(d, [{ tipo: 'CREAR_BLOQUE_ESTUDIO', fecha: s.fecha, inicio: s.inicio, fin: s.fin, texto: s.titulo }],
+          { confirmado: true, horarioId: activo.id, columnaId: col.id, hoy }).estado;
+      }
+      onCambiar(d);
+      return { error: null };
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [estado, examenesProximos, hoy, asignaturas, estudios, productividad, activo]);
+
   const contexto = useMemo(
     () => contextoTemporal(estado, { fecha, hoy, asignaturas, estudios, productividad, calendario, horarioId: activo?.id || null }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1768,7 +1938,7 @@ export default function HorarioView({
           onAbrirBloque={(ev) => setBloque({ ...ev, id: ev.bloqueId })}
           onIrAFecha={(f) => { setFecha(f); setVista('dia'); }}
           mochilaHoy={mochilaHoy} mochilaManana={mochilaManana} accionesMochila={accionesMochila}
-          tablon={tablon} automatizaciones={automatizaciones}
+          tablon={tablon} automatizaciones={automatizaciones} planificador={planificador}
           onCompletar={(ev, v) => aplicar(marcarCompletada(estado, ev, fecha, v))}
         />
       )}
