@@ -118,14 +118,22 @@ export function diaDeFecha(fechaISO) {
   return ((d.getDay() + 6) % 7) + 1;
 }
 
-export function crearColumna({ nombre = '', dia = null } = {}) {
+export function crearColumna({ nombre = '', dia = null, posicion = 0, corto = '', color = '', icono = '' } = {}) {
   // El día se valida ANTES de usarlo para el nombre. Con `dia: 9` —truthy pero
   // fuera de rango— la versión anterior indexaba `DIAS_SEMANA[8]` y reventaba.
   const valido = Number.isInteger(dia) && dia >= 1 && dia <= 7 ? dia : null;
   return {
     id: uid(),
     nombre: (nombre || '').trim() || (valido ? DIAS_SEMANA[valido - 1].label : 'Columna'),
+    // HT F2 · apartado 8 — `short_name`, `position`, `is_visible`, color e icono.
+    // `corto` no se deriva del nombre: "Miércoles" abrevia a "X" en España, no a
+    // "Mi", y adivinarlo con las tres primeras letras daría "Mié".
+    corto: (corto || '').trim() || (valido ? DIAS_SEMANA[valido - 1].corto : ''),
     dia: valido,
+    posicion: Number.isFinite(posicion) ? posicion : 0,
+    visible: true,
+    color: (color || '').trim(),
+    icono: (icono || '').trim(),
   };
 }
 
@@ -136,11 +144,13 @@ export function crearColumna({ nombre = '', dia = null } = {}) {
  * hora de inicio, un recreo de 20 minutos entre clases de 50 no se podría
  * representar sin inventarse una duración.
  */
-export const crearFila = ({ inicio = '08:00', fin = '09:00', etiqueta = '' } = {}) => ({
+export const crearFila = ({ inicio = '08:00', fin = '09:00', etiqueta = '', posicion = 0 } = {}) => ({
   id: uid(),
   inicio: normalizarHora(inicio) || '08:00',
   fin: normalizarHora(fin) || '09:00',
   etiqueta: (etiqueta || '').trim(),
+  posicion: Number.isFinite(posicion) ? posicion : 0,
+  visible: true,
 });
 
 /** `HH:MM` o nada. Se compara como texto, que para `HH:MM` ordena bien. */
@@ -169,10 +179,10 @@ export const duracionMinutos = (inicio, fin) => {
 
 /** La rejilla que se ofrece al empezar: lunes a viernes, 08:00–14:00 (apartado 6). */
 export function cuadriculaInicial() {
-  const columnas = [1, 2, 3, 4, 5].map((dia) => crearColumna({ dia }));
+  const columnas = [1, 2, 3, 4, 5].map((dia, i) => crearColumna({ dia, posicion: i }));
   const filas = [];
   for (let h = 8; h < 14; h++) {
-    filas.push(crearFila({ inicio: `${String(h).padStart(2, '0')}:00`, fin: `${String(h + 1).padStart(2, '0')}:00` }));
+    filas.push(crearFila({ inicio: `${String(h).padStart(2, '0')}:00`, fin: `${String(h + 1).padStart(2, '0')}:00`, posicion: h - 8 }));
   }
   return { columnas, filas };
 }
@@ -207,7 +217,7 @@ export const DEFAULT_HORARIO_TOP = {
  * nuevo y desactivar el viejo, no borrar nada: el histórico se conserva y las
  * notas del curso pasado siguen apuntando a algo que existe.
  */
-export function crearHorario({ nombre = '', tipo = 'escolar', periodo = '', hoy = todayISO() } = {}) {
+export function crearHorario({ nombre = '', tipo = 'escolar', periodo = '', descripcion = '', desde = '', hasta = '', porDefecto = false, hoy = todayISO() } = {}) {
   const t = tipoHorario(tipo);
   const { columnas, filas } = cuadriculaInicial();
   return normalizarHorarioObj({
@@ -215,37 +225,82 @@ export function crearHorario({ nombre = '', tipo = 'escolar', periodo = '', hoy 
     nombre: (nombre || '').trim() || t.label,
     tipo: t.id,
     periodo: (periodo || '').trim(),
+    descripcion,
+    // HT F2 · apartado 7 — `start_date` y `end_date`. El periodo era una etiqueta
+    // ("2026-2027"); esto son fechas de verdad, y `resolverDia` las respeta: un
+    // horario del curso pasado deja de resolver solo, sin desactivarlo a mano.
+    desde,
+    hasta,
+    porDefecto: !!porDefecto,
     columnas,
     filas,
     activo: true,
     creadoEn: hoy,
+    actualizadoEn: hoy,
   });
 }
 
 export function normalizarHorarioObj(guardado) {
   const g = guardado || {};
   const t = tipoHorario(g.tipo);
-  const columnas = (Array.isArray(g.columnas) ? g.columnas : []).map((c) => ({
-    id: c?.id || uid(),
-    nombre: (c?.nombre || '').trim() || 'Columna',
-    dia: c?.dia >= 1 && c?.dia <= 7 ? c.dia : null,
-  }));
-  const filas = (Array.isArray(g.filas) ? g.filas : []).map((f) => ({
+  // ⚠️ Este normalizador tiene que conocer TODOS los campos: lo que no aparezca
+  // aquí se pierde en el siguiente guardado, aunque `crearColumna` lo escriba.
+  // Pasó de verdad al añadir `visible` en HT F2: ocultar el sábado funcionaba
+  // hasta recargar la app.
+  const columnas = (Array.isArray(g.columnas) ? g.columnas : []).map((c, i) => {
+    const dia = Number.isInteger(c?.dia) && c.dia >= 1 && c.dia <= 7 ? c.dia : null;
+    return {
+      id: c?.id || uid(),
+      nombre: (c?.nombre || '').trim() || (dia ? DIAS_SEMANA[dia - 1].label : 'Columna'),
+      corto: (c?.corto || '').trim() || (dia ? DIAS_SEMANA[dia - 1].corto : ''),
+      dia,
+      posicion: Number.isFinite(c?.posicion) ? c.posicion : i,
+      visible: c?.visible !== false,
+      color: (c?.color || '').trim(),
+      icono: (c?.icono || '').trim(),
+    };
+  });
+  const filas = (Array.isArray(g.filas) ? g.filas : []).map((f, i) => ({
     id: f?.id || uid(),
     inicio: normalizarHora(f?.inicio) || '08:00',
     fin: normalizarHora(f?.fin) || '09:00',
     etiqueta: (f?.etiqueta || '').trim(),
+    posicion: Number.isFinite(f?.posicion) ? f.posicion : i,
+    visible: f?.visible !== false,
   }));
   return {
     id: g.id || uid(),
     nombre: (g.nombre || '').trim() || t.label,
     tipo: t.id,
     periodo: (g.periodo || '').trim(),
+    descripcion: (g.descripcion || '').trim(),
+    desde: fechaValida(g.desde),
+    hasta: fechaValida(g.hasta),
+    porDefecto: !!g.porDefecto,
     columnas,
     filas,
     activo: g.activo !== false,
     creadoEn: g.creadoEn || null,
+    actualizadoEn: g.actualizadoEn || g.creadoEn || null,
   };
+}
+
+/** Una fecha `AAAA-MM-DD` o cadena vacía. Nunca `undefined`, que rompe las comparaciones. */
+export const fechaValida = (f) => (/^\d{4}-\d{2}-\d{2}$/.test(f || '') ? f : '');
+
+/**
+ * HT F2 · apartado 7 — ¿está el horario vigente esa fecha?
+ *
+ * Sin fechas, siempre. Es lo que permite *"Horario curso 2026/27 y después
+ * 2027/28 sin borrar el anterior"* (apartado 24 de F1): el viejo deja de
+ * resolver por su `hasta`, no porque alguien se acuerde de desactivarlo.
+ */
+export function horarioVigente(horario, fecha) {
+  const h = normalizarHorarioObj(horario);
+  if (!h.activo) return false;
+  if (h.desde && fecha < h.desde) return false;
+  if (h.hasta && fecha > h.hasta) return false;
+  return true;
 }
 
 /* ---------------------------------------------------------------------------
@@ -271,7 +326,7 @@ export const TIPOS_ACTIVIDAD = [
   { id: 'otro', label: 'Otro' },
 ];
 
-export function crearActividad({ nombre = '', tipo = 'otro', color = '', icono = '', asignaturaId = null, material = [], ubicacion = '', persona = '', prioridad: pri = 'normal' } = {}) {
+export function crearActividad({ nombre = '', tipo = 'otro', color = '', icono = '', asignaturaId = null, material = [], ubicacion = '', persona = '', corto = '', descripcion = '', prioridad: pri = 'normal', hoy = todayISO() } = {}) {
   return normalizarActividad({
     id: uid(),
     nombre,
@@ -282,7 +337,12 @@ export function crearActividad({ nombre = '', tipo = 'otro', color = '', icono =
     material,
     ubicacion,
     persona,
+    corto,
+    descripcion,
     prioridad: pri,
+    activa: true,
+    creadoEn: hoy,
+    actualizadoEn: hoy,
   });
 }
 
@@ -302,8 +362,16 @@ export function normalizarActividad(guardada) {
       .map((m) => (typeof m === 'string' ? m.trim() : ''))
       .filter(Boolean),
     ubicacion: (g.ubicacion || '').trim(),
-    persona: (g.persona || '').trim(),
+    // HT F2 · apartado 11 — `teacher` y `room` son campos suyos, no de cada
+    // bloque: el profesor de Biología es el mismo los tres días. `persona` era
+    // el nombre de F1 y se conserva como sinónimo para no romper lo guardado.
+    persona: (g.profesor || g.persona || '').trim(),
+    corto: (g.corto || '').trim(),
+    descripcion: (g.descripcion || '').trim(),
     prioridad: prioridad(g.prioridad).id,
+    activa: g.activa !== false,
+    creadoEn: g.creadoEn || null,
+    actualizadoEn: g.actualizadoEn || g.creadoEn || null,
   };
 }
 
@@ -337,8 +405,60 @@ export function nombreDeActividad(actividad, asignaturas = []) {
    es ninguno). Guardar el día aquí lo duplicaría, y renombrar una columna
    dejaría los dos valores discrepando. */
 
-export function crearBloque({ horarioId, columnaId, actividadId = null, inicio, fin, titulo = '', ubicacion = '', notas = '', etiquetas = [] } = {}) {
-  return normalizarBloque({ id: uid(), horarioId, columnaId, actividadId, inicio, fin, titulo, ubicacion, notas, etiquetas });
+export function crearBloque({ horarioId, columnaId, filaId = null, actividadId = null, inicio, fin, titulo = '', ubicacion = '', notas = '', etiquetas = [], colorPropio = '', iconoPropio = '', recurrencia = null, hoy = todayISO() } = {}) {
+  return normalizarBloque({
+    id: uid(), horarioId, columnaId, filaId, actividadId, inicio, fin, titulo, ubicacion, notas, etiquetas,
+    colorPropio, iconoPropio, recurrencia, creadoEn: hoy, actualizadoEn: hoy,
+  });
+}
+
+/* ---------------------------------------------------------------------------
+   RECURRENCIA (HT F2 · apartado 23)
+   ---------------------------------------------------------------------------
+   *"Se deberá preparar soporte para: diariamente, semanalmente, determinados
+   días, cada dos semanas, semanas A/B, fechas de inicio, fechas de finalización,
+   excepciones."*
+
+   La mayoría ya la daba F1: la columna dice qué día, el horario dice desde
+   cuándo y hasta cuándo, y las excepciones son las excepciones. Lo que NO se
+   podía expresar era **la alternancia**: "Educación Física solo las semanas
+   pares", "esta hora es Semana A y la otra Semana B".
+
+   Eso es lo único que se añade, y se resuelve contando semanas ISO desde una
+   fecha ancla en vez de guardando "esta semana toca": un contador guardado se
+   desincroniza en cuanto pasa una semana sin abrir la app. */
+export const CLASES_RECURRENCIA = [
+  { id: 'siempre', label: 'Todas las semanas' },
+  { id: 'alternas', label: 'Semanas alternas' },
+];
+
+export function normalizarRecurrencia(r) {
+  const g = r || {};
+  const clase = CLASES_RECURRENCIA.some((c) => c.id === g.clase) ? g.clase : 'siempre';
+  if (clase === 'siempre') return { clase: 'siempre' };
+  return {
+    clase: 'alternas',
+    // El ancla es la semana en la que SÍ toca. Sin ella no hay forma de saber
+    // cuál de las dos alternas es esta.
+    ancla: fechaValida(g.ancla) || '',
+  };
+}
+
+/** El lunes de la semana de una fecha. La unidad de la alternancia es la semana. */
+export function lunesDe(fechaISO) {
+  const dia = diaDeFecha(fechaISO);
+  return dia ? addDays(fechaISO, -(dia - 1)) : fechaISO;
+}
+
+/** ¿Toca este bloque esa fecha, según su recurrencia? */
+export function tocaEsaSemana(recurrencia, fecha) {
+  const r = normalizarRecurrencia(recurrencia);
+  if (r.clase === 'siempre') return true;
+  // Sin ancla no se puede decidir, y adivinar sería peor que no alternar: se
+  // trata como "siempre" para no hacer desaparecer clases en silencio.
+  if (!r.ancla) return true;
+  const semanas = Math.round((new Date(`${lunesDe(fecha)}T00:00:00`) - new Date(`${lunesDe(r.ancla)}T00:00:00`)) / 604800000);
+  return semanas % 2 === 0;
 }
 
 export function normalizarBloque(guardado) {
@@ -356,6 +476,20 @@ export function normalizarBloque(guardado) {
     ubicacion: (g.ubicacion || '').trim(),
     notas: (g.notas || '').trim(),
     etiquetas: (Array.isArray(g.etiquetas) ? g.etiquetas : []).map((e) => String(e).trim()).filter(Boolean),
+    // HT F2 · apartados 15 y 16 — `color_override` / `icon_override`. Sin
+    // override manda el de la actividad, para que la identidad visual sea
+    // consistente: "Matemáticas es azul" y un bloque especial puede no serlo.
+    colorPropio: (g.colorPropio || '').trim(),
+    iconoPropio: (g.iconoPropio || '').trim(),
+    // Apartado 13 — `row_id`. Es informativo: el que manda es `inicio`/`fin`,
+    // porque el apartado 14 pide expresamente que un bloque pueda NO ocupar una
+    // fila exacta ("09:00–09:30 Recreo" entre filas de una hora).
+    filaId: g.filaId || null,
+    descripcion: (g.descripcion || '').trim(),
+    posicion: Number.isFinite(g.posicion) ? g.posicion : 0,
+    recurrencia: normalizarRecurrencia(g.recurrencia),
+    creadoEn: g.creadoEn || null,
+    actualizadoEn: g.actualizadoEn || g.creadoEn || null,
   };
 }
 
@@ -445,7 +579,9 @@ export function resolverDia(estado, fecha, { asignaturas = [], horarioId = null 
   const libres = excepcionesHoy.filter((x) => x.tipo === 'dia_libre');
   const horarioLibre = (id) => libres.some((x) => !x.horarioId || x.horarioId === id);
 
-  const horarios = e.horarios.filter((h) => h.activo && (!horarioId || h.id === horarioId));
+  // HT F2 · apartado 7 — además de estar activo, el horario tiene que estar
+  // VIGENTE esa fecha. Así el curso pasado deja de resolver solo.
+  const horarios = e.horarios.filter((h) => horarioVigente(h, fecha) && (!horarioId || h.id === horarioId));
   const salida = [];
 
   for (const horario of horarios) {
@@ -453,12 +589,17 @@ export function resolverDia(estado, fecha, { asignaturas = [], horarioId = null 
     // Solo las columnas que representan un día real resuelven a una fecha. Una
     // columna "Semana A" no es ningún día: sus bloques existen, pero no caen en
     // ninguna fecha hasta que una fase futura decida qué semana es cuál.
-    const columnas = horario.columnas.filter((c) => c.dia === dia);
+    // Una columna oculta (apartado 8, `is_visible`) no resuelve: es como
+    // plegar el sábado sin borrar lo que hay dentro.
+    const columnas = horario.columnas.filter((c) => c.dia === dia && c.visible !== false);
     if (!columnas.length) continue;
 
     for (const bloque of e.bloques.filter((b) => b.horarioId === horario.id && columnas.some((c) => c.id === b.columnaId))) {
       const cancelado = excepcionesHoy.find((x) => x.tipo === 'cancelado' && x.bloqueId === bloque.id);
       if (cancelado) continue;
+      // Apartado 23 — la alternancia de semanas. Si esta semana no toca, el
+      // bloque simplemente no ocurre; no es una cancelación.
+      if (!tocaEsaSemana(bloque.recurrencia, fecha)) continue;
 
       const cambio = excepcionesHoy.find((x) => x.tipo === 'modificado' && x.bloqueId === bloque.id);
       salida.push(componerEvento(e, horario, bloque, cambio, asignaturas));
@@ -469,7 +610,7 @@ export function resolverDia(estado, fecha, { asignaturas = [], horarioId = null 
   // o una clase de recuperación que no está en el horario.
   for (const x of excepcionesHoy.filter((v) => v.tipo === 'anadido')) {
     const horario = e.horarios.find((h) => h.id === x.horarioId) || null;
-    if (horario && (!horario.activo || horarioLibre(horario.id))) continue;
+    if (horario && (!horarioVigente(horario, fecha) || horarioLibre(horario.id))) continue;
     if (horarioId && x.horarioId !== horarioId) continue;
     salida.push(componerEvento(e, horario, null, x, asignaturas));
   }
@@ -509,8 +650,10 @@ function componerEvento(estado, horario, bloque, excepcion, asignaturas) {
     titulo,
     inicio: c.inicio || bloque?.inicio || '',
     fin: c.fin || bloque?.fin || '',
-    color: actividad?.color || '',
-    icono: actividad?.icono || '',
+    // Apartados 15 y 16 — el override del bloque gana; si no hay, el de la
+    // actividad. Nunca al revés, o "Matemáticas es azul" dejaría de ser cierto.
+    color: bloque?.colorPropio || actividad?.color || '',
+    icono: bloque?.iconoPropio || actividad?.icono || '',
     ubicacion: c.ubicacion || bloque?.ubicacion || actividad?.ubicacion || '',
     material: actividad?.material || [],
     prioridad: actividad?.prioridad || 'normal',
@@ -806,7 +949,7 @@ export function resumenHorario(estado, { asignaturas = [], fecha = todayISO() } 
   const e = normalizarHorarioTop(estado);
   const linea = lineaDelDia(estado, fecha, { asignaturas });
   return {
-    horarios: e.horarios.filter((h) => h.activo).length,
+    horarios: e.horarios.filter((h) => horarioVigente(h, fecha)).length,
     actividades: e.actividades.length,
     bloques: e.bloques.length,
     hoy: linea.total,

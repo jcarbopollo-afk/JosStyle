@@ -152,6 +152,12 @@ else
   fallo "Falla la arquitectura de Horario Top"; grep '✗' /tmp/jc_horario.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-horario-datos.mjs >/tmp/jc_horario2.log 2>&1; then
+  ok "Modelo de datos de Horario Top (HT F2) — $(grep -c '✓' /tmp/jc_horario2.log) comprobaciones"
+else
+  fallo "Falla el modelo de datos de Horario Top"; grep '✗' /tmp/jc_horario2.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

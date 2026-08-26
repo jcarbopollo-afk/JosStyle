@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 29 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)** y **HT 1/12** (hasta v1.52.0). Quedan **77**:
-> HT (11), SO · Sonido (5) y EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 30 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)** y **HT 2/12** (hasta v1.53.0). Quedan **76**:
+> HT (10), SO · Sonido (5) y EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -3257,61 +3257,118 @@ clave `horarioTop`, por coherencia con los otros veintiún módulos y para no a�
 **HT F2 es literalmente la fase del modelo de datos y Supabase**, así que lo confirmará o lo cambiará
 con su especificación delante. Nada de lo construido aquí depende de esa elección: el módulo es puro.
 
-#### HT · Fase 2/12 — MODELO DE DATOS + CLOUD + SUPABASE
-- [ ] OBJETIVO
-- [ ] PRINCIPIO DE LA BASE DE DATOS
-- [ ] USUARIO
-- [ ] IDENTIFICADORES
-- [ ] TABLA
-- [ ] HORARIOS SIMULTÁNEOS
-- [ ] PERIODOS DE VALIDEZ
-- [ ] NO LIMITAR LAS FILAS
-- [ ] TIPOS DE ACTIVIDAD
-- [ ] BLOQUES CON DURACIONES DIFERENTES
-- [ ] COLOR GLOBAL VS COLOR DEL BLOQUE
-- [ ] ICONOS
-- [ ] TIPOS DE EXCEPCIÓN
-- [ ] REGLA DE PRIORIDAD
-- [ ] CALENDARIO
-- [ ] EVITAR DUPLICACIONES
-- [ ] RECURRENCIA
-- [ ] RELACIÓN ACTIVIDAD ↔ MATERIAL
-- [ ] PREPARACIÓN DE LA MOCHILA
-- [ ] RECORDATORIOS
-- [ ] NOTIFICACIONES FUTURAS
-- [ ] VISTA
-- [ ] EJEMPLO DE GENERACIÓN DE HOY
-- [ ] SUPABASE
-- [ ] ROW LEVEL SECURITY
-- [ ] SEGURIDAD
-- [ ] ÍNDICES
-- [ ] SOFT DELETE
-- [ ] SINCRONIZACIÓN MULTIDISPOSITIVO
-- [ ] CONFLICTOS
-- [ ] CACHE LOCAL
-- [ ] DATOS MÍNIMOS VS DATOS AVANZADOS
-- [ ] CONFIGURACIÓN DEL USUARIO
-- [ ] HISTORIAL
-- [ ] ESTRUCTURA RELACIONAL GENERAL
-- [ ] FLUJO DE INFORMACIÓN
-- [ ] PREPARACIÓN PARA IA AVANZADA
-- [ ] Obtiene fecha.
-- [ ] Consulta horarios activos.
-- [ ] Calcula recurrencias.
-- [ ] Aplica excepciones.
-- [ ] Obtiene eventos.
-- [ ] Obtiene tareas.
-- [ ] Obtiene recordatorios.
-- [ ] Obtiene material.
-- [ ] Construye contexto.
-- [ ] Genera respuesta.
-- [ ] FUTURA CAPA DE ACCIONES DE IA
-- [ ] VALIDACIONES
-- [ ] PREPARACIÓN PARA ESCALABILIDAD
-- [ ] REGLA DE COMPATIBILIDAD CON EL SISTEMA PERSONAL
-- [ ] RESULTADO DE LA FASE 2
-- [ ] LO QUE NO SE IMPLEMENTA TODAVÍA
-- [ ] SIGUIENTE FASE
+#### HT · Fase 2/12 — MODELO DE DATOS, CLOUD Y SUPABASE ✅ COMPLETADA (v1.53.0)
+
+**El apartado 51 decide dónde va todo:** *"HORARIO TOP no podrá crear una arquitectura incompatible
+con los demás módulos. Antes de implementar las tablas definitivas se deberá comprobar nombres de
+tablas, convenciones de IDs, autenticación, RLS, timestamps, patrones de Supabase existentes… **La
+implementación final deberá adaptarse a la arquitectura global del Sistema Personal.**"*
+
+Comprobado: **JosStyle no tiene una tabla por entidad.** Tiene una, `app_data`, una fila por usuario
+y clave, con RLS por `auth.uid()`, que usan los veintiún módulos. Las trece tablas del apartado 45
+serían el segundo sistema de persistencia del proyecto y **trece bloques de SQL que Josué tendría que
+ejecutar a mano desde el iPhone**. Así que se adaptan, que es lo que el apartado manda: cada "tabla"
+es una lista dentro de `horarioTop`, y lo que en PostgreSQL serían restricciones son aquí funciones
+que se ejecutan de verdad.
+
+- [x] **1-2 · Objetivo y principio** — *"cada dato importante debe existir una sola vez"*. Las
+      asignaturas ya se apuntan a Estudios desde F1; aquí les toca a los materiales.
+- [x] **3 · Usuario** — el modelo **no tiene campo `user_id`**: el estado es del usuario autenticado
+      y no hay otro del que sacar nada.
+- [x] **4 · Identificadores** — `uid()`, el de toda la app.
+- [x] **5 · Tabla `schedules`** — `nombre`, `tipo`, `descripcion`, `activo`, `porDefecto`, `desde`,
+      `hasta`, timestamps.
+- [x] **6 · Horarios simultáneos** — ya desde F1; un festivo de instituto no cancela el
+      entrenamiento.
+- [x] **7 · Periodos de validez** — `desde` y `hasta` **de verdad**, no una etiqueta. Y
+      `resolverDia` los respeta: **el curso pasado deja de resolver solo**, sin desactivarlo a mano.
+- [x] **8 · `schedule_columns`** — `corto`, `posicion`, `visible`, color e icono. El corto **no se
+      deriva del nombre**: "Miércoles" abrevia a "X" en España, no a "Mié".
+- [x] **9-10 · `schedule_rows` y no limitar** — `posicion` y `visible`; ni columnas ni filas tienen
+      número fijo.
+- [x] **11-12 · `subjects` y tipos** — `corto`, `profesor`, `aula`, `descripcion`, `activa`.
+- [x] **13-14 · `schedule_blocks` y duraciones** — `filaId` es **informativo**: el que manda es
+      `inicio`/`fin`, porque el apartado 14 pide expresamente que un bloque pueda no ocupar una fila
+      exacta ("09:00–09:30 Recreo" entre filas de una hora).
+- [x] **15-16 · Color e icono override** — el del bloque gana; sin override, el de la asignatura.
+      **Y los demás bloques de esa asignatura no cambian** — probado.
+- [x] **17-19 · `schedule_exceptions` y prioridad** — desde F1, con los cuatro tipos y la excepción
+      ganando siempre al horario base.
+- [x] **20-21 · Calendario** — ⚠️ *"No se recomienda crear un calendario completamente
+      independiente."* JosStyle ya tiene el común (`calendarioIntegracion.js`), donde cada módulo
+      aporta eventos **derivados** con `origen` y `origenId` — exactamente los `source` y `source_id`
+      del apartado. `eventosDeHorario()` produce esa aportación; **no crea una tabla nueva**.
+- [x] **22 · Evitar duplicaciones** — catorce días de calendario **no crean catorce registros**: se
+      calculan. Hay una prueba que lo comprueba.
+- [x] **23 · Recurrencia** — la mayoría ya la daba F1 (la columna dice qué día, el horario desde
+      cuándo, las excepciones son las excepciones). Lo que no se podía expresar era **la
+      alternancia**, y es lo único que se añade: se resuelve **contando semanas desde un ancla**, no
+      guardando "esta semana toca" — un contador guardado se desincroniza en cuanto pasa una semana
+      sin abrir la app. Sin ancla no se hace desaparecer nada en silencio.
+- [x] **24 · `tasks`** — las tareas son de Productividad y **no se copian**: entran en `agendaDelDia`
+      como parámetro.
+- [x] **25-26 · `materials` y `subject_materials`** — mejora real sobre F1, donde el material era
+      texto. Con textos, "Libreta" en Biología y en Matemáticas eran dos cosas que solo se parecían
+      al escribirlas. La migración **une los repetidos** —tres asignaturas con libreta dan UN
+      material y tres enlaces— y es idempotente.
+- [x] **27-28 · Mochila** — *"será una consecuencia de los datos existentes y no una lista
+      completamente independiente"*. `mochilaDelDia()` **deriva**; lo único que se guarda es lo que
+      no se puede derivar: si ya está metido, y lo añadido a mano. Y agrupa: "Libreta — para Biología
+      y Matemáticas", no dos libretas.
+- [x] **29-30 · Recordatorios y notificaciones** — el modelo los admite; `avisosDelDia` (F1)
+      describe sin notificar. Se construyen en la Fase 10.
+- [x] **31-32 · Vista HOY** — `agendaDelDia()` agrega clases, tareas, eventos y recordatorios en una
+      sola experiencia, con lo que tiene hora ordenado por hora y lo que no, **por importancia** —
+      no intercalado a las 00:00. Las fuentes de fuera son **parámetros**, así que la Fase 6 añadirá
+      fuentes sin tocar la función.
+- [x] **33-35 · Supabase, RLS y seguridad** — las políticas de `app_data`, ya vigentes. *"Nunca
+      confiar en el user_id enviado desde la interfaz"*: no hay ninguno que enviar.
+- [x] **36 · Índices** — `construirIndices()`. En Postgres son índices; aquí, mapas. El efecto y el
+      motivo son el mismo: que HOY siga siendo rápido con tres cursos de historial.
+- [x] **37 · `created_at` / `updated_at`** — en cada entidad.
+- [x] **38 · Soft delete** — ⚠️ **la papelera de ME F3**, que ya es el borrado reversible del
+      proyecto, con retención, restauración y purga. Un `deleted_at` propio sería un segundo sistema
+      de recuperación con sus propias reglas.
+- [x] **39-40 · Sincronización y conflictos** — `detectarConflicto()` usa `actualizadoEn` para decir
+      *"esto lo cambió otro dispositivo después de que tú lo abrieras"*. **Detecta y avisa; no
+      resuelve**: *"no se deberá sobrescribir información silenciosamente sin criterio"*, y la
+      política de quién gana es una decisión de producto que el apartado deja para después.
+- [x] **41 · Cache local** — el de siempre: estado en React, `saveData` detrás.
+- [x] **42 · Datos mínimos vs avanzados** — un bloque necesita horario, columna y horas. Profesor,
+      aula, material, icono y etiquetas son opcionales.
+- [x] **43 · Configuración del usuario** — vista, inicio de semana, 12/24 h, aulas, iconos, colores.
+      ⚠️ **Densidad y tamaño de texto NO están**, aunque el apartado los mencione: existen desde la
+      Fase A3 para toda la app, y duplicarlos daría dos ajustes diciendo cosas distintas sobre lo
+      mismo.
+- [x] **44 · Historial** — los timestamps lo permiten; no se construye.
+- [x] **45-46 · Estructura relacional y flujo** — `describirModelo()` la dice **leyendo el estado
+      real**, no una lista escrita a mano que se quedaría desfasada en la primera fase que añada una
+      entidad.
+- [x] **47-48 · IA** — `contextoIA` (F1) da estructura; la capa de acciones pasará por estas mismas
+      validaciones. *"La IA no tendrá permisos especiales para saltarse las reglas."*
+- [x] **49 · Validaciones** — `validarBloque`, `validarExcepcion`, `validarHorario`. Devuelven el
+      motivo en vez de lanzar, para que la interfaz lo diga con una frase corta.
+- [x] **50 · Escalabilidad** — profesores, aulas, grupos y etiquetas caben como campos o entidades
+      nuevas sin tocar lo que hay.
+- [x] **51 · Compatibilidad** — el apartado que ha decidido la fase entera.
+- [x] **52 · Resultado** — el modelo técnico completo, en código y probado.
+- [x] **53-54 · Lo que no se implementa** — ni editor, ni cuadrícula, ni drag & drop, ni interfaz, ni
+      mochila inteligente, ni notificaciones, ni automatizaciones.
+
+**Tres bugs míos, cazados por sus propias pruebas — y uno perdía datos:**
+
+1. **El normalizador de horarios tiraba los campos nuevos de columnas y filas.** Ocultar el sábado
+   funcionaba… hasta recargar la app. Es la trampa de siempre: `crearColumna` escribía `visible`,
+   pero `normalizarHorarioObj` no lo conocía, así que se perdía en el primer guardado.
+2. **Un item de mochila añadido a mano se borraba solo.** El normalizador exigía `materialId`, y un
+   "Bocadillo" escrito a mano no sale de ningún material.
+3. **`validarHorario` no detectaba un nombre vacío**, porque miraba el objeto ya normalizado y el
+   normalizador lo rellena con la etiqueta del tipo. Ahora mira el crudo — misma lección que la
+   revisión de integridad de RA F2.
+
+⏸ **Queda confirmada la decisión que HT F1 dejó abierta:** el horario se guarda en `app_data` con la
+clave `horarioTop`. **Sin tabla nueva y sin SQL que Josué tenga que ejecutar**, y con el aislamiento
+por usuario que ya dan las políticas existentes.
 
 #### HT · Fase 3/12 — EDITOR VISUAL DE HORARIOS
 - [ ] OBJETIVO DE LA FASE

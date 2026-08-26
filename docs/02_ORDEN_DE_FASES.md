@@ -166,8 +166,10 @@ escribir código.
 
 | v1.52.0 | **HT F1** | Arquitectura de Horario Top: **el horario es una regla, no una lista de eventos**. Y las asignaturas no se duplican — se apuntan a las de Estudios |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 1/12. Quedan
-**77** fases de la Entrega 2: HT (11), SO · Sonido (5) y EH (65).
+| v1.53.0 | **HT F2** | Modelo de datos: **el apartado 51 obliga a adaptarse al proyecto**, así que ni una tabla nueva ni un SQL pendiente. Materiales como entidades, mochila derivada y detección de conflictos entre dispositivos |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 2/12. Quedan
+**76** fases de la Entrega 2: HT (10), SO · Sonido (5) y EH (65).
 
 ⏸ **SO · Sonido sigue bloqueado a la espera de Josué (C-23):** su Fase 1 no aparece en la
 especificación, y además necesita archivos de audio que él dará más adelante.

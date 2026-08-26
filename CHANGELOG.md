@@ -1,5 +1,71 @@
 # CHANGELOG.md
 
+## Entrega 2 · HT Fase 2 — Modelo de datos, Cloud y Supabase (v1.53.0)
+
+### Ni una tabla nueva, ni un SQL que ejecutar
+La especificación propone trece tablas —`schedules`, `schedule_columns`, `schedule_blocks`,
+`subjects`, `materials`…— y en el apartado 51 dice cómo decidir: *"HORARIO TOP no podrá crear una
+arquitectura incompatible con los demás módulos. La implementación final deberá adaptarse a la
+arquitectura global del Sistema Personal."*
+
+JosStyle no tiene una tabla por entidad. Tiene **una**, `app_data`, con RLS por usuario, que usan los
+veintiún módulos. Trece tablas serían el segundo sistema de persistencia del proyecto y **trece
+bloques de SQL que ejecutar a mano desde el iPhone**.
+
+Así que lo que en PostgreSQL serían restricciones son aquí funciones que se ejecutan de verdad: los
+índices son mapas, las validaciones son código, el `user_id` no existe —no hay ninguno que falsear— y
+el borrado reversible es la papelera que ya tiene el proyecto.
+
+### El curso pasado deja de resolver solo
+Un horario ya no tiene solo una etiqueta de periodo: tiene `desde` y `hasta` de verdad, y
+`resolverDia()` los respeta. Acabado junio, el horario 26/27 deja de aparecer sin que nadie se
+acuerde de desactivarlo, y sus bloques siguen guardados.
+
+### Los materiales dejan de ser textos sueltos
+En la Fase 1 el material era `['Libro', 'Libreta']` dentro de la actividad. Con textos, "Libreta" en
+Biología y "Libreta" en Matemáticas eran dos cosas distintas que solo se parecían al escribirlas.
+
+Ahora son entidades con su enlace, y la migración **une las repetidas**: tres asignaturas con libreta
+dan **un** material y tres enlaces, no tres libretas. Pasarla dos veces no duplica nada, y el texto
+original se conserva para que sea reversible.
+
+### La mochila es una consecuencia, no una lista
+*"La mochila será una consecuencia de los datos existentes y no una lista completamente
+independiente."* `mochilaDelDia()` deriva: horario → actividades → material. Lo único que se guarda
+es lo que no se puede derivar — si ya está metido, y lo que se añada a mano.
+
+Y agrupa: "Libreta — para Biología y Matemáticas", no dos libretas. Con cinco clases al día, la
+diferencia es entre una mochila útil y una lista de veinte cosas repetidas.
+
+### El calendario no se duplica
+Catorce días de agenda **no crean catorce registros**: se calculan. El horario aporta eventos
+derivados con `origen` y `origenId` al calendario común que ya existe — exactamente los `source` y
+`source_id` que pide la especificación.
+
+### Cuando dos dispositivos cambian lo mismo
+`detectarConflicto()` usa los timestamps para decir "esto lo cambió otro dispositivo después de que
+tú lo abrieras". **Detecta y avisa; no resuelve**: la especificación dice que *"no se deberá
+sobrescribir información silenciosamente sin criterio"*, y quién gana es una decisión que deja para
+más adelante.
+
+### Tres bugs míos, y uno perdía datos
+1. **El normalizador de horarios tiraba los campos nuevos de columnas y filas.** Ocultar el sábado
+   funcionaba… hasta recargar la app: `crearColumna` escribía `visible`, pero el normalizador no lo
+   conocía y se perdía en el primer guardado.
+2. **Un item de mochila añadido a mano se borraba solo**, porque el normalizador exigía un
+   `materialId` que un "Bocadillo" escrito a mano no tiene.
+3. **`validarHorario` no detectaba un nombre vacío**, porque miraba el objeto ya normalizado y el
+   normalizador lo rellena con la etiqueta del tipo.
+
+Los tres los cazaron sus propias pruebas.
+
+### Verificación
+**2085 comprobaciones y 9 reglas invariantes en verde**, build incluido. `package.json` →
+**v1.53.0**. Van 30 de las 106 fases; quedan 76.
+
+⏸ **Queda confirmado lo que HT F1 dejó abierto:** el horario se guarda en `app_data` con la clave
+`horarioTop`. Sin tabla nueva y sin SQL pendiente.
+
 ## Entrega 2 · HT Fase 1 — Arquitectura de Horario Top (v1.52.0)
 
 ### Esta fase no pide construir: pide definir

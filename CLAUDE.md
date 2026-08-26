@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.52.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.53.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados y **Horario Top** va por 1/12, quedan 77) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados y **Horario Top** va por 2/12, quedan 76) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,10 +107,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 1755 pruebas unitarias con Node, 5 de auditoría, 192 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **1961 comprobaciones**.
+Vite, 1879 pruebas unitarias con Node, 5 de auditoría, 192 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **2085 comprobaciones**.
 
-Eso ya ha encontrado **treinta y ocho bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **cuarenta y un bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -147,8 +147,9 @@ que no existen en el proyecto.** Él mismo lo escribió dentro de la especificac
 hacer cuando la web ya tenga todos los botones activos"*. Sin los sonidos, un motor de audio sería un
 control decorativo (regla 8).
 
-**Mientras tanto se sigue por HT · Horario Top, que no depende de nada de esto.** F1 está hecha
-(v1.52.0); **la siguiente candidata es HT · Fase 2/12 — Modelo de datos, Cloud y Supabase**.
+**Mientras tanto se sigue por HT · Horario Top, que no depende de nada de esto.** F1 y F2 están
+hechas (v1.53.0); **la siguiente candidata es HT · Fase 3/12 — Editor visual de horarios**, la
+primera de HT con interfaz.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
 
 ⚠️ **No empezar ninguna sin que Josué pase la fase.**
@@ -169,6 +170,11 @@ Cinco cosas que conviene tener presentes al retomar:
   futura pide "generar los eventos del curso", es que hay que releer el apartado 5.
 - **Las asignaturas del horario son las de Estudios** (HT F1, apartado 25): una actividad escolar
   guarda `asignaturaId`, nunca el nombre. Nunca crear una segunda lista de asignaturas.
+- **El horario no tiene tablas propias en Supabase** (HT F2, apartado 51): vive en `app_data` con la
+  clave `horarioTop`, con la RLS que ya existe. Si una fase pide crear `schedules`, releer el 51.
+- ⚠️ **Un normalizador que no conoce un campo lo BORRA en el siguiente guardado.** Pasó en HT F2 con
+  `visible` de las columnas: `crearColumna` lo escribía y `normalizarHorarioObj` no. Al añadir un
+  campo a una entidad, añadirlo también a su normalizador — siempre.
 - **La gamificación no tiene XP ni niveles, a propósito** (RA F3), y **los logros de racha viven en
   el Centro de Rachas, no en la pantalla de Logros** (RA F4): los doce de la Fase 20 son de toda la
   app; estos son por racha y pueden ser muchos. Si Josué los prefiere juntos, es mover una lista.
