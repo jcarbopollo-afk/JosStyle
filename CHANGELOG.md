@@ -1,5 +1,91 @@
 # CHANGELOG.md
 
+## Entrega 2 · HT Fase 4 — Configuración avanzada de columnas, filas y bloques (v1.56.0)
+
+### Todo detrás de un solo botón
+*"Toda la potencia estará disponible, pero sin complicar la interfaz básica."* (apartado 63)
+
+Esta fase añade semanas A/B, generación de franjas, búsqueda, zoom, densidad, archivado y validación
+estructural. Si todo eso apareciera en la cuadrícula, la pantalla de todos los días sería ilegible en
+un iPhone. Así que vive entero detrás de **"Opciones avanzadas", dentro del modo edición**: quien
+solo quiere mirar qué le toca ahora no ve ni uno de esos controles.
+
+### Nada se mueve en silencio
+El apartado 30 es el que manda sobre toda la fase: *"No se deben mover datos silenciosamente."*
+
+Regenerar la rejilla de horas puede dejar clases fuera de sitio. Eliminar una columna puede llevarse
+bloques por delante. Cambiar el horario de una franja puede descolocar lo que había dentro.
+
+Las tres operaciones **calculan el impacto y lo enseñan antes de escribir**, con el número exacto de
+clases afectadas y un botón de "Hacerlo igualmente". Nunca se escribe primero y se avisa después.
+
+Y regenerar las franjas **no mueve ni un bloque**: conservan sus horas, solo pierden la fila a la que
+apuntaban. Las filas son la rejilla visual; los bloques guardan sus propias horas desde HT F2.
+
+### Las semanas A/B se calculan, no se guardan
+Un horario puede alternar entre semana A y semana B, hasta ocho semanas de ciclo.
+
+**La semana en la que estamos se calcula desde una fecha ancla.** Guardar "esta semana es la B" sería
+un contador, y un contador miente en cuanto pasa un lunes sin abrir la app — el mismo error que RA F1
+evitó con las rachas.
+
+Y **sin ancla no se adivina**: se enseña la semana A y se dice por qué. Adivinar sería peor que no
+alternar, porque haría desaparecer clases sin motivo aparente.
+
+Una columna sin grupo vale para todas las semanas del ciclo, que es lo que permite tener "Lunes"
+fijo y solo "Miércoles A/B" alternando.
+
+### Archivar no es borrar, y bloquear no es ocultar
+Dos distinciones que la especificación pide expresamente (apartados 56 y 8):
+
+- Un horario **archivado** sale del selector y deja de resolver fechas, pero sus bloques siguen
+  guardados y se recupera de un toque. Y si están **todos** archivados, la pantalla vacía ofrece
+  recuperarlos — si no, sería un callejón sin salida.
+- Una columna **bloqueada** se sigue viendo y sigue resolviendo fechas: solo no se edita sin querer.
+
+### El zoom del móvil no cambia el del ordenador
+El apartado 59 separa configuración local de configuración en la nube. Aquí la línea está clara:
+**estructura y datos a Supabase, preferencias de vista al aparato.**
+
+El zoom (60–140 %) y la densidad de las filas van a `localStorage`. Sincronizarlos haría que
+ajustarlos en el iPhone estropeara la vista en el ordenador, que no tiene la misma pantalla.
+
+El zoom escala **alto y ancho** de la cuadrícula. Escalar solo hacia abajo dejaría las columnas
+igual de estrechas y el nombre de la asignatura igual de ilegible.
+
+### Un bug que perdía datos, otra vez el mismo
+El normalizador de `horario.js` no conocía `archivado`, `icono`, `color`, `zonaHoraria` ni `ciclo`,
+así que **archivar un horario funcionaba hasta el siguiente guardado**, y entonces volvía solo. Es
+exactamente el fallo que HT F2 tuvo con `visible` y que el comentario encima de la función avisa de
+que puede repetirse. Lo cazó su propia prueba.
+
+### Una configuración extrema no puede destruir la app
+El apartado 20 lo pide y hay dos topes que lo cumplen: el generador de franjas **no pasa de 40
+filas** (un intervalo de 1 minuto sobre doce horas daría 720 y dejaría la app inservible) y el ciclo
+de semanas se **acota a 8** en vez de descartarse — devolver 1 apagaría el ciclo entero por un
+dedazo, y las clases alternas desaparecerían sin que nada lo explicara.
+
+### Lo que no se ha construido, y por qué
+- **Bloques multifila y multicolumna** (15-18): el modelo ya los permite, falta pintarlos estirados.
+  Es trabajo de cuadrícula y va con la Fase 5, donde se rehace la celda.
+- **Atajos de teclado** (42): Josué trabaja desde el iPhone. Sería un control decorativo.
+- **Versionado, importar, exportar, imprimir y compartir** (46-52): la propia especificación llama al
+  46 *"versionado futuro"*, exportar e imprimir son de la Fase 12, y compartir depende de decisiones
+  de privacidad que Josué no ha tomado.
+- **Cambio de hora** (54): el cambio de hora español no mueve las clases. No hay nada que construir.
+- **Rendimiento de horarios enormes** (60-62): un horario de instituto son 5 columnas y 7 franjas.
+
+### Verificación
+**2468 comprobaciones y 10 reglas invariantes en verde** (antes 2308), 121 de la configuración
+avanzada y 240 casos de renderizado. `package.json` → **v1.56.0**.
+
+⚠️ Sin probar: el zoom y la densidad en pantalla real, el aspecto en un iPhone y el recorrido
+tocando. Como todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
 ## Entrega 2 · HT Fase 3 — Editor visual de horarios (v1.55.0)
 
 ### Un módulo nuevo: Horario

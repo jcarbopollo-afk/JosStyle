@@ -27,7 +27,8 @@ import StatsView from '../src/views/StatsView.jsx';
 import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
-import HorarioView from '../src/views/HorarioView.jsx';
+import HorarioView, { PanelAvanzado } from '../src/views/HorarioView.jsx';
+import { archivarHorario, guardarCiclo, normalizarVisual } from '../src/lib/horarioEstructura.js';
 import { DEFAULT_HORARIO_TOP } from '../src/lib/horario.js';
 import { crearDesdePlantilla, crearBloqueRapido, editarBloque, ALCANCES } from '../src/lib/horarioEditor.js';
 import AchievementsView from '../src/views/AchievementsView.jsx';
@@ -277,6 +278,31 @@ const CASOS = [
       // Dos horarios a la vez: sale el selector.
       ['HorarioView · dos horarios', HorarioView, () =>
         props(crearDesdePlantilla(lleno, { nombre: 'Gimnasio', tipo: 'entrenamiento', plantillaId: 'tarde', hoy: HOY }).estado)],
+
+      /* HT Fase 4 — el panel avanzado y el callejón sin salida.
+         Si TODOS los horarios están archivados, la pantalla se queda sin
+         ninguno: tiene que seguir habiendo una forma de recuperarlos. */
+      ['HorarioView · todos archivados', HorarioView, () =>
+        props(archivarHorario(lleno, base.horario.id))],
+      ['PanelAvanzado', PanelAvanzado, () => ({
+        estado: lleno, horario: base.horario, accent, asignaturas: [{ id: 'a1', nombre: 'Física' }],
+        visual: normalizarVisual(null), hoy: HOY, onVisual: noop, onCambiar: noop, onResultado: noop,
+      })],
+      // Con un ciclo A/B guardado y con la estructura rota, que es donde el
+      // panel tiene que decir algo en castellano y no un `tipo` interno.
+      ['PanelAvanzado · con ciclo A/B', PanelAvanzado, () => ({
+        estado: guardarCiclo(lleno, base.horario.id, { semanas: 2, ancla: HOY }),
+        horario: guardarCiclo(lleno, base.horario.id, { semanas: 2, ancla: HOY }).horarios[0],
+        accent, asignaturas: [], visual: normalizarVisual({ densidad: 'compacto', zoom: 140 }),
+        hoy: HOY, onVisual: noop, onCambiar: noop, onResultado: noop,
+      })],
+      ['PanelAvanzado · horario sin días', PanelAvanzado, () => {
+        const vacio = crearDesdePlantilla(DEFAULT_HORARIO_TOP, { nombre: 'Mío', plantillaId: 'vacio', hoy: HOY });
+        return {
+          estado: vacio.estado, horario: vacio.horario, accent, asignaturas: [],
+          visual: normalizarVisual(null), hoy: HOY, onVisual: noop, onCambiar: noop, onResultado: noop,
+        };
+      }],
     ];
   })(),
 

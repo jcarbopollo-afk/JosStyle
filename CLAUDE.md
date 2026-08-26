@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.55.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.56.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados **Horario Top** va por 3/12 y **Sonido** por 1/5, quedan 74) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados, **Horario Top** va por 4/12 y **Sonido** por 1/5, quedan 73) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,10 +107,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 2079 pruebas unitarias con Node, 5 de auditoría, 224 casos de renderizado real con
-`react-dom/server` y 10 reglas invariantes — **2308 comprobaciones**.
+Vite, 2223 pruebas unitarias con Node, 5 de auditoría, 240 casos de renderizado real con
+`react-dom/server` y 10 reglas invariantes — **2468 comprobaciones**.
 
-Eso ya ha encontrado **cuarenta y un bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **cuarenta y tres bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -133,7 +133,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase candidata: HT · Fase 4/12 — Configuración avanzada de columnas, filas y bloques.**
+**Siguiente fase candidata: HT · Fase 5/12 — Asignaturas, actividades, colores, iconos y contexto.**
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
@@ -159,7 +159,17 @@ Seis cosas que conviene tener presentes al retomar:
   si el cambio es de un día o de todos **no escribe nada**. Nunca ponerle un defecto: cambiar la
   hora "porque hoy hubo un cambio" se cargaría todos los lunes del curso, y sin avisar.
 - ⚠️ **Un normalizador que no conoce un campo lo BORRA en el siguiente guardado.** Pasó en HT F2 con
-  `visible` de las columnas. Al añadir un campo a una entidad, añadirlo también a su normalizador.
+  `visible` de las columnas **y otra vez en HT F4** con `archivado` (archivar un horario funcionaba
+  hasta recargar). Al añadir un campo a una entidad, añadirlo también a su normalizador.
+- ⚠️ **Nada se mueve en silencio** (HT F4, apartado 30). Toda operación de estructura que pueda dejar
+  clases fuera de sitio tiene su `impacto*()`, que se enseña **antes** de escribir. Si una fase
+  futura añade otra, tiene que traer la suya.
+- **Las semanas A/B se CALCULAN desde una fecha ancla** (HT F4), igual que las rachas. Si algo pide
+  guardar "esta semana es la B", es un contador y miente.
+- **El zoom y la densidad del horario van a `localStorage`, no a Supabase** (HT F4, apartado 59): el
+  iPhone y el ordenador no tienen la misma pantalla.
+- ⚠️ **HT F5 tiene trabajo heredado:** los bloques multifila y multicolumna (apartados 15-18 de F4)
+  no se han pintado. El modelo ya los permite; falta la celda, que F5 rehace de todas formas.
 
 ⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
 de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin

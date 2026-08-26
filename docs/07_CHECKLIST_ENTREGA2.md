@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 32 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 3/12** y **SO 1/5** (hasta v1.55.0). Quedan
-> **74**: HT (9), SO (4) y EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 33 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 4/12** y **SO 1/5** (hasta v1.56.0). Quedan
+> **73**: HT (8), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -3458,72 +3458,89 @@ no calcula ni un solape.
 **Lo que sigue sin estar probado, y hay que decirlo:** el aspecto real en un iPhone, los gestos, el
 arrastre y el modo oscuro. Como todo desde R1.
 
-#### HT · Fase 4/12 — CONFIGURACIÓN AVANZADA DE COLUMNAS, FILAS Y BLOQUES
-- [ ] OBJETIVO
-- [ ] PRINCIPIO DE FLEXIBILIDAD
-- [ ] CONFIGURADOR DEL HORARIO
-- [ ] CONFIGURACIÓN DE COLUMNAS
-- [ ] TIPOS DE COLUMNAS
-- [ ] COLUMNAS ESPECIALES
-- [ ] OCULTAR COLUMNAS
-- [ ] BLOQUEAR COLUMNAS
-- [ ] AGRUPACIÓN DE COLUMNAS
-- [ ] SEMANAS A/B
-- [ ] CICLOS PERSONALIZADOS
-- [ ] FILAS AVANZADAS
-- [ ] FILAS SIN HORA
-- [ ] FILAS DE SEPARACIÓN
-- [ ] BLOQUES MULTIFILA
-- [ ] BLOQUES MULTICOLUMNA
-- [ ] BLOQUES FLOTANTES
-- [ ] BLOQUES ANIDADOS
-- [ ] DENSIDAD DE INFORMACIÓN
-- [ ] TAMAÑO DE LAS FILAS
-- [ ] TAMAÑO DE COLUMNAS
-- [ ] ZOOM
-- [ ] AJUSTE AUTOMÁTICO
-- [ ] REORDENACIÓN MASIVA
-- [ ] DUPLICAR ESTRUCTURA
-- [ ] PLANTILLAS PERSONALIZADAS
-- [ ] PLANTILLAS DEL SISTEMA
-- [ ] CONFIGURACIÓN DE INTERVALOS
-- [ ] HORARIOS SIN INTERVALOS REGULARES
-- [ ] CAMBIOS DE ESTRUCTURA CON DATOS EXISTENTES
-- [ ] PREVISUALIZACIÓN DE CAMBIOS
-- [ ] MIGRACIÓN AUTOMÁTICA
-- [ ] VALIDACIÓN ESTRUCTURAL
-- [ ] HORAS SOLAPADAS
-- [ ] MODO LIBRE
-- [ ] REGLAS SEGÚN TIPO DE HORARIO
-- [ ] METADATOS DEL HORARIO
-- [ ] COLOR DEL HORARIO
-- [ ] FILTROS POR HORARIO
-- [ ] FILTROS POR ACTIVIDAD
-- [ ] BÚSQUEDA
-- [ ] ATAJOS
-- [ ] SISTEMA DE SELECCIÓN
-- [ ] ACCIONES SOBRE SELECCIÓN
-- [ ] ELIMINACIÓN SEGURA
-- [ ] RESTAURACIÓN
-- [ ] VERSIONADO FUTURO
-- [ ] IMPORTACIÓN DE ESTRUCTURAS
-- [ ] EXPORTACIÓN
-- [ ] HORARIO PARA IMPRIMIR
-- [ ] VISTA PARA COMPARTIR
-- [ ] PRIVACIDAD
-- [ ] ZONA HORARIA
-- [ ] CAMBIO DE HORA
-- [ ] CAMBIOS DE CURSO
-- [ ] ARCHIVAR HORARIOS
-- [ ] RECUPERACIÓN
-- [ ] CONFIGURACIÓN POR USUARIO
-- [ ] CONFIGURACIÓN LOCAL VS CLOUD
-- [ ] RENDIMIENTO DE GRANDES HORARIOS
-- [ ] ARQUITECTURA PREPARADA PARA FUTUROS MÓDULOS
-- [ ] EXPERIENCIA FINAL ESPERADA
-- [ ] REGLA DE DISEÑO
-- [ ] CRITERIOS DE ACEPTACIÓN
-- [ ] PREPARACIÓN PARA LA FASE 5
+#### HT · Fase 4/12 — CONFIGURACIÓN AVANZADA DE COLUMNAS, FILAS Y BLOQUES ✅ COMPLETADA (v1.56.0)
+
+*"Toda la potencia estará disponible, pero sin complicar la interfaz básica."* (apartado 63) Por eso
+lo de esta fase vive entero detrás de **un solo botón, "Opciones avanzadas", dentro del modo
+edición**: quien solo quiera mirar su horario no ve nada de esto.
+
+La lógica está en `src/lib/horarioEstructura.js` (121 comprobaciones); la pantalla solo pinta.
+
+⚠️ **El apartado que manda sobre todos los demás es el 30: *"No se deben mover datos
+silenciosamente."*** Cada operación que puede dejar clases fuera de sitio **calcula el impacto y lo
+enseña ANTES de escribir**, con el número exacto de clases afectadas y un botón de "Hacerlo
+igualmente". Nunca se escribe primero y se avisa después.
+
+- [x] **1-3 · Objetivo, flexibilidad y configurador** — el configurador es el panel avanzado, no una
+      pantalla aparte: en un iPhone, una pantalla más es una pantalla que no se encuentra.
+- [x] **4-9 · Columnas: tipos, especiales, ocultar, bloquear, agrupar** — ocho tipos
+      (`TIPOS_COLUMNA`), `visible`, `bloqueada` y `grupo`. ⚠️ **Bloquear no es ocultar**: una columna
+      bloqueada se sigue viendo y sigue resolviendo fechas, solo no se edita sin querer.
+- [x] **10-11 · Semanas A/B y ciclos personalizados** — de 1 a 8 semanas, con nombres propios o
+      A/B/C… ⚠️ **La semana se CALCULA desde una fecha ancla, no se guarda.** Guardar "esta semana es
+      la B" es un contador que miente en cuanto pasa un lunes sin abrir la app. Y **sin ancla no se
+      adivina**: se enseña la A y se dice por qué. Una columna sin grupo vale para todas las
+      semanas, que es lo que permite "Lunes fijo, Miércoles A/B".
+- [x] **12-14 · Filas avanzadas, sin hora y de separación** — tres tipos (`TIPOS_FILA`). Una fila sin
+      hora se queda **genuinamente vacía**, no rellena con un `08:00` inventado (regla 8).
+- [x] **19-23 · Densidad, tamaño de filas, zoom y ajuste automático** — tres densidades y zoom
+      60-140 %. ⚠️ **Van a `localStorage`, no a Supabase** (apartado 59): el iPhone y el ordenador no
+      tienen la misma pantalla, y sincronizar el zoom haría que ajustarlo en uno estropeara el otro.
+      El zoom escala **alto y ancho**: solo hacia abajo dejaría las columnas ilegibles.
+- [x] **24 · Reordenación masiva** — ⚠️ **una columna que no venga en el orden nuevo NO desaparece**:
+      se queda al final. Un reordenamiento parcial no puede ser un borrado.
+- [x] **25-27 · Duplicar estructura, plantillas propias y del sistema** — duplicar copia columnas,
+      filas y bloques con ids nuevos; **las actividades se comparten, no se copian** (apartado 25 de
+      HT F1: Matemáticas del curso que viene es la misma Matemáticas). **Las excepciones del curso
+      pasado no se arrastran.** Una plantilla guarda estructura y nada más, y sin ids.
+- [x] **28-29 · Intervalos y horarios irregulares** — generador de franjas con descanso, **topado a
+      40 filas**: un intervalo de 1 minuto sobre doce horas daría 720 filas y dejaría la app
+      inservible (apartado 20).
+- [x] **30-32 · Cambios con datos existentes, previsualización y migración** — `impactoEliminarColumna`,
+      `impactoCambiarFila` e `impactoRegenerarFranjas` devuelven qué pasaría **antes** de tocar nada.
+      Regenerar la rejilla **no mueve ni un bloque**: conservan sus horas y solo pierden la fila.
+- [x] **33-35 · Validación estructural, horas solapadas y modo libre** — `validarEstructura` detecta
+      posiciones repetidas, ids duplicados, filas sin horas, filas solapadas, bloques huérfanos y
+      conflictos. Un horario sin columnas de día es **un aviso, no un error**: puede ser un tablero.
+- [x] **37-38 · Metadatos y color del horario** — nombre, periodo, fechas, icono, color y zona
+      horaria. ⚠️ **Solo se aceptan campos de una lista blanca**: pasarle `bloques` a los metadatos
+      no puede vaciar el horario.
+- [x] **39-41 · Filtros por horario, por actividad y búsqueda** — la búsqueda mira título, aula,
+      profesor y etiquetas, sin distinguir mayúsculas.
+- [x] **43-45 · Selección, acciones sobre la selección y eliminación segura** — seleccionar un día,
+      una franja o **todos los bloques de una asignatura** (el ejemplo del apartado 24: Matemáticas
+      lunes, martes y jueves → cambiar color → los tres). ⚠️ El color de una selección es el de los
+      **bloques**, no el de la asignatura: teñir tres bloques no puede repintar la asignatura entera
+      en el resto de la app.
+- [x] **53 · Zona horaria** — se guarda la del aparato al crear el horario, para no perderla al
+      viajar.
+- [x] **55-57 · Cambios de curso, archivar y recuperación** — ⚠️ **archivar en lugar de eliminar**
+      (apartado 56). Un horario archivado sale del selector y **deja de resolver fechas**, pero sus
+      bloques siguen guardados y se recupera de un toque. Y si están **todos** archivados, la
+      pantalla vacía ofrece recuperarlos: si no, sería un callejón sin salida.
+- [x] **59 · Configuración local vs cloud** — la línea está clara: **estructura y datos a Supabase,
+      preferencias de vista al aparato.**
+- [x] **63-64 · Regla de diseño y criterios de aceptación** — los 25 criterios comprobables sin
+      navegador están en `scripts/test-horario-estructura.mjs`. Los dos que no —zoom real y uso en
+      un iPhone— se dicen en la propia prueba.
+
+**Lo que NO se ha construido, y por qué (regla 8: nada decorativo):**
+
+- [-] **15-18 · Bloques multifila, multicolumna, flotantes y anidados** — el modelo de HT F2 ya los
+      permite (un bloque tiene sus propias horas, no una fila), así que un bloque de 8:00 a 10:00 ya
+      ocupa dos franjas en los datos. Lo que falta es **pintarlo estirado**, que es trabajo de
+      cuadrícula y va con la Fase 5, donde se rehace la celda.
+- [-] **42 · Atajos** — de teclado. Josué trabaja desde el iPhone: sería un control decorativo.
+- [-] **46-52 · Versionado, importación, exportación, imprimir, compartir y privacidad** — la propia
+      especificación llama al 46 *"versionado futuro"*. Exportar e imprimir son de la Fase 12
+      (Cloud), y compartir depende de decisiones de privacidad que Josué no ha tomado.
+- [-] **54 · Cambio de hora** — el cambio de hora español no mueve las clases: a las 8:00 sigue
+      habiendo clase a las 8:00. No hay nada que construir.
+- [-] **60-62 · Rendimiento de horarios enormes y arquitectura futura** — un horario de instituto
+      son 5 columnas y 7 franjas. Optimizar para mil bloques ahora sería inventar un problema.
+
+**Lo que sigue sin estar probado, y hay que decirlo:** el zoom y la densidad en pantalla real, el
+aspecto en un iPhone y el recorrido tocando. Como todo desde R1.
 
 #### HT · Fase 5/12 — ASIGNATURAS, ACTIVIDADES, COLORES, ICONOS Y CONTEXTO
 - [ ] OBJETIVO DE LA FASE

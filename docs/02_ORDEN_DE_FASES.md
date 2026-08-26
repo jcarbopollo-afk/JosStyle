@@ -172,8 +172,10 @@ escribir código.
 
 | v1.55.0 | **HT F3** | Editor visual: módulo nuevo con cuadrícula, día y agenda. Tocar celda + escribir crea y **reutiliza** la asignatura, y "solo este lunes" no puede cargarse todos los lunes |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 3/12 y SO por
-1/5. Quedan **74** fases de la Entrega 2: HT (9), SO (4) y EH (65).
+| v1.56.0 | **HT F4** | Configuración avanzada: semanas A/B **calculadas desde una fecha ancla, nunca guardadas**, y toda operación que pueda dejar clases fuera de sitio enseña el impacto **antes** de escribir. Archivar en vez de borrar; zoom y densidad al aparato, no a Supabase |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 4/12 y SO por
+1/5. Quedan **73** fases de la Entrega 2: HT (8), SO (4) y EH (61).
 
 ✅ **C-23 resuelta a medias:** Josué pasó el texto que faltaba de la Fase 1 del Sonido (v1.54.0).
 ⏸ **Sigue pendiente lo de los archivos de audio**, que él dará *"cuando la web ya tenga todos los

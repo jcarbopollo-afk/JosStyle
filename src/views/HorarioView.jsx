@@ -48,6 +48,13 @@ import {
   duplicarDia, vaciarDia, VISTAS_HORARIO, rejillaSemana, vistaDia, vistaAgenda,
   resumenEditor, PALETA_ACTIVIDADES,
 } from '../lib/horarioEditor';
+import {
+  DENSIDADES, densidad, leerVisual, guardarVisual,
+  cicloDe, guardarCiclo, semanaDelCiclo, gruposDe,
+  INTERVALOS, generarFranjas, impactoRegenerarFranjas, regenerarFranjas,
+  duplicarHorario, archivarHorario, horariosActivos, horariosArchivados,
+  buscarEnHorario, resumenEstructura, describirProblema,
+} from '../lib/horarioEstructura';
 
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
 const fechaCorta = (iso) => iso.split('-').reverse().slice(0, 2).join('/');
@@ -134,7 +141,7 @@ function BloqueCelda({ bloque, accent, compacto = false, onAbrir }) {
    días."* Se resuelve con la hora fuera del contenedor que hace scroll, no con
    `position: sticky` — en iOS, `sticky` dentro de un scroll horizontal es
    irregular, y aquí la solución simple es además la robusta. */
-function Cuadricula({ rejilla, accent, edicion, onCelda, onBloque, onMenuColumna }) {
+function Cuadricula({ rejilla, accent, edicion, visual, onCelda, onBloque, onMenuColumna }) {
   const { columnas, celdas } = rejilla;
   if (!columnas.length) {
     return (
@@ -145,7 +152,12 @@ function Cuadricula({ rejilla, accent, edicion, onCelda, onBloque, onMenuColumna
   }
 
   const ANCHO_HORA = 46;
-  const ANCHO_COL = columnas.length <= 5 ? 0 : 92;   // ≤5 caben; más, scroll
+  // HT F4 · apartados 22, 23 y 59 — la densidad y el zoom son de ESTE aparato.
+  // El alto de fila sale de la densidad; el zoom lo escala y también el ancho,
+  // porque un zoom que solo estirara hacia abajo dejaría las columnas ilegibles.
+  const escala = (visual?.zoom || 100) / 100;
+  const ALTO = Math.round(densidad(visual?.densidad).alto * escala);
+  const ANCHO_COL = columnas.length <= 5 && escala <= 1 ? 0 : Math.round(92 * escala);
 
   return (
     <div className="flex" style={{ gap: 4 }}>
@@ -153,7 +165,7 @@ function Cuadricula({ rejilla, accent, edicion, onCelda, onBloque, onMenuColumna
       <div style={{ width: ANCHO_HORA, flexShrink: 0 }}>
         <div style={{ height: 26 }} aria-hidden="true" />
         {celdas.map(({ fila }) => (
-          <div key={fila.id} className="flex flex-col justify-center" style={{ height: 46 }}>
+          <div key={fila.id} className="flex flex-col justify-center" style={{ height: ALTO }}>
             <p className="text-[10px] font-semibold leading-none" style={{ color: COLORS.text }}>{fila.inicio}</p>
             <p className="text-[9px] leading-none mt-0.5" style={{ color: COLORS.textMuted }}>{fila.fin}</p>
           </div>
@@ -179,7 +191,7 @@ function Cuadricula({ rejilla, accent, edicion, onCelda, onBloque, onMenuColumna
           </div>
 
           {celdas.map(({ fila, celdas: fils }) => (
-            <div key={fila.id} className="flex" style={{ gap: 4, height: 46 }}>
+            <div key={fila.id} className="flex" style={{ gap: 4, height: ALTO }}>
               {fils.map((celda) => (
                 <div key={celda.columna.id} className="flex-1 py-0.5" style={{ minWidth: ANCHO_COL || 0 }}>
                   {celda.bloques.length === 0 ? (
@@ -530,6 +542,229 @@ function PanelFranjas({ horario, estado, accent, onAnadir, onEditar, onEliminar 
 /* ===========================================================================
    LA PANTALLA
    =========================================================================== */
+/* ===========================================================================
+   OPCIONES AVANZADAS (apartado 63)
+   ===========================================================================
+   *"Toda la potencia estará disponible, pero sin complicar la interfaz
+   básica."* Por eso todo lo de esta fase vive detrás de un solo botón, dentro
+   del modo edición: quien solo quiera mirar su horario no ve nada de esto.
+
+   Los cuatro apartados que mandan aquí:
+
+   · **30 — nada se mueve en silencio.** Regenerar las franjas puede dejar
+     bloques sin fila; el impacto se calcula y se enseña ANTES de escribir.
+   · **56 — archivar en vez de borrar.** Un horario archivado deja de resolver
+     fechas, pero sus bloques siguen ahí.
+   · **59 — el zoom es de este aparato.** Va a `localStorage`, no a Supabase:
+     el iPhone y el ordenador no tienen la misma pantalla.
+   · **20 — una configuración extrema no puede destruir la usabilidad.** El
+     generador de franjas está topado y el zoom acotado en la propia librería. */
+export function PanelAvanzado({ estado, horario, accent, asignaturas, visual, hoy, onVisual, onCambiar, onResultado }) {
+  const [abierto, setAbierto] = useState(null);   // 'ver' | 'ciclo' | 'franjas' | 'buscar' | 'horario'
+  const [busqueda, setBusqueda] = useState('');
+  const [ciclo, setCiclo] = useState(() => cicloDe(horario));
+  const [fr, setFr] = useState({ desde: '08:00', hasta: '14:00', intervalo: 60, descanso: 0 });
+  const [aviso, setAviso] = useState(null);
+  const [confirmando, setConfirmando] = useState(null);
+
+  const resultados = useMemo(
+    () => (busqueda.trim() ? buscarEnHorario(estado, busqueda, { asignaturas }) : []),
+    [estado, busqueda, asignaturas],
+  );
+  const nuevasFranjas = useMemo(() => generarFranjas(fr), [fr]);
+  const estructura = useMemo(() => resumenEstructura(estado, horario.id), [estado, horario]);
+  const archivados = horariosArchivados(estado);
+
+  const secciones = [
+    { id: 'ver', label: 'Ver' },
+    { id: 'buscar', label: 'Buscar' },
+    { id: 'ciclo', label: 'Semanas A/B' },
+    { id: 'franjas', label: 'Franjas' },
+    { id: 'horario', label: 'El horario' },
+  ];
+
+  const aplicarFranjas = (forzar) => {
+    const impacto = impactoRegenerarFranjas(estado, horario.id, nuevasFranjas);
+    if (!impacto.seguro && !forzar) { setAviso(impacto); return; }
+    setAviso(null);
+    onCambiar(regenerarFranjas(estado, horario.id, nuevasFranjas));
+  };
+
+  return (
+    <Card>
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {secciones.map((s) => (
+          <button key={s.id} onClick={() => { setAbierto(abierto === s.id ? null : s.id); setAviso(null); }}
+            className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold"
+            style={abierto === s.id
+              ? { background: accent, color: COLORS.textOnAccent }
+              : { background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {abierto === 'ver' && (
+        <>
+          <Field label="Tamaño de las filas">
+            <Select value={visual.densidad} onChange={(e) => onVisual({ ...visual, densidad: e.target.value })}>
+              {DENSIDADES.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+            </Select>
+          </Field>
+          <Field label={`Zoom · ${visual.zoom} %`}>
+            <input type="range" min={60} max={140} step={10} value={visual.zoom} className="w-full"
+              onChange={(e) => onVisual({ ...visual, zoom: Number(e.target.value) })}
+              style={{ accentColor: accent }} aria-label="Zoom de la cuadrícula" />
+          </Field>
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+            El tamaño y el zoom son solo de este aparato. En el ordenador se ven a su medida.
+          </p>
+        </>
+      )}
+
+      {abierto === 'buscar' && (
+        <>
+          <TextInput value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Asignatura, aula, profesor…" />
+          {busqueda.trim() && (
+            <p className="text-[11px] mt-2 mb-1" style={{ color: COLORS.textMuted }}>
+              {resultados.length} {plural(resultados.length, 'resultado', 'resultados')}
+            </p>
+          )}
+          {resultados.slice(0, 12).map((b, i) => (
+            <ListRow key={b.id} last={i === Math.min(resultados.length, 12) - 1}>
+              <span className="text-[11px] font-semibold" style={{ color: COLORS.textMuted, width: 42 }}>{b.inicio}</span>
+              <span className="text-xs font-semibold flex-1 truncate" style={{ color: COLORS.text }}>{b.titulo}</span>
+              {b.ubicacion && <span className="text-[10px]" style={{ color: COLORS.textMuted }}>{b.ubicacion}</span>}
+            </ListRow>
+          ))}
+        </>
+      )}
+
+      {abierto === 'ciclo' && (
+        <>
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+            Para horarios que alternan: una semana A y otra B. Cada columna se marca con su semana; las que no
+            lleven ninguna salen todas las semanas.
+          </p>
+          <Field label="Semanas que se repiten">
+            <Select value={ciclo.semanas} onChange={(e) => setCiclo({ ...ciclo, semanas: Number(e.target.value) })}>
+              {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n === 1 ? 'Sin alternar' : `${n} semanas`}</option>)}
+            </Select>
+          </Field>
+          {ciclo.semanas > 1 && (
+            <Field label="La semana A empieza el">
+              <TextInput type="date" value={ciclo.ancla} onChange={(e) => setCiclo({ ...ciclo, ancla: e.target.value })} />
+            </Field>
+          )}
+          {ciclo.semanas > 1 && !ciclo.ancla && (
+            <p className="text-[11px] mb-2" style={{ color: COLORS.negative }}>
+              Sin esa fecha no se puede saber en qué semana estamos, así que siempre se enseñará la A.
+            </p>
+          )}
+          {ciclo.semanas > 1 && ciclo.ancla && (
+            <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+              Hoy toca la semana {semanaDelCiclo(ciclo, hoy)?.nombre}.
+              {gruposDe(horario).length === 0 && ' Todavía no has marcado ninguna columna con su semana.'}
+            </p>
+          )}
+          <PrimaryButton accent={accent} onClick={() => onCambiar(guardarCiclo(estado, horario.id, ciclo))}>
+            Guardar
+          </PrimaryButton>
+        </>
+      )}
+
+      {abierto === 'franjas' && (
+        <>
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+            Crea de golpe todas las horas del día. Sustituye las que ya hay.
+          </p>
+          <div className="flex gap-2">
+            <Field label="Desde"><TextInput type="time" value={fr.desde} onChange={(e) => setFr({ ...fr, desde: e.target.value })} /></Field>
+            <Field label="Hasta"><TextInput type="time" value={fr.hasta} onChange={(e) => setFr({ ...fr, hasta: e.target.value })} /></Field>
+          </div>
+          <Field label="Cada">
+            <Select value={fr.intervalo} onChange={(e) => setFr({ ...fr, intervalo: Number(e.target.value) })}>
+              {INTERVALOS.map((n) => <option key={n} value={n}>{n} minutos</option>)}
+            </Select>
+          </Field>
+          <Field label="Descanso entre clases">
+            <Select value={fr.descanso} onChange={(e) => setFr({ ...fr, descanso: Number(e.target.value) })}>
+              {[0, 5, 10, 15, 20].map((n) => <option key={n} value={n}>{n === 0 ? 'Sin descanso' : `${n} minutos`}</option>)}
+            </Select>
+          </Field>
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+            Saldrían {nuevasFranjas.length} {plural(nuevasFranjas.length, 'franja', 'franjas')}
+            {nuevasFranjas.length ? `, de ${nuevasFranjas[0].inicio} a ${nuevasFranjas[nuevasFranjas.length - 1].fin}` : ''}.
+          </p>
+          {aviso && (
+            <div className="rounded-xl p-2 mb-2" style={{ background: hexToRgba(COLORS.negative, 0.1) }}>
+              <p className="text-[11px] font-semibold" style={{ color: COLORS.negative }}>
+                {aviso.huerfanos} {plural(aviso.huerfanos, 'clase se quedaría', 'clases se quedarían')} fuera de la rejilla nueva.
+              </p>
+              <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+                No se borran ni se mueven: conservan su hora, pero dejarían de encajar en ninguna franja.
+              </p>
+              <PrimaryButton accent={accent} onClick={() => aplicarFranjas(true)}>Hacerlo igualmente</PrimaryButton>
+            </div>
+          )}
+          {!aviso && nuevasFranjas.length > 0 && (
+            <PrimaryButton accent={accent} onClick={() => aplicarFranjas(false)}>Crear las franjas</PrimaryButton>
+          )}
+        </>
+      )}
+
+      {abierto === 'horario' && (
+        <>
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+            {estructura?.columnas} {plural(estructura?.columnas, 'columna', 'columnas')} y {estructura?.filas} {plural(estructura?.filas, 'fila', 'filas')}
+            {estructura?.sinHora ? ` (${estructura.sinHora} sin hora)` : ''}.
+          </p>
+          {[...new Set((estructura?.validacion.problemas || []).map(describirProblema))].map((texto, i) => (
+            <p key={i} className="text-[11px] mb-1 flex items-start gap-1" style={{ color: COLORS.negative }}>
+              <AlertTriangle size={10} className="mt-0.5 flex-shrink-0" /> {texto}
+            </p>
+          ))}
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            <Accion icono={Copy} label="Duplicar para otro curso"
+              onClick={() => onResultado(duplicarHorario(estado, horario.id, { nombre: `${horario.nombre} (copia)`, hoy }))} />
+            <Accion icono={EyeOff} label="Archivar" tono={COLORS.negative} onClick={() => setConfirmando('archivar')} />
+          </div>
+          {confirmando === 'archivar' && (
+            <div className="rounded-xl p-2 mt-2" style={{ background: COLORS.surface2 }}>
+              <p className="text-[11px] mb-2" style={{ color: COLORS.text }}>
+                Archivarlo lo saca de la vista y deja de aparecer en tus días, pero no se borra nada: sus clases
+                siguen guardadas y puedes recuperarlo cuando quieras.
+              </p>
+              <div className="flex gap-2">
+                <PrimaryButton accent={COLORS.negative}
+                  onClick={() => { onCambiar(archivarHorario(estado, horario.id)); setConfirmando(null); }}>
+                  Archivar
+                </PrimaryButton>
+                <div style={{ width: 110, flexShrink: 0 }}>
+                  <GhostBtn onClick={() => setConfirmando(null)}>Cancelar</GhostBtn>
+                </div>
+              </div>
+            </div>
+          )}
+          {archivados.length > 0 && (
+            <>
+              <p className="text-[11px] mt-3 mb-1" style={{ color: COLORS.textMuted }}>Archivados</p>
+              {archivados.map((h, i) => (
+                <ListRow key={h.id} last={i === archivados.length - 1}
+                  onClick={() => onCambiar(archivarHorario(estado, h.id, false))}>
+                  <span className="text-xs flex-1 truncate" style={{ color: COLORS.text }}>{h.nombre}</span>
+                  <span className="text-[10px]" style={{ color: accent }}>Recuperar</span>
+                </ListRow>
+              ))}
+            </>
+          )}
+        </>
+      )}
+    </Card>
+  );
+}
+
 export default function HorarioView({
   horarioTop, asignaturas = [], accent, hoy = todayISO(),
   onCambiar, onCrearHorario,
@@ -544,8 +779,15 @@ export default function HorarioView({
   const [menuColumna, setMenuColumna] = useState(null);
   const [fecha, setFecha] = useState(hoy);
   const [franjas, setFranjas] = useState(false);
+  const [avanzado, setAvanzado] = useState(false);
+  // Apartado 59 — las preferencias de vista son de este aparato, así que se leen
+  // de `localStorage` una vez y se guardan al cambiarlas. Nunca van a Supabase.
+  const [visual, setVisual] = useState(() => leerVisual());
+  const cambiarVisual = (v) => setVisual(guardarVisual(v));
 
-  const horarios = estado?.horarios || [];
+  // Apartado 56 — los archivados no salen en el selector, pero siguen en el
+  // estado: se recuperan desde Opciones avanzadas.
+  const horarios = useMemo(() => (estado ? horariosActivos(estado) : []), [estado]);
   const activo = horarios.find((h) => h.id === horarioId) || horarios[0] || null;
   const columnas = useMemo(() => (activo ? columnasDe(activo) : []), [activo]);
   const rejilla = useMemo(() => (activo ? rejillaSemana(estado, activo.id, { asignaturas }) : { columnas: [], filas: [], celdas: [] }), [estado, activo, asignaturas]);
@@ -570,6 +812,14 @@ export default function HorarioView({
           Elige una plantilla y en unos minutos lo tienes montado.
         </p>
         <PrimaryButton accent={accent} icon={Plus} onClick={() => setCreando(true)}>Crear horario</PrimaryButton>
+        {/* Si están todos archivados, esta pantalla sería un callejón sin salida:
+            el sitio para recuperarlos está dentro del horario que no hay. */}
+        {horariosArchivados(estado).map((h) => (
+          <button key={h.id} onClick={() => { onCambiar(archivarHorario(estado, h.id, false)); setHorarioId(h.id); }}
+            className="text-[11px] font-semibold mt-3 block mx-auto" style={{ color: accent }}>
+            Recuperar «{h.nombre}»
+          </button>
+        ))}
       </Card>
     );
   }
@@ -667,7 +917,7 @@ export default function HorarioView({
       {vista === 'semana' && (
         <Card>
           <Cuadricula
-            rejilla={rejilla} accent={accent} edicion={edicion}
+            rejilla={rejilla} accent={accent} edicion={edicion} visual={visual}
             onCelda={(columna, fila) => { setBloque(null); setMenuColumna(null); setCelda({ columna, fila }); }}
             onBloque={(b) => { setCelda(null); setMenuColumna(null); setBloque(b); }}
             onMenuColumna={(c) => { setCelda(null); setBloque(null); setMenuColumna(c); }}
@@ -730,7 +980,17 @@ export default function HorarioView({
             <Accion icono={Plus} label="Añadir día" onClick={() => aplicar(anadirColumna(estado, activo.id, { nombre: `Columna ${columnas.length + 1}` }))} />
             <Accion icono={Plus} label="Franjas" onClick={() => setFranjas(!franjas)} />
             <Accion icono={Plus} label="Otro horario" onClick={() => setCreando(true)} />
+            {/* Apartado 63 — toda la potencia detrás de un botón, para no
+                complicar la cuadrícula de todos los días. */}
+            <Accion icono={GripVertical} label={avanzado ? 'Cerrar opciones' : 'Opciones avanzadas'} onClick={() => setAvanzado(!avanzado)} />
           </div>
+          {avanzado && (
+            <PanelAvanzado
+              estado={estado} horario={activo} accent={accent} asignaturas={asignaturas}
+              visual={visual} hoy={hoy} onVisual={cambiarVisual}
+              onCambiar={aplicar} onResultado={aplicarResultado}
+            />
+          )}
           {franjas && (
             <PanelFranjas
               horario={activo} estado={estado} accent={accent}

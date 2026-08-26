@@ -100,6 +100,31 @@ export const pesoPrioridad = (id) => prioridad(id).peso;
    posible. Sin ese campo habría que adivinar el día por el nombre, y "Semana A"
    no es ningún día. */
 
+/* HT F4 · apartado 5 — *"Aunque normalmente representarán días, técnicamente
+   podrán representar cualquier dimensión."* El tipo NO cambia la mecánica: solo
+   una columna con `dia` resuelve a una fecha. Lo que cambia es lo que la
+   interfaz ofrece y cómo se agrupa. */
+export const TIPOS_COLUMNA = [
+  { id: 'dia', label: 'Día' },
+  { id: 'persona', label: 'Persona' },
+  { id: 'semana', label: 'Semana' },
+  { id: 'turno', label: 'Turno' },
+  { id: 'proyecto', label: 'Proyecto' },
+  { id: 'categoria', label: 'Categoría' },
+  { id: 'nota', label: 'Notas' },
+  { id: 'personalizado', label: 'Personalizado' },
+];
+
+/* HT F4 · apartados 12, 13 y 14 — no todas las filas son una hora. */
+export const TIPOS_FILA = [
+  { id: 'hora', label: 'Franja horaria', conHora: true },
+  { id: 'etiqueta', label: 'Sin hora', conHora: false },     // "Mañana", "Prioridad alta"
+  { id: 'separador', label: 'Separador', conHora: false },   // "Descanso"
+];
+
+export const tipoColumna = (id) => TIPOS_COLUMNA.find((t) => t.id === id) || TIPOS_COLUMNA[TIPOS_COLUMNA.length - 1];
+export const tipoFila = (id) => TIPOS_FILA.find((t) => t.id === id) || TIPOS_FILA[0];
+
 export const DIAS_SEMANA = [
   { dia: 1, label: 'Lunes', corto: 'L' },
   { dia: 2, label: 'Martes', corto: 'M' },
@@ -134,6 +159,9 @@ export function crearColumna({ nombre = '', dia = null, posicion = 0, corto = ''
     visible: true,
     color: (color || '').trim(),
     icono: (icono || '').trim(),
+    tipo: valido ? 'dia' : 'personalizado',
+    bloqueada: false,
+    grupo: '',
   };
 }
 
@@ -144,14 +172,19 @@ export function crearColumna({ nombre = '', dia = null, posicion = 0, corto = ''
  * hora de inicio, un recreo de 20 minutos entre clases de 50 no se podría
  * representar sin inventarse una duración.
  */
-export const crearFila = ({ inicio = '08:00', fin = '09:00', etiqueta = '', posicion = 0 } = {}) => ({
-  id: uid(),
-  inicio: normalizarHora(inicio) || '08:00',
-  fin: normalizarHora(fin) || '09:00',
-  etiqueta: (etiqueta || '').trim(),
-  posicion: Number.isFinite(posicion) ? posicion : 0,
-  visible: true,
-});
+export const crearFila = ({ inicio = '08:00', fin = '09:00', etiqueta = '', posicion = 0, tipo = 'hora', color = '' } = {}) => {
+  const t = tipoFila(tipo);
+  return {
+    id: uid(),
+    inicio: t.conHora ? (normalizarHora(inicio) || '08:00') : '',
+    fin: t.conHora ? (normalizarHora(fin) || '09:00') : '',
+    etiqueta: (etiqueta || '').trim(),
+    posicion: Number.isFinite(posicion) ? posicion : 0,
+    visible: true,
+    tipo: t.id,
+    color: (color || '').trim(),
+  };
+};
 
 /** `HH:MM` o nada. Se compara como texto, que para `HH:MM` ordena bien. */
 export function normalizarHora(h) {
@@ -235,6 +268,16 @@ export function crearHorario({ nombre = '', tipo = 'escolar', periodo = '', desc
     columnas,
     filas,
     activo: true,
+    // HT F4 · apartados 25 y 27 — un horario del curso pasado se archiva, no se
+    // borra, y lleva su propia identidad visual y su zona horaria.
+    archivado: false,
+    icono: '',
+    color: '',
+    zonaHoraria: '',
+    // El ciclo de semanas alternas (A/B…) vive en el horario, no en un ajuste
+    // global: dos horarios pueden alternar de forma distinta. Su forma la
+    // normaliza `horarioEstructura.js`; aquí solo se conserva.
+    ciclo: null,
     creadoEn: hoy,
     actualizadoEn: hoy,
   });
@@ -258,16 +301,34 @@ export function normalizarHorarioObj(guardado) {
       visible: c?.visible !== false,
       color: (c?.color || '').trim(),
       icono: (c?.icono || '').trim(),
+      // HT F4 · apartados 5 y 6 — una columna no tiene por qué ser un día.
+      // Si trae `dia` es de tipo 'dia' aunque diga otra cosa: el campo que
+      // decide si resuelve a una fecha es `dia`, y dos verdades sobre lo mismo
+      // acabarían discrepando.
+      tipo: dia ? 'dia' : (TIPOS_COLUMNA.some((t) => t.id === c?.tipo) ? c.tipo : 'personalizado'),
+      // Apartado 8 — bloquear evita modificaciones accidentales.
+      bloqueada: !!c?.bloqueada,
+      // Apartado 9 — el encabezado superior que agrupa columnas ("Semana A").
+      grupo: (c?.grupo || '').trim(),
     };
   });
-  const filas = (Array.isArray(g.filas) ? g.filas : []).map((f, i) => ({
-    id: f?.id || uid(),
-    inicio: normalizarHora(f?.inicio) || '08:00',
-    fin: normalizarHora(f?.fin) || '09:00',
-    etiqueta: (f?.etiqueta || '').trim(),
-    posicion: Number.isFinite(f?.posicion) ? f.posicion : i,
-    visible: f?.visible !== false,
-  }));
+  const filas = (Array.isArray(g.filas) ? g.filas : []).map((f, i) => {
+    const tipo = TIPOS_FILA.some((t) => t.id === f?.tipo) ? f.tipo : 'hora';
+    // HT F4 · apartados 13 y 14 — una fila puede NO tener hora ("Mañana",
+    // "Tarde") o ser un separador ("Descanso"). Esas no se rellenan con un
+    // 08:00 inventado: se quedan vacías, y `resolverDia` no las mira.
+    const conHora = tipo === 'hora';
+    return {
+      id: f?.id || uid(),
+      inicio: conHora ? (normalizarHora(f?.inicio) || '08:00') : normalizarHora(f?.inicio),
+      fin: conHora ? (normalizarHora(f?.fin) || '09:00') : normalizarHora(f?.fin),
+      etiqueta: (f?.etiqueta || '').trim(),
+      posicion: Number.isFinite(f?.posicion) ? f.posicion : i,
+      visible: f?.visible !== false,
+      tipo,
+      color: (f?.color || '').trim(),
+    };
+  });
   return {
     id: g.id || uid(),
     nombre: (g.nombre || '').trim() || t.label,
@@ -280,6 +341,11 @@ export function normalizarHorarioObj(guardado) {
     columnas,
     filas,
     activo: g.activo !== false,
+    archivado: !!g.archivado,
+    icono: (g.icono || '').trim(),
+    color: (g.color || '').trim(),
+    zonaHoraria: (g.zonaHoraria || '').trim(),
+    ciclo: g.ciclo && Number.isFinite(Number(g.ciclo.semanas)) ? g.ciclo : null,
     creadoEn: g.creadoEn || null,
     actualizadoEn: g.actualizadoEn || g.creadoEn || null,
   };
@@ -297,7 +363,7 @@ export const fechaValida = (f) => (/^\d{4}-\d{2}-\d{2}$/.test(f || '') ? f : '')
  */
 export function horarioVigente(horario, fecha) {
   const h = normalizarHorarioObj(horario);
-  if (!h.activo) return false;
+  if (!h.activo || h.archivado) return false;
   if (h.desde && fecha < h.desde) return false;
   if (h.hasta && fecha > h.hasta) return false;
   return true;
@@ -591,6 +657,8 @@ export function resolverDia(estado, fecha, { asignaturas = [], horarioId = null 
     // ninguna fecha hasta que una fase futura decida qué semana es cuál.
     // Una columna oculta (apartado 8, `is_visible`) no resuelve: es como
     // plegar el sábado sin borrar lo que hay dentro.
+    // Una columna bloqueada SÍ resuelve: bloquear impide editarla, no la
+    // esconde (apartado 8). La que no resuelve es la oculta.
     const columnas = horario.columnas.filter((c) => c.dia === dia && c.visible !== false);
     if (!columnas.length) continue;
 
