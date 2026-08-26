@@ -1,5 +1,64 @@
 # CHANGELOG.md
 
+## Entrega 2 · RA Fase 1 — Motor de rachas (v1.48.0)
+
+### El apartado 24 describía el código que ya teníamos
+*"No hagas una solución rápida que simplemente incremente un contador."*
+
+Pues eso era exactamente lo que había. Los hábitos de Productividad guardaban `rachaActual` y
+`mejorRacha` como números sueltos, y al desmarcar el día de hoy le restaban uno al contador **a
+mano**. Es decir: **desmarcar y volver a marcar el mismo día subía el récord** sin haber cumplido
+nada — y con ello se desbloqueaba el logro "Un mes de constancia".
+
+Ahora no se guarda ni un número. Racha actual, récord, historial y porcentaje salen del historial de
+días, que es el mismo que ya estaba guardado. Nadie pierde nada y no hay migración destructiva.
+
+### Un día en curso no es un día fallado
+Es lo que más repite la especificación, y con razón. Con lunes ✅, martes ✅ y el miércoles todavía
+por hacer, a las 10:00 de la mañana la racha vale **2 y está viva**, no 0 y perdida. Los cuatro
+estados de un día están separados y no se mezclan: completado, perdido, pendiente y futuro.
+
+### El día es el de Josué, no el del servidor
+Cada cumplimiento guarda dos tiempos: el **día local**, que es el que decide la racha, y el instante
+en UTC, que solo sirve para desempatar si dos dispositivos escriben a la vez. A las 23:59 cuenta
+para hoy; a las 00:01, para mañana. Probado, junto con el fin de año, el cambio de mes y el 29 de
+febrero de un bisiesto.
+
+### Pulsar cinco veces no son cinco días
+La clave lógica es `racha + día local`, y registrar un cumplimiento **sustituye**, nunca añade. Da
+igual si se pulsa una vez o veinte, y da igual si dos dispositivos mandan lo mismo a la vez. Es
+también lo que permitirá que una cola offline reintente sin inflar una racha.
+
+### La regla de los hábitos se ha conservado tal cual
+En JosStyle un fallo suelto no rompe una racha de hábito: se perdona. Esa regla llevaba ahí desde la
+Fase 8, y en vez de cambiársela a Josué sin avisar se ha llevado al motor como una regla más
+(`diaria_con_gracia`). Añadir "estudiar 30 minutos al día" es registrar otra entrada, no tocar el
+motor.
+
+Una regla **semanal** sería distinta: cuenta semanas, no días, y eso cambia el recorrido entero. Por
+eso **no se ha fingido que existe** — el sitio exacto donde entraría está marcado en el código.
+
+### Cuatro fallos reales, tres ya en producción
+1. El récord de los hábitos se podía inflar. Una prueba lo intenta diez veces; ya no se mueve.
+2. **Un hábito sin `historial` dejaba Productividad en blanco.** Nunca se había visto porque esa
+   pantalla no se renderizaba en ninguna prueba; salió en cuanto se añadió.
+3. La exportación podía no cuadrar con la pantalla: leía el contador, y la pantalla otra cosa.
+4. Mío: `[].every()` es `true`, así que la primera racha de la vida "batía el récord" sin haber
+   ningún récord anterior. Lo cazó su propia prueba.
+
+### Lo que NO lleva, y es deliberado
+Ni niveles, ni medallas, ni logros, ni recompensas, ni confeti, ni sonidos (apartado 22). Hay una
+prueba que **falla si aparecen**. Y por D2-02, cuando lleguen, se quedan dentro de Rachas y Sonido.
+
+### Verificación
+**1556 comprobaciones y 9 reglas invariantes en verde**, build incluido. `package.json` →
+**v1.48.0**. Van 25 de las 106 fases; quedan 81.
+
+⏸ **Pendiente de Josué (regla 49, ficha C-23):** en `ESPECIFICACION_SONIDO_Y_RACHAS.md` el
+encabezado *"Fase 1 — Arquitectura + motor global de audio"* va seguido del texto de *"Fase 4 ·
+Sistema de Rachas: interfaz"*. Falta saber dónde está la Fase 1 real del Sonido y en qué orden van
+los dos módulos. No bloquea nada de lo entregado aquí.
+
 ## Entrega 2 · FO Fase 12 — Eliminados, recuperación y cierre del bloque (v1.47.0)
 
 ### En Apariencia no se borra nada, y eso cambia el sentido de la fase

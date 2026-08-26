@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.47.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.48.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR** y **FO** están terminados, quedan 82) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI**, **AR** y **FO** están terminados y **Rachas** va por 1/4, quedan 81) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,10 +107,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 1277 pruebas unitarias con Node, 5 de auditoría, 132 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **1414 comprobaciones**.
+Vite, 1402 pruebas unitarias con Node, 5 de auditoría, 140 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **1556 comprobaciones**.
 
-Eso ya ha encontrado **treinta y tres bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **treinta y seis bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -133,21 +133,24 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase: SR · SONIDO, Fase 1/5.** Con FO cerrado (12/12) toca el bloque E2-5 del orden
-confirmado. Ver `docs/07_CHECKLIST_ENTREGA2.md` y
-`especificaciones/ESPECIFICACION_SONIDO_Y_RACHAS.md`.
+**Siguiente fase candidata: RA · Fase 2/4 — Base de datos, Supabase, seguridad y sincronización.**
+Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_SONIDO_Y_RACHAS.md`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
+
+⏸ **Y antes hay que preguntarle dos cosas (regla 49, ficha C-23 en `docs/03`):** en la
+especificación, el encabezado *"FASE 1 — Arquitectura + motor global de audio"* va seguido del texto
+de *"FASE 4 · Sistema de Rachas: interfaz"*. Falta saber **dónde está la Fase 1 real del Sonido** y
+**en qué orden van los dos módulos**. No bloquea las fases de Rachas.
 
 Tres avisos para cuando toque:
 
 - **D2-01: Sonido y Rachas son DOS módulos independientes** (5 fases + 4). No mezclar sus
-  especificaciones ni su numeración, aunque compartan archivo de especificación.
+  especificaciones ni su numeración, aunque compartan archivo.
 - **D2-02 sigue en pie: no sobregamificar.** XP y niveles solo dentro de Sonido/Rachas, sin salir
   de ahí. Nada de puntos ni monedas en Bienestar ni en ningún otro módulo.
-- **El sonido necesita un gesto del usuario para empezar a sonar** en iOS — es una restricción
-  real del navegador, no un fallo. Si algo no se puede hacer, se dice con una frase corta en la
-  propia interfaz (regla 8), no se simula.
+- **El motor de rachas no guarda ni un contador** (`src/lib/rachas.js`, RA F1). Todo se deriva del
+  historial. Si una fase futura pide "guardar la racha", es que hay que releer el apartado 24.
 
 ⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
 de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin

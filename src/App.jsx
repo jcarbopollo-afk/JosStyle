@@ -12,6 +12,7 @@ import { calcularResumenModulo } from './lib/resumenesHub';
 import { eventosDerivados } from './lib/calendarioIntegracion';
 import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
 import { urlFirmada, urlEnCache } from './lib/imagenes';
+import { resumenHabito } from './lib/rachas';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal } from './components/ui';
 import HubView from './views/HubView';
 import Auth from './components/Auth';
@@ -1431,7 +1432,8 @@ export default function App() {
     const ultimaMedida = salud.medidas[salud.medidas.length - 1];
     valores.peso = ultimaMedida?.peso ? `${ultimaMedida.peso} kg` : 'Sin datos';
     valores.hucha = `${economia.hucha || 0} €`;
-    const mejorRacha = productividad.habitos.reduce((max, h) => Math.max(max, h.rachaActual || 0), 0);
+    // RA Fase 1 — derivada del historial, no de un contador guardado.
+    const mejorRacha = productividad.habitos.reduce((max, h) => Math.max(max, resumenHabito(h).actual), 0);
     valores.racha_habito = productividad.habitos.length ? `${mejorRacha} días` : 'Sin hábitos';
     const pendientesConPlazo = objetivos.lista
       .filter((o) => !o.cumplido)

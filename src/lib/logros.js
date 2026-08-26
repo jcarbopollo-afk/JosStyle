@@ -1,3 +1,5 @@
+import { resumenHabito } from './rachas';
+
 // Fase 20 — Centro de logros: igual que predicciones.js y correlaciones.js, este motor no
 // guarda nada propio — calcula insignias al vuelo a partir de datos que ya existen en otros
 // módulos. Cada logro es {id, titulo, desc, conseguido, progreso, meta} — "progreso"/"meta" son
@@ -5,7 +7,11 @@
 // Deliberadamente sin puntos, niveles ni monedas — son insignias binarias (conseguido o no),
 // mismo espíritu "no sobregamificar" que ya se aplicó a Bienestar digital en la Fase 15.
 export function calcularLogros({ productividad, diario, objetivos, bienestar, fe, nutricion, salud, calistenia, economia, sueno }) {
-  const mejorRacha = (productividad?.habitos || []).reduce((max, h) => Math.max(max, h.mejorRacha || 0), 0);
+  // RA Fase 1 — la mejor racha se DERIVA del historial de cada hábito. Antes se leía
+  // `h.mejorRacha`, un contador guardado que se podía inflar desmarcando y volviendo
+  // a marcar el mismo día: bastaba con eso para desbloquear "Un mes de constancia"
+  // sin haber cumplido nada. Ahora un logro solo se consigue cumpliendo de verdad.
+  const mejorRacha = (productividad?.habitos || []).reduce((max, h) => Math.max(max, resumenHabito(h).record), 0);
   const entradasDiario = (diario?.entradas || []).length;
   const objetivosCumplidos = (objetivos?.lista || []).filter((o) => o.cumplido).length;
   const sesionesConcentracion = (bienestar?.sesiones || []).length;

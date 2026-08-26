@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 24 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
-> y **FO 12/12 (cerrado)** (hasta v1.47.0). Quedan **82**, todas de módulos aún sin empezar:
-> SR (5+4), HT (12) y EH (65) — en ese orden (E2-5 → E2-6 → E2-7). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 25 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)** y **RA 1/4** (hasta v1.48.0). Quedan **81**: RA (3), SO (5), HT (12) y
+> EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -4428,9 +4428,115 @@ tiene arriba. El apartado 20 lo pide expresamente: no duplicar sistemas.
 
 ## SR · SONIDO Y RACHAS — 5 + 4 fases
 
-⚠️ **Este bloque contiene DOS especificaciones con numeración solapada** (Sistema de Sonido, 5 fases; Sistema de Rachas, 4 fases). La checklist las fusiona porque no hay forma automática de separarlas con certeza. **Aclarar con Josué si son uno o dos módulos antes de tocar nada** — ver aviso 3 arriba.
+⚠️ **Este bloque contiene DOS especificaciones con numeración solapada** (Sistema de Sonido, 5 fases; Sistema de Rachas, 4 fases). La checklist de más abajo las fusiona porque no hay forma automática de separarlas con certeza.
+
+**Ya no hay que aclarar si son uno o dos módulos: D2-01 lo decidió** — son **dos**, con su propia
+numeración y su propia clave. Lo que sigue sin estar claro es **qué texto pertenece a qué fase**, y
+eso está anotado como **C-23** en `docs/03` a la espera de Josué (regla 49). Mientras tanto se ha
+construido lo único que el archivo identifica sin ambigüedad: la Fase 1 de **Rachas**.
+
+---
+
+### RA · RACHAS — 4 fases
+
+#### RA · Fase 1/4 — ARQUITECTURA Y LÓGICA DEL SISTEMA DE RACHAS ✅ COMPLETADA (v1.48.0)
+
+**El apartado 24 describe, sin saberlo, el código que el proyecto ya tenía:** *"No hagas una
+solución rápida que simplemente incremente un contador."* Los hábitos de Productividad guardaban
+`rachaActual` y `mejorRacha` como números sueltos, y al desmarcar el día de hoy le restaban uno al
+contador **a mano**. Consecuencia: bastaba con desmarcar y volver a marcar el mismo día para subir
+el récord sin haber cumplido nada — y con ello desbloquear el logro "Un mes de constancia".
+
+Ahora no se guarda ni un número. Todo —racha actual, récord, historial, porcentaje— sale del
+historial de días, que es el mismo que Josué ya tenía. Es el camino de AR Fase 3, donde
+desaparecieron por lo mismo los contadores de uso del Armario.
+
+- [x] **1 · Objetivo principal** — `src/lib/rachas.js`: fiable, persistente, sincronizable e
+      **independiente de la interfaz**. No toca React, ni Supabase, ni el reloj — el día de hoy
+      entra como parámetro, y por eso se prueba entero con Node.
+- [x] **2 · Concepto fundamental** — días consecutivos que cumplen una condición, sin asumir que
+      todas las rachas se comportan igual.
+- [x] **3 · Tipos de racha** — los nueve del apartado, con identificador estable: lo que se guarda
+      en un evento es el `id`, así que renombrar "Estudio" no rompe ningún historial.
+- [x] **4 · Regla de día** — **el día local de Josué, nunca el UTC.** Se apoya en `todayISO` y
+      `addDays`, ya corregidos en AR F3. Cada evento guarda su día local (que decide) y su instante
+      UTC (que solo desempata). A las 23:59 cuenta para hoy; a las 00:01, para mañana — probado.
+- [x] **5 · Qué significa completar un día** — cuatro conceptos separados: **Racha** (definición),
+      **Regla** (condición), **Evento** (cumplimiento) y **Estado** (derivado, nunca guardado).
+- [x] **6 · Eventos de racha** — la racha se reconstruye del historial. No hay `currentStreak = 17`
+      en ninguna parte.
+- [x] **7 · Racha actual** — `rachaActual()`, anclada en hoy y recorriendo hacia atrás.
+- [x] **8 · No penalizar prematuramente** — **lo más importante de la fase.** Con lunes ✅, martes ✅
+      y el miércoles todavía por hacer, a las 10:00 la racha vale 2 y está VIVA, no 0 y perdida.
+- [x] **9 · Mejor racha** — se calcula del historial. Corregir un día corrige el récord solo, y no
+      hay forma de inflarlo desde la interfaz porque no hay nada que escribir.
+- [x] **10 · Historial** — `historialDeRachas()` da todos los tramos con inicio, fin, duración y si
+      está vivo. Fuente independiente, lista para el calendario de RA F4.
+- [x] **11 · Días perdidos** — los cuatro estados sin mezclar: `completado`, `perdido`,
+      `pendiente`, `futuro`.
+- [x] **12 · Futura flexibilidad** — registro `CLASES_REGLA`. Añadir "estudiar 30 minutos" es una
+      entrada más, no tocar el motor. Ya funcionan `diaria`, `diaria_con_gracia`, `minimo` y
+      `cantidad`. ⚠️ Una regla **semanal** cuenta semanas, no días: cambia el recorrido entero, así
+      que **no se ha fingido que existe** (regla 8); el punto exacto donde entraría está marcado.
+- [x] **13 · Racha global** — `rachaGlobal()`, capa superior que no sustituye a las individuales:
+      las señala. ⚠️ **He tenido que elegir un significado**, porque el ejemplo del apartado no
+      cuadra (18, 12, 7 y 24 → dice 18, que no es ni el máximo ni el mínimo). Se ha implementado
+      como **días seguidos cumpliendo al menos una racha**. Anotado en `docs/03` para que lo
+      confirme; cambiarlo es tocar una sola función.
+- [x] **14 · Rachas personalizadas** — el tipo `custom` existe y el motor no distingue. La interfaz
+      para crearlas es de una fase posterior.
+- [x] **15 · Supabase** — se guarda en `app_data`, la misma tabla por usuario que los otros veinte
+      módulos. Nada de `localStorage` como fuente de verdad.
+- [x] **16 · Seguridad** — *"nunca confiar en un user_id enviado desde el cliente"*: aquí el cliente
+      no manda ninguno, porque no existe ninguno que mandar. RLS por `auth.uid()`, sin tabla nueva.
+      Y el récord no se puede manipular desde la interfaz porque no se guarda.
+- [x] **17 · Consistencia** — `resumenRacha()` es la función única: una llamada devuelve todo lo que
+      enseña una pantalla. Dashboard, hub, exportación y Productividad ya la usan; que uno diga 15 y
+      otro 16 solo podría pasar si alguien contara por su cuenta, y ya nadie lo hace.
+- [x] **18 · Idempotencia** — clave lógica `racha + día local`. Pulsar cinco veces "completado" deja
+      **un** día, no cinco. Es también lo que permite que una cola offline reintente sin duplicar.
+- [x] **19 · Sincronización** — el estado vive en `app_data`, nunca en la memoria de un componente,
+      y como todo se deriva del historial, dos dispositivos con los mismos eventos no pueden
+      enseñar rachas distintas.
+- [x] **20 · Offline** — no se construye aquí, pero el punto de enganche queda identificado y
+      documentado: la lista de eventos, idempotente por diseño.
+- [x] **21 · Casos extremos** — los quince, con prueba: medianoche, fin de año, cambio de mes, 29 de
+      febrero, volver tras semanas fuera, duplicados, datos desordenados, borrar la actividad que
+      sostenía la racha, restaurarla, cuenta nueva y usuario sin historial.
+- [x] **22 · Nada de gamificación todavía** — ni niveles, ni medallas, ni logros, ni confeti, ni
+      sonidos. Hay una prueba que **falla si aparecen**. Y por D2-02, cuando lleguen, se quedan
+      dentro de Rachas y Sonido.
+- [x] **23 · Resultado esperado** — arquitectura, modelo, motor y preparación, los cuatro.
+- [x] **24 · Regla fundamental** — cero contadores guardados. Todo derivado.
+- [x] **25 · Antes de modificar el proyecto** — se inspeccionó primero, y por eso la regla de los
+      hábitos ("un fallo suelto no rompe la racha") **se ha conservado tal cual**, convertida en la
+      regla `diaria_con_gracia` en vez de cambiarle el comportamiento a Josué sin avisar.
+- [x] **26 · Documentación** — los siete puntos, en `CHANGELOG.md` y `HANDOFF.md`.
+- [x] **27 · Criterio de finalización** — RA F2 (Supabase), F3 (hitos y logros) y F4 (interfaz y
+      Centro de Rachas) pueden construirse encima sin rehacer nada de esto.
+
+**Cuatro fallos reales, tres de ellos ya en producción:**
+
+1. **El récord de los hábitos se podía inflar** desmarcando y volviendo a marcar el mismo día. Hay
+   una prueba que lo hace diez veces y comprueba que ahora el récord no se mueve.
+2. **Un hábito sin `historial` dejaba Productividad en blanco.** Nunca se había visto porque esa
+   vista **no se renderizaba en ninguna prueba**; salió en cuanto se añadió. Puede pasar de verdad
+   con un dato importado o restaurado a medias.
+3. **La exportación podía no cuadrar con la pantalla**, porque leía el contador y la pantalla otro.
+4. **Mío, durante la fase:** `[].every()` es `true`, así que la primera racha de la vida "batía el
+   récord" sin haber ningún récord anterior. Lo cazó su propia prueba.
+
+⏸ **PENDIENTE DE JOSUÉ (regla 49) — ver C-23 en `docs/03`:** en el archivo de especificación, el
+encabezado *"FASE 1 — Arquitectura + motor global de audio"* va seguido del texto de *"FASE 4 ·
+Sistema de Rachas: interfaz"*. Falta saber **dónde está la Fase 1 real del Sonido** y **en qué orden
+van los dos módulos**. Nada de eso bloquea esta fase, que ya está cerrada.
+
+---
 
 #### SR · Fase 1/5+4 — ARQUITECTURA + MOTOR GLOBAL DE AUDIO
+
+⚠️ **Los apartados de abajo NO son de audio.** Son los de Rachas F1 (ya completados arriba) y los de
+Rachas F4. Ver **C-23**. Se dejan tal cual porque la checklist conserva la redacción literal.
 - [ ] OBJETIVO PRINCIPAL
 - [ ] CONCEPTO FUNDAMENTAL
 - [ ] TIPOS DE RACHAS

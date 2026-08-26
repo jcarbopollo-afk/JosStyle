@@ -25,6 +25,7 @@ import ObjectivesView from '../src/views/ObjectivesView.jsx';
 import DiaryView from '../src/views/DiaryView.jsx';
 import StatsView from '../src/views/StatsView.jsx';
 import PredictionsView from '../src/views/PredictionsView.jsx';
+import ProductivityView from '../src/views/ProductivityView.jsx';
 import AchievementsView from '../src/views/AchievementsView.jsx';
 import HubView from '../src/views/HubView.jsx';
 import WellbeingView from '../src/views/WellbeingView.jsx';
@@ -43,10 +44,15 @@ import {
 import { DEFAULT_PAPELERA } from '../src/lib/papelera.js';
 import { DEFAULT_ARMARIO, crearPrenda, crearOutfit, crearUso } from '../src/lib/armario.js';
 import { calcularResumenModulo } from '../src/lib/resumenesHub.js';
+import { addDays } from '../src/lib/helpers.js';
 
 const accent = ACCENTS[0].value;
 const noop = () => {};
 const HOY = new Date().toISOString().slice(0, 10);
+// RA Fase 1 — los dos días anteriores, para poder montar una racha de verdad en las
+// pruebas. Se calculan con el mismo `addDays` que usa el motor, no a mano.
+const AYER = addDays(HOY, -1);
+const AYER2 = addDays(HOY, -2);
 
 // --- Dos escenarios: usuario recién registrado y usuario con datos reales ---
 const vacio = {
@@ -97,7 +103,9 @@ const lleno = {
   economia: { saldoInicial: 100, hucha: 50, movimientos: [{ id: 'm', fecha: HOY, tipo: 'gasto', cantidad: 12, concepto: 'Café' }] },
   salud: { medidas: [{ id: 'x', fecha: HOY, peso: 72, grasa: 12 }], historial: [] },
   nutricion: { comidas: [{ id: 'c', fecha: HOY, nombre: 'Avena', kcal: 350, prot: 12, carbs: 55, grasas: 8 }], agua: { [HOY]: 1500 }, favoritos: [] },
-  productividad: { habitos: [{ id: 'h', nombre: 'Leer', historial: { [HOY]: true }, rachaActual: 3, mejorRacha: 5 }], rutinas: [], tareas: [{ id: 't', texto: 'Repasar', hecha: false, fechaLimite: HOY }], metas: [], pomodoros: { [HOY]: 2 } },
+  // RA Fase 1 — el hábito ya no guarda `rachaActual` ni `mejorRacha`: la racha sale del
+  // historial. Se dejan tres días seguidos para que la tarjeta enseñe una racha de verdad.
+  productividad: { habitos: [{ id: 'h', nombre: 'Leer', historial: { [AYER2]: true, [AYER]: true, [HOY]: true } }], rutinas: [], tareas: [{ id: 't', texto: 'Repasar', hecha: false, fechaLimite: HOY }], metas: [], pomodoros: { [HOY]: 2 } },
   objetivos: { lista: [{ id: 'o', texto: 'Handstand 30s', plazo: '90 días', cumplido: false, fechaCreacion: HOY }], ultimaRevision: null },
   diario: { entradas: [{ id: 'd', fecha: HOY, animo: 4, comoMeSiento: 'Bien', queHeAprendido: 'Algo', queMejorareManana: 'Otra cosa' }] },
   relacion: { nombre: 'A', fechas: [{ id: 'r', etiqueta: 'Aniversario', fecha: HOY, tipo: 'aniversario', repetir: true }] },
@@ -143,6 +151,33 @@ const CASOS = [
   ['StatsView', StatsView, (e) => ({ sueno: e.sueno, estudios: e.estudios, diario: e.diario, calistenia: e.calistenia, accent })],
   ['PredictionsView', PredictionsView, (e) => ({ objetivos: e.objetivos, productividad: e.productividad, salud: e.salud, calistenia: e.calistenia, economia: e.economia, estudios: e.estudios, accent })],
   ['AchievementsView', AchievementsView, (e) => ({ ...e, accent })],
+  // RA Fase 1 — la lista de hábitos con su racha derivada. Antes no se renderizaba en
+  // ninguna prueba, que es como un contador guardado podía mentir sin que nada avisara.
+  ['ProductivityView', ProductivityView, (e) => ({
+    productividad: e.productividad, accent,
+    onAddHabito: noop, onUpdateHabito: noop, onDeleteHabito: noop,
+    onAddRutina: noop, onUpdateRutina: noop, onDeleteRutina: noop,
+    onAddTarea: noop, onToggleTarea: noop, onDeleteTarea: noop,
+    onAddMeta: noop, onUpdateMeta: noop, onDeleteMeta: noop,
+    onCompletarPomodoro: noop, foco: null, onFocoConsumido: noop,
+  })],
+  // Un hábito sin historial (recién creado) y otro con un hueco de un día: la regla con
+  // margen no debe romperse por ese hueco, y ninguno de los dos puede reventar la vista.
+  ['ProductivityView · hábitos límite', ProductivityView, () => ({
+    productividad: {
+      habitos: [
+        { id: 'nuevo', nombre: 'Recién creado', historial: {} },
+        { id: 'hueco', nombre: 'Con un fallo', historial: { [AYER2]: true, [HOY]: true } },
+      ],
+      rutinas: [], tareas: [], metas: [], pomodoros: {},
+    },
+    accent,
+    onAddHabito: noop, onUpdateHabito: noop, onDeleteHabito: noop,
+    onAddRutina: noop, onUpdateRutina: noop, onDeleteRutina: noop,
+    onAddTarea: noop, onToggleTarea: noop, onDeleteTarea: noop,
+    onAddMeta: noop, onUpdateMeta: noop, onDeleteMeta: noop,
+    onCompletarPomodoro: noop, foco: null, onFocoConsumido: noop,
+  })],
   ['WellbeingView', WellbeingView, (e) => ({ bienestar: e.bienestar, onAdd: noop, onDelete: noop, onAddReflexion: noop, onCompletarSesion: noop, accent })],
   ['BusinessView', BusinessView, (e) => ({ negocio: e.negocio, onAdd: noop, onUpdate: noop, onDelete: noop, accent })],
   ['ArmarioView', ArmarioView, (e) => ({

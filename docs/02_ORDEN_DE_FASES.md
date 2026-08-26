@@ -156,8 +156,14 @@ escribir código.
 | v1.46.0 | **FO F11** | Rendimiento: la foto se sube optimizada (4 MB → ~400 KB) y las URLs firmadas se cachean. El coste real estaba ahí, no en los efectos |
 | v1.47.0 | **FO F12** | Eliminados y recuperación. **Cierra el bloque FO.** En Apariencia no se borra nada: la foto sustituida sigue en Storage, así que recuperar es volver a apuntar a ella, no restaurar una copia |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4) y FO (12/12) cerrados.** Quedan **82** fases de la
-Entrega 2, todas de módulos aún sin empezar: SR (5+4), HT (12) y EH (65) — en ese orden (E2-5 → E2-6 → E2-7).
+| v1.48.0 | **RA F1** | Motor de rachas: **todo derivado del historial, ni un contador guardado**. Destapó que el récord de los hábitos se podía inflar desmarcando y volviendo a marcar el mismo día |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4) y FO (12/12) cerrados**, RA va por 1/4. Quedan **81**
+fases de la Entrega 2: RA (3), SO · Sonido (5), HT (12) y EH (65).
+
+⏸ **El orden dentro de E2-5 está pendiente de Josué (C-23):** en la especificación, el encabezado de
+la Fase 1 de Sonido va seguido del texto de la Fase 4 de Rachas, así que no se sabe dónde está el
+texto real del motor de audio ni si Sonido va antes o después de Rachas.
 
 ---
 

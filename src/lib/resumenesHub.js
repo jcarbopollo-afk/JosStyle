@@ -17,6 +17,7 @@ import { ESTADOS_ANIMO } from '../tokens';
 import { resumenDelDia, eventosFuturos } from './calendario';
 import { eventosDerivados } from './calendarioIntegracion';
 import { resumenHistorial } from './armario';
+import { resumenHabito } from './rachas';
 
 function ultimoPorFecha(lista) {
   if (!lista || lista.length === 0) return null;
@@ -101,7 +102,8 @@ export function calcularResumenModulo(id, s) {
     }
     case 'productividad': {
       const pendientes = (s.productividad?.tareas || []).filter((t) => !t.hecha).length;
-      const mejorRacha = Math.max(0, ...(s.productividad?.habitos || []).map((h) => h.rachaActual || 0));
+      // RA Fase 1 — derivada, no leída de un contador guardado.
+      const mejorRacha = Math.max(0, ...(s.productividad?.habitos || []).map((h) => resumenHabito(h).actual));
       return {
         linea1: `${pendientes} ${plural(pendientes, 'tarea pendiente', 'tareas pendientes')}`,
         linea2: mejorRacha > 0 ? `Racha de ${mejorRacha} ${plural(mejorRacha, 'día', 'días')}` : 'Sin rachas activas',

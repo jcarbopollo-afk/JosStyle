@@ -375,6 +375,44 @@ directos ya creados. No pierde ningún dato al hacerlo.
 
 ---
 
+### ⏸ C-23 — PENDIENTE DE JOSUÉ (regla 49) — En `ESPECIFICACION_SONIDO_Y_RACHAS.md` los títulos de fase no coinciden con su contenido
+
+**Encontrada al empezar el bloque SR (v1.48.0).** D2-01 ya decidió lo importante —Sonido y Rachas
+son **dos módulos independientes**, 5 fases y 4— pero eso no dice **qué texto pertenece a cada
+fase de cada módulo**, y el archivo está intercalado de una forma que no se puede resolver leyendo:
+
+| Línea | Título que se lee | Contenido que sigue de verdad |
+|---|---|---|
+| 529 | `FASE 1 — BASE DEL SISTEMA` | Rachas Fase 1 (motor: reglas, historial, idempotencia). **Coherente.** |
+| 1002 | *(fin del bloque anterior)* | `Esta es la FASE 1 — ARQUITECTURA Y LÓGICA DEL SISTEMA DE RACHAS` — lo confirma |
+| 1008 | `FASE 5 — PRODUCCIÓN…` | Sonido Fase 5, **pegado justo detrás** de la Fase 1 de Rachas |
+| **4837** | **`FASE 1 — ARQUITECTURA + MOTOR GLOBAL DE AUDIO`** | **`PROMPT PARA CLAUDE — FASE 4 · Sistema de Rachas: interfaz…`** ← el título dice Sonido F1 y debajo hay Rachas F4 |
+
+`docs/07` ya avisaba de esto ("la checklist las fusiona porque no hay forma automática de separarlas
+con certeza"), y se ve en su propia lista: bajo el encabezado *SR · Fase 1/5+4 — Arquitectura +
+motor global de audio* hay 27 apartados del **motor de rachas** seguidos de 40 de la **interfaz de
+rachas**, y **ni uno solo de audio**.
+
+**Lo que sí está claro y por eso se ha construido:** el texto de las líneas 529-1000 es, sin
+ambigüedad, **Rachas Fase 1** — lo dice su propio cierre. Es una fase completa, cerrada y que no
+depende de resolver nada de esto. Se ha implementado como **RA · Fase 1/4** (v1.48.0).
+
+**Lo que está detenido hasta que Josué conteste** (regla 49: para la fase afectada, no la sesión):
+
+1. **¿Dónde está el texto real de la Fase 1 del Sistema de Sonido** (arquitectura y motor global de
+   audio)? En el archivo no aparece: donde debería estar hay una fase de Rachas.
+2. **¿En qué orden van los dos módulos?** ¿Las 4 fases de Rachas primero y luego las 5 de Sonido, o
+   alternándose? Sonido F3 ("eventos, feedback y recompensas sonoras") **necesita** el motor de
+   rachas, así que Rachas parece ir antes, pero eso es deducción mía, no una decisión suya.
+
+**Y un aviso aparte, que no es contradicción sino límite real:** el módulo de Sonido necesita
+**archivos de audio** que no existen en el proyecto. El propio Josué lo escribió dentro de la
+especificación: *"esto lo voy a hacer cuando la web ya tenga todos los botones activos y todo, no te
+lo voy a dar aún"*. Sin los sonidos, un motor de audio sería un control decorativo — justo lo que
+prohíbe la regla 8.
+
+---
+
 ## PARTE B — DUPLICADOS (14)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

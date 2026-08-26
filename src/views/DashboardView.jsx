@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { COLORS, MODOS_APP } from '../tokens';
 import { calcularDuracion, formatHoras, hexToRgba, diasHasta, formatFecha, todayISO, addDays } from '../lib/helpers';
+import { resumenHabito } from '../lib/rachas';
 import { resumenDelDia, eventosDelDia } from '../lib/calendario';
 import { puntuacionDelDia, mensajePuntuacion } from '../lib/puntuacion';
 import { Card, AIPanel, ScoreGauge, DashboardModuleCard, MiniAccessCard, QuickActionButton } from '../components/ui';
@@ -103,19 +104,22 @@ function AvisoSuenoCorto({ ultimoSueno, accent, notificaciones }) {
 
 // Fase 20 — segunda automatización fija: si un hábito con racha en marcha (3+ días) no se ha
 // marcado ni hoy ni ayer, un tercer día sin marcar la rompería a 1 (ver alternarHabitoHoy en
-// ProductivityView.jsx) — aviso discreto para que le dé tiempo a decidir si la marca hoy.
+// lib/rachas.js, regla `diaria_con_gracia`) — aviso discreto para que le dé tiempo a decidir.
 // Calculado al vuelo sobre productividad.habitos, nada nuevo que guardar.
 function AvisoRachaEnRiesgo({ productividad, accent, notificaciones }) {
   const hoy = todayISO();
   const ayer = addDays(hoy, -1);
+  // RA Fase 1 — la racha se deriva del historial; antes se leía el contador guardado,
+  // que podía no cuadrar con los días realmente marcados.
   const enRiesgo = productividad
     ? productividad.habitos
-        .filter((h) => (h.rachaActual || 0) >= 3 && !h.historial[hoy] && !h.historial[ayer])
-        .sort((a, b) => (b.rachaActual || 0) - (a.rachaActual || 0))[0]
+        .map((h) => ({ ...h, dias: resumenHabito(h, hoy).actual }))
+        .filter((h) => h.dias >= 3 && !h.historial[hoy] && !h.historial[ayer])
+        .sort((a, b) => b.dias - a.dias)[0]
     : null;
   useEffect(() => {
     if (!enRiesgo) return;
-    notificarSiCorresponde(notificaciones, 'productividad', `racha-riesgo-${enRiesgo.id || enRiesgo.nombre}`, 'Una racha está en riesgo', `"${enRiesgo.nombre}" (${enRiesgo.rachaActual} días) se rompe si no la marcas hoy.`);
+    notificarSiCorresponde(notificaciones, 'productividad', `racha-riesgo-${enRiesgo.id || enRiesgo.nombre}`, 'Una racha está en riesgo', `"${enRiesgo.nombre}" (${enRiesgo.dias} días) se rompe si no la marcas hoy.`);
   }, [enRiesgo && enRiesgo.id, enRiesgo && enRiesgo.nombre]);
   if (!productividad) return null;
   if (!enRiesgo) return null;
@@ -123,7 +127,7 @@ function AvisoRachaEnRiesgo({ productividad, accent, notificaciones }) {
     <Card style={{ padding: '0.85rem 1.1rem', border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
       <p className="text-sm flex items-center gap-2" style={{ color: COLORS.text }}>
         <Flame size={15} style={{ color: accent, flexShrink: 0 }} />
-        Tu racha de <span className="font-semibold">"{enRiesgo.nombre}"</span> ({enRiesgo.rachaActual} días) se rompe si no la marcas hoy.
+        Tu racha de <span className="font-semibold">"{enRiesgo.nombre}"</span> ({enRiesgo.dias} días) se rompe si no la marcas hoy.
       </p>
     </Card>
   );

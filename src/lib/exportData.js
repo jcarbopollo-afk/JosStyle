@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { resumenHabito } from './rachas';
 import Papa from 'papaparse';
 import { calcularDuracion, formatHoras, todayISO } from './helpers';
 
@@ -108,9 +109,13 @@ function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion
   }
 
   if (productividad) {
-    productividad.habitos.forEach((h) =>
-      rows.push({ modulo: 'Productividad (hábito)', fecha: '', detalle: h.nombre, valor: `racha ${h.rachaActual || 0}`, extra: `mejor racha: ${h.mejorRacha || 0}` })
-    );
+    // RA Fase 1 — la racha exportada se deriva del historial, igual que la que se ve
+    // en pantalla. Antes salía del contador guardado, así que una exportación podía
+    // no cuadrar con lo que la app enseñaba.
+    productividad.habitos.forEach((h) => {
+      const r = resumenHabito(h);
+      rows.push({ modulo: 'Productividad (hábito)', fecha: '', detalle: h.nombre, valor: `racha ${r.actual}`, extra: `mejor racha: ${r.record}` });
+    });
     productividad.tareas.forEach((t) =>
       rows.push({ modulo: 'Productividad (tarea)', fecha: t.fechaLimite || '', detalle: t.texto, valor: t.hecha ? 'hecha' : 'pendiente', extra: '' })
     );

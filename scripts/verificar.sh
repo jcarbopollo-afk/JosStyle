@@ -128,6 +128,12 @@ else
   fallo "Fallan pruebas de optimización de imágenes"; grep '✗' /tmp/jc_img.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-rachas.mjs >/tmp/jc_rachas.log 2>&1; then
+  ok "Motor de rachas (RA F1) — $(grep -c '✓' /tmp/jc_rachas.log) comprobaciones"
+else
+  fallo "Falla el motor de rachas"; grep '✗' /tmp/jc_rachas.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

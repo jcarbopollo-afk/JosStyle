@@ -1,26 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle2, Circle, Flame, Plus, Trash2, Play, Pause, RotateCcw, ListChecks, Target, ChevronDown, ChevronUp } from 'lucide-react';
 import { COLORS, PERIODOS_META } from '../tokens';
-import { uid, todayISO, addDays } from '../lib/helpers';
+import { uid, todayISO } from '../lib/helpers';
+import { resumenHabito, alternarHabito } from '../lib/rachas';
 import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
 
 /* ---------- Hábitos ---------- */
-// Una racha no se rompe a cero por fallar un solo día: si ayer o anteayer está marcado,
-// marcar hoy continúa la racha (el fallo de un día se "pausa", no se corta). Solo dos días
-// seguidos sin marcar reinicia la racha a 1.
-function alternarHabitoHoy(habito) {
-  const hoy = todayISO();
-  if (habito.historial[hoy]) {
-    const { [hoy]: _omit, ...historialSinHoy } = habito.historial;
-    return { ...habito, historial: historialSinHoy, rachaActual: Math.max(0, (habito.rachaActual || 0) - 1) };
-  }
-  const ayer = addDays(hoy, -1);
-  const anteayer = addDays(hoy, -2);
-  const continuaOPausada = habito.historial[ayer] || habito.historial[anteayer];
-  const rachaActual = continuaOPausada ? (habito.rachaActual || 0) + 1 : 1;
-  const mejorRacha = Math.max(habito.mejorRacha || 0, rachaActual);
-  return { ...habito, historial: { ...habito.historial, [hoy]: true }, rachaActual, mejorRacha };
-}
+// RA Fase 1 — la racha ya no se guarda: se deriva del historial con el motor de
+// `lib/rachas.js`. El comportamiento que ve Josué es el MISMO de siempre (un solo
+// día fallado no la rompe, se perdona), porque esa regla se ha llevado tal cual al
+// motor como `diaria_con_gracia`.
+//
+// Lo que desaparece son `rachaActual` y `mejorRacha` guardados en el hábito. Eran
+// números sueltos que además mentían: al desmarcar hoy se le restaba uno al
+// contador a mano, así que **desmarcar y volver a marcar subía el récord** sin
+// haber cumplido nada. Ahora no hay nada que inflar.
 
 function HabitosTab({ habitos, onAdd, onUpdate, onDelete, accent }) {
   const [nombre, setNombre] = useState('');
@@ -34,7 +28,7 @@ function HabitosTab({ habitos, onAdd, onUpdate, onDelete, accent }) {
           <div style={{ width: 84, flexShrink: 0 }}>
             <PrimaryButton
               accent={accent} icon={Plus}
-              onClick={() => { if (!nombre.trim()) return; onAdd({ id: uid(), nombre: nombre.trim(), historial: {}, rachaActual: 0, mejorRacha: 0 }); setNombre(''); }}
+              onClick={() => { if (!nombre.trim()) return; onAdd({ id: uid(), nombre: nombre.trim(), historial: {} }); setNombre(''); }}
             >
               Añadir
             </PrimaryButton>
@@ -44,15 +38,20 @@ function HabitosTab({ habitos, onAdd, onUpdate, onDelete, accent }) {
 
       {habitos.length === 0 && <EmptyHint text="Todavía no tienes hábitos. Añade el primero arriba." />}
       {habitos.map((h) => {
-        const hechoHoy = !!h.historial[hoy];
+        // Un hábito sin `historial` dejaba la pantalla EN BLANCO. Nunca se había visto
+        // porque esta vista no se renderizaba en ninguna prueba; salió al añadirla en
+        // RA F1. Puede pasar de verdad: un dato restaurado o importado a medias.
+        const hechoHoy = !!h.historial?.[hoy];
+        const racha = resumenHabito(h, hoy);
         return (
           <Card key={h.id} className="flex items-center justify-between">
-            <button onClick={() => onUpdate(alternarHabitoHoy(h))} className="flex items-center gap-3 flex-1 text-left">
+            <button onClick={() => onUpdate(alternarHabito(h, hoy))} className="flex items-center gap-3 flex-1 text-left">
               {hechoHoy ? <CheckCircle2 size={22} style={{ color: accent }} /> : <Circle size={22} style={{ color: COLORS.textMuted }} />}
               <div>
                 <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{h.nombre}</p>
                 <p className="text-xs flex items-center gap-1 mt-0.5" style={{ color: COLORS.textMuted }}>
-                  <Flame size={12} /> {h.rachaActual || 0} días {h.mejorRacha ? `· mejor: ${h.mejorRacha}` : ''}
+                  <Flame size={12} /> {racha.actual} {racha.actual === 1 ? 'día' : 'días'}
+                  {racha.record > racha.actual ? ` · mejor: ${racha.record}` : ''}
                 </p>
               </div>
             </button>
@@ -67,7 +66,10 @@ function HabitosTab({ habitos, onAdd, onUpdate, onDelete, accent }) {
         label="Consejo de hábitos"
         accent={accent}
         buildPrompt={() =>
-          `Hábitos de Josué y su estado (JSON): ${JSON.stringify(habitos.map((h) => ({ nombre: h.nombre, rachaActual: h.rachaActual, mejorRacha: h.mejorRacha })))}. ` +
+          `Hábitos de Josué y su estado (JSON): ${JSON.stringify(habitos.map((h) => {
+            const r = resumenHabito(h, hoy);
+            return { nombre: h.nombre, rachaActual: r.actual, mejorRacha: r.record };
+          }))}. ` +
           `Dale un consejo breve y animado sobre cuál priorizar o cómo va, sin ser condescendiente ni castigar los fallos.`
         }
       />
