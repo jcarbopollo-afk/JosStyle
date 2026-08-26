@@ -1,5 +1,31 @@
 # CHANGELOG.md
 
+## Entrega 2 · FO Fase 7 — Personalización manual avanzada (v1.42.0)
+
+Cierra un hueco que las fases anteriores habían abierto: **FO F4 metió en el modelo el texto
+secundario, los iconos activo e inactivo y el fondo de la barra, pero sin control.** Se podían
+guardar y no había forma de tocarlos. Ahora el constructor de temas los ofrece los diez.
+
+### Bordes y sombras
+El color del borde ya se podía cambiar; lo que faltaba era su **intensidad**. Un borde al 100 %
+sobre una tarjeta translúcida encima de una foto se ve como una caja pegada; bajarlo la integra sin
+quitarle la separación.
+
+Las sombras son nuevas, con **tope bajo a propósito**: el apartado 11 pide evitar configuraciones
+que hagan que la app parezca desordenada.
+
+### Sin tocar nada, nada cambia
+Cada añadido tiene su valor de fábrica igual al comportamiento anterior: sombra 0, borde al 100 %,
+transparencias al 100 %. Es lo que permite añadir controles sin arriesgar una regresión visual.
+
+Y sin sombra, `cardShadow` es `'none'`, no una sombra de opacidad cero: una sombra invisible sigue
+costando pintado en cada tarjeta, y hay muchas por pantalla.
+
+### Verificación
+**1209 comprobaciones en verde** (antes 1193).
+
+---
+
 ## Entrega 2 · FO Fase 6 — Sistema "Recomendado" (v1.41.0)
 
 JosStyle propone **cinco apariencias completas** sacadas de los colores de tu foto: Equilibrada,

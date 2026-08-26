@@ -21,7 +21,11 @@ export function Card({ children, style, className = '', id }) {
       // vuelve ilegible.
       style={{
         background: COLORS.surfaceAlpha || COLORS.surface,
-        border: `1px solid ${COLORS.border}`,
+        // FO Fase 7 — el borde y la sombra también salen del sistema. `borderAlpha`
+        // al 100 % es el borde sólido de siempre, y `cardShadow` es `none` por
+        // defecto: sin tocar nada, la tarjeta se ve exactamente igual que antes.
+        border: `1px solid ${COLORS.borderAlpha || COLORS.border}`,
+        boxShadow: COLORS.cardShadow && COLORS.cardShadow !== 'none' ? COLORS.cardShadow : undefined,
         backdropFilter: COLORS.surfaceAlpha && COLORS.surfaceAlpha !== COLORS.surface ? 'blur(12px)' : undefined,
         ...style,
       }}

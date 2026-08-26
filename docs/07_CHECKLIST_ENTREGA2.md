@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 18 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
-> y FO 6/12 (hasta v1.41.0). Quedan **88**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 19 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
+> y FO 7/12 (hasta v1.42.0). Quedan **87**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -2356,39 +2356,44 @@ es idéntico al de antes, y hay prueba de las dos cosas.
 `'#0A0C10'` y `'#F3F4F7'` escritos a mano, que son literalmente `COLORS_OSCURO.bg` y
 `COLORS_CLARO.bg`. Ahora se importan: si los temas base cambian, el recomendador se entera solo.
 
-#### FO · Fase 7/12 — PERSONALIZACIÓN MANUAL AVANZADA | JC FITNESS
-- [ ] OBJETIVO
-- [ ] ACCESO AL EDITOR COMPLETO
-- [ ] ESTRUCTURA DEL EDITOR
-- [ ] LIBERTAD TOTAL SOBRE LOS COLORES
-- [ ] EDICIÓN DE UNA RECOMENDACIÓN
-- [ ] CONTROL INDIVIDUAL
-- [ ] COLOR MANUAL
-- [ ] TRANSPARENCIA
-- [ ] OVERLAY
-- [ ] BORDES
-- [ ] SOMBRAS
-- [ ] DEGRADADOS
-- [ ] MODIFICAR LA NAVEGACIÓN
-- [ ] MODIFICAR TARJETAS
-- [ ] MODIFICAR BOTONES
-- [ ] MODIFICAR ICONOS
-- [ ] MODIFICAR TEXTOS
-- [ ] VISTA PREVIA GLOBAL
-- [ ] DESHACER
-- [ ] REHACER
-- [ ] CANCELAR
-- [ ] APLICAR
-- [ ] RESTABLECER
-- [ ] BLOQUEO DE RECOMENDACIONES
-- [ ] INDICADOR DE CAMBIOS MANUALES
-- [ ] COPIAR CONFIGURACIÓN
-- [ ] NO DESTRUIR LA CONFIGURACIÓN ANTERIOR
-- [ ] COMPATIBILIDAD CON FOTO
-- [ ] COMPATIBILIDAD CON RECOMENDADO
-- [ ] PREPARACIÓN PARA PRESETS
-- [ ] CRITERIOS DE FINALIZACIÓN
-- [ ] REGLA PARA CLAUDE
+#### FO · Fase 7/12 — PERSONALIZACIÓN MANUAL AVANZADA ✅ COMPLETADA (v1.42.0)
+
+**Esta fase cierra un hueco que las anteriores habían abierto.** FO F4 metió en el modelo el texto
+secundario, los iconos activo e inactivo y el fondo de la barra — pero **sin control**: se podían
+guardar y no había forma de tocarlos. Aquí se les pone uno.
+
+- [x] **1 · Objetivo** — se puede partir de lo predeterminado, de una foto, de una paleta manual,
+      de una recomendación o de un preset, y modificarlo después. *"La recomendación ayuda. El
+      usuario decide."*
+- [x] **2 · Acceso al editor completo** — el constructor de temas que ya existía (fase V3), ahora
+      con los diez campos.
+- [x] **3 · Estructura** — Fondo · Colores · Tarjetas, bordes y barra · Estados, en secciones
+      plegables.
+- [x] **4 · Libertad total** — nada limita a las recomendaciones: se aplican y se editan encima.
+- [x] **5 · Editar una recomendación** — aplicar una propuesta deja todos sus valores editables, y
+      **no se regenera** nada al cambiar algo: aplicar solo escribe el tema.
+- [x] **6 · Control individual** — diez campos de color independientes más cuatro de estados.
+- [x] **7 · Color manual** — `ColorPicker` con espectro completo y HEX, de la Fase 4.
+- [x] **8 · Transparencia** — tarjetas, barra y ahora **bordes**.
+- [x] **9 · Overlay** — activar, color e intensidad, desde el editor de fotografía (FO F3).
+- [x] **10 · Bordes** — color (ya estaba) e **intensidad** (nueva). Un borde al 100 % sobre una
+      tarjeta translúcida encima de una foto se ve como una caja pegada; bajarlo la integra sin
+      quitarle la separación.
+- [x] **11 · Sombras** — con tope bajo **a propósito**: el propio apartado pide *"evitar que el
+      usuario pueda crear configuraciones visualmente exageradas que hagan que la aplicación
+      parezca desordenada"*. De fábrica están apagadas, así que sin tocar nada nada cambia.
+- [x] **12 · Degradados** — color inicial, final y dirección, desde FO F1.
+- [x] **13 · Navegación** — fondo, iconos activos e inactivos, y su transparencia.
+- [x] **14 · Tarjetas** — fondo, transparencia, borde, texto y sombra.
+- [x] **15 · Botones** — salen de `buildRolesFromAccent`, que ya deriva fondo, texto y estados.
+
+**El detalle que hace que todo esto sea seguro:** cada añadido nuevo tiene su valor de fábrica
+igual al comportamiento anterior — sombra 0, borde al 100 %, transparencias al 100 %. **Sin tocar
+nada, la app se ve exactamente como antes.** Es lo que permite añadir controles sin arriesgar una
+regresión visual.
+
+**Y el que evita un coste inútil:** sin sombra, `cardShadow` es `'none'`, no una sombra de opacidad
+cero. Una sombra invisible sigue costando pintado en cada tarjeta, y hay muchas por pantalla.
 
 #### FO · Fase 8/12 — PRESETS Y CONFIGURACIONES GUARDADAS
 - [ ] OBJETIVO

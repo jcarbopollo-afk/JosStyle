@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.41.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.42.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI** y **AR** están terminados y **FO** va por 6/12, quedan 88) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI** y **AR** están terminados y **FO** va por 7/12, quedan 87) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,8 +107,8 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 1084 pruebas unitarias con Node, 5 de auditoría, 104 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **1193 comprobaciones**.
+Vite, 1100 pruebas unitarias con Node, 5 de auditoría, 104 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **1209 comprobaciones**.
 
 Eso ya ha encontrado **treinta y dos bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), ocho módulos que dejaban crear y no borrar,
@@ -133,19 +133,20 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase: FO · Fase 7/12 — Personalización manual avanzada.**
+**Siguiente fase: FO · Fase 8/12 — Presets y configuraciones guardadas.**
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_FONDOS_Y_FOTOGRAFIAS.md`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
 Tres avisos para cuando toque:
 
-- **Ya existe `TemaBuilder`** (fase V3) con 10 campos editables a mano, más `ColorPicker` con
-  espectro completo. FO F7 los AMPLÍA; no se empieza otro editor.
-- **`temaPersonalizado` ya tiene los campos nuevos** de FO F4 (transparencias, texto secundario,
-  iconos, navegación). Añadir controles no exige tocar el modelo.
-- **Recomendado y manual conviven** (apartado 16 de FO F6): aplicar una propuesta deja todo
-  editable. La Fase 7 no puede bloquear eso.
+- **Ya existe la gestión de temas guardados** (fase V4: crear, renombrar, duplicar, eliminar,
+  exportar, importar) y `PALETAS_PREDEFINIDAS`. FO F8 las AMPLÍA con el fondo; no se empieza otro
+  sistema de presets.
+- **Un preset con fondo tiene que decidir qué guarda.** Colores y fondo son claves distintas a
+  propósito (FO F4, apartado 16): un preset que arrastre la foto pisaría la de Josué al aplicarlo.
+- **El "favorito" de FO F6 (apartado 14) entra aquí**: guardar una propuesta recomendada como
+  preset reutilizable.
 
 ⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
 de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin

@@ -28,7 +28,11 @@ export const CAMPOS_COLOR = [
   'textoSecundario', 'iconoActivo', 'iconoInactivo', 'navegacionFondo',
 ];
 
-export const CAMPOS_ALFA = ['superficieAlfa', 'navegacionAlfa'];
+export const CAMPOS_ALFA = ['superficieAlfa', 'navegacionAlfa', 'bordeAlfa'];
+
+// FO Fase 7 — la sombra no es un alfa (su rango es 0-40 y su valor de fábrica 0),
+// así que se acota aparte en vez de forzarla dentro de una lista donde no encaja.
+export const MAX_SOMBRAS = 40;
 
 /**
  * Rellena y limpia un tema personalizado.
@@ -49,6 +53,7 @@ export function normalizarTema(guardado) {
     // "translúcida", es texto suelto encima de una imagen, y deja de leerse.
     out[k] = Number.isFinite(n) ? Math.min(100, Math.max(20, n)) : 100;
   }
+  out.sombras = Number.isFinite(Number(t.sombras)) ? Math.min(MAX_SOMBRAS, Math.max(0, Number(t.sombras))) : 0;
   const est = t.estados || {};
   out.estados = {};
   for (const k of ['positive', 'warning', 'negative', 'info']) {
@@ -74,6 +79,7 @@ export function tieneColoresPersonalizados(tema) {
   const t = normalizarTema(tema);
   if (CAMPOS_COLOR.some((k) => t[k])) return true;
   if (CAMPOS_ALFA.some((k) => t[k] !== 100)) return true;
+  if (t.sombras !== 0) return true;
   return Object.values(t.estados).some(Boolean);
 }
 
@@ -95,6 +101,7 @@ export function aplicarPresetColor(temaActual, presetTema) {
   for (const k of CAMPOS_ALFA) {
     out[k] = (presetTema && presetTema[k] !== undefined) ? preset[k] : actual[k];
   }
+  out.sombras = (presetTema && presetTema.sombras !== undefined) ? preset.sombras : actual.sombras;
   return out;
 }
 

@@ -36,6 +36,13 @@ const FILAS_PRINCIPALES = [
   { key: 'superficie', label: 'Superficie', desc: 'Automático: la superficie del tema Claro/Oscuro activo.' },
   { key: 'texto', label: 'Texto', desc: 'Automático: el texto principal del tema activo (con contraste garantizado).' },
   { key: 'bordes', label: 'Bordes', desc: 'Automático: el borde del tema activo.' },
+  // FO Fase 7 — estos cuatro ya existían en el modelo desde FO F4, pero no tenían
+  // control: se podían guardar y no había forma de tocarlos. Los apartados 6 y 13
+  // los piden expresamente (control individual, y personalizar la navegación).
+  { key: 'textoSecundario', label: 'Texto secundario', desc: 'Automático: el texto atenuado del tema (con contraste garantizado).' },
+  { key: 'iconoActivo', label: 'Icono activo', desc: 'Automático: el color Principal.' },
+  { key: 'iconoInactivo', label: 'Icono inactivo', desc: 'Automático: el texto secundario.' },
+  { key: 'navegacionFondo', label: 'Barra inferior', desc: 'Automático: la superficie del tema activo.' },
 ];
 
 const FILAS_ESTADOS = [
@@ -50,6 +57,7 @@ const FILAS_ESTADOS = [
 // negative/info).
 const CAMPO_COLORS = {
   secundario: 'secondary', terciario: 'tertiary', fondo: 'bg', superficie: 'surface', texto: 'text', bordes: 'border',
+  textoSecundario: 'textMuted', iconoActivo: 'iconActive', iconoInactivo: 'iconMuted', navegacionFondo: 'navBg',
 };
 
 export default function TemaBuilder({

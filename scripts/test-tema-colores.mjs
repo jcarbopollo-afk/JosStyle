@@ -15,7 +15,7 @@
 import { COLORS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_APARIENCIA, aplicarTema } from '../src/tokens.js';
 import { ensureContrast, contrastRatio } from '../src/lib/colorEngine.js';
 import {
-  CAMPOS_COLOR, CAMPOS_ALFA, normalizarTema, restablecerColores,
+  CAMPOS_COLOR, CAMPOS_ALFA, MAX_SOMBRAS, normalizarTema, restablecerColores,
   tieneColoresPersonalizados, aplicarPresetColor, coloresYFondoSonIndependientes,
 } from '../src/lib/temaColores.js';
 
@@ -185,7 +185,35 @@ const ACENTO = '#4C8DFF';
     aplicarPresetColor(actual, { ...preset, superficieAlfa: 100 }).superficieAlfa === 100);
   comprobar('Un preset vacío no revienta', !!aplicarPresetColor(actual, null));
   // Apartado 17: foto + colores personalizados a la vez es explícitamente válido.
-  comprobar('Los alfas son dos campos independientes', CAMPOS_ALFA.length === 2);
+  comprobar('Hay un alfa por cada superficie personalizable', CAMPOS_ALFA.length === 3);
+}
+
+/* --- FO Fase 7: los campos que la Fase 4 dejó sin control --- */
+{
+  // Estos cuatro existían en el modelo desde FO F4 pero no tenían forma de tocarse:
+  // se podían guardar y no había control. La Fase 7 les pone uno en el constructor.
+  for (const campo of ['textoSecundario', 'iconoActivo', 'iconoInactivo', 'navegacionFondo']) {
+    comprobar(`"${campo}" es editable a mano`, CAMPOS_COLOR.includes(campo));
+  }
+  comprobar('El borde tiene su propia transparencia', CAMPOS_ALFA.includes('bordeAlfa'));
+  comprobar('Las sombras existen en el modelo', 'sombras' in DEFAULT_TEMA_PERSONALIZADO);
+  comprobar('...y de fábrica están apagadas', DEFAULT_TEMA_PERSONALIZADO.sombras === 0);
+  comprobar('Una sombra absurda se acota', normalizarTema({ sombras: 999 }).sombras === MAX_SOMBRAS);
+  comprobar('...y una negativa también', normalizarTema({ sombras: -50 }).sombras === 0);
+  comprobar('Una sombra cuenta como personalización', tieneColoresPersonalizados({ sombras: 10 }) === true);
+  comprobar('Restablecer también las apaga', restablecerColores().sombras === 0);
+
+  // Que lleguen a los tokens de verdad, que es lo que distingue un ajuste real de
+  // uno que se guarda y no hace nada.
+  aplicarTema('oscuro', false, ACENTO, normalizarTema(null));
+  comprobar('Sin sombra, la tarjeta no lleva ninguna', COLORS.cardShadow === 'none');
+  comprobar('Al 100 %, el borde translúcido es el borde sólido', COLORS.borderAlpha === COLORS.border);
+
+  aplicarTema('oscuro', false, ACENTO, normalizarTema({ sombras: 24, bordeAlfa: 50 }));
+  comprobar('Con sombra, la tarjeta la recibe', COLORS.cardShadow.includes('px'), COLORS.cardShadow);
+  comprobar('El borde se vuelve translúcido', COLORS.borderAlpha.startsWith('rgba('), COLORS.borderAlpha);
+  comprobar('...a la opacidad pedida', COLORS.borderAlpha.includes('0.5'), COLORS.borderAlpha);
+  comprobar('El borde sólido sigue disponible', COLORS.border.startsWith('#'));
 }
 
 console.log(fallos === 0 ? '\n  Todo correcto.\n' : `\n  ${fallos} fallo(s).\n`);

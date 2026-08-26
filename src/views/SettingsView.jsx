@@ -503,7 +503,7 @@ export function BloqueLegibilidad({ tema, fondoActivo, accent, onCambiar }) {
 
   return (
     <Card>
-      <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Tarjetas y barra</p>
+      <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Tarjetas, bordes y barra</p>
       <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
         {fondoActivo
           ? 'Baja la opacidad para que se vea el fondo a través de la interfaz.'
@@ -515,6 +515,16 @@ export function BloqueLegibilidad({ tema, fondoActivo, accent, onCambiar }) {
           onChange={(v) => set({ superficieAlfa: v })} />
         <Deslizador label="Opacidad de la barra inferior" valor={t.navegacionAlfa} min={20} max={100} accent={accent}
           onChange={(v) => set({ navegacionAlfa: v })} />
+        {/* FO Fase 7, apartado 10 — el color del borde ya se podía cambiar en el
+            constructor de temas; lo que faltaba era su intensidad. Un borde al
+            100 % sobre una tarjeta translúcida encima de una foto se ve como una
+            caja pegada; bajarlo la integra sin quitarle la separación. */}
+        <Deslizador label="Intensidad de los bordes" valor={t.bordeAlfa} min={20} max={100} accent={accent}
+          onChange={(v) => set({ bordeAlfa: v })} />
+        {/* Apartado 11 — sombras. El tope es bajo a propósito: el propio apartado
+            pide evitar configuraciones que hagan que la app parezca desordenada. */}
+        <Deslizador label="Sombra de las tarjetas" valor={t.sombras} min={0} max={40} sufijo="" accent={accent}
+          onChange={(v) => set({ sombras: v })} />
       </div>
 
       {/* El mínimo no es 0 y conviene decir por qué, para que no parezca un tope

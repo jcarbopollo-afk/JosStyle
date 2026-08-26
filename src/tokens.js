@@ -100,6 +100,19 @@ export const DEFAULT_TEMA_PERSONALIZADO = {
 
   // Apartado 10 — la barra de navegación inferior.
   navegacionFondo: null,
+
+  // ---- FO Fase 7 — personalización manual avanzada ----
+  //
+  // Apartado 10: el color del borde ya se podía cambiar; lo que faltaba era su
+  // INTENSIDAD. Un borde al 100 % sobre una tarjeta translúcida encima de una foto
+  // se ve como una caja pegada; bajarlo la integra sin quitarle la separación.
+  bordeAlfa: 100,
+
+  // Apartado 11 — sombras. El tope es bajo a propósito: el propio apartado pide
+  // "evitar que el usuario pueda crear configuraciones visualmente exageradas que
+  // hagan que la aplicación parezca desordenada". 0 es sin sombra, que es como ha
+  // estado la app hasta ahora.
+  sombras: 0,               // 0-40
 };
 
 // Fase 1 del Sistema de Personalización Visual Extrema — `aplicarTema` gana un tercer parámetro,
@@ -182,6 +195,17 @@ export function aplicarTema(nombreResuelto, altoContraste, accentHex, temaPerson
   //
   // Al ser tokens de `COLORS`, cualquier vista los hereda sin cambiar de import,
   // igual que pasó con los roles derivados del acento en la Fase 1 de Personalización.
+  // FO Fase 7 — borde y sombra. El borde translúcido se deriva del color de borde
+  // ya resuelto, así que sigue el tema y cualquier override de arriba.
+  const alfaBorde = clampAlfa(tp.bordeAlfa);
+  COLORS.borderAlpha = alfaBorde >= 100 ? COLORS.border : hexToRgbaLocal(COLORS.border, alfaBorde / 100);
+  const sombra = Math.min(40, Math.max(0, Number(tp.sombras) || 0));
+  // `none` y no una sombra de opacidad 0: una sombra invisible sigue costando
+  // pintado en cada tarjeta, y son muchas por pantalla.
+  COLORS.cardShadow = sombra > 0
+    ? `0 ${Math.round(sombra / 3)}px ${sombra}px rgba(0, 0, 0, ${(sombra / 60).toFixed(3)})`
+    : 'none';
+
   const alfaSuperficie = clampAlfa(tp.superficieAlfa);
   const alfaNav = clampAlfa(tp.navegacionAlfa);
   COLORS.surfaceAlpha = alfaSuperficie >= 100 ? COLORS.surface : hexToRgbaLocal(COLORS.surface, alfaSuperficie / 100);

@@ -194,7 +194,7 @@ const CASOS = [
     tema: DEFAULT_TEMA_PERSONALIZADO, fondoActivo: false, accent, onCambiar: noop,
   })],
   ['SettingsView · Legibilidad translúcida', BloqueLegibilidad, () => ({
-    tema: { ...DEFAULT_TEMA_PERSONALIZADO, superficieAlfa: 25, navegacionAlfa: 30, secundario: '#FF0000' },
+    tema: { ...DEFAULT_TEMA_PERSONALIZADO, superficieAlfa: 25, navegacionAlfa: 30, secundario: '#FF0000', bordeAlfa: 40, sombras: 28 },
     fondoActivo: true, accent, onCambiar: noop,
   })],
   // FO Fase 5 — la paleta detectada, con un análisis ya hecho y sellado. Sin
