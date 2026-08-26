@@ -164,8 +164,13 @@ escribir código.
 
 | v1.51.0 | **RA F4** | Centro de Rachas: módulo nuevo en el área Vida, racha principal en Hoy, calendario compacto, logros y celebración **agrupada**. Cierra el bloque RA |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados.** Quedan **78** fases de
-la Entrega 2: SO · Sonido (5), HT (12) y EH (65).
+| v1.52.0 | **HT F1** | Arquitectura de Horario Top: **el horario es una regla, no una lista de eventos**. Y las asignaturas no se duplican — se apuntan a las de Estudios |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 1/12. Quedan
+**77** fases de la Entrega 2: HT (11), SO · Sonido (5) y EH (65).
+
+⏸ **SO · Sonido sigue bloqueado a la espera de Josué (C-23):** su Fase 1 no aparece en la
+especificación, y además necesita archivos de audio que él dará más adelante.
 
 ⏸ **El orden dentro de E2-5 está pendiente de Josué (C-23):** en la especificación, el encabezado de
 la Fase 1 de Sonido va seguido del texto de la Fase 4 de Rachas, así que no se sabe dónde está el

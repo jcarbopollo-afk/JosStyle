@@ -1,5 +1,76 @@
 # CHANGELOG.md
 
+## Entrega 2 · HT Fase 1 — Arquitectura de Horario Top (v1.52.0)
+
+### Esta fase no pide construir: pide definir
+*"No estamos construyendo todavía la interfaz definitiva, la base de datos definitiva, el editor
+definitivo, la mochila, las notificaciones ni la IA. Estamos estableciendo cómo debe funcionar todo
+el ecosistema antes de empezar a construirlo."*
+
+En este proyecto eso ha significado siempre lo mismo: **un módulo puro y probado, no un documento.**
+Un documento se contradice con el código en la segunda fase; un modelo con 131 comprobaciones no
+puede. `src/lib/horario.js` es el ecosistema entero como código, **sin una sola pantalla**.
+
+### El horario es una regla, no una lista de eventos
+Es la distinción de la que cuelga todo lo demás. La regla base vive en `bloques` —"los martes a las
+10:00 hay Biología"— y los cambios puntuales en `excepciones`. `resolverDia()` los compone al vuelo.
+
+Materializarlo —crear cuarenta "Biología" para el curso— haría que cambiar la hora de la clase
+obligara a editar cuarenta filas, y que un festivo tuviera que borrar seis. Es el mismo error que el
+proyecto ya evitó en el Calendario.
+
+Con esto: el mismo bloque resuelve en todos los martes del curso (probado con dos martes distintos),
+cancelar un día no toca el siguiente, y **un festivo se declara una vez** en vez de cancelar seis
+clases a mano. Y un festivo de instituto **no cancela el entrenamiento**.
+
+### Las asignaturas no se duplican
+*"Si el usuario crea Biología, no debería tener que volver a escribir «Biología» para Horario,
+Tareas, Exámenes, Mochila y Estudios."*
+
+Y JosStyle **ya tiene las asignaturas de Josué**, en `estudios.asignaturas` desde la Fase 6. Así que
+una actividad escolar no las copia: **apunta a ellas**, y el nombre se resuelve al leer. Renombrar
+"Bio" a "Biología" en Estudios lo cambia en el horario sin tocar el horario.
+
+Sin esto habría dos "Biología" —una en cada módulo— y ningún examen podría enlazarse con su clase.
+
+### Una columna guarda su día aparte de su nombre
+Es la pieza que permite las dos cosas que pide la especificación a la vez: que "Martes" resuelva a
+una fecha, y que "Semana A", "Persona 2" o "Proyecto 1" sigan siendo columnas posibles. Sin ese
+campo habría que adivinar el día por el nombre, y "Semana A" no es ningún día.
+
+Una columna sin día no cae en ninguna fecha — está probado, y es exactamente el hueco donde entrarán
+las semanas A/B más adelante sin tocar el modelo.
+
+### Los enganches de lo que viene, y solo los enganches
+- **Mochila** (Fase 7): `materialDelDia()` agrupa y dice **para qué** hace falta cada cosa —
+  "Libreta — para Biología y Matemáticas" es más útil que la libreta repetida dos veces.
+- **Notificaciones** (Fase 10): `avisosDelDia()` **describe, no notifica**. Devuelve qué se podría
+  avisar y a qué hora; quién avise es de esa fase. Así dos sistemas no mandan el mismo aviso.
+- **IA** (Fase 9): `contextoIA()` devuelve estructura, no una lista de textos, y omite los campos
+  vacíos. Y no llama a ninguna IA: la IA nunca se dispara sola.
+
+### Dos decisiones que se llevan por delante un error futuro
+1. **Borrar una actividad no borra sus bloques**: los deja sin actividad. Perder la hora de una clase
+   porque se borró la asignatura sería mucho peor que quedarse con un hueco que se vuelve a rellenar.
+2. **Un evento resuelto no tiene id propio.** No es una entidad guardada, es el resultado de componer
+   otras; darle un id invitaría a guardarlo, que es justo lo que esta arquitectura evita.
+
+### Un fallo mío, cazado por su propia prueba
+`crearColumna({ dia: 9 })` reventaba. El día es *truthy* pero está fuera de rango, y se usaba para
+construir el nombre **antes** de validarlo, así que indexaba una posición que no existe.
+
+### Verificación
+**1961 comprobaciones y 9 reglas invariantes en verde**, build incluido. `package.json` →
+**v1.52.0**. Van 29 de las 106 fases; quedan 77.
+
+⏸ **Lo decidirá HT F2, no esta fase:** dónde se guarda. Aquí se ha asumido `app_data` con la clave
+`horarioTop`, por coherencia con los otros veintiún módulos y para no añadir SQL pendiente. **La
+Fase 2 es literalmente la del modelo de datos y Supabase**, así que lo confirmará o lo cambiará con
+su especificación delante. Nada de lo construido aquí depende de esa elección: el módulo es puro.
+
+⏸ **SO · Sonido sigue esperando a Josué (C-23):** su Fase 1 no aparece en la especificación, y además
+necesita archivos de audio que él dará cuando la web tenga todos los botones activos.
+
 ## Entrega 2 · RA Fase 4 — Centro de Rachas y experiencia visual (v1.51.0) 🔒 CIERRA EL BLOQUE RA
 
 ### Un módulo nuevo: Rachas

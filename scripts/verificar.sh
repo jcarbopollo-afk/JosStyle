@@ -146,6 +146,12 @@ else
   fallo "Falla la gamificación de rachas"; grep '✗' /tmp/jc_rachas3.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-horario.mjs >/tmp/jc_horario.log 2>&1; then
+  ok "Arquitectura de Horario Top (HT F1) — $(grep -c '✓' /tmp/jc_horario.log) comprobaciones"
+else
+  fallo "Falla la arquitectura de Horario Top"; grep '✗' /tmp/jc_horario.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

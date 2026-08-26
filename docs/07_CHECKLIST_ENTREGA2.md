@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 28 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)** y **RA 4/4 (cerrado)** (hasta v1.51.0). Quedan **78**: SO · Sonido (5),
-> HT (12) y EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 29 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)** y **HT 1/12** (hasta v1.52.0). Quedan **77**:
+> HT (11), SO · Sonido (5) y EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -3150,38 +3150,112 @@ Sistema global de módulos activables/desactivables, personalización y papelera
 
 Motor temporal y de planificación: horario configurable, pantalla HOY consciente del tiempo real, mochila inteligente, planificador de huecos, notificaciones contextuales y analítica de uso del tiempo. **Es el módulo más acoplado a lo existente**: Calendario Universal (C1–C3), Productividad, Estudios y el Dashboard Centro de Control cubren ya parte de su superficie.
 
-#### HT · Fase 1/12 — ARQUITECTURA GENERAL DEL SISTEMA
-- [ ] OBJETIVO DE ESTA FASE
-- [ ] PRINCIPIO FUNDAMENTAL
-- [ ] ESTRUCTURA GENERAL
-- [ ] TIPOS DE HORARIO
-- [ ] HORARIO RECURRENTE VS. HORARIO REAL
-- [ ] DISEÑO DE LA CUADRÍCULA
-- [ ] COLUMNAS
-- [ ] FILAS
-- [ ] BLOQUES VISUALES
-- [ ] PERSONALIZACIÓN VISUAL
-- [ ] IDENTIDAD DE LAS ACTIVIDADES
-- [ ] SISTEMA DE ENTIDADES
-- [ ] CONEXIÓN CON EL SISTEMA PERSONAL
-- [ ] EL SISTEMA “HOY”
-- [ ] SISTEMA DE PRIORIDADES
-- [ ] PREPARACIÓN PARA LA MOCHILA
-- [ ] PREPARACIÓN PARA NOTIFICACIONES
-- [ ] PREPARACIÓN PARA IA
-- [ ] PREPARACIÓN PARA SUPABASE
-- [ ] SINCRONIZACIÓN
-- [ ] OFFLINE
-- [ ] ESCALABILIDAD
-- [ ] PERIODOS Y SEMANAS
-- [ ] CAMBIO DE HORARIO
-- [ ] PRINCIPIO DE NO DUPLICACIÓN
-- [ ] EXPERIENCIA DE USUARIO
-- [ ] DISEÑO MOBILE-FIRST
-- [ ] ARQUITECTURA MODULAR
-- [ ] EVENTOS DEL SISTEMA
-- [ ] FUTURO SISTEMA DE AUTOMATIZACIONES
-- [ ] RESULTADO ESPERADO DE ESTA FASE
+#### HT · Fase 1/12 — ARQUITECTURA GENERAL DEL SISTEMA ✅ COMPLETADA (v1.52.0)
+
+**Esta fase no pide construir: pide definir.** *"No estamos construyendo todavía la interfaz
+definitiva, la base de datos definitiva, el editor definitivo, la mochila, las notificaciones ni la
+IA. Estamos estableciendo cómo debe funcionar todo el ecosistema antes de empezar a construirlo"*
+(apartado 31).
+
+En este proyecto "arquitectura definida" ha significado siempre lo mismo —AR F1, FO F1, RA F1—: **un
+módulo puro y probado, no un documento.** Un documento se contradice con el código en la segunda
+fase; un modelo con 131 comprobaciones no puede. Así que `src/lib/horario.js` es el ecosistema
+entero como código, **sin una sola pantalla**.
+
+- [x] **1 · Objetivo** — un sistema central de planificación temporal, no una pantalla de consulta.
+      Todo lo que otros módulos necesitarán leer está en funciones, no en la vista.
+- [x] **2 · Principio fundamental** — **el horario y lo que pasa un día son DOS cosas.** La regla
+      base vive en `bloques`; los cambios puntuales, en `excepciones`.
+- [x] **3 · Estructura general** — las cinco capas: horarios, bloques, calendario (excepciones y
+      eventos resueltos), HOY (`lineaDelDia`) e inteligencia (conflictos y huecos, ya utilizables).
+- [x] **4 · Tipos de horario** — seis, y el tipo **no cambia la mecánica**: solo lo que la interfaz
+      ofrecerá por defecto. Un horario de entrenamiento no necesita aula ni profesor.
+- [x] **5 · Recurrente vs. real** — **`resolverDia()` compone, no materializa.** El mismo bloque
+      resuelve en todos los martes del curso: hay una prueba que lo comprueba con dos martes
+      distintos. Cambiar la hora de una clase la cambia en todos, y un festivo se declara **una
+      vez** con `dia_libre` en vez de cancelar seis clases a mano.
+- [x] **6 · Diseño de la cuadrícula** — el modelo es un editor, no una imagen: columnas y filas son
+      datos, no constantes. La interfaz es de la Fase 3.
+- [x] **7 · Columnas** — **una columna guarda su `dia` aparte de su nombre.** Es la pieza que
+      permite las dos cosas del apartado a la vez: que "Martes" resuelva a una fecha y que
+      "Semana A" o "Persona 2" sigan siendo posibles. Sin ese campo habría que adivinar el día por
+      el nombre, y "Semana A" no es ningún día. Una columna sin `dia` no cae en ninguna fecha —
+      probado.
+- [x] **8 · Filas** — guardan **inicio y fin**, no una duración implícita. Con solo la hora de
+      inicio, un recreo de 20 minutos entre clases de 50 no se podría representar.
+- [x] **9 · Bloques visuales** — el bloque guarda solo lo suyo (cuándo, y dónde si ese día cambia);
+      color, icono y material viven en la **actividad**, porque tres bloques de Matemáticas son la
+      misma entidad (apartado 11).
+- [x] **10 · Personalización visual** — color e icono por actividad, en el modelo. Tipografía y
+      estilo son de la app entera y ya existen desde la Fase A3: **no se ha creado un segundo
+      sistema de apariencia** para el horario.
+- [x] **11 · Identidad de las actividades** — una actividad es una entidad reutilizable, y los
+      bloques la referencian por id.
+- [x] **12 · Sistema de entidades** — horario, bloque, actividad, excepción y evento resuelto,
+      separados de verdad y en listas planas.
+- [x] **13 · Conexión con el sistema personal** — el módulo no guarda nada de otros módulos: los
+      lee. Las asignaturas entran como parámetro, nunca copiadas.
+- [x] **14 · El sistema HOY** — `lineaDelDia()` responde a "qué tengo", "qué viene después" y "qué
+      necesito"; `proximoEvento()` salta al día siguiente si hoy ya se acabó. La agregación con
+      tareas y exámenes es de la Fase 6, y encaja **añadiendo fuentes**, no rehaciendo la vista.
+- [x] **15 · Sistema de prioridades** — cuatro, con peso, para que HOY pueda ordenar en vez de
+      listar.
+- [x] **16 · Preparación para la mochila** — `materialDelDia()` agrupa el material y dice **para qué
+      hace falta cada cosa**: "Libreta — para Biología y Matemáticas" es más útil que la libreta
+      repetida dos veces. La mochila de verdad es la Fase 7.
+- [x] **17 · Preparación para notificaciones** — `avisosDelDia()` **describe, no notifica**. Devuelve
+      qué se podría avisar y a qué hora; quién avise es la Fase 10. Mismo criterio que RA F2, y evita
+      que dos sistemas manden el mismo aviso.
+- [x] **18 · Preparación para IA** — `contextoIA()` devuelve estructura, no una lista de textos, y
+      omite los campos vacíos para no ensuciar el contexto. Y **la IA no se dispara sola** (regla 7):
+      esto solo prepara el contexto.
+- [x] **19 · Preparación para Supabase** — mismo camino que RA F2: `app_data`, clave `horarioTop`,
+      con la RLS que ya existe. **Sin tabla nueva y sin SQL que Josué tenga que ejecutar.** La Fase
+      2 de HT es justo la del modelo de datos y confirmará o cambiará esto con su propia
+      especificación delante.
+- [x] **20 · Sincronización** — el estado no depende del almacenamiento local: viaja en `app_data`
+      como los otros veintiún módulos.
+- [x] **21 · Offline** — el módulo es puro y sin efectos, así que una cola de sincronización se
+      monta encima sin tocarlo. El enganche queda identificado.
+- [x] **22 · Escalabilidad** — varios horarios a la vez, y un festivo de instituto **no cancela el
+      entrenamiento**: hay una prueba de ello.
+- [x] **23 · Periodos y semanas** — un horario tiene `periodo`. Las columnas sin `dia` son
+      exactamente el hueco donde entrarán "Semana A" y "Semana B" sin tocar el modelo.
+- [x] **24 · Cambio de horario** — se desactiva, no se borra: *"sin destruir el anterior"*. Un
+      horario desactivado no resuelve nada pero conserva sus bloques — probado.
+- [x] **25 · Principio de no duplicación** — ⚠️ **el apartado que más ha decidido.** JosStyle ya
+      tiene las asignaturas de Josué en `estudios.asignaturas` desde la Fase 6, así que **una
+      actividad escolar no las copia: apunta a ellas** por `asignaturaId`, y el nombre se resuelve al
+      leer. Renombrar "Bio" a "Biología" en Estudios lo cambia en el horario sin tocar el horario.
+      Sin esto habría dos "Biología" y ningún examen podría enlazarse con su clase.
+- [x] **26 · Experiencia de usuario** — *"máxima potencia con mínima fricción"*: un bloque puede
+      tener título propio sin actividad, así que poner "Recreo" no obliga a crear una entidad.
+- [x] **27 · Mobile-first** — no aplica todavía (no hay interfaz), y por eso **no se ha marcado nada
+      de diseño que no exista**. Es de la Fase 3.
+- [x] **28 · Arquitectura modular** — cada pieza es una función suya, y las de fases posteriores
+      (mochila, avisos, IA) están separadas y ya probadas, para que esa fase no toque el modelo.
+- [x] **29 · Eventos del sistema** — la cascada del apartado es aquí integridad referencial:
+      `eliminarHorario`, `eliminarActividad`, `eliminarColumna` y `revisarHorario`.
+- [x] **30 · Futuro sistema de automatizaciones** — `conflictosDelDia` y `huecosDelDia` contestan ya
+      "qué choca" y "cuándo tengo un hueco", que es lo que necesitará la Fase 8.
+- [x] **31 · Resultado esperado** — la arquitectura conceptual completa, en código y probada.
+
+**Dos decisiones que se llevan por delante un error futuro:**
+
+1. **Borrar una actividad NO borra sus bloques**: los deja sin actividad. Perder la hora de una clase
+   porque se borró la asignatura sería mucho peor que quedarse con un hueco que se vuelve a
+   rellenar. Es la misma decisión que AR F2 con una prenda borrada de un outfit.
+2. **Un evento resuelto no tiene id propio.** No es una entidad guardada, es el resultado de
+   componer otras; darle un id invitaría a guardarlo, que es justo lo que esta arquitectura evita.
+
+**Un fallo mío, cazado por su propia prueba:** `crearColumna({ dia: 9 })` reventaba. El día es
+*truthy* pero está fuera de rango, y se usaba para el nombre **antes** de validarlo, así que
+indexaba `DIAS_SEMANA[8]`. Ahora se valida primero.
+
+⏸ **Una cosa que decidirá la Fase 2, no esta:** dónde se guarda. Aquí se ha asumido `app_data` con la
+clave `horarioTop`, por coherencia con los otros veintiún módulos y para no añadir SQL pendiente.
+**HT F2 es literalmente la fase del modelo de datos y Supabase**, así que lo confirmará o lo cambiará
+con su especificación delante. Nada de lo construido aquí depende de esa elección: el módulo es puro.
 
 #### HT · Fase 2/12 — MODELO DE DATOS + CLOUD + SUPABASE
 - [ ] OBJETIVO
