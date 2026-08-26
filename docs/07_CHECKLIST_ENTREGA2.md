@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 39 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 10/12** y **SO 1/5** (hasta v1.62.0). Quedan
-> **67**: HT (2), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 40 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 11/12** y **SO 1/5** (hasta v1.63.0). Quedan
+> **66**: HT (1), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -3950,8 +3950,56 @@ decisión es donde están los errores que importan, y la decisión sí se puede 
 **Lo que sigue sin estar probado, y hay que decirlo:** que la notificación llegue de verdad al
 iPhone, el permiso del navegador y Web Push con la app cerrada. Como todo desde R1 y la Fase A4.
 
-#### HT · Fase 11/12 — ANALÍTICA PERSONAL + CARGA + PROGRESO + APRENDIZAJE DEL SISTEMA
-- [ ] *(sin apartados numerados extraídos — leer la fase completa en la especificación)*
+#### HT · Fase 11/12 — ANALÍTICA PERSONAL + CARGA + PROGRESO + APRENDIZAJE ✅ COMPLETADA (v1.63.0)
+
+⚠️ **Esta fase tiene la especificación más corta de las doce:** veintitrés puntos y ninguna letra
+pequeña. Uno de ellos, sin embargo, dice cómo hay que construir todo lo demás:
+
+> *"…y un sistema de aprendizaje que mejore las sugerencias **sin convertirlo en una caja negra**."*
+
+Así que en `src/lib/analiticaHorario.js` (49 comprobaciones) **no hay ni un número que no se pueda
+explicar**: cada cifra viene con **de dónde sale**, y lo que el sistema "aprende" son frases que se
+leen y se comprueban — *"por la tarde confirmas menos (3 de 12)"*. Nada de pesos ocultos.
+
+- [x] **Estadísticas de cumplimiento · planificado vs. realizado** — lo primero sale del horario, lo
+      segundo de lo que Josué confirmó en HT F8. ⚠️ **Solo cuentan los días ya pasados**: incluir el
+      futuro daría un cumplimiento que baja solo según avanza la semana.
+- [x] **Carga diaria/semanal y horas libres** — ⚠️ la media es **de los días ocupados**: incluir los
+      domingos vacíos la hunde y deja de describir cómo es un día de instituto.
+- [x] **Tareas completadas y aplazadas** — las que no tienen fecha se cuentan aparte, no como
+      vencidas.
+- [x] **Mochila** — ⚠️ los días sin mochila **no cuentan**: un domingo no es un olvido.
+- [x] **Patrones de organización y aprendizaje** — ⚠️ **cada patrón es una frase con sus números
+      dentro**, y **por debajo de 3 ocurrencias no se dice nada**: "los martes te saltas el estudio"
+      basado en un martes es una afirmación inventada.
+- [x] **Tendencias y comparativas** — ⚠️ **hacen falta los DOS periodos con datos.** Comparar una
+      semana llena con una de vacaciones diría "has bajado un 80 %", y sería mentira. Y menos de 10
+      puntos de diferencia no es tendencia: es ruido de una semana.
+- [x] **Detección de sobrecarga y evolución** — el día más cargado y el más libre, con sus minutos.
+- [x] **Informes y recomendaciones** — ⚠️ **las recomendaciones no las hace la IA ni se disparan
+      solas** (regla 7): son consecuencias directas de un patrón ya medido, con su número delante.
+- [x] **Un bug de diseño que cazó su propia prueba** — `suficientesDatos` solo miraba si había clases
+      planificadas. Con cero confirmaciones, eso daba *"esta semana 0 %, la anterior 0 %"*, que
+      **da por hecho que Josué no hizo nada** cuando lo que pasa es que no usa el botón de confirmar.
+      Ahora hace falta también **alguna confirmación**, y si no la hay se dice con esas palabras.
+
+⚠️ **Y la regla que gobierna la fase entera: describe, no juzga.** Es la misma línea de HT F7
+(*"sin castigo"*), HT F9 (*"no castigar"*) y D2-02 (*"no sobregamificar"*). Un 40 % es un dato, no
+una nota. Hay **una lista declarada de palabras prohibidas** y una prueba que **recorre todos los
+textos que genera el archivo** —resumen, orígenes, patrones, tendencia y recomendaciones— buscando
+reproches, en el peor escenario posible: cuatro semanas de clases y nada confirmado. Más otra que
+comprueba que no hay ni puntos, ni niveles, ni rachas.
+
+**Lo que NO se ha construido, y por qué (regla 8):**
+
+- [-] **Gráficas** — la especificación no las pide, y el proyecto **ya tiene** un módulo de
+      Estadísticas (Fase 12 de la Entrega 1) con las suyas. Un segundo sistema de gráficas dentro del
+      horario sería la duplicación de siempre.
+- [-] **Cumplimiento de objetivos y hábitos** — los objetivos son su propio módulo y los hábitos
+      viven en Productividad con sus rachas (RA F1-F4). El horario **lee** lo suyo; medir el
+      cumplimiento de un hábito aquí daría dos números distintos para lo mismo.
+
+**Lo que sigue sin estar probado, y hay que decirlo:** la pantalla del informe. Como todo desde R1.
 
 #### HT · Fase 12/12 — CLOUD + SUPABASE + SINCRONIZACIÓN + ARQUITECTURA DEFINITIVA
 - [ ] ARQUITECTURA GENERAL

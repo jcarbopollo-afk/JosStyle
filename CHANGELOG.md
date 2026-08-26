@@ -1,5 +1,69 @@
 # CHANGELOG.md
 
+## Entrega 2 · HT Fase 11 — Analítica personal, carga, progreso y aprendizaje (v1.63.0)
+
+### La frase que decidió cómo construir la fase
+Esta es la especificación más corta de las doce: veintitrés puntos y ninguna letra pequeña. Pero uno
+de ellos dice cómo hay que hacer todo lo demás:
+
+> *"…y un sistema de aprendizaje que mejore las sugerencias **sin convertirlo en una caja negra**."*
+
+Así que aquí **no hay ni un número que no se pueda explicar**. Cada cifra viene con de dónde sale
+—*"de 9 días con clases, confirmadas a mano"*— y lo que el sistema "aprende" son frases que se leen y
+se comprueban: *"por la tarde confirmas menos (3 de 12)"*.
+
+### Sin datos no se inventa una tendencia
+Con tres días no hay tendencia; hay tres días.
+
+- **Por debajo de 3 ocurrencias no se afirma ningún patrón.** "Los martes te saltas el estudio"
+  basado en un martes es una afirmación inventada.
+- **La tendencia necesita los dos periodos con datos.** Comparar una semana llena con una de
+  vacaciones diría "has bajado un 80 %", y sería mentira.
+- **Menos de 10 puntos de diferencia no es tendencia**: es ruido de una semana.
+
+Y cuando no hay bastante, se dice: *"todavía no hay suficientes semanas para comparar"*, no un cero.
+
+### Un bug de diseño que cazó su propia prueba
+`suficientesDatos` solo miraba si había clases planificadas. Con cero confirmaciones eso daba *"esta
+semana 0 %, la anterior 0 %"* — que **da por hecho que Josué no hizo nada**, cuando lo que pasa es
+que no ha usado el botón de confirmar.
+
+Ahora hace falta también **alguna confirmación**, y si no la hay se dice con esas palabras: *"hay 40
+actividades en esos días, pero ninguna confirmada todavía"*.
+
+### Describe, no juzga
+Es la misma línea de la mochila (*"sin castigo"*), del planificador (*"no castigar"*) y de D2-02
+(*"no sobregamificar"*). Un 40 % es un dato, no una nota.
+
+Hay una **lista declarada de palabras prohibidas** y una prueba que **recorre todos los textos que
+genera el archivo** —resumen, orígenes, patrones, tendencia y recomendaciones— buscando reproches, en
+el peor escenario posible: cuatro semanas de clases y nada confirmado. Más otra que comprueba que no
+hay ni puntos, ni niveles, ni rachas.
+
+### Detalles que evitan medias verdades
+- **Solo cuentan los días ya pasados**: incluir el futuro daría un cumplimiento que baja solo según
+  avanza la semana.
+- **La media es de los días ocupados**: incluir los domingos vacíos la hunde y deja de describir cómo
+  es un día de instituto.
+- **Los días sin mochila no cuentan**: un domingo no es un olvido.
+- **Las tareas sin fecha se cuentan aparte**, no como vencidas.
+
+### Lo que no se ha construido, y por qué
+- **Gráficas**: la especificación no las pide, y el proyecto **ya tiene** un módulo de Estadísticas
+  con las suyas. Un segundo sistema de gráficas dentro del horario sería la duplicación de siempre.
+- **Cumplimiento de objetivos y hábitos**: los objetivos son su módulo y los hábitos viven en
+  Productividad con sus rachas. Medirlos aquí daría dos números distintos para lo mismo.
+
+### Verificación
+**3066 comprobaciones y 10 reglas invariantes en verde** (antes 3009), 49 de la analítica y 304 casos
+de renderizado. `package.json` → **v1.63.0**.
+
+⚠️ Sin probar: la pantalla del informe. Como todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
 ## Entrega 2 · HT Fase 10 — Notificaciones, recordatorios y contexto proactivo (v1.62.0)
 
 ### La mitad que faltaba: decidir, no mandar

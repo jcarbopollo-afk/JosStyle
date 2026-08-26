@@ -34,6 +34,7 @@ import {
 } from '../src/lib/automatizaciones.js';
 import { detectarSobrecarga } from '../src/lib/planificador.js';
 import { registrarEnviado, centroDeAvisos } from '../src/lib/avisosHorario.js';
+import { informe, recomendaciones } from '../src/lib/analiticaHorario.js';
 import { crearMaterial, crearEnlaceMaterial } from '../src/lib/horarioDatos.js';
 import { contextoTemporal, opcionesReprogramar } from '../src/lib/hoy.js';
 import { fichaActividad, impactoEliminarActividad, editarActividad, crearActividadUnica } from '../src/lib/actividades.js';
@@ -456,6 +457,18 @@ const CASOS = [
                 centroAvisos: centroDeAvisos(conAvisos),
                 accionesAvisos: { leer: noop, archivar: noop, todosLeidos: noop },
               })],
+            ];
+          })(),
+          /* HT Fase 11 — el informe. Los dos casos que importan: con datos, y
+             SIN ellos (que no puede enseñar un 0 % que parezca un suspenso). */
+          ...(() => {
+            const conInf = (e) => {
+              const inf = informe(e, { hoy: HOY, dias: 14 });
+              return { informe: inf, recomendaciones: recomendaciones(inf) };
+            };
+            return [
+              ['HoyView · con informe', HoyView, () => ({ ...propsHoy(lleno, { productividad: tareas }), analitica: conInf(lleno) })],
+              ['HoyView · informe sin datos', HoyView, () => ({ ...propsHoy(DEFAULT_HORARIO_TOP), analitica: conInf(DEFAULT_HORARIO_TOP) })],
             ];
           })(),
           ['HoyView · con clases y pendientes', HoyView, () => propsHoy(lleno, { productividad: tareas })],

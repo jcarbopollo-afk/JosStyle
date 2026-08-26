@@ -186,8 +186,10 @@ escribir código.
 
 | v1.62.0 | **HT F10** | El motor de DECISIÓN de avisos, separado del emisor que ya existía. **Que exista un evento no significa avisar**, tres avisos se agrupan en uno y **no molestar se respeta también con lo crítico** |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 10/12 y SO por
-1/5. Quedan **67** fases de la Entrega 2: HT (2), SO (4) y EH (61).
+| v1.63.0 | **HT F11** | Analítica personal **sin caja negra**: cada cifra con su origen, los patrones como frases con sus números dentro, y **sin datos no se inventa una tendencia**. Describe, no juzga |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 11/12 y SO por
+1/5. Quedan **66** fases de la Entrega 2: HT (1), SO (4) y EH (61).
 
 ✅ **C-23 resuelta a medias:** Josué pasó el texto que faltaba de la Fase 1 del Sonido (v1.54.0).
 ⏸ **Sigue pendiente lo de los archivos de audio**, que él dará *"cuando la web ya tenga todos los

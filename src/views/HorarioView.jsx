@@ -77,6 +77,7 @@ import {
   avisosAMandar, registrarEnviado, centroDeAvisos, marcarLeido, archivarAviso,
   marcarTodosLeidos, posponer, MINUTOS_SNOOZE, tipoAviso, resumenNocturno,
 } from '../lib/avisosHorario';
+import { informe, recomendaciones } from '../lib/analiticaHorario';
 import { notificarSiCorresponde } from '../lib/notificaciones';
 
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
@@ -574,6 +575,82 @@ function PanelFranjas({ horario, estado, accent, onAnadir, onEditar, onEliminar 
    LA PANTALLA
    =========================================================================== */
 /* ===========================================================================
+   EL INFORME (HT F11)
+   ===========================================================================
+   *"Un sistema de aprendizaje que mejore las sugerencias **sin convertirlo en
+   una caja negra**."*
+
+   Por eso cada cifra sale **con su origen debajo**, y los patrones son frases
+   que se pueden leer y comprobar: *"por la tarde confirmas menos (3 de 12)"*.
+
+   ⚠️ **Y no se riñe.** Es la misma línea de la mochila (*"sin castigo"*) y del
+   planificador (*"no castigar"*). Un 40 % es un dato, no una nota — hay una
+   prueba que recorre todos los textos buscando reproches.
+
+   ⚠️ **Si no hay datos, se dice**, en vez de enseñar un 0 % que parece un
+   suspenso cuando lo que pasa es que aún no se ha confirmado nada. */
+function PanelInforme({ inf, recs, accent }) {
+  const [abierto, setAbierto] = useState(false);
+  if (!inf) return null;
+
+  const dato = (label, valor, origen, hay) => (
+    <div className="py-1">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-xs" style={{ color: COLORS.text }}>{label}</span>
+        <span className="text-sm font-semibold" style={{ color: hay ? accent : COLORS.textMuted }}>
+          {hay ? `${valor} %` : '—'}
+        </span>
+      </div>
+      {/* ⚠️ El origen SIEMPRE, también cuando no hay dato: es lo que impide
+          que sea una caja negra. */}
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{origen}</p>
+    </div>
+  );
+
+  return (
+    <Card>
+      <button onClick={() => setAbierto(!abierto)} className="w-full flex items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold tracking-wide" style={{ color: COLORS.textMuted }}>CÓMO VA</p>
+        <span className="text-[10px]" style={{ color: accent }}>{abierto ? 'Cerrar' : 'Ver'}</span>
+      </button>
+      <p className="text-[11px] mt-1" style={{ color: COLORS.text }}>{inf.resumen}</p>
+
+      {abierto && (
+        <>
+          {dato('Actividades confirmadas', inf.cumplimiento.porcentaje, inf.cumplimiento.origen, inf.cumplimiento.suficientesDatos)}
+          {dato('Tareas hechas', inf.tareas.porcentaje, inf.tareas.origen, inf.tareas.suficientesDatos)}
+          {dato('Mochila completa', inf.mochila.porcentaje, inf.mochila.origen, inf.mochila.suficientesDatos)}
+
+          <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>{inf.tendencia.texto}</p>
+
+          {/* Los patrones: frases con sus números dentro. */}
+          {inf.patrones.length > 0 && (
+            <>
+              <p className="text-[10px] font-semibold mt-3" style={{ color: COLORS.textMuted }}>LO QUE SE VE</p>
+              {inf.patrones.slice(0, 4).map((p, i) => (
+                <p key={`${p.tipo}-${p.clave}-${i}`} className="text-[11px] py-0.5" style={{ color: COLORS.text }}>{p.texto}</p>
+              ))}
+            </>
+          )}
+
+          {recs.length > 0 && (
+            <>
+              <p className="text-[10px] font-semibold mt-3" style={{ color: COLORS.textMuted }}>IDEAS</p>
+              {recs.slice(0, 3).map((r, i) => (
+                <div key={i} className="py-1">
+                  <p className="text-[11px]" style={{ color: COLORS.text }}>{r.sugerencia}</p>
+                  <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{r.motivo}</p>
+                </div>
+              ))}
+            </>
+          )}
+        </>
+      )}
+    </Card>
+  );
+}
+
+/* ===========================================================================
    EL CENTRO DE AVISOS (HT F10 · apartados 51, 54-57, 72-75)
    ===========================================================================
    Lo que se ha avisado, sin leer primero, con las tres acciones del apartado
@@ -1012,6 +1089,9 @@ export function HoyView({
   planificador = null,
   // HT F10 — el centro de avisos.
   centroAvisos = null, accionesAvisos = null,
+  // HT F11 — el informe. Solo en modo completo: mirar cómo va es algo que se
+  // hace de vez en cuando, no cada mañana.
+  analitica = null,
 }) {
   const { dia, ahora, siguiente: prox, pendientes: pend, libre, conflictos, manana, agenda } = contexto;
   const [reprogramando, setReprogramando] = useState(null);
@@ -1129,6 +1209,11 @@ export function HoyView({
             </div>
           ))}
         </Card>
+      )}
+
+      {/* HT F11 — cómo va, con cada cifra y su origen. */}
+      {completo && analitica && (
+        <PanelInforme inf={analitica.informe} recs={analitica.recomendaciones} accent={accent} />
       )}
 
       {/* HT F10 · apartados 72-75 — qué se ha avisado. */}
@@ -1868,6 +1953,14 @@ export default function HorarioView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [estado]);
 
+  /* HT F11 — el informe. Es lo más caro que se calcula aquí (recorre cuatro
+     semanas), así que va memoizado y NO depende de `minuto`: cómo fue el mes
+     no cambia cada sesenta segundos. */
+  const analitica = useMemo(() => {
+    const inf = informe(estado, { hoy, dias: 14, asignaturas, productividad, estudios });
+    return { informe: inf, recomendaciones: recomendaciones(inf) };
+  }, [estado, hoy, asignaturas, productividad, estudios]);
+
   const contexto = useMemo(
     () => contextoTemporal(estado, { fecha, hoy, asignaturas, estudios, productividad, calendario, horarioId: activo?.id || null }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2044,7 +2137,7 @@ export default function HorarioView({
           onIrAFecha={(f) => { setFecha(f); setVista('dia'); }}
           mochilaHoy={mochilaHoy} mochilaManana={mochilaManana} accionesMochila={accionesMochila}
           tablon={tablon} automatizaciones={automatizaciones} planificador={planificador}
-          centroAvisos={centroAvisos} accionesAvisos={accionesAvisos}
+          centroAvisos={centroAvisos} accionesAvisos={accionesAvisos} analitica={analitica}
           onCompletar={(ev, v) => aplicar(marcarCompletada(estado, ev, fecha, v))}
         />
       )}

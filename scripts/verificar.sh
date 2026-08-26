@@ -212,6 +212,12 @@ else
   fallo "Falla el motor de avisos"; grep '✗' /tmp/jc_horario10.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-analitica-horario.mjs >/tmp/jc_horario11.log 2>&1; then
+  ok "Analítica personal del horario (HT F11) — $(grep -c '✓' /tmp/jc_horario11.log) comprobaciones"
+else
+  fallo "Falla la analítica del horario"; grep '✗' /tmp/jc_horario11.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else
