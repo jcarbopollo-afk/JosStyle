@@ -31,13 +31,14 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
+import { BloqueFondo } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
   DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION,
   DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO,
   DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION,
-  DEFAULT_NOTIFICACIONES, DEFAULT_CALENDARIO, ACCENTS,
+  DEFAULT_NOTIFICACIONES, DEFAULT_CALENDARIO, DEFAULT_APARIENCIA, ACCENTS,
 } from '../src/tokens.js';
 import { DEFAULT_PAPELERA } from '../src/lib/papelera.js';
 import { DEFAULT_ARMARIO, crearPrenda, crearOutfit, crearUso } from '../src/lib/armario.js';
@@ -56,7 +57,7 @@ const vacio = {
   relacion: DEFAULT_RELACION, fe: DEFAULT_FE, bienestar: DEFAULT_BIENESTAR,
   calendario: DEFAULT_CALENDARIO, personalizacion: DEFAULT_PERSONALIZACION,
   notificaciones: DEFAULT_NOTIFICACIONES, papelera: DEFAULT_PAPELERA,
-  armario: DEFAULT_ARMARIO,
+  armario: DEFAULT_ARMARIO, apariencia: DEFAULT_APARIENCIA,
 };
 
 const lleno = {
@@ -86,6 +87,10 @@ const lleno = {
       ],
     };
   })(),
+  // FO Fase 1 — un fondo configurado a la antigua: SIN los campos nuevos (velo, escala,
+  // foto, analisis...). Es exactamente lo que devuelve `loadData` de una versión anterior,
+  // y tiene que pintarse sin romperse (regla 5 del proyecto).
+  apariencia: { ...DEFAULT_APARIENCIA, fondo: { tipo: 'degradado', activo: true, degradado: { de: '#123456', a: '#654321', angulo: 120 } } },
   sueno: [{ id: '1', fecha: HOY, horaDormir: '23:30', horaDespertar: '07:00', calidad: 4, notas: '' }],
   calistenia: { ...DEFAULT_CALISTENIA, Planche: { nivel: 35, progresion: [{ id: 'p', texto: 'Tuck', hecho: true }], prs: [{ id: 'r', fecha: HOY, valor: '20s' }], sesiones: [{ id: 's', fecha: HOY }] } },
   futbol: [{ id: 'f', fecha: HOY, resultado: '3-2' }],
@@ -166,6 +171,10 @@ const CASOS = [
     usos: e.armario.usos, outfits: e.armario.outfits, prendas: e.armario.prendas,
     hoyISO: HOY, onAbrirOutfit: noop, onAbrirPrenda: noop, onRegistrarUso: noop, accent,
   })],
+  // FO Fase 1 — el bloque de fondo de Ajustes. Se renderiza aparte porque SettingsView
+  // entera pide ~40 props; lo que hay que comprobar aquí es que el fondo se pinta con
+  // cualquier configuración, incluida una guardada por una versión anterior.
+  ['SettingsView · Fondo', BloqueFondo, (e) => ({ fondo: e.apariencia.fondo, accent, onCambiar: noop })],
   ['PersonalizationView', PersonalizationView, (e) => ({
     areas: AREAS_PRUEBA,
     modulos: MODULOS_PRUEBA,

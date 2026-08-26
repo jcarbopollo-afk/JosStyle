@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.35.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.36.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI** y **AR** están terminados, quedan 94) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI** y **AR** están terminados y **FO** va por 1/12, quedan 93) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,10 +107,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 704 pruebas unitarias con Node, 5 de auditoría, 68 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **777 comprobaciones**.
+Vite, 805 pruebas unitarias con Node, 5 de auditoría, 72 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **882 comprobaciones**.
 
-Eso ya ha encontrado **veinticuatro bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **veinticinco bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), ocho módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -133,21 +133,22 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**El bloque AR está cerrado (4/4).** Por orden, lo siguiente es **E2-4 · FO — Fondos y
-Fotografías (12 fases)**, que amplía el sistema de apariencia que ya existe. Ver
-`docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_FONDOS_Y_FOTOGRAFIAS.md`.
+**Siguiente fase: FO · Fase 2/12 — Galería y selección de fotografías.** La arquitectura ya está
+(`src/lib/fondos.js`, v1.36.0); esta fase la llena.
+Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_FONDOS_Y_FOTOGRAFIAS.md`.
 
-⚠️ **Pero no empezarlo sin que Josué pase la fase.** Él va pasando fase por fase.
+⚠️ **No empezarla sin que Josué pase la fase.**
 
 Tres avisos para cuando toque:
 
-- **Ya existe un motor de color** (`src/lib/colorEngine.js`) y un sistema de temas completo. FO lo
-  AMPLÍA; no se empieza otro. Regla 2: `COLORS` es un singleton mutable y no hay un segundo
-  sistema de tokens.
-- **Ya existe subida de imágenes a Storage** con URLs firmadas (Salud, Calistenia, Armario). El
-  patrón está resuelto y probado: se reutiliza.
-- **La legibilidad manda sobre la foto.** Un fondo fotográfico que deje el texto ilegible es un
-  fallo, no una opción del usuario.
+- **El modelo ya la contempla.** `fondo.foto` declara id, ruta, origen, ancho, alto y proporción,
+  y `resolverFondo` ya sabe qué hacer cuando la foto no está: baja al fondo incluido en vez de
+  dejar un hueco. No hay que añadir campos ni rehacer nada.
+- **Ya existe subida a Storage con URL firmada** (Salud, Calistenia, Armario). Se reutiliza el
+  patrón; no se inventa otro. El bucket nuevo va en `supabase/schema.sql`, con su RLS por carpeta
+  de usuario, igual que el de `armario`.
+- **El tipo `foto` está marcado `implementado: false`** en `TIPOS_FONDO` y por eso Ajustes no lo
+  ofrece todavía. Esta fase le cambia esa marca; es el interruptor pensado para ello.
 
 ⚠️ **Recordatorio para Josué, si aún no lo ha hecho:** ejecutar el bloque del bucket `armario` de
 `supabase/schema.sql` en el SQL Editor de Supabase. Sin eso, todo funciona menos subir fotos.

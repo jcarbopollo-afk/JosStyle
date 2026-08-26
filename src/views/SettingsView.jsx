@@ -20,6 +20,11 @@ import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
 import { Card, Field, TextInput, Select, GhostBtn, SectionTitle } from '../components/ui';
 import PersonalizationView from './PersonalizationView';
 import PapeleraView from './PapeleraView';
+import {
+  TIPOS_FONDO, FONDOS_INCLUIDOS, POSICIONES_FONDO, seleccionarFondo, ajustarFondo,
+  restablecerFondo, describirFondo, tieneFondoGuardado, resolverFondo, estilosDeFondo,
+  estilosDeVelo,
+} from '../lib/fondos';
 import ColorPicker from '../components/ColorPicker';
 import TemaBuilder from '../components/TemaBuilder';
 import GestionTemas from '../components/GestionTemas';
@@ -172,6 +177,188 @@ function LesionesEditor({ value, onChange, accent }) {
 
 // Fase A3 — fila de opciones excluyentes (tema, tamaño de texto, densidad, bordes, animaciones):
 // mismo estilo de pastilla que DeportesChips, pero selección única en vez de múltiple.
+/* ---------- FO Fase 1 — el fondo, dentro de Apariencia ----------
+   Solo se ofrecen los tipos que YA funcionan. La fotografía llega en la Fase 2 y por eso
+   no aparece aquí: la regla 8 del proyecto prohíbe enseñar un control que no hace nada, y
+   un "Fotografía (próximamente)" sería exactamente eso. El modelo ya la contempla; la
+   interfaz la ofrecerá cuando exista.
+
+   La vista previa se pinta con las MISMAS funciones que pintan el fondo de verdad
+   (`resolverFondo` + `estilosDeFondo`), no con una imitación: si algún día divergieran,
+   Josué elegiría una cosa y vería otra. */
+function VistaPreviaFondo({ fondo, accent }) {
+  const resuelto = resolverFondo(fondo, { urlFoto: null });
+  const estilo = estilosDeFondo(resuelto, COLORS);
+  const velo = estilosDeVelo(resuelto, COLORS);
+  return (
+    <div
+      className="rounded-2xl overflow-hidden relative mb-3"
+      style={{ height: 96, background: COLORS.bg, border: `1px solid ${COLORS.border}` }}
+    >
+      {estilo && <div className="absolute inset-0" style={estilo} />}
+      {velo && <div className="absolute inset-0" style={velo} />}
+      {/* Una tarjeta y un texto de mentira, para ver cómo queda la interfaz ENCIMA del
+          fondo. Un rectángulo de color solo enseña el fondo; lo que hay que juzgar es si
+          el contenido se sigue leyendo. */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="rounded-xl px-3 py-2" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
+          <p className="text-xs font-semibold" style={{ color: COLORS.text }}>Así se ve una tarjeta</p>
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>y su texto secundario</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Deslizador({ label, valor, min, max, sufijo = '%', accent, onChange }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs" style={{ color: COLORS.textMuted }}>{label}</span>
+        <span className="text-xs font-semibold" style={{ color: COLORS.text }}>{valor}{sufijo}</span>
+      </div>
+      <input
+        type="range" min={min} max={max} value={valor}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full"
+        style={{ accentColor: accent }}
+        aria-label={label}
+      />
+    </div>
+  );
+}
+
+export function BloqueFondo({ fondo, accent, onCambiar }) {
+  const [abierto, setAbierto] = useState(false);
+  const disponibles = TIPOS_FONDO.filter((t) => t.implementado);
+  const activo = fondo?.activo ? fondo.tipo : 'ninguno';
+
+  return (
+    <Card>
+      <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Fondo</p>
+      <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>{describirFondo(fondo)}</p>
+
+      <VistaPreviaFondo fondo={fondo} accent={accent} />
+
+      <OpcionesFila
+        opciones={disponibles.map((t) => ({ value: t.id, label: t.label }))}
+        valor={activo}
+        onChange={(tipo) => onCambiar(seleccionarFondo(fondo, tipo))}
+        accent={accent}
+      />
+
+      {/* Cada tipo enseña SOLO sus controles. Un selector de color cuando has elegido
+          "degradado" no sirve para nada y confunde. */}
+      {activo === 'predeterminado' && (
+        <div className="flex flex-wrap gap-2 mt-3">
+          {FONDOS_INCLUIDOS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => onCambiar(ajustarFondo(fondo, { incluido: f.id }))}
+              className="px-3 py-2 rounded-xl text-xs font-semibold"
+              style={fondo.incluido === f.id
+                ? { background: accent, color: COLORS.textOnAccent }
+                : { background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {activo === 'color' && (
+        <div className="mt-3">
+          <Field label="Color del fondo">
+            <input
+              type="color"
+              value={fondo.color || COLORS.bg}
+              onChange={(e) => onCambiar(ajustarFondo(fondo, { color: e.target.value }))}
+              className="w-full rounded-xl"
+              style={{ height: 42, background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+              aria-label="Color del fondo"
+            />
+          </Field>
+        </div>
+      )}
+
+      {activo === 'degradado' && (
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <Field label="De">
+            <input
+              type="color"
+              value={fondo.degradado?.de || COLORS.surface2}
+              onChange={(e) => onCambiar(ajustarFondo(fondo, { degradado: { ...fondo.degradado, de: e.target.value } }))}
+              className="w-full rounded-xl"
+              style={{ height: 42, background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+              aria-label="Color inicial del degradado"
+            />
+          </Field>
+          <Field label="A">
+            <input
+              type="color"
+              value={fondo.degradado?.a || COLORS.bg}
+              onChange={(e) => onCambiar(ajustarFondo(fondo, { degradado: { ...fondo.degradado, a: e.target.value } }))}
+              className="w-full rounded-xl"
+              style={{ height: 42, background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+              aria-label="Color final del degradado"
+            />
+          </Field>
+          <div className="col-span-2">
+            <Deslizador
+              label="Ángulo" valor={fondo.degradado?.angulo ?? 160} min={0} max={360} sufijo="°" accent={accent}
+              onChange={(v) => onCambiar(ajustarFondo(fondo, { degradado: { ...fondo.degradado, angulo: v } }))}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Los ajustes de presentación valen para cualquier tipo, así que van juntos y
+          plegados: en un iPhone, tres deslizadores siempre abiertos empujan todo lo demás
+          fuera de la pantalla. */}
+      {activo !== 'ninguno' && (
+        <>
+          <button
+            onClick={() => setAbierto((v) => !v)}
+            className="text-xs font-semibold mt-3"
+            style={{ color: accent }}
+            aria-expanded={abierto}
+          >
+            {abierto ? 'Ocultar ajustes' : 'Ajustar cómo se ve'}
+          </button>
+          {abierto && (
+            <div className="space-y-3 mt-3">
+              <Deslizador label="Intensidad" valor={fondo.opacidad} min={0} max={100} accent={accent}
+                onChange={(v) => onCambiar(ajustarFondo(fondo, { opacidad: v }))} />
+              <Deslizador label="Desenfoque" valor={fondo.desenfoque} min={0} max={40} sufijo=" px" accent={accent}
+                onChange={(v) => onCambiar(ajustarFondo(fondo, { desenfoque: v }))} />
+              <div>
+                <Deslizador label="Velo" valor={fondo.velo} min={0} max={90} accent={accent}
+                  onChange={(v) => onCambiar(ajustarFondo(fondo, { velo: v }))} />
+                <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+                  El velo atenúa el fondo por detrás de la interfaz. Súbelo si te cuesta leer.
+                </p>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Apartado 14 — restablecer NO borra nada, y la interfaz lo dice para que nadie
+          evite el botón por miedo a perder lo que había elegido. */}
+      {fondo?.activo && (
+        <div className="mt-3">
+          <GhostBtn onClick={() => onCambiar(restablecerFondo(fondo))}>Volver al fondo normal</GhostBtn>
+          {tieneFondoGuardado(fondo) && (
+            <p className="text-[11px] mt-1.5" style={{ color: COLORS.textMuted }}>
+              No se borra nada: lo que has elegido se queda guardado por si quieres volver.
+            </p>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function OpcionesFila({ opciones, valor, onChange, accent }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -632,6 +819,14 @@ export default function SettingsView({
               <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Claro, Oscuro o Automático (sigue al sistema, sin reiniciar la app).</p>
               <OpcionesFila opciones={TEMAS_DISPONIBLES} valor={apariencia.tema} onChange={(v) => onUpdateApariencia({ ...apariencia, tema: v })} accent={accent} />
             </Card>
+
+            {/* FO Fase 1 — el fondo, dentro de Apariencia y no en una pantalla aparte: el
+                apartado 5 pide que se integre con el sistema que ya existe, no que compita. */}
+            <BloqueFondo
+              fondo={apariencia.fondo}
+              accent={accent}
+              onCambiar={(f) => onUpdateApariencia({ ...apariencia, fondo: f })}
+            />
 
             <Card>
               <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Color de acento</p>

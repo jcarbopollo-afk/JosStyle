@@ -1,5 +1,56 @@
 # CHANGELOG.md
 
+## Entrega 2 · FO Fase 1 — Arquitectura del sistema de fondos (v1.36.0)
+
+Empieza el bloque **FO (Fondos y Fotografías)**. Esta fase no añade una foto de fondo: construye
+el sistema que hará falta para que quepan las once fases siguientes sin rehacer nada.
+
+### El fondo es un elemento propio, no "una imagen detrás"
+Es lo que pide el apartado 2, y marca la diferencia entre esto y pegar una imagen en el `<body>`.
+Hay un solo sistema que sabe qué fondo está activo, cuál usa, cómo se muestra, con qué ajustes y
+qué colores usa la interfaz encima.
+
+### Amplía el sistema de apariencia; no compite con él
+Ya existían `COLORS`, `aplicarTema()` y `colorEngine.js`. El fondo **se guarda dentro de
+`apariencia`**, junto a tema, densidad, radio y alto contraste, y se resuelve en el mismo sitio y
+el mismo momento que el tema. Ni una clave nueva en la base de datos, ni un segundo sistema de
+apariencia — los dos lo piden los apartados 5 y 12.
+
+### Nunca un fondo roto
+El apartado 6 es literal: *"nunca debe aparecer un fondo vacío, roto o indefinido"*. Por eso
+`resolverFondo` **no devuelve null jamás**. Un color inválido, un degradado a medias o una foto que
+ya no está bajan un escalón de la cadena en vez de dejar un hueco, y dicen por qué. Hay una prueba
+que le mete diez entradas rotas a propósito —`null`, `42`, `'texto'`, un tipo inventado— y
+comprueba que todas salen con un tipo pintable.
+
+### Cambiar de tema no puede perder el fondo
+Los fondos incluidos se definen con **tokens**, no con hex, así que un fondo incluido acompaña al
+tema claro/oscuro y al acento de Josué en vez de imponer un color ajeno. La prueba pinta el mismo
+fondo con dos paletas distintas y comprueba que sale distinto y que la configuración guardada no
+cambia.
+
+### Restablecer no borra nada
+El apartado 14 es explícito. "Volver al fondo normal" desactiva el fondo pero conserva el color, la
+foto y los ajustes, y **la interfaz lo dice** para que nadie evite el botón por miedo a perder lo
+que eligió. Es el mismo criterio que la app tiene desde ME Fase 3: lo reversible no se destruye.
+
+### Un fallo de apilamiento CSS corregido al escribirlo
+Una capa `position: fixed; z-index: 0` se pinta en el paso 6 del orden de pintado de CSS, **por
+encima** del contenido en flujo normal, que va en el paso 3. Tal cual, el fondo habría tapado la
+aplicación entera. Se arregla con `isolation: isolate` en el contenedor y `z-index: -1` en las
+capas, que las deja exactamente entre el `background` del contenedor y el contenido.
+
+### Y un hueco de cobertura que se cerró de paso
+`SettingsView` no se renderizaba en ninguna prueba. Ahora su bloque de fondo sí, con cuatro
+escenarios — incluido **un fondo guardado por una versión anterior, sin los campos nuevos**, que es
+exactamente lo que devuelve `loadData` y lo que la regla 5 del proyecto obliga a soportar.
+
+### Verificación
+**882 comprobaciones en verde** (antes 777): 101 nuevas del sistema de fondos y 72 casos de
+renderizado real.
+
+---
+
 ## Entrega 2 · AR Fase 4 — Anti-repetición, estadísticas y recomendaciones (v1.35.0)
 
 **Cierra el bloque AR (4/4).** El historial deja de ser una lista y pasa a decir algo. Cuarta

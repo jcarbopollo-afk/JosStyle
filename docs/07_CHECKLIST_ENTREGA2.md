@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 12 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4 y **AR 4/4, bloque
-> cerrado** (hasta v1.35.0). Quedan **94**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 13 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
+> y FO 1/12 (hasta v1.36.0). Quedan **93**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -1974,22 +1974,69 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 
 Amplía el sistema de apariencia ya existente para permitir usar una fotografía como fondo y derivar de ella una paleta coherente. **Se apoya directamente en `colorEngine.js`, `ColorPicker`, `TemaBuilder` y `GestionTemas` (fases V1–V4, ya construidas): no debe crear un segundo motor de color.**
 
-#### FO · Fase 1/12 — SISTEMA BASE DE FONDOS Y FOTOGRAFÍAS
-- [ ] OBJETIVO DE ESTA FASE
-- [ ] PRINCIPIO FUNDAMENTAL
-- [ ] TIPOS DE FONDO
-- [ ] MODELO CENTRAL DEL FONDO
-- [ ] SISTEMA ÚNICO DE APARIENCIA
-- [ ] PRIORIDAD DEL FONDO
-- [ ] PREPARACIÓN PARA FOTOGRAFÍAS
-- [ ] PREPARACIÓN PARA COLORES
-- [ ] PREPARACIÓN PARA RECOMENDACIONES
-- [ ] COMPATIBILIDAD CON MODO OSCURO Y CLARO
-- [ ] COMPONENTE CENTRALIZADO
-- [ ] PERSISTENCIA
-- [ ] CAMBIO DE FONDO
-- [ ] RESTABLECER
-- [ ] PREPARACIÓN PARA LAS SIGUIENTES FASES
+#### FO · Fase 1/12 — SISTEMA BASE DE FONDOS Y FOTOGRAFÍAS ✅ COMPLETADA (v1.36.0)
+
+Todo el modelo vive en `src/lib/fondos.js`, un motor puro nuevo que solo depende de
+`colorEngine.js`. El fondo se guarda dentro de `apariencia`, **no en una clave suya**.
+
+- [x] **1 · Objetivo** — arquitectura completa y escalable, sin las funciones avanzadas de las
+      fases 2-12. Ninguna de ellas obligará a rehacer esta base.
+- [x] **2 · Principio fundamental** — el fondo es un elemento propio, no "una imagen detrás".
+      Un solo sistema sabe qué fondo está activo, cuál usa, cómo se muestra y con qué ajustes.
+- [x] **3 · Tipos de fondo** — los cinco desde el primer día: sin fondo, color sólido, degradado,
+      fotografía e incluido. **Solo se ofrecen en Ajustes los cuatro que ya funcionan**: la
+      fotografía es de la Fase 2, y un "Fotografía (próximamente)" sería el control decorativo
+      que prohíbe la regla 8. Existe en el modelo; la interfaz la ofrecerá cuando exista.
+- [x] **4 · Modelo central** — los once campos del apartado, con los nombres del proyecto y la
+      correspondencia documentada al lado (`type→tipo`, `overlay→velo`, `isActive→activo`…).
+- [x] **5 · Sistema único de apariencia** — el fondo vive en `apariencia`, junto a tema,
+      densidad, radio y alto contraste, y se resuelve en el mismo sitio y el mismo momento que
+      el tema. **No hay un segundo sistema de apariencia.**
+- [x] **6 · Prioridad** — la cadena del apartado, y `resolverFondo` **nunca devuelve null**: el
+      peor caso es el fondo normal de JosStyle. Un color roto, un degradado a medias o una foto
+      que ya no está bajan un escalón en vez de dejar un hueco, y dicen por qué (`motivo`).
+- [x] **7 · Preparado para fotografías** — `foto` declara id, ruta, origen, ancho, alto y
+      proporción. Nace vacía; la llena la Fase 2.
+- [x] **8 · Preparado para colores** — `analisis` y `paleta`, en `null`. Sin detector, que es
+      de la Fase 5.
+- [x] **9 · Preparado para recomendaciones** — `recomendacion`, en `null`, para la Fase 6.
+- [x] **10 · Claro y oscuro** — cambiar de tema **no puede tocar el fondo**, y no es una promesa:
+      los fondos incluidos se definen con TOKENS, no con hex, así que se pintan distinto en cada
+      tema sin que la configuración guardada cambie. Hay prueba que pinta el mismo fondo con dos
+      paletas y comprueba que sale distinto y que lo guardado sigue igual.
+- [x] **11 · Componente centralizado** — una sola resolución en `App.jsx`, justo después de
+      `aplicarTema`. Ninguna pantalla gestiona su propio fondo.
+- [x] **12 · Persistencia** — el `saveData` que ya existe. **Ninguna base de datos nueva.**
+- [x] **13 · Cambio de fondo** — `seleccionarFondo` es la función central, y el cambio es
+      reactivo: se ve al instante, sin recargar.
+- [x] **14 · Restablecer** — vuelve al fondo normal **sin borrar nada**, y la interfaz lo dice
+      para que nadie evite el botón por miedo a perder lo que eligió.
+- [x] **15 · Preparado para las fases 2-12** — sí, y por un motivo concreto: la regla 5 del
+      proyecto dice que `loadData` NO fusiona con el valor por defecto. Un campo que aparezca en
+      la Fase 5 no lo tendría la configuración ya guardada, y arreglarlo entonces exige una
+      migración a mano. Declararlo hoy, vacío, cuesta cero. Es la misma decisión que las 21
+      propiedades de la prenda en AR Fase 1.
+- [x] **16 · Restricciones** — ni detector de colores, ni IA, ni editor fotográfico, ni filtros,
+      ni presets, ni eliminados, ni análisis de contraste, ni editor de degradados avanzado.
+- [x] **17 · Criterios de finalización** — los trece, con 101 comprobaciones propias y 882 en
+      total en verde.
+
+**Un fallo de apilamiento CSS corregido al escribirlo:** una capa `position: fixed; z-index: 0`
+se pinta en el paso 6 del orden de pintado, **por encima** del contenido en flujo normal (paso 3).
+Tal cual, el fondo habría tapado la aplicación entera. Se arregla con `isolation: isolate` en el
+contenedor —que lo convierte en contexto de apilamiento propio— y `z-index: -1` en las capas, que
+las deja entre el `background` del contenedor y el contenido. `isolation` no crea bloque contenedor
+para `position: fixed`, así que los overlays fijos de la app no se ven afectados, y los modales van
+por `createPortal` a `document.body`, fuera de este contenedor.
+
+**Por qué el velo va en su propia capa y no en la del fondo:** si compartieran capa, subir el
+desenfoque difuminaría también el velo y dejaría de proteger la lectura, que es justo para lo que
+existe.
+
+**Un hueco de cobertura que se cerró de paso:** `SettingsView` no se renderizaba en ninguna prueba.
+Ahora su bloque de fondo sí, con cuatro escenarios — incluido **un fondo guardado por una versión
+anterior, sin los campos nuevos**, que es exactamente lo que devuelve `loadData` y lo que la regla
+5 obliga a soportar.
 
 #### FO · Fase 2/12 — GALERÍA Y SELECCIÓN DE FOTOGRAFÍAS
 - [ ] OBJETIVO

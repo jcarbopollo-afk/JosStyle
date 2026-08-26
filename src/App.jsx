@@ -10,6 +10,7 @@ import { verificarBiometria } from './lib/biometria';
 import { crearPinHash, verificarPin } from './lib/pin';
 import { calcularResumenModulo } from './lib/resumenesHub';
 import { eventosDerivados } from './lib/calendarioIntegracion';
+import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo } from './lib/fondos';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal } from './components/ui';
 import HubView from './views/HubView';
 import Auth from './components/Auth';
@@ -156,6 +157,11 @@ function BloqueoAutomaticoGate({ seguridad, accent, onUnlock, onOlvidoPin }) {
     </div>
   );
 }
+
+// FO Fase 1 — el fondo se guarda dentro de `apariencia`, y el merge de carga es superficial,
+// así que hay que normalizarlo aparte. Está aquí y no dentro del componente porque no depende
+// de ningún estado: es una transformación pura de lo que viene de la base de datos.
+const conFondoNormalizado = (ap) => ({ ...ap, fondo: normalizarFondo(ap.fondo) });
 
 export default function App() {
   const [session, setSession] = useState(undefined); // undefined = comprobando, null = sin sesión
@@ -331,7 +337,12 @@ export default function App() {
       }
       // Fase A3: merge con DEFAULT_APARIENCIA, mismo motivo que el merge de perfil de la Fase A2 —
       // un registro `ajustes` guardado antes de esta fase no tiene la clave `apariencia` todavía.
-      setApariencia({ ...DEFAULT_APARIENCIA, ...(a.apariencia || {}) });
+      //
+      // FO Fase 1 — el merge de arriba es SUPERFICIAL, así que un `fondo` guardado por una versión
+      // anterior sustituiría al valor por defecto entero y llegaría sin los campos nuevos. Por eso
+      // pasa además por `normalizarFondo`, que repone lo que falte sin pisar lo que sí había y
+      // acota los números al rango en que significan algo.
+      setApariencia(conFondoNormalizado({ ...DEFAULT_APARIENCIA, ...(a.apariencia || {}) }));
       // Fase A2: merge con DEFAULT_PERFIL para que un perfil guardado antes de esta fase
       // (sin los campos nuevos: apellidos, sexo, deportesPracticados, idioma, unidades...)
       // no se quede con esos campos en `undefined` — mismo patrón que ya se usaba en
@@ -411,6 +422,22 @@ export default function App() {
   // Fase 3: cuarto parámetro, `temaPersonalizado` — overrides de Secundario/Terciario/Fondo/
   // Superficie/Texto/Bordes/Estados (ver tokens.js). `null`/vacío en cada campo = automático.
   aplicarTema(temaResuelto, apariencia.altoContraste, accent, temaPersonalizado);
+
+  // FO Fase 1 — el fondo se resuelve AQUÍ, en el mismo sitio y el mismo momento que el tema, y
+  // justo DESPUÉS de `aplicarTema`: los fondos incluidos se pintan con los tokens ya resueltos,
+  // así que tienen que leer `COLORS` con el tema y el acento de este render, no los del anterior.
+  //
+  // Es el "componente centralizado" del apartado 11: una sola resolución para toda la app, y
+  // ninguna pantalla gestiona su propio fondo. Va antes de los `return` condicionales por la
+  // regla 4 del proyecto (ya se produjo aquí el error "Rendered more hooks than during the
+  // previous render"), aunque esto no sea un Hook: mantener junto todo lo que decide la
+  // apariencia evita que la pantalla de carga y la de login queden fuera del sistema.
+  //
+  // La URL firmada de la fotografía llega en la Fase 2. Hoy siempre es null, y `resolverFondo`
+  // ya sabe qué hacer con eso: baja al fondo incluido en vez de dejar un hueco (apartado 6).
+  const fondoResuelto = resolverFondo(apariencia.fondo, { urlFoto: null });
+  const estiloFondo = estilosDeFondo(fondoResuelto, COLORS);
+  const estiloVelo = estilosDeVelo(fondoResuelto, COLORS);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -1789,9 +1816,37 @@ export default function App() {
         background: COLORS.bg,
         minHeight: '100vh',
         fontFamily: "'Inter', sans-serif",
+        // FO Fase 1 — `isolation: isolate` convierte este contenedor en un contexto de
+        // apilamiento propio. Hace falta para que las capas de fondo puedan ir con
+        // `z-index: -1` y queden ENTRE el `background` de aquí arriba y el contenido de la
+        // app, en vez de escaparse al contexto raíz y esconderse detrás del `<body>`.
+        //
+        // No afecta a los overlays `fixed` de la app: `isolation` crea contexto de
+        // apilamiento, pero NO un bloque contenedor para `position: fixed` (eso solo lo
+        // hacen transform/filter/will-change). Y los modales van por `createPortal` a
+        // `document.body`, así que están fuera de este contenedor y siguen encima de todo.
+        isolation: 'isolate',
       }}
     >
       <style>{`*:focus-visible { outline: 2px solid ${accent}; outline-offset: 2px; }`}</style>
+
+      {/* FO Fase 1 — el fondo, en DOS capas fijas detrás de todo (z-index 0; el contenido de la
+          app vive por encima porque `position: relative` lo saca del flujo de apilamiento base).
+
+          `background: COLORS.bg` sigue estando arriba, en el contenedor, y eso es a propósito:
+          es la última red de seguridad del apartado 6. Si estas capas no pintaran nada —porque
+          el fondo está apagado, o roto, o el navegador no entiende `color-mix`— debajo sigue
+          habiendo el fondo normal de JosStyle, nunca un hueco.
+
+          Son dos capas y no una porque el velo NO debe desenfocarse con la fotografía: si
+          compartieran capa, subir el desenfoque difuminaría también el velo y dejaría de
+          proteger la lectura, que es justo para lo que existe. */}
+      {estiloFondo && (
+        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ ...estiloFondo, zIndex: -1 }} />
+      )}
+      {estiloVelo && (
+        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ ...estiloVelo, zIndex: -1 }} />
+      )}
 
       {/* Fase 18 + BI Fase 2 — dos accesos fijos, ninguno de los dos se dispara solo.
           La lupa pasa a la IZQUIERDA en esta fase porque el apartado 1 la sitúa ahí, y el panel

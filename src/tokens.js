@@ -1,4 +1,7 @@
 import { buildRolesFromAccent, rotateHue, generateScale, bestReadableText, ensureContrast } from './lib/colorEngine';
+// FO Fase 1 — `fondos.js` solo depende de `colorEngine`, nunca de este archivo: importarlo aquí
+// no crea ningún ciclo. El modelo del fondo vive allí; aquí solo entra en `DEFAULT_APARIENCIA`.
+import { DEFAULT_FONDO } from './lib/fondos';
 
 // Fase 1 del Sistema de Personalización Visual Extrema — `warning`/`info` se suman aquí a los
 // ya existentes `positive`/`negative` (mismo criterio: colores de "Estados" fijos y curados por
@@ -145,6 +148,13 @@ export const DEFAULT_APARIENCIA = {
   // (crear/renombrar/duplicar/eliminar/exportar/importar). Nadie ve un constructor de 10 campos
   // por accidente — hay que pedirlo explícitamente una vez.
   modoColorAvanzado: false,
+  // Entrega 2 · FO Fase 1 — el fondo vive AQUÍ, dentro de apariencia, no en una clave suya.
+  // El apartado 5 lo pide expresamente ("no crear un sistema independiente que compita con el
+  // actual") y el 12 dice que se use la persistencia que ya existe. Tema, densidad, radio y
+  // alto contraste ya estaban en este objeto; el fondo es una pieza más de lo mismo, se guarda
+  // en el mismo `saveData` y se resuelve en el mismo sitio. El modelo entero está en
+  // `src/lib/fondos.js`; aquí solo se declara para que exista desde el arranque.
+  fondo: { ...DEFAULT_FONDO },
 };
 
 // Fase A7 — apartado 86: paletas predefinidas. Con la arquitectura real de la app (un tema

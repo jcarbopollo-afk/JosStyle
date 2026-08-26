@@ -86,6 +86,12 @@ else
   fallo "Fallan pruebas de la inteligencia del armario"; grep '✗' /tmp/jc_arm4.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-fondos.mjs >/tmp/jc_fondos.log 2>&1; then
+  ok "Sistema de fondos (FO F1) — $(grep -c '✓' /tmp/jc_fondos.log) comprobaciones"
+else
+  fallo "Fallan pruebas del sistema de fondos"; grep '✗' /tmp/jc_fondos.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else
