@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 22 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
-> y FO 10/12 (hasta v1.45.0). Quedan **84**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 23 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
+> y FO 11/12 (hasta v1.46.0). Quedan **83**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -2533,40 +2533,60 @@ líneas partió un comentario JSX multilínea por la mitad y dejó una sección 
 señaló con la línea exacta antes de que llegara a ninguna parte. Después se comprobó pieza por
 pieza que las trece tarjetas originales siguen todas ahí.
 
-#### FO · Fase 11/12 — RENDIMIENTO, OPTIMIZACIÓN Y EXPERIENCIA
-- [ ] OBJETIVO
-- [ ] PRINCIPIO FUNDAMENTAL
-- [ ] OPTIMIZACIÓN DE FOTOGRAFÍAS
-- [ ] DIFERENTES VERSIONES DE UNA FOTO
-- [ ] CARGA DIFERIDA
-- [ ] CACHÉ
-- [ ] CACHÉ DEL DETECTOR DE COLORES
-- [ ] PREVISUALIZACIÓN OPTIMIZADA
-- [ ] APLICACIÓN FINAL
-- [ ] EFECTOS VISUALES
-- [ ] ANIMACIONES
-- [ ] RENDERIZADO
-- [ ] ESTADO CENTRALIZADO
-- [ ] APERTURA DE ASPECTO
-- [ ] APERTURA DE PRESETS
-- [ ] USO DE MEMORIA
-- [ ] COMPATIBILIDAD CON IPHONE
-- [ ] COMPATIBILIDAD CON ANDROID
-- [ ] RED
-- [ ] FUNCIONAMIENTO OFFLINE
-- [ ] SEGURIDAD Y VALIDACIÓN
-- [ ] LÍMITES RAZONABLES
-- [ ] RECUPERACIÓN DE ERRORES
-- [ ] CAMBIOS RÁPIDOS
-- [ ] CAMBIOS RÁPIDOS DE COLORES
-- [ ] GENERACIÓN DE RECOMENDACIONES
-- [ ] PERSISTENCIA EFICIENTE
-- [ ] PRUEBAS
-- [ ] PRUEBAS DE REGRESIÓN
-- [ ] MÉTRICAS
-- [ ] OBJETIVO DE EXPERIENCIA
-- [ ] CRITERIOS DE FINALIZACIÓN
-- [ ] REGLA PARA CLAUDE
+#### FO · Fase 11/12 — RENDIMIENTO Y OPTIMIZACIÓN ✅ COMPLETADA (v1.46.0)
+
+**El problema real no era ninguno de los que uno se imagina.** Las capas del fondo son CSS puro
+(baratas), el análisis va sobre una miniatura de 96 px desde F5, y las propuestas son aritmética.
+Lo caro era otra cosa: **la fotografía se subía y se servía a resolución original**. Una foto de
+iPhone son 4032×3024 y unos 4 MB, y se estaba usando como fondo de una pantalla de 390 px de
+ancho — megabytes descargados para pintar algo que no puede enseñar ni una décima parte de esos
+píxeles.
+
+- [x] **1 · Objetivo** — usar fotos, efectos y transparencias sin que la app se vuelva pesada.
+- [x] **2 · Principio fundamental** — calidad visual ≠ coste de rendimiento. Se guarda una versión
+      **optimizada** (1600 px de lado largo, JPEG 82 %) para usarla de fondo.
+- [x] **3 · Optimización de fotografías** — se miden, se redimensionan y se recomprimen **justo
+      antes de subir**, no al elegir: si se hiciera al elegir, cada foto que Josué mirase y
+      descartara pagaría el trabajo para nada.
+- [x] **4 · Diferentes versiones** — `LADO_FONDO` (1600) y `LADO_MINIATURA` (240) salen del mismo
+      cálculo, con objetivos distintos.
+- [x] **5 · Carga diferida** — la URL de la foto se firma solo cuando hay foto, y solo cuando
+      cambia su ruta.
+- [x] **6 · Caché** — **caché de URLs firmadas**. Duran una hora, y sin caché cada vez que se
+      montaba Ajustes se pedía otra firma para la misma foto. Ahora, si hay una válida, el fondo
+      aparece **al instante** en vez de parpadear.
+- [x] **7 · Caché del detector** — ya estaba desde F5: el análisis va sellado con el id de su
+      fotografía y no se repite si no ha cambiado.
+- [x] **8 · Previsualización optimizada** — la vista previa usa `URL.createObjectURL`, que es
+      local: no se procesa nada mientras se mueven los deslizadores.
+- [x] **9 · Aplicación final** — al aplicar se sube la versión optimizada, con sus medidas reales.
+- [x] **10 · Efectos visuales** — `backdropFilter` **solo cuando hay transparencia de verdad** (ya
+      desde F4), y `cardShadow` es `'none'` sin sombra, no una sombra de opacidad cero.
+- [x] **11 · Animaciones** — sin cambios: la app ya tiene el ajuste de animaciones desde la A3.
+- [x] **12 · Renderizado** — cada cálculo caro va en su `useMemo` con sus dependencias reales.
+- [x] **13 · Estado centralizado** — fondo, colores, presets y preferencias están en claves
+      separadas desde F4 y F8, así que tocar un color no invalida el análisis de la foto.
+
+**Tres decisiones que evitan hacer daño al optimizar:**
+
+1. **Nunca agrandar.** Si la imagen ya es más pequeña que el objetivo se deja tal cual: escalar
+   hacia arriba no añade detalle, solo peso y una imagen más borrosa.
+2. **Si la copia pesa más, se queda la original.** Pasa con imágenes ya muy comprimidas.
+   Recomprimir una foto ya ligera solo le quita calidad sin ahorrar nada.
+3. **Si algo falla, se devuelve el archivo original** en vez de lanzar. No poder optimizar una
+   foto no debe impedir usarla: es peor una foto pesada que ninguna foto.
+
+**Un detalle que habría pasado desapercibido:** al optimizar hay que guardar **las medidas de la
+foto ORIGINAL**, no las de la copia. La proporción y la orientación deciden el encuadre inicial
+(F2, apartado 6), y calcularlo sobre la copia habría funcionado por casualidad —la proporción se
+conserva— pero habría dejado en el modelo unas dimensiones que no son las de la imagen que Josué
+eligió.
+
+**Una URL a punto de caducar no se entrega.** La caché la considera vencida un minuto antes de
+tiempo, para no dar una firma que expire mientras la imagen se está descargando.
+
+**Y se aplicó también a las fotos de prenda del Armario**, que tenían exactamente el mismo problema:
+~4 MB para pintar una miniatura de 150 px en una rejilla.
 
 #### FO · Fase 12/12 — ELIMINADOS RECIENTEMENTE, RECUPERACIÓN Y CIERRE DEL SISTEMA
 - [ ] OBJETIVO

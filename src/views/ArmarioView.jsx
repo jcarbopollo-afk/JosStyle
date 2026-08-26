@@ -4,6 +4,7 @@ import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, Chevro
 import { COLORS } from '../tokens';
 import { hexToRgba, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedPrendaUrl } from '../lib/supabase';
+import { optimizarImagen, urlFirmada } from '../lib/imagenes';
 import {
   CATEGORIAS_ARMARIO, COLORES_ARMARIO, ESTADOS_PRENDA, TEMPORADAS_PRENDA,
   prendasVisibles, marcasDe, conteoPorCategoria, ordenesDisponibles,
@@ -42,7 +43,7 @@ function MiniaturaPrenda({ prenda, alto = 104 }) {
     let vivo = true;
     if (!prenda.fotoPath) { setUrl(null); setCargando(false); return; }
     setCargando(true);
-    getSignedPrendaUrl(prenda.fotoPath).then((u) => {
+    urlFirmada(prenda.fotoPath, getSignedPrendaUrl).then((u) => {
       if (vivo) { setUrl(u); setCargando(false); }
     });
     return () => { vivo = false; };
@@ -1118,7 +1119,11 @@ function PanelPrendas({ prendas, outfits, usos, hoyISO, onAddPrenda, onUpdatePre
     let fotoPath = editando ? editando.fotoPath : '';
     if (archivoFoto) {
       try {
-        fotoPath = await onSubirFoto(archivoFoto);
+        // FO Fase 11 — misma optimización que la foto de fondo, y por el mismo
+        // motivo: una foto de iPhone son ~4 MB y aquí se pinta en una miniatura de
+        // 150 px dentro de una rejilla. Si falla, `optimizarImagen` devuelve el
+        // archivo original, así que no poder optimizar nunca impide subir.
+        fotoPath = await onSubirFoto((await optimizarImagen(archivoFoto)).file);
       } catch {
         // La foto es opcional: si falla la subida se guarda la prenda igual y se dice
         // por qué. Perder los datos escritos por un fallo de red sería mucho peor.
@@ -1366,7 +1371,11 @@ export function PanelOutfits({ outfits, prendas, usos, hoyISO, onAddOutfit, onUp
     let fotoPath = editando ? editando.fotoPath : '';
     if (archivoFoto) {
       try {
-        fotoPath = await onSubirFoto(archivoFoto);
+        // FO Fase 11 — misma optimización que la foto de fondo, y por el mismo
+        // motivo: una foto de iPhone son ~4 MB y aquí se pinta en una miniatura de
+        // 150 px dentro de una rejilla. Si falla, `optimizarImagen` devuelve el
+        // archivo original, así que no poder optimizar nunca impide subir.
+        fotoPath = await onSubirFoto((await optimizarImagen(archivoFoto)).file);
       } catch {
         // Apartado 19 del pulido: no perder en silencio lo que ya había escrito.
         setErrorFoto('No se ha podido subir la foto. El outfit se ha guardado sin ella.');

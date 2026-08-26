@@ -11,6 +11,7 @@ import { crearPinHash, verificarPin } from './lib/pin';
 import { calcularResumenModulo } from './lib/resumenesHub';
 import { eventosDerivados } from './lib/calendarioIntegracion';
 import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
+import { urlFirmada, urlEnCache } from './lib/imagenes';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal } from './components/ui';
 import HubView from './views/HubView';
 import Auth from './components/Auth';
@@ -455,8 +456,13 @@ export default function App() {
   const rutaFotoFondo = apariencia.fondo?.foto?.path || '';
   useEffect(() => {
     if (!rutaFotoFondo) { setUrlFotoFondo(null); return undefined; }
+    // FO Fase 11 — si ya hay una firma válida en caché se usa SIN esperar: así al
+    // volver a Ajustes el fondo aparece al instante en vez de parpadear mientras se
+    // pide otra firma para la misma foto. Las firmas duran una hora.
+    const yaFirmada = urlEnCache(rutaFotoFondo);
+    if (yaFirmada) { setUrlFotoFondo(yaFirmada); return undefined; }
     let cancelado = false;
-    getSignedFondoUrl(rutaFotoFondo).then((url) => { if (!cancelado) setUrlFotoFondo(url); });
+    urlFirmada(rutaFotoFondo, getSignedFondoUrl).then((url) => { if (!cancelado) setUrlFotoFondo(url); });
     return () => { cancelado = true; };
   }, [rutaFotoFondo]);
 

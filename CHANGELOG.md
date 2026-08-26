@@ -1,5 +1,42 @@
 # CHANGELOG.md
 
+## Entrega 2 · FO Fase 11 — Rendimiento y optimización (v1.46.0)
+
+### El problema real no era ninguno de los que uno se imagina
+Las capas del fondo son CSS puro, el análisis va sobre una miniatura de 96 px y las propuestas son
+aritmética. Lo caro era otra cosa: **la fotografía se subía y se servía a resolución original**.
+Una foto de iPhone son 4032×3024 y unos 4 MB, y se estaba usando como fondo de una pantalla de
+390 px de ancho.
+
+Ahora se redimensiona a 1600 px de lado largo con JPEG al 82 % **justo antes de subir** — no al
+elegir, porque entonces cada foto que mirases y descartaras pagaría el trabajo para nada.
+
+Se aplicó también a las fotos de prenda del Armario, que tenían el mismo problema: megabytes para
+pintar una miniatura de 150 px.
+
+### Tres decisiones que evitan hacer daño al optimizar
+1. **Nunca agrandar.** Escalar hacia arriba no añade detalle, solo peso.
+2. **Si la copia pesa más, se queda la original.** Pasa con imágenes ya muy comprimidas.
+3. **Si algo falla, se devuelve el original** en vez de lanzar: es peor una foto pesada que ninguna
+   foto.
+
+### Caché de URLs firmadas
+Duran una hora, y sin caché cada vez que se montaba Ajustes se pedía otra firma para la misma foto.
+Ahora, si hay una válida, el fondo aparece **al instante** en vez de parpadear.
+
+Y una a punto de caducar **no se entrega**: se considera vencida un minuto antes, para no dar una
+firma que expire mientras la imagen se está descargando.
+
+### Un detalle que habría pasado desapercibido
+Al optimizar hay que guardar **las medidas de la foto original**, no las de la copia. La proporción
+y la orientación deciden el encuadre inicial, y calcularlo sobre la copia habría funcionado por
+casualidad pero habría dejado en el modelo unas dimensiones que no son las de la imagen elegida.
+
+### Verificación
+**1380 comprobaciones en verde** (antes 1340): 40 de optimización de imágenes.
+
+---
+
 ## Entrega 2 · FO Fase 10 — Integración completa en Aspecto (v1.45.0)
 
 **Esta fase no añade funciones: ordena las que ya hay.** Después de las fases 1-9, Ajustes →

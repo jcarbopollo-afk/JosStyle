@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.45.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.46.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI** y **AR** están terminados y **FO** va por 10/12, quedan 84) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI** y **AR** están terminados y **FO** va por 11/12, quedan 83) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,8 +107,8 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 1207 pruebas unitarias con Node, 5 de auditoría, 128 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **1340 comprobaciones**.
+Vite, 1247 pruebas unitarias con Node, 5 de auditoría, 128 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **1380 comprobaciones**.
 
 Eso ya ha encontrado **treinta y dos bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), ocho módulos que dejaban crear y no borrar,
@@ -133,20 +133,21 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase: FO · Fase 11/12 — Rendimiento y optimización.**
-Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_FONDOS_Y_FOTOGRAFIAS.md`.
+**Siguiente fase: FO · Fase 12/12 — Eliminados, recuperación y cierre del bloque.**
+Con ella se cierra FO. Ver `docs/07_CHECKLIST_ENTREGA2.md` y
+`especificaciones/ESPECIFICACION_FONDOS_Y_FOTOGRAFIAS.md`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
 Tres avisos para cuando toque:
 
-- **Lo caro ya está acotado.** El análisis va sobre una miniatura de 96 px (F5) y las capas del
-  fondo son CSS puro, no canvas. Lo que queda por mirar es la **imagen que se descarga**: hoy se
-  sube y se sirve el archivo original.
-- **`backdropFilter` es lo más caro que hay en pantalla** — está en cada tarjeta translúcida y en
-  la barra. Si algo va lento en el iPhone, empezar por ahí.
-- **Medir antes de optimizar.** La regla 8 prohíbe simular; una "optimización" sin una medida que
-  la respalde es exactamente eso.
+- **La papelera universal ya existe** (ME F3, `src/lib/papelera.js`, 30 colecciones). FO F12 debe
+  conectarse a ella, **no crear un segundo sistema de eliminados**.
+- **Quitar una foto ya la conserva** (FO F2, apartado 9) y **restablecer no borra nada** (FO F1,
+  apartado 14). La Fase 12 añade la recuperación explícita, no cambia esa política.
+- **Una foto borrada de Storage no vuelve.** Es el mismo límite que las fotos de Salud, los
+  vídeos de Calistenia y las prendas: la papelera guarda el objeto, no el archivo. Hay que decirlo
+  en la interfaz, no dejar que se descubra.
 
 ⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
 de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin

@@ -122,6 +122,12 @@ else
   fallo "Fallan pruebas de legibilidad"; grep '✗' /tmp/jc_leg.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-imagenes.mjs >/tmp/jc_img.log 2>&1; then
+  ok "Optimización de imágenes (FO F11) — $(grep -c '✓' /tmp/jc_img.log) comprobaciones"
+else
+  fallo "Fallan pruebas de optimización de imágenes"; grep '✗' /tmp/jc_img.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

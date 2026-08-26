@@ -30,6 +30,7 @@ import {
 import { normalizarTema, restablecerColores, tieneColoresPersonalizados } from '../lib/temaColores';
 import { analizarImagen, analisisValidoPara, sellarAnalisis, describirColor } from '../lib/detectorColores';
 import { generarPropuestas, aplicarPropuesta, guardarApariencia } from '../lib/recomendadorApariencia';
+import { optimizarImagen, ahorroDe } from '../lib/imagenes';
 import {
   MAX_PRESETS, crearPreset, aplicarPreset, listaPresets, presetActivo,
   duplicarPreset, actualizarPreset, alternarFavorito, esEditable,
@@ -299,14 +300,22 @@ function SelectorFoto({ fondo, accent, urlFotoActual, onSubirFoto, onCambiar }) 
     setSubiendo(true);
     setError('');
     try {
-      const path = await onSubirFoto(pendiente.file);
+      // FO Fase 11 — se optimiza JUSTO ANTES de subir, no al elegir: si se hiciera
+      // al elegir, cada foto que Josué mirase y descartara pagaría el redimensionado
+      // para nada. Y aquí importa de verdad: una foto de iPhone son 4032×3024 y unos
+      // 4 MB, y se estaba subiendo tal cual para pintarla en una pantalla de 390 px.
+      const opt = await optimizarImagen(pendiente.file);
+      const path = await onSubirFoto(opt.file);
       onCambiar(aplicarFotoConAjustes(fondo, datosDeFoto({
         path,
         origen: 'galeria',
-        formato: pendiente.file.type,
+        formato: opt.file.type,
+        // Las medidas de la foto ORIGINAL, no las de la copia: la proporción y la
+        // orientación tienen que ser las de la imagen que Josué eligió, o el
+        // encuadre inicial saldría calculado sobre otra cosa.
         ancho: pendiente.ancho,
         alto: pendiente.alto,
-        peso: pendiente.file.size,
+        peso: opt.file.size,
       })));
       cancelar();
     } catch {
