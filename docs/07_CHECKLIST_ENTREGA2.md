@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 41 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)** y **SO 1/5** (hasta
-> v1.64.0). Quedan **65**: SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 42 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)** y **SO 2/5** (hasta
+> v1.65.0). Quedan **64**: SO (3, con **F2 bloqueada** por los archivos de audio) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -4873,6 +4873,46 @@ justo lo que necesita los archivos que Josué dará *"cuando la web ya tenga tod
 activos"*.
 
 ---
+
+#### SO · Fase 3/5 — EVENTOS, FEEDBACK, RECOMPENSAS Y RACHA ✅ COMPLETADA (v1.65.0)
+
+*"Si ocurren varios eventos simultáneamente, no quiero cinco sonidos superpuestos. […] El sistema
+deberá seleccionar el evento sonoro dominante."*
+
+`src/lib/audioEventos.js` (47 comprobaciones). SO F1 dejó 17 eventos y cuatro prioridades, que era lo
+que el motor necesitaba; esta fase trae **los 42 del catálogo**, la escala de 0 a 5 y la progresión
+de la racha. ⚠️ **No se redefine nada de F1**: se traduce, porque dos catálogos que se separan es lo
+que su apartado 30 prohíbe.
+
+⚠️ **Se construye ANTES que SO F2 a propósito**: F2 es la biblioteca de sonidos y **está bloqueada**
+por los archivos de audio, que no existen. El catálogo y la jerarquía no los necesitan, así que se
+adelanta en vez de dejar el bloque parado.
+
+- [x] **El catálogo completo** — los 42 exactos: 5 de interfaz, 4 de confirmación, 4 de
+      tarea/objetivo, 3 de XP, 5 de nivel/recompensa/insignia, 2 de racha, 10 milestones, 4 de estado
+      de racha, 2 de logro y 3 de sistema.
+- [x] **La escala 0-5 y el evento dominante** — el ejemplo literal de la especificación (tarea → XP →
+      nivel → milestone → récord) **suena como PERSONAL_RECORD**, y tiene su prueba.
+- [x] **Un bug que cazó esa prueba** — ⚠️ el desempate por días hacía ganar al milestone de 30 sobre
+      el récord, que es **justo lo contrario** de lo que dice la especificación. Ahora el récord
+      lleva su propio peso de desempate.
+- [x] **La interfaz enseña todo, el audio jerarquiza** — los silenciados **se devuelven**, no se
+      pierden: es literal en la especificación.
+- [x] **La progresión de la racha** — ⚠️ *"no quiero simplemente el mismo sonido con más volumen"*,
+      así que **el nivel sube con los días**, con una prueba que recorre los diez milestones y falla
+      si dos consecutivos bajan, y otra de punta a punta: el de 365 **no puede** sonar como el de 7.
+- [x] **El récord es independiente del milestone** — la especificación lo dice expresamente: *"has
+      alcanzado un milestone"* y *"has superado tu propio récord"* son acontecimientos distintos.
+- [x] **Los eventos que hoy no emite nadie, declarados con su motivo** — ⚠️ **XP y niveles existen en
+      el catálogo y nadie los emite**, porque **RA F3 decidió no construirlos** (sus apartados los
+      dejaban en condicional, y sin nada que gastar un contador de XP es un control decorativo —
+      regla 8). D2-02 lo respalda. Lo mismo con las recompensas y el "congelar racha", que no existe
+      en RA F1 porque el motor deriva del historial y no tiene comodines. **Está dicho en el código y
+      comprobado en una prueba, en vez de dejar eventos fantasma.**
+
+**Lo que sigue sin estar probado, y es lo mismo desde SO F1:** ⏸ **HOY NO SUENA NADA**, porque no hay
+ni un archivo de audio en el proyecto. **SO F2 es justo la fase que los necesita y sigue esperando** a
+que Josué los dé *"cuando la web ya tenga todos los botones activos"*.
 
 #### SR · Fase 1/5+4 — ARQUITECTURA + MOTOR GLOBAL DE AUDIO (encabezado antiguo)
 

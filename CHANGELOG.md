@@ -1,5 +1,72 @@
 # CHANGELOG.md
 
+## Entrega 2 · SO Fase 3 — Eventos, feedback, recompensas y racha (v1.65.0)
+
+### Por qué esta fase va antes que la 2
+SO F2 es la biblioteca de sonidos y **sigue bloqueada**: no hay ni un archivo de audio en el
+proyecto, y Josué dijo que los daría *"cuando la web ya tenga todos los botones activos"*.
+
+El catálogo de eventos y la jerarquía **no los necesitan**. Así que se adelanta, en vez de dejar el
+bloque parado esperando.
+
+### Los 42 eventos, sin crear un segundo catálogo
+SO F1 dejó 17 eventos y cuatro prioridades, que era lo que el motor necesitaba. Esta fase trae los 42
+que pide la especificación.
+
+⚠️ Pero **no redefine ninguno de F1**: los traduce. Dos catálogos que se separan con cada fase es
+exactamente lo que el apartado 30 de aquella fase prohíbe.
+
+### Un solo sonido cuando pasan cinco cosas a la vez
+*"Completar tarea → +XP → subir de nivel → alcanzar milestone → nuevo récord."* Cinco eventos, un
+sonido: **PERSONAL_RECORD**.
+
+Y los otros cuatro **se devuelven**, no se pierden: la especificación dice que *"la interfaz puede
+mostrar visualmente todos los acontecimientos, pero el audio debe mantener jerarquía"*.
+
+Esto no sustituye al cooldown de SO F1 — aquel evita que veinte toques den veinte sonidos, esto elige
+cuál de los cinco simultáneos suena. Son dos problemas distintos.
+
+### Un bug que cazó su propia prueba
+El desempate a igual nivel era "gana el que tenga más días", pensado para milestone contra milestone.
+Pero eso hacía que **el milestone de 30 días ganara al récord**, que es justo lo contrario de lo que
+dice la especificación con ese ejemplo delante.
+
+Ahora el récord lleva su propio peso de desempate, y el de 365 días sigue ganando al de 100.
+
+### La racha sube de identidad, no de volumen
+*"Los milestones deben ser progresivamente más especiales. No quiero simplemente el mismo sonido con
+más volumen. Debe existir una evolución real de la identidad sonora."*
+
+Traducido a algo comprobable: **el nivel sube con los días**. El de 3 días es nivel 2, el de 7 es 3,
+el de 30 es 4, el de 365 es 5. Hay una prueba que recorre los diez milestones y falla si dos
+consecutivos bajan, y otra de punta a punta.
+
+Y **el récord es independiente del milestone**: *"has alcanzado un milestone"* y *"has superado tu
+propio récord"* son acontecimientos diferentes, y la especificación lo dice con esas palabras.
+
+### Los eventos que hoy no emite nadie, dichos con su motivo
+La especificación lista `xp_small`, `level_up`, `reward_major` y `streak_freeze_used`. Pero:
+
+- **RA F3 decidió no construir XP ni niveles.** Sus apartados los dejaban en condicional, y sin nada
+  que gastar un contador de XP es un control decorativo (regla 8). D2-02 lo respalda.
+- **El "congelar racha" no existe en RA F1**: el motor deriva la racha del historial y no tiene
+  comodines.
+
+Así que esos eventos **están en el catálogo** —para que el día que haya XP suene sin tocar nada— y
+**cada uno lleva escrito por qué hoy no lo emite nadie**, con una prueba que lo comprueba. Un evento
+fantasma sin explicación es lo que hace que alguien lo conecte mal seis meses después.
+
+### Verificación
+**3162 comprobaciones y 10 reglas invariantes en verde** (antes 3115), 47 del catálogo.
+`package.json` → **v1.65.0**.
+
+⏸ **Sigue sin sonar nada**, y es lo mismo desde SO F1: no hay archivos de audio. **SO F2 es justo la
+fase que los necesita.**
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes: bucket `armario` (AR F1) y bucket
+`fondos` (FO F2).
+
+
 ## Entrega 2 · HT Fase 12 — Cloud, sincronización y arquitectura definitiva (v1.64.0) 🔒 CIERRA HORARIO TOP
 
 Con esta fase **el bloque HT queda cerrado: 12 de 12**.

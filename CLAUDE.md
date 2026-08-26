@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.64.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.65.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va por 1/5, quedan 65) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va por 2/5, quedan 64) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,10 +107,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 2802 pruebas unitarias con Node, 5 de auditoría, 308 casos de renderizado real con
-`react-dom/server` y 10 reglas invariantes — **3115 comprobaciones**.
+Vite, 2849 pruebas unitarias con Node, 5 de auditoría, 308 casos de renderizado real con
+`react-dom/server` y 10 reglas invariantes — **3162 comprobaciones**.
 
-Eso ya ha encontrado **cuarenta y siete bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **cuarenta y ocho bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -133,8 +133,9 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**🔒 Horario Top está CERRADO (12/12).** La siguiente candidata es **EH · Estilo de Hombre, Fase
-1/65**, el último bloque y el más grande.
+**🔒 Horario Top está CERRADO (12/12)** y **Sonido va por 2/5** (F1 y F3; F2 sigue bloqueada).
+Las siguientes candidatas son **SO · Fase 4/5 — Diseño de los sonidos**, que tampoco necesita los
+archivos, o **EH · Estilo de Hombre, Fase 1/65**, el último bloque y el más grande.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
@@ -147,7 +148,9 @@ entero y funciona; lo único que falta son los sonidos.
 Seis cosas que conviene tener presentes al retomar:
 
 - **D2-01: Sonido y Rachas son DOS módulos independientes** (5 fases + 4). Rachas está cerrado 4/4;
-  Sonido va por 1/5.
+  Sonido va por 2/5 (F1 y F3), y **F3 se adelantó a F2 a propósito** porque no necesita los archivos.
+- ⚠️ **`audioEventos.js` NO redefine el catálogo de SO F1: lo traduce** (SO F3). Y los eventos que
+  nadie emite —XP, niveles, recompensas— llevan escrito por qué, con prueba.
 - **D2-02 sigue en pie: no sobregamificar.** XP y niveles solo dentro de Sonido/Rachas.
 - **El motor de rachas no guarda ni un contador** (`src/lib/rachas.js`, RA F1). Todo se deriva del
   historial. Si una fase futura pide "guardar la racha", hay que releer el apartado 24.

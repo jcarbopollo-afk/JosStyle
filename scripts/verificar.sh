@@ -164,6 +164,12 @@ else
   fallo "Falla el sistema global de sonido"; grep '✗' /tmp/jc_audio.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-audio-eventos.mjs >/tmp/jc_audio3.log 2>&1; then
+  ok "Catálogo de eventos y jerarquía (SO F3) — $(grep -c '✓' /tmp/jc_audio3.log) comprobaciones"
+else
+  fallo "Falla el catálogo de eventos de sonido"; grep '✗' /tmp/jc_audio3.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

@@ -190,8 +190,10 @@ escribir código.
 
 | v1.64.0 | **HT F12** | **Cierra el bloque HT (12/12).** Una sola puerta al módulo, exportar/importar idempotente y **una auditoría comprobada contra el código**: si alguien borra una función, falla sola |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y AHORA TAMBIÉN HT (12/12)
-cerrados.** SO va por 1/5. Quedan **65** fases de la Entrega 2: SO (4) y EH (61).
+| v1.65.0 | **SO F3** | El catálogo entero (42 eventos) y la jerarquía: **un solo sonido cuando pasan cinco cosas a la vez**, el récord gana al milestone, y la racha **sube de identidad** con los días. Se adelanta a F2, que sigue bloqueada por los archivos de audio |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
+2/5. Quedan **64** fases de la Entrega 2: SO (3, con **F2 bloqueada**) y EH (61).
 
 ✅ **C-23 resuelta a medias:** Josué pasó el texto que faltaba de la Fase 1 del Sonido (v1.54.0).
 ⏸ **Sigue pendiente lo de los archivos de audio**, que él dará *"cuando la web ya tenga todos los
