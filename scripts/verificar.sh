@@ -170,6 +170,12 @@ else
   fallo "Falla el catálogo de eventos de sonido"; grep '✗' /tmp/jc_audio3.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-especificacion-sonidos.mjs >/tmp/jc_audio4.log 2>&1; then
+  ok "Biblioteca sonora definida (SO F4) — $(grep -c '✓' /tmp/jc_audio4.log) comprobaciones"
+else
+  fallo "Falla la especificación de sonidos"; grep '✗' /tmp/jc_audio4.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

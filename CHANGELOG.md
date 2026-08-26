@@ -1,5 +1,71 @@
 # CHANGELOG.md
 
+## Entrega 2 · SO Fase 4 — Diseño y especificación de los sonidos (v1.66.0)
+
+### Lo que esta fase puede hacer, y lo que no
+*"Definir y preparar la biblioteca sonora."*
+
+**No crea los sonidos, y no puede.** No hay ni un archivo de audio en el proyecto, y generarlos sería
+inventarse la mitad del trabajo (regla 8).
+
+Lo que sí hace —y es exactamente el verbo del enunciado— es **definir**: la ficha de cada archivo,
+escrita como código. Nombre exacto, carpeta, familia, duración mínima y máxima, si lleva variantes y
+si tiene que ser único.
+
+**Eso convierte *"dame los sonidos"* en una lista precisa.** El día que estén en `public/sonidos/`
+con estos nombres, suenan sin tocar una línea: el motor de SO F1 ya los busca ahí.
+
+### La familia manda sobre el tramo
+El enunciado da dos cosas: familias (UI, feedback, reward…) y tramos de duración (microinteracción
+40-150 ms, feedback 100-300…). Se cruzan, y **gana la más estricta**.
+
+Un `ui_click` de 300 ms cumpliría "feedback" y aun así **se pisaría con el siguiente toque**. Hay una
+prueba de que ningún sonido acaba con un rango imposible.
+
+### La firma, en intervalos y no en notas
+*"Un motivo de 2-4 notas que pueda aparecer de forma evolucionada."*
+
+Está definida como **intervalos** (0, 5, 7 — cuarta justa y segunda mayor), no como notas concretas:
+así se transporta a cualquier tonalidad y sigue reconociéndose. Con sus cinco evoluciones, de las
+tres notas limpias en un logro a la firma completa con cola larga en un gran logro.
+
+Y **se llama "firma de JosStyle"** (D2-08): *JC Lifestyle* es el nombre histórico que aparece en la
+especificación, no el del proyecto.
+
+### Los importantes son únicos
+Los que se repiten mucho llevan variantes numeradas: `ui_click_01`, `_02`, `_03`. Oír el mismo clic
+doscientas veces al día es exactamente lo que cansa.
+
+Pero el enunciado enumera los que **no**: `level_up`, `personal_record`, `grand_achievement`, los
+milestones grandes y los 365 días. **Un récord con tres variantes deja de ser un momento** — la misma
+razón por la que SO F1 le puso el cooldown más largo.
+
+El validador rechaza un `personal_record_02` por ese motivo, con esas palabras.
+
+### `queFalta()`
+La función más honesta del archivo. Hoy devuelve **la lista entera**, porque no hay ni uno.
+
+Dice cuántos faltan, cuáles son los únicos (que son los que más cuestan y más se notan) y **por dónde
+empezar**: los de interfaz, que son los que se aprecian nada más usar la app.
+
+### Un hueco que cazó la comprobación cruzada
+`goal_progress` estaba en el catálogo de SO F3, podía sonar, y **no tenía archivo definido**. La
+prueba que cruza el catálogo con la biblioteca lo encontró.
+
+### Lo que no se ha construido, y es un límite de fase
+- **La pantalla de Ajustes de sonido**: SO F1 terminaba con *"DETENTE. No empieces todavía la
+  biblioteca de sonidos ni la pantalla de Ajustes"*, y esa pantalla es de **SO F5**.
+- **Los archivos**: ⏸ los da Josué *"cuando la web ya tenga todos los botones activos"*. **SO F2 es
+  la fase que los necesita y sigue bloqueada.**
+
+### Verificación
+**3221 comprobaciones y 10 reglas invariantes en verde** (antes 3162), 59 de la biblioteca definida.
+`package.json` → **v1.66.0**.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes: bucket `armario` (AR F1) y bucket
+`fondos` (FO F2).
+
+
 ## Entrega 2 · SO Fase 3 — Eventos, feedback, recompensas y racha (v1.65.0)
 
 ### Por qué esta fase va antes que la 2

@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 42 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)** y **SO 2/5** (hasta
-> v1.65.0). Quedan **64**: SO (3, con **F2 bloqueada** por los archivos de audio) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 43 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)** y **SO 3/5** (hasta
+> v1.66.0). Quedan **63**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -4913,6 +4913,48 @@ adelanta en vez de dejar el bloque parado.
 **Lo que sigue sin estar probado, y es lo mismo desde SO F1:** ⏸ **HOY NO SUENA NADA**, porque no hay
 ni un archivo de audio en el proyecto. **SO F2 es justo la fase que los necesita y sigue esperando** a
 que Josué los dé *"cuando la web ya tenga todos los botones activos"*.
+
+#### SO · Fase 4/5 — DISEÑO Y ESPECIFICACIÓN DE LOS SONIDOS ✅ COMPLETADA (v1.66.0)
+
+*"Definir y preparar la biblioteca sonora."*
+
+⚠️ **Esta fase no crea los sonidos, y no puede.** No hay ni un archivo de audio en el proyecto, y
+generarlos sería inventarse la mitad del trabajo (regla 8). Lo que sí hace —y es exactamente el verbo
+que usa el enunciado— es **definir**: `src/lib/especificacionSonidos.js` (59 comprobaciones) escribe
+la ficha de cada archivo como código.
+
+**Esto convierte *"dame los sonidos"* en una lista precisa.** El día que estén en `public/sonidos/`
+con estos nombres, **suenan sin tocar una línea**: el motor de SO F1 ya los busca ahí.
+
+- [x] **Las ocho familias y sus duraciones** — ⚠️ **la familia manda sobre el tramo cuando es más
+      estricta**: un `ui_click` de 300 ms cumpliría "feedback" y aun así **se pisaría con el siguiente
+      toque**. Hay una prueba de que ningún sonido tiene un rango imposible.
+- [x] **El carácter y lo que hay que evitar** — como datos, no como comentario: es lo que se le
+      entrega a quien los produzca, y una frase suelta en un README se pierde.
+- [x] **La firma sonora** — ⚠️ definida **como intervalos, no como notas concretas**, para que se
+      transporte y siga reconociéndose. Tres notas, con sus cinco evoluciones de menor a mayor, y
+      declarada en los ocho sonidos que el enunciado enumera. ⚠️ **Se llama "de JosStyle"** (D2-08):
+      *JC Lifestyle* es el nombre histórico de la especificación.
+- [x] **Variantes y sonidos únicos** — los que se repiten mucho llevan variantes numeradas (oír el
+      mismo clic doscientas veces al día es lo que cansa). ⚠️ **Y los importantes son únicos**, con la
+      lista literal del enunciado: `level_up`, `personal_record`, `grand_achievement` y los
+      milestones grandes. Un récord con tres variantes deja de ser un momento.
+- [x] **El validador** — caza un archivo demasiado largo, demasiado corto, que pesa de más, con
+      formato equivocado, con un nombre que no está en la lista, o **una variante de un sonido que
+      tenía que ser único**.
+- [x] **`queFalta()`, la función más honesta del archivo** — hoy devuelve **la lista entera**, porque
+      no hay ni uno. Dice cuántos faltan, cuáles son los únicos (que son los que más cuestan) y **por
+      dónde empezar**: los de interfaz, que son los que se notan al usar la app.
+- [x] **Un hueco que cazó la comprobación cruzada** — `goal_progress` estaba en el catálogo de SO F3,
+      podía sonar, y **no tenía archivo definido**. La prueba que cruza catálogo y biblioteca lo
+      encontró.
+
+**Lo que NO se ha construido, y es un límite de fase, no una omisión:**
+
+- [-] **La pantalla de Ajustes de sonido** — SO F1 terminaba con *"DETENTE. No empieces todavía la
+      biblioteca de sonidos ni la pantalla de Ajustes"*, y esa pantalla es de **SO F5**.
+- [-] **Los archivos de audio** — ⏸ los da Josué *"cuando la web ya tenga todos los botones
+      activos"*. **SO F2 es la fase que los necesita y sigue bloqueada.**
 
 #### SR · Fase 1/5+4 — ARQUITECTURA + MOTOR GLOBAL DE AUDIO (encabezado antiguo)
 
