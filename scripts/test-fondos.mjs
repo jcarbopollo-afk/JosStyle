@@ -17,6 +17,8 @@ import {
   describirFondo,
   ORIENTACIONES_FOTO, orientacionDeFoto, datosDeFoto, encuadreInicial, validarFotoFondo,
   aplicarFoto, quitarFoto, tieneFoto, MAX_PESO_FONDO,
+  AJUSTES_PRESENTACION, ajustesPorDefecto, ajustesDe, restablecerAjustes, tieneAjustes,
+  recordarAjustes, aplicarFotoConAjustes, estilosDeLuminosidad, MAX_AJUSTES_RECORDADOS,
 } from '../src/lib/fondos.js';
 
 let fallos = 0;
@@ -44,14 +46,17 @@ const COLORES = { bg: '#0B0D12', surface: '#151922', surface2: '#1E2430', accent
   // Los incluidos se definen con TOKENS, no con hex: siguen el tema y el acento.
   comprobar('Los fondos incluidos se definen con tokens, no con hex sueltos',
     FONDOS_INCLUIDOS.every((f) => !/^#/.test(f.de) && !/^#/.test(f.a)));
-  comprobar('Las 5 posiciones tienen su CSS', POSICIONES_FONDO.every((p) => p.id && p.label && p.css));
+  // Desde FO F3 las posiciones fijas son solo la tabla de migración y los atajos
+  // del editor: el encuadre real son dos porcentajes libres.
+  comprobar('Las 5 posiciones traen sus coordenadas', POSICIONES_FONDO.every((p) => p.id && p.label && Number.isFinite(p.x) && Number.isFinite(p.y)));
   comprobar('Una posición desconocida cae en el centro', posicionDeFondo('zzz').id === 'centro');
 }
 
 /* --- Apartado 4: el modelo central --- */
 {
-  const esperados = ['tipo', 'activo', 'incluido', 'color', 'degradado', 'foto', 'posicion',
-    'escala', 'opacidad', 'desenfoque', 'velo', 'analisis', 'paleta', 'recomendacion'];
+  const esperados = ['tipo', 'activo', 'incluido', 'color', 'degradado', 'foto', 'encuadre',
+    'escala', 'opacidad', 'desenfoque', 'luminosidad', 'overlay', 'ajustesPorFoto',
+    'analisis', 'paleta', 'recomendacion'];
   for (const campo of esperados) comprobar(`El modelo declara "${campo}"`, campo in DEFAULT_FONDO);
   // Apartado 7: la fotografía tiene que poder identificarse por completo.
   for (const campo of ['id', 'path', 'origen', 'formato', 'ancho', 'alto', 'proporcion', 'peso', 'anadidaEn']) {
@@ -69,7 +74,7 @@ const COLORES = { bg: '#0B0D12', surface: '#151922', surface2: '#1E2430', accent
   const antiguo = { tipo: 'color', activo: true, color: '#FF0000' };
   const n = normalizarFondo(antiguo);
   comprobar('Una configuración antigua conserva lo que tenía', n.tipo === 'color' && n.color === '#FF0000');
-  comprobar('...y recupera los campos que le faltaban', n.velo === 0 && n.escala === 100 && 'foto' in n);
+  comprobar('...y recupera los campos que le faltaban', n.overlay.intensidad === 0 && n.escala === 100 && 'foto' in n);
   comprobar('...incluidos los de fases futuras', 'analisis' in n && 'paleta' in n);
   comprobar('Un fondo nulo devuelve el valor por defecto', normalizarFondo(null).tipo === 'ninguno');
   comprobar('Un fondo indefinido también', normalizarFondo(undefined).activo === false);
@@ -79,7 +84,9 @@ const COLORES = { bg: '#0B0D12', surface: '#151922', surface2: '#1E2430', accent
   comprobar('Una escala absurda se acota', normalizarFondo({ escala: 4000 }).escala === 300);
   comprobar('Una opacidad negativa se acota a 0', normalizarFondo({ opacidad: -50 }).opacidad === 0);
   comprobar('Un desenfoque enorme se acota', normalizarFondo({ desenfoque: 999 }).desenfoque === 40);
-  comprobar('Un velo por encima de 90 se acota', normalizarFondo({ velo: 100 }).velo === 90);
+  comprobar('Un overlay por encima de 90 se acota', normalizarFondo({ overlay: { intensidad: 100 } }).overlay.intensidad === 90);
+  comprobar('La luminosidad se acota por abajo', normalizarFondo({ luminosidad: -500 }).luminosidad === -90);
+  comprobar('...y por arriba, con menos margen para aclarar', normalizarFondo({ luminosidad: 500 }).luminosidad === 60);
   comprobar('Un valor no numérico cae en su valor por defecto', normalizarFondo({ escala: 'mucho' }).escala === 100);
   comprobar('Un tipo inventado cae en "ninguno"', normalizarFondo({ tipo: 'zzz' }).tipo === 'ninguno');
   comprobar('Un color inválido se descarta', normalizarFondo({ color: 'rojo' }).color === '');
@@ -151,22 +158,27 @@ const COLORES = { bg: '#0B0D12', surface: '#151922', surface2: '#1E2430', accent
   comprobar('La foto se pinta como backgroundImage', foto.backgroundImage.includes('https://x/y.jpg'));
   comprobar('...a tamaño cover cuando la escala es 100', foto.backgroundSize === 'cover');
   comprobar('...y sin repetirse', foto.backgroundRepeat === 'no-repeat');
-  const fotoZoom = estilosDeFondo(resolverFondo({ tipo: 'foto', activo: true, escala: 150, posicion: 'arriba' }, { urlFoto: 'u' }), COLORES);
+  const fotoZoom = estilosDeFondo(resolverFondo({ tipo: 'foto', activo: true, escala: 150, encuadre: { x: 20, y: 80 } }, { urlFoto: 'u' }), COLORES);
   comprobar('Con escala distinta de 100 se usa el porcentaje', fotoZoom.backgroundSize === '150%');
-  comprobar('...y la posición elegida', fotoZoom.backgroundPosition === 'center top');
+  comprobar('...y el encuadre libre en porcentajes', fotoZoom.backgroundPosition === '20% 80%', fotoZoom.backgroundPosition);
 }
 
 /* --- El velo (apartado 4, `overlay`) --- */
 {
-  comprobar('Sin velo no se pinta capa de velo', estilosDeVelo(resolverFondo({ tipo: 'color', color: '#F00', activo: true }), COLORES) === null);
+  comprobar('Sin overlay no se pinta esa capa', estilosDeVelo(resolverFondo({ tipo: 'color', color: '#F00', activo: true }), COLORES) === null);
   comprobar('Sin fondo tampoco', estilosDeVelo(resolverFondo(DEFAULT_FONDO), COLORES) === null);
-  const velo = estilosDeVelo(resolverFondo({ tipo: 'color', color: '#F00', activo: true, velo: 40 }), COLORES);
-  comprobar('Con velo se pinta con el color de fondo del tema', velo.background === COLORES.bg);
+  const velo = estilosDeVelo(resolverFondo({ tipo: 'color', color: '#F00', activo: true, overlay: { intensidad: 40 } }), COLORES);
+  comprobar('Sin color propio, el overlay usa el fondo del tema', velo.background === COLORES.bg);
   comprobar('...a la opacidad pedida', velo.opacity === 0.4);
-  // El velo va en SU capa: si se desenfocara con la foto dejaría de proteger la
+  const teñido = estilosDeVelo(resolverFondo({ tipo: 'color', color: '#F00', activo: true, overlay: { color: '#00FF00', intensidad: 50 } }), COLORES);
+  comprobar('Con color propio, el overlay lo usa', teñido.background === '#00FF00');
+  // El overlay va en SU capa: si se desenfocara con la foto dejaría de proteger la
   // lectura, que es justo para lo que existe.
-  comprobar('El velo NO lleva desenfoque, aunque el fondo sí',
-    estilosDeVelo(resolverFondo({ tipo: 'foto', activo: true, velo: 30, desenfoque: 20 }, { urlFoto: 'u' }), COLORES).filter === undefined);
+  comprobar('El overlay NO lleva desenfoque, aunque el fondo sí',
+    estilosDeVelo(resolverFondo({ tipo: 'foto', activo: true, overlay: { intensidad: 30 }, desenfoque: 20 }, { urlFoto: 'u' }), COLORES).filter === undefined);
+  // MIGRACIÓN: un `velo` guardado por v1.36/37 tiene que llegar al overlay.
+  comprobar('Un `velo` guardado por una versión anterior se migra al overlay',
+    normalizarFondo({ velo: 35 }).overlay.intensidad === 35);
 }
 
 /* --- Apartados 13 y 14: cambiar y restablecer --- */
@@ -251,13 +263,14 @@ console.log('\n═══ FO Fase 2 — la fotografía de fondo ═══\n');
 {
   // Una foto muy vertical se ancla ARRIBA: centrada cortaría justo por donde
   // suele estar lo importante en una foto de móvil.
-  comprobar('Una foto vertical se ancla arriba', encuadreInicial({ proporcion: 0.5625 }).posicion === 'arriba');
-  comprobar('Una horizontal se centra', encuadreInicial({ proporcion: 1.77 }).posicion === 'centro');
-  comprobar('Una panorámica se centra', encuadreInicial({ proporcion: 3 }).posicion === 'centro');
-  comprobar('Una cuadrada se centra', encuadreInicial({ proporcion: 1 }).posicion === 'centro');
+  comprobar('Una foto vertical se ancla arriba', encuadreInicial({ proporcion: 0.5625 }).encuadre.y === 0);
+  comprobar('Una horizontal se centra', encuadreInicial({ proporcion: 1.77 }).encuadre.y === 50);
+  comprobar('Una panorámica se centra', encuadreInicial({ proporcion: 3 }).encuadre.y === 50);
+  comprobar('Una cuadrada se centra', encuadreInicial({ proporcion: 1 }).encuadre.y === 50);
+  comprobar('El encuadre inicial nunca desplaza en horizontal', encuadreInicial({ proporcion: 0.5 }).encuadre.x === 50);
   // Apartado 5: la imagen NUNCA debe deformarse. Escala 100 = `cover`.
   comprobar('El encuadre inicial es siempre cover, para no deformar', encuadreInicial({ proporcion: 3 }).escala === 100);
-  comprobar('Sin medidas, el encuadre no revienta', encuadreInicial(null).posicion === 'centro');
+  comprobar('Sin medidas, el encuadre no revienta', encuadreInicial(null).encuadre.y === 50);
 }
 
 /* --- Apartado 12: no dejar entrar una imagen imposible --- */
@@ -284,19 +297,19 @@ console.log('\n═══ FO Fase 2 — la fotografía de fondo ═══\n');
   const conFoto = aplicarFoto(conColor, datosDeFoto({ path: 'u/1.jpg', ancho: 1080, alto: 1920 }));
   comprobar('Aplicar una foto la deja activa', conFoto.tipo === 'foto' && conFoto.activo === true);
   comprobar('...con su ruta guardada', conFoto.foto.path === 'u/1.jpg');
-  comprobar('...y el encuadre inicial ya calculado', conFoto.posicion === 'arriba' && conFoto.escala === 100);
+  comprobar('...y el encuadre inicial ya calculado', conFoto.encuadre.y === 0 && conFoto.escala === 100);
   comprobar('APLICAR UNA FOTO NO BORRA EL COLOR ANTERIOR', conFoto.color === '#123456');
 
   const conDeg = seleccionarFondo(DEFAULT_FONDO, 'degradado', { degradado: { de: '#FF0000', a: '#00FF00', angulo: 90 } });
   const conFoto2 = aplicarFoto(conDeg, datosDeFoto({ path: 'u/2.jpg', ancho: 1920, alto: 1080 }));
   comprobar('...ni el degradado', conFoto2.degradado.de === '#FF0000' && conFoto2.degradado.a === '#00FF00');
-  comprobar('Una foto horizontal se centra al aplicarla', conFoto2.posicion === 'centro');
+  comprobar('Una foto horizontal se centra al aplicarla', conFoto2.encuadre.y === 50);
   comprobar('tieneFoto lo detecta', tieneFoto(conFoto) === true && tieneFoto(DEFAULT_FONDO) === false);
 
   // Apartado 8: cambiar de foto sin quitar la anterior primero.
   const cambiada = aplicarFoto(conFoto, datosDeFoto({ path: 'u/3.jpg', ancho: 1000, alto: 1000 }));
   comprobar('Cambiar de foto sustituye la ruta', cambiada.foto.path === 'u/3.jpg');
-  comprobar('...recalculando su encuadre', cambiada.posicion === 'centro');
+  comprobar('...recalculando su encuadre', cambiada.encuadre.y === 50);
   comprobar('...y sigue sin perder el color', cambiada.color === '#123456');
 }
 
@@ -332,8 +345,152 @@ console.log('\n═══ FO Fase 2 — la fotografía de fondo ═══\n');
   comprobar('La foto sobrevive a guardar y volver a cargar', vuelta.foto.path === 'u/1.jpg');
   comprobar('...con sus medidas', vuelta.foto.ancho === 1080 && vuelta.foto.alto === 1920);
   comprobar('...su formato y su peso', vuelta.foto.formato === 'image/jpeg' && vuelta.foto.peso === 999);
-  comprobar('...y su encuadre', vuelta.posicion === 'arriba');
+  comprobar('...y su encuadre', vuelta.encuadre.y === 0);
   comprobar('...y sigue siendo el fondo activo', vuelta.tipo === 'foto' && vuelta.activo === true);
+}
+
+/* ===========================================================================
+   FO FASE 3 — EL EDITOR DE FOTOGRAFÍA
+   =========================================================================== */
+console.log('\n═══ FO Fase 3 — editor de fotografía ═══\n');
+
+const FOTO_V = datosDeFoto({ path: 'u/v.jpg', ancho: 1080, alto: 1920 });   // vertical
+const FOTO_H = datosDeFoto({ path: 'u/h.jpg', ancho: 1920, alto: 1080 });   // horizontal
+
+/* --- Apartado 2: la fotografía original NUNCA se modifica --- */
+{
+  const base = aplicarFoto(DEFAULT_FONDO, FOTO_V);
+  const editado = ajustarFondo(base, { escala: 180, desenfoque: 12, luminosidad: -50, encuadre: { x: 30, y: 20 } });
+  // Los ajustes son configuración del fondo, no una imagen nueva: la ruta y las
+  // medidas de la foto siguen siendo exactamente las mismas.
+  comprobar('Editar NO toca el archivo: misma ruta', editado.foto.path === FOTO_V.path);
+  comprobar('...mismas medidas', editado.foto.ancho === 1080 && editado.foto.alto === 1920);
+  comprobar('...y mismo id', editado.foto.id === FOTO_V.id);
+  comprobar('Los ajustes se guardan como configuración', editado.escala === 180 && editado.desenfoque === 12);
+}
+
+/* --- Apartados 4-7: zoom y encuadre, sin deformar --- */
+{
+  const f = aplicarFoto(DEFAULT_FONDO, FOTO_H);
+  comprobar('El zoom mínimo es 100 (cover): por debajo dejaría huecos', ajustarFondo(f, { escala: 50 }).escala === 100);
+  comprobar('El zoom tiene tope razonable', ajustarFondo(f, { escala: 9999 }).escala === 300);
+  comprobar('Volver al zoom inicial es volver a 100', restablecerAjustes(ajustarFondo(f, { escala: 250 })).escala === 100);
+
+  // Apartado 5 y 6: horizontal y vertical, libres.
+  const movido = ajustarFondo(f, { encuadre: { x: 15, y: 85 } });
+  comprobar('Se puede desplazar en horizontal', movido.encuadre.x === 15);
+  comprobar('...y en vertical', movido.encuadre.y === 85);
+  comprobar('El encuadre se acota a 0-100', ajustarFondo(f, { encuadre: { x: -50, y: 500 } }).encuadre.x === 0);
+  comprobar('...por los dos lados', ajustarFondo(f, { encuadre: { x: -50, y: 500 } }).encuadre.y === 100);
+
+  // Apartado 7: NUNCA deformar. El tamaño de fondo es cover o un %, jamás "100% 100%".
+  const est = estilosDeFondo(resolverFondo(ajustarFondo(f, { escala: 180 }), { urlFoto: 'u' }), COLORES);
+  comprobar('El zoom no deforma: se pinta con un solo porcentaje', est.backgroundSize === '180%');
+  comprobar('Sin zoom, cover', estilosDeFondo(resolverFondo(f, { urlFoto: 'u' }), COLORES).backgroundSize === 'cover');
+}
+
+/* --- Apartados 9 y 10: oscurecer y aclarar --- */
+{
+  comprobar('Sin luminosidad no se pinta esa capa', estilosDeLuminosidad(resolverFondo(aplicarFoto(DEFAULT_FONDO, FOTO_H), { urlFoto: 'u' })) === null);
+  const osc = estilosDeLuminosidad(resolverFondo(ajustarFondo(aplicarFoto(DEFAULT_FONDO, FOTO_H), { luminosidad: -60 }), { urlFoto: 'u' }));
+  comprobar('Negativo oscurece con negro', osc.background === 'black' && Math.abs(osc.opacity - 0.6) < 0.001);
+  const acl = estilosDeLuminosidad(resolverFondo(ajustarFondo(aplicarFoto(DEFAULT_FONDO, FOTO_H), { luminosidad: 40 }), { urlFoto: 'u' }));
+  comprobar('Positivo aclara con blanco', acl.background === 'white' && Math.abs(acl.opacity - 0.4) < 0.001);
+  // Apartado 10: el aclarado tiene menos recorrido, para no matar el contraste.
+  comprobar('El aclarado llega menos lejos que el oscurecido',
+    normalizarFondo({ luminosidad: 999 }).luminosidad < Math.abs(normalizarFondo({ luminosidad: -999 }).luminosidad));
+  comprobar('Sin fondo no hay capa de luminosidad', estilosDeLuminosidad(resolverFondo(DEFAULT_FONDO)) === null);
+}
+
+/* --- Apartado 13: restablecer ajustes, sin perder la foto --- */
+{
+  const f = aplicarFoto(DEFAULT_FONDO, FOTO_V);
+  const editado = ajustarFondo(f, { escala: 220, desenfoque: 20, luminosidad: -70, opacidad: 40, encuadre: { x: 10, y: 90 }, overlay: { color: '#FF0000', intensidad: 60 } });
+  const limpio = restablecerAjustes(editado);
+
+  comprobar('Restablecer devuelve el zoom', limpio.escala === 100);
+  comprobar('...quita el desenfoque', limpio.desenfoque === 0);
+  comprobar('...quita el oscurecimiento', limpio.luminosidad === 0);
+  comprobar('...devuelve la opacidad', limpio.opacidad === 100);
+  comprobar('...desactiva el overlay', limpio.overlay.intensidad === 0 && limpio.overlay.color === '');
+  // Y esto es lo que subraya el apartado: NO elimina la fotografía.
+  comprobar('RESTABLECER NO ELIMINA LA FOTOGRAFÍA', limpio.foto.path === FOTO_V.path);
+  comprobar('...y sigue activa', limpio.tipo === 'foto' && limpio.activo === true);
+  // El encuadre vuelve al INICIAL de esa orientación, no a "centro" a secas: para
+  // una foto vertical, "original" es anclada arriba, que es como se aplicó.
+  comprobar('El encuadre vuelve al inicial de SU orientación, no al centro', limpio.encuadre.y === 0);
+  comprobar('Una foto horizontal sí vuelve al centro', restablecerAjustes(ajustarFondo(aplicarFoto(DEFAULT_FONDO, FOTO_H), { encuadre: { x: 0, y: 0 } })).encuadre.y === 50);
+  comprobar('Sin ajustes, no hay nada que restablecer', tieneAjustes(f) === false);
+  comprobar('Con ajustes, sí', tieneAjustes(editado) === true);
+}
+
+/* --- Apartado 14: cancelar. El editor trabaja sobre un borrador --- */
+{
+  // Cancelar es no llamar a onCambiar: el fondo guardado no se toca. Se comprueba
+  // que editar un borrador NUNCA muta el original, que es lo que lo hace posible
+  // "incluso después de realizar muchos cambios".
+  const original = aplicarFoto(DEFAULT_FONDO, FOTO_V);
+  const copia = JSON.parse(JSON.stringify(original));
+  let borrador = original;
+  for (let i = 0; i < 40; i++) borrador = ajustarFondo(borrador, { escala: 100 + i, desenfoque: i % 40, luminosidad: -i });
+  comprobar('40 cambios seguidos no tocan el fondo original', JSON.stringify(original) === JSON.stringify(copia));
+  comprobar('...aunque el borrador sí haya cambiado', borrador.escala !== original.escala);
+}
+
+/* --- Apartado 16: cambiar de foto desde el editor --- */
+{
+  const conAjustes = ajustarFondo(aplicarFoto(DEFAULT_FONDO, FOTO_V), {
+    escala: 200, encuadre: { x: 10, y: 90 }, desenfoque: 15, luminosidad: -40,
+  });
+  const nueva = aplicarFotoConAjustes(conAjustes, FOTO_H);
+
+  comprobar('Cambiar de foto sustituye la imagen', nueva.foto.path === FOTO_H.path);
+  // La geometría NO se hereda: el encuadre bueno de un retrato vertical no
+  // significa nada en una panorámica. Es el "accidentalmente" del apartado.
+  comprobar('El encuadre NO se hereda: se recalcula', nueva.encuadre.y === 50 && nueva.encuadre.x === 50);
+  comprobar('...ni el zoom', nueva.escala === 100);
+  // El gusto sí: si querías la foto discreta y oscura para leer mejor, la sigues
+  // queriendo así con otra imagen.
+  comprobar('El desenfoque SÍ se hereda, es gusto', nueva.desenfoque === 15);
+  comprobar('...y el oscurecimiento también', nueva.luminosidad === -40);
+}
+
+/* --- Apartado 20: los ajustes quedan vinculados a SU fotografía --- */
+{
+  const conV = ajustarFondo(aplicarFoto(DEFAULT_FONDO, FOTO_V), { escala: 250, encuadre: { x: 80, y: 10 } });
+  // Al cambiar a la horizontal, los de la vertical se recuerdan...
+  const conH = aplicarFotoConAjustes(conV, FOTO_H);
+  comprobar('Al cambiar de foto se recuerdan los ajustes de la anterior', !!conH.ajustesPorFoto[FOTO_V.id]);
+  comprobar('...con su zoom', conH.ajustesPorFoto[FOTO_V.id].escala === 250);
+  // ...y al volver a ella, se recuperan en vez de heredar los de la otra.
+  const vuelta = aplicarFotoConAjustes(ajustarFondo(conH, { escala: 130 }), FOTO_V);
+  comprobar('VOLVER A UNA FOTO YA USADA RECUPERA SUS AJUSTES', vuelta.escala === 250, String(vuelta.escala));
+  comprobar('...incluido su encuadre', vuelta.encuadre.x === 80 && vuelta.encuadre.y === 10);
+  comprobar('...y no los de la foto intermedia', vuelta.escala !== 130);
+
+  // La memoria no puede crecer sin fin: se guarda entera en cada saveData.
+  let acumulado = DEFAULT_FONDO;
+  for (let i = 0; i < MAX_AJUSTES_RECORDADOS + 6; i++) {
+    acumulado = aplicarFotoConAjustes(acumulado, datosDeFoto({ path: `u/${i}.jpg`, ancho: 100, alto: 100 }));
+  }
+  comprobar('La memoria de ajustes se limita', Object.keys(recordarAjustes(acumulado).ajustesPorFoto).length <= MAX_AJUSTES_RECORDADOS,
+    String(Object.keys(recordarAjustes(acumulado).ajustesPorFoto).length));
+  comprobar('Una foto sin id no ensucia la memoria', Object.keys(recordarAjustes(DEFAULT_FONDO).ajustesPorFoto).length === 0);
+}
+
+/* --- Los ajustes de presentación son una lista única --- */
+{
+  comprobar('AJUSTES_PRESENTACION cubre los seis controles', AJUSTES_PRESENTACION.length === 6);
+  comprobar('Todos existen en el modelo', AJUSTES_PRESENTACION.every((k) => k in DEFAULT_FONDO));
+  const porDefecto = ajustesPorDefecto();
+  comprobar('Los valores de fábrica salen del propio modelo', porDefecto.escala === DEFAULT_FONDO.escala);
+  // Copias, no referencias: si `ajustesPorDefecto` devolviera el mismo objeto
+  // anidado, editar un fondo mutaría DEFAULT_FONDO para toda la app.
+  porDefecto.overlay.intensidad = 99;
+  comprobar('ajustesPorDefecto devuelve COPIAS, no referencias a DEFAULT_FONDO',
+    DEFAULT_FONDO.overlay.intensidad === 0);
+  const extraidos = ajustesDe(ajustarFondo(DEFAULT_FONDO, { escala: 150 }));
+  comprobar('ajustesDe extrae solo la presentación', extraidos.escala === 150 && !('tipo' in extraidos) && !('foto' in extraidos));
 }
 
 console.log(fallos === 0 ? '\n  Todo correcto.\n' : `\n  ${fallos} fallo(s).\n`);

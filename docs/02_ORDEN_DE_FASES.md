@@ -145,8 +145,9 @@ escribir código.
 | v1.35.0 | **AR F4** | Anti-repetición, estadísticas y recomendaciones explicadas. **Cierra el bloque AR.** Sin una sola llamada a la IA: todo son reglas sobre el historial real |
 | v1.36.0 | **FO F1** | Arquitectura del sistema de fondos: cinco tipos, cadena de prioridad que nunca deja un hueco, y el fondo dentro de `apariencia` en vez de un sistema paralelo |
 | v1.37.0 | **FO F2** | Fotografía de fondo: elegir → previsualizar → aplicar, con encuadre inicial según la orientación y sin perder el color anterior |
+| v1.38.0 | **FO F3** | Editor de fotografía: zoom, encuadre libre, desenfoque, luz y tinte, sobre un borrador para que Cancelar funcione de verdad |
 
-🔒 **Bloques ME (4/4), BI (4/4) y AR (4/4) cerrados**, FO va por 2/12. Quedan 92 fases de la Entrega 2.
+🔒 **Bloques ME (4/4), BI (4/4) y AR (4/4) cerrados**, FO va por 3/12. Quedan 91 fases de la Entrega 2.
 
 ---
 

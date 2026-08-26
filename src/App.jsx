@@ -10,7 +10,7 @@ import { verificarBiometria } from './lib/biometria';
 import { crearPinHash, verificarPin } from './lib/pin';
 import { calcularResumenModulo } from './lib/resumenesHub';
 import { eventosDerivados } from './lib/calendarioIntegracion';
-import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, tieneFoto } from './lib/fondos';
+import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal } from './components/ui';
 import HubView from './views/HubView';
 import Auth from './components/Auth';
@@ -442,6 +442,10 @@ export default function App() {
   // se ve la pantalla sin fondo mientras carga la imagen.
   const fondoResuelto = resolverFondo(apariencia.fondo, { urlFoto: urlFotoFondo });
   const estiloFondo = estilosDeFondo(fondoResuelto, COLORS);
+  // FO Fase 3 — tres capas, en este orden: la foto, la luz (oscurecer/aclarar) y el
+  // overlay de color. Ninguna se mezcla con otra: "oscurecer la foto" no debe
+  // oscurecer el overlay, y el overlay no debe desenfocarse con la foto.
+  const estiloLuz = estilosDeLuminosidad(fondoResuelto);
   const estiloVelo = estilosDeVelo(fondoResuelto, COLORS);
 
   // Firma la foto de fondo cuando cambia la ruta, y solo entonces. La URL dura una hora,
@@ -1863,6 +1867,9 @@ export default function App() {
           proteger la lectura, que es justo para lo que existe. */}
       {estiloFondo && (
         <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ ...estiloFondo, zIndex: -1 }} />
+      )}
+      {estiloLuz && (
+        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ ...estiloLuz, zIndex: -1 }} />
       )}
       {estiloVelo && (
         <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ ...estiloVelo, zIndex: -1 }} />

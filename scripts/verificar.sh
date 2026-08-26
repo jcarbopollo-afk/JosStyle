@@ -87,7 +87,7 @@ else
 fi
 
 if node --import ./scripts/resolver-vite.mjs scripts/test-fondos.mjs >/tmp/jc_fondos.log 2>&1; then
-  ok "Sistema de fondos y fotografía (FO F1-F2) — $(grep -c '✓' /tmp/jc_fondos.log) comprobaciones"
+  ok "Fondos, fotografía y editor (FO F1-F3) — $(grep -c '✓' /tmp/jc_fondos.log) comprobaciones"
 else
   fallo "Fallan pruebas del sistema de fondos"; grep '✗' /tmp/jc_fondos.log
 fi

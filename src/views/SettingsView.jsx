@@ -24,7 +24,8 @@ import {
   TIPOS_FONDO, FONDOS_INCLUIDOS, POSICIONES_FONDO, seleccionarFondo, ajustarFondo,
   restablecerFondo, describirFondo, tieneFondoGuardado, resolverFondo, estilosDeFondo,
   estilosDeVelo, datosDeFoto, validarFotoFondo, aplicarFoto, quitarFoto, tieneFoto,
-  orientacionDeFoto,
+  orientacionDeFoto, estilosDeLuminosidad, restablecerAjustes, tieneAjustes,
+  aplicarFotoConAjustes,
 } from '../lib/fondos';
 import ColorPicker from '../components/ColorPicker';
 import TemaBuilder from '../components/TemaBuilder';
@@ -190,13 +191,16 @@ function LesionesEditor({ value, onChange, accent }) {
 function VistaPreviaFondo({ fondo, accent, urlFoto = null, alto = 96 }) {
   const resuelto = resolverFondo(fondo, { urlFoto });
   const estilo = estilosDeFondo(resuelto, COLORS);
+  const luz = estilosDeLuminosidad(resuelto);
   const velo = estilosDeVelo(resuelto, COLORS);
   return (
     <div
       className="rounded-2xl overflow-hidden relative mb-3"
       style={{ height: alto, background: COLORS.bg, border: `1px solid ${COLORS.border}` }}
     >
+      {/* Las tres capas, en el mismo orden que en la app: foto → luz → overlay. */}
       {estilo && <div className="absolute inset-0" style={estilo} />}
+      {luz && <div className="absolute inset-0" style={luz} />}
       {velo && <div className="absolute inset-0" style={velo} />}
       {/* Una tarjeta y un texto de mentira, para ver cómo queda la interfaz ENCIMA del
           fondo. Un rectángulo de color solo enseña el fondo; lo que hay que juzgar es si
@@ -246,6 +250,7 @@ function SelectorFoto({ fondo, accent, urlFotoActual, onSubirFoto, onCambiar }) 
   const [pendiente, setPendiente] = useState(null);   // { file, url, ancho, alto }
   const [error, setError] = useState('');
   const [subiendo, setSubiendo] = useState(false);
+  const [editando, setEditando] = useState(false);
 
   // Un `objectURL` que no se revoca es memoria retenida hasta recargar la página.
   // Se suelta al desmontar y cada vez que se sustituye por otro.
@@ -285,7 +290,7 @@ function SelectorFoto({ fondo, accent, urlFotoActual, onSubirFoto, onCambiar }) 
     setError('');
     try {
       const path = await onSubirFoto(pendiente.file);
-      onCambiar(aplicarFoto(fondo, datosDeFoto({
+      onCambiar(aplicarFotoConAjustes(fondo, datosDeFoto({
         path,
         origen: 'galeria',
         formato: pendiente.file.type,
@@ -330,17 +335,27 @@ function SelectorFoto({ fondo, accent, urlFotoActual, onSubirFoto, onCambiar }) 
             </div>
           </div>
         </>
+      ) : editando ? (
+        <EditorFoto
+          fondo={fondo} accent={accent} urlFoto={urlFotoActual}
+          onGuardar={(b) => { onCambiar(b); setEditando(false); }}
+          onCerrar={() => setEditando(false)}
+          onCambiarFoto={() => { setEditando(false); inputRef.current?.click(); }}
+        />
       ) : hayFoto ? (
         <>
           <VistaPreviaFondo fondo={fondo} urlFoto={urlFotoActual} accent={accent} alto={150} />
           <div className="flex gap-2">
-            <PrimaryButton accent={accent} icon={ImageIcon} onClick={() => inputRef.current?.click()}>
-              Cambiar foto
+            <PrimaryButton accent={accent} icon={SlidersHorizontal} onClick={() => setEditando(true)}>
+              Ajustar foto
             </PrimaryButton>
             <div style={{ width: 110, flexShrink: 0 }}>
-              {/* Apartado 9: quitar la foto NO la borra del sistema. */}
-              <GhostBtn onClick={() => onCambiar(quitarFoto(fondo))}>Quitar foto</GhostBtn>
+              <GhostBtn onClick={() => inputRef.current?.click()}>Cambiar</GhostBtn>
             </div>
+          </div>
+          <div className="mt-2">
+            {/* Apartado 9: quitar la foto NO la borra del sistema. */}
+            <GhostBtn onClick={() => onCambiar(quitarFoto(fondo))}>Quitar foto</GhostBtn>
           </div>
           <p className="text-[11px] mt-1.5" style={{ color: COLORS.textMuted }}>
             Quitarla no la borra: vuelve al fondo que tenías antes.
@@ -375,6 +390,100 @@ function medirImagen(url) {
     img.onerror = reject;
     img.src = url;
   });
+}
+
+/* ---------- FO Fase 3 — el editor de fotografía ----------
+   Apartado 14: se puede editar mucho y cancelar. Eso obliga a trabajar sobre un
+   BORRADOR local, no sobre el fondo guardado: mientras el editor está abierto,
+   `onCambiar` no se llama ni una vez. Cancelar es, literalmente, tirar el borrador.
+
+   La vista previa lee ese mismo borrador, así que es en tiempo real (apartado 3)
+   sin que nada se haya guardado todavía. */
+export function EditorFoto({ fondo, accent, urlFoto, onGuardar, onCerrar, onCambiarFoto }) {
+  const [borrador, setBorrador] = useState(() => fondo);
+  const set = (cambios) => setBorrador((b) => ajustarFondo(b, cambios));
+  const mover = (eje, valor) => set({ encuadre: { ...borrador.encuadre, [eje]: valor } });
+
+  return (
+    <div className="mt-3">
+      {/* Apartado 17: la vista previa, grande y protagonista. */}
+      <VistaPreviaFondo fondo={borrador} urlFoto={urlFoto} accent={accent} alto={190} />
+
+      <div className="space-y-3">
+        <Deslizador label="Zoom" valor={borrador.escala} min={100} max={300} accent={accent}
+          onChange={(v) => set({ escala: v })} />
+        {/* Apartados 5 y 6 — qué parte de la foto queda a la vista. Solo tienen
+            sentido con zoom: a tamaño exacto no hay nada que desplazar. */}
+        <Deslizador label="Horizontal" valor={borrador.encuadre.x} min={0} max={100} accent={accent}
+          onChange={(v) => mover('x', v)} />
+        <Deslizador label="Vertical" valor={borrador.encuadre.y} min={0} max={100} accent={accent}
+          onChange={(v) => mover('y', v)} />
+        <Deslizador label="Desenfoque" valor={borrador.desenfoque} min={0} max={40} sufijo=" px" accent={accent}
+          onChange={(v) => set({ desenfoque: v })} />
+        {/* Apartados 9 y 10 en un solo control: negativo oscurece, positivo aclara. */}
+        <div>
+          <Deslizador label="Luz" valor={borrador.luminosidad} min={-90} max={60} accent={accent}
+            onChange={(v) => set({ luminosidad: v })} />
+          <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+            A la izquierda oscurece la foto, a la derecha la aclara. Útil para poder leer encima.
+          </p>
+        </div>
+        <Deslizador label="Opacidad" valor={borrador.opacidad} min={10} max={100} accent={accent}
+          onChange={(v) => set({ opacidad: v })} />
+
+        {/* Apartado 12 — el overlay, con su color. Sin color, usa el del tema. */}
+        <div>
+          <Deslizador label="Tinte" valor={borrador.overlay.intensidad} min={0} max={90} accent={accent}
+            onChange={(v) => set({ overlay: { ...borrador.overlay, intensidad: v } })} />
+          {borrador.overlay.intensidad > 0 && (
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="color"
+                value={borrador.overlay.color || COLORS.bg}
+                onChange={(e) => set({ overlay: { ...borrador.overlay, color: e.target.value } })}
+                className="rounded-lg flex-shrink-0"
+                style={{ width: 44, height: 32, background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+                aria-label="Color del tinte"
+              />
+              {borrador.overlay.color && (
+                <button
+                  onClick={() => set({ overlay: { ...borrador.overlay, color: '' } })}
+                  className="text-[11px] font-semibold"
+                  style={{ color: accent }}
+                >
+                  Usar el color del tema
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Apartado 13 — restablecer. Solo aparece si hay algo que restablecer:
+          un botón que no puede hacer nada es un control decorativo (regla 8). */}
+      {tieneAjustes(borrador) && (
+        <button
+          onClick={() => setBorrador(restablecerAjustes(borrador))}
+          className="text-xs font-semibold mt-3"
+          style={{ color: accent }}
+        >
+          Restablecer ajustes
+        </button>
+      )}
+
+      <div className="flex gap-2 mt-3">
+        <PrimaryButton accent={accent} onClick={() => onGuardar(borrador)}>Aplicar</PrimaryButton>
+        <div style={{ width: 110, flexShrink: 0 }}>
+          <GhostBtn onClick={onCerrar}>Cancelar</GhostBtn>
+        </div>
+      </div>
+
+      {/* Apartado 16 — cambiar de foto desde el editor. */}
+      <button onClick={onCambiarFoto} className="text-xs font-semibold mt-3" style={{ color: accent }}>
+        Cambiar de fotografía
+      </button>
+    </div>
+  );
 }
 
 export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFondo }) {

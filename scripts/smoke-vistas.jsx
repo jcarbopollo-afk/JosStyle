@@ -31,7 +31,7 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
-import { BloqueFondo } from '../src/views/SettingsView.jsx';
+import { BloqueFondo, EditorFoto } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
@@ -187,6 +187,17 @@ const CASOS = [
   ['SettingsView · Fondo foto sin elegir', BloqueFondo, () => ({
     fondo: { ...DEFAULT_APARIENCIA.fondo, tipo: 'foto', activo: true },
     accent, onCambiar: noop, onSubirFoto: async () => '', urlFotoFondo: null,
+  })],
+  // FO Fase 3 — el editor, con una foto ya muy ajustada: las tres capas (foto, luz
+  // y overlay) tienen que pintarse a la vez sin romperse.
+  ['SettingsView · Editor de foto', EditorFoto, () => ({
+    fondo: {
+      ...DEFAULT_APARIENCIA.fondo, tipo: 'foto', activo: true,
+      foto: { ...DEFAULT_APARIENCIA.fondo.foto, id: 'f1', path: 'u/1.jpg', ancho: 1080, alto: 1920, proporcion: 0.5625 },
+      escala: 180, encuadre: { x: 30, y: 15 }, desenfoque: 8, luminosidad: -45,
+      opacidad: 85, overlay: { color: '#112233', intensidad: 25 },
+    },
+    accent, urlFoto: 'https://ejemplo/x.jpg', onGuardar: noop, onCerrar: noop, onCambiarFoto: noop,
   })],
   ['PersonalizationView', PersonalizationView, (e) => ({
     areas: AREAS_PRUEBA,

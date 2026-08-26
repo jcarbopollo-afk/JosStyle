@@ -1,5 +1,64 @@
 # CHANGELOG.md
 
+## Entrega 2 · FO Fase 3 — Editor de fotografía (v1.38.0)
+
+Zoom, encuadre, desenfoque, luz, opacidad y tinte, con vista previa en tiempo real. Detrás de
+"Ajustar foto", para no llenar Ajustes de deslizadores.
+
+### La foto original nunca se toca
+Los ajustes son configuración del fondo, no una imagen nueva: después de editar, la ruta, las
+medidas y el id de la fotografía son exactamente los mismos. Se puede volver a ajustar cuantas
+veces haga falta.
+
+### Cancelar funciona de verdad
+El editor trabaja sobre un **borrador local**: mientras está abierto no se guarda nada. Cancelar es
+literalmente tirar el borrador. Hay prueba que hace 40 cambios seguidos y comprueba que el fondo
+guardado no se ha movido — el apartado 14 pide expresamente que funcione "incluso después de
+realizar muchos cambios".
+
+### Un solo control para oscurecer y aclarar
+Los apartados 9 y 10 piden las dos cosas. Van en **un control bipolar**, no en dos deslizadores:
+dos controles para dos mitades del mismo eje se contradicen en cuanto los dos valen algo (¿qué es
+"oscurecer 40 y aclarar 30"?), y el apartado 17 pide no llenar la pantalla. El aclarado llega menos
+lejos a propósito, porque el apartado 10 avisa de no perder contraste.
+
+### Tres capas, y el orden importa
+Foto → luz → overlay. "Oscurecer la foto" no debe oscurecer el overlay que va encima, y el overlay
+no debe desenfocarse con la foto. Por eso tampoco se usa `filter: brightness()` sobre la capa de la
+imagen.
+
+### Cambiar de foto no arrastra lo que no toca
+El apartado 16 dice que los ajustes no deben transferirse "accidentalmente si no tiene sentido". La
+línea está en si el ajuste habla de **esa imagen** o del **gusto** de quien mira: encuadre y zoom se
+recalculan —el encuadre bueno de un retrato vertical no significa nada en una panorámica—, mientras
+que desenfoque, luz, opacidad y tinte se heredan, porque si querías la foto discreta y oscura para
+leer mejor la sigues queriendo así con otra imagen.
+
+Y si esa foto ya se había ajustado antes, mandan **sus** ajustes: se guardan por id de fotografía
+(apartado 20), limitados a las últimas diez para que no crezcan sin fin.
+
+### Una decisión de modelo que no era neutral
+La Fase 1 guardaba `posicion` con cinco valores fijos; esta fase necesita encuadre libre. **No
+conviven**: dos formas de decir dónde va la foto son dos fuentes de verdad. `posicion` se traduce a
+`encuadre {x, y}` y lo guardado por v1.36/37 se migra. Lo mismo con `velo`, que era el overlay sin
+color.
+
+### Un fallo real que encontró la prueba de esa migración
+El traslado de `velo` a `overlay` estaba escrito como `f.overlay?.intensidad ?? f.velo`, y **nunca
+se ejecutaba**: `f` ya viene fusionado con el valor por defecto, así que `f.overlay` siempre existe
+con `intensidad: 0`, y `??` no salta con 0. A quien tuviera un velo puesto se le habría perdido en
+silencio al actualizar. Se arregla mirando el objeto **guardado**, no el fusionado.
+
+### Y otro que cazó la regla invariante de colores
+La capa de luz usaba `#000000`/`#FFFFFF` sueltos. No son colores de interfaz —oscurecer es acercar
+al negro en tema claro y en oscuro— pero añadir una excepción al comprobador lo habría debilitado.
+Se usan las palabras clave de CSS `black` y `white`.
+
+### Verificación
+**1000 comprobaciones en verde** (antes 941): 207 del sistema de fondos y 84 casos de renderizado.
+
+---
+
 ## Entrega 2 · FO Fase 2 — Galería y selección de fotografías (v1.37.0)
 
 Ya se puede poner una foto propia de fondo. **Ajustes → Apariencia → Fondo → Foto.**

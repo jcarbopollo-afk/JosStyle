@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 14 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
-> y FO 2/12 (hasta v1.37.0). Quedan **92**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 15 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
+> y FO 3/12 (hasta v1.38.0). Quedan **91**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -2100,31 +2100,78 @@ la fotografía — color, degradado e incluidos no tocan Storage.
    anterior se estaba firmando, la respuesta lenta de la vieja llegaría después y sobrescribiría
    a la nueva. El efecto lleva una bandera `cancelado` que descarta el resultado obsoleto.
 
-#### FO · Fase 3/12 — EDITOR DE FOTOGRAFÍAS
-- [ ] OBJETIVO
-- [ ] REGLA PRINCIPAL
-- [ ] VISTA PREVIA EN TIEMPO REAL
-- [ ] ZOOM
-- [ ] POSICIÓN HORIZONTAL
-- [ ] POSICIÓN VERTICAL
-- [ ] ENCUADRE
-- [ ] DESENFOQUE
-- [ ] OSCURECIMIENTO
-- [ ] ACLARADO
-- [ ] OPACIDAD
-- [ ] OVERLAY
-- [ ] RESTABLECER AJUSTES
-- [ ] CANCELAR CAMBIOS
-- [ ] APLICAR CAMBIOS
-- [ ] CAMBIAR DE FOTO DESDE EL EDITOR
-- [ ] INTERFAZ DEL EDITOR
-- [ ] EXPERIENCIA MÓVIL
-- [ ] RENDIMIENTO
-- [ ] GUARDADO DE CONFIGURACIÓN
-- [ ] COMPATIBILIDAD CON LAS FASES ANTERIORES
-- [ ] PREPARACIÓN PARA LA FASE 4
-- [ ] CRITERIOS DE FINALIZACIÓN
-- [ ] REGLA PARA CLAUDE
+#### FO · Fase 3/12 — EDITOR DE FOTOGRAFÍAS ✅ COMPLETADA (v1.38.0)
+
+- [x] **1 · Objetivo** — elegir → editar → vista previa en tiempo real → aplicar, encima del
+      sistema de las fases 1 y 2.
+- [x] **2 · Regla principal** — **la fotografía original nunca se modifica**. Los ajustes son
+      configuración del fondo: misma ruta, mismas medidas, mismo id después de editar.
+- [x] **3 · Vista previa en tiempo real** — el editor lee su propio borrador, así que cada
+      deslizador se ve al instante sin haber guardado nada.
+- [x] **4 · Zoom** — de 100 a 300 %. El mínimo es 100 porque por debajo la foto dejaría huecos:
+      100 % es `cover`, no "tamaño original".
+- [x] **5 · Posición horizontal** y **6 · Posición vertical** — encuadre libre en porcentajes.
+- [x] **7 · Encuadre** — `cover` o un único porcentaje, **nunca `100% 100%`**: la relación de
+      aspecto se conserva siempre.
+- [x] **8 · Desenfoque** — 0 a 40 px, con el 0 como "sin desenfoque".
+- [x] **9 · Oscurecimiento** y **10 · Aclarado** — **un solo control bipolar** en vez de dos
+      deslizadores. Dos controles para dos mitades del mismo eje se contradicen en cuanto los dos
+      valen algo (¿qué es "oscurecer 40 y aclarar 30"?), y el apartado 17 pide no llenar la
+      pantalla de controles. El aclarado llega menos lejos a propósito (apartado 10: "no debe
+      provocar pérdida exagerada de contraste").
+- [x] **11 · Opacidad** — 10 a 100 %.
+- [x] **12 · Overlay** — capa de color con intensidad. Sin color elegido usa el del tema, que es
+      lo que hacía el `velo` de la Fase 1.
+- [x] **13 · Restablecer ajustes** — devuelve todo a fábrica **sin eliminar la fotografía**, y el
+      encuadre vuelve al **inicial de su orientación**, no a "centro" a secas: para una foto
+      vertical, "original" es anclada arriba, que es como se aplicó. El botón solo aparece si hay
+      algo que restablecer.
+- [x] **14 · Cancelar cambios** — el editor trabaja sobre un **borrador local**: mientras está
+      abierto no se llama a `onCambiar` ni una vez. Hay prueba que hace 40 cambios seguidos y
+      comprueba que el fondo guardado no se ha tocado.
+- [x] **15 · Aplicar cambios** — guarda y se ve al instante, sin recargar.
+- [x] **16 · Cambiar de foto desde el editor** — y la parte que importa: *"los ajustes no deben
+      transferirse accidentalmente si no tiene sentido"*. La línea está en si el ajuste habla de
+      ESA imagen o del gusto de quien mira: **encuadre y zoom se recalculan** (el encuadre bueno
+      de un retrato vertical no significa nada en una panorámica); **desenfoque, luz, opacidad y
+      overlay se heredan** (si querías la foto discreta y oscura para leer mejor, la sigues
+      queriendo así con otra imagen).
+- [x] **17 · Interfaz** — vista previa grande arriba, controles debajo, y el editor entero detrás
+      de "Ajustar foto" para no llenar Ajustes de deslizadores.
+- [x] **18 · Experiencia móvil** — deslizadores nativos, botones grandes, nada pensado para ratón.
+- [x] **19 · Rendimiento** — el borrador es un objeto plano y las capas son CSS puro; no se
+      recodifica la imagen ni se toca un canvas.
+- [x] **20 · Guardado por fotografía** — los ajustes quedan **vinculados a su foto** por id, así
+      que volver a una imagen ya usada recupera su encuadre en vez de heredar el de otra. Limitado
+      a las últimas 10 para que no crezca sin fin dentro de la configuración.
+- [x] **21 · Compatibilidad** — 1000 comprobaciones en verde.
+- [x] **22 · Preparado para la Fase 4** — el overlay ya acepta color, que es por donde entrará la
+      paleta.
+- [x] **23 · Criterios de finalización** — los diecisiete.
+- [x] **24 · Regla para Claude** — no son filtros sueltos: es **una sola configuración coherente**
+      del fondo (`AJUSTES_PRESENTACION`, una única lista que usan restablecer, cambiar de foto y
+      guardar por foto — si cada una tuviera la suya, acabarían discrepando).
+
+**Una decisión de modelo que había que tomar y no era neutral:** la Fase 1 guardaba `posicion` con
+cinco valores fijos; esta fase necesita un encuadre libre. **No conviven**: dos formas de decir
+dónde va la foto son dos fuentes de verdad. `posicion` se ha traducido a `encuadre {x, y}` y
+`normalizarFondo` migra lo guardado por v1.36/37. Lo mismo con `velo`, que era el overlay sin
+color: ahora es `overlay.intensidad`.
+
+**Un fallo real que encontró la prueba de esa migración:** el traslado de `velo` a `overlay` estaba
+escrito como `f.overlay?.intensidad ?? f.velo`, y **nunca se ejecutaba**. `f` ya viene fusionado con
+`DEFAULT_FONDO`, así que `f.overlay` siempre existe con `intensidad: 0`, y `??` no salta con 0. A
+quien tuviera un velo puesto se le habría perdido en silencio al actualizar. Se arregla mirando el
+objeto **guardado**, no el fusionado.
+
+**Y otro que cazó la regla invariante de colores:** la capa de luz usaba `#000000`/`#FFFFFF`
+sueltos. No son colores de interfaz —oscurecer es acercar al negro en tema claro y en oscuro— así
+que no pertenecen a `tokens.js`; pero añadir una excepción al comprobador lo habría debilitado. Se
+usan las palabras clave de CSS `black` y `white`, que lo dicen al leerlo y no son un hex.
+
+**Tres capas y no una**, y el orden importa: foto → luz → overlay. "Oscurecer la foto" no debe
+oscurecer el overlay que va encima, y el overlay no debe desenfocarse con la foto. Tampoco se usa
+`filter: brightness()` sobre la capa de la foto por el mismo motivo.
 
 #### FO · Fase 4/12 — SISTEMA AVANZADO DE COLORES
 - [ ] OBJETIVO

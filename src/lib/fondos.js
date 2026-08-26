@@ -110,27 +110,51 @@ export const DEFAULT_FONDO = {
     anadidaEn: '',          // ISO, para poder ordenar y para la Fase 12
   },
 
-  // --- Cómo se muestra (apartado 4) ---
-  posicion: 'centro',       // ver POSICIONES_FONDO
+  // --- Cómo se muestra (apartado 4 de la F1, apartados 4-12 de la F3) ---
+  //
+  // FO Fase 3 sustituyó `posicion` (5 valores fijos) por `encuadre`, dos porcentajes
+  // libres. NO conviven: dos formas de decir lo mismo son dos fuentes de verdad, y
+  // `normalizarFondo` traduce el `posicion` guardado por v1.36/37 a coordenadas.
+  encuadre: { x: 50, y: 50 },   // % del punto de la foto que queda centrado
   escala: 100,              // %
   opacidad: 100,            // % del propio fondo
+
   desenfoque: 0,            // px
-  velo: 0,                  // % de scrim entre el fondo y la interfaz (apartado 4 `overlay`)
+
+  // Apartados 9 y 10 en UN solo control bipolar en vez de dos deslizadores.
+  // Negativo oscurece, positivo aclara, 0 es la foto tal cual. Dos controles para
+  // dos mitades del mismo eje se contradicen entre sí en cuanto los dos valen algo
+  // —¿qué es "oscurecer 40 y aclarar 30"?— y el apartado 17 pide no llenar la
+  // pantalla de controles. El tope de aclarado es menor a propósito (apartado 10:
+  // "no debe provocar pérdida exagerada de contraste").
+  luminosidad: 0,           // -90 (oscuro) .. +60 (claro)
+
+  // Apartado 12 — la capa superpuesta. `color: ''` significa "el fondo del tema",
+  // que es lo que hacía el `velo` de la Fase 1: se conserva ese comportamiento y se
+  // le añade poder elegir color. `velo` guardado por v1.36/37 se migra aquí.
+  overlay: { color: '', intensidad: 0 },
 
   // --- Preparado para las fases 4, 5 y 6 (apartados 8 y 9) ---
   // Nadie escribe esto todavía. Existe para que la configuración ya guardada
   // no necesite una migración cuando lleguen esas fases (regla 5).
+  // Apartado 20 de la Fase 3 — los ajustes de cada fotografía, por su id, para que
+  // volver a una imagen ya usada recupere su encuadre en vez de heredar el de otra.
+  ajustesPorFoto: {},
+
   analisis: null,           // Fase 5: colores detectados en la fotografía
   paleta: null,             // Fase 4/5: paleta derivada
   recomendacion: null,      // Fase 6: apariencia completa recomendada para este fondo
 };
 
+// Las cinco posiciones fijas de la Fase 1, ahora solo como TABLA DE MIGRACIÓN: la
+// Fase 3 las sustituyó por un encuadre libre. Se conservan para poder traducir lo
+// guardado por v1.36/37, y como atajos en la interfaz del editor.
 export const POSICIONES_FONDO = [
-  { id: 'centro', label: 'Centro', css: 'center center' },
-  { id: 'arriba', label: 'Arriba', css: 'center top' },
-  { id: 'abajo', label: 'Abajo', css: 'center bottom' },
-  { id: 'izquierda', label: 'Izquierda', css: 'left center' },
-  { id: 'derecha', label: 'Derecha', css: 'right center' },
+  { id: 'centro', label: 'Centro', x: 50, y: 50 },
+  { id: 'arriba', label: 'Arriba', x: 50, y: 0 },
+  { id: 'abajo', label: 'Abajo', x: 50, y: 100 },
+  { id: 'izquierda', label: 'Izquierda', x: 0, y: 50 },
+  { id: 'derecha', label: 'Derecha', x: 100, y: 50 },
 ];
 
 export const posicionDeFondo = (id) => POSICIONES_FONDO.find((p) => p.id === id) || POSICIONES_FONDO[0];
@@ -145,7 +169,8 @@ export const posicionDeFondo = (id) => POSICIONES_FONDO.find((p) => p.id === id)
  * error no puede dejar la app inutilizable.
  */
 export function normalizarFondo(guardado) {
-  const f = { ...DEFAULT_FONDO, ...(guardado || {}) };
+  const g = guardado || {};
+  const f = { ...DEFAULT_FONDO, ...g };
   return {
     ...f,
     tipo: TIPOS_FONDO.some((t) => t.id === f.tipo) ? f.tipo : 'ninguno',
@@ -153,12 +178,39 @@ export function normalizarFondo(guardado) {
     color: isValidHex(f.color) ? normalizeHex(f.color) : '',
     degradado: { ...DEFAULT_FONDO.degradado, ...(f.degradado || {}) },
     foto: { ...DEFAULT_FONDO.foto, ...(f.foto || {}) },
-    posicion: POSICIONES_FONDO.some((p) => p.id === f.posicion) ? f.posicion : 'centro',
+    encuadre: encuadreNormalizado(f),
     escala: acotar(f.escala, 100, 100, 300),
     opacidad: acotar(f.opacidad, 100, 0, 100),
     desenfoque: acotar(f.desenfoque, 0, 0, 40),
-    velo: acotar(f.velo, 0, 0, 90),
+    luminosidad: acotar(f.luminosidad, 0, -90, 60),
+    overlay: {
+      color: isValidHex(f.overlay?.color) ? normalizeHex(f.overlay.color) : '',
+      // Migración de v1.36/37: el `velo` de la Fase 1 era exactamente esto con el
+      // color del tema. Se mira `g` (lo GUARDADO) y no `f` (lo ya fusionado con el
+      // valor por defecto), porque `f.overlay` siempre existe —lo pone el default—
+      // con `intensidad: 0`, y `??` no salta con 0. Mirando `f` la migración no se
+      // habría ejecutado nunca y el velo de quien lo tuviera puesto desaparecería.
+      intensidad: acotar(g.overlay ? g.overlay.intensidad : g.velo, 0, 0, 90),
+    },
+    ajustesPorFoto: f.ajustesPorFoto && typeof f.ajustesPorFoto === 'object' ? f.ajustesPorFoto : {},
+    // `posicion` ya no forma parte del modelo: se ha traducido a `encuadre` arriba.
+    posicion: undefined,
   };
+}
+
+/**
+ * El encuadre, traduciendo lo que hiciera falta.
+ *
+ * Un fondo guardado por v1.36/37 trae `posicion: 'arriba'` y ningún `encuadre`. Se
+ * convierte una vez, aquí, en vez de dejar que las dos formas convivan: dos maneras
+ * de decir dónde va la foto son dos fuentes de verdad, y ya se sabe cómo acaba eso.
+ */
+function encuadreNormalizado(f) {
+  if (f.encuadre && Number.isFinite(Number(f.encuadre.x))) {
+    return { x: acotar(f.encuadre.x, 50, 0, 100), y: acotar(f.encuadre.y, 50, 0, 100) };
+  }
+  const p = POSICIONES_FONDO.find((x) => x.id === f.posicion);
+  return p ? { x: p.x, y: p.y } : { x: 50, y: 50 };
 }
 
 function acotar(valor, porDefecto, min, max) {
@@ -274,8 +326,15 @@ export function estilosDeFondo(resuelto, colors) {
       return {
         ...comun,
         backgroundImage: `url("${resuelto.urlFoto}")`,
+        // `cover` con la escala como zoom encima. Nunca `100% 100%`, que sí
+        // deformaría: el apartado 7 dice que la relación de aspecto original se
+        // conserva siempre.
         backgroundSize: resuelto.escala === 100 ? 'cover' : `${resuelto.escala}%`,
-        backgroundPosition: posicionDeFondo(resuelto.posicion).css,
+        // Los dos porcentajes del encuadre libre (apartados 5 y 6 de la Fase 3).
+        // En CSS, `background-position: X% Y%` alinea el punto X%/Y% de la imagen
+        // con el punto X%/Y% del contenedor, que es justo lo que hace falta para
+        // "decidir qué parte de la fotografía queda visible".
+        backgroundPosition: `${resuelto.encuadre.x}% ${resuelto.encuadre.y}%`,
         backgroundRepeat: 'no-repeat',
       };
 
@@ -306,8 +365,39 @@ const mezclarCss = (a, b, t) => `color-mix(in oklab, ${a} ${Math.round(t * 100)}
  * sin decidir nada por su cuenta.
  */
 export function estilosDeVelo(resuelto, colors) {
-  if (!resuelto || resuelto.tipo === 'ninguno' || !resuelto.velo) return null;
-  return { background: (colors || {}).bg || 'transparent', opacity: resuelto.velo / 100 };
+  if (!resuelto || resuelto.tipo === 'ninguno') return null;
+  const { color, intensidad } = resuelto.overlay || {};
+  if (!intensidad) return null;
+  // `color: ''` significa "el fondo del tema", que es lo que hacía el velo de la
+  // Fase 1: así el overlay por defecto sigue aclarando en tema claro y oscureciendo
+  // en oscuro, sin decidir nada por su cuenta.
+  return { background: color || (colors || {}).bg || 'transparent', opacity: intensidad / 100 };
+}
+
+/**
+ * FO Fase 3, apartados 9 y 10 — oscurecer o aclarar la fotografía.
+ *
+ * Va en una TERCERA capa, y no mezclado con el overlay, porque son cosas
+ * distintas: esto ajusta la luz de la foto (blanco o negro puros), el overlay la
+ * tiñe hacia un color. Juntarlos obligaría a elegir uno de los dos, y la
+ * especificación pide los dos por separado (apartados 9, 10 y 12).
+ *
+ * Tampoco se hace con `filter: brightness()` sobre la capa de la foto: eso
+ * también apagaría el overlay que va encima, y "oscurecer la foto" no debe
+ * oscurecer una capa que no es la foto.
+ */
+export function estilosDeLuminosidad(resuelto) {
+  if (!resuelto || resuelto.tipo === 'ninguno' || !resuelto.luminosidad) return null;
+  const l = resuelto.luminosidad;
+  // `black` y `white`, no un hex. No son colores de interfaz —no salen del tema ni
+  // pueden salir de él: oscurecer es acercar al negro en tema claro Y en oscuro— así
+  // que no pertenecen a `tokens.js`. Usar las palabras clave de CSS en vez de
+  // `#000000`/`#FFFFFF` lo deja claro al leerlo y respeta la regla 2 sin necesidad
+  // de añadir una excepción al comprobador, que es lo que la debilitaría.
+  return {
+    background: l < 0 ? 'black' : 'white',
+    opacity: Math.abs(l) / 100,
+  };
 }
 
 /* ===========================================================================
@@ -419,7 +509,7 @@ export function datosDeFoto({ path, origen = 'galeria', formato = '', ancho = 0,
 export function encuadreInicial(foto) {
   const orientacion = orientacionDeFoto(foto);
   return {
-    posicion: orientacion === 'vertical' ? 'arriba' : 'centro',
+    encuadre: { x: 50, y: orientacion === 'vertical' ? 0 : 50 },
     escala: 100,
   };
 }
@@ -479,6 +569,120 @@ export function quitarFoto(fondo) {
   if (f.color) return seleccionarFondo(f, 'color');
   if (f.degradado.de && f.degradado.a) return seleccionarFondo(f, 'degradado');
   return restablecerFondo(f);
+}
+
+/* ===========================================================================
+   FO Fase 3 — EL EDITOR
+   =========================================================================== */
+
+// Qué cuenta como "ajuste de presentación". Está en un solo sitio y con nombre
+// porque lo usan tres cosas distintas —restablecer, cambiar de foto y guardar los
+// ajustes por foto— y si cada una tuviera su propia lista, acabarían discrepando.
+export const AJUSTES_PRESENTACION = ['encuadre', 'escala', 'opacidad', 'desenfoque', 'luminosidad', 'overlay'];
+
+// Los ajustes que describen DÓNDE está la foto. Son propios de esa imagen
+// concreta: el encuadre bueno de un retrato vertical no significa nada en una
+// panorámica.
+const AJUSTES_GEOMETRICOS = ['encuadre', 'escala'];
+
+/** Los valores "de fábrica" de la presentación, sacados del propio DEFAULT_FONDO. */
+export function ajustesPorDefecto() {
+  const out = {};
+  for (const k of AJUSTES_PRESENTACION) {
+    out[k] = typeof DEFAULT_FONDO[k] === 'object' && DEFAULT_FONDO[k] !== null
+      ? { ...DEFAULT_FONDO[k] }
+      : DEFAULT_FONDO[k];
+  }
+  return out;
+}
+
+/** Extrae solo los ajustes de presentación de un fondo. */
+export function ajustesDe(fondo) {
+  const f = normalizarFondo(fondo);
+  const out = {};
+  for (const k of AJUSTES_PRESENTACION) {
+    out[k] = typeof f[k] === 'object' && f[k] !== null ? { ...f[k] } : f[k];
+  }
+  return out;
+}
+
+/**
+ * Apartado 13 — "Restablecer": devuelve la fotografía a sus valores originales.
+ *
+ * **No elimina la fotografía**, solo sus ajustes; el apartado lo subraya. Y el
+ * encuadre no vuelve a "centro" a secas sino al **encuadre inicial** que calculó
+ * la Fase 2 para esa orientación: para una foto vertical, "original" es anclada
+ * arriba, que es como se aplicó. Volver al centro sería restablecer a un estado
+ * en el que esa foto no ha estado nunca.
+ */
+export function restablecerAjustes(fondo) {
+  const f = normalizarFondo(fondo);
+  return normalizarFondo({ ...f, ...ajustesPorDefecto(), ...encuadreInicial(f.foto) });
+}
+
+/** ¿Hay algún ajuste distinto de los de fábrica? Para no ofrecer un botón inerte. */
+export function tieneAjustes(fondo) {
+  const a = ajustesDe(fondo);
+  const base = { ...ajustesPorDefecto(), ...encuadreInicial(normalizarFondo(fondo).foto) };
+  return JSON.stringify(a) !== JSON.stringify({ ...ajustesPorDefecto(), ...base });
+}
+
+/**
+ * Apartado 20 — los ajustes quedan vinculados a SU fotografía.
+ *
+ * Se guardan por id de foto, así que volver a una imagen que ya se había usado
+ * recupera su encuadre en vez de aplicarle el de otra. `aplicarFoto` los restaura
+ * solo, más abajo.
+ *
+ * Se limita a las últimas `MAX_AJUSTES_RECORDADOS` para que este objeto no crezca
+ * sin fin dentro de la configuración del usuario, que se guarda entera en cada
+ * `saveData`.
+ */
+export const MAX_AJUSTES_RECORDADOS = 10;
+
+export function recordarAjustes(fondo) {
+  const f = normalizarFondo(fondo);
+  if (!f.foto.id) return f;
+  const memoria = { ...(f.ajustesPorFoto || {}), [f.foto.id]: ajustesDe(f) };
+  const ids = Object.keys(memoria);
+  if (ids.length > MAX_AJUSTES_RECORDADOS) {
+    for (const id of ids.slice(0, ids.length - MAX_AJUSTES_RECORDADOS)) delete memoria[id];
+  }
+  return { ...f, ajustesPorFoto: memoria };
+}
+
+/**
+ * Apartado 16 — cambiar de foto desde el editor: *"los ajustes de la fotografía
+ * anterior no deben transferirse accidentalmente a la nueva imagen si no tiene
+ * sentido hacerlo"*.
+ *
+ * La línea está en si el ajuste habla de ESA imagen o del gusto de quien mira:
+ *
+ *   · encuadre y zoom → propios de la imagen. Se recalculan (`encuadreInicial`).
+ *     El encuadre bueno de un retrato vertical no significa nada en una
+ *     panorámica; heredarlo es exactamente el "accidentalmente" del apartado.
+ *   · desenfoque, luminosidad, opacidad y overlay → gusto. Si Josué había puesto
+ *     la foto discreta y oscura para leer mejor, sigue queriéndola así con otra
+ *     imagen; volver a ajustarlo cada vez sería trabajo repetido sin motivo.
+ *
+ * Y si esa foto concreta ya tenía ajustes guardados (apartado 20), mandan esos.
+ */
+export function aplicarFotoConAjustes(fondo, foto) {
+  const previo = recordarAjustes(fondo);          // no se pierde lo de la foto anterior
+  const datos = { ...DEFAULT_FONDO.foto, ...(foto || {}) };
+  const recordados = previo.ajustesPorFoto?.[datos.id];
+
+  const base = recordados
+    ? recordados                                   // esta foto ya se había ajustado
+    : { ...ajustesDe(previo), ...encuadreInicial(datos) };   // gusto sí, geometría no
+
+  return normalizarFondo({
+    ...previo,
+    ...base,
+    foto: datos,
+    tipo: 'foto',
+    activo: true,
+  });
 }
 
 /** ¿Hay una fotografía elegida, esté activa o no? */
