@@ -1,5 +1,91 @@
 # CHANGELOG.md
 
+## Entrega 2 · HT Fase 5 — Asignaturas, actividades, colores, iconos y contexto (v1.57.0)
+
+### "Biología" deja de ser una palabra dentro de una celda
+Ahora es una entidad con identidad, color, icono, nombre corto, alias, etiquetas, profesor, aula,
+material, notas, exámenes y tareas — y con una ficha que las junta todas.
+
+Tocar el nombre de una clase en el horario abre esa ficha. Y hay una lista de todas las asignaturas,
+porque una archivada ya no tiene ningún bloque y aun así hay que poder abrirla para recuperarla.
+
+### Todo lo que se puede derivar, se deriva
+Es la decisión que gobierna la fase entera. Los usos, el tiempo semanal, las más utilizadas, las
+recientes y la carga de cada día **no se guardan en ninguna parte**: salen de los bloques.
+
+Un contador de "veces usada" empieza a mentir en cuanto se borra un bloque. Y ese número es
+precisamente el que decide si una asignatura se borra o se archiva: "Biología está en 6 clases"
+diciendo 6 cuando quedan 4 sería peor que no decir nada.
+
+Lo único que se guarda es lo que no se puede calcular: que Josué la marcó como favorita.
+
+### Nunca se fusionan dos actividades solas
+Antes de crear "Biología" el sistema mira si ya existe — sin importar tildes ni mayúsculas — y
+enseña también las parecidas: "Biología 2", "Biología y Geología".
+
+El apartado 57 lo dice literalmente: *"no deberá fusionar automáticamente entidades ambiguas"*.
+Pueden ser dos asignaturas de dos cursos distintos, y juntarlas no se deshace. Se enseñan las tres y
+elige Josué.
+
+### Las notas privadas no llegan a la IA
+El apartado 52 permite guardar una nota privada: *"recordar preguntar por la recuperación"*. El 73
+dice que la información adicional es privada por defecto.
+
+Así que la nota **sale en la ficha** —que es la pantalla de Josué— y **no viaja en el contexto que
+se le manda a la IA**. Hay una prueba que falla si aparece. Lo que no sale de aquí no puede acabar
+en un servidor.
+
+Y el contexto para la IA devuelve **estructura, no un texto**, sin llamar a nadie (regla 7).
+
+### Borrar avisa primero, y recomienda archivar
+*"Biología está utilizada en 6 bloques, 4 tareas y 1 examen."* (apartado 58)
+
+Se calcula antes de decidir y la opción recomendada es archivar: una asignatura del curso pasado
+tiene exámenes, notas y horas de estudio colgando. Si no la usa nada, se dice también, y entonces
+borrar no se lleva nada por delante.
+
+Y si se borra de todas formas, **los bloques no desaparecen**: se quedan sin actividad. Perder la
+hora de una clase por haber borrado la asignatura sería mucho peor que un hueco que se rellena — la
+misma decisión que HT F1 y AR F2 ya tomaron.
+
+### Las tareas se dicen como lo que son
+Los exámenes se enlazan de verdad, por `asignaturaId`. Las tareas de Productividad **no tienen campo
+de asignatura**, así que se enseñan las que mencionan la actividad por su nombre, y debajo pone:
+*"salen las que escribiste con su nombre: las tareas todavía no se pueden enlazar a una asignatura"*.
+
+Fingir un enlace que no existe habría sido un dato inventado (regla 8).
+
+### Oculta no es archivada, y el color del bloque no es el de la asignatura
+Dos distinciones que la especificación pide y que juntar habría roto algo:
+
+- **Oculta** es "existe y sigue viva, pero no la quiero ver aquí"; **archivada** es "esto es del
+  curso pasado". Sin las dos, el "Trabajo personal" del apartado 51 —que sale en HOY pero no en el
+  horario escolar— sería imposible.
+- El color va **bloque → actividad → grupo → acento**. Marcar un examen en rojo **no repinta
+  Biología entera** (apartado 44).
+
+### Un bug que se habría comido la pantalla
+Una actividad puede tener madre (apartado 63: Estudios → Biología, Física, Matemáticas). Sin
+comprobarlo, nada impedía ponerse a sí misma de madre — o a su propia abuela — y pintar el árbol se
+habría colgado en un bucle, dejando la pantalla en blanco. `puedeSerPadre` recorre la cadena antes
+de aceptar.
+
+### Y otro que perdía datos, por tercera vez
+`grupos` no estaba ni en el estado por defecto ni en el normalizador, así que se habría perdido en
+el siguiente guardado. Es el mismo fallo de HT F2 (`visible`) y HT F4 (`archivado`). Esta vez se vio
+antes de que llegara a pasar.
+
+### Verificación
+**2596 comprobaciones y 10 reglas invariantes en verde** (antes 2468), 116 de las actividades y 252
+casos de renderizado. `package.json` → **v1.57.0**.
+
+⚠️ Sin probar: la ficha en pantalla, el selector de iconos y el recorrido tocando en un iPhone. Como
+todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
 ## Entrega 2 · HT Fase 4 — Configuración avanzada de columnas, filas y bloques (v1.56.0)
 
 ### Todo detrás de un solo botón

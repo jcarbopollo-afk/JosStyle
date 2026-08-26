@@ -33,7 +33,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, ArrowLeft, Trash2, Copy,
-  Pencil, Eye, EyeOff, AlertTriangle, Check, MoveRight, X, GripVertical,
+  Pencil, Eye, EyeOff, AlertTriangle, Check, MoveRight, X, GripVertical, Star,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba, todayISO, addDays } from '../lib/helpers';
@@ -55,6 +55,11 @@ import {
   duplicarHorario, archivarHorario, horariosActivos, horariosArchivados,
   buscarEnHorario, resumenEstructura, describirProblema,
 } from '../lib/horarioEstructura';
+import {
+  ICONOS_ACTIVIDAD, iconoDe, fichaActividad, impactoEliminarActividad, horasYMinutos,
+  editarActividad, alternarFavorita, archivarActividad, duplicarActividad,
+  eliminarActividadDefinitiva, actividadesOrdenadas, gruposDe as gruposDeActividades,
+} from '../lib/actividades';
 
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
 const fechaCorta = (iso) => iso.split('-').reverse().slice(0, 2).join('/');
@@ -307,7 +312,7 @@ function NuevoBloque({ estado, columna, fila, accent, asignaturas, onCrear, onCe
    hubo un cambio se carga todos los lunes del curso.
 
    El editor lo impone además desde abajo: sin alcance no escribe. */
-function PanelBloque({ bloque, columnas, accent, fecha, onEditar, onMover, onDuplicar, onEliminar, onCerrar }) {
+function PanelBloque({ bloque, columnas, accent, fecha, onEditar, onMover, onDuplicar, onEliminar, onAbrirActividad, onCerrar }) {
   const [modo, setModo] = useState(null);        // 'hora' | 'mover' | 'duplicar' | 'borrar'
   const [inicio, setInicio] = useState(bloque.inicio);
   const [fin, setFin] = useState(bloque.fin);
@@ -324,7 +329,15 @@ function PanelBloque({ bloque, columnas, accent, fecha, onEditar, onMover, onDup
     <Card style={{ border: `1px solid ${bloque.color || accent}` }}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{bloque.titulo}</p>
+          {/* HT F5 · apartado 29 — el nombre abre la ficha de la actividad: es
+              la puerta a su profesor, su material, sus exámenes y sus tareas. */}
+          {bloque.actividadId && onAbrirActividad ? (
+            <button onClick={() => onAbrirActividad(bloque.actividadId)} className="text-left">
+              <p className="text-sm font-semibold truncate" style={{ color: accent }}>{bloque.titulo}</p>
+            </button>
+          ) : (
+            <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{bloque.titulo}</p>
+          )}
           <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{bloque.inicio} – {bloque.fin}</p>
           {/* Apartados 54 y 55 — solo si existen. Nada de filas vacías. */}
           {bloque.aula && <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>Aula {bloque.aula}</p>}
@@ -542,6 +555,191 @@ function PanelFranjas({ horario, estado, accent, onAnadir, onEditar, onEliminar 
 /* ===========================================================================
    LA PANTALLA
    =========================================================================== */
+/* ===========================================================================
+   LA FICHA DE UNA ACTIVIDAD (HT F5 · apartados 29, 30, 77, 79 y 100)
+   ===========================================================================
+   *"«Biología» dejará de ser texto dentro de una celda: será una entidad
+   reutilizable y conectada."*
+
+   La ficha es **la puerta de entrada al resto de la información** (apartado 29):
+   qué días toca, cuánto tiempo a la semana, profesor, aula, material, exámenes
+   y tareas. No calcula nada: se lo pide todo a `actividades.js`.
+
+   ── TRES DECISIONES QUE SE VEN ─────────────────────────────────────────────
+   · **Las notas privadas SÍ salen aquí** (apartado 52) y **no salen en el
+     contexto de la IA** (apartado 73). Esta es la pantalla privada de Josué.
+   · **Las tareas se dicen como lo que son**: Productividad no tiene campo de
+     asignatura, así que se enseñan las que MENCIONAN la actividad y el texto lo
+     dice. Fingir un enlace sería un dato inventado (regla 8).
+   · **Borrar avisa primero y recomienda archivar** (apartado 58). */
+export function FichaActividad({ ficha, accent, onEditar, onFavorita, onArchivar, onDuplicar, onEliminar, impacto, onCerrar }) {
+  const [modo, setModo] = useState(null);   // 'editar' | 'borrar'
+  const [campos, setCampos] = useState({
+    nombre: ficha.titulo, corto: ficha.corto, persona: ficha.profesor,
+    ubicacion: ficha.aula, notas: ficha.notas, icono: ficha.icono,
+  });
+
+  const color = ficha.color || accent;
+  return (
+    <Card style={{ border: `1px solid ${color}` }}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex items-center gap-2">
+          <span className="text-lg leading-none" aria-hidden="true">{ficha.icono}</span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{ficha.titulo}</p>
+            <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+              {ficha.tipo}{ficha.grupo ? ` · ${ficha.grupo.nombre}` : ''}
+              {ficha.estado !== 'Activa' ? ` · ${ficha.estado}` : ''}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <button onClick={onFavorita} className="p-1" aria-label={ficha.favorita ? 'Quitar de favoritas' : 'Marcar como favorita'}>
+            <Star size={14} style={{ color: ficha.favorita ? accent : COLORS.textMuted }} fill={ficha.favorita ? accent : 'none'} />
+          </button>
+          <button onClick={onCerrar} className="p-1" aria-label="Cerrar"><X size={14} style={{ color: COLORS.textMuted }} /></button>
+        </div>
+      </div>
+
+      {!modo && (
+        <>
+          {/* Cuándo toca y cuánto ocupa: lo primero del apartado 77. */}
+          {ficha.horario.length > 0 && (
+            <div className="mt-3">
+              {ficha.horario.map((h) => (
+                <p key={h.bloqueId} className="text-xs" style={{ color: COLORS.text }}>
+                  <span style={{ color: COLORS.textMuted }}>{h.diaLabel}</span> · {h.inicio}–{h.fin}
+                </p>
+              ))}
+              <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+                {horasYMinutos(ficha.minutosSemana)} a la semana
+              </p>
+            </div>
+          )}
+          {ficha.horario.length === 0 && (
+            <p className="text-[11px] mt-3" style={{ color: COLORS.textMuted }}>Todavía no está en ningún día del horario.</p>
+          )}
+
+          {/* Solo lo que existe: nada de filas vacías (regla 8). */}
+          {(ficha.profesor || ficha.aula) && (
+            <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
+              {[ficha.profesor, ficha.aula].filter(Boolean).join(' · ')}
+            </p>
+          )}
+          {ficha.material.length > 0 && (
+            <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+              Material: {ficha.material.join(', ')}
+            </p>
+          )}
+          {ficha.etiquetas.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {ficha.etiquetas.map((t) => (
+                <span key={t} className="px-1.5 py-0.5 rounded-md text-[10px]"
+                  style={{ background: hexToRgba(color, 0.14), color: COLORS.text }}>{t}</span>
+              ))}
+            </div>
+          )}
+
+          {ficha.examenes.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>Exámenes</p>
+              {ficha.examenes.slice(0, 3).map((x) => (
+                <p key={x.id} className="text-[11px]" style={{ color: x.pasado ? COLORS.textMuted : COLORS.text }}>
+                  {fechaCorta(x.fecha || '')} {x.tema}
+                </p>
+              ))}
+            </div>
+          )}
+
+          {ficha.tareas.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>Tareas que la nombran</p>
+              {ficha.tareas.slice(0, 4).map((t) => (
+                <p key={t.id} className="text-[11px]" style={{ color: t.hecha ? COLORS.textMuted : COLORS.text }}>
+                  {t.hecha ? '✓ ' : '· '}{t.texto}
+                </p>
+              ))}
+              <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
+                Salen las que escribiste con su nombre: las tareas todavía no se pueden enlazar a una asignatura.
+              </p>
+            </div>
+          )}
+
+          {ficha.notas && (
+            <div className="mt-3 rounded-xl p-2" style={{ background: COLORS.surface2 }}>
+              <p className="text-[10px] font-semibold mb-0.5" style={{ color: COLORS.textMuted }}>Nota privada</p>
+              <p className="text-[11px]" style={{ color: COLORS.text }}>{ficha.notas}</p>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            <Accion icono={Pencil} label="Editar" onClick={() => setModo('editar')} />
+            <Accion icono={Copy} label="Duplicar" onClick={onDuplicar} />
+            <Accion icono={EyeOff} label={ficha.estado === 'Archivada' ? 'Recuperar' : 'Archivar'} onClick={onArchivar} />
+            <Accion icono={Trash2} label="Eliminar" tono="negativo" onClick={() => setModo('borrar')} />
+          </div>
+        </>
+      )}
+
+      {modo === 'editar' && (
+        <div className="mt-3">
+          <Field label="Nombre"><TextInput value={campos.nombre} onChange={(e) => setCampos({ ...campos, nombre: e.target.value })} /></Field>
+          <Field label="Nombre corto">
+            <TextInput value={campos.corto} onChange={(e) => setCampos({ ...campos, corto: e.target.value })} placeholder="BIO" />
+          </Field>
+          <Field label="Icono">
+            <div className="flex flex-wrap gap-1">
+              {ICONOS_ACTIVIDAD.map((i) => (
+                <button key={i.id} onClick={() => setCampos({ ...campos, icono: i.id })}
+                  className="w-8 h-8 rounded-lg text-base"
+                  style={{ background: campos.icono === i.id ? hexToRgba(accent, 0.2) : COLORS.surface2, border: `1px solid ${campos.icono === i.id ? accent : COLORS.border}` }}
+                  aria-label={i.etiqueta}>{i.id}</button>
+              ))}
+            </div>
+          </Field>
+          <Field label="Profesor"><TextInput value={campos.persona} onChange={(e) => setCampos({ ...campos, persona: e.target.value })} /></Field>
+          <Field label="Aula"><TextInput value={campos.ubicacion} onChange={(e) => setCampos({ ...campos, ubicacion: e.target.value })} /></Field>
+          <Field label="Nota privada">
+            <TextInput value={campos.notas} onChange={(e) => setCampos({ ...campos, notas: e.target.value })} placeholder="Solo la ves tú" />
+          </Field>
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+            Las notas privadas se quedan aquí: no salen en tu día ni se le mandan a la IA.
+          </p>
+          <div className="flex gap-2">
+            <PrimaryButton accent={accent} onClick={() => { onEditar(campos); setModo(null); }}>Guardar</PrimaryButton>
+            <div style={{ width: 110, flexShrink: 0 }}><GhostBtn onClick={() => setModo(null)}>Cancelar</GhostBtn></div>
+          </div>
+        </div>
+      )}
+
+      {modo === 'borrar' && (
+        <div className="mt-3 rounded-xl p-2" style={{ background: hexToRgba(COLORS.negative, 0.1) }}>
+          {/* Apartado 58 — el impacto, con números, ANTES de decidir. */}
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+            {ficha.titulo} está en {impacto.bloques} {plural(impacto.bloques, 'clase', 'clases')}
+            {impacto.examenes ? `, ${impacto.examenes} ${plural(impacto.examenes, 'examen', 'exámenes')}` : ''}
+            {impacto.tareas ? ` y ${impacto.tareas} ${plural(impacto.tareas, 'tarea', 'tareas')}` : ''}.
+          </p>
+          <p className="text-[11px] mt-1 mb-2" style={{ color: COLORS.textMuted }}>
+            {impacto.recomendado === 'archivar'
+              ? 'Archivarla lo conserva todo y la puedes recuperar. Borrarla no.'
+              : 'No la usa nada, así que borrarla no se lleva nada por delante.'}
+          </p>
+          <div className="flex flex-col gap-2">
+            {impacto.recomendado === 'archivar' && (
+              <PrimaryButton accent={accent} onClick={() => { onArchivar(); setModo(null); onCerrar(); }}>Archivar</PrimaryButton>
+            )}
+            <button onClick={() => { onEliminar(); onCerrar(); }} className="text-xs font-semibold text-left" style={{ color: COLORS.negative }}>
+              Eliminar de todos modos
+            </button>
+            <button onClick={() => setModo(null)} className="text-xs font-semibold text-left" style={{ color: COLORS.textMuted }}>Cancelar</button>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 /* ===========================================================================
    OPCIONES AVANZADAS (apartado 63)
    ===========================================================================
@@ -767,6 +965,9 @@ export function PanelAvanzado({ estado, horario, accent, asignaturas, visual, ho
 
 export default function HorarioView({
   horarioTop, asignaturas = [], accent, hoy = todayISO(),
+  // HT F5 — se LEEN, nunca se escriben: los exámenes son de Estudios y las
+  // tareas de Productividad (apartado 92, "referencia única").
+  estudios = null, productividad = null,
   onCambiar, onCrearHorario,
 }) {
   const estado = horarioTop;
@@ -780,6 +981,8 @@ export default function HorarioView({
   const [fecha, setFecha] = useState(hoy);
   const [franjas, setFranjas] = useState(false);
   const [avanzado, setAvanzado] = useState(false);
+  const [actividadId, setActividadId] = useState(null);
+  const [listaActividades, setListaActividades] = useState(false);
   // Apartado 59 — las preferencias de vista son de este aparato, así que se leen
   // de `localStorage` una vez y se guardan al cambiarlas. Nunca van a Supabase.
   const [visual, setVisual] = useState(() => leerVisual());
@@ -798,6 +1001,22 @@ export default function HorarioView({
      guardar ni historial propio (apartados 36 y 38). */
   const aplicar = (nuevo) => { onCambiar(nuevo); return { error: null }; };
   const aplicarResultado = (r) => { if (!r.error) onCambiar(r.estado); return r; };
+
+  /* HT F5 — la ficha y su impacto. Los dos son derivados: se recalculan solos
+     al cambiar el estado, así que "está en 6 clases" nunca dice 6 cuando
+     quedan 4. */
+  const ficha = useMemo(
+    () => (actividadId ? fichaActividad(estado, actividadId, { asignaturas, estudios, productividad, acento: accent, hoy }) : null),
+    [estado, actividadId, asignaturas, estudios, productividad, accent, hoy],
+  );
+  const impactoActividad = useMemo(
+    () => (actividadId ? impactoEliminarActividad(estado, actividadId, { asignaturas, estudios, productividad }) : null),
+    [estado, actividadId, asignaturas, estudios, productividad],
+  );
+  const actividades = useMemo(
+    () => actividadesOrdenadas(estado, { asignaturas, incluirArchivadas: true }),
+    [estado, asignaturas],
+  );
 
   // Apartado 25 — sin ningún horario, no una pantalla vacía.
   if (!horarios.length) {
@@ -862,6 +1081,37 @@ export default function HorarioView({
         </button>
       </div>
 
+      {/* HT F5 · apartados 18 y 30 — las actividades tienen que ser alcanzables
+          sin pasar por un bloque: una asignatura archivada ya no tiene ninguno,
+          y aun así hay que poder abrirla para recuperarla. */}
+      {actividades.length > 0 && (
+        <button onClick={() => { setListaActividades(!listaActividades); setActividadId(null); }}
+          className="flex items-center gap-1.5 text-[11px] font-semibold"
+          style={{ color: listaActividades ? accent : COLORS.textMuted }}>
+          <Star size={12} /> {listaActividades ? 'Cerrar asignaturas' : `Tus asignaturas y actividades (${actividades.length})`}
+        </button>
+      )}
+
+      {listaActividades && !ficha && (
+        <Card>
+          {actividades.map((a, i) => (
+            <ListRow key={a.id} last={i === actividades.length - 1} onClick={() => setActividadId(a.id)}>
+              <span className="text-sm leading-none" aria-hidden="true">{iconoDe(a)}</span>
+              <span className="text-xs font-semibold flex-1 truncate"
+                style={{ color: a.estado === 'activa' ? COLORS.text : COLORS.textMuted }}>
+                {a.titulo}
+              </span>
+              {a.favorita && <Star size={11} style={{ color: accent }} fill={accent} />}
+              <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                {a.estado === 'archivada' ? 'Archivada'
+                  : a.estado === 'oculta' ? 'Oculta'
+                    : a.usos ? `${a.usos} ${plural(a.usos, 'clase', 'clases')}` : 'Sin usar'}
+              </span>
+            </ListRow>
+          ))}
+        </Card>
+      )}
+
       {/* Apartado 35 — el interruptor entre consulta y edición. */}
       <div className="flex items-center gap-2">
         <button onClick={() => setEdicion(!edicion)}
@@ -886,9 +1136,23 @@ export default function HorarioView({
         />
       )}
 
+      {/* HT F5 · apartado 29 — tocar una actividad abre su ficha entera. */}
+      {ficha && impactoActividad && (
+        <FichaActividad
+          ficha={ficha} accent={accent} impacto={impactoActividad}
+          onCerrar={() => setActividadId(null)}
+          onEditar={(campos) => aplicar(editarActividad(estado, actividadId, campos))}
+          onFavorita={() => aplicar(alternarFavorita(estado, actividadId))}
+          onArchivar={() => aplicar(archivarActividad(estado, actividadId, ficha.estado !== 'Archivada'))}
+          onDuplicar={() => aplicarResultado(duplicarActividad(estado, actividadId, { hoy }))}
+          onEliminar={() => { aplicar(eliminarActividadDefinitiva(estado, actividadId)); setActividadId(null); }}
+        />
+      )}
+
       {bloque && (
         <PanelBloque
           bloque={bloque} columnas={columnas} accent={accent}
+          onAbrirActividad={(id) => { setBloque(null); setActividadId(id); }}
           fecha={vista === 'semana' ? null : fecha}
           onCerrar={() => setBloque(null)}
           onEditar={(id, cambios, opciones) => aplicarResultado(editarBloque(estado, id, cambios, opciones))}

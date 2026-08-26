@@ -1726,6 +1726,7 @@ export default function App() {
           <HorarioView
             horarioTop={horarioTop}
             asignaturas={estudios.asignaturas || []}
+            estudios={estudios} productividad={productividad}
             accent={accent}
             onCambiar={(nuevo) => snapshotAndSave({ horarioTop: nuevo })}
             onCrearHorario={(nuevo) => snapshotAndSave({ horarioTop: nuevo })}

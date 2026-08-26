@@ -138,7 +138,10 @@ console.log('\n═══ Las asignaturas no se duplican ═══\n');
   comprobar('Una actividad que NO es asignatura sí guarda su nombre', nombreDeActividad(propia, []) === 'Entrenamiento');
   comprobar('...porque no existe en ningún otro módulo', propia.asignaturaId === null);
 
-  comprobar('Los seis tipos de actividad', TIPOS_ACTIVIDAD.length === 6);
+  // HT F5 · apartado 8 amplió la lista a nueve: *"el sistema deberá permitir
+  // ampliar esta lista posteriormente"*. `descanso`, que no está en la
+  // especificación pero venía de F1, se conserva.
+  comprobar('Los nueve tipos de actividad', TIPOS_ACTIVIDAD.length === 9);
   comprobar('Un tipo inventado cae en "otro"', normalizarActividad({ tipo: 'zzz' }).tipo === 'otro');
   comprobar('El material se limpia de basura', normalizarActividad({ material: ['Libro', '', '  ', 5] }).material.length === 1);
   comprobar('Un material que no es lista no revienta', normalizarActividad({ material: 'Libro' }).material.length === 0);

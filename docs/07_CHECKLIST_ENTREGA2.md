@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 33 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 4/12** y **SO 1/5** (hasta v1.56.0). Quedan
-> **73**: HT (8), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 34 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 5/12** y **SO 1/5** (hasta v1.57.0). Quedan
+> **72**: HT (7), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -3542,113 +3542,90 @@ igualmente". Nunca se escribe primero y se avisa después.
 **Lo que sigue sin estar probado, y hay que decirlo:** el zoom y la densidad en pantalla real, el
 aspecto en un iPhone y el recorrido tocando. Como todo desde R1.
 
-#### HT · Fase 5/12 — ASIGNATURAS, ACTIVIDADES, COLORES, ICONOS Y CONTEXTO
-- [ ] OBJETIVO DE LA FASE
-- [ ] CONCEPTO DE ACTIVIDAD
-- [ ] ASIGNATURA COMO TIPO DE ACTIVIDAD
-- [ ] IDENTIDAD DE LA ACTIVIDAD
-- [ ] NOMBRE
-- [ ] NOMBRE CORTO
-- [ ] ALIAS
-- [ ] TIPO
-- [ ] ICONO
-- [ ] ICONOS PERSONALIZADOS
-- [ ] COLOR PRINCIPAL
-- [ ] PALETA PREDEFINIDA
-- [ ] COLOR AUTOMÁTICO
-- [ ] COLOR PERSONALIZADO
-- [ ] COLOR DEL BLOQUE VS ACTIVIDAD
-- [ ] SISTEMA DE ESTADOS
-- [ ] ARCHIVADO
-- [ ] REUTILIZACIÓN
-- [ ] PROFESOR
-- [ ] PROFESOR COMO ENTIDAD FUTURA
-- [ ] AULA
-- [ ] UBICACIÓN COMO ENTIDAD
-- [ ] DESCRIPCIÓN
-- [ ] ETIQUETAS
-- [ ] FAVORITOS
-- [ ] ACTIVIDADES RECIENTES
-- [ ] BUSCADOR DE ACTIVIDADES
-- [ ] CREACIÓN DESDE EL HORARIO
-- [ ] PANEL DE DETALLES
-- [ ] ACTIVIDAD COMO CENTRO DE INFORMACIÓN
-- [ ] TAREAS ASOCIADAS
-- [ ] EXÁMENES ASOCIADOS
-- [ ] ARCHIVOS
-- [ ] MATERIAL
-- [ ] MOCHILA
-- [ ] REQUERIDO VS OPCIONAL
-- [ ] CANTIDAD
-- [ ] CONTEXTO TEMPORAL
-- [ ] ACTIVIDADES ESPECIALES
-- [ ] ENTRENAMIENTOS
-- [ ] ESTUDIO
-- [ ] ACTIVIDADES RECURRENTES
-- [ ] CAMBIO GLOBAL
-- [ ] CAMBIO LOCAL
-- [ ] ESTADÍSTICAS FUTURAS
-- [ ] TIEMPO SEMANAL
-- [ ] DETECCIÓN DE CARGA
-- [ ] PRIORIDADES
-- [ ] ESTADO DE ACTIVIDAD
-- [ ] VISIBILIDAD
-- [ ] REGLAS DE VISIBILIDAD
-- [ ] NOTAS PRIVADAS
-- [ ] CONTEXTO PARA IA
-- [ ] IA COMO ASISTENTE DEL HORARIO
-- [ ] CREACIÓN MEDIANTE IA
-- [ ] DETECCIÓN DE DUPLICADOS
-- [ ] ACTIVIDADES PARECIDAS
-- [ ] ELIMINACIÓN
-- [ ] ARCHIVADO INTELIGENTE
-- [ ] RESTAURACIÓN
-- [ ] DUPLICAR ACTIVIDAD
-- [ ] RELACIONES ENTRE ACTIVIDADES
-- [ ] ACTIVIDADES PADRE E HIJAS
-- [ ] AGRUPACIONES
-- [ ] COLORES DE GRUPO
-- [ ] SISTEMA DE FILTROS
-- [ ] BÚSQUEDA GLOBAL
-- [ ] ACCESO DESDE HOY
-- [ ] ACCESO DESDE CALENDARIO
-- [ ] ACCESO DESDE MOCHILA
-- [ ] ACCESO DESDE TAREAS
-- [ ] SISTEMA DE CONTEXTO
-- [ ] PRIVACIDAD
-- [ ] PREPARACIÓN PARA CLOUD
-- [ ] PREPARACIÓN PARA OFFLINE
-- [ ] CACHÉ INTELIGENTE
-- [ ] DISEÑO DE LA FICHA
-- [ ] ACCIONES RÁPIDAS DESDE LA FICHA
-- [ ] RESUMEN DE ACTIVIDAD
-- [ ] SISTEMA DE COLORES CONSISTENTE
-- [ ] CONTRASTE Y ACCESIBILIDAD
-- [ ] PERSONALIZACIÓN GLOBAL
-- [ ] ORDEN DE ACTIVIDADES
-- [ ] Favoritas.
-- [ ] Recientes.
-- [ ] Más utilizadas.
-- [ ] Alfabéticamente.
-- [ ] ACTIVIDADES MÁS UTILIZADAS
-- [ ] INTELIGENCIA CONTEXTUAL
-- [ ] SUGERENCIAS
-- [ ] RECONOCIMIENTO DE PATRONES
-- [ ] INTEGRACIÓN CON OBJETIVOS
-- [ ] INTEGRACIÓN CON HÁBITOS
-- [ ] INTEGRACIÓN CON PRODUCTIVIDAD
-- [ ] INTEGRACIÓN CON ENTRENAMIENTO
-- [ ] PRINCIPIO DE REFERENCIA ÚNICA
-- [ ] EJEMPLO
-- [ ] EVENTOS EXTERNOS
-- [ ] NO DUPLICAR IMPORTACIONES
-- [ ] HISTORIAL DE ACTIVIDAD
-- [ ] ELIMINACIÓN LÓGICA
-- [ ] SEGURIDAD
-- [ ] IA Y PERMISOS
-- [ ] RESULTADO DE LA FASE
-- [ ] CRITERIOS DE ACEPTACIÓN
-- [ ] SIGUIENTE FASE
+#### HT · Fase 5/12 — ASIGNATURAS, ACTIVIDADES, COLORES, ICONOS Y CONTEXTO ✅ COMPLETADA (v1.57.0)
+
+*"«Biología» no será solamente una palabra dentro de una celda. Será una entidad."* (apartado 1)
+
+La lógica está en `src/lib/actividades.js` (116 comprobaciones); la ficha, en `HorarioView.jsx`.
+
+⚠️ **La decisión que gobierna la fase: todo lo que se puede derivar, se deriva.** Los usos, el tiempo
+semanal, las más utilizadas, las recientes y la carga por día **no se guardan**. Un contador de
+"veces usada" empieza a mentir en cuanto se borra un bloque — y ese número es justo el que el
+apartado 58 usa para decidir si una actividad se borra o se archiva.
+
+- [x] **2-4 · Actividad genérica, asignatura como tipo, identidad** — nueve tipos (`TIPOS_ACTIVIDAD`).
+      ⚠️ `descanso` no está en la lista de la especificación pero venía de F1: quitarlo dejaría sin
+      tipo a lo que Josué ya hubiera creado.
+- [x] **5-7 · Nombre, nombre corto y alias** — ⚠️ **renombrar en Estudios sigue mandando** (apartado 25
+      de F1): el horario apunta a la asignatura, no la copia. El nombre corto se **deriva** si no se
+      pone, porque una celda sin texto no se distingue de una celda libre.
+- [x] **8-10 · Tipo e iconos** — dieciséis emojis y uno por defecto según el tipo, para que crear no
+      obligue a elegir. El campo acepta cualquier cadena, así que las imágenes del apartado 10
+      caben mañana sin migrar nada.
+- [x] **11-15 · Colores, paleta, automático y bloque vs actividad** — la cadena es **bloque →
+      actividad → grupo → acento**. ⚠️ El color de un bloque **no toca la actividad**: marcar un
+      examen en rojo no puede repintar Biología entera (apartado 44).
+- [x] **16-17, 49 · Estados** — activa, archivada y **oculta**. ⚠️ **Oculta no es archivada**: la
+      especificación las distingue, y juntarlas haría imposible una actividad viva que no salga en
+      el horario escolar (apartado 51). Un `activa: false` guardado en F1 se **traduce**, no se pierde.
+- [x] **18, 28, 56, 57 · Reutilizar y no duplicar** — antes de crear "Biología" se dice si ya existe,
+      sin importar tildes ni mayúsculas, y se enseñan las parecidas. ⚠️ **Nunca se fusionan solas**
+      (apartado 57, literal): "Biología" y "Biología 2" pueden ser dos asignaturas de dos cursos, y
+      juntarlas no se deshace.
+- [x] **19-23 · Profesor, aula y descripción** — campos de la actividad, no del bloque: el profesor de
+      Biología es el mismo los tres días (ya venía de HT F2).
+- [x] **24-27, 83-84 · Etiquetas, favoritos, recientes y buscador** — la búsqueda mira nombre, corto,
+      alias y etiquetas: "bio" encuentra Biología. El orden recomendado es el del apartado 83
+      (favoritas → recientes → más usadas → A-Z), y **solo "favorita" se guarda**: lo pone Josué.
+- [x] **29-30, 77, 79, 100 · La ficha** — qué días toca, cuánto a la semana, profesor, aula, material,
+      etiquetas, exámenes, tareas y notas. Es *"la puerta de entrada al resto de la información"*.
+- [x] **31-32 · Tareas y exámenes** — los exámenes se enlazan **de verdad** por `asignaturaId`. ⚠️ Las
+      tareas de Productividad **no tienen campo de asignatura**, así que se enseñan las que la
+      MENCIONAN y la pantalla lo dice con esas palabras. Fingir un enlace sería un dato inventado
+      (regla 8).
+- [x] **45-47 · Estadísticas, tiempo semanal y carga** — *"esta semana tienes 4 h de Biología"*, todo
+      derivado de los bloques. La carga por día se **calcula pero no juzga**: avisar es Fase 11.
+- [x] **50-51 · Visibilidad** — cuatro interruptores (horario, hoy, calendario, mochila), **todos
+      encendidos de fábrica**: esconder es la excepción. Es lo que permite el "Trabajo personal" del
+      apartado 51.
+- [x] **52, 73 · Notas privadas** — ⚠️ **salen en la ficha y NO viajan en el contexto de la IA.** Hay
+      una prueba que falla si aparecen. Lo que no sale de aquí no puede acabar en un servidor.
+- [x] **53-54 · Contexto para la IA** — devuelve **estructura, no un texto**, y **no llama a nadie**
+      (regla 7). Quien la use decide si la manda y cuándo, a un toque.
+- [x] **58-61 · Eliminar, archivar, restaurar y duplicar** — ⚠️ borrar **enseña el impacto con
+      números antes de decidir** y **recomienda archivar**. Duplicar crea una **entidad nueva** que
+      no arrastra ni los bloques ni el enlace con Estudios, o renombrar una cambiaría las dos.
+- [x] **63-65 · Jerarquía, agrupaciones y colores de grupo** — una actividad puede heredar el color de
+      su grupo o sobrescribirlo. ⚠️ Una actividad **no puede ser su propia madre ni su propia
+      abuela**: sin esa comprobación, pintar el árbol se colgaría y la pantalla quedaría en blanco.
+- [x] **86 · Sugerencias** — lo que suele ir a esa hora pesa más que lo que suele ir ese día. ⚠️
+      **Sugerir no escribe nada**, y hay una prueba que fotografía el estado antes y después.
+- [x] **92-93 · Referencia única** — los exámenes son de Estudios y las tareas de Productividad: aquí
+      se LEEN, nunca se escriben.
+- [x] **98 · Seguridad** — el modelo **no tiene `user_id`** (viene de HT F2): no hay ninguno que
+      falsear, y el aislamiento lo dan las políticas RLS de `app_data`.
+- [x] **101 · Criterios de aceptación** — los treinta, en `scripts/test-actividades.mjs`.
+
+**Lo que NO se ha construido, y por qué (regla 8):**
+
+- [-] **20, 22 · Profesor y ubicación como entidades propias** — la propia especificación las llama
+      *"entidad futura"* y *"futura ampliación"*. Hoy son campos de texto, que es lo que Josué
+      necesita para escribir "Ana Ruiz" y "Lab 2.14".
+- [-] **33 · Archivos** — subir documentos por asignatura necesita un bucket de Supabase, y Josué ya
+      tiene dos bloques de SQL pendientes de ejecutar. No se le añade un tercero por una función que
+      no ha pedido.
+- [-] **55 · Creación mediante IA** — *"añade Física los martes y jueves"* exige
+      validación → previsualización → confirmación, y eso es la Fase 9 (IA de Horario). Aquí está
+      hecho el contexto que la alimentará.
+- [-] **74-76 · Cloud, offline y caché** — resuelto desde HT F2: todo vive en `app_data`, que ya
+      sincroniza y ya tiene RLS. No hay nada nuevo que construir.
+- [-] **87-91 · Patrones, objetivos, hábitos y entrenamiento** — enganches para las Fases 9 y 11. El
+      apartado 87 dice literalmente *"en fases posteriores"*.
+- [-] **94-95 · Eventos externos** — los campos `origen` y `origenId` ya están en el modelo para no
+      importar dos veces lo mismo; el importador es de la Fase 12.
+
+**Lo que sigue sin estar probado, y hay que decirlo:** la ficha en pantalla, el selector de iconos y
+el recorrido tocando en un iPhone. Como todo desde R1.
 
 #### HT · Fase 6/12 — CALENDARIO + AGENDA + SISTEMA «HOY»
 - [ ] EL CENTRO: «HOY»

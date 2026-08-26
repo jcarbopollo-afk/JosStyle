@@ -236,6 +236,9 @@ export const DEFAULT_HORARIO_TOP = {
   actividades: [],   // las entidades reutilizables
   bloques: [],       // la regla base: lo que ocurre normalmente
   excepciones: [],   // lo que cambia un día concreto
+  // HT F5 · apartado 64 — agrupar actividades ("Colegio", "Fitness"). El grupo
+  // puede dar color a las suyas, y ellas pueden sobrescribirlo.
+  grupos: [],
 };
 
 /* ---------------------------------------------------------------------------
@@ -388,11 +391,55 @@ export const TIPOS_ACTIVIDAD = [
   { id: 'entrenamiento', label: 'Entrenamiento' },
   { id: 'estudio', label: 'Estudio' },
   { id: 'trabajo', label: 'Trabajo' },
+  // HT F5 · apartado 8 — *"el sistema deberá permitir ampliar esta lista"*.
+  // `descanso` no está en la lista de la especificación pero ya existía desde
+  // F1: quitarlo dejaría sin tipo a lo que Josué ya hubiera creado.
+  { id: 'reunion', label: 'Reunión' },
+  { id: 'personal', label: 'Personal' },
+  { id: 'rutina', label: 'Rutina' },
   { id: 'descanso', label: 'Descanso' },
   { id: 'otro', label: 'Otro' },
 ];
 
-export function crearActividad({ nombre = '', tipo = 'otro', color = '', icono = '', asignaturaId = null, material = [], ubicacion = '', persona = '', corto = '', descripcion = '', prioridad: pri = 'normal', hoy = todayISO() } = {}) {
+/**
+ * HT F5 · apartados 16 y 49 — `activa` / `archivada` / `oculta`.
+ *
+ * ⚠️ **Oculta no es archivada.** Archivada es "esto es del curso pasado";
+ * oculta es "existe y sigue viva, pero no quiero verla en esta pantalla". La
+ * especificación las distingue expresamente, y juntarlas haría imposible tener
+ * una actividad activa que no salga en el horario escolar (apartado 51).
+ */
+export const ESTADOS_ACTIVIDAD = [
+  { id: 'activa', label: 'Activa' },
+  { id: 'archivada', label: 'Archivada' },
+  { id: 'oculta', label: 'Oculta' },
+];
+
+export const estadoActividad = (id) => ESTADOS_ACTIVIDAD.find((e) => e.id === id) || ESTADOS_ACTIVIDAD[0];
+
+/**
+ * HT F5 · apartados 50 y 51 — dónde se usa la actividad. Cuatro interruptores,
+ * todos encendidos de fábrica: una actividad recién creada tiene que aparecer
+ * donde se espera, y esconderla es la excepción.
+ */
+export const VISTAS_ACTIVIDAD = ['horario', 'hoy', 'calendario', 'mochila'];
+
+export function normalizarVisibilidad(guardada) {
+  const g = guardada || {};
+  const salida = {};
+  for (const v of VISTAS_ACTIVIDAD) salida[v] = g[v] !== false;
+  return salida;
+}
+
+export function crearActividad({
+  nombre = '', tipo = 'otro', color = '', icono = '', asignaturaId = null, material = [],
+  ubicacion = '', persona = '', corto = '', descripcion = '', prioridad: pri = 'normal',
+  // HT F5 — la identidad completa del apartado 4, más lo que la conecta con el
+  // resto del Sistema Personal.
+  alias = [], etiquetas = [], favorita = false, estado = 'activa', visibilidad = null,
+  notas = '', grupoId = null, padreId = null, origen = '', origenId = '',
+  hoy = todayISO(),
+} = {}) {
   return normalizarActividad({
     id: uid(),
     nombre,
@@ -406,7 +453,16 @@ export function crearActividad({ nombre = '', tipo = 'otro', color = '', icono =
     corto,
     descripcion,
     prioridad: pri,
-    activa: true,
+    alias,
+    etiquetas,
+    favorita,
+    estado,
+    visibilidad,
+    notas,
+    grupoId,
+    padreId,
+    origen,
+    origenId,
     creadoEn: hoy,
     actualizadoEn: hoy,
   });
@@ -435,7 +491,23 @@ export function normalizarActividad(guardada) {
     corto: (g.corto || '').trim(),
     descripcion: (g.descripcion || '').trim(),
     prioridad: prioridad(g.prioridad).id,
-    activa: g.activa !== false,
+    // HT F5 · apartado 7 — los alias son para buscar y para que la IA reconozca
+    // "mates". No se enseñan en la cuadrícula.
+    alias: (Array.isArray(g.alias) ? g.alias : []).map((x) => String(x).trim()).filter(Boolean),
+    etiquetas: (Array.isArray(g.etiquetas) ? g.etiquetas : []).map((x) => String(x).trim().toLowerCase()).filter(Boolean),
+    favorita: !!g.favorita,
+    // `activa` era el campo de F1. Un `false` guardado significaba "archivada",
+    // así que se traduce en vez de perderse.
+    estado: ESTADOS_ACTIVIDAD.some((e) => e.id === g.estado) ? g.estado : (g.activa === false ? 'archivada' : 'activa'),
+    visibilidad: normalizarVisibilidad(g.visibilidad),
+    // Apartados 52 y 73 — las notas son privadas por defecto: no salen en HOY
+    // ni viajan en el contexto de la IA.
+    notas: (g.notas || '').trim(),
+    grupoId: g.grupoId || null,
+    padreId: g.padreId || null,
+    // Apartados 94 y 95 — de dónde vino, para no importar dos veces lo mismo.
+    origen: (g.origen || '').trim(),
+    origenId: (g.origenId || '').trim(),
     creadoEn: g.creadoEn || null,
     actualizadoEn: g.actualizadoEn || g.creadoEn || null,
   };
@@ -618,6 +690,10 @@ export function normalizarHorarioTop(guardado) {
     actividades: (Array.isArray(g.actividades) ? g.actividades : []).map(normalizarActividad),
     bloques: (Array.isArray(g.bloques) ? g.bloques : []).map(normalizarBloque).filter((b) => b.horarioId && b.columnaId),
     excepciones: (Array.isArray(g.excepciones) ? g.excepciones : []).map(normalizarExcepcion),
+    // ⚠️ Sin esta línea los grupos se perderían en el siguiente guardado: es el
+    // fallo que ya pasó dos veces (HT F2 con `visible`, HT F4 con `archivado`).
+    // La forma la valida `actividades.js`; aquí solo se conserva la lista.
+    grupos: (Array.isArray(g.grupos) ? g.grupos : []).filter((x) => x && typeof x === 'object'),
   };
 }
 

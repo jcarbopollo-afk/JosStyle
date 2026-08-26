@@ -166,6 +166,10 @@ export const DEFAULT_HORARIO_DATOS = {
   actividades: [],
   bloques: [],
   excepciones: [],
+  // HT F5 · apartado 64 — los grupos de actividades. Va aquí porque
+  // `normalizarDatos` extiende `normalizarHorarioTop`: si una de las dos formas
+  // no lo conoce, las dos dejan de describir el mismo estado.
+  grupos: [],
   materiales: [],
   enlacesMaterial: [],
   mochila: [],
@@ -461,7 +465,7 @@ export function construirIndices(datos) {
   return {
     bloquesPorHorario, bloquesPorColumna, bloquesPorActividad, excepcionesPorFecha, materialPorActividad,
     horariosActivos: d.horarios.filter((h) => h.activo),
-    actividadesActivas: d.actividades.filter((a) => a.activa),
+    actividadesActivas: d.actividades.filter((a) => a.estado === 'activa'),
   };
 }
 

@@ -27,7 +27,8 @@ import StatsView from '../src/views/StatsView.jsx';
 import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
-import HorarioView, { PanelAvanzado } from '../src/views/HorarioView.jsx';
+import HorarioView, { PanelAvanzado, FichaActividad } from '../src/views/HorarioView.jsx';
+import { fichaActividad, impactoEliminarActividad, editarActividad, crearActividadUnica } from '../src/lib/actividades.js';
 import { archivarHorario, guardarCiclo, normalizarVisual } from '../src/lib/horarioEstructura.js';
 import { DEFAULT_HORARIO_TOP } from '../src/lib/horario.js';
 import { crearDesdePlantilla, crearBloqueRapido, editarBloque, ALCANCES } from '../src/lib/horarioEditor.js';
@@ -295,6 +296,41 @@ const CASOS = [
         horario: guardarCiclo(lleno, base.horario.id, { semanas: 2, ancla: HOY }).horarios[0],
         accent, asignaturas: [], visual: normalizarVisual({ densidad: 'compacto', zoom: 140 }),
         hoy: HOY, onVisual: noop, onCambiar: noop, onResultado: noop,
+      })],
+      /* HT Fase 5 — la ficha de actividad. Se monta con `fichaActividad` real:
+         si el enlace con Estudios o el recuento de usos se rompiera, esto
+         dejaría de renderizar. */
+      ['FichaActividad', FichaActividad, () => {
+        const act = lleno.actividades[0];
+        const conDatos = editarActividad(lleno, act.id, {
+          persona: 'Ana Ruiz', ubicacion: 'Lab 2.14', material: ['Bata'],
+          notas: 'Preguntar por la recuperación', etiquetas: ['laboratorio'], favorita: true,
+        });
+        return {
+          ficha: fichaActividad(conDatos, act.id, {
+            estudios: { examenes: [] },
+            productividad: { tareas: [{ id: 't1', texto: `Repasar ${act.nombre}`, hecha: false }] },
+            acento: accent, hoy: HOY,
+          }),
+          impacto: impactoEliminarActividad(conDatos, act.id, { productividad: { tareas: [] } }),
+          accent, onEditar: noop, onFavorita: noop, onArchivar: noop,
+          onDuplicar: noop, onEliminar: noop, onCerrar: noop,
+        };
+      }],
+      // Una actividad recién creada: sin días, sin profesor, sin nada. No puede
+      // quedar una tarjeta con huecos ni con filas vacías.
+      ['FichaActividad · sin nada todavía', FichaActividad, () => {
+        const nueva = crearActividadUnica(base.estado, { nombre: 'Filosofía', hoy: HOY });
+        return {
+          ficha: fichaActividad(nueva.estado, nueva.actividad.id, { acento: accent, hoy: HOY }),
+          impacto: impactoEliminarActividad(nueva.estado, nueva.actividad.id),
+          accent, onEditar: noop, onFavorita: noop, onArchivar: noop,
+          onDuplicar: noop, onEliminar: noop, onCerrar: noop,
+        };
+      }],
+      ['HorarioView · con actividades y exámenes', HorarioView, () => props(lleno, {
+        estudios: { asignaturas: [], examenes: [{ id: 'x1', asignaturaId: null, fecha: '2026-09-03', tema: 'Tema 3' }] },
+        productividad: { tareas: [{ id: 't1', texto: 'Repasar Matemáticas', hecha: false }] },
       })],
       ['PanelAvanzado · horario sin días', PanelAvanzado, () => {
         const vacio = crearDesdePlantilla(DEFAULT_HORARIO_TOP, { nombre: 'Mío', plantillaId: 'vacio', hoy: HOY });
