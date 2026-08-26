@@ -16,6 +16,7 @@ import { calcularDuracion, formatHoras, diasHasta, todayISO, addDays } from './h
 import { ESTADOS_ANIMO } from '../tokens';
 import { resumenDelDia, eventosFuturos } from './calendario';
 import { eventosDerivados } from './calendarioIntegracion';
+import { resumenHistorial } from './armario';
 
 function ultimoPorFecha(lista) {
   if (!lista || lista.length === 0) return null;
@@ -157,11 +158,17 @@ export function calcularResumenModulo(id, s) {
       }
       const disponibles = prendas.filter((p) => p.estado === 'disponible').length;
       const categorias = new Set(prendas.map((p) => p.categoria)).size;
+      // AR Fase 3: en cuanto hay historial, lo que más informa de un vistazo es cuándo
+      // fue la última vez. Sin historial NO se dice "hace 0 días" (apartado 28): se
+      // sigue enseñando lo de antes, que es cierto.
+      const hist = resumenHistorial(s.armario);
       return {
         linea1: `${prendas.length} ${plural(prendas.length, 'prenda', 'prendas')}`,
-        linea2: disponibles < prendas.length
-          ? `${disponibles} ${plural(disponibles, 'disponible', 'disponibles')}`
-          : `${categorias} ${plural(categorias, 'categoría', 'categorías')}`,
+        linea2: hist.total > 0
+          ? `Último outfit: ${hist.texto.toLowerCase()}`
+          : disponibles < prendas.length
+            ? `${disponibles} ${plural(disponibles, 'disponible', 'disponibles')}`
+            : `${categorias} ${plural(categorias, 'categoría', 'categorías')}`,
         estado: 'activo',
       };
     }

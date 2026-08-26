@@ -19,7 +19,7 @@ serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario, Fondos, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME** y **BI** están terminados y **AR** va por 2/4, quedan 96) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME** y **BI** están terminados y **AR** va por 3/4, quedan 95) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,11 +107,12 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 480 pruebas unitarias con Node, 5 de auditoría, 60 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **545 comprobaciones**.
+Vite, 592 pruebas unitarias con Node, 5 de auditoría, 64 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **661 comprobaciones**.
 
-Eso ya ha encontrado **diecinueve bugs reales** que la revisión a mano no vio, entre ellos una
-notificación falsa (`null < 7` es `true` en JavaScript) y ocho módulos que dejaban crear y no borrar.
+Eso ya ha encontrado **veintiún bugs reales** que la revisión a mano no vio, entre ellos una
+notificación falsa (`null < 7` es `true` en JavaScript), ocho módulos que dejaban crear y no borrar,
+y dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`).
 
 ⚠️ **Lo que las pruebas NO cubren, y sigue pendiente de que lo mire Josué (R1):** Supabase real, la
 sincronización entre dispositivos, los permisos del navegador, el aspecto en un iPhone y el
@@ -131,18 +132,21 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase: AR · Fase 3/4 — Calendario + historial de uso.**
+**Siguiente fase: AR · Fase 4/4 — Sistema inteligente anti-repetición, estadísticas y
+recomendaciones.** Con ella se cierra el bloque AR.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_ARMARIO.md`.
 
 Tres avisos antes de escribir código ahí:
 
-- **`armario.usos` ya existe y está vacío**, declarado desde la Fase 1. Cada uso tiene que ser un
-  **registro independiente** (fecha, hora, lugar, personas, evento), no una fecha dentro del
-  outfit: el mismo outfit puede usarse el 1, el 5 y el 12 de agosto.
-- `prenda.usos`, `prenda.ultimoUso`, `outfit.usos` y `outfit.ultimoUso` están a **cero a
-  propósito**. Es esta fase la que empieza a llenarlos; hasta ahora nadie los ha tocado.
-- **Se conecta al Calendario Universal como fuente DERIVADA** (`eventosDerivados()`), nunca
-  duplicando datos — regla 11. Mira cómo lo hacen Estudios y Relación.
+- **Todo lo que necesita ya existe y está probado.** `diasDesde`, `usosDePrenda`, `usosDeOutfit`,
+  `indiceUsoPrendas`, `indiceUsoOutfits` y los filtros por persona y por lugar salieron de la Fase
+  3. No hay que recalcular nada desde cero ni añadir campos nuevos a prenda ni a outfit.
+- **No hay contadores guardados, y no se pueden reintroducir.** Desde la Fase 3, "cuántas veces" y
+  "cuándo fue la última" se **derivan** de `armario.usos`. Añadir un contador para el
+  anti-repetición sería exactamente el descuadre que la Fase 3 eliminó.
+- **La recomendación sale de datos, no de la IA** (regla 7): reglas sobre el historial real, y
+  explicables. Nada de recomendaciones aleatorias, y nunca proponer una prenda que está en la
+  lavandería — para eso están los `ESTADOS_PRENDA`.
 
 ⚠️ **Recordatorio para Josué, si aún no lo ha hecho:** ejecutar el bloque del bucket `armario` de
 `supabase/schema.sql` en el SQL Editor de Supabase. Sin eso, todo funciona menos subir fotos.

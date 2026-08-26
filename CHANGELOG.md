@@ -1,5 +1,78 @@
 # CHANGELOG.md
 
+## Entrega 2 · AR Fase 3 — Calendario e historial de uso (v1.34.0)
+
+El armario deja de ser un inventario y pasa a tener memoria. **Gestión → Armario** tiene ahora tres
+pestañas: **Prendas | Outfits | Calendario**.
+
+### Cada uso es un registro, no una fecha que se pisa
+Ponerse el mismo outfit el 1, el 5 y el 12 de agosto son **tres registros independientes**, cada uno
+con su fecha, su hora, su lugar, sus personas, su ocasión y sus notas. Sin eso no hay historial: hay
+un "último uso" que olvida todo lo anterior.
+
+### Ningún contador guardado
+Aquí está el cambio de fondo de esta fase. Las Fases 1 y 2 dejaron un `usos` y un `ultimoUso`
+guardados dentro de cada prenda y de cada outfit. **Se han eliminado**, tal y como pide el apartado
+17 de la especificación, y ahora todo se deduce de `armario.usos`:
+
+    PRENDA → los outfits que la contienen → los usos de esos outfits
+
+Un contador guardado es una **segunda fuente de verdad**: basta con que un borrado de uso no lo
+decremente para que una prenda diga "usada 18 veces" con 17 registros detrás. Derivándolo, ese
+descuadre es imposible por construcción. El efecto secundario bonito es que **una prenda tiene
+historial aunque nunca se haya registrado directamente**: se deduce de los outfits en los que sale.
+
+Para que ordenar por uso no salga caro, las tres ordenaciones que lo necesitan van contra un índice
+(`indiceUsoPrendas` / `indiceUsoOutfits`) construido en una sola pasada y tirado al acabar el
+render. Es rendimiento, no modelo de datos: nunca se guarda, así que nunca se desincroniza.
+
+### El calendario
+Vista mensual que **reutiliza `celdasMes` del Calendario Universal** — regla 11 del proyecto: ni un
+segundo motor de calendario. Lo único propio es qué se pinta dentro de cada celda: la **miniatura de
+la prenda** al 55 % detrás del número del día, y una insignia con el número cuando ese día hubo más
+de un outfit. Pulsar un día con outfits abre su detalle; pulsar uno vacío abre el formulario con esa
+fecha ya puesta. Hay también una **vista de lista** con rango (7 / 30 / 90 / 365 días o todo) y
+filtros por outfit, prenda, ocasión, lugar y persona.
+
+### En el Calendario Universal, derivado
+Los usos aparecen en el Calendario general como **fuente derivada**, igual que Objetivos, Estudios,
+Entrenamiento, Tareas y Relación: se generan en cada render desde `armario.usos` y **no se copian
+nunca**. Borrar un uso desde el Armario lo quita del Calendario en el mismo render, sin una línea de
+código de limpieza, porque nunca hubo una segunda copia que limpiar. El título sale del outfit
+referenciado, así que renombrarlo actualiza también el calendario del mes pasado.
+
+### Borrar un outfit con historial
+**Se conserva el historial**, por el mismo motivo por el que la Fase 2 conservaba las prendas dentro
+de los outfits: el outfit va a la papelera, o sea que puede volver. Si al borrarlo se borraran sus
+usos, restaurarlo devolvería el outfit pero no su historia. Conservándolos, **restaurar lo cura todo
+solo**. Mientras no esté, la fila del historial dice *"Outfit eliminado"* en vez de fingir que ese
+día no pasó nada.
+
+### Dos fallos reales de TODA la app que destapó esta fase
+Los dos en `src/lib/helpers.js`, los dos por usar `toISOString()`, que devuelve siempre UTC:
+
+1. **`todayISO()` devolvía AYER** entre las 00:00 y la 01:00/02:00 en España. Registrar el sueño a
+   las 00:30 lo archivaba en el día anterior — y lo mismo un gasto, una comida, un hábito o una
+   entrada del diario a esa hora. Lo avisaba el apartado 9 para el registro de outfits; el fallo
+   era de todo el proyecto, no solo del armario.
+2. **`addDays()` restaba un día entero**: construía la fecha en hora local y la devolvía en UTC.
+   `addDays('2026-08-25', 1)` daba `'2026-08-25'`, y `addDays('2026-01-15', 7)` daba el 21 en vez
+   del 22. Lo usan la recurrencia del Calendario y las predicciones.
+
+Los dos están arreglados con `toLocaleDateString('sv-SE')`, que es la forma estándar de pedirle al
+formateador local un `AAAA-MM-DD` limpio, y los dos tienen prueba propia.
+
+### Sin datos, no se inventa nada
+Una prenda o un outfit sin usar dice **"Todavía no hay datos de uso."** — nunca "hace 0 días", nunca
+una fecha inventada (apartado 28, literal).
+
+### Verificación
+**661 comprobaciones en verde** (antes 545): build de Vite, 297 del armario —incluida la batería
+obligatoria del apartado 40 y la prueba crítica del 41, número a número—, 64 casos de renderizado
+real y las 9 reglas invariantes.
+
+---
+
 ## Entrega 2 · AR Fase 2 — Constructor de Outfits (v1.33.0)
 
 Las prendas dejan de ser elementos sueltos. **Gestión → Armario** tiene ahora dos pestañas:

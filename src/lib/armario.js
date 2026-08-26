@@ -7,13 +7,17 @@
 // arquitectura tiene que aguantar tres fases más sin rehacerse, y el 14 pide
 // explícitamente "no diseñar una estructura que obligue a rehacer las prendas".
 //
-// POR QUÉ HAY CAMPOS QUE HOY NO SE USAN
-// `usos`, `ultimoUso` y `favorita` están desde el primer día y vacíos. No son
-// adorno: la Fase 3 (calendario e historial) y la Fase 4 (anti-repetición) necesitan
-// responder a "¿cuándo la usé por última vez?" y "¿cuánto lleva sin usarse?", y si
-// esos campos aparecen después, todas las prendas ya guardadas se quedan sin ellos —
-// y `loadData` NO fusiona con el valor por defecto (regla 5), así que arreglarlo
-// luego exige una migración manual prenda a prenda.
+// DOS CONTADORES QUE SE QUITARON AL LLEGAR LA FASE 3
+// Las fases 1 y 2 dejaron un `usos` y un `ultimoUso` guardados dentro de cada prenda
+// y de cada outfit, pensando que la Fase 3 los llenaría. El apartado 17 de la Fase 3
+// dice lo contrario, y tiene razón: *"no guardar manualmente usageCount si puede
+// calcularse de manera fiable desde el historial... evitar inconsistencias entre
+// contadores y registros reales"*.
+//
+// Un contador guardado es una segunda fuente de verdad: basta con que un borrado de
+// uso no lo decremente para que la prenda diga "usada 18 veces" con 17 registros. Se
+// derivan de `armario.usos`, que es la única lista que existe, y así no hay nada que
+// pueda desincronizarse. Lo guardado en versiones anteriores era cero; nadie lo lee.
 //
 // UN CAMPO QUE SE QUITÓ AL LLEGAR LA FASE 2
 // La Fase 1 dejó también un `prenda.outfits`, pensando que haría falta. Al construir
@@ -29,7 +33,7 @@
 // probar entero con Node.
 // ---------------------------------------------------------------------------
 
-import { uid } from './helpers';
+import { uid, todayISO } from './helpers';
 
 // Apartado 3 — categorías iniciales. Es una lista, no un enum cerrado: el apartado
 // pide expresamente que se puedan ampliar, y una prenda cuya categoría desaparezca
@@ -140,9 +144,6 @@ export function crearPrenda(datos = {}) {
     fechaCompra: datos.fechaCompra || '',
     estado: datos.estado || 'disponible',
     favorita: !!datos.favorita,
-    // --- Preparado para las fases 3 y 4 (apartados 14 y 15). Vacío hoy. ---
-    usos: 0,
-    ultimoUso: null,
     creadaEn: datos.creadaEn || ahora,
     actualizadaEn: ahora,
   };
@@ -157,10 +158,6 @@ export function actualizarPrenda(prenda, cambios = {}) {
     ...prenda,
     ...cambios,
     precio,
-    // Estos NO se dejan sobrescribir desde el formulario: son historia, y una edición
-    // de la talla no puede borrar cuántas veces se ha puesto la prenda.
-    usos: prenda.usos,
-    ultimoUso: prenda.ultimoUso,
     creadaEn: prenda.creadaEn,
     actualizadaEn: new Date().toISOString(),
   };
@@ -222,34 +219,51 @@ export function filtrarPrendas(prendas, filtros = {}) {
   });
 }
 
-/** Apartado 11 — ordenación. Devuelve una copia; nunca ordena la lista original. */
-export function ordenarPrendas(prendas, orden = 'recientes') {
+/**
+ * Apartado 11 — ordenación. Devuelve una copia; nunca ordena la lista original.
+ *
+ * Las tres ordenaciones por uso NO leen ningún campo de la prenda: leen el índice que
+ * se les pasa, derivado del historial (ver `indiceUsoPrendas`, más abajo). Antes esto
+ * hacía `(b.usos || 0) - (a.usos || 0)` sobre un contador guardado dentro de la prenda,
+ * y ese contador ya no existe — era una segunda fuente de verdad que se desincronizaba
+ * en cuanto se borraba un uso. Sin índice, ordena como si no hubiera historial, que es
+ * exactamente lo que pasa cuando todavía no lo hay.
+ */
+export function ordenarPrendas(prendas, orden = 'recientes', indiceUso) {
   const lista = [...(prendas || [])];
   const porNombre = (a, b) => norm(a.nombre).localeCompare(norm(b.nombre), 'es');
+  const uso = (p) => (indiceUso && indiceUso.get(p.id)) || SIN_USO;
   switch (orden) {
     case 'antiguas': return lista.sort((a, b) => String(a.creadaEn).localeCompare(String(b.creadaEn)));
     case 'az': return lista.sort(porNombre);
     case 'za': return lista.sort((a, b) => porNombre(b, a));
     case 'categoria': return lista.sort((a, b) =>
       categoriaDe(a.categoria).label.localeCompare(categoriaDe(b.categoria).label, 'es') || porNombre(a, b));
-    case 'mas_usadas': return lista.sort((a, b) => (b.usos || 0) - (a.usos || 0) || porNombre(a, b));
-    case 'menos_usadas': return lista.sort((a, b) => (a.usos || 0) - (b.usos || 0) || porNombre(a, b));
-    // Sin uso registrado, `ultimoUso` es null: esas prendas son justamente las que
+    case 'mas_usadas': return lista.sort((a, b) => uso(b).veces - uso(a).veces || porNombre(a, b));
+    case 'menos_usadas': return lista.sort((a, b) => uso(a).veces - uso(b).veces || porNombre(a, b));
+    // Sin uso registrado no hay última fecha: esas prendas son justamente las que
     // más tiempo llevan sin usarse, así que van primero.
     case 'sin_usar': return lista.sort((a, b) => {
-      if (!a.ultimoUso && !b.ultimoUso) return porNombre(a, b);
-      if (!a.ultimoUso) return -1;
-      if (!b.ultimoUso) return 1;
-      return String(a.ultimoUso).localeCompare(String(b.ultimoUso));
+      const ua = uso(a).ultima, ub = uso(b).ultima;
+      if (!ua && !ub) return porNombre(a, b);
+      if (!ua) return -1;
+      if (!ub) return 1;
+      return ua.localeCompare(ub);
     });
     case 'recientes':
     default: return lista.sort((a, b) => String(b.creadaEn).localeCompare(String(a.creadaEn)));
   }
 }
 
-/** Buscar + filtrar + ordenar, en el orden en que tiene sentido hacerlo. */
-export function prendasVisibles(prendas, { consulta = '', filtros = {}, orden = 'recientes' } = {}) {
-  return ordenarPrendas(filtrarPrendas(buscarPrendas(prendas, consulta), filtros), orden);
+/**
+ * Buscar + filtrar + ordenar, en el orden en que tiene sentido hacerlo.
+ *
+ * `usos` y `outfits` solo hacen falta para las ordenaciones por uso; el índice se
+ * construye una vez aquí y no en cada comparación del `sort`.
+ */
+export function prendasVisibles(prendas, { consulta = '', filtros = {}, orden = 'recientes', usos, outfits } = {}) {
+  const indice = ORDENES_POR_USO.has(orden) ? indiceUsoPrendas(usos, outfits) : null;
+  return ordenarPrendas(filtrarPrendas(buscarPrendas(prendas, consulta), filtros), orden, indice);
 }
 
 /** Marcas que Josué ha escrito de verdad, para el desplegable de filtro. */
@@ -274,8 +288,8 @@ export function conteoPorCategoria(prendas) {
  * uso que ordenar. Mientras la Fase 3 no exista, esto devuelve siempre las cinco
  * primeras, y así no aparece un control que no puede hacer nada.
  */
-export function ordenesDisponibles(prendas) {
-  const hayUso = (prendas || []).some((p) => (p.usos || 0) > 0);
+export function ordenesDisponibles(usos) {
+  const hayUso = (usos || []).length > 0;
   return ORDENES_ARMARIO.filter((o) => !o.requiereUso || hayUso);
 }
 
@@ -380,9 +394,6 @@ export function crearOutfit(datos = {}) {
     lugar: (datos.lugar || '').trim(),
     personas: Array.isArray(datos.personas) ? datos.personas.filter(Boolean) : [],
     favorito: !!datos.favorito,
-    // --- Apartado 18: preparado para la Fase 3. Vacío hoy. ---
-    usos: 0,
-    ultimoUso: null,
     creadoEn: datos.creadoEn || ahora,
     actualizadoEn: ahora,
   };
@@ -393,9 +404,6 @@ export function actualizarOutfit(outfit, cambios = {}) {
     ...outfit,
     ...cambios,
     prendaIds: cambios.prendaIds ? [...new Set(cambios.prendaIds)] : outfit.prendaIds,
-    // Historia: no se sobrescribe desde el formulario.
-    usos: outfit.usos,
-    ultimoUso: outfit.ultimoUso,
     creadoEn: outfit.creadoEn,
     actualizadoEn: new Date().toISOString(),
   };
@@ -502,35 +510,38 @@ export function filtrarOutfits(outfits, filtros = {}) {
   });
 }
 
-/** Apartado 24 — ordenación. Devuelve una copia. */
-export function ordenarOutfits(outfits, orden = 'recientes') {
+/** Apartado 24 — ordenación. Devuelve una copia. Mismo criterio de índice que en prendas. */
+export function ordenarOutfits(outfits, orden = 'recientes', indiceUso) {
   const lista = [...(outfits || [])];
   const porNombre = (a, b) => norm(a.nombre).localeCompare(norm(b.nombre), 'es');
+  const uso = (o) => (indiceUso && indiceUso.get(o.id)) || SIN_USO;
   switch (orden) {
     case 'antiguos': return lista.sort((a, b) => String(a.creadoEn).localeCompare(String(b.creadoEn)));
     case 'az': return lista.sort(porNombre);
     case 'za': return lista.sort((a, b) => porNombre(b, a));
     case 'favoritos': return lista.sort((a, b) => (b.favorito ? 1 : 0) - (a.favorito ? 1 : 0) || String(b.creadoEn).localeCompare(String(a.creadoEn)));
-    case 'mas_usados': return lista.sort((a, b) => (b.usos || 0) - (a.usos || 0) || porNombre(a, b));
-    case 'menos_usados': return lista.sort((a, b) => (a.usos || 0) - (b.usos || 0) || porNombre(a, b));
+    case 'mas_usados': return lista.sort((a, b) => uso(b).veces - uso(a).veces || porNombre(a, b));
+    case 'menos_usados': return lista.sort((a, b) => uso(a).veces - uso(b).veces || porNombre(a, b));
     case 'sin_usar': return lista.sort((a, b) => {
-      if (!a.ultimoUso && !b.ultimoUso) return porNombre(a, b);
-      if (!a.ultimoUso) return -1;
-      if (!b.ultimoUso) return 1;
-      return String(a.ultimoUso).localeCompare(String(b.ultimoUso));
+      const ua = uso(a).ultima, ub = uso(b).ultima;
+      if (!ua && !ub) return porNombre(a, b);
+      if (!ua) return -1;
+      if (!ub) return 1;
+      return ua.localeCompare(ub);
     });
     case 'recientes':
     default: return lista.sort((a, b) => String(b.creadoEn).localeCompare(String(a.creadoEn)));
   }
 }
 
-export function outfitsVisibles(outfits, prendas, { consulta = '', filtros = {}, orden = 'recientes' } = {}) {
-  return ordenarOutfits(filtrarOutfits(buscarOutfits(outfits, prendas, consulta), filtros), orden);
+export function outfitsVisibles(outfits, prendas, { consulta = '', filtros = {}, orden = 'recientes', usos } = {}) {
+  const indice = ORDENES_POR_USO.has(orden) ? indiceUsoOutfits(usos) : null;
+  return ordenarOutfits(filtrarOutfits(buscarOutfits(outfits, prendas, consulta), filtros), orden, indice);
 }
 
 /** Mismo criterio que en prendas: sin uso registrado no se ofrece ordenar por uso. */
-export function ordenesOutfitsDisponibles(outfits) {
-  const hayUso = (outfits || []).some((o) => (o.usos || 0) > 0);
+export function ordenesOutfitsDisponibles(usos) {
+  const hayUso = (usos || []).length > 0;
   return ORDENES_OUTFITS.filter((o) => !o.requiereUso || hayUso);
 }
 
@@ -584,4 +595,311 @@ export function limpiarPrendaDeOutfits(outfits, prendaId) {
     return { ...o, prendaIds: o.prendaIds.filter((x) => x !== prendaId), actualizadoEn: new Date().toISOString() };
   });
   return cambio ? siguiente : outfits;
+}
+
+// ===========================================================================
+// Entrega 2 · AR Fase 3 — Historial de uso
+//
+// LA IDEA CENTRAL, EN PALABRAS DE JOSUÉ
+// "No quiero simplemente guardar qué ropa tengo. Quiero saber cuánto tiempo hace
+// que no utilizo cada outfit y cada prenda."
+//
+// CADA USO ES UN REGISTRO INDEPENDIENTE (apartado 1)
+// Ponerse el mismo outfit el 1, el 5 y el 12 de agosto son TRES registros, no una
+// fecha que se pisa. Sin eso no hay historial, solo un "último uso" que olvida.
+//
+// TODO SE DERIVA, NADA SE GUARDA DOS VECES (apartados 17 y 29)
+// No hay contadores. "Cuántas veces he usado el vaquero gris" se calcula así:
+//
+//     PRENDA → los outfits que la contienen → los usos de esos outfits
+//
+// Por eso una prenda tiene historial aunque Josué nunca la haya registrado
+// directamente: se deduce de los outfits en los que aparece (apartado 16).
+//
+// LA FECHA ES UN DÍA LOCAL, NO UN INSTANTE (apartado 9)
+// `fecha` es "AAAA-MM-DD" en la zona horaria del dispositivo. Guardar un timestamp
+// UTC haría que un outfit registrado a las 00:30 apareciera en el día anterior —
+// exactamente el fallo que la especificación avisa de evitar, y que existía en
+// `todayISO()` hasta esta fase.
+// ===========================================================================
+
+export const EVENTOS_USO = [
+  { id: 'diario', label: 'Diario' },
+  { id: 'universidad', label: 'Universidad' },
+  { id: 'trabajo', label: 'Trabajo' },
+  { id: 'cena', label: 'Cena' },
+  { id: 'fiesta', label: 'Fiesta' },
+  { id: 'deporte', label: 'Deporte' },
+  { id: 'viaje', label: 'Viaje' },
+  { id: 'evento', label: 'Evento' },
+  { id: 'otro', label: 'Otro' },
+];
+
+// Apartado 26 — rangos para consultar el historial. `dias: null` es "todo".
+export const RANGOS_HISTORIAL = [
+  { id: 'todo', label: 'Todo', dias: null },
+  { id: 'semana', label: 'Últimos 7 días', dias: 7 },
+  { id: 'mes', label: 'Últimos 30 días', dias: 30 },
+  { id: 'trimestre', label: 'Últimos 90 días', dias: 90 },
+  { id: 'ano', label: 'Últimos 365 días', dias: 365 },
+];
+
+/**
+ * Crea un registro de uso. Lo único obligatorio es outfit + fecha (apartado 6);
+ * todo lo demás es opcional y puede rellenarse después.
+ */
+export function crearUso(datos = {}) {
+  const ahora = new Date().toISOString();
+  return {
+    id: uid(),
+    outfitId: datos.outfitId || '',
+    // Día local "AAAA-MM-DD". Ver la cabecera de este bloque: nunca un instante UTC.
+    fecha: datos.fecha || todayISO(),
+    hora: datos.hora || '',
+    lugar: (datos.lugar || '').trim(),
+    personas: Array.isArray(datos.personas) ? datos.personas.filter(Boolean) : [],
+    // Apartado 12: el evento del USO es distinto de la ocasión del OUTFIT. El outfit
+    // puede ser "de cena"; este uso concreto, "la cena de cumpleaños de Jorge".
+    evento: datos.evento || 'diario',
+    notas: (datos.notas || '').trim(),
+    creadoEn: datos.creadoEn || ahora,
+    actualizadoEn: ahora,
+  };
+}
+
+export function actualizarUso(uso, cambios = {}) {
+  return {
+    ...uso,
+    ...cambios,
+    personas: cambios.personas
+      ? (Array.isArray(cambios.personas) ? cambios.personas.filter(Boolean) : [])
+      : uso.personas,
+    creadoEn: uso.creadoEn,
+    actualizadoEn: new Date().toISOString(),
+  };
+}
+
+/** Ordena por fecha y hora, del más reciente al más antiguo. */
+function porFechaDesc(a, b) {
+  const fa = `${a.fecha} ${a.hora || '00:00'}`;
+  const fb = `${b.fecha} ${b.hora || '00:00'}`;
+  return fb.localeCompare(fa);
+}
+
+/** Los usos de un outfit, del más reciente al más antiguo. */
+export function usosDeOutfit(usos, outfitId) {
+  return (usos || []).filter((u) => u.outfitId === outfitId).sort(porFechaDesc);
+}
+
+/**
+ * Apartados 16 y 18 — el historial de una PRENDA, deducido.
+ *
+ * Josué nunca registra una prenda: registra outfits. Así que los usos de una prenda
+ * son los usos de todos los outfits que la contienen. Si dos outfits distintos la
+ * llevan y los dos se usaron el mismo día, son dos usos: se la puso dos veces.
+ */
+export function usosDePrenda(usos, outfits, prendaId) {
+  const suyos = new Set(outfitsConPrenda(outfits, prendaId).map((o) => o.id));
+  return (usos || []).filter((u) => suyos.has(u.outfitId)).sort(porFechaDesc);
+}
+
+/**
+ * Resumen de uso a partir de una lista de usos ya filtrada.
+ *
+ * `ultimo` es null cuando no hay ninguno: **nunca cero, nunca una fecha inventada**
+ * (apartado 28: "no mostrar 0 días ni inventar una fecha").
+ */
+export function resumenDeUso(usosFiltrados) {
+  const lista = usosFiltrados || [];
+  return {
+    total: lista.length,
+    ultimo: lista.length ? lista[0] : null,
+    ultimaFecha: lista.length ? lista[0].fecha : null,
+  };
+}
+
+export const resumenOutfit = (usos, outfitId) => resumenDeUso(usosDeOutfit(usos, outfitId));
+export const resumenPrenda = (usos, outfits, prendaId) => resumenDeUso(usosDePrenda(usos, outfits, prendaId));
+
+/**
+ * Lo que ve una prenda o un outfit del que no hay ni un uso registrado. Es una constante
+ * compartida, no un objeto nuevo por consulta: se consulta una vez por comparación dentro
+ * de un `sort`, y nadie lo modifica.
+ */
+const SIN_USO = Object.freeze({ veces: 0, ultima: null });
+
+/** Las ordenaciones que necesitan el historial. El resto no paga por construir el índice. */
+const ORDENES_POR_USO = new Set(['mas_usadas', 'menos_usadas', 'mas_usados', 'menos_usados', 'sin_usar']);
+
+/**
+ * Índice de uso por outfit: `Map(outfitId → { veces, ultima })`.
+ *
+ * Existe por rendimiento, no por modelo de datos: ordenar por uso sin él obligaría a
+ * recorrer el historial entero dentro de cada comparación del `sort`. Se construye en una
+ * pasada y se tira al acabar el render — nunca se guarda, así que nunca se desincroniza.
+ */
+export function indiceUsoOutfits(usos) {
+  const indice = new Map();
+  for (const u of usos || []) {
+    const actual = indice.get(u.outfitId) || { veces: 0, ultima: null };
+    actual.veces += 1;
+    if (!actual.ultima || u.fecha > actual.ultima) actual.ultima = u.fecha;
+    indice.set(u.outfitId, actual);
+  }
+  return indice;
+}
+
+/**
+ * Índice de uso por prenda: la misma cuenta, pero atravesando los outfits.
+ *
+ * Cada uso reparte un punto a todas las prendas del outfit que se usó — que es
+ * exactamente lo que dice `usosDePrenda`, solo que calculado para todas de una vez.
+ * Un uso cuyo outfit ya no existe no cuenta para nadie: no se sabe qué llevaba puesto.
+ */
+export function indiceUsoPrendas(usos, outfits) {
+  const porId = new Map((outfits || []).map((o) => [o.id, o]));
+  const indice = new Map();
+  for (const u of usos || []) {
+    const outfit = porId.get(u.outfitId);
+    if (!outfit) continue;
+    for (const pid of outfit.prendaIds || []) {
+      const actual = indice.get(pid) || { veces: 0, ultima: null };
+      actual.veces += 1;
+      if (!actual.ultima || u.fecha > actual.ultima) actual.ultima = u.fecha;
+      indice.set(pid, actual);
+    }
+  }
+  return indice;
+}
+
+/**
+ * Apartado 15 — "hace X días", calculado siempre, nunca guardado.
+ *
+ * Devuelve el número de días, o null si no hay uso. Se compara día contra día en
+ * hora local, no instante contra instante: si no, "hoy" a las 23:00 y "hoy" a la
+ * 01:00 saldrían con un día de diferencia.
+ */
+export function diasDesde(fechaISO, hoyISO) {
+  if (!fechaISO) return null;
+  const hoy = new Date(`${hoyISO || todayISO()}T00:00:00`);
+  const dia = new Date(`${fechaISO}T00:00:00`);
+  return Math.round((hoy - dia) / 86400000);
+}
+
+/** El "hace X días" tal y como Josué lo lee (apartado 15). */
+export function textoUltimoUso(fechaISO, hoyISO) {
+  const d = diasDesde(fechaISO, hoyISO);
+  if (d === null) return 'Nunca utilizado';
+  if (d < 0) return 'Programado';
+  if (d === 0) return 'Hoy';
+  if (d === 1) return 'Ayer';
+  if (d < 7) return `Hace ${d} días`;
+  if (d < 14) return 'Hace una semana';
+  if (d < 31) return `Hace ${Math.floor(d / 7)} semanas`;
+  if (d < 61) return 'Hace un mes';
+  if (d < 365) return `Hace ${Math.floor(d / 30)} meses`;
+  if (d < 730) return 'Hace un año';
+  return `Hace ${Math.floor(d / 365)} años`;
+}
+
+/** Los usos de un día concreto, ordenados por hora ascendente para leerlos como una agenda. */
+export function usosDelDia(usos, fechaISO) {
+  return (usos || [])
+    .filter((u) => u.fecha === fechaISO)
+    .sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
+}
+
+/** Qué días del mes tienen uso: `{ 'AAAA-MM-DD': [usos] }`, para pintar el calendario. */
+export function usosPorDia(usos, ano, mes) {
+  const prefijo = `${ano}-${String(mes + 1).padStart(2, '0')}`;
+  const mapa = {};
+  for (const u of usos || []) {
+    if (!String(u.fecha).startsWith(prefijo)) continue;
+    (mapa[u.fecha] = mapa[u.fecha] || []).push(u);
+  }
+  for (const k of Object.keys(mapa)) {
+    mapa[k].sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
+  }
+  return mapa;
+}
+
+/**
+ * Apartado 25 — filtros del historial, combinables.
+ *
+ * `prendaId` necesita los outfits para resolverse: filtrar "todos los usos del
+ * vaquero gris" es filtrar los usos de los outfits que lo llevan.
+ */
+export function filtrarUsos(usos, outfits, filtros = {}) {
+  const { outfitId, prendaId, lugar, persona, evento, desde, hasta } = filtros;
+  const deLaPrenda = prendaId
+    ? new Set(outfitsConPrenda(outfits, prendaId).map((o) => o.id))
+    : null;
+  return (usos || []).filter((u) => {
+    if (outfitId && u.outfitId !== outfitId) return false;
+    if (deLaPrenda && !deLaPrenda.has(u.outfitId)) return false;
+    if (lugar && norm(u.lugar) !== norm(lugar)) return false;
+    if (persona && !(u.personas || []).some((p) => norm(p) === norm(persona))) return false;
+    if (evento && u.evento !== evento) return false;
+    if (desde && u.fecha < desde) return false;
+    if (hasta && u.fecha > hasta) return false;
+    return true;
+  }).sort(porFechaDesc);
+}
+
+/** Traduce un rango del apartado 26 a una fecha "desde". */
+export function desdeDelRango(rangoId, hoyISO) {
+  const rango = RANGOS_HISTORIAL.find((r) => r.id === rangoId);
+  if (!rango || rango.dias === null) return undefined;
+  const hoy = new Date(`${hoyISO || todayISO()}T00:00:00`);
+  hoy.setDate(hoy.getDate() - rango.dias);
+  return hoy.toLocaleDateString('sv-SE');
+}
+
+/** Lugares y personas que Josué ha escrito de verdad, para los filtros. */
+export function lugaresDeUsos(usos) {
+  const vistos = new Map();
+  for (const u of usos || []) {
+    const l = (u.lugar || '').trim();
+    if (l && !vistos.has(norm(l))) vistos.set(norm(l), l);
+  }
+  return [...vistos.values()].sort((a, b) => a.localeCompare(b, 'es'));
+}
+
+export function personasDeUsos(usos) {
+  const vistas = new Map();
+  for (const u of usos || []) {
+    for (const p of u.personas || []) {
+      const t = String(p).trim();
+      if (t && !vistas.has(norm(t))) vistas.set(norm(t), t);
+    }
+  }
+  return [...vistas.values()].sort((a, b) => a.localeCompare(b, 'es'));
+}
+
+/**
+ * Apartado 32 — qué pasa si se borra un outfit que tiene historial.
+ *
+ * MISMA POLÍTICA QUE CON LAS PRENDAS EN LA FASE 2, y por el mismo motivo: el outfit
+ * va a la papelera, o sea que puede volver. Los usos **se conservan** apuntando a su
+ * id; si el outfit vuelve, el historial vuelve entero con él. Mientras no esté, el
+ * calendario y la lista lo dicen ("outfit eliminado") en vez de fingir que ese día no
+ * pasó nada — la prioridad que marca el apartado es no romper el historial.
+ *
+ * Cuenta cuántos usos tiene un outfit, para poder avisar antes de borrarlo.
+ */
+export function usosHuerfanos(usos, outfits) {
+  const vivos = new Set((outfits || []).map((o) => o.id));
+  return (usos || []).filter((u) => !vivos.has(u.outfitId));
+}
+
+/** Resumen del historial para la cabecera del calendario y el hub. */
+export function resumenHistorial(armario, hoyISO) {
+  const usos = armario?.usos || [];
+  const r = resumenDeUso([...usos].sort(porFechaDesc));
+  return {
+    total: r.total,
+    ultimaFecha: r.ultimaFecha,
+    texto: textoUltimoUso(r.ultimaFecha, hoyISO),
+    esteMes: usos.filter((u) => String(u.fecha).startsWith((hoyISO || todayISO()).slice(0, 7))).length,
+  };
 }

@@ -66,6 +66,10 @@ export const CATALOGO_PAPELERA = {
   'estudios.horas': { modulo: 'estudios', coleccion: 'horas', tipo: 'Horas de estudio', campos: ['fecha'], icono: 'estudios' },
   'armario.prendas': { modulo: 'armario', coleccion: 'prendas', tipo: 'Prenda', campos: ['nombre'], icono: 'armario' },
   'armario.outfits': { modulo: 'armario', coleccion: 'outfits', tipo: 'Outfit', campos: ['nombre'], icono: 'armario' },
+  // Un uso es un día concreto del historial. Va a la papelera como todo lo demás porque
+  // borrarlo cambia las estadísticas del armario entero (una prenda pasa de "usada 12
+  // veces" a 11), y eso tiene que poder deshacerse.
+  'armario.usos': { modulo: 'armario', coleccion: 'usos', tipo: 'Uso', campos: ['fecha'], icono: 'armario' },
   'negocio.proyectos': { modulo: 'negocio', coleccion: 'proyectos', tipo: 'Proyecto', campos: ['nombre'], icono: 'negocio' },
   'productividad.habitos': { modulo: 'productividad', coleccion: 'habitos', tipo: 'Hábito', campos: ['nombre'], icono: 'productividad' },
   'productividad.rutinas': { modulo: 'productividad', coleccion: 'rutinas', tipo: 'Rutina', campos: ['nombre'], icono: 'productividad' },

@@ -75,7 +75,7 @@ else
 fi
 
 if node --import ./scripts/resolver-vite.mjs scripts/test-armario.mjs >/tmp/jc_arm.log 2>&1; then
-  ok "Armario y outfits (AR F1+F2) — $(grep -c '✓' /tmp/jc_arm.log) comprobaciones"
+  ok "Armario, outfits e historial (AR F1-F3) — $(grep -c '✓' /tmp/jc_arm.log) comprobaciones"
 else
   fallo "Fallan pruebas del armario"; grep '✗' /tmp/jc_arm.log
 fi

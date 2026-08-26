@@ -34,7 +34,7 @@ import PredictionsView from './views/PredictionsView';
 import AchievementsView from './views/AchievementsView';
 import SettingsView from './views/SettingsView';
 import { construirIndice } from './lib/indiceBusqueda';
-import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda, crearOutfit, actualizarOutfit, duplicarOutfit } from './lib/armario';
+import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda, crearOutfit, actualizarOutfit, duplicarOutfit, crearUso, actualizarUso } from './lib/armario';
 import ArmarioView from './views/ArmarioView';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
@@ -969,6 +969,17 @@ export default function App() {
   // la app con lo recuperable.
   const deleteOutfit = (id) => eliminarConPapelera('armario', 'outfits', id);
 
+  // ---------- AR Fase 3 — Historial de uso ----------
+  // Un uso es un HECHO fechado: "el día 20 me puse el Casual Gris". Todo lo demás —cuántas
+  // veces se ha usado una prenda, cuándo fue la última— se DEDUCE de esta lista, nunca se
+  // guarda aparte (apartado 17). Por eso aquí solo hay las tres operaciones básicas: no
+  // existe ningún contador que mantener sincronizado.
+  const addUso = (datos) => snapshotAndSave({ armario: { ...armario, usos: [...armario.usos, crearUso(datos)] } });
+  const updateUso = (id, cambios) => snapshotAndSave({
+    armario: { ...armario, usos: armario.usos.map((u) => (u.id === id ? actualizarUso(u, cambios) : u)) },
+  });
+  const deleteUso = (id) => eliminarConPapelera('armario', 'usos', id);
+
   const setIconoModulo = (id, iconKey) => {
     const iconos = { ...personalizacion.iconos };
     if (iconKey) iconos[id] = iconKey; else delete iconos[id];
@@ -1370,7 +1381,7 @@ export default function App() {
   // `null` y ni un solo indicador de esas fechas llega al Calendario o al Dashboard.
   const relacionDesbloqueadaParaCalendario = !seguridad.pinHash || estaDesbloqueado('area:relacion');
   const derivadosCalendario = eventosDerivados({
-    objetivos, estudios, calistenia, futbol, productividad,
+    objetivos, estudios, calistenia, futbol, productividad, armario,
     relacion: relacionDesbloqueadaParaCalendario ? relacion : null,
   });
 
@@ -1472,6 +1483,7 @@ export default function App() {
             onSubirFoto={subirFotoPrenda}
             onAddOutfit={addOutfit} onUpdateOutfit={updateOutfit}
             onDeleteOutfit={deleteOutfit} onDuplicarOutfit={duplicarUnOutfit}
+            onAddUso={addUso} onUpdateUso={updateUso} onDeleteUso={deleteUso}
             accent={accent}
           />
         );

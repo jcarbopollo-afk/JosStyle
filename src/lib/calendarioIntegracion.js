@@ -181,6 +181,42 @@ function eventosDeRelacion(relacion) {
   });
 }
 
+// AR Fase 3 — el historial de uso del Armario, visto desde el Calendario Universal.
+//
+// Regla 11 del proyecto: el Calendario NUNCA duplica el dato de otro módulo. Aquí eso se cumple
+// literalmente — la única fuente de verdad sigue siendo `armario.usos`, y estos eventos se
+// generan al vuelo en cada render, no se guardan en `calendario.eventos` ni se sincronizan.
+// Borrar un uso desde el Armario lo hace desaparecer del Calendario en el mismo render, sin
+// ningún código de limpieza, porque nunca hubo una segunda copia que limpiar.
+//
+// El título sale del outfit REFERENCIADO (`u.outfitId`), no de un nombre copiado dentro del uso:
+// si Josué renombra "Casual Gris" a "Casual gris claro", el calendario del mes pasado se entera
+// solo. Un uso cuyo outfit ya no existe (borrado, aún en la papelera) no genera evento: no se
+// inventa un título para algo que no se puede abrir.
+function eventosDeArmario(armario) {
+  if (!armario) return [];
+  const porId = new Map((armario.outfits || []).map((o) => [o.id, o]));
+  return (armario.usos || []).reduce((acc, u) => {
+    const outfit = porId.get(u.outfitId);
+    if (!outfit) return acc;
+    acc.push({
+      id: `armario:${u.id}`,
+      titulo: `👕 ${outfit.nombre}`,
+      fecha: u.fecha,
+      todoElDia: !u.hora,
+      horaInicio: u.hora || null,
+      horaFin: null,
+      tipo: 'personal',
+      notas: u.notas || '',
+      ubicacion: u.lugar || '',
+      origen: 'armario',
+      origenId: u.id,
+      soloLectura: true,
+    });
+    return acc;
+  }, []);
+}
+
 // Fuentes deliberadamente NO integradas en esta fase, documentado con la misma honestidad que el
 // resto del proyecto (nunca simular algo que el modelo de datos actual no sostiene de verdad):
 //
@@ -196,13 +232,14 @@ function eventosDeRelacion(relacion) {
 //   (Diaria/Semanal/Mensual/Anual) y un progreso — mismo motivo que Hábitos/Rutinas.
 // - Recordatorios: no existen como módulo propio en la app — ya están cubiertos desde la Fase 1,
 //   Josué los crea directamente en el calendario (tipo "Recordatorio").
-export function eventosDerivados({ objetivos, estudios, calistenia, futbol, productividad, relacion }) {
+export function eventosDerivados({ objetivos, estudios, calistenia, futbol, productividad, relacion, armario }) {
   return [
     ...eventosDeObjetivos(objetivos),
     ...eventosDeEstudios(estudios),
     ...eventosDeEntrenamiento(calistenia, futbol),
     ...eventosDeTareas(productividad),
     ...eventosDeRelacion(relacion),
+    ...eventosDeArmario(armario),
   ];
 }
 
@@ -214,4 +251,5 @@ export const NOMBRES_ORIGEN = {
   entreno: 'Entrenamiento',
   productividad: 'Productividad',
   relacion: 'Relación',
+  armario: 'Armario',
 };

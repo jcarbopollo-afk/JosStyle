@@ -141,8 +141,9 @@ escribir código.
 | v1.31.0 | **BI F4** | Intención del usuario: navegación / pregunta / **acción**. Cierra el bloque BI. Arreglada la vuelta atrás desde el buscador |
 | v1.32.0 | **AR F1** | Armario digital: el primer módulo **nuevo** de la Entrega 2. 21 campos por prenda desde el día uno, para que las fases 2-4 no exijan migración |
 | v1.33.0 | **AR F2** | Constructor de outfits: referencias en vez de copias, y borrar una prenda ya no rompe nada — se conserva el vínculo para que restaurarla cure el outfit sola |
+| v1.34.0 | **AR F3** | Calendario e historial de uso: cada uso es un registro independiente y **todos los contadores guardados desaparecen** — se derivan. Destapó dos fallos de UTC en `helpers.js` que afectaban a toda la app |
 
-🔒 **Bloques ME (4/4) y BI (4/4) cerrados**, AR va por 2/4. Quedan 96 fases de la Entrega 2.
+🔒 **Bloques ME (4/4) y BI (4/4) cerrados**, AR va por 3/4. Quedan 95 fases de la Entrega 2.
 
 ---
 

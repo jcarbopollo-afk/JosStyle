@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, ChevronDown, ChevronUp, Loader2, Copy, Check, Layers } from 'lucide-react';
+import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Loader2, Copy, Check, Layers, CalendarDays, History, List } from 'lucide-react';
 import { COLORS } from '../tokens';
-import { hexToRgba } from '../lib/helpers';
+import { hexToRgba, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedPrendaUrl } from '../lib/supabase';
 import {
   CATEGORIAS_ARMARIO, COLORES_ARMARIO, ESTADOS_PRENDA, TEMPORADAS_PRENDA,
@@ -12,9 +12,13 @@ import {
   outfitsVisibles, ordenesOutfitsDisponibles, lugaresDe, prendasDeOutfit,
   composicionPorZonas, outfitsConPrenda, usoEnOutfits, composicionDeOutfit,
   noDisponiblesDeOutfit, crearOutfit,
+  EVENTOS_USO, RANGOS_HISTORIAL, usosDeOutfit, usosDePrenda, resumenOutfit, resumenPrenda,
+  textoUltimoUso, usosDelDia, usosPorDia, filtrarUsos, desdeDelRango,
+  lugaresDeUsos, personasDeUsos, resumenDeUso, resumenHistorial,
 } from '../lib/armario';
+import { celdasMes, isoDeFecha } from '../lib/calendario';
 import {
-  Card, SectionTitle, Field, TextInput, Textarea, PrimaryButton, GhostBtn, EmptyHint, SelectInput, ToggleTab,
+  Card, SectionTitle, Field, TextInput, Textarea, PrimaryButton, GhostBtn, EmptyHint, SelectInput, ToggleTab, BotonBorrar,
 } from '../components/ui';
 
 /* ---------- Miniatura ----------
@@ -218,10 +222,15 @@ function FormularioPrenda({ inicial, accent, guardando, errorFoto, onGuardar, on
    los vídeos de Calistenia, excluidos de la papelera desde ME Fase 3. Borrar una
    prenda con foto es, en parte, irreversible, y eso es exactamente lo que la regla
    del proyecto reserva para la confirmación. */
-function DetallePrenda({ prenda, outfits, accent, onCerrar, onEditar, onEliminar }) {
+function DetallePrenda({ prenda, outfits, usos, hoyISO, accent, onCerrar, onEditar, onEliminar }) {
   const [confirmando, setConfirmando] = useState(false);
+  const [verHistorial, setVerHistorial] = useState(false);
   // Apartado 10 de la continuación: no se impide borrar, pero sí se avisa.
   const enOutfits = usoEnOutfits(outfits, prenda.id);
+  // Apartado 16: la prenda tiene historial aunque Josué nunca la registre directamente.
+  // Se deduce de los outfits que la llevan.
+  const mios = usosDePrenda(usos, outfits, prenda.id);
+  const resumen = resumenDeUso(mios);
   const color = colorDe(prenda.color);
   const filas = [
     ['Categoría', categoriaDe(prenda.categoria).label],
@@ -275,6 +284,35 @@ function DetallePrenda({ prenda, outfits, accent, onCerrar, onEditar, onEliminar
 
             {prenda.notas && (
               <p className="text-sm mt-3 leading-relaxed" style={{ color: COLORS.textMuted }}>{prenda.notas}</p>
+            )}
+
+            {/* Apartado 28: sin datos NO se dice "0 días" ni se inventa una fecha. */}
+            <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>
+              {resumen.total > 0
+                ? `Usada ${resumen.total} ${resumen.total === 1 ? 'vez' : 'veces'} · último uso ${textoUltimoUso(resumen.ultimaFecha, hoyISO).toLowerCase()}`
+                : 'Todavía no hay datos de uso.'}
+            </p>
+
+            {resumen.total > 0 && (
+              <>
+                <button
+                  onClick={() => setVerHistorial((v) => !v)}
+                  className="flex items-center gap-1.5 text-xs font-semibold mt-2"
+                  style={{ color: COLORS.textMuted }}
+                  aria-expanded={verHistorial}
+                >
+                  {verHistorial ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                  <History size={12} /> Historial de uso
+                </button>
+                {verHistorial && (
+                  <div className="mt-2">
+                    <HistorialDeUso
+                      usosFiltrados={mios} outfits={outfits} prendas={[prenda]} accent={accent} hoyISO={hoyISO}
+                      vacioTexto="Todavía no hay datos de uso."
+                    />
+                  </div>
+                )}
+              </>
             )}
 
             <div className="flex gap-2 mt-4">
@@ -682,8 +720,11 @@ function FormularioOutfit({ inicial, prendas, accent, guardando, errorFoto, foto
 }
 
 /* Detalle del outfit (apartado 16): todo lo que tenga, y editar / duplicar / eliminar. */
-function DetalleOutfit({ outfit, prendas, accent, onCerrar, onEditar, onDuplicar, onEliminar, onFavorito, onAbrirPrenda }) {
+function DetalleOutfit({ outfit, prendas, usos, hoyISO, accent, onCerrar, onEditar, onDuplicar, onEliminar, onFavorito, onAbrirPrenda, onRegistrarUso }) {
   const [confirmando, setConfirmando] = useState(false);
+  const [verHistorial, setVerHistorial] = useState(false);
+  const mios = usosDeOutfit(usos, outfit.id);
+  const resumen = resumenDeUso(mios);
   const ocasion = OCASIONES_OUTFIT.find((o) => o.id === outfit.ocasion);
   const estacion = ESTACIONES_OUTFIT.find((o) => o.id === outfit.estacion);
   const filas = [
@@ -750,6 +791,38 @@ function DetalleOutfit({ outfit, prendas, accent, onCerrar, onEditar, onDuplicar
               <p className="text-sm mt-3 leading-relaxed" style={{ color: COLORS.textMuted }}>{outfit.descripcion}</p>
             )}
 
+            {/* Apartado 15: "hace X días", siempre calculado, nunca guardado. */}
+            <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>
+              {resumen.total > 0
+                ? `Usado ${resumen.total} ${resumen.total === 1 ? 'vez' : 'veces'} · último uso ${textoUltimoUso(resumen.ultimaFecha, hoyISO).toLowerCase()}`
+                : 'Todavía no has registrado este outfit.'}
+            </p>
+
+            {/* Apartado 7: el atajo que hace que registrar tarde segundos. */}
+            <div className="mt-3">
+              <PrimaryButton accent={accent} onClick={() => onRegistrarUso(outfit)} icon={Check}>
+                Me lo he puesto hoy
+              </PrimaryButton>
+            </div>
+
+            <button
+              onClick={() => setVerHistorial((v) => !v)}
+              className="flex items-center gap-1.5 text-xs font-semibold mt-3"
+              style={{ color: COLORS.textMuted }}
+              aria-expanded={verHistorial}
+            >
+              {verHistorial ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              <History size={12} /> Historial de uso
+            </button>
+            {verHistorial && (
+              <div className="mt-2">
+                <HistorialDeUso
+                  usosFiltrados={mios} outfits={[outfit]} prendas={prendas} accent={accent} hoyISO={hoyISO}
+                  vacioTexto="Todavía no has registrado este outfit."
+                />
+              </div>
+            )}
+
             <div className="flex gap-2 mt-4">
               <PrimaryButton accent={accent} onClick={() => onEditar(outfit)} icon={Pencil}>Editar</PrimaryButton>
               <div style={{ width: 118, flexShrink: 0 }}>
@@ -763,6 +836,7 @@ function DetalleOutfit({ outfit, prendas, accent, onCerrar, onEditar, onDuplicar
                     el outfit no borra ninguna prenda. */}
                 <p className="text-xs mb-2" style={{ color: COLORS.text }}>
                   ¿Eliminar este outfit? Tus prendas se quedan en el armario; solo desaparece la combinación.
+                  {resumen.total > 0 && ` Sus ${resumen.total} ${resumen.total === 1 ? 'uso registrado se conserva' : 'usos registrados se conservan'} en el calendario, y vuelven a su sitio si lo recuperas.`}
                 </p>
                 <div className="flex gap-2">
                   <button onClick={() => onEliminar(outfit)} className="text-xs font-semibold" style={{ color: COLORS.negative }}>Sí, eliminar</button>
@@ -782,11 +856,189 @@ function DetalleOutfit({ outfit, prendas, accent, onCerrar, onEditar, onDuplicar
   );
 }
 
+/* ===========================================================================
+   Entrega 2 · AR Fase 3 — Calendario e historial de uso
+   =========================================================================== */
+
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const DIAS_SEMANA = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+const FORM_USO_VACIO = { outfitId: '', fecha: '', hora: '', lugar: '', personas: [], evento: 'diario', notas: '' };
+
+/* Formulario de un uso (apartados 6 y 20).
+   Lo único obligatorio es outfit + fecha. Todo lo demás vive plegado, porque el
+   apartado 35 pide que registrar un outfit tarde segundos, no que se rellene una ficha. */
+function FormularioUso({ inicial, outfits, prendas, accent, onGuardar, onCancelar }) {
+  const [form, setForm] = useState({ ...FORM_USO_VACIO, fecha: todayISO(), ...(inicial || {}) });
+  const [masInfo, setMasInfo] = useState(false);
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const puedeGuardar = !!form.outfitId && !!form.fecha;
+  const elegido = outfits.find((o) => o.id === form.outfitId);
+
+  return (
+    <Card>
+      <Field label="Outfit">
+        <SelectInput value={form.outfitId} onChange={(e) => set('outfitId', e.target.value)}>
+          <option value="">Elige un outfit…</option>
+          {[...outfits].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map((o) => (
+            <option key={o.id} value={o.id}>{o.nombre}</option>
+          ))}
+        </SelectInput>
+      </Field>
+
+      {/* Ver qué llevaba ese outfit ayuda a no registrar el equivocado. */}
+      {elegido && (
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-3" style={{ scrollbarWidth: 'none' }}>
+          {prendasDeOutfit(elegido, prendas).map((p) => (
+            <div key={p.id} className="rounded-xl overflow-hidden flex-shrink-0" style={{ width: 60, background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <MiniaturaPrenda prenda={p} alto={44} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Fecha">
+          <TextInput type="date" value={form.fecha} onChange={(e) => set('fecha', e.target.value)} />
+        </Field>
+        <Field label="Hora (opcional)">
+          <TextInput type="time" value={form.hora} onChange={(e) => set('hora', e.target.value)} />
+        </Field>
+      </div>
+
+      <button
+        onClick={() => setMasInfo((m) => !m)}
+        className="flex items-center gap-1.5 text-xs font-semibold mb-3"
+        style={{ color: COLORS.textMuted }}
+        aria-expanded={masInfo}
+      >
+        {masInfo ? <ChevronUp size={13} /> : <ChevronDown size={13} />} Más información
+      </button>
+
+      {masInfo && (
+        <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Lugar"><TextInput value={form.lugar} onChange={(e) => set('lugar', e.target.value)} placeholder="Instituto, casa…" /></Field>
+            <Field label="Ocasión">
+              <SelectInput value={form.evento} onChange={(e) => set('evento', e.target.value)}>
+                {EVENTOS_USO.map((ev) => <option key={ev.id} value={ev.id}>{ev.label}</option>)}
+              </SelectInput>
+            </Field>
+          </div>
+          <Field label="Personas">
+            <TextInput
+              value={(form.personas || []).join(', ')}
+              onChange={(e) => set('personas', e.target.value.split(',').map((x) => x.trim()).filter(Boolean))}
+              placeholder="Jorge, Pablo, María"
+            />
+          </Field>
+          <Field label="Notas"><Textarea value={form.notas} onChange={(e) => set('notas', e.target.value)} rows={2} placeholder="Hacía bastante calor…" /></Field>
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <PrimaryButton accent={accent} onClick={() => onGuardar(form)} disabled={!puedeGuardar}>
+          {inicial?.id ? 'Guardar cambios' : 'Registrar uso'}
+        </PrimaryButton>
+        <div style={{ width: 100, flexShrink: 0 }}>
+          <GhostBtn onClick={onCancelar}>Cancelar</GhostBtn>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/* Una fila del historial: el outfit, cuándo y dónde. Sirve igual en el detalle de un
+   día, en la vista de lista y en el historial de un outfit o de una prenda. */
+function FilaUso({ uso, outfits, prendas, accent, onAbrirOutfit, onEditar, onEliminar, mostrarFecha = true }) {
+  const outfit = outfits.find((o) => o.id === uso.outfitId);
+  const evento = EVENTOS_USO.find((e) => e.id === uso.evento);
+  const contexto = [uso.lugar, evento && evento.id !== 'diario' ? evento.label : '', (uso.personas || []).join(', ')]
+    .filter(Boolean).join(' · ');
+
+  return (
+    <div className="rounded-2xl p-3" style={{ background: COLORS.surface2 }}>
+      <div className="flex items-start justify-between gap-2">
+        <button
+          onClick={() => outfit && onAbrirOutfit && onAbrirOutfit(outfit)}
+          className="text-left min-w-0 flex-1"
+          disabled={!outfit}
+        >
+          <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>
+            {/* Apartado 32: si el outfit se borró, el uso NO desaparece — se dice. */}
+            {outfit ? outfit.nombre : 'Outfit eliminado'}
+          </p>
+          <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
+            {mostrarFecha ? formatFecha(uso.fecha) : ''}{uso.hora ? `${mostrarFecha ? ' · ' : ''}${uso.hora}` : ''}
+            {contexto ? `${mostrarFecha || uso.hora ? ' · ' : ''}${contexto}` : ''}
+          </p>
+        </button>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {onEditar && (
+            <button onClick={() => onEditar(uso)} className="p-1.5 rounded-lg transition-transform active:scale-90" aria-label="Editar este uso">
+              <Pencil size={12} style={{ color: COLORS.textMuted }} />
+            </button>
+          )}
+          {onEliminar && <BotonBorrar onClick={() => onEliminar(uso)} label="Eliminar este uso" />}
+        </div>
+      </div>
+      {uso.notas && <p className="text-xs mt-1.5 leading-relaxed" style={{ color: COLORS.textMuted }}>{uso.notas}</p>}
+      {outfit && (
+        <div className="flex gap-1.5 mt-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {prendasDeOutfit(outfit, prendas).slice(0, 6).map((p) => (
+            <div key={p.id} className="rounded-lg overflow-hidden flex-shrink-0" style={{ width: 38, border: `1px solid ${COLORS.border}` }}>
+              <MiniaturaPrenda prenda={p} alto={30} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Historial de un outfit o de una prenda (apartados 14, 16, 27 y 28).
+   Se usa dentro de los dos detalles, así que recibe ya la lista filtrada. */
+export function HistorialDeUso({ usosFiltrados, outfits, prendas, accent, hoyISO, onRegistrar, vacioTexto, vacioBoton }) {
+  const resumen = resumenDeUso(usosFiltrados);
+  if (resumen.total === 0) {
+    return (
+      <div className="rounded-2xl p-3" style={{ background: COLORS.surface2 }}>
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>{vacioTexto}</p>
+        {onRegistrar && vacioBoton && (
+          <button onClick={onRegistrar} className="text-xs font-semibold mt-2" style={{ color: accent }}>{vacioBoton}</button>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3 mb-2">
+        <span className="text-sm font-semibold" style={{ color: COLORS.text }}>
+          {resumen.total} {resumen.total === 1 ? 'uso' : 'usos'}
+        </span>
+        <span className="text-xs" style={{ color: COLORS.textMuted }}>
+          Último: {textoUltimoUso(resumen.ultimaFecha, hoyISO)}
+        </span>
+      </div>
+      <div className="space-y-1.5" style={{ maxHeight: '34vh', overflowY: 'auto' }}>
+        {usosFiltrados.slice(0, 40).map((u) => (
+          <FilaUso key={u.id} uso={u} outfits={outfits} prendas={prendas} accent={accent} />
+        ))}
+      </div>
+      {usosFiltrados.length > 40 && (
+        <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
+          Se muestran los 40 más recientes de {usosFiltrados.length}.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ---------- Pestaña PRENDAS ----------
    Es la pantalla entera de la Fase 1, ahora como una de las dos pestañas del Armario
    (apartado 2 de la Fase 2). No ha cambiado nada de su funcionamiento: solo recibe
    `outfits` para poder avisar, al borrar una prenda, de en cuántas combinaciones está. */
-function PanelPrendas({ prendas, outfits, onAddPrenda, onUpdatePrenda, onDeletePrenda, onSubirFoto, accent, prendaFoco, onFocoConsumido }) {
+function PanelPrendas({ prendas, outfits, usos, hoyISO, onAddPrenda, onUpdatePrenda, onDeletePrenda, onSubirFoto, accent, prendaFoco, onFocoConsumido }) {
   const [consulta, setConsulta] = useState('');
   const [filtros, setFiltros] = useState({});
   const [orden, setOrden] = useState('recientes');
@@ -800,10 +1052,12 @@ function PanelPrendas({ prendas, outfits, onAddPrenda, onUpdatePrenda, onDeleteP
 
   const marcas = useMemo(() => marcasDe(prendas), [prendas]);
   const conteo = useMemo(() => conteoPorCategoria(prendas), [prendas]);
-  const ordenes = useMemo(() => ordenesDisponibles(prendas), [prendas]);
+  // Las ordenaciones por uso salen del historial, no de un contador dentro de la prenda:
+  // por eso `usos` y `outfits` entran aquí y en las dependencias del memo.
+  const ordenes = useMemo(() => ordenesDisponibles(usos), [usos]);
   const visibles = useMemo(
-    () => prendasVisibles(prendas, { consulta, filtros, orden }),
-    [prendas, consulta, filtros, orden],
+    () => prendasVisibles(prendas, { consulta, filtros, orden, usos, outfits }),
+    [prendas, consulta, filtros, orden, usos, outfits],
   );
 
   // Si el orden elegido deja de estar disponible (porque se ha borrado el último uso
@@ -980,7 +1234,7 @@ function PanelPrendas({ prendas, outfits, onAddPrenda, onUpdatePrenda, onDeleteP
 
       {detalle && (
         <DetallePrenda
-          prenda={detalle} outfits={outfits} accent={accent}
+          prenda={detalle} outfits={outfits} usos={usos} hoyISO={hoyISO} accent={accent}
           onCerrar={() => setDetalle(null)}
           onEditar={abrirEdicion}
           onEliminar={eliminar}
@@ -994,7 +1248,7 @@ function PanelPrendas({ prendas, outfits, onAddPrenda, onUpdatePrenda, onDeleteP
    Se exporta con nombre además de usarse aquí dentro: `renderToString` no puede pulsar
    una pestaña, así que sin esto el panel de outfits nunca llegaría a renderizarse en la
    prueba de humo — y es justo donde vive la mitad de esta fase. */
-export function PanelOutfits({ outfits, prendas, onAddOutfit, onUpdateOutfit, onDeleteOutfit, onDuplicarOutfit, onSubirFoto, onAbrirPrenda, accent }) {
+export function PanelOutfits({ outfits, prendas, usos, hoyISO, onAddOutfit, onUpdateOutfit, onDeleteOutfit, onDuplicarOutfit, onSubirFoto, onAbrirPrenda, onRegistrarUso, accent, outfitFoco, onFocoConsumido }) {
   const [consulta, setConsulta] = useState('');
   const [filtros, setFiltros] = useState({});
   const [orden, setOrden] = useState('recientes');
@@ -1008,10 +1262,10 @@ export function PanelOutfits({ outfits, prendas, onAddOutfit, onUpdateOutfit, on
   const [aviso, setAviso] = useState('');
 
   const lugares = useMemo(() => lugaresDe(outfits), [outfits]);
-  const ordenes = useMemo(() => ordenesOutfitsDisponibles(outfits), [outfits]);
+  const ordenes = useMemo(() => ordenesOutfitsDisponibles(usos), [usos]);
   const visibles = useMemo(
-    () => outfitsVisibles(outfits, prendas, { consulta, filtros, orden }),
-    [outfits, prendas, consulta, filtros, orden],
+    () => outfitsVisibles(outfits, prendas, { consulta, filtros, orden, usos }),
+    [outfits, prendas, consulta, filtros, orden, usos],
   );
 
   useEffect(() => {
@@ -1033,6 +1287,14 @@ export function PanelOutfits({ outfits, prendas, onAddOutfit, onUpdateOutfit, on
   useEffect(() => {
     if (detalle && !detalleVivo) setDetalle(null);
   }, [detalle, detalleVivo]);
+
+  // Desde el calendario se puede abrir el outfit de un uso: llega su id y se abre aquí.
+  useEffect(() => {
+    if (!outfitFoco) return;
+    const o = outfits.find((x) => x.id === outfitFoco);
+    if (o) setDetalle(o);
+    onFocoConsumido && onFocoConsumido();
+  }, [outfitFoco]);
 
   const hayFiltros = Object.values(filtros).some(Boolean) || consulta.trim().length > 0;
 
@@ -1228,12 +1490,13 @@ export function PanelOutfits({ outfits, prendas, onAddOutfit, onUpdateOutfit, on
 
       {detalleVivo && (
         <DetalleOutfit
-          outfit={detalleVivo} prendas={prendas} accent={accent}
+          outfit={detalleVivo} prendas={prendas} usos={usos} hoyISO={hoyISO} accent={accent}
           onCerrar={() => setDetalle(null)}
           onEditar={abrirEdicion}
           onDuplicar={duplicar}
           onEliminar={eliminar}
           onFavorito={alternarFavorito}
+          onRegistrarUso={(o) => { onRegistrarUso(o); setDetalle(null); setAviso('Registrado: te lo has puesto hoy'); }}
           onAbrirPrenda={(p) => { setDetalle(null); onAbrirPrenda(p.id); }}
         />
       )}
@@ -1247,16 +1510,29 @@ export function PanelOutfits({ outfits, prendas, onAddOutfit, onUpdateOutfit, on
    y las subpestañas de Productividad — nada de un sistema de navegación nuevo. */
 export default function ArmarioView({
   armario, onAddPrenda, onUpdatePrenda, onDeletePrenda, onSubirFoto,
-  onAddOutfit, onUpdateOutfit, onDeleteOutfit, onDuplicarOutfit, accent,
+  onAddOutfit, onUpdateOutfit, onDeleteOutfit, onDuplicarOutfit,
+  onAddUso, onUpdateUso, onDeleteUso, accent,
 }) {
   const prendas = armario?.prendas || [];
   const outfits = armario?.outfits || [];
+  const usos = armario?.usos || [];
   const [pestana, setPestana] = useState('prendas');
   const [prendaFoco, setPrendaFoco] = useState(null);
+  const [outfitFoco, setOutfitFoco] = useState(null);
+
+  // El "hoy" se calcula una vez por render y se pasa a todo el árbol: si cada "hace X
+  // días" llamara a `todayISO()` por su cuenta, una sesión abierta durante el cambio de
+  // día podría enseñar dos fechas distintas en la misma pantalla.
+  const hoyISO = todayISO();
 
   // Apartado 17: desde un outfit se abre la prenda. Cambia de pestaña y deja el id;
   // `PanelPrendas` lo consume y abre su detalle.
   const abrirPrenda = (id) => { setPrendaFoco(id); setPestana('prendas'); };
+  // Y al revés, desde el calendario: abrir el outfit de un uso.
+  const abrirOutfit = (o) => { setOutfitFoco(o.id); setPestana('outfits'); };
+
+  // Apartado 7: "Me lo he puesto" registra con la fecha de hoy y nada más que rellenar.
+  const registrarHoy = (outfit) => onAddUso({ outfitId: outfit.id, fecha: hoyISO });
 
   return (
     <div>
@@ -1267,23 +1543,362 @@ export default function ArmarioView({
         <ToggleTab active={pestana === 'outfits'} onClick={() => setPestana('outfits')} accent={accent}>
           Outfits{outfits.length > 0 ? ` ${outfits.length}` : ''}
         </ToggleTab>
+        <ToggleTab active={pestana === 'calendario'} onClick={() => setPestana('calendario')} accent={accent}>
+          Calendario
+        </ToggleTab>
       </div>
 
-      {pestana === 'prendas' ? (
+      {pestana === 'prendas' && (
         <PanelPrendas
-          prendas={prendas} outfits={outfits}
+          prendas={prendas} outfits={outfits} usos={usos} hoyISO={hoyISO}
           onAddPrenda={onAddPrenda} onUpdatePrenda={onUpdatePrenda} onDeletePrenda={onDeletePrenda}
           onSubirFoto={onSubirFoto} accent={accent}
           prendaFoco={prendaFoco} onFocoConsumido={() => setPrendaFoco(null)}
         />
-      ) : (
+      )}
+      {pestana === 'outfits' && (
         <PanelOutfits
-          outfits={outfits} prendas={prendas}
+          outfits={outfits} prendas={prendas} usos={usos} hoyISO={hoyISO}
           onAddOutfit={onAddOutfit} onUpdateOutfit={onUpdateOutfit}
           onDeleteOutfit={onDeleteOutfit} onDuplicarOutfit={onDuplicarOutfit}
-          onSubirFoto={onSubirFoto} onAbrirPrenda={abrirPrenda} accent={accent}
+          onSubirFoto={onSubirFoto} onAbrirPrenda={abrirPrenda}
+          onRegistrarUso={registrarHoy} accent={accent}
+          outfitFoco={outfitFoco} onFocoConsumido={() => setOutfitFoco(null)}
+        />
+      )}
+      {pestana === 'calendario' && (
+        <PanelCalendario
+          usos={usos} outfits={outfits} prendas={prendas} accent={accent} hoyISO={hoyISO}
+          onAddUso={onAddUso} onUpdateUso={onUpdateUso} onDeleteUso={onDeleteUso}
+          onAbrirOutfit={abrirOutfit}
         />
       )}
     </div>
+  );
+}
+
+/* ---------- Pestaña CALENDARIO ----------
+   Apartado 23: no es una tabla, es "¿qué me he puesto este mes?" de un vistazo. Los días
+   con uso llevan la miniatura del outfit, no un punto.
+
+   Reutiliza `celdasMes` del Calendario Universal (regla 11: nada de un segundo motor de
+   calendario). Lo único propio es qué se pinta dentro de cada celda. */
+export function PanelCalendario({
+  usos, outfits, prendas, accent, hoyISO,
+  onAddUso, onUpdateUso, onDeleteUso, onAbrirOutfit,
+}) {
+  const hoy = hoyISO || todayISO();
+  const [ano, setAno] = useState(() => Number(hoy.slice(0, 4)));
+  const [mes, setMes] = useState(() => Number(hoy.slice(5, 7)) - 1);
+  const [vista, setVista] = useState('mes');
+  const [diaAbierto, setDiaAbierto] = useState(null);
+  const [formAbierto, setFormAbierto] = useState(false);
+  const [editando, setEditando] = useState(null);
+  const [rango, setRango] = useState('mes');
+  const [filtros, setFiltros] = useState({});
+  const [verFiltros, setVerFiltros] = useState(false);
+  const [aviso, setAviso] = useState('');
+
+  useEffect(() => {
+    if (!aviso) return;
+    const t = setTimeout(() => setAviso(''), 2600);
+    return () => clearTimeout(t);
+  }, [aviso]);
+
+  const celdas = useMemo(() => celdasMes(ano, mes), [ano, mes]);
+  const porDia = useMemo(() => usosPorDia(usos, ano, mes), [usos, ano, mes]);
+
+  // Apartado 25 y 26: la vista de lista filtra por rango y contexto.
+  const listaFiltrada = useMemo(
+    () => filtrarUsos(usos, outfits, { ...filtros, desde: desdeDelRango(rango, hoy) }),
+    [usos, outfits, filtros, rango, hoy],
+  );
+  const lugares = useMemo(() => lugaresDeUsos(usos), [usos]);
+  const personas = useMemo(() => personasDeUsos(usos), [usos]);
+  const resumen = useMemo(() => resumenHistorial({ usos }, hoy), [usos, hoy]);
+
+  const irMes = (delta) => {
+    const d = new Date(ano, mes + delta, 1);
+    setAno(d.getFullYear());
+    setMes(d.getMonth());
+  };
+  const irHoy = () => { setAno(Number(hoy.slice(0, 4))); setMes(Number(hoy.slice(5, 7)) - 1); };
+
+  const abrirNuevo = (fecha) => {
+    setEditando(fecha ? { ...FORM_USO_VACIO, fecha } : null);
+    setFormAbierto(true);
+    setDiaAbierto(null);
+  };
+  const abrirEdicion = (uso) => { setEditando(uso); setFormAbierto(true); setDiaAbierto(null); };
+
+  const guardar = (form) => {
+    if (editando?.id) { onUpdateUso(editando.id, form); setAviso('Uso actualizado'); }
+    else { onAddUso(form); setAviso('Uso registrado'); }
+    setFormAbierto(false);
+    setEditando(null);
+  };
+  const eliminar = (uso) => { onDeleteUso(uso.id); setAviso('Uso eliminado'); };
+
+  const sinOutfits = outfits.length === 0;
+
+  return (
+    <div className="space-y-4 pb-4">
+      <div className="flex items-start justify-between gap-3">
+        <SectionTitle sub={resumen.total ? `${resumen.total} ${resumen.total === 1 ? 'uso registrado' : 'usos registrados'} · último ${resumen.texto.toLowerCase()}` : 'Registra qué te pones y verás cuánto hace que no usas cada cosa'}>
+          <span className="flex items-center gap-2"><CalendarDays size={18} style={{ color: accent }} /> Calendario</span>
+        </SectionTitle>
+        {!sinOutfits && (
+          <button
+            onClick={() => abrirNuevo(null)}
+            className="p-2.5 rounded-xl flex-shrink-0 transition-transform active:scale-90"
+            style={{ background: accent }}
+            aria-label="Registrar uso de un outfit"
+          >
+            <Plus size={16} color={COLORS.textOnAccent} />
+          </button>
+        )}
+      </div>
+
+      {aviso && (
+        <div className="rounded-2xl px-3 py-2 flex items-center gap-2" style={{ background: hexToRgba(accent, 0.12), border: `1px solid ${hexToRgba(accent, 0.28)}` }}>
+          <Check size={14} style={{ color: accent }} strokeWidth={3} />
+          <span className="text-xs font-semibold" style={{ color: COLORS.text }}>{aviso}</span>
+        </div>
+      )}
+
+      {sinOutfits && (
+        <Card>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Todavía no puedes registrar nada</p>
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+            El calendario registra outfits, no prendas sueltas. Crea un outfit en la pestaña Outfits y vuelve aquí.
+          </p>
+        </Card>
+      )}
+
+      {formAbierto && (
+        <FormularioUso
+          inicial={editando}
+          outfits={outfits}
+          prendas={prendas}
+          accent={accent}
+          onGuardar={guardar}
+          onCancelar={() => { setFormAbierto(false); setEditando(null); }}
+        />
+      )}
+
+      {!sinOutfits && (
+        <>
+          {/* Apartado 24: además del calendario, una lista cronológica. */}
+          <div className="flex gap-2">
+            <ToggleTab active={vista === 'mes'} onClick={() => setVista('mes')} accent={accent}>Mes</ToggleTab>
+            <ToggleTab active={vista === 'lista'} onClick={() => setVista('lista')} accent={accent}>Lista</ToggleTab>
+          </div>
+
+          {vista === 'mes' ? (
+            <Card style={{ padding: '0.9rem' }}>
+              <div className="flex items-center justify-between mb-3">
+                <button onClick={() => irMes(-1)} className="p-1.5 rounded-lg" style={{ background: COLORS.surface2 }} aria-label="Mes anterior">
+                  <ChevronLeft size={15} style={{ color: COLORS.text }} />
+                </button>
+                <button onClick={irHoy} className="text-sm font-semibold" style={{ color: COLORS.text }}>
+                  {MESES[mes]} {ano}
+                </button>
+                <button onClick={() => irMes(1)} className="p-1.5 rounded-lg" style={{ background: COLORS.surface2 }} aria-label="Mes siguiente">
+                  <ChevronRight size={15} style={{ color: COLORS.text }} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-7 gap-1 mb-1">
+                {DIAS_SEMANA.map((d, i) => (
+                  <span key={i} className="text-[10px] font-semibold text-center" style={{ color: COLORS.textMuted }}>{d}</span>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1">
+                {celdas.map((c, i) => {
+                  if (!c) return <span key={`h${i}`} />;
+                  const delDia = porDia[c.fecha] || [];
+                  const esHoy = c.fecha === hoy;
+                  const primero = delDia[0] && outfits.find((o) => o.id === delDia[0].outfitId);
+                  const suyas = primero ? prendasDeOutfit(primero, prendas) : [];
+                  return (
+                    <button
+                      key={c.fecha}
+                      onClick={() => (delDia.length ? setDiaAbierto(c.fecha) : abrirNuevo(c.fecha))}
+                      className="rounded-lg overflow-hidden relative transition-transform active:scale-90"
+                      style={{
+                        aspectRatio: '1',
+                        background: delDia.length ? COLORS.surface2 : 'transparent',
+                        border: `1px solid ${esHoy ? accent : delDia.length ? COLORS.border : 'transparent'}`,
+                      }}
+                      aria-label={delDia.length
+                        ? `${c.dia} de ${MESES[mes]}, ${delDia.length} ${delDia.length === 1 ? 'outfit registrado' : 'outfits registrados'}`
+                        : `${c.dia} de ${MESES[mes]}, registrar un outfit`}
+                    >
+                      {/* Apartado 23: la miniatura del outfit, no un punto. */}
+                      {suyas.length > 0 && (
+                        <span className="absolute inset-0" style={{ opacity: 0.55 }}>
+                          <MiniaturaPrenda prenda={suyas[0]} alto={999} />
+                        </span>
+                      )}
+                      <span
+                        className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold"
+                        style={{ color: delDia.length ? COLORS.text : COLORS.textMuted, textShadow: suyas.length ? `0 1px 3px ${COLORS.bg}` : 'none' }}
+                      >
+                        {c.dia}
+                      </span>
+                      {/* Apartado 5: varios outfits el mismo día. */}
+                      {delDia.length > 1 && (
+                        <span
+                          className="absolute rounded-full text-[9px] font-bold flex items-center justify-center"
+                          style={{ bottom: 2, right: 2, width: 12, height: 12, background: accent, color: COLORS.textOnAccent }}
+                        >
+                          {delDia.length}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <SelectInput value={rango} onChange={(e) => setRango(e.target.value)}>
+                    {RANGOS_HISTORIAL.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+                  </SelectInput>
+                </div>
+                <button
+                  onClick={() => setVerFiltros((v) => !v)}
+                  className="p-2.5 rounded-xl flex-shrink-0"
+                  style={{ background: verFiltros ? hexToRgba(accent, 0.16) : COLORS.surface2, border: `1px solid ${verFiltros ? accent : COLORS.border}` }}
+                  aria-label="Filtros del historial"
+                  aria-expanded={verFiltros}
+                >
+                  <SlidersHorizontal size={16} style={{ color: verFiltros ? accent : COLORS.textMuted }} />
+                </button>
+              </div>
+
+              {verFiltros && (
+                <Card style={{ background: COLORS.surface2 }}>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Outfit">
+                      <SelectInput value={filtros.outfitId || ''} onChange={(e) => setFiltros((f) => ({ ...f, outfitId: e.target.value || undefined }))}>
+                        <option value="">Todos</option>
+                        {[...outfits].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+                      </SelectInput>
+                    </Field>
+                    {/* Apartado 25: "todos los usos del vaquero gris". */}
+                    {prendas.length > 0 && (
+                      <Field label="Prenda">
+                        <SelectInput value={filtros.prendaId || ''} onChange={(e) => setFiltros((f) => ({ ...f, prendaId: e.target.value || undefined }))}>
+                          <option value="">Todas</option>
+                          {[...prendas].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                        </SelectInput>
+                      </Field>
+                    )}
+                    <Field label="Ocasión">
+                      <SelectInput value={filtros.evento || ''} onChange={(e) => setFiltros((f) => ({ ...f, evento: e.target.value || undefined }))}>
+                        <option value="">Todas</option>
+                        {EVENTOS_USO.map((ev) => <option key={ev.id} value={ev.id}>{ev.label}</option>)}
+                      </SelectInput>
+                    </Field>
+                    {lugares.length > 0 && (
+                      <Field label="Lugar">
+                        <SelectInput value={filtros.lugar || ''} onChange={(e) => setFiltros((f) => ({ ...f, lugar: e.target.value || undefined }))}>
+                          <option value="">Todos</option>
+                          {lugares.map((l) => <option key={l} value={l}>{l}</option>)}
+                        </SelectInput>
+                      </Field>
+                    )}
+                    {personas.length > 0 && (
+                      <Field label="Con">
+                        <SelectInput value={filtros.persona || ''} onChange={(e) => setFiltros((f) => ({ ...f, persona: e.target.value || undefined }))}>
+                          <option value="">Cualquiera</option>
+                          {personas.map((x) => <option key={x} value={x}>{x}</option>)}
+                        </SelectInput>
+                      </Field>
+                    )}
+                  </div>
+                </Card>
+              )}
+
+              {listaFiltrada.length === 0 ? (
+                <EmptyHint text={usos.length === 0 ? 'Todavía no has registrado ningún uso.' : 'Ningún uso coincide con lo que has filtrado.'} />
+              ) : (
+                <div className="space-y-2">
+                  {listaFiltrada.slice(0, 60).map((u) => (
+                    <FilaUso
+                      key={u.id} uso={u} outfits={outfits} prendas={prendas} accent={accent}
+                      onAbrirOutfit={onAbrirOutfit}
+                      onEditar={abrirEdicion}
+                      onEliminar={eliminar}
+                    />
+                  ))}
+                  {listaFiltrada.length > 60 && (
+                    <p className="text-xs" style={{ color: COLORS.textMuted }}>
+                      Se muestran los 60 más recientes de {listaFiltrada.length}. Acota el rango o filtra para ver el resto.
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* Apartado 19 — detalle de un día */}
+      {diaAbierto && (
+        <DetalleDia
+          fecha={diaAbierto}
+          usos={usosDelDia(usos, diaAbierto)}
+          outfits={outfits} prendas={prendas} accent={accent}
+          onCerrar={() => setDiaAbierto(null)}
+          onAnadir={() => abrirNuevo(diaAbierto)}
+          onAbrirOutfit={(o) => { setDiaAbierto(null); onAbrirOutfit(o); }}
+          onEditar={abrirEdicion}
+          onEliminar={eliminar}
+        />
+      )}
+    </div>
+  );
+}
+
+/* Detalle de un día (apartado 19). */
+function DetalleDia({ fecha, usos, outfits, prendas, accent, onCerrar, onAnadir, onAbrirOutfit, onEditar, onEliminar }) {
+  const legible = new Date(`${fecha}T00:00:00`).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCerrar}>
+      <div
+        className="w-full max-w-md rounded-3xl p-4"
+        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, maxHeight: '86vh', overflowY: 'auto' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <p className="text-lg font-bold capitalize" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{legible}</p>
+          <button onClick={onCerrar} className="rounded-full p-1.5 flex-shrink-0" style={{ background: COLORS.surface2 }} aria-label="Cerrar el día">
+            <X size={14} style={{ color: COLORS.text }} />
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {usos.map((u) => (
+            <FilaUso
+              key={u.id} uso={u} outfits={outfits} prendas={prendas} accent={accent}
+              mostrarFecha={false}
+              onAbrirOutfit={onAbrirOutfit}
+              onEditar={onEditar}
+              onEliminar={onEliminar}
+            />
+          ))}
+        </div>
+
+        <button onClick={onAnadir} className="flex items-center gap-1.5 text-xs font-semibold mt-3" style={{ color: accent }}>
+          <Plus size={13} /> Añadir otro outfit a este día
+        </button>
+      </div>
+    </div>,
+    document.body,
   );
 }

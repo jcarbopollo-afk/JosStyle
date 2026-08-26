@@ -4,8 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado de todo lo que hay aquí: ⬜ NADA IMPLEMENTADO.** Ninguna de estas 106 fases se ha
-> construido. Esta checklist es el inventario de partida, no un registro de progreso.
+> **Estado: 11 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4 y AR 3/4 (hasta
+> v1.34.0). Quedan **95**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
 > original sin tocar en `especificaciones/ORIGINAL_JC_FITNESS_ESTILO_DE_HOMBRE.txt`.
@@ -3904,49 +3905,85 @@ detalle releyéndose del array para que un cambio se vea al instante sin recarga
 **Un fallo mío corregido durante la fase:** al escribir el detalle del outfit dejé un `</div>` de
 más, y el proyecto dejó de compilar. Lo cazó `scripts/smoke.mjs` antes de llegar a ninguna parte.
 
-#### AR · Fase 3/4 — CALENDARIO + HISTORIAL DE USO DEL ARMARIO
-- [ ] CONCEPTO PRINCIPAL
-- [ ] CALENDARIO
-- [ ] VISTA MENSUAL
-- [ ] DÍA CON OUTFIT
-- [ ] VARIOS OUTFITS EN UN MISMO DÍA
-- [ ] REGISTRAR USO
-- [ ] REGISTRAR DESDE EL OUTFIT
-- [ ] REGISTRAR DESDE EL CALENDARIO
-- [ ] FECHA Y HORA
-- [ ] LUGAR
-- [ ] PERSONAS
-- [ ] EVENTO / OCASIÓN
-- [ ] NOTAS
-- [ ] HISTORIAL
-- [ ] HISTORIAL DE CADA PRENDA
-- [ ] CONTADOR DE USOS DE PRENDA
-- [ ] ÚLTIMO USO DE PRENDA
-- [ ] DETALLE DE UN DÍA
-- [ ] EDITAR UN USO
-- [ ] ELIMINAR UN USO
-- [ ] CAMBIO DE FECHA
-- [ ] CALENDARIO COMO CENTRO VISUAL
-- [ ] VISTA DE LISTA
-- [ ] FILTROS DEL HISTORIAL
-- [ ] RANGO DE FECHAS
-- [ ] OUTFITS SIN HISTORIAL
-- [ ] PRENDAS SIN HISTORIAL
-- [ ] RELACIÓN CON PRENDAS
-- [ ] MODELO DE DATOS
-- [ ] SEGURIDAD
-- [ ] BORRADO DE OUTFIT
-- [ ] EDICIÓN DE PRENDA
-- [ ] RENDIMIENTO
-- [ ] MÓVIL
-- [ ] ACCESO RÁPIDO
-- [ ] INTEGRACIÓN CON FASE 1 Y FASE 2
-- [ ] PREPARACIÓN PARA FASE 4
-- [ ] EXPERIENCIA FINAL
-- [ ] PRUEBAS OBLIGATORIAS
-- [ ] PRUEBA CRÍTICA
-- [ ] ERRORES
-- [ ] NO HACER
+#### AR · Fase 3/4 — CALENDARIO + HISTORIAL DE USO DEL ARMARIO ✅ COMPLETADA (v1.34.0)
+
+- [x] **1 · Concepto principal** — cada uso es **un registro independiente**. Ponerse el mismo
+      outfit el 1, el 5 y el 12 son tres registros, no una fecha que se pisa.
+- [x] **2 · Calendario** — tercera pestaña del Armario: **Prendas | Outfits | Calendario**.
+      Reutiliza `celdasMes` del Calendario Universal; **ni un segundo motor de calendario**.
+- [x] **3 · Vista mensual** — rejilla del mes con navegación, "hoy" marcado y vuelta a hoy
+      pulsando el nombre del mes.
+- [x] **4 · Día con outfit** — se pinta la **miniatura de la prenda** al 55 % detrás del número,
+      no un punto de color.
+- [x] **5 · Varios outfits en un mismo día** — se admiten y se cuentan: una insignia con el número
+      en la esquina de la celda, y el detalle del día los lista todos.
+- [x] **6 · Registrar uso** — outfit + fecha es lo único obligatorio; el resto es opcional.
+- [x] **7 · Registrar desde el outfit** — botón **"Me lo he puesto hoy"** en su detalle, a un toque.
+- [x] **8 · Registrar desde el calendario** — pulsar un día vacío abre el formulario con esa fecha
+      ya puesta.
+- [x] **9 · Fecha y hora** — la fecha es un **día local "AAAA-MM-DD"**, nunca un instante UTC. Aquí
+      se destapó el fallo de `todayISO()` que afectaba a toda la app (ver abajo).
+- [x] **10 · Lugar** — texto libre; los lugares escritos alimentan el filtro sin repetirse.
+- [x] **11 · Personas** — lista de texto libre, **no un sistema social**.
+- [x] **12 · Evento / ocasión** — los 9 del apartado, **distintos de la ocasión del outfit**: el
+      outfit puede ser "de cena"; este uso concreto, "la cena de cumpleaños de Jorge".
+- [x] **13 · Notas** — opcionales, visibles en la fila del historial.
+- [x] **14 · Editar un uso** — todos los campos, desde el calendario y desde la lista.
+- [x] **15 · Eliminar un uso** — pasa por la papelera (`armario.usos`), así que se puede restaurar.
+- [x] **16 · Cambio de fecha** — editar la fecha mueve el uso de día sin duplicarlo.
+- [x] **17 · Calendario como centro visual** — es la pestaña que abre la vista mensual por defecto.
+- [x] **18 · Vista de lista** — alternativa cronológica al mes, con los 60 más recientes.
+- [x] **19 · Filtros del historial** — outfit, **prenda**, ocasión, lugar y persona, combinables.
+- [x] **20 · Rango de fechas** — los 5 del apartado (todo / 7 / 30 / 90 / 365 días).
+- [x] **21 · Outfits sin historial** — lo dicen con una frase y un botón para registrar el primero.
+- [x] **22 · Prendas sin historial** — **"Todavía no hay datos de uso."**, nunca "0 días" ni una
+      fecha inventada (apartado 28, literal).
+- [x] **23 · Relación con prendas** — el historial de una prenda **se deduce**: sus outfits → los
+      usos de esos outfits. Josué nunca registra una prenda suelta y aun así la prenda tiene
+      historial.
+- [x] **24 · Modelo de datos** — 10 campos por uso. **Ningún contador guardado** (apartado 17): se
+      quitaron `usos`/`ultimoUso` de prenda y outfit.
+- [x] **25 · Seguridad** — clave `armario` en `app_data` con la RLS por `user_id` de siempre. Un
+      uso viaja dentro del mismo paquete que las prendas y los outfits: **no hay una tabla nueva
+      ni una vía nueva de acceso**, así que hereda el aislamiento ya verificado. Ninguna clave de
+      API en el cliente; nada nuevo sale del dispositivo.
+- [x] **26 · Borrado de outfit** — **el historial se conserva** (ver la decisión, abajo).
+- [x] **27 · Edición de prenda** — no toca ningún uso: los usos apuntan al outfit, no a la prenda.
+- [x] **28 · Rendimiento** — las ordenaciones por uso van contra un **índice construido en una
+      pasada** (`indiceUsoPrendas` / `indiceUsoOutfits`), no recorriendo el historial dentro de
+      cada comparación del `sort`.
+- [x] **29 · Móvil** — mismos componentes, celdas cuadradas y modales por `createPortal`.
+- [x] **30 · Acceso rápido** — el uso aparece en el **Calendario Universal** como fuente
+      **derivada** (regla 11): se genera en cada render desde `armario.usos`, nunca se copia.
+      Borrar un uso lo quita del calendario en el mismo render, sin código de limpieza.
+- [x] **31 · Integración con Fase 1 y Fase 2** — las tres ordenaciones por uso que la Fase 1 dejó
+      escondidas **ya se ofrecen** en cuanto hay un uso, y ahora salen del historial real.
+- [x] **32 · Preparación para Fase 4** — todo lo que el anti-repetición necesita ya está y es
+      consultable: `diasDesde`, `usosDePrenda`, `usosDeOutfit`, los índices de uso y los filtros
+      por persona y por lugar.
+- [x] **33 · Experiencia final** — un toque para registrar lo de hoy; todo lo demás, plegado.
+- [x] **34 · Pruebas obligatorias** — la batería del apartado 40 está automatizada.
+- [x] **35 · Prueba crítica** — la del apartado 41, número a número:
+      `Vaquero gris → 3 usos, último 2026-08-20` · `Casual Gris → 2, 2026-08-20` ·
+      `Cena Negra → 1, 2026-08-15`. Todo derivado; nada escrito a mano.
+- [x] **36 · No romper nada** — **661 comprobaciones en verde**.
+
+**La decisión del apartado 32 (borrar un outfit que tiene historial):** se **conserva el
+historial**, igual que la Fase 2 conservó las prendas dentro de los outfits y por el mismo motivo:
+el outfit va a la papelera, o sea que puede volver. Si al borrarlo se borraran sus usos,
+restaurarlo devolvería el outfit pero no su historia. Conservándolos, **restaurar lo cura todo
+solo**. Mientras el outfit no esté, la fila del historial dice *"Outfit eliminado"* en vez de
+fingir que ese día no pasó nada, y la confirmación de borrado avisa de cuántos usos hay.
+
+**Dos fallos reales de toda la app que destapó esta fase** (los dos en `src/lib/helpers.js`, los
+dos por usar `toISOString()`, que da siempre UTC):
+
+1. **`todayISO()` devolvía AYER entre las 00:00 y las 01:00/02:00** en España. Registrar el sueño a
+   las 00:30 lo archivaba en el día anterior — y lo mismo un gasto, una comida, un hábito o una
+   entrada del diario. Lo avisaba el apartado 9 para el armario; el fallo era de todo el proyecto.
+2. **`addDays()` restaba un día entero**: `addDays('2026-08-25', 1)` devolvía `'2026-08-25'`, y
+   `addDays('2026-01-15', 7)` devolvía el 21 en vez del 22. Lo usan la recurrencia del Calendario y
+   las predicciones.
 
 #### AR · Fase 4/4 — SISTEMA INTELIGENTE ANTI-REPETICIÓN + ESTADÍSTICAS + RECOMENDACIONES
 - [ ] OBJETIVO PRINCIPAL

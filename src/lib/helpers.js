@@ -54,12 +54,34 @@ export function formatFecha(iso) {
   return new Date(iso + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
 }
 
-export const todayISO = () => new Date().toISOString().slice(0, 10);
+// FECHA DE HOY EN LA ZONA HORARIA DE JOSUÉ, no en UTC.
+//
+// Antes esto era `new Date().toISOString().slice(0, 10)`, y `toISOString()` da SIEMPRE
+// UTC. En España (UTC+1 en invierno, UTC+2 en verano) eso significaba que **entre las
+// 00:00 y las 01:00 o 02:00 devolvía AYER**: registrar el sueño a las 00:30 lo archivaba
+// en el día anterior, y lo mismo un gasto, una comida, un hábito o una entrada del
+// diario a esa hora.
+//
+// Lo destapó el apartado 9 de AR Fase 3, que avisa expresamente de esto para el registro
+// de outfits — pero el fallo era de toda la app, no solo del armario.
+//
+// `sv-SE` no es una preferencia de idioma: es el truco estándar para pedirle al
+// formateador local un `AAAA-MM-DD` limpio, que es justo el formato que guarda el
+// proyecto entero. La fecha sale de la hora del dispositivo, como debe ser.
+export const todayISO = () => new Date().toLocaleDateString('sv-SE');
 
+/** La misma conversión para una fecha cualquiera: día local, nunca UTC. */
+export const fechaLocalISO = (d) => new Date(d).toLocaleDateString('sv-SE');
+
+// Sumar días a una fecha. Tenía el MISMO fallo de UTC que `todayISO`, y peor: construía
+// la fecha en hora local (`T00:00:00`) y la devolvía con `toISOString()`, que la pasa a
+// UTC. En España eso restaba un día entero: `addDays('2026-08-25', 1)` devolvía
+// '2026-08-25' en vez de '2026-08-26', y `addDays('2026-01-15', 7)` devolvía el 21 en
+// lugar del 22. Lo usan la recurrencia del Calendario y las predicciones.
 export function addDays(iso, n) {
   const d = new Date(iso + 'T00:00:00');
   d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+  return fechaLocalISO(d);
 }
 
 // Fase 12 — Relación: dado un ISO (aniversario, cumpleaños, o cualquier fecha importante
