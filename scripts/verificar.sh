@@ -92,6 +92,12 @@ else
   fallo "Fallan pruebas del sistema de fondos"; grep '✗' /tmp/jc_fondos.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-tema-colores.mjs >/tmp/jc_tema.log 2>&1; then
+  ok "Sistema avanzado de colores (FO F4) — $(grep -c '✓' /tmp/jc_tema.log) comprobaciones"
+else
+  fallo "Fallan pruebas del sistema de colores"; grep '✗' /tmp/jc_tema.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

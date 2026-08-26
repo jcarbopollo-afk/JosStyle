@@ -146,8 +146,9 @@ escribir código.
 | v1.36.0 | **FO F1** | Arquitectura del sistema de fondos: cinco tipos, cadena de prioridad que nunca deja un hueco, y el fondo dentro de `apariencia` en vez de un sistema paralelo |
 | v1.37.0 | **FO F2** | Fotografía de fondo: elegir → previsualizar → aplicar, con encuadre inicial según la orientación y sin perder el color anterior |
 | v1.38.0 | **FO F3** | Editor de fotografía: zoom, encuadre libre, desenfoque, luz y tinte, sobre un borrador para que Cancelar funcione de verdad |
+| v1.39.0 | **FO F4** | Colores avanzados: **transparencia de tarjetas y barra**, la pieza sin la cual poner una foto de fondo no servía de nada |
 
-🔒 **Bloques ME (4/4), BI (4/4) y AR (4/4) cerrados**, FO va por 3/12. Quedan 91 fases de la Entrega 2.
+🔒 **Bloques ME (4/4), BI (4/4) y AR (4/4) cerrados**, FO va por 4/12. Quedan 90 fases de la Entrega 2.
 
 ---
 

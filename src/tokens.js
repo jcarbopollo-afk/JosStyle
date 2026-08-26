@@ -74,6 +74,32 @@ export const DEFAULT_TEMA_PERSONALIZADO = {
   secundario: null, terciario: null,
   fondo: null, superficie: null, texto: null, bordes: null,
   estados: { positive: null, warning: null, negative: null, info: null },
+
+  // ---- Entrega 2 · FO Fase 4 — lo que faltaba para poder usar una foto de fondo ----
+  //
+  // LA TRANSPARENCIA ES LA PIEZA QUE FALTABA, no un adorno. Con una fotografía
+  // detrás, las tarjetas opacas la tapan entera: se ve el fondo solo en los
+  // márgenes. Los apartados 7 y 12 lo piden expresamente ("especialmente
+  // importante cuando exista una fotografía detrás"), y sin esto la Fase 2 y la
+  // Fase 3 quedan a medias — puedes poner tu foto y no verla.
+  //
+  // Son porcentajes y no colores: 100 = opaco, que es como se ha comportado la
+  // app hasta ahora. Así, no tocar nada deja todo exactamente igual que antes.
+  superficieAlfa: 100,      // tarjetas y superficies
+  navegacionAlfa: 100,      // la barra inferior
+
+  // Jerarquía de texto del apartado 8. `texto` (principal) ya existía; falta el
+  // secundario, que es el que más sufre sobre una foto.
+  textoSecundario: null,
+
+  // Apartado 9 — iconos. Se distingue activo de inactivo porque forzar un solo
+  // color para los dos destruye la jerarquía, que es justo lo que el apartado
+  // pide no hacer.
+  iconoActivo: null,
+  iconoInactivo: null,
+
+  // Apartado 10 — la barra de navegación inferior.
+  navegacionFondo: null,
 };
 
 // Fase 1 del Sistema de Personalización Visual Extrema — `aplicarTema` gana un tercer parámetro,
@@ -128,10 +154,62 @@ export function aplicarTema(nombreResuelto, altoContraste, accentHex, temaPerson
     if (tp.estados.info) COLORS.info = tp.estados.info;
   }
 
-  // Red de seguridad de contraste — siempre, última operación de la función, para que ningún
-  // override de arriba pueda dejar texto ilegible sobre el fondo efectivo.
+  // ---- FO Fase 4 ----
+  //
+  // Se limpian ANTES de aplicarlos, y no es un detalle: `Object.assign(COLORS, base)`
+  // de arriba sobrescribe las claves de `base`, pero NO BORRA las que no están en él.
+  // Estos tres tokens no existen en `COLORS_OSCURO`/`COLORS_CLARO`, así que sin esta
+  // línea un color de icono que Josué quitara seguiría pegado del render anterior:
+  // el ajuste se vería como si no se hubiera podido deshacer.
+  COLORS.iconActive = undefined;
+  COLORS.iconMuted = undefined;
+  COLORS.navBg = undefined;
+
+  if (tp.textoSecundario) COLORS.textMuted = tp.textoSecundario;
+  if (tp.iconoActivo) COLORS.iconActive = tp.iconoActivo;
+  if (tp.iconoInactivo) COLORS.iconMuted = tp.iconoInactivo;
+  if (tp.navegacionFondo) COLORS.navBg = tp.navegacionFondo;
+
+  // Red de seguridad de contraste — siempre, ANTES de calcular las versiones
+  // translúcidas, para que ningún override de arriba pueda dejar texto ilegible
+  // sobre el fondo efectivo.
   COLORS.text = ensureContrast(COLORS.text, COLORS.bg, 4.5);
   COLORS.textMuted = ensureContrast(COLORS.textMuted, COLORS.bg, 3);
+
+  // Los tokens translúcidos se derivan de los sólidos, ya corregidos. Se calculan
+  // SIEMPRE, incluso al 100 %, para que un componente pueda usar `surfaceAlpha` sin
+  // preguntarse si existe: al 100 % es el color sólido de siempre y no cambia nada.
+  //
+  // Al ser tokens de `COLORS`, cualquier vista los hereda sin cambiar de import,
+  // igual que pasó con los roles derivados del acento en la Fase 1 de Personalización.
+  const alfaSuperficie = clampAlfa(tp.superficieAlfa);
+  const alfaNav = clampAlfa(tp.navegacionAlfa);
+  COLORS.surfaceAlpha = alfaSuperficie >= 100 ? COLORS.surface : hexToRgbaLocal(COLORS.surface, alfaSuperficie / 100);
+  COLORS.surface2Alpha = alfaSuperficie >= 100 ? COLORS.surface2 : hexToRgbaLocal(COLORS.surface2, alfaSuperficie / 100);
+  COLORS.navBg = COLORS.navBg || COLORS.surface;
+  COLORS.navBgAlpha = alfaNav >= 100 ? COLORS.navBg : hexToRgbaLocal(COLORS.navBg, alfaNav / 100);
+  COLORS.iconActive = COLORS.iconActive || accentHex || COLORS.text;
+  COLORS.iconMuted = COLORS.iconMuted || COLORS.textMuted;
+}
+
+const clampAlfa = (v) => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 100;
+  // El suelo es 20 y no 0 a propósito: una tarjeta totalmente transparente sobre
+  // una fotografía no es "translúcida", es texto suelto encima de una foto, y deja
+  // de leerse. La Fase 9 afinará esto con medidas de contraste reales.
+  return Math.min(100, Math.max(20, n));
+};
+
+// Versión local de `hexToRgba` para no crear una dependencia de `lib/helpers` desde
+// `tokens.js` (helpers no importa tokens hoy, y meter el ciclo por una función de
+// cuatro líneas no compensa). Acepta ya un `rgb()`/`rgba()` y lo deja pasar.
+function hexToRgbaLocal(color, alpha) {
+  if (typeof color !== 'string' || !color.startsWith('#')) return color;
+  const h = color.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  if (!Number.isFinite(n)) return color;
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
 export const DEFAULT_APARIENCIA = {

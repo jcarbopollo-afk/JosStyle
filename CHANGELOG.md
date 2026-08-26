@@ -1,5 +1,54 @@
 # CHANGELOG.md
 
+## Entrega 2 · FO Fase 4 — Sistema avanzado de colores (v1.39.0)
+
+Amplía el sistema de color que ya existía —`colorEngine.js`, `aplicarTema`, `ColorPicker`,
+`TemaBuilder`, temas guardados— con lo que le faltaba para convivir con una fotografía de fondo.
+
+### La transparencia no es un efecto bonito: era la pieza que faltaba
+Con una foto detrás, las tarjetas opacas la tapan entera y solo se ve en los márgenes. Sin esto,
+las fases 2 y 3 quedaban a medias: podías poner tu foto y **no verla**.
+
+Por eso la transparencia llega hasta los tokens de verdad (`COLORS.surfaceAlpha`,
+`COLORS.navBgAlpha`) y hasta los componentes (`Card`, la barra inferior), no solo al modelo. **Al
+100 % es exactamente el color sólido de siempre**, así que sin tocar nada nada cambia.
+
+Lleva `backdropFilter` cuando hay transparencia, porque una tarjeta translúcida sobre una foto con
+detalle se vuelve ilegible sin él.
+
+### Un fallo real corregido de paso
+La barra de navegación tenía un `rgba(5,6,10,0.75)` fijo en el código, así que **en tema claro
+seguía siendo negra**. Ahora sale del sistema de colores y respeta el tema.
+
+### Y otro que las pruebas existen para que no vuelva
+`Object.assign(COLORS, base)` sobrescribe las claves de `base` pero **no borra** las que no están
+en él. `iconActive`, `iconMuted` y `navBg` no existen en las paletas base, así que sin limpiarlos
+antes se quedaban pegados del render anterior: quitar un color personalizado habría parecido que no
+funcionaba.
+
+### Restablecer colores no puede tocar la fotografía
+Y no porque se acuerde de no hacerlo: **ni siquiera la recibe**. `restablecerColores()` no tiene
+parámetros, y hay una prueba que comprueba justamente eso. Una garantía que depende de acordarse no
+es una garantía.
+
+Un preset de color tampoco vuelve las tarjetas opacas: si habías bajado la opacidad para ver tu
+foto, elegir una paleta no tiene por qué taparla.
+
+### Jerarquía de texto e iconos
+Texto secundario configurable, con red de seguridad: uno del color del fondo **no se queda
+invisible**, `ensureContrast` lo corrige. Iconos activo e inactivo por separado, porque forzar un
+solo color para los dos destruye la jerarquía.
+
+### El mínimo de opacidad es 20, no 0
+Y la interfaz lo explica cuando te acercas. Por debajo, una tarjeta sobre una foto no es
+"translúcida": es texto suelto encima de una imagen. La Fase 9 afinará esto con medidas reales.
+
+### Verificación
+**1070 comprobaciones en verde** (antes 1000): 62 nuevas del sistema de colores y 92 casos de
+renderizado.
+
+---
+
 ## Entrega 2 · FO Fase 3 — Editor de fotografía (v1.38.0)
 
 Zoom, encuadre, desenfoque, luz, opacidad y tinte, con vista previa en tiempo real. Detrás de

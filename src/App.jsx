@@ -1920,7 +1920,10 @@ export default function App() {
           sexta pestaña — los módulos nuevos van dentro de un área existente (AREAS_NAV arriba). */}
       <nav
         className="fixed bottom-0 left-0 right-0 flex justify-center"
-        style={{ background: 'rgba(5,6,10,0.75)', backdropFilter: 'blur(20px)', borderTop: `1px solid ${COLORS.border}` }}
+        // FO Fase 4, apartado 10 — la barra sale del sistema de colores en vez de llevar
+        // un rgba fijo, que además ignoraba el tema claro: en modo claro la barra era
+        // negra igual. `navBgAlpha` respeta el tema y la transparencia elegida.
+        style={{ background: COLORS.navBgAlpha || COLORS.surface, backdropFilter: 'blur(20px)', borderTop: `1px solid ${COLORS.border}` }}
       >
         <div className="max-w-md w-full flex px-2 py-2">
           <button onClick={() => setTab('hoy')} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">

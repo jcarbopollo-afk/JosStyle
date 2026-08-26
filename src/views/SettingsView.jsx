@@ -27,6 +27,7 @@ import {
   orientacionDeFoto, estilosDeLuminosidad, restablecerAjustes, tieneAjustes,
   aplicarFotoConAjustes,
 } from '../lib/fondos';
+import { normalizarTema, restablecerColores, tieneColoresPersonalizados } from '../lib/temaColores';
 import ColorPicker from '../components/ColorPicker';
 import TemaBuilder from '../components/TemaBuilder';
 import GestionTemas from '../components/GestionTemas';
@@ -483,6 +484,68 @@ export function EditorFoto({ fondo, accent, urlFoto, onGuardar, onCerrar, onCamb
         Cambiar de fotografía
       </button>
     </div>
+  );
+}
+
+/* ---------- FO Fase 4 — que se vea el fondo, y que se siga leyendo ----------
+   Apartados 7 y 12. Esto no es un efecto bonito: sin transparencia, poner una
+   fotografía de fondo no sirve de nada, porque las tarjetas opacas la tapan
+   entera y solo se ve en los márgenes.
+
+   Va justo debajo del fondo, y no dentro del constructor de temas, porque es
+   donde tiene sentido tocarlo: se ajusta MIRANDO la foto, no eligiendo colores. */
+export function BloqueLegibilidad({ tema, fondoActivo, accent, onCambiar }) {
+  const t = normalizarTema(tema);
+  const set = (cambios) => onCambiar({ ...t, ...cambios });
+  const [confirmando, setConfirmando] = useState(false);
+
+  return (
+    <Card>
+      <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Tarjetas y barra</p>
+      <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
+        {fondoActivo
+          ? 'Baja la opacidad para que se vea el fondo a través de la interfaz.'
+          : 'Con un fondo puesto, esto deja que se vea a través de las tarjetas.'}
+      </p>
+
+      <div className="space-y-3">
+        <Deslizador label="Opacidad de las tarjetas" valor={t.superficieAlfa} min={20} max={100} accent={accent}
+          onChange={(v) => set({ superficieAlfa: v })} />
+        <Deslizador label="Opacidad de la barra inferior" valor={t.navegacionAlfa} min={20} max={100} accent={accent}
+          onChange={(v) => set({ navegacionAlfa: v })} />
+      </div>
+
+      {/* El mínimo no es 0 y conviene decir por qué, para que no parezca un tope
+          arbitrario cuando el deslizador se planta antes de llegar al final. */}
+      {(t.superficieAlfa <= 35 || t.navegacionAlfa <= 35) && (
+        <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
+          No baja de ahí a propósito: por debajo, el texto encima de una foto deja de leerse.
+        </p>
+      )}
+
+      {/* Apartado 15 — restablecer colores, con confirmación y diciendo lo que NO toca. */}
+      {tieneColoresPersonalizados(t) && (
+        <div className="mt-3">
+          {confirmando ? (
+            <div className="rounded-2xl p-3" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <p className="text-xs mb-2" style={{ color: COLORS.text }}>
+                Se van a devolver todos los colores a los de JosStyle. <strong>Tu fondo y tu fotografía no se tocan.</strong>
+              </p>
+              <div className="flex gap-2">
+                <PrimaryButton accent={accent} onClick={() => { onCambiar(restablecerColores()); setConfirmando(false); }}>
+                  Restablecer
+                </PrimaryButton>
+                <div style={{ width: 110, flexShrink: 0 }}>
+                  <GhostBtn onClick={() => setConfirmando(false)}>Cancelar</GhostBtn>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <GhostBtn onClick={() => setConfirmando(true)} icon={RotateCcw}>Restablecer colores</GhostBtn>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -1094,6 +1157,13 @@ export default function SettingsView({
               onCambiar={(f) => onUpdateApariencia({ ...apariencia, fondo: f })}
               onSubirFoto={onSubirFotoFondo}
               urlFotoFondo={urlFotoFondo}
+            />
+
+            <BloqueLegibilidad
+              tema={temaPersonalizado}
+              fondoActivo={!!apariencia.fondo?.activo}
+              accent={accent}
+              onCambiar={onUpdateTemaPersonalizado}
             />
 
             <Card>

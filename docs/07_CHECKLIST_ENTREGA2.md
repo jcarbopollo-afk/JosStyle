@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 15 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
-> y FO 3/12 (hasta v1.38.0). Quedan **91**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 16 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
+> y FO 4/12 (hasta v1.39.0). Quedan **90**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -2173,34 +2173,70 @@ usan las palabras clave de CSS `black` y `white`, que lo dicen al leerlo y no so
 oscurecer el overlay que va encima, y el overlay no debe desenfocarse con la foto. Tampoco se usa
 `filter: brightness()` sobre la capa de la foto por el mismo motivo.
 
-#### FO · Fase 4/12 — SISTEMA AVANZADO DE COLORES
-- [ ] OBJETIVO
-- [ ] ESTRUCTURA DE LA PERSONALIZACIÓN
-- [ ] COLOR PRINCIPAL
-- [ ] COLOR SECUNDARIO
-- [ ] COLOR DE ACENTO
-- [ ] COLORES DE BOTONES
-- [ ] COLORES DE TARJETAS
-- [ ] COLORES DE TEXTO
-- [ ] ICONOS
-- [ ] NAVEGACIÓN
-- [ ] DEGRADADOS
-- [ ] TRANSPARENCIA
-- [ ] SELECTOR DE COLOR
-- [ ] COLORES PREDETERMINADOS
-- [ ] RESTABLECER COLORES
-- [ ] GUARDADO INDEPENDIENTE
-- [ ] COMBINACIÓN FOTO + COLOR
-- [ ] VISTA PREVIA
-- [ ] CANCELAR CAMBIOS
-- [ ] APLICAR
-- [ ] COMPATIBILIDAD CON EL FONDO
-- [ ] MODO OSCURO Y CLARO
-- [ ] SISTEMA CENTRALIZADO
-- [ ] PREPARACIÓN PARA EL DETECTOR
-- [ ] PREPARACIÓN PARA «RECOMENDADO»
-- [ ] CRITERIOS DE FINALIZACIÓN
-- [ ] REGLA PARA CLAUDE
+#### FO · Fase 4/12 — SISTEMA AVANZADO DE COLORES ✅ COMPLETADA (v1.39.0)
+
+**Esta fase AMPLÍA el sistema de color que ya existía** (`colorEngine.js`, `aplicarTema`,
+`ColorPicker`, `TemaBuilder`, temas guardados — fases V1-V4). El apartado 23 pide un sistema
+centralizado y ya lo había; crear otro habría sido exactamente lo que prohíbe.
+
+- [x] **1 · Objetivo** — fondo y colores son sistemas **relacionados pero independientes**: se
+      guardan en claves distintas, así que se pueden combinar libremente.
+- [x] **2 · Estructura** — dentro de Apariencia: Tema · Fondo · Tarjetas y barra · Color de
+      acento · Constructor de temas.
+- [x] **3, 4, 5 · Principal, secundario y acento** — ya existían y siguen igual.
+- [x] **6 · Botones** — fondo, texto e iconos ya salen de `buildRolesFromAccent`.
+- [x] **7 · Tarjetas** — fondo, borde y **transparencia**. Esta es la pieza que faltaba.
+- [x] **8 · Jerarquía de texto** — principal, secundario (nuevo), atenuado y sobre acento. Con
+      red de seguridad: un texto secundario del color del fondo **no se queda invisible**,
+      `ensureContrast` lo corrige. El apartado lo pide literalmente.
+- [x] **9 · Iconos** — activo e inactivo **por separado**: forzar un solo color para los dos
+      destruye la jerarquía, que es lo que el apartado pide no hacer.
+- [x] **10 · Navegación** — la barra inferior sale ya del sistema de colores.
+- [x] **11 · Degradados** — ya soportados desde FO F1.
+- [x] **12 · Transparencia** — tarjetas y barra, con `backdropFilter` para que el texto se siga
+      leyendo sobre una foto con detalle.
+- [x] **13 · Selector de color** — `ColorPicker` ya da espectro completo y hex.
+- [x] **14 · Colores predeterminados** — `PALETAS_PREDEFINIDAS` ya existían; se añade
+      `aplicarPresetColor`, que **conserva la transparencia** que el preset no menciona.
+- [x] **15 · Restablecer colores** — con confirmación, y **sin tocar la fotografía**.
+- [x] **16 · Guardado independiente** — `fondo` y `temaPersonalizado` son claves distintas (de
+      hecho, claves distintas de Supabase). Hay prueba que lo comprueba estructuralmente.
+- [x] **17 · Foto + colores** — explícitamente válido: nada obliga a usar colores detectados.
+- [x] **18 · Vista previa** — inmediata, como ya lo era.
+- [x] **19 · Cancelar** — el constructor de temas ya trabajaba así; el restablecer lleva
+      confirmación propia.
+- [x] **20 · Aplicar** — al instante, sin recargar.
+- [x] **21 · Compatibilidad con el fondo** — los colores funcionan con los cinco tipos.
+- [x] **22 · Claro y oscuro** — la transparencia se aplica **sobre el color de superficie de cada
+      tema**, y lo personalizado sobrevive al cambio. Con prueba.
+- [x] **23 · Sistema centralizado** — un solo `COLORS`, mutado en un solo sitio.
+- [x] **24 · Preparado para el detector** — `fondo.analisis` y `fondo.paleta` esperan a la Fase 5.
+- [x] **25 · Preparado para "Recomendado"** — `fondo.recomendacion`, para la Fase 6.
+
+**LA TRANSPARENCIA NO ES UN EFECTO BONITO, ERA LA PIEZA QUE FALTABA.** Con una fotografía detrás,
+las tarjetas opacas la tapan entera y solo se ve en los márgenes: sin esto, las fases 2 y 3
+quedaban a medias — podías poner tu foto y no verla. Por eso se ha llevado hasta los tokens de
+verdad (`COLORS.surfaceAlpha`, `COLORS.navBgAlpha`) y hasta los componentes (`Card`, la barra
+inferior), no solo al modelo. **Al 100 % es exactamente el color sólido de siempre**, así que sin
+tocar nada nada cambia.
+
+**Un fallo real corregido de paso:** la barra de navegación tenía un `rgba(5,6,10,0.75)` fijo en el
+código, así que **en tema claro seguía siendo negra**. Ahora sale de `COLORS.navBgAlpha` y respeta
+el tema.
+
+**Y un fallo que estas pruebas existen para que no vuelva:** `Object.assign(COLORS, base)`
+sobrescribe las claves de `base` pero **no borra** las que no están en él. `iconActive`, `iconMuted`
+y `navBg` no existen en `COLORS_OSCURO`/`COLORS_CLARO`, así que sin limpiarlos antes se quedaban
+pegados del render anterior — quitar un color personalizado habría parecido que no funcionaba.
+
+**Por qué "Restablecer colores" no puede tocar la fotografía:** no es que se acuerde de no hacerlo,
+es que **ni siquiera la recibe**. `restablecerColores()` no tiene parámetros. Hay una prueba que
+comprueba justamente eso (`restablecerColores.length === 0`), porque una garantía que depende de
+acordarse no es una garantía.
+
+**El mínimo de opacidad es 20 y no 0**, y la interfaz lo explica cuando te acercas: por debajo, una
+tarjeta sobre una foto no es "translúcida", es texto suelto encima de una imagen. La Fase 9 afinará
+esto con medidas de contraste reales.
 
 #### FO · Fase 5/12 — DETECTOR INTELIGENTE DE COLORES
 - [ ] OBJETIVO

@@ -31,14 +31,14 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
-import { BloqueFondo, EditorFoto } from '../src/views/SettingsView.jsx';
+import { BloqueFondo, EditorFoto, BloqueLegibilidad } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
   DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION,
   DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO,
   DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION,
-  DEFAULT_NOTIFICACIONES, DEFAULT_CALENDARIO, DEFAULT_APARIENCIA, ACCENTS,
+  DEFAULT_NOTIFICACIONES, DEFAULT_CALENDARIO, DEFAULT_APARIENCIA, DEFAULT_TEMA_PERSONALIZADO, ACCENTS,
 } from '../src/tokens.js';
 import { DEFAULT_PAPELERA } from '../src/lib/papelera.js';
 import { DEFAULT_ARMARIO, crearPrenda, crearOutfit, crearUso } from '../src/lib/armario.js';
@@ -187,6 +187,15 @@ const CASOS = [
   ['SettingsView · Fondo foto sin elegir', BloqueFondo, () => ({
     fondo: { ...DEFAULT_APARIENCIA.fondo, tipo: 'foto', activo: true },
     accent, onCambiar: noop, onSubirFoto: async () => '', urlFotoFondo: null,
+  })],
+  // FO Fase 4 — la transparencia, en sus dos extremos: opaca (como siempre) y muy
+  // translúcida, que es cuando el aviso de legibilidad tiene que aparecer.
+  ['SettingsView · Legibilidad', BloqueLegibilidad, () => ({
+    tema: DEFAULT_TEMA_PERSONALIZADO, fondoActivo: false, accent, onCambiar: noop,
+  })],
+  ['SettingsView · Legibilidad translúcida', BloqueLegibilidad, () => ({
+    tema: { ...DEFAULT_TEMA_PERSONALIZADO, superficieAlfa: 25, navegacionAlfa: 30, secundario: '#FF0000' },
+    fondoActivo: true, accent, onCambiar: noop,
   })],
   // FO Fase 3 — el editor, con una foto ya muy ajustada: las tres capas (foto, luz
   // y overlay) tienen que pintarse a la vez sin romperse.

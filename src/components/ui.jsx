@@ -13,7 +13,18 @@ export function Card({ children, style, className = '', id }) {
     <div
       id={id}
       className={`rounded-3xl p-5 ${className}`}
-      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, ...style }}
+      // FO Fase 4 (apartados 7 y 12) — `surfaceAlpha` en vez de `surface`. Al 100 % de
+      // opacidad es EXACTAMENTE el mismo color sólido de siempre, así que sin tocar nada
+      // nada cambia; por debajo, deja ver la fotografía de fondo, que es lo que hace que
+      // poner una foto sirva de algo. `backdropFilter` mantiene el texto legible sobre
+      // una foto con detalle: sin él, una tarjeta translúcida sobre una imagen movida se
+      // vuelve ilegible.
+      style={{
+        background: COLORS.surfaceAlpha || COLORS.surface,
+        border: `1px solid ${COLORS.border}`,
+        backdropFilter: COLORS.surfaceAlpha && COLORS.surfaceAlpha !== COLORS.surface ? 'blur(12px)' : undefined,
+        ...style,
+      }}
     >
       {children}
     </div>
