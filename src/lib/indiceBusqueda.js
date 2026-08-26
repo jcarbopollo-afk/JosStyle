@@ -125,7 +125,7 @@ export const PALABRAS_MODULOS = {
   predicciones: ['futuro', 'proyeccion', 'estimacion', 'prevision'],
   logros: ['insignias', 'medallas', 'trofeos', 'conseguidos'],
   economia: ['dinero', 'gastos', 'ahorro', 'hucha', 'saldo', 'presupuesto', 'finanzas', 'gastar', 'ingresos'],
-  armario: ['ropa', 'prendas', 'vestir', 'camiseta', 'pantalon', 'zapatillas', 'outfit', 'closet', 'que me pongo'],
+  armario: ['ropa', 'prendas', 'vestir', 'camiseta', 'pantalon', 'zapatillas', 'outfit', 'closet', 'que me pongo', 'recomendar outfit'],
   ajustes: ['configuracion', 'opciones', 'preferencias', 'settings'],
 };
 

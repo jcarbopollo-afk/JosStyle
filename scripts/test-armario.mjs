@@ -19,7 +19,7 @@ import {
   ZONAS_OUTFIT, OCASIONES_OUTFIT, ESTACIONES_OUTFIT, ORDENES_OUTFITS, zonaDeCategoria,
   crearOutfit, actualizarOutfit, duplicarOutfit, prendasDeOutfit, outfitsConPrenda,
   buscarOutfits, filtrarOutfits, ordenarOutfits, outfitsVisibles, ordenesOutfitsDisponibles,
-  lugaresDe, composicionPorZonas, composicionDeOutfit, noDisponiblesDeOutfit,
+  lugaresDe, composicionPorZonas, composicionDeOutfit, noDisponiblesDeOutfit, prendasNoDisponiblesDeOutfit,
   usoEnOutfits, limpiarPrendaDeOutfits,
   EVENTOS_USO, RANGOS_HISTORIAL, crearUso, actualizarUso, usosDeOutfit, usosDePrenda,
   resumenDeUso, resumenOutfit, resumenPrenda, diasDesde, textoUltimoUso, usosDelDia,
@@ -365,6 +365,20 @@ const ARMARIO = [camiseta, sudadera, vaquero, airforce, reloj, pantalonNegro, en
     noDisponiblesDeOutfit(crearOutfit({ prendaIds: [vaquero.id] }), ARMARIO) === 0);
   comprobar('Una prenda borrada también cuenta como no disponible',
     noDisponiblesDeOutfit(crearOutfit({ prendaIds: [vaquero.id] }), []) === 1);
+
+  // AR Fase 4 necesita saber CUÁLES, no solo cuántas, para poder explicar por qué un
+  // outfit no es la primera recomendación. Las dos respuestas salen del mismo cálculo:
+  // si se separaran, podrían acabar diciendo cosas distintas.
+  const lista = prendasNoDisponiblesDeOutfit(conLavadora, ARMARIO);
+  comprobar('La versión en lista devuelve un array, no un número', Array.isArray(lista));
+  comprobar('...con la prenda concreta que falta', lista.length === 1 && lista[0].prenda.nombre === 'Polo azul',
+    String(lista[0]?.prenda?.nombre));
+  comprobar('...y el contador es exactamente su longitud',
+    noDisponiblesDeOutfit(conLavadora, ARMARIO) === prendasNoDisponiblesDeOutfit(conLavadora, ARMARIO).length);
+  // Una prenda borrada sale con `prenda: null`, para poder decir "prenda eliminada"
+  // en vez de fingir que el outfit tiene una prenda menos.
+  const borrada = prendasNoDisponiblesDeOutfit(crearOutfit({ prendaIds: [vaquero.id] }), []);
+  comprobar('Una prenda borrada sale con prenda null, no desaparece', borrada.length === 1 && borrada[0].prenda === null);
 }
 
 // --- Apartado 23: búsqueda, incluido el ejemplo literal de "Total Black" ---

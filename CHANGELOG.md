@@ -1,5 +1,74 @@
 # CHANGELOG.md
 
+## Entrega 2 · AR Fase 4 — Anti-repetición, estadísticas y recomendaciones (v1.35.0)
+
+**Cierra el bloque AR (4/4).** El historial deja de ser una lista y pasa a decir algo. Cuarta
+pestaña del Armario: **Prendas | Outfits | Calendario | Ideas**.
+
+### Ninguna llamada a la IA, y es a propósito
+El apartado 25 de la especificación prohíbe expresamente la IA de moda, y la regla 7 del proyecto
+dice que la IA analiza y sugiere pero nunca decide ni se dispara sola. Así que **toda la
+inteligencia de esta fase son reglas sobre el historial real**. La consecuencia práctica es la que
+importa: cada recomendación llega con sus **motivos escritos**, sacados de los mismos números que
+la ordenaron. Si algo no se puede explicar en una línea, no se enseña.
+
+```
+✨ Cena Negra
+   · hace 20 días que no lo usas
+   · todas sus prendas están disponibles
+   · es uno de tus favoritos
+```
+
+### Sin contadores, otra vez
+La Fase 3 quitó los contadores guardados. Esta fase **no los reintroduce por la puerta de atrás**:
+los índices que usa se construyen al vuelo, se consultan y se tiran al acabar el render.
+
+### Qué calcula
+Estadísticas de outfits y de prendas (con rankings), diversidad del armario, outfits olvidados,
+prendas infrautilizadas, prendas que se están repitiendo y **combinaciones repetidas** — estas
+últimas detectan el mismo conjunto de ropa aunque esté guardado en dos outfits distintos, que es lo
+que pasa cuando duplicas un outfit y le cambias el nombre.
+
+El uso de una prenda **se deriva de sus outfits**, con el ejemplo literal del apartado 4
+comprobado: 3 usos en un outfit + 5 en otro = 8, y sigue siendo UNA prenda.
+
+### La diversidad es una fracción, no una puntuación
+El apartado 16 avisa: nada de un número arbitrario sin explicación, y si no aporta valor, mejor no
+implementarlo. Así que la única métrica que hay es `prendas usadas ÷ prendas disponibles`, una
+división que cualquiera puede rehacer a mano, con sus dos números crudos a la vista. **No cuenta
+las que están en la lavandería**: una camiseta que ha pasado el mes en el cesto no se ha usado,
+pero eso no es falta de diversidad, es que no estaba.
+
+### Nada se prohíbe, todo se dice
+Un outfit usado ayer sale marcado, pero se puede usar igual. Un outfit con una prenda en la
+lavadora nunca es la primera recomendación —cualquier alternativa completa le gana— pero **sigue
+apareciendo, y dice qué prenda concreta le falta**. El contexto (lugar, ocasión, personas,
+temporada) suma señales y no descarta a nadie.
+
+### Saber cuándo no se sabe
+Por debajo de 5 usos registrados **no se recomienda nada**, y se dice cuántos faltan. Con menos,
+"el que hace más tiempo que no usas" es casi siempre "el que registraste primero", y eso no es un
+patrón: es el orden de entrada de los datos.
+
+### Un fallo real que encontraron las pruebas
+`noDisponiblesDeOutfit` devuelve un **número**, y yo lo estaba tratando como una lista.
+`noDisponibles.length` era `undefined`, así que `> 0` era siempre falso y **la penalización por
+prendas no disponibles no se aplicaba nunca**: el outfit con una prenda en la lavadora salía como
+primera recomendación. No daba error ni al compilar ni en consola. Arreglado en el origen, con una
+`prendasNoDisponiblesDeOutfit` que devuelve la lista y un `noDisponiblesDeOutfit` que pasa a ser su
+longitud — las dos respuestas salen ahora del mismo cálculo.
+
+### Y dos cosas más, al releer el código antes de cerrar
+- **La recomendación se guardaba en el estado**, así que registrar el uso desde la propia tarjeta
+  dejaba en pantalla un "hace 20 días" que acababa de dejar de ser verdad.
+- **"Más usados" y "menos usados" eran la misma lista al revés** cuando había 5 outfits o menos.
+
+### Verificación
+**777 comprobaciones en verde** (antes 661): 108 nuevas del motor de inteligencia —incluida la
+prueba crítica del apartado 24, número a número— y 68 casos de renderizado real.
+
+---
+
 ## Entrega 2 · AR Fase 3 — Calendario e historial de uso (v1.34.0)
 
 El armario deja de ser un inventario y pasa a tener memoria. **Gestión → Armario** tiene ahora tres

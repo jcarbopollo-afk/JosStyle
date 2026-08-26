@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 11 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4 y AR 3/4 (hasta
-> v1.34.0). Quedan **95**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 12 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4 y **AR 4/4, bloque
+> cerrado** (hasta v1.35.0). Quedan **94**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -3985,75 +3985,91 @@ dos por usar `toISOString()`, que da siempre UTC):
    `addDays('2026-01-15', 7)` devolvía el 21 en vez del 22. Lo usan la recurrencia del Calendario y
    las predicciones.
 
-#### AR · Fase 4/4 — SISTEMA INTELIGENTE ANTI-REPETICIÓN + ESTADÍSTICAS + RECOMENDACIONES
-- [ ] OBJETIVO PRINCIPAL
-- [ ] PANEL INTELIGENTE
-- [ ] NO HACER RECOMENDACIONES ALEATORIAS
-- [ ] SISTEMA ANTI-REPETICIÓN
-- [ ] DISTANCIA TEMPORAL
-- [ ] OUTFITS “OLVIDADOS”
-- [ ] Outfit Verano → 61 días
-- [ ] Casual Azul → 47 días
-- [ ] Cena Negra → 39 días
-- [ ] PRENDAS “OLVIDADAS”
-- [ ] PRENDAS MUY REPETIDAS
-- [ ] NIVEL DE REPETICIÓN
-- [ ] PUNTUACIÓN DE DIVERSIDAD
-- [ ] COBERTURA DEL ARMARIO
-- [ ] OUTFITS SIN USAR
-- [ ] RECOMENDACIÓN POR OCASIÓN
-- [ ] RECOMENDACIÓN POR TEMPORADA
-- [ ] DISPONIBILIDAD
-- [ ] RECOMENDACIÓN POR HISTORIAL
-- [ ] PENALIZACIÓN POR REPETICIÓN
-- [ ] RECOMENDACIONES EXPLICABLES
-- [ ] EVITAR REPETICIONES CON PERSONAS
-- [ ] EVITAR REPETICIONES POR LUGAR
-- [ ] MODO “NO REPETIR”
-- [ ] AJUSTE DE SENSIBILIDAD
-- [ ] ESTADÍSTICAS
-- [ ] PERÍODOS
-- [ ] GRÁFICOS
-- [ ] RANKING
-- [ ] PRIVACIDAD
-- [ ] RENDIMIENTO
-- [ ] CONSISTENCIA DE DATOS
-- [ ] IA
-- [ ] BOTÓN “SORPRÉNDEME”
-- [ ] REGISTRO DESDE LA RECOMENDACIÓN
-- [ ] APRENDIZAJE DEL COMPORTAMIENTO
-- [ ] INTEGRACIÓN CON EL RESTO DE JC LIFESTYLE
-- [ ] NO ROMPER FUNCIONALIDADES
-- [ ] PRUEBA COMPLETA DEL SISTEMA
-- [ ] Registrar varios usos.
-- [ ] Crear una nueva utilización reciente.
-- [ ] Comprobar que cambian las recomendaciones.
-- [ ] Eliminar un uso.
-- [ ] Comprobar que se recalculan.
-- [ ] Cambiar la fecha de un uso.
-- [ ] Comprobar estadísticas.
-- [ ] Marcar una prenda como no disponible.
-- [ ] Comprobar que baja su prioridad.
-- [ ] Activar modo no repetir.
-- [ ] Generar recomendación.
-- [ ] Utilizar la recomendación.
-- [ ] Comprobar que el calendario recibe el nuevo uso.
-- [ ] Comprobar que el historial se actualiza.
-- [ ] CASO CLAVE
-- [ ] CALIDAD DEL ALGORITMO
-- [ ] TRANSPARENCIA
-- [ ] SEGURIDAD
-- [ ] EXPERIENCIA MÓVIL
-- [ ] CRITERIO DE FINALIZACIÓN
-- [ ] NO DEJAR MAQUETAS
-- [ ] AUDITORÍA FINAL
-- [ ] INFORME FINAL
-- [ ] NO IMPLEMENTAR TODAVÍA
-- [ ] CALIDAD
-- [ ] REGLA FUNDAMENTAL
-- [ ] ENTREGA
+#### AR · Fase 4/4 — SISTEMA INTELIGENTE ANTI-REPETICIÓN + ESTADÍSTICAS + RECOMENDACIONES ✅ COMPLETADA (v1.35.0)
 
----
+Cierra el bloque **AR (4/4)**. Todo vive en `src/lib/armarioInteligencia.js`, un módulo puro nuevo
+que **consume** lo de las fases 1-3 y no recalcula ni una relación por su cuenta.
+
+- [x] **1 · Fuente de verdad** — cero contadores nuevos. Los índices se construyen al vuelo, se
+      consultan y se tiran al acabar el render: nunca se guardan, así que nunca se desincronizan.
+- [x] **2 · "Hace X días"** — ahora también en la tarjeta de prenda y en la de outfit, no solo en
+      el detalle. Calculado, nunca guardado. Sin historial no se pinta: "Nunca utilizado" en cada
+      tarjeta de un armario recién creado es ruido, no información.
+- [x] **3 · Estadísticas de outfits** — total, usados, sin estrenar, más usado, menos usado,
+      último usado y rankings.
+- [x] **4 · Estadísticas de prendas** — más usadas, nunca usadas, la más reciente y las que llevan
+      más tiempo sin aparecer en un outfit. **El uso de una prenda se deriva de sus outfits**, con
+      el ejemplo literal del apartado comprobado: 3 usos + 5 usos = 8, y sigue siendo UNA prenda.
+- [x] **5 · Diversidad del armario** — `prendas usadas ÷ prendas disponibles`, una división que
+      cualquiera puede rehacer a mano. **No cuenta las que están en la lavandería**: una camiseta
+      que ha estado el mes entero en el cesto no se ha usado, pero eso no es falta de diversidad.
+- [x] **6 · Anti-repetición** — cuatro estados (sin estrenar / usado hace poco / usado esta semana
+      / hace tiempo que no lo usas). **Ninguno prohíbe nada**: solo cambia lo que se dice.
+- [x] **7 · Recomendación de outfit** — con sus **motivos en texto**, sacados de los mismos números
+      que la ordenaron. Si no se puede explicar, no se enseña.
+- [x] **8 · Contexto** — lugar, ocasión, personas y temporada **suman señales, nunca excluyen**. El
+      lugar se mira en el HISTORIAL REAL, no solo en la etiqueta del outfit: haberlo llevado tres
+      veces a la universidad pesa más que una etiqueta puesta al crearlo.
+- [x] **9 · Prendas no disponibles** — penalización fuerte, no veto: cualquier alternativa completa
+      gana, pero el outfit sigue apareciendo y **dice qué prenda concreta le falta**.
+- [x] **10 · Repetición de prendas** — "la has usado 8 veces en los últimos 14 días", como
+      información. Solo mira la ventana reciente: 40 usos en dos años no es sobreutilización.
+- [x] **11 · Combinaciones repetidas** — detecta el mismo CONJUNTO de prendas aunque esté guardado
+      en outfits distintos (el caso de un outfit duplicado y renombrado). No crea outfits nuevos.
+- [x] **12 · Outfits poco utilizados** — los que existen y llevan 30 días o más sin usarse. Los
+      que nunca se han estrenado **no** entran: eso es otra cosa y tiene su propia lista.
+- [x] **13 · Prendas infrautilizadas** — nunca usadas primero, después las olvidadas. Las que están
+      en la lavandería quedan fuera: sugerirlas no es una sugerencia, es un despiste.
+- [x] **14 · Panel inteligente** — "Tu armario hoy", con frases generadas de los números reales.
+      Cada frase aparece solo si su dato existe.
+- [x] **15 · Filtros temporales** — 7 / 30 / 90 días, este año, todo y desde una fecha. "Este año"
+      empieza el 1 de enero, que no es lo mismo que "hace 365 días".
+- [x] **16 · Puntuación** — la única que hay es la diversidad, y es una fracción explicada con sus
+      dos números crudos a la vista. No se ha inventado ningún "índice de estilo" sin sentido.
+- [x] **17 · Privacidad** — ni una consulta nueva, ni una tabla nueva. Todo se calcula en el
+      dispositivo sobre el `armario` que ya viajaba con la RLS por `user_id`.
+- [x] **18 · Rendimiento** — un índice por rejilla, no un recorrido por tarjeta; los períodos
+      recortan antes de agregar. **Se corrigió un fallo mío de este tipo** durante la fase.
+- [x] **19 · Móvil** — tarjetas compactas, bloques plegables y el flujo rápido entero:
+      **Recomiéndame → outfit con sus motivos → "Me lo pongo"**, tres toques.
+- [x] **20 · Integración** — cuatro subpestañas con `flex-wrap`, el mismo patrón que Productividad
+      ya usa con cinco. Las estadísticas se abren **desde Prendas y desde Outfits**, y son LAS
+      MISMAS: un solo sistema, no tres pantallas de estadísticas.
+- [x] **21 · Estados vacíos** — sin historial, la pestaña dice qué hacer para tenerlo.
+- [x] **22 · Datos insuficientes** — por debajo de 5 usos **no se recomienda**, y se dice cuántos
+      faltan. Con menos, "el que hace más tiempo que no usas" es solo el que registraste primero.
+- [x] **23 · Pruebas obligatorias** — automatizadas las que no necesitan navegador.
+- [x] **24 · Prueba crítica** — el escenario literal del apartado, comprobado número a número.
+- [x] **25 · No implementar** — ni IA de moda, ni generación por IA, ni compras, ni tiendas, ni
+      nada social. **Ninguna llamada a la IA en toda la fase.**
+- [x] **26 · Calidad** — código muerto eliminado (un import sin usar), imports revisados, y las
+      fases 1-3 intactas.
+- [x] **27 · Criterio de finalización** — 777 comprobaciones en verde.
+
+**Un fallo real encontrado y corregido durante la fase:** `noDisponiblesDeOutfit` devuelve un
+**número**, y yo lo estaba tratando como una lista. `noDisponibles.length` era `undefined`, así que
+`> 0` era siempre falso y **la penalización del apartado 9 no se aplicaba nunca**: el outfit con una
+prenda en la lavandería salía como primera recomendación. No daba error ni en consola ni al
+compilar — lo cazó la prueba del apartado 9. Arreglado en el origen: se ha añadido
+`prendasNoDisponiblesDeOutfit`, que devuelve la lista, y `noDisponiblesDeOutfit` pasa a ser su
+longitud, para que las dos respuestas salgan siempre del mismo cálculo.
+
+**Dos cosas más que se corrigieron al releer el código antes de cerrar:**
+
+1. **La recomendación se guardaba en el estado**, así que registrar un uso desde la propia tarjeta
+   dejaba en pantalla un "hace 20 días" que acababa de dejar de ser verdad — la tarjeta se
+   contradecía con el botón que se acababa de pulsar. Ahora solo se guarda *si* se ha pedido; el
+   resultado se deriva del historial actual.
+2. **"Más usados" y "menos usados" mostraban la misma lista al revés** cuando había 5 outfits
+   usados o menos. Ahora el segundo ranking solo aparece cuando hay más de 5, que es cuando las
+   dos listas contienen outfits distintos.
+
+**Por qué las estadísticas están en una pestaña y no repartidas:** el apartado 3 las pide "dentro
+del área de Outfits" y el 4 "dentro del Armario", pero las dos se apoyan en el mismo historial y
+comparten el filtro temporal del apartado 15. Partirlas obligaría a mantener dos veces el mismo
+selector de período y a que Josué eligiera "30 días" dos veces para ver una foto coherente. Están
+juntas en **Ideas** y se llega desde las dos pestañas, con el botón "Ver estadísticas" que cada una
+tiene arriba. El apartado 20 lo pide expresamente: no duplicar sistemas.
 
 ## SR · SONIDO Y RACHAS — 5 + 4 fases
 

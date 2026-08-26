@@ -437,7 +437,7 @@ export const DESCRIPCIONES_MODULOS = {
   estadisticas: 'Relaciones entre tu sueño, tu ánimo, tu estudio y tu entreno.',
   predicciones: 'Hacia dónde apuntan tus datos: peso, ahorro, notas y hábitos.',
   logros: 'Insignias conseguidas y tu mapa de vida.',
-  armario: 'Tus prendas, con categorías, colores y estado.',
+  armario: 'Prendas, outfits, historial de uso y recomendaciones.',
   economia: 'Saldo, movimientos y hucha.',
   ajustes: 'La configuración de toda la app.',
 };

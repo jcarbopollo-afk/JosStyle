@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Loader2, Copy, Check, Layers, CalendarDays, History, List } from 'lucide-react';
+import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Loader2, Copy, Check, Layers, CalendarDays, History, List, Sparkles, BarChart3, TrendingUp } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedPrendaUrl } from '../lib/supabase';
@@ -15,7 +15,13 @@ import {
   EVENTOS_USO, RANGOS_HISTORIAL, usosDeOutfit, usosDePrenda, resumenOutfit, resumenPrenda,
   textoUltimoUso, usosDelDia, usosPorDia, filtrarUsos, desdeDelRango,
   lugaresDeUsos, personasDeUsos, resumenDeUso, resumenHistorial,
+  indiceUsoPrendas, indiceUsoOutfits, diasDesde,
 } from '../lib/armario';
+import {
+  PERIODOS_ARMARIO, desdeDelPeriodo, usosDelPeriodo, estadisticasOutfits, estadisticasPrendas,
+  diversidadArmario, estadoRepeticion, prendasMuyRepetidas, combinacionesRepetidas,
+  outfitsOlvidados, prendasInfrautilizadas, recomendarOutfits, panelInteligente,
+} from '../lib/armarioInteligencia';
 import { celdasMes, isoDeFecha } from '../lib/calendario';
 import {
   Card, SectionTitle, Field, TextInput, Textarea, PrimaryButton, GhostBtn, EmptyHint, SelectInput, ToggleTab, BotonBorrar,
@@ -72,7 +78,13 @@ function MiniaturaPrenda({ prenda, alto = 104 }) {
    Apartado 6: nombre, categoría y color como mínimo, y toda la tarjeta pulsable para
    ir al detalle. La estrella de favorita se pinta encima de la miniatura, no en una
    fila aparte: no puede ser un botón dentro de un botón (bug de BI Fase 1). */
-function TarjetaPrenda({ prenda, accent, onAbrir }) {
+/* AR Fase 4, apartado 2: "hace X días" también en la tarjeta, no solo en el detalle.
+   `usoTexto` llega ya calculado desde el panel, que construye el índice una sola vez
+   para toda la rejilla — calcularlo aquí obligaría a recorrer el historial entero por
+   cada tarjeta pintada, que es justo el coste que el apartado 18 pide evitar.
+   Llega `null` mientras no haya ni un uso registrado en todo el armario: antes de eso
+   "Nunca utilizado" en cada tarjeta es ruido, no información. */
+function TarjetaPrenda({ prenda, accent, onAbrir, usoTexto }) {
   const color = colorDe(prenda.color);
   const estado = estadoDe(prenda.estado);
   return (
@@ -97,6 +109,9 @@ function TarjetaPrenda({ prenda, accent, onAbrir }) {
         </p>
         {prenda.estado !== 'disponible' && (
           <p className="text-[11px] mt-0.5 truncate" style={{ color: COLORS.textMuted }}>{estado.label}</p>
+        )}
+        {usoTexto && (
+          <p className="text-[11px] mt-0.5 truncate" style={{ color: COLORS.textMuted }}>{usoTexto}</p>
         )}
       </div>
     </button>
@@ -476,7 +491,7 @@ function ComposicionOutfit({ outfit, prendas, accent, onPulsarPrenda, onAnadirPr
    fila de acciones debajo. Un botón dentro de otro es HTML inválido y en iOS el toque
    interior se lo come el exterior — el mismo fallo silencioso que apareció en BI Fase 1
    y que `smoke-vistas.jsx` comprueba ahora en todas las vistas. */
-function TarjetaOutfit({ outfit, prendas, accent, onAbrir, onEditar, onDuplicar, onFavorito }) {
+function TarjetaOutfit({ outfit, prendas, accent, onAbrir, onEditar, onDuplicar, onFavorito, uso }) {
   const suyas = prendasDeOutfit(outfit, prendas);
   const ocasion = OCASIONES_OUTFIT.find((o) => o.id === outfit.ocasion);
   const noDisponibles = noDisponiblesDeOutfit(outfit, prendas);
@@ -514,6 +529,13 @@ function TarjetaOutfit({ outfit, prendas, accent, onAbrir, onEditar, onDuplicar,
           {noDisponibles > 0 && (
             <p className="text-[11px] mt-0.5 truncate" style={{ color: COLORS.textMuted }}>
               {noDisponibles} {noDisponibles === 1 ? 'prenda no disponible' : 'prendas no disponibles'}
+            </p>
+          )}
+          {/* AR Fase 4, apartados 2 y 6: cuánto hace que no te lo pones, y el aviso
+              cuando fue hace nada. Es información: el outfit se puede usar igual. */}
+          {uso && (
+            <p className="text-[11px] mt-0.5 truncate" style={{ color: uso.estado.id === 'reciente' ? accent : COLORS.textMuted }}>
+              {uso.estado.icono} {uso.texto}
             </p>
           )}
         </div>
@@ -1038,7 +1060,7 @@ export function HistorialDeUso({ usosFiltrados, outfits, prendas, accent, hoyISO
    Es la pantalla entera de la Fase 1, ahora como una de las dos pestañas del Armario
    (apartado 2 de la Fase 2). No ha cambiado nada de su funcionamiento: solo recibe
    `outfits` para poder avisar, al borrar una prenda, de en cuántas combinaciones está. */
-function PanelPrendas({ prendas, outfits, usos, hoyISO, onAddPrenda, onUpdatePrenda, onDeletePrenda, onSubirFoto, accent, prendaFoco, onFocoConsumido }) {
+function PanelPrendas({ prendas, outfits, usos, hoyISO, onAddPrenda, onUpdatePrenda, onDeletePrenda, onSubirFoto, accent, prendaFoco, onFocoConsumido, onVerEstadisticas }) {
   const [consulta, setConsulta] = useState('');
   const [filtros, setFiltros] = useState({});
   const [orden, setOrden] = useState('recientes');
@@ -1052,6 +1074,14 @@ function PanelPrendas({ prendas, outfits, usos, hoyISO, onAddPrenda, onUpdatePre
 
   const marcas = useMemo(() => marcasDe(prendas), [prendas]);
   const conteo = useMemo(() => conteoPorCategoria(prendas), [prendas]);
+  // AR Fase 4, apartado 2 — el índice para el "hace X días" de cada tarjeta se
+  // construye UNA vez por rejilla, no una por tarjeta (apartado 18).
+  const indiceUso = useMemo(() => indiceUsoPrendas(usos, outfits), [usos, outfits]);
+  const textoDeUsoPrenda = (id) => {
+    if (usos.length === 0) return null;   // sin historial, el dato no aplica todavía
+    return textoUltimoUso(indiceUso.get(id)?.ultima || null, hoyISO);
+  };
+
   // Las ordenaciones por uso salen del historial, no de un contador dentro de la prenda:
   // por eso `usos` y `outfits` entran aquí y en las dependencias del memo.
   const ordenes = useMemo(() => ordenesDisponibles(usos), [usos]);
@@ -1123,6 +1153,22 @@ function PanelPrendas({ prendas, outfits, usos, hoyISO, onAddPrenda, onUpdatePre
           </button>
         )}
       </div>
+
+      {/* AR Fase 4, apartado 4: las estadísticas de prendas se consultan desde el
+          Armario. No se pintan aquí otra vez —eso sería el sistema duplicado que
+          prohíbe el apartado 20—: se llega a las de verdad, en la pestaña Ideas. */}
+      {usos.length > 0 && (
+        <button
+          onClick={onVerEstadisticas}
+          className="w-full rounded-2xl px-3 py-2 flex items-center justify-between gap-2"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+        >
+          <span className="flex items-center gap-2 text-xs font-semibold" style={{ color: COLORS.text }}>
+            <BarChart3 size={14} style={{ color: accent }} /> Ver estadísticas de tus prendas
+          </span>
+          <ChevronRight size={14} style={{ color: COLORS.textMuted }} />
+        </button>
+      )}
 
       {/* Apartado 19: el armario vacío invita, no deja una pantalla en blanco. */}
       {prendas.length === 0 && !formAbierto && (
@@ -1225,7 +1271,10 @@ function PanelPrendas({ prendas, outfits, usos, hoyISO, onAddPrenda, onUpdatePre
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {visibles.map((p) => (
-                <TarjetaPrenda key={p.id} prenda={p} accent={accent} onAbrir={setDetalle} />
+                <TarjetaPrenda
+                  key={p.id} prenda={p} accent={accent} onAbrir={setDetalle}
+                  usoTexto={textoDeUsoPrenda(p.id)}
+                />
               ))}
             </div>
           )}
@@ -1248,7 +1297,7 @@ function PanelPrendas({ prendas, outfits, usos, hoyISO, onAddPrenda, onUpdatePre
    Se exporta con nombre además de usarse aquí dentro: `renderToString` no puede pulsar
    una pestaña, así que sin esto el panel de outfits nunca llegaría a renderizarse en la
    prueba de humo — y es justo donde vive la mitad de esta fase. */
-export function PanelOutfits({ outfits, prendas, usos, hoyISO, onAddOutfit, onUpdateOutfit, onDeleteOutfit, onDuplicarOutfit, onSubirFoto, onAbrirPrenda, onRegistrarUso, accent, outfitFoco, onFocoConsumido }) {
+export function PanelOutfits({ outfits, prendas, usos, hoyISO, onAddOutfit, onUpdateOutfit, onDeleteOutfit, onDuplicarOutfit, onSubirFoto, onAbrirPrenda, onRegistrarUso, accent, outfitFoco, onFocoConsumido, onVerEstadisticas }) {
   const [consulta, setConsulta] = useState('');
   const [filtros, setFiltros] = useState({});
   const [orden, setOrden] = useState('recientes');
@@ -1262,6 +1311,15 @@ export function PanelOutfits({ outfits, prendas, usos, hoyISO, onAddOutfit, onUp
   const [aviso, setAviso] = useState('');
 
   const lugares = useMemo(() => lugaresDe(outfits), [outfits]);
+  // Igual que en Prendas: un índice por rejilla, no un recorrido por tarjeta.
+  const indiceUso = useMemo(() => indiceUsoOutfits(usos), [usos]);
+  const usoDeOutfit = (id) => {
+    if (usos.length === 0) return null;
+    const datos = indiceUso.get(id) || null;
+    const dias = diasDesde(datos?.ultima || null, hoyISO);
+    return { texto: textoUltimoUso(datos?.ultima || null, hoyISO), estado: estadoRepeticion(dias), dias };
+  };
+
   const ordenes = useMemo(() => ordenesOutfitsDisponibles(usos), [usos]);
   const visibles = useMemo(
     () => outfitsVisibles(outfits, prendas, { consulta, filtros, orden, usos }),
@@ -1344,6 +1402,21 @@ export function PanelOutfits({ outfits, prendas, usos, hoyISO, onAddOutfit, onUp
           </button>
         )}
       </div>
+
+      {/* AR Fase 4, apartado 3: la zona de estadísticas de outfits se abre desde aquí,
+          y es LA MISMA de la pestaña Ideas — un solo sistema (apartado 20). */}
+      {usos.length > 0 && (
+        <button
+          onClick={onVerEstadisticas}
+          className="w-full rounded-2xl px-3 py-2 flex items-center justify-between gap-2"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+        >
+          <span className="flex items-center gap-2 text-xs font-semibold" style={{ color: COLORS.text }}>
+            <BarChart3 size={14} style={{ color: accent }} /> Ver estadísticas y recomendaciones
+          </span>
+          <ChevronRight size={14} style={{ color: COLORS.textMuted }} />
+        </button>
+      )}
 
       {/* Apartado 20 del pulido: feedback breve, con el sistema visual de la propia app. */}
       {aviso && (
@@ -1481,6 +1554,7 @@ export function PanelOutfits({ outfits, prendas, usos, hoyISO, onAddOutfit, onUp
                   onEditar={abrirEdicion}
                   onDuplicar={duplicar}
                   onFavorito={alternarFavorito}
+                  uso={usoDeOutfit(o.id)}
                 />
               ))}
             </div>
@@ -1536,7 +1610,9 @@ export default function ArmarioView({
 
   return (
     <div>
-      <div className="flex gap-2 mb-4">
+      {/* Cuatro subpestañas. `flex-wrap` es el mismo patrón que ya usa Productividad
+          con cinco: en un iPhone estrecho pasan a dos líneas en vez de aplastarse. */}
+      <div className="flex gap-1.5 flex-wrap mb-4">
         <ToggleTab active={pestana === 'prendas'} onClick={() => setPestana('prendas')} accent={accent}>
           Prendas{prendas.length > 0 ? ` ${prendas.length}` : ''}
         </ToggleTab>
@@ -1546,6 +1622,9 @@ export default function ArmarioView({
         <ToggleTab active={pestana === 'calendario'} onClick={() => setPestana('calendario')} accent={accent}>
           Calendario
         </ToggleTab>
+        <ToggleTab active={pestana === 'ideas'} onClick={() => setPestana('ideas')} accent={accent}>
+          Ideas
+        </ToggleTab>
       </div>
 
       {pestana === 'prendas' && (
@@ -1554,6 +1633,7 @@ export default function ArmarioView({
           onAddPrenda={onAddPrenda} onUpdatePrenda={onUpdatePrenda} onDeletePrenda={onDeletePrenda}
           onSubirFoto={onSubirFoto} accent={accent}
           prendaFoco={prendaFoco} onFocoConsumido={() => setPrendaFoco(null)}
+          onVerEstadisticas={() => setPestana('ideas')}
         />
       )}
       {pestana === 'outfits' && (
@@ -1564,6 +1644,7 @@ export default function ArmarioView({
           onSubirFoto={onSubirFoto} onAbrirPrenda={abrirPrenda}
           onRegistrarUso={registrarHoy} accent={accent}
           outfitFoco={outfitFoco} onFocoConsumido={() => setOutfitFoco(null)}
+          onVerEstadisticas={() => setPestana('ideas')}
         />
       )}
       {pestana === 'calendario' && (
@@ -1571,6 +1652,12 @@ export default function ArmarioView({
           usos={usos} outfits={outfits} prendas={prendas} accent={accent} hoyISO={hoyISO}
           onAddUso={onAddUso} onUpdateUso={onUpdateUso} onDeleteUso={onDeleteUso}
           onAbrirOutfit={abrirOutfit}
+        />
+      )}
+      {pestana === 'ideas' && (
+        <PanelIdeas
+          usos={usos} outfits={outfits} prendas={prendas} accent={accent} hoyISO={hoyISO}
+          onAbrirOutfit={abrirOutfit} onAbrirPrenda={abrirPrenda} onRegistrarUso={registrarHoy}
         />
       )}
     </div>
@@ -1900,5 +1987,492 @@ function DetalleDia({ fecha, usos, outfits, prendas, accent, onCerrar, onAnadir,
       </div>
     </div>,
     document.body,
+  );
+}
+
+/* ===========================================================================
+   Pestaña IDEAS — AR Fase 4
+   ===========================================================================
+   Aquí viven las CONCLUSIONES sobre el historial: estadísticas, anti-repetición
+   y recomendaciones. Todo sale de `lib/armarioInteligencia.js`; este archivo
+   solo pinta. Ningún número se calcula en el JSX.
+
+   Por qué una pestaña y no dos sitios distintos: el apartado 3 pide las
+   estadísticas de outfits "dentro del área de Outfits" y el 4 las de prendas
+   "dentro del Armario", pero las dos se apoyan en el mismo historial y comparten
+   el filtro temporal del apartado 15. Partirlas en dos pantallas obligaría a
+   mantener dos veces el mismo selector de período y a que Josué eligiera "30
+   días" dos veces para ver una foto coherente. Están juntas y **se llega desde
+   las dos pestañas**, con el botón "Ver estadísticas" que cada una tiene arriba.
+   El apartado 20 lo pide expresamente: no duplicar sistemas. */
+
+/* Una fila de ranking: puesto, nombre y número. Sirve para outfits y prendas. */
+function FilaRanking({ puesto, nombre, veces, sufijo = 'usos', accent, onAbrir }) {
+  const contenido = (
+    <>
+      <span
+        className="rounded-full text-[10px] font-bold flex items-center justify-center flex-shrink-0"
+        style={{ width: 18, height: 18, background: puesto === 1 ? accent : COLORS.surface2, color: puesto === 1 ? COLORS.textOnAccent : COLORS.textMuted }}
+      >
+        {puesto}
+      </span>
+      <span className="text-sm truncate flex-1 min-w-0" style={{ color: COLORS.text }}>{nombre}</span>
+      <span className="text-xs font-semibold flex-shrink-0" style={{ color: COLORS.textMuted }}>
+        {veces} {veces === 1 ? sufijo.replace(/s$/, '') : sufijo}
+      </span>
+    </>
+  );
+  // Si se puede abrir, la fila entera es el botón. Si no, no se finge que lo sea.
+  return onAbrir
+    ? <button onClick={onAbrir} className="w-full flex items-center gap-2 py-1 text-left">{contenido}</button>
+    : <div className="flex items-center gap-2 py-1">{contenido}</div>;
+}
+
+/* Un dato suelto con su etiqueta, para la cuadrícula de resumen. */
+function Dato({ valor, etiqueta, accent }) {
+  return (
+    <div className="rounded-xl px-2.5 py-2" style={{ background: COLORS.surface2 }}>
+      <p className="text-lg font-bold leading-tight" style={{ color: accent, fontFamily: "'Manrope', sans-serif" }}>{valor}</p>
+      <p className="text-[11px] leading-tight mt-0.5" style={{ color: COLORS.textMuted }}>{etiqueta}</p>
+    </div>
+  );
+}
+
+/* Bloque plegable. Las estadísticas son mucha información: en un iPhone tienen que
+   poder cerrarse para llegar a lo siguiente sin hacer scroll eterno (apartado 19). */
+function Bloque({ titulo, icono: Icono, accent, defecto = false, children }) {
+  const [abierto, setAbierto] = useState(defecto);
+  return (
+    <Card style={{ padding: '0.9rem' }}>
+      <button
+        onClick={() => setAbierto((v) => !v)}
+        className="w-full flex items-center justify-between gap-2"
+        aria-expanded={abierto}
+      >
+        <span className="flex items-center gap-2 min-w-0">
+          {Icono && <Icono size={15} style={{ color: accent }} />}
+          <span className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{titulo}</span>
+        </span>
+        {abierto ? <ChevronUp size={15} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={15} style={{ color: COLORS.textMuted }} />}
+      </button>
+      {abierto && <div className="mt-3">{children}</div>}
+    </Card>
+  );
+}
+
+export function PanelIdeas({ usos, outfits, prendas, accent, hoyISO, onAbrirOutfit, onAbrirPrenda, onRegistrarUso }) {
+  const hoy = hoyISO || todayISO();
+  const [periodo, setPeriodo] = useState('30');
+  const [desdePersonalizado, setDesdePersonalizado] = useState('');
+  const [contexto, setContexto] = useState({});
+  const [verContexto, setVerContexto] = useState(false);
+  // Solo se guarda SI se ha pedido recomendación, no el resultado: el resultado se
+  // deriva del historial actual. Si se guardara, registrar un uso desde la propia
+  // recomendación dejaría en pantalla un "hace 20 días" que acaba de dejar de ser
+  // verdad — la tarjeta se contradiría con el botón que se acaba de pulsar.
+  const [pedida, setPedida] = useState(false);
+  const [aviso, setAviso] = useState('');
+
+  useEffect(() => {
+    if (!aviso) return;
+    const t = setTimeout(() => setAviso(''), 2600);
+    return () => clearTimeout(t);
+  }, [aviso]);
+
+  // Apartado 15: TODO lo que se ve debajo respeta el período elegido, salvo la
+  // recomendación —que necesita el historial entero para saber cuánto hace de
+  // verdad que no te pones algo— y el panel de arriba, que habla de "esta semana".
+  const desde = desdeDelPeriodo(periodo, hoy, desdePersonalizado);
+  const usosPeriodo = useMemo(() => usosDelPeriodo(usos, desde), [usos, desde]);
+
+  const frases = useMemo(() => panelInteligente({ usos, outfits, prendas }, { hoyISO: hoy }), [usos, outfits, prendas, hoy]);
+  const estOutfits = useMemo(() => estadisticasOutfits(usosPeriodo, outfits, { hoyISO: hoy }), [usosPeriodo, outfits, hoy]);
+  const estPrendas = useMemo(() => estadisticasPrendas(usosPeriodo, outfits, prendas, { hoyISO: hoy }), [usosPeriodo, outfits, prendas, hoy]);
+  const diversidad = useMemo(() => diversidadArmario(usos, outfits, prendas, { desde }), [usos, outfits, prendas, desde]);
+  const olvidados = useMemo(() => outfitsOlvidados(usos, outfits, { hoyISO: hoy }), [usos, outfits, hoy]);
+  const infrautilizadas = useMemo(() => prendasInfrautilizadas(usos, outfits, prendas, { hoyISO: hoy }), [usos, outfits, prendas, hoy]);
+  const repetidas = useMemo(() => prendasMuyRepetidas(usos, outfits, prendas, { hoyISO: hoy }), [usos, outfits, prendas, hoy]);
+  const combinaciones = useMemo(() => combinacionesRepetidas(usos, outfits, prendas, { hoyISO: hoy }), [usos, outfits, prendas, hoy]);
+
+  const lugares = useMemo(() => lugaresDeUsos(usos), [usos]);
+  const personas = useMemo(() => personasDeUsos(usos), [usos]);
+
+  const recomendacion = useMemo(
+    () => (pedida ? recomendarOutfits(usos, outfits, prendas, { hoyISO: hoy, contexto, limite: 3 }) : null),
+    [pedida, usos, outfits, prendas, hoy, contexto],
+  );
+
+  // Apartado 21: sin historial no se enseñan estadísticas vacías, se dice por qué.
+  if (usos.length === 0) {
+    return (
+      <div className="space-y-4 pb-4">
+        <SectionTitle sub="Estadísticas, repeticiones y recomendaciones a partir de lo que te pones">
+          <span className="flex items-center gap-2"><Sparkles size={18} style={{ color: accent }} /> Ideas</span>
+        </SectionTitle>
+        <Card>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Todavía no hay suficientes datos</p>
+          <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.textMuted }}>
+            Registra algunos outfits en el calendario y aquí verás cuáles repites más, cuáles tienes
+            olvidados y qué prendas no estás aprovechando. Todo sale de lo que registres tú.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 pb-4">
+      <SectionTitle sub="Estadísticas, repeticiones y recomendaciones a partir de lo que te pones">
+        <span className="flex items-center gap-2"><Sparkles size={18} style={{ color: accent }} /> Ideas</span>
+      </SectionTitle>
+
+      {aviso && (
+        <div className="rounded-2xl px-3 py-2 flex items-center gap-2" style={{ background: hexToRgba(accent, 0.12), border: `1px solid ${hexToRgba(accent, 0.28)}` }}>
+          <Check size={14} style={{ color: accent }} strokeWidth={3} />
+          <span className="text-xs font-semibold" style={{ color: COLORS.text }}>{aviso}</span>
+        </div>
+      )}
+
+      {/* ---------- Apartado 14: tu armario hoy ---------- */}
+      {frases.length > 0 && (
+        <Card style={{ background: hexToRgba(accent, 0.07), border: `1px solid ${hexToRgba(accent, 0.22)}` }}>
+          <p className="text-sm font-semibold mb-2 flex items-center gap-1.5" style={{ color: COLORS.text }}>
+            <Sparkles size={14} style={{ color: accent }} /> Tu armario hoy
+          </p>
+          <ul className="space-y-1.5">
+            {frases.map((f) => (
+              <li key={f.id} className="text-xs leading-relaxed flex gap-2" style={{ color: COLORS.textMuted }}>
+                <span style={{ color: accent }}>·</span>
+                <span>{f.texto}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {/* ---------- Apartados 7, 8 y 9: recomendar ---------- */}
+      <Card>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>¿Qué me pongo?</p>
+          <button
+            onClick={() => setVerContexto((v) => !v)}
+            className="text-xs font-semibold flex-shrink-0"
+            style={{ color: accent }}
+            aria-expanded={verContexto}
+          >
+            {verContexto ? 'Ocultar contexto' : 'Añadir contexto'}
+          </button>
+        </div>
+
+        {/* Apartado 8: el contexto SUMA señales, nunca descarta outfits. */}
+        {verContexto && (
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            {lugares.length > 0 && (
+              <Field label="Lugar">
+                <SelectInput value={contexto.lugar || ''} onChange={(e) => setContexto((c) => ({ ...c, lugar: e.target.value || undefined }))}>
+                  <option value="">Cualquiera</option>
+                  {lugares.map((l) => <option key={l} value={l}>{l}</option>)}
+                </SelectInput>
+              </Field>
+            )}
+            <Field label="Ocasión">
+              <SelectInput value={contexto.ocasion || ''} onChange={(e) => setContexto((c) => ({ ...c, ocasion: e.target.value || undefined }))}>
+                <option value="">Cualquiera</option>
+                {OCASIONES_OUTFIT.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+              </SelectInput>
+            </Field>
+            {personas.length > 0 && (
+              <Field label="Con">
+                <SelectInput value={contexto.persona || ''} onChange={(e) => setContexto((c) => ({ ...c, persona: e.target.value || undefined }))}>
+                  <option value="">Cualquiera</option>
+                  {personas.map((p) => <option key={p} value={p}>{p}</option>)}
+                </SelectInput>
+              </Field>
+            )}
+            <Field label="Temporada">
+              <SelectInput value={contexto.estacion || ''} onChange={(e) => setContexto((c) => ({ ...c, estacion: e.target.value || undefined }))}>
+                <option value="">Cualquiera</option>
+                {ESTACIONES_OUTFIT.map((e) => <option key={e.id} value={e.id}>{e.label}</option>)}
+              </SelectInput>
+            </Field>
+          </div>
+        )}
+
+        <PrimaryButton accent={accent} icon={Sparkles} onClick={() => setPedida(true)}>
+          Recomiéndame un outfit
+        </PrimaryButton>
+
+        {/* Apartado 22: saber cuándo NO se sabe, y decirlo sin fingir. */}
+        {recomendacion && !recomendacion.suficiente && (
+          <p className="text-xs mt-3 leading-relaxed" style={{ color: COLORS.textMuted }}>
+            {recomendacion.motivo === 'sin_outfits'
+              ? 'Todavía no tienes ningún outfit creado. Créalo en la pestaña Outfits y podré recomendártelo.'
+              : `Todavía no puedo recomendarte con precisión: me faltan ${recomendacion.faltan} ${recomendacion.faltan === 1 ? 'uso' : 'usos'} registrados para conocer tus patrones.`}
+          </p>
+        )}
+
+        {recomendacion && recomendacion.suficiente && (
+          <div className="space-y-2 mt-3">
+            {recomendacion.recomendaciones.map((r, i) => (
+              <div
+                key={r.outfit.id}
+                className="rounded-2xl p-3"
+                style={{
+                  background: i === 0 ? hexToRgba(accent, 0.1) : COLORS.surface2,
+                  border: `1px solid ${i === 0 ? hexToRgba(accent, 0.3) : COLORS.border}`,
+                }}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <button onClick={() => onAbrirOutfit(r.outfit)} className="text-left min-w-0 flex-1">
+                    <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>
+                      {i === 0 ? '✨ ' : ''}{r.outfit.nombre}
+                    </p>
+                  </button>
+                  {/* Apartado 19: el flujo rápido termina aquí — recomendar → registrar. */}
+                  <button
+                    onClick={() => { onRegistrarUso(r.outfit); setAviso(`"${r.outfit.nombre}" registrado hoy`); }}
+                    className="text-[11px] font-semibold px-2 py-1 rounded-lg flex-shrink-0"
+                    style={{ background: accent, color: COLORS.textOnAccent }}
+                  >
+                    Me lo pongo
+                  </button>
+                </div>
+                {/* "Mostrar por qué se recomienda" — apartado 7, literal. */}
+                <ul className="mt-1.5 space-y-0.5">
+                  {r.motivos.map((m, j) => (
+                    <li key={j} className="text-[11px] leading-relaxed" style={{ color: COLORS.textMuted }}>· {m}</li>
+                  ))}
+                </ul>
+                {r.noDisponibles.length > 0 && (
+                  <p className="text-[11px] mt-1.5" style={{ color: COLORS.textMuted }}>
+                    ⚠️ {r.noDisponibles.map(({ id, prenda }) => prenda?.nombre || 'Prenda eliminada').join(', ')}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* ---------- Apartado 15: filtro temporal ---------- */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <SelectInput value={periodo} onChange={(e) => setPeriodo(e.target.value)}>
+            {PERIODOS_ARMARIO.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            <option value="personalizado">Desde una fecha…</option>
+          </SelectInput>
+        </div>
+        {periodo === 'personalizado' && (
+          <div className="flex-1 min-w-0">
+            <TextInput type="date" value={desdePersonalizado} onChange={(e) => setDesdePersonalizado(e.target.value)} />
+          </div>
+        )}
+      </div>
+
+      {/* ---------- Apartado 5: diversidad ---------- */}
+      {diversidad.porcentaje !== null && (
+        <Card>
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Diversidad del armario</p>
+            <p className="text-2xl font-bold" style={{ color: accent, fontFamily: "'Manrope', sans-serif" }}>{diversidad.porcentaje}%</p>
+          </div>
+          <div className="rounded-full overflow-hidden mt-2" style={{ height: 6, background: COLORS.surface2 }}>
+            <div className="h-full rounded-full" style={{ width: `${diversidad.porcentaje}%`, background: accent }} />
+          </div>
+          {/* Apartado 16: la puntuación se explica, o no se enseña. */}
+          <p className="text-[11px] mt-2 leading-relaxed" style={{ color: COLORS.textMuted }}>{diversidad.explicacion}</p>
+        </Card>
+      )}
+
+      {/* ---------- Apartado 3: estadísticas de outfits ---------- */}
+      <Bloque titulo="Tus outfits en números" icono={BarChart3} accent={accent} defecto>
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <Dato valor={estOutfits.total} etiqueta="outfits" accent={accent} />
+          <Dato valor={estOutfits.usados} etiqueta="usados" accent={accent} />
+          <Dato valor={estOutfits.nuncaUsados.length} etiqueta="sin estrenar" accent={accent} />
+        </div>
+
+        {estOutfits.ultimoUsado && (
+          <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
+            Último: <span style={{ color: COLORS.text }}>{estOutfits.ultimoUsado.outfit.nombre}</span> · {estOutfits.textoUltimo.toLowerCase()}
+          </p>
+        )}
+
+        {estOutfits.rankingMas.length === 0 ? (
+          <EmptyHint text="En este período no has registrado ningún uso." />
+        ) : (
+          <>
+            <p className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: COLORS.textMuted }}>Más usados</p>
+            {estOutfits.rankingMas.map((x, i) => (
+              <FilaRanking
+                key={x.outfit.id} puesto={i + 1} nombre={x.outfit.nombre} veces={x.veces}
+                accent={accent} onAbrir={() => onAbrirOutfit(x.outfit)}
+              />
+            ))}
+            {/* El "menos usados" solo se enseña cuando aporta algo. Con 5 outfits
+                usados o menos, la lista de arriba ya los muestra TODOS ordenados —
+                el menos usado es sencillamente el último— y repetirlos del revés
+                sería la misma información dos veces, no una estadística nueva. */}
+            {estOutfits.usados > 5 && (
+              <>
+                <p className="text-[11px] font-semibold uppercase tracking-wide mt-3 mb-1" style={{ color: COLORS.textMuted }}>Menos usados</p>
+                {estOutfits.rankingMenos.map((x, i) => (
+                  <FilaRanking
+                    key={x.outfit.id} puesto={i + 1} nombre={x.outfit.nombre} veces={x.veces}
+                    accent={accent} onAbrir={() => onAbrirOutfit(x.outfit)}
+                  />
+                ))}
+              </>
+            )}
+          </>
+        )}
+      </Bloque>
+
+      {/* ---------- Apartado 4: estadísticas de prendas ---------- */}
+      <Bloque titulo="Tus prendas en números" icono={Shirt} accent={accent}>
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <Dato valor={estPrendas.total} etiqueta="prendas" accent={accent} />
+          <Dato valor={estPrendas.usadas} etiqueta="usadas" accent={accent} />
+          <Dato valor={estPrendas.nuncaUsadas.length} etiqueta="sin estrenar" accent={accent} />
+        </div>
+
+        {estPrendas.rankingMas.length === 0 ? (
+          <EmptyHint text="En este período no has registrado ningún uso." />
+        ) : (
+          <>
+            <p className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: COLORS.textMuted }}>Más usadas</p>
+            {estPrendas.rankingMas.map((x, i) => (
+              <FilaRanking
+                key={x.prenda.id} puesto={i + 1} nombre={x.prenda.nombre} veces={x.veces}
+                accent={accent} onAbrir={() => onAbrirPrenda(x.prenda.id)}
+              />
+            ))}
+            {estPrendas.masTiempoSinUsar.length > 0 && (
+              <>
+                <p className="text-[11px] font-semibold uppercase tracking-wide mt-3 mb-1" style={{ color: COLORS.textMuted }}>Más tiempo sin usar</p>
+                {estPrendas.masTiempoSinUsar.map((x) => (
+                  <button
+                    key={x.prenda.id}
+                    onClick={() => onAbrirPrenda(x.prenda.id)}
+                    className="w-full flex items-center gap-2 py-1 text-left"
+                  >
+                    <span className="text-sm truncate flex-1 min-w-0" style={{ color: COLORS.text }}>{x.prenda.nombre}</span>
+                    <span className="text-xs flex-shrink-0" style={{ color: COLORS.textMuted }}>{x.texto.toLowerCase()}</span>
+                  </button>
+                ))}
+              </>
+            )}
+          </>
+        )}
+      </Bloque>
+
+      {/* ---------- Apartado 12: outfits olvidados ---------- */}
+      {olvidados.length > 0 && (
+        <Bloque titulo={`Hace tiempo que no usas ${olvidados.length === 1 ? 'este outfit' : 'estos outfits'}`} icono={History} accent={accent} defecto>
+          <div className="space-y-1.5">
+            {olvidados.slice(0, 6).map((x) => (
+              <button
+                key={x.outfit.id}
+                onClick={() => onAbrirOutfit(x.outfit)}
+                className="w-full rounded-xl px-3 py-2 text-left flex items-center justify-between gap-2"
+                style={{ background: COLORS.surface2 }}
+              >
+                <span className="min-w-0">
+                  <span className="text-sm font-semibold block truncate" style={{ color: COLORS.text }}>{x.outfit.nombre}</span>
+                  <span className="text-[11px]" style={{ color: COLORS.textMuted }}>
+                    {x.veces} {x.veces === 1 ? 'uso' : 'usos'} · {x.texto.toLowerCase()}
+                  </span>
+                </span>
+                <ChevronRight size={14} style={{ color: COLORS.textMuted }} className="flex-shrink-0" />
+              </button>
+            ))}
+          </div>
+        </Bloque>
+      )}
+
+      {/* ---------- Apartado 13: prendas infrautilizadas ---------- */}
+      {infrautilizadas.length > 0 && (
+        <Bloque titulo="Prendas que podrías volver a usar" icono={TrendingUp} accent={accent} defecto>
+          <div className="space-y-1.5">
+            {infrautilizadas.map((x) => (
+              <button
+                key={x.prenda.id}
+                onClick={() => onAbrirPrenda(x.prenda.id)}
+                className="w-full rounded-xl px-2 py-1.5 text-left flex items-center gap-2"
+                style={{ background: COLORS.surface2 }}
+              >
+                <span className="rounded-lg overflow-hidden flex-shrink-0" style={{ width: 34 }}>
+                  <MiniaturaPrenda prenda={x.prenda} alto={28} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="text-sm truncate block" style={{ color: COLORS.text }}>{x.prenda.nombre}</span>
+                  <span className="text-[11px]" style={{ color: COLORS.textMuted }}>{x.motivo}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </Bloque>
+      )}
+
+      {/* ---------- Apartado 10: prendas muy repetidas ---------- */}
+      {repetidas.length > 0 && (
+        <Bloque titulo="Prendas que estás repitiendo" icono={History} accent={accent}>
+          <div className="space-y-1.5">
+            {repetidas.slice(0, 6).map((x) => (
+              <button
+                key={x.prenda.id}
+                onClick={() => onAbrirPrenda(x.prenda.id)}
+                className="w-full rounded-xl px-3 py-2 text-left"
+                style={{ background: COLORS.surface2 }}
+              >
+                <span className="text-sm font-semibold block truncate" style={{ color: COLORS.text }}>{x.prenda.nombre}</span>
+                {/* Información, no prohibición (apartado 10, literal). */}
+                <span className="text-[11px]" style={{ color: COLORS.textMuted }}>⚠️ {x.texto}</span>
+              </button>
+            ))}
+          </div>
+        </Bloque>
+      )}
+
+      {/* ---------- Apartado 11: combinaciones repetidas ---------- */}
+      {combinaciones.length > 0 && (
+        <Bloque titulo="Combinaciones que repites" icono={Layers} accent={accent}>
+          <div className="space-y-2">
+            {combinaciones.slice(0, 4).map((c) => (
+              <div key={c.huella} className="rounded-xl p-2.5" style={{ background: COLORS.surface2 }}>
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="text-xs font-semibold" style={{ color: COLORS.text }}>
+                    {c.veces} usos · {c.texto.toLowerCase()}
+                  </span>
+                  {/* Cuando la misma ropa vive en dos outfits distintos, se dice: es
+                      justo lo que explica por qué el número no cuadra con ninguno. */}
+                  {c.outfits.length > 1 && (
+                    <span className="text-[10px] flex-shrink-0" style={{ color: COLORS.textMuted }}>
+                      en {c.outfits.length} outfits
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                  {c.prendas.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => onAbrirPrenda(p.id)}
+                      className="rounded-lg overflow-hidden flex-shrink-0"
+                      style={{ width: 38, border: `1px solid ${COLORS.border}` }}
+                      aria-label={`Abrir ${p.nombre}`}
+                    >
+                      <MiniaturaPrenda prenda={p} alto={30} />
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] mt-1.5 truncate" style={{ color: COLORS.textMuted }}>
+                  {c.outfits.map((o) => o.nombre).join(' · ')}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Bloque>
+      )}
+    </div>
   );
 }

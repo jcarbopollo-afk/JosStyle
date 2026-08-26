@@ -462,9 +462,21 @@ export function composicionDeOutfit(outfit, prendas) {
  * necesitará este dato para no recomendar un outfit imposible de ponerse).
  */
 export function noDisponiblesDeOutfit(outfit, prendas) {
+  return prendasNoDisponiblesDeOutfit(outfit, prendas).length;
+}
+
+/**
+ * Las mismas, pero la LISTA en vez del número.
+ *
+ * La Fase 4 necesita decir *cuáles* no están disponibles, no solo cuántas, para
+ * poder explicar por qué un outfit no es la primera recomendación (apartado 9).
+ * Se separa así, y `noDisponiblesDeOutfit` pasa a ser su longitud, para que las
+ * dos respuestas salgan siempre del mismo cálculo: si un día cambia qué cuenta
+ * como "no disponible", cambia aquí y las dos se enteran.
+ */
+export function prendasNoDisponiblesDeOutfit(outfit, prendas) {
   return composicionDeOutfit(outfit, prendas)
-    .filter(({ prenda }) => !prenda || prenda.estado !== 'disponible')
-    .length;
+    .filter(({ prenda }) => !prenda || prenda.estado !== 'disponible');
 }
 
 /**

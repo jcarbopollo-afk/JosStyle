@@ -31,7 +31,7 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
-import ArmarioView, { PanelOutfits, PanelCalendario } from '../src/views/ArmarioView.jsx';
+import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
   DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION,
@@ -159,6 +159,12 @@ const CASOS = [
   ['ArmarioView · Calendario', PanelCalendario, (e) => ({
     usos: e.armario.usos, outfits: e.armario.outfits, prendas: e.armario.prendas,
     hoyISO: HOY, onAddUso: noop, onUpdateUso: noop, onDeleteUso: noop, onAbrirOutfit: noop, accent,
+  })],
+  // Y la cuarta. El escenario "lleno" trae un uso huérfano y una prenda en la
+  // lavandería: las estadísticas tienen que salir sin contarlos mal ni reventar.
+  ['ArmarioView · Ideas', PanelIdeas, (e) => ({
+    usos: e.armario.usos, outfits: e.armario.outfits, prendas: e.armario.prendas,
+    hoyISO: HOY, onAbrirOutfit: noop, onAbrirPrenda: noop, onRegistrarUso: noop, accent,
   })],
   ['PersonalizationView', PersonalizationView, (e) => ({
     areas: AREAS_PRUEBA,

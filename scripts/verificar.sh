@@ -80,6 +80,12 @@ else
   fallo "Fallan pruebas del armario"; grep '✗' /tmp/jc_arm.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-armario-inteligencia.mjs >/tmp/jc_arm4.log 2>&1; then
+  ok "Estadísticas y recomendaciones (AR F4) — $(grep -c '✓' /tmp/jc_arm4.log) comprobaciones"
+else
+  fallo "Fallan pruebas de la inteligencia del armario"; grep '✗' /tmp/jc_arm4.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else
