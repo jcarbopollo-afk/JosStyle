@@ -1,5 +1,64 @@
 # CHANGELOG.md
 
+## Entrega 2 · RA Fase 3 — Gamificación, hitos, logros y progresión (v1.50.0)
+
+### La frase que marca el tono
+*"No quiero que el usuario sienta «tengo que usar la app para ganar puntos». Quiero que sienta
+«estoy progresando en mi vida y la app me ayuda a verlo»."*
+
+De ahí salen las tres decisiones que se notan en el código: sin XP ni niveles, doce logros en vez de
+cien, y celebraciones que se reservan.
+
+### Sin XP ni niveles, y dicho con claridad
+Los apartados 14 y 15 los dejan en condicional: *"no conviertas automáticamente las rachas en
+niveles si no es necesario"*, *"si decides preparar XP"*. Y no es necesario: no hay nada que gastar
+ni con qué compararse. Un contador de XP sin uso sería un control decorativo.
+
+Lo que sí queda es el punto de enganche: los eventos llevan los días y el hito, que es todo lo que
+necesitaría una capa de XP futura. Y por D2-02, si llega, se queda dentro de Rachas y Sonido.
+
+### Un hito se anuncia una sola vez
+Un evento derivado del estado se emitiría cada vez que alguien mirase la pantalla. Por eso se apunta
+qué hitos ya se anunciaron, por racha. Y al volver después de una semana fuera se anuncian **todos
+los intermedios**, no solo el último: llegar a 30 días no puede saltarse el 7, el 14 y el 21 en
+silencio.
+
+### La barra de progreso se mide desde el hito anterior
+Con 25 días y el siguiente hito en 30, va por el **44 %**, no por el 83 %. Medirlo desde cero haría
+que la barra apenas se moviera entre 200 y 365 días.
+
+### No se puede hacer trampa, por construcción
+El apartado 27 lo pide con nombre: `currentStreak = 1000` no debe desbloquear nada sin días reales
+detrás. Aquí se cumple sin vigilar nada, porque **el contexto no acepta ningún número de fuera**: lo
+pide todo al servicio, que lo deriva del historial de cumplimientos. Y un logro inyectado a mano que
+no esté en el catálogo se descarta al cargar.
+
+### Un logro conseguido no se pierde
+Es la decisión que había que tomar (apartado 28). Josué cumplió treinta días seguidos; corregir
+después un entrenamiento mal apuntado no deshace haberlos cumplido, y quitarle el logro por eso
+sería castigarle por ordenar sus datos. Los números —racha, récord, progreso— sí se corrigen solos,
+porque se derivan. `revisarLogros()` **informa**; revocar es una decisión explícita, y solo ocurre
+sola al borrar la racha entera.
+
+### La racha global no es max()
+El apartado 22 lo prohíbe expresamente. La condición aquí es "días seguidos cumpliendo al menos una
+racha", y hay una prueba que lo demuestra: **dos rachas que se turnan dan una global mayor que
+cualquiera de las dos**, que es imposible con un máximo.
+
+### Dos expectativas mías mal puestas
+Con la lista de doce hitos, el siguiente después de 17 días es **21**, no 30. Y con 5 días los hitos
+alcanzados son dos (el 1 y el 3), no tres: **5 no es un hito**. El código estaba bien las dos veces.
+
+### Verificación
+**Las diez pruebas que pide el apartado 34**, una por una y marcadas como tales. **1778
+comprobaciones y 9 reglas invariantes en verde**, build incluido. `package.json` → **v1.50.0**. Van
+27 de las 106 fases; quedan 79.
+
+⚠️ **Un duplicado anotado para RA F4:** el proyecto ya tiene `src/lib/logros.js` (Fase 20) con doce
+insignias de toda la app, dos de ellas de racha. Los logros de aquí todavía no tienen pantalla, así
+que hoy no hay duplicación visible; cuando F4 construya el Centro de Rachas habrá que decidir si son
+dos listas o una.
+
 ## Entrega 2 · RA Fase 2 — Persistencia, seguridad y sincronización (v1.49.0)
 
 ### Ni una tabla nueva, ni un SQL que ejecutar

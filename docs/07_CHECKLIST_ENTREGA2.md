@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 26 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)** y **RA 2/4** (hasta v1.49.0). Quedan **80**: RA (2), SO (5), HT (12) y
+> **Estado: 27 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)** y **RA 3/4** (hasta v1.50.0). Quedan **79**: RA (1), SO (5), HT (12) y
 > EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
@@ -4623,6 +4623,108 @@ se miran en el estado crudo.
 **Lo que todavía no tiene pantalla, y es deliberado:** no hay forma de crear una racha desde la
 interfaz. El apartado 28 prohíbe expresamente el Centro de Rachas en esta fase; llega en RA F4. Lo
 que sí funciona hoy de punta a punta son los hábitos, que ya consultan por el servicio central.
+
+#### RA · Fase 3/4 — GAMIFICACIÓN, HITOS, LOGROS Y PROGRESIÓN ✅ COMPLETADA (v1.50.0)
+
+**La frase que marca el tono** (apartado 23): *"No quiero que el usuario sienta «tengo que usar la
+app para ganar puntos». Quiero que sienta «estoy progresando en mi vida y la app me ayuda a
+verlo»."* De ahí salen las tres decisiones que se notan en el código: sin XP ni niveles, doce logros
+en vez de cien, y celebraciones que se reservan.
+
+Es una capa **encima**: no calcula ni una racha, se las pide al motor de F1 a través del servicio de
+F2. Si se borrara el archivo entero, las rachas seguirían funcionando igual.
+
+- [x] **1 · Regla principal** — el motor no se ha tocado. La gamificación consume.
+- [x] **2 · Sistema de hitos** — los doce del apartado (1, 3, 7, 14, 21, 30, 50, 75, 100, 150, 200,
+      365) en una configuración central. **Una sola lista**, la de RA F2, reexportada aquí como
+      `STREAK_MILESTONES`: no dos que puedan desincronizarse.
+- [x] **3 · Múltiples tipos de racha** — los hitos son días. Una racha de entreno de 30 llega al
+      mismo hito que una de sueño de 30. Cero lógica por módulo.
+- [x] **4 · Logros** — `DefinicionLogro` (estático y global, cacheable) separado de lo desbloqueado.
+      La condición recibe el contexto entero, no un número, así que "haber creado 5 rachas" será una
+      fila más de la tabla.
+- [x] **5 · Logros desbloqueados** — clave única `logro + racha`. La racha entra porque llegar a 30
+      días entrenando y a 30 estudiando son **dos conquistas**, no una repetida.
+- [x] **6 · No repetir recompensas** — se guardan con su fecha. Cerrar y abrir la app no vuelve a
+      desbloquear nada. Probado con cinco evaluaciones seguidas.
+- [x] **7 · Hito ≠ logro** — separados de verdad: distinta estructura, distinta persistencia.
+- [x] **8 · Progresión** — derivada, nunca guardada. **Y medida desde el hito anterior, no desde
+      cero**: con 25 días y el hito en 30 va por el 44 %, no por el 83 %. Medirlo desde cero haría
+      que la barra apenas se moviera entre 200 y 365.
+- [x] **9 · Récord personal** — viene del motor de F1. No hay un segundo contador.
+- [x] **10 · Récord superado** — `STREAK_PERSONAL_RECORD`. Y **la primera racha de la vida no
+      cuenta**: no hay récord anterior que batir.
+- [x] **11 · Eventos de gamificación** — los seis que pide, desde una capa central. Ningún
+      componente tiene que averiguar por su cuenta qué ha pasado.
+- [x] **12 · Transiciones** — un hito se anuncia **una sola vez**, porque se apunta cuál ya se
+      anunció. Un evento derivado del estado se emitiría cada vez que alguien mirase. Y al volver
+      tras una semana fuera se anuncian **todos los hitos intermedios**, no solo el último.
+- [x] **13 · Recompensas** — la arquitectura las soporta (un logro es una definición con condición);
+      no se ha construido ninguna tienda ni economía.
+- [x] **14 · Niveles** — ⚠️ **deliberadamente no implementados.** El apartado los deja en
+      condicional (*"no conviertas automáticamente las rachas en niveles si no es necesario"*) y no
+      es necesario: no hay nada con qué compararse. Un nivel sin uso sería un control decorativo
+      (regla 8).
+- [x] **15 · Puntos / XP** — ⚠️ **igual, y por lo mismo**: *"si decides preparar XP"*. No hay nada
+      que gastar. Lo que sí queda es el enganche: los eventos llevan los días y el hito, que es todo
+      lo que necesitaría una capa de XP futura. Y D2-02 obliga a que, si llega, se quede dentro de
+      Rachas y Sonido.
+- [x] **16 · Rachas especiales** — "Primera llama", "Mejor que nunca", "Constancia" (30 días en
+      total, aunque se falle: premia volver) y "Leyenda". Base sólida, no cien logros.
+- [x] **17 · Logros ocultos** — uno, "Mes perfecto". Hasta desbloquearlo se enseña como `???` y no
+      cuenta de qué va: contarlo antes convertiría un descubrimiento en una tarea.
+- [x] **18 · Estados** — `locked` / `unlocked`, más `oculto` / visible.
+- [x] **19 · Progreso hacia logros** — cuando tiene sentido. El de récord **no lleva barra**: nadie
+      sabe cuánto le falta para batirse a sí mismo. Y un logro ya conseguido tampoco.
+- [x] **20 · Estadísticas** — los ocho datos que pide, todos derivados. Sin dashboard.
+- [x] **21 · Calendario futuro** — `diasDelMes()` da el estado de cada día. No pinta nada.
+- [x] **22 · Rachas globales** — *"no debe ser simplemente `max(streaks)`. Debe existir una
+      condición real."* La suya es "días seguidos cumpliendo al menos una racha", y hay una prueba
+      que lo demuestra: **dos rachas que se turnan dan una global mayor que cualquiera de las dos**,
+      que es imposible con `max()`.
+- [x] **23 · Filosofía** — sin pop-ups, sin recompensas constantes. Un día normal después de otro no
+      genera ninguna celebración: hay una prueba de ello.
+- [x] **24 · Celebraciones** — tres niveles. Grande solo para 30, 100 y 365.
+- [x] **25 · Preparación para sonidos** — los eventos son consumibles tal cual por el sistema de
+      audio, sin tocar el motor. Aquí no suena nada.
+- [x] **26 · Preparación para notificaciones** — igual, con los de RA F2.
+- [x] **27 · Anti-exploit** — **el requisito con más filo, y se cumple por construcción**: el
+      contexto no acepta ningún número de fuera, lo pide todo al servicio, que lo deriva del
+      historial. `currentStreak = 1000` sin días detrás no desbloquea nada — probado. Y un logro
+      inyectado a mano que no esté en el catálogo se descarta al cargar.
+- [x] **28 · Recálculo y revocación** — **decisión tomada y documentada: un logro no se revoca
+      nunca solo.** Josué cumplió treinta días; corregir después un entrenamiento mal apuntado no
+      deshace haberlos cumplido, y quitárselo por eso sería castigarle por ordenar sus datos. Los
+      números sí se corrigen solos, porque se derivan. `revisarLogros()` **informa**; revocar es
+      explícito, y solo pasa solo al borrar la racha entera.
+- [x] **29 · Modelo de datos** — misma decisión y mismos motivos que RA F2: dentro de `app_data`,
+      clave `gamificacionRachas`. *"No uses exactamente estos nombres si contradicen las
+      convenciones existentes."* Sin tabla nueva, sin SQL nuevo.
+- [x] **30 · Rendimiento** — las definiciones son estáticas y se leen una vez; el panel se calcula
+      una vez por cambio real de estado, no una por render. Y todo es del usuario autenticado
+      porque no hay otro.
+- [x] **31 · Tipado** — mismo criterio honesto que RA F2: el proyecto es JavaScript, así que
+      `@typedef` más normalizadores que se ejecutan de verdad.
+- [x] **32 · Servicio central** — `src/lib/rachasGamificacion.js`, con las cinco operaciones que
+      pide. Nada de esto vive en un componente.
+- [x] **33 · Hook** — `src/hooks/useGamificacion.js`.
+- [x] **34 · Pruebas obligatorias** — **las diez, una por una y marcadas como tales.** 118
+      comprobaciones.
+- [x] **35 · No implementar todavía** — ni diseño, ni Centro de Rachas, ni calendario, ni confeti,
+      ni sonidos, ni vibraciones, ni notificaciones, ni tienda, ni ranking.
+- [x] **36 · Criterio de finalización** — racha → progreso → hito → detección → evento → logro →
+      persistencia, y todos los datos que RA F4 necesitará, listos en `panelGamificacion()`.
+- [x] **37 · Informe final** — los ocho puntos, en `CHANGELOG.md` y `HANDOFF.md`.
+
+**Dos expectativas mías mal puestas, cazadas por las pruebas:** con la lista de doce hitos, el
+siguiente después de 17 días es **21**, no 30 — y con 5 días los hitos alcanzados son dos (el 1 y el
+3), no tres, porque **5 no es un hito**. El código estaba bien las dos veces.
+
+⚠️ **Un duplicado que hay que resolver en RA F4:** el proyecto ya tiene `src/lib/logros.js` (Fase
+20) con doce insignias de toda la app, dos de ellas de racha (`racha7`, `racha30`). Los logros de
+aquí son de racha y todavía **no tienen pantalla**, así que hoy no hay duplicación visible. Cuando
+RA F4 construya el Centro de Rachas habrá que decidir si son dos listas o una — anotado para
+entonces, no resuelto por mi cuenta.
 
 ---
 

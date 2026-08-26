@@ -409,7 +409,12 @@ export function panelRacha(estado, rachaId, hoy = todayISO()) {
 
    Los hitos son solo números de referencia, no logros: no dan XP, ni nivel, ni
    medalla (apartado 26 y D2-02). */
-export const HITOS = [7, 14, 30, 50, 100, 365];
+// Apartado 2 de RA F3: *"NO codifiques estos números directamente por todas
+// partes. Crea una configuración central."* Esta es. La capa de gamificación la
+// reexporta con el nombre que pide la especificación (`STREAK_MILESTONES`); vive
+// aquí y no allí para que el servicio no tenga que importar de su propia capa
+// superior, que sería una dependencia circular.
+export const HITOS = [1, 3, 7, 14, 21, 30, 50, 75, 100, 150, 200, 365];
 
 export const EVENTOS_RACHA = {
   EN_RIESGO: 'streak_at_risk',

@@ -140,6 +140,12 @@ else
   fallo "Falla la capa persistente de rachas"; grep '✗' /tmp/jc_rachas2.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-rachas-gamificacion.mjs >/tmp/jc_rachas3.log 2>&1; then
+  ok "Gamificación de rachas (RA F3) — $(grep -c '✓' /tmp/jc_rachas3.log) comprobaciones"
+else
+  fallo "Falla la gamificación de rachas"; grep '✗' /tmp/jc_rachas3.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

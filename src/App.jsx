@@ -14,6 +14,7 @@ import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosD
 import { urlFirmada, urlEnCache } from './lib/imagenes';
 import { resumenHabito } from './lib/rachas';
 import { ESTADO_INICIAL, normalizarEstado } from './lib/rachasServicio';
+import { GAMIFICACION_INICIAL, normalizarGamificacion } from './lib/rachasGamificacion';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal } from './components/ui';
 import HubView from './views/HubView';
 import Auth from './components/Auth';
@@ -257,6 +258,10 @@ export default function App() {
   // no vuelve a saltar solo al mismo elemento.
   const [armario, setArmario] = useState(DEFAULT_ARMARIO);
   const [rachas, setRachas] = useState(ESTADO_INICIAL);
+  // RA Fase 3 — los logros y los hitos ya anunciados, en su propia clave. Van
+  // aparte de `rachas` porque son cosas distintas (apartado 7: hito ≠ logro) y
+  // porque un logro conseguido NO se revoca al corregir el historial (apartado 28).
+  const [gamificacion, setGamificacion] = useState(GAMIFICACION_INICIAL);
   const [dashboardFoco, setDashboardFoco] = useState(null);
   // BI Fase 4 · apartado 11 — de dónde vino Josué al abrir algo desde el buscador.
   const [vueltaBusqueda, setVueltaBusqueda] = useState(null);
@@ -272,7 +277,7 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach] = await Promise.all([
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam] = await Promise.all([
         loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
@@ -306,6 +311,7 @@ export default function App() {
         // todo lo demás. Sin tabla nueva y sin SQL que Josué tenga que ejecutar: las
         // políticas RLS de `app_data` ya garantizan el aislamiento del apartado 5.
         loadData(uidUser, 'rachas', ESTADO_INICIAL),
+        loadData(uidUser, 'gamificacionRachas', GAMIFICACION_INICIAL),
       ]);
       if (cancelled) return;
       setAccent(a.accent || ACCENTS[0].value);
@@ -422,6 +428,7 @@ export default function App() {
       // vez de saneado: un estado restaurado de una copia vieja con contadores
       // pegados o cumplimientos huérfanos entra limpio.
       setRachas(normalizarEstado(rach));
+      setGamificacion(normalizarGamificacion(gam));
       setLoaded(true);
     })();
     return () => { cancelled = true; };
@@ -1140,7 +1147,7 @@ export default function App() {
   // al restaurarse duplicaría el elemento. Con la papelera dentro del snapshot, deshacer revierte
   // las dos cosas a la vez y los dos sistemas de recuperación no se pisan.
   const snapshotAndSave = (patch) => {
-    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas };
+    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion };
     const nextHist = [...history, snapshot].slice(-10);
     setHistory(nextHist);
     saveData(uidUser, 'historial', nextHist);
@@ -1163,6 +1170,7 @@ export default function App() {
     if (patch.papelera) { setPapelera(patch.papelera); saveData(uidUser, 'papelera', patch.papelera); }
     if (patch.armario) { setArmario(patch.armario); saveData(uidUser, 'armario', patch.armario); }
     if (patch.rachas) { setRachas(patch.rachas); saveData(uidUser, 'rachas', patch.rachas); }
+    if (patch.gamificacion) { setGamificacion(patch.gamificacion); saveData(uidUser, 'gamificacionRachas', patch.gamificacion); }
   };
 
   const addSueno = (entry) => snapshotAndSave({ sueno: [...sueno, entry] });
@@ -1397,6 +1405,7 @@ export default function App() {
     setPapelera(last.papelera || DEFAULT_PAPELERA); saveData(uidUser, 'papelera', last.papelera || DEFAULT_PAPELERA);
     setArmario(last.armario || DEFAULT_ARMARIO); saveData(uidUser, 'armario', last.armario || DEFAULT_ARMARIO);
     setRachas(last.rachas || ESTADO_INICIAL); saveData(uidUser, 'rachas', last.rachas || ESTADO_INICIAL);
+    setGamificacion(last.gamificacion || GAMIFICACION_INICIAL); saveData(uidUser, 'gamificacionRachas', last.gamificacion || GAMIFICACION_INICIAL);
     setHistory(rest); saveData(uidUser, 'historial', rest);
   };
 

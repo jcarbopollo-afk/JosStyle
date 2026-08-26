@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.49.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.50.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR** y **FO** están terminados y **Rachas** va por 2/4, quedan 80) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI**, **AR** y **FO** están terminados y **Rachas** va por 3/4, quedan 79) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,8 +107,8 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 1506 pruebas unitarias con Node, 5 de auditoría, 140 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **1660 comprobaciones**.
+Vite, 1624 pruebas unitarias con Node, 5 de auditoría, 140 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **1778 comprobaciones**.
 
 Eso ya ha encontrado **treinta y siete bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -133,8 +133,9 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase candidata: RA · Fase 3/4 — Gamificación, hitos, logros y progresión.**
-Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_SONIDO_Y_RACHAS.md`.
+**Siguiente fase candidata: RA · Fase 4/4 — UI/UX, Centro de Rachas y experiencia visual.**
+Con ella se cierra el bloque de Rachas. Ver `docs/07_CHECKLIST_ENTREGA2.md` y
+`especificaciones/ESPECIFICACION_SONIDO_Y_RACHAS.md`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
@@ -154,8 +155,13 @@ Tres avisos para cuando toque:
 - **`src/lib/rachasServicio.js` es el ÚNICO sitio que escribe rachas** (RA F2). Ninguna pantalla
   toca Supabase ni recalcula por su cuenta; se pasa por `useRachas`. Y las rachas viven en
   `app_data`, **sin tabla ni SQL propios** — ver el comentario en `supabase/schema.sql`.
-- **RA F3 es la fase de la gamificación, y ahí D2-02 aprieta:** XP, niveles y recompensas se quedan
-  DENTRO de Rachas y Sonido. Ni al Dashboard, ni a la puntuación diaria, ni a los hubs.
+- **La gamificación no tiene XP ni niveles, a propósito** (RA F3): los apartados 14 y 15 los dejan
+  en condicional y no hacían falta. Si RA F4 los pide, D2-02 obliga a que se queden DENTRO de
+  Rachas y Sonido: ni al Dashboard, ni a la puntuación diaria, ni a los hubs.
+- ⚠️ **RA F4 tiene que resolver un duplicado:** `src/lib/logros.js` (Fase 20) ya enseña doce
+  insignias de toda la app, dos de ellas de racha. Los logros de RA F3 aún no tienen pantalla. Al
+  construir el Centro de Rachas hay que decidir si son dos listas o una — **preguntárselo a Josué**,
+  no decidirlo por cuenta propia.
 
 ⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
 de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin
