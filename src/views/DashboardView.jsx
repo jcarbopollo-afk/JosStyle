@@ -8,6 +8,7 @@ import {
 import { COLORS, MODOS_APP } from '../tokens';
 import { calcularDuracion, formatHoras, hexToRgba, diasHasta, formatFecha, todayISO, addDays } from '../lib/helpers';
 import { resumenHabito } from '../lib/rachas';
+import { ResumenRachaHoy } from './RachasView';
 import { resumenDelDia, eventosDelDia } from '../lib/calendario';
 import { puntuacionDelDia, mensajePuntuacion } from '../lib/puntuacion';
 import { Card, AIPanel, ScoreGauge, DashboardModuleCard, MiniAccessCard, QuickActionButton } from '../components/ui';
@@ -379,6 +380,7 @@ export default function DashboardView({
   calendario, derivadosCalendario,
   // Ampliación del Dashboard — Centro de Control
   salud, objetivos, nutricion, negocio, diario, biblioteca, fe, bienestar, resumenes, dashboardOcultos, modulosDesactivados, onNavegar,
+  rachas,
   accent,
 }) {
   const hora = new Date().getHours();
@@ -504,6 +506,19 @@ export default function DashboardView({
         {!oculto('calendario') && <AccesoCalendarioYAgenda calendario={calendario} derivadosCalendario={derivadosCalendario} accent={accent} onNavegar={onNavegar} />}
         {!oculto('relacion') && <RecordatorioPareja relacion={relacion} accent={accent} />}
         {!oculto('sueno') && <AvisoSuenoCorto ultimoSueno={ultimoSueno} accent={accent} notificaciones={notificaciones} />}
+        {/* RA Fase 4 · apartado 3 — la racha principal en Hoy: *"visible pero sin dominar
+            toda la pantalla"*. Se pinta sola solo si hay una racha viva; si no hay ninguna, no
+            deja un hueco que diga "0 días" todos los días. Y sustituye al aviso de racha en
+            riesgo de la Fase 20, que solo miraba los hábitos: este mira TODAS las rachas y ya
+            incluye el recordatorio de día pendiente (apartado 29). */}
+        {!oculto('rachas') && (
+          <ResumenRachaHoy
+            rachas={rachas}
+            habitos={productividad?.habitos}
+            accent={accent}
+            onAbrir={() => onNavegar && onNavegar('rachas')}
+          />
+        )}
         {!oculto('productividad') && <AvisoRachaEnRiesgo productividad={productividad} accent={accent} notificaciones={notificaciones} />}
         {!oculto('estudios') && <AvisoExamenSinHoras estudios={estudios} accent={accent} notificaciones={notificaciones} />}
       </div>

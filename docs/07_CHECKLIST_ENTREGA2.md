@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 27 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)** y **RA 3/4** (hasta v1.50.0). Quedan **79**: RA (1), SO (5), HT (12) y
-> EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 28 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)** y **RA 4/4 (cerrado)** (hasta v1.51.0). Quedan **78**: SO · Sonido (5),
+> HT (12) y EH (65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -4725,6 +4725,106 @@ siguiente después de 17 días es **21**, no 30 — y con 5 días los hitos alca
 aquí son de racha y todavía **no tienen pantalla**, así que hoy no hay duplicación visible. Cuando
 RA F4 construya el Centro de Rachas habrá que decidir si son dos listas o una — anotado para
 entonces, no resuelto por mi cuenta.
+
+#### RA · Fase 4/4 — UI/UX, CENTRO DE RACHAS Y EXPERIENCIA VISUAL ✅ COMPLETADA (v1.51.0) 🔒 CIERRA EL BLOQUE RA
+
+Las tres fases anteriores construyeron el motor, la persistencia y la gamificación. **Esto es lo
+único que Josué ve**, y por eso no calcula ni un número: todo viene de `rachasGamificacion.js`.
+
+`src/views/RachasView.jsx` + un módulo nuevo, **Rachas**, en el área Vida junto a Productividad,
+que es donde viven los hábitos. La barra inferior sigue teniendo cinco pestañas (regla 10).
+
+- [x] **1 · Inspeccionar la app** — se hizo, y por eso no hay ni un color suelto ni un componente
+      que duplique otro: `Card`, `PrimaryButton`, `GhostBtn`, `ListRow` y los tokens de `COLORS`
+      son los de siempre. Lo propio es solo lo que no existía.
+- [x] **2 · Mobile-first** — nada depende de `hover`, sin scroll horizontal, todo pulsable con el
+      dedo, y las mismas `Card` que ya respetan las safe areas del iPhone.
+- [x] **3 · Racha principal en el Dashboard** — `ResumenRachaHoy`. Visible sin dominar la pantalla,
+      y **si no hay ninguna racha viva no se pinta nada**: una tarjeta que dice "0 días" todos los
+      días deja de significar algo y ocupa sitio.
+- [x] **4 · Tarjeta de racha** — `TarjetaRacha`, genérica. Recibe un resumen y no sabe de qué
+      módulo viene: sirve igual para una racha propia que para un hábito de Productividad.
+- [x] **5 · Estados visuales** — los cinco, **y nunca solo por color**: cada uno lleva su palabra y
+      su icono. Un estado que solo se distingue por el tinte no existe para quien no lo distingue.
+- [x] **6 · Centro de Rachas** — resumen arriba (actual · mejor · logros), principal, secundarias,
+      logros y totales.
+- [x] **7 · Jerarquía** — la principal grande, las demás compactas. *"No quiero que 10 tarjetas
+      ocupen toda la pantalla."*
+- [x] **8 · Detalle de una racha** — los nueve datos que pide, incluido el historial de tramos.
+- [x] **9 · Calendario de racha** — rejilla de puntos, no emojis: el apartado los propone *"pero
+      quiero algo más elegante si el sistema de iconografía actual permite algo mejor"*. Con
+      leyenda, `aria-label` por día y navegación entre meses. Lunes primero.
+- [x] **10 · Calendario compacto** — un mes cabe entero sin scroll.
+- [x] **11 · Progreso hacia el hito** — `BarraHito`, con el porcentaje que ya calcula RA F3. **Sin
+      hito siguiente no se dibuja nada**: quien lleva 400 días no tiene barra que llenar.
+- [x] **12 · Récord personal** — destacado sin competir con la racha actual: pequeño y debajo. Y
+      "estás batiendo tu récord" solo cuando de verdad lo está batiendo.
+- [x] **13 · Logros** — desbloqueados destacados, bloqueados discretos, con progreso cuando existe.
+- [x] **14 · Detalle de logro** — *"no hagas una ventana enorme"*: una tarjeta que se despliega bajo
+      la lista, no un modal. Un logro oculto sin desbloquear **tampoco se destapa aquí**.
+- [x] **15 · Celebraciones** — una tarjeta, no una pantalla invasiva.
+- [x] **16 · Niveles de celebración** — los de RA F3. Completar un día normal **no abre nada**: su
+      microfeedback va en la propia tarjeta.
+- [x] **17 · Animaciones** — una transición de 0.35 s en la barra, y ya. Sin bucles, sin efectos
+      pesados y **sin un segundo sistema de animaciones**: `prefers-reduced-motion` y el ajuste de
+      animaciones de la Fase A3 las gobiernan desde `index.css`, como al resto de la app.
+- [x] **18 · Feedback al completar** — "Día completado · Racha: N días", con el número del motor
+      real.
+- [x] **19 · No duplicar feedback** — **`Celebracion` recibe la lista entera de eventos y saca UN
+      solo mensaje.** Hito, récord y logro a la vez salen en una tarjeta, no en tres avisos. Hay una
+      prueba de renderizado con los tres a la vez.
+- [x] **20 · Sonido** — ⚠️ **no se implementa**, y no hay ni un archivo de audio en un componente.
+      La pantalla emite eventos; el sistema de audio los escuchará cuando exista.
+- [x] **21 · Haptics** — igual: eventos, nada de vibración.
+- [x] **22 · Colores** — `COLORS` y el acento del usuario. Cero hex sueltos: lo comprueba la regla
+      invariante de siempre.
+- [x] **23 · Dark mode** — funciona en los dos porque **no hay ni un color propio**: todo sale de
+      los tokens, que ya cambian con el tema.
+- [x] **24 · Accesibilidad** — `aria-label` en botones, días y barra de progreso; `role="progressbar"`
+      con sus valores; estados que no dependen solo del color; leyenda en el calendario.
+- [x] **25 · Empty states** — *"Empieza tu primera racha"*, con su botón. Ni un hueco.
+- [x] **26 · Primer día** — el estado `NUEVA` dice "Recién empezada", no "1 día" a secas, y el hito
+      de 1 día se celebra: no parece que un número haya pasado de 0 a 1.
+- [x] **27 · Racha rota** — *"La racha terminó. Hoy puedes empezar una nueva"*, literal. Nada de
+      "HAS FALLADO".
+- [x] **28 · Recuperación** — el récord y el historial siguen ahí, con la frase *"tu mejor marca de
+      N días sigue siendo tuya"*.
+- [x] **29 · Recordatorio visual** — solo si el día está pendiente. Si ya está completado, no
+      aparece.
+- [x] **30 · Móvil** — ⚠️ **probado por renderizado, no en un iPhone de verdad.** Es el límite
+      honesto de este entorno, el mismo de siempre (R1): el layout real, los gestos y el scroll solo
+      los puede ver Josué.
+- [x] **31 · Rendimiento** — el panel va en `useMemo`; y el resumen del hub de Rachas, que recorre
+      historiales, ha obligado a **memoizar `resumenesTodos` en `App.jsx`**, que hasta ahora se
+      recalculaba en cada render porque todo lo que había era barato.
+- [x] **32 · Componentes** — `TarjetaRacha`, `BarraHito`, `CalendarioRacha`, `TarjetaLogro`,
+      `DetalleLogro`, `Celebracion`, `DetalleRacha`, `CrearRacha`, `ResumenRachaHoy`. Ninguno
+      duplica otro que ya existiera.
+- [x] **33 · Navegación** — **un módulo más**, en el área Vida. Mismo hub, mismo botón de volver,
+      mismas cinco pestañas. Cero navegación paralela.
+- [x] **34 · Microinteracciones** — la barra que avanza y el estado que cambia. Poco y suave.
+- [x] **35 · No sobrecargar** — *"si una animación o componente no mejora la comprensión, elimínalo"*.
+- [x] **36 · Pruebas visuales** — las doce que pide, **montadas con el servicio real** y no con
+      datos escritos a mano: si el motor cambiara de forma, estas pruebas se enterarían. Los casos
+      de renderizado suben de 140 a 192.
+- [x] **37 · Criterio de finalización** — el recorrido entero: Hoy → racha → Centro → detalle →
+      historial → progreso → récord → logros → feedback al completar.
+- [x] **38 · No avanzar a sonido** — no se ha tocado.
+- [x] **39 · Informe final** — los doce puntos, en `CHANGELOG.md` y `HANDOFF.md`.
+
+**Cómo se ha resuelto el duplicado que RA F3 dejó anotado.** El proyecto ya tiene `logros.js` (Fase
+20) con doce insignias de **toda la app** —Diario, Objetivos, Nutrición, Calistenia…—. Los de aquí
+son de **las rachas** y son por racha, así que pueden ser muchos. Juntarlos daría una lista larguísima
+que mezcla dos cosas distintas. Se quedan separados: los de racha en el Centro de Rachas, los
+generales en Logros. **No es una decisión irreversible**: si Josué prefiere verlos juntos, es mover
+una lista.
+
+**Un hábito no se marca desde aquí.** Aparece en el Centro con su racha, pero el botón de completar
+solo sale en las rachas propias: el dato de un hábito vive en Productividad, y ofrecer un segundo
+sitio donde escribirlo sería duplicar el camino.
+
+**Lo que sigue sin estar probado, y hay que decirlo:** el aspecto real en un iPhone, los gestos y el
+scroll. Como todo lo demás desde R1.
 
 ---
 

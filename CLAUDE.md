@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.50.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.51.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR** y **FO** están terminados y **Rachas** va por 3/4, quedan 79) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI**, **AR**, **FO** y **Rachas** están terminados, quedan 78) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,8 +107,8 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 1624 pruebas unitarias con Node, 5 de auditoría, 140 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **1778 comprobaciones**.
+Vite, 1624 pruebas unitarias con Node, 5 de auditoría, 192 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **1830 comprobaciones**.
 
 Eso ya ha encontrado **treinta y siete bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -133,18 +133,26 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase candidata: RA · Fase 4/4 — UI/UX, Centro de Rachas y experiencia visual.**
-Con ella se cierra el bloque de Rachas. Ver `docs/07_CHECKLIST_ENTREGA2.md` y
-`especificaciones/ESPECIFICACION_SONIDO_Y_RACHAS.md`.
+⏸ **PREGÚNTALE A JOSUÉ ANTES DE SEGUIR (regla 49, ficha C-23 en `docs/03`).** El bloque RA está
+cerrado (4/4) y el siguiente del orden confirmado sería **SO · Sonido**, pero **su Fase 1 no se
+encuentra en la especificación**: donde debería estar el encabezado *"FASE 1 — Arquitectura + motor
+global de audio"* va seguido del texto de *"FASE 4 · Sistema de Rachas: interfaz"*. Hay que
+preguntarle:
 
-⚠️ **No empezarla sin que Josué pase la fase.**
+1. **¿Dónde está el texto real de la Fase 1 del Sonido?**
+2. **¿En qué orden van los dos módulos**, Sonido y Rachas?
 
-⏸ **Y antes hay que preguntarle dos cosas (regla 49, ficha C-23 en `docs/03`):** en la
-especificación, el encabezado *"FASE 1 — Arquitectura + motor global de audio"* va seguido del texto
-de *"FASE 4 · Sistema de Rachas: interfaz"*. Falta saber **dónde está la Fase 1 real del Sonido** y
-**en qué orden van los dos módulos**. No bloquea las fases de Rachas.
+Y hay un límite real, aparte de la contradicción: **el módulo de Sonido necesita archivos de audio
+que no existen en el proyecto.** Él mismo lo escribió dentro de la especificación — *"esto lo voy a
+hacer cuando la web ya tenga todos los botones activos"*. Sin los sonidos, un motor de audio sería un
+control decorativo (regla 8).
 
-Tres avisos para cuando toque:
+**Alternativa si prefiere no parar: HT · Horario Top, Fase 1/12**, que no depende de nada de esto.
+Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_HORARIO_TOP.md`.
+
+⚠️ **No empezar ninguna sin que Josué pase la fase.**
+
+Cinco cosas que conviene tener presentes al retomar:
 
 - **D2-01: Sonido y Rachas son DOS módulos independientes** (5 fases + 4). No mezclar sus
   especificaciones ni su numeración, aunque compartan archivo.
@@ -155,13 +163,9 @@ Tres avisos para cuando toque:
 - **`src/lib/rachasServicio.js` es el ÚNICO sitio que escribe rachas** (RA F2). Ninguna pantalla
   toca Supabase ni recalcula por su cuenta; se pasa por `useRachas`. Y las rachas viven en
   `app_data`, **sin tabla ni SQL propios** — ver el comentario en `supabase/schema.sql`.
-- **La gamificación no tiene XP ni niveles, a propósito** (RA F3): los apartados 14 y 15 los dejan
-  en condicional y no hacían falta. Si RA F4 los pide, D2-02 obliga a que se queden DENTRO de
-  Rachas y Sonido: ni al Dashboard, ni a la puntuación diaria, ni a los hubs.
-- ⚠️ **RA F4 tiene que resolver un duplicado:** `src/lib/logros.js` (Fase 20) ya enseña doce
-  insignias de toda la app, dos de ellas de racha. Los logros de RA F3 aún no tienen pantalla. Al
-  construir el Centro de Rachas hay que decidir si son dos listas o una — **preguntárselo a Josué**,
-  no decidirlo por cuenta propia.
+- **La gamificación no tiene XP ni niveles, a propósito** (RA F3), y **los logros de racha viven en
+  el Centro de Rachas, no en la pantalla de Logros** (RA F4): los doce de la Fase 20 son de toda la
+  app; estos son por racha y pueden ser muchos. Si Josué los prefiere juntos, es mover una lista.
 
 ⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
 de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin

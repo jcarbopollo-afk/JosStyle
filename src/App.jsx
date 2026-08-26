@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt } from 'lucide-react';
+import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt, Flame } from 'lucide-react';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
 import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
@@ -13,8 +13,8 @@ import { eventosDerivados } from './lib/calendarioIntegracion';
 import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
 import { urlFirmada, urlEnCache } from './lib/imagenes';
 import { resumenHabito } from './lib/rachas';
-import { ESTADO_INICIAL, normalizarEstado } from './lib/rachasServicio';
-import { GAMIFICACION_INICIAL, normalizarGamificacion } from './lib/rachasGamificacion';
+import { ESTADO_INICIAL, normalizarEstado, crearRacha as crearRachaServicio, completarDia as completarDiaServicio, deshacerDia as deshacerDiaServicio, eliminarRacha as eliminarRachaServicio } from './lib/rachasServicio';
+import { GAMIFICACION_INICIAL, normalizarGamificacion, evaluar as evaluarRachas, olvidarRacha as olvidarRachaGamificacion } from './lib/rachasGamificacion';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal } from './components/ui';
 import HubView from './views/HubView';
 import Auth from './components/Auth';
@@ -41,6 +41,7 @@ import SettingsView from './views/SettingsView';
 import { construirIndice } from './lib/indiceBusqueda';
 import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda, crearOutfit, actualizarOutfit, duplicarOutfit, crearUso, actualizarUso } from './lib/armario';
 import ArmarioView from './views/ArmarioView';
+import RachasView, { ResumenRachaHoy } from './views/RachasView';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.
@@ -89,6 +90,7 @@ const MORE_NAV = [
   { id: 'logros', label: 'Logros', icon: Trophy },
   { id: 'economia', label: 'Economía', icon: Wallet },
   { id: 'armario', label: 'Armario', icon: Shirt },
+  { id: 'rachas', label: 'Rachas', icon: Flame },
   { id: 'ajustes', label: 'Ajustes', icon: Settings },
 ];
 
@@ -98,7 +100,7 @@ const MAX_RECIENTES_BUSQUEDA = 4;
 
 const AREAS_NAV = [
   { id: 'area-salud', label: 'Salud', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno'] },
-  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['calendario', 'estudios', 'productividad', 'objetivos', 'diario', 'biblioteca'] },
+  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['calendario', 'estudios', 'productividad', 'rachas', 'objetivos', 'diario', 'biblioteca'] },
   { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['economia', 'negocio', 'armario'] },
   { id: 'area-mas', label: 'Más', icon: MoreHorizontal, modulos: ['relacion', 'fe', 'bienestar', 'estadisticas', 'predicciones', 'logros', 'ajustes'] },
 ];
@@ -1107,6 +1109,40 @@ export default function App() {
   });
   const deleteUso = (id) => eliminarConPapelera('armario', 'usos', id);
 
+  /* ---------------------------------------------------------------------------
+     RA Fase 4 — las cuatro operaciones del Centro de Rachas.
+
+     Todas pasan por `rachasServicio.js` (RA F2): esta pantalla no escribe
+     rachas por su cuenta ni recalcula nada, igual que ninguna otra. Y todas
+     entran por `snapshotAndSave`, así que "Deshacer" funciona con las rachas
+     como con todo lo demás.
+     --------------------------------------------------------------------------- */
+  const crearNuevaRacha = (datos) => {
+    const { estado: nuevo, error } = crearRachaServicio(rachas, datos);
+    if (!error) snapshotAndSave({ rachas: nuevo });
+    return { error };
+  };
+  const completarDiaRacha = (rachaId) => {
+    const { estado: nuevo, error } = completarDiaServicio(rachas, { rachaId });
+    if (!error) snapshotAndSave({ rachas: nuevo });
+  };
+  const deshacerDiaRacha = (rachaId) => snapshotAndSave({ rachas: deshacerDiaServicio(rachas, rachaId) });
+  // Borrar la racha se lleva su historial (RA F2) y también sus logros e hitos
+  // (RA F3): si no, quedarían apuntando a algo que ya no existe.
+  const borrarRacha = (rachaId) => snapshotAndSave({
+    rachas: eliminarRachaServicio(rachas, rachaId),
+    gamificacion: olvidarRachaGamificacion(gamificacion, rachaId),
+  });
+
+  /* Evalúa hitos y logros y devuelve SOLO lo nuevo, para que la pantalla lo
+     celebre una vez. No entra en el historial de deshacer: un logro conseguido
+     no es una edición que Josué quisiera revertir con el botón de atrás. */
+  const evaluarGamificacion = () => {
+    const { gamificacion: nuevo, eventos } = evaluarRachas(rachas, gamificacion);
+    if (eventos.length) { setGamificacion(nuevo); saveData(uidUser, 'gamificacionRachas', nuevo); }
+    return eventos;
+  };
+
   const setIconoModulo = (id, iconKey) => {
     const iconos = { ...personalizacion.iconos };
     if (iconKey) iconos[id] = iconKey; else delete iconos[id];
@@ -1441,9 +1477,11 @@ export default function App() {
   const areaActual = tab.startsWith('area-') ? AREAS_NAV.find((a) => a.id === tab) : areaDeModulo(tab);
   // Resúmenes de todas las tarjetas, recalculados en cada render — son cálculos baratos (sumas,
   // últimas fechas) sobre datos que ya están en memoria, mismo criterio que calcularMetricas().
-  const resumenesTodos = Object.fromEntries(
-    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar })])
-  );
+  // RA Fase 4 — el resumen de Rachas SÍ es caro (recorre historiales día a día), así que a
+  // partir de aquí esto va memoizado. Es el apartado 31: *"evita cálculos repetidos"*.
+  const resumenesTodos = useMemo(() => Object.fromEntries(
+    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas })])
+  ), [sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas]);
 
   // Fase 19 — métricas favoritas del panel "Hoy": se calculan aquí (no en DashboardView) porque
   // combinan datos de varios módulos, mismo criterio que ya usan Estadísticas/Predicciones —
@@ -1538,6 +1576,7 @@ export default function App() {
             perfil={perfil} sueno={sueno} calistenia={calistenia} futbol={futbol} economia={economia}
             relacion={relacion} favoritas={favoritasResueltas}
             productividad={productividad} estudios={estudios}
+            rachas={rachas}
             // BI Fase 1 — el desplegable de situación de "Hoy" cambia el modo desde ahí mismo.
             // Es el MISMO interruptor que Personalización, no un segundo sistema (decisión D2-07).
             modo={personalizacion.modo} onSetModo={setModoApp}
@@ -1617,6 +1656,21 @@ export default function App() {
             onDeleteOutfit={deleteOutfit} onDuplicarOutfit={duplicarUnOutfit}
             onAddUso={addUso} onUpdateUso={updateUso} onDeleteUso={deleteUso}
             accent={accent}
+          />
+        );
+      // RA Fase 4 — el Centro de Rachas. Un módulo más, en el área Vida, junto a
+      // Productividad, que es donde viven los hábitos. Nada de navegación paralela
+      // (apartado 33): mismo hub, mismo botón de volver, mismas 5 pestañas.
+      case 'rachas':
+        return (
+          <RachasView
+            rachas={rachas} gamificacion={gamificacion} habitos={productividad.habitos}
+            accent={accent}
+            onCrearRacha={crearNuevaRacha}
+            onCompletarDia={completarDiaRacha}
+            onDeshacerDia={deshacerDiaRacha}
+            onEliminarRacha={borrarRacha}
+            onEvaluar={evaluarGamificacion}
           />
         );
       case 'negocio':

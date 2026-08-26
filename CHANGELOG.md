@@ -1,5 +1,71 @@
 # CHANGELOG.md
 
+## Entrega 2 · RA Fase 4 — Centro de Rachas y experiencia visual (v1.51.0) 🔒 CIERRA EL BLOQUE RA
+
+### Un módulo nuevo: Rachas
+Vive en el área **Vida**, junto a Productividad, que es donde están los hábitos. La barra inferior
+sigue teniendo cinco pestañas: un módulo nuevo entra en un área que ya existe, nunca en la barra.
+
+Dentro: resumen (racha actual · mejor · logros), la racha principal grande, las demás compactas,
+detalle con historial y calendario, logros, y los totales.
+
+### No calcula ni un número
+Todo viene de la capa de gamificación, que lo deriva del historial. Si esta pantalla dijera un
+número distinto del Dashboard sería porque alguien contó por su cuenta — y aquí nadie cuenta.
+
+### Una sola celebración, no cuatro avisos
+Es lo que pide el apartado 19: si un mismo día trae hito, récord y logro, no pueden salir tres
+tarjetas. `Celebracion` recibe la lista entera de eventos y saca **un** mensaje. Hay una prueba de
+renderizado con los tres a la vez.
+
+Y completar un día normal **no abre nada**: su feedback va en la propia tarjeta de la racha. Las
+celebraciones grandes se reservan para 30, 100 y 365 días.
+
+### La racha rota no castiga
+Literalmente lo que pedía la especificación: *"La racha terminó. Hoy puedes empezar una nueva"*, con
+el récord y el historial siempre visibles — *"el usuario nunca debe sentir que su progreso histórico
+desapareció"*.
+
+### El calendario, con puntos y no con emojis
+La especificación proponía 🔥 por día, *"pero quiero algo más elegante si el sistema de iconografía
+actual permite algo mejor"*. Una rejilla de puntos ocupa la mitad, se lee de un vistazo y —esto es
+lo importante— **no distingue los estados solo por color**: completado es un punto lleno, perdido un
+aro, pendiente un aro marcado. Con leyenda y `aria-label` por día.
+
+### Sin colores propios, sin animaciones propias, sin sonido
+- Los colores salen de `COLORS` y del acento del usuario, así que el modo claro y el oscuro
+  funcionan **solos**.
+- La única animación es la barra de progreso, y la gobiernan `prefers-reduced-motion` y el ajuste de
+  animaciones de la Fase A3 desde `index.css`. No hay un segundo sistema.
+- **Ni un archivo de audio en un componente** (apartados 20 y 38). La pantalla emite eventos; el
+  sistema de audio los escuchará cuando exista.
+
+### Un efecto secundario en el rendimiento
+El resumen del hub de Rachas recorre historiales, y hasta ahora `resumenesTodos` en `App.jsx` se
+recalculaba en cada render porque todo lo que había era barato. Ahora va memoizado.
+
+### Cómo se ha resuelto el duplicado que dejó anotado RA F3
+`logros.js` (Fase 20) tiene doce insignias de **toda la app**. Las de aquí son de **las rachas** y
+son por racha, así que pueden ser muchas. Juntarlas daría una lista larguísima mezclando dos cosas
+distintas, así que se quedan separadas: las de racha en el Centro de Rachas, las generales en
+Logros. No es irreversible — si Josué las prefiere juntas, es mover una lista.
+
+### Un hábito no se marca desde aquí
+Aparece en el Centro con su racha, pero el botón de completar solo sale en las rachas propias: el
+dato de un hábito vive en Productividad, y un segundo sitio donde escribirlo sería duplicar el
+camino.
+
+### Verificación
+Las doce pruebas visuales del apartado 36, **montadas con el servicio real** y no con datos escritos
+a mano: si el motor cambiara de forma, se enterarían. Los casos de renderizado suben de 140 a 192.
+**1830 comprobaciones y 9 reglas invariantes en verde**, build incluido. `package.json` →
+**v1.51.0**.
+
+⚠️ **Lo que sigue sin estar probado, y hay que decirlo:** el aspecto real en un iPhone, los gestos y
+el scroll. Como todo lo demás desde R1.
+
+**Con esto el bloque RA queda cerrado: 4 de 4.** Van 28 de las 106 fases de la Entrega 2; quedan 78.
+
 ## Entrega 2 · RA Fase 3 — Gamificación, hitos, logros y progresión (v1.50.0)
 
 ### La frase que marca el tono

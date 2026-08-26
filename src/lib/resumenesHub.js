@@ -18,6 +18,7 @@ import { resumenDelDia, eventosFuturos } from './calendario';
 import { eventosDerivados } from './calendarioIntegracion';
 import { resumenHistorial } from './armario';
 import { resumenHabito } from './rachas';
+import { panelRachas, panelHabitos } from './rachasServicio';
 
 function ultimoPorFecha(lista) {
   if (!lista || lista.length === 0) return null;
@@ -153,6 +154,28 @@ export function calcularResumenModulo(id, s) {
     // Entrega 2 · AR Fase 1 — Armario. La segunda línea cambia según lo que aporte más:
     // con pocas prendas, cuántas categorías tienes; con muchas, cuántas están disponibles
     // de verdad (lo que la Fase 2 necesitará para proponer outfits).
+    // RA Fase 4 — el resumen del Centro de Rachas. Junta las rachas propias y los
+    // hábitos, porque para Josué son lo mismo aunque vengan de módulos distintos.
+    case 'rachas': {
+      const hoy = todayISO();
+      const propias = panelRachas(s.rachas, hoy).rachas;
+      const deHabitos = panelHabitos(s.productividad?.habitos, hoy).rachas;
+      const todas = [...propias, ...deHabitos];
+      if (!todas.length) {
+        return { linea1: 'Todavía no tienes rachas', linea2: 'Toca para empezar la primera', estado: 'vacio' };
+      }
+      const mejor = todas.reduce((max, r) => (r.actual > max.actual ? r : max), todas[0]);
+      const vivas = todas.filter((r) => r.actual > 0).length;
+      return {
+        linea1: mejor.actual > 0
+          ? `${mejor.actual} ${plural(mejor.actual, 'día', 'días')} · ${mejor.nombre}`
+          : 'Ninguna racha viva ahora mismo',
+        linea2: vivas > 1
+          ? `${vivas} rachas en marcha`
+          : mejor.actual > 0 ? `Tu mejor: ${mejor.record} ${plural(mejor.record, 'día', 'días')}` : 'Hoy puedes empezar una nueva',
+        estado: mejor.actual > 0 ? 'activo' : 'vacio',
+      };
+    }
     case 'armario': {
       const prendas = s.armario?.prendas || [];
       if (prendas.length === 0) {

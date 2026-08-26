@@ -126,6 +126,7 @@ export const PALABRAS_MODULOS = {
   logros: ['insignias', 'medallas', 'trofeos', 'conseguidos'],
   economia: ['dinero', 'gastos', 'ahorro', 'hucha', 'saldo', 'presupuesto', 'finanzas', 'gastar', 'ingresos'],
   armario: ['ropa', 'prendas', 'vestir', 'camiseta', 'pantalon', 'zapatillas', 'outfit', 'closet', 'que me pongo', 'recomendar outfit'],
+  rachas: ['racha', 'rachas', 'dias seguidos', 'constancia', 'cadena', 'hito', 'hitos', 'logro', 'logros', 'record', 'mejor racha', 'no romper la racha'],
   ajustes: ['configuracion', 'opciones', 'preferencias', 'settings'],
 };
 
@@ -155,6 +156,7 @@ export const SINONIMOS_MODULOS = {
   logros: ['recompensas', 'hitos', 'progreso'],
   economia: ['pagar', 'cobrar', 'euros', 'cuenta', 'economico'],
   armario: ['estilo', 'moda', 'vestuario', 'looks'],
+  rachas: ['seguidos', 'consecutivos', 'streak', 'progreso'],
   ajustes: ['ajuste', 'configurar', 'cambiar'],
 };
 

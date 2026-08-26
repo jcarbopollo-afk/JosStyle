@@ -26,6 +26,7 @@ import DiaryView from '../src/views/DiaryView.jsx';
 import StatsView from '../src/views/StatsView.jsx';
 import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
+import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import AchievementsView from '../src/views/AchievementsView.jsx';
 import HubView from '../src/views/HubView.jsx';
 import WellbeingView from '../src/views/WellbeingView.jsx';
@@ -45,6 +46,8 @@ import { DEFAULT_PAPELERA } from '../src/lib/papelera.js';
 import { DEFAULT_ARMARIO, crearPrenda, crearOutfit, crearUso } from '../src/lib/armario.js';
 import { calcularResumenModulo } from '../src/lib/resumenesHub.js';
 import { addDays } from '../src/lib/helpers.js';
+import { ESTADO_INICIAL, crearRacha as crearRachaSrv, completarDia as completarDiaSrv } from '../src/lib/rachasServicio.js';
+import { GAMIFICACION_INICIAL, evaluar as evaluarGam, EVENTOS_GAMIFICACION } from '../src/lib/rachasGamificacion.js';
 
 const accent = ACCENTS[0].value;
 const noop = () => {};
@@ -151,6 +154,87 @@ const CASOS = [
   ['StatsView', StatsView, (e) => ({ sueno: e.sueno, estudios: e.estudios, diario: e.diario, calistenia: e.calistenia, accent })],
   ['PredictionsView', PredictionsView, (e) => ({ objetivos: e.objetivos, productividad: e.productividad, salud: e.salud, calistenia: e.calistenia, economia: e.economia, estudios: e.estudios, accent })],
   ['AchievementsView', AchievementsView, (e) => ({ ...e, accent })],
+  /* RA Fase 4 · apartado 36 — las pruebas visuales que pide, una por una. Se montan
+     con el servicio real, no con datos inventados a mano: así, si el motor cambiara de
+     forma, estas pruebas se enterarían. */
+  ...(() => {
+    // Una racha con N días seguidos que terminan hoy.
+    const conDias = (n, extra = 0) => {
+      let e = ESTADO_INICIAL;
+      const c = crearRachaSrv(e, { tipo: 'training', nombre: 'Entreno' }, HOY);
+      e = c.estado;
+      // `extra` días en un tramo antiguo, para poder tener récord anterior.
+      for (let i = 0; i < extra; i++) e = completarDiaSrv(e, { rachaId: c.racha.id, fecha: addDays(HOY, -40 - i) }).estado;
+      for (let i = n - 1; i >= 0; i--) e = completarDiaSrv(e, { rachaId: c.racha.id, fecha: addDays(HOY, -i) }).estado;
+      return { estado: e, id: c.racha.id };
+    };
+    const props = (estado, gam = GAMIFICACION_INICIAL, habitos = []) => ({
+      rachas: estado, gamificacion: gam, habitos, accent, hoy: HOY,
+      onCrearRacha: () => ({ error: null }), onCompletarDia: noop, onDeshacerDia: noop,
+      onEliminarRacha: noop, onEvaluar: () => [],
+    });
+
+    const uno = conDias(1);
+    const siete = conDias(7);
+    const treinta = conDias(30);
+    const record = conDias(9, 4);          // tramo viejo de 4, ahora 9 → récord batido
+    const rota = (() => {
+      let e = ESTADO_INICIAL;
+      const c = crearRachaSrv(e, { tipo: 'study', nombre: 'Estudio' }, HOY); e = c.estado;
+      for (let i = 8; i >= 6; i--) e = completarDiaSrv(e, { rachaId: c.racha.id, fecha: addDays(HOY, -i) }).estado;
+      return e;
+    })();
+    const muchas = (() => {
+      let e = ESTADO_INICIAL;
+      for (const [tipo, nombre] of [['training', 'Entreno'], ['study', 'Estudio'], ['sleep', 'Sueño'], ['nutrition', 'Comer bien'], ['habits', 'Leer']]) {
+        const c = crearRachaSrv(e, { tipo, nombre }, HOY); e = c.estado;
+        for (let i = 0; i < 5; i++) e = completarDiaSrv(e, { rachaId: c.racha.id, fecha: addDays(HOY, -i) }).estado;
+      }
+      return e;
+    })();
+    const conLogros = evaluarGam(treinta.estado, GAMIFICACION_INICIAL, HOY).gamificacion;
+
+    return [
+      // Sin ninguna racha: el estado inicial, que no puede ser una pantalla vacía.
+      ['RachasView · sin rachas', RachasView, () => props(ESTADO_INICIAL)],
+      ['RachasView · un día', RachasView, () => props(uno.estado)],
+      ['RachasView · siete días', RachasView, () => props(siete.estado)],
+      // 30 días con sus logros ya desbloqueados: es donde más elementos hay a la vez.
+      ['RachasView · treinta días con logros', RachasView, () => props(treinta.estado, conLogros)],
+      ['RachasView · récord batido', RachasView, () => props(record.estado)],
+      ['RachasView · racha rota', RachasView, () => props(rota)],
+      ['RachasView · muchas rachas', RachasView, () => props(muchas)],
+      // Rachas propias y hábitos juntos: la lista mezclada del Centro.
+      ['RachasView · con hábitos', RachasView, (e) => props(siete.estado, GAMIFICACION_INICIAL, e.productividad.habitos)],
+      // Un hábito solo, sin ninguna racha propia: no puede caer en el estado vacío.
+      ['RachasView · solo hábitos', RachasView, (e) => props(ESTADO_INICIAL, GAMIFICACION_INICIAL, e.productividad.habitos)],
+
+      // La tarjeta suelta, en sus dos formas.
+      ['RachasView · tarjeta suelta', TarjetaRacha, () => ({
+        resumen: { id: 'x', nombre: 'Entreno', actual: 17, record: 42, estado: 'activa', diasCumplidos: 50, tramos: [], batiendoRecord: false, porcentaje: 80, regla: 'Todos los días' },
+        accent,
+      })],
+      ['RachasView · tarjeta compacta', TarjetaRacha, () => ({
+        resumen: { id: 'x', nombre: 'Sueño', actual: 0, record: 0, estado: 'sin_datos', diasCumplidos: 0, tramos: [], batiendoRecord: false, porcentaje: 0, regla: 'Todos los días' },
+        accent, compacta: true,
+      })],
+
+      // El resumen de Hoy: con racha viva se pinta, sin ninguna no.
+      ['RachasView · resumen en Hoy', ResumenRachaHoy, () => ({ rachas: siete.estado, habitos: [], accent, hoy: HOY, onAbrir: noop })],
+
+      // Apartado 19 — la celebración AGRUPADA: hito, récord y logro a la vez deben
+      // salir en una sola tarjeta, no en tres avisos.
+      ['RachasView · celebración agrupada', Celebracion, () => ({
+        eventos: [
+          { tipo: EVENTOS_GAMIFICACION.STREAK_MILESTONE_REACHED, hito: 30, celebracion: 'grande', nombre: 'Entreno', dias: 30 },
+          { tipo: EVENTOS_GAMIFICACION.STREAK_PERSONAL_RECORD, nombre: 'Entreno', dias: 30, record: 30 },
+          { tipo: EVENTOS_GAMIFICACION.ACHIEVEMENT_UNLOCKED, logroId: 'imparable', titulo: 'Imparable' },
+        ],
+        accent, onCerrar: noop,
+      })],
+    ];
+  })(),
+
   // RA Fase 1 — la lista de hábitos con su racha derivada. Antes no se renderizaba en
   // ninguna prueba, que es como un contador guardado podía mentir sin que nada avisara.
   ['ProductivityView', ProductivityView, (e) => ({

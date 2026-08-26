@@ -162,8 +162,10 @@ escribir código.
 
 | v1.50.0 | **RA F3** | Gamificación: hitos irrepetibles, doce logros y progresión. **Sin XP ni niveles** — los apartados los dejan en condicional y no hacían falta. Un logro conseguido no se revoca al corregir el historial |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4) y FO (12/12) cerrados**, RA va por 3/4. Quedan **79**
-fases de la Entrega 2: RA (1), SO · Sonido (5), HT (12) y EH (65).
+| v1.51.0 | **RA F4** | Centro de Rachas: módulo nuevo en el área Vida, racha principal en Hoy, calendario compacto, logros y celebración **agrupada**. Cierra el bloque RA |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados.** Quedan **78** fases de
+la Entrega 2: SO · Sonido (5), HT (12) y EH (65).
 
 ⏸ **El orden dentro de E2-5 está pendiente de Josué (C-23):** en la especificación, el encabezado de
 la Fase 1 de Sonido va seguido del texto de la Fase 4 de Rachas, así que no se sabe dónde está el
