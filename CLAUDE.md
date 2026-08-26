@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.32.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.66.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
-Armario, Fondos, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME** y **BI** están terminados y **AR** va por 1/4, quedan 97) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
+bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va por 3/5, quedan 63) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -96,7 +96,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
   — preguntárselo si hace falta para depurar un despliegue, no asumirlo.
 - **Rota entre varias cuentas de Claude**, pasando `HANDOFF.md` + zip. Puede haber resuelto en otra
   conversación algo que aquí parece pendiente.
-- **Pide encadenar fases sin esperar confirmación real de cada una.**
+- ⚠️ **UNA FASE POR TURNO, y se para.** Josué cambió el modo de trabajo: él pasa la fase, se
+  construye entera y verificada, se le avisa con `PushNotification` y **se espera**. No encadenar
+  fases ni adelantar la siguiente aunque parezca obvia cuál es. (Antes pedía lo contrario; ya no.)
+- **Al terminar, decirle siempre dos cosas:** qué se ha hecho y hasta dónde se ha llegado.
 - **Lo que más le importa es recibir la entrega actualizada cuanto antes.** Priorizarlo sobre
   explicaciones largas; nunca dejar un turno a medias sin entregarla.
 
@@ -104,11 +107,13 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 382 pruebas unitarias con Node, 5 de auditoría, 56 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **443 comprobaciones**.
+Vite, 2908 pruebas unitarias con Node, 5 de auditoría, 308 casos de renderizado real con
+`react-dom/server` y 10 reglas invariantes — **3221 comprobaciones**.
 
-Eso ya ha encontrado **diecinueve bugs reales** que la revisión a mano no vio, entre ellos una
-notificación falsa (`null < 7` es `true` en JavaScript) y ocho módulos que dejaban crear y no borrar.
+Eso ya ha encontrado **cuarenta y ocho bugs reales** que la revisión a mano no vio, entre ellos una
+notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
+dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
+comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
 
 ⚠️ **Lo que las pruebas NO cubren, y sigue pendiente de que lo mire Josué (R1):** Supabase real, la
 sincronización entre dispositivos, los permisos del navegador, el aspecto en un iPhone y el
@@ -128,20 +133,86 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase: AR · Fase 2/4 — Constructor de Outfits.**
-Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_ARMARIO.md`.
+**🔒 Horario Top está CERRADO (12/12)** y **Sonido va por 3/5** (F1, F3 y F4). **Lo que queda de
+Sonido depende de los archivos de audio**: F2 es la biblioteca y F5 la integración, que la necesita.
 
-Tres avisos antes de escribir código ahí:
+La siguiente candidata es **EH · Estilo de Hombre, Fase 1/65**, el último bloque y el más grande.
+Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-- **`armario.outfits` ya existe y está vacío**, declarado en `DEFAULT_ARMARIO` desde la Fase 1. Y
-  cada prenda ya tiene un array `outfits`. No hay que migrar nada: solo llenarlos.
-- Los **estados de prenda** (`lavanderia`, `reparacion`…) existen precisamente para esta fase: un
-  outfit no debería proponer una prenda que está en la lavadora.
-- **AR Fase 3 (calendario de uso) se conectará al Calendario Universal como fuente derivada**,
-  nunca duplicando datos (regla 11). Tenlo en cuenta al modelar los usos.
+⚠️ **No empezarla sin que Josué pase la fase.**
 
-⚠️ **Recordatorio para Josué, si aún no lo ha hecho:** ejecutar el bloque del bucket `armario` de
-`supabase/schema.sql` en el SQL Editor de Supabase. Sin eso, todo funciona menos subir fotos.
+⏸ **SO · Fase 2 (biblioteca de sonidos) está bloqueada, y por un motivo real:** no hay ni un archivo
+de audio en el proyecto. Josué escribió en la especificación que los daría *"cuando la web ya tenga
+todos los botones activos"*, y F2 es literalmente la fase que los necesita. El motor de F1 está
+entero y funciona; lo único que falta son los sonidos.
+
+Seis cosas que conviene tener presentes al retomar:
+
+- **D2-01: Sonido y Rachas son DOS módulos independientes** (5 fases + 4). Rachas está cerrado 4/4;
+  Sonido va por 3/5 (F1, F3 y F4), y **F3 y F4 se adelantaron a F2 a propósito** porque no
+  necesitan los archivos. Lo que queda (F2 y F5) sí.
+- ⚠️ **`especificacionSonidos.js` DEFINE la biblioteca, no la crea** (SO F4). `queFalta()` dice
+  exactamente qué archivos tiene que dar Josué y por dónde empezar.
+- ⚠️ **`audioEventos.js` NO redefine el catálogo de SO F1: lo traduce** (SO F3). Y los eventos que
+  nadie emite —XP, niveles, recompensas— llevan escrito por qué, con prueba.
+- **D2-02 sigue en pie: no sobregamificar.** XP y niveles solo dentro de Sonido/Rachas.
+- **El motor de rachas no guarda ni un contador** (`src/lib/rachas.js`, RA F1). Todo se deriva del
+  historial. Si una fase futura pide "guardar la racha", hay que releer el apartado 24.
+- **`src/lib/rachasServicio.js` es el ÚNICO sitio que escribe rachas** (RA F2), y
+  **`src/lib/audioEngine.js` el ÚNICO que toca el audio** (SO F1, con regla invariante que lo
+  comprueba). Ninguna pantalla toca Supabase ni reproduce sonido por su cuenta.
+- **El horario es una REGLA, no una lista de eventos** (HT F1), **no tiene tablas propias en
+  Supabase** (HT F2, apartado 51) y **sus asignaturas son las de Estudios** (apartado 25).
+- ⚠️ **`ALCANCES` no tiene valor por defecto** (HT F3, apartados 52-53): editar un bloque sin decir
+  si el cambio es de un día o de todos **no escribe nada**. Nunca ponerle un defecto: cambiar la
+  hora "porque hoy hubo un cambio" se cargaría todos los lunes del curso, y sin avisar.
+- ⚠️ **Un normalizador que no conoce un campo lo BORRA en el siguiente guardado.** Pasó en HT F2 con
+  `visible` de las columnas **y otra vez en HT F4** con `archivado` (archivar un horario funcionaba
+  hasta recargar). Al añadir un campo a una entidad, añadirlo también a su normalizador.
+- ⚠️ **Nada se mueve en silencio** (HT F4, apartado 30). Toda operación de estructura que pueda dejar
+  clases fuera de sitio tiene su `impacto*()`, que se enseña **antes** de escribir. Si una fase
+  futura añade otra, tiene que traer la suya.
+- **Las semanas A/B se CALCULAN desde una fecha ancla** (HT F4), igual que las rachas. Si algo pide
+  guardar "esta semana es la B", es un contador y miente.
+- **El zoom y la densidad del horario van a `localStorage`, no a Supabase** (HT F4, apartado 59): el
+  iPhone y el ordenador no tienen la misma pantalla.
+- ⚠️ **Los bloques multifila y multicolumna siguen sin pintarse** (apartados 15-18 de HT F4). El
+  modelo ya los permite —un bloque guarda sus horas, no una fila—, así que uno de 8:00 a 10:00 ya
+  ocupa dos franjas en los datos: falta **pintarlo estirado**, y eso es trabajo de cuadrícula.
+- ⚠️ **Las notas privadas de una actividad NO viajan en el contexto de la IA** (HT F5, apartados 52
+  y 73), y hay una prueba que falla si aparecen. Si una fase futura amplía `contextoActividadIA`,
+  releer esa prueba antes.
+- **Nada de la actividad que se pueda derivar se guarda** (HT F5): usos, tiempo semanal, recientes,
+  más usadas y carga por día salen de los bloques. Lo único guardado es "favorita", que la pone él.
+- ⚠️ **`horarioTop.js` es la ÚNICA puerta al módulo desde fuera** (HT F12). Y su auditoría está
+  atada al código: borrar una función del horario hace fallar `test-horario-top.mjs`.
+- ⚠️ **La exportación NO se lleva el histórico de uso** (HT F12): lo confirmado, los avisos dados y
+  la mochila de cada día son de este curso. Importar es idempotente por id.
+- ⚠️ **La analítica no tiene caja negra** (HT F11): toda cifra lleva su origen, y hay una prueba que
+  recorre TODOS los textos generados buscando reproches. Si una fase futura añade texto, releerla.
+- ⚠️ **`avisosHorario.js` DECIDE, `notificaciones.js` MANDA** (HT F10). Nunca añadir un segundo
+  emisor: el interruptor global, las categorías y el horario de descanso son de la Fase A4.
+- ⚠️ **`aplicarPlan` sin `confirmado` no hace nada** (HT F9): es la regla 7 en código, no una
+  comprobación defensiva. Nunca darle un valor por defecto.
+- ⚠️ **`contextoParaIA` nunca lleva notas privadas ni nada de Relación** (HT F9), con pruebas. Si
+  una fase futura amplía lo que se manda, releerlas antes.
+- ⚠️ **PASADA no es COMPLETADA** (HT F8): lo primero se calcula del reloj, lo segundo lo confirma
+  Josué y es lo único que se guarda. Nunca guardar un estado temporal: miente en un minuto.
+- ⚠️ **La excepción gana a la regla** (HT F8, apartado 45), y **nada importante se ejecuta sin
+  confirmar** — ni dentro de un "hacerlo todo".
+- ⚠️ **La mochila es DERIVADA** (HT F7) y lo añadido a mano lleva `manual: true` por escrito: es lo
+  único que impide que el recálculo lo borre (apartado 57). Nunca quitar ese campo.
+- ⚠️ **`src/lib/hoy.js` NO GUARDA NADA** (HT F6, apartado 102): es una función de lectura sobre las
+  entidades originales. Si una fase futura quiere "guardar lo de hoy", es una copia y va a mentir.
+- ⚠️ **Antes de construir algo de HOY, mirar si ya existe.** El 90 % de HT F6 fue no duplicar:
+  `eventosDerivados`, `lineaDelDia`, `huecosDelDia` y `puntuacion.js` ya estaban.
+- ⚠️ **Las tareas NO se enlazan con una asignatura**: Productividad no tiene ese campo, así que se
+  buscan por mención y la pantalla lo dice. Si algún día se le añade `asignaturaId` a las tareas,
+  `tareasQueMencionan` deja de hacer falta.
+
+⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
+de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin
+ellos todo funciona menos subir fotos de prenda y fotos de fondo.
 
 El bloque **R0** ya está completo (v1.23.0) y **C-11** —el modelo de IA obsoleto— está resuelto:
 `api/ask-ai.js` lee `ANTHROPIC_MODEL` y por defecto usa un modelo vigente.

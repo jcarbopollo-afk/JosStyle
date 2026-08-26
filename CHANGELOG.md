@@ -1,5 +1,2116 @@
 # CHANGELOG.md
 
+## Entrega 2 · SO Fase 4 — Diseño y especificación de los sonidos (v1.66.0)
+
+### Lo que esta fase puede hacer, y lo que no
+*"Definir y preparar la biblioteca sonora."*
+
+**No crea los sonidos, y no puede.** No hay ni un archivo de audio en el proyecto, y generarlos sería
+inventarse la mitad del trabajo (regla 8).
+
+Lo que sí hace —y es exactamente el verbo del enunciado— es **definir**: la ficha de cada archivo,
+escrita como código. Nombre exacto, carpeta, familia, duración mínima y máxima, si lleva variantes y
+si tiene que ser único.
+
+**Eso convierte *"dame los sonidos"* en una lista precisa.** El día que estén en `public/sonidos/`
+con estos nombres, suenan sin tocar una línea: el motor de SO F1 ya los busca ahí.
+
+### La familia manda sobre el tramo
+El enunciado da dos cosas: familias (UI, feedback, reward…) y tramos de duración (microinteracción
+40-150 ms, feedback 100-300…). Se cruzan, y **gana la más estricta**.
+
+Un `ui_click` de 300 ms cumpliría "feedback" y aun así **se pisaría con el siguiente toque**. Hay una
+prueba de que ningún sonido acaba con un rango imposible.
+
+### La firma, en intervalos y no en notas
+*"Un motivo de 2-4 notas que pueda aparecer de forma evolucionada."*
+
+Está definida como **intervalos** (0, 5, 7 — cuarta justa y segunda mayor), no como notas concretas:
+así se transporta a cualquier tonalidad y sigue reconociéndose. Con sus cinco evoluciones, de las
+tres notas limpias en un logro a la firma completa con cola larga en un gran logro.
+
+Y **se llama "firma de JosStyle"** (D2-08): *JC Lifestyle* es el nombre histórico que aparece en la
+especificación, no el del proyecto.
+
+### Los importantes son únicos
+Los que se repiten mucho llevan variantes numeradas: `ui_click_01`, `_02`, `_03`. Oír el mismo clic
+doscientas veces al día es exactamente lo que cansa.
+
+Pero el enunciado enumera los que **no**: `level_up`, `personal_record`, `grand_achievement`, los
+milestones grandes y los 365 días. **Un récord con tres variantes deja de ser un momento** — la misma
+razón por la que SO F1 le puso el cooldown más largo.
+
+El validador rechaza un `personal_record_02` por ese motivo, con esas palabras.
+
+### `queFalta()`
+La función más honesta del archivo. Hoy devuelve **la lista entera**, porque no hay ni uno.
+
+Dice cuántos faltan, cuáles son los únicos (que son los que más cuestan y más se notan) y **por dónde
+empezar**: los de interfaz, que son los que se aprecian nada más usar la app.
+
+### Un hueco que cazó la comprobación cruzada
+`goal_progress` estaba en el catálogo de SO F3, podía sonar, y **no tenía archivo definido**. La
+prueba que cruza el catálogo con la biblioteca lo encontró.
+
+### Lo que no se ha construido, y es un límite de fase
+- **La pantalla de Ajustes de sonido**: SO F1 terminaba con *"DETENTE. No empieces todavía la
+  biblioteca de sonidos ni la pantalla de Ajustes"*, y esa pantalla es de **SO F5**.
+- **Los archivos**: ⏸ los da Josué *"cuando la web ya tenga todos los botones activos"*. **SO F2 es
+  la fase que los necesita y sigue bloqueada.**
+
+### Verificación
+**3221 comprobaciones y 10 reglas invariantes en verde** (antes 3162), 59 de la biblioteca definida.
+`package.json` → **v1.66.0**.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes: bucket `armario` (AR F1) y bucket
+`fondos` (FO F2).
+
+
+## Entrega 2 · SO Fase 3 — Eventos, feedback, recompensas y racha (v1.65.0)
+
+### Por qué esta fase va antes que la 2
+SO F2 es la biblioteca de sonidos y **sigue bloqueada**: no hay ni un archivo de audio en el
+proyecto, y Josué dijo que los daría *"cuando la web ya tenga todos los botones activos"*.
+
+El catálogo de eventos y la jerarquía **no los necesitan**. Así que se adelanta, en vez de dejar el
+bloque parado esperando.
+
+### Los 42 eventos, sin crear un segundo catálogo
+SO F1 dejó 17 eventos y cuatro prioridades, que era lo que el motor necesitaba. Esta fase trae los 42
+que pide la especificación.
+
+⚠️ Pero **no redefine ninguno de F1**: los traduce. Dos catálogos que se separan con cada fase es
+exactamente lo que el apartado 30 de aquella fase prohíbe.
+
+### Un solo sonido cuando pasan cinco cosas a la vez
+*"Completar tarea → +XP → subir de nivel → alcanzar milestone → nuevo récord."* Cinco eventos, un
+sonido: **PERSONAL_RECORD**.
+
+Y los otros cuatro **se devuelven**, no se pierden: la especificación dice que *"la interfaz puede
+mostrar visualmente todos los acontecimientos, pero el audio debe mantener jerarquía"*.
+
+Esto no sustituye al cooldown de SO F1 — aquel evita que veinte toques den veinte sonidos, esto elige
+cuál de los cinco simultáneos suena. Son dos problemas distintos.
+
+### Un bug que cazó su propia prueba
+El desempate a igual nivel era "gana el que tenga más días", pensado para milestone contra milestone.
+Pero eso hacía que **el milestone de 30 días ganara al récord**, que es justo lo contrario de lo que
+dice la especificación con ese ejemplo delante.
+
+Ahora el récord lleva su propio peso de desempate, y el de 365 días sigue ganando al de 100.
+
+### La racha sube de identidad, no de volumen
+*"Los milestones deben ser progresivamente más especiales. No quiero simplemente el mismo sonido con
+más volumen. Debe existir una evolución real de la identidad sonora."*
+
+Traducido a algo comprobable: **el nivel sube con los días**. El de 3 días es nivel 2, el de 7 es 3,
+el de 30 es 4, el de 365 es 5. Hay una prueba que recorre los diez milestones y falla si dos
+consecutivos bajan, y otra de punta a punta.
+
+Y **el récord es independiente del milestone**: *"has alcanzado un milestone"* y *"has superado tu
+propio récord"* son acontecimientos diferentes, y la especificación lo dice con esas palabras.
+
+### Los eventos que hoy no emite nadie, dichos con su motivo
+La especificación lista `xp_small`, `level_up`, `reward_major` y `streak_freeze_used`. Pero:
+
+- **RA F3 decidió no construir XP ni niveles.** Sus apartados los dejaban en condicional, y sin nada
+  que gastar un contador de XP es un control decorativo (regla 8). D2-02 lo respalda.
+- **El "congelar racha" no existe en RA F1**: el motor deriva la racha del historial y no tiene
+  comodines.
+
+Así que esos eventos **están en el catálogo** —para que el día que haya XP suene sin tocar nada— y
+**cada uno lleva escrito por qué hoy no lo emite nadie**, con una prueba que lo comprueba. Un evento
+fantasma sin explicación es lo que hace que alguien lo conecte mal seis meses después.
+
+### Verificación
+**3162 comprobaciones y 10 reglas invariantes en verde** (antes 3115), 47 del catálogo.
+`package.json` → **v1.65.0**.
+
+⏸ **Sigue sin sonar nada**, y es lo mismo desde SO F1: no hay archivos de audio. **SO F2 es justo la
+fase que los necesita.**
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes: bucket `armario` (AR F1) y bucket
+`fondos` (FO F2).
+
+
+## Entrega 2 · HT Fase 12 — Cloud, sincronización y arquitectura definitiva (v1.64.0) 🔒 CIERRA HORARIO TOP
+
+Con esta fase **el bloque HT queda cerrado: 12 de 12**.
+
+### Una sola puerta
+Once archivos de horario no pueden ser once puntos de entrada. `diaCompleto()`, `resumenModulo()` y
+`contextoCompletoIA()` son la única puerta desde fuera; cada archivo sigue siendo dueño de lo suyo
+(apartados 90 y 91).
+
+### Exportar sin llevarse lo que no es
+Se exporta la estructura y los datos: horarios, asignaturas, clases, materiales, mochilas, kits,
+reglas y automatizaciones.
+
+**No viajan** lo que confirmaste que hiciste, los avisos que ya se dieron ni lo que metiste en la
+mochila cada día. Son de este curso y de este aparato — llevárselos daría un histórico que no
+ocurrió. Y está escrito **por qué**, para que nadie los añada sin pensarlo.
+
+### Importar dos veces no duplica el curso
+Es la propiedad que evita el desastre, y es la misma idempotencia de RA F2: se compara por id, así
+que pegar el mismo archivo dos veces no crea cuarenta clases repetidas.
+
+Antes de escribir se revisa y se dice **cuánto traería y qué no va a traer**. Un archivo de otro
+módulo se rechaza; uno de una versión más nueva también, en vez de intentar adivinarlo.
+
+Y sustituir el horario entero **no borra lo que confirmaste**: eso sigue siendo de este dispositivo.
+
+### La auditoría es código, no un documento
+El apartado 103 enumera cincuenta y tres cosas que Horario Top tiene que saber hacer. Las 38
+comprobables **están atadas a una función que tiene que existir**.
+
+Si alguien borra una, la prueba falla sola. Un documento que dice "está todo" se desactualiza en la
+primera fase que venga después; esto no puede.
+
+Es la misma decisión que HT F1 tomó al construir un módulo probado en vez de un documento de
+arquitectura.
+
+Y **lo que la auditoría no puede comprobar, lo dice ella misma**: el responsive, la accesibilidad
+real con lector de pantalla, el modo oscuro en pantalla, el diseño, los backups de Supabase (son de
+la consola) y las Edge Functions (infraestructura que el proyecto no tiene). Decir que están porque
+hay una clase de CSS sería mentir.
+
+### Cloud, RLS y multidispositivo: ya estaban
+No se ha rehecho nada. **Se resolvieron en HT F2**, y con la decisión más importante del módulo: el
+apartado 51 obliga a *"adaptarse a la arquitectura global"*, así que el horario vive en `app_data`
+con RLS por usuario — **sin una tabla propia y sin un SQL que Josué tenga que ejecutar**.
+
+La auditoría lo comprueba de verdad: **no hay `user_id` que falsear** en el modelo.
+
+### Lo que queda montado
+`Horario → Estudios → Mochila → Tareas → Objetivos → Entrenamiento → Productividad → IA →
+Notificaciones → Analítica`, entero, y cada eslabón **lee** del dueño del dato en vez de copiarlo.
+
+### Verificación
+**3115 comprobaciones y 10 reglas invariantes en verde** (antes 3066), 45 del cierre y 308 casos de
+renderizado. `package.json` → **v1.64.0**.
+
+⚠️ **Ningún SQL nuevo, en las doce fases del módulo.** Siguen los dos bloques pendientes de siempre,
+que son de otras fases: bucket `armario` (AR F1) y bucket `fondos` (FO F2).
+
+
+## Entrega 2 · HT Fase 11 — Analítica personal, carga, progreso y aprendizaje (v1.63.0)
+
+### La frase que decidió cómo construir la fase
+Esta es la especificación más corta de las doce: veintitrés puntos y ninguna letra pequeña. Pero uno
+de ellos dice cómo hay que hacer todo lo demás:
+
+> *"…y un sistema de aprendizaje que mejore las sugerencias **sin convertirlo en una caja negra**."*
+
+Así que aquí **no hay ni un número que no se pueda explicar**. Cada cifra viene con de dónde sale
+—*"de 9 días con clases, confirmadas a mano"*— y lo que el sistema "aprende" son frases que se leen y
+se comprueban: *"por la tarde confirmas menos (3 de 12)"*.
+
+### Sin datos no se inventa una tendencia
+Con tres días no hay tendencia; hay tres días.
+
+- **Por debajo de 3 ocurrencias no se afirma ningún patrón.** "Los martes te saltas el estudio"
+  basado en un martes es una afirmación inventada.
+- **La tendencia necesita los dos periodos con datos.** Comparar una semana llena con una de
+  vacaciones diría "has bajado un 80 %", y sería mentira.
+- **Menos de 10 puntos de diferencia no es tendencia**: es ruido de una semana.
+
+Y cuando no hay bastante, se dice: *"todavía no hay suficientes semanas para comparar"*, no un cero.
+
+### Un bug de diseño que cazó su propia prueba
+`suficientesDatos` solo miraba si había clases planificadas. Con cero confirmaciones eso daba *"esta
+semana 0 %, la anterior 0 %"* — que **da por hecho que Josué no hizo nada**, cuando lo que pasa es
+que no ha usado el botón de confirmar.
+
+Ahora hace falta también **alguna confirmación**, y si no la hay se dice con esas palabras: *"hay 40
+actividades en esos días, pero ninguna confirmada todavía"*.
+
+### Describe, no juzga
+Es la misma línea de la mochila (*"sin castigo"*), del planificador (*"no castigar"*) y de D2-02
+(*"no sobregamificar"*). Un 40 % es un dato, no una nota.
+
+Hay una **lista declarada de palabras prohibidas** y una prueba que **recorre todos los textos que
+genera el archivo** —resumen, orígenes, patrones, tendencia y recomendaciones— buscando reproches, en
+el peor escenario posible: cuatro semanas de clases y nada confirmado. Más otra que comprueba que no
+hay ni puntos, ni niveles, ni rachas.
+
+### Detalles que evitan medias verdades
+- **Solo cuentan los días ya pasados**: incluir el futuro daría un cumplimiento que baja solo según
+  avanza la semana.
+- **La media es de los días ocupados**: incluir los domingos vacíos la hunde y deja de describir cómo
+  es un día de instituto.
+- **Los días sin mochila no cuentan**: un domingo no es un olvido.
+- **Las tareas sin fecha se cuentan aparte**, no como vencidas.
+
+### Lo que no se ha construido, y por qué
+- **Gráficas**: la especificación no las pide, y el proyecto **ya tiene** un módulo de Estadísticas
+  con las suyas. Un segundo sistema de gráficas dentro del horario sería la duplicación de siempre.
+- **Cumplimiento de objetivos y hábitos**: los objetivos son su módulo y los hábitos viven en
+  Productividad con sus rachas. Medirlos aquí daría dos números distintos para lo mismo.
+
+### Verificación
+**3066 comprobaciones y 10 reglas invariantes en verde** (antes 3009), 49 de la analítica y 304 casos
+de renderizado. `package.json` → **v1.63.0**.
+
+⚠️ Sin probar: la pantalla del informe. Como todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
+## Entrega 2 · HT Fase 10 — Notificaciones, recordatorios y contexto proactivo (v1.62.0)
+
+### La mitad que faltaba: decidir, no mandar
+El proyecto **ya tiene** quien manda notificaciones: `notificaciones.js`, de la Fase A4, con el
+permiso del navegador, el interruptor global, las categorías y el horario de descanso. Un segundo
+emisor daría dos avisos por lo mismo.
+
+Así que lo construido es la otra mitad:
+
+- **`avisosHorario.js` decide** qué avisar, cuándo y con qué prioridad. Puro, se prueba con Node.
+- **`notificaciones.js` manda.** Toca el navegador.
+
+Es el mismo reparto de SO F1 (`audio.js` decide, `audioEngine.js` suena), y por el mismo motivo: la
+decisión es donde están los errores que importan, y la decisión sí se puede probar.
+
+### Que exista un evento no significa que haya que avisar
+Es la regla fundamental de la fase (apartado 4). Por eso hay un motor con las seis preguntas del
+apartado 5 en vez de un `if`:
+
+¿Es importante? → ¿Está configurado? → ¿Es el momento? → ¿Ya se avisó? → ¿Sigue valiendo? → Enviar.
+
+Y **cada rechazo lleva su motivo por escrito**: "todavía no toca", "ya se avisó de esto", "estás en
+horas de descanso". Sin eso, contestar *"¿por qué no me ha avisado?"* sería adivinar.
+
+### Tres avisos se convierten en uno
+Seis clases un martes no son seis notificaciones (apartado 34). Cuando hay más de uno que mandar a la
+vez, se junta en uno solo — *"3 cosas hoy: Examen, Mates, Biología"* — con **lo más importante
+primero**.
+
+Y el resumen nocturno **calla si mañana no hay nada**. Uno que dice "mañana no tienes nada" todas las
+noches de las vacaciones es exactamente el ruido que el apartado quiere evitar.
+
+### No molestar se respeta también con lo crítico
+Un aviso de mochila a las 3 de la mañana **no es más útil por ser urgente**. Así que las horas de
+descanso ganan a todo, incluida la prioridad crítica. Tiene su propia prueba.
+
+### Un aviso caduca
+Si la clase ya pasó o la tarea ya está hecha, el aviso programado **no se manda** (apartado 52).
+Avisar de algo que ya no aplica es peor que no avisar.
+
+Y con más de dos horas de retraso tampoco: avisar a las 12 de una clase de las 8 solo hace ruido.
+
+### Lo crítico es lo crítico
+Un examen **mañana** es lo único que sube a crítica solo. Uno de dentro de tres días es alta. Uno de
+dentro de un mes no avisa todavía.
+
+Y **que falte material en la mochila no es crítico**: es importante. Confundirlos hace que lo crítico
+deje de serlo, que es cómo se acaba ignorando el aviso que sí importaba.
+
+Si la mochila está completa, no se avisa. Si no hay tareas vencidas, no se avisa de tareas.
+
+### El centro de avisos
+Lo que se ha avisado, con los **sin leer primero**, y las tres acciones del apartado 57: posponer, dar
+por leído y archivar. Archivar da por leído — nadie archiva algo sin mirarlo.
+
+Posponer vive en la sesión, no se guarda: es una decisión de este rato, no un dato.
+
+### Lo que no se ha construido, y por qué
+- **Push Cloud con la app cerrada** (47-49): exige un Service Worker que escuche `push`, una tabla de
+  suscripciones y otra función serverless. Es infraestructura nueva —ya documentada como fuera de
+  alcance desde la Fase A4— y añadiría un tercer bloque de SQL a los dos que Josué tiene pendientes.
+- **Ubicación y contexto de dispositivo** (44-45): necesita GPS.
+- **Sonido y vibración** (82-84): el sonido es **SO · Sonido**, con su motor y su regla invariante.
+  Meterlo aquí sería el segundo sistema que esa regla impide.
+- **Cloud y conflictos** (86-88): resuelto desde HT F2.
+
+### Verificación
+**3009 comprobaciones y 10 reglas invariantes en verde** (antes 2934), 71 del motor de avisos y 296
+casos de renderizado. `package.json` → **v1.62.0**.
+
+⚠️ Sin probar: que la notificación llegue de verdad al iPhone, el permiso del navegador y Web Push
+con la app cerrada. Como todo desde R1 y la Fase A4.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
+## Entrega 2 · HT Fase 9 — IA de horario y planificador personal (v1.61.0)
+
+### Dónde está la IA en la arquitectura
+El apartado 52 lo dibuja así:
+
+    DATOS → MOTOR TEMPORAL → MOTOR DE PLANIFICACIÓN → IA → PROPUESTA → CONFIRMACIÓN → CAMBIOS
+
+La IA está **después del planificador y antes de la confirmación**. No calcula y no escribe. Lo que
+se ha construido es el motor que va antes: `planificador.js`, **determinista** — los mismos datos dan
+el mismo plan, y se prueba entero con Node.
+
+### Sin confirmar no se escribe nada
+`aplicarPlan` sin `confirmado: true` **no hace nada**. No es una comprobación defensiva: es la regla
+7 del proyecto puesta en código, para que sea imposible que una respuesta de la IA cambie el horario
+sola.
+
+Y el botón dice exactamente qué va a pasar: *"se van a crear 4 sesiones en tu horario; puedes
+cambiarlas o borrarlas después como cualquier otra clase"*.
+
+### Los números salen del motor, no de una estimación
+*"Tienes 1 h 20 min libres"* lo dice el motor temporal (apartado 51). Por eso el contexto que se le
+manda a la IA lleva los huecos, la carga y las prioridades **ya calculados**.
+
+Y **no se manda toda la base de datos** (apartado 50): solo lo relevante. Nunca las notas privadas de
+una actividad, nunca una palabra del módulo de Relación. Hay pruebas de las dos cosas.
+
+### Un hueco de 35 minutos no sirve para una sesión de 30
+Hay que levantarse, llegar y sentarse. Por eso el planificador descuenta margen y transición, y el
+hueco propuesto **empieza después de la transición**, no pegado a la clase anterior.
+
+Y *"no estudiar después de entrenar"* funciona de verdad: lo que se pidió evitar **no sale en la
+lista**, no se ordena al final. Si saliera, acabaría eligiéndose un día con prisa.
+
+### La víspera es repaso, no materia nueva
+El plan reparte el temario entre los días que quedan y **deja la víspera para repasar**. Meter el
+último tema el día antes es exactamente lo que hace llegar al examen sin haberlo visto dos veces.
+
+El día del examen no se estudia. Y si el examen es hoy, lo dice y desea suerte — no propone nada.
+
+### No castiga
+El apartado 19 se titula así. Si el martes no estudiaste, el plan **no dice "has fallado"**: dice
+*"te quedan dos sesiones antes del examen, el plan se reajusta así"*.
+
+Hay una prueba que falla si aparece "has fallado", "mal", "deberías" o "penalización".
+
+### Ninguna acción de la IA borra nada
+Cuatro acciones estructuradas y cerradas: crear una sesión de estudio, crear una tarea, mover un
+bloque, añadir algo a la mochila. **Ninguna borra.** Una IA que pueda proponer un borrado acabará
+proponiéndolo el día que no te fijes.
+
+Se validan antes de tocar nada —fecha, horas coherentes, que el bloque exista— y se previsualizan sin
+escribir, igual que los `impacto*()` de HT F4.
+
+Y una tarea **no se escribe aquí**: se devuelve marcada para Productividad, que es su dueña.
+
+### El número de prioridad no se enseña
+El cálculo existe (apartado 21) y es determinista: vencido, hoy, examen, prioridad y días de margen.
+Pero "esto vale 87 puntos" no le dice nada a nadie. Lo que se enseña es **el orden y el motivo**:
+*"se pasó hace 1 día"*, *"es mañana"*, *"faltan 3 días"*.
+
+### Lo que no se ha construido, y por qué
+- **Chat contextual** (3, 41, 46-48): el proyecto **ya tiene** buscador con IA (BI F3-F4) y el proxy
+  de `api/ask-ai.js`. Un segundo chat sería la cuarta lista que D2-07 prohíbe. Lo que faltaba —el
+  contexto que se le manda— es lo que está hecho.
+- **Descomponer tareas grandes** (22-24): trocear "hacer el trabajo de Historia" exige entender el
+  trabajo, no el horario.
+- **Tiempo de desplazamiento** (29): necesita mapas.
+- **Memoria de IA** (65): guardar preferencias aprendidas sin que Josué las vea sería justo lo que la
+  regla 7 evita. Las preferencias **se declaran**, no se deducen.
+
+### Verificación
+**2934 comprobaciones y 10 reglas invariantes en verde** (antes 2854), 72 del planificador y 292
+casos de renderizado. `package.json` → **v1.61.0**.
+
+⚠️ Sin probar: la respuesta real de la IA y la pantalla. Como todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
+## Entrega 2 · HT Fase 8 — Motor temporal y automatizaciones inteligentes (v1.60.0)
+
+### "Pasada" no es "completada"
+Es la distinción que sostiene la fase entera. *"La hora terminó"* y *"la actividad se realizó"* son
+cosas distintas: una clase a la que no fuiste terminó igual, pero no la hiciste.
+
+Confundirlas rompe el histórico, así que:
+
+- **"Pasada" se calcula del reloj.** Guardarlo dejaría de ser verdad en un minuto, y a las 23:59
+  media app estaría diciendo "en curso" de algo de por la mañana.
+- **"Completada" se guarda**, porque no hay forma de deducir del reloj si fuiste a clase. Y es lo
+  único que se guarda de todo esto.
+
+Confirmar es siempre opcional. Nada obliga a marcar nada.
+
+### El tablón se vacía solo
+Lo terminado **sale del tablón principal** y se consulta con un toque: a las 20:00 lo que importa no
+es la clase de las 8.
+
+Debajo, el día lleva su cuenta: *"2 de 3 terminadas confirmadas"*. Las completadas cuentan también
+como terminadas — contarlas aparte daría totales que no suman.
+
+### El cambio de día, dicho con honestidad
+No hay proceso de fondo en una PWA. Un temporizador que corriera toda la noche no existe en iOS.
+
+Así que el "cambio de día" es lo que sí se puede hacer: comparar la fecha que la pantalla creía con
+la de ahora, y recalcular si no coinciden. Funciona, y no finge un servicio que no está corriendo.
+
+### La excepción gana a la regla
+El motor es trigger → condiciones → acción, con **todas** las condiciones exigidas.
+
+Y el apartado 45 pone el caso: *"añadir bata"* como regla general, *"no llevar bata el 15 de
+septiembre"* como excepción. **El 15 no se lleva bata.** Sin esto, una regla general no se podría
+matizar nunca, y la única salida sería borrarla y volver a crearla.
+
+El motor es **deliberadamente cerrado**: cuatro triggers, cinco condiciones y cuatro acciones. Uno
+abierto sería un lenguaje de programación dentro de una app de instituto, y nadie podría depurar por
+qué apareció una bata.
+
+### Nada crítico se ejecuta solo
+Las acciones tienen nivel: informativa, reversible e importante. **No hay críticas** — nada de lo
+que puede hacer una regla borra datos.
+
+Y lo importante **no se ejecuta sin confirmar**, ni siquiera dentro de un "hacerlo todo": ahí se
+queda fuera del lote y se pregunta aparte. Ejecutarlo "porque estaba en el lote" sería saltarse el
+apartado 53 por comodidad.
+
+### Todo lo automático se explica y se deshace
+*"21:00 → Añadida bata automáticamente por Biología."* Con su hora, su motivo y un botón.
+
+⚠️ Y **deshacer un aviso ya dado no revierte nada** — no se puede "no avisar". Así que se marca en el
+historial y se dice que no tuvo efecto, en vez de fingir que sí.
+
+Lo que pone una regla en la mochila **no se marca como manual** a propósito: si lo hiciera, sería
+eterno y el motor de la mochila no podría recalcularlo nunca.
+
+### La IA no es el motor
+El apartado 55 lo dice y aquí se cumple: el motor es determinista y se prueba entero con Node. La IA,
+cuando llegue en la Fase 9, **propondrá** reglas para que Josué las apruebe — no las ejecutará.
+
+### Verificación
+**2854 comprobaciones y 10 reglas invariantes en verde** (antes 2772), 74 del motor temporal y 284
+casos de renderizado. `package.json` → **v1.60.0**.
+
+⚠️ Sin probar: que la pantalla se refresque sola al pasar la hora y el cambio de día con la app
+cerrada. Como todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
+## Entrega 2 · HT Fase 7 — Mochila inteligente, materiales y preparación automática (v1.59.0)
+
+### La mochila es una consecuencia, no una lista
+*"Día → actividades → materiales → excepciones → mochila."*
+
+Nada de lo que sale en la mochila se ha escrito a mano: sale del horario de ese día y de los
+materiales de cada asignatura. Lo único que se guarda es lo que **no se puede deducir**: qué has
+metido ya, qué has añadido tú, en qué estado está cada cosa y dónde la tienes.
+
+Se ve dentro de HOY, con dos tarjetas: **la de hoy** y **la de mañana**, que es la que de verdad se
+prepara por la noche. Y la de mañana ya existe hoy, sin esperar a las 00:00, porque no se genera:
+se deriva.
+
+### Lo que añades a mano no se borra solo
+Es la regla que se rompe sin que nadie se entere. Si escribes "llevar bata igualmente", el recálculo
+de mañana **no puede** hacerla desaparecer (apartado 57).
+
+Por eso cada elemento sabe de dónde viene (apartado 58) y el motor solo toca los automáticos. Tiene
+su prueba: se añade a mano, se recalcula entero y sigue ahí.
+
+### Una libreta es una libreta, pero dos hojas y tres son cinco
+Dos asignaturas que piden libreta dan **1 libreta, para Biología y Matemáticas** — no dos entradas
+iguales (apartado 60).
+
+Pero con los **consumibles** es al revés: dos hojas y tres hojas **son cinco hojas** (apartado 61).
+El inventario es quien sabe qué es consumible, así que se lo dice al agrupador de HT F2 en vez de
+escribir un segundo agrupador.
+
+### Cada cosa dice por qué está
+Tocar la bata explica: *"la necesitas porque tienes Biología"*. Y si es una dependencia, *"va con el
+iPad"*; si es de la base, *"siempre lo llevas"*; si la pusiste tú, lo dice.
+
+Una checklist que no se explica es una checklist que se ignora.
+
+### "Meter todo" no marca lo que no tienes
+Si la bata está prestada o perdida, "Meter todo" **la salta**. Marcarla sería mentira, y la mochila
+dejaría de servir justo el día que importa.
+
+En su lugar sale tachada, con el motivo: *"necesitas la bata y la tiene Jorge"* (apartado 38).
+Devolverla borra ese nombre — si no, seguiría diciendo "la tiene Jorge" para siempre.
+
+### Kits, dependencias y reglas
+- **Dependencias** (96-97): iPad → cargador → cable, resuelto en cadena. ⚠️ Y un ciclo (A necesita B
+  y B necesita A) **no cuelga la app**: sin cortarlo, la pantalla se quedaría en blanco.
+- **Reglas** (75-79): tres condiciones — por actividad, por día de la semana, por etiqueta.
+  Deliberadamente simple: un motor con anidamiento sería un lenguaje de programación dentro de una
+  mochila.
+- **Mochila base** (26): estuche, botella, cargador. Lo que va siempre, sin depender del horario.
+
+### Sin castigo
+El apartado 105 se titula exactamente así. Se detecta que faltó algo y **no se riñe**: el mensaje es
+*"pasa"*. Hay una prueba que falla si aparece la palabra "fallo", "mal" o "penalización", y otra que
+comprueba que no hay ni puntos, ni niveles, ni rachas de mochila (D2-02).
+
+### Un bug de datos evitado antes de que pasara
+`normalizarHorarioTop` no conocía `materiales`, `enlacesMaterial`, `mochila` ni las cinco colecciones
+nuevas. Y decenas de funciones devuelven `normalizarHorarioTop(estado)` — cualquiera de ellas habría
+borrado **el material y la mochila enteros** en el siguiente guardado.
+
+Es el mismo fallo de `visible` (HT F2), `archivado` (HT F4) y `grupos` (HT F5), pero con muchos más
+datos por delante. Esta vez se vio al añadir los campos, no al perderlos.
+
+Y otro: el campo se llama `metido` desde HT F2. Inventar aquí un `preparado` habría dado un botón
+que se olvida al recargar. Se reutiliza el que ya existía.
+
+### Lo que no se ha construido, y por qué
+- **Recordatorio a las 21:00** (47-49): es una notificación, y eso es la Fase 10. Lo que sí está es
+  **qué** diría: el aviso con los nombres de lo que falta.
+- **Conexión con Economía** (65): la lista de compra dice qué falta; crear un gasto por una libreta
+  que no se ha comprado sería inventarse un movimiento.
+- **IA para configurar reglas** (80): la IA nunca se dispara sola (regla 7), y esto es Fase 9.
+- **Widget y pantalla de bloqueo** (111-112): la propia especificación los llama "futuro", y una PWA
+  en iOS no puede hacerlos.
+
+### Verificación
+**2772 comprobaciones y 10 reglas invariantes en verde** (antes 2679), 85 de la mochila y 276 casos
+de renderizado. `package.json` → **v1.59.0**.
+
+⚠️ Sin probar: la pantalla, los gestos y el recordatorio de las 21:00. Como todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
+## Entrega 2 · HT Fase 6 — Calendario, agenda y sistema HOY (v1.58.0)
+
+### HOY es ahora la primera pantalla del horario
+Cuatro tarjetas, en el orden de las preguntas que uno se hace al abrir la app:
+
+**AHORA** (qué estoy haciendo, y cuánto le queda) · **SIGUIENTE** (qué viene, y en cuántos minutos) ·
+**PENDIENTE** (qué se me olvida) · **MAÑANA** (qué preparo esta noche).
+
+Es una vista más dentro del módulo Horario, la primera y la que sale por defecto. **La barra inferior
+sigue teniendo cinco pestañas**: un módulo nuevo entra en un área existente, nunca en la barra.
+
+### No guarda una copia de nada
+El apartado 102 decide la forma del archivo entero: *"HOY no almacenará una copia independiente de
+todo. Consultará las entidades originales."*
+
+Así que `hoy.js` es una función de lectura y nada más. Completar una tarea desde Productividad cambia
+HOY sin que HOY se entere, y hay una prueba que lo demuestra. Si guardara "las cosas de hoy" habría
+dos verdades, y la copia empieza a mentir en cuanto se toca la original.
+
+### El 90 % del trabajo fue no volver a construir
+La especificación describe HOY como si el proyecto empezara de cero. No empieza:
+
+- **Los eventos de otros módulos** ya los reúne `eventosDerivados`, del Calendario, con exámenes,
+  tareas, entrenamientos y objetivos. Se lee de ahí; no hay un segundo recolector.
+- **La línea del día, los huecos, los conflictos y los avisos** ya estaban en `horario.js` desde
+  HT F1.
+- **La puntuación del día** (apartado 37) ya es `puntuacion.js`, la del Dashboard. Una segunda daría
+  dos números distintos para el mismo día, que es peor que no tener ninguno.
+
+Lo que faltaba de verdad era **la pregunta**: qué pasa ahora, cuánto queda, qué viene, qué está
+pendiente y en qué orden. Eso es `contextoTemporal()`, que responde las ocho preguntas del apartado
+101 en una sola llamada — porque si cada tarjeta preguntara por su cuenta, acabarían diciendo cosas
+distintas.
+
+### Una tarea vencida no desaparece
+El apartado 33 es explícito. Sigue arriba del todo, diciendo cuántos días lleva, y con las dos cosas
+que hacen falta a un toque:
+
+- **Completar sin abrir Productividad** (apartado 35).
+- **Reprogramar en un toque** (apartado 34): mañana, este fin de semana o la semana que viene.
+
+Y "este fin de semana" pedido un domingo por la tarde es el sábado **que viene**, no el de ayer.
+
+### Un día sin nada no es una pantalla rota
+El apartado 69 lo pide con esas palabras. Un domingo vacío dice que no hay nada programado y ofrece
+montar el día; un festivo dice que es día libre. Los dos casos tienen su prueba de renderizado.
+
+Y un domingo **no dice "clase pendiente"** si el horario escolar es de lunes a viernes (apartado 70).
+
+### El contador baja solo
+*"El contador deberá actualizarse automáticamente sin recargar la página."* (apartado 5)
+
+Un tic de un minuto basta, porque el número se dice en minutos. Sin él, "empieza en 42 min" se
+queda congelado y sigue diciendo 42 cuando la clase empezó hace diez.
+
+### Los avisos se agrupan en uno
+*"No se debe bombardear al usuario."* (apartado 81) Un mensaje —"tienes 3 cosas importantes hoy"— en
+vez de tres avisos, con las tres prioridades del apartado 82: una tarea vencida y un examen mañana
+son altas; algo de dentro de una semana, baja.
+
+Aquí se **describen**. Mandarlas es la Fase 10, y el proyecto ya tiene su emisor: dos darían dos
+avisos por lo mismo.
+
+### Un bug que dejaba la pantalla en blanco
+`lineaDelDia` devuelve el día entero —eventos, en curso, festivo, total, minutos—, no una lista.
+Tratarlo como un array reventaba con `linea.map is not a function`. Lo cazó su propia prueba antes
+de llegar a ninguna pantalla.
+
+### Lo que no se ha construido, y por qué
+- **Arrastrar bloques** (30-31): misma decisión que HT F3 — en móvil manda "Mover a…".
+- **Recordatorios, ubicación y tiempo de desplazamiento** (47-52): los recordatorios son la Fase 10;
+  el desplazamiento necesita mapas, que el proyecto no tiene ni ha pedido.
+- **IA proactiva y planificar desde un hueco** (59, 61, 66-67): es la Fase 9. Aquí está el contexto
+  que la alimentará, y la IA nunca se dispara sola (regla 7).
+- **Centro de notificaciones** (83): ya existe uno. Un segundo historial sería la duplicación que el
+  apartado 102 prohíbe.
+- **Comando rápido** (108-109): el buscador global de BI F3-F4 ya es exactamente eso, y D2-07
+  prohíbe una cuarta lista.
+
+### Verificación
+**2679 comprobaciones y 10 reglas invariantes en verde** (antes 2596), 83 del motor temporal y 268
+casos de renderizado. `package.json` → **v1.58.0**.
+
+⚠️ Sin probar: el contador que baja solo en pantalla, el aspecto en un iPhone y el recorrido tocando.
+Como todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
+## Entrega 2 · HT Fase 5 — Asignaturas, actividades, colores, iconos y contexto (v1.57.0)
+
+### "Biología" deja de ser una palabra dentro de una celda
+Ahora es una entidad con identidad, color, icono, nombre corto, alias, etiquetas, profesor, aula,
+material, notas, exámenes y tareas — y con una ficha que las junta todas.
+
+Tocar el nombre de una clase en el horario abre esa ficha. Y hay una lista de todas las asignaturas,
+porque una archivada ya no tiene ningún bloque y aun así hay que poder abrirla para recuperarla.
+
+### Todo lo que se puede derivar, se deriva
+Es la decisión que gobierna la fase entera. Los usos, el tiempo semanal, las más utilizadas, las
+recientes y la carga de cada día **no se guardan en ninguna parte**: salen de los bloques.
+
+Un contador de "veces usada" empieza a mentir en cuanto se borra un bloque. Y ese número es
+precisamente el que decide si una asignatura se borra o se archiva: "Biología está en 6 clases"
+diciendo 6 cuando quedan 4 sería peor que no decir nada.
+
+Lo único que se guarda es lo que no se puede calcular: que Josué la marcó como favorita.
+
+### Nunca se fusionan dos actividades solas
+Antes de crear "Biología" el sistema mira si ya existe — sin importar tildes ni mayúsculas — y
+enseña también las parecidas: "Biología 2", "Biología y Geología".
+
+El apartado 57 lo dice literalmente: *"no deberá fusionar automáticamente entidades ambiguas"*.
+Pueden ser dos asignaturas de dos cursos distintos, y juntarlas no se deshace. Se enseñan las tres y
+elige Josué.
+
+### Las notas privadas no llegan a la IA
+El apartado 52 permite guardar una nota privada: *"recordar preguntar por la recuperación"*. El 73
+dice que la información adicional es privada por defecto.
+
+Así que la nota **sale en la ficha** —que es la pantalla de Josué— y **no viaja en el contexto que
+se le manda a la IA**. Hay una prueba que falla si aparece. Lo que no sale de aquí no puede acabar
+en un servidor.
+
+Y el contexto para la IA devuelve **estructura, no un texto**, sin llamar a nadie (regla 7).
+
+### Borrar avisa primero, y recomienda archivar
+*"Biología está utilizada en 6 bloques, 4 tareas y 1 examen."* (apartado 58)
+
+Se calcula antes de decidir y la opción recomendada es archivar: una asignatura del curso pasado
+tiene exámenes, notas y horas de estudio colgando. Si no la usa nada, se dice también, y entonces
+borrar no se lleva nada por delante.
+
+Y si se borra de todas formas, **los bloques no desaparecen**: se quedan sin actividad. Perder la
+hora de una clase por haber borrado la asignatura sería mucho peor que un hueco que se rellena — la
+misma decisión que HT F1 y AR F2 ya tomaron.
+
+### Las tareas se dicen como lo que son
+Los exámenes se enlazan de verdad, por `asignaturaId`. Las tareas de Productividad **no tienen campo
+de asignatura**, así que se enseñan las que mencionan la actividad por su nombre, y debajo pone:
+*"salen las que escribiste con su nombre: las tareas todavía no se pueden enlazar a una asignatura"*.
+
+Fingir un enlace que no existe habría sido un dato inventado (regla 8).
+
+### Oculta no es archivada, y el color del bloque no es el de la asignatura
+Dos distinciones que la especificación pide y que juntar habría roto algo:
+
+- **Oculta** es "existe y sigue viva, pero no la quiero ver aquí"; **archivada** es "esto es del
+  curso pasado". Sin las dos, el "Trabajo personal" del apartado 51 —que sale en HOY pero no en el
+  horario escolar— sería imposible.
+- El color va **bloque → actividad → grupo → acento**. Marcar un examen en rojo **no repinta
+  Biología entera** (apartado 44).
+
+### Un bug que se habría comido la pantalla
+Una actividad puede tener madre (apartado 63: Estudios → Biología, Física, Matemáticas). Sin
+comprobarlo, nada impedía ponerse a sí misma de madre — o a su propia abuela — y pintar el árbol se
+habría colgado en un bucle, dejando la pantalla en blanco. `puedeSerPadre` recorre la cadena antes
+de aceptar.
+
+### Y otro que perdía datos, por tercera vez
+`grupos` no estaba ni en el estado por defecto ni en el normalizador, así que se habría perdido en
+el siguiente guardado. Es el mismo fallo de HT F2 (`visible`) y HT F4 (`archivado`). Esta vez se vio
+antes de que llegara a pasar.
+
+### Verificación
+**2596 comprobaciones y 10 reglas invariantes en verde** (antes 2468), 116 de las actividades y 252
+casos de renderizado. `package.json` → **v1.57.0**.
+
+⚠️ Sin probar: la ficha en pantalla, el selector de iconos y el recorrido tocando en un iPhone. Como
+todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
+## Entrega 2 · HT Fase 4 — Configuración avanzada de columnas, filas y bloques (v1.56.0)
+
+### Todo detrás de un solo botón
+*"Toda la potencia estará disponible, pero sin complicar la interfaz básica."* (apartado 63)
+
+Esta fase añade semanas A/B, generación de franjas, búsqueda, zoom, densidad, archivado y validación
+estructural. Si todo eso apareciera en la cuadrícula, la pantalla de todos los días sería ilegible en
+un iPhone. Así que vive entero detrás de **"Opciones avanzadas", dentro del modo edición**: quien
+solo quiere mirar qué le toca ahora no ve ni uno de esos controles.
+
+### Nada se mueve en silencio
+El apartado 30 es el que manda sobre toda la fase: *"No se deben mover datos silenciosamente."*
+
+Regenerar la rejilla de horas puede dejar clases fuera de sitio. Eliminar una columna puede llevarse
+bloques por delante. Cambiar el horario de una franja puede descolocar lo que había dentro.
+
+Las tres operaciones **calculan el impacto y lo enseñan antes de escribir**, con el número exacto de
+clases afectadas y un botón de "Hacerlo igualmente". Nunca se escribe primero y se avisa después.
+
+Y regenerar las franjas **no mueve ni un bloque**: conservan sus horas, solo pierden la fila a la que
+apuntaban. Las filas son la rejilla visual; los bloques guardan sus propias horas desde HT F2.
+
+### Las semanas A/B se calculan, no se guardan
+Un horario puede alternar entre semana A y semana B, hasta ocho semanas de ciclo.
+
+**La semana en la que estamos se calcula desde una fecha ancla.** Guardar "esta semana es la B" sería
+un contador, y un contador miente en cuanto pasa un lunes sin abrir la app — el mismo error que RA F1
+evitó con las rachas.
+
+Y **sin ancla no se adivina**: se enseña la semana A y se dice por qué. Adivinar sería peor que no
+alternar, porque haría desaparecer clases sin motivo aparente.
+
+Una columna sin grupo vale para todas las semanas del ciclo, que es lo que permite tener "Lunes"
+fijo y solo "Miércoles A/B" alternando.
+
+### Archivar no es borrar, y bloquear no es ocultar
+Dos distinciones que la especificación pide expresamente (apartados 56 y 8):
+
+- Un horario **archivado** sale del selector y deja de resolver fechas, pero sus bloques siguen
+  guardados y se recupera de un toque. Y si están **todos** archivados, la pantalla vacía ofrece
+  recuperarlos — si no, sería un callejón sin salida.
+- Una columna **bloqueada** se sigue viendo y sigue resolviendo fechas: solo no se edita sin querer.
+
+### El zoom del móvil no cambia el del ordenador
+El apartado 59 separa configuración local de configuración en la nube. Aquí la línea está clara:
+**estructura y datos a Supabase, preferencias de vista al aparato.**
+
+El zoom (60–140 %) y la densidad de las filas van a `localStorage`. Sincronizarlos haría que
+ajustarlos en el iPhone estropeara la vista en el ordenador, que no tiene la misma pantalla.
+
+El zoom escala **alto y ancho** de la cuadrícula. Escalar solo hacia abajo dejaría las columnas
+igual de estrechas y el nombre de la asignatura igual de ilegible.
+
+### Un bug que perdía datos, otra vez el mismo
+El normalizador de `horario.js` no conocía `archivado`, `icono`, `color`, `zonaHoraria` ni `ciclo`,
+así que **archivar un horario funcionaba hasta el siguiente guardado**, y entonces volvía solo. Es
+exactamente el fallo que HT F2 tuvo con `visible` y que el comentario encima de la función avisa de
+que puede repetirse. Lo cazó su propia prueba.
+
+### Una configuración extrema no puede destruir la app
+El apartado 20 lo pide y hay dos topes que lo cumplen: el generador de franjas **no pasa de 40
+filas** (un intervalo de 1 minuto sobre doce horas daría 720 y dejaría la app inservible) y el ciclo
+de semanas se **acota a 8** en vez de descartarse — devolver 1 apagaría el ciclo entero por un
+dedazo, y las clases alternas desaparecerían sin que nada lo explicara.
+
+### Lo que no se ha construido, y por qué
+- **Bloques multifila y multicolumna** (15-18): el modelo ya los permite, falta pintarlos estirados.
+  Es trabajo de cuadrícula y va con la Fase 5, donde se rehace la celda.
+- **Atajos de teclado** (42): Josué trabaja desde el iPhone. Sería un control decorativo.
+- **Versionado, importar, exportar, imprimir y compartir** (46-52): la propia especificación llama al
+  46 *"versionado futuro"*, exportar e imprimir son de la Fase 12, y compartir depende de decisiones
+  de privacidad que Josué no ha tomado.
+- **Cambio de hora** (54): el cambio de hora español no mueve las clases. No hay nada que construir.
+- **Rendimiento de horarios enormes** (60-62): un horario de instituto son 5 columnas y 7 franjas.
+
+### Verificación
+**2468 comprobaciones y 10 reglas invariantes en verde** (antes 2308), 121 de la configuración
+avanzada y 240 casos de renderizado. `package.json` → **v1.56.0**.
+
+⚠️ Sin probar: el zoom y la densidad en pantalla real, el aspecto en un iPhone y el recorrido
+tocando. Como todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
+## Entrega 2 · HT Fase 3 — Editor visual de horarios (v1.55.0)
+
+### Un módulo nuevo: Horario
+En el área Vida, junto al Calendario. La barra inferior sigue con cinco pestañas.
+
+Dentro: cuadrícula de la semana, vista de día, agenda, acceso a HOY, y un interruptor entre **modo
+consulta y modo edición** — que en un iPhone no es estética: los controles de añadir, mover y borrar
+ocupan media pantalla, y el 95 % de las veces solo se quiere mirar qué toca ahora.
+
+### Montar un horario tiene que ser minutos, no media hora
+Tocar una celda, escribir "Matemáticas", Enter. El sistema busca si ya existe, la reutiliza si sí, la
+crea si no, le pone un color automático y guarda.
+
+El paso que importa es **reutilizar**: escribir "Matemáticas" otro día usa la misma actividad, con su
+mismo color. Sin eso habría cuatro Matemáticas de cuatro colores, y no habría forma de cambiar el
+color de la asignatura de una vez.
+
+Y el autocompletado sugiere también **las asignaturas de Estudios que aún no están en el horario** —
+sin eso, apuntar a Estudios en vez de duplicarlas no serviría de nada en la práctica.
+
+### "Solo este lunes" no puede cargarse todos los lunes
+Es lo más delicado de la fase. Cambiar la hora de Matemáticas porque hoy hubo un cambio de aula no
+puede modificar todos los lunes del curso.
+
+Se resuelve con dos alcances, y **sin valor por defecto**: si no se dice cuál, no se escribe nada. Un
+defecto silencioso sería justo el error que el apartado quiere evitar, y sería irreversible sin darse
+cuenta. "Solo este día" crea una excepción; el horario base no se toca.
+
+### Cuatro cosas que no se han construido porque ya existían
+Autoguardado, sincronización, deshacer y rehacer. Cada operación entra por `snapshotAndSave`, que
+guarda y alimenta el "Deshacer" global — y ese cubre literalmente la lista del apartado 38: eliminar
+bloque, mover bloque, cambiar color, eliminar fila, eliminar columna. Un segundo autoguardado daría
+dos sistemas escribiendo la misma clave.
+
+### Sin drag & drop, y es una decisión
+El apartado 25 lo pide *"en dispositivos compatibles"*; el 26 exige que en móvil exista igualmente
+"Mover a…". Se ha construido lo segundo, que es lo que Josué va a usar desde el iPhone. El arrastre se
+añade encima sin tocar nada, porque acabaría en la misma función.
+
+Y mover **conserva la duración**: arrastrar una clase de una hora a otro sitio no puede convertirla en
+una de diez minutos.
+
+### Detalles que evitan perder cosas
+- **Eliminar una franja no borra los bloques que caen en ella.** Las filas son la rejilla visual; los
+  bloques guardan sus propias horas. Quitar la fila de las 10:00 no puede hacer desaparecer la clase
+  de las 10:00.
+- **Duplicar un día sobre otro que ya tiene clases se rechaza**, con el número. Forzar sustituye, no
+  acumula: es lo que espera quien dice "haz el martes igual que el lunes".
+- **Un conflicto se detecta antes de escribir.** Forzar existe, pero hay que pedirlo.
+- **Importar exige revisar**: la previsualización no escribe nada y aplicar solo acepta lo que salió
+  de ella. Y avisa de las actividades que ya existen, para no crear una segunda Matemáticas.
+
+### La columna de horas se queda fija
+Con siete días no caben en 390 px. La hora vive **fuera** del contenedor que hace scroll, no con
+`position: sticky`: en iOS, `sticky` dentro de un scroll horizontal es irregular, y aquí la solución
+simple es además la robusta.
+
+### Verificación
+**2308 comprobaciones y 10 reglas invariantes en verde**, con 224 casos de renderizado. Los veinte
+criterios de aceptación comprobables tienen prueba propia. `package.json` → **v1.55.0**. Van 32 de
+las 106 fases; quedan 74.
+
+⚠️ **Lo que sigue sin probarse, y se dice en la propia salida:** el aspecto en un iPhone, los gestos
+y el modo oscuro.
+
+## Entrega 2 · SO Fase 1 — Sistema global de sonido (v1.54.0)
+
+### Lo primero: hoy no suena nada, y está dicho
+**No hay ni un archivo de audio en el proyecto**, y el apartado 38 prohíbe crearlos: *"En esta fase
+NO quiero: biblioteca completa de sonidos…"*. El 21 lo remata: *"Esta fase solo necesita dejar la
+arquitectura lista."*
+
+Así que el motor está entero y no suena — que es exactamente el camino de fallback del apartado 25
+(*"si tampoco existe: silencio"*), no una función a medias. En cuanto los archivos estén en
+`public/sonidos/`, suena sin tocar una línea de código.
+
+Y **el sonido está apagado de fábrica**, a propósito: encenderlo sin biblioteca daría un interruptor
+que dice "Sonidos: sí" y no suena nunca.
+
+### Una regla invariante nueva
+*"Queda prohibido crear lógica como `new Audio(...)` repartida por la aplicación."*
+
+`verificar.sh` ahora **falla si `new Audio(` o un contexto de audio aparecen fuera de
+`audioEngine.js`**, aunque sea dentro de un comentario. Sin ella, el primer botón que quiera sonar se
+traería el suyo y el motor dejaría de ser central: no se le aplicarían ni el volumen por categoría,
+ni el cooldown, ni las colisiones. Me cazó a mí dos veces escribiendo esta misma fase.
+
+### Nunca como una máquina tragaperras
+Completar un entrenamiento puede disparar `ACTION_COMPLETED`, `STREAK_CONTINUED` y `SUCCESS` casi a
+la vez. Suena **una** vez: dentro de una ventana de 180 ms solo pasa lo más importante.
+
+Y veinte toques rapidísimos en un botón dan **un** sonido, no veinte. Las dos cosas tienen su prueba
+con ese caso exacto.
+
+### Web Audio API, y por qué
+Con un `<audio>` solo se pierde una de las siete prioridades que pide la especificación — pero es la
+que sostiene el apartado 8: **un elemento tiene un `volume` y nada más**. "Interfaz al 30 % y Rachas
+al 90 %" habría que calcularlo a mano en cada reproducción, y no habría forma de bajar una categoría
+entera de golpe. Con Web Audio es un `GainNode` por categoría, que es la forma exacta del problema.
+
+Además iOS limita cuántos `<audio>` suenan a la vez. Sin librerías: hacen falta un contexto, un nodo
+por categoría y un `fetch`.
+
+### iOS no se intenta esquivar
+Safari crea el contexto suspendido y no deja reanudarlo sin un gesto. El motor se engancha al primer
+toque y se desbloquea ahí. Hasta entonces **no falla: simplemente no suena**. Y hay **un solo
+contexto**, creado en ese primer toque y no al arrancar.
+
+### El bus, y lo que deliberadamente no hace
+No había Event Bus en el proyecto, así que se ha creado uno ligero. **No define ni un evento propio
+de rachas**: los de RA F3 llegan con sus nombres y se traducen con dos alias. Redefinirlos habría
+dejado dos catálogos separándose con cada fase.
+
+Rachas no sabe que existe el audio, y el audio no sabe qué es una racha. Cuando lleguen haptics,
+notificaciones o analítica, se enganchan al mismo bus.
+
+Y un suscriptor que revienta **no tumba al emisor**: si el motor de audio falla, el entrenamiento
+queda guardado igual.
+
+### El sonido nunca es el único canal
+El apartado 35 lo pide, y no se puede imponer con una comprobación… salvo **no dándole al motor
+ninguna forma de suprimir la interfaz**. La decisión solo dice si suena y por qué. Hay una prueba que
+falla si aparece un campo que pudiera usarse para ocultar algo.
+
+### Verificación
+**2176 comprobaciones y 10 reglas invariantes en verde**. `package.json` → **v1.54.0**. Van 31 de las
+106 fases; quedan 75.
+
+⚠️ **Lo que no se ha podido comprobar aquí, y se dice en la propia salida de las pruebas:** iOS,
+Android, PWA y navegador de escritorio. Son del navegador real.
+
+✅ **C-23 queda resuelta a medias:** Josué pasó el texto que faltaba. ⏸ Siguen faltando **los archivos
+de audio**, que él dará *"cuando la web ya tenga todos los botones activos"*.
+
+## Entrega 2 · HT Fase 2 — Modelo de datos, Cloud y Supabase (v1.53.0)
+
+### Ni una tabla nueva, ni un SQL que ejecutar
+La especificación propone trece tablas —`schedules`, `schedule_columns`, `schedule_blocks`,
+`subjects`, `materials`…— y en el apartado 51 dice cómo decidir: *"HORARIO TOP no podrá crear una
+arquitectura incompatible con los demás módulos. La implementación final deberá adaptarse a la
+arquitectura global del Sistema Personal."*
+
+JosStyle no tiene una tabla por entidad. Tiene **una**, `app_data`, con RLS por usuario, que usan los
+veintiún módulos. Trece tablas serían el segundo sistema de persistencia del proyecto y **trece
+bloques de SQL que ejecutar a mano desde el iPhone**.
+
+Así que lo que en PostgreSQL serían restricciones son aquí funciones que se ejecutan de verdad: los
+índices son mapas, las validaciones son código, el `user_id` no existe —no hay ninguno que falsear— y
+el borrado reversible es la papelera que ya tiene el proyecto.
+
+### El curso pasado deja de resolver solo
+Un horario ya no tiene solo una etiqueta de periodo: tiene `desde` y `hasta` de verdad, y
+`resolverDia()` los respeta. Acabado junio, el horario 26/27 deja de aparecer sin que nadie se
+acuerde de desactivarlo, y sus bloques siguen guardados.
+
+### Los materiales dejan de ser textos sueltos
+En la Fase 1 el material era `['Libro', 'Libreta']` dentro de la actividad. Con textos, "Libreta" en
+Biología y "Libreta" en Matemáticas eran dos cosas distintas que solo se parecían al escribirlas.
+
+Ahora son entidades con su enlace, y la migración **une las repetidas**: tres asignaturas con libreta
+dan **un** material y tres enlaces, no tres libretas. Pasarla dos veces no duplica nada, y el texto
+original se conserva para que sea reversible.
+
+### La mochila es una consecuencia, no una lista
+*"La mochila será una consecuencia de los datos existentes y no una lista completamente
+independiente."* `mochilaDelDia()` deriva: horario → actividades → material. Lo único que se guarda
+es lo que no se puede derivar — si ya está metido, y lo que se añada a mano.
+
+Y agrupa: "Libreta — para Biología y Matemáticas", no dos libretas. Con cinco clases al día, la
+diferencia es entre una mochila útil y una lista de veinte cosas repetidas.
+
+### El calendario no se duplica
+Catorce días de agenda **no crean catorce registros**: se calculan. El horario aporta eventos
+derivados con `origen` y `origenId` al calendario común que ya existe — exactamente los `source` y
+`source_id` que pide la especificación.
+
+### Cuando dos dispositivos cambian lo mismo
+`detectarConflicto()` usa los timestamps para decir "esto lo cambió otro dispositivo después de que
+tú lo abrieras". **Detecta y avisa; no resuelve**: la especificación dice que *"no se deberá
+sobrescribir información silenciosamente sin criterio"*, y quién gana es una decisión que deja para
+más adelante.
+
+### Tres bugs míos, y uno perdía datos
+1. **El normalizador de horarios tiraba los campos nuevos de columnas y filas.** Ocultar el sábado
+   funcionaba… hasta recargar la app: `crearColumna` escribía `visible`, pero el normalizador no lo
+   conocía y se perdía en el primer guardado.
+2. **Un item de mochila añadido a mano se borraba solo**, porque el normalizador exigía un
+   `materialId` que un "Bocadillo" escrito a mano no tiene.
+3. **`validarHorario` no detectaba un nombre vacío**, porque miraba el objeto ya normalizado y el
+   normalizador lo rellena con la etiqueta del tipo.
+
+Los tres los cazaron sus propias pruebas.
+
+### Verificación
+**2085 comprobaciones y 9 reglas invariantes en verde**, build incluido. `package.json` →
+**v1.53.0**. Van 30 de las 106 fases; quedan 76.
+
+⏸ **Queda confirmado lo que HT F1 dejó abierto:** el horario se guarda en `app_data` con la clave
+`horarioTop`. Sin tabla nueva y sin SQL pendiente.
+
+## Entrega 2 · HT Fase 1 — Arquitectura de Horario Top (v1.52.0)
+
+### Esta fase no pide construir: pide definir
+*"No estamos construyendo todavía la interfaz definitiva, la base de datos definitiva, el editor
+definitivo, la mochila, las notificaciones ni la IA. Estamos estableciendo cómo debe funcionar todo
+el ecosistema antes de empezar a construirlo."*
+
+En este proyecto eso ha significado siempre lo mismo: **un módulo puro y probado, no un documento.**
+Un documento se contradice con el código en la segunda fase; un modelo con 131 comprobaciones no
+puede. `src/lib/horario.js` es el ecosistema entero como código, **sin una sola pantalla**.
+
+### El horario es una regla, no una lista de eventos
+Es la distinción de la que cuelga todo lo demás. La regla base vive en `bloques` —"los martes a las
+10:00 hay Biología"— y los cambios puntuales en `excepciones`. `resolverDia()` los compone al vuelo.
+
+Materializarlo —crear cuarenta "Biología" para el curso— haría que cambiar la hora de la clase
+obligara a editar cuarenta filas, y que un festivo tuviera que borrar seis. Es el mismo error que el
+proyecto ya evitó en el Calendario.
+
+Con esto: el mismo bloque resuelve en todos los martes del curso (probado con dos martes distintos),
+cancelar un día no toca el siguiente, y **un festivo se declara una vez** en vez de cancelar seis
+clases a mano. Y un festivo de instituto **no cancela el entrenamiento**.
+
+### Las asignaturas no se duplican
+*"Si el usuario crea Biología, no debería tener que volver a escribir «Biología» para Horario,
+Tareas, Exámenes, Mochila y Estudios."*
+
+Y JosStyle **ya tiene las asignaturas de Josué**, en `estudios.asignaturas` desde la Fase 6. Así que
+una actividad escolar no las copia: **apunta a ellas**, y el nombre se resuelve al leer. Renombrar
+"Bio" a "Biología" en Estudios lo cambia en el horario sin tocar el horario.
+
+Sin esto habría dos "Biología" —una en cada módulo— y ningún examen podría enlazarse con su clase.
+
+### Una columna guarda su día aparte de su nombre
+Es la pieza que permite las dos cosas que pide la especificación a la vez: que "Martes" resuelva a
+una fecha, y que "Semana A", "Persona 2" o "Proyecto 1" sigan siendo columnas posibles. Sin ese
+campo habría que adivinar el día por el nombre, y "Semana A" no es ningún día.
+
+Una columna sin día no cae en ninguna fecha — está probado, y es exactamente el hueco donde entrarán
+las semanas A/B más adelante sin tocar el modelo.
+
+### Los enganches de lo que viene, y solo los enganches
+- **Mochila** (Fase 7): `materialDelDia()` agrupa y dice **para qué** hace falta cada cosa —
+  "Libreta — para Biología y Matemáticas" es más útil que la libreta repetida dos veces.
+- **Notificaciones** (Fase 10): `avisosDelDia()` **describe, no notifica**. Devuelve qué se podría
+  avisar y a qué hora; quién avise es de esa fase. Así dos sistemas no mandan el mismo aviso.
+- **IA** (Fase 9): `contextoIA()` devuelve estructura, no una lista de textos, y omite los campos
+  vacíos. Y no llama a ninguna IA: la IA nunca se dispara sola.
+
+### Dos decisiones que se llevan por delante un error futuro
+1. **Borrar una actividad no borra sus bloques**: los deja sin actividad. Perder la hora de una clase
+   porque se borró la asignatura sería mucho peor que quedarse con un hueco que se vuelve a rellenar.
+2. **Un evento resuelto no tiene id propio.** No es una entidad guardada, es el resultado de componer
+   otras; darle un id invitaría a guardarlo, que es justo lo que esta arquitectura evita.
+
+### Un fallo mío, cazado por su propia prueba
+`crearColumna({ dia: 9 })` reventaba. El día es *truthy* pero está fuera de rango, y se usaba para
+construir el nombre **antes** de validarlo, así que indexaba una posición que no existe.
+
+### Verificación
+**1961 comprobaciones y 9 reglas invariantes en verde**, build incluido. `package.json` →
+**v1.52.0**. Van 29 de las 106 fases; quedan 77.
+
+⏸ **Lo decidirá HT F2, no esta fase:** dónde se guarda. Aquí se ha asumido `app_data` con la clave
+`horarioTop`, por coherencia con los otros veintiún módulos y para no añadir SQL pendiente. **La
+Fase 2 es literalmente la del modelo de datos y Supabase**, así que lo confirmará o lo cambiará con
+su especificación delante. Nada de lo construido aquí depende de esa elección: el módulo es puro.
+
+⏸ **SO · Sonido sigue esperando a Josué (C-23):** su Fase 1 no aparece en la especificación, y además
+necesita archivos de audio que él dará cuando la web tenga todos los botones activos.
+
+## Entrega 2 · RA Fase 4 — Centro de Rachas y experiencia visual (v1.51.0) 🔒 CIERRA EL BLOQUE RA
+
+### Un módulo nuevo: Rachas
+Vive en el área **Vida**, junto a Productividad, que es donde están los hábitos. La barra inferior
+sigue teniendo cinco pestañas: un módulo nuevo entra en un área que ya existe, nunca en la barra.
+
+Dentro: resumen (racha actual · mejor · logros), la racha principal grande, las demás compactas,
+detalle con historial y calendario, logros, y los totales.
+
+### No calcula ni un número
+Todo viene de la capa de gamificación, que lo deriva del historial. Si esta pantalla dijera un
+número distinto del Dashboard sería porque alguien contó por su cuenta — y aquí nadie cuenta.
+
+### Una sola celebración, no cuatro avisos
+Es lo que pide el apartado 19: si un mismo día trae hito, récord y logro, no pueden salir tres
+tarjetas. `Celebracion` recibe la lista entera de eventos y saca **un** mensaje. Hay una prueba de
+renderizado con los tres a la vez.
+
+Y completar un día normal **no abre nada**: su feedback va en la propia tarjeta de la racha. Las
+celebraciones grandes se reservan para 30, 100 y 365 días.
+
+### La racha rota no castiga
+Literalmente lo que pedía la especificación: *"La racha terminó. Hoy puedes empezar una nueva"*, con
+el récord y el historial siempre visibles — *"el usuario nunca debe sentir que su progreso histórico
+desapareció"*.
+
+### El calendario, con puntos y no con emojis
+La especificación proponía 🔥 por día, *"pero quiero algo más elegante si el sistema de iconografía
+actual permite algo mejor"*. Una rejilla de puntos ocupa la mitad, se lee de un vistazo y —esto es
+lo importante— **no distingue los estados solo por color**: completado es un punto lleno, perdido un
+aro, pendiente un aro marcado. Con leyenda y `aria-label` por día.
+
+### Sin colores propios, sin animaciones propias, sin sonido
+- Los colores salen de `COLORS` y del acento del usuario, así que el modo claro y el oscuro
+  funcionan **solos**.
+- La única animación es la barra de progreso, y la gobiernan `prefers-reduced-motion` y el ajuste de
+  animaciones de la Fase A3 desde `index.css`. No hay un segundo sistema.
+- **Ni un archivo de audio en un componente** (apartados 20 y 38). La pantalla emite eventos; el
+  sistema de audio los escuchará cuando exista.
+
+### Un efecto secundario en el rendimiento
+El resumen del hub de Rachas recorre historiales, y hasta ahora `resumenesTodos` en `App.jsx` se
+recalculaba en cada render porque todo lo que había era barato. Ahora va memoizado.
+
+### Cómo se ha resuelto el duplicado que dejó anotado RA F3
+`logros.js` (Fase 20) tiene doce insignias de **toda la app**. Las de aquí son de **las rachas** y
+son por racha, así que pueden ser muchas. Juntarlas daría una lista larguísima mezclando dos cosas
+distintas, así que se quedan separadas: las de racha en el Centro de Rachas, las generales en
+Logros. No es irreversible — si Josué las prefiere juntas, es mover una lista.
+
+### Un hábito no se marca desde aquí
+Aparece en el Centro con su racha, pero el botón de completar solo sale en las rachas propias: el
+dato de un hábito vive en Productividad, y un segundo sitio donde escribirlo sería duplicar el
+camino.
+
+### Verificación
+Las doce pruebas visuales del apartado 36, **montadas con el servicio real** y no con datos escritos
+a mano: si el motor cambiara de forma, se enterarían. Los casos de renderizado suben de 140 a 192.
+**1830 comprobaciones y 9 reglas invariantes en verde**, build incluido. `package.json` →
+**v1.51.0**.
+
+⚠️ **Lo que sigue sin estar probado, y hay que decirlo:** el aspecto real en un iPhone, los gestos y
+el scroll. Como todo lo demás desde R1.
+
+**Con esto el bloque RA queda cerrado: 4 de 4.** Van 28 de las 106 fases de la Entrega 2; quedan 78.
+
+## Entrega 2 · RA Fase 3 — Gamificación, hitos, logros y progresión (v1.50.0)
+
+### La frase que marca el tono
+*"No quiero que el usuario sienta «tengo que usar la app para ganar puntos». Quiero que sienta
+«estoy progresando en mi vida y la app me ayuda a verlo»."*
+
+De ahí salen las tres decisiones que se notan en el código: sin XP ni niveles, doce logros en vez de
+cien, y celebraciones que se reservan.
+
+### Sin XP ni niveles, y dicho con claridad
+Los apartados 14 y 15 los dejan en condicional: *"no conviertas automáticamente las rachas en
+niveles si no es necesario"*, *"si decides preparar XP"*. Y no es necesario: no hay nada que gastar
+ni con qué compararse. Un contador de XP sin uso sería un control decorativo.
+
+Lo que sí queda es el punto de enganche: los eventos llevan los días y el hito, que es todo lo que
+necesitaría una capa de XP futura. Y por D2-02, si llega, se queda dentro de Rachas y Sonido.
+
+### Un hito se anuncia una sola vez
+Un evento derivado del estado se emitiría cada vez que alguien mirase la pantalla. Por eso se apunta
+qué hitos ya se anunciaron, por racha. Y al volver después de una semana fuera se anuncian **todos
+los intermedios**, no solo el último: llegar a 30 días no puede saltarse el 7, el 14 y el 21 en
+silencio.
+
+### La barra de progreso se mide desde el hito anterior
+Con 25 días y el siguiente hito en 30, va por el **44 %**, no por el 83 %. Medirlo desde cero haría
+que la barra apenas se moviera entre 200 y 365 días.
+
+### No se puede hacer trampa, por construcción
+El apartado 27 lo pide con nombre: `currentStreak = 1000` no debe desbloquear nada sin días reales
+detrás. Aquí se cumple sin vigilar nada, porque **el contexto no acepta ningún número de fuera**: lo
+pide todo al servicio, que lo deriva del historial de cumplimientos. Y un logro inyectado a mano que
+no esté en el catálogo se descarta al cargar.
+
+### Un logro conseguido no se pierde
+Es la decisión que había que tomar (apartado 28). Josué cumplió treinta días seguidos; corregir
+después un entrenamiento mal apuntado no deshace haberlos cumplido, y quitarle el logro por eso
+sería castigarle por ordenar sus datos. Los números —racha, récord, progreso— sí se corrigen solos,
+porque se derivan. `revisarLogros()` **informa**; revocar es una decisión explícita, y solo ocurre
+sola al borrar la racha entera.
+
+### La racha global no es max()
+El apartado 22 lo prohíbe expresamente. La condición aquí es "días seguidos cumpliendo al menos una
+racha", y hay una prueba que lo demuestra: **dos rachas que se turnan dan una global mayor que
+cualquiera de las dos**, que es imposible con un máximo.
+
+### Dos expectativas mías mal puestas
+Con la lista de doce hitos, el siguiente después de 17 días es **21**, no 30. Y con 5 días los hitos
+alcanzados son dos (el 1 y el 3), no tres: **5 no es un hito**. El código estaba bien las dos veces.
+
+### Verificación
+**Las diez pruebas que pide el apartado 34**, una por una y marcadas como tales. **1778
+comprobaciones y 9 reglas invariantes en verde**, build incluido. `package.json` → **v1.50.0**. Van
+27 de las 106 fases; quedan 79.
+
+⚠️ **Un duplicado anotado para RA F4:** el proyecto ya tiene `src/lib/logros.js` (Fase 20) con doce
+insignias de toda la app, dos de ellas de racha. Los logros de aquí todavía no tienen pantalla, así
+que hoy no hay duplicación visible; cuando F4 construya el Centro de Rachas habrá que decidir si son
+dos listas o una.
+
+## Entrega 2 · RA Fase 2 — Persistencia, seguridad y sincronización (v1.49.0)
+
+### Ni una tabla nueva, ni un SQL que ejecutar
+La especificación propone tablas `streaks` y `streak_days` en Supabase, y acto seguido dice: *"No
+copies estos nombres obligatoriamente si el proyecto ya utiliza otra convención"*, y *"No dupliques
+sistemas existentes"*.
+
+JosStyle tiene una convención: **una sola tabla `app_data`**, una fila por usuario y clave, con RLS
+por `auth.uid()`, que usan los veinte módulos. Las rachas entran ahí. Montar tablas propias habría
+sido el segundo sistema de persistencia del proyecto **y un tercer bloque de SQL que Josué tendría
+que ejecutar a mano desde el iPhone** —ya tiene dos pendientes— sin el cual las rachas no
+funcionarían.
+
+Lo que en la especificación son políticas RLS y una restricción `UNIQUE`, aquí es:
+
+- **Aislamiento entre usuarios** → las cuatro políticas de `app_data`, ya vigentes.
+- **`UNIQUE(streak_id, local_date)`** → la clave lógica `racha + día`, aplicada en el servicio, que
+  es el único sitio del proyecto que escribe cumplimientos.
+- **Contadores no manipulables** → no existen. Mandar `{currentStreak: 9999}` no tiene dónde
+  aterrizar, porque no se guarda ningún contador.
+
+Y algo más fuerte que "no confiar en el `user_id` del cliente": **el modelo no tiene campo
+`user_id`.** No hay ninguno que falsear. Hay una prueba que comprueba que la palabra no aparece.
+
+### Un solo sitio escribe rachas
+`src/lib/rachasServicio.js`. Dashboard, Productividad y lo que venga después llaman ahí; ninguno
+toca Supabase ni recalcula por su cuenta. Los hábitos, que guardan su historial en su propio módulo
+desde la Fase 8, también se consultan por el servicio: no se ha migrado su dato —es de Josué y
+moverlo no aporta nada— pero sí su camino.
+
+Con él llega `src/hooks/useRachas.js`, el hook central. No añade lógica: envuelve el servicio y
+memoiza lo caro, para que el panel se calcule una vez por cambio real de estado y no una por render.
+
+### La cola offline funciona por una sola razón
+Reintentar es idempotente. Un cumplimiento que se reenvía cinco veces sigue siendo **un** día — hay
+una prueba que lo hace. Sin esa propiedad, una cola offline infla rachas; con ella, no puede.
+
+### Cuando se borra la actividad que sostenía la racha
+Es el caso que la especificación describe con detalle: un entrenamiento genera un cumplimiento, la
+racha llega a 15, y después se borra ese entrenamiento. Con contadores guardados habría que
+acordarse de decrementar. Aquí basta con que desaparezca el día: **el número se corrige solo**,
+porque nunca estuvo guardado. Lo que faltaba era poder encontrar el cumplimiento a partir de su
+actividad, y para eso cada uno guarda ahora `origen` y `origenId`.
+
+### Sobre TypeScript, con honestidad
+El apartado 22 pide tipos y evitar `any`. **El proyecto no usa TypeScript**: es JavaScript con Vite
+y no hay un solo `.ts` en `src/`. Meterlo por un módulo obligaría a configurar el compilador para el
+resto. El equivalente honesto es lo que se ha hecho: `@typedef` para las cuatro entidades —que el
+editor sí lee— y, sobre todo, **normalizadores que se ejecutan de verdad**. Un typedef avisa; un
+normalizador impide.
+
+### Un fallo mío, cazado por su propia prueba
+La revisión de integridad buscaba los contadores corruptos **después** de normalizar, y el
+normalizador ya los había descartado al pasar. Que el motor sea inmune a ellos es bueno; que la
+revisión no pudiera avisar de que venían, no.
+
+### Lo que todavía no tiene pantalla, y es deliberado
+No hay forma de crear una racha desde la interfaz: el apartado 28 prohíbe expresamente el Centro de
+Rachas en esta fase, que llega en RA F4. Lo que sí funciona hoy de punta a punta son los hábitos.
+
+### Verificación
+Los **diez casos que pide el apartado 27**, uno por uno y marcados como tales, más lo que sostiene
+cada uno. **1660 comprobaciones y 9 reglas invariantes en verde**, build incluido. `package.json` →
+**v1.49.0**. Van 26 de las 106 fases; quedan 80.
+
+## Entrega 2 · RA Fase 1 — Motor de rachas (v1.48.0)
+
+### El apartado 24 describía el código que ya teníamos
+*"No hagas una solución rápida que simplemente incremente un contador."*
+
+Pues eso era exactamente lo que había. Los hábitos de Productividad guardaban `rachaActual` y
+`mejorRacha` como números sueltos, y al desmarcar el día de hoy le restaban uno al contador **a
+mano**. Es decir: **desmarcar y volver a marcar el mismo día subía el récord** sin haber cumplido
+nada — y con ello se desbloqueaba el logro "Un mes de constancia".
+
+Ahora no se guarda ni un número. Racha actual, récord, historial y porcentaje salen del historial de
+días, que es el mismo que ya estaba guardado. Nadie pierde nada y no hay migración destructiva.
+
+### Un día en curso no es un día fallado
+Es lo que más repite la especificación, y con razón. Con lunes ✅, martes ✅ y el miércoles todavía
+por hacer, a las 10:00 de la mañana la racha vale **2 y está viva**, no 0 y perdida. Los cuatro
+estados de un día están separados y no se mezclan: completado, perdido, pendiente y futuro.
+
+### El día es el de Josué, no el del servidor
+Cada cumplimiento guarda dos tiempos: el **día local**, que es el que decide la racha, y el instante
+en UTC, que solo sirve para desempatar si dos dispositivos escriben a la vez. A las 23:59 cuenta
+para hoy; a las 00:01, para mañana. Probado, junto con el fin de año, el cambio de mes y el 29 de
+febrero de un bisiesto.
+
+### Pulsar cinco veces no son cinco días
+La clave lógica es `racha + día local`, y registrar un cumplimiento **sustituye**, nunca añade. Da
+igual si se pulsa una vez o veinte, y da igual si dos dispositivos mandan lo mismo a la vez. Es
+también lo que permitirá que una cola offline reintente sin inflar una racha.
+
+### La regla de los hábitos se ha conservado tal cual
+En JosStyle un fallo suelto no rompe una racha de hábito: se perdona. Esa regla llevaba ahí desde la
+Fase 8, y en vez de cambiársela a Josué sin avisar se ha llevado al motor como una regla más
+(`diaria_con_gracia`). Añadir "estudiar 30 minutos al día" es registrar otra entrada, no tocar el
+motor.
+
+Una regla **semanal** sería distinta: cuenta semanas, no días, y eso cambia el recorrido entero. Por
+eso **no se ha fingido que existe** — el sitio exacto donde entraría está marcado en el código.
+
+### Cuatro fallos reales, tres ya en producción
+1. El récord de los hábitos se podía inflar. Una prueba lo intenta diez veces; ya no se mueve.
+2. **Un hábito sin `historial` dejaba Productividad en blanco.** Nunca se había visto porque esa
+   pantalla no se renderizaba en ninguna prueba; salió en cuanto se añadió.
+3. La exportación podía no cuadrar con la pantalla: leía el contador, y la pantalla otra cosa.
+4. Mío: `[].every()` es `true`, así que la primera racha de la vida "batía el récord" sin haber
+   ningún récord anterior. Lo cazó su propia prueba.
+
+### Lo que NO lleva, y es deliberado
+Ni niveles, ni medallas, ni logros, ni recompensas, ni confeti, ni sonidos (apartado 22). Hay una
+prueba que **falla si aparecen**. Y por D2-02, cuando lleguen, se quedan dentro de Rachas y Sonido.
+
+### Verificación
+**1556 comprobaciones y 9 reglas invariantes en verde**, build incluido. `package.json` →
+**v1.48.0**. Van 25 de las 106 fases; quedan 81.
+
+⏸ **Pendiente de Josué (regla 49, ficha C-23):** en `ESPECIFICACION_SONIDO_Y_RACHAS.md` el
+encabezado *"Fase 1 — Arquitectura + motor global de audio"* va seguido del texto de *"Fase 4 ·
+Sistema de Rachas: interfaz"*. Falta saber dónde está la Fase 1 real del Sonido y en qué orden van
+los dos módulos. No bloquea nada de lo entregado aquí.
+
+## Entrega 2 · FO Fase 12 — Eliminados, recuperación y cierre del bloque (v1.47.0)
+
+### En Apariencia no se borra nada, y eso cambia el sentido de la fase
+Cambiar de fotografía no borra la anterior de Storage. Quitar el fondo tampoco. En Salud o
+Calistenia la papelera guarda el registro treinta días mientras el archivo desaparece; aquí el
+archivo **sigue estando**, así que recuperar no es restaurar una copia — es volver a apuntar a algo
+que nunca se fue.
+
+Por eso esta fase no monta una papelera nueva. Reutiliza la de ME F3 para lo que sí se borra (los
+presets) y añade una lista de fotografías sustituidas dentro del propio fondo para lo que no.
+
+### Las fotografías sustituidas ya no se pierden
+Hasta ahora, cambiar de foto dejaba el archivo en el bucket y **ninguna forma de volver a él**.
+Ahora se guarda su ficha (hasta ocho, `MAX_FOTOS_ANTERIORES`) y aparecen en Ajustes → Apariencia →
+Fondo con su miniatura, su fecha y sus medidas.
+
+Recuperar una devuelve también **sus ajustes de entonces** —encuadre, zoom, luz, overlay— porque
+`ajustesPorFoto` ya los guardaba desde la Fase 3. Y la que estaba puesta pasa a la lista, así que
+recuperar tampoco pierde nada.
+
+Olvidar una sí es irreversible, y es lo único de esta pantalla que pide confirmación.
+
+### Los presets se podían crear y no borrar
+El botón existía, pero se limitaba a filtrarlos de la lista: se perdían para siempre. Ahora pasan
+por la papelera universal como todo lo demás. Es el noveno módulo con ese mismo fallo desde que
+existe la verificación automática.
+
+### Un preset con fotografía ahora lo dice
+La miniatura de un preset se pinta sin firmar la URL de la foto (serían varias firmas a la vez para
+un recuadro de 44 px), así que uno con fotografía enseñaba el fondo de respaldo y parecía un
+degradado cualquiera. Ahora lleva su icono encima. Es la "dependencia detectada" que pide el
+apartado 8: nada se rompe en silencio.
+
+Borrar un preset no borra su fotografía, y olvidar una fotografía no borra los presets que la usen.
+
+### Un error de test que valió la pena
+La comprobación de que la lista conserva las más recientes fallaba por uno. La `h12` es la foto
+**activa**, así que la primera de las *anteriores* es la `h11`. El código estaba bien; la
+expectativa, mal.
+
+### Verificación
+**1414 comprobaciones y 9 reglas invariantes en verde**, build de Vite incluido. `package.json` →
+**v1.47.0**.
+
+**Con esto el bloque FO queda cerrado: 12 de 12.** Van 24 de las 106 fases de la Entrega 2; quedan
+82, todas de módulos aún sin empezar — SR (5+4), HT (12) y EH (65).
+
+⚠️ Siguen pendientes en el SQL Editor de Supabase los bloques de los buckets `armario` (AR F1) y
+`fondos` (FO F2).
+
+## Entrega 2 · FO Fase 11 — Rendimiento y optimización (v1.46.0)
+
+### El problema real no era ninguno de los que uno se imagina
+Las capas del fondo son CSS puro, el análisis va sobre una miniatura de 96 px y las propuestas son
+aritmética. Lo caro era otra cosa: **la fotografía se subía y se servía a resolución original**.
+Una foto de iPhone son 4032×3024 y unos 4 MB, y se estaba usando como fondo de una pantalla de
+390 px de ancho.
+
+Ahora se redimensiona a 1600 px de lado largo con JPEG al 82 % **justo antes de subir** — no al
+elegir, porque entonces cada foto que mirases y descartaras pagaría el trabajo para nada.
+
+Se aplicó también a las fotos de prenda del Armario, que tenían el mismo problema: megabytes para
+pintar una miniatura de 150 px.
+
+### Tres decisiones que evitan hacer daño al optimizar
+1. **Nunca agrandar.** Escalar hacia arriba no añade detalle, solo peso.
+2. **Si la copia pesa más, se queda la original.** Pasa con imágenes ya muy comprimidas.
+3. **Si algo falla, se devuelve el original** en vez de lanzar: es peor una foto pesada que ninguna
+   foto.
+
+### Caché de URLs firmadas
+Duran una hora, y sin caché cada vez que se montaba Ajustes se pedía otra firma para la misma foto.
+Ahora, si hay una válida, el fondo aparece **al instante** en vez de parpadear.
+
+Y una a punto de caducar **no se entrega**: se considera vencida un minuto antes, para no dar una
+firma que expire mientras la imagen se está descargando.
+
+### Un detalle que habría pasado desapercibido
+Al optimizar hay que guardar **las medidas de la foto original**, no las de la copia. La proporción
+y la orientación deciden el encuadre inicial, y calcularlo sobre la copia habría funcionado por
+casualidad pero habría dejado en el modelo unas dimensiones que no son las de la imagen elegida.
+
+### Verificación
+**1380 comprobaciones en verde** (antes 1340): 40 de optimización de imágenes.
+
+---
+
+## Entrega 2 · FO Fase 10 — Integración completa en Aspecto (v1.45.0)
+
+**Esta fase no añade funciones: ordena las que ya hay.** Después de las fases 1-9, Ajustes →
+Apariencia había llegado a **trece tarjetas seguidas** — en un iPhone, una pantalla entera de
+scroll para encontrar cualquier cosa.
+
+### Vista previa global arriba del todo
+Fondo, tarjeta, botón, texto, iconos y barra inferior, en una sola pieza. Es la referencia contra
+la que se juzga cualquier cambio de los que hay debajo, sin salir de Ajustes.
+
+Se pinta con **las mismas funciones y los mismos tokens que la app de verdad**. Una imitación
+acabaría divergiendo y enseñaría algo que no es lo que se aplica.
+
+### Seis secciones plegables
+Fondo · Colores · Recomendado · Apariencias guardadas · Legibilidad · Texto y movimiento. Solo
+**Fondo** viene abierta, y su subtítulo dice qué fondo hay puesto, así que se sabe sin abrirla.
+
+### Lo que no se ha tocado, y es deliberado
+Tema, acento, tamaño de texto, densidad, bordes y animaciones llevan ahí desde la Fase A3 y **Josué
+ya sabe dónde están**. Se han agrupado, no reordenado ni renombrado: mover controles que alguien
+tiene memorizados es una regresión aunque el orden nuevo sea mejor.
+
+Tema y la vista previa quedan fuera de las secciones: son lo que más se toca.
+
+### Dos roturas mías, cazadas por la compilación
+Reorganizar por rangos de líneas partió un comentario JSX multilínea por la mitad y dejó una sección
+sin cerrar. `esbuild` lo señaló con la línea exacta. Después se comprobó pieza por pieza que las
+trece tarjetas originales siguen todas ahí.
+
+### Verificación
+**1340 comprobaciones en verde**, con 128 casos de renderizado.
+
+---
+
+## Entrega 2 · FO Fase 9 — Legibilidad y contraste inteligente (v1.44.0)
+
+*"Libertad total para personalizar, pero con protección inteligente para que la interfaz siga
+siendo usable."* Es la frase del apartado 1 y gobierna toda la fase.
+
+### El problema difícil: ¿contra qué se mide?
+Con una fotografía de fondo **no hay un color de fondo único**. Lo que hay detrás de un texto es la
+tarjeta translúcida encima de la foto encima del tema. Medir contra `COLORS.bg` daría un número que
+no describe lo que se ve — y un aviso falso enseña a ignorar los avisos.
+
+Así que el fondo efectivo **se compone**, capa a capa, en el mismo orden en que se pinta: tema →
+foto → luz → overlay → tarjeta. Y con el análisis de la Fase 5 se mide **por zona**: un texto
+arriba no está sobre el mismo color que un botón abajo.
+
+### Detectar no es corregir
+Revisar no cambia nada. Los avisos traen **qué campo cambiar y a qué valor**, y aplicarlo es un
+botón. El modo automático existe, pero **apagado de fábrica**: el apartado 8 dice "debe ser
+opcional, nunca obligar".
+
+Y nada se bloquea: un color flojo **se avisa, no se impide**.
+
+### Cuando el problema es la foto, la solución no es cambiar el texto
+El apartado 12 lo dice. Foto clara con interfaz oscura → se propone oscurecer **la foto**. Foto con
+mucho detalle → un desenfoque ligero. Los colores se quedan en paz.
+
+Y si ya lo habías resuelto —ya la habías oscurecido, ya tenías overlay, ya la habías desenfocado—
+no se insiste.
+
+### Dos falsos positivos sobre la propia app, cazados por las pruebas
+1. **El texto de los botones.** La prueba ponía blanco a mano (4,28, por debajo de AA). La app no
+   usa blanco: lo deriva con `bestReadableText`, que da 4,54. Estaba probando un color que la app
+   nunca usa.
+2. **La separación entre tarjeta y fondo.** JosStyle separa sus tarjetas **con el borde, no con el
+   relleno** — la superficie es apenas más clara que el fondo (1,07) y se ve perfectamente porque
+   cada tarjeta lleva su borde. Comprobar solo el relleno marcaba la apariencia de fábrica como
+   rota. Ahora se miran las dos vías, y solo hay problema cuando fallan ambas.
+
+### Y una limpieza de raíz
+`NEGRO` y `BLANCO` viven ahora en `colorEngine.js` en vez de escribirse a mano en cada archivo que
+compone capas. No son colores de interfaz —oscurecer es acercar al negro en tema claro y en
+oscuro— así que no pertenecen a `tokens.js`.
+
+### Verificación
+**1332 comprobaciones en verde** (antes 1277): 47 de legibilidad y 120 casos de renderizado.
+
+---
+
+## Entrega 2 · FO Fase 8 — Presets de apariencia (v1.43.0)
+
+Guardar tus colores **y tu fondo juntos**, y cambiar entre ellos de un toque.
+
+### Un preset es la apariencia completa
+Tema, acento, colores, transparencias, sombras, bordes, overlay **y la fotografía con sus
+ajustes**. El sistema anterior (fase V4) guardaba solo los colores: media configuración. Aquí se
+reutiliza ese mismo sistema —misma clave de Supabase, mismo estado, mismo límite— y lo único que
+cambia es qué se guarda dentro.
+
+### "Activo" dice la verdad
+No se compara por id, porque el id no dice nada: puedes aplicar un preset y luego cambiar un color
+a mano, y entonces **ya no estás usando ese preset** aunque fuera el último que tocaste. Se compara
+una huella de lo que se ve — y de ahí quedan fuera el historial de encuadres y el análisis de
+colores, porque no se ven.
+
+### Los incluidos no se tocan, se duplican
+JosStyle, Profundo, Claro y Minimal. Intentar actualizar uno **no hace nada** en vez de fallar, y
+duplicarlo da un preset tuyo, editable: es la vía que da el propio apartado 14 para personalizarlos
+sin perder el original.
+
+Ninguno trae fotografía: una foto es de quien la hizo, y un preset de fábrica con una imagen de
+archivo sería contenido inventado.
+
+Y `accent: null` en ellos significa **"no toques el acento"**, no "ponlo a null": aplicar "JosStyle"
+devuelve la app a su estado de fábrica **sin imponerte un color que no elegiste**.
+
+### Un fallo que habría aparecido seguro
+Aplicar un preset cambia cuatro cosas a la vez, y encadenar los tres setters existentes **habría
+perdido el fondo o el tema sin dar ningún error**: cada uno guarda el paquete de ajustes entero
+leyendo el resto del closure, y dos llamadas seguidas en la misma función no ven el `setState` de
+la anterior. Lo evitó un aviso que la fase V4 había dejado escrito justo al lado.
+
+### Verificación
+**1277 comprobaciones en verde** (antes 1209): 60 de los presets y 112 casos de renderizado.
+
+---
+
+## Entrega 2 · FO Fase 7 — Personalización manual avanzada (v1.42.0)
+
+Cierra un hueco que las fases anteriores habían abierto: **FO F4 metió en el modelo el texto
+secundario, los iconos activo e inactivo y el fondo de la barra, pero sin control.** Se podían
+guardar y no había forma de tocarlos. Ahora el constructor de temas los ofrece los diez.
+
+### Bordes y sombras
+El color del borde ya se podía cambiar; lo que faltaba era su **intensidad**. Un borde al 100 %
+sobre una tarjeta translúcida encima de una foto se ve como una caja pegada; bajarlo la integra sin
+quitarle la separación.
+
+Las sombras son nuevas, con **tope bajo a propósito**: el apartado 11 pide evitar configuraciones
+que hagan que la app parezca desordenada.
+
+### Sin tocar nada, nada cambia
+Cada añadido tiene su valor de fábrica igual al comportamiento anterior: sombra 0, borde al 100 %,
+transparencias al 100 %. Es lo que permite añadir controles sin arriesgar una regresión visual.
+
+Y sin sombra, `cardShadow` es `'none'`, no una sombra de opacidad cero: una sombra invisible sigue
+costando pintado en cada tarjeta, y hay muchas por pantalla.
+
+### Verificación
+**1209 comprobaciones en verde** (antes 1193).
+
+---
+
+## Entrega 2 · FO Fase 6 — Sistema "Recomendado" (v1.41.0)
+
+JosStyle propone **cinco apariencias completas** sacadas de los colores de tu foto: Equilibrada,
+Con contraste, Serena, Intensa y Minimalista. Sin IA — teoría del color sobre lo que el detector
+de la Fase 5 encontró de verdad.
+
+### Cinco propuestas, y distintas de verdad
+El apartado 8 lo dice con un ejemplo: azul #123456, #123457 y #123458 **no son tres opciones, son
+una**. Por eso cada propuesta parte de una **estrategia cromática distinta** —el mismo tono, el
+complementario, el mismo desaturado, subido de intensidad, casi todo neutro— y no de un retoque de
+la anterior. Hay prueba de que no hay dos acentos iguales y de que la distancia entre ellas es
+perceptible.
+
+Cada una es un tema entero: principal, secundario, terciario, transparencia de tarjetas y barra, y
+overlay del fondo. No un color suelto.
+
+### Probar antes de decidir
+"Probar" la pone en la app de verdad, al instante, **sin guardarla**. "Volver" recupera exactamente
+lo que tenías.
+
+Y eso funciona porque se hace una **copia profunda de la apariencia antes de tocar nada** y se
+restaura entera — no se deshace cambio por cambio. La copia se hace **una sola vez**, al empezar a
+probar: si se rehiciera en cada prueba, la segunda guardaría la apariencia de la primera y "Volver"
+devolvería a una propuesta en lugar de a lo tuyo.
+
+### Aplicar no toca la fotografía
+Y no porque se acuerde de no hacerlo: `aplicarPropuesta` **ni siquiera la recibe**. Cambia acento,
+tema y overlay, y nada más.
+
+### Una foto en blanco y negro sigue dando propuestas
+La Fase 5 dejó `acento: null` como dato honesto cuando la foto no tiene color. Aquí se usa: en vez
+de inventar uno, se parte del que **ya tenías**.
+
+### Un fallo real y preexistente, encontrado por las pruebas de contraste
+`ensureContrast` elegía la dirección con `l <= bgL ? -1 : 1`, o sea por el **orden relativo** entre
+los dos colores. Sobre un fondo oscuro, un color aún más oscuro se oscurecía **todavía más**: lo
+empujaba hasta el negro puro y salía sin contraste ninguno.
+
+No era solo cosa de esta fase: afectaba a la red de seguridad de `aplicarTema`, así que un texto
+personalizado casi negro sobre el fondo oscuro de la app se habría quedado ilegible. Ahora la
+dirección la decide **el fondo** —sobre fondo oscuro se aclara, sobre claro se oscurece— y para los
+casos normales el resultado es idéntico al de antes.
+
+### Y otro hex duplicado que cazó la regla invariante
+El recomendador comparaba el contraste contra `'#0A0C10'` y `'#F3F4F7'` escritos a mano, que son
+literalmente `COLORS_OSCURO.bg` y `COLORS_CLARO.bg`. Ahora se importan.
+
+### Verificación
+**1193 comprobaciones en verde** (antes 1143): 46 del recomendador y 104 casos de renderizado.
+
+---
+
+## Entrega 2 · FO Fase 5 — Detector de colores (v1.40.0)
+
+JosStyle mira tu foto de fondo y te dice de qué colores es. **Sin IA y sin que la foto salga del
+teléfono**: es aritmética sobre los píxeles de un `<canvas>` local, ni una petición.
+
+### Frecuencia no es utilidad
+Es la idea que gobierna toda la fase. El color que más superficie ocupa suele ser el **peor**
+candidato a acento: en una foto nocturna es "casi negro" y en una de playa "casi blanco". Lo
+interesante suele ser ese pequeño azul eléctrico que ocupa el 2 %.
+
+Por eso cada color lleva **dos números distintos**: `peso` (cuánta superficie ocupa) e `interes`
+(cuánto destaca). El ejemplo literal del apartado 8 está automatizado: una foto 95 % negra con un
+5 % de azul eléctrico devuelve el **negro como dominante y el azul como acento**.
+
+### Detectar no es aplicar
+El apartado 15 es tajante y la interfaz lo dice: *"Solo te los enseño: tus colores no cambian
+solos"*. Si tienes una foto azul y una paleta roja, tu paleta roja **se queda como está**. Tocar un
+color lo copia, y de ahí decides tú. Aplicar automáticamente es la Fase 6.
+
+### Una foto en blanco y negro no es un error
+Se identifica como paleta neutra, y **no se inventa un acento que la foto no tiene**: `acento` es
+`null`. Eso es información honesta, y la Fase 6 podrá buscar el acento por otro lado sabiendo que
+ahí no está.
+
+### Cada análisis va sellado con su fotografía
+Cambiar de foto y seguir viendo la paleta de la anterior es imposible por construcción: el análisis
+lleva el id de su imagen y se comprueba antes de usarlo. Y una foto ya analizada no se vuelve a
+analizar.
+
+### Un fallo real, y de los que no dan ningún error
+`rgbToHsl`/`hexToHsl` devuelven la saturación en **0-100, no en 0-1**. Mis umbrales estaban en la
+escala equivocada, así que **todo color con más de un 0,6 % de saturación salía como "vivo"** y solo
+un gris exacto contaba como neutro: la clasificación entera habría sido inútil, y la Fase 6 habría
+construido recomendaciones sobre datos sin sentido. Lo cazó la prueba que clasifica el propio acento
+de la app (`#5C7E9A`, s = 25,2).
+
+### Ocho fotos imposibles, ninguna rota
+Toda negra, toda blanca, gris plano, extremadamente oscura, extremadamente clara, dos colores, un
+solo píxel y saturadísima. El apartado 17 dice que **nunca** debe producirse una configuración rota,
+y hay una prueba por cada caso.
+
+Los píxeles transparentes tampoco cuentan: un agujero no es un color, y contarlo metería un falso
+negro en toda imagen con transparencia.
+
+### Verificación
+**1143 comprobaciones en verde** (antes 1070): 65 del detector y 100 casos de renderizado.
+
+---
+
+## Entrega 2 · FO Fase 4 — Sistema avanzado de colores (v1.39.0)
+
+Amplía el sistema de color que ya existía —`colorEngine.js`, `aplicarTema`, `ColorPicker`,
+`TemaBuilder`, temas guardados— con lo que le faltaba para convivir con una fotografía de fondo.
+
+### La transparencia no es un efecto bonito: era la pieza que faltaba
+Con una foto detrás, las tarjetas opacas la tapan entera y solo se ve en los márgenes. Sin esto,
+las fases 2 y 3 quedaban a medias: podías poner tu foto y **no verla**.
+
+Por eso la transparencia llega hasta los tokens de verdad (`COLORS.surfaceAlpha`,
+`COLORS.navBgAlpha`) y hasta los componentes (`Card`, la barra inferior), no solo al modelo. **Al
+100 % es exactamente el color sólido de siempre**, así que sin tocar nada nada cambia.
+
+Lleva `backdropFilter` cuando hay transparencia, porque una tarjeta translúcida sobre una foto con
+detalle se vuelve ilegible sin él.
+
+### Un fallo real corregido de paso
+La barra de navegación tenía un `rgba(5,6,10,0.75)` fijo en el código, así que **en tema claro
+seguía siendo negra**. Ahora sale del sistema de colores y respeta el tema.
+
+### Y otro que las pruebas existen para que no vuelva
+`Object.assign(COLORS, base)` sobrescribe las claves de `base` pero **no borra** las que no están
+en él. `iconActive`, `iconMuted` y `navBg` no existen en las paletas base, así que sin limpiarlos
+antes se quedaban pegados del render anterior: quitar un color personalizado habría parecido que no
+funcionaba.
+
+### Restablecer colores no puede tocar la fotografía
+Y no porque se acuerde de no hacerlo: **ni siquiera la recibe**. `restablecerColores()` no tiene
+parámetros, y hay una prueba que comprueba justamente eso. Una garantía que depende de acordarse no
+es una garantía.
+
+Un preset de color tampoco vuelve las tarjetas opacas: si habías bajado la opacidad para ver tu
+foto, elegir una paleta no tiene por qué taparla.
+
+### Jerarquía de texto e iconos
+Texto secundario configurable, con red de seguridad: uno del color del fondo **no se queda
+invisible**, `ensureContrast` lo corrige. Iconos activo e inactivo por separado, porque forzar un
+solo color para los dos destruye la jerarquía.
+
+### El mínimo de opacidad es 20, no 0
+Y la interfaz lo explica cuando te acercas. Por debajo, una tarjeta sobre una foto no es
+"translúcida": es texto suelto encima de una imagen. La Fase 9 afinará esto con medidas reales.
+
+### Verificación
+**1070 comprobaciones en verde** (antes 1000): 62 nuevas del sistema de colores y 92 casos de
+renderizado.
+
+---
+
+## Entrega 2 · FO Fase 3 — Editor de fotografía (v1.38.0)
+
+Zoom, encuadre, desenfoque, luz, opacidad y tinte, con vista previa en tiempo real. Detrás de
+"Ajustar foto", para no llenar Ajustes de deslizadores.
+
+### La foto original nunca se toca
+Los ajustes son configuración del fondo, no una imagen nueva: después de editar, la ruta, las
+medidas y el id de la fotografía son exactamente los mismos. Se puede volver a ajustar cuantas
+veces haga falta.
+
+### Cancelar funciona de verdad
+El editor trabaja sobre un **borrador local**: mientras está abierto no se guarda nada. Cancelar es
+literalmente tirar el borrador. Hay prueba que hace 40 cambios seguidos y comprueba que el fondo
+guardado no se ha movido — el apartado 14 pide expresamente que funcione "incluso después de
+realizar muchos cambios".
+
+### Un solo control para oscurecer y aclarar
+Los apartados 9 y 10 piden las dos cosas. Van en **un control bipolar**, no en dos deslizadores:
+dos controles para dos mitades del mismo eje se contradicen en cuanto los dos valen algo (¿qué es
+"oscurecer 40 y aclarar 30"?), y el apartado 17 pide no llenar la pantalla. El aclarado llega menos
+lejos a propósito, porque el apartado 10 avisa de no perder contraste.
+
+### Tres capas, y el orden importa
+Foto → luz → overlay. "Oscurecer la foto" no debe oscurecer el overlay que va encima, y el overlay
+no debe desenfocarse con la foto. Por eso tampoco se usa `filter: brightness()` sobre la capa de la
+imagen.
+
+### Cambiar de foto no arrastra lo que no toca
+El apartado 16 dice que los ajustes no deben transferirse "accidentalmente si no tiene sentido". La
+línea está en si el ajuste habla de **esa imagen** o del **gusto** de quien mira: encuadre y zoom se
+recalculan —el encuadre bueno de un retrato vertical no significa nada en una panorámica—, mientras
+que desenfoque, luz, opacidad y tinte se heredan, porque si querías la foto discreta y oscura para
+leer mejor la sigues queriendo así con otra imagen.
+
+Y si esa foto ya se había ajustado antes, mandan **sus** ajustes: se guardan por id de fotografía
+(apartado 20), limitados a las últimas diez para que no crezcan sin fin.
+
+### Una decisión de modelo que no era neutral
+La Fase 1 guardaba `posicion` con cinco valores fijos; esta fase necesita encuadre libre. **No
+conviven**: dos formas de decir dónde va la foto son dos fuentes de verdad. `posicion` se traduce a
+`encuadre {x, y}` y lo guardado por v1.36/37 se migra. Lo mismo con `velo`, que era el overlay sin
+color.
+
+### Un fallo real que encontró la prueba de esa migración
+El traslado de `velo` a `overlay` estaba escrito como `f.overlay?.intensidad ?? f.velo`, y **nunca
+se ejecutaba**: `f` ya viene fusionado con el valor por defecto, así que `f.overlay` siempre existe
+con `intensidad: 0`, y `??` no salta con 0. A quien tuviera un velo puesto se le habría perdido en
+silencio al actualizar. Se arregla mirando el objeto **guardado**, no el fusionado.
+
+### Y otro que cazó la regla invariante de colores
+La capa de luz usaba `#000000`/`#FFFFFF` sueltos. No son colores de interfaz —oscurecer es acercar
+al negro en tema claro y en oscuro— pero añadir una excepción al comprobador lo habría debilitado.
+Se usan las palabras clave de CSS `black` y `white`.
+
+### Verificación
+**1000 comprobaciones en verde** (antes 941): 207 del sistema de fondos y 84 casos de renderizado.
+
+---
+
+## Entrega 2 · FO Fase 2 — Galería y selección de fotografías (v1.37.0)
+
+Ya se puede poner una foto propia de fondo. **Ajustes → Apariencia → Fondo → Foto.**
+
+### La foto no se aplica al elegirla
+El apartado 3 lo pide expresamente: primero la vista previa, después "Aplicar". Así nadie tiene
+que aceptar una configuración que no le gusta y deshacerla después.
+
+Y la **subida a Storage ocurre al aplicar, no al elegir**. Si subiera al elegir, cada foto que
+Josué mirara y descartara dejaría un archivo huérfano en su bucket para siempre. La vista previa
+se hace con `URL.createObjectURL`, que es local e instantánea: no hay que esperar a la red para
+ver cómo queda.
+
+### La vista previa enseña la interfaz, no solo la foto
+La foto se pinta **dentro de una representación de JosStyle**, con una tarjeta y su texto
+secundario encima. Un rectángulo con la foto solo enseña la foto; lo que hay que poder juzgar es
+si el contenido se sigue leyendo.
+
+### El encuadre inicial no es "centrar y ya"
+Una foto muy vertical se ancla **arriba** — que es donde está el cielo o el rostro en la inmensa
+mayoría de fotos de móvil — en vez de cortar por la cintura. Las horizontales, panorámicas y
+cuadradas se centran. Siempre `cover`, así que **la imagen nunca se deforma** (apartado 5).
+
+### Quitar la foto no la borra
+Vuelve al fondo anterior —el color o el degradado que hubiera, y si no, al fondo normal— y **la
+fotografía se conserva** para la recuperación de la Fase 12, como pide el apartado 9. La interfaz
+lo dice para que nadie evite el botón.
+
+Y al revés: **elegir una foto no borra el color ni el degradado** que hubiera configurados
+(apartado 14). Hay prueba propia.
+
+### Nunca la pantalla sin fondo
+Mientras la URL de la foto se está firmando, `resolverFondo` baja al fondo incluido. Eso da gratis
+la transición suave del apartado 16: no hay parpadeo ni un instante sin fondo.
+
+### Bucket nuevo `fondos`
+Con sus tres políticas RLS por carpeta de usuario, mismo patrón que `armario`, `progreso` y
+`entrenamiento-videos`. Va en su propio bucket a propósito: una foto de prenda se borra con la
+prenda, un fondo se sustituye al elegir otro, y mezclarlos obligaría a distinguirlos por convenio
+de nombre de archivo — el tipo de acuerdo implícito que se rompe solo.
+
+⚠️ **Josué tiene que ejecutar ese bloque de `supabase/schema.sql` en el SQL Editor.** Hasta
+entonces funciona todo menos la fotografía: color, degradado e incluidos no tocan Storage.
+
+### Dos detalles que estaban mal si no se piensan
+1. **`URL.createObjectURL` sin `revokeObjectURL` es memoria retenida** hasta recargar la página.
+   Se suelta al desmontar y cada vez que se sustituye por otra foto.
+2. **Una firma en vuelo puede pisar a la siguiente.** Si Josué cambia de foto mientras la URL
+   anterior se firmaba, la respuesta lenta de la vieja llegaría después y sobrescribiría a la
+   nueva. El efecto lleva una bandera que descarta el resultado obsoleto.
+
+### Verificación
+**941 comprobaciones en verde** (antes 882): 152 del sistema de fondos y 80 casos de renderizado,
+incluidos el estado con foto y el estado sin foto todavía, que es donde más fácil sería dejar un
+hueco roto.
+
+---
+
+## Entrega 2 · FO Fase 1 — Arquitectura del sistema de fondos (v1.36.0)
+
+Empieza el bloque **FO (Fondos y Fotografías)**. Esta fase no añade una foto de fondo: construye
+el sistema que hará falta para que quepan las once fases siguientes sin rehacer nada.
+
+### El fondo es un elemento propio, no "una imagen detrás"
+Es lo que pide el apartado 2, y marca la diferencia entre esto y pegar una imagen en el `<body>`.
+Hay un solo sistema que sabe qué fondo está activo, cuál usa, cómo se muestra, con qué ajustes y
+qué colores usa la interfaz encima.
+
+### Amplía el sistema de apariencia; no compite con él
+Ya existían `COLORS`, `aplicarTema()` y `colorEngine.js`. El fondo **se guarda dentro de
+`apariencia`**, junto a tema, densidad, radio y alto contraste, y se resuelve en el mismo sitio y
+el mismo momento que el tema. Ni una clave nueva en la base de datos, ni un segundo sistema de
+apariencia — los dos lo piden los apartados 5 y 12.
+
+### Nunca un fondo roto
+El apartado 6 es literal: *"nunca debe aparecer un fondo vacío, roto o indefinido"*. Por eso
+`resolverFondo` **no devuelve null jamás**. Un color inválido, un degradado a medias o una foto que
+ya no está bajan un escalón de la cadena en vez de dejar un hueco, y dicen por qué. Hay una prueba
+que le mete diez entradas rotas a propósito —`null`, `42`, `'texto'`, un tipo inventado— y
+comprueba que todas salen con un tipo pintable.
+
+### Cambiar de tema no puede perder el fondo
+Los fondos incluidos se definen con **tokens**, no con hex, así que un fondo incluido acompaña al
+tema claro/oscuro y al acento de Josué en vez de imponer un color ajeno. La prueba pinta el mismo
+fondo con dos paletas distintas y comprueba que sale distinto y que la configuración guardada no
+cambia.
+
+### Restablecer no borra nada
+El apartado 14 es explícito. "Volver al fondo normal" desactiva el fondo pero conserva el color, la
+foto y los ajustes, y **la interfaz lo dice** para que nadie evite el botón por miedo a perder lo
+que eligió. Es el mismo criterio que la app tiene desde ME Fase 3: lo reversible no se destruye.
+
+### Un fallo de apilamiento CSS corregido al escribirlo
+Una capa `position: fixed; z-index: 0` se pinta en el paso 6 del orden de pintado de CSS, **por
+encima** del contenido en flujo normal, que va en el paso 3. Tal cual, el fondo habría tapado la
+aplicación entera. Se arregla con `isolation: isolate` en el contenedor y `z-index: -1` en las
+capas, que las deja exactamente entre el `background` del contenedor y el contenido.
+
+### Y un hueco de cobertura que se cerró de paso
+`SettingsView` no se renderizaba en ninguna prueba. Ahora su bloque de fondo sí, con cuatro
+escenarios — incluido **un fondo guardado por una versión anterior, sin los campos nuevos**, que es
+exactamente lo que devuelve `loadData` y lo que la regla 5 del proyecto obliga a soportar.
+
+### Verificación
+**882 comprobaciones en verde** (antes 777): 101 nuevas del sistema de fondos y 72 casos de
+renderizado real.
+
+---
+
+## Entrega 2 · AR Fase 4 — Anti-repetición, estadísticas y recomendaciones (v1.35.0)
+
+**Cierra el bloque AR (4/4).** El historial deja de ser una lista y pasa a decir algo. Cuarta
+pestaña del Armario: **Prendas | Outfits | Calendario | Ideas**.
+
+### Ninguna llamada a la IA, y es a propósito
+El apartado 25 de la especificación prohíbe expresamente la IA de moda, y la regla 7 del proyecto
+dice que la IA analiza y sugiere pero nunca decide ni se dispara sola. Así que **toda la
+inteligencia de esta fase son reglas sobre el historial real**. La consecuencia práctica es la que
+importa: cada recomendación llega con sus **motivos escritos**, sacados de los mismos números que
+la ordenaron. Si algo no se puede explicar en una línea, no se enseña.
+
+```
+✨ Cena Negra
+   · hace 20 días que no lo usas
+   · todas sus prendas están disponibles
+   · es uno de tus favoritos
+```
+
+### Sin contadores, otra vez
+La Fase 3 quitó los contadores guardados. Esta fase **no los reintroduce por la puerta de atrás**:
+los índices que usa se construyen al vuelo, se consultan y se tiran al acabar el render.
+
+### Qué calcula
+Estadísticas de outfits y de prendas (con rankings), diversidad del armario, outfits olvidados,
+prendas infrautilizadas, prendas que se están repitiendo y **combinaciones repetidas** — estas
+últimas detectan el mismo conjunto de ropa aunque esté guardado en dos outfits distintos, que es lo
+que pasa cuando duplicas un outfit y le cambias el nombre.
+
+El uso de una prenda **se deriva de sus outfits**, con el ejemplo literal del apartado 4
+comprobado: 3 usos en un outfit + 5 en otro = 8, y sigue siendo UNA prenda.
+
+### La diversidad es una fracción, no una puntuación
+El apartado 16 avisa: nada de un número arbitrario sin explicación, y si no aporta valor, mejor no
+implementarlo. Así que la única métrica que hay es `prendas usadas ÷ prendas disponibles`, una
+división que cualquiera puede rehacer a mano, con sus dos números crudos a la vista. **No cuenta
+las que están en la lavandería**: una camiseta que ha pasado el mes en el cesto no se ha usado,
+pero eso no es falta de diversidad, es que no estaba.
+
+### Nada se prohíbe, todo se dice
+Un outfit usado ayer sale marcado, pero se puede usar igual. Un outfit con una prenda en la
+lavadora nunca es la primera recomendación —cualquier alternativa completa le gana— pero **sigue
+apareciendo, y dice qué prenda concreta le falta**. El contexto (lugar, ocasión, personas,
+temporada) suma señales y no descarta a nadie.
+
+### Saber cuándo no se sabe
+Por debajo de 5 usos registrados **no se recomienda nada**, y se dice cuántos faltan. Con menos,
+"el que hace más tiempo que no usas" es casi siempre "el que registraste primero", y eso no es un
+patrón: es el orden de entrada de los datos.
+
+### Un fallo real que encontraron las pruebas
+`noDisponiblesDeOutfit` devuelve un **número**, y yo lo estaba tratando como una lista.
+`noDisponibles.length` era `undefined`, así que `> 0` era siempre falso y **la penalización por
+prendas no disponibles no se aplicaba nunca**: el outfit con una prenda en la lavadora salía como
+primera recomendación. No daba error ni al compilar ni en consola. Arreglado en el origen, con una
+`prendasNoDisponiblesDeOutfit` que devuelve la lista y un `noDisponiblesDeOutfit` que pasa a ser su
+longitud — las dos respuestas salen ahora del mismo cálculo.
+
+### Y dos cosas más, al releer el código antes de cerrar
+- **La recomendación se guardaba en el estado**, así que registrar el uso desde la propia tarjeta
+  dejaba en pantalla un "hace 20 días" que acababa de dejar de ser verdad.
+- **"Más usados" y "menos usados" eran la misma lista al revés** cuando había 5 outfits o menos.
+
+### Verificación
+**777 comprobaciones en verde** (antes 661): 108 nuevas del motor de inteligencia —incluida la
+prueba crítica del apartado 24, número a número— y 68 casos de renderizado real.
+
+---
+
+## Entrega 2 · AR Fase 3 — Calendario e historial de uso (v1.34.0)
+
+El armario deja de ser un inventario y pasa a tener memoria. **Gestión → Armario** tiene ahora tres
+pestañas: **Prendas | Outfits | Calendario**.
+
+### Cada uso es un registro, no una fecha que se pisa
+Ponerse el mismo outfit el 1, el 5 y el 12 de agosto son **tres registros independientes**, cada uno
+con su fecha, su hora, su lugar, sus personas, su ocasión y sus notas. Sin eso no hay historial: hay
+un "último uso" que olvida todo lo anterior.
+
+### Ningún contador guardado
+Aquí está el cambio de fondo de esta fase. Las Fases 1 y 2 dejaron un `usos` y un `ultimoUso`
+guardados dentro de cada prenda y de cada outfit. **Se han eliminado**, tal y como pide el apartado
+17 de la especificación, y ahora todo se deduce de `armario.usos`:
+
+    PRENDA → los outfits que la contienen → los usos de esos outfits
+
+Un contador guardado es una **segunda fuente de verdad**: basta con que un borrado de uso no lo
+decremente para que una prenda diga "usada 18 veces" con 17 registros detrás. Derivándolo, ese
+descuadre es imposible por construcción. El efecto secundario bonito es que **una prenda tiene
+historial aunque nunca se haya registrado directamente**: se deduce de los outfits en los que sale.
+
+Para que ordenar por uso no salga caro, las tres ordenaciones que lo necesitan van contra un índice
+(`indiceUsoPrendas` / `indiceUsoOutfits`) construido en una sola pasada y tirado al acabar el
+render. Es rendimiento, no modelo de datos: nunca se guarda, así que nunca se desincroniza.
+
+### El calendario
+Vista mensual que **reutiliza `celdasMes` del Calendario Universal** — regla 11 del proyecto: ni un
+segundo motor de calendario. Lo único propio es qué se pinta dentro de cada celda: la **miniatura de
+la prenda** al 55 % detrás del número del día, y una insignia con el número cuando ese día hubo más
+de un outfit. Pulsar un día con outfits abre su detalle; pulsar uno vacío abre el formulario con esa
+fecha ya puesta. Hay también una **vista de lista** con rango (7 / 30 / 90 / 365 días o todo) y
+filtros por outfit, prenda, ocasión, lugar y persona.
+
+### En el Calendario Universal, derivado
+Los usos aparecen en el Calendario general como **fuente derivada**, igual que Objetivos, Estudios,
+Entrenamiento, Tareas y Relación: se generan en cada render desde `armario.usos` y **no se copian
+nunca**. Borrar un uso desde el Armario lo quita del Calendario en el mismo render, sin una línea de
+código de limpieza, porque nunca hubo una segunda copia que limpiar. El título sale del outfit
+referenciado, así que renombrarlo actualiza también el calendario del mes pasado.
+
+### Borrar un outfit con historial
+**Se conserva el historial**, por el mismo motivo por el que la Fase 2 conservaba las prendas dentro
+de los outfits: el outfit va a la papelera, o sea que puede volver. Si al borrarlo se borraran sus
+usos, restaurarlo devolvería el outfit pero no su historia. Conservándolos, **restaurar lo cura todo
+solo**. Mientras no esté, la fila del historial dice *"Outfit eliminado"* en vez de fingir que ese
+día no pasó nada.
+
+### Dos fallos reales de TODA la app que destapó esta fase
+Los dos en `src/lib/helpers.js`, los dos por usar `toISOString()`, que devuelve siempre UTC:
+
+1. **`todayISO()` devolvía AYER** entre las 00:00 y la 01:00/02:00 en España. Registrar el sueño a
+   las 00:30 lo archivaba en el día anterior — y lo mismo un gasto, una comida, un hábito o una
+   entrada del diario a esa hora. Lo avisaba el apartado 9 para el registro de outfits; el fallo
+   era de todo el proyecto, no solo del armario.
+2. **`addDays()` restaba un día entero**: construía la fecha en hora local y la devolvía en UTC.
+   `addDays('2026-08-25', 1)` daba `'2026-08-25'`, y `addDays('2026-01-15', 7)` daba el 21 en vez
+   del 22. Lo usan la recurrencia del Calendario y las predicciones.
+
+Los dos están arreglados con `toLocaleDateString('sv-SE')`, que es la forma estándar de pedirle al
+formateador local un `AAAA-MM-DD` limpio, y los dos tienen prueba propia.
+
+### Sin datos, no se inventa nada
+Una prenda o un outfit sin usar dice **"Todavía no hay datos de uso."** — nunca "hace 0 días", nunca
+una fecha inventada (apartado 28, literal).
+
+### Verificación
+**661 comprobaciones en verde** (antes 545): build de Vite, 297 del armario —incluida la batería
+obligatoria del apartado 40 y la prueba crítica del 41, número a número—, 64 casos de renderizado
+real y las 9 reglas invariantes.
+
+---
+
+## Entrega 2 · AR Fase 2 — Constructor de Outfits (v1.33.0)
+
+Las prendas dejan de ser elementos sueltos. **Gestión → Armario** tiene ahora dos pestañas:
+**Prendas** y **Outfits**.
+
+### La regla que manda: referencias, nunca copias
+La especificación lo repite en cuatro apartados distintos, así que se ha respetado al pie de la
+letra: un outfit guarda **`prendaIds`**, no objetos de prenda. Cambiarle el nombre, el color o la
+foto a una prenda se ve al instante en todos sus outfits, porque no hay ninguna copia que
+actualizar. Una prenda usada en tres outfits sigue siendo **una prenda y tres relaciones**.
+
+### Qué pasa al borrar una prenda que está en un outfit
+La especificación dejaba elegir entre tres salidas. Se ha elegido **conservar la referencia y
+mostrarla como no disponible**, por un motivo concreto:
+
+Desde ME Fase 3, borrar una prenda la manda a la papelera — **se puede restaurar**. Si al borrarla
+le quitáramos su id a todos los outfits, restaurarla dejaría los outfits rotos para siempre: el dato
+volvería, pero el vínculo no. Conservando la referencia, **restaurar la prenda cura los outfits
+solos**, sin una línea de código de reparación.
+
+Mientras tanto el outfit no miente: dice *"1 prenda no disponible"* y su detalle explica que vuelve
+sola si la recuperas. Y la confirmación de borrar una prenda avisa antes: *"está en 2 outfits"*.
+
+### Cómo se eligen las prendas
+Por **zona del cuerpo** (superior, inferior, calzado, abrigo, accesorios, otros), no por las 14
+categorías: es como se piensa uno al vestirse. Es una vista sobre las categorías que ya existen, no
+una segunda clasificación que rellenar.
+
+Y **sin límite**: camiseta + camiseta interior + sudadera + pantalón + zapatillas + reloj + cadena es
+un outfit perfectamente válido. El buscador de dentro **es el de la Fase 1 tal cual** — la
+especificación pide expresamente no crear un segundo sistema.
+
+### "negro" encuentra "Total Black"
+El ejemplo literal del apartado 23, funcionando: buscar "negro" encuentra un outfit llamado *Total
+Black* **porque contiene una prenda negra**, aunque su nombre no lleve esa palabra. La búsqueda mira
+también el nombre, la marca, la categoría y el color de las prendas que lo componen.
+
+### Duplicar sin heredar lo que no toca
+Duplicar un outfit crea una entidad independiente con **las mismas prendas**, y modificar la copia no
+roza el original. Lo que la especificación subraya dos veces: la copia **empieza con el historial a
+cero**. Es un outfit nuevo; no se ha llevado nunca.
+
+### Lo que se ha pulido
+Contador de selección; quitar una prenda volviendo a pulsar su tarjeta entera; aviso de *"Outfit
+guardado ✓"* que se va solo (nada de `alert()`); editar y duplicar **a un toque desde la tarjeta**;
+**eliminar separado de esas dos** y solo dentro del detalle con confirmación, para que no se pulse
+sin querer; y el detalle releyéndose de la lista, para que un cambio se vea al instante.
+
+### Lo que NO se ha hecho, a propósito
+Ni calendario, ni historial de uso, ni recomendaciones, ni anti-repetición. `usos` y `ultimoUso`
+existen y **están a cero**: el apartado 8 del cierre es explícito — *"no inventes datos"*. La Fase 3
+los llenará, y `armario.usos` ya está declarado como lista para que cada uso sea **un registro
+independiente**, no una sola fecha.
+
+### Un fallo mío, cazado por las pruebas
+Al escribir el detalle del outfit dejé un `</div>` de más y el proyecto dejó de compilar.
+`scripts/smoke.mjs` lo detectó antes de llegar a ninguna parte.
+
+### Verificación
+`bash scripts/verificar.sh` → **545 comprobaciones en verde**, 185 del armario y 60 casos de
+renderizado. Entre ellos, los dos casos límite que la especificación subraya: **un outfit con una
+prenda borrada** y **un outfit sin ninguna prenda**, que tienen que pintarse sin reventar.
+
+⚠️ **Pendiente de Josué (R1):** el recorrido completo en un iPhone y la persistencia real en
+Supabase.
+
+---
+
 ## Entrega 2 · AR Fase 1 — Armario digital (v1.32.0)
 
 **El primer módulo genuinamente nuevo de la Entrega 2.** ME y BI ampliaban cosas que ya existían;
