@@ -98,6 +98,12 @@ else
   fallo "Fallan pruebas del sistema de colores"; grep '✗' /tmp/jc_tema.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-detector-colores.mjs >/tmp/jc_det.log 2>&1; then
+  ok "Detector de colores (FO F5) — $(grep -c '✓' /tmp/jc_det.log) comprobaciones"
+else
+  fallo "Fallan pruebas del detector de colores"; grep '✗' /tmp/jc_det.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

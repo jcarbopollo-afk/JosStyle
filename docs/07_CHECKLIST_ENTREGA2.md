@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 16 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
-> y FO 4/12 (hasta v1.39.0). Quedan **90**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 17 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
+> y FO 5/12 (hasta v1.40.0). Quedan **89**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -2238,30 +2238,64 @@ acordarse no es una garantía.
 tarjeta sobre una foto no es "translúcida", es texto suelto encima de una imagen. La Fase 9 afinará
 esto con medidas de contraste reales.
 
-#### FO · Fase 5/12 — DETECTOR INTELIGENTE DE COLORES
-- [ ] OBJETIVO
-- [ ] CUÁNDO ANALIZAR LA FOTOGRAFÍA
-- [ ] COLORES DOMINANTES
-- [ ] PALETA ESTRUCTURADA
-- [ ] DETECCIÓN DE TONOS CLAROS Y OSCUROS
-- [ ] SATURACIÓN
-- [ ] NEUTROS
-- [ ] COLORES DESTACABLES
-- [ ] DISTRIBUCIÓN DEL COLOR
-- [ ] ANÁLISIS OPTIMIZADO
-- [ ] RESULTADO DEL ANÁLISIS
-- [ ] REPRESENTACIÓN VISUAL
-- [ ] ACTUALIZACIÓN DEL ANÁLISIS
-- [ ] CACHÉ DEL ANÁLISIS
-- [ ] NO MODIFICAR AUTOMÁTICAMENTE LOS COLORES
-- [ ] INTEGRACIÓN CON EL SISTEMA DE COLORES
-- [ ] ERROR Y FOTOGRAFÍAS PROBLEMÁTICAS
-- [ ] FOTOGRAFÍAS MONOCROMÁTICAS
-- [ ] PRIVACIDAD
-- [ ] RENDIMIENTO
-- [ ] PREPARACIÓN PARA LA FASE 6
-- [ ] CRITERIOS DE FINALIZACIÓN
-- [ ] REGLA PARA CLAUDE
+#### FO · Fase 5/12 — DETECTOR INTELIGENTE DE COLORES ✅ COMPLETADA (v1.40.0)
+
+Todo en `src/lib/detectorColores.js`. **Aritmética sobre píxeles, no IA.**
+
+- [x] **1 · Objetivo** — foto → análisis → colores → paleta estructurada, lista para la Fase 6.
+- [x] **2 · Cuándo analizar** — al cambiar de fotografía, **no** mientras se mueve el zoom: eso
+      sería analizar decenas de veces por segundo para nada.
+- [x] **3 · Colores dominantes** — hasta 6, agrupados en una rejilla de 4×4×4 por canal. El color
+      de cada grupo es la **media de sus píxeles**, no el centro de la caja, así que es un color
+      que de verdad está en la foto.
+- [x] **4 · Paleta estructurada** — dominante, acento, secundario, neutro, claro y oscuro. Cada
+      papel se elige por lo que ese papel necesita: **"no asumir que el color más frecuente es
+      automáticamente el mejor color para botones"**, literal del apartado.
+- [x] **5 · Claros, medios y oscuros** — por luminancia percibida.
+- [x] **6 · Saturación** — neutro, apagado, moderado y vivo.
+- [x] **7 · Neutros** — blancos, negros, grises y lo que se les parece.
+- [x] **8 · Colores destacables** — **la prueba que define esta fase.** Cada color lleva dos
+      números distintos: `peso` (cuánta superficie ocupa) e `interes` (cuánto destaca). El ejemplo
+      literal del apartado está automatizado: una foto 95 % negra con un 5 % de azul eléctrico
+      devuelve el **negro como dominante y el azul como acento**.
+- [x] **9 · Distribución** — en qué tercio vertical vive cada color.
+- [x] **10 · Análisis optimizado** — sobre una miniatura de 96 px de lado (~9.000 píxeles). **La
+      fotografía original no se toca.**
+- [x] **11 · Resultado** — hex, luminosidad, saturación, tono, peso, interés, zona y clasificación.
+- [x] **12 · Representación visual** — las muestras en Ajustes, con su descripción, y tocar una la
+      copia.
+- [x] **13 · Actualización** — cada análisis va **sellado con el id de su fotografía**. Cambiar de
+      foto y seguir viendo la paleta de la anterior es imposible por construcción.
+- [x] **14 · Caché** — una foto ya analizada no se vuelve a analizar.
+- [x] **15 · NO cambiar colores automáticamente** — detectar no es aplicar. Una foto azul con una
+      paleta roja deja la paleta roja **intacta**, y la interfaz lo dice: *"Solo te los enseño:
+      tus colores no cambian solos"*. Decidir es la Fase 6.
+- [x] **16 · Integración con el sistema de colores** — tocar un color lo copia, y de ahí al
+      selector que ya existe. El control sigue siendo de Josué.
+- [x] **17 · Fotografías problemáticas** — ocho casos automatizados (toda negra, toda blanca, gris
+      plano, extremadamente oscura, extremadamente clara, dos colores, un solo píxel, saturadísima)
+      y ninguno produce una configuración rota.
+- [x] **18 · Monocromáticas** — se identifican como paleta neutra y **no se inventa un acento que
+      la foto no tiene**: `acento` es `null`, y eso es información honesta que la Fase 6 podrá usar.
+- [x] **19 · Privacidad** — **la foto no sale del teléfono**. Ni IA, ni servicio externo, ni una
+      sola petición: es `getImageData` sobre un `<canvas>` local.
+- [x] **20 · Rendimiento** — "Analizando colores…" mientras trabaja, y una miniatura de 96 px en
+      vez de la foto entera.
+
+**Un fallo real, y de los que no dan ningún error:** `rgbToHsl`/`hexToHsl` de `colorEngine.js`
+devuelven la saturación y la luminosidad en **0-100, no en 0-1**. Mis umbrales estaban en la escala
+equivocada, así que **todo color con más de un 0,6 % de saturación salía como "vivo"** y solo un
+gris exacto contaba como neutro: la clasificación entera habría sido inútil, y la Fase 6 habría
+construido recomendaciones sobre datos sin sentido. Lo cazó la prueba que clasifica el propio
+acento de la app (`#5C7E9A`, s = 25,2). La conversión está ahora en **un solo sitio**, con el aviso
+escrito al lado.
+
+**Por qué `interes` y `peso` son dos números y no uno:** el color que más superficie ocupa suele ser
+el peor candidato a acento — en una foto nocturna es "casi negro" y en una de playa "casi blanco".
+Fundirlos en una sola cifra habría hecho imposible la prueba del apartado 8.
+
+**Los píxeles transparentes no cuentan.** Un agujero no es un color: contarlo metería un falso
+negro en toda imagen con transparencia. Con prueba propia.
 
 #### FO · Fase 6/12 — SISTEMA «RECOMENDADO» | JC FITNESS
 - [ ] OBJETIVO

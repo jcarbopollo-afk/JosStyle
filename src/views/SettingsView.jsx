@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   User, Download, Upload, RotateCcw, Undo2, Lock, LogOut, ArrowLeft, Search, ChevronRight,
   Palette, LayoutGrid, SlidersHorizontal, Bell, ShieldCheck,
-  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon,
+  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2,
 } from 'lucide-react';
 import pkg from '../../package.json';
 import {
@@ -28,6 +28,7 @@ import {
   aplicarFotoConAjustes,
 } from '../lib/fondos';
 import { normalizarTema, restablecerColores, tieneColoresPersonalizados } from '../lib/temaColores';
+import { analizarImagen, analisisValidoPara, sellarAnalisis, describirColor } from '../lib/detectorColores';
 import ColorPicker from '../components/ColorPicker';
 import TemaBuilder from '../components/TemaBuilder';
 import GestionTemas from '../components/GestionTemas';
@@ -549,7 +550,99 @@ export function BloqueLegibilidad({ tema, fondoActivo, accent, onCambiar }) {
   );
 }
 
-export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFondo }) {
+/* ---------- FO Fase 5 — la paleta detectada en la fotografía ----------
+   Apartado 15, y es la regla que gobierna este componente: **detectar NO es
+   aplicar**. Si Josué tiene una foto azul y una paleta roja, aquí se enseña
+   "azul" y su paleta roja se queda como está. Aplicarla es la Fase 6.
+
+   Por eso este bloque solo MUESTRA, y lo único que se puede hacer con un color
+   es copiarlo — una acción que decide él, no el sistema.
+
+   El análisis se dispara al cambiar la foto (apartado 2), no mientras se mueve
+   el zoom: eso sería analizar decenas de veces por segundo para nada. Y se
+   guarda sellado con el id de su fotografía (apartados 13 y 14), así que una
+   foto ya analizada no se vuelve a analizar y la paleta de una foto nunca se
+   enseña para otra. */
+export function PaletaDetectada({ fondo, urlFoto, accent, analisis, onAnalisis }) {
+  const [estado, setEstado] = useState('inactivo');   // inactivo | analizando | listo | fallo
+  const [copiado, setCopiado] = useState('');
+  const fotoId = fondo?.foto?.id || '';
+  const valido = analisisValidoPara(analisis, fondo?.foto);
+
+  useEffect(() => {
+    // Apartado 14 — si esta foto ya está analizada, no se repite el trabajo.
+    if (!urlFoto || !fotoId || valido) { setEstado(valido ? 'listo' : 'inactivo'); return undefined; }
+    let cancelado = false;
+    setEstado('analizando');
+    analizarImagen(urlFoto).then((res) => {
+      if (cancelado) return;
+      if (!res) { setEstado('fallo'); return; }
+      onAnalisis(sellarAnalisis(res, fondo.foto));
+      setEstado('listo');
+    });
+    // Igual que con la firma de la URL: si Josué cambia de foto mientras la
+    // anterior se analizaba, el resultado viejo no puede pisar al nuevo.
+    return () => { cancelado = true; };
+  }, [urlFoto, fotoId, valido]);
+
+  useEffect(() => {
+    if (!copiado) return undefined;
+    const t = setTimeout(() => setCopiado(''), 2000);
+    return () => clearTimeout(t);
+  }, [copiado]);
+
+  if (!fotoId) return null;
+
+  if (estado === 'analizando') {
+    return (
+      <p className="text-xs mt-3 flex items-center gap-2" style={{ color: COLORS.textMuted }}>
+        <Loader2 size={13} className="animate-spin" style={{ color: accent }} /> Analizando colores…
+      </p>
+    );
+  }
+  // Si no se ha podido analizar, se dice y ya: no se inventa una paleta.
+  if (estado === 'fallo') {
+    return <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>No he podido leer los colores de esta foto.</p>;
+  }
+  if (!valido || !analisis.colores.length) return null;
+
+  const copiar = async (hex) => {
+    try { await navigator.clipboard.writeText(hex); setCopiado(hex); } catch { setCopiado(''); }
+  };
+
+  return (
+    <div className="mt-3">
+      <p className="text-xs font-semibold mb-2" style={{ color: COLORS.text }}>Colores de tu foto</p>
+      <div className="flex flex-wrap gap-2">
+        {analisis.colores.map((c) => (
+          <button
+            key={c.hex}
+            onClick={() => copiar(c.hex)}
+            className="rounded-xl overflow-hidden transition-transform active:scale-90"
+            style={{ width: 42, height: 42, background: c.hex, border: `1px solid ${COLORS.border}` }}
+            aria-label={`${c.hex}, ${describirColor(c)}. Tocar para copiar.`}
+            title={describirColor(c)}
+          />
+        ))}
+      </div>
+      {copiado && (
+        <p className="text-[11px] mt-1.5" style={{ color: accent }}>{copiado} copiado.</p>
+      )}
+      {/* Apartado 18 — una foto en blanco y negro no es un error, es una paleta neutra. */}
+      {analisis.monocromatica && (
+        <p className="text-[11px] mt-1.5" style={{ color: COLORS.textMuted }}>
+          Tu foto es prácticamente en blanco y negro, así que no hay un color de acento que sacar de ella.
+        </p>
+      )}
+      {/* Apartado 15, dicho en la propia interfaz para que no haya duda. */}
+      <p className="text-[11px] mt-1.5" style={{ color: COLORS.textMuted }}>
+        Solo te los enseño: tus colores no cambian solos. Toca uno para copiarlo.
+      </p>
+    </div>
+  );
+}
+
+export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFondo, analisisFoto, onAnalisisFoto }) {
   const [abierto, setAbierto] = useState(false);
   const disponibles = TIPOS_FONDO.filter((t) => t.implementado);
   const activo = fondo?.activo ? fondo.tipo : 'ninguno';
@@ -572,10 +665,18 @@ export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFond
           "degradado" no sirve para nada y confunde. */}
       {/* FO Fase 2 — la fotografía, con su flujo propio de elegir → previsualizar → aplicar. */}
       {activo === 'foto' && (
-        <SelectorFoto
-          fondo={fondo} accent={accent} urlFotoActual={urlFotoFondo}
-          onSubirFoto={onSubirFoto} onCambiar={onCambiar}
-        />
+        <>
+          <SelectorFoto
+            fondo={fondo} accent={accent} urlFotoActual={urlFotoFondo}
+            onSubirFoto={onSubirFoto} onCambiar={onCambiar}
+          />
+          {onAnalisisFoto && (
+            <PaletaDetectada
+              fondo={fondo} urlFoto={urlFotoFondo} accent={accent}
+              analisis={analisisFoto} onAnalisis={onAnalisisFoto}
+            />
+          )}
+        </>
       )}
 
       {activo === 'predeterminado' && (
@@ -1157,6 +1258,8 @@ export default function SettingsView({
               onCambiar={(f) => onUpdateApariencia({ ...apariencia, fondo: f })}
               onSubirFoto={onSubirFotoFondo}
               urlFotoFondo={urlFotoFondo}
+              analisisFoto={apariencia.fondo?.analisis}
+              onAnalisisFoto={(a) => onUpdateApariencia({ ...apariencia, fondo: { ...apariencia.fondo, analisis: a } })}
             />
 
             <BloqueLegibilidad

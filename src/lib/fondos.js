@@ -193,6 +193,10 @@ export function normalizarFondo(guardado) {
       intensidad: acotar(g.overlay ? g.overlay.intensidad : g.velo, 0, 0, 90),
     },
     ajustesPorFoto: f.ajustesPorFoto && typeof f.ajustesPorFoto === 'object' ? f.ajustesPorFoto : {},
+    // FO Fase 5 — el análisis se conserva tal cual. Va sellado con el id de su
+    // fotografía (`analisisValidoPara`), así que no hace falta invalidarlo aquí:
+    // si la foto cambia, el sello deja de coincidir y se vuelve a analizar solo.
+    analisis: f.analisis || null,
     // `posicion` ya no forma parte del modelo: se ha traducido a `encuadre` arriba.
     posicion: undefined,
   };

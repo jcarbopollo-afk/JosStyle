@@ -1,5 +1,54 @@
 # CHANGELOG.md
 
+## Entrega 2 · FO Fase 5 — Detector de colores (v1.40.0)
+
+JosStyle mira tu foto de fondo y te dice de qué colores es. **Sin IA y sin que la foto salga del
+teléfono**: es aritmética sobre los píxeles de un `<canvas>` local, ni una petición.
+
+### Frecuencia no es utilidad
+Es la idea que gobierna toda la fase. El color que más superficie ocupa suele ser el **peor**
+candidato a acento: en una foto nocturna es "casi negro" y en una de playa "casi blanco". Lo
+interesante suele ser ese pequeño azul eléctrico que ocupa el 2 %.
+
+Por eso cada color lleva **dos números distintos**: `peso` (cuánta superficie ocupa) e `interes`
+(cuánto destaca). El ejemplo literal del apartado 8 está automatizado: una foto 95 % negra con un
+5 % de azul eléctrico devuelve el **negro como dominante y el azul como acento**.
+
+### Detectar no es aplicar
+El apartado 15 es tajante y la interfaz lo dice: *"Solo te los enseño: tus colores no cambian
+solos"*. Si tienes una foto azul y una paleta roja, tu paleta roja **se queda como está**. Tocar un
+color lo copia, y de ahí decides tú. Aplicar automáticamente es la Fase 6.
+
+### Una foto en blanco y negro no es un error
+Se identifica como paleta neutra, y **no se inventa un acento que la foto no tiene**: `acento` es
+`null`. Eso es información honesta, y la Fase 6 podrá buscar el acento por otro lado sabiendo que
+ahí no está.
+
+### Cada análisis va sellado con su fotografía
+Cambiar de foto y seguir viendo la paleta de la anterior es imposible por construcción: el análisis
+lleva el id de su imagen y se comprueba antes de usarlo. Y una foto ya analizada no se vuelve a
+analizar.
+
+### Un fallo real, y de los que no dan ningún error
+`rgbToHsl`/`hexToHsl` devuelven la saturación en **0-100, no en 0-1**. Mis umbrales estaban en la
+escala equivocada, así que **todo color con más de un 0,6 % de saturación salía como "vivo"** y solo
+un gris exacto contaba como neutro: la clasificación entera habría sido inútil, y la Fase 6 habría
+construido recomendaciones sobre datos sin sentido. Lo cazó la prueba que clasifica el propio acento
+de la app (`#5C7E9A`, s = 25,2).
+
+### Ocho fotos imposibles, ninguna rota
+Toda negra, toda blanca, gris plano, extremadamente oscura, extremadamente clara, dos colores, un
+solo píxel y saturadísima. El apartado 17 dice que **nunca** debe producirse una configuración rota,
+y hay una prueba por cada caso.
+
+Los píxeles transparentes tampoco cuentan: un agujero no es un color, y contarlo metería un falso
+negro en toda imagen con transparencia.
+
+### Verificación
+**1143 comprobaciones en verde** (antes 1070): 65 del detector y 100 casos de renderizado.
+
+---
+
 ## Entrega 2 · FO Fase 4 — Sistema avanzado de colores (v1.39.0)
 
 Amplía el sistema de color que ya existía —`colorEngine.js`, `aplicarTema`, `ColorPicker`,

@@ -31,7 +31,7 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
-import { BloqueFondo, EditorFoto, BloqueLegibilidad } from '../src/views/SettingsView.jsx';
+import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
@@ -196,6 +196,30 @@ const CASOS = [
   ['SettingsView · Legibilidad translúcida', BloqueLegibilidad, () => ({
     tema: { ...DEFAULT_TEMA_PERSONALIZADO, superficieAlfa: 25, navegacionAlfa: 30, secundario: '#FF0000' },
     fondoActivo: true, accent, onCambiar: noop,
+  })],
+  // FO Fase 5 — la paleta detectada, con un análisis ya hecho y sellado. Sin
+  // `urlFoto` el efecto no arranca, así que esto prueba el pintado, que es lo que
+  // `renderToString` puede probar.
+  ['SettingsView · Paleta detectada', PaletaDetectada, () => ({
+    fondo: { ...DEFAULT_APARIENCIA.fondo, tipo: 'foto', activo: true, foto: { ...DEFAULT_APARIENCIA.fondo.foto, id: 'f1', path: 'u/1.jpg' } },
+    urlFoto: null, accent, onAnalisis: noop,
+    analisis: {
+      fotoId: 'f1', monocromatica: false, suficiente: true,
+      colores: [
+        { hex: '#1B3A5C', peso: 0.5, tono: 'oscuro', saturacion: 'moderado', neutro: false },
+        { hex: '#E8A33D', peso: 0.3, tono: 'claro', saturacion: 'vivo', neutro: false },
+        { hex: '#7F7F7F', peso: 0.2, tono: 'medio', saturacion: 'neutro', neutro: true },
+      ],
+    },
+  })],
+  // Y una foto monocromática, que tiene su propio aviso.
+  ['SettingsView · Paleta monocromática', PaletaDetectada, () => ({
+    fondo: { ...DEFAULT_APARIENCIA.fondo, tipo: 'foto', activo: true, foto: { ...DEFAULT_APARIENCIA.fondo.foto, id: 'f2', path: 'u/2.jpg' } },
+    urlFoto: null, accent, onAnalisis: noop,
+    analisis: {
+      fotoId: 'f2', monocromatica: true, suficiente: true,
+      colores: [{ hex: '#111111', peso: 0.8, tono: 'oscuro', saturacion: 'neutro', neutro: true }],
+    },
   })],
   // FO Fase 3 — el editor, con una foto ya muy ajustada: las tres capas (foto, luz
   // y overlay) tienen que pintarse a la vez sin romperse.

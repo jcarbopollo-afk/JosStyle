@@ -14,12 +14,12 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.39.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.40.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI** y **AR** están terminados y **FO** va por 4/12, quedan 90) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
+bloques **ME**, **BI** y **AR** están terminados y **FO** va por 5/12, quedan 89) y el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado
 por decisión de Josué hasta terminar la Entrega 2).
 
 ## Decisiones cerradas de Josué (no reabrir)
@@ -107,10 +107,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 973 pruebas unitarias con Node, 5 de auditoría, 92 casos de renderizado real con
-`react-dom/server` y 9 reglas invariantes — **1070 comprobaciones**.
+Vite, 1038 pruebas unitarias con Node, 5 de auditoría, 100 casos de renderizado real con
+`react-dom/server` y 9 reglas invariantes — **1143 comprobaciones**.
 
-Eso ya ha encontrado **veintinueve bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **treinta bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), ocho módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -133,20 +133,20 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**Siguiente fase: FO · Fase 5/12 — Detector inteligente de colores.**
+**Siguiente fase: FO · Fase 6/12 — Sistema "Recomendado".**
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/ESPECIFICACION_FONDOS_Y_FOTOGRAFIAS.md`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
 Tres avisos para cuando toque:
 
-- **`fondo.analisis` y `fondo.paleta` ya están declarados y vacíos** desde FO F1, para que
-  llenarlos no exija una migración (regla 5).
-- **El detector se ejecuta en el dispositivo**, sobre un `<canvas>` con la imagen reducida.
-  Ni IA, ni servicio externo, ni mandar la foto a ninguna parte (regla 7 y privacidad).
-- **`colorEngine.js` ya tiene todo lo de color** (OKLCH, escalas, `contrastRatio`,
-  `ensureContrast`). El detector solo saca colores de píxeles; **no se escribe un segundo
-  motor de color** para juzgarlos.
+- **El detector ya está** (`detectorColores.js`, v1.40.0) y devuelve `dominante`, `acento`,
+  `secundario`, `neutro`, `claro` y `oscuro`, cada uno con `peso` e `interes` **por separado**.
+  La Fase 6 decide cómo combinarlos; no hay que volver a analizar nada.
+- **`acento: null` en una foto monocromática es un dato, no un fallo.** Significa que ahí no hay
+  acento y hay que buscarlo por otro lado — probablemente conservando el que Josué ya tenía.
+- **Recomendar no es imponer.** La Fase 5 no cambia ni un color por su cuenta; la 6 debe seguir
+  siendo una propuesta que se acepta o se rechaza, y reversible. Regla 7 del proyecto.
 
 ⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
 de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin
