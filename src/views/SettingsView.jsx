@@ -34,6 +34,9 @@ import {
   MAX_PRESETS, crearPreset, aplicarPreset, listaPresets, presetActivo,
   duplicarPreset, actualizarPreset, alternarFavorito, esEditable,
 } from '../lib/presetsApariencia';
+import {
+  revisarLegibilidad, propuestasSobreFoto, correccionesDe, hayCorrecciones, resumenLegibilidad,
+} from '../lib/legibilidad';
 import ColorPicker from '../components/ColorPicker';
 import TemaBuilder from '../components/TemaBuilder';
 import GestionTemas from '../components/GestionTemas';
@@ -901,6 +904,99 @@ function MiniaturaPreset({ preset }) {
   );
 }
 
+/* ---------- FO Fase 9 — legibilidad ----------
+   La filosofía del apartado 1: libertad total para personalizar, pero con
+   protección para que la app siga siendo usable.
+
+   Y la línea que la hace posible, del apartado 7: **detectar y corregir son
+   cosas distintas**. Este bloque avisa y propone; no cambia nada hasta que se
+   pulsa. El modo automático (apartado 8) está APAGADO por defecto y es lo único
+   que autoriza a arreglar solo.
+
+   Nada se bloquea (apartado 9): un color flojo se avisa, no se impide. */
+export function BloqueLegibilidadAuto({ colors, fondo, analisis, tema, accent, auto, onSetAuto, onCorregir }) {
+  const revision = useMemo(
+    () => revisarLegibilidad({ colors, fondo, analisis, tema, accent }),
+    [colors, fondo, analisis, tema, accent],
+  );
+  const sobreFoto = useMemo(
+    () => propuestasSobreFoto({ fondo, analisis, colors }),
+    [fondo, analisis, colors],
+  );
+
+  const todo = [...revision.problemas, ...sobreFoto];
+  const cambios = correccionesDe(todo);
+  const hayAlgo = hayCorrecciones(cambios);
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: COLORS.text }}>
+          <ShieldCheck size={14} style={{ color: revision.graves > 0 ? COLORS.warning : accent }} /> Legibilidad
+        </p>
+      </div>
+      <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>{resumenLegibilidad(revision)}</p>
+
+      {/* Apartado 5 — el aviso, en castellano y sin tecnicismos. */}
+      {revision.hayProblemas && (
+        <ul className="space-y-1.5 mb-3">
+          {revision.problemas.map((p) => (
+            <li key={p.id} className="text-xs leading-relaxed flex gap-2" style={{ color: COLORS.textMuted }}>
+              <span>{p.nivel === 'mal' ? '⚠️' : '·'}</span>
+              <span>
+                {p.que} {p.nivel === 'mal' ? 'cuesta leerlo' : 'se lee justo'} con tu combinación actual.
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Apartados 10, 11 y 12 — cuando el problema es la foto, la solución no es
+          cambiar el texto: se propone tocar la foto y dejar los colores en paz. */}
+      {sobreFoto.length > 0 && (
+        <ul className="space-y-1.5 mb-3">
+          {sobreFoto.map((p) => (
+            <li key={p.id} className="text-xs leading-relaxed flex gap-2" style={{ color: COLORS.textMuted }}>
+              <span style={{ color: accent }}>·</span>
+              <span>{p.texto}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {hayAlgo && (
+        <div className="mb-3">
+          <PrimaryButton accent={accent} onClick={() => onCorregir(cambios)}>Arreglarlo</PrimaryButton>
+          <p className="text-[11px] mt-1.5" style={{ color: COLORS.textMuted }}>
+            Solo cambia lo que hace falta. Tu foto y tus colores principales no se tocan.
+          </p>
+        </div>
+      )}
+
+      {/* Apartado 8 — el modo automático, opcional y apagado de fábrica. */}
+      <button
+        onClick={() => onSetAuto(!auto)}
+        className="w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2"
+        style={{ background: COLORS.surface2, border: `1px solid ${auto ? accent : COLORS.border}` }}
+        aria-pressed={auto}
+      >
+        <span className="text-xs font-semibold text-left" style={{ color: COLORS.text }}>
+          Arreglar la legibilidad sola
+          <span className="block text-[11px] font-normal" style={{ color: COLORS.textMuted }}>
+            {auto ? 'Activado: se corrige sin preguntar.' : 'Desactivado: solo te aviso, decides tú.'}
+          </span>
+        </span>
+        <span
+          className="rounded-full flex-shrink-0"
+          style={{ width: 34, height: 20, background: auto ? accent : COLORS.border, position: 'relative' }}
+        >
+          <span className="rounded-full absolute" style={{ width: 16, height: 16, top: 2, left: auto ? 16 : 2, background: COLORS.surface }} />
+        </span>
+      </button>
+    </Card>
+  );
+}
+
 export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFondo, analisisFoto, onAnalisisFoto }) {
   const [abierto, setAbierto] = useState(false);
   const disponibles = TIPOS_FONDO.filter((t) => t.implementado);
@@ -1527,6 +1623,21 @@ export default function SettingsView({
               fondoActivo={!!apariencia.fondo?.activo}
               accent={accent}
               onCambiar={onUpdateTemaPersonalizado}
+            />
+
+            <BloqueLegibilidadAuto
+              colors={COLORS}
+              fondo={apariencia.fondo}
+              analisis={apariencia.fondo?.analisis}
+              tema={temaPersonalizado}
+              accent={accent}
+              auto={!!apariencia.legibilidadAuto}
+              onSetAuto={(v) => onUpdateApariencia({ ...apariencia, legibilidadAuto: v })}
+              onCorregir={(c) => {
+                if (c.accent) onUpdateAccent(c.accent);
+                if (Object.keys(c.tema).length) onUpdateTemaPersonalizado({ ...temaPersonalizado, ...c.tema });
+                if (Object.keys(c.fondo).length) onUpdateApariencia({ ...apariencia, fondo: { ...apariencia.fondo, ...c.fondo } });
+              }}
             />
 
             <BloquePresets

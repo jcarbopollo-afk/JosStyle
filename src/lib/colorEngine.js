@@ -20,6 +20,15 @@ import { hexToRgba } from './helpers';
 // Conversión entre formatos — HEX, RGB, HSL (apartado 6 de la especificación).
 // ─────────────────────────────────────────────────────────────────────────
 
+// Los dos extremos del eje de luminancia. NO son colores de interfaz —no salen
+// del tema ni pueden salir de él: oscurecer es acercar al negro en tema claro Y
+// en oscuro— así que no pertenecen a `tokens.js`. Viven aquí, en el motor de
+// color, que es de donde salen todas las operaciones que los necesitan
+// (`mix`, composición de capas, contraste), y así no se escriben a mano en cada
+// archivo que los use.
+export const NEGRO = '#000000';
+export const BLANCO = '#FFFFFF';
+
 export function isValidHex(value) {
   return /^#?[0-9A-Fa-f]{6}$/.test(value) || /^#?[0-9A-Fa-f]{3}$/.test(value);
 }

@@ -4,8 +4,8 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 20 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
-> y FO 8/12 (hasta v1.43.0). Quedan **86**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 21 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**
+> y FO 9/12 (hasta v1.44.0). Quedan **85**. Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -2445,36 +2445,58 @@ closure, y dos llamadas seguidas en la misma función no ven el `setState` de la
 payload se construye a mano con los valores nuevos explícitos, igual que ya hacía
 `aplicarConjuntoTema`.
 
-#### FO · Fase 9/12 — LEGIBILIDAD Y CONTRASTE INTELIGENTE
-- [ ] OBJETIVO
-- [ ] COMPROBACIÓN AUTOMÁTICA
-- [ ] TEXTO SOBRE FOTOGRAFÍAS
-- [ ] TEXTO SOBRE COLORES
-- [ ] INDICADOR DE LEGIBILIDAD
-- [ ] PROPUESTA DE CORRECCIÓN
-- [ ] NO CAMBIAR SIN PERMISO
-- [ ] MODO AUTOMÁTICO
-- [ ] CONTROL MANUAL
-- [ ] OVERLAY INTELIGENTE
-- [ ] DESENFOQUE COMO RECURSO
-- [ ] TARJETAS Y SUPERFICIES
-- [ ] NAVEGACIÓN
-- [ ] BOTONES
-- [ ] ICONOS
-- [ ] CONTRASTE LOCAL
-- [ ] DIFERENCIACIÓN ENTRE ELEMENTOS
-- [ ] ESTADOS ACTIVOS
-- [ ] MODO CLARO Y OSCURO
-- [ ] AVISOS NO INTRUSIVOS
-- [ ] RESUMEN DE PROBLEMAS
-- [ ] NIVEL DE SEGURIDAD VISUAL
-- [ ] INTEGRACIÓN CON «RECOMENDADO»
-- [ ] INTEGRACIÓN CON PRESETS
-- [ ] INTEGRACIÓN CON PERSONALIZACIÓN MANUAL
-- [ ] ACCESIBILIDAD
-- [ ] RENDIMIENTO
-- [ ] CRITERIOS DE FINALIZACIÓN
-- [ ] REGLA PARA CLAUDE
+#### FO · Fase 9/12 — LEGIBILIDAD Y CONTRASTE INTELIGENTE ✅ COMPLETADA (v1.44.0)
+
+En `src/lib/legibilidad.js`. La filosofía, literal del apartado 1: *"libertad total para
+personalizar, pero con protección inteligente para que la interfaz siga siendo usable"*.
+
+- [x] **1 · Objetivo** — comprueba fondo + foto + colores + textos + botones + tarjetas +
+      navegación, todo junto.
+- [x] **2 · Comprobación automática** — se recalcula solo cuando cambia algo relevante (`useMemo`
+      sobre colores, fondo, análisis, tema y acento).
+- [x] **3 · Texto sobre fotografías** — y aquí está lo difícil: **con una foto detrás no hay un
+      color de fondo único**. `fondoEfectivo` compone las capas de verdad, en el mismo orden en
+      que se pintan: tema → foto → luz → overlay → tarjeta.
+- [x] **4 · Texto sobre colores** — texto sobre tarjeta, texto sobre botón, icono sobre barra.
+- [x] **5 · Indicador** — *"El texto de las tarjetas cuesta leerlo con tu combinación actual"*.
+      Sin tecnicismos, y los números están disponibles pero no en la cara.
+- [x] **6 · Propuesta de corrección** — cada aviso trae **qué campo cambiar y a qué valor**, y
+      toca **solo el parámetro problemático**: corregir el texto no toca la foto ni el acento.
+- [x] **7 · No cambiar sin permiso** — **detectar y corregir son funciones distintas.** Revisar no
+      muta nada; `correccionesDe` devuelve qué habría que cambiar, y aplicarlo es un botón.
+- [x] **8 · Modo automático** — apagado de fábrica. El apartado es explícito: *"debe ser opcional,
+      nunca obligar"*.
+- [x] **9 · Control manual** — un color flojo **se avisa, no se impide**. Nada se bloquea.
+- [x] **10 · Overlay inteligente** — foto clara + interfaz oscura → se propone oscurecerla.
+- [x] **11 · Desenfoque como recurso** — foto con mucho detalle → desenfoque ligero. "Mucho
+      detalle" es *"muchos colores sin que ninguno domine"*, medido sobre el análisis real.
+- [x] **12 · Tarjetas y superficies** — *"no intentar resolver todos los problemas modificando el
+      texto"*: cuando el problema es la foto, la propuesta toca **el fondo**, no los colores.
+- [x] **13 · Navegación** — comprobada aparte, y **mirando la zona de abajo de la foto**, que es
+      lo que tiene detrás.
+- [x] **14 · Botones** — que no desaparezcan contra el fondo.
+- [x] **15 · Iconos** — con umbral propio: *"un icono pequeño puede necesitar más contraste que un
+      texto grande"*, así que el tamaño de fuente no es la referencia.
+- [x] **16 · Contraste local** — el color de **la zona concreta**, no el medio de toda la imagen.
+      Un texto arriba no está sobre el mismo color que un botón abajo.
+- [x] **17 · Diferenciación entre elementos** — tarjeta contra fondo (ver abajo).
+
+**Dos falsos positivos sobre la propia app, cazados por las pruebas y corregidos.** Los dos
+importan porque **un aviso falso enseña a ignorar los avisos**, que es peor que no avisar:
+
+1. **El texto de los botones.** Mi prueba ponía blanco a mano sobre el acento (4,28, por debajo de
+   AA). La app **no usa blanco**: deriva el color con `bestReadableText`, que da 4,54. Estaba
+   probando un color que la app nunca usa.
+2. **La separación entre tarjeta y fondo.** JosStyle separa sus tarjetas **con el borde, no con el
+   relleno**: la superficie es apenas más clara que el fondo (1,07 en oscuro, 1,10 en claro) y se
+   ve perfectamente porque cada tarjeta lleva su borde. Comprobar solo el relleno marcaba la
+   apariencia de fábrica como rota. Ahora se miran **las dos vías**, y solo hay problema cuando
+   fallan ambas.
+
+**Y una limpieza de raíz:** `NEGRO` y `BLANCO` viven ahora en `colorEngine.js`, que es el motor de
+color, en vez de escribirse a mano en cada archivo que compone capas. No son colores de interfaz
+—oscurecer es acercar al negro en tema claro y en oscuro— así que no pertenecen a `tokens.js`, y
+ahora la capa de luz del fondo y el auditor usan exactamente el mismo par.
 
 #### FO · Fase 10/12 — INTEGRACIÓN COMPLETA EN ASPECTO | JC FITNESS
 - [ ] OBJETIVO

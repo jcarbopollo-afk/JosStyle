@@ -31,14 +31,14 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
-import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets } from '../src/views/SettingsView.jsx';
+import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
   DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION,
   DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO,
   DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION,
-  DEFAULT_NOTIFICACIONES, DEFAULT_CALENDARIO, DEFAULT_APARIENCIA, DEFAULT_TEMA_PERSONALIZADO, ACCENTS,
+  DEFAULT_NOTIFICACIONES, DEFAULT_CALENDARIO, DEFAULT_APARIENCIA, DEFAULT_TEMA_PERSONALIZADO, ACCENTS, COLORS,
 } from '../src/tokens.js';
 import { DEFAULT_PAPELERA } from '../src/lib/papelera.js';
 import { DEFAULT_ARMARIO, crearPrenda, crearOutfit, crearUso } from '../src/lib/armario.js';
@@ -262,6 +262,23 @@ const CASOS = [
   ['SettingsView · Presets solo oficiales', BloquePresets, () => ({
     presets: [], apariencia: DEFAULT_APARIENCIA, accent, temaPersonalizado: DEFAULT_TEMA_PERSONALIZADO,
     onGuardar: noop, onCambiarPresets: noop, onAplicar: noop,
+  })],
+  // FO Fase 9 — legibilidad: el caso limpio (sin avisos) y el caso roto (texto
+  // casi del color de la tarjeta, sobre una foto clara), que es donde se pintan
+  // los avisos y el botón de arreglarlo.
+  ['SettingsView · Legibilidad auto', BloqueLegibilidadAuto, () => ({
+    colors: COLORS, fondo: DEFAULT_APARIENCIA.fondo, analisis: null,
+    tema: DEFAULT_TEMA_PERSONALIZADO, accent, auto: false, onSetAuto: noop, onCorregir: noop,
+  })],
+  ['SettingsView · Legibilidad con avisos', BloqueLegibilidadAuto, () => ({
+    colors: { ...COLORS, text: COLORS.surface, iconActive: COLORS.surface },
+    fondo: { ...DEFAULT_APARIENCIA.fondo, tipo: 'foto', activo: true, foto: { ...DEFAULT_APARIENCIA.fondo.foto, id: 'f1', path: 'u/1.jpg' } },
+    analisis: {
+      fotoId: 'f1', monocromatica: false, suficiente: true, medio: '#EFEADF',
+      colores: [{ hex: '#EFEADF', peso: 0.7, zona: 'centro', neutro: false, saturacionValor: 0.1, luminosidad: 0.9 }],
+      dominante: { hex: '#EFEADF', peso: 0.7, zona: 'centro' },
+    },
+    tema: DEFAULT_TEMA_PERSONALIZADO, accent, auto: true, onSetAuto: noop, onCorregir: noop,
   })],
   // FO Fase 3 — el editor, con una foto ya muy ajustada: las tres capas (foto, luz
   // y overlay) tienen que pintarse a la vez sin romperse.

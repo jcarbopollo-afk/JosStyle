@@ -29,7 +29,7 @@
 // Declararlo hoy, vacío, cuesta cero y evita eso. Es la misma decisión que se
 // tomó con las 21 propiedades de la prenda en AR Fase 1.
 // ---------------------------------------------------------------------------
-import { isValidHex, normalizeHex } from './colorEngine';
+import { isValidHex, normalizeHex, NEGRO, BLANCO } from './colorEngine';
 
 /* ===========================================================================
    TIPOS DE FONDO (apartado 3)
@@ -393,13 +393,12 @@ export function estilosDeVelo(resuelto, colors) {
 export function estilosDeLuminosidad(resuelto) {
   if (!resuelto || resuelto.tipo === 'ninguno' || !resuelto.luminosidad) return null;
   const l = resuelto.luminosidad;
-  // `black` y `white`, no un hex. No son colores de interfaz —no salen del tema ni
-  // pueden salir de él: oscurecer es acercar al negro en tema claro Y en oscuro— así
-  // que no pertenecen a `tokens.js`. Usar las palabras clave de CSS en vez de
-  // `#000000`/`#FFFFFF` lo deja claro al leerlo y respeta la regla 2 sin necesidad
-  // de añadir una excepción al comprobador, que es lo que la debilitaría.
+  // `NEGRO`/`BLANCO` de `colorEngine`, no un hex escrito aquí. No son colores de
+  // interfaz —oscurecer es acercar al negro en tema claro Y en oscuro— así que no
+  // pertenecen a `tokens.js`; viven en el motor de color, y así el mismo par lo
+  // usan esta capa y el auditor de legibilidad sin escribirlo dos veces.
   return {
-    background: l < 0 ? 'black' : 'white',
+    background: l < 0 ? NEGRO : BLANCO,
     opacity: Math.abs(l) / 100,
   };
 }

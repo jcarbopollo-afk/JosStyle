@@ -257,6 +257,11 @@ export const DEFAULT_APARIENCIA = {
   // en el mismo `saveData` y se resuelve en el mismo sitio. El modelo entero está en
   // `src/lib/fondos.js`; aquí solo se declara para que exista desde el arranque.
   fondo: { ...DEFAULT_FONDO },
+  // FO Fase 9, apartado 8 — "Legibilidad automática". APAGADA por defecto, y el
+  // apartado es explícito: "esta opción debe ser opcional, nunca obligar". Con
+  // ella apagada el sistema DETECTA y AVISA, pero no cambia nada sin permiso
+  // (apartado 7).
+  legibilidadAuto: false,
 };
 
 // Fase A7 — apartado 86: paletas predefinidas. Con la arquitectura real de la app (un tema

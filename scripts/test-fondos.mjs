@@ -393,9 +393,9 @@ const FOTO_H = datosDeFoto({ path: 'u/h.jpg', ancho: 1920, alto: 1080 });   // h
 {
   comprobar('Sin luminosidad no se pinta esa capa', estilosDeLuminosidad(resolverFondo(aplicarFoto(DEFAULT_FONDO, FOTO_H), { urlFoto: 'u' })) === null);
   const osc = estilosDeLuminosidad(resolverFondo(ajustarFondo(aplicarFoto(DEFAULT_FONDO, FOTO_H), { luminosidad: -60 }), { urlFoto: 'u' }));
-  comprobar('Negativo oscurece con negro', osc.background === 'black' && Math.abs(osc.opacity - 0.6) < 0.001);
+  comprobar('Negativo oscurece con negro', osc.background === '#000000' && Math.abs(osc.opacity - 0.6) < 0.001);
   const acl = estilosDeLuminosidad(resolverFondo(ajustarFondo(aplicarFoto(DEFAULT_FONDO, FOTO_H), { luminosidad: 40 }), { urlFoto: 'u' }));
-  comprobar('Positivo aclara con blanco', acl.background === 'white' && Math.abs(acl.opacity - 0.4) < 0.001);
+  comprobar('Positivo aclara con blanco', acl.background === '#FFFFFF' && Math.abs(acl.opacity - 0.4) < 0.001);
   // Apartado 10: el aclarado tiene menos recorrido, para no matar el contraste.
   comprobar('El aclarado llega menos lejos que el oscurecido',
     normalizarFondo({ luminosidad: 999 }).luminosidad < Math.abs(normalizarFondo({ luminosidad: -999 }).luminosidad));

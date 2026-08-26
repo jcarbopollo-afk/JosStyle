@@ -116,6 +116,12 @@ else
   fallo "Fallan pruebas de los presets"; grep '✗' /tmp/jc_pre.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-legibilidad.mjs >/tmp/jc_leg.log 2>&1; then
+  ok "Legibilidad y contraste (FO F9) — $(grep -c '✓' /tmp/jc_leg.log) comprobaciones"
+else
+  fallo "Fallan pruebas de legibilidad"; grep '✗' /tmp/jc_leg.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

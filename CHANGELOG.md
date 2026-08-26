@@ -1,5 +1,52 @@
 # CHANGELOG.md
 
+## Entrega 2 · FO Fase 9 — Legibilidad y contraste inteligente (v1.44.0)
+
+*"Libertad total para personalizar, pero con protección inteligente para que la interfaz siga
+siendo usable."* Es la frase del apartado 1 y gobierna toda la fase.
+
+### El problema difícil: ¿contra qué se mide?
+Con una fotografía de fondo **no hay un color de fondo único**. Lo que hay detrás de un texto es la
+tarjeta translúcida encima de la foto encima del tema. Medir contra `COLORS.bg` daría un número que
+no describe lo que se ve — y un aviso falso enseña a ignorar los avisos.
+
+Así que el fondo efectivo **se compone**, capa a capa, en el mismo orden en que se pinta: tema →
+foto → luz → overlay → tarjeta. Y con el análisis de la Fase 5 se mide **por zona**: un texto
+arriba no está sobre el mismo color que un botón abajo.
+
+### Detectar no es corregir
+Revisar no cambia nada. Los avisos traen **qué campo cambiar y a qué valor**, y aplicarlo es un
+botón. El modo automático existe, pero **apagado de fábrica**: el apartado 8 dice "debe ser
+opcional, nunca obligar".
+
+Y nada se bloquea: un color flojo **se avisa, no se impide**.
+
+### Cuando el problema es la foto, la solución no es cambiar el texto
+El apartado 12 lo dice. Foto clara con interfaz oscura → se propone oscurecer **la foto**. Foto con
+mucho detalle → un desenfoque ligero. Los colores se quedan en paz.
+
+Y si ya lo habías resuelto —ya la habías oscurecido, ya tenías overlay, ya la habías desenfocado—
+no se insiste.
+
+### Dos falsos positivos sobre la propia app, cazados por las pruebas
+1. **El texto de los botones.** La prueba ponía blanco a mano (4,28, por debajo de AA). La app no
+   usa blanco: lo deriva con `bestReadableText`, que da 4,54. Estaba probando un color que la app
+   nunca usa.
+2. **La separación entre tarjeta y fondo.** JosStyle separa sus tarjetas **con el borde, no con el
+   relleno** — la superficie es apenas más clara que el fondo (1,07) y se ve perfectamente porque
+   cada tarjeta lleva su borde. Comprobar solo el relleno marcaba la apariencia de fábrica como
+   rota. Ahora se miran las dos vías, y solo hay problema cuando fallan ambas.
+
+### Y una limpieza de raíz
+`NEGRO` y `BLANCO` viven ahora en `colorEngine.js` en vez de escribirse a mano en cada archivo que
+compone capas. No son colores de interfaz —oscurecer es acercar al negro en tema claro y en
+oscuro— así que no pertenecen a `tokens.js`.
+
+### Verificación
+**1332 comprobaciones en verde** (antes 1277): 47 de legibilidad y 120 casos de renderizado.
+
+---
+
 ## Entrega 2 · FO Fase 8 — Presets de apariencia (v1.43.0)
 
 Guardar tus colores **y tu fondo juntos**, y cambiar entre ellos de un toque.
