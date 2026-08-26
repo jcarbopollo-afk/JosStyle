@@ -178,8 +178,10 @@ escribir código.
 
 | v1.58.0 | **HT F6** | El motor de contexto temporal y HOY: ahora, siguiente, pendiente y mañana. **No guarda una copia de nada** (apartado 102) y **el 90 % del trabajo fue no volver a construir** lo que el proyecto ya tenía |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 6/12 y SO por
-1/5. Quedan **71** fases de la Entrega 2: HT (6), SO (4) y EH (61).
+| v1.59.0 | **HT F7** | La mochila inteligente: día → actividades → materiales → mochila, derivada entera. **Lo que añades a mano no se borra solo**, una libreta es una libreta pero dos hojas y tres son cinco, y **sin castigo** cuando falta algo |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12) y RA (4/4) cerrados**, HT va por 7/12 y SO por
+1/5. Quedan **70** fases de la Entrega 2: HT (5), SO (4) y EH (61).
 
 ✅ **C-23 resuelta a medias:** Josué pasó el texto que faltaba de la Fase 1 del Sonido (v1.54.0).
 ⏸ **Sigue pendiente lo de los archivos de audio**, que él dará *"cuando la web ya tenga todos los

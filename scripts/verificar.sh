@@ -188,6 +188,12 @@ else
   fallo "Falla el motor de contexto temporal"; grep '✗' /tmp/jc_horario6.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-mochila.mjs >/tmp/jc_horario7.log 2>&1; then
+  ok "Mochila inteligente (HT F7) — $(grep -c '✓' /tmp/jc_horario7.log) comprobaciones"
+else
+  fallo "Falla la mochila inteligente"; grep '✗' /tmp/jc_horario7.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else

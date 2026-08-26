@@ -1,5 +1,89 @@
 # CHANGELOG.md
 
+## Entrega 2 · HT Fase 7 — Mochila inteligente, materiales y preparación automática (v1.59.0)
+
+### La mochila es una consecuencia, no una lista
+*"Día → actividades → materiales → excepciones → mochila."*
+
+Nada de lo que sale en la mochila se ha escrito a mano: sale del horario de ese día y de los
+materiales de cada asignatura. Lo único que se guarda es lo que **no se puede deducir**: qué has
+metido ya, qué has añadido tú, en qué estado está cada cosa y dónde la tienes.
+
+Se ve dentro de HOY, con dos tarjetas: **la de hoy** y **la de mañana**, que es la que de verdad se
+prepara por la noche. Y la de mañana ya existe hoy, sin esperar a las 00:00, porque no se genera:
+se deriva.
+
+### Lo que añades a mano no se borra solo
+Es la regla que se rompe sin que nadie se entere. Si escribes "llevar bata igualmente", el recálculo
+de mañana **no puede** hacerla desaparecer (apartado 57).
+
+Por eso cada elemento sabe de dónde viene (apartado 58) y el motor solo toca los automáticos. Tiene
+su prueba: se añade a mano, se recalcula entero y sigue ahí.
+
+### Una libreta es una libreta, pero dos hojas y tres son cinco
+Dos asignaturas que piden libreta dan **1 libreta, para Biología y Matemáticas** — no dos entradas
+iguales (apartado 60).
+
+Pero con los **consumibles** es al revés: dos hojas y tres hojas **son cinco hojas** (apartado 61).
+El inventario es quien sabe qué es consumible, así que se lo dice al agrupador de HT F2 en vez de
+escribir un segundo agrupador.
+
+### Cada cosa dice por qué está
+Tocar la bata explica: *"la necesitas porque tienes Biología"*. Y si es una dependencia, *"va con el
+iPad"*; si es de la base, *"siempre lo llevas"*; si la pusiste tú, lo dice.
+
+Una checklist que no se explica es una checklist que se ignora.
+
+### "Meter todo" no marca lo que no tienes
+Si la bata está prestada o perdida, "Meter todo" **la salta**. Marcarla sería mentira, y la mochila
+dejaría de servir justo el día que importa.
+
+En su lugar sale tachada, con el motivo: *"necesitas la bata y la tiene Jorge"* (apartado 38).
+Devolverla borra ese nombre — si no, seguiría diciendo "la tiene Jorge" para siempre.
+
+### Kits, dependencias y reglas
+- **Dependencias** (96-97): iPad → cargador → cable, resuelto en cadena. ⚠️ Y un ciclo (A necesita B
+  y B necesita A) **no cuelga la app**: sin cortarlo, la pantalla se quedaría en blanco.
+- **Reglas** (75-79): tres condiciones — por actividad, por día de la semana, por etiqueta.
+  Deliberadamente simple: un motor con anidamiento sería un lenguaje de programación dentro de una
+  mochila.
+- **Mochila base** (26): estuche, botella, cargador. Lo que va siempre, sin depender del horario.
+
+### Sin castigo
+El apartado 105 se titula exactamente así. Se detecta que faltó algo y **no se riñe**: el mensaje es
+*"pasa"*. Hay una prueba que falla si aparece la palabra "fallo", "mal" o "penalización", y otra que
+comprueba que no hay ni puntos, ni niveles, ni rachas de mochila (D2-02).
+
+### Un bug de datos evitado antes de que pasara
+`normalizarHorarioTop` no conocía `materiales`, `enlacesMaterial`, `mochila` ni las cinco colecciones
+nuevas. Y decenas de funciones devuelven `normalizarHorarioTop(estado)` — cualquiera de ellas habría
+borrado **el material y la mochila enteros** en el siguiente guardado.
+
+Es el mismo fallo de `visible` (HT F2), `archivado` (HT F4) y `grupos` (HT F5), pero con muchos más
+datos por delante. Esta vez se vio al añadir los campos, no al perderlos.
+
+Y otro: el campo se llama `metido` desde HT F2. Inventar aquí un `preparado` habría dado un botón
+que se olvida al recargar. Se reutiliza el que ya existía.
+
+### Lo que no se ha construido, y por qué
+- **Recordatorio a las 21:00** (47-49): es una notificación, y eso es la Fase 10. Lo que sí está es
+  **qué** diría: el aviso con los nombres de lo que falta.
+- **Conexión con Economía** (65): la lista de compra dice qué falta; crear un gasto por una libreta
+  que no se ha comprado sería inventarse un movimiento.
+- **IA para configurar reglas** (80): la IA nunca se dispara sola (regla 7), y esto es Fase 9.
+- **Widget y pantalla de bloqueo** (111-112): la propia especificación los llama "futuro", y una PWA
+  en iOS no puede hacerlos.
+
+### Verificación
+**2772 comprobaciones y 10 reglas invariantes en verde** (antes 2679), 85 de la mochila y 276 casos
+de renderizado. `package.json` → **v1.59.0**.
+
+⚠️ Sin probar: la pantalla, los gestos y el recordatorio de las 21:00. Como todo desde R1.
+
+⚠️ **Ningún SQL nuevo.** Siguen los dos bloques pendientes de siempre: bucket `armario` (AR F1) y
+bucket `fondos` (FO F2).
+
+
 ## Entrega 2 · HT Fase 6 — Calendario, agenda y sistema HOY (v1.58.0)
 
 ### HOY es ahora la primera pantalla del horario

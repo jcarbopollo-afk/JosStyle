@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 35 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 6/12** y **SO 1/5** (hasta v1.58.0). Quedan
-> **71**: HT (6), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 36 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **HT 7/12** y **SO 1/5** (hasta v1.59.0). Quedan
+> **70**: HT (5), SO (4) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
@@ -3708,143 +3708,72 @@ del Dashboard. Una segunda puntuación daría dos números distintos para el mis
 **Lo que sigue sin estar probado, y hay que decirlo:** el contador que baja solo en pantalla, el
 aspecto en un iPhone y el recorrido tocando. Como todo desde R1.
 
-#### HT · Fase 7/12 — MOCHILA INTELIGENTE + MATERIALES + PREPARACIÓN AUTOMÁTICA
-- [ ] OBJETIVO PRINCIPAL
-- [ ] LA MOCHILA COMO ENTIDAD
-- [ ] ELEMENTO DE MOCHILA
-- [ ] TIPOS DE MATERIAL
-- [ ] MATERIAL PERSONALIZADO
-- [ ] MATERIAL ASOCIADO A ACTIVIDAD
-- [ ] MATERIAL OPCIONAL
-- [ ] MATERIAL TEMPORAL
-- [ ] MATERIAL POR FECHA
-- [ ] MATERIAL POR EVENTO
-- [ ] MATERIAL POR EXAMEN
-- [ ] MATERIAL DE ENTRENAMIENTO
-- [ ] MATERIAL DE ENTRENAMIENTO ESPECÍFICO
-- [ ] MOCHILA DE HOY
-- [ ] MOCHILA DE MAÑANA
-- [ ] PREPARACIÓN
-- [ ] MARCAR COMO PREPARADO
-- [ ] PROGRESO DE MOCHILA
-- [ ] MOCHILA COMPLETA
-- [ ] MOCHILA INCOMPLETA
-- [ ] DIFERENCIAR OBLIGATORIO
-- [ ] PREPARAR TODO
-- [ ] DESMARCAR TODO
-- [ ] ELEMENTOS PERSISTENTES
-- [ ] ELEMENTOS NO PERSISTENTES
-- [ ] MOCHILA BASE
-- [ ] MOCHILA ESCOLAR
-- [ ] MOCHILA DEPORTIVA
-- [ ] OTRAS MOCHILAS
-- [ ] SELECCIÓN DE MOCHILA
-- [ ] MATERIAL COMPARTIDO
-- [ ] INVENTARIO
-- [ ] CANTIDAD DISPONIBLE
-- [ ] MATERIAL PRESTADO
-- [ ] MATERIAL PERDIDO
-- [ ] MATERIAL ROTO
-- [ ] DISPONIBILIDAD
-- [ ] ALERTA DE DISPONIBILIDAD
-- [ ] COMPARTIR MATERIAL
-- [ ] UBICACIÓN DEL MATERIAL
-- [ ] UBICACIONES DE ALMACENAMIENTO
-- [ ] CAMBIO DE UBICACIÓN
-- [ ] HISTORIAL
-- [ ] PREPARACIÓN AUTOMÁTICA
-- [ ] GENERACIÓN ANTICIPADA
-- [ ] HORA DE PREPARACIÓN
-- [ ] RECORDATORIO
-- [ ] RECORDATORIO INTELIGENTE
-- [ ] RECORDATORIO CON FALTANTES
-- [ ] PRIORIDAD DEL MATERIAL
-- [ ] MATERIAL CRÍTICO
-- [ ] MATERIAL RECOMENDADO
-- [ ] EXCEPCIONES
-- [ ] DÍA ESPECIAL
-- [ ] CAMBIO DE HORARIO
-- [ ] CANCELACIÓN
-- [ ] NO BORRAR MATERIAL MANUAL
-- [ ] ORIGEN DEL ELEMENTO
-- [ ] EXPLICACIÓN
-- [ ] MATERIAL DUPLICADO
-- [ ] CANTIDADES INTELIGENTES
-- [ ] CONSUMIBLES
-- [ ] INVENTARIO BAJO
-- [ ] LISTA DE COMPRA
-- [ ] CONEXIÓN CON ECONOMÍA
-- [ ] CONEXIÓN CON TAREAS
-- [ ] CONEXIÓN CON RECORDATORIOS
-- [ ] MOCHILA + HOY
-- [ ] MOCHILA + CALENDARIO
-- [ ] MOCHILA + SEMANA
-- [ ] ESTADO DE PREPARACIÓN SEMANAL
-- [ ] PREPARACIÓN DE VARIOS DÍAS
-- [ ] PLANIFICACIÓN ANTICIPADA
-- [ ] MOCHILA POR PERFIL
-- [ ] REGLAS
-- [ ] REGLAS CON CONDICIONES
-- [ ] REGLAS TEMPORALES
-- [ ] REGLAS POR DÍA
-- [ ] REGLAS POR UBICACIÓN
-- [ ] IA PARA CONFIGURAR REGLAS
-- [ ] EXPLICABILIDAD
-- [ ] IA PARA DETECTAR PATRONES
-- [ ] PREDICCIÓN
-- [ ] NIVELES DE CERTEZA
-- [ ] MOCHILA MANUAL + AUTOMÁTICA
-- [ ] EVITAR SOBRESCRITURA
-- [ ] BLOQUEO MANUAL
-- [ ] BLOQUEO TEMPORAL
-- [ ] REGLA GLOBAL
-- [ ] PREPARACIÓN FÍSICA
-- [ ] ESCÁNER FUTURO
-- [ ] FOTO DEL MATERIAL
-- [ ] RECONOCIMIENTO VISUAL FUTURO
-- [ ] MATERIAL DIGITAL
-- [ ] DISPOSITIVOS
-- [ ] CARGADORES
-- [ ] DEPENDENCIAS
-- [ ] KIT
-- [ ] KIT DEPORTIVO
-- [ ] KIT PERSONALIZADO
-- [ ] PREPARACIÓN POR KITS
-- [ ] HISTORIAL DE PREPARACIÓN
-- [ ] ESTADÍSTICAS
-- [ ] DETECCIÓN DE OLVIDOS
-- [ ] SIN CASTIGO
-- [ ] RACHAS FUTURAS
-- [ ] GAMIFICACIÓN OPCIONAL
-- [ ] DISEÑO VISUAL
-- [ ] INDICADORES
-- [ ] GESTOS MÓVILES
-- [ ] WIDGET FUTURO
-- [ ] LOCK SCREEN FUTURO
-- [ ] CLOUD
-- [ ] OFFLINE
-- [ ] SEGURIDAD
-- [ ] RENDIMIENTO
-- [ ] MOTOR DE CÁLCULO
-- [ ] EJEMPLO REAL COMPLETO
-- [ ] EJEMPLO CON EXCEPCIÓN
-- [ ] EJEMPLO CON MATERIAL NO DISPONIBLE
-- [ ] EJEMPLO CON EXAMEN
-- [ ] EJEMPLO CON IA
-- [ ] CRITERIOS DE ACEPTACIÓN DE LA FASE 7
-- [ ] SIGUIENTE FASE
-- [ ] Arquitectura general	✅
-- [ ] Datos + Cloud + Supabase	✅
-- [ ] Editor visual	✅
-- [ ] Configuración avanzada	✅
-- [ ] Actividades y contexto	✅
-- [ ] Calendario + Agenda + HOY	✅
-- [ ] Mochila inteligente	⏳
-- [ ] Reglas y automatizaciones	⏳
-- [ ] IA del horario	⏳
-- [ ] Notificaciones y contexto	⏳
-- [ ] Integraciones y sincronización avanzada	⏳
-- [ ] Optimización, seguridad y acabado final	⏳
+#### HT · Fase 7/12 — MOCHILA INTELIGENTE + MATERIALES + PREPARACIÓN AUTOMÁTICA ✅ COMPLETADA (v1.59.0)
+
+*"Día → actividades → materiales → excepciones → mochila."* (apartado 1)
+
+El motor está en `src/lib/mochila.js` (85 comprobaciones) y la mochila se ve **dentro de HOY**: la de
+hoy y la de mañana, que es la que de verdad se prepara por la noche.
+
+⚠️ **La cadena entera es una consecuencia, no una lista.** Nada de lo que sale en la mochila se ha
+escrito a mano. Lo único que se guarda es lo que **no se puede deducir**: qué has metido ya, qué has
+añadido tú, en qué estado está cada cosa y dónde la tienes.
+
+- [x] **2-13 · La mochila como entidad y los materiales** — extiende los materiales de HT F2, que ya
+      eran entidades reutilizables. No se creó una segunda lista.
+- [x] **14-20 · Mochila de hoy, de mañana, preparación y progreso** — ⚠️ **con la mochila vacía el
+      porcentaje es 100, no `NaN`**: 0/0 habría hecho desaparecer la barra sin decir nada.
+- [x] **21 · Diferenciar obligatorio** — dos listas separadas, porque el apartado lo justifica:
+      *"evita que el usuario confunda recomendaciones con necesidades reales"*.
+- [x] **22-23 · Preparar todo y vaciar** — ⚠️ **"Meter todo" NO marca lo que está perdido o
+      prestado**: sería mentira, y la mochila dejaría de servir justo el día que importa.
+- [x] **24-30 · Mochila base y mochilas múltiples** — colegio, deporte, viaje. La base (estuche,
+      botella, cargador) aparece **siempre**, sin depender del horario.
+- [x] **32-33, 40-42 · Inventario, cantidad y ubicación física** — con `ubicacion` se podrá contestar
+      la pregunta del apartado 40 (*"¿dónde está mi bata?"*), y las ubicaciones ya usadas se ofrecen
+      para no reescribirlas.
+- [x] **34-38 · Prestado, perdido, roto y alerta de disponibilidad** — ⚠️ *"mañana necesitas la
+      calculadora, pero está prestada"*, **diciendo a quién**. Devolverla borra ese nombre: si no,
+      seguiría diciendo "lo tiene Jorge" para siempre.
+- [x] **44-46 · Preparación automática y anticipada** — la mochila de mañana **ya existe hoy**, sin
+      esperar a las 00:00: se deriva, así que no hay nada que generar.
+- [x] **50-52 · Prioridad del material** — imprescindible, obligatorio, recomendado y opcional.
+- [x] **57 · No borrar material manual** — ⚠️ **la regla que se rompe sin que nadie se entere.** Si
+      escribes "llevar bata igualmente", el recálculo de mañana **no puede** hacerla desaparecer. Por
+      eso `manual` se guarda por escrito y el motor solo toca lo automático. Tiene su prueba.
+- [x] **58-59 · Origen y explicación** — ocho orígenes, y **cada cosa dice por qué está**: *"la
+      necesitas porque tienes Biología"*. Una checklist muda se ignora.
+- [x] **60-61 · Material duplicado y cantidades inteligentes** — ⚠️ **dos asignaturas con libreta dan
+      UNA libreta**, pero **dos hojas y tres hojas son cinco hojas**: lo segundo solo pasa con los
+      consumibles, y el inventario es quien sabe cuáles lo son.
+- [x] **62-64 · Consumibles y lista de compra** — lo perdido, lo roto y lo agotado.
+- [x] **68-73 · Mochila + HOY, calendario y semana** — la preparación semanal ve los siete días.
+- [x] **75-79 · Reglas** — tres condiciones (por actividad, por día de la semana, por etiqueta).
+      Deliberadamente simple: un motor con anidamiento sería un lenguaje de programación dentro de
+      una mochila.
+- [x] **94-97, 100-101 · Digital, dispositivos, cargadores, dependencias y kits** — *"iPad → cargador
+      → cable"* se resuelve en cadena. ⚠️ Y **un ciclo no cuelga la app**: A necesita B y B necesita
+      A se corta, porque sin eso la pantalla se quedaría en blanco.
+- [x] **102-104 · Historial, estadísticas y detección de olvidos** — se detecta qué faltó.
+- [x] **105-107 · SIN CASTIGO** — ⚠️ el apartado 105 se titula así. El mensaje es *"pasa"*, y hay una
+      prueba que falla si aparece la palabra "fallo", "mal" o "penalización". Y **ni puntos, ni
+      niveles, ni rachas de mochila** (D2-02), con su propia comprobación.
+- [x] **113-116 · Cloud, offline, seguridad y rendimiento** — resueltos desde HT F2: todo en
+      `app_data`, con RLS y sin `user_id` que falsear.
+- [x] **117-123 · El motor y los criterios de aceptación** — en `scripts/test-mochila.mjs`.
+
+**Lo que NO se ha construido, y por qué (regla 8):**
+
+- [-] **47-49 · Recordatorio a las 21:00** — es una notificación, y las notificaciones son la Fase 10.
+      Lo que sí está es **qué** diría: `progresoMochila` ya devuelve el aviso con los nombres.
+- [-] **65-67 · Conexión con Economía, tareas y recordatorios** — la lista de compra dice qué falta;
+      **crear un gasto** por una libreta que no se ha comprado sería inventarse un movimiento.
+- [-] **80 · IA para configurar reglas** — la IA nunca se dispara sola (regla 7), y esto es Fase 9.
+- [-] **111-112 · Widget y pantalla de bloqueo** — la propia especificación los llama *"futuro"*, y
+      una PWA en iOS no puede hacerlos.
+
+**Lo que sigue sin estar probado, y hay que decirlo:** la pantalla, los gestos y el recordatorio de
+las 21:00 (que es de la Fase 10). Como todo desde R1.
 
 #### HT · Fase 8/12 — MOTOR TEMPORAL + REGLAS + AUTOMATIZACIONES INTELIGENTES
 - [ ] OBJETIVO

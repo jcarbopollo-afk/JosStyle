@@ -239,6 +239,17 @@ export const DEFAULT_HORARIO_TOP = {
   // HT F5 · apartado 64 — agrupar actividades ("Colegio", "Fitness"). El grupo
   // puede dar color a las suyas, y ellas pueden sobrescribirlo.
   grupos: [],
+  // HT F2 y F7 — el material y la mochila. Viven aquí, en la misma clave
+  // `horarioTop` de `app_data`, porque el apartado 51 de F2 obliga a adaptarse
+  // a la arquitectura del proyecto en vez de crear tablas propias.
+  materiales: [],
+  enlacesMaterial: [],
+  mochila: [],
+  mochilas: [],
+  inventario: {},
+  kits: [],
+  dependencias: {},
+  reglas: [],
 };
 
 /* ---------------------------------------------------------------------------
@@ -694,6 +705,20 @@ export function normalizarHorarioTop(guardado) {
     // fallo que ya pasó dos veces (HT F2 con `visible`, HT F4 con `archivado`).
     // La forma la valida `actividades.js`; aquí solo se conserva la lista.
     grupos: (Array.isArray(g.grupos) ? g.grupos : []).filter((x) => x && typeof x === 'object'),
+    // ⚠️ Estas siete se CONSERVAN tal cual: su forma la validan
+    // `horarioDatos.js` (HT F2) y `mochila.js` (HT F7). Si no estuvieran aquí,
+    // cualquier función que devuelva `normalizarHorarioTop(estado)` —y son
+    // muchas— borraría el material y la mochila enteros en el siguiente
+    // guardado. Es el mismo fallo de `visible`, `archivado` y `grupos`, pero
+    // con más datos por delante.
+    materiales: Array.isArray(g.materiales) ? g.materiales : [],
+    enlacesMaterial: Array.isArray(g.enlacesMaterial) ? g.enlacesMaterial : [],
+    mochila: Array.isArray(g.mochila) ? g.mochila : [],
+    mochilas: Array.isArray(g.mochilas) ? g.mochilas : [],
+    inventario: g.inventario && typeof g.inventario === 'object' ? g.inventario : {},
+    kits: Array.isArray(g.kits) ? g.kits : [],
+    dependencias: g.dependencias && typeof g.dependencias === 'object' ? g.dependencias : {},
+    reglas: Array.isArray(g.reglas) ? g.reglas : [],
   };
 }
 

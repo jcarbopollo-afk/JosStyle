@@ -28,6 +28,8 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
+import { mochilaDeFecha, progresoMochila, marcarEstado } from '../src/lib/mochila.js';
+import { crearMaterial, crearEnlaceMaterial } from '../src/lib/horarioDatos.js';
 import { contextoTemporal, opcionesReprogramar } from '../src/lib/hoy.js';
 import { fichaActividad, impactoEliminarActividad, editarActividad, crearActividadUnica } from '../src/lib/actividades.js';
 import { archivarHorario, guardarCiclo, normalizarVisual } from '../src/lib/horarioEstructura.js';
@@ -350,6 +352,44 @@ const CASOS = [
           ],
         };
         return [
+          /* HT Fase 7 — la mochila dentro de HOY. El caso que más importa es el
+             tercero: un material PERDIDO no se puede marcar, y tiene que
+             pintarse tachado con su motivo en vez de desaparecer. */
+          ...(() => {
+            const libreta = crearMaterial({ nombre: 'Libreta', tipo: 'libreta', hoy: HOY });
+            const bata = crearMaterial({ nombre: 'Bata', tipo: 'ropa', hoy: HOY });
+            const act = lleno.actividades[0];
+            const conMaterial = {
+              ...lleno,
+              materiales: [libreta, bata],
+              enlacesMaterial: [
+                crearEnlaceMaterial({ actividadId: act.id, materialId: libreta.id, obligatorio: true }),
+                crearEnlaceMaterial({ actividadId: act.id, materialId: bata.id, obligatorio: false }),
+              ],
+            };
+            const perdida = marcarEstado(conMaterial, bata.id, 'prestado', { prestadoA: 'Jorge' });
+            const paquete = (e, f) => {
+              const m = mochilaDeFecha(e, f);
+              return { mochila: m, progreso: progresoMochila(m) };
+            };
+            const acciones = {
+              marcar: noop, prepararTodo: noop, vaciar: noop, anadir: () => ({ error: null }), quitar: noop,
+              marcarManana: noop, prepararTodoManana: noop, vaciarManana: noop,
+              anadirManana: () => ({ error: null }), quitarManana: noop,
+            };
+            return [
+              ['HoyView · con mochila', HoyView, () => ({
+                ...propsHoy(conMaterial, { productividad: tareas }),
+                mochilaHoy: paquete(conMaterial, HOY), mochilaManana: paquete(conMaterial, addDays(HOY, 1)),
+                accionesMochila: acciones,
+              })],
+              ['HoyView · con material prestado', HoyView, () => ({
+                ...propsHoy(perdida, { productividad: tareas }),
+                mochilaHoy: paquete(perdida, HOY), mochilaManana: paquete(perdida, addDays(HOY, 1)),
+                accionesMochila: acciones,
+              })],
+            ];
+          })(),
           ['HoyView · con clases y pendientes', HoyView, () => propsHoy(lleno, { productividad: tareas })],
           ['HoyView · modo mínimo', HoyView, () => ({ ...propsHoy(lleno, { productividad: tareas }), modo: 'minimo' })],
           // El caso del apartado 69: nada programado. Y el del 39: un choque.

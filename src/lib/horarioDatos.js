@@ -173,6 +173,12 @@ export const DEFAULT_HORARIO_DATOS = {
   materiales: [],
   enlacesMaterial: [],
   mochila: [],
+  // HT F7 — mochilas múltiples, inventario, kits, dependencias y reglas.
+  mochilas: [],
+  inventario: {},
+  kits: [],
+  dependencias: {},
+  reglas: [],
   config: DEFAULT_CONFIG_HORARIO,
 };
 
@@ -275,7 +281,7 @@ export function normalizarItemMochila(guardado) {
   };
 }
 
-export function mochilaDelDia(datos, fecha, { asignaturas = [], soloObligatorio = false } = {}) {
+export function mochilaDelDia(datos, fecha, { asignaturas = [], soloObligatorio = false, consumibles = null } = {}) {
   const d = normalizarDatos(datos);
   const eventos = resolverDia(d, fecha, { asignaturas });
   const guardados = d.mochila.filter((m) => m.fecha === fecha);
@@ -291,7 +297,12 @@ export function mochilaDelDia(datos, fecha, { asignaturas = [], soloObligatorio 
         // "Libreta, para Biología y Matemáticas" — no dos libretas. Es lo que
         // separa una mochila útil de una lista de veinte cosas repetidas.
         previo.para.push(ev.titulo);
-        previo.cantidad = Math.max(previo.cantidad, m.cantidad);
+        // HT F7 · apartado 61 — con los CONSUMIBLES es al revés: dos hojas y
+        // tres hojas SON cinco hojas. `consumibles` lo aporta `mochila.js`,
+        // que es quien tiene el inventario.
+        previo.cantidad = consumibles?.has(m.materialId)
+          ? previo.cantidad + m.cantidad
+          : Math.max(previo.cantidad, m.cantidad);
         previo.obligatorio = previo.obligatorio || m.obligatorio;
       } else {
         porClave.set(clave, {

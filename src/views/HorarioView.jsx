@@ -61,6 +61,10 @@ import {
   eliminarActividadDefinitiva, actividadesOrdenadas, gruposDe as gruposDeActividades,
 } from '../lib/actividades';
 import { contextoTemporal, describirMinutos, opcionesReprogramar, modoHoy } from '../lib/hoy';
+import {
+  mochilaDeFecha, progresoMochila, marcarPreparado, prepararTodo, vaciarPreparacion,
+  anadirAMano, quitarDeMochila,
+} from '../lib/mochila';
 
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
 const fechaCorta = (iso) => iso.split('-').reverse().slice(0, 2).join('/');
@@ -557,6 +561,146 @@ function PanelFranjas({ horario, estado, accent, onAnadir, onEditar, onEliminar 
    LA PANTALLA
    =========================================================================== */
 /* ===========================================================================
+   LA MOCHILA (HT F7 · apartados 14-23, 38, 57, 59 y 108)
+   ===========================================================================
+   *"Día → actividades → materiales → excepciones → mochila."*
+
+   Nada de esta lista se ha escrito a mano: sale del horario de ese día. Lo
+   único que se guarda es qué has metido ya y qué has añadido tú.
+
+   ── LO QUE SE VE, Y POR QUÉ ────────────────────────────────────────────────
+   · **Obligatorio y opcional van separados** (apartado 21): *"esto evita que el
+     usuario confunda recomendaciones con necesidades reales"*.
+   · **Cada cosa dice por qué está** (apartado 59). "Bata — la necesitas porque
+     tienes Biología" se lee de un vistazo; una checklist muda se ignora.
+   · **Lo que no tienes no se puede marcar** (apartado 38): sale tachado y con
+     su motivo, porque marcarlo sería mentira.
+   · **Sin castigo** (apartado 105): si faltó algo se dice qué, sin reproche. */
+function PanelMochila({ mochila, progreso, accent, titulo = 'MOCHILA', onMarcar, onPrepararTodo, onVaciar, onAnadir, onQuitar }) {
+  const [texto, setTexto] = useState('');
+  const [abierto, setAbierto] = useState(null);
+  const [error, setError] = useState('');
+
+  const obligatorios = mochila.elementos.filter((e) => ['critico', 'obligatorio'].includes(e.prioridad));
+  const opcionales = mochila.elementos.filter((e) => !['critico', 'obligatorio'].includes(e.prioridad));
+
+  const fila = (e) => (
+    <div key={e.clave} className="py-1">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => e.disponible && onMarcar?.(e, !e.preparado)}
+          className="flex-shrink-0"
+          disabled={!e.disponible}
+          aria-label={`${e.preparado ? 'Sacar' : 'Meter'} ${e.nombre}`}
+        >
+          <span className="block w-4 h-4 rounded-md flex items-center justify-center"
+            style={{
+              border: `1.5px solid ${e.preparado ? accent : COLORS.border}`,
+              background: e.preparado ? accent : 'transparent',
+              opacity: e.disponible ? 1 : 0.4,
+            }}>
+            {e.preparado && <Check size={10} style={{ color: COLORS.textOnAccent }} />}
+          </span>
+        </button>
+        <button onClick={() => setAbierto(abierto === e.clave ? null : e.clave)} className="flex-1 text-left min-w-0">
+          <span className="text-xs truncate block"
+            style={{ color: e.disponible ? COLORS.text : COLORS.textMuted, textDecoration: e.disponible ? 'none' : 'line-through' }}>
+            {e.cantidad > 1 ? `${e.cantidad} ` : ''}{e.nombre}
+          </span>
+        </button>
+        {!e.disponible && (
+          <span className="text-[10px] flex-shrink-0" style={{ color: COLORS.negative }}>
+            {e.prestadoA ? `lo tiene ${e.prestadoA}` : e.estado}
+          </span>
+        )}
+        {e.origen === 'manual' && onQuitar && (
+          <button onClick={() => onQuitar(e.nombre)} className="p-0.5 flex-shrink-0" aria-label={`Quitar ${e.nombre}`}>
+            <X size={11} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+      </div>
+      {/* Apartado 59 — la explicación, al tocarlo. */}
+      {abierto === e.clave && (
+        <p className="text-[10px] pl-6 mt-0.5" style={{ color: COLORS.textMuted }}>
+          {e.porQueTexto}{e.ubicacion ? ` Está en: ${e.ubicacion}.` : ''}
+        </p>
+      )}
+    </div>
+  );
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <p className="text-[10px] font-semibold tracking-wide" style={{ color: COLORS.textMuted }}>🎒 {titulo}</p>
+        {!progreso.vacia && (
+          <span className="text-[10px]" style={{ color: progreso.completa ? accent : COLORS.textMuted }}>
+            {progreso.preparados}/{progreso.total}
+          </span>
+        )}
+      </div>
+
+      {progreso.vacia ? (
+        <p className="text-[11px]" style={{ color: COLORS.textMuted }}>Nada que llevar ese día.</p>
+      ) : (
+        <>
+          {/* Apartado 18 — la barra. Con la mochila vacía sería 0/0 y
+              desaparecería, por eso el motor devuelve 100 en ese caso. */}
+          <div className="h-1 rounded-full mb-2" style={{ background: COLORS.surface2 }}>
+            <div className="h-1 rounded-full" style={{ width: `${progreso.porcentaje}%`, background: accent }} />
+          </div>
+
+          {obligatorios.length > 0 && (
+            <>
+              <p className="text-[10px] font-semibold mt-1" style={{ color: COLORS.textMuted }}>OBLIGATORIO</p>
+              {obligatorios.map(fila)}
+            </>
+          )}
+          {opcionales.length > 0 && (
+            <>
+              <p className="text-[10px] font-semibold mt-2" style={{ color: COLORS.textMuted }}>OPCIONAL</p>
+              {opcionales.map(fila)}
+            </>
+          )}
+
+          {/* Apartados 20 y 49 — qué falta, dicho con su nombre. */}
+          {progreso.aviso && (
+            <p className="text-[11px] mt-2 flex items-start gap-1" style={{ color: COLORS.negative }}>
+              <AlertTriangle size={10} className="mt-0.5 flex-shrink-0" /> {progreso.aviso}
+            </p>
+          )}
+          {progreso.completa && (
+            <p className="text-[11px] mt-2" style={{ color: accent }}>Lo tienes todo.</p>
+          )}
+
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {onPrepararTodo && !progreso.completa && <Accion icono={Check} label="Meter todo" onClick={onPrepararTodo} />}
+            {onVaciar && progreso.preparados > 0 && <Accion icono={X} label="Vaciar" onClick={onVaciar} />}
+          </div>
+        </>
+      )}
+
+      {/* Apartado 57 — añadir algo a mano, que después no se borra solo. */}
+      {onAnadir && (
+        <div className="flex gap-2 mt-2">
+          <TextInput value={texto} onChange={(e) => { setTexto(e.target.value); setError(''); }} placeholder="Añadir algo más…" />
+          <button
+            onClick={() => {
+              const r = onAnadir(texto);
+              if (r?.error) { setError(r.error); return; }
+              setTexto('');
+            }}
+            className="px-2.5 rounded-xl text-[11px] font-semibold flex-shrink-0"
+            style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}>
+            Añadir
+          </button>
+        </div>
+      )}
+      {error && <p className="text-[11px] mt-1" style={{ color: COLORS.negative }}>{error}</p>}
+    </Card>
+  );
+}
+
+/* ===========================================================================
    HOY (HT F6 · apartados 1-7, 32-36, 65, 69 y 85)
    ===========================================================================
    *"HOY no será simplemente la fecha actual. Será una vista agregadora."*
@@ -577,7 +721,13 @@ function PanelFranjas({ horario, estado, accent, onAnadir, onEditar, onEliminar 
    un `setInterval` de un minuto. Sin él, el número se congela en cuanto la
    pantalla lleva un rato abierta, y decir "empieza en 42 min" cuando empezó
    hace diez es peor que no decir nada. */
-export function HoyView({ contexto, accent, modo = 'completo', onModo, onCompletarTarea, onReprogramar, onAbrirBloque, onIrAFecha, opcionesFecha = [] }) {
+export function HoyView({
+  contexto, accent, modo = 'completo', onModo, onCompletarTarea, onReprogramar,
+  onAbrirBloque, onIrAFecha, opcionesFecha = [],
+  // HT F7 — la mochila de HOY y la de MAÑANA, que es la que de verdad importa
+  // por la noche (apartado 15).
+  mochilaHoy = null, mochilaManana = null, accionesMochila = null,
+}) {
   const { dia, ahora, siguiente: prox, pendientes: pend, libre, conflictos, manana, agenda } = contexto;
   const [reprogramando, setReprogramando] = useState(null);
   const completo = modo === 'completo';
@@ -695,6 +845,15 @@ export function HoyView({ contexto, accent, modo = 'completo', onModo, onComplet
         </Card>
       )}
 
+      {/* HT F7 · apartado 14 — la mochila de hoy. */}
+      {mochilaHoy && !mochilaHoy.progreso.vacia && (
+        <PanelMochila
+          mochila={mochilaHoy.mochila} progreso={mochilaHoy.progreso} accent={accent} titulo="HOY"
+          onMarcar={accionesMochila?.marcar} onPrepararTodo={accionesMochila?.prepararTodo}
+          onVaciar={accionesMochila?.vaciar} onAnadir={accionesMochila?.anadir} onQuitar={accionesMochila?.quitar}
+        />
+      )}
+
       {/* Apartado 69 — un día sin nada NO es una pantalla rota. */}
       {dia.vacio && pend.length === 0 && (
         <Card className="text-center">
@@ -761,12 +920,18 @@ export function HoyView({ contexto, accent, modo = 'completo', onModo, onComplet
               {manana.dia.vacio ? 'Nada programado'
                 : `${manana.dia.actividades} ${plural(manana.dia.actividades, 'actividad', 'actividades')}`}
             </p>
-            {manana.material.length > 0 && (
-              <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
-                🎒 {manana.material.map((m) => m.nombre || m).join(', ')}
-              </p>
-            )}
           </Card>
+
+          {/* HT F7 · apartado 15 — la mochila de MAÑANA, que es la que se
+              prepara por la noche. Sustituye a la línea de material suelta que
+              había en F6: una lista con casillas sirve; una frase, no. */}
+          {mochilaManana && !mochilaManana.progreso.vacia && (
+            <PanelMochila
+              mochila={mochilaManana.mochila} progreso={mochilaManana.progreso} accent={accent} titulo="PARA MAÑANA"
+              onMarcar={accionesMochila?.marcarManana} onPrepararTodo={accionesMochila?.prepararTodoManana}
+              onVaciar={accionesMochila?.vaciarManana} onAnadir={accionesMochila?.anadirManana} onQuitar={accionesMochila?.quitarManana}
+            />
+          )}
         </>
       )}
     </div>
@@ -1254,6 +1419,33 @@ export default function HorarioView({
      cada tarjeta preguntara por su cuenta, acabarían diciendo cosas distintas.
      `minuto` está en las dependencias a propósito: es lo que hace que
      "termina en 23 min" baje solo. */
+  /* HT F7 — la mochila de hoy y la de mañana. Las dos son DERIVADAS: se
+     recalculan al cambiar el estado, así que meter algo desde aquí y verlo
+     marcado son el mismo dato, no dos. */
+  const mochilaHoy = useMemo(() => {
+    const m = mochilaDeFecha(estado, fecha, { asignaturas });
+    return { mochila: m, progreso: progresoMochila(m) };
+  }, [estado, fecha, asignaturas]);
+  const fechaManana = useMemo(() => addDays(fecha, 1), [fecha]);
+  const mochilaManana = useMemo(() => {
+    const m = mochilaDeFecha(estado, fechaManana, { asignaturas });
+    return { mochila: m, progreso: progresoMochila(m) };
+  }, [estado, fechaManana, asignaturas]);
+
+  const accionesMochila = useMemo(() => ({
+    marcar: (el, v) => aplicar(marcarPreparado(estado, fecha, el, v)),
+    prepararTodo: () => aplicar(prepararTodo(estado, fecha, { asignaturas })),
+    vaciar: () => aplicar(vaciarPreparacion(estado, fecha)),
+    anadir: (t) => aplicarResultado(anadirAMano(estado, fecha, t)),
+    quitar: (n) => aplicar(quitarDeMochila(estado, fecha, n)),
+    marcarManana: (el, v) => aplicar(marcarPreparado(estado, fechaManana, el, v)),
+    prepararTodoManana: () => aplicar(prepararTodo(estado, fechaManana, { asignaturas })),
+    vaciarManana: () => aplicar(vaciarPreparacion(estado, fechaManana)),
+    anadirManana: (t) => aplicarResultado(anadirAMano(estado, fechaManana, t)),
+    quitarManana: (n) => aplicar(quitarDeMochila(estado, fechaManana, n)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [estado, fecha, fechaManana, asignaturas]);
+
   const contexto = useMemo(
     () => contextoTemporal(estado, { fecha, hoy, asignaturas, estudios, productividad, calendario, horarioId: activo?.id || null }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1428,6 +1620,7 @@ export default function HorarioView({
           onReprogramar={onReprogramarTarea}
           onAbrirBloque={(ev) => setBloque({ ...ev, id: ev.bloqueId })}
           onIrAFecha={(f) => { setFecha(f); setVista('dia'); }}
+          mochilaHoy={mochilaHoy} mochilaManana={mochilaManana} accionesMochila={accionesMochila}
         />
       )}
 
