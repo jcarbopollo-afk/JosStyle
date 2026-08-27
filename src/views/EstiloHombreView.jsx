@@ -33,7 +33,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Settings, Check, ArrowLeft, Search, X, ChevronUp, ChevronDown, ArrowUpDown, Plus, SlidersHorizontal } from 'lucide-react';
+import { Settings, Check, ArrowLeft, Search, X, ChevronUp, ChevronDown, ArrowUpDown, Plus, SlidersHorizontal, Database, Lock, Pencil } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { Card, PrimaryButton, Switch, TextInput } from '../components/ui';
@@ -52,6 +52,10 @@ import {
   reiniciarAsistente, modificarConfiguracion, loQueYaSabemos, configuracionPendiente,
   resumenAsistente,
 } from '../lib/configuracionInicial';
+import {
+  todosLosDatos, resumenDatos, guardarDato, eliminarDato, antiguedadDato,
+  TEXTO_SIN_DATO, ACCION_ANADIR,
+} from '../lib/datosEstiloHombre';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -399,7 +403,7 @@ export function RetomarConfiguracion({ estado, accent, onCambiar }) {
    ===========================================================================
    *"Este sistema será reutilizado por todo Estilo de hombre"* — por eso es un
    componente aparte y sirve tanto para la primera vez como para después. */
-export function GestionarApartados({ estado, accent, onCambiar, onCerrar }) {
+export function GestionarApartados({ estado, accent, onCambiar, onCerrar, onMisDatos }) {
   const [busqueda, setBusqueda] = useState('');
   const [ficha, setFicha] = useState(null);
   const [pendiente, setPendiente] = useState(null);   // { id, aviso }
@@ -508,19 +512,152 @@ export function GestionarApartados({ estado, accent, onCambiar, onCerrar }) {
       {/* F3, apartado 16 — *"Modificar mi configuración. Pero esto no debe
           borrar datos."* Vuelve al asistente por el paso de la selección, con lo
           que hoy está encendido ya marcado y EN SU ORDEN. */}
-      <button
-        onClick={() => onCambiar?.(modificarConfiguracion(estado))}
-        className="flex items-center gap-1.5 text-[11px] font-semibold mx-auto mt-1"
-        style={{ color: COLORS.textMuted }}
-      >
-        <SlidersHorizontal size={12} /> Modificar mi configuración
-      </button>
+      <div className="flex items-center justify-center gap-4 mt-1">
+        <button
+          onClick={() => onCambiar?.(modificarConfiguracion(estado))}
+          className="flex items-center gap-1.5 text-[11px] font-semibold"
+          style={{ color: COLORS.textMuted }}
+        >
+          <SlidersHorizontal size={12} /> Modificar mi configuración
+        </button>
+        {/* F3 apartado 13 y F4 apartado 8 — *"No queremos que las respuestas
+            iniciales queden bloqueadas para siempre."* */}
+        {onMisDatos && (
+          <button
+            onClick={onMisDatos}
+            className="flex items-center gap-1.5 text-[11px] font-semibold"
+            style={{ color: COLORS.textMuted }}
+          >
+            <Database size={12} /> Mis datos
+          </button>
+        )}
+      </div>
 
       <AvisoDesactivar
         aviso={pendiente?.aviso} accent={accent}
         onConfirmar={confirmarApagado} onCancelar={() => setPendiente(null)}
       />
       <FichaModuloEH ficha={ficha} accent={accent} onCerrar={() => setFicha(null)} />
+    </Card>
+  );
+}
+
+/* ===========================================================================
+   MIS DATOS (F3 apartado 13 · F4 completo)
+   ===========================================================================
+   *"Todo dato introducido por el usuario debe poder modificarse posteriormente…
+   Nunca bloquear la información introducida."* (F4, apartado 8)
+
+   ⚠️ **Y lo de fuera se edita fuera.** El peso sale con un candado y con el
+   nombre del módulo donde vive: ofrecer aquí un campo para cambiarlo crearía la
+   copia que prohíbe el apartado 3, y dos sitios donde se edita el mismo dato
+   acaban dando dos números distintos.
+
+   ⚠️ **Nunca `undefined` ni `null`** (apartado 15): lo que falta dice *"Todavía
+   no tienes esta información"* y ofrece añadirlo. */
+export function MisDatosEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  const [editando, setEditando] = useState(null);   // { id, valor }
+  const grupos = useMemo(() => todosLosDatos(estado, datosGlobales), [estado, datosGlobales]);
+  const resumen = useMemo(() => resumenDatos(estado, datosGlobales), [estado, datosGlobales]);
+
+  const guardar = () => {
+    if (!editando) return;
+    const { estado: nuevo, error } = guardarDato(estado, editando.id, editando.valor);
+    if (!error) onCambiar?.(nuevo);
+    setEditando(null);
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Mis datos</p>
+      </div>
+      <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>
+        {resumen.globales} de {resumen.globalesTotal} datos ya los tiene JosStyle y no hace falta repetirlos.
+        {resumen.compartidos > 0 && ` ${resumen.compartidos} se comparten entre apartados.`}
+      </p>
+
+      {grupos.map((cat) => (
+        <div key={cat.id} className="mb-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>
+            {cat.icono} {cat.nombre}
+          </p>
+          <div className="space-y-1">
+            {cat.datos.map((d) => {
+              const edad = d.origen === 'propio' ? antiguedadDato(estado, d.id) : { texto: '' };
+              const enEdicion = editando?.id === d.id;
+              return (
+                <div
+                  key={d.id}
+                  className="rounded-2xl p-2.5"
+                  style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-semibold truncate" style={{ color: COLORS.text }}>{d.nombre}</p>
+                      <p className="text-[10px] truncate" style={{ color: d.tiene ? COLORS.textMuted : COLORS.textMuted }}>
+                        {d.tiene ? d.texto : TEXTO_SIN_DATO}
+                      </p>
+                    </div>
+                    {/* ⚠️ Apartado 3 — lo global no se toca desde aquí. */}
+                    {!d.editableAqui ? (
+                      <span className="flex items-center gap-1 flex-shrink-0">
+                        <Lock size={11} style={{ color: COLORS.textMuted }} />
+                        <span className="text-[10px]" style={{ color: COLORS.textMuted }}>{d.donde}</span>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setEditando(enEdicion ? null : { id: d.id, valor: d.tiene ? String(d.valor) : '' })}
+                        className="flex items-center gap-1 flex-shrink-0 text-[10px] font-semibold"
+                        style={{ color: accent }}
+                      >
+                        {d.tiene ? <Pencil size={11} /> : <Plus size={11} />}
+                        {d.tiene ? 'Editar' : ACCION_ANADIR}
+                      </button>
+                    )}
+                  </div>
+
+                  {edad.texto && !enEdicion && (
+                    <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{edad.texto}</p>
+                  )}
+
+                  {enEdicion && (
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <TextInput
+                        value={editando.valor}
+                        onChange={(ev) => setEditando({ ...editando, valor: ev.target.value })}
+                        placeholder={d.nombre}
+                        aria-label={d.nombre}
+                      />
+                      <button
+                        onClick={guardar}
+                        className="rounded-2xl px-3 py-2 text-[11px] font-semibold flex-shrink-0"
+                        style={{ background: accent, color: '#fff' }}
+                      >
+                        Guardar
+                      </button>
+                      {d.tiene && (
+                        <button
+                          onClick={() => { onCambiar?.(eliminarDato(estado, d.id).estado); setEditando(null); }}
+                          className="text-[11px] font-semibold flex-shrink-0"
+                          style={{ color: COLORS.textMuted }}
+                        >
+                          Borrar
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </Card>
   );
 }
@@ -562,6 +699,7 @@ export function Recomendados({ estado, accent, onAnadir }) {
    =========================================================================== */
 export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, onCambiar }) {
   const [gestionando, setGestionando] = useState(false);
+  const [misDatos, setMisDatos] = useState(false);
   const [ordenando, setOrdenando] = useState(false);
   /* ⚠️ **Se calcula UNA sola vez, al entrar en el módulo** (regla 4: los hooks,
      antes de cualquier `return`). Si se recalculara en cada render, pulsar
@@ -592,12 +730,22 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
       : <AsistenteEH estado={estado} accent={accent} datosGlobales={datosGlobales} onCambiar={seguir} />;
   }
 
+  if (misDatos) {
+    return (
+      <MisDatosEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setMisDatos(false)}
+      />
+    );
+  }
+
   if (gestionando) {
     return (
       <GestionarApartados
         estado={estado} accent={accent}
         onCambiar={onCambiar}
         onCerrar={() => setGestionando(false)}
+        onMisDatos={() => { setGestionando(false); setMisDatos(true); }}
       />
     );
   }

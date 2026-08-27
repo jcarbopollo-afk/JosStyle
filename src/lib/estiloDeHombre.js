@@ -132,6 +132,10 @@ export const DEFAULT_ESTILO_HOMBRE = {
   // Solo el paso y la selección en curso: lo que ya sabemos de Josué se LEE de
   // su módulo, no se copia aquí (apartado 7).
   asistente: { paso: null, seleccion: [], estado: 'nunca', empezadoEn: null, terminadoEn: null },
+  // ⚠️ EH F4 — la capa de datos compartidos. Aquí SOLO van los datos propios de
+  // Estilo de Hombre (tipo de piel, tallas, preferencias). Lo que ya existe en
+  // JosStyle —peso, altura, nombre— NO se copia nunca (apartado 3).
+  datos: {},
   version: VERSION_EH,
   creadoEn: null,
 };
@@ -219,6 +223,10 @@ export function normalizarEstiloHombre(guardado) {
     asistente: g.asistente && typeof g.asistente === 'object'
       ? g.asistente
       : { ...DEFAULT_ESTILO_HOMBRE.asistente },
+    // ⚠️ EH F4 — sexto campo. La forma la decide `normalizarDatosEH` en
+    // `datosEstiloHombre.js`; aquí solo se arrastra, para no importar en
+    // círculo. Un campo que el normalizador no conoce se pierde (regla 5).
+    datos: g.datos && typeof g.datos === 'object' && !Array.isArray(g.datos) ? g.datos : {},
     version: VERSION_EH,
     creadoEn: g.creadoEn || null,
   };

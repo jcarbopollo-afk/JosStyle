@@ -1,5 +1,78 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 4/65 — Sistema de datos, perfil y reutilización global (v1.70.0)
+
+### La regla, en una línea
+*"Un dato debe existir una sola vez y poder ser utilizado por todos los módulos que lo necesiten."*
+
+### ⚠️ Una sola función lee, venga el dato de donde venga
+`leerDato()` resuelve igual el **peso** —que vive en Salud— que el **tipo de piel** —que vivirá
+aquí— y devuelve **exactamente la misma forma**. Hay una prueba que compara las claves de las dos
+respuestas.
+
+Eso importa dentro de cuarenta fases: cuando Skincare necesite los dos, **no tendrá que saber cuál
+es cuál**. Si tuviera que distinguirlos, tarde o temprano alguien pediría el peso por el camino
+equivocado, se lo encontraría vacío y crearía "su" copia.
+
+### ⚠️ Y su gemela: guardar un dato global se rechaza
+El apartado 3 lo escribe con un ejemplo: *"No puede existir Perfil → 72 kg, Estilo de hombre → 70
+kg."*
+
+`guardarDato(estado, 'peso', 70)` **no guarda nada**, y no falla en silencio: devuelve un error con
+**el sitio donde sí se edita**, para que la pantalla pueda mandar a Josué allí. Hay una prueba que lo
+intenta y comprueba que el peso sigue siendo el 73 de Salud y que no se ha creado ninguna copia.
+
+Lo mismo con borrar (apartado 12): un dato propio se elimina, uno de JosStyle no se toca desde aquí.
+
+### El Test 4 sale gratis, y ese es el punto
+*"Modificar dato → todos los módulos compatibles reciben el cambio."* Productos cambia el tipo de
+piel y Skincare lo ve **porque es el mismo dato**, no porque haya un mecanismo que los sincronice. Si
+hubiera dos copias, cada módulo enseñaría un valor distinto y **nada reventaría**: por eso este test
+importa más que los otros nueve.
+
+### El historial es opcional, y está declarado
+Las tallas lo llevan (apartado 9: *"peso, medidas, rendimiento…"*), el tipo de piel no. Ponérselo a
+todo llenaría el guardado de ruido. Y guardar el mismo valor dos veces **no crea dos entradas**.
+
+### La antigüedad describe, no juzga
+*"Tipo de piel — Actualizado hace 3 meses"*, el ejemplo literal del enunciado, con su prueba. Y cinco
+comprobaciones de que el texto nunca dice "deberías", "llevas", "olvidado", "demasiado" ni "mal". Es
+la misma línea que se trazó en la analítica del Horario (HT F11).
+
+### ⚠️ El apartado 14 pide NO ROMPER, y eso empieza por el texto
+*"Productos → necesita preferencias de Skincare. Si Skincare está desactivado: no debe romper
+Productos."*
+
+Lo que sale es *"Añade tu tipo de piel para personalizar esto"*, y hay cinco pruebas de que nunca
+aparecen las palabras "error", "undefined", "null", "falta" ni "no se puede". Un mensaje que asusta
+rompe igual que una excepción.
+
+Y una cosa más: **el dato sigue disponible con su módulo apagado**. Los datos no dependen de que su
+módulo esté encendido — eso es el apartado 13, que el enunciado repite entero *"porque será
+fundamental"*.
+
+### Solo los datos que la especificación nombra
+Tipo de piel, sensibilidad, tipo de pelo, preferencia de corte, preferencia de textura, productos sin
+perfume, ropa oversize y tres tallas. **Ni uno inventado.** *"No crear todavía todos los campos
+específicos. Solo preparar la arquitectura."* Añadir uno es añadir una línea.
+
+### Privacidad: hoy ninguno
+Ningún dato está marcado como privado, y decirlo es más honesto que fingir una protección que no
+protege nada todavía. Lo que sí existe es el filtro, para que la fase que marque el primero no tenga
+que construirlo — y para que nadie mande a la IA lo que no debe.
+
+### Sexto campo nuevo, segundo seguido que el normalizador conoce
+`datos` entra en `normalizarEstiloHombre` desde el primer commit. Y un dato guardado de una versión
+anterior del registro **no se borra solo** (apartados 12 y 17).
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 431 comprobaciones unitarias**, 5 de
+auditoría, **408 casos de renderizado real** y 10 reglas invariantes — **3 844 en total**. De ellas,
+**141 nuevas** para EH F4. El **Test 10** (*"sincronización → no aparecen duplicados"*) se comprueba
+hasta donde llega Node; que dos iPhones acaben con lo mismo es **R1**.
+
+---
+
 ## Entrega 2 · EH Fase 3/65 — Sistema de primera configuración y perfil de usuario (v1.69.0)
 
 ### Lo que pide el enunciado, en una línea

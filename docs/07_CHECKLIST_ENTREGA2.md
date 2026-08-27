@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 46 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 3/65**
-> (hasta v1.69.0). Quedan **60**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (58). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 47 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 4/65**
+> (hasta v1.70.0). Quedan **59**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (57). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -404,25 +404,74 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 > ⚠️ **El Test 10 (*"probar todo el flujo en móvil"*) necesita un iPhone: es R1**, igual que el Test J
 > de la Fase 2. El archivo de pruebas lo imprime en vez de darlo por bueno.
 
-#### EH · Fase 4/65 — SISTEMA DE DATOS, PERFIL Y REUTILIZACIÓN GLOBAL
-- [ ] CREAR UNA CAPA DE DATOS COMPARTIDOS
-- [ ] COMPROBAR QUÉ EXISTE YA
-- [ ] FUENTE ÚNICA DE VERDAD
-- [ ] DATOS PROPIOS DE ESTILO DE HOMBRE
-- [ ] PREFERENCIAS
-- [ ] INFORMACIÓN DESCONOCIDA
-- [ ] NO PREGUNTAR DOS VECES
-- [ ] DATOS MODIFICABLES
-- [ ] HISTORIAL CUANDO SEA NECESARIO
-- [ ] FECHA DE ACTUALIZACIÓN
-- [ ] CONSENTIMIENTO Y PRIVACIDAD
-- [ ] ELIMINACIÓN
-- [ ] DESACTIVAR NO ES ELIMINAR
-- [ ] DEPENDENCIAS
-- [ ] DATOS FALTANTES
-- [ ] SINCRONIZACIÓN
-- [ ] COMPATIBILIDAD FUTURA
-- [ ] PRUEBAS
+#### EH · Fase 4/65 — SISTEMA DE DATOS, PERFIL Y REUTILIZACIÓN GLOBAL ✅ COMPLETADA (v1.70.0)
+
+> **`src/lib/datosEstiloHombre.js`** (141 comprobaciones) + el panel **Mis datos** en
+> `src/views/EstiloHombreView.jsx`. Sin SQL nuevo: `app_data` / clave `estiloHombre`, campo `datos`.
+>
+> ⚠️ **Una sola función lee, venga el dato de donde venga.** `leerDato()` resuelve igual el peso —que
+> vive en Salud— que el tipo de piel —que vive aquí— y **devuelve exactamente la misma forma**, con
+> una prueba que compara las claves de las dos respuestas. Cuando llegue la fase 13 y Skincare
+> necesite los dos, no tendrá que saber cuál es cuál: si tuviera que distinguirlos, tarde o temprano
+> alguien pediría el peso por el camino equivocado y acabaría habiendo dos.
+>
+> ⚠️ **Y su gemela: `guardarDato()` se NIEGA a escribir un dato global.** El apartado 3 lo dice con un
+> ejemplo — *"No puede existir Perfil → 72 kg, Estilo de hombre → 70 kg"*— y aquí es un `error` con el
+> sitio donde sí se edita, no un fallo en silencio. Hay una prueba que intenta guardar 70 y comprueba
+> que el peso sigue siendo el 73 de Salud **y que no se ha creado ninguna copia**.
+>
+> ⚠️ **El Test 4 sale gratis porque no hay copias.** *"Modificar dato → todos los módulos compatibles
+> reciben el cambio"*: Productos cambia el tipo de piel y Skincare lo ve, porque es **el mismo dato**,
+> no dos que se sincronizan.
+>
+> **El historial es opcional y está declarado** (apartado 9): las tallas lo llevan, el tipo de piel
+> no. Ponérselo a todo llenaría el guardado de ruido. Y guardar el mismo valor dos veces no crea dos
+> entradas.
+>
+> **La antigüedad describe, no juzga** (apartado 10): *"Actualizado hace 3 meses"* —el ejemplo literal
+> del enunciado, con su prueba— y hay cinco comprobaciones de que el texto nunca reprocha. Misma línea
+> que la analítica del Horario (HT F11).
+>
+> ⚠️ **El apartado 14 pide NO ROMPER, y eso empieza por el texto.** Si a Productos le falta el tipo de
+> piel, lo que sale es *"Añade tu tipo de piel para personalizar esto"* — hay cinco pruebas de que
+> nunca aparecen las palabras "error", "undefined", "null", "falta" ni "no se puede".
+>
+> **`datos` es el sexto campo nuevo de este proyecto, y el segundo seguido que no se olvidó el
+> normalizador.** Y un dato guardado de una versión anterior del registro **no se borra solo**
+> (apartados 12 y 17).
+
+- [x] CREAR UNA CAPA DE DATOS COMPARTIDOS
+- [x] COMPROBAR QUÉ EXISTE YA
+- [x] FUENTE ÚNICA DE VERDAD
+- [x] DATOS PROPIOS DE ESTILO DE HOMBRE
+- [x] PREFERENCIAS
+- [x] INFORMACIÓN DESCONOCIDA
+- [x] NO PREGUNTAR DOS VECES
+- [x] DATOS MODIFICABLES
+- [x] HISTORIAL CUANDO SEA NECESARIO
+- [x] FECHA DE ACTUALIZACIÓN
+- [x] CONSENTIMIENTO Y PRIVACIDAD
+- [x] ELIMINACIÓN
+- [x] DESACTIVAR NO ES ELIMINAR
+- [x] DEPENDENCIAS
+- [x] DATOS FALTANTES
+- [x] SINCRONIZACIÓN
+- [x] COMPATIBILIDAD FUTURA
+- [x] PRUEBAS
+
+
+> ⚠️ **Solo están los datos que la especificación nombra**, y ni uno inventado: tipo de piel
+> (apartados 6 y 7), sensibilidad y preferencia de textura (17), tipo de pelo y preferencia de corte
+> (4), productos sin perfume y ropa oversize (5) y las tallas (4). *"No crear todavía todos los campos
+> específicos. Solo preparar la arquitectura."* Añadir uno es añadir una línea.
+>
+> ⚠️ **Ningún dato está marcado como privado hoy**, y decirlo es más honesto que fingir una protección
+> que no protege nada todavía. Lo que sí existe es el filtro (`datosCompartibles`), para que la fase
+> que marque el primero no tenga que construirlo — y para que nadie mande a la IA lo que no debe.
+>
+> ⚠️ **El Test 10 (*"sincronización → no aparecen duplicados"*) se comprueba hasta donde llega Node**:
+> que el estado sobreviva al viaje por JSON sin duplicar entradas. Que dos iPhones acaben con lo mismo
+> es **R1**, y el archivo de pruebas lo imprime.
 
 #### EH · Fase 5/65 — ESTILO + ARMARIO: INTEGRACIÓN CON EL SISTEMA EXISTENTE
 - [ ] CONECTAR EL ARMARIO EXISTENTE

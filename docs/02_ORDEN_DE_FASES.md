@@ -200,8 +200,10 @@ escribir código.
 
 | v1.69.0 | **EH F3** | El asistente de primera entrada: cuatro pasos, **saltable en tres de ellos**, recuperable a medias y **sin preguntar nada que JosStyle ya sepa** — el peso, la altura y el nombre se LEEN de su módulo y no se copian, con pruebas que fallan si aparecen guardados. Encontró dos fallos reales: modificar y confirmar reordenaba las plaquitas, y pulsar "Empezar" enseñaba *"lo dejaste a medias"* |
 
+| v1.70.0 | **EH F4** | La capa de datos compartidos: **una sola función lee**, venga el dato de Salud o de aquí dentro, y devuelve la misma forma — y su gemela **se niega a escribir un dato global**, con el sitio donde sí se edita. *"No puede existir Perfil → 72 kg, Estilo de hombre → 70 kg"* escrito como código. Historial opcional y declarado, antigüedad que describe sin juzgar, y dependencias que **no rompen**: enseñan una frase, no un error |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 3/65**. Quedan **60** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (58).
+3/5 y **EH por 4/65**. Quedan **59** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (57).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

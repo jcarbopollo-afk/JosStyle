@@ -28,7 +28,8 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH } from '../src/views/EstiloHombreView.jsx';
+import { guardarDato } from '../src/lib/datosEstiloHombre.js';
 import { iniciarAsistente, irAPaso, marcarEnSeleccion, omitirAsistente, terminarAsistente } from '../src/lib/configuracionInicial.js';
 import { DEFAULT_ESTILO_HOMBRE, configurarPrimeraVez, alternarModulo, guardarConfig } from '../src/lib/estiloDeHombre.js';
 import { mochilaDeFecha, progresoMochila, marcarEstado } from '../src/lib/mochila.js';
@@ -523,6 +524,20 @@ const CASOS = [
             estado: conMarcados, accent, onCambiar: noop,
           })],
           ['YaLoSabemos · con datos', YaLoSabemos, () => ({ datosGlobales: GLOBAL_EH, accent })],
+          // EH Fase 4 — la capa de datos: lo global con candado, lo propio editable.
+          ['MisDatosEH · sin nada propio', MisDatosEH, () => ({
+            estado: conTres, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop,
+          })],
+          ['MisDatosEH · con datos propios', MisDatosEH, () => ({
+            estado: guardarDato(guardarDato(conTres, 'tipoPiel', 'mixta', { hoy: HOY }).estado,
+              'tallaCamiseta', 'M', { hoy: '2025-11-01' }).estado,
+            accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop,
+          })],
+          /* ⚠️ La cuenta en blanco: NADA puede salir como "undefined" ni "null"
+             (apartado 15), y hay una prueba de Node que lo comprueba texto a texto. */
+          ['MisDatosEH · sin datos globales', MisDatosEH, () => ({
+            estado: conTres, accent, datosGlobales: {}, onCambiar: noop, onCerrar: noop,
+          })],
           ['EstiloHombreView · omitido', EstiloHombreView, () => props(omitirAsistente(arranque, { hoy: HOY }))],
           ['EstiloHombreView · terminado por el asistente', EstiloHombreView, () =>
             props(terminarAsistente(conMarcados, { hoy: HOY }))],
