@@ -222,8 +222,10 @@ escribir código.
 
 | v1.80.0 | **EH F14** | Rutinas de skincare. ⚠️ **El apartado 19 se titula "NO DUPLICAR" y esta fase pedía la máquina de la Fase 8**, así que lo genérico se extrajo a `motorRutinas.js` y lo usan los dos — **las 171 pruebas de F8 pasaron sin tocar ni una**. **Omitir no es fallar**: un paso omitido sale de la cuenta, así que dos hechos y uno omitido es una rutina HECHA. **Los productos son los de F13**, las **plantillas sugieren** y **cambiar de nivel no borra la rutina anterior** |
 
+| v1.81.0 | **EH F15** | Seguimiento de la piel. 🐛 **Y un fallo REAL y grave encontrado de paso: `App.jsx` nunca importó `papelera.js`**, así que la app lanzaba un `ReferenceError` en el primer render — invisible para el build y para las 648 pruebas de renderizado. Lo cazó una **regla invariante nueva**, escrita justo después de cometer el mismo fallo. ⚠️ **Ni otro diario, ni otra papelera, ni otra exportación, ni rachas, ni causalidad**: las cinco prohibiciones del enunciado, con pruebas |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 14/65**. Quedan **49** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (47).
+3/5 y **EH por 15/65**. Quedan **48** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (46).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

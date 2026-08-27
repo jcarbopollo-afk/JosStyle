@@ -1188,37 +1188,82 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Reactivarlo.
 - [x] Comprobar que no existen duplicados.
 
-#### EH · Fase 15/65 — SKINCARE: SEGUIMIENTO Y EVOLUCIÓN
-- [ ] PLAQUITA DE SEGUIMIENTO
-- [ ] VALORACIÓN RÁPIDA
-- [ ] ASPECTOS CONCRETOS
-- [ ] NOTA PERSONAL
-- [ ] REGISTRO DE PRODUCTOS
-- [ ] CAMBIOS DE RUTINA
-- [ ] EVOLUCIÓN
-- [ ] PERIODOS
-- [ ] NO OBLIGAR A REGISTRAR CADA DÍA
-- [ ] FOTOS
-- [ ] CONEXIÓN CON EL DIARIO
-- [ ] CONEXIÓN CON PRODUCTOS
-- [ ] ELIMINAR REGISTROS
-- [ ] EXPORTACIÓN
-- [ ] DESACTIVAR
-- [ ] PRUEBAS
-- [ ] Crear valoración.
-- [ ] Editarla.
-- [ ] Eliminarla.
-- [ ] Añadir nota.
-- [ ] Asociar producto.
-- [ ] Registrar cambio de rutina.
-- [ ] Consultar evolución.
-- [ ] Cambiar periodo.
-- [ ] Sin registros suficientes.
-- [ ] Desactivar seguimiento.
-- [ ] Reactivarlo.
-- [ ] Comprobar que no se crea otro diario.
-- [ ] Comprobar integración con eliminados recientemente.
-- [ ] Comprobar móvil.
+#### EH · Fase 15/65 — SKINCARE: SEGUIMIENTO Y EVOLUCIÓN ✅ COMPLETADA (v1.81.0)
+
+> **`src/lib/seguimientoPiel.js`** (121 comprobaciones) + la pantalla `SeguimientoPielEH`, y una
+> **regla invariante nueva** (`scripts/test-imports.mjs`). Sin SQL nuevo.
+>
+> 🐛 **Y un fallo REAL, grave y antiguo, encontrado por esa regla: `App.jsx` nunca importó
+> `papelera.js`.** `DEFAULT_PAPELERA` se usa en un `useState` de la línea 262, así que **la
+> aplicación lanzaba un `ReferenceError` en el primer render**. Ni `vite build` ni los 648 casos de
+> renderizado podían verlo: JavaScript no comprueba los identificadores al compilar, y `App.jsx` no
+> se renderiza en las pruebas porque necesita Supabase. Ver la sección de abajo.
+>
+> ⚠️ **NO se crea otro diario** (apartado 11, con esas palabras). JosStyle ya tiene el Diario
+> general, y lo que Josué escriba ahí sobre su piel **sigue siendo de ese módulo**. Aquí solo viven
+> *"los datos específicos necesarios para este módulo"*: una valoración, unos aspectos y una nota
+> corta —280 caracteres a propósito, porque el sitio para escribir es el Diario—.
+>
+> ⚠️ **NO se crea otra papelera** (apartado 13). Y no hizo falta tocar el motor de ME F3: es genérico
+> sobre la lista que se le pasa, así que bastó con **una línea en `CATALOGO_PAPELERA`**. El borrado
+> sale por `eliminarConPapelera`, la única puerta de borrado de la app — que es además lo que hace
+> que **la auditoría de ME F4 lo vea**: cuando iba por un atajo, la auditoría lo cazó y dijo *"el
+> catálogo describe colecciones sin borrado real"*. Tenía razón.
+>
+> ⚠️ **NO se registra cada día** (apartado 9, que el enunciado marca como *"esto es importante"*).
+> Nada de *"has perdido tu racha"*, ninguna exigencia diaria, ningún hueco pintado como fallo: **un
+> día sin registrar no existe** — no es un cero. Siete pruebas barren todos los textos, y
+> `resumenSeguimientoPiel` devuelve `racha: null` a propósito.
+>
+> ⚠️ **Las tendencias NUNCA afirman causalidad** (apartados 7 y 12): *"no afirmar que un producto ha
+> causado un resultado"*. Se enseña *"↑ Mejorando"* y *"desde que empezaste a utilizar X has
+> registrado N valoraciones"*, y ahí se para — con una prueba que busca siete formas de decir "por su
+> culpa". Y **con menos de cuatro registros no se afirma nada**, con la frase literal del apartado 8;
+> que dice que faltan **datos**, no que él haya fallado.
+>
+> **Medio punto de margen** para llamar a algo "mejorando": sin él, una diferencia de 0,1 entre cinco
+> registros se anunciaría como una mejora que no existe.
+>
+> ⚠️ **Sin fotos** (apartado 10) y **sin exportación propia** (apartado 14): `datosParaExportar()`
+> **prepara** los datos con `exporta: false` escrito en el propio dato, y no hay nada que descargue.
+>
+> **Un fallo propio, cazado por la prueba:** `evolucionPiel` hacía `{ id: a.id, ...tendencia(t) }`, y
+> la tendencia **también tiene `id` y `nombre`** —'sube' y 'Mejorando'—, así que el spread se llevaba
+> por delante los del aspecto: la hidratación pasaba a llamarse "sube". Ahora los campos se copian
+> uno a uno.
+
+- [x]
+
+- [x] PLAQUITA DE SEGUIMIENTO
+- [x] VALORACIÓN RÁPIDA
+- [x] ASPECTOS CONCRETOS
+- [x] NOTA PERSONAL
+- [x] REGISTRO DE PRODUCTOS
+- [x] CAMBIOS DE RUTINA
+- [x] EVOLUCIÓN
+- [x] PERIODOS
+- [x] NO OBLIGAR A REGISTRAR CADA DÍA
+- [x] FOTOS
+- [x] CONEXIÓN CON EL DIARIO
+- [x] CONEXIÓN CON PRODUCTOS
+- [x] ELIMINAR REGISTROS
+- [x] EXPORTACIÓN
+- [x] DESACTIVAR
+- [x] PRUEBAS
+- [x] Crear valoración.
+- [x] Editarla.
+- [x] Eliminarla.
+- [x] Añadir nota.
+- [x] Asociar producto.
+- [x] Registrar cambio de rutina.
+- [x] Consultar evolución.
+- [x] Cambiar periodo.
+- [x] Sin registros suficientes.
+- [x] Desactivar seguimiento.
+- [x] Reactivarlo.
+- [x] Comprobar que no se crea otro diario.
+- [x] Comprobar integración con eliminados recientemente.
+- [x] Comprobar móvil.
 
 #### EH · Fase 16/65 — SKINCARE: MOTOR DE RECOMENDACIONES
 - [ ] PLAQUITA

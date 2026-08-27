@@ -260,6 +260,12 @@ else
   fallo "Fallan las rutinas de piel"; grep '✗' /tmp/jc_eh14.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-seguimiento-piel.mjs >/tmp/jc_eh15.log 2>&1; then
+  ok "Seguimiento y evolución de la piel (EH F15) — $(grep -c '✓' /tmp/jc_eh15.log) comprobaciones"
+else
+  fallo "Falla el seguimiento de la piel"; grep '✗' /tmp/jc_eh15.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else
@@ -459,6 +465,12 @@ fi
 
 # --- Coherencia: todo case de renderTab tiene entrada de navegación y viceversa ---
 node --import ./scripts/resolver-vite.mjs scripts/comprobar-navegacion.mjs || FALLOS=$((FALLOS+1))
+
+if node scripts/test-imports.mjs >/tmp/jc_imports.log 2>&1; then
+  ok "Nadie usa una función de src/lib/ sin importarla"
+else
+  fallo "Hay una función usada sin importar (ReferenceError en el móvil)"; grep '✗' /tmp/jc_imports.log
+fi
 
 echo ""
 if [ "$FALLOS" -eq 0 ]; then

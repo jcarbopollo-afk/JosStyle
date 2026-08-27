@@ -97,6 +97,13 @@ export const CATALOGO_PAPELERA = {
   'bienestar.reflexiones': { modulo: 'bienestar', coleccion: 'reflexiones', tipo: 'Reflexión', campos: ['fecha'], icono: 'bienestar' },
   // Relación va a la papelera como todo lo demás, pero marcada como privada: su
   // etiqueta no se muestra mientras el módulo esté bloqueado. Ver `describirEntrada`.
+  // EH F15, apartado 13 — *"y si JC Fitness ya tiene Eliminados recientemente,
+  // utilizar ese sistema en lugar de crear otro"*. Es literalmente lo que dice
+  // el comentario de arriba: añadir un módulo a la papelera es añadir una línea
+  // aquí. El motor es genérico sobre la lista que se le pase, así que los
+  // registros de piel —que viven dentro de la `config` de Skincare— entran sin
+  // tocar ni una función.
+  'skincare.registros': { modulo: 'skincare', coleccion: 'registros', tipo: 'Registro de piel', campos: ['fecha'], icono: 'skincare' },
   'relacion.fechas': { modulo: 'relacion', coleccion: 'fechas', tipo: 'Fecha importante', campos: ['etiqueta'], icono: 'relacion', privado: true },
 };
 

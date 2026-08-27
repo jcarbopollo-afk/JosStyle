@@ -114,6 +114,11 @@ import {
   marcarRutinaPielEntera, plantillaSugerida, usarPlantilla, estaSemanaPiel,
   historialPiel, resumenRutinasPiel, TEXTOS_ESTADO_DIA as TEXTOS_DIA_PIEL,
 } from '../lib/rutinasPiel';
+import {
+  PARTE_SEGUIMIENTO, ESCALA_PIEL, TEXTO_NO_REGISTRAR, ASPECTOS_PIEL,
+  NIVELES_ASPECTO, registrarPiel, eliminarRegistroPiel, PERIODOS_PIEL,
+  panelSeguimientoPiel, resumenSeguimientoPiel, desdeQueUsas,
+} from '../lib/seguimientoPiel';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -2731,16 +2736,191 @@ export function RutinasPielEH({ estado, accent, datosGlobales = {}, onCambiar, o
   );
 }
 
+/* ===========================================================================
+   SKINCARE: SEGUIMIENTO (F15)
+   ===========================================================================
+   ⚠️ **Ni rachas ni obligación** (apartado 9, que el enunciado marca como *"esto
+   es importante"*). Un día sin registrar **no existe**: no sale como un cero, no
+   se cuenta y no se menciona.
+
+   ⚠️ Y **nunca una causa** (apartados 7 y 12): se enseña *"↑ Mejorando"* y
+   *"desde que empezaste a usar X has registrado N valoraciones"*, y ahí se
+   para. */
+export function SeguimientoPielEH({ estado, accent, onCambiar, onCerrar, onEliminar }) {
+  const [periodo, setPeriodo] = useState('30');
+  const [como, setComo] = useState(null);
+  const [aspectos, setAspectos] = useState({});
+  const [nota, setNota] = useState('');
+  const [cambio, setCambio] = useState('');
+  const [producto, setProducto] = useState(null);
+  const [error, setError] = useState(null);
+
+  const panel = useMemo(() => panelSeguimientoPiel(estado, { periodo }), [estado, periodo]);
+
+  const limpiar = () => { setComo(null); setAspectos({}); setNota(''); setCambio(''); setProducto(null); };
+
+  const guardar = () => {
+    const r = registrarPiel(estado, { como, aspectos, nota, cambio, productoId: producto });
+    if (r.error) { setError(r.error); return; }
+    setError(null); limpiar(); onCambiar?.(r.estado);
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-3">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>📈 Seguimiento</p>
+      </div>
+
+      {/* Apartado 2 — la valoración rápida. */}
+      <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>¿Cómo notas tu piel hoy?</p>
+      <div className="flex gap-1 mb-1.5">
+        {ESCALA_PIEL.map((x) => (
+          <button
+            key={x.id} onClick={() => setComo(como === x.id ? null : x.id)}
+            className="flex-1 rounded-2xl py-1.5"
+            style={{
+              background: como === x.id ? hexToRgba(accent, 0.14) : COLORS.surface2,
+              border: `1px solid ${como === x.id ? accent : COLORS.border}`,
+            }}
+            aria-label={x.nombre}
+          >
+            <span className="text-base">{x.icono}</span>
+          </button>
+        ))}
+      </div>
+      {/* ⚠️ No es una sexta cara: es no registrar. */}
+      <button onClick={limpiar} className="text-[10px] font-semibold mb-2" style={{ color: COLORS.textMuted }}>
+        {TEXTO_NO_REGISTRAR}
+      </button>
+
+      {/* Apartado 3 — los aspectos, todos opcionales. */}
+      {ASPECTOS_PIEL.map((a) => (
+        <div key={a.id} className="flex items-center gap-2 mb-1">
+          <span className="text-[10px] flex-1" style={{ color: COLORS.textMuted }}>{a.nombre}</span>
+          {NIVELES_ASPECTO.map((nv) => (
+            <button
+              key={nv.valor}
+              onClick={() => setAspectos({ ...aspectos, [a.id]: aspectos[a.id] === nv.valor ? undefined : nv.valor })}
+              className="rounded-full w-6 h-6"
+              style={{
+                background: aspectos[a.id] === nv.valor ? hexToRgba(accent, 0.14) : COLORS.surface2,
+                border: `1px solid ${aspectos[a.id] === nv.valor ? accent : COLORS.border}`,
+              }}
+              aria-label={`${a.nombre}: ${nv.nombre}`}
+            >
+              <span className="text-[10px]" style={{ color: aspectos[a.id] === nv.valor ? accent : COLORS.textMuted }}>
+                {nv.valor}
+              </span>
+            </button>
+          ))}
+        </div>
+      ))}
+
+      {/* Apartados 4, 5 y 6 — nota, producto y cambio de rutina. Opcionales. */}
+      <TextInput value={nota} onChange={(ev) => setNota(ev.target.value)}
+        placeholder="📝 ¿Quieres escribir algo?" aria-label="Nota" />
+      <div className="mt-1">
+        <TextInput value={cambio} onChange={(ev) => setCambio(ev.target.value)}
+          placeholder="¿Has cambiado algo de tu rutina?" aria-label="Cambio de rutina" />
+      </div>
+      {panel.productos.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-1.5">
+          {panel.productos.map((pr) => (
+            <button
+              key={pr.id} onClick={() => setProducto(producto === pr.id ? null : pr.id)}
+              className="rounded-full px-2 py-0.5"
+              style={{
+                background: producto === pr.id ? hexToRgba(accent, 0.14) : COLORS.surface2,
+                border: `1px solid ${producto === pr.id ? accent : COLORS.border}`,
+              }}
+            >
+              <span className="text-[10px]" style={{ color: producto === pr.id ? accent : COLORS.textMuted }}>{pr.nombre}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="mt-2">
+        <PrimaryButton accent={accent} onClick={guardar}>Guardar</PrimaryButton>
+      </div>
+      {error && <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{error}</p>}
+
+      {/* Apartado 8 — los periodos. */}
+      <div className="flex gap-1 mt-3 mb-1.5">
+        {PERIODOS_PIEL.map((pd) => (
+          <button key={pd.id} onClick={() => setPeriodo(pd.id)} className="flex-1 rounded-2xl py-1"
+            style={{
+              background: periodo === pd.id ? hexToRgba(accent, 0.14) : COLORS.surface2,
+              border: `1px solid ${periodo === pd.id ? accent : COLORS.border}`,
+            }}>
+            <span className="text-[10px] font-semibold" style={{ color: periodo === pd.id ? accent : COLORS.textMuted }}>
+              {pd.id === 'todo' ? 'Todo' : pd.id}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Apartado 7 — la evolución, sin una sola causa. */}
+      {panel.evolucion.hay ? (
+        <div className="rounded-2xl p-2.5 mb-2"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>📊 Tu evolución</p>
+          {panel.evolucion.aspectos.map((a) => (
+            <p key={a.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {a.nombre}: {a.icono} {a.etiqueta}
+            </p>
+          ))}
+          {/* ⚠️ De dónde sale: sin caja negra. */}
+          <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{panel.evolucion.de}</p>
+        </div>
+      ) : (
+        <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>{panel.evolucion.texto}</p>
+      )}
+
+      {panel.registros.map((r) => (
+        <div key={r.id} className="rounded-2xl p-2 flex items-center gap-2 mb-1"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <span className="text-base">{r.comoInfo?.icono || '·'}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px]" style={{ color: COLORS.text }}>{r.fecha}</p>
+            <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>
+              {[r.producto, r.cambio, r.nota].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+          {/* ⚠️ Apartado 13 — va a "Eliminados recientemente", la papelera que ya
+              existe. Por eso lo maneja App.jsx y no esta pantalla. */}
+          <button onClick={() => onEliminar?.(r.id)} aria-label={`Eliminar el registro del ${r.fecha}`}>
+            <X size={13} style={{ color: COLORS.textMuted }} />
+          </button>
+        </div>
+      ))}
+
+      {/* Apartado 12 — se cuenta lo registrado, nunca se explica. */}
+      {panel.productos.map((pr) => {
+        const d = desdeQueUsas(estado, pr.id);
+        return d?.hay ? (
+          <p key={pr.id} className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{d.texto}</p>
+        ) : null;
+      })}
+    </Card>
+  );
+}
+
 /**
  * F14, apartado 1 — el panel de Skincare, con sus cinco plaquitas. ⚠️ Regla 8:
  * las dos que todavía no funcionan **dicen en qué fase llegan**, en vez de no
  * hacer nada al tocarlas.
  */
-export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil }) {
+export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil, onEliminarRegistro }) {
   const [zona, setZona] = useState(null);      // null | 'rutina' | 'seguimiento'
   const prog = useMemo(() => progresoPiel(estado, datosGlobales), [estado, datosGlobales]);
   const rut = useMemo(() => resumenRutinasPiel(estado), [estado]);
   const hist = useMemo(() => historialPiel(estado), [estado]);
+  const seg = useMemo(() => resumenSeguimientoPiel(estado), [estado]);
 
   if (zona === 'rutina') {
     return (
@@ -2750,11 +2930,21 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
       />
     );
   }
+  if (zona === 'seguimiento') {
+    return (
+      <SeguimientoPielEH
+        estado={estado} accent={accent}
+        onCambiar={onCambiar} onCerrar={() => setZona(null)} onEliminar={onEliminarRegistro}
+      />
+    );
+  }
 
   const sub = {
     perfil: prog.sinEmpezar ? 'Sin configurar' : `${prog.contestadas} de ${prog.total}`,
     rutina: rut.rutinas === 0 ? 'Ninguna todavía' : `${rut.rutinas} ${rut.rutinas === 1 ? 'rutina' : 'rutinas'}`,
-    seguimiento: rut.registros === 0 ? 'Sin registros' : estaSemanaPiel(estado).texto,
+    // ⚠️ F15 — el recuento es de registros de piel, no de rutinas hechas: son
+    // dos cosas distintas y mezclarlas mentiría en las dos direcciones.
+    seguimiento: seg.guardados === 0 ? 'Sin registros' : seg.texto,
   };
 
   return (
@@ -2780,7 +2970,8 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
                 sub={p.listo ? (sub[p.id] || '') : `Llega en la fase ${p.fase}`}
                 onAbrir={p.listo
                   ? (p.id === 'perfil' ? onPerfil
-                    : (p.id === 'rutina' ? () => setZona('rutina') : null))
+                    : (p.id === 'rutina' ? () => setZona('rutina')
+                      : (p.id === 'seguimiento' ? () => setZona('seguimiento') : null)))
                   : null}
               />
             ))}
@@ -2825,7 +3016,7 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
 }
 
 /** Apartado 1 de F13 — la entrada, con sus dos botones. */
-export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onEliminarRegistro }) {
   const [configurando, setConfigurando] = useState(false);
   const entrada = useMemo(() => estadoDeEntrada(estado, datosGlobales), [estado, datosGlobales]);
   /* ⚠️ Se calcula UNA vez, antes de cualquier `return` (regla 4): si se
@@ -2850,6 +3041,7 @@ export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
         estado={estado} accent={accent} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={onCerrar}
         onPerfil={() => setConfigurando(true)}
+        onEliminarRegistro={onEliminarRegistro}
       />
     );
   }
@@ -2920,7 +3112,7 @@ export function Recomendados({ estado, accent, onAnadir }) {
 /* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
-export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar }) {
+export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro }) {
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
@@ -3006,6 +3198,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
       <SkincareEH
         estado={estado} accent={accent} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={() => setSkincare(false)}
+        onEliminarRegistro={onEliminarRegistro}
       />
     );
   }

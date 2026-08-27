@@ -28,11 +28,12 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
 import { crearRutinaPiel, marcarPasoPiel, omitirPasoPiel, alternarPartePiel, usarPlantilla } from '../src/lib/rutinasPiel.js';
+import { registrarPiel, PARTE_SEGUIMIENTO } from '../src/lib/seguimientoPiel.js';
 import { crearRutina, marcarRutinaEntera, registrarCambio, alternarParte, datosPelo } from '../src/lib/rutinasPelo.js';
 import { guardarRecomendacion, descartar, REGLAS_PELO } from '../src/lib/recomendacionesPelo.js';
 import { crearProductoPelo, anadirTienda, marcarNoDisponible, crearPack } from '../src/lib/productosPelo.js';
@@ -653,7 +654,14 @@ const CASOS = [
               marcarPasoPiel(conRutinaPiel, rutPiel.rutina.id, rutPiel.rutina.pasos[0].id, { hoy: HOY }).estado,
               rutPiel.rutina.id, rutPiel.rutina.pasos[2].id, { hoy: HOY },
             ).estado;
-            const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop });
+            // EH F15 — cuatro registros, que es el mínimo para una evolución.
+            let conRegistros = pielConNivel;
+            [['2026-08-01', 2], ['2026-08-05', 2], ['2026-08-20', 4], ['2026-08-25', 5]].forEach(([f, v]) => {
+              conRegistros = registrarPiel(conRegistros, {
+                fecha: f, como: 'normal', aspectos: { hidratacion: v }, nota: 'Una nota',
+              }, { hoy: HOY }).estado;
+            });
+            const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop, onEliminar: noop, onEliminarRegistro: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
               ['PanelPelo · con rutina hecha', PanelPelo, () => pp(conCambios)],
@@ -735,6 +743,14 @@ const CASOS = [
               ['RutinasPielEH · sin nivel', RutinasPielEH, () => pp(pielAMedias)],
               ['RutinasPielEH · con rutina', RutinasPielEH, () => pp(conRutinaPiel)],
               ['RutinasPielEH · con paso omitido', RutinasPielEH, () => pp(conOmitido)],
+              /* EH Fase 15 — seguimiento. ⚠️ Los tres que importan: sin
+                 registros (donde sale "todavía no hay suficientes"), con los
+                 cuatro que hacen falta para una evolución, y apagado. */
+              ['SeguimientoPielEH · sin registros', SeguimientoPielEH, () => pp(pielConNivel)],
+              ['SeguimientoPielEH · con evolución', SeguimientoPielEH, () => pp(conRegistros)],
+              ['SeguimientoPielEH · apagado', SeguimientoPielEH, () =>
+                pp(alternarPartePiel(conRegistros, PARTE_SEGUIMIENTO))],
+              ['PanelPiel · con seguimiento', PanelPiel, () => pp(conRegistros)],
             ];
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>

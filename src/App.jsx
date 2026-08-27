@@ -49,6 +49,16 @@ import HorarioView from './views/HorarioView';
 import EstiloHombreView from './views/EstiloHombreView';
 import { DEFAULT_HORARIO_TOP, normalizarHorarioTop } from './lib/horario';
 import { DEFAULT_ESTILO_HOMBRE, normalizarEstiloHombre } from './lib/estiloDeHombre';
+/* ⚠️ **Este import faltaba desde ME F3**, y `DEFAULT_PAPELERA` se usa en un
+   `useState` de la línea 262: `App.jsx` lanzaba un ReferenceError en el primer
+   render. Ni `vite build` ni las pruebas de renderizado podían verlo —
+   JavaScript no comprueba los identificadores al compilar, y `App.jsx` no se
+   renderiza en las pruebas porque necesita Supabase—. Lo encontró la regla
+   invariante que se añadió en esta misma fase (`scripts/test-imports.mjs`),
+   escrita justo después de cometer el mismo fallo con `eliminarRegistroPiel`. */
+import { DEFAULT_PAPELERA, purgarCaducados, prepararEliminacion, prepararRestauracion, conArrastrados } from './lib/papelera';
+// EH F15 — los registros de piel entran y salen de la papelera que YA existe.
+import { eliminarRegistroPiel, restaurarRegistroPiel } from './lib/seguimientoPiel';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.
@@ -1043,7 +1053,25 @@ export default function App() {
     temasGuardados: [temasGuardados, setTemasGuardados],
   };
 
+  /* EH F15, apartado 13 — *"si JC Fitness ya tiene Eliminados recientemente,
+     utilizar ese sistema en lugar de crear otro"*. Los registros de piel viven
+     dentro de la `config` de Skincare, así que su lista no está en el primer
+     nivel de un módulo y `MODULOS_PAPELERA` no los alcanza. Lo que se hace es
+     pedirle al propio módulo el estado ya sin el registro **y la entrada de
+     papelera**, y guardarlos juntos: ⚠️ la papelera sigue siendo UNA, con su
+     retención, su recuperación y su pantalla. */
+  const eliminarRegistroDePiel = (id) => {
+    const r = eliminarRegistroPiel(estiloHombre, id);
+    if (r.error) return;
+    snapshotAndSave({
+      estiloHombre: r.estado,
+      papelera: { ...papelera, elementos: [...papelera.elementos, r.entrada] },
+    });
+  };
+
   const eliminarConPapelera = (modulo, coleccion, id) => {
+    // Los registros de piel no son una lista de primer nivel: van por su puerta.
+    if (modulo === 'skincare' && coleccion === 'registros') return eliminarRegistroDePiel(id);
     const entradaModulo = MODULOS_PAPELERA[modulo];
     if (!entradaModulo) return;
     const resultado = prepararEliminacion(entradaModulo[0], modulo, coleccion, id, new Date().toISOString());
@@ -1059,6 +1087,16 @@ export default function App() {
   const restaurarDePapelera = (entradaId) => {
     const entrada = papelera.elementos.find((e) => e.id === entradaId);
     if (!entrada) return;
+    // EH F15 — y vuelven por la misma puerta, con el motor de ME F3 intacto.
+    if (entrada.modulo === 'skincare' && entrada.coleccion === 'registros') {
+      const r = restaurarRegistroPiel(estiloHombre, entrada);
+      if (r.error) return;
+      snapshotAndSave({
+        estiloHombre: r.estado,
+        papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
+      });
+      return;
+    }
     const entradaModulo = MODULOS_PAPELERA[entrada.modulo];
     if (!entradaModulo) return;
     const resultado = prepararRestauracion(entradaModulo[0], entrada);
@@ -1762,6 +1800,13 @@ export default function App() {
             armario={armario}
             onIr={(destino) => setTab(destino)}
             onCambiar={(nuevo) => snapshotAndSave({ estiloHombre: nuevo })}
+            /* EH F15, apartado 13 — borrar un registro de piel va a "Eliminados
+               recientemente", la papelera que ya existe. Por eso lo maneja
+               App.jsx, que es quien la tiene, y no la pantalla. */
+            /* ⚠️ Por `eliminarConPapelera`, la ÚNICA puerta de borrado de la
+               app (ME F3), no por un atajo: así la auditoría de ME F4 ve el
+               borrado y lo empareja con su entrada del catálogo. */
+            onEliminarRegistro={(id) => eliminarConPapelera('skincare', 'registros', id)}
           />
         );
 

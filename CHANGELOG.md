@@ -1,5 +1,87 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 15/65 — Skincare: seguimiento y evolución (v1.81.0)
+
+### 🐛 Un fallo real y grave, encontrado de paso: `App.jsx` nunca importó `papelera.js`
+Al enganchar los registros de piel a la papelera desde `App.jsx`, escribí la llamada y **me olvidé
+del import**. Como eso no lo ve nadie —JavaScript no comprueba los identificadores al compilar, y
+`App.jsx` no se renderiza en las pruebas porque necesita Supabase— se ha escrito una **regla
+invariante** que sí lo ve: `scripts/test-imports.mjs`.
+
+En su primera ejecución encontró cinco cosas. Una era mía. **Las otras cuatro llevaban ahí desde
+ME F3:** `DEFAULT_PAPELERA`, `purgarCaducados`, `prepararEliminacion` y `prepararRestauracion` se
+usan en `App.jsx` **y nunca se importaron**.
+
+`DEFAULT_PAPELERA` se usa en un `useState` de la línea 262, así que **la aplicación lanzaba un
+`ReferenceError` en el primer render**. Es el tipo de fallo que sólo aparece en el iPhone de Josué, al
+abrir la app — el peor sitio posible para descubrirlo.
+
+Corregido con una línea. Y la regla se queda: recoge los 1319 nombres que exporta `src/lib/` y
+comprueba, para cada uno de los 38 archivos de `src/`, que los que use estén importados ahí.
+
+### ⚠️ No se crea otro diario
+El apartado 11, con esas palabras: *"como ya existe el Diario general de JC Fitness, **NO** crear
+otro diario de skincare"*.
+
+Aquí solo viven *"los datos específicos necesarios para este módulo"*: una valoración, unos aspectos
+y una nota corta —280 caracteres a propósito, porque el sitio para escribir es el Diario—. Hay una
+prueba que lee este código y falla si aparece la palabra.
+
+### ⚠️ No se crea otra papelera
+El apartado 13: *"si JC Fitness ya tiene Eliminados recientemente, utilizar ese sistema en lugar de
+crear otro"*. Y no hizo falta tocar el motor de ME F3: es genérico sobre la lista que se le pasa, así
+que bastó con **una línea en `CATALOGO_PAPELERA`** — exactamente lo que ese archivo decía que haría
+falta.
+
+El borrado sale por `eliminarConPapelera`, la única puerta de borrado de la app. Cuando fue por un
+atajo, **la auditoría de ME F4 lo cazó** —*"el catálogo describe colecciones sin borrado real"*— y
+tenía razón: una colección en el catálogo sin un borrado visible es una entrada que nadie puede
+comprobar.
+
+### ⚠️ No se registra cada día
+El apartado 9, que el propio enunciado marca como *"esto es importante"*: *"no crear 🔴 has perdido
+tu racha, ni exigir registros diarios"*.
+
+**Un día sin registrar no existe.** No es un cero, no se cuenta y no se menciona. Siete pruebas
+barren todos los textos buscando "racha", "has perdido", "has fallado", "constancia" y "cada día", y
+`resumenSeguimientoPiel` devuelve `racha: null` a propósito, con una prueba de que no hay ningún
+cálculo de racha en el archivo.
+
+### ⚠️ Las tendencias nunca afirman una causa
+Apartado 7: *"no afirmar que un producto ha causado un resultado"*. Apartado 12: *"pero no establecer
+causalidad médica. Simplemente mostrar los datos registrados."*
+
+Se enseña *"Hidratación ↑ Mejorando"* y *"Desde que empezaste a utilizar X has registrado 4
+valoraciones"*, y ahí se para — con una prueba que busca "gracias a", "ha mejorado tu", "funciona",
+"ha causado", "provoca", "cura" y "por culpa".
+
+**Con menos de cuatro registros no se afirma nada**, con la frase literal del apartado 8: *"todavía
+no hay suficientes registros para mostrar una evolución"*. Y esa frase dice que faltan **datos**, no
+que él haya fallado — hay una prueba de eso también.
+
+**Medio punto de margen** para llamar a algo "mejorando": sin él, una diferencia de 0,1 entre cinco
+registros se anunciaría como una mejora que no existe.
+
+### ⚠️ Sin fotos y sin exportación propia
+Apartado 10: nada de fotos, ni ahora ni como obligación. Apartado 14: *"no crear un sistema de
+exportación independiente"* — `datosParaExportar()` **prepara** los datos con `exporta: false`
+escrito en el propio dato, y no hay nada en el archivo que descargue.
+
+### Un fallo propio, cazado por la prueba
+`evolucionPiel` hacía `{ id: a.id, nombre: a.nombre, ...tendencia(t) }`, y **la tendencia también
+tiene `id` y `nombre`** —'sube' y 'Mejorando'—, así que el spread se llevaba por delante los del
+aspecto: la hidratación pasaba a llamarse "sube". Ahora los campos se copian uno a uno.
+
+### Verificación
+`bash scripts/verificar.sh` — **5844 comprobaciones**, todas correctas: build de Vite,
+121 nuevas en `scripts/test-seguimiento-piel.mjs` (los trece tests del apartado 16 que no son
+"comprobar móvil"), **648 casos de renderizado** (16 nuevos) y **una regla invariante nueva**.
+
+⚠️ Y **la sexta vez en este bloque que una comprobación salta con algo que estaba bien**: los
+barridos de "esto no existe" cazaban su propia evidencia (`fotos: 0` y `diariosNuevos: 0` viven
+dentro de la función de auditoría), y el primer barrido de imports dio un falso positivo con la
+cadena *"Mano dominante (opcional)"*. Mirar qué línea hace saltar la prueba antes de tocar el código.
+
 ## Entrega 2 · EH Fase 14/65 — Skincare: rutinas y cuidado diario (v1.80.0)
 
 ### ⚠️ El apartado 19 se titula "NO DUPLICAR", y esta fase pedía la máquina que ya existía
