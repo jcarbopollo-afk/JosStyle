@@ -188,6 +188,12 @@ else
   fallo "Falla la gestión de módulos de Estilo de Hombre"; grep '✗' /tmp/jc_eh2.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-configuracion-inicial.mjs >/tmp/jc_eh3.log 2>&1; then
+  ok "Primera configuración y perfil (EH F3) — $(grep -c '✓' /tmp/jc_eh3.log) comprobaciones"
+else
+  fallo "Falla la primera configuración de Estilo de Hombre"; grep '✗' /tmp/jc_eh3.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

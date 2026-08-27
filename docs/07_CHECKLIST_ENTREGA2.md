@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 45 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 2/65**
-> (hasta v1.68.0). Quedan **61**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (59). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 46 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 3/65**
+> (hasta v1.69.0). Quedan **60**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (58). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -346,24 +346,63 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 > la forma de fases que no tocan. Las siete categorías están las siete: si una fase futura crea uno de
 > esos módulos, entra **con una línea**.
 
-#### EH · Fase 3/65 — SISTEMA DE PRIMERA CONFIGURACIÓN Y PERFIL DE USUARIO
-- [ ] PRIMERA ENTRADA
-- [ ] EXPLICACIÓN BREVE
-- [ ] SELECCIÓN INICIAL
-- [ ] CONTADOR
-- [ ] PODER SALTAR
-- [ ] NO PREGUNTAR LO QUE YA SABEMOS
-- [ ] FORMULARIOS PROGRESIVOS
-- [ ] CADA MÓDULO ES INDEPENDIENTE
-- [ ] INFORMACIÓN OPCIONAL
-- [ ] PREFERENCIAS
-- [ ] REUTILIZACIÓN DE INFORMACIÓN
-- [ ] MODIFICAR INFORMACIÓN
-- [ ] COMPLETAR CONFIGURACIÓN
-- [ ] CONFIGURACIÓN PARCIAL
-- [ ] VOLVER A CONFIGURAR
-- [ ] NO CREAR TODAVÍA LOS FORMULARIOS INTERNOS
-- [ ] PRUEBAS
+#### EH · Fase 3/65 — SISTEMA DE PRIMERA CONFIGURACIÓN Y PERFIL DE USUARIO ✅ COMPLETADA (v1.69.0)
+
+> **`src/lib/configuracionInicial.js`** (139 comprobaciones) + el asistente en
+> `src/views/EstiloHombreView.jsx`. Sin SQL nuevo.
+>
+> ⚠️ **El asistente guarda por dónde va, NO lo que sabe.** El apartado 7 lo pide con esas palabras:
+> *"No preguntar información que JC Fitness ya conoce."* Así que se guardan cinco cosas —el paso, la
+> selección en curso, el estado y dos fechas— y **ni un dato de Josué**. Su peso, su altura y su
+> nombre se **leen** de Perfil, Salud y Objetivos cada vez. Hay cuatro pruebas que buscan esos valores
+> dentro de lo guardado y fallan si aparecen.
+>
+> ⚠️ **`asistente` es el quinto campo nuevo que se añade a una entidad de este proyecto, y el primero
+> que NO se olvidó el normalizador.** Las cuatro veces anteriores el siguiente guardado se lo llevaba
+> (regla 5). Hay una prueba que serializa, recarga y comprueba que el paso sigue ahí.
+>
+> ⚠️ **Un fallo real que encontró la prueba:** entrar en *"Modificar mi configuración"* y confirmar
+> **sin cambiar nada** reordenaba las plaquitas, porque la selección salía en orden de catálogo y
+> `terminarAsistente` reescribe el `orden` a partir de ella. Nada se mueve en silencio.
+>
+> ⚠️ **Y otro en el enlazado:** pulsar "Empezar" en la bienvenida pasaba el asistente a `en_curso` y
+> acto seguido le enseñaba *"Lo dejaste a medias"*. Lo que el apartado 15 distingue es **volver** de
+> **seguir**, y eso no está en el estado guardado: está en si ya estaba a medias al abrir la pantalla.
+>
+> **Omitir marca `configurado`.** Si no, la próxima vez le saldría otra vez la bienvenida — que es
+> justo lo contrario de saltárselo. Y no enciende nada: entra en la pantalla vacía de F2, que ya sabe
+> qué decir.
+>
+> **"Empezar de nuevo" reinicia el asistente, no los módulos.** Los datos de cada apartado siguen
+> donde estaban: es la diferencia entre *volver a elegir* y *perderlo todo*, y el enunciado pide la
+> primera.
+
+- [x] PRIMERA ENTRADA
+- [x] EXPLICACIÓN BREVE
+- [x] SELECCIÓN INICIAL
+- [x] CONTADOR
+- [x] PODER SALTAR
+- [x] NO PREGUNTAR LO QUE YA SABEMOS
+- [x] FORMULARIOS PROGRESIVOS
+- [x] CADA MÓDULO ES INDEPENDIENTE
+- [x] INFORMACIÓN OPCIONAL
+- [x] PREFERENCIAS
+- [x] REUTILIZACIÓN DE INFORMACIÓN
+- [x] MODIFICAR INFORMACIÓN
+- [x] COMPLETAR CONFIGURACIÓN
+- [x] CONFIGURACIÓN PARCIAL
+- [x] VOLVER A CONFIGURAR
+- [x] NO CREAR TODAVÍA LOS FORMULARIOS INTERNOS
+- [x] PRUEBAS
+
+
+> **Apartado 17 — aquí NO hay ni una pregunta construida.** *"Esta fase solo construye el sistema que
+> las podrá alojar."* Lo que hay es, por módulo, **qué datos globales reutilizará** (`usa`) y **en qué
+> fase hará sus propias preguntas** (`pregunta`): un número, no un formulario. Hay una prueba que
+> comprueba que en todo `NECESIDADES_MODULO` no aparece ni un signo de interrogación.
+>
+> ⚠️ **El Test 10 (*"probar todo el flujo en móvil"*) necesita un iPhone: es R1**, igual que el Test J
+> de la Fase 2. El archivo de pruebas lo imprime en vez de darlo por bueno.
 
 #### EH · Fase 4/65 — SISTEMA DE DATOS, PERFIL Y REUTILIZACIÓN GLOBAL
 - [ ] CREAR UNA CAPA DE DATOS COMPARTIDOS

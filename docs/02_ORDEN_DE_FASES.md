@@ -198,8 +198,10 @@ escribir código.
 
 | v1.68.0 | **EH F2** | La gestión de apartados de verdad: siete categorías, buscador con sinónimos (*"pelo"* encuentra Barba, que es el ejemplo del enunciado), ↑↓ que se mueven **dentro de los activos**, recomendados **sin IA** y ficha. Y **arregla un fallo real de F1**: un módulo retirado del catálogo perdía sus datos en el siguiente guardado — ahora va a cuarentena |
 
+| v1.69.0 | **EH F3** | El asistente de primera entrada: cuatro pasos, **saltable en tres de ellos**, recuperable a medias y **sin preguntar nada que JosStyle ya sepa** — el peso, la altura y el nombre se LEEN de su módulo y no se copian, con pruebas que fallan si aparecen guardados. Encontró dos fallos reales: modificar y confirmar reordenaba las plaquitas, y pulsar "Empezar" enseñaba *"lo dejaste a medias"* |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 2/65**. Quedan **61** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (59).
+3/5 y **EH por 3/65**. Quedan **60** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (58).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

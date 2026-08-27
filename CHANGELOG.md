@@ -1,5 +1,84 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 3/65 — Sistema de primera configuración y perfil de usuario (v1.69.0)
+
+### Lo que pide el enunciado, en una línea
+*"La aplicación debe conocer qué necesita el usuario sin obligarle a rellenar un formulario
+interminable."* Sencilla, progresiva, saltable, personalizable, reutilizable y **sin IA**.
+
+Y subrayado: **"No preguntar información que JC Fitness ya conoce."**
+
+### ⚠️ El asistente guarda por dónde va, no lo que sabe
+Es la decisión que gobierna toda la fase. Se guardan **cinco cosas** —el paso, la selección en curso,
+el estado y dos fechas— y **ni un dato de Josué**.
+
+Su peso, su altura, su nombre y sus objetivos **se leen** de Perfil, Salud y Objetivos cada vez que
+hacen falta. Guardar aquí una copia "para no volver a preguntarlo" sería exactamente lo contrario de
+lo que pide el apartado 7, y daría dos pesos distintos el día que se corrija uno.
+
+Hay cuatro pruebas que buscan `"Josué"`, `"2010-07-29"`, `"187"` y `"Masculino"` dentro de lo que se
+guarda, y **fallan si aparecen**.
+
+### El peso sale de donde es más reciente
+`salud.medidas` tiene la última medida; `perfil.peso` tiene la del día que rellenó el perfil. Gana la
+de Salud, y si no hay ninguna, vale la del perfil. Está probado con las dos.
+
+### ⚠️ Quinto campo nuevo, primer normalizador que no se olvida
+`asistente` es el quinto campo que se añade a una entidad de este proyecto. Las cuatro veces
+anteriores —`visible`, `archivado`, `materiales`, y el módulo retirado de la semana pasada— **el
+siguiente guardado se lo llevaba**, porque `saveData` sobrescribe y no fusiona (regla 5).
+
+Esta vez `normalizarEstiloHombre` lo conoce desde el primer commit, y hay una prueba que serializa,
+recarga y comprueba que el paso sigue ahí.
+
+### ⚠️ Dos fallos reales que encontraron las pruebas
+
+**1. Modificar la configuración reordenaba las plaquitas en silencio.** Entrar en *"Modificar mi
+configuración"*, no tocar nada y confirmar **cambiaba el orden**, porque la selección de partida
+salía en orden de catálogo y `terminarAsistente` reescribe el `orden` a partir de ella. Ahora sale en
+el orden que él eligió.
+
+**2. Pulsar "Empezar" enseñaba "Lo dejaste a medias".** El botón pasa el asistente a `en_curso`, y el
+enlazado interpretaba eso como "vuelve de una configuración abandonada". Lo que el apartado 15
+distingue es **volver** de **seguir**, y eso no está en el estado guardado: está en si ya estaba a
+medias cuando abrió la pantalla. Ahora se calcula una sola vez, al entrar.
+
+### Omitir marca configurado, y eso no es un descuido
+El apartado 6 pide *"Omitir por ahora"* y que **no se rompa nada**. Si omitir no marcara
+`configurado`, la próxima vez que entrase le saldría otra vez la bienvenida — que es justo lo
+contrario de saltárselo. Y no enciende nada: entra en la pantalla vacía de la Fase 2, que ya sabe qué
+decir.
+
+### "Empezar de nuevo" reinicia el asistente, no los módulos
+Los datos de cada apartado siguen donde estaban. Es la diferencia entre *volver a elegir* y *perderlo
+todo*, y el apartado 15 pide la primera.
+
+### ⚠️ Apartado 17 — ni una pregunta construida
+*"Esta fase solo construye el sistema que las podrá alojar."* Así que no hay ningún formulario de piel,
+pelo o fitness. Lo que hay es, por módulo:
+
+- **`usa`** — qué datos globales reutilizará. Eso es lo que **no** se le va a preguntar.
+- **`pregunta`** — en qué fase hará las suyas. Un número, no un formulario.
+
+Hay una prueba que recorre todo `NECESIDADES_MODULO` buscando un signo de interrogación y falla si lo
+encuentra.
+
+### Mis datos: lo de fuera se edita fuera
+El apartado 13 pide poder modificar las respuestas. "Mis datos" enseña el peso y **dice que está en
+Salud**; no ofrece un campo para cambiarlo aquí. Dos sitios donde se edita el mismo dato y uno de los
+dos acaba mintiendo.
+
+### Los diez tests del apartado 18
+Están los diez. El **Test 10** (*"probar todo el flujo en móvil"*) necesita un iPhone: es **R1**, y el
+archivo de pruebas lo imprime en vez de darlo por bueno.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 290 comprobaciones unitarias**, 5 de
+auditoría, **396 casos de renderizado real** y 10 reglas invariantes — **3 691 en total**. De ellas,
+**139 nuevas** para EH F3.
+
+---
+
 ## Entrega 2 · EH Fase 2/65 — Sistema de gestión y personalización de módulos (v1.68.0)
 
 ### La regla que gobierna la fase

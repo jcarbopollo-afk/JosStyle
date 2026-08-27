@@ -128,6 +128,10 @@ export const DEFAULT_ESTILO_HOMBRE = {
   modulos: [],              // [{ id, activo, orden, config, version }]
   // ⚠️ EH F2, apartado 17 — la cuarentena. Ver `normalizarEstiloHombre`.
   retirados: [],            // módulos guardados que ya no están en el catálogo
+  // ⚠️ EH F3, apartado 15 — por dónde va el asistente de primera configuración.
+  // Solo el paso y la selección en curso: lo que ya sabemos de Josué se LEE de
+  // su módulo, no se copia aquí (apartado 7).
+  asistente: { paso: null, seleccion: [], estado: 'nunca', empezadoEn: null, terminadoEn: null },
   version: VERSION_EH,
   creadoEn: null,
 };
@@ -207,6 +211,14 @@ export function normalizarEstiloHombre(guardado) {
     configurado: !!g.configurado,
     modulos: [...guardados, ...nuevos],
     retirados: deduplicar([...previos, ...fuera]),
+    // ⚠️ EH F3 — quinta vez que se añade un campo a una entidad de este
+    // proyecto, y la primera en que no se olvida el normalizador. La forma la
+    // decide `normalizarAsistente` en `configuracionInicial.js`; aquí solo se
+    // arrastra tal cual para no importar en círculo. Un campo que el
+    // normalizador no conoce lo BORRA en el siguiente guardado (regla 5).
+    asistente: g.asistente && typeof g.asistente === 'object'
+      ? g.asistente
+      : { ...DEFAULT_ESTILO_HOMBRE.asistente },
     version: VERSION_EH,
     creadoEn: g.creadoEn || null,
   };

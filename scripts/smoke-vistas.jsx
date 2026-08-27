@@ -28,7 +28,8 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos } from '../src/views/EstiloHombreView.jsx';
+import { iniciarAsistente, irAPaso, marcarEnSeleccion, omitirAsistente, terminarAsistente } from '../src/lib/configuracionInicial.js';
 import { DEFAULT_ESTILO_HOMBRE, configurarPrimeraVez, alternarModulo, guardarConfig } from '../src/lib/estiloDeHombre.js';
 import { mochilaDeFecha, progresoMochila, marcarEstado } from '../src/lib/mochila.js';
 import {
@@ -487,18 +488,51 @@ const CASOS = [
          lo que añade la Fase 2: categorías, buscador con y sin resultados,
          ficha, aviso al desactivar y recomendados. */
       ...(() => {
-        const props = (estado) => ({ estiloHombre: estado, accent, onCambiar: noop });
+        const GLOBAL_EH = {
+          perfil: { nombre: 'Josué', fechaNacimiento: '2010-07-29', altura: 187, peso: 72, sexo: 'Masculino' },
+          salud: { medidas: [{ fecha: HOY, peso: 73 }] }, objetivos: { lista: [{ id: 'o1' }] },
+          calistenia: { Dominadas: { sesiones: [{ fecha: HOY }] } }, sueno: [{ fecha: HOY, horas: 8 }],
+        };
+        const props = (estado) => ({ estiloHombre: estado, accent, datosGlobales: GLOBAL_EH, onCambiar: noop });
         const conTres = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['skincare', 'pelo', 'habitos'], { hoy: HOY });
         const todosLosIds = ['estilo', 'pelo', 'skincare', 'higiene', 'barba', 'cuerpo', 'fitness', 'sueno', 'salud', 'habitos', 'progreso', 'educacion', 'productos'];
         const conDatos = guardarConfig(conTres, 'skincare', { tipoPiel: 'mixta' });
+        // EH Fase 3 — los cuatro pasos del asistente, más retomar y omitir.
+        const arranque = iniciarAsistente(DEFAULT_ESTILO_HOMBRE, { hoy: HOY });
+        const pasoAsist = (id) => ({
+          estado: irAPaso(arranque, id), accent, datosGlobales: GLOBAL_EH, onCambiar: noop,
+        });
+        const conMarcados = marcarEnSeleccion(marcarEnSeleccion(irAPaso(arranque, 'seleccion'), 'skincare'), 'fitness');
         return [
+          ['AsistenteEH · bienvenida', AsistenteEH, () => pasoAsist('bienvenida')],
+          ['AsistenteEH · explicación', AsistenteEH, () => pasoAsist('explicacion')],
+          ['AsistenteEH · selección vacía', AsistenteEH, () => pasoAsist('seleccion')],
+          ['AsistenteEH · selección con marcados', AsistenteEH, () => ({
+            estado: conMarcados, accent, datosGlobales: GLOBAL_EH, onCambiar: noop,
+          })],
+          ['AsistenteEH · final', AsistenteEH, () => ({
+            estado: irAPaso(conMarcados, 'final'), accent, datosGlobales: GLOBAL_EH, onCambiar: noop,
+          })],
+          ['AsistenteEH · final sin nada elegido', AsistenteEH, () => pasoAsist('final')],
+          /* ⚠️ La cuenta en blanco importa: el asistente NO puede enseñar "esto
+             ya lo sabemos" cuando no sabemos nada. */
+          ['AsistenteEH · sin datos globales', AsistenteEH, () => ({
+            estado: irAPaso(arranque, 'explicacion'), accent, datosGlobales: {}, onCambiar: noop,
+          })],
+          ['RetomarConfiguracion · a medias', RetomarConfiguracion, () => ({
+            estado: conMarcados, accent, onCambiar: noop,
+          })],
+          ['YaLoSabemos · con datos', YaLoSabemos, () => ({ datosGlobales: GLOBAL_EH, accent })],
+          ['EstiloHombreView · omitido', EstiloHombreView, () => props(omitirAsistente(arranque, { hoy: HOY }))],
+          ['EstiloHombreView · terminado por el asistente', EstiloHombreView, () =>
+            props(terminarAsistente(conMarcados, { hoy: HOY }))],
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],
           ['EstiloHombreView · con módulos', EstiloHombreView, () => props(conTres)],
           ['EstiloHombreView · configurado sin módulos', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],
           ['EstiloHombreView · con todos', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, todosLosIds))],
           ['EstiloHombreView · con uno solo', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['pelo']))],
-          ['GestionarApartados · primera vez', GestionarApartados, () => ({
-            estado: DEFAULT_ESTILO_HOMBRE, accent, primeraVez: true, onGuardar: noop,
+          ['GestionarApartados · sin nada encendido', GestionarApartados, () => ({
+            estado: DEFAULT_ESTILO_HOMBRE, accent, onCambiar: noop, onCerrar: noop,
           })],
           ['GestionarApartados · después', GestionarApartados, () => ({
             estado: conTres, accent, onCambiar: noop, onCerrar: noop,

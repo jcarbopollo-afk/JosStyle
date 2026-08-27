@@ -1,5 +1,5 @@
 // ============================================================================
-// EH · Fases 1 y 2/65 — LA PANTALLA
+// EH · Fases 1, 2 y 3/65 — LA PANTALLA
 //
 // F1 dejó una pantalla mínima. La **Fase 2** construye la gestión de verdad:
 // categorías, buscador, orden, confirmación al apagar, recomendados y ficha.
@@ -25,22 +25,33 @@
 // **4. Reordenar es un modo, no un estorbo.** Las flechas ↑↓ solo salen cuando
 // se pulsa "Ordenar" (F2, apartado 9), y en los extremos salen apagadas en vez
 // de no hacer nada al pulsarlas.
+//
+// **5. El asistente se puede saltar en cualquier paso** (F3, apartado 6), y
+// saltárselo lleva a la misma pantalla que terminarlo. No es un estado
+// degradado: es una decisión suya.
 // ============================================================================
 
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Settings, Check, ArrowLeft, Search, X, ChevronUp, ChevronDown, ArrowUpDown, Plus } from 'lucide-react';
+import { Settings, Check, ArrowLeft, Search, X, ChevronUp, ChevronDown, ArrowUpDown, Plus, SlidersHorizontal } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { Card, PrimaryButton, Switch, TextInput } from '../components/ui';
 import {
-  modulosActivos, todosLosModulos, configurarPrimeraVez,
-  alternarModulo, estadoPantalla, resumenEstiloHombre,
+  modulosActivos, todosLosModulos, alternarModulo, estadoPantalla,
+  resumenEstiloHombre, normalizarEstiloHombre,
 } from '../lib/estiloDeHombre';
 import {
   modulosAgrupados, resultadosAgrupados, avisoDesactivar, subirModulo, bajarModulo,
   puedeMover, recomendados, fichaModulo, TEXTOS_GESTION, resumenGestion,
 } from '../lib/gestionModulos';
+import {
+  pasoAsistente, puedeOmitir, TEXTO_OMITIR, estadoAsistente, normalizarAsistente,
+  iniciarAsistente, avanzar, retroceder, marcarEnSeleccion, seleccionarTodos,
+  limpiarSeleccion, contadorSeleccion, terminarAsistente, omitirAsistente,
+  reiniciarAsistente, modificarConfiguracion, loQueYaSabemos, configuracionPendiente,
+  resumenAsistente,
+} from '../lib/configuracionInicial';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -179,33 +190,230 @@ export function FichaModuloEH({ ficha, accent, onCerrar }) {
 }
 
 /* ===========================================================================
+   EL ASISTENTE DE PRIMERA CONFIGURACIÓN (F3)
+   ===========================================================================
+   *"Sencilla. Progresiva. Saltable. Personalizable. Reutilizable. Sin IA."*
+
+   Cuatro pasos, y en tres de ellos se puede salir. La pantalla no decide por
+   dónde va: se lo pregunta a `resumenAsistente()`. */
+
+/** Apartado 5 — *"no necesitamos mostrar una cifra gigante ni hacer que parezca
+ *  una tarea"*. Cuatro puntos y ya. */
+function Pasos({ numero, de, accent }) {
+  return (
+    <div className="flex items-center justify-center gap-1.5">
+      {Array.from({ length: de }, (_, i) => (
+        <span
+          key={i}
+          className="rounded-full"
+          style={{
+            width: i + 1 === numero ? 16 : 5, height: 5,
+            background: i + 1 <= numero ? accent : COLORS.border,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Apartado 7 — *"No preguntar información que JC Fitness ya conoce."* Se le
+ *  enseña lo que ya sabemos y de dónde sale, en vez de volver a pedírselo. */
+export function YaLoSabemos({ datosGlobales, accent }) {
+  const { sabidos } = useMemo(() => loQueYaSabemos(datosGlobales), [datosGlobales]);
+  if (sabidos.length === 0) return null;
+  return (
+    <div
+      className="rounded-2xl p-3"
+      style={{ background: hexToRgba(accent, 0.08), border: `1px solid ${hexToRgba(accent, 0.25)}` }}
+    >
+      <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>
+        Esto ya lo sabemos, no hace falta que lo repitas
+      </p>
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+        {sabidos.map((d) => d.que).join(' · ')}. Se lee de {[...new Set(sabidos.map((d) => d.donde))].join(', ')}.
+      </p>
+    </div>
+  );
+}
+
+export function AsistenteEH({ estado, accent, datosGlobales, onCambiar }) {
+  const resumen = useMemo(() => resumenAsistente(estado, datosGlobales), [estado, datosGlobales]);
+  const contador = useMemo(() => contadorSeleccion(estado), [estado]);
+  const seleccion = normalizarAsistente(normalizarEstiloHombre(estado).asistente).seleccion;
+  const grupos = useMemo(() => modulosAgrupados(estado), [estado]);
+  const paso = pasoAsistente(resumen.paso) || pasoAsistente('bienvenida');
+  const esSeleccion = paso.id === 'seleccion';
+  const esFinal = paso.id === 'final';
+  const pendientes = useMemo(
+    () => (esFinal ? configuracionPendiente(terminarAsistente(estado), datosGlobales) : []),
+    [estado, datosGlobales, esFinal],
+  );
+
+  const siguiente = () => onCambiar(esFinal ? terminarAsistente(estado) : avanzar(estado));
+
+  return (
+    <div className="space-y-3">
+      <Card className="text-center">
+        <p className="text-2xl leading-none mb-2" aria-hidden="true">{paso.icono}</p>
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{paso.titulo}</p>
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{paso.texto}</p>
+        <div className="mt-3"><Pasos numero={resumen.numero} de={resumen.de} accent={accent} /></div>
+      </Card>
+
+      {/* Apartado 7 — lo que ya sabemos, antes de pedirle nada. */}
+      {paso.id === 'explicacion' && <YaLoSabemos datosGlobales={datosGlobales} accent={accent} />}
+
+      {/* Apartado 3 — la selección, agrupada por categorías. */}
+      {esSeleccion && (
+        <Card>
+          {/* Apartado 4 — *"pero no debe ser la opción predeterminada"*: son dos
+              botones pequeños, no un interruptor puesto de fábrica. */}
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{contador.texto}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => onCambiar(seleccionarTodos(estado))}
+                className="text-[11px] font-semibold" style={{ color: contador.todos ? COLORS.textMuted : accent }}
+                disabled={contador.todos}
+              >
+                Seleccionar todos
+              </button>
+              <button
+                onClick={() => onCambiar(limpiarSeleccion(estado))}
+                className="text-[11px] font-semibold" style={{ color: contador.ninguno ? COLORS.textMuted : accent }}
+                disabled={contador.ninguno}
+              >
+                Limpiar
+              </button>
+            </div>
+          </div>
+
+          {grupos.map((cat) => (
+            <div key={cat.id} className="mb-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>
+                {cat.icono} {cat.nombre}
+              </p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {cat.modulos.map((m) => {
+                  const on = seleccion.includes(m.id);
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => onCambiar(marcarEnSeleccion(estado, m.id))}
+                      className="rounded-2xl p-2.5 flex items-center gap-2 text-left"
+                      style={{
+                        background: on ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                        border: `1px solid ${on ? accent : COLORS.border}`,
+                        minWidth: 0,
+                      }}
+                      aria-pressed={on}
+                    >
+                      <span className="text-base leading-none flex-shrink-0" aria-hidden="true">{m.icono}</span>
+                      <span className="text-[11px] font-semibold flex-1 truncate" style={{ color: COLORS.text }}>
+                        {m.nombre}
+                      </span>
+                      {on && <Check size={12} style={{ color: accent }} className="flex-shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Apartado 8 — *"no mostrar todos los formularios juntos"*. Y regla 8:
+          hoy ninguno de esos formularios existe, así que se dice CUÁNDO llega
+          cada uno en vez de abrir una pantalla vacía. */}
+      {esFinal && pendientes.length > 0 && (
+        <Card>
+          <p className="text-[11px] font-semibold mb-2" style={{ color: COLORS.text }}>Lo que has elegido</p>
+          <div className="space-y-1">
+            {pendientes.map((m) => (
+              <div key={m.id} className="flex items-center gap-2">
+                <span className="text-sm leading-none" aria-hidden="true">{m.icono}</span>
+                <span className="text-[11px] flex-1 truncate" style={{ color: COLORS.text }}>{m.nombre}</span>
+                <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                  {m.reutiliza > 0 ? `${m.reutiliza} datos ya guardados` : 'Sin configurar'}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>
+            Cada apartado se configura por su cuenta cuando lo abras. No hay nada más que rellenar ahora.
+          </p>
+        </Card>
+      )}
+
+      <div>
+        <PrimaryButton accent={accent} onClick={siguiente}>{paso.boton}</PrimaryButton>
+        <div className="flex items-center justify-center gap-4 mt-2">
+          {resumen.numero > 1 && !esFinal && (
+            <button onClick={() => onCambiar(retroceder(estado))} className="text-[11px] font-semibold"
+              style={{ color: COLORS.textMuted }}>
+              Atrás
+            </button>
+          )}
+          {/* Apartado 6 — omitir por ahora. No se rompe nada. */}
+          {puedeOmitir(paso.id) && (
+            <button onClick={() => onCambiar(omitirAsistente(estado))} className="text-[11px] font-semibold"
+              style={{ color: COLORS.textMuted }}>
+              {TEXTO_OMITIR}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Apartado 15 — *"Continuar configuración"* o *"Empezar de nuevo"*. */
+export function RetomarConfiguracion({ estado, accent, onCambiar }) {
+  const resumen = useMemo(() => resumenAsistente(estado, {}), [estado]);
+  return (
+    <Card className="text-center">
+      <p className="text-2xl leading-none mb-2" aria-hidden="true">🧔</p>
+      <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Lo dejaste a medias</p>
+      <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>
+        Ibas por el paso {resumen.numero} de {resumen.de}
+        {resumen.seleccionados > 0
+          ? `, con ${resumen.seleccionados} ${resumen.seleccionados === 1 ? 'apartado elegido' : 'apartados elegidos'}.`
+          : '.'}
+      </p>
+      <PrimaryButton accent={accent} onClick={() => onCambiar(iniciarAsistente(estado))}>
+        Continuar configuración
+      </PrimaryButton>
+      <button
+        onClick={() => onCambiar(reiniciarAsistente(estado))}
+        className="text-[11px] font-semibold mt-2"
+        style={{ color: COLORS.textMuted }}
+      >
+        Empezar de nuevo
+      </button>
+    </Card>
+  );
+}
+
+/* ===========================================================================
    GESTIONAR APARTADOS (F1 apartados 4 y 6 · F2 completo)
    ===========================================================================
    *"Este sistema será reutilizado por todo Estilo de hombre"* — por eso es un
    componente aparte y sirve tanto para la primera vez como para después. */
-export function GestionarApartados({ estado, accent, primeraVez = false, onGuardar, onCambiar, onCerrar }) {
+export function GestionarApartados({ estado, accent, onCambiar, onCerrar }) {
   const [busqueda, setBusqueda] = useState('');
   const [ficha, setFicha] = useState(null);
   const [pendiente, setPendiente] = useState(null);   // { id, aviso }
   const todos = useMemo(() => todosLosModulos(estado), [estado]);
-
-  // En la primera configuración se elige y se confirma; después, cada
-  // interruptor se aplica al momento.
-  const [elegidos, setElegidos] = useState(() => todos.filter((m) => m.activo).map((m) => m.id));
 
   const grupos = useMemo(
     () => (busqueda.trim() ? resultadosAgrupados(estado, busqueda) : modulosAgrupados(estado)),
     [estado, busqueda],
   );
 
-  const activo = (id) => (primeraVez ? elegidos.includes(id) : !!todos.find((m) => m.id === id)?.activo);
+  const activo = (id) => !!todos.find((m) => m.id === id)?.activo;
 
   const tocar = (id) => {
-    if (primeraVez) {
-      setElegidos((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-      return;
-    }
-    // Apartado 6 — apagar un módulo con datos pregunta antes. Encenderlo, no.
+    // F2, apartado 6 — apagar un módulo con datos pregunta antes. Encenderlo, no.
     if (activo(id)) {
       const aviso = avisoDesactivar(estado, id);
       if (aviso) { setPendiente({ id, aviso }); return; }
@@ -221,24 +429,17 @@ export function GestionarApartados({ estado, accent, primeraVez = false, onGuard
   return (
     <Card>
       <div className="flex items-center gap-2 mb-1">
-        {!primeraVez && onCerrar && (
+        {onCerrar && (
           <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
             <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
           </button>
         )}
-        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>
-          {primeraVez ? '¿Qué quieres utilizar?' : TEXTOS_GESTION.cabecera}
-        </p>
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_GESTION.cabecera}</p>
       </div>
-      <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>
-        {primeraVez
-          ? 'Elige los apartados que quieras tener. Puedes cambiarlo cuando quieras.'
-          : TEXTOS_GESTION.ayuda}
-      </p>
+      <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>{TEXTOS_GESTION.ayuda}</p>
 
-      {/* Apartado 12 — el buscador. Solo después de la primera configuración:
-          con trece módulos delante y ninguno elegido, buscar sobra. */}
-      {!primeraVez && (
+      {/* F2, apartado 12 — el buscador. */}
+      {(
         <div className="relative mb-3">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: COLORS.textMuted }} />
           <TextInput
@@ -284,7 +485,7 @@ export function GestionarApartados({ estado, accent, primeraVez = false, onGuard
                   }}
                 >
                   <button
-                    onClick={() => (primeraVez ? tocar(m.id) : setFicha(fichaModulo(estado, m.id)))}
+                    onClick={() => setFicha(fichaModulo(estado, m.id))}
                     className="flex items-center gap-2 flex-1 min-w-0 text-left"
                     aria-label={`Información de ${m.nombre}`}
                   >
@@ -296,9 +497,7 @@ export function GestionarApartados({ estado, accent, primeraVez = false, onGuard
                       <span className="text-[10px] block truncate" style={{ color: COLORS.textMuted }}>{m.sub}</span>
                     </span>
                   </button>
-                  {primeraVez
-                    ? (on && <Check size={14} style={{ color: accent }} className="flex-shrink-0" />)
-                    : <Switch checked={on} onChange={() => tocar(m.id)} accent={accent} label={m.nombre} />}
+                  <Switch checked={on} onChange={() => tocar(m.id)} accent={accent} label={m.nombre} />
                 </div>
               );
             })}
@@ -306,16 +505,16 @@ export function GestionarApartados({ estado, accent, primeraVez = false, onGuard
         </div>
       ))}
 
-      {primeraVez && (
-        <div className="mt-3">
-          <PrimaryButton accent={accent} onClick={() => onGuardar?.(elegidos)}>Continuar</PrimaryButton>
-          <p className="text-[10px] text-center mt-1.5" style={{ color: COLORS.textMuted }}>
-            {elegidos.length === 0
-              ? 'Puedes continuar sin elegir nada y decidirlo después.'
-              : `${elegidos.length} ${elegidos.length === 1 ? 'apartado elegido' : 'apartados elegidos'}.`}
-          </p>
-        </div>
-      )}
+      {/* F3, apartado 16 — *"Modificar mi configuración. Pero esto no debe
+          borrar datos."* Vuelve al asistente por el paso de la selección, con lo
+          que hoy está encendido ya marcado y EN SU ORDEN. */}
+      <button
+        onClick={() => onCambiar?.(modificarConfiguracion(estado))}
+        className="flex items-center gap-1.5 text-[11px] font-semibold mx-auto mt-1"
+        style={{ color: COLORS.textMuted }}
+      >
+        <SlidersHorizontal size={12} /> Modificar mi configuración
+      </button>
 
       <AvisoDesactivar
         aviso={pendiente?.aviso} accent={accent}
@@ -361,32 +560,36 @@ export function Recomendados({ estado, accent, onAnadir }) {
 /* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
-export default function EstiloHombreView({ estiloHombre, accent, onCambiar }) {
+export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, onCambiar }) {
   const [gestionando, setGestionando] = useState(false);
   const [ordenando, setOrdenando] = useState(false);
+  /* ⚠️ **Se calcula UNA sola vez, al entrar en el módulo** (regla 4: los hooks,
+     antes de cualquier `return`). Si se recalculara en cada render, pulsar
+     "Empezar" en la bienvenida pasaría el asistente a `en_curso` y acto seguido
+     le saldría "Lo dejaste a medias" — sobre algo que acaba de empezar. Lo que
+     el apartado 15 pide es distinguir **volver** de **seguir**, y eso no está en
+     el estado guardado: está en si ya estaba a medias cuando abrió la pantalla. */
+  const [veniaAMedias, setVeniaAMedias] = useState(() => estadoAsistente(estiloHombre) === 'en_curso');
   const estado = estiloHombre;
   const pantalla = estadoPantalla(estado);
+  const asistente = estadoAsistente(estado);
+  const seguir = (nuevo) => { setVeniaAMedias(false); onCambiar(nuevo); };
   const activos = useMemo(() => modulosActivos(estado), [estado]);
   const resumen = useMemo(() => resumenEstiloHombre(estado), [estado]);
   const gestion = useMemo(() => resumenGestion(estado), [estado]);
 
-  // Apartado 3 de F1 — la primera configuración.
-  if (pantalla === 'sin_configurar') {
-    return (
-      <div className="space-y-3">
-        <Card className="text-center">
-          <p className="text-2xl leading-none mb-2" aria-hidden="true">🧔</p>
-          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Estilo de hombre</p>
-          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
-            Personaliza tu espacio y utiliza solamente lo que necesitas.
-          </p>
-        </Card>
-        <GestionarApartados
-          estado={estado} accent={accent} primeraVez
-          onGuardar={(ids) => onCambiar(configurarPrimeraVez(estado, ids))}
-        />
-      </div>
-    );
+  /* F3 — el asistente manda mientras esté en curso o sin empezar.
+     ⚠️ Los tres casos los decide `estadoAsistente()`, no un `if` aquí:
+     'nunca' → bienvenida · 'en_curso' → retomar o seguir · lo demás → pantalla. */
+  if (asistente === 'nunca' && pantalla === 'sin_configurar') {
+    return <AsistenteEH estado={estado} accent={accent} datosGlobales={datosGlobales} onCambiar={seguir} />;
+  }
+  if (asistente === 'en_curso') {
+    // Apartado 15 — si lo dejó a medias, primero se le ofrece continuar o
+    // empezar de nuevo. Una vez elige, sigue el asistente normal.
+    return veniaAMedias
+      ? <RetomarConfiguracion estado={estado} accent={accent} onCambiar={seguir} />
+      : <AsistenteEH estado={estado} accent={accent} datosGlobales={datosGlobales} onCambiar={seguir} />;
   }
 
   if (gestionando) {

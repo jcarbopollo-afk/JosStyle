@@ -1744,6 +1744,11 @@ export default function App() {
           <EstiloHombreView
             estiloHombre={estiloHombre}
             accent={accent}
+            /* EH F3, apartado 7 — *"No preguntar información que JC Fitness ya
+               conoce."* Se le PASA lo que ya existe para que el asistente lo lea
+               y no lo pregunte. ⚠️ Nada de esto se copia dentro de
+               `estiloHombre`: se mira y se olvida (F1, apartado 10). */
+            datosGlobales={{ perfil, salud, objetivos, calistenia, sueno }}
             onCambiar={(nuevo) => snapshotAndSave({ estiloHombre: nuevo })}
           />
         );

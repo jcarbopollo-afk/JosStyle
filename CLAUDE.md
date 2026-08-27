@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.68.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.69.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 2/65**, quedan 61) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 3/65**, quedan 60) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -113,10 +113,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 3151 pruebas unitarias con Node, 5 de auditoría, 352 casos de renderizado real con
-`react-dom/server` y 10 reglas invariantes — **3508 comprobaciones**.
+Vite, 3290 pruebas unitarias con Node, 5 de auditoría, 396 casos de renderizado real con
+`react-dom/server` y 10 reglas invariantes — **3691 comprobaciones**.
 
-Eso ya ha encontrado **cuarenta y nueve bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **cincuenta y un bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -140,15 +140,15 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 2/65** (v1.68.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 3/65** (v1.69.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
-La siguiente candidata es **EH · Fase 3/65 — Sistema de primera configuración y perfil de usuario**.
+La siguiente candidata es **EH · Fase 4/65 — Sistema de datos, perfil y reutilización global**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
-⚠️ **EH F1 y F2 dejaron cinco cosas que las 63 fases siguientes tienen que respetar:**
+⚠️ **EH F1, F2 y F3 dejaron siete cosas que las 62 fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -162,6 +162,12 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   que el mismo fallo de normalizador aparece en este proyecto.
 - ⚠️ **`gestionModulos.js` no redefine nada de `estiloDeHombre.js`.** Decide qué hay que llamar;
   escribir sigue siendo de F1. Mismo reparto que `avisosHorario.js` / `notificaciones.js`.
+- ⚠️ **El asistente guarda por dónde va, NO lo que sabe** (F3, apartado 7). Nada de Josué —peso,
+  altura, nombre, objetivos— se copia dentro de `estiloHombre`: se lee de su módulo. Hay cuatro
+  pruebas que buscan esos valores en lo guardado y fallan si aparecen.
+- ⚠️ **`asistente` es el quinto campo nuevo y el primero que no se olvidó el normalizador.** Al
+  añadir un campo a una entidad, añadirlo también a su normalizador — o el siguiente guardado se lo
+  lleva (regla 5). Van cinco veces.
 
 ⏸ **SO · Fase 2 (biblioteca de sonidos) está bloqueada, y por un motivo real:** no hay ni un archivo
 de audio en el proyecto. Josué escribió en la especificación que los daría *"cuando la web ya tenga
