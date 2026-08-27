@@ -63,6 +63,10 @@ import {
   ZONA_MI_ESTILO, perfilDeEstilo, alternarValor, anadirLibre, limpiarCampo,
   estadoDelPerfil, loQueReflejaTuArmario, contrasteConElArmario, nombreDeValor,
 } from '../lib/perfilEstilo';
+import {
+  MODULO_PELO, TEXTOS_PELO, perfilCapilar, contestarPelo, borrarPelo,
+  progresoPelo, estadoPerfilCapilar, dudasDelPerfil,
+} from '../lib/perfilCapilar';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -832,6 +836,93 @@ export function MiEstiloEH({ estado, accent, armario = null, datosGlobales = {},
 }
 
 /* ===========================================================================
+   PERFIL CAPILAR (F7)
+   ===========================================================================
+   *"Tu perfil capilar — Cuéntanos un poco sobre tu pelo para poder personalizar
+   este apartado."* Con dos salidas desde el primer momento: **el usuario puede
+   saltárselo** (apartado 1).
+
+   ⚠️ Las doce preguntas se pintan desde `PREGUNTAS_PELO`. Esta pantalla no sabe
+   ni una: cuando la fase 13 traiga las de Skincare, servirá igual. */
+export function PerfilCapilarEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  const preguntas = useMemo(() => perfilCapilar(estado, datosGlobales), [estado, datosGlobales]);
+  const progreso = useMemo(() => progresoPelo(estado, datosGlobales), [estado, datosGlobales]);
+  const dudas = useMemo(() => dudasDelPerfil(estado, datosGlobales), [estado, datosGlobales]);
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>
+          💇 {progreso.sinEmpezar ? TEXTOS_PELO.titulo : TEXTOS_PELO.editar}
+        </p>
+      </div>
+      <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>{TEXTOS_PELO.texto}</p>
+
+      {preguntas.map((q) => (
+        <div key={q.id} className="mb-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>
+              {q.titulo}
+            </p>
+            {q.contestada && (
+              <button
+                onClick={() => onCambiar?.(borrarPelo(estado, q.id).estado)}
+                className="text-[10px] font-semibold"
+                style={{ color: COLORS.textMuted }}
+              >
+                Quitar
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {q.opcionesVisibles.map((o) => {
+              const on = q.valores.includes(o.id);
+              return (
+                <button
+                  key={o.id}
+                  onClick={() => onCambiar?.(contestarPelo(estado, q.id, o.id).estado)}
+                  className="rounded-full px-2.5 py-1"
+                  style={{
+                    background: on ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                    border: `1px solid ${on ? accent : COLORS.border}`,
+                  }}
+                  aria-pressed={on}
+                >
+                  <span className="text-[11px] font-semibold" style={{ color: on ? COLORS.text : COLORS.textMuted }}>
+                    {o.nombre}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {q.ayuda && !q.contestada && (
+            <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{q.ayuda}</p>
+          )}
+        </div>
+      ))}
+
+      {/* ⚠️ Apartado 2 — "no lo sé" no es un hueco: es lo que abre la puerta al
+          contenido educativo, y se dice CUÁNDO llega en vez de "próximamente". */}
+      {dudas.length > 0 && (
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>{TEXTOS_PELO.educativo}</p>
+      )}
+
+      {/* Un recuento, no una nota. Contestar dos de doce está bien. */}
+      <p className="text-[10px] text-center" style={{ color: COLORS.textMuted }}>
+        {progreso.sinEmpezar
+          ? 'Todo esto es opcional. Puedes contestar solo lo que quieras.'
+          : `Has contestado ${progreso.contestadas} de ${progreso.total}. El resto puede quedarse sin contestar.`}
+      </p>
+    </Card>
+  );
+}
+
+/* ===========================================================================
    TAMBIÉN PUEDES AÑADIR (F2, apartado 11)
    ===========================================================================
    *"Debe ser informativo, nunca obligatorio. No utilizar IA."* Y no aparece si
@@ -870,6 +961,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
+  const [perfilPelo, setPerfilPelo] = useState(false);
   const [ordenando, setOrdenando] = useState(false);
   /* ⚠️ **Se calcula UNA sola vez, al entrar en el módulo** (regla 4: los hooks,
      antes de cualquier `return`). Si se recalculara en cada render, pulsar
@@ -890,6 +982,10 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     () => (armario ? resumenEstiloArmario(estado, armario, datosGlobales) : null),
     [estado, armario, datosGlobales],
   );
+  const progresoPeloEH = useMemo(() => progresoPelo(estado, datosGlobales), [estado, datosGlobales]);
+  const subPelo = progresoPeloEH.sinEmpezar
+    ? 'Configura tu perfil'
+    : `${progresoPeloEH.contestadas} de ${progresoPeloEH.total} contestadas`;
   const perfilEstilo = useMemo(
     () => estadoDelPerfil(estado, armario, datosGlobales), [estado, armario, datosGlobales],
   );
@@ -910,6 +1006,15 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     return veniaAMedias
       ? <RetomarConfiguracion estado={estado} accent={accent} onCambiar={seguir} />
       : <AsistenteEH estado={estado} accent={accent} datosGlobales={datosGlobales} onCambiar={seguir} />;
+  }
+
+  if (perfilPelo) {
+    return (
+      <PerfilCapilarEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setPerfilPelo(false)}
+      />
+    );
   }
 
   if (miEstilo) {
@@ -962,11 +1067,15 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
                  armario, porque su módulo YA EXISTE. Y lleva al de siempre, no a
                  una copia (apartado 1). */
               const esArmario = m.id === MODULO_EH_ESTILO && !ordenando && onIr;
+              /* F7 — Pelo ya tiene contenido propio: su perfil capilar. Sigue
+                 siendo la excepción, no la regla: los otros once apartados no
+                 llevan a ninguna parte todavía y la pantalla lo dice. */
+              const esPelo = m.id === MODULO_PELO && !ordenando;
               return (
                 <Plaquita
                   key={m.id} modulo={m} accent={accent}
-                  sub={esArmario && estiloArmario ? resumenPlaquitaArmario : null}
-                  onAbrir={esArmario ? () => onIr(DESTINO_ARMARIO) : null}
+                  sub={esArmario && estiloArmario ? resumenPlaquitaArmario : (esPelo ? subPelo : null)}
+                  onAbrir={esArmario ? () => onIr(DESTINO_ARMARIO) : (esPelo ? () => setPerfilPelo(true) : null)}
                   orden={ordenando ? puedeMover(estado, m.id) : null}
                   onSubir={() => onCambiar(subirModulo(estado, m.id))}
                   onBajar={() => onCambiar(bajarModulo(estado, m.id))}
@@ -983,11 +1092,12 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
               decir "ninguno": dice cuántos faltan y no miente sobre el que hay. */}
           {!ordenando && (() => {
             const conArmario = activos.some((m) => m.id === MODULO_EH_ESTILO) && !!onIr;
-            const pendientes = activos.length - (conArmario ? 1 : 0);
+            const conPelo = activos.some((m) => m.id === MODULO_PELO);
+            const pendientes = activos.length - (conArmario ? 1 : 0) - (conPelo ? 1 : 0);
             if (pendientes === 0) return null;
             return (
               <p className="text-[11px] text-center" style={{ color: COLORS.textMuted }}>
-                {conArmario
+                {conArmario || conPelo
                   ? 'El resto de apartados que has elegido llegan en las siguientes fases.'
                   : 'De momento esto es solo tu espacio elegido: el contenido de cada apartado llega en las siguientes fases.'}
               </p>

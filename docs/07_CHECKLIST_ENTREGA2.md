@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 49 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 6/65**
-> (hasta v1.72.0). Quedan **57**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (55). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 50 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 7/65**
+> (hasta v1.73.0). Quedan **56**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (54). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -598,25 +598,68 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 > archivo con los comentarios quitados — una prueba que salta con la prosa acaba haciendo que se
 > reescriba la prosa en vez del código.
 
-#### EH · Fase 7/65 — PELO: PERFIL CAPILAR Y NECESIDADES
-- [ ] ENTRADA AL MÓDULO
-- [ ] TIPO DE PELO
-- [ ] GROSOR
-- [ ] DENSIDAD
-- [ ] LONGITUD ACTUAL
-- [ ] CUERO CABELLUDO
-- [ ] NECESIDADES
-- [ ] PREFERENCIAS
-- [ ] PEINADO
-- [ ] TIEMPO DISPONIBLE
-- [ ] PRODUCTOS
-- [ ] BARBERÍA / PELUQUERÍA
-- [ ] FRECUENCIA DE CORTE
-- [ ] DATOS DESCONOCIDOS
-- [ ] EDITAR INFORMACIÓN
-- [ ] CONEXIÓN CON EL SISTEMA DE DATOS
-- [ ] RECOMENDACIONES FUTURAS
-- [ ] PRUEBAS
+#### EH · Fase 7/65 — PELO: PERFIL CAPILAR Y NECESIDADES ✅ COMPLETADA (v1.73.0)
+
+> **`src/lib/cuestionarios.js`** (el motor) + **`src/lib/perfilCapilar.js`** (las doce preguntas) +
+> la pantalla, con **118 comprobaciones**. Sin SQL nuevo.
+>
+> **Es la primera fase que pregunta cosas de verdad, y no será la última:** Skincare (13), Cuerpo
+> (18), Barba (20), Manos (22) y Perfumes (24) traen cada una su cuestionario. Así que lo que se
+> construye es **el motor**, y las doce preguntas de Pelo son su primera configuración: están en un
+> array, y las fases siguientes traerán el suyo **sin tocar una línea de aquí**.
+>
+> ⚠️ **El motor no guarda nada por su cuenta.** Cada respuesta va a uno de los dos sitios que ya
+> existen, y la elección es una regla, no un `if`: si el dato está en `REGISTRO_DATOS` (F4) va allí
+> —lo comparte con otro módulo y por tanto no se puede volver a preguntar—; si no está, es solo de ese
+> módulo y va a su `config` (F1, apartado 8), que `alternarModulo` nunca toca. **De las doce, solo
+> `tipoPelo` es compartida**, con Productos.
+>
+> Esa única decisión es la que hace pasar los Tests 7, 8 y 9 a la vez. Si estuviera mal, nada
+> reventaría: simplemente Productos volvería a preguntar el tipo de pelo, o apagar Pelo se llevaría
+> once respuestas.
+>
+> ⚠️ **"No lo sé" es una respuesta, no un hueco** (apartados 2 y 14: *"nunca obligar a inventar una
+> respuesta"*). Se guarda, cuenta como contestada, y **es lo que abre la puerta al contenido
+> educativo**. Y es **exclusivo**: marcarlo borra lo demás y marcar algo de verdad lo quita, porque
+> *"cuero cabelludo graso y no lo sé"* es un estado imposible que luego nadie sabe interpretar.
+> Por defecto toda pregunta lo admite — el valor por defecto tiene que ser el que no obliga a
+> inventar— y solo se quita donde el enunciado no lo ofrece.
+>
+> ⚠️ **"No diagnosticar problemas"** (apartado 7). Se pregunta qué quiere cuidar, no qué le falla, y
+> hay siete pruebas que buscan "caspa", "alopecia", "problema", "diagnos"… en el código. Un chaval de
+> 16 años no necesita una aplicación diciéndole que tiene un problema.
+>
+> **Ni calendario, ni inventario de productos, ni recomendaciones.** El enunciado lo prohíbe tres
+> veces (apartados 11, 12 y 17) y hay pruebas de que no se define ninguno — **pero sí se dice cuándo
+> llegan**, que es la regla 8.
+
+- [x] ENTRADA AL MÓDULO
+- [x] TIPO DE PELO
+- [x] GROSOR
+- [x] DENSIDAD
+- [x] LONGITUD ACTUAL
+- [x] CUERO CABELLUDO
+- [x] NECESIDADES
+- [x] PREFERENCIAS
+- [x] PEINADO
+- [x] TIEMPO DISPONIBLE
+- [x] PRODUCTOS
+- [x] BARBERÍA / PELUQUERÍA
+- [x] FRECUENCIA DE CORTE
+- [x] DATOS DESCONOCIDOS
+- [x] EDITAR INFORMACIÓN
+- [x] CONEXIÓN CON EL SISTEMA DE DATOS
+- [x] RECOMENDACIONES FUTURAS
+- [x] PRUEBAS
+
+
+> ⚠️ **Una prueba mal escrita, corregida:** la primera versión prohibía la palabra "calendario" en
+> todo el archivo, y saltaba con la frase que le dice a Josué que el calendario llega en la fase 11 —
+> justo lo que manda la regla 8. Ahora comprueba que no se **defina** ninguno, y además comprueba que
+> **sí se diga cuándo llega**. Una prueba que castiga la honestidad está mal escrita.
+>
+> ⚠️ **El Test 10 (flujo completo en móvil) necesita un iPhone: es R1**, y el archivo de pruebas lo
+> imprime en vez de darlo por bueno.
 
 #### EH · Fase 8/65 — PELO: RUTINA, CUIDADOS Y SEGUIMIENTO
 - [ ] PANEL PRINCIPAL DE PELO

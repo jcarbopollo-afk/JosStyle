@@ -212,6 +212,12 @@ else
   fallo "Falla el perfil de estilo"; grep '✗' /tmp/jc_eh6.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-perfil-capilar.mjs >/tmp/jc_eh7.log 2>&1; then
+  ok "Perfil capilar y motor de cuestionarios (EH F7) — $(grep -c '✓' /tmp/jc_eh7.log) comprobaciones"
+else
+  fallo "Falla el perfil capilar"; grep '✗' /tmp/jc_eh7.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

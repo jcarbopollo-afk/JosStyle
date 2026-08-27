@@ -28,7 +28,9 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH } from '../src/views/EstiloHombreView.jsx';
+import { contestarPelo, PREGUNTAS_PELO } from '../src/lib/perfilCapilar.js';
+import { NO_LO_SE } from '../src/lib/cuestionarios.js';
 import { alternarValor, anadirLibre } from '../src/lib/perfilEstilo.js';
 import { guardarDato } from '../src/lib/datosEstiloHombre.js';
 import { iniciarAsistente, irAPaso, marcarEnSeleccion, omitirAsistente, terminarAsistente } from '../src/lib/configuracionInicial.js';
@@ -570,6 +572,24 @@ const CASOS = [
             estado: configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['estilo']), accent,
             armario: null, datosGlobales: {}, onCambiar: noop, onCerrar: noop,
           })],
+          // EH Fase 7 — el perfil capilar: sin empezar, a medias con un "no lo sé", y entero.
+          ['PerfilCapilarEH · sin empezar', PerfilCapilarEH, () => ({
+            estado: configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['pelo']), accent,
+            datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop,
+          })],
+          ['PerfilCapilarEH · a medias con dudas', PerfilCapilarEH, () => {
+            let e3 = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['pelo']);
+            e3 = contestarPelo(e3, 'tipoPelo', NO_LO_SE, { hoy: HOY }).estado;
+            e3 = contestarPelo(e3, 'cueroCabelludo', 'graso', { hoy: HOY }).estado;
+            return { estado: e3, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop };
+          }],
+          ['PerfilCapilarEH · contestado entero', PerfilCapilarEH, () => {
+            let e3 = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['pelo']);
+            PREGUNTAS_PELO.forEach((q) => { e3 = contestarPelo(e3, q.id, q.opciones[0].id, { hoy: HOY }).estado; });
+            return { estado: e3, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop };
+          }],
+          ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>
+            conArmario(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['pelo', 'skincare']))],
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],
           ['EstiloHombreView · con módulos', EstiloHombreView, () => props(conTres)],
           ['EstiloHombreView · configurado sin módulos', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],

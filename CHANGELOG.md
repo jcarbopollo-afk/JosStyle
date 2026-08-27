@@ -1,5 +1,68 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 7/65 — Pelo: perfil capilar y necesidades (v1.73.0)
+
+### La primera fase que pregunta cosas de verdad
+Y no será la última: Skincare (13), Cuerpo (18), Barba (20), Manos (22) y Perfumes (24) traen cada
+una su propio cuestionario de perfil.
+
+Así que lo que se construye es **el motor** (`cuestionarios.js`), y las doce preguntas de Pelo son su
+primera configuración. Están en un array; las fases siguientes traerán el suyo **sin tocar una línea
+de aquí**.
+
+### ⚠️ El motor no guarda nada por su cuenta
+Cada respuesta va a uno de los dos sitios que ya existen, y la elección es una regla, no un `if`
+suelto:
+
+- **Si el dato está en `REGISTRO_DATOS`** (Fase 4), va allí. Eso significa que lo comparten varios
+  módulos — `tipoPelo` lo usan Pelo y Productos — y por tanto **no se puede volver a preguntar**.
+- **Si no está**, es solo de ese módulo y va a su `config` (Fase 1, apartado 8: *"configuración
+  específica futura"*), que `alternarModulo` **nunca toca**.
+
+De las doce preguntas, **solo `tipoPelo` es compartida**.
+
+Esa única decisión es la que hace pasar los Tests 7, 8 y 9 a la vez. Y si estuviera mal, **nada
+reventaría**: simplemente Productos volvería a preguntar el tipo de pelo, o apagar Pelo se llevaría
+once respuestas. Por eso hay pruebas de las tres cosas.
+
+### ⚠️ "No lo sé" es una respuesta, no un hueco
+El apartado 14 lo dice con esas palabras: *"Nunca obligar a inventar una respuesta."* Así que:
+
+- **Se guarda, y cuenta como contestada.** No es lo mismo que no haber respondido: *"no lo sé"* es
+  información —se le puede ofrecer contenido educativo— y *"aún no ha llegado"* no lo es.
+- **Es exclusivo.** Marcarlo borra lo demás, y marcar algo de verdad lo quita. *"Cuero cabelludo
+  graso y no lo sé"* es un estado imposible que luego nadie sabe interpretar.
+- **Por defecto toda pregunta lo admite.** El valor por defecto tiene que ser el que no obliga a
+  inventar. Solo se quita donde el enunciado no lo ofrece: preguntar cada cuánto se corta el pelo ya
+  tiene su *"Cuando lo necesito"*.
+
+### ⚠️ "No diagnosticar problemas"
+Es el apartado 7, y se cumple en la forma de las preguntas: se pregunta **qué quiere cuidar**, no qué
+le falla. Hay siete pruebas que buscan "caspa", "alopecia", "calvicie", "problema", "diagnos",
+"enfermedad" y "sintoma" en el código.
+
+Un chaval de 16 años no necesita una aplicación diciéndole que tiene un problema.
+
+### Ni calendario, ni productos, ni recomendaciones
+El enunciado lo prohíbe tres veces (apartados 11, 12 y 17). Hay pruebas de que no se define ninguno
+— **pero sí se dice cuándo llegan**, que es la regla 8: *"Se usará para el calendario de peluquería,
+que llega en la fase 11."*
+
+### ⚠️ Una prueba mal escrita, corregida
+La primera versión de esa comprobación prohibía la **palabra** "calendario" en todo el archivo, y
+saltaba justo con la frase que le dice a Josué cuándo llega. Ahora comprueba que no se **defina**
+ninguno, y además comprueba que **sí se diga cuándo llega**.
+
+Una prueba que castiga la honestidad está mal escrita, y arreglarla es más barato que descubrir dentro
+de diez fases que se dejó de explicar nada por no hacerla saltar.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 809 comprobaciones unitarias**, 5 de
+auditoría, **448 casos de renderizado real** y 10 reglas invariantes — **4 262 en total**. De ellas,
+**118 nuevas** para EH F7. El **Test 10** (flujo en móvil) necesita un iPhone: **R1**.
+
+---
+
 ## Entrega 2 · EH Fase 6/65 — Perfil de estilo y preferencias personales (v1.72.0)
 
 ### La diferencia, en una línea

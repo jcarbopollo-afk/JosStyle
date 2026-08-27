@@ -206,8 +206,10 @@ escribir código.
 
 | v1.72.0 | **EH F6** | El perfil de estilo: once campos, **todos opcionales y sin almacén propio** —viven en la capa de la Fase 4, una línea cada uno—, con los colores, las marcas y las ocasiones **prestados del armario**. *"Lo que refleja tu armario"* no clasifica prendas: va de la ocasión que él eligió al estilo, y por debajo de cuatro prendas no afirma nada |
 
+| v1.73.0 | **EH F7** | El perfil capilar, y con él **el motor de cuestionarios** que usarán Skincare, Cuerpo, Barba, Manos y Perfumes. ⚠️ **No guarda nada por su cuenta**: lo compartido va a la capa de F4 y lo del módulo a su `config`, y esa única decisión hace pasar tres tests a la vez. **"No lo sé" es una respuesta**, cuenta como contestada y es exclusiva. Y no se diagnostica nada |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 6/65**. Quedan **57** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (55).
+3/5 y **EH por 7/65**. Quedan **56** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (54).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.
