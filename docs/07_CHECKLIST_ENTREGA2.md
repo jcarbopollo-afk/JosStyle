@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 51 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 8/65**
-> (hasta v1.74.0). Quedan **55**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (53). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 52 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 9/65**
+> (hasta v1.75.0). Quedan **54**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (52). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -724,34 +724,82 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 > vez en este bloque que una comprobación salta con algo que estaba bien: conviene mirar **qué línea**
 > la hace saltar antes de cambiar el código.
 
-#### EH · Fase 9/65 — PELO: SISTEMA DE RECOMENDACIONES
-- [ ] ZONA DE RECOMENDACIONES
-- [ ] UTILIZAR TODA LA INFORMACIÓN DISPONIBLE
-- [ ] REGLAS INTERNAS
-- [ ] RECOMENDACIONES NO OBLIGATORIAS
-- [ ] MOSTRAR EL MOTIVO
-- [ ] NIVEL DE RECOMENDACIÓN
-- [ ] CANTIDAD
-- [ ] DESCARTAR
-- [ ] GUARDAR
-- [ ] NO MODIFICAR AUTOMÁTICAMENTE LA RUTINA
-- [ ] PRODUCTOS
-- [ ] INFORMACIÓN INSUFICIENTE
-- [ ] ACTUALIZACIÓN
-- [ ] EVITAR REPETICIONES
-- [ ] CONEXIÓN CON EL RESTO DE ESTILO DE HOMBRE
-- [ ] PRIVACIDAD
-- [ ] PRUEBAS
-- [ ] Usuario con perfil completo → recomendaciones personalizadas.
-- [ ] Perfil incompleto → recomendaciones básicas.
-- [ ] Cambiar tipo de pelo → recomendaciones actualizadas.
-- [ ] Ignorar → no insistir inmediatamente.
-- [ ] Guardar → aparece en guardados.
-- [ ] Añadir recomendación a rutina → solo si el usuario lo confirma.
-- [ ] Desactivar recomendaciones → desaparecen.
-- [ ] Reactivar → configuración conservada.
-- [ ] No utilizar IA.
-- [ ] No crear datos duplicados.
+#### EH · Fase 9/65 — PELO: SISTEMA DE RECOMENDACIONES ✅ COMPLETADA (v1.75.0)
+
+> **`src/lib/recomendacionesPelo.js`** (146 comprobaciones) + la pantalla. Sin SQL nuevo.
+>
+> El enunciado abre con dos palabras en mayúsculas: **NO IA.** Hay seis pruebas que buscan `askAI`,
+> `anthropic`, `fetch(`, `XMLHttpRequest` y `openai` en el código: se comprueba sobre el archivo, no
+> sobre la buena voluntad.
+>
+> ⚠️ **Si un dato no existe, NO SE ASUME** (apartado 2). Cada una de las catorce reglas declara qué
+> necesita saber, y si falta algo **no se dispara**. Con el perfil vacío salen **cero**
+> recomendaciones, y hay una prueba de que **una regla sin requisitos no se aplica nunca** — porque se
+> dispararía con el contexto vacío y acabaría recomendándole cosas a alguien de quien no sabemos nada.
+>
+> Y **"No lo sé" no es un valor**: es la ausencia declarada de uno (F7), así que tampoco dispara nada.
+>
+> ⚠️ **Nunca "debes"** (apartado 4). Hay una prueba que genera **todos** los textos posibles del motor
+> —con el perfil entero contestado y con el perfil de ejemplo— y busca diez imperativos: "debes",
+> "tienes que", "deberías", "obligatorio", "necesitas", "hay que", "error", "mal", "problema" y
+> "fallo". Y comprueba que **sí** aparecen las fórmulas del enunciado: *"podría venirte bien"*,
+> *"podrías probar"*, *"una opción compatible contigo"*.
+>
+> ⚠️ **Una recomendación NUNCA modifica nada** (apartado 10). `aplicarARutina` **exige
+> `confirmado: true`**, y hay una prueba que **serializa el estado antes y después** y comprueba que
+> no ha cambiado ni un byte. Es la regla 7 del proyecto en código, igual que `aplicarPlan` en HT F9.
+> Y calcular recomendaciones tampoco escribe: **mostrar y registrar que se ha mostrado son dos
+> llamadas distintas**, para que repintar una pantalla no ensucie el historial.
+>
+> **Los dos ejemplos literales del enunciado son dos reglas con su id**: rizado + definición, y cuero
+> graso. Y el tercero — *"buscas hidratación y tu rutina tiene pocos pasos de hidratación"* — mira de
+> verdad los pasos de su rutina.
+>
+> **Los niveles 🟢🟡🔴 se importan de la Fase 6**, no se redefinen, y hay reglas en los tres: un nivel
+> vacío sería un control decorativo.
+>
+> ⚠️ **Descartar tiene memoria, pero con caducidad**: *"no me interesa"* calla 30 días, *"ya lo hago"*
+> 90, y **"no quiero verlo" es para siempre** — por eso es el único sin plazo, porque "para siempre"
+> no es un número de días. Y todo se puede deshacer: un toque no condena una recomendación.
+
+- [x] ZONA DE RECOMENDACIONES
+- [x] UTILIZAR TODA LA INFORMACIÓN DISPONIBLE
+- [x] REGLAS INTERNAS
+- [x] RECOMENDACIONES NO OBLIGATORIAS
+- [x] MOSTRAR EL MOTIVO
+- [x] NIVEL DE RECOMENDACIÓN
+- [x] CANTIDAD
+- [x] DESCARTAR
+- [x] GUARDAR
+- [x] NO MODIFICAR AUTOMÁTICAMENTE LA RUTINA
+- [x] PRODUCTOS
+- [x] INFORMACIÓN INSUFICIENTE
+- [x] ACTUALIZACIÓN
+- [x] EVITAR REPETICIONES
+- [x] CONEXIÓN CON EL RESTO DE ESTILO DE HOMBRE
+- [x] PRIVACIDAD
+- [x] PRUEBAS
+- [x] Usuario con perfil completo → recomendaciones personalizadas.
+- [x] Perfil incompleto → recomendaciones básicas.
+- [x] Cambiar tipo de pelo → recomendaciones actualizadas.
+- [x] Ignorar → no insistir inmediatamente.
+- [x] Guardar → aparece en guardados.
+- [x] Añadir recomendación a rutina → solo si el usuario lo confirma.
+- [x] Desactivar recomendaciones → desaparecen.
+- [x] Reactivar → configuración conservada.
+- [x] No utilizar IA.
+- [x] No crear datos duplicados.
+
+
+> ⚠️ **Un fallo real, encontrado por la prueba en el mismo turno:** `normalizarPelo` (F8) no conocía
+> el campo `recomendaciones`, así que **lo descartaba en cada lectura** — descartar o guardar una
+> recomendación no tenía ningún efecto. Es la **séptima vez** que este proyecto se topa con el mismo
+> fallo de normalizador, y la primera en que se detecta en el turno en que se introduce.
+>
+> ⚠️ **El apartado 9 pide integrar el sistema global de guardados "si existe". No existe:** Nutrición
+> y los colores tienen cada uno los suyos, y no hay ninguno general. Así que los guardados de pelo
+> viven en la `config` de Pelo, y queda dicho para que la fase que cree el global sepa que tiene que
+> absorberlos.
 
 #### EH · Fase 10/65 — PELO: PRODUCTOS, CATÁLOGO Y RECOMENDACIONES
 - [ ] SECCIÓN DE PRODUCTOS

@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.74.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.75.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 8/65**, quedan 55) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 9/65**, quedan 54) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -113,10 +113,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 3979 pruebas unitarias con Node, 5 de auditoría, 488 casos de renderizado real con
-`react-dom/server` y 10 reglas invariantes — **4472 comprobaciones**.
+Vite, 4126 pruebas unitarias con Node, 5 de auditoría, 504 casos de renderizado real con
+`react-dom/server` y 10 reglas invariantes — **4635 comprobaciones**.
 
-Eso ya ha encontrado **cincuenta y dos bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **cincuenta y tres bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -140,15 +140,15 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 8/65** (v1.74.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 9/65** (v1.75.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
-La siguiente candidata es **EH · Fase 9/65 — Pelo: sistema de recomendaciones**.
+La siguiente candidata es **EH · Fase 10/65 — Pelo: productos, catálogo y recomendaciones**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
-⚠️ **EH F1-F8 dejaron diecisiete cosas que las 57 fases siguientes tienen que respetar:**
+⚠️ **EH F1-F9 dejaron diecinueve cosas que las 56 fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -194,10 +194,17 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   **"Pendiente"**. Sin días en los que tocara **no hay cumplimiento**, ni 0 ni 100.
 - ⚠️ **Una recurrencia guarda su REGLA, nunca sus fechas** (F8 + regla 11), y las ocurrencias entran
   en el Calendario que ya existe con la misma forma que las del Armario. Nunca un segundo calendario.
+- ⚠️ **Toda regla de recomendación declara `requiere`** (F9, apartado 2). Sin datos no se dispara, y
+  una regla sin requisitos **no se aplica nunca**: se dispararía con el contexto vacío. "No lo sé"
+  tampoco es un valor.
+- ⚠️ **`aplicarARutina` sin `confirmado` no escribe** (F9, apartado 10), y calcular recomendaciones
+  tampoco: mostrar y registrar son dos llamadas. Nunca darle un valor por defecto.
 
-⚠️ **Y una lección de las pruebas de este bloque:** tres veces una comprobación saltó con algo que
-estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, y el
-`fotos: 0` de una auditoría—. **Mirar qué línea la hace saltar antes de tocar el código.**
+⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
+que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el
+`fotos: 0` de una auditoría y el recuento de colecciones de F8 al añadir una legítima—. **Mirar qué
+línea la hace saltar antes de tocar el código.** Y la otra: **el fallo del normalizador ya va por la
+séptima vez** (F9 lo cazó en el mismo turno). Al añadir un campo, añadirlo a su normalizador.
 
 ⏸ **SO · Fase 2 (biblioteca de sonidos) está bloqueada, y por un motivo real:** no hay ni un archivo
 de audio en el proyecto. Josué escribió en la especificación que los daría *"cuando la web ya tenga

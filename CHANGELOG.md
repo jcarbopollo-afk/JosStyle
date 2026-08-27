@@ -1,5 +1,85 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 9/65 — Pelo: sistema de recomendaciones (v1.75.0)
+
+### El enunciado abre con dos palabras en mayúsculas
+**NO IA.** *"Las recomendaciones deben salir de la información que ya tenemos guardada y de reglas
+internas de la aplicación. El usuario siempre tiene la última palabra."*
+
+Seis pruebas buscan `askAI`, `AI_SYSTEM`, `anthropic`, `fetch(`, `XMLHttpRequest` y `openai` en el
+código. Se comprueba sobre el archivo, no sobre la buena voluntad.
+
+### ⚠️ Si un dato no existe, no se asume
+Es el apartado 2, y es la diferencia entre un motor de reglas y uno que se inventa cosas.
+
+Cada una de las catorce reglas declara **qué necesita saber**. Si falta algo, no se dispara. Con el
+perfil vacío salen **cero** recomendaciones.
+
+Y una comprobación que no es obvia: **una regla sin requisitos declarados no se aplica nunca**. Si se
+permitiera, se dispararía con el contexto vacío y acabaría recomendándole cosas a alguien de quien no
+sabemos nada — el fallo silencioso de este tipo de motor.
+
+**"No lo sé" tampoco es un valor**: es la ausencia declarada de uno (Fase 7), así que no dispara nada.
+
+### ⚠️ Nunca "debes"
+El apartado 4: *"Nunca 'Debes hacer esto'. Utilizar: Podría venirte bien / Podrías probar / Una opción
+compatible contigo."*
+
+Hay una prueba que genera **todos** los textos posibles del motor —con el perfil entero contestado y
+con el de ejemplo— y busca diez imperativos. Y comprueba que **sí** aparecen las fórmulas del
+enunciado. Y, como en la Fase 7, que no se diagnostica nada.
+
+### ⚠️ Una recomendación no modifica nada
+El apartado 10: *"Una recomendación no debe modificar rutina, productos, preferencias ni
+calendario."*
+
+`aplicarARutina` **exige `confirmado: true`**, y la prueba serializa el estado antes y después para
+comprobar que **no ha cambiado ni un byte**. Es la regla 7 del proyecto en código, igual que
+`aplicarPlan` en HT F9. Nunca darle un valor por defecto.
+
+Y calcular recomendaciones tampoco escribe: **mostrar y registrar que se ha mostrado son dos llamadas
+distintas**, para que repintar una pantalla no ensucie el historial.
+
+### Los ejemplos del enunciado son reglas con su id
+- *"Si pelo = rizado + objetivo = definición"* → `definicion_rizado`.
+- *"Si cuero cabelludo = graso"* → `cuero_graso`.
+- *"Buscas hidratación y tu rutina tiene pocos pasos de hidratación"* → `hidratacion_sin_paso`, que
+  **mira de verdad los pasos de su rutina**.
+
+Y el tiempo disponible entra en las reglas, no en el texto: la mascarilla semanal solo se propone a
+quien ha dicho que puede dedicarle más de diez minutos. Es para lo que servía esa pregunta de la
+Fase 7.
+
+### Los niveles vienen de la Fase 6
+El apartado 6 dice *"utilizar los niveles que ya hemos definido"*, y eso es lo que se hace: se
+importan 🟢🟡🔴, no se redefinen. Hay una prueba de que no aparece un `const NIVELES` aquí, y otra de
+que **hay reglas en los tres** — un nivel vacío sería un control decorativo.
+
+### Descartar tiene memoria, pero con caducidad
+*"No me interesa"* calla 30 días, *"ya lo hago"* 90, y **"no quiero verlo" es para siempre** — por eso
+es el único de los cuatro sin plazo asignado: "para siempre" no es un número de días.
+
+Y todo se puede deshacer. Un toque no condena una recomendación.
+
+### ⚠️ Un fallo real, encontrado en el mismo turno
+`normalizarPelo` (Fase 8) no conocía el campo `recomendaciones`, así que **lo descartaba en cada
+lectura**: descartar o guardar una recomendación no tenía ningún efecto.
+
+Es la **séptima vez** que este proyecto se topa con el mismo fallo de normalizador, y la primera en
+que se detecta en el turno en que se introduce, en lugar de fases después.
+
+### El apartado 9 pide integrar el sistema global de guardados "si existe"
+**No existe.** Nutrición y los colores tienen cada uno los suyos, y no hay ninguno general. Así que
+los guardados de pelo viven en la `config` de Pelo, y queda dicho para que la fase que cree el global
+sepa que tiene que absorberlos.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **4 126 comprobaciones unitarias**, 5 de
+auditoría, **504 casos de renderizado real** y 10 reglas invariantes — **4 635 en total**. De ellas,
+**146 nuevas** para EH F9.
+
+---
+
 ## Entrega 2 · EH Fase 8/65 — Pelo: rutina, cuidados y seguimiento (v1.74.0)
 
 ### La filosofía, que el propio enunciado escribe

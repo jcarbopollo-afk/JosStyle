@@ -69,9 +69,10 @@ const conRutina = (opts = {}) => {
 eq(PLAQUITAS_PELO.length, 5, 'Las cinco plaquitas del apartado 1');
 eq(PLAQUITAS_PELO.map((p) => p.nombre),
   ['Mi pelo', 'Mi rutina', 'Seguimiento', 'Recomendaciones', 'Peluquería'], 'Con sus nombres literales');
-eq(PLAQUITAS_PELO.filter((p) => p.listo).length, 3, 'Tres funcionan hoy');
-ok(PLAQUITAS_PELO.filter((p) => !p.listo).every((p) => p.fase > 8),
-  '⚠️ Y las dos que no, dicen en qué fase llegan — regla 8, no "próximamente"');
+// ⚠️ Cuatro desde la Fase 9: Recomendaciones pasó a listo. Peluquería no.
+eq(PLAQUITAS_PELO.filter((p) => p.listo).length, 4, 'Cuatro funcionan hoy');
+ok(PLAQUITAS_PELO.filter((p) => !p.listo).every((p) => p.fase > 9),
+  '⚠️ Y la que no, dice en qué fase llega — regla 8, no "próximamente"');
 eq(PLAQUITAS_PELO.find((p) => p.id === 'peluqueria').fase, 11, 'Peluquería, en la fase 11');
 
 /* ── 2 · LAS PARTES (apartados 15 y 16) ──────────────────────────────────── */
@@ -298,7 +299,11 @@ eq(auditarPelo(e1).fotos, 0, '⚠️ Apartado 10: cero fotos — "no crear una g
 ok(!/foto|imagen|galeria/i.test(codigoSinAuditoria), 'Y ni una función de foto en el código');
 
 const rec = baseParaRecomendar(e1);
-ok(!rec.disponible, '⚠️ Apartado 13: las recomendaciones NO existen todavía, y se dice');
+/* ⚠️ En la Fase 8 esto decía que las recomendaciones no existían. La Fase 9 las
+   construyó, así que lo que sigue siendo cierto es que ESTE archivo no las
+   calcula: `baseParaRecomendar` entrega el material y `recomendacionesPelo.js`
+   hace el resto. La declaración se conserva porque sigue describiendo el reparto. */
+ok(!rec.disponible, 'Apartado 13: este archivo no calcula recomendaciones, solo prepara el material');
 eq(rec.fase, 9, 'Con la fase en la que llegan');
 eq(rec.fuentes.length, 6, 'Y las seis fuentes que enumera el enunciado');
 ok(rec.sinIA, '⚠️ Sin IA, declarado');
@@ -371,8 +376,15 @@ eq(resumenPelo(base(), { hoy: HOY }).rutinas, 0, 'Sin nada, cero — y no revien
 eq(ACCIONES_PELO.length, 7, 'Las siete acciones del apartado 2');
 ok(ACCIONES_PELO.every((a) => a.nombre && a.icono), 'Con nombre e icono');
 eq(accionPelo('inventada'), null, 'Una acción que no existe devuelve null');
-eq(Object.keys(DEFAULT_PELO).sort(), ['cambios', 'hechos', 'partes', 'productos', 'rutinas'],
-  'Cinco colecciones, y ninguna de fotos ni de catálogo');
+/* ⚠️ Seis desde la Fase 9, que añadió `recomendaciones` (lo que él decide sobre
+   ellas, no las recomendaciones en sí). Lo que esta comprobación vigila de
+   verdad no es el número, sino que NO aparezca una colección de fotos ni un
+   catálogo de productos — así que ahora lo dice así. */
+eq(Object.keys(DEFAULT_PELO).sort(),
+  ['cambios', 'hechos', 'partes', 'productos', 'recomendaciones', 'rutinas'],
+  'Las seis colecciones que hay hoy');
+ok(!Object.keys(DEFAULT_PELO).some((k) => /foto|galeria|catalogo/i.test(k)),
+  '⚠️ Y ninguna de fotos (apartado 10) ni de catálogo (apartado 11 + D2-03)');
 
 if (fallos > 0) {
   console.log(`\n  ${fallos} de ${n} comprobaciones han fallado.`);

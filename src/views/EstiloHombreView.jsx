@@ -62,6 +62,7 @@ import {
 import {
   ZONA_MI_ESTILO, perfilDeEstilo, alternarValor, anadirLibre, limpiarCampo,
   estadoDelPerfil, loQueReflejaTuArmario, contrasteConElArmario, nombreDeValor,
+  NIVELES_ESTILO,
 } from '../lib/perfilEstilo';
 import {
   MODULO_PELO, TEXTOS_PELO, perfilCapilar, contestarPelo, borrarPelo,
@@ -74,6 +75,10 @@ import {
   TEXTOS_ESTADO_DIA, marcarPaso, marcarRutinaEntera, historialPelo,
   registrarCambio, cambiosPelo, anadirProducto, resumenPelo, baseParaRecomendar,
 } from '../lib/rutinasPelo';
+import {
+  MOTIVOS_DESCARTE, recomendarPelo, descartar, guardarRecomendacion,
+  guardadasDePelo, aplicarARutina, PUENTE_PRODUCTOS_PELO, resumenRecomendacionesPelo,
+} from '../lib/recomendacionesPelo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -942,15 +947,27 @@ export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCer
   const [zona, setZona] = useState(null);      // null | 'rutina' | 'seguimiento' | 'ajustes'
   const resumen = useMemo(() => resumenPelo(estado), [estado]);
   const perfil = useMemo(() => progresoPelo(estado, datosGlobales), [estado, datosGlobales]);
+  const recs = useMemo(() => resumenRecomendacionesPelo(estado, datosGlobales), [estado, datosGlobales]);
 
   if (zona === 'rutina') return <RutinasPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
   if (zona === 'seguimiento') return <SeguimientoPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
   if (zona === 'ajustes') return <AjustesPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
+  if (zona === 'recomendaciones') {
+    return (
+      <RecomendacionesPeloEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setZona(null)}
+      />
+    );
+  }
 
   const sub = {
     perfil: perfil.sinEmpezar ? 'Sin configurar' : `${perfil.contestadas} de ${perfil.total}`,
     rutina: resumen.rutinas === 0 ? 'Ninguna todavía' : `${resumen.rutinas} ${resumen.rutinas === 1 ? 'rutina' : 'rutinas'}`,
     seguimiento: resumen.registros === 0 ? 'Sin registros' : `${resumen.registros} ${resumen.registros === 1 ? 'día' : 'días'}`,
+    recomendaciones: recs.disponibles === 0
+      ? 'Cuéntanos algo más'
+      : `${recs.disponibles} ${recs.disponibles === 1 ? 'opción' : 'opciones'}`,
   };
 
   return (
@@ -972,7 +989,8 @@ export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCer
             .map((p) => {
               const abre = p.id === 'perfil' ? onPerfil
                 : (p.id === 'rutina' ? () => setZona('rutina')
-                  : (p.id === 'seguimiento' ? () => setZona('seguimiento') : null));
+                  : (p.id === 'seguimiento' ? () => setZona('seguimiento')
+                    : (p.id === 'recomendaciones' ? () => setZona('recomendaciones') : null)));
               return (
                 <Plaquita
                   key={p.id} accent={accent}
@@ -1302,6 +1320,155 @@ export function AjustesPeloEH({ estado, accent, onCambiar, onCerrar }) {
       </div>
       {/* Regla 8 — se dice cuándo llegan, no "próximamente". */}
       <p className="text-[10px] mt-3" style={{ color: COLORS.textMuted }}>{rec.nota}</p>
+    </Card>
+  );
+}
+
+/* ===========================================================================
+   RECOMENDACIONES DE PELO (F9)
+   ===========================================================================
+   *"💡 Recomendaciones para ti."* Tres, con su motivo y con las dos salidas de
+   siempre.
+
+   ⚠️ **Una recomendación no modifica nada** (apartado 10). "Añadir a mi rutina"
+   llama a `aplicarARutina` con `confirmado: true`, y sin ese toque el estado no
+   cambia ni un byte. */
+export function RecomendacionesPeloEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  const [verTodas, setVerTodas] = useState(false);
+  const [nivel, setNivel] = useState(null);
+  const [menu, setMenu] = useState(null);
+  const r = useMemo(
+    () => recomendarPelo(estado, datosGlobales, { nivel, limite: verTodas ? 99 : 3 }),
+    [estado, datosGlobales, nivel, verTodas],
+  );
+  const guardadas = useMemo(() => guardadasDePelo(estado), [estado]);
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>💡 Recomendaciones para ti</p>
+      </div>
+      <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>
+        Salen de lo que nos has contado. Ninguna es obligatoria.
+      </p>
+
+      {/* Apartado 6 — el nivel lo elige él. */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {[{ id: null, nombre: 'Todos', icono: '' }, ...NIVELES_ESTILO].map((niv) => (
+          <button
+            key={niv.id || 'todos'} onClick={() => setNivel(niv.id)}
+            className="rounded-full px-2.5 py-1"
+            style={{
+              background: nivel === niv.id ? hexToRgba(accent, 0.12) : COLORS.surface2,
+              border: `1px solid ${nivel === niv.id ? accent : COLORS.border}`,
+            }}
+            aria-pressed={nivel === niv.id}
+          >
+            <span className="text-[11px] font-semibold" style={{ color: nivel === niv.id ? COLORS.text : COLORS.textMuted }}>
+              {niv.icono} {niv.nombre}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Apartado 12 — falta información, pero NUNCA se bloquea. */}
+      {r.falta.hayQueAfinar && (
+        <div className="rounded-2xl p-3 mb-3"
+          style={{ background: hexToRgba(accent, 0.08), border: `1px solid ${hexToRgba(accent, 0.25)}` }}>
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{r.falta.titulo}</p>
+          <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>{r.falta.texto}</p>
+        </div>
+      )}
+
+      {r.recomendaciones.length === 0 ? (
+        <p className="text-[11px] text-center py-3" style={{ color: COLORS.textMuted }}>
+          Cuéntanos algo más sobre tu pelo y aquí aparecerán opciones que podrían encajarte.
+        </p>
+      ) : (
+        <div className="space-y-1.5">
+          {r.recomendaciones.map((x) => (
+            <div key={x.reglaId} className="rounded-2xl p-2.5"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <div className="flex items-start gap-2">
+                <span className="text-base leading-none flex-shrink-0" aria-hidden="true">{x.icono}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                    {x.titulo} <span style={{ color: COLORS.textMuted }}>{x.nivelIcono}</span>
+                  </p>
+                  <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{x.texto}</p>
+                  {/* ⚠️ Apartado 5 — siempre el motivo. */}
+                  <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{x.porque}</p>
+                </div>
+                <button onClick={() => setMenu(menu === x.reglaId ? null : x.reglaId)}
+                  className="flex-shrink-0 px-1" aria-label={`Opciones de ${x.titulo}`}>
+                  <span className="text-[13px]" style={{ color: COLORS.textMuted }}>⋯</span>
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <button onClick={() => onCambiar?.(guardarRecomendacion(estado, x.reglaId).estado)}
+                  className="text-[10px] font-semibold" style={{ color: x.guardada ? accent : COLORS.textMuted }}>
+                  {x.guardada ? '❤️ Guardada' : '❤️ Guardar'}
+                </button>
+                {/* ⚠️ Apartado 10 — solo si él lo confirma. */}
+                {x.accion && (
+                  <button
+                    onClick={() => onCambiar?.(aplicarARutina(estado, x.reglaId, { confirmado: true }).estado)}
+                    className="text-[10px] font-semibold" style={{ color: accent }}
+                  >
+                    Añadir a mi rutina
+                  </button>
+                )}
+                {x.verProductos && (
+                  <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                    🛒 {PUENTE_PRODUCTOS_PELO.nota}
+                  </span>
+                )}
+              </div>
+
+              {/* Apartado 8 — los cuatro motivos, y nada más. */}
+              {menu === x.reglaId && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {MOTIVOS_DESCARTE.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => { onCambiar?.(descartar(estado, x.reglaId, m.id).estado); setMenu(null); }}
+                      className="rounded-full px-2.5 py-1"
+                      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+                    >
+                      <span className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>{m.nombre}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Apartado 7 — "Ver más", para no saturar. */}
+      {r.hayMas && !verTodas && (
+        <button onClick={() => setVerTodas(true)} className="text-[11px] font-semibold mx-auto block mt-2"
+          style={{ color: accent }}>
+          Ver más
+        </button>
+      )}
+
+      {guardadas.length > 0 && (
+        <div className="mt-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>
+            ⭐ Guardados
+          </p>
+          {guardadas.map((g) => (
+            <p key={g.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>{g.icono} {g.titulo}</p>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }

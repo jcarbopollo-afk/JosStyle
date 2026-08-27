@@ -28,8 +28,9 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH } from '../src/views/EstiloHombreView.jsx';
 import { crearRutina, marcarRutinaEntera, registrarCambio, alternarParte, datosPelo } from '../src/lib/rutinasPelo.js';
+import { guardarRecomendacion, descartar, REGLAS_PELO } from '../src/lib/recomendacionesPelo.js';
 import { contestarPelo, PREGUNTAS_PELO } from '../src/lib/perfilCapilar.js';
 import { NO_LO_SE } from '../src/lib/cuestionarios.js';
 import { alternarValor, anadirLibre } from '../src/lib/perfilEstilo.js';
@@ -600,6 +601,11 @@ const CASOS = [
             const idR = datosPeloSmoke(conRut);
             const hecha = marcarRutinaEntera(conRut, idR, { hoy: HOY }).estado;
             const conCambios = registrarCambio(hecha, 'mejor', 'Lo noto menos seco.', { hoy: HOY }).estado;
+            // Un perfil capilar de verdad, para que el motor de F9 tenga con qué.
+            let conPerfilPelo = conCambios;
+            [['tipoPelo', 'rizado'], ['necesidadesPelo', 'definicion'], ['necesidadesPelo', 'hidratacion'],
+              ['cueroCabelludo', 'graso'], ['tiempoPelo', '10_20']]
+              .forEach(([q, v]) => { conPerfilPelo = contestarPelo(conPerfilPelo, q, v, { hoy: HOY }).estado; });
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
@@ -615,6 +621,15 @@ const CASOS = [
               ['SeguimientoPeloEH · sin datos', SeguimientoPeloEH, () => pp(soloPelo)],
               ['SeguimientoPeloEH · con historial', SeguimientoPeloEH, () => pp(conCambios)],
               ['AjustesPeloEH · las cuatro partes', AjustesPeloEH, () => pp(conRut)],
+              // EH Fase 9 — el motor de recomendaciones: sin perfil, con perfil y descartada.
+              ['RecomendacionesPeloEH · sin perfil', RecomendacionesPeloEH, () => pp(soloPelo)],
+              ['RecomendacionesPeloEH · con perfil', RecomendacionesPeloEH, () => pp(conPerfilPelo)],
+              ['RecomendacionesPeloEH · con una guardada', RecomendacionesPeloEH, () =>
+                pp(guardarRecomendacion(conPerfilPelo, 'definicion_rizado', { hoy: HOY }).estado)],
+              /* ⚠️ Con TODAS descartadas la pantalla no puede quedarse en blanco:
+                 tiene que decir qué hacer (apartado 12). */
+              ['RecomendacionesPeloEH · todas descartadas', RecomendacionesPeloEH, () =>
+                pp(REGLAS_PELO.reduce((acc, rg) => descartar(acc, rg.id, 'no_verlo', { hoy: HOY }).estado, conPerfilPelo))],
             ];
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>

@@ -210,8 +210,10 @@ escribir código.
 
 | v1.74.0 | **EH F8** | Rutinas capilares y seguimiento. **No castigar**: un día sin hacer es "Pendiente", con nueve pruebas sobre el peor escenario, y **sin días en los que tocara no hay cumplimiento** —decir "0 %" de algo que nunca tocó es el mismo reproche—. **Nada materializado**: "cada 3 días" guarda su regla, y un año de eventos deja el estado por debajo de 3 KB. Entra en el Calendario que ya existe |
 
+| v1.75.0 | **EH F9** | El motor de recomendaciones capilares, **sin IA y comprobado sobre el código**. ⚠️ **Si un dato no existe no se asume**: cada regla declara qué necesita y con el perfil vacío salen CERO. **Nunca "debes"**, con una prueba sobre todos los textos posibles. Y **una recomendación no modifica nada**: `aplicarARutina` exige confirmación, y la prueba compara el estado byte a byte |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 8/65**. Quedan **55** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (53).
+3/5 y **EH por 9/65**. Quedan **54** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (52).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

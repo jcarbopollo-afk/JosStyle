@@ -47,9 +47,10 @@ export const PLAQUITAS_PELO = [
   { id: 'perfil', nombre: 'Mi pelo', icono: '🧬', fase: 7, listo: true },
   { id: 'rutina', nombre: 'Mi rutina', icono: '🧴', fase: 8, listo: true },
   { id: 'seguimiento', nombre: 'Seguimiento', icono: '📈', fase: 8, listo: true },
-  // ⚠️ Las dos últimas existen como estructura y lo dicen. Regla 8: enseñar una
-  // plaquita que no lleva a nada sin avisar es el control decorativo prohibido.
-  { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', fase: 9, listo: false },
+  // ⚠️ Recomendaciones pasó a `listo: true` en la Fase 9. Peluquería sigue sin
+  // estarlo, y lo dice: regla 8 — enseñar una plaquita que no lleva a nada sin
+  // avisar es el control decorativo prohibido.
+  { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', fase: 9, listo: true },
   { id: 'peluqueria', nombre: 'Peluquería', icono: '📅', fase: 11, listo: false },
 ];
 
@@ -85,6 +86,10 @@ export const DEFAULT_PELO = {
   cambios: [],       // [{ id, fecha, como, nota }]
   productos: [],     // [{ id, nombre, paso }] — ⚠️ sin catálogo (D2-03)
   partes: {},        // { [parte]: bool }
+  // ⚠️ EH F9 — lo que él decide sobre las recomendaciones (descartes, guardadas
+  // y vistas). La forma la decide `normalizarRecs` en `recomendacionesPelo.js`;
+  // aquí solo se declara y se arrastra, para no importar en círculo.
+  recomendaciones: {},
 };
 
 export const ACCIONES_PELO = [
@@ -166,6 +171,14 @@ export function normalizarPelo(guardado) {
       .filter((p) => p && (p.nombre || '').trim())
       .map((p) => ({ id: p.id || uid(), nombre: p.nombre.trim(), paso: p.paso || null })),
     partes,
+    // ⚠️ **Séptima vez que este proyecto se topa con el mismo fallo, y la
+    // primera en la que lo encontró una prueba en el mismo turno:** sin esta
+    // línea, `normalizarPelo` descartaba `recomendaciones` en CADA lectura, así
+    // que descartar o guardar una recomendación no tenía ningún efecto. Un campo
+    // que el normalizador no conoce no llega ni al siguiente guardado.
+    recomendaciones: g.recomendaciones && typeof g.recomendaciones === 'object' && !Array.isArray(g.recomendaciones)
+      ? g.recomendaciones
+      : {},
   };
 }
 
