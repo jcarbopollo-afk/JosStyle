@@ -67,6 +67,13 @@ import {
   MODULO_PELO, TEXTOS_PELO, perfilCapilar, contestarPelo, borrarPelo,
   progresoPelo, estadoPerfilCapilar, dudasDelPerfil,
 } from '../lib/perfilCapilar';
+import {
+  PLAQUITAS_PELO, PARTES_PELO, ACCIONES_PELO, FRECUENCIAS_PELO, COMO_LO_NOTAS,
+  datosPelo, parteActiva, alternarParte, crearRutina, editarRutina,
+  impactoEliminarRutina, eliminarRutina, rutinasDeHoy, checklistDelDia,
+  TEXTOS_ESTADO_DIA, marcarPaso, marcarRutinaEntera, historialPelo,
+  registrarCambio, cambiosPelo, anadirProducto, resumenPelo, baseParaRecomendar,
+} from '../lib/rutinasPelo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -923,6 +930,383 @@ export function PerfilCapilarEH({ estado, accent, datosGlobales = {}, onCambiar,
 }
 
 /* ===========================================================================
+   PELO: PANEL, RUTINAS Y SEGUIMIENTO (F8)
+   ===========================================================================
+   *"La aplicación recomienda y organiza; el usuario decide."*
+
+   ⚠️ **No castigar** (apartado 7). Un día sin hacer la rutina sale como
+   "Pendiente" y nada más: ni rojo, ni un aspa, ni una cuenta de días perdidos.
+   Hay una prueba de Node que recorre todos los textos buscando reproches. */
+
+export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil }) {
+  const [zona, setZona] = useState(null);      // null | 'rutina' | 'seguimiento' | 'ajustes'
+  const resumen = useMemo(() => resumenPelo(estado), [estado]);
+  const perfil = useMemo(() => progresoPelo(estado, datosGlobales), [estado, datosGlobales]);
+
+  if (zona === 'rutina') return <RutinasPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
+  if (zona === 'seguimiento') return <SeguimientoPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
+  if (zona === 'ajustes') return <AjustesPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
+
+  const sub = {
+    perfil: perfil.sinEmpezar ? 'Sin configurar' : `${perfil.contestadas} de ${perfil.total}`,
+    rutina: resumen.rutinas === 0 ? 'Ninguna todavía' : `${resumen.rutinas} ${resumen.rutinas === 1 ? 'rutina' : 'rutinas'}`,
+    seguimiento: resumen.registros === 0 ? 'Sin registros' : `${resumen.registros} ${resumen.registros === 1 ? 'día' : 'días'}`,
+  };
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          {onCerrar && (
+            <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+              <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+            </button>
+          )}
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>💇 Pelo</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5">
+          {PLAQUITAS_PELO.filter((p) => p.id !== 'recomendaciones' || parteActiva(estado, 'recomendaciones'))
+            .filter((p) => p.id !== 'seguimiento' || parteActiva(estado, 'seguimiento'))
+            .filter((p) => p.id !== 'rutina' || parteActiva(estado, 'rutinas'))
+            .map((p) => {
+              const abre = p.id === 'perfil' ? onPerfil
+                : (p.id === 'rutina' ? () => setZona('rutina')
+                  : (p.id === 'seguimiento' ? () => setZona('seguimiento') : null));
+              return (
+                <Plaquita
+                  key={p.id} accent={accent}
+                  modulo={{ nombre: p.nombre, icono: p.icono, sub: '' }}
+                  /* ⚠️ Regla 8 — las dos que no funcionan dicen en qué fase
+                     llegan, en vez de no hacer nada al tocarlas. */
+                  sub={p.listo ? (sub[p.id] || '') : `Llega en la fase ${p.fase}`}
+                  onAbrir={p.listo ? abre : null}
+                />
+              );
+            })}
+        </div>
+      </Card>
+
+      {/* Apartado 6 — la lista de hoy, si hay algo que tocar. */}
+      <RutinaDeHoy estado={estado} accent={accent} onCambiar={onCambiar} />
+
+      <button
+        onClick={() => setZona('ajustes')}
+        className="flex items-center gap-1.5 text-[11px] font-semibold mx-auto"
+        style={{ color: COLORS.textMuted }}
+      >
+        <Settings size={12} /> Configurar Pelo
+      </button>
+    </div>
+  );
+}
+
+/** Apartado 6 — *"Rutina de hoy"*, con sus casillas. */
+export function RutinaDeHoy({ estado, accent, onCambiar }) {
+  const hoy = useMemo(() => rutinasDeHoy(estado), [estado]);
+  const listas = useMemo(
+    () => hoy.map((r) => checklistDelDia(estado, r.id)).filter(Boolean), [estado, hoy],
+  );
+  if (listas.length === 0) return null;
+
+  return (
+    <Card>
+      <p className="text-sm font-semibold mb-2" style={{ color: COLORS.text }}>Rutina de hoy</p>
+      {listas.map((l) => (
+        <div key={l.id} className="mb-3 last:mb-0">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{l.nombre}</p>
+            {/* ⚠️ Apartado 7: "Pendiente", nunca "Has fallado". */}
+            <span className="text-[10px]" style={{ color: l.estado === 'hecha' ? accent : COLORS.textMuted }}>
+              {TEXTOS_ESTADO_DIA[l.estado]}
+            </span>
+          </div>
+          <div className="space-y-1">
+            {l.pasos.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => onCambiar?.(marcarPaso(estado, l.id, p.id).estado)}
+                className="rounded-2xl p-2.5 flex items-center gap-2 w-full text-left"
+                style={{
+                  background: p.hecho ? hexToRgba(accent, 0.1) : COLORS.surface2,
+                  border: `1px solid ${p.hecho ? accent : COLORS.border}`,
+                }}
+                aria-pressed={p.hecho}
+              >
+                <span className="text-sm leading-none flex-shrink-0" aria-hidden="true">{p.icono}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="text-[11px] font-semibold block truncate" style={{ color: COLORS.text }}>
+                    {p.etiqueta}
+                  </span>
+                  {p.producto && (
+                    <span className="text-[10px] block truncate" style={{ color: COLORS.textMuted }}>{p.producto}</span>
+                  )}
+                </span>
+                {p.hecho && <Check size={14} style={{ color: accent }} className="flex-shrink-0" />}
+              </button>
+            ))}
+          </div>
+          {l.total > 1 && (
+            <button
+              onClick={() => onCambiar?.(marcarRutinaEntera(estado, l.id).estado)}
+              className="text-[10px] font-semibold mt-1.5"
+              style={{ color: accent }}
+            >
+              {l.estado === 'hecha' ? 'Desmarcar todo' : 'Marcar todo'}
+            </button>
+          )}
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+/** Apartados 2, 3, 11, 12 y 14 — crear, editar y borrar rutinas. */
+export function RutinasPeloEH({ estado, accent, onCambiar, onCerrar }) {
+  const [creando, setCreando] = useState(false);
+  const [nombre, setNombre] = useState('');
+  const [elegidos, setElegidos] = useState([]);
+  const [frecuencia, setFrecuencia] = useState('diaria');
+  const [aBorrar, setABorrar] = useState(null);
+  const datos = useMemo(() => datosPelo(estado), [estado]);
+
+  const crear = () => {
+    const { estado: nuevo } = crearRutina(estado, {
+      nombre: nombre.trim() || 'Mi rutina',
+      pasos: elegidos.map((a) => ({ accion: a })),
+      frecuencia,
+    });
+    onCambiar?.(nuevo);
+    setCreando(false); setNombre(''); setElegidos([]); setFrecuencia('diaria');
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-3">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>🧴 Mi rutina</p>
+      </div>
+
+      {datos.rutinas.length === 0 && !creando && (
+        <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>
+          Todavía no tienes ninguna. Créala como quieras: aquí no hay rutinas puestas de fábrica.
+        </p>
+      )}
+
+      <div className="space-y-1.5 mb-3">
+        {datos.rutinas.map((r) => (
+          <div
+            key={r.id}
+            className="rounded-2xl p-2.5"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+          >
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold truncate" style={{ color: COLORS.text }}>{r.nombre}</p>
+                <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>
+                  {FRECUENCIAS_PELO.find((f) => f.id === r.frecuencia)?.nombre}
+                  {r.pasos.length > 0 && ` · ${r.pasos.length} ${r.pasos.length === 1 ? 'paso' : 'pasos'}`}
+                  {r.duracion ? ` · ${r.duracion} min` : ''}
+                </p>
+              </div>
+              <Switch
+                checked={r.activa}
+                onChange={() => onCambiar?.(editarRutina(estado, r.id, { activa: !r.activa }).estado)}
+                accent={accent} label={r.nombre}
+              />
+              <button onClick={() => setABorrar(impactoEliminarRutina(estado, r.id))} aria-label={`Borrar ${r.nombre}`}>
+                <X size={14} style={{ color: COLORS.textMuted }} />
+              </button>
+            </div>
+            {/* Apartado 5 — el recordatorio es suyo, y nace apagado. */}
+            {parteActiva(estado, 'recordatorios') && (
+              <button
+                onClick={() => onCambiar?.(editarRutina(estado, r.id, { recordatorio: !r.recordatorio }).estado)}
+                className="text-[10px] font-semibold mt-1"
+                style={{ color: r.recordatorio ? accent : COLORS.textMuted }}
+              >
+                {r.recordatorio ? '🔔 Recordatorio activado' : '🔕 Recordatorio desactivado'}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {creando ? (
+        <div className="space-y-2">
+          <TextInput value={nombre} onChange={(ev) => setNombre(ev.target.value)}
+            placeholder="Nombre de la rutina" aria-label="Nombre de la rutina" />
+          <div className="flex flex-wrap gap-1.5">
+            {ACCIONES_PELO.map((a) => {
+              const on = elegidos.includes(a.id);
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => setElegidos((p) => (on ? p.filter((x) => x !== a.id) : [...p, a.id]))}
+                  className="rounded-full px-2.5 py-1"
+                  style={{
+                    background: on ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                    border: `1px solid ${on ? accent : COLORS.border}`,
+                  }}
+                  aria-pressed={on}
+                >
+                  <span className="text-[11px] font-semibold" style={{ color: on ? COLORS.text : COLORS.textMuted }}>
+                    {a.icono} {a.nombre}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {FRECUENCIAS_PELO.map((f) => (
+              <button
+                key={f.id} onClick={() => setFrecuencia(f.id)}
+                className="rounded-full px-2.5 py-1"
+                style={{
+                  background: frecuencia === f.id ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                  border: `1px solid ${frecuencia === f.id ? accent : COLORS.border}`,
+                }}
+                aria-pressed={frecuencia === f.id}
+              >
+                <span className="text-[11px] font-semibold"
+                  style={{ color: frecuencia === f.id ? COLORS.text : COLORS.textMuted }}>{f.nombre}</span>
+              </button>
+            ))}
+          </div>
+          <PrimaryButton accent={accent} onClick={crear}>Guardar rutina</PrimaryButton>
+          <button onClick={() => setCreando(false)} className="text-[11px] font-semibold mx-auto block"
+            style={{ color: COLORS.textMuted }}>Cancelar</button>
+        </div>
+      ) : (
+        <PrimaryButton accent={accent} icon={Plus} onClick={() => setCreando(true)}>Crear rutina</PrimaryButton>
+      )}
+
+      {/* ⚠️ Borrar dice ANTES qué se lleva por delante. */}
+      <AvisoDesactivar
+        aviso={aBorrar?.existe ? {
+          titulo: 'Borrar rutina', texto: aBorrar.texto, confirmar: 'Borrar', cancelar: 'Cancelar',
+        } : null}
+        accent={accent}
+        onConfirmar={() => {
+          const r = datos.rutinas.find((x) => x.nombre === aBorrar.nombre);
+          if (r) onCambiar?.(eliminarRutina(estado, r.id).estado);
+          setABorrar(null);
+        }}
+        onCancelar={() => setABorrar(null)}
+      />
+    </Card>
+  );
+}
+
+/** Apartados 8 y 9 — historial y cambios. *"No convertirlo todavía en estadísticas complejas."* */
+export function SeguimientoPeloEH({ estado, accent, onCambiar, onCerrar }) {
+  const [nota, setNota] = useState('');
+  const hist = useMemo(() => historialPelo(estado), [estado]);
+  const cambios = useMemo(() => cambiosPelo(estado), [estado]);
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-3">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>📈 Seguimiento</p>
+      </div>
+
+      {hist.length === 0 ? (
+        <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>
+          Cuando tengas alguna rutina, aquí verás cómo va.
+        </p>
+      ) : (
+        <div className="space-y-1.5 mb-3">
+          {hist.map((h) => (
+            <div key={h.id} className="rounded-2xl p-2.5"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <p className="text-[11px] font-semibold truncate" style={{ color: COLORS.text }}>{h.nombre}</p>
+              {/* ⚠️ Sin días en los que tocara NO hay cumplimiento: decir "0 %"
+                  de algo que nunca tocó es el reproche que prohíbe el apartado 7. */}
+              <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                {h.cumplimiento === null
+                  ? `${h.hechas} ${h.hechas === 1 ? 'vez' : 'veces'} en el último mes`
+                  : `${h.hechas} de ${h.tocaba} · ${h.cumplimiento} %`}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Apartado 9 — ¿cómo notas tu pelo? */}
+      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>
+        ¿Cómo notas tu pelo?
+      </p>
+      <div className="flex gap-1.5 mb-2">
+        {COMO_LO_NOTAS.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => { onCambiar?.(registrarCambio(estado, c.id, nota).estado); setNota(''); }}
+            className="rounded-full px-3 py-1 flex-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+          >
+            <span className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{c.nombre}</span>
+          </button>
+        ))}
+      </div>
+      <TextInput value={nota} onChange={(ev) => setNota(ev.target.value)}
+        placeholder="Una nota, si quieres" aria-label="Nota" />
+
+      {cambios.length > 0 && (
+        <div className="mt-3 space-y-1">
+          {cambios.slice(0, 5).map((c) => (
+            <p key={c.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {c.fecha} · {COMO_LO_NOTAS.find((x) => x.id === c.como)?.nombre}
+              {c.nota ? ` — ${c.nota}` : ''}
+            </p>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/** Apartado 15 — *"Cada parte puede desaparecer si el usuario no la quiere."* */
+export function AjustesPeloEH({ estado, accent, onCambiar, onCerrar }) {
+  const rec = useMemo(() => baseParaRecomendar(estado), [estado]);
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>⚙️ Configurar Pelo</p>
+      </div>
+      <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>
+        Lo que apagues deja de aparecer, pero no se borra nada.
+      </p>
+      <div className="space-y-1">
+        {PARTES_PELO.map((p) => (
+          <div key={p.id} className="rounded-2xl p-2.5 flex items-center gap-2"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <span className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>{p.nombre}</span>
+            <Switch checked={parteActiva(estado, p.id)} onChange={() => onCambiar?.(alternarParte(estado, p.id))}
+              accent={accent} label={p.nombre} />
+          </div>
+        ))}
+      </div>
+      {/* Regla 8 — se dice cuándo llegan, no "próximamente". */}
+      <p className="text-[10px] mt-3" style={{ color: COLORS.textMuted }}>{rec.nota}</p>
+    </Card>
+  );
+}
+
+/* ===========================================================================
    TAMBIÉN PUEDES AÑADIR (F2, apartado 11)
    ===========================================================================
    *"Debe ser informativo, nunca obligatorio. No utilizar IA."* Y no aparece si
@@ -961,7 +1345,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
-  const [perfilPelo, setPerfilPelo] = useState(false);
+  const [perfilPelo, setPerfilPelo] = useState(false);   // false | 'panel' | 'perfil'
   const [ordenando, setOrdenando] = useState(false);
   /* ⚠️ **Se calcula UNA sola vez, al entrar en el módulo** (regla 4: los hooks,
      antes de cualquier `return`). Si se recalculara en cada render, pulsar
@@ -983,9 +1367,12 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     [estado, armario, datosGlobales],
   );
   const progresoPeloEH = useMemo(() => progresoPelo(estado, datosGlobales), [estado, datosGlobales]);
-  const subPelo = progresoPeloEH.sinEmpezar
-    ? 'Configura tu perfil'
-    : `${progresoPeloEH.contestadas} de ${progresoPeloEH.total} contestadas`;
+  const resumenPeloEH = useMemo(() => resumenPelo(estado), [estado]);
+  const subPelo = resumenPeloEH.rutinas > 0
+    ? `${resumenPeloEH.rutinas} ${resumenPeloEH.rutinas === 1 ? 'rutina' : 'rutinas'}`
+      + (resumenPeloEH.hoy > 0 ? ` · ${resumenPeloEH.hechasHoy}/${resumenPeloEH.hoy} hoy` : '')
+    : (progresoPeloEH.sinEmpezar ? 'Configura tu perfil'
+      : `${progresoPeloEH.contestadas} de ${progresoPeloEH.total} contestadas`);
   const perfilEstilo = useMemo(
     () => estadoDelPerfil(estado, armario, datosGlobales), [estado, armario, datosGlobales],
   );
@@ -1008,11 +1395,22 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
       : <AsistenteEH estado={estado} accent={accent} datosGlobales={datosGlobales} onCambiar={seguir} />;
   }
 
-  if (perfilPelo) {
+  /* F8 — la plaquita de Pelo abre su PANEL, y el perfil capilar de F7 es una de
+     sus cinco plaquitas (apartado 1). */
+  if (perfilPelo === 'perfil') {
     return (
       <PerfilCapilarEH
         estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setPerfilPelo('panel')}
+      />
+    );
+  }
+  if (perfilPelo) {
+    return (
+      <PanelPelo
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={() => setPerfilPelo(false)}
+        onPerfil={() => setPerfilPelo('perfil')}
       />
     );
   }
@@ -1075,7 +1473,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
                 <Plaquita
                   key={m.id} modulo={m} accent={accent}
                   sub={esArmario && estiloArmario ? resumenPlaquitaArmario : (esPelo ? subPelo : null)}
-                  onAbrir={esArmario ? () => onIr(DESTINO_ARMARIO) : (esPelo ? () => setPerfilPelo(true) : null)}
+                  onAbrir={esArmario ? () => onIr(DESTINO_ARMARIO) : (esPelo ? () => setPerfilPelo('panel') : null)}
                   orden={ordenando ? puedeMover(estado, m.id) : null}
                   onSubir={() => onCambiar(subirModulo(estado, m.id))}
                   onBajar={() => onCambiar(bajarModulo(estado, m.id))}

@@ -1,5 +1,74 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 8/65 — Pelo: rutina, cuidados y seguimiento (v1.74.0)
+
+### La filosofía, que el propio enunciado escribe
+*"La aplicación recomienda y organiza; el usuario decide. No vamos a convertirlo en una obligación ni
+en un sistema médico."*
+
+### ⚠️ No castigar, y probado en el peor escenario
+El apartado 7 lo dice sin rodeos: *"No queremos 'Has fallado'. Simplemente 'Pendiente'."*
+
+Un día sin hacer la rutina **no es un día perdido**. Hay una prueba que monta el peor caso posible
+—una rutina diaria abandonada durante dos meses— y recorre **todos** los textos que el módulo genera
+buscando "fallado", "fallo", "perdido", "deberías", "mal", "incumplido", "abandonado", "racha rota" y
+"castigo". Nueve comprobaciones sobre el mismo escenario.
+
+Y una consecuencia que no es obvia: **sin días en los que tocara, no hay cumplimiento** — ni 0 % ni
+100 %. Una rutina "personalizada", que Josué hace cuando quiere, no puede salir con un 0 %: decir eso
+de algo que nunca tocó es exactamente el reproche que el apartado prohíbe.
+
+### ⚠️ Nada se materializa
+El apartado 17: *"No crear un segundo calendario. Debe utilizarse el calendario existente."* Y la
+regla 11 del proyecto dice lo mismo para cualquier recurrencia.
+
+Una rutina "cada 3 días" guarda **su regla**, no cien fechas. La prueba pide **un año entero** de
+eventos, comprueba que salen más de cien… **y que el estado guardado sigue por debajo de 3 KB**.
+
+El efecto: cambiar la frecuencia cambia los eventos al momento, porque no hay nada que sincronizar.
+
+Las rutinas entran en el Calendario con **la misma forma** que los usos del Armario, así que encajan
+sin adaptadores.
+
+### ⚠️ Ni un contador guardado
+Cuántas veces la ha hecho, cuántos días le tocaba, el cumplimiento — todo se deriva del historial. Un
+contador guardado miente en cuanto Josué borra un registro. Hay una prueba de que la rutina guardada
+no lleva ninguna cifra acumulada.
+
+Y el estado de hoy también es derivado: **marcada ayer no significa marcada hoy**.
+
+### Lo que no se construye, y está declarado
+- **Sin gamificación** (D2-02 de Josué): ni XP, ni niveles, ni medallas.
+- **Sin fotos** (apartado 10): *"no crear una galería fotográfica obligatoria"*.
+- **Sin catálogo de productos** (apartado 11 + D2-03): un producto aquí es **un nombre que él
+  escribe**. Seis pruebas buscan "amazon", "afiliad", "precio", "comprar", "http" y "marca:".
+- **Sin recomendaciones** (apartado 13): existe la estructura, que declara las seis fuentes que
+  usará y que llega en la fase 9.
+
+### Recordatorios nace apagado
+El apartado 5: *"nunca deben ser obligatorios"*. Y el enunciado lo dibuja así — `☐ Recordatorios` —
+así que es la única de las cuatro partes que empieza en off.
+
+### Dos cosas pequeñas que evitan sustos
+**Borrar una rutina dice antes qué se lleva por delante**: *"se borrará X y 3 días registrados"*. Y
+**borrar un producto desengancha** los pasos que lo usaban, no los borra.
+
+### ⚠️ Otra prueba mal escrita, corregida
+Los barridos de *"esto NO existe"* cazaban su propia evidencia: `fotos: 0` y `xp: 0` viven dentro de
+`auditarPelo()`, que es justo la función que **declara los ceros**. Ahora el barrido excluye esa
+función.
+
+Es la tercera vez en este bloque que una comprobación salta con algo que estaba bien. Conviene mirar
+**qué línea** la hace saltar antes de tocar el código: dos de las tres veces, el código era correcto
+y la prueba estaba mal.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 979 comprobaciones unitarias**, 5 de
+auditoría, **488 casos de renderizado real** y 10 reglas invariantes — **4 472 en total**. De ellas,
+**170 nuevas** para EH F8.
+
+---
+
 ## Entrega 2 · EH Fase 7/65 — Pelo: perfil capilar y necesidades (v1.73.0)
 
 ### La primera fase que pregunta cosas de verdad

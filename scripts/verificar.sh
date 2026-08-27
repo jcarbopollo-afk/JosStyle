@@ -218,6 +218,12 @@ else
   fallo "Falla el perfil capilar"; grep '✗' /tmp/jc_eh7.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-rutinas-pelo.mjs >/tmp/jc_eh8.log 2>&1; then
+  ok "Rutinas y seguimiento de pelo (EH F8) — $(grep -c '✓' /tmp/jc_eh8.log) comprobaciones"
+else
+  fallo "Fallan las rutinas de pelo"; grep '✗' /tmp/jc_eh8.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

@@ -28,7 +28,8 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy } from '../src/views/EstiloHombreView.jsx';
+import { crearRutina, marcarRutinaEntera, registrarCambio, alternarParte, datosPelo } from '../src/lib/rutinasPelo.js';
 import { contestarPelo, PREGUNTAS_PELO } from '../src/lib/perfilCapilar.js';
 import { NO_LO_SE } from '../src/lib/cuestionarios.js';
 import { alternarValor, anadirLibre } from '../src/lib/perfilEstilo.js';
@@ -72,6 +73,7 @@ import { GAMIFICACION_INICIAL, evaluar as evaluarGam, EVENTOS_GAMIFICACION } fro
 
 const accent = ACCENTS[0].value;
 const noop = () => {};
+const datosPeloSmoke = (e5) => datosPelo(e5).rutinas[0].id;
 const HOY = new Date().toISOString().slice(0, 10);
 // RA Fase 1 — los dos días anteriores, para poder montar una racha de verdad en las
 // pruebas. Se calculan con el mismo `addDays` que usa el motor, no a mano.
@@ -588,6 +590,33 @@ const CASOS = [
             PREGUNTAS_PELO.forEach((q) => { e3 = contestarPelo(e3, q.id, q.opciones[0].id, { hoy: HOY }).estado; });
             return { estado: e3, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop };
           }],
+          // EH Fase 8 — el panel de Pelo, sus rutinas y su seguimiento.
+          ...(() => {
+            const soloPelo = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['pelo']);
+            const conRut = crearRutina(soloPelo, {
+              nombre: 'Rutina de lavado', frecuencia: 'diaria',
+              pasos: [{ accion: 'lavado', nombre: 'Champú' }, { accion: 'acondicionador' }],
+            }, { hoy: HOY }).estado;
+            const idR = datosPeloSmoke(conRut);
+            const hecha = marcarRutinaEntera(conRut, idR, { hoy: HOY }).estado;
+            const conCambios = registrarCambio(hecha, 'mejor', 'Lo noto menos seco.', { hoy: HOY }).estado;
+            const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop });
+            return [
+              ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
+              ['PanelPelo · con rutina hecha', PanelPelo, () => pp(conCambios)],
+              /* ⚠️ Con las partes apagadas la pantalla NO puede quedarse rota:
+                 las plaquitas desaparecen y ya (apartado 15). */
+              ['PanelPelo · con partes apagadas', PanelPelo, () =>
+                pp(alternarParte(alternarParte(conRut, 'seguimiento'), 'rutinas'))],
+              ['RutinasPeloEH · vacío', RutinasPeloEH, () => pp(soloPelo)],
+              ['RutinasPeloEH · con una rutina', RutinasPeloEH, () => pp(conRut)],
+              ['RutinaDeHoy · pendiente', RutinaDeHoy, () => ({ estado: conRut, accent, onCambiar: noop })],
+              ['RutinaDeHoy · hecha', RutinaDeHoy, () => ({ estado: hecha, accent, onCambiar: noop })],
+              ['SeguimientoPeloEH · sin datos', SeguimientoPeloEH, () => pp(soloPelo)],
+              ['SeguimientoPeloEH · con historial', SeguimientoPeloEH, () => pp(conCambios)],
+              ['AjustesPeloEH · las cuatro partes', AjustesPeloEH, () => pp(conRut)],
+            ];
+          })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>
             conArmario(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['pelo', 'skincare']))],
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],

@@ -17,6 +17,7 @@
 // tabla de traducción aparte.
 import { prediccionObjetivo } from './predicciones';
 import { TIPOS_FECHA_RELACION } from '../tokens';
+import { eventosDePelo } from './rutinasPelo';
 
 // Objetivos con plazo estimable (prediccionObjetivo, Fase 17) y todavía no cumplidos — un
 // objetivo ya marcado como cumplido no aporta nada al calendario, solo ruido. El plazo es una
@@ -232,7 +233,7 @@ function eventosDeArmario(armario) {
 //   (Diaria/Semanal/Mensual/Anual) y un progreso — mismo motivo que Hábitos/Rutinas.
 // - Recordatorios: no existen como módulo propio en la app — ya están cubiertos desde la Fase 1,
 //   Josué los crea directamente en el calendario (tipo "Recordatorio").
-export function eventosDerivados({ objetivos, estudios, calistenia, futbol, productividad, relacion, armario }) {
+export function eventosDerivados({ objetivos, estudios, calistenia, futbol, productividad, relacion, armario, estiloHombre, desde, hasta }) {
   return [
     ...eventosDeObjetivos(objetivos),
     ...eventosDeEstudios(estudios),
@@ -240,12 +241,19 @@ export function eventosDerivados({ objetivos, estudios, calistenia, futbol, prod
     ...eventosDeTareas(productividad),
     ...eventosDeRelacion(relacion),
     ...eventosDeArmario(armario),
+    // EH F8, apartado 17 — *"No crear un segundo calendario. Debe utilizarse el
+    // calendario existente."* Las rutinas de pelo entran por aquí como todo lo
+    // demás: ⚠️ **derivadas y de solo lectura** (regla 11), calculadas de su
+    // regla. Necesitan un rango porque una rutina "cada 3 días" no tiene un
+    // número finito de ocurrencias — y no se materializa ninguna.
+    ...(estiloHombre && desde && hasta ? eventosDePelo(estiloHombre, { desde, hasta }) : []),
   ];
 }
 
 // Nombre legible del módulo de origen — solo para el botón "Abrir en..." del detalle de un
 // evento de solo lectura en CalendarView.jsx.
 export const NOMBRES_ORIGEN = {
+  pelo: 'Pelo',
   objetivos: 'Objetivos',
   estudios: 'Estudios',
   entreno: 'Entrenamiento',

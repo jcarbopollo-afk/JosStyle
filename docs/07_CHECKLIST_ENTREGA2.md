@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 50 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 7/65**
-> (hasta v1.73.0). Quedan **56**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (54). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 51 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 8/65**
+> (hasta v1.74.0). Quedan **55**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (53). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -661,25 +661,68 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 > ⚠️ **El Test 10 (flujo completo en móvil) necesita un iPhone: es R1**, y el archivo de pruebas lo
 > imprime en vez de darlo por bueno.
 
-#### EH · Fase 8/65 — PELO: RUTINA, CUIDADOS Y SEGUIMIENTO
-- [ ] PANEL PRINCIPAL DE PELO
-- [ ] RUTINA CAPILAR
-- [ ] CREAR UNA RUTINA
-- [ ] FRECUENCIAS
-- [ ] SIN RECORDATORIOS OBLIGATORIOS
-- [ ] CHECKLIST
-- [ ] NO CASTIGAR AL USUARIO
-- [ ] HISTORIAL
-- [ ] CAMBIOS
-- [ ] FOTOS
-- [ ] PRODUCTOS UTILIZADOS
-- [ ] PRODUCTOS SIN REGISTRAR
-- [ ] RECOMENDACIONES
-- [ ] PERSONALIZACIÓN
-- [ ] ACTIVAR/DESACTIVAR COMPONENTES
-- [ ] DATOS CONSERVADOS
-- [ ] INTEGRACIÓN CON CALENDARIO
-- [ ] PRUEBAS
+#### EH · Fase 8/65 — PELO: RUTINA, CUIDADOS Y SEGUIMIENTO ✅ COMPLETADA (v1.74.0)
+
+> **`src/lib/rutinasPelo.js`** (170 comprobaciones) + el panel de Pelo, sus rutinas y su seguimiento.
+> Sin SQL nuevo: todo vive en la `config` del módulo Pelo, que `alternarModulo` **nunca toca** — que
+> es literalmente lo que pide el apartado 16.
+>
+> ⚠️ **No castigar** (apartado 7). *"No queremos 'Has fallado'. Simplemente 'Pendiente'."* Un día sin
+> hacer la rutina no es un día perdido. Hay una prueba que monta **el peor escenario posible** —una
+> rutina diaria abandonada durante dos meses— y recorre todos los textos generados buscando
+> "fallado", "perdido", "deberías", "incumplido", "abandonado", "racha rota" y "castigo". Nueve
+> comprobaciones.
+>
+> ⚠️ **Y sin días en los que tocara, NO hay cumplimiento** — ni 0 % ni 100 %. Decir "0 %" de algo que
+> nunca tocó es exactamente el reproche que prohíbe ese apartado.
+>
+> ⚠️ **Nada se materializa** (apartado 17 + regla 11). Una rutina "cada 3 días" guarda **su regla**,
+> no cien fechas: hay una prueba que pide un año entero de eventos, comprueba que salen más de cien
+> **y que el estado guardado sigue por debajo de 3 KB**. Cambiar la frecuencia cambia los eventos al
+> momento, porque no hay nada que sincronizar.
+>
+> ⚠️ **Ni un contador guardado.** Cuántas veces la ha hecho y el cumplimiento se derivan del
+> historial. Un contador guardado miente en cuanto Josué borra un registro.
+>
+> ⚠️ **Sin gamificación** (D2-02 de Josué): ni XP, ni niveles, ni medallas, con prueba sobre el
+> código. **Ni fotos** (apartado 10). **Ni catálogo de productos** (apartado 11 + D2-03): un producto
+> aquí es un nombre que él escribe, y hay seis pruebas que buscan "amazon", "afiliad", "precio",
+> "comprar", "http" y "marca:".
+>
+> **Recordatorios nace apagado** (apartado 5: *"nunca deben ser obligatorios"*), tal y como el propio
+> enunciado lo dibuja: `☐ Recordatorios`.
+>
+> **Borrar una rutina dice antes qué se lleva por delante** —*"se borrará X y 3 días registrados"*—
+> y borrar un producto **desengancha** los pasos que lo usaban, no los borra.
+>
+> **Las rutinas entran en el Calendario que ya existe**, con la misma forma que las del Armario, así
+> que encajan sin adaptadores (apartado 17: *"no crear un segundo calendario"*).
+
+- [x] PANEL PRINCIPAL DE PELO
+- [x] RUTINA CAPILAR
+- [x] CREAR UNA RUTINA
+- [x] FRECUENCIAS
+- [x] SIN RECORDATORIOS OBLIGATORIOS
+- [x] CHECKLIST
+- [x] NO CASTIGAR AL USUARIO
+- [x] HISTORIAL
+- [x] CAMBIOS
+- [x] FOTOS
+- [x] PRODUCTOS UTILIZADOS
+- [x] PRODUCTOS SIN REGISTRAR
+- [x] RECOMENDACIONES
+- [x] PERSONALIZACIÓN
+- [x] ACTIVAR/DESACTIVAR COMPONENTES
+- [x] DATOS CONSERVADOS
+- [x] INTEGRACIÓN CON CALENDARIO
+- [x] PRUEBAS
+
+
+> ⚠️ **Otra prueba mal escrita, corregida:** los barridos de *"esto NO existe"* cazaban su propia
+> evidencia — `fotos: 0` y `xp: 0` dentro de `auditarPelo()` son **la prueba** de que no hay fotos ni
+> gamificación, no una infracción. Ahora el barrido excluye la función de auditoría. Es la tercera
+> vez en este bloque que una comprobación salta con algo que estaba bien: conviene mirar **qué línea**
+> la hace saltar antes de cambiar el código.
 
 #### EH · Fase 9/65 — PELO: SISTEMA DE RECOMENDACIONES
 - [ ] ZONA DE RECOMENDACIONES
