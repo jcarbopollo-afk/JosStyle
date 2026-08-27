@@ -1,5 +1,81 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 6/65 — Perfil de estilo y preferencias personales (v1.72.0)
+
+### La diferencia, en una línea
+*"Armario → qué prendas tiene el usuario. Perfil de estilo → qué le gusta, qué quiere conseguir y
+qué tipo de imagen quiere transmitir."*
+
+Y va **dentro** de Estilo y Armario (apartado 1: *"no crear otro apartado principal"*), no como un
+módulo nuevo del catálogo.
+
+### ⚠️ Once campos y ningún almacén propio
+Todo el perfil se guarda en **la capa de datos de la Fase 4**, con una línea por preferencia en el
+registro. No es por ahorrar: **`estilosFavoritos` y `coloresFavoritos` ya existían** desde la Fase 5.
+Crear aquí unos paralelos habría dado dos listas de estilos favoritos que se separan con el tiempo, y
+el Test 9 de esta fase dice literalmente *"comprobar que no se duplica la información"*.
+
+El efecto secundario bueno: el panel **Mis datos** enseña el perfil entero sin que nadie lo enchufe, y
+`hayQuePreguntar()` ya sabe que Productos no tiene que volver a preguntar los colores.
+
+### Tres listas se toman prestadas y no se declaran
+Los colores son `COLORES_ARMARIO` (apartado 4: *"no duplicar el sistema de paletas si ya existe"*),
+las marcas salen de sus propias prendas (apartado 5: *"reutilizar las marcas existentes"*) y las
+ocasiones son `OCASIONES_OUTFIT` (apartado 6). Hay pruebas que leen el código y fallan si aparece una
+lista nueva.
+
+### ⚠️ Los niveles nacen aquí
+El apartado 10 dice *"mantener el sistema de niveles que ya definimos"* (🟢 Básico 🟡 Intermedio
+🔴 Avanzado). En la especificación se definen en las fases 18 y 22 — que en orden de construcción
+todavía no existen. Así que se definen **una vez, aquí**, y esas fases los importarán en vez de
+escribir los suyos. El día que alguien teclee `['Básico', 'Intermedio', 'Avanzado']` por su cuenta,
+habrá dos listas.
+
+### ⚠️ Un perfil vacío es un perfil válido
+El Test 7 es exactamente eso: *"no rellenar ningún campo → el módulo sigue funcionando"*. Así que:
+
+- No hay barra de progreso, ni porcentaje, ni la palabra "incompleto". Hay una prueba que lo busca.
+- **Quitar el último valor borra el dato**, en vez de guardar `[]` y decir después "no lo has
+  indicado". Guardar una lista vacía y llamarla "sin indicar" es mentir a medias.
+- Con el perfil vacío, el motor de reglas devuelve **cero reglas**, no un error.
+
+### ⚠️ "Lo que refleja tu armario" no clasifica prendas
+El apartado 14 pide *"Tu armario refleja principalmente: Deportivo · Casual · Minimalista"*. La
+tentación es deducir el estilo de cada prenda, y eso es adivinar: un pantalón negro puede ser de
+cualquier estilo.
+
+Así que la tabla va de **ocasión** —que la eligió él para cada outfit— a estilo, y de categoría a
+estilo **solo donde la prenda lo dice sin ambigüedad**. `chandal` está; `pantalones` no, y hay una
+prueba de que no está. Por debajo de cuatro prendas no se afirma nada, y cada frase dice de dónde
+sale — misma regla que la analítica del Horario (HT F11).
+
+**Y el contraste describe, no corrige:** si él dice "elegante" y su armario refleja "deportivo", el
+texto es *"puede ser justo lo que buscas cambiar"*. Cinco pruebas comprueban que nunca aparece
+"deberías", "error", "incorrecto", "mal" ni "no encaja".
+
+### Lo personal no viaja a las recomendaciones
+El apartado 15 pide respetar la privacidad. *"Cosas que me gustaría hacer"* **no sale** en el contexto
+que se entrega a quien recomiende ropa, con el motivo escrito y una prueba que lo busca. Los
+intereses sí — el propio enunciado los pone como ejemplo de contexto útil.
+
+### ⚠️ Esta fase obligó a afinar una prueba de la Fase 5
+La Fase 5 comprobaba que ningún id del registro contuviera la palabra "marca" u "ocasion", y
+`marcasFavoritas` la hizo saltar. **No era una duplicación:** el armario sabe qué marcas *tiene*, no
+cuáles le *gustan*. Lo que hay que prohibir es el catálogo, no la preferencia — así que ahora compara
+ids exactos.
+
+Y dos comprobaciones nuevas cazaban **comentarios en vez de código**: una saltaba con la frase que
+explica que *no* hay un almacén paralelo, y otra con "con**seguir**". Ahora las dos leen el archivo
+con los comentarios quitados. Una prueba que salta con la prosa acaba haciendo que se reescriba la
+prosa en vez del código.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 691 comprobaciones unitarias**, 5 de
+auditoría, **432 casos de renderizado real** y 10 reglas invariantes — **4 128 en total**. De ellas,
+**119 nuevas** para EH F6.
+
+---
+
 ## Entrega 2 · EH Fase 5/65 — Estilo + Armario: integración con el sistema existente (v1.71.0)
 
 ### El enunciado empieza con tres avisos, y los tres dicen lo mismo

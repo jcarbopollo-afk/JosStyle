@@ -204,8 +204,10 @@ escribir código.
 
 | v1.71.0 | **EH F5** | El armario **conectado, no reconstruido**: cero prendas guardadas aquí, y una prueba que lee el código fuente y falla si este archivo puede escribir en él. **Un solo perfil de tallas**, derivado de las prendas, con el choque enseñado en vez de resuelto en silencio. Y un fallo real encontrado: leía `ocasiones` donde un outfit guarda `ocasion` |
 
+| v1.72.0 | **EH F6** | El perfil de estilo: once campos, **todos opcionales y sin almacén propio** —viven en la capa de la Fase 4, una línea cada uno—, con los colores, las marcas y las ocasiones **prestados del armario**. *"Lo que refleja tu armario"* no clasifica prendas: va de la ocasión que él eligió al estilo, y por debajo de cuatro prendas no afirma nada |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 5/65**. Quedan **58** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (56).
+3/5 y **EH por 6/65**. Quedan **57** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (55).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

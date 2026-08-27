@@ -91,6 +91,18 @@ export const REGISTRO_DATOS = [
   { id: 'estilosFavoritos', nombre: 'Estilos favoritos', categoria: 'estilo', clase: 'preferencia', usan: ['estilo'], historial: false, desde: 5 },
   { id: 'coloresFavoritos', nombre: 'Colores favoritos', categoria: 'estilo', clase: 'preferencia', usan: ['estilo', 'productos'], historial: false, desde: 5 },
   { id: 'formalidad', nombre: 'Nivel de formalidad habitual', categoria: 'estilo', clase: 'preferencia', usan: ['estilo'], historial: false, desde: 5 },
+  // EH F6, el perfil de estilo. ⚠️ `estilosFavoritos` y `coloresFavoritos` YA
+  // estaban (F5): la Fase 6 los REUTILIZA en vez de crear unos paralelos, que es
+  // lo que su Test 9 comprueba. Solo se añaden los que no existían.
+  { id: 'prioridadesEstilo', nombre: 'Qué buscas al vestir', categoria: 'estilo', clase: 'preferencia', usan: ['estilo', 'productos'], historial: false, desde: 6 },
+  { id: 'coloresEvitar', nombre: 'Colores que prefieres evitar', categoria: 'estilo', clase: 'preferencia', usan: ['estilo', 'productos'], historial: false, desde: 6 },
+  { id: 'marcasFavoritas', nombre: 'Marcas favoritas', categoria: 'estilo', clase: 'opcional', usan: ['estilo', 'productos'], historial: false, desde: 6 },
+  { id: 'marcasEvitar', nombre: 'Marcas que no quieres usar', categoria: 'estilo', clase: 'opcional', usan: ['estilo', 'productos'], historial: false, desde: 6 },
+  { id: 'ocasionesInteres', nombre: 'Para qué quieres recomendaciones', categoria: 'estilo', clase: 'preferencia', usan: ['estilo'], historial: false, desde: 6 },
+  { id: 'intereses', nombre: 'Cosas que te gustan', categoria: 'perfil', clase: 'opcional', usan: ['estilo', 'habitos'], historial: false, desde: 6 },
+  { id: 'quiereHacer', nombre: 'Cosas que te gustaría hacer', categoria: 'objetivos', clase: 'opcional', usan: ['estilo', 'habitos'], historial: false, desde: 6 },
+  { id: 'imagenPersonal', nombre: 'Qué imagen quieres transmitir', categoria: 'estilo', clase: 'opcional', usan: ['estilo'], historial: false, desde: 6 },
+  { id: 'nivelEstilo', nombre: 'Tu nivel en estilo', categoria: 'estilo', clase: 'preferencia', usan: ['estilo', 'educacion'], historial: true, desde: 6 },
 ];
 
 export const datoDelRegistro = (id) => REGISTRO_DATOS.find((d) => d.id === id) || null;

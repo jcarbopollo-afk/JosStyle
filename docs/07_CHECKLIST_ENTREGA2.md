@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 48 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 5/65**
-> (hasta v1.71.0). Quedan **58**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (56). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 49 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 6/65**
+> (hasta v1.72.0). Quedan **57**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (55). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -535,22 +535,68 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 > ⚠️ **El Test 10 (navegación en móvil) necesita un iPhone: es R1**, y la auditoría lo declara en
 > `noComprobableAqui` en vez de darlo por bueno.
 
-#### EH · Fase 6/65 — PERFIL DE ESTILO Y PREFERENCIAS PERSONALES
-- [ ] ACCESO
-- [ ] PRIORIDADES
-- [ ] COLORES
-- [ ] MARCAS
-- [ ] OCASIONES
-- [ ] COSAS QUE LE GUSTAN
-- [ ] COSAS QUE LE GUSTARÍA HACER
-- [ ] IMAGEN PERSONAL
-- [ ] NIVELES
-- [ ] RECOMENDACIONES
-- [ ] EL USUARIO SIEMPRE PUEDE CAMBIARLO
-- [ ] NO OBLIGAR A COMPLETAR TODO
-- [ ] CONEXIÓN CON EL ARMARIO
-- [ ] PRIVACIDAD
-- [ ] PRUEBAS
+#### EH · Fase 6/65 — PERFIL DE ESTILO Y PREFERENCIAS PERSONALES ✅ COMPLETADA (v1.72.0)
+
+> **`src/lib/perfilEstilo.js`** (119 comprobaciones) + el panel **Mi estilo** en
+> `src/views/EstiloHombreView.jsx`. Sin SQL nuevo **y sin almacén propio**.
+>
+> ⚠️ **Los once campos del perfil viven en la capa de datos de la Fase 4**, una línea cada uno en
+> `REGISTRO_DATOS`. No es por ahorrar: `estilosFavoritos` y `coloresFavoritos` **ya existían** desde
+> la Fase 5, y crear aquí unos paralelos habría dado dos listas que se separan con el tiempo — que es
+> exactamente lo que comprueba el Test 9. El efecto secundario bueno: el panel *Mis datos* enseña el
+> perfil entero sin que nadie lo enchufe.
+>
+> ⚠️ **Tres listas se toman prestadas y no se declaran**: los colores son `COLORES_ARMARIO`
+> (apartado 4: *"no duplicar el sistema de paletas"*), las marcas salen de sus propias prendas
+> (apartado 5) y las ocasiones son `OCASIONES_OUTFIT` (apartado 6). Hay pruebas que leen el código y
+> fallan si aparece una lista nueva.
+>
+> ⚠️ **Los NIVELES (🟢🟡🔴) nacen aquí.** El apartado 10 dice *"mantener el sistema que ya
+> definimos"*, pero en la especificación se definen en las fases 18 y 22, que aún no existen. Así que
+> se definen una vez, aquí, y esas fases los importarán en vez de escribir los suyos.
+>
+> ⚠️ **Un perfil vacío es un perfil válido** (Test 7 + apartado 13). No hay barra de progreso, ni
+> porcentaje, ni la palabra "incompleto": hay una prueba que lo comprueba. Y quitar el último valor
+> **borra el dato** en vez de guardar `[]` y decir después "no lo has indicado".
+>
+> ⚠️ **Lo que refleja tu armario NO clasifica prendas** (apartado 14). Deducir el estilo de un
+> pantalón es adivinar, así que la tabla va de **ocasión** —que la eligió él— a estilo, y de categoría
+> a estilo **solo donde la prenda lo dice sin ambigüedad**: `pantalones` no está, y hay una prueba de
+> que no está. Por debajo de cuatro prendas no se afirma nada, y cada frase dice de dónde sale.
+>
+> **Y el contraste describe, no corrige:** si dice "elegante" y su armario refleja "deportivo", el
+> texto es *"puede ser justo lo que buscas cambiar"*. Cinco pruebas comprueban que nunca aparece
+> "deberías", "error", "incorrecto", "mal" ni "no encaja".
+>
+> ⚠️ **Lo que le gustaría hacer NO viaja al contexto de recomendaciones** (apartado 15), con su
+> motivo escrito y una prueba que lo busca.
+
+- [x] ACCESO
+- [x] PRIORIDADES
+- [x] COLORES
+- [x] MARCAS
+- [x] OCASIONES
+- [x] COSAS QUE LE GUSTAN
+- [x] COSAS QUE LE GUSTARÍA HACER
+- [x] IMAGEN PERSONAL
+- [x] NIVELES
+- [x] RECOMENDACIONES
+- [x] EL USUARIO SIEMPRE PUEDE CAMBIARLO
+- [x] NO OBLIGAR A COMPLETAR TODO
+- [x] CONEXIÓN CON EL ARMARIO
+- [x] PRIVACIDAD
+- [x] PRUEBAS
+
+
+> ⚠️ **Esta fase obligó a afinar una prueba de la Fase 5.** Aquella comprobaba que ningún id del
+> registro contuviera la palabra "marca" u "ocasion", y `marcasFavoritas` la hizo saltar. No era una
+> duplicación: el armario sabe qué marcas **tiene**, no cuáles le **gustan**. Lo que hay que prohibir
+> es el catálogo, no la preferencia, así que ahora compara ids exactos.
+>
+> ⚠️ **Y dos comprobaciones nuevas cazaban comentarios en vez de código**: una saltaba con la frase
+> que explica que *no* hay un almacén paralelo, y otra con "con**seguir**". Ahora las dos leen el
+> archivo con los comentarios quitados — una prueba que salta con la prosa acaba haciendo que se
+> reescriba la prosa en vez del código.
 
 #### EH · Fase 7/65 — PELO: PERFIL CAPILAR Y NECESIDADES
 - [ ] ENTRADA AL MÓDULO

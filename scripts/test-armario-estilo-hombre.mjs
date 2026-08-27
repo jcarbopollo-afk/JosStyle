@@ -212,11 +212,19 @@ eq(prefs.propias.length, PREFERENCIAS_PROPIAS.length, 'Y las propias, de la capa
 ok(prefs.propias.every((d) => REGISTRO_DATOS.some((r) => r.id === d.id)),
   'Todas declaradas en el registro, ninguna suelta');
 
-// ⚠️ Apartado 5 — lo que el armario YA tiene no se declara como dato propio.
-['marca', 'marcas', 'ocasion', 'ocasiones', 'paleta'].forEach((x) => {
-  ok(!REGISTRO_DATOS.some((d) => d.id.toLowerCase().includes(x)),
-    `⚠️ "${x}" no se guarda como dato propio: ya lo tiene el armario`);
+/* ⚠️ Apartado 5 — lo que el armario YA tiene no se declara como dato propio.
+   La primera versión de esta prueba buscaba la PALABRA "marca" u "ocasion" en
+   cualquier id del registro, y la Fase 6 la hizo saltar con `marcasFavoritas` y
+   `ocasionesInteres`. Eso no era una duplicación: el armario sabe qué marcas
+   TIENE, no cuáles le GUSTAN. Lo que hay que prohibir es el CATÁLOGO, no la
+   preferencia — así que la comprobación mira los ids exactos. */
+['marcas', 'ocasiones', 'colores', 'paletas', 'prendas', 'outfits', 'categorias'].forEach((x) => {
+  ok(!REGISTRO_DATOS.some((d) => d.id.toLowerCase() === x),
+    `⚠️ No hay un catálogo "${x}" guardado como dato propio: ya lo tiene el armario`);
 });
+// Y la lista de valores posibles sigue saliendo del armario, no del registro.
+ok(REGISTRO_DATOS.filter((d) => /marca/i.test(d.id)).every((d) => d.clase === 'opcional'),
+  '⚠️ Lo que hay sobre marcas son PREFERENCIAS opcionales, no el catálogo');
 
 // Test 4 — cambiar una preferencia y que se use.
 const conColores = guardarDato(conEstilo(), 'coloresFavoritos', 'negro, azul', { hoy: HOY }).estado;

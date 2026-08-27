@@ -59,6 +59,10 @@ import {
 import {
   MODULO_EH_ESTILO, DESTINO_ARMARIO, accesoAlArmario, resumenEstiloArmario,
 } from '../lib/armarioEnEstiloHombre';
+import {
+  ZONA_MI_ESTILO, perfilDeEstilo, alternarValor, anadirLibre, limpiarCampo,
+  estadoDelPerfil, loQueReflejaTuArmario, contrasteConElArmario, nombreDeValor,
+} from '../lib/perfilEstilo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -676,6 +680,158 @@ export function MisDatosEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
 }
 
 /* ===========================================================================
+   MI ESTILO (F6)
+   ===========================================================================
+   *"Armario → qué prendas tiene. Perfil de estilo → qué le gusta, qué quiere
+   conseguir y qué imagen quiere transmitir."*
+
+   ⚠️ **Todo es opcional** (apartado 13). No hay barra de progreso, ni
+   porcentaje, ni la palabra "incompleto": un perfil vacío es un perfil válido y
+   la pantalla no le pone nota. */
+export function MiEstiloEH({ estado, accent, armario = null, datosGlobales = {}, onCambiar, onCerrar }) {
+  const [libre, setLibre] = useState({});
+  const campos = useMemo(() => perfilDeEstilo(estado, armario, datosGlobales), [estado, armario, datosGlobales]);
+  const resumen = useMemo(() => estadoDelPerfil(estado, armario, datosGlobales), [estado, armario, datosGlobales]);
+  const refleja = useMemo(() => loQueReflejaTuArmario(armario), [armario]);
+  const contraste = useMemo(
+    () => contrasteConElArmario(estado, armario, datosGlobales), [estado, armario, datosGlobales],
+  );
+
+  const anadir = (id) => {
+    const texto = (libre[id] || '').trim();
+    if (!texto) return;
+    const { estado: nuevo, error } = anadirLibre(estado, id, texto);
+    if (!error) onCambiar?.(nuevo);
+    setLibre((prev) => ({ ...prev, [id]: '' }));
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>
+          {ZONA_MI_ESTILO.icono} {ZONA_MI_ESTILO.nombre}
+        </p>
+      </div>
+      <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>
+        Qué te gusta y qué imagen quieres dar. Puedes dejarlo todo vacío: nada de esto es obligatorio.
+      </p>
+
+      {/* Apartado 14 — informativo, no una clasificación. Solo si hay datos. */}
+      {refleja.suficiente && (
+        <div
+          className="rounded-2xl p-3 mb-3"
+          style={{ background: hexToRgba(accent, 0.08), border: `1px solid ${hexToRgba(accent, 0.25)}` }}
+        >
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{refleja.texto}</p>
+          <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
+            Sale de {refleja.origen}.{contraste.hayContraste ? ` ${contraste.texto}` : ''}
+          </p>
+        </div>
+      )}
+
+      {campos.map((campo) => (
+        <div key={campo.id} className="mb-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>
+              {campo.titulo}
+            </p>
+            {campo.tiene && (
+              <button
+                onClick={() => onCambiar?.(limpiarCampo(estado, campo.id).estado)}
+                className="text-[10px] font-semibold"
+                style={{ color: COLORS.textMuted }}
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+
+          {/* ⚠️ Apartado 5 — sin prendas no hay marcas que ofrecer, y se dice.
+              Una lista vacía sin explicación parece una pantalla rota. */}
+          {campo.sinOpciones ? (
+            <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              Cuando añadas prendas al armario podrás elegir entre sus marcas.
+            </p>
+          ) : campo.libre ? (
+            <>
+              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                {campo.valores.map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => onCambiar?.(alternarValor(estado, campo.id, v).estado)}
+                    className="rounded-full pl-2.5 pr-2 py-1 flex items-center gap-1"
+                    style={{ background: hexToRgba(accent, 0.12), border: `1px solid ${accent}` }}
+                  >
+                    <span className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{v}</span>
+                    <X size={10} style={{ color: COLORS.textMuted }} />
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <TextInput
+                  value={libre[campo.id] || ''}
+                  onChange={(ev) => setLibre((prev) => ({ ...prev, [campo.id]: ev.target.value }))}
+                  placeholder="Escribe y añade"
+                  aria-label={campo.titulo}
+                />
+                <button
+                  onClick={() => anadir(campo.id)}
+                  className="rounded-2xl px-3 py-2 text-[11px] font-semibold flex-shrink-0"
+                  style={{ background: accent, color: '#fff' }}
+                >
+                  Añadir
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {campo.opciones.map((o) => {
+                const on = campo.valores.includes(o.id);
+                return (
+                  <button
+                    key={o.id}
+                    onClick={() => onCambiar?.(alternarValor(estado, campo.id, o.id).estado)}
+                    className="rounded-full px-2.5 py-1"
+                    style={{
+                      background: on ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                      border: `1px solid ${on ? accent : COLORS.border}`,
+                    }}
+                    aria-pressed={on}
+                  >
+                    <span className="text-[11px] font-semibold" style={{ color: on ? COLORS.text : COLORS.textMuted }}>
+                      {o.nombre || o.label || o.id}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Apartado 3 — el orden ES la prioridad, así que se enseña numerado. */}
+          {campo.ordenada && campo.valores.length > 1 && (
+            <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+              Por orden: {campo.valores.map((v, i) => `${i + 1}. ${nombreDeValor(campo.id, v)}`).join(' · ')}
+            </p>
+          )}
+        </div>
+      ))}
+
+      {/* ⚠️ Apartado 13 — un recuento, no una nota. Ni porcentaje ni "incompleto". */}
+      <p className="text-[10px] text-center" style={{ color: COLORS.textMuted }}>
+        {resumen.vacio
+          ? 'Todo esto es opcional. Puedes volver cuando quieras.'
+          : `Has rellenado ${resumen.rellenos} de ${resumen.total}. El resto puede quedarse vacío.`}
+      </p>
+    </Card>
+  );
+}
+
+/* ===========================================================================
    TAMBIÉN PUEDES AÑADIR (F2, apartado 11)
    ===========================================================================
    *"Debe ser informativo, nunca obligatorio. No utilizar IA."* Y no aparece si
@@ -713,6 +869,7 @@ export function Recomendados({ estado, accent, onAnadir }) {
 export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar }) {
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
+  const [miEstilo, setMiEstilo] = useState(false);
   const [ordenando, setOrdenando] = useState(false);
   /* ⚠️ **Se calcula UNA sola vez, al entrar en el módulo** (regla 4: los hooks,
      antes de cualquier `return`). Si se recalculara en cada render, pulsar
@@ -733,6 +890,9 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     () => (armario ? resumenEstiloArmario(estado, armario, datosGlobales) : null),
     [estado, armario, datosGlobales],
   );
+  const perfilEstilo = useMemo(
+    () => estadoDelPerfil(estado, armario, datosGlobales), [estado, armario, datosGlobales],
+  );
   const resumenPlaquitaArmario = estiloArmario && !estiloArmario.vacio
     ? `${estiloArmario.total} ${estiloArmario.total === 1 ? 'prenda' : 'prendas'}`
       + (estiloArmario.outfits > 0 ? ` · ${estiloArmario.outfits} ${estiloArmario.outfits === 1 ? 'outfit' : 'outfits'}` : '')
@@ -750,6 +910,15 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     return veniaAMedias
       ? <RetomarConfiguracion estado={estado} accent={accent} onCambiar={seguir} />
       : <AsistenteEH estado={estado} accent={accent} datosGlobales={datosGlobales} onCambiar={seguir} />;
+  }
+
+  if (miEstilo) {
+    return (
+      <MiEstiloEH
+        estado={estado} accent={accent} armario={armario} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setMiEstilo(false)}
+      />
+    );
   }
 
   if (misDatos) {
@@ -825,8 +994,25 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
             );
           })()}
 
-          {/* Apartado 9 — reordenar es un modo. Con un solo módulo activo no se
-              ofrece: dos flechas que no hacen nada. */}
+          {/* F6, apartado 1 — *"dentro de 👕 Estilo y Armario añadir una zona 👤 Mi
+              estilo. No crear otro apartado principal."* Por eso el acceso está
+              debajo de las plaquitas y solo si ese apartado está encendido, no
+              como una plaquita más. */}
+          {!ordenando && activos.some((m) => m.id === MODULO_EH_ESTILO) && (
+            <button
+              onClick={() => setMiEstilo(true)}
+              className="flex items-center gap-1.5 text-[11px] font-semibold mx-auto"
+              style={{ color: accent }}
+            >
+              {ZONA_MI_ESTILO.icono} {ZONA_MI_ESTILO.nombre}
+              {perfilEstilo && !perfilEstilo.vacio && (
+                <span style={{ color: COLORS.textMuted }}>· {perfilEstilo.rellenos} de {perfilEstilo.total}</span>
+              )}
+            </button>
+          )}
+
+          {/* Apartado 9 de F2 — reordenar es un modo. Con un solo módulo activo
+              no se ofrece: dos flechas que no hacen nada. */}
           {gestion.puedeReordenar && (
             <button
               onClick={() => setOrdenando((v) => !v)}

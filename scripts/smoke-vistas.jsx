@@ -28,7 +28,8 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH } from '../src/views/EstiloHombreView.jsx';
+import { alternarValor, anadirLibre } from '../src/lib/perfilEstilo.js';
 import { guardarDato } from '../src/lib/datosEstiloHombre.js';
 import { iniciarAsistente, irAPaso, marcarEnSeleccion, omitirAsistente, terminarAsistente } from '../src/lib/configuracionInicial.js';
 import { DEFAULT_ESTILO_HOMBRE, configurarPrimeraVez, alternarModulo, guardarConfig } from '../src/lib/estiloDeHombre.js';
@@ -549,6 +550,26 @@ const CASOS = [
             conArmario(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['skincare']))],
           ['EstiloHombreView · solo el armario', EstiloHombreView, () =>
             conArmario(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['estilo']))],
+          // EH Fase 6 — el perfil de estilo: vacío (Test 7), relleno, y sin armario.
+          ['MiEstiloEH · todo vacío', MiEstiloEH, () => ({
+            estado: configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['estilo']), accent,
+            armario: lleno.armario, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop,
+          })],
+          ['MiEstiloEH · con preferencias', MiEstiloEH, () => {
+            let e2 = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['estilo']);
+            e2 = alternarValor(e2, 'estilosFavoritos', 'casual', { hoy: HOY }).estado;
+            e2 = alternarValor(e2, 'prioridadesEstilo', 'comodidad', { hoy: HOY }).estado;
+            e2 = alternarValor(e2, 'prioridadesEstilo', 'precio', { hoy: HOY }).estado;
+            e2 = alternarValor(e2, 'nivelEstilo', 'basico', { hoy: HOY }).estado;
+            e2 = anadirLibre(e2, 'intereses', 'Fútbol', { hoy: HOY }).estado;
+            return { estado: e2, accent, armario: lleno.armario, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop };
+          }],
+          /* ⚠️ Sin armario NO hay marcas que ofrecer, y la pantalla tiene que
+             decirlo en vez de enseñar un hueco (apartado 5). */
+          ['MiEstiloEH · sin armario', MiEstiloEH, () => ({
+            estado: configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['estilo']), accent,
+            armario: null, datosGlobales: {}, onCambiar: noop, onCerrar: noop,
+          })],
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],
           ['EstiloHombreView · con módulos', EstiloHombreView, () => props(conTres)],
           ['EstiloHombreView · configurado sin módulos', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],
