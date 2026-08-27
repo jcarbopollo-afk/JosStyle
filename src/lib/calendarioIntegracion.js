@@ -19,6 +19,7 @@ import { prediccionObjetivo } from './predicciones';
 import { TIPOS_FECHA_RELACION } from '../tokens';
 import { eventosDePelo } from './rutinasPelo';
 import { eventosDePeluqueria } from './peluqueria';
+import { eventosDePiel } from './rutinasPiel';
 
 // Objetivos con plazo estimable (prediccionObjetivo, Fase 17) y todavía no cumplidos — un
 // objetivo ya marcado como cumplido no aporta nada al calendario, solo ruido. El plazo es una
@@ -253,6 +254,10 @@ export function eventosDerivados({ objetivos, estudios, calistenia, futbol, prod
     // el próximo corte es un plan concreto, así que no necesita rango — a
     // diferencia de las rutinas, que son una regla sin fin.
     ...(estiloHombre ? eventosDePeluqueria(estiloHombre) : []),
+    // EH F14, apartado 17 — *"no crear un calendario de skincare
+    // independiente"*. Las rutinas de piel entran por la misma puerta que las
+    // de pelo, con la misma forma y el mismo motor.
+    ...(estiloHombre && desde && hasta ? eventosDePiel(estiloHombre, { desde, hasta }) : []),
   ];
 }
 
@@ -260,6 +265,7 @@ export function eventosDerivados({ objetivos, estudios, calistenia, futbol, prod
 // evento de solo lectura en CalendarView.jsx.
 export const NOMBRES_ORIGEN = {
   pelo: 'Pelo',
+  piel: 'Skincare',
   objetivos: 'Objetivos',
   estudios: 'Estudios',
   entreno: 'Entrenamiento',

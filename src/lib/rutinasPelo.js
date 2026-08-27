@@ -35,6 +35,10 @@
 
 import { normalizarEstiloHombre, guardarConfig, moduloEH } from './estiloDeHombre';
 import { MODULO_PELO, contextoCapilar } from './perfilCapilar';
+import {
+  normalizarRutinaGenerica, tocaEnFechaGenerico, estadoDelDia,
+  ESTADOS_RUTINA_DIA, TEXTOS_ESTADO_DIA,
+} from './motorRutinas';
 import { uid, todayISO, addDays } from './helpers';
 
 /* ===========================================================================
@@ -122,15 +126,26 @@ export const ACCIONES_PELO = [
 export const accionPelo = (id) => ACCIONES_PELO.find((a) => a.id === id) || null;
 
 /** *"No limitar artificialmente las opciones"* (apartado 4). */
+/* ⚠️ **EH F14 extrajo el motor.** La Fase 14 pide la misma máquina para
+   Skincare y su apartado 19 se titula *"NO DUPLICAR"*, así que lo genérico
+   —la forma de una rutina, la regla de qué día toca y el estado del día— vive
+   ahora en `motorRutinas.js` y lo usan los dos. Aquí se queda **lo que es de
+   Pelo**: su catálogo de pasos, sus productos y su seguimiento.
+
+   Cada frecuencia declara **de qué tipo es**: la etiqueta es de este módulo, el
+   comportamiento es del motor. */
 export const FRECUENCIAS_PELO = [
-  { id: 'diaria', nombre: 'Diaria' },
-  { id: 'semana', nombre: 'Varias veces por semana', pideDias: true },
-  { id: 'semanal', nombre: 'Semanal', pideDias: true },
-  { id: 'cada_x', nombre: 'Cada X días', pideCada: true },
-  { id: 'personalizada', nombre: 'Personalizada' },
+  { id: 'diaria', nombre: 'Diaria', tipo: 'diaria' },
+  { id: 'semana', nombre: 'Varias veces por semana', pideDias: true, tipo: 'dias' },
+  { id: 'semanal', nombre: 'Semanal', pideDias: true, tipo: 'dias' },
+  { id: 'cada_x', nombre: 'Cada X días', pideCada: true, tipo: 'cada_x' },
+  { id: 'personalizada', nombre: 'Personalizada', tipo: 'ninguna' },
 ];
 
 export const frecuenciaPelo = (id) => FRECUENCIAS_PELO.find((f) => f.id === id) || null;
+
+/** Lo que el motor necesita saber de este módulo: qué hace cada frecuencia. */
+const tipoFrecuenciaPelo = (id) => frecuenciaPelo(id)?.tipo || null;
 
 export const COMO_LO_NOTAS = [
   { id: 'mejor', nombre: 'Mejor' },
@@ -138,32 +153,11 @@ export const COMO_LO_NOTAS = [
   { id: 'peor', nombre: 'Peor' },
 ];
 
-function normalizarRutina(g, i) {
-  const r = g || {};
-  const frecuencia = frecuenciaPelo(r.frecuencia) ? r.frecuencia : 'personalizada';
-  return {
-    id: r.id || uid(),
-    nombre: (r.nombre || '').trim() || 'Rutina',
-    // Los pasos son ids del catálogo o texto suyo: *"Otros cuidados"* existe
-    // precisamente para que no tenga que caber en la lista.
-    pasos: (Array.isArray(r.pasos) ? r.pasos : []).map((p) => ({
-      id: p?.id || uid(),
-      accion: p?.accion || 'otros',
-      nombre: (p?.nombre || '').trim(),
-      productoId: p?.productoId || null,
-    })),
-    frecuencia,
-    // Días de la semana (0=domingo), solo si la frecuencia los pide.
-    dias: (Array.isArray(r.dias) ? r.dias : []).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6),
-    cada: Number.isFinite(Number(r.cada)) && Number(r.cada) >= 1 ? Math.floor(Number(r.cada)) : 2,
-    duracion: Number.isFinite(Number(r.duracion)) && Number(r.duracion) > 0 ? Math.floor(Number(r.duracion)) : null,
-    activa: r.activa !== false,
-    // ⚠️ Apagado por defecto (apartado 5).
-    recordatorio: r.recordatorio === true,
-    desde: typeof r.desde === 'string' ? r.desde : null,
-    orden: Number.isFinite(Number(r.orden)) ? Number(r.orden) : i,
-  };
-}
+/* La forma de una rutina la da el motor. Los pasos son ids del catálogo o texto
+   suyo: *"Otros cuidados"* existe precisamente para que no tenga que caber en
+   la lista. Y el recordatorio nace apagado (apartado 5). */
+const normalizarRutina = (g, i) =>
+  normalizarRutinaGenerica(g, i, { tipoDe: tipoFrecuenciaPelo });
 
 export function normalizarPelo(guardado) {
   const g = guardado && typeof guardado === 'object' ? guardado : {};
@@ -307,27 +301,9 @@ export function ordenarPasos(estado, rutinaId, ordenIds = []) {
    Una rutina guarda **su regla**, no cien fechas. Igual que el horario y las
    rachas. */
 
-export function tocaEnFecha(rutina, fechaISO) {
-  const r = normalizarRutina(rutina, 0);
-  if (!r.activa) return false;
-  if (r.desde && fechaISO < r.desde) return false;
-
-  const dia = new Date(`${fechaISO}T00:00:00`).getDay();
-  switch (r.frecuencia) {
-    case 'diaria': return true;
-    case 'semana':
-    case 'semanal': return r.dias.includes(dia);
-    case 'cada_x': {
-      if (!r.desde) return false;
-      const dias = Math.round((new Date(`${fechaISO}T00:00:00`) - new Date(`${r.desde}T00:00:00`)) / 86400000);
-      return dias >= 0 && dias % r.cada === 0;
-    }
-    // ⚠️ "Personalizada" no toca ningún día por su cuenta: es una rutina que
-    // Josué hace cuando quiere. Inventarle un calendario sería justo lo que el
-    // apartado 7 intenta evitar.
-    default: return false;
-  }
-}
+/** ⚠️ El cálculo es del motor: es EL sitio donde se decide qué toca hoy. */
+export const tocaEnFecha = (rutina, fechaISO) =>
+  tocaEnFechaGenerico(normalizarRutina(rutina, 0), fechaISO, tipoFrecuenciaPelo);
 
 export function rutinasDeHoy(estado, { hoy = todayISO() } = {}) {
   const d = datosPelo(estado);
@@ -360,17 +336,11 @@ export function checklistDelDia(estado, rutinaId, { hoy = todayISO() } = {}) {
     hechos: hechos.length,
     total: r.pasos.length,
     // ⚠️ Apartado 7 — un día sin hacer NO es un fallo. Es "Pendiente".
-    estado: hechos.length === 0 ? 'pendiente' : (hechos.length === r.pasos.length && r.pasos.length > 0 ? 'hecha' : 'a_medias'),
+    estado: estadoDelDia(hechos.length, r.pasos.length),
   };
 }
 
-export const ESTADOS_RUTINA_DIA = ['pendiente', 'a_medias', 'hecha'];
-
-export const TEXTOS_ESTADO_DIA = {
-  pendiente: 'Pendiente',
-  a_medias: 'Empezada',
-  hecha: 'Hecha',
-};
+export { ESTADOS_RUTINA_DIA, TEXTOS_ESTADO_DIA };
 
 /** Marcar y desmarcar un paso. Idempotente por rutina + día, como RA F2. */
 export function marcarPaso(estado, rutinaId, pasoId, { hoy = todayISO() } = {}) {

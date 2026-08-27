@@ -104,8 +104,16 @@ import {
 import {
   MODULO_PIEL, TEXTOS_PIEL, panelPiel, contestarPiel, seccionesDePiel,
   progresoPiel, estadoDeEntrada, decirAhoraNo, volverAConfigurar,
-  anadirProductoPiel, quitarProductoPiel, datosPiel, resumenPiel,
+  anadirProductoPiel, quitarProductoPiel, datosPiel, resumenPiel, respuestaPiel,
 } from '../lib/perfilPiel';
+import {
+  PLAQUITAS_PIEL, PARTES_PIEL, parteActivaPiel, alternarPartePiel, PASOS_PIEL,
+  pasosParaNivel, MOMENTOS_PIEL, FRECUENCIAS_PIEL, datosRutinasPiel,
+  crearRutinaPiel, editarRutinaPiel, impactoEliminarRutinaPiel, eliminarRutinaPiel,
+  rutinasDeHoyPiel, checklistPiel, marcarPasoPiel, omitirPasoPiel,
+  marcarRutinaPielEntera, plantillaSugerida, usarPlantilla, estaSemanaPiel,
+  historialPiel, resumenRutinasPiel, TEXTOS_ESTADO_DIA as TEXTOS_DIA_PIEL,
+} from '../lib/rutinasPiel';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -2525,20 +2533,323 @@ export function PerfilPielEH({ estado, accent, datosGlobales = {}, onCambiar, on
   );
 }
 
-/** Apartado 1 — la entrada, con sus dos botones. */
-export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
-  const [configurando, setConfigurando] = useState(
-    () => estadoDeEntrada(estado, datosGlobales) === 'a_medias'
-      || estadoDeEntrada(estado, datosGlobales) === 'configurado',
-  );
-  const entrada = useMemo(() => estadoDeEntrada(estado, datosGlobales), [estado, datosGlobales]);
+/* ===========================================================================
+   SKINCARE: RUTINAS (F14)
+   ===========================================================================
+   *"La aplicación propone. El usuario configura."*
 
-  /* ⚠️ Regla 4 — el `return` condicional, después de los hooks. */
+   ⚠️ **Omitir no es fallar** (apartado 10). Un paso omitido sale de la cuenta
+   del día, así que dos hechos y uno omitido es una rutina HECHA. Lo decide
+   `checklistPiel()`, no esta pantalla. */
+export function RutinasPielEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  const [creando, setCreando] = useState(false);
+  const [nombre, setNombre] = useState('');
+  const [momento, setMomento] = useState('manana');
+  const [frecuencia, setFrecuencia] = useState('diario');
+  const [pasos, setPasos] = useState([]);
+  /* ⚠️ Guardamos el id junto al aviso: buscar la rutina por su nombre al
+     confirmar borraría la equivocada en cuanto haya dos que se llamen igual. */
+  const [confirmar, setConfirmar] = useState(null);
+
+  const d = useMemo(() => datosRutinasPiel(estado), [estado]);
+  const sug = useMemo(() => plantillaSugerida(estado, datosGlobales), [estado, datosGlobales]);
+  /* Apartado 14 — el nivel que eligió en la Fase 13. Se LEE, no se guarda otra
+     vez aquí: sería el segundo perfil. */
+  const nivel = useMemo(
+    () => respuestaPiel(estado, 'complejidadPiel', datosGlobales).valores[0] || null,
+    [estado, datosGlobales],
+  );
+  const disponibles = useMemo(() => pasosParaNivel(nivel), [nivel]);
+
+  const aplicar = (r) => onCambiar?.(r.estado ?? r);
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-3">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>🧴 Mi rutina</p>
+      </div>
+
+      {/* Apartados 12 y 13 — la plantilla PROPONE; crearla la confirma él. */}
+      {d.rutinas.length === 0 && (
+        sug.hay ? (
+          <div className="rounded-2xl p-2.5 mb-3"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{sug.nombre}</p>
+            <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {sug.pasos.map((p) => `${p.icono} ${p.nombre}`).join(' · ')}
+            </p>
+            <button
+              onClick={() => aplicar(usarPlantilla(estado, sug.plantilla, { confirmado: true }))}
+              className="text-[10px] font-semibold mt-1" style={{ color: accent }}
+            >
+              {sug.accion}
+            </button>
+          </div>
+        ) : (
+          <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>{sug.texto}</p>
+        )
+      )}
+
+      {d.rutinas.map((r) => {
+        const lista = checklistPiel(estado, r.id);
+        const toca = rutinasDeHoyPiel(estado).some((x) => x.id === r.id);
+        return (
+          <div key={r.id} className="rounded-2xl p-2.5 mb-1.5"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold flex-1 truncate" style={{ color: COLORS.text }}>
+                {MOMENTOS_PIEL.find((m) => m.id === r.momento)?.icono} {r.nombre}
+              </span>
+              {/* ⚠️ "Pendiente", nunca "has fallado" (apartado 15). */}
+              <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                {toca ? TEXTOS_DIA_PIEL[lista.estado] : 'Hoy no toca'}
+              </span>
+              <button
+                onClick={() => setConfirmar({ ...impactoEliminarRutinaPiel(estado, r.id), id: r.id })}
+                aria-label={`Eliminar ${r.nombre}`}
+              >
+                <X size={13} style={{ color: COLORS.textMuted }} />
+              </button>
+            </div>
+            {toca && lista.pasos.map((p) => (
+              <div key={p.id} className="flex items-center gap-1.5 mt-1">
+                <button
+                  onClick={() => aplicar(marcarPasoPiel(estado, r.id, p.id))}
+                  className="flex items-center gap-1.5 flex-1 text-left"
+                >
+                  <span className="text-[11px]" style={{ color: p.hecho ? accent : COLORS.textMuted }}>
+                    {p.hecho ? '☑' : (p.omitido ? '—' : '☐')}
+                  </span>
+                  <span className="text-[11px]" style={{ color: p.omitido ? COLORS.textMuted : COLORS.text }}>
+                    {p.icono} {p.etiqueta}{p.producto ? ` · ${p.producto}` : ''}
+                  </span>
+                </button>
+                {/* ⚠️ Apartado 10 — *"Omitir hoy"*, sin penalización. */}
+                <button
+                  onClick={() => aplicar(omitirPasoPiel(estado, r.id, p.id))}
+                  className="text-[10px]" style={{ color: p.omitido ? accent : COLORS.textMuted }}
+                >
+                  {p.omitido ? 'Omitido hoy' : 'Omitir hoy'}
+                </button>
+              </div>
+            ))}
+            {toca && lista.pasos.length > 0 && (
+              <button
+                onClick={() => aplicar(marcarRutinaPielEntera(estado, r.id))}
+                className="text-[10px] font-semibold mt-1" style={{ color: accent }}
+              >
+                {lista.estado === 'hecha' ? 'Desmarcar todo' : 'Marcar todo'}
+              </button>
+            )}
+          </div>
+        );
+      })}
+
+      {creando ? (
+        <div className="space-y-1.5 mt-2">
+          <TextInput value={nombre} onChange={(ev) => setNombre(ev.target.value)}
+            placeholder="Nombre de la rutina" aria-label="Nombre de la rutina" />
+          <div className="flex flex-wrap gap-1">
+            {MOMENTOS_PIEL.map((m) => (
+              <button key={m.id} onClick={() => setMomento(m.id)} className="rounded-full px-2.5 py-1"
+                style={{
+                  background: momento === m.id ? hexToRgba(accent, 0.14) : COLORS.surface2,
+                  border: `1px solid ${momento === m.id ? accent : COLORS.border}`,
+                }}>
+                <span className="text-[10px] font-semibold" style={{ color: momento === m.id ? accent : COLORS.text }}>
+                  {m.icono} {m.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {FRECUENCIAS_PIEL.map((f) => (
+              <button key={f.id} onClick={() => setFrecuencia(f.id)} className="rounded-full px-2 py-0.5"
+                style={{
+                  background: frecuencia === f.id ? hexToRgba(accent, 0.14) : COLORS.surface2,
+                  border: `1px solid ${frecuencia === f.id ? accent : COLORS.border}`,
+                }}>
+                <span className="text-[10px]" style={{ color: frecuencia === f.id ? accent : COLORS.textMuted }}>{f.nombre}</span>
+              </button>
+            ))}
+          </div>
+          {/* ⚠️ Apartado 14 — el nivel filtra lo que se OFRECE, nunca lo guardado. */}
+          <div className="flex flex-wrap gap-1">
+            {disponibles.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setPasos(pasos.includes(p.id) ? pasos.filter((x) => x !== p.id) : [...pasos, p.id])}
+                className="rounded-full px-2 py-0.5"
+                style={{
+                  background: pasos.includes(p.id) ? hexToRgba(accent, 0.14) : COLORS.surface2,
+                  border: `1px solid ${pasos.includes(p.id) ? accent : COLORS.border}`,
+                }}
+              >
+                <span className="text-[10px]" style={{ color: pasos.includes(p.id) ? accent : COLORS.textMuted }}>
+                  {p.icono} {p.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+          <PrimaryButton
+            accent={accent}
+            onClick={() => {
+              aplicar(crearRutinaPiel(estado, {
+                nombre, momento, frecuencia, pasos: pasos.map((id) => ({ accion: id })),
+              }));
+              setCreando(false); setNombre(''); setPasos([]);
+            }}
+          >
+            Crear rutina
+          </PrimaryButton>
+          <button onClick={() => setCreando(false)} className="text-[10px] font-semibold w-full"
+            style={{ color: COLORS.textMuted }}>Cancelar</button>
+        </div>
+      ) : (
+        <PrimaryButton accent={accent} icon={Plus} onClick={() => setCreando(true)}>Crear rutina</PrimaryButton>
+      )}
+
+      {/* Apartado 16 — una frase, no una pantalla de estadísticas. */}
+      <p className="text-[10px] text-center mt-3" style={{ color: COLORS.textMuted }}>
+        {estaSemanaPiel(estado).texto}
+      </p>
+
+      <AvisoDesactivar
+        aviso={confirmar} accent={accent}
+        onCancelar={() => setConfirmar(null)}
+        onConfirmar={() => {
+          if (confirmar?.id) aplicar(eliminarRutinaPiel(estado, confirmar.id));
+          setConfirmar(null);
+        }}
+      />
+    </Card>
+  );
+}
+
+/**
+ * F14, apartado 1 — el panel de Skincare, con sus cinco plaquitas. ⚠️ Regla 8:
+ * las dos que todavía no funcionan **dicen en qué fase llegan**, en vez de no
+ * hacer nada al tocarlas.
+ */
+export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil }) {
+  const [zona, setZona] = useState(null);      // null | 'rutina' | 'seguimiento'
+  const prog = useMemo(() => progresoPiel(estado, datosGlobales), [estado, datosGlobales]);
+  const rut = useMemo(() => resumenRutinasPiel(estado), [estado]);
+  const hist = useMemo(() => historialPiel(estado), [estado]);
+
+  if (zona === 'rutina') {
+    return (
+      <RutinasPielEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setZona(null)}
+      />
+    );
+  }
+
+  const sub = {
+    perfil: prog.sinEmpezar ? 'Sin configurar' : `${prog.contestadas} de ${prog.total}`,
+    rutina: rut.rutinas === 0 ? 'Ninguna todavía' : `${rut.rutinas} ${rut.rutinas === 1 ? 'rutina' : 'rutinas'}`,
+    seguimiento: rut.registros === 0 ? 'Sin registros' : estaSemanaPiel(estado).texto,
+  };
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          {onCerrar && (
+            <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+              <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+            </button>
+          )}
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>🧴 Skincare</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5">
+          {PLAQUITAS_PIEL
+            .filter((p) => p.id !== 'rutina' || parteActivaPiel(estado, 'rutinas'))
+            .filter((p) => p.id !== 'seguimiento' || parteActivaPiel(estado, 'seguimiento'))
+            .map((p) => (
+              <Plaquita
+                key={p.id} accent={accent}
+                modulo={{ nombre: p.nombre, icono: p.icono, sub: '' }}
+                sub={p.listo ? (sub[p.id] || '') : `Llega en la fase ${p.fase}`}
+                onAbrir={p.listo
+                  ? (p.id === 'perfil' ? onPerfil
+                    : (p.id === 'rutina' ? () => setZona('rutina') : null))
+                  : null}
+              />
+            ))}
+        </div>
+      </Card>
+
+      {/* Apartado 16 — *"información sencilla"*, y ya. */}
+      {parteActivaPiel(estado, 'seguimiento') && hist.length > 0 && (
+        <Card>
+          <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>📈 Seguimiento</p>
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>{estaSemanaPiel(estado).texto}</p>
+          {hist.map((h) => (
+            <p key={h.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {/* ⚠️ Sin días en los que tocara NO hay cumplimiento (apartado 15). */}
+              {h.nombre}: {h.cumplimiento === null
+                ? `${h.hechas} ${h.hechas === 1 ? 'vez' : 'veces'} en el último mes`
+                : `${h.hechas} de ${h.tocaba}`}
+            </p>
+          ))}
+        </Card>
+      )}
+
+      {/* Apartado 18 — cada parte se puede apagar, y los datos se conservan. */}
+      <Card>
+        <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>
+          ⚙️ Gestionar apartados
+        </p>
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+          Lo que apagues deja de aparecer, pero no se borra nada.
+        </p>
+        {PARTES_PIEL.map((p) => (
+          <div key={p.id} className="rounded-2xl p-2.5 flex items-center gap-2 mb-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <span className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>{p.nombre}</span>
+            <Switch checked={parteActivaPiel(estado, p.id)} onChange={() => onCambiar?.(alternarPartePiel(estado, p.id))}
+              accent={accent} label={p.nombre} />
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+/** Apartado 1 de F13 — la entrada, con sus dos botones. */
+export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  const [configurando, setConfigurando] = useState(false);
+  const entrada = useMemo(() => estadoDeEntrada(estado, datosGlobales), [estado, datosGlobales]);
+  /* ⚠️ Se calcula UNA vez, antes de cualquier `return` (regla 4): si se
+     recalculara, pulsar "Configurar" pasaría el estado a `a_medias` y la
+     pantalla saltaría sola. Mismo fallo real que ya se corrigió en F3. */
+  const [yaConfigurado] = useState(() => ['a_medias', 'configurado'].includes(estadoDeEntrada(estado, datosGlobales)));
+
+  /* ⚠️ Regla 4 — los `return` condicionales, después de los hooks.
+     F14 — una vez configurado, la entrada lleva al PANEL, no al formulario:
+     el perfil es una de sus cinco plaquitas (apartado 1). */
   if (configurando) {
     return (
       <PerfilPielEH
         estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setConfigurando(false)}
+      />
+    );
+  }
+  if (yaConfigurado || entrada === 'configurado' || entrada === 'a_medias') {
+    return (
+      <PanelPiel
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={onCerrar}
+        onPerfil={() => setConfigurando(true)}
       />
     );
   }

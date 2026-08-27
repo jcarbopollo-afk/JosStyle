@@ -254,6 +254,12 @@ else
   fallo "Falla el perfil de piel"; grep '✗' /tmp/jc_eh13.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-rutinas-piel.mjs >/tmp/jc_eh14.log 2>&1; then
+  ok "Rutinas de skincare y motor común (EH F14) — $(grep -c '✓' /tmp/jc_eh14.log) comprobaciones"
+else
+  fallo "Fallan las rutinas de piel"; grep '✗' /tmp/jc_eh14.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

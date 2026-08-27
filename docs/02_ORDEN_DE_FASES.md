@@ -220,8 +220,10 @@ escribir código.
 
 | v1.79.0 | **EH F13** | Empieza Skincare. ⚠️ **El apartado 15 ya era código**: la Fase 4 declaraba `tipoPiel` y `sensibilidadPiel` como datos de esta fase, así que se reutilizan solos y `destinoDe()` lo decide, no un `if`. **El formulario adaptativo vive en el motor** —`cuando` + `preguntasVisibles()`— porque Barba, Cuerpo, Manos y Perfumes van a querer lo mismo. Y **esconder no es borrar**. **Objetivos de cuidado, nunca un diagnóstico**, con prueba sobre todos los textos. **Apartado 17: esto no sale de aquí** |
 
+| v1.80.0 | **EH F14** | Rutinas de skincare. ⚠️ **El apartado 19 se titula "NO DUPLICAR" y esta fase pedía la máquina de la Fase 8**, así que lo genérico se extrajo a `motorRutinas.js` y lo usan los dos — **las 171 pruebas de F8 pasaron sin tocar ni una**. **Omitir no es fallar**: un paso omitido sale de la cuenta, así que dos hechos y uno omitido es una rutina HECHA. **Los productos son los de F13**, las **plantillas sugieren** y **cambiar de nivel no borra la rutina anterior** |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 13/65**. Quedan **50** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (48).
+3/5 y **EH por 14/65**. Quedan **49** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (47).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

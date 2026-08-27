@@ -1098,47 +1098,95 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar que no se pierde información.
 - [x] Probar móvil.
 
-#### EH · Fase 14/65 — SKINCARE: RUTINAS Y CUIDADO DIARIO
-- [ ] PANEL DE SKINCARE
-- [ ] CREAR RUTINA
-- [ ] Limpieza
-- [ ] Hidratación
-- [ ] Protección solar
-- [ ] MAÑANA Y NOCHE
-- [ ] PASOS
-- [ ] ORDEN
-- [ ] PRODUCTOS
-- [ ] FRECUENCIA
-- [ ] RECORDATORIOS
-- [ ] CHECKLIST
-- [ ] OMITIR PASOS
-- [ ] CAMBIAR RUTINA
-- [ ] RUTINAS PREDEFINIDAS
-- [ ] PERSONALIZACIÓN
-- [ ] NIVELES
-- [ ] SEGUIMIENTO
-- [ ] HISTORIAL
-- [ ] CONEXIÓN CON CALENDARIO
-- [ ] ACTIVAR/DESACTIVAR
-- [ ] NO DUPLICAR
-- [ ] PRUEBAS
-- [ ] Crear rutina.
-- [ ] Crear rutina mañana.
-- [ ] Crear rutina noche.
-- [ ] Añadir pasos.
-- [ ] Cambiar orden.
-- [ ] Asociar productos.
-- [ ] Cambiar frecuencia.
-- [ ] Activar/desactivar recordatorios.
-- [ ] Marcar pasos.
-- [ ] Omitir rutina.
-- [ ] Editar rutina.
-- [ ] Eliminar rutina.
-- [ ] Consultar historial.
-- [ ] Conectar con calendario.
-- [ ] Desactivar módulo.
-- [ ] Reactivarlo.
-- [ ] Comprobar que no existen duplicados.
+#### EH · Fase 14/65 — SKINCARE: RUTINAS Y CUIDADO DIARIO ✅ COMPLETADA (v1.80.0)
+
+> **`src/lib/motorRutinas.js`** (el motor extraído) + **`src/lib/rutinasPiel.js`** (148
+> comprobaciones) + las pantallas `PanelPiel` y `RutinasPielEH`. Sin SQL nuevo.
+>
+> ⚠️ **EL APARTADO 19 SE TITULA "NO DUPLICAR", Y ESTA FASE PEDÍA LA MÁQUINA QUE YA EXISTÍA.** Pasos,
+> frecuencia, lista del día, historial y eventos de calendario: lo que la Fase 8 construyó para el
+> pelo, otra vez para la piel. Copiar `rutinasPelo.js` habría sido el segundo sistema —y el segundo
+> sitio donde arreglar el mismo fallo—, así que **lo genérico se extrajo a `motorRutinas.js`** y los
+> dos módulos lo usan. **Las 171 pruebas de la Fase 8 son la red que demuestra que la extracción no
+> cambió nada**: pasaron sin tocar ni una.
+>
+> ⚠️ **La lista de frecuencias es de cada módulo; el COMPORTAMIENTO es del motor.** La Fase 8 ofrecía
+> cinco opciones y esta pide seis, pero **debajo solo hay cuatro reglas**: *"días concretos"*,
+> *"varias veces por semana"* y *"semanal"* son tres formas de decir "estos días de la semana". Cada
+> etiqueta declara **de qué tipo es**, se guarda la palabra que eligió Josué, y hay una prueba de que
+> Pelo y Skincare dan **la misma respuesta al mismo caso**.
+>
+> ⚠️ **OMITIR NO ES FALLAR** (apartado 10: *"sin penalización"*). Un paso omitido es una **tercera
+> cosa**: no pendiente —eso sería el reproche— y no hecho —eso sería mentir—. **Sale de la cuenta del
+> día**, así que una rutina de tres pasos con uno omitido y dos hechos está **HECHA**. Y un paso no
+> puede estar hecho y omitido a la vez: marcar quita lo uno, omitir quita lo otro.
+>
+> ⚠️ **Los productos son los de la Fase 13** (apartados 6 y 19: *"no crear un segundo inventario"*).
+> Un paso guarda el `id` de un producto que ya existe en el perfil de piel, y *"+ Añadir producto"*
+> **escribe allí** y luego lo engancha: dos escrituras, un solo inventario. Hay una prueba que lee
+> este código y falla si aparece una lista de productos propia.
+>
+> ⚠️ **Las plantillas SUGIEREN** (apartados 12 y 13). *"Son plantillas, no obligaciones"*, y *"el
+> usuario debe confirmar: Usar esta rutina"*. `plantillaSugerida()` devuelve una propuesta con
+> `guardado: false` en el propio dato y **no escribe nada** —la prueba serializa el estado antes y
+> después—; `usarPlantilla()` **sin `confirmado` no crea nada**. Cuarto `aplicarPlan` del proyecto.
+> Y la propuesta se adapta al perfil: si ha dicho que no usa protección solar, ese paso no aparece.
+>
+> ⚠️ **CAMBIAR DE NIVEL NO BORRA LA RUTINA ANTERIOR** (apartado 14, con esas palabras). El nivel
+> filtra **lo que se ofrece**, no lo que existe, y hay una prueba que baja de avanzado a básico y
+> cuenta las rutinas y los pasos antes y después. **Sin nivel elegido se ofrece todo**: esconder
+> opciones a quien no ha dicho nada es decidir por él.
+>
+> **El seguimiento es una frase** (apartado 16: *"no hace falta llenar la pantalla de
+> estadísticas"*): *"Esta semana: 3 rutinas realizadas."* Sin porcentajes, sin rachas y sin
+> comparaciones con la semana pasada, con una prueba que lo busca.
+>
+> **Y el calendario es el que ya existe** (apartado 17), con la misma forma de evento que el Armario
+> y las rutinas de pelo. Un año de eventos no guarda ni una fecha (regla 11) — y **ninguno anterior
+> al día en que la creó**: una rutina no existe antes de existir.
+
+- [x]
+
+- [x] PANEL DE SKINCARE
+- [x] CREAR RUTINA
+- [x] Limpieza
+- [x] Hidratación
+- [x] Protección solar
+- [x] MAÑANA Y NOCHE
+- [x] PASOS
+- [x] ORDEN
+- [x] PRODUCTOS
+- [x] FRECUENCIA
+- [x] RECORDATORIOS
+- [x] CHECKLIST
+- [x] OMITIR PASOS
+- [x] CAMBIAR RUTINA
+- [x] RUTINAS PREDEFINIDAS
+- [x] PERSONALIZACIÓN
+- [x] NIVELES
+- [x] SEGUIMIENTO
+- [x] HISTORIAL
+- [x] CONEXIÓN CON CALENDARIO
+- [x] ACTIVAR/DESACTIVAR
+- [x] NO DUPLICAR
+- [x] PRUEBAS
+- [x] Crear rutina.
+- [x] Crear rutina mañana.
+- [x] Crear rutina noche.
+- [x] Añadir pasos.
+- [x] Cambiar orden.
+- [x] Asociar productos.
+- [x] Cambiar frecuencia.
+- [x] Activar/desactivar recordatorios.
+- [x] Marcar pasos.
+- [x] Omitir rutina.
+- [x] Editar rutina.
+- [x] Eliminar rutina.
+- [x] Consultar historial.
+- [x] Conectar con calendario.
+- [x] Desactivar módulo.
+- [x] Reactivarlo.
+- [x] Comprobar que no existen duplicados.
 
 #### EH · Fase 15/65 — SKINCARE: SEGUIMIENTO Y EVOLUCIÓN
 - [ ] PLAQUITA DE SEGUIMIENTO

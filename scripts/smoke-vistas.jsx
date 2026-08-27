@@ -28,10 +28,11 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
+import { crearRutinaPiel, marcarPasoPiel, omitirPasoPiel, alternarPartePiel, usarPlantilla } from '../src/lib/rutinasPiel.js';
 import { crearRutina, marcarRutinaEntera, registrarCambio, alternarParte, datosPelo } from '../src/lib/rutinasPelo.js';
 import { guardarRecomendacion, descartar, REGLAS_PELO } from '../src/lib/recomendacionesPelo.js';
 import { crearProductoPelo, anadirTienda, marcarNoDisponible, crearPack } from '../src/lib/productosPelo.js';
@@ -641,6 +642,17 @@ const CASOS = [
             const pielConProductos = anadirProductoPiel(
               contestarPiel(pielAMedias, 'usaProductos', 'si', { hoy: HOY }).estado, 'Crema hidratante',
             ).estado;
+            // EH F14 — rutinas de piel.
+            const pielConNivel = contestarPiel(pielAMedias, 'complejidadPiel', 'basico', { hoy: HOY }).estado;
+            const rutPiel = crearRutinaPiel(pielConNivel, {
+              nombre: 'Rutina de mañana', momento: 'manana', frecuencia: 'diario',
+              pasos: [{ accion: 'limpieza' }, { accion: 'hidratacion' }, { accion: 'solar' }],
+            }, { hoy: HOY });
+            const conRutinaPiel = rutPiel.estado;
+            const conOmitido = omitirPasoPiel(
+              marcarPasoPiel(conRutinaPiel, rutPiel.rutina.id, rutPiel.rutina.pasos[0].id, { hoy: HOY }).estado,
+              rutPiel.rutina.id, rutPiel.rutina.pasos[2].id, { hoy: HOY },
+            ).estado;
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
@@ -711,6 +723,18 @@ const CASOS = [
               ['PerfilPielEH · a medias', PerfilPielEH, () => pp(pielAMedias)],
               ['PerfilPielEH · sin productos', PerfilPielEH, () => pp(pielSinProductos)],
               ['PerfilPielEH · con productos', PerfilPielEH, () => pp(pielConProductos)],
+              /* EH Fase 14 — rutinas de piel. ⚠️ Los estados que importan: sin
+                 rutinas (donde sale la plantilla propuesta), con una, con un
+                 paso omitido —que NO puede pintarse como fallo— y con las
+                 partes apagadas. */
+              ['PanelPiel · a medias', PanelPiel, () => pp(pielAMedias)],
+              ['PanelPiel · con rutina', PanelPiel, () => pp(conRutinaPiel)],
+              ['PanelPiel · partes apagadas', PanelPiel, () =>
+                pp(alternarPartePiel(alternarPartePiel(conRutinaPiel, 'rutinas'), 'seguimiento'))],
+              ['RutinasPielEH · sin rutinas', RutinasPielEH, () => pp(pielConNivel)],
+              ['RutinasPielEH · sin nivel', RutinasPielEH, () => pp(pielAMedias)],
+              ['RutinasPielEH · con rutina', RutinasPielEH, () => pp(conRutinaPiel)],
+              ['RutinasPielEH · con paso omitido', RutinasPielEH, () => pp(conOmitido)],
             ];
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>

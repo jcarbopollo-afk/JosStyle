@@ -1,5 +1,85 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 14/65 — Skincare: rutinas y cuidado diario (v1.80.0)
+
+### ⚠️ El apartado 19 se titula "NO DUPLICAR", y esta fase pedía la máquina que ya existía
+Pasos, frecuencia, lista del día, historial y eventos de calendario: exactamente lo que la **Fase 8**
+construyó para el pelo, otra vez para la piel.
+
+Copiar `rutinasPelo.js` habría sido el segundo sistema de siempre —y, peor, el segundo sitio donde
+arreglar el mismo fallo—. Así que lo genérico se ha extraído a **`src/lib/motorRutinas.js`**, y los
+dos módulos lo usan: Pelo pasa su catálogo de pasos, Skincare el suyo, y **el cálculo de qué toca hoy
+es uno solo**.
+
+**Las 171 pruebas de la Fase 8 son la red que demuestra que la extracción no cambió nada.** Pasaron
+sin tocar ni una.
+
+### ⚠️ La lista de frecuencias es de cada módulo; el comportamiento es del motor
+La Fase 8 ofrecía cinco opciones y esta pide seis —*"Diario, Días concretos, Varias veces por semana,
+Semanal, Cada X días, Personalizado"*—, pero **debajo solo hay cuatro reglas distintas**: todos los
+días, unos días de la semana, cada X días, y ninguno por su cuenta.
+
+*"Días concretos"*, *"varias veces por semana"* y *"semanal"* son tres formas de decir lo mismo. Se
+guarda con su id propio —Josué eligió esa palabra y esa palabra se conserva— y cada una declara **de
+qué tipo es**. Hay una prueba de que Pelo y Skincare dan **la misma respuesta al mismo caso**.
+
+### ⚠️ Omitir no es fallar
+El apartado 10: *"Un usuario puede decidir: 'hoy no quiero hacer este paso'. Debe poder marcarlo como
+Omitir hoy. **Sin penalización**."*
+
+Un paso omitido es una **tercera cosa**: no pendiente —eso sería el reproche que el apartado
+prohíbe— y no hecho —eso sería mentir—. **Sale de la cuenta del día**, así que una rutina de tres
+pasos con uno omitido y dos hechos está **hecha**, no a medias.
+
+Y un paso no puede estar hecho y omitido a la vez: marcar quita lo uno, omitir quita lo otro.
+
+### ⚠️ Los productos son los de la Fase 13
+Apartados 6 y 19: *"si todavía no existe: + Añadir producto. **No crear un segundo inventario**."*
+
+Un paso guarda el `id` de un producto que ya vive en el perfil de piel, y *"+ Añadir producto"*
+**escribe allí** y luego lo engancha: dos escrituras, un solo inventario. Hay una prueba que lee este
+código y falla si aparece una lista de productos propia.
+
+### ⚠️ Las plantillas sugieren, no crean
+Apartado 12: *"son plantillas, no obligaciones"*. Apartado 13: *"el usuario debe confirmar: Usar esta
+rutina"*.
+
+`plantillaSugerida()` devuelve una propuesta con `guardado: false` escrito en el propio dato y **no
+escribe nada** —la prueba serializa el estado antes y después—. Crearla es `usarPlantilla()`, que
+**sin `confirmado` no hace nada**. Cuarto `aplicarPlan` del proyecto, tras HT F9, EH F9 y EH F12.
+
+Y la propuesta se adapta al perfil, que es lo que pide el apartado 13: si ha dicho que no usa
+protección solar, ese paso no aparece en la propuesta. **Sin nivel elegido no se propone ninguna**:
+elegir una por él sería decidir por él.
+
+### ⚠️ Cambiar de nivel no borra la rutina anterior
+El apartado 14, con esas palabras: *"cambiar de nivel no debe borrar la rutina anterior. Simplemente
+modifica las opciones que se muestran."*
+
+El nivel filtra **lo que se ofrece**, no lo que existe. Hay una prueba que crea una rutina con pasos
+avanzados, baja el nivel a básico y cuenta las rutinas y los pasos antes y después.
+
+**Sin nivel elegido se ofrece todo**: esconder opciones a quien no ha dicho nada es decidir por él.
+
+### El seguimiento es una frase
+Apartado 16: *"con información sencilla… no hace falta llenar la pantalla de estadísticas"*. Así que
+es exactamente eso: *"Esta semana: 3 rutinas realizadas."*
+
+Sin porcentajes, sin rachas, sin comparación con la semana pasada — con una prueba que busca todo
+eso en el texto. Y **sin días en los que tocara no hay cumplimiento**, ni 0 ni 100, como en la Fase 8.
+
+### El calendario es el que ya existe
+Apartado 17: *"no crear un calendario de skincare independiente"*. Entra por `eventosDerivados`, con
+la misma forma de evento que el Armario y las rutinas de pelo.
+
+Un año de eventos no guarda ni una fecha (regla 11), y **ninguno es anterior al día en que la creó**:
+una rutina no existe antes de existir.
+
+### Verificación
+`bash scripts/verificar.sh` — **5707 comprobaciones**, todas correctas: build de Vite,
+148 nuevas en `scripts/test-rutinas-piel.mjs` (los diecisiete tests del apartado 20) y **632 casos de
+renderizado** (28 nuevos). Y, sobre todo, las **171 de la Fase 8 intactas** tras el refactor.
+
 ## Entrega 2 · EH Fase 13/65 — Skincare: perfil de piel y configuración inicial (v1.79.0)
 
 Empieza el bloque de Skincare, *"uno de los apartados importantes de Estilo de hombre"*. El enunciado
