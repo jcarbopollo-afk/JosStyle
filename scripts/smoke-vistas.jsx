@@ -28,9 +28,10 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
+import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
 import { crearRutina, marcarRutinaEntera, registrarCambio, alternarParte, datosPelo } from '../src/lib/rutinasPelo.js';
 import { guardarRecomendacion, descartar, REGLAS_PELO } from '../src/lib/recomendacionesPelo.js';
 import { crearProductoPelo, anadirTienda, marcarNoDisponible, crearPack } from '../src/lib/productosPelo.js';
@@ -632,6 +633,14 @@ const CASOS = [
               conValorados = decirQueCorteFue(conValorados, c.id, 'taper').estado;
               conValorados = valorarCorte(conValorados, c.id, 'encanto').estado;
             });
+            // EH F13 — Skincare, con Pelo y Skincare encendidos a la vez.
+            const soloPiel = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['pelo', 'skincare']);
+            const pielAMedias = ['tipoPiel', 'mixta'].length && [['tipoPiel', 'mixta'], ['necesidadesPiel', 'hidratacion'], ['sensibilidadPiel', 'si']]
+              .reduce((acc, [q, v]) => contestarPiel(acc, q, v, { hoy: HOY }).estado, soloPiel);
+            const pielSinProductos = contestarPiel(pielAMedias, 'usaProductos', 'no', { hoy: HOY }).estado;
+            const pielConProductos = anadirProductoPiel(
+              contestarPiel(pielAMedias, 'usaProductos', 'si', { hoy: HOY }).estado, 'Crema hidratante',
+            ).estado;
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
@@ -691,6 +700,17 @@ const CASOS = [
                 pp(anadirCorte(conPreferencias, { nombre: 'Mullet', mantenimiento: 'intermedio' }).estado)],
               ['MiEstiloDeCorteEH · con historial valorado', MiEstiloDeCorteEH, () => pp(conValorados)],
               ['PeluqueriaEH · con estilo de corte', PeluqueriaEH, () => pp(conPreferencias)],
+              /* EH Fase 13 — Skincare. ⚠️ Los estados que importan: la entrada
+                 sin configurar, "Ahora no", el formulario a medias, y —lo del
+                 apartado 14— el de quien dice que NO usa productos, que es
+                 cuando desaparecen cuatro preguntas. */
+              ['SkincareEH · entrada', SkincareEH, () => pp(soloPiel)],
+              ['SkincareEH · ahora no', SkincareEH, () => pp(decirAhoraNo(soloPiel).estado)],
+              ['SkincareEH · a medias', SkincareEH, () => pp(pielAMedias)],
+              ['PerfilPielEH · vacío', PerfilPielEH, () => pp(soloPiel)],
+              ['PerfilPielEH · a medias', PerfilPielEH, () => pp(pielAMedias)],
+              ['PerfilPielEH · sin productos', PerfilPielEH, () => pp(pielSinProductos)],
+              ['PerfilPielEH · con productos', PerfilPielEH, () => pp(pielConProductos)],
             ];
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>

@@ -1,5 +1,94 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 13/65 — Skincare: perfil de piel y configuración inicial (v1.79.0)
+
+Empieza el bloque de Skincare, *"uno de los apartados importantes de Estilo de hombre"*. El enunciado
+pone las reglas antes de pedir nada: **sin IA, sin diagnósticos médicos, el usuario decide siempre,
+todo es opcional.**
+
+### ⚠️ El apartado 15 ya era código, y ya estaba escrito
+*"Antes de preguntar: comprobar la información ya registrada. Si un dato compatible ya existe:
+reutilizarlo. No preguntar dos veces."*
+
+**El registro de la Fase 4 ya declaraba `tipoPiel` y `sensibilidadPiel` como datos de esta fase**
+(`desde: 13`), compartidos con Productos, Barba y Cuerpo — más `sinPerfume`, que usan Cuerpo y
+Productos. Así que esas tres respuestas van solas a la capa compartida: **no hay un `if` que lo
+decida**, lo decide `destinoDe()` mirando el registro.
+
+Y funciona en las dos direcciones, con prueba: un `tipoPiel` que guardó Productos aparece aquí ya
+contestado, y contestarlo aquí lo deja donde los demás módulos lo encuentran.
+
+Esto es la diferencia entre una regla escrita en un documento y una regla que es una función. La
+Fase 4 la escribió hace nueve fases; esta es la primera que la cobra entera.
+
+### ⚠️ El formulario adaptativo vive en el motor, no en la pantalla
+El apartado 14 pide *"no mostrar preguntas irrelevantes"*, con su ejemplo: *"si el usuario dice 'no
+utilizo productos', no mostrar inmediatamente 15 preguntas sobre productos"*.
+
+Se le ha añadido `cuando` a la forma de una pregunta y `preguntasVisibles()` / `progresoVisible()` a
+`cuestionarios.js`. **Barba, Cuerpo, Manos y Perfumes van a querer exactamente lo mismo**, y una
+pregunta que se esconde con un `if` en el JSX es una pregunta que nadie puede comprobar.
+
+Cuatro de las trece preguntas están condicionadas, y el ejemplo del enunciado es una prueba.
+
+### ⚠️ Y esconder no es borrar
+Si dice que no usa productos, esas preguntas desaparecen **y sus respuestas de antes siguen
+guardadas**; si mañana dice que sí, reaparecen contestadas. Es la regla 5 otra vez, aplicada a lo que
+se ve en lugar de a lo que se guarda — y es lo que separa un formulario adaptativo de uno que castiga
+por cambiar de opinión.
+
+**El progreso cuenta lo visible.** Decirle *"has contestado 4 de 13"* de un formulario donde cuatro
+preguntas no le aplican sería una nota inventada.
+
+### ⚠️ Objetivos de cuidado, nunca un diagnóstico
+El apartado 4 lleva la advertencia dentro: *"estas opciones son objetivos de cuidado, **no
+diagnósticos**"*. Y el objetivo de la fase lo repite: *"sin diagnósticos médicos"*.
+
+Por eso la pregunta es *"¿Qué te gustaría mejorar o cuidar?"* y **no** *"¿qué te pasa?"*. Hay una
+prueba que recorre **todos** los textos de la fase —títulos, ayudas, opciones, secciones, frases—
+buscando veinte palabras clínicas, y otra que comprueba que en ningún sitio se le pregunta qué le
+pasa.
+
+### ⚠️ Apartado 17 — esto no sale de aquí
+*"Toda la información debe permanecer dentro del sistema de usuario. No enviar estos datos a una IA.
+No crear perfiles externos."*
+
+Siete pruebas sobre el código buscan `askAI`, `AI_SYSTEM`, `anthropic`, `fetch(`, `XMLHttpRequest`,
+`openai` y `supabase`. El contexto que este módulo entrega a las fases 14-17 lleva `paraIA: false`
+escrito en el propio dato, y `auditarPiel()` devuelve `perfilesExternos: 0`.
+
+### Los niveles 🟢🟡🔴, otra vez importados
+El apartado 9 lo dice literalmente: *"esto conecta directamente con el sistema de niveles"*. Así que
+`COMPLEJIDADES_PIEL` toma los ids y los iconos de `NIVELES_ESTILO` (F6) con los nombres del enunciado
+—Básica / Intermedia / Completa—. Segunda fase seguida que lo hace.
+
+### Y una duplicación que NO lo era
+El apartado 8 pregunta cuánto tiempo quiere dedicar a su cuidado, y se parece mucho a la del apartado
+5 de la Fase 12, que sí resultó ser una repetición. **No lo es:** allí las opciones eran menos de 5 /
+5–10 / 10–20 / más de 20 minutos y hablaban del pelo; aquí son menos de 2 / 2–5 / 5–10 / más de 10 y
+hablan de la piel. Otra escala, otro asunto, otra pregunta — y hay una prueba que compara las dos
+listas para dejarlo dicho.
+
+### ⚠️ Lo que esta fase NO construye
+El enunciado cierra con *"todavía no implementar esas funciones dentro de esta fase"*, refiriéndose a
+rutinas, seguimiento, recomendaciones, productos, packs e integración.
+
+`auditarPiel()` devuelve cinco ceros, y cinco pruebas buscan `crearRutina`, `recomendar`, `CATALOGO`,
+`crearPack` y `aplicarA` en el archivo. Un producto aquí **es un nombre**: ni marca, ni precio, ni
+tienda, ni valoración. Y la pantalla dice en qué fases llega lo demás, en vez de "próximamente"
+(regla 8).
+
+### Un vocabulario de estado, no dos
+Sobre la marcha, el módulo tenía `estadoPerfilPiel` devolviendo las palabras del motor (`contestado`)
+y `estadoDeEntrada` devolviendo las suyas (`configurado`). Dos nombres para lo mismo dentro del mismo
+archivo es cómo se acaba comparando contra la palabra equivocada, así que se ha quedado uno: el que
+sabe de *"Ahora no"* (apartado 1), que el motor no puede conocer.
+
+### Verificación
+`bash scripts/verificar.sh` — **5531 comprobaciones**, todas correctas: build de Vite,
+227 nuevas en `scripts/test-perfil-piel.mjs` (los doce tests del apartado 18 que no son "probar
+móvil") y **604 casos de renderizado** (28 nuevos).
+
 ## Entrega 2 · EH Fase 12/65 — Peluquería: cortes, preferencias y recomendaciones (v1.78.0)
 
 ### ⚠️ El apartado 5 ya estaba contestado, y no se vuelve a preguntar

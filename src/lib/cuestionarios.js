@@ -53,6 +53,17 @@ export function normalizarPregunta(p) {
     ayuda: q.ayuda || '',
     opciones: Array.isArray(q.opciones) ? q.opciones : [],
     multiple: !!q.multiple,
+    /* ⚠️ **El formulario adaptativo** (nace en EH F13, apartado 14: *"no mostrar
+       preguntas irrelevantes… si el usuario dice 'no utilizo productos', no
+       mostrar inmediatamente 15 preguntas sobre productos"*).
+
+       Vive en el motor y no en Skincare porque Barba, Cuerpo, Manos y Perfumes
+       van a querer lo mismo, y porque una pregunta que decide si se enseña con
+       un `if` en la pantalla es una pregunta que nadie puede comprobar.
+
+       Por defecto **siempre se enseña**: el defecto tiene que ser el que no
+       esconde nada. */
+    cuando: typeof q.cuando === 'function' ? q.cuando : null,
     // ⚠️ Por defecto SÍ se puede decir "no lo sé": el apartado 14 lo pide, y el
     // valor por defecto tiene que ser el que no obliga a inventar.
     noLoSe: q.noLoSe !== false,
@@ -189,6 +200,40 @@ export function leerCuestionario(estado, moduloId, preguntas, datosGlobales = {}
       opcionesVisibles: opcionesDe(q),
     };
   });
+}
+
+/**
+ * ⚠️ **El formulario adaptativo** (EH F13, apartado 14). Devuelve solo las
+ * preguntas que toca enseñar ahora mismo, dado lo que ya ha contestado.
+ *
+ * Dos decisiones que no son obvias:
+ *
+ * - **Una pregunta escondida NO se borra.** Si dijo que no usa productos, las
+ *   preguntas de productos desaparecen; si mañana dice que sí, sus respuestas
+ *   de antes siguen ahí. Esconder no es olvidar (regla 5, otra vez).
+ * - **El progreso cuenta lo VISIBLE.** Decirle *"has contestado 4 de 18"* de un
+ *   formulario donde seis preguntas no le aplican sería una nota inventada.
+ */
+export function preguntasVisibles(estado, moduloId, preguntas, datosGlobales = {}) {
+  const todas = leerCuestionario(estado, moduloId, preguntas, datosGlobales);
+  const respuestas = Object.fromEntries(todas.map((q) => [q.id, q.noSabe ? [] : q.valores]));
+  return todas.filter((q) => q.cuando === null || q.cuando(respuestas));
+}
+
+/** El progreso de lo que de verdad se le enseña. */
+export function progresoVisible(estado, moduloId, preguntas, datosGlobales = {}) {
+  const visibles = preguntasVisibles(estado, moduloId, preguntas, datosGlobales);
+  const contestadas = visibles.filter((q) => q.contestada);
+  return {
+    contestadas: contestadas.length,
+    total: visibles.length,
+    noSabe: visibles.filter((q) => q.noSabe).length,
+    sinEmpezar: contestadas.length === 0,
+    todasContestadas: contestadas.length === visibles.length && visibles.length > 0,
+    // Cuántas se están escondiendo ahora mismo. No es un aviso: es un dato para
+    // que la pantalla pueda decir "hay más si cambias esta respuesta".
+    escondidas: (preguntas || []).length - visibles.length,
+  };
 }
 
 /**

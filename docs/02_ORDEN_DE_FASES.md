@@ -218,8 +218,10 @@ escribir código.
 
 | v1.78.0 | **EH F12** | El perfil de corte y sus recomendaciones. ⚠️ **El apartado 5 ya lo preguntó la Fase 7**, con las mismas cinco opciones: se LEE de allí y se dice dónde se cambia, así que el perfil tiene seis preguntas y no siete (D-15). **Los niveles 🟢🟡🔴 se importan de la Fase 6** con los nombres de Josué. **Añadir un corte es añadir una línea**, y la lista es ampliable de verdad. **Nada sin confirmar**, con prueba byte a byte. Y **el historial no diagnostica**: con un corte valorado bien no se afirma nada |
 
+| v1.79.0 | **EH F13** | Empieza Skincare. ⚠️ **El apartado 15 ya era código**: la Fase 4 declaraba `tipoPiel` y `sensibilidadPiel` como datos de esta fase, así que se reutilizan solos y `destinoDe()` lo decide, no un `if`. **El formulario adaptativo vive en el motor** —`cuando` + `preguntasVisibles()`— porque Barba, Cuerpo, Manos y Perfumes van a querer lo mismo. Y **esconder no es borrar**. **Objetivos de cuidado, nunca un diagnóstico**, con prueba sobre todos los textos. **Apartado 17: esto no sale de aquí** |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 12/65**. Quedan **51** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (49).
+3/5 y **EH por 13/65**. Quedan **50** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (48).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

@@ -1015,38 +1015,88 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] USUARIO SIEMPRE DECIDE
 - [x] PRUEBAS
 
-#### EH · Fase 13/65 — SKINCARE: PERFIL DE PIEL Y CONFIGURACIÓN INICIAL
-- [ ] ENTRADA A SKINCARE
-- [ ] FORMULARIO
-- [ ] TIPO DE PIEL
-- [ ] NECESIDADES
-- [ ] SENSIBILIDAD
-- [ ] ZONAS
-- [ ] OBJETIVO PRINCIPAL
-- [ ] TIEMPO DISPONIBLE
-- [ ] COMPLEJIDAD
-- [ ] PRODUCTOS ACTUALES
-- [ ] PREFERENCIAS DE PRODUCTOS
-- [ ] PRESUPUESTO
-- [ ] PROTECCIÓN SOLAR
-- [ ] FORMULARIO ADAPTATIVO
-- [ ] INFORMACIÓN EXISTENTE
-- [ ] DATOS EDITABLES
-- [ ] PRIVACIDAD
-- [ ] PRUEBAS
-- [ ] Usuario que completa todo.
-- [ ] Usuario que responde parcialmente.
-- [ ] Usuario que pulsa “No lo sé”.
-- [ ] Usuario que salta el formulario.
-- [ ] Usuario con información existente.
-- [ ] Usuario sin productos.
-- [ ] Usuario con productos.
-- [ ] Cambiar preferencias.
-- [ ] Cambiar nivel.
-- [ ] Desactivar Skincare.
-- [ ] Reactivar Skincare.
-- [ ] Comprobar que no se pierde información.
-- [ ] Probar móvil.
+#### EH · Fase 13/65 — SKINCARE: PERFIL DE PIEL Y CONFIGURACIÓN INICIAL ✅ COMPLETADA (v1.79.0)
+
+> **`src/lib/perfilPiel.js`** (227 comprobaciones) + las pantallas `SkincareEH` y `PerfilPielEH`.
+> Sin SQL nuevo.
+>
+> ⚠️ **EL APARTADO 15 YA ERA CÓDIGO, Y YA ESTABA ESCRITO.** *"Antes de preguntar, comprobar la
+> información ya registrada. Si un dato compatible ya existe, reutilizarlo. No preguntar dos veces."*
+> El registro de la **Fase 4 ya declaraba `tipoPiel` y `sensibilidadPiel` como datos de esta fase**
+> (`desde: 13`), compartidos con Productos, Barba y Cuerpo — más `sinPerfume`, de Cuerpo y Productos.
+> Así que esas tres respuestas van solas a la capa compartida: **no hay un `if` que lo decida**, lo
+> decide `destinoDe()`. Y funciona en las dos direcciones, con prueba: un `tipoPiel` que guardó
+> Productos aparece aquí ya contestado, y contestarlo aquí lo deja donde los demás lo encuentran.
+>
+> ⚠️ **EL FORMULARIO ADAPTATIVO VIVE EN EL MOTOR, no en la pantalla** (apartado 14). Se le ha añadido
+> `cuando` a la forma de una pregunta y `preguntasVisibles()` / `progresoVisible()` a
+> `cuestionarios.js`. **Barba, Cuerpo, Manos y Perfumes van a querer lo mismo**, y una pregunta que
+> se esconde con un `if` en el JSX es una pregunta que nadie puede comprobar. El ejemplo literal del
+> enunciado —*"si el usuario dice 'no utilizo productos', no mostrar inmediatamente 15 preguntas
+> sobre productos"*— es una prueba.
+>
+> ⚠️ **Y ESCONDER NO ES BORRAR.** Si dice que no usa productos, esas preguntas desaparecen **y sus
+> respuestas de antes siguen ahí**; si mañana dice que sí, reaparecen contestadas. Es la regla 5 otra
+> vez, aplicada a lo que se ve en vez de a lo que se guarda.
+>
+> ⚠️ **El progreso cuenta lo VISIBLE.** Decirle *"has contestado 4 de 13"* de un formulario donde
+> cuatro preguntas no le aplican sería una nota inventada.
+>
+> ⚠️ **OBJETIVOS DE CUIDADO, NUNCA UN DIAGNÓSTICO** (apartado 4, con la advertencia en el propio
+> enunciado, y el objetivo de la fase: *"sin diagnósticos médicos"*). La pregunta es *"¿qué te
+> gustaría mejorar o cuidar?"*, **no** *"¿qué te pasa?"*, y hay una prueba que recorre todos los
+> textos de la fase buscando veinte palabras clínicas.
+>
+> ⚠️ **APARTADO 17 — ESTO NO SALE DE AQUÍ.** *"No enviar estos datos a una IA. No crear perfiles
+> externos."* Siete pruebas sobre el código (`askAI`, `anthropic`, `fetch(`, `openai`, `supabase`…),
+> y el contexto que entrega lleva `paraIA: false` escrito en el propio dato.
+>
+> **Los niveles 🟢🟡🔴 se importan de la Fase 6**, porque el apartado 9 dice literalmente *"esto
+> conecta directamente con el sistema de niveles"*. Segunda fase seguida que lo hace.
+>
+> ⚠️ **Y LO QUE ESTA FASE NO CONSTRUYE, DECLARADO Y COMPROBADO:** el enunciado cierra con *"todavía
+> no implementar esas funciones dentro de esta fase"*, así que `auditarPiel()` devuelve cero rutinas,
+> cero seguimiento, cero recomendaciones, cero catálogo y cero packs, y hay cinco pruebas que buscan
+> `crearRutina`, `recomendar`, `CATALOGO`, `crearPack` y `aplicarA` en el archivo. Un producto aquí
+> **es un nombre**: ni marca, ni precio, ni tienda.
+>
+> **Un detalle que se corrigió sobre la marcha:** el módulo tenía dos vocabularios de estado
+> —`estadoPerfilPiel` devolvía las palabras del motor (`contestado`) y `estadoDeEntrada` las suyas
+> (`configurado`)—. Dos nombres para lo mismo en el mismo archivo es cómo se acaba comparando contra
+> la palabra equivocada, así que se ha quedado uno: el que sabe de *"Ahora no"*.
+
+
+- [x] ENTRADA A SKINCARE
+- [x] FORMULARIO
+- [x] TIPO DE PIEL
+- [x] NECESIDADES
+- [x] SENSIBILIDAD
+- [x] ZONAS
+- [x] OBJETIVO PRINCIPAL
+- [x] TIEMPO DISPONIBLE
+- [x] COMPLEJIDAD
+- [x] PRODUCTOS ACTUALES
+- [x] PREFERENCIAS DE PRODUCTOS
+- [x] PRESUPUESTO
+- [x] PROTECCIÓN SOLAR
+- [x] FORMULARIO ADAPTATIVO
+- [x] INFORMACIÓN EXISTENTE
+- [x] DATOS EDITABLES
+- [x] PRIVACIDAD
+- [x] PRUEBAS
+- [x] Usuario que completa todo.
+- [x] Usuario que responde parcialmente.
+- [x] Usuario que pulsa “No lo sé”.
+- [x] Usuario que salta el formulario.
+- [x] Usuario con información existente.
+- [x] Usuario sin productos.
+- [x] Usuario con productos.
+- [x] Cambiar preferencias.
+- [x] Cambiar nivel.
+- [x] Desactivar Skincare.
+- [x] Reactivar Skincare.
+- [x] Comprobar que no se pierde información.
+- [x] Probar móvil.
 
 #### EH · Fase 14/65 — SKINCARE: RUTINAS Y CUIDADO DIARIO
 - [ ] PANEL DE SKINCARE

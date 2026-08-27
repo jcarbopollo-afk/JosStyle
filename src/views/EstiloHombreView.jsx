@@ -101,6 +101,11 @@ import {
   recomendarCortes, loQueFaltaParaCortes, compararCortes, patronesDeCorte,
   tiempoParaPeinarse, resumenCortes,
 } from '../lib/cortesPelo';
+import {
+  MODULO_PIEL, TEXTOS_PIEL, panelPiel, contestarPiel, seccionesDePiel,
+  progresoPiel, estadoDeEntrada, decirAhoraNo, volverAConfigurar,
+  anadirProductoPiel, quitarProductoPiel, datosPiel, resumenPiel,
+} from '../lib/perfilPiel';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -2372,6 +2377,204 @@ export function MiEstiloDeCorteEH({ estado, accent, datosGlobales = {}, onCambia
 }
 
 /* ===========================================================================
+   SKINCARE: PERFIL DE PIEL (F13)
+   ===========================================================================
+   *"Sin IA. Sin diagnósticos médicos. El usuario decide siempre. Todo es
+   opcional."*
+
+   ⚠️ **La pantalla no decide qué preguntas se enseñan.** El apartado 14 pide un
+   formulario adaptativo, y eso lo calcula `preguntasVisibles()` en el motor: si
+   dijo que no usa productos, esas preguntas no llegan hasta aquí. Un `if` en el
+   JSX habría sido una regla que nadie puede comprobar.
+
+   ⚠️ Y **el formulario va por secciones** (apartado 2): *"no mostrar un
+   formulario gigante de golpe"*. */
+export function PerfilPielEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  const [seccion, setSeccion] = useState(0);
+  const [nuevo, setNuevo] = useState('');
+  const [error, setError] = useState(null);
+
+  const panel = useMemo(() => panelPiel(estado, datosGlobales), [estado, datosGlobales]);
+  const secciones = panel.secciones;
+  const actual = secciones[Math.min(seccion, Math.max(secciones.length - 1, 0))] || null;
+
+  const aplicar = (r) => {
+    if (r.error) { setError(r.error); return; }
+    setError(null);
+    onCambiar?.(r.estado);
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_PIEL.editar}</p>
+      </div>
+
+      {/* ⚠️ Apartado 15 — lo que ya sabíamos, y de dónde. Si no se dice, parece
+          que la respuesta se ha ido a otro sitio sin avisar. */}
+      {panel.yaSabemos.length > 0 && (
+        <div className="rounded-2xl p-2.5 mb-3"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          {panel.yaSabemos.map((x) => (
+            <p key={x.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {x.nombre}: {x.etiquetas.join(', ')}
+              {x.conQuien.length > 0 ? ` · también lo usa ${x.conQuien.join(' y ')}` : ''}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* Apartado 2 — las secciones, para no plantarle trece preguntas de golpe. */}
+      <div className="flex gap-1 mb-3 overflow-x-auto">
+        {secciones.map((s, i) => (
+          <button
+            key={s.id} onClick={() => setSeccion(i)}
+            className="rounded-2xl px-2.5 py-1.5 flex-shrink-0"
+            style={{
+              background: actual?.id === s.id ? hexToRgba(accent, 0.14) : COLORS.surface2,
+              border: `1px solid ${actual?.id === s.id ? accent : COLORS.border}`,
+            }}
+          >
+            <span className="text-[10px] font-semibold" style={{ color: actual?.id === s.id ? accent : COLORS.text }}>
+              {s.nombre} {s.contestadas}/{s.total}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {actual && (
+        <div className="space-y-3">
+          {actual.preguntas.map((q) => (
+            <div key={q.id}>
+              <p className="text-[11px] font-semibold mb-0.5" style={{ color: COLORS.text }}>{q.titulo}</p>
+              {q.ayuda && <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>{q.ayuda}</p>}
+              <div className="flex flex-wrap gap-1">
+                {q.opcionesVisibles.map((o) => {
+                  const puesto = q.valores.includes(o.id);
+                  return (
+                    <button
+                      key={o.id}
+                      onClick={() => aplicar(contestarPiel(estado, q.id, o.id))}
+                      className="rounded-full px-2.5 py-1"
+                      style={{
+                        background: puesto ? hexToRgba(accent, 0.14) : COLORS.surface2,
+                        border: `1px solid ${puesto ? accent : COLORS.border}`,
+                      }}
+                    >
+                      <span className="text-[10px] font-semibold" style={{ color: puesto ? accent : COLORS.text }}>
+                        {o.nombre}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {/* Apartado 10 — sus productos de ahora. ⚠️ Solo si usa alguno, y
+              *"no obligar a introducirlos todos"*: uno basta. */}
+          {actual.id === 'productos' && panel.pideProductos && (
+            <div>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>
+                Los que uses ahora, si quieres
+              </p>
+              {panel.productos.map((p) => (
+                <div key={p.id} className="rounded-2xl p-2 flex items-center gap-2 mb-1"
+                  style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+                  <span className="text-[11px] flex-1 truncate" style={{ color: COLORS.text }}>{p.nombre}</span>
+                  <button onClick={() => aplicar(quitarProductoPiel(estado, p.id))} aria-label={`Quitar ${p.nombre}`}>
+                    <X size={13} style={{ color: COLORS.textMuted }} />
+                  </button>
+                </div>
+              ))}
+              <div className="flex gap-1.5">
+                <TextInput value={nuevo} onChange={(ev) => setNuevo(ev.target.value)}
+                  placeholder="Nombre del producto" aria-label="Nombre del producto" />
+                <button
+                  onClick={() => { aplicar(anadirProductoPiel(estado, nuevo)); setNuevo(''); }}
+                  disabled={!nuevo.trim()}
+                  className="rounded-2xl px-3 disabled:opacity-40"
+                  style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+                >
+                  <span className="text-[11px] font-semibold" style={{ color: COLORS.text }}>Añadir</span>
+                </button>
+              </div>
+              <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+                Con apuntar alguno vale. No hace falta que estén todos.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <p className="text-[10px] text-center mt-3" style={{ color: COLORS.textMuted }}>
+        {panel.progreso.sinEmpezar
+          ? 'Todo es opcional, y puedes cambiarlo cuando quieras.'
+          : `Has contestado ${panel.progreso.contestadas} de ${panel.progreso.total}.`}
+      </p>
+      {/* Regla 8 — se dice qué llega después, no "próximamente". */}
+      <p className="text-[10px] text-center" style={{ color: COLORS.textMuted }}>{panel.nota}</p>
+
+      {error && <p className="text-[10px] mt-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+    </Card>
+  );
+}
+
+/** Apartado 1 — la entrada, con sus dos botones. */
+export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  const [configurando, setConfigurando] = useState(
+    () => estadoDeEntrada(estado, datosGlobales) === 'a_medias'
+      || estadoDeEntrada(estado, datosGlobales) === 'configurado',
+  );
+  const entrada = useMemo(() => estadoDeEntrada(estado, datosGlobales), [estado, datosGlobales]);
+
+  /* ⚠️ Regla 4 — el `return` condicional, después de los hooks. */
+  if (configurando) {
+    return (
+      <PerfilPielEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={onCerrar}
+      />
+    );
+  }
+
+  return (
+    <Card className="text-center">
+      {onCerrar && (
+        <button onClick={onCerrar} className="p-1 -ml-1 float-left" aria-label="Volver">
+          <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+        </button>
+      )}
+      <p className="text-2xl leading-none mb-2" aria-hidden="true">🧴</p>
+      <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_PIEL.titulo}</p>
+      <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{TEXTOS_PIEL.sub}</p>
+      <PrimaryButton
+        accent={accent}
+        onClick={() => { onCambiar?.(volverAConfigurar(estado).estado); setConfigurando(true); }}
+      >
+        {TEXTOS_PIEL.configurar}
+      </PrimaryButton>
+      {/* ⚠️ "Ahora no" no es un estado degradado: es una decisión suya. */}
+      <button
+        onClick={() => onCambiar?.(decirAhoraNo(estado).estado)}
+        className="text-[11px] font-semibold mt-2"
+        style={{ color: COLORS.textMuted }}
+      >
+        {TEXTOS_PIEL.ahoraNo}
+      </button>
+      {entrada === 'ahora_no' && (
+        <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>{TEXTOS_PIEL.omitido}</p>
+      )}
+    </Card>
+  );
+}
+
+/* ===========================================================================
    TAMBIÉN PUEDES AÑADIR (F2, apartado 11)
    ===========================================================================
    *"Debe ser informativo, nunca obligatorio. No utilizar IA."* Y no aparece si
@@ -2411,6 +2614,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
   const [perfilPelo, setPerfilPelo] = useState(false);   // false | 'panel' | 'perfil'
+  const [skincare, setSkincare] = useState(false);       // F13
   const [ordenando, setOrdenando] = useState(false);
   /* ⚠️ **Se calcula UNA sola vez, al entrar en el módulo** (regla 4: los hooks,
      antes de cualquier `return`). Si se recalculara en cada render, pulsar
@@ -2433,6 +2637,10 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   );
   const progresoPeloEH = useMemo(() => progresoPelo(estado, datosGlobales), [estado, datosGlobales]);
   const resumenPeloEH = useMemo(() => resumenPelo(estado), [estado]);
+  /* F13 — el recuento de Skincare, derivado como todos los demás. */
+  const pielEH = useMemo(() => resumenPiel(estado, datosGlobales), [estado, datosGlobales]);
+  const subPiel = { sin_configurar: 'Configura tu perfil', ahora_no: 'Cuando quieras' }[pielEH.estado]
+    || `${pielEH.contestadas} de ${pielEH.total} contestadas`;
   const subPelo = resumenPeloEH.rutinas > 0
     ? `${resumenPeloEH.rutinas} ${resumenPeloEH.rutinas === 1 ? 'rutina' : 'rutinas'}`
       + (resumenPeloEH.hoy > 0 ? ` · ${resumenPeloEH.hechasHoy}/${resumenPeloEH.hoy} hoy` : '')
@@ -2476,6 +2684,17 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
         estado={estado} accent={accent} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={() => setPerfilPelo(false)}
         onPerfil={() => setPerfilPelo('perfil')}
+      />
+    );
+  }
+
+  /* F13 — la plaquita de Skincare abre su entrada (apartado 1), que decide
+     entre la bienvenida y el formulario. */
+  if (skincare) {
+    return (
+      <SkincareEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setSkincare(false)}
       />
     );
   }
@@ -2534,11 +2753,16 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
                  siendo la excepción, no la regla: los otros once apartados no
                  llevan a ninguna parte todavía y la pantalla lo dice. */
               const esPelo = m.id === MODULO_PELO && !ordenando;
+              /* F13 — Skincare es el tercero con contenido propio. */
+              const esPiel = m.id === MODULO_PIEL && !ordenando;
               return (
                 <Plaquita
                   key={m.id} modulo={m} accent={accent}
-                  sub={esArmario && estiloArmario ? resumenPlaquitaArmario : (esPelo ? subPelo : null)}
-                  onAbrir={esArmario ? () => onIr(DESTINO_ARMARIO) : (esPelo ? () => setPerfilPelo('panel') : null)}
+                  sub={esArmario && estiloArmario ? resumenPlaquitaArmario
+                    : (esPelo ? subPelo : (esPiel ? subPiel : null))}
+                  onAbrir={esArmario ? () => onIr(DESTINO_ARMARIO)
+                    : (esPelo ? () => setPerfilPelo('panel')
+                      : (esPiel ? () => setSkincare(true) : null))}
                   orden={ordenando ? puedeMover(estado, m.id) : null}
                   onSubir={() => onCambiar(subirModulo(estado, m.id))}
                   onBajar={() => onCambiar(bajarModulo(estado, m.id))}
@@ -2556,11 +2780,16 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
           {!ordenando && (() => {
             const conArmario = activos.some((m) => m.id === MODULO_EH_ESTILO) && !!onIr;
             const conPelo = activos.some((m) => m.id === MODULO_PELO);
-            const pendientes = activos.length - (conArmario ? 1 : 0) - (conPelo ? 1 : 0);
+            /* ⚠️ F13 — Skincare ya tiene contenido, así que deja de contar como
+               pendiente. Un aviso que dice "el resto llega después" incluyendo
+               uno que YA funciona es exactamente la mentira que prohíbe la
+               regla 8, solo que en la otra dirección. */
+            const conPiel = activos.some((m) => m.id === MODULO_PIEL);
+            const pendientes = activos.length - (conArmario ? 1 : 0) - (conPelo ? 1 : 0) - (conPiel ? 1 : 0);
             if (pendientes === 0) return null;
             return (
               <p className="text-[11px] text-center" style={{ color: COLORS.textMuted }}>
-                {conArmario || conPelo
+                {conArmario || conPelo || conPiel
                   ? 'El resto de apartados que has elegido llegan en las siguientes fases.'
                   : 'De momento esto es solo tu espacio elegido: el contenido de cada apartado llega en las siguientes fases.'}
               </p>

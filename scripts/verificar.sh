@@ -248,6 +248,12 @@ else
   fallo "Fallan los cortes de pelo"; grep '✗' /tmp/jc_eh12.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-perfil-piel.mjs >/tmp/jc_eh13.log 2>&1; then
+  ok "Skincare: perfil de piel (EH F13) — $(grep -c '✓' /tmp/jc_eh13.log) comprobaciones"
+else
+  fallo "Falla el perfil de piel"; grep '✗' /tmp/jc_eh13.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else
