@@ -200,6 +200,12 @@ else
   fallo "Falla la capa de datos de Estilo de Hombre"; grep '✗' /tmp/jc_eh4.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-armario-estilo-hombre.mjs >/tmp/jc_eh5.log 2>&1; then
+  ok "Armario integrado en Estilo de Hombre (EH F5) — $(grep -c '✓' /tmp/jc_eh5.log) comprobaciones"
+else
+  fallo "Falla la integración del armario en Estilo de Hombre"; grep '✗' /tmp/jc_eh5.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

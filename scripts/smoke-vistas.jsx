@@ -495,6 +495,8 @@ const CASOS = [
           calistenia: { Dominadas: { sesiones: [{ fecha: HOY }] } }, sueno: [{ fecha: HOY, horas: 8 }],
         };
         const props = (estado) => ({ estiloHombre: estado, accent, datosGlobales: GLOBAL_EH, onCambiar: noop });
+        // EH Fase 5 — con un armario de verdad detrás, y con el módulo apagado.
+        const conArmario = (estado) => ({ ...props(estado), armario: lleno.armario, onIr: noop });
         const conTres = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['skincare', 'pelo', 'habitos'], { hoy: HOY });
         const todosLosIds = ['estilo', 'pelo', 'skincare', 'higiene', 'barba', 'cuerpo', 'fitness', 'sueno', 'salud', 'habitos', 'progreso', 'educacion', 'productos'];
         const conDatos = guardarConfig(conTres, 'skincare', { tipoPiel: 'mixta' });
@@ -541,6 +543,12 @@ const CASOS = [
           ['EstiloHombreView · omitido', EstiloHombreView, () => props(omitirAsistente(arranque, { hoy: HOY }))],
           ['EstiloHombreView · terminado por el asistente', EstiloHombreView, () =>
             props(terminarAsistente(conMarcados, { hoy: HOY }))],
+          ['EstiloHombreView · con el armario conectado', EstiloHombreView, () =>
+            conArmario(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['estilo', 'skincare']))],
+          ['EstiloHombreView · armario apagado', EstiloHombreView, () =>
+            conArmario(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['skincare']))],
+          ['EstiloHombreView · solo el armario', EstiloHombreView, () =>
+            conArmario(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['estilo']))],
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],
           ['EstiloHombreView · con módulos', EstiloHombreView, () => props(conTres)],
           ['EstiloHombreView · configurado sin módulos', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],

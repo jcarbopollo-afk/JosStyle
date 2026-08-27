@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 47 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 4/65**
-> (hasta v1.70.0). Quedan **59**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (57). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 48 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 5/65**
+> (hasta v1.71.0). Quedan **58**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (56). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -473,22 +473,67 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 > que el estado sobreviva al viaje por JSON sin duplicar entradas. Que dos iPhones acaben con lo mismo
 > es **R1**, y el archivo de pruebas lo imprime.
 
-#### EH · Fase 5/65 — ESTILO + ARMARIO: INTEGRACIÓN CON EL SISTEMA EXISTENTE
-- [ ] CONECTAR EL ARMARIO EXISTENTE
-- [ ] MANTENER LOS DATOS EXISTENTES
-- [ ] TALLAS
-- [ ] INFORMACIÓN DEL PERFIL
-- [ ] PREFERENCIAS DE ESTILO
-- [ ] RECOMENDACIONES
-- [ ] EL USUARIO DECIDE
-- [ ] INFORMACIÓN FALTANTE
-- [ ] ARMARIO COMO FUENTE DE INFORMACIÓN
-- [ ] ACTIVACIÓN/DESACTIVACIÓN
-- [ ] NO CREAR IA DE ESTILO
-- [ ] CONEXIÓN FUTURA CON PRODUCTOS
-- [ ] CONEXIÓN CON OCASIONES
-- [ ] CONEXIÓN CON EL PERFIL FÍSICO
-- [ ] PRUEBAS DE INTEGRACIÓN
+#### EH · Fase 5/65 — ESTILO + ARMARIO: INTEGRACIÓN CON EL SISTEMA EXISTENTE ✅ COMPLETADA (v1.71.0)
+
+> **`src/lib/armarioEnEstiloHombre.js`** (138 comprobaciones). Sin SQL nuevo, **y sin una sola prenda
+> guardada en Estilo de Hombre**.
+>
+> El enunciado empieza con tres avisos seguidos —*"NO reconstruir el armario. NO duplicar sus datos.
+> NO crear un segundo sistema de ropa"*— así que este archivo **solo lee**. Todo sigue en
+> `armario.js` y `armarioInteligencia.js` (AR F1-F4).
+>
+> ⚠️ **La prueba que más importa no es ninguna de las diez del enunciado: es la que lee el código
+> fuente** y falla si aquí aparece `crearPrenda(`, `crearOutfit(`, `crearUso(` o una llamada a la IA.
+> El apartado 7 dice que *"una recomendación nunca debe convertirse automáticamente en una
+> modificación del armario"*, y la forma de garantizarlo no es acordarse: es que **la capacidad no
+> exista**.
+>
+> ⚠️ **Un solo perfil de tallas** (apartado 3, Test 8). El armario ya sabe qué gasta Josué —lo dice
+> cada prenda— así que la talla **se deriva de ahí**, y lo guardado en la capa de la Fase 4 solo
+> rellena los huecos. Si los dos existen y no coinciden, **se enseña el choque** en vez de elegir en
+> silencio; y **un empate en el armario no es una respuesta**.
+>
+> ⚠️ **El motor de recomendación tampoco se reescribe**: `recomendarOutfits()` es de AR F4 y ya sabe
+> de repetición, disponibilidad y olvido. Lo que añade esta fase es la capa de preferencias por
+> encima — y **si no ha indicado colores favoritos, no se afirma que algo encaje**.
+>
+> ⚠️ **Un fallo real que encontró la prueba:** el puente leía `outfit.ocasiones` como si fuera una
+> lista, y un outfit guarda **una** ocasión (`ocasion`). Devolvía cero ocasiones siempre, y en
+> silencio. La forma que existe manda sobre la que uno supone.
+>
+> **Apagar el apartado no esconde el armario, lo saca de aquí** (apartado 10): la nota lo dice —*"el
+> armario sigue en su sitio de siempre"*— en vez de dejar un hueco.
+>
+> **Y el apartado 8 no bloquea:** falta la talla de calzado, se dice *"No tenemos registrada tu talla
+> de calzado"* con su *"Añadir talla"*… **y la recomendación sale igual**.
+
+- [x] CONECTAR EL ARMARIO EXISTENTE
+- [x] MANTENER LOS DATOS EXISTENTES
+- [x] TALLAS
+- [x] INFORMACIÓN DEL PERFIL
+- [x] PREFERENCIAS DE ESTILO
+- [x] RECOMENDACIONES
+- [x] EL USUARIO DECIDE
+- [x] INFORMACIÓN FALTANTE
+- [x] ARMARIO COMO FUENTE DE INFORMACIÓN
+- [x] ACTIVACIÓN/DESACTIVACIÓN
+- [x] NO CREAR IA DE ESTILO
+- [x] CONEXIÓN FUTURA CON PRODUCTOS
+- [x] CONEXIÓN CON OCASIONES
+- [x] CONEXIÓN CON EL PERFIL FÍSICO
+- [x] PRUEBAS DE INTEGRACIÓN
+
+
+> ⚠️ **Las preferencias que el armario ya tiene NO se declaran como dato propio** (marcas, colores y
+> ocasiones): se derivan de él. Hay cinco pruebas que fallan si aparecen en el registro de la Fase 4.
+> Solo se guardan las tres que no existían: estilos favoritos, colores favoritos y formalidad.
+>
+> ⚠️ **El puente a Productos declara el enlace y ni un producto** (apartado 12 + **D2-03** de Josué:
+> arquitectura sí, afiliación no). Hay cinco pruebas que buscan "amazon", "afiliad", "precio",
+> "comprar" y "http" dentro de él.
+>
+> ⚠️ **El Test 10 (navegación en móvil) necesita un iPhone: es R1**, y la auditoría lo declara en
+> `noComprobableAqui` en vez de darlo por bueno.
 
 #### EH · Fase 6/65 — PERFIL DE ESTILO Y PREFERENCIAS PERSONALES
 - [ ] ACCESO

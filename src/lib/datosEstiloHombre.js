@@ -84,6 +84,13 @@ export const REGISTRO_DATOS = [
   { id: 'tallaCamiseta', nombre: 'Talla de camiseta', categoria: 'tallas', clase: 'necesario', usan: ['estilo'], historial: true, desde: 5 },
   { id: 'tallaPantalon', nombre: 'Talla de pantalón', categoria: 'tallas', clase: 'necesario', usan: ['estilo'], historial: true, desde: 5 },
   { id: 'tallaCalzado', nombre: 'Talla de calzado', categoria: 'tallas', clase: 'necesario', usan: ['estilo'], historial: false, desde: 5 },
+  // EH F5, apartado 5 — las preferencias de estilo que el Armario NO tiene.
+  // ⚠️ Las que sí tiene (marcas, colores y ocasiones de sus prendas y outfits)
+  // **no se declaran aquí**: se derivan de él. Declararlas sería el segundo
+  // sistema de ropa que prohíbe el encabezado de la Fase 5.
+  { id: 'estilosFavoritos', nombre: 'Estilos favoritos', categoria: 'estilo', clase: 'preferencia', usan: ['estilo'], historial: false, desde: 5 },
+  { id: 'coloresFavoritos', nombre: 'Colores favoritos', categoria: 'estilo', clase: 'preferencia', usan: ['estilo', 'productos'], historial: false, desde: 5 },
+  { id: 'formalidad', nombre: 'Nivel de formalidad habitual', categoria: 'estilo', clase: 'preferencia', usan: ['estilo'], historial: false, desde: 5 },
 ];
 
 export const datoDelRegistro = (id) => REGISTRO_DATOS.find((d) => d.id === id) || null;

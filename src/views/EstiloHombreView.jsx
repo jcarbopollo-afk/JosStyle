@@ -56,6 +56,9 @@ import {
   todosLosDatos, resumenDatos, guardarDato, eliminarDato, antiguedadDato,
   TEXTO_SIN_DATO, ACCION_ANADIR,
 } from '../lib/datosEstiloHombre';
+import {
+  MODULO_EH_ESTILO, DESTINO_ARMARIO, accesoAlArmario, resumenEstiloArmario,
+} from '../lib/armarioEnEstiloHombre';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -63,16 +66,26 @@ import {
    Icono, nombre y una descripción corta. Nada más: el apartado lo pide
    pequeño, y con trece módulos la diferencia entre "cabe" y "no cabe" son
    veinte píxeles de alto. */
-export function Plaquita({ modulo, accent, orden = null, onSubir, onBajar }) {
+export function Plaquita({ modulo, accent, orden = null, onSubir, onBajar, onAbrir, sub = null }) {
+  /* ⚠️ EH F5, apartado 1 — *"debe abrir el sistema de armario que ya existe. No
+     crear una nueva pantalla equivalente."* Por eso la plaquita de Estilo y
+     armario, y solo esa, es pulsable: es la única que hoy lleva a algún sitio.
+     Las otras doce lo dicen en vez de no hacer nada al tocarlas (regla 8). */
+  const Contenedor = onAbrir ? 'button' : 'div';
   return (
-    <div
-      className="rounded-2xl p-2.5 flex items-center gap-2"
-      style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, minWidth: 0 }}
+    <Contenedor
+      onClick={onAbrir || undefined}
+      className={`rounded-2xl p-2.5 flex items-center gap-2${onAbrir ? ' text-left w-full' : ''}`}
+      style={{
+        background: COLORS.surface2,
+        border: `1px solid ${onAbrir ? accent : COLORS.border}`,
+        minWidth: 0,
+      }}
     >
       <span className="text-base leading-none flex-shrink-0" aria-hidden="true">{modulo.icono}</span>
       <div className="min-w-0 flex-1">
         <p className="text-xs font-semibold truncate" style={{ color: COLORS.text }}>{modulo.nombre}</p>
-        <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>{modulo.sub}</p>
+        <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>{sub || modulo.sub}</p>
       </div>
       {/* Apartado 9 — ↑ Subir ↓ Bajar. En los extremos se apagan, no se
           esconden: una flecha que desaparece mueve la interfaz al pulsarla. */}
@@ -92,7 +105,7 @@ export function Plaquita({ modulo, accent, orden = null, onSubir, onBajar }) {
           </button>
         </div>
       )}
-    </div>
+    </Contenedor>
   );
 }
 
@@ -697,7 +710,7 @@ export function Recomendados({ estado, accent, onAnadir }) {
 /* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
-export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, onCambiar }) {
+export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar }) {
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [ordenando, setOrdenando] = useState(false);
@@ -715,6 +728,15 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const activos = useMemo(() => modulosActivos(estado), [estado]);
   const resumen = useMemo(() => resumenEstiloHombre(estado), [estado]);
   const gestion = useMemo(() => resumenGestion(estado), [estado]);
+  /* F5 — el recuento del armario es DERIVADO, calculado aquí, nunca guardado. */
+  const estiloArmario = useMemo(
+    () => (armario ? resumenEstiloArmario(estado, armario, datosGlobales) : null),
+    [estado, armario, datosGlobales],
+  );
+  const resumenPlaquitaArmario = estiloArmario && !estiloArmario.vacio
+    ? `${estiloArmario.total} ${estiloArmario.total === 1 ? 'prenda' : 'prendas'}`
+      + (estiloArmario.outfits > 0 ? ` · ${estiloArmario.outfits} ${estiloArmario.outfits === 1 ? 'outfit' : 'outfits'}` : '')
+    : null;
 
   /* F3 — el asistente manda mientras esté en curso o sin empezar.
      ⚠️ Los tres casos los decide `estadoAsistente()`, no un `if` aquí:
@@ -766,26 +788,42 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
       ) : (
         <>
           <div className="grid grid-cols-2 gap-1.5">
-            {activos.map((m) => (
-              <Plaquita
-                key={m.id} modulo={m} accent={accent}
-                orden={ordenando ? puedeMover(estado, m.id) : null}
-                onSubir={() => onCambiar(subirModulo(estado, m.id))}
-                onBajar={() => onCambiar(bajarModulo(estado, m.id))}
-              />
-            ))}
+            {activos.map((m) => {
+              /* F5 — la única plaquita que hoy lleva a algún sitio es la del
+                 armario, porque su módulo YA EXISTE. Y lleva al de siempre, no a
+                 una copia (apartado 1). */
+              const esArmario = m.id === MODULO_EH_ESTILO && !ordenando && onIr;
+              return (
+                <Plaquita
+                  key={m.id} modulo={m} accent={accent}
+                  sub={esArmario && estiloArmario ? resumenPlaquitaArmario : null}
+                  onAbrir={esArmario ? () => onIr(DESTINO_ARMARIO) : null}
+                  orden={ordenando ? puedeMover(estado, m.id) : null}
+                  onSubir={() => onCambiar(subirModulo(estado, m.id))}
+                  onBajar={() => onCambiar(bajarModulo(estado, m.id))}
+                />
+              );
+            })}
           </div>
 
           {/* ⚠️ Regla 8 y apartado 14 de F1. Ninguno de estos apartados tiene
               contenido todavía, y el enunciado prohíbe construirlo. Así que la
               pantalla LO DICE, en vez de que Josué toque una plaquita y no pase
               nada. */}
-          {resumen.conContenido === 0 && !ordenando && (
-            <p className="text-[11px] text-center" style={{ color: COLORS.textMuted }}>
-              De momento esto es solo tu espacio elegido: el contenido de cada apartado llega en las
-              siguientes fases.
-            </p>
-          )}
+          {/* ⚠️ F5 — el armario YA tiene contenido, así que el aviso ya no puede
+              decir "ninguno": dice cuántos faltan y no miente sobre el que hay. */}
+          {!ordenando && (() => {
+            const conArmario = activos.some((m) => m.id === MODULO_EH_ESTILO) && !!onIr;
+            const pendientes = activos.length - (conArmario ? 1 : 0);
+            if (pendientes === 0) return null;
+            return (
+              <p className="text-[11px] text-center" style={{ color: COLORS.textMuted }}>
+                {conArmario
+                  ? 'El resto de apartados que has elegido llegan en las siguientes fases.'
+                  : 'De momento esto es solo tu espacio elegido: el contenido de cada apartado llega en las siguientes fases.'}
+              </p>
+            );
+          })()}
 
           {/* Apartado 9 — reordenar es un modo. Con un solo módulo activo no se
               ofrece: dos flechas que no hacen nada. */}

@@ -1749,6 +1749,11 @@ export default function App() {
                y no lo pregunte. ⚠️ Nada de esto se copia dentro de
                `estiloHombre`: se mira y se olvida (F1, apartado 10). */
             datosGlobales={{ perfil, salud, objetivos, calistenia, sueno }}
+            /* EH F5, apartado 1 — la plaquita de Estilo y armario abre EL
+               ARMARIO QUE YA EXISTE. ⚠️ Se pasa en solo lectura: aquí no se
+               guarda ni una prenda (*"no crear un segundo sistema de ropa"*). */
+            armario={armario}
+            onIr={(destino) => setTab(destino)}
             onCambiar={(nuevo) => snapshotAndSave({ estiloHombre: nuevo })}
           />
         );

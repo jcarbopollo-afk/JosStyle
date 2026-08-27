@@ -1,5 +1,81 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 5/65 — Estilo + Armario: integración con el sistema existente (v1.71.0)
+
+### El enunciado empieza con tres avisos, y los tres dicen lo mismo
+> ⚠️ NO reconstruir el armario.
+> ⚠️ NO duplicar sus datos.
+> ⚠️ NO crear un segundo sistema de ropa.
+
+Así que este archivo **no guarda ni una prenda**. Ni un outfit, ni un uso, ni una marca, ni una
+ocasión. Todo sigue en `armario.js` y `armarioInteligencia.js`, donde lo dejó AR F1-F4.
+
+### ⚠️ La prueba que más importa no es ninguna de las diez del enunciado
+El apartado 7 dice que *"una recomendación nunca debe convertirse automáticamente en una modificación
+del armario"*. La forma de garantizar eso no es acordarse: es que **la capacidad no exista**.
+
+Hay una prueba que **lee el código fuente** de `armarioEnEstiloHombre.js` y falla si aparece
+`crearPrenda(`, `actualizarPrenda(`, `crearOutfit(`, `crearUso(`… o una llamada a la IA (apartado 11).
+Nueve comprobaciones, todas sobre el texto del archivo.
+
+Y otra que serializa el estado de Estilo de Hombre y comprueba que **no contiene el id de ninguna
+prenda, ni el del outfit, ni la marca "Zara"**.
+
+### ⚠️ Un solo perfil de tallas (Test 8)
+El armario ya sabe qué talla gasta Josué: lo dice cada prenda. Así que **se deriva de ahí** —tres de
+sus cuatro camisetas son M, luego gasta M— y lo guardado en la capa de la Fase 4 solo rellena los
+huecos, como el calzado, del que no tiene ninguna prenda.
+
+Dos decisiones que no son obvias:
+
+- **Si los dos existen y no coinciden, se enseña el choque.** El armario manda, pero Josué ve
+  "guardada: L · armario: M" y decide. Elegir uno en silencio sería crear el segundo perfil por la
+  puerta de atrás: vería M en un sitio y L en otro sin saber por qué.
+- **Un empate no es una respuesta.** Un 43 y un 44 con la misma frecuencia significan que el armario
+  **no sabe** cuál es la suya, y entonces gana la que él indicó.
+
+### El motor de recomendación tampoco se reescribe
+`recomendarOutfits()` es de AR F4 y ya sabe de repetición, de prendas en la lavadora y de outfits
+olvidados. Lo que añade esta fase es la capa de preferencias por encima.
+
+Y **si no ha indicado colores favoritos, no se afirma que nada encaje**: `encajaConTusColores` sale
+`false` en lugar de inventarse una afinidad.
+
+### El apartado 8 no bloquea
+*"No tenemos registrada tu talla de calzado"* con su *"Añadir talla"*… **y la recomendación sale
+igual**. El enunciado lo dice con esas palabras: *"No obligar al usuario a completar todo su
+perfil."*
+
+### ⚠️ Un fallo real que encontró la prueba
+El puente leía `outfit.ocasiones` como si fuera una lista. Un outfit guarda **una** ocasión, en
+`ocasion`. Devolvía cero ocasiones siempre, y en silencio — la clase de error que nadie nota hasta
+que una pantalla lleva meses vacía.
+
+La forma que existe manda sobre la que uno supone. Es literalmente el tema de esta fase.
+
+### Apagar el apartado no esconde el armario: lo saca de aquí
+El apartado 10 pide que *"el sistema global de armario siga intacto si existe fuera de este
+apartado"*. Así que al apagarlo la plaquita desaparece **y la pantalla dice** *"el armario sigue en su
+sitio de siempre, con todo lo que tienes guardado"*, en vez de dejar un hueco.
+
+### Las preferencias que el armario ya tiene no se declaran
+Marcas, colores y ocasiones **se derivan de sus prendas y sus outfits**. Hay cinco pruebas que fallan
+si aparecen en el registro de datos de la Fase 4. Solo se guardan las tres que no existían: estilos
+favoritos, colores favoritos y formalidad — **una línea cada una**, que es lo que la Fase 1 prometió.
+
+### Productos: el enlace declarado, ni un producto
+Apartado 12 más **D2-03** de Josué (*arquitectura sí, afiliación no*). `PUENTE_PRODUCTOS` dice qué le
+pasará el día que exista y que hoy no existe. Cinco pruebas buscan "amazon", "afiliad", "precio",
+"comprar" y "http" dentro de él.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 569 comprobaciones unitarias**, 5 de
+auditoría, **420 casos de renderizado real** y 10 reglas invariantes — **3 994 en total**. De ellas,
+**138 nuevas** para EH F5. El **Test 10** (navegación en móvil) necesita un iPhone: **R1**, y la
+auditoría lo declara en vez de darlo por bueno.
+
+---
+
 ## Entrega 2 · EH Fase 4/65 — Sistema de datos, perfil y reutilización global (v1.70.0)
 
 ### La regla, en una línea

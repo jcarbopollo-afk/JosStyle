@@ -202,8 +202,10 @@ escribir código.
 
 | v1.70.0 | **EH F4** | La capa de datos compartidos: **una sola función lee**, venga el dato de Salud o de aquí dentro, y devuelve la misma forma — y su gemela **se niega a escribir un dato global**, con el sitio donde sí se edita. *"No puede existir Perfil → 72 kg, Estilo de hombre → 70 kg"* escrito como código. Historial opcional y declarado, antigüedad que describe sin juzgar, y dependencias que **no rompen**: enseñan una frase, no un error |
 
+| v1.71.0 | **EH F5** | El armario **conectado, no reconstruido**: cero prendas guardadas aquí, y una prueba que lee el código fuente y falla si este archivo puede escribir en él. **Un solo perfil de tallas**, derivado de las prendas, con el choque enseñado en vez de resuelto en silencio. Y un fallo real encontrado: leía `ocasiones` donde un outfit guarda `ocasion` |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 4/65**. Quedan **59** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (57).
+3/5 y **EH por 5/65**. Quedan **58** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (56).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.
