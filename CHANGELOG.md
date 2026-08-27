@@ -1,5 +1,608 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 8/65 — Pelo: rutina, cuidados y seguimiento (v1.74.0)
+
+### La filosofía, que el propio enunciado escribe
+*"La aplicación recomienda y organiza; el usuario decide. No vamos a convertirlo en una obligación ni
+en un sistema médico."*
+
+### ⚠️ No castigar, y probado en el peor escenario
+El apartado 7 lo dice sin rodeos: *"No queremos 'Has fallado'. Simplemente 'Pendiente'."*
+
+Un día sin hacer la rutina **no es un día perdido**. Hay una prueba que monta el peor caso posible
+—una rutina diaria abandonada durante dos meses— y recorre **todos** los textos que el módulo genera
+buscando "fallado", "fallo", "perdido", "deberías", "mal", "incumplido", "abandonado", "racha rota" y
+"castigo". Nueve comprobaciones sobre el mismo escenario.
+
+Y una consecuencia que no es obvia: **sin días en los que tocara, no hay cumplimiento** — ni 0 % ni
+100 %. Una rutina "personalizada", que Josué hace cuando quiere, no puede salir con un 0 %: decir eso
+de algo que nunca tocó es exactamente el reproche que el apartado prohíbe.
+
+### ⚠️ Nada se materializa
+El apartado 17: *"No crear un segundo calendario. Debe utilizarse el calendario existente."* Y la
+regla 11 del proyecto dice lo mismo para cualquier recurrencia.
+
+Una rutina "cada 3 días" guarda **su regla**, no cien fechas. La prueba pide **un año entero** de
+eventos, comprueba que salen más de cien… **y que el estado guardado sigue por debajo de 3 KB**.
+
+El efecto: cambiar la frecuencia cambia los eventos al momento, porque no hay nada que sincronizar.
+
+Las rutinas entran en el Calendario con **la misma forma** que los usos del Armario, así que encajan
+sin adaptadores.
+
+### ⚠️ Ni un contador guardado
+Cuántas veces la ha hecho, cuántos días le tocaba, el cumplimiento — todo se deriva del historial. Un
+contador guardado miente en cuanto Josué borra un registro. Hay una prueba de que la rutina guardada
+no lleva ninguna cifra acumulada.
+
+Y el estado de hoy también es derivado: **marcada ayer no significa marcada hoy**.
+
+### Lo que no se construye, y está declarado
+- **Sin gamificación** (D2-02 de Josué): ni XP, ni niveles, ni medallas.
+- **Sin fotos** (apartado 10): *"no crear una galería fotográfica obligatoria"*.
+- **Sin catálogo de productos** (apartado 11 + D2-03): un producto aquí es **un nombre que él
+  escribe**. Seis pruebas buscan "amazon", "afiliad", "precio", "comprar", "http" y "marca:".
+- **Sin recomendaciones** (apartado 13): existe la estructura, que declara las seis fuentes que
+  usará y que llega en la fase 9.
+
+### Recordatorios nace apagado
+El apartado 5: *"nunca deben ser obligatorios"*. Y el enunciado lo dibuja así — `☐ Recordatorios` —
+así que es la única de las cuatro partes que empieza en off.
+
+### Dos cosas pequeñas que evitan sustos
+**Borrar una rutina dice antes qué se lleva por delante**: *"se borrará X y 3 días registrados"*. Y
+**borrar un producto desengancha** los pasos que lo usaban, no los borra.
+
+### ⚠️ Otra prueba mal escrita, corregida
+Los barridos de *"esto NO existe"* cazaban su propia evidencia: `fotos: 0` y `xp: 0` viven dentro de
+`auditarPelo()`, que es justo la función que **declara los ceros**. Ahora el barrido excluye esa
+función.
+
+Es la tercera vez en este bloque que una comprobación salta con algo que estaba bien. Conviene mirar
+**qué línea** la hace saltar antes de tocar el código: dos de las tres veces, el código era correcto
+y la prueba estaba mal.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 979 comprobaciones unitarias**, 5 de
+auditoría, **488 casos de renderizado real** y 10 reglas invariantes — **4 472 en total**. De ellas,
+**170 nuevas** para EH F8.
+
+---
+
+## Entrega 2 · EH Fase 7/65 — Pelo: perfil capilar y necesidades (v1.73.0)
+
+### La primera fase que pregunta cosas de verdad
+Y no será la última: Skincare (13), Cuerpo (18), Barba (20), Manos (22) y Perfumes (24) traen cada
+una su propio cuestionario de perfil.
+
+Así que lo que se construye es **el motor** (`cuestionarios.js`), y las doce preguntas de Pelo son su
+primera configuración. Están en un array; las fases siguientes traerán el suyo **sin tocar una línea
+de aquí**.
+
+### ⚠️ El motor no guarda nada por su cuenta
+Cada respuesta va a uno de los dos sitios que ya existen, y la elección es una regla, no un `if`
+suelto:
+
+- **Si el dato está en `REGISTRO_DATOS`** (Fase 4), va allí. Eso significa que lo comparten varios
+  módulos — `tipoPelo` lo usan Pelo y Productos — y por tanto **no se puede volver a preguntar**.
+- **Si no está**, es solo de ese módulo y va a su `config` (Fase 1, apartado 8: *"configuración
+  específica futura"*), que `alternarModulo` **nunca toca**.
+
+De las doce preguntas, **solo `tipoPelo` es compartida**.
+
+Esa única decisión es la que hace pasar los Tests 7, 8 y 9 a la vez. Y si estuviera mal, **nada
+reventaría**: simplemente Productos volvería a preguntar el tipo de pelo, o apagar Pelo se llevaría
+once respuestas. Por eso hay pruebas de las tres cosas.
+
+### ⚠️ "No lo sé" es una respuesta, no un hueco
+El apartado 14 lo dice con esas palabras: *"Nunca obligar a inventar una respuesta."* Así que:
+
+- **Se guarda, y cuenta como contestada.** No es lo mismo que no haber respondido: *"no lo sé"* es
+  información —se le puede ofrecer contenido educativo— y *"aún no ha llegado"* no lo es.
+- **Es exclusivo.** Marcarlo borra lo demás, y marcar algo de verdad lo quita. *"Cuero cabelludo
+  graso y no lo sé"* es un estado imposible que luego nadie sabe interpretar.
+- **Por defecto toda pregunta lo admite.** El valor por defecto tiene que ser el que no obliga a
+  inventar. Solo se quita donde el enunciado no lo ofrece: preguntar cada cuánto se corta el pelo ya
+  tiene su *"Cuando lo necesito"*.
+
+### ⚠️ "No diagnosticar problemas"
+Es el apartado 7, y se cumple en la forma de las preguntas: se pregunta **qué quiere cuidar**, no qué
+le falla. Hay siete pruebas que buscan "caspa", "alopecia", "calvicie", "problema", "diagnos",
+"enfermedad" y "sintoma" en el código.
+
+Un chaval de 16 años no necesita una aplicación diciéndole que tiene un problema.
+
+### Ni calendario, ni productos, ni recomendaciones
+El enunciado lo prohíbe tres veces (apartados 11, 12 y 17). Hay pruebas de que no se define ninguno
+— **pero sí se dice cuándo llegan**, que es la regla 8: *"Se usará para el calendario de peluquería,
+que llega en la fase 11."*
+
+### ⚠️ Una prueba mal escrita, corregida
+La primera versión de esa comprobación prohibía la **palabra** "calendario" en todo el archivo, y
+saltaba justo con la frase que le dice a Josué cuándo llega. Ahora comprueba que no se **defina**
+ninguno, y además comprueba que **sí se diga cuándo llega**.
+
+Una prueba que castiga la honestidad está mal escrita, y arreglarla es más barato que descubrir dentro
+de diez fases que se dejó de explicar nada por no hacerla saltar.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 809 comprobaciones unitarias**, 5 de
+auditoría, **448 casos de renderizado real** y 10 reglas invariantes — **4 262 en total**. De ellas,
+**118 nuevas** para EH F7. El **Test 10** (flujo en móvil) necesita un iPhone: **R1**.
+
+---
+
+## Entrega 2 · EH Fase 6/65 — Perfil de estilo y preferencias personales (v1.72.0)
+
+### La diferencia, en una línea
+*"Armario → qué prendas tiene el usuario. Perfil de estilo → qué le gusta, qué quiere conseguir y
+qué tipo de imagen quiere transmitir."*
+
+Y va **dentro** de Estilo y Armario (apartado 1: *"no crear otro apartado principal"*), no como un
+módulo nuevo del catálogo.
+
+### ⚠️ Once campos y ningún almacén propio
+Todo el perfil se guarda en **la capa de datos de la Fase 4**, con una línea por preferencia en el
+registro. No es por ahorrar: **`estilosFavoritos` y `coloresFavoritos` ya existían** desde la Fase 5.
+Crear aquí unos paralelos habría dado dos listas de estilos favoritos que se separan con el tiempo, y
+el Test 9 de esta fase dice literalmente *"comprobar que no se duplica la información"*.
+
+El efecto secundario bueno: el panel **Mis datos** enseña el perfil entero sin que nadie lo enchufe, y
+`hayQuePreguntar()` ya sabe que Productos no tiene que volver a preguntar los colores.
+
+### Tres listas se toman prestadas y no se declaran
+Los colores son `COLORES_ARMARIO` (apartado 4: *"no duplicar el sistema de paletas si ya existe"*),
+las marcas salen de sus propias prendas (apartado 5: *"reutilizar las marcas existentes"*) y las
+ocasiones son `OCASIONES_OUTFIT` (apartado 6). Hay pruebas que leen el código y fallan si aparece una
+lista nueva.
+
+### ⚠️ Los niveles nacen aquí
+El apartado 10 dice *"mantener el sistema de niveles que ya definimos"* (🟢 Básico 🟡 Intermedio
+🔴 Avanzado). En la especificación se definen en las fases 18 y 22 — que en orden de construcción
+todavía no existen. Así que se definen **una vez, aquí**, y esas fases los importarán en vez de
+escribir los suyos. El día que alguien teclee `['Básico', 'Intermedio', 'Avanzado']` por su cuenta,
+habrá dos listas.
+
+### ⚠️ Un perfil vacío es un perfil válido
+El Test 7 es exactamente eso: *"no rellenar ningún campo → el módulo sigue funcionando"*. Así que:
+
+- No hay barra de progreso, ni porcentaje, ni la palabra "incompleto". Hay una prueba que lo busca.
+- **Quitar el último valor borra el dato**, en vez de guardar `[]` y decir después "no lo has
+  indicado". Guardar una lista vacía y llamarla "sin indicar" es mentir a medias.
+- Con el perfil vacío, el motor de reglas devuelve **cero reglas**, no un error.
+
+### ⚠️ "Lo que refleja tu armario" no clasifica prendas
+El apartado 14 pide *"Tu armario refleja principalmente: Deportivo · Casual · Minimalista"*. La
+tentación es deducir el estilo de cada prenda, y eso es adivinar: un pantalón negro puede ser de
+cualquier estilo.
+
+Así que la tabla va de **ocasión** —que la eligió él para cada outfit— a estilo, y de categoría a
+estilo **solo donde la prenda lo dice sin ambigüedad**. `chandal` está; `pantalones` no, y hay una
+prueba de que no está. Por debajo de cuatro prendas no se afirma nada, y cada frase dice de dónde
+sale — misma regla que la analítica del Horario (HT F11).
+
+**Y el contraste describe, no corrige:** si él dice "elegante" y su armario refleja "deportivo", el
+texto es *"puede ser justo lo que buscas cambiar"*. Cinco pruebas comprueban que nunca aparece
+"deberías", "error", "incorrecto", "mal" ni "no encaja".
+
+### Lo personal no viaja a las recomendaciones
+El apartado 15 pide respetar la privacidad. *"Cosas que me gustaría hacer"* **no sale** en el contexto
+que se entrega a quien recomiende ropa, con el motivo escrito y una prueba que lo busca. Los
+intereses sí — el propio enunciado los pone como ejemplo de contexto útil.
+
+### ⚠️ Esta fase obligó a afinar una prueba de la Fase 5
+La Fase 5 comprobaba que ningún id del registro contuviera la palabra "marca" u "ocasion", y
+`marcasFavoritas` la hizo saltar. **No era una duplicación:** el armario sabe qué marcas *tiene*, no
+cuáles le *gustan*. Lo que hay que prohibir es el catálogo, no la preferencia — así que ahora compara
+ids exactos.
+
+Y dos comprobaciones nuevas cazaban **comentarios en vez de código**: una saltaba con la frase que
+explica que *no* hay un almacén paralelo, y otra con "con**seguir**". Ahora las dos leen el archivo
+con los comentarios quitados. Una prueba que salta con la prosa acaba haciendo que se reescriba la
+prosa en vez del código.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 691 comprobaciones unitarias**, 5 de
+auditoría, **432 casos de renderizado real** y 10 reglas invariantes — **4 128 en total**. De ellas,
+**119 nuevas** para EH F6.
+
+---
+
+## Entrega 2 · EH Fase 5/65 — Estilo + Armario: integración con el sistema existente (v1.71.0)
+
+### El enunciado empieza con tres avisos, y los tres dicen lo mismo
+> ⚠️ NO reconstruir el armario.
+> ⚠️ NO duplicar sus datos.
+> ⚠️ NO crear un segundo sistema de ropa.
+
+Así que este archivo **no guarda ni una prenda**. Ni un outfit, ni un uso, ni una marca, ni una
+ocasión. Todo sigue en `armario.js` y `armarioInteligencia.js`, donde lo dejó AR F1-F4.
+
+### ⚠️ La prueba que más importa no es ninguna de las diez del enunciado
+El apartado 7 dice que *"una recomendación nunca debe convertirse automáticamente en una modificación
+del armario"*. La forma de garantizar eso no es acordarse: es que **la capacidad no exista**.
+
+Hay una prueba que **lee el código fuente** de `armarioEnEstiloHombre.js` y falla si aparece
+`crearPrenda(`, `actualizarPrenda(`, `crearOutfit(`, `crearUso(`… o una llamada a la IA (apartado 11).
+Nueve comprobaciones, todas sobre el texto del archivo.
+
+Y otra que serializa el estado de Estilo de Hombre y comprueba que **no contiene el id de ninguna
+prenda, ni el del outfit, ni la marca "Zara"**.
+
+### ⚠️ Un solo perfil de tallas (Test 8)
+El armario ya sabe qué talla gasta Josué: lo dice cada prenda. Así que **se deriva de ahí** —tres de
+sus cuatro camisetas son M, luego gasta M— y lo guardado en la capa de la Fase 4 solo rellena los
+huecos, como el calzado, del que no tiene ninguna prenda.
+
+Dos decisiones que no son obvias:
+
+- **Si los dos existen y no coinciden, se enseña el choque.** El armario manda, pero Josué ve
+  "guardada: L · armario: M" y decide. Elegir uno en silencio sería crear el segundo perfil por la
+  puerta de atrás: vería M en un sitio y L en otro sin saber por qué.
+- **Un empate no es una respuesta.** Un 43 y un 44 con la misma frecuencia significan que el armario
+  **no sabe** cuál es la suya, y entonces gana la que él indicó.
+
+### El motor de recomendación tampoco se reescribe
+`recomendarOutfits()` es de AR F4 y ya sabe de repetición, de prendas en la lavadora y de outfits
+olvidados. Lo que añade esta fase es la capa de preferencias por encima.
+
+Y **si no ha indicado colores favoritos, no se afirma que nada encaje**: `encajaConTusColores` sale
+`false` en lugar de inventarse una afinidad.
+
+### El apartado 8 no bloquea
+*"No tenemos registrada tu talla de calzado"* con su *"Añadir talla"*… **y la recomendación sale
+igual**. El enunciado lo dice con esas palabras: *"No obligar al usuario a completar todo su
+perfil."*
+
+### ⚠️ Un fallo real que encontró la prueba
+El puente leía `outfit.ocasiones` como si fuera una lista. Un outfit guarda **una** ocasión, en
+`ocasion`. Devolvía cero ocasiones siempre, y en silencio — la clase de error que nadie nota hasta
+que una pantalla lleva meses vacía.
+
+La forma que existe manda sobre la que uno supone. Es literalmente el tema de esta fase.
+
+### Apagar el apartado no esconde el armario: lo saca de aquí
+El apartado 10 pide que *"el sistema global de armario siga intacto si existe fuera de este
+apartado"*. Así que al apagarlo la plaquita desaparece **y la pantalla dice** *"el armario sigue en su
+sitio de siempre, con todo lo que tienes guardado"*, en vez de dejar un hueco.
+
+### Las preferencias que el armario ya tiene no se declaran
+Marcas, colores y ocasiones **se derivan de sus prendas y sus outfits**. Hay cinco pruebas que fallan
+si aparecen en el registro de datos de la Fase 4. Solo se guardan las tres que no existían: estilos
+favoritos, colores favoritos y formalidad — **una línea cada una**, que es lo que la Fase 1 prometió.
+
+### Productos: el enlace declarado, ni un producto
+Apartado 12 más **D2-03** de Josué (*arquitectura sí, afiliación no*). `PUENTE_PRODUCTOS` dice qué le
+pasará el día que exista y que hoy no existe. Cinco pruebas buscan "amazon", "afiliad", "precio",
+"comprar" y "http" dentro de él.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 569 comprobaciones unitarias**, 5 de
+auditoría, **420 casos de renderizado real** y 10 reglas invariantes — **3 994 en total**. De ellas,
+**138 nuevas** para EH F5. El **Test 10** (navegación en móvil) necesita un iPhone: **R1**, y la
+auditoría lo declara en vez de darlo por bueno.
+
+---
+
+## Entrega 2 · EH Fase 4/65 — Sistema de datos, perfil y reutilización global (v1.70.0)
+
+### La regla, en una línea
+*"Un dato debe existir una sola vez y poder ser utilizado por todos los módulos que lo necesiten."*
+
+### ⚠️ Una sola función lee, venga el dato de donde venga
+`leerDato()` resuelve igual el **peso** —que vive en Salud— que el **tipo de piel** —que vivirá
+aquí— y devuelve **exactamente la misma forma**. Hay una prueba que compara las claves de las dos
+respuestas.
+
+Eso importa dentro de cuarenta fases: cuando Skincare necesite los dos, **no tendrá que saber cuál
+es cuál**. Si tuviera que distinguirlos, tarde o temprano alguien pediría el peso por el camino
+equivocado, se lo encontraría vacío y crearía "su" copia.
+
+### ⚠️ Y su gemela: guardar un dato global se rechaza
+El apartado 3 lo escribe con un ejemplo: *"No puede existir Perfil → 72 kg, Estilo de hombre → 70
+kg."*
+
+`guardarDato(estado, 'peso', 70)` **no guarda nada**, y no falla en silencio: devuelve un error con
+**el sitio donde sí se edita**, para que la pantalla pueda mandar a Josué allí. Hay una prueba que lo
+intenta y comprueba que el peso sigue siendo el 73 de Salud y que no se ha creado ninguna copia.
+
+Lo mismo con borrar (apartado 12): un dato propio se elimina, uno de JosStyle no se toca desde aquí.
+
+### El Test 4 sale gratis, y ese es el punto
+*"Modificar dato → todos los módulos compatibles reciben el cambio."* Productos cambia el tipo de
+piel y Skincare lo ve **porque es el mismo dato**, no porque haya un mecanismo que los sincronice. Si
+hubiera dos copias, cada módulo enseñaría un valor distinto y **nada reventaría**: por eso este test
+importa más que los otros nueve.
+
+### El historial es opcional, y está declarado
+Las tallas lo llevan (apartado 9: *"peso, medidas, rendimiento…"*), el tipo de piel no. Ponérselo a
+todo llenaría el guardado de ruido. Y guardar el mismo valor dos veces **no crea dos entradas**.
+
+### La antigüedad describe, no juzga
+*"Tipo de piel — Actualizado hace 3 meses"*, el ejemplo literal del enunciado, con su prueba. Y cinco
+comprobaciones de que el texto nunca dice "deberías", "llevas", "olvidado", "demasiado" ni "mal". Es
+la misma línea que se trazó en la analítica del Horario (HT F11).
+
+### ⚠️ El apartado 14 pide NO ROMPER, y eso empieza por el texto
+*"Productos → necesita preferencias de Skincare. Si Skincare está desactivado: no debe romper
+Productos."*
+
+Lo que sale es *"Añade tu tipo de piel para personalizar esto"*, y hay cinco pruebas de que nunca
+aparecen las palabras "error", "undefined", "null", "falta" ni "no se puede". Un mensaje que asusta
+rompe igual que una excepción.
+
+Y una cosa más: **el dato sigue disponible con su módulo apagado**. Los datos no dependen de que su
+módulo esté encendido — eso es el apartado 13, que el enunciado repite entero *"porque será
+fundamental"*.
+
+### Solo los datos que la especificación nombra
+Tipo de piel, sensibilidad, tipo de pelo, preferencia de corte, preferencia de textura, productos sin
+perfume, ropa oversize y tres tallas. **Ni uno inventado.** *"No crear todavía todos los campos
+específicos. Solo preparar la arquitectura."* Añadir uno es añadir una línea.
+
+### Privacidad: hoy ninguno
+Ningún dato está marcado como privado, y decirlo es más honesto que fingir una protección que no
+protege nada todavía. Lo que sí existe es el filtro, para que la fase que marque el primero no tenga
+que construirlo — y para que nadie mande a la IA lo que no debe.
+
+### Sexto campo nuevo, segundo seguido que el normalizador conoce
+`datos` entra en `normalizarEstiloHombre` desde el primer commit. Y un dato guardado de una versión
+anterior del registro **no se borra solo** (apartados 12 y 17).
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 431 comprobaciones unitarias**, 5 de
+auditoría, **408 casos de renderizado real** y 10 reglas invariantes — **3 844 en total**. De ellas,
+**141 nuevas** para EH F4. El **Test 10** (*"sincronización → no aparecen duplicados"*) se comprueba
+hasta donde llega Node; que dos iPhones acaben con lo mismo es **R1**.
+
+---
+
+## Entrega 2 · EH Fase 3/65 — Sistema de primera configuración y perfil de usuario (v1.69.0)
+
+### Lo que pide el enunciado, en una línea
+*"La aplicación debe conocer qué necesita el usuario sin obligarle a rellenar un formulario
+interminable."* Sencilla, progresiva, saltable, personalizable, reutilizable y **sin IA**.
+
+Y subrayado: **"No preguntar información que JC Fitness ya conoce."**
+
+### ⚠️ El asistente guarda por dónde va, no lo que sabe
+Es la decisión que gobierna toda la fase. Se guardan **cinco cosas** —el paso, la selección en curso,
+el estado y dos fechas— y **ni un dato de Josué**.
+
+Su peso, su altura, su nombre y sus objetivos **se leen** de Perfil, Salud y Objetivos cada vez que
+hacen falta. Guardar aquí una copia "para no volver a preguntarlo" sería exactamente lo contrario de
+lo que pide el apartado 7, y daría dos pesos distintos el día que se corrija uno.
+
+Hay cuatro pruebas que buscan `"Josué"`, `"2010-07-29"`, `"187"` y `"Masculino"` dentro de lo que se
+guarda, y **fallan si aparecen**.
+
+### El peso sale de donde es más reciente
+`salud.medidas` tiene la última medida; `perfil.peso` tiene la del día que rellenó el perfil. Gana la
+de Salud, y si no hay ninguna, vale la del perfil. Está probado con las dos.
+
+### ⚠️ Quinto campo nuevo, primer normalizador que no se olvida
+`asistente` es el quinto campo que se añade a una entidad de este proyecto. Las cuatro veces
+anteriores —`visible`, `archivado`, `materiales`, y el módulo retirado de la semana pasada— **el
+siguiente guardado se lo llevaba**, porque `saveData` sobrescribe y no fusiona (regla 5).
+
+Esta vez `normalizarEstiloHombre` lo conoce desde el primer commit, y hay una prueba que serializa,
+recarga y comprueba que el paso sigue ahí.
+
+### ⚠️ Dos fallos reales que encontraron las pruebas
+
+**1. Modificar la configuración reordenaba las plaquitas en silencio.** Entrar en *"Modificar mi
+configuración"*, no tocar nada y confirmar **cambiaba el orden**, porque la selección de partida
+salía en orden de catálogo y `terminarAsistente` reescribe el `orden` a partir de ella. Ahora sale en
+el orden que él eligió.
+
+**2. Pulsar "Empezar" enseñaba "Lo dejaste a medias".** El botón pasa el asistente a `en_curso`, y el
+enlazado interpretaba eso como "vuelve de una configuración abandonada". Lo que el apartado 15
+distingue es **volver** de **seguir**, y eso no está en el estado guardado: está en si ya estaba a
+medias cuando abrió la pantalla. Ahora se calcula una sola vez, al entrar.
+
+### Omitir marca configurado, y eso no es un descuido
+El apartado 6 pide *"Omitir por ahora"* y que **no se rompa nada**. Si omitir no marcara
+`configurado`, la próxima vez que entrase le saldría otra vez la bienvenida — que es justo lo
+contrario de saltárselo. Y no enciende nada: entra en la pantalla vacía de la Fase 2, que ya sabe qué
+decir.
+
+### "Empezar de nuevo" reinicia el asistente, no los módulos
+Los datos de cada apartado siguen donde estaban. Es la diferencia entre *volver a elegir* y *perderlo
+todo*, y el apartado 15 pide la primera.
+
+### ⚠️ Apartado 17 — ni una pregunta construida
+*"Esta fase solo construye el sistema que las podrá alojar."* Así que no hay ningún formulario de piel,
+pelo o fitness. Lo que hay es, por módulo:
+
+- **`usa`** — qué datos globales reutilizará. Eso es lo que **no** se le va a preguntar.
+- **`pregunta`** — en qué fase hará las suyas. Un número, no un formulario.
+
+Hay una prueba que recorre todo `NECESIDADES_MODULO` buscando un signo de interrogación y falla si lo
+encuentra.
+
+### Mis datos: lo de fuera se edita fuera
+El apartado 13 pide poder modificar las respuestas. "Mis datos" enseña el peso y **dice que está en
+Salud**; no ofrece un campo para cambiarlo aquí. Dos sitios donde se edita el mismo dato y uno de los
+dos acaba mintiendo.
+
+### Los diez tests del apartado 18
+Están los diez. El **Test 10** (*"probar todo el flujo en móvil"*) necesita un iPhone: es **R1**, y el
+archivo de pruebas lo imprime en vez de darlo por bueno.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 290 comprobaciones unitarias**, 5 de
+auditoría, **396 casos de renderizado real** y 10 reglas invariantes — **3 691 en total**. De ellas,
+**139 nuevas** para EH F3.
+
+---
+
+## Entrega 2 · EH Fase 2/65 — Sistema de gestión y personalización de módulos (v1.68.0)
+
+### La regla que gobierna la fase
+*"El usuario decide qué quiere ver y qué no. No debemos mostrar 30 funcionalidades a alguien que
+solo quiere utilizar 5."*
+
+La Fase 1 dejó el catálogo y el interruptor. Esta construye **la gestión de verdad**: siete
+categorías, buscador, orden, confirmación al apagar, recomendados y ficha.
+
+### ⚠️ Y arregla un fallo real de la Fase 1, que avisaba la propia especificación
+El apartado 17 dice: *"Módulo eliminado del catálogo en una futura actualización → los datos NO
+deben borrarse automáticamente."*
+
+El normalizador de la Fase 1 hacía justo lo contrario: descartaba el módulo entero. Y con la regla 5
+del proyecto —**`saveData` sobrescribe, no fusiona**— eso significaba que **el siguiente guardado se
+llevaba su `config` para siempre**.
+
+Es la **cuarta vez** que este proyecto tropieza con el mismo fallo de normalizador (pasó con
+`visible` en HT F2, con `archivado` en HT F4 y con `materiales` en HT F7). La diferencia es que esta
+vez estaba escrito en el enunciado antes de que ocurriera.
+
+Ahora el módulo retirado va a la cuarentena `retirados`: fuera de la lista que se pinta —nadie
+sabría dibujarlo— pero **guardado entero**. Si vuelve al catálogo, `restaurarRetirados` lo devuelve
+con sus datos, no desde cero.
+
+### Una única fuente de verdad, comprobada contra el código
+El apartado 15: *"No crear `skincareSettings` en un lugar distinto simplemente para saber si Skincare
+está activo."*
+
+Por eso categoría, confirmación, recomendación y sinónimos de búsqueda **están en la línea del
+módulo**, dentro de `MODULOS_EH`. Un segundo mapa `id → categoría` se separaría del primero el día
+que alguien añada un módulo y se olvide del otro sitio.
+
+Y no es una promesa: hay una prueba que **lee `gestionModulos.js` y la vista** y falla si aparece un
+segundo catálogo o un id de módulo suelto.
+
+### El buscador tiene sinónimos porque el enunciado lo obliga
+*"Buscar: pelo → 💇 Pelo, 🧔 Barba."* El nombre de Barba no contiene "pelo", así que un `includes`
+sobre el nombre fallaría el ejemplo literal del enunciado. Cada módulo lleva sus términos.
+
+Y aguanta lo que Josué escribe de verdad desde el iPhone: mayúsculas, tildes puestas o quitadas
+("habito" encuentra **Hábitos**) y la eñe.
+
+### ⚠️ El aviso al desactivar solo sale si hay algo que perder
+El apartado 6 pide confirmación *"para módulos que puedan contener información importante"*, y que
+la aplicación pueda definir cuáles.
+
+Está definido —`confirmar: true` en el catálogo— **pero además se mira si el módulo tiene datos**.
+Un cartel que dice *"tus datos no se eliminarán"* sobre un módulo vacío no protege nada: enseña a
+pulsar "Desactivar" sin leer, y entonces no sirve el día que sí importa.
+
+### ⚠️ Subir y bajar se mueven dentro de los ACTIVOS
+Si la flecha saltara por encima de un módulo apagado, Josué la pulsaría y **no vería moverse nada**,
+porque el que ha adelantado no se pinta. Hay una prueba con un módulo apagado justo en medio.
+
+En los extremos las flechas salen **apagadas**, no desaparecen: una flecha que se esconde mueve la
+interfaz debajo del dedo.
+
+La estructura ya está lista para drag & drop, que es lo que pide el apartado 9: `moverA(estado, id,
+posición)` acepta el destino directo, y `reordenar` acepta la lista entera de una vez.
+
+### Recomendados: dos reglas, sin IA
+*"Debe ser informativo, nunca obligatorio. No utilizar IA."* Solo se sugiere lo que está apagado, y
+entre los apagados van primero los marcados en el catálogo y después los que **antes tendrán
+contenido**: recomendar hoy algo que llega en la fase 55 es prometer.
+
+Y **no sale nada** si no ha configurado todavía o si lo tiene todo encendido. Una sección con título
+y sin contenido es peor que ninguna sección.
+
+### ⚠️ Seis módulos que el enunciado nombra y no se han creado
+El apartado 3 enumera, dentro de las categorías, **Nutrición, Recuperación, Salud preventiva, Salud
+dental, Salud visual y Objetivos**. No están, y cada uno lleva su motivo escrito en el código:
+
+- **Nutrición y Objetivos ya son módulos enteros de JosStyle.** Copiarlos dentro de Estilo de Hombre
+  es literalmente lo que prohíben el apartado 10 de la Fase 1 y el 15 de esta.
+- **Recuperación** es contenido de Fitness (fase 26).
+- **Las tres de salud** son subdivisiones de Salud (fase 33) e Higiene (fase 18). Partirlas hoy sería
+  decidir por adelantado la forma de fases que no tocan.
+
+Las siete categorías están las siete. Si una fase futura crea uno de esos módulos, **entra con una
+línea**.
+
+### Los diez tests del apartado 18
+Están los diez. Los dos que no se pueden ejecutar aquí lo dicen en vez de darse por buenos: el
+**Test E** (*"cerrar aplicación"*) se comprueba hasta donde llega Node —el estado sobrevive al viaje
+por JSON y por el normalizador, que es lo que hacen `saveData`/`loadData`— y que Supabase responda es
+**R1**; el **Test J** (*"probar en móvil"*) necesita un iPhone, también **R1**.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 151 comprobaciones unitarias**, 5 de
+auditoría, **352 casos de renderizado real** y 10 reglas invariantes — **3 508 en total**. De ellas,
+**157 nuevas** para EH F2.
+
+---
+
+## Entrega 2 · EH Fase 1/65 — Arquitectura base y sistema modular (v1.67.0)
+
+### Empieza el bloque más grande del proyecto
+Estilo de Hombre son **65 fases**: más que todo JosStyle construido hasta hoy. Esta primera no
+construye ni un apartado de contenido —el enunciado lo prohíbe expresamente, apartado 14— sino **el
+sistema que va a sostener a los otros 64**.
+
+### Añadir un módulo es añadir una línea
+Es el apartado 9: *"la arquitectura permita añadir decenas de módulos posteriormente sin rehacer
+este sistema"*. En `src/lib/estiloDeHombre.js` los trece apartados son trece líneas de un array:
+
+```js
+{ id: 'skincare', nombre: 'Skincare', icono: '🧴', sub: 'Rutina de piel', fase: 6 },
+```
+
+Nada más. Ni un `case`, ni un `if`, ni un sitio donde acordarse de registrarlo. **Esa es la única
+razón por la que este archivo existe antes que ninguna pantalla.**
+
+### El catálogo va a cambiar, y el normalizador lo sabe
+Sesenta y cuatro fases por delante significan que el catálogo **va a crecer**, y probablemente
+también a encoger. `normalizarEstiloHombre` aguanta las dos direcciones:
+
+- **Lo guardado que ya no está en el catálogo se descarta.** Un módulo retirado no puede quedarse
+  como un id fantasma que ninguna pantalla sabe pintar.
+- **Lo nuevo del catálogo aparece apagado.** Si apareciera encendido, cada fase futura le encendería
+  a Josué un apartado que él no ha pedido — y son sesenta y cuatro fases de eso.
+
+### ⚠️ `alternarModulo` no toca `config`. Jamás
+El apartado 7 lo dice con esas palabras: *"desactivar un módulo NO elimine sus datos"*. Aquí el
+peligro no es el del normalizador de siempre —olvidar un campo y borrarlo sin querer— sino el
+contrario: **limpiar los datos "por orden"** al apagar el interruptor.
+
+Apagar es apagar. Los datos de skincare siguen ahí seis meses después, y al volver a encenderlo
+están como los dejó. Hay una prueba que guarda una configuración, apaga, enciende y comprueba que
+sigue entera; es una de las dos que **fallan en silencio** si alguien se despista.
+
+### ⚠️ El apartado 10, escrito como función y no como recordatorio
+*"Estilo de hombre NO debe crear una copia de los datos globales."* Peso, altura, sueño, agua,
+entrenamiento — ya viven en Salud, Sueño, Nutrición y Calistenia.
+
+Un documento diciéndolo se olvida. Así que están declarados en `FUENTES_GLOBALES`, y `esDatoGlobal()`
+responde. Una fase futura que quiera guardar el peso aquí **choca con una función**, no con la buena
+memoria de quien lea el documento.
+
+### Las plaquitas dicen la verdad
+Ninguno de los trece apartados tiene contenido todavía. Podrían abrir trece pantallas vacías; en vez
+de eso **la pantalla escribe que el contenido llega en las siguientes fases**. Es la regla 8: nada de
+"próximamente", pero tampoco fingir que algo funciona.
+
+### La pantalla no decide su propio estado
+Los tres casos del apartado 13 —sin configurar, configurado sin nada encendido, con apartados— los
+calcula `estadoPantalla()`, que se prueba con Node. Tres `if` encadenados en una vista es donde
+aparece el cuarto caso que nadie contempló.
+
+### Dónde vive
+`app_data`, clave `estiloHombre`. **Sin SQL nuevo.** Entra por *Más → Estilo de hombre*, dentro de un
+área que ya existía: las cinco pestañas de abajo siguen siendo cinco (regla 10).
+
+### ⚠️ C-24 — el "106" de la portada no cuadra
+Al abrir el bloque: toda la documentación llama a la Entrega 2 *"las 106 fases"*, pero el desglose
+por módulos suma **110** (EH 65 + HT 12 + FO 12 + SR 9 + ME 4 + BI 4 + AR 4). Las fases de EH están
+numeradas *"x/65"* en la propia especificación de Josué, así que el desglose es el que manda sobre el
+trabajo. No lo he cambiado por mi cuenta: está anotado en `docs/03` como **C-24** y **no bloquea
+nada**, porque el trabajo ya se está haciendo con el número bueno.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **2 994 comprobaciones unitarias**, 5 de
+auditoría, **332 casos de renderizado real** y 10 reglas invariantes — **3 331 en total**. De ellas,
+**69 nuevas** para EH F1, con los 7 tests obligatorios del apartado 15 cubiertos.
+
+---
+
 ## Entrega 2 · SO Fase 4 — Diseño y especificación de los sonidos (v1.66.0)
 
 ### Lo que esta fase puede hacer, y lo que no
