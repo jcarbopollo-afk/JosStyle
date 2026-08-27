@@ -417,6 +417,38 @@ prohíbe la regla 8.
 
 ---
 
+### 🟡 C-24 — "106 fases" no cuadra con el desglose por módulos · **detectada en v1.67.0, no bloquea nada**
+
+**Encontrada al abrir el bloque EH.** Toda la documentación llama a la Entrega 2 *"las 106 fases"*,
+pero el desglose por módulos de `docs/07` suma **110**:
+
+| EH | HT | FO | SR | ME | BI | AR | **Suma** |
+|---|---|---|---|---|---|---|---|
+| 65 | 12 | 12 | 5+4 | 4 | 4 | 4 | **110** |
+
+El 106 viene de `docs/06_ENTREGA2_ANALISIS.md` (línea 26, tabla TOTAL) y de ahí se copió a todos los
+demás documentos. La diferencia son cuatro fases de **Estilo de Hombre**, y ahí el desglose tiene
+razón: las fases de EH están numeradas ***"x/65"* dentro de la propia especificación de Josué**, y
+`docs/07` contiene **65 encabezados `#### EH · Fase n/65`**, del 1/65 al 65/65, ninguno inventado.
+
+**Por qué no la he resuelto por mi cuenta:**
+
+- **No cambia el trabajo.** El número de fases que hay que construir es el que dice el desglose, y
+  ese ya se está siguiendo: EH F1 se ha construido como *"1/65"*, no como *"1/61"*.
+- **Cambiar el rótulo tocaría siete documentos** (`00`, `02`, `03`, `05`, `06`, `07`, `CLAUDE.md`,
+  `HANDOFF.md`) y rompería las referencias cruzadas de todos ellos por una cifra de portada.
+- **Es contabilidad, no una contradicción de especificación**, así que la regla 49 no obliga a
+  detener ninguna fase. Se anota, se sigue, y se le pregunta.
+
+**⏸ Lo que se le pregunta a Josué:** ¿se corrige el rótulo a **110 fases** en todos los documentos,
+o se deja "106" como nombre histórico de la entrega —igual que *JC Fitness*— sabiendo que el
+desglose real son 110?
+
+**Mientras tanto:** los recuentos de avance se escriben con las dos cifras a la vista (*"44 de las
+106"* con la nota de C-24 al lado), y el progreso por bloque —**EH 1/65**— es el que no miente.
+
+---
+
 ## PARTE B — DUPLICADOS (14)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

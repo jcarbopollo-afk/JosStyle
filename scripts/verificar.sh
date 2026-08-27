@@ -176,6 +176,12 @@ else
   fallo "Falla la especificación de sonidos"; grep '✗' /tmp/jc_audio4.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-estilo-hombre.mjs >/tmp/jc_eh1.log 2>&1; then
+  ok "Arquitectura de Estilo de Hombre (EH F1) — $(grep -c '✓' /tmp/jc_eh1.log) comprobaciones"
+else
+  fallo "Falla la arquitectura de Estilo de Hombre"; grep '✗' /tmp/jc_eh1.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

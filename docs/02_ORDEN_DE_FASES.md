@@ -194,8 +194,14 @@ escribir código.
 
 | v1.66.0 | **SO F4** | La biblioteca sonora **definida como código**: familias, duraciones, la firma en intervalos, qué es único y qué lleva variantes, un validador y `queFalta()`. Convierte "dame los sonidos" en una lista precisa |
 
+| v1.67.0 | **EH F1** | **Empieza el último bloque y el más grande (65 fases).** La arquitectura modular: trece apartados en un catálogo donde **añadir uno es añadir una línea**, un normalizador que aguanta el catálogo cambiando en las dos direcciones, `alternarModulo` **que no toca los datos jamás**, y `FUENTES_GLOBALES` para que el apartado 10 —*no dupliques lo que ya existe*— sea una función y no un recordatorio |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5. Quedan **63** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (61).
+3/5 y **EH acaba de empezar (1/65)**. Quedan **62** fases de la Entrega 2: SO (2, con **F2
+bloqueada**) y EH (60).
+
+⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
+rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.
 
 ✅ **C-23 resuelta a medias:** Josué pasó el texto que faltaba de la Fase 1 del Sonido (v1.54.0).
 ⏸ **Sigue pendiente lo de los archivos de audio**, que él dará *"cuando la web ya tenga todos los

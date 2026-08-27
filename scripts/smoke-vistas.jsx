@@ -28,6 +28,8 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
+import EstiloHombreView, { GestionarApartados } from '../src/views/EstiloHombreView.jsx';
+import { DEFAULT_ESTILO_HOMBRE, configurarPrimeraVez, alternarModulo } from '../src/lib/estiloDeHombre.js';
 import { mochilaDeFecha, progresoMochila, marcarEstado } from '../src/lib/mochila.js';
 import {
   tablonDelDia, crearAutomatizacion, previsualizar, ejecutar, historialDe, marcarCompletada,
@@ -479,6 +481,26 @@ const CASOS = [
         ];
       })(),
       // HT Fase 12 — el panel avanzado ahora tiene la pestaña de copia.
+      /* EH Fase 1 — los TRES estados del apartado 13, que es lo único que
+         esta fase tiene que saber pintar. El tercero es el que más importa:
+         configurado pero sin nada encendido NO puede ser una pantalla rota. */
+      ...(() => {
+        const props = (estado) => ({ estiloHombre: estado, accent, onCambiar: noop });
+        const conTres = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['skincare', 'pelo', 'habitos'], { hoy: HOY });
+        return [
+          ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],
+          ['EstiloHombreView · con módulos', EstiloHombreView, () => props(conTres)],
+          ['EstiloHombreView · configurado sin módulos', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],
+          ['EstiloHombreView · con todos', EstiloHombreView, () =>
+            props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['estilo', 'pelo', 'skincare', 'higiene', 'barba', 'cuerpo', 'fitness', 'sueno', 'salud', 'habitos', 'progreso', 'educacion', 'productos']))],
+          ['GestionarApartados · primera vez', GestionarApartados, () => ({
+            estado: DEFAULT_ESTILO_HOMBRE, accent, primeraVez: true, onGuardar: noop,
+          })],
+          ['GestionarApartados · después', GestionarApartados, () => ({
+            estado: conTres, accent, onAlternar: noop, onCerrar: noop,
+          })],
+        ];
+      })(),
       ['PanelAvanzado · con copia', PanelAvanzado, () => ({
         estado: lleno, horario: base.horario, accent, asignaturas: [],
         visual: normalizarVisual(null), hoy: HOY, onVisual: noop, onCambiar: noop, onResultado: noop,

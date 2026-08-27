@@ -1,5 +1,77 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 1/65 — Arquitectura base y sistema modular (v1.67.0)
+
+### Empieza el bloque más grande del proyecto
+Estilo de Hombre son **65 fases**: más que todo JosStyle construido hasta hoy. Esta primera no
+construye ni un apartado de contenido —el enunciado lo prohíbe expresamente, apartado 14— sino **el
+sistema que va a sostener a los otros 64**.
+
+### Añadir un módulo es añadir una línea
+Es el apartado 9: *"la arquitectura permita añadir decenas de módulos posteriormente sin rehacer
+este sistema"*. En `src/lib/estiloDeHombre.js` los trece apartados son trece líneas de un array:
+
+```js
+{ id: 'skincare', nombre: 'Skincare', icono: '🧴', sub: 'Rutina de piel', fase: 6 },
+```
+
+Nada más. Ni un `case`, ni un `if`, ni un sitio donde acordarse de registrarlo. **Esa es la única
+razón por la que este archivo existe antes que ninguna pantalla.**
+
+### El catálogo va a cambiar, y el normalizador lo sabe
+Sesenta y cuatro fases por delante significan que el catálogo **va a crecer**, y probablemente
+también a encoger. `normalizarEstiloHombre` aguanta las dos direcciones:
+
+- **Lo guardado que ya no está en el catálogo se descarta.** Un módulo retirado no puede quedarse
+  como un id fantasma que ninguna pantalla sabe pintar.
+- **Lo nuevo del catálogo aparece apagado.** Si apareciera encendido, cada fase futura le encendería
+  a Josué un apartado que él no ha pedido — y son sesenta y cuatro fases de eso.
+
+### ⚠️ `alternarModulo` no toca `config`. Jamás
+El apartado 7 lo dice con esas palabras: *"desactivar un módulo NO elimine sus datos"*. Aquí el
+peligro no es el del normalizador de siempre —olvidar un campo y borrarlo sin querer— sino el
+contrario: **limpiar los datos "por orden"** al apagar el interruptor.
+
+Apagar es apagar. Los datos de skincare siguen ahí seis meses después, y al volver a encenderlo
+están como los dejó. Hay una prueba que guarda una configuración, apaga, enciende y comprueba que
+sigue entera; es una de las dos que **fallan en silencio** si alguien se despista.
+
+### ⚠️ El apartado 10, escrito como función y no como recordatorio
+*"Estilo de hombre NO debe crear una copia de los datos globales."* Peso, altura, sueño, agua,
+entrenamiento — ya viven en Salud, Sueño, Nutrición y Calistenia.
+
+Un documento diciéndolo se olvida. Así que están declarados en `FUENTES_GLOBALES`, y `esDatoGlobal()`
+responde. Una fase futura que quiera guardar el peso aquí **choca con una función**, no con la buena
+memoria de quien lea el documento.
+
+### Las plaquitas dicen la verdad
+Ninguno de los trece apartados tiene contenido todavía. Podrían abrir trece pantallas vacías; en vez
+de eso **la pantalla escribe que el contenido llega en las siguientes fases**. Es la regla 8: nada de
+"próximamente", pero tampoco fingir que algo funciona.
+
+### La pantalla no decide su propio estado
+Los tres casos del apartado 13 —sin configurar, configurado sin nada encendido, con apartados— los
+calcula `estadoPantalla()`, que se prueba con Node. Tres `if` encadenados en una vista es donde
+aparece el cuarto caso que nadie contempló.
+
+### Dónde vive
+`app_data`, clave `estiloHombre`. **Sin SQL nuevo.** Entra por *Más → Estilo de hombre*, dentro de un
+área que ya existía: las cinco pestañas de abajo siguen siendo cinco (regla 10).
+
+### ⚠️ C-24 — el "106" de la portada no cuadra
+Al abrir el bloque: toda la documentación llama a la Entrega 2 *"las 106 fases"*, pero el desglose
+por módulos suma **110** (EH 65 + HT 12 + FO 12 + SR 9 + ME 4 + BI 4 + AR 4). Las fases de EH están
+numeradas *"x/65"* en la propia especificación de Josué, así que el desglose es el que manda sobre el
+trabajo. No lo he cambiado por mi cuenta: está anotado en `docs/03` como **C-24** y **no bloquea
+nada**, porque el trabajo ya se está haciendo con el número bueno.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **2 994 comprobaciones unitarias**, 5 de
+auditoría, **332 casos de renderizado real** y 10 reglas invariantes — **3 331 en total**. De ellas,
+**69 nuevas** para EH F1, con los 7 tests obligatorios del apartado 15 cubiertos.
+
+---
+
 ## Entrega 2 · SO Fase 4 — Diseño y especificación de los sonidos (v1.66.0)
 
 ### Lo que esta fase puede hacer, y lo que no

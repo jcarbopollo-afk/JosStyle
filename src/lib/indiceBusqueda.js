@@ -126,6 +126,9 @@ export const PALABRAS_MODULOS = {
   logros: ['insignias', 'medallas', 'trofeos', 'conseguidos'],
   economia: ['dinero', 'gastos', 'ahorro', 'hucha', 'saldo', 'presupuesto', 'finanzas', 'gastar', 'ingresos'],
   armario: ['ropa', 'prendas', 'vestir', 'camiseta', 'pantalon', 'zapatillas', 'outfit', 'closet', 'que me pongo', 'recomendar outfit'],
+  // EH Fase 1 — el espacio nuevo. Las palabras son las de los apartados que
+  // ofrece, para que buscar "skincare" o "barba" lleve aquí desde el primer día.
+  'estilo-hombre': ['estilo', 'hombre', 'skincare', 'piel', 'cara', 'pelo', 'barba', 'higiene', 'cuidado', 'aspecto', 'imagen', 'productos'],
   rachas: ['racha', 'rachas', 'dias seguidos', 'constancia', 'cadena', 'hito', 'hitos', 'logro', 'logros', 'record', 'mejor racha', 'no romper la racha'],
   horario: ['horario', 'clases', 'clase', 'asignatura', 'cuadricula', 'franja', 'que tengo hoy', 'que tengo manana', 'instituto', 'colegio', 'aula'],
   ajustes: ['configuracion', 'opciones', 'preferencias', 'settings'],
@@ -157,6 +160,7 @@ export const SINONIMOS_MODULOS = {
   logros: ['recompensas', 'hitos', 'progreso'],
   economia: ['pagar', 'cobrar', 'euros', 'cuenta', 'economico'],
   armario: ['estilo', 'moda', 'vestuario', 'looks'],
+  'estilo-hombre': ['apariencia', 'grooming', 'rutina facial', 'verse bien'],
   rachas: ['seguidos', 'consecutivos', 'streak', 'progreso'],
   horario: ['agenda', 'semana', 'timetable', 'horarios'],
   ajustes: ['ajuste', 'configurar', 'cambiar'],

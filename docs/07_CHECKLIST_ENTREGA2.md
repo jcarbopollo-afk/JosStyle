@@ -4,10 +4,16 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 43 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)** y **SO 3/5** (hasta
-> v1.66.0). Quedan **63**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (61). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 44 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 1/65**
+> (hasta v1.67.0). Quedan **62**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (60). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
+>
+> ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
+> Sumando la tabla de más abajo salen **110** (EH 65 + HT 12 + FO 12 + SR 9 + ME 4 + BI 4 + AR 4).
+> El 106 viene de `docs/06`; las fases de EH están numeradas *"x/65"* dentro de la propia
+> especificación de Josué, así que el desglose es el que manda sobre el trabajo real. Se conserva el
+> rótulo "106" para no romper las referencias de los demás documentos. Ver **C-24** en `docs/03`.
 >
 > **Fuente:** `especificaciones/` — transcripción íntegra, dividida por módulo, más el archivo
 > original sin tocar en `especificaciones/ORIGINAL_JC_FITNESS_ESTILO_DE_HOMBRE.txt`.
@@ -190,42 +196,69 @@ fase** y que conviene no perder:
 
 El módulo más grande de todo el proyecto. Una central personal de salud, cuidado, bienestar, físico y estilo masculino, completamente modular: el usuario elige qué apartados usa y el resto no ocupa espacio. **Fases 1–6** son la arquitectura base; **7–29** los módulos de contenido (pelo, peluquería, skincare, cuerpo, barba, manos, higiene bucal, perfumes, accesorios, gustos, objetivos, perfil de estilo); **30–39** organización, recomendaciones e integración; **40–55** calidad, rendimiento, datos y producción; **56–61** IA e insights; **62–65** accesibilidad, seguridad y cierre.
 
-#### EH · Fase 1/65 — ARQUITECTURA BASE Y SISTEMA MODULAR
-- [ ] Se pueda entrar en Estilo de hombre.
-- [ ] Aparezca una pantalla inicial limpia.
-- [ ] Se pueda configurar qué módulos quiere utilizar el usuario.
-- [ ] Los módulos seleccionados aparezcan como plaquitas.
-- [ ] Los módulos no seleccionados no ocupen espacio.
-- [ ] Se puedan activar/desactivar posteriormente.
-- [ ] Desactivar un módulo NO elimine sus datos.
-- [ ] La configuración permanezca guardada.
-- [ ] La arquitectura permita añadir decenas de módulos posteriormente sin rehacer este sistema.
-- [ ] CREAR LA ESTRUCTURA PRINCIPAL
-- [ ] PANTALLA PRINCIPAL
-- [ ] PRIMERA CONFIGURACIÓN
-- [ ] SELECCIÓN DE MÓDULOS
-- [ ] PLAQUITAS
-- [ ] GESTIONAR APARTADOS
-- [ ] DESACTIVACIÓN
-- [ ] DATOS Y CONFIGURACIÓN
-- [ ] ORDEN DE LOS MÓDULOS
-- [ ] Skincare
-- [ ] Pelo
-- [ ] Hábitos
-- [ ] Fitness
-- [ ] CONEXIÓN CON JC FITNESS
-- [ ] SISTEMA PREPARADO PARA CRECER
-- [ ] RESPONSIVE
-- [ ] ESTADOS VACÍOS
-- [ ] NO IMPLEMENTAR TODAVÍA
-- [ ] PRUEBAS OBLIGATORIAS
-- [ ] OBJETIVO GENERAL
-- [ ] PRINCIPIO FUNDAMENTAL: TODO ES MODULAR
-- [ ] INTERFAZ: PEQUEÑAS PLAQUITAS
-- [ ] JC FITNESS YA TIENE MUCHAS FUNCIONES
-- [ ] REGLA ABSOLUTA CONTRA DUPLICACIONES
-- [ ] IA: PRÁCTICAMENTE FUERA DE ESTE APARTADO
-- [ ] EL USUARIO TIENE EL CONTROL
+#### EH · Fase 1/65 — ARQUITECTURA BASE Y SISTEMA MODULAR ✅ COMPLETADA (v1.67.0)
+
+> **`src/lib/estiloDeHombre.js`** (motor, 69 comprobaciones) + **`src/views/EstiloHombreView.jsx`**
+> (pantalla) + `scripts/test-estilo-hombre.mjs`. Los datos viven en `app_data` bajo la clave
+> `estiloHombre`; **no hay SQL nuevo**.
+>
+> **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Eso es el apartado 9 —*"la arquitectura
+> permita añadir decenas de módulos posteriormente sin rehacer este sistema"*— y es la única razón
+> por la que este archivo existe antes que ninguna pantalla de contenido.
+>
+> ⚠️ **`normalizarEstiloHombre` aguanta el catálogo cambiando en las dos direcciones:** un módulo
+> guardado que ya no está en el catálogo se descarta, y un módulo nuevo del catálogo aparece
+> **apagado**. Si apareciera encendido, cada fase futura le encendería un apartado a Josué sin
+> preguntarle.
+>
+> ⚠️ **`alternarModulo` no toca `config` jamás** (apartado 7: *"desactivar un módulo NO elimine sus
+> datos"*). Es la trampa clásica del normalizador al revés: aquí el peligro no es olvidar un campo,
+> es limpiarlo "por orden".
+>
+> ⚠️ **`FUENTES_GLOBALES` + `esDatoGlobal()` son el apartado 10 en código** (*"Estilo de hombre NO
+> debe crear una copia de los datos globales"*): declaran dónde vive ya cada dato —peso, altura,
+> sueño, agua, entrenamiento— para que una fase futura que pida "guardar el peso aquí" choque con
+> una función, no con la buena memoria de quien lea el documento.
+>
+> **Las plaquitas dicen la verdad** (regla 8 + apartado 14): ningún apartado tiene contenido
+> todavía, así que **no llevan a ninguna parte y la pantalla lo escribe**, en vez de abrir trece
+> pantallas vacías.
+
+- [x] Se pueda entrar en Estilo de hombre.
+- [x] Aparezca una pantalla inicial limpia.
+- [x] Se pueda configurar qué módulos quiere utilizar el usuario.
+- [x] Los módulos seleccionados aparezcan como plaquitas.
+- [x] Los módulos no seleccionados no ocupen espacio.
+- [x] Se puedan activar/desactivar posteriormente.
+- [x] Desactivar un módulo NO elimine sus datos.
+- [x] La configuración permanezca guardada.
+- [x] La arquitectura permita añadir decenas de módulos posteriormente sin rehacer este sistema.
+- [x] CREAR LA ESTRUCTURA PRINCIPAL
+- [x] PANTALLA PRINCIPAL
+- [x] PRIMERA CONFIGURACIÓN
+- [x] SELECCIÓN DE MÓDULOS
+- [x] PLAQUITAS
+- [x] GESTIONAR APARTADOS
+- [x] DESACTIVACIÓN
+- [x] DATOS Y CONFIGURACIÓN
+- [x] ORDEN DE LOS MÓDULOS
+- [x] Skincare
+- [x] Pelo
+- [x] Hábitos
+- [x] Fitness
+- [x] CONEXIÓN CON JC FITNESS
+- [x] SISTEMA PREPARADO PARA CRECER
+- [x] RESPONSIVE
+- [x] ESTADOS VACÍOS
+- [x] NO IMPLEMENTAR TODAVÍA
+- [x] PRUEBAS OBLIGATORIAS
+- [x] OBJETIVO GENERAL
+- [x] PRINCIPIO FUNDAMENTAL: TODO ES MODULAR
+- [x] INTERFAZ: PEQUEÑAS PLAQUITAS
+- [x] JC FITNESS YA TIENE MUCHAS FUNCIONES
+- [x] REGLA ABSOLUTA CONTRA DUPLICACIONES
+- [x] IA: PRÁCTICAMENTE FUERA DE ESTE APARTADO
+- [x] EL USUARIO TIENE EL CONTROL
 - [ ] FORMULARIOS Y PREFERENCIAS
 - [ ] SISTEMA DE RECOMENDACIONES
 - [ ] SISTEMA DE PRODUCTOS
@@ -233,14 +266,20 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [ ] EDUCACIÓN Y GUÍAS
 - [ ] SALUD
 - [ ] DISPOSITIVOS WEARABLES
-- [ ] MÓDULOS ESPECIALMENTE IMPORTANTES
+- [x] MÓDULOS ESPECIALMENTE IMPORTANTES
 - [ ] ESTILO Y ARMARIO
 - [ ] FOTOS
 - [ ] PRIVACIDAD
-- [ ] DESACTIVACIÓN DE MÓDULOS IMPORTANTES
-- [ ] ARQUITECTURA DE DESARROLLO
-- [ ] REGLA DE ORO DURANTE TODAS LAS FASES
+- [x] DESACTIVACIÓN DE MÓDULOS IMPORTANTES
+- [x] ARQUITECTURA DE DESARROLLO
+- [x] REGLA DE ORO DURANTE TODAS LAS FASES
 - [ ] OBJETIVO FINAL
+
+> **Las once casillas que siguen sin marcar son deliberadas.** Son el preámbulo de contexto de la
+> especificación —describe el módulo entero, no esta fase— y el propio enunciado las mete bajo
+> *"NO IMPLEMENTAR TODAVÍA"*. Formularios, recomendaciones, productos, calendario, educación, salud,
+> wearables, armario, fotos y privacidad llegan en las fases 2-65; `OBJETIVO FINAL` se marca cuando
+> se cierre el bloque. Marcarlas ahora sería decir que hay algo construido que no existe.
 
 #### EH · Fase 2/65 — SISTEMA DE GESTIÓN Y PERSONALIZACIÓN DE MÓDULOS
 - [ ] ACCESO A “GESTIONAR APARTADOS”

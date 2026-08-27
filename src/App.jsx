@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt, Flame, CalendarClock } from 'lucide-react';
+import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt, Flame, CalendarClock, UserRound } from 'lucide-react';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
 import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
@@ -46,7 +46,9 @@ import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda, crearOutfit, actualizar
 import ArmarioView from './views/ArmarioView';
 import RachasView, { ResumenRachaHoy } from './views/RachasView';
 import HorarioView from './views/HorarioView';
+import EstiloHombreView from './views/EstiloHombreView';
 import { DEFAULT_HORARIO_TOP, normalizarHorarioTop } from './lib/horario';
+import { DEFAULT_ESTILO_HOMBRE, normalizarEstiloHombre } from './lib/estiloDeHombre';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.
@@ -97,6 +99,10 @@ const MORE_NAV = [
   { id: 'armario', label: 'Armario', icon: Shirt },
   { id: 'rachas', label: 'Rachas', icon: Flame },
   { id: 'horario', label: 'Horario', icon: CalendarClock },
+  // Entrega 2 · EH Fase 1 — Estilo de Hombre entra como UN módulo más del área
+  // "Más". La barra inferior sigue con cinco pestañas (regla 10): un apartado
+  // nuevo va a un área existente, nunca a la barra.
+  { id: 'estilo-hombre', label: 'Estilo de hombre', icon: UserRound },
   { id: 'ajustes', label: 'Ajustes', icon: Settings },
 ];
 
@@ -108,7 +114,7 @@ const AREAS_NAV = [
   { id: 'area-salud', label: 'Salud', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno'] },
   { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['calendario', 'horario', 'estudios', 'productividad', 'rachas', 'objetivos', 'diario', 'biblioteca'] },
   { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['economia', 'negocio', 'armario'] },
-  { id: 'area-mas', label: 'Más', icon: MoreHorizontal, modulos: ['relacion', 'fe', 'bienestar', 'estadisticas', 'predicciones', 'logros', 'ajustes'] },
+  { id: 'area-mas', label: 'Más', icon: MoreHorizontal, modulos: ['estilo-hombre', 'relacion', 'fe', 'bienestar', 'estadisticas', 'predicciones', 'logros', 'ajustes'] },
 ];
 
 // Fase de Seguridad Centralizada — catálogo de "áreas protegibles" (apartado 1 de la
@@ -272,6 +278,11 @@ export default function App() {
   // borraría. Y de fábrica está apagado, porque todavía no hay sonidos.
   const [audio, setAudio] = useState(DEFAULT_AUDIO);
   const [horarioTop, setHorarioTop] = useState(DEFAULT_HORARIO_TOP);
+  /* EH Fase 1 — Estilo de Hombre en su propia clave de `app_data`. Ni una tabla
+     nueva ni SQL que ejecutar, igual que los otros veintidós módulos, y aparte
+     del paquete `ajustes` porque ese se guarda entero en cada escritura
+     (regla 5): un `saveData` que se olvidara de esto lo borraría. */
+  const [estiloHombre, setEstiloHombre] = useState(DEFAULT_ESTILO_HOMBRE);
   // RA Fase 3 — los logros y los hitos ya anunciados, en su propia clave. Van
   // aparte de `rachas` porque son cosas distintas (apartado 7: hito ≠ logro) y
   // porque un logro conseguido NO se revoca al corregir el historial (apartado 28).
@@ -291,7 +302,7 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud, hor] = await Promise.all([
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud, hor, eh] = await Promise.all([
         loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
@@ -328,6 +339,7 @@ export default function App() {
         loadData(uidUser, 'gamificacionRachas', GAMIFICACION_INICIAL),
         loadData(uidUser, 'audio', DEFAULT_AUDIO),
         loadData(uidUser, 'horarioTop', DEFAULT_HORARIO_TOP),
+        loadData(uidUser, 'estiloHombre', DEFAULT_ESTILO_HOMBRE),
       ]);
       if (cancelled) return;
       setAccent(a.accent || ACCENTS[0].value);
@@ -447,6 +459,7 @@ export default function App() {
       setGamificacion(normalizarGamificacion(gam));
       setAudio(normalizarAudio(aud));
       setHorarioTop(normalizarHorarioTop(hor));
+      setEstiloHombre(normalizarEstiloHombre(eh));
       setLoaded(true);
     })();
     return () => { cancelled = true; };
@@ -1251,6 +1264,7 @@ export default function App() {
     if (patch.rachas) { setRachas(patch.rachas); saveData(uidUser, 'rachas', patch.rachas); }
     if (patch.gamificacion) { setGamificacion(patch.gamificacion); saveData(uidUser, 'gamificacionRachas', patch.gamificacion); }
     if (patch.horarioTop) { setHorarioTop(patch.horarioTop); saveData(uidUser, 'horarioTop', patch.horarioTop); }
+    if (patch.estiloHombre) { setEstiloHombre(patch.estiloHombre); saveData(uidUser, 'estiloHombre', patch.estiloHombre); }
   };
 
   const addSueno = (entry) => snapshotAndSave({ sueno: [...sueno, entry] });
@@ -1487,6 +1501,7 @@ export default function App() {
     setRachas(last.rachas || ESTADO_INICIAL); saveData(uidUser, 'rachas', last.rachas || ESTADO_INICIAL);
     setGamificacion(last.gamificacion || GAMIFICACION_INICIAL); saveData(uidUser, 'gamificacionRachas', last.gamificacion || GAMIFICACION_INICIAL);
     setHorarioTop(last.horarioTop || DEFAULT_HORARIO_TOP); saveData(uidUser, 'horarioTop', last.horarioTop || DEFAULT_HORARIO_TOP);
+    setEstiloHombre(last.estiloHombre || DEFAULT_ESTILO_HOMBRE); saveData(uidUser, 'estiloHombre', last.estiloHombre || DEFAULT_ESTILO_HOMBRE);
     setHistory(rest); saveData(uidUser, 'historial', rest);
   };
 
@@ -1721,6 +1736,18 @@ export default function App() {
       // HT Fase 3 — el editor de horarios. Cada operación entra por
       // `snapshotAndSave`, así que guarda sola y el "Deshacer" global la cubre:
       // el editor no monta ni autoguardado ni historial propios.
+      // EH Fase 1 — el espacio de Estilo de Hombre. Todavía SIN contenido en
+      // los apartados: el enunciado lo prohíbe expresamente en esta fase, y la
+      // pantalla lo dice en vez de abrir plaquitas vacías (regla 8).
+      case 'estilo-hombre':
+        return (
+          <EstiloHombreView
+            estiloHombre={estiloHombre}
+            accent={accent}
+            onCambiar={(nuevo) => snapshotAndSave({ estiloHombre: nuevo })}
+          />
+        );
+
       case 'horario':
         return (
           <HorarioView
