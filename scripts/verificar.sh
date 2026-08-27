@@ -242,6 +242,12 @@ else
   fallo "Falla la peluquería"; grep '✗' /tmp/jc_eh11.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-cortes-pelo.mjs >/tmp/jc_eh12.log 2>&1; then
+  ok "Cortes, preferencias y recomendaciones (EH F12) — $(grep -c '✓' /tmp/jc_eh12.log) comprobaciones"
+else
+  fallo "Fallan los cortes de pelo"; grep '✗' /tmp/jc_eh12.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

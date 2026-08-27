@@ -138,11 +138,19 @@ export const ANTELACIONES_AVISO = [
 
 export const antelacion = (id) => ANTELACIONES_AVISO.find((a) => a.id === id) || null;
 
+/* ⚠️ **`corteId`, `valoracion` y `objetivo` los añadió la Fase 12**, y son el
+   décimo, undécimo y duodécimo campo que se enseña a un normalizador en este
+   proyecto. Un normalizador que no conoce un campo LO BORRA en el siguiente
+   guardado (regla 5): valorar un corte habría funcionado hasta recargar. */
 export const DEFAULT_PELUQUERIA = {
-  cortes: [],      // historia: [{ id, fecha, nota, preferencia, sitioId }]
+  cortes: [],      // historia: [{ id, fecha, nota, preferencia, sitioId, corteId, valoracion }]
   cita: null,      // el plan: { id, fecha, hora, nota, recordatorio, antelacion }
   sitios: [],      // [{ id, nombre, lugar, nota }] — apartado 12
   semanas: null,   // frecuencia propia, solo si la pone a mano
+  // F12, apartado 12 — *"🎯 Quiero probar"*. Aquí solo se guarda; QUIÉN puede
+  // ser objetivo y por qué lo decide `cortesPelo.js`. Mismo reparto que
+  // `gestionModulos.js` con `estiloDeHombre.js`.
+  objetivo: null,  // { id, nombre }
 };
 
 function normalizarCorte(g) {
@@ -153,7 +161,20 @@ function normalizarCorte(g) {
     nota: (c.nota || '').trim(),
     preferencia: preferenciaCorte(c.preferencia) ? c.preferencia : null,
     sitioId: c.sitioId || null,
+    // F12, apartado 13 — *"¿Qué corte te hiciste? Opcional."* Un id suelto, sin
+    // validar contra el catálogo: un corte que él borró del catálogo no puede
+    // desaparecer de su propio historial.
+    corteId: c.corteId || null,
+    // F12, apartado 14 — la valoración. `null` es "todavía no la ha dado", que
+    // no es lo mismo que "normal".
+    valoracion: typeof c.valoracion === 'string' && c.valoracion ? c.valoracion : null,
   };
+}
+
+/** F12, apartado 12 — el objetivo es un id y un nombre, y nada más. */
+function normalizarObjetivo(g) {
+  if (!g || typeof g !== 'object' || !g.id) return null;
+  return { id: String(g.id), nombre: String(g.nombre || g.id) };
 }
 
 function horaValida(h) {
@@ -191,6 +212,7 @@ export function normalizarPeluqueria(guardado) {
       .filter((s) => s && (s.nombre || '').trim())
       .map((s) => ({ id: s.id || uid(), nombre: s.nombre.trim(), lugar: (s.lugar || '').trim(), nota: (s.nota || '').trim() })),
     semanas: Number.isInteger(semanas) && semanas >= 1 && semanas <= 52 ? semanas : null,
+    objetivo: normalizarObjetivo(g.objetivo),
   };
 }
 
@@ -206,7 +228,7 @@ const escribir = (estado, datos) => {
    ===========================================================================
    *"+ Registrar corte… También: Hoy, para hacerlo rápidamente."* */
 
-export function registrarCorte(estado, { fecha = todayISO(), nota = '', preferencia = null, sitioId = null } = {}) {
+export function registrarCorte(estado, { fecha = todayISO(), nota = '', preferencia = null, sitioId = null, corteId = null, valoracion = null } = {}) {
   if (typeof fecha !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
     return { estado: normalizarEstiloHombre(estado), error: 'Esa fecha no vale.', corte: null };
   }
@@ -215,8 +237,19 @@ export function registrarCorte(estado, { fecha = todayISO(), nota = '', preferen
   if (d.cortes.some((c) => c.fecha === fecha)) {
     return { estado: normalizarEstiloHombre(estado), error: null, corte: d.cortes.find((c) => c.fecha === fecha), yaExistia: true };
   }
-  const corte = normalizarCorte({ fecha, nota, preferencia, sitioId });
+  const corte = normalizarCorte({ fecha, nota, preferencia, sitioId, corteId, valoracion });
   return { estado: escribir(estado, { ...d, cortes: [...d.cortes, corte] }), error: null, corte };
+}
+
+/**
+ * F12, apartado 12 — el almacén del objetivo. ⚠️ **Aquí solo se guarda.** Qué
+ * cortes existen y cuál puede ser objetivo lo decide `cortesPelo.js`; este
+ * archivo no sabe qué es un "Taper". Mismo reparto que `gestionModulos.js` con
+ * `estiloDeHombre.js`, y evita que los dos archivos se importen en círculo.
+ */
+export function fijarObjetivoDeCorte(estado, objetivo) {
+  const d = datosPeluqueria(estado);
+  return { estado: escribir(estado, { ...d, objetivo: normalizarObjetivo(objetivo) }), error: null };
 }
 
 export function editarCorte(estado, id, cambios = {}) {
@@ -502,7 +535,12 @@ export function eventosDePeluqueria(estado) {
     horaInicio: d.cita.hora,
     horaFin: null,
     tipo: 'recordatorio',
-    notas: d.cita.nota,
+    /* ⚠️ F12, apartado 12 — *"✂️ Próximo corte / Taper"*. El corte que quiere
+       probar entra en la NOTA del evento que ya existe, no en una clave nueva:
+       la forma tiene que seguir siendo la misma que la de los eventos del
+       Armario y las rutinas, o deja de encajar sin adaptadores. Y desde luego
+       no en un segundo evento (apartado 6). */
+    notas: [d.objetivo?.nombre, d.cita.nota].filter(Boolean).join(' · '),
     ubicacion: d.sitios.find((s) => s.id === d.cita.sitioId)?.lugar || '',
     origen: 'pelo',
     origenId: d.cita.id,

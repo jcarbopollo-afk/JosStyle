@@ -216,8 +216,10 @@ escribir código.
 
 | v1.77.0 | **EH F11** | Peluquería: el calendario de cortes. ⚠️ **Evento planificado y corte que ocurrió son dos listas, no una** (apartado 15): borrar la cita no puede tocar el historial porque no tiene manera de hacerlo. **`frecuenciaDeCorte` enseña el choque** entre el perfil y lo puesto a mano, como `tallaDe`. **Sugerir no es reservar**, y `avisoDeCorte` DECIDE mientras `notificaciones.js` manda. Dos fallos silenciosos cazados: "en X semanas" sin la X planificaba para HOY, y `'25:99'` pasaba por hora |
 
+| v1.78.0 | **EH F12** | El perfil de corte y sus recomendaciones. ⚠️ **El apartado 5 ya lo preguntó la Fase 7**, con las mismas cinco opciones: se LEE de allí y se dice dónde se cambia, así que el perfil tiene seis preguntas y no siete (D-15). **Los niveles 🟢🟡🔴 se importan de la Fase 6** con los nombres de Josué. **Añadir un corte es añadir una línea**, y la lista es ampliable de verdad. **Nada sin confirmar**, con prueba byte a byte. Y **el historial no diagnostica**: con un corte valorado bien no se afirma nada |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 11/65**. Quedan **52** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (50).
+3/5 y **EH por 12/65**. Quedan **51** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (49).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

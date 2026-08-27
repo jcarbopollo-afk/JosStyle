@@ -92,6 +92,15 @@ import {
   anadirSitio, borrarSitio, guardarFrecuencia, datosPeluqueria, resumenPeluqueria,
   PARTE_PELUQUERIA,
 } from '../lib/peluqueria';
+import {
+  PARTES_LONGITUD, NIVELES_MANTENIMIENTO, nivelMantenimiento, preguntasDeCorte,
+  perfilDeCorte, progresoCorte, contestarCorte, guardarReferencia, referenciaDe,
+  cortesDisponibles, corteDe, anadirCorte, alternarFavoritoCorte, fijarCorteActual,
+  corteActual, marcarQuieroProbar, quitarObjetivoDeCorte, objetivoDeCorte,
+  VALORACIONES_CORTE, decirQueCorteFue, valorarCorte, historialConCortes,
+  recomendarCortes, loQueFaltaParaCortes, compararCortes, patronesDeCorte,
+  tiempoParaPeinarse, resumenCortes,
+} from '../lib/cortesPelo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -1726,16 +1735,28 @@ export function PeluqueriaEH({ estado, accent, datosGlobales = {}, onCambiar, on
   const [error, setError] = useState(null);
   const [confirmar, setConfirmar] = useState(null);
   const [verSitios, setVerSitios] = useState(false);
+  const [verCorte, setVerCorte] = useState(false);
 
   const panel = useMemo(() => panelPeluqueria(estado, datosGlobales), [estado, datosGlobales]);
   const historial = useMemo(() => historialDeCortes(estado), [estado]);
   const cita = useMemo(() => datosPeluqueria(estado).cita, [estado]);
+  const corte = useMemo(() => resumenCortes(estado, datosGlobales), [estado, datosGlobales]);
 
   const aplicar = (r) => {
     if (r.error) { setError(r.error); return; }
     setError(null);
     onCambiar?.(r.estado);
   };
+
+  /* ⚠️ Regla 4 — el `return` condicional va DESPUÉS de todos los hooks. */
+  if (verCorte) {
+    return (
+      <MiEstiloDeCorteEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setVerCorte(false)}
+      />
+    );
+  }
 
   return (
     <Card>
@@ -1747,6 +1768,25 @@ export function PeluqueriaEH({ estado, accent, datosGlobales = {}, onCambiar, on
         )}
         <p className="text-sm font-semibold" style={{ color: COLORS.text }}>✂️ Peluquería</p>
       </div>
+
+      {/* F12, apartado 1 — *"dentro de ✂️ Peluquería añadir: Mi estilo de corte"*. */}
+      <button
+        onClick={() => setVerCorte(true)}
+        className="w-full rounded-2xl p-2.5 flex items-center gap-2 text-left mb-3"
+        style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+      >
+        <span className="text-base leading-none" aria-hidden="true">💇‍♂️</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>Mi estilo de corte</p>
+          <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>
+            {corte.objetivo
+              ? `🎯 Quieres probar: ${corte.objetivo}`
+              : (corte.actual
+                ? `Ahora llevas: ${corte.actual}`
+                : (corte.contestadas === 0 ? 'Cuéntanos qué corte te gusta' : `${corte.contestadas} de ${corte.total} contestadas`))}
+          </p>
+        </div>
+      </button>
 
       {/* Apartado 1 — lo primero es lo último que pasó y lo siguiente que toca. */}
       {panel.sinNada ? (
@@ -2054,6 +2094,279 @@ export function PeluqueriaEH({ estado, accent, datosGlobales = {}, onCambiar, on
         onCancelar={() => setConfirmar(null)}
         onConfirmar={() => { aplicar(eliminarCita(estado)); setConfirmar(null); }}
       />
+    </Card>
+  );
+}
+
+/* ===========================================================================
+   MI ESTILO DE CORTE (F12)
+   ===========================================================================
+   *"Son recomendaciones, no órdenes."*
+
+   ⚠️ **La pregunta del apartado 5 no está aquí, y se dice por qué.** La Fase 7
+   ya preguntó cuánto tiempo quiere dedicarle, con esas mismas cinco opciones.
+   Volver a preguntarla dejaría a Josué con dos respuestas y ninguna forma de
+   saber cuál manda, así que se enseña la suya y dónde se cambia. */
+export function MiEstiloDeCorteEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  const [zona, setZona] = useState('perfil');   // 'perfil' | 'ideas' | 'historial'
+  const [nuevo, setNuevo] = useState('');
+  const [comparar, setComparar] = useState([]);
+  const [error, setError] = useState(null);
+
+  const perfil = useMemo(() => perfilDeCorte(estado, datosGlobales), [estado, datosGlobales]);
+  const progreso = useMemo(() => progresoCorte(estado, datosGlobales), [estado, datosGlobales]);
+  const tiempo = useMemo(() => tiempoParaPeinarse(estado, datosGlobales), [estado, datosGlobales]);
+  const recs = useMemo(() => recomendarCortes(estado, datosGlobales), [estado, datosGlobales]);
+  const falta = useMemo(() => loQueFaltaParaCortes(estado, datosGlobales), [estado, datosGlobales]);
+  const actual = useMemo(() => corteActual(estado), [estado]);
+  const objetivo = useMemo(() => objetivoDeCorte(estado), [estado]);
+  const patron = useMemo(() => patronesDeCorte(estado), [estado]);
+  const historial = useMemo(() => historialConCortes(estado), [estado]);
+  const cortes = useMemo(() => cortesDisponibles(estado), [estado]);
+  const tabla = useMemo(() => compararCortes(estado, comparar), [estado, comparar]);
+
+  const aplicar = (r) => {
+    if (r.error) { setError(r.error); return; }
+    setError(null);
+    onCambiar?.(r.estado);
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-2">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>💇‍♂️ Mi estilo de corte</p>
+      </div>
+
+      <div className="flex gap-1 mb-3">
+        {[['perfil', 'Preferencias'], ['ideas', 'Ideas'], ['historial', 'Historial']].map(([id, nom]) => (
+          <button
+            key={id} onClick={() => setZona(id)}
+            className="flex-1 rounded-2xl py-1.5"
+            style={{
+              background: zona === id ? hexToRgba(accent, 0.14) : COLORS.surface2,
+              border: `1px solid ${zona === id ? accent : COLORS.border}`,
+            }}
+          >
+            <span className="text-[11px] font-semibold" style={{ color: zona === id ? accent : COLORS.text }}>{nom}</span>
+          </button>
+        ))}
+      </div>
+
+      {zona === 'perfil' && (
+        <div className="space-y-3">
+          {perfil.map((q) => (
+            <div key={q.id}>
+              <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>{q.titulo}</p>
+              <div className="flex flex-wrap gap-1">
+                {q.opcionesVisibles.map((o) => {
+                  const puesto = q.valores.includes(o.id);
+                  return (
+                    <button
+                      key={o.id}
+                      onClick={() => aplicar(contestarCorte(estado, q.id, o.id))}
+                      className="rounded-full px-2.5 py-1"
+                      style={{
+                        background: puesto ? hexToRgba(accent, 0.14) : COLORS.surface2,
+                        border: `1px solid ${puesto ? accent : COLORS.border}`,
+                      }}
+                    >
+                      <span className="text-[10px] font-semibold" style={{ color: puesto ? accent : COLORS.text }}>
+                        {o.nombre}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Apartado 2 — *"no obligar a utilizar medidas exactas"*. */}
+              {PARTES_LONGITUD.some((p) => p.id === q.id) && (
+                <input
+                  value={referenciaDe(estado, q.id)}
+                  onChange={(ev) => aplicar(guardarReferencia(estado, q.id, ev.target.value))}
+                  placeholder="O una referencia tuya: «número 2»"
+                  aria-label={`Referencia para ${q.titulo}`}
+                  className="w-full rounded-2xl px-2.5 py-1.5 text-[11px] mt-1"
+                  style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+                />
+              )}
+            </div>
+          ))}
+
+          {/* ⚠️ Apartado 5 — la respuesta que YA dio, y dónde se cambia. */}
+          <div className="rounded-2xl p-2.5"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>Tiempo para peinarte</p>
+            <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {tiempo.contestada
+                ? `${tiempo.etiqueta} · lo dijiste en ${tiempo.donde}, ahí se cambia.`
+                : `Todavía no lo has dicho. Se contesta en ${tiempo.donde}.`}
+            </p>
+          </div>
+
+          {/* Apartado 3 — *"la lista debe ser ampliable"*. */}
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: COLORS.textMuted }}>
+              ¿Falta alguno?
+            </p>
+            <div className="flex gap-1.5">
+              <TextInput value={nuevo} onChange={(ev) => setNuevo(ev.target.value)}
+                placeholder="Nombre del corte" aria-label="Nombre del corte" />
+              <button
+                onClick={() => { aplicar(anadirCorte(estado, { nombre: nuevo })); setNuevo(''); }}
+                disabled={!nuevo.trim()}
+                className="rounded-2xl px-3 disabled:opacity-40"
+                style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+              >
+                <span className="text-[11px] font-semibold" style={{ color: COLORS.text }}>Añadir</span>
+              </button>
+            </div>
+          </div>
+
+          <p className="text-[10px] text-center" style={{ color: COLORS.textMuted }}>
+            {progreso.sinEmpezar
+              ? 'Todo esto es opcional. Cuanto más nos cuentes, mejor afinamos.'
+              : `Has contestado ${progreso.contestadas} de ${progreso.total}.`}
+          </p>
+        </div>
+      )}
+
+      {zona === 'ideas' && (
+        <div className="space-y-2">
+          {/* Apartado 11 — el corte actual, que pone él. */}
+          <div className="rounded-2xl p-2.5"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-[11px]" style={{ color: COLORS.text }}>
+              {actual ? `Ahora llevas: ${actual.nombre}` : 'No has dicho qué corte llevas ahora'}
+            </p>
+            {objetivo && (
+              <p className="text-[10px] mt-0.5" style={{ color: accent }}>{objetivo.texto}</p>
+            )}
+            {/* Apartado 15 — *"parece"*, no un diagnóstico. */}
+            {patron.hay && (
+              <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
+                {patron.texto} ({patron.cortes.map((c) => c.nombre).join(', ')})
+              </p>
+            )}
+          </div>
+
+          {recs.total === 0 ? (
+            <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+              {falta.hayQueAfinar ? falta.texto : 'Aquí saldrán cortes que podrían encajarte.'}
+            </p>
+          ) : (
+            <>
+              <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>
+                💡 Cortes que podrían encajarte
+              </p>
+              {recs.recomendaciones.map((x) => (
+                <div key={x.id} className="rounded-2xl p-2.5"
+                  style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>{x.nombre}</p>
+                    <span className="text-[10px]" style={{ color: COLORS.textMuted }}>{x.mantenimiento}</span>
+                  </div>
+                  {/* ⚠️ Apartado 8 — el "¿por qué?", siempre. */}
+                  {x.porque.map((p) => (
+                    <p key={p} className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>{p}</p>
+                  ))}
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {/* Apartado 18 — las tres son decisiones suyas, una a una. */}
+                    <button onClick={() => aplicar(alternarFavoritoCorte(estado, x.id))}
+                      className="text-[10px] font-semibold" style={{ color: x.favorito ? accent : COLORS.textMuted }}>
+                      {x.favorito ? '❤️ Guardado' : '❤️ Guardar corte'}
+                    </button>
+                    <button
+                      onClick={() => aplicar(x.objetivo ? quitarObjetivoDeCorte(estado) : marcarQuieroProbar(estado, x.id))}
+                      className="text-[10px] font-semibold" style={{ color: x.objetivo ? accent : COLORS.textMuted }}>
+                      {x.objetivo ? '🎯 Es tu objetivo' : '🎯 Quiero probar'}
+                    </button>
+                    <button
+                      onClick={() => setComparar(comparar.includes(x.id) ? comparar.filter((c) => c !== x.id) : [...comparar, x.id])}
+                      className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                      {comparar.includes(x.id) ? 'Quitar' : 'Comparar'}
+                    </button>
+                    <button onClick={() => aplicar(fijarCorteActual(estado, x.id))}
+                      className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                      Es el que llevo
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* Apartado 9 — comparar. ⚠️ No elige: enseña y ya. */}
+          {tabla.length > 1 && (
+            <div className="rounded-2xl p-2.5"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              {tabla.map((c) => (
+                <div key={c.id} className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>{c.nombre}</span>
+                  <span className="text-[10px]" style={{ color: COLORS.textMuted }}>Mantenimiento: {c.mantenimiento}</span>
+                </div>
+              ))}
+              <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>Tú decides cuál te pega más.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {zona === 'historial' && (
+        <div className="space-y-1.5">
+          {historial.length === 0 ? (
+            <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+              Cuando registres un corte en Peluquería podrás decir cuál fue y qué te pareció.
+            </p>
+          ) : historial.map((c) => (
+            <div key={c.id} className="rounded-2xl p-2.5"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                {c.fecha}{c.corteNombre ? ` — ${c.corteNombre}` : ''}
+              </p>
+              {/* Apartado 13 — decir qué corte fue es OPCIONAL, y después. */}
+              <div className="flex flex-wrap gap-1 mt-1">
+                {cortes.filter((x) => x.id !== 'otro').slice(0, 9).map((x) => (
+                  <button
+                    key={x.id}
+                    onClick={() => aplicar(decirQueCorteFue(estado, c.id, c.corteId === x.id ? null : x.id))}
+                    className="rounded-full px-2 py-0.5"
+                    style={{
+                      background: c.corteId === x.id ? hexToRgba(accent, 0.14) : COLORS.surface,
+                      border: `1px solid ${c.corteId === x.id ? accent : COLORS.border}`,
+                    }}
+                  >
+                    <span className="text-[10px]" style={{ color: c.corteId === x.id ? accent : COLORS.textMuted }}>{x.nombre}</span>
+                  </button>
+                ))}
+              </div>
+              {/* Apartado 14 — ¿qué te pareció? */}
+              <div className="flex gap-1 mt-1">
+                {VALORACIONES_CORTE.map((v) => (
+                  <button
+                    key={v.id}
+                    onClick={() => aplicar(valorarCorte(estado, c.id, c.valoracion === v.id ? null : v.id))}
+                    className="rounded-full px-2 py-0.5"
+                    style={{
+                      background: c.valoracion === v.id ? hexToRgba(accent, 0.14) : COLORS.surface,
+                      border: `1px solid ${c.valoracion === v.id ? accent : COLORS.border}`,
+                    }}
+                    aria-label={v.nombre}
+                  >
+                    <span className="text-[11px]">{v.icono}</span>
+                  </button>
+                ))}
+              </div>
+              {c.nota && <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{c.nota}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {error && <p className="text-[10px] mt-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
     </Card>
   );
 }

@@ -948,26 +948,72 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 > ⚠️ **`peluqueria` es el noveno campo que se enseña a un normalizador en este proyecto**, y el
 > tercero seguido que se recuerda a la primera. La costumbre ya está.
 
-#### EH · Fase 12/65 — PELUQUERÍA: CORTES, PREFERENCIAS Y RECOMENDACIONES
-- [ ] PERFIL DE CORTE
-- [ ] LONGITUD
-- [ ] ESTILO DE CORTE
-- [ ] CÓMO QUIERE PEINARLO
-- [ ] TIEMPO PARA PEINARSE
-- [ ] MANTENIMIENTO
-- [ ] RECOMENDACIONES DE CORTE
-- [ ] EXPLICACIÓN
-- [ ] COMPARACIÓN
-- [ ] FAVORITOS
-- [ ] CORTE ACTUAL
-- [ ] CORTE QUE QUIERE PROBAR
-- [ ] HISTORIAL
-- [ ] VALORACIÓN
-- [ ] RECOMENDACIONES BASADAS EN HISTORIAL
-- [ ] CONEXIÓN CON PELO
-- [ ] CONEXIÓN CON ESTILO
-- [ ] USUARIO SIEMPRE DECIDE
-- [ ] PRUEBAS
+#### EH · Fase 12/65 — PELUQUERÍA: CORTES, PREFERENCIAS Y RECOMENDACIONES ✅ COMPLETADA (v1.78.0)
+
+> **`src/lib/cortesPelo.js`** (209 comprobaciones) + la pantalla `MiEstiloDeCorteEH`. Sin SQL nuevo.
+>
+> ⚠️ **EL APARTADO 5 YA ESTABA CONTESTADO, y no se vuelve a preguntar.** Pide *"¿Cuánto tiempo
+> quieres dedicar a peinarte?"* con cinco opciones — y **la Fase 7 ya hizo esa pregunta**
+> (`tiempoPelo`) **con esas cinco opciones exactas**, dejando escrito para qué: *"así las
+> recomendaciones futuras no propondrán una rutina de 20 minutos a alguien que quiere tardar 3"*.
+> Repetirla habría dejado a Josué con **dos respuestas a la misma pregunta y ninguna forma de saber
+> cuál manda**. Así que se **lee** de allí y la pantalla dice dónde se cambia. Está anotado como
+> **D-15** en `docs/03`: no activa la regla 49 porque no es una contradicción — es la duplicación que
+> el apartado 10 de F1 ya prohíbe, con decisión tomada. **Consecuencia visible: el perfil de corte
+> tiene seis preguntas, no siete. La séptima no falta: ya está contestada.**
+>
+> ⚠️ **Los niveles 🟢🟡🔴 se importan de la Fase 6**, no se reescriben. `NIVELES_MANTENIMIENTO` toma
+> **los ids y los iconos** de `NIVELES_ESTILO` —para que un nivel siga significando lo mismo entre
+> módulos— con **los nombres que escribió Josué**: Bajo / Medio / Alto, no Básico / Intermedio /
+> Avanzado. Una segunda escala de tres niveles habría sido el segundo sistema de siempre.
+>
+> ⚠️ **Añadir un corte es añadir una línea.** Mantenimiento, minutos, longitudes, tipos de pelo y
+> estilos compatibles van EN LA LÍNEA del catálogo, así que el motor no lleva un `if` por corte. Y
+> *"la lista debe ser ampliable"* (apartado 3): los que añade Josué salen mezclados con los nueve del
+> enunciado, y llegan hasta la pregunta de estilos, porque la pregunta **lee el catálogo**, no una
+> copia congelada al importar el archivo.
+>
+> ⚠️ **Nada sin confirmar** (apartado 18). Mirar recomendaciones, comparar, ver patrones y abrir el
+> panel **no cambian ni un byte del estado**, con una prueba que serializa antes y después. Guardar
+> un favorito, fijar el corte actual y marcar un objetivo son tres llamadas distintas que hace él.
+> Y **el corte que ya lleva no se le recomienda**: eso no es una recomendación.
+>
+> ⚠️ **El historial no diagnostica** (apartado 15). Con **un** corte valorado bien no se afirma nada;
+> hacen falta dos, y entonces la frase es la del enunciado — *"parece que este estilo encaja bastante
+> con tus preferencias"*. Misma disciplina que `frecuenciaReal` (F11), HT F11 y AR F4.
+>
+> **Sin IA**, como la Fase 9 y comprobado sobre el código. Y la frase que el enunciado prohíbe
+> expresamente —*"este es el mejor corte para ti"*— tiene su propio guardián, porque no lleva ninguna
+> palabra de la lista de la Fase 9; los textos se comprueban contra **las dos** listas.
+>
+> **El objetivo entra en el evento que YA existe** (apartado 12 + apartado 6): en la `notas` de la
+> cita de la Fase 11, no en una clave nueva y desde luego no en un segundo evento. Y lleva su nombre
+> encima, así que borrar el corte del catálogo no lo deja apuntando a un fantasma.
+>
+> ⚠️ **`corte` es el DÉCIMO campo que se enseña a un normalizador en este proyecto**, y otra vez lo
+> cazó la prueba en el mismo turno: sin esa línea en `normalizarPelo`, añadir un corte y guardar una
+> referencia no tenían ningún efecto. `corteId`, `valoracion` y `objetivo` en `peluqueria.js` son el
+> undécimo, duodécimo y decimotercero.
+
+- [x] PERFIL DE CORTE
+- [x] LONGITUD
+- [x] ESTILO DE CORTE
+- [x] CÓMO QUIERE PEINARLO
+- [x] TIEMPO PARA PEINARSE
+- [x] MANTENIMIENTO
+- [x] RECOMENDACIONES DE CORTE
+- [x] EXPLICACIÓN
+- [x] COMPARACIÓN
+- [x] FAVORITOS
+- [x] CORTE ACTUAL
+- [x] CORTE QUE QUIERE PROBAR
+- [x] HISTORIAL
+- [x] VALORACIÓN
+- [x] RECOMENDACIONES BASADAS EN HISTORIAL
+- [x] CONEXIÓN CON PELO
+- [x] CONEXIÓN CON ESTILO
+- [x] USUARIO SIEMPRE DECIDE
+- [x] PRUEBAS
 
 #### EH · Fase 13/65 — SKINCARE: PERFIL DE PIEL Y CONFIGURACIÓN INICIAL
 - [ ] ENTRADA A SKINCARE

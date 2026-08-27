@@ -101,6 +101,12 @@ export const DEFAULT_PELO = {
   // ⚠️ EH F11 — cortes, cita, sitios y frecuencia propia. Forma en
   // `normalizarPeluqueria` (`peluqueria.js`); aquí se declara y se arrastra.
   peluqueria: {},
+  // ⚠️ EH F12 — el perfil de corte, los cortes suyos, los favoritos y el corte
+  // actual. Forma en `normalizarCorteEH` (`cortesPelo.js`); aquí se declara y se
+  // arrastra. **DÉCIMA vez** que este proyecto añade un campo a una entidad: sin
+  // esta línea el siguiente guardado se lo lleva (regla 5), y añadir un corte
+  // funcionaría hasta recargar.
+  corte: {},
 };
 
 export const ACCIONES_PELO = [
@@ -202,6 +208,9 @@ export function normalizarPelo(guardado) {
     peluqueria: g.peluqueria && typeof g.peluqueria === 'object' && !Array.isArray(g.peluqueria)
       ? g.peluqueria
       : {},
+    // ⚠️ Décima vez. Y otra vez lo cazó la prueba en el mismo turno: sin esta
+    // línea, `anadirCorte` y `guardarReferencia` no tenían ningún efecto.
+    corte: g.corte && typeof g.corte === 'object' && !Array.isArray(g.corte) ? g.corte : {},
   };
 }
 

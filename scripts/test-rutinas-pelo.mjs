@@ -386,8 +386,8 @@ eq(accionPelo('inventada'), null, 'Una acción que no existe devuelve null');
    verdad no es el número, sino que NO aparezca una colección de fotos ni un
    catálogo de productos — así que ahora lo dice así. */
 eq(Object.keys(DEFAULT_PELO).sort(),
-  ['cambios', 'hechos', 'packs', 'partes', 'peluqueria', 'productos', 'recomendaciones', 'rutinas'],
-  'Las ocho colecciones que hay hoy');
+  ['cambios', 'corte', 'hechos', 'packs', 'partes', 'peluqueria', 'productos', 'recomendaciones', 'rutinas'],
+  'Las nueve colecciones que hay hoy (`corte` la añadió la Fase 12)');
 ok(!Object.keys(DEFAULT_PELO).some((k) => /foto|galeria|catalogo/i.test(k)),
   '⚠️ Y ninguna de fotos (apartado 10) ni de catálogo (apartado 11 + D2-03)');
 

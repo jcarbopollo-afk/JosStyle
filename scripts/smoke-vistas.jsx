@@ -28,8 +28,9 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH } from '../src/views/EstiloHombreView.jsx';
-import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA } from '../src/lib/peluqueria.js';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH } from '../src/views/EstiloHombreView.jsx';
+import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
+import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { crearRutina, marcarRutinaEntera, registrarCambio, alternarParte, datosPelo } from '../src/lib/rutinasPelo.js';
 import { guardarRecomendacion, descartar, REGLAS_PELO } from '../src/lib/recomendacionesPelo.js';
 import { crearProductoPelo, anadirTienda, marcarNoDisponible, crearPack } from '../src/lib/productosPelo.js';
@@ -622,6 +623,15 @@ const CASOS = [
               { fecha: '2026-07-06' },
             ).estado;
             const conCita = planificarCorte(conCortes, { modo: 'semanas', cantidad: 3, desde: HOY }).estado;
+            // EH F12 — preferencias de corte y un historial valorado.
+            let conPreferencias = contestarCorte(conCortes, 'mantenimientoCorte', 'intermedio', { hoy: HOY }).estado;
+            conPreferencias = contestarCorte(conPreferencias, 'longitudSuperior', 'medio', { hoy: HOY }).estado;
+            conPreferencias = fijarCorteActual(conPreferencias, 'fade').estado;
+            let conValorados = conPreferencias;
+            datosPeluqueria(conValorados).cortes.forEach((c) => {
+              conValorados = decirQueCorteFue(conValorados, c.id, 'taper').estado;
+              conValorados = valorarCorte(conValorados, c.id, 'encanto').estado;
+            });
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
@@ -670,6 +680,17 @@ const CASOS = [
               ['PanelPelo · sin peluquería', PanelPelo, () =>
                 pp(alternarParte(conCita, PARTE_PELUQUERIA))],
               ['PanelPelo · con cita', PanelPelo, () => pp(conCita)],
+              /* EH Fase 12 — el perfil de corte. ⚠️ Sin nada, con preferencias
+                 (que es cuando aparecen recomendaciones) y con el historial
+                 valorado, que es lo que dispara el patrón del apartado 15. */
+              ['MiEstiloDeCorteEH · sin nada', MiEstiloDeCorteEH, () => pp(conPerfilPelo)],
+              ['MiEstiloDeCorteEH · con preferencias', MiEstiloDeCorteEH, () => pp(conPreferencias)],
+              ['MiEstiloDeCorteEH · con objetivo', MiEstiloDeCorteEH, () =>
+                pp(marcarQuieroProbar(conPreferencias, 'taper').estado)],
+              ['MiEstiloDeCorteEH · con corte propio', MiEstiloDeCorteEH, () =>
+                pp(anadirCorte(conPreferencias, { nombre: 'Mullet', mantenimiento: 'intermedio' }).estado)],
+              ['MiEstiloDeCorteEH · con historial valorado', MiEstiloDeCorteEH, () => pp(conValorados)],
+              ['PeluqueriaEH · con estilo de corte', PeluqueriaEH, () => pp(conPreferencias)],
             ];
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>

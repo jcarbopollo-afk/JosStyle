@@ -358,8 +358,16 @@ eq(datosPelo(conTodo).productos.length, 1, 'Y el producto');
   });
 eq(normalizarPeluqueria({ cita: { fecha: 5 } }).cita, null, 'Una cita sin fecha válida se descarta');
 eq(normalizarPeluqueria({ cortes: [{ nota: 'x' }] }).cortes, [], 'Un corte sin fecha, también');
-eq(Object.keys(DEFAULT_PELUQUERIA).sort(), ['cita', 'cortes', 'semanas', 'sitios'],
-  '⚠️ Cuatro cosas, y `cortes` y `cita` SEPARADAS: es el apartado 15');
+/* ⚠️ Lo que esta comprobación guarda es que `cortes` y `cita` sean DOS cosas,
+   no cuántas llaves hay: la Fase 12 añadió `objetivo` con todo el derecho, y
+   una cuenta exacta habría saltado por algo que estaba bien — la quinta vez que
+   pasa en este bloque. Así que se comprueba lo que importa. */
+ok(Array.isArray(DEFAULT_PELUQUERIA.cortes) && 'cita' in DEFAULT_PELUQUERIA
+  && DEFAULT_PELUQUERIA.cortes !== DEFAULT_PELUQUERIA.cita,
+  '⚠️ `cortes` y `cita` son DOS cosas separadas: es el apartado 15');
+ok(!Object.keys(DEFAULT_PELUQUERIA).some((k) => /hecho|realizado|pasado/i.test(k)),
+  '⚠️ Y no hay un campo "hecho" en ninguna parte: eso las volvería a juntar');
+eq(DEFAULT_PELUQUERIA.cita, null, 'Sin cita por defecto');
 
 /* ── 13 · EL PANEL (apartado 1) ─────────────────────────────────────────── */
 

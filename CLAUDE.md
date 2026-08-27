@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.77.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.78.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 11/65**, quedan 52) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 12/65**, quedan 51) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -113,10 +113,10 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 4479 pruebas unitarias con Node, 5 de auditoría, 552 casos de renderizado real con
-`react-dom/server` y 10 reglas invariantes — **5036 comprobaciones**.
+Vite, 4695 pruebas unitarias con Node, 5 de auditoría, 576 casos de renderizado real con
+`react-dom/server` y 10 reglas invariantes — **5276 comprobaciones**.
 
-Eso ya ha encontrado **cincuenta y cinco bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **cincuenta y seis bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -140,15 +140,15 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 11/65** (v1.77.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 12/65** (v1.78.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
-La siguiente candidata es **EH · Fase 12/65 — Peluquería: cortes, preferencias y recomendaciones**.
+La siguiente candidata es **EH · Fase 13/65 — Skincare: arquitectura y perfil de piel**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
-⚠️ **EH F1-F11 dejaron veinticinco cosas que las 54 fases siguientes tienen que respetar:**
+⚠️ **EH F1-F12 dejaron veintinueve cosas que las 53 fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -214,6 +214,18 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   avisar es `notificaciones.js`. Tercer `aplicarPlan` del proyecto y segundo `avisosHorario.js`.
 - ⚠️ **`Number(null)` es 0 y `Number.isInteger(0)` es `true`** (F11): "en X semanas" sin la X
   planificaba el corte para HOY. Y `'25:99'` encaja con `/^\d{2}:\d{2}$/`: **la forma no basta**.
+- ⚠️ **Antes de añadir una pregunta, mirar si ya está contestada** (F12 + D-15). El apartado 5 de
+  F12 y `tiempoPelo` de F7 son **la misma pregunta con las mismas cinco opciones**: se lee de F7 y
+  la pantalla dice dónde se cambia. El perfil de corte tiene seis preguntas, no siete, **a
+  propósito**. Skincare, Barba, Cuerpo, Manos y Perfumes tienen el mismo riesgo.
+- ⚠️ **`NIVELES_MANTENIMIENTO` (F12) importa ids e iconos de `NIVELES_ESTILO`** y solo cambia los
+  nombres. Si una fase futura necesita una escala de tres niveles, **es esta**, no una nueva.
+- ⚠️ **El corte que ya lleva no se le recomienda** (F12), y **con un solo corte valorado bien no hay
+  patrón** (apartado 15). *"Parece"* y *"bastante"* son las dos palabras que evitan el diagnóstico.
+- ⚠️ **`normalizarPelo` va por DIEZ campos** (`corte`, de F12, es el décimo) y `normalizarCorte` /
+  `normalizarPeluqueria` sumaron tres más. Al añadir un campo, añadirlo a su normalizador — y una
+  **cuenta exacta de llaves en una prueba saltará** cuando la fase siguiente añada la suya con todo
+  el derecho: comprobar lo que la prueba guarda, no cuántas hay.
 
 ⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
 que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el

@@ -449,7 +449,7 @@ desglose real son 110?
 
 ---
 
-## PARTE B — DUPLICADOS (14)
+## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos
 repetidos que sí conviene resolver).
@@ -464,6 +464,7 @@ repetidos que sí conviene resolver).
 | **D-02** | "Agenda" en el Dashboard y en el Calendario | **Una sola implementación, dos puertas.** La Agenda es el mismo toggle de `CalendarView` desde la Fase 3; el acceso desde "Hoy" solo cambia el punto de entrada vía `foco.vista === 'agenda'` |
 | **D-11** | Clave `notificaciones` separada de `ajustes` | Decisión consciente: evita agrandar el objeto que las 4 funciones de guardado de `ajustes` tienen que reenviar completo |
 | **D-14** | `salud` (medidas históricas) vs. Ajustes → Perfil (cálculos corporales) | Salud registra **evolución en el tiempo**; Perfil muestra el **cálculo orientativo** del estado actual. Coexistencia intencionada desde la Fase 3 |
+| **D-15** | EH F12 apartado 5 (*"¿cuánto tiempo quieres dedicar a peinarte?"*) vs. EH F7 `tiempoPelo` | **NO son dos preguntas: son la misma, y solo se hace una vez.** Ver más abajo |
 
 ### Duplicados reales — conviene resolver
 
@@ -479,6 +480,32 @@ repetidos que sí conviene resolver).
 | **D-01** | Resúmenes del Dashboard: Nivel 2 reutiliza `calcularResumenModulo`, Nivel 1 calcula lo suyo | Parcial y justificado (Nivel 1 necesita además el elemento concreto para el deep-link), pero significa que un cambio en cómo se resume Sueño o Entreno hay que hacerlo en dos sitios | Vigilar; no urgente |
 
 ---
+
+---
+
+### 🟢 D-15 — El apartado 5 de EH F12 ya lo preguntó EH F7 · **resuelto por la regla existente, v1.78.0**
+
+**El apartado 5 de la Fase 12** pide preguntar *"¿Cuánto tiempo quieres dedicar a peinarte?"* con
+cinco opciones: menos de 5 min, 5–10, 10–20, más de 20, me da igual.
+
+**La Fase 7 ya hizo esa pregunta** (`tiempoPelo`, apartado 10 de su enunciado) **con esas cinco
+opciones exactas**, y dejó escrito para qué servía: *"así las recomendaciones futuras no propondrán
+una rutina de 20 minutos a alguien que quiere tardar 3"*. La Fase 12 la quiere justamente para eso.
+
+**Por qué esto NO activa la regla 49:** la regla 49 detiene una fase ante una *contradicción* entre
+prompts sobre la que no haya decisión tomada. Aquí no hay contradicción —los dos enunciados quieren
+lo mismo— y **la decisión ya está tomada**: es el apartado 10 de EH F1 (*"no dupliques lo que ya
+existe"*), que en este proyecto es código (`FUENTES_GLOBALES`, `esDatoGlobal()`, `destinoDe()`) y no
+un recordatorio. Preguntarla otra vez habría dejado a Josué con **dos respuestas a la misma pregunta
+y ninguna forma de saber cuál manda**, que es exactamente el fallo que esa regla existe para evitar.
+
+**Qué se ha hecho:** `cortesPelo.js` **lee** la respuesta de la Fase 7 (`tiempoParaPeinarse()`), la
+pantalla la enseña con **dónde se cambia** —*"lo dijiste en Pelo → Mi pelo, ahí se cambia"*— y hay
+cuatro pruebas: que la pregunta de F7 tiene esas cinco opciones, que F12 **no** la repite, que no la
+repite con otro nombre, y que lo contestado allí llega hasta aquí.
+
+**Consecuencia visible para Josué:** el perfil de corte tiene **seis** preguntas, no siete. La
+séptima no falta: ya está contestada.
 
 ## PARTE C — DEPENDENCIAS (24)
 

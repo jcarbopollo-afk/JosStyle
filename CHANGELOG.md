@@ -1,5 +1,96 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 12/65 — Peluquería: cortes, preferencias y recomendaciones (v1.78.0)
+
+### ⚠️ El apartado 5 ya estaba contestado, y no se vuelve a preguntar
+El apartado 5 pide preguntar *"¿Cuánto tiempo quieres dedicar a peinarte?"* con cinco opciones:
+menos de 5 min, 5–10, 10–20, más de 20, me da igual.
+
+**La Fase 7 ya hizo esa pregunta** (`tiempoPelo`) **con esas cinco opciones exactas**, y dejó escrito
+para qué servía: *"así las recomendaciones futuras no propondrán una rutina de 20 minutos a alguien
+que quiere tardar 3"*. Esta fase la quiere justamente para eso.
+
+Volver a preguntarla habría dejado a Josué con **dos respuestas a la misma pregunta y ninguna forma
+de saber cuál manda** — que es exactamente el fallo que el apartado 10 de la Fase 1 existe para
+evitar, y que en este proyecto ya es código (`FUENTES_GLOBALES`, `esDatoGlobal()`, `destinoDe()`).
+
+Así que se **lee** de allí, y la pantalla dice dónde se cambia: *"lo dijiste en Pelo → Mi pelo, ahí
+se cambia"*. Cuatro pruebas lo sostienen: que la pregunta de F7 tiene esas cinco opciones, que F12
+**no** la repite, que no la repite con otro nombre, y que lo contestado allí llega hasta aquí.
+
+**Queda anotado como D-15 en `docs/03`.** No activa la regla 49: esa regla detiene una fase ante una
+*contradicción* sin decisión tomada, y aquí no hay contradicción —los dos enunciados quieren lo
+mismo— ni falta decisión.
+
+⚠️ **Consecuencia visible para Josué: el perfil de corte tiene seis preguntas, no siete. La séptima
+no falta — ya está contestada.**
+
+### ⚠️ Los niveles 🟢🟡🔴 se importan de la Fase 6
+El apartado 6 pide tres niveles de mantenimiento con esos tres iconos. `NIVELES_ESTILO` (F6) ya es
+esa escala, y las fases 9, 18 y 22 la comparten.
+
+`NIVELES_MANTENIMIENTO` toma **sus ids y sus iconos** —para que un nivel siga significando lo mismo
+en todo el proyecto— con **los nombres que escribió Josué**: Bajo / Medio / Alto, no Básico /
+Intermedio / Avanzado. Reescribir la escala habría creado dos escalas de tres niveles.
+
+### Añadir un corte es añadir una línea
+Mantenimiento, minutos, longitudes, tipos de pelo y estilos compatibles van EN LA LÍNEA del catálogo,
+como `MODULOS_EH` en la Fase 1 y `REGLAS_PELO` en la Fase 9. El motor no lleva un `if` por corte.
+
+Y *"la lista debe ser ampliable"* (apartado 3) es ampliable de verdad: los cortes que añade Josué
+salen mezclados con los nueve del enunciado **y llegan hasta la pregunta de estilos**, porque la
+pregunta lee el catálogo en vez de una copia congelada al importar el archivo.
+
+### ⚠️ Nada sin confirmar
+El apartado 18 enumera cinco cosas que la aplicación nunca hace sola: cambiar el corte actual, crear
+una cita, modificar el calendario, añadir un producto y cambiar preferencias.
+
+Mirar recomendaciones, comparar, ver patrones y abrir el panel **no cambian ni un byte del estado**,
+con una prueba que lo serializa antes y después. Guardar un favorito, fijar el corte actual y marcar
+un objetivo son tres llamadas distintas, y las hace él.
+
+Y una que no es obvia: **el corte que ya lleva no se le recomienda**. Eso no es una recomendación.
+
+### ⚠️ El historial no diagnostica
+El apartado 15 pide detectar patrones *"sin presentarlo como diagnóstico ni como una conclusión
+absoluta"*. Con **un** corte valorado bien no se afirma nada; hacen falta dos, y entonces la frase es
+la del enunciado: *"parece que este estilo encaja bastante con tus preferencias"*.
+
+Misma disciplina que `frecuenciaReal` (F11), la analítica del Horario (HT F11) y las estadísticas del
+Armario (AR F4). Y un corte que **no** le gustó no entra en el patrón por mucho que se repita.
+
+### Sin IA, y sin "el mejor corte para ti"
+Como la Fase 9, comprobado sobre el código: seis pruebas buscan `askAI`, `anthropic`, `fetch(`,
+`XMLHttpRequest` y `openai`.
+
+La frase que el enunciado prohíbe expresamente —*"este es el mejor corte para ti"*— tiene su propio
+guardián, porque no lleva ninguna palabra de la lista de la Fase 9. Todos los textos que el motor
+puede generar se comprueban contra **las dos** listas.
+
+### El objetivo entra en el evento que ya existe
+*"🎯 Quiero probar"* (apartado 12) sale en el calendario dentro de la `notas` de la cita de la Fase
+11 — no en una clave nueva, que rompería la forma común con los eventos del Armario y las rutinas, y
+desde luego no en un segundo evento (apartado 6). Y lleva su nombre encima, así que borrar el corte
+del catálogo no lo deja apuntando a un fantasma.
+
+### ⚠️ El normalizador, décima vez — y otra vez cazado en el mismo turno
+`normalizarPelo` no conocía el campo `corte`, así que **lo descartaba en cada lectura**: añadir un
+corte y guardar una referencia no tenían ningún efecto. Lo encontró la prueba en el mismo turno en
+que se introdujo, como en las fases 9, 10 y 11.
+
+`corteId`, `valoracion` (en `normalizarCorte`) y `objetivo` (en `normalizarPeluqueria`) son el
+undécimo, duodécimo y decimotercero.
+
+### Verificación
+`bash scripts/verificar.sh` — **5276 comprobaciones**, todas correctas: build de Vite,
+209 nuevas en `scripts/test-cortes-pelo.mjs` (los doce tests del apartado 19, más el apartado 5, más
+el apartado 18 byte a byte) y **576 casos de renderizado** (24 nuevos).
+
+**Y dos comprobaciones de fases anteriores que saltaron con algo que estaba bien:** la cuenta exacta
+de colecciones de `DEFAULT_PELO` (F8) y la de llaves de `DEFAULT_PELUQUERIA` (F11), las dos ampliadas
+legítimamente por esta fase. La segunda se ha reescrito para comprobar **lo que de verdad guarda**
+—que `cortes` y `cita` sigan siendo dos cosas— en vez de contar llaves. Quinta vez en este bloque.
+
 ## Entrega 2 · EH Fase 11/65 — Peluquería: calendario y seguimiento de cortes (v1.77.0)
 
 ### ⚠️ La decisión que gobierna la fase entera
