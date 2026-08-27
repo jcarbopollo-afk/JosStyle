@@ -54,20 +54,53 @@ import { todayISO } from './helpers';
    permite que la pantalla diga la verdad sobre lo que todavía está vacío, en
    vez de enseñar una plaquita que no lleva a ninguna parte (regla 8). */
 
+/* ── Las categorías (EH F2, apartado 3) ────────────────────────────────────
+   *"Como habrá muchos módulos, no queremos una lista interminable."* Y a
+   renglón seguido: *"Estas categorías son principalmente organizativas. No
+   deben convertirse en sistemas duplicados."*
+
+   Por eso son una etiqueta en el catálogo y **nada más**: no tienen estado, no
+   se guardan, no se activan ni se desactivan. Una categoría sin módulos
+   simplemente no se pinta. */
+export const CATEGORIAS_EH = [
+  { id: 'estilo', nombre: 'Estilo', icono: '👕' },
+  { id: 'cuidado', nombre: 'Cuidado', icono: '🧴' },
+  { id: 'fisico', nombre: 'Físico', icono: '🏋️' },
+  { id: 'salud', nombre: 'Salud', icono: '❤️' },
+  { id: 'bienestar', nombre: 'Bienestar', icono: '🧠' },
+  { id: 'conocimiento', nombre: 'Conocimiento', icono: '📚' },
+  { id: 'compras', nombre: 'Compras', icono: '🛒' },
+];
+
+export const categoriaEH = (id) => CATEGORIAS_EH.find((c) => c.id === id) || null;
+
+/* ⚠️ **Cada módulo lleva TODO lo suyo en su línea**, y esa es la razón de que
+   la Fase 2 pudiera añadir categoría, confirmación, recomendación y términos de
+   búsqueda **sin tocar nada más que estas trece líneas**.
+
+   Un segundo mapa `id → categoría` en otro archivo sería exactamente la "base
+   de datos duplicada" que prohíbe el apartado 15 de la Fase 2, y se separaría
+   de esta el día que alguien añada un módulo y se olvide del otro sitio.
+
+   - `categoria` — para agrupar en Gestionar apartados (F2, apartado 3).
+   - `confirmar` — si al apagarlo hay que preguntar (F2, apartado 6).
+   - `recomendado` — si aparece en "También puedes añadir" (F2, apartado 11).
+   - `terminos` — sinónimos para el buscador (F2, apartado 12). Por eso "pelo"
+     encuentra también Barba, que es el ejemplo literal del enunciado. */
 export const MODULOS_EH = [
-  { id: 'estilo', nombre: 'Estilo y armario', icono: '👕', sub: 'Cómo vestir', fase: 2 },
-  { id: 'pelo', nombre: 'Pelo', icono: '💇', sub: 'Corte y cuidado', fase: 12 },
-  { id: 'skincare', nombre: 'Skincare', icono: '🧴', sub: 'Mi cuidado facial', fase: 6 },
-  { id: 'higiene', nombre: 'Higiene', icono: '🧼', sub: 'Rutina diaria', fase: 18 },
-  { id: 'barba', nombre: 'Barba', icono: '🧔', sub: 'Afeitado y forma', fase: 15 },
-  { id: 'cuerpo', nombre: 'Cuidado corporal', icono: '🧍', sub: 'De cuello para abajo', fase: 21 },
-  { id: 'fitness', nombre: 'Fitness', icono: '🏋️', sub: 'Físico y postura', fase: 26 },
-  { id: 'sueno', nombre: 'Sueño', icono: '😴', sub: 'Descanso y aspecto', fase: 30 },
-  { id: 'salud', nombre: 'Salud', icono: '🧬', sub: 'Lo que se nota fuera', fase: 33 },
-  { id: 'habitos', nombre: 'Hábitos y rutinas', icono: '🧠', sub: 'Lo de cada día', fase: 37 },
-  { id: 'progreso', nombre: 'Progreso', icono: '📊', sub: 'Cómo vas', fase: 45 },
-  { id: 'educacion', nombre: 'Educación', icono: '📚', sub: 'Aprender a cuidarte', fase: 50 },
-  { id: 'productos', nombre: 'Productos', icono: '🛒', sub: 'Lo que usas', fase: 55 },
+  { id: 'estilo', nombre: 'Estilo y armario', icono: '👕', sub: 'Cómo vestir', fase: 2, categoria: 'estilo', confirmar: true, terminos: ['ropa', 'armario', 'outfit', 'vestir', 'prendas', 'moda'] },
+  { id: 'pelo', nombre: 'Pelo', icono: '💇', sub: 'Corte y cuidado', fase: 12, categoria: 'estilo', confirmar: true, terminos: ['pelo', 'cabello', 'corte', 'peluqueria', 'peluquería', 'champu', 'champú'] },
+  { id: 'barba', nombre: 'Barba', icono: '🧔', sub: 'Afeitado y forma', fase: 15, categoria: 'estilo', confirmar: true, terminos: ['barba', 'pelo', 'afeitado', 'afeitar', 'bigote', 'cuchilla'] },
+  { id: 'skincare', nombre: 'Skincare', icono: '🧴', sub: 'Mi cuidado facial', fase: 6, categoria: 'cuidado', confirmar: true, recomendado: true, terminos: ['piel', 'cara', 'facial', 'crema', 'acne', 'acné', 'rutina'] },
+  { id: 'higiene', nombre: 'Higiene', icono: '🧼', sub: 'Rutina diaria', fase: 18, categoria: 'cuidado', terminos: ['higiene', 'ducha', 'dientes', 'boca', 'manos', 'uñas', 'unas'] },
+  { id: 'cuerpo', nombre: 'Cuidado corporal', icono: '🧍', sub: 'De cuello para abajo', fase: 21, categoria: 'cuidado', terminos: ['cuerpo', 'corporal', 'piel', 'desodorante', 'perfume', 'colonia'] },
+  { id: 'fitness', nombre: 'Fitness', icono: '🏋️', sub: 'Físico y postura', fase: 26, categoria: 'fisico', terminos: ['fisico', 'físico', 'postura', 'entrenar', 'gimnasio', 'musculo', 'músculo'] },
+  { id: 'sueno', nombre: 'Sueño', icono: '😴', sub: 'Descanso y aspecto', fase: 30, categoria: 'fisico', terminos: ['sueño', 'sueno', 'dormir', 'descanso', 'ojeras', 'cansancio'] },
+  { id: 'salud', nombre: 'Salud', icono: '🧬', sub: 'Lo que se nota fuera', fase: 33, categoria: 'salud', confirmar: true, terminos: ['salud', 'medico', 'médico', 'revision', 'revisión', 'dental', 'vista'] },
+  { id: 'habitos', nombre: 'Hábitos y rutinas', icono: '🧠', sub: 'Lo de cada día', fase: 37, categoria: 'bienestar', recomendado: true, terminos: ['habito', 'hábito', 'habitos', 'hábitos', 'rutina', 'rutinas', 'constancia'] },
+  { id: 'progreso', nombre: 'Progreso', icono: '📊', sub: 'Cómo vas', fase: 45, categoria: 'bienestar', confirmar: true, terminos: ['progreso', 'evolucion', 'evolución', 'fotos', 'estadisticas', 'estadísticas'] },
+  { id: 'educacion', nombre: 'Educación', icono: '📚', sub: 'Aprender a cuidarte', fase: 50, categoria: 'conocimiento', recomendado: true, terminos: ['educacion', 'educación', 'guias', 'guías', 'aprender', 'consejos'] },
+  { id: 'productos', nombre: 'Productos', icono: '🛒', sub: 'Lo que usas', fase: 55, categoria: 'compras', confirmar: true, terminos: ['productos', 'comprar', 'compras', 'marcas', 'farmacia'] },
 ];
 
 export const moduloEH = (id) => MODULOS_EH.find((m) => m.id === id) || null;
@@ -93,6 +126,8 @@ export const VERSION_EH = 1;
 export const DEFAULT_ESTILO_HOMBRE = {
   configurado: false,       // ¿ha pasado ya por la primera configuración?
   modulos: [],              // [{ id, activo, orden, config, version }]
+  // ⚠️ EH F2, apartado 17 — la cuarentena. Ver `normalizarEstiloHombre`.
+  retirados: [],            // módulos guardados que ya no están en el catálogo
   version: VERSION_EH,
   creadoEn: null,
 };
@@ -113,15 +148,48 @@ function normalizarModulo(guardado, i) {
  * ⚠️ **El apartado 15, test 7, hecho código**: *"añadir un módulo nuevo
  * posteriormente no debe romper los existentes"*.
  *
- * Lo guardado que ya no está en el catálogo **se descarta** (un módulo que se
- * retiró), y lo del catálogo que no está guardado **aparece apagado** (uno que
- * se añadió después). Las dos cosas pasan solas, sin migración.
+ * Lo guardado que ya no está en el catálogo **sale de la lista** (un módulo que
+ * se retiró: nadie sabría pintarlo), y lo del catálogo que no está guardado
+ * **aparece apagado** (uno que se añadió después). Las dos cosas pasan solas,
+ * sin migración.
+ *
+ * ⚠️⚠️ **EH F2, apartado 17 — "Módulo eliminado del catálogo en una futura
+ * actualización: los datos NO deben borrarse automáticamente."**
+ *
+ * En la Fase 1 el módulo retirado se descartaba entero, y con la regla 5 del
+ * proyecto (*`saveData` sobrescribe, no fusiona*) eso significaba que **el
+ * siguiente guardado se llevaba su `config` para siempre**. Es la cuarta vez que
+ * aparece el mismo fallo del normalizador en este proyecto, y esta vez lo dice
+ * la propia especificación antes de que ocurra.
+ *
+ * Ahora va a `retirados`: fuera de la lista que se pinta, pero guardado. Si el
+ * módulo vuelve al catálogo, `restaurarRetirados` lo devuelve con sus datos.
+ *
+ * ⚠️ **Y se quitan los duplicados** (apartado 17: *"usuario pulsa muchas veces
+ * rápidamente → no debe duplicar módulos"*). **Manda la última entrada** —que es
+ * la intención más reciente— pero las `config` de todas **se fusionan**: perder
+ * ajustes por un guardado a medias es justo lo que este bloque intenta evitar.
+ * El sitio en la lista sigue siendo el de la primera, para que reordenar y
+ * deduplicar no se peleen.
  */
+function deduplicar(lista) {
+  const porId = new Map();
+  lista.forEach((m) => {
+    const previo = porId.get(m.id);
+    if (!previo) { porId.set(m.id, m); return; }
+    porId.set(m.id, { ...m, config: { ...previo.config, ...m.config } });
+  });
+  return [...porId.values()];
+}
+
 export function normalizarEstiloHombre(guardado) {
   const g = guardado || {};
-  const guardados = (Array.isArray(g.modulos) ? g.modulos : [])
+  const todos = deduplicar((Array.isArray(g.modulos) ? g.modulos : [])
     .map(normalizarModulo)
-    .filter((m) => IDS_EH.includes(m.id));
+    .filter((m) => typeof m.id === 'string' && m.id));
+
+  const guardados = todos.filter((m) => IDS_EH.includes(m.id));
+  const fuera = todos.filter((m) => !IDS_EH.includes(m.id));
 
   const vistos = new Set(guardados.map((m) => m.id));
   const nuevos = MODULOS_EH
@@ -130,12 +198,40 @@ export function normalizarEstiloHombre(guardado) {
     // sería decidir por Josué qué quiere usar.
     .map((m, i) => ({ id: m.id, activo: false, orden: guardados.length + i, config: {}, version: 1 }));
 
+  // La cuarentena arrastra lo que ya hubiera, sin volver a meterlo en la lista.
+  const previos = deduplicar((Array.isArray(g.retirados) ? g.retirados : [])
+    .map(normalizarModulo)
+    .filter((m) => typeof m.id === 'string' && m.id && !IDS_EH.includes(m.id)));
+
   return {
     configurado: !!g.configurado,
     modulos: [...guardados, ...nuevos],
+    retirados: deduplicar([...previos, ...fuera]),
     version: VERSION_EH,
     creadoEn: g.creadoEn || null,
   };
+}
+
+/**
+ * Apartado 17 — si un módulo retirado vuelve al catálogo, **vuelve con sus
+ * datos**, no desde cero. Se llama sola desde `normalizarEstiloHombre`… no:
+ * se llama a mano, porque devolver datos a la lista es una decisión, no una
+ * limpieza. La pantalla la ofrece cuando `retiradosQueVuelven` no está vacío.
+ */
+export function retiradosQueVuelven(estado) {
+  const g = estado || {};
+  return (Array.isArray(g.retirados) ? g.retirados : []).filter((m) => IDS_EH.includes(m?.id));
+}
+
+export function restaurarRetirados(estado) {
+  const g = estado || {};
+  const vuelven = retiradosQueVuelven(g);
+  if (vuelven.length === 0) return normalizarEstiloHombre(g);
+  return normalizarEstiloHombre({
+    ...g,
+    modulos: [...(Array.isArray(g.modulos) ? g.modulos : []), ...vuelven],
+    retirados: (Array.isArray(g.retirados) ? g.retirados : []).filter((m) => !IDS_EH.includes(m?.id)),
+  });
 }
 
 /* ===========================================================================

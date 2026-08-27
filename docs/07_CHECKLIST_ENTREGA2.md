@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 44 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 1/65**
-> (hasta v1.67.0). Quedan **62**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (60). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 45 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 2/65**
+> (hasta v1.68.0). Quedan **61**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (59). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -281,29 +281,70 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 > wearables, armario, fotos y privacidad llegan en las fases 2-65; `OBJETIVO FINAL` se marca cuando
 > se cierre el bloque. Marcarlas ahora sería decir que hay algo construido que no existe.
 
-#### EH · Fase 2/65 — SISTEMA DE GESTIÓN Y PERSONALIZACIÓN DE MÓDULOS
-- [ ] ACCESO A “GESTIONAR APARTADOS”
-- [ ] LISTADO COMPLETO
-- [ ] AGRUPACIÓN
-- [ ] ACTIVAR UN MÓDULO
-- [ ] El módulo pasa a estar activo.
-- [ ] Aparece en la pantalla principal.
-- [ ] Se guarda automáticamente.
-- [ ] No es necesario volver a realizar la configuración inicial.
-- [ ] DESACTIVAR UN MÓDULO
-- [ ] AVISO AL DESACTIVAR
-- [ ] REACTIVACIÓN
-- [ ] FILTRO DE MÓDULOS ACTIVOS
-- [ ] REORDENACIÓN
-- [ ] ESTADO VACÍO
-- [ ] MÓDULOS RECOMENDADOS
-- [ ] BÚSQUEDA DE MÓDULOS
-- [ ] INFORMACIÓN DEL MÓDULO
-- [ ] CONFIGURACIÓN PERSISTENTE
-- [ ] NO CREAR BASES DE DATOS DUPLICADAS
-- [ ] PREPARACIÓN PARA FUTUROS MÓDULOS
-- [ ] CASOS LÍMITE
-- [ ] PRUEBAS
+#### EH · Fase 2/65 — SISTEMA DE GESTIÓN Y PERSONALIZACIÓN DE MÓDULOS ✅ COMPLETADA (v1.68.0)
+
+> **`src/lib/gestionModulos.js`** (157 comprobaciones) + la pantalla de gestión reescrita en
+> `src/views/EstiloHombreView.jsx`. Sin SQL nuevo y **sin una segunda fuente de verdad**.
+>
+> ⚠️ **Esta fase arregló un fallo real de la Fase 1**, y lo avisaba la propia especificación
+> (apartado 17: *"Módulo eliminado del catálogo en una futura actualización → los datos NO deben
+> borrarse automáticamente"*). `normalizarEstiloHombre` descartaba el módulo entero, y con la regla 5
+> del proyecto —`saveData` sobrescribe, no fusiona— **el siguiente guardado se llevaba su `config`
+> para siempre**. Es la cuarta vez que este proyecto tropieza con el mismo fallo de normalizador.
+> Ahora va a la cuarentena `retirados`, y si el módulo vuelve al catálogo, `restaurarRetirados` lo
+> devuelve con sus datos.
+>
+> ⚠️ **El catálogo sigue siendo el único sitio donde vive un módulo** (apartado 15). Categoría,
+> confirmación, recomendación y sinónimos de búsqueda **están en la línea del módulo**, no en un
+> segundo mapa: por eso la Fase 2 pudo añadir las cuatro cosas sin tocar nada más que esas trece
+> líneas, y hay una prueba que lee el código y comprueba que `gestionModulos.js` no redefine nada.
+>
+> ⚠️ **El aviso al desactivar solo sale si hay algo que perder.** Un cartel que dice *"tus datos no
+> se eliminarán"* sobre un módulo vacío no protege nada: enseña a pulsar sin leer, y entonces no
+> sirve el día que sí importa. Se declara el módulo como importante **y** se mira si tiene datos.
+>
+> ⚠️ **Subir y bajar se mueven dentro de los ACTIVOS**, no del catálogo: si la flecha saltara por
+> encima de un módulo apagado, Josué vería una plaquita que no se mueve al pulsarla.
+>
+> **Los duplicados se quitan al cargar** (apartado 17), fusionando las `config` y dejando mandar a la
+> última entrada, que es la intención más reciente.
+
+- [x] ACCESO A “GESTIONAR APARTADOS”
+- [x] LISTADO COMPLETO
+- [x] AGRUPACIÓN
+- [x] ACTIVAR UN MÓDULO
+- [x] El módulo pasa a estar activo.
+- [x] Aparece en la pantalla principal.
+- [x] Se guarda automáticamente.
+- [x] No es necesario volver a realizar la configuración inicial.
+- [x] DESACTIVAR UN MÓDULO
+- [x] AVISO AL DESACTIVAR
+- [x] REACTIVACIÓN
+- [x] FILTRO DE MÓDULOS ACTIVOS
+- [x] REORDENACIÓN
+- [x] ESTADO VACÍO
+- [x] MÓDULOS RECOMENDADOS
+- [x] BÚSQUEDA DE MÓDULOS
+- [x] INFORMACIÓN DEL MÓDULO
+- [x] CONFIGURACIÓN PERSISTENTE
+- [x] NO CREAR BASES DE DATOS DUPLICADAS
+- [x] PREPARACIÓN PARA FUTUROS MÓDULOS
+- [x] CASOS LÍMITE
+- [x] PRUEBAS
+
+> **Dos de los diez tests del apartado 18 no se pueden ejecutar aquí, y está dicho en el archivo de
+> pruebas en vez de darse por buenos:** el **Test E** (*"cerrar aplicación → configuración intacta"*)
+> se comprueba hasta donde llega Node —el estado sobrevive al viaje por JSON y por el normalizador,
+> que es lo que hacen `saveData`/`loadData`—; que Supabase responda es **R1**. El **Test J**
+> (*"probar en móvil"*) necesita un iPhone: también **R1**.
+>
+> ⚠️ **Seis módulos que el apartado 3 nombra dentro de las categorías NO se han creado**, y cada uno
+> lleva su motivo escrito en `MODULOS_DEL_ENUNCIADO_NO_CREADOS`: **Nutrición** y **Objetivos** ya son
+> módulos enteros de JosStyle (copiarlos es justo lo que prohíben el apartado 10 de la Fase 1 y el 15
+> de esta), **Recuperación** es contenido de Fitness (fase 26) y **Salud preventiva, dental y visual**
+> son subdivisiones de Salud (fase 33) e Higiene (fase 18): partirlas hoy sería decidir por adelantado
+> la forma de fases que no tocan. Las siete categorías están las siete: si una fase futura crea uno de
+> esos módulos, entra **con una línea**.
 
 #### EH · Fase 3/65 — SISTEMA DE PRIMERA CONFIGURACIÓN Y PERFIL DE USUARIO
 - [ ] PRIMERA ENTRADA

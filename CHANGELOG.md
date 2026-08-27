@@ -1,5 +1,100 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 2/65 — Sistema de gestión y personalización de módulos (v1.68.0)
+
+### La regla que gobierna la fase
+*"El usuario decide qué quiere ver y qué no. No debemos mostrar 30 funcionalidades a alguien que
+solo quiere utilizar 5."*
+
+La Fase 1 dejó el catálogo y el interruptor. Esta construye **la gestión de verdad**: siete
+categorías, buscador, orden, confirmación al apagar, recomendados y ficha.
+
+### ⚠️ Y arregla un fallo real de la Fase 1, que avisaba la propia especificación
+El apartado 17 dice: *"Módulo eliminado del catálogo en una futura actualización → los datos NO
+deben borrarse automáticamente."*
+
+El normalizador de la Fase 1 hacía justo lo contrario: descartaba el módulo entero. Y con la regla 5
+del proyecto —**`saveData` sobrescribe, no fusiona**— eso significaba que **el siguiente guardado se
+llevaba su `config` para siempre**.
+
+Es la **cuarta vez** que este proyecto tropieza con el mismo fallo de normalizador (pasó con
+`visible` en HT F2, con `archivado` en HT F4 y con `materiales` en HT F7). La diferencia es que esta
+vez estaba escrito en el enunciado antes de que ocurriera.
+
+Ahora el módulo retirado va a la cuarentena `retirados`: fuera de la lista que se pinta —nadie
+sabría dibujarlo— pero **guardado entero**. Si vuelve al catálogo, `restaurarRetirados` lo devuelve
+con sus datos, no desde cero.
+
+### Una única fuente de verdad, comprobada contra el código
+El apartado 15: *"No crear `skincareSettings` en un lugar distinto simplemente para saber si Skincare
+está activo."*
+
+Por eso categoría, confirmación, recomendación y sinónimos de búsqueda **están en la línea del
+módulo**, dentro de `MODULOS_EH`. Un segundo mapa `id → categoría` se separaría del primero el día
+que alguien añada un módulo y se olvide del otro sitio.
+
+Y no es una promesa: hay una prueba que **lee `gestionModulos.js` y la vista** y falla si aparece un
+segundo catálogo o un id de módulo suelto.
+
+### El buscador tiene sinónimos porque el enunciado lo obliga
+*"Buscar: pelo → 💇 Pelo, 🧔 Barba."* El nombre de Barba no contiene "pelo", así que un `includes`
+sobre el nombre fallaría el ejemplo literal del enunciado. Cada módulo lleva sus términos.
+
+Y aguanta lo que Josué escribe de verdad desde el iPhone: mayúsculas, tildes puestas o quitadas
+("habito" encuentra **Hábitos**) y la eñe.
+
+### ⚠️ El aviso al desactivar solo sale si hay algo que perder
+El apartado 6 pide confirmación *"para módulos que puedan contener información importante"*, y que
+la aplicación pueda definir cuáles.
+
+Está definido —`confirmar: true` en el catálogo— **pero además se mira si el módulo tiene datos**.
+Un cartel que dice *"tus datos no se eliminarán"* sobre un módulo vacío no protege nada: enseña a
+pulsar "Desactivar" sin leer, y entonces no sirve el día que sí importa.
+
+### ⚠️ Subir y bajar se mueven dentro de los ACTIVOS
+Si la flecha saltara por encima de un módulo apagado, Josué la pulsaría y **no vería moverse nada**,
+porque el que ha adelantado no se pinta. Hay una prueba con un módulo apagado justo en medio.
+
+En los extremos las flechas salen **apagadas**, no desaparecen: una flecha que se esconde mueve la
+interfaz debajo del dedo.
+
+La estructura ya está lista para drag & drop, que es lo que pide el apartado 9: `moverA(estado, id,
+posición)` acepta el destino directo, y `reordenar` acepta la lista entera de una vez.
+
+### Recomendados: dos reglas, sin IA
+*"Debe ser informativo, nunca obligatorio. No utilizar IA."* Solo se sugiere lo que está apagado, y
+entre los apagados van primero los marcados en el catálogo y después los que **antes tendrán
+contenido**: recomendar hoy algo que llega en la fase 55 es prometer.
+
+Y **no sale nada** si no ha configurado todavía o si lo tiene todo encendido. Una sección con título
+y sin contenido es peor que ninguna sección.
+
+### ⚠️ Seis módulos que el enunciado nombra y no se han creado
+El apartado 3 enumera, dentro de las categorías, **Nutrición, Recuperación, Salud preventiva, Salud
+dental, Salud visual y Objetivos**. No están, y cada uno lleva su motivo escrito en el código:
+
+- **Nutrición y Objetivos ya son módulos enteros de JosStyle.** Copiarlos dentro de Estilo de Hombre
+  es literalmente lo que prohíben el apartado 10 de la Fase 1 y el 15 de esta.
+- **Recuperación** es contenido de Fitness (fase 26).
+- **Las tres de salud** son subdivisiones de Salud (fase 33) e Higiene (fase 18). Partirlas hoy sería
+  decidir por adelantado la forma de fases que no tocan.
+
+Las siete categorías están las siete. Si una fase futura crea uno de esos módulos, **entra con una
+línea**.
+
+### Los diez tests del apartado 18
+Están los diez. Los dos que no se pueden ejecutar aquí lo dicen en vez de darse por buenos: el
+**Test E** (*"cerrar aplicación"*) se comprueba hasta donde llega Node —el estado sobrevive al viaje
+por JSON y por el normalizador, que es lo que hacen `saveData`/`loadData`— y que Supabase responda es
+**R1**; el **Test J** (*"probar en móvil"*) necesita un iPhone, también **R1**.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **3 151 comprobaciones unitarias**, 5 de
+auditoría, **352 casos de renderizado real** y 10 reglas invariantes — **3 508 en total**. De ellas,
+**157 nuevas** para EH F2.
+
+---
+
 ## Entrega 2 · EH Fase 1/65 — Arquitectura base y sistema modular (v1.67.0)
 
 ### Empieza el bloque más grande del proyecto

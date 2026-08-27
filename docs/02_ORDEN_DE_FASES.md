@@ -196,9 +196,10 @@ escribir código.
 
 | v1.67.0 | **EH F1** | **Empieza el último bloque y el más grande (65 fases).** La arquitectura modular: trece apartados en un catálogo donde **añadir uno es añadir una línea**, un normalizador que aguanta el catálogo cambiando en las dos direcciones, `alternarModulo` **que no toca los datos jamás**, y `FUENTES_GLOBALES` para que el apartado 10 —*no dupliques lo que ya existe*— sea una función y no un recordatorio |
 
+| v1.68.0 | **EH F2** | La gestión de apartados de verdad: siete categorías, buscador con sinónimos (*"pelo"* encuentra Barba, que es el ejemplo del enunciado), ↑↓ que se mueven **dentro de los activos**, recomendados **sin IA** y ficha. Y **arregla un fallo real de F1**: un módulo retirado del catálogo perdía sus datos en el siguiente guardado — ahora va a cuarentena |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH acaba de empezar (1/65)**. Quedan **62** fases de la Entrega 2: SO (2, con **F2
-bloqueada**) y EH (60).
+3/5 y **EH por 2/65**. Quedan **61** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (59).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

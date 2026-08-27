@@ -28,8 +28,8 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados } from '../src/views/EstiloHombreView.jsx';
-import { DEFAULT_ESTILO_HOMBRE, configurarPrimeraVez, alternarModulo } from '../src/lib/estiloDeHombre.js';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita } from '../src/views/EstiloHombreView.jsx';
+import { DEFAULT_ESTILO_HOMBRE, configurarPrimeraVez, alternarModulo, guardarConfig } from '../src/lib/estiloDeHombre.js';
 import { mochilaDeFecha, progresoMochila, marcarEstado } from '../src/lib/mochila.js';
 import {
   tablonDelDia, crearAutomatizacion, previsualizar, ejecutar, historialDe, marcarCompletada,
@@ -481,24 +481,46 @@ const CASOS = [
         ];
       })(),
       // HT Fase 12 — el panel avanzado ahora tiene la pestaña de copia.
-      /* EH Fase 1 — los TRES estados del apartado 13, que es lo único que
-         esta fase tiene que saber pintar. El tercero es el que más importa:
-         configurado pero sin nada encendido NO puede ser una pantalla rota. */
+      /* EH Fases 1 y 2 — los TRES estados del apartado 13, que es lo único que
+         la Fase 1 tenía que saber pintar (el tercero es el que más importa:
+         configurado pero sin nada encendido NO puede ser una pantalla rota), más
+         lo que añade la Fase 2: categorías, buscador con y sin resultados,
+         ficha, aviso al desactivar y recomendados. */
       ...(() => {
         const props = (estado) => ({ estiloHombre: estado, accent, onCambiar: noop });
         const conTres = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['skincare', 'pelo', 'habitos'], { hoy: HOY });
+        const todosLosIds = ['estilo', 'pelo', 'skincare', 'higiene', 'barba', 'cuerpo', 'fitness', 'sueno', 'salud', 'habitos', 'progreso', 'educacion', 'productos'];
+        const conDatos = guardarConfig(conTres, 'skincare', { tipoPiel: 'mixta' });
         return [
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],
           ['EstiloHombreView · con módulos', EstiloHombreView, () => props(conTres)],
           ['EstiloHombreView · configurado sin módulos', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],
-          ['EstiloHombreView · con todos', EstiloHombreView, () =>
-            props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['estilo', 'pelo', 'skincare', 'higiene', 'barba', 'cuerpo', 'fitness', 'sueno', 'salud', 'habitos', 'progreso', 'educacion', 'productos']))],
+          ['EstiloHombreView · con todos', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, todosLosIds))],
+          ['EstiloHombreView · con uno solo', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['pelo']))],
           ['GestionarApartados · primera vez', GestionarApartados, () => ({
             estado: DEFAULT_ESTILO_HOMBRE, accent, primeraVez: true, onGuardar: noop,
           })],
           ['GestionarApartados · después', GestionarApartados, () => ({
-            estado: conTres, accent, onAlternar: noop, onCerrar: noop,
+            estado: conTres, accent, onCambiar: noop, onCerrar: noop,
           })],
+          ['GestionarApartados · todo encendido', GestionarApartados, () => ({
+            estado: configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, todosLosIds), accent, onCambiar: noop, onCerrar: noop,
+          })],
+          ['GestionarApartados · con datos guardados', GestionarApartados, () => ({
+            estado: conDatos, accent, onCambiar: noop, onCerrar: noop,
+          })],
+          ['Recomendados · con sugerencias', Recomendados, () => ({ estado: conTres, accent, onAnadir: noop })],
+          ['Plaquita · en modo ordenar', Plaquita, () => ({
+            modulo: { id: 'pelo', nombre: 'Pelo', icono: '💇', sub: 'Corte y cuidado' }, accent,
+            orden: { arriba: true, abajo: false, posicion: 2, de: 3 }, onSubir: noop, onBajar: noop,
+          })],
+          /* ⚠️ `Recomendados` sin nada que sugerir y `FichaModuloEH` no entran
+             aquí, y por dos motivos distintos que conviene no confundir:
+             el primero devuelve `null` a propósito (apartado 11: no se pinta una
+             sección vacía con título) y este arnés cuenta un render vacío como
+             fallo; el segundo usa `createPortal`, que necesita un `document` y
+             `react-dom/server` no lo tiene. Los dos comportamientos están
+             probados con Node en `test-gestion-modulos.mjs`. */
         ];
       })(),
       ['PanelAvanzado · con copia', PanelAvanzado, () => ({
