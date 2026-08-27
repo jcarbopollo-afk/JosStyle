@@ -872,38 +872,81 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 > Fase 9, el que se olvidó (`recomendaciones`) lo cazó la prueba en el mismo turno. La costumbre está
 > funcionando.
 
-#### EH · Fase 11/65 — PELUQUERÍA: CALENDARIO Y SEGUIMIENTO DE CORTES
-- [ ] PLAQUITA DE PELUQUERÍA
-- [ ] REGISTRAR ÚLTIMO CORTE
-- [ ] PRÓXIMO CORTE
-- [ ] FRECUENCIA
-- [ ] RECORDATORIOS
-- [ ] CALENDARIO GENERAL
-- [ ] CANCELAR / CAMBIAR
-- [ ] REGISTRAR CORTE REALIZADO
-- [ ] HISTORIAL
-- [ ] NOTAS
-- [ ] PREFERENCIAS DEL CORTE
-- [ ] PELUQUERÍA / BARBERÍA
-- [ ] RECORDATORIOS DESACTIVADOS
-- [ ] DESACTIVAR PELUQUERÍA
-- [ ] ELIMINAR EVENTO
-- [ ] PRÓXIMO CORTE INTELIGENTE
-- [ ] PRUEBAS
-- [ ] Registrar último corte.
-- [ ] Elegir próximo corte.
-- [ ] Crear frecuencia.
-- [ ] Modificar frecuencia.
-- [ ] Crear recordatorio.
-- [ ] Desactivar recordatorio.
-- [ ] Marcar corte realizado.
-- [ ] Ver historial.
-- [ ] Editar evento.
-- [ ] Eliminar evento.
-- [ ] Integrarlo con calendario general.
-- [ ] Desactivar Peluquería.
-- [ ] Reactivarla.
-- [ ] Confirmar que todos los datos permanecen.
+#### EH · Fase 11/65 — PELUQUERÍA: CALENDARIO Y SEGUIMIENTO DE CORTES ✅ COMPLETADA (v1.77.0)
+
+> **`src/lib/peluqueria.js`** (189 comprobaciones) + la pantalla `PeluqueriaEH`. Sin SQL nuevo.
+>
+> ⚠️ **La decisión que gobierna la fase entera es el apartado 15: *"Esto eliminará el evento del
+> calendario, pero no el historial del corte."*** Un evento planificado y un corte que ocurrió **no
+> son la misma cosa**, así que no viven en la misma lista: `cortes` es la historia y `cita` es el
+> plan. Quitar la cita no puede tocar un corte porque **no tiene manera de hacerlo**, y hay una
+> prueba que cuenta los cortes antes y después de borrarla. Un solo array con un campo `hecho` habría
+> puesto las dos cosas a un `filter` de distancia.
+>
+> ⚠️ **`frecuenciaDeCorte()` es la única respuesta a "cada cuánto"**, y hace lo mismo que `tallaDe()`
+> en la Fase 5: lo que ya contestó en el perfil capilar (F7) manda, lo que ponga a mano rellena el
+> hueco, y **si los dos existen y no coinciden se enseña el choque** en vez de elegir en silencio.
+> *"Cuando lo necesito"* es una respuesta legítima que sencillamente no permite calcular una fecha:
+> se dice, y no se inventa una frecuencia por defecto.
+>
+> ⚠️ **`sugerirProximoCorte()` sugiere, no reserva** (apartado 16). Devuelve la fecha con
+> `guardado: false` escrito en el propio dato; guardarla es `planificarCorte`, y esa la llama él.
+> Tercera vez que aparece el mismo patrón tras `aplicarPlan` (HT F9) y `aplicarARutina` (EH F9).
+>
+> ⚠️ **`avisoDeCorte()` DECIDE, `notificaciones.js` MANDA.** Mismo reparto que `avisosHorario.js`.
+> El recordatorio **nace apagado** (apartado 5: *"nunca activarlos de forma invasiva"*) y el
+> apartado 13 se cumple literalmente: **el calendario funciona sin recordatorios**, son dos cosas
+> independientes, y la pantalla lo dice.
+>
+> ⚠️ **Desactivar oculta, no borra** (apartado 14). `impactoDesactivarPeluqueria()` avisa de la cita
+> futura antes de apagar y devuelve `seBorraAlgo: false`; reactivar lo devuelve todo — historial,
+> sitios, preferencias y la propia cita.
+>
+> ⚠️ **`anadirSitio` no es un sistema de reservas** (apartado 12): un nombre, un lugar y una nota.
+> Y la pantalla lo dice — *"aquí solo se apunta dónde vas"* — en vez de dejar un botón muerto
+> (regla 8). Borrar un sitio **desengancha** los cortes que lo usaban; no los borra.
+>
+> **La frecuencia real es derivada** (apartado 9), y **con menos de dos intervalos no se afirma
+> nada**: misma disciplina que HT F11 y AR F4.
+>
+> **Dos fallos silenciosos que encontró la prueba:** `planificarCorte({modo:'semanas'})` sin cantidad
+> planificaba el corte para HOY (`Number(null)` es 0 y `Number.isInteger(0)` es `true`), y `'25:99'`
+> encajaba con `/^\d{2}:\d{2}$/` y se guardaba como hora.
+
+- [x] PLAQUITA DE PELUQUERÍA
+- [x] REGISTRAR ÚLTIMO CORTE
+- [x] PRÓXIMO CORTE
+- [x] FRECUENCIA
+- [x] RECORDATORIOS
+- [x] CALENDARIO GENERAL
+- [x] CANCELAR / CAMBIAR
+- [x] REGISTRAR CORTE REALIZADO
+- [x] HISTORIAL
+- [x] NOTAS
+- [x] PREFERENCIAS DEL CORTE
+- [x] PELUQUERÍA / BARBERÍA
+- [x] RECORDATORIOS DESACTIVADOS
+- [x] DESACTIVAR PELUQUERÍA
+- [x] ELIMINAR EVENTO
+- [x] PRÓXIMO CORTE INTELIGENTE
+- [x] PRUEBAS
+- [x] Registrar último corte.
+- [x] Elegir próximo corte.
+- [x] Crear frecuencia.
+- [x] Modificar frecuencia.
+- [x] Crear recordatorio.
+- [x] Desactivar recordatorio.
+- [x] Marcar corte realizado.
+- [x] Ver historial.
+- [x] Editar evento.
+- [x] Eliminar evento.
+- [x] Integrarlo con calendario general.
+- [x] Desactivar Peluquería.
+- [x] Reactivarla.
+- [x] Confirmar que todos los datos permanecen.
+
+> ⚠️ **`peluqueria` es el noveno campo que se enseña a un normalizador en este proyecto**, y el
+> tercero seguido que se recuerda a la primera. La costumbre ya está.
 
 #### EH · Fase 12/65 — PELUQUERÍA: CORTES, PREFERENCIAS Y RECOMENDACIONES
 - [ ] PERFIL DE CORTE

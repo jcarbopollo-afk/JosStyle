@@ -47,13 +47,13 @@ export const PLAQUITAS_PELO = [
   { id: 'perfil', nombre: 'Mi pelo', icono: '🧬', fase: 7, listo: true },
   { id: 'rutina', nombre: 'Mi rutina', icono: '🧴', fase: 8, listo: true },
   { id: 'seguimiento', nombre: 'Seguimiento', icono: '📈', fase: 8, listo: true },
-  // ⚠️ Recomendaciones pasó a `listo: true` en la Fase 9. Peluquería sigue sin
-  // estarlo, y lo dice: regla 8 — enseñar una plaquita que no lleva a nada sin
-  // avisar es el control decorativo prohibido.
+  // ⚠️ Las seis están listas desde la Fase 11. Si una fase futura añade otra
+  // que todavía no funcione, `listo: false` y su `fase`: regla 8 — enseñar una
+  // plaquita que no lleva a nada sin avisar es el control decorativo prohibido.
   { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', fase: 9, listo: true },
   // EH F10 — la plaquita de productos que pide su apartado 1.
   { id: 'productos', nombre: 'Productos', icono: '🛒', fase: 10, listo: true },
-  { id: 'peluqueria', nombre: 'Peluquería', icono: '📅', fase: 11, listo: false },
+  { id: 'peluqueria', nombre: 'Peluquería', icono: '📅', fase: 11, listo: true },
 ];
 
 /* ===========================================================================
@@ -74,6 +74,9 @@ export const PARTES_PELO = [
   { id: 'seguimiento', nombre: 'Seguimiento', porDefecto: true },
   { id: 'recomendaciones', nombre: 'Recomendaciones', porDefecto: true },
   { id: 'recordatorios', nombre: 'Recordatorios', porDefecto: false },
+  // EH F11, apartado 14 — Peluquería también se puede apagar, y apagarla
+  // conserva el historial, las preferencias y los datos.
+  { id: 'peluqueria', nombre: 'Peluquería', porDefecto: true },
 ];
 
 export const IDS_PARTES = PARTES_PELO.map((p) => p.id);
@@ -95,6 +98,9 @@ export const DEFAULT_PELO = {
   // ⚠️ EH F10 — los packs de productos. Forma en `normalizarPack`
   // (`productosPelo.js`); aquí se declara y se arrastra, como `recomendaciones`.
   packs: [],
+  // ⚠️ EH F11 — cortes, cita, sitios y frecuencia propia. Forma en
+  // `normalizarPeluqueria` (`peluqueria.js`); aquí se declara y se arrastra.
+  peluqueria: {},
 };
 
 export const ACCIONES_PELO = [
@@ -192,6 +198,10 @@ export function normalizarPelo(guardado) {
       : {},
     // ⚠️ Octava vez. Al añadir un campo, añadirlo también aquí.
     packs: Array.isArray(g.packs) ? g.packs : [],
+    // ⚠️ Novena vez. Es literalmente la costumbre de este proyecto.
+    peluqueria: g.peluqueria && typeof g.peluqueria === 'object' && !Array.isArray(g.peluqueria)
+      ? g.peluqueria
+      : {},
   };
 }
 

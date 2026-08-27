@@ -85,6 +85,13 @@ import {
   alternativasDe, enlacesDe, recomendarProductos, packsPelo, crearPack, verPack,
   packSugerido, resumenProductosPelo, estadoProducto,
 } from '../lib/productosPelo';
+import {
+  PREFERENCIAS_CORTE, ANTELACIONES_AVISO, MODOS_PROXIMO, panelPeluqueria,
+  historialDeCortes, registrarCorte, borrarCorte, planificarCorte, editarCita,
+  avisoEliminarCita, eliminarCita, marcarCorteRealizado, alternarRecordatorio,
+  anadirSitio, borrarSitio, guardarFrecuencia, datosPeluqueria, resumenPeluqueria,
+  PARTE_PELUQUERIA,
+} from '../lib/peluqueria';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -955,6 +962,7 @@ export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCer
   const perfil = useMemo(() => progresoPelo(estado, datosGlobales), [estado, datosGlobales]);
   const recs = useMemo(() => resumenRecomendacionesPelo(estado, datosGlobales), [estado, datosGlobales]);
   const prods = useMemo(() => resumenProductosPelo(estado, datosGlobales), [estado, datosGlobales]);
+  const pelu = useMemo(() => resumenPeluqueria(estado, datosGlobales), [estado, datosGlobales]);
 
   if (zona === 'rutina') return <RutinasPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
   if (zona === 'seguimiento') return <SeguimientoPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
@@ -975,6 +983,14 @@ export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCer
       />
     );
   }
+  if (zona === 'peluqueria') {
+    return (
+      <PeluqueriaEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setZona(null)}
+      />
+    );
+  }
 
   const sub = {
     perfil: perfil.sinEmpezar ? 'Sin configurar' : `${perfil.contestadas} de ${perfil.total}`,
@@ -984,6 +1000,10 @@ export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCer
       ? 'Cuéntanos algo más'
       : `${recs.disponibles} ${recs.disponibles === 1 ? 'opción' : 'opciones'}`,
     productos: prods.total === 0 ? 'Añade los tuyos' : `${prods.total} ${prods.total === 1 ? 'producto' : 'productos'}`,
+    // ⚠️ Nunca una fecha inventada: si no hay cita, se dice que no la hay.
+    peluqueria: pelu.proximo
+      ? `Corte el ${pelu.proximo}`
+      : (pelu.ultimo ? `Último: ${pelu.ultimo}` : 'Registra tu último corte'),
   };
 
   return (
@@ -1002,12 +1022,16 @@ export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCer
           {PLAQUITAS_PELO.filter((p) => p.id !== 'recomendaciones' || parteActiva(estado, 'recomendaciones'))
             .filter((p) => p.id !== 'seguimiento' || parteActiva(estado, 'seguimiento'))
             .filter((p) => p.id !== 'rutina' || parteActiva(estado, 'rutinas'))
+            /* ⚠️ F11, apartado 14 — apagar Peluquería **oculta la plaquita** y
+               conserva historial, preferencias y sitios. No borra nada. */
+            .filter((p) => p.id !== 'peluqueria' || parteActiva(estado, PARTE_PELUQUERIA))
             .map((p) => {
               const abre = p.id === 'perfil' ? onPerfil
                 : (p.id === 'rutina' ? () => setZona('rutina')
                   : (p.id === 'seguimiento' ? () => setZona('seguimiento')
                     : (p.id === 'recomendaciones' ? () => setZona('recomendaciones')
-                      : (p.id === 'productos' ? () => setZona('productos') : null))));
+                      : (p.id === 'productos' ? () => setZona('productos')
+                        : (p.id === 'peluqueria' ? () => setZona('peluqueria') : null)))));
               return (
                 <Plaquita
                   key={p.id} accent={accent}
@@ -1671,6 +1695,365 @@ export function ProductosPeloEH({ estado, accent, datosGlobales = {}, onCambiar,
       ) : (
         <PrimaryButton accent={accent} icon={Plus} onClick={() => setCreando(true)}>Añadir producto</PrimaryButton>
       )}
+    </Card>
+  );
+}
+
+/* ===========================================================================
+   PELUQUERÍA (F11)
+   ===========================================================================
+   *"Última vez que te cortaste el pelo… Próximo corte planificado."*
+
+   ⚠️ **Las dos listas nunca se mezclan** (apartado 15). Arriba, el plan: una
+   cita, que se puede mover, marcar como hecha o quitar del calendario. Abajo,
+   la historia: los cortes que de verdad ocurrieron. Quitar la cita **no toca**
+   el historial, y la pantalla lo dice con esas palabras antes de hacerlo.
+
+   ⚠️ Y **nada se calcula aquí**: el próximo corte lo sugiere
+   `sugerirProximoCorte`, la frecuencia real la deriva `frecuenciaReal`, y el
+   choque entre lo que dijo en el perfil y lo que puso a mano lo enseña
+   `frecuenciaDeCorte`. La vista pinta lo que le dan. */
+export function PeluqueriaEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  /* ⚠️ Regla 4 — todos los hooks antes de cualquier `return`. */
+  const [fecha, setFecha] = useState('');
+  const [nota, setNota] = useState('');
+  const [preferencia, setPreferencia] = useState(null);
+  const [modo, setModo] = useState('fecha');
+  const [cuando, setCuando] = useState('');
+  const [cantidad, setCantidad] = useState('');
+  const [sitio, setSitio] = useState('');
+  const [lugar, setLugar] = useState('');
+  const [error, setError] = useState(null);
+  const [confirmar, setConfirmar] = useState(null);
+  const [verSitios, setVerSitios] = useState(false);
+
+  const panel = useMemo(() => panelPeluqueria(estado, datosGlobales), [estado, datosGlobales]);
+  const historial = useMemo(() => historialDeCortes(estado), [estado]);
+  const cita = useMemo(() => datosPeluqueria(estado).cita, [estado]);
+
+  const aplicar = (r) => {
+    if (r.error) { setError(r.error); return; }
+    setError(null);
+    onCambiar?.(r.estado);
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>✂️ Peluquería</p>
+      </div>
+
+      {/* Apartado 1 — lo primero es lo último que pasó y lo siguiente que toca. */}
+      {panel.sinNada ? (
+        <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>{panel.textoVacio}</p>
+      ) : (
+        <div className="rounded-2xl p-2.5 mb-3"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <p className="text-[11px]" style={{ color: COLORS.text }}>
+            {panel.ultimo ? `Último corte: ${panel.ultimo.fecha}` : 'Todavía no has registrado ningún corte'}
+          </p>
+          {/* ⚠️ Regla 8 — o hay una fecha de verdad, o se dice que no la hay.
+              Nunca una fecha inventada para llenar el hueco. */}
+          {panel.proximo ? (
+            <p className="text-[10px] mt-0.5" style={{ color: accent }}>
+              Próximo corte planificado: {panel.proximo.fecha}
+              {cita?.hora ? ` a las ${cita.hora}` : ''}
+            </p>
+          ) : panel.sugerido ? (
+            <div className="mt-1">
+              <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.sugerido.texto}</p>
+              <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.sugerido.de}</p>
+              {/* ⚠️ Sugerir no es reservar (apartado 16): esto lo guarda él. */}
+              <button
+                onClick={() => aplicar(planificarCorte(estado, { modo: 'fecha', fecha: panel.sugerido.fecha }))}
+                className="text-[10px] font-semibold mt-1"
+                style={{ color: accent }}
+              >
+                {panel.sugerido.accion}
+              </button>
+            </div>
+          ) : (
+            <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>Sin corte planificado</p>
+          )}
+        </div>
+      )}
+
+      {/* Apartado 4 — la frecuencia, y el choque si lo hay. */}
+      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: COLORS.textMuted }}>
+        Cada cuánto
+      </p>
+      <p className="text-[11px]" style={{ color: COLORS.text }}>{panel.frecuencia.texto}</p>
+      {panel.frecuencia.de && (
+        <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.frecuencia.de}</p>
+      )}
+      {/* ⚠️ El choque se ENSEÑA, no se resuelve en silencio (como `tallaDe`). */}
+      {panel.frecuencia.conflicto && (
+        <p className="text-[10px] mt-0.5" style={{ color: COLORS.warning || COLORS.textMuted }}>
+          Aquí pusiste cada {panel.frecuencia.conflicto.guardada} y en tu perfil cada {panel.frecuencia.conflicto.perfil}.
+          Manda la del perfil.
+        </p>
+      )}
+      <div className="flex flex-wrap gap-1 mt-1.5 mb-3">
+        {[2, 3, 4, 6, 8].map((s) => (
+          <button
+            key={s}
+            onClick={() => aplicar(guardarFrecuencia(estado, s))}
+            className="rounded-full px-2.5 py-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+          >
+            <span className="text-[10px] font-semibold" style={{ color: COLORS.text }}>{s} sem.</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Apartado 2 — registrar un corte, con el atajo de "Hoy". */}
+      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>
+        Registrar corte
+      </p>
+      <div className="flex gap-1.5 mb-1.5">
+        <button
+          onClick={() => aplicar(registrarCorte(estado, { nota, preferencia }))}
+          className="rounded-2xl px-3 py-1.5"
+          style={{ background: accent }}
+        >
+          <span className="text-[11px] font-semibold" style={{ color: COLORS.textOnAccent }}>Hoy</span>
+        </button>
+        <input
+          type="date" value={fecha} onChange={(ev) => setFecha(ev.target.value)}
+          aria-label="Fecha del corte"
+          className="flex-1 rounded-2xl px-2.5 py-1.5 text-[11px]"
+          style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+        />
+        <button
+          onClick={() => { aplicar(registrarCorte(estado, { fecha, nota, preferencia })); setFecha(''); setNota(''); }}
+          disabled={!fecha}
+          className="rounded-2xl px-3 py-1.5 disabled:opacity-40"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+        >
+          <span className="text-[11px] font-semibold" style={{ color: COLORS.text }}>Añadir</span>
+        </button>
+      </div>
+      {/* Apartado 10 — qué quiere la próxima vez. Opcional. */}
+      <div className="flex flex-wrap gap-1 mb-1.5">
+        {PREFERENCIAS_CORTE.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => setPreferencia(preferencia === p.id ? null : p.id)}
+            className="rounded-full px-2.5 py-1"
+            style={{
+              background: preferencia === p.id ? hexToRgba(accent, 0.14) : COLORS.surface2,
+              border: `1px solid ${preferencia === p.id ? accent : COLORS.border}`,
+            }}
+          >
+            <span className="text-[10px] font-semibold" style={{ color: preferencia === p.id ? accent : COLORS.text }}>
+              {p.nombre}
+            </span>
+          </button>
+        ))}
+      </div>
+      <TextInput value={nota} onChange={(ev) => setNota(ev.target.value)}
+        placeholder="Una nota, si quieres" aria-label="Nota del corte" />
+
+      {/* Apartados 3, 7 y 8 — el plan. */}
+      <p className="text-[10px] font-semibold uppercase tracking-wide mt-3 mb-1.5" style={{ color: COLORS.textMuted }}>
+        Próximo corte
+      </p>
+      {cita ? (
+        <div className="rounded-2xl p-2.5 space-y-1.5"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <div className="flex items-center gap-2">
+            <input
+              type="date" value={cita.fecha} onChange={(ev) => aplicar(editarCita(estado, { fecha: ev.target.value }))}
+              aria-label="Fecha de la cita"
+              className="flex-1 rounded-xl px-2 py-1 text-[11px]"
+              style={{ background: COLORS.surface, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+            />
+            <input
+              type="time" value={cita.hora || ''} onChange={(ev) => aplicar(editarCita(estado, { hora: ev.target.value }))}
+              aria-label="Hora de la cita"
+              className="rounded-xl px-2 py-1 text-[11px]"
+              style={{ background: COLORS.surface, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+            />
+          </div>
+
+          {/* Apartado 5 — el recordatorio nace apagado y se pide. */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] flex-1" style={{ color: COLORS.text }}>Avisarme</span>
+            <Switch checked={cita.recordatorio} onChange={() => aplicar(alternarRecordatorio(estado))}
+              accent={accent} label="Avisarme del corte" />
+          </div>
+          {cita.recordatorio && (
+            <div className="flex flex-wrap gap-1">
+              {ANTELACIONES_AVISO.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => aplicar(editarCita(estado, { antelacion: a.id }))}
+                  className="rounded-full px-2 py-0.5"
+                  style={{
+                    background: cita.antelacion === a.id ? hexToRgba(accent, 0.14) : COLORS.surface,
+                    border: `1px solid ${cita.antelacion === a.id ? accent : COLORS.border}`,
+                  }}
+                >
+                  <span className="text-[10px] font-semibold" style={{ color: cita.antelacion === a.id ? accent : COLORS.textMuted }}>
+                    {a.nombre}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Apartado 13 — el calendario sigue funcionando sin recordatorios. */}
+          <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            Salga o no el aviso, el corte sigue en tu calendario.
+          </p>
+
+          <div className="flex gap-1.5">
+            {/* Apartado 8 — el plan se vuelve historia. */}
+            <button
+              onClick={() => aplicar(marcarCorteRealizado(estado))}
+              className="flex-1 rounded-2xl py-1.5"
+              style={{ background: accent }}
+            >
+              <span className="text-[11px] font-semibold" style={{ color: COLORS.textOnAccent }}>✅ Corte realizado</span>
+            </button>
+            {/* ⚠️ Apartado 15 — con su aviso, y sin tocar el historial. */}
+            <button
+              onClick={() => setConfirmar(avisoEliminarCita(estado))}
+              className="rounded-2xl px-3 py-1.5"
+              style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+            >
+              <span className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>Eliminar</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap gap-1">
+            {MODOS_PROXIMO.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setModo(m.id)}
+                className="rounded-full px-2.5 py-1"
+                style={{
+                  background: modo === m.id ? hexToRgba(accent, 0.14) : COLORS.surface2,
+                  border: `1px solid ${modo === m.id ? accent : COLORS.border}`,
+                }}
+              >
+                <span className="text-[10px] font-semibold" style={{ color: modo === m.id ? accent : COLORS.text }}>
+                  {m.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+          {/* ⚠️ "Todavía no lo sé" no pide nada más: es una respuesta, no un
+              hueco que rellenar (apartado 3). */}
+          {modo === 'fecha' && (
+            <input
+              type="date" value={cuando} onChange={(ev) => setCuando(ev.target.value)}
+              aria-label="Fecha del próximo corte"
+              className="w-full rounded-2xl px-2.5 py-1.5 text-[11px]"
+              style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+            />
+          )}
+          {(modo === 'semanas' || modo === 'dias') && (
+            <TextInput value={cantidad} onChange={(ev) => setCantidad(ev.target.value)}
+              placeholder={modo === 'semanas' ? 'Cuántas semanas' : 'Cuántos días'}
+              aria-label={modo === 'semanas' ? 'Cuántas semanas' : 'Cuántos días'} />
+          )}
+          {modo !== 'no_se' && (
+            <PrimaryButton
+              accent={accent}
+              onClick={() => { aplicar(planificarCorte(estado, { modo, fecha: cuando, cantidad })); setCuando(''); setCantidad(''); }}
+            >
+              Planificar
+            </PrimaryButton>
+          )}
+        </div>
+      )}
+
+      {/* Apartado 9 — el historial, y lo que se deriva de él. */}
+      {historial.length > 0 && (
+        <>
+          <p className="text-[10px] font-semibold uppercase tracking-wide mt-3 mb-1.5" style={{ color: COLORS.textMuted }}>
+            Historial
+          </p>
+          {panel.real.suficiente && (
+            <p className="text-[10px] mb-1.5" style={{ color: COLORS.textMuted }}>{panel.real.texto}</p>
+          )}
+          <div className="space-y-1">
+            {historial.slice(0, 12).map((c) => (
+              <div key={c.id} className="rounded-2xl p-2 flex items-center gap-2"
+                style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{c.fecha}</p>
+                  <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>
+                    {[
+                      // `null` en el más antiguo: no hay con qué compararlo.
+                      c.diasDesdeElAnterior === null ? '' : `${c.diasDesdeElAnterior} días después del anterior`,
+                      c.sitio, c.preferenciaNombre, c.nota,
+                    ].filter(Boolean).join(' · ')}
+                  </p>
+                </div>
+                <button onClick={() => aplicar(borrarCorte(estado, c.id))} aria-label={`Borrar el corte del ${c.fecha}`}>
+                  <X size={13} style={{ color: COLORS.textMuted }} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Apartado 12 — dónde se corta. Un nombre y un sitio, nada más. */}
+      <button
+        onClick={() => setVerSitios(!verSitios)}
+        className="text-[10px] font-semibold mt-3"
+        style={{ color: COLORS.textMuted }}
+      >
+        {verSitios ? 'Ocultar' : 'Dónde te lo cortas'} ({panel.sitios.length})
+      </button>
+      {verSitios && (
+        <div className="mt-1.5 space-y-1">
+          {panel.sitios.map((s) => (
+            <div key={s.id} className="rounded-2xl p-2 flex items-center gap-2"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-semibold truncate" style={{ color: COLORS.text }}>{s.nombre}</p>
+                {s.lugar && <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>{s.lugar}</p>}
+              </div>
+              <button onClick={() => aplicar(borrarSitio(estado, s.id))} aria-label={`Borrar ${s.nombre}`}>
+                <X size={13} style={{ color: COLORS.textMuted }} />
+              </button>
+            </div>
+          ))}
+          <TextInput value={sitio} onChange={(ev) => setSitio(ev.target.value)}
+            placeholder="Nombre" aria-label="Nombre del sitio" />
+          <TextInput value={lugar} onChange={(ev) => setLugar(ev.target.value)}
+            placeholder="Dónde está" aria-label="Dónde está" />
+          <button
+            onClick={() => { aplicar(anadirSitio(estado, { nombre: sitio, lugar })); setSitio(''); setLugar(''); }}
+            className="text-[10px] font-semibold"
+            style={{ color: accent }}
+          >
+            Añadir sitio
+          </button>
+          {/* Regla 8 — se dice lo que NO hace, en vez de dejar un botón muerto. */}
+          <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            Aquí solo se apunta dónde vas. Las reservas se hacen por tu cuenta.
+          </p>
+        </div>
+      )}
+
+      {error && <p className="text-[10px] mt-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+
+      <AvisoDesactivar
+        aviso={confirmar} accent={accent}
+        onCancelar={() => setConfirmar(null)}
+        onConfirmar={() => { aplicar(eliminarCita(estado)); setConfirmar(null); }}
+      />
     </Card>
   );
 }

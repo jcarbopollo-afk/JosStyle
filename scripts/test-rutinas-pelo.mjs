@@ -72,14 +72,17 @@ eq(PLAQUITAS_PELO.map((p) => p.nombre),
   ['Mi pelo', 'Mi rutina', 'Seguimiento', 'Recomendaciones', 'Productos', 'Peluquería'],
   'Con sus nombres literales');
 // ⚠️ Cuatro desde la Fase 9: Recomendaciones pasó a listo. Peluquería no.
-eq(PLAQUITAS_PELO.filter((p) => p.listo).length, 5, 'Cinco funcionan hoy');
-ok(PLAQUITAS_PELO.filter((p) => !p.listo).every((p) => p.fase > 10),
-  '⚠️ Y la que no, dice en qué fase llega — regla 8, no "próximamente"');
+// ⚠️ Las seis funcionan desde la Fase 11.
+eq(PLAQUITAS_PELO.filter((p) => p.listo).length, 6, 'Las seis funcionan');
+ok(PLAQUITAS_PELO.every((p) => Number.isFinite(p.fase)),
+  '⚠️ Y cada una sigue declarando su fase, para que una futura que no funcione lo diga');
 eq(PLAQUITAS_PELO.find((p) => p.id === 'peluqueria').fase, 11, 'Peluquería, en la fase 11');
 
 /* ── 2 · LAS PARTES (apartados 15 y 16) ──────────────────────────────────── */
 
-eq(IDS_PARTES, ['rutinas', 'seguimiento', 'recomendaciones', 'recordatorios'], 'Las cuatro del enunciado');
+// ⚠️ Cinco desde la Fase 11, que añadió Peluquería (su apartado 14).
+eq(IDS_PARTES, ['rutinas', 'seguimiento', 'recomendaciones', 'recordatorios', 'peluqueria'],
+  'Las cuatro del enunciado de F8, más Peluquería (F11)');
 ok(parteActiva(base(), 'rutinas'), 'Rutinas viene encendida');
 ok(!parteActiva(base(), 'recordatorios'),
   '⚠️ Apartado 5: recordatorios nace APAGADO — "nunca deben ser obligatorios"');
@@ -383,8 +386,8 @@ eq(accionPelo('inventada'), null, 'Una acción que no existe devuelve null');
    verdad no es el número, sino que NO aparezca una colección de fotos ni un
    catálogo de productos — así que ahora lo dice así. */
 eq(Object.keys(DEFAULT_PELO).sort(),
-  ['cambios', 'hechos', 'packs', 'partes', 'productos', 'recomendaciones', 'rutinas'],
-  'Las siete colecciones que hay hoy');
+  ['cambios', 'hechos', 'packs', 'partes', 'peluqueria', 'productos', 'recomendaciones', 'rutinas'],
+  'Las ocho colecciones que hay hoy');
 ok(!Object.keys(DEFAULT_PELO).some((k) => /foto|galeria|catalogo/i.test(k)),
   '⚠️ Y ninguna de fotos (apartado 10) ni de catálogo (apartado 11 + D2-03)');
 

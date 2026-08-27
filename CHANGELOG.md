@@ -1,5 +1,84 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 11/65 — Peluquería: calendario y seguimiento de cortes (v1.77.0)
+
+### ⚠️ La decisión que gobierna la fase entera
+El apartado 15, literal: *"Esto eliminará el evento del calendario, **pero no el historial del
+corte**."*
+
+Un corte planificado y un corte que ocurrió **no son la misma cosa**, así que no viven en la misma
+lista. `cortes` es la historia; `cita` es el plan. Borrar la cita no puede tocar un corte **porque
+no tiene manera de hacerlo**, y hay una prueba que cuenta los cortes antes y después de borrarla.
+
+Un solo array con un campo `hecho` habría puesto las dos cosas a un `filter` de distancia, y ese
+`filter` habría llegado tarde o temprano.
+
+### ⚠️ Una sola respuesta a "cada cuánto te lo cortas"
+`frecuenciaDeCorte()` hace exactamente lo que `tallaDe()` en la Fase 5: **lo que ya contestó en el
+perfil capilar (F7) manda**, lo que ponga a mano rellena el hueco, y **si los dos existen y no
+coinciden se enseña el choque** en vez de elegir en silencio.
+
+*"Cuando lo necesito"* es una respuesta legítima que sencillamente no permite calcular una fecha. Se
+dice —*"sin frecuencia fija"*— y **no se inventa una por defecto**: un valor puesto para llenar el
+hueco habría empezado a proponer fechas que él nunca pidió.
+
+### ⚠️ Sugerir no es reservar
+`sugerirProximoCorte()` devuelve *"tu próximo corte podría ser alrededor del…"* con `guardado: false`
+escrito en el propio dato. Guardarlo es `planificarCorte`, y esa la llama él tocando un botón.
+
+Tercera vez que aparece el mismo patrón: `aplicarPlan` (HT F9), `aplicarARutina` (EH F9) y ahora
+esto. El apartado 16 lo pide con esas palabras: *"no reservar ni crear automáticamente nada sin que
+el usuario lo confirme"*.
+
+### ⚠️ Decide aquí, manda `notificaciones.js`
+`avisoDeCorte()` dice **qué habría que avisar y cuándo**; quien emite sigue siendo el emisor único
+del proyecto, con su permiso, su interruptor global y su horario de descanso. Mismo reparto que
+`avisosHorario.js` en el Horario. Un segundo emisor daría dos avisos.
+
+El recordatorio **nace apagado** (apartado 5: *"nunca activarlos de forma invasiva"*), y el apartado
+13 se cumple literalmente: **el calendario funciona sin recordatorios**, son dos cosas
+independientes, y la pantalla lo dice — *"salga o no el aviso, el corte sigue en tu calendario"*.
+
+### Desactivar oculta, no borra
+`impactoDesactivarPeluqueria()` avisa de la cita futura **antes** de apagar y devuelve
+`seBorraAlgo: false`. Reactivar lo devuelve todo: historial, sitios, preferencias y la propia cita.
+Es el apartado 14, y es también la regla de siempre: apagar no es cancelar.
+
+### Los sitios no son un sistema de reservas
+El apartado 12 lo dice: *"no crear todavía un sistema completo de reservas de peluquería"*. Así que
+un sitio es **un nombre, un lugar y una nota**. Ni horarios, ni teléfonos, ni disponibilidad. Y la
+pantalla lo dice —*"aquí solo se apunta dónde vas"*— en vez de dejar un botón muerto (regla 8).
+
+Borrar un sitio **desengancha** los cortes que lo usaban; no los borra.
+
+### El calendario que ya existe
+`eventosDePeluqueria()` devuelve el evento con la misma forma que los del Armario y los de las
+rutinas de F8, y entra por `eventosDerivados` como todo lo demás: **derivado y de solo lectura**
+(regla 11). **Una cita, no una serie** — el próximo corte es un plan concreto, así que a diferencia
+de las rutinas no necesita rango. Hay cinco comprobaciones sobre el enchufe en sí, no sobre la
+función: `eventosDePeluqueria` puede funcionar perfectamente y no salir en ningún sitio si nadie la
+llama.
+
+### Dos fallos silenciosos que encontró la prueba
+1. **`planificarCorte({modo: 'semanas'})` sin cantidad planificaba el corte para HOY.** `Number(null)`
+   es `0` y `Number.isInteger(0)` es `true`, así que la comprobación pasaba y `addDays(hoy, 0)`
+   devolvía hoy. Sin error, sin aviso: una cita para esta tarde.
+2. **`'25:99'` encajaba con `/^\d{2}:\d{2}$/`** y se guardaba como hora de la cita. La forma no
+   basta: ahora se comprueban las horas y los minutos.
+
+### La frecuencia real, derivada
+`frecuenciaReal()` mira los intervalos entre cortes y dice *"de media te lo cortas cada N semanas"*.
+**Con menos de dos intervalos no afirma nada** — misma disciplina que HT F11 y AR F4 —, y en el corte
+más antiguo `diasDesdeElAnterior` es `null`, no `0`: no hay con qué compararlo.
+
+### Verificación
+`bash scripts/verificar.sh` — **5041 comprobaciones**, todas correctas: build de Vite,
+189 nuevas en `scripts/test-peluqueria.mjs` (los catorce tests del apartado 17, más los dos fallos
+silenciosos, más el enchufe al calendario) y **552 casos de renderizado** (28 nuevos).
+
+⚠️ **`peluqueria` es el noveno campo que se enseña a un normalizador en este proyecto.** Tercero
+seguido que se recuerda a la primera.
+
 ## Entrega 2 · EH Fase 10/65 — Pelo: productos, catálogo y recomendaciones (v1.76.0)
 
 ### ⚠️ La decisión que gobierna la fase entera

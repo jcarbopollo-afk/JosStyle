@@ -18,6 +18,7 @@
 import { prediccionObjetivo } from './predicciones';
 import { TIPOS_FECHA_RELACION } from '../tokens';
 import { eventosDePelo } from './rutinasPelo';
+import { eventosDePeluqueria } from './peluqueria';
 
 // Objetivos con plazo estimable (prediccionObjetivo, Fase 17) y todavía no cumplidos — un
 // objetivo ya marcado como cumplido no aporta nada al calendario, solo ruido. El plazo es una
@@ -247,6 +248,11 @@ export function eventosDerivados({ objetivos, estudios, calistenia, futbol, prod
     // regla. Necesitan un rango porque una rutina "cada 3 días" no tiene un
     // número finito de ocurrencias — y no se materializa ninguna.
     ...(estiloHombre && desde && hasta ? eventosDePelo(estiloHombre, { desde, hasta }) : []),
+    // EH F11, apartado 6 — *"El evento debe poder aparecer en el calendario
+    // global. No crear un segundo calendario."* ⚠️ **Una cita, no una serie**:
+    // el próximo corte es un plan concreto, así que no necesita rango — a
+    // diferencia de las rutinas, que son una regla sin fin.
+    ...(estiloHombre ? eventosDePeluqueria(estiloHombre) : []),
   ];
 }
 

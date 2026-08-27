@@ -214,8 +214,10 @@ escribir código.
 
 | v1.76.0 | **EH F10** | Productos capilares: **la arquitectura entera y el catálogo vacío** (D2-03, y el propio enunciado dice lo mismo). ⚠️ **Ni un enlace inventado** —una "url" que no lo es se guarda como `null` y se dice— ni una función que compre, con pruebas sobre el código. **No disponible no es borrado**, y **el pack sugerido sugiere, no crea** |
 
+| v1.77.0 | **EH F11** | Peluquería: el calendario de cortes. ⚠️ **Evento planificado y corte que ocurrió son dos listas, no una** (apartado 15): borrar la cita no puede tocar el historial porque no tiene manera de hacerlo. **`frecuenciaDeCorte` enseña el choque** entre el perfil y lo puesto a mano, como `tallaDe`. **Sugerir no es reservar**, y `avisoDeCorte` DECIDE mientras `notificaciones.js` manda. Dos fallos silenciosos cazados: "en X semanas" sin la X planificaba para HOY, y `'25:99'` pasaba por hora |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 10/65**. Quedan **53** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (51).
+3/5 y **EH por 11/65**. Quedan **52** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (50).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

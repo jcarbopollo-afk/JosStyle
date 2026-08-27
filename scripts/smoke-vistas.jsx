@@ -28,7 +28,8 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH } from '../src/views/EstiloHombreView.jsx';
+import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA } from '../src/lib/peluqueria.js';
 import { crearRutina, marcarRutinaEntera, registrarCambio, alternarParte, datosPelo } from '../src/lib/rutinasPelo.js';
 import { guardarRecomendacion, descartar, REGLAS_PELO } from '../src/lib/recomendacionesPelo.js';
 import { crearProductoPelo, anadirTienda, marcarNoDisponible, crearPack } from '../src/lib/productosPelo.js';
@@ -615,6 +616,12 @@ const CASOS = [
               anadirTienda(conProductosPelo, idProdSmoke, { tipo: 'farmacia', nombre: 'Mi farmacia', url: 'https://ejemplo.test/a' }).estado,
               idProdSmoke, { tipo: 'amazon', nombre: 'Amazon', url: 'https://ejemplo.test/b', afiliado: true },
             ).estado;
+            // EH F11 — dos cortes (para que haya intervalo) y una cita planificada.
+            const conCortes = registrarCorte(
+              registrarCorte(conPerfilPelo, { fecha: '2026-06-01', nota: 'Muy corto' }).estado,
+              { fecha: '2026-07-06' },
+            ).estado;
+            const conCita = planificarCorte(conCortes, { modo: 'semanas', cantidad: 3, desde: HOY }).estado;
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
@@ -649,6 +656,20 @@ const CASOS = [
                 pp(marcarNoDisponible(conProductosPelo, idProdSmoke).estado)],
               ['ProductosPeloEH · con un pack', ProductosPeloEH, () =>
                 pp(crearPack(conProductosPelo, 'Pack hidratación', [idProdSmoke], { hoy: HOY }).estado)],
+              /* EH Fase 11 — peluquería. ⚠️ Los cuatro estados que la pantalla
+                 tiene que saber pintar: sin nada, con historial, con una cita
+                 planificada y con el aviso de eliminarla abierto. */
+              ['PeluqueriaEH · sin nada', PeluqueriaEH, () => pp(conPerfilPelo)],
+              ['PeluqueriaEH · con historial', PeluqueriaEH, () => pp(conCortes)],
+              ['PeluqueriaEH · con cita', PeluqueriaEH, () => pp(conCita)],
+              ['PeluqueriaEH · con recordatorio', PeluqueriaEH, () =>
+                pp(alternarRecordatorio(conCita).estado)],
+              ['PeluqueriaEH · con sitio', PeluqueriaEH, () =>
+                pp(anadirSitio(conCortes, { nombre: 'Barbería del barrio', lugar: 'Calle Mayor' }).estado)],
+              /* ⚠️ Apagar Peluquería oculta la plaquita y no rompe nada. */
+              ['PanelPelo · sin peluquería', PanelPelo, () =>
+                pp(alternarParte(conCita, PARTE_PELUQUERIA))],
+              ['PanelPelo · con cita', PanelPelo, () => pp(conCita)],
             ];
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>
