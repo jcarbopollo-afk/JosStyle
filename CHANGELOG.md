@@ -1,5 +1,80 @@
 # CHANGELOG.md
 
+## Entrega 2 · EH Fase 10/65 — Pelo: productos, catálogo y recomendaciones (v1.76.0)
+
+### ⚠️ La decisión que gobierna la fase entera
+El enunciado habla de catálogo, de Amazon y de afiliación. **D2-03 de Josué** dice: *"Amazon:
+arquitectura sí, afiliación no. Ni catálogo, ni productos, ni API, ni cuenta de afiliados
+inventados."*
+
+**No hay contradicción que resolver: el propio enunciado dice lo mismo.** Apartado 3: *"No llenar
+todavía la aplicación con cientos de productos manualmente en esta fase."* Apartado 11: *"**No poner
+enlaces inventados**."*
+
+Así que se construye **la arquitectura entera** —la ficha con sus doce campos, las cinco clases de
+tienda, la distinción entre enlace normal y de afiliado, el aviso de transparencia, los packs, la
+comparación, los favoritos, "ya lo tengo" y la valoración— y **el catálogo está vacío, declarado
+vacío y comprobado vacío**.
+
+Todo producto que existe en la aplicación lo ha metido él (apartado 9). El día que haya catálogo,
+entra por `CATALOGO_PELO` sin tocar nada más.
+
+### ⚠️ Nunca un enlace inventado
+Una "url" que no lo es se guarda como `null`, y la pantalla **dice que no hay enlace** en vez de
+fabricar una búsqueda de Amazon "por si acaso" — que es inventarse un enlace con otro nombre.
+
+Hay una prueba de que **no aparece ni una URL literal ni un dominio de tienda ni una etiqueta de
+afiliado en todo el código**.
+
+### ⚠️ Nunca una compra automática
+El apartado 19: *"La aplicación únicamente: recomienda → muestra información → ofrece enlace →
+usuario decide."*
+
+Cinco pruebas buscan funciones de "comprar", "checkout", "carrito", "pagar" y "pedido". Lo más lejos
+que llega esto es un objeto con la URL que él guardó.
+
+Y el apartado 12: **el usuario ve siempre "Ver producto"**, lleve el enlace la marca que lleve. El
+aviso de transparencia —*"Algunos enlaces pueden ser enlaces de afiliado"*— sale **solo si alguno lo
+es**. Poner el aviso donde no hay afiliación es tan poco honesto como quitarlo donde sí la hay.
+
+### No disponible no es borrado
+El apartado 10: *"Si un producto deja de estar disponible: **no eliminarlo automáticamente del
+historial**."* Se marca, se avisa y se ofrecen alternativas de entre los suyos.
+
+Y una que no es obvia: **una alternativa que tampoco está disponible no se ofrece**.
+
+### ⚠️ Una sola lista de productos
+La Fase 8 creó una con nombre y paso. Esta le ha añadido marca, categoría, descripción, para qué
+sirve, características, nivel, precio, tiendas, estado, valoración y opinión — **en la misma lista**.
+
+*"No duplicar productos"* está en la lista de pruebas del apartado 20, y dos listas de productos
+capilares es exactamente cómo se incumple. Mismo nombre y misma marca es el mismo producto, aunque
+cambien las mayúsculas.
+
+### El precio lleva su fecha
+El apartado 16: *"si el precio puede cambiar, no tratarlo como un dato permanente"*. Así que viaja
+con `precioAnotado`, y se re-sella al cambiarlo.
+
+### ⚠️ El pack sugerido sugiere, no crea
+El apartado 15 pide que el sistema pueda armar packs por reglas. `packSugerido` devuelve una
+propuesta — y hay una prueba de que **el estado no cambia**. Guardarlo es `crearPack`, y eso lo hace
+él, igual que `aplicarARutina` en la Fase 9.
+
+### Las recomendaciones se apagan, los productos siguen
+El apartado 18 lo dice con esas palabras, y hay una prueba de las dos mitades: con las
+recomendaciones apagadas no sale ninguna, **y los tres productos siguen ahí**.
+
+### `packs` es el octavo campo que se enseña a un normalizador
+Y como en la Fase 9, el que se olvidó lo cazó la prueba en el mismo turno. La costumbre está
+funcionando.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **4 295 comprobaciones unitarias**, 5 de
+auditoría, **524 casos de renderizado real** y 10 reglas invariantes — **4 824 en total**. De ellas,
+**169 nuevas** para EH F10.
+
+---
+
 ## Entrega 2 · EH Fase 9/65 — Pelo: sistema de recomendaciones (v1.75.0)
 
 ### El enunciado abre con dos palabras en mayúsculas

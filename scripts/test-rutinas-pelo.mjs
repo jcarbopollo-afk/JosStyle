@@ -66,12 +66,14 @@ const conRutina = (opts = {}) => {
 
 /* ── 1 · EL PANEL (apartado 1) ───────────────────────────────────────────── */
 
-eq(PLAQUITAS_PELO.length, 5, 'Las cinco plaquitas del apartado 1');
+// ⚠️ Seis desde la Fase 10, que añadió la de Productos (su apartado 1).
+eq(PLAQUITAS_PELO.length, 6, 'Las cinco del apartado 1 de F8 más la de Productos de F10');
 eq(PLAQUITAS_PELO.map((p) => p.nombre),
-  ['Mi pelo', 'Mi rutina', 'Seguimiento', 'Recomendaciones', 'Peluquería'], 'Con sus nombres literales');
+  ['Mi pelo', 'Mi rutina', 'Seguimiento', 'Recomendaciones', 'Productos', 'Peluquería'],
+  'Con sus nombres literales');
 // ⚠️ Cuatro desde la Fase 9: Recomendaciones pasó a listo. Peluquería no.
-eq(PLAQUITAS_PELO.filter((p) => p.listo).length, 4, 'Cuatro funcionan hoy');
-ok(PLAQUITAS_PELO.filter((p) => !p.listo).every((p) => p.fase > 9),
+eq(PLAQUITAS_PELO.filter((p) => p.listo).length, 5, 'Cinco funcionan hoy');
+ok(PLAQUITAS_PELO.filter((p) => !p.listo).every((p) => p.fase > 10),
   '⚠️ Y la que no, dice en qué fase llega — regla 8, no "próximamente"');
 eq(PLAQUITAS_PELO.find((p) => p.id === 'peluqueria').fase, 11, 'Peluquería, en la fase 11');
 
@@ -381,8 +383,8 @@ eq(accionPelo('inventada'), null, 'Una acción que no existe devuelve null');
    verdad no es el número, sino que NO aparezca una colección de fotos ni un
    catálogo de productos — así que ahora lo dice así. */
 eq(Object.keys(DEFAULT_PELO).sort(),
-  ['cambios', 'hechos', 'partes', 'productos', 'recomendaciones', 'rutinas'],
-  'Las seis colecciones que hay hoy');
+  ['cambios', 'hechos', 'packs', 'partes', 'productos', 'recomendaciones', 'rutinas'],
+  'Las siete colecciones que hay hoy');
 ok(!Object.keys(DEFAULT_PELO).some((k) => /foto|galeria|catalogo/i.test(k)),
   '⚠️ Y ninguna de fotos (apartado 10) ni de catálogo (apartado 11 + D2-03)');
 

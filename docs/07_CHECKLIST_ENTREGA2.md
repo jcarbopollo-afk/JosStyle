@@ -4,9 +4,9 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 52 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 9/65**
-> (hasta v1.75.0). Quedan **54**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (52). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 53 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 10/65**
+> (hasta v1.76.0). Quedan **53**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (51). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -801,30 +801,76 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 > viven en la `config` de Pelo, y queda dicho para que la fase que cree el global sepa que tiene que
 > absorberlos.
 
-#### EH · Fase 10/65 — PELO: PRODUCTOS, CATÁLOGO Y RECOMENDACIONES
-- [ ] SECCIÓN DE PRODUCTOS
-- [ ] CATEGORÍAS
-- [ ] FICHA DE PRODUCTO
-- [ ] PRODUCTOS RECOMENDADOS
-- [ ] MOTIVO DE LA RECOMENDACIÓN
-- [ ] COMPARAR
-- [ ] FAVORITOS
-- [ ] PRODUCTOS QUE YA UTILIZA
-- [ ] AÑADIR PRODUCTO PERSONAL
-- [ ] PRODUCTOS NO DISPONIBLES
-- [ ] AMAZON
-- [ ] AFILIACIÓN
-- [ ] OTRAS TIENDAS
-- [ ] PACKS
-- [ ] PACK PERSONALIZADO
-- [ ] Producto A
-- [ ] Producto B
-- [ ] Producto C
-- [ ] PRECIO
-- [ ] VALORACIÓN PERSONAL
-- [ ] RECOMENDACIONES CONTROLADAS
-- [ ] NO COMPRAR AUTOMÁTICAMENTE
-- [ ] PRUEBAS
+#### EH · Fase 10/65 — PELO: PRODUCTOS, CATÁLOGO Y RECOMENDACIONES ✅ COMPLETADA (v1.76.0)
+
+> **`src/lib/productosPelo.js`** (169 comprobaciones) + la pantalla. Sin SQL nuevo.
+>
+> ⚠️ **El enunciado habla de catálogo, de Amazon y de afiliación. D2-03 de Josué dice
+> *"arquitectura sí, afiliación no; ni catálogo, ni productos, ni API, ni cuenta de afiliados
+> inventados"*. No hay contradicción que resolver: el propio enunciado dice lo mismo** — apartado 3,
+> *"no llenar todavía la aplicación con cientos de productos"*; apartado 11, *"**no poner enlaces
+> inventados**"*.
+>
+> Así que se construye **la arquitectura entera** —la ficha con sus doce campos, las cinco clases de
+> tienda, la distinción entre enlace normal y de afiliado, el aviso de transparencia, los packs, la
+> comparación, los favoritos, "ya lo tengo" y la valoración— y **el catálogo está vacío, declarado
+> vacío y comprobado vacío**. Todo producto que existe lo ha metido él (apartado 9).
+>
+> ⚠️ **Nunca un enlace inventado.** Una "url" que no lo es se guarda como `null`, y la pantalla
+> **dice que no hay enlace** en vez de fabricar una búsqueda de Amazon "por si acaso". Hay una prueba
+> de que **no aparece ni una URL literal ni un dominio de tienda en todo el código**.
+>
+> ⚠️ **Nunca una compra automática** (apartado 19). Cinco pruebas buscan funciones de "comprar",
+> "checkout", "carrito", "pagar" y "pedido". Lo más lejos que llega la aplicación es *"Ver
+> producto"* — y el usuario **ve siempre esa misma etiqueta**, lleve el enlace la marca que lleve
+> (apartado 12), con el aviso de transparencia **solo si alguno es de afiliado**.
+>
+> ⚠️ **No disponible no es borrado** (apartado 10): se marca, se avisa y se ofrecen alternativas de
+> entre los suyos — y **una alternativa que tampoco está disponible no se ofrece**.
+>
+> ⚠️ **Una sola lista de productos.** La Fase 8 creó una con nombre y paso; esta le añadió marca,
+> categoría, tiendas y valoración **en la misma lista**. *"No duplicar productos"* está en la lista de
+> pruebas del apartado 20, y dos listas de productos capilares es exactamente cómo se incumple. Mismo
+> nombre y misma marca es el mismo producto, aunque cambien las mayúsculas.
+>
+> **El precio lleva la fecha en la que se anotó** (apartado 16: *"si el precio puede cambiar, no
+> tratarlo como un dato permanente"*), y se re-sella al cambiarlo.
+>
+> ⚠️ **El pack sugerido SUGIERE, no crea** (apartado 15): devuelve una propuesta y hay una prueba de
+> que el estado **no cambia**. Guardarlo es `crearPack`, y eso lo hace él — igual que
+> `aplicarARutina` en la Fase 9.
+>
+> **Las recomendaciones se pueden apagar y los productos siguen** (apartado 18), con su prueba: es lo
+> que el apartado dice con esas palabras.
+
+- [x] SECCIÓN DE PRODUCTOS
+- [x] CATEGORÍAS
+- [x] FICHA DE PRODUCTO
+- [x] PRODUCTOS RECOMENDADOS
+- [x] MOTIVO DE LA RECOMENDACIÓN
+- [x] COMPARAR
+- [x] FAVORITOS
+- [x] PRODUCTOS QUE YA UTILIZA
+- [x] AÑADIR PRODUCTO PERSONAL
+- [x] PRODUCTOS NO DISPONIBLES
+- [x] AMAZON
+- [x] AFILIACIÓN
+- [x] OTRAS TIENDAS
+- [x] PACKS
+- [x] PACK PERSONALIZADO
+- [x] Producto A
+- [x] Producto B
+- [x] Producto C
+- [x] PRECIO
+- [x] VALORACIÓN PERSONAL
+- [x] RECOMENDACIONES CONTROLADAS
+- [x] NO COMPRAR AUTOMÁTICAMENTE
+- [x] PRUEBAS
+
+
+> ⚠️ **`packs` es el octavo campo que se enseña a un normalizador en este proyecto.** Y como en la
+> Fase 9, el que se olvidó (`recomendaciones`) lo cazó la prueba en el mismo turno. La costumbre está
+> funcionando.
 
 #### EH · Fase 11/65 — PELUQUERÍA: CALENDARIO Y SEGUIMIENTO DE CORTES
 - [ ] PLAQUITA DE PELUQUERÍA

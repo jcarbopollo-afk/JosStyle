@@ -212,8 +212,10 @@ escribir código.
 
 | v1.75.0 | **EH F9** | El motor de recomendaciones capilares, **sin IA y comprobado sobre el código**. ⚠️ **Si un dato no existe no se asume**: cada regla declara qué necesita y con el perfil vacío salen CERO. **Nunca "debes"**, con una prueba sobre todos los textos posibles. Y **una recomendación no modifica nada**: `aplicarARutina` exige confirmación, y la prueba compara el estado byte a byte |
 
+| v1.76.0 | **EH F10** | Productos capilares: **la arquitectura entera y el catálogo vacío** (D2-03, y el propio enunciado dice lo mismo). ⚠️ **Ni un enlace inventado** —una "url" que no lo es se guarda como `null` y se dice— ni una función que compre, con pruebas sobre el código. **No disponible no es borrado**, y **el pack sugerido sugiere, no crea** |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 9/65**. Quedan **54** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (52).
+3/5 y **EH por 10/65**. Quedan **53** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (51).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

@@ -51,6 +51,8 @@ export const PLAQUITAS_PELO = [
   // estarlo, y lo dice: regla 8 — enseñar una plaquita que no lleva a nada sin
   // avisar es el control decorativo prohibido.
   { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', fase: 9, listo: true },
+  // EH F10 — la plaquita de productos que pide su apartado 1.
+  { id: 'productos', nombre: 'Productos', icono: '🛒', fase: 10, listo: true },
   { id: 'peluqueria', nombre: 'Peluquería', icono: '📅', fase: 11, listo: false },
 ];
 
@@ -90,6 +92,9 @@ export const DEFAULT_PELO = {
   // y vistas). La forma la decide `normalizarRecs` en `recomendacionesPelo.js`;
   // aquí solo se declara y se arrastra, para no importar en círculo.
   recomendaciones: {},
+  // ⚠️ EH F10 — los packs de productos. Forma en `normalizarPack`
+  // (`productosPelo.js`); aquí se declara y se arrastra, como `recomendaciones`.
+  packs: [],
 };
 
 export const ACCIONES_PELO = [
@@ -167,9 +172,15 @@ export function normalizarPelo(guardado) {
     cambios: (Array.isArray(g.cambios) ? g.cambios : [])
       .filter((c) => c && typeof c.fecha === 'string' && COMO_LO_NOTAS.some((x) => x.id === c.como))
       .map((c) => ({ id: c.id || uid(), fecha: c.fecha, como: c.como, nota: (c.nota || '').trim() })),
+    /* ⚠️ EH F10 amplió el producto: la Fase 8 guardaba solo `nombre` y `paso`, y
+       la 10 le añadió marca, categoría, tiendas, valoración… **en esta misma
+       lista**, no en una segunda. "No duplicar productos" está en la lista de
+       pruebas del apartado 20, y dos listas de productos capilares es
+       exactamente cómo se incumple. Los campos nuevos se arrastran tal cual;
+       la forma la decide `normalizarProducto` en `productosPelo.js`. */
     productos: (Array.isArray(g.productos) ? g.productos : [])
       .filter((p) => p && (p.nombre || '').trim())
-      .map((p) => ({ id: p.id || uid(), nombre: p.nombre.trim(), paso: p.paso || null })),
+      .map((p) => ({ ...p, id: p.id || uid(), nombre: p.nombre.trim(), paso: p.paso || null })),
     partes,
     // ⚠️ **Séptima vez que este proyecto se topa con el mismo fallo, y la
     // primera en la que lo encontró una prueba en el mismo turno:** sin esta
@@ -179,6 +190,8 @@ export function normalizarPelo(guardado) {
     recomendaciones: g.recomendaciones && typeof g.recomendaciones === 'object' && !Array.isArray(g.recomendaciones)
       ? g.recomendaciones
       : {},
+    // ⚠️ Octava vez. Al añadir un campo, añadirlo también aquí.
+    packs: Array.isArray(g.packs) ? g.packs : [],
   };
 }
 

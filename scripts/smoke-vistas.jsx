@@ -28,9 +28,10 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH } from '../src/views/EstiloHombreView.jsx';
 import { crearRutina, marcarRutinaEntera, registrarCambio, alternarParte, datosPelo } from '../src/lib/rutinasPelo.js';
 import { guardarRecomendacion, descartar, REGLAS_PELO } from '../src/lib/recomendacionesPelo.js';
+import { crearProductoPelo, anadirTienda, marcarNoDisponible, crearPack } from '../src/lib/productosPelo.js';
 import { contestarPelo, PREGUNTAS_PELO } from '../src/lib/perfilCapilar.js';
 import { NO_LO_SE } from '../src/lib/cuestionarios.js';
 import { alternarValor, anadirLibre } from '../src/lib/perfilEstilo.js';
@@ -603,9 +604,17 @@ const CASOS = [
             const conCambios = registrarCambio(hecha, 'mejor', 'Lo noto menos seco.', { hoy: HOY }).estado;
             // Un perfil capilar de verdad, para que el motor de F9 tenga con qué.
             let conPerfilPelo = conCambios;
+            /* eslint-disable no-unused-vars */
             [['tipoPelo', 'rizado'], ['necesidadesPelo', 'definicion'], ['necesidadesPelo', 'hidratacion'],
               ['cueroCabelludo', 'graso'], ['tiempoPelo', '10_20']]
               .forEach(([q, v]) => { conPerfilPelo = contestarPelo(conPerfilPelo, q, v, { hoy: HOY }).estado; });
+            const cp1 = crearProductoPelo(conPerfilPelo, { nombre: 'Crema hidratante', marca: 'Genérica', categoria: 'hidratacion', precio: 9 }, { hoy: HOY });
+            const conProductosPelo = crearProductoPelo(cp1.estado, { nombre: 'Crema de rizos', categoria: 'definicion' }, { hoy: HOY }).estado;
+            const idProdSmoke = cp1.producto.id;
+            const conEnlacePelo = anadirTienda(
+              anadirTienda(conProductosPelo, idProdSmoke, { tipo: 'farmacia', nombre: 'Mi farmacia', url: 'https://ejemplo.test/a' }).estado,
+              idProdSmoke, { tipo: 'amazon', nombre: 'Amazon', url: 'https://ejemplo.test/b', afiliado: true },
+            ).estado;
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
@@ -630,6 +639,16 @@ const CASOS = [
                  tiene que decir qué hacer (apartado 12). */
               ['RecomendacionesPeloEH · todas descartadas', RecomendacionesPeloEH, () =>
                 pp(REGLAS_PELO.reduce((acc, rg) => descartar(acc, rg.id, 'no_verlo', { hoy: HOY }).estado, conPerfilPelo))],
+              // EH Fase 10 — productos: sin ninguno, con los suyos, y uno no disponible.
+              ['ProductosPeloEH · sin ninguno', ProductosPeloEH, () => pp(conPerfilPelo)],
+              ['ProductosPeloEH · con productos', ProductosPeloEH, () => pp(conProductosPelo)],
+              ['ProductosPeloEH · con enlace y afiliado', ProductosPeloEH, () => pp(conEnlacePelo)],
+              /* ⚠️ Un producto no disponible NO desaparece: sale con su aviso y,
+                 si las hay, con sus alternativas (apartado 10). */
+              ['ProductosPeloEH · uno no disponible', ProductosPeloEH, () =>
+                pp(marcarNoDisponible(conProductosPelo, idProdSmoke).estado)],
+              ['ProductosPeloEH · con un pack', ProductosPeloEH, () =>
+                pp(crearPack(conProductosPelo, 'Pack hidratación', [idProdSmoke], { hoy: HOY }).estado)],
             ];
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>

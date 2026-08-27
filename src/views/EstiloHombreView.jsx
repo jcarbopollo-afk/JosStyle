@@ -79,6 +79,12 @@ import {
   MOTIVOS_DESCARTE, recomendarPelo, descartar, guardarRecomendacion,
   guardadasDePelo, aplicarARutina, PUENTE_PRODUCTOS_PELO, resumenRecomendacionesPelo,
 } from '../lib/recomendacionesPelo';
+import {
+  CATEGORIAS_PRODUCTO_PELO, categoriaProducto, CATALOGO_VACIO_PORQUE,
+  productosPelo, crearProductoPelo, alternarFavorito, alternarMio, marcarNoDisponible,
+  alternativasDe, enlacesDe, recomendarProductos, packsPelo, crearPack, verPack,
+  packSugerido, resumenProductosPelo, estadoProducto,
+} from '../lib/productosPelo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -948,10 +954,19 @@ export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCer
   const resumen = useMemo(() => resumenPelo(estado), [estado]);
   const perfil = useMemo(() => progresoPelo(estado, datosGlobales), [estado, datosGlobales]);
   const recs = useMemo(() => resumenRecomendacionesPelo(estado, datosGlobales), [estado, datosGlobales]);
+  const prods = useMemo(() => resumenProductosPelo(estado, datosGlobales), [estado, datosGlobales]);
 
   if (zona === 'rutina') return <RutinasPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
   if (zona === 'seguimiento') return <SeguimientoPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
   if (zona === 'ajustes') return <AjustesPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
+  if (zona === 'productos') {
+    return (
+      <ProductosPeloEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setZona(null)}
+      />
+    );
+  }
   if (zona === 'recomendaciones') {
     return (
       <RecomendacionesPeloEH
@@ -968,6 +983,7 @@ export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCer
     recomendaciones: recs.disponibles === 0
       ? 'Cuéntanos algo más'
       : `${recs.disponibles} ${recs.disponibles === 1 ? 'opción' : 'opciones'}`,
+    productos: prods.total === 0 ? 'Añade los tuyos' : `${prods.total} ${prods.total === 1 ? 'producto' : 'productos'}`,
   };
 
   return (
@@ -990,7 +1006,8 @@ export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCer
               const abre = p.id === 'perfil' ? onPerfil
                 : (p.id === 'rutina' ? () => setZona('rutina')
                   : (p.id === 'seguimiento' ? () => setZona('seguimiento')
-                    : (p.id === 'recomendaciones' ? () => setZona('recomendaciones') : null)));
+                    : (p.id === 'recomendaciones' ? () => setZona('recomendaciones')
+                      : (p.id === 'productos' ? () => setZona('productos') : null))));
               return (
                 <Plaquita
                   key={p.id} accent={accent}
@@ -1468,6 +1485,191 @@ export function RecomendacionesPeloEH({ estado, accent, datosGlobales = {}, onCa
             <p key={g.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>{g.icono} {g.titulo}</p>
           ))}
         </div>
+      )}
+    </Card>
+  );
+}
+
+/* ===========================================================================
+   PRODUCTOS CAPILARES (F10)
+   ===========================================================================
+   *"La aplicación recomienda. El usuario elige."*
+
+   ⚠️ **Aquí no hay catálogo, y se dice.** D2-03 de Josué y el apartado 3 del
+   enunciado coinciden: nada de llenar la aplicación con productos inventados.
+   Todo lo que sale aquí lo ha metido él.
+
+   ⚠️ **Y nunca un botón de comprar** (apartado 19). Como mucho, *"Ver
+   producto"* — y solo si él guardó un enlace. */
+export function ProductosPeloEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  const [creando, setCreando] = useState(false);
+  const [nombre, setNombre] = useState('');
+  const [marca, setMarca] = useState('');
+  const [cat, setCat] = useState(null);
+  const productos = useMemo(() => productosPelo(estado), [estado]);
+  const rec = useMemo(() => recomendarProductos(estado, datosGlobales, { limite: 3 }), [estado, datosGlobales]);
+  const sug = useMemo(() => packSugerido(estado, datosGlobales), [estado, datosGlobales]);
+  const packs = useMemo(() => packsPelo(estado).map((p) => verPack(estado, p.id)).filter(Boolean), [estado]);
+
+  const crear = () => {
+    const { estado: nuevo, error } = crearProductoPelo(estado, { nombre, marca, categoria: cat });
+    if (!error) onCambiar?.(nuevo);
+    setCreando(false); setNombre(''); setMarca(''); setCat(null);
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>🛒 Productos para ti</p>
+      </div>
+      {/* ⚠️ Regla 8 + D2-03: se dice que no hay catálogo, en vez de fingir uno. */}
+      <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>{CATALOGO_VACIO_PORQUE}</p>
+
+      {/* Apartado 4 — ⭐ Para ti, solo si están activas (apartado 18). */}
+      {rec.activas && rec.recomendaciones.length > 0 && (
+        <div className="mb-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>
+            ⭐ Para ti
+          </p>
+          <div className="space-y-1">
+            {rec.recomendaciones.map((x) => (
+              <div key={x.id} className="rounded-2xl p-2.5"
+                style={{ background: hexToRgba(accent, 0.08), border: `1px solid ${hexToRgba(accent, 0.25)}` }}>
+                <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                  {x.icono} {x.nombre}{x.marca ? ` · ${x.marca}` : ''}
+                </p>
+                <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{x.encaje}</p>
+                {/* Apartado 5 — siempre el motivo. */}
+                <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>{x.porque}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Apartado 15 — el pack sugerido: se propone, se elige. Nunca se compra. */}
+      {sug.hayPack && (
+        <div className="rounded-2xl p-3 mb-3"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>📦 {sug.nombre}</p>
+          {sug.productos.map((x) => (
+            <p key={x.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>{x.icono} {x.nombre}</p>
+          ))}
+          <button
+            onClick={() => onCambiar?.(crearPack(estado, sug.nombre, sug.productos.map((x) => x.id)).estado)}
+            className="text-[10px] font-semibold mt-1.5" style={{ color: accent }}
+          >
+            Guardar este pack
+          </button>
+        </div>
+      )}
+
+      {packs.length > 0 && (
+        <div className="mb-3">
+          {packs.map((p) => (
+            <p key={p.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              📦 {p.nombre} · {p.productos.length} {p.productos.length === 1 ? 'producto' : 'productos'}
+              {p.precio !== null ? ` · ${p.precio} €` : ''}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* La lista de los suyos. */}
+      <div className="space-y-1 mb-3">
+        {productos.map((p) => {
+          const en = enlacesDe(estado, p.id);
+          const est = estadoProducto(p.estado);
+          const alts = p.estado !== 'disponible' ? alternativasDe(estado, p.id) : [];
+          return (
+            <div key={p.id} className="rounded-2xl p-2.5"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <div className="flex items-center gap-2">
+                <span className="text-sm leading-none flex-shrink-0" aria-hidden="true">
+                  {categoriaProducto(p.categoria)?.icono || '🧴'}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold truncate" style={{ color: COLORS.text }}>{p.nombre}</p>
+                  <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>
+                    {[p.marca, categoriaProducto(p.categoria)?.nombre, p.precio !== null ? `${p.precio} €` : null]
+                      .filter(Boolean).join(' · ') || 'Sin más datos'}
+                  </p>
+                </div>
+                <button onClick={() => onCambiar?.(alternarFavorito(estado, p.id).estado)}
+                  className="flex-shrink-0 text-[11px]" aria-label={`Favorito ${p.nombre}`}>
+                  {p.favorito ? '❤️' : '🤍'}
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                <button onClick={() => onCambiar?.(alternarMio(estado, p.id).estado)}
+                  className="text-[10px] font-semibold" style={{ color: p.mio ? accent : COLORS.textMuted }}>
+                  {p.mio ? '✓ Ya lo tengo' : 'Ya lo tengo'}
+                </button>
+                {/* ⚠️ Apartado 12: siempre "Ver producto", nunca "Comprar". */}
+                {en.enlaces.map((l, i) => (
+                  <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                    className="text-[10px] font-semibold" style={{ color: accent }}>
+                    {l.etiqueta} · {l.tienda}
+                  </a>
+                ))}
+                {en.sinEnlaces && (
+                  <span className="text-[10px]" style={{ color: COLORS.textMuted }}>{en.sinEnlacesTexto}</span>
+                )}
+                <button onClick={() => onCambiar?.(marcarNoDisponible(estado, p.id, p.estado !== 'disponible').estado)}
+                  className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                  {p.estado === 'disponible' ? 'Marcar no disponible' : 'Vuelve a estar'}
+                </button>
+              </div>
+
+              {/* ⚠️ Apartado 12 — el aviso SOLO si hay algún enlace de afiliado. */}
+              {en.aviso && <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{en.aviso}</p>}
+
+              {/* Apartado 10 — no disponible NO es borrado. */}
+              {est?.aviso && (
+                <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+                  ⚠️ {est.nombre}
+                  {alts.length > 0 && ` · También tienes: ${alts.map((a) => a.nombre).join(', ')}`}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {creando ? (
+        <div className="space-y-2">
+          <TextInput value={nombre} onChange={(ev) => setNombre(ev.target.value)}
+            placeholder="Nombre del producto" aria-label="Nombre del producto" />
+          <TextInput value={marca} onChange={(ev) => setMarca(ev.target.value)}
+            placeholder="Marca (opcional)" aria-label="Marca" />
+          <div className="flex flex-wrap gap-1.5">
+            {CATEGORIAS_PRODUCTO_PELO.map((c) => (
+              <button key={c.id} onClick={() => setCat(cat === c.id ? null : c.id)}
+                className="rounded-full px-2.5 py-1"
+                style={{
+                  background: cat === c.id ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                  border: `1px solid ${cat === c.id ? accent : COLORS.border}`,
+                }}
+                aria-pressed={cat === c.id}
+              >
+                <span className="text-[11px] font-semibold" style={{ color: cat === c.id ? COLORS.text : COLORS.textMuted }}>
+                  {c.icono} {c.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+          <PrimaryButton accent={accent} onClick={crear}>Guardar producto</PrimaryButton>
+          <button onClick={() => setCreando(false)} className="text-[11px] font-semibold mx-auto block"
+            style={{ color: COLORS.textMuted }}>Cancelar</button>
+        </div>
+      ) : (
+        <PrimaryButton accent={accent} icon={Plus} onClick={() => setCreando(true)}>Añadir producto</PrimaryButton>
       )}
     </Card>
   );
