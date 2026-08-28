@@ -70,6 +70,8 @@ import {
 import { eliminarPerfume, restaurarPerfume, eliminarUso, restaurarUso } from './lib/perfumes';
 // EH F26 — accesorios y su lista de deseados, a la misma papelera.
 import { eliminarAccesorio, restaurarAccesorio, eliminarDeseoAccesorio, restaurarDeseoAccesorio } from './lib/accesorios';
+// EH F27 — gustos, intereses y cosas que quiere hacer, a la misma papelera.
+import { eliminarGusto, restaurarGusto } from './lib/gustos';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.
@@ -1172,6 +1174,17 @@ export default function App() {
     });
   };
 
+  /* EH F27 — Mis gustos. ⚠️ Borrar saca el nombre TAMBIÉN del registro de la
+     Fase 4, para que el perfil de estilo no siga diciendo que le gusta. */
+  const eliminarDeGustos = (id) => {
+    const r = eliminarGusto(estiloHombre, id);
+    if (r.error) return;
+    snapshotAndSave({
+      estiloHombre: r.estado,
+      papelera: { ...papelera, elementos: [...papelera.elementos, r.entrada] },
+    });
+  };
+
   const eliminarConPapelera = (modulo, coleccion, id) => {
     // Los registros de piel no son una lista de primer nivel: van por su puerta.
     if (modulo === 'skincare' && coleccion === 'registros') return eliminarRegistroDePiel(id);
@@ -1179,6 +1192,7 @@ export default function App() {
     if (modulo === 'sonrisa') return eliminarDeSonrisa(coleccion, id);
     if (modulo === 'perfumes') return eliminarDePerfumes(coleccion, id);
     if (modulo === 'accesorios') return eliminarDeAccesorios(coleccion, id);
+    if (modulo === 'gustos') return eliminarDeGustos(id);
     const entradaModulo = MODULOS_PAPELERA[modulo];
     if (!entradaModulo) return;
     const resultado = prepararEliminacion(entradaModulo[0], modulo, coleccion, id, new Date().toISOString());
@@ -1209,6 +1223,16 @@ export default function App() {
       const r = entrada.coleccion === 'perfumes'
         ? restaurarPerfume(estiloHombre, entrada)
         : restaurarUso(estiloHombre, entrada);
+      if (r.error) return;
+      snapshotAndSave({
+        estiloHombre: r.estado,
+        papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
+      });
+      return;
+    }
+    // EH F27 — y Mis gustos.
+    if (entrada.modulo === 'gustos') {
+      const r = restaurarGusto(estiloHombre, entrada);
       if (r.error) return;
       snapshotAndSave({
         estiloHombre: r.estado,
@@ -1988,6 +2012,9 @@ export default function App() {
                lo hace en el ARMARIO: el módulo decide, App.jsx —que es el dueño
                de los dos almacenes— guarda. Mismo reparto que `gestionModulos`
                con `estiloDeHombre`. */
+            /* ⚠️ EH F27 — con el nombre escrito: la auditoría de ME F4 los busca
+               literales sobre el código de App.jsx. */
+            onEliminarGusto={(id) => eliminarConPapelera('gustos', 'entradas', id)}
             onGuardarAccesorio={({ estado: nuevo, armario: nuevoArmario }) => snapshotAndSave({
               ...(nuevo ? { estiloHombre: nuevo } : {}),
               ...(nuevoArmario ? { armario: nuevoArmario } : {}),

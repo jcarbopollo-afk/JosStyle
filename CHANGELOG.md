@@ -1,5 +1,69 @@
 # CHANGELOG.md
 
+## v1.90.0 — EH Fase 27/65: gustos, intereses y cosas que quiero hacer
+
+### Qué se ha construido
+El módulo ❤️ **Mis gustos**, con sus cuatro bloques: ❤️ Me gusta, 🎯 Quiero hacer, 🌟 Mis intereses y
+📋 Mis preferencias. Se llega desde **Más → Estilo de hombre → Mis gustos**.
+
+*"No será un diario ni una lista de tareas. Será una especie de perfil personal de gustos e intereses
+dentro de Estilo de hombre."*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ "Cosas que te gustan" y "cosas que te gustaría hacer" ya existían.** Están en el **registro de
+la Fase 4** desde la **Fase 6** —`intereses` y `quiereHacer`, las dos de texto libre— y el perfil de
+estilo las pregunta. Así que esta fase **no crea una segunda lista**: guarda la **ficha** de cada cosa
+—su categoría, su prioridad, su estado, su fecha, su lugar y su nota— y **deja los nombres donde ya
+vivían**. Lo que él escribió en el perfil sale aquí como una entrada suelta con un botón para
+completarla, y completarla **no la duplica**. Cuarta vez que este registro evita un duplicado.
+
+**2. ⚠️ Borrar y renombrar sacan el nombre del registro.** Sin eso, borrar "Fútbol" lo devolvía como
+entrada suelta del perfil de estilo: el módulo diría que ya no le gusta y el perfil seguiría diciendo
+que sí. Lo cazó la prueba, y por eso `escribirEntradas` tiene un parámetro `quitar`.
+
+**3. ⚠️ "Quiero hacer" no es una tarea** (apartado 4: *"no debe aparecer automáticamente como tarea
+pendiente"*). El módulo **no importa nada de Productividad**, y hay una prueba que lee el código
+fuente. Y se le dice **en la pantalla**, no solo en un comentario.
+
+**4. ⚠️ El estado es solo de "Quiero hacer"** (apartado 6, con esas palabras). Un "Me gusta" no lo
+tiene: dárselo obligaría a decidir qué significa *"ya lo hice"* sobre *"me gusta el fútbol"*. Y **"Ya
+lo hice" no borra nada** —*"esto permite conservar el historial sin eliminarlo"*—: solo deja de salir
+en el calendario, porque es historial y no un plan.
+
+**5. ⚠️ La fecha llega al calendario, pero nadie crea un evento** (apartado 7). Los eventos son
+**derivados y de solo lectura**, filtrados por el rango que se pide, y entran por la misma puerta que
+Pelo, Piel, Barba y Sonrisa. Quitar la fecha hace desaparecer el evento, porque nunca se guardó.
+
+**6. ⚠️ "Mis preferencias" no es una cuarta lista.** El apartado 1 la nombra y el enunciado no la
+define en ningún sitio, mientras que el registro de la Fase 4 **ya clasifica** las suyas con
+`clase: 'preferencia'`. Así que es una **vista de solo lectura** que dice dónde se cambia cada cosa,
+igual que la Fase 12 con `tiempoPelo`. Inventar una lista habría sido la cuarta de preferencias.
+
+### Y dos cosas más que el enunciado pide con nombre
+**La nota es corta y lo extenso es del Diario** (apartado 10: *"pero no convertirlo en diario… así
+reutilizamos el Diario existente"*): la pantalla **lleva** al Diario, no copia nada allí ni trae nada
+de allí. Y **`paraPersonalizar()` devuelve, no aplica** (apartado 11: *"nunca modificar
+automáticamente otros módulos"*), con `soloLectura: true` escrito en el propio dato.
+
+La prioridad **no mete prisa**: ninguna viene marcada, ninguna dice "urgente" y ninguna pone fecha
+límite. *"No crear presión."*
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **191 comprobaciones nuevas**, **984 casos de
+renderizado** (36 nuevos) y **168 comprobaciones en Chromium** (17 nuevas): se entra en Mis gustos, se
+configura, se añade algo a "Quiero hacer", **se comprueba que su nombre va al registro de la Fase 4** y
+que sigue ahí después de recargar.
+
+### Archivos
+- **Nuevos:** `src/lib/gustos.js`, `scripts/test-gustos.mjs`.
+- **Modificados:** `src/lib/estiloDeHombre.js` (la línea del módulo), `src/lib/papelera.js` (una
+  entrada del catálogo), `src/lib/datosEstiloHombre.js` (`intereses` y `quiereHacer` los usa también
+  `gustos`), `src/lib/calendarioIntegracion.js`, `src/App.jsx`, `src/views/EstiloHombreView.jsx`,
+  `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.89.0 — EH Fase 26/65: accesorios y estilo personal
 
 ### Qué se ha construido

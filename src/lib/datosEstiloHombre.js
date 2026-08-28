@@ -110,8 +110,11 @@ export const REGISTRO_DATOS = [
   { id: 'marcasFavoritas', nombre: 'Marcas favoritas', categoria: 'estilo', clase: 'opcional', usan: ['estilo', 'productos'], historial: false, desde: 6 },
   { id: 'marcasEvitar', nombre: 'Marcas que no quieres usar', categoria: 'estilo', clase: 'opcional', usan: ['estilo', 'productos'], historial: false, desde: 6 },
   { id: 'ocasionesInteres', nombre: 'Para qué quieres recomendaciones', categoria: 'estilo', clase: 'preferencia', usan: ['estilo'], historial: false, desde: 6 },
-  { id: 'intereses', nombre: 'Cosas que te gustan', categoria: 'perfil', clase: 'opcional', usan: ['estilo', 'habitos'], historial: false, desde: 6 },
-  { id: 'quiereHacer', nombre: 'Cosas que te gustaría hacer', categoria: 'objetivos', clase: 'opcional', usan: ['estilo', 'habitos'], historial: false, desde: 6 },
+  /* ⚠️ EH F27 — `gustos` se suma a los dos que los usan, y es el módulo que
+     ahora los EDITA con ficha. Los nombres siguen viviendo aquí: la Fase 27 no
+     crea una segunda lista de "cosas que me gustan". */
+  { id: 'intereses', nombre: 'Cosas que te gustan', categoria: 'perfil', clase: 'opcional', usan: ['estilo', 'habitos', 'gustos'], historial: false, desde: 6 },
+  { id: 'quiereHacer', nombre: 'Cosas que te gustaría hacer', categoria: 'objetivos', clase: 'opcional', usan: ['estilo', 'habitos', 'gustos'], historial: false, desde: 6 },
   { id: 'imagenPersonal', nombre: 'Qué imagen quieres transmitir', categoria: 'estilo', clase: 'opcional', usan: ['estilo'], historial: false, desde: 6 },
   { id: 'nivelEstilo', nombre: 'Tu nivel en estilo', categoria: 'estilo', clase: 'preferencia', usan: ['estilo', 'educacion'], historial: true, desde: 6 },
 ];

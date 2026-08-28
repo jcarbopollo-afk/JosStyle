@@ -22,6 +22,7 @@ import { eventosDePeluqueria } from './peluqueria';
 import { eventosDePiel } from './rutinasPiel';
 import { eventosDeBarba } from './rutinasBarba';
 import { eventosDeSonrisa } from './sonrisa';
+import { eventosDeGustos } from './gustos';
 
 // Objetivos con plazo estimable (prediccionObjetivo, Fase 17) y todavía no cumplidos — un
 // objetivo ya marcado como cumplido no aporta nada al calendario, solo ruido. El plazo es una
@@ -267,6 +268,10 @@ export function eventosDerivados({ objetivos, estudios, calistenia, futbol, prod
     /* EH F23, apartado 15 — *"nunca crear un calendario dental independiente"*.
        Cuarto módulo de Estilo de Hombre por esta misma puerta. */
     ...(estiloHombre && desde && hasta ? eventosDeSonrisa(estiloHombre, desde, hasta) : []),
+    /* EH F27, apartado 7 — *"sí podrá conectarse con el calendario global. Pero
+       no crear automáticamente ningún evento"*. Quinto módulo de Estilo de
+       Hombre por esta puerta: derivados, de solo lectura y sin guardar nada. */
+    ...(estiloHombre && desde && hasta ? eventosDeGustos(estiloHombre, desde, hasta) : []),
   ];
 }
 
@@ -277,6 +282,7 @@ export const NOMBRES_ORIGEN = {
   piel: 'Skincare',
   barba: 'Barba y afeitado',
   sonrisa: 'Sonrisa',
+  gustos: 'Mis gustos',
   objetivos: 'Objetivos',
   estudios: 'Estudios',
   entreno: 'Entrenamiento',

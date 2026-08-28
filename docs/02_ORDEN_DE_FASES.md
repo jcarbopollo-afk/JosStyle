@@ -240,9 +240,11 @@ escribir código.
 
 | v1.89.0 | **EH F26** | Accesorios y estilo personal. ⚠️ **Un accesorio ES una prenda del Armario**: allí vive una sola vez y aquí solo su envoltorio de estilo, con `CAMPOS_DE_LA_PRENDA` como frontera y una prueba por cada campo. ⚠️ **Añadirlo escribe en el ARMARIO**, y App.jsx guarda los dos almacenes. ⚠️ **El duplicado se comprueba ANTES** (apartado 3), sin valor por defecto. ⚠️ **La combinación es una preferencia, no un outfit**. ⚠️ **Ni otra lista de estilos (F6) ni de ocasiones (F24)**, y **el favorito es el de la prenda** |
 
+| v1.90.0 | **EH F27** | Gustos, intereses y cosas que quiero hacer. ⚠️ **"Cosas que te gustan" y "que te gustaría hacer" YA EXISTÍAN** en el registro de la F4 desde la F6: esta fase guarda la FICHA y deja los nombres donde vivían — cuarta vez que el registro evita un duplicado. ⚠️ **Borrar y renombrar sacan el nombre del registro**. ⚠️ **"Quiero hacer" NO es una tarea** (apartado 4), con prueba sobre el código. ⚠️ **El estado es solo de "Quiero hacer"**, y "ya lo hice" no borra nada. ⚠️ **La fecha llega al calendario sin crear ningún evento**. ⚠️ Y **"Mis preferencias" es la vista del registro**, no una cuarta lista |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 23/65** (F1-F17, F20, F21, F23-F26; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **40** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (38, tres de ellas bloqueadas).
+3/5 y **EH por 24/65** (F1-F17, F20, F21, F23-F27; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **39** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (37, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

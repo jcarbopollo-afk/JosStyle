@@ -105,6 +105,10 @@ export const MODULOS_EH = [
      de Accesorios; la de Fitness sigue siendo una estimación de la F1. */
   { id: 'accesorios', nombre: 'Accesorios', icono: '🕶️', sub: 'Relojes, gafas y detalles', fase: 26, categoria: 'estilo', terminos: ['accesorio', 'accesorios', 'reloj', 'relojes', 'gafas', 'pulsera', 'pulseras', 'collar', 'collares', 'anillo', 'anillos', 'gorra', 'gorras'] },
   { id: 'fitness', nombre: 'Fitness', icono: '🏋️', sub: 'Físico y postura', fase: 26, categoria: 'fisico', terminos: ['fisico', 'físico', 'postura', 'entrenar', 'gimnasio', 'musculo', 'músculo'] },
+  /* ⚠️ EH F27 — otra línea. ⚠️ Sus nombres viven en el REGISTRO de la F4
+     (`intereses` y `quiereHacer`, desde la F6): este módulo guarda la ficha de
+     cada cosa, no una segunda lista. */
+  { id: 'gustos', nombre: 'Mis gustos', icono: '❤️', sub: 'Lo que te gusta y lo que quieres hacer', fase: 27, categoria: 'bienestar', terminos: ['gustos', 'gusta', 'intereses', 'interes', 'interés', 'aficiones', 'hobbies', 'quiero hacer', 'experiencias'] },
   { id: 'sueno', nombre: 'Sueño', icono: '😴', sub: 'Descanso y aspecto', fase: 30, categoria: 'fisico', terminos: ['sueño', 'sueno', 'dormir', 'descanso', 'ojeras', 'cansancio'] },
   { id: 'salud', nombre: 'Salud', icono: '🧬', sub: 'Lo que se nota fuera', fase: 33, categoria: 'salud', confirmar: true, terminos: ['salud', 'medico', 'médico', 'revision', 'revisión', 'dental', 'vista'] },
   { id: 'habitos', nombre: 'Hábitos y rutinas', icono: '🧠', sub: 'Lo de cada día', fase: 37, categoria: 'bienestar', recomendado: true, terminos: ['habito', 'hábito', 'habitos', 'hábitos', 'rutina', 'rutinas', 'constancia'] },

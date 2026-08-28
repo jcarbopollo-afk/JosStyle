@@ -1911,35 +1911,68 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar persistencia.
 - [x] Probar móvil.
 
-#### EH · Fase 27/65 — GUSTOS, INTERESES Y COSAS QUE QUIERO HACER
-- [ ] PLAQUITA PRINCIPAL
-- [ ] CATEGORÍAS
-- [ ] PRIORIDAD
-- [ ] ESTADO
-- [ ] FECHA
-- [ ] LUGARES
-- [ ] FAVORITOS
-- [ ] NOTAS
-- [ ] CONEXIÓN CON EL RESTO DE JC FITNESS
-- [ ] EJEMPLO
-- [ ] DESACTIVAR
-- [ ] ELIMINAR
-- [ ] PRUEBAS
-- [ ] Añadir gusto.
-- [ ] Editarlo.
-- [ ] Eliminarlo.
-- [ ] Recuperarlo.
-- [ ] Añadir interés.
-- [ ] Añadir algo que quiere hacer.
-- [ ] Cambiar estado.
-- [ ] Añadir fecha.
-- [ ] Conectarlo con calendario.
-- [ ] Añadir favorito.
-- [ ] Añadir nota.
-- [ ] Abrir nota extensa en Diario.
-- [ ] Desactivar cada plaquita.
-- [ ] Reactivar.
-- [ ] Comprobar persistencia.
+#### EH · Fase 27/65 — GUSTOS, INTERESES Y COSAS QUE QUIERO HACER ✅ COMPLETADA (v1.90.0)
+
+> **`src/lib/gustos.js`** (191 comprobaciones) + la pantalla `GustosEH`. Sin SQL nuevo.
+>
+> ⚠️ **"Cosas que te gustan" y "cosas que te gustaría hacer" YA EXISTÍAN.** Están en el registro de
+> la **Fase 4** desde la **Fase 6** —`intereses` y `quiereHacer`, las dos con `libre: true`— y el
+> perfil de estilo las pregunta. Así que esta fase **no crea una segunda lista**: guarda la **ficha**
+> de cada cosa y **deja los nombres donde ya vivían**. Lo que él escribió en el perfil sale aquí como
+> una entrada suelta con un botón para completarla. **Cuarta vez** que el registro evita un duplicado.
+>
+> ⚠️ **Borrar y renombrar sacan el nombre del registro.** Sin eso, borrar "Fútbol" lo devolvía como
+> entrada suelta del perfil: el módulo diría que ya no le gusta y el perfil seguiría diciendo que sí.
+> Lo cazó la prueba.
+>
+> ⚠️ **"Quiero hacer" NO es una tarea** (apartado 4, con esas palabras). El módulo no importa nada de
+> Productividad, y hay una prueba que lee el código. Y se le dice **en la pantalla**, no solo aquí.
+>
+> ⚠️ **El estado es SOLO de "Quiero hacer"** (apartado 6). Un "Me gusta" no lo tiene: dárselo obligaría
+> a decidir qué significa *"ya lo hice"* sobre *"me gusta el fútbol"*. Y **"Ya lo hice" no borra nada**
+> —*"permite conservar el historial"*—, solo deja de salir en el calendario.
+>
+> ⚠️ **La fecha llega al calendario, pero nadie crea un evento** (apartado 7): derivados, de solo
+> lectura, filtrados por el rango pedido y por la puerta que ya usan Pelo, Piel, Barba y Sonrisa.
+>
+> ⚠️ **"Mis preferencias" no es una cuarta lista.** El apartado 1 la nombra y no la define en ningún
+> sitio; el registro de la Fase 4 ya clasifica las suyas con `clase: 'preferencia'`. Es una **vista de
+> solo lectura** que dice dónde se cambia cada cosa, como la Fase 12 con `tiempoPelo`.
+>
+> ⚠️ **La nota es corta y lo extenso es del Diario** (apartado 10): la pantalla **lleva** al Diario;
+> no copia nada allí ni trae nada de allí.
+>
+> ⚠️ **Y `paraPersonalizar()` devuelve, no aplica** (apartado 11): *"nunca modificar automáticamente
+> otros módulos"*, con `soloLectura: true` escrito en el propio dato.
+
+- [x] PLAQUITA PRINCIPAL
+- [x] CATEGORÍAS
+- [x] PRIORIDAD
+- [x] ESTADO
+- [x] FECHA
+- [x] LUGARES
+- [x] FAVORITOS
+- [x] NOTAS
+- [x] CONEXIÓN CON EL RESTO DE JC FITNESS
+- [x] EJEMPLO
+- [x] DESACTIVAR
+- [x] ELIMINAR
+- [x] PRUEBAS
+- [x] Añadir gusto.
+- [x] Editarlo.
+- [x] Eliminarlo.
+- [x] Recuperarlo.
+- [x] Añadir interés.
+- [x] Añadir algo que quiere hacer.
+- [x] Cambiar estado.
+- [x] Añadir fecha.
+- [x] Conectarlo con calendario.
+- [x] Añadir favorito.
+- [x] Añadir nota.
+- [x] Abrir nota extensa en Diario.
+- [x] Desactivar cada plaquita.
+- [x] Reactivar.
+- [x] Comprobar persistencia.
 
 #### EH · Fase 28/65 — OBJETIVOS Y EXPERIENCIAS PERSONALES
 - [ ] DESDE «QUIERO HACER»

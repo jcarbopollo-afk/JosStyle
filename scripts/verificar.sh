@@ -314,6 +314,12 @@ else
   fallo "Fallan los accesorios"; grep '✗' /tmp/jc_eh26.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-gustos.mjs >/tmp/jc_eh27.log 2>&1; then
+  ok "Gustos, intereses y cosas que quiero hacer (EH F27) — $(grep -c '✓' /tmp/jc_eh27.log) comprobaciones"
+else
+  fallo "Fallan los gustos"; grep '✗' /tmp/jc_eh27.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

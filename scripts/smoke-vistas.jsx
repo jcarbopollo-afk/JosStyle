@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -57,6 +57,11 @@ import {
   editarAccesorio as editarAccesorioEH, alternarFavoritoAccesorio, alternarEnUsoAccesorio,
   anadirDeseoAccesorio, alternarParteAccesorios, elegirCategoriasAccesorios,
 } from '../src/lib/accesorios.js';
+import {
+  configurarGustos, decirAhoraNoGustos, anadirGusto, alternarFavoritoGusto,
+  cambiarEstadoGusto, ponerFechaGusto, alternarParteGustos,
+} from '../src/lib/gustos.js';
+import { guardarDato as guardarDatoEH } from '../src/lib/datosEstiloHombre.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
   crearRevision, registrarCambioCepillo, planificarCambioCepillo,
@@ -847,6 +852,21 @@ const CASOS = [
             };
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop, onEliminar: noop, onEliminarRegistro: noop });
             const pa = (e4, arm = ARM_ACC) => ({ ...pp(e4), armario: arm, onGuardar: noop });
+            /* EH F27 — Mis gustos. ⚠️ Los estados que importan: la entrada, el
+               panel, cada bloque, lo que ya escribió en el perfil de estilo sin
+               ficha, lo que ya hizo y los bloques apagados. */
+            const gusBase = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['gustos', 'estilo']);
+            const gusConf = configurarGustos(gusBase, { hoy: HOY }).estado;
+            const gusAlta = anadirGusto(gusConf, { nombre: 'Fútbol', tipo: 'gusta', categoria: 'deportes' }, { hoy: HOY });
+            const gusUno = gusAlta.estado;
+            const gusHacer = anadirGusto(gusUno, { nombre: 'Viajar a Londres', tipo: 'hacer' }, { hoy: HOY });
+            const gusTres = anadirGusto(gusHacer.estado, { nombre: 'Fotografía', tipo: 'interes' }, { hoy: HOY }).estado;
+            const gusFav = alternarFavoritoGusto(gusTres, gusAlta.entrada.id).estado;
+            const gusFecha = ponerFechaGusto(gusTres, gusHacer.entrada.id, '2026-09-10').estado;
+            const gusHecho = cambiarEstadoGusto(gusTres, gusHacer.entrada.id, 'hecho').estado;
+            /* ⚠️ Lo que escribió en el perfil de estilo y aún no tiene ficha. */
+            const gusSueltos = guardarDatoEH(gusConf, 'intereses', ['Piano', 'Montaña']).estado;
+            const pg = (e4) => ({ ...pp(e4), onIr: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
               ['PanelPelo · con rutina hecha', PanelPelo, () => pp(conCambios)],
@@ -1034,6 +1054,18 @@ const CASOS = [
                 pa(elegirCategoriasAccesorios(accConEstilo, ['gafas']), armAcc)],
               ['AccesoriosEH · partes apagadas', AccesoriosEH, () =>
                 pa(alternarParteAccesorios(alternarParteAccesorios(accConEstilo, 'deseos'), 'recomendaciones'), armAcc)],
+              /* EH Fase 27 — Mis gustos. */
+              ['GustosEH · entrada', GustosEH, () => pg(gusBase)],
+              ['GustosEH · ahora no', GustosEH, () => pg(decirAhoraNoGustos(gusBase).estado)],
+              ['GustosEH · panel vacío', GustosEH, () => pg(gusConf)],
+              ['GustosEH · con los tres tipos', GustosEH, () => pg(gusTres)],
+              ['GustosEH · con favorito', GustosEH, () => pg(gusFav)],
+              ['GustosEH · con fecha', GustosEH, () => pg(gusFecha)],
+              ['GustosEH · con algo ya hecho', GustosEH, () => pg(gusHecho)],
+              /* ⚠️ Lo del perfil de estilo, que sale aquí sin duplicarse. */
+              ['GustosEH · con sueltos del perfil', GustosEH, () => pg(gusSueltos)],
+              ['GustosEH · bloques apagados', GustosEH, () =>
+                pg(alternarParteGustos(alternarParteGustos(gusTres, 'me_gusta'), 'preferencias'))],
             ];
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>

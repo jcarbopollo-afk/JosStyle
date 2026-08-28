@@ -122,6 +122,9 @@ export const CATALOGO_PAPELERA = {
      ENVOLTORIO de estilo: el nombre y la foto son de la prenda, que sigue en el
      Armario, así que la etiqueta sale de su nota o de su fecha. */
   'accesorios.accesorios': { modulo: 'accesorios', coleccion: 'accesorios', tipo: 'Accesorio', campos: ['nota', 'creadoEn'], icono: 'accesorios' },
+  /* ⚠️ EH F27, apartado 14 — *"eliminados recientemente GLOBAL. No crear
+     papelera propia"*. Una línea, como todos. */
+  'gustos.entradas': { modulo: 'gustos', coleccion: 'entradas', tipo: 'Gusto o interés', campos: ['nombre'], icono: 'gustos' },
   'accesorios.deseos': { modulo: 'accesorios', coleccion: 'deseos', tipo: 'Accesorio que quiere comprar', campos: ['nombre'], icono: 'accesorios' },
   'relacion.fechas': { modulo: 'relacion', coleccion: 'fechas', tipo: 'Fecha importante', campos: ['etiqueta'], icono: 'relacion', privado: true },
 };

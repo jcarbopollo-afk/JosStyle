@@ -85,6 +85,8 @@ const ESTILO_GUARDADO = {
     { id: 'perfumes', activo: true, orden: 4, config: {} },
     // EH F26 — Accesorios, encendido y sin configurar.
     { id: 'accesorios', activo: true, orden: 5, config: {} },
+    // EH F27 — Mis gustos, encendido y sin configurar.
+    { id: 'gustos', activo: true, orden: 6, config: {} },
     /* ⚠️ Con el perfil de piel empezado: si no, Skincare enseña su puerta de
        entrada ("Configurar / Ahora no") y no se llega al panel. */
     { id: 'skincare', activo: true, orden: 1, config: { necesidadesPiel: 'hidratacion', complejidadPiel: 'basico' } },
@@ -525,5 +527,53 @@ await pulsar('Accesorios');
 await pulsar('Mis accesorios');
 await page.waitForTimeout(500);
 ok(/Casio negro/.test(await ver()), '⚠️ PERSISTENCIA: sigue ahí después de recargar');
+
+/* ── 12 · MIS GUSTOS, Y NI UNA SEGUNDA LISTA (EH F27) ──────────────────── */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+ok(await pulsar('Mis gustos'), 'Mis gustos (EH F27) se abre desde Estilo de hombre');
+ok(/¿Quieres utilizar este apartado\?/.test(await ver()), 'Y pregunta si lo quiere usar');
+
+ok(await pulsar('Sí, configurarlo'), 'Se puede configurar');
+await page.waitForTimeout(800);
+const panelGus = await ver();
+['Me gusta', 'Quiero hacer', 'Mis intereses', 'Mis preferencias']
+  .forEach((p) => ok(panelGus.includes(p), `Se ve la plaquita "${p}"`));
+ok(!/Llega en la fase/.test(panelGus), '⚠️ Regla 8: ninguna plaquita decorativa');
+
+ok(await pulsar('Quiero hacer'), '"Quiero hacer" se abre');
+const quiero = await ver();
+ok(/no te va a aparecer como pendiente/.test(quiero),
+  '⚠️ Y dice que NO es una lista de tareas, donde se ve (apartado 4)');
+
+await page.fill('input[aria-label="Añadir a Quiero hacer"]', 'Viajar a Londres');
+guardado.length = 0;
+ok(await pulsar('Añadir'), 'Se puede añadir algo que quiere hacer');
+await page.waitForTimeout(1400);
+
+const escGus = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escGus.length > 0, '⚠️ PERSISTENCIA: se escribe en Supabase');
+const guardadoEH = escGus.at(-1)?.value || {};
+const entradasGus = guardadoEH.modulos?.find((m) => m.id === 'gustos')?.config?.gustos?.entradas || [];
+ok(entradasGus.length === 1 && entradasGus[0].nombre === 'Viajar a Londres', 'Con su ficha');
+ok(entradasGus[0].estado === 'idea', 'Que nace como idea (apartado 6)');
+/* ⚠️ La prueba de la fase: el NOMBRE va al registro de la Fase 4, donde ya vivía
+   desde la Fase 6. Ni una segunda lista de "cosas que me gustaría hacer". */
+const registro = guardadoEH.datos?.quiereHacer?.valor || [];
+ok(Array.isArray(registro) && registro.includes('Viajar a Londres'),
+  '⚠️ Y SU NOMBRE VA AL REGISTRO DE LA FASE 4: ni una segunda lista');
+ok(/Viajar a Londres/.test(await ver()), '⚠️ Y la pantalla lo enseña');
+
+/* ⚠️ Y al recargar sigue estando, con su ficha y su nombre en el registro. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await pulsar('Mis gustos');
+await pulsar('Quiero hacer');
+await page.waitForTimeout(500);
+ok(/Viajar a Londres/.test(await ver()), '⚠️ PERSISTENCIA: sigue ahí después de recargar');
 
 await salir(browser);

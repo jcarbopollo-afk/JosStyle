@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.89.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.90.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 23/65**, quedan 40 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 24/65**, quedan 39 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -98,8 +98,12 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 ## Contexto operativo de Josué
 
 - **No tiene ordenador**: todo desde el iPhone. Comandos simples, uno a la vez.
-- **Despliega vía Vercel.** El detalle exacto de cómo sube el código desde el iPhone **no se conoce**
-  — preguntárselo si hace falta para depurar un despliegue, no asumirlo.
+- **Despliega vía Vercel, desde la rama `main`.** 🚨 **Ya se sabe cómo subía el código, y era el
+  problema:** extraía el zip en el iPhone y lo subía por la web de GitHub (`Add files via upload`),
+  que **se lleva los archivos sueltos de la raíz pero NO las carpetas**. Resultado: `main` tenía la
+  documentación al día y `src/` del 11 de agosto, y la web no cambiaba nunca. **Desde v1.90.0 el
+  trabajo se lleva a `main` desde la sesión** y la web se actualiza sola; el zip es una copia de
+  seguridad. Si vuelve a decir *"la web sigue igual"*, **mirar en qué versión está `main`**.
 - **Rota entre varias cuentas de Claude**, pasando `HANDOFF.md` + zip. Puede haber resuelto en otra
   conversación algo que aquí parece pendiente.
 - ⚠️ **UNA FASE POR TURNO, y se para.** Josué cambió el modo de trabajo: él pasa la fase, se
@@ -149,7 +153,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 23/65** (v1.89.0: F1-F17, **F20, F21 y F23-F26**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 24/65** (v1.90.0: F1-F17, **F20, F21 y F23-F27**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -161,10 +165,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 27/65 — Gustos, intereses y cosas que quiero hacer**.
+La siguiente candidata es **EH · Fase 28/65 — Objetivos y experiencias personales**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F26 dejaron setenta y siete cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F27 dejaron ochenta y cuatro cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -367,6 +371,28 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   Escribir el objeto entero se lleva por delante todo el módulo en el siguiente guardado.
 - ⚠️ **Elegir qué gestionas y apagar un apartado pueden ser EL MISMO interruptor** (F26, apartados 2
   y 14). Antes de crear un segundo mecanismo, comprobar si el enunciado describe el mismo dos veces.
+- ⚠️ **`intereses` y `quiereHacer` VIVEN EN EL REGISTRO DE LA F4 desde la F6** (F27). La F27 guarda la
+  **ficha** de cada cosa y deja el nombre allí: lo que él escribió en el perfil de estilo sale aquí
+  como entrada suelta y completarla **no la duplica**. Cuarta vez que el registro evita un duplicado.
+- ⚠️ **Sincronizar un dato del registro tiene DOS direcciones** (F27): al borrar o renombrar una
+  ficha hay que **sacar el nombre viejo**, o vuelve como entrada suelta y el perfil sigue diciendo
+  que le gusta algo que acaba de borrar. Por eso `escribirEntradas` recibe `quitar`.
+- ⚠️ **"Quiero hacer" NO es una tarea** (F27, apartado 4) y **el estado es SOLO suyo** (apartado 6):
+  un "Me gusta" no tiene estado, y *"ya lo hice"* **no borra nada** — deja de salir en el calendario
+  porque es historial, no un plan.
+- ⚠️ **Un bloque que el enunciado NOMBRA pero no DEFINE probablemente ya existe** (F27): *"📋 Mis
+  preferencias"* no se define en ningún apartado, y el registro de la F4 ya las clasifica con
+  `clase: 'preferencia'`. Es una vista de solo lectura, no una cuarta lista.
+- ⚠️ **La nota corta es del módulo; lo extenso, del Diario** (F27, apartado 10). Se LLEVA al Diario;
+  no se copia nada allí ni se trae nada de allí.
+- ⚠️ **`paraPersonalizar()` devuelve, no aplica** (F27, apartado 11), con `soloLectura: true` escrito
+  en el propio dato. *"Nunca modificar automáticamente otros módulos."*
+- 🚨 **LO QUE JOSUÉ SUBE A MANO A GITHUB NO INCLUYE LAS CARPETAS.** Sus seis `Add files via upload`
+  solo llevaron los **nueve archivos sueltos de la raíz**: ni uno de `src/`. Por eso `main` tenía la
+  documentación nueva y el código del 11 de agosto, y la web no cambiaba por más zips que subiera.
+  **Desde v1.90.0 el trabajo se lleva a `main` desde aquí y la web se actualiza sola**; el zip es una
+  copia de seguridad, no la forma de publicar. Si alguna vez vuelve a decir *"la web sigue igual"*,
+  **mirar primero en qué versión está `main`**, no el zip.
 
 ⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
 que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el
