@@ -1,5 +1,89 @@
 # CHANGELOG.md
 
+## v1.84.0 — EH Fase 20/65: barba y afeitado, y una pregunta para Josué
+
+### ⏸ Lo primero: las Fases 18 y 19 están bloqueadas, y no las he resuelto por mi cuenta
+Al abrir la Fase 18 (*Cuerpo e higiene*) aparecieron **dos prompts de Josué que dicen cosas
+distintas**:
+
+- Su **Fase 2**, en la lista de módulos, pone en 🧴 Cuidado **tres apartados**: *Skincare*,
+  **Higiene** y **Cuidado corporal** — dos entradas separadas, cada una con su interruptor.
+- El objetivo de la **Fase 18** dice *"la estructura será modular: 🚿 **Cuidado corporal e higiene**,
+  y dentro aparecerán pequeñas plaquitas"*, y el apartado 1 de la **Fase 19** lo confirma:
+  *"**dentro de** 🚿 Cuerpo e Higiene mostrar 🚿 Mi rutina"*.
+
+Las dos lecturas rompen un prompt suyo: fundirlos **quita un módulo del catálogo que él escribió** y
+que lleva en uso desde v1.60.0; mantenerlos separados deja el *"¿Qué quieres utilizar?"* del apartado
+1, con sus siete casillas, **sin una pantalla donde vivir**. Es la **regla 49** exactamente: se anota
+como **C-25** en `docs/03` con tres preguntas concretas, **se detiene la fase afectada y no la
+sesión**, y se sigue por la 20.
+
+*(Y hay un solape añadido que conviene decidir a la vez: dos de esas siete casillas son "Cuidado de
+manos" y "Cuidado de pies", y la **Fase 22** se titula "Manos, uñas y pies: configuración".)*
+
+### Qué se ha construido: Barba y afeitado
+La entrada opcional, las seis casillas de *"¿qué quieres gestionar?"*, el perfil por secciones, sus
+productos y la gestión de apartados. Se llega desde **Más → Estilo de hombre → Barba**.
+
+### Las cinco decisiones que gobiernan la fase
+
+**1. ⚠️ Nada nuevo se construye aquí.** El apartado 17 es una **lista de siete cosas que hay que
+reutilizar** —perfil global, productos globales, calendario, recordatorios, favoritos y Eliminados
+recientemente— y termina con *"no crear sistemas paralelos"*. Así que la fase es, casi entera,
+llamadas: el motor de cuestionarios de la F7, el registro de datos de la F4, los inventarios de F10 y
+F17 y los tres niveles de la F6. `auditarBarba()` declara **nueve ceros**.
+
+**2. ⚠️ `sensibilidadPiel` no se vuelve a preguntar.** El registro de la Fase 4 ya la declaraba con
+`usan: ['skincare', 'barba', 'productos']` — con **"barba" escrito dentro, siete fases antes de que
+existiera este archivo**. Se lee, y la pantalla dice dónde se cambia. Lo que sí es nuevo es
+`molestiaAfeitado` (apartado 10), que **no es la misma pregunta**: reaccionar a un producto y
+molestarse tras pasar una cuchilla son dos cosas, y se puede tener lo primero sin afeitarse nunca.
+
+**3. ⚠️ Los productos son los del catálogo global, y aquí solo se guardan IDS.** Un aftershave
+registrado en Skincare se marca para la barba **sin duplicarse**; desmarcarlo **no lo borra** de su
+módulo; y si lo borra allí, **aquí desaparece** — no se queda su nombre huérfano, que sería media
+ficha guardada aquí, o sea el segundo inventario por la puerta de atrás.
+
+**4. ⚠️ El formulario adaptativo se amplió EN EL MOTOR, no con un `if`.** El apartado 7 dice *"si
+selecciona afeitado"*, y "afeitado" no es una respuesta: es una de las casillas del apartado 2, que
+vive en la `config`. Así que `cuando` pasó a recibir **dos** cosas —las respuestas y un contexto del
+módulo— y las preguntas de la Fase 13 siguieron funcionando **sin tocar ni una**. Era eso o volver a
+meter la condición en el JSX, que es justo lo que la F13 sacó de ahí porque no se puede comprobar.
+
+**5. ⚠️ `frecuenciaDeAfeitado()` es la única respuesta a "cada cuánto"**, como `frecuenciaDeCorte()`
+en la F11: *"cuando lo necesito"* **es una respuesta** y no se traduce a días, *"Personalizado"* sin
+cifra **no es una frecuencia todavía**, y el choque entre lo del perfil y lo puesto a mano **se
+enseña** en vez de resolverse por él. Con las mismas trampas cubiertas: `Number(null)` es 0 y
+`Number.isInteger(0)` es `true`.
+
+### Nunca un diagnóstico
+Los apartados 10 y 11 lo dicen los dos: *"no diagnosticar"* e *"información declarada por el usuario,
+no un diagnóstico médico"*. `PALABRAS_CLINICAS` es **la lista de la Fase 13, importada** —no una
+segunda—, y una prueba barre los 82 textos de esta fase. La ayuda de la pregunta de molestias tuvo
+que reescribirse porque *"no es un diagnóstico"* **contiene la palabra**: octava vez que una
+comprobación de este proyecto salta con algo que estaba bien dicho.
+
+### Y un fallo real, cazado por la regla invariante
+Al conectar la pantalla renombré un import y dejé `resumenBarba()` usada sin importar. `vite build`
+**pasó igual** —no comprueba identificadores— y en el móvil habría sido un `ReferenceError` en
+blanco: exactamente el fallo de `papelera.js` que tuvo la app rota durante meses.
+`scripts/test-imports.mjs`, que existe por aquello, lo señaló con nombre y archivo.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **141 comprobaciones nuevas**, **756 casos de
+renderizado** (60 nuevos) y **61 comprobaciones en Chromium** sobre la aplicación de verdad: se llega
+a Barba, se dice que sí, se dejan marcadas solo las casillas que quiere, **se escribe en Supabase**,
+se abre el perfil —**sin las preguntas de afeitado, porque no marcó esa casilla**— y se contesta.
+
+### Archivos
+- **Nuevos:** `src/lib/perfilBarba.js`, `scripts/test-perfil-barba.mjs`.
+- **Modificados:** `src/lib/cuestionarios.js` (el contexto del módulo en `cuando`),
+  `src/views/EstiloHombreView.jsx` (cinco pantallas nuevas y la plaquita),
+  `docs/03` (**C-25**), `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`,
+  `scripts/verificar.sh`.
+
+---
+
 ## v1.83.0 — EH Fase 17/65: productos, farmacia, Amazon y packs de skincare
 
 ### Qué se ha construido

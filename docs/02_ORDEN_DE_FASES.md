@@ -228,8 +228,11 @@ escribir código.
 
 | v1.83.0 | **EH F17** | Productos, farmacia, Amazon y packs de skincare. ⚠️ **La condición de finalización pedía el motor** —*"evitando crear cinco catálogos diferentes"*—, así que lo genérico se extrajo a `motorProductos.js` y Pelo y Piel lo comparten: **las 169 pruebas de F10 pasaron sin tocar ni una**. ⚠️ **UN inventario, el de la Fase 13**, ampliado, no un segundo. 🐛 **Y el fallo de normalizador por decimoctava vez**: `normalizarPiel` recortaba cada producto a `{id, nombre}`, así que el siguiente guardado se habría llevado la ficha entera. ⚠️ **Catálogo vacío (D2-03), nunca un enlace inventado y nunca una compra**, con pruebas sobre el código |
 
+| v1.84.0 | **EH F20** (fuera de orden) + ⏸ **C-25** | Barba y afeitado: perfil y configuración. ⚠️ **Construida saltándose la 18 y la 19, y a propósito**: la **C-25** las bloquea por la regla 49 —la Fase 2 de Josué dice que *Higiene* y *Cuidado corporal* son **dos** módulos, y las Fases 18 y 19 los tratan como **uno**—, y la 20 no depende de ellas. ⚠️ **El apartado 17 es una lista de siete cosas que hay que REUTILIZAR**, así que la fase es casi entera llamadas: nueve ceros en la auditoría. ⚠️ **`sensibilidadPiel` NO se vuelve a preguntar**: el registro de la Fase 4 ya decía que Barba la usa. ⚠️ **Los productos son los del catálogo global y aquí solo se guardan IDS.** ⚠️ Y el **formulario adaptativo se amplió en el MOTOR**, no con un `if`: `cuando` pasó a recibir también el contexto del módulo |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 17/65**. Quedan **46** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (44).
+3/5 y **EH por 18/65** (F1-F17 y F20; **F18 y F19 ⏸ bloqueadas por C-25**). Quedan **45** fases de la
+Entrega 2: SO (2, con **F2 bloqueada**) y EH (43, dos de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

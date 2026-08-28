@@ -11,7 +11,7 @@
 
 ---
 
-## PARTE A — CONTRADICCIONES (22)
+## PARTE A — CONTRADICCIONES (23)
 
 Formato: **qué choca con qué** → **cuál gana y por qué** → **qué hay que hacer**.
 Severidad: 🔴 rompe algo hoy · 🟠 engaña a quien lea la documentación · 🟡 tensión de diseño asumida
@@ -414,6 +414,52 @@ ya no importa porque Rachas está entero (4/4). **SO F1 está construida.**
 especificación: *"esto lo voy a hacer cuando la web ya tenga todos los botones activos y todo, no te
 lo voy a dar aún"*. Sin los sonidos, un motor de audio sería un control decorativo — justo lo que
 prohíbe la regla 8.
+
+---
+
+### 🔴 C-25 — ¿Higiene y Cuidado corporal son UN módulo o DOS? · **⏸ PENDIENTE DE JOSUÉ, bloquea EH F18 y F19**
+
+**Encontrada al abrir EH F18.** Dos prompts de Josué dicen cosas distintas, y la diferencia se ve en
+la pantalla:
+
+| Dónde | Qué dice |
+|---|---|
+| **EH F2, apartado 3** (*"Agrupación"*) | En 🧴 Cuidado hay **tres** módulos: *Skincare*, ***Higiene*** y ***Cuidado corporal*** — dos entradas separadas en el catálogo, cada una con su interruptor |
+| **EH F18, objetivo** | *"La estructura será modular: **🚿 Cuidado corporal e higiene**. Y dentro aparecerán pequeñas plaquitas"* — **un** módulo con partes dentro |
+| **EH F19, apartado 1** | *"**Dentro de** 🚿 Cuerpo e Higiene mostrar: 🚿 Mi rutina"* — confirma que F18/F19 lo tratan como uno solo |
+
+Y hay una tercera pista que **no** desempata: el apartado 17 de F18 dice *"desde ⚙️ Gestionar
+apartados puede quitar 🚿 Higiene diaria sin quitar 🧴 Cuidado corporal"*. Eso describe el mismo
+comportamiento visible en las dos lecturas —dos interruptores independientes—, así que sirve igual
+de bien para defender una que la otra.
+
+**Por qué NO la he resuelto por mi cuenta (regla 49):**
+
+- **Las dos lecturas rompen un prompt de Josué.** Fundir `higiene` y `cuerpo` en una sola línea de
+  `MODULOS_EH` **quita un módulo del catálogo que él mismo escribió en F2** y que ya está construido
+  y en uso desde v1.60.0 — con el agravante de que ese catálogo tiene `retirados` precisamente
+  porque quitar un módulo no es gratis. Y mantener los dos deja el *"¿Qué quieres utilizar?"* del
+  apartado 1 de F18, con sus siete casillas, **sin una sola pantalla donde vivir**.
+- **Cambia lo que Josué ve y cuántos interruptores tiene.** No es contabilidad como C-24: es la
+  navegación.
+- Y hay un solape añadido que conviene resolver a la vez: **dos de esas siete casillas son
+  "Cuidado de manos" y "Cuidado de pies", y la Fase 22 se titula *"Manos, uñas y pies:
+  configuración"***. O son la misma cosa contada dos veces, o la 22 desarrolla lo que la 18
+  enciende — y eso también lo decide él.
+
+**⏸ Lo que se le pregunta a Josué:**
+
+1. En tu lista de módulos, ¿*Higiene* y *Cuidado corporal* siguen siendo **dos apartados separados**
+   en Estilo de hombre (como escribiste en la Fase 2), o quieres **uno solo** llamado *"Cuerpo e
+   higiene"* con las siete casillas dentro (como está escrito en la Fase 18)?
+2. Si son dos, ¿en cuál de los dos vive la pantalla de *"¿Qué quieres utilizar?"* con sus siete
+   casillas?
+3. *Cuidado de manos* y *Cuidado de pies*: ¿son casillas de este bloque, o son la Fase 22 y aquí
+   solo se encienden?
+
+**Mientras tanto** (regla 49: *"se detiene la fase afectada, no la sesión"*): **F18 y F19 quedan sin
+construir**, y se sigue por **F20 (Barba y afeitado)**, que es un módulo con una sola entrada en
+`MODULOS_EH` y no depende de esto para nada. Cuando conteste, F18 y F19 se retoman en su sitio.
 
 ---
 

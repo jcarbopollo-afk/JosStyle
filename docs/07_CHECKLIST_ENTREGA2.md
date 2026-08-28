@@ -1381,7 +1381,15 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] NO COMPRA AUTOMÁTICA
 - [x] PRUEBAS
 
-#### EH · Fase 18/65 — CUERPO E HIGIENE MASCULINA: CONFIGURACIÓN Y PERFIL
+#### EH · Fase 18/65 — CUERPO E HIGIENE MASCULINA: CONFIGURACIÓN Y PERFIL ⏸ **BLOQUEADA (C-25)**
+
+> ⏸ **Pendiente de Josué, por la regla 49.** Su Fase 2 dice que *Higiene* y *Cuidado corporal* son
+> **dos módulos** del catálogo; el objetivo de esta fase y el apartado 1 de la Fase 19 dicen que son
+> **uno solo** llamado *"Cuerpo e higiene"* con plaquitas dentro. Las dos lecturas rompen un prompt
+> suyo y cambian lo que ve en pantalla, así que **no se resuelve por cuenta propia**. Ver **C-25** en
+> `docs/03`, con las tres preguntas concretas. Mientras tanto se ha seguido por la **Fase 20**, que
+> no depende de esto.
+
 - [ ] ACTIVACIÓN INICIAL
 - [ ] FORMULARIO
 - [ ] HIGIENE DIARIA
@@ -1459,38 +1467,81 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [ ] Reactivarlos.
 - [ ] Comprobar persistencia.
 
-#### EH · Fase 20/65 — BARBA Y AFEITADO: PERFIL Y CONFIGURACIÓN
-- [ ] ACTIVACIÓN
-- [ ] QUÉ UTILIZA
-- [ ] TIPO DE BARBA
-- [ ] LONGITUD
-- [ ] ESTILO
-- [ ] OBJETIVO
-- [ ] AFEITADO
-- [ ] FRECUENCIA
-- [ ] PREFERENCIAS
-- [ ] SENSIBILIDAD
-- [ ] PROBLEMAS PERCIBIDOS
-- [ ] PRODUCTOS ACTUALES
-- [ ] NIVEL
-- [ ] RUTINA
-- [ ] RECORDATORIOS
-- [ ] ACTIVAR/DESACTIVAR
-- [ ] CONEXIONES
-- [ ] PRUEBAS
-- [ ] Activar módulo.
-- [ ] Saltarlo.
-- [ ] Elegir barba.
-- [ ] Elegir afeitado.
-- [ ] Configurar ambos.
-- [ ] Editar preferencias.
-- [ ] Añadir productos existentes.
-- [ ] Crear rutina.
-- [ ] Desactivar recordatorios.
-- [ ] Desactivar módulo.
-- [ ] Reactivarlo.
-- [ ] Comprobar que todo sigue guardado.
-- [ ] Comprobar que no existen datos duplicados.
+#### EH · Fase 20/65 — BARBA Y AFEITADO: PERFIL Y CONFIGURACIÓN ✅ COMPLETADA (v1.84.0)
+
+> **`src/lib/perfilBarba.js`** (141 comprobaciones) + las pantallas `BarbaEH`, `ElegirPartesBarba`,
+> `PerfilBarbaEH`, `ProductosBarbaEH` y `PanelBarba`. Sin SQL nuevo.
+>
+> ⚠️ **Construida fuera de orden, y a propósito**: las Fases 18 y 19 están **bloqueadas por C-25**
+> (regla 49), y la 20 no depende de ellas. Cuando Josué conteste, se retoman en su sitio.
+>
+> ⚠️ **El apartado 17 es una lista de siete cosas que hay que REUTILIZAR**, y termina con *"no crear
+> sistemas paralelos"*. Así que esta fase es, casi entera, llamadas: el motor de cuestionarios de la
+> F7, el registro de datos de la F4, los inventarios de F10/F17 y los tres niveles de la F6. La
+> auditoría declara **nueve ceros**.
+>
+> ⚠️ **`sensibilidadPiel` NO se vuelve a preguntar**: el registro de la Fase 4 ya la declaraba con
+> `usan: ['skincare', 'barba', 'productos']` —con "barba" escrito dentro, siete fases antes de que
+> existiera este archivo—. Se lee, y la pantalla dice dónde se cambia. Lo que sí es nuevo es
+> `molestiaAfeitado`, que **no es la misma pregunta**. Séptima vez que esta comprobación evita una
+> pregunta repetida (D-15).
+>
+> ⚠️ **Los productos son los del catálogo global, y aquí solo se guardan IDS.** Un aftershave de
+> Skincare se marca para la barba **sin duplicarse**, desmarcarlo no lo borra de su módulo, y si lo
+> borra allí, aquí desaparece — no se queda su nombre huérfano, que sería media ficha guardada aquí.
+>
+> ⚠️ **El formulario adaptativo se amplió EN EL MOTOR, no con un `if`.** El apartado 7 dice *"si
+> selecciona afeitado"*, y "afeitado" no es una respuesta: es una casilla del apartado 2. Así que
+> `cuando` pasó a recibir **dos** cosas —las respuestas y un contexto del módulo—, y las preguntas de
+> F13 siguieron funcionando sin tocar ni una.
+>
+> ⚠️ **`frecuenciaDeAfeitado()` es la ÚNICA respuesta a "cada cuánto"**, como `frecuenciaDeCorte()`
+> en F11: *"cuando lo necesito"* **es una respuesta** y no se traduce a días, "Personalizado" sin
+> cifra **no es una frecuencia**, y el choque entre el perfil y lo puesto a mano **se enseña**.
+>
+> ⚠️ **Nunca un diagnóstico** (apartados 10 y 11): `PALABRAS_CLINICAS` es **la lista de la Fase 13,
+> importada**, y una prueba barre los 82 textos de esta fase. La ayuda de la pregunta de molestias
+> tuvo que reescribirse porque *"no es un diagnóstico"* **contiene la palabra**: octava vez que una
+> comprobación de este proyecto salta con algo bien dicho.
+>
+> ⚠️ **RUTINA y RECORDATORIOS quedan como ESTRUCTURA, y es lo que pide el enunciado**: su apartado
+> 14 dice *"preparar 🧔 Mi rutina"* y la condición de finalización lo remata — *"todavía no
+> desarrollamos rutinas avanzadas, recomendaciones, productos, packs ni seguimiento"*. Así que la
+> plaquita existe y **dice que llega en la Fase 21** (regla 8), en vez de abrir una pantalla vacía.
+> Por eso dos de las trece pruebas del apartado 18 —*"crear rutina"* y *"desactivar
+> recordatorios"*— quedan sin marcar: no hay rutinas que crear todavía.
+
+- [x] ACTIVACIÓN
+- [x] QUÉ UTILIZA
+- [x] TIPO DE BARBA
+- [x] LONGITUD
+- [x] ESTILO
+- [x] OBJETIVO
+- [x] AFEITADO
+- [x] FRECUENCIA
+- [x] PREFERENCIAS
+- [x] SENSIBILIDAD
+- [x] PROBLEMAS PERCIBIDOS
+- [x] PRODUCTOS ACTUALES
+- [x] NIVEL
+- [x] RUTINA
+- [x] RECORDATORIOS
+- [x] ACTIVAR/DESACTIVAR
+- [x] CONEXIONES
+- [x] PRUEBAS
+- [x] Activar módulo.
+- [x] Saltarlo.
+- [x] Elegir barba.
+- [x] Elegir afeitado.
+- [x] Configurar ambos.
+- [x] Editar preferencias.
+- [x] Añadir productos existentes.
+- [ ] Crear rutina.  ⏸ *(llega con las rutinas, en la Fase 21)*
+- [ ] Desactivar recordatorios.  ⏸ *(llega con las rutinas, en la Fase 21)*
+- [x] Desactivar módulo.
+- [x] Reactivarlo.
+- [x] Comprobar que todo sigue guardado.
+- [x] Comprobar que no existen datos duplicados.
 
 #### EH · Fase 21/65 — BARBA Y AFEITADO: RUTINAS Y SEGUIMIENTO
 - [ ] PLAQUITA «MI RUTINA»

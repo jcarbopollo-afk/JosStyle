@@ -77,6 +77,8 @@ const ESTILO_GUARDADO = {
   asistente: { paso: 4, estado: 'terminado', seleccion: ['pelo', 'skincare'] },
   modulos: [
     { id: 'pelo', activo: true, orden: 0, config: {} },
+    // EH F20 — Barba encendida, y todavía sin configurar: la entrada del apartado 1.
+    { id: 'barba', activo: true, orden: 2, config: {} },
     /* ⚠️ Con el perfil de piel empezado: si no, Skincare enseña su puerta de
        entrada ("Configurar / Ahora no") y no se llega al panel. */
     { id: 'skincare', activo: true, orden: 1, config: { necesidadesPiel: 'hidratacion', complejidadPiel: 'basico' } },
@@ -221,5 +223,56 @@ const tras = await ver();
 ok(/Crema de prueba/.test(tras), '⚠️ Y la pantalla lo enseña: el usuario VE su producto');
 ok(/Disponible en/.test(tras),
   '⚠️ Y dónde conseguirlo aunque no haya enlace (apartado 6): Amazon no es una limitación');
+
+/* ── 6 · BARBA Y AFEITADO, DE PRINCIPIO A FIN (EH F20) ─────────────────── */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+ok(await pulsar('Barba'), 'Barba (EH F20) se abre desde Estilo de hombre');
+const barba = await ver();
+ok(/¿Quieres utilizar este apartado\?/.test(barba),
+  '⚠️ Y pregunta si lo quiere usar: es 100 % opcional (apartado 1)');
+ok(/Ahora no/.test(barba), 'Con su "Ahora no"');
+
+guardado.length = 0;
+ok(await pulsar('Sí, configurarlo'), 'Se puede decir que sí');
+const casillas = await ver();
+ok(/¿Qué quieres gestionar\?/.test(casillas), 'Y salen las casillas del apartado 2');
+['Barba', 'Afeitado', 'Perfilado', 'Productos', 'Seguimiento']
+  .forEach((c) => ok(casillas.includes(c), `Se ve la casilla "${c}"`));
+
+// Se deja solo Barba: se destildan las otras que vienen puestas.
+for (const quitar of ['Afeitado', 'Perfilado', 'Cuidado de la piel después del afeitado', 'Productos']) {
+  await page.locator('button', { hasText: quitar }).first().click();
+  await page.waitForTimeout(150);
+}
+await pulsar('Continuar');
+await page.waitForTimeout(1000);
+
+const escBarba = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escBarba.length > 0, '⚠️ PERSISTENCIA: las casillas se ESCRIBEN en Supabase');
+const partes = escBarba.at(-1)?.value?.modulos?.find((m) => m.id === 'barba')?.config?.barba?.partes || {};
+ok(partes.barba === true && partes.afeitado === false,
+  'Con solo lo que marcó, y las demás apagadas');
+
+const panelB = await ver();
+ok(/Mi barba/.test(panelB), '⚠️ Y llega a su panel: el usuario VE que ha pasado algo');
+ok(/Llega en la fase 21/.test(panelB),
+  '⚠️ Regla 8: y lo que todavía no funciona DICE en qué fase llega');
+
+ok(await pulsar('Mi barba'), 'El perfil se abre');
+const perfilB = await ver();
+ok(/¿Cómo llevas la barba ahora mismo\?/.test(perfilB), 'Con la pregunta del apartado 3');
+ok(!/¿Cómo sueles afeitarte\?/.test(perfilB),
+  '⚠️ Y SIN las de afeitado, porque no marcó esa casilla (apartado 7)');
+
+guardado.length = 0;
+ok(await pulsar('Barba corta'), 'Se puede contestar');
+await page.waitForTimeout(1000);
+const conResp = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(conResp.at(-1)?.value?.modulos?.find((m) => m.id === 'barba')?.config?.tipoBarba === 'corta',
+  '⚠️ Y la respuesta se guarda donde la deja el motor de cuestionarios');
+ok(/1 de \d/.test(await ver()), '⚠️ Y la pantalla lo enseña, contando solo lo visible');
 
 await salir(browser);

@@ -214,15 +214,28 @@ export function leerCuestionario(estado, moduloId, preguntas, datosGlobales = {}
  * - **El progreso cuenta lo VISIBLE.** Decirle *"has contestado 4 de 18"* de un
  *   formulario donde seis preguntas no le aplican sería una nota inventada.
  */
-export function preguntasVisibles(estado, moduloId, preguntas, datosGlobales = {}) {
+/*
+ * ⚠️ **`cuando` recibe DOS cosas: las respuestas y un contexto del módulo.** El
+ * segundo lo añadió EH F20, y por un motivo concreto: su apartado 7 dice *"si
+ * selecciona afeitado"*, y "afeitado" no es una respuesta —es una de las
+ * casillas del apartado 2, que vive en la `config` del módulo—. Sin esto, esa
+ * condición habría vuelto a ser un `if` en el JSX, que es justo lo que la Fase
+ * 13 sacó de ahí porque no se puede comprobar.
+ *
+ * El contexto es **opcional y del módulo**: el motor no sabe qué hay dentro, se
+ * lo pasa tal cual. Las preguntas de F13, cuyo `cuando` solo mira las
+ * respuestas, siguen funcionando sin tocar ni una: un argumento de más que no se
+ * usa no molesta.
+ */
+export function preguntasVisibles(estado, moduloId, preguntas, datosGlobales = {}, extra = {}) {
   const todas = leerCuestionario(estado, moduloId, preguntas, datosGlobales);
   const respuestas = Object.fromEntries(todas.map((q) => [q.id, q.noSabe ? [] : q.valores]));
-  return todas.filter((q) => q.cuando === null || q.cuando(respuestas));
+  return todas.filter((q) => q.cuando === null || q.cuando(respuestas, extra));
 }
 
 /** El progreso de lo que de verdad se le enseña. */
-export function progresoVisible(estado, moduloId, preguntas, datosGlobales = {}) {
-  const visibles = preguntasVisibles(estado, moduloId, preguntas, datosGlobales);
+export function progresoVisible(estado, moduloId, preguntas, datosGlobales = {}, extra = {}) {
+  const visibles = preguntasVisibles(estado, moduloId, preguntas, datosGlobales, extra);
   const contestadas = visibles.filter((q) => q.contestada);
   return {
     contestadas: contestadas.length,

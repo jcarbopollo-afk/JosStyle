@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -38,6 +38,10 @@ import {
   crearProductoPiel, alternarMioPiel, marcarNoDisponiblePiel, crearPackPiel,
   productosPiel, PARTE_PRODUCTOS,
 } from '../src/lib/productosPiel.js';
+import {
+  decirAhoraNoBarba, elegirPartesBarba, contestarBarba, marcarProductoBarba,
+  alternarParteBarba, ponerDiasAfeitado,
+} from '../src/lib/perfilBarba.js';
 import { crearRutina, marcarRutinaEntera, registrarCambio, alternarParte, datosPelo } from '../src/lib/rutinasPelo.js';
 import { guardarRecomendacion, descartar, REGLAS_PELO } from '../src/lib/recomendacionesPelo.js';
 import { crearProductoPelo, anadirTienda, marcarNoDisponible, crearPack } from '../src/lib/productosPelo.js';
@@ -695,6 +699,21 @@ const CASOS = [
               alternarMioPiel(pielAfiliado, productosPiel(pielAfiliado)[0].id).estado,
               'Pack de mañana', productosPiel(pielAfiliado).map((x) => x.id), { hoy: HOY },
             ).estado;
+            /* EH F20 — Barba y afeitado. */
+            const soloBarba = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['barba', 'skincare']);
+            const barbaTodo = elegirPartesBarba(soloBarba, ['barba', 'afeitado', 'productos'], { hoy: HOY }).estado;
+            const barbaSoloBarba = elegirPartesBarba(soloBarba, ['barba'], { hoy: HOY }).estado;
+            const barbaSoloAfeitado = elegirPartesBarba(soloBarba, ['afeitado'], { hoy: HOY }).estado;
+            const barbaAMedias = [['tipoBarba', 'corta'], ['nivelBarba', 'basico'], ['frecuenciaAfeitado', 'semanal']]
+              .reduce((acc, [q, v]) => contestarBarba(acc, q, v, { hoy: HOY }).estado, barbaTodo);
+            const barbaPersonalizado = contestarBarba(barbaTodo, 'frecuenciaAfeitado', 'personalizado', { hoy: HOY }).estado;
+            const barbaChoque = ponerDiasAfeitado(barbaAMedias, 3).estado;
+            const barbaConProductoBase = crearProductoPiel(barbaTodo, {
+              nombre: 'Aftershave', marca: 'Una marca', categoria: 'barba',
+            }, { hoy: HOY }).estado;
+            const barbaConProducto = marcarProductoBarba(
+              barbaConProductoBase, productosPiel(barbaConProductoBase)[0].id,
+            ).estado;
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop, onEliminar: noop, onEliminarRegistro: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
@@ -803,6 +822,26 @@ const CASOS = [
                 pp(alternarPartePiel(pielConPack, PARTE_PRODUCTOS))],
               ['ProductosPielEH · apagado', ProductosPielEH, () =>
                 pp(alternarPartePiel(pielConPack, PARTE_PRODUCTOS))],
+              /* EH Fase 20 — Barba y afeitado. ⚠️ Los estados que importan: la
+                 entrada sin configurar, "Ahora no", las casillas del apartado 2,
+                 solo barba (donde desaparecen las preguntas de afeitado), solo
+                 afeitado, "Personalizado" sin cifra y con productos marcados. */
+              ['BarbaEH · entrada', BarbaEH, () => pp(soloBarba)],
+              ['BarbaEH · ahora no', BarbaEH, () => pp(decirAhoraNoBarba(soloBarba).estado)],
+              ['BarbaEH · ya eligió', BarbaEH, () => pp(barbaTodo)],
+              ['ElegirPartesBarba · sin nada', ElegirPartesBarba, () => pp(soloBarba)],
+              ['ElegirPartesBarba · con partes', ElegirPartesBarba, () => pp(barbaTodo)],
+              ['PerfilBarbaEH · solo barba', PerfilBarbaEH, () => pp(barbaSoloBarba)],
+              ['PerfilBarbaEH · solo afeitado', PerfilBarbaEH, () => pp(barbaSoloAfeitado)],
+              ['PerfilBarbaEH · a medias', PerfilBarbaEH, () => pp(barbaAMedias)],
+              ['PerfilBarbaEH · personalizado sin cifra', PerfilBarbaEH, () => pp(barbaPersonalizado)],
+              ['PerfilBarbaEH · con choque de frecuencia', PerfilBarbaEH, () => pp(barbaChoque)],
+              ['PanelBarba · recién elegido', PanelBarba, () => pp(barbaTodo)],
+              ['PanelBarba · a medias', PanelBarba, () => pp(barbaAMedias)],
+              ['PanelBarba · sin productos', PanelBarba, () =>
+                pp(alternarParteBarba(barbaTodo, 'productos'))],
+              ['ProductosBarbaEH · sin catálogo', ProductosBarbaEH, () => pp(barbaTodo)],
+              ['ProductosBarbaEH · con productos', ProductosBarbaEH, () => pp(barbaConProducto)],
             ];
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>
