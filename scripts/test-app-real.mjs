@@ -86,6 +86,10 @@ const ESTILO_GUARDADO = {
   datos: {}, retirados: [],
 };
 
+/* Lo que "hay en Supabase" ahora mismo. Empieza con lo guardado y **se queda con
+   lo que la app escriba**: así una recarga ve lo de antes, como en el móvil. */
+const almacen = { estiloHombre: ESTILO_GUARDADO };
+
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const page = await browser.newPage();
 
@@ -108,11 +112,19 @@ await page.route(`${SUPA}/**`, async (route) => {
   }
   if (url.includes('/rest/v1/app_data')) {
     if (route.request().method() !== 'GET') {
-      try { guardado.push(JSON.parse(route.request().postData() || '{}')); } catch { /* vacío */ }
+      try {
+        const cuerpo = JSON.parse(route.request().postData() || '{}');
+        guardado.push(cuerpo);
+        /* ⚠️ **Y se GUARDA de verdad**, para devolverlo en el siguiente GET. Sin
+           esto, recargar volvía siempre al estado inicial y la prueba no podía
+           comprobar lo que más importa: que lo que toca **sobrevive a la
+           recarga**, que es el punto 5 de lo que pide Josué. */
+        if (cuerpo && cuerpo.key) almacen[cuerpo.key] = cuerpo.value;
+      } catch { /* vacío */ }
       return route.fulfill({ status: 201, contentType: 'application/json', body: '[]' });
     }
     const clave = decodeURIComponent(url).match(/key=eq\.([^&]+)/)?.[1];
-    const valor = clave === 'estiloHombre' ? ESTILO_GUARDADO : null;
+    const valor = almacen[clave] ?? null;
     return route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify(valor ? { value: valor } : null),
@@ -258,8 +270,11 @@ ok(partes.barba === true && partes.afeitado === false,
 
 const panelB = await ver();
 ok(/Mi barba/.test(panelB), '⚠️ Y llega a su panel: el usuario VE que ha pasado algo');
-ok(/Llega en la fase 21/.test(panelB),
-  '⚠️ Regla 8: y lo que todavía no funciona DICE en qué fase llega');
+/* ⚠️ Solo marcó "Barba", así que Productos y Seguimiento no salen; lo que sí
+   sale es la rutina, porque su interruptor es propio (F21, apartado 16). */
+ok(/Mi rutina/.test(panelB), '⚠️ Y la rutina está ahí aunque solo gestione la barba (EH F21)');
+ok(!/Llega en la fase/.test(panelB) || /Llega en la fase 2/.test(panelB),
+  'Regla 8: y si algo no funciona todavía, dice en qué fase llega');
 
 ok(await pulsar('Mi barba'), 'El perfil se abre');
 const perfilB = await ver();
@@ -274,5 +289,50 @@ const conResp = guardado.filter((g) => g && g.key === 'estiloHombre');
 ok(conResp.at(-1)?.value?.modulos?.find((m) => m.id === 'barba')?.config?.tipoBarba === 'corta',
   '⚠️ Y la respuesta se guarda donde la deja el motor de cuestionarios');
 ok(/1 de \d/.test(await ver()), '⚠️ Y la pantalla lo enseña, contando solo lo visible');
+
+/* ── 7 · LA RUTINA DE BARBA, DE PRINCIPIO A FIN (EH F21) ───────────────── */
+/* ⚠️ Se recarga otra vez: aquí se comprueba que lo de la Fase 20 **sobrevive**,
+   porque el almacén simulado se ha quedado con lo que la app escribió. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await pulsar('Barba');
+const panelBarba = await ver();
+ok(/Mi barba/.test(panelBarba),
+  '⚠️ RECARGA: Barba abre su panel con lo que se guardó antes, no la pantalla de entrada');
+ok(/Mi rutina/.test(panelBarba), 'Con su plaquita de rutina');
+
+ok(await pulsar('Mi rutina'), 'Mi rutina (EH F21) se abre');
+const rut = await ver();
+ok(/Crear rutina/.test(rut), 'Con su "Crear rutina"');
+/* ⚠️ Solo marcó "Barba" en las casillas, así que se le ofrece la plantilla de
+   cuidado de barba y NO la de afeitado. */
+ok(/Cuidado de barba/.test(rut), '⚠️ Y la plantilla de lo que él gestiona');
+ok(!/🪒 Afeitado/.test(rut), '⚠️ Y NO la de afeitado, que no marcó (apartado 2 de la F20)');
+
+guardado.length = 0;
+ok(await pulsar('Usar esta rutina'), 'Se puede usar la plantilla');
+await page.waitForTimeout(1200);
+const escRut = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escRut.length > 0, '⚠️ PERSISTENCIA: la rutina se ESCRIBE en Supabase');
+const rutinas = escRut.at(-1)?.value?.modulos?.find((m) => m.id === 'barba')?.config?.rutinas?.rutinas || [];
+ok(rutinas.length === 1 && rutinas[0].pasos.length === 5,
+  'Con sus cinco pasos, los del apartado 3');
+ok(rutinas[0].recordatorio === false, '⚠️ Y con el recordatorio APAGADO: nunca automático');
+
+const conRut = await ver();
+ok(/Cuidado de barba/.test(conRut), '⚠️ Y la pantalla la enseña');
+ok(/Omitir hoy/.test(conRut), 'Con su "Omitir hoy" en cada paso (apartado 7)');
+ok(/Pendiente|Empezada|Hecha/.test(conRut),
+  '⚠️ Y el estado del día en palabras —"Pendiente", nunca "has fallado"');
+
+guardado.length = 0;
+ok(await pulsar('Omitir hoy'), 'Se puede omitir un paso');
+await page.waitForTimeout(1000);
+const trasOmitir = guardado.filter((g) => g && g.key === 'estiloHombre').at(-1);
+const omitidos = trasOmitir?.value?.modulos?.find((m) => m.id === 'barba')?.config?.rutinas?.hechos?.[0]?.omitidos || [];
+ok(omitidos.length === 1, '⚠️ Y omitir SE GUARDA como omitido, no como hecho');
+ok(/Omitido hoy/.test(await ver()), 'Y la pantalla lo dice');
 
 await salir(browser);

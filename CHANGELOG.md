@@ -1,5 +1,70 @@
 # CHANGELOG.md
 
+## v1.85.0 — EH Fase 21/65: rutinas y seguimiento de barba, y tres fallos reales
+
+### Qué se ha construido
+Las rutinas de Barba y afeitado, con sus plantillas, su checklist, el seguimiento, el historial y las
+sugerencias. Se llega desde **Más → Estilo de hombre → Barba → 🪒 Mi rutina**.
+
+### 🐛 Tres fallos reales, y de dónde salieron
+
+**1. Quien solo marcaba "Barba" no podía crear ninguna rutina.** Las rutinas colgaban de la casilla
+*"Afeitado"* del apartado 2 de la Fase 20, cuando el apartado 3 de esta fase dice literalmente
+*"RUTINA DE BARBA: si tiene barba, 🧔 Cuidado de barba"*. Ahora `rutinas` es un **interruptor
+propio** —que además es el que ya pedía el apartado 16 de la Fase 20— y **elegir las casillas no lo
+toca**: volver a elegir qué gestionas no puede apagarte las rutinas por la espalda. `deApartado2`
+separa las dos listas.
+
+**2 y 3. `TEXTOS_ESTADO_DIA` son textos, no objetos**, y la pantalla leía `.nombre`: el estado del
+día salía **en blanco**, y el barrido de palabras clínicas **no miraba ninguna** de esas etiquetas.
+Lo cazó la prueba de navegador, que es exactamente para lo que está.
+
+### Casi todo esto ya existía
+Rutinas, plantillas, checklist, omitir, historial, calendario y papelera los construyeron las fases 8
+y 14, y `motorRutinas.js` los tiene extraídos desde la 14 justo para esto. Lo propio de esta fase son
+sus tres plantillas, sus etiquetas de frecuencia y sus cuatro aspectos. `auditarRutinasBarba()`
+declara **ocho ceros**.
+
+### Las decisiones que gobiernan la fase
+
+⚠️ **Omitir es una TERCERA cosa** (apartado 7: *"Omitir hoy. Sin penalización"*): ni hecho ni
+pendiente, y **sale de la cuenta del día**. Dos pasos hechos y uno omitido es una rutina **HECHA**.
+
+⚠️ **El perfilado no es una cuarta cosa: es una rutina.** Las cuatro frecuencias del apartado 4 son
+las que el motor ya sabe hacer. Un segundo mecanismo de *"cada cuánto"* habría sido el tercero del
+proyecto.
+
+⚠️ **Nunca un segundo calendario** (apartado 14) ni **una papelera propia** (apartado 19): dos líneas
+de catálogo y una llamada al motor de siempre. Tercer módulo de Estilo de Hombre que entra en el
+calendario global por la misma puerta, y **nunca se materializa una ocurrencia**.
+
+⚠️ **Borrar la rutina NO borra su historial.** *"23/08 — Afeitado ⭐ 5/5"* pasó, y sus registros se
+quedan huérfanos en vez de desaparecer. Misma decisión que la Fase 11 con los cortes y las citas.
+
+⚠️ **Y sin valoraciones no hay estrella**: `null`, nunca un 0. Ni rachas, ni promedios, ni
+porcentajes (D2-02). Las sugerencias del apartado 15 usan el motor de reglas de la Fase 16 —cada una
+con su `requiere`— y **ninguna hace nada sola**.
+
+### Una prueba con bomba de relojería, desactivada
+`test-papelera.mjs` comprobaba que el catálogo tuviera **exactamente 32** entradas, y saltaba cada
+vez que una fase añadía la suya con todo el derecho. Ahora comprueba **que estén las que tienen que
+estar**, que es lo que importa.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **155 comprobaciones nuevas**, **792 casos de
+renderizado** (36 nuevos) y **78 comprobaciones en Chromium**: se llega a la rutina, se usa la
+plantilla de barba —**y no se ofrece la de afeitado, que no marcó**—, se escribe en Supabase con el
+recordatorio apagado, y se omite un paso, que **se guarda como omitido y no como hecho**.
+
+### Archivos
+- **Nuevos:** `src/lib/rutinasBarba.js`, `scripts/test-rutinas-barba.mjs`.
+- **Modificados:** `src/lib/perfilBarba.js` (el interruptor de rutinas), `src/lib/papelera.js`
+  (dos líneas de catálogo), `src/lib/calendarioIntegracion.js`, `src/App.jsx` (la papelera global),
+  `src/views/EstiloHombreView.jsx`, `scripts/test-papelera.mjs`, `scripts/test-perfil-barba.mjs`,
+  `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.84.0 — EH Fase 20/65: barba y afeitado, y una pregunta para Josué
 
 ### ⏸ Lo primero: las Fases 18 y 19 están bloqueadas, y no las he resuelto por mi cuenta

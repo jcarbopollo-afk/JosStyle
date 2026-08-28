@@ -80,23 +80,45 @@ export const TEXTOS_BARBA = {
    **sin perder los datos**. `Seguimiento` viene apagada porque el enunciado la
    dibuja con ☐, no con ☑️. */
 
+/* ⚠️ **Son DOS listas en una, y la diferencia importa.** Las seis primeras son
+   las casillas del **apartado 2** —*"¿qué quieres gestionar?"*—, y las elige él
+   de una vez en la pantalla de entrada. Las que llevan `deApartado2: false` son
+   los interruptores sueltos del **apartado 16** —*"también puede quitar
+   independientemente: Rutinas, Productos, Seguimiento"*—, y **`elegirPartes` no
+   las toca**: si volver a elegir qué gestiona apagara sus rutinas sin avisar,
+   sería exactamente lo que el apartado 16 promete que no pasa. */
 export const PARTES_BARBA = [
-  { id: 'barba', nombre: 'Barba', icono: '🧔', porDefecto: true },
-  { id: 'afeitado', nombre: 'Afeitado', icono: '🪒', porDefecto: true },
-  { id: 'perfilado', nombre: 'Perfilado', icono: '✂️', porDefecto: true },
-  { id: 'cuidadoPiel', nombre: 'Cuidado de la piel después del afeitado', icono: '🧴', porDefecto: true },
-  { id: 'productos', nombre: 'Productos', icono: '🛒', porDefecto: true },
+  { id: 'barba', nombre: 'Barba', icono: '🧔', porDefecto: true, deApartado2: true },
+  { id: 'afeitado', nombre: 'Afeitado', icono: '🪒', porDefecto: true, deApartado2: true },
+  { id: 'perfilado', nombre: 'Perfilado', icono: '✂️', porDefecto: true, deApartado2: true },
+  { id: 'cuidadoPiel', nombre: 'Cuidado de la piel después del afeitado', icono: '🧴', porDefecto: true, deApartado2: true },
+  { id: 'productos', nombre: 'Productos', icono: '🛒', porDefecto: true, deApartado2: true },
   // ⚠️ ☐ en el enunciado, no ☑️.
-  { id: 'seguimiento', nombre: 'Seguimiento', icono: '📈', porDefecto: false },
+  { id: 'seguimiento', nombre: 'Seguimiento', icono: '📈', porDefecto: false, deApartado2: true },
+  /* ⚠️ **EH F21 — el interruptor de las rutinas, y arregla un fallo de verdad.**
+     Antes las rutinas colgaban de la casilla "Afeitado", así que **quien solo
+     marcaba "Barba" se quedaba sin poder crear ninguna** — y el apartado 3 de la
+     F21 dice literalmente *"RUTINA DE BARBA: si tiene barba, 🧔 Cuidado de
+     barba"*. Las rutinas son de las tres cosas, no solo del afeitado, y por eso
+     tienen su propio interruptor, que es además el que pide el apartado 16. */
+  { id: 'rutinas', nombre: 'Rutinas', icono: '🪒', porDefecto: true, deApartado2: false },
 ];
+
+/** Las seis casillas del apartado 2, que son las que él marca en la entrada. */
+export const CASILLAS_BARBA = PARTES_BARBA.filter((p) => p.deApartado2);
 
 export const parteBarba = (id) => PARTES_BARBA.find((p) => p.id === id) || null;
 
 /** Apartado 16 — y lo que llega después, con su fase, en vez de no hacer nada. */
 export const PLAQUITAS_BARBA = [
   { id: 'perfil', nombre: 'Mi barba', icono: '🧔', fase: 20, listo: true },
-  { id: 'rutina', nombre: 'Mi rutina', icono: '🪒', fase: 21, listo: false },
-  { id: 'seguimiento', nombre: 'Seguimiento', icono: '📈', fase: 21, listo: false },
+  { id: 'rutina', nombre: 'Mi rutina', icono: '🪒', fase: 21, listo: true },
+  /* ⚠️ El seguimiento NO es una plaquita aparte: el apartado 9 de la F21 dice
+     *"si ha activado 📈 Seguimiento, **podrá registrar** ¿cómo ha ido?"*, y eso
+     vive dentro de la rutina, junto a lo que acaba de hacer. Una pantalla
+     separada para pulsar una carita sería un clic de más y un sitio más donde
+     mirar. Se queda en el catálogo con su fase para no romper referencias. */
+  { id: 'seguimiento', nombre: 'Seguimiento', icono: '📈', fase: 21, listo: false, dentroDe: 'rutina' },
   { id: 'productos', nombre: 'Productos', icono: '🛒', fase: 21, listo: false },
 ];
 
@@ -459,12 +481,17 @@ export const configurarBarba = (estado, { hoy = todayISO() } = {}) =>
  * alguna. Quien no quiere nada tiene "Ahora no", que es otra cosa.
  */
 export function elegirPartesBarba(estado, ids = [], { hoy = todayISO() } = {}) {
-  const validas = ids.filter((id) => parteBarba(id));
+  // ⚠️ Solo valen las casillas del apartado 2: `rutinas` no se elige aquí.
+  const validas = ids.filter((id) => CASILLAS_BARBA.some((p) => p.id === id));
   if (validas.length === 0) {
     return { estado: normalizarEstiloHombre(estado), error: 'Elige al menos una cosa que quieras gestionar.' };
   }
-  const partes = {};
-  PARTES_BARBA.forEach((p) => { partes[p.id] = validas.includes(p.id); });
+  /* ⚠️ Solo se tocan las casillas del apartado 2. Los interruptores del 16
+     —`rutinas`— se quedan como estén: volver a elegir qué gestionas no puede
+     apagarte las rutinas por la espalda. */
+  const actuales = datosBarba(estado).partes;
+  const partes = { ...actuales };
+  CASILLAS_BARBA.forEach((p) => { partes[p.id] = validas.includes(p.id); });
   return {
     estado: escribir(estado, { ...datosBarba(estado), partes, elegido: true, ahoraNo: false, editado: hoy }),
     error: null,

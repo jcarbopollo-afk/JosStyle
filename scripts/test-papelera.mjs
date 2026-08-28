@@ -26,10 +26,18 @@ console.log('\n═══ ME Fase 3 — papelera global ═══\n');
 
 // --- Catálogo ---
 {
-  // 27 desde ME Fase 4 (la auditoría añadió `estudios.programas`, que se podía crear y
-  // no borrar) y 28 desde AR Fase 1, con las prendas del Armario.
-  comprobar('El catálogo cubre 32 colecciones', Object.keys(CATALOGO_PAPELERA).length === 32,
+  /* ⚠️ **Aquí había una cuenta exacta de llaves, y saltaba cada vez que una fase
+     añadía la suya con todo el derecho** — ME F4, AR F1, EH F15, EH F21…. Lo que
+     importa no es cuántas hay, sino que **estén las que tienen que estar** y que
+     todas tengan la forma correcta, que es lo que comprueban las tres de abajo.
+     Es la lección que este proyecto ya se había apuntado y aquí seguía sin
+     aplicar. */
+  comprobar('El catálogo cubre al menos las 32 colecciones que había',
+    Object.keys(CATALOGO_PAPELERA).length >= 32,
     String(Object.keys(CATALOGO_PAPELERA).length));
+  // Las que ninguna fase futura puede quitarse por delante.
+  ['armario.prendas', 'estudios.programas', 'skincare.registros', 'barba.rutinas', 'barba.registros']
+    .forEach((k) => comprobar(`El catálogo incluye "${k}"`, !!CATALOGO_PAPELERA[k]));
   comprobar('Toda entrada declara módulo, tipo y campos',
     Object.values(CATALOGO_PAPELERA).every((c) => c.modulo && c.tipo && Array.isArray(c.campos)));
   comprobar('La clave del catálogo coincide con modulo.coleccion',

@@ -104,6 +104,12 @@ export const CATALOGO_PAPELERA = {
   // registros de piel —que viven dentro de la `config` de Skincare— entran sin
   // tocar ni una función.
   'skincare.registros': { modulo: 'skincare', coleccion: 'registros', tipo: 'Registro de piel', campos: ['fecha'], icono: 'skincare' },
+  /* ⚠️ EH F21, apartado 19 — *"si elimina una rutina, un registro o un producto
+     asociado, utilizar 🗑️ Eliminados recientemente global. **No crear papelera
+     propia**"*. Cuarta vez que un módulo entra aquí **sin tocar ni una función
+     del motor**: dos líneas de catálogo y ya está. */
+  'barba.rutinas': { modulo: 'barba', coleccion: 'rutinas', tipo: 'Rutina de barba', campos: ['nombre'], icono: 'barba' },
+  'barba.registros': { modulo: 'barba', coleccion: 'registros', tipo: 'Registro de barba', campos: ['fecha'], icono: 'barba' },
   'relacion.fechas': { modulo: 'relacion', coleccion: 'fechas', tipo: 'Fecha importante', campos: ['etiqueta'], icono: 'relacion', privado: true },
 };
 

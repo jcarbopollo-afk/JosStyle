@@ -24,7 +24,7 @@ import {
   respuestaBarba, contestarBarba, borrarBarba, perfilBarba, preguntasDeBarba,
   progresoBarba, seccionesDeBarba, DEFAULT_BARBA, normalizarBarba, datosBarba,
   decirAhoraNoBarba, configurarBarba, elegirPartesBarba, parteActivaBarba,
-  alternarParteBarba, ESTADOS_BARBA, estadoDeEntradaBarba, catalogoParaBarba,
+  alternarParteBarba, ESTADOS_BARBA, estadoDeEntradaBarba, catalogoParaBarba, CASILLAS_BARBA,
   productosDeBarba, marcarProductoBarba, quitarProductoBarba, ponerDiasAfeitado,
   frecuenciaDeAfeitado, DATOS_QUE_YA_TENEMOS, loQueYaSabemosDeTuBarba,
   textosDeBarba, contextoDeBarba, resumenBarba, auditarBarba, panelBarba,
@@ -100,10 +100,15 @@ eq(estadoDeEntradaBarba(base()), 'sin_configurar', 'Prueba 1: se entra sin confi
 /* ── 3 · QUÉ QUIERE GESTIONAR (apartado 2) ──────────────────────────────── */
 console.log('\n3 · Las seis casillas del apartado 2');
 
-eq(PARTES_BARBA.map((p) => p.id), ['barba', 'afeitado', 'perfilado', 'cuidadoPiel', 'productos', 'seguimiento'],
-  'Las seis, en el orden del enunciado');
-eq(PARTES_BARBA.filter((p) => !p.porDefecto).map((p) => p.id), ['seguimiento'],
+eq(CASILLAS_BARBA.map((p) => p.id), ['barba', 'afeitado', 'perfilado', 'cuidadoPiel', 'productos', 'seguimiento'],
+  'Las seis casillas del apartado 2, en el orden del enunciado');
+eq(CASILLAS_BARBA.filter((p) => !p.porDefecto).map((p) => p.id), ['seguimiento'],
   '⚠️ Y Seguimiento viene apagada, porque el enunciado la dibuja con ☐, no con ☑️');
+/* ⚠️ EH F21 — `rutinas` es un interruptor del apartado 16, no una casilla del 2.
+   Antes las rutinas colgaban de "Afeitado" y quien solo marcaba "Barba" se
+   quedaba sin poder crear ninguna. */
+eq(PARTES_BARBA.filter((p) => !p.deApartado2).map((p) => p.id), ['rutinas'],
+  '⚠️ Y `rutinas` es un interruptor suelto del apartado 16, no una casilla del 2');
 
 {
   // Prueba 3: activar solo una sección.
@@ -115,8 +120,18 @@ eq(PARTES_BARBA.filter((p) => !p.porDefecto).map((p) => p.id), ['seguimiento'],
 
   // Prueba 4: activar varias.
   const varias = conPartes(base(), ['barba', 'afeitado', 'productos']);
-  eq(PARTES_BARBA.filter((p) => parteActivaBarba(varias, p.id)).map((p) => p.id),
+  eq(CASILLAS_BARBA.filter((p) => parteActivaBarba(varias, p.id)).map((p) => p.id),
     ['barba', 'afeitado', 'productos'], 'Prueba 4: o varias');
+
+  /* ⚠️ Y elegir las casillas NO toca los interruptores del apartado 16: quien
+     solo marca "Barba" sigue teniendo sus rutinas encendidas. Ese era el fallo. */
+  eq(parteActivaBarba(una, 'rutinas'), true,
+    '⚠️ Quien solo marca "Barba" CONSERVA sus rutinas: no cuelgan del afeitado');
+  const sinRutinas = alternarParteBarba(varias, 'rutinas');
+  eq(parteActivaBarba(conPartes(sinRutinas, ['barba']), 'rutinas'), false,
+    '⚠️ Y volver a elegir qué gestionas no se las vuelve a encender por la espalda');
+  eq(elegirPartesBarba(base(), ['rutinas']).error, 'Elige al menos una cosa que quieras gestionar.',
+    'Ni `rutinas` cuela como casilla del apartado 2');
 
   eq(elegirPartesBarba(base(), []).error, 'Elige al menos una cosa que quieras gestionar.',
     '⚠️ Sin marcar ninguna no se guarda: quien no quiere nada tiene "Ahora no", que es otra cosa');
@@ -370,8 +385,9 @@ console.log('\n11 · ⚠️ El normalizador conoce sus seis campos');
 console.log('\n12 · Regla 8: lo que todavía no funciona lo dice');
 
 eq(PLAQUITAS_BARBA.find((p) => p.id === 'perfil').listo, true, 'El perfil funciona hoy');
-eq(PLAQUITAS_BARBA.filter((p) => !p.listo).map((p) => p.fase), [21, 21, 21],
-  '⚠️ Y las tres que no, dicen que llegan en la Fase 21 (condición de finalización)');
+eq(PLAQUITAS_BARBA.find((p) => p.id === 'rutina').listo, true, 'Y la rutina, desde la Fase 21');
+eq(PLAQUITAS_BARBA.filter((p) => !p.listo).map((p) => p.fase), [21, 21],
+  '⚠️ Y las que no, dicen en qué fase llegan (regla 8)');
 ok(!/proximamente|próximamente|en construcción|TODO:/i.test(fuente), 'Ni un "próximamente" ni un TODO');
 ok(!/Math\.random/.test(codigo), 'Ni una cifra inventada');
 ok(!/askAI|anthropic|claude|fetch\(/i.test(codigo), '⚠️ Sin IA: ni una llamada');
@@ -389,11 +405,11 @@ console.log('\n13 · El panel que dibuja la pantalla');
   ok(p.secciones.length > 0 && p.secciones.every((s) => s.total > 0),
     '⚠️ Y ninguna sección vacía: no se pinta un título sin nada');
   eq(p.frecuencia.dias, 7, 'Y la frecuencia');
-  eq(p.partes.filter((x) => x.activa).length, 3, 'Y qué partes están encendidas');
+  eq(p.partes.filter((x) => x.activa && x.deApartado2).length, 3, 'Y qué casillas están marcadas');
 
   const r = resumenBarba(e);
   eq(r.nivel, 'Básico', 'El resumen sabe su nivel');
-  eq(r.partesActivas, 3, 'Y cuántas partes lleva');
+  eq(r.partesActivas, 4, 'Y cuántas partes lleva, contando el interruptor de rutinas');
   eq(r.compartidos, ['sensibilidadPiel', 'sinPerfume', 'nivelEstilo'],
     'Y declara cuáles de los datos que usa NO son suyos');
   eq(r.productos, 0, 'Y cuántos productos ha marcado');

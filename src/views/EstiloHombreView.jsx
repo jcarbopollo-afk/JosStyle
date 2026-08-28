@@ -145,6 +145,14 @@ import {
   catalogoParaBarba, productosDeBarba, marcarProductoBarba, quitarProductoBarba,
   resumenBarba, MODULO_BARBA,
 } from '../lib/perfilBarba';
+import {
+  PASOS_BARBA, FRECUENCIAS_BARBA, frecuenciaBarba, ESCALA_BARBA, ASPECTOS_BARBA,
+  plantillasSugeridasBarba, usarPlantillaBarba, crearRutinaBarba,
+  alternarFavoritaBarba, alternarRecordatorioBarba, impactoEliminarRutinaBarba,
+  eliminarRutinaBarba, checklistBarba, marcarPasoBarba, omitirPasoBarba,
+  marcarRutinaBarbaEntera, registrarBarba, historialBarba, sugerenciasBarba,
+  resumenRutinasBarba, panelRutinasBarba, TEXTOS_ESTADO_DIA as TEXTOS_DIA_BARBA,
+} from '../lib/rutinasBarba';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -3916,13 +3924,360 @@ export function ProductosBarbaEH({ estado, accent, onCambiar, onCerrar }) {
   );
 }
 
+/* ===========================================================================
+   RUTINAS DE BARBA (F21)
+   ===========================================================================
+   ⚠️ **Omitir es una tercera cosa** (apartado 7) y **un día sin hacer no es un
+   fallo**: la pantalla dice "Pendiente", nunca "has fallado". Y **nada se
+   calcula aquí**: el estado del día lo dice `checklistBarba`, las plantillas
+   `plantillasSugeridasBarba` y las sugerencias `sugerenciasBarba`. */
+export function RutinasBarbaEH({ estado, accent, onCambiar, onCerrar, onEliminarRegistro, onEliminarRutina }) {
+  /* ⚠️ Regla 4 — todos los hooks antes de cualquier `return`. */
+  const [creando, setCreando] = useState(false);
+  const [nombre, setNombre] = useState('');
+  const [pasos, setPasos] = useState([]);
+  const [frecuencia, setFrecuencia] = useState('diaria');
+  const [registrando, setRegistrando] = useState(null);
+  const [como, setComo] = useState(null);
+  const [aspectos, setAspectos] = useState({});
+  const [nota, setNota] = useState('');
+  const [confirmar, setConfirmar] = useState(null);
+  const [error, setError] = useState(null);
+
+  const panel = useMemo(() => panelRutinasBarba(estado), [estado]);
+
+  const aplicar = (r) => {
+    if (r.error) { setError(r.error); return false; }
+    setError(null);
+    onCambiar?.(r.estado);
+    return true;
+  };
+
+  const crear = () => {
+    const r = crearRutinaBarba(estado, { nombre, pasos: pasos.map((a) => ({ accion: a })), frecuencia });
+    if (!aplicar(r)) return;
+    setCreando(false); setNombre(''); setPasos([]); setFrecuencia('diaria');
+  };
+
+  const guardarRegistro = () => {
+    const r = registrarBarba(estado, { rutinaId: registrando, como, aspectos, nota });
+    if (!aplicar(r)) return;
+    setRegistrando(null); setComo(null); setAspectos({}); setNota('');
+  };
+
+  const chip = (activo) => ({
+    background: activo ? hexToRgba(accent, 0.12) : COLORS.surface2,
+    border: `1px solid ${activo ? accent : COLORS.border}`,
+  });
+
+  /* ⚠️ Regla 4 — el `return` condicional, después de todos los hooks. */
+  if (!panel.activo) {
+    return (
+      <Card>
+        <div className="flex items-center gap-2 mb-1">
+          {onCerrar && (
+            <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+              <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+            </button>
+          )}
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>🪒 Mi rutina</p>
+        </div>
+        {/* ⚠️ Apagado no es roto: se dice qué pasa y dónde se enciende. */}
+        <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+          Tienes el afeitado desactivado. Puedes volver a encenderlo en Gestionar apartados, y tus rutinas siguen guardadas.
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-1">
+          {onCerrar && (
+            <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+              <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+            </button>
+          )}
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>🪒 Mi rutina</p>
+        </div>
+
+        {error && <p className="text-[10px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+
+        {/* Apartado 6 — el checklist de hoy. */}
+        {panel.hoy.length > 0 && (
+          <div className="space-y-2 mb-3">
+            {panel.hoy.map((lista) => (
+              <div key={lista.id} className="rounded-2xl p-2.5"
+                style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>{lista.nombre}</p>
+                  {/* ⚠️ "Pendiente", nunca "has fallado". El texto es del motor. */}
+                  {/* ⚠️ `TEXTOS_ESTADO_DIA` son TEXTOS, no objetos: leer `.nombre`
+                      dejaba el estado del día en blanco. Lo cazó el navegador. */}
+                  <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                    {TEXTOS_DIA_BARBA[lista.estado] || ''}
+                  </span>
+                </div>
+                {lista.pasos.map((p) => (
+                  <div key={p.id} className="flex items-center gap-2 py-0.5">
+                    <button
+                      onClick={() => onCambiar?.(marcarPasoBarba(estado, lista.id, p.id))}
+                      className="text-[13px] leading-none"
+                      aria-label={`Marcar ${p.etiqueta}`}
+                      aria-pressed={p.hecho}
+                    >
+                      {p.hecho ? '☑️' : '☐'}
+                    </button>
+                    <span className="text-[11px] flex-1"
+                      style={{ color: p.omitido ? COLORS.textMuted : COLORS.text }}>
+                      {p.icono} {p.etiqueta}
+                      {p.producto ? ` · ${p.producto}` : ''}
+                    </span>
+                    {/* Apartado 7 — omitir, sin penalización. */}
+                    <button
+                      onClick={() => onCambiar?.(omitirPasoBarba(estado, lista.id, p.id))}
+                      className="text-[10px] font-semibold"
+                      style={{ color: p.omitido ? accent : COLORS.textMuted }}
+                    >
+                      {p.omitido ? 'Omitido hoy' : 'Omitir hoy'}
+                    </button>
+                  </div>
+                ))}
+                <button onClick={() => onCambiar?.(marcarRutinaBarbaEntera(estado, lista.id))}
+                  className="text-[10px] font-semibold mt-1" style={{ color: accent }}>
+                  Marcarlo todo
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Apartado 1 — las plantillas, que se ofrecen. */}
+        {panel.plantillas.length > 0 && (
+          <div className="space-y-1 mb-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>
+              Si quieres, empieza por una de estas
+            </p>
+            {panel.plantillas.map((p) => (
+              <div key={p.id} className="rounded-2xl p-2.5"
+                style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+                <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{p.icono} {p.nombre}</p>
+                <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                  {p.pasosVisibles.map((x) => x.nombre).join(' · ')} · {p.frecuenciaNombre}
+                </p>
+                {/* ⚠️ Con `confirmado`: verla no la crea. */}
+                <button
+                  onClick={() => aplicar(usarPlantillaBarba(estado, p.id, { confirmado: true }))}
+                  className="text-[10px] font-semibold mt-1" style={{ color: accent }}
+                >
+                  {p.accion}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Apartado 4 — sus rutinas, cada una como una tarjeta sencilla. */}
+        <div className="space-y-1 mb-3">
+          {panel.rutinas.map((r) => (
+            <div key={r.id} className="rounded-2xl p-2.5"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <div className="flex items-center gap-2">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-semibold truncate" style={{ color: COLORS.text }}>{r.nombre}</span>
+                  <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>
+                    {r.pasos.length} {r.pasos.length === 1 ? 'paso' : 'pasos'} · {frecuenciaBarba(r.frecuencia)?.nombre || ''}
+                  </span>
+                </span>
+                {/* Apartado 16 — favoritos globales. */}
+                <button onClick={() => aplicar(alternarFavoritaBarba(estado, r.id))}
+                  className="text-[11px]" aria-label={`Favorita ${r.nombre}`}>
+                  {r.favorita ? '❤️' : '🤍'}
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                {/* Apartado 8 — el recordatorio, que enciende él. */}
+                <button onClick={() => aplicar(alternarRecordatorioBarba(estado, r.id))}
+                  className="text-[10px] font-semibold"
+                  style={{ color: r.recordatorio ? accent : COLORS.textMuted }}>
+                  {r.recordatorio ? '🔔 Con recordatorio' : 'Recordármelo'}
+                </button>
+                {panel.seguimiento && (
+                  <button onClick={() => setRegistrando(r.id)} className="text-[10px] font-semibold" style={{ color: accent }}>
+                    ¿Cómo ha ido?
+                  </button>
+                )}
+                {/* ⚠️ Apartado 19 — antes de borrar, se dice qué se lleva. */}
+                <button onClick={() => setConfirmar(impactoEliminarRutinaBarba(estado, r.id))}
+                  className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                  Eliminar
+                </button>
+              </div>
+              {confirmar && confirmar.nombre === r.nombre && (
+                <div className="mt-1.5">
+                  <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{confirmar.texto}</p>
+                  <div className="flex gap-2 mt-1">
+                    {/* ⚠️ Apartado 19 — por la papelera GLOBAL, para que se pueda
+                        recuperar. Si la pantalla no está enganchada a ella, se
+                        borra sin más: nunca se deja el botón sin hacer nada. */}
+                    <button
+                      onClick={() => {
+                        if (onEliminarRutina) onEliminarRutina(r.id);
+                        else aplicar(eliminarRutinaBarba(estado, r.id));
+                        setConfirmar(null);
+                      }}
+                      className="text-[10px] font-semibold" style={{ color: accent }}>{confirmar.confirmar}</button>
+                    <button onClick={() => setConfirmar(null)}
+                      className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>{confirmar.cancelar}</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          {panel.rutinas.length === 0 && !creando && (
+            <p className="text-[11px]" style={{ color: COLORS.textMuted }}>Crea tu primera rutina cuando quieras.</p>
+          )}
+        </div>
+
+        {/* Apartado 5 — rutina personalizada. */}
+        {creando ? (
+          <div className="space-y-2">
+            <TextInput value={nombre} onChange={(ev) => setNombre(ev.target.value)}
+              placeholder="Nombre de la rutina" aria-label="Nombre de la rutina" />
+            <p className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>Pasos</p>
+            <div className="flex flex-wrap gap-1.5">
+              {PASOS_BARBA.map((p) => (
+                <button key={p.id}
+                  onClick={() => setPasos(pasos.includes(p.id) ? pasos.filter((x) => x !== p.id) : [...pasos, p.id])}
+                  className="rounded-full px-2.5 py-1" style={chip(pasos.includes(p.id))}
+                  aria-pressed={pasos.includes(p.id)}>
+                  <span className="text-[11px] font-semibold"
+                    style={{ color: pasos.includes(p.id) ? COLORS.text : COLORS.textMuted }}>
+                    {p.icono} {p.nombre}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>Cada cuánto</p>
+            <div className="flex flex-wrap gap-1.5">
+              {FRECUENCIAS_BARBA.map((f) => (
+                <button key={f.id} onClick={() => setFrecuencia(f.id)}
+                  className="rounded-full px-2.5 py-1" style={chip(frecuencia === f.id)}
+                  aria-pressed={frecuencia === f.id}>
+                  <span className="text-[11px] font-semibold"
+                    style={{ color: frecuencia === f.id ? COLORS.text : COLORS.textMuted }}>{f.nombre}</span>
+                </button>
+              ))}
+            </div>
+            <PrimaryButton accent={accent} onClick={crear}>Guardar rutina</PrimaryButton>
+            <button onClick={() => { setCreando(false); setError(null); }}
+              className="text-[11px] font-semibold mx-auto block" style={{ color: COLORS.textMuted }}>Cancelar</button>
+          </div>
+        ) : (
+          <PrimaryButton accent={accent} icon={Plus} onClick={() => setCreando(true)}>Crear rutina</PrimaryButton>
+        )}
+      </Card>
+
+      {/* Apartados 9, 10 y 11 — registrar cómo ha ido. Todo opcional. */}
+      {registrando && (
+        <Card>
+          <p className="text-sm font-semibold mb-2" style={{ color: COLORS.text }}>¿Cómo ha ido?</p>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {ESCALA_BARBA.map((x) => (
+              <button key={x.id} onClick={() => setComo(como === x.id ? null : x.id)}
+                className="rounded-full px-2.5 py-1" style={chip(como === x.id)} aria-pressed={como === x.id}>
+                <span className="text-[11px] font-semibold" style={{ color: como === x.id ? COLORS.text : COLORS.textMuted }}>
+                  {x.icono} {x.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+          {ASPECTOS_BARBA.map((a) => (
+            <div key={a.id} className="flex items-center gap-1 mb-1">
+              <span className="text-[10px] flex-1" style={{ color: COLORS.textMuted }}>{a.icono} {a.nombre}</span>
+              {[1, 2, 3, 4, 5].map((v) => (
+                <button key={v}
+                  onClick={() => setAspectos({ ...aspectos, [a.id]: aspectos[a.id] === v ? undefined : v })}
+                  className="text-[11px]" aria-label={`${a.nombre} ${v}`}>
+                  {aspectos[a.id] >= v ? '⭐' : '☆'}
+                </button>
+              ))}
+            </div>
+          ))}
+          <TextInput value={nota} onChange={(ev) => setNota(ev.target.value)}
+            placeholder="Una nota, si quieres" aria-label="Nota" />
+          <div className="mt-2">
+            <PrimaryButton accent={accent} onClick={guardarRegistro}>Guardar</PrimaryButton>
+          </div>
+          <button onClick={() => { setRegistrando(null); setError(null); }}
+            className="text-[11px] font-semibold mx-auto block mt-2" style={{ color: COLORS.textMuted }}>Cancelar</button>
+        </Card>
+      )}
+
+      {/* Apartado 15 — sugerencias, que no hacen nada solas. */}
+      {panel.sugerencias.length > 0 && (
+        <Card>
+          <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>💡 Sugerencias</p>
+          {panel.sugerencias.map((s) => (
+            <div key={s.id} className="rounded-2xl p-2.5 mb-1"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <p className="text-[11px]" style={{ color: COLORS.text }}>{s.texto}</p>
+              {s.id === 'guardar_habitual' && s.rutina && (
+                <button onClick={() => aplicar(alternarFavoritaBarba(estado, s.rutina.id))}
+                  className="text-[10px] font-semibold mt-1" style={{ color: accent }}>{s.accion}</button>
+              )}
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Apartado 12 — el historial, sencillo. */}
+      {panel.historial.length > 0 && (
+        <Card>
+          <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>📋 Historial</p>
+          {panel.historial.map((h) => (
+            <div key={h.id} className="flex items-start gap-2 py-1">
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px]" style={{ color: COLORS.text }}>
+                  {h.fecha.slice(8, 10)}/{h.fecha.slice(5, 7)} — {h.que || 'Registro'}
+                  {h.como ? ` ${h.como.icono}` : ''}
+                </span>
+                {/* ⚠️ Sin valoraciones NO hay estrella: no se pinta un 0. */}
+                {h.estrella !== null && (
+                  <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>⭐ {h.estrella}/5</span>
+                )}
+                {h.nota && <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>📝 {h.nota}</span>}
+              </span>
+              {onEliminarRegistro && (
+                <button onClick={() => onEliminarRegistro(h.id)} aria-label={`Eliminar registro del ${h.fecha}`}>
+                  <X size={13} style={{ color: COLORS.textMuted }} />
+                </button>
+              )}
+            </div>
+          ))}
+        </Card>
+      )}
+    </div>
+  );
+}
+
 /** Apartado 16 — el panel, con sus plaquitas y su gestión de apartados. */
-export function PanelBarba({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil, onPartes }) {
+export function PanelBarba({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil, onPartes, onEliminarRegistroBarba, onEliminarRutinaBarba }) {
   const [zona, setZona] = useState(null);
   const panel = useMemo(() => panelBarba(estado, datosGlobales), [estado, datosGlobales]);
   const res = useMemo(() => resumenBarba(estado, datosGlobales), [estado, datosGlobales]);
+  const rut = useMemo(() => resumenRutinasBarba(estado), [estado]);
 
-  /* ⚠️ Regla 4 — el `return` condicional, después de los hooks. */
+  /* ⚠️ Regla 4 — los `return` condicionales, después de los hooks. */
+  if (zona === 'rutina') {
+    return (
+      <RutinasBarbaEH
+        estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)}
+        onEliminarRegistro={onEliminarRegistroBarba} onEliminarRutina={onEliminarRutinaBarba}
+      />
+    );
+  }
   if (zona === 'productos') {
     return (
       <ProductosBarbaEH
@@ -3934,6 +4289,11 @@ export function PanelBarba({ estado, accent, datosGlobales = {}, onCambiar, onCe
   const sub = {
     perfil: res.sinEmpezar ? 'Sin configurar' : `${res.contestadas} de ${res.total}`,
     productos: res.productos === 0 ? 'Marca los tuyos' : `${res.productos} marcados`,
+    /* ⚠️ F21 — derivado, como todo: ni un contador guardado. */
+    rutina: rut.rutinas === 0
+      ? 'Crea la primera'
+      : `${rut.rutinas} ${rut.rutinas === 1 ? 'rutina' : 'rutinas'}`
+        + (rut.hoy > 0 ? ` · ${rut.hechasHoy}/${rut.hoy} hoy` : ''),
   };
 
   return (
@@ -3951,6 +4311,9 @@ export function PanelBarba({ estado, accent, datosGlobales = {}, onCambiar, onCe
         <div className="grid grid-cols-2 gap-1.5">
           {PLAQUITAS_BARBA
             .filter((p) => p.id !== 'productos' || parteActivaBarba(estado, 'productos'))
+            /* ⚠️ F21 — la rutina tiene su propio interruptor (apartado 16), y
+               vale para las tres cosas: barba, afeitado y perfilado. */
+            .filter((p) => p.id !== 'rutina' || parteActivaBarba(estado, 'rutinas'))
             .filter((p) => p.id !== 'seguimiento' || parteActivaBarba(estado, 'seguimiento'))
             .map((p) => (
               <Plaquita
@@ -3960,7 +4323,8 @@ export function PanelBarba({ estado, accent, datosGlobales = {}, onCambiar, onCe
                 sub={p.listo ? (sub[p.id] || '') : `Llega en la fase ${p.fase}`}
                 onAbrir={p.listo
                   ? (p.id === 'perfil' ? onPerfil
-                    : (p.id === 'productos' ? () => setZona('productos') : null))
+                    : (p.id === 'rutina' ? () => setZona('rutina')
+                      : (p.id === 'productos' ? () => setZona('productos') : null)))
                   : null}
               />
             ))}
@@ -4001,7 +4365,7 @@ export function PanelBarba({ estado, accent, datosGlobales = {}, onCambiar, onCe
 }
 
 /** Apartado 1 — la entrada, con sus dos botones literales. */
-export function BarbaEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+export function BarbaEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onEliminarRegistroBarba, onEliminarRutinaBarba }) {
   const [pantalla, setPantalla] = useState(null);   // null | 'partes' | 'perfil'
   const entrada = useMemo(() => estadoDeEntradaBarba(estado, datosGlobales), [estado, datosGlobales]);
   /* ⚠️ Regla 4 y el fallo real de F3: se calcula UNA vez. Si se recalculara,
@@ -4031,6 +4395,8 @@ export function BarbaEH({ estado, accent, datosGlobales = {}, onCambiar, onCerra
         onCambiar={onCambiar} onCerrar={onCerrar}
         onPerfil={() => setPantalla('perfil')}
         onPartes={() => setPantalla('partes')}
+        onEliminarRegistroBarba={onEliminarRegistroBarba}
+        onEliminarRutinaBarba={onEliminarRutinaBarba}
       />
     );
   }
@@ -4163,7 +4529,7 @@ export function Recomendados({ estado, accent, onAnadir }) {
 /* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
-export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro }) {
+export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba }) {
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
@@ -4267,6 +4633,8 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
       <BarbaEH
         estado={estado} accent={accent} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={() => setBarba(false)}
+        onEliminarRegistroBarba={onEliminarRegistroBarba}
+        onEliminarRutinaBarba={onEliminarRutinaBarba}
       />
     );
   }

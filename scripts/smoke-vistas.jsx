@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -42,6 +42,11 @@ import {
   decirAhoraNoBarba, elegirPartesBarba, contestarBarba, marcarProductoBarba,
   alternarParteBarba, ponerDiasAfeitado,
 } from '../src/lib/perfilBarba.js';
+import {
+  usarPlantillaBarba, crearRutinaBarba, marcarPasoBarba, omitirPasoBarba,
+  registrarBarba, alternarRecordatorioBarba, rutinasBarba,
+  PARTE_RUTINAS_BARBA as PARTE_RUT_BARBA,
+} from '../src/lib/rutinasBarba.js';
 import { crearRutina, marcarRutinaEntera, registrarCambio, alternarParte, datosPelo } from '../src/lib/rutinasPelo.js';
 import { guardarRecomendacion, descartar, REGLAS_PELO } from '../src/lib/recomendacionesPelo.js';
 import { crearProductoPelo, anadirTienda, marcarNoDisponible, crearPack } from '../src/lib/productosPelo.js';
@@ -714,6 +719,27 @@ const CASOS = [
             const barbaConProducto = marcarProductoBarba(
               barbaConProductoBase, productosPiel(barbaConProductoBase)[0].id,
             ).estado;
+            /* EH F21 — rutinas y seguimiento de barba. ⚠️ Los estados que
+               importan: sin rutinas (donde salen las plantillas), con una y su
+               checklist, con un paso OMITIDO —que no puede pintarse como
+               fallo—, con registros (el historial) y con el afeitado apagado. */
+            const barbaSinRutinas = barbaTodo;
+            const barbaConRutina = usarPlantillaBarba(barbaTodo, 'afeitado', { hoy: HOY, confirmado: true }).estado;
+            const rutBarba = rutinasBarba(barbaConRutina)[0];
+            const barbaMarcada = marcarPasoBarba(barbaConRutina, rutBarba.id, rutBarba.pasos[0].id, { hoy: HOY });
+            const barbaOmitida = omitirPasoBarba(barbaMarcada, rutBarba.id, rutBarba.pasos[1].id, { hoy: HOY });
+            const barbaConSeguimiento = elegirPartesBarba(
+              barbaConRutina, ['barba', 'afeitado', 'perfilado', 'productos', 'seguimiento'], { hoy: HOY },
+            ).estado;
+            let barbaConHistorial = barbaConSeguimiento;
+            [['2026-08-23', 5], ['2026-08-18', 4], ['2026-08-10', null]].forEach(([f, v]) => {
+              barbaConHistorial = registrarBarba(barbaConHistorial, {
+                rutinaId: rutinasBarba(barbaConHistorial)[0].id, fecha: f, como: 'bien',
+                aspectos: v ? { comodidad: v } : {}, nota: 'Una nota',
+              }, { hoy: HOY }).estado;
+            });
+            const barbaConRecordatorio = alternarRecordatorioBarba(barbaConRutina, rutBarba.id).estado;
+            const barbaSinAfeitado = alternarParteBarba(barbaConRutina, PARTE_RUT_BARBA);
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop, onEliminar: noop, onEliminarRegistro: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
@@ -840,6 +866,15 @@ const CASOS = [
               ['PanelBarba · a medias', PanelBarba, () => pp(barbaAMedias)],
               ['PanelBarba · sin productos', PanelBarba, () =>
                 pp(alternarParteBarba(barbaTodo, 'productos'))],
+              ['RutinasBarbaEH · sin rutinas', RutinasBarbaEH, () => pp(barbaSinRutinas)],
+              ['RutinasBarbaEH · con una rutina', RutinasBarbaEH, () => pp(barbaConRutina)],
+              ['RutinasBarbaEH · con un paso hecho', RutinasBarbaEH, () => pp(barbaMarcada)],
+              ['RutinasBarbaEH · con un paso omitido', RutinasBarbaEH, () => pp(barbaOmitida)],
+              ['RutinasBarbaEH · con seguimiento', RutinasBarbaEH, () => pp(barbaConSeguimiento)],
+              ['RutinasBarbaEH · con historial', RutinasBarbaEH, () => pp(barbaConHistorial)],
+              ['RutinasBarbaEH · con recordatorio', RutinasBarbaEH, () => pp(barbaConRecordatorio)],
+              ['RutinasBarbaEH · afeitado apagado', RutinasBarbaEH, () => pp(barbaSinAfeitado)],
+              ['PanelBarba · con rutina', PanelBarba, () => pp(barbaConHistorial)],
               ['ProductosBarbaEH · sin catálogo', ProductosBarbaEH, () => pp(barbaTodo)],
               ['ProductosBarbaEH · con productos', ProductosBarbaEH, () => pp(barbaConProducto)],
             ];

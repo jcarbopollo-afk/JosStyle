@@ -230,9 +230,11 @@ escribir código.
 
 | v1.84.0 | **EH F20** (fuera de orden) + ⏸ **C-25** | Barba y afeitado: perfil y configuración. ⚠️ **Construida saltándose la 18 y la 19, y a propósito**: la **C-25** las bloquea por la regla 49 —la Fase 2 de Josué dice que *Higiene* y *Cuidado corporal* son **dos** módulos, y las Fases 18 y 19 los tratan como **uno**—, y la 20 no depende de ellas. ⚠️ **El apartado 17 es una lista de siete cosas que hay que REUTILIZAR**, así que la fase es casi entera llamadas: nueve ceros en la auditoría. ⚠️ **`sensibilidadPiel` NO se vuelve a preguntar**: el registro de la Fase 4 ya decía que Barba la usa. ⚠️ **Los productos son los del catálogo global y aquí solo se guardan IDS.** ⚠️ Y el **formulario adaptativo se amplió en el MOTOR**, no con un `if`: `cuando` pasó a recibir también el contexto del módulo |
 
+| v1.85.0 | **EH F21** | Barba y afeitado: rutinas y seguimiento. ⚠️ **Casi todo ya existía**: `motorRutinas.js` (F14), la papelera, el calendario global. 🐛 **Y arregló un fallo de la F20**: las rutinas colgaban de la casilla *"Afeitado"*, así que **quien solo marcaba "Barba" no podía crear ninguna** — ahora `rutinas` es el interruptor propio que pedía el apartado 16. 🐛 **Y dos más cazados por el navegador**: `TEXTOS_ESTADO_DIA` son textos, no objetos, y la pantalla leía `.nombre`. ⚠️ **Omitir es una TERCERA cosa** y sale de la cuenta; **borrar la rutina no borra su historial** |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 18/65** (F1-F17 y F20; **F18 y F19 ⏸ bloqueadas por C-25**). Quedan **45** fases de la
-Entrega 2: SO (2, con **F2 bloqueada**) y EH (43, dos de ellas bloqueadas).
+3/5 y **EH por 19/65** (F1-F17, F20 y F21; **F18 y F19 ⏸ bloqueadas por C-25**). Quedan **44** fases
+de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (42, dos de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

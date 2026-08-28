@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.84.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.85.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 18/65**, quedan 45 — **dos de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 19/65**, quedan 44 — **dos de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -149,7 +149,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 18/65** (v1.84.0: F1-F17 y **F20**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 19/65** (v1.85.0: F1-F17, **F20 y F21**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18 y F19 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -158,10 +158,10 @@ apartado 1 de la Fase 19 los tratan como **uno solo** llamado *"Cuerpo e higiene
 rompen un prompt suyo y cambian lo que ve en pantalla, así que **regla 49**: se anotó en `docs/03`
 con tres preguntas concretas y se siguió por la 20. **No construirlas hasta que conteste.**
 
-La siguiente candidata es **EH · Fase 21/65 — Barba y afeitado: rutinas y seguimiento**.
+La siguiente candidata es **EH · Fase 22/65 — Manos, uñas y pies: configuración**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17 y F20 dejaron cincuenta y tres cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20 y F21 dejaron cincuenta y siete cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -305,6 +305,17 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   sin la palabra, no excusar el texto.
 - ⚠️ **Antes de escribir una pregunta, mirar `REGISTRO_DATOS`** (F20): `sensibilidadPiel` ya decía
   `usan: [… 'barba' …]` siete fases antes. Van dos veces (D-15 fue la primera).
+- ⚠️ **Una casilla de "qué gestionas" NO es un interruptor de apartado** (F21). Colgar las rutinas de
+  la casilla *"Afeitado"* dejó sin rutinas a quien solo marcaba *"Barba"*. `deApartado2` separa las
+  dos listas, y **`elegirPartes` no toca los interruptores**: volver a elegir qué gestionas no puede
+  apagar algo por la espalda.
+- ⚠️ **`TEXTOS_ESTADO_DIA` son TEXTOS, no objetos** (F21): leer `.nombre` dejaba el estado del día en
+  blanco **y hacía que el barrido de palabras clínicas no mirara ninguna**. Lo cazó el navegador.
+- ⚠️ **Borrar una rutina NO borra su historial** (F21): *"23/08 — Afeitado ⭐ 5/5"* pasó. Los
+  registros se quedan huérfanos, como los cortes y las citas de F11.
+- ⚠️ **Una cuenta exacta de llaves en una prueba es una bomba de relojería.** La de
+  `test-papelera.mjs` saltó en F21 al añadir dos entradas legítimas, y ya había saltado antes.
+  Comprobar **que estén las que tienen que estar**, no cuántas hay.
 
 ⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
 que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el

@@ -20,6 +20,7 @@ import { TIPOS_FECHA_RELACION } from '../tokens';
 import { eventosDePelo } from './rutinasPelo';
 import { eventosDePeluqueria } from './peluqueria';
 import { eventosDePiel } from './rutinasPiel';
+import { eventosDeBarba } from './rutinasBarba';
 
 // Objetivos con plazo estimable (prediccionObjetivo, Fase 17) y todavía no cumplidos — un
 // objetivo ya marcado como cumplido no aporta nada al calendario, solo ruido. El plazo es una
@@ -258,6 +259,10 @@ export function eventosDerivados({ objetivos, estudios, calistenia, futbol, prod
     // independiente"*. Las rutinas de piel entran por la misma puerta que las
     // de pelo, con la misma forma y el mismo motor.
     ...(estiloHombre && desde && hasta ? eventosDePiel(estiloHombre, { desde, hasta }) : []),
+    /* EH F21, apartado 14 — *"debe aparecer en el calendario general. **No crear
+       un calendario de barba**"*. Tercer módulo de Estilo de Hombre que entra
+       por esta misma puerta, con la misma forma y el mismo motor. */
+    ...(estiloHombre && desde && hasta ? eventosDeBarba(estiloHombre, desde, hasta) : []),
   ];
 }
 
@@ -266,6 +271,7 @@ export function eventosDerivados({ objetivos, estudios, calistenia, futbol, prod
 export const NOMBRES_ORIGEN = {
   pelo: 'Pelo',
   piel: 'Skincare',
+  barba: 'Barba y afeitado',
   objetivos: 'Objetivos',
   estudios: 'Estudios',
   entreno: 'Entrenamiento',

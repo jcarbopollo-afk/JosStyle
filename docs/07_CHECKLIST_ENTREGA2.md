@@ -1543,31 +1543,62 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar que todo sigue guardado.
 - [x] Comprobar que no existen datos duplicados.
 
-#### EH · Fase 21/65 — BARBA Y AFEITADO: RUTINAS Y SEGUIMIENTO
-- [ ] PLAQUITA «MI RUTINA»
-- [ ] RUTINA DE AFEITADO
-- [ ] Preparación.
-- [ ] Afeitado.
-- [ ] Limpieza.
-- [ ] Cuidado posterior.
-- [ ] RUTINA DE BARBA
-- [ ] PERFILADO
-- [ ] RUTINAS PERSONALIZADAS
-- [ ] CHECKLIST
-- [ ] OMITIR
-- [ ] RECORDATORIOS
-- [ ] SEGUIMIENTO
-- [ ] VALORACIÓN DEL AFEITADO
-- [ ] NOTAS
-- [ ] HISTORIAL
-- [ ] PRODUCTOS
-- [ ] CALENDARIO
-- [ ] RECOMENDACIONES BÁSICAS
-- [ ] GUARDAR COMO FAVORITA
-- [ ] DESACTIVAR SEGUIMIENTO
-- [ ] DESACTIVAR TODO
-- [ ] ELIMINAR
-- [ ] PRUEBAS
+#### EH · Fase 21/65 — BARBA Y AFEITADO: RUTINAS Y SEGUIMIENTO ✅ COMPLETADA (v1.85.0)
+
+> **`src/lib/rutinasBarba.js`** (155 comprobaciones) + la pantalla `RutinasBarbaEH`. Sin SQL nuevo.
+>
+> ⚠️ **Casi todo esto ya existía.** Rutinas, plantillas, checklist, omitir, historial, calendario y
+> papelera los construyeron F8 y F14, y `motorRutinas.js` los tiene extraídos desde F14 justo para
+> esto. Lo propio de la fase son sus tres plantillas, sus etiquetas de frecuencia y sus cuatro
+> aspectos. La auditoría declara **ocho ceros**.
+>
+> 🐛 **Y arregló un fallo de verdad de la Fase 20:** las rutinas colgaban de la casilla *"Afeitado"*,
+> así que **quien solo marcaba "Barba" no podía crear ninguna** — cuando el apartado 3 dice
+> literalmente *"RUTINA DE BARBA: si tiene barba, 🧔 Cuidado de barba"*. Ahora `rutinas` es un
+> interruptor propio, que además es el que pedía el apartado 16 de la F20, y **elegir las casillas no
+> lo toca**: volver a elegir qué gestionas no puede apagarte las rutinas por la espalda.
+>
+> 🐛 **Dos fallos más, cazados por el navegador:** `TEXTOS_ESTADO_DIA` son **textos, no objetos**, y
+> la pantalla leía `.nombre` — el estado del día salía en blanco, y el barrido de palabras clínicas
+> no miraba ninguna de esas etiquetas.
+>
+> ⚠️ **Omitir es una TERCERA cosa** (apartado 7: *"sin penalización"*): ni hecho ni pendiente, y
+> **sale de la cuenta del día**. Dos pasos hechos y uno omitido es una rutina **HECHA**.
+>
+> ⚠️ **Nunca un segundo calendario** (apartado 14) ni **una papelera propia** (apartado 19): las dos
+> cosas son dos líneas de catálogo y una llamada al motor de siempre. Tercer módulo de Estilo de
+> Hombre que entra en el calendario global por la misma puerta.
+>
+> ⚠️ **Borrar la rutina NO borra su historial**: *"23/08 — Afeitado ⭐ 5/5"* pasó, y sus registros se
+> quedan huérfanos en vez de desaparecer. Misma decisión que la F11 con los cortes y las citas.
+>
+> ⚠️ **Y sin valoraciones no hay estrella**: `null`, nunca un 0. Ni rachas, ni promedios, ni
+> porcentajes (D2-02).
+
+- [x] PLAQUITA «MI RUTINA»
+- [x] RUTINA DE AFEITADO
+- [x] Preparación.
+- [x] Afeitado.
+- [x] Limpieza.
+- [x] Cuidado posterior.
+- [x] RUTINA DE BARBA
+- [x] PERFILADO
+- [x] RUTINAS PERSONALIZADAS
+- [x] CHECKLIST
+- [x] OMITIR
+- [x] RECORDATORIOS
+- [x] SEGUIMIENTO
+- [x] VALORACIÓN DEL AFEITADO
+- [x] NOTAS
+- [x] HISTORIAL
+- [x] PRODUCTOS
+- [x] CALENDARIO
+- [x] RECOMENDACIONES BÁSICAS
+- [x] GUARDAR COMO FAVORITA
+- [x] DESACTIVAR SEGUIMIENTO
+- [x] DESACTIVAR TODO
+- [x] ELIMINAR
+- [x] PRUEBAS
 
 #### EH · Fase 22/65 — MANOS, UÑAS Y PIES: CONFIGURACIÓN
 - [ ] ACTIVACIÓN
