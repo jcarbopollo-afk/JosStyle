@@ -1,5 +1,164 @@
 # CHANGELOG.md
 
+## v1.84.0 — EH Fase 20/65: barba y afeitado, y una pregunta para Josué
+
+### ⏸ Lo primero: las Fases 18 y 19 están bloqueadas, y no las he resuelto por mi cuenta
+Al abrir la Fase 18 (*Cuerpo e higiene*) aparecieron **dos prompts de Josué que dicen cosas
+distintas**:
+
+- Su **Fase 2**, en la lista de módulos, pone en 🧴 Cuidado **tres apartados**: *Skincare*,
+  **Higiene** y **Cuidado corporal** — dos entradas separadas, cada una con su interruptor.
+- El objetivo de la **Fase 18** dice *"la estructura será modular: 🚿 **Cuidado corporal e higiene**,
+  y dentro aparecerán pequeñas plaquitas"*, y el apartado 1 de la **Fase 19** lo confirma:
+  *"**dentro de** 🚿 Cuerpo e Higiene mostrar 🚿 Mi rutina"*.
+
+Las dos lecturas rompen un prompt suyo: fundirlos **quita un módulo del catálogo que él escribió** y
+que lleva en uso desde v1.60.0; mantenerlos separados deja el *"¿Qué quieres utilizar?"* del apartado
+1, con sus siete casillas, **sin una pantalla donde vivir**. Es la **regla 49** exactamente: se anota
+como **C-25** en `docs/03` con tres preguntas concretas, **se detiene la fase afectada y no la
+sesión**, y se sigue por la 20.
+
+*(Y hay un solape añadido que conviene decidir a la vez: dos de esas siete casillas son "Cuidado de
+manos" y "Cuidado de pies", y la **Fase 22** se titula "Manos, uñas y pies: configuración".)*
+
+### Qué se ha construido: Barba y afeitado
+La entrada opcional, las seis casillas de *"¿qué quieres gestionar?"*, el perfil por secciones, sus
+productos y la gestión de apartados. Se llega desde **Más → Estilo de hombre → Barba**.
+
+### Las cinco decisiones que gobiernan la fase
+
+**1. ⚠️ Nada nuevo se construye aquí.** El apartado 17 es una **lista de siete cosas que hay que
+reutilizar** —perfil global, productos globales, calendario, recordatorios, favoritos y Eliminados
+recientemente— y termina con *"no crear sistemas paralelos"*. Así que la fase es, casi entera,
+llamadas: el motor de cuestionarios de la F7, el registro de datos de la F4, los inventarios de F10 y
+F17 y los tres niveles de la F6. `auditarBarba()` declara **nueve ceros**.
+
+**2. ⚠️ `sensibilidadPiel` no se vuelve a preguntar.** El registro de la Fase 4 ya la declaraba con
+`usan: ['skincare', 'barba', 'productos']` — con **"barba" escrito dentro, siete fases antes de que
+existiera este archivo**. Se lee, y la pantalla dice dónde se cambia. Lo que sí es nuevo es
+`molestiaAfeitado` (apartado 10), que **no es la misma pregunta**: reaccionar a un producto y
+molestarse tras pasar una cuchilla son dos cosas, y se puede tener lo primero sin afeitarse nunca.
+
+**3. ⚠️ Los productos son los del catálogo global, y aquí solo se guardan IDS.** Un aftershave
+registrado en Skincare se marca para la barba **sin duplicarse**; desmarcarlo **no lo borra** de su
+módulo; y si lo borra allí, **aquí desaparece** — no se queda su nombre huérfano, que sería media
+ficha guardada aquí, o sea el segundo inventario por la puerta de atrás.
+
+**4. ⚠️ El formulario adaptativo se amplió EN EL MOTOR, no con un `if`.** El apartado 7 dice *"si
+selecciona afeitado"*, y "afeitado" no es una respuesta: es una de las casillas del apartado 2, que
+vive en la `config`. Así que `cuando` pasó a recibir **dos** cosas —las respuestas y un contexto del
+módulo— y las preguntas de la Fase 13 siguieron funcionando **sin tocar ni una**. Era eso o volver a
+meter la condición en el JSX, que es justo lo que la F13 sacó de ahí porque no se puede comprobar.
+
+**5. ⚠️ `frecuenciaDeAfeitado()` es la única respuesta a "cada cuánto"**, como `frecuenciaDeCorte()`
+en la F11: *"cuando lo necesito"* **es una respuesta** y no se traduce a días, *"Personalizado"* sin
+cifra **no es una frecuencia todavía**, y el choque entre lo del perfil y lo puesto a mano **se
+enseña** en vez de resolverse por él. Con las mismas trampas cubiertas: `Number(null)` es 0 y
+`Number.isInteger(0)` es `true`.
+
+### Nunca un diagnóstico
+Los apartados 10 y 11 lo dicen los dos: *"no diagnosticar"* e *"información declarada por el usuario,
+no un diagnóstico médico"*. `PALABRAS_CLINICAS` es **la lista de la Fase 13, importada** —no una
+segunda—, y una prueba barre los 82 textos de esta fase. La ayuda de la pregunta de molestias tuvo
+que reescribirse porque *"no es un diagnóstico"* **contiene la palabra**: octava vez que una
+comprobación de este proyecto salta con algo que estaba bien dicho.
+
+### Y un fallo real, cazado por la regla invariante
+Al conectar la pantalla renombré un import y dejé `resumenBarba()` usada sin importar. `vite build`
+**pasó igual** —no comprueba identificadores— y en el móvil habría sido un `ReferenceError` en
+blanco: exactamente el fallo de `papelera.js` que tuvo la app rota durante meses.
+`scripts/test-imports.mjs`, que existe por aquello, lo señaló con nombre y archivo.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **141 comprobaciones nuevas**, **756 casos de
+renderizado** (60 nuevos) y **61 comprobaciones en Chromium** sobre la aplicación de verdad: se llega
+a Barba, se dice que sí, se dejan marcadas solo las casillas que quiere, **se escribe en Supabase**,
+se abre el perfil —**sin las preguntas de afeitado, porque no marcó esa casilla**— y se contesta.
+
+### Archivos
+- **Nuevos:** `src/lib/perfilBarba.js`, `scripts/test-perfil-barba.mjs`.
+- **Modificados:** `src/lib/cuestionarios.js` (el contexto del módulo en `cuando`),
+  `src/views/EstiloHombreView.jsx` (cinco pantallas nuevas y la plaquita),
+  `docs/03` (**C-25**), `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`,
+  `scripts/verificar.sh`.
+
+---
+
+## v1.83.0 — EH Fase 17/65: productos, farmacia, Amazon y packs de skincare
+
+### Qué se ha construido
+El sistema de productos de Skincare, entero: ficha, categorías, tiendas, enlaces, recomendaciones
+"Para ti", buscador, filtros, comparación, alternativas, valoración y packs. Se llega desde
+**Más → Estilo de hombre → Skincare → 🛒 Productos**.
+
+### Las cinco decisiones que gobiernan la fase
+
+**1. ⚠️ El propio enunciado pedía el motor.** Su condición de finalización lo dice con estas
+palabras: *"este sistema debe diseñarse de forma que podamos reutilizar exactamente la misma
+arquitectura de productos para Pelo, Cuerpo, Higiene y otros módulos, **evitando crear cinco
+catálogos diferentes**"*. La Fase 10 ya la había construido para el pelo, así que lo genérico se
+extrajo a **`src/lib/motorProductos.js`** y los dos módulos lo usan. **Las 169 pruebas de la Fase 10
+pasaron sin tocar ni una.** Tercer motor extraído de este bloque, después de `motorRutinas.js`
+(F14) y `motorRecomendaciones.js` (F16).
+
+Lo que **no** se comparte, a propósito: las categorías y **las filas de la tabla de comparación**.
+La Fase 10 dibuja cuatro y la 17 dibuja cinco — son dos tablas distintas en dos enunciados
+distintos, y forzarlas a compartir una habría sido inventarse una que no pide ninguno de los dos.
+
+**2. ⚠️ UN inventario, el de la Fase 13.** El apartado 13 dice que *"Ya lo tengo" alimentará la
+información de productos del usuario*: esa información **ya existía** —`datosPiel().productos`, que
+creó F13 y usa F14 para enganchar productos a los pasos de una rutina—. Esta fase **la amplía**, no
+crea otra. Hay una prueba de que un producto creado aquí lo ve `productosDePiel()` de la Fase 14.
+
+**3. 🐛 Y ahí saltó el fallo de normalizador por DECIMOCTAVA vez, y de los caros.** `normalizarPiel`
+recortaba cada producto a `{ id, nombre }`, que es lo que guardaba la Fase 13. Con la regla 5
+(`saveData` sobrescribe), el siguiente guardado se habría llevado por delante marca, categoría,
+precio, tiendas, objetivos, tipos de piel y valoración: la ficha entera, en silencio. Arreglado, con
+cuatro pruebas que normalizan dos veces seguidas. `packs` también se declaró en `DEFAULT_PIEL`.
+
+**4. ⚠️ El catálogo está VACÍO, y es D2-03.** *"Amazon: arquitectura sí, afiliación no. Ni catálogo,
+ni productos, ni API, ni cuenta de afiliados inventados."* Se ha construido la arquitectura entera
+—ficha, cinco tipos de tienda, enlace de afiliado, aviso de transparencia, packs, comparación,
+alternativas, filtros y buscador— y **todo producto que existe lo ha metido él**. La pantalla lo
+dice con una frase en vez de fingir una tienda. Y **nunca un enlace inventado** (apartado 4): una
+"url" que no lo es se guarda como `null` y se dice que no hay enlace, en vez de fabricar una
+búsqueda de Amazon "por si acaso".
+
+**5. ⚠️ Amazon no es una limitación** (apartados 5 y 6). Un producto que solo está en la farmacia se
+recomienda igual, y *"Disponible en farmacia"* es una respuesta completa aunque no haya ningún
+enlace. El aviso de afiliación sale **solo donde hay afiliación** —ponerlo donde no la hay es tan
+poco honesto como quitarlo donde sí—, y el usuario ve siempre la misma etiqueta: *"Ver producto"*.
+
+### Y el apartado 22, que es el que cierra
+*"Nunca comprar. Nunca añadir al carrito externamente. Nunca elegir por el usuario."* Cinco pruebas
+sobre el código y tres ceros declarados en la auditoría. `packSugeridoPiel` **sugiere y no escribe**
+—la prueba serializa el estado antes y después—, igual que `aplicarARutina`: es el sexto
+`aplicarPlan` del proyecto.
+
+### Un fallo de verdad, encontrado de paso
+`CATALOGO_VACIO_PORQUE` estaba escrita **dos veces, palabra por palabra**, en `productosPelo.js` y
+en `productosPiel.js`. Se mudó al motor, donde vive la decisión. Al hacerlo apareció un fallo real
+que cazaron las pruebas de renderizado: **`export … from` no crea binding local**, así que el propio
+archivo la usaba sin tenerla, y cuatro pantallas de Pelo reventaban con
+`CATALOGO_VACIO_PORQUE is not defined`. Se importa y se reexporta la variable.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **199 comprobaciones nuevas** en
+`scripts/test-productos-piel.mjs`, **696 casos de renderizado** (13 nuevos, incluidos los de la
+Fase 16, que no tenía ninguno) y **41 comprobaciones en Chromium** sobre la aplicación de verdad: se
+llega a Productos desde Más → Estilo de hombre → Skincare, se crea un producto con su categoría y su
+farmacia, **se escribe en Supabase con la ficha entera** y la pantalla lo enseña.
+
+### Archivos
+- **Nuevos:** `src/lib/motorProductos.js`, `src/lib/productosPiel.js`,
+  `scripts/test-productos-piel.mjs`.
+- **Modificados:** `src/lib/perfilPiel.js` (el normalizador y `DEFAULT_PIEL`), `src/lib/rutinasPiel.js`
+  (la parte `productos` y su plaquita), `src/lib/productosPelo.js` (delega en el motor),
+  `src/views/EstiloHombreView.jsx` (`ProductosPielEH` y su sitio en `PanelPiel`),
+  `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## 🚨 v1.82.0 — LA APLICACIÓN NO ARRANCABA. Dos fallos fatales, y EH Fase 16/65
 
 ### Lo primero, porque es lo que importa

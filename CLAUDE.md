@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.82.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.84.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 16/65**, quedan 47) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 18/65**, quedan 45 — **dos de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -149,15 +149,19 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 16/65** (v1.82.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 18/65** (v1.84.0: F1-F17 y **F20**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
-La siguiente candidata es **EH · Fase 17/65 — Skincare: productos, farmacia, packs y afiliación**.
+⏸ **EH F18 y F19 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
+*Higiene* y *Cuidado corporal* como **dos módulos** del catálogo; el objetivo de la Fase 18 y el
+apartado 1 de la Fase 19 los tratan como **uno solo** llamado *"Cuerpo e higiene"*. Las dos lecturas
+rompen un prompt suyo y cambian lo que ve en pantalla, así que **regla 49**: se anotó en `docs/03`
+con tres preguntas concretas y se siguió por la 20. **No construirlas hasta que conteste.**
+
+La siguiente candidata es **EH · Fase 21/65 — Barba y afeitado: rutinas y seguimiento**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **No empezarla sin que Josué pase la fase.**
-
-⚠️ **EH F1-F16 dejaron cuarenta y tres cosas que las 49 fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17 y F20 dejaron cincuenta y tres cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -261,6 +265,25 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   menciona. Sin rachas, sin obligación diaria y sin porcentaje de días registrados.
 - ⚠️ **Nunca una causa** (F15, apartados 7 y 12): *"↑ Mejorando"* y *"desde que empezaste a usar X
   has registrado N valoraciones"*. Ni "gracias a", ni "funciona", ni "ha mejorado tu piel".
+- ⚠️ **`motorProductos.js` es EL motor de productos** (F17, extraído de F10), **porque lo pide la
+  condición de finalización del enunciado**: *"evitando crear cinco catálogos diferentes"*. Cuerpo,
+  Higiene y lo que venga **llaman ahí**. Lo que se queda en cada módulo son sus categorías y **sus
+  filas de comparación**: F10 dibuja cuatro y F17 cinco, y cada fase se queda con la suya.
+- ⚠️ **Los productos de piel son la lista de F13, ampliada** (F17, apartado 13), como los de pelo son
+  la de F8. Antes de crear un inventario, mirar si ya existe: van dos veces.
+- ⚠️ **`normalizarPiel` va por DIECIOCHO** (`productos` con su ficha entera y `packs`, de F17, son
+  los últimos), y ésta fue de las caras: recortaba cada producto a `{id, nombre}`, así que el
+  siguiente guardado se llevaba marca, categoría, precio, tiendas y valoración. **Al añadir un campo
+  a una entidad, añadirlo también a su normalizador.**
+- ⚠️ **`export … from` NO CREA BINDING LOCAL** (F17). Al mudar `CATALOGO_VACIO_PORQUE` al motor,
+  `productosPelo.js` la reexportó así y **se quedó sin la variable que usa dos líneas más abajo**:
+  cuatro pantallas reventaban con `is not defined`. Para reexportar algo que el archivo TAMBIÉN usa,
+  se importa y se hace `export { X }`.
+- ⚠️ **El catálogo de productos de piel está VACÍO** (F17 + D2-03), como el de pelo, y **nunca se
+  inventa un enlace**: una "url" que no lo es se guarda `null` y se dice que no hay enlace. Ni una
+  función que compre o añada a un carrito (apartado 22).
+- ⚠️ **`packSugeridoPiel` sugiere, no crea** (F17, apartado 17), como `packSugerido` y
+  `aplicarARutina`. Sexto `aplicarPlan` del proyecto.
 - ⚠️ **`motorRecomendaciones.js` es EL motor de reglas** (F16, extraído de F9). Pelo, Cortes y
   Skincare lo usan. **Una regla sin `requiere` no se aplica NUNCA**: se dispararía con el contexto
   vacío. Nunca una cuarta copia de ese `if`.
@@ -268,12 +291,26 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   del proyecto, tras HT F9, EH F9, EH F12 y EH F14. Nunca darle un valor por defecto.
 - ⚠️ **La prioridad pesa, pero no tapa** (F16, apartado 2): lo del objetivo que él marcó sale
   primero, y una recomendación de otro tema sigue pudiendo salir.
+- ⚠️ **`cuando` recibe DOS cosas desde F20**: las respuestas y **un contexto del módulo**. Nació
+  porque el apartado 7 dice *"si selecciona afeitado"* y "afeitado" no es una respuesta, sino una
+  casilla guardada en la `config`. Una condición de visibilidad **nunca vuelve al JSX**.
+- ⚠️ **Un módulo que use productos NO guarda fichas, guarda IDS** (F20, apartado 12). Borrar el
+  producto en su módulo lo hace desaparecer de aquí, y eso está bien: guardar el nombre "por si
+  acaso" es media ficha, o sea el segundo inventario por la puerta de atrás.
+- ⚠️ **`frecuenciaDeAfeitado()` es la ÚNICA respuesta a "cada cuánto" en Barba** (F20), como
+  `frecuenciaDeCorte()` en F11 y `tallaDe()` en F5. *"Cuando lo necesito"* **es una respuesta**:
+  nunca traducirla a días.
+- ⚠️ **`PALABRAS_CLINICAS` es UNA lista, la de F13.** F20 la importa. Y **una prueba que barra los
+  textos saltará con "no es un diagnóstico"**, porque contiene la palabra: la solución es decirlo
+  sin la palabra, no excusar el texto.
+- ⚠️ **Antes de escribir una pregunta, mirar `REGISTRO_DATOS`** (F20): `sensibilidadPiel` ya decía
+  `usan: [… 'barba' …]` siete fases antes. Van dos veces (D-15 fue la primera).
 
 ⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
 que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el
 `fotos: 0` de una auditoría y el recuento de colecciones de F8 al añadir una legítima—. **Mirar qué
 línea la hace saltar antes de tocar el código.** Y la otra: **el fallo del normalizador ya va por la
-séptima vez** (F9 lo cazó en el mismo turno). Al añadir un campo, añadirlo a su normalizador.
+decimoctava vez** (F9 lo cazó en el mismo turno). Al añadir un campo, añadirlo a su normalizador.
 
 ⏸ **SO · Fase 2 (biblioteca de sonidos) está bloqueada, y por un motivo real:** no hay ni un archivo
 de audio en el proyecto. Josué escribió en la especificación que los daría *"cuando la web ya tenga
