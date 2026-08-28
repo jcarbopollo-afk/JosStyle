@@ -115,6 +115,9 @@ export const CATALOGO_PAPELERA = {
   'sonrisa.rutinas': { modulo: 'sonrisa', coleccion: 'rutinas', tipo: 'Rutina de higiene bucal', campos: ['nombre'], icono: 'sonrisa' },
   'sonrisa.revisiones': { modulo: 'sonrisa', coleccion: 'revisiones', tipo: 'Revisión dental', campos: ['fecha'], icono: 'sonrisa' },
   'sonrisa.registros': { modulo: 'sonrisa', coleccion: 'registros', tipo: 'Registro de higiene bucal', campos: ['fecha'], icono: 'sonrisa' },
+  // ⚠️ EH F24 — la colección de perfumes y su historial, a la papelera de siempre.
+  'perfumes.perfumes': { modulo: 'perfumes', coleccion: 'perfumes', tipo: 'Perfume', campos: ['nombre'], icono: 'perfumes' },
+  'perfumes.historial': { modulo: 'perfumes', coleccion: 'historial', tipo: 'Uso de perfume', campos: ['fecha'], icono: 'perfumes' },
   'relacion.fechas': { modulo: 'relacion', coleccion: 'fechas', tipo: 'Fecha importante', campos: ['etiqueta'], icono: 'relacion', privado: true },
 };
 

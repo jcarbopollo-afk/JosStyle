@@ -296,6 +296,12 @@ else
   fallo "Falla el módulo de sonrisa"; grep '✗' /tmp/jc_eh23.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-perfumes.mjs >/tmp/jc_eh24.log 2>&1; then
+  ok "Perfumes y fragancias (EH F24) — $(grep -c '✓' /tmp/jc_eh24.log) comprobaciones"
+else
+  fallo "Falla el módulo de perfumes"; grep '✗' /tmp/jc_eh24.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

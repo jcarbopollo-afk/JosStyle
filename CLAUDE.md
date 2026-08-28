@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.86.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.87.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 20/65**, quedan 43 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 21/65**, quedan 42 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -149,7 +149,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 20/65** (v1.86.0: F1-F17, **F20, F21 y F23**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 21/65** (v1.87.0: F1-F17, **F20, F21, F23 y F24**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -161,10 +161,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 24/65 — Perfumes y fragancias: perfil personal**.
+La siguiente candidata es **EH · Fase 25/65 — Perfumes: recomendaciones, ocasiones y colección**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23 dejaron sesenta y dos cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21, F23 y F24 dejaron sesenta y seis cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -331,6 +331,15 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 - ⚠️ **La auditoría de ME F4 lee el código y busca los NOMBRES LITERALES** de módulo y colección en
   `eliminarConPapelera(...)`. Una colección pasada como variable no la ve, y salta como "colección
   sin borrado real".
+- ⚠️ **Antes de escribir una pregunta que otra fase también hará, DECLARARLA COMPARTIDA** (F24). Los
+  aromas los pregunta la F18 y la F24; se declararon en el registro de la F4 con `usan` para las dos,
+  y la que llegue después los lee. Tercera vez (D-15 y `sensibilidadPiel` fueron las otras).
+- ⚠️ **"Mi X actual" y "mi X favorito" NUNCA se deducen el uno del otro** (F24, apartado 12). Son dos
+  campos, y marcar uno no toca el otro.
+- ⚠️ **Un id que apunta a algo borrado se limpia EN EL NORMALIZADOR** (F24): `actual` y `porOcasion`
+  se validan contra lo que existe. Guardar el id de un perfume que ya no está es guardar una mentira.
+- ⚠️ **Lo que él dice que NO quiere vale tanto como lo que quiere** (F24, apartado 3), y se le repite
+  con sus palabras: *"dijiste que preferías evitar…"*, nunca *"no te gusta"*.
 
 ⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
 que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el

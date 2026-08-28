@@ -1715,41 +1715,66 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Recuperar.
 - [x] Comprobar que no hay calendarios/productos/rachas duplicados.
 
-#### EH · Fase 24/65 — PERFUMES Y FRAGANCIAS: PERFIL PERSONAL
-- [ ] ACTIVACIÓN
-- [ ] PERFIL DE FRAGANCIA
-- [ ] AROMAS QUE NO LE GUSTAN
-- [ ] INTENSIDAD
-- [ ] DURACIÓN
-- [ ] OCASIONES
-- [ ] ESTACIONES
-- [ ] PRESUPUESTO
-- [ ] PERFUMES QUE YA TIENE
-- [ ] FAVORITOS
-- [ ] VALORACIÓN
-- [ ] PERFUME ACTUAL
-- [ ] PERFUME PARA CADA OCASIÓN
-- [ ] PERFUMES QUE QUIERE PROBAR
-- [ ] HISTORIAL
-- [ ] RECOMENDACIONES
-- [ ] PRODUCTOS
-- [ ] DESACTIVACIÓN
-- [ ] PRUEBAS
-- [ ] Activar módulo.
-- [ ] Configurar gustos.
-- [ ] Configurar disgustos.
-- [ ] Añadir perfume.
-- [ ] Marcar favorito.
-- [ ] Valorar.
-- [ ] Asignar ocasión.
-- [ ] Asignar temporada.
-- [ ] Crear lista “Quiero probar”.
-- [ ] Configurar perfume actual.
-- [ ] Consultar historial.
-- [ ] Ver recomendaciones.
-- [ ] Desactivar partes.
-- [ ] Reactivar.
-- [ ] Comprobar que no se duplica el catálogo de productos.
+#### EH · Fase 24/65 — PERFUMES Y FRAGANCIAS: PERFIL PERSONAL ✅ COMPLETADA (v1.87.0)
+
+> **`src/lib/perfumes.js`** (147 comprobaciones) + la pantalla `PerfumesEH`. Sin SQL nuevo.
+>
+> ⚠️ **Los aromas son un dato COMPARTIDO, y se declaran aquí.** El apartado 6 de la **Fase 18**
+> pregunta *"¿qué tipo de aromas te gustan?"* con casi las mismas opciones, y ésta es la fase dedicada
+> a las fragancias. Así que `aromasFavoritos` y `aromasQueNoGustan` entran en el **registro de la Fase
+> 4** con `usan: ['perfumes', 'cuerpo', 'productos']`, y la Fase 18 **los leerá** en vez de volver a
+> preguntarlos. Tercera vez que este registro evita una pregunta repetida antes de escribirla.
+>
+> ⚠️ **Lo que NO le gusta pesa tanto como lo que le gusta.** El apartado 3 empieza con *"muy
+> importante"*: *"servirá para **evitar** recomendaciones que no encajen"*. Por eso
+> `chocaConSusGustos()` existe ya, aunque las recomendaciones lleguen en la 25 — y lo dice **con sus
+> palabras**: *"dijiste que preferías evitar…"*, no *"no te gusta"*.
+>
+> ⚠️ **"Mi perfume actual" NO es "mi favorito"** (apartado 12, con esas palabras). Son dos campos
+> distintos, ninguno se deduce del otro, y hay una prueba en las dos direcciones — también en el
+> navegador.
+>
+> ⚠️ **Los perfumes usan el catálogo global** (apartado 17): aquí se guarda lo que es del perfume
+> —sus aromas, sus ocasiones, su temporada— y **el id** del producto si lo enlazó. Nunca su ficha, y
+> **ni una tienda ni un precio**: *"la idea no es convertirlo en una tienda de perfumes"*.
+>
+> ⚠️ **Y el normalizador limpia lo que apunta a la nada**: borrar un perfume deja de hacerlo "el
+> actual" y saca su ocasión, en vez de guardar un id colgando que mentiría.
+
+- [x] ACTIVACIÓN
+- [x] PERFIL DE FRAGANCIA
+- [x] AROMAS QUE NO LE GUSTAN
+- [x] INTENSIDAD
+- [x] DURACIÓN
+- [x] OCASIONES
+- [x] ESTACIONES
+- [x] PRESUPUESTO
+- [x] PERFUMES QUE YA TIENE
+- [x] FAVORITOS
+- [x] VALORACIÓN
+- [x] PERFUME ACTUAL
+- [x] PERFUME PARA CADA OCASIÓN
+- [x] PERFUMES QUE QUIERE PROBAR
+- [x] HISTORIAL
+- [x] RECOMENDACIONES
+- [x] PRODUCTOS
+- [x] DESACTIVACIÓN
+- [x] PRUEBAS
+- [x] Activar módulo.
+- [x] Configurar gustos.
+- [x] Configurar disgustos.
+- [x] Añadir perfume.
+- [x] Marcar favorito.
+- [x] Valorar.
+- [x] Asignar ocasión.
+- [x] Asignar temporada.
+- [x] Crear lista “Quiero probar”.
+- [x] Configurar perfume actual.
+- [x] Consultar historial.
+- [x] Ver recomendaciones.
+- [x] Desactivar partes.
+- [x] Reactivar.
+- [x] Comprobar que no se duplica el catálogo de productos.
 
 #### EH · Fase 25/65 — PERFUMES: RECOMENDACIONES, OCASIONES Y COLECCIÓN
 - [ ] PLAQUITA «MIS PERFUMES»

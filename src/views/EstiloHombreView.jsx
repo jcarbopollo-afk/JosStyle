@@ -164,6 +164,13 @@ import {
   crearRevision, editarRevision, registrarSonrisa, resumenSonrisa, panelSonrisa,
   TEXTOS_ESTADO_DIA as TEXTOS_DIA_SONRISA,
 } from '../lib/sonrisa';
+import {
+  MODULO_PERFUMES, TEXTOS_PERFUMES, aroma, ocasion, configurarPerfumes,
+  decirAhoraNoPerfumes, alternarPartePerfumes, contestarPerfume, anadirPerfume,
+  alternarFavoritoPerfume, valorarPerfume, ponerPerfumeActual,
+  asignarPerfumeAOcasion, anadirPorProbar, quitarPorProbar, moverAColeccion,
+  registrarUso, resumenPerfumes, panelPerfumes,
+} from '../lib/perfumes';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -4901,6 +4908,349 @@ export function SonrisaEH({ estado, accent, rachas = null, onCambiar, onCerrar, 
   );
 }
 
+/* ===========================================================================
+   PERFUMES Y FRAGANCIAS (F24)
+   ===========================================================================
+   *"La idea no es convertirlo en una tienda de perfumes."* Así que aquí no hay
+   precios, ni tiendas, ni catálogo: solo lo que él tiene y lo que le gusta.
+
+   ⚠️ **"Mi perfume actual" y "favorito" son dos botones distintos**, y ninguno
+   se deduce del otro (apartado 12). */
+export function PerfumesEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onEliminar }) {
+  /* ⚠️ Regla 4 — todos los hooks antes de cualquier `return`. */
+  const [zona, setZona] = useState(null);
+  const [seccion, setSeccion] = useState(0);
+  const [nombre, setNombre] = useState('');
+  const [marca, setMarca] = useState('');
+  const [probar, setProbar] = useState('');
+  const [error, setError] = useState(null);
+
+  const panel = useMemo(() => panelPerfumes(estado, datosGlobales), [estado, datosGlobales]);
+  const [yaEntro] = useState(() => panel.estado === 'configurado');
+  const secciones = panel.secciones;
+  const actual = secciones[Math.min(seccion, Math.max(secciones.length - 1, 0))] || null;
+
+  const aplicar = (r) => {
+    if (r.error) { setError(r.error); return false; }
+    setError(null);
+    onCambiar?.(r.estado);
+    return true;
+  };
+
+  const chip = (a) => ({
+    background: a ? hexToRgba(accent, 0.12) : COLORS.surface2,
+    border: `1px solid ${a ? accent : COLORS.border}`,
+  });
+
+  const cabecera = (titulo) => (
+    <div className="flex items-center gap-2 mb-1">
+      <button onClick={() => setZona(null)} className="p-1 -ml-1" aria-label="Volver">
+        <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+      </button>
+      <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{titulo}</p>
+    </div>
+  );
+
+  /* ⚠️ Regla 4 — los `return` condicionales, después de los hooks. */
+  if (!yaEntro && panel.estado !== 'configurado') {
+    return (
+      <Card className="text-center">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1 float-left" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-2xl leading-none mb-2" aria-hidden="true">🌫️</p>
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_PERFUMES.titulo}</p>
+        <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{TEXTOS_PERFUMES.pregunta}</p>
+        <PrimaryButton accent={accent} onClick={() => aplicar(configurarPerfumes(estado))}>
+          {TEXTOS_PERFUMES.configurar}
+        </PrimaryButton>
+        <button onClick={() => aplicar(decirAhoraNoPerfumes(estado))}
+          className="text-[11px] font-semibold mt-2" style={{ color: COLORS.textMuted }}>
+          {TEXTOS_PERFUMES.ahoraNo}
+        </button>
+        {panel.estado === 'ahora_no' && (
+          <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>{TEXTOS_PERFUMES.oculto}</p>
+        )}
+      </Card>
+    );
+  }
+
+  /* ── 🌫️ Mi perfil ──────────────────────────────────────────────────── */
+  if (zona === 'perfil') {
+    return (
+      <Card>
+        {cabecera(TEXTOS_PERFUMES.editar)}
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+          {panel.progreso.contestadas} de {panel.progreso.total} · todo es opcional
+        </p>
+        <div className="flex gap-1 mb-3 overflow-x-auto">
+          {secciones.map((s, i) => (
+            <button key={s.id} onClick={() => setSeccion(i)}
+              className="rounded-2xl px-2.5 py-1.5 flex-shrink-0"
+              style={{
+                background: actual?.id === s.id ? hexToRgba(accent, 0.14) : COLORS.surface2,
+                border: `1px solid ${actual?.id === s.id ? accent : COLORS.border}`,
+              }}>
+              <span className="text-[10px] font-semibold" style={{ color: actual?.id === s.id ? accent : COLORS.text }}>
+                {s.nombre} {s.contestadas}/{s.total}
+              </span>
+            </button>
+          ))}
+        </div>
+        {actual && actual.preguntas.map((q) => (
+          <div key={q.id} className="mb-3">
+            <p className="text-[11px] font-semibold mb-0.5" style={{ color: COLORS.text }}>{q.titulo}</p>
+            {q.ayuda && <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>{q.ayuda}</p>}
+            <div className="flex flex-wrap gap-1">
+              {q.opcionesVisibles.map((o) => {
+                const puesto = q.valores.includes(o.id);
+                return (
+                  <button key={o.id} onClick={() => aplicar(contestarPerfume(estado, q.id, o.id))}
+                    className="rounded-full px-2.5 py-1" style={chip(puesto)} aria-pressed={puesto}>
+                    <span className="text-[10px] font-semibold" style={{ color: puesto ? accent : COLORS.text }}>
+                      {o.nombre}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+        {error && <p className="text-[10px]" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+      </Card>
+    );
+  }
+
+  /* ── 🧴 Mi colección ───────────────────────────────────────────────── */
+  if (zona === 'coleccion') {
+    return (
+      <Card>
+        {cabecera('🧴 Mi colección')}
+        {error && <p className="text-[10px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+        {panel.perfumes.map((p) => (
+          <div key={p.id} className="rounded-2xl p-2.5 mb-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <div className="flex items-center gap-2">
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] font-semibold truncate" style={{ color: COLORS.text }}>
+                  {p.nombre}{panel.actual?.id === p.id ? ' · el que usas ahora' : ''}
+                </span>
+                <span className="block text-[10px] truncate" style={{ color: COLORS.textMuted }}>
+                  {[p.marca, p.tipo.map((t) => aroma(t)?.nombre).filter(Boolean).join(', '),
+                    p.ocasiones.map((o) => ocasion(o)?.nombre).filter(Boolean).join(', ')]
+                    .filter(Boolean).join(' · ') || 'Sin más datos'}
+                </span>
+              </span>
+              <button onClick={() => aplicar(alternarFavoritoPerfume(estado, p.id))}
+                className="text-[11px]" aria-label={`Favorito ${p.nombre}`}>
+                {p.favorito ? '❤️' : '🤍'}
+              </button>
+            </div>
+            <div className="flex items-center gap-1 mt-1">
+              {[1, 2, 3, 4, 5].map((v) => (
+                <button key={v} onClick={() => aplicar(valorarPerfume(estado, p.id, p.valoracion === v ? null : v))}
+                  className="text-[11px]" aria-label={`Valorar ${p.nombre} con ${v}`}>
+                  {p.valoracion !== null && v <= p.valoracion ? '⭐' : '☆'}
+                </button>
+              ))}
+            </div>
+            {p.nota && <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>📝 {p.nota}</p>}
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              {/* ⚠️ Apartado 12 — "el que uso ahora" es OTRA cosa que "favorito". */}
+              <button onClick={() => aplicar(ponerPerfumeActual(estado, panel.actual?.id === p.id ? null : p.id))}
+                className="text-[10px] font-semibold"
+                style={{ color: panel.actual?.id === p.id ? accent : COLORS.textMuted }}>
+                {panel.actual?.id === p.id ? '✓ Es el que uso ahora' : 'Es el que uso ahora'}
+              </button>
+              <button onClick={() => onEliminar?.('perfumes', p.id)}
+                className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>Eliminar</button>
+            </div>
+            {/* Apartado 13 — un perfume para cada ocasión, opcional. */}
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {panel.ocasiones.map((o) => {
+                const puesta = panel.porOcasion.some((x) => x.ocasion.id === o.id && x.perfume.id === p.id);
+                return (
+                  <button key={o.id}
+                    onClick={() => aplicar(asignarPerfumeAOcasion(estado, o.id, puesta ? null : p.id))}
+                    className="rounded-full px-2 py-0.5" style={chip(puesta)} aria-pressed={puesta}>
+                    <span className="text-[10px]" style={{ color: puesta ? accent : COLORS.textMuted }}>
+                      {o.icono} {o.nombre}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+        {panel.perfumes.length === 0 && (
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>Añade los que tengas, cuando quieras.</p>
+        )}
+        <div className="space-y-2 mt-2">
+          <TextInput value={nombre} onChange={(ev) => setNombre(ev.target.value)}
+            placeholder="Nombre del perfume" aria-label="Nombre del perfume" />
+          <TextInput value={marca} onChange={(ev) => setMarca(ev.target.value)}
+            placeholder="Marca (opcional)" aria-label="Marca" />
+          <PrimaryButton accent={accent} onClick={() => {
+            if (!aplicar(anadirPerfume(estado, { nombre, marca }))) return;
+            setNombre(''); setMarca('');
+          }}>Añadir perfume</PrimaryButton>
+        </div>
+      </Card>
+    );
+  }
+
+  /* ── 🎯 Quiero probar ──────────────────────────────────────────────── */
+  if (zona === 'probar') {
+    return (
+      <Card>
+        {cabecera('🎯 Quiero probar')}
+        {error && <p className="text-[10px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+        {panel.porProbar.map((p) => (
+          <div key={p.id} className="rounded-2xl p-2.5 flex items-center gap-2 mb-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-semibold truncate" style={{ color: COLORS.text }}>{p.nombre}</span>
+              {p.marca && <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>{p.marca}</span>}
+            </span>
+            {/* ⚠️ Lo probó: pasa a la colección y sale de aquí, de una vez. */}
+            <button onClick={() => aplicar(moverAColeccion(estado, p.id))}
+              className="text-[10px] font-semibold" style={{ color: accent }}>Ya lo tengo</button>
+            <button onClick={() => aplicar(quitarPorProbar(estado, p.id))} aria-label={`Quitar ${p.nombre}`}>
+              <X size={13} style={{ color: COLORS.textMuted }} />
+            </button>
+          </div>
+        ))}
+        {panel.porProbar.length === 0 && (
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+            Apunta aquí los que te llamen la atención.
+          </p>
+        )}
+        <div className="flex gap-1.5 mt-2">
+          <TextInput value={probar} onChange={(ev) => setProbar(ev.target.value)}
+            placeholder="Nombre" aria-label="Perfume que quieres probar" />
+          <button onClick={() => { aplicar(anadirPorProbar(estado, { nombre: probar })); setProbar(''); }}
+            disabled={!probar.trim()}
+            className="rounded-2xl px-3 disabled:opacity-40"
+            style={{ background: hexToRgba(accent, 0.12), border: `1px solid ${accent}` }}>
+            <span className="text-[11px] font-semibold" style={{ color: accent }}>Añadir</span>
+          </button>
+        </div>
+      </Card>
+    );
+  }
+
+  /* ── 📋 Historial ──────────────────────────────────────────────────── */
+  if (zona === 'historial') {
+    return (
+      <Card>
+        {cabecera('📋 Historial')}
+        {error && <p className="text-[10px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+        {/* ⚠️ *"Sin necesidad de hacerlo cada vez"*: ni racha ni hueco. */}
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+          Apunta cuándo usas cada uno, si te apetece. No hace falta hacerlo siempre.
+        </p>
+        {panel.historial.map((u) => (
+          <div key={u.id} className="flex items-start gap-2 py-1">
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px]" style={{ color: COLORS.text }}>
+                {u.fecha} — {u.perfume?.nombre || 'Un perfume que ya no tienes'}
+                {u.ocasionNombre ? ` · ${u.ocasionNombre}` : ''}
+              </span>
+              {u.valoracion !== null && (
+                <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>⭐ {u.valoracion}/5</span>
+              )}
+            </span>
+            <button onClick={() => onEliminar?.('historial', u.id)} aria-label={`Eliminar el registro del ${u.fecha}`}>
+              <X size={13} style={{ color: COLORS.textMuted }} />
+            </button>
+          </div>
+        ))}
+        {panel.perfumes.map((p) => (
+          <button key={p.id} onClick={() => aplicar(registrarUso(estado, { perfumeId: p.id }))}
+            className="text-[10px] font-semibold mr-2 mt-1" style={{ color: accent }}>
+            + Hoy usé {p.nombre}
+          </button>
+        ))}
+      </Card>
+    );
+  }
+
+  /* ── El panel ──────────────────────────────────────────────────────── */
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          {onCerrar && (
+            <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+              <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+            </button>
+          )}
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_PERFUMES.titulo}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          {panel.plaquitas.map((p) => (
+            <Plaquita
+              key={p.id} accent={accent}
+              modulo={{ nombre: p.nombre, icono: p.icono, sub: '' }}
+              /* ⚠️ Regla 8 — la que no funciona dice en qué fase llega. */
+              sub={p.listo ? ({
+                perfil: panel.progreso.sinEmpezar ? 'Cuéntanos tus gustos'
+                  : `${panel.progreso.contestadas} de ${panel.progreso.total}`,
+                coleccion: panel.resumen.coleccion === 0 ? 'Añade los tuyos'
+                  : `${panel.resumen.coleccion} ${panel.resumen.coleccion === 1 ? 'perfume' : 'perfumes'}`,
+                probar: panel.resumen.porProbar === 0 ? 'Apunta los que te llamen' : `${panel.resumen.porProbar} apuntados`,
+                historial: panel.resumen.usos === 0 ? 'Si te apetece' : `${panel.resumen.usos} registros`,
+              }[p.id] || '') : `Llega en la fase ${p.fase}`}
+              onAbrir={p.listo ? () => setZona(p.id) : null}
+            />
+          ))}
+        </div>
+      </Card>
+
+      {/* Apartado 12 — el que usa ahora, que no es el favorito. */}
+      {panel.actual && (
+        <Card>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>🌫️ El que usas ahora</p>
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+            {panel.actual.nombre}{panel.actual.marca ? ` · ${panel.actual.marca}` : ''}
+          </p>
+        </Card>
+      )}
+
+      {/* Apartado 13 — el de cada ocasión, si ha asignado alguno. */}
+      {panel.porOcasion.length > 0 && (
+        <Card>
+          <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Para cada ocasión</p>
+          {panel.porOcasion.map((x) => (
+            <p key={x.ocasion.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {x.ocasion.icono} {x.ocasion.nombre} → {x.perfume.nombre}
+            </p>
+          ))}
+        </Card>
+      )}
+
+      {/* Apartado 18 — cada parte, con su interruptor. */}
+      <Card>
+        <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>⚙️ Gestionar apartados</p>
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+          Quita lo que no uses. Los datos permanecen.
+        </p>
+        {panel.partes.map((p) => (
+          <div key={p.id} className="rounded-2xl p-2.5 flex items-center gap-2 mb-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <span className="text-sm leading-none" aria-hidden="true">{p.icono}</span>
+            <span className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>{p.nombre}</span>
+            <Switch checked={p.activa} onChange={() => onCambiar?.(alternarPartePerfumes(estado, p.id))}
+              accent={accent} label={p.nombre} />
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
 /** Apartado 1 de F13 — la entrada, con sus dos botones. */
 export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onEliminarRegistro }) {
   const [configurando, setConfigurando] = useState(false);
@@ -4998,7 +5348,7 @@ export function Recomendados({ estado, accent, onAnadir }) {
 /* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
-export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, rachas = null }) {
+export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, onEliminarPerfume, rachas = null }) {
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
@@ -5006,6 +5356,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const [skincare, setSkincare] = useState(false);       // F13
   const [barba, setBarba] = useState(false);             // F20
   const [sonrisa, setSonrisa] = useState(false);         // F23
+  const [perfumes, setPerfumes] = useState(false);       // F24
   const [ordenando, setOrdenando] = useState(false);
   /* ⚠️ **Se calcula UNA sola vez, al entrar en el módulo** (regla 4: los hooks,
      antes de cualquier `return`). Si se recalculara en cada render, pulsar
@@ -5044,6 +5395,12 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
       : (sonrisaEH.rutinas === 0 ? 'Crea tu rutina'
         : `${sonrisaEH.rutinas} ${sonrisaEH.rutinas === 1 ? 'rutina' : 'rutinas'}`
           + (sonrisaEH.hoy > 0 ? ` · ${sonrisaEH.hechasHoy}/${sonrisaEH.hoy} hoy` : '')));
+  /* F24 — el de Perfumes, derivado igual. */
+  const perfumesEH = useMemo(() => resumenPerfumes(estado, datosGlobales), [estado, datosGlobales]);
+  const subPerfumes = perfumesEH.estado === 'sin_configurar' ? 'Si quieres, configúralo'
+    : (perfumesEH.estado === 'ahora_no' ? 'Cuando quieras'
+      : (perfumesEH.coleccion === 0 ? 'Añade los tuyos'
+        : `${perfumesEH.coleccion} ${perfumesEH.coleccion === 1 ? 'perfume' : 'perfumes'}`));
   const subPelo = resumenPeloEH.rutinas > 0
     ? `${resumenPeloEH.rutinas} ${resumenPeloEH.rutinas === 1 ? 'rutina' : 'rutinas'}`
       + (resumenPeloEH.hoy > 0 ? ` · ${resumenPeloEH.hechasHoy}/${resumenPeloEH.hoy} hoy` : '')
@@ -5128,6 +5485,17 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     );
   }
 
+  /* F24 — la plaquita de Perfumes abre su entrada. */
+  if (perfumes) {
+    return (
+      <PerfumesEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setPerfumes(false)}
+        onEliminar={onEliminarPerfume}
+      />
+    );
+  }
+
   if (miEstilo) {
     return (
       <MiEstiloEH
@@ -5188,16 +5556,19 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
               const esBarba = m.id === MODULO_BARBA && !ordenando;
               /* F23 — Sonrisa, el quinto. */
               const esSonrisa = m.id === MODULO_SONRISA && !ordenando;
+              /* F24 — y Perfumes, el sexto. */
+              const esPerfumes = m.id === MODULO_PERFUMES && !ordenando;
               return (
                 <Plaquita
                   key={m.id} modulo={m} accent={accent}
                   sub={esArmario && estiloArmario ? resumenPlaquitaArmario
-                    : (esPelo ? subPelo : (esPiel ? subPiel : (esBarba ? subBarba : (esSonrisa ? subSonrisa : null))))}
+                    : (esPelo ? subPelo : (esPiel ? subPiel : (esBarba ? subBarba : (esSonrisa ? subSonrisa : (esPerfumes ? subPerfumes : null)))))}
                   onAbrir={esArmario ? () => onIr(DESTINO_ARMARIO)
                     : (esPelo ? () => setPerfilPelo('panel')
                       : (esPiel ? () => setSkincare(true)
                         : (esBarba ? () => setBarba(true)
-                          : (esSonrisa ? () => setSonrisa(true) : null))))}
+                          : (esSonrisa ? () => setSonrisa(true)
+                            : (esPerfumes ? () => setPerfumes(true) : null)))))}
                   orden={ordenando ? puedeMover(estado, m.id) : null}
                   onSubir={() => onCambiar(subirModulo(estado, m.id))}
                   onBajar={() => onCambiar(bajarModulo(estado, m.id))}

@@ -1,5 +1,59 @@
 # CHANGELOG.md
 
+## v1.87.0 — EH Fase 24/65: perfumes y fragancias, el perfil personal
+
+### Qué se ha construido
+El módulo 🌫️ **Perfumes**: su perfil de gustos, su colección, la lista de *"quiero probar"* y el
+historial. Se llega desde **Más → Estilo de hombre → Perfumes**.
+
+*"La idea no es convertirlo en una tienda de perfumes"*, así que aquí **no hay precios ni tiendas**:
+solo lo que él tiene y lo que le gusta. La auditoría lo declara con dos ceros.
+
+### Las decisiones que gobiernan la fase
+
+**1. ⚠️ Los aromas son un dato COMPARTIDO, y se declaran aquí.** El apartado 6 de la **Fase 18**
+pregunta *"¿qué tipo de aromas te gustan?"* con casi las mismas opciones, y ésta es la fase dedicada
+a las fragancias. Así que `aromasFavoritos` y `aromasQueNoGustan` entran en el **registro de la Fase
+4** con `usan: ['perfumes', 'cuerpo', 'productos']`, y la Fase 18 **los leerá** en vez de volver a
+preguntarlos. Tercera vez que este registro evita una pregunta repetida **antes** de escribirla.
+
+**2. ⚠️ Lo que NO le gusta pesa tanto como lo que le gusta.** El apartado 3 empieza con *"muy
+importante"*: *"esto servirá para **evitar** recomendaciones que no encajen"*. Por eso
+`chocaConSusGustos()` existe desde ya, aunque las recomendaciones lleguen en la Fase 25 — y lo dice
+**con sus palabras**: *"dijiste que preferías evitar…"*, nunca *"no te gusta"*. Es información suya,
+no un juicio nuestro.
+
+**3. ⚠️ "Mi perfume actual" NO es "mi favorito"** (apartado 12, con esas palabras: *"esto no
+significa que sea su favorito. Es simplemente el que está utilizando actualmente"*). Son dos campos
+distintos y ninguno se deduce del otro. Hay prueba en las dos direcciones, y también en el navegador.
+
+**4. ⚠️ Los perfumes usan el catálogo global** (apartado 17): aquí se guarda lo que es del perfume
+—sus aromas, sus ocasiones, su temporada— y **el id** del producto si lo enlazó. Nunca su ficha.
+
+**5. ⚠️ Y el normalizador limpia lo que apunta a la nada.** Borrar un perfume deja de hacerlo "el
+actual" y saca su ocasión, en vez de guardar un id colgando que mentiría. Lo mismo con el historial:
+el uso se queda, diciendo que ese perfume ya no está, porque **lo que pasó, pasó**.
+
+### Y nada se asume
+*"No asumir que todos quieren todas"* (apartado 6): ninguna ocasión viene marcada, ninguna estación
+viene elegida, y el perfil entero es opcional. Las recomendaciones llegan en la Fase 25 y su plaquita
+**dice en qué fase llega**, en vez de abrir una pantalla vacía (regla 8).
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **147 comprobaciones nuevas**, **868 casos de
+renderizado** (36 nuevos) y **118 comprobaciones en Chromium**: se llega a Perfumes, se configura, se
+añade uno, **se escribe en Supabase**, y al marcarlo como "el que uso ahora" se comprueba que **no
+queda marcado como favorito**.
+
+### Archivos
+- **Nuevos:** `src/lib/perfumes.js`, `scripts/test-perfumes.mjs`.
+- **Modificados:** `src/lib/estiloDeHombre.js` (la línea del módulo),
+  `src/lib/datosEstiloHombre.js` (los dos datos compartidos), `src/lib/papelera.js`, `src/App.jsx`,
+  `src/views/EstiloHombreView.jsx`, `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`,
+  `scripts/verificar.sh`.
+
+---
+
 ## v1.86.0 — EH Fase 23/65: higiene bucal y sonrisa
 
 ### Qué se ha construido

@@ -66,6 +66,8 @@ import {
   eliminarRutinaSonrisa, restaurarRutinaSonrisa, eliminarRevision, restaurarRevision,
   eliminarRegistroSonrisa, restaurarRegistroSonrisa,
 } from './lib/sonrisa';
+// EH F24 — perfumes y su historial, a la misma papelera.
+import { eliminarPerfume, restaurarPerfume, eliminarUso, restaurarUso } from './lib/perfumes';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.
@@ -1146,11 +1148,21 @@ export default function App() {
     });
   };
 
+  const eliminarDePerfumes = (coleccion, id) => {
+    const r = coleccion === 'perfumes' ? eliminarPerfume(estiloHombre, id) : eliminarUso(estiloHombre, id);
+    if (r.error) return;
+    snapshotAndSave({
+      estiloHombre: r.estado,
+      papelera: { ...papelera, elementos: [...papelera.elementos, r.entrada] },
+    });
+  };
+
   const eliminarConPapelera = (modulo, coleccion, id) => {
     // Los registros de piel no son una lista de primer nivel: van por su puerta.
     if (modulo === 'skincare' && coleccion === 'registros') return eliminarRegistroDePiel(id);
     if (modulo === 'barba') return eliminarDeBarba(coleccion, id);
     if (modulo === 'sonrisa') return eliminarDeSonrisa(coleccion, id);
+    if (modulo === 'perfumes') return eliminarDePerfumes(coleccion, id);
     const entradaModulo = MODULOS_PAPELERA[modulo];
     if (!entradaModulo) return;
     const resultado = prepararEliminacion(entradaModulo[0], modulo, coleccion, id, new Date().toISOString());
@@ -1169,6 +1181,18 @@ export default function App() {
     // EH F15 — y vuelven por la misma puerta, con el motor de ME F3 intacto.
     if (entrada.modulo === 'skincare' && entrada.coleccion === 'registros') {
       const r = restaurarRegistroPiel(estiloHombre, entrada);
+      if (r.error) return;
+      snapshotAndSave({
+        estiloHombre: r.estado,
+        papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
+      });
+      return;
+    }
+    // EH F24 — y Perfumes.
+    if (entrada.modulo === 'perfumes') {
+      const r = entrada.coleccion === 'perfumes'
+        ? restaurarPerfume(estiloHombre, entrada)
+        : restaurarUso(estiloHombre, entrada);
       if (r.error) return;
       snapshotAndSave({
         estiloHombre: r.estado,
@@ -1780,6 +1804,10 @@ export default function App() {
             perfil={perfil} sueno={sueno} calistenia={calistenia} futbol={futbol} economia={economia}
             relacion={relacion} favoritas={favoritasResueltas}
             productividad={productividad} estudios={estudios}
+            /* ⚠️ Con los nombres escritos: la auditoría de ME F4 los busca literales. */
+            onEliminarPerfume={(coleccion, id) => (coleccion === 'perfumes'
+              ? eliminarConPapelera('perfumes', 'perfumes', id)
+              : eliminarConPapelera('perfumes', 'historial', id))}
             rachas={rachas}
             // BI Fase 1 — el desplegable de situación de "Hoy" cambia el modo desde ahí mismo.
             // Es el MISMO interruptor que Personalización, no un segundo sistema (decisión D2-07).
@@ -1868,6 +1896,10 @@ export default function App() {
       case 'rachas':
         return (
           <RachasView
+            /* ⚠️ Con los nombres escritos: la auditoría de ME F4 los busca literales. */
+            onEliminarPerfume={(coleccion, id) => (coleccion === 'perfumes'
+              ? eliminarConPapelera('perfumes', 'perfumes', id)
+              : eliminarConPapelera('perfumes', 'historial', id))}
             rachas={rachas} gamificacion={gamificacion} habitos={productividad.habitos}
             accent={accent}
             onCrearRacha={crearNuevaRacha}
@@ -1916,6 +1948,10 @@ export default function App() {
               if (coleccion === 'revisiones') return eliminarConPapelera('sonrisa', 'revisiones', id);
               return eliminarConPapelera('sonrisa', 'registros', id);
             }}
+            /* ⚠️ Con los nombres escritos: la auditoría de ME F4 los busca literales. */
+            onEliminarPerfume={(coleccion, id) => (coleccion === 'perfumes'
+              ? eliminarConPapelera('perfumes', 'perfumes', id)
+              : eliminarConPapelera('perfumes', 'historial', id))}
             rachas={rachas}
           />
         );

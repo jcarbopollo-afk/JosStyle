@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -42,6 +42,12 @@ import {
   decirAhoraNoBarba, elegirPartesBarba, contestarBarba, marcarProductoBarba,
   alternarParteBarba, ponerDiasAfeitado,
 } from '../src/lib/perfilBarba.js';
+import {
+  configurarPerfumes, decirAhoraNoPerfumes, contestarPerfume, anadirPerfume,
+  alternarFavoritoPerfume, valorarPerfume, ponerPerfumeActual,
+  asignarPerfumeAOcasion, anadirPorProbar, registrarUso, alternarPartePerfumes,
+  perfumes as perfumesDe,
+} from '../src/lib/perfumes.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
   crearRevision, registrarCambioCepillo, planificarCambioCepillo,
@@ -770,6 +776,29 @@ const CASOS = [
               definiciones: [{ id: 'r1', nombre: 'Higiene bucal', origen: ORIGEN_RACHA_SONRISA }],
               eventos: [{ rachaId: 'r1', fecha: HOY }],
             };
+            /* EH F24 — Perfumes. ⚠️ Los estados que importan: la entrada, el
+               panel, la colección con favorito/valoración/actual/ocasión, la
+               lista de "quiero probar", el historial y las partes apagadas. */
+            const perfBase = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['perfumes', 'skincare']);
+            const perfConf = configurarPerfumes(perfBase, { hoy: HOY }).estado;
+            const perfGustos = [['aromasFavoritos', 'frescos'], ['aromasQueNoGustan', 'dulces'],
+              ['intensidadPerfume', 'media'], ['ocasionesPerfume', 'noche']]
+              .reduce((acc, [q, v]) => contestarPerfume(acc, q, v, { hoy: HOY }).estado, perfConf);
+            const perfAlta = anadirPerfume(perfGustos, {
+              nombre: 'Uno que tengo', marca: 'Una marca', tipo: ['frescos'], ocasiones: ['noche'],
+            }, { hoy: HOY });
+            const perfUno = perfAlta.estado;
+            const perfCompleto = asignarPerfumeAOcasion(
+              ponerPerfumeActual(
+                valorarPerfume(alternarFavoritoPerfume(perfUno, perfAlta.perfume.id).estado,
+                  perfAlta.perfume.id, 5, 'Me gusta mucho para salir por la noche.').estado,
+                perfAlta.perfume.id).estado,
+              'cita', perfAlta.perfume.id,
+            ).estado;
+            const perfPorProbar = anadirPorProbar(perfCompleto, { nombre: 'Otro que quiero' }, { hoy: HOY }).estado;
+            const perfHistorial = registrarUso(perfCompleto, {
+              perfumeId: perfumesDe(perfCompleto)[0].id, ocasion: 'noche', valoracion: 4,
+            }, { hoy: HOY }).estado;
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop, onEliminar: noop, onEliminarRegistro: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
@@ -919,6 +948,17 @@ const CASOS = [
                 ({ ...pp(sonrisaConRutina), rachas: RACHAS_SONRISA })],
               ['SonrisaEH · partes apagadas', SonrisaEH, () =>
                 pp(alternarParteSonrisa(alternarParteSonrisa(sonrisaConRutina, 'higiene'), 'revisiones'))],
+              /* EH Fase 24 — Perfumes. */
+              ['PerfumesEH · entrada', PerfumesEH, () => pp(perfBase)],
+              ['PerfumesEH · ahora no', PerfumesEH, () => pp(decirAhoraNoPerfumes(perfBase).estado)],
+              ['PerfumesEH · panel', PerfumesEH, () => pp(perfConf)],
+              ['PerfumesEH · con gustos', PerfumesEH, () => pp(perfGustos)],
+              ['PerfumesEH · con un perfume', PerfumesEH, () => pp(perfUno)],
+              ['PerfumesEH · con favorito, nota y ocasión', PerfumesEH, () => pp(perfCompleto)],
+              ['PerfumesEH · con lista de probar', PerfumesEH, () => pp(perfPorProbar)],
+              ['PerfumesEH · con historial', PerfumesEH, () => pp(perfHistorial)],
+              ['PerfumesEH · partes apagadas', PerfumesEH, () =>
+                pp(alternarPartePerfumes(alternarPartePerfumes(perfCompleto, 'historial'), 'recomendaciones'))],
               ['ProductosBarbaEH · sin catálogo', ProductosBarbaEH, () => pp(barbaTodo)],
               ['ProductosBarbaEH · con productos', ProductosBarbaEH, () => pp(barbaConProducto)],
             ];

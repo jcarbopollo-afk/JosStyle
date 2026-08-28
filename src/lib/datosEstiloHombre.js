@@ -80,6 +80,13 @@ export const REGISTRO_DATOS = [
   { id: 'preferenciaCorte', nombre: 'Preferencia de corte', categoria: 'estilo', clase: 'preferencia', usan: ['pelo'], historial: true, desde: 12 },
   { id: 'preferenciaTextura', nombre: 'Preferencia de textura', categoria: 'estilo', clase: 'opcional', usan: ['pelo', 'estilo', 'productos'], historial: false, desde: 12 },
   { id: 'sinPerfume', nombre: 'Productos sin perfume', categoria: 'productos', clase: 'preferencia', usan: ['skincare', 'cuerpo', 'productos'], historial: false, desde: 17 },
+  /* ⚠️ EH F24 — los aromas son un dato COMPARTIDO, y por eso viven aquí: el
+     apartado 6 de la Fase 18 pregunta lo mismo con casi las mismas opciones, y
+     ésta es la fase dedicada a las fragancias. Cuando la 18 se desbloquee, los
+     LEERÁ en vez de volver a preguntarlos. Tercera vez que este registro evita
+     una pregunta repetida antes de que se escriba (D-15 fue la primera). */
+  { id: 'aromasFavoritos', nombre: 'Aromas que te gustan', categoria: 'estilo', clase: 'preferencia', usan: ['perfumes', 'cuerpo', 'productos'], historial: false, desde: 24 },
+  { id: 'aromasQueNoGustan', nombre: 'Aromas que prefieres evitar', categoria: 'estilo', clase: 'preferencia', usan: ['perfumes', 'cuerpo', 'productos'], historial: false, desde: 24 },
   { id: 'ropaOversize', nombre: 'Prefiere ropa oversize', categoria: 'estilo', clase: 'preferencia', usan: ['estilo'], historial: false, desde: 6 },
   { id: 'tallaCamiseta', nombre: 'Talla de camiseta', categoria: 'tallas', clase: 'necesario', usan: ['estilo'], historial: true, desde: 5 },
   { id: 'tallaPantalon', nombre: 'Talla de pantalón', categoria: 'tallas', clase: 'necesario', usan: ['estilo'], historial: true, desde: 5 },

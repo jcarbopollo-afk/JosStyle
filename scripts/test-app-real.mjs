@@ -81,6 +81,8 @@ const ESTILO_GUARDADO = {
     { id: 'barba', activo: true, orden: 2, config: {} },
     // EH F23 — Sonrisa encendida y sin configurar: su pantalla de entrada.
     { id: 'sonrisa', activo: true, orden: 3, config: {} },
+    // EH F24 — Perfumes, encendido y sin configurar.
+    { id: 'perfumes', activo: true, orden: 4, config: {} },
     /* ⚠️ Con el perfil de piel empezado: si no, Skincare enseña su puerta de
        entrada ("Configurar / Ahora no") y no se llega al panel. */
     { id: 'skincare', activo: true, orden: 1, config: { necesidadesPiel: 'hidratacion', complejidadPiel: 'basico' } },
@@ -382,5 +384,48 @@ const trasPlantilla = await ver();
 ok(/Mañana/.test(trasPlantilla) && /Noche/.test(trasPlantilla), '⚠️ Y la pantalla las enseña');
 ok(/Omitir hoy/.test(trasPlantilla), 'Con su "Omitir hoy" en cada paso');
 ok(/Pendiente|Empezada|Hecha/.test(trasPlantilla), 'Y el estado del día en palabras');
+
+/* ── 9 · PERFUMES, DE PRINCIPIO A FIN (EH F24) ─────────────────────────── */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+ok(await pulsar('Perfumes'), 'Perfumes (EH F24) se abre desde Estilo de hombre');
+ok(/¿Quieres utilizar este apartado\?/.test(await ver()), 'Y pregunta si lo quiere usar');
+
+ok(await pulsar('Sí, configurarlo'), 'Se puede configurar');
+await page.waitForTimeout(800);
+const panelPerf = await ver();
+['Mi perfil', 'Mi colección', 'Quiero probar', 'Historial']
+  .forEach((p) => ok(panelPerf.includes(p), `Se ve la plaquita "${p}"`));
+ok(/Llega en la fase 25/.test(panelPerf),
+  '⚠️ Regla 8: y las recomendaciones DICEN que llegan en la Fase 25');
+
+ok(await pulsar('Mi colección'), 'La colección se abre');
+await page.fill('input[aria-label="Nombre del perfume"]', 'Uno que tengo');
+await page.fill('input[aria-label="Marca"]', 'Una marca');
+guardado.length = 0;
+ok(await pulsar('Añadir perfume'), 'Se puede añadir un perfume');
+await page.waitForTimeout(1200);
+
+const escPerf = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escPerf.length > 0, '⚠️ PERSISTENCIA: el perfume se ESCRIBE en Supabase');
+const cole = escPerf.at(-1)?.value?.modulos?.find((m) => m.id === 'perfumes')?.config?.perfumes?.perfumes || [];
+ok(cole.length === 1 && cole[0].nombre === 'Uno que tengo', 'Con su nombre y su marca');
+ok(cole[0].favorito === false, 'Y sin marcarlo favorito solo');
+
+const conPerf = await ver();
+ok(/Uno que tengo/.test(conPerf), '⚠️ Y la pantalla lo enseña');
+ok(/Es el que uso ahora/.test(conPerf), 'Con su botón de "el que uso ahora"');
+
+/* ⚠️ Apartado 12 — marcarlo como actual NO lo hace favorito. */
+guardado.length = 0;
+ok(await pulsar('Es el que uso ahora'), 'Se puede marcar el que usa ahora');
+await page.waitForTimeout(1200);
+const trasActual = guardado.filter((g) => g && g.key === 'estiloHombre').at(-1)
+  ?.value?.modulos?.find((m) => m.id === 'perfumes')?.config?.perfumes || {};
+ok(!!trasActual.actual, '⚠️ Se guarda cuál usa ahora');
+ok((trasActual.perfumes || [])[0]?.favorito === false,
+  '⚠️ Y NO lo marca favorito: "esto no significa que sea su favorito" (apartado 12)');
 
 await salir(browser);

@@ -98,6 +98,8 @@ export const MODULOS_EH = [
      línea**, con su categoría, su confirmación y sus sinónimos: ese es el punto
      de extensión que construyó F1, y no hace falta ni un `case` ni un `if`. */
   { id: 'sonrisa', nombre: 'Sonrisa', icono: '😁', sub: 'Higiene bucal', fase: 23, categoria: 'cuidado', terminos: ['sonrisa', 'dientes', 'boca', 'bucal', 'dental', 'dentista', 'cepillo', 'muelas'] },
+  // ⚠️ EH F24 — otra línea, y ya está. Sin `case` y sin `if`.
+  { id: 'perfumes', nombre: 'Perfumes', icono: '🌫️', sub: 'Tus fragancias', fase: 24, categoria: 'estilo', terminos: ['perfume', 'perfumes', 'colonia', 'fragancia', 'fragancias', 'aroma', 'olor'] },
   { id: 'fitness', nombre: 'Fitness', icono: '🏋️', sub: 'Físico y postura', fase: 26, categoria: 'fisico', terminos: ['fisico', 'físico', 'postura', 'entrenar', 'gimnasio', 'musculo', 'músculo'] },
   { id: 'sueno', nombre: 'Sueño', icono: '😴', sub: 'Descanso y aspecto', fase: 30, categoria: 'fisico', terminos: ['sueño', 'sueno', 'dormir', 'descanso', 'ojeras', 'cansancio'] },
   { id: 'salud', nombre: 'Salud', icono: '🧬', sub: 'Lo que se nota fuera', fase: 33, categoria: 'salud', confirmar: true, terminos: ['salud', 'medico', 'médico', 'revision', 'revisión', 'dental', 'vista'] },
