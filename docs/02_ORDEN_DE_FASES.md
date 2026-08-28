@@ -244,9 +244,11 @@ escribir código.
 
 | v1.91.0 | **EH F28** | Objetivos y experiencias personales. Fase **puente**: no crea un módulo, conecta los que ya hay. ⚠️ **Lo único que guarda es un `objetivoId`**: el objetivo vive en Objetivos. ⚠️ **Un objetivo es `{ texto, plazo, cumplido }`** y esta fase NO inventa los campos que el sistema global no tiene — lo personal ya lo guarda la F27. ⚠️ **El progreso es un sí/no, y se dice** (regla 8). ⚠️ **"Ya lo hice" se PROPONE**, y sin `confirmado` no escribe. ⚠️ **"Experiencias" es un filtro** sobre la categoría de la F27. ⏸ **Las fotos (apartado 7) no tienen sistema al que enlazar**: dicho en pantalla, pendiente de Josué |
 
+| v1.92.0 | **EH F29** | Perfil de estilo personal ("Mi estilo"). ⚠️ **No guarda NADA menos un booleano**: etiquetas, estados y resúmenes se derivan en el momento, así que la "actualización automática" sale sola. ⚠️ **Los apartados 11, 12 y 15 SON el sistema de la F2** (D2-07): ni un interruptor ni un orden nuevos, y la pantalla lo dice. ⚠️ **Ni una pregunta nueva** (apartado 14). ⚠️ **El estado de cada módulo lo dice su módulo**, una línea por módulo. 🐛 Y `pulsar()` del recorrido de Chromium ahora **solo pulsa botones** |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 25/65** (F1-F17, F20, F21, F23-F28; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **38** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (36, tres de ellas bloqueadas).
+3/5 y **EH por 26/65** (F1-F17, F20, F21, F23-F29; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **37** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (35, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

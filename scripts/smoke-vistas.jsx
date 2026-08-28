@@ -64,6 +64,7 @@ import {
 import {
   prepararObjetivo, aplicarObjetivo,
 } from '../src/lib/objetivosEnEstiloHombre.js';
+import { ocultarMiEstilo } from '../src/lib/miEstilo.js';
 import { guardarDato as guardarDatoEH } from '../src/lib/datosEstiloHombre.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
@@ -1095,6 +1096,15 @@ const CASOS = [
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>
             conArmario(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['pelo', 'skincare']))],
+          /* EH Fase 29 — la tarjeta "Mi estilo", que se deriva de lo que hay. */
+          ['EstiloHombreView · Mi estilo con varios módulos', EstiloHombreView, () =>
+            conArmario(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE,
+              ['estilo', 'skincare', 'perfumes', 'accesorios', 'gustos']))],
+          ['EstiloHombreView · Mi estilo con uno solo', EstiloHombreView, () =>
+            conArmario(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['perfumes']))],
+          /* ⚠️ Oculto: la tarjeta no se pinta y sale el botón de volver. */
+          ['EstiloHombreView · Mi estilo oculto', EstiloHombreView, () =>
+            conArmario(ocultarMiEstilo(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['estilo', 'perfumes'])))],
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],
           ['EstiloHombreView · con módulos', EstiloHombreView, () => props(conTres)],
           ['EstiloHombreView · configurado sin módulos', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],

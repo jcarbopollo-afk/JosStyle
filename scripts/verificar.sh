@@ -326,6 +326,12 @@ else
   fallo "Falla el puente con Objetivos"; grep '✗' /tmp/jc_eh28.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-mi-estilo.mjs >/tmp/jc_eh29.log 2>&1; then
+  ok "Perfil de estilo personal (EH F29) — $(grep -c '✓' /tmp/jc_eh29.log) comprobaciones"
+else
+  fallo "Falla Mi estilo"; grep '✗' /tmp/jc_eh29.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

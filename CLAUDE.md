@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.91.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.92.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 25/65**, quedan 38 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 26/65**, quedan 37 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -153,7 +153,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 25/65** (v1.91.0: F1-F17, **F20, F21 y F23-F28**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 26/65** (v1.92.0: F1-F17, **F20, F21 y F23-F29**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -165,10 +165,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 29/65 — Perfil de estilo personal**.
+La siguiente candidata es **EH · Fase 30/65 — Pantalla principal de Estilo de hombre**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F28 dejaron noventa cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F29 dejaron noventa y seis cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -403,6 +403,19 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 - ⏸ **NO HAY UN SISTEMA DE FOTOS GENERAL** (F28, apartado 7). Los que existen son de Salud, Armario,
   Biblioteca y Fondos, y una entrada del Diario no tiene fotos. Mientras no lo haya, **se dice en la
   pantalla**; nunca una galería paralela. Pendiente de que Josué decida.
+- ⚠️ **"QUÉ SE VE" Y "EN QUÉ ORDEN" SON DE LA FASE 2** (F29, apartados 11, 12 y 15). `activo`,
+  `orden`, `subirModulo`/`bajarModulo` y Gestionar apartados **ya existen**, y D2-07 prohíbe una
+  cuarta lista. Una fase que quiera reordenar algo usa esas; la pantalla lo dice y lleva allí.
+- ⚠️ **Una capa de resumen NO GUARDA NADA** (F29): las etiquetas, los estados y los recuentos se
+  derivan en el momento. Así "se actualiza solo" no hay que programarlo: sale de no tener copia.
+- ⚠️ **El estado de un módulo lo dice SU módulo** (F29, apartado 13). `FUENTES_DE_ESTADO` es una
+  línea por módulo, como `MODULOS_EH`; **al añadir un módulo con pantalla, añadir su línea**, o
+  saldrá "sin configurar" para siempre.
+- ⚠️ **Lo que se deduce se marca como NO suyo** (F29, apartado 2). Una etiqueta sacada del armario no
+  es una preferencia que él haya dicho, y la pantalla las distingue en vez de atribuírselas.
+- ⚠️ **Y `pulsar()` del recorrido de Chromium SOLO PULSA BOTONES** (F29). Antes buscaba cualquier
+  elemento con ese texto, y en cuanto una pantalla nueva **nombró** los módulos empezó a pulsar un
+  título en vez de la plaquita. Si una fase futura repite un nombre en pantalla, esto ya lo aguanta.
 - 🚨 **LO QUE JOSUÉ SUBE A MANO A GITHUB NO INCLUYE LAS CARPETAS.** Sus seis `Add files via upload`
   solo llevaron los **nueve archivos sueltos de la raíz**: ni uno de `src/`. Por eso `main` tenía la
   documentación nueva y el código del 11 de agosto, y la web no cambiaba por más zips que subiera.

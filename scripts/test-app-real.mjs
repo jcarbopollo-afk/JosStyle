@@ -153,10 +153,22 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2500);
 
 const ver = () => page.evaluate(() => document.body.innerText);
+/* ⚠️ **Solo pulsa BOTONES**, y prefiere el que dice exactamente eso.
+   Antes buscaba cualquier elemento con ese texto, y en cuanto la Fase 29 puso
+   "Mi estilo" arriba —que NOMBRA los módulos— empezó a pulsar el título de un
+   bloque, que no es pulsable, en vez de la plaquita. Un usuario de verdad pulsa
+   un botón; esto hace lo mismo. */
 const pulsar = async (txt) => {
-  const b = page.locator(`text="${txt}"`).first();
-  if (await b.count() === 0) return false;
-  await b.click(); await page.waitForTimeout(600); return true;
+  const clicado = await page.evaluate((t) => {
+    const botones = [...document.querySelectorAll('button')];
+    const destino = botones.find((x) => x.innerText.trim() === t)
+      || botones.find((x) => x.innerText.includes(t));
+    if (!destino) return false;
+    destino.click();
+    return true;
+  }, txt);
+  await page.waitForTimeout(600);
+  return clicado;
 };
 
 /* ── 1 · ⚠️ ARRANCA, Y SIN NINGÚN ERROR ────────────────────────────────── */
@@ -626,5 +638,51 @@ ok(!('texto' in enlazada) && !('plazo' in enlazada), 'Sin duplicar ni el texto n
 /* Apartado 2 — y se abre el sistema global de objetivos, no una copia. */
 await page.waitForTimeout(600);
 ok(/Objetivos/.test(await ver()), '⚠️ Y navega a OBJETIVOS, el módulo que ya existía');
+
+/* ── 14 · "MI ESTILO": EL RESUMEN DE ARRIBA (EH F29) ───────────────────── */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(500);
+const miEstilo = await ver();
+ok(/Mi estilo personal/.test(miEstilo), 'La tarjeta "Mi estilo" (EH F29) sale arriba');
+/* ⚠️ Los bloques del apartado 1, solo los que tienen módulos activos. */
+['Cuidado', 'Fragancias', 'Accesorios', 'Gustos']
+  .forEach((b) => ok(miEstilo.includes(b), `Se ve el bloque "${b}"`));
+ok(!/\bRopa\b/.test(miEstilo),
+  '⚠️ Y NO sale "Ropa", porque el módulo de Estilo y armario está apagado (apartado 6)');
+ok(/⚪|🟢/.test(miEstilo), 'Cada módulo lleva su estado (apartado 13)');
+ok(/Gestionar apartados/.test(miEstilo),
+  '⚠️ Y dice que el orden y qué aparece se cambian ALLÍ, no aquí (D2-07)');
+
+/* ⚠️ Y desde el resumen se abre el módulo de verdad, no una copia. */
+ok(await pulsar('🟢 Perfumes') || await pulsar('⚪ Perfumes'),
+  'Desde el resumen se abre Perfumes');
+await page.waitForTimeout(600);
+ok(/Mi colección|¿Quieres utilizar este apartado\?/.test(await ver()),
+  '⚠️ Y abre SU módulo, el que ya existía');
+
+/* Apartado 10 — ocultar, y que no se lleve nada por delante. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+guardado.length = 0;
+ok(await pulsar('⚙️ Ocultar "Mi estilo"'), 'Se puede ocultar');
+await page.waitForTimeout(1200);
+const trasOcultar = await ver();
+ok(!/Mi estilo personal/.test(trasOcultar), 'Y desaparece');
+ok(/Volver a enseñar/.test(trasOcultar), 'Con su botón para traerla de vuelta');
+ok(/Perfumes/.test(trasOcultar),
+  '⚠️ Y LOS MÓDULOS SIGUEN AHÍ: ocultar el resumen no apaga nada (apartado 10)');
+const escMiEstilo = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escMiEstilo.length > 0, '⚠️ PERSISTENCIA: se guarda que la ocultó');
+const cfgEstilo = escMiEstilo.at(-1)?.value?.modulos?.find((m) => m.id === 'estilo')?.config || {};
+ok(cfgEstilo.miEstilo?.oculto === true, 'Y es lo ÚNICO que esta fase guarda: un booleano');
+
+ok(await pulsar('Volver a enseñar "Mi estilo"'), 'Y se puede volver a enseñar');
+await page.waitForTimeout(800);
+ok(/Mi estilo personal/.test(await ver()), '⚠️ Y vuelve entera');
 
 await salir(browser);

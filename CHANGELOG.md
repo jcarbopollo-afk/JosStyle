@@ -1,5 +1,66 @@
 # CHANGELOG.md
 
+## v1.92.0 — EH Fase 29/65: perfil de estilo personal ("Mi estilo")
+
+### Qué se ha construido
+La tarjeta 🧔 **Mi estilo personal**, arriba del todo de **Más → Estilo de hombre**: las etiquetas de
+su estilo, sus colores, y los seis bloques del enunciado —👕 Ropa, 💇 Pelo, 🧴 Cuidado, 🌫️ Fragancias,
+🕶️ Accesorios y ❤️ Gustos— cada uno con su resumen y con sus módulos, que se abren desde ahí.
+
+*"No será otro apartado enorme. Será una pequeña plaquita que resume las preferencias que el usuario
+ya ha configurado… La aplicación **no debe hacerle repetir información que ya haya introducido**."*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Este archivo no guarda nada, menos un booleano.** Las etiquetas, los estados y los resúmenes
+se **derivan en el momento** de los módulos que ya existen. Por eso la prueba 6 del apartado 16
+—*"comprobar actualización automática"*— sale sola: **no hay nada que actualizar, porque no hay
+copia**. Lo único guardado es si él ha ocultado la tarjeta, y va **donde la Fase 6 declaró que vive**
+(`ZONA_MI_ESTILO.dentroDe`), no en un almacén nuevo.
+
+**2. ⚠️ Los apartados 11, 12 y 15 son el sistema de la Fase 2.** *"Elegir qué aparece"*, *"reordenar
+plaquitas"* y *"ocultar / mostrar / reordenar / desactivar"* **ya existían**: son `activo`, `orden`,
+`subirModulo`/`bajarModulo` y Gestionar apartados. **D2-07 lo prohíbe expresamente** —*"prohibido
+crear una cuarta lista de qué se ve"*—, así que aquí no hay ni un interruptor ni un orden nuevos: se
+usan los suyos y **la pantalla lo dice, con su botón**. Hay una prueba que reordena con la función de
+la Fase 2 y comprueba que los bloques de "Mi estilo" **se reordenan solos**.
+
+**3. ⚠️ Ni una pregunta nueva** (apartado 14: *"NO crear un test de estilo. No queremos 50 preguntas
+obligatorias. El perfil debe construirse poco a poco mientras utiliza JC Fitness"*). El archivo no
+tiene lista de preguntas, y una prueba lee su código fuente y falla si aparece una.
+
+**4. ⚠️ El estado de cada módulo lo dice su módulo** (apartado 13: 🟢 Configurado · ⚪ Sin configurar ·
+⚫ Desactivado). Aquí no se adivina si Skincare está configurado: se le pregunta a `perfilPiel.js`.
+`FUENTES_DE_ESTADO` es **una línea por módulo**, el mismo punto de extensión que `MODULOS_EH`, y el
+que todavía no tiene pantalla propia sale como **"sin configurar"**, que es la verdad y no un hueco.
+
+**5. ⚠️ Un bloque sin módulos activos no se pinta** (apartado 6: *"mostrar únicamente módulos
+activos. No mostrar módulos desactivados"*), y el orden de los bloques es **el que él eligió**.
+
+**6. ⚠️ Y las etiquetas se derivan, no se piden** (apartado 2: *"se obtienen de las preferencias
+existentes. **No obligar al usuario a rellenarlas manualmente**"*). Salen del perfil de estilo de la
+Fase 6 y de lo que refleja su armario — y las segundas **se marcan como no suyas**, para no
+atribuirle algo que no ha dicho. Si no hay ninguna, **no se inventa**: se dice que se irá llenando
+solo, que es el apartado 14 en una frase.
+
+### 🐛 Un fallo real, del propio recorrido
+Al poner "Mi estilo" arriba, que **nombra** los módulos, el recorrido de Chromium empezó a pulsar el
+título de un bloque en vez de la plaquita, y tres comprobaciones de Accesorios se cayeron. `pulsar()`
+ahora **solo pulsa botones**, prefiriendo el que dice exactamente eso — que es lo que hace una persona.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **115 comprobaciones nuevas**, **1016 casos de
+renderizado** (12 nuevos) y **204 comprobaciones en Chromium** (18 nuevas): se entra en Estilo de
+hombre, sale la tarjeta con sus bloques, **no sale "Ropa" porque ese módulo está apagado**, se abre un
+módulo desde el resumen, se oculta —y **los módulos siguen ahí**— y se vuelve a enseñar.
+
+### Archivos
+- **Nuevos:** `src/lib/miEstilo.js`, `scripts/test-mi-estilo.mjs`.
+- **Modificados:** `src/views/EstiloHombreView.jsx`, `scripts/smoke-vistas.jsx`,
+  `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.91.0 — EH Fase 28/65: objetivos y experiencias personales
 
 ### Qué se ha construido

@@ -193,6 +193,9 @@ import {
   TEXTOS_PUENTE, DESTINO_OBJETIVOS, PARTE_EXPERIENCIAS, estadoDelObjetivo,
   prepararObjetivo, aplicarObjetivo, marcarYaLoHice, panelPuente,
 } from '../lib/objetivosEnEstiloHombre';
+import {
+  TEXTOS_MI_ESTILO, ocultarMiEstilo, mostrarMiEstilo, panelMiEstilo,
+} from '../lib/miEstilo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -6464,6 +6467,22 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const pantalla = estadoPantalla(estado);
   const asistente = estadoAsistente(estado);
   const seguir = (nuevo) => { setVeniaAMedias(false); onCambiar(nuevo); };
+  /* F29 — *"cada apartado abre directamente su módulo correspondiente"*
+     (apartado 1). ⚠️ Una línea por módulo, y **son los mismos `set*` que ya usan
+     las plaquitas**: ni una pantalla paralela, ni una segunda navegación. */
+  const abrirModulo = (id) => {
+    if (id === MODULO_EH_ESTILO) return onIr?.(DESTINO_ARMARIO);
+    if (id === MODULO_PELO) return setPerfilPelo('panel');
+    if (id === MODULO_PIEL) return setSkincare(true);
+    if (id === MODULO_BARBA) return setBarba(true);
+    if (id === MODULO_SONRISA) return setSonrisa(true);
+    if (id === MODULO_PERFUMES) return setPerfumes(true);
+    if (id === MODULO_ACCESORIOS) return setAccesorios(true);
+    if (id === MODULO_GUSTOS) return setGustos(true);
+    /* ⚠️ Un módulo cuya pantalla todavía no existe no hace nada al tocarlo, y
+       su insignia ya dice "sin configurar": no se finge un destino (regla 8). */
+    return undefined;
+  };
   const activos = useMemo(() => modulosActivos(estado), [estado]);
   const resumen = useMemo(() => resumenEstiloHombre(estado), [estado]);
   const gestion = useMemo(() => resumenGestion(estado), [estado]);
@@ -6523,6 +6542,11 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
       : `${progresoPeloEH.contestadas} de ${progresoPeloEH.total} contestadas`);
   const perfilEstilo = useMemo(
     () => estadoDelPerfil(estado, armario, datosGlobales), [estado, armario, datosGlobales],
+  );
+  /* F29 — la tarjeta "Mi estilo". ⚠️ TODO derivado: no guarda ni un dato de los
+     módulos, así que cambiar una preferencia se refleja sin sincronizar nada. */
+  const miEstiloPanel = useMemo(
+    () => panelMiEstilo(estado, { armario, datosGlobales }), [estado, armario, datosGlobales],
   );
   const resumenPlaquitaArmario = estiloArmario && !estiloArmario.vacio
     ? `${estiloArmario.total} ${estiloArmario.total === 1 ? 'prenda' : 'prendas'}`
@@ -6683,6 +6707,95 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
         </Card>
       ) : (
         <>
+          {/* ── EH F29 — 🧔 Mi estilo: el resumen de lo que ya hay ──────────
+              ⚠️ Con `ordenando` no se pinta: mientras reordena, la pantalla es
+              la de la Fase 2 y no conviene que compita con ella. */}
+          {!miEstiloPanel.oculto && !ordenando && miEstiloPanel.bloques.length > 0 && (
+            <Card>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>
+                  {miEstiloPanel.titulo}
+                </p>
+                <button onClick={() => onCambiar(ocultarMiEstilo(estado))}
+                  className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                  {TEXTOS_MI_ESTILO.ocultar}
+                </button>
+              </div>
+              {/* Apartado 2 — las etiquetas, DERIVADAS de lo que ya dijo. */}
+              {miEstiloPanel.etiquetas.hay ? (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {miEstiloPanel.etiquetas.etiquetas.map((et) => (
+                    <span key={et.id} className="rounded-full px-2 py-0.5"
+                      style={{
+                        background: et.suyo ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                        border: `1px solid ${et.suyo ? accent : COLORS.border}`,
+                      }}>
+                      <span className="text-[10px] font-semibold"
+                        style={{ color: et.suyo ? accent : COLORS.textMuted }}>{et.nombre}</span>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+                  {miEstiloPanel.etiquetas.texto}
+                </p>
+              )}
+              {/* Apartado 4 — los colores, los del Armario. Ni otro selector. */}
+              {miEstiloPanel.colores.length > 0 && (
+                <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+                  🎨 {miEstiloPanel.colores.map((c) => c.nombre).join(' · ')}
+                </p>
+              )}
+              {/* Apartado 1 — cada bloque abre su módulo. */}
+              {miEstiloPanel.bloques.map((b) => (
+                <div key={b.id} className="rounded-2xl p-2.5 mb-1"
+                  style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm leading-none" aria-hidden="true">{b.icono}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                        {b.nombre}
+                      </span>
+                      <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>
+                        {b.resumen}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {b.modulosActivos.map((m) => (
+                      <button key={m.id} onClick={() => abrirModulo(m.id)}
+                        className="rounded-full px-2 py-0.5"
+                        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+                        aria-label={`Abrir ${m.nombre}`}>
+                        {/* Apartado 13 — su estado, tal cual: 🟢 ⚪ ⚫ */}
+                        <span className="text-[10px] font-semibold" style={{ color: COLORS.text }}>
+                          {m.insignia.icono} {m.nombre}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {/* ⚠️ Apartados 11, 12 y 15 — el orden y qué aparece son de la
+                  Fase 2. Se dice y se lleva allí, en vez de un segundo sistema. */}
+              <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+                {TEXTOS_MI_ESTILO.dondeSeOrdena}
+              </p>
+              <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                {TEXTOS_MI_ESTILO.ocultarNoBorra}
+              </p>
+            </Card>
+          )}
+          {/* Apartado 10 — y se puede volver a enseñar cuando quiera. */}
+          {miEstiloPanel.oculto && !ordenando && (
+            <Card>
+              <button onClick={() => onCambiar(mostrarMiEstilo(estado))}
+                className="text-[11px] font-semibold" style={{ color: accent }}>
+                {TEXTOS_MI_ESTILO.mostrar}
+              </button>
+            </Card>
+          )}
+
           <div className="grid grid-cols-2 gap-1.5">
             {activos.map((m) => {
               /* F5 — la única plaquita que hoy lleva a algún sitio es la del

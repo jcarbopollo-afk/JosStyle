@@ -2039,41 +2039,67 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Reactivarlo.
 - [x] Comprobar que no se duplican objetivos, tareas, calendario, diario ni fotos.
 
-#### EH · Fase 29/65 — PERFIL DE ESTILO PERSONAL
-- [ ] PLAQUITA «MI ESTILO»
-- [ ] PERFIL VISUAL
-- [ ] PREFERENCIAS GENERALES
-- [ ] COLORES
-- [ ] ESTILO DE ROPA
-- [ ] CUIDADO PERSONAL
-- [ ] PERFUMES
-- [ ] ACCESORIOS
-- [ ] GUSTOS
-- [ ] COMPLETAMENTE OPCIONAL
-- [ ] PERSONALIZACIÓN
-- [ ] ORDEN
-- [ ] Skincare.
-- [ ] Pelo.
-- [ ] Perfumes.
-- [ ] Barba.
-- [ ] Armario.
-- [ ] Accesorios.
-- [ ] ESTADO DE CONFIGURACIÓN
-- [ ] NO CREAR UN «TEST DE ESTILO»
-- [ ] PRIVACIDAD Y CONTROL
-- [ ] PRUEBAS
-- [ ] Entrar sin datos.
-- [ ] Entrar con un solo módulo.
-- [ ] Activar varios.
-- [ ] Mostrar resumen.
-- [ ] Cambiar preferencias.
-- [ ] Comprobar actualización automática.
-- [ ] Reordenar plaquitas.
-- [ ] Ocultar una.
-- [ ] Reactivarla.
-- [ ] Desactivar “Mi estilo”.
-- [ ] Comprobar que los módulos originales siguen intactos.
-- [ ] Verificar que no existen datos duplicados.
+#### EH · Fase 29/65 — PERFIL DE ESTILO PERSONAL ✅ COMPLETADA (v1.92.0)
+
+> **`src/lib/miEstilo.js`** (115 comprobaciones) + la tarjeta 🧔 **Mi estilo** arriba de la pantalla
+> de Estilo de hombre. Sin SQL nuevo.
+>
+> ⚠️ **Este archivo NO GUARDA NADA, menos un booleano.** Las etiquetas, los estados y los resúmenes
+> se **derivan en el momento** de los módulos que ya existen. Por eso la prueba 6 —*"comprobar
+> actualización automática"*— sale sola: no hay nada que actualizar, porque no hay copia. Lo único
+> guardado es si él ha ocultado la tarjeta (apartado 10), y se guarda **donde la F6 dijo que vive**:
+> dentro del módulo `estilo`, que es lo que declara `ZONA_MI_ESTILO.dentroDe`.
+>
+> ⚠️ **Los apartados 11, 12 y 15 SON EL SISTEMA DE LA FASE 2.** *"Elegir qué aparece"*, *"reordenar
+> plaquitas"* y *"ocultar / mostrar / reordenar / desactivar"* ya existen: `activo`, `orden`,
+> `subirModulo`/`bajarModulo` y Gestionar apartados. **D2-07 lo prohíbe expresamente**, así que aquí
+> no hay ni un interruptor ni un orden nuevos: se usan los suyos y **la pantalla lo dice**. Hay una
+> prueba que reordena con la función de la F2 y comprueba que **los bloques se reordenan**.
+>
+> ⚠️ **Ni una pregunta nueva** (apartado 14: *"NO crear un test de estilo. No queremos 50 preguntas
+> obligatorias"*). El archivo no tiene lista de preguntas, y una prueba lee su código y falla si
+> aparece una.
+>
+> ⚠️ **El estado de cada módulo lo dice su módulo** (apartado 13). Aquí no se adivina si Skincare
+> está configurado: se le pregunta a `perfilPiel.js`. `FUENTES_DE_ESTADO` es una línea por módulo,
+> el mismo punto de extensión que `MODULOS_EH`, y el que aún no tiene pantalla sale **"sin
+> configurar"**, que es la verdad.
+>
+> ⚠️ **Un bloque sin módulos activos no se pinta** (apartado 6), y **las etiquetas se derivan**: si no
+> hay ninguna **no se inventa** — se dice que se irán llenando solas.
+>
+> 🐛 **Y un fallo real del propio recorrido:** al poner "Mi estilo" arriba, que **nombra** los
+> módulos, el recorrido de Chromium empezó a pulsar el título de un bloque en vez de la plaquita.
+> `pulsar()` ahora **solo pulsa botones**, prefiriendo el que dice exactamente eso — como un usuario.
+
+- [x] PLAQUITA «MI ESTILO»
+- [x] PERFIL VISUAL
+- [x] PREFERENCIAS GENERALES
+- [x] COLORES
+- [x] ESTILO DE ROPA
+- [x] CUIDADO PERSONAL
+- [x] PERFUMES
+- [x] ACCESORIOS
+- [x] GUSTOS
+- [x] COMPLETAMENTE OPCIONAL
+- [x] PERSONALIZACIÓN
+- [x] ORDEN
+- [x] ESTADO DE CONFIGURACIÓN
+- [x] NO CREAR UN «TEST DE ESTILO»
+- [x] PRIVACIDAD Y CONTROL
+- [x] PRUEBAS
+- [x] Entrar sin datos.
+- [x] Entrar con un solo módulo.
+- [x] Activar varios.
+- [x] Mostrar resumen.
+- [x] Cambiar preferencias.
+- [x] Comprobar actualización automática.
+- [x] Reordenar plaquitas.
+- [x] Ocultar una.
+- [x] Reactivarla.
+- [x] Desactivar “Mi estilo”.
+- [x] Comprobar que los módulos originales siguen intactos.
+- [x] Verificar que no existen datos duplicados.
 
 #### EH · Fase 30/65 — PANTALLA PRINCIPAL Y ORGANIZACIÓN
 - [ ] CABECERA
