@@ -2101,39 +2101,68 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar que los módulos originales siguen intactos.
 - [x] Verificar que no existen datos duplicados.
 
-#### EH · Fase 30/65 — PANTALLA PRINCIPAL Y ORGANIZACIÓN
-- [ ] CABECERA
-- [ ] PLAQUITAS PRINCIPALES
-- [ ] DISEÑO DE PLAQUITAS
-- [ ] ESTADO
-- [ ] ORDEN PERSONALIZABLE
-- [ ] MENOS ES MÁS
-- [ ] ACCESO RÁPIDO
-- [ ] PERSONALIZACIÓN TOTAL
-- [ ] REORDENAR
-- [ ] ANIMACIONES
-- [ ] VACÍO INICIAL
-- [ ] PROGRESIVIDAD
-- [ ] NO DUPLICAR INFORMACIÓN
-- [ ] CONFIGURACIÓN GLOBAL
-- [ ] ELIMINACIÓN
-- [ ] PRUEBAS DE UX
-- [ ] Usuario nuevo.
-- [ ] Usuario con un módulo.
-- [ ] Usuario con 5 módulos.
-- [ ] Usuario con todos.
-- [ ] Ocultar.
-- [ ] Mostrar.
-- [ ] Reordenar.
-- [ ] Añadir.
-- [ ] Quitar.
-- [ ] Accesos rápidos.
-- [ ] Modo oscuro.
-- [ ] Pantallas pequeñas.
-- [ ] Pantallas grandes.
-- [ ] Rotación.
-- [ ] Animaciones.
-- [ ] Persistencia.
+#### EH · Fase 30/65 — PANTALLA PRINCIPAL Y ORGANIZACIÓN ✅ COMPLETADA (v1.93.0)
+
+> **`src/lib/pantallaEH.js`** (109 comprobaciones) + la pantalla principal reorganizada. Sin SQL.
+>
+> ⚠️ **Los tres grupos del apartado 3 SON las categorías de la Fase 2.** *"🧴 Cuidado · 👕 Estilo ·
+> ❤️ Personal"* es exactamente `CATEGORIAS_EH` con `modulosAgrupados()`. Así que **no hay una segunda
+> agrupación**: se movieron `pelo` y `barba` a `cuidado` y se renombró *"Bienestar"* a **"Personal"**
+> —el **id no se toca**, así que nada de lo guardado se entera—, que es donde Josué los pone. Un mapa
+> `id → grupo` en este archivo habría sido la "base de datos duplicada" que prohíbe la Fase 2.
+>
+> ⚠️ **Reordenar y ocultar ya existían** (apartados 6, 10, 11 y el 16 con todas las letras: *"utilizar
+> el sistema existente de Gestionar apartados"*). Ni uno nuevo, por **D2-07**. Y **el orden de las
+> secciones es el suyo**: cada una se coloca donde esté su módulo más arriba, porque si no reordenar
+> no movería nada.
+>
+> ⚠️ **Una sección no tiene interruptor propio: lo tienen sus módulos.** El apartado 10 enumera cinco
+> casillas, pero Cuidado, Estilo y Personal **se apagan apagando sus módulos** y desaparecen solas
+> (apartado 3). Los únicos dos que necesitan interruptor son **Mi estilo**, que ya lo tiene desde la
+> F29, y **Accesos rápidos**.
+>
+> ⚠️ **Los accesos rápidos los elige él, y nacen vacíos** (apartado 9). Solo se ofrece el de un módulo
+> **activo** —un atajo a algo apagado sería un botón a ninguna parte—, apagar el módulo lo hace
+> desaparecer **sin borrar su elección**, y con la zona apagada se devuelve `null`, no `[]`.
+>
+> ⚠️ **Menos es más** (apartados 8 y 15): cada plaquita lleva **una línea**, y la escribe el
+> `resumen…()` de su módulo. La auditoría lo declara con ocho ceros.
+>
+> ⚠️ **Y el vacío inicial no enseña 30 módulos** (apartado 13): se le ofrecen **tres**, y no las que
+> ya tiene.
+
+- [x] CABECERA
+- [x] PLAQUITAS PRINCIPALES
+- [x] DISEÑO DE PLAQUITAS
+- [x] ESTADO
+- [x] ORDEN PERSONALIZABLE
+- [x] MENOS ES MÁS
+- [x] ACCESO RÁPIDO
+- [x] PERSONALIZACIÓN TOTAL
+- [x] REORDENAR
+- [x] ANIMACIONES
+- [x] VACÍO INICIAL
+- [x] PROGRESIVIDAD
+- [x] NO DUPLICAR INFORMACIÓN
+- [x] CONFIGURACIÓN GLOBAL
+- [x] ELIMINACIÓN
+- [x] PRUEBAS DE UX
+- [x] Usuario nuevo.
+- [x] Usuario con un módulo.
+- [x] Usuario con 5 módulos.
+- [x] Usuario con todos.
+- [x] Ocultar.
+- [x] Mostrar.
+- [x] Reordenar.
+- [x] Añadir.
+- [x] Quitar.
+- [x] Accesos rápidos.
+- [x] Modo oscuro.
+- [x] Pantallas pequeñas.
+- [x] Pantallas grandes.
+- [x] Rotación.
+- [x] Animaciones.
+- [x] Persistencia.
 
 #### EH · Fase 31/65 — PERSONALIZACIÓN PROFUNDA DE LAS PLAQUITAS
 - [ ] MODO «PERSONALIZAR»

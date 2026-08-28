@@ -246,9 +246,11 @@ escribir código.
 
 | v1.92.0 | **EH F29** | Perfil de estilo personal ("Mi estilo"). ⚠️ **No guarda NADA menos un booleano**: etiquetas, estados y resúmenes se derivan en el momento, así que la "actualización automática" sale sola. ⚠️ **Los apartados 11, 12 y 15 SON el sistema de la F2** (D2-07): ni un interruptor ni un orden nuevos, y la pantalla lo dice. ⚠️ **Ni una pregunta nueva** (apartado 14). ⚠️ **El estado de cada módulo lo dice su módulo**, una línea por módulo. 🐛 Y `pulsar()` del recorrido de Chromium ahora **solo pulsa botones** |
 
+| v1.93.0 | **EH F30** | Pantalla principal y organización. ⚠️ **Los tres grupos del apartado 3 SON las categorías de la F2**: se movieron `pelo` y `barba` a `cuidado` y "Bienestar" pasó a llamarse **"Personal"** (el id no se toca), en vez de una segunda agrupación. ⚠️ **Reordenar y ocultar ya existían** (D2-07), y el orden de las secciones es el suyo. ⚠️ **Una sección no tiene interruptor: lo tienen sus módulos**. ⚠️ **Los accesos rápidos los elige él y nacen vacíos**, y solo los de un módulo activo. ⚠️ **Menos es más**: una línea por plaquita, y el vacío inicial ofrece tres opciones, no treinta |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 26/65** (F1-F17, F20, F21, F23-F29; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **37** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (35, tres de ellas bloqueadas).
+3/5 y **EH por 27/65** (F1-F17, F20, F21, F23-F30; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **36** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (34, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

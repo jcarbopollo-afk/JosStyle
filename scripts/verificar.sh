@@ -332,6 +332,12 @@ else
   fallo "Falla Mi estilo"; grep '✗' /tmp/jc_eh29.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-pantalla-eh.mjs >/tmp/jc_eh30.log 2>&1; then
+  ok "Pantalla principal y organización (EH F30) — $(grep -c '✓' /tmp/jc_eh30.log) comprobaciones"
+else
+  fallo "Falla la pantalla principal"; grep '✗' /tmp/jc_eh30.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

@@ -67,7 +67,10 @@ export const CATEGORIAS_EH = [
   { id: 'cuidado', nombre: 'Cuidado', icono: '🧴' },
   { id: 'fisico', nombre: 'Físico', icono: '🏋️' },
   { id: 'salud', nombre: 'Salud', icono: '❤️' },
-  { id: 'bienestar', nombre: 'Bienestar', icono: '🧠' },
+  /* ⚠️ EH F30, apartado 3 — el enunciado llama **"Personal"** a este grupo
+     (*"❤️ Personal: Gustos, Experiencias"*). Se renombra el nombre visible; **el
+     id no se toca**, así que nada de lo guardado se entera. */
+  { id: 'bienestar', nombre: 'Personal', icono: '❤️' },
   { id: 'conocimiento', nombre: 'Conocimiento', icono: '📚' },
   { id: 'compras', nombre: 'Compras', icono: '🛒' },
 ];
@@ -89,8 +92,11 @@ export const categoriaEH = (id) => CATEGORIAS_EH.find((c) => c.id === id) || nul
      encuentra también Barba, que es el ejemplo literal del enunciado. */
 export const MODULOS_EH = [
   { id: 'estilo', nombre: 'Estilo y armario', icono: '👕', sub: 'Cómo vestir', fase: 2, categoria: 'estilo', confirmar: true, terminos: ['ropa', 'armario', 'outfit', 'vestir', 'prendas', 'moda'] },
-  { id: 'pelo', nombre: 'Pelo', icono: '💇', sub: 'Corte y cuidado', fase: 12, categoria: 'estilo', confirmar: true, terminos: ['pelo', 'cabello', 'corte', 'peluqueria', 'peluquería', 'champu', 'champú'] },
-  { id: 'barba', nombre: 'Barba', icono: '🧔', sub: 'Afeitado y forma', fase: 15, categoria: 'estilo', confirmar: true, terminos: ['barba', 'pelo', 'afeitado', 'afeitar', 'bigote', 'cuchilla'] },
+  /* ⚠️ EH F30, apartado 3 — *"🧴 Cuidado: Skincare, Pelo, Cuerpo, Barba"*. Pelo y
+     Barba pasan a `cuidado` porque **es donde Josué los pone**; la agrupación de la
+     pantalla principal es la de la F2, no una segunda. */
+  { id: 'pelo', nombre: 'Pelo', icono: '💇', sub: 'Corte y cuidado', fase: 12, categoria: 'cuidado', confirmar: true, terminos: ['pelo', 'cabello', 'corte', 'peluqueria', 'peluquería', 'champu', 'champú'] },
+  { id: 'barba', nombre: 'Barba', icono: '🧔', sub: 'Afeitado y forma', fase: 15, categoria: 'cuidado', confirmar: true, terminos: ['barba', 'pelo', 'afeitado', 'afeitar', 'bigote', 'cuchilla'] },
   { id: 'skincare', nombre: 'Skincare', icono: '🧴', sub: 'Mi cuidado facial', fase: 6, categoria: 'cuidado', confirmar: true, recomendado: true, terminos: ['piel', 'cara', 'facial', 'crema', 'acne', 'acné', 'rutina'] },
   { id: 'higiene', nombre: 'Higiene', icono: '🧼', sub: 'Rutina diaria', fase: 18, categoria: 'cuidado', terminos: ['higiene', 'ducha', 'dientes', 'boca', 'manos', 'uñas', 'unas'] },
   { id: 'cuerpo', nombre: 'Cuidado corporal', icono: '🧍', sub: 'De cuello para abajo', fase: 21, categoria: 'cuidado', terminos: ['cuerpo', 'corporal', 'piel', 'desodorante', 'perfume', 'colonia'] },

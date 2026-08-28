@@ -196,6 +196,9 @@ import {
 import {
   TEXTOS_MI_ESTILO, ocultarMiEstilo, mostrarMiEstilo, panelMiEstilo,
 } from '../lib/miEstilo';
+import {
+  CABECERA_EH, TEXTOS_PANTALLA, alternarAcceso, alternarVerAccesos, panelPantalla,
+} from '../lib/pantallaEH';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -6483,6 +6486,20 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
        su insignia ya dice "sin configurar": no se finge un destino (regla 8). */
     return undefined;
   };
+  /* F30, apartado 4 — *"🧴 Skincare · 3 rutinas activas"*: **una línea**, y la
+     escribe el `resumen…()` de su módulo. ⚠️ Los mismos `sub*` que ya usaban las
+     plaquitas: ni un resumen nuevo, ni la información entera dentro (apartado 8). */
+  const subDeModulo = (id) => {
+    if (id === MODULO_EH_ESTILO) return estiloArmario ? resumenPlaquitaArmario : null;
+    if (id === MODULO_PELO) return subPelo;
+    if (id === MODULO_PIEL) return subPiel;
+    if (id === MODULO_BARBA) return subBarba;
+    if (id === MODULO_SONRISA) return subSonrisa;
+    if (id === MODULO_PERFUMES) return subPerfumes;
+    if (id === MODULO_ACCESORIOS) return subAccesorios;
+    if (id === MODULO_GUSTOS) return subGustos;
+    return null;
+  };
   const activos = useMemo(() => modulosActivos(estado), [estado]);
   const resumen = useMemo(() => resumenEstiloHombre(estado), [estado]);
   const gestion = useMemo(() => resumenGestion(estado), [estado]);
@@ -6547,6 +6564,11 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
      módulos, así que cambiar una preferencia se refleja sin sincronizar nada. */
   const miEstiloPanel = useMemo(
     () => panelMiEstilo(estado, { armario, datosGlobales }), [estado, armario, datosGlobales],
+  );
+  /* F30 — la pantalla principal: secciones agrupadas, accesos rápidos y vacío
+     inicial. ⚠️ TODO derivado: la agrupación y el orden son los de la Fase 2. */
+  const pantallaPanel = useMemo(
+    () => panelPantalla(estado, { armario, datosGlobales }), [estado, armario, datosGlobales],
   );
   const resumenPlaquitaArmario = estiloArmario && !estiloArmario.vacio
     ? `${estiloArmario.total} ${estiloArmario.total === 1 ? 'prenda' : 'prendas'}`
@@ -6696,11 +6718,37 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     <div className="space-y-3">
       {/* F2, apartado 10 — configurado pero sin nada encendido. No es una
           pantalla rota: es una decisión suya, y se le ofrece cambiarla. */}
+      {/* ── EH F30, apartado 1 — la cabecera. *"Nada más."* ─────────────── */}
+      {!ordenando && (
+        <div>
+          <p className="text-base font-semibold" style={{ color: COLORS.text }}>
+            {CABECERA_EH.titulo}
+          </p>
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{CABECERA_EH.sub}</p>
+        </div>
+      )}
       {pantalla === 'sin_modulos' ? (
+        /* ⚠️ EH F30, apartado 13 — *"si alguien entra por primera vez, NO mostrar
+           30 módulos"*. Se le ofrecen TRES, y el botón de siempre debajo. */
         <Card className="text-center">
           <p className="text-2xl leading-none mb-2" aria-hidden="true">🧔</p>
           <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_GESTION.vacioTitulo}</p>
-          <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{TEXTOS_GESTION.vacioTexto}</p>
+          <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>
+            {pantallaPanel.inicial ? pantallaPanel.inicial.texto : TEXTOS_GESTION.vacioTexto}
+          </p>
+          {pantallaPanel.inicial && (
+            <div className="flex flex-wrap gap-1 justify-center mb-3">
+              {pantallaPanel.inicial.opciones.map((m) => (
+                <button key={m.id} onClick={() => onCambiar(alternarModulo(estado, m.id, true))}
+                  className="rounded-2xl px-2.5 py-1.5"
+                  style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+                  <span className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                    {m.icono} {m.nombre}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
           <PrimaryButton accent={accent} icon={Settings} onClick={() => setGestionando(true)}>
             {TEXTOS_GESTION.vacioAccion}
           </PrimaryButton>
@@ -6796,48 +6844,97 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
             </Card>
           )}
 
-          <div className="grid grid-cols-2 gap-1.5">
-            {activos.map((m) => {
-              /* F5 — la única plaquita que hoy lleva a algún sitio es la del
-                 armario, porque su módulo YA EXISTE. Y lleva al de siempre, no a
-                 una copia (apartado 1). */
-              const esArmario = m.id === MODULO_EH_ESTILO && !ordenando && onIr;
-              /* F7 — Pelo ya tiene contenido propio: su perfil capilar. Sigue
-                 siendo la excepción, no la regla: los otros once apartados no
-                 llevan a ninguna parte todavía y la pantalla lo dice. */
-              const esPelo = m.id === MODULO_PELO && !ordenando;
-              /* F13 — Skincare es el tercero con contenido propio. */
-              const esPiel = m.id === MODULO_PIEL && !ordenando;
-              /* F20 — y Barba el cuarto. */
-              const esBarba = m.id === MODULO_BARBA && !ordenando;
-              /* F23 — Sonrisa, el quinto. */
-              const esSonrisa = m.id === MODULO_SONRISA && !ordenando;
-              /* F24 — y Perfumes, el sexto. */
-              const esPerfumes = m.id === MODULO_PERFUMES && !ordenando;
-              /* F26 — Accesorios, el séptimo. */
-              const esAccesorios = m.id === MODULO_ACCESORIOS && !ordenando;
-              /* F27 — y Mis gustos, el octavo. */
-              const esGustos = m.id === MODULO_GUSTOS && !ordenando;
-              return (
+          {/* ── EH F30 — la pantalla principal ─────────────────────────
+              ⚠️ **Reordenando, la lista es PLANA**: es la pantalla de la Fase 2,
+              con sus flechas, y agruparla mientras se mueve confundiría. Fuera de
+              ese modo, las plaquitas van por secciones (apartado 3). */}
+          {ordenando ? (
+            <div className="grid grid-cols-2 gap-1.5">
+              {activos.map((m) => (
                 <Plaquita
-                  key={m.id} modulo={m} accent={accent}
-                  sub={esArmario && estiloArmario ? resumenPlaquitaArmario
-                    : (esPelo ? subPelo : (esPiel ? subPiel : (esBarba ? subBarba : (esSonrisa ? subSonrisa : (esPerfumes ? subPerfumes : (esAccesorios ? subAccesorios : (esGustos ? subGustos : null)))))))}
-                  onAbrir={esArmario ? () => onIr(DESTINO_ARMARIO)
-                    : (esPelo ? () => setPerfilPelo('panel')
-                      : (esPiel ? () => setSkincare(true)
-                        : (esBarba ? () => setBarba(true)
-                          : (esSonrisa ? () => setSonrisa(true)
-                            : (esPerfumes ? () => setPerfumes(true)
-                              : (esAccesorios ? () => setAccesorios(true)
-                                : (esGustos ? () => setGustos(true) : null)))))))}
-                  orden={ordenando ? puedeMover(estado, m.id) : null}
+                  key={m.id} modulo={m} accent={accent} sub={null} onAbrir={null}
+                  orden={puedeMover(estado, m.id)}
                   onSubir={() => onCambiar(subirModulo(estado, m.id))}
                   onBajar={() => onCambiar(bajarModulo(estado, m.id))}
                 />
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : (
+            pantallaPanel.secciones.map((sec) => (
+              <div key={sec.id}>
+                <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.textMuted }}>
+                  {sec.icono} {sec.nombre}
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {sec.modulos.map((m) => (
+                    <Plaquita
+                      key={m.id} accent={accent}
+                      /* Apartado 5 — la indicación, solo en el que falta por configurar. */
+                      modulo={m.insignia ? { ...m, nombre: `${m.insignia.icono} ${m.nombre}` } : m}
+                      sub={subDeModulo(m.id)}
+                      onAbrir={() => abrirModulo(m.id)}
+                      orden={null}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+
+          {/* Apartado 9 — ⚡ accesos rápidos, los que él haya elegido. */}
+          {!ordenando && pantallaPanel.accesos !== null && pantallaPanel.accesos.length > 0 && (
+            <Card>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>
+                  {TEXTOS_PANTALLA.accesos}
+                </p>
+                <button onClick={() => onCambiar(alternarVerAccesos(estado))}
+                  className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                  Quitar
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {pantallaPanel.accesos.map((a) => (
+                  <button key={a.id} onClick={() => abrirModulo(a.modulo)}
+                    className="rounded-2xl px-2.5 py-1.5"
+                    style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+                    <span className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                      {a.icono} {a.nombre}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* ⚠️ Y para elegirlos. Nacen vacíos: los decide él (apartado 9). */}
+          {!ordenando && pantallaPanel.accesosDisponibles.length > 0 && (
+            <Card>
+              <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>
+                {TEXTOS_PANTALLA.accesos}
+              </p>
+              <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+                {TEXTOS_PANTALLA.sinAccesos}
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {pantallaPanel.accesosDisponibles.map((a) => {
+                  const puesto = (pantallaPanel.accesos || []).some((x) => x.id === a.id);
+                  return (
+                    <button key={a.id} aria-pressed={puesto}
+                      onClick={() => onCambiar(alternarAcceso(estado, a.id))}
+                      className="rounded-full px-2.5 py-1"
+                      style={{
+                        background: puesto ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                        border: `1px solid ${puesto ? accent : COLORS.border}`,
+                      }}>
+                      <span className="text-[10px] font-semibold"
+                        style={{ color: puesto ? accent : COLORS.text }}>{a.icono} {a.nombre}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
 
           {/* ⚠️ Regla 8 y apartado 14 de F1. Ninguno de estos apartados tiene
               contenido todavía, y el enunciado prohíbe construirlo. Así que la

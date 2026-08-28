@@ -1,5 +1,60 @@
 # CHANGELOG.md
 
+## v1.93.0 — EH Fase 30/65: pantalla principal y organización
+
+### Qué se ha construido
+La pantalla de **Más → Estilo de hombre**, reorganizada: su cabecera, las plaquitas **agrupadas** en
+🧴 Cuidado · 👕 Estilo · ❤️ Personal, una zona de **⚡ accesos rápidos** que él elige, y un vacío
+inicial que ofrece tres cosas en vez de treinta.
+
+*"La prioridad es: **pocas cosas visibles → pequeñas plaquitas → todo personalizable**."*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Los tres grupos del apartado 3 son las categorías de la Fase 2.** *"🧴 Cuidado: Skincare,
+Pelo, Cuerpo, Barba · 👕 Estilo: Armario, Accesorios, Perfumes · ❤️ Personal: Gustos, Experiencias"*
+es exactamente `CATEGORIAS_EH` con `modulosAgrupados()`, que ya existía. Así que **no hay una segunda
+agrupación**: se **movieron `pelo` y `barba` a `cuidado`** y se renombró *"Bienestar"* a **"Personal"**
+—el **id no se toca**, así que nada de lo guardado se entera—, porque **es donde Josué los pone**. Un
+mapa `id → grupo` en el archivo nuevo habría sido la "base de datos duplicada" que prohíbe la Fase 2.
+
+**2. ⚠️ Reordenar y ocultar ya existían.** Los apartados 6, 10 y 11 los pide, y el **16 lo dice con
+todas las letras**: *"utilizar el sistema existente de ⚙️ Gestionar apartados"*. Son `activo`, `orden`
+y `subirModulo`/`bajarModulo`. Ni uno nuevo, por **D2-07**. Y **el orden de las secciones es el suyo**:
+cada una se coloca donde esté su módulo más arriba — sin eso, reordenar no habría movido nada.
+
+**3. ⚠️ Una sección no tiene interruptor propio: lo tienen sus módulos.** El apartado 10 enumera cinco
+casillas, pero Cuidado, Estilo y Personal **se apagan apagando sus módulos**, y entonces desaparecen
+solas (apartado 3: *"solo aparecen los módulos activos"*). Los únicos dos que necesitan interruptor
+son **Mi estilo**, que ya lo tiene desde la Fase 29, y **Accesos rápidos**.
+
+**4. ⚠️ Los accesos rápidos los elige él, y nacen vacíos** (apartado 9: *"el usuario decide qué
+accesos aparecen"*). Solo se ofrece el de un módulo **activo** —un atajo a algo apagado sería un botón
+que no lleva a ninguna parte (regla 8)—, apagar el módulo lo hace desaparecer **sin borrar su
+elección**, y con la zona apagada se devuelve `null`, no una lista vacía.
+
+**5. ⚠️ Menos es más** (apartado 8, con su lista: *"no mostrar automáticamente estadísticas,
+historiales, recomendaciones, productos ni rutinas completas"*, y el 15). Cada plaquita lleva **una
+línea**, y quien la escribe es el `resumen…()` de su módulo — los mismos que ya existían. La auditoría
+lo declara con ocho ceros.
+
+**6. ⚠️ Y el vacío inicial no enseña 30 módulos** (apartado 13). Se le ofrecen **tres**, las del
+ejemplo, y **no las que ya tiene**.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **109 comprobaciones nuevas**, **1032 casos de
+renderizado** (16 nuevos) y **218 comprobaciones en Chromium** (14 nuevas): se entra, sale la cabecera
+literal, las tres secciones agrupadas, la marca de lo que falta por configurar, se elige un acceso
+rápido, **se guarda**, sigue ahí tras recargar y **abre su módulo**.
+
+### Archivos
+- **Nuevos:** `src/lib/pantallaEH.js`, `scripts/test-pantalla-eh.mjs`.
+- **Modificados:** `src/lib/estiloDeHombre.js` (dos categorías y un nombre),
+  `src/views/EstiloHombreView.jsx`, `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`,
+  `scripts/verificar.sh`.
+
+---
+
 ## v1.92.0 — EH Fase 29/65: perfil de estilo personal ("Mi estilo")
 
 ### Qué se ha construido

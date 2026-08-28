@@ -65,6 +65,7 @@ import {
   prepararObjetivo, aplicarObjetivo,
 } from '../src/lib/objetivosEnEstiloHombre.js';
 import { ocultarMiEstilo } from '../src/lib/miEstilo.js';
+import { alternarAcceso, alternarVerAccesos } from '../src/lib/pantallaEH.js';
 import { guardarDato as guardarDatoEH } from '../src/lib/datosEstiloHombre.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
@@ -1105,6 +1106,19 @@ const CASOS = [
           /* ⚠️ Oculto: la tarjeta no se pinta y sale el botón de volver. */
           ['EstiloHombreView · Mi estilo oculto', EstiloHombreView, () =>
             conArmario(ocultarMiEstilo(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['estilo', 'perfumes'])))],
+          /* EH Fase 30 — la pantalla principal: secciones, accesos y vacío. */
+          ['EstiloHombreView · pantalla vacía (usuario nuevo)', EstiloHombreView, () =>
+            conArmario(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],
+          ['EstiloHombreView · pantalla con las tres secciones', EstiloHombreView, () =>
+            conArmario(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE,
+              ['estilo', 'perfumes', 'skincare', 'barba', 'gustos']))],
+          ['EstiloHombreView · con un acceso rápido', EstiloHombreView, () =>
+            conArmario(alternarAcceso(
+              configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['skincare', 'barba']), 'afeitarme'))],
+          /* ⚠️ La zona de accesos apagada: no se pinta, y no revienta. */
+          ['EstiloHombreView · accesos rápidos apagados', EstiloHombreView, () =>
+            conArmario(alternarVerAccesos(
+              configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['skincare', 'barba'])))],
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],
           ['EstiloHombreView · con módulos', EstiloHombreView, () => props(conTres)],
           ['EstiloHombreView · configurado sin módulos', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],

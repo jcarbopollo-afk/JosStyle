@@ -685,4 +685,44 @@ ok(await pulsar('Volver a enseñar "Mi estilo"'), 'Y se puede volver a enseñar'
 await page.waitForTimeout(800);
 ok(/Mi estilo personal/.test(await ver()), '⚠️ Y vuelve entera');
 
+/* ── 15 · LA PANTALLA PRINCIPAL, POR SECCIONES (EH F30) ────────────────── */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(500);
+const portada = await ver();
+// Apartado 1 — la cabecera, literal.
+ok(/Estilo de hombre/.test(portada), 'La cabecera está');
+ok(/Tu cuidado, estilo y preferencias\./.test(portada), 'Con su frase, tal cual (apartado 1)');
+// Apartado 3 — las plaquitas, agrupadas.
+ok(/Cuidado/.test(portada), 'Se ve la sección "Cuidado"');
+ok(/Estilo\b/.test(portada), 'y la sección "Estilo"');
+ok(/Personal/.test(portada), 'y "Personal", que es como Josué llama al tercero');
+ok(/⚪/.test(portada), 'Con la marca de lo que está sin configurar (apartado 5)');
+
+/* Apartado 9 — los accesos rápidos: nacen vacíos y los elige él. */
+ok(/Accesos rápidos/.test(portada), 'La zona de accesos rápidos se ofrece');
+ok(/Elige los que uses de verdad/.test(portada),
+  '⚠️ Y dice que los elige él: ninguno viene puesto (apartado 9)');
+guardado.length = 0;
+ok(await pulsar('🪒 Afeitarme'), 'Se puede elegir uno');
+await page.waitForTimeout(1200);
+const escPantalla = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escPantalla.length > 0, '⚠️ PERSISTENCIA: la elección se guarda');
+const cfgPantalla = escPantalla.at(-1)?.value?.modulos?.find((m) => m.id === 'estilo')?.config || {};
+ok((cfgPantalla.pantalla?.accesos || []).includes('afeitarme'), 'Con el acceso que eligió');
+
+/* ⚠️ Y al recargar sigue ahí, y abre su módulo. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(500);
+ok(/🪒 Afeitarme/.test(await ver()), '⚠️ PERSISTENCIA: el acceso sigue tras recargar');
+ok(await pulsar('🪒 Afeitarme'), 'Y se puede pulsar');
+await page.waitForTimeout(700);
+ok(/Barba|¿Quieres utilizar este apartado\?/.test(await ver()),
+  '⚠️ Y abre SU módulo, el que ya existía');
+
 await salir(browser);
