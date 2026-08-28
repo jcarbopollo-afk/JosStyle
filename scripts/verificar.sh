@@ -290,6 +290,12 @@ else
   fallo "Fallan las rutinas de barba"; grep '✗' /tmp/jc_eh21.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-sonrisa.mjs >/tmp/jc_eh23.log 2>&1; then
+  ok "Higiene bucal y sonrisa (EH F23) — $(grep -c '✓' /tmp/jc_eh23.log) comprobaciones"
+else
+  fallo "Falla el módulo de sonrisa"; grep '✗' /tmp/jc_eh23.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

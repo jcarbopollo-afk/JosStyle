@@ -153,6 +153,17 @@ import {
   marcarRutinaBarbaEntera, registrarBarba, historialBarba, sugerenciasBarba,
   resumenRutinasBarba, panelRutinasBarba, TEXTOS_ESTADO_DIA as TEXTOS_DIA_BARBA,
 } from '../lib/rutinasBarba';
+import {
+  MODULO_SONRISA, TEXTOS_SONRISA, PASOS_SONRISA, MOMENTOS_SONRISA, momentoSonrisa,
+  TIPOS_PRODUCTO_SONRISA, FRECUENCIAS_CEPILLO, avisoRevision, configurarSonrisa,
+  decirAhoraNoSonrisa, alternarParteSonrisa, crearRutinaSonrisa,
+  usarPlantillaSonrisa, marcarPasoSonrisa, omitirPasoSonrisa,
+  alternarRecordatorioSonrisa, impactoEliminarRutinaSonrisa,
+  anadirProductoSonrisa, quitarProductoSonrisa, registrarCambioCepillo,
+  ponerFrecuenciaCepillo, planificarCambioCepillo, quitarPlanCepillo,
+  crearRevision, editarRevision, registrarSonrisa, resumenSonrisa, panelSonrisa,
+  TEXTOS_ESTADO_DIA as TEXTOS_DIA_SONRISA,
+} from '../lib/sonrisa';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -4432,6 +4443,464 @@ export function BarbaEH({ estado, accent, datosGlobales = {}, onCambiar, onCerra
   );
 }
 
+/* ===========================================================================
+   SONRISA — HIGIENE BUCAL (F23)
+   ===========================================================================
+   *"Pequeño, opcional, configurable y sin saturar."*
+
+   ⚠️ **La racha solo se pinta si él la tiene** (apartado 10). Si no hay una
+   racha suya de esto, `panel.racha` es `null` y aquí no se dibuja nada — ni un
+   "créala", que sería empujarle a algo que no ha pedido.
+
+   ⚠️ Y **nada se calcula aquí**: la cuenta de la semana la deriva
+   `estaSemanaSonrisa`, la fecha del cepillo la propone `sugerirCambioCepillo` y
+   los consejos son fijos. */
+export function SonrisaEH({ estado, accent, rachas = null, onCambiar, onCerrar, onEliminar }) {
+  /* ⚠️ Regla 4 — todos los hooks antes de cualquier `return`. */
+  const [zona, setZona] = useState(null);
+  const [creando, setCreando] = useState(false);
+  const [nombre, setNombre] = useState('');
+  const [pasos, setPasos] = useState([]);
+  const [momento, setMomento] = useState('cualquiera');
+  const [prodNombre, setProdNombre] = useState('');
+  const [prodTipo, setProdTipo] = useState('cepillo');
+  const [fechaRev, setFechaRev] = useState('');
+  const [notaRev, setNotaRev] = useState('');
+  const [cambio, setCambio] = useState('');
+  const [nota, setNota] = useState('');
+  const [confirmar, setConfirmar] = useState(null);
+  const [error, setError] = useState(null);
+
+  const panel = useMemo(() => panelSonrisa(estado, { rachas }), [estado, rachas]);
+  const entrada = panel.estado;
+  const [yaEntro] = useState(() => entrada === 'configurado');
+
+  const aplicar = (r) => {
+    if (r.error) { setError(r.error); return false; }
+    setError(null);
+    onCambiar?.(r.estado);
+    return true;
+  };
+
+  const chip = (activo) => ({
+    background: activo ? hexToRgba(accent, 0.12) : COLORS.surface2,
+    border: `1px solid ${activo ? accent : COLORS.border}`,
+  });
+
+  const cabecera = (titulo, volver) => (
+    <div className="flex items-center gap-2 mb-1">
+      <button onClick={volver} className="p-1 -ml-1" aria-label="Volver">
+        <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+      </button>
+      <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{titulo}</p>
+    </div>
+  );
+
+  /* ⚠️ Regla 4 — los `return` condicionales, todos después de los hooks. */
+  if (!yaEntro && entrada !== 'configurado') {
+    return (
+      <Card className="text-center">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1 float-left" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-2xl leading-none mb-2" aria-hidden="true">😁</p>
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_SONRISA.titulo}</p>
+        <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{TEXTOS_SONRISA.sub}</p>
+        <PrimaryButton accent={accent} onClick={() => aplicar(configurarSonrisa(estado))}>
+          {TEXTOS_SONRISA.configurar}
+        </PrimaryButton>
+        <button onClick={() => aplicar(decirAhoraNoSonrisa(estado))}
+          className="text-[11px] font-semibold mt-2" style={{ color: COLORS.textMuted }}>
+          {TEXTOS_SONRISA.ahoraNo}
+        </button>
+        {entrada === 'ahora_no' && (
+          <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>{TEXTOS_SONRISA.oculto}</p>
+        )}
+      </Card>
+    );
+  }
+
+  /* ── 🪥 Higiene diaria ─────────────────────────────────────────────── */
+  if (zona === 'higiene') {
+    return (
+      <Card>
+        {cabecera('🪥 Higiene diaria', () => setZona(null))}
+        {error && <p className="text-[10px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+
+        {panel.hoy.map((lista) => (
+          <div key={lista.id} className="rounded-2xl p-2.5 mb-2"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>{lista.nombre}</p>
+              {/* ⚠️ "Pendiente", nunca "has fallado". El texto es del motor. */}
+              <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                {TEXTOS_DIA_SONRISA[lista.estado] || ''}
+              </span>
+            </div>
+            {lista.pasos.map((p) => (
+              <div key={p.id} className="flex items-center gap-2 py-0.5">
+                <button onClick={() => onCambiar?.(marcarPasoSonrisa(estado, lista.id, p.id))}
+                  className="text-[13px] leading-none" aria-label={`Marcar ${p.etiqueta}`} aria-pressed={p.hecho}>
+                  {p.hecho ? '☑️' : '☐'}
+                </button>
+                <span className="text-[11px] flex-1"
+                  style={{ color: p.omitido ? COLORS.textMuted : COLORS.text }}>
+                  {p.icono} {p.etiqueta}{p.producto ? ` · ${p.producto}` : ''}
+                </span>
+                <button onClick={() => onCambiar?.(omitirPasoSonrisa(estado, lista.id, p.id))}
+                  className="text-[10px] font-semibold"
+                  style={{ color: p.omitido ? accent : COLORS.textMuted }}>
+                  {p.omitido ? 'Omitido hoy' : 'Omitir hoy'}
+                </button>
+              </div>
+            ))}
+          </div>
+        ))}
+
+        {/* Apartado 2 — la plantilla, que se ofrece. */}
+        {panel.plantilla.hay && (
+          <div className="rounded-2xl p-2.5 mb-2"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+              {panel.plantilla.icono} {panel.plantilla.nombre}
+            </p>
+            {panel.plantilla.rutinasVisibles.map((r) => (
+              <p key={r.nombre} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                {r.nombre}: {r.pasosVisibles.map((x) => x.nombre).join(' · ')}
+              </p>
+            ))}
+            <button onClick={() => aplicar(usarPlantillaSonrisa(estado, { confirmado: true }))}
+              className="text-[10px] font-semibold mt-1" style={{ color: accent }}>
+              {panel.plantilla.accion}
+            </button>
+          </div>
+        )}
+
+        {panel.rutinas.map((r) => (
+          <div key={r.id} className="rounded-2xl p-2.5 mb-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+              {momentoSonrisa(r.momento)?.icono} {r.nombre}
+            </p>
+            <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {r.pasos.length} {r.pasos.length === 1 ? 'paso' : 'pasos'}
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <button onClick={() => aplicar(alternarRecordatorioSonrisa(estado, r.id))}
+                className="text-[10px] font-semibold"
+                style={{ color: r.recordatorio ? accent : COLORS.textMuted }}>
+                {r.recordatorio ? '🔔 Con recordatorio' : 'Recordármela'}
+              </button>
+              <button onClick={() => setConfirmar(impactoEliminarRutinaSonrisa(estado, r.id))}
+                className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>Eliminar</button>
+            </div>
+            {confirmar && confirmar.nombre === r.nombre && (
+              <div className="mt-1.5">
+                <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{confirmar.texto}</p>
+                <div className="flex gap-2 mt-1">
+                  <button onClick={() => { onEliminar?.('rutinas', r.id); setConfirmar(null); }}
+                    className="text-[10px] font-semibold" style={{ color: accent }}>{confirmar.confirmar}</button>
+                  <button onClick={() => setConfirmar(null)}
+                    className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>{confirmar.cancelar}</button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {creando ? (
+          <div className="space-y-2 mt-2">
+            <TextInput value={nombre} onChange={(ev) => setNombre(ev.target.value)}
+              placeholder="Nombre de la rutina" aria-label="Nombre de la rutina" />
+            <div className="flex flex-wrap gap-1.5">
+              {PASOS_SONRISA.map((p) => (
+                <button key={p.id}
+                  onClick={() => setPasos(pasos.includes(p.id) ? pasos.filter((x) => x !== p.id) : [...pasos, p.id])}
+                  className="rounded-full px-2.5 py-1" style={chip(pasos.includes(p.id))}
+                  aria-pressed={pasos.includes(p.id)}>
+                  <span className="text-[11px] font-semibold"
+                    style={{ color: pasos.includes(p.id) ? COLORS.text : COLORS.textMuted }}>
+                    {p.icono} {p.nombre}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {MOMENTOS_SONRISA.map((m) => (
+                <button key={m.id} onClick={() => setMomento(m.id)}
+                  className="rounded-full px-2.5 py-1" style={chip(momento === m.id)} aria-pressed={momento === m.id}>
+                  <span className="text-[11px] font-semibold"
+                    style={{ color: momento === m.id ? COLORS.text : COLORS.textMuted }}>{m.icono} {m.nombre}</span>
+                </button>
+              ))}
+            </div>
+            <PrimaryButton accent={accent} onClick={() => {
+              if (!aplicar(crearRutinaSonrisa(estado, { nombre, momento, frecuencia: 'diario', pasos: pasos.map((a) => ({ accion: a })) }))) return;
+              setCreando(false); setNombre(''); setPasos([]); setMomento('cualquiera');
+            }}>Guardar rutina</PrimaryButton>
+            <button onClick={() => { setCreando(false); setError(null); }}
+              className="text-[11px] font-semibold mx-auto block" style={{ color: COLORS.textMuted }}>Cancelar</button>
+          </div>
+        ) : (
+          <div className="mt-2">
+            <PrimaryButton accent={accent} icon={Plus} onClick={() => setCreando(true)}>Crear rutina</PrimaryButton>
+          </div>
+        )}
+      </Card>
+    );
+  }
+
+  /* ── 🦷 Cuidado dental: cepillo y productos ────────────────────────── */
+  if (zona === 'dental') {
+    return (
+      <Card>
+        {cabecera('🦷 Cuidado dental', () => setZona(null))}
+        {error && <p className="text-[10px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+
+        <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: COLORS.textMuted }}>
+          🪥 Cambio de cepillo
+        </p>
+        <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+          {panel.cepillo.ultimoCambio ? `Último cambio: ${panel.cepillo.ultimoCambio}` : 'Todavía no nos lo has dicho.'}
+        </p>
+        <p className="text-[11px] mb-1" style={{ color: COLORS.textMuted }}>{panel.cepillo.sugerencia.texto}</p>
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {FRECUENCIAS_CEPILLO.filter((f) => f.dias).map((f) => (
+            <button key={f.id} onClick={() => aplicar(ponerFrecuenciaCepillo(estado, f.id))}
+              className="rounded-full px-2.5 py-1" style={chip(panel.cepillo.frecuencia === f.id)}
+              aria-pressed={panel.cepillo.frecuencia === f.id}>
+              <span className="text-[10px] font-semibold"
+                style={{ color: panel.cepillo.frecuencia === f.id ? COLORS.text : COLORS.textMuted }}>{f.nombre}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1.5 mb-1">
+          <TextInput value={cambio} onChange={(ev) => setCambio(ev.target.value)}
+            placeholder="AAAA-MM-DD" aria-label="Fecha del último cambio" />
+          <button onClick={() => { aplicar(registrarCambioCepillo(estado, { fecha: cambio })); setCambio(''); }}
+            className="rounded-2xl px-3" style={{ background: hexToRgba(accent, 0.12), border: `1px solid ${accent}` }}>
+            <span className="text-[11px] font-semibold" style={{ color: accent }}>Lo cambié</span>
+          </button>
+        </div>
+        {/* ⚠️ Apartado 6 — la fecha se GUARDA si él quiere. Nunca sola. */}
+        {panel.cepillo.sugerencia.hay && !panel.cepillo.proximo && (
+          <button onClick={() => aplicar(planificarCambioCepillo(estado, panel.cepillo.sugerencia.fecha, { confirmado: true }))}
+            className="text-[10px] font-semibold" style={{ color: accent }}>
+            {panel.cepillo.sugerencia.accion}
+          </button>
+        )}
+        {panel.cepillo.proximo && (
+          <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            📅 Guardado para el {panel.cepillo.proximo} ·{' '}
+            <button onClick={() => aplicar(quitarPlanCepillo(estado))} className="font-semibold" style={{ color: accent }}>
+              quitarlo
+            </button>
+          </p>
+        )}
+
+        <p className="text-[10px] font-semibold uppercase tracking-wide mt-3 mb-1" style={{ color: COLORS.textMuted }}>
+          🛒 Mis productos
+        </p>
+        {panel.productos.map((p) => (
+          <div key={p.id} className="rounded-2xl p-2 flex items-center gap-2 mb-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] truncate" style={{ color: COLORS.text }}>{p.nombreVisible}</span>
+              <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>
+                {p.etiqueta}
+                {/* ⚠️ Si lo borró en su módulo, se dice, en vez de fingir que sigue. */}
+                {p.seFue ? ' · ya no está en tu catálogo' : ''}
+              </span>
+            </span>
+            <button onClick={() => aplicar(quitarProductoSonrisa(estado, p.id))} aria-label={`Quitar ${p.nombreVisible}`}>
+              <X size={13} style={{ color: COLORS.textMuted }} />
+            </button>
+          </div>
+        ))}
+        <div className="flex flex-wrap gap-1.5 my-1.5">
+          {TIPOS_PRODUCTO_SONRISA.map((t) => (
+            <button key={t.id} onClick={() => setProdTipo(t.id)}
+              className="rounded-full px-2.5 py-1" style={chip(prodTipo === t.id)} aria-pressed={prodTipo === t.id}>
+              <span className="text-[10px] font-semibold"
+                style={{ color: prodTipo === t.id ? COLORS.text : COLORS.textMuted }}>{t.icono} {t.nombre}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1.5">
+          <TextInput value={prodNombre} onChange={(ev) => setProdNombre(ev.target.value)}
+            placeholder="Nombre del producto" aria-label="Nombre del producto" />
+          <button onClick={() => { aplicar(anadirProductoSonrisa(estado, { tipo: prodTipo, nombre: prodNombre })); setProdNombre(''); }}
+            disabled={!prodNombre.trim()}
+            className="rounded-2xl px-3 disabled:opacity-40"
+            style={{ background: hexToRgba(accent, 0.12), border: `1px solid ${accent}` }}>
+            <span className="text-[11px] font-semibold" style={{ color: accent }}>Añadir</span>
+          </button>
+        </div>
+
+        {/* Apartado 12 — sugerencias, que no hacen nada solas. */}
+        {panel.sugerencias.length > 0 && (
+          <div className="mt-3">
+            {panel.sugerencias.map((s) => (
+              <p key={s.id} className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>💡 {s.texto}</p>
+            ))}
+          </div>
+        )}
+      </Card>
+    );
+  }
+
+  /* ── 📅 Revisiones ─────────────────────────────────────────────────── */
+  if (zona === 'revisiones') {
+    return (
+      <Card>
+        {cabecera('📅 Revisiones', () => setZona(null))}
+        {error && <p className="text-[10px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+        {panel.revisiones.map((r) => (
+          <div key={r.id} className="rounded-2xl p-2.5 mb-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+              🦷 {r.fecha}{r.hecha ? ' · hecha' : ''}
+            </p>
+            {r.nota && <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{r.nota}</p>}
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <button onClick={() => aplicar(editarRevision(estado, r.id, { aviso: !r.aviso }))}
+                className="text-[10px] font-semibold" style={{ color: r.aviso ? accent : COLORS.textMuted }}>
+                {r.aviso ? `🔔 ${avisoRevision(r.avisoTipo)?.nombre || ''}` : 'Recordármela'}
+              </button>
+              {!r.hecha && (
+                <button onClick={() => aplicar(editarRevision(estado, r.id, { hecha: true }))}
+                  className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>Ya fui</button>
+              )}
+              <button onClick={() => onEliminar?.('revisiones', r.id)}
+                className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>Eliminar</button>
+            </div>
+          </div>
+        ))}
+        {panel.revisiones.length === 0 && (
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+            Cuando tengas fecha, apúntala y la verás en tu calendario.
+          </p>
+        )}
+        <div className="space-y-2 mt-2">
+          <TextInput value={fechaRev} onChange={(ev) => setFechaRev(ev.target.value)}
+            placeholder="AAAA-MM-DD" aria-label="Fecha de la revisión" />
+          <TextInput value={notaRev} onChange={(ev) => setNotaRev(ev.target.value)}
+            placeholder="Una nota, si quieres" aria-label="Nota de la revisión" />
+          <PrimaryButton accent={accent} onClick={() => {
+            if (!aplicar(crearRevision(estado, { fecha: fechaRev, nota: notaRev }))) return;
+            setFechaRev(''); setNotaRev('');
+          }}>Apuntar revisión</PrimaryButton>
+        </div>
+      </Card>
+    );
+  }
+
+  /* ── 📈 Seguimiento ────────────────────────────────────────────────── */
+  if (zona === 'seguimiento') {
+    return (
+      <Card>
+        {cabecera('📈 Seguimiento', () => setZona(null))}
+        {error && <p className="text-[10px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+        {/* ⚠️ Derivado, y sin competición. */}
+        {panel.semana && (
+          <p className="text-[11px] mb-2" style={{ color: COLORS.text }}>{panel.semana.texto}</p>
+        )}
+        {panel.registros.map((r) => (
+          <div key={r.id} className="flex items-start gap-2 py-1">
+            <span className="min-w-0 flex-1">
+              <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>{r.fecha}</span>
+              <span className="block text-[11px]" style={{ color: COLORS.text }}>📝 {r.nota}</span>
+            </span>
+            <button onClick={() => onEliminar?.('registros', r.id)} aria-label={`Eliminar registro del ${r.fecha}`}>
+              <X size={13} style={{ color: COLORS.textMuted }} />
+            </button>
+          </div>
+        ))}
+        <div className="space-y-2 mt-2">
+          <TextInput value={nota} onChange={(ev) => setNota(ev.target.value)}
+            placeholder="¿Cómo lo llevas?" aria-label="Nota de seguimiento" />
+          <PrimaryButton accent={accent} onClick={() => {
+            if (!aplicar(registrarSonrisa(estado, { nota }))) return;
+            setNota('');
+          }}>Guardar</PrimaryButton>
+        </div>
+      </Card>
+    );
+  }
+
+  /* ── El panel ──────────────────────────────────────────────────────── */
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          {onCerrar && (
+            <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+              <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+            </button>
+          )}
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_SONRISA.titulo}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5">
+          {panel.partes.filter((p) => p.activa).map((p) => (
+            <Plaquita
+              key={p.id} accent={accent}
+              modulo={{ nombre: p.nombre, icono: p.icono, sub: '' }}
+              sub={{
+                higiene: panel.resumen.rutinas === 0 ? 'Crea la primera'
+                  : `${panel.resumen.rutinas} ${panel.resumen.rutinas === 1 ? 'rutina' : 'rutinas'}`,
+                dental: panel.resumen.productos === 0 ? 'Apunta lo que usas' : `${panel.resumen.productos} productos`,
+                revisiones: panel.resumen.proximaRevision || 'Sin ninguna apuntada',
+                seguimiento: panel.semana?.hechas ? `${panel.semana.hechas} esta semana` : 'Cuéntanos',
+              }[p.id] || ''}
+              onAbrir={() => setZona(p.id)}
+            />
+          ))}
+        </div>
+      </Card>
+
+      {/* ⚠️ Apartado 10 — la racha, SOLO si él la tiene. Si no, no se pinta. */}
+      {panel.racha && (
+        <Card>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>
+            🏆 {panel.racha.racha.nombre}
+          </p>
+          <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            {panel.racha.eventos.length} {panel.racha.eventos.length === 1 ? 'día' : 'días'} registrados
+          </p>
+        </Card>
+      )}
+
+      {/* Apartado 11 — consejos generales, iguales para todo el mundo. */}
+      <Card>
+        <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>💡 Consejos</p>
+        {panel.consejos.map((c) => (
+          <p key={c} className="text-[10px] mb-0.5" style={{ color: COLORS.textMuted }}>· {c}</p>
+        ))}
+      </Card>
+
+      {/* Apartado 14 — cada plaquita, con su interruptor. */}
+      <Card>
+        <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>⚙️ Gestionar apartados</p>
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+          Quita lo que no uses. Lo que hayas guardado se queda.
+        </p>
+        {panel.partes.map((p) => (
+          <div key={p.id} className="rounded-2xl p-2.5 flex items-center gap-2 mb-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <span className="text-sm leading-none" aria-hidden="true">{p.icono}</span>
+            <span className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>{p.nombre}</span>
+            <Switch checked={p.activa} onChange={() => onCambiar?.(alternarParteSonrisa(estado, p.id))}
+              accent={accent} label={p.nombre} />
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
 /** Apartado 1 de F13 — la entrada, con sus dos botones. */
 export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onEliminarRegistro }) {
   const [configurando, setConfigurando] = useState(false);
@@ -4529,13 +4998,14 @@ export function Recomendados({ estado, accent, onAnadir }) {
 /* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
-export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba }) {
+export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, rachas = null }) {
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
   const [perfilPelo, setPerfilPelo] = useState(false);   // false | 'panel' | 'perfil'
   const [skincare, setSkincare] = useState(false);       // F13
   const [barba, setBarba] = useState(false);             // F20
+  const [sonrisa, setSonrisa] = useState(false);         // F23
   const [ordenando, setOrdenando] = useState(false);
   /* ⚠️ **Se calcula UNA sola vez, al entrar en el módulo** (regla 4: los hooks,
      antes de cualquier `return`). Si se recalculara en cada render, pulsar
@@ -4567,6 +5037,13 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const subBarba = {
     sin_configurar: 'Si quieres, configúralo', ahora_no: 'Cuando quieras', eligiendo: 'Personalízalo',
   }[barbaEH.estado] || `${barbaEH.contestadas} de ${barbaEH.total} contestadas`;
+  /* F23 — el de Sonrisa, derivado igual. */
+  const sonrisaEH = useMemo(() => resumenSonrisa(estado), [estado]);
+  const subSonrisa = sonrisaEH.estado === 'sin_configurar' ? 'Si quieres, configúralo'
+    : (sonrisaEH.estado === 'ahora_no' ? 'Cuando quieras'
+      : (sonrisaEH.rutinas === 0 ? 'Crea tu rutina'
+        : `${sonrisaEH.rutinas} ${sonrisaEH.rutinas === 1 ? 'rutina' : 'rutinas'}`
+          + (sonrisaEH.hoy > 0 ? ` · ${sonrisaEH.hechasHoy}/${sonrisaEH.hoy} hoy` : '')));
   const subPelo = resumenPeloEH.rutinas > 0
     ? `${resumenPeloEH.rutinas} ${resumenPeloEH.rutinas === 1 ? 'rutina' : 'rutinas'}`
       + (resumenPeloEH.hoy > 0 ? ` · ${resumenPeloEH.hechasHoy}/${resumenPeloEH.hoy} hoy` : '')
@@ -4639,6 +5116,18 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     );
   }
 
+  /* F23 — la plaquita de Sonrisa abre su entrada, que decide entre la
+     bienvenida y el panel de sus cuatro apartados. */
+  if (sonrisa) {
+    return (
+      <SonrisaEH
+        estado={estado} accent={accent} rachas={rachas}
+        onCambiar={onCambiar} onCerrar={() => setSonrisa(false)}
+        onEliminar={onEliminarSonrisa}
+      />
+    );
+  }
+
   if (miEstilo) {
     return (
       <MiEstiloEH
@@ -4697,15 +5186,18 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
               const esPiel = m.id === MODULO_PIEL && !ordenando;
               /* F20 — y Barba el cuarto. */
               const esBarba = m.id === MODULO_BARBA && !ordenando;
+              /* F23 — Sonrisa, el quinto. */
+              const esSonrisa = m.id === MODULO_SONRISA && !ordenando;
               return (
                 <Plaquita
                   key={m.id} modulo={m} accent={accent}
                   sub={esArmario && estiloArmario ? resumenPlaquitaArmario
-                    : (esPelo ? subPelo : (esPiel ? subPiel : (esBarba ? subBarba : null)))}
+                    : (esPelo ? subPelo : (esPiel ? subPiel : (esBarba ? subBarba : (esSonrisa ? subSonrisa : null))))}
                   onAbrir={esArmario ? () => onIr(DESTINO_ARMARIO)
                     : (esPelo ? () => setPerfilPelo('panel')
                       : (esPiel ? () => setSkincare(true)
-                        : (esBarba ? () => setBarba(true) : null)))}
+                        : (esBarba ? () => setBarba(true)
+                          : (esSonrisa ? () => setSonrisa(true) : null))))}
                   orden={ordenando ? puedeMover(estado, m.id) : null}
                   onSubir={() => onCambiar(subirModulo(estado, m.id))}
                   onBajar={() => onCambiar(bajarModulo(estado, m.id))}

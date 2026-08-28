@@ -1600,7 +1600,14 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] ELIMINAR
 - [x] PRUEBAS
 
-#### EH · Fase 22/65 — MANOS, UÑAS Y PIES: CONFIGURACIÓN
+#### EH · Fase 22/65 — MANOS, UÑAS Y PIES: CONFIGURACIÓN ⏸ **BLOQUEADA (C-25)**
+
+> ⏸ **Pendiente de Josué, por la regla 49 — y es la tercera pregunta de C-25.** Su apartado 1 dice
+> *"dentro de 🧼 **Cuidado personal**"*, que es el módulo `higiene`, justo uno de los dos en disputa;
+> y dos de las siete casillas de la Fase 18 son *"Cuidado de manos"* y *"Cuidado de pies"*, que es
+> exactamente lo que esta fase construye. Hasta saber si Higiene y Cuidado corporal son uno o dos, no
+> se sabe dónde vive esto ni si sus datos se quedarían huérfanos. Se siguió por la **Fase 23**.
+
 - [ ] ACTIVACIÓN
 - [ ] UÑAS
 - [ ] LONGITUD
@@ -1634,39 +1641,79 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [ ] Reactivar.
 - [ ] Comprobar que no existen duplicados.
 
-#### EH · Fase 23/65 — HIGIENE BUCAL Y SONRISA
-- [ ] ACTIVACIÓN
-- [ ] HIGIENE DIARIA
-- [ ] PRODUCTOS
-- [ ] FRECUENCIA
-- [ ] RECORDATORIOS
-- [ ] CAMBIO DE CEPILLO
-- [ ] REVISIONES DENTALES
-- [ ] RECORDATORIO DE REVISIÓN
-- [ ] SEGUIMIENTO
-- [ ] RACHAS
-- [ ] CONSEJOS
-- [ ] PRODUCTOS RECOMENDADOS
-- [ ] COMPRAS
-- [ ] DESACTIVAR
-- [ ] CALENDARIO
-- [ ] ELIMINACIÓN
-- [ ] PRUEBAS
-- [ ] Activar higiene.
-- [ ] Crear rutina.
-- [ ] Editar pasos.
-- [ ] Registrar productos.
-- [ ] Programar cambio de cepillo.
-- [ ] Crear revisión.
-- [ ] Añadir recordatorio.
-- [ ] Añadir evento al calendario.
-- [ ] Activar/desactivar seguimiento.
-- [ ] Utilizar rachas globales.
-- [ ] Desactivar cada plaquita individualmente.
-- [ ] Reactivar.
-- [ ] Eliminar.
-- [ ] Recuperar.
-- [ ] Comprobar que no hay calendarios/productos/rachas duplicados.
+#### EH · Fase 23/65 — HIGIENE BUCAL Y SONRISA ✅ COMPLETADA (v1.86.0)
+
+> **`src/lib/sonrisa.js`** (191 comprobaciones) + la pantalla `SonrisaEH`. Sin SQL nuevo.
+>
+> ⚠️ **Construida fuera de orden**: la **Fase 22** está ⏸ bloqueada por **C-25**, y ésta no depende
+> de ella.
+>
+> ⚠️ **Es un módulo nuevo, y se añadió como manda la Fase 1**: *una línea* en `MODULOS_EH`, con su
+> categoría, su icono y sus ocho sinónimos de búsqueda. Ni un `case`, ni un `if`, ni un registro
+> aparte — hay una prueba que lo comprueba sobre el código de `estiloDeHombre.js`.
+>
+> ⚠️ **La racha es la GLOBAL, y si no la tiene NO se pinta** (apartado 10, con esas palabras: *"como
+> ya existe el sistema global de rachas, no crear otra racha… Si no: no mostrarla"*). Aquí **no se
+> guarda ni un contador**: `rachaDeSonrisa()` mira las definiciones que ya existen y devuelve `null`
+> si no hay ninguna suya. Ni se le propone crearla, que sería empujarle a algo que no ha pedido.
+>
+> ⚠️ **El cambio de cepillo se SUGIERE, no se agenda** (apartado 6): `sugerirCambioCepillo()` propone
+> y **no escribe**, y guardarla exige `confirmado`. Octavo `aplicarPlan` del proyecto. Y **cambiarlo
+> de verdad borra el plan anterior**: avisar de algo que ya hizo sería mentir.
+>
+> 🐛 **Un fallo real, cazado por sus propias pruebas:** las revisiones y el cambio de cepillo salían
+> en `eventosDeSonrisa` **sin filtrar por el rango pedido** — una revisión de octubre aparecía al
+> pedir los eventos de agosto, y el calendario la habría pintado en el mes equivocado.
+>
+> ⚠️ **Ni un calendario dental** (apartado 15), **ni una papelera propia** (apartado 16), **ni otro
+> inventario de productos** (apartado 3): tres líneas de catálogo en `papelera.js`, una entrada más en
+> `eventosDerivados` y el catálogo global de la Fase 17. Cuarto módulo de Estilo de Hombre que entra
+> en el calendario general por la misma puerta.
+>
+> ⚠️ **Consejos GENERALES, nunca un diagnóstico** (apartado 11): son frases fijas, iguales para todo
+> el mundo, y **no miran sus datos** — eso es justo lo que las mantiene generales. Hay una prueba de
+> que el panel devuelve la lista tal cual.
+>
+> ⚠️ **Y la cuenta de la semana se DERIVA** (apartado 9): *"esta semana: 10 rutinas realizadas"* sale
+> de lo hecho, no de un contador. Con cero se dice *"todavía no"*, no *"0 rutinas"*.
+>
+> ⚠️ **Dos pruebas con bomba de relojería, desactivadas:** `test-estilo-hombre.mjs` comprobaba
+> `MODULOS_EH.length === 13` **nueve veces**, y su propio Test 7 se llama *"un estado viejo no se
+> rompe al crecer el catálogo"*. Ahora comprueba que estén los trece que escribió Josué, y compara
+> contra el tamaño real.
+
+- [x] ACTIVACIÓN
+- [x] HIGIENE DIARIA
+- [x] PRODUCTOS
+- [x] FRECUENCIA
+- [x] RECORDATORIOS
+- [x] CAMBIO DE CEPILLO
+- [x] REVISIONES DENTALES
+- [x] RECORDATORIO DE REVISIÓN
+- [x] SEGUIMIENTO
+- [x] RACHAS
+- [x] CONSEJOS
+- [x] PRODUCTOS RECOMENDADOS
+- [x] COMPRAS
+- [x] DESACTIVAR
+- [x] CALENDARIO
+- [x] ELIMINACIÓN
+- [x] PRUEBAS
+- [x] Activar higiene.
+- [x] Crear rutina.
+- [x] Editar pasos.
+- [x] Registrar productos.
+- [x] Programar cambio de cepillo.
+- [x] Crear revisión.
+- [x] Añadir recordatorio.
+- [x] Añadir evento al calendario.
+- [x] Activar/desactivar seguimiento.
+- [x] Utilizar rachas globales.
+- [x] Desactivar cada plaquita individualmente.
+- [x] Reactivar.
+- [x] Eliminar.
+- [x] Recuperar.
+- [x] Comprobar que no hay calendarios/productos/rachas duplicados.
 
 #### EH · Fase 24/65 — PERFUMES Y FRAGANCIAS: PERFIL PERSONAL
 - [ ] ACTIVACIÓN

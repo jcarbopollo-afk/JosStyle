@@ -94,6 +94,10 @@ export const MODULOS_EH = [
   { id: 'skincare', nombre: 'Skincare', icono: '🧴', sub: 'Mi cuidado facial', fase: 6, categoria: 'cuidado', confirmar: true, recomendado: true, terminos: ['piel', 'cara', 'facial', 'crema', 'acne', 'acné', 'rutina'] },
   { id: 'higiene', nombre: 'Higiene', icono: '🧼', sub: 'Rutina diaria', fase: 18, categoria: 'cuidado', terminos: ['higiene', 'ducha', 'dientes', 'boca', 'manos', 'uñas', 'unas'] },
   { id: 'cuerpo', nombre: 'Cuidado corporal', icono: '🧍', sub: 'De cuello para abajo', fase: 21, categoria: 'cuidado', terminos: ['cuerpo', 'corporal', 'piel', 'desodorante', 'perfume', 'colonia'] },
+  /* ⚠️ EH F23 — *"dentro de 😁 Sonrisa"*. **Añadir un módulo es añadir una
+     línea**, con su categoría, su confirmación y sus sinónimos: ese es el punto
+     de extensión que construyó F1, y no hace falta ni un `case` ni un `if`. */
+  { id: 'sonrisa', nombre: 'Sonrisa', icono: '😁', sub: 'Higiene bucal', fase: 23, categoria: 'cuidado', terminos: ['sonrisa', 'dientes', 'boca', 'bucal', 'dental', 'dentista', 'cepillo', 'muelas'] },
   { id: 'fitness', nombre: 'Fitness', icono: '🏋️', sub: 'Físico y postura', fase: 26, categoria: 'fisico', terminos: ['fisico', 'físico', 'postura', 'entrenar', 'gimnasio', 'musculo', 'músculo'] },
   { id: 'sueno', nombre: 'Sueño', icono: '😴', sub: 'Descanso y aspecto', fase: 30, categoria: 'fisico', terminos: ['sueño', 'sueno', 'dormir', 'descanso', 'ojeras', 'cansancio'] },
   { id: 'salud', nombre: 'Salud', icono: '🧬', sub: 'Lo que se nota fuera', fase: 33, categoria: 'salud', confirmar: true, terminos: ['salud', 'medico', 'médico', 'revision', 'revisión', 'dental', 'vista'] },

@@ -1,5 +1,72 @@
 # CHANGELOG.md
 
+## v1.86.0 — EH Fase 23/65: higiene bucal y sonrisa
+
+### Qué se ha construido
+El módulo 😁 **Sonrisa**, con sus cuatro apartados: 🪥 Higiene diaria, 🦷 Cuidado dental, 📅 Revisiones
+y 📈 Seguimiento, cada uno con su interruptor. Se llega desde **Más → Estilo de hombre → Sonrisa**.
+
+### ⏸ Y la Fase 22 se suma a las bloqueadas
+Su apartado 1 dice *"dentro de 🧼 **Cuidado personal**"*, que es el módulo `higiene` —justo uno de los
+dos en disputa en **C-25**—, y dos de las siete casillas de la Fase 18 son *"Cuidado de manos"* y
+*"Cuidado de pies"*, que es exactamente lo que la 22 construye. Sin saber si Higiene y Cuidado
+corporal son uno o dos, no se sabe dónde vive ni si sus datos quedarían huérfanos. **Regla 49**: se
+anota y se sigue por la 23, que no depende de nada de eso.
+
+### Las decisiones que gobiernan la fase
+
+**1. ⚠️ Un módulo nuevo se añade con UNA LÍNEA.** `MODULOS_EH` gana una entrada con su categoría, su
+icono, su fase y sus ocho sinónimos de búsqueda. Ese es el punto de extensión que construyó la Fase 1
+—*"añadir un módulo es añadir una línea"*— y no ha hecho falta ni un `case`, ni un `if`, ni un
+registro aparte. Hay una prueba que lo comprueba leyendo `estiloDeHombre.js`.
+
+**2. ⚠️ La racha es la GLOBAL, y si no la tiene no se pinta.** El apartado 10 lo dice con esas
+palabras: *"como ya existe el sistema global de rachas, **no crear otra racha**… Si no: **no
+mostrarla**"*. Así que aquí **no se guarda ni un contador**: se mira si existe una definición suya que
+apunte a este módulo y, si no la hay, se devuelve `null`. Ni se le propone crearla.
+
+**3. ⚠️ El cambio de cepillo se SUGIERE, no se agenda** (apartado 6: *"puede sugerir una fecha…
+**pero no crear automáticamente una cita**"*). `sugerirCambioCepillo()` propone y no escribe, y
+guardarla exige `confirmado`. Octavo `aplicarPlan` del proyecto. Y **cambiarlo de verdad borra el plan
+anterior**: avisar de algo que ya hizo sería mentir.
+
+**4. ⚠️ Ni un calendario dental, ni una papelera propia, ni otro inventario.** Tres líneas en
+`papelera.js`, una entrada más en `eventosDerivados` y el catálogo global de la Fase 17. Cuarto módulo
+de Estilo de Hombre que entra en el calendario general por la misma puerta.
+
+**5. ⚠️ Consejos GENERALES, nunca un diagnóstico** (apartado 11). Son frases fijas, iguales para todo
+el mundo, y **no miran sus datos**: eso es justo lo que las mantiene generales. En cuanto los miraran
+pasarían a ser instrucciones personalizadas, que es lo que el enunciado prohíbe.
+
+**6. ⚠️ Y la cuenta de la semana se DERIVA** (apartado 9). *"Esta semana: 10 rutinas realizadas"* sale
+de lo hecho, no de un contador guardado. Con cero se dice *"todavía no"*, no *"0 rutinas"*.
+
+### 🐛 Un fallo real, cazado por sus propias pruebas
+`eventosDeSonrisa` devolvía las revisiones y el cambio de cepillo **sin filtrar por el rango pedido**:
+una revisión de octubre aparecía al pedir los eventos de agosto, y el calendario la habría pintado en
+el mes equivocado.
+
+### Dos bombas de relojería más, desactivadas
+`test-estilo-hombre.mjs` comprobaba `MODULOS_EH.length === 13` **nueve veces** —y su propio Test 7 se
+llama *"un estado viejo no se rompe al crecer el catálogo"*—. Ahora comprueba que estén los trece que
+escribió Josué en su Fase 2, y compara contra el tamaño real. Y la auditoría de ME F4 no veía el
+borrado de Sonrisa porque la colección iba como variable: ahora las tres van con su nombre escrito.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **191 comprobaciones nuevas**, **832 casos de
+renderizado** (40 nuevos) y **100 comprobaciones en Chromium**: se llega a Sonrisa, se configura, se
+ve que **el seguimiento no tiene plaquita porque viene apagado**, que **no hay racha porque no la
+tiene**, se usa la plantilla y **se escribe en Supabase con los recordatorios apagados**.
+
+### Archivos
+- **Nuevos:** `src/lib/sonrisa.js`, `scripts/test-sonrisa.mjs`.
+- **Modificados:** `src/lib/estiloDeHombre.js` (la línea del módulo), `src/lib/papelera.js`,
+  `src/lib/calendarioIntegracion.js`, `src/App.jsx`, `src/views/EstiloHombreView.jsx`,
+  `docs/03` (C-25 crece), `scripts/test-estilo-hombre.mjs`, `scripts/smoke-vistas.jsx`,
+  `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.85.0 — EH Fase 21/65: rutinas y seguimiento de barba, y tres fallos reales
 
 ### Qué se ha construido

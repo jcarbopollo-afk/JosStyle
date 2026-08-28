@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -42,6 +42,11 @@ import {
   decirAhoraNoBarba, elegirPartesBarba, contestarBarba, marcarProductoBarba,
   alternarParteBarba, ponerDiasAfeitado,
 } from '../src/lib/perfilBarba.js';
+import {
+  configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
+  crearRevision, registrarCambioCepillo, planificarCambioCepillo,
+  anadirProductoSonrisa, registrarSonrisa, ORIGEN_RACHA_SONRISA,
+} from '../src/lib/sonrisa.js';
 import {
   usarPlantillaBarba, crearRutinaBarba, marcarPasoBarba, omitirPasoBarba,
   registrarBarba, alternarRecordatorioBarba, rutinasBarba,
@@ -740,6 +745,31 @@ const CASOS = [
             });
             const barbaConRecordatorio = alternarRecordatorioBarba(barbaConRutina, rutBarba.id).estado;
             const barbaSinAfeitado = alternarParteBarba(barbaConRutina, PARTE_RUT_BARBA);
+            /* EH F23 — Sonrisa. ⚠️ Los estados que importan: la entrada, "ahora
+               no", el panel, cada uno de sus cuatro apartados, y —lo del
+               apartado 10— **con y sin racha global**, porque sin ella no se
+               pinta. */
+            const sonrisaBase = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['sonrisa', 'skincare']);
+            const sonrisaConf = configurarSonrisa(sonrisaBase, { hoy: HOY }).estado;
+            const sonrisaConRutina = usarPlantillaSonrisa(sonrisaConf, { hoy: HOY, confirmado: true }).estado;
+            const sonrisaConCepillo = planificarCambioCepillo(
+              registrarCambioCepillo(sonrisaConRutina, { fecha: '2026-06-01' }).estado,
+              '2026-08-30', { confirmado: true },
+            ).estado;
+            const sonrisaConProducto = anadirProductoSonrisa(
+              sonrisaConCepillo, { tipo: 'cepillo', nombre: 'Mi cepillo' }, { hoy: HOY },
+            ).estado;
+            const sonrisaConRevision = crearRevision(sonrisaConRutina, {
+              fecha: '2026-10-15', nota: 'Dentista de siempre', aviso: true, avisoTipo: 'una_semana',
+            }).estado;
+            const sonrisaConSeguimiento = registrarSonrisa(
+              alternarParteSonrisa(sonrisaConRutina, 'seguimiento'),
+              { nota: 'Prefiero por la noche' }, { hoy: HOY },
+            ).estado;
+            const RACHAS_SONRISA = {
+              definiciones: [{ id: 'r1', nombre: 'Higiene bucal', origen: ORIGEN_RACHA_SONRISA }],
+              eventos: [{ rachaId: 'r1', fecha: HOY }],
+            };
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop, onEliminar: noop, onEliminarRegistro: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
@@ -875,6 +905,20 @@ const CASOS = [
               ['RutinasBarbaEH · con recordatorio', RutinasBarbaEH, () => pp(barbaConRecordatorio)],
               ['RutinasBarbaEH · afeitado apagado', RutinasBarbaEH, () => pp(barbaSinAfeitado)],
               ['PanelBarba · con rutina', PanelBarba, () => pp(barbaConHistorial)],
+              /* EH Fase 23 — Sonrisa. */
+              ['SonrisaEH · entrada', SonrisaEH, () => pp(sonrisaBase)],
+              ['SonrisaEH · ahora no', SonrisaEH, () => pp(decirAhoraNoSonrisa(sonrisaBase).estado)],
+              ['SonrisaEH · panel', SonrisaEH, () => pp(sonrisaConf)],
+              ['SonrisaEH · con rutinas', SonrisaEH, () => pp(sonrisaConRutina)],
+              ['SonrisaEH · con cepillo planificado', SonrisaEH, () => pp(sonrisaConCepillo)],
+              ['SonrisaEH · con producto', SonrisaEH, () => pp(sonrisaConProducto)],
+              ['SonrisaEH · con revisión', SonrisaEH, () => pp(sonrisaConRevision)],
+              ['SonrisaEH · con seguimiento', SonrisaEH, () => pp(sonrisaConSeguimiento)],
+              /* ⚠️ Apartado 10 — con racha global se pinta; sin ella, no. */
+              ['SonrisaEH · con racha global', SonrisaEH, () =>
+                ({ ...pp(sonrisaConRutina), rachas: RACHAS_SONRISA })],
+              ['SonrisaEH · partes apagadas', SonrisaEH, () =>
+                pp(alternarParteSonrisa(alternarParteSonrisa(sonrisaConRutina, 'higiene'), 'revisiones'))],
               ['ProductosBarbaEH · sin catálogo', ProductosBarbaEH, () => pp(barbaTodo)],
               ['ProductosBarbaEH · con productos', ProductosBarbaEH, () => pp(barbaConProducto)],
             ];

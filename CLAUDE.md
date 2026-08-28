@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.85.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.86.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 19/65**, quedan 44 — **dos de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 20/65**, quedan 43 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -149,19 +149,22 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 19/65** (v1.85.0: F1-F17, **F20 y F21**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 20/65** (v1.86.0: F1-F17, **F20, F21 y F23**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
-⏸ **EH F18 y F19 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
+⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
 *Higiene* y *Cuidado corporal* como **dos módulos** del catálogo; el objetivo de la Fase 18 y el
 apartado 1 de la Fase 19 los tratan como **uno solo** llamado *"Cuerpo e higiene"*. Las dos lecturas
 rompen un prompt suyo y cambian lo que ve en pantalla, así que **regla 49**: se anotó en `docs/03`
-con tres preguntas concretas y se siguió por la 20. **No construirlas hasta que conteste.**
+con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 también depende**: su
+*"🧼 Cuidado personal"* es el módulo en disputa, y dos de las siete casillas de la F18 son *"Cuidado
+de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
+conteste.**
 
-La siguiente candidata es **EH · Fase 22/65 — Manos, uñas y pies: configuración**.
+La siguiente candidata es **EH · Fase 24/65 — Perfumes y fragancias: perfil personal**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20 y F21 dejaron cincuenta y siete cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23 dejaron sesenta y dos cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -314,8 +317,20 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 - ⚠️ **Borrar una rutina NO borra su historial** (F21): *"23/08 — Afeitado ⭐ 5/5"* pasó. Los
   registros se quedan huérfanos, como los cortes y las citas de F11.
 - ⚠️ **Una cuenta exacta de llaves en una prueba es una bomba de relojería.** La de
-  `test-papelera.mjs` saltó en F21 al añadir dos entradas legítimas, y ya había saltado antes.
-  Comprobar **que estén las que tienen que estar**, no cuántas hay.
+  `test-papelera.mjs` saltó en F21 al añadir dos entradas legítimas, y la de `test-estilo-hombre.mjs`
+  —`MODULOS_EH.length === 13`, **nueve veces**— saltó en F23. Comprobar **que estén las que tienen
+  que estar**, no cuántas hay.
+- ⚠️ **Añadir un módulo es UNA LÍNEA en `MODULOS_EH`** (F1, confirmado por F23): categoría, icono,
+  fase y sinónimos van ahí. Ni un `case`, ni un `if`, ni un registro aparte.
+- ⚠️ **La racha es la GLOBAL, y si no la tiene NO se pinta** (F23, apartado 10). Nunca un contador
+  guardado, y nunca proponerle crearla: sería empujarle a algo que no ha pedido.
+- ⚠️ **Un evento derivado FILTRA por el rango que le piden** (F23). Sin eso, una revisión de octubre
+  salía al pedir los eventos de agosto y el calendario la pintaba en el mes equivocado.
+- ⚠️ **Un consejo "general" no mira sus datos** (F23, apartado 11). En cuanto los mira, deja de ser
+  general y pasa a ser una instrucción personalizada, que es lo que el enunciado prohíbe.
+- ⚠️ **La auditoría de ME F4 lee el código y busca los NOMBRES LITERALES** de módulo y colección en
+  `eliminarConPapelera(...)`. Una colección pasada como variable no la ve, y salta como "colección
+  sin borrado real".
 
 ⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
 que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el

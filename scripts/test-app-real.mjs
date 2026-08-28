@@ -79,6 +79,8 @@ const ESTILO_GUARDADO = {
     { id: 'pelo', activo: true, orden: 0, config: {} },
     // EH F20 — Barba encendida, y todavía sin configurar: la entrada del apartado 1.
     { id: 'barba', activo: true, orden: 2, config: {} },
+    // EH F23 — Sonrisa encendida y sin configurar: su pantalla de entrada.
+    { id: 'sonrisa', activo: true, orden: 3, config: {} },
     /* ⚠️ Con el perfil de piel empezado: si no, Skincare enseña su puerta de
        entrada ("Configurar / Ahora no") y no se llega al panel. */
     { id: 'skincare', activo: true, orden: 1, config: { necesidadesPiel: 'hidratacion', complejidadPiel: 'basico' } },
@@ -334,5 +336,51 @@ const trasOmitir = guardado.filter((g) => g && g.key === 'estiloHombre').at(-1);
 const omitidos = trasOmitir?.value?.modulos?.find((m) => m.id === 'barba')?.config?.rutinas?.hechos?.[0]?.omitidos || [];
 ok(omitidos.length === 1, '⚠️ Y omitir SE GUARDA como omitido, no como hecho');
 ok(/Omitido hoy/.test(await ver()), 'Y la pantalla lo dice');
+
+/* ── 8 · SONRISA, DE PRINCIPIO A FIN (EH F23) ──────────────────────────── */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+ok(await pulsar('Sonrisa'), 'Sonrisa (EH F23) se abre desde Estilo de hombre');
+const son = await ver();
+ok(/Higiene bucal/.test(son), 'Con su entrada');
+ok(/Ahora no/.test(son), 'Y su "Ahora no": es opcional');
+
+guardado.length = 0;
+ok(await pulsar('Sí, configurarlo'), 'Se puede configurar');
+await page.waitForTimeout(1000);
+const panelSon = await ver();
+['Higiene diaria', 'Cuidado dental', 'Revisiones'].forEach((p) =>
+  ok(panelSon.includes(p), `Se ve la plaquita "${p}"`));
+/* ⚠️ Las encendidas salen DOS veces —su plaquita y su interruptor—; el
+   seguimiento, apagado, sale solo una: la del interruptor, que es donde tiene
+   que estar para poder encenderlo (apartado 14). */
+const veces = (t) => panelSon.split(t).length - 1;
+ok(veces('Seguimiento') === 1,
+  '⚠️ El seguimiento viene apagado: no tiene plaquita, solo su interruptor (apartado 9)');
+ok(veces('Revisiones') === 2, 'Y las encendidas sí tienen plaquita');
+ok(/Gestionar apartados/.test(panelSon), 'Con su ⚙️ Gestionar apartados (apartado 14)');
+ok(/Consejos/.test(panelSon), 'Con sus consejos generales');
+ok(!/🏆/.test(panelSon), '⚠️ Y SIN racha, porque no tiene una: no se pinta (apartado 10)');
+
+ok(await pulsar('Higiene diaria'), 'Higiene diaria se abre');
+const hig = await ver();
+ok(/Mi rutina de higiene bucal/.test(hig), 'Con la plantilla del apartado 2');
+ok(/Cepillado/.test(hig) && /Hilo dental/.test(hig), 'Y sus pasos');
+
+guardado.length = 0;
+ok(await pulsar('Usar esta rutina'), 'Se puede usar la plantilla');
+await page.waitForTimeout(1200);
+const escSon = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escSon.length > 0, '⚠️ PERSISTENCIA: las rutinas se ESCRIBEN en Supabase');
+const rutSon = escSon.at(-1)?.value?.modulos?.find((m) => m.id === 'sonrisa')?.config?.sonrisa?.rutinas || [];
+ok(rutSon.length === 2, 'Las dos del enunciado: mañana y noche');
+ok(rutSon.every((r) => r.recordatorio === false), '⚠️ Y con el recordatorio APAGADO');
+
+const trasPlantilla = await ver();
+ok(/Mañana/.test(trasPlantilla) && /Noche/.test(trasPlantilla), '⚠️ Y la pantalla las enseña');
+ok(/Omitir hoy/.test(trasPlantilla), 'Con su "Omitir hoy" en cada paso');
+ok(/Pendiente|Empezada|Hecha/.test(trasPlantilla), 'Y el estado del día en palabras');
 
 await salir(browser);

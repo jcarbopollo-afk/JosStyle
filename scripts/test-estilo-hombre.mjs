@@ -32,7 +32,18 @@ const HOY = '2026-08-27';
    =========================================================================== */
 console.log('\n═══ El catálogo de módulos ═══\n');
 {
-  comprobar('Están los trece módulos del enunciado', MODULOS_EH.length === 13);
+  /* ⚠️ **Aquí había un `=== 13` repetido nueve veces, y el catálogo está hecho
+     para crecer**: el Test 7 de más abajo se llama literalmente *"un estado
+     viejo NO se rompe al crecer el catálogo"*. EH F23 añadió `sonrisa` con todo
+     el derecho y saltaron las nueve. Lo que importa es **que estén los que
+     Josué escribió en su Fase 2** y que el normalizador devuelva SIEMPRE el
+     catálogo entero, sea del tamaño que sea. */
+  comprobar('Están los trece módulos que escribió Josué en la Fase 2',
+    ['estilo', 'pelo', 'barba', 'skincare', 'higiene', 'cuerpo', 'fitness', 'sueno',
+      'salud', 'habitos', 'progreso', 'educacion', 'productos']
+      .every((id) => MODULOS_EH.some((m) => m.id === id)));
+  comprobar('Y ninguno se ha quedado sin categoría ni sin sinónimos',
+    MODULOS_EH.every((m) => m.categoria && Array.isArray(m.terminos) && m.terminos.length > 0));
   comprobar('CLAVE · Cada uno con icono, nombre y descripción corta',
     MODULOS_EH.every((m) => m.icono && m.nombre && m.sub));
   comprobar('⚠️ CLAVE · Y con la FASE en la que se construye su contenido',
@@ -55,7 +66,7 @@ console.log('\n═══ Test 1 · Usuario nuevo ═══\n');
   comprobar('CLAVE · ...y la pantalla lo sabe', estadoPantalla(nuevo) === 'sin_configurar');
   comprobar('⚠️ CLAVE · Todos los módulos nacen APAGADOS: encenderlos sería decidir por él',
     nuevo.modulos.every((m) => m.activo === false));
-  comprobar('CLAVE · Pero están todos, listos para elegir', nuevo.modulos.length === 13);
+  comprobar('CLAVE · Pero están todos, listos para elegir', nuevo.modulos.length === MODULOS_EH.length);
   comprobar('Hay tres estados de pantalla', ESTADOS_PANTALLA.length === 3);
   comprobar('El estado por defecto es el correcto', DEFAULT_ESTILO_HOMBRE.configurado === false);
 }
@@ -71,7 +82,7 @@ console.log('\n═══ Test 2 · Selecciona 3 módulos ═══\n');
   comprobar('CLAVE · ...y son los que eligió', modulosActivos(e).map((m) => m.id).join() === 'skincare,pelo,habitos');
   comprobar('⚠️ CLAVE · En EL ORDEN en que los eligió, no en el del catálogo',
     modulosActivos(e)[0].id === 'skincare');
-  comprobar('CLAVE · Los demás siguen ahí, apagados', normalizarEstiloHombre(e).modulos.length === 13);
+  comprobar('CLAVE · Los demás siguen ahí, apagados', normalizarEstiloHombre(e).modulos.length === MODULOS_EH.length);
   comprobar('Ya está configurado', e.configurado === true && estadoPantalla(e) === 'con_modulos');
   comprobar('CLAVE · Y se guarda cuándo', e.creadoEn === HOY);
   comprobar('Las plaquitas traen su icono y su nombre',
@@ -109,7 +120,7 @@ console.log('\n═══ Tests 4 y 5 · Desactivar y volver a activar ═══\
   const sinPelo = alternarModulo(e, 'pelo', false);
   comprobar('TEST 4 · Desactivar un módulo lo quita de la pantalla', modulosActivos(sinPelo).length === 2);
   comprobar('CLAVE · ...y ya no está activo', estaActivo(sinPelo, 'pelo') === false);
-  comprobar('CLAVE · Pero SIGUE en la lista de gestionar', todosLosModulos(sinPelo).length === 13);
+  comprobar('CLAVE · Pero SIGUE en la lista de gestionar', todosLosModulos(sinPelo).length === MODULOS_EH.length);
 
   const conPelo = alternarModulo(sinPelo, 'pelo', true);
   comprobar('TEST 5 · Volver a activarlo lo devuelve', modulosActivos(conPelo).length === 3);
@@ -144,7 +155,7 @@ console.log('\n═══ Test 6 · Desactivar NO borra datos ═══\n');
   comprobar('CLAVE · Guardar config FUSIONA, no sustituye: una fase no borra lo de otra',
     Object.keys(guardarConfig(e, 'skincare', { spf: 50 }).modulos.find((m) => m.id === 'skincare').config).length === 3);
   comprobar('Guardar en un módulo que no existe no revienta',
-    normalizarEstiloHombre(guardarConfig(e, 'zzz', { x: 1 })).modulos.length === 13);
+    normalizarEstiloHombre(guardarConfig(e, 'zzz', { x: 1 })).modulos.length === MODULOS_EH.length);
 }
 
 /* ===========================================================================
@@ -165,7 +176,7 @@ console.log('\n═══ Test 7 · Un módulo nuevo no rompe nada ═══\n');
   };
   const migrado = normalizarEstiloHombre(viejo);
 
-  comprobar('⚠️ TEST 7 · Un estado viejo NO se rompe al crecer el catálogo', migrado.modulos.length === 13);
+  comprobar('⚠️ TEST 7 · Un estado viejo NO se rompe al crecer el catálogo', migrado.modulos.length === MODULOS_EH.length);
   comprobar('⚠️ CLAVE · Lo que ya tenía sigue activo', modulosActivos(migrado).length === 2);
   comprobar('⚠️ CLAVE · ...con su configuración intacta',
     migrado.modulos.find((m) => m.id === 'skincare').config.tipoPiel === 'seca');
@@ -181,9 +192,9 @@ console.log('\n═══ Test 7 · Un módulo nuevo no rompe nada ═══\n');
     !conFantasma.modulos.some((m) => m.id === 'modulo_retirado'));
   comprobar('CLAVE · ...y los demás siguen intactos', modulosActivos(conFantasma).length === 2);
 
-  comprobar('Basura entera no revienta', normalizarEstiloHombre('hola').modulos.length === 13);
+  comprobar('Basura entera no revienta', normalizarEstiloHombre('hola').modulos.length === MODULOS_EH.length);
   comprobar('Un módulo guardado sin id se descarta',
-    normalizarEstiloHombre({ modulos: [{ activo: true }] }).modulos.length === 13);
+    normalizarEstiloHombre({ modulos: [{ activo: true }] }).modulos.length === MODULOS_EH.length);
 }
 
 /* ===========================================================================
@@ -238,8 +249,8 @@ console.log('\n═══ Estados de pantalla y resumen ═══\n');
     estadoPantalla(alternarModulo(configurarPrimeraVez(null, ['pelo']), 'pelo', false)) === 'sin_modulos');
 
   const r = resumenEstiloHombre(configurarPrimeraVez(null, ['skincare', 'pelo'], { hoy: HOY }));
-  comprobar('El resumen cuenta los activos', r.activos === 2 && r.total === 13);
-  comprobar('...y los apagados', r.apagados === 11);
+  comprobar('El resumen cuenta los activos', r.activos === 2 && r.total === MODULOS_EH.length);
+  comprobar('...y los apagados', r.apagados === MODULOS_EH.length - 2);
   comprobar('⚠️ CLAVE · Y dice que HOY NINGUNO tiene contenido todavía', r.conContenido === 0);
   comprobar('CLAVE · ...porque el enunciado prohíbe construirlo en esta fase', r.proximaFase === 2);
   comprobar('La versión está declarada', VERSION_EH === 1);

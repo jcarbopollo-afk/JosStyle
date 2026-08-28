@@ -61,6 +61,11 @@ import { DEFAULT_PAPELERA, purgarCaducados, prepararEliminacion, prepararRestaur
 import { eliminarRegistroPiel, restaurarRegistroPiel } from './lib/seguimientoPiel';
 // EH F21 — lo mismo para barba: rutinas y registros, a la papelera de siempre.
 import { eliminarRegistroBarba, restaurarRegistroBarba, eliminarRutinaConPapelera, restaurarRutinaBarba } from './lib/rutinasBarba';
+// EH F23 — y lo mismo para Sonrisa: rutinas, revisiones y registros.
+import {
+  eliminarRutinaSonrisa, restaurarRutinaSonrisa, eliminarRevision, restaurarRevision,
+  eliminarRegistroSonrisa, restaurarRegistroSonrisa,
+} from './lib/sonrisa';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.
@@ -1127,10 +1132,25 @@ export default function App() {
     });
   };
 
+  /* ⚠️ EH F23, apartado 16 — igual que barba y piel: viven dentro de la
+     `config` de su módulo, así que van por su puerta y acaban en LA MISMA
+     papelera, con su retención y su recuperación. */
+  const eliminarDeSonrisa = (coleccion, id) => {
+    const fn = { rutinas: eliminarRutinaSonrisa, revisiones: eliminarRevision, registros: eliminarRegistroSonrisa }[coleccion];
+    if (!fn) return;
+    const r = fn(estiloHombre, id);
+    if (r.error) return;
+    snapshotAndSave({
+      estiloHombre: r.estado,
+      papelera: { ...papelera, elementos: [...papelera.elementos, r.entrada] },
+    });
+  };
+
   const eliminarConPapelera = (modulo, coleccion, id) => {
     // Los registros de piel no son una lista de primer nivel: van por su puerta.
     if (modulo === 'skincare' && coleccion === 'registros') return eliminarRegistroDePiel(id);
     if (modulo === 'barba') return eliminarDeBarba(coleccion, id);
+    if (modulo === 'sonrisa') return eliminarDeSonrisa(coleccion, id);
     const entradaModulo = MODULOS_PAPELERA[modulo];
     if (!entradaModulo) return;
     const resultado = prepararEliminacion(entradaModulo[0], modulo, coleccion, id, new Date().toISOString());
@@ -1150,6 +1170,17 @@ export default function App() {
     if (entrada.modulo === 'skincare' && entrada.coleccion === 'registros') {
       const r = restaurarRegistroPiel(estiloHombre, entrada);
       if (r.error) return;
+      snapshotAndSave({
+        estiloHombre: r.estado,
+        papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
+      });
+      return;
+    }
+    // EH F23 — y Sonrisa, por la misma puerta.
+    if (entrada.modulo === 'sonrisa') {
+      const fn = { rutinas: restaurarRutinaSonrisa, revisiones: restaurarRevision, registros: restaurarRegistroSonrisa }[entrada.coleccion];
+      const r = fn ? fn(estiloHombre, entrada) : null;
+      if (!r || r.error) return;
       snapshotAndSave({
         estiloHombre: r.estado,
         papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
@@ -1877,6 +1908,15 @@ export default function App() {
             onEliminarRegistro={(id) => eliminarConPapelera('skincare', 'registros', id)}
             onEliminarRegistroBarba={(id) => eliminarConPapelera('barba', 'registros', id)}
             onEliminarRutinaBarba={(id) => eliminarConPapelera('barba', 'rutinas', id)}
+            /* ⚠️ Las tres, con su nombre escrito: la auditoría de ME F4 comprueba
+               sobre el código que toda colección del catálogo tenga un borrado
+               de verdad, y una colección pasada como variable no se ve. */
+            onEliminarSonrisa={(coleccion, id) => {
+              if (coleccion === 'rutinas') return eliminarConPapelera('sonrisa', 'rutinas', id);
+              if (coleccion === 'revisiones') return eliminarConPapelera('sonrisa', 'revisiones', id);
+              return eliminarConPapelera('sonrisa', 'registros', id);
+            }}
+            rachas={rachas}
           />
         );
 

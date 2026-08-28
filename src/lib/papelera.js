@@ -110,6 +110,11 @@ export const CATALOGO_PAPELERA = {
      del motor**: dos líneas de catálogo y ya está. */
   'barba.rutinas': { modulo: 'barba', coleccion: 'rutinas', tipo: 'Rutina de barba', campos: ['nombre'], icono: 'barba' },
   'barba.registros': { modulo: 'barba', coleccion: 'registros', tipo: 'Registro de barba', campos: ['fecha'], icono: 'barba' },
+  /* ⚠️ EH F23, apartado 16 — *"cualquier eliminación utilizará 🗑️ Eliminados
+     recientemente global"*. Tres líneas más, y ni una función nueva. */
+  'sonrisa.rutinas': { modulo: 'sonrisa', coleccion: 'rutinas', tipo: 'Rutina de higiene bucal', campos: ['nombre'], icono: 'sonrisa' },
+  'sonrisa.revisiones': { modulo: 'sonrisa', coleccion: 'revisiones', tipo: 'Revisión dental', campos: ['fecha'], icono: 'sonrisa' },
+  'sonrisa.registros': { modulo: 'sonrisa', coleccion: 'registros', tipo: 'Registro de higiene bucal', campos: ['fecha'], icono: 'sonrisa' },
   'relacion.fechas': { modulo: 'relacion', coleccion: 'fechas', tipo: 'Fecha importante', campos: ['etiqueta'], icono: 'relacion', privado: true },
 };
 

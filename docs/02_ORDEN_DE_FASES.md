@@ -232,9 +232,11 @@ escribir código.
 
 | v1.85.0 | **EH F21** | Barba y afeitado: rutinas y seguimiento. ⚠️ **Casi todo ya existía**: `motorRutinas.js` (F14), la papelera, el calendario global. 🐛 **Y arregló un fallo de la F20**: las rutinas colgaban de la casilla *"Afeitado"*, así que **quien solo marcaba "Barba" no podía crear ninguna** — ahora `rutinas` es el interruptor propio que pedía el apartado 16. 🐛 **Y dos más cazados por el navegador**: `TEXTOS_ESTADO_DIA` son textos, no objetos, y la pantalla leía `.nombre`. ⚠️ **Omitir es una TERCERA cosa** y sale de la cuenta; **borrar la rutina no borra su historial** |
 
+| v1.86.0 | **EH F23** + ⏸ **C-25 crece** | Higiene bucal y sonrisa. ⚠️ **Un módulo nuevo se añade con UNA LÍNEA en `MODULOS_EH`**, que es el punto de extensión de la F1. ⚠️ **La racha es la GLOBAL y si no la tiene NO se pinta** (apartado 10): ni un contador guardado. ⚠️ **El cambio de cepillo se SUGIERE, no se agenda** (octavo `aplicarPlan`). 🐛 **Y un fallo real**: las revisiones salían sin filtrar por el rango pedido, así que una de octubre aparecía al pedir agosto. ⏸ **La F22 se suma a C-25**: su "🧼 Cuidado personal" es el módulo en disputa |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 19/65** (F1-F17, F20 y F21; **F18 y F19 ⏸ bloqueadas por C-25**). Quedan **44** fases
-de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (42, dos de ellas bloqueadas).
+3/5 y **EH por 20/65** (F1-F17, F20, F21 y F23; **F18, F19 y F22 ⏸ bloqueadas por C-25**). Quedan
+**43** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (41, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

@@ -417,7 +417,7 @@ prohíbe la regla 8.
 
 ---
 
-### 🔴 C-25 — ¿Higiene y Cuidado corporal son UN módulo o DOS? · **⏸ PENDIENTE DE JOSUÉ, bloquea EH F18 y F19**
+### 🔴 C-25 — ¿Higiene y Cuidado corporal son UN módulo o DOS? · **⏸ PENDIENTE DE JOSUÉ, bloquea EH F18, F19 y F22**
 
 **Encontrada al abrir EH F18.** Dos prompts de Josué dicen cosas distintas, y la diferencia se ve en
 la pantalla:
@@ -457,9 +457,16 @@ de bien para defender una que la otra.
 3. *Cuidado de manos* y *Cuidado de pies*: ¿son casillas de este bloque, o son la Fase 22 y aquí
    solo se encienden?
 
-**Mientras tanto** (regla 49: *"se detiene la fase afectada, no la sesión"*): **F18 y F19 quedan sin
-construir**, y se sigue por **F20 (Barba y afeitado)**, que es un módulo con una sola entrada en
-`MODULOS_EH` y no depende de esto para nada. Cuando conteste, F18 y F19 se retoman en su sitio.
+**⏸ Y bloquea también la F22 (Manos, uñas y pies), por la tercera pregunta.** Su apartado 1 dice
+*"dentro de 🧼 **Cuidado personal**"* —que es el módulo `higiene`, justo uno de los dos en disputa—,
+y dos de las siete casillas de la F18 son *"Cuidado de manos"* y *"Cuidado de pies"*, que es
+exactamente lo que la F22 construye. Sin saber si Higiene y Cuidado corporal son uno o dos, no se
+sabe dónde vive la F22 ni si sus datos se quedarían huérfanos el día que se decida.
+
+**Mientras tanto** (regla 49: *"se detiene la fase afectada, no la sesión"*): **F18, F19 y F22 quedan
+sin construir**, y se ha seguido por **F20 y F21 (Barba y afeitado)** y **F23 (Sonrisa)**, que son
+módulos con una sola entrada en `MODULOS_EH` y no dependen de esto para nada. Cuando conteste, las
+tres se retoman en su sitio.
 
 ---
 
