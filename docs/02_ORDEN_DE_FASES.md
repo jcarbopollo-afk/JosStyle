@@ -226,8 +226,10 @@ escribir código.
 
 | v1.82.0 | **EH F16** + 🚨 **DOS FALLOS QUE IMPEDÍAN QUE LA APP ARRANCARA** | **La aplicación llevaba meses sin funcionar, y ninguna de las 5 800 comprobaciones lo veía.** (1) `App.jsx` nunca importó `papelera.js`: `purgarCaducados` lanzaba un TypeError EN MITAD de la carga, sin `try/catch`, así que **`setEstiloHombre`, `setArmario`, `setHorarioTop`, `setRachas` y `setAudio` no llegaban a ejecutarse** — ningún módulo de la Entrega 2 cargaba sus datos. (2) Cinco hooks estaban DESPUÉS de los `return` condicionales (regla 4): React lanzaba *"Rendered more hooks…"* y **tumbaba la app entera**. Las dos cosas explican por qué la interfaz "seguía igual" por más fases que se construyeran. Arreglado, y **`scripts/test-app-real.mjs` abre la app en Chromium** y comprueba la cadena entera. Además, EH F16: el motor de recomendaciones, extraído y compartido con F9 y F12 |
 
+| v1.83.0 | **EH F17** | Productos, farmacia, Amazon y packs de skincare. ⚠️ **La condición de finalización pedía el motor** —*"evitando crear cinco catálogos diferentes"*—, así que lo genérico se extrajo a `motorProductos.js` y Pelo y Piel lo comparten: **las 169 pruebas de F10 pasaron sin tocar ni una**. ⚠️ **UN inventario, el de la Fase 13**, ampliado, no un segundo. 🐛 **Y el fallo de normalizador por decimoctava vez**: `normalizarPiel` recortaba cada producto a `{id, nombre}`, así que el siguiente guardado se habría llevado la ficha entera. ⚠️ **Catálogo vacío (D2-03), nunca un enlace inventado y nunca una compra**, con pruebas sobre el código |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 16/65**. Quedan **47** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (45).
+3/5 y **EH por 17/65**. Quedan **46** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (44).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

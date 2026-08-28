@@ -272,6 +272,12 @@ else
   fallo "Fallan las recomendaciones de piel"; grep '✗' /tmp/jc_eh16.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-productos-piel.mjs >/tmp/jc_eh17.log 2>&1; then
+  ok "Productos, farmacia, Amazon y packs de skincare (EH F17) — $(grep -c '✓' /tmp/jc_eh17.log) comprobaciones"
+else
+  fallo "Fallan los productos de piel"; grep '✗' /tmp/jc_eh17.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

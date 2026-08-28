@@ -28,12 +28,16 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
 import { crearRutinaPiel, marcarPasoPiel, omitirPasoPiel, alternarPartePiel, usarPlantilla } from '../src/lib/rutinasPiel.js';
 import { registrarPiel, PARTE_SEGUIMIENTO } from '../src/lib/seguimientoPiel.js';
+import {
+  crearProductoPiel, alternarMioPiel, marcarNoDisponiblePiel, crearPackPiel,
+  productosPiel, PARTE_PRODUCTOS,
+} from '../src/lib/productosPiel.js';
 import { crearRutina, marcarRutinaEntera, registrarCambio, alternarParte, datosPelo } from '../src/lib/rutinasPelo.js';
 import { guardarRecomendacion, descartar, REGLAS_PELO } from '../src/lib/recomendacionesPelo.js';
 import { crearProductoPelo, anadirTienda, marcarNoDisponible, crearPack } from '../src/lib/productosPelo.js';
@@ -661,6 +665,36 @@ const CASOS = [
                 fecha: f, como: 'normal', aspectos: { hidratacion: v }, nota: 'Una nota',
               }, { hoy: HOY }).estado;
             });
+            /* EH F17 — productos de skincare. ⚠️ Los estados que importan: sin
+               ninguno (donde sale la frase de "no hay catálogo"), con la ficha
+               entera y su enlace, uno de farmacia SIN enlace —el apartado 6—,
+               uno afiliado (que es cuando sale el aviso), uno no disponible con
+               alternativa, y un pack. */
+            const pielConProducto = crearProductoPiel(pielConNivel, {
+              nombre: 'Crema hidratante', marca: 'Una marca', categoria: 'hidratante',
+              precio: 12, nivel: 'basico', tiposPiel: ['mixta'], objetivos: ['hidratacion'],
+              caracteristicas: ['Textura ligera'],
+              tiendas: [{ tipo: 'amazon', url: 'https://www.amazon.es/dp/EJEMPLO' }],
+            }, { hoy: HOY }).estado;
+            const pielDeFarmacia = crearProductoPiel(pielConProducto, {
+              nombre: 'Limpiador suave', categoria: 'limpiador',
+              tiendas: [{ tipo: 'farmacia', nombre: 'Farmacia' }],
+            }, { hoy: HOY }).estado;
+            const pielAfiliado = crearProductoPiel(pielDeFarmacia, {
+              nombre: 'Protector solar', categoria: 'solar',
+              tiendas: [{ tipo: 'amazon', url: 'https://www.amazon.es/dp/OTRO', afiliado: true }],
+            }, { hoy: HOY }).estado;
+            const otroHidratante = crearProductoPiel(pielAfiliado, {
+              nombre: 'Otra crema', categoria: 'hidratante',
+            }, { hoy: HOY });
+            const pielConAgotado = marcarNoDisponiblePiel(
+              otroHidratante.estado,
+              productosPiel(otroHidratante.estado).find((x) => x.nombre === 'Crema hidratante').id,
+            ).estado;
+            const pielConPack = crearPackPiel(
+              alternarMioPiel(pielAfiliado, productosPiel(pielAfiliado)[0].id).estado,
+              'Pack de mañana', productosPiel(pielAfiliado).map((x) => x.id), { hoy: HOY },
+            ).estado;
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop, onEliminar: noop, onEliminarRegistro: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
@@ -751,6 +785,24 @@ const CASOS = [
               ['SeguimientoPielEH · apagado', SeguimientoPielEH, () =>
                 pp(alternarPartePiel(conRegistros, PARTE_SEGUIMIENTO))],
               ['PanelPiel · con seguimiento', PanelPiel, () => pp(conRegistros)],
+              /* EH Fase 16 — las recomendaciones, que nunca tocan la rutina. */
+              ['RecomendacionesPielEH · sin datos', RecomendacionesPielEH, () => pp(soloPiel)],
+              ['RecomendacionesPielEH · con perfil', RecomendacionesPielEH, () => pp(pielConNivel)],
+              ['RecomendacionesPielEH · con rutina', RecomendacionesPielEH, () => pp(conRutinaPiel)],
+              /* EH Fase 17 — los productos. */
+              ['ProductosPielEH · sin ninguno', ProductosPielEH, () => pp(pielConNivel)],
+              ['ProductosPielEH · con uno y su enlace', ProductosPielEH, () => pp(pielConProducto)],
+              ['ProductosPielEH · uno de farmacia sin enlace', ProductosPielEH, () => pp(pielDeFarmacia)],
+              ['ProductosPielEH · con enlace de afiliado', ProductosPielEH, () => pp(pielAfiliado)],
+              ['ProductosPielEH · uno no disponible', ProductosPielEH, () => pp(pielConAgotado)],
+              ['ProductosPielEH · con un pack', ProductosPielEH, () => pp(pielConPack)],
+              ['PanelPiel · con productos', PanelPiel, () => pp(pielConPack)],
+              /* ⚠️ Apartado 21 — apagar Productos oculta la plaquita y skincare
+                 sigue funcionando. */
+              ['PanelPiel · sin productos', PanelPiel, () =>
+                pp(alternarPartePiel(pielConPack, PARTE_PRODUCTOS))],
+              ['ProductosPielEH · apagado', ProductosPielEH, () =>
+                pp(alternarPartePiel(pielConPack, PARTE_PRODUCTOS))],
             ];
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>

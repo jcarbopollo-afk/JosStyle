@@ -77,7 +77,9 @@ const ESTILO_GUARDADO = {
   asistente: { paso: 4, estado: 'terminado', seleccion: ['pelo', 'skincare'] },
   modulos: [
     { id: 'pelo', activo: true, orden: 0, config: {} },
-    { id: 'skincare', activo: true, orden: 1, config: {} },
+    /* ⚠️ Con el perfil de piel empezado: si no, Skincare enseña su puerta de
+       entrada ("Configurar / Ahora no") y no se llega al panel. */
+    { id: 'skincare', activo: true, orden: 1, config: { necesidadesPiel: 'hidratacion', complejidadPiel: 'basico' } },
   ],
   datos: {}, retirados: [],
 };
@@ -179,5 +181,45 @@ ok(cortes.length === 1, 'Con el corte dentro, en su sitio del modelo de datos');
 ok(cortes[0] && 'corteId' in cortes[0] && 'valoracion' in cortes[0],
   'Y con los campos de la Fase 12, así que el normalizador no se los come');
 ok(/Último corte/.test(await ver()), '⚠️ Y la pantalla lo enseña: el usuario VE que ha pasado algo');
+
+/* ── 5 · LO MISMO EN SKINCARE, HASTA LA ÚLTIMA FASE ────────────────────── */
+/* ⚠️ Se recarga: así se comprueba también que lo de antes **sobrevive**. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+ok(await pulsar('Skincare'), 'Skincare se abre');
+const piel = await ver();
+ok(!/Configurar|Ahora no/.test(piel),
+  '⚠️ Y sin volver a preguntarle el perfil, porque ya lo tenía guardado');
+['Mi piel', 'Mi rutina', 'Seguimiento', 'Recomendaciones', 'Productos']
+  .forEach((p) => ok(piel.includes(p), `Se ve la plaquita "${p}" de Skincare`));
+
+ok(await pulsar('Productos'), 'Productos (EH F17) se abre');
+const prod = await ver();
+ok(/Todavía no hay catálogo/.test(prod),
+  '⚠️ Y dice que no hay catálogo (D2-03), en vez de fingir una tienda');
+ok(!/Comprar|carrito/i.test(prod), '⚠️ Y no hay ni un botón de comprar (apartado 22)');
+
+guardado.length = 0;
+ok(await pulsar('Añadir producto'), 'Se puede añadir un producto suyo (apartado 14)');
+await page.fill('input[aria-label="Nombre del producto"]', 'Crema de prueba');
+await page.locator('button', { hasText: 'Hidratantes' }).first().click();
+await page.locator('button', { hasText: 'Farmacia' }).first().click();
+await page.waitForTimeout(300);
+await pulsar('Guardar producto');
+await page.waitForTimeout(1200);
+
+const escPiel = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escPiel.length > 0, '⚠️ PERSISTENCIA: el producto se ESCRIBE en Supabase');
+const guardados = escPiel.at(-1)?.value?.modulos
+  ?.find((m) => m.id === 'skincare')?.config?.piel?.productos || [];
+ok(guardados.length === 1, 'Con el producto en la lista de la Fase 13, que es la única que hay');
+ok(guardados[0]?.categoria === 'hidratante' && Array.isArray(guardados[0]?.tiendas),
+  '⚠️ Y con la ficha de la Fase 17 entera, así que el normalizador no se la come');
+const tras = await ver();
+ok(/Crema de prueba/.test(tras), '⚠️ Y la pantalla lo enseña: el usuario VE su producto');
+ok(/Disponible en/.test(tras),
+  '⚠️ Y dónde conseguirlo aunque no haya enlace (apartado 6): Amazon no es una limitación');
 
 await salir(browser);

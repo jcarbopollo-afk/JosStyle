@@ -105,6 +105,7 @@ import {
   MODULO_PIEL, TEXTOS_PIEL, panelPiel, contestarPiel, seccionesDePiel,
   progresoPiel, estadoDeEntrada, decirAhoraNo, volverAConfigurar,
   anadirProductoPiel, quitarProductoPiel, datosPiel, resumenPiel, respuestaPiel,
+  TIPOS_PIEL, NECESIDADES_PIEL,
 } from '../lib/perfilPiel';
 import {
   PLAQUITAS_PIEL, PARTES_PIEL, parteActivaPiel, alternarPartePiel, PASOS_PIEL,
@@ -124,6 +125,17 @@ import {
   marcarVistasPiel, descartarPiel, guardarRecomendacionPiel, quitarGuardadaPiel,
   anadirARutina, resumenRecsPiel,
 } from '../lib/recomendacionesPiel';
+import {
+  /* ⚠️ `CATALOGO_VACIO_PORQUE` no se importa aquí: es LA MISMA constante que
+     ya viene de `productosPelo`, porque vive en `motorProductos`. */
+  PARTE_PRODUCTOS, CATEGORIAS_PRODUCTO_PIEL, categoriaPiel,
+  productosPiel, crearProductoPiel, eliminarProductoPiel, alternarFavoritoPiel,
+  alternarMioPiel, valorarProductoPiel, enlacesDePiel, marcarNoDisponiblePiel,
+  alternativasDePiel, FILTROS_PIEL, buscarEnPiel, marcasDePiel,
+  FILAS_COMPARACION_PIEL, compararProductosPiel, recomendarProductosPiel,
+  packsPiel, crearPackPiel, eliminarPackPiel, verPackPiel, packSugeridoPiel,
+  resumenProductosPiel, MAX_COMPARAR, TIPOS_TIENDA,
+} from '../lib/productosPiel';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -3050,6 +3062,448 @@ export function SeguimientoPielEH({ estado, accent, onCambiar, onCerrar, onElimi
   );
 }
 
+/* ===========================================================================
+   PRODUCTOS DE SKINCARE (F17)
+   ===========================================================================
+   *"La aplicación recomienda. El usuario elige."*
+
+   ⚠️ **Todo lo que se ve aquí lo ha metido él.** El catálogo está vacío por
+   decisión de Josué (D2-03), y la pantalla lo dice con una frase en vez de
+   fingir una tienda. No hay ni un botón que compre: los enlaces son enlaces, y
+   el pack sugerido trae un botón que **lo crearía**, que pulsa él.
+
+   ⚠️ Y **la vista no calcula nada**: recomendar es `recomendarProductosPiel`,
+   filtrar es `buscarEnPiel`, comparar es `compararProductosPiel` y el pack lo
+   propone `packSugeridoPiel`. Aquí solo se pinta. */
+export function ProductosPielEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  /* ⚠️ Regla 4 — todos los hooks antes de cualquier `return`. */
+  const [creando, setCreando] = useState(false);
+  const [nombre, setNombre] = useState('');
+  const [marca, setMarca] = useState('');
+  const [cat, setCat] = useState(null);
+  const [precio, setPrecio] = useState('');
+  const [tipos, setTipos] = useState([]);
+  const [objetivos, setObjetivos] = useState([]);
+  const [tienda, setTienda] = useState(null);
+  const [url, setUrl] = useState('');
+  const [error, setError] = useState(null);
+  const [texto, setTexto] = useState('');
+  const [filtros, setFiltros] = useState({});
+  const [verFiltros, setVerFiltros] = useState(false);
+  const [comparar, setComparar] = useState([]);
+  const [nombrePack, setNombrePack] = useState('');
+
+  const lista = useMemo(() => buscarEnPiel(estado, { texto, ...filtros }), [estado, texto, filtros]);
+  const todos = useMemo(() => productosPiel(estado), [estado]);
+  const rec = useMemo(() => recomendarProductosPiel(estado, datosGlobales), [estado, datosGlobales]);
+  const sug = useMemo(() => packSugeridoPiel(estado, datosGlobales), [estado, datosGlobales]);
+  const packs = useMemo(() => packsPiel(estado).map((p) => verPackPiel(estado, p.id)).filter(Boolean), [estado]);
+  const marcas = useMemo(() => marcasDePiel(estado), [estado]);
+  const tabla = useMemo(() => compararProductosPiel(estado, comparar), [estado, comparar]);
+  const resumen = useMemo(() => resumenProductosPiel(estado, datosGlobales), [estado, datosGlobales]);
+
+  const aplicar = (r) => {
+    if (r.error) { setError(r.error); return; }
+    setError(null);
+    onCambiar?.(r.estado);
+  };
+
+  const guardar = () => {
+    const r = crearProductoPiel(estado, {
+      nombre,
+      marca,
+      categoria: cat,
+      precio: precio.trim() === '' ? null : Number(precio.replace(',', '.')),
+      tiposPiel: tipos,
+      objetivos,
+      /* ⚠️ *"Nunca inventar enlaces"* (apartado 4): si no escribe una URL, la
+         tienda se guarda igual y **sin enlace**. Lo que no vale, el
+         normalizador lo deja en `null` y la ficha dirá que no hay enlace. */
+      tiendas: tienda ? [{ tipo: tienda, url: url.trim() || null }] : [],
+    });
+    if (r.error) { setError(r.error); return; }
+    setError(null);
+    if (!r.sinEfecto) onCambiar?.(r.estado);
+    setCreando(false); setNombre(''); setMarca(''); setCat(null); setPrecio('');
+    setTipos([]); setObjetivos([]); setTienda(null); setUrl('');
+  };
+
+  const alternar = (lst, set, id) => set(lst.includes(id) ? lst.filter((x) => x !== id) : [...lst, id]);
+  const filtrar = (id, valor) => setFiltros((f) => (f[id] === valor
+    ? Object.fromEntries(Object.entries(f).filter(([k]) => k !== id))
+    : { ...f, [id]: valor }));
+
+  const chip = (activo) => ({
+    background: activo ? hexToRgba(accent, 0.12) : COLORS.surface2,
+    border: `1px solid ${activo ? accent : COLORS.border}`,
+  });
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>🛒 Productos para ti</p>
+      </div>
+      {/* ⚠️ Regla 8 + D2-03: se dice que no hay catálogo, en vez de fingir uno. */}
+      <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>{CATALOGO_VACIO_PORQUE}</p>
+
+      {error && <p className="text-[11px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+
+      {/* Apartados 8 y 9 — ⭐ Para ti, cada uno con su porqué. */}
+      {rec.activo && rec.productos.length > 0 && (
+        <div className="mb-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>
+            ⭐ Para ti
+          </p>
+          <div className="space-y-1">
+            {rec.productos.map((p) => (
+              <div key={p.id} className="rounded-2xl p-2.5"
+                style={{ background: hexToRgba(accent, 0.08), border: `1px solid ${hexToRgba(accent, 0.25)}` }}>
+                <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                  {categoriaPiel(p.categoria)?.icono || '🧴'} {p.nombre}{p.marca ? ` · ${p.marca}` : ''}
+                </p>
+                <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{p.porque}</p>
+              </div>
+            ))}
+          </div>
+          {rec.hayMas && (
+            <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+              Y {rec.total - rec.productos.length} más en tu lista.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Apartado 17 — el pack sugerido SUGIERE: crearlo lo pulsa él. */}
+      {sug.hay && (
+        <div className="rounded-2xl p-3 mb-3"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>📦 {sug.nombre}</p>
+          {sug.productos.map((p) => (
+            <p key={p.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {categoriaPiel(p.categoria)?.icono || '🧴'} {p.nombre}
+            </p>
+          ))}
+          <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>{sug.porque}</p>
+          <button
+            onClick={() => aplicar(crearPackPiel(estado, sug.nombre, sug.productoIds))}
+            className="text-[10px] font-semibold mt-1.5" style={{ color: accent }}
+          >
+            {sug.accion}
+          </button>
+        </div>
+      )}
+
+      {/* Apartado 16 — sus packs, con lo que ya tiene marcado. */}
+      {packs.length > 0 && (
+        <div className="space-y-1 mb-3">
+          {packs.map((p) => (
+            <div key={p.id} className="rounded-2xl p-2.5"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>📦 {p.nombre}</p>
+              {p.items.map((x) => (
+                <p key={x.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                  {p.yaTengo.includes(x.id) ? '☑️' : '☐'} {x.nombre}
+                </p>
+              ))}
+              {/* ⚠️ Sin todos los precios NO se da un total: mentiría. */}
+              <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
+                {p.precio === null
+                  ? 'Sin precios guardados'
+                  : `${p.precio} €${p.sumaParcial ? ` · solo ${p.conPrecio} de ${p.total} tienen precio` : ''}`}
+              </p>
+              <button onClick={() => aplicar(eliminarPackPiel(estado, p.id))}
+                className="text-[10px] font-semibold mt-1" style={{ color: COLORS.textMuted }}>
+                Quitar el pack
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Apartado 11 — el buscador. Apartado 10 — los filtros, que no obligan. */}
+      {todos.length > 0 && (
+        <div className="mb-3 space-y-2">
+          <TextInput value={texto} onChange={(ev) => setTexto(ev.target.value)}
+            placeholder="🔍 Buscar productos" aria-label="Buscar productos" />
+          <button onClick={() => setVerFiltros(!verFiltros)} className="text-[10px] font-semibold"
+            style={{ color: accent }}>
+            {verFiltros ? 'Ocultar filtros' : 'Filtros'}
+          </button>
+          {verFiltros && (
+            <div className="space-y-1.5">
+              {FILTROS_PIEL.filter((f) => f.opciones).map((f) => (
+                <div key={f.id}>
+                  <p className="text-[10px] font-semibold mb-1" style={{ color: COLORS.textMuted }}>{f.nombre}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {f.opciones().map((o) => (
+                      <button key={o.id} onClick={() => filtrar(f.id, o.id)}
+                        className="rounded-full px-2 py-0.5" style={chip(filtros[f.id] === o.id)}
+                        aria-pressed={filtros[f.id] === o.id}>
+                        <span className="text-[10px] font-semibold"
+                          style={{ color: filtros[f.id] === o.id ? COLORS.text : COLORS.textMuted }}>
+                          {o.icono ? `${o.icono} ` : ''}{o.nombre}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {marcas.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-semibold mb-1" style={{ color: COLORS.textMuted }}>Marca</p>
+                  <div className="flex flex-wrap gap-1">
+                    {marcas.map((m) => (
+                      <button key={m} onClick={() => filtrar('marca', m)}
+                        className="rounded-full px-2 py-0.5" style={chip(filtros.marca === m)}
+                        aria-pressed={filtros.marca === m}>
+                        <span className="text-[10px] font-semibold"
+                          style={{ color: filtros.marca === m ? COLORS.text : COLORS.textMuted }}>{m}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <button onClick={() => { setFiltros({}); setTexto(''); }}
+                className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                Quitar los filtros
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Apartado 15 — la comparación, que enseña diferencias y no elige. */}
+      {tabla.suficiente && (
+        <div className="rounded-2xl p-2.5 mb-3 overflow-x-auto"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <table className="text-[10px] w-full">
+            <thead>
+              <tr>
+                <th className="text-left pr-2" style={{ color: COLORS.textMuted }}> </th>
+                {tabla.productos.map((p) => (
+                  <th key={p.id} className="text-left pr-2 font-semibold" style={{ color: COLORS.text }}>{p.nombre}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tabla.filas.map((f) => (
+                <tr key={f.id}>
+                  <td className="pr-2" style={{ color: COLORS.textMuted }}>{f.nombre}</td>
+                  {f.valores.map((v, i) => (
+                    <td key={i} className="pr-2" style={{ color: COLORS.text }}>{v}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {tabla.recortado && (
+            <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+              Se comparan {MAX_COMPARAR} a la vez.
+            </p>
+          )}
+          <div className="flex flex-wrap items-center gap-2 mt-1.5">
+            <button onClick={() => setComparar([])} className="text-[10px] font-semibold"
+              style={{ color: COLORS.textMuted }}>Dejar de comparar</button>
+            <TextInput value={nombrePack} onChange={(ev) => setNombrePack(ev.target.value)}
+              placeholder="Nombre del pack" aria-label="Nombre del pack" />
+            <button
+              onClick={() => { aplicar(crearPackPiel(estado, nombrePack, comparar)); setNombrePack(''); }}
+              className="text-[10px] font-semibold" style={{ color: accent }}>
+              Guardarlos como pack
+            </button>
+          </div>
+        </div>
+      )}
+      {comparar.length === 1 && (
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>{tabla.texto}</p>
+      )}
+
+      {/* La lista. */}
+      <div className="space-y-1 mb-3">
+        {lista.map((p) => {
+          const en = enlacesDePiel(estado, p.id);
+          const alts = p.estado !== 'disponible' ? alternativasDePiel(estado, p.id) : [];
+          const elegido = comparar.includes(p.id);
+          return (
+            <div key={p.id} className="rounded-2xl p-2.5"
+              style={{ background: COLORS.surface2, border: `1px solid ${elegido ? accent : COLORS.border}` }}>
+              <div className="flex items-center gap-2">
+                <span className="text-sm leading-none flex-shrink-0" aria-hidden="true">
+                  {categoriaPiel(p.categoria)?.icono || '🧴'}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold truncate" style={{ color: COLORS.text }}>{p.nombre}</p>
+                  <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>
+                    {[p.marca, categoriaPiel(p.categoria)?.nombre, p.precio !== null ? `${p.precio} €` : null]
+                      .filter(Boolean).join(' · ') || 'Sin más datos'}
+                  </p>
+                </div>
+                <button onClick={() => aplicar(alternarFavoritoPiel(estado, p.id))}
+                  className="flex-shrink-0 text-[11px]" aria-label={`Favorito ${p.nombre}`}>
+                  {p.favorito ? '❤️' : '🤍'}
+                </button>
+              </div>
+
+              {/* Apartado 5 — dónde conseguirlo, aunque no haya enlace. */}
+              {en.donde.length > 0 && (
+                <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+                  Disponible en {en.donde.join(', ')}
+                </p>
+              )}
+
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                <button onClick={() => aplicar(alternarMioPiel(estado, p.id))}
+                  className="text-[10px] font-semibold" style={{ color: p.mio ? accent : COLORS.textMuted }}>
+                  {p.mio ? '✓ Ya lo tengo' : 'Ya lo tengo'}
+                </button>
+                {/* ⚠️ Apartado 7: siempre "Ver producto", nunca "Comprar". */}
+                {en.enlaces.map((l, i) => (
+                  <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                    className="text-[10px] font-semibold" style={{ color: accent }}>
+                    {l.etiqueta} · {l.tienda}
+                  </a>
+                ))}
+                {en.sinEnlaces && (
+                  <span className="text-[10px]" style={{ color: COLORS.textMuted }}>{en.sinEnlacesTexto}</span>
+                )}
+                <button
+                  onClick={() => setComparar(elegido
+                    ? comparar.filter((x) => x !== p.id)
+                    : [...comparar, p.id].slice(-MAX_COMPARAR))}
+                  className="text-[10px] font-semibold" style={{ color: elegido ? accent : COLORS.textMuted }}>
+                  {elegido ? '✓ Comparar' : 'Comparar'}
+                </button>
+                <button onClick={() => aplicar(marcarNoDisponiblePiel(estado, p.id, p.estado !== 'disponible'))}
+                  className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                  {p.estado === 'disponible' ? 'Marcar no disponible' : 'Vuelve a estar'}
+                </button>
+                <button onClick={() => aplicar(eliminarProductoPiel(estado, p.id))}
+                  className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                  Quitar
+                </button>
+              </div>
+
+              {/* Apartado 20 — su valoración, que es información personal. */}
+              <div className="flex items-center gap-1 mt-1.5">
+                {[1, 2, 3, 4, 5].map((v) => (
+                  <button key={v} onClick={() => aplicar(valorarProductoPiel(estado, p.id, p.valoracion === v ? null : v))}
+                    className="text-[11px]" aria-label={`Valorar ${p.nombre} con ${v}`}>
+                    {p.valoracion !== null && v <= p.valoracion ? '⭐' : '☆'}
+                  </button>
+                ))}
+              </div>
+
+              {/* ⚠️ El aviso de afiliación, SOLO si hay algún enlace de afiliado. */}
+              {en.aviso && <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{en.aviso}</p>}
+
+              {/* Apartado 18 — no disponible NO es borrado, y hay alternativas. */}
+              {p.estado !== 'disponible' && (
+                <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+                  ⚠️ No disponible
+                  {alts.length > 0
+                    ? ` · Ver alternativas: ${alts.map((a) => a.nombre).join(', ')}`
+                    : ' · Todavía no tienes ninguna alternativa guardada'}
+                </p>
+              )}
+            </div>
+          );
+        })}
+        {todos.length > 0 && lista.length === 0 && (
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+            Ninguno de tus productos encaja con lo que has buscado.
+          </p>
+        )}
+      </div>
+
+      {/* Apartado 14 — producto personalizado: no necesita estar en un catálogo. */}
+      {creando ? (
+        <div className="space-y-2">
+          <TextInput value={nombre} onChange={(ev) => setNombre(ev.target.value)}
+            placeholder="Nombre del producto" aria-label="Nombre del producto" />
+          <TextInput value={marca} onChange={(ev) => setMarca(ev.target.value)}
+            placeholder="Marca (opcional)" aria-label="Marca" />
+          <TextInput value={precio} onChange={(ev) => setPrecio(ev.target.value)}
+            placeholder="Precio en € (opcional)" aria-label="Precio" inputMode="decimal" />
+
+          <p className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>Categoría</p>
+          <div className="flex flex-wrap gap-1.5">
+            {CATEGORIAS_PRODUCTO_PIEL.map((c) => (
+              <button key={c.id} onClick={() => setCat(cat === c.id ? null : c.id)}
+                className="rounded-full px-2.5 py-1" style={chip(cat === c.id)} aria-pressed={cat === c.id}>
+                <span className="text-[11px] font-semibold" style={{ color: cat === c.id ? COLORS.text : COLORS.textMuted }}>
+                  {c.icono} {c.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <p className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+            Para qué tipo de piel (si no marcas ninguno, vale para cualquiera)
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {TIPOS_PIEL.map((t) => (
+              <button key={t.id} onClick={() => alternar(tipos, setTipos, t.id)}
+                className="rounded-full px-2.5 py-1" style={chip(tipos.includes(t.id))}
+                aria-pressed={tipos.includes(t.id)}>
+                <span className="text-[11px] font-semibold"
+                  style={{ color: tipos.includes(t.id) ? COLORS.text : COLORS.textMuted }}>{t.nombre}</span>
+              </button>
+            ))}
+          </div>
+
+          <p className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>Para qué sirve</p>
+          <div className="flex flex-wrap gap-1.5">
+            {NECESIDADES_PIEL.map((o) => (
+              <button key={o.id} onClick={() => alternar(objetivos, setObjetivos, o.id)}
+                className="rounded-full px-2.5 py-1" style={chip(objetivos.includes(o.id))}
+                aria-pressed={objetivos.includes(o.id)}>
+                <span className="text-[11px] font-semibold"
+                  style={{ color: objetivos.includes(o.id) ? COLORS.text : COLORS.textMuted }}>{o.nombre}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Apartados 4, 5 y 6 — dónde se consigue, con enlace o sin él. */}
+          <p className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>Dónde se consigue</p>
+          <div className="flex flex-wrap gap-1.5">
+            {TIPOS_TIENDA.map((t) => (
+              <button key={t.id} onClick={() => setTienda(tienda === t.id ? null : t.id)}
+                className="rounded-full px-2.5 py-1" style={chip(tienda === t.id)} aria-pressed={tienda === t.id}>
+                <span className="text-[11px] font-semibold" style={{ color: tienda === t.id ? COLORS.text : COLORS.textMuted }}>
+                  {t.icono} {t.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+          {tienda && (
+            <TextInput value={url} onChange={(ev) => setUrl(ev.target.value)}
+              placeholder="Enlace (opcional)" aria-label="Enlace del producto" inputMode="url" />
+          )}
+
+          <PrimaryButton accent={accent} onClick={guardar}>Guardar producto</PrimaryButton>
+          <button onClick={() => { setCreando(false); setError(null); }}
+            className="text-[11px] font-semibold mx-auto block" style={{ color: COLORS.textMuted }}>Cancelar</button>
+        </div>
+      ) : (
+        <PrimaryButton accent={accent} icon={Plus} onClick={() => setCreando(true)}>Añadir producto</PrimaryButton>
+      )}
+
+      {resumen.total > 0 && (
+        <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>
+          {resumen.total} {resumen.total === 1 ? 'producto' : 'productos'}
+          {resumen.mios > 0 ? ` · ${resumen.mios} que ya tienes` : ''}
+          {resumen.favoritos > 0 ? ` · ${resumen.favoritos} favoritos` : ''}
+        </p>
+      )}
+    </Card>
+  );
+}
+
 /**
  * F14, apartado 1 — el panel de Skincare, con sus cinco plaquitas. ⚠️ Regla 8:
  * las dos que todavía no funcionan **dicen en qué fase llegan**, en vez de no
@@ -3062,6 +3516,7 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
   const hist = useMemo(() => historialPiel(estado), [estado]);
   const seg = useMemo(() => resumenSeguimientoPiel(estado), [estado]);
   const recs = useMemo(() => resumenRecsPiel(estado, datosGlobales), [estado, datosGlobales]);
+  const prod = useMemo(() => resumenProductosPiel(estado, datosGlobales), [estado, datosGlobales]);
 
   if (zona === 'rutina') {
     return (
@@ -3087,6 +3542,14 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
       />
     );
   }
+  if (zona === 'productos') {
+    return (
+      <ProductosPielEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setZona(null)}
+      />
+    );
+  }
 
   const sub = {
     perfil: prog.sinEmpezar ? 'Sin configurar' : `${prog.contestadas} de ${prog.total}`,
@@ -3097,6 +3560,11 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
     recomendaciones: recs.disponibles === 0
       ? 'Cuéntanos algo más'
       : `${recs.disponibles} ${recs.disponibles === 1 ? 'opción' : 'opciones'}`,
+    /* ⚠️ F17 — el recuento es de SUS productos, porque no hay catálogo (D2-03).
+       Decir "0 productos" sin más parecería un fallo; se dice qué pasa. */
+    productos: prod.total === 0
+      ? 'Añade los tuyos'
+      : `${prod.total} ${prod.total === 1 ? 'producto' : 'productos'}`,
   };
 
   return (
@@ -3118,6 +3586,9 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
             /* ⚠️ F16, apartados 1 y 17 — apagarlas hace desaparecer la plaquita
                y los demás módulos siguen funcionando. */
             .filter((p) => p.id !== 'recomendaciones' || parteActivaPiel(estado, PARTE_RECOMENDACIONES))
+            /* ⚠️ F17, apartado 21 — apagar Productos hace desaparecer su
+               plaquita, **los datos permanecen** y skincare sigue funcionando. */
+            .filter((p) => p.id !== 'productos' || parteActivaPiel(estado, PARTE_PRODUCTOS))
             .map((p) => (
               <Plaquita
                 key={p.id} accent={accent}
@@ -3127,7 +3598,8 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
                   ? (p.id === 'perfil' ? onPerfil
                     : (p.id === 'rutina' ? () => setZona('rutina')
                       : (p.id === 'seguimiento' ? () => setZona('seguimiento')
-                        : (p.id === 'recomendaciones' ? () => setZona('recomendaciones') : null))))
+                        : (p.id === 'recomendaciones' ? () => setZona('recomendaciones')
+                          : (p.id === 'productos' ? () => setZona('productos') : null)))))
                   : null}
               />
             ))}

@@ -1,5 +1,80 @@
 # CHANGELOG.md
 
+## v1.83.0 — EH Fase 17/65: productos, farmacia, Amazon y packs de skincare
+
+### Qué se ha construido
+El sistema de productos de Skincare, entero: ficha, categorías, tiendas, enlaces, recomendaciones
+"Para ti", buscador, filtros, comparación, alternativas, valoración y packs. Se llega desde
+**Más → Estilo de hombre → Skincare → 🛒 Productos**.
+
+### Las cinco decisiones que gobiernan la fase
+
+**1. ⚠️ El propio enunciado pedía el motor.** Su condición de finalización lo dice con estas
+palabras: *"este sistema debe diseñarse de forma que podamos reutilizar exactamente la misma
+arquitectura de productos para Pelo, Cuerpo, Higiene y otros módulos, **evitando crear cinco
+catálogos diferentes**"*. La Fase 10 ya la había construido para el pelo, así que lo genérico se
+extrajo a **`src/lib/motorProductos.js`** y los dos módulos lo usan. **Las 169 pruebas de la Fase 10
+pasaron sin tocar ni una.** Tercer motor extraído de este bloque, después de `motorRutinas.js`
+(F14) y `motorRecomendaciones.js` (F16).
+
+Lo que **no** se comparte, a propósito: las categorías y **las filas de la tabla de comparación**.
+La Fase 10 dibuja cuatro y la 17 dibuja cinco — son dos tablas distintas en dos enunciados
+distintos, y forzarlas a compartir una habría sido inventarse una que no pide ninguno de los dos.
+
+**2. ⚠️ UN inventario, el de la Fase 13.** El apartado 13 dice que *"Ya lo tengo" alimentará la
+información de productos del usuario*: esa información **ya existía** —`datosPiel().productos`, que
+creó F13 y usa F14 para enganchar productos a los pasos de una rutina—. Esta fase **la amplía**, no
+crea otra. Hay una prueba de que un producto creado aquí lo ve `productosDePiel()` de la Fase 14.
+
+**3. 🐛 Y ahí saltó el fallo de normalizador por DECIMOCTAVA vez, y de los caros.** `normalizarPiel`
+recortaba cada producto a `{ id, nombre }`, que es lo que guardaba la Fase 13. Con la regla 5
+(`saveData` sobrescribe), el siguiente guardado se habría llevado por delante marca, categoría,
+precio, tiendas, objetivos, tipos de piel y valoración: la ficha entera, en silencio. Arreglado, con
+cuatro pruebas que normalizan dos veces seguidas. `packs` también se declaró en `DEFAULT_PIEL`.
+
+**4. ⚠️ El catálogo está VACÍO, y es D2-03.** *"Amazon: arquitectura sí, afiliación no. Ni catálogo,
+ni productos, ni API, ni cuenta de afiliados inventados."* Se ha construido la arquitectura entera
+—ficha, cinco tipos de tienda, enlace de afiliado, aviso de transparencia, packs, comparación,
+alternativas, filtros y buscador— y **todo producto que existe lo ha metido él**. La pantalla lo
+dice con una frase en vez de fingir una tienda. Y **nunca un enlace inventado** (apartado 4): una
+"url" que no lo es se guarda como `null` y se dice que no hay enlace, en vez de fabricar una
+búsqueda de Amazon "por si acaso".
+
+**5. ⚠️ Amazon no es una limitación** (apartados 5 y 6). Un producto que solo está en la farmacia se
+recomienda igual, y *"Disponible en farmacia"* es una respuesta completa aunque no haya ningún
+enlace. El aviso de afiliación sale **solo donde hay afiliación** —ponerlo donde no la hay es tan
+poco honesto como quitarlo donde sí—, y el usuario ve siempre la misma etiqueta: *"Ver producto"*.
+
+### Y el apartado 22, que es el que cierra
+*"Nunca comprar. Nunca añadir al carrito externamente. Nunca elegir por el usuario."* Cinco pruebas
+sobre el código y tres ceros declarados en la auditoría. `packSugeridoPiel` **sugiere y no escribe**
+—la prueba serializa el estado antes y después—, igual que `aplicarARutina`: es el sexto
+`aplicarPlan` del proyecto.
+
+### Un fallo de verdad, encontrado de paso
+`CATALOGO_VACIO_PORQUE` estaba escrita **dos veces, palabra por palabra**, en `productosPelo.js` y
+en `productosPiel.js`. Se mudó al motor, donde vive la decisión. Al hacerlo apareció un fallo real
+que cazaron las pruebas de renderizado: **`export … from` no crea binding local**, así que el propio
+archivo la usaba sin tenerla, y cuatro pantallas de Pelo reventaban con
+`CATALOGO_VACIO_PORQUE is not defined`. Se importa y se reexporta la variable.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **199 comprobaciones nuevas** en
+`scripts/test-productos-piel.mjs`, **696 casos de renderizado** (13 nuevos, incluidos los de la
+Fase 16, que no tenía ninguno) y **41 comprobaciones en Chromium** sobre la aplicación de verdad: se
+llega a Productos desde Más → Estilo de hombre → Skincare, se crea un producto con su categoría y su
+farmacia, **se escribe en Supabase con la ficha entera** y la pantalla lo enseña.
+
+### Archivos
+- **Nuevos:** `src/lib/motorProductos.js`, `src/lib/productosPiel.js`,
+  `scripts/test-productos-piel.mjs`.
+- **Modificados:** `src/lib/perfilPiel.js` (el normalizador y `DEFAULT_PIEL`), `src/lib/rutinasPiel.js`
+  (la parte `productos` y su plaquita), `src/lib/productosPelo.js` (delega en el motor),
+  `src/views/EstiloHombreView.jsx` (`ProductosPielEH` y su sitio en `PanelPiel`),
+  `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## 🚨 v1.82.0 — LA APLICACIÓN NO ARRANCABA. Dos fallos fatales, y EH Fase 16/65
 
 ### Lo primero, porque es lo que importa

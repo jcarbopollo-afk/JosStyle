@@ -411,21 +411,32 @@ export function loQueYaSabemosDeTuPiel(estado, datosGlobales = {}) {
 export const DEFAULT_PIEL = {
   // apartado 1 — pulsó "Ahora no". Es una respuesta, no un hueco.
   ahoraNo: false,
-  productos: [],   // [{ id, nombre }]
+  productos: [],   // [{ id, nombre }] — la Fase 17 le añade la ficha entera
+  // ⚠️ EH F17 — los packs de productos de piel. Forma en `normalizarPackGenerico`
+  // (`motorProductos.js`); aquí se declara y se arrastra, como `productos`.
+  packs: [],
   editado: null,   // apartado 16 — cuándo tocó el perfil por última vez
 };
-
-function normalizarProductoPiel(g) {
-  const nombre = String((g || {}).nombre || '').trim();
-  if (!nombre) return null;
-  return { id: (g || {}).id || uid(), nombre };
-}
 
 export function normalizarPiel(guardado) {
   const g = guardado && typeof guardado === 'object' ? guardado : {};
   return {
     ahoraNo: g.ahoraNo === true,
-    productos: (Array.isArray(g.productos) ? g.productos : []).map(normalizarProductoPiel).filter(Boolean),
+    /* ⚠️ **DECIMOCTAVA VEZ QUE ESTE PROYECTO SE TOPA CON EL MISMO FALLO**, y la
+       segunda con esta forma exacta: la Fase 13 guardaba `{ id, nombre }` y la
+       Fase 17 le añade marca, categoría, tiendas, precio, valoración, estado…
+       **en esta misma lista**, no en una segunda (apartado 13: *"Ya lo tengo"
+       alimentará la información de productos del usuario*). Si este normalizador
+       recortara a `{ id, nombre }`, el siguiente guardado se llevaría por
+       delante toda la ficha — que es exactamente lo que pasó en la Fase 8 con
+       los productos de pelo. Los campos nuevos se arrastran tal cual; la forma
+       la decide `normalizarProductoPiel` en `productosPiel.js`, que es de quien
+       son. Mismo reparto que `rutinasPelo.js` / `productosPelo.js`. */
+    productos: (Array.isArray(g.productos) ? g.productos : [])
+      .filter((p) => p && String(p.nombre || '').trim())
+      .map((p) => ({ ...p, id: p.id || uid(), nombre: String(p.nombre).trim() })),
+    // ⚠️ Y lo mismo con los packs de la Fase 17: se declaran y se arrastran.
+    packs: (Array.isArray(g.packs) ? g.packs : []).filter((p) => p && typeof p === 'object'),
     editado: typeof g.editado === 'string' ? g.editado : null,
   };
 }

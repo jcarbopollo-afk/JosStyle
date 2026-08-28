@@ -173,7 +173,12 @@ eq(e1.aviso, '', '⚠️ Y sin el aviso: no hay nada que declarar');
 const conAfiliado = anadirTienda(conEnlace, idProd, { tipo: 'amazon', nombre: 'Amazon', url: 'https://ejemplo.test/y', afiliado: true }).estado;
 ok(enlacesDe(conAfiliado, idProd).hayAfiliado, 'Con afiliado se sabe');
 eq(enlacesDe(conAfiliado, idProd).aviso, AVISO_AFILIACION, '⚠️ Y AHÍ sí sale el aviso de transparencia');
-eq(AVISO_AFILIACION, 'Algunos enlaces pueden ser enlaces de afiliado.', 'Con la frase literal del enunciado');
+eq(AVISO_AFILIACION, 'Algunos enlaces pueden ser enlaces de afiliado. Esto puede generar una comisión sin coste adicional para ti.', /* ⚠️ La Fase 17 da la frase COMPLETA de la que ésta citó solo la primera
+     mitad: *"…esto puede generar una comisión para JC Fitness sin coste
+     adicional para ti"*. Es el mismo aviso, y el completo es el que de verdad
+     informa, así que el aviso es UNO y es ése — dos textos de transparencia
+     distintos habrían sido el segundo sistema de siempre. */
+  'Con la frase del enunciado, en su versión completa (la que da la Fase 17)');
 eq(enlacesDe(conAfiliado, idProd).enlaces.map((x) => x.etiqueta), [ETIQUETA_ENLACE, ETIQUETA_ENLACE],
   '⚠️ Pero la etiqueta sigue siendo la misma: él no tiene que conocer la estructura técnica');
 

@@ -42,6 +42,12 @@ import { NIVELES_ESTILO, nivelEstilo } from './perfilEstilo';
 import { MODULO_PELO } from './perfilCapilar';
 import { datosPelo, parteActiva, ACCIONES_PELO } from './rutinasPelo';
 import { contextoParaRecomendar } from './recomendacionesPelo';
+import {
+  TIPOS_TIENDA, tipoTienda, ETIQUETA_ENLACE, AVISO_AFILIACION, normalizarTienda,
+  ESTADOS_PRODUCTO, estadoProducto, normalizarProductoGenerico,
+  alternativasGenericas, enlacesDeProducto, MAX_COMPARAR,
+  normalizarPackGenerico, CATALOGO_VACIO_PORQUE,
+} from './motorProductos';
 import { uid, todayISO } from './helpers';
 
 /* ===========================================================================
@@ -67,40 +73,14 @@ export const categoriaProducto = (id) => CATEGORIAS_PRODUCTO_PELO.find((c) => c.
    ===========================================================================
    *"No limitar el sistema a Amazon."* Cinco tipos, y ninguno privilegiado. */
 
-export const TIPOS_TIENDA = [
-  { id: 'amazon', nombre: 'Amazon' },
-  { id: 'farmacia', nombre: 'Farmacia' },
-  { id: 'especializada', nombre: 'Tienda especializada' },
-  { id: 'fabricante', nombre: 'Fabricante' },
-  { id: 'otra', nombre: 'Otra tienda' },
-];
 
-export const tipoTienda = (id) => TIPOS_TIENDA.find((t) => t.id === id) || null;
 
 /**
  * Apartado 12 — *"El usuario final simplemente verá: Ver producto. No necesita
  * conocer la estructura técnica."* Así que la etiqueta es siempre la misma,
  * lleve el enlace la marca que lleve.
  */
-export const ETIQUETA_ENLACE = 'Ver producto';
-export const AVISO_AFILIACION = 'Algunos enlaces pueden ser enlaces de afiliado.';
 
-/**
- * ⚠️ **Nunca un enlace inventado** (apartado 11). Una URL solo se guarda si él
- * la ha dado y parece una URL. Construir aquí una búsqueda de Amazon "por si
- * acaso" sería inventarse un enlace con otro nombre.
- */
-function normalizarTienda(t) {
-  const g = t || {};
-  const url = typeof g.url === 'string' && /^https?:\/\/\S+$/i.test(g.url.trim()) ? g.url.trim() : null;
-  return {
-    tipo: tipoTienda(g.tipo) ? g.tipo : 'otra',
-    nombre: (g.nombre || '').trim(),
-    url,
-    // Apartado 12 — la distinción existe en el dato, no en la pantalla.
-    afiliado: g.afiliado === true,
-  };
-}
 
 /* ===========================================================================
    3 · LA FICHA (apartado 3)
@@ -108,56 +88,28 @@ function normalizarTienda(t) {
    Los doce campos del enunciado. *"No obligarle a introducir todos los datos"*
    (apartado 9): solo el nombre es obligatorio. */
 
-export const ESTADOS_PRODUCTO = [
-  { id: 'disponible', nombre: 'Disponible' },
-  { id: 'no_disponible', nombre: 'Actualmente no disponible', aviso: true },
-  { id: 'descatalogado', nombre: 'Descatalogado', aviso: true },
-];
 
-export const estadoProducto = (id) => ESTADOS_PRODUCTO.find((e) => e.id === id) || null;
-
-export function normalizarProducto(g) {
-  const p = g || {};
-  const valoracion = Number(p.valoracion);
-  return {
-    id: p.id || uid(),
-    nombre: (p.nombre || '').trim(),
-    marca: (p.marca || '').trim(),
-    categoria: categoriaProducto(p.categoria) ? p.categoria : null,
-    descripcion: (p.descripcion || '').trim(),
-    paraQue: (p.paraQue || '').trim(),
-    caracteristicas: (Array.isArray(p.caracteristicas) ? p.caracteristicas : [])
-      .map((c) => String(c).trim()).filter(Boolean),
-    nivel: nivelEstilo(p.nivel) ? p.nivel : null,
-    // Apartado 16 — *"si el precio puede cambiar, no tratarlo como un dato
-    // permanente"*. Por eso viaja con la fecha en la que se anotó.
-    precio: Number.isFinite(Number(p.precio)) && Number(p.precio) > 0 ? Number(p.precio) : null,
-    precioAnotado: typeof p.precioAnotado === 'string' ? p.precioAnotado : null,
-    tiendas: (Array.isArray(p.tiendas) ? p.tiendas : []).map(normalizarTienda),
-    estado: estadoProducto(p.estado) ? p.estado : 'disponible',
-    // Apartado 8 — *"Ya lo tengo"*.
-    mio: p.mio === true,
-    // Apartado 7 — favoritos.
-    favorito: p.favorito === true,
-    // Apartado 17 — su valoración y su opinión.
-    valoracion: Number.isInteger(valoracion) && valoracion >= 1 && valoracion <= 5 ? valoracion : null,
-    opinion: (p.opinion || '').trim(),
-    notaPersonal: (p.notaPersonal || '').trim(),
-    // De dónde salió: hoy siempre "suyo" (ver cabecera y D2-03).
-    origen: p.origen === 'catalogo' ? 'catalogo' : 'propio',
-    // Enlace con la rutina: qué paso cubre (viene de la Fase 8).
-    paso: p.paso || null,
-    creadoEn: p.creadoEn || null,
-  };
-}
+/* ⚠️ **EH F17 extrajo el motor**, porque su condición de finalización lo pide
+   con esas palabras: *"reutilizar exactamente la misma arquitectura de productos
+   para Pelo, Cuerpo, Higiene y otros módulos, evitando crear cinco catálogos
+   diferentes"*. La forma de un producto vive ahora en `motorProductos.js`; aquí
+   se queda **lo que es del pelo**: sus categorías y el `paso` de la rutina de F8,
+   que el motor no conoce y por tanto normaliza este archivo (regla 5). */
+export const normalizarProducto = (g) => normalizarProductoGenerico(g, {
+  categoriaValida: (id) => !!categoriaProducto(id),
+  extra: (p) => ({ paso: p.paso || null }),
+});
 
 /* ⚠️ **El catálogo está vacío, y es una decisión, no un olvido.** D2-03 y el
    apartado 3 del enunciado dicen lo mismo. El día que Josué dé productos de
    verdad, entran aquí y todo lo demás ya funciona. */
 export const CATALOGO_PELO = [];
 
-export const CATALOGO_VACIO_PORQUE =
-  'Todavía no hay catálogo: los productos que ves son los que has añadido tú.';
+/* ⚠️ La frase vive en el motor, y la Fase 17 usa ESTA MISMA. Se **importa** y
+   se reexporta la variable, no `export … from`: eso último no crea binding
+   local, y este archivo la usa dos líneas más abajo. Lo cazaron las pruebas de
+   renderizado, con un `CATALOGO_VACIO_PORQUE is not defined` en pantalla. */
+export { CATALOGO_VACIO_PORQUE };
 
 /* ===========================================================================
    4 · CRUD (apartados 9, 10 y 17)
@@ -217,12 +169,7 @@ export function marcarNoDisponible(estado, id, disponible = false) {
 }
 
 /** *"Y, si existen alternativas: Ver alternativas."* De entre los suyos. */
-export function alternativasDe(estado, id) {
-  const p = productoPelo(estado, id);
-  if (!p || !p.categoria) return [];
-  return productosPelo(estado)
-    .filter((x) => x.id !== id && x.categoria === p.categoria && x.estado === 'disponible');
-}
+export const alternativasDe = (estado, id) => alternativasGenericas(productosPelo(estado), id);
 
 export const alternarFavorito = (estado, id) => {
   const p = productoPelo(estado, id);
@@ -271,27 +218,7 @@ export function quitarTienda(estado, id, indice) {
  * ⚠️ Apartado 19 — aquí no hay ninguna función que compre. Este objeto es lo
  * más lejos que llega la aplicación: *"ofrece enlace → usuario decide"*.
  */
-export function enlacesDe(estado, id) {
-  const p = productoPelo(estado, id);
-  if (!p) return { enlaces: [], hayAfiliado: false, aviso: '', sinEnlaces: true, sinEnlacesTexto: '' };
-  const conUrl = p.tiendas.filter((t) => t.url);
-  return {
-    enlaces: conUrl.map((t) => ({
-      // El usuario ve siempre lo mismo (apartado 12).
-      etiqueta: ETIQUETA_ENLACE,
-      tienda: t.nombre || tipoTienda(t.tipo)?.nombre || 'Tienda',
-      url: t.url,
-      afiliado: t.afiliado,
-    })),
-    hayAfiliado: conUrl.some((t) => t.afiliado),
-    aviso: conUrl.some((t) => t.afiliado) ? AVISO_AFILIACION : '',
-    sinEnlaces: conUrl.length === 0,
-    // ⚠️ Regla 8: si no hay enlace, se dice — no se fabrica uno.
-    sinEnlacesTexto: conUrl.length === 0 && p.tiendas.length > 0
-      ? 'No has guardado ningún enlace para este producto.'
-      : (conUrl.length === 0 ? 'Sin tienda ni enlace guardados.' : ''),
-  };
-}
+export const enlacesDe = (estado, id) => enlacesDeProducto(productoPelo(estado, id));
 
 /* ===========================================================================
    6 · COMPARAR (apartado 6)
@@ -299,14 +226,7 @@ export function enlacesDe(estado, id) {
    *"No hacer comparaciones interminables."* Dos o tres, y las filas que el
    enunciado dibuja. */
 
-export const MAX_COMPARAR = 3;
 
-export const FILAS_COMPARACION = [
-  { id: 'categoria', nombre: 'Tipo' },
-  { id: 'nivel', nombre: 'Nivel' },
-  { id: 'precio', nombre: 'Precio' },
-  { id: 'caracteristicas', nombre: 'Características' },
-];
 
 export function compararProductos(estado, ids = []) {
   const productos = ids.slice(0, MAX_COMPARAR).map((id) => productoPelo(estado, id)).filter(Boolean);
@@ -403,16 +323,7 @@ export function recomendarProductos(estado, datosGlobales = {}, { limite = 3 } =
 
 export const DEFAULT_PACKS = [];
 
-export function normalizarPack(g) {
-  const p = g || {};
-  return {
-    id: p.id || uid(),
-    nombre: (p.nombre || '').trim() || 'Pack',
-    productoIds: [...new Set(Array.isArray(p.productoIds) ? p.productoIds.filter(Boolean) : [])],
-    creadoEn: p.creadoEn || null,
-    sugerido: p.sugerido === true,
-  };
-}
+export const normalizarPack = normalizarPackGenerico;
 
 export const packsPelo = (estado) => (Array.isArray(datosPelo(estado).packs) ? datosPelo(estado).packs : []).map(normalizarPack);
 
@@ -530,3 +441,20 @@ export function auditarProductosPelo(estado) {
 }
 
 export { NIVELES_ESTILO, ACCIONES_PELO };
+
+/* ⚠️ Se re-exporta lo que ahora vive en el motor: las pruebas de la Fase 10 y
+   la pantalla ya lo importaban de aquí, y el sitio donde vive una constante no
+   tiene por qué ser una ruptura para quien la usa. */
+export {
+  TIPOS_TIENDA, tipoTienda, ETIQUETA_ENLACE, AVISO_AFILIACION,
+  ESTADOS_PRODUCTO, estadoProducto, MAX_COMPARAR,
+};
+
+/* Las cuatro filas que dibuja el enunciado de la Fase 10. La 17 dibuja otras
+   cinco: son dos tablas distintas, y cada fase se queda con la suya. */
+export const FILAS_COMPARACION = [
+  { id: 'categoria', nombre: 'Tipo' },
+  { id: 'nivel', nombre: 'Nivel' },
+  { id: 'precio', nombre: 'Precio' },
+  { id: 'caracteristicas', nombre: 'Características' },
+];

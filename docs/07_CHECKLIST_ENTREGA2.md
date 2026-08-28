@@ -1314,30 +1314,72 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] DESACTIVAR
 - [x] PRUEBAS
 
-#### EH · Fase 17/65 — SKINCARE: SISTEMA DE PRODUCTOS, FARMACIA, AMAZON Y PACKS
-- [ ] PLAQUITA DE PRODUCTOS
-- [ ] CATEGORÍAS
-- [ ] FICHA DEL PRODUCTO
-- [ ] AMAZON
-- [ ] FARMACIA
-- [ ] SI NO ESTÁ EN AMAZON
-- [ ] AFILIACIÓN
-- [ ] PRODUCTOS RECOMENDADOS
-- [ ] MOTIVO
-- [ ] FILTROS
-- [ ] BUSCADOR
-- [ ] FAVORITOS
-- [ ] PRODUCTOS QUE YA TIENE
-- [ ] PRODUCTOS PERSONALIZADOS
-- [ ] COMPARACIÓN
-- [ ] PACKS
-- [ ] PACK PERSONALIZADO
-- [ ] ALTERNATIVAS
-- [ ] PRECIO
-- [ ] VALORACIÓN PERSONAL
-- [ ] DESACTIVAR PRODUCTOS
-- [ ] NO COMPRA AUTOMÁTICA
-- [ ] PRUEBAS
+#### EH · Fase 17/65 — SKINCARE: SISTEMA DE PRODUCTOS, FARMACIA, AMAZON Y PACKS ✅ COMPLETADA (v1.83.0)
+
+> **`src/lib/motorProductos.js`** (el motor extraído) + **`src/lib/productosPiel.js`**
+> (199 comprobaciones) + la pantalla `ProductosPielEH`. Sin SQL nuevo.
+>
+> ⚠️ **La condición de finalización pedía el motor**, con esas palabras: *"reutilizar exactamente la
+> misma arquitectura de productos para Pelo, Cuerpo, Higiene y otros módulos, **evitando crear cinco
+> catálogos diferentes**"*. La Fase 10 ya la había construido para el pelo, así que lo genérico se
+> extrajo a `motorProductos.js` y los dos módulos lo usan — **las 169 pruebas de F10 pasaron sin
+> tocar ni una**. Lo que se queda en cada módulo es lo suyo: las diez categorías de la piel y su
+> tabla de comparación, que este enunciado dibuja con **cinco** filas donde el de la Fase 10 dibuja
+> **cuatro**.
+>
+> ⚠️ **UN inventario, el de la Fase 13** (apartado 13: *"Ya lo tengo alimentará la información de
+> productos del usuario"*). Esa lista **ya existía**: la creó F13 y la usa F14 para enganchar
+> productos a los pasos. Esta fase le añade la ficha entera **en la misma lista**, y hay una prueba
+> de que un producto creado aquí lo ve `productosDePiel()` de la Fase 14.
+>
+> ⚠️ **DECIMOCTAVA VEZ del mismo fallo de normalizador**, y la más cara: `normalizarPiel` recortaba
+> cada producto a `{ id, nombre }`, así que el siguiente guardado se habría llevado marca, categoría,
+> precio, tiendas, objetivos y valoración. Cuatro pruebas normalizan dos veces seguidas para que no
+> vuelva a pasar. `packs` también se declaró en `DEFAULT_PIEL`.
+>
+> ⚠️ **El catálogo está VACÍO, y es D2-03**: *"Amazon: arquitectura sí, afiliación no. Ni catálogo,
+> ni productos, ni API, ni cuenta de afiliados inventados."* Se construye la arquitectura entera y
+> **todo producto que existe lo ha metido él**; la pantalla lo dice con una frase en vez de fingir
+> una tienda. Y **nunca un enlace inventado** (apartado 4): una "url" que no lo es se guarda como
+> `null` y se dice que no hay enlace, en vez de fabricar una búsqueda de Amazon "por si acaso".
+>
+> ⚠️ **Amazon no es una limitación** (apartados 5 y 6): un producto que solo está en la farmacia se
+> recomienda igual, y *"Disponible en farmacia"* es una respuesta completa aunque no haya enlace.
+> El aviso de afiliación sale **solo donde hay afiliación**, y el usuario ve siempre *"Ver producto"*.
+>
+> ⚠️ **Nunca comprar, nunca añadir al carrito, nunca elegir por él** (apartado 22): cinco pruebas
+> sobre el código y tres ceros declarados. `packSugeridoPiel` **sugiere y no escribe** —la prueba
+> serializa el estado antes y después—, como `aplicarARutina`. Sexto `aplicarPlan` del proyecto.
+>
+> ⚠️ **Y una frase que estaba escrita dos veces**: `CATALOGO_VACIO_PORQUE` era idéntica, palabra por
+> palabra, en `productosPelo.js` y aquí. Se mudó al motor, donde vive la decisión. Al hacerlo apareció
+> un fallo de verdad que cazaron las pruebas de renderizado: `export … from` **no crea binding
+> local**, así que el propio archivo la usaba sin tenerla — cuatro pantallas reventaban con
+> `CATALOGO_VACIO_PORQUE is not defined`.
+
+- [x] PLAQUITA DE PRODUCTOS
+- [x] CATEGORÍAS
+- [x] FICHA DEL PRODUCTO
+- [x] AMAZON
+- [x] FARMACIA
+- [x] SI NO ESTÁ EN AMAZON
+- [x] AFILIACIÓN
+- [x] PRODUCTOS RECOMENDADOS
+- [x] MOTIVO
+- [x] FILTROS
+- [x] BUSCADOR
+- [x] FAVORITOS
+- [x] PRODUCTOS QUE YA TIENE
+- [x] PRODUCTOS PERSONALIZADOS
+- [x] COMPARACIÓN
+- [x] PACKS
+- [x] PACK PERSONALIZADO
+- [x] ALTERNATIVAS
+- [x] PRECIO
+- [x] VALORACIÓN PERSONAL
+- [x] DESACTIVAR PRODUCTOS
+- [x] NO COMPRA AUTOMÁTICA
+- [x] PRUEBAS
 
 #### EH · Fase 18/65 — CUERPO E HIGIENE MASCULINA: CONFIGURACIÓN Y PERFIL
 - [ ] ACTIVACIÓN INICIAL

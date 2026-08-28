@@ -66,7 +66,7 @@ export const PLAQUITAS_PIEL = [
   { id: 'rutina', nombre: 'Mi rutina', icono: '🧴', fase: 14, listo: true },
   { id: 'seguimiento', nombre: 'Seguimiento', icono: '📈', fase: 14, listo: true },
   { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', fase: 16, listo: true },
-  { id: 'productos', nombre: 'Productos', icono: '🛒', fase: 17, listo: false },
+  { id: 'productos', nombre: 'Productos', icono: '🛒', fase: 17, listo: true },
 ];
 
 /** Apartado 18 — cada parte se puede apagar, y **los datos se conservan**. */
@@ -79,6 +79,10 @@ export const PARTES_PIEL = [
      desactivarse"*, y *"los demás módulos continúan funcionando"*. Encendida por
      defecto, como las rutinas: es contenido, no un aviso. */
   { id: 'recomendaciones', nombre: 'Recomendaciones', porDefecto: true },
+  /* EH F17, apartado 21 — *"si el usuario desactiva productos, el módulo de
+     skincare debe seguir funcionando"*. Encendida por defecto, y apagarla no
+     borra ni un producto: solo deja de enseñarlos. */
+  { id: 'productos', nombre: 'Productos', porDefecto: true },
 ];
 
 export const parteActivaPiel = (estado, id) => datosRutinasPiel(estado).partes[id] === true;
