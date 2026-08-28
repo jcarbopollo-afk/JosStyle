@@ -398,8 +398,10 @@ await page.waitForTimeout(800);
 const panelPerf = await ver();
 ['Mi perfil', 'Mi colección', 'Quiero probar', 'Historial']
   .forEach((p) => ok(panelPerf.includes(p), `Se ve la plaquita "${p}"`));
-ok(/Llega en la fase 25/.test(panelPerf),
-  '⚠️ Regla 8: y las recomendaciones DICEN que llegan en la Fase 25');
+/* ⚠️ Esto comprobaba que las recomendaciones dijeran *"llega en la fase 25"*.
+   La Fase 25 las construyó, así que ahora lo correcto es que **funcionen**. */
+ok(panelPerf.includes('Recomendaciones'), 'Y la de Recomendaciones, que llenó la Fase 25');
+ok(!/Llega en la fase/.test(panelPerf), '⚠️ Regla 8: y ya no queda ninguna a medias');
 
 ok(await pulsar('Mi colección'), 'La colección se abre');
 await page.fill('input[aria-label="Nombre del perfume"]', 'Uno que tengo');
@@ -427,5 +429,33 @@ const trasActual = guardado.filter((g) => g && g.key === 'estiloHombre').at(-1)
 ok(!!trasActual.actual, '⚠️ Se guarda cuál usa ahora');
 ok((trasActual.perfumes || [])[0]?.favorito === false,
   '⚠️ Y NO lo marca favorito: "esto no significa que sea su favorito" (apartado 12)');
+
+/* ── 10 · LAS RECOMENDACIONES DE PERFUME (EH F25) ──────────────────────── */
+/* ⚠️ Recargando: aquí se comprueba también que el perfume de la F24 sobrevive. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await pulsar('Perfumes');
+const panelP2 = await ver();
+ok(/Recomendaciones/.test(panelP2), 'La plaquita de Recomendaciones (EH F25) ya funciona');
+ok(!/Llega en la fase 25/.test(panelP2), '⚠️ Y ya no dice que llega en la Fase 25: ha llegado');
+
+ok(await pulsar('Recomendaciones'), 'Recomendaciones se abre');
+const recP = await ver();
+ok(/¿Cuál me pongo\?/.test(recP), 'Con su pregunta');
+ok(/¿Para qué lo necesitas\?/.test(recP), 'Y la del apartado 5');
+ok(/¿Cuándo\?/.test(recP), 'Y la del apartado 6');
+ok(/Entretiempo/.test(recP), 'Con las cuatro épocas, incluida la que no estaba en la Fase 24');
+
+/* ⚠️ Sin decir para qué, el perfume que tiene no encaja con nada todavía. */
+/* El chip lleva su icono delante, así que se busca por texto parcial. */
+await page.locator('button', { hasText: 'Noche' }).first().click();
+await page.waitForTimeout(200);
+ok(true, 'Se puede pedir una ocasión');
+await page.waitForTimeout(700);
+const conOcasion = await ver();
+ok(/Uno que tengo/.test(conOcasion) || /todavía no podemos/.test(conOcasion),
+  '⚠️ Y o sale una recomendación, o se dice por qué no: nunca una tarjeta vacía');
 
 await salir(browser);

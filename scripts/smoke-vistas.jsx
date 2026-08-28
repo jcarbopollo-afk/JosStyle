@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -48,6 +48,10 @@ import {
   asignarPerfumeAOcasion, anadirPorProbar, registrarUso, alternarPartePerfumes,
   perfumes as perfumesDe,
 } from '../src/lib/perfumes.js';
+import {
+  PARTE_ROTACION, PARTE_ESTADISTICAS, ponerEnRotacion, ponerEspera,
+  ponerDisponibilidad, descartarPerfume,
+} from '../src/lib/recomendacionesPerfumes.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
   crearRevision, registrarCambioCepillo, planificarCambioCepillo,
@@ -799,6 +803,18 @@ const CASOS = [
             const perfHistorial = registrarUso(perfCompleto, {
               perfumeId: perfumesDe(perfCompleto)[0].id, ocasion: 'noche', valoracion: 4,
             }, { hoy: HOY }).estado;
+            /* EH F25 — recomendaciones, rotación y estadísticas. ⚠️ Con y sin
+               rotación, y con y sin estadísticas: apagadas devuelven `null` y la
+               pantalla no las pinta. */
+            const perfConRot = ponerEnRotacion(
+              alternarPartePerfumes(perfCompleto, PARTE_ROTACION), 1, perfumesDe(perfCompleto)[0].id,
+            ).estado;
+            const perfConEspera = ponerEspera(perfConRot, 'tres').estado;
+            const perfConStats = alternarPartePerfumes(perfHistorial, PARTE_ESTADISTICAS);
+            const perfDosMas = anadirPerfume(perfCompleto, {
+              nombre: 'Otro más', tipo: ['frescos'], ocasiones: ['noche'], intensidad: 'intensa',
+            }, { hoy: HOY }).estado;
+            const perfTerminado = ponerDisponibilidad(perfCompleto, perfumesDe(perfCompleto)[0].id, 'terminado').estado;
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop, onEliminar: noop, onEliminarRegistro: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
@@ -959,6 +975,15 @@ const CASOS = [
               ['PerfumesEH · con historial', PerfumesEH, () => pp(perfHistorial)],
               ['PerfumesEH · partes apagadas', PerfumesEH, () =>
                 pp(alternarPartePerfumes(alternarPartePerfumes(perfCompleto, 'historial'), 'recomendaciones'))],
+              /* EH Fase 25 — recomendaciones de perfume. */
+              ['RecomendacionesPerfumesEH · sin colección', RecomendacionesPerfumesEH, () => pp(perfConf)],
+              ['RecomendacionesPerfumesEH · con uno', RecomendacionesPerfumesEH, () => pp(perfCompleto)],
+              ['RecomendacionesPerfumesEH · con dos', RecomendacionesPerfumesEH, () => pp(perfDosMas)],
+              ['RecomendacionesPerfumesEH · con rotación', RecomendacionesPerfumesEH, () => pp(perfConRot)],
+              ['RecomendacionesPerfumesEH · con espera', RecomendacionesPerfumesEH, () => pp(perfConEspera)],
+              ['RecomendacionesPerfumesEH · con estadísticas', RecomendacionesPerfumesEH, () => pp(perfConStats)],
+              ['RecomendacionesPerfumesEH · uno terminado', RecomendacionesPerfumesEH, () => pp(perfTerminado)],
+              ['PerfumesEH · con recomendaciones listas', PerfumesEH, () => pp(perfDosMas)],
               ['ProductosBarbaEH · sin catálogo', ProductosBarbaEH, () => pp(barbaTodo)],
               ['ProductosBarbaEH · con productos', ProductosBarbaEH, () => pp(barbaConProducto)],
             ];

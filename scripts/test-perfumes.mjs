@@ -101,8 +101,14 @@ eq(estadoDeEntradaPerfumes(decirAhoraNoPerfumes(configurarPrimeraVez(DEFAULT_EST
   '"Ahora no" se guarda, y el apartado no aparece');
 eq(estadoDeEntradaPerfumes(base()), 'configurado', 'Y configurarlo también');
 
-eq(PARTES_PERFUMES.map((p) => p.id), ['perfil', 'favoritos', 'historial', 'recomendaciones'],
-  'Las cuatro que se pueden quitar por separado (apartado 18)');
+ok(['perfil', 'favoritos', 'historial', 'recomendaciones'].every((id) => PARTES_PERFUMES.some((p) => p.id === id)),
+  'Las cuatro que se pueden quitar por separado (apartado 18 de la F24)');
+/* ⚠️ EH F25 añadió Colección, Rotación y Estadísticas — su apartado 18 las lista
+   con todo el derecho. Comprobar CUÁLES están, no cuántas hay. */
+ok(['coleccion', 'rotacion', 'estadisticas'].every((id) => PARTES_PERFUMES.some((p) => p.id === id)),
+  'Y las tres que añade el apartado 18 de la F25');
+eq(PARTES_PERFUMES.filter((p) => !p.porDefecto).map((p) => p.id), ['rotacion', 'estadisticas'],
+  '⚠️ Rotación y estadísticas nacen APAGADAS: "solamente si el usuario activa esta función"');
 
 /* Pruebas 13 y 14: desactivar partes y reactivar, sin perder datos. */
 {
@@ -344,8 +350,13 @@ console.log('\n10 · ⚠️ El normalizador conoce sus siete campos');
 /* ── 11 · EL PANEL Y LA REGLA 8 ─────────────────────────────────────────── */
 console.log('\n11 · El panel, y regla 8');
 
-eq(PLAQUITAS_PERFUMES.filter((p) => !p.listo).map((p) => p.fase), [25],
-  '⚠️ Las recomendaciones dicen que llegan en la Fase 25 (apartado 16)');
+/* ⚠️ El apartado 16 de la F24 pedía *"preparar una plaquita"* de recomendaciones
+   para la Fase 25 — y la Fase 25 ya la llenó, así que ahora funciona. Lo que se
+   comprueba es que **exista y esté marcada con su fase**, no que siga a medias. */
+ok(PLAQUITAS_PERFUMES.some((p) => p.id === 'recomendaciones' && p.fase === 25),
+  'La plaquita de recomendaciones existe, y consta que es de la Fase 25');
+ok(PLAQUITAS_PERFUMES.every((p) => p.listo || p.fase > 25),
+  '⚠️ Y si alguna no funcionara todavía, diría en qué fase llega (regla 8)');
 
 {
   const { estado } = conUno();

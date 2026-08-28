@@ -1776,44 +1776,74 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Reactivar.
 - [x] Comprobar que no se duplica el catálogo de productos.
 
-#### EH · Fase 25/65 — PERFUMES: RECOMENDACIONES, OCASIONES Y COLECCIÓN
-- [ ] PLAQUITA «MIS PERFUMES»
-- [ ] AÑADIR PERFUME
-- [ ] DISPONIBILIDAD
-- [ ] PERFUME ACTIVO
-- [ ] OCASIONES
-- [ ] TEMPORADA
-- [ ] RECOMENDACIÓN
-- [ ] OTRA OPCIÓN
-- [ ] COMPARACIÓN
-- [ ] ROTACIÓN
-- [ ] NO REPETIR
-- [ ] PERFUMES FAVORITOS
-- [ ] QUIERO PROBAR
-- [ ] RECOMENDACIONES DE COMPRA
-- [ ] ALTERNATIVAS
-- [ ] HISTORIAL
-- [ ] ESTADÍSTICAS
-- [ ] DESACTIVACIÓN
-- [ ] PRUEBAS
-- [ ] Añadir perfume.
-- [ ] Añadir manualmente.
-- [ ] Marcar favorito.
-- [ ] Seleccionar actual.
-- [ ] Asignar ocasión.
-- [ ] Asignar temporada.
-- [ ] Recomendar.
-- [ ] Pedir otra opción.
-- [ ] Comparar.
-- [ ] Activar rotación.
-- [ ] Evitar repetición.
-- [ ] Gestionar colección.
-- [ ] Añadir “Quiero probar”.
-- [ ] Ver alternativas.
-- [ ] Consultar historial.
-- [ ] Desactivar partes.
-- [ ] Reactivar.
-- [ ] Comprobar integración con catálogo global.
+#### EH · Fase 25/65 — PERFUMES: RECOMENDACIONES, OCASIONES Y COLECCIÓN ✅ COMPLETADA (v1.88.0)
+
+> **`src/lib/recomendacionesPerfumes.js`** (122 comprobaciones) + la pantalla
+> `RecomendacionesPerfumesEH`. Sin SQL nuevo.
+>
+> ⚠️ **No es una puntuación: es una explicación.** El apartado 7 dibuja la recomendación con su
+> porqué —*"encaja con tus preferencias y lo has marcado como adecuado para ocasiones nocturnas"*—,
+> así que cada motivo es **una frase entera** y el que no tiene ninguna **no se propone**.
+>
+> ⚠️ **"Otra opción" tiene memoria, y POR OCASIÓN** (apartado 8). Descartar un perfume para la noche
+> **no lo descarta para el trabajo**, y el descarte **caduca a los 30 días**: *"no repetir
+> continuamente"* no es *"nunca más"*.
+>
+> ⚠️ **"No repetir" BAJA de sitio, no esconde** (apartado 11). Un perfume usado hace poco pierde
+> posiciones, pero si es el único que encaja **se propone igual y se dice cuándo lo usó**. Esconderlo
+> sería decidir por él.
+>
+> ⚠️ **La rotación y las estadísticas son opt-in**, con esas palabras en los apartados 10 y 17
+> (*"pero solamente si el usuario activa esta función"*). Nacen apagadas y, si lo están, devuelven
+> **`null` — no una lista vacía**: apagada y vacía son dos cosas distintas.
+>
+> ⚠️ **La tabla de comparar es la del motor de la Fase 17.** Cuarta del proyecto, y ni una línea
+> nueva de mecánica: el tope de tres, la raya para lo que no se sabe y *"la comparación no elige"* ya
+> estaban. Lo único de esta fase son sus cuatro filas.
+>
+> ⚠️ **Y la compra es la del catálogo global** (apartados 14 y 15): tienda, precio, enlace y
+> afiliación salen de la ficha de la Fase 17 por el `productoId`. **Ni un precio guardado aquí.**
+>
+> ⚠️ **Sin ni un uso registrado NO hay "más utilizado"** (apartado 17): todos empatan a cero, y
+> nombrar a uno sería inventarlo. Se dice que cuando apunte algo, se verá.
+
+- [x] PLAQUITA «MIS PERFUMES»
+- [x] AÑADIR PERFUME
+- [x] DISPONIBILIDAD
+- [x] PERFUME ACTIVO
+- [x] OCASIONES
+- [x] TEMPORADA
+- [x] RECOMENDACIÓN
+- [x] OTRA OPCIÓN
+- [x] COMPARACIÓN
+- [x] ROTACIÓN
+- [x] NO REPETIR
+- [x] PERFUMES FAVORITOS
+- [x] QUIERO PROBAR
+- [x] RECOMENDACIONES DE COMPRA
+- [x] ALTERNATIVAS
+- [x] HISTORIAL
+- [x] ESTADÍSTICAS
+- [x] DESACTIVACIÓN
+- [x] PRUEBAS
+- [x] Añadir perfume.
+- [x] Añadir manualmente.
+- [x] Marcar favorito.
+- [x] Seleccionar actual.
+- [x] Asignar ocasión.
+- [x] Asignar temporada.
+- [x] Recomendar.
+- [x] Pedir otra opción.
+- [x] Comparar.
+- [x] Activar rotación.
+- [x] Evitar repetición.
+- [x] Gestionar colección.
+- [x] Añadir “Quiero probar”.
+- [x] Ver alternativas.
+- [x] Consultar historial.
+- [x] Desactivar partes.
+- [x] Reactivar.
+- [x] Comprobar integración con catálogo global.
 
 #### EH · Fase 26/65 — ACCESORIOS Y ESTILO PERSONAL
 - [ ] ACTIVACIÓN

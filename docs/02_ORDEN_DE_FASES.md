@@ -236,9 +236,11 @@ escribir código.
 
 | v1.87.0 | **EH F24** | Perfumes y fragancias: perfil personal. ⚠️ **Los aromas son un dato COMPARTIDO** y se declaran en el registro de la F4, para que la F18 los lea en vez de repreguntarlos. ⚠️ **Lo que NO le gusta pesa tanto como lo que le gusta** (apartado 3, *"muy importante"*), y se dice con sus palabras. ⚠️ **"Mi perfume actual" NO es "mi favorito"** (apartado 12), con prueba en las dos direcciones. ⚠️ **Ni tiendas ni precios**: no es una tienda de perfumes |
 
+| v1.88.0 | **EH F25** | Perfumes: recomendaciones, ocasiones y rotación. ⚠️ **No es una nota, es una explicación** (apartado 7): cada motivo es una frase, y el que no tiene ninguna no se propone. ⚠️ **"Otra opción" tiene memoria POR OCASIÓN**, y el descarte caduca. ⚠️ **"No repetir" BAJA de sitio, no esconde**. ⚠️ **Rotación y estadísticas son opt-in y devuelven `null` si están apagadas**, no una lista vacía. ⚠️ Y **la tabla de comparar es la del motor de la F17** |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 21/65** (F1-F17, F20, F21, F23 y F24; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **42** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (40, tres de ellas bloqueadas).
+3/5 y **EH por 22/65** (F1-F17, F20, F21 y F23-F25; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **41** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (39, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

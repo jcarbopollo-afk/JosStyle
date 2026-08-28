@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.87.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.88.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 21/65**, quedan 42 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 22/65**, quedan 41 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -149,7 +149,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 21/65** (v1.87.0: F1-F17, **F20, F21, F23 y F24**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 22/65** (v1.88.0: F1-F17, **F20, F21 y F23-F25**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -161,10 +161,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 25/65 — Perfumes: recomendaciones, ocasiones y colección**.
+La siguiente candidata es **EH · Fase 26/65 — Accesorios y estilo personal**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21, F23 y F24 dejaron sesenta y seis cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F25 dejaron setenta cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -340,6 +340,14 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   se validan contra lo que existe. Guardar el id de un perfume que ya no está es guardar una mentira.
 - ⚠️ **Lo que él dice que NO quiere vale tanto como lo que quiere** (F24, apartado 3), y se le repite
   con sus palabras: *"dijiste que preferías evitar…"*, nunca *"no te gusta"*.
+- ⚠️ **Una recomendación es una EXPLICACIÓN, no una nota** (F25, apartado 7): cada motivo es una
+  frase entera, y **el que no tiene ninguna no se propone**. Nunca una puntuación a la vista.
+- ⚠️ **Apagado y vacío son DOS COSAS** (F25, apartados 10 y 17). Una parte opt-in apagada devuelve
+  `null`, no `[]`: si no, la pantalla pinta siete días en blanco de algo que él no ha activado.
+- ⚠️ **"No repetir" BAJA de sitio, no esconde** (F25, apartado 11). Si es el único que encaja, se
+  propone igual y se dice cuándo lo usó. Esconderlo sería decidir por él.
+- ⚠️ **Un descarte se guarda CON su contexto** (F25, apartado 8): descartar un perfume para la noche
+  no lo descarta para el trabajo. Y caduca: *"continuamente"* no es *"nunca más"*.
 
 ⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
 que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el

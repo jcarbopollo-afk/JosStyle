@@ -1,5 +1,62 @@
 # CHANGELOG.md
 
+## v1.88.0 — EH Fase 25/65: recomendaciones de perfume, ocasiones y rotación
+
+### Qué se ha construido
+La segunda mitad del módulo 🌫️ **Perfumes**: **qué ponerse hoy**, por ocasión y por época del año,
+con su porqué; *"otra opción"*; la comparación de hasta tres; la rotación; el historial de uso y las
+estadísticas. Se llega desde **Más → Estilo de hombre → Perfumes → Recomendaciones**.
+
+La plaquita que en la Fase 24 decía *"llega en la Fase 25"* ahora abre la pantalla de verdad.
+
+### Las decisiones que gobiernan la fase
+
+**1. ⚠️ No es una puntuación: es una explicación.** El apartado 7 dibuja la recomendación con su
+porqué —*"encaja con tus preferencias y lo has marcado como adecuado para ocasiones nocturnas"*—, así
+que cada motivo es **una frase entera** y se enseñan enlazadas, no como un número ni como etiquetas
+sueltas. Un perfume **sin ningún motivo no se propone**: proponerlo sería un ranking disfrazado.
+
+**2. ⚠️ "Otra opción" tiene memoria, y por ocasión** (apartado 8). Descartar un perfume para la noche
+**no lo descarta para el trabajo**, porque el descarte se guarda **con la ocasión en la que ocurrió**.
+Y **caduca a los 30 días**: *"no repetir continuamente"* no es *"nunca más"*.
+
+**3. ⚠️ "No repetir" BAJA de sitio, no esconde** (apartado 11). Un perfume usado hace poco pierde
+posiciones, pero si es el único que encaja **se propone igual, diciendo cuándo lo usó**. Esconderlo
+sería decidir por él, y la regla 7 dice que la IA sugiere.
+
+**4. ⚠️ Apagada y vacía son dos cosas distintas.** La rotación y las estadísticas son **opt-in**, con
+esas palabras en los apartados 10 y 17 (*"pero solamente si el usuario activa esta función"*): nacen
+apagadas y, mientras lo estén, devuelven **`null`, no una lista vacía**. Una lista vacía diría "no
+tienes perfumes"; `null` dice "esto no lo has encendido".
+
+**5. ⚠️ La tabla de comparar es la del motor de la Fase 17.** Cuarta del proyecto y ni una línea
+nueva de mecánica: el tope de tres, la raya para lo que no se sabe y *"la comparación no elige"* ya
+estaban. Lo único de esta fase son **sus cuatro filas**.
+
+**6. ⚠️ Y la compra es la del catálogo global** (apartados 14 y 15): tienda, precio, enlace y
+afiliación salen de la ficha de la **Fase 17** por el `productoId`. **Ni un precio guardado aquí**, y
+ni un enlace inventado (D2-03).
+
+### Lo que no se inventa
+**Sin ni un uso registrado no hay "más utilizado"** (apartado 17): todos empatan a cero y nombrar a
+uno sería inventarlo, así que se dice que cuando apunte algo, se verá. Y las cuatro épocas del año de
+esta fase **se traducen** a las tres temporadas que ya guardaba la Fase 24 —"entretiempo" no existía
+allí— en vez de crear un segundo campo de temporada.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **122 comprobaciones nuevas**, **900 casos de
+renderizado** (32 nuevos) y **128 comprobaciones en Chromium** (10 nuevas): se entra en
+Recomendaciones, se pide una para una ocasión, sale **con su porqué**, se pide *"otra opción"* y el
+descartado deja de salir.
+
+### Archivos
+- **Nuevos:** `src/lib/recomendacionesPerfumes.js`, `scripts/test-recomendaciones-perfumes.mjs`.
+- **Modificados:** `src/lib/perfumes.js` (las dos partes opt-in y los dos campos nuevos de la ficha),
+  `src/views/EstiloHombreView.jsx`, `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`,
+  `scripts/test-perfumes.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.87.0 — EH Fase 24/65: perfumes y fragancias, el perfil personal
 
 ### Qué se ha construido

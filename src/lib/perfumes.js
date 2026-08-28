@@ -73,9 +73,15 @@ export const TEXTOS_PERFUMES = {
 
 export const PARTES_PERFUMES = [
   { id: 'perfil', nombre: 'Perfil', icono: '🌫️', porDefecto: true },
+  { id: 'coleccion', nombre: 'Colección', icono: '🧴', porDefecto: true },
   { id: 'favoritos', nombre: 'Favoritos', icono: '❤️', porDefecto: true },
   { id: 'historial', nombre: 'Historial', icono: '📋', porDefecto: true },
   { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', porDefecto: true },
+  /* ⚠️ EH F25, apartados 10 y 18 — *"pero solamente si el usuario activa esta
+     función"*. La rotación y las estadísticas **nacen apagadas**: son de quien
+     las quiere, no de todo el mundo. */
+  { id: 'rotacion', nombre: 'Rotación', icono: '🔄', porDefecto: false },
+  { id: 'estadisticas', nombre: 'Estadísticas', icono: '📊', porDefecto: false },
 ];
 
 export const partePerfumes = (id) => PARTES_PERFUMES.find((p) => p.id === id) || null;
@@ -86,8 +92,8 @@ export const PLAQUITAS_PERFUMES = [
   { id: 'coleccion', nombre: 'Mi colección', icono: '🧴', fase: 24, listo: true },
   { id: 'probar', nombre: 'Quiero probar', icono: '🎯', fase: 24, listo: true },
   { id: 'historial', nombre: 'Historial', icono: '📋', fase: 24, listo: true },
-  // Apartado 16 — *"preparar una plaquita"*: llegan en la Fase 25.
-  { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', fase: 25, listo: false },
+  // Apartado 16 de la F24 — *"preparar una plaquita"*. La F25 la llenó.
+  { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', fase: 25, listo: true },
 ];
 
 /* ===========================================================================
@@ -303,7 +309,19 @@ export const catalogoParaPerfumes = (estado) => [
   ...productosPelo(estado).map((p) => ({ ...p, modulo: 'pelo', moduloNombre: 'Pelo' })),
 ];
 
-/** Apartado 9 — los siete campos, y ni uno inventado. */
+/**
+ * Apartado 3 de la **Fase 25** — la disponibilidad, *"para gestionar la
+ * colección"*. ⚠️ **Opcional**: sin decir nada, no se asume que lo tenga.
+ */
+export const DISPONIBILIDADES = [
+  { id: 'tengo', nombre: 'Lo tengo', icono: '🟢' },
+  { id: 'acabando', nombre: 'Casi terminado', icono: '🟡' },
+  { id: 'terminado', nombre: 'Terminado', icono: '🔴' },
+];
+
+export const disponibilidad = (id) => DISPONIBILIDADES.find((d) => d.id === id) || null;
+
+/** Apartado 9 — los campos del enunciado, y ni uno inventado. */
 export function normalizarPerfume(g) {
   const p = g || {};
   const nombre = String(p.nombre || '').trim();
@@ -320,6 +338,11 @@ export function normalizarPerfume(g) {
     // ⚠️ `Number(null)` es 0 y `Number.isInteger(0)` es `true`: el 0 no es una nota.
     valoracion: Number.isInteger(val) && val >= 1 && val <= 5 ? val : null,
     nota: String(p.nota || '').trim().slice(0, MAX_NOTA_PERFUME),
+    /* ⚠️ EH F25 — los dos campos que añade la Fase 25. Sin esta línea el
+       siguiente guardado se los llevaría (regla 5): van veintidós veces. */
+    intensidad: INTENSIDADES.some((x) => x.id === p.intensidad) ? p.intensidad : null,
+    // ⚠️ `null` a propósito: no decir nada NO es "lo tengo".
+    disponibilidad: disponibilidad(p.disponibilidad) ? p.disponibilidad : null,
     // Apartado 10 — el favorito, con el sistema global.
     favorito: p.favorito === true,
     // Apartado 17 — el id del catálogo global, si lo enlazó. **Nunca la ficha.**

@@ -171,6 +171,10 @@ import {
   asignarPerfumeAOcasion, anadirPorProbar, quitarPorProbar, moverAColeccion,
   registrarUso, resumenPerfumes, panelPerfumes,
 } from '../lib/perfumes';
+import {
+  panelRecsPerfume, compararPerfumes, descartarPerfume, ponerEnRotacion,
+  ponerEspera, ponerDisponibilidad, MAX_COMPARAR as MAX_COMPARAR_PERFUME,
+} from '../lib/recomendacionesPerfumes';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -5141,6 +5145,16 @@ export function PerfumesEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
     );
   }
 
+  /* ── 💡 Recomendaciones (F25) ──────────────────────────────────────── */
+  if (zona === 'recomendaciones') {
+    return (
+      <RecomendacionesPerfumesEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setZona(null)}
+      />
+    );
+  }
+
   /* ── 📋 Historial ──────────────────────────────────────────────────── */
   if (zona === 'historial') {
     return (
@@ -5202,6 +5216,7 @@ export function PerfumesEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
                   : `${panel.resumen.coleccion} ${panel.resumen.coleccion === 1 ? 'perfume' : 'perfumes'}`,
                 probar: panel.resumen.porProbar === 0 ? 'Apunta los que te llamen' : `${panel.resumen.porProbar} apuntados`,
                 historial: panel.resumen.usos === 0 ? 'Si te apetece' : `${panel.resumen.usos} registros`,
+                recomendaciones: '¿Cuál me pongo?',
               }[p.id] || '') : `Llega en la fase ${p.fase}`}
               onAbrir={p.listo ? () => setZona(p.id) : null}
             />
@@ -5247,6 +5262,235 @@ export function PerfumesEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
           </div>
         ))}
       </Card>
+    </div>
+  );
+}
+
+/* ===========================================================================
+   RECOMENDACIONES DE PERFUME (F25)
+   ===========================================================================
+   *"Qué perfume usar → cuándo → por qué."* Sin IA.
+
+   ⚠️ **La rotación y las estadísticas devuelven `null` si están apagadas**, y
+   aquí eso se pinta como lo que es: no se enseñan. Apagada y vacía son dos
+   cosas distintas, y confundirlas sería enseñarle una lista de siete días en
+   blanco de algo que no ha activado. */
+export function RecomendacionesPerfumesEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  /* ⚠️ Regla 4 — todos los hooks antes de cualquier `return`. */
+  const [ocasionPedida, setOcasionPedida] = useState(null);
+  const [epocaPedida, setEpocaPedida] = useState(null);
+  const [saltar, setSaltar] = useState(0);
+  const [comparar, setComparar] = useState([]);
+  const [error, setError] = useState(null);
+
+  const panel = useMemo(
+    () => panelRecsPerfume(estado, { ocasion: ocasionPedida, epoca: epocaPedida, saltar, datosGlobales }),
+    [estado, ocasionPedida, epocaPedida, saltar, datosGlobales],
+  );
+  const tabla = useMemo(() => compararPerfumes(estado, comparar), [estado, comparar]);
+  const rec = panel.recomendacion;
+
+  const aplicar = (r) => {
+    if (r.error) { setError(r.error); return false; }
+    setError(null);
+    onCambiar?.(r.estado);
+    return true;
+  };
+
+  const chip = (a) => ({
+    background: a ? hexToRgba(accent, 0.12) : COLORS.surface2,
+    border: `1px solid ${a ? accent : COLORS.border}`,
+  });
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-1">
+          {onCerrar && (
+            <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+              <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+            </button>
+          )}
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>💡 ¿Cuál me pongo?</p>
+        </div>
+        {error && <p className="text-[10px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+
+        {/* Apartado 5 — *"¿Para qué lo necesitas?"*. Se elige, no se deduce. */}
+        <p className="text-[10px] font-semibold mb-1" style={{ color: COLORS.textMuted }}>¿Para qué lo necesitas?</p>
+        <div className="flex flex-wrap gap-1 mb-2">
+          {panel.ocasiones.map((o) => (
+            <button key={o.id}
+              onClick={() => { setOcasionPedida(ocasionPedida === o.id ? null : o.id); setSaltar(0); }}
+              className="rounded-full px-2.5 py-1" style={chip(ocasionPedida === o.id)}
+              aria-pressed={ocasionPedida === o.id}>
+              <span className="text-[10px] font-semibold"
+                style={{ color: ocasionPedida === o.id ? accent : COLORS.text }}>{o.icono} {o.nombre}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Apartado 6 — *"¿Cuándo?"*. */}
+        <p className="text-[10px] font-semibold mb-1" style={{ color: COLORS.textMuted }}>¿Cuándo?</p>
+        <div className="flex flex-wrap gap-1 mb-3">
+          {panel.epocas.map((e) => (
+            <button key={e.id}
+              onClick={() => { setEpocaPedida(epocaPedida === e.id ? null : e.id); setSaltar(0); }}
+              className="rounded-full px-2.5 py-1" style={chip(epocaPedida === e.id)}
+              aria-pressed={epocaPedida === e.id}>
+              <span className="text-[10px] font-semibold"
+                style={{ color: epocaPedida === e.id ? accent : COLORS.text }}>{e.icono} {e.nombre}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Apartado 7 — la recomendación, con su porqué. */}
+        {rec.hay ? (
+          <div className="rounded-2xl p-3"
+            style={{ background: hexToRgba(accent, 0.08), border: `1px solid ${hexToRgba(accent, 0.25)}` }}>
+            <p className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>{rec.titulo}</p>
+            <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{rec.perfume.nombre}</p>
+            <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>{rec.porque}</p>
+            {/* ⚠️ Apartado 11 — usado hace poco se DICE, no se esconde. */}
+            {rec.aviso && <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>⏳ {rec.aviso}</p>}
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <button onClick={() => aplicar(alternarFavoritoPerfume(estado, rec.perfume.id))}
+                className="text-[10px] font-semibold" style={{ color: accent }}>
+                {rec.perfume.favorito ? '❤️ Ya es favorito' : '❤️ Me gusta'}
+              </button>
+              {/* Apartado 8 — y "otra opción" recuerda lo que descartó. */}
+              {rec.hayMas && (
+                <button
+                  onClick={() => { aplicar(descartarPerfume(estado, rec.perfume.id, { ocasion: ocasionPedida })); setSaltar(saltar + 1); }}
+                  className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                  🔄 Otra opción
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* ⚠️ Sin recomendación se dice qué falta, no una tarjeta vacía. */
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{rec.texto}</p>
+        )}
+      </Card>
+
+      {/* Apartado 9 — comparar. La tabla es la del motor de la Fase 17. */}
+      {panel.coleccion.length > 1 && (
+        <Card>
+          <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Comparar</p>
+          <div className="flex flex-wrap gap-1 mb-2">
+            {panel.coleccion.map((p) => {
+              const puesto = comparar.includes(p.id);
+              return (
+                <button key={p.id}
+                  onClick={() => setComparar(puesto ? comparar.filter((x) => x !== p.id) : [...comparar, p.id].slice(-MAX_COMPARAR_PERFUME))}
+                  className="rounded-full px-2.5 py-1" style={chip(puesto)} aria-pressed={puesto}>
+                  <span className="text-[10px] font-semibold" style={{ color: puesto ? accent : COLORS.text }}>{p.nombre}</span>
+                </button>
+              );
+            })}
+          </div>
+          {tabla.suficiente ? (
+            <div className="overflow-x-auto">
+              <table className="text-[10px] w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left pr-2" style={{ color: COLORS.textMuted }}> </th>
+                    {tabla.perfumes.map((p) => (
+                      <th key={p.id} className="text-left pr-2 font-semibold" style={{ color: COLORS.text }}>{p.nombre}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {tabla.filas.map((f) => (
+                    <tr key={f.id}>
+                      <td className="pr-2" style={{ color: COLORS.textMuted }}>{f.nombre}</td>
+                      {f.valores.map((v, i) => (
+                        <td key={i} className="pr-2" style={{ color: COLORS.text }}>{v}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            comparar.length > 0 && <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{tabla.texto}</p>
+          )}
+        </Card>
+      )}
+
+      {/* ⚠️ Apartado 10 — la rotación, SOLO si la ha activado. `null` = apagada. */}
+      {panel.rotacion !== null && (
+        <Card>
+          <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>🔄 Rotación</p>
+          {panel.tocaHoy && (
+            <p className="text-[11px] mb-1" style={{ color: COLORS.textMuted }}>Hoy toca {panel.tocaHoy.nombre}.</p>
+          )}
+          {panel.rotacion.map((d) => (
+            <div key={d.id} className="flex items-center gap-2 py-0.5">
+              <span className="text-[11px] w-20" style={{ color: COLORS.textMuted }}>{d.nombre}</span>
+              <div className="flex flex-wrap gap-1 flex-1">
+                {panel.coleccion.map((p) => {
+                  const puesto = d.perfume?.id === p.id;
+                  return (
+                    <button key={p.id} onClick={() => aplicar(ponerEnRotacion(estado, d.id, puesto ? null : p.id))}
+                      className="rounded-full px-2 py-0.5" style={chip(puesto)} aria-pressed={puesto}>
+                      <span className="text-[10px]" style={{ color: puesto ? accent : COLORS.textMuted }}>{p.nombre}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {/* Apartado 11 — evitar repetir. Opcional. */}
+          <p className="text-[10px] font-semibold mt-2 mb-1" style={{ color: COLORS.textMuted }}>
+            Evitar repetir el mismo perfume durante
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {panel.esperas.filter((e) => e.dias).map((e) => (
+              <button key={e.id}
+                onClick={() => aplicar(ponerEspera(estado, panel.resumen.espera === e.id ? null : e.id))}
+                className="rounded-full px-2.5 py-1" style={chip(panel.resumen.espera === e.id)}
+                aria-pressed={panel.resumen.espera === e.id}>
+                <span className="text-[10px] font-semibold"
+                  style={{ color: panel.resumen.espera === e.id ? accent : COLORS.text }}>{e.nombre}</span>
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* ⚠️ Apartado 17 — las estadísticas, solo si activó seguimiento. */}
+      {panel.estadisticas !== null && (
+        <Card>
+          <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>📊 Mi uso</p>
+          {panel.estadisticas.hay ? (
+            <>
+              {panel.estadisticas.masUsado && (
+                <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                  Más utilizado → {panel.estadisticas.masUsado.nombre} ({panel.estadisticas.masUsado.usos})
+                </p>
+              )}
+              {panel.estadisticas.masValorado && (
+                <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                  Más valorado → {panel.estadisticas.masValorado.nombre} ({panel.estadisticas.masValorado.valoracion}/5)
+                </p>
+              )}
+              {panel.estadisticas.menosUsado && (
+                <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                  Menos utilizado → {panel.estadisticas.menosUsado.nombre} ({panel.estadisticas.menosUsado.usos})
+                </p>
+              )}
+              {/* ⚠️ Sin ni un uso NO se dice cuál es el más usado: se dice esto. */}
+              {panel.estadisticas.texto && (
+                <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.estadisticas.texto}</p>
+              )}
+            </>
+          ) : (
+            <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.estadisticas.texto}</p>
+          )}
+        </Card>
+      )}
     </div>
   );
 }
