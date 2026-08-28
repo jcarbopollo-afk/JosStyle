@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.74.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.82.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 8/65**, quedan 55) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 16/65**, quedan 47) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -111,12 +111,21 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 ## Verificación: qué está probado y qué no
 
+🚨 **LO MÁS IMPORTANTE QUE HA APRENDIDO ESTE PROYECTO (v1.82.0):** durante meses **la aplicación no
+arrancaba** y ninguna de las 5 844 comprobaciones lo vio, porque **`App.jsx` no se renderizaba en
+ninguna prueba**. Dos fallos: un import que faltaba (`papelera.js`) que rompía la carga de datos a
+media función —así que **ningún módulo de la Entrega 2 cargaba lo guardado**— y cinco hooks después
+de un `return` condicional (regla 4) que tumbaban la app entera. **Una fase no está hecha porque su
+prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para eso está
+`scripts/test-app-real.mjs`, que la abre en Chromium de verdad.
+
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 3979 pruebas unitarias con Node, 5 de auditoría, 488 casos de renderizado real con
-`react-dom/server` y 10 reglas invariantes — **4472 comprobaciones**.
+Vite, 5346 pruebas unitarias con Node, 5 de auditoría, 648 casos de renderizado real con
+`react-dom/server`, 11 reglas invariantes y **25 comprobaciones sobre la aplicación de verdad en
+Chromium** — **6030 comprobaciones**.
 
-Eso ya ha encontrado **cincuenta y dos bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **sesenta bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -140,15 +149,15 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 8/65** (v1.74.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 16/65** (v1.82.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
-La siguiente candidata es **EH · Fase 9/65 — Pelo: sistema de recomendaciones**.
+La siguiente candidata es **EH · Fase 17/65 — Skincare: productos, farmacia, packs y afiliación**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
-⚠️ **EH F1-F8 dejaron diecisiete cosas que las 57 fases siguientes tienen que respetar:**
+⚠️ **EH F1-F16 dejaron cuarenta y tres cosas que las 49 fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -194,10 +203,77 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   **"Pendiente"**. Sin días en los que tocara **no hay cumplimiento**, ni 0 ni 100.
 - ⚠️ **Una recurrencia guarda su REGLA, nunca sus fechas** (F8 + regla 11), y las ocurrencias entran
   en el Calendario que ya existe con la misma forma que las del Armario. Nunca un segundo calendario.
+- ⚠️ **Toda regla de recomendación declara `requiere`** (F9, apartado 2). Sin datos no se dispara, y
+  una regla sin requisitos **no se aplica nunca**: se dispararía con el contexto vacío. "No lo sé"
+  tampoco es un valor.
+- ⚠️ **`aplicarARutina` sin `confirmado` no escribe** (F9, apartado 10), y calcular recomendaciones
+  tampoco: mostrar y registrar son dos llamadas. Nunca darle un valor por defecto.
+- ⚠️ **El catálogo de productos está VACÍO a propósito** (F10 + D2-03 + apartado 3 del enunciado).
+  Nunca rellenarlo con productos inventados, y **nunca fabricar un enlace**: una URL que Josué no ha
+  dado no existe. Ni una función que compre (apartado 19).
+- ⚠️ **`packSugerido` sugiere, no crea** (F10, apartado 15), como `aplicarARutina`. Y hay UNA sola
+  lista de productos capilares, la que creó F8: dos es cómo se incumple *"no duplicar productos"*.
+- ⚠️ **Un evento planificado y un corte que ocurrió son DOS listas** (F11, apartado 15). `cortes` es
+  la historia, `cita` es el plan, y borrar la cita no puede tocar el historial **porque no tiene
+  manera de hacerlo**. Un array con un campo `hecho` deja las dos cosas a un `filter` de distancia.
+- ⚠️ **`frecuenciaDeCorte()` es la ÚNICA respuesta a "cada cuánto"** (F11), como `tallaDe()` en F5:
+  el perfil de F7 manda, lo puesto a mano rellena el hueco, **y el choque se enseña**. Y *"cuando lo
+  necesito"* es una respuesta: **nunca inventar una frecuencia por defecto**.
+- ⚠️ **`sugerirProximoCorte` sugiere, `avisoDeCorte` decide** (F11). Guardar es `planificarCorte`, y
+  avisar es `notificaciones.js`. Tercer `aplicarPlan` del proyecto y segundo `avisosHorario.js`.
+- ⚠️ **`Number(null)` es 0 y `Number.isInteger(0)` es `true`** (F11): "en X semanas" sin la X
+  planificaba el corte para HOY. Y `'25:99'` encaja con `/^\d{2}:\d{2}$/`: **la forma no basta**.
+- ⚠️ **Antes de añadir una pregunta, mirar si ya está contestada** (F12 + D-15). El apartado 5 de
+  F12 y `tiempoPelo` de F7 son **la misma pregunta con las mismas cinco opciones**: se lee de F7 y
+  la pantalla dice dónde se cambia. El perfil de corte tiene seis preguntas, no siete, **a
+  propósito**. Skincare, Barba, Cuerpo, Manos y Perfumes tienen el mismo riesgo.
+- ⚠️ **`NIVELES_MANTENIMIENTO` (F12) importa ids e iconos de `NIVELES_ESTILO`** y solo cambia los
+  nombres. Si una fase futura necesita una escala de tres niveles, **es esta**, no una nueva.
+- ⚠️ **El corte que ya lleva no se le recomienda** (F12), y **con un solo corte valorado bien no hay
+  patrón** (apartado 15). *"Parece"* y *"bastante"* son las dos palabras que evitan el diagnóstico.
+- ⚠️ **`normalizarPelo` va por DIEZ campos** (`corte`, de F12, es el décimo) y `normalizarCorte` /
+  `normalizarPeluqueria` sumaron tres más. Al añadir un campo, añadirlo a su normalizador — y una
+  **cuenta exacta de llaves en una prueba saltará** cuando la fase siguiente añada la suya con todo
+  el derecho: comprobar lo que la prueba guarda, no cuántas hay.
+- ⚠️ **El formulario adaptativo es del MOTOR** (F13): `cuando` en la pregunta y `preguntasVisibles()`
+  / `progresoVisible()` en `cuestionarios.js`. Barba, Cuerpo, Manos y Perfumes lo usan tal cual;
+  **nunca un `if` en el JSX**, que no se puede comprobar.
+- ⚠️ **Esconder una pregunta NO borra su respuesta** (F13), y **el progreso cuenta lo visible**:
+  "4 de 13" de preguntas que no le aplican es una nota inventada.
+- ⚠️ **El registro de F4 es quien decide qué se comparte** (F13, apartado 15). `tipoPiel`,
+  `sensibilidadPiel` y `sinPerfume` ya estaban declaradas ahí antes de que existiera Skincare:
+  **mirar el registro antes de escribir una pregunta**, no después.
+- ⚠️ **Nunca un diagnóstico** (F13): *"¿qué te gustaría mejorar o cuidar?"*, no *"¿qué te pasa?"*.
+  `PALABRAS_CLINICAS` + `sinDiagnostico()` barren todos los textos, y el perfil de piel **no viaja
+  a la IA** (apartado 17), con `paraIA: false` en el propio dato.
+- ⚠️ **`motorRutinas.js` es EL motor de rutinas** (F14, extraído de F8). Pelo y Skincare lo usan; si
+  Barba o Cuerpo tienen rutinas, **llaman ahí**. Nunca una tercera copia de `tocaEnFecha`.
+- ⚠️ **La lista de frecuencias es del módulo, el comportamiento es del motor** (F14). Seis etiquetas
+  de F14 y cinco de F8 sobre **cuatro** reglas: cada etiqueta declara su `tipo`.
+- ⚠️ **Omitir es una TERCERA cosa** (F14, apartado 10): ni hecho ni pendiente, y **sale de la cuenta
+  del día**. Dos hechos y uno omitido es una rutina HECHA. Nunca contarlo como fallo.
+- ⚠️ **Un campo propio de un módulo lo normaliza ese módulo** (F14): el motor solo conoce los suyos,
+  así que `momento`, `hora` y `diasAviso` los normaliza `rutinasPiel.js`. Van catorce.
+- ⚠️ **`scripts/test-imports.mjs` existe porque `App.jsx` nunca importó `papelera.js`** (F15) y la
+  app lanzaba un `ReferenceError` en el primer render — invisible para el build y para las pruebas
+  de renderizado. **Al llamar a algo de `src/lib/` desde una vista, importarlo.**
+- ⚠️ **Un día sin registrar NO EXISTE** (F15, apartado 9): no es un cero, no se cuenta y no se
+  menciona. Sin rachas, sin obligación diaria y sin porcentaje de días registrados.
+- ⚠️ **Nunca una causa** (F15, apartados 7 y 12): *"↑ Mejorando"* y *"desde que empezaste a usar X
+  has registrado N valoraciones"*. Ni "gracias a", ni "funciona", ni "ha mejorado tu piel".
+- ⚠️ **`motorRecomendaciones.js` es EL motor de reglas** (F16, extraído de F9). Pelo, Cortes y
+  Skincare lo usan. **Una regla sin `requiere` no se aplica NUNCA**: se dispararía con el contexto
+  vacío. Nunca una cuarta copia de ese `if`.
+- ⚠️ **`anadirARutina` sin `confirmado` no escribe** (F16, apartados 4 y 11). Quinto `aplicarPlan`
+  del proyecto, tras HT F9, EH F9, EH F12 y EH F14. Nunca darle un valor por defecto.
+- ⚠️ **La prioridad pesa, pero no tapa** (F16, apartado 2): lo del objetivo que él marcó sale
+  primero, y una recomendación de otro tema sigue pudiendo salir.
 
-⚠️ **Y una lección de las pruebas de este bloque:** tres veces una comprobación saltó con algo que
-estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, y el
-`fotos: 0` de una auditoría—. **Mirar qué línea la hace saltar antes de tocar el código.**
+⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
+que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el
+`fotos: 0` de una auditoría y el recuento de colecciones de F8 al añadir una legítima—. **Mirar qué
+línea la hace saltar antes de tocar el código.** Y la otra: **el fallo del normalizador ya va por la
+séptima vez** (F9 lo cazó en el mismo turno). Al añadir un campo, añadirlo a su normalizador.
 
 ⏸ **SO · Fase 2 (biblioteca de sonidos) está bloqueada, y por un motivo real:** no hay ni un archivo
 de audio en el proyecto. Josué escribió en la especificación que los daría *"cuando la web ya tenga

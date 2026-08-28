@@ -1,5 +1,657 @@
 # CHANGELOG.md
 
+## 🚨 v1.82.0 — LA APLICACIÓN NO ARRANCABA. Dos fallos fatales, y EH Fase 16/65
+
+### Lo primero, porque es lo que importa
+Josué dijo que **por más fases que se construyeran, al abrir la aplicación la veía prácticamente
+igual**. Tenía razón, y la causa no era la documentación: **la aplicación no funcionaba**. Dos
+fallos, los dos fatales, los dos invisibles para las 5 844 comprobaciones que había.
+
+**1. `App.jsx` nunca importó `papelera.js`** (desde ME F3, v1.25.0). `purgarCaducados(...)` lanzaba
+un `TypeError` **en mitad de la carga de datos**, y no hay `try/catch` en toda esa ruta. Todo lo que
+venía después no llegaba a ejecutarse:
+
+```
+  línea 456   purgarCaducados(...)        ← TypeError
+  línea 457   setPapelera(...)            ← nunca
+  línea 464   setArmario(...)             ← nunca
+  línea 471   setHorarioTop(...)          ← nunca
+  línea 472   setEstiloHombre(...)        ← nunca
+```
+
+**Ningún módulo de la Entrega 2 cargaba sus datos guardados.** Cada arranque los dejaba en su valor
+por defecto: por eso todo salía "sin configurar" y por eso lo que Josué configuraba parecía
+desaparecer al recargar.
+
+**2. Cinco hooks estaban DESPUÉS de los `return` condicionales de `App.jsx`** — la regla 4 del
+proyecto, rota otra vez. En el primer render `session` es `undefined` y se sale por
+`<LoadingScreen />`, así que esos hooks no se ejecutan; en cuanto llega la sesión, React encuentra
+cinco hooks más que la vez anterior y lanza **"Rendered more hooks than during the previous
+render"**, que **tumba la aplicación entera**.
+
+Los dos están arreglados. Comprobado abriendo la aplicación en un navegador de verdad.
+
+### ⚠️ Por qué ninguna prueba lo veía, y qué se ha hecho al respecto
+**`App.jsx` no se renderizaba en ninguna prueba.** El build no comprueba identificadores, y las 648
+pruebas de renderizado montan las *vistas*, no la aplicación — porque `App.jsx` necesita Supabase y
+un navegador.
+
+Ahora sí: **`scripts/test-app-real.mjs`** arranca Vite, abre la app en Chromium con la sesión y las
+respuestas de Supabase simuladas, y comprueba la cadena entera:
+
+**arranca → carga lo guardado → se llega al módulo → se toca → se guarda → se ve.**
+
+25 comprobaciones, incluidas dos que existen solo para estos dos fallos: que no aparezca *"Rendered
+more hooks"* y que no haya ningún *"is not a function"*. Playwright **no es dependencia del
+proyecto** (Vercel no debe instalarlo): si no está, la prueba se salta con un aviso.
+
+Y **`scripts/test-imports.mjs`**, la regla invariante que encontró el primer fallo, recorre los
+1 319 nombres que exporta `src/lib/` y comprueba que los 38 archivos de `src/` importen los que usan.
+
+### Lo que esto significa para las fases anteriores
+**Estaban bien construidas.** Se ha comprobado en el navegador: Estilo de Hombre se abre desde Más,
+carga los módulos que había guardados, el panel de Pelo enseña sus seis plaquitas (F7 a F12),
+Peluquería abre con su frecuencia y su planificación, "Mi estilo de corte" está dentro, y registrar
+un corte **escribe en Supabase y se ve en pantalla**. Lo que fallaba era el arranque, no las fases.
+
+### EH Fase 16/65 — Skincare: motor de recomendaciones
+Tercera fase que necesitaba reglas con `requiere`/`cuando`/`porque`: la 9 lo construyó para el pelo,
+la 12 escribió su propia copia del mismo `if`, y ésta era la tercera. Lo genérico se ha extraído a
+**`motorRecomendaciones.js`** y las tres lo usan — **las 146 pruebas de F9 y las 209 de F12 pasaron
+sin tocar ni una**.
+
+- ⚠️ **La aplicación nunca modifica la rutina** (apartados 4 y 11): `anadirARutina` exige
+  `confirmado: true`, y calcular no escribe. Quinto `aplicarPlan` del proyecto.
+- ⚠️ **La prioridad la marca él** (apartado 2) y pesa **sin tapar el resto**.
+- ⚠️ **El nivel se respeta** (apartado 7); sin nivel elegido, se enseña todo.
+- ⚠️ *"No quiero recomendaciones similares"* **calla el tema entero**, que es lo que significa.
+- ⚠️ **Apartado 16**: seis pruebas de "sin IA" sobre el código, y cuatro ceros declarados.
+
+### Y una prueba con fecha de caducidad, arreglada
+`test-peluqueria.mjs` comparaba el "Hoy" de `registrarCorte` contra una fecha fija: pasaba el día que
+se escribió y fallaba al siguiente. Ahora compara contra `todayISO()`, sea el día que sea.
+
+### Verificación
+`bash scripts/verificar.sh` — **6030 comprobaciones**, todas correctas: build de Vite, 160 nuevas
+para EH F16, 648 casos de renderizado, 11 reglas invariantes y **25 comprobaciones sobre la
+aplicación de verdad, en Chromium**.
+
+## Entrega 2 · EH Fase 15/65 — Skincare: seguimiento y evolución (v1.81.0)
+
+### 🐛 Un fallo real y grave, encontrado de paso: `App.jsx` nunca importó `papelera.js`
+Al enganchar los registros de piel a la papelera desde `App.jsx`, escribí la llamada y **me olvidé
+del import**. Como eso no lo ve nadie —JavaScript no comprueba los identificadores al compilar, y
+`App.jsx` no se renderiza en las pruebas porque necesita Supabase— se ha escrito una **regla
+invariante** que sí lo ve: `scripts/test-imports.mjs`.
+
+En su primera ejecución encontró cinco cosas. Una era mía. **Las otras cuatro llevaban ahí desde
+ME F3:** `DEFAULT_PAPELERA`, `purgarCaducados`, `prepararEliminacion` y `prepararRestauracion` se
+usan en `App.jsx` **y nunca se importaron**.
+
+`DEFAULT_PAPELERA` se usa en un `useState` de la línea 262, así que **la aplicación lanzaba un
+`ReferenceError` en el primer render**. Es el tipo de fallo que sólo aparece en el iPhone de Josué, al
+abrir la app — el peor sitio posible para descubrirlo.
+
+Corregido con una línea. Y la regla se queda: recoge los 1319 nombres que exporta `src/lib/` y
+comprueba, para cada uno de los 38 archivos de `src/`, que los que use estén importados ahí.
+
+### ⚠️ No se crea otro diario
+El apartado 11, con esas palabras: *"como ya existe el Diario general de JC Fitness, **NO** crear
+otro diario de skincare"*.
+
+Aquí solo viven *"los datos específicos necesarios para este módulo"*: una valoración, unos aspectos
+y una nota corta —280 caracteres a propósito, porque el sitio para escribir es el Diario—. Hay una
+prueba que lee este código y falla si aparece la palabra.
+
+### ⚠️ No se crea otra papelera
+El apartado 13: *"si JC Fitness ya tiene Eliminados recientemente, utilizar ese sistema en lugar de
+crear otro"*. Y no hizo falta tocar el motor de ME F3: es genérico sobre la lista que se le pasa, así
+que bastó con **una línea en `CATALOGO_PAPELERA`** — exactamente lo que ese archivo decía que haría
+falta.
+
+El borrado sale por `eliminarConPapelera`, la única puerta de borrado de la app. Cuando fue por un
+atajo, **la auditoría de ME F4 lo cazó** —*"el catálogo describe colecciones sin borrado real"*— y
+tenía razón: una colección en el catálogo sin un borrado visible es una entrada que nadie puede
+comprobar.
+
+### ⚠️ No se registra cada día
+El apartado 9, que el propio enunciado marca como *"esto es importante"*: *"no crear 🔴 has perdido
+tu racha, ni exigir registros diarios"*.
+
+**Un día sin registrar no existe.** No es un cero, no se cuenta y no se menciona. Siete pruebas
+barren todos los textos buscando "racha", "has perdido", "has fallado", "constancia" y "cada día", y
+`resumenSeguimientoPiel` devuelve `racha: null` a propósito, con una prueba de que no hay ningún
+cálculo de racha en el archivo.
+
+### ⚠️ Las tendencias nunca afirman una causa
+Apartado 7: *"no afirmar que un producto ha causado un resultado"*. Apartado 12: *"pero no establecer
+causalidad médica. Simplemente mostrar los datos registrados."*
+
+Se enseña *"Hidratación ↑ Mejorando"* y *"Desde que empezaste a utilizar X has registrado 4
+valoraciones"*, y ahí se para — con una prueba que busca "gracias a", "ha mejorado tu", "funciona",
+"ha causado", "provoca", "cura" y "por culpa".
+
+**Con menos de cuatro registros no se afirma nada**, con la frase literal del apartado 8: *"todavía
+no hay suficientes registros para mostrar una evolución"*. Y esa frase dice que faltan **datos**, no
+que él haya fallado — hay una prueba de eso también.
+
+**Medio punto de margen** para llamar a algo "mejorando": sin él, una diferencia de 0,1 entre cinco
+registros se anunciaría como una mejora que no existe.
+
+### ⚠️ Sin fotos y sin exportación propia
+Apartado 10: nada de fotos, ni ahora ni como obligación. Apartado 14: *"no crear un sistema de
+exportación independiente"* — `datosParaExportar()` **prepara** los datos con `exporta: false`
+escrito en el propio dato, y no hay nada en el archivo que descargue.
+
+### Un fallo propio, cazado por la prueba
+`evolucionPiel` hacía `{ id: a.id, nombre: a.nombre, ...tendencia(t) }`, y **la tendencia también
+tiene `id` y `nombre`** —'sube' y 'Mejorando'—, así que el spread se llevaba por delante los del
+aspecto: la hidratación pasaba a llamarse "sube". Ahora los campos se copian uno a uno.
+
+### Verificación
+`bash scripts/verificar.sh` — **5844 comprobaciones**, todas correctas: build de Vite,
+121 nuevas en `scripts/test-seguimiento-piel.mjs` (los trece tests del apartado 16 que no son
+"comprobar móvil"), **648 casos de renderizado** (16 nuevos) y **una regla invariante nueva**.
+
+⚠️ Y **la sexta vez en este bloque que una comprobación salta con algo que estaba bien**: los
+barridos de "esto no existe" cazaban su propia evidencia (`fotos: 0` y `diariosNuevos: 0` viven
+dentro de la función de auditoría), y el primer barrido de imports dio un falso positivo con la
+cadena *"Mano dominante (opcional)"*. Mirar qué línea hace saltar la prueba antes de tocar el código.
+
+## Entrega 2 · EH Fase 14/65 — Skincare: rutinas y cuidado diario (v1.80.0)
+
+### ⚠️ El apartado 19 se titula "NO DUPLICAR", y esta fase pedía la máquina que ya existía
+Pasos, frecuencia, lista del día, historial y eventos de calendario: exactamente lo que la **Fase 8**
+construyó para el pelo, otra vez para la piel.
+
+Copiar `rutinasPelo.js` habría sido el segundo sistema de siempre —y, peor, el segundo sitio donde
+arreglar el mismo fallo—. Así que lo genérico se ha extraído a **`src/lib/motorRutinas.js`**, y los
+dos módulos lo usan: Pelo pasa su catálogo de pasos, Skincare el suyo, y **el cálculo de qué toca hoy
+es uno solo**.
+
+**Las 171 pruebas de la Fase 8 son la red que demuestra que la extracción no cambió nada.** Pasaron
+sin tocar ni una.
+
+### ⚠️ La lista de frecuencias es de cada módulo; el comportamiento es del motor
+La Fase 8 ofrecía cinco opciones y esta pide seis —*"Diario, Días concretos, Varias veces por semana,
+Semanal, Cada X días, Personalizado"*—, pero **debajo solo hay cuatro reglas distintas**: todos los
+días, unos días de la semana, cada X días, y ninguno por su cuenta.
+
+*"Días concretos"*, *"varias veces por semana"* y *"semanal"* son tres formas de decir lo mismo. Se
+guarda con su id propio —Josué eligió esa palabra y esa palabra se conserva— y cada una declara **de
+qué tipo es**. Hay una prueba de que Pelo y Skincare dan **la misma respuesta al mismo caso**.
+
+### ⚠️ Omitir no es fallar
+El apartado 10: *"Un usuario puede decidir: 'hoy no quiero hacer este paso'. Debe poder marcarlo como
+Omitir hoy. **Sin penalización**."*
+
+Un paso omitido es una **tercera cosa**: no pendiente —eso sería el reproche que el apartado
+prohíbe— y no hecho —eso sería mentir—. **Sale de la cuenta del día**, así que una rutina de tres
+pasos con uno omitido y dos hechos está **hecha**, no a medias.
+
+Y un paso no puede estar hecho y omitido a la vez: marcar quita lo uno, omitir quita lo otro.
+
+### ⚠️ Los productos son los de la Fase 13
+Apartados 6 y 19: *"si todavía no existe: + Añadir producto. **No crear un segundo inventario**."*
+
+Un paso guarda el `id` de un producto que ya vive en el perfil de piel, y *"+ Añadir producto"*
+**escribe allí** y luego lo engancha: dos escrituras, un solo inventario. Hay una prueba que lee este
+código y falla si aparece una lista de productos propia.
+
+### ⚠️ Las plantillas sugieren, no crean
+Apartado 12: *"son plantillas, no obligaciones"*. Apartado 13: *"el usuario debe confirmar: Usar esta
+rutina"*.
+
+`plantillaSugerida()` devuelve una propuesta con `guardado: false` escrito en el propio dato y **no
+escribe nada** —la prueba serializa el estado antes y después—. Crearla es `usarPlantilla()`, que
+**sin `confirmado` no hace nada**. Cuarto `aplicarPlan` del proyecto, tras HT F9, EH F9 y EH F12.
+
+Y la propuesta se adapta al perfil, que es lo que pide el apartado 13: si ha dicho que no usa
+protección solar, ese paso no aparece en la propuesta. **Sin nivel elegido no se propone ninguna**:
+elegir una por él sería decidir por él.
+
+### ⚠️ Cambiar de nivel no borra la rutina anterior
+El apartado 14, con esas palabras: *"cambiar de nivel no debe borrar la rutina anterior. Simplemente
+modifica las opciones que se muestran."*
+
+El nivel filtra **lo que se ofrece**, no lo que existe. Hay una prueba que crea una rutina con pasos
+avanzados, baja el nivel a básico y cuenta las rutinas y los pasos antes y después.
+
+**Sin nivel elegido se ofrece todo**: esconder opciones a quien no ha dicho nada es decidir por él.
+
+### El seguimiento es una frase
+Apartado 16: *"con información sencilla… no hace falta llenar la pantalla de estadísticas"*. Así que
+es exactamente eso: *"Esta semana: 3 rutinas realizadas."*
+
+Sin porcentajes, sin rachas, sin comparación con la semana pasada — con una prueba que busca todo
+eso en el texto. Y **sin días en los que tocara no hay cumplimiento**, ni 0 ni 100, como en la Fase 8.
+
+### El calendario es el que ya existe
+Apartado 17: *"no crear un calendario de skincare independiente"*. Entra por `eventosDerivados`, con
+la misma forma de evento que el Armario y las rutinas de pelo.
+
+Un año de eventos no guarda ni una fecha (regla 11), y **ninguno es anterior al día en que la creó**:
+una rutina no existe antes de existir.
+
+### Verificación
+`bash scripts/verificar.sh` — **5707 comprobaciones**, todas correctas: build de Vite,
+148 nuevas en `scripts/test-rutinas-piel.mjs` (los diecisiete tests del apartado 20) y **632 casos de
+renderizado** (28 nuevos). Y, sobre todo, las **171 de la Fase 8 intactas** tras el refactor.
+
+## Entrega 2 · EH Fase 13/65 — Skincare: perfil de piel y configuración inicial (v1.79.0)
+
+Empieza el bloque de Skincare, *"uno de los apartados importantes de Estilo de hombre"*. El enunciado
+pone las reglas antes de pedir nada: **sin IA, sin diagnósticos médicos, el usuario decide siempre,
+todo es opcional.**
+
+### ⚠️ El apartado 15 ya era código, y ya estaba escrito
+*"Antes de preguntar: comprobar la información ya registrada. Si un dato compatible ya existe:
+reutilizarlo. No preguntar dos veces."*
+
+**El registro de la Fase 4 ya declaraba `tipoPiel` y `sensibilidadPiel` como datos de esta fase**
+(`desde: 13`), compartidos con Productos, Barba y Cuerpo — más `sinPerfume`, que usan Cuerpo y
+Productos. Así que esas tres respuestas van solas a la capa compartida: **no hay un `if` que lo
+decida**, lo decide `destinoDe()` mirando el registro.
+
+Y funciona en las dos direcciones, con prueba: un `tipoPiel` que guardó Productos aparece aquí ya
+contestado, y contestarlo aquí lo deja donde los demás módulos lo encuentran.
+
+Esto es la diferencia entre una regla escrita en un documento y una regla que es una función. La
+Fase 4 la escribió hace nueve fases; esta es la primera que la cobra entera.
+
+### ⚠️ El formulario adaptativo vive en el motor, no en la pantalla
+El apartado 14 pide *"no mostrar preguntas irrelevantes"*, con su ejemplo: *"si el usuario dice 'no
+utilizo productos', no mostrar inmediatamente 15 preguntas sobre productos"*.
+
+Se le ha añadido `cuando` a la forma de una pregunta y `preguntasVisibles()` / `progresoVisible()` a
+`cuestionarios.js`. **Barba, Cuerpo, Manos y Perfumes van a querer exactamente lo mismo**, y una
+pregunta que se esconde con un `if` en el JSX es una pregunta que nadie puede comprobar.
+
+Cuatro de las trece preguntas están condicionadas, y el ejemplo del enunciado es una prueba.
+
+### ⚠️ Y esconder no es borrar
+Si dice que no usa productos, esas preguntas desaparecen **y sus respuestas de antes siguen
+guardadas**; si mañana dice que sí, reaparecen contestadas. Es la regla 5 otra vez, aplicada a lo que
+se ve en lugar de a lo que se guarda — y es lo que separa un formulario adaptativo de uno que castiga
+por cambiar de opinión.
+
+**El progreso cuenta lo visible.** Decirle *"has contestado 4 de 13"* de un formulario donde cuatro
+preguntas no le aplican sería una nota inventada.
+
+### ⚠️ Objetivos de cuidado, nunca un diagnóstico
+El apartado 4 lleva la advertencia dentro: *"estas opciones son objetivos de cuidado, **no
+diagnósticos**"*. Y el objetivo de la fase lo repite: *"sin diagnósticos médicos"*.
+
+Por eso la pregunta es *"¿Qué te gustaría mejorar o cuidar?"* y **no** *"¿qué te pasa?"*. Hay una
+prueba que recorre **todos** los textos de la fase —títulos, ayudas, opciones, secciones, frases—
+buscando veinte palabras clínicas, y otra que comprueba que en ningún sitio se le pregunta qué le
+pasa.
+
+### ⚠️ Apartado 17 — esto no sale de aquí
+*"Toda la información debe permanecer dentro del sistema de usuario. No enviar estos datos a una IA.
+No crear perfiles externos."*
+
+Siete pruebas sobre el código buscan `askAI`, `AI_SYSTEM`, `anthropic`, `fetch(`, `XMLHttpRequest`,
+`openai` y `supabase`. El contexto que este módulo entrega a las fases 14-17 lleva `paraIA: false`
+escrito en el propio dato, y `auditarPiel()` devuelve `perfilesExternos: 0`.
+
+### Los niveles 🟢🟡🔴, otra vez importados
+El apartado 9 lo dice literalmente: *"esto conecta directamente con el sistema de niveles"*. Así que
+`COMPLEJIDADES_PIEL` toma los ids y los iconos de `NIVELES_ESTILO` (F6) con los nombres del enunciado
+—Básica / Intermedia / Completa—. Segunda fase seguida que lo hace.
+
+### Y una duplicación que NO lo era
+El apartado 8 pregunta cuánto tiempo quiere dedicar a su cuidado, y se parece mucho a la del apartado
+5 de la Fase 12, que sí resultó ser una repetición. **No lo es:** allí las opciones eran menos de 5 /
+5–10 / 10–20 / más de 20 minutos y hablaban del pelo; aquí son menos de 2 / 2–5 / 5–10 / más de 10 y
+hablan de la piel. Otra escala, otro asunto, otra pregunta — y hay una prueba que compara las dos
+listas para dejarlo dicho.
+
+### ⚠️ Lo que esta fase NO construye
+El enunciado cierra con *"todavía no implementar esas funciones dentro de esta fase"*, refiriéndose a
+rutinas, seguimiento, recomendaciones, productos, packs e integración.
+
+`auditarPiel()` devuelve cinco ceros, y cinco pruebas buscan `crearRutina`, `recomendar`, `CATALOGO`,
+`crearPack` y `aplicarA` en el archivo. Un producto aquí **es un nombre**: ni marca, ni precio, ni
+tienda, ni valoración. Y la pantalla dice en qué fases llega lo demás, en vez de "próximamente"
+(regla 8).
+
+### Un vocabulario de estado, no dos
+Sobre la marcha, el módulo tenía `estadoPerfilPiel` devolviendo las palabras del motor (`contestado`)
+y `estadoDeEntrada` devolviendo las suyas (`configurado`). Dos nombres para lo mismo dentro del mismo
+archivo es cómo se acaba comparando contra la palabra equivocada, así que se ha quedado uno: el que
+sabe de *"Ahora no"* (apartado 1), que el motor no puede conocer.
+
+### Verificación
+`bash scripts/verificar.sh` — **5531 comprobaciones**, todas correctas: build de Vite,
+227 nuevas en `scripts/test-perfil-piel.mjs` (los doce tests del apartado 18 que no son "probar
+móvil") y **604 casos de renderizado** (28 nuevos).
+
+## Entrega 2 · EH Fase 12/65 — Peluquería: cortes, preferencias y recomendaciones (v1.78.0)
+
+### ⚠️ El apartado 5 ya estaba contestado, y no se vuelve a preguntar
+El apartado 5 pide preguntar *"¿Cuánto tiempo quieres dedicar a peinarte?"* con cinco opciones:
+menos de 5 min, 5–10, 10–20, más de 20, me da igual.
+
+**La Fase 7 ya hizo esa pregunta** (`tiempoPelo`) **con esas cinco opciones exactas**, y dejó escrito
+para qué servía: *"así las recomendaciones futuras no propondrán una rutina de 20 minutos a alguien
+que quiere tardar 3"*. Esta fase la quiere justamente para eso.
+
+Volver a preguntarla habría dejado a Josué con **dos respuestas a la misma pregunta y ninguna forma
+de saber cuál manda** — que es exactamente el fallo que el apartado 10 de la Fase 1 existe para
+evitar, y que en este proyecto ya es código (`FUENTES_GLOBALES`, `esDatoGlobal()`, `destinoDe()`).
+
+Así que se **lee** de allí, y la pantalla dice dónde se cambia: *"lo dijiste en Pelo → Mi pelo, ahí
+se cambia"*. Cuatro pruebas lo sostienen: que la pregunta de F7 tiene esas cinco opciones, que F12
+**no** la repite, que no la repite con otro nombre, y que lo contestado allí llega hasta aquí.
+
+**Queda anotado como D-15 en `docs/03`.** No activa la regla 49: esa regla detiene una fase ante una
+*contradicción* sin decisión tomada, y aquí no hay contradicción —los dos enunciados quieren lo
+mismo— ni falta decisión.
+
+⚠️ **Consecuencia visible para Josué: el perfil de corte tiene seis preguntas, no siete. La séptima
+no falta — ya está contestada.**
+
+### ⚠️ Los niveles 🟢🟡🔴 se importan de la Fase 6
+El apartado 6 pide tres niveles de mantenimiento con esos tres iconos. `NIVELES_ESTILO` (F6) ya es
+esa escala, y las fases 9, 18 y 22 la comparten.
+
+`NIVELES_MANTENIMIENTO` toma **sus ids y sus iconos** —para que un nivel siga significando lo mismo
+en todo el proyecto— con **los nombres que escribió Josué**: Bajo / Medio / Alto, no Básico /
+Intermedio / Avanzado. Reescribir la escala habría creado dos escalas de tres niveles.
+
+### Añadir un corte es añadir una línea
+Mantenimiento, minutos, longitudes, tipos de pelo y estilos compatibles van EN LA LÍNEA del catálogo,
+como `MODULOS_EH` en la Fase 1 y `REGLAS_PELO` en la Fase 9. El motor no lleva un `if` por corte.
+
+Y *"la lista debe ser ampliable"* (apartado 3) es ampliable de verdad: los cortes que añade Josué
+salen mezclados con los nueve del enunciado **y llegan hasta la pregunta de estilos**, porque la
+pregunta lee el catálogo en vez de una copia congelada al importar el archivo.
+
+### ⚠️ Nada sin confirmar
+El apartado 18 enumera cinco cosas que la aplicación nunca hace sola: cambiar el corte actual, crear
+una cita, modificar el calendario, añadir un producto y cambiar preferencias.
+
+Mirar recomendaciones, comparar, ver patrones y abrir el panel **no cambian ni un byte del estado**,
+con una prueba que lo serializa antes y después. Guardar un favorito, fijar el corte actual y marcar
+un objetivo son tres llamadas distintas, y las hace él.
+
+Y una que no es obvia: **el corte que ya lleva no se le recomienda**. Eso no es una recomendación.
+
+### ⚠️ El historial no diagnostica
+El apartado 15 pide detectar patrones *"sin presentarlo como diagnóstico ni como una conclusión
+absoluta"*. Con **un** corte valorado bien no se afirma nada; hacen falta dos, y entonces la frase es
+la del enunciado: *"parece que este estilo encaja bastante con tus preferencias"*.
+
+Misma disciplina que `frecuenciaReal` (F11), la analítica del Horario (HT F11) y las estadísticas del
+Armario (AR F4). Y un corte que **no** le gustó no entra en el patrón por mucho que se repita.
+
+### Sin IA, y sin "el mejor corte para ti"
+Como la Fase 9, comprobado sobre el código: seis pruebas buscan `askAI`, `anthropic`, `fetch(`,
+`XMLHttpRequest` y `openai`.
+
+La frase que el enunciado prohíbe expresamente —*"este es el mejor corte para ti"*— tiene su propio
+guardián, porque no lleva ninguna palabra de la lista de la Fase 9. Todos los textos que el motor
+puede generar se comprueban contra **las dos** listas.
+
+### El objetivo entra en el evento que ya existe
+*"🎯 Quiero probar"* (apartado 12) sale en el calendario dentro de la `notas` de la cita de la Fase
+11 — no en una clave nueva, que rompería la forma común con los eventos del Armario y las rutinas, y
+desde luego no en un segundo evento (apartado 6). Y lleva su nombre encima, así que borrar el corte
+del catálogo no lo deja apuntando a un fantasma.
+
+### ⚠️ El normalizador, décima vez — y otra vez cazado en el mismo turno
+`normalizarPelo` no conocía el campo `corte`, así que **lo descartaba en cada lectura**: añadir un
+corte y guardar una referencia no tenían ningún efecto. Lo encontró la prueba en el mismo turno en
+que se introdujo, como en las fases 9, 10 y 11.
+
+`corteId`, `valoracion` (en `normalizarCorte`) y `objetivo` (en `normalizarPeluqueria`) son el
+undécimo, duodécimo y decimotercero.
+
+### Verificación
+`bash scripts/verificar.sh` — **5276 comprobaciones**, todas correctas: build de Vite,
+209 nuevas en `scripts/test-cortes-pelo.mjs` (los doce tests del apartado 19, más el apartado 5, más
+el apartado 18 byte a byte) y **576 casos de renderizado** (24 nuevos).
+
+**Y dos comprobaciones de fases anteriores que saltaron con algo que estaba bien:** la cuenta exacta
+de colecciones de `DEFAULT_PELO` (F8) y la de llaves de `DEFAULT_PELUQUERIA` (F11), las dos ampliadas
+legítimamente por esta fase. La segunda se ha reescrito para comprobar **lo que de verdad guarda**
+—que `cortes` y `cita` sigan siendo dos cosas— en vez de contar llaves. Quinta vez en este bloque.
+
+## Entrega 2 · EH Fase 11/65 — Peluquería: calendario y seguimiento de cortes (v1.77.0)
+
+### ⚠️ La decisión que gobierna la fase entera
+El apartado 15, literal: *"Esto eliminará el evento del calendario, **pero no el historial del
+corte**."*
+
+Un corte planificado y un corte que ocurrió **no son la misma cosa**, así que no viven en la misma
+lista. `cortes` es la historia; `cita` es el plan. Borrar la cita no puede tocar un corte **porque
+no tiene manera de hacerlo**, y hay una prueba que cuenta los cortes antes y después de borrarla.
+
+Un solo array con un campo `hecho` habría puesto las dos cosas a un `filter` de distancia, y ese
+`filter` habría llegado tarde o temprano.
+
+### ⚠️ Una sola respuesta a "cada cuánto te lo cortas"
+`frecuenciaDeCorte()` hace exactamente lo que `tallaDe()` en la Fase 5: **lo que ya contestó en el
+perfil capilar (F7) manda**, lo que ponga a mano rellena el hueco, y **si los dos existen y no
+coinciden se enseña el choque** en vez de elegir en silencio.
+
+*"Cuando lo necesito"* es una respuesta legítima que sencillamente no permite calcular una fecha. Se
+dice —*"sin frecuencia fija"*— y **no se inventa una por defecto**: un valor puesto para llenar el
+hueco habría empezado a proponer fechas que él nunca pidió.
+
+### ⚠️ Sugerir no es reservar
+`sugerirProximoCorte()` devuelve *"tu próximo corte podría ser alrededor del…"* con `guardado: false`
+escrito en el propio dato. Guardarlo es `planificarCorte`, y esa la llama él tocando un botón.
+
+Tercera vez que aparece el mismo patrón: `aplicarPlan` (HT F9), `aplicarARutina` (EH F9) y ahora
+esto. El apartado 16 lo pide con esas palabras: *"no reservar ni crear automáticamente nada sin que
+el usuario lo confirme"*.
+
+### ⚠️ Decide aquí, manda `notificaciones.js`
+`avisoDeCorte()` dice **qué habría que avisar y cuándo**; quien emite sigue siendo el emisor único
+del proyecto, con su permiso, su interruptor global y su horario de descanso. Mismo reparto que
+`avisosHorario.js` en el Horario. Un segundo emisor daría dos avisos.
+
+El recordatorio **nace apagado** (apartado 5: *"nunca activarlos de forma invasiva"*), y el apartado
+13 se cumple literalmente: **el calendario funciona sin recordatorios**, son dos cosas
+independientes, y la pantalla lo dice — *"salga o no el aviso, el corte sigue en tu calendario"*.
+
+### Desactivar oculta, no borra
+`impactoDesactivarPeluqueria()` avisa de la cita futura **antes** de apagar y devuelve
+`seBorraAlgo: false`. Reactivar lo devuelve todo: historial, sitios, preferencias y la propia cita.
+Es el apartado 14, y es también la regla de siempre: apagar no es cancelar.
+
+### Los sitios no son un sistema de reservas
+El apartado 12 lo dice: *"no crear todavía un sistema completo de reservas de peluquería"*. Así que
+un sitio es **un nombre, un lugar y una nota**. Ni horarios, ni teléfonos, ni disponibilidad. Y la
+pantalla lo dice —*"aquí solo se apunta dónde vas"*— en vez de dejar un botón muerto (regla 8).
+
+Borrar un sitio **desengancha** los cortes que lo usaban; no los borra.
+
+### El calendario que ya existe
+`eventosDePeluqueria()` devuelve el evento con la misma forma que los del Armario y los de las
+rutinas de F8, y entra por `eventosDerivados` como todo lo demás: **derivado y de solo lectura**
+(regla 11). **Una cita, no una serie** — el próximo corte es un plan concreto, así que a diferencia
+de las rutinas no necesita rango. Hay cinco comprobaciones sobre el enchufe en sí, no sobre la
+función: `eventosDePeluqueria` puede funcionar perfectamente y no salir en ningún sitio si nadie la
+llama.
+
+### Dos fallos silenciosos que encontró la prueba
+1. **`planificarCorte({modo: 'semanas'})` sin cantidad planificaba el corte para HOY.** `Number(null)`
+   es `0` y `Number.isInteger(0)` es `true`, así que la comprobación pasaba y `addDays(hoy, 0)`
+   devolvía hoy. Sin error, sin aviso: una cita para esta tarde.
+2. **`'25:99'` encajaba con `/^\d{2}:\d{2}$/`** y se guardaba como hora de la cita. La forma no
+   basta: ahora se comprueban las horas y los minutos.
+
+### La frecuencia real, derivada
+`frecuenciaReal()` mira los intervalos entre cortes y dice *"de media te lo cortas cada N semanas"*.
+**Con menos de dos intervalos no afirma nada** — misma disciplina que HT F11 y AR F4 —, y en el corte
+más antiguo `diasDesdeElAnterior` es `null`, no `0`: no hay con qué compararlo.
+
+### Verificación
+`bash scripts/verificar.sh` — **5041 comprobaciones**, todas correctas: build de Vite,
+189 nuevas en `scripts/test-peluqueria.mjs` (los catorce tests del apartado 17, más los dos fallos
+silenciosos, más el enchufe al calendario) y **552 casos de renderizado** (28 nuevos).
+
+⚠️ **`peluqueria` es el noveno campo que se enseña a un normalizador en este proyecto.** Tercero
+seguido que se recuerda a la primera.
+
+## Entrega 2 · EH Fase 10/65 — Pelo: productos, catálogo y recomendaciones (v1.76.0)
+
+### ⚠️ La decisión que gobierna la fase entera
+El enunciado habla de catálogo, de Amazon y de afiliación. **D2-03 de Josué** dice: *"Amazon:
+arquitectura sí, afiliación no. Ni catálogo, ni productos, ni API, ni cuenta de afiliados
+inventados."*
+
+**No hay contradicción que resolver: el propio enunciado dice lo mismo.** Apartado 3: *"No llenar
+todavía la aplicación con cientos de productos manualmente en esta fase."* Apartado 11: *"**No poner
+enlaces inventados**."*
+
+Así que se construye **la arquitectura entera** —la ficha con sus doce campos, las cinco clases de
+tienda, la distinción entre enlace normal y de afiliado, el aviso de transparencia, los packs, la
+comparación, los favoritos, "ya lo tengo" y la valoración— y **el catálogo está vacío, declarado
+vacío y comprobado vacío**.
+
+Todo producto que existe en la aplicación lo ha metido él (apartado 9). El día que haya catálogo,
+entra por `CATALOGO_PELO` sin tocar nada más.
+
+### ⚠️ Nunca un enlace inventado
+Una "url" que no lo es se guarda como `null`, y la pantalla **dice que no hay enlace** en vez de
+fabricar una búsqueda de Amazon "por si acaso" — que es inventarse un enlace con otro nombre.
+
+Hay una prueba de que **no aparece ni una URL literal ni un dominio de tienda ni una etiqueta de
+afiliado en todo el código**.
+
+### ⚠️ Nunca una compra automática
+El apartado 19: *"La aplicación únicamente: recomienda → muestra información → ofrece enlace →
+usuario decide."*
+
+Cinco pruebas buscan funciones de "comprar", "checkout", "carrito", "pagar" y "pedido". Lo más lejos
+que llega esto es un objeto con la URL que él guardó.
+
+Y el apartado 12: **el usuario ve siempre "Ver producto"**, lleve el enlace la marca que lleve. El
+aviso de transparencia —*"Algunos enlaces pueden ser enlaces de afiliado"*— sale **solo si alguno lo
+es**. Poner el aviso donde no hay afiliación es tan poco honesto como quitarlo donde sí la hay.
+
+### No disponible no es borrado
+El apartado 10: *"Si un producto deja de estar disponible: **no eliminarlo automáticamente del
+historial**."* Se marca, se avisa y se ofrecen alternativas de entre los suyos.
+
+Y una que no es obvia: **una alternativa que tampoco está disponible no se ofrece**.
+
+### ⚠️ Una sola lista de productos
+La Fase 8 creó una con nombre y paso. Esta le ha añadido marca, categoría, descripción, para qué
+sirve, características, nivel, precio, tiendas, estado, valoración y opinión — **en la misma lista**.
+
+*"No duplicar productos"* está en la lista de pruebas del apartado 20, y dos listas de productos
+capilares es exactamente cómo se incumple. Mismo nombre y misma marca es el mismo producto, aunque
+cambien las mayúsculas.
+
+### El precio lleva su fecha
+El apartado 16: *"si el precio puede cambiar, no tratarlo como un dato permanente"*. Así que viaja
+con `precioAnotado`, y se re-sella al cambiarlo.
+
+### ⚠️ El pack sugerido sugiere, no crea
+El apartado 15 pide que el sistema pueda armar packs por reglas. `packSugerido` devuelve una
+propuesta — y hay una prueba de que **el estado no cambia**. Guardarlo es `crearPack`, y eso lo hace
+él, igual que `aplicarARutina` en la Fase 9.
+
+### Las recomendaciones se apagan, los productos siguen
+El apartado 18 lo dice con esas palabras, y hay una prueba de las dos mitades: con las
+recomendaciones apagadas no sale ninguna, **y los tres productos siguen ahí**.
+
+### `packs` es el octavo campo que se enseña a un normalizador
+Y como en la Fase 9, el que se olvidó lo cazó la prueba en el mismo turno. La costumbre está
+funcionando.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **4 295 comprobaciones unitarias**, 5 de
+auditoría, **524 casos de renderizado real** y 10 reglas invariantes — **4 824 en total**. De ellas,
+**169 nuevas** para EH F10.
+
+---
+
+## Entrega 2 · EH Fase 9/65 — Pelo: sistema de recomendaciones (v1.75.0)
+
+### El enunciado abre con dos palabras en mayúsculas
+**NO IA.** *"Las recomendaciones deben salir de la información que ya tenemos guardada y de reglas
+internas de la aplicación. El usuario siempre tiene la última palabra."*
+
+Seis pruebas buscan `askAI`, `AI_SYSTEM`, `anthropic`, `fetch(`, `XMLHttpRequest` y `openai` en el
+código. Se comprueba sobre el archivo, no sobre la buena voluntad.
+
+### ⚠️ Si un dato no existe, no se asume
+Es el apartado 2, y es la diferencia entre un motor de reglas y uno que se inventa cosas.
+
+Cada una de las catorce reglas declara **qué necesita saber**. Si falta algo, no se dispara. Con el
+perfil vacío salen **cero** recomendaciones.
+
+Y una comprobación que no es obvia: **una regla sin requisitos declarados no se aplica nunca**. Si se
+permitiera, se dispararía con el contexto vacío y acabaría recomendándole cosas a alguien de quien no
+sabemos nada — el fallo silencioso de este tipo de motor.
+
+**"No lo sé" tampoco es un valor**: es la ausencia declarada de uno (Fase 7), así que no dispara nada.
+
+### ⚠️ Nunca "debes"
+El apartado 4: *"Nunca 'Debes hacer esto'. Utilizar: Podría venirte bien / Podrías probar / Una opción
+compatible contigo."*
+
+Hay una prueba que genera **todos** los textos posibles del motor —con el perfil entero contestado y
+con el de ejemplo— y busca diez imperativos. Y comprueba que **sí** aparecen las fórmulas del
+enunciado. Y, como en la Fase 7, que no se diagnostica nada.
+
+### ⚠️ Una recomendación no modifica nada
+El apartado 10: *"Una recomendación no debe modificar rutina, productos, preferencias ni
+calendario."*
+
+`aplicarARutina` **exige `confirmado: true`**, y la prueba serializa el estado antes y después para
+comprobar que **no ha cambiado ni un byte**. Es la regla 7 del proyecto en código, igual que
+`aplicarPlan` en HT F9. Nunca darle un valor por defecto.
+
+Y calcular recomendaciones tampoco escribe: **mostrar y registrar que se ha mostrado son dos llamadas
+distintas**, para que repintar una pantalla no ensucie el historial.
+
+### Los ejemplos del enunciado son reglas con su id
+- *"Si pelo = rizado + objetivo = definición"* → `definicion_rizado`.
+- *"Si cuero cabelludo = graso"* → `cuero_graso`.
+- *"Buscas hidratación y tu rutina tiene pocos pasos de hidratación"* → `hidratacion_sin_paso`, que
+  **mira de verdad los pasos de su rutina**.
+
+Y el tiempo disponible entra en las reglas, no en el texto: la mascarilla semanal solo se propone a
+quien ha dicho que puede dedicarle más de diez minutos. Es para lo que servía esa pregunta de la
+Fase 7.
+
+### Los niveles vienen de la Fase 6
+El apartado 6 dice *"utilizar los niveles que ya hemos definido"*, y eso es lo que se hace: se
+importan 🟢🟡🔴, no se redefinen. Hay una prueba de que no aparece un `const NIVELES` aquí, y otra de
+que **hay reglas en los tres** — un nivel vacío sería un control decorativo.
+
+### Descartar tiene memoria, pero con caducidad
+*"No me interesa"* calla 30 días, *"ya lo hago"* 90, y **"no quiero verlo" es para siempre** — por eso
+es el único de los cuatro sin plazo asignado: "para siempre" no es un número de días.
+
+Y todo se puede deshacer. Un toque no condena una recomendación.
+
+### ⚠️ Un fallo real, encontrado en el mismo turno
+`normalizarPelo` (Fase 8) no conocía el campo `recomendaciones`, así que **lo descartaba en cada
+lectura**: descartar o guardar una recomendación no tenía ningún efecto.
+
+Es la **séptima vez** que este proyecto se topa con el mismo fallo de normalizador, y la primera en
+que se detecta en el turno en que se introduce, en lugar de fases después.
+
+### El apartado 9 pide integrar el sistema global de guardados "si existe"
+**No existe.** Nutrición y los colores tienen cada uno los suyos, y no hay ninguno general. Así que
+los guardados de pelo viven en la `config` de Pelo, y queda dicho para que la fase que cree el global
+sepa que tiene que absorberlos.
+
+### Verificación
+`bash scripts/verificar.sh` en verde: build de Vite, **4 126 comprobaciones unitarias**, 5 de
+auditoría, **504 casos de renderizado real** y 10 reglas invariantes — **4 635 en total**. De ellas,
+**146 nuevas** para EH F9.
+
+---
+
 ## Entrega 2 · EH Fase 8/65 — Pelo: rutina, cuidados y seguimiento (v1.74.0)
 
 ### La filosofía, que el propio enunciado escribe
