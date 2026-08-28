@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { signIn, signUp } from '../lib/supabase';
 import { COLORS, ACCENTS } from '../tokens';
+/* ⚠️ La versión, ANTES de iniciar sesión. Existe por un problema real: durante
+   semanas la web se veía igual después de cada entrega y no había manera de
+   saber, sin entrar y navegar hasta Ajustes, si lo que estaba cargado era lo
+   nuevo o una copia guardada por el navegador. Se lee de `package.json`, que es
+   donde ya estaba (la misma fuente que usa Ajustes → Información): ni un número
+   escrito a mano, que se quedaría desfasado a la primera. */
+import pkg from '../../package.json';
 
 export default function Auth() {
   const [mode, setMode] = useState('signin');
@@ -41,9 +48,10 @@ export default function Auth() {
         <h1 className="text-2xl font-extrabold mb-1" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
           JosStyle
         </h1>
-        <p className="text-sm mb-6" style={{ color: COLORS.textMuted }}>
+        <p className="text-sm mb-1" style={{ color: COLORS.textMuted }}>
           {mode === 'signin' ? 'Inicia sesión para continuar' : 'Crea tu cuenta'}
         </p>
+        <p className="text-[11px] mb-6" style={{ color: COLORS.textMuted }}>v{pkg.version}</p>
 
         <input
           className="w-full rounded-xl px-3 py-2.5 text-sm mb-3 outline-none"
