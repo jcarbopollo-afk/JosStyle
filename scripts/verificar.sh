@@ -308,6 +308,12 @@ else
   fallo "Fallan las recomendaciones de perfumes"; grep '✗' /tmp/jc_eh25.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-accesorios.mjs >/tmp/jc_eh26.log 2>&1; then
+  ok "Accesorios y estilo personal (EH F26) — $(grep -c '✓' /tmp/jc_eh26.log) comprobaciones"
+else
+  fallo "Fallan los accesorios"; grep '✗' /tmp/jc_eh26.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

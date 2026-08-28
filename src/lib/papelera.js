@@ -118,6 +118,11 @@ export const CATALOGO_PAPELERA = {
   // ⚠️ EH F24 — la colección de perfumes y su historial, a la papelera de siempre.
   'perfumes.perfumes': { modulo: 'perfumes', coleccion: 'perfumes', tipo: 'Perfume', campos: ['nombre'], icono: 'perfumes' },
   'perfumes.historial': { modulo: 'perfumes', coleccion: 'historial', tipo: 'Uso de perfume', campos: ['fecha'], icono: 'perfumes' },
+  /* ⚠️ EH F26 — a la papelera de siempre. Un accesorio guardado aquí es SU
+     ENVOLTORIO de estilo: el nombre y la foto son de la prenda, que sigue en el
+     Armario, así que la etiqueta sale de su nota o de su fecha. */
+  'accesorios.accesorios': { modulo: 'accesorios', coleccion: 'accesorios', tipo: 'Accesorio', campos: ['nota', 'creadoEn'], icono: 'accesorios' },
+  'accesorios.deseos': { modulo: 'accesorios', coleccion: 'deseos', tipo: 'Accesorio que quiere comprar', campos: ['nombre'], icono: 'accesorios' },
   'relacion.fechas': { modulo: 'relacion', coleccion: 'fechas', tipo: 'Fecha importante', campos: ['etiqueta'], icono: 'relacion', privado: true },
 };
 

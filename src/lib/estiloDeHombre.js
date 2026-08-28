@@ -100,6 +100,10 @@ export const MODULOS_EH = [
   { id: 'sonrisa', nombre: 'Sonrisa', icono: '😁', sub: 'Higiene bucal', fase: 23, categoria: 'cuidado', terminos: ['sonrisa', 'dientes', 'boca', 'bucal', 'dental', 'dentista', 'cepillo', 'muelas'] },
   // ⚠️ EH F24 — otra línea, y ya está. Sin `case` y sin `if`.
   { id: 'perfumes', nombre: 'Perfumes', icono: '🌫️', sub: 'Tus fragancias', fase: 24, categoria: 'estilo', terminos: ['perfume', 'perfumes', 'colonia', 'fragancia', 'fragancias', 'aroma', 'olor'] },
+  /* ⚠️ EH F26 — otra línea, y ya está. Su `fase` coincide con la de Fitness a
+     propósito: el número dice **en qué fase llega su pantalla**, y la 26 trae la
+     de Accesorios; la de Fitness sigue siendo una estimación de la F1. */
+  { id: 'accesorios', nombre: 'Accesorios', icono: '🕶️', sub: 'Relojes, gafas y detalles', fase: 26, categoria: 'estilo', terminos: ['accesorio', 'accesorios', 'reloj', 'relojes', 'gafas', 'pulsera', 'pulseras', 'collar', 'collares', 'anillo', 'anillos', 'gorra', 'gorras'] },
   { id: 'fitness', nombre: 'Fitness', icono: '🏋️', sub: 'Físico y postura', fase: 26, categoria: 'fisico', terminos: ['fisico', 'físico', 'postura', 'entrenar', 'gimnasio', 'musculo', 'músculo'] },
   { id: 'sueno', nombre: 'Sueño', icono: '😴', sub: 'Descanso y aspecto', fase: 30, categoria: 'fisico', terminos: ['sueño', 'sueno', 'dormir', 'descanso', 'ojeras', 'cansancio'] },
   { id: 'salud', nombre: 'Salud', icono: '🧬', sub: 'Lo que se nota fuera', fase: 33, categoria: 'salud', confirmar: true, terminos: ['salud', 'medico', 'médico', 'revision', 'revisión', 'dental', 'vista'] },

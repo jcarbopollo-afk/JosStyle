@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -52,6 +52,11 @@ import {
   PARTE_ROTACION, PARTE_ESTADISTICAS, ponerEnRotacion, ponerEspera,
   ponerDisponibilidad, descartarPerfume,
 } from '../src/lib/recomendacionesPerfumes.js';
+import {
+  configurarAccesorios, decirAhoraNoAccesorios, prepararAltaAccesorio, aplicarAltaAccesorio,
+  editarAccesorio as editarAccesorioEH, alternarFavoritoAccesorio, alternarEnUsoAccesorio,
+  anadirDeseoAccesorio, alternarParteAccesorios, elegirCategoriasAccesorios,
+} from '../src/lib/accesorios.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
   crearRevision, registrarCambioCepillo, planificarCambioCepillo,
@@ -815,7 +820,33 @@ const CASOS = [
               nombre: 'Otro más', tipo: ['frescos'], ocasiones: ['noche'], intensidad: 'intensa',
             }, { hoy: HOY }).estado;
             const perfTerminado = ponerDisponibilidad(perfCompleto, perfumesDe(perfCompleto)[0].id, 'terminado').estado;
+            /* EH F26 — Accesorios. ⚠️ La pantalla escribe en DOS almacenes, así
+               que cada caso lleva su armario: el envoltorio sin prenda no se
+               pinta, y la prenda suelta del armario se ofrece sin duplicarla. */
+            const ARM_ACC = { prendas: [], outfits: [], usos: [] };
+            const accBase = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['accesorios', 'skincare']);
+            const accConf = configurarAccesorios(accBase, { hoy: HOY }).estado;
+            const accAlta = (() => {
+              const plan = prepararAltaAccesorio(accConf, ARM_ACC,
+                { nombre: 'Casio negro', tipo: 'relojes', marca: 'Casio' }, { hoy: HOY });
+              return aplicarAltaAccesorio(accConf, ARM_ACC, plan.plan);
+            })();
+            const accUno = accAlta.estado;
+            const armAcc = accAlta.armario;
+            const accConEstilo = editarAccesorioEH(accUno, accAlta.accesorio.id, {
+              estilos: ['casual'], ocasiones: ['estudios'], combinaCon: ['urbano'],
+            }).estado;
+            const armFav = alternarFavoritoAccesorio(accConEstilo, armAcc, accAlta.accesorio.id).armario;
+            const accEnUso = alternarEnUsoAccesorio(accConEstilo, accAlta.accesorio.id).estado;
+            const accDeseo = anadirDeseoAccesorio(accConEstilo, { nombre: 'Gafas de sol', tipo: 'gafas' }, { hoy: HOY }).estado;
+            /* ⚠️ Apartado 3 — una prenda de accesorio en el armario que todavía
+               no tiene envoltorio: se ofrece usarla, no crear otra. */
+            const armSuelto = {
+              ...ARM_ACC,
+              prendas: [crearPrenda({ nombre: 'Gorra negra', categoria: 'accesorios', subcategoria: 'gorras' })],
+            };
             const pp = (e4) => ({ estado: e4, accent, datosGlobales: GLOBAL_EH, onCambiar: noop, onCerrar: noop, onPerfil: noop, onEliminar: noop, onEliminarRegistro: noop });
+            const pa = (e4, arm = ARM_ACC) => ({ ...pp(e4), armario: arm, onGuardar: noop });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
               ['PanelPelo · con rutina hecha', PanelPelo, () => pp(conCambios)],
@@ -986,6 +1017,23 @@ const CASOS = [
               ['PerfumesEH · con recomendaciones listas', PerfumesEH, () => pp(perfDosMas)],
               ['ProductosBarbaEH · sin catálogo', ProductosBarbaEH, () => pp(barbaTodo)],
               ['ProductosBarbaEH · con productos', ProductosBarbaEH, () => pp(barbaConProducto)],
+              /* EH Fase 26 — Accesorios. */
+              ['AccesoriosEH · entrada', AccesoriosEH, () => pa(accBase)],
+              ['AccesoriosEH · ahora no', AccesoriosEH, () => pa(decirAhoraNoAccesorios(accBase).estado)],
+              ['AccesoriosEH · panel vacío', AccesoriosEH, () => pa(accConf)],
+              ['AccesoriosEH · con uno', AccesoriosEH, () => pa(accUno, armAcc)],
+              ['AccesoriosEH · con estilo y ocasión', AccesoriosEH, () => pa(accConEstilo, armAcc)],
+              ['AccesoriosEH · con favorito', AccesoriosEH, () => pa(accConEstilo, armFav)],
+              ['AccesoriosEH · con uno puesto', AccesoriosEH, () => pa(accEnUso, armAcc)],
+              ['AccesoriosEH · con deseos', AccesoriosEH, () => pa(accDeseo, armAcc)],
+              /* ⚠️ La prenda borrada en el Armario: el envoltorio NO se pinta. */
+              ['AccesoriosEH · sin la prenda', AccesoriosEH, () => pa(accConEstilo, ARM_ACC)],
+              /* ⚠️ Apartado 3 — la prenda del armario que aún no está aquí. */
+              ['AccesoriosEH · con una prenda suelta', AccesoriosEH, () => pa(accConf, armSuelto)],
+              ['AccesoriosEH · solo una categoría', AccesoriosEH, () =>
+                pa(elegirCategoriasAccesorios(accConEstilo, ['gafas']), armAcc)],
+              ['AccesoriosEH · partes apagadas', AccesoriosEH, () =>
+                pa(alternarParteAccesorios(alternarParteAccesorios(accConEstilo, 'deseos'), 'recomendaciones'), armAcc)],
             ];
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>

@@ -238,9 +238,11 @@ escribir código.
 
 | v1.88.0 | **EH F25** | Perfumes: recomendaciones, ocasiones y rotación. ⚠️ **No es una nota, es una explicación** (apartado 7): cada motivo es una frase, y el que no tiene ninguna no se propone. ⚠️ **"Otra opción" tiene memoria POR OCASIÓN**, y el descarte caduca. ⚠️ **"No repetir" BAJA de sitio, no esconde**. ⚠️ **Rotación y estadísticas son opt-in y devuelven `null` si están apagadas**, no una lista vacía. ⚠️ Y **la tabla de comparar es la del motor de la F17** |
 
+| v1.89.0 | **EH F26** | Accesorios y estilo personal. ⚠️ **Un accesorio ES una prenda del Armario**: allí vive una sola vez y aquí solo su envoltorio de estilo, con `CAMPOS_DE_LA_PRENDA` como frontera y una prueba por cada campo. ⚠️ **Añadirlo escribe en el ARMARIO**, y App.jsx guarda los dos almacenes. ⚠️ **El duplicado se comprueba ANTES** (apartado 3), sin valor por defecto. ⚠️ **La combinación es una preferencia, no un outfit**. ⚠️ **Ni otra lista de estilos (F6) ni de ocasiones (F24)**, y **el favorito es el de la prenda** |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 22/65** (F1-F17, F20, F21 y F23-F25; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **41** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (39, tres de ellas bloqueadas).
+3/5 y **EH por 23/65** (F1-F17, F20, F21, F23-F26; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **40** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (38, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

@@ -1,5 +1,75 @@
 # CHANGELOG.md
 
+## v1.89.0 — EH Fase 26/65: accesorios y estilo personal
+
+### Qué se ha construido
+El módulo 🕶️ **Accesorios**: relojes, gafas, pulseras, collares, anillos, gorras y otros, con su
+estilo, sus ocasiones, sus combinaciones, sus recomendaciones y la lista de *"quiero comprar"*. Se
+llega desde **Más → Estilo de hombre → Accesorios**.
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Un accesorio ES una prenda del Armario.** El objetivo lo dice con todas las letras: *"**NO
+crear otro armario**"*. Y el armario ya tenía la categoría `accesorios` desde AR F1, así que el reloj
+de Josué **vive allí, una sola vez**. Lo que se guarda en Estilo de hombre es un **envoltorio** con
+lo que el armario no sabe: con qué estilo lo usa, para qué ocasiones, con qué combina y el id del
+producto si lo enlazó. `CAMPOS_DE_LA_PRENDA` es esa frontera **escrita**, y hay una prueba por cada
+uno de sus quince campos: si mañana alguien guarda aquí el nombre "por si acaso", tendrá media ficha
+en un sitio y la ficha entera en otro, que es el segundo armario por la puerta de atrás.
+
+**2. ⚠️ Añadir un accesorio escribe en el Armario, no aquí.** `prepararAltaAccesorio` devuelve un
+**plan** con las dos piezas y quien guarda es `App.jsx`, que es el dueño de los dos almacenes. La
+prenda se construye con `crearPrenda`, la fábrica del armario, así que tiene exactamente la misma
+forma que las que crea el Armario. En Chromium se comprueba que **se escriben los dos**.
+
+**3. ⚠️ El duplicado se comprueba antes.** *"Antes de crear un accesorio: comprobar si ya existe en el
+Armario. Si existe: utilizar ese elemento. **No crear una copia**."* Con el nombre repetido **no hay
+plan**: se devuelve la prenda encontrada para que la pantalla ofrezca usarla, y crear otra igual
+exige decirlo. **Sin valor por defecto**: elegir por él sería crear la copia que el apartado prohíbe.
+Y se busca en **todo** el armario, no solo en la categoría de accesorios — una gorra apuntada como
+"Otros" sigue siendo la misma gorra.
+
+**4. ⚠️ La combinación es una preferencia, no un outfit** (apartado 9: *"no construir todavía un
+segundo sistema de outfits, porque eso pertenece al Armario"*). Se guarda *"lo uso con X estilo"* y se
+devuelve **una frase**. Ni `crearOutfit(` aparece en el archivo, y hay una prueba que lee el código.
+
+**5. ⚠️ Ni otra lista de estilos ni otra de ocasiones.** Los siete estilos del apartado 5 ya estaban
+**todos** en `ESTILOS_VESTIR` (Fase 6) y las siete ocasiones del apartado 6 **todas** en `OCASIONES`
+(Fase 24). Se importan, y las ocasiones son un subconjunto declarado por sus ids: si alguien renombra
+uno allí, aquí desaparece y la prueba lo dice.
+
+**6. ⚠️ Y el favorito es el de la prenda** (apartado 7: *"utilizar favoritos globales"*).
+`alternarFavoritoAccesorio` **no devuelve un estado de Estilo de hombre**: devuelve un armario nuevo.
+Es la manera de que no haya dos.
+
+### Dos detalles que importan
+**"Estoy usando" es una lista**, no un campo: un reloj y unas gafas se llevan a la vez, al revés que
+el perfume de la Fase 24. Y **el apartado 2 y el apartado 14 son el mismo interruptor**: elegir qué
+gestiona y apagar una categoría después son marcar y desmarcar la misma casilla.
+
+La **lista de deseados** es del módulo porque el apartado 13 dice *"si ya existe"* una global, **y no
+existe ninguna** en el proyecto. La auditoría lo declara con un cero en vez de esconderlo.
+
+### 🐛 Un fallo real
+`restaurarAccesorio` escribía el `{ moduloActualizado, yaExistia }` entero en vez de
+`r.moduloActualizado`, así que recuperar un accesorio de la papelera habría guardado un objeto que el
+normalizador no reconoce y **se habría llevado por delante todo el módulo**. Lo cazó la prueba.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **237 comprobaciones nuevas**, **948 casos de
+renderizado** (48 nuevos) y **151 comprobaciones en Chromium** (23 nuevas): se entra en Accesorios, se
+configura, se añade uno, **se comprueba que la prenda se escribe en el Armario y aquí solo su
+envoltorio**, se repite el nombre y **avisa en vez de duplicar**, y al recargar sigue estando.
+
+### Archivos
+- **Nuevos:** `src/lib/accesorios.js`, `scripts/test-accesorios.mjs`.
+- **Modificados:** `src/lib/estiloDeHombre.js` (la línea del módulo), `src/lib/papelera.js` (dos
+  entradas del catálogo), `src/lib/datosEstiloHombre.js` (`estilosFavoritos` lo leen dos módulos),
+  `src/App.jsx`, `src/views/EstiloHombreView.jsx`, `scripts/smoke-vistas.jsx`,
+  `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.88.0 — EH Fase 25/65: recomendaciones de perfume, ocasiones y rotación
 
 ### Qué se ha construido

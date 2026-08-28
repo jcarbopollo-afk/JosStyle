@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.88.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.89.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 22/65**, quedan 41 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 23/65**, quedan 40 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -149,7 +149,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 22/65** (v1.88.0: F1-F17, **F20, F21 y F23-F25**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 23/65** (v1.89.0: F1-F17, **F20, F21 y F23-F26**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -161,10 +161,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 26/65 — Accesorios y estilo personal**.
+La siguiente candidata es **EH · Fase 27/65 — Gustos, intereses y cosas que quiero hacer**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F25 dejaron setenta cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F26 dejaron setenta y siete cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -348,6 +348,25 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   propone igual y se dice cuándo lo usó. Esconderlo sería decidir por él.
 - ⚠️ **Un descarte se guarda CON su contexto** (F25, apartado 8): descartar un perfume para la noche
   no lo descarta para el trabajo. Y caduca: *"continuamente"* no es *"nunca más"*.
+- ⚠️ **UN ACCESORIO ES UNA PRENDA DEL ARMARIO** (F26). El armario ya tenía la categoría `accesorios`
+  desde AR F1, así que el reloj vive allí **una sola vez** y aquí solo queda un **envoltorio** con lo
+  que el armario no sabe. `CAMPOS_DE_LA_PRENDA` es la frontera escrita, con una prueba por campo:
+  guardar aquí el nombre "por si acaso" es media ficha en un sitio y la ficha entera en otro.
+- ⚠️ **Añadir un accesorio ESCRIBE EN EL ARMARIO** (F26). El módulo devuelve un **plan** con las dos
+  piezas y guarda `App.jsx`, que es el dueño de los dos almacenes; la prenda la construye
+  `crearPrenda`, la fábrica del armario. Mismo reparto que `gestionModulos.js` / `estiloDeHombre.js`.
+- ⚠️ **El duplicado se comprueba ANTES de crear nada** (F26, apartado 3), y **crear otro igual exige
+  decirlo**: nunca un valor por defecto. Y se busca en **todo** el armario, no solo en la categoría
+  de accesorios: una gorra apuntada como "Otros" sigue siendo la misma gorra.
+- ⚠️ **El favorito de un accesorio es `prenda.favorita`** (F26, apartado 7), y por eso
+  `alternarFavoritoAccesorio` **no devuelve un estado de Estilo de hombre: devuelve un armario**.
+- ⚠️ **Antes de escribir una lista de estilos o de ocasiones, MIRAR SI YA EXISTE** (F26): las siete
+  del apartado 5 estaban enteras en `ESTILOS_VESTIR` (F6) y las siete del apartado 6 en `OCASIONES`
+  (F24). Un subconjunto se declara **por sus ids**, para que renombrar uno rompa la prueba.
+- ⚠️ **`prepararRestauracion` devuelve `{ moduloActualizado, yaExistia }`, NO el módulo** (F26).
+  Escribir el objeto entero se lleva por delante todo el módulo en el siguiente guardado.
+- ⚠️ **Elegir qué gestionas y apagar un apartado pueden ser EL MISMO interruptor** (F26, apartados 2
+  y 14). Antes de crear un segundo mecanismo, comprobar si el enunciado describe el mismo dos veces.
 
 ⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
 que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el

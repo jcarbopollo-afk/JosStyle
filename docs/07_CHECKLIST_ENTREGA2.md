@@ -1845,37 +1845,71 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Reactivar.
 - [x] Comprobar integración con catálogo global.
 
-#### EH · Fase 26/65 — ACCESORIOS Y ESTILO PERSONAL
-- [ ] ACTIVACIÓN
-- [ ] QUÉ QUIERE GESTIONAR
-- [ ] IMPORTANTE: CONEXIÓN CON ARMARIO
-- [ ] AÑADIR ACCESORIO
-- [ ] ESTILO
-- [ ] OCASIONES
-- [ ] FAVORITOS
-- [ ] ACCESORIO ACTUAL
-- [ ] COMBINACIONES
-- [ ] RECOMENDACIONES
-- [ ] QUÉ NO HACEMOS
-- [ ] PRODUCTOS
-- [ ] LISTA DE DESEADOS
-- [ ] DESACTIVACIÓN INDIVIDUAL
-- [ ] PRUEBAS
-- [ ] Activar accesorios.
-- [ ] Seleccionar categorías.
-- [ ] Añadir accesorio.
-- [ ] Editarlo.
-- [ ] Añadir preferencias.
-- [ ] Marcar favorito.
-- [ ] Añadir a deseos.
-- [ ] Asociarlo al catálogo.
-- [ ] Comprobar duplicados con Armario.
-- [ ] Desactivar una categoría.
-- [ ] Reactivarla.
-- [ ] Desactivar todo.
-- [ ] Reactivar.
-- [ ] Comprobar persistencia.
-- [ ] Probar móvil.
+#### EH · Fase 26/65 — ACCESORIOS Y ESTILO PERSONAL ✅ COMPLETADA (v1.89.0)
+
+> **`src/lib/accesorios.js`** (237 comprobaciones) + la pantalla `AccesoriosEH`. Sin SQL nuevo.
+>
+> ⚠️ **Un accesorio ES una prenda del Armario.** El objetivo lo dice con mayúsculas —*"NO crear otro
+> armario"*— y el armario ya tenía la categoría `accesorios` desde AR F1. Así que el reloj vive
+> **allí, una sola vez**, y lo que se guarda aquí es un **envoltorio** con lo que el armario no sabe:
+> estilo, ocasiones, con qué combina y el id del producto. `CAMPOS_DE_LA_PRENDA` es esa frontera
+> escrita, y hay una prueba por cada uno de sus quince campos.
+>
+> ⚠️ **Añadir un accesorio ESCRIBE EN EL ARMARIO.** `prepararAltaAccesorio` devuelve un plan con las
+> dos piezas y quien guarda es App.jsx, que es el dueño de los dos almacenes. La prenda se construye
+> con `crearPrenda`, la fábrica del armario. En el navegador se comprueba que se escriben **los dos**.
+>
+> ⚠️ **El duplicado se comprueba ANTES** (apartado 3). Con el nombre repetido **no hay plan**: se
+> devuelve la prenda encontrada para ofrecer usarla, y crear otra igual exige `forzarNueva`. Sin
+> valor por defecto: elegir por él sería crear la copia que el apartado prohíbe.
+>
+> ⚠️ **La combinación es una preferencia, no un outfit** (apartado 9). Devuelve **una frase**; ni
+> `crearOutfit(` aparece en el archivo, y hay una prueba que lee el código.
+>
+> ⚠️ **Ni otra lista de estilos ni otra de ocasiones.** Los siete estilos del apartado 5 ya estaban en
+> `ESTILOS_VESTIR` (F6) y las siete ocasiones del apartado 6 en `OCASIONES` (F24): se importan, y las
+> ocasiones son un subconjunto declarado por sus ids.
+>
+> ⚠️ **El favorito es el de la prenda** (apartado 7). `alternarFavoritoAccesorio` **no devuelve un
+> estado de Estilo de hombre**: devuelve un armario. Es la manera de que no haya dos.
+>
+> ⚠️ **Y "estoy usando" es una LISTA** (apartado 8): un reloj y unas gafas se llevan a la vez, al
+> revés que el perfume de la F24.
+>
+> 🐛 **Un fallo real, cazado por la prueba:** `restaurarAccesorio` escribía el `{ moduloActualizado,
+> yaExistia }` entero en vez de `r.moduloActualizado`, así que recuperar un accesorio de la papelera
+> **se habría llevado por delante todo el módulo**.
+
+- [x] ACTIVACIÓN
+- [x] QUÉ QUIERE GESTIONAR
+- [x] IMPORTANTE: CONEXIÓN CON ARMARIO
+- [x] AÑADIR ACCESORIO
+- [x] ESTILO
+- [x] OCASIONES
+- [x] FAVORITOS
+- [x] ACCESORIO ACTUAL
+- [x] COMBINACIONES
+- [x] RECOMENDACIONES
+- [x] QUÉ NO HACEMOS
+- [x] PRODUCTOS
+- [x] LISTA DE DESEADOS
+- [x] DESACTIVACIÓN INDIVIDUAL
+- [x] PRUEBAS
+- [x] Activar accesorios.
+- [x] Seleccionar categorías.
+- [x] Añadir accesorio.
+- [x] Editarlo.
+- [x] Añadir preferencias.
+- [x] Marcar favorito.
+- [x] Añadir a deseos.
+- [x] Asociarlo al catálogo.
+- [x] Comprobar duplicados con Armario.
+- [x] Desactivar una categoría.
+- [x] Reactivarla.
+- [x] Desactivar todo.
+- [x] Reactivar.
+- [x] Comprobar persistencia.
+- [x] Probar móvil.
 
 #### EH · Fase 27/65 — GUSTOS, INTERESES Y COSAS QUE QUIERO HACER
 - [ ] PLAQUITA PRINCIPAL

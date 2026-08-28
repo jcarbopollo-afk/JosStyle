@@ -68,6 +68,8 @@ import {
 } from './lib/sonrisa';
 // EH F24 — perfumes y su historial, a la misma papelera.
 import { eliminarPerfume, restaurarPerfume, eliminarUso, restaurarUso } from './lib/perfumes';
+// EH F26 — accesorios y su lista de deseados, a la misma papelera.
+import { eliminarAccesorio, restaurarAccesorio, eliminarDeseoAccesorio, restaurarDeseoAccesorio } from './lib/accesorios';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.
@@ -1157,12 +1159,26 @@ export default function App() {
     });
   };
 
+  /* EH F26 — Accesorios. ⚠️ Borrar aquí quita el ENVOLTORIO de estilo: la
+     prenda sigue en el Armario, y por eso esto no toca `armario`. */
+  const eliminarDeAccesorios = (coleccion, id) => {
+    const r = coleccion === 'accesorios'
+      ? eliminarAccesorio(estiloHombre, id)
+      : eliminarDeseoAccesorio(estiloHombre, id);
+    if (r.error) return;
+    snapshotAndSave({
+      estiloHombre: r.estado,
+      papelera: { ...papelera, elementos: [...papelera.elementos, r.entrada] },
+    });
+  };
+
   const eliminarConPapelera = (modulo, coleccion, id) => {
     // Los registros de piel no son una lista de primer nivel: van por su puerta.
     if (modulo === 'skincare' && coleccion === 'registros') return eliminarRegistroDePiel(id);
     if (modulo === 'barba') return eliminarDeBarba(coleccion, id);
     if (modulo === 'sonrisa') return eliminarDeSonrisa(coleccion, id);
     if (modulo === 'perfumes') return eliminarDePerfumes(coleccion, id);
+    if (modulo === 'accesorios') return eliminarDeAccesorios(coleccion, id);
     const entradaModulo = MODULOS_PAPELERA[modulo];
     if (!entradaModulo) return;
     const resultado = prepararEliminacion(entradaModulo[0], modulo, coleccion, id, new Date().toISOString());
@@ -1193,6 +1209,18 @@ export default function App() {
       const r = entrada.coleccion === 'perfumes'
         ? restaurarPerfume(estiloHombre, entrada)
         : restaurarUso(estiloHombre, entrada);
+      if (r.error) return;
+      snapshotAndSave({
+        estiloHombre: r.estado,
+        papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
+      });
+      return;
+    }
+    // EH F26 — y Accesorios.
+    if (entrada.modulo === 'accesorios') {
+      const r = entrada.coleccion === 'accesorios'
+        ? restaurarAccesorio(estiloHombre, entrada)
+        : restaurarDeseoAccesorio(estiloHombre, entrada);
       if (r.error) return;
       snapshotAndSave({
         estiloHombre: r.estado,
@@ -1952,6 +1980,18 @@ export default function App() {
             onEliminarPerfume={(coleccion, id) => (coleccion === 'perfumes'
               ? eliminarConPapelera('perfumes', 'perfumes', id)
               : eliminarConPapelera('perfumes', 'historial', id))}
+            /* ⚠️ EH F26 — los dos, con su nombre escrito, por lo mismo. */
+            onEliminarAccesorio={(coleccion, id) => (coleccion === 'accesorios'
+              ? eliminarConPapelera('accesorios', 'accesorios', id)
+              : eliminarConPapelera('accesorios', 'deseos', id))}
+            /* ⚠️ EH F26 — el ÚNICO sitio que escribe la prenda de un accesorio, y
+               lo hace en el ARMARIO: el módulo decide, App.jsx —que es el dueño
+               de los dos almacenes— guarda. Mismo reparto que `gestionModulos`
+               con `estiloDeHombre`. */
+            onGuardarAccesorio={({ estado: nuevo, armario: nuevoArmario }) => snapshotAndSave({
+              ...(nuevo ? { estiloHombre: nuevo } : {}),
+              ...(nuevoArmario ? { armario: nuevoArmario } : {}),
+            })}
             rachas={rachas}
           />
         );

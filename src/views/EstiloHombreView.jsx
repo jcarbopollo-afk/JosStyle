@@ -175,6 +175,15 @@ import {
   panelRecsPerfume, compararPerfumes, descartarPerfume, ponerEnRotacion,
   ponerEspera, ponerDisponibilidad, MAX_COMPARAR as MAX_COMPARAR_PERFUME,
 } from '../lib/recomendacionesPerfumes';
+import {
+  MODULO_ACCESORIOS, TEXTOS_ACCESORIOS, CATEGORIAS_ACCESORIO, CASILLAS_ACCESORIOS,
+  configurarAccesorios, decirAhoraNoAccesorios, elegirCategoriasAccesorios,
+  alternarParteAccesorios, prepararAltaAccesorio, aplicarAltaAccesorio,
+  usarPrendaComoAccesorio, editarAccesorio, alternarFavoritoAccesorio,
+  alternarEnUsoAccesorio, combinacionesDeAccesorio, anadirDeseoAccesorio,
+  dondeComprarAccesorio, TEXTO_AL_BORRAR, resumenAccesorios, panelAccesorios,
+  categoriasActivasAccesorios,
+} from '../lib/accesorios';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -5590,9 +5599,445 @@ export function Recomendados({ estado, accent, onAnadir }) {
 }
 
 /* ===========================================================================
+   EH F26 — 🕶️ ACCESORIOS
+   ===========================================================================
+   ⚠️ **La pantalla escribe en DOS almacenes.** Añadir un accesorio crea la
+   prenda en el Armario y el envoltorio de estilo aquí, así que necesita dos
+   canales: `onCambiar` para Estilo de hombre y `onGuardar` para los dos a la
+   vez. Marcar favorito solo toca el armario, porque el favorito es el global
+   (apartado 7). */
+export function AccesoriosEH({ estado, armario = null, accent, datosGlobales = {}, onCambiar, onGuardar, onCerrar, onEliminar }) {
+  /* ⚠️ Regla 4 — todos los hooks antes de cualquier `return`. */
+  const [zona, setZona] = useState(null);
+  const [eligiendo, setEligiendo] = useState(false);
+  const [nombre, setNombre] = useState('');
+  const [tipo, setTipo] = useState('relojes');
+  const [marca, setMarca] = useState('');
+  const [deseo, setDeseo] = useState('');
+  const [abierto, setAbierto] = useState(null);
+  const [duplicado, setDuplicado] = useState(null);
+  const [error, setError] = useState(null);
+
+  const arm = armario || { prendas: [], outfits: [], usos: [] };
+  const panel = useMemo(() => panelAccesorios(estado, arm, datosGlobales), [estado, arm, datosGlobales]);
+  const [yaEntro] = useState(() => panel.estado === 'configurado');
+  const activas = panel.categorias.filter((c) => c.activa);
+
+  const aplicar = (r) => {
+    if (r.error) { setError(r.error); return false; }
+    setError(null);
+    onCambiar?.(r.estado);
+    return true;
+  };
+
+  const chip = (a) => ({
+    background: a ? hexToRgba(accent, 0.12) : COLORS.surface2,
+    border: `1px solid ${a ? accent : COLORS.border}`,
+  });
+
+  const cabecera = (titulo) => (
+    <div className="flex items-center gap-2 mb-1">
+      <button onClick={() => { setZona(null); setDuplicado(null); setError(null); }} className="p-1 -ml-1" aria-label="Volver">
+        <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+      </button>
+      <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{titulo}</p>
+    </div>
+  );
+
+  /* Apartado 4 — el alta. ⚠️ Primero se comprueba el duplicado; solo si él dice
+     que lo cree igual, se fuerza. */
+  const anadir = ({ forzarNueva = false } = {}) => {
+    const p = prepararAltaAccesorio(estado, arm, { nombre, tipo, marca }, { forzarNueva });
+    if (p.error) { setError(p.error); return; }
+    if (p.duplicado) { setDuplicado(p); return; }
+    const r = aplicarAltaAccesorio(estado, arm, p.plan);
+    if (r.error) { setError(r.error); return; }
+    setError(null); setDuplicado(null); setNombre(''); setMarca('');
+    onGuardar?.({ estado: r.estado, armario: r.armario });
+  };
+
+  /* Apartado 3 — *"si existe: utilizar ese elemento"*. Ni una copia. */
+  const usarLaQueYaTiene = (prendaId) => {
+    const r = usarPrendaComoAccesorio(estado, arm, prendaId, {});
+    if (r.error) { setError(r.error); return; }
+    setError(null); setDuplicado(null); setNombre(''); setMarca('');
+    onCambiar?.(r.estado);
+  };
+
+  /* Apartado 7 — el favorito vive en la prenda, así que esto solo toca el armario. */
+  const alternarFavorito = (id) => {
+    const r = alternarFavoritoAccesorio(estado, arm, id);
+    if (r.error) { setError(r.error); return; }
+    setError(null);
+    onGuardar?.({ armario: r.armario });
+  };
+
+  /* ⚠️ Regla 4 — los `return` condicionales, después de los hooks. */
+  if (!yaEntro && panel.estado !== 'configurado') {
+    return (
+      <Card className="text-center">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1 float-left" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-2xl leading-none mb-2" aria-hidden="true">🕶️</p>
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_ACCESORIOS.titulo}</p>
+        <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{TEXTOS_ACCESORIOS.pregunta}</p>
+        <PrimaryButton accent={accent} onClick={() => aplicar(configurarAccesorios(estado))}>
+          {TEXTOS_ACCESORIOS.configurar}
+        </PrimaryButton>
+        <button onClick={() => aplicar(decirAhoraNoAccesorios(estado))}
+          className="text-[11px] font-semibold mt-2" style={{ color: COLORS.textMuted }}>
+          {TEXTOS_ACCESORIOS.ahoraNo}
+        </button>
+        {panel.estado === 'ahora_no' && (
+          <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>{TEXTOS_ACCESORIOS.oculto}</p>
+        )}
+      </Card>
+    );
+  }
+
+  /* ── Apartado 2 — qué quiere gestionar ─────────────────────────────── */
+  if (eligiendo) {
+    const puestas = activas.map((c) => c.id);
+    return (
+      <Card>
+        <div className="flex items-center gap-2 mb-1">
+          <button onClick={() => setEligiendo(false)} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_ACCESORIOS.editar}</p>
+        </div>
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>Cada categoría va por su cuenta.</p>
+        <div className="flex flex-wrap gap-1">
+          {CASILLAS_ACCESORIOS.map((c) => {
+            const puesta = puestas.includes(c.id);
+            return (
+              <button key={c.id} aria-pressed={puesta}
+                onClick={() => onCambiar?.(elegirCategoriasAccesorios(
+                  estado, puesta ? puestas.filter((x) => x !== c.id) : [...puestas, c.id],
+                ))}
+                className="rounded-full px-2.5 py-1" style={chip(puesta)}>
+                <span className="text-[10px] font-semibold" style={{ color: puesta ? accent : COLORS.text }}>
+                  {c.icono} {c.nombre}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </Card>
+    );
+  }
+
+  /* ── 🕶️ Mis accesorios (apartados 3 a 8) ───────────────────────────── */
+  if (zona === 'mios') {
+    return (
+      <Card>
+        {cabecera('🕶️ Mis accesorios')}
+        {/* ⚠️ Apartado 3, dicho: si no, apuntaría su reloj en los dos sitios. */}
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>{TEXTOS_ACCESORIOS.viveEnElArmario}</p>
+        {error && <p className="text-[10px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+
+        {panel.accesorios.map((a) => {
+          const comb = combinacionesDeAccesorio(estado, arm, a.id, datosGlobales);
+          const donde = dondeComprarAccesorio(estado, arm, a.id);
+          return (
+            <div key={a.id} className="rounded-2xl p-2.5 mb-1"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <div className="flex items-center gap-2">
+                <span className="text-sm leading-none" aria-hidden="true">{a.categoria.icono}</span>
+                <button onClick={() => setAbierto(abierto === a.id ? null : a.id)}
+                  className="min-w-0 flex-1 text-left">
+                  <span className="block text-[11px] font-semibold truncate" style={{ color: COLORS.text }}>
+                    {a.nombre}{a.marca ? ` · ${a.marca}` : ''}
+                  </span>
+                  <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>
+                    {a.categoria.nombre}{a.enUso ? ' · ⭐ lo llevas' : ''}
+                  </span>
+                </button>
+                {/* Apartado 7 — el favorito global, escrito en la prenda. */}
+                <button onClick={() => alternarFavorito(a.id)} aria-pressed={a.favorito}
+                  aria-label={`Marcar ${a.nombre} como favorito`}>
+                  <span className="text-[13px] leading-none" aria-hidden="true">{a.favorito ? '❤️' : '🤍'}</span>
+                </button>
+                {/* Apartado 8 — "estoy usando", que admite varios a la vez. */}
+                <button onClick={() => aplicar(alternarEnUsoAccesorio(estado, a.id))}
+                  aria-pressed={a.enUso} aria-label={`Marcar que llevas ${a.nombre}`}>
+                  <span className="text-[13px] leading-none" aria-hidden="true">{a.enUso ? '⭐' : '☆'}</span>
+                </button>
+                <button onClick={() => onEliminar?.('accesorios', a.id)} aria-label={`Eliminar ${a.nombre}`}>
+                  <X size={13} style={{ color: COLORS.textMuted }} />
+                </button>
+              </div>
+              {abierto === a.id && (
+                <div className="mt-2">
+                  {/* Apartado 5 — el estilo, de la lista de la Fase 6. */}
+                  <p className="text-[10px] font-semibold mb-0.5" style={{ color: COLORS.text }}>Estilo</p>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {panel.estilos.map((e) => {
+                      const puesto = a.estilos.includes(e.id);
+                      return (
+                        <button key={e.id} aria-pressed={puesto}
+                          onClick={() => aplicar(editarAccesorio(estado, a.id, {
+                            estilos: puesto ? a.estilos.filter((x) => x !== e.id) : [...a.estilos, e.id],
+                          }))}
+                          className="rounded-full px-2 py-0.5" style={chip(puesto)}>
+                          <span className="text-[10px] font-semibold" style={{ color: puesto ? accent : COLORS.text }}>{e.nombre}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Apartado 6 — las ocasiones, de la lista de la Fase 24. */}
+                  <p className="text-[10px] font-semibold mb-0.5" style={{ color: COLORS.text }}>Ocasiones</p>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {panel.ocasiones.map((o) => {
+                      const puesta = a.ocasiones.includes(o.id);
+                      return (
+                        <button key={o.id} aria-pressed={puesta}
+                          onClick={() => aplicar(editarAccesorio(estado, a.id, {
+                            ocasiones: puesta ? a.ocasiones.filter((x) => x !== o.id) : [...a.ocasiones, o.id],
+                          }))}
+                          className="rounded-full px-2 py-0.5" style={chip(puesta)}>
+                          <span className="text-[10px] font-semibold" style={{ color: puesta ? accent : COLORS.text }}>
+                            {o.icono} {o.nombre}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{comb.texto}</p>
+                  {/* Apartado 12 — el enlace sale del catálogo global, si lo hay. */}
+                  <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{donde.texto || (donde.donde || []).join(' · ')}</p>
+                  <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{TEXTO_AL_BORRAR}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {panel.accesorios.length === 0 && (
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>Todavía no has apuntado ninguno.</p>
+        )}
+
+        {/* Apartado 3 — los que ya están en el Armario, sin volver a crearlos. */}
+        {panel.delArmarioSinUsar.length > 0 && (
+          <div className="mt-2">
+            <p className="text-[10px] font-semibold mb-1" style={{ color: COLORS.text }}>Ya los tienes en tu Armario</p>
+            {panel.delArmarioSinUsar.map((p) => (
+              <button key={p.id} onClick={() => usarLaQueYaTiene(p.id)}
+                className="text-[10px] font-semibold mr-2" style={{ color: accent }}>
+                + Usar {p.nombre}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Apartado 4 — añadir. */}
+        <div className="mt-3">
+          <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>+ Añadir accesorio</p>
+          <div className="flex flex-wrap gap-1 mb-1">
+            {activas.map((c) => (
+              <button key={c.id} onClick={() => setTipo(c.id)} aria-pressed={tipo === c.id}
+                className="rounded-full px-2 py-0.5" style={chip(tipo === c.id)}>
+                <span className="text-[10px] font-semibold" style={{ color: tipo === c.id ? accent : COLORS.text }}>
+                  {c.icono} {c.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+          <TextInput value={nombre} onChange={(e) => setNombre(e.target.value)}
+            placeholder="Nombre" aria-label="Nombre del accesorio" />
+          <div className="mt-1">
+            <TextInput value={marca} onChange={(e) => setMarca(e.target.value)}
+              placeholder="Marca (opcional)" aria-label="Marca del accesorio" />
+          </div>
+          {duplicado ? (
+            <div className="mt-2 rounded-2xl p-2.5" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <p className="text-[10px] mb-1" style={{ color: COLORS.text }}>{duplicado.texto}</p>
+              <button onClick={() => usarLaQueYaTiene(duplicado.duplicado.id)}
+                className="text-[10px] font-semibold mr-3" style={{ color: accent }}>
+                Usar el que ya tengo
+              </button>
+              {/* ⚠️ Crear otro igual exige decirlo: no hay valor por defecto. */}
+              <button onClick={() => anadir({ forzarNueva: true })}
+                className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                Crear otro distinto
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => anadir()} className="text-[11px] font-semibold mt-1" style={{ color: accent }}>
+              Añadir
+            </button>
+          )}
+        </div>
+      </Card>
+    );
+  }
+
+  /* ── 🧩 Combinaciones (apartado 9) ─────────────────────────────────── */
+  if (zona === 'combinaciones') {
+    return (
+      <Card>
+        {cabecera('🧩 Combinaciones')}
+        {/* ⚠️ No es un outfit: es la preferencia que él guarda. */}
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+          Los outfits se montan en tu Armario. Aquí solo apuntas con qué estilo usas cada accesorio.
+        </p>
+        {panel.accesorios.map((a) => (
+          <div key={a.id} className="rounded-2xl p-2.5 mb-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+              {a.categoria.icono} {a.nombre}
+            </p>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {panel.estilos.map((e) => {
+                const puesto = a.combinaCon.includes(e.id);
+                return (
+                  <button key={e.id} aria-pressed={puesto}
+                    onClick={() => aplicar(editarAccesorio(estado, a.id, {
+                      combinaCon: puesto ? a.combinaCon.filter((x) => x !== e.id) : [...a.combinaCon, e.id],
+                    }))}
+                    className="rounded-full px-2 py-0.5" style={chip(puesto)}>
+                    <span className="text-[10px] font-semibold" style={{ color: puesto ? accent : COLORS.text }}>{e.nombre}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+              {combinacionesDeAccesorio(estado, arm, a.id, datosGlobales).texto}
+            </p>
+          </div>
+        ))}
+        {panel.accesorios.length === 0 && (
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>Cuando apuntes alguno, aquí dirás con qué lo usas.</p>
+        )}
+      </Card>
+    );
+  }
+
+  /* ── 💡 Recomendaciones (apartado 10) ──────────────────────────────── */
+  if (zona === 'recomendaciones') {
+    return (
+      <Card>
+        {cabecera('💡 Recomendaciones')}
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+          Salen de lo que has apuntado. Sin inteligencia artificial.
+        </p>
+        {panel.sugerencias.map((s) => (
+          <div key={s.id} className="rounded-2xl p-2.5 mb-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-[11px]" style={{ color: COLORS.text }}>{s.texto}</p>
+            <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>{s.accion}</p>
+          </div>
+        ))}
+        {panel.sugerencias.length === 0 && (
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>Ahora mismo no se nos ocurre nada que decirte.</p>
+        )}
+      </Card>
+    );
+  }
+
+  /* ── 🎯 Quiero comprar (apartado 13) ───────────────────────────────── */
+  if (zona === 'deseos') {
+    return (
+      <Card>
+        {cabecera('🎯 Quiero comprar')}
+        {error && <p className="text-[10px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
+        {panel.deseos.map((d) => (
+          <div key={d.id} className="rounded-2xl p-2.5 mb-1 flex items-center gap-2"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-semibold truncate" style={{ color: COLORS.text }}>{d.nombre}</span>
+              <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>{d.marca || 'Sin marca apuntada'}</span>
+            </span>
+            <button onClick={() => onEliminar?.('deseos', d.id)} aria-label={`Eliminar ${d.nombre}`}>
+              <X size={13} style={{ color: COLORS.textMuted }} />
+            </button>
+          </div>
+        ))}
+        {panel.deseos.length === 0 && (
+          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>Apunta lo que te vaya llamando.</p>
+        )}
+        <TextInput value={deseo} onChange={(e) => setDeseo(e.target.value)}
+          placeholder="Lo que te apetece" aria-label="Lo que quieres comprar" />
+        <button
+          onClick={() => { if (aplicar(anadirDeseoAccesorio(estado, { nombre: deseo, tipo }))) setDeseo(''); }}
+          className="text-[11px] font-semibold mt-1" style={{ color: accent }}>
+          Añadir a la lista
+        </button>
+      </Card>
+    );
+  }
+
+  /* ── El panel ──────────────────────────────────────────────────────── */
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          {onCerrar && (
+            <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+              <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+            </button>
+          )}
+          <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>{TEXTOS_ACCESORIOS.titulo}</p>
+          <button onClick={() => setEligiendo(true)} className="text-[10px] font-semibold" style={{ color: accent }}>
+            {TEXTOS_ACCESORIOS.editar}
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          {panel.plaquitas.map((p) => (
+            <Plaquita
+              key={p.id} accent={accent}
+              modulo={{ nombre: p.nombre, icono: p.icono, sub: '' }}
+              sub={{
+                mios: panel.resumen.accesorios === 0 ? 'Añade los tuyos'
+                  : `${panel.resumen.accesorios} ${panel.resumen.accesorios === 1 ? 'accesorio' : 'accesorios'}`,
+                combinaciones: panel.resumen.accesorios === 0 ? 'Cuando tengas alguno'
+                  : `${panel.resumen.conEstilo} con estilo`,
+                recomendaciones: panel.sugerencias.length === 0 ? 'Nada por ahora'
+                  : `${panel.sugerencias.length} ${panel.sugerencias.length === 1 ? 'idea' : 'ideas'}`,
+                deseos: panel.deseos.length === 0 ? 'Apunta lo que te llame' : `${panel.deseos.length} apuntados`,
+              }[p.id] || ''}
+              onAbrir={() => setZona(p.id)}
+            />
+          ))}
+        </div>
+      </Card>
+
+      {/* Apartado 8 — lo que lleva ahora, si ha marcado algo. */}
+      {panel.enUso.length > 0 && (
+        <Card>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>⭐ Lo que llevas</p>
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+            {panel.enUso.map((a) => a.nombre).join(' · ')}
+          </p>
+        </Card>
+      )}
+
+      {/* Apartado 14 — cada parte, con su interruptor. */}
+      <Card>
+        <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>⚙️ Gestionar apartados</p>
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+          Quita lo que no uses. Los datos permanecen.
+        </p>
+        {panel.partes.map((p) => (
+          <div key={p.id} className="rounded-2xl p-2.5 flex items-center gap-2 mb-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <span className="text-sm leading-none" aria-hidden="true">{p.icono}</span>
+            <span className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>{p.nombre}</span>
+            <Switch checked={p.activa} onChange={() => onCambiar?.(alternarParteAccesorios(estado, p.id))}
+              accent={accent} label={p.nombre} />
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+/* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
-export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, onEliminarPerfume, rachas = null }) {
+export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, onEliminarPerfume, onEliminarAccesorio, onGuardarAccesorio, rachas = null }) {
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
@@ -5601,6 +6046,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const [barba, setBarba] = useState(false);             // F20
   const [sonrisa, setSonrisa] = useState(false);         // F23
   const [perfumes, setPerfumes] = useState(false);       // F24
+  const [accesorios, setAccesorios] = useState(false);   // F26
   const [ordenando, setOrdenando] = useState(false);
   /* ⚠️ **Se calcula UNA sola vez, al entrar en el módulo** (regla 4: los hooks,
      antes de cualquier `return`). Si se recalculara en cada render, pulsar
@@ -5645,6 +6091,17 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     : (perfumesEH.estado === 'ahora_no' ? 'Cuando quieras'
       : (perfumesEH.coleccion === 0 ? 'Añade los tuyos'
         : `${perfumesEH.coleccion} ${perfumesEH.coleccion === 1 ? 'perfume' : 'perfumes'}`));
+  /* F26 — el de Accesorios, derivado igual: la cuenta sale de unir el armario
+     con lo guardado aquí, y no hay ni un contador. */
+  const accesoriosEH = useMemo(
+    () => resumenAccesorios(estado, armario || { prendas: [], outfits: [], usos: [] }),
+    [estado, armario],
+  );
+  const subAccesorios = accesoriosEH.estado === 'sin_configurar' ? 'Si quieres, configúralo'
+    : (accesoriosEH.estado === 'ahora_no' ? 'Cuando quieras'
+      : (accesoriosEH.accesorios === 0 ? 'Añade los tuyos'
+        : `${accesoriosEH.accesorios} ${accesoriosEH.accesorios === 1 ? 'accesorio' : 'accesorios'}`
+          + (accesoriosEH.enUso > 0 ? ` · ${accesoriosEH.enUso} puestos` : '')));
   const subPelo = resumenPeloEH.rutinas > 0
     ? `${resumenPeloEH.rutinas} ${resumenPeloEH.rutinas === 1 ? 'rutina' : 'rutinas'}`
       + (resumenPeloEH.hoy > 0 ? ` · ${resumenPeloEH.hechasHoy}/${resumenPeloEH.hoy} hoy` : '')
@@ -5740,6 +6197,19 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     );
   }
 
+  /* F26 — la plaquita de Accesorios abre su entrada. ⚠️ Recibe el armario y el
+     canal que escribe en los dos almacenes: la prenda va allí, no aquí. */
+  if (accesorios) {
+    return (
+      <AccesoriosEH
+        estado={estado} armario={armario} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onGuardar={onGuardarAccesorio}
+        onCerrar={() => setAccesorios(false)}
+        onEliminar={onEliminarAccesorio}
+      />
+    );
+  }
+
   if (miEstilo) {
     return (
       <MiEstiloEH
@@ -5802,17 +6272,20 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
               const esSonrisa = m.id === MODULO_SONRISA && !ordenando;
               /* F24 — y Perfumes, el sexto. */
               const esPerfumes = m.id === MODULO_PERFUMES && !ordenando;
+              /* F26 — Accesorios, el séptimo. */
+              const esAccesorios = m.id === MODULO_ACCESORIOS && !ordenando;
               return (
                 <Plaquita
                   key={m.id} modulo={m} accent={accent}
                   sub={esArmario && estiloArmario ? resumenPlaquitaArmario
-                    : (esPelo ? subPelo : (esPiel ? subPiel : (esBarba ? subBarba : (esSonrisa ? subSonrisa : (esPerfumes ? subPerfumes : null)))))}
+                    : (esPelo ? subPelo : (esPiel ? subPiel : (esBarba ? subBarba : (esSonrisa ? subSonrisa : (esPerfumes ? subPerfumes : (esAccesorios ? subAccesorios : null))))))}
                   onAbrir={esArmario ? () => onIr(DESTINO_ARMARIO)
                     : (esPelo ? () => setPerfilPelo('panel')
                       : (esPiel ? () => setSkincare(true)
                         : (esBarba ? () => setBarba(true)
                           : (esSonrisa ? () => setSonrisa(true)
-                            : (esPerfumes ? () => setPerfumes(true) : null)))))}
+                            : (esPerfumes ? () => setPerfumes(true)
+                              : (esAccesorios ? () => setAccesorios(true) : null))))))}
                   orden={ordenando ? puedeMover(estado, m.id) : null}
                   onSubir={() => onCambiar(subirModulo(estado, m.id))}
                   onBajar={() => onCambiar(bajarModulo(estado, m.id))}

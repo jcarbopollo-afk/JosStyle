@@ -83,6 +83,8 @@ const ESTILO_GUARDADO = {
     { id: 'sonrisa', activo: true, orden: 3, config: {} },
     // EH F24 — Perfumes, encendido y sin configurar.
     { id: 'perfumes', activo: true, orden: 4, config: {} },
+    // EH F26 — Accesorios, encendido y sin configurar.
+    { id: 'accesorios', activo: true, orden: 5, config: {} },
     /* ⚠️ Con el perfil de piel empezado: si no, Skincare enseña su puerta de
        entrada ("Configurar / Ahora no") y no se llega al panel. */
     { id: 'skincare', activo: true, orden: 1, config: { necesidadesPiel: 'hidratacion', complejidadPiel: 'basico' } },
@@ -457,5 +459,71 @@ await page.waitForTimeout(700);
 const conOcasion = await ver();
 ok(/Uno que tengo/.test(conOcasion) || /todavía no podemos/.test(conOcasion),
   '⚠️ Y o sale una recomendación, o se dice por qué no: nunca una tarjeta vacía');
+
+/* ── 11 · ACCESORIOS, Y LA PRENDA VA AL ARMARIO (EH F26) ───────────────── */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+ok(await pulsar('Accesorios'), 'Accesorios (EH F26) se abre desde Estilo de hombre');
+ok(/¿Quieres utilizar este apartado\?/.test(await ver()), 'Y pregunta si lo quiere usar');
+
+ok(await pulsar('Sí, configurarlo'), 'Se puede configurar');
+await page.waitForTimeout(800);
+const panelAcc = await ver();
+['Mis accesorios', 'Combinaciones', 'Recomendaciones', 'Quiero comprar']
+  .forEach((p) => ok(panelAcc.includes(p), `Se ve la plaquita "${p}"`));
+ok(!/Llega en la fase/.test(panelAcc), '⚠️ Regla 8: ninguna plaquita decorativa');
+
+ok(await pulsar('Mis accesorios'), 'Mis accesorios se abre');
+const misAcc = await ver();
+ok(/se guardan en tu Armario/.test(misAcc),
+  '⚠️ Y la pantalla DICE que viven en el Armario: si no, los apuntaría dos veces');
+
+await page.fill('input[aria-label="Nombre del accesorio"]', 'Casio negro');
+await page.fill('input[aria-label="Marca del accesorio"]', 'Casio');
+guardado.length = 0;
+ok(await pulsar('Añadir'), 'Se puede añadir un accesorio');
+await page.waitForTimeout(1400);
+
+/* ⚠️ La prueba de la fase: se escriben LOS DOS almacenes, y la prenda va al
+   armario, no a Estilo de hombre. */
+const escArm = guardado.filter((g) => g && g.key === 'armario');
+const escAcc = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escArm.length > 0, '⚠️ PERSISTENCIA: la PRENDA se escribe en el ARMARIO');
+ok(escAcc.length > 0, '⚠️ Y el envoltorio de estilo, en Estilo de hombre');
+const prendasAcc = (escArm.at(-1)?.value?.prendas || []).filter((p) => p.categoria === 'accesorios');
+ok(prendasAcc.length === 1 && prendasAcc[0].nombre === 'Casio negro',
+  'La prenda entra en la categoría "accesorios" del armario que ya existía');
+ok(prendasAcc[0].subcategoria === 'relojes', 'Con el tipo de accesorio como subcategoría');
+const envoltorios = escAcc.at(-1)?.value?.modulos?.find((m) => m.id === 'accesorios')?.config?.accesorios?.accesorios || [];
+ok(envoltorios.length === 1, 'Y aquí queda un solo envoltorio');
+ok(envoltorios[0].prendaId === prendasAcc[0].id, 'Apuntando a la prenda por su id');
+ok(!('nombre' in envoltorios[0]) && !('marca' in envoltorios[0]),
+  '⚠️ NI UN CAMPO DE LA PRENDA duplicado aquí: *"no crear otro armario"*');
+
+const conAcc = await ver();
+ok(/Casio negro/.test(conAcc), '⚠️ Y la pantalla lo enseña, unido a su prenda');
+
+/* ⚠️ Apartado 3 — el mismo nombre otra vez NO crea una copia. */
+await page.fill('input[aria-label="Nombre del accesorio"]', 'Casio negro');
+guardado.length = 0;
+await pulsar('Añadir');
+await page.waitForTimeout(900);
+const avisoDup = await ver();
+ok(/Ya tienes/.test(avisoDup), '⚠️ Con el nombre repetido AVISA en vez de crear la copia');
+ok(/Usar el que ya tengo/.test(avisoDup), 'Y ofrece usar el que ya tiene');
+ok(guardado.filter((g) => g && g.key === 'armario').length === 0,
+  '⚠️ Y no ha escrito nada en el armario mientras él decide');
+
+/* ⚠️ Y al recargar sigue estando: la prenda en el armario y su estilo aquí. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await pulsar('Accesorios');
+await pulsar('Mis accesorios');
+await page.waitForTimeout(500);
+ok(/Casio negro/.test(await ver()), '⚠️ PERSISTENCIA: sigue ahí después de recargar');
 
 await salir(browser);

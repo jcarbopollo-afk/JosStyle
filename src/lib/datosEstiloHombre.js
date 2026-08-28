@@ -95,7 +95,11 @@ export const REGISTRO_DATOS = [
   // ⚠️ Las que sí tiene (marcas, colores y ocasiones de sus prendas y outfits)
   // **no se declaran aquí**: se derivan de él. Declararlas sería el segundo
   // sistema de ropa que prohíbe el encabezado de la Fase 5.
-  { id: 'estilosFavoritos', nombre: 'Estilos favoritos', categoria: 'estilo', clase: 'preferencia', usan: ['estilo'], historial: false, desde: 5 },
+  /* ⚠️ EH F26 — `accesorios` se suma a los que lo LEEN: las combinaciones y las
+     recomendaciones de accesorio se apoyan en el estilo que ya eligió, en vez de
+     volver a preguntárselo. Cuarta vez que este registro evita una pregunta
+     repetida antes de escribirla. */
+  { id: 'estilosFavoritos', nombre: 'Estilos favoritos', categoria: 'estilo', clase: 'preferencia', usan: ['estilo', 'accesorios'], historial: false, desde: 5 },
   { id: 'coloresFavoritos', nombre: 'Colores favoritos', categoria: 'estilo', clase: 'preferencia', usan: ['estilo', 'productos'], historial: false, desde: 5 },
   { id: 'formalidad', nombre: 'Nivel de formalidad habitual', categoria: 'estilo', clase: 'preferencia', usan: ['estilo'], historial: false, desde: 5 },
   // EH F6, el perfil de estilo. ⚠️ `estilosFavoritos` y `coloresFavoritos` YA
