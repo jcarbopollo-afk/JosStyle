@@ -119,6 +119,11 @@ import {
   NIVELES_ASPECTO, registrarPiel, eliminarRegistroPiel, PERIODOS_PIEL,
   panelSeguimientoPiel, resumenSeguimientoPiel, desdeQueUsas,
 } from '../lib/seguimientoPiel';
+import {
+  PARTE_RECOMENDACIONES, MOTIVOS_DESCARTE_PIEL, recomendarPiel, loQueFaltaPiel,
+  marcarVistasPiel, descartarPiel, guardarRecomendacionPiel, quitarGuardadaPiel,
+  anadirARutina, resumenRecsPiel,
+} from '../lib/recomendacionesPiel';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -2737,6 +2742,141 @@ export function RutinasPielEH({ estado, accent, datosGlobales = {}, onCambiar, o
 }
 
 /* ===========================================================================
+   SKINCARE: RECOMENDACIONES (F16)
+   ===========================================================================
+   ⚠️ **La aplicación nunca modifica la rutina** (apartados 4 y 11). "Añadir a
+   mi rutina" llama a `anadirARutina` con `confirmado: true` **porque él ha
+   tocado el botón**; sin ese toque no se escribe nada.
+
+   ⚠️ Y **cada una trae su "¿por qué aparece?"** (apartado 6): la transparencia
+   es el punto, no un adorno. */
+export function RecomendacionesPielEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil }) {
+  const [verTodas, setVerTodas] = useState(false);
+  const [menu, setMenu] = useState(null);
+  const [aviso, setAviso] = useState(null);
+
+  const r = useMemo(
+    () => recomendarPiel(estado, datosGlobales, { limite: verTodas ? 99 : 3 }),
+    [estado, datosGlobales, verTodas],
+  );
+  const rutinas = useMemo(() => datosRutinasPiel(estado).rutinas, [estado]);
+
+  const aplicar = (x) => onCambiar?.(x.estado ?? x);
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-3">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>💡 Recomendaciones</p>
+      </div>
+
+      {/* ⚠️ Apartado 13 — se ofrece completar el perfil, con "Ahora no" al lado.
+          *"Nunca bloquear."* */}
+      {r.falta.hayQueAfinar && (
+        <div className="rounded-2xl p-2.5 mb-2"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <p className="text-[11px]" style={{ color: COLORS.text }}>{r.falta.texto}</p>
+          <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            {r.falta.campos.map((c) => c.texto).join(' · ')}
+          </p>
+          <div className="flex gap-2 mt-1">
+            <button onClick={onPerfil} className="text-[10px] font-semibold" style={{ color: accent }}>
+              {r.falta.accion}
+            </button>
+            <button onClick={() => {}} className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+              {r.falta.ahoraNo}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {r.total === 0 ? (
+        <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+          Aquí saldrán cosas que podrían encajarte, cuando nos cuentes algo más.
+        </p>
+      ) : r.recomendaciones.map((x) => (
+        <div key={x.id} className="rounded-2xl p-2.5 mb-1.5"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <div className="flex items-start gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                {x.icono} {x.titulo}
+              </p>
+              <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{x.texto}</p>
+              {/* ⚠️ Apartado 6 — el "¿por qué aparece?", siempre. */}
+              <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>{x.porque}</p>
+            </div>
+            {/* Apartado 9 — el ⋯ con sus cuatro motivos. */}
+            <button onClick={() => setMenu(menu === x.id ? null : x.id)} aria-label="Opciones">
+              <span className="text-[13px]" style={{ color: COLORS.textMuted }}>⋯</span>
+            </button>
+          </div>
+
+          {menu === x.id && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {MOTIVOS_DESCARTE_PIEL.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => { aplicar(descartarPiel(estado, x.id, m.id)); setMenu(null); }}
+                  className="rounded-full px-2 py-0.5"
+                  style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+                >
+                  <span className="text-[10px]" style={{ color: COLORS.textMuted }}>{m.nombre}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2 mt-1.5">
+            <button
+              onClick={() => aplicar(x.guardada ? quitarGuardadaPiel(estado, x.id) : guardarRecomendacionPiel(estado, x.id))}
+              className="text-[10px] font-semibold" style={{ color: x.guardada ? accent : COLORS.textMuted }}
+            >
+              {x.guardada ? '❤️ Guardada' : '❤️ Guardar'}
+            </button>
+            {/* ⚠️ Apartados 4 y 11 — con confirmación, siempre. */}
+            {x.tipo === 'rutina' && (
+              <button
+                onClick={() => setAviso({
+                  id: x.id,
+                  titulo: 'Añadir a tu rutina',
+                  texto: `Se añadirá "${x.titulo}" a ${rutinas[0]?.nombre || 'una rutina nueva'}.`,
+                  confirmar: 'Añadir', cancelar: 'Ignorar',
+                })}
+                className="text-[10px] font-semibold" style={{ color: accent }}
+              >
+                Añadir a mi rutina
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+
+      {/* Apartado 8 — tres, y "Ver más". */}
+      {r.hayMas && !verTodas && (
+        <button onClick={() => setVerTodas(true)} className="text-[11px] font-semibold mx-auto block mt-1"
+          style={{ color: accent }}>Ver más</button>
+      )}
+
+      <AvisoDesactivar
+        aviso={aviso} accent={accent}
+        onCancelar={() => setAviso(null)}
+        onConfirmar={() => {
+          /* ⚠️ `confirmado: true` porque ÉL acaba de tocar "Añadir". Nunca es
+             un valor por defecto de la función. */
+          aplicar(anadirARutina(estado, aviso.id, rutinas[0]?.id || null, { confirmado: true }));
+          setAviso(null);
+        }}
+      />
+    </Card>
+  );
+}
+
+/* ===========================================================================
    SKINCARE: SEGUIMIENTO (F15)
    ===========================================================================
    ⚠️ **Ni rachas ni obligación** (apartado 9, que el enunciado marca como *"esto
@@ -2921,12 +3061,21 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
   const rut = useMemo(() => resumenRutinasPiel(estado), [estado]);
   const hist = useMemo(() => historialPiel(estado), [estado]);
   const seg = useMemo(() => resumenSeguimientoPiel(estado), [estado]);
+  const recs = useMemo(() => resumenRecsPiel(estado, datosGlobales), [estado, datosGlobales]);
 
   if (zona === 'rutina') {
     return (
       <RutinasPielEH
         estado={estado} accent={accent} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={() => setZona(null)}
+      />
+    );
+  }
+  if (zona === 'recomendaciones') {
+    return (
+      <RecomendacionesPielEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setZona(null)} onPerfil={onPerfil}
       />
     );
   }
@@ -2945,6 +3094,9 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
     // ⚠️ F15 — el recuento es de registros de piel, no de rutinas hechas: son
     // dos cosas distintas y mezclarlas mentiría en las dos direcciones.
     seguimiento: seg.guardados === 0 ? 'Sin registros' : seg.texto,
+    recomendaciones: recs.disponibles === 0
+      ? 'Cuéntanos algo más'
+      : `${recs.disponibles} ${recs.disponibles === 1 ? 'opción' : 'opciones'}`,
   };
 
   return (
@@ -2963,6 +3115,9 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
           {PLAQUITAS_PIEL
             .filter((p) => p.id !== 'rutina' || parteActivaPiel(estado, 'rutinas'))
             .filter((p) => p.id !== 'seguimiento' || parteActivaPiel(estado, 'seguimiento'))
+            /* ⚠️ F16, apartados 1 y 17 — apagarlas hace desaparecer la plaquita
+               y los demás módulos siguen funcionando. */
+            .filter((p) => p.id !== 'recomendaciones' || parteActivaPiel(estado, PARTE_RECOMENDACIONES))
             .map((p) => (
               <Plaquita
                 key={p.id} accent={accent}
@@ -2971,7 +3126,8 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
                 onAbrir={p.listo
                   ? (p.id === 'perfil' ? onPerfil
                     : (p.id === 'rutina' ? () => setZona('rutina')
-                      : (p.id === 'seguimiento' ? () => setZona('seguimiento') : null)))
+                      : (p.id === 'seguimiento' ? () => setZona('seguimiento')
+                        : (p.id === 'recomendaciones' ? () => setZona('recomendaciones') : null))))
                   : null}
               />
             ))}

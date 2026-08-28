@@ -266,6 +266,12 @@ else
   fallo "Falla el seguimiento de la piel"; grep '✗' /tmp/jc_eh15.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-recomendaciones-piel.mjs >/tmp/jc_eh16.log 2>&1; then
+  ok "Recomendaciones de skincare sin IA (EH F16) — $(grep -c '✓' /tmp/jc_eh16.log) comprobaciones"
+else
+  fallo "Fallan las recomendaciones de piel"; grep '✗' /tmp/jc_eh16.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else
@@ -465,6 +471,19 @@ fi
 
 # --- Coherencia: todo case de renderTab tiene entrada de navegación y viceversa ---
 node --import ./scripts/resolver-vite.mjs scripts/comprobar-navegacion.mjs || FALLOS=$((FALLOS+1))
+
+# --- ⚠️ LA APLICACIÓN DE VERDAD, EN UN NAVEGADOR ---
+# Existe porque la app estuvo meses SIN ARRANCAR y ninguna de las otras 5 800
+# comprobaciones lo vio: `App.jsx` no se renderizaba en ninguna prueba.
+if node scripts/test-app-real.mjs >/tmp/jc_app.log 2>&1; then
+  if grep -q "OMITIDA" /tmp/jc_app.log; then
+    aviso "Prueba de navegador omitida (falta Playwright, no hace falta para desplegar)"
+  else
+    ok "La aplicación arranca, carga lo guardado y persiste — $(grep -c '✓' /tmp/jc_app.log) comprobaciones en Chromium"
+  fi
+else
+  fallo "LA APLICACIÓN NO ARRANCA O NO GUARDA"; grep '✗' /tmp/jc_app.log
+fi
 
 if node scripts/test-imports.mjs >/tmp/jc_imports.log 2>&1; then
   ok "Nadie usa una función de src/lib/ sin importarla"

@@ -10,6 +10,7 @@
 // ============================================================================
 
 import { readFileSync } from 'node:fs';
+import { todayISO } from '../src/lib/helpers.js';
 import {
   DEFAULT_ESTILO_HOMBRE, configurarPrimeraVez, alternarModulo, normalizarEstiloHombre,
 } from '../src/lib/estiloDeHombre.js';
@@ -92,7 +93,13 @@ const r1 = registrarCorte(base(), { fecha: '2026-08-23', nota: 'Me gustó mucho.
 eq(r1.error, null, 'Test 1: registrar el último corte');
 eq(datosPeluqueria(r1.estado).cortes.length, 1, 'Y queda guardado');
 eq(ultimoCorte(r1.estado).nota, 'Me gustó mucho.', 'Apartado 10: con su nota');
-eq(registrarCorte(base(), {}).corte.fecha, HOY, '⚠️ Apartado 2: "Hoy", para hacerlo rápido');
+/* ⚠️ Contra `todayISO()`, NO contra la constante HOY del fichero: sin fecha,
+   `registrarCorte` usa el día de verdad, así que compararlo con una fecha fija
+   convertía esta prueba en una bomba de relojería — pasaba el día que se
+   escribió y fallaba al siguiente. Lo que se comprueba es que "Hoy" ponga HOY,
+   sea el día que sea. */
+eq(registrarCorte(base(), {}).corte.fecha, todayISO(), '⚠️ Apartado 2: "Hoy", para hacerlo rápido');
+eq(registrarCorte(base(), { fecha: HOY }).corte.fecha, HOY, 'Y una fecha concreta se respeta');
 ok(registrarCorte(base(), { fecha: 'ayer' }).error !== null, 'Una fecha que no lo es se rechaza');
 ok(registrarCorte(r1.estado, { fecha: '2026-08-23' }).yaExistia, 'Dos cortes el mismo día no son dos cortes');
 eq(datosPeluqueria(registrarCorte(r1.estado, { fecha: '2026-08-23' }).estado).cortes.length, 1, 'Y no se duplica');

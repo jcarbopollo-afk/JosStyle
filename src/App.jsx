@@ -618,6 +618,64 @@ export default function App() {
     return unsub;
   }, []);
 
+  /* =========================================================================
+     ⚠️ REGLA 4 — TODOS LOS HOOKS, ANTES DE LOS `return` CONDICIONALES
+     =========================================================================
+     Estos cinco hooks estaban MÁS ABAJO, después de los tres `return` de aquí
+     debajo. El efecto: en el primer render `session` es `undefined`, se salía
+     por `<LoadingScreen />` y esos hooks NO se ejecutaban; en cuanto llegaba la
+     sesión, React encontraba cinco hooks más que la vez anterior y lanzaba
+     **"Rendered more hooks than during the previous render"**, que TUMBA LA
+     APLICACIÓN ENTERA.
+
+     Es literalmente la regla 4 del proyecto —*"en App.jsx, todos los useEffect
+     van ANTES de los return condicionales"*—, que ya se había roto una vez y
+     volvió a romperse. Lo encontró abrir la aplicación en un navegador de
+     verdad: ni el build ni las pruebas de renderizado podían verlo, porque
+     `App.jsx` no se renderizaba en ninguna prueba.
+
+     Las funciones auxiliares que los usan (`irAResultado`, `recordarBusqueda`,
+     `focoPara`…) siguen abajo: no son hooks y da igual dónde estén. */
+
+  // BI Fase 4 · apartado 11 — el rastro de "vuelve a donde estabas" solo vale para el
+  // módulo al que llevó el buscador. En cuanto Josué navega a cualquier otro sitio se
+  // borra, para que no reaparezca días después si vuelve a ese módulo por la barra de
+  // abajo. Un único efecto cubre TODAS las formas de navegar.
+  useEffect(() => {
+    setVueltaBusqueda((v) => (v && v.hacia !== tab ? null : v));
+  }, [tab]);
+
+  // BI Fase 2 — el índice del buscador se construye a partir de MORE_NAV, así que un
+  // módulo que una fase futura añada ahí aparece solo (apartado 17). Se recalcula cuando
+  // cambia lo que Josué ha apagado: lo desactivado no debe poder encontrarse (D2-07).
+  const indiceBusqueda = useMemo(
+    () => construirIndice(MORE_NAV, { modulosDesactivados: personalizacion.ocultos }),
+    [personalizacion.ocultos],
+  );
+
+  // BI Fase 3 · apartado 16 — accesos recientes del buscador. Se guardan los IDS de las
+  // funciones abiertas, nunca el texto que escribió; y en `localStorage`, no en
+  // `app_data`, porque el apartado lo pide y porque no merece sincronizarse.
+  const [recientesBusqueda, setRecientesBusqueda] = useState(() => {
+    try {
+      const guardado = JSON.parse(localStorage.getItem('josstyle:busquedas-recientes') || '[]');
+      return Array.isArray(guardado) ? guardado.slice(0, MAX_RECIENTES_BUSQUEDA) : [];
+    } catch { return []; }
+  });
+
+  // Se resuelven contra el índice ACTUAL, así que un reciente cuyo módulo se haya
+  // desactivado después desaparece solo, sin necesidad de limpiar nada.
+  const entradasRecientes = useMemo(
+    () => recientesBusqueda.map((id) => indiceBusqueda.find((e) => e.id === id)).filter(Boolean),
+    [recientesBusqueda, indiceBusqueda],
+  );
+
+  // RA Fase 4 · apartado 31 — el resumen de Rachas recorre historiales día a día, así que
+  // esto va memoizado. El resto son sumas baratas sobre datos que ya están en memoria.
+  const resumenesTodos = useMemo(() => Object.fromEntries(
+    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop })])
+  ), [sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop]);
+
   if (session === undefined) return <LoadingScreen />;
   if (!session) return <Auth />;
   if (!loaded) return <LoadingScreen />;
@@ -650,19 +708,12 @@ export default function App() {
   // borra, para que no reaparezca días después si vuelve a ese módulo por la barra de
   // abajo. Un único efecto cubre TODAS las formas de navegar; ponerlo en cada botón
   // habría dejado fuera la que se añada mañana.
-  useEffect(() => {
-    setVueltaBusqueda((v) => (v && v.hacia !== tab ? null : v));
-  }, [tab]);
 
   // ---------- Entrega 2 · BI Fase 2 — buscador de funciones ----------
   // El índice se construye a partir de MORE_NAV, así que un módulo que una fase futura añada
   // ahí aparece solo en el buscador (apartado 17). Se recalcula cuando cambia la lista de
   // módulos desactivados: lo que Josué ha apagado no debe poder encontrarse (decisión D2-07 —
   // Inicio, Buscador y Módulos son un solo sistema, no tres).
-  const indiceBusqueda = useMemo(
-    () => construirIndice(MORE_NAV, { modulosDesactivados: personalizacion.ocultos }),
-    [personalizacion.ocultos],
-  );
   // Apartado 12: pulsar un resultado abre el sitio exacto, no la lista de Ajustes para que lo
   // busque él. Reutiliza el mismo `navegarDesdeHoy` del deep-link del Dashboard — ni un sistema
   // de navegación nuevo (apartado 16 y regla 10).
@@ -691,12 +742,6 @@ export default function App() {
   // ("guardarlo localmente si corresponde, no enviarlo innecesariamente al servidor"), y
   // además no es un dato de Josué que merezca sincronizarse entre dispositivos ni entrar
   // en la copia de seguridad. Si el navegador lo borra, no se pierde nada que importe.
-  const [recientesBusqueda, setRecientesBusqueda] = useState(() => {
-    try {
-      const guardado = JSON.parse(localStorage.getItem('josstyle:busquedas-recientes') || '[]');
-      return Array.isArray(guardado) ? guardado.slice(0, MAX_RECIENTES_BUSQUEDA) : [];
-    } catch { return []; }
-  });
   const guardarRecientes = (ids) => {
     setRecientesBusqueda(ids);
     try { localStorage.setItem('josstyle:busquedas-recientes', JSON.stringify(ids)); } catch { /* modo privado */ }
@@ -707,10 +752,6 @@ export default function App() {
   };
   // Se resuelven contra el índice ACTUAL, así que un reciente cuyo módulo se haya
   // desactivado después desaparece solo, sin necesidad de limpiar nada.
-  const entradasRecientes = useMemo(
-    () => recientesBusqueda.map((id) => indiceBusqueda.find((e) => e.id === id)).filter(Boolean),
-    [recientesBusqueda, indiceBusqueda],
-  );
   // Cada vista de destino solo necesita saber si el foco pendiente es "el suyo" — así ninguna
   // vista tiene que conocer la forma de `dashboardFoco` de las demás.
   const focoPara = (modulo) => (dashboardFoco && dashboardFoco.modulo === modulo ? dashboardFoco : null);
@@ -1577,9 +1618,6 @@ export default function App() {
   // últimas fechas) sobre datos que ya están en memoria, mismo criterio que calcularMetricas().
   // RA Fase 4 — el resumen de Rachas SÍ es caro (recorre historiales día a día), así que a
   // partir de aquí esto va memoizado. Es el apartado 31: *"evita cálculos repetidos"*.
-  const resumenesTodos = useMemo(() => Object.fromEntries(
-    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop })])
-  ), [sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop]);
 
   // Fase 19 — métricas favoritas del panel "Hoy": se calculan aquí (no en DashboardView) porque
   // combinan datos de varios módulos, mismo criterio que ya usan Estadísticas/Predicciones —

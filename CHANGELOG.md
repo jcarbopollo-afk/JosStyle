@@ -1,5 +1,81 @@
 # CHANGELOG.md
 
+## 🚨 v1.82.0 — LA APLICACIÓN NO ARRANCABA. Dos fallos fatales, y EH Fase 16/65
+
+### Lo primero, porque es lo que importa
+Josué dijo que **por más fases que se construyeran, al abrir la aplicación la veía prácticamente
+igual**. Tenía razón, y la causa no era la documentación: **la aplicación no funcionaba**. Dos
+fallos, los dos fatales, los dos invisibles para las 5 844 comprobaciones que había.
+
+**1. `App.jsx` nunca importó `papelera.js`** (desde ME F3, v1.25.0). `purgarCaducados(...)` lanzaba
+un `TypeError` **en mitad de la carga de datos**, y no hay `try/catch` en toda esa ruta. Todo lo que
+venía después no llegaba a ejecutarse:
+
+```
+  línea 456   purgarCaducados(...)        ← TypeError
+  línea 457   setPapelera(...)            ← nunca
+  línea 464   setArmario(...)             ← nunca
+  línea 471   setHorarioTop(...)          ← nunca
+  línea 472   setEstiloHombre(...)        ← nunca
+```
+
+**Ningún módulo de la Entrega 2 cargaba sus datos guardados.** Cada arranque los dejaba en su valor
+por defecto: por eso todo salía "sin configurar" y por eso lo que Josué configuraba parecía
+desaparecer al recargar.
+
+**2. Cinco hooks estaban DESPUÉS de los `return` condicionales de `App.jsx`** — la regla 4 del
+proyecto, rota otra vez. En el primer render `session` es `undefined` y se sale por
+`<LoadingScreen />`, así que esos hooks no se ejecutan; en cuanto llega la sesión, React encuentra
+cinco hooks más que la vez anterior y lanza **"Rendered more hooks than during the previous
+render"**, que **tumba la aplicación entera**.
+
+Los dos están arreglados. Comprobado abriendo la aplicación en un navegador de verdad.
+
+### ⚠️ Por qué ninguna prueba lo veía, y qué se ha hecho al respecto
+**`App.jsx` no se renderizaba en ninguna prueba.** El build no comprueba identificadores, y las 648
+pruebas de renderizado montan las *vistas*, no la aplicación — porque `App.jsx` necesita Supabase y
+un navegador.
+
+Ahora sí: **`scripts/test-app-real.mjs`** arranca Vite, abre la app en Chromium con la sesión y las
+respuestas de Supabase simuladas, y comprueba la cadena entera:
+
+**arranca → carga lo guardado → se llega al módulo → se toca → se guarda → se ve.**
+
+25 comprobaciones, incluidas dos que existen solo para estos dos fallos: que no aparezca *"Rendered
+more hooks"* y que no haya ningún *"is not a function"*. Playwright **no es dependencia del
+proyecto** (Vercel no debe instalarlo): si no está, la prueba se salta con un aviso.
+
+Y **`scripts/test-imports.mjs`**, la regla invariante que encontró el primer fallo, recorre los
+1 319 nombres que exporta `src/lib/` y comprueba que los 38 archivos de `src/` importen los que usan.
+
+### Lo que esto significa para las fases anteriores
+**Estaban bien construidas.** Se ha comprobado en el navegador: Estilo de Hombre se abre desde Más,
+carga los módulos que había guardados, el panel de Pelo enseña sus seis plaquitas (F7 a F12),
+Peluquería abre con su frecuencia y su planificación, "Mi estilo de corte" está dentro, y registrar
+un corte **escribe en Supabase y se ve en pantalla**. Lo que fallaba era el arranque, no las fases.
+
+### EH Fase 16/65 — Skincare: motor de recomendaciones
+Tercera fase que necesitaba reglas con `requiere`/`cuando`/`porque`: la 9 lo construyó para el pelo,
+la 12 escribió su propia copia del mismo `if`, y ésta era la tercera. Lo genérico se ha extraído a
+**`motorRecomendaciones.js`** y las tres lo usan — **las 146 pruebas de F9 y las 209 de F12 pasaron
+sin tocar ni una**.
+
+- ⚠️ **La aplicación nunca modifica la rutina** (apartados 4 y 11): `anadirARutina` exige
+  `confirmado: true`, y calcular no escribe. Quinto `aplicarPlan` del proyecto.
+- ⚠️ **La prioridad la marca él** (apartado 2) y pesa **sin tapar el resto**.
+- ⚠️ **El nivel se respeta** (apartado 7); sin nivel elegido, se enseña todo.
+- ⚠️ *"No quiero recomendaciones similares"* **calla el tema entero**, que es lo que significa.
+- ⚠️ **Apartado 16**: seis pruebas de "sin IA" sobre el código, y cuatro ceros declarados.
+
+### Y una prueba con fecha de caducidad, arreglada
+`test-peluqueria.mjs` comparaba el "Hoy" de `registrarCorte` contra una fecha fija: pasaba el día que
+se escribió y fallaba al siguiente. Ahora compara contra `todayISO()`, sea el día que sea.
+
+### Verificación
+`bash scripts/verificar.sh` — **6030 comprobaciones**, todas correctas: build de Vite, 160 nuevas
+para EH F16, 648 casos de renderizado, 11 reglas invariantes y **25 comprobaciones sobre la
+aplicación de verdad, en Chromium**.
+
 ## Entrega 2 · EH Fase 15/65 — Skincare: seguimiento y evolución (v1.81.0)
 
 ### 🐛 Un fallo real y grave, encontrado de paso: `App.jsx` nunca importó `papelera.js`

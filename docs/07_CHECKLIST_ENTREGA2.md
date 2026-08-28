@@ -1265,25 +1265,54 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar integración con eliminados recientemente.
 - [x] Comprobar móvil.
 
-#### EH · Fase 16/65 — SKINCARE: MOTOR DE RECOMENDACIONES
-- [ ] PLAQUITA
-- [ ] PRIORIDADES
-- [ ] REGLAS
-- [ ] RECOMENDACIONES DE RUTINA
-- [ ] RECOMENDACIONES DE PRODUCTOS
-- [ ] EXPLICACIÓN
-- [ ] NIVEL
-- [ ] CANTIDAD
-- [ ] DESCARTAR
-- [ ] GUARDAR
-- [ ] AÑADIR A RUTINA
-- [ ] AÑADIR PRODUCTO
-- [ ] INFORMACIÓN INSUFICIENTE
-- [ ] ACTUALIZACIÓN
-- [ ] HISTORIAL DE RECOMENDACIONES
-- [ ] NO IA
-- [ ] DESACTIVAR
-- [ ] PRUEBAS
+#### EH · Fase 16/65 — SKINCARE: MOTOR DE RECOMENDACIONES ✅ COMPLETADA (v1.82.0)
+
+> **`src/lib/motorRecomendaciones.js`** (el motor extraído) + **`src/lib/recomendacionesPiel.js`**
+> (160 comprobaciones) + la pantalla `RecomendacionesPielEH`. Sin SQL nuevo.
+>
+> ⚠️ **Tercera fase que necesitaba reglas con `requiere`/`cuando`/`porque`.** La 9 lo construyó para
+> el pelo, la 12 escribió su propia copia del mismo `if`, y ésta era la tercera. Lo genérico se
+> extrajo a `motorRecomendaciones.js` y las tres lo usan — **las 146 pruebas de F9 y las 209 de F12
+> pasaron sin tocar ni una**, y hay una prueba de que F9 usa literalmente la misma función.
+>
+> ⚠️ **La aplicación NUNCA modifica la rutina** (apartados 4 y 11, los dos con esas palabras).
+> `anadirARutina` exige `confirmado: true`, y calcular recomendaciones no escribe nada — la prueba
+> serializa el estado antes y después. Quinto `aplicarPlan` del proyecto.
+>
+> ⚠️ **La prioridad la marca ÉL** (apartado 2) y **pesa sin tapar el resto**: lo de su objetivo sale
+> primero, pero una recomendación de otro tema sigue pudiendo aparecer.
+>
+> ⚠️ **El nivel se respeta** (apartado 7): un básico no ve lo avanzado, con prueba en las dos
+> direcciones. Y **sin nivel elegido se enseña todo**, como en la Fase 14.
+>
+> ⚠️ *"No quiero recomendaciones similares"* **calla el TEMA entero**, no solo esa regla — que es lo
+> que "similares" significa. Los otros tres motivos caducan (30/90/90 días).
+>
+> ⚠️ **Apartado 16, la comprobación explícita de "sin IA"**: seis pruebas sobre el código y cuatro
+> ceros declarados (llamadas, envío de datos, diagnósticos, análisis de fotos).
+>
+> **El catálogo de productos sigue vacío**: `queBuscarEnProductos()` dice **qué se buscaría** con lo
+> que ya se sabe, y declara `catalogo: 0` — el catálogo llega en la fase 17 (D2-03).
+
+
+- [x] PLAQUITA
+- [x] PRIORIDADES
+- [x] REGLAS
+- [x] RECOMENDACIONES DE RUTINA
+- [x] RECOMENDACIONES DE PRODUCTOS
+- [x] EXPLICACIÓN
+- [x] NIVEL
+- [x] CANTIDAD
+- [x] DESCARTAR
+- [x] GUARDAR
+- [x] AÑADIR A RUTINA
+- [x] AÑADIR PRODUCTO
+- [x] INFORMACIÓN INSUFICIENTE
+- [x] ACTUALIZACIÓN
+- [x] HISTORIAL DE RECOMENDACIONES
+- [x] NO IA
+- [x] DESACTIVAR
+- [x] PRUEBAS
 
 #### EH · Fase 17/65 — SKINCARE: SISTEMA DE PRODUCTOS, FARMACIA, AMAZON Y PACKS
 - [ ] PLAQUITA DE PRODUCTOS

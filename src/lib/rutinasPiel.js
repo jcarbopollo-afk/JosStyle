@@ -65,7 +65,7 @@ export const PLAQUITAS_PIEL = [
   { id: 'perfil', nombre: 'Mi piel', icono: '🧬', fase: 13, listo: true },
   { id: 'rutina', nombre: 'Mi rutina', icono: '🧴', fase: 14, listo: true },
   { id: 'seguimiento', nombre: 'Seguimiento', icono: '📈', fase: 14, listo: true },
-  { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', fase: 16, listo: false },
+  { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', fase: 16, listo: true },
   { id: 'productos', nombre: 'Productos', icono: '🛒', fase: 17, listo: false },
 ];
 
@@ -75,6 +75,10 @@ export const PARTES_PIEL = [
   { id: 'seguimiento', nombre: 'Seguimiento', porDefecto: true },
   // ⚠️ Apagado por defecto: *"los recordatorios son opcionales… no insistir"*.
   { id: 'recordatorios', nombre: 'Recordatorios', porDefecto: false },
+  /* EH F16, apartados 1 y 17 — *"debe ser una plaquita independiente y poder
+     desactivarse"*, y *"los demás módulos continúan funcionando"*. Encendida por
+     defecto, como las rutinas: es contenido, no un aviso. */
+  { id: 'recomendaciones', nombre: 'Recomendaciones', porDefecto: true },
 ];
 
 export const parteActivaPiel = (estado, id) => datosRutinasPiel(estado).partes[id] === true;

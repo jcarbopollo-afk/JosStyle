@@ -3,3 +3,7 @@ dist
 .env
 .env.local
 .DS_Store
+
+# Variables locales para la prueba de navegador (scripts/test-app-real.mjs).
+# Las de verdad viven en Vercel.
+.env.local

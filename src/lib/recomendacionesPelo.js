@@ -41,6 +41,10 @@ import { NIVELES_ESTILO, nivelEstilo } from './perfilEstilo';
 import { MODULO_PELO, contextoCapilar, respuestaPelo } from './perfilCapilar';
 import { datosPelo, parteActiva, ACCIONES_PELO, crearRutina, editarRutina } from './rutinasPelo';
 import { leerDato } from './datosEstiloHombre';
+import {
+  reglaAplicable, silenciadaEn, PALABRAS_PROHIBIDAS, FORMULAS_PERMITIDAS,
+  tonoCorrecto,
+} from './motorRecomendaciones';
 import { uid, todayISO } from './helpers';
 
 /* ===========================================================================
@@ -298,13 +302,12 @@ export const IDS_REGLAS = REGLAS_PELO.map((r) => r.id);
    saber acabaría disparándose con el contexto vacío y recomendando cosas a
    alguien de quien no sabemos nada. */
 
-export function reglaAplicable(regla, ctx) {
-  if (!regla || typeof regla.cuando !== 'function') return false;
-  // Apartado 2 — si falta algún dato que la regla necesita, NO se asume.
-  if (!Array.isArray(regla.requiere) || regla.requiere.length === 0) return false;
-  if (!regla.requiere.every((k) => tiene(ctx[k]))) return false;
-  try { return regla.cuando(ctx) === true; } catch { return false; }
-}
+/* ⚠️ **EH F16 extrajo el motor.** El apartado 2 —*"si falta algún dato que la
+   regla necesita, NO se asume"*— y su corolario —*"una regla sin requisitos no
+   se aplica nunca"*— viven ahora en `motorRecomendaciones.js`, porque la Fase
+   12 y la 16 necesitaban exactamente lo mismo. Tres copias del mismo `if` es
+   como se acaba arreglando un fallo en dos sitios y olvidando el tercero. */
+export { reglaAplicable };
 
 /* ── El descarte y lo guardado (apartados 8, 9 y 14) ─────────────────────── */
 
@@ -352,14 +355,8 @@ const diasDesde = (fecha, hoy) => {
 };
 
 /** Apartado 14 — *"no mostrar continuamente la misma recomendación"*. */
-export function silenciada(estado, reglaId, { hoy = todayISO() } = {}) {
-  const recs = recsDe(estado);
-  const f = recs.feedback.find((x) => x.reglaId === reglaId);
-  if (!f) return { silenciada: false, motivo: null };
-  if (f.motivo === 'no_verlo') return { silenciada: true, motivo: f.motivo, paraSiempre: true };
-  const dias = DIAS_SILENCIO[f.motivo] || 30;
-  return { silenciada: diasDesde(f.fecha, hoy) < dias, motivo: f.motivo, paraSiempre: false };
-}
+export const silenciada = (estado, reglaId, { hoy = todayISO() } = {}) =>
+  silenciadaEn(recsDe(estado), reglaId, { hoy, dias: DIAS_SILENCIO, paraSiempre: ['no_verlo'] });
 
 /* ===========================================================================
    4 · RECOMENDAR (apartados 1, 6 y 7)
@@ -563,17 +560,11 @@ export const PUENTE_PRODUCTOS_PELO = {
    *"Nunca 'Debes hacer esto'."* Estas listas existen para que la prueba pueda
    recorrer todos los textos posibles y fallar si aparece un imperativo. */
 
-export const PALABRAS_PROHIBIDAS_PELO = [
-  'debes', 'tienes que', 'deberías', 'obligatorio', 'necesitas', 'hay que',
-  'error', 'mal', 'problema', 'fallo',
-];
-
-export const FORMULAS_PERMITIDAS = ['podría', 'podrías', 'una opción compatible', 'puedes'];
-
-export function tonoCorrecto(texto) {
-  const t = String(texto || '').toLowerCase();
-  return !PALABRAS_PROHIBIDAS_PELO.some((p) => t.includes(p));
-}
+/* ⚠️ **Una sola lista de palabras prohibidas**, en el motor: dos listas es cómo
+   una fase futura se olvida de añadir la suya a las dos. El nombre de aquí se
+   conserva porque lo importan la Fase 12 y sus pruebas. */
+export const PALABRAS_PROHIBIDAS_PELO = PALABRAS_PROHIBIDAS;
+export { FORMULAS_PERMITIDAS, tonoCorrecto };
 
 /* ===========================================================================
    8 · RESUMEN Y AUDITORÍA

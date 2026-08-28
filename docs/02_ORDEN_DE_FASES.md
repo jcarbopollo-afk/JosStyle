@@ -224,8 +224,10 @@ escribir código.
 
 | v1.81.0 | **EH F15** | Seguimiento de la piel. 🐛 **Y un fallo REAL y grave encontrado de paso: `App.jsx` nunca importó `papelera.js`**, así que la app lanzaba un `ReferenceError` en el primer render — invisible para el build y para las 648 pruebas de renderizado. Lo cazó una **regla invariante nueva**, escrita justo después de cometer el mismo fallo. ⚠️ **Ni otro diario, ni otra papelera, ni otra exportación, ni rachas, ni causalidad**: las cinco prohibiciones del enunciado, con pruebas |
 
+| v1.82.0 | **EH F16** + 🚨 **DOS FALLOS QUE IMPEDÍAN QUE LA APP ARRANCARA** | **La aplicación llevaba meses sin funcionar, y ninguna de las 5 800 comprobaciones lo veía.** (1) `App.jsx` nunca importó `papelera.js`: `purgarCaducados` lanzaba un TypeError EN MITAD de la carga, sin `try/catch`, así que **`setEstiloHombre`, `setArmario`, `setHorarioTop`, `setRachas` y `setAudio` no llegaban a ejecutarse** — ningún módulo de la Entrega 2 cargaba sus datos. (2) Cinco hooks estaban DESPUÉS de los `return` condicionales (regla 4): React lanzaba *"Rendered more hooks…"* y **tumbaba la app entera**. Las dos cosas explican por qué la interfaz "seguía igual" por más fases que se construyeran. Arreglado, y **`scripts/test-app-real.mjs` abre la app en Chromium** y comprueba la cadena entera. Además, EH F16: el motor de recomendaciones, extraído y compartido con F9 y F12 |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 15/65**. Quedan **48** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (46).
+3/5 y **EH por 16/65**. Quedan **47** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (45).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

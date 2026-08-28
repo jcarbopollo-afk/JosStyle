@@ -55,6 +55,7 @@ import {
 import { NIVELES_ESTILO, nivelEstilo } from './perfilEstilo';
 import { leerDato } from './datosEstiloHombre';
 import { NO_LO_SE, leerCuestionario, progresoCuestionario, contextoDelCuestionario, contestar, auditarCuestionario } from './cuestionarios';
+import { reglaAplicable } from './motorRecomendaciones';
 import { uid } from './helpers';
 
 /** Apartado 1 — *"Dentro de ✂️ Peluquería añadir: Mi estilo de corte"*. */
@@ -590,16 +591,20 @@ export const REGLAS_CORTE = [
 
 export const reglaCorte = (id) => REGLAS_CORTE.find((r) => r.id === id) || null;
 
-/** ⚠️ Sin sus datos no se dispara, y sin requisitos declarados tampoco. */
-export function reglaAplicableCorte(regla, contexto) {
-  if (!regla || !Array.isArray(regla.requiere) || regla.requiere.length === 0) return false;
-  const tiene = regla.requiere.every((k) => {
-    const v = contexto[k];
-    if (Array.isArray(v)) return v.length > 0;
-    return v !== null && v !== undefined && v !== '' && v !== NO_LO_SE;
-  });
-  return tiene && regla.cuando(contexto);
-}
+/**
+ * ⚠️ Sin sus datos no se dispara, y sin requisitos declarados tampoco.
+ *
+ * ⚠️ **EH F16 extrajo el motor**: esto era una copia del `reglaAplicable` de la
+ * Fase 9, y la 16 iba a ser la tercera. Ahora las tres llaman al mismo sitio.
+ * Lo único propio de aquí es que **"No lo sé" tampoco cuenta como valor**: el
+ * contexto ya lo filtra antes (`contextoParaCortes` devuelve `[]`), así que la
+ * comprobación extra se queda como red por si una fase futura pasa el valor
+ * crudo.
+ */
+export const reglaAplicableCorte = (regla, contexto) => reglaAplicable(
+  regla,
+  Object.fromEntries(Object.entries(contexto || {}).map(([k, v]) => [k, v === NO_LO_SE ? null : v])),
+);
 
 /* ===========================================================================
    8 · RECOMENDAR (apartados 7, 8 y 15)

@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.81.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.82.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 15/65**, quedan 48) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 16/65**, quedan 47) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -111,12 +111,21 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
 ## Verificación: qué está probado y qué no
 
+🚨 **LO MÁS IMPORTANTE QUE HA APRENDIDO ESTE PROYECTO (v1.82.0):** durante meses **la aplicación no
+arrancaba** y ninguna de las 5 844 comprobaciones lo vio, porque **`App.jsx` no se renderizaba en
+ninguna prueba**. Dos fallos: un import que faltaba (`papelera.js`) que rompía la carga de datos a
+media función —así que **ningún módulo de la Entrega 2 cargaba lo guardado**— y cinco hooks después
+de un `return` condicional (regla 4) que tumbaban la app entera. **Una fase no está hecha porque su
+prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para eso está
+`scripts/test-app-real.mjs`, que la abre en Chromium de verdad.
+
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 5191 pruebas unitarias con Node, 5 de auditoría, 648 casos de renderizado real con
-`react-dom/server` y 11 reglas invariantes — **5844 comprobaciones**.
+Vite, 5346 pruebas unitarias con Node, 5 de auditoría, 648 casos de renderizado real con
+`react-dom/server`, 11 reglas invariantes y **25 comprobaciones sobre la aplicación de verdad en
+Chromium** — **6030 comprobaciones**.
 
-Eso ya ha encontrado **cincuenta y ocho bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **sesenta bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -140,15 +149,15 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 15/65** (v1.81.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 16/65** (v1.82.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
-La siguiente candidata es **EH · Fase 16/65 — Skincare: motor de recomendaciones**.
+La siguiente candidata es **EH · Fase 17/65 — Skincare: productos, farmacia, packs y afiliación**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
 ⚠️ **No empezarla sin que Josué pase la fase.**
 
-⚠️ **EH F1-F15 dejaron cuarenta cosas que las 50 fases siguientes tienen que respetar:**
+⚠️ **EH F1-F16 dejaron cuarenta y tres cosas que las 49 fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -252,6 +261,13 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   menciona. Sin rachas, sin obligación diaria y sin porcentaje de días registrados.
 - ⚠️ **Nunca una causa** (F15, apartados 7 y 12): *"↑ Mejorando"* y *"desde que empezaste a usar X
   has registrado N valoraciones"*. Ni "gracias a", ni "funciona", ni "ha mejorado tu piel".
+- ⚠️ **`motorRecomendaciones.js` es EL motor de reglas** (F16, extraído de F9). Pelo, Cortes y
+  Skincare lo usan. **Una regla sin `requiere` no se aplica NUNCA**: se dispararía con el contexto
+  vacío. Nunca una cuarta copia de ese `if`.
+- ⚠️ **`anadirARutina` sin `confirmado` no escribe** (F16, apartados 4 y 11). Quinto `aplicarPlan`
+  del proyecto, tras HT F9, EH F9, EH F12 y EH F14. Nunca darle un valor por defecto.
+- ⚠️ **La prioridad pesa, pero no tapa** (F16, apartado 2): lo del objetivo que él marcó sale
+  primero, y una recomendación de otro tema sigue pudiendo salir.
 
 ⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
 que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el
