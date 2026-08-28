@@ -7,3 +7,6 @@ dist
 # Variables locales para la prueba de navegador (scripts/test-app-real.mjs).
 # Las de verdad viven en Vercel.
 .env.local
+
+# Zips de entrega: se generan, no se versionan.
+*.zip
