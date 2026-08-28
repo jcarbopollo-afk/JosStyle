@@ -91,6 +91,11 @@ export const PARTES_GUSTOS = [
   /* ⚠️ Apartado 1 — *"📋 Mis preferencias"*. No es una lista: es la vista de lo
      que ya dijo en el registro de la Fase 4 (decisión 5 del encabezado). */
   { id: 'preferencias', nombre: 'Mis preferencias', icono: '📋', porDefecto: true },
+  /* ⚠️ EH F28, apartado 12 — *"la plaquita 🌟 Experiencias puede desactivarse"*.
+     Una línea, y ya está: el normalizador recorre esta lista, así que el campo
+     aparece solo. Y **no es una lista nueva**: es la vista de la categoría
+     `experiencias`, que `CATEGORIAS_GUSTO` tiene desde la F27. */
+  { id: 'experiencias', nombre: 'Experiencias', icono: '🌟', porDefecto: true },
 ];
 
 export const parteGustos = (id) => PARTES_GUSTOS.find((p) => p.id === id) || null;
@@ -198,6 +203,10 @@ export function normalizarEntradaGusto(g) {
     nota: String(e.nota || '').trim().slice(0, MAX_NOTA_GUSTO),
     // Apartado 9 — el favorito, con el sistema global.
     favorito: e.favorito === true,
+    /* ⚠️ EH F28 — el enlace con Objetivos, y **es lo ÚNICO que guarda esta fase**:
+       el id, nunca una copia del objetivo. Sin esta línea el siguiente guardado
+       se lo llevaría (regla 5): van veinticinco veces en el proyecto. */
+    objetivoId: typeof e.objetivoId === 'string' ? e.objetivoId : null,
     creadoEn: typeof e.creadoEn === 'string' ? e.creadoEn : null,
   };
 }

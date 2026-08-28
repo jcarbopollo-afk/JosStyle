@@ -576,4 +576,55 @@ await pulsar('Quiero hacer');
 await page.waitForTimeout(500);
 ok(/Viajar a Londres/.test(await ver()), '⚠️ PERSISTENCIA: sigue ahí después de recargar');
 
+/* ── 13 · CONVERTIR EN OBJETIVO, SIN UN SEGUNDO SISTEMA (EH F28) ───────── */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await pulsar('Mis gustos');
+ok(/Experiencias/.test(await ver()), 'La plaquita 🌟 Experiencias (EH F28) está ahí');
+ok(await pulsar('Quiero hacer'), '"Quiero hacer" se abre');
+await page.waitForTimeout(400);
+
+/* Se abre la ficha de lo que se apuntó en la Fase 27. */
+ok(await pulsar('Viajar a Londres'), 'Se abre la ficha de lo que quiere hacer');
+await page.waitForTimeout(400);
+const fichaF28 = await ver();
+ok(/Todavía no es un objetivo/.test(fichaF28), 'Y dice que todavía no es un objetivo');
+ok(/Convertir en objetivo/.test(fichaF28), 'Con su botón de convertir');
+ok(/Los objetivos se gestionan en Objetivos/.test(fichaF28),
+  '⚠️ Y dice DÓNDE viven de verdad (apartado 2)');
+ok(/Todavía no hay dónde guardar fotos/.test(fichaF28),
+  '⚠️ Y el límite de las fotos, dicho en vez de un botón muerto (regla 8)');
+
+ok(await pulsar('🎯 Convertir en objetivo'), 'Se puede convertir');
+await page.waitForTimeout(400);
+ok(/¿Para cuándo te lo pones\?/.test(await ver()),
+  '⚠️ Y PIDE EL PLAZO: no hay valor por defecto');
+
+guardado.length = 0;
+ok(await pulsar('1 año'), 'Se elige un plazo');
+await page.waitForTimeout(1500);
+
+/* ⚠️ La prueba de la fase: el objetivo va a OBJETIVOS y aquí solo su id. */
+const escObj = guardado.filter((g) => g && g.key === 'objetivos');
+const escEH28 = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escObj.length > 0, '⚠️ PERSISTENCIA: el objetivo se escribe en OBJETIVOS');
+ok(escEH28.length > 0, 'Y el enlace, en Estilo de hombre');
+const listaObj = escObj.at(-1)?.value?.lista || [];
+ok(listaObj.length === 1 && listaObj[0].texto === 'Viajar a Londres',
+  'El objetivo lleva el nombre que él ya había escrito');
+ok(listaObj[0].plazo === '1 año' && listaObj[0].cumplido === false, 'Con su plazo y sin cumplir');
+ok(Object.keys(listaObj[0]).sort().join(',') === 'cumplido,fechaCreacion,id,plazo,texto',
+  '⚠️ Con los campos de Objetivos y NI UNO INVENTADO');
+const entradasF28 = escEH28.at(-1)?.value?.modulos?.find((m) => m.id === 'gustos')?.config?.gustos?.entradas || [];
+const enlazada = entradasF28.find((e) => e.nombre === 'Viajar a Londres');
+ok(!!enlazada && enlazada.objetivoId === listaObj[0].id,
+  '⚠️ Y aquí SOLO QUEDA SU ID: ni una copia del objetivo');
+ok(!('texto' in enlazada) && !('plazo' in enlazada), 'Sin duplicar ni el texto ni el plazo');
+
+/* Apartado 2 — y se abre el sistema global de objetivos, no una copia. */
+await page.waitForTimeout(600);
+ok(/Objetivos/.test(await ver()), '⚠️ Y navega a OBJETIVOS, el módulo que ya existía');
+
 await salir(browser);

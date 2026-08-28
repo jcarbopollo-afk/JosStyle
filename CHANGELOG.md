@@ -1,5 +1,72 @@
 # CHANGELOG.md
 
+## v1.91.0 — EH Fase 28/65: objetivos y experiencias personales
+
+### Qué se ha construido
+El **puente** entre "Quiero hacer" y **Objetivos**: convertir algo que quiere hacer en un objetivo
+de verdad, ver si está cumplido, marcarlo como "Ya lo hice" y la vista 🌟 **Experiencias**.
+
+No es un módulo nuevo. El enunciado empieza así: *"**NO crear otro sistema de objetivos**. Si JC
+Fitness ya tiene Objetivos, utilizamos ese sistema. Esta fase únicamente define **cómo Estilo de
+hombre se conecta con él**."*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Esta fase casi no guarda nada.** Lo único que añade al almacén es un **`objetivoId`** en la
+entrada de "Quiero hacer" de la Fase 27. El objetivo vive en Objetivos y aquí solo está su id — hay
+pruebas de que ni el texto ni el plazo se copian, y una comprobación en el navegador que mira **los
+dos guardados** para verlo.
+
+**2. ⚠️ Un objetivo de JosStyle es `{ texto, plazo, cumplido }`.** El apartado 3 enumera *nombre,
+descripción, fecha, prioridad, progreso y categoría*, pero termina con *"todo gestionado por
+Objetivos global"* — y el sistema global **no tiene** descripción, fecha concreta, prioridad,
+categoría ni porcentaje. Inventarlos aquí habría sido exactamente el segundo sistema de objetivos que
+la primera línea prohíbe. **Y no falta nada**, porque lo personal ya lo guarda la Fase 27: categoría,
+prioridad, fecha, lugar y nota son campos de la entrada. Cada dato tiene un dueño, y solo uno.
+
+**3. ⚠️ El progreso es un sí o un no, y se dice.** El apartado 10 habla de *"35% → 60% → 100%"*, pero
+empieza con *"**si** el objetivo tiene progreso"* y acaba con *"el progreso pertenece al sistema
+global"*. El global tiene `cumplido`, que es un booleano. Se enseña lo que hay, con su frase, en vez
+de pintar una barra de porcentaje que no existe (regla 8).
+
+**4. ⚠️ "Ya lo hice" se propone, no se hace solo.** El apartado 5 dice *"**podrá** actualizarse
+automáticamente"*, no "se actualizará". Así que `sugerirYaLoHice()` mira y `marcarYaLoHice()` escribe
+**solo con `confirmado`**. Noveno `aplicarPlan` del proyecto, y sin valor por defecto.
+
+**5. ⚠️ "Experiencias" no es un gestor nuevo** (apartado 4: *"no crear otro gestor independiente"*).
+`CATEGORIAS_GUSTO` ya tenía `experiencias` desde la Fase 27, así que esto es **un filtro** sobre lo
+que ya hay. Y con la parte apagada devuelve `null`, no una lista vacía.
+
+**6. ⚠️ Y el plazo no tiene valor por defecto.** Elegirlo por él metería su viaje a Japón en "30
+días" sin decírselo. Mismo criterio que `ALCANCES` en HT F3: si no lo elige, no se escribe nada.
+
+### Lo que se reutiliza, y no se vuelve a escribir
+La navegación a Objetivos es `navegarDesdeHoy`, la única con enlace directo de la app, y
+`ObjectivesView` **ya sabía destacar el objetivo por su id**: cero líneas nuevas de interfaz allí. El
+calendario y el Diario son los que ya conectó la Fase 27. Y avisar sigue siendo de
+`notificaciones.js`: aquí se decide, allí se manda.
+
+### ⏸ Un límite dicho, no escondido
+El apartado 7 pide *"📷 añadir fotos, **utilizando el sistema de fotos existente**"*. **No hay
+ninguno** al que colgar un recuerdo: los que existen son de Salud (progreso), Armario (prendas),
+Biblioteca (material) y Fondos, y una entrada del Diario no tiene fotos. Crear una galería lo prohíbe
+el propio apartado, así que la pantalla **lo dice con una frase** en vez de enseñar un botón que no
+hace nada. **Pendiente de que Josué decida** si quiere un sitio para esas fotos.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **124 comprobaciones nuevas**, **1004 casos de
+renderizado** (20 nuevos) y **186 comprobaciones en Chromium** (18 nuevas): se abre lo que quiere
+hacer, **pide el plazo**, se convierte, y se comprueba que el objetivo se escribe **en Objetivos** con
+sus campos y ni uno inventado, que aquí solo queda el id, y que navega al módulo que ya existía.
+
+### Archivos
+- **Nuevos:** `src/lib/objetivosEnEstiloHombre.js`, `scripts/test-objetivos-eh.mjs`.
+- **Modificados:** `src/lib/gustos.js` (`objetivoId` en el normalizador y la parte `experiencias`),
+  `src/App.jsx`, `src/views/EstiloHombreView.jsx`, `scripts/smoke-vistas.jsx`,
+  `scripts/test-app-real.mjs`, `scripts/test-gustos.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.90.0 — EH Fase 27/65: gustos, intereses y cosas que quiero hacer
 
 ### Qué se ha construido

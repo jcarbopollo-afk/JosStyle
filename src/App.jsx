@@ -1981,7 +1981,14 @@ export default function App() {
                ARMARIO QUE YA EXISTE. ⚠️ Se pasa en solo lectura: aquí no se
                guarda ni una prenda (*"no crear un segundo sistema de ropa"*). */
             armario={armario}
-            onIr={(destino) => setTab(destino)}
+            /* ⚠️ EH F28 — Objetivos llega en SOLO LECTURA. Aquí no se guarda ni
+               un objetivo: el módulo devuelve un plan y guarda App.jsx. */
+            objetivos={objetivos}
+            /* ⚠️ EH F28, apartado 2 — *"se abrirá el sistema global de
+               objetivos. No crear una pantalla paralela."* Se usa la ÚNICA
+               navegación con deep-link de la app, la misma del Centro de
+               Control: `ObjectivesView` ya sabe destacar el `foco.id`. */
+            onIr={(destino, foco) => navegarDesdeHoy(destino, foco)}
             onCambiar={(nuevo) => snapshotAndSave({ estiloHombre: nuevo })}
             /* EH F15, apartado 13 — borrar un registro de piel va a "Eliminados
                recientemente", la papelera que ya existe. Por eso lo maneja
@@ -2018,6 +2025,12 @@ export default function App() {
             onGuardarAccesorio={({ estado: nuevo, armario: nuevoArmario }) => snapshotAndSave({
               ...(nuevo ? { estiloHombre: nuevo } : {}),
               ...(nuevoArmario ? { armario: nuevoArmario } : {}),
+            })}
+            /* ⚠️ EH F28 — el objetivo va a OBJETIVOS y aquí solo queda su id.
+               Los dos almacenes en un solo guardado, como los accesorios. */
+            onGuardarObjetivo={({ estado: nuevo, objetivos: nuevosObjetivos }) => snapshotAndSave({
+              ...(nuevo ? { estiloHombre: nuevo } : {}),
+              ...(nuevosObjetivos ? { objetivos: nuevosObjetivos } : {}),
             })}
             rachas={rachas}
           />

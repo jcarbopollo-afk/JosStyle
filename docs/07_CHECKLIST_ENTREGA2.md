@@ -1974,34 +1974,70 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Reactivar.
 - [x] Comprobar persistencia.
 
-#### EH · Fase 28/65 — OBJETIVOS Y EXPERIENCIAS PERSONALES
-- [ ] DESDE «QUIERO HACER»
-- [ ] UTILIZAR OBJETIVOS GLOBAL
-- [ ] INFORMACIÓN
-- [ ] EXPERIENCIAS
-- [ ] COMPLETADO
-- [ ] DIARIO
-- [ ] FOTOS
-- [ ] CALENDARIO
-- [ ] RECORDATORIOS
-- [ ] PROGRESO
-- [ ] FAVORITOS
-- [ ] DESACTIVACIÓN
-- [ ] ELIMINACIÓN
-- [ ] PRUEBAS
-- [ ] Crear “Quiero hacer”.
-- [ ] Convertirlo en objetivo.
-- [ ] Abrir Objetivos global.
-- [ ] Añadir fecha.
-- [ ] Añadir calendario.
-- [ ] Crear recordatorio.
-- [ ] Completar objetivo.
-- [ ] Actualizar automáticamente “Ya lo hice”.
-- [ ] Abrir Diario.
-- [ ] Añadir fotos mediante sistema existente.
-- [ ] Desactivar módulo.
-- [ ] Reactivarlo.
-- [ ] Comprobar que no se duplican objetivos, tareas, calendario, diario ni fotos.
+#### EH · Fase 28/65 — OBJETIVOS Y EXPERIENCIAS PERSONALES ✅ COMPLETADA (v1.91.0)
+
+> **`src/lib/objetivosEnEstiloHombre.js`** (124 comprobaciones) + el puente dentro de `GustosEH`.
+> Sin SQL nuevo. Es una fase **puente**: no crea un módulo, conecta los que ya hay.
+>
+> ⚠️ **Esta fase casi no guarda nada.** Lo único que añade al almacén es un **`objetivoId`** en la
+> entrada de "Quiero hacer" de la F27. El objetivo vive en Objetivos; aquí solo está su id. Y hay
+> pruebas de que ni el texto ni el plazo se copian.
+>
+> ⚠️ **Un objetivo de JosStyle es `{ texto, plazo, cumplido }`.** El apartado 3 enumera *nombre,
+> descripción, fecha, prioridad, progreso y categoría*, pero acaba con *"todo gestionado por Objetivos
+> global"* — y el sistema global **no tiene** descripción, fecha, prioridad, categoría ni porcentaje.
+> Inventarlos habría sido el segundo sistema de objetivos que la primera línea del enunciado prohíbe.
+> Y **no falta nada**, porque la F27 ya guarda lo personal: categoría, prioridad, fecha, lugar y nota.
+>
+> ⚠️ **El progreso es un sí o un no, y se dice.** El apartado 10 habla de *"35% → 60% → 100%"* pero
+> empieza con *"**si** el objetivo tiene progreso"*. El global tiene `cumplido`. Se enseña lo que hay
+> (regla 8) en vez de pintar una barra inventada.
+>
+> ⚠️ **"Ya lo hice" se PROPONE.** El apartado 5 dice *"**podrá** actualizarse"*: `sugerirYaLoHice()`
+> mira y `marcarYaLoHice()` escribe **solo con `confirmado`**. Noveno `aplicarPlan` del proyecto.
+>
+> ⚠️ **"Experiencias" no es un gestor nuevo** (apartado 4): `CATEGORIAS_GUSTO` ya tenía
+> `experiencias` desde la F27, así que es **un filtro**. Y apagada devuelve `null`, no `[]`.
+>
+> ⚠️ **El plazo no tiene valor por defecto**: elegirlo por él metería su viaje a Japón en "30 días".
+> Mismo criterio que `ALCANCES` en HT F3.
+>
+> ⚠️ **Y avisar sigue siendo de `notificaciones.js`** (apartado 9): aquí se decide, allí se manda.
+> Nunca un segundo emisor.
+>
+> ⏸ **Un límite dicho, no escondido (apartado 7):** *"utilizar el sistema de fotos existente"* — y
+> **no hay ninguno** al que colgar un recuerdo (los que hay son de Salud, Armario, Biblioteca y
+> Fondos, y una entrada del Diario no tiene fotos). Crear una galería lo prohíbe el propio apartado,
+> así que la pantalla lo dice con una frase. **Pendiente de que Josué decida** si quiere un sitio
+> para las fotos de un recuerdo.
+
+- [x] DESDE «QUIERO HACER»
+- [x] UTILIZAR OBJETIVOS GLOBAL
+- [x] INFORMACIÓN
+- [x] EXPERIENCIAS
+- [x] COMPLETADO
+- [x] DIARIO
+- [ ] FOTOS ⏸ *no existe un sistema de fotos al que enlazar — dicho en pantalla, pendiente de Josué*
+- [x] CALENDARIO
+- [x] RECORDATORIOS
+- [x] PROGRESO
+- [x] FAVORITOS
+- [x] DESACTIVACIÓN
+- [x] ELIMINACIÓN
+- [x] PRUEBAS
+- [x] Crear “Quiero hacer”.
+- [x] Convertirlo en objetivo.
+- [x] Abrir Objetivos global.
+- [x] Añadir fecha.
+- [x] Añadir calendario.
+- [x] Crear recordatorio.
+- [x] Completar objetivo.
+- [x] Actualizar automáticamente “Ya lo hice”.
+- [x] Abrir Diario.
+- [ ] Añadir fotos mediante sistema existente. ⏸ *no hay sistema al que enlazar*
+- [x] Desactivar módulo.
+- [x] Reactivarlo.
+- [x] Comprobar que no se duplican objetivos, tareas, calendario, diario ni fotos.
 
 #### EH · Fase 29/65 — PERFIL DE ESTILO PERSONAL
 - [ ] PLAQUITA «MI ESTILO»

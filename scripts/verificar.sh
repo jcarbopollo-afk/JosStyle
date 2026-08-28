@@ -320,6 +320,12 @@ else
   fallo "Fallan los gustos"; grep '✗' /tmp/jc_eh27.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-objetivos-eh.mjs >/tmp/jc_eh28.log 2>&1; then
+  ok "Objetivos y experiencias personales (EH F28) — $(grep -c '✓' /tmp/jc_eh28.log) comprobaciones"
+else
+  fallo "Falla el puente con Objetivos"; grep '✗' /tmp/jc_eh28.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

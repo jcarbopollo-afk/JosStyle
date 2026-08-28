@@ -187,8 +187,12 @@ import {
 import {
   MODULO_GUSTOS, TEXTOS_GUSTOS, DESTINO_DIARIO, configurarGustos, decirAhoraNoGustos,
   alternarParteGustos, anadirGusto, editarGusto, alternarFavoritoGusto, cambiarEstadoGusto,
-  ponerFechaGusto, completarSuelto, resumenGustos, panelGustos,
+  ponerFechaGusto, completarSuelto, resumenGustos, panelGustos, estadoHacer,
 } from '../lib/gustos';
+import {
+  TEXTOS_PUENTE, DESTINO_OBJETIVOS, PARTE_EXPERIENCIAS, estadoDelObjetivo,
+  prepararObjetivo, aplicarObjetivo, marcarYaLoHice, panelPuente,
+} from '../lib/objetivosEnEstiloHombre';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -6046,15 +6050,20 @@ export function AccesoriosEH({ estado, armario = null, accent, datosGlobales = {
    `quiereHacer`, desde la Fase 6), así que lo que él escribió en el perfil de
    estilo sale aquí como una entrada suelta con un botón para completarla. Y la
    nota es corta: **lo extenso lleva al Diario**, que ya existe. */
-export function GustosEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onIr, onEliminar }) {
+export function GustosEH({ estado, accent, datosGlobales = {}, objetivos = null, onCambiar, onCerrar, onIr, onEliminar, onGuardarObjetivo }) {
   /* ⚠️ Regla 4 — todos los hooks antes de cualquier `return`. */
   const [zona, setZona] = useState(null);
   const [texto, setTexto] = useState('');
   const [categoria, setCategoria] = useState('otros');
   const [abierto, setAbierto] = useState(null);
+  const [convirtiendo, setConvirtiendo] = useState(null);
   const [error, setError] = useState(null);
 
   const panel = useMemo(() => panelGustos(estado, datosGlobales), [estado, datosGlobales]);
+  /* EH F28 — el puente con Objetivos. ⚠️ `objetivos` llega de fuera en solo
+     lectura: aquí no se guarda ni un objetivo, solo su id. */
+  const objs = objetivos || { lista: [] };
+  const puente = useMemo(() => panelPuente(estado, objs), [estado, objs]);
   const [yaEntro] = useState(() => panel.estado === 'configurado');
   const bloque = panel.porTipo.find((t) => t.parte === zona) || null;
 
@@ -6101,6 +6110,47 @@ export function GustosEH({ estado, accent, datosGlobales = {}, onCambiar, onCerr
         {panel.estado === 'ahora_no' && (
           <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>{TEXTOS_GUSTOS.oculto}</p>
         )}
+      </Card>
+    );
+  }
+
+  /* ── 🌟 Experiencias (EH F28, apartado 4) ──────────────────────────── */
+  if (zona === PARTE_EXPERIENCIAS) {
+    return (
+      <Card>
+        {cabecera('🌟 Experiencias')}
+        {/* ⚠️ Es una vista de la categoría que ya existe, no otra lista. */}
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+          Lo que has apuntado en la categoría Experiencias.
+        </p>
+        {(puente.experiencias || []).map((x) => (
+          <div key={x.id} className="rounded-2xl p-2.5 mb-1"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+              {x.tipoNombre.icono} {x.nombre}
+            </p>
+            <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {[x.texto, x.lugar, x.fecha].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+        ))}
+        {(puente.experiencias || []).length === 0 && (
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+            Cuando apuntes algo como Experiencia, aparecerá aquí.
+          </p>
+        )}
+        {/* Apartado 5 — lo que está cumplido en Objetivos y aún no marcado aquí. */}
+        {puente.sugerencias.map((s) => (
+          <div key={s.id} className="rounded-2xl p-2.5 mt-2"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-[11px]" style={{ color: COLORS.text }}>{s.nombre} — {s.texto}</p>
+            <button
+              onClick={() => aplicar(marcarYaLoHice(estado, objs, s.id, { confirmado: true, datosGlobales }))}
+              className="text-[10px] font-semibold mt-1" style={{ color: accent }}>
+              {s.accion}
+            </button>
+          </div>
+        ))}
       </Card>
     );
   }
@@ -6220,6 +6270,74 @@ export function GustosEH({ estado, accent, datosGlobales = {}, onCambiar, onCerr
                     {TEXTOS_GUSTOS.abrirDiario}
                   </button>
                 )}
+
+                {/* ── EH F28 — el puente con Objetivos, solo en "Quiero hacer" ── */}
+                {x.tipo === 'hacer' && (() => {
+                  const est = estadoDelObjetivo(x, objs);
+                  return (
+                    <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+                      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{est.texto}</p>
+                      {/* ⚠️ Apartado 10 — lo que Objetivos tiene es un sí/no. */}
+                      {est.enlazado && (
+                        <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                          {TEXTOS_PUENTE.sinPorcentaje}
+                        </p>
+                      )}
+                      {/* Apartado 5 — se propone, y marcar exige confirmarlo. */}
+                      {est.cumplido && estadoHacer(x.estado)?.abierto && (
+                        <button
+                          onClick={() => aplicar(marcarYaLoHice(estado, objs, x.id, { confirmado: true, datosGlobales }))}
+                          className="text-[10px] font-semibold mr-3" style={{ color: accent }}>
+                          {TEXTOS_PUENTE.yaLoHice}
+                        </button>
+                      )}
+                      {est.enlazado && onIr && (
+                        <button onClick={() => onIr(DESTINO_OBJETIVOS, { id: est.objetivo.id })}
+                          className="text-[10px] font-semibold" style={{ color: accent }}>
+                          {TEXTOS_PUENTE.verObjetivo}
+                        </button>
+                      )}
+                      {/* Apartados 1 y 2 — convertir, eligiendo plazo. Sin defecto. */}
+                      {!est.enlazado && !est.perdido && (
+                        convirtiendo === x.id ? (
+                          <div className="mt-1">
+                            <p className="text-[10px] font-semibold mb-1" style={{ color: COLORS.text }}>
+                              {TEXTOS_PUENTE.elegirPlazo}
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {puente.plazos.map((pl) => (
+                                <button key={pl} className="rounded-full px-2 py-0.5" style={chip(false)}
+                                  onClick={() => {
+                                    const plan = prepararObjetivo(estado, objs, x.id, { plazo: pl });
+                                    if (plan.error) { setError(plan.error); return; }
+                                    const guardado = aplicarObjetivo(estado, objs, plan.plan, { datosGlobales });
+                                    if (guardado.error) { setError(guardado.error); return; }
+                                    setError(null); setConvirtiendo(null);
+                                    onGuardarObjetivo?.({ estado: guardado.estado, objetivos: guardado.objetivos });
+                                    /* Apartado 2 — se abre el sistema global, y
+                                       `ObjectivesView` ya sabe destacar el id. */
+                                    onIr?.(DESTINO_OBJETIVOS, { id: guardado.objetivo.id });
+                                  }}>
+                                  <span className="text-[10px] font-semibold" style={{ color: COLORS.text }}>{pl}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConvirtiendo(x.id)}
+                            className="text-[10px] font-semibold" style={{ color: accent }}>
+                            {TEXTOS_PUENTE.convertir}
+                          </button>
+                        )
+                      )}
+                      <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+                        {TEXTOS_PUENTE.dondeVive}
+                      </p>
+                      {/* ⚠️ Apartado 7 — el límite, dicho en vez de un botón muerto. */}
+                      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{TEXTOS_PUENTE.sinFotos}</p>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -6290,6 +6408,9 @@ export function GustosEH({ estado, accent, datosGlobales = {}, onCambiar, onCerr
                 quiero_hacer: panel.resumen.hacer === 0 ? 'Lo que te apetezca' : `${panel.resumen.hacer} apuntados`,
                 intereses: panel.resumen.interes === 0 ? 'Lo que te llame' : `${panel.resumen.interes} apuntados`,
                 preferencias: 'Lo que ya has contado',
+                experiencias: puente.resumen.experiencias
+                  ? `${puente.resumen.experiencias} apuntadas`
+                  : 'Viajes, aprender algo…',
               }[p.id] || ''}
               onAbrir={() => setZona(p.id)}
             />
@@ -6320,7 +6441,7 @@ export function GustosEH({ estado, accent, datosGlobales = {}, onCambiar, onCerr
 /* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
-export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, onEliminarPerfume, onEliminarAccesorio, onGuardarAccesorio, onEliminarGusto, rachas = null }) {
+export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, onEliminarPerfume, onEliminarAccesorio, onGuardarAccesorio, onEliminarGusto, onGuardarObjetivo, objetivos = null, rachas = null }) {
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
@@ -6509,6 +6630,8 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     return (
       <GustosEH
         estado={estado} accent={accent} datosGlobales={datosGlobales}
+        /* EH F28 — Objetivos en solo lectura, y el canal que escribe los dos. */
+        objetivos={objetivos} onGuardarObjetivo={onGuardarObjetivo}
         onCambiar={onCambiar} onIr={onIr}
         onCerrar={() => setGustos(false)}
         onEliminar={onEliminarGusto}

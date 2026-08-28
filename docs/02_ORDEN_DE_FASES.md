@@ -242,9 +242,11 @@ escribir código.
 
 | v1.90.0 | **EH F27** | Gustos, intereses y cosas que quiero hacer. ⚠️ **"Cosas que te gustan" y "que te gustaría hacer" YA EXISTÍAN** en el registro de la F4 desde la F6: esta fase guarda la FICHA y deja los nombres donde vivían — cuarta vez que el registro evita un duplicado. ⚠️ **Borrar y renombrar sacan el nombre del registro**. ⚠️ **"Quiero hacer" NO es una tarea** (apartado 4), con prueba sobre el código. ⚠️ **El estado es solo de "Quiero hacer"**, y "ya lo hice" no borra nada. ⚠️ **La fecha llega al calendario sin crear ningún evento**. ⚠️ Y **"Mis preferencias" es la vista del registro**, no una cuarta lista |
 
+| v1.91.0 | **EH F28** | Objetivos y experiencias personales. Fase **puente**: no crea un módulo, conecta los que ya hay. ⚠️ **Lo único que guarda es un `objetivoId`**: el objetivo vive en Objetivos. ⚠️ **Un objetivo es `{ texto, plazo, cumplido }`** y esta fase NO inventa los campos que el sistema global no tiene — lo personal ya lo guarda la F27. ⚠️ **El progreso es un sí/no, y se dice** (regla 8). ⚠️ **"Ya lo hice" se PROPONE**, y sin `confirmado` no escribe. ⚠️ **"Experiencias" es un filtro** sobre la categoría de la F27. ⏸ **Las fotos (apartado 7) no tienen sistema al que enlazar**: dicho en pantalla, pendiente de Josué |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 24/65** (F1-F17, F20, F21, F23-F27; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **39** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (37, tres de ellas bloqueadas).
+3/5 y **EH por 25/65** (F1-F17, F20, F21, F23-F28; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **38** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (36, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

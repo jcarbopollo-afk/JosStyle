@@ -61,6 +61,9 @@ import {
   configurarGustos, decirAhoraNoGustos, anadirGusto, alternarFavoritoGusto,
   cambiarEstadoGusto, ponerFechaGusto, alternarParteGustos,
 } from '../src/lib/gustos.js';
+import {
+  prepararObjetivo, aplicarObjetivo,
+} from '../src/lib/objetivosEnEstiloHombre.js';
 import { guardarDato as guardarDatoEH } from '../src/lib/datosEstiloHombre.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
@@ -866,7 +869,21 @@ const CASOS = [
             const gusHecho = cambiarEstadoGusto(gusTres, gusHacer.entrada.id, 'hecho').estado;
             /* ⚠️ Lo que escribió en el perfil de estilo y aún no tiene ficha. */
             const gusSueltos = guardarDatoEH(gusConf, 'intereses', ['Piano', 'Montaña']).estado;
-            const pg = (e4) => ({ ...pp(e4), onIr: noop });
+            /* EH F28 — el puente con Objetivos. ⚠️ Los estados que importan:
+               sin objetivo, con objetivo, con el objetivo CUMPLIDO (que propone
+               "Ya lo hice"), y con el objetivo borrado en Objetivos. */
+            const OBJ_VACIO = { lista: [], ultimaRevision: null };
+            const gusObjPlan = prepararObjetivo(gusTres, OBJ_VACIO, gusHacer.entrada.id, { plazo: '1 año', hoy: HOY });
+            const gusObjGuardado = aplicarObjetivo(gusTres, OBJ_VACIO, gusObjPlan.plan);
+            const gusConObjetivo = gusObjGuardado.estado;
+            const objetivosConUno = gusObjGuardado.objetivos;
+            const objetivosCumplido = {
+              ...objetivosConUno,
+              lista: objetivosConUno.lista.map((o) => ({ ...o, cumplido: true })),
+            };
+            const pg = (e4, obj = OBJ_VACIO) => ({
+              ...pp(e4), onIr: noop, objetivos: obj, onGuardarObjetivo: noop,
+            });
             return [
               ['PanelPelo · sin nada', PanelPelo, () => pp(soloPelo)],
               ['PanelPelo · con rutina hecha', PanelPelo, () => pp(conCambios)],
@@ -1066,6 +1083,14 @@ const CASOS = [
               ['GustosEH · con sueltos del perfil', GustosEH, () => pg(gusSueltos)],
               ['GustosEH · bloques apagados', GustosEH, () =>
                 pg(alternarParteGustos(alternarParteGustos(gusTres, 'me_gusta'), 'preferencias'))],
+              /* EH Fase 28 — el puente con Objetivos. */
+              ['GustosEH · sin objetivo', GustosEH, () => pg(gusTres)],
+              ['GustosEH · con objetivo', GustosEH, () => pg(gusConObjetivo, objetivosConUno)],
+              ['GustosEH · con objetivo cumplido', GustosEH, () => pg(gusConObjetivo, objetivosCumplido)],
+              /* ⚠️ El objetivo borrado en Objetivos: se dice, no se inventa. */
+              ['GustosEH · con el objetivo perdido', GustosEH, () => pg(gusConObjetivo, OBJ_VACIO)],
+              ['GustosEH · experiencias apagadas', GustosEH, () =>
+                pg(alternarParteGustos(gusConObjetivo, 'experiencias'), objetivosConUno)],
             ];
           })(),
           ['EstiloHombreView · con Pelo activo', EstiloHombreView, () =>

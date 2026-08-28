@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.90.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.91.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 24/65**, quedan 39 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 25/65**, quedan 38 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -153,7 +153,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 24/65** (v1.90.0: F1-F17, **F20, F21 y F23-F27**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 25/65** (v1.91.0: F1-F17, **F20, F21 y F23-F28**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -165,10 +165,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 28/65 — Objetivos y experiencias personales**.
+La siguiente candidata es **EH · Fase 29/65 — Perfil de estilo personal**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F27 dejaron ochenta y cuatro cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F28 dejaron noventa cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -387,6 +387,22 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   no se copia nada allí ni se trae nada de allí.
 - ⚠️ **`paraPersonalizar()` devuelve, no aplica** (F27, apartado 11), con `soloLectura: true` escrito
   en el propio dato. *"Nunca modificar automáticamente otros módulos."*
+- ⚠️ **UN OBJETIVO DE JOSSTYLE ES `{ texto, plazo, cumplido }`** (F28). El enunciado enumera seis
+  campos, pero el sistema global solo tiene esos tres, así que **no se inventan los otros**: sería el
+  segundo sistema de objetivos que la fase prohíbe. Y no hacen falta, porque **lo personal ya lo
+  guarda la F27**. Antes de añadir un campo a un objetivo, mirar qué tiene Objetivos de verdad.
+- ⚠️ **El progreso de un objetivo es un sí/no, no un porcentaje** (F28, apartado 10). Se enseña lo
+  que hay y se dice; una barra de "35 %" sería una cifra inventada (regla 8).
+- ⚠️ **`marcarYaLoHice` sin `confirmado` no escribe** (F28, apartado 5). *"**Podrá** actualizarse"* no
+  es "se actualizará". Noveno `aplicarPlan` del proyecto; nunca darle un valor por defecto.
+- ⚠️ **El plazo al convertir en objetivo NO tiene valor por defecto** (F28), como `ALCANCES` en HT F3:
+  elegirlo por él metería su viaje a Japón en "30 días" sin decírselo.
+- ⚠️ **Para llevarle a otro módulo, `navegarDesdeHoy(modulo, foco)`** (F28) — la única navegación con
+  enlace directo de la app. `ObjectivesView` ya sabe destacar un id: mirar si el módulo de destino ya
+  interpreta `foco` antes de escribir una pantalla nueva.
+- ⏸ **NO HAY UN SISTEMA DE FOTOS GENERAL** (F28, apartado 7). Los que existen son de Salud, Armario,
+  Biblioteca y Fondos, y una entrada del Diario no tiene fotos. Mientras no lo haya, **se dice en la
+  pantalla**; nunca una galería paralela. Pendiente de que Josué decida.
 - 🚨 **LO QUE JOSUÉ SUBE A MANO A GITHUB NO INCLUYE LAS CARPETAS.** Sus seis `Add files via upload`
   solo llevaron los **nueve archivos sueltos de la raíz**: ni uno de `src/`. Por eso `main` tenía la
   documentación nueva y el código del 11 de agosto, y la web no cambiaba por más zips que subiera.

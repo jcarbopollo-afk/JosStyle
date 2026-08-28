@@ -51,10 +51,15 @@ console.log('Test 1 — la plaquita y sus cuatro bloques');
   eq(moduloEH('gustos').categoria, 'bienestar', 'en la categoría de bienestar');
   ok(moduloEH('gustos').terminos.includes('intereses'), '"intereses" lo encuentra en el buscador');
 
-  eq(PARTES_GUSTOS.map((p) => p.id), ['me_gusta', 'quiero_hacer', 'intereses', 'preferencias'],
-    'los cuatro bloques del apartado 1, en su orden');
-  eq(PARTES_GUSTOS.map((p) => p.nombre), ['Me gusta', 'Quiero hacer', 'Mis intereses', 'Mis preferencias'],
-    'con sus nombres');
+  /* ⚠️ Se comprueba QUE ESTÉN LOS QUE TIENEN QUE ESTAR, no cuántos hay: la F28
+     añadió 'experiencias' con todo el derecho y una cuenta exacta habría saltado
+     con algo que está bien. Es la lección de `test-papelera.mjs`. */
+  ['me_gusta', 'quiero_hacer', 'intereses', 'preferencias'].forEach((id) => {
+    ok(PARTES_GUSTOS.some((p) => p.id === id), `el bloque "${id}" del apartado 1 existe`);
+  });
+  eq(PARTES_GUSTOS.slice(0, 4).map((p) => p.nombre),
+    ['Me gusta', 'Quiero hacer', 'Mis intereses', 'Mis preferencias'],
+    'los cuatro del apartado 1, con sus nombres y en su orden');
   ok(PARTES_GUSTOS.every((p) => p.porDefecto), 'los cuatro nacen encendidos');
   ok(PLAQUITAS_GUSTOS.every((p) => p.listo), '⚠️ Regla 8 — las cuatro funcionan hoy');
 
@@ -353,7 +358,10 @@ console.log('\nTest 12 — todo independiente');
     'al reactivarlo vuelve todo');
   eq(alternarParteGustos(r.estado, 'inventada'), normalizarEstiloHombre(r.estado),
     'una parte que no existe no cambia nada');
-  eq(panelGustos(sinGustos).plaquitas.length, 3, 'y la plaquita apagada no se enseña');
+  ok(!panelGustos(sinGustos).plaquitas.some((p) => p.id === 'me_gusta'),
+    'y la plaquita apagada no se enseña');
+  ok(panelGustos(sinGustos).plaquitas.some((p) => p.id === 'quiero_hacer'),
+    'mientras que las demás siguen ahí');
   ok(!tipoActivo(sinGustos, 'gusta'), 'el tipo queda inactivo');
   ok(!tipoActivo(r.estado, 'inventado'), 'y un tipo que no existe nunca está activo');
 }
@@ -432,7 +440,7 @@ console.log('\nTest 15 — el panel que dibuja la pantalla');
   eq(res.conFecha, 1, 'una con fecha');
   eq(res.hechas, 0, 'ninguna hecha todavía');
   eq(res.sueltos, 0, 'y nada suelto en el perfil');
-  eq(res.partesActivas, 4, 'con los cuatro bloques encendidos');
+  eq(res.partesActivas, PARTES_GUSTOS.length, 'con todos los bloques encendidos');
 
   const p = panelGustos(e);
   eq(p.estado, 'configurado', 'el panel sabe en qué estado está');
