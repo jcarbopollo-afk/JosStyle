@@ -204,6 +204,12 @@ import {
   cambiarTamano, alternarLinea, restablecerDiseno, personalizarAutomaticamente,
   panelPersonalizar, TEXTOS_MOVER,
 } from '../lib/pantallaEH';
+import {
+  // ── EH F32 ──
+  TEXTOS_IDEAS, FRECUENCIAS_IDEAS, panelIdeas, ocultarIdeas, mostrarIdeas,
+  cambiarFrecuencia, responderIdea, guardarIdea, quitarGuardada, marcarVistas,
+  borrarHistorialIdeas, datosIdeas,
+} from '../lib/ideasEstilo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -6467,6 +6473,154 @@ export function GustosEH({ estado, accent, datosGlobales = {}, objetivos = null,
 }
 
 /* ===========================================================================
+   EH · F32 — 💡 IDEAS PARA TI (apartados 1 a 15 y 17)
+   ===========================================================================
+   *"Esto es subjetivo. Son recomendaciones, no reglas."*
+
+   ⚠️ **La tarjeta no calcula nada**: `panelIdeas` trae las ideas ya elegidas,
+   con su motivo y su acción, y aquí solo se pintan. Y **marcar como vistas es un
+   toque suyo** —"🔄 Otras ideas"—, no un efecto al abrir la pantalla: escribir
+   en Supabase cada vez que se repinta una tarjeta sería hacerlo a sus espaldas. */
+export function IdeasEH({
+  estado, accent, armario = null, datosGlobales = {}, objetivos = null, onCambiar, onAccion,
+}) {
+  /* ⚠️ Regla 4 — los hooks, antes de cualquier `return` condicional. */
+  const [borrando, setBorrando] = useState(false);
+  const panel = useMemo(
+    () => panelIdeas(estado, { armario, datosGlobales, objetivos }),
+    [estado, armario, datosGlobales, objetivos],
+  );
+
+  /* Apartados 1 y 16 — apagada, solo queda la puerta para volver. */
+  if (panel.apagada) {
+    return (
+      <Card>
+        <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>{panel.texto}</p>
+        <button onClick={() => onCambiar(mostrarIdeas(estado))}
+          className="text-[11px] font-semibold" style={{ color: accent }}>
+          {TEXTOS_IDEAS.volver}
+        </button>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1">
+        <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>{panel.titulo}</p>
+        {/* Apartado 1 — *"si el usuario no la quiere: 👁️ Ocultar"*. */}
+        <button onClick={() => onCambiar(ocultarIdeas(estado))}
+          className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+          {TEXTOS_IDEAS.ocultar}
+        </button>
+      </div>
+      {/* Apartado 10 — el tono, dicho también aquí. */}
+      <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>{panel.aviso}</p>
+
+      {panel.ideas.length === 0 ? (
+        // ⚠️ Regla 8 — si no encaja ninguna se dice, no se rellena con una inventada.
+        <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{panel.texto}</p>
+      ) : panel.ideas.map((idea) => (
+        <div key={idea.id} className="rounded-2xl p-2.5 mb-1.5"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+            {idea.icono} {idea.titulo}
+          </p>
+          <p className="text-[11px] mb-1" style={{ color: COLORS.text }}>{idea.texto}</p>
+          {/* Apartado 8 — *"cada recomendación debe incluir por qué aparece"*. */}
+          <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+            <span className="font-semibold">{TEXTOS_IDEAS.porque}: </span>{idea.porque}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {/* Apartados 11 a 13 — abre el módulo que ya existe. */}
+            {idea.accion && (
+              <button onClick={() => onAccion?.(idea.accion)}
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{ background: hexToRgba(accent, 0.12), color: accent, border: `1px solid ${accent}` }}>
+                {idea.accion.etiqueta}
+              </button>
+            )}
+            {/* Apartado 4 — las tres respuestas. */}
+            {panel.acciones.map((a) => (
+              <button key={a.id}
+                onClick={() => onCambiar(responderIdea(estado, idea.id, a.id).estado)}
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{ background: COLORS.surface, color: COLORS.text, border: `1px solid ${COLORS.border}` }}>
+                {a.icono} {a.nombre}
+              </button>
+            ))}
+            {/* Apartado 15 — ❤️ Guardar. */}
+            <button
+              onClick={() => onCambiar(idea.guardada
+                ? quitarGuardada(estado, idea.id)
+                : guardarIdea(estado, idea.id))}
+              aria-pressed={idea.guardada}
+              className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+              style={{
+                background: idea.guardada ? hexToRgba(accent, 0.12) : COLORS.surface,
+                color: idea.guardada ? accent : COLORS.text,
+                border: `1px solid ${idea.guardada ? accent : COLORS.border}`,
+              }}>
+              {TEXTOS_IDEAS.guardar}
+            </button>
+            {/* Apartado 14 — *"abrir el Diario existente. No crear otro"*. */}
+            <button onClick={() => onAccion?.({ destino: DESTINO_DIARIO, zona: null })}
+              className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+              style={{ background: COLORS.surface, color: COLORS.text, border: `1px solid ${COLORS.border}` }}>
+              {TEXTOS_IDEAS.diario}
+            </button>
+          </div>
+        </div>
+      ))}
+
+      <div className="flex flex-wrap items-center gap-2 mt-1">
+        {/* ⚠️ Apartado 3 — marcar como vistas es un toque SUYO, no un efecto. */}
+        {panel.ideas.length > 0 && (
+          <button
+            onClick={() => onCambiar(marcarVistas(estado, panel.ideas.map((i) => i.id)))}
+            className="text-[10px] font-semibold" style={{ color: accent }}>
+            🔄 Otras ideas
+          </button>
+        )}
+        {/* Apartado 17 — y puede borrar el historial. */}
+        {panel.puedeBorrarHistorial && (
+          <button onClick={() => setBorrando(true)}
+            className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+            {TEXTOS_IDEAS.borrarHistorial}
+          </button>
+        )}
+      </div>
+
+      {/* Apartado 15 — y dónde acaban las guardadas, porque no hay favoritos globales. */}
+      {panel.guardadas.length > 0 && (
+        <div className="mt-2">
+          <p className="text-[10px] font-semibold" style={{ color: COLORS.text }}>
+            {TEXTOS_IDEAS.guardadas}
+          </p>
+          {panel.guardadas.map((g) => (
+            <p key={g.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>· {g.titulo}</p>
+          ))}
+          <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
+            {TEXTOS_IDEAS.dondeSeGuardan}
+          </p>
+        </div>
+      )}
+
+      <AvisoDesactivar
+        aviso={borrando ? borrarHistorialIdeas(estado).aviso : null} accent={accent}
+        onCancelar={() => setBorrando(false)}
+        onConfirmar={() => {
+          // ⚠️ Duodécimo `aplicarPlan`: aquí es donde llega el `confirmado`.
+          onCambiar(borrarHistorialIdeas(estado, { confirmado: true }).estado);
+          setBorrando(false);
+        }}
+      />
+    </Card>
+  );
+}
+
+
+/* ===========================================================================
    EH · F31 — ⋮ PERSONALIZAR (apartados 1 a 5, 8, 10, 14, 16 y 17)
    ===========================================================================
    ⚠️ **Esta pantalla no inventa ni un mecanismo.** Mover es `moverA` y las
@@ -6720,6 +6874,36 @@ export function PersonalizarPlaquitas({
           )}
         </Card>
       ))}
+
+      {/* ── EH F32, apartados 7 y 16 — *"desde personalización: 💡
+          Recomendaciones se puede desactivar completamente"*, y su frecuencia.
+          ⚠️ Es EL MISMO interruptor que el "👁️ Ocultar" de la tarjeta: una sola
+          cosa guardada, no tres formas de apagar lo mismo. */}
+      <Card>
+        <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>
+          {TEXTOS_IDEAS.titulo}
+        </p>
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+          🔔 Frecuencia de sugerencias
+        </p>
+        <div className="flex flex-wrap gap-1">
+          {FRECUENCIAS_IDEAS.map((f) => {
+            const puesta = f.id === datosIdeas(estado).frecuencia;
+            return (
+              <button key={f.id} aria-pressed={puesta}
+                onClick={() => onCambiar(cambiarFrecuencia(estado, f.id))}
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{
+                  background: puesta ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                  color: puesta ? accent : COLORS.text,
+                  border: `1px solid ${puesta ? accent : COLORS.border}`,
+                }}>
+                {f.nombre}
+              </button>
+            );
+          })}
+        </div>
+      </Card>
 
       {/* ── Apartados 10 y 17 — los dos botones de abajo ───────────────── */}
       <Card>
@@ -7178,6 +7362,29 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
                 {TEXTOS_MI_ESTILO.mostrar}
               </button>
             </Card>
+          )}
+
+          {/* ── EH F32 — 💡 Ideas para ti ──────────────────────────────
+              Apartado 1: *"en la pantalla principal, OPCIONALMENTE"*. Con
+              `ordenando` no se pinta, igual que "Mi estilo". */}
+          {!ordenando && (
+            <IdeasEH
+              estado={estado} accent={accent} armario={armario}
+              datosGlobales={datosGlobales} objetivos={objetivos}
+              onCambiar={onCambiar}
+              /* ⚠️ Apartados 11 a 14 — cada idea abre un módulo QUE YA EXISTE.
+                 Los de dentro de Estilo de hombre son los mismos `set*` de las
+                 plaquitas; los de fuera van por `onIr`, la única navegación con
+                 enlace directo de la aplicación. Ni una pantalla paralela. */
+              onAccion={(a) => {
+                if (!a) return;
+                if (a.destino === 'miEstilo') return setMiEstilo(true);
+                if (['skincare', 'pelo', 'barba', 'perfumes', 'accesorios', 'gustos'].includes(a.destino)) {
+                  return abrirModulo(a.destino);
+                }
+                return onIr?.(a.destino);
+              }}
+            />
           )}
 
           {/* ── EH F30 — la pantalla principal ─────────────────────────

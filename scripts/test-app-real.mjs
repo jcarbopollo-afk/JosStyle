@@ -777,4 +777,44 @@ const grandeMarcada = await page.evaluate(() => [...document.querySelectorAll('b
 ok(grandeMarcada,
   '⚠️ PERSISTENCIA: tras recargar, el tamaño elegido sigue marcado (prueba 9)');
 
+/* ── 17 · 💡 IDEAS PARA TI (EH F32) ───────────────────────────────────────
+   Lo que de verdad importa: que la idea EXPLIQUE por qué aparece, que "no me
+   interesa" la haga desaparecer, y que eso siga tras recargar. */
+ok(/Frecuencia de sugerencias/.test(await ver()),
+  '🔔 La frecuencia de sugerencias se configura desde Personalizar (apartados 7 y 16)');
+await pulsar('Listo');
+await page.waitForTimeout(600);
+const conIdeas = await ver();
+ok(/Ideas para ti/.test(conIdeas), '💡 La tarjeta de ideas está en la pantalla principal (apartado 1)');
+ok(/Por qué aparece/.test(conIdeas), '⚠️ Y cada idea EXPLICA por qué aparece (apartado 8 · prueba 3)');
+ok(/Lo hemos pensado porque/.test(conIdeas), 'con una frase entera, hecha con sus datos');
+ok(/Podrías|Quizá te interese|Una opción sería/.test(conIdeas),
+  '⚠️ Con el tono del apartado 10: nunca "debes"');
+ok(!/\bdebes\b|tienes que|obligatorio/i.test(conIdeas), 'y no aparece ninguna palabra prohibida');
+ok(/Me interesa/.test(conIdeas) && /No me interesa/.test(conIdeas) && /Ya lo hago/.test(conIdeas),
+  'Con las tres respuestas del apartado 4');
+
+guardado.length = 0;
+ok(await pulsar('❌ No me interesa'), 'Se puede descartar una idea (prueba 5)');
+await page.waitForTimeout(1200);
+const escIdeas = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escIdeas.length > 0, '⚠️ PERSISTENCIA: la respuesta se guarda');
+const cfgIdeas = escIdeas.at(-1)?.value?.modulos?.find((m) => m.id === 'estilo')?.config || {};
+ok((cfgIdeas.ideas?.recomendaciones?.feedback || []).some((f) => f.motivo === 'no_interesa'),
+  'con su motivo, en el almacén de las ideas');
+ok(cfgIdeas.ideas?.frecuencia === 'normal',
+  '⚠️ Y la frecuencia sigue en "Normal", que es el defecto del apartado 7');
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(600);
+ok(/Ideas para ti/.test(await ver()),
+  '⚠️ PERSISTENCIA: tras recargar, las ideas siguen ahí (pruebas 9 y 11)');
+ok(await pulsar('👁️ Ocultar'), 'Y se pueden ocultar (apartado 1)');
+await page.waitForTimeout(1000);
+ok(/Volver a ver las ideas/.test(await ver()),
+  '⚠️ Ocultar es desactivar el sistema (apartado 16), y se puede volver (prueba 11)');
+
 await salir(browser);

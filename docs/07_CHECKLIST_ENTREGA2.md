@@ -2235,36 +2235,69 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Pantalla pequeña.
 - [x] Comprobar que los datos internos no cambian.
 
-#### EH · Fase 32/65 — RECOMENDACIONES GENERALES DE ESTILO
-- [ ] PLAQUITA
-- [ ] TIPO DE CONSEJO
-- [ ] NO REPETIR
-- [ ] ACCIONES
-- [ ] FRECUENCIA
-- [ ] CONSEJO EXPLICADO
-- [ ] PERSONALIZACIÓN
-- [ ] CONSEJOS SUBJETIVOS
-- [ ] CONSEJOS DE PRODUCTOS
-- [ ] CONSEJOS DE OUTFITS
-- [ ] CONSEJOS DE RUTINA
-- [ ] DIARIO
-- [ ] GUARDAR CONSEJO
-- [ ] OCULTAR SISTEMA
-- [ ] PRIVACIDAD
-- [ ] PRUEBAS
-- [ ] Activar recomendaciones.
-- [ ] Recibir sugerencia.
-- [ ] Ver motivo.
-- [ ] Marcar “me interesa”.
-- [ ] Marcar “no me interesa”.
-- [ ] Marcar “ya lo hago”.
-- [ ] Guardar.
-- [ ] Abrir módulo relacionado.
-- [ ] Abrir Diario.
-- [ ] Desactivar recomendaciones.
-- [ ] Reactivarlas.
-- [ ] Comprobar que no se repiten innecesariamente.
-- [ ] Comprobar que no aparecen recomendaciones contradictorias.
+#### EH · Fase 32/65 — RECOMENDACIONES GENERALES DE ESTILO ✅ COMPLETADA (v1.95.0)
+
+> **`src/lib/ideasEstilo.js`** (215 comprobaciones) + `IdeasEH` en `EstiloHombreView.jsx`. Sin SQL.
+>
+> ⚠️ **EL MOTOR YA EXISTE.** `motorRecomendaciones.js` (F16, extraído de F9) trae `reglaAplicable`
+> con su regla de oro, el descarte con motivos y caducidad, las guardadas, las vistas, la lista de
+> palabras prohibidas y `ordenarYRecortar`. Esta fase es su **cuarto** uso y **no escribe un cuarto
+> `if`**, ni una segunda lista de palabras prohibidas, ni otro `descartarEn`. Lo que aporta es un
+> **contexto que cruza todos los módulos**, que es justo lo que las tres anteriores no hacían.
+>
+> ⚠️ **OCULTAR (apartado 1), DESACTIVAR (16) Y "NUNCA" (7) SON EL MISMO INTERRUPTOR.** Tres formas
+> de decir lo mismo, así que hay **una sola cosa guardada**: `frecuencia`. Es la lección de la F26
+> —*"antes de crear un segundo mecanismo, comprobar si el enunciado describe el mismo dos veces"*—.
+>
+> ⚠️ **NO SE REPITE LO QUE OTRO MÓDULO YA RECOMIENDA** (prueba 13). Skincare, Pelo y Perfumes
+> tienen su propio motor con datos más finos, así que las ideas de aquí son **cruzadas** y, cuando
+> tocaría una idea de un módulo concreto, **llevan allí** en vez de escribirla otra vez.
+>
+> ⚠️ **UN MÓDULO APAGADO DEJA SU DATO EN `null`, Y `null` NO ES CERO** (apartado 9). Sin eso, Barba
+> apagada contaría como "cero productos de barba" y dispararía una idea sobre algo que él ha decidido
+> no usar. Es la diferencia entre *"no lo sé"* y *"sé que no tiene ninguno"*.
+>
+> ⚠️ **"ME INTERESA" NO SILENCIA**: guarda. Silenciar lo que acaba de pedir sería lo contrario de
+> lo que el botón dice. **"No me interesa" calla también las de su tema** (apartado 5: *"evitar
+> recomendaciones equivalentes"*); **"Ya lo hago" solo calla esa**, porque él no ha dicho que el tema
+> no le interese. Y **ningún descarte es para siempre**: todos caducan y todos se pueden deshacer.
+>
+> ⚠️ **NO HAY UN SISTEMA DE FAVORITOS GLOBALES** (apartado 15). Lo que hay son favoritos por módulo
+> y las `guardadas` del motor, que es exactamente "guardar una idea". Se usa esa, y **la pantalla dice
+> dónde están** en vez de fingir un sistema global que no existe (regla 8).
+>
+> ⚠️ **Y BORRAR EL HISTORIAL NO SE LLEVA LO GUARDADO** (apartado 17): lo guardó él a propósito, no
+> es historial. Duodécimo `aplicarPlan`: sin `confirmado` no borra nada.
+
+- [x] PLAQUITA
+- [x] TIPO DE CONSEJO
+- [x] NO REPETIR
+- [x] ACCIONES
+- [x] FRECUENCIA
+- [x] CONSEJO EXPLICADO
+- [x] PERSONALIZACIÓN
+- [x] CONSEJOS SUBJETIVOS
+- [x] CONSEJOS DE PRODUCTOS
+- [x] CONSEJOS DE OUTFITS
+- [x] CONSEJOS DE RUTINA
+- [x] DIARIO
+- [x] GUARDAR CONSEJO
+- [x] OCULTAR SISTEMA
+- [x] PRIVACIDAD
+- [x] PRUEBAS
+- [x] Activar recomendaciones.
+- [x] Recibir sugerencia.
+- [x] Ver motivo.
+- [x] Marcar “me interesa”.
+- [x] Marcar “no me interesa”.
+- [x] Marcar “ya lo hago”.
+- [x] Guardar.
+- [x] Abrir módulo relacionado.
+- [x] Abrir Diario.
+- [x] Desactivar recomendaciones.
+- [x] Reactivarlas.
+- [x] Comprobar que no se repiten innecesariamente.
+- [x] Comprobar que no aparecen recomendaciones contradictorias.
 
 #### EH · Fase 33/65 — DESCUBRIR E INSPIRACIÓN
 - [ ] PLAQUITA «DESCUBRIR»

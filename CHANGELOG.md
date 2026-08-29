@@ -1,5 +1,74 @@
 # CHANGELOG.md
 
+## v1.95.0 — EH Fase 32/65: recomendaciones generales de estilo
+
+### Qué se ha construido
+La tarjeta **💡 Ideas para ti** en la pantalla de Estilo de hombre: quince ideas repartidas por los
+**siete temas del apartado 2**, cada una con **por qué aparece**, sus tres respuestas
+(👍 Me interesa · ❌ No me interesa · ✅ Ya lo hago), su **❤️ Guardar**, su acción al módulo
+correspondiente y su **📝 Escribir en Diario**. Con **🔔 frecuencia** configurable desde Personalizar
+y **🧹 borrar el historial** desde la propia tarjeta.
+
+*"Esto es subjetivo. Son recomendaciones, no reglas."* Nunca *"tienes que hacer esto"*, nunca *"tu
+estilo correcto es este"*, y **ni una puntuación** que le juzgue.
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ El motor ya existe, y ésta es su cuarta vez.** `motorRecomendaciones.js` (F16, extraído de
+F9) trae `reglaAplicable` con su regla de oro, el descarte con motivos y caducidad, las guardadas,
+las vistas, la lista de palabras prohibidas y `ordenarYRecortar`. Esta fase **no escribe un cuarto
+`if`**, ni una segunda lista de palabras prohibidas, ni otro `descartarEn`. Lo que aporta es un
+**contexto que cruza todos los módulos**, que es justo lo que las tres anteriores no hacían:
+`recomendacionesPelo` mira el pelo, `recomendacionesPiel` la piel, `recomendacionesPerfumes` los
+perfumes; ésta mira **los siete temas a la vez**.
+
+**2. ⚠️ Ocultar (apartado 1), desactivar (16) y "Nunca" (7) son el mismo interruptor.** El enunciado
+lo describe tres veces, así que hay **una sola cosa guardada**: `frecuencia`. Tres booleanos que
+apagan lo mismo son tres cosas que un día dirán algo distinto. Es la lección de la F26.
+
+**3. ⚠️ No se repite lo que otro módulo ya recomienda** (prueba 13: *"comprobar que no aparecen
+recomendaciones contradictorias"*). Skincare, Pelo y Perfumes tienen **su propio motor**, con datos
+más finos. Así que las ideas de aquí son **cruzadas** —*"ya tienes rutina de piel y ninguna de
+pelo"*— y, cuando tocaría una idea de un módulo concreto, **llevan allí** en vez de escribirla otra
+vez. Tres reglas existen solo para eso, y una prueba comprueba que el archivo no importa las reglas
+de esos módulos.
+
+**4. ⚠️ Un módulo apagado deja su dato en `null`, y `null` no es cero** (apartado 9: *"no asumir
+características que no conocemos"*). Sin esa distinción, Barba apagada contaría como "cero productos
+de barba" y dispararía una idea sobre algo que él ha decidido no usar. Quien lo garantiza en el
+código es `requiere` del motor: **una regla sin requisitos declarados no se aplica nunca**.
+
+**5. ⚠️ "Me interesa" no silencia: guarda.** Callar lo que acaba de pedir sería lo contrario de lo
+que dice el botón. *"No me interesa"* calla también **las de su tema** —que es lo que "evitar
+recomendaciones equivalentes" significa (apartado 5)—; *"Ya lo hago"* calla **solo esa**, porque él
+no ha dicho que el tema no le interese. Y **ningún descarte es para siempre**: todos caducan y todos
+se pueden deshacer.
+
+**6. ⚠️ No hay un sistema de favoritos globales** (apartado 15). Lo que hay son favoritos **por
+módulo** —`prenda.favorita`, `perfume.favorito`, `gusto.favorito`— y las `guardadas` del motor, que
+es exactamente "guardar una idea". Se usa esa, y **la pantalla dice dónde están** en vez de fingir un
+sistema global que no existe (regla 8). Y **borrar el historial no se lleva lo guardado** (apartado
+17): lo guardó él a propósito, no es historial.
+
+### Dos detalles que no son obvios
+- **Marcar una idea como vista es un toque suyo** ("🔄 Otras ideas"), no un efecto al abrir la
+  pantalla: escribir en Supabase cada vez que se repinta una tarjeta sería hacerlo a sus espaldas.
+- **La idea que no sabe explicarse no se propone.** Si su `porque` sale vacío, se descarta antes de
+  llegar a la pantalla: un motivo vacío convierte una idea en una nota suelta (lección de la F25).
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **215 comprobaciones nuevas**, **1112 casos de
+renderizado** (36 nuevos) y **245 comprobaciones en Chromium** (14 nuevas): se entra, sale la
+tarjeta, **cada idea explica por qué aparece**, el tono es el del apartado 10, se descarta una,
+**se guarda**, sigue descartada tras recargar, se oculta y se puede volver.
+
+### Archivos
+- **Nuevos:** `src/lib/ideasEstilo.js`, `scripts/test-ideas-estilo.mjs`.
+- **Modificados:** `src/views/EstiloHombreView.jsx` (`IdeasEH` y la frecuencia en Personalizar),
+  `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.94.0 — EH Fase 31/65: personalización profunda de las plaquitas
 
 ### Qué se ha construido

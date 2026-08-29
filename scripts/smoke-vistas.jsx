@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -66,6 +66,7 @@ import {
 } from '../src/lib/objetivosEnEstiloHombre.js';
 import { ocultarMiEstilo } from '../src/lib/miEstilo.js';
 import { alternarAcceso, alternarVerAccesos, cambiarTamano, alternarLinea } from '../src/lib/pantallaEH.js';
+import { ocultarIdeas, cambiarFrecuencia, guardarIdea, marcarVistas as marcarVistasIdeas, responderIdea as responderIdeaEH } from '../src/lib/ideasEstilo.js';
 import { guardarDato as guardarDatoEH } from '../src/lib/datosEstiloHombre.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
@@ -1155,6 +1156,31 @@ const CASOS = [
                 pp(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],
               ['PersonalizarPlaquitas · ya personalizado', PersonalizarPlaquitas, () =>
                 pp(alternarLinea(cambiarTamano(cinco, 'skincare', 'grande'), 'skincare', 'estadisticas'))],
+            ];
+          })(),
+          /* EH Fase 32 — 💡 Ideas para ti: la tarjeta, apagada, guardadas y sin ninguna. */
+          ...(() => {
+            const siete = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE,
+              ['estilo', 'skincare', 'pelo', 'barba', 'perfumes', 'accesorios', 'gustos']);
+            const ip = (e) => ({
+              estado: e, accent, armario: lleno.armario, datosGlobales: {}, objetivos: null,
+              onCambiar: noop, onAccion: noop,
+            });
+            return [
+              ['IdeasEH · con ideas', IdeasEH, () => ip(siete)],
+              ['IdeasEH · apagadas (apartados 1 y 16)', IdeasEH, () => ip(ocultarIdeas(siete))],
+              ['IdeasEH · frecuencia alta', IdeasEH, () => ip(cambiarFrecuencia(siete, 'alta'))],
+              ['IdeasEH · con una guardada', IdeasEH, () => ip(guardarIdea(siete, 'gustos_por_hacer'))],
+              ['IdeasEH · con historial que borrar', IdeasEH, () =>
+                ip(marcarVistasIdeas(siete, ['accesorios_vacio']))],
+              ['IdeasEH · con una descartada', IdeasEH, () =>
+                ip(responderIdeaEH(siete, 'accesorios_vacio', 'no_interesa').estado)],
+              /* ⚠️ Sin nada activo no encaja ninguna: se dice, no se rellena. */
+              ['IdeasEH · sin ninguna que encaje', IdeasEH, () =>
+                ip(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],
+              ['EstiloHombreView · con la tarjeta de ideas', EstiloHombreView, () => conArmario(siete)],
+              ['EstiloHombreView · con las ideas apagadas', EstiloHombreView, () =>
+                conArmario(ocultarIdeas(siete))],
             ];
           })(),
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],

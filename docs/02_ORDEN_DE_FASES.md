@@ -250,9 +250,11 @@ escribir código.
 
 | v1.94.0 | **EH F31** | Personalización profunda de las plaquitas. ⚠️ **Casi todo el enunciado ya existía**: mover (`moverA`), ocultar, confirmar y "+ Añadir apartado" son de la **F2**; los accesos rápidos, de la **F30**; eliminar, la papelera global. Lo nuevo son **tamaño**, **contenido**, **el límite de accesos visibles** y dos botones. ⚠️ **El apartado 12 manda dónde se guarda**: `tamanos` y `contenido` van al almacén de la PANTALLA, **nunca** a la `config` del módulo que describen. ⚠️ **Tres tamaños y solo tres**, con sus columnas declaradas. ⚠️ **`LINEAS_DE_PLAQUITA` es una línea por módulo**, y cada línea sale de su propio `resumen…()`: la principal puesta, las extras apagadas. ⚠️ **Restablecer NO reactiva lo que él apagó**. ⚠️ **No se finge un "uso reciente"** que no se guarda: se dice el criterio de verdad. 🐛 Y una lista **vacía** no es "no hay lista" |
 
+| v1.95.0 | **EH F32** | Recomendaciones generales de estilo ("💡 Ideas para ti"). ⚠️ **El motor ya existe**: cuarto uso de `motorRecomendaciones.js` (F16), sin un cuarto `reglaAplicable` ni una segunda lista de palabras prohibidas; lo que aporta es un **contexto que cruza los siete temas del apartado 2**. ⚠️ **Ocultar (1), desactivar (16) y "Nunca" (7) son EL MISMO interruptor**: una sola `frecuencia` guardada. ⚠️ **No se repite lo que Skincare, Pelo y Perfumes ya recomiendan**: las ideas son cruzadas y, si tocaría una suya, LLEVAN allí (prueba 13). ⚠️ **Un módulo apagado deja su dato en `null`, y `null` no es cero**. ⚠️ **"Me interesa" no silencia: guarda**; "No me interesa" calla su tema; "Ya lo hago", solo esa. ⚠️ **No hay favoritos globales** (apartado 15): se usan las `guardadas` del motor y se dice dónde están. ⚠️ Y **borrar el historial no se lleva lo guardado** |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 28/65** (F1-F17, F20, F21, F23-F31; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **35** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (33, tres de ellas bloqueadas).
+3/5 y **EH por 29/65** (F1-F17, F20, F21, F23-F32; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **34** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (32, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.
