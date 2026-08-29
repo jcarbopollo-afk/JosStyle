@@ -356,6 +356,12 @@ else
   fallo "Fallan las preferencias de estilo"; grep '✗' /tmp/jc_eh34.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-progreso-estilo.mjs >/tmp/jc_eh35.log 2>&1; then
+  ok "Estadísticas y progreso de estilo (EH F35) — $(grep -c '✓' /tmp/jc_eh35.log) comprobaciones"
+else
+  fallo "Falla el progreso de estilo"; grep '✗' /tmp/jc_eh35.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

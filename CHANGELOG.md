@@ -1,5 +1,65 @@
 # CHANGELOG.md
 
+## v1.98.0 — EH Fase 35/65: estadísticas y progreso de estilo
+
+### Qué se ha construido
+La tarjeta **📊 Mi progreso** en la pantalla de Estilo de hombre: once métricas repartidas por sus
+módulos, con **Semana · Mes · Personalizado**, su barrita de ocho caracteres, la elección de qué
+quiere ver, la racha y el objetivo **del sistema global**, y su **👁️ Ocultar**.
+
+*"No todo necesita una estadística. Estilo de hombre no debe parecer una aplicación de análisis."*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ La estadística es una vista calculada, no la fuente de datos** (apartado 13, con esas
+palabras). Así que **aquí no se guarda ni una cifra**: todo se cuenta en el momento sobre los
+historiales que ya existen. Lo único guardado son sus preferencias de pantalla —qué métricas quiere
+ver, qué periodo mira y si quiere ver esto—, y por eso *"si elimina estadísticas, no eliminar los
+datos originales"* **sale solo**: no hay nada que eliminar. Hay una prueba que quita todas las
+métricas y comprueba que los tres registros de piel y los tres de perfume siguen ahí.
+
+**2. ⚠️ Nunca una nota y nunca una comparación** (apartados 3 y 9). Ni *"tu estilo es 73/100"*, ni
+*"eres un 82 % de hombre arreglado"*, ni *"este mes eres mejor que el anterior"*. Se enseña **lo que
+hay**: *"esta semana, 2 rutinas"*. La auditoría lo declara con ceros, una prueba barre todos los
+textos buscando un juicio, y una tercera comprueba que una métrica **no trae con qué compararse**.
+
+**3. ⚠️ Ni una racha nueva ni otro sistema de objetivos** (apartados 7 y 8). La racha es **la
+global**, y si no la tiene **no se pinta** —mismo criterio que la F23, y una racha de otro módulo no
+cuenta como suya—; el objetivo se lee del sistema global. Cero contadores guardados.
+
+**4. ⚠️ Ocultar (apartado 1) y quitar el progreso (12) son el mismo interruptor** — cuarta vez en
+cinco fases que un enunciado describe lo mismo dos veces. Un solo booleano.
+
+**5. ⚠️ Sin datos no se inventa una estadística** (apartado 10). Un módulo sin ni un registro **no
+enseña un cero**: dice *"todavía no hay suficientes datos"*. **Pero con historial, un cero en el
+periodo sí se enseña**, porque eso es un dato y no un hueco. Distinguir las dos cosas es la lección
+de `null` frente a `[]` de la F25, aplicada a una cifra.
+
+**6. ⚠️ Y el "gráfico" son ocho caracteres** (apartado 6: *"muy simples. Por ejemplo: ▂ ▅ ▆ ▇. **No
+llenar la pantalla de gráficas**"*). Ni una librería, ni un `<canvas>`, ni un SVG: una cadena de
+bloques que se calcula con una división, **agrupada a catorce barras como mucho** para que un mes
+entero no salga como una pared en un iPhone. Y todo a cero **no dibuja una línea de mínimos**: no
+dibuja nada.
+
+### Una nota honesta
+El apartado 2 pide separar *"afeitados"* de *"perfilados"* en Barba, pero **eso no se guarda como
+categoría**: el registro de la F21 tiene un campo `que` de texto libre. Así que se cuenta lo que hay
+—los registros— en vez de deducir una clasificación de un texto que él escribió a mano (regla 8), y
+queda dicho en el código.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **134 comprobaciones nuevas**, **1200 casos de
+renderizado** (32 nuevos) y **284 comprobaciones en Chromium** (14 nuevas): sale la tarjeta con su
+*"Esta semana"*, **sin registros dice que no hay datos en vez de enseñar un cero**, no hay ni una
+puntuación ni una comparación, se cambia el periodo, **se guarda**, sigue tras recargar y se oculta.
+
+### Archivos
+- **Nuevos:** `src/lib/progresoEstilo.js`, `scripts/test-progreso-estilo.mjs`.
+- **Modificados:** `src/views/EstiloHombreView.jsx` (`ProgresoEH`), `scripts/smoke-vistas.jsx`,
+  `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.97.0 — EH Fase 34/65: perfil y preferencias avanzadas
 
 ### Qué se ha construido

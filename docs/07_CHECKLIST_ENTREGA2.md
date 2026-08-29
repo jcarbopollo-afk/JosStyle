@@ -2417,33 +2417,62 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar que no se modifican otros módulos.
 - [x] Comprobar que no existen duplicados.
 
-#### EH · Fase 35/65 — ESTADÍSTICAS Y PROGRESO DE ESTILO
-- [ ] PLAQUITA «PROGRESO»
-- [ ] NO PUNTUAR AL USUARIO
-- [ ] RESUMEN
-- [ ] PERIODOS
-- [ ] GRÁFICOS
-- [ ] OBJETIVOS
-- [ ] RACHAS
-- [ ] COMPARACIONES
-- [ ] DATOS INCOMPLETOS
-- [ ] PERSONALIZACIÓN
-- [ ] DESACTIVACIÓN
-- [ ] HISTORIAL
-- [ ] PRIVACIDAD
-- [ ] PRUEBAS
-- [ ] Registrar rutina.
-- [ ] Registrar afeitado.
-- [ ] Registrar perfume.
-- [ ] Ver estadísticas.
-- [ ] Cambiar periodo.
-- [ ] Ocultar una métrica.
-- [ ] Ocultar todo.
-- [ ] Reactivar.
-- [ ] Comprobar datos sin registros.
-- [ ] Comprobar integración con rachas.
-- [ ] Comprobar integración con objetivos.
-- [ ] Verificar que las estadísticas no duplican datos.
+#### EH · Fase 35/65 — ESTADÍSTICAS Y PROGRESO DE ESTILO ✅ COMPLETADA (v1.98.0)
+
+> **`src/lib/progresoEstilo.js`** (134 comprobaciones) + `ProgresoEH` en `EstiloHombreView.jsx`.
+> Sin SQL.
+>
+> ⚠️ **LA ESTADÍSTICA ES UNA VISTA CALCULADA, NO LA FUENTE DE DATOS** (apartado 13, con esas
+> palabras): **aquí no se guarda ni una cifra**. Lo único guardado son sus preferencias de pantalla
+> —qué métricas quiere ver, qué periodo mira y si quiere ver esto—, y por eso *"si elimina
+> estadísticas, no eliminar los datos originales"* **sale solo**: no hay nada que eliminar.
+>
+> ⚠️ **NUNCA UNA NOTA Y NUNCA UNA COMPARACIÓN** (apartados 3 y 9). Ni *"tu estilo es 73/100"*, ni
+> *"este mes eres mejor que el anterior"*. Se enseña lo que hay, y una prueba barre todos los textos.
+>
+> ⚠️ **NI UNA RACHA NUEVA NI OTRO SISTEMA DE OBJETIVOS** (apartados 7 y 8): la racha es **la
+> global** y si no la tiene **no se pinta** —mismo criterio que la F23—; el objetivo se lee del
+> sistema global. Cero contadores guardados.
+>
+> ⚠️ **OCULTAR (1) Y QUITAR EL PROGRESO (12) SON EL MISMO INTERRUPTOR** — cuarta vez en cinco fases.
+>
+> ⚠️ **SIN DATOS NO SE INVENTA UNA ESTADÍSTICA** (apartado 10). Un módulo sin ni un registro **no
+> enseña un cero**: dice *"todavía no hay suficientes datos"*. Pero con historial, **un cero en el
+> periodo SÍ se enseña**, porque eso es un dato. Es la lección de `null` frente a `[]` de la F25.
+>
+> ⚠️ **Y EL "GRÁFICO" SON OCHO CARACTERES** (apartado 6): ni una librería, ni un `<canvas>`, ni un
+> SVG. Una cadena de bloques, agrupada a catorce barras como mucho para que un mes no salga como una
+> pared en un iPhone.
+>
+> ⚠️ Y una nota honesta: el apartado 2 pide separar *"afeitados"* de *"perfilados"*, pero **eso no se
+> guarda como categoría** —el registro de la F21 tiene un `que` de texto libre—, así que se cuenta lo
+> que hay en vez de inventar una clasificación (regla 8).
+- [x] PLAQUITA «PROGRESO»
+- [x] NO PUNTUAR AL USUARIO
+- [x] RESUMEN
+- [x] PERIODOS
+- [x] GRÁFICOS
+- [x] OBJETIVOS
+- [x] RACHAS
+- [x] COMPARACIONES
+- [x] DATOS INCOMPLETOS
+- [x] PERSONALIZACIÓN
+- [x] DESACTIVACIÓN
+- [x] HISTORIAL
+- [x] PRIVACIDAD
+- [x] PRUEBAS
+- [x] Registrar rutina.
+- [x] Registrar afeitado.
+- [x] Registrar perfume.
+- [x] Ver estadísticas.
+- [x] Cambiar periodo.
+- [x] Ocultar una métrica.
+- [x] Ocultar todo.
+- [x] Reactivar.
+- [x] Comprobar datos sin registros.
+- [x] Comprobar integración con rachas.
+- [x] Comprobar integración con objetivos.
+- [x] Verificar que las estadísticas no duplican datos.
 
 #### EH · Fase 36/65 — GESTIÓN GLOBAL DE MÓDULOS
 - [ ] CENTRO «GESTIONAR ESTILO»

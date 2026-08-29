@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -69,6 +69,7 @@ import { alternarAcceso, alternarVerAccesos, cambiarTamano, alternarLinea } from
 import { ocultarIdeas, cambiarFrecuencia, guardarIdea, marcarVistas as marcarVistasIdeas, responderIdea as responderIdeaEH } from '../src/lib/ideasEstilo.js';
 import { ocultarDescubrir, cambiarFrecuenciaDescubrir, alternarFiltro as alternarFiltroDesc, guardarTarjeta, descartarTarjeta, TARJETAS_DESCUBRIR } from '../src/lib/descubrir.js';
 import { alternarPreferenciasEnUso } from '../src/lib/preferenciasEstilo.js';
+import { ocultarProgreso, cambiarPeriodo as cambiarPeriodoProg, alternarMetrica, METRICAS_POR_DEFECTO } from '../src/lib/progresoEstilo.js';
 import { guardarDato as guardarDatoEH } from '../src/lib/datosEstiloHombre.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
@@ -1230,6 +1231,38 @@ const CASOS = [
                 estado: conDatos, accent, armario: lleno.armario, datosGlobales: {},
                 onCambiar: noop, onCerrar: noop, onPreferencias: noop,
               })],
+            ];
+          })(),
+          /* EH Fase 35 — 📊 Mi progreso: con datos, sin datos, apagado y sin métricas. */
+          ...(() => {
+            const ocho = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE,
+              ['estilo', 'skincare', 'pelo', 'barba', 'perfumes', 'sonrisa', 'accesorios', 'gustos']);
+            const conHechos = guardarConfig(ocho, 'skincare', {
+              rutinas: {
+                rutinas: [{ id: 'r1', nombre: 'Mañana', pasos: [{ id: 'p1', texto: 'Limpiar' }], activa: true, momento: 'manana', frecuencia: 'diaria' }],
+                hechos: [{ id: 'h1', rutinaId: 'r1', fecha: HOY, pasos: ['p1'] }],
+              },
+            });
+            const RACHAS = {
+              definiciones: [{ id: 'ra1', nombre: 'Skincare', origen: 'skincare' }],
+              eventos: [{ rachaId: 'ra1', fecha: HOY }],
+            };
+            const pg2 = (e, extra = {}) => ({
+              estado: e, accent, armario: lleno.armario, datosGlobales: {},
+              rachas: null, objetivos: null, onCambiar: noop, onIr: noop, ...extra,
+            });
+            return [
+              ['ProgresoEH · con datos', ProgresoEH, () => pg2(conHechos)],
+              ['ProgresoEH · sin ningún registro', ProgresoEH, () => pg2(ocho)],
+              ['ProgresoEH · apagado (apartados 1 y 12)', ProgresoEH, () => pg2(ocultarProgreso(ocho))],
+              ['ProgresoEH · por meses', ProgresoEH, () => pg2(cambiarPeriodoProg(conHechos, 'mes'))],
+              /* ⚠️ Sin ninguna métrica elegida: se dice, no se deja en blanco. */
+              ['ProgresoEH · sin métricas elegidas', ProgresoEH, () =>
+                pg2(METRICAS_POR_DEFECTO.reduce((acc, id) => alternarMetrica(acc, id), ocho))],
+              ['ProgresoEH · con la racha global', ProgresoEH, () => pg2(conHechos, { rachas: RACHAS })],
+              ['ProgresoEH · con un objetivo de estilo', ProgresoEH, () =>
+                pg2(conHechos, { objetivos: { lista: [{ id: 'o1', texto: 'Cuidarme la piel', origen: 'estiloHombre', cumplido: false }] } })],
+              ['EstiloHombreView · con la tarjeta de progreso', EstiloHombreView, () => conArmario(conHechos)],
             ];
           })(),
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],

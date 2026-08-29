@@ -256,9 +256,11 @@ escribir código.
 
 | v1.97.0 | **EH F34** | Perfil y preferencias avanzadas ("⚙️ Mis preferencias"). ⚠️ **El apartado 15 ES el registro de la F4**: esta fase **no guarda ni una preferencia** —sin almacén ni normalizador propios—, las lee y dice dónde se cambian. ⚠️ **"Mis preferencias" ya estaba escrita** (F27): se reutiliza y se agrupa. ⚠️ **Los siete grupos son los siete temas de la F32**, y "Editar" abre el módulo original. ⚠️ **El interruptor del apartado 7 vive en el almacén de la F32** y **hace algo**: apagado, las reglas que miran una preferencia dejan de aplicarse, y las preferencias siguen guardadas. ⚠️ **Ocultar y eliminar son dos acciones**, y el apartado 13 sale solo. ⚠️ **Borrar Estilo de hombre no toca otros módulos** y enumera lo que se queda. ⚠️ Y **la exportación entra por la que ya existía**, con `estiloHombre` pasado APARTE de `currentState` para que no viaje a la IA |
 
+| v1.98.0 | **EH F35** | Estadísticas y progreso de estilo ("📊 Mi progreso"). ⚠️ **La estadística es una VISTA CALCULADA, no la fuente** (apartado 13): ni una cifra guardada, solo preferencias de pantalla — y por eso *"si elimina estadísticas, no eliminar los datos originales"* sale solo. ⚠️ **Nunca una nota ni una comparación** (apartados 3 y 9). ⚠️ **Ni una racha nueva ni otro sistema de objetivos**: los globales, y `null` si no los tiene. ⚠️ **Ocultar (1) y quitar el progreso (12) son el mismo interruptor** —cuarta vez—. ⚠️ **Sin datos NO se enseña un cero**: se dice que no hay; pero con historial, un cero en el periodo SÍ es un dato. ⚠️ Y **el "gráfico" son ocho caracteres**, agrupados a catorce barras: ni una librería |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 31/65** (F1-F17, F20, F21, F23-F34; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **32** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (30, tres de ellas bloqueadas).
+3/5 y **EH por 32/65** (F1-F17, F20, F21, F23-F35; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **31** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (29, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

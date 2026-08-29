@@ -891,4 +891,44 @@ await pulsar('Cancelar');
 await page.waitForTimeout(400);
 ok(/Mis preferencias/.test(await ver()), 'y cancelar no borra nada');
 
+/* ── 20 · 📊 MI PROGRESO (EH F35) ─────────────────────────────────────────
+   Lo que importa: que NO haya notas ni porcentajes, que sin registros diga que
+   no hay datos en vez de enseñar un cero, y que el periodo se guarde. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(700);
+const progreso = await ver();
+ok(/Mi progreso/.test(progreso), '📊 Mi progreso está en la pantalla principal (apartado 1)');
+ok(/Esta semana/.test(progreso), 'con el encabezado del apartado 4, literal');
+ok(/Todavía no hay suficientes datos/.test(progreso),
+  '⚠️ Y sin registros NO enseña un cero: dice que no hay datos (apartado 10 · prueba 9)');
+ok(!/\d+\s*\/\s*100|% de hombre/.test(progreso),
+  '⚠️ NI UNA PUNTUACIÓN: *"tu estilo es 73/100"* no existe (apartado 3)');
+ok(!/mejor que|peor que/i.test(progreso), 'ni una comparación (apartado 9)');
+ok(/solo lo que has registrado/.test(progreso), 'y se dice qué es esta pantalla');
+ok(/No se comparte con nadie/.test(progreso), 'con su nota de privacidad (apartado 14)');
+
+guardado.length = 0;
+ok(await pulsar('Mes'), 'Se puede cambiar el periodo (apartado 5 · prueba 5)');
+await page.waitForTimeout(1200);
+const escProg = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escProg.length > 0, '⚠️ PERSISTENCIA: el periodo se guarda');
+const cfgProg = escProg.at(-1)?.value?.modulos?.find((m) => m.id === 'estilo')?.config || {};
+ok(cfgProg.progreso?.periodo === 'mes', 'con el que eligió');
+ok(!('total' in (cfgProg.progreso || {})) && !('cifras' in (cfgProg.progreso || {})),
+  '⚠️ Y NO se guarda ni una cifra: la estadística es una vista (apartado 13)');
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(700);
+ok(/Este mes/.test(await ver()), '⚠️ PERSISTENCIA: tras recargar sigue en el mes');
+ok(await pulsar('👁️ Ocultar'), 'y se puede ocultar (apartado 12 · prueba 7)');
+await page.waitForTimeout(1000);
+ok(/Volver a ver mi progreso/.test(await ver()),
+  '⚠️ Con todo lo demás funcionando igual, y se puede volver (prueba 8)');
+
 await salir(browser);

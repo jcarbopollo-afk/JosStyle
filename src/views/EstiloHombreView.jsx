@@ -221,6 +221,11 @@ import {
   ZONA_PREFERENCIAS, TEXTOS_PREFERENCIAS, panelPreferencias, alternarPreferenciasEnUso,
   borrarPreferencia, restablecerCategoria, eliminarDatosDeEstilo,
 } from '../lib/preferenciasEstilo';
+import {
+  // ── EH F35 ──
+  TEXTOS_PROGRESO, panelProgreso, ocultarProgreso, mostrarProgreso,
+  alternarMetrica, cambiarPeriodo, datosProgreso,
+} from '../lib/progresoEstilo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -6963,6 +6968,146 @@ export function PreferenciasEH({
 
 
 /* ===========================================================================
+   EH · F35 — 📊 MI PROGRESO (apartados 1 a 14)
+   ===========================================================================
+   *"No todo necesita una estadística. Estilo de hombre no debe parecer una
+   aplicación de análisis."*
+
+   ⚠️ **La tarjeta no calcula nada**: `panelProgreso` trae las métricas ya
+   contadas, con su barrita hecha de ocho caracteres. Y **no guarda ni una
+   cifra**: la estadística es una vista, no la fuente (apartado 13). */
+export function ProgresoEH({
+  estado, accent, armario = null, datosGlobales = {}, rachas = null, objetivos = null,
+  onCambiar, onIr,
+}) {
+  /* ⚠️ Regla 4 — los hooks, antes de cualquier `return` condicional. */
+  const [eligiendo, setEligiendo] = useState(false);
+  const panel = useMemo(
+    () => panelProgreso(estado, { armario, datosGlobales, rachas, objetivos }),
+    [estado, armario, datosGlobales, rachas, objetivos],
+  );
+
+  /* Apartados 1 y 12 — apagado, solo queda la puerta para volver. */
+  if (!panel.ver) {
+    return (
+      <Card>
+        <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>{panel.apagado}</p>
+        <button onClick={() => onCambiar(mostrarProgreso(estado))}
+          className="text-[11px] font-semibold" style={{ color: accent }}>
+          {TEXTOS_PROGRESO.volver}
+        </button>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1">
+        <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>{panel.titulo}</p>
+        <button onClick={() => setEligiendo((v) => !v)}
+          className="text-[10px] font-semibold" style={{ color: eligiendo ? accent : COLORS.textMuted }}>
+          ☑️ Qué ver
+        </button>
+        {/* Apartado 1 — *"si el usuario no quiere verlo: 👁️ Ocultar"*. */}
+        <button onClick={() => onCambiar(ocultarProgreso(estado))}
+          className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+          {TEXTOS_PROGRESO.ocultar}
+        </button>
+      </div>
+
+      {/* Apartado 5 — semana · mes · personalizado. */}
+      <div className="flex flex-wrap gap-1 mb-2">
+        {panel.periodos.map((p) => {
+          const puesto = p.id === panel.periodo;
+          return (
+            <button key={p.id} aria-pressed={puesto}
+              onClick={() => onCambiar(cambiarPeriodo(estado, p.id))}
+              className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+              style={{
+                background: puesto ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                color: puesto ? accent : COLORS.text,
+                border: `1px solid ${puesto ? accent : COLORS.border}`,
+              }}>
+              {p.nombre}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Apartado 11 — solo lo seleccionado. */}
+      {eligiendo && (
+        <div className="mb-2">
+          <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>
+            {TEXTOS_PROGRESO.queVer}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {panel.disponibles.map((m) => (
+              <button key={m.id} aria-pressed={m.puesta}
+                onClick={() => onCambiar(alternarMetrica(estado, m.id))}
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{
+                  background: m.puesta ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                  color: m.puesta ? accent : COLORS.text,
+                  border: `1px solid ${m.puesta ? accent : COLORS.border}`,
+                }}>
+                {m.puesta ? '☑️' : '☐'} {m.icono} {m.nombre}
+              </button>
+            ))}
+          </div>
+          {/* Apartado 13 — lo que más le preocupa, dicho. */}
+          <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{panel.noBorraDatos}</p>
+        </div>
+      )}
+
+      {/* Apartado 4 — *"Esta semana: 🧴 5 rutinas…"* */}
+      <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>
+        {panel.encabezado}
+      </p>
+      {panel.metricas.length === 0 ? (
+        <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{panel.vacio}</p>
+      ) : panel.metricas.map((m) => (
+        <div key={m.id} className="flex items-center gap-2 mb-1">
+          <span className="text-sm leading-none" aria-hidden="true">{m.icono}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px]" style={{ color: COLORS.text }}>
+              {/* ⚠️ Apartado 9 — el número y su nombre. Ni una comparación. */}
+              {m.hayDatos ? `${m.texto} — ${m.nombre}` : m.nombre}
+            </span>
+            {!m.hayDatos && (
+              <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>{m.texto}</span>
+            )}
+          </span>
+          {/* Apartado 6 — el "gráfico": ocho caracteres. */}
+          {m.barrita && (
+            <span className="text-[11px] tracking-tight" style={{ color: accent }}>{m.barrita}</span>
+          )}
+        </div>
+      ))}
+
+      {/* Apartado 8 — la racha GLOBAL, y solo si la tiene. */}
+      {panel.rachas && panel.rachas.map(({ racha, eventos }) => (
+        <p key={racha.id} className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+          🔥 {racha.nombre} — {eventos.length} {eventos.length === 1 ? 'día' : 'días'} registrados
+        </p>
+      ))}
+
+      {/* Apartado 7 — el objetivo, del sistema global. */}
+      {panel.objetivos && panel.objetivos.map((o) => (
+        <button key={o.id} onClick={() => onIr?.('objetivos', { id: o.id })}
+          className="block text-[10px] mt-1 text-left" style={{ color: accent }}>
+          🎯 {o.texto}{o.cumplido ? ' · cumplido' : ''}
+        </button>
+      ))}
+
+      {/* Apartados 3 y 14 — lo que esta pantalla NO es. */}
+      <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>{panel.sinNotas}</p>
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.privado}</p>
+    </Card>
+  );
+}
+
+
+/* ===========================================================================
    EH · F31 — ⋮ PERSONALIZAR (apartados 1 a 5, 8, 10, 14, 16 y 17)
    ===========================================================================
    ⚠️ **Esta pantalla no inventa ni un mecanismo.** Mover es `moverA` y las
@@ -7781,6 +7926,17 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
                 }
                 return onIr?.(a.destino);
               }}
+            />
+          )}
+
+          {/* ── EH F35 — 📊 Mi progreso ────────────────────────────────
+              Apartado 1: *"opcional"*. Va debajo de las Ideas y encima de
+              Descubrir: lo suyo primero, la inspiración al final. */}
+          {!ordenando && (
+            <ProgresoEH
+              estado={estado} accent={accent} armario={armario}
+              datosGlobales={datosGlobales} rachas={rachas} objetivos={objetivos}
+              onCambiar={onCambiar} onIr={onIr}
             />
           )}
 
