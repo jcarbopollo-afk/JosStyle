@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -65,7 +65,7 @@ import {
   prepararObjetivo, aplicarObjetivo,
 } from '../src/lib/objetivosEnEstiloHombre.js';
 import { ocultarMiEstilo } from '../src/lib/miEstilo.js';
-import { alternarAcceso, alternarVerAccesos } from '../src/lib/pantallaEH.js';
+import { alternarAcceso, alternarVerAccesos, cambiarTamano, alternarLinea } from '../src/lib/pantallaEH.js';
 import { guardarDato as guardarDatoEH } from '../src/lib/datosEstiloHombre.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
@@ -1119,6 +1119,44 @@ const CASOS = [
           ['EstiloHombreView · accesos rápidos apagados', EstiloHombreView, () =>
             conArmario(alternarVerAccesos(
               configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['skincare', 'barba'])))],
+          /* EH Fase 31 — tamaño, contenido, límite de accesos y personalizar. */
+          ...(() => {
+            const cinco = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE,
+              ['estilo', 'perfumes', 'skincare', 'barba', 'gustos']);
+            const seisAccesos = ['rutina_facial', 'afeitarme', 'elegir_perfume', 'mi_pelo', 'que_me_pongo', 'mis_gustos']
+              .reduce((e, id) => alternarAcceso(e, id),
+                configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE,
+                  ['skincare', 'barba', 'perfumes', 'pelo', 'estilo', 'gustos']));
+            const pp = (e) => ({
+              estado: e, accent, armario: lleno.armario, datosGlobales: {}, onCambiar: noop, onCerrar: noop,
+            });
+            return [
+              ['EstiloHombreView · plaquita grande', EstiloHombreView, () =>
+                conArmario(cambiarTamano(cinco, 'skincare', 'grande'))],
+              ['EstiloHombreView · plaquita pequeña', EstiloHombreView, () =>
+                conArmario(cambiarTamano(cinco, 'skincare', 'pequena'))],
+              ['EstiloHombreView · los tres tamaños a la vez', EstiloHombreView, () =>
+                conArmario(cambiarTamano(cambiarTamano(cinco, 'skincare', 'grande'), 'barba', 'pequena'))],
+              ['EstiloHombreView · contenido ampliado', EstiloHombreView, () =>
+                conArmario(alternarLinea(alternarLinea(cinco, 'skincare', 'productos'), 'perfumes', 'favoritos'))],
+              /* ⚠️ Todas las líneas apagadas: la plaquita se queda sin ellas a
+                 propósito, y NO vuelve el resumen de la F30 por la puerta de atrás. */
+              ['EstiloHombreView · sin ninguna línea', EstiloHombreView, () =>
+                conArmario(alternarLinea(cinco, 'skincare', 'rutina'))],
+              ['EstiloHombreView · accesos por encima del límite', EstiloHombreView, () =>
+                conArmario(seisAccesos)],
+              ['PersonalizarPlaquitas · con cinco módulos', PersonalizarPlaquitas, () => pp(cinco)],
+              ['PersonalizarPlaquitas · con uno solo', PersonalizarPlaquitas, () =>
+                pp(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['skincare']))],
+              /* ⚠️ Un módulo sin líneas: se dice, no se enseñan casillas vacías. */
+              ['PersonalizarPlaquitas · módulo sin líneas', PersonalizarPlaquitas, () =>
+                pp(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['cuerpo', 'higiene']))],
+              ['PersonalizarPlaquitas · sin nada activo', PersonalizarPlaquitas, () =>
+                pp(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],
+              ['PersonalizarPlaquitas · ya personalizado', PersonalizarPlaquitas, () =>
+                pp(alternarLinea(cambiarTamano(cinco, 'skincare', 'grande'), 'skincare', 'estadisticas'))],
+            ];
+          })(),
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],
           ['EstiloHombreView · con módulos', EstiloHombreView, () => props(conTres)],
           ['EstiloHombreView · configurado sin módulos', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],

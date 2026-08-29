@@ -248,9 +248,11 @@ escribir código.
 
 | v1.93.0 | **EH F30** | Pantalla principal y organización. ⚠️ **Los tres grupos del apartado 3 SON las categorías de la F2**: se movieron `pelo` y `barba` a `cuidado` y "Bienestar" pasó a llamarse **"Personal"** (el id no se toca), en vez de una segunda agrupación. ⚠️ **Reordenar y ocultar ya existían** (D2-07), y el orden de las secciones es el suyo. ⚠️ **Una sección no tiene interruptor: lo tienen sus módulos**. ⚠️ **Los accesos rápidos los elige él y nacen vacíos**, y solo los de un módulo activo. ⚠️ **Menos es más**: una línea por plaquita, y el vacío inicial ofrece tres opciones, no treinta |
 
+| v1.94.0 | **EH F31** | Personalización profunda de las plaquitas. ⚠️ **Casi todo el enunciado ya existía**: mover (`moverA`), ocultar, confirmar y "+ Añadir apartado" son de la **F2**; los accesos rápidos, de la **F30**; eliminar, la papelera global. Lo nuevo son **tamaño**, **contenido**, **el límite de accesos visibles** y dos botones. ⚠️ **El apartado 12 manda dónde se guarda**: `tamanos` y `contenido` van al almacén de la PANTALLA, **nunca** a la `config` del módulo que describen. ⚠️ **Tres tamaños y solo tres**, con sus columnas declaradas. ⚠️ **`LINEAS_DE_PLAQUITA` es una línea por módulo**, y cada línea sale de su propio `resumen…()`: la principal puesta, las extras apagadas. ⚠️ **Restablecer NO reactiva lo que él apagó**. ⚠️ **No se finge un "uso reciente"** que no se guarda: se dice el criterio de verdad. 🐛 Y una lista **vacía** no es "no hay lista" |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 27/65** (F1-F17, F20, F21, F23-F30; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **36** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (34, tres de ellas bloqueadas).
+3/5 y **EH por 28/65** (F1-F17, F20, F21, F23-F31; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **35** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (33, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

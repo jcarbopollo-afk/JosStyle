@@ -13,8 +13,11 @@ import {
   DEFAULT_ESTILO_HOMBRE, configurarPrimeraVez, normalizarEstiloHombre, moduloEH,
   modulosActivos, alternarModulo, CATEGORIAS_EH, categoriaEH, MODULOS_EH,
 } from '../src/lib/estiloDeHombre.js';
-import { subirModulo, modulosAgrupados, recomendados } from '../src/lib/gestionModulos.js';
+import {
+  subirModulo, modulosAgrupados, recomendados, moverA, avisoDesactivar,
+} from '../src/lib/gestionModulos.js';
 import { configurarPerfumes } from '../src/lib/perfumes.js';
+import { anadirProductoPiel } from '../src/lib/perfilPiel.js';
 import { MODULO_ANFITRION, miEstiloOculto } from '../src/lib/miEstilo.js';
 import {
   CABECERA_EH, TEXTOS_PANTALLA, seccionesDePantalla, GRUPOS_DEL_ENUNCIADO,
@@ -22,6 +25,12 @@ import {
   normalizarPantalla, datosPantalla, alternarAcceso, alternarVerAccesos, accesosActivos,
   MAX_PRIMERAS_OPCIONES, PRIMERAS_OPCIONES, empiezaPorLoQueQuieras, paraAnadir,
   resumenPantalla, auditarPantalla, textosDePantalla, panelPantalla,
+  // ── EH F31 ──
+  TAMANOS_PLAQUITA, TAMANO_POR_DEFECTO, tamanoPlaquita, tamanoDe, cambiarTamano,
+  LINEAS_DE_PLAQUITA, lineasDisponibles, lineasPorDefecto, lineasActivas, alternarLinea,
+  contenidoDePlaquita, SIN_LINEAS, MAX_ACCESOS_VISIBLES, accesosVisibles,
+  TEXTOS_RESTABLECER, restablecerDiseno, CRITERIO_AUTOMATICO, TEXTOS_AUTOMATICO,
+  personalizarAutomaticamente, TEXTOS_MOVER, panelPersonalizar,
 } from '../src/lib/pantallaEH.js';
 
 let n = 0; let fallos = 0;
@@ -259,7 +268,14 @@ console.log('\nTest 8 — ⚠️ lo que la portada NO enseña');
   eq(a.diarios, 0, 'ni diario');
   eq(a.calendarios, 0, 'ni calendario');
   eq(a.papelerasNuevas, 0, 'y cero papeleras (apartado 17)');
-  eq(a.datosGuardados, 2, '⚠️ y lo que guarda son dos cosas, las dos suyas');
+  /* ⚠️ **Por su nombre, no por una cuenta.** La F31 añadió `tamanos` y
+     `contenido` con todo el derecho, y una cifra exacta habría saltado por algo
+     que estaba bien: es la cuarta vez que pasa en este bloque. */
+  ['accesos', 'verAccesos'].forEach((k) => {
+    ok(a.datosGuardados.includes(k), `guarda "${k}", que es suyo`);
+  });
+  eq(a.datosGuardados, Object.keys(DEFAULT_PANTALLA),
+    '⚠️ y lo que guarda es exactamente lo que declara el defecto');
 
   const fuente = readFileSync(new URL('../src/lib/pantallaEH.js', import.meta.url), 'utf8');
   ok(!/from '\.\/calendario|from '\.\/diario|from '\.\/motorProductos/.test(fuente),
@@ -315,6 +331,355 @@ console.log('\nTest 10 — el panel que dibuja la pantalla');
   ok(textosDePantalla().every((t) => typeof t === 'string' && t.length > 0), 'ninguno está vacío');
   ok(!textosDePantalla().some((t) => /debes|tienes que|obligatorio/i.test(t)),
     'y ninguno le manda');
+}
+
+/* ###########################################################################
+   EH · Fase 31/65 — PERSONALIZACIÓN PROFUNDA DE LAS PLAQUITAS
+   ###########################################################################
+   Las catorce pruebas del apartado 18, y lo que gobierna la fase:
+     · el apartado 12: tocar la plaquita de Skincare NO toca a Skincare
+     · ocultar y volver no pierde nada (apartados 8 y 13)
+     · restablecer NO reactiva lo que él apagó
+     · sin `confirmado` no escribe ninguno de los dos
+     · y no se finge un "uso reciente" que no se guarda en ningún sitio
+   ########################################################################### */
+
+console.log('\n\n🎛️   EH · Fase 31/65 — Personalización profunda de las plaquitas\n');
+
+/* ===========================================================================
+   Test 11 — ⚠️ NADA NUEVO PARA MOVER, OCULTAR NI CONFIRMAR (apartados 1, 2, 3, 9 y 16)
+   =========================================================================== */
+console.log('Test 11 — ⚠️ lo que ya existía, no se repite');
+{
+  const e = con(['estilo', 'perfumes', 'skincare']);
+
+  // Apartado 3 — *"mantener pulsada una plaquita y moverla"*: `moverA` de la F2.
+  eq(modulosActivos(moverA(e, 'skincare', 0)).map((m) => m.id),
+    ['skincare', 'estilo', 'perfumes'],
+    '⚠️ mover a una posición es `moverA()` de la Fase 2 (prueba 1)');
+  eq(modulosActivos(moverA(e, 'estilo', 99)).map((m) => m.id),
+    ['perfumes', 'skincare', 'estilo'],
+    'y un índice imposible se queda en el borde, no rompe nada');
+  ok(TEXTOS_MOVER.mover.includes('Mover'), 'la pantalla lo ofrece con ese nombre');
+  ok(TEXTOS_MOVER.eligiendo.includes('dónde'), 'y dice qué hacer después de pulsarlo');
+
+  // Apartado 2 — 👁️ Ocultar es `alternarModulo`, y apartado 16 su confirmación.
+  const sinPiel = alternarModulo(e, 'skincare', false);
+  ok(!modulosActivos(sinPiel).some((m) => m.id === 'skincare'),
+    '⚠️ ocultar es `alternarModulo` de la Fase 2 (prueba 2)');
+  const aviso = avisoDesactivar(e, 'skincare', { tieneDatos: () => true });
+  ok(!!aviso && aviso.texto.includes('no se eliminarán'),
+    '⚠️ y el aviso del apartado 16 ya existía, con su *"tus datos no se eliminarán"*');
+
+  // Apartado 9 — "+ Añadir apartado" trae los ocultos.
+  ok(paraAnadir(sinPiel).some((m) => m.id === 'skincare'),
+    '⚠️ y desde "+ Añadir apartado" vuelve a aparecer (prueba 3)');
+
+  /* ⚠️ Y esta fase NO declara su propio orden ni su propio interruptor. */
+  const fuente = readFileSync(new URL('../src/lib/pantallaEH.js', import.meta.url), 'utf8');
+  const sinComentarios = fuente.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  ok(!/function\s+(subir|bajar|ocultar)Modulo/.test(sinComentarios),
+    '⚠️ el archivo no redefine subir, bajar ni ocultar (D2-07)');
+  eq(auditarPantalla(e).listasDeOrden, 0, 'y la auditoría lo dice: cero listas de orden');
+}
+
+/* ===========================================================================
+   Test 12 — TAMAÑO (apartado 4 · prueba 4)
+   =========================================================================== */
+console.log('\nTest 12 — tres tamaños, y solo tres');
+{
+  const e = con(['skincare', 'perfumes']);
+  eq(TAMANOS_PLAQUITA.map((t) => t.id), ['pequena', 'mediana', 'grande'],
+    'los tres del enunciado, en ese orden');
+  eq(TAMANOS_PLAQUITA.length, 3,
+    '⚠️ y NINGUNO más: *"no permitir tamaños completamente libres"*');
+  ok(TAMANOS_PLAQUITA.every((t) => t.columnas >= 1 && t.columnas <= 2),
+    'cada uno declara sus columnas, así que la pantalla no improvisa');
+  eq(tamanoPlaquita('grande').columnas, 2, 'la grande ocupa las dos');
+  eq(tamanoPlaquita('pequena').conLineas, false, 'y la pequeña se queda sin líneas');
+
+  eq(tamanoDe(e, 'skincare').id, TAMANO_POR_DEFECTO, 'de partida, mediana');
+  const grande = cambiarTamano(e, 'skincare', 'grande');
+  eq(tamanoDe(grande, 'skincare').id, 'grande', 'se puede cambiar (prueba 4)');
+  eq(tamanoDe(grande, 'perfumes').id, 'mediana', '⚠️ y solo cambia esa plaquita');
+
+  eq(datosPantalla(cambiarTamano(grande, 'skincare', 'inventado')).tamanos, { skincare: 'grande' },
+    '⚠️ un tamaño que no existe NO se escribe: no se rompe el diseño');
+  eq(tamanoDe(normalizarPantalla({ tamanos: { skincare: 'gigante' } }) && cambiarTamano(e, 'skincare', 'gigante'), 'skincare').id,
+    'mediana', 'y uno inventado cae en mediana');
+  eq(normalizarPantalla({ tamanos: { fantasma: 'grande' } }).tamanos, {},
+    'un módulo que ya no existe tampoco sobrevive');
+
+  eq(datosPantalla(cambiarTamano(grande, 'skincare', 'mediana')).tamanos, {},
+    '⚠️ volver al defecto QUITA la excepción, no guarda una copia de la norma');
+
+  const sec = seccionesDePantalla(grande, { armario: ARM });
+  const piel = sec.flatMap((s) => s.modulos).find((m) => m.id === 'skincare');
+  eq(piel.tamano.id, 'grande', 'y la pantalla recibe el tamaño ya resuelto');
+}
+
+/* ===========================================================================
+   Test 13 — CONTENIDO (apartado 5 · prueba 5)
+   =========================================================================== */
+console.log('\nTest 13 — qué información aparece dentro');
+{
+  const e = con(['skincare', 'perfumes', 'gustos']);
+
+  // Las cuatro del ejemplo del enunciado, con sus nombres.
+  eq(lineasDisponibles('skincare').map((l) => l.nombre),
+    ['Rutina actual', 'Próximo recordatorio', 'Productos', 'Estadísticas'],
+    '⚠️ las cuatro del ejemplo del apartado 5, con sus nombres');
+  eq(lineasDisponibles('skincare').filter((l) => l.principal).length, 1,
+    'una sola principal por módulo');
+  eq(lineasActivas(e, 'skincare'), ['rutina'],
+    '⚠️ de fábrica, SOLO la principal: las extras vienen apagadas (F30, apartado 8)');
+  eq(auditarPantalla(e).lineasExtraPorDefecto, 0,
+    'y la auditoría lo comprueba en todos los módulos a la vez');
+
+  const conProductos = alternarLinea(e, 'skincare', 'productos');
+  eq(lineasActivas(conProductos, 'skincare'), ['rutina', 'productos'],
+    'él puede encender una extra (prueba 5)');
+  eq(lineasActivas(alternarLinea(conProductos, 'skincare', 'productos'), 'skincare'), ['rutina'],
+    'y volver a apagarla');
+  eq(lineasActivas(conProductos, 'perfumes'), ['coleccion'],
+    '⚠️ y no toca las de otra plaquita');
+
+  const sinNada = alternarLinea(e, 'skincare', 'rutina');
+  eq(lineasActivas(sinNada, 'skincare'), [],
+    '⚠️ puede quitarlas TODAS: es una decisión suya');
+  eq(datosPantalla(sinNada).contenido.skincare, [],
+    '⚠️ y se guarda una lista vacía, no un hueco: apagado y sin tocar son dos cosas');
+  eq(contenidoDePlaquita(sinNada, 'skincare', { armario: ARM }), [],
+    'así que la plaquita se queda sin líneas');
+
+  eq(lineasActivas(alternarLinea(e, 'skincare', 'inventada'), 'skincare'), ['rutina'],
+    'una línea que no existe no se enciende');
+  eq(normalizarPantalla({ contenido: { skincare: ['fantasma', 'rutina'] } }).contenido.skincare,
+    ['rutina'], '⚠️ y una guardada de otra versión no revive');
+
+  /* ⚠️ Regla 8 — un módulo sin pantalla propia NO enseña casillas vacías. */
+  eq(lineasDisponibles('cuerpo'), [], 'un módulo sin pantalla todavía no tiene líneas');
+  const panel = panelPersonalizar(con(['cuerpo']), { armario: ARM });
+  eq(panel.modulos[0].sinLineas, SIN_LINEAS, '⚠️ y se dice, en vez de dejarlo en blanco');
+  ok(!/pr[oó]ximamente/i.test(SIN_LINEAS), 'sin prometer nada');
+
+  // La pequeña no pinta líneas, por definición (apartado 4).
+  eq(contenidoDePlaquita(cambiarTamano(conProductos, 'skincare', 'pequena'), 'skincare', { armario: ARM }),
+    [], '⚠️ la plaquita pequeña se queda solo con icono y nombre');
+  eq(lineasActivas(cambiarTamano(conProductos, 'skincare', 'pequena'), 'skincare'),
+    ['rutina', 'productos'],
+    '⚠️ pero sin perder lo que había elegido: al agrandarla, vuelve');
+}
+
+/* ===========================================================================
+   Test 14 — ⚠️ EL APARTADO 12: NO AFECTAR A OTROS MÓDULOS
+   =========================================================================== */
+console.log('\nTest 14 — ⚠️ tocar la plaquita de Skincare NO toca a Skincare (prueba 14)');
+{
+  /* Un Skincare con datos de verdad, para que se note si algo se los lleva. */
+  const base = anadirProductoPiel(con(['skincare', 'perfumes']), 'Crema hidratante').estado;
+  const configDe = (est, id) => normalizarEstiloHombre(est).modulos.find((m) => m.id === id).config;
+  const antes = JSON.stringify(configDe(base, 'skincare'));
+
+  const tocada = alternarLinea(cambiarTamano(base, 'skincare', 'grande'), 'skincare', 'productos');
+  eq(JSON.stringify(configDe(tocada, 'skincare')), antes,
+    '⚠️ *"solo cambia su representación… NO modifica la configuración interna de Skincare"*');
+  eq(configDe(tocada, MODULO_ANFITRION).pantalla.tamanos, { skincare: 'grande' },
+    '⚠️ lo de la presentación vive en el almacén de la pantalla, no en el módulo');
+  eq(configDe(tocada, MODULO_ANFITRION).pantalla.contenido, { skincare: ['rutina', 'productos'] },
+    'y el contenido, en el mismo sitio');
+  eq(auditarPantalla(base).escrituraEnOtrosModulos, 0,
+    'la auditoría: cero escrituras en la config de otro módulo');
+
+  /* Y lo mismo con Perfumes, para que no sea un caso suelto. */
+  const antesPerf = JSON.stringify(configDe(base, 'perfumes'));
+  const tocada2 = cambiarTamano(base, 'perfumes', 'pequena');
+  eq(JSON.stringify(configDe(tocada2, 'perfumes')), antesPerf, 'igual con Perfumes');
+
+  /* ⚠️ Y el código no llama a `guardarConfig` sobre nada que no sea el anfitrión. */
+  const fuente = readFileSync(new URL('../src/lib/pantallaEH.js', import.meta.url), 'utf8');
+  const llamadas = fuente.match(/guardarConfig\(([^)]*)\)/g) || [];
+  ok(llamadas.every((l) => l.includes('MODULO_ANFITRION')),
+    '⚠️ y en el código, `guardarConfig` solo se llama sobre el módulo anfitrión');
+}
+
+/* ===========================================================================
+   Test 15 — OCULTAR NO BORRA (apartados 8 y 13 · pruebas 2, 3 y 9)
+   =========================================================================== */
+console.log('\nTest 15 — ⚠️ *"los datos siguen existiendo"*');
+{
+  const e = alternarLinea(cambiarTamano(con(['skincare', 'perfumes']), 'skincare', 'grande'),
+    'skincare', 'estadisticas');
+  const oculto = alternarModulo(e, 'skincare', false);
+  eq(datosPantalla(oculto).tamanos, { skincare: 'grande' },
+    '⚠️ ocultar la plaquita NO borra su tamaño (apartado 8)');
+  eq(datosPantalla(oculto).contenido.skincare, ['rutina', 'estadisticas'],
+    'ni su contenido');
+  const vuelve = alternarModulo(oculto, 'skincare', true);
+  eq(tamanoDe(vuelve, 'skincare').id, 'grande',
+    '⚠️ y al volver a mostrarla, está como la dejó (pruebas 3 y 9)');
+  eq(lineasActivas(vuelve, 'skincare'), ['rutina', 'estadisticas'], 'con sus líneas');
+
+  ok(TEXTOS_PANTALLA.ocultarNoBorra.includes('no borra'),
+    'y la pantalla lo dice antes de que lo pruebe');
+  // Apartado 13 — eliminar de verdad es la papelera global, que aquí no se toca.
+  eq(auditarPantalla(e).papelerasNuevas, 0, '⚠️ y eliminar sigue siendo la papelera global');
+}
+
+/* ===========================================================================
+   Test 16 — LÍMITE DE ACCESOS RÁPIDOS (apartado 7 · pruebas 6 y 7)
+   =========================================================================== */
+console.log('\nTest 16 — ⚡ *"no permitir crear 50 accesos rápidos"*');
+{
+  const e = con(['skincare', 'barba', 'perfumes', 'pelo', 'estilo', 'gustos']);
+  eq(accesosVisibles(e).lista, [], 'sin accesos elegidos, ninguno (prueba 7)');
+
+  let conAccesos = e;
+  ['rutina_facial', 'afeitarme', 'elegir_perfume', 'mi_pelo'].forEach((id) => {
+    conAccesos = alternarAcceso(conAccesos, id);
+  });
+  const cuatro = accesosVisibles(conAccesos);
+  eq(cuatro.lista.length, 4, 'cuatro caben enteros (prueba 6)');
+  eq(cuatro.hayMas, false, 'y no hace falta "Mostrar todos"');
+
+  const seis = alternarAcceso(alternarAcceso(conAccesos, 'que_me_pongo'), 'mis_gustos');
+  const v = accesosVisibles(seis);
+  eq(v.lista.length, MAX_ACCESOS_VISIBLES, '⚠️ pasado el límite, se pintan los que caben');
+  eq(v.ocultos, 2, 'y se dice cuántos quedan detrás');
+  eq(v.hayMas, true, 'con su "Mostrar todos"');
+  eq(v.total, 6, '⚠️ sin perder ninguno: solo no se pintan');
+  eq(accesosVisibles(seis, { todos: true }).lista.length, 6,
+    'y con "Mostrar todos" salen los seis');
+  ok(TEXTOS_PANTALLA.mostrarTodos === 'Mostrar todos', 'el texto es el del enunciado');
+
+  eq(accesosVisibles(alternarVerAccesos(seis)), null,
+    '⚠️ con la zona apagada, `null`: apagada y vacía son dos cosas');
+  eq(panelPantalla(seis, { armario: ARM }).visibles.hayMas, true, 'y el panel lo trae');
+}
+
+/* ===========================================================================
+   Test 17 — RESTABLECER DISEÑO (apartado 10 · prueba 8)
+   =========================================================================== */
+console.log('\nTest 17 — 🔄 restablecer, con permiso');
+{
+  const e = con(['estilo', 'perfumes', 'skincare']);
+  const tocado = alternarAcceso(
+    alternarLinea(cambiarTamano(moverA(e, 'skincare', 0), 'skincare', 'grande'), 'skincare', 'productos'),
+    'rutina_facial',
+  );
+  eq(modulosActivos(tocado).map((m) => m.id)[0], 'skincare', 'de partida, todo cambiado');
+
+  // ⚠️ Décimo `aplicarPlan`: sin confirmar, NO escribe.
+  const sinConfirmar = restablecerDiseno(tocado);
+  eq(sinConfirmar.aplicado, false, '⚠️ sin `confirmado` no hace nada');
+  eq(sinConfirmar.estado, normalizarEstiloHombre(tocado), 'y devuelve el estado tal cual');
+  eq(sinConfirmar.aviso.pregunta, '¿Quieres recuperar la distribución predeterminada?',
+    'con la pregunta literal del enunciado');
+  eq(sinConfirmar.aviso.noBorra, 'Esto no elimina datos.', 'y su *"esto no elimina datos"*');
+  eq([sinConfirmar.aviso.cancelar, sinConfirmar.aviso.confirmar], ['Cancelar', 'Restablecer'],
+    'con las dos opciones que pide');
+
+  const hecho = restablecerDiseno(tocado, { confirmado: true });
+  eq(hecho.aplicado, true, 'confirmando, sí (prueba 8)');
+  eq(datosPantalla(hecho.estado).tamanos, {}, 'los tamaños vuelven a lo de fábrica');
+  eq(datosPantalla(hecho.estado).contenido, {}, 'el contenido también');
+  eq(datosPantalla(hecho.estado).accesos, [], 'y los accesos');
+  eq(modulosActivos(hecho.estado).map((m) => m.id), ['estilo', 'skincare', 'perfumes'],
+    'y el orden vuelve al del catálogo');
+
+  /* ⚠️ Lo que NO hace: reactivar lo que él apagó. */
+  const apagado = alternarModulo(tocado, 'perfumes', false);
+  const tras = restablecerDiseno(apagado, { confirmado: true }).estado;
+  ok(!modulosActivos(tras).some((m) => m.id === 'perfumes'),
+    '⚠️ restablecer NO reactiva lo que él quitó: eso lo decidió él');
+  ok(TEXTOS_RESTABLECER.noReactiva.includes('siguen quitados'),
+    'y la pantalla lo dice antes de pulsar');
+
+  /* Y no toca los datos de ningún módulo (el *"esto no elimina datos"*). */
+  const cfg = (est, id) => JSON.stringify(normalizarEstiloHombre(est).modulos.find((m) => m.id === id).config);
+  eq(cfg(hecho.estado, 'skincare'), cfg(tocado, 'skincare'),
+    '⚠️ y la config de Skincare sale intacta: restablecer es de diseño');
+}
+
+/* ===========================================================================
+   Test 18 — PERSONALIZAR AUTOMÁTICAMENTE (apartado 17)
+   =========================================================================== */
+console.log('\nTest 18 — ✨ *"solo si el usuario lo solicita"*');
+{
+  /* Perfumes configurado, Skincare no, Cuerpo todavía sin pantalla. */
+  /* ⚠️ `configurarPrimeraVez` numera por el ORDEN DE LA LISTA que se le pasa,
+     no por el del catálogo: es la lección de la F30. Así que se parte de lo
+     vacío arriba del todo, que es justo lo que esta función tiene que arreglar. */
+  const e = configurarPerfumes(con(['cuerpo', 'skincare', 'perfumes']), { hoy: HOY }).estado;
+  eq(modulosActivos(e).map((m) => m.id), ['cuerpo', 'skincare', 'perfumes'],
+    'de partida, lo vacío arriba del todo');
+
+  const sinConfirmar = personalizarAutomaticamente(e, { armario: ARM });
+  eq(sinConfirmar.aplicado, false, '⚠️ undécimo `aplicarPlan`: sin `confirmado` no escribe');
+  eq(sinConfirmar.estado, normalizarEstiloHombre(e), 'y el estado sale igual');
+  eq(sinConfirmar.propuesta, ['perfumes', 'skincare', 'cuerpo'], 'pero enseña lo que haría');
+  eq(modulosActivos(e).map((m) => m.id), ['cuerpo', 'skincare', 'perfumes'],
+    '⚠️ y enseñarlo no ha movido nada');
+
+  const hecho = personalizarAutomaticamente(e, { armario: ARM, confirmado: true });
+  eq(modulosActivos(hecho.estado).map((m) => m.id), ['perfumes', 'skincare', 'cuerpo'],
+    '⚠️ lo configurado primero, lo vacío después y lo que no tiene pantalla al final');
+  eq(hecho.aplicado, true, 'y se aplica');
+
+  /* ⚠️ NO se finge un "uso reciente" que no existe. */
+  eq(auditarPantalla(e).registrosDeUso, 0,
+    '⚠️ no se guarda ni un registro de cuándo abrió cada módulo');
+  ok(CRITERIO_AUTOMATICO.includes('No se mira cuándo abriste cada uno'),
+    '⚠️ y la pantalla dice el criterio de verdad, en vez de dar a entender otro');
+  const fuente = readFileSync(new URL('../src/lib/pantallaEH.js', import.meta.url), 'utf8');
+  ok(!/ultimoUso|ultimaApertura|visitas|contadorDeUso/i.test(fuente),
+    'ni el código guarda nada parecido');
+
+  // Empate: se queda como estaba. Nunca se baraja lo que él ya ordenó.
+  const dosIguales = con(['skincare', 'perfumes']);
+  const p = personalizarAutomaticamente(dosIguales, { armario: ARM });
+  eq(p.propuesta, modulosActivos(dosIguales).map((m) => m.id),
+    '⚠️ con todo empatado, el orden no cambia');
+  eq(p.cambia, false, 'y se dice que no hay nada que cambiar');
+  eq(TEXTOS_AUTOMATICO.sinCambios, 'Ya están en ese orden.', 'con su frase');
+}
+
+/* ===========================================================================
+   Test 19 — PERSISTENCIA Y PANEL (apartado 11 · pruebas 9, 10, 11, 12 y 13)
+   =========================================================================== */
+console.log('\nTest 19 — *"debe persistir entre sesiones y dispositivos"*');
+{
+  const e = alternarLinea(cambiarTamano(con(['skincare', 'perfumes']), 'skincare', 'grande'),
+    'skincare', 'productos');
+  const guardado = datosPantalla(e);
+  const releido = normalizarPantalla(JSON.parse(JSON.stringify(guardado)));
+  eq(releido, guardado,
+    '⚠️ guardar y volver a leer devuelve lo mismo (pruebas 9, 10 y 11 · regla 5)');
+  eq(releido.tamanos, { skincare: 'grande' }, 'el tamaño sobrevive');
+  eq(releido.contenido, { skincare: ['rutina', 'productos'] }, 'y el contenido');
+
+  const panel = panelPersonalizar(e, { armario: ARM });
+  eq(panel.modulos.length, 2, 'el panel trae una fila por módulo activo');
+  eq(panel.modulos[0].tamanos.length, 3, 'con los tres tamaños para elegir');
+  ok(panel.modulos.every((m) => typeof m.posicion === 'number' && m.de === 2),
+    'y dónde está cada uno, para poder moverlo');
+  const piel = panel.modulos.find((m) => m.id === 'skincare');
+  eq(piel.lineas.filter((l) => l.puesta).map((l) => l.id), ['rutina', 'productos'],
+    'con sus casillas marcadas');
+  eq(piel.sinLineas, null, 'y sin el aviso, porque sí tiene líneas');
+  eq(panel.maxAccesos, MAX_ACCESOS_VISIBLES, 'y el límite de accesos, dicho');
+
+  /* Pruebas 12 y 13 — modo oscuro y pantalla pequeña: esto no elige colores ni
+     píxeles, y por eso no puede romperlos. Se comprueba que no los toca. */
+  const fuente = readFileSync(new URL('../src/lib/pantallaEH.js', import.meta.url), 'utf8');
+  ok(!/#[0-9a-fA-F]{6}|COLORS/.test(fuente),
+    '⚠️ ni un color aquí dentro: el tema es de `tokens.js` (prueba 12 · regla 2)');
+  ok(!/\bwidth\s*:|\bpx\b/.test(fuente.replace(/\/\*[\s\S]*?\*\//g, '')),
+    'ni una medida en píxeles: la pantalla pequeña la resuelve el diseño (prueba 13)');
+
+  ok(textosDePantalla().length > 30, 'los textos nuevos también se barren');
+  ok(!textosDePantalla().some((t) => /debes|tienes que|obligatorio|has fallado/i.test(t)),
+    'y ninguno le manda ni le reprocha');
 }
 
 console.log(`\n${fallos === 0 ? '✅' : '❌'} ${n - fallos}/${n} comprobaciones\n`);

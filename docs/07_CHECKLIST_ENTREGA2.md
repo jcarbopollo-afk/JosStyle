@@ -2164,39 +2164,76 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Animaciones.
 - [x] Persistencia.
 
-#### EH · Fase 31/65 — PERSONALIZACIÓN PROFUNDA DE LAS PLAQUITAS
-- [ ] MODO «PERSONALIZAR»
-- [ ] CADA PLAQUITA
-- [ ] ARRASTRAR
-- [ ] TAMAÑO
-- [ ] CONTENIDO
-- [ ] ACCESOS RÁPIDOS
-- [ ] LÍMITE DE ACCESOS
-- [ ] OCULTAR
-- [ ] RECUPERAR
-- [ ] RESTABLECER
-- [ ] CONFIGURACIÓN POR USUARIO
-- [ ] NO AFECTAR A OTROS MÓDULOS
-- [ ] DATOS CONSERVADOS
-- [ ] ANIMACIONES
-- [ ] MÓVIL
-- [ ] PREVENIR ERRORES
-- [ ] PERSONALIZACIÓN RÁPIDA
-- [ ] PRUEBAS
-- [ ] Mover.
-- [ ] Ocultar.
-- [ ] Mostrar.
-- [ ] Cambiar tamaño.
-- [ ] Cambiar contenido.
-- [ ] Crear acceso rápido.
-- [ ] Eliminar acceso rápido.
-- [ ] Restablecer.
-- [ ] Salir y volver a entrar.
-- [ ] Cerrar sesión y volver.
-- [ ] Probar otro dispositivo.
-- [ ] Modo oscuro.
-- [ ] Pantalla pequeña.
-- [ ] Comprobar que los datos internos no cambian.
+#### EH · Fase 31/65 — PERSONALIZACIÓN PROFUNDA DE LAS PLAQUITAS ✅ COMPLETADA (v1.94.0)
+
+> **`src/lib/pantallaEH.js`** (sección 5, 106 comprobaciones nuevas) + `PersonalizarPlaquitas` en
+> `EstiloHombreView.jsx`. Sin archivo nuevo y sin SQL.
+>
+> ⚠️ **Casi todo lo que el enunciado pide YA EXISTÍA**, y esta fase no lo repite: mover, ocultar,
+> confirmar y "+ Añadir apartado" son de la **Fase 2** (`moverA`, `subirModulo`, `alternarModulo`,
+> `avisoDesactivar`, `recomendados`); los accesos rápidos, de la **Fase 30**; y eliminar de verdad
+> sigue siendo la **papelera global** de ME F3. Lo nuevo son cuatro cosas: **tamaño**, **contenido**,
+> **el límite de accesos visibles** y los dos botones de abajo.
+>
+> ⚠️ **El apartado 12 manda sobre dónde se guarda lo nuevo**: *"cambiar la plaquita de Skincare
+> **solo cambia su representación**… **no modifica la configuración interna de Skincare**"*. Así que
+> `tamanos` y `contenido` van en el almacén de la **pantalla**, indexados por id de módulo, y **nunca**
+> dentro de la `config` del módulo que describen. Tres pruebas lo comprueban, una de ellas leyendo el
+> código para exigir que `guardarConfig` solo se llame sobre el módulo anfitrión.
+>
+> ⚠️ **Tres tamaños y solo tres** (apartado 4). Cada uno **declara sus columnas**, así que la grande
+> ocupa las dos sin un `if` por módulo, y **volver a "mediana" quita la excepción** en vez de guardar
+> una copia de la norma.
+>
+> ⚠️ **`LINEAS_DE_PLAQUITA` es una línea por módulo**, el mismo punto de extensión que
+> `FUENTES_DE_ESTADO` (F29) y `MODULOS_EH` (F1), y **cada línea sale del `resumen…()` de su módulo**.
+> La principal viene puesta; las extras, apagadas — que es lo que concilia el apartado 5 con el "menos
+> es más" de la F30. Un módulo sin líneas **lo dice** (regla 8).
+>
+> ⚠️ **Restablecer NO reactiva lo que él apagó** (apartado 10): eso fue una decisión suya, no
+> "distribución". Décimo `aplicarPlan`: **sin `confirmado` no escribe**.
+>
+> ⚠️ **No se finge un "uso reciente" que no existe** (apartado 17). No hay ningún registro de uso, y
+> crearlo obligaría a escribir en cada navegación. Se ordena por lo configurado / vacío / todavía sin
+> contenido, **y la pantalla dice ese criterio con esas palabras**. Undécimo `aplicarPlan`.
+>
+> ⚠️ **Y una lista vacía no es "no hay lista"**: sin distinguirlas, apagar todas las líneas de una
+> plaquita hacía volver el resumen de la F30 por la puerta de atrás. Lo separa `tieneLineas`. Es la
+> lección de la F25 (`null` no es `[]`) por tercera vez en el bloque.
+
+- [x] MODO «PERSONALIZAR»
+- [x] CADA PLAQUITA
+- [x] ARRASTRAR
+- [x] TAMAÑO
+- [x] CONTENIDO
+- [x] ACCESOS RÁPIDOS
+- [x] LÍMITE DE ACCESOS
+- [x] OCULTAR
+- [x] RECUPERAR
+- [x] RESTABLECER
+- [x] CONFIGURACIÓN POR USUARIO
+- [x] NO AFECTAR A OTROS MÓDULOS
+- [x] DATOS CONSERVADOS
+- [x] ANIMACIONES
+- [x] MÓVIL
+- [x] PREVENIR ERRORES
+- [x] PERSONALIZACIÓN RÁPIDA
+- [x] PRUEBAS
+- [x] Mover.
+- [x] Ocultar.
+- [x] Mostrar.
+- [x] Cambiar tamaño.
+- [x] Cambiar contenido.
+- [x] Crear acceso rápido.
+- [x] Eliminar acceso rápido.
+- [x] Restablecer.
+- [x] Salir y volver a entrar.
+- [x] Cerrar sesión y volver.
+- [ ] Probar otro dispositivo. ⏸ **R1** — va a Supabase como todo lo demás, pero eso solo lo puede
+      comprobar Josué con dos aparatos de verdad.
+- [x] Modo oscuro.
+- [x] Pantalla pequeña.
+- [x] Comprobar que los datos internos no cambian.
 
 #### EH · Fase 32/65 — RECOMENDACIONES GENERALES DE ESTILO
 - [ ] PLAQUITA

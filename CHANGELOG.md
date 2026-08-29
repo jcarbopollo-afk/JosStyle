@@ -1,5 +1,91 @@
 # CHANGELOG.md
 
+## v1.94.0 — EH Fase 31/65: personalización profunda de las plaquitas
+
+### Qué se ha construido
+La pantalla **⋮ Personalizar** de Estilo de hombre, y lo que hace falta para que funcione: el
+**tamaño** de cada plaquita (pequeña · mediana · grande), **qué información aparece dentro**, el
+**límite de accesos rápidos** con su *"Mostrar todos"*, **🔄 Restablecer diseño** y **✨ Personalizar
+automáticamente**.
+
+*"La aplicación se adapta al usuario, no el usuario a la aplicación."* Y su regla: *"si el usuario no
+quiere algo, lo puede quitar. Y si después lo quiere, lo puede volver a activar. **Sin perder sus
+datos**."*
+
+### ⚠️ Casi todo lo que el enunciado pide ya existía, y no se ha repetido
+| El enunciado pide | Ya existía, desde |
+|---|---|
+| Apartado 1 — modo *"⋮ Personalizar"* | `ordenando` + `GestionarApartados` (F2) |
+| Apartado 2 — mover / mostrar / ocultar / configurar | `subirModulo`, `bajarModulo`, `alternarModulo` (F2) |
+| Apartado 3 — arrastrar a una posición | **`moverA(estado, id, indice)`**, escrita en la F2 *"para el drag & drop"* |
+| Apartado 6 — accesos rápidos | `ACCESOS_DISPONIBLES` + `alternarAcceso` (F30) |
+| Apartado 9 — *"+ Añadir apartado"* con los ocultos | `paraAnadir()` (F30) sobre `recomendados()` (F2) |
+| Apartado 16 — confirmar antes de quitar | `avisoDesactivar()` + el flujo de `pendiente` (F2) |
+| Apartado 13 — eliminar de verdad | la papelera global (ME F3) |
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ El apartado 12 manda sobre dónde se guarda todo lo nuevo.** *"Cambiar la plaquita de Skincare
+**solo cambia su representación** en Estilo de hombre. **No modifica la configuración interna de
+Skincare**."* Así que `tamanos` y `contenido` van en el almacén de la **pantalla** —junto a los accesos
+de la F30—, indexados por id de módulo, y **nunca dentro de la `config` del módulo al que describen**.
+Hay dos pruebas que guardan la `config` de Skincare, tocan su plaquita y comprueban que sale
+**idéntica**, y una tercera que lee el código y falla si `guardarConfig` se llama sobre algo que no sea
+el módulo anfitrión.
+
+**2. ⚠️ Tres tamaños, y solo tres** (apartado 4: *"no permitir tamaños completamente libres que puedan
+romper el diseño"*). Cada uno **declara sus columnas**, así que la grande ocupa las dos sin que la
+pantalla tenga un `if` por módulo. Y **volver a "mediana" quita la excepción** en vez de guardar una
+copia de la norma.
+
+**3. ⚠️ El contenido es una línea por módulo, y cada línea sale de su propio `resumen…()`**
+(`LINEAS_DE_PLAQUITA`, el mismo punto de extensión que `FUENTES_DE_ESTADO` en la F29 y `MODULOS_EH` en
+la F1). Ni un dato nuevo, ni una copia. **La principal viene puesta; las extras, apagadas** — que es lo
+que concilia esta fase con el *"no mostrar automáticamente estadísticas ni productos"* de la F30:
+**automáticamente no, pero él puede**. Un módulo sin líneas **lo dice**, en vez de enseñar casillas que
+no hacen nada (regla 8).
+
+**4. ⚠️ Restablecer NO reactiva lo que él apagó** (apartado 10). Devuelve orden, tamaños, contenido y
+accesos a lo de fábrica, pero **apagar Barba fue una decisión suya, no "distribución"**: volver a
+encenderla sería decidir por él. La pantalla lo dice con una frase, junto al *"esto no elimina datos"*
+que pide el enunciado. Décimo `aplicarPlan` del proyecto: **sin `confirmado` no escribe**.
+
+**5. ⚠️ No se finge un "uso reciente" que no existe** (apartado 17: *"puede organizar las plaquitas
+según el uso reciente"*). **No hay ningún registro de uso**, y crearlo obligaría a escribir en cada
+navegación. Así que se ordena por lo que sí se puede saber sin inventar nada —lo configurado primero,
+lo vacío después, y al final lo que todavía no tiene contenido en la aplicación— **y la pantalla dice
+ese criterio con estas palabras**: *"no se mira cuándo abriste cada uno: eso no se guarda en ningún
+sitio"*. Undécimo `aplicarPlan`. Y **con todo empatado no se baraja nada**: el orden se queda como él
+lo dejó.
+
+**6. ⚠️ El límite es de lo que se pinta** (apartado 7: *"no permitir crear 50 accesos rápidos. Si hay
+demasiados: Mostrar todos"*). Un tope de cuántos puede elegir, por encima de los que hay en el
+catálogo, sería un control que no salta nunca (regla 8). Así que se pintan los que caben y se dice
+cuántos quedan detrás — que es el remedio que da el propio enunciado.
+
+### ⚠️ Un fallo que se cazó escribiendo la pantalla
+Una lista de líneas **vacía** y **no haber pasado ninguna** no son lo mismo. Sin distinguirlas, apagar
+todas las líneas de una plaquita hacía **volver el resumen de la F30 por la puerta de atrás**: justo lo
+que él acababa de decir que no quería ver. Lo resuelve `tieneLineas`, que dice si el módulo **declara**
+líneas, separado de cuántas están encendidas. Es la misma lección de la F25 (`null` no es `[]`), la
+tercera vez en el bloque.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **106 comprobaciones nuevas**, **1076 casos de
+renderizado** (44 nuevos) y **231 comprobaciones en Chromium** (13 nuevas): se entra, se abre
+⋮ Personalizar, salen los tres tamaños y las casillas de contenido, **se pone una plaquita grande**,
+se comprueba que lo guardado va al almacén de la pantalla y **no** a la config del módulo, se abre
+✨ Personalizar automáticamente y **se lee el criterio de verdad**, se recarga y el tamaño **sigue
+marcado**.
+
+### Archivos
+- **Modificados:** `src/lib/pantallaEH.js` (la fase entera), `src/views/EstiloHombreView.jsx`
+  (`PersonalizarPlaquitas`, la rejilla y el límite de accesos), `scripts/test-pantalla-eh.mjs`,
+  `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+- **Nuevos:** ninguno. La fase cabe en el archivo de la pantalla, que es donde le toca.
+
+---
+
 ## v1.93.0 — EH Fase 30/65: pantalla principal y organización
 
 ### Qué se ha construido

@@ -333,7 +333,7 @@ else
 fi
 
 if node --import ./scripts/resolver-vite.mjs scripts/test-pantalla-eh.mjs >/tmp/jc_eh30.log 2>&1; then
-  ok "Pantalla principal y organización (EH F30) — $(grep -c '✓' /tmp/jc_eh30.log) comprobaciones"
+  ok "Pantalla, organización y personalización (EH F30-F31) — $(grep -c '✓' /tmp/jc_eh30.log) comprobaciones"
 else
   fallo "Falla la pantalla principal"; grep '✗' /tmp/jc_eh30.log
 fi

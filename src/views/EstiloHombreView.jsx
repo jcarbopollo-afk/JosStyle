@@ -44,6 +44,8 @@ import {
 import {
   modulosAgrupados, resultadosAgrupados, avisoDesactivar, subirModulo, bajarModulo,
   puedeMover, recomendados, fichaModulo, TEXTOS_GESTION, resumenGestion,
+  // EH F31, apartado 3 — *"y moverla"*: la función ya existía, escrita para esto.
+  moverA,
 } from '../lib/gestionModulos';
 import {
   pasoAsistente, puedeOmitir, TEXTO_OMITIR, estadoAsistente, normalizarAsistente,
@@ -198,6 +200,9 @@ import {
 } from '../lib/miEstilo';
 import {
   CABECERA_EH, TEXTOS_PANTALLA, alternarAcceso, alternarVerAccesos, panelPantalla,
+  // ── EH F31 ──
+  cambiarTamano, alternarLinea, restablecerDiseno, personalizarAutomaticamente,
+  panelPersonalizar, TEXTOS_MOVER,
 } from '../lib/pantallaEH';
 
 /* ===========================================================================
@@ -206,7 +211,12 @@ import {
    Icono, nombre y una descripción corta. Nada más: el apartado lo pide
    pequeño, y con trece módulos la diferencia entre "cabe" y "no cabe" son
    veinte píxeles de alto. */
-export function Plaquita({ modulo, accent, orden = null, onSubir, onBajar, onAbrir, sub = null }) {
+export function Plaquita({
+  modulo, accent, orden = null, onSubir, onBajar, onAbrir, sub = null,
+  /* ⚠️ **EH F31, apartados 4 y 5** — el tamaño y las líneas los decide él, y
+     llegan ya resueltos desde `pantallaEH.js`: aquí no se calcula ninguno. */
+  tamano = null, lineas = null,
+}) {
   /* ⚠️ EH F5, apartado 1 — *"debe abrir el sistema de armario que ya existe. No
      crear una nueva pantalla equivalente."* Por eso la plaquita de Estilo y
      armario, y solo esa, es pulsable: es la única que hoy lleva a algún sitio.
@@ -225,7 +235,19 @@ export function Plaquita({ modulo, accent, orden = null, onSubir, onBajar, onAbr
       <span className="text-base leading-none flex-shrink-0" aria-hidden="true">{modulo.icono}</span>
       <div className="min-w-0 flex-1">
         <p className="text-xs font-semibold truncate" style={{ color: COLORS.text }}>{modulo.nombre}</p>
-        <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>{sub || modulo.sub}</p>
+        {/* ⚠️ F31 — la **pequeña** se queda solo con icono y nombre: `conLineas`
+            en `false` es lo que lo dice, y viene del tamaño, no de un `if`. */}
+        {/* ⚠️ Y una lista VACÍA no es lo mismo que no haber pasado ninguna: si él
+            apagó todas las líneas, la plaquita se queda sin ellas a propósito. */}
+        {(!tamano || tamano.conLineas) && (
+          Array.isArray(lineas)
+            ? lineas.map((l) => (
+              <p key={l.id} className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>
+                {l.texto}
+              </p>
+            ))
+            : <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>{sub || modulo.sub}</p>
+        )}
       </div>
       {/* Apartado 9 — ↑ Subir ↓ Bajar. En los extremos se apagan, no se
           esconden: una flecha que desaparece mueve la interfaz al pulsarla. */}
@@ -6445,6 +6467,304 @@ export function GustosEH({ estado, accent, datosGlobales = {}, objetivos = null,
 }
 
 /* ===========================================================================
+   EH · F31 — ⋮ PERSONALIZAR (apartados 1 a 5, 8, 10, 14, 16 y 17)
+   ===========================================================================
+   ⚠️ **Esta pantalla no inventa ni un mecanismo.** Mover es `moverA` y las
+   flechas de la Fase 2; quitar es `alternarModulo` con el aviso del apartado 16,
+   que también es de la Fase 2; y lo único nuevo —tamaño y contenido— lo deciden
+   `cambiarTamano` y `alternarLinea`, que escriben en el almacén de la pantalla y
+   **nunca en la `config` del módulo** (apartado 12). */
+
+function AvisoDiseno({ aviso, accent, onConfirmar, onCancelar }) {
+  if (!aviso) return null;
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.55)' }}
+      onClick={onCancelar}
+    >
+      <div
+        className="rounded-3xl p-4 w-full max-w-xs"
+        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>{aviso.titulo}</p>
+        <p className="text-xs mb-1" style={{ color: COLORS.text }}>{aviso.pregunta}</p>
+        {/* ⚠️ Las dos frases que la fase se obliga a decir antes de tocar nada. */}
+        {aviso.notas.map((t) => (
+          <p key={t} className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>{t}</p>
+        ))}
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={onCancelar}
+            className="flex-1 rounded-2xl py-2 text-xs font-semibold"
+            style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+          >
+            {aviso.cancelar}
+          </button>
+          <button
+            onClick={onConfirmar}
+            className="flex-1 rounded-2xl py-2 text-xs font-semibold"
+            style={{ background: accent, color: '#fff' }}
+          >
+            {aviso.confirmar}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+export function PersonalizarPlaquitas({
+  estado, accent, armario = null, datosGlobales = {}, onCambiar, onCerrar,
+}) {
+  /* ⚠️ Regla 4 — todos los hooks, antes de cualquier `return` condicional. */
+  const [moviendo, setMoviendo] = useState(null);
+  const [pendiente, setPendiente] = useState(null);   // el aviso del apartado 16
+  const [diseno, setDiseno] = useState(null);         // 'restablecer' | 'automatico'
+  const panel = useMemo(
+    () => panelPersonalizar(estado, { armario, datosGlobales }),
+    [estado, armario, datosGlobales],
+  );
+  const auto = useMemo(
+    () => personalizarAutomaticamente(estado, { armario, datosGlobales }),
+    [estado, armario, datosGlobales],
+  );
+
+  const quitar = (id) => {
+    const aviso = avisoDesactivar(estado, id);
+    // Apartado 16 — se pregunta solo si hay algo que perder de vista.
+    if (aviso) setPendiente({ id, aviso });
+    else onCambiar(alternarModulo(estado, id, false));
+  };
+
+  const avisoDiseno = diseno === 'restablecer'
+    ? {
+      titulo: panel.restablecer.titulo,
+      pregunta: panel.restablecer.pregunta,
+      notas: [panel.restablecer.noBorra, panel.restablecer.noReactiva],
+      confirmar: panel.restablecer.confirmar,
+      cancelar: panel.restablecer.cancelar,
+    }
+    : (diseno === 'automatico'
+      ? {
+        titulo: panel.automatico.titulo,
+        // ⚠️ Se dice el criterio DE VERDAD, no "según el uso reciente".
+        pregunta: auto.cambia ? panel.automatico.criterio : panel.automatico.sinCambios,
+        notas: [],
+        confirmar: panel.automatico.confirmar,
+        cancelar: panel.automatico.cancelar,
+      }
+      : null);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <p className="text-base font-semibold flex-1" style={{ color: COLORS.text }}>
+          {TEXTOS_PANTALLA.personalizar}
+        </p>
+        <button onClick={onCerrar} className="text-[11px] font-semibold" style={{ color: accent }}>
+          {TEXTOS_PANTALLA.listo}
+        </button>
+      </div>
+      {/* Apartado 8 — lo que más le preocupa, dicho antes de que lo pruebe. */}
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+        {TEXTOS_PANTALLA.ocultarNoBorra}
+      </p>
+
+      {panel.modulos.map((m) => (
+        <Card key={m.id}>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-base leading-none" aria-hidden="true">{m.icono}</span>
+            <p className="text-sm font-semibold flex-1 min-w-0 truncate" style={{ color: COLORS.text }}>
+              {m.nombre}
+            </p>
+            <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {m.posicion + 1}/{m.de}
+            </span>
+          </div>
+          {/* Lo que se verá en la portada, tal cual, para que no lo adivine. */}
+          {m.vista.length > 0 && (
+            <div className="rounded-2xl p-2 mb-2"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              {m.vista.map((l) => (
+                <p key={l.id} className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>
+                  {l.texto}
+                </p>
+              ))}
+            </div>
+          )}
+
+          {/* ── Apartado 2 — ⋮⋮ Mover · 👁️ Ocultar ───────────────────────── */}
+          <div className="flex flex-wrap items-center gap-1 mb-2">
+            <button
+              onClick={() => onCambiar(subirModulo(estado, m.id))}
+              disabled={m.posicion === 0} aria-label={`Subir ${m.nombre}`}
+              className="rounded-full p-1"
+              style={{
+                color: m.posicion === 0 ? COLORS.border : accent,
+                border: `1px solid ${COLORS.border}`,
+              }}
+            >
+              <ChevronUp size={14} />
+            </button>
+            <button
+              onClick={() => onCambiar(bajarModulo(estado, m.id))}
+              disabled={m.posicion === m.de - 1} aria-label={`Bajar ${m.nombre}`}
+              className="rounded-full p-1"
+              style={{
+                color: m.posicion === m.de - 1 ? COLORS.border : accent,
+                border: `1px solid ${COLORS.border}`,
+              }}
+            >
+              <ChevronDown size={14} />
+            </button>
+            {/* ⚠️ Apartado 3 — mover a una posición concreta, con `moverA`. En un
+                iPhone se elige el destino tocando: las flechas se quedan. */}
+            {m.de > 1 && (
+              <button
+                onClick={() => setMoviendo(moviendo === m.id ? null : m.id)}
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{
+                  background: moviendo === m.id ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                  color: moviendo === m.id ? accent : COLORS.text,
+                  border: `1px solid ${moviendo === m.id ? accent : COLORS.border}`,
+                }}
+              >
+                {panel.textosMover.mover}
+              </button>
+            )}
+            <button
+              onClick={() => quitar(m.id)}
+              className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+              style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+            >
+              👁️ Quitar
+            </button>
+          </div>
+
+          {moviendo === m.id && (
+            <div className="mb-2">
+              <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>
+                {panel.textosMover.eligiendo}
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {panel.modulos.map((otro, i) => (
+                  <button
+                    key={otro.id}
+                    onClick={() => { onCambiar(moverA(estado, m.id, i)); setMoviendo(null); }}
+                    className="rounded-full px-2 py-1 text-[10px] font-semibold"
+                    style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+                  >
+                    {i + 1}. {panel.textosMover.aqui}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setMoviendo(null)}
+                  className="rounded-full px-2 py-1 text-[10px] font-semibold"
+                  style={{ color: COLORS.textMuted }}
+                >
+                  {panel.textosMover.cancelar}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Apartado 4 — el tamaño, uno de tres ──────────────────────── */}
+          <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>{TEXTOS_PANTALLA.tamano}</p>
+          <div className="flex flex-wrap gap-1 mb-2">
+            {m.tamanos.map((t) => {
+              const puesto = t.id === m.tamano.id;
+              return (
+                <button
+                  key={t.id} aria-pressed={puesto}
+                  onClick={() => onCambiar(cambiarTamano(estado, m.id, t.id))}
+                  className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                  style={{
+                    background: puesto ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                    color: puesto ? accent : COLORS.text,
+                    border: `1px solid ${puesto ? accent : COLORS.border}`,
+                  }}
+                >
+                  {t.icono} {t.nombre}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ── Apartado 5 — qué información aparece ─────────────────────── */}
+          <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>
+            {TEXTOS_PANTALLA.configurarContenido}
+          </p>
+          {/* ⚠️ Regla 8 — sin líneas se dice, no se enseñan casillas vacías. */}
+          {m.sinLineas ? (
+            <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{m.sinLineas}</p>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {m.lineas.map((l) => (
+                <button
+                  key={l.id} aria-pressed={l.puesta}
+                  onClick={() => onCambiar(alternarLinea(estado, m.id, l.id))}
+                  className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                  style={{
+                    background: l.puesta ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                    color: l.puesta ? accent : COLORS.text,
+                    border: `1px solid ${l.puesta ? accent : COLORS.border}`,
+                  }}
+                >
+                  {l.puesta ? '☑️' : '☐'} {l.nombre}
+                </button>
+              ))}
+            </div>
+          )}
+        </Card>
+      ))}
+
+      {/* ── Apartados 10 y 17 — los dos botones de abajo ───────────────── */}
+      <Card>
+        <button
+          onClick={() => setDiseno('automatico')}
+          className="text-[11px] font-semibold block mb-2"
+          style={{ color: accent }}
+        >
+          {panel.automatico.titulo}
+        </button>
+        <button
+          onClick={() => setDiseno('restablecer')}
+          className="text-[11px] font-semibold block"
+          style={{ color: COLORS.textMuted }}
+        >
+          {panel.restablecer.titulo}
+        </button>
+      </Card>
+
+      <AvisoDesactivar
+        aviso={pendiente?.aviso} accent={accent}
+        onCancelar={() => setPendiente(null)}
+        onConfirmar={() => {
+          onCambiar(alternarModulo(estado, pendiente.id, false));
+          setPendiente(null);
+        }}
+      />
+      <AvisoDiseno
+        aviso={avisoDiseno} accent={accent}
+        onCancelar={() => setDiseno(null)}
+        onConfirmar={() => {
+          /* ⚠️ Décimo y undécimo `aplicarPlan`: aquí es donde llega el
+             `confirmado`, y sin él ninguna de las dos escribe nada. */
+          const r = diseno === 'restablecer'
+            ? restablecerDiseno(estado, { confirmado: true })
+            : personalizarAutomaticamente(estado, { armario, datosGlobales, confirmado: true });
+          onCambiar(r.estado);
+          setDiseno(null);
+        }}
+      />
+    </div>
+  );
+}
+
+/* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
 export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, onEliminarPerfume, onEliminarAccesorio, onGuardarAccesorio, onEliminarGusto, onGuardarObjetivo, objetivos = null, rachas = null }) {
@@ -6459,6 +6779,10 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const [accesorios, setAccesorios] = useState(false);   // F26
   const [gustos, setGustos] = useState(false);           // F27
   const [ordenando, setOrdenando] = useState(false);
+  const [personalizando, setPersonalizando] = useState(false);   // F31, apartado 1
+  /* F31, apartado 7 — *"si hay demasiados: Mostrar todos"*. Es de la sesión, no
+     se guarda: es cómo está mirando la pantalla ahora, no una preferencia. */
+  const [todosLosAccesos, setTodosLosAccesos] = useState(false);
   /* ⚠️ **Se calcula UNA sola vez, al entrar en el módulo** (regla 4: los hooks,
      antes de cualquier `return`). Si se recalculara en cada render, pulsar
      "Empezar" en la bienvenida pasaría el asistente a `en_curso` y acto seguido
@@ -6568,7 +6892,8 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   /* F30 — la pantalla principal: secciones agrupadas, accesos rápidos y vacío
      inicial. ⚠️ TODO derivado: la agrupación y el orden son los de la Fase 2. */
   const pantallaPanel = useMemo(
-    () => panelPantalla(estado, { armario, datosGlobales }), [estado, armario, datosGlobales],
+    () => panelPantalla(estado, { armario, datosGlobales, todosLosAccesos }),
+    [estado, armario, datosGlobales, todosLosAccesos],
   );
   const resumenPlaquitaArmario = estiloArmario && !estiloArmario.vacio
     ? `${estiloArmario.total} ${estiloArmario.total === 1 ? 'prenda' : 'prendas'}`
@@ -6699,6 +7024,17 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
       <MisDatosEH
         estado={estado} accent={accent} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={() => setMisDatos(false)}
+      />
+    );
+  }
+
+  /* F31, apartado 1 — *"⋮ Personalizar. Al activarlo, las plaquitas entran en
+     modo edición."* Es una pantalla propia, no un estado a medias de la portada. */
+  if (personalizando) {
+    return (
+      <PersonalizarPlaquitas
+        estado={estado} accent={accent} armario={armario} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onCerrar={() => setPersonalizando(false)}
       />
     );
   }
@@ -6867,14 +7203,22 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {sec.modulos.map((m) => (
-                    <Plaquita
-                      key={m.id} accent={accent}
-                      /* Apartado 5 — la indicación, solo en el que falta por configurar. */
-                      modulo={m.insignia ? { ...m, nombre: `${m.insignia.icono} ${m.nombre}` } : m}
-                      sub={subDeModulo(m.id)}
-                      onAbrir={() => abrirModulo(m.id)}
-                      orden={null}
-                    />
+                    /* ⚠️ **F31, apartado 4** — la grande ocupa las dos columnas.
+                       El número sale del tamaño, no de un `if` por cada id. */
+                    <div key={m.id} className={m.tamano.columnas === 2 ? 'col-span-2' : ''}>
+                      <Plaquita
+                        accent={accent}
+                        /* Apartado 5 — la indicación, solo en el que falta por configurar. */
+                        modulo={m.insignia ? { ...m, nombre: `${m.insignia.icono} ${m.nombre}` } : m}
+                        /* ⚠️ F31 — las líneas que él eligió; el `sub` de la F30 se
+                           queda de red por si un módulo todavía no tiene ninguna. */
+                        sub={subDeModulo(m.id)}
+                        tamano={m.tamano}
+                        lineas={m.tieneLineas ? m.lineas : null}
+                        onAbrir={() => abrirModulo(m.id)}
+                        orden={null}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -6894,7 +7238,8 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
                 </button>
               </div>
               <div className="flex flex-wrap gap-1">
-                {pantallaPanel.accesos.map((a) => (
+                {/* ⚠️ F31, apartado 7 — se pintan los que caben, no los 50. */}
+                {pantallaPanel.visibles.lista.map((a) => (
                   <button key={a.id} onClick={() => abrirModulo(a.modulo)}
                     className="rounded-2xl px-2.5 py-1.5"
                     style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
@@ -6904,6 +7249,15 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
                   </button>
                 ))}
               </div>
+              {/* *"Si hay demasiados: Mostrar todos. Así la pantalla sigue limpia."* */}
+              {(pantallaPanel.visibles.hayMas || todosLosAccesos) && (
+                <button onClick={() => setTodosLosAccesos((v) => !v)}
+                  className="text-[10px] font-semibold mt-1" style={{ color: accent }}>
+                  {todosLosAccesos
+                    ? TEXTOS_PANTALLA.mostrarMenos
+                    : `${TEXTOS_PANTALLA.mostrarTodos} (${pantallaPanel.visibles.ocultos} más)`}
+                </button>
+              )}
             </Card>
           )}
 
@@ -6975,6 +7329,19 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
               {perfilEstilo && !perfilEstilo.vacio && (
                 <span style={{ color: COLORS.textMuted }}>· {perfilEstilo.rellenos} de {perfilEstilo.total}</span>
               )}
+            </button>
+          )}
+
+          {/* ⚠️ **F31, apartado 1** — *"⋮ Personalizar"*. Un solo botón que abre
+              el modo edición entero: tamaño, contenido, mover y quitar. Con nada
+              activo no se ofrece, porque no habría qué personalizar (regla 8). */}
+          {!ordenando && activos.length > 0 && (
+            <button
+              onClick={() => setPersonalizando(true)}
+              className="flex items-center gap-1.5 text-[11px] font-semibold mx-auto"
+              style={{ color: accent }}
+            >
+              {TEXTOS_PANTALLA.personalizar}
             </button>
           )}
 

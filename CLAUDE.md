@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.93.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.94.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 27/65**, quedan 36 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 28/65**, quedan 35 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -125,9 +125,9 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 5346 pruebas unitarias con Node, 5 de auditoría, 648 casos de renderizado real con
-`react-dom/server`, 11 reglas invariantes y **25 comprobaciones sobre la aplicación de verdad en
-Chromium** — **6030 comprobaciones**.
+Vite, 7212 pruebas unitarias con Node (5 de ellas de auditoría), 1076 casos de renderizado real
+con `react-dom/server`, 11 reglas invariantes y **231 comprobaciones sobre la aplicación de verdad
+en Chromium** — **8530 comprobaciones**.
 
 Eso ya ha encontrado **sesenta bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -153,7 +153,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 27/65** (v1.93.0: F1-F17, **F20, F21 y F23-F30**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 28/65** (v1.94.0: F1-F17, **F20, F21 y F23-F31**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -165,10 +165,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 31/65 — Personalización profunda de las plaquitas**.
+La siguiente candidata es **EH · Fase 32/65 — Sistema de recomendaciones generales de estilo**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F30 dejaron ciento una cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F31 dejaron ciento ocho cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -427,7 +427,27 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 - ⚠️ **Un atajo a un módulo apagado no se ofrece** (F30, apartado 9), y apagar el módulo lo esconde
   **sin borrar su elección**: al reactivarlo vuelve.
 - ⚠️ **La portada lleva UNA LÍNEA por plaquita** (F30, apartados 8 y 15), y la escribe el
-  `resumen…()` de su módulo. Ni estadísticas, ni historiales, ni rutinas completas, ni productos.
+  `resumen…()` de su módulo. Ni estadísticas, ni historiales, ni rutinas completas, ni productos —
+  **salvo que él las encienda** (F31): no automáticamente, pero puede.
+- ⚠️ **LA PRESENTACIÓN DE UNA PLAQUITA NO SE GUARDA EN SU MÓDULO** (F31, apartado 12): *"cambiar la
+  plaquita de Skincare solo cambia su representación… no modifica la configuración interna de
+  Skincare"*. `tamanos` y `contenido` van en el almacén de la **pantalla**, indexados por id, y hay
+  una prueba que lee el código y exige que `guardarConfig` solo se llame sobre el módulo anfitrión.
+- ⚠️ **`LINEAS_DE_PLAQUITA` es una línea por módulo** (F31), como `MODULOS_EH` y `FUENTES_DE_ESTADO`.
+  Al añadir un módulo con pantalla, añadir su línea — **y cada línea sale de su propio `resumen…()`**,
+  nunca de un dato nuevo.
+- ⚠️ **Los tamaños son TRES y declaran sus columnas** (F31, apartado 4). Si una fase futura necesita
+  que algo ocupe dos columnas, **es `columnas: 2`**, no un `if` por id en el JSX. Y volver al defecto
+  **quita la excepción**, no guarda una copia de la norma.
+- ⚠️ **Una lista vacía no es "no hay lista"** (F31): sin `tieneLineas`, apagar todas las líneas de una
+  plaquita hacía volver el resumen de la F30 por la puerta de atrás. Tercera vez de la lección de la
+  F25 (`null` no es `[]`).
+- ⚠️ **`restablecerDiseno` NO reactiva lo que él apagó** (F31, apartado 10) y
+  **`personalizarAutomaticamente` no finge un "uso reciente"** que no se guarda en ningún sitio
+  (apartado 17): dice el criterio de verdad. Décimo y undécimo `aplicarPlan`; **sin `confirmado` no
+  escriben**.
+- ⚠️ **Un límite que no puede saltar nunca es un control decorativo** (F31, apartado 7): el tope es de
+  lo que **se pinta**, con su *"Mostrar todos"*, no de cuántos accesos puede elegir.
 - 🚨 **LO QUE JOSUÉ SUBE A MANO A GITHUB NO INCLUYE LAS CARPETAS.** Sus seis `Add files via upload`
   solo llevaron los **nueve archivos sueltos de la raíz**: ni uno de `src/`. Por eso `main` tenía la
   documentación nueva y el código del 11 de agosto, y la web no cambiaba por más zips que subiera.

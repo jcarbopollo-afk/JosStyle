@@ -725,4 +725,56 @@ await page.waitForTimeout(700);
 ok(/Barba|¿Quieres utilizar este apartado\?/.test(await ver()),
   '⚠️ Y abre SU módulo, el que ya existía');
 
+/* ── 16 · ⋮ PERSONALIZAR LAS PLAQUITAS (EH F31) ───────────────────────────
+   ⚠️ La prueba que de verdad importa de esta fase: **cambiar el tamaño de una
+   plaquita, recargar y comprobar que sigue** (apartado 11, pruebas 9 a 11). */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(500);
+ok(await pulsar('⋮ Personalizar'), '⋮ Personalizar abre el modo edición (apartado 1)');
+await page.waitForTimeout(600);
+const personalizar = await ver();
+ok(/Tamaño/.test(personalizar), 'Con el tamaño de cada plaquita (apartado 4)');
+ok(/Pequeña/.test(personalizar) && /Mediana/.test(personalizar) && /Grande/.test(personalizar),
+  '⚠️ Los tres tamaños, y solo tres');
+ok(/Configurar contenido/.test(personalizar), 'Y qué información aparece (apartado 5)');
+ok(/Ocultar una plaquita no borra nada/.test(personalizar),
+  '⚠️ Diciendo antes que ocultar no borra (apartado 8)');
+ok(/Restablecer diseño/.test(personalizar), 'Con 🔄 Restablecer diseño (apartado 10)');
+ok(/Personalizar automáticamente/.test(personalizar), 'Y ✨ Personalizar automáticamente (apartado 17)');
+
+guardado.length = 0;
+ok(await pulsar('⬜ Grande'), 'Se puede poner una plaquita grande');
+await page.waitForTimeout(1200);
+const escTam = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escTam.length > 0, '⚠️ PERSISTENCIA: el tamaño se guarda');
+const cfgTam = escTam.at(-1)?.value?.modulos?.find((m) => m.id === 'estilo')?.config || {};
+ok(Object.keys(cfgTam.pantalla?.tamanos || {}).length > 0,
+  '⚠️ Y va al almacén de la PANTALLA, no a la config del módulo (apartado 12)');
+
+/* ⚠️ Apartado 17 — y el criterio de "personalizar automáticamente" se dice de
+   verdad: nunca "según el uso reciente", que es un dato que no se guarda. */
+ok(await pulsar('✨ Personalizar automáticamente'), 'El botón abre su confirmación');
+await page.waitForTimeout(600);
+ok(/No se mira cuándo abriste cada uno/.test(await ver()),
+  '⚠️ Y dice el criterio de verdad, en vez de fingir un "uso reciente"');
+await pulsar('Cancelar');
+await page.waitForTimeout(400);
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(500);
+await pulsar('⋮ Personalizar');
+await page.waitForTimeout(600);
+/* ⚠️ El texto "⬜ Grande" está SIEMPRE —es uno de los tres botones—, así que
+   comprobarlo no probaría nada. Lo que se mira es cuál está marcado. */
+const grandeMarcada = await page.evaluate(() => [...document.querySelectorAll('button')]
+  .some((b) => b.innerText.trim() === '⬜ Grande' && b.getAttribute('aria-pressed') === 'true'));
+ok(grandeMarcada,
+  '⚠️ PERSISTENCIA: tras recargar, el tamaño elegido sigue marcado (prueba 9)');
+
 await salir(browser);
