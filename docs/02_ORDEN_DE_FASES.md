@@ -260,9 +260,11 @@ escribir código.
 
 | v1.99.0 | **EH F36** | Gestión global de módulos ("🧩 Gestionar apartados"). ⚠️ **La fase entera es el TERCER ESTADO**: `activo` (si funciona) y `oculto` (si sale en la portada) eran el mismo booleano, y el enunciado los separa —*"ocultar ≠ desactivar ≠ eliminar"*—. Un módulo **oculto sigue dando ideas, tarjetas y métricas**. ⚠️ **Lo demás ya existía**: `alternarModulo` (F1), el orden y el buscador (F2), la papelera (ME F3), las partes de cada módulo y `restablecerDiseno` (F31). ⚠️ **Eliminar va a la papelera global elemento a elemento**, con el plan sacado de su catálogo y ejecutado por `App.jsx`. ⚠️ **Restablecer devuelve la visibilidad pero NO reactiva**. ⚠️ **Ninguno es obligatorio** y **una dependencia se avisa, no se impone** — las tres declaradas existen en el código |
 
+| v2.0.0 | **EH F37** | Buscador y navegación interna. ⚠️ **El apartado 11 decide qué se construye**: los módulos los busca `buscarModulos()` (F2) y EH ya está en el índice global (BI F3), así que lo que aporta esto es buscar **dentro de sus ELEMENTOS**, que no indexa nadie. ⚠️ **Añadir una fuente es una línea en `FUENTES_BUSQUEDA`**, y ni un índice guardado. ⚠️ **Un módulo oculto o desactivado SALE, marcado, y nunca se enciende solo**; el oculto sí aporta sus elementos, el desactivado no. ⚠️ **Lo eliminado no aparece**, y sale gratis. ⚠️ **No hay favoritos globales**: son los de cada módulo. ⚠️ **"Recientes" guarda lo que abre desde aquí**, no por dónde navega. ⚠️ Y **`atras()` nunca devuelve `null`**. 🐛 Y el recorrido en Chromium cazó que `onChange={setTexto}` guardaba el EVENTO: el buscador se pintaba y no buscaba |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 33/65** (F1-F17, F20, F21, F23-F36; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **30** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (28, tres de ellas bloqueadas).
+3/5 y **EH por 34/65** (F1-F17, F20, F21, F23-F37; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **29** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (27, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

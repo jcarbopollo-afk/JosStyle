@@ -988,4 +988,39 @@ ok(await pulsar('👁️ Mostrar'), 'y se puede volver a mostrar (prueba 2)');
 await page.waitForTimeout(1000);
 ok(!/⚪ Oculto/.test(await ver()), 'y vuelve a estar visible');
 
+/* ── 22 · 🔍 BUSCAR EN ESTILO DE HOMBRE (EH F37) ──────────────────────────
+   Lo que importa: que encuentre SIN terminar la palabra, que agrupe, y que
+   abrir un resultado apunte el reciente y NO active nada por su cuenta. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(700);
+ok(/Buscar en Estilo de hombre/.test(await ver()),
+  '🔍 El buscador está arriba del todo (apartado 1)');
+ok(await pulsar('🔍 Buscar en Estilo de hombre'), 'y se abre');
+await page.waitForTimeout(600);
+const buscador = await ver();
+ok(/Recientes/.test(buscador), 'con sus 🕘 Recientes (apartado 5)');
+ok(/lo último que abras desde el buscador/.test(buscador),
+  '⚠️ diciendo que salen de lo que ABRA, no de por dónde navegue');
+ok(/no hay una lista aparte/.test(buscador),
+  '⚠️ y que los favoritos son los de cada apartado (apartado 6)');
+ok(/Eliminados recientemente/.test(buscador), 'y dónde está lo borrado (apartado 15)');
+
+// Apartado 3 — *"bar…"* sin terminar la palabra.
+await page.fill('input[placeholder*="Buscar en Estilo"]', 'bar');
+await page.waitForTimeout(700);
+const conBar = await ver();
+ok(/Apartados/.test(conBar), '⚠️ "bar" encuentra sin terminar la palabra, y AGRUPADO (apartados 2 y 3)');
+ok(/Barba/.test(conBar), 'con Barba dentro');
+
+guardado.length = 0;
+ok(await pulsar('Barba'), 'Se puede abrir un resultado');
+await page.waitForTimeout(1200);
+const escBusc = guardado.filter((g) => g && g.key === 'estiloHombre');
+const cfgBusc = escBusc.at(-1)?.value?.modulos?.find((m) => m.id === 'estilo')?.config || {};
+ok((cfgBusc.buscador?.recientes || []).includes('barba'),
+  '⚠️ PERSISTENCIA: abrirlo lo apunta en Recientes — y son IDS, no lo que escribió');
+
 await salir(browser);

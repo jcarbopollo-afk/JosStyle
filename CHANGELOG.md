@@ -1,5 +1,69 @@
 # CHANGELOG.md
 
+## v2.0.0 — EH Fase 37/65: buscador y navegación interna
+
+### Qué se ha construido
+El **🔍 Buscar en Estilo de hombre**, arriba del todo de su pantalla: busca entre módulos, perfumes,
+accesorios, gustos, rutinas, productos, preferencias y objetivos, con los **resultados agrupados**,
+sus **🕘 Recientes**, el filtro de **❤️ Favoritos**, y los apartados ocultos y desactivados marcados
+con su oferta de activarlos. Más las **migas** y el **volver** coherente.
+
+*"Muchos módulos por detrás, interfaz sencilla por delante."*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ El apartado 11 decide qué se construye y qué no.** *"Si JosStyle ya tiene un buscador global,
+**no crear otro buscador independiente**. La búsqueda interna solo será necesaria si aporta una
+experiencia más rápida."*
+- Los **módulos** ya los busca `buscarModulos()` (F2), y Estilo de hombre ya está en el índice global
+  (BI F3). **Ni una copia de ninguno de los dos**, con una prueba que compara resultado por resultado.
+- Lo que **nadie indexa** son sus **elementos**: perfumes, accesorios, gustos, rutinas, productos y
+  preferencias. Eso es literalmente la lista del apartado 1, y es lo que aporta esta fase.
+
+**2. ⚠️ Añadir una fuente es añadir una línea a `FUENTES_BUSQUEDA`**, y cada línea saca su lista del
+`datos*()` que ya existe. **Ni un índice guardado**: se quedaría viejo en cuanto él borrase algo, y
+entonces el buscador enseñaría cosas que ya no están.
+
+**3. ⚠️ Un módulo oculto o desactivado sale, marcado, y nunca se enciende solo** (apartados 13 y 14,
+con esas palabras: *"nunca activarlo automáticamente"*). Se apoya en `estadoDe()` de la F36 y
+devuelve la acción como **oferta**: decimosexto `aplicarPlan`. Y la distinción de la F36 se nota
+aquí: **el oculto sí aporta sus elementos** —ocultar no cambia nada por dentro—; el desactivado, no.
+
+**4. ⚠️ Lo eliminado no aparece** (apartado 15), y **sale gratis**: lo borrado se fue de su lista a la
+papelera, así que no hay nada que filtrar. Lo que sí hay es una prueba de que este archivo **ni
+importa la papelera**.
+
+**5. ⚠️ No hay favoritos globales** (apartado 6: *"conectado al sistema global. No crear favoritos
+independientes"*). Son los de cada módulo, el buscador los **lee**, y la pantalla dice dónde están.
+Sexta vez de esta lección.
+
+**6. ⚠️ Y "Recientes" guarda lo que él abre desde aquí, no por dónde navega** (apartado 5). La F31 ya
+decidió que **no existe un registro de uso** y que crearlo obligaría a escribir en cada navegación.
+Esto es otra cosa: un toque explícito suyo en un resultado, **ids de módulo** y nunca lo que escribió.
+
+⚠️ Y `atras()` **nunca devuelve `null`** (apartado 9: *"no sacar al usuario accidentalmente de
+JosStyle"*): de la raíz se vuelve a la raíz. Las **migas son una función** de dónde está, no un estado
+guardado que se desincronice.
+
+### 🐛 Y el recorrido en Chromium cazó un bug de verdad
+`TextInput` es un `<input>` pelado que reparte sus props tal cual, así que **`onChange` recibe el
+evento, no el valor**. `onChange={setTexto}` guardaba el evento entero en el estado: el buscador se
+pintaba perfecto y **no buscaba nada**. Estaba igual en la pantalla de la F36 — las dos arregladas.
+Ni el build ni los 1256 casos de renderizado lo veían, porque **renderizar no es usar**.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **137 comprobaciones nuevas**, **1256 casos de
+renderizado** (28 nuevos) y **309 comprobaciones en Chromium** (10 nuevas): se abre el buscador, se
+escribe *"bar"* **sin terminar la palabra**, salen los resultados agrupados, se abre uno y **se
+apunta en Recientes con su id**.
+
+### Archivos
+- **Nuevos:** `src/lib/buscadorEstilo.js`, `scripts/test-buscador-estilo.mjs`.
+- **Modificados:** `src/views/EstiloHombreView.jsx` (`BuscadorEstiloEH` y las dos llamadas a
+  `TextInput`), `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.99.0 — EH Fase 36/65: gestión global de módulos
 
 ### Qué se ha construido

@@ -231,6 +231,10 @@ import {
   TEXTOS_GESTION_EH, panelGestionEstilo, alternarOculto, desactivarModulo,
   activarModulo, alternarParteDe, avisoEliminarDatos, restablecerEstilo,
 } from '../lib/gestionEstilo';
+import {
+  // ── EH F37 ──
+  TEXTOS_BUSCADOR, panelBuscador, resolverApartado, apuntarReciente,
+} from '../lib/buscadorEstilo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -7157,8 +7161,9 @@ export function GestionarEstiloEH({
       <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.tresCosas}</p>
 
       {/* Apartado 14 — 🔍 Buscar apartado. Es el buscador de la F2. */}
+      {/* ⚠️ `TextInput` es un `<input>` pelado: `onChange` recibe el EVENTO. */}
       <TextInput
-        value={texto} onChange={setTexto} accent={accent}
+        value={texto} onChange={(ev) => setTexto(ev.target.value)}
         placeholder={panel.buscar}
       />
 
@@ -7335,6 +7340,166 @@ export function GestionarEstiloEH({
         onConfirmar={() => {
           onCambiar(restablecerEstilo(estado, { confirmado: true }).estado);
           setRestableciendo(false);
+        }}
+      />
+    </div>
+  );
+}
+
+
+/* ===========================================================================
+   EH · F37 — 🔍 BUSCAR EN ESTILO DE HOMBRE (apartados 1 a 15)
+   ===========================================================================
+   *"Muchos módulos por detrás, interfaz sencilla por delante."*
+
+   ⚠️ **No es otro buscador global** (apartado 11): el de BI F3 sigue siendo el
+   único, y los módulos los busca `buscarModulos()` de la F2. Lo que aporta esto
+   es buscar **dentro** de los elementos de Estilo de hombre, que no indexa
+   nadie: perfumes, accesorios, gustos, rutinas, productos y preferencias. */
+export function BuscadorEstiloEH({
+  estado, accent, armario = null, datosGlobales = {}, objetivos = null,
+  desde = null, onCambiar, onCerrar, onAbrir,
+}) {
+  /* ⚠️ Regla 4 — los hooks, antes de cualquier `return` condicional. */
+  const [texto, setTexto] = useState('');
+  const [soloFavoritos, setSoloFavoritos] = useState(false);
+  const [pendiente, setPendiente] = useState(null);   // el apartado oculto o desactivado
+  const panel = useMemo(
+    () => panelBuscador(estado, texto, { armario, datosGlobales, objetivos, desde, soloFavoritos }),
+    [estado, texto, armario, datosGlobales, objetivos, desde, soloFavoritos],
+  );
+  const avisoApartado = useMemo(
+    () => (pendiente ? resolverApartado(estado, pendiente).aviso : null), [estado, pendiente],
+  );
+
+  /* ⚠️ Apartado 5 — abrir apunta el reciente. Buscar NO: son dos llamadas, y
+     repintar la pantalla no puede ensuciar el historial. */
+  const abrir = (r) => {
+    if (r.estado !== 'activo') return setPendiente(r.id);
+    if (r.modulo) onCambiar(apuntarReciente(estado, r.modulo));
+    return onAbrir?.(r.modulo, r.zona);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>{panel.titulo}</p>
+      </div>
+
+      {/* Apartados 8 y 9 — dónde está, y de dónde viene. */}
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+        {panel.migas.map((m) => m.nombre).join(' → ')}
+      </p>
+
+      {/* Apartado 16 — un campo y ya: sin animaciones ni adornos. */}
+      {/* ⚠️ `TextInput` es un `<input>` pelado: `onChange` recibe el EVENTO, no
+          el valor. Pasarle el `set` a secas guardaba el evento en el estado. */}
+      <TextInput value={texto} onChange={(ev) => setTexto(ev.target.value)}
+        placeholder={panel.titulo} />
+
+      {/* Apartado 6 — el filtro de favoritos, que son los de cada módulo. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button aria-pressed={soloFavoritos} onClick={() => setSoloFavoritos((v) => !v)}
+          className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+          style={{
+            background: soloFavoritos ? hexToRgba(accent, 0.12) : COLORS.surface2,
+            color: soloFavoritos ? accent : COLORS.text,
+            border: `1px solid ${soloFavoritos ? accent : COLORS.border}`,
+          }}>
+          {panel.favoritos}
+        </button>
+        <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+          {panel.dondeEstanFavoritos}
+        </span>
+      </div>
+
+      {/* Apartado 5 — 🕘 Recientes, con lo que él haya abierto desde aquí. */}
+      {texto.trim().length === 0 && (
+        <Card>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>
+            {panel.tituloRecientes}
+          </p>
+          {panel.recientes.length === 0 ? (
+            <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.sinRecientes}</p>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {panel.recientes.map((m) => (
+                <button key={m.id}
+                  onClick={() => abrir({ id: m.id, modulo: m.id, zona: null, estado: m.estado })}
+                  className="rounded-2xl px-2.5 py-1.5"
+                  style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+                  <span className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                    {m.insignia ? `${m.insignia.icono} ` : ''}{m.icono} {m.nombre}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Apartado 15 — y dónde está lo borrado. */}
+          <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>
+            {panel.eliminadosNoSalen}
+          </p>
+        </Card>
+      )}
+
+      {/* Apartado 4 — cuando no hay nada, con su salida. */}
+      {panel.vacio && texto.trim().length > 0 && (
+        <Card className="text-center">
+          <p className="text-[11px] mb-2" style={{ color: COLORS.text }}>{panel.texto}</p>
+          <button onClick={onCerrar} className="text-[11px] font-semibold" style={{ color: accent }}>
+            {panel.explorar}
+          </button>
+        </Card>
+      )}
+
+      {/* Apartado 2 — resultados AGRUPADOS, no una lista caótica. */}
+      {panel.grupos.map((g) => (
+        <Card key={g.id}>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.textMuted }}>
+            {g.icono} {g.grupo}
+          </p>
+          {g.resultados.map((r) => (
+            <button key={`${g.id}:${r.id}`} onClick={() => abrir(r)}
+              className="w-full text-left rounded-2xl p-2 mb-1"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <span className="block text-[11px]" style={{ color: COLORS.text }}>
+                {r.insignia ? `${r.insignia.icono} ` : ''}{r.favorito ? '❤️ ' : ''}{r.nombre}
+              </span>
+              {/* Apartados 13 y 14 — marcado, y con lo que ofrece. */}
+              {r.aviso && (
+                <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>
+                  {r.aviso} · {r.accion}
+                </span>
+              )}
+            </button>
+          ))}
+          {g.total > g.resultados.length && (
+            <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              y {g.total - g.resultados.length} más
+            </p>
+          )}
+        </Card>
+      ))}
+
+      {/* ⚠️ Apartados 13 y 14 — *"nunca activarlo automáticamente"*. */}
+      <AvisoDiseno
+        aviso={avisoApartado && {
+          titulo: avisoApartado.titulo,
+          pregunta: avisoApartado.texto,
+          notas: [avisoApartado.nota],
+          confirmar: avisoApartado.confirmar,
+          cancelar: avisoApartado.cancelar,
+        }}
+        accent={accent}
+        onCancelar={() => setPendiente(null)}
+        onConfirmar={() => {
+          onCambiar(resolverApartado(estado, pendiente, { confirmado: true }).estado);
+          setPendiente(null);
         }}
       />
     </div>
@@ -7716,6 +7881,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const [miEstilo, setMiEstilo] = useState(false);
   const [preferencias, setPreferencias] = useState(false);   // F34, apartado 1
   const [gestionEstilo, setGestionEstilo] = useState(false);  // F36, apartado 1
+  const [buscando, setBuscando] = useState(false);            // F37, apartado 1
   const [perfilPelo, setPerfilPelo] = useState(false);   // false | 'panel' | 'perfil'
   const [skincare, setSkincare] = useState(false);       // F13
   const [barba, setBarba] = useState(false);             // F20
@@ -7989,6 +8155,22 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     );
   }
 
+  /* F37, apartado 1 — *"en la parte superior: 🔍 Buscar en Estilo de hombre"*.
+     ⚠️ Es una pantalla propia, y **no sustituye al buscador global** (apartado
+     11): éste busca DENTRO de los elementos, que aquél no indexa. */
+  if (buscando) {
+    return (
+      <BuscadorEstiloEH
+        estado={estado} accent={accent} armario={armario}
+        datosGlobales={datosGlobales} objetivos={objetivos}
+        onCambiar={onCambiar}
+        onCerrar={() => setBuscando(false)}
+        /* Apartados 7 y 10 — abre el módulo que ya existe y vuelve aquí. */
+        onAbrir={(modulo) => { setBuscando(false); if (modulo) abrirModulo(modulo); }}
+      />
+    );
+  }
+
   /* F36, apartado 1 — *"dentro de ⚙️ Personalizar Estilo añadir 🧩 Gestionar
      apartados"*. Se entra desde ⋮ Personalizar y se vuelve ahí. */
   if (gestionEstilo) {
@@ -8042,6 +8224,17 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
           </p>
           <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{CABECERA_EH.sub}</p>
         </div>
+      )}
+      {/* ⚠️ **EH F37, apartado 1** — *"en la parte superior: 🔍 Buscar en Estilo
+          de hombre"*. Con `ordenando` no se pinta, como todo lo demás. */}
+      {!ordenando && pantalla !== 'sin_modulos' && (
+        <button onClick={() => setBuscando(true)}
+          className="w-full rounded-2xl px-3 py-2 text-left"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <span className="text-[11px]" style={{ color: COLORS.textMuted }}>
+            {TEXTOS_BUSCADOR.titulo}
+          </span>
+        </button>
       )}
       {pantalla === 'sin_modulos' ? (
         /* ⚠️ EH F30, apartado 13 — *"si alguien entra por primera vez, NO mostrar

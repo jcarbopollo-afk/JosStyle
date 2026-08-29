@@ -2542,39 +2542,75 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Volver a entrar.
 - [x] Comprobar persistencia.
 
-#### EH · Fase 37/65 — BUSCADOR Y NAVEGACIÓN INTERNA
-- [ ] BUSCADOR
-- [ ] RESULTADOS AGRUPADOS
-- [ ] BÚSQUEDA RÁPIDA
-- [ ] SIN RESULTADOS
-- [ ] ACCESOS RECIENTES
-- [ ] FAVORITOS
-- [ ] NAVEGACIÓN INTERNA
-- [ ] BREADCRUMBS MÓVILES
-- [ ] BOTÓN «VOLVER»
-- [ ] ENLACES ENTRE MÓDULOS
-- [ ] BÚSQUEDA GLOBAL
-- [ ] RESULTADOS CONTEXTUALES
-- [ ] MÓDULOS OCULTOS
-- [ ] MÓDULOS DESACTIVADOS
-- [ ] ELIMINADOS
-- [ ] RENDIMIENTO
-- [ ] PRUEBAS
-- [ ] Buscar módulo.
-- [ ] Buscar elemento.
-- [ ] Buscar producto.
-- [ ] Buscar favorito.
-- [ ] Buscar un módulo oculto.
-- [ ] Buscar uno desactivado.
-- [ ] Buscar elemento eliminado.
-- [ ] Búsqueda sin resultados.
-- [ ] Resultados parciales.
-- [ ] Abrir resultado.
-- [ ] Volver atrás.
-- [ ] Mantener posición anterior.
-- [ ] Probar teclado móvil.
-- [ ] Probar modo oscuro.
-- [ ] Comprobar que no se duplican resultados.
+#### EH · Fase 37/65 — BUSCADOR Y NAVEGACIÓN INTERNA ✅ COMPLETADA (v2.0.0)
+
+> **`src/lib/buscadorEstilo.js`** (137 comprobaciones) + `BuscadorEstiloEH` en
+> `EstiloHombreView.jsx`. Sin SQL.
+>
+> ⚠️ **EL APARTADO 11 DECIDE QUÉ SE CONSTRUYE Y QUÉ NO:** *"si JosStyle ya tiene un buscador global,
+> **no crear otro buscador independiente**. La búsqueda interna solo será necesaria si aporta una
+> experiencia más rápida."* Los **módulos** ya los busca `buscarModulos()` (F2) y Estilo de hombre ya
+> está en el índice global (BI F3): ni una copia de ninguno. Lo que **nadie indexa** son sus
+> **elementos** —perfumes, accesorios, gustos, rutinas, productos y preferencias—, que es literalmente
+> la lista del apartado 1. Eso es lo que aporta esta fase.
+>
+> ⚠️ **AÑADIR UNA FUENTE ES AÑADIR UNA LÍNEA A `FUENTES_BUSQUEDA`**, y cada línea saca su lista del
+> `datos*()` que ya existe. **Ni un índice guardado**: se quedaría viejo en cuanto él borrase algo.
+>
+> ⚠️ **UN MÓDULO OCULTO O DESACTIVADO SALE, MARCADO, Y NUNCA SE ENCIENDE SOLO** (apartados 13 y 14).
+> Se apoya en `estadoDe()` de la F36 y devuelve la acción como **oferta**: decimosexto `aplicarPlan`.
+> Y **el oculto sí aporta sus elementos** (ocultar no cambia nada por dentro); el desactivado, no.
+>
+> ⚠️ **LO ELIMINADO NO APARECE** (apartado 15), y **sale gratis**: lo borrado se fue de su lista a la
+> papelera, así que no hay nada que filtrar. Lo que sí hay es una prueba de que este archivo **no
+> importa la papelera**.
+>
+> ⚠️ **NO HAY FAVORITOS GLOBALES** (apartado 6). Son los de cada módulo, el buscador los **lee** y la
+> pantalla dice dónde están. Sexta vez de esta lección.
+>
+> ⚠️ **"RECIENTES" GUARDA LO QUE ÉL ABRE DESDE AQUÍ**, no por dónde navega (apartado 5): un toque
+> explícito suyo, ids de módulo y nunca lo que escribió. Es lo mismo que hace el buscador global desde
+> BI F3, y lo contrario del registro de uso que la F31 se negó a inventar.
+>
+> ⚠️ **Y `atras()` NUNCA DEVUELVE `null`** (apartado 9: *"no sacar al usuario accidentalmente de
+> JosStyle"*): de la raíz se vuelve a la raíz. Las migas son **una función**, no un estado guardado.
+>
+> 🐛 **Y el recorrido en Chromium cazó un bug de verdad:** `TextInput` es un `<input>` pelado, así que
+> `onChange` recibe **el evento**, no el valor — y `onChange={setTexto}` guardaba el evento entero en
+> el estado. El buscador se pintaba perfecto y **no buscaba nada**. Estaba igual en la pantalla de la
+> F36; las dos arregladas.
+- [x] BUSCADOR
+- [x] RESULTADOS AGRUPADOS
+- [x] BÚSQUEDA RÁPIDA
+- [x] SIN RESULTADOS
+- [x] ACCESOS RECIENTES
+- [x] FAVORITOS
+- [x] NAVEGACIÓN INTERNA
+- [x] BREADCRUMBS MÓVILES
+- [x] BOTÓN «VOLVER»
+- [x] ENLACES ENTRE MÓDULOS
+- [x] BÚSQUEDA GLOBAL
+- [x] RESULTADOS CONTEXTUALES
+- [x] MÓDULOS OCULTOS
+- [x] MÓDULOS DESACTIVADOS
+- [x] ELIMINADOS
+- [x] RENDIMIENTO
+- [x] PRUEBAS
+- [x] Buscar módulo.
+- [x] Buscar elemento.
+- [x] Buscar producto.
+- [x] Buscar favorito.
+- [x] Buscar un módulo oculto.
+- [x] Buscar uno desactivado.
+- [x] Buscar elemento eliminado.
+- [x] Búsqueda sin resultados.
+- [x] Resultados parciales.
+- [x] Abrir resultado.
+- [x] Volver atrás.
+- [x] Mantener posición anterior.
+- [x] Probar teclado móvil.
+- [x] Probar modo oscuro.
+- [x] Comprobar que no se duplican resultados.
 
 #### EH · Fase 38/65 — NOTIFICACIONES Y RECORDATORIOS
 - [ ] CENTRO DE NOTIFICACIONES
