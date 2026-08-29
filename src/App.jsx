@@ -2171,12 +2171,19 @@ export default function App() {
         // cualquier otra acción sensible — mismo `pedirVerificacionPin` que usa todo lo demás.
         const exportarProtegido = seguridad.protectedActions.includes('exportar_datos');
         const eliminarProtegido = seguridad.protectedActions.includes('eliminar_datos');
+        /* ⚠️ **EH F34, apartado 14** — *"Estilo de hombre debe incluir sus datos
+           dentro de esa exportación"*. Se pasa **aparte de `currentState`**, no
+           dentro: ese objeto es también el contexto que se le manda a la IA, y
+           el perfil de piel tiene escrito que **no viaja a la IA** (EH F13,
+           apartado 17). Meterlo en `currentState` habría sido más corto y habría
+           filtrado a la IA todo Estilo de hombre de una vez. */
+        const paraExportar = { ...currentState, estiloHombre };
         const exportarCSVProtegido = () => {
-          const ejecutar = () => exportCSV(currentState);
+          const ejecutar = () => exportCSV(paraExportar);
           if (exportarProtegido) pedirVerificacionPin('Confirma tu PIN para exportar tus datos.', ejecutar); else ejecutar();
         };
         const exportarXLSXProtegido = () => {
-          const ejecutar = () => exportXLSX(currentState);
+          const ejecutar = () => exportXLSX(paraExportar);
           if (exportarProtegido) pedirVerificacionPin('Confirma tu PIN para exportar tus datos.', ejecutar); else ejecutar();
         };
         const borrarDatosModuloProtegido = (id) => {

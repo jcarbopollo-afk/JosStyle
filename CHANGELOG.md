@@ -1,5 +1,69 @@
 # CHANGELOG.md
 
+## v1.97.0 — EH Fase 34/65: perfil y preferencias avanzadas
+
+### Qué se ha construido
+La pantalla **⚙️ Mis preferencias**, dentro de 🧔 Mi estilo: los siete grupos del enunciado con su
+resumen de una línea, **Editar** que lleva al módulo donde de verdad se configura cada cosa, el
+borrado de una preferencia suelta, **🔄 Restablecer** una categoría, el interruptor **💡 Usar mis
+preferencias para recomendaciones** y la opción avanzada **🗑️ Eliminar datos de Estilo de hombre**.
+Y **Estilo de hombre entra en la exportación de datos que ya existía**.
+
+*"Tú tienes el control de tus datos y preferencias."*
+
+### Las siete decisiones que gobiernan la fase
+
+**1. ⚠️ El apartado 15 es el registro de la Fase 4, palabra por palabra.** *"La información debe tener
+una única fuente de verdad. Por ejemplo: tipo de perfume → Perfumes. **No**: tipo de perfume → Mi
+estilo + Perfumes. 'Mi estilo' simplemente lo muestra."* Eso es `REGISTRO_DATOS` con `leerDato()`,
+que existe desde la Fase 4. Así que **esta fase no guarda ni una preferencia**: no tiene almacén ni
+normalizador propios, y hay una prueba que lo comprueba leyendo el código.
+
+**2. ⚠️ "Mis preferencias" ya estaba escrita.** La Fase 27 la construyó como vista de solo lectura
+sobre el registro (`misPreferencias()`), por el mismo motivo. Esta fase **la reutiliza y la agrupa**;
+escribir otra habría sido la cuarta lista de preferencias del proyecto. Es la **quinta vez** que este
+registro evita un duplicado.
+
+**3. ⚠️ Los siete grupos del apartado 2 son los siete temas de la Fase 32**, que ya declaran **su
+módulo** — y ese módulo es adonde lleva "Editar" (apartados 2 y 3: *"cada una abre el módulo
+original. **No duplicar formularios**"*). Tercera vez que se reutiliza esa lista en tres fases.
+
+**4. ⚠️ El interruptor del apartado 7 vive donde surte efecto**, en el almacén de la Fase 32: esta
+pantalla **solo lo lee y lo conmuta**, que es el apartado 15 aplicado a sí mismo. Y **hace algo de
+verdad** (regla 8): apagado, las reglas que miran una preferencia dejan de aplicarse — hay una prueba
+que cuenta ideas antes y después—, **pero las preferencias siguen guardadas**, que es literalmente lo
+que pide.
+
+**5. ⚠️ Ocultar y eliminar son dos acciones distintas** (apartado 12, con esas palabras), y el
+apartado 13 —*"al volver a activar, recuperar la configuración anterior"*— **sale solo**, porque
+`alternarModulo` no toca `config` desde la Fase 1. Aquí no hay código nuevo: hay dos frases y dos
+pruebas.
+
+**6. ⚠️ "Eliminar datos de Estilo de hombre" no toca otros módulos** (apartado 10). Enumera lo que se
+va **y lo que se queda** —el armario, el diario, los objetivos, el calendario y las fotos—, y **no
+apaga sus apartados**: qué tiene encendido lo eligió él, y el apartado 12 separa las dos cosas.
+
+**7. 🚨 Y `currentState` es también el contexto que se le manda a la IA.** El apartado 14 pedía meter
+Estilo de hombre en la exportación, y lo cómodo habría sido añadir `estiloHombre` a `currentState`.
+**Se pasa aparte**: ese objeto alimenta también al buscador con IA, y el perfil de piel tiene escrito
+que **no viaja a la IA** (F13, apartado 17). Un atajo de una línea habría filtrado Estilo de hombre
+entero, en silencio.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **126 comprobaciones nuevas**, **1168 casos de
+renderizado** (20 nuevos) y **270 comprobaciones en Chromium** (13 nuevas): se entra desde Mi estilo,
+**no hay ni un porcentaje** en la pantalla, está el interruptor con su frase, "Editar" sale de aquí y
+abre el módulo, y la confirmación fuerte del borrado dice qué se va **y qué se queda**.
+
+### Archivos
+- **Nuevos:** `src/lib/preferenciasEstilo.js`, `scripts/test-preferencias-estilo.mjs`.
+- **Modificados:** `src/lib/ideasEstilo.js` (el interruptor y `usaPreferencias` en las reglas),
+  `src/lib/exportData.js` (las filas de Estilo de hombre), `src/App.jsx` (pasarlo solo a la
+  exportación), `src/views/EstiloHombreView.jsx` (`PreferenciasEH` y sus dos puertas),
+  `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.96.0 — EH Fase 33/65: descubrir e inspiración
 
 ### Qué se ha construido

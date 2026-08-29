@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx';
 import { resumenHabito } from './rachas';
 import Papa from 'papaparse';
 import { calcularDuracion, formatHoras, todayISO } from './helpers';
+import { filasParaExportar } from './preferenciasEstilo';
 
 function downloadBlob(filename, content, mime) {
   const blob = new Blob([content], { type: mime });
@@ -15,8 +16,18 @@ function downloadBlob(filename, content, mime) {
   URL.revokeObjectURL(url);
 }
 
-function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, fe, bienestar }) {
+function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, fe, bienestar, estiloHombre = null }) {
   const rows = [];
+  /* ⚠️ **EH F34, apartado 14** — *"Estilo de hombre debe incluir sus datos dentro
+     de esa exportación. **No crear otro sistema de exportación.**"* Así que entra
+     por aquí, con la misma forma de fila que todo lo demás, y quien decide QUÉ
+     sale es su propio módulo (`filasParaExportar`), que ya excluye lo privado.
+
+     ⚠️ Y **`estiloHombre` NO se ha metido en `currentState`**, que es lo que
+     habría sido más cómodo: ese objeto es también el contexto que se le manda a
+     la IA, y el perfil de piel tiene escrito que **no viaja a la IA** (EH F13,
+     apartado 17). Se pasa aparte, solo a la exportación. */
+  if (estiloHombre) rows.push(...filasParaExportar(estiloHombre));
   sueno.forEach((e) =>
     rows.push({
       modulo: 'Sueño',

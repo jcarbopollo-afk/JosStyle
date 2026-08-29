@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -68,6 +68,7 @@ import { ocultarMiEstilo } from '../src/lib/miEstilo.js';
 import { alternarAcceso, alternarVerAccesos, cambiarTamano, alternarLinea } from '../src/lib/pantallaEH.js';
 import { ocultarIdeas, cambiarFrecuencia, guardarIdea, marcarVistas as marcarVistasIdeas, responderIdea as responderIdeaEH } from '../src/lib/ideasEstilo.js';
 import { ocultarDescubrir, cambiarFrecuenciaDescubrir, alternarFiltro as alternarFiltroDesc, guardarTarjeta, descartarTarjeta, TARJETAS_DESCUBRIR } from '../src/lib/descubrir.js';
+import { alternarPreferenciasEnUso } from '../src/lib/preferenciasEstilo.js';
 import { guardarDato as guardarDatoEH } from '../src/lib/datosEstiloHombre.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
@@ -1204,6 +1205,31 @@ const CASOS = [
               ['EstiloHombreView · con Descubrir', EstiloHombreView, () => conArmario(siete)],
               ['EstiloHombreView · con Descubrir apagado', EstiloHombreView, () =>
                 conArmario(ocultarDescubrir(siete))],
+            ];
+          })(),
+          /* EH Fase 34 — ⚙️ Mis preferencias: con datos, vacía y sin usarlas. */
+          ...(() => {
+            const siete = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE,
+              ['estilo', 'skincare', 'pelo', 'barba', 'perfumes', 'accesorios', 'gustos']);
+            const conDatos = guardarDatoEH(
+              guardarDatoEH(siete, 'tipoPiel', 'seca', { modulo: 'skincare' }).estado,
+              'aromasFavoritos', ['frescos'], { modulo: 'perfumes' },
+            ).estado;
+            const pf = (e) => ({
+              estado: e, accent, datosGlobales: {}, onCambiar: noop, onCerrar: noop, onEditar: noop,
+            });
+            return [
+              ['PreferenciasEH · con preferencias', PreferenciasEH, () => pf(conDatos)],
+              ['PreferenciasEH · todo sin configurar', PreferenciasEH, () => pf(siete)],
+              ['PreferenciasEH · sin usarlas para recomendar', PreferenciasEH, () =>
+                pf(alternarPreferenciasEnUso(conDatos))],
+              ['PreferenciasEH · sin módulos activos', PreferenciasEH, () =>
+                pf(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],
+              /* ⚠️ Y la puerta de entrada, dentro de Mi estilo (apartado 1). */
+              ['MiEstiloEH · con la puerta a Mis preferencias', MiEstiloEH, () => ({
+                estado: conDatos, accent, armario: lleno.armario, datosGlobales: {},
+                onCambiar: noop, onCerrar: noop, onPreferencias: noop,
+              })],
             ];
           })(),
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],

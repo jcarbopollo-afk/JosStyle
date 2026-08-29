@@ -168,7 +168,10 @@ export const REGLAS_IDEAS = [
   },
   {
     id: 'ropa_sin_estilos',
-    tema: 'ropa', peso: 2,
+    /* ⚠️ **F34, apartado 7** — la única de las quince que mira una PREFERENCIA
+       (`estilosFavoritos`, del registro de la F4). Con el interruptor apagado no
+       se aplica; las demás miran cuentas de sus módulos, no preferencias. */
+    tema: 'ropa', peso: 2, usaPreferencias: true,
     titulo: 'Qué estilos te gustan',
     texto: 'Podrías decirnos qué estilos te gustan: las ideas se afinan solas.',
     requiere: ['prendas'],
@@ -408,6 +411,11 @@ export const DIAS_SILENCIO_IDEAS = Object.fromEntries(MOTIVOS_IDEAS.map((m) => [
 
 export const DEFAULT_IDEAS = {
   frecuencia: FRECUENCIA_POR_DEFECTO,
+  /* ⚠️ **EH F34, apartado 7** — *"💡 Usar mis preferencias para recomendaciones.
+     Si lo desactiva: **las preferencias permanecen guardadas**, simplemente
+     dejan de utilizarse."* Vive aquí, que es donde surte efecto: la pantalla de
+     la F34 lo enseña, pero **la fuente de verdad es una sola** (apartado 15). */
+  usarPreferencias: true,
   recomendaciones: DEFAULT_RECOMENDACIONES,
 };
 
@@ -437,6 +445,8 @@ export function normalizarIdeas(guardado) {
   const todas = normalizarRecomendaciones(g.recomendaciones, { ids: null, motivos: MOTIVOS_IDEAS });
   return {
     frecuencia: frecuenciaIdeas(g.frecuencia) ? g.frecuencia : FRECUENCIA_POR_DEFECTO,
+    // ⚠️ F34 — el campo nuevo, con su línea en el normalizador (regla 5).
+    usarPreferencias: typeof g.usarPreferencias === 'boolean' ? g.usarPreferencias : true,
     recomendaciones: {
       ...propias,
       guardadas: todas.guardadas.filter((x) => idGuardable(x.reglaId)),
@@ -468,6 +478,18 @@ export const mostrarIdeas = (estado, id = FRECUENCIA_POR_DEFECTO) =>
   cambiarFrecuencia(estado, frecuenciaIdeas(id) && id !== 'nunca' ? id : FRECUENCIA_POR_DEFECTO);
 
 export const ideasApagadas = (estado) => datosIdeas(estado).frecuencia === 'nunca';
+
+/* ── EH F34, apartado 7 — el interruptor de las preferencias ─────────────── */
+
+export const usaPreferencias = (estado) => datosIdeas(estado).usarPreferencias === true;
+
+export const alternarUsarPreferencias = (estado) => {
+  const d = datosIdeas(estado);
+  return escribir(estado, { ...d, usarPreferencias: !d.usarPreferencias });
+};
+
+/** Las que dependen de una preferencia, para que la pantalla pueda decirlo. */
+export const REGLAS_CON_PREFERENCIAS = REGLAS_IDEAS.filter((r) => r.usaPreferencias === true).map((r) => r.id);
 
 /* ===========================================================================
    7 · ¿ESTÁ CALLADA? (apartados 3, 5 y 6)
@@ -523,6 +545,10 @@ export function recomendarIdeas(estado, { armario = null, datosGlobales = {}, ob
 
   const ctx = contextoIdeas(e, { armario, datosGlobales, objetivos });
   const candidatas = REGLAS_IDEAS
+    /* ⚠️ **F34, apartado 7** — apagado el interruptor, las reglas que miran una
+       preferencia **no se aplican**. Las preferencias siguen guardadas: lo que
+       cambia es que dejan de usarse, que es literalmente lo que pide. */
+    .filter((r) => d.usarPreferencias || !r.usaPreferencias)
     .filter((r) => reglaAplicable(r, ctx))
     // ⚠️ Apartado 3 — lo enseñado hace poco no se repite.
     .filter((r) => !silenciadaIdea(e, r.id, { hoy }).silenciada)
@@ -698,8 +724,10 @@ export function auditarIdeas() {
     textosConTonoMalo: textosDeIdeas().filter((t) => !tonoCorrecto(t)).length,
     reglas: REGLAS_IDEAS.length,
     temas: TEMAS_IDEAS.length,
-    // Lo que guarda: la frecuencia y lo del motor.
+    // Lo que guarda: la frecuencia, el interruptor de la F34 y lo del motor.
     datosGuardados: Object.keys(DEFAULT_IDEAS),
+    // F34, apartado 7 — cuántas reglas miran una preferencia.
+    reglasConPreferencias: REGLAS_CON_PREFERENCIAS.length,
   };
 }
 

@@ -216,6 +216,11 @@ import {
   mostrarDescubrir, cambiarFrecuenciaDescubrir, alternarFiltro, descartarTarjeta,
   guardarTarjeta, quitarTarjetaGuardada, marcarVistasDescubrir, datosDescubrir,
 } from '../lib/descubrir';
+import {
+  // ── EH F34 ──
+  ZONA_PREFERENCIAS, TEXTOS_PREFERENCIAS, panelPreferencias, alternarPreferenciasEnUso,
+  borrarPreferencia, restablecerCategoria, eliminarDatosDeEstilo,
+} from '../lib/preferenciasEstilo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -858,7 +863,7 @@ export function MisDatosEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
    ⚠️ **Todo es opcional** (apartado 13). No hay barra de progreso, ni
    porcentaje, ni la palabra "incompleto": un perfil vacío es un perfil válido y
    la pantalla no le pone nota. */
-export function MiEstiloEH({ estado, accent, armario = null, datosGlobales = {}, onCambiar, onCerrar }) {
+export function MiEstiloEH({ estado, accent, armario = null, datosGlobales = {}, onCambiar, onCerrar, onPreferencias }) {
   const [libre, setLibre] = useState({});
   const campos = useMemo(() => perfilDeEstilo(estado, armario, datosGlobales), [estado, armario, datosGlobales]);
   const resumen = useMemo(() => estadoDelPerfil(estado, armario, datosGlobales), [estado, armario, datosGlobales]);
@@ -890,6 +895,17 @@ export function MiEstiloEH({ estado, accent, armario = null, datosGlobales = {},
       <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>
         Qué te gusta y qué imagen quieres dar. Puedes dejarlo todo vacío: nada de esto es obligatorio.
       </p>
+
+      {/* ⚠️ **EH F34, apartado 1** — *"dentro de 🧔 Mi estilo añadir ⚙️ Mis
+          preferencias"*. Es una zona dentro de esta pantalla, no un apartado
+          principal nuevo: el mismo criterio que `ZONA_MI_ESTILO` en la Fase 6. */}
+      {onPreferencias && (
+        <button onClick={onPreferencias}
+          className="flex items-center gap-1.5 text-[11px] font-semibold mb-3"
+          style={{ color: accent }}>
+          {ZONA_PREFERENCIAS.icono} {ZONA_PREFERENCIAS.nombre}
+        </button>
+      )}
 
       {/* Apartado 14 — informativo, no una clasificación. Solo si hay datos. */}
       {refleja.suficiente && (
@@ -6776,6 +6792,177 @@ export function DescubrirEH({ estado, accent, onCambiar, onAccion }) {
 
 
 /* ===========================================================================
+   EH · F34 — ⚙️ MIS PREFERENCIAS (apartados 1 a 14)
+   ===========================================================================
+   *"No es otro formulario gigante. Es el lugar donde el usuario puede ver y
+   modificar las preferencias que ha ido configurando."*
+
+   ⚠️ **Esta pantalla no guarda ni una preferencia.** Las lee del registro de la
+   Fase 4, dice dónde se cambia cada una y lleva allí (apartados 3 y 15). Lo
+   único que escribe son borrados, y los tres piden confirmación. */
+export function PreferenciasEH({
+  estado, accent, datosGlobales = {}, onCambiar, onCerrar, onEditar,
+}) {
+  /* ⚠️ Regla 4 — los hooks, antes de cualquier `return` condicional. */
+  const [restableciendo, setRestableciendo] = useState(null);   // temaId
+  const [borrandoTodo, setBorrandoTodo] = useState(false);
+  const panel = useMemo(() => panelPreferencias(estado, datosGlobales), [estado, datosGlobales]);
+  const avisoRestablecer = useMemo(
+    () => (restableciendo ? restablecerCategoria(estado, restableciendo, { datosGlobales }).aviso : null),
+    [estado, restableciendo, datosGlobales],
+  );
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="flex items-center gap-2 mb-1">
+          {onCerrar && (
+            <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+              <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+            </button>
+          )}
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{panel.titulo}</p>
+        </div>
+        <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{panel.sub}</p>
+        {/* Apartado 11 — y qué se ve aquí y qué no. */}
+        <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{panel.privacidad}</p>
+        {/* Apartado 5 — sin insistir y sin porcentajes. */}
+        <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.noInsistir}</p>
+      </Card>
+
+      {/* Apartado 7 — el interruptor, que vive en el almacén de las Ideas. */}
+      <Card>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>
+            {panel.interruptor}
+          </span>
+          <Switch
+            checked={panel.usandolas} accent={accent}
+            onChange={() => onCambiar(alternarPreferenciasEnUso(estado))}
+          />
+        </div>
+        <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{panel.siguenGuardadas}</p>
+      </Card>
+
+      {/* Apartados 2, 3, 4, 6, 8 y 9 — una plaquita por grupo. */}
+      <p className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>
+        {TEXTOS_PREFERENCIAS.resumen}
+      </p>
+      {panel.grupos.map((g) => (
+        <Card key={g.id}>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-base leading-none" aria-hidden="true">{g.icono}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                {g.nombre}
+              </span>
+              {/* Apartado 4 — *"mostrar algo muy sencillo. Nada más."* */}
+              <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>{g.linea}</span>
+            </span>
+            {/* Apartado 3 — *"Editar lleva al lugar donde realmente se configura"*. */}
+            <button onClick={() => onEditar?.(g.modulo)}
+              className="text-[10px] font-semibold" style={{ color: accent }}>
+              {TEXTOS_PREFERENCIAS.editar}
+            </button>
+          </div>
+
+          {/* Apartados 6 y 8 — cada preferencia, con quién la usa y su borrado. */}
+          {g.preferencias.filter((p) => p.tiene).map((p) => (
+            <div key={p.id} className="rounded-2xl p-2 mb-1"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <div className="flex items-center gap-2">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[10px] font-semibold" style={{ color: COLORS.text }}>
+                    {p.nombre}
+                  </span>
+                  <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>{p.texto}</span>
+                </span>
+                {p.sePuedeBorrar && (
+                  <button onClick={() => onCambiar(borrarPreferencia(estado, p.id).estado)}
+                    className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                    {TEXTOS_PREFERENCIAS.eliminarDato}
+                  </button>
+                )}
+              </div>
+              {/* Apartado 6 — *"el usuario debe poder entenderlo"*. */}
+              {p.usadaPor.length > 0 && (
+                <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
+                  {panel.usandolas ? TEXTOS_PREFERENCIAS.seUsaPara : TEXTOS_PREFERENCIAS.noSeUsa}
+                  {' '}({p.usadaPor.join(' · ')})
+                </p>
+              )}
+            </div>
+          ))}
+
+          {/* Apartado 9 — restablecer la categoría, con confirmación. */}
+          {g.configuradas > 0 && (
+            <button onClick={() => setRestableciendo(g.id)}
+              className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+              🔄 Restablecer preferencias de {g.nombre}
+            </button>
+          )}
+        </Card>
+      ))}
+
+      {/* Apartado 12 — ocultar y borrar son dos cosas, y se dice. */}
+      <p className="text-[10px] text-center" style={{ color: COLORS.textMuted }}>
+        {panel.ocultarNoEsBorrar}
+      </p>
+      {/* Apartado 14. */}
+      <p className="text-[10px] text-center" style={{ color: COLORS.textMuted }}>
+        {panel.exportacion}
+      </p>
+
+      {/* Apartado 10 — la opción avanzada, al final y con confirmación fuerte. */}
+      <Card>
+        <button onClick={() => setBorrandoTodo(true)}
+          className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>
+          {panel.borradoTotal.titulo}
+        </button>
+      </Card>
+
+      {/* Apartado 9 — su confirmación, diciendo cuáles se van. */}
+      <AvisoDiseno
+        aviso={avisoRestablecer && {
+          titulo: avisoRestablecer.titulo,
+          pregunta: avisoRestablecer.pregunta,
+          notas: [avisoRestablecer.cuales.join(' · '), avisoRestablecer.nota],
+          confirmar: avisoRestablecer.confirmar,
+          cancelar: avisoRestablecer.cancelar,
+        }}
+        accent={accent}
+        onCancelar={() => setRestableciendo(null)}
+        onConfirmar={() => {
+          onCambiar(restablecerCategoria(estado, restableciendo, { confirmado: true, datosGlobales }).estado);
+          setRestableciendo(null);
+        }}
+      />
+
+      {/* Apartado 10 — *"debe aclarar exactamente qué se eliminará"*. */}
+      <AvisoDiseno
+        aviso={borrandoTodo && {
+          titulo: panel.borradoTotal.titulo,
+          pregunta: panel.borradoTotal.texto,
+          notas: [
+            `Se borra: ${[...panel.borradoTotal.seBorra.modulos, ...panel.borradoTotal.seBorra.preferencias].join(' · ') || 'nada, todavía no hay datos'}`,
+            `No se toca: ${panel.borradoTotal.seQueda.join(' · ')}`,
+          ],
+          confirmar: panel.borradoTotal.confirmar,
+          cancelar: panel.borradoTotal.cancelar,
+        }}
+        accent={accent}
+        onCancelar={() => setBorrandoTodo(false)}
+        onConfirmar={() => {
+          onCambiar(eliminarDatosDeEstilo(estado, { confirmado: true }).estado);
+          setBorrandoTodo(false);
+        }}
+      />
+    </div>
+  );
+}
+
+
+/* ===========================================================================
    EH · F31 — ⋮ PERSONALIZAR (apartados 1 a 5, 8, 10, 14, 16 y 17)
    ===========================================================================
    ⚠️ **Esta pantalla no inventa ni un mecanismo.** Mover es `moverA` y las
@@ -7137,6 +7324,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
+  const [preferencias, setPreferencias] = useState(false);   // F34, apartado 1
   const [perfilPelo, setPerfilPelo] = useState(false);   // false | 'panel' | 'perfil'
   const [skincare, setSkincare] = useState(false);       // F13
   const [barba, setBarba] = useState(false);             // F20
@@ -7376,11 +7564,27 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     );
   }
 
+  /* F34, apartado 1 — *"dentro de 🧔 Mi estilo añadir ⚙️ Mis preferencias"*: se
+     entra desde ahí y se vuelve ahí, no a la portada. */
+  if (preferencias) {
+    return (
+      <PreferenciasEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar}
+        onCerrar={() => setPreferencias(false)}
+        /* Apartado 3 — *"Editar lleva al lugar donde realmente se configura"*:
+           el mismo `abrirModulo` de las plaquitas, ni una navegación nueva. */
+        onEditar={(modulo) => { setPreferencias(false); setMiEstilo(false); abrirModulo(modulo); }}
+      />
+    );
+  }
+
   if (miEstilo) {
     return (
       <MiEstiloEH
         estado={estado} accent={accent} armario={armario} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={() => setMiEstilo(false)}
+        onPreferencias={() => setPreferencias(true)}
       />
     );
   }
@@ -7526,6 +7730,17 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
                   </div>
                 </div>
               ))}
+              {/* ⚠️ **EH F34, apartado 1** — *"dentro de 🧔 Mi estilo añadir ⚙️ Mis
+                  preferencias"*. También desde AQUÍ, y no solo desde la zona de
+                  la Fase 6: aquélla **solo existe si "Estilo y armario" está
+                  encendido**, y Mis preferencias agrupa los siete temas, así que
+                  colgarla únicamente de ahí la dejaría inalcanzable para quien
+                  no use el armario. Es la misma pantalla, con dos puertas. */}
+              <button onClick={() => setPreferencias(true)}
+                className="flex items-center gap-1.5 text-[11px] font-semibold mt-1"
+                style={{ color: accent }}>
+                {ZONA_PREFERENCIAS.icono} {ZONA_PREFERENCIAS.nombre}
+              </button>
               {/* ⚠️ Apartados 11, 12 y 15 — el orden y qué aparece son de la
                   Fase 2. Se dice y se lleva allí, en vez de un segundo sistema. */}
               <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>

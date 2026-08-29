@@ -851,4 +851,44 @@ await page.waitForTimeout(600);
 ok(/Quitar de guardados/.test(await ver()),
   '⚠️ PERSISTENCIA: tras recargar, la tarjeta sigue guardada (prueba 12)');
 
+/* ── 19 · ⚙️ MIS PREFERENCIAS (EH F34) ────────────────────────────────────
+   Lo que importa: que se llegue desde Mi estilo, que NO haya porcentajes, que
+   el interruptor del apartado 7 se guarde y que la confirmación fuerte del
+   borrado diga qué se va Y qué se queda. */
+/* ⚠️ Se entra por la tarjeta "🧔 Mi estilo personal", que está SIEMPRE. La otra
+   puerta —la zona de la Fase 6— solo existe con "Estilo y armario" encendido, y
+   aquí no lo está: por eso hay dos, y no una. */
+ok(await pulsar('⚙️ Mis preferencias'),
+  '⚙️ Mis preferencias se abre desde Mi estilo (apartado 1)');
+await page.waitForTimeout(600);
+const prefs = await ver();
+ok(/Tú tienes el control de tus datos/.test(prefs), 'con la frase del objetivo, literal');
+ok(/Usar mis preferencias para recomendaciones/.test(prefs), 'y el interruptor del apartado 7');
+ok(/siguen guardadas/.test(prefs), 'que dice que las preferencias no se pierden');
+ok(!/%/.test(prefs), '⚠️ Y NI UN PORCENTAJE: *"no queremos gamificar la configuración"* (apartado 5)');
+ok(/Sin configurar/.test(prefs), 'lo no configurado se marca, y ya');
+ok(/Eliminar datos de Estilo de hombre/.test(prefs), 'con la opción avanzada del apartado 10');
+
+guardado.length = 0;
+ok(await pulsar('Editar'), 'Editar lleva al módulo donde de verdad se configura (apartado 3)');
+await page.waitForTimeout(800);
+ok(!/Mis preferencias/.test(await ver()), '⚠️ Y sale de esta pantalla: no duplica el formulario');
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(500);
+await pulsar('⚙️ Mis preferencias');
+await page.waitForTimeout(600);
+ok(await pulsar('🗑️ Eliminar datos de Estilo de hombre'), 'La opción avanzada abre su confirmación');
+await page.waitForTimeout(600);
+const aviso = await ver();
+ok(/no se puede deshacer/.test(aviso), '⚠️ Con una confirmación FUERTE (apartado 10)');
+ok(/No se toca:/.test(aviso) && /armario/i.test(aviso),
+  '⚠️ Y diciendo qué NO se borra: el armario, el diario y los objetivos son de otros módulos');
+await pulsar('Cancelar');
+await page.waitForTimeout(400);
+ok(/Mis preferencias/.test(await ver()), 'y cancelar no borra nada');
+
 await salir(browser);

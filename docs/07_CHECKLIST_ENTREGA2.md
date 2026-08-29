@@ -2356,34 +2356,66 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar que no aparecen categorías desactivadas.
 - [x] Comprobar que no se duplican favoritos ni productos.
 
-#### EH · Fase 34/65 — PERFIL Y PREFERENCIAS AVANZADAS
-- [ ] PLAQUITA «MIS PREFERENCIAS»
-- [ ] CATEGORÍAS
-- [ ] EDITAR
-- [ ] RESUMEN
-- [ ] INFORMACIÓN NO CONFIGURADA
-- [ ] PREFERENCIAS UTILIZADAS
-- [ ] CONTROL DE RECOMENDACIONES
-- [ ] BORRAR UNA PREFERENCIA
-- [ ] RESTABLECER CATEGORÍA
-- [ ] BORRAR TODO ESTILO
-- [ ] PRIVACIDAD
-- [ ] DESACTIVACIÓN
-- [ ] REACTIVACIÓN
-- [ ] EXPORTACIÓN
-- [ ] SIN DUPLICADOS
-- [ ] PRUEBAS
-- [ ] Ver preferencias.
-- [ ] Editarlas.
-- [ ] Eliminar una.
-- [ ] Restablecer categoría.
-- [ ] Desactivar recomendaciones.
-- [ ] Ocultar módulo.
-- [ ] Reactivar módulo.
-- [ ] Eliminar datos.
-- [ ] Exportar.
-- [ ] Comprobar que no se modifican otros módulos.
-- [ ] Comprobar que no existen duplicados.
+#### EH · Fase 34/65 — PERFIL Y PREFERENCIAS AVANZADAS ✅ COMPLETADA (v1.97.0)
+
+> **`src/lib/preferenciasEstilo.js`** (126 comprobaciones) + `PreferenciasEH` en
+> `EstiloHombreView.jsx`, y **Estilo de hombre dentro de la exportación que ya existía**. Sin SQL.
+>
+> ⚠️ **EL APARTADO 15 ES EL REGISTRO DE LA FASE 4, PALABRA POR PALABRA:** *"la información debe tener
+> una única fuente de verdad… 'Mi estilo' simplemente lo muestra"*. Así que **esta fase no guarda ni
+> una preferencia**: no tiene almacén ni normalizador propios, y hay una prueba que lo comprueba
+> leyendo el código.
+>
+> ⚠️ **"MIS PREFERENCIAS" YA ESTABA ESCRITA.** La F27 la construyó como vista de solo lectura sobre
+> el registro (`misPreferencias()`); esta fase **la reutiliza y la agrupa**. Escribir otra habría sido
+> la cuarta lista de preferencias del proyecto. Quinta vez que el registro evita un duplicado.
+>
+> ⚠️ **Los siete grupos del apartado 2 son los siete temas de la F32**, que ya declaran su módulo — y
+> ese módulo es adonde lleva "Editar" (apartados 2 y 3). Tercera vez que se reutiliza esa lista.
+>
+> ⚠️ **El interruptor del apartado 7 vive donde surte efecto**, en el almacén de la F32: aquí solo se
+> lee y se conmuta. Y **hace algo de verdad** (regla 8): apagado, las reglas que miran una preferencia
+> dejan de aplicarse, con una prueba que lo comprueba contando ideas antes y después — **pero las
+> preferencias siguen guardadas**, que es literalmente lo que pide.
+>
+> ⚠️ **Ocultar y eliminar son dos acciones distintas** (apartado 12), y el apartado 13 —*"al volver a
+> activar, recuperar la configuración anterior"*— **sale solo**, porque `alternarModulo` no toca
+> `config` desde la F1. Aquí no hay código nuevo: hay dos frases y dos pruebas.
+>
+> ⚠️ **Y "eliminar datos de Estilo de hombre" NO toca otros módulos** (apartado 10): enumera lo que se
+> va **y lo que se queda** —el armario, el diario, los objetivos, el calendario y las fotos—, y **no
+> apaga sus apartados**, porque qué tiene encendido lo eligió él y no es un dato.
+>
+> ⚠️ **La exportación (apartado 14) entra por la que ya existía**, con la misma forma de fila. Y
+> `estiloHombre` se pasa **aparte de `currentState`**: ese objeto es también el contexto que se manda
+> a la IA, y el perfil de piel tiene escrito que **no viaja a la IA** (F13, apartado 17).
+- [x] PLAQUITA «MIS PREFERENCIAS»
+- [x] CATEGORÍAS
+- [x] EDITAR
+- [x] RESUMEN
+- [x] INFORMACIÓN NO CONFIGURADA
+- [x] PREFERENCIAS UTILIZADAS
+- [x] CONTROL DE RECOMENDACIONES
+- [x] BORRAR UNA PREFERENCIA
+- [x] RESTABLECER CATEGORÍA
+- [x] BORRAR TODO ESTILO
+- [x] PRIVACIDAD
+- [x] DESACTIVACIÓN
+- [x] REACTIVACIÓN
+- [x] EXPORTACIÓN
+- [x] SIN DUPLICADOS
+- [x] PRUEBAS
+- [x] Ver preferencias.
+- [x] Editarlas.
+- [x] Eliminar una.
+- [x] Restablecer categoría.
+- [x] Desactivar recomendaciones.
+- [x] Ocultar módulo.
+- [x] Reactivar módulo.
+- [x] Eliminar datos.
+- [x] Exportar.
+- [x] Comprobar que no se modifican otros módulos.
+- [x] Comprobar que no existen duplicados.
 
 #### EH · Fase 35/65 — ESTADÍSTICAS Y PROGRESO DE ESTILO
 - [ ] PLAQUITA «PROGRESO»
