@@ -380,6 +380,12 @@ else
   fallo "Fallan los avisos de estilo"; grep '✗' /tmp/jc_eh38.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-integracion-estilo.mjs >/tmp/jc_eh39.log 2>&1; then
+  ok "Integración con el resto de JosStyle (EH F39) — $(grep -c '✓' /tmp/jc_eh39.log) comprobaciones"
+else
+  fallo "Falla la integración de Estilo de hombre"; grep '✗' /tmp/jc_eh39.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else
@@ -593,10 +599,12 @@ else
   fallo "LA APLICACIÓN NO ARRANCA O NO GUARDA"; grep '✗' /tmp/jc_app.log
 fi
 
+# ⚠️ Dos reglas: una función de `src/lib/` sin importar (EH F15) y un componente
+# JSX sin importar (EH F39) — las dos revientan en el móvil y no las ve el build.
 if node scripts/test-imports.mjs >/tmp/jc_imports.log 2>&1; then
-  ok "Nadie usa una función de src/lib/ sin importarla"
+  ok "Nadie usa una función de src/lib/ ni un componente JSX sin importarlo"
 else
-  fallo "Hay una función usada sin importar (ReferenceError en el móvil)"; grep '✗' /tmp/jc_imports.log
+  fallo "Hay algo usado sin importar (ReferenceError en el móvil)"; grep '✗' /tmp/jc_imports.log
 fi
 
 echo ""

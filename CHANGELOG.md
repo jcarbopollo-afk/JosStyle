@@ -1,5 +1,83 @@
 # CHANGELOG.md
 
+## v2.2.0 — EH Fase 39/65: integración con el resto de JosStyle
+
+### Qué se ha construido
+La pantalla **🔗 Cómo se conecta con el resto**, dentro de ⋮ Personalizar: el **mapa de los
+diecisiete sistemas globales** que Estilo de hombre usa —calendario, objetivos, tareas,
+recordatorios, favoritos, productos, armario, diario, fotos, rachas, sonidos, eliminados, búsqueda,
+notificaciones, ajustes, cuenta y sincronización—, cada uno con **a dónde lleva**; el paso de una
+acción concreta a **Tareas**; el mapa de **datos compartidos**; y el aviso de que **desactivar no
+borra**.
+
+*"Estilo de hombre utiliza los sistemas globales. **No los duplica.**"*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Esta fase casi no construye: declara y comprueba.** Dieciséis de los diecisiete sistemas del
+enunciado **ya estaban conectados** —el calendario desde la F8, los objetivos desde la F28, la
+papelera desde la F1, el armario desde la F5, el diario desde la F27, los avisos desde la F38—. Lo
+que faltaba era **una línea por sistema que diga por dónde entra**, y una prueba que lo compruebe
+importando la función real. `SISTEMAS_EH` es esa lista, del mismo tipo que `MODULOS_EH` o
+`METRICAS_PROGRESO`: **al conectar un sistema nuevo, se añade su línea**. Y su `entra` **son las
+funciones de verdad**: renombrar una rompe la compilación y hace saltar la prueba.
+
+**2. ⚠️ Tareas era el único que faltaba** (apartado 3). Estilo de hombre no había tocado nunca
+`productividad.tareas`, y el enunciado pide *"Comprar producto X"*. Entra **como entró Objetivos en
+la F28**: la tarea vive en Productividad con su forma real —`{ id, texto, fechaLimite, hecha }`, ni
+un campo inventado—, aquí solo queda **su id**, y quien escribe los dos almacenes es `App.jsx`.
+Decimoséptimo `aplicarPlan` del proyecto: **sin `confirmado` no escribe nada**. Las acciones salen de
+dos listas que ya existían: los accesorios que quiere (F26) y los perfumes por probar (F24).
+
+**3. ⚠️ Dos de los sistemas del enunciado no existen, y se dice.** El apartado 5 pide *"favoritos
+globales"* y el 9 *"sistema global de fotos"*: **no hay ninguno de los dos**. Los favoritos son de
+cada módulo (ya lo dijo la F32) y las fotos son de Salud, el Armario, la Biblioteca y los Fondos,
+cada una con su bucket. Inventarlos sería exactamente el sistema paralelo que la fase prohíbe, y
+fingirlos rompería la regla 8. Se declaran con `existe: false` y **su frase honesta**, que es la que
+se lee en pantalla, sin un botón que no llevaría a ninguna parte.
+
+**4. ⚠️ "Fuente única de verdad" ya tenía motor** (apartado 18). Es `FUENTES_GLOBALES` /
+`esDatoGlobal()` de la F1 más el `REGISTRO_DATOS` de la F4, y `guardarDato()` lleva desde entonces
+negándose a escribir un dato que vive fuera. Aquí no se construye un tercero: se usa ése, y
+`duplicadosDetectados()` **lo comprueba de verdad** — un módulo que guardase el peso por su cuenta
+saldría con su nombre y con dónde vive el dato.
+
+**5. ⚠️ La cascada no borra más: enseña** (apartado 19). `impactoDeEliminar()` separa tres cosas:
+**el elemento**, que va a Eliminados recientemente; **lo que se queda sin apuntar a nada**; y **lo
+que no se toca** — borrar un accesorio **no borra la prenda del Armario**. Limpiar los ids colgados
+sigue siendo del normalizador de cada módulo, que ya lo hacía desde la F24: aquí no se repite esa
+lógica, y hay una prueba que comprueba que este archivo **no borra**.
+
+**6. ⚠️ Y desactivar no borra** (apartado 20). Sale solo, porque `alternarModulo` no toca `config`
+desde la F1 y el tercer estado de la F36 separó ocultar de desactivar. No hacía falta código nuevo:
+hacía falta comprobarlo **apagando y encendiendo de verdad**, que es la clase de cosa que se rompe en
+silencio.
+
+⚠️ **El campo nuevo va en su normalizador desde el primer día** (regla 5): `tareaId` está en
+`normalizarDeseo` y en `normalizarPorProbar`, no después. Es la lección número veintinueve, y esta
+vez el fallo no llegó a ocurrir.
+
+### 🐛 Y una del navegador
+El botón de la lista y el de confirmar decían **lo mismo** —*"Crear tarea"*—, así que no había forma
+de saber cuál se estaba pulsando, tampoco para el recorrido en Chromium. El de confirmar pasó a decir
+**"Apuntar en Tareas"**, que además dice mejor lo que hace.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **172 comprobaciones nuevas**, **1304 casos de
+renderizado** (24 nuevos) y **339 comprobaciones en Chromium** (17 nuevas): se abre desde
+⋮ Personalizar, se ve el mapa entero, **lo que no existe se dice con su motivo**, sale *"Comprar
+Reloj negro (Casio)"*, se confirma, **la tarea se guarda en Productividad**, en Estilo de hombre
+**queda solo su id** y tras recargar sigue apuntada.
+
+### Archivos
+- **Nuevos:** `src/lib/integracionEstilo.js`, `scripts/test-integracion-estilo.mjs`.
+- **Modificados:** `src/lib/accesorios.js` y `src/lib/perfumes.js` (el campo `tareaId` y
+  `editarPorProbar`), `src/views/EstiloHombreView.jsx` (`IntegracionEH` y su puerta en Personalizar),
+  `src/App.jsx` (el puente a Tareas), `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`,
+  `scripts/test-imports.mjs` (la segunda regla invariante) y `scripts/verificar.sh`.
+
+---
+
 ## v2.1.0 — EH Fase 38/65: notificaciones y recordatorios
 
 ### Qué se ha construido

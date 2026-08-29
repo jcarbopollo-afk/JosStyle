@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH, GestionarEstiloEH, BuscadorEstiloEH, AvisosEstiloEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH, GestionarEstiloEH, BuscadorEstiloEH, AvisosEstiloEH, IntegracionEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -57,6 +57,8 @@ import {
   editarAccesorio as editarAccesorioEH, alternarFavoritoAccesorio, alternarEnUsoAccesorio,
   anadirDeseoAccesorio, alternarParteAccesorios, elegirCategoriasAccesorios,
 } from '../src/lib/accesorios.js';
+/* EH F39 — la integración con el resto de JosStyle. */
+import { accionesConcretas, prepararTarea, aplicarTarea } from '../src/lib/integracionEstilo';
 import {
   configurarGustos, decirAhoraNoGustos, anadirGusto, alternarFavoritoGusto,
   cambiarEstadoGusto, ponerFechaGusto, alternarParteGustos,
@@ -1357,6 +1359,33 @@ const CASOS = [
                 ap(crearRecordatorio(conPerf, { texto: 'Comprar champú', fecha: HOY, hora: '20:00', repeticion: 'semanal' }).estado)],
               ['AvisosEstiloEH · sin nada activo', AvisosEstiloEH, () =>
                 ap(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],
+            ];
+          })(),
+          /* EH Fase 39 — 🔗 la integración: el mapa de sistemas globales, las
+             acciones que pueden pasar a Tareas y lo que todavía no existe. */
+          ...(() => {
+            const ocho = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE,
+              ['estilo', 'skincare', 'pelo', 'barba', 'perfumes', 'sonrisa', 'accesorios', 'gustos']);
+            const conDeseo = anadirDeseoAccesorio(ocho, { nombre: 'Reloj negro', marca: 'Casio' }, { hoy: HOY }).estado;
+            const conProbar = anadirPorProbar(conDeseo, { nombre: 'Sauvage', marca: 'Dior' }, { hoy: HOY }).estado;
+            const acc = accionesConcretas(conProbar, { tareas: [] });
+            const conTarea = aplicarTarea(conProbar, { tareas: [] },
+              prepararTarea(conProbar, 'accesorio_deseado', acc[0].elementoId, { fechaLimite: HOY }),
+              { confirmado: true });
+            const ip = (e, prod) => ({
+              estado: e, accent, productividad: prod, datosGlobales: {},
+              onCerrar: noop, onIr: noop, onGuardarTarea: noop,
+            });
+            return [
+              ['IntegracionEH · sin nada que apuntar', IntegracionEH, () => ip(ocho, { tareas: [] })],
+              ['IntegracionEH · con acciones concretas', IntegracionEH, () => ip(conProbar, { tareas: [] })],
+              ['IntegracionEH · con una ya en Tareas', IntegracionEH, () =>
+                ip(conTarea.estiloHombre, conTarea.productividad)],
+              ['IntegracionEH · con la tarea marcada', IntegracionEH, () =>
+                ip(conTarea.estiloHombre, { tareas: conTarea.productividad.tareas.map((t) => ({ ...t, hecha: true })) })],
+              ['IntegracionEH · con el enlace colgando', IntegracionEH, () =>
+                ip(conTarea.estiloHombre, { tareas: [] })],
+              ['IntegracionEH · sin configurar', IntegracionEH, () => ip(DEFAULT_ESTILO_HOMBRE, null)],
             ];
           })(),
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],

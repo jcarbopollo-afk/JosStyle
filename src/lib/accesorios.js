@@ -240,6 +240,11 @@ export function normalizarDeseo(g) {
     marca: String(d.marca || '').trim(),
     nota: String(d.nota || '').trim().slice(0, MAX_NOTA_ACCESORIO),
     productoId: typeof d.productoId === 'string' ? d.productoId : null,
+    /* ⚠️ **EH F39, apartado 3** — el enlace a la tarea de Productividad. Aquí
+       solo vive **el id**: el texto, la fecha y el "hecha" son de Tareas, que es
+       el sistema global. Y va en el normalizador desde el primer día, o el
+       siguiente guardado se lo llevaría (regla 5). */
+    tareaId: typeof d.tareaId === 'string' ? d.tareaId : null,
     creadoEn: typeof d.creadoEn === 'string' ? d.creadoEn : null,
   };
 }

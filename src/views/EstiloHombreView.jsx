@@ -240,6 +240,12 @@ import {
   TEXTOS_AVISOS_EH, panelAvisosEH, alternarTipo, alternarSilencio,
   desactivarAvisosEH, activarAvisosEH, crearRecordatorio, borrarRecordatorio, repeticion,
 } from '../lib/avisosEstilo';
+/* ⚠️ **EH F39** — la integración con el resto de JosStyle. Es una capa de
+   declaración: aquí no hay ni un sistema nuevo, solo por dónde se entra a los
+   que ya existen. */
+import {
+  TEXTOS_INTEGRACION, panelIntegracion, prepararTarea,
+} from '../lib/integracionEstilo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -7521,6 +7527,180 @@ export function BuscadorEstiloEH({
    ⚠️ **Esta pantalla no manda ni una notificación**: elige de qué avisar. El
    interruptor general, las categorías y el horario de silencio son los de la
    Fase A4, y se dice en la propia pantalla. */
+/* ===========================================================================
+   EH F39 — 🔗 CÓMO SE CONECTA CON EL RESTO DE JOSSTYLE
+   ===========================================================================
+   *"Estilo de hombre utiliza los sistemas globales. No los duplica."*
+
+   ⚠️ Esta pantalla **no configura nada**: dice dónde vive cada cosa y lleva
+   allí. Los dos sistemas que el enunciado da por hechos y todavía no existen
+   —favoritos globales (apartado 5) y galería de fotos (apartado 9)— se dicen
+   con su frase, en vez de un botón que no haría nada (regla 8).
+
+   Lo único que esta pantalla escribe es la tarea del apartado 3, y **la escribe
+   `App.jsx`**, que es el dueño de los dos almacenes. */
+export function IntegracionEH({
+  estado, accent, productividad = null, datosGlobales = {},
+  onCerrar, onIr, onGuardarTarea,
+}) {
+  /* ⚠️ Regla 4 — los hooks, antes de cualquier `return` condicional. */
+  const [creando, setCreando] = useState(null);   // { fuente, elementoId, texto }
+  const [fecha, setFecha] = useState('');
+  const panel = useMemo(
+    () => panelIntegracion(estado, { productividad, datosGlobales }),
+    [estado, productividad, datosGlobales],
+  );
+
+  const crear = () => {
+    if (!creando) return;
+    const plan = prepararTarea(estado, creando.fuente, creando.elementoId, { fechaLimite: fecha || null });
+    /* ⚠️ Decimoséptimo `aplicarPlan`: el `confirmado` lo pone este botón, que es
+       el toque explícito de Josué. Nunca un valor por defecto (regla 7). */
+    if (plan) onGuardarTarea?.(plan);
+    setCreando(null);
+    setFecha('');
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>{panel.titulo}</p>
+      </div>
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.sub}</p>
+
+      {/* ── Apartado 3 — lo concreto, a Tareas ───────────────────────────── */}
+      <Card>
+        <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+          {panel.tareas.titulo}
+        </p>
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>{panel.tareas.sub}</p>
+        {panel.tareas.acciones.length === 0 ? (
+          <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.tareas.vacio}</p>
+        ) : (
+          panel.tareas.acciones.map((a) => (
+            <div key={`${a.fuente}-${a.elementoId}`} className="rounded-2xl p-2 mb-1"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <div className="flex items-center gap-2">
+                <span className="text-sm leading-none" aria-hidden="true">{a.icono}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                    {a.texto}
+                  </span>
+                  {/* ⚠️ El enlace colgando se dice, no se rehace solo. */}
+                  {a.colgada && (
+                    <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>
+                      {TEXTOS_INTEGRACION.tareaBorrada}
+                    </span>
+                  )}
+                </span>
+                {a.enTareas ? (
+                  <span className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                    {a.hecha ? '✅' : ''} {TEXTOS_INTEGRACION.tareaHecha}
+                  </span>
+                ) : (
+                  <button onClick={() => { setCreando({ fuente: a.fuente, elementoId: a.elementoId, texto: a.texto }); setFecha(''); }}
+                    className="text-[10px] font-semibold" style={{ color: accent }}>
+                    {TEXTOS_INTEGRACION.tareaCrear}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+        {/* Apartado 3 — dónde se ven de verdad. */}
+        <button onClick={() => onIr?.('productividad', { sub: 'tareas' })}
+          className="text-[10px] font-semibold mt-1" style={{ color: accent }}>
+          {TEXTOS_INTEGRACION.tareaDonde}
+        </button>
+      </Card>
+
+      {/* El paso de confirmar, con su fecha opcional. */}
+      {creando && (
+        <Card>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>{creando.texto}</p>
+          {/* ⚠️ `Field` NO está importado en este archivo, y usarlo dejaba la
+              tarjeta sin renderizar: el botón de confirmar no llegaba a existir.
+              Lo cazó el recorrido en Chromium. Se etiqueta como en el resto del
+              archivo, con `aria-label`. */}
+          <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>
+            Fecha límite (opcional)
+          </p>
+          <TextInput type="date" value={fecha} onChange={(ev) => setFecha(ev.target.value)}
+            aria-label="Fecha límite de la tarea" />
+          <div className="flex gap-2 mt-2">
+            <PrimaryButton accent={accent} onClick={crear}>{TEXTOS_INTEGRACION.tareaConfirmar}</PrimaryButton>
+            <button onClick={() => { setCreando(null); setFecha(''); }}
+              className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>
+              Cancelar
+            </button>
+          </div>
+        </Card>
+      )}
+
+      {/* ── Apartados 1-17 — el mapa ─────────────────────────────────────── */}
+      {panel.sistemas.map((sis) => (
+        <Card key={sis.id}>
+          <div className="flex items-center gap-2">
+            <span className="text-base leading-none" aria-hidden="true">{sis.icono}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                {sis.nombre}
+              </span>
+              <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>
+                {sis.que}
+              </span>
+            </span>
+            {/* ⚠️ Solo hay botón si hay a dónde ir. Nada decorativo (regla 8). */}
+            {sis.existe && sis.destino && onIr && (
+              <button onClick={() => onIr(sis.destino)}
+                className="text-[10px] font-semibold" style={{ color: accent }}>
+                {TEXTOS_INTEGRACION.abrir}
+              </button>
+            )}
+            {!sis.existe && (
+              <span className="rounded-full px-2 py-0.5"
+                style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+                <span className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                  {TEXTOS_INTEGRACION.todavia}
+                </span>
+              </span>
+            )}
+          </div>
+          {/* Lo que no existe, y por qué. Y el catálogo vacío a propósito. */}
+          {sis.porque && (
+            <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{sis.porque}</p>
+          )}
+        </Card>
+      ))}
+
+      {/* ── Apartado 18 — un dato existe una sola vez ────────────────────── */}
+      <Card>
+        <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+          {panel.datos.texto}
+        </p>
+        <div className="flex flex-wrap gap-1 mt-2">
+          {panel.datos.lista.filter((d) => d.tiene).map((d) => (
+            <span key={d.id} className="rounded-full px-2 py-0.5"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <span className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+                {d.nombre}
+              </span>
+            </span>
+          ))}
+        </div>
+      </Card>
+
+      {/* ── Apartado 20 — desactivar no borra ────────────────────────────── */}
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.desactivar}</p>
+    </div>
+  );
+}
+
 export function AvisosEstiloEH({
   estado, accent, armario = null, datosGlobales = {}, objetivos = null, onCambiar, onCerrar,
 }) {
@@ -7740,6 +7920,7 @@ function AvisoDiseno({ aviso, accent, onConfirmar, onCancelar }) {
 
 export function PersonalizarPlaquitas({
   estado, accent, armario = null, datosGlobales = {}, onCambiar, onCerrar, onGestionar, onAvisos,
+  onIntegracion,
 }) {
   /* ⚠️ Regla 4 — todos los hooks, antes de cualquier `return` condicional. */
   const [moviendo, setMoviendo] = useState(null);
@@ -7810,6 +7991,14 @@ export function PersonalizarPlaquitas({
         <button onClick={onAvisos}
           className="text-[11px] font-semibold" style={{ color: accent }}>
           {TEXTOS_AVISOS_EH.titulo}
+        </button>
+      )}
+      {/* ⚠️ **EH F39** — dónde vive cada cosa que Estilo de hombre usa de fuera.
+          No configura nada: enseña y lleva allí. */}
+      {onIntegracion && (
+        <button onClick={onIntegracion}
+          className="text-[11px] font-semibold" style={{ color: accent }}>
+          {TEXTOS_INTEGRACION.titulo}
         </button>
       )}
 
@@ -8064,7 +8253,7 @@ export function PersonalizarPlaquitas({
 /* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
-export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, onEliminarPerfume, onEliminarAccesorio, onGuardarAccesorio, onEliminarGusto, onGuardarObjetivo, objetivos = null, rachas = null, onEliminarDatosEH }) {
+export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, onEliminarPerfume, onEliminarAccesorio, onGuardarAccesorio, onEliminarGusto, onGuardarObjetivo, objetivos = null, rachas = null, onEliminarDatosEH, productividad = null, onGuardarTarea }) {
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
@@ -8072,6 +8261,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const [gestionEstilo, setGestionEstilo] = useState(false);  // F36, apartado 1
   const [buscando, setBuscando] = useState(false);            // F37, apartado 1
   const [avisos, setAvisos] = useState(false);                // F38, apartado 11
+  const [integracion, setIntegracion] = useState(false);      // F39, apartados 1-21
   const [perfilPelo, setPerfilPelo] = useState(false);   // false | 'panel' | 'perfil'
   const [skincare, setSkincare] = useState(false);       // F13
   const [barba, setBarba] = useState(false);             // F20
@@ -8392,6 +8582,21 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     );
   }
 
+  /* ⚠️ **EH F39** — *"Estilo de hombre utiliza los sistemas globales. No los
+     duplica."* La pantalla dice dónde vive cada cosa y lleva allí. Lo único que
+     escribe es la tarea del apartado 3, y la escribe `App.jsx`. */
+  if (integracion) {
+    return (
+      <IntegracionEH
+        estado={estado} accent={accent}
+        productividad={productividad} datosGlobales={datosGlobales}
+        onCerrar={() => setIntegracion(false)}
+        onIr={onIr}
+        onGuardarTarea={onGuardarTarea}
+      />
+    );
+  }
+
   /* F31, apartado 1 — *"⋮ Personalizar. Al activarlo, las plaquitas entran en
      modo edición."* Es una pantalla propia, no un estado a medias de la portada. */
   if (personalizando) {
@@ -8401,6 +8606,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
         onCambiar={onCambiar} onCerrar={() => setPersonalizando(false)}
         onGestionar={() => setGestionEstilo(true)}
         onAvisos={() => { setPersonalizando(false); setAvisos(true); }}
+        onIntegracion={() => { setPersonalizando(false); setIntegracion(true); }}
       />
     );
   }

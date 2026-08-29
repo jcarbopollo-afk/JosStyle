@@ -72,6 +72,9 @@ import { eliminarPerfume, restaurarPerfume, eliminarUso, restaurarUso } from './
 import { eliminarAccesorio, restaurarAccesorio, eliminarDeseoAccesorio, restaurarDeseoAccesorio } from './lib/accesorios';
 // EH F27 — gustos, intereses y cosas que quiere hacer, a la misma papelera.
 import { eliminarGusto, restaurarGusto } from './lib/gustos';
+/* ⚠️ **EH F39, apartado 3** — el puente a Tareas. `App.jsx` es el dueño de
+   `estiloHombre` y de `productividad`, así que el plan lo aplica aquí. */
+import { aplicarTarea } from './lib/integracionEstilo';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.
@@ -2040,6 +2043,14 @@ export default function App() {
               ...(nuevo ? { estiloHombre: nuevo } : {}),
               ...(nuevosObjetivos ? { objetivos: nuevosObjetivos } : {}),
             })}
+            /* ⚠️ **EH F39, apartado 3** — el único sistema global que Estilo de
+               hombre no había tocado nunca. La tarea vive en Productividad y
+               aquí solo queda su id; los dos almacenes, en un solo guardado. */
+            productividad={productividad}
+            onGuardarTarea={(plan) => {
+              const r = aplicarTarea(estiloHombre, productividad, plan, { confirmado: true });
+              if (r) snapshotAndSave({ estiloHombre: r.estiloHombre, productividad: r.productividad });
+            }}
             rachas={rachas}
           />
         );

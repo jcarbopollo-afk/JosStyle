@@ -360,6 +360,10 @@ export function normalizarPorProbar(g) {
     nombre,
     marca: String(p.marca || '').trim(),
     nota: String(p.nota || '').trim().slice(0, MAX_NOTA_PERFUME),
+    /* ⚠️ **EH F39, apartado 3** — el enlace a la tarea de Productividad, igual
+       que el de un deseo de Accesorios: aquí solo el id, y en el normalizador
+       desde el primer día (regla 5). */
+    tareaId: typeof p.tareaId === 'string' ? p.tareaId : null,
     creadoEn: typeof p.creadoEn === 'string' ? p.creadoEn : null,
   };
 }
@@ -557,6 +561,23 @@ export function anadirPorProbar(estado, datos = {}, { hoy = todayISO() } = {}) {
   if (!p) return { estado: normalizarEstiloHombre(estado), error: 'Dinos al menos su nombre.', item: null };
   const d = datosPerfumes(estado);
   return { estado: escribir(estado, { ...d, porProbar: [...d.porProbar, p] }), error: null, item: p };
+}
+
+/**
+ * ⚠️ **EH F39** — el editor de una entrada de "por probar". Nació para poder
+ * guardar el `tareaId` del apartado 3, y es el mismo reparto de siempre: el
+ * puente decide, **escribe el módulo dueño del dato**. Mismo patrón que
+ * `editarDeseoAccesorio` en Accesorios.
+ */
+export function editarPorProbar(estado, id, cambios = {}) {
+  const d = datosPerfumes(estado);
+  const actual = d.porProbar.find((x) => x.id === id);
+  if (!actual) return { estado: normalizarEstiloHombre(estado), error: 'Ese no está en la lista.' };
+  if ('nombre' in cambios && !String(cambios.nombre || '').trim()) {
+    return { estado: normalizarEstiloHombre(estado), error: 'Necesita un nombre.' };
+  }
+  const nuevo = normalizarPorProbar({ ...actual, ...cambios, id: actual.id });
+  return { estado: escribir(estado, { ...d, porProbar: d.porProbar.map((x) => (x.id === id ? nuevo : x)) }), error: null };
 }
 
 export function quitarPorProbar(estado, id) {

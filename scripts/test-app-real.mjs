@@ -1076,4 +1076,80 @@ await page.waitForTimeout(700);
 ok(/🔕 silenciado/.test(await ver()),
   '⚠️ PERSISTENCIA: tras recargar, el módulo sigue silenciado (prueba 14)');
 
+/* ── 24 · 🔗 INTEGRACIÓN CON EL RESTO DE JOSSTYLE (EH F39) ────────────────
+   Lo que importa de esta fase: que el mapa se vea, que lo que NO existe se
+   diga en vez de fingirse, y —lo único que escribe— que "Comprar producto X"
+   acabe DE VERDAD en las tareas de Productividad y aquí solo quede su id. */
+
+/* Se siembra un deseo de accesorio, que es de donde sale una acción concreta.
+   ⚠️ Se toca `almacen` directamente, no el estado inicial compartido: así esta
+   sección no cambia lo que ven las anteriores. */
+almacen.estiloHombre = {
+  ...ESTILO_GUARDADO,
+  modulos: ESTILO_GUARDADO.modulos.map((m) => (m.id === 'accesorios'
+    ? { ...m, config: { accesorios: { deseos: [{ id: 'des1', nombre: 'Reloj negro', marca: 'Casio' }] } } }
+    : m)),
+};
+almacen.productividad = { habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {} };
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(600);
+await pulsar('⋮ Personalizar');
+await page.waitForTimeout(600);
+ok(await pulsar('🔗 Cómo se conecta con el resto'),
+  '🔗 La integración se abre desde ⋮ Personalizar');
+await page.waitForTimeout(700);
+const integr = await ver();
+ok(/no guarda nada dos veces/.test(integr),
+  '⚠️ Con la regla de la fase dicha: usa lo que ya tienes');
+ok(/Calendario/.test(integr) && /Objetivos/.test(integr) && /Eliminados recientemente/.test(integr),
+  'y el mapa entero: calendario, objetivos y la papelera global');
+ok(/Todavía no existe/.test(integr),
+  '⚠️ Lo que NO existe se dice, en vez de un botón que no haría nada (apartados 5 y 9)');
+ok(/Todavía no hay una lista de favoritos común/.test(integr),
+  '⚠️ Y con su motivo: los favoritos son de cada apartado');
+ok(/Todavía no hay una galería común/.test(integr),
+  'igual que las fotos, que son del módulo al que pertenecen');
+ok(/Un dato existe una sola vez/.test(integr), 'con la fuente única de verdad (apartado 18)');
+ok(/no borra nada/.test(integr), 'y que desactivar no borra (apartado 20)');
+ok(/Comprar Reloj negro \(Casio\)/.test(integr),
+  '⚠️ Y la acción concreta del enunciado: *"Comprar producto X"* (apartado 3)');
+
+guardado.length = 0;
+ok(await pulsar('Crear tarea'), 'Se puede pasar a Tareas');
+await page.waitForTimeout(600);
+ok(await pulsar('Apuntar en Tareas'), 'y hay que confirmarlo (regla 7)');
+await page.waitForTimeout(1400);
+
+const escTareas = guardado.filter((g) => g && g.key === 'productividad');
+ok(escTareas.length > 0, '⚠️ PERSISTENCIA: la tarea se guarda en PRODUCTIVIDAD, no aquí');
+const tareas = escTareas.at(-1)?.value?.tareas || [];
+ok(tareas.length === 1 && tareas[0].texto === 'Comprar Reloj negro (Casio)',
+  'con el texto del enunciado');
+ok(tareas[0].hecha === false && 'fechaLimite' in tareas[0],
+  '⚠️ y con la forma REAL de una tarea, ni un campo inventado');
+
+const escEH39 = guardado.filter((g) => g && g.key === 'estiloHombre');
+const cfgAcc = escEH39.at(-1)?.value?.modulos?.find((m) => m.id === 'accesorios')?.config || {};
+const deseoGuardado = (cfgAcc.accesorios?.deseos || [])[0] || {};
+ok(deseoGuardado.tareaId === tareas[0]?.id,
+  '⚠️ Y en Estilo de hombre queda SOLO su id (fuente única, apartado 18)');
+ok(!('hecha' in deseoGuardado) && !('texto' in deseoGuardado),
+  '⚠️ Ni el texto ni el "hecha": eso vive en Tareas');
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(600);
+await pulsar('⋮ Personalizar');
+await page.waitForTimeout(500);
+await pulsar('🔗 Cómo se conecta con el resto');
+await page.waitForTimeout(700);
+ok(/Ya está en Tareas/.test(await ver()),
+  '⚠️ PERSISTENCIA: tras recargar sigue apuntada, y no se le vuelve a ofrecer');
+
 await salir(browser);

@@ -2675,28 +2675,62 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar horario de silencio.
 - [x] Comprobar persistencia.
 
-#### EH · Fase 39/65 — INTEGRACIÓN CON EL RESTO DE JC FITNESS
-- [ ] CALENDARIO 📅
-- [ ] OBJETIVOS 🎯
-- [ ] TAREAS ✅
-- [ ] RECORDATORIOS 🔔
-- [ ] FAVORITOS ❤️
-- [ ] PRODUCTOS 🛒
-- [ ] ARMARIO 👕
-- [ ] DIARIO 📝
-- [ ] FOTOS 📷
-- [ ] RACHAS 🔥
-- [ ] SONIDOS 🔊
-- [ ] ELIMINADOS 🗑️
-- [ ] BÚSQUEDA 🔍
-- [ ] NOTIFICACIONES 🔔
-- [ ] AJUSTES ⚙️
-- [ ] AUTENTICACIÓN 👤
-- [ ] SINCRONIZACIÓN ☁️
-- [ ] FUENTE ÚNICA DE VERDAD
-- [ ] ELIMINACIÓN EN CASCADA
-- [ ] DESACTIVACIÓN
-- [ ] PRUEBA MAESTRA
+#### EH · Fase 39/65 — INTEGRACIÓN CON EL RESTO DE JC FITNESS ✅ COMPLETADA (v2.2.0)
+
+> **`src/lib/integracionEstilo.js`** (172 comprobaciones) + `IntegracionEH` en
+> `EstiloHombreView.jsx`, más el campo `tareaId` en `accesorios.js` y `perfumes.js`. Sin SQL.
+>
+> ⚠️ **ESTA FASE CASI NO CONSTRUYE: DECLARA Y COMPRUEBA.** Dieciséis de los diecisiete sistemas del
+> enunciado **ya estaban conectados** — el calendario desde la F8, los objetivos desde la F28, la
+> papelera desde la F1, el armario desde la F5, el diario desde la F27, los avisos desde la F38.
+> `SISTEMAS_EH` es **una línea por sistema** —del mismo tipo que `MODULOS_EH` o `METRICAS_PROGRESO`—
+> y su `entra` **son las funciones de verdad, importadas**: si una fase futura renombra una, esto deja
+> de compilar y la prueba salta.
+>
+> ⚠️ **TAREAS ERA EL ÚNICO QUE FALTABA** (apartado 3): Estilo de hombre no había tocado nunca
+> `productividad.tareas`. Entra **como entró Objetivos en la F28** — la tarea vive en Productividad,
+> aquí solo queda **su id**, y quien escribe los dos almacenes es `App.jsx`. Decimoséptimo
+> `aplicarPlan` del proyecto: **sin `confirmado` no escribe nada**.
+>
+> ⚠️ **DOS DE LOS SISTEMAS DEL ENUNCIADO NO EXISTEN, Y SE DICE.** El apartado 5 pide *"favoritos
+> globales"* y el 9 *"sistema global de fotos"*: **no hay ninguno de los dos**. Se declaran con
+> `existe: false` y su frase honesta, que es la que se lee en pantalla (regla 8). Fingirlos habría
+> sido exactamente el sistema paralelo que la propia fase prohíbe.
+>
+> ⚠️ **"FUENTE ÚNICA DE VERDAD" YA TENÍA MOTOR** (apartado 18): `FUENTES_GLOBALES` / `esDatoGlobal()`
+> de la F1 más el `REGISTRO_DATOS` de la F4. `duplicadosDetectados()` lo comprueba de verdad — un
+> módulo que guardase el peso por su cuenta saldría con su nombre y con dónde vive el dato.
+>
+> ⚠️ **LA CASCADA NO BORRA MÁS: ENSEÑA** (apartado 19). `impactoDeEliminar()` separa **lo que va a la
+> papelera**, **lo que se queda sin apuntar a nada** y **lo que no se toca** — borrar un accesorio no
+> borra la prenda del Armario. Limpiar los ids colgados sigue siendo del normalizador de cada módulo.
+>
+> ⚠️ **Y DESACTIVAR NO BORRA** (apartado 20): sale solo, porque `alternarModulo` no toca `config`
+> desde la F1. Aquí solo se comprueba, apagando y encendiendo de verdad.
+>
+> 🐛 Y una del navegador: el botón de la lista y el de confirmar decían **lo mismo**, así que no había
+> forma de saber cuál se estaba pulsando. El de confirmar pasó a decir *"Apuntar en Tareas"*.
+- [x] CALENDARIO 📅
+- [x] OBJETIVOS 🎯
+- [x] TAREAS ✅
+- [x] RECORDATORIOS 🔔
+- [x] FAVORITOS ❤️ — *no existe un sistema global; se dice y no se crea uno propio*
+- [x] PRODUCTOS 🛒
+- [x] ARMARIO 👕
+- [x] DIARIO 📝
+- [x] FOTOS 📷 — *no existe una galería común; se dice*
+- [x] RACHAS 🔥
+- [x] SONIDOS 🔊
+- [x] ELIMINADOS 🗑️
+- [x] BÚSQUEDA 🔍
+- [x] NOTIFICACIONES 🔔
+- [x] AJUSTES ⚙️
+- [x] AUTENTICACIÓN 👤
+- [x] SINCRONIZACIÓN ☁️
+- [x] FUENTE ÚNICA DE VERDAD
+- [x] ELIMINACIÓN EN CASCADA
+- [x] DESACTIVACIÓN
+- [x] PRUEBA MAESTRA
 
 #### EH · Fase 40/65 — PRIMER USO Y CONFIGURACIÓN INICIAL
 - [ ] PRIMERA ENTRADA

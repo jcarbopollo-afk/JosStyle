@@ -20,7 +20,7 @@ serverless en Vercel que hace de proxy a Anthropic.
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 35/65**, quedan 28 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 36/65**, quedan 27 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -125,11 +125,11 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 8293 pruebas unitarias con Node (5 de ellas de auditoría), 1280 casos de renderizado real
-con `react-dom/server`, 11 reglas invariantes y **322 comprobaciones sobre la aplicación de verdad
-en Chromium** — **9906 comprobaciones**.
+Vite, 8465 pruebas unitarias con Node (5 de ellas de auditoría), 1304 casos de renderizado real
+con `react-dom/server`, 11 reglas invariantes y **339 comprobaciones sobre la aplicación de verdad
+en Chromium** — **10 122 comprobaciones**.
 
-Eso ya ha encontrado **sesenta bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **sesenta y un bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -153,7 +153,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 35/65** (v2.1.0: F1-F17, **F20, F21 y F23-F38**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 36/65** (v2.2.0: F1-F17, **F20, F21 y F23-F39**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -165,10 +165,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 39/65 — Integración con el resto de JosStyle**.
+La siguiente candidata es **EH · Fase 40/65 — Experiencia de primer uso y configuración inicial**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F38 dejaron ciento cincuenta cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F39 dejaron ciento sesenta cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -572,6 +572,27 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 - ⚠️ **UNA PRUEBA QUE LEE EL CÓDIGO TIENE QUE QUITAR LOS COMENTARIOS** (F38): la cabecera decía que
   aquí no se llama a `new Notification`, y el barrido saltaba **con la frase que lo promete**. Séptima
   vez en el bloque.
+- ⚠️ **`SISTEMAS_EH` ES UNA LÍNEA POR SISTEMA GLOBAL** (F39), como `MODULOS_EH`, `FUENTES_DE_ESTADO`,
+  `LINEAS_DE_PLAQUITA`, `METRICAS_PROGRESO`, `PARTES_POR_MODULO` y `FUENTES_BUSQUEDA`. Y su `entra`
+  **son las funciones de verdad, importadas**: renombrar una rompe la compilación y hace saltar la
+  prueba. Al conectar un sistema global nuevo, se añade su línea.
+- ⚠️ **UNA TAREA DE JOSSTYLE ES `{ id, texto, fechaLimite, hecha }`** (F39, apartado 3), y vive en
+  `productividad.tareas`. En Estilo de hombre queda **solo su `tareaId`**, como el `objetivoId` de la
+  F28 y la `prendaId` de la F26. Decimoséptimo `aplicarPlan`: **sin `confirmado` no escribe**.
+- ⚠️ **NO HAY FAVORITOS GLOBALES NI GALERÍA DE FOTOS GENERAL** (F39, apartados 5 y 9). El enunciado
+  los da por hechos y **no existen**: se declaran con `existe: false` y su frase, que es la que se lee
+  en pantalla. Fingirlos sería el sistema paralelo que la propia fase prohíbe (regla 8).
+- ⚠️ **`impactoDeEliminar` ENSEÑA, NO BORRA** (F39, apartado 19): el elemento va a la papelera, se
+  dice **lo que se queda sin apuntar a nada** y **lo que no se toca** — borrar un accesorio no borra
+  la prenda del Armario. Limpiar los ids colgados sigue siendo del normalizador de cada módulo (F24).
+- 🚨 **UN COMPONENTE JSX SIN IMPORTAR NO LO VE NI EL BUILD NI EL RENDERIZADO** (F39). `IntegracionEH`
+  usó `<Field>` y `Field` **no está importado en `EstiloHombreView.jsx`**: React lanzaba al pintar esa
+  tarjeta, así que **el botón que escribe la tarea no llegaba a existir** — y los 1304 casos de
+  renderizado no lo vieron porque **esa tarjeta solo aparece tras pulsar un botón**. Lo cazó Chromium.
+  `scripts/test-imports.mjs` tiene ahora una **segunda regla invariante** que lo comprueba.
+- ⚠️ **`sinComentarios` NO ES UN ANALIZADOR** (F39): en `ui.jsx` se lleva **22 000 caracteres de
+  código de verdad**. Una prueba que busque **definiciones** tiene que mirar el archivo **en bruto**;
+  el limpio vale para buscar **usos**. Octava vez que una comprobación salta con algo que estaba bien.
 - 🚨 **LO QUE JOSUÉ SUBE A MANO A GITHUB NO INCLUYE LAS CARPETAS.** Sus seis `Add files via upload`
   solo llevaron los **nueve archivos sueltos de la raíz**: ni uno de `src/`. Por eso `main` tenía la
   documentación nueva y el código del 11 de agosto, y la web no cambiaba por más zips que subiera.

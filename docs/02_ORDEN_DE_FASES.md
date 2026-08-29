@@ -264,8 +264,10 @@ escribir código.
 
 | v2.1.0 | **EH F38** | Notificaciones y recordatorios. ⚠️ **Este archivo DECIDE; `notificaciones.js` MANDA** (mismo reparto que HT F10): aquí no se llama a `new Notification` ni una vez. ⚠️ **TODO nace apagado**, escrito en el catálogo: con cosas que avisar y nada encendido, ni un aviso. ⚠️ **Ni un horario de silencio ni un interruptor global nuevos**: son de la Fase A4. ⚠️ **Silenciar un módulo NO es desactivarlo**: tercer eje tras `activo` y `oculto`. ⚠️ **Ni un historial paralelo** — y la verdad es que JosStyle no tiene uno global, así que se dice. ⚠️ **Las recomendaciones no avisan solas**. ⚠️ Y una recurrencia guarda su REGLA, nunca sus fechas |
 
+| v2.2.0 | **EH F39** | Integración con el resto de JosStyle. ⚠️ **Esta fase casi no construye: DECLARA y COMPRUEBA.** Dieciséis de los diecisiete sistemas del enunciado ya estaban conectados; `SISTEMAS_EH` es **una línea por sistema** y su `entra` **son las funciones de verdad, importadas** — renombrar una rompe la compilación. ⚠️ **Tareas era el único que faltaba** (apartado 3): entra como entró Objetivos en la F28 — la tarea vive en Productividad, aquí solo su id, y escribe `App.jsx`. ⚠️ **Dos de los sistemas del enunciado NO existen** —favoritos globales (5) y galería de fotos (9)—: se declaran con `existe: false` y su frase, en vez de fingirlos. ⚠️ **"Fuente única de verdad" ya tenía motor** (F1 + F4), y `duplicadosDetectados()` lo comprueba. ⚠️ **La cascada no borra más: enseña** lo que va a la papelera, lo que se queda sin apuntar y lo que no se toca. ⚠️ Y **desactivar no borra**: sale solo desde la F1, y aquí se prueba apagando y encendiendo |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 35/65** (F1-F17, F20, F21, F23-F38; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+3/5 y **EH por 36/65** (F1-F17, F20, F21, F23-F39; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
 Quedan **28** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (26, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
