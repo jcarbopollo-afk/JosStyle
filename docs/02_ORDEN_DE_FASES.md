@@ -258,9 +258,11 @@ escribir código.
 
 | v1.98.0 | **EH F35** | Estadísticas y progreso de estilo ("📊 Mi progreso"). ⚠️ **La estadística es una VISTA CALCULADA, no la fuente** (apartado 13): ni una cifra guardada, solo preferencias de pantalla — y por eso *"si elimina estadísticas, no eliminar los datos originales"* sale solo. ⚠️ **Nunca una nota ni una comparación** (apartados 3 y 9). ⚠️ **Ni una racha nueva ni otro sistema de objetivos**: los globales, y `null` si no los tiene. ⚠️ **Ocultar (1) y quitar el progreso (12) son el mismo interruptor** —cuarta vez—. ⚠️ **Sin datos NO se enseña un cero**: se dice que no hay; pero con historial, un cero en el periodo SÍ es un dato. ⚠️ Y **el "gráfico" son ocho caracteres**, agrupados a catorce barras: ni una librería |
 
+| v1.99.0 | **EH F36** | Gestión global de módulos ("🧩 Gestionar apartados"). ⚠️ **La fase entera es el TERCER ESTADO**: `activo` (si funciona) y `oculto` (si sale en la portada) eran el mismo booleano, y el enunciado los separa —*"ocultar ≠ desactivar ≠ eliminar"*—. Un módulo **oculto sigue dando ideas, tarjetas y métricas**. ⚠️ **Lo demás ya existía**: `alternarModulo` (F1), el orden y el buscador (F2), la papelera (ME F3), las partes de cada módulo y `restablecerDiseno` (F31). ⚠️ **Eliminar va a la papelera global elemento a elemento**, con el plan sacado de su catálogo y ejecutado por `App.jsx`. ⚠️ **Restablecer devuelve la visibilidad pero NO reactiva**. ⚠️ **Ninguno es obligatorio** y **una dependencia se avisa, no se impone** — las tres declaradas existen en el código |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 32/65** (F1-F17, F20, F21, F23-F35; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **31** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (29, tres de ellas bloqueadas).
+3/5 y **EH por 33/65** (F1-F17, F20, F21, F23-F36; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **30** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (28, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

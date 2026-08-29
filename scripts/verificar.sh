@@ -362,6 +362,12 @@ else
   fallo "Falla el progreso de estilo"; grep '✗' /tmp/jc_eh35.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-gestion-estilo.mjs >/tmp/jc_eh36.log 2>&1; then
+  ok "Gestión global de módulos (EH F36) — $(grep -c '✓' /tmp/jc_eh36.log) comprobaciones"
+else
+  fallo "Falla la gestión de módulos"; grep '✗' /tmp/jc_eh36.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

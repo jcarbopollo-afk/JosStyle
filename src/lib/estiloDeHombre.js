@@ -165,6 +165,18 @@ function normalizarModulo(guardado, i) {
   return {
     id: g.id,
     activo: g.activo !== false,
+    /* ⚠️ **EH F36, apartados 3 y 4** — *"ocultar ≠ desactivar ≠ eliminar"*.
+       `activo` es **si funciona** (apartado 4: sin recomendaciones, sin avisos,
+       sin salir en sugerencias); `oculto` es **si sale en la portada** (apartado
+       3: *"desaparece de la pantalla principal. NO CAMBIA SU FUNCIONAMIENTO
+       INTERNO"*). Eran lo mismo hasta la F36, y confundirlos hacía imposible
+       tener un módulo que trabaja sin ocupar sitio.
+
+       ⚠️ Y **lo guardado antes de la F36 se queda como estaba**: sin este campo,
+       `oculto` es `false`, así que un módulo que él apagó sigue apagado y
+       ninguno se esconde solo. Es el séptimo campo de esta entidad, y va con su
+       línea aquí — sin ella, el siguiente guardado se lo llevaría (regla 5). */
+    oculto: g.oculto === true,
     orden: Number.isFinite(Number(g.orden)) ? Number(g.orden) : i,
     // Apartado 8 — el hueco para lo que venga, sin tener que migrar nada.
     config: g.config && typeof g.config === 'object' ? g.config : {},
@@ -224,7 +236,7 @@ export function normalizarEstiloHombre(guardado) {
     .filter((m) => !vistos.has(m.id))
     // Un módulo que aparece en una fase futura nace APAGADO: encenderlo solo
     // sería decidir por Josué qué quiere usar.
-    .map((m, i) => ({ id: m.id, activo: false, orden: guardados.length + i, config: {}, version: 1 }));
+    .map((m, i) => ({ id: m.id, activo: false, oculto: false, orden: guardados.length + i, config: {}, version: 1 }));
 
   // La cuarentena arrastra lo que ya hubiera, sin volver a meterlo en la lista.
   const previos = deduplicar((Array.isArray(g.retirados) ? g.retirados : [])

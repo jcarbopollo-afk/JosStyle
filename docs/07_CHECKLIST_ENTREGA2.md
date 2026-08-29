@@ -2474,39 +2474,73 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar integración con objetivos.
 - [x] Verificar que las estadísticas no duplican datos.
 
-#### EH · Fase 36/65 — GESTIÓN GLOBAL DE MÓDULOS
-- [ ] CENTRO «GESTIONAR ESTILO»
-- [ ] CADA MÓDULO
-- [ ] OCULTAR
-- [ ] DESACTIVAR
-- [ ] ELIMINAR
-- [ ] RECUPERACIÓN
-- [ ] REACTIVAR
-- [ ] RESTABLECER
-- [ ] ACTIVACIÓN POR PARTES
-- [ ] MÓDULOS OBLIGATORIOS
-- [ ] DEPENDENCIAS
-- [ ] NO BORRAR POR DESACTIVAR
-- [ ] CONFIGURACIÓN POR DEFECTO
-- [ ] BÚSQUEDA
-- [ ] ORDEN
-- [ ] INDICADOR DE ESTADO
-- [ ] PRUEBAS CRÍTICAS
-- [ ] Ocultar módulo.
-- [ ] Volver a mostrarlo.
-- [ ] Desactivarlo.
-- [ ] Reactivarlo.
-- [ ] Eliminarlo.
-- [ ] Recuperarlo.
-- [ ] Eliminarlo definitivamente.
-- [ ] Restablecer diseño.
-- [ ] Comprobar que los datos no se pierden al ocultar.
-- [ ] Comprobar que no se pierden al desactivar.
-- [ ] Comprobar dependencias.
-- [ ] Comprobar móvil.
-- [ ] Cerrar sesión.
-- [ ] Volver a entrar.
-- [ ] Comprobar persistencia.
+#### EH · Fase 36/65 — GESTIÓN GLOBAL DE MÓDULOS ✅ COMPLETADA (v1.99.0)
+
+> **`src/lib/gestionEstilo.js`** (141 comprobaciones) + `GestionarEstiloEH` en
+> `EstiloHombreView.jsx`, y el campo **`oculto`** en el normalizador de cada módulo. Sin SQL.
+>
+> ⚠️ **LA FASE ENTERA ES EL TERCER ESTADO.** Hasta aquí un módulo estaba encendido o apagado, y ese
+> booleano hacía **dos cosas a la vez**. El enunciado las separa con todas las letras —*"ocultar ≠
+> desactivar ≠ eliminar"*—, así que ahora son dos campos: **`activo`** (si funciona) y **`oculto`**
+> (si sale en la portada). Un módulo oculto **sigue dando ideas, tarjetas y métricas**, y hay una
+> prueba por cada una.
+>
+> ⚠️ **Y LO DEMÁS YA EXISTÍA:** ocultar/desactivar es `alternarModulo` (F1), el orden es
+> `subirModulo`/`moverA` (F2), el buscador es `buscarModulos` (F2), la papelera es la global (ME F3),
+> las partes las declara cada módulo desde su propia fase, y restablecer es `restablecerDiseno`
+> (F31). Esta fase **los junta en una pantalla**; no reescribe ninguno.
+>
+> ⚠️ **DESACTIVAR NO BORRA, NI DESPUÉS DE MESES** (apartado 12). `alternarModulo` no toca `config`,
+> así que el apartado 7 —*"no obliga a configurarlo desde cero"*— **sale solo**.
+>
+> ⚠️ **ELIMINAR VA A LA PAPELERA GLOBAL, ELEMENTO A ELEMENTO** (apartados 5 y 6), para que cada uno
+> se recupere por separado. Y **el plan lo devuelve la biblioteca; quien borra es `App.jsx`**, dueño
+> de la papelera — mismo reparto que la F26. El plan sale del **catálogo de la papelera**, no de una
+> lista propia: un módulo que entre allí mañana se vuelve borrable desde aquí sin tocar nada.
+>
+> ⚠️ **RESTABLECER DEVUELVE LA VISIBILIDAD, PERO NO REACTIVA** (apartado 8). Ahora que ocultar y
+> desactivar son dos cosas, deja de chocar con la decisión de la F31: la visibilidad es distribución
+> y vuelve; que un módulo funcione o no lo decidió él.
+>
+> ⚠️ **NINGÚN MÓDULO ES OBLIGATORIO** (apartado 10) y **una dependencia se avisa, no se impone**
+> (apartado 11, con Activar o Cancelar). Las tres declaradas **existen en el código**: sin esas
+> partes, registrar no funciona y hay un `return` que lo dice.
+>
+> 🐛 Y la lección de siempre, **sexta vez**: la frase *"no hay que configurarlo otra vez"* hizo
+> saltar el barrido de imperativos con un texto que dice justo lo contrario. Se arregló **la frase**,
+> no la prueba.
+- [x] CENTRO «GESTIONAR ESTILO»
+- [x] CADA MÓDULO
+- [x] OCULTAR
+- [x] DESACTIVAR
+- [x] ELIMINAR
+- [x] RECUPERACIÓN
+- [x] REACTIVAR
+- [x] RESTABLECER
+- [x] ACTIVACIÓN POR PARTES
+- [x] MÓDULOS OBLIGATORIOS
+- [x] DEPENDENCIAS
+- [x] NO BORRAR POR DESACTIVAR
+- [x] CONFIGURACIÓN POR DEFECTO
+- [x] BÚSQUEDA
+- [x] ORDEN
+- [x] INDICADOR DE ESTADO
+- [x] PRUEBAS CRÍTICAS
+- [x] Ocultar módulo.
+- [x] Volver a mostrarlo.
+- [x] Desactivarlo.
+- [x] Reactivarlo.
+- [x] Eliminarlo.
+- [x] Recuperarlo.
+- [x] Eliminarlo definitivamente.
+- [x] Restablecer diseño.
+- [x] Comprobar que los datos no se pierden al ocultar.
+- [x] Comprobar que no se pierden al desactivar.
+- [x] Comprobar dependencias.
+- [x] Comprobar móvil.
+- [x] Cerrar sesión.
+- [x] Volver a entrar.
+- [x] Comprobar persistencia.
 
 #### EH · Fase 37/65 — BUSCADOR Y NAVEGACIÓN INTERNA
 - [ ] BUSCADOR

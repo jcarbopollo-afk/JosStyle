@@ -278,8 +278,13 @@ export function bloquesVisibles(estado, { armario = null, datosGlobales = {} } =
   };
   return BLOQUES_MI_ESTILO
     .map((b) => {
+      /* ⚠️ **EH F36, apartado 3** — *"el módulo desaparece de la pantalla
+         principal"*, y esta tarjeta está en la pantalla principal. Un módulo
+         oculto sigue funcionando —da ideas, tarjetas y métricas—, pero **no
+         ocupa sitio aquí**: verlo en el resumen justo debajo de donde acaba de
+         quitarlo parecería que ocultar no ha hecho nada. */
       const suyos = b.modulos
-        .filter((id) => activos.some((m) => m.id === id))
+        .filter((id) => activos.some((m) => m.id === id && !m.oculto))
         .sort((a, c) => posicion(a) - posicion(c));
       return {
         ...b,

@@ -1,5 +1,83 @@
 # CHANGELOG.md
 
+## v1.99.0 — EH Fase 36/65: gestión global de módulos
+
+### Qué se ha construido
+La pantalla **🧩 Gestionar apartados**, dentro de ⋮ Personalizar: cada módulo con su estado, sus tres
+acciones separadas —**👁️ Ocultar**, **⏸️ Desactivar**, **🗑️ Eliminar datos**—, sus partes
+independientes, el buscador, las flechas de orden, los avisos de dependencia y
+**🔄 Restablecer Estilo de hombre**.
+
+*"Todo lo que no quiera el usuario se puede quitar. Pero hay que diferenciar perfectamente: **ocultar
+≠ desactivar ≠ eliminar**."*
+
+### 🚨 La fase entera es el tercer estado
+Hasta aquí un módulo estaba **encendido o apagado**, y ese único booleano hacía **dos cosas a la
+vez**: quitarlo de la portada y dejarlo sin funcionar. El enunciado las separa con todas las letras,
+así que ahora son dos campos:
+
+- **`activo`** → **si funciona** (apartado 4: *"no muestra recomendaciones, no genera recordatorios
+  propios, no aparece en sugerencias"*).
+- **`oculto`** → **si sale en la portada** (apartado 3: *"desaparece de la pantalla principal. **No
+  cambia su funcionamiento interno.**"*).
+
+⚠️ **Un módulo oculto sigue dando ideas (F32), tarjetas de Descubrir (F33) y métricas (F35)**, y hay
+una prueba por cada una. Filtrarlo también allí habría sido confundir ocultar con desactivar, que es
+justo lo que esta fase vino a separar. Lo que sí desaparece es **la pantalla principal entera**: su
+plaquita y su hueco en la tarjeta "Mi estilo" — verlo en el resumen justo debajo de donde acaba de
+quitarlo parecería que ocultar no ha hecho nada.
+
+⚠️ Y **lo guardado antes de la F36 se queda como estaba**: sin el campo, `oculto` es `false`, así que
+ningún módulo se esconde solo. Es el séptimo campo de esa entidad, y va con su línea en el
+normalizador — sin ella, el siguiente guardado se lo llevaría (regla 5).
+
+### Las otras cinco decisiones
+
+**⚠️ Y lo demás ya existía.** Ocultar/desactivar es `alternarModulo` (F1), el orden es
+`subirModulo`/`moverA` (F2), el buscador es `buscarModulos` (F2), la papelera es la global (ME F3),
+las partes las declara cada módulo desde su propia fase, y restablecer es `restablecerDiseno` (F31).
+Esta fase **los junta en una pantalla**; no reescribe ninguno, y la auditoría lo declara con seis
+ceros.
+
+**⚠️ Desactivar no borra, ni después de meses** (apartado 12). `alternarModulo` no toca `config`, así
+que el apartado 7 —*"recupera su funcionamiento anterior. No obliga a configurarlo desde cero"*—
+**sale solo**. Aquí no hay código nuevo: hay dos pruebas.
+
+**⚠️ Eliminar va a la papelera global, elemento a elemento** (apartados 5 y 6), para que cada uno se
+recupere por separado. Y **el plan lo devuelve la biblioteca; quien borra es `App.jsx`**, que es el
+dueño de la papelera — mismo reparto que la F26 con el armario. El plan sale del **catálogo de la
+papelera**, no de una lista propia: un módulo que entre allí mañana se vuelve borrable desde aquí sin
+tocar nada.
+
+**⚠️ Restablecer devuelve la visibilidad, pero no reactiva** (apartado 8, que nombra *"orden,
+visibilidad, tamaños, plaquitas"*). Ahora que ocultar y desactivar son dos cosas, esto **deja de
+chocar** con la decisión de la F31: la visibilidad es distribución y vuelve; que un módulo funcione o
+no es una decisión suya y no se toca.
+
+**⚠️ Ninguno es obligatorio, y una dependencia se avisa pero no se impone** (apartados 10 y 11), con
+**Activar o Cancelar**. Las tres declaradas **existen en el código**: sin esas partes, registrar no
+funciona y hay un `return` que lo dice. Inventar una cuarta habría sido un aviso decorativo.
+
+### 🐛 Y la lección de siempre, sexta vez
+La frase *"no hay que configurarlo otra vez"* hizo saltar el barrido de imperativos… con un texto que
+dice **justo lo contrario**. Se arregló **la frase**, no la prueba.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **141 comprobaciones nuevas**, **1228 casos de
+renderizado** (28 nuevos) y **299 comprobaciones en Chromium** (15 nuevas): se abre desde
+⋮ Personalizar, la pantalla separa las tres acciones con todas las letras, se oculta un módulo,
+**se guarda con `oculto: true` y `activo: true`**, tras recargar sigue fuera de la portada, y se
+vuelve a mostrar.
+
+### Archivos
+- **Nuevos:** `src/lib/gestionEstilo.js`, `scripts/test-gestion-estilo.mjs`.
+- **Modificados:** `src/lib/estiloDeHombre.js` (el campo `oculto`), `src/lib/pantallaEH.js` y
+  `src/lib/miEstilo.js` (la portada lo filtra), `src/views/EstiloHombreView.jsx`
+  (`GestionarEstiloEH`), `src/App.jsx` (ejecutar el plan de borrado), `scripts/smoke-vistas.jsx`,
+  `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.98.0 — EH Fase 35/65: estadísticas y progreso de estilo
 
 ### Qué se ha construido

@@ -137,7 +137,13 @@ export function seccionesDePantalla(estado, { armario = null, datosGlobales = {}
   return modulosAgrupados(e, { soloActivos: true })
     .map((cat) => ({
       ...cat,
-      modulos: cat.modulos.map((m) => {
+      /* ⚠️ **EH F36, apartado 3** — *"ocultar: el módulo desaparece de la
+         pantalla principal. **No cambia su funcionamiento interno.**"* Aquí es
+         donde eso se hace verdad, y **solo aquí**: el módulo oculto sigue
+         estando activo, así que sigue dando ideas (F32), tarjetas (F33) y
+         métricas (F35). Filtrarlo también en aquéllas sería confundir ocultar
+         con desactivar, que es justo lo que la F36 vino a separar. */
+      modulos: cat.modulos.filter((m) => !m.oculto).map((m) => {
         const est = estadoDeModulo(e, m.id, { armario, datosGlobales });
         return {
           ...m,
@@ -155,8 +161,10 @@ export function seccionesDePantalla(estado, { armario = null, datosGlobales = {}
           tieneLineas: lineasDisponibles(m.id).length > 0,
         };
       }),
-      posicion: Math.min(...cat.modulos.map((m) => posicion(m.id)), Infinity),
+      posicion: Math.min(...cat.modulos.filter((m) => !m.oculto).map((m) => posicion(m.id)), Infinity),
     }))
+    // ⚠️ Y una sección cuyos módulos están TODOS ocultos tampoco se pinta.
+    .filter((cat) => cat.modulos.length > 0)
     .sort((a, b) => a.posicion - b.posicion);
 }
 

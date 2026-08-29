@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH, GestionarEstiloEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -70,6 +70,7 @@ import { ocultarIdeas, cambiarFrecuencia, guardarIdea, marcarVistas as marcarVis
 import { ocultarDescubrir, cambiarFrecuenciaDescubrir, alternarFiltro as alternarFiltroDesc, guardarTarjeta, descartarTarjeta, TARJETAS_DESCUBRIR } from '../src/lib/descubrir.js';
 import { alternarPreferenciasEnUso } from '../src/lib/preferenciasEstilo.js';
 import { ocultarProgreso, cambiarPeriodo as cambiarPeriodoProg, alternarMetrica, METRICAS_POR_DEFECTO } from '../src/lib/progresoEstilo.js';
+import { ocultarModulo, desactivarModulo } from '../src/lib/gestionEstilo.js';
 import { guardarDato as guardarDatoEH } from '../src/lib/datosEstiloHombre.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
@@ -1263,6 +1264,39 @@ const CASOS = [
               ['ProgresoEH · con un objetivo de estilo', ProgresoEH, () =>
                 pg2(conHechos, { objetivos: { lista: [{ id: 'o1', texto: 'Cuidarme la piel', origen: 'estiloHombre', cumplido: false }] } })],
               ['EstiloHombreView · con la tarjeta de progreso', EstiloHombreView, () => conArmario(conHechos)],
+            ];
+          })(),
+          /* EH Fase 36 — 🧩 Gestionar apartados: los tres estados, partes y búsqueda. */
+          ...(() => {
+            const ocho = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE,
+              ['estilo', 'skincare', 'pelo', 'barba', 'perfumes', 'sonrisa', 'accesorios', 'gustos']);
+            const conPerfumes = guardarConfig(ocho, 'perfumes', {
+              perfumes: {
+                perfumes: [{ id: 'pf1', nombre: 'Uno' }],
+                historial: [{ id: 'u1', perfumeId: 'pf1', fecha: HOY }],
+                partes: { historial: true },
+              },
+            });
+            const gp = (e, extra = {}) => ({
+              estado: e, accent, onCambiar: noop, onCerrar: noop,
+              onConfigurar: noop, onEliminarDatos: noop, ...extra,
+            });
+            return [
+              ['GestionarEstiloEH · todo activo', GestionarEstiloEH, () => gp(ocho)],
+              ['GestionarEstiloEH · con uno oculto', GestionarEstiloEH, () =>
+                gp(ocultarModulo(ocho, 'perfumes'))],
+              ['GestionarEstiloEH · con uno desactivado', GestionarEstiloEH, () =>
+                gp(desactivarModulo(ocho, 'barba'))],
+              ['GestionarEstiloEH · con datos que eliminar', GestionarEstiloEH, () => gp(conPerfumes)],
+              ['GestionarEstiloEH · sin nada activo', GestionarEstiloEH, () =>
+                gp(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],
+              /* ⚠️ Un módulo oculto NO sale en la portada, pero sigue funcionando. */
+              ['EstiloHombreView · con un módulo oculto', EstiloHombreView, () =>
+                conArmario(ocultarModulo(ocho, 'perfumes'))],
+              ['PersonalizarPlaquitas · con la puerta a Gestionar', PersonalizarPlaquitas, () => ({
+                estado: ocho, accent, armario: lleno.armario, datosGlobales: {},
+                onCambiar: noop, onCerrar: noop, onGestionar: noop,
+              })],
             ];
           })(),
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],

@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.98.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.99.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 32/65**, quedan 31 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 33/65**, quedan 30 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -125,9 +125,9 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 7893 pruebas unitarias con Node (5 de ellas de auditoría), 1200 casos de renderizado real
-con `react-dom/server`, 11 reglas invariantes y **284 comprobaciones sobre la aplicación de verdad
-en Chromium** — **9388 comprobaciones**.
+Vite, 8034 pruebas unitarias con Node (5 de ellas de auditoría), 1228 casos de renderizado real
+con `react-dom/server`, 11 reglas invariantes y **299 comprobaciones sobre la aplicación de verdad
+en Chromium** — **9572 comprobaciones**.
 
 Eso ya ha encontrado **sesenta bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -153,7 +153,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 32/65** (v1.98.0: F1-F17, **F20, F21 y F23-F35**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 33/65** (v1.99.0: F1-F17, **F20, F21 y F23-F36**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -165,10 +165,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 36/65 — Activación, desactivación y gestión global**.
+La siguiente candidata es **EH · Fase 37/65 — Buscador y navegación interna de Estilo de hombre**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F35 dejaron ciento treinta y tres cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F36 dejaron ciento treinta y nueve cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -520,6 +520,25 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   releer el apartado antes.
 - ⚠️ **LA RACHA ES LA GLOBAL Y EL OBJETIVO ES EL GLOBAL** (F35, apartados 7 y 8; F23 lo dijo primero).
   Si no los tiene, `null` y no se pinta. Nunca proponerle crear una.
+- 🚨 **OCULTAR ≠ DESACTIVAR ≠ ELIMINAR** (F36). Un módulo tiene **dos campos**: `activo` (si
+  funciona) y `oculto` (si sale en la portada). Eran el mismo booleano hasta la F36, y confundirlos
+  hacía imposible tener un módulo que trabaja sin ocupar sitio. **Un módulo oculto sigue dando ideas
+  (F32), tarjetas (F33) y métricas (F35)**: filtrarlo también allí sería confundirlo con
+  desactivado. La portada lo filtra en `seccionesDePantalla` y en `bloquesVisibles`, y **solo ahí**.
+- ⚠️ **`oculto` ES EL SÉPTIMO CAMPO DEL MÓDULO**, con su línea en `normalizarModulo` — y lo guardado
+  antes de la F36 se queda como estaba, porque sin el campo es `false`. Van veintiocho.
+- ⚠️ **ELIMINAR LOS DATOS DE UN MÓDULO ES UN PLAN, NO UN BORRADO** (F36, apartados 5 y 6):
+  `planEliminarDatos` devuelve `{ modulo, coleccion, id }` por elemento, y **quien borra es
+  `App.jsx`** con `eliminarConPapelera`, la única puerta (ME F3). El plan sale del **catálogo de la
+  papelera**, así que un módulo que entre allí mañana se vuelve borrable sin tocar nada.
+- ⚠️ **RESTABLECER DEVUELVE LA VISIBILIDAD, PERO NO REACTIVA** (F36, apartado 8). La visibilidad es
+  distribución; que un módulo funcione o no lo decidió él. Así es como el apartado 8 de la F36 y la
+  decisión de la F31 dejan de chocar.
+- ⚠️ **UNA DEPENDENCIA SE AVISA, NO SE IMPONE** (F36, apartados 10 y 11), con **Activar o Cancelar**.
+  Y las que se declaran **existen en el código**: sin esa parte hay un `return` que lo dice. Ni una
+  inventada, o sería un aviso decorativo (regla 8).
+- ⚠️ **LAS PARTES LAS DECLARA CADA MÓDULO** (F36, apartado 9). `PARTES_POR_MODULO` es una línea por
+  módulo que recoge las suyas y su `alternarParte*`; **ni una parte se define en la F36**.
 - 🚨 **LO QUE JOSUÉ SUBE A MANO A GITHUB NO INCLUYE LAS CARPETAS.** Sus seis `Add files via upload`
   solo llevaron los **nueve archivos sueltos de la raíz**: ni uno de `src/`. Por eso `main` tenía la
   documentación nueva y el código del 11 de agosto, y la web no cambiaba por más zips que subiera.

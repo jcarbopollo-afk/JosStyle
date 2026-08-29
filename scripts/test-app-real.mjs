@@ -931,4 +931,61 @@ await page.waitForTimeout(1000);
 ok(/Volver a ver mi progreso/.test(await ver()),
   '⚠️ Con todo lo demás funcionando igual, y se puede volver (prueba 8)');
 
+/* ── 21 · 🧩 GESTIONAR APARTADOS (EH F36) ─────────────────────────────────
+   La prueba que de verdad importa de esta fase: **ocultar un módulo lo quita de
+   la portada SIN desactivarlo**, y eso sigue tras recargar. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(600);
+ok(/Perfumes/.test(await ver()), 'De partida, Perfumes sale en la portada');
+await pulsar('⋮ Personalizar');
+await page.waitForTimeout(600);
+ok(await pulsar('🧩 Gestionar apartados'),
+  '🧩 Gestionar apartados se abre desde ⋮ Personalizar (apartado 1)');
+await page.waitForTimeout(700);
+const gestion = await ver();
+ok(/Ocultar lo quita de la portada/.test(gestion),
+  '⚠️ Y separa las tres acciones con todas las letras (apartados 3, 4 y 5)');
+ok(/🟢/.test(gestion) && /Activo/.test(gestion), 'con la etiqueta de estado (apartado 16)');
+/* ⚠️ El buscador es un `placeholder`, y `innerText` no los ve: se mira el campo. */
+ok(await page.evaluate(() => [...document.querySelectorAll('input')]
+  .some((i) => /Buscar apartado/.test(i.placeholder || ''))),
+'y su buscador (apartado 14)');
+ok(/Ninguno es obligatorio/.test(gestion), 'diciendo que ninguno lo es (apartado 10)');
+ok(/Restablecer Estilo de hombre/.test(gestion), 'con su restablecer (apartado 8)');
+
+guardado.length = 0;
+ok(await pulsar('👁️ Ocultar'), 'Se puede ocultar un módulo (prueba 1)');
+await page.waitForTimeout(1200);
+const escGest = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escGest.length > 0, '⚠️ PERSISTENCIA: se guarda');
+const modsGest = escGest.at(-1)?.value?.modulos || [];
+const ocultoAlguno = modsGest.find((m) => m.oculto === true);
+ok(!!ocultoAlguno, 'con el módulo marcado como oculto');
+ok(ocultoAlguno && ocultoAlguno.activo === true,
+  '⚠️ Y SIGUE ACTIVO: ocultar no es desactivar (apartado 3)');
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(700);
+/* ⚠️ Y el módulo oculto YA NO SALE en la portada, tras recargar. */
+const nombreOculto = ({
+  estilo: 'Estilo y armario', pelo: 'Pelo', barba: 'Barba', skincare: 'Skincare',
+  sonrisa: 'Sonrisa', perfumes: 'Perfumes', accesorios: 'Accesorios', gustos: 'Mis gustos',
+})[ocultoAlguno.id] || ocultoAlguno.id;
+ok(!new RegExp(`⚪ ${nombreOculto}|▫️ ${nombreOculto}`).test(await ver()),
+  `⚠️ PERSISTENCIA: tras recargar, ${nombreOculto} sigue fuera de la portada`);
+await pulsar('⋮ Personalizar');
+await page.waitForTimeout(500);
+await pulsar('🧩 Gestionar apartados');
+await page.waitForTimeout(700);
+ok(/⚪/.test(await ver()), '⚠️ Y la etiqueta lo dice: ⚪ Oculto (prueba 15)');
+ok(await pulsar('👁️ Mostrar'), 'y se puede volver a mostrar (prueba 2)');
+await page.waitForTimeout(1000);
+ok(!/⚪ Oculto/.test(await ver()), 'y vuelve a estar visible');
+
 await salir(browser);

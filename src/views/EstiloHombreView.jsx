@@ -226,6 +226,11 @@ import {
   TEXTOS_PROGRESO, panelProgreso, ocultarProgreso, mostrarProgreso,
   alternarMetrica, cambiarPeriodo, datosProgreso,
 } from '../lib/progresoEstilo';
+import {
+  // ── EH F36 ──
+  TEXTOS_GESTION_EH, panelGestionEstilo, alternarOculto, desactivarModulo,
+  activarModulo, alternarParteDe, avisoEliminarDatos, restablecerEstilo,
+} from '../lib/gestionEstilo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -7108,6 +7113,236 @@ export function ProgresoEH({
 
 
 /* ===========================================================================
+   EH · F36 — 🧩 GESTIONAR APARTADOS (apartados 1 a 16)
+   ===========================================================================
+   *"Todo lo que no quiera el usuario se puede quitar. Pero hay que diferenciar
+   perfectamente: ocultar ≠ desactivar ≠ eliminar."*
+
+   ⚠️ **Las tres acciones se pintan como tres, y se dicen como tres.** Ésa es la
+   fase entera: hasta aquí un módulo estaba encendido o apagado, y ese booleano
+   hacía dos cosas a la vez. */
+export function GestionarEstiloEH({
+  estado, accent, onCambiar, onCerrar, onConfigurar, onEliminarDatos,
+}) {
+  /* ⚠️ Regla 4 — los hooks, antes de cualquier `return` condicional. */
+  const [texto, setTexto] = useState('');
+  const [abierto, setAbierto] = useState(null);        // qué módulo tiene las partes abiertas
+  const [pendiente, setPendiente] = useState(null);    // el aviso al desactivar (F2)
+  const [borrando, setBorrando] = useState(null);      // el aviso al eliminar datos
+  const [restableciendo, setRestableciendo] = useState(false);
+  const panel = useMemo(() => panelGestionEstilo(estado, { texto }), [estado, texto]);
+  const avisoBorrar = useMemo(
+    () => (borrando ? avisoEliminarDatos(estado, borrando) : null), [estado, borrando],
+  );
+
+  const desactivar = (id) => {
+    const aviso = avisoDesactivar(estado, id);
+    // Apartado 6 de la F2 — se pregunta solo si hay algo que perder de vista.
+    if (aviso) setPendiente({ id, aviso });
+    else onCambiar(desactivarModulo(estado, id));
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-base font-semibold flex-1" style={{ color: COLORS.text }}>{panel.titulo}</p>
+      </div>
+      <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{panel.sub}</p>
+      {/* ⚠️ La frase que separa las tres acciones, arriba del todo. */}
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.tresCosas}</p>
+
+      {/* Apartado 14 — 🔍 Buscar apartado. Es el buscador de la F2. */}
+      <TextInput
+        value={texto} onChange={setTexto} accent={accent}
+        placeholder={panel.buscar}
+      />
+
+      {panel.modulos.length === 0 ? (
+        <p className="text-[11px] text-center" style={{ color: COLORS.textMuted }}>
+          No hay ningún apartado con ese nombre.
+        </p>
+      ) : panel.modulos.map((m) => (
+        <Card key={m.id}>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-base leading-none" aria-hidden="true">{m.icono}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                {m.nombre}
+              </span>
+              {/* Apartado 16 — la etiqueta, pequeña y una sola. */}
+              <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>
+                {m.insignia.icono} {m.insignia.nombre}
+              </span>
+            </span>
+            {/* Apartado 15 — el orden, con las flechas de la F2. */}
+            {m.activo && m.orden.de > 1 && (
+              <span className="flex flex-col flex-shrink-0">
+                <button onClick={() => onCambiar(subirModulo(estado, m.id))}
+                  disabled={!m.orden.arriba} aria-label={`Subir ${m.nombre}`}
+                  style={{ color: m.orden.arriba ? accent : COLORS.border }} className="p-0.5">
+                  <ChevronUp size={14} />
+                </button>
+                <button onClick={() => onCambiar(bajarModulo(estado, m.id))}
+                  disabled={!m.orden.abajo} aria-label={`Bajar ${m.nombre}`}
+                  style={{ color: m.orden.abajo ? accent : COLORS.border }} className="p-0.5">
+                  <ChevronDown size={14} />
+                </button>
+              </span>
+            )}
+          </div>
+
+          {/* ── Apartados 2, 3, 4, 5 y 7 — las acciones, separadas ─────────── */}
+          <div className="flex flex-wrap gap-1 mb-1">
+            {m.activo ? (
+              <>
+                <button onClick={() => onCambiar(alternarOculto(estado, m.id))}
+                  className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                  style={{
+                    background: m.oculto ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                    color: m.oculto ? accent : COLORS.text,
+                    border: `1px solid ${m.oculto ? accent : COLORS.border}`,
+                  }}>
+                  {m.oculto ? TEXTOS_GESTION_EH.mostrar : TEXTOS_GESTION_EH.ocultar}
+                </button>
+                <button onClick={() => desactivar(m.id)}
+                  className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                  style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}>
+                  {TEXTOS_GESTION_EH.desactivar}
+                </button>
+                <button onClick={() => onConfigurar?.(m.id)}
+                  className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                  style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}>
+                  {TEXTOS_GESTION_EH.configurar}
+                </button>
+              </>
+            ) : (
+              // Apartado 7 — *"recupera su funcionamiento anterior"*.
+              <button onClick={() => onCambiar(activarModulo(estado, m.id))}
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{ background: hexToRgba(accent, 0.12), color: accent, border: `1px solid ${accent}` }}>
+                {TEXTOS_GESTION_EH.activar}
+              </button>
+            )}
+            {/* Apartado 5 — eliminar datos, que es OTRA cosa, y solo si hay. */}
+            {m.elementos > 0 && (
+              <button onClick={() => setBorrando(m.id)}
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{ background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}>
+                {TEXTOS_GESTION_EH.eliminar}
+              </button>
+            )}
+            {/* Apartado 9 — sus partes, si las tiene. */}
+            {m.partes.length > 0 && (
+              <button onClick={() => setAbierto(abierto === m.id ? null : m.id)}
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{ color: abierto === m.id ? accent : COLORS.textMuted }}>
+                ⋮ Más opciones
+              </button>
+            )}
+          </div>
+
+          {/* ⚠️ Apartados 3, 7 y 12 — las tres frases que hacen falta. */}
+          <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            {m.oculto ? TEXTOS_GESTION_EH.ocultarNoCambia
+              : (m.activo ? m.nota : TEXTOS_GESTION_EH.reactivar)}
+          </p>
+
+          {/* Apartado 9 — *"cada componente puede controlarse independientemente"*. */}
+          {abierto === m.id && m.partes.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {m.partes.map((p) => (
+                <button key={p.id} aria-pressed={p.puesta}
+                  onClick={() => onCambiar(alternarParteDe(estado, m.id, p.id))}
+                  className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                  style={{
+                    background: p.puesta ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                    color: p.puesta ? accent : COLORS.text,
+                    border: `1px solid ${p.puesta ? accent : COLORS.border}`,
+                  }}>
+                  {p.puesta ? '☑️' : '☐'} {p.icono} {p.nombre}
+                </button>
+              ))}
+            </div>
+          )}
+        </Card>
+      ))}
+
+      {/* Apartados 10 y 13 — y que nada es obligatorio. */}
+      <p className="text-[10px] text-center" style={{ color: COLORS.textMuted }}>
+        {panel.nadaObligatorio} {panel.esenciales}
+      </p>
+
+      {/* Apartado 8 — 🔄 Restablecer Estilo de hombre. */}
+      <Card>
+        <button onClick={() => setRestableciendo(true)}
+          className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>
+          {panel.restablecer.titulo}
+        </button>
+      </Card>
+
+      {/* El aviso del apartado 6 de la F2, tal cual. */}
+      <AvisoDesactivar
+        aviso={pendiente?.aviso} accent={accent}
+        onCancelar={() => setPendiente(null)}
+        onConfirmar={() => {
+          onCambiar(desactivarModulo(estado, pendiente.id));
+          setPendiente(null);
+        }}
+      />
+
+      {/* Apartado 5 — la confirmación clara, diciendo adónde van los datos. */}
+      <AvisoDiseno
+        aviso={avisoBorrar && {
+          titulo: avisoBorrar.titulo,
+          pregunta: avisoBorrar.texto,
+          notas: [
+            `${avisoBorrar.elementos.length} ${avisoBorrar.elementos.length === 1 ? 'elemento' : 'elementos'}`,
+            avisoBorrar.nota,
+          ],
+          confirmar: avisoBorrar.confirmar,
+          cancelar: avisoBorrar.cancelar,
+        }}
+        accent={accent}
+        onCancelar={() => setBorrando(null)}
+        onConfirmar={() => {
+          /* ⚠️ **Este componente no borra**: le pasa el plan a `App.jsx`, que es
+             el dueño de la papelera global (ME F3). Mismo reparto que la F26. */
+          onEliminarDatos?.(avisoBorrar.elementos);
+          setBorrando(null);
+        }}
+      />
+
+      {/* Apartado 8 — restablecer, con lo que vuelve y lo que no. */}
+      <AvisoDiseno
+        aviso={restableciendo && {
+          titulo: panel.restablecer.titulo,
+          pregunta: panel.restablecer.pregunta,
+          notas: [
+            panel.restablecer.noBorra,
+            panel.restablecer.siVuelven,
+            panel.restablecer.noReactiva,
+          ],
+          confirmar: panel.restablecer.confirmar,
+          cancelar: panel.restablecer.cancelar,
+        }}
+        accent={accent}
+        onCancelar={() => setRestableciendo(false)}
+        onConfirmar={() => {
+          onCambiar(restablecerEstilo(estado, { confirmado: true }).estado);
+          setRestableciendo(false);
+        }}
+      />
+    </div>
+  );
+}
+
+
+/* ===========================================================================
    EH · F31 — ⋮ PERSONALIZAR (apartados 1 a 5, 8, 10, 14, 16 y 17)
    ===========================================================================
    ⚠️ **Esta pantalla no inventa ni un mecanismo.** Mover es `moverA` y las
@@ -7158,7 +7393,7 @@ function AvisoDiseno({ aviso, accent, onConfirmar, onCancelar }) {
 }
 
 export function PersonalizarPlaquitas({
-  estado, accent, armario = null, datosGlobales = {}, onCambiar, onCerrar,
+  estado, accent, armario = null, datosGlobales = {}, onCambiar, onCerrar, onGestionar,
 }) {
   /* ⚠️ Regla 4 — todos los hooks, antes de cualquier `return` condicional. */
   const [moviendo, setMoviendo] = useState(null);
@@ -7213,6 +7448,16 @@ export function PersonalizarPlaquitas({
       <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
         {TEXTOS_PANTALLA.ocultarNoBorra}
       </p>
+
+      {/* ⚠️ **EH F36, apartado 1** — *"dentro de ⚙️ Personalizar Estilo añadir
+          🧩 Gestionar apartados"*. Es donde viven las tres acciones separadas:
+          ocultar, desactivar y eliminar. */}
+      {onGestionar && (
+        <button onClick={onGestionar}
+          className="text-[11px] font-semibold" style={{ color: accent }}>
+          {TEXTOS_GESTION_EH.titulo}
+        </button>
+      )}
 
       {panel.modulos.map((m) => (
         <Card key={m.id}>
@@ -7465,11 +7710,12 @@ export function PersonalizarPlaquitas({
 /* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
-export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, onEliminarPerfume, onEliminarAccesorio, onGuardarAccesorio, onEliminarGusto, onGuardarObjetivo, objetivos = null, rachas = null }) {
+export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, onEliminarPerfume, onEliminarAccesorio, onGuardarAccesorio, onEliminarGusto, onGuardarObjetivo, objetivos = null, rachas = null, onEliminarDatosEH }) {
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
   const [preferencias, setPreferencias] = useState(false);   // F34, apartado 1
+  const [gestionEstilo, setGestionEstilo] = useState(false);  // F36, apartado 1
   const [perfilPelo, setPerfilPelo] = useState(false);   // false | 'panel' | 'perfil'
   const [skincare, setSkincare] = useState(false);       // F13
   const [barba, setBarba] = useState(false);             // F20
@@ -7743,6 +7989,24 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     );
   }
 
+  /* F36, apartado 1 — *"dentro de ⚙️ Personalizar Estilo añadir 🧩 Gestionar
+     apartados"*. Se entra desde ⋮ Personalizar y se vuelve ahí. */
+  if (gestionEstilo) {
+    return (
+      <GestionarEstiloEH
+        estado={estado} accent={accent}
+        onCambiar={onCambiar}
+        onCerrar={() => setGestionEstilo(false)}
+        /* Apartado 2 — *"⚙️ Configurar"*: el mismo `abrirModulo` de las
+           plaquitas, ni una navegación nueva. */
+        onConfigurar={(id) => { setGestionEstilo(false); setPersonalizando(false); abrirModulo(id); }}
+        /* ⚠️ Apartados 5 y 6 — la pantalla NO borra: pasa el plan a `App.jsx`,
+           que es el dueño de la papelera global (ME F3). */
+        onEliminarDatos={onEliminarDatosEH}
+      />
+    );
+  }
+
   /* F31, apartado 1 — *"⋮ Personalizar. Al activarlo, las plaquitas entran en
      modo edición."* Es una pantalla propia, no un estado a medias de la portada. */
   if (personalizando) {
@@ -7750,6 +8014,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
       <PersonalizarPlaquitas
         estado={estado} accent={accent} armario={armario} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={() => setPersonalizando(false)}
+        onGestionar={() => setGestionEstilo(true)}
       />
     );
   }

@@ -1990,6 +1990,14 @@ export default function App() {
                Control: `ObjectivesView` ya sabe destacar el `foco.id`. */
             onIr={(destino, foco) => navegarDesdeHoy(destino, foco)}
             onCambiar={(nuevo) => snapshotAndSave({ estiloHombre: nuevo })}
+            /* ⚠️ **EH F36, apartados 5 y 6** — *"utilizar 🗑️ Eliminados
+               recientemente para poder recuperarlos"*. La pantalla devuelve el
+               PLAN —qué elementos se van—, y aquí se ejecuta por la ÚNICA puerta
+               de borrado de la app (ME F3), uno a uno, para que cada uno se
+               pueda recuperar por separado. Mismo reparto que la F26. */
+            onEliminarDatosEH={(elementos) => {
+              (elementos || []).forEach((x) => eliminarConPapelera(x.modulo, x.coleccion, x.id));
+            }}
             /* EH F15, apartado 13 — borrar un registro de piel va a "Eliminados
                recientemente", la papelera que ya existe. Por eso lo maneja
                App.jsx, que es quien la tiene, y no la pantalla. */
