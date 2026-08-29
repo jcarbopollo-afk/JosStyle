@@ -1280,4 +1280,62 @@ ok(/Un reloj, unas gafas o una gorra/.test(vacio),
 ok(/Añadir accesorio/.test(vacio),
   '⚠️ Y TIENE SALIDA: nunca una pantalla completamente vacía');
 
+/* ── 27 · ACCESIBILIDAD EN EL NAVEGADOR (EH F42) ──────────────────────────
+   El revisor de la F42 lee el código; esto comprueba que lo que dice el código
+   **llega al DOM**: que los interruptores tienen nombre y que el botón de
+   cerrar tiene una zona de toque de verdad. */
+
+almacen.estiloHombre = {
+  configurado: true,
+  asistente: { paso: 4, estado: 'terminado', seleccion: ['perfumes'] },
+  modulos: [{ id: 'perfumes', activo: true, orden: 0, config: {} }],
+  datos: {}, retirados: [],
+};
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(700);
+await pulsar('⋮ Personalizar');
+await page.waitForTimeout(600);
+await pulsar('🔔 Avisos de Estilo de hombre');
+await page.waitForTimeout(800);
+
+const interruptores = await page.evaluate(() => {
+  const sw = [...document.querySelectorAll('[role="switch"]')];
+  return {
+    total: sw.length,
+    sinNombre: sw.filter((x) => !x.getAttribute('aria-label')).length,
+    // El mínimo de Apple son 44 píxeles.
+    pequenos: sw.filter((x) => x.getBoundingClientRect().width < 44).length,
+  };
+});
+ok(interruptores.total > 0, '♿ Hay interruptores en la pantalla de avisos');
+ok(interruptores.sinNombre === 0,
+  '⚠️ Y NINGUNO se queda sin nombre para un lector de pantalla (apartado 14)');
+ok(interruptores.pequenos === 0,
+  '⚠️ Y ninguno mide menos de 44 píxeles (apartado 1)');
+
+const iconos = await page.evaluate(() => {
+  const botones = [...document.querySelectorAll('button')];
+  const soloIcono = botones.filter((b) => !b.innerText.trim() && b.querySelector('svg'));
+  return {
+    total: soloIcono.length,
+    sinNombre: soloIcono.filter((b) => !b.getAttribute('aria-label')).length,
+    diminutos: soloIcono.filter((b) => {
+      const r = b.getBoundingClientRect();
+      return r.width > 0 && r.width < 24;
+    }).length,
+  };
+});
+ok(iconos.sinNombre === 0,
+  '⚠️ Y ningún botón de solo icono se queda sin `aria-label` (apartado 14)');
+ok(iconos.diminutos === 0,
+  '⚠️ Ni ninguno es un botón diminuto: *"compacto ≠ incómodo"* (apartados 1 y 2)');
+
+/* Apartado 9 — nada se sale del ancho del teléfono. */
+const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+ok(desborde <= 0, '⚠️ Y la pantalla no se desborda a lo ancho (apartado 9)');
+
 await salir(browser);

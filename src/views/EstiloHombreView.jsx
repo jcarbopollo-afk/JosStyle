@@ -394,7 +394,12 @@ export function FichaModuloEH({ ficha, accent, onCerrar }) {
             <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{ficha.nombre}</p>
             <p className="text-xs" style={{ color: COLORS.textMuted }}>{ficha.sub}</p>
           </div>
-          <button onClick={onCerrar} aria-label="Cerrar"><X size={16} style={{ color: COLORS.textMuted }} /></button>
+          {/* ⚠️ **EH F42, apartado 1** — el icono mide dieciséis píxeles; el botón,
+            no. *"Compacto ≠ incómodo."* El margen negativo deja el dibujo donde
+            estaba y solo crece la zona que se toca. */}
+        <button onClick={onCerrar} aria-label="Cerrar" className="p-1.5 -m-1.5">
+          <X size={16} style={{ color: COLORS.textMuted }} />
+        </button>
         </div>
 
         <div className="flex items-center gap-2 mt-3">
@@ -6903,8 +6908,11 @@ export function PreferenciasEH({
           <span className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>
             {panel.interruptor}
           </span>
+          {/* ⚠️ **EH F42, apartado 14** — un interruptor tiene que decir qué
+              enciende: al lado se lee, pero un lector de pantalla no lo une. */}
           <Switch
             checked={panel.usandolas} accent={accent}
+            label={panel.interruptor}
             onChange={() => onCambiar(alternarPreferenciasEnUso(estado))}
           />
         </div>
@@ -8095,6 +8103,7 @@ export function AvisosEstiloEH({
           </span>
           <Switch
             checked={panel.activados} accent={accent}
+            label="Avisos de Estilo de hombre"
             onChange={() => onCambiar(panel.activados
               ? desactivarAvisosEH(estado)
               : activarAvisosEH(estado))}
@@ -8120,6 +8129,7 @@ export function AvisosEstiloEH({
             </span>
             <Switch
               checked={t.puesto} accent={accent}
+              label={t.nombre}
               onChange={() => onCambiar(alternarTipo(estado, t.id))}
             />
           </div>

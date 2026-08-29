@@ -270,8 +270,10 @@ escribir código.
 
 | v2.4.0 | **EH F41** | Estados vacíos, carga, errores y recuperación. ⚠️ **Un estado es una línea**, con las tres respuestas del enunciado —qué ha pasado, qué puede hacer, qué ha ocurrido con sus datos— y una auditoría que comprueba que ninguna se queda sin las tres. ⚠️ **Tres estados del enunciado NO se pueden detectar hoy** —el error de guardado, la sincronización y el conflicto—: `saveData` se traga su error y sube sin leer la versión anterior, así que se declaran con su motivo y **sus textos escritos**, en vez de un aviso que no aparecería nunca. ⚠️ **Ni una cola de escritura**: RA F2 dejó dicho que solo vale si reintentar es idempotente, y aquí no lo es. 🐛 ⚠️ **Un dato corrupto hay que buscarlo en lo GUARDADO**: leerlo con `datos*()` no encontraba nunca nada, porque el normalizador ya lo había tirado. ⚠️ **Antes de borrar se dice adónde va, y solo cuando es verdad**. ⚠️ Y **el permiso se pide una vez** |
 
+| v2.5.0 | **EH F42** | Accesibilidad y usabilidad. ⚠️ **Esta fase no se construye: se revisa** — no hay pantalla nueva, hay diecisiete reglas que cumplir en las cuarenta que ya existen. Lo que se construye es **el revisor**, que lee el código y devuelve los incumplimientos con su línea: encontró cuatro el primer día (un botón de cerrar del tamaño de su icono y tres interruptores sin nombre) y ahora **revisa las veintisiete vistas de JosStyle** en cada `verificar.sh`. ⚠️ **Compacto ≠ incómodo**: 44 píxeles de área táctil, con `-m-1.5` para que el dibujo no cambie. ⚠️ **El color nunca va solo**. ⚠️ **Lo ya resuelto no se rehace**: contraste, tamaño de fuente y `prefers-reduced-motion` viven donde vivían. ⚠️ Y **tres apartados necesitan un móvil de verdad**, declarados en vez de darlos por buenos. 🐛 Y la décima vez de la lección: el revisor tomaba `{label}` por "sin nombre" |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 38/65** (F1-F17, F20, F21, F23-F41; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+3/5 y **EH por 39/65** (F1-F17, F20, F21, F23-F42; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
 Quedan **28** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (26, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el

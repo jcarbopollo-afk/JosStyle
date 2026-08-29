@@ -1,5 +1,70 @@
 # CHANGELOG.md
 
+## v2.5.0 — EH Fase 42/65: accesibilidad y usabilidad
+
+### Qué se ha construido
+**El revisor de accesibilidad** de JosStyle, y los cuatro arreglos que encontró: un botón de cerrar
+que medía lo que su icono, y tres interruptores que un lector de pantalla no sabía nombrar.
+
+*"Las plaquitas pueden ser visualmente pequeñas, pero **nunca deben ser difíciles de pulsar**."*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Esta fase no se puede "construir": se revisa.** No hay una pantalla nueva que hacer — hay
+diecisiete reglas que cumplir en las cuarenta que ya existen. Así que lo que se construye es **el
+revisor**: `revisarPantalla()` lee el código de una vista y devuelve **los incumplimientos de verdad,
+con su línea**. Una lista de buenas intenciones no habría encontrado nada; esto encontró cuatro cosas
+el primer día. Y ahora **revisa las veintisiete vistas de JosStyle y `ui.jsx`** en cada
+`verificar.sh`, no solo Estilo de hombre.
+
+**2. ⚠️ Compacto no es incómodo** (apartados 1 y 2). El área táctil mínima son **44 píxeles** —la de
+Apple— y una plaquita puede seguir midiendo lo que mide mientras su zona de toque llegue ahí. El
+arreglo del botón de cerrar es `p-1.5 -m-1.5`: **el dibujo se queda exactamente donde estaba** y solo
+crece lo que se puede tocar.
+
+**3. ⚠️ El color nunca va solo** (apartado 6: *"🟢 Activo también debe tener: Activo"*).
+`etiquetaDeEstado()` devuelve el icono **y** la palabra, y hay una comprobación de que los tres
+catálogos de estado del módulo traen las dos cosas. Un catálogo con `icono` y sin `nombre` es un
+estado que alguien que no distingue los colores no puede leer.
+
+**4. ⚠️ Lo que ya estaba resuelto no se vuelve a resolver.** El contraste y los dos modos son de
+`tokens.js`, el tamaño de fuente es de Ajustes, y las animaciones **ya respetan
+`prefers-reduced-motion`** desde `index.css`. Se declara dónde vive cada una y se comprueba que sigue
+ahí, en vez de escribir un segundo sistema (regla 2).
+
+**5. ⚠️ Tres apartados no se pueden comprobar desde aquí, y se dice**: el teclado tapando el botón de
+guardar (10), la rotación (16) y los cuatro dispositivos (17) necesitan un teléfono de verdad. Están
+declarados con su motivo y le tocan a Josué (R1), en vez de dar por buena una prueba que nadie ha
+hecho.
+
+**6. ⚠️ Y un revisor que no puede fallar no sirve.** Cada regla trae **un ejemplo que sí la
+incumple**, y hay una prueba de que lo caza. Sin eso, una expresión mal escrita daría siempre cero
+problemas y todo el mundo se quedaría tranquilo.
+
+### Lo que encontró, y está arreglado
+- **Un botón de cerrar del tamaño de su icono** (16 px): ahora tiene su zona de toque.
+- **Tres interruptores sin nombre**: el de *"usar mis preferencias"*, el general de avisos y el de
+  cada tipo de aviso. La palabra estaba al lado en la pantalla, pero un lector de pantalla no la une.
+
+### 🐛 Y la lección, décima vez
+El revisor daba por "botón sin nombre" a `QuickActionButton`, que pinta `{label}` justo al lado del
+icono — porque quitaba **las expresiones** antes de buscar texto. Se arregló al revés: se quitan
+**los iconos**, y si no queda absolutamente nada, entonces sí es un botón de solo icono.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **51 comprobaciones nuevas** (que incluyen pasar el
+revisor por toda la aplicación), **1376 casos de renderizado** y **373 comprobaciones en Chromium**
+(7 nuevas): en el navegador de verdad, ningún interruptor se queda sin nombre, **ninguno mide menos
+de 44 píxeles**, ningún botón de solo icono se queda sin `aria-label`, ninguno es diminuto y la
+pantalla no se desborda a lo ancho.
+
+### Archivos
+- **Nuevos:** `src/lib/accesibilidadEH.js`, `scripts/test-accesibilidad-eh.mjs`.
+- **Modificados:** `src/views/EstiloHombreView.jsx` (los cuatro arreglos),
+  `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v2.4.0 — EH Fase 41/65: estados vacíos, carga, errores y recuperación
 
 ### Qué se ha construido

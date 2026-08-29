@@ -398,6 +398,14 @@ else
   fallo "Fallan los estados de Estilo de hombre"; grep '✗' /tmp/jc_eh41.log
 fi
 
+# ⚠️ EH F42 — además de sus propias comprobaciones, esta suite pasa el revisor de
+# accesibilidad por TODAS las vistas de JosStyle, no solo por Estilo de hombre.
+if node --import ./scripts/resolver-vite.mjs scripts/test-accesibilidad-eh.mjs >/tmp/jc_eh42.log 2>&1; then
+  ok "Accesibilidad y usabilidad (EH F42) — $(grep -c '✓' /tmp/jc_eh42.log) comprobaciones"
+else
+  fallo "Alguna pantalla incumple las reglas de accesibilidad"; grep '✗' /tmp/jc_eh42.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

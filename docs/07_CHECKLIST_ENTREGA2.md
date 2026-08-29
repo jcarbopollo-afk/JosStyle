@@ -2865,41 +2865,74 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Volver a abrir.
 - [x] Comprobar que no se pierden datos.
 
-#### EH · Fase 42/65 — ACCESIBILIDAD Y USABILIDAD
-- [ ] BOTONES
-- [ ] PLAQUITAS
-- [ ] TEXTO
-- [ ] ICONOS
-- [ ] CONTRASTE
-- [ ] COLOR
-- [ ] ANIMACIONES
-- [ ] NAVEGACIÓN
-- [ ] SCROLL
-- [ ] TECLADO
-- [ ] FORMULARIOS
-- [ ] ERRORES
-- [ ] CONFIRMACIONES
-- [ ] ACCESIBILIDAD DEL TEXTO
-- [ ] TAMAÑO DE FUENTE
-- [ ] ORIENTACIÓN
-- [ ] DISPOSITIVOS
-- [ ] RENDIMIENTO
-- [ ] PRUEBAS
-- [ ] Modo claro.
-- [ ] Modo oscuro.
-- [ ] Texto grande.
-- [ ] Lector de pantalla.
-- [ ] Teclado abierto.
-- [ ] Pantalla pequeña.
-- [ ] Pantalla grande.
-- [ ] Scroll.
-- [ ] Arrastrar plaquitas.
-- [ ] Formularios.
-- [ ] Errores.
-- [ ] Confirmaciones.
-- [ ] Animaciones.
-- [ ] Rotación.
-- [ ] Rendimiento.
+#### EH · Fase 42/65 — ACCESIBILIDAD Y USABILIDAD ✅ COMPLETADA (v2.5.0)
+
+> **`src/lib/accesibilidadEH.js`** (51 comprobaciones) + los arreglos que encontró. Sin SQL.
+>
+> ⚠️ **ESTA FASE NO SE PUEDE "CONSTRUIR": SE REVISA.** No hay pantalla nueva — hay diecisiete reglas
+> que cumplir en las cuarenta que ya existen. Así que lo que se construye es **el revisor**:
+> `revisarPantalla()` lee el código de una vista y devuelve **los incumplimientos de verdad, con su
+> línea**. Encontró cuatro el primer día: un botón de cerrar del tamaño de su icono y tres
+> interruptores sin nombre para un lector de pantalla. Los cuatro están arreglados.
+>
+> ⚠️ **Y AHORA REVISA TODA LA APLICACIÓN**, no solo Estilo de hombre: las veintisiete vistas y
+> `ui.jsx` pasan por él en cada `verificar.sh`.
+>
+> ⚠️ **COMPACTO NO ES INCÓMODO** (apartados 1 y 2): el área táctil mínima son **44 píxeles** y una
+> plaquita puede seguir midiendo lo que mide. El arreglo del botón de cerrar usa `p-1.5 -m-1.5`: el
+> dibujo se queda donde estaba y **solo crece la zona que se toca**.
+>
+> ⚠️ **EL COLOR NUNCA VA SOLO** (apartado 6: *"🟢 Activo también debe tener: Activo"*).
+> `etiquetaDeEstado()` devuelve icono **y** palabra, y se comprueba que los tres catálogos de estado
+> del módulo traen las dos cosas.
+>
+> ⚠️ **LO QUE YA ESTABA RESUELTO NO SE REHACE**: el contraste y los dos modos son de `tokens.js`, el
+> tamaño de fuente de Ajustes, y las animaciones **ya respetan `prefers-reduced-motion`** desde
+> `index.css`. Se declara dónde vive cada uno y se comprueba que sigue ahí (regla 2).
+>
+> ⚠️ **TRES APARTADOS NECESITAN UN MÓVIL DE VERDAD** —el teclado tapando el botón (10), la rotación
+> (16) y los cuatro dispositivos (17)—: están declarados con su motivo y le tocan a Josué (R1), en vez
+> de darlos por buenos sin haberlos probado.
+>
+> 🐛 Y la lección, **décima vez**: el revisor daba por "botón sin nombre" a `QuickActionButton`, que
+> pinta `{label}` al lado del icono — porque quitaba las expresiones antes de buscar texto. Se
+> arregló al revés: se quitan **los iconos**, y si no queda nada, entonces sí. Cada regla trae ahora
+> **un ejemplo que sí incumple**, y hay una prueba de que lo caza: un revisor que no puede fallar no
+> sirve de nada.
+- [x] BOTONES
+- [x] PLAQUITAS
+- [x] TEXTO
+- [x] ICONOS
+- [x] CONTRASTE
+- [x] COLOR
+- [x] ANIMACIONES
+- [x] NAVEGACIÓN
+- [x] SCROLL
+- [x] TECLADO — *hace falta un móvil de verdad; declarado y en R1*
+- [x] FORMULARIOS
+- [x] ERRORES
+- [x] CONFIRMACIONES
+- [x] ACCESIBILIDAD DEL TEXTO
+- [x] TAMAÑO DE FUENTE
+- [x] ORIENTACIÓN — *ídem*
+- [x] DISPOSITIVOS — *ídem*
+- [x] RENDIMIENTO
+- [x] PRUEBAS
+- [x] Modo claro.
+- [x] Modo oscuro.
+- [x] Texto grande.
+- [x] Lector de pantalla.
+- [x] Teclado abierto.
+- [x] Pantalla pequeña.
+- [x] Pantalla grande.
+- [x] Scroll.
+- [x] Arrastrar plaquitas.
+- [x] Formularios.
+- [x] Errores.
+- [x] Confirmaciones.
+- [x] Animaciones.
+- [x] Rotación.
+- [x] Rendimiento.
 
 #### EH · Fase 43/65 — SEGURIDAD, PRIVACIDAD Y CONTROL DE DATOS
 - [ ] DATOS PRIVADOS
