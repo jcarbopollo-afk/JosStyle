@@ -1,5 +1,74 @@
 # CHANGELOG.md
 
+## v2.3.0 — EH Fase 40/65: primer uso y configuración inicial
+
+### Qué se ha construido
+El **❔ ¿Cómo funciona?** —un tutorial de cuatro pantallas que se puede saltar y que se recuerda— y
+la **bienvenida** de la pantalla de Estilo de hombre: lo que ya tiene de otros apartados con su
+*"Añadir a Estilo"*, **una** idea para empezar con su *Cerrar*, y como mucho **una** sugerencia del
+tipo *"¿Quieres añadir 🕶️ Accesorios?"*.
+
+*"Entrar → elegir lo que interesa → empezar. Y si no quiere configurar nada: **no pasa absolutamente
+nada**."*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ La mitad de esta fase ya estaba construida, y no se rehace.** La primera entrada (apartado
+1), el *"¿qué te interesa?"* (2), el **Saltar** (3), la configuración progresiva (4), la pantalla
+resultante (6), el volver a configurar (9), el *"ahora no"* (12) y el volver más tarde (13) son
+`configuracionInicial.js` (F3), `estadoPantalla` (F1) y la entrada de tres plaquitas de la F30.
+Rehacerlas habría sido la cuarta lista que prohíbe D2-07. Se declaran en **`YA_CONSTRUIDO`, con la
+función real que las resuelve** —igual que `SISTEMAS_EH` en la F39—, y hay pruebas que comprueban
+que siguen funcionando: usuario nuevo, empezar, uno o varios, saltar, volver y añadir después.
+
+**2. ⚠️ Lo nuevo es el tutorial** (apartados 14 y 15). Cuatro pantallas, y cada una cuenta algo **que
+existe de verdad**: las plaquitas de la F30, ⋮ Personalizar de la F31, las conexiones de la F39 y
+ocultar frente a desactivar de la F36. Ni una promesa de algo sin hacer (regla 8). Y **que esté
+abierto ahora es de la pantalla, no del almacén**: guardarlo tenía un efecto feo — volver a verlo
+hacía que constara como no visto, justo mientras lo estaba viendo.
+
+**3. ⚠️ Una idea. Una.** (apartado 7: *"no bombardear. Como máximo: 💡 una idea para empezar"*). Y
+**sin catálogo nuevo**: sale de `descubrir()` (F33), que ya sabe qué módulos tiene encendidos.
+Cerrarla es de la bienvenida — **la tarjeta sigue existiendo en ✨ Descubrir**, porque cerrar no es
+descartar, y hay una prueba que lo comprueba.
+
+**4. ⚠️ Aprender con el uso no activa nada** (apartado 8: *"pero no automáticamente activar nada"*).
+`sugerenciaPorUso()` mira si **de verdad lo usa** —tener Perfumes encendido y ni un perfume apuntado
+no es usarlo—, propone **una sola**, y `aceptarSugerencia()` escribe **solo con `confirmado`**:
+decimoctavo `aplicarPlan` del proyecto. Y *"No, gracias"* se guarda: no se vuelve a proponer.
+
+**5. ⚠️ "Añadir a Estilo" es activar el módulo que ya lo lee** (apartados 10 y 11: *"crear la
+referencia, **no duplicar los datos**"*). El armario lo lee `armarioEnEstiloHombre.js` desde la F5 y
+los datos globales `leerDato()` desde la F4: no hay nada que importar. **Esta fase no copia ni un
+campo**, y la prueba lo comprueba comparando los dos almacenes antes y después — lo único que cambia
+es el interruptor.
+
+**6. ⚠️ Ni un porcentaje, ni una tarea pendiente** (apartado 5: *"no utilizar 'tu perfil está al
+20%'"*). `auditarPrimerUso()` barre todos los textos buscando porcentajes y palabras de deber, y hay
+una prueba que comprueba que el barrido **cazaría el ejemplo del enunciado**.
+
+### 🐛 Una encontrada de paso, y es la novena vez de la misma lección
+`test-rachas-servicio.mjs` buscaba las palabras prohibidas —*"xp"*, *"nivel"*, *"medalla"*— en el
+JSON entero del panel, **con los ids dentro**. Los ids son `Math.random().toString(36)`, y **uno de
+cada ciento ochenta contiene "xp"**: la comprobación fallaba un par de veces de cada cien y tumbaba
+`verificar.sh` con ella, sin que nada estuviera mal. Ahora se quitan los ids antes de mirar, y hay
+una comprobación de que el barrido sigue cazando un campo `xp` de verdad.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **113 comprobaciones nuevas**, **1340 casos de
+renderizado** (36 nuevos) y **358 comprobaciones en Chromium** (19 nuevas): usa Perfumes y se le
+ofrece Accesorios con su motivo, **decir que no no enciende nada** y queda apuntado, el tutorial se
+abre a un toque suyo, se avanza por sus cuatro pantallas, **se recuerda que lo vio** y tras recargar
+**no se abre solo**.
+
+### Archivos
+- **Nuevos:** `src/lib/primerUso.js`, `scripts/test-primer-uso.mjs`.
+- **Modificados:** `src/views/EstiloHombreView.jsx` (`TutorialEH`, `BienvenidaEH` y sus puertas),
+  `scripts/test-rachas-servicio.mjs` (la comprobación que fallaba por azar),
+  `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v2.2.0 — EH Fase 39/65: integración con el resto de JosStyle
 
 ### Qué se ha construido

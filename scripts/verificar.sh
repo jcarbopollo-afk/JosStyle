@@ -386,6 +386,12 @@ else
   fallo "Falla la integración de Estilo de hombre"; grep '✗' /tmp/jc_eh39.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-primer-uso.mjs >/tmp/jc_eh40.log 2>&1; then
+  ok "Primer uso y configuración inicial (EH F40) — $(grep -c '✓' /tmp/jc_eh40.log) comprobaciones"
+else
+  fallo "Falla el primer uso de Estilo de hombre"; grep '✗' /tmp/jc_eh40.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

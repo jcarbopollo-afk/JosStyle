@@ -246,6 +246,13 @@ import {
 import {
   TEXTOS_INTEGRACION, panelIntegracion, prepararTarea,
 } from '../lib/integracionEstilo';
+/* ⚠️ **EH F40** — el primer uso. La mitad ya estaba construida (el asistente de
+   la F3, la entrada de la F30): aquí solo entra lo nuevo — el tutorial, la idea
+   para empezar, la sugerencia por uso y lo que ya tiene de otros apartados. */
+import {
+  TEXTOS_PRIMER_USO, panelPrimerUso, verTutorial, avanzarTutorial, saltarTutorial,
+  pasoDelTutorial, cerrarIdea, aceptarSugerencia, rechazarSugerencia, anadirAEstilo,
+} from '../lib/primerUso';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -7539,6 +7546,175 @@ export function BuscadorEstiloEH({
 
    Lo único que esta pantalla escribe es la tarea del apartado 3, y **la escribe
    `App.jsx`**, que es el dueño de los dos almacenes. */
+/* ===========================================================================
+   EH F40 — ❔ ¿CÓMO FUNCIONA? (apartados 14 y 15)
+   ===========================================================================
+   *"Tutorial corto de máximo unas pocas pantallas… Puede saltarlo."*
+
+   ⚠️ Cuatro pantallas, y cada una cuenta algo **que existe de verdad**: las
+   plaquitas de la F30, ⋮ Personalizar de la F31, las conexiones de la F39 y
+   ocultar frente a desactivar de la F36. Ni una promesa (regla 8).
+
+   ⚠️ Y **que esté abierto ahora es de la pantalla**, no del almacén: lo único
+   que se guarda es si ya lo vio (apartado 15). */
+export function TutorialEH({ estado, accent, onCambiar, onCerrar }) {
+  const paso = pasoDelTutorial(estado);
+  const ultima = paso.ultima;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>
+          {TEXTOS_PRIMER_USO.comoFunciona}
+        </p>
+        <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+          {paso.numero}/{paso.de}
+        </span>
+      </div>
+
+      <Card className="text-center">
+        <p className="text-2xl leading-none mb-2" aria-hidden="true">{paso.pantalla.icono}</p>
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{paso.pantalla.titulo}</p>
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{paso.pantalla.texto}</p>
+      </Card>
+
+      <div className="flex items-center gap-2">
+        <PrimaryButton
+          accent={accent}
+          onClick={() => {
+            onCambiar(avanzarTutorial(estado));
+            if (ultima) onCerrar?.();
+          }}
+        >
+          {ultima ? TEXTOS_PRIMER_USO.terminarTutorial : TEXTOS_PRIMER_USO.siguiente}
+        </PrimaryButton>
+        {/* Apartado 14 — *"puede saltarlo"*, en cualquier pantalla. */}
+        {!ultima && (
+          <button
+            onClick={() => { onCambiar(saltarTutorial(estado)); onCerrar?.(); }}
+            className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}
+          >
+            {TEXTOS_PRIMER_USO.saltarTutorial}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+   EH F40 — LO QUE YA TIENE, LA IDEA Y LA SUGERENCIA (apartados 7, 8, 10 y 11)
+   ===========================================================================
+   Tres tarjetas pequeñas para la portada. ⚠️ Ninguna de las tres activa nada
+   sola: la sugerencia y el "Añadir a Estilo" pasan por su confirmación. */
+export function BienvenidaEH({
+  estado, accent, armario = null, datosGlobales = {}, onCambiar, onComoFunciona,
+}) {
+  const panel = useMemo(
+    () => panelPrimerUso(estado, { armario, datosGlobales }),
+    [estado, armario, datosGlobales],
+  );
+  const traibles = panel.yaTienes.fuentes.filter((f) => !f.yaActivo);
+
+  return (
+    <>
+      {/* ── Apartado 10 y 11 — lo que ya tiene, sin pedírselo otra vez ──── */}
+      {traibles.length > 0 && (
+        <Card>
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+            {panel.yaTienes.titulo}
+          </p>
+          {/* ⚠️ Con todas las letras: no se copia nada. */}
+          <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+            {panel.yaTienes.sinDuplicar}
+          </p>
+          {traibles.map((f) => (
+            <div key={f.id} className="flex items-center gap-2 rounded-2xl p-2 mb-1"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <span className="text-sm leading-none" aria-hidden="true">{f.icono}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                  {f.texto}
+                </span>
+                <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>{f.detalle}</span>
+              </span>
+              <button
+                onClick={() => {
+                  const nuevo = anadirAEstilo(estado, f.id, { confirmado: true });
+                  if (nuevo) onCambiar(nuevo);
+                }}
+                className="text-[10px] font-semibold" style={{ color: accent }}
+              >
+                {TEXTOS_PRIMER_USO.anadir}
+              </button>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* ── Apartado 7 — UNA idea. Una. Y su Cerrar ──────────────────────── */}
+      {panel.idea && (
+        <Card>
+          <div className="flex items-start gap-2">
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                {panel.idea.titulo}
+              </span>
+              <span className="block text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
+                {panel.idea.texto}
+              </span>
+            </span>
+            <button onClick={() => onCambiar(cerrarIdea(estado, panel.idea.id))}
+              className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+              {panel.idea.cerrar}
+            </button>
+          </div>
+        </Card>
+      )}
+
+      {/* ── Apartado 8 — aprender con el uso, sin activar nada solo ──────── */}
+      {panel.sugerencia && (
+        <Card>
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+            {panel.sugerencia.pregunta}
+          </p>
+          <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+            {panel.sugerencia.porque}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const nuevo = aceptarSugerencia(estado, panel.sugerencia.modulo, { confirmado: true });
+                if (nuevo) onCambiar(nuevo);
+              }}
+              className="text-[11px] font-semibold" style={{ color: accent }}
+            >
+              {TEXTOS_PRIMER_USO.anadir}
+            </button>
+            <button onClick={() => onCambiar(rechazarSugerencia(estado, panel.sugerencia.modulo))}
+              className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>
+              {TEXTOS_PRIMER_USO.noGracias}
+            </button>
+          </div>
+        </Card>
+      )}
+
+      {/* Apartado 14 — y la puerta al tutorial, que nunca se abre sola. */}
+      {onComoFunciona && (
+        <button onClick={onComoFunciona}
+          className="text-[11px] font-semibold" style={{ color: accent }}>
+          {panel.comoFunciona}
+        </button>
+      )}
+    </>
+  );
+}
+
 export function IntegracionEH({
   estado, accent, productividad = null, datosGlobales = {},
   onCerrar, onIr, onGuardarTarea,
@@ -7920,7 +8096,7 @@ function AvisoDiseno({ aviso, accent, onConfirmar, onCancelar }) {
 
 export function PersonalizarPlaquitas({
   estado, accent, armario = null, datosGlobales = {}, onCambiar, onCerrar, onGestionar, onAvisos,
-  onIntegracion,
+  onIntegracion, onComoFunciona,
 }) {
   /* ⚠️ Regla 4 — todos los hooks, antes de cualquier `return` condicional. */
   const [moviendo, setMoviendo] = useState(null);
@@ -7999,6 +8175,15 @@ export function PersonalizarPlaquitas({
         <button onClick={onIntegracion}
           className="text-[11px] font-semibold" style={{ color: accent }}>
           {TEXTOS_INTEGRACION.titulo}
+        </button>
+      )}
+      {/* ⚠️ **EH F40, apartado 14** — el tutorial, siempre a un toque suyo y
+          nunca solo. Y desde aquí, que es donde el apartado 9 pone lo de
+          *"volver a configurar"*. */}
+      {onComoFunciona && (
+        <button onClick={onComoFunciona}
+          className="text-[11px] font-semibold" style={{ color: accent }}>
+          {TEXTOS_PRIMER_USO.comoFunciona}
         </button>
       )}
 
@@ -8262,6 +8447,9 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const [buscando, setBuscando] = useState(false);            // F37, apartado 1
   const [avisos, setAvisos] = useState(false);                // F38, apartado 11
   const [integracion, setIntegracion] = useState(false);      // F39, apartados 1-21
+  /* ⚠️ **EH F40, apartados 14 y 15** — que el tutorial esté abierto AHORA es de
+     la pantalla. Lo único que se guarda es si ya lo vio. */
+  const [tutorial, setTutorial] = useState(false);
   const [perfilPelo, setPerfilPelo] = useState(false);   // false | 'panel' | 'perfil'
   const [skincare, setSkincare] = useState(false);       // F13
   const [barba, setBarba] = useState(false);             // F20
@@ -8582,6 +8770,18 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     );
   }
 
+  /* ⚠️ **EH F40, apartado 14** — *"si el usuario quiere aprender"*: nunca se
+     abre solo, siempre a un toque suyo. */
+  if (tutorial) {
+    return (
+      <TutorialEH
+        estado={estado} accent={accent}
+        onCambiar={onCambiar}
+        onCerrar={() => setTutorial(false)}
+      />
+    );
+  }
+
   /* ⚠️ **EH F39** — *"Estilo de hombre utiliza los sistemas globales. No los
      duplica."* La pantalla dice dónde vive cada cosa y lleva allí. Lo único que
      escribe es la tarea del apartado 3, y la escribe `App.jsx`. */
@@ -8607,6 +8807,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
         onGestionar={() => setGestionEstilo(true)}
         onAvisos={() => { setPersonalizando(false); setAvisos(true); }}
         onIntegracion={() => { setPersonalizando(false); setIntegracion(true); }}
+        onComoFunciona={() => { setPersonalizando(false); onCambiar(verTutorial(estado)); setTutorial(true); }}
       />
     );
   }
@@ -8646,6 +8847,18 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
           </span>
         </button>
       )}
+      {/* ⚠️ **EH F40, apartados 10, 11 y 14** — también sin ni un apartado
+          encendido: es justo cuando más ayuda saber que ya tiene cosas y que hay
+          un tutorial de cuatro pantallas. */}
+      {!ordenando && pantalla === 'sin_modulos' && (
+        <BienvenidaEH
+          estado={estado} accent={accent} armario={armario} datosGlobales={datosGlobales}
+          onCambiar={onCambiar}
+          /* ⚠️ Se abre SIEMPRE por el principio (prueba 12: repetir tutorial).
+                 `verTutorial` NO toca la memoria: sigue constando como visto. */
+              onComoFunciona={() => { onCambiar(verTutorial(estado)); setTutorial(true); }}
+        />
+      )}
       {pantalla === 'sin_modulos' ? (
         /* ⚠️ EH F30, apartado 13 — *"si alguien entra por primera vez, NO mostrar
            30 módulos"*. Se le ofrecen TRES, y el botón de siempre debajo. */
@@ -8671,9 +8884,26 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
           <PrimaryButton accent={accent} icon={Settings} onClick={() => setGestionando(true)}>
             {TEXTOS_GESTION.vacioAccion}
           </PrimaryButton>
+          {/* ⚠️ **EH F40, apartado 12** — *"no insistir"*, dicho con una frase. */}
+          <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>
+            {TEXTOS_PRIMER_USO.sinPresion}
+          </p>
         </Card>
       ) : (
         <>
+          {/* ⚠️ **EH F40, apartados 7, 8, 10 y 11** — lo que ya tiene de otros
+              apartados, UNA idea para empezar y, como mucho, una sugerencia.
+              Con `ordenando` no se pinta, como todo lo demás. */}
+          {!ordenando && (
+            <BienvenidaEH
+              estado={estado} accent={accent} armario={armario} datosGlobales={datosGlobales}
+              onCambiar={onCambiar}
+              /* ⚠️ Se abre SIEMPRE por el principio (prueba 12: repetir tutorial).
+                 `verTutorial` NO toca la memoria: sigue constando como visto. */
+              onComoFunciona={() => { onCambiar(verTutorial(estado)); setTutorial(true); }}
+            />
+          )}
+
           {/* ── EH F29 — 🧔 Mi estilo: el resumen de lo que ya hay ──────────
               ⚠️ Con `ordenando` no se pinta: mientras reordena, la pantalla es
               la de la Fase 2 y no conviene que compita con ella. */}

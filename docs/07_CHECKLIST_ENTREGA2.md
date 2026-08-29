@@ -2732,40 +2732,75 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] DESACTIVACIÓN
 - [x] PRUEBA MAESTRA
 
-#### EH · Fase 40/65 — PRIMER USO Y CONFIGURACIÓN INICIAL
-- [ ] PRIMERA ENTRADA
-- [ ] SALTAR
-- [ ] CONFIGURACIÓN PROGRESIVA
-- [ ] NADA DE «PERFIL 100%»
-- [ ] PANTALLA RESULTANTE
-- [ ] RECOMENDACIONES INICIALES
-- [ ] APRENDER CON EL USO
-- [ ] VOLVER A CONFIGURAR
-- [ ] USUARIO QUE YA TIENE DATOS
-- [ ] IMPORTAR
-- [ ] USUARIO QUE NO QUIERE NADA
-- [ ] VOLVER MÁS TARDE
-- [ ] TUTORIAL
-- [ ] Plaquitas.
-- [ ] Personalización.
-- [ ] Conexiones con otros módulos.
-- [ ] Cómo ocultar/desactivar.
-- [ ] RECORDAR EL ESTADO
-- [ ] PRUEBAS
-- [ ] Usuario nuevo.
-- [ ] Empezar.
-- [ ] Seleccionar un módulo.
-- [ ] Seleccionar varios.
-- [ ] Saltar.
-- [ ] Salir.
-- [ ] Volver.
-- [ ] Añadir posteriormente módulos.
-- [ ] Usuario con datos existentes.
-- [ ] Importar referencias.
-- [ ] Comprobar que no hay duplicados.
-- [ ] Repetir tutorial.
-- [ ] Saltar tutorial.
-- [ ] Comprobar persistencia.
+#### EH · Fase 40/65 — PRIMER USO Y CONFIGURACIÓN INICIAL ✅ COMPLETADA (v2.3.0)
+
+> **`src/lib/primerUso.js`** (113 comprobaciones) + `TutorialEH` y `BienvenidaEH` en
+> `EstiloHombreView.jsx`. Sin SQL.
+>
+> ⚠️ **LA MITAD DE ESTA FASE YA ESTABA CONSTRUIDA, Y NO SE REHACE.** La primera entrada (1), el
+> *"¿qué te interesa?"* (2), el **Saltar** (3), la configuración progresiva (4), la pantalla
+> resultante (6), el volver a configurar (9), el *"ahora no"* (12) y el volver más tarde (13) son
+> `configuracionInicial.js` (F3), `estadoPantalla` (F1) y la entrada de tres plaquitas de la F30.
+> Rehacerlas habría sido la cuarta lista que prohíbe D2-07: se declaran en `YA_CONSTRUIDO` **con la
+> función real que las resuelve**, y hay pruebas que comprueban que siguen funcionando.
+>
+> ⚠️ **LO NUEVO ES EL TUTORIAL** (14 y 15): cuatro pantallas —plaquitas, personalización, conexiones
+> y ocultar/desactivar—, **se puede saltar** y **se recuerda**. Y **que esté abierto ahora es de la
+> pantalla, no del almacén**: guardarlo hacía que volver a verlo dijera que no lo había visto, justo
+> mientras lo estaba viendo.
+>
+> ⚠️ **UNA IDEA. UNA** (apartado 7). Y **sin catálogo nuevo**: sale de `descubrir()` (F33). Cerrarla
+> es de la bienvenida — **la tarjeta sigue en ✨ Descubrir**, porque cerrar no es descartar.
+>
+> ⚠️ **APRENDER CON EL USO NO ACTIVA NADA** (apartado 8, con esas palabras). `sugerenciaPorUso()` mira
+> si de verdad lo **usa** —encenderlo y no tocarlo no es usarlo—, propone **una sola**, y
+> `aceptarSugerencia()` escribe solo con `confirmado`: decimoctavo `aplicarPlan`. Y *"No, gracias"* se
+> guarda: no se insiste.
+>
+> ⚠️ **"AÑADIR A ESTILO" ES ACTIVAR EL MÓDULO QUE YA LO LEE** (10 y 11: *"crear la referencia, no
+> duplicar los datos"*). No copia ni un campo, y hay una prueba que compara los dos almacenes antes y
+> después: **lo único que cambia es el interruptor**.
+>
+> ⚠️ **NI UN PORCENTAJE, NI UNA TAREA PENDIENTE** (apartado 5). `auditarPrimerUso()` barre todos los
+> textos buscando *"al 20%"* y las palabras de deber.
+>
+> 🐛 Y una encontrada de paso, **la novena vez de la misma lección**: `test-rachas-servicio.mjs`
+> buscaba *"xp"* en el JSON entero del panel, **ids aleatorios incluidos** — y uno de cada ciento
+> ochenta contiene "xp". Tumbaba `verificar.sh` un par de veces de cada cien sin que nada estuviera
+> mal. Ahora se quitan los ids antes de mirar.
+- [x] PRIMERA ENTRADA — *ya estaba (F3)*
+- [x] SALTAR — *ya estaba (F3)*
+- [x] CONFIGURACIÓN PROGRESIVA — *ya estaba (F1)*
+- [x] NADA DE «PERFIL 100%»
+- [x] PANTALLA RESULTANTE — *ya estaba (F3)*
+- [x] RECOMENDACIONES INICIALES
+- [x] APRENDER CON EL USO
+- [x] VOLVER A CONFIGURAR — *ya estaba (F3)*
+- [x] USUARIO QUE YA TIENE DATOS
+- [x] IMPORTAR — *una referencia, nunca una copia*
+- [x] USUARIO QUE NO QUIERE NADA — *ya estaba (F3)*
+- [x] VOLVER MÁS TARDE — *ya estaba (F3)*
+- [x] TUTORIAL
+- [x] Plaquitas.
+- [x] Personalización.
+- [x] Conexiones con otros módulos.
+- [x] Cómo ocultar/desactivar.
+- [x] RECORDAR EL ESTADO
+- [x] PRUEBAS
+- [x] Usuario nuevo.
+- [x] Empezar.
+- [x] Seleccionar un módulo.
+- [x] Seleccionar varios.
+- [x] Saltar.
+- [x] Salir.
+- [x] Volver.
+- [x] Añadir posteriormente módulos.
+- [x] Usuario con datos existentes.
+- [x] Importar referencias.
+- [x] Comprobar que no hay duplicados.
+- [x] Repetir tutorial.
+- [x] Saltar tutorial.
+- [x] Comprobar persistencia.
 
 #### EH · Fase 41/65 — ESTADOS VACÍOS, CARGA, ERRORES Y RECUPERACIÓN
 - [ ] SIN DATOS

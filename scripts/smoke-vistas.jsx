@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH, GestionarEstiloEH, BuscadorEstiloEH, AvisosEstiloEH, IntegracionEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH, GestionarEstiloEH, BuscadorEstiloEH, AvisosEstiloEH, IntegracionEH, TutorialEH, BienvenidaEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -59,6 +59,8 @@ import {
 } from '../src/lib/accesorios.js';
 /* EH F39 — la integración con el resto de JosStyle. */
 import { accionesConcretas, prepararTarea, aplicarTarea } from '../src/lib/integracionEstilo';
+/* EH F40 — el primer uso: tutorial, idea para empezar y lo que ya tiene. */
+import { verTutorial, avanzarTutorial, saltarTutorial, rechazarSugerencia } from '../src/lib/primerUso';
 import {
   configurarGustos, decirAhoraNoGustos, anadirGusto, alternarFavoritoGusto,
   cambiarEstadoGusto, ponerFechaGusto, alternarParteGustos,
@@ -1386,6 +1388,34 @@ const CASOS = [
               ['IntegracionEH · con el enlace colgando', IntegracionEH, () =>
                 ip(conTarea.estiloHombre, { tareas: [] })],
               ['IntegracionEH · sin configurar', IntegracionEH, () => ip(DEFAULT_ESTILO_HOMBRE, null)],
+            ];
+          })(),
+          /* EH Fase 40 — el primer uso: el tutorial de cuatro pantallas y la
+             bienvenida (lo que ya tiene, la idea y la sugerencia). */
+          ...(() => {
+            const ocho = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE,
+              ['estilo', 'skincare', 'pelo', 'barba', 'perfumes', 'sonrisa', 'accesorios', 'gustos']);
+            const soloPerfumes = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['perfumes']);
+            const conPerfume = anadirPerfume(soloPerfumes, { nombre: 'Bleu' }, { hoy: HOY }).estado;
+            const tp = (e) => ({ estado: e, accent, onCambiar: noop, onCerrar: noop });
+            const bp = (e, arm) => ({
+              estado: e, accent, armario: arm, datosGlobales: {},
+              onCambiar: noop, onComoFunciona: noop,
+            });
+            return [
+              ['TutorialEH · primera pantalla', TutorialEH, () => tp(verTutorial(ocho))],
+              ['TutorialEH · por la mitad', TutorialEH, () => tp(avanzarTutorial(verTutorial(ocho)))],
+              ['TutorialEH · en la última', TutorialEH, () =>
+                tp(avanzarTutorial(avanzarTutorial(avanzarTutorial(verTutorial(ocho)))))],
+              ['TutorialEH · ya saltado', TutorialEH, () => tp(saltarTutorial(ocho))],
+              ['BienvenidaEH · sin nada', BienvenidaEH, () =>
+                bp(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []), null)],
+              ['BienvenidaEH · con armario que traer', BienvenidaEH, () =>
+                bp(conPerfume, lleno.armario)],
+              ['BienvenidaEH · con sugerencia por uso', BienvenidaEH, () => bp(conPerfume, null)],
+              ['BienvenidaEH · con la sugerencia rechazada', BienvenidaEH, () =>
+                bp(rechazarSugerencia(conPerfume, 'accesorios'), null)],
+              ['BienvenidaEH · con todo encendido', BienvenidaEH, () => bp(ocho, lleno.armario)],
             ];
           })(),
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],

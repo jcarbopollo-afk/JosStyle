@@ -20,7 +20,7 @@ serverless en Vercel que hace de proxy a Anthropic.
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 36/65**, quedan 27 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 37/65**, quedan 26 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -125,11 +125,11 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 8465 pruebas unitarias con Node (5 de ellas de auditoría), 1304 casos de renderizado real
-con `react-dom/server`, 11 reglas invariantes y **339 comprobaciones sobre la aplicación de verdad
-en Chromium** — **10 122 comprobaciones**.
+Vite, 8579 pruebas unitarias con Node (5 de ellas de auditoría), 1340 casos de renderizado real
+con `react-dom/server`, 11 reglas invariantes y **358 comprobaciones sobre la aplicación de verdad
+en Chromium** — **10 291 comprobaciones**.
 
-Eso ya ha encontrado **sesenta y un bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **sesenta y dos bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -153,7 +153,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 36/65** (v2.2.0: F1-F17, **F20, F21 y F23-F39**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 37/65** (v2.3.0: F1-F17, **F20, F21 y F23-F40**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -165,10 +165,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 40/65 — Experiencia de primer uso y configuración inicial**.
+La siguiente candidata es **EH · Fase 41/65 — Estados vacíos, carga, errores y recuperación**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F39 dejaron ciento sesenta cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F40 dejaron ciento sesenta y cinco cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -593,6 +593,21 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 - ⚠️ **`sinComentarios` NO ES UN ANALIZADOR** (F39): en `ui.jsx` se lleva **22 000 caracteres de
   código de verdad**. Una prueba que busque **definiciones** tiene que mirar el archivo **en bruto**;
   el limpio vale para buscar **usos**. Octava vez que una comprobación salta con algo que estaba bien.
+- ⚠️ **ANTES DE CONSTRUIR UNA FASE, MIRAR SI YA ESTÁ CONSTRUIDA** (F40). Ocho de sus dieciséis
+  apartados los resolvían la F3, la F1 y la F30, y rehacerlos habría sido la cuarta lista que prohíbe
+  D2-07. `YA_CONSTRUIDO` los declara **con la función real** que los resuelve, como `SISTEMAS_EH`.
+- ⚠️ **QUE UNA PANTALLA ESTÉ ABIERTA AHORA ES DE LA PANTALLA** (F40). Guardar `viendo` en el almacén
+  hacía que volver a ver el tutorial dijera que no lo había visto, **justo mientras lo estaba
+  viendo**. Lo que se guarda es el hecho —lo vio o no—, nunca dónde está el dedo.
+- ⚠️ **ENCENDER UN MÓDULO NO ES USARLO** (F40, apartado 8). `sugerenciaPorUso` mira si hay **datos de
+  verdad**; proponerle algo por tener un interruptor puesto es adivinar. Y **"No, gracias" se
+  guarda**: no se insiste.
+- ⚠️ **"AÑADIR A ESTILO" ES ACTIVAR EL MÓDULO QUE YA LO LEE** (F40, apartados 10 y 11). Ni un campo
+  copiado, y hay una prueba que compara los dos almacenes: **lo único que cambia es el interruptor**.
+- 🚨 **UNA PRUEBA NUNCA DEBE MIRAR DENTRO DE UN ID ALEATORIO** (F40). `uid()` es
+  `Math.random().toString(36)`, y **uno de cada ciento ochenta contiene "xp"**: buscar las palabras
+  prohibidas en el JSON entero del panel de rachas tumbaba `verificar.sh` un par de veces de cada
+  cien **sin que nada estuviera mal**. Se quitan los ids antes de barrer. Novena vez de esta lección.
 - 🚨 **LO QUE JOSUÉ SUBE A MANO A GITHUB NO INCLUYE LAS CARPETAS.** Sus seis `Add files via upload`
   solo llevaron los **nueve archivos sueltos de la raíz**: ni uno de `src/`. Por eso `main` tenía la
   documentación nueva y el código del 11 de agosto, y la web no cambiaba por más zips que subiera.

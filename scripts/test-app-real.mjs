@@ -1152,4 +1152,82 @@ await page.waitForTimeout(700);
 ok(/Ya está en Tareas/.test(await ver()),
   '⚠️ PERSISTENCIA: tras recargar sigue apuntada, y no se le vuelve a ofrecer');
 
+/* ── 25 · PRIMER USO: TUTORIAL, IDEA Y SUGERENCIA (EH F40) ────────────────
+   Lo que importa: que el tutorial se abra SOLO a un toque suyo y se recuerde,
+   que la sugerencia por uso NO active nada sola, y que "Añadir a Estilo" sea
+   una referencia — el interruptor y nada más. */
+
+/* Un estado donde Perfumes se USA de verdad (un perfume apuntado) y Accesorios
+   está apagado: es el ejemplo literal del apartado 8. */
+almacen.estiloHombre = {
+  configurado: true,
+  asistente: { paso: 4, estado: 'terminado', seleccion: ['perfumes'] },
+  modulos: [
+    { id: 'perfumes', activo: true, orden: 0, config: { perfumes: { perfumes: [{ id: 'pf1', nombre: 'Bleu' }] } } },
+  ],
+  datos: {}, retirados: [],
+};
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(800);
+const primerUso = await ver();
+ok(/¿Quieres añadir/.test(primerUso),
+  '⚠️ Usa Perfumes y se le OFRECE Accesorios (apartado 8)');
+ok(/Los accesorios se apuntan igual/.test(primerUso),
+  'con su motivo, no a secas');
+ok(/¿Cómo funciona\?/.test(primerUso), '❔ Y la puerta al tutorial (apartado 14)');
+ok(!/\d+\s?%/.test(primerUso),
+  '⚠️ Y ni un porcentaje: nada de "tu perfil está al 20%" (apartado 5)');
+
+/* Apartado 8 — *"pero no automáticamente activar nada"*. */
+guardado.length = 0;
+ok(await pulsar('No, gracias'), 'Se puede decir que no');
+await page.waitForTimeout(1200);
+const escNo = guardado.filter((g) => g && g.key === 'estiloHombre');
+const cfgNo = escNo.at(-1)?.value?.modulos?.find((m) => m.id === 'estilo')?.config || {};
+ok((cfgNo.primerUso?.rechazados || []).includes('accesorios'),
+  '⚠️ PERSISTENCIA: queda apuntado que dijo que no');
+const accNo = escNo.at(-1)?.value?.modulos?.find((m) => m.id === 'accesorios');
+ok(!accNo || accNo.activo !== true,
+  '⚠️ Y ACCESORIOS SIGUE APAGADO: decir que no no enciende nada');
+ok(!/¿Quieres añadir 🕶️ Accesorios/.test(await ver()),
+  '⚠️ Y ya no se le vuelve a proponer: "no insistir"');
+
+/* Apartados 14 y 15 — el tutorial, sus cuatro pantallas y su Saltar. */
+ok(await pulsar('❔ ¿Cómo funciona?'), 'El tutorial se abre a un toque suyo');
+await page.waitForTimeout(700);
+const tuto = await ver();
+ok(/1\/4/.test(tuto), 'con sus cuatro pantallas (apartado 14)');
+ok(/Cada cosa es una plaquita/.test(tuto), 'y empieza por las plaquitas');
+ok(/Saltar/.test(tuto), 'con su Saltar en cualquier momento');
+ok(await pulsar('Siguiente'), 'Se puede avanzar');
+await page.waitForTimeout(600);
+ok(/2\/4/.test(await ver()), 'y va por la segunda');
+
+guardado.length = 0;
+await pulsar('Siguiente');
+await page.waitForTimeout(400);
+await pulsar('Siguiente');
+await page.waitForTimeout(400);
+ok(/Ocultar no es desactivar/.test(await ver()), 'la cuarta es ocultar frente a desactivar');
+ok(await pulsar('Entendido'), 'y se termina');
+await page.waitForTimeout(1300);
+const escTuto = guardado.filter((g) => g && g.key === 'estiloHombre');
+const cfgTuto = escTuto.at(-1)?.value?.modulos?.find((m) => m.id === 'estilo')?.config || {};
+ok(cfgTuto.primerUso?.tutorial === 'visto',
+  '⚠️ PERSISTENCIA: se recuerda que lo vio (apartado 15)');
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(800);
+ok(!/1\/4/.test(await ver()),
+  '⚠️ Y tras recargar NO se abre solo: el tutorial nunca se enseña sin pedirlo');
+ok(/¿Cómo funciona\?/.test(await ver()),
+  'pero sigue estando ahí para volver a verlo (prueba 12)');
+
 await salir(browser);

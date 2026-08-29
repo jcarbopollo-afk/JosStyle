@@ -325,11 +325,24 @@ console.log('\n═══ Eventos, hitos y ausencia de gamificación ═══\n'
   comprobar('CLAVE · Pasado el último hito NO se inventa uno nuevo', siguienteHito(500) === null);
   comprobar('Los hitos son números de referencia, no logros', HITOS.every((h) => typeof h === 'number'));
 
-  // Apartado 26 y D2-02: ni XP, ni niveles, ni medallas.
-  const texto = JSON.stringify(eventosDeRacha(siete, HOY)) + JSON.stringify(panelRachas(siete, HOY));
+  /* Apartado 26 y D2-02: ni XP, ni niveles, ni medallas.
+
+     ⚠️ **Los ids son ALEATORIOS** (`Math.random().toString(36)`), y **uno de
+     cada ciento ochenta contiene "xp"**. Buscar la palabra en el JSON entero
+     hacía fallar esta comprobación un par de veces de cada cien **sin que nada
+     estuviera mal**, y tumbaba `verificar.sh` con ella. Se quitan los ids antes
+     de mirar: lo que se comprueba es el mecanismo —los nombres de campo y lo
+     que se lee en pantalla—, no una cadena de azar. Es la novena vez en este
+     proyecto que una prueba salta con algo que estaba bien. */
+  const sinIds = (o) => JSON.stringify(o, (clave, valor) => (
+    /^(id|rachaId|eventoId|habitoId)$/.test(clave) ? '' : valor));
+  const texto = (sinIds(eventosDeRacha(siete, HOY)) + sinIds(panelRachas(siete, HOY))).toLowerCase();
   const prohibidas = ['xp', 'nivel', 'medalla', 'moneda', 'puntos', 'ranking'];
   comprobar('CLAVE · Ni el panel ni los eventos traen XP, niveles ni medallas',
-    prohibidas.every((p) => !texto.toLowerCase().includes(p)));
+    prohibidas.every((p) => !texto.includes(p)));
+  // Y la comprobación sigue sirviendo: con un campo así de verdad, salta.
+  comprobar('...y la comprobación cazaría uno de verdad',
+    sinIds({ id: 'a', xp: 10 }).toLowerCase().includes('xp'));
 
   // Sin rachas no se emite nada. No hay avisos fantasma.
   comprobar('Sin rachas no se emite ningún evento', eventosDeRacha(ESTADO_INICIAL, HOY).length === 0);
