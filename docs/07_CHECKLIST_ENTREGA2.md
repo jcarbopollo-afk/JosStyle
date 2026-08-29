@@ -2299,34 +2299,62 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar que no se repiten innecesariamente.
 - [x] Comprobar que no aparecen recomendaciones contradictorias.
 
-#### EH · Fase 33/65 — DESCUBRIR E INSPIRACIÓN
-- [ ] PLAQUITA «DESCUBRIR»
-- [ ] QUÉ PUEDE DESCUBRIR
-- [ ] TARJETAS PEQUEÑAS
-- [ ] PERSONALIZACIÓN
-- [ ] FILTROS
-- [ ] GUARDAR
-- [ ] ABRIR MÓDULO
-- [ ] PRODUCTOS
-- [ ] SIN COMPRAS FORZADAS
-- [ ] FRECUENCIA
-- [ ] OCULTAR
-- [ ] CONTENIDO REPETIDO
-- [ ] CONTENIDO SUBJETIVO
-- [ ] SIN RED SOCIAL
-- [ ] PRUEBAS
-- [ ] Activar Descubrir.
-- [ ] Mostrar tarjetas.
-- [ ] Filtrar categorías.
-- [ ] Guardar.
-- [ ] Descartar.
-- [ ] Abrir módulo.
-- [ ] Abrir producto.
-- [ ] Cambiar frecuencia.
-- [ ] Ocultar.
-- [ ] Reactivar.
-- [ ] Comprobar que no aparecen categorías desactivadas.
-- [ ] Comprobar que no se duplican favoritos ni productos.
+#### EH · Fase 33/65 — DESCUBRIR E INSPIRACIÓN ✅ COMPLETADA (v1.96.0)
+
+> **`src/lib/descubrir.js`** (205 comprobaciones) + `DescubrirEH` en `EstiloHombreView.jsx`. Sin SQL.
+>
+> ⚠️ **DESCUBRIR NO ES LA FASE 32.** Las dos enseñan tarjetas, se guardan, se descartan y tienen
+> frecuencia — pero **lo que dicen es distinto**: *💡 Ideas para ti* sale **de SUS datos** y explica
+> por qué con sus cifras; *✨ Descubrir* son ideas generales que él no ha pedido, y lo suyo solo
+> decide **cuáles se le enseñan**, nunca el texto. Por eso una tarjeta de aquí **no lleva `porque`**:
+> inventarle uno sería atribuirle una razón que no existe. Hay una prueba por cada lado.
+>
+> ⚠️ **UNA SOLA LISTA DE GUARDADOS** (apartado 6, con todas las letras). Se guarda en la lista que
+> creó la F32, por su puerta, y **este archivo no tiene `guardadas` propias**. Para que eso funcione,
+> el normalizador de la F32 tuvo que aprender a aceptar estos ids: sin el prefijo `desc_`, el
+> siguiente guardado se los habría llevado — **la vigesimoséptima vez** del mismo fallo.
+>
+> ⚠️ **UN MÓDULO APAGADO NO APORTA TARJETAS** (apartado 4). Cada tarjeta declara de qué módulo es, y
+> sin ese módulo activo no existe.
+>
+> ⚠️ **OCULTAR (1), QUITAR DESDE PERSONALIZAR (12) Y "DESACTIVADA" (11) SON EL MISMO INTERRUPTOR** —
+> segunda vez en dos fases. Y **las etiquetas NO son las de la F32**: allí Baja/Normal/Alta/Nunca,
+> aquí Poca/Normal/Mucha/Desactivada, porque así lo pone cada enunciado.
+>
+> ⚠️ **NI UN CATÁLOGO NUEVO** (apartado 9): una tarjeta que habla de un producto lleva al módulo
+> donde vive el catálogo global, **que está vacío a propósito** (D2-03) y lo dice. Y nunca *"compra
+> esto"* (apartado 10).
+>
+> ⚠️ **Y NO ES UNA RED SOCIAL** (apartado 15): cuatro ceros en la auditoría. La prueba busca el
+> **mecanismo**, no la palabra: la frase que dice que no hay seguidores contiene "seguidores", y es
+> la quinta vez en el bloque que una comprobación así habría saltado con algo que estaba bien.
+- [x] PLAQUITA «DESCUBRIR»
+- [x] QUÉ PUEDE DESCUBRIR
+- [x] TARJETAS PEQUEÑAS
+- [x] PERSONALIZACIÓN
+- [x] FILTROS
+- [x] GUARDAR
+- [x] ABRIR MÓDULO
+- [x] PRODUCTOS
+- [x] SIN COMPRAS FORZADAS
+- [x] FRECUENCIA
+- [x] OCULTAR
+- [x] CONTENIDO REPETIDO
+- [x] CONTENIDO SUBJETIVO
+- [x] SIN RED SOCIAL
+- [x] PRUEBAS
+- [x] Activar Descubrir.
+- [x] Mostrar tarjetas.
+- [x] Filtrar categorías.
+- [x] Guardar.
+- [x] Descartar.
+- [x] Abrir módulo.
+- [x] Abrir producto.
+- [x] Cambiar frecuencia.
+- [x] Ocultar.
+- [x] Reactivar.
+- [x] Comprobar que no aparecen categorías desactivadas.
+- [x] Comprobar que no se duplican favoritos ni productos.
 
 #### EH · Fase 34/65 — PERFIL Y PREFERENCIAS AVANZADAS
 - [ ] PLAQUITA «MIS PREFERENCIAS»

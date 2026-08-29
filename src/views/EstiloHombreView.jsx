@@ -210,6 +210,12 @@ import {
   cambiarFrecuencia, responderIdea, guardarIdea, quitarGuardada, marcarVistas,
   borrarHistorialIdeas, datosIdeas,
 } from '../lib/ideasEstilo';
+import {
+  // ── EH F33 ──
+  TEXTOS_DESCUBRIR, FRECUENCIAS_DESCUBRIR, panelDescubrir, ocultarDescubrir,
+  mostrarDescubrir, cambiarFrecuenciaDescubrir, alternarFiltro, descartarTarjeta,
+  guardarTarjeta, quitarTarjetaGuardada, marcarVistasDescubrir, datosDescubrir,
+} from '../lib/descubrir';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -6621,6 +6627,155 @@ export function IdeasEH({
 
 
 /* ===========================================================================
+   EH · F33 — ✨ DESCUBRIR (apartados 1 a 10 y 13 a 15)
+   ===========================================================================
+   *"Inspiración, no obligación. No será una red social ni otro apartado
+   gigantesco."*
+
+   ⚠️ **Esta tarjeta no es la de las Ideas.** Aquellas salen de SUS datos y
+   explican por qué; éstas son ideas generales que él no ha pedido, y lo suyo
+   solo decide **cuáles se le enseñan**, nunca el texto. */
+export function DescubrirEH({ estado, accent, onCambiar, onAccion }) {
+  /* ⚠️ Regla 4 — los hooks, antes de cualquier `return` condicional. */
+  const [filtrando, setFiltrando] = useState(false);
+  const panel = useMemo(() => panelDescubrir(estado), [estado]);
+
+  /* Apartados 1, 11 y 12 — apagado, solo queda la puerta para volver. */
+  if (panel.apagado) {
+    return (
+      <Card>
+        <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>{panel.texto}</p>
+        <button onClick={() => onCambiar(mostrarDescubrir(estado))}
+          className="text-[11px] font-semibold" style={{ color: accent }}>
+          {TEXTOS_DESCUBRIR.volver}
+        </button>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-1">
+        <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>{panel.titulo}</p>
+        <button onClick={() => setFiltrando((v) => !v)}
+          className="text-[10px] font-semibold" style={{ color: filtrando ? accent : COLORS.textMuted }}>
+          🔎 Temas
+        </button>
+        {/* Apartado 1 — *"si el usuario no la quiere: 👁️ Ocultar"*. */}
+        <button onClick={() => onCambiar(ocultarDescubrir(estado))}
+          className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+          {TEXTOS_DESCUBRIR.ocultar}
+        </button>
+      </div>
+      <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>{panel.sub}</p>
+
+      {/* Apartado 5 — *"¿qué quieres descubrir?"*, opcional. */}
+      {filtrando && (
+        <div className="mb-2">
+          <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>
+            {TEXTOS_DESCUBRIR.filtros}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {panel.temas.map((t) => (
+              <button key={t.id} aria-pressed={t.puesto}
+                onClick={() => onCambiar(alternarFiltro(estado, t.id))}
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{
+                  background: t.puesto ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                  color: t.puesto ? accent : COLORS.text,
+                  border: `1px solid ${t.puesto ? accent : COLORS.border}`,
+                }}>
+                {t.puesto ? '☑️' : '☐'} {t.icono} {t.nombre}
+              </button>
+            ))}
+          </div>
+          {/* ⚠️ Vacío y "los siete" son lo mismo, y se dice. */}
+          {panel.sinFiltros && (
+            <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{panel.sinFiltros}</p>
+          )}
+        </div>
+      )}
+
+      {panel.tarjetas.length === 0 ? (
+        // ⚠️ Regla 8 — si no queda ninguna se dice, no se inventa una.
+        <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{panel.texto}</p>
+      ) : panel.tarjetas.map((tarjeta) => (
+        <div key={tarjeta.id} className="rounded-2xl p-2.5 mb-1.5"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            {tarjeta.icono} {tarjeta.temaNombre}
+          </p>
+          <p className="text-[11px] mb-2" style={{ color: COLORS.text }}>{tarjeta.texto}</p>
+          {/* Apartado 9 — el catálogo global está vacío a propósito, y se dice. */}
+          {tarjeta.catalogo && (
+            <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>{tarjeta.catalogo}</p>
+          )}
+          <div className="flex flex-wrap gap-1">
+            {/* Apartado 8 — *"se abre el módulo existente"*. */}
+            {tarjeta.accion && (
+              <button onClick={() => onAccion?.(tarjeta.accion)}
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{ background: hexToRgba(accent, 0.12), color: accent, border: `1px solid ${accent}` }}>
+                {tarjeta.accion.etiqueta}
+              </button>
+            )}
+            {/* Apartado 6 — y va a la MISMA lista que las ideas. */}
+            <button
+              onClick={() => onCambiar(tarjeta.guardada
+                ? quitarTarjetaGuardada(estado, tarjeta.id)
+                : guardarTarjeta(estado, tarjeta.id))}
+              aria-pressed={tarjeta.guardada}
+              className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+              style={{
+                background: tarjeta.guardada ? hexToRgba(accent, 0.12) : COLORS.surface,
+                color: tarjeta.guardada ? accent : COLORS.text,
+                border: `1px solid ${tarjeta.guardada ? accent : COLORS.border}`,
+              }}>
+              {tarjeta.guardada ? TEXTOS_DESCUBRIR.quitar : TEXTOS_DESCUBRIR.guardar}
+            </button>
+            {/* Apartado 7 — ❌ No me interesa. */}
+            <button onClick={() => onCambiar(descartarTarjeta(estado, tarjeta.id).estado)}
+              className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+              style={{ background: COLORS.surface, color: COLORS.text, border: `1px solid ${COLORS.border}` }}>
+              {TEXTOS_DESCUBRIR.descartar}
+            </button>
+          </div>
+        </div>
+      ))}
+
+      {/* ⚠️ Apartado 13 — marcar como vistas es un toque SUYO, no un efecto. */}
+      {panel.tarjetas.length > 0 && (
+        <button
+          onClick={() => onCambiar(marcarVistasDescubrir(estado, panel.tarjetas.map((t) => t.id)))}
+          className="text-[10px] font-semibold" style={{ color: accent }}>
+          {TEXTOS_DESCUBRIR.verMas}
+        </button>
+      )}
+
+      {/* Apartado 6 — lo guardado, y en qué lista está. */}
+      {panel.guardadas.length > 0 && (
+        <div className="mt-2">
+          <p className="text-[10px] font-semibold" style={{ color: COLORS.text }}>
+            {TEXTOS_DESCUBRIR.guardadas}
+          </p>
+          {panel.guardadas.map((g) => (
+            <p key={g.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>· {g.texto}</p>
+          ))}
+          <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
+            {panel.mismaLista}
+          </p>
+        </div>
+      )}
+
+      {/* Apartados 10 y 15 — lo que Descubrir NO es, dicho. */}
+      <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>{panel.sinCompras}</p>
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.sinRedSocial}</p>
+    </Card>
+  );
+}
+
+
+/* ===========================================================================
    EH · F31 — ⋮ PERSONALIZAR (apartados 1 a 5, 8, 10, 14, 16 y 17)
    ===========================================================================
    ⚠️ **Esta pantalla no inventa ni un mecanismo.** Mover es `moverA` y las
@@ -6892,6 +7047,33 @@ export function PersonalizarPlaquitas({
             return (
               <button key={f.id} aria-pressed={puesta}
                 onClick={() => onCambiar(cambiarFrecuencia(estado, f.id))}
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{
+                  background: puesta ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                  color: puesta ? accent : COLORS.text,
+                  border: `1px solid ${puesta ? accent : COLORS.border}`,
+                }}>
+                {f.nombre}
+              </button>
+            );
+          })}
+        </div>
+        {/* ⚠️ **EH F33, apartados 11 y 12** — *"desde ⚙️ Personalizar se podrá
+            quitar ✨ Descubrir SIN AFECTAR AL RESTO"*: son dos interruptores
+            distintos porque son dos cosas distintas, con las etiquetas de cada
+            enunciado (Baja/Normal/Alta/Nunca frente a Poca/Normal/Mucha/…). */}
+        <p className="text-sm font-semibold mt-3 mb-1" style={{ color: COLORS.text }}>
+          {TEXTOS_DESCUBRIR.titulo}
+        </p>
+        <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+          {TEXTOS_DESCUBRIR.frecuencia}
+        </p>
+        <div className="flex flex-wrap gap-1">
+          {FRECUENCIAS_DESCUBRIR.map((f) => {
+            const puesta = f.id === datosDescubrir(estado).frecuencia;
+            return (
+              <button key={f.id} aria-pressed={puesta}
+                onClick={() => onCambiar(cambiarFrecuenciaDescubrir(estado, f.id))}
                 className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
                 style={{
                   background: puesta ? hexToRgba(accent, 0.12) : COLORS.surface2,
@@ -7379,6 +7561,24 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
               onAccion={(a) => {
                 if (!a) return;
                 if (a.destino === 'miEstilo') return setMiEstilo(true);
+                if (['skincare', 'pelo', 'barba', 'perfumes', 'accesorios', 'gustos'].includes(a.destino)) {
+                  return abrirModulo(a.destino);
+                }
+                return onIr?.(a.destino);
+              }}
+            />
+          )}
+
+          {/* ── EH F33 — ✨ Descubrir ──────────────────────────────────
+              Apartado 1: *"completamente opcional"*. Va debajo de las Ideas
+              porque aquéllas salen de sus datos y éstas no: primero lo suyo. */}
+          {!ordenando && (
+            <DescubrirEH
+              estado={estado} accent={accent} onCambiar={onCambiar}
+              /* Apartado 8 — *"se abre el módulo existente"*, el mismo camino
+                 que usan las Ideas: ni una navegación nueva. */
+              onAccion={(a) => {
+                if (!a) return;
                 if (['skincare', 'pelo', 'barba', 'perfumes', 'accesorios', 'gustos'].includes(a.destino)) {
                   return abrirModulo(a.destino);
                 }

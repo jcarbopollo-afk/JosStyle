@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -67,6 +67,7 @@ import {
 import { ocultarMiEstilo } from '../src/lib/miEstilo.js';
 import { alternarAcceso, alternarVerAccesos, cambiarTamano, alternarLinea } from '../src/lib/pantallaEH.js';
 import { ocultarIdeas, cambiarFrecuencia, guardarIdea, marcarVistas as marcarVistasIdeas, responderIdea as responderIdeaEH } from '../src/lib/ideasEstilo.js';
+import { ocultarDescubrir, cambiarFrecuenciaDescubrir, alternarFiltro as alternarFiltroDesc, guardarTarjeta, descartarTarjeta, TARJETAS_DESCUBRIR } from '../src/lib/descubrir.js';
 import { guardarDato as guardarDatoEH } from '../src/lib/datosEstiloHombre.js';
 import {
   configurarSonrisa, decirAhoraNoSonrisa, usarPlantillaSonrisa, alternarParteSonrisa,
@@ -1181,6 +1182,28 @@ const CASOS = [
               ['EstiloHombreView · con la tarjeta de ideas', EstiloHombreView, () => conArmario(siete)],
               ['EstiloHombreView · con las ideas apagadas', EstiloHombreView, () =>
                 conArmario(ocultarIdeas(siete))],
+            ];
+          })(),
+          /* EH Fase 33 — ✨ Descubrir: con tarjetas, filtrada, apagada y vacía. */
+          ...(() => {
+            const siete = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE,
+              ['estilo', 'skincare', 'pelo', 'barba', 'perfumes', 'accesorios', 'gustos']);
+            const dp = (e) => ({ estado: e, accent, onCambiar: noop, onAccion: noop });
+            return [
+              ['DescubrirEH · con tarjetas', DescubrirEH, () => dp(siete)],
+              ['DescubrirEH · apagado (apartados 1, 11 y 12)', DescubrirEH, () => dp(ocultarDescubrir(siete))],
+              ['DescubrirEH · frecuencia Mucha', DescubrirEH, () => dp(cambiarFrecuenciaDescubrir(siete, 'mucha'))],
+              ['DescubrirEH · filtrado por un tema', DescubrirEH, () => dp(alternarFiltroDesc(siete, 'ropa'))],
+              ['DescubrirEH · con una guardada', DescubrirEH, () =>
+                dp(guardarTarjeta(siete, TARJETAS_DESCUBRIR[0].id))],
+              ['DescubrirEH · con una descartada', DescubrirEH, () =>
+                dp(descartarTarjeta(siete, TARJETAS_DESCUBRIR[0].id).estado)],
+              /* ⚠️ Sin módulos activos no hay ni una tarjeta: se dice. */
+              ['DescubrirEH · sin ninguna tarjeta', DescubrirEH, () =>
+                dp(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],
+              ['EstiloHombreView · con Descubrir', EstiloHombreView, () => conArmario(siete)],
+              ['EstiloHombreView · con Descubrir apagado', EstiloHombreView, () =>
+                conArmario(ocultarDescubrir(siete))],
             ];
           })(),
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],

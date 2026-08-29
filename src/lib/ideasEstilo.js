@@ -411,13 +411,36 @@ export const DEFAULT_IDEAS = {
   recomendaciones: DEFAULT_RECOMENDACIONES,
 };
 
+/**
+ * ⚠️ **EH F33, apartado 6** — *"utilizar el sistema global de favoritos. **No
+ * crear una segunda lista de guardados**."* Descubrir guarda **en esta misma
+ * lista**, así que su normalizador tiene que aceptar sus ids, o el siguiente
+ * guardado se los llevaría (regla 5): sería la vigesimoséptima vez.
+ *
+ * El prefijo vive aquí y no en `descubrir.js` porque **la dependencia va en un
+ * solo sentido**: Descubrir importa este archivo, no al revés. Importarlo desde
+ * aquí para leer sus ids sería un ciclo.
+ */
+export const PREFIJO_DESCUBRIR = 'desc_';
+
+export const idGuardable = (id) =>
+  !!reglaIdea(id) || (typeof id === 'string' && id.startsWith(PREFIJO_DESCUBRIR) && id.length > PREFIJO_DESCUBRIR.length);
+
 export function normalizarIdeas(guardado) {
   const g = guardado && typeof guardado === 'object' ? guardado : {};
+  const propias = normalizarRecomendaciones(g.recomendaciones, {
+    ids: IDS_REGLAS_IDEAS, motivos: MOTIVOS_IDEAS,
+  });
+  /* ⚠️ `feedback` y `vistas` son de las ideas de la F32 y se validan contra su
+     catálogo. `guardadas`, en cambio, es **la lista compartida**: admite también
+     las tarjetas de Descubrir. Cada sistema resuelve las suyas al pintarlas. */
+  const todas = normalizarRecomendaciones(g.recomendaciones, { ids: null, motivos: MOTIVOS_IDEAS });
   return {
     frecuencia: frecuenciaIdeas(g.frecuencia) ? g.frecuencia : FRECUENCIA_POR_DEFECTO,
-    recomendaciones: normalizarRecomendaciones(g.recomendaciones, {
-      ids: IDS_REGLAS_IDEAS, motivos: MOTIVOS_IDEAS,
-    }),
+    recomendaciones: {
+      ...propias,
+      guardadas: todas.guardadas.filter((x) => idGuardable(x.reglaId)),
+    },
   };
 }
 
@@ -572,14 +595,27 @@ export const deshacerRespuesta = (estado, reglaId) =>
   escribirRecs(estado, deshacerDescarteEn(datosIdeas(estado).recomendaciones, reglaId));
 
 /* Apartado 15 — ❤️ Guardar. Sin sistema de favoritos globales al que enchufarse
-   (decisión 6), se usan las `guardadas` del motor, que es lo que ya existía. */
-export const guardarIdea = (estado, reglaId, { hoy = todayISO() } = {}) =>
-  (reglaIdea(reglaId)
-    ? escribirRecs(estado, guardarEn(datosIdeas(estado).recomendaciones, reglaId, hoy))
+   (decisión 6), se usan las `guardadas` del motor, que es lo que ya existía.
+
+   ⚠️ **Y es UNA sola lista** (F33, apartado 6: *"no crear una segunda lista de
+   guardados"*): estas tres funciones son la puerta, y Descubrir entra por ella. */
+
+export const listaDeGuardados = (estado) => datosIdeas(estado).recomendaciones.guardadas;
+
+export const estaGuardado = (estado, id) => listaDeGuardados(estado).some((g) => g.reglaId === id);
+
+export const guardarEnLista = (estado, id, { hoy = todayISO() } = {}) =>
+  (idGuardable(id)
+    ? escribirRecs(estado, guardarEn(datosIdeas(estado).recomendaciones, id, hoy))
     : normalizarEstiloHombre(estado));
 
-export const quitarGuardada = (estado, reglaId) =>
-  escribirRecs(estado, quitarGuardadaEn(datosIdeas(estado).recomendaciones, reglaId));
+export const quitarDeLista = (estado, id) =>
+  escribirRecs(estado, quitarGuardadaEn(datosIdeas(estado).recomendaciones, id));
+
+export const guardarIdea = (estado, reglaId, opciones) =>
+  (reglaIdea(reglaId) ? guardarEnLista(estado, reglaId, opciones) : normalizarEstiloHombre(estado));
+
+export const quitarGuardada = (estado, reglaId) => quitarDeLista(estado, reglaId);
 
 /* ===========================================================================
    10 · BORRAR EL HISTORIAL (apartado 17)

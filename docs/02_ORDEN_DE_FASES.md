@@ -252,9 +252,11 @@ escribir código.
 
 | v1.95.0 | **EH F32** | Recomendaciones generales de estilo ("💡 Ideas para ti"). ⚠️ **El motor ya existe**: cuarto uso de `motorRecomendaciones.js` (F16), sin un cuarto `reglaAplicable` ni una segunda lista de palabras prohibidas; lo que aporta es un **contexto que cruza los siete temas del apartado 2**. ⚠️ **Ocultar (1), desactivar (16) y "Nunca" (7) son EL MISMO interruptor**: una sola `frecuencia` guardada. ⚠️ **No se repite lo que Skincare, Pelo y Perfumes ya recomiendan**: las ideas son cruzadas y, si tocaría una suya, LLEVAN allí (prueba 13). ⚠️ **Un módulo apagado deja su dato en `null`, y `null` no es cero**. ⚠️ **"Me interesa" no silencia: guarda**; "No me interesa" calla su tema; "Ya lo hago", solo esa. ⚠️ **No hay favoritos globales** (apartado 15): se usan las `guardadas` del motor y se dice dónde están. ⚠️ Y **borrar el historial no se lleva lo guardado** |
 
+| v1.96.0 | **EH F33** | Descubrir e inspiración ("✨ Descubrir"). ⚠️ **No es la F32**: aquellas ideas salen de SUS datos y explican por qué; éstas son generales y lo suyo solo decide **cuáles se le enseñan**, nunca el texto — por eso una tarjeta de aquí **no lleva `porque`**. ⚠️ **UNA sola lista de guardados** (apartado 6): la de la F32, cuyo normalizador tuvo que aprender el prefijo `desc_` o se los llevaba (**27.ª vez**). ⚠️ **Un módulo apagado no aporta tarjetas**. ⚠️ **Ocultar (1), quitar desde Personalizar (12) y "Desactivada" (11) son el mismo interruptor**, con las etiquetas de ESTE enunciado. ⚠️ **Ni un catálogo nuevo** (apartado 9) y nunca *"compra esto"*. ⚠️ **No es una red social**: cuatro ceros, y la prueba busca el MECANISMO, no la palabra |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 29/65** (F1-F17, F20, F21, F23-F32; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **34** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (32, tres de ellas bloqueadas).
+3/5 y **EH por 30/65** (F1-F17, F20, F21, F23-F33; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **33** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (31, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

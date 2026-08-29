@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v1.95.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v1.96.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 29/65**, quedan 34 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 30/65**, quedan 33 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -125,9 +125,9 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 7427 pruebas unitarias con Node (5 de ellas de auditoría), 1112 casos de renderizado real
-con `react-dom/server`, 11 reglas invariantes y **245 comprobaciones sobre la aplicación de verdad
-en Chromium** — **8795 comprobaciones**.
+Vite, 7632 pruebas unitarias con Node (5 de ellas de auditoría), 1148 casos de renderizado real
+con `react-dom/server`, 11 reglas invariantes y **257 comprobaciones sobre la aplicación de verdad
+en Chromium** — **9048 comprobaciones**.
 
 Eso ya ha encontrado **sesenta bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -153,7 +153,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 29/65** (v1.95.0: F1-F17, **F20, F21 y F23-F32**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 30/65** (v1.96.0: F1-F17, **F20, F21 y F23-F33**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -165,10 +165,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 33/65 — Sistema de descubrimiento e inspiración**.
+La siguiente candidata es **EH · Fase 34/65 — Perfil y preferencias avanzadas**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F32 dejaron ciento catorce cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F33 dejaron ciento veinte cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -464,6 +464,23 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   módulo y las `guardadas` del motor. Se usa esa, y la pantalla dice dónde están (regla 8).
 - ⚠️ **BORRAR EL HISTORIAL NO SE LLEVA LO GUARDADO** (F32, apartado 17): lo guardó él a propósito, no
   es historial. Duodécimo `aplicarPlan`; sin `confirmado` no borra nada.
+- ⚠️ **DESCUBRIR (F33) NO ES IDEAS (F32).** Las dos enseñan tarjetas, se guardan, se descartan y
+  tienen frecuencia, pero **💡 Ideas sale de SUS datos y explica por qué con sus cifras**, y
+  **✨ Descubrir son ideas generales**: lo suyo solo decide cuáles se le enseñan, nunca el texto. Una
+  tarjeta de Descubrir **no lleva `porque`**: inventarle uno sería atribuirle una razón que no tiene.
+- ⚠️ **HAY UNA SOLA LISTA DE GUARDADOS** (F33, apartado 6), la de `ideasEstilo.js`, y se entra por
+  `guardarEnLista`. Un módulo que quiera guardar algo ahí **pone el prefijo `desc_` a sus ids o
+  declara el suyo en `idGuardable`**: sin eso, el normalizador de la F32 se los lleva (27.ª vez).
+- ⚠️ **UN MÓDULO APAGADO NO APORTA CONTENIDO** (F33, apartado 4): cada tarjeta declara su módulo, y
+  sin ese módulo activo no existe. Es el `null` de la F32 dicho de otra forma.
+- ⚠️ **LAS ETIQUETAS SON DE CADA MÓDULO; EL COMPORTAMIENTO, DEL MISMO SITIO** (F33). Las frecuencias
+  de Ideas son Baja/Normal/Alta/Nunca y las de Descubrir Poca/Normal/Mucha/Desactivada **porque así
+  lo pone cada enunciado**: unificarlas sería contradecir a Josué.
+- ⚠️ **UNA PRUEBA BUSCA EL MECANISMO, NO LA PALABRA** (F33, apartado 15). La frase que dice que NO
+  hay seguidores contiene "seguidores", y la auditoría se llama igual: es la **quinta vez** en el
+  bloque que una comprobación así habría saltado con algo que estaba bien.
+- ⚠️ **NUNCA UNA COMPRA** (F33, apartado 10): ni la palabra, ni un carrito, ni un enlace inventado.
+  El catálogo global está vacío a propósito (D2-03) y se dice.
 - 🚨 **LO QUE JOSUÉ SUBE A MANO A GITHUB NO INCLUYE LAS CARPETAS.** Sus seis `Add files via upload`
   solo llevaron los **nueve archivos sueltos de la raíz**: ni uno de `src/`. Por eso `main` tenía la
   documentación nueva y el código del 11 de agosto, y la web no cambiaba por más zips que subiera.

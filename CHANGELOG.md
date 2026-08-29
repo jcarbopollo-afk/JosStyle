@@ -1,5 +1,75 @@
 # CHANGELOG.md
 
+## v1.96.0 — EH Fase 33/65: descubrir e inspiración
+
+### Qué se ha construido
+La tarjeta **✨ Descubrir** en la pantalla de Estilo de hombre: diecinueve ideas de inspiración
+repartidas por los siete temas, con **❤️ Guardar**, **❌ No me interesa**, **→ Ver más**, sus
+**filtros por tema**, su **✨ frecuencia** (Poca · Normal · Mucha · Desactivada) y su acción para
+abrir el módulo correspondiente.
+
+*"Inspiración, no obligación. **No será una red social** ni otro apartado gigantesco."*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Descubrir no es la Fase 32, y en eso está la fase entera.** Las dos enseñan tarjetas, las dos
+se guardan y se descartan, y las dos tienen frecuencia. La diferencia es **lo que dicen**:
+- **💡 Ideas para ti** (F32) sale **de sus datos**: *"tienes cinco prendas y ningún outfit"*, y cada
+  una explica por qué aparece **con sus cifras**.
+- **✨ Descubrir** (F33) son ideas **que él no ha pedido y no salen de nada suyo**: *"podrías probar a
+  combinar un accesorio sencillo con un look casual"*. Lo suyo solo decide **cuáles se le enseñan**,
+  nunca el texto.
+
+Por eso una tarjeta de aquí **no tiene `porque` con datos**: inventarle uno sería atribuirle una
+razón que no existe. Hay una prueba por cada lado, y una tercera que comprueba que ningún texto de
+Descubrir finge citar un dato suyo.
+
+**2. ⚠️ Una sola lista de guardados** (apartado 6, con todas las letras: *"utilizar el sistema global
+de favoritos. **No crear una segunda lista de guardados**"*). Se guarda en la lista que creó la F32,
+por su puerta, y **este archivo no tiene `guardadas` propias** — hay una prueba de que el almacén de
+Descubrir no lleva ese campo, y otra de que una tarjeta y una idea conviven en el mismo array.
+
+**3. 🐛 Y ahí estaba el fallo que había que ver venir.** El normalizador de la F32 valida su lista
+contra **su** catálogo, así que una tarjeta de Descubrir guardada allí **se habría perdido en el
+siguiente guardado** (regla 5): la vigesimoséptima vez del mismo fallo. Lo resuelve el prefijo
+`desc_` con `idGuardable()`, declarado en `ideasEstilo.js` **porque la dependencia va en un solo
+sentido** —Descubrir importa a Ideas, no al revés— y una prueba que guarda, serializa, vuelve a leer
+y comprueba que sigue.
+
+**4. ⚠️ Un módulo apagado no aporta tarjetas** (apartado 4: *"no mostrar contenido de categorías que
+el usuario haya desactivado"*). Cada tarjeta declara **de qué módulo es**, y sin ese módulo activo no
+existe. Es la misma frontera que la F32 puso con `null`, dicha de otra forma.
+
+**5. ⚠️ Ocultar (1), quitar desde Personalizar (12) y "Desactivada" (11) son el mismo interruptor** —
+segunda vez en dos fases. Pero ⚠️ **las etiquetas no son las de la F32**: allí Baja/Normal/Alta/Nunca
+y aquí Poca/Normal/Mucha/Desactivada, **porque así lo pone cada enunciado**. Los nombres son de cada
+módulo; el comportamiento, del mismo sitio. Y apagar Descubrir **no toca** las Ideas.
+
+**6. ⚠️ Ni un catálogo nuevo, y no es una red social.** Una tarjeta que habla de un producto lleva al
+módulo donde vive el catálogo global, **que está vacío a propósito** (D2-03) y lo dice; nunca *"compra
+esto"* (apartado 10). Y el apartado 15 se comprueba con cuatro ceros en la auditoría.
+
+### Una lección que ya va por la quinta vez
+La prueba de *"no es una red social"* saltó con algo que **estaba bien**: la frase que dice que no hay
+seguidores contiene la palabra "seguidores", y la auditoría se llama igual. **Se comprueba el
+mecanismo, no la palabra** — que no exista una lista de seguidores, ni un campo en el almacén, ni una
+función de comentar. Es la quinta vez en este bloque que una comprobación por texto habría fallado
+con código correcto.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **205 comprobaciones nuevas**, **1148 casos de
+renderizado** (36 nuevos) y **257 comprobaciones en Chromium** (12 nuevas): se entra, sale la tarjeta,
+el lenguaje es abierto, se guarda una y **se comprueba que va a la misma lista que las ideas**, se
+abren los filtros, se recarga y **sigue guardada**.
+
+### Archivos
+- **Nuevos:** `src/lib/descubrir.js`, `scripts/test-descubrir.mjs`.
+- **Modificados:** `src/lib/ideasEstilo.js` (la lista de guardados compartida y `idGuardable`),
+  `src/views/EstiloHombreView.jsx` (`DescubrirEH` y su frecuencia en Personalizar),
+  `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v1.95.0 — EH Fase 32/65: recomendaciones generales de estilo
 
 ### Qué se ha construido

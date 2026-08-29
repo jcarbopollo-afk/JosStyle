@@ -817,4 +817,38 @@ await page.waitForTimeout(1000);
 ok(/Volver a ver las ideas/.test(await ver()),
   '⚠️ Ocultar es desactivar el sistema (apartado 16), y se puede volver (prueba 11)');
 
+/* ── 18 · ✨ DESCUBRIR (EH F33) ───────────────────────────────────────────
+   Lo que importa: que la tarjeta salga, que su lenguaje sea abierto, que
+   guardar vaya a LA MISMA lista que las ideas, y que eso siga tras recargar. */
+const descubrirTxt = await ver();
+ok(/Descubrir/.test(descubrirTxt), '✨ Descubrir está en la pantalla principal (apartado 1)');
+ok(/Inspiración, no obligación/.test(descubrirTxt), 'con la regla del objetivo, literal');
+ok(/Podrías|Una idea podría ser|Si te gusta/.test(descubrirTxt),
+  '⚠️ Y lenguaje abierto: nunca una tendencia como verdad absoluta (apartado 14)');
+ok(/no hay seguidores/.test(descubrirTxt), '⚠️ Y se dice que NO es una red social (apartado 15)');
+ok(/no se compra nada/.test(descubrirTxt), 'ni se compra nada aquí (apartado 10)');
+
+guardado.length = 0;
+ok(await pulsar('❤️ Guardar'), 'Se puede guardar una tarjeta (prueba 4)');
+await page.waitForTimeout(1200);
+const escDesc = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escDesc.length > 0, '⚠️ PERSISTENCIA: lo guardado se guarda');
+const cfgDesc = escDesc.at(-1)?.value?.modulos?.find((m) => m.id === 'estilo')?.config || {};
+ok((cfgDesc.ideas?.recomendaciones?.guardadas || []).some((g) => String(g.reglaId).startsWith('desc_')),
+  '⚠️ Y va a LA MISMA lista que las ideas: no hay una segunda (apartado 6)');
+ok(!('guardadas' in (cfgDesc.descubrir || {})),
+  '⚠️ El almacén de Descubrir no tiene lista propia de guardados');
+
+ok(await pulsar('🔎 Temas'), 'Se pueden filtrar los temas (apartado 5 · prueba 3)');
+await page.waitForTimeout(500);
+ok(/¿Qué quieres descubrir\?/.test(await ver()), 'con la pregunta del enunciado');
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(600);
+ok(/Quitar de guardados/.test(await ver()),
+  '⚠️ PERSISTENCIA: tras recargar, la tarjeta sigue guardada (prueba 12)');
+
 await salir(browser);
