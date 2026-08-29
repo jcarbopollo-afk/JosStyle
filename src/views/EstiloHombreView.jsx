@@ -31,7 +31,7 @@
 // degradado: es una decisión suya.
 // ============================================================================
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Settings, Check, ArrowLeft, Search, X, ChevronUp, ChevronDown, ArrowUpDown, Plus, SlidersHorizontal, Database, Lock, Pencil } from 'lucide-react';
 import { COLORS } from '../tokens';
@@ -253,6 +253,14 @@ import {
   TEXTOS_PRIMER_USO, panelPrimerUso, verTutorial, avanzarTutorial, saltarTutorial,
   pasoDelTutorial, cerrarIdea, aceptarSugerencia, rechazarSugerencia, anadirAEstilo,
 } from '../lib/primerUso';
+/* ⚠️ **EH F41** — los estados: sin datos, cargando, sin conexión, desactivado,
+   eliminado, permiso, datos corruptos y el aviso antes de borrar. Todos salen
+   del catálogo, ninguno se escribe en la pantalla. */
+import {
+  estadoEH, MENSAJES_HECHO, DURACION_FEEDBACK_MS, TARJETAS_DE_CARGA,
+  estadoDeColeccion, avisoDeCorrupto, estadoDeAcceso, estadoDeConexion, avisoDeBorrado,
+  COLECCIONES_EH,
+} from '../lib/estadosEstilo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -3044,6 +3052,10 @@ export function RecomendacionesPielEH({ estado, accent, datosGlobales = {}, onCa
    *"desde que empezaste a usar X has registrado N valoraciones"*, y ahí se
    para. */
 export function SeguimientoPielEH({ estado, accent, onCambiar, onCerrar, onEliminar }) {
+  /* ⚠️ **EH F41, apartado 15** — el registro que está esperando confirmación.
+     El texto y el *"podrás recuperarlo"* salen del catálogo, y este último
+     **solo si es verdad**: se mira la papelera global. */
+  const [porBorrar, setPorBorrar] = useState(null);
   const [periodo, setPeriodo] = useState('30');
   const [como, setComo] = useState(null);
   const [aspectos, setAspectos] = useState({});
@@ -3072,6 +3084,23 @@ export function SeguimientoPielEH({ estado, accent, onCambiar, onCerrar, onElimi
         )}
         <p className="text-sm font-semibold" style={{ color: COLORS.text }}>📈 Seguimiento</p>
       </div>
+
+      {/* ⚠️ **EH F41, apartado 15** — antes de eliminar, se pregunta y se dice
+          adónde va. El *"podrás recuperarlo"* sale del catálogo de la papelera:
+          prometerlo de algo que no va allí sería mentir. */}
+      {porBorrar && (
+        <AvisoEstadoEH
+          aviso={{
+            ...avisoDeBorrado('skincare', 'registros', { nombre: porBorrar.fecha }),
+            texto: avisoDeBorrado('skincare', 'registros').datos,
+          }}
+          accent={accent}
+          acciones={{
+            eliminar: () => { onEliminar?.(porBorrar.id); setPorBorrar(null); },
+            cerrar: () => setPorBorrar(null),
+          }}
+        />
+      )}
 
       {/* Apartado 2 — la valoración rápida. */}
       <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>¿Cómo notas tu piel hoy?</p>
@@ -3189,8 +3218,10 @@ export function SeguimientoPielEH({ estado, accent, onCambiar, onCerrar, onElimi
             </p>
           </div>
           {/* ⚠️ Apartado 13 — va a "Eliminados recientemente", la papelera que ya
-              existe. Por eso lo maneja App.jsx y no esta pantalla. */}
-          <button onClick={() => onEliminar?.(r.id)} aria-label={`Eliminar el registro del ${r.fecha}`}>
+              existe. Por eso lo maneja App.jsx y no esta pantalla.
+              ⚠️ **EH F41, apartado 15** — y antes se pregunta, diciendo adónde
+              va: borrar sin avisar es la acción que la fase viene a evitar. */}
+          <button onClick={() => setPorBorrar(r)} aria-label={`Eliminar el registro del ${r.fecha}`}>
             <X size={13} style={{ color: COLORS.textMuted }} />
           </button>
         </div>
@@ -5912,9 +5943,13 @@ export function AccesoriosEH({ estado, armario = null, accent, datosGlobales = {
             </div>
           );
         })}
-        {panel.accesorios.length === 0 && (
-          <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>Todavía no has apuntado ninguno.</p>
-        )}
+        {/* ⚠️ **EH F41, apartado 1** — *"nunca mostrar una pantalla completamente
+            vacía"*. Antes era una frase sin salida; ahora sale del catálogo de
+            estados, con su título, su explicación y su botón. */}
+        <VacioEH
+          estado={estado} coleccion="accesorios.accesorios" accent={accent}
+          onAnadir={() => document.getElementById('nuevo-accesorio')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+        />
 
         {/* Apartado 3 — los que ya están en el Armario, sin volver a crearlos. */}
         {panel.delArmarioSinUsar.length > 0 && (
@@ -5929,8 +5964,8 @@ export function AccesoriosEH({ estado, armario = null, accent, datosGlobales = {
           </div>
         )}
 
-        {/* Apartado 4 — añadir. */}
-        <div className="mt-3">
+        {/* Apartado 4 — añadir. ⚠️ Con id, para que el vacío de la F41 lleve aquí. */}
+        <div className="mt-3" id="nuevo-accesorio">
           <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>+ Añadir accesorio</p>
           <div className="flex flex-wrap gap-1 mb-1">
             {activas.map((c) => (
@@ -7557,6 +7592,142 @@ export function BuscadorEstiloEH({
 
    ⚠️ Y **que esté abierto ahora es de la pantalla**, no del almacén: lo único
    que se guarda es si ya lo vio (apartado 15). */
+/* ===========================================================================
+   EH F41 — LOS ESTADOS QUE NO SON "TODO BIEN"
+   ===========================================================================
+   *"Todo estado debe tener una respuesta clara."* Y las tres preguntas del
+   enunciado, siempre en el mismo orden: **qué ha pasado**, **qué puede hacer**,
+   **qué ha ocurrido con sus datos**.
+
+   ⚠️ Ninguno de estos componentes escribe un texto: todos salen del catálogo de
+   `estadosEstilo.js`, para que ninguna pantalla se quede sin botón. */
+
+/** Apartados 1 y 2 — *"nunca mostrar una pantalla completamente vacía"*. */
+export function VacioEH({ estado, coleccion, accent, onAnadir }) {
+  const v = estadoDeColeccion(estado, coleccion);
+  if (!v || !v.vacia) return null;
+  return (
+    <Card className="text-center">
+      <p className="text-2xl leading-none mb-2" aria-hidden="true">{v.icono}</p>
+      <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{v.titulo}</p>
+      <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{v.texto}</p>
+      {/* ⚠️ El botón no es opcional: un vacío sin salida es una pantalla rota. */}
+      {onAnadir && (
+        <PrimaryButton accent={accent} icon={Plus} onClick={onAnadir}>{v.boton}</PrimaryButton>
+      )}
+    </Card>
+  );
+}
+
+/** Apartado 3 — *"pequeñas tarjetas de carga… evitar spinners enormes"*. */
+export function CargandoEH({ cuantas = TARJETAS_DE_CARGA }) {
+  return (
+    <div className="space-y-2" aria-label="Cargando" aria-busy="true">
+      {Array.from({ length: cuantas }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-2xl"
+          style={{ height: 56, background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * El aviso de un estado cualquiera del catálogo, con sus opciones.
+ * ⚠️ Solo se pinta una opción **si le han pasado qué hacer con ella**: un botón
+ * que no hace nada es exactamente lo que prohíbe la regla 8.
+ */
+export function AvisoEstadoEH({ aviso, accent, acciones = {} }) {
+  if (!aviso) return null;
+  const opciones = (aviso.opciones || []).filter((o) => typeof acciones[o.accion] === 'function');
+  return (
+    <Card>
+      <div className="flex items-start gap-2">
+        <span className="text-base leading-none" aria-hidden="true">{aviso.icono}</span>
+        <span className="min-w-0 flex-1">
+          {/* Qué ha pasado. */}
+          <span className="block text-[11px] font-semibold" style={{ color: COLORS.text }}>
+            {aviso.titulo}
+          </span>
+          {/* Qué ha ocurrido con sus datos. */}
+          <span className="block text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
+            {aviso.texto || aviso.datos}
+          </span>
+        </span>
+      </div>
+      {/* Qué puede hacer. */}
+      {opciones.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          {opciones.map((o) => (
+            <button key={o.id} onClick={() => acciones[o.accion](aviso)}
+              className="text-[11px] font-semibold" style={{ color: accent }}>
+              {o.etiqueta}
+            </button>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * Apartado 16 — *"mensajes pequeños y temporales"*. ⚠️ Ni un modal para decir
+ * que algo se ha guardado, y desaparece solo.
+ */
+export function HechoEH({ mensaje, accent }) {
+  const [visible, setVisible] = useState(!!mensaje);
+  useEffect(() => {
+    if (!mensaje) return undefined;
+    setVisible(true);
+    const t = setTimeout(() => setVisible(false), DURACION_FEEDBACK_MS);
+    return () => clearTimeout(t);
+  }, [mensaje]);
+  if (!mensaje || !visible) return null;
+  return (
+    <p className="text-[10px] font-semibold" role="status" style={{ color: accent }}>
+      {MENSAJES_HECHO[mensaje] || mensaje}
+    </p>
+  );
+}
+
+/**
+ * Los avisos de estado de la portada (apartados 4, 5 y 14).
+ * ⚠️ **Solo se pintan si hay algo que decir**: con todo bien, no ocupa ni una
+ * línea. Un aviso permanente de "todo correcto" sería ruido.
+ */
+export function AvisosDeEstadoEH({ estado, accent, onHecho }) {
+  const [reintento, setReintento] = useState(0);
+  const conexion = useMemo(() => estadoDeConexion(), [reintento]);
+  const problemas = useMemo(
+    () => COLECCIONES_EH.map((c) => avisoDeCorrupto(estado, c.id)).filter(Boolean),
+    [estado],
+  );
+  if (!conexion && problemas.length === 0) return null;
+  return (
+    <>
+      {conexion && (
+        <AvisoEstadoEH
+          aviso={conexion} accent={accent}
+          /* ⚠️ Reintentar aquí es volver a mirar si hay conexión, que es lo
+             único que esta pantalla puede hacer de verdad. */
+          acciones={{ reintentar: () => setReintento((x) => x + 1) }}
+        />
+      )}
+      {problemas.map((p) => (
+        <AvisoEstadoEH
+          key={p.id + p.cuantos}
+          aviso={p}
+          accent={accent}
+          /* ⚠️ Y nada más: borrarlo es del módulo que lo tiene, no de aquí. */
+          acciones={{}}
+        />
+      ))}
+    </>
+  );
+}
+
 export function TutorialEH({ estado, accent, onCambiar, onCerrar }) {
   const paso = pasoDelTutorial(estado);
   const ultima = paso.ultima;
@@ -8450,6 +8621,11 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   /* ⚠️ **EH F40, apartados 14 y 15** — que el tutorial esté abierto AHORA es de
      la pantalla. Lo único que se guarda es si ya lo vio. */
   const [tutorial, setTutorial] = useState(false);
+  /* ⚠️ **EH F41, apartados 10 y 16** — si llega a un apartado desactivado desde
+     un enlace, se le dice y se le ofrece activarlo; y al hacerlo, un ✓ pequeño
+     y temporal. */
+  const [bloqueado, setBloqueado] = useState(null);
+  const [hecho, setHecho] = useState(null);
   const [perfilPelo, setPerfilPelo] = useState(false);   // false | 'panel' | 'perfil'
   const [skincare, setSkincare] = useState(false);       // F13
   const [barba, setBarba] = useState(false);             // F20
@@ -8477,6 +8653,17 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
      (apartado 1). ⚠️ Una línea por módulo, y **son los mismos `set*` que ya usan
      las plaquitas**: ni una pantalla paralela, ni una segunda navegación. */
   const abrirModulo = (id) => {
+    /* ⚠️ **EH F41, apartado 10** — *"si intenta entrar desde un enlace: este
+       apartado está desactivado"*. El estado lo dice la F36; aquí solo se para
+       antes de abrir una pantalla que no debería verse.
+
+       ⚠️ Las plaquitas, "Mi estilo" y Gestionar apartados **ya filtran** por
+       activo, y el buscador de la F37 tiene su propio aviso desde el apartado 13.
+       El que no filtra es **⚙️ Mis preferencias → Editar** (F34): una preferencia
+       sigue en el registro aunque su módulo se apague, y ese "Editar" abriría la
+       pantalla de un apartado desactivado. Esto es esa puerta. */
+    const parado = estadoDeAcceso(estado, id);
+    if (parado) return setBloqueado(parado);
     if (id === MODULO_EH_ESTILO) return onIr?.(DESTINO_ARMARIO);
     if (id === MODULO_PELO) return setPerfilPelo('panel');
     if (id === MODULO_PIEL) return setSkincare(true);
@@ -8770,6 +8957,27 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     );
   }
 
+  /* ⚠️ **EH F41, apartado 10** — llegó a un apartado desactivado. Se le dice
+     qué ha pasado, qué puede hacer y qué ha pasado con sus datos (nada). */
+  if (bloqueado) {
+    return (
+      <div className="space-y-3">
+        <AvisoEstadoEH
+          aviso={bloqueado} accent={accent}
+          acciones={{
+            activar: () => {
+              onCambiar(alternarModulo(estado, bloqueado.modulo, true));
+              setBloqueado(null);
+              setHecho('activado');
+            },
+            cerrar: () => setBloqueado(null),
+          }}
+        />
+        <HechoEH mensaje={hecho} accent={accent} />
+      </div>
+    );
+  }
+
   /* ⚠️ **EH F40, apartado 14** — *"si el usuario quiere aprender"*: nunca se
      abre solo, siempre a un toque suyo. */
   if (tutorial) {
@@ -8891,6 +9099,13 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
         </Card>
       ) : (
         <>
+          {/* ⚠️ **EH F41, apartados 4, 5 y 14** — lo que puede haber ido mal, con
+              su explicación y su salida. Sin conexión, lo que ve es lo último
+              que se cargó; y un registro que no se puede leer **no rompe la
+              pantalla**: se marca él solo y lo demás sigue. */}
+          {!ordenando && <AvisosDeEstadoEH estado={estado} accent={accent} onHecho={setHecho} />}
+          <HechoEH mensaje={hecho} accent={accent} />
+
           {/* ⚠️ **EH F40, apartados 7, 8, 10 y 11** — lo que ya tiene de otros
               apartados, UNA idea para empezar y, como mucho, una sugerencia.
               Con `ordenando` no se pinta, como todo lo demás. */}

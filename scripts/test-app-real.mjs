@@ -1230,4 +1230,54 @@ ok(!/1\/4/.test(await ver()),
 ok(/¿Cómo funciona\?/.test(await ver()),
   'pero sigue estando ahí para volver a verlo (prueba 12)');
 
+/* ── 26 · ESTADOS: VACÍO Y DATO CORRUPTO (EH F41) ─────────────────────────
+   Lo que importa: que un registro roto NO rompa la pantalla —y que los otros se
+   sigan viendo—, y que un vacío tenga SALIDA.
+
+   ⚠️ El apartado desactivado NO se prueba aquí: las plaquitas, "Mi estilo" y
+   Gestionar apartados ya filtran por activo, y el buscador tiene su propio aviso
+   desde la F37 (sección 22). La puerta que queda —Mis preferencias → Editar— se
+   comprueba en `test-estados-estilo.mjs`. */
+
+/* Perfumes con un registro roto en medio de dos buenos, como llegaría de
+   Supabase; Accesorios encendido y vacío. */
+almacen.estiloHombre = {
+  configurado: true,
+  asistente: { paso: 4, estado: 'terminado', seleccion: ['perfumes', 'accesorios'] },
+  modulos: [
+    {
+      id: 'perfumes', activo: true, orden: 0,
+      config: { perfumes: { perfumes: [{ id: 'a', nombre: 'Uno' }, { id: 'b' }, { id: 'c', nombre: 'Tres' }] } },
+    },
+    { id: 'accesorios', activo: true, orden: 1, config: { accesorios: { configurado: true, accesorios: [], deseos: [] } } },
+  ],
+  datos: {}, retirados: [],
+};
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(900);
+const estados = await ver();
+ok(/Este elemento no se puede mostrar/.test(estados),
+  '⚠️ Un registro roto se avisa (apartado 14)');
+ok(/Se siguen viendo 2/.test(estados),
+  '⚠️ Y LOS OTROS DOS SIGUEN AHÍ: no rompe la pantalla');
+ok(!/undefined|NaN|\[object/.test(estados),
+  '⚠️ Y la pantalla no habla en informático');
+
+/* Apartado 1 — un vacío con salida. */
+ok(await pulsar('Accesorios'), 'Se entra en Accesorios');
+await page.waitForTimeout(800);
+ok(await pulsar('Mis accesorios'), 'y en su lista, que está vacía');
+await page.waitForTimeout(700);
+const vacio = await ver();
+ok(/Todavía no tienes accesorios apuntados/.test(vacio),
+  '⚠️ El vacío dice qué pasa (apartado 1)');
+ok(/Un reloj, unas gafas o una gorra/.test(vacio),
+  'y lo explica en una frase');
+ok(/Añadir accesorio/.test(vacio),
+  '⚠️ Y TIENE SALIDA: nunca una pantalla completamente vacía');
+
 await salir(browser);

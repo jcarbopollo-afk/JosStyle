@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH, GestionarEstiloEH, BuscadorEstiloEH, AvisosEstiloEH, IntegracionEH, TutorialEH, BienvenidaEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH, GestionarEstiloEH, BuscadorEstiloEH, AvisosEstiloEH, IntegracionEH, TutorialEH, BienvenidaEH, VacioEH, CargandoEH, AvisoEstadoEH, HechoEH, AvisosDeEstadoEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -61,6 +61,9 @@ import {
 import { accionesConcretas, prepararTarea, aplicarTarea } from '../src/lib/integracionEstilo';
 /* EH F40 — el primer uso: tutorial, idea para empezar y lo que ya tiene. */
 import { verTutorial, avanzarTutorial, saltarTutorial, rechazarSugerencia } from '../src/lib/primerUso';
+/* EH F41 — los estados que no son "todo bien". */
+import { estadoEH, estadoDeAcceso, avisoDeBorrado } from '../src/lib/estadosEstilo';
+import { datosPerfumes } from '../src/lib/perfumes.js';
 import {
   configurarGustos, decirAhoraNoGustos, anadirGusto, alternarFavoritoGusto,
   cambiarEstadoGusto, ponerFechaGusto, alternarParteGustos,
@@ -1416,6 +1419,43 @@ const CASOS = [
               ['BienvenidaEH · con la sugerencia rechazada', BienvenidaEH, () =>
                 bp(rechazarSugerencia(conPerfume, 'accesorios'), null)],
               ['BienvenidaEH · con todo encendido', BienvenidaEH, () => bp(ocho, lleno.armario)],
+            ];
+          })(),
+          /* EH Fase 41 — los estados: vacío, cargando, avisos y el ✓ temporal.
+             ⚠️ Los casos en los que estos componentes NO pintan nada —una
+             colección con datos, un aviso nulo, un mensaje vacío— no están aquí
+             porque este banco cuenta un render vacío como fallo. Que se callen
+             cuando toca lo comprueba `test-estados-estilo.mjs`, que sí puede
+             mirar lo que devuelven. */
+          ...(() => {
+            const ocho = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE,
+              ['estilo', 'skincare', 'pelo', 'barba', 'perfumes', 'sonrisa', 'accesorios', 'gustos']);
+            const conPerfume = anadirPerfume(ocho, { nombre: 'Bleu' }, { hoy: HOY }).estado;
+            /* Un registro roto guardado a mano, como llegaría de Supabase. */
+            const roto = guardarConfig(conPerfume, 'perfumes', {
+              perfumes: {
+                ...datosPerfumes(conPerfume),
+                perfumes: [{ id: 'a', nombre: 'Uno' }, { id: 'b' }, { id: 'c', nombre: 'Tres' }],
+              },
+            });
+            const soloPerfumes = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['perfumes']);
+            return [
+              ['VacioEH · colección vacía', VacioEH, () =>
+                ({ estado: ocho, coleccion: 'perfumes.perfumes', accent, onAnadir: noop })],
+              ['VacioEH · sin botón', VacioEH, () =>
+                ({ estado: ocho, coleccion: 'gustos.entradas', accent })],
+              ['CargandoEH · tarjetas de carga', CargandoEH, () => ({})],
+              ['AvisoEstadoEH · sin conexión', AvisoEstadoEH, () =>
+                ({ aviso: estadoEH('sin_conexion'), accent, acciones: { reintentar: noop, cerrar: noop } })],
+              ['AvisoEstadoEH · apartado desactivado', AvisoEstadoEH, () =>
+                ({ aviso: estadoDeAcceso(soloPerfumes, 'barba'), accent, acciones: { activar: noop, cerrar: noop } })],
+              ['AvisoEstadoEH · antes de borrar', AvisoEstadoEH, () =>
+                ({ aviso: avisoDeBorrado('perfumes', 'perfumes'), accent, acciones: { eliminar: noop, cerrar: noop } })],
+              ['AvisoEstadoEH · sin acciones (no pinta botones)', AvisoEstadoEH, () =>
+                ({ aviso: estadoEH('datos_corruptos'), accent })],
+              ['HechoEH · ✓ Guardado', HechoEH, () => ({ mensaje: 'guardado', accent })],
+              ['AvisosDeEstadoEH · con un registro roto', AvisosDeEstadoEH, () =>
+                ({ estado: roto, accent, onHecho: noop })],
             ];
           })(),
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],

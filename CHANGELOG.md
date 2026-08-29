@@ -1,5 +1,70 @@
 # CHANGELOG.md
 
+## v2.4.0 — EH Fase 41/65: estados vacíos, carga, errores y recuperación
+
+### Qué se ha construido
+El **catálogo de estados** de Estilo de hombre y sus cinco pantallitas: el **vacío con salida**, las
+**tarjetas de carga**, el **aviso** con sus opciones, el **✓ pequeño y temporal**, y los avisos de la
+portada. Y en uso: el registro que no se puede leer ya no se pierde en silencio, la lista vacía de
+Accesorios tiene su botón, y borrar un registro de piel **pregunta antes y dice adónde va**.
+
+*"Todo estado debe tener una respuesta clara."*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Un estado es una línea, no un `if` en una pantalla.** `ESTADOS_EH` es una línea por apartado
+con **las tres respuestas del enunciado** —*qué ha pasado*, *qué puede hacer*, *qué ha ocurrido con
+sus datos*—, y `COLECCIONES_EH` una línea por lista con su vacío y su "+ Añadir". Hay una auditoría
+que comprueba que ninguna se queda sin las tres, y que **ninguna opción es un botón decorativo**:
+cada una declara su acción, y la pantalla solo pinta las que le han dicho qué hacer.
+
+**2. ⚠️ Tres de los estados del enunciado no se pueden detectar hoy, y se dice.** El error de
+guardado (6), el estado de la sincronización (8) y el conflicto entre dispositivos (9) necesitan algo
+que **JosStyle no tiene**: `saveData` se traga su error y sube sin leer la versión anterior. Se
+declaran con `detectable: false` **y su motivo** —y con sus textos ya escritos, para que el día que
+exista el mecanismo no haya que inventarlos—, en vez de pintar un aviso que no aparecería nunca. Es
+el mismo criterio que la F39 con los favoritos globales.
+
+**3. ⚠️ Y no se monta una cola de escritura.** RA F2 lo dejó escrito: una cola offline solo vale **si
+reintentar es idempotente**, y allí lo es porque un cumplimiento reenviado tres veces sigue siendo un
+día. Aquí **no lo es**: añadir un perfume dos veces son dos perfumes. Así que sin conexión se enseña
+lo que hay y se dice la verdad — *"puedes consultar lo que ya tienes; para guardar cambios hace falta
+conexión"*.
+
+**4. ⚠️ Un dato corrupto no rompe la pantalla** (apartado 14), y **para verlo hay que mirar lo
+guardado**. Cada colección declara dónde vive en crudo y cuál es su normalizador de elemento: el
+registro que no sobrevive se marca **solo él**, y el aviso dice lo único que tranquiliza — *"se
+siguen viendo 2"*.
+
+**5. ⚠️ Antes de borrar se dice adónde va, y solo cuando es verdad.** `avisoDeBorrado()` mira el
+catálogo de la papelera global (ME F3): prometer *"podrás recuperarlo"* de algo que no va allí sería
+mentir, así que en ese caso dice lo contrario.
+
+**6. ⚠️ Y el permiso se pide una vez** (apartado 12, con esas palabras). Si el navegador ya dijo que
+no, aquí **no se vuelve a pedir**: se dice que se cambia desde Ajustes. Esta fase no llama a
+`requestPermission` ni una vez, y hay una prueba que lee el código.
+
+### 🐛 El error que se cazó construyéndola
+La primera versión de `elementosProblematicos()` leía cada colección con su `datos*()` de siempre…
+que **ya había descartado el registro malo en silencio**. Encontraba cero problemas siempre: un aviso
+que no podía aparecer nunca, que es justo lo que la regla 8 prohíbe. Se arregló leyendo **lo
+guardado**, y hay una prueba que comprueba las dos cosas a la vez — que el normalizador tira el
+registro y que la revisión sí lo encuentra.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **104 comprobaciones nuevas**, **1376 casos de
+renderizado** (36 nuevos) y **366 comprobaciones en Chromium** (8 nuevas): un registro roto se avisa
+**y los otros dos se siguen viendo**, la pantalla no habla en informático, y la lista vacía de
+Accesorios dice qué pasa, lo explica y **tiene su botón**.
+
+### Archivos
+- **Nuevos:** `src/lib/estadosEstilo.js`, `scripts/test-estados-estilo.mjs`.
+- **Modificados:** `src/views/EstiloHombreView.jsx` (las cinco pantallitas, el vacío de Accesorios,
+  el guardia de `abrirModulo` y la confirmación al borrar un registro de piel),
+  `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v2.3.0 — EH Fase 40/65: primer uso y configuración inicial
 
 ### Qué se ha construido

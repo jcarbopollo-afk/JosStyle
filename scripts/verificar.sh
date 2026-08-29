@@ -392,6 +392,12 @@ else
   fallo "Falla el primer uso de Estilo de hombre"; grep '✗' /tmp/jc_eh40.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-estados-estilo.mjs >/tmp/jc_eh41.log 2>&1; then
+  ok "Estados vacíos, carga y errores (EH F41) — $(grep -c '✓' /tmp/jc_eh41.log) comprobaciones"
+else
+  fallo "Fallan los estados de Estilo de hombre"; grep '✗' /tmp/jc_eh41.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

@@ -2802,39 +2802,68 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Saltar tutorial.
 - [x] Comprobar persistencia.
 
-#### EH · Fase 41/65 — ESTADOS VACÍOS, CARGA, ERRORES Y RECUPERACIÓN
-- [ ] SIN DATOS
-- [ ] PRIMERA VEZ
-- [ ] CARGANDO
-- [ ] ERROR DE CONEXIÓN
-- [ ] MODO SIN CONEXIÓN
-- [ ] ERROR DE GUARDADO
-- [ ] EVITAR PÉRDIDA DE DATOS
-- [ ] SINCRONIZACIÓN
-- [ ] CONFLICTOS
-- [ ] MÓDULO DESACTIVADO
-- [ ] ELEMENTO ELIMINADO
-- [ ] PERMISO DENEGADO
-- [ ] ERROR IRRECUPERABLE
-- [ ] DATOS CORRUPTOS
-- [ ] ACCIONES DESTRUCTIVAS
-- [ ] FEEDBACK VISUAL
-- [ ] PRUEBAS
-- [ ] Sin datos.
-- [ ] Sin conexión.
-- [ ] Con conexión lenta.
-- [ ] Error de servidor.
-- [ ] Error de guardado.
-- [ ] Sincronización.
-- [ ] Conflicto.
-- [ ] Permiso denegado.
-- [ ] Elemento eliminado.
-- [ ] Módulo desactivado.
-- [ ] Recuperación.
-- [ ] Reintento.
-- [ ] Cierre durante guardado.
-- [ ] Volver a abrir.
-- [ ] Comprobar que no se pierden datos.
+#### EH · Fase 41/65 — ESTADOS VACÍOS, CARGA, ERRORES Y RECUPERACIÓN ✅ COMPLETADA (v2.4.0)
+
+> **`src/lib/estadosEstilo.js`** (104 comprobaciones) + `VacioEH`, `CargandoEH`, `AvisoEstadoEH`,
+> `HechoEH` y `AvisosDeEstadoEH` en `EstiloHombreView.jsx`. Sin SQL.
+>
+> ⚠️ **UN ESTADO ES UNA LÍNEA, NO UN `if` EN UNA PANTALLA.** `ESTADOS_EH` es una línea por apartado
+> con las tres respuestas que pide el enunciado —**qué ha pasado**, **qué puede hacer**, **qué ha
+> ocurrido con sus datos**—, y `COLECCIONES_EH` una línea por lista con su vacío y su "+ Añadir". Hay
+> una auditoría que comprueba que ninguna se queda sin las tres.
+>
+> ⚠️ **TRES ESTADOS DEL ENUNCIADO NO SE PUEDEN DETECTAR HOY, Y SE DICE.** El error de guardado (6),
+> el estado de la sincronización (8) y el conflicto entre dispositivos (9) necesitan algo que JosStyle
+> no tiene: `saveData` se traga su error y sube sin leer la versión anterior. Se declaran con
+> `detectable: false` **y su motivo** —con sus textos ya escritos para el día que exista el
+> mecanismo—, en vez de pintar un aviso que no aparecería nunca (regla 8).
+>
+> ⚠️ **Y NO SE MONTA UNA COLA DE ESCRITURA.** RA F2 lo dejó dicho: una cola offline solo vale **si
+> reintentar es idempotente**. Aquí no lo es —añadir un perfume dos veces son dos perfumes—, así que
+> sin conexión se enseña lo que hay y **se dice que para guardar hace falta conexión**.
+>
+> 🐛 ⚠️ **UN DATO CORRUPTO HAY QUE BUSCARLO EN LO GUARDADO, NO EN LO NORMALIZADO.** El primer intento
+> leía las colecciones con su `datos*()`… que ya había descartado el registro malo en silencio, así
+> que no encontraba nunca nada: un aviso decorativo. Cada colección declara **dónde vive en crudo**, y
+> el registro que no sobrevive se marca **solo él** — *"se siguen viendo 2"*.
+>
+> ⚠️ **ANTES DE BORRAR SE DICE ADÓNDE VA, Y SOLO CUANDO ES VERDAD**: `avisoDeBorrado()` mira el
+> catálogo de la papelera global. Prometer *"podrás recuperarlo"* de algo que no va allí sería mentir.
+>
+> ⚠️ **Y EL PERMISO SE PIDE UNA VEZ** (apartado 12): si el navegador ya dijo que no, aquí no se vuelve
+> a pedir — se dice que se cambia desde Ajustes, y esta fase **no llama a `requestPermission`**.
+- [x] SIN DATOS
+- [x] PRIMERA VEZ
+- [x] CARGANDO
+- [x] ERROR DE CONEXIÓN
+- [x] MODO SIN CONEXIÓN
+- [x] ERROR DE GUARDADO — *texto escrito; hoy no se puede detectar, y se dice*
+- [x] EVITAR PÉRDIDA DE DATOS
+- [x] SINCRONIZACIÓN — *ídem*
+- [x] CONFLICTOS — *ídem*
+- [x] MÓDULO DESACTIVADO
+- [x] ELEMENTO ELIMINADO
+- [x] PERMISO DENEGADO
+- [x] ERROR IRRECUPERABLE
+- [x] DATOS CORRUPTOS
+- [x] ACCIONES DESTRUCTIVAS
+- [x] FEEDBACK VISUAL
+- [x] PRUEBAS
+- [x] Sin datos.
+- [x] Sin conexión.
+- [x] Con conexión lenta.
+- [x] Error de servidor.
+- [x] Error de guardado.
+- [x] Sincronización.
+- [x] Conflicto.
+- [x] Permiso denegado.
+- [x] Elemento eliminado.
+- [x] Módulo desactivado.
+- [x] Recuperación.
+- [x] Reintento.
+- [x] Cierre durante guardado.
+- [x] Volver a abrir.
+- [x] Comprobar que no se pierden datos.
 
 #### EH · Fase 42/65 — ACCESIBILIDAD Y USABILIDAD
 - [ ] BOTONES

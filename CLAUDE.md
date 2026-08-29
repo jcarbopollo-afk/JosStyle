@@ -20,7 +20,7 @@ serverless en Vercel que hace de proxy a Anthropic.
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 37/65**, quedan 26 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 38/65**, quedan 25 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -125,11 +125,11 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 8579 pruebas unitarias con Node (5 de ellas de auditoría), 1340 casos de renderizado real
-con `react-dom/server`, 11 reglas invariantes y **358 comprobaciones sobre la aplicación de verdad
-en Chromium** — **10 291 comprobaciones**.
+Vite, 8683 pruebas unitarias con Node (5 de ellas de auditoría), 1376 casos de renderizado real
+con `react-dom/server`, 11 reglas invariantes y **366 comprobaciones sobre la aplicación de verdad
+en Chromium** — **10 439 comprobaciones**.
 
-Eso ya ha encontrado **sesenta y dos bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **sesenta y tres bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -153,7 +153,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 37/65** (v2.3.0: F1-F17, **F20, F21 y F23-F40**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 38/65** (v2.4.0: F1-F17, **F20, F21 y F23-F41**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -165,10 +165,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 41/65 — Estados vacíos, carga, errores y recuperación**.
+La siguiente candidata es **EH · Fase 42/65 — Accesibilidad y usabilidad**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F40 dejaron ciento sesenta y cinco cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F41 dejaron ciento setenta cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -608,6 +608,22 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   `Math.random().toString(36)`, y **uno de cada ciento ochenta contiene "xp"**: buscar las palabras
   prohibidas en el JSON entero del panel de rachas tumbaba `verificar.sh` un par de veces de cada
   cien **sin que nada estuviera mal**. Se quitan los ids antes de barrer. Novena vez de esta lección.
+- ⚠️ **UN ESTADO ES UNA LÍNEA DE `ESTADOS_EH`** (F41), con las tres respuestas: **qué ha pasado**,
+  **qué puede hacer** y **qué ha ocurrido con sus datos**. Y `COLECCIONES_EH` es una línea por lista,
+  con su vacío y su botón: **un vacío sin salida es una pantalla rota** (apartado 1).
+- 🚨 **UN DATO CORRUPTO SE BUSCA EN LO GUARDADO, NO EN LO NORMALIZADO** (F41). El normalizador de una
+  colección **ya lo ha descartado en silencio**, así que leerlo con `datos*()` no encuentra nunca
+  nada. Cada colección declara `crudo` —dónde vive sin normalizar— y su normalizador de elemento.
+- ⚠️ **`avisoDeBorrado` SOLO PROMETE RECUPERAR LO QUE VA A LA PAPELERA** (F41, apartado 15). Se mira
+  el catálogo de ME F3: prometerlo de lo demás sería mentir, y se dice lo contrario.
+- ⚠️ **NI UNA COLA DE ESCRITURA EN ESTILO DE HOMBRE** (F41). RA F2 lo dejó escrito: una cola offline
+  solo vale **si reintentar es idempotente**, y aquí no lo es —añadir un perfume dos veces son dos
+  perfumes—. Sin conexión se enseña lo que hay y **se dice que para guardar hace falta conexión**.
+- ⚠️ **EL ERROR DE GUARDADO, LA SINCRONIZACIÓN Y EL CONFLICTO NO SE PUEDEN DETECTAR** (F41,
+  apartados 6, 8 y 9): `saveData` se traga su error y sube sin leer la versión anterior. Sus textos
+  están escritos y declarados con `detectable: false`; el día que exista el mecanismo, están listos.
+- ⚠️ **EL PERMISO SE PIDE UNA VEZ** (F41, apartado 12). Si el navegador ya dijo que no, se dice dónde
+  se cambia y ya está: esta fase **no llama a `requestPermission`**, con una prueba que lee el código.
 - 🚨 **LO QUE JOSUÉ SUBE A MANO A GITHUB NO INCLUYE LAS CARPETAS.** Sus seis `Add files via upload`
   solo llevaron los **nueve archivos sueltos de la raíz**: ni uno de `src/`. Por eso `main` tenía la
   documentación nueva y el código del 11 de agosto, y la web no cambiaba por más zips que subiera.
