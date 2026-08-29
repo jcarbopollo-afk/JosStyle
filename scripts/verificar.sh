@@ -374,6 +374,12 @@ else
   fallo "Falla el buscador de estilo"; grep '✗' /tmp/jc_eh37.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-avisos-estilo.mjs >/tmp/jc_eh38.log 2>&1; then
+  ok "Notificaciones y recordatorios (EH F38) — $(grep -c '✓' /tmp/jc_eh38.log) comprobaciones"
+else
+  fallo "Fallan los avisos de estilo"; grep '✗' /tmp/jc_eh38.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

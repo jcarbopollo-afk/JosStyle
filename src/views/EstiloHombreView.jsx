@@ -235,6 +235,11 @@ import {
   // ── EH F37 ──
   TEXTOS_BUSCADOR, panelBuscador, resolverApartado, apuntarReciente,
 } from '../lib/buscadorEstilo';
+import {
+  // ── EH F38 ──
+  TEXTOS_AVISOS_EH, panelAvisosEH, alternarTipo, alternarSilencio,
+  desactivarAvisosEH, activarAvisosEH, crearRecordatorio, borrarRecordatorio, repeticion,
+} from '../lib/avisosEstilo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -7508,6 +7513,182 @@ export function BuscadorEstiloEH({
 
 
 /* ===========================================================================
+   EH · F38 — 🔔 AVISOS DE ESTILO DE HOMBRE (apartados 2 a 12)
+   ===========================================================================
+   *"Estilo propone → usuario activa → JosStyle recuerda. Nunca: Estilo decide →
+   JosStyle molesta."*
+
+   ⚠️ **Esta pantalla no manda ni una notificación**: elige de qué avisar. El
+   interruptor general, las categorías y el horario de silencio son los de la
+   Fase A4, y se dice en la propia pantalla. */
+export function AvisosEstiloEH({
+  estado, accent, armario = null, datosGlobales = {}, objetivos = null, onCambiar, onCerrar,
+}) {
+  /* ⚠️ Regla 4 — los hooks, antes de cualquier `return` condicional. */
+  const [creando, setCreando] = useState(false);
+  const [texto, setTexto] = useState('');
+  const [fecha, setFecha] = useState('');
+  const [hora, setHora] = useState('09:00');
+  const [repe, setRepe] = useState('una_vez');
+  const [error, setError] = useState(null);
+  const panel = useMemo(
+    () => panelAvisosEH(estado, { armario, datosGlobales, objetivos }),
+    [estado, armario, datosGlobales, objetivos],
+  );
+
+  const crear = () => {
+    const r = crearRecordatorio(estado, { texto, fecha, hora, repeticion: repe });
+    if (r.error) return setError(r.error);
+    onCambiar(r.estado);
+    setTexto(''); setFecha(''); setHora('09:00'); setRepe('una_vez');
+    setError(null);
+    return setCreando(false);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>{panel.titulo}</p>
+      </div>
+      {/* La regla principal de la fase, dicha en la pantalla. */}
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.todoApagado}</p>
+      {/* Apartados 1, 7 y 11 — y de quién es lo demás. */}
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.delSistemaGlobal}</p>
+
+      {/* Apartado 12 — el interruptor de todo Estilo de hombre. */}
+      <Card>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>
+            Avisos de Estilo de hombre
+          </span>
+          <Switch
+            checked={panel.activados} accent={accent}
+            onChange={() => onCambiar(panel.activados
+              ? desactivarAvisosEH(estado)
+              : activarAvisosEH(estado))}
+          />
+        </div>
+        <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+          {panel.desactivarNoBorra}
+        </p>
+      </Card>
+
+      {/* Apartados 2 y 11 — la lista, uno a uno y todos apagados de fábrica. */}
+      {panel.tipos.map((t) => (
+        <Card key={t.id}>
+          <div className="flex items-center gap-2">
+            <span className="text-base leading-none" aria-hidden="true">{t.icono}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                {t.nombre}
+              </span>
+              <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>
+                {t.moduloNombre}{t.silenciado ? ' · 🔕 silenciado' : ''}
+              </span>
+            </span>
+            <Switch
+              checked={t.puesto} accent={accent}
+              onChange={() => onCambiar(alternarTipo(estado, t.id))}
+            />
+          </div>
+          {/* Apartado 6 — silenciar el módulo, SIN desactivarlo. */}
+          <button onClick={() => onCambiar(alternarSilencio(estado, t.modulo))}
+            className="text-[10px] font-semibold mt-1" style={{ color: COLORS.textMuted }}>
+            {t.silenciado ? '🔔 Volver a recibir avisos' : TEXTOS_AVISOS_EH.silenciar}
+          </button>
+        </Card>
+      ))}
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.silenciarNoApaga}</p>
+
+      {/* Apartados 4 y 5 — 🔔 Recordarme. */}
+      <Card>
+        <div className="flex items-center gap-2 mb-1">
+          <p className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>
+            {TEXTOS_AVISOS_EH.crear}
+          </p>
+          <button onClick={() => setCreando((v) => !v)}
+            className="text-[10px] font-semibold" style={{ color: accent }}>
+            {creando ? 'Cancelar' : '+ Nuevo'}
+          </button>
+        </div>
+        {panel.recordatorios.length === 0 && !creando && (
+          <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            {TEXTOS_AVISOS_EH.sinRecordatorios}
+          </p>
+        )}
+        {panel.recordatorios.map((r) => (
+          <div key={r.id} className="flex items-center gap-2 mb-1">
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px]" style={{ color: COLORS.text }}>{r.texto}</span>
+              <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>
+                {r.fecha} · {r.hora} · {repeticion(r.repeticion)?.nombre}
+              </span>
+            </span>
+            <button onClick={() => onCambiar(borrarRecordatorio(estado, r.id))}
+              className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+              Borrar
+            </button>
+          </div>
+        ))}
+        {creando && (
+          <div className="space-y-1 mt-1">
+            <TextInput value={texto} onChange={(ev) => setTexto(ev.target.value)}
+              placeholder="¿De qué te recordamos?" />
+            <div className="flex gap-1">
+              <input type="date" value={fecha} onChange={(ev) => setFecha(ev.target.value)}
+                className="flex-1 rounded-xl px-2 py-2 text-xs"
+                style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text }} />
+              <input type="time" value={hora} onChange={(ev) => setHora(ev.target.value)}
+                className="rounded-xl px-2 py-2 text-xs"
+                style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text }} />
+            </div>
+            {/* Apartado 5 — la repetición. */}
+            <div className="flex flex-wrap gap-1">
+              {panel.repeticiones.map((x) => (
+                <button key={x.id} aria-pressed={x.id === repe} onClick={() => setRepe(x.id)}
+                  className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                  style={{
+                    background: x.id === repe ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                    color: x.id === repe ? accent : COLORS.text,
+                    border: `1px solid ${x.id === repe ? accent : COLORS.border}`,
+                  }}>
+                  {x.nombre}
+                </button>
+              ))}
+            </div>
+            {error && <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{error}</p>}
+            <PrimaryButton accent={accent} onClick={crear}>Guardar recordatorio</PrimaryButton>
+          </div>
+        )}
+      </Card>
+
+      {/* Apartados 8 y 9 — lo que se mandaría hoy, ya agrupado. */}
+      {panel.hoy.length > 0 && (
+        <Card>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>
+            Lo que te llegaría hoy
+          </p>
+          {panel.hoy.map((a) => (
+            <p key={a.clave} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {a.icono} {a.titulo}{a.cuerpo ? ` — ${a.cuerpo}` : ''}
+            </p>
+          ))}
+        </Card>
+      )}
+
+      {/* Apartado 13 — y la verdad sobre el historial. */}
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.sinHistorial}</p>
+    </div>
+  );
+}
+
+
+/* ===========================================================================
    EH · F31 — ⋮ PERSONALIZAR (apartados 1 a 5, 8, 10, 14, 16 y 17)
    ===========================================================================
    ⚠️ **Esta pantalla no inventa ni un mecanismo.** Mover es `moverA` y las
@@ -7558,7 +7739,7 @@ function AvisoDiseno({ aviso, accent, onConfirmar, onCancelar }) {
 }
 
 export function PersonalizarPlaquitas({
-  estado, accent, armario = null, datosGlobales = {}, onCambiar, onCerrar, onGestionar,
+  estado, accent, armario = null, datosGlobales = {}, onCambiar, onCerrar, onGestionar, onAvisos,
 }) {
   /* ⚠️ Regla 4 — todos los hooks, antes de cualquier `return` condicional. */
   const [moviendo, setMoviendo] = useState(null);
@@ -7621,6 +7802,14 @@ export function PersonalizarPlaquitas({
         <button onClick={onGestionar}
           className="text-[11px] font-semibold" style={{ color: accent }}>
           {TEXTOS_GESTION_EH.titulo}
+        </button>
+      )}
+      {/* ⚠️ **EH F38, apartado 11** — de qué avisa Estilo de hombre. El
+          interruptor general y el horario de silencio son los de Ajustes. */}
+      {onAvisos && (
+        <button onClick={onAvisos}
+          className="text-[11px] font-semibold" style={{ color: accent }}>
+          {TEXTOS_AVISOS_EH.titulo}
         </button>
       )}
 
@@ -7882,6 +8071,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const [preferencias, setPreferencias] = useState(false);   // F34, apartado 1
   const [gestionEstilo, setGestionEstilo] = useState(false);  // F36, apartado 1
   const [buscando, setBuscando] = useState(false);            // F37, apartado 1
+  const [avisos, setAvisos] = useState(false);                // F38, apartado 11
   const [perfilPelo, setPerfilPelo] = useState(false);   // false | 'panel' | 'perfil'
   const [skincare, setSkincare] = useState(false);       // F13
   const [barba, setBarba] = useState(false);             // F20
@@ -8155,6 +8345,19 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     );
   }
 
+  /* F38, apartado 11 — *"desde ⚙️ Notificaciones mostrar Estilo de hombre"*.
+     ⚠️ Aquí solo se elige DE QUÉ avisar: el interruptor general y el horario de
+     silencio son los de la Fase A4, y la pantalla lo dice. */
+  if (avisos) {
+    return (
+      <AvisosEstiloEH
+        estado={estado} accent={accent} armario={armario}
+        datosGlobales={datosGlobales} objetivos={objetivos}
+        onCambiar={onCambiar} onCerrar={() => setAvisos(false)}
+      />
+    );
+  }
+
   /* F37, apartado 1 — *"en la parte superior: 🔍 Buscar en Estilo de hombre"*.
      ⚠️ Es una pantalla propia, y **no sustituye al buscador global** (apartado
      11): éste busca DENTRO de los elementos, que aquél no indexa. */
@@ -8197,6 +8400,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
         estado={estado} accent={accent} armario={armario} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={() => setPersonalizando(false)}
         onGestionar={() => setGestionEstilo(true)}
+        onAvisos={() => { setPersonalizando(false); setAvisos(true); }}
       />
     );
   }

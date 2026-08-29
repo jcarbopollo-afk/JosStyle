@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v2.0.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v2.1.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 34/65**, quedan 29 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 35/65**, quedan 28 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -125,9 +125,9 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 8171 pruebas unitarias con Node (5 de ellas de auditoría), 1256 casos de renderizado real
-con `react-dom/server`, 11 reglas invariantes y **309 comprobaciones sobre la aplicación de verdad
-en Chromium** — **9747 comprobaciones**.
+Vite, 8293 pruebas unitarias con Node (5 de ellas de auditoría), 1280 casos de renderizado real
+con `react-dom/server`, 11 reglas invariantes y **322 comprobaciones sobre la aplicación de verdad
+en Chromium** — **9906 comprobaciones**.
 
 Eso ya ha encontrado **sesenta bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -153,7 +153,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 34/65** (v2.0.0: F1-F17, **F20, F21 y F23-F37**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 35/65** (v2.1.0: F1-F17, **F20, F21 y F23-F38**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -165,10 +165,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 38/65**. Ver `especificaciones/` para su enunciado.
+La siguiente candidata es **EH · Fase 39/65 — Integración con el resto de JosStyle**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F37 dejaron ciento cuarenta y cinco cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F38 dejaron ciento cincuenta cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -558,6 +558,20 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   como no se sale de JosStyle sin querer. Y **las migas son una función**, no un estado guardado.
 - ⚠️ **"RECIENTES" GUARDA IDS DE LO QUE ÉL ABRE, NUNCA LO QUE ESCRIBIÓ** (F37, apartado 5), y solo
   desde el buscador: no es un registro de navegación, que es lo que la F31 se negó a inventar.
+- ⚠️ **`avisosEstilo.js` DECIDE, `notificaciones.js` MANDA** (F38), igual que `avisosHorario.js` en
+  HT F10. **Nunca un segundo emisor**, y **nunca un segundo horario de silencio**: el interruptor
+  general, las categorías y el descanso son de la Fase A4. Un segundo horario es el peor duplicado
+  posible — el día que él cambie uno, el otro sigue despertándole.
+- ⚠️ **TODO AVISO NACE APAGADO** (F38), y está escrito en el catálogo (`porDefecto: false`), no en un
+  comentario. Con cosas que avisar y nada encendido, **ni un aviso**.
+- ⚠️ **SILENCIAR NO ES DESACTIVAR** (F38, apartado 6): es el tercer eje después de `activo` y `oculto`
+  de la F36. Un módulo silenciado sigue funcionando y sigue en la portada.
+- ⚠️ **NO HAY HISTORIAL GLOBAL DE NOTIFICACIONES** (F38, apartado 13). Lo que hay es el
+  antirrepetición por día de `notificarSiCorresponde`. Así que no se guarda ni un aviso enviado, y se
+  dice — montar uno propio sería el historial paralelo que el apartado prohíbe.
+- ⚠️ **UNA PRUEBA QUE LEE EL CÓDIGO TIENE QUE QUITAR LOS COMENTARIOS** (F38): la cabecera decía que
+  aquí no se llama a `new Notification`, y el barrido saltaba **con la frase que lo promete**. Séptima
+  vez en el bloque.
 - 🚨 **LO QUE JOSUÉ SUBE A MANO A GITHUB NO INCLUYE LAS CARPETAS.** Sus seis `Add files via upload`
   solo llevaron los **nueve archivos sueltos de la raíz**: ni uno de `src/`. Por eso `main` tenía la
   documentación nueva y el código del 11 de agosto, y la web no cambiaba por más zips que subiera.

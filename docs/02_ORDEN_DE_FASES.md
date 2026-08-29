@@ -262,9 +262,11 @@ escribir código.
 
 | v2.0.0 | **EH F37** | Buscador y navegación interna. ⚠️ **El apartado 11 decide qué se construye**: los módulos los busca `buscarModulos()` (F2) y EH ya está en el índice global (BI F3), así que lo que aporta esto es buscar **dentro de sus ELEMENTOS**, que no indexa nadie. ⚠️ **Añadir una fuente es una línea en `FUENTES_BUSQUEDA`**, y ni un índice guardado. ⚠️ **Un módulo oculto o desactivado SALE, marcado, y nunca se enciende solo**; el oculto sí aporta sus elementos, el desactivado no. ⚠️ **Lo eliminado no aparece**, y sale gratis. ⚠️ **No hay favoritos globales**: son los de cada módulo. ⚠️ **"Recientes" guarda lo que abre desde aquí**, no por dónde navega. ⚠️ Y **`atras()` nunca devuelve `null`**. 🐛 Y el recorrido en Chromium cazó que `onChange={setTexto}` guardaba el EVENTO: el buscador se pintaba y no buscaba |
 
+| v2.1.0 | **EH F38** | Notificaciones y recordatorios. ⚠️ **Este archivo DECIDE; `notificaciones.js` MANDA** (mismo reparto que HT F10): aquí no se llama a `new Notification` ni una vez. ⚠️ **TODO nace apagado**, escrito en el catálogo: con cosas que avisar y nada encendido, ni un aviso. ⚠️ **Ni un horario de silencio ni un interruptor global nuevos**: son de la Fase A4. ⚠️ **Silenciar un módulo NO es desactivarlo**: tercer eje tras `activo` y `oculto`. ⚠️ **Ni un historial paralelo** — y la verdad es que JosStyle no tiene uno global, así que se dice. ⚠️ **Las recomendaciones no avisan solas**. ⚠️ Y una recurrencia guarda su REGLA, nunca sus fechas |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 34/65** (F1-F17, F20, F21, F23-F37; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
-Quedan **29** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (27, tres de ellas bloqueadas).
+3/5 y **EH por 35/65** (F1-F17, F20, F21, F23-F38; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+Quedan **28** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (26, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

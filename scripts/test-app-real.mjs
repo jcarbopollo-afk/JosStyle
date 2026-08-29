@@ -1023,4 +1023,57 @@ const cfgBusc = escBusc.at(-1)?.value?.modulos?.find((m) => m.id === 'estilo')?.
 ok((cfgBusc.buscador?.recientes || []).includes('barba'),
   '⚠️ PERSISTENCIA: abrirlo lo apunta en Recientes — y son IDS, no lo que escribió');
 
+/* ── 23 · 🔔 AVISOS DE ESTILO DE HOMBRE (EH F38) ──────────────────────────
+   Lo que importa: que TODO empiece apagado, que encender uno se guarde, y que
+   la pantalla diga que el interruptor general es el de JosStyle. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(600);
+await pulsar('⋮ Personalizar');
+await page.waitForTimeout(600);
+ok(await pulsar('🔔 Avisos de Estilo de hombre'),
+  '🔔 Los avisos se abren desde ⋮ Personalizar (apartado 11)');
+await page.waitForTimeout(700);
+const avisos = await ver();
+ok(/Solo te avisamos de lo que enciendas tú/.test(avisos),
+  '⚠️ Con la regla principal dicha: TODO empieza apagado');
+ok(/son los de JosStyle/.test(avisos),
+  '⚠️ Y que el interruptor general y el horario de silencio NO son de aquí (apartados 1, 7 y 11)');
+ok(/Recordarme/.test(avisos), 'con 🔔 Recordarme (apartado 4)');
+ok(/todavía no guarda un historial/.test(avisos),
+  '⚠️ Y la verdad sobre el historial, en vez de montar uno paralelo (apartado 13)');
+ok(/No recibir avisos/.test(avisos), 'y el 🔕 por módulo (apartado 6)');
+ok(!/Lo que te llegaría hoy/.test(avisos),
+  '⚠️ Y de fábrica NO hay nada que mandar: nada está encendido (prueba 1)');
+
+/* ⚠️ Se pulsa un botón de verdad —el 🔕 de un módulo—, no un interruptor cuyo
+   marcado no conocemos: así la comprobación mide algo. */
+guardado.length = 0;
+ok(await pulsar('🔕 No recibir avisos'), 'Se puede silenciar un módulo (apartado 6 · prueba 7)');
+await page.waitForTimeout(1200);
+const escAv = guardado.filter((g) => g && g.key === 'estiloHombre');
+ok(escAv.length > 0, '⚠️ PERSISTENCIA: se guarda');
+const cfgAv = escAv.at(-1)?.value?.modulos?.find((m) => m.id === 'estilo')?.config || {};
+ok((cfgAv.avisos?.silenciados || []).length === 1, 'con el módulo silenciado');
+const silenciado = (cfgAv.avisos?.silenciados || [])[0];
+const modSil = escAv.at(-1)?.value?.modulos?.find((m) => m.id === silenciado);
+ok(modSil && modSil.activo === true,
+  '⚠️ Y el módulo SIGUE ACTIVO: silenciar no es desactivar (apartado 6)');
+ok(Object.keys(cfgAv.avisos?.tipos || {}).length === 0,
+  '⚠️ Y sigue sin ningún tipo encendido: silenciar no enciende nada');
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(600);
+await pulsar('⋮ Personalizar');
+await page.waitForTimeout(500);
+await pulsar('🔔 Avisos de Estilo de hombre');
+await page.waitForTimeout(700);
+ok(/🔕 silenciado/.test(await ver()),
+  '⚠️ PERSISTENCIA: tras recargar, el módulo sigue silenciado (prueba 14)');
+
 await salir(browser);

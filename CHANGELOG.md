@@ -1,5 +1,65 @@
 # CHANGELOG.md
 
+## v2.1.0 — EH Fase 38/65: notificaciones y recordatorios
+
+### Qué se ha construido
+La pantalla **🔔 Avisos de Estilo de hombre**, dentro de ⋮ Personalizar: los seis tipos de aviso uno
+a uno —**todos apagados de fábrica**—, el **🔕 por módulo**, sus **recordatorios** con fecha, hora y
+repetición, el interruptor de **desactivar todo Estilo**, y el resumen de lo que le llegaría hoy ya
+agrupado.
+
+*"Estilo propone → usuario activa → JosStyle recuerda. **Nunca: Estilo decide → JosStyle molesta.**"*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Este archivo decide; `notificaciones.js` manda.** Es el mismo reparto que HT F10 dejó escrito
+—*"`avisosHorario.js` DECIDE, `notificaciones.js` MANDA"*—, y el apartado 1 lo pide con esas
+palabras: *"no crear otro sistema. Utilizar 🔔 Notificaciones globales de JosStyle."* Aquí **no se
+llama a `new Notification` ni una vez**, y hay una prueba que lee el código.
+
+**2. ⚠️ Todo nace apagado** — la regla principal de la fase, escrita **en el catálogo**
+(`porDefecto: false` en los seis) y no en un comentario. Con una rutina pendiente y dos perfumes y
+**nada encendido**, no sale ni un aviso. Y el *"hace 7 días que no te afeitas"* del apartado 3 **no
+se manda si él nunca dijo cada cuánto**: sin frecuencia y sin un registro con el que contar, no hay
+aviso.
+
+**3. ⚠️ Ni un horario de silencio ni un interruptor global nuevos** (apartados 7 y 11): son de la
+**Fase A4** y viven en `notificaciones.js`. Un segundo horario de silencio sería el peor duplicado
+posible — el día que él cambiara uno, el otro seguiría despertándole.
+
+**4. ⚠️ Silenciar un módulo no es desactivarlo** (apartado 6, con esas palabras: *"🔕 no recibir
+avisos **sin desactivar el módulo completo**"*). Es el tercer eje después de `activo` y `oculto` de
+la F36, y un módulo silenciado **sigue funcionando y sigue en la portada**.
+
+**5. ⚠️ Ni un historial paralelo** (apartado 13). Y la respuesta honesta es que **JosStyle no tiene
+un historial global de notificaciones**: lo que tiene es el antirrepetición por día de
+`notificarSiCorresponde`. Así que esta fase **no guarda ni un aviso enviado** y lo dice en la
+pantalla, en vez de montar el historial paralelo que el apartado prohíbe.
+
+**6. ⚠️ Y las recomendaciones no se vuelven avisos solas** (apartado 10): son un tipo más, apagado
+como los demás. Sin encender *"avisarme de nuevas ideas"*, la F32 no notifica nada.
+
+⚠️ Dos detalles heredados: **una recurrencia guarda su regla, nunca sus fechas** (regla 11), y
+**`'25:99'` no es una hora** — la forma no basta, que es la lección de la F11.
+
+### 🐛 Y la lección de siempre, séptima vez
+La cabecera dice literalmente que aquí **no se llama a `new Notification`**, y la prueba que lo
+comprueba saltaba… **con la frase que lo promete**. Se barre el código **sin comentarios**.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **122 comprobaciones nuevas**, **1280 casos de
+renderizado** (24 nuevos) y **322 comprobaciones en Chromium** (13 nuevas): se abre desde
+⋮ Personalizar, la pantalla dice que todo empieza apagado y que el interruptor general es el de
+JosStyle, **de fábrica no hay nada que mandar**, se silencia un módulo, **se guarda**, el módulo
+**sigue activo** y tras recargar sigue silenciado.
+
+### Archivos
+- **Nuevos:** `src/lib/avisosEstilo.js`, `scripts/test-avisos-estilo.mjs`.
+- **Modificados:** `src/views/EstiloHombreView.jsx` (`AvisosEstiloEH` y su puerta en Personalizar),
+  `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`.
+
+---
+
 ## v2.0.0 — EH Fase 37/65: buscador y navegación interna
 
 ### Qué se ha construido

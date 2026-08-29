@@ -2612,36 +2612,68 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Probar modo oscuro.
 - [x] Comprobar que no se duplican resultados.
 
-#### EH · Fase 38/65 — NOTIFICACIONES Y RECORDATORIOS
-- [ ] CENTRO DE NOTIFICACIONES
-- [ ] TIPOS DE AVISO
-- [ ] NADA AUTOMÁTICO SIN PERMISO
-- [ ] CREAR RECORDATORIO
-- [ ] REPETICIÓN
-- [ ] SILENCIAR
-- [ ] HORARIO DE SILENCIO
-- [ ] LÍMITE DE NOTIFICACIONES
-- [ ] NOTIFICACIONES INTELIGENTES
-- [ ] RECOMENDACIONES
-- [ ] CONTROL GLOBAL
-- [ ] DESACTIVACIÓN TOTAL
-- [ ] HISTORIAL
-- [ ] ACCIÓN DESDE LA NOTIFICACIÓN
-- [ ] PRUEBAS
-- [ ] Activar aviso.
-- [ ] Crear recordatorio.
-- [ ] Programarlo.
-- [ ] Recibirlo.
-- [ ] Abrirlo.
-- [ ] Comprobar que lleva al módulo correcto.
-- [ ] Silenciar categoría.
-- [ ] Desactivar todo.
-- [ ] Reactivar.
-- [ ] Probar repetición.
-- [ ] Probar varios avisos.
-- [ ] Comprobar agrupación.
-- [ ] Comprobar horario de silencio.
-- [ ] Comprobar persistencia.
+#### EH · Fase 38/65 — NOTIFICACIONES Y RECORDATORIOS ✅ COMPLETADA (v2.1.0)
+
+> **`src/lib/avisosEstilo.js`** (122 comprobaciones) + `AvisosEstiloEH` en
+> `EstiloHombreView.jsx`. Sin SQL.
+>
+> ⚠️ **ESTE ARCHIVO DECIDE; `notificaciones.js` MANDA.** Mismo reparto que HT F10, y el apartado 1 lo
+> pide con esas palabras: *"no crear otro sistema. Utilizar 🔔 Notificaciones globales de JosStyle."*
+> Aquí **no se llama a `new Notification` ni una vez**, y hay una prueba que lee el código.
+>
+> ⚠️ **TODO NACE APAGADO** — la regla principal de la fase, escrita en el catálogo (`porDefecto:
+> false` en los seis) y no en un comentario. Con una rutina pendiente y dos perfumes y **nada
+> encendido**, no sale ni un aviso.
+>
+> ⚠️ **NI UN HORARIO DE SILENCIO NI UN INTERRUPTOR GLOBAL NUEVOS** (apartados 7 y 11): son de la
+> **Fase A4**. Un segundo horario de silencio sería el peor duplicado posible — el día que él
+> cambiara uno, el otro seguiría despertándole.
+>
+> ⚠️ **SILENCIAR UN MÓDULO NO ES DESACTIVARLO** (apartado 6): es el tercer eje después de `activo` y
+> `oculto` de la F36, y un módulo silenciado **sigue funcionando y sigue en la portada**.
+>
+> ⚠️ **NI UN HISTORIAL PARALELO** (apartado 13). Y la respuesta honesta es que **JosStyle no tiene un
+> historial global de notificaciones**: lo que tiene es el antirrepetición de `notificarSiCorresponde`.
+> Así que esta fase **no guarda ni un aviso enviado** y lo dice, en vez de montar el historial que el
+> apartado prohíbe.
+>
+> ⚠️ **Y LAS RECOMENDACIONES NO SE VUELVEN AVISOS SOLAS** (apartado 10): son un tipo más, apagado.
+>
+> ⚠️ **Una recurrencia guarda su REGLA, nunca sus fechas** (regla 11), y `'25:99'` **no es una hora**:
+> la forma no basta (lección de la F11).
+>
+> 🐛 Y la lección de siempre, **séptima vez**: la cabecera dice literalmente que aquí no se llama a
+> `new Notification`, y buscar esa palabra en el archivo entero saltaba **con la frase que promete lo
+> contrario**. Se comprueba el código sin comentarios.
+- [x] CENTRO DE NOTIFICACIONES
+- [x] TIPOS DE AVISO
+- [x] NADA AUTOMÁTICO SIN PERMISO
+- [x] CREAR RECORDATORIO
+- [x] REPETICIÓN
+- [x] SILENCIAR
+- [x] HORARIO DE SILENCIO
+- [x] LÍMITE DE NOTIFICACIONES
+- [x] NOTIFICACIONES INTELIGENTES
+- [x] RECOMENDACIONES
+- [x] CONTROL GLOBAL
+- [x] DESACTIVACIÓN TOTAL
+- [x] HISTORIAL
+- [x] ACCIÓN DESDE LA NOTIFICACIÓN
+- [x] PRUEBAS
+- [x] Activar aviso.
+- [x] Crear recordatorio.
+- [x] Programarlo.
+- [x] Recibirlo.
+- [x] Abrirlo.
+- [x] Comprobar que lleva al módulo correcto.
+- [x] Silenciar categoría.
+- [x] Desactivar todo.
+- [x] Reactivar.
+- [x] Probar repetición.
+- [x] Probar varios avisos.
+- [x] Comprobar agrupación.
+- [x] Comprobar horario de silencio.
+- [x] Comprobar persistencia.
 
 #### EH · Fase 39/65 — INTEGRACIÓN CON EL RESTO DE JC FITNESS
 - [ ] CALENDARIO 📅
