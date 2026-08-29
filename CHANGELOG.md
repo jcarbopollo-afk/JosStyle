@@ -1,5 +1,74 @@
 # CHANGELOG.md
 
+## v2.6.0 — EH Fase 43/65: seguridad, privacidad y control de datos
+
+### Qué se ha construido
+La pantalla **🔒 Tus datos** —qué guarda Estilo de hombre, dónde vive cada sistema y qué no sale
+nunca de la aplicación—, la **auditoría de privacidad** que lo demuestra sobre el código, y
+**un arreglo de seguridad de verdad en `App.jsx`**.
+
+*"Los datos son del usuario y debe poder decidir qué ocurre con ellos."*
+
+### 🚨 El fallo que encontró esta fase
+`loaded` se ponía a `true` una sola vez y **no volvía a bajar nunca**. Al cerrar sesión y entrar con
+otra cuenta **sin recargar la página**, `if (!loaded) return <LoadingScreen />` ya no paraba nada, así
+que la aplicación se pintaba **con los datos del usuario anterior** hasta que Supabase contestaba. En
+un móvil compartido eso es ver lo de otro, y es exactamente lo que prohíbe el apartado 15.
+
+Arreglado con un efecto que baja `loaded` y saca de memoria lo más privado. ⚠️ Y va por el **id del
+usuario**, no por el objeto `session`: Supabase lo renueva solo cada hora, y con `[session]` la
+pantalla de carga aparecería sola en mitad del día. Hay una comprobación que lee `App.jsx` y **falla
+si el arreglo desaparece** — probado quitándolo.
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Esta fase se comprueba, no se construye.** Lo que pide el enunciado es que **no exista** nada:
+ni un PIN propio, ni una papelera propia, ni una exportación propia, ni un guardado propio. Así que lo
+que se construye es la **auditoría que lo demuestra**, leyendo las **cuarenta y dos librerías** de
+Estilo de hombre. Y para que sirva de algo, hay tres ejemplos inventados —una librería que guarda por
+su cuenta, otra que se monta un PIN, otra que exporta— y la prueba comprueba que los caza.
+
+**2. ⚠️ El aislamiento es de la base de datos, no de la pantalla.** Las cuatro políticas de `app_data`
+son `auth.uid() = user_id`, y se comprueban **leyendo `supabase/schema.sql`**: la auditoría busca
+expresamente la política permisiva `auth.uid() IS NOT NULL`, que dejaría a cualquiera leer la fila de
+cualquiera.
+
+**3. ⚠️ Ni un secreto en el cliente**, y el patrón lo reconoce de verdad. El primero solo aceptaba
+letras y números después de `sk-`, así que **se quedaba en "sk-ant" y no habría reconocido una clave
+de Anthropic** (`sk-ant-api03-…`). Una comprobación de seguridad que no reconoce lo que busca es peor
+que no tenerla.
+
+**4. ⚠️ Lo más privado no viaja** (apartado 5). El contexto de piel lleva `paraIA: false` escrito
+desde la F13, y `estiloHombre` va **aparte de `currentState`** desde la F34 justo para que no llegue a
+la IA. Aquí se junta en una lista y se comprueba que sigue siendo verdad.
+
+**5. ⚠️ Y lo que no existe se dice.** JosStyle **no tiene analítica** (apartado 12) ni afiliación
+(11, y D2-03 lo prohíbe): no hay nada que restringir, así que se declara con su motivo en vez de
+escribir una política sobre algo que no ocurre.
+
+**6. ⚠️ La pantalla no habla en técnico.** *"Solo tú puedes verlo: se guarda con tu cuenta, no en el
+teléfono."* Hay una prueba que comprueba que ningún texto dice `RLS` ni `auth.uid`.
+
+### 🐛 Y la lección, undécima vez
+`schema.sql` explica en un comentario que ninguna de sus políticas es del tipo permisivo
+`auth.uid() IS NOT NULL`… y buscar esa frase en el archivo entero saltaba **con la frase que promete
+lo contrario**. Se quitan los comentarios de SQL antes de mirar.
+
+### Verificación
+`bash scripts/verificar.sh` — build de Vite, **67 comprobaciones nuevas**, **1384 casos de
+renderizado** y **383 comprobaciones en Chromium** (10 nuevas): 🔒 Tus datos dice que todo va con su
+cuenta, que lo borrado se recupera, que la copia se descarga desde Ajustes, que **no hay una
+contraseña aparte** y que lo más privado no sale ni en un aviso; y se cierra sesión de verdad desde
+Ajustes → Seguridad **sin que quede nada suyo en la pantalla**.
+
+### Archivos
+- **Nuevos:** `src/lib/privacidadEstilo.js`, `scripts/test-privacidad-estilo.mjs`.
+- **Modificados:** `src/App.jsx` (**el arreglo de la sesión**), `src/views/EstiloHombreView.jsx`
+  (`PrivacidadEH` y su puerta), `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`,
+  `scripts/verificar.sh`.
+
+---
+
 ## v2.5.0 — EH Fase 42/65: accesibilidad y usabilidad
 
 ### Qué se ha construido

@@ -323,6 +323,27 @@ export default function App() {
     return unsub;
   }, []);
 
+  /* ⚠️ **EH F43, apartados 3 y 15** — *"cerrar sesión debe invalidar correctamente
+     el acceso: no dejar datos privados accesibles desde una sesión anterior."*
+
+     🚨 `loaded` se ponía a `true` una sola vez y **no volvía a bajar nunca**. Al
+     cerrar sesión y entrar con otra cuenta, `if (!loaded)` ya no paraba nada, así
+     que la aplicación se pintaba **con los datos del usuario anterior** hasta que
+     Supabase contestaba. En un móvil compartido eso es ver lo de otro.
+
+     ⚠️ Va por el **id del usuario**, no por el objeto `session`: Supabase lo
+     renueva solo cada hora, y con `[session]` la pantalla de carga aparecería
+     sola en mitad del día. */
+  useEffect(() => {
+    setLoaded(false);
+    if (!session) {
+      // Y de paso, fuera de memoria lo más privado.
+      setEstiloHombre(DEFAULT_ESTILO_HOMBRE);
+      setRelacion(DEFAULT_RELACION);
+      setDiario(DEFAULT_DIARIO);
+    }
+  }, [session?.user?.id]);
+
   useEffect(() => {
     if (!session) return;
     let cancelled = false;

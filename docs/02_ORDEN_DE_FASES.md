@@ -272,8 +272,10 @@ escribir código.
 
 | v2.5.0 | **EH F42** | Accesibilidad y usabilidad. ⚠️ **Esta fase no se construye: se revisa** — no hay pantalla nueva, hay diecisiete reglas que cumplir en las cuarenta que ya existen. Lo que se construye es **el revisor**, que lee el código y devuelve los incumplimientos con su línea: encontró cuatro el primer día (un botón de cerrar del tamaño de su icono y tres interruptores sin nombre) y ahora **revisa las veintisiete vistas de JosStyle** en cada `verificar.sh`. ⚠️ **Compacto ≠ incómodo**: 44 píxeles de área táctil, con `-m-1.5` para que el dibujo no cambie. ⚠️ **El color nunca va solo**. ⚠️ **Lo ya resuelto no se rehace**: contraste, tamaño de fuente y `prefers-reduced-motion` viven donde vivían. ⚠️ Y **tres apartados necesitan un móvil de verdad**, declarados en vez de darlos por buenos. 🐛 Y la décima vez de la lección: el revisor tomaba `{label}` por "sin nombre" |
 
+| v2.6.0 | **EH F43** | Seguridad, privacidad y control de datos. ⚠️ **Esta fase se comprueba, no se construye**: lo que pide el enunciado es que NO exista nada —ni PIN, ni papelera, ni exportación, ni guardado propios—, así que se construye la auditoría que lo demuestra sobre las **cuarenta y dos librerías** de Estilo de hombre. 🚨 **Y encontró uno de verdad:** `loaded` no volvía a bajar nunca, así que al entrar con otra cuenta **sin recargar** se veían los datos del usuario anterior hasta que Supabase contestaba. ⚠️ **El aislamiento es de la base de datos**: las cuatro políticas de `app_data` son `auth.uid() = user_id`, y se busca expresamente la permisiva. ⚠️ **Ni un secreto en el cliente** —y el patrón se corrigió, porque no habría reconocido una clave de Anthropic—. ⚠️ **Lo más privado no viaja**, y **lo que no existe se dice**. 🐛 Undécima vez de la lección: el comentario del `schema.sql` hacía saltar su propia comprobación |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 39/65** (F1-F17, F20, F21, F23-F42; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
+3/5 y **EH por 40/65** (F1-F17, F20, F21, F23-F43; **F18, F19 y F22 ⏸ bloqueadas por C-25**).
 Quedan **28** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (26, tres de ellas bloqueadas).
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el

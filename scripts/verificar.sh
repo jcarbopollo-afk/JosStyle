@@ -406,6 +406,14 @@ else
   fallo "Alguna pantalla incumple las reglas de accesibilidad"; grep '✗' /tmp/jc_eh42.log
 fi
 
+# ⚠️ EH F43 — comprueba el aislamiento por usuario (RLS de `app_data`), que no haya
+# secretos en el cliente y que Estilo de hombre no duplique ningún sistema global.
+if node --import ./scripts/resolver-vite.mjs scripts/test-privacidad-estilo.mjs >/tmp/jc_eh43.log 2>&1; then
+  ok "Seguridad, privacidad y control de datos (EH F43) — $(grep -c '✓' /tmp/jc_eh43.log) comprobaciones"
+else
+  fallo "Falla la privacidad de Estilo de hombre"; grep '✗' /tmp/jc_eh43.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

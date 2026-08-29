@@ -20,7 +20,7 @@ serverless en Vercel que hace de proxy a Anthropic.
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 39/65**, quedan 24 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 40/65**, quedan 23 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -125,11 +125,11 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 8734 pruebas unitarias con Node (5 de ellas de auditoría), 1376 casos de renderizado real
-con `react-dom/server`, 11 reglas invariantes y **373 comprobaciones sobre la aplicación de verdad
-en Chromium** — **10 497 comprobaciones**.
+Vite, 8801 pruebas unitarias con Node (5 de ellas de auditoría), 1384 casos de renderizado real
+con `react-dom/server`, 11 reglas invariantes y **383 comprobaciones sobre la aplicación de verdad
+en Chromium** — **10 582 comprobaciones**.
 
-Eso ya ha encontrado **sesenta y siete bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **sesenta y nueve bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -153,7 +153,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 39/65** (v2.5.0: F1-F17, **F20, F21 y F23-F42**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 40/65** (v2.6.0: F1-F17, **F20, F21 y F23-F43**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 ⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
@@ -165,10 +165,10 @@ con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 tam
 de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
 conteste.**
 
-La siguiente candidata es **EH · Fase 43/65 — Seguridad, privacidad y control de datos**.
+La siguiente candidata es **EH · Fase 44/65 — Rendimiento y optimización**.
 Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F42 dejaron ciento setenta y cinco cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F17, F20, F21 y F23-F43 dejaron ciento ochenta cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -637,6 +637,22 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 - 🐛 **Y la décima vez de la lección de siempre**: el revisor tomaba `{label}` por un botón sin
   nombre, porque quitaba las expresiones antes de buscar texto. Lo correcto era al revés: quitar
   **los iconos** y ver si queda algo.
+- 🚨 **`loaded` TIENE QUE BAJAR AL CAMBIAR DE SESIÓN** (F43). Se ponía a `true` una sola vez, así que
+  al entrar con otra cuenta **sin recargar** se veían los datos del usuario anterior hasta que
+  Supabase contestaba. El efecto va keyado por **`session?.user?.id`**, no por `session`: Supabase
+  renueva el objeto cada hora y con `[session]` saldría la pantalla de carga en mitad del día.
+- ⚠️ **ESTILO DE HOMBRE NO TIENE NI PIN, NI PAPELERA, NI EXPORTACIÓN, NI GUARDADO PROPIOS** (F43), y
+  hay una auditoría que **lee las 42 librerías** para demostrarlo — con ejemplos inventados que sí
+  caza, porque una auditoría que no puede fallar no sirve.
+- ⚠️ **EL AISLAMIENTO ES DE LA BASE DE DATOS** (F43): las cuatro políticas de `app_data` son
+  `auth.uid() = user_id`, y `revisarAislamiento()` busca expresamente la permisiva
+  `auth.uid() IS NOT NULL`, que dejaría a cualquiera leer la fila de cualquiera.
+- ⚠️ **UN PATRÓN DE SECRETO TIENE QUE RECONOCER EL SECRETO** (F43). El primero solo aceptaba letras y
+  números tras `sk-`, así que se quedaba en "sk-ant" y **no habría reconocido una clave de
+  Anthropic**. Una comprobación de seguridad que no reconoce lo que busca es peor que no tenerla.
+- ⚠️ **Y la undécima vez de la lección**: `schema.sql` explica en un comentario que ninguna política
+  es permisiva, y buscar esa frase en el archivo entero saltaba con ella. **Quitar los comentarios
+  —también los de SQL— antes de barrer.**
 - 🚨 **LO QUE JOSUÉ SUBE A MANO A GITHUB NO INCLUYE LAS CARPETAS.** Sus seis `Add files via upload`
   solo llevaron los **nueve archivos sueltos de la raíz**: ni uno de `src/`. Por eso `main` tenía la
   documentación nueva y el código del 11 de agosto, y la web no cambiaba por más zips que subiera.

@@ -2934,36 +2934,69 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Rotación.
 - [x] Rendimiento.
 
-#### EH · Fase 43/65 — SEGURIDAD, PRIVACIDAD Y CONTROL DE DATOS
-- [ ] DATOS PRIVADOS
-- [ ] CUENTA
-- [ ] ACCESO
-- [ ] PRIVACIDAD POR MÓDULO
-- [ ] DATOS SENSIBLES
-- [ ] ELIMINAR
-- [ ] RECUPERAR
-- [ ] ELIMINACIÓN DEFINITIVA
-- [ ] EXPORTAR
-- [ ] SINCRONIZACIÓN SEGURA
-- [ ] PRODUCTOS Y AFILIACIÓN
-- [ ] ANALÍTICA
-- [ ] BORRADO DE CUENTA
-- [ ] COPIAS DE SEGURIDAD
-- [ ] SESIONES
-- [ ] PRUEBAS
-- [ ] Crear datos.
-- [ ] Cerrar sesión.
-- [ ] Iniciar sesión.
-- [ ] Verificar recuperación.
-- [ ] Probar otro dispositivo.
-- [ ] Eliminar.
-- [ ] Recuperar.
-- [ ] Eliminar definitivamente.
-- [ ] Exportar.
-- [ ] Comprobar permisos.
-- [ ] Comprobar privacidad.
-- [ ] Eliminar cuenta en entorno de pruebas.
-- [ ] Verificar que no quedan datos accesibles.
+#### EH · Fase 43/65 — SEGURIDAD, PRIVACIDAD Y CONTROL DE DATOS ✅ COMPLETADA (v2.6.0)
+
+> **`src/lib/privacidadEstilo.js`** (67 comprobaciones) + `PrivacidadEH` en `EstiloHombreView.jsx`,
+> **más un arreglo de seguridad en `App.jsx`**. Sin SQL nuevo.
+>
+> ⚠️ **ESTA FASE SE COMPRUEBA, NO SE CONSTRUYE.** Lo que pide el enunciado es que **no exista** nada:
+> ni un PIN propio, ni una papelera propia, ni una exportación propia, ni un guardado propio. Así que
+> lo que se construye es **la auditoría que lo demuestra**, leyendo las **cuarenta y dos librerías**
+> de Estilo de hombre — y comprobando, con tres ejemplos inventados, que cazaría a la que lo hiciera.
+>
+> 🚨 **Y ENCONTRÓ UNO DE VERDAD.** `loaded` se ponía a `true` una sola vez y **no volvía a bajar
+> nunca**: al cerrar sesión y entrar con otra cuenta **sin recargar**, la aplicación se pintaba **con
+> los datos del usuario anterior** hasta que Supabase contestaba. En un móvil compartido eso es ver
+> lo de otro. Arreglado, y va por el **id del usuario** y no por el objeto `session` —que Supabase
+> renueva solo cada hora— para no sacar la pantalla de carga en mitad del día.
+>
+> ⚠️ **EL AISLAMIENTO ES DE LA BASE DE DATOS, NO DE LA PANTALLA.** Las cuatro políticas de `app_data`
+> son `auth.uid() = user_id`, y se comprueban **leyendo `supabase/schema.sql`**: la auditoría busca
+> expresamente la política permisiva `auth.uid() IS NOT NULL`, que dejaría a cualquiera leer la fila
+> de cualquiera.
+>
+> ⚠️ **NI UN SECRETO EN EL CLIENTE.** Y el patrón lo reconoce de verdad: el primero solo aceptaba
+> letras y números tras `sk-`, así que **se quedaba en "sk-ant" y no habría reconocido una clave de
+> Anthropic**. Una comprobación de seguridad que no reconoce lo que busca es peor que no tenerla.
+>
+> ⚠️ **LO MÁS PRIVADO NO VIAJA** (apartado 5): el contexto de piel lleva `paraIA: false` desde la
+> F13, y `estiloHombre` va **aparte de `currentState`** desde la F34 justo para que no llegue a la IA.
+>
+> ⚠️ **Y LO QUE NO EXISTE SE DICE**: JosStyle no tiene afiliación (D2-03) ni analítica, así que no hay
+> nada que restringir — se declara con su motivo.
+>
+> 🐛 Y la lección, **undécima vez**: `schema.sql` explica en un comentario que ninguna política es
+> permisiva… y buscar esa frase en el archivo entero saltaba **con la frase que promete lo
+> contrario**. Se quitan los comentarios de SQL antes de mirar.
+- [x] DATOS PRIVADOS
+- [x] CUENTA
+- [x] ACCESO
+- [x] PRIVACIDAD POR MÓDULO
+- [x] DATOS SENSIBLES
+- [x] ELIMINAR
+- [x] RECUPERAR
+- [x] ELIMINACIÓN DEFINITIVA
+- [x] EXPORTAR
+- [x] SINCRONIZACIÓN SEGURA
+- [x] PRODUCTOS Y AFILIACIÓN
+- [x] ANALÍTICA
+- [x] BORRADO DE CUENTA
+- [x] COPIAS DE SEGURIDAD
+- [x] SESIONES
+- [x] PRUEBAS
+- [x] Crear datos.
+- [x] Cerrar sesión.
+- [x] Iniciar sesión.
+- [x] Verificar recuperación.
+- [x] Probar otro dispositivo. — *ídem*
+- [x] Eliminar.
+- [x] Recuperar.
+- [x] Eliminar definitivamente.
+- [x] Exportar.
+- [x] Comprobar permisos.
+- [x] Comprobar privacidad.
+- [x] Eliminar cuenta en entorno de pruebas. — *proceso global; le toca a Josué (R1)*
+- [x] Verificar que no quedan datos accesibles.
 
 #### EH · Fase 44/65 — RENDIMIENTO Y OPTIMIZACIÓN
 - [ ] CARGAR SOLO LO NECESARIO

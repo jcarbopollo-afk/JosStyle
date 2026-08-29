@@ -261,6 +261,9 @@ import {
   estadoDeColeccion, avisoDeCorrupto, estadoDeAcceso, estadoDeConexion, avisoDeBorrado,
   COLECCIONES_EH,
 } from '../lib/estadosEstilo';
+/* ⚠️ **EH F43** — qué guarda Estilo de hombre, dónde vive y por qué no hay aquí
+   ni una contraseña, ni una papelera, ni una exportación propias. */
+import { TEXTOS_PRIVACIDAD, panelPrivacidad } from '../lib/privacidadEstilo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -7736,6 +7739,92 @@ export function AvisosDeEstadoEH({ estado, accent, onHecho }) {
   );
 }
 
+/* ===========================================================================
+   EH F43 — 🔒 TUS DATOS
+   ===========================================================================
+   *"Los datos son del usuario y debe poder decidir qué ocurre con ellos."*
+
+   ⚠️ Esta pantalla **no configura nada**: enseña qué se guarda, dónde vive cada
+   sistema —para que se vea que ninguno está aquí dentro— y qué es lo que nunca
+   sale de la aplicación. Lo que se puede hacer con los datos (borrar, recuperar,
+   exportar, cerrar sesión) está donde siempre, y se dice. */
+export function PrivacidadEH({ accent, onCerrar, onIr }) {
+  const panel = useMemo(() => panelPrivacidad(), []);
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        {onCerrar && (
+          <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+            <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+          </button>
+        )}
+        <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>{panel.titulo}</p>
+      </div>
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.sub}</p>
+
+      {/* Apartado 1 — qué se guarda, con todas las letras. */}
+      <Card>
+        <p className="text-[11px] font-semibold mb-2" style={{ color: COLORS.text }}>
+          Lo que se guarda
+        </p>
+        {panel.guarda.map((g) => (
+          <div key={g.id} className="flex items-center gap-2 mb-1">
+            <span className="text-sm leading-none" aria-hidden="true">{g.icono}</span>
+            <span className="text-[11px] flex-1 min-w-0" style={{ color: COLORS.text }}>{g.que}</span>
+          </div>
+        ))}
+      </Card>
+
+      {/* Apartado 5 — y lo que no sale de aquí ni en un aviso. */}
+      {panel.noViajan.length > 0 && (
+        <Card>
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+            {panel.loMasPrivado}
+          </p>
+          <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+            {panel.noViajan.map((d) => d.nombre).join(' · ')}
+          </p>
+        </Card>
+      )}
+
+      {/* La condición de finalización: ninguno de estos sistemas vive aquí. */}
+      <Card>
+        <p className="text-[11px] font-semibold mb-2" style={{ color: COLORS.text }}>
+          Dónde vive cada cosa
+        </p>
+        {panel.sistemas.map((sis) => (
+          <div key={sis.id} className="flex items-center gap-2 mb-1">
+            <span className="text-sm leading-none" aria-hidden="true">{sis.icono}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-semibold" style={{ color: COLORS.text }}>{sis.nombre}</span>
+              <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>{sis.vive}</span>
+            </span>
+          </div>
+        ))}
+        {onIr && (
+          <button onClick={() => onIr('ajustes')}
+            className="text-[10px] font-semibold mt-1" style={{ color: accent }}>
+            {TEXTOS_PRIVACIDAD.exportar}
+          </button>
+        )}
+      </Card>
+
+      {/* Apartados 2, 3, 6, 9 y 13 — lo que pasa con sus datos, en frases. */}
+      {panel.avisos.map((a) => (
+        <p key={a} className="text-[10px]" style={{ color: COLORS.textMuted }}>{a}</p>
+      ))}
+
+      {/* Apartados 11 y 12 — y lo que NO existe, con su motivo. */}
+      {panel.noExiste.map((x) => (
+        <p key={x.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+          <span className="font-semibold" style={{ color: COLORS.text }}>{x.nombre}: </span>
+          {x.porque}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function TutorialEH({ estado, accent, onCambiar, onCerrar }) {
   const paso = pasoDelTutorial(estado);
   const ultima = paso.ultima;
@@ -8277,7 +8366,7 @@ function AvisoDiseno({ aviso, accent, onConfirmar, onCancelar }) {
 
 export function PersonalizarPlaquitas({
   estado, accent, armario = null, datosGlobales = {}, onCambiar, onCerrar, onGestionar, onAvisos,
-  onIntegracion, onComoFunciona,
+  onIntegracion, onComoFunciona, onPrivacidad,
 }) {
   /* ⚠️ Regla 4 — todos los hooks, antes de cualquier `return` condicional. */
   const [moviendo, setMoviendo] = useState(null);
@@ -8365,6 +8454,13 @@ export function PersonalizarPlaquitas({
         <button onClick={onComoFunciona}
           className="text-[11px] font-semibold" style={{ color: accent }}>
           {TEXTOS_PRIMER_USO.comoFunciona}
+        </button>
+      )}
+      {/* ⚠️ **EH F43** — *"los datos son del usuario"*: qué se guarda y dónde. */}
+      {onPrivacidad && (
+        <button onClick={onPrivacidad}
+          className="text-[11px] font-semibold" style={{ color: accent }}>
+          {TEXTOS_PRIVACIDAD.titulo}
         </button>
       )}
 
@@ -8631,6 +8727,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   /* ⚠️ **EH F40, apartados 14 y 15** — que el tutorial esté abierto AHORA es de
      la pantalla. Lo único que se guarda es si ya lo vio. */
   const [tutorial, setTutorial] = useState(false);
+  const [privacidad, setPrivacidad] = useState(false);   // F43
   /* ⚠️ **EH F41, apartados 10 y 16** — si llega a un apartado desactivado desde
      un enlace, se le dice y se le ofrece activarlo; y al hacerlo, un ✓ pequeño
      y temporal. */
@@ -8967,6 +9064,11 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     );
   }
 
+  /* ⚠️ **EH F43** — qué se guarda, dónde vive y qué no sale nunca de aquí. */
+  if (privacidad) {
+    return <PrivacidadEH accent={accent} onCerrar={() => setPrivacidad(false)} onIr={onIr} />;
+  }
+
   /* ⚠️ **EH F41, apartado 10** — llegó a un apartado desactivado. Se le dice
      qué ha pasado, qué puede hacer y qué ha pasado con sus datos (nada). */
   if (bloqueado) {
@@ -9026,6 +9128,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
         onAvisos={() => { setPersonalizando(false); setAvisos(true); }}
         onIntegracion={() => { setPersonalizando(false); setIntegracion(true); }}
         onComoFunciona={() => { setPersonalizando(false); onCambiar(verTutorial(estado)); setTutorial(true); }}
+        onPrivacidad={() => { setPersonalizando(false); setPrivacidad(true); }}
       />
     );
   }

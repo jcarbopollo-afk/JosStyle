@@ -1338,4 +1338,64 @@ ok(iconos.diminutos === 0,
 const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 ok(desborde <= 0, '⚠️ Y la pantalla no se desborda a lo ancho (apartado 9)');
 
+/* ── 28 · PRIVACIDAD: LA PANTALLA Y EL CAMBIO DE SESIÓN (EH F43) ──────────
+   Lo que importa: que 🔒 Tus datos diga qué se guarda y dónde vive cada sistema
+   —para que se vea que ninguno está dentro de Estilo de hombre—, y sobre todo
+   que **al cambiar de cuenta no se vean los datos de la anterior**. */
+
+almacen.estiloHombre = {
+  configurado: true,
+  asistente: { paso: 4, estado: 'terminado', seleccion: ['perfumes'] },
+  modulos: [
+    { id: 'perfumes', activo: true, orden: 0, config: { perfumes: { perfumes: [{ id: 'p1', nombre: 'Perfume Del Primero' }] } } },
+  ],
+  datos: {}, retirados: [],
+};
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(700);
+await pulsar('⋮ Personalizar');
+await page.waitForTimeout(600);
+ok(await pulsar('🔒 Tus datos'), '🔒 Tus datos se abre desde ⋮ Personalizar');
+await page.waitForTimeout(700);
+const priv = await ver();
+ok(/va con tu cuenta/.test(priv), '⚠️ Y dice que todo va con su cuenta (apartados 1 y 2)');
+ok(/Eliminados recientemente/.test(priv), 'que lo borrado se recupera (apartados 6 y 7)');
+ok(/Ajustes/.test(priv), 'que la copia se descarga desde Ajustes (apartado 9)');
+ok(/la de JosStyle vale para todo/.test(priv),
+  '⚠️ Y que NO hay una contraseña aparte para este apartado (apartado 4)');
+ok(/no sale nunca de la aplicación/.test(priv),
+  '⚠️ Y que lo más privado no sale ni en un aviso ni a la IA (apartado 5)');
+ok(!/auth\.uid|RLS|user_id/.test(priv),
+  '⚠️ Y no habla en técnico: son frases para Josué');
+
+/* 🚨 La prueba de verdad de la fase: **cerrar sesión desde dentro** y comprobar
+   que no queda nada del usuario anterior en la pantalla.
+
+   ⚠️ Esto es lo que NO se puede probar recargando: al recargar, React arranca de
+   cero y `loaded` vuelve a ser `false` solo. El fallo estaba en el camino de
+   dentro —cerrar sesión y entrar con otra cuenta **sin recargar**—, y por eso la
+   comprobación tiene que pulsar el botón de verdad. */
+await pulsar('Volver');
+await page.waitForTimeout(400);
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Más');
+await page.waitForTimeout(500);
+await pulsar('Ajustes');
+await page.waitForTimeout(800);
+// El botón vive dentro de la categoría Seguridad, no en la portada de Ajustes.
+await pulsar('Seguridad');
+await page.waitForTimeout(800);
+ok(await pulsar('Cerrar sesión'), 'Se puede cerrar sesión desde Ajustes → Seguridad');
+await page.waitForTimeout(1500);
+const fuera = await ver();
+ok(!/Perfume Del Primero/.test(fuera),
+  '🚨 Y NO QUEDA NADA suyo en la pantalla (apartados 3 y 15)');
+ok(!/Estilo de hombre/.test(fuera),
+  'ni se puede llegar a sus apartados');
+
 await salir(browser);
