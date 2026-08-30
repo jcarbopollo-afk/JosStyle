@@ -52,6 +52,9 @@ import { leerCampo, loQueReflejaTuArmario, estadoDelPerfil, nombreDeValor } from
 import { estadoDeEntrada as estadoDeEntradaPiel } from './perfilPiel';
 import { estadoDeEntradaBarba } from './perfilBarba';
 import { estadoDeEntradaSonrisa } from './sonrisa';
+/* ⚠️ **EH F18** — los dos módulos que la C-25 tenía bloqueados. Comparten
+   librería, así que su estado sale de la misma función con distinto módulo. */
+import { estadoDeEntradaCH, MODULO_HIGIENE, MODULO_CUERPO } from './cuerpoHigiene';
 import { estadoDeEntradaPerfumes, resumenPerfumes } from './perfumes';
 import { estadoDeEntradaAccesorios, resumenAccesorios } from './accesorios';
 import { estadoDeEntradaGustos, resumenGustos } from './gustos';
@@ -142,6 +145,8 @@ export const FUENTES_DE_ESTADO = {
   perfumes: (estado) => estadoDeEntradaPerfumes(estado) === 'configurado',
   accesorios: (estado) => estadoDeEntradaAccesorios(estado) === 'configurado',
   gustos: (estado) => estadoDeEntradaGustos(estado) === 'configurado',
+  higiene: (estado) => estadoDeEntradaCH(estado, MODULO_HIGIENE) === 'configurado',
+  cuerpo: (estado) => estadoDeEntradaCH(estado, MODULO_CUERPO) === 'configurado',
 };
 
 export function estadoDeModulo(estado, id, { armario = null, datosGlobales = {} } = {}) {

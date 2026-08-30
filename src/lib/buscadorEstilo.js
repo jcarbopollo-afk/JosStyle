@@ -58,6 +58,9 @@ import { datosRutinasPiel } from './rutinasPiel';
 import { datosPelo } from './rutinasPelo';
 import { datosRutinasBarba } from './rutinasBarba';
 import { datosSonrisa } from './sonrisa';
+import {
+  PARTES_HIGIENE, PARTES_CUERPO, parteActivaCH, MODULO_HIGIENE, MODULO_CUERPO,
+} from './cuerpoHigiene';
 import { productosPelo } from './productosPelo';
 import { productosPiel } from './productosPiel';
 import { misPreferencias } from './gustos';
@@ -126,6 +129,21 @@ export const FUENTES_BUSQUEDA = [
   {
     id: 'rutinasBarba', modulo: 'barba', grupo: 'Rutinas de barba', icono: '🧔', zona: 'rutinas',
     lista: (e) => nombresDe(datosRutinasBarba(e).rutinas),
+  },
+  /* ⚠️ **EH F18** — lo que se busca de Higiene y de Cuidado corporal son **sus
+     partes**: es lo único que guardan hasta que llegue la F19. */
+  {
+    id: 'partesHigiene', modulo: 'higiene', grupo: 'Higiene', icono: '🧼', zona: null,
+    lista: (e) => PARTES_HIGIENE.filter((p) => parteActivaCH(e, MODULO_HIGIENE, p.id))
+      /* ⚠️ El campo es `nombre`, que es lo que lee `buscarEnEstilo`. Con
+         `texto` la fuente no habría encontrado nunca nada — y la prueba de que
+         cada fuente trae su lista habría pasado igual. */
+      .map((p) => ({ id: `hig_${p.id}`, nombre: p.nombre })),
+  },
+  {
+    id: 'partesCuerpo', modulo: 'cuerpo', grupo: 'Cuidado corporal', icono: '🧍', zona: null,
+    lista: (e) => PARTES_CUERPO.filter((p) => parteActivaCH(e, MODULO_CUERPO, p.id))
+      .map((p) => ({ id: `cue_${p.id}`, nombre: p.nombre })),
   },
   {
     id: 'rutinasSonrisa', modulo: 'sonrisa', grupo: 'Rutinas de sonrisa', icono: '😁', zona: null,

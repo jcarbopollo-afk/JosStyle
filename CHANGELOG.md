@@ -1,5 +1,103 @@
 # CHANGELOG.md
 
+## v2.7.0 — EH Fase 18/65: cuerpo e higiene, configuración y perfil · 🔓 **C-25 resuelta**
+
+### Qué se ha construido
+Los dos apartados **🚿 Higiene** y **🧴 Cuidado corporal** de Estilo de hombre: su pantalla de
+*"¿Qué quieres utilizar?"*, lo que se configura dentro de la higiene diaria, y el formulario de
+preferencias, tipo de producto, necesidades, tiempo y nivel.
+
+*"Debe ser mucho más sencillo que Skincare, porque no queremos llenar Estilo de hombre de funciones
+que no todo el mundo necesita."*
+
+### 🔓 La contradicción que llevaba parada desde v1.67.0
+Josué preguntó **"dime en qué se diferencian aseo y cuidado corporal"**, que era literalmente la
+pregunta de **C-25**: su **Fase 2** pone *Higiene* y *Cuidado corporal* como **dos** módulos del
+catálogo, y las **Fases 18 y 19** los tratan como **uno solo** llamado *"Cuerpo e higiene"*. Se le
+contestó desde su propia especificación —*Higiene* es **limpiarse**, *Cuidado corporal* es **cuidarse
+la piel de cuello para abajo**— y se le pusieron las tres preguntas. Contestó:
+
+| | Respuesta |
+|---|---|
+| 1 | **Dos apartados separados**, como escribió en la Fase 2 |
+| 2 | ***Cuidado de manos* y *Cuidado de pies* son la Fase 22.** Aquí solo se encienden |
+| 3 | **Se sigue llamando *Higiene***, no *Aseo* |
+
+Con eso se desbloquean **F18, F19 y F22**. C-25 queda ✅ **RESUELTA** en `docs/03`.
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Las siete casillas se REPARTEN, no se funden.** El apartado 1 las lista en una sola pantalla;
+con dos módulos, cada uno enseña **las suyas**. `PARTES_HIGIENE` y `PARTES_CUERPO` son **dos listas**,
+con `enFase` en cada línea, y hay una prueba de que ninguna casilla se queda sin módulo y ninguna
+está en las dos. Así `MODULOS_EH` **no cambia** —no se retira nada del catálogo, que tiene
+`retirados` precisamente porque quitar un módulo no es gratis— y el **apartado 17 se cumple
+literalmente**: se puede quitar 🚿 Higiene diaria sin tocar 🧴 Cuidado corporal, comprobado en
+Chromium.
+
+**2. ⚠️ Y eso cierra un solape del propio enunciado.** Su apartado 1 pone *Desodorante*, *Cuidado de
+manos* y *Cuidado de pies* como casillas sueltas, pero su apartado 3 las mete **dentro de "Higiene
+diaria"**. Con el reparto, las cuatro son partes de `higiene` y no hay que elegir: la casilla es el
+interruptor, y `COSAS_DE_HIGIENE_DIARIA` es lo que se configura dentro.
+
+**3. ⚠️ Aquí no se pregunta lo que ya se sabe** (apartado 2, con esas palabras). Los aromas los
+declaró la **F24** en el registro de la F4 **con `cuerpo` dentro de su `usan`**, justo previendo
+esto; `sinPerfume` igual desde la F17; y `sensibilidadPiel` desde la F13. `YA_CONTESTADO` los lee y
+la pantalla dice dónde se cambian — **cuarta vez que el registro de la F4 evita una pregunta
+repetida antes de escribirla**.
+
+**4. ⚠️ Ni un catálogo de productos nuevo** (apartado 15, con todas las letras: *"no crear «Catálogo
+corporal 2»"*). Es `motorProductos.js` (F17), y lo que se queda aquí son **sus cinco categorías**. El
+catálogo global sigue vacío a propósito (D2-03), y el apartado 18 se resuelve igual: calendario,
+diario, recordatorios, perfil y papelera, los que ya existen.
+
+**5. ⚠️ Nunca un diagnóstico** (apartado 7: *"no realizar diagnósticos"*). Se reutilizan
+`PALABRAS_CLINICAS` y `sinDiagnostico()` de la F13 —no una segunda lista— y hay una prueba que barre
+todos los textos. Esta fase habla de *higiene íntima* y de *rozaduras*, así que el barrido importa
+más que nunca: se pregunta **qué quiere cuidar**, no qué le pasa.
+
+**6. ⚠️ Y lo que esta fase no hace, se dice.** Rutinas, recomendaciones y seguimiento son la **F19**;
+manos, uñas y pies la **F22**. Cada plaquita anuncia en qué fase llega, en vez de abrir una pantalla
+vacía (regla 8).
+
+### 🐛 Los cinco fallos reales, y el peor lo cazó Chromium
+- **Una casilla que hacía lo contrario de lo que enseñaba.** La pantalla pintaba las marcas **desde
+  lo guardado** pero alternaba sobre un estado local vacío, así que **marcar desmarcaba**. Se arregla
+  con `marcadas = null` como *"todavía no ha tocado nada"*, y el valor efectivo es
+  `marcadas ?? loGuardado`. Ni el build ni los 1408 casos de renderizado lo vieron.
+- **`sinDiagnostico(t)` devuelve un booleano**, no un objeto: leer `.limpio` da `undefined`, que es
+  falso, así que **todos los textos salían clínicos**.
+- **`progresoVisible` devuelve `total`, no `de`.**
+- **Una línea de `FUENTES_BUSQUEDA` usa `lista:` y `nombre:`**, no `leer:` ni `texto:`. Con los
+  nombres mal, la fuente **no habría encontrado nunca nada** — y eso no lo ve el build.
+- **`normalizarPregunta` se lleva `seccion`**, así que agrupar por secciones se hace contra el
+  catálogo y no contra el motor. Barba ya tenía escrita esta misma lección.
+
+### 🐛 Y una sexta, de las pruebas
+`test-pantalla-eh` y `test-gestion-estilo` usaban **`cuerpo` escrito a mano** como ejemplo de "módulo
+que todavía no tiene pantalla" y "módulo sin partes". La F18 le dio las dos cosas y **cinco
+comprobaciones saltaron con algo que estaba bien**. Ahora se le pregunta al catálogo
+(`MODULOS_EH.find((m) => !LINEAS_DE_PLAQUITA[m.id])`), que es la lección de siempre: comprobar el
+mecanismo, no un ejemplo escrito a mano.
+
+### Verificación
+`bash scripts/verificar.sh` en verde — build de Vite, **98 comprobaciones nuevas**, **1408 casos de
+renderizado** y **400 comprobaciones en Chromium** (19 nuevas): los **dos** apartados salen en la
+portada, cada uno enseña **sus** casillas y no las del otro, lo marcado **se guarda tal cual** tras
+recargar, **Cuidado corporal no se toca** al configurar Higiene, dentro se ven ducha / higiene
+corporal / higiene íntima, y **lo que llega en la Fase 22 se anuncia** en vez de abrir una pantalla
+vacía.
+
+### Archivos
+- **Nuevos:** `src/lib/cuerpoHigiene.js`, `scripts/test-cuerpo-higiene.mjs`.
+- **Modificados:** `src/views/EstiloHombreView.jsx` (`CuerpoHigieneEH`), `src/lib/pantallaEH.js`,
+  `src/lib/buscadorEstilo.js`, `src/lib/gestionEstilo.js`, `src/lib/miEstilo.js`,
+  `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`, `scripts/verificar.sh`,
+  `scripts/test-pantalla-eh.mjs`, `scripts/test-gestion-estilo.mjs`,
+  `docs/03_CONTRADICCIONES_DUPLICADOS_DEPENDENCIAS.md` (**C-25 cerrada**).
+
+---
+
 ## v2.6.0 — EH Fase 43/65: seguridad, privacidad y control de datos
 
 ### Qué se ha construido

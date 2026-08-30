@@ -1381,52 +1381,87 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] NO COMPRA AUTOMÁTICA
 - [x] PRUEBAS
 
-#### EH · Fase 18/65 — CUERPO E HIGIENE MASCULINA: CONFIGURACIÓN Y PERFIL ⏸ **BLOQUEADA (C-25)**
+#### EH · Fase 18/65 — CUERPO E HIGIENE MASCULINA: CONFIGURACIÓN Y PERFIL ✅ COMPLETADA (v2.7.0)
 
-> ⏸ **Pendiente de Josué, por la regla 49.** Su Fase 2 dice que *Higiene* y *Cuidado corporal* son
-> **dos módulos** del catálogo; el objetivo de esta fase y el apartado 1 de la Fase 19 dicen que son
-> **uno solo** llamado *"Cuerpo e higiene"* con plaquitas dentro. Las dos lecturas rompen un prompt
-> suyo y cambian lo que ve en pantalla, así que **no se resuelve por cuenta propia**. Ver **C-25** en
-> `docs/03`, con las tres preguntas concretas. Mientras tanto se ha seguido por la **Fase 20**, que
-> no depende de esto.
-
-- [ ] ACTIVACIÓN INICIAL
-- [ ] FORMULARIO
-- [ ] HIGIENE DIARIA
-- [ ] PREFERENCIAS
-- [ ] TIPO DE PRODUCTO
-- [ ] FRAGANCIAS
-- [ ] SENSIBILIDAD
-- [ ] NECESIDADES ESPECÍFICAS
-- [ ] TIEMPO
-- [ ] NIVEL
-- [ ] PRODUCTOS EXISTENTES
-- [ ] RUTINAS
-- [ ] RECORDATORIOS
-- [ ] RECOMENDACIONES
-- [ ] PRODUCTOS
-- [ ] FARMACIA Y TIENDAS
-- [ ] ACTIVAR Y DESACTIVAR CADA PARTE
-- [ ] NO DUPLICAR CON OTROS MÓDULOS
-- [ ] ELIMINACIÓN
-- [ ] PRUEBAS
-- [ ] Entrar sin configurar.
-- [ ] Saltar formulario.
-- [ ] Activar solo una sección.
-- [ ] Activar varias.
-- [ ] Desactivar una.
-- [ ] Reactivarla.
-- [ ] Crear rutina.
-- [ ] Editarla.
-- [ ] Asociar productos existentes.
-- [ ] Añadir un producto nuevo.
-- [ ] Activar/desactivar recordatorios.
-- [ ] Ver recomendaciones.
-- [ ] Utilizar productos de farmacia.
-- [ ] Utilizar productos de Amazon.
-- [ ] Comprobar que no existen catálogos duplicados.
-- [ ] Comprobar que los datos permanecen al desactivar módulos.
-- [ ] Probar todo en móvil.
+> **`src/lib/cuerpoHigiene.js`** (98 comprobaciones) + `CuerpoHigieneEH` en `EstiloHombreView.jsx`,
+> con sus altas en `pantallaEH.js`, `buscadorEstilo.js`, `gestionEstilo.js` y `miEstilo.js`. Sin SQL
+> nuevo.
+>
+> 🔓 **ESTUVO PARADA DESDE v1.67.0 POR C-25, Y LA DESBLOQUEÓ JOSUÉ.** Preguntó *"dime en qué se
+> diferencian aseo y cuidado corporal"* —que era literalmente la pregunta de la contradicción— y al
+> contestarle se le pusieron las tres. Dijo: **dos apartados separados**, ***Cuidado de manos* y
+> *Cuidado de pies* son la Fase 22**, y **se sigue llamando *Higiene***. Ver **C-25** en `docs/03`,
+> ya cerrada.
+>
+> ⚠️ **LAS SIETE CASILLAS SE REPARTEN, NO SE FUNDEN.** El apartado 1 las lista en una sola pantalla;
+> con dos módulos, cada uno enseña **las suyas**. `PARTES_HIGIENE` y `PARTES_CUERPO` son **dos
+> listas**, con una prueba de que ninguna casilla se queda sin módulo y ninguna está en las dos. Así
+> `MODULOS_EH` **no cambia** y el apartado 17 se cumple **literalmente**: se puede quitar 🚿 Higiene
+> diaria sin tocar 🧴 Cuidado corporal, y hay una comprobación en Chromium que lo hace de verdad.
+>
+> ⚠️ **Y ESO CIERRA UN SOLAPE DEL PROPIO ENUNCIADO**: su apartado 1 pone *Desodorante*, *Cuidado de
+> manos* y *Cuidado de pies* como casillas sueltas y su apartado 3 las mete **dentro de "Higiene
+> diaria"**. Con el reparto, las cuatro son partes de `higiene`: la casilla es el interruptor y
+> `COSAS_DE_HIGIENE_DIARIA` es lo que se configura dentro.
+>
+> ⚠️ **AQUÍ NO SE PREGUNTA LO QUE YA SE SABE** (apartado 2, con esas palabras). Los aromas los
+> declaró la **F24** en el registro de la F4 **con `cuerpo` dentro de su `usan`**, justo previendo
+> esto; `sinPerfume` igual desde la F17; y `sensibilidadPiel` desde la F13. `YA_CONTESTADO` los lee y
+> la pantalla dice dónde se cambian — **cuarta vez que el registro evita una pregunta repetida**.
+>
+> ⚠️ **NI UN CATÁLOGO NUEVO** (apartado 15, literal: *"no crear «Catálogo corporal 2»"*): es
+> `motorProductos.js` (F17) y aquí solo viven sus categorías. Papelera, calendario, recordatorios,
+> perfil y eliminados, los globales (apartados 18 y 19).
+>
+> ⚠️ **Y LO QUE ESTA FASE NO HACE SE DICE**: rutinas, recomendaciones y seguimiento son la **F19**;
+> manos, uñas y pies la **F22**. Cada plaquita anuncia en qué fase llega en vez de abrir una pantalla
+> vacía (regla 8).
+>
+> 🐛 **Cinco fallos reales, y el peor lo cazó Chromium**: la pantalla de casillas **pintaba desde lo
+> guardado pero alternaba sobre un `marcadas` vacío**, así que marcar desmarcaba y desmarcar marcaba.
+> Se arregla con `marcadas = null` como *"todavía no ha tocado nada"*. Los otros cuatro:
+> `sinDiagnostico()` **devuelve un booleano** y leer `.limpio` marcaba clínico *todo*;
+> `progresoVisible` devuelve `total`, no `de`; una línea de `FUENTES_BUSQUEDA` con `leer:`/`texto:`
+> en vez de `lista:`/`nombre:` **no habría encontrado nunca nada**; y `normalizarPregunta` **se lleva
+> `seccion`**, así que agrupar por secciones se hace contra el catálogo y no contra el motor —Barba
+> ya tenía escrita esta misma.
+- [x] ACTIVACIÓN INICIAL
+- [x] FORMULARIO
+- [x] HIGIENE DIARIA
+- [x] PREFERENCIAS
+- [x] TIPO DE PRODUCTO
+- [x] FRAGANCIAS — *se leen del registro de la F4; no se vuelven a preguntar*
+- [x] SENSIBILIDAD — *ídem, declarada desde la F13*
+- [x] NECESIDADES ESPECÍFICAS
+- [x] TIEMPO
+- [x] NIVEL — *`NIVELES_ESTILO` de la F6, importado*
+- [x] PRODUCTOS EXISTENTES
+- [x] RUTINAS — *estructura preparada; el enunciado dice "no desarrollar todavía": es la F19*
+- [x] RECORDATORIOS — *estructura preparada, apagada; el emisor es `avisosEstilo.js` (F38)*
+- [x] RECOMENDACIONES — *`contextoDeCuerpo()` listo para el motor de la F16; las reglas, en la F19*
+- [x] PRODUCTOS — *`motorProductos.js`, con sus cinco categorías*
+- [x] FARMACIA Y TIENDAS — *`TIPOS_TIENDA` del motor; el catálogo sigue vacío (D2-03)*
+- [x] ACTIVAR Y DESACTIVAR CADA PARTE
+- [x] NO DUPLICAR CON OTROS MÓDULOS
+- [x] ELIMINACIÓN
+- [x] PRUEBAS
+- [x] Entrar sin configurar.
+- [x] Saltar formulario.
+- [x] Activar solo una sección.
+- [x] Activar varias.
+- [x] Desactivar una.
+- [x] Reactivarla.
+- [x] Crear rutina. — *la estructura; crearla de verdad es la F19*
+- [x] Editarla. — *ídem*
+- [x] Asociar productos existentes.
+- [x] Añadir un producto nuevo. — *por el motor global; el catálogo está vacío a propósito*
+- [x] Activar/desactivar recordatorios.
+- [x] Ver recomendaciones. — *el contexto; las reglas son la F19*
+- [x] Utilizar productos de farmacia.
+- [x] Utilizar productos de Amazon. — *arquitectura sí, afiliación no (D2-03)*
+- [x] Comprobar que no existen catálogos duplicados.
+- [x] Comprobar que los datos permanecen al desactivar módulos.
+- [x] Probar todo en móvil. — *le toca a Josué (R1); aquí, 19 comprobaciones en Chromium*
 
 #### EH · Fase 19/65 — CUERPO E HIGIENE: RUTINAS Y RECOMENDACIONES
 - [ ] PLAQUITA «MI RUTINA»
@@ -1472,8 +1507,8 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 > **`src/lib/perfilBarba.js`** (141 comprobaciones) + las pantallas `BarbaEH`, `ElegirPartesBarba`,
 > `PerfilBarbaEH`, `ProductosBarbaEH` y `PanelBarba`. Sin SQL nuevo.
 >
-> ⚠️ **Construida fuera de orden, y a propósito**: las Fases 18 y 19 están **bloqueadas por C-25**
-> (regla 49), y la 20 no depende de ellas. Cuando Josué conteste, se retoman en su sitio.
+> ⚠️ **Construida fuera de orden, y a propósito**: las Fases 18 y 19 estaban **bloqueadas por C-25**
+> (regla 49), y la 20 no dependía de ellas. **Josué contestó en v2.7.0** y se retomaron en su sitio.
 >
 > ⚠️ **El apartado 17 es una lista de siete cosas que hay que REUTILIZAR**, y termina con *"no crear
 > sistemas paralelos"*. Así que esta fase es, casi entera, llamadas: el motor de cuestionarios de la
@@ -1600,13 +1635,13 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] ELIMINAR
 - [x] PRUEBAS
 
-#### EH · Fase 22/65 — MANOS, UÑAS Y PIES: CONFIGURACIÓN ⏸ **BLOQUEADA (C-25)**
+#### EH · Fase 22/65 — MANOS, UÑAS Y PIES: CONFIGURACIÓN 🔓 **DESBLOQUEADA (v2.7.0)**
 
-> ⏸ **Pendiente de Josué, por la regla 49 — y es la tercera pregunta de C-25.** Su apartado 1 dice
-> *"dentro de 🧼 **Cuidado personal**"*, que es el módulo `higiene`, justo uno de los dos en disputa;
-> y dos de las siete casillas de la Fase 18 son *"Cuidado de manos"* y *"Cuidado de pies"*, que es
-> exactamente lo que esta fase construye. Hasta saber si Higiene y Cuidado corporal son uno o dos, no
-> se sabe dónde vive esto ni si sus datos se quedarían huérfanos. Se siguió por la **Fase 23**.
+> 🔓 **Estuvo parada por C-25 y la desbloqueó Josué**, con la segunda de sus tres respuestas:
+> ***Cuidado de manos* y *Cuidado de pies* son la Fase 22**, y las casillas de la Fase 18 **solo las
+> encienden**. Así que esta fase vive **dentro del módulo `higiene`** —que es el *"🧼 Cuidado
+> personal"* de su apartado 1— y sus tres partes (💅 Uñas · 🤲 Manos · 🦶 Pies) son las que aquellas
+> casillas activan: **no hay una segunda configuración**. Pendiente de construir.
 
 - [ ] ACTIVACIÓN
 - [ ] UÑAS
@@ -1645,8 +1680,8 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 
 > **`src/lib/sonrisa.js`** (191 comprobaciones) + la pantalla `SonrisaEH`. Sin SQL nuevo.
 >
-> ⚠️ **Construida fuera de orden**: la **Fase 22** está ⏸ bloqueada por **C-25**, y ésta no depende
-> de ella.
+> ⚠️ **Construida fuera de orden**: la **Fase 22** estaba ⏸ bloqueada por **C-25** —resuelta en
+> v2.7.0—, y ésta no dependía de ella.
 >
 > ⚠️ **Es un módulo nuevo, y se añadió como manda la Fase 1**: *una línea* en `MODULOS_EH`, con su
 > categoría, su icono y sus ocho sinónimos de búsqueda. Ni un `case`, ni un `if`, ni un registro

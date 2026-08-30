@@ -80,6 +80,8 @@ import { resumenRutinasPiel } from './rutinasPiel';
 import { resumenProductosPiel } from './productosPiel';
 import { resumenBarba } from './perfilBarba';
 import { resumenSonrisa } from './sonrisa';
+/* ⚠️ **EH F18** — y su línea sale de `lineaCH()`, no de un dato nuevo. */
+import { lineaCH, resumenCH, MODULO_HIGIENE, MODULO_CUERPO } from './cuerpoHigiene';
 import { resumenPerfumes } from './perfumes';
 import { resumenAccesorios } from './accesorios';
 import { resumenGustos } from './gustos';
@@ -510,6 +512,24 @@ export const LINEAS_DE_PLAQUITA = {
         const r = resumenBarba(e, datosGlobales);
         return r.productos > 0 ? plural(r.productos, 'producto', 'productos') : null;
       },
+    },
+  ],
+  /* ⚠️ **EH F18** — los dos, con la misma forma: cuántas partes tiene puestas.
+     Sale de `lineaCH()`, que es del módulo. */
+  higiene: [
+    {
+      id: 'partes',
+      nombre: 'Qué utilizas',
+      principal: true,
+      texto: (e) => lineaCH(e, MODULO_HIGIENE) || 'Si quieres, configúralo',
+    },
+  ],
+  cuerpo: [
+    {
+      id: 'partes',
+      nombre: 'Qué utilizas',
+      principal: true,
+      texto: (e) => lineaCH(e, MODULO_CUERPO) || 'Si quieres, configúralo',
     },
   ],
   sonrisa: [

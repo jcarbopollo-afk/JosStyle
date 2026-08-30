@@ -417,56 +417,42 @@ prohíbe la regla 8.
 
 ---
 
-### 🔴 C-25 — ¿Higiene y Cuidado corporal son UN módulo o DOS? · **⏸ PENDIENTE DE JOSUÉ, bloquea EH F18, F19 y F22**
+### ✅ C-25 — ¿Higiene y Cuidado corporal son UN módulo o DOS? · **RESUELTA por Josué (v2.7.0)**
 
-**Encontrada al abrir EH F18.** Dos prompts de Josué dicen cosas distintas, y la diferencia se ve en
-la pantalla:
+**Estuvo bloqueando EH F18, F19 y F22 desde v1.67.0.** La Fase 2 los pone como **dos** módulos del
+catálogo; las Fases 18 y 19 los tratan como **uno solo** llamado *"Cuerpo e higiene"*. Las dos
+lecturas rompían un prompt suyo y cambiaban lo que ve en pantalla, así que se aplicó la **regla 49**:
+se anotó, se siguió por lo que no dependía de ella (F20, F21, F23-F43) y se le preguntó.
 
-| Dónde | Qué dice |
-|---|---|
-| **EH F2, apartado 3** (*"Agrupación"*) | En 🧴 Cuidado hay **tres** módulos: *Skincare*, ***Higiene*** y ***Cuidado corporal*** — dos entradas separadas en el catálogo, cada una con su interruptor |
-| **EH F18, objetivo** | *"La estructura será modular: **🚿 Cuidado corporal e higiene**. Y dentro aparecerán pequeñas plaquitas"* — **un** módulo con partes dentro |
-| **EH F19, apartado 1** | *"**Dentro de** 🚿 Cuerpo e Higiene mostrar: 🚿 Mi rutina"* — confirma que F18/F19 lo tratan como uno solo |
+**Josué preguntó *"dime en qué se diferencian aseo y cuidado corporal"*, y al contestarle se le
+pusieron las tres preguntas. Sus respuestas:**
 
-Y hay una tercera pista que **no** desempata: el apartado 17 de F18 dice *"desde ⚙️ Gestionar
-apartados puede quitar 🚿 Higiene diaria sin quitar 🧴 Cuidado corporal"*. Eso describe el mismo
-comportamiento visible en las dos lecturas —dos interruptores independientes—, así que sirve igual
-de bien para defender una que la otra.
+| | Pregunta | Respuesta de Josué |
+|---|---|---|
+| 1 | ¿Dos apartados separados o uno solo? | **Dos apartados separados**, como en la Fase 2 |
+| 2 | *Cuidado de manos* y *Cuidado de pies*: ¿aquí o la Fase 22? | **Son la Fase 22.** Aquí solo se encienden |
+| 3 | ¿*Higiene* o *Aseo*? | **Higiene**, como estaba |
 
-**Por qué NO la he resuelto por mi cuenta (regla 49):**
+**Lo que eso significa en código:**
 
-- **Las dos lecturas rompen un prompt de Josué.** Fundir `higiene` y `cuerpo` en una sola línea de
-  `MODULOS_EH` **quita un módulo del catálogo que él mismo escribió en F2** y que ya está construido
-  y en uso desde v1.60.0 — con el agravante de que ese catálogo tiene `retirados` precisamente
-  porque quitar un módulo no es gratis. Y mantener los dos deja el *"¿Qué quieres utilizar?"* del
-  apartado 1 de F18, con sus siete casillas, **sin una sola pantalla donde vivir**.
-- **Cambia lo que Josué ve y cuántos interruptores tiene.** No es contabilidad como C-24: es la
-  navegación.
-- Y hay un solape añadido que conviene resolver a la vez: **dos de esas siete casillas son
-  "Cuidado de manos" y "Cuidado de pies", y la Fase 22 se titula *"Manos, uñas y pies:
-  configuración"***. O son la misma cosa contada dos veces, o la 22 desarrolla lo que la 18
-  enciende — y eso también lo decide él.
+- `MODULOS_EH` **no cambia**: `higiene` y `cuerpo` siguen siendo dos líneas, con sus dos
+  interruptores. No se retira nada del catálogo, y el apartado 17 de la F18 —*"puede quitar 🚿
+  Higiene diaria sin quitar 🧴 Cuidado corporal"*— se cumple **literalmente**.
+- Las **siete casillas** del apartado 1 de la F18 se reparten entre los dos:
 
-**⏸ Lo que se le pregunta a Josué:**
+| Casilla | Módulo | Dónde se configura |
+|---|---|---|
+| Higiene diaria · Desodorante | `higiene` | F18/F19 |
+| Cuidado de manos · Cuidado de pies | `higiene` | **F22** (aquí solo el interruptor) |
+| Cuidado corporal · Cuidado específico · Seguimiento | `cuerpo` | F18/F19 |
 
-1. En tu lista de módulos, ¿*Higiene* y *Cuidado corporal* siguen siendo **dos apartados separados**
-   en Estilo de hombre (como escribiste en la Fase 2), o quieres **uno solo** llamado *"Cuerpo e
-   higiene"* con las siete casillas dentro (como está escrito en la Fase 18)?
-2. Si son dos, ¿en cuál de los dos vive la pantalla de *"¿Qué quieres utilizar?"* con sus siete
-   casillas?
-3. *Cuidado de manos* y *Cuidado de pies*: ¿son casillas de este bloque, o son la Fase 22 y aquí
-   solo se encienden?
+- La F22 vive **dentro de `higiene`**, que es exactamente el *"🧼 Cuidado personal"* de su apartado 1
+  — el módulo se llama *Higiene* y su icono ya era 🧼.
 
-**⏸ Y bloquea también la F22 (Manos, uñas y pies), por la tercera pregunta.** Su apartado 1 dice
-*"dentro de 🧼 **Cuidado personal**"* —que es el módulo `higiene`, justo uno de los dos en disputa—,
-y dos de las siete casillas de la F18 son *"Cuidado de manos"* y *"Cuidado de pies"*, que es
-exactamente lo que la F22 construye. Sin saber si Higiene y Cuidado corporal son uno o dos, no se
-sabe dónde vive la F22 ni si sus datos se quedarían huérfanos el día que se decida.
-
-**Mientras tanto** (regla 49: *"se detiene la fase afectada, no la sesión"*): **F18, F19 y F22 quedan
-sin construir**, y se ha seguido por **F20 y F21 (Barba y afeitado)** y **F23 (Sonrisa)**, que son
-módulos con una sola entrada en `MODULOS_EH` y no dependen de esto para nada. Cuando conteste, las
-tres se retoman en su sitio.
+**⚠️ Y de paso se cerró un solape interno de la propia F18** que no estaba anotado: su apartado 1
+lista *Desodorante*, *Cuidado de manos* y *Cuidado de pies* como casillas sueltas, pero su
+apartado 3 las mete **dentro de "Higiene diaria"**. Con dos módulos y el reparto de arriba, las
+cuatro son partes de `higiene` y el solape desaparece sin tener que elegir.
 
 ---
 

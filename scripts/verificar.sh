@@ -414,6 +414,14 @@ else
   fallo "Falla la privacidad de Estilo de hombre"; grep '✗' /tmp/jc_eh43.log
 fi
 
+# ⚠️ EH F18 — Higiene y Cuidado corporal son DOS módulos (C-25, contestada por Josué),
+# así que lo que más se comprueba aquí es que apagar uno no toca el otro.
+if node --import ./scripts/resolver-vite.mjs scripts/test-cuerpo-higiene.mjs >/tmp/jc_eh18.log 2>&1; then
+  ok "Cuerpo e higiene: configuración y perfil (EH F18) — $(grep -c '✓' /tmp/jc_eh18.log) comprobaciones"
+else
+  fallo "Falla Cuerpo e higiene"; grep '✗' /tmp/jc_eh18.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

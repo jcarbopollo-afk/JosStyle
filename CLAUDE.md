@@ -20,7 +20,8 @@ serverless en Vercel que hace de proxy a Anthropic.
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 40/65**, quedan 23 — **tres de ellas bloqueadas por C-25**) y el bloque **AXION** de la
+por 3/5, **Estilo de Hombre va por 41/65**, quedan 24 — **ninguna bloqueada: C-25 la resolvió Josué
+en v2.7.0**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -125,11 +126,11 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 8801 pruebas unitarias con Node (5 de ellas de auditoría), 1384 casos de renderizado real
-con `react-dom/server`, 11 reglas invariantes y **383 comprobaciones sobre la aplicación de verdad
-en Chromium** — **10 582 comprobaciones**.
+Vite, 8910 pruebas unitarias con Node (5 de ellas de auditoría), 1408 casos de renderizado real
+con `react-dom/server`, 11 reglas invariantes y **400 comprobaciones sobre la aplicación de verdad
+en Chromium** — **10 732 comprobaciones**.
 
-Eso ya ha encontrado **sesenta y nueve bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **setenta y cuatro bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
@@ -153,22 +154,20 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 40/65** (v2.6.0: F1-F17, **F20, F21 y F23-F43**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 41/65** (v2.7.0: F1-F18, **F20, F21 y F23-F43**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
-⏸ **EH F18, F19 y F22 están BLOQUEADAS por C-25, y es una de verdad.** La Fase 2 de Josué pone
-*Higiene* y *Cuidado corporal* como **dos módulos** del catálogo; el objetivo de la Fase 18 y el
-apartado 1 de la Fase 19 los tratan como **uno solo** llamado *"Cuerpo e higiene"*. Las dos lecturas
-rompen un prompt suyo y cambian lo que ve en pantalla, así que **regla 49**: se anotó en `docs/03`
-con tres preguntas concretas y se siguió por la 20, la 21 y la 23. **La F22 también depende**: su
-*"🧼 Cuidado personal"* es el módulo en disputa, y dos de las siete casillas de la F18 son *"Cuidado
-de manos"* y *"Cuidado de pies"*, que es lo que la 22 construye. **No construirlas hasta que
-conteste.**
+🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
+*"dime en qué se diferencian aseo y cuidado corporal"* —que era literalmente la pregunta de la
+contradicción— y contestó las tres: **dos apartados separados** (`higiene` y `cuerpo` siguen siendo
+dos líneas de `MODULOS_EH`), ***Cuidado de manos* y *Cuidado de pies* son la Fase 22** (la casilla de
+la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. La **F18 ya está construida**;
+quedan la **F19** (rutinas y recomendaciones) y la **F22** (manos, uñas y pies).
 
-La siguiente candidata es **EH · Fase 44/65 — Rendimiento y optimización**.
-Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
+Las siguientes son **EH · Fase 19/65**, **EH · Fase 22/65** y luego **EH · Fase 44/65 — Rendimiento y
+optimización**. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F17, F20, F21 y F23-F43 dejaron ciento ochenta cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F18, F20, F21 y F23-F43 dejaron ciento ochenta y siete cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -659,6 +658,27 @@ Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   **Desde v1.90.0 el trabajo se lleva a `main` desde aquí y la web se actualiza sola**; el zip es una
   copia de seguridad, no la forma de publicar. Si alguna vez vuelve a decir *"la web sigue igual"*,
   **mirar primero en qué versión está `main`**, no el zip.
+- 🔓 **HIGIENE Y CUIDADO CORPORAL SON DOS MÓDULOS, Y LO DIJO ÉL** (F18, C-25). Las **siete casillas**
+  del apartado 1 se reparten en `PARTES_HIGIENE` y `PARTES_CUERPO` —**dos listas**, con `enFase` en
+  cada línea—, `MODULOS_EH` no cambia, y quitar 🚿 Higiene diaria **no toca** 🧴 Cuidado corporal.
+  *Cuidado de manos* y *Cuidado de pies* **solo se encienden aquí**: la pantalla es la F22.
+- ⚠️ **`sinDiagnostico(t)` DEVUELVE UN BOOLEANO** (F18), no un objeto. Leer `.limpio` da `undefined`,
+  que es falso, así que **todos los textos salían clínicos**. Y `progresoVisible` devuelve `total`,
+  no `de`. Antes de leer un campo de una función de otra fase, mirar qué devuelve.
+- ⚠️ **`normalizarPregunta` SE LLEVA `seccion`** (F18): agrupar preguntas por secciones se hace
+  contra el **catálogo** (`preguntaCH(id).seccion`), no contra lo que devuelve el motor. Barba ya
+  tenía escrita esta misma lección, y aun así `seccionesDeCH` devolvía `[]`.
+- ⚠️ **UNA LÍNEA DE `FUENTES_BUSQUEDA` USA `lista:` Y `nombre:`** (F18), no `leer:` ni `texto:`. Con
+  los nombres mal, la fuente **no encuentra nunca nada** y ni el build ni el renderizado lo ven: hay
+  que buscar algo de verdad y comprobar que sale.
+- 🐛 **Y UNA CASILLA QUE HACÍA LO CONTRARIO DE LO QUE ENSEÑABA** (F18): la pantalla pintaba las
+  marcas **desde lo guardado** pero alternaba sobre un estado local vacío, así que **marcar
+  desmarcaba**. `marcadas = null` significa *"todavía no ha tocado nada"*; el valor efectivo es
+  `marcadas ?? loGuardado`. **Lo cazó Chromium**, no las 1408 pruebas de renderizado.
+- ⚠️ **UNA PRUEBA NUNCA ESCRIBE A MANO EL MÓDULO "QUE TODAVÍA NO TIENE X"** (F18). `test-pantalla-eh`
+  y `test-gestion-estilo` usaban `cuerpo` como ejemplo de módulo sin pantalla y sin partes; la F18 le
+  dio las dos cosas y **cinco comprobaciones saltaron con algo que estaba bien**. Se le pregunta al
+  catálogo: `MODULOS_EH.find((m) => !LINEAS_DE_PLAQUITA[m.id])`.
 
 ⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
 que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el

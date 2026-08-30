@@ -264,6 +264,12 @@ import {
 /* ⚠️ **EH F43** — qué guarda Estilo de hombre, dónde vive y por qué no hay aquí
    ni una contraseña, ni una papelera, ni una exportación propias. */
 import { TEXTOS_PRIVACIDAD, panelPrivacidad } from '../lib/privacidadEstilo';
+/* ⚠️ **EH F18** — Cuerpo e higiene, desbloqueada por C-25: son DOS módulos con
+   las siete casillas repartidas, no uno con las siete dentro. */
+import {
+  MODULO_HIGIENE, MODULO_CUERPO, TEXTOS_CH, panelCH, elegirPartesCH, alternarParteCH,
+  alternarCosaHigiene, decirAhoraNoCH, configurarCH, contestarCH, respuestaCH,
+} from '../lib/cuerpoHigiene';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -7825,6 +7831,238 @@ export function PrivacidadEH({ accent, onCerrar, onIr }) {
   );
 }
 
+/* ===========================================================================
+   EH F18 — 🧼 HIGIENE y 🧍 CUIDADO CORPORAL
+   ===========================================================================
+   ⚠️ **Una sola pantalla para los dos módulos**, porque los dos tienen la misma
+   forma: casillas → formulario → plaquitas. Lo que cambia es **qué casillas** y
+   **qué plaquitas**, y eso lo decide `panelCH(estado, moduloId)`. Escribir dos
+   pantallas gemelas habría sido la copia que este proyecto lleva 43 fases
+   evitando.
+
+   ⚠️ Y el apartado 17, que es el que la contradicción tenía en el aire: los dos
+   son independientes, y la pantalla lo dice. */
+export function CuerpoHigieneEH({ estado, modulo, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+  /* ⚠️ Regla 4 — los hooks, antes de cualquier `return` condicional. */
+  const [eligiendo, setEligiendo] = useState(false);
+  /* 🐛 ⚠️ `null` significa **"todavía no ha tocado nada"**, y entonces lo marcado
+     es lo que hay guardado. La primera versión arrancaba en `[]` y pintaba las
+     casillas leyendo el estado guardado: **marcar quitaba y quitar marcaba**,
+     porque lo que se veía y lo que se tocaba eran dos listas distintas. Lo cazó
+     el recorrido en Chromium. */
+  const [marcadas, setMarcadas] = useState(null);
+  const panel = useMemo(
+    () => panelCH(estado, modulo, datosGlobales),
+    [estado, modulo, datosGlobales],
+  );
+  const primeraVez = panel.estado !== 'configurado';
+  // Lo que está marcado ahora mismo: lo que él haya tocado, o lo guardado.
+  const elegidas = marcadas ?? panel.entrada.casillas.filter((c) => c.puesta).map((c) => c.id);
+  const alternar = (id) => setMarcadas(
+    elegidas.includes(id) ? elegidas.filter((x) => x !== id) : [...elegidas, id],
+  );
+
+  const abrirEleccion = () => { setMarcadas(null); setEligiendo(true); };
+  const guardarEleccion = () => {
+    onCambiar(elegirPartesCH(estado, modulo, elegidas));
+    setMarcadas(null);
+    setEligiendo(false);
+  };
+
+  const cabecera = (
+    <div className="flex items-center gap-2">
+      {onCerrar && (
+        <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+          <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+        </button>
+      )}
+      <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>{panel.titulo}</p>
+    </div>
+  );
+
+  /* ── Apartado 1 — la primera vez, o cuando quiera cambiar qué utiliza ──── */
+  if (primeraVez || eligiendo) {
+    return (
+      <div className="space-y-3">
+        {cabecera}
+        <Card>
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+            {panel.entrada.titulo}
+          </p>
+          <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+            {panel.entrada.soloLoTuyo}
+          </p>
+          {panel.entrada.casillas.map((c) => {
+            // ⚠️ Lo que se ve y lo que se toca son la MISMA lista.
+            const puesta = elegidas.includes(c.id);
+            return (
+              <button
+                key={c.id} aria-pressed={puesta}
+                onClick={() => alternar(c.id)}
+                className="w-full flex items-center gap-2 rounded-2xl p-2 mb-1 text-left"
+                style={{
+                  background: puesta ? hexToRgba(accent, 0.1) : COLORS.surface2,
+                  border: `1px solid ${puesta ? accent : COLORS.border}`,
+                }}
+              >
+                <span className="text-sm leading-none" aria-hidden="true">{c.icono}</span>
+                <span className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>
+                  {c.nombre}
+                </span>
+                <span className="text-[11px]" style={{ color: puesta ? accent : COLORS.textMuted }}>
+                  {puesta ? '☑️' : '☐'}
+                </span>
+              </button>
+            );
+          })}
+          <div className="flex items-center gap-2 mt-2">
+            <PrimaryButton accent={accent} onClick={guardarEleccion}>
+              {panel.entrada.continuar}
+            </PrimaryButton>
+            {/* Apartado 1 — *"Ahora no"*, y no se insiste. */}
+            {primeraVez && (
+              <button onClick={() => onCambiar(decirAhoraNoCH(estado, modulo))}
+                className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>
+                {panel.entrada.ahoraNo}
+              </button>
+            )}
+            {eligiendo && !primeraVez && (
+              <button onClick={() => { setMarcadas(null); setEligiendo(false); }}
+                className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>
+                Cancelar
+              </button>
+            )}
+          </div>
+        </Card>
+        {/* ⚠️ C-25 y apartado 17 — los dos apartados son independientes. */}
+        <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.sonDos}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {cabecera}
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.sub}</p>
+
+      {/* ── Las plaquitas. La que no existe todavía lo dice (regla 8) ────── */}
+      <div className="grid grid-cols-2 gap-2">
+        {panel.plaquitas.map((pl) => (
+          <div key={pl.id} className="rounded-2xl p-2.5"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-sm leading-none mb-1" aria-hidden="true">{pl.icono}</p>
+            <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{pl.nombre}</p>
+            {!pl.lista && (
+              <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>{pl.texto}</p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Apartado 17 — cada parte, con su interruptor independiente ───── */}
+      <Card>
+        <div className="flex items-center gap-2 mb-1">
+          <p className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>
+            Qué utilizo
+          </p>
+          <button onClick={abrirEleccion} className="text-[10px] font-semibold" style={{ color: accent }}>
+            Cambiar
+          </button>
+        </div>
+        {panel.partes.map((p) => (
+          <div key={p.id} className="flex items-center gap-2 mb-1">
+            <span className="text-sm leading-none" aria-hidden="true">{p.icono}</span>
+            <span className="text-[11px] flex-1 min-w-0" style={{ color: COLORS.text }}>{p.nombre}</span>
+            <Switch
+              checked={p.puesta} accent={accent} label={p.nombre}
+              onChange={() => onCambiar(alternarParteCH(estado, modulo, p.id))}
+            />
+          </div>
+        ))}
+        <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{panel.sonDos}</p>
+      </Card>
+
+      {/* ── Apartado 3 — lo de dentro de "Higiene diaria". Solo en Higiene ─ */}
+      {panel.cosas.length > 0 && (
+        <Card>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>
+            🚿 Higiene diaria
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {panel.cosas.map((c) => (
+              <button key={c.id} aria-pressed={c.puesta}
+                onClick={() => onCambiar(alternarCosaHigiene(estado, c.id))}
+                className="rounded-full px-2.5 py-1"
+                style={{
+                  background: c.puesta ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                  border: `1px solid ${c.puesta ? accent : COLORS.border}`,
+                }}>
+                <span className="text-[10px] font-semibold" style={{ color: c.puesta ? accent : COLORS.text }}>
+                  {c.icono} {c.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* ── Apartado 2 — lo que ya sabemos, antes de preguntar nada ──────── */}
+      {panel.yaSabemos.length > 0 && (
+        <div className="rounded-2xl p-3"
+          style={{ background: hexToRgba(accent, 0.08), border: `1px solid ${hexToRgba(accent, 0.25)}` }}>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>
+            {panel.yaLoSabemosTexto}
+          </p>
+          <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            {panel.yaSabemos.map((x) => `${x.nombre} (${x.donde})`).join(' · ')}
+          </p>
+        </div>
+      )}
+
+      {/* ── Apartados 4 a 10 — el formulario, opcional entero ────────────── */}
+      {panel.secciones.map((sec) => (
+        <Card key={sec.id}>
+          <p className="text-[11px] font-semibold mb-2" style={{ color: COLORS.text }}>
+            {sec.icono} {sec.nombre}
+          </p>
+          {sec.preguntas.map((pr) => (
+            <div key={pr.id} className="mb-3">
+              <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{pr.titulo}</p>
+              {pr.ayuda && (
+                <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>{pr.ayuda}</p>
+              )}
+              <div className="flex flex-wrap gap-1">
+                {pr.opciones.map((o) => {
+                  const puesta = (respuestaCH(estado, modulo, pr.id, datosGlobales).valores || []).includes(o.id);
+                  return (
+                    <button key={o.id} aria-pressed={puesta}
+                      onClick={() => {
+                        const r = contestarCH(estado, modulo, pr.id, o.id);
+                        if (!r.error) onCambiar(r.estado);
+                      }}
+                      className="rounded-full px-2.5 py-1"
+                      style={{
+                        background: puesta ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                        border: `1px solid ${puesta ? accent : COLORS.border}`,
+                      }}>
+                      <span className="text-[10px] font-semibold" style={{ color: puesta ? accent : COLORS.text }}>
+                        {o.icono ? `${o.icono} ` : ''}{o.nombre}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </Card>
+      ))}
+
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.opcional}</p>
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.catalogo}</p>
+    </div>
+  );
+}
+
 export function TutorialEH({ estado, accent, onCambiar, onCerrar }) {
   const paso = pasoDelTutorial(estado);
   const ultima = paso.ultima;
@@ -8728,6 +8966,9 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
      la pantalla. Lo único que se guarda es si ya lo vio. */
   const [tutorial, setTutorial] = useState(false);
   const [privacidad, setPrivacidad] = useState(false);   // F43
+  /* ⚠️ **EH F18** — los dos módulos comparten pantalla y se distinguen por su
+     id: 'higiene' | 'cuerpo' | null. */
+  const [cuerpoHigiene, setCuerpoHigiene] = useState(null);
   /* ⚠️ **EH F41, apartados 10 y 16** — si llega a un apartado desactivado desde
      un enlace, se le dice y se le ofrece activarlo; y al hacerlo, un ✓ pequeño
      y temporal. */
@@ -8779,6 +9020,8 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     if (id === MODULO_PERFUMES) return setPerfumes(true);
     if (id === MODULO_ACCESORIOS) return setAccesorios(true);
     if (id === MODULO_GUSTOS) return setGustos(true);
+    /* ⚠️ **EH F18** — los dos apartados que la C-25 tenía bloqueados. */
+    if (id === MODULO_HIGIENE || id === MODULO_CUERPO) return setCuerpoHigiene(id);
     /* ⚠️ Un módulo cuya pantalla todavía no existe no hace nada al tocarlo, y
        su insignia ya dice "sin configurar": no se finge un destino (regla 8). */
     return undefined;
@@ -9060,6 +9303,17 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
         /* ⚠️ Apartados 5 y 6 — la pantalla NO borra: pasa el plan a `App.jsx`,
            que es el dueño de la papelera global (ME F3). */
         onEliminarDatos={onEliminarDatosEH}
+      />
+    );
+  }
+
+  /* ⚠️ **EH F18** — Higiene y Cuidado corporal. Una pantalla, dos módulos. */
+  if (cuerpoHigiene) {
+    return (
+      <CuerpoHigieneEH
+        estado={estado} modulo={cuerpoHigiene} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar}
+        onCerrar={() => setCuerpoHigiene(null)}
       />
     );
   }

@@ -65,6 +65,12 @@ import { PARTES_PIEL, parteActivaPiel, alternarPartePiel } from './rutinasPiel';
 import { PARTES_PELO, parteActiva as parteActivaPelo, alternarParte as alternarPartePelo } from './rutinasPelo';
 import { PARTES_BARBA, parteActivaBarba, alternarParteBarba } from './perfilBarba';
 import { PARTES_SONRISA, parteActivaSonrisa, alternarParteSonrisa } from './sonrisa';
+/* ⚠️ **EH F18** — dos módulos, DOS listas de partes. Una de Cuerpo no puede
+   aparecer en Higiene: es la respuesta 1 de la C-25 en código. */
+import {
+  PARTES_HIGIENE, PARTES_CUERPO, parteActivaCH, alternarParteCH,
+  MODULO_HIGIENE, MODULO_CUERPO,
+} from './cuerpoHigiene';
 import { PARTES_PERFUMES, parteActivaPerfumes, alternarPartePerfumes } from './perfumes';
 import { PARTES_ACCESORIOS, parteActivaAccesorios, alternarParteAccesorios } from './accesorios';
 import { PARTES_GUSTOS, parteActivaGustos, alternarParteGustos } from './gustos';
@@ -185,6 +191,16 @@ export const PARTES_POR_MODULO = {
   perfumes: { partes: PARTES_PERFUMES, activa: parteActivaPerfumes, alternar: alternarPartePerfumes },
   accesorios: { partes: PARTES_ACCESORIOS, activa: parteActivaAccesorios, alternar: alternarParteAccesorios },
   gustos: { partes: PARTES_GUSTOS, activa: parteActivaGustos, alternar: alternarParteGustos },
+  higiene: {
+    partes: PARTES_HIGIENE,
+    activa: (e, id) => parteActivaCH(e, MODULO_HIGIENE, id),
+    alternar: (e, id) => alternarParteCH(e, MODULO_HIGIENE, id),
+  },
+  cuerpo: {
+    partes: PARTES_CUERPO,
+    activa: (e, id) => parteActivaCH(e, MODULO_CUERPO, id),
+    alternar: (e, id) => alternarParteCH(e, MODULO_CUERPO, id),
+  },
 };
 
 /** ⚠️ Un módulo sin partes devuelve `[]`, y la pantalla no pinta la sección. */

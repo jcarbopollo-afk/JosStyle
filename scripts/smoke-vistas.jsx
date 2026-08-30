@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView from '../src/views/ProductivityView.jsx';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
-import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH, GestionarEstiloEH, BuscadorEstiloEH, AvisosEstiloEH, IntegracionEH, TutorialEH, BienvenidaEH, VacioEH, CargandoEH, AvisoEstadoEH, HechoEH, AvisosDeEstadoEH, PrivacidadEH } from '../src/views/EstiloHombreView.jsx';
+import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH, GestionarEstiloEH, BuscadorEstiloEH, AvisosEstiloEH, IntegracionEH, TutorialEH, BienvenidaEH, VacioEH, CargandoEH, AvisoEstadoEH, HechoEH, AvisosDeEstadoEH, PrivacidadEH, CuerpoHigieneEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
 import { contestarPiel, decirAhoraNo, anadirProductoPiel } from '../src/lib/perfilPiel.js';
@@ -63,6 +63,8 @@ import { accionesConcretas, prepararTarea, aplicarTarea } from '../src/lib/integ
 import { verTutorial, avanzarTutorial, saltarTutorial, rechazarSugerencia } from '../src/lib/primerUso';
 /* EH F41 — los estados que no son "todo bien". */
 import { estadoEH, estadoDeAcceso, avisoDeBorrado } from '../src/lib/estadosEstilo';
+/* EH F18 — Cuerpo e higiene, desbloqueada por C-25. */
+import { elegirPartesCH, alternarCosaHigiene, decirAhoraNoCH } from '../src/lib/cuerpoHigiene';
 import { datosPerfumes } from '../src/lib/perfumes.js';
 import {
   configurarGustos, decirAhoraNoGustos, anadirGusto, alternarFavoritoGusto,
@@ -1461,6 +1463,26 @@ const CASOS = [
           /* EH Fase 43 — qué se guarda, dónde vive y qué no sale nunca. */
           ['PrivacidadEH · tus datos', PrivacidadEH, () => ({ accent, onCerrar: noop, onIr: noop })],
           ['PrivacidadEH · sin navegación', PrivacidadEH, () => ({ accent, onCerrar: noop })],
+          /* EH Fase 18 — Higiene y Cuidado corporal: dos módulos, una pantalla. */
+          ...(() => {
+            const dos = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['higiene', 'cuerpo']);
+            const higConf = elegirPartesCH(dos, 'higiene', ['higieneDiaria', 'desodorante']);
+            const cueConf = elegirPartesCH(higConf, 'cuerpo', ['cuidadoCorporal', 'especifico']);
+            const conDucha = alternarCosaHigiene(cueConf, 'ducha');
+            const ch = (e, modulo) => ({
+              estado: e, modulo, accent, datosGlobales: {}, onCambiar: noop, onCerrar: noop,
+            });
+            return [
+              ['CuerpoHigieneEH · Higiene, primera vez', CuerpoHigieneEH, () => ch(dos, 'higiene')],
+              ['CuerpoHigieneEH · Cuerpo, primera vez', CuerpoHigieneEH, () => ch(dos, 'cuerpo')],
+              ['CuerpoHigieneEH · Higiene configurado', CuerpoHigieneEH, () => ch(conDucha, 'higiene')],
+              ['CuerpoHigieneEH · Cuerpo configurado', CuerpoHigieneEH, () => ch(cueConf, 'cuerpo')],
+              ['CuerpoHigieneEH · con "Ahora no"', CuerpoHigieneEH, () =>
+                ch(decirAhoraNoCH(dos, 'higiene'), 'higiene')],
+              ['CuerpoHigieneEH · sin ninguna casilla', CuerpoHigieneEH, () =>
+                ch(elegirPartesCH(dos, 'higiene', []), 'higiene')],
+            ];
+          })(),
           ['EstiloHombreView · sin configurar', EstiloHombreView, () => props(DEFAULT_ESTILO_HOMBRE)],
           ['EstiloHombreView · con módulos', EstiloHombreView, () => props(conTres)],
           ['EstiloHombreView · configurado sin módulos', EstiloHombreView, () => props(configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, []))],

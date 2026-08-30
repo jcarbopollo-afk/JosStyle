@@ -1398,4 +1398,72 @@ ok(!/Perfume Del Primero/.test(fuera),
 ok(!/Estilo de hombre/.test(fuera),
   'ni se puede llegar a sus apartados');
 
+/* ── 29 · CUERPO E HIGIENE (EH F18) ───────────────────────────────────────
+   La fase que estuvo bloqueada por C-25 desde v1.67.0. Lo que importa es
+   exactamente lo que la contradicción tenía en el aire: que son **DOS
+   apartados**, que las siete casillas están repartidas, y que **quitar uno no
+   toca el otro** (apartado 17, con esas palabras). */
+
+almacen.estiloHombre = {
+  configurado: true,
+  asistente: { paso: 4, estado: 'terminado', seleccion: ['higiene', 'cuerpo'] },
+  modulos: [
+    { id: 'higiene', activo: true, orden: 0, config: {} },
+    { id: 'cuerpo', activo: true, orden: 1, config: {} },
+  ],
+  datos: {}, retirados: [],
+};
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+await page.waitForTimeout(900);
+const portadaCH = await ver();
+ok(/Higiene/.test(portadaCH) && /Cuidado corporal/.test(portadaCH),
+  '⚠️ Los DOS apartados están en la portada (C-25, respuesta 1)');
+
+ok(await pulsar('Higiene'), 'Se entra en Higiene');
+await page.waitForTimeout(800);
+const entrada = await ver();
+ok(/¿Qué quieres utilizar\?/.test(entrada), 'con su "¿Qué quieres utilizar?" (apartado 1)');
+ok(/Higiene diaria/.test(entrada) && /Desodorante/.test(entrada),
+  'y SUS casillas: Higiene diaria y Desodorante');
+ok(/Cuidado de manos/.test(entrada) && /Cuidado de pies/.test(entrada),
+  'más manos y pies, que aquí solo se encienden (respuesta 2)');
+ok(!/Cuidado corporal.*Cuidado específico/s.test(entrada.split('¿Qué quieres utilizar?')[1] || ''),
+  '⚠️ Y NO las de Cuidado corporal: cada módulo enseña las suyas');
+ok(/Solo verás lo que hayas marcado/.test(entrada),
+  'diciendo que no se le enseñará lo que no marque');
+ok(/dos apartados/i.test(entrada),
+  '⚠️ Y que Higiene y Cuidado corporal son dos, y puede quedarse con uno');
+
+/* Se dejan solo dos marcadas y se guarda. */
+guardado.length = 0;
+await pulsar('Cuidado de manos');
+await page.waitForTimeout(300);
+await pulsar('Cuidado de pies');
+await page.waitForTimeout(300);
+ok(await pulsar('Continuar'), 'Se puede continuar con lo elegido');
+await page.waitForTimeout(1300);
+const escCH = guardado.filter((g) => g && g.key === 'estiloHombre');
+const cfgHig = escCH.at(-1)?.value?.modulos?.find((m) => m.id === 'higiene')?.config?.cuerpoHigiene;
+ok(!!cfgHig && cfgHig.configurado === true, '⚠️ PERSISTENCIA: se guarda que ya lo configuró');
+ok(cfgHig.partes?.higieneDiaria === true && cfgHig.partes?.manos === false,
+  '⚠️ Y se guarda EXACTAMENTE lo que marcó: dos sí, dos no');
+const cfgCue = escCH.at(-1)?.value?.modulos?.find((m) => m.id === 'cuerpo')?.config?.cuerpoHigiene;
+ok(!cfgCue || cfgCue.configurado !== true,
+  '⚠️ Y CUIDADO CORPORAL NO SE HA TOCADO: son dos apartados de verdad');
+
+const dentro = await ver();
+ok(/Higiene diaria/.test(dentro), 'Dentro se ve lo que utiliza');
+ok(/Ducha/.test(dentro) && /Higiene íntima/.test(dentro),
+  '⚠️ Y lo de dentro de Higiene diaria: ducha, higiene corporal e íntima (apartado 3)');
+ok(/¿Qué buscas principalmente\?/.test(dentro), 'y el formulario del apartado 4');
+ok(/Manos, uñas y pies/.test(dentro), 'con la plaquita de la Fase 22 anunciada');
+ok(/Esto llega más adelante/.test(dentro),
+  '⚠️ Y lo que todavía no existe LO DICE, en vez de abrir una pantalla vacía');
+ok(!/dermatitis|hongos|infección/i.test(dentro),
+  '⚠️ Y ni una palabra de diagnóstico (apartado 7)');
+
 await salir(browser);

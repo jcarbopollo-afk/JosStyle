@@ -251,7 +251,13 @@ console.log('\nTest 6 — ⚠️ activación por partes, sin definir ninguna aqu
   ok(!/PARTES_[A-Z]+\s*=\s*\[/.test(SIN_COMENTARIOS), 'y el código no declara ninguna lista');
 
   const e = con(TODOS_EH);
-  eq(partesDe(e, 'cuerpo'), [], '⚠️ un módulo sin partes devuelve []: la pantalla no pinta la sección');
+  /* ⚠️ Se pregunta al CATÁLOGO cuál no tiene partes, en vez de escribir un id a
+     mano: la F18 le dio partes a `cuerpo`, que era el que ponía aquí, y esta
+     comprobación saltó **con algo que estaba bien**. Es la lección de siempre. */
+  const sinPartes = MODULOS_EH.map((m) => m.id).find((id) => !PARTES_POR_MODULO[id]);
+  ok(!!sinPartes, 'hay algún módulo que todavía no declara partes');
+  eq(partesDe(e, sinPartes), [], '⚠️ un módulo sin partes devuelve []: la pantalla no pinta la sección');
+  eq(partesDe(e, 'no_existe'), [], 'y un id que no existe, igual');
   const partes = partesDe(e, 'perfumes');
   ok(partes.length >= 5, 'Perfumes trae las suyas');
   ok(partes.every((p) => 'puesta' in p && p.nombre && p.id), 'con su marca, su nombre y su id');

@@ -457,9 +457,14 @@ console.log('\nTest 13 — qué información aparece dentro');
   eq(normalizarPantalla({ contenido: { skincare: ['fantasma', 'rutina'] } }).contenido.skincare,
     ['rutina'], '⚠️ y una guardada de otra versión no revive');
 
-  /* ⚠️ Regla 8 — un módulo sin pantalla propia NO enseña casillas vacías. */
-  eq(lineasDisponibles('cuerpo'), [], 'un módulo sin pantalla todavía no tiene líneas');
-  const panel = panelPersonalizar(con(['cuerpo']), { armario: ARM });
+  /* ⚠️ Regla 8 — un módulo sin pantalla propia NO enseña casillas vacías.
+     ⚠️ Y el módulo de ejemplo se PREGUNTA AL CATÁLOGO: aquí ponía `cuerpo`, la
+     F18 le dio su pantalla y sus líneas, y esta comprobación saltó **con algo
+     que estaba bien**. Es la lección de siempre. */
+  const sinPantalla = MODULOS_EH.map((m) => m.id).find((id) => !LINEAS_DE_PLAQUITA[id]);
+  ok(!!sinPantalla, 'hay algún módulo que todavía no tiene pantalla propia');
+  eq(lineasDisponibles(sinPantalla), [], 'un módulo sin pantalla todavía no tiene líneas');
+  const panel = panelPersonalizar(con([sinPantalla]), { armario: ARM });
   eq(panel.modulos[0].sinLineas, SIN_LINEAS, '⚠️ y se dice, en vez de dejarlo en blanco');
   ok(!/pr[oó]ximamente/i.test(SIN_LINEAS), 'sin prometer nada');
 
@@ -606,23 +611,27 @@ console.log('\nTest 17 — 🔄 restablecer, con permiso');
    =========================================================================== */
 console.log('\nTest 18 — ✨ *"solo si el usuario lo solicita"*');
 {
-  /* Perfumes configurado, Skincare no, Cuerpo todavía sin pantalla. */
+  /* Perfumes configurado, Skincare no, y uno que todavía no tiene pantalla. */
   /* ⚠️ `configurarPrimeraVez` numera por el ORDEN DE LA LISTA que se le pasa,
      no por el del catálogo: es la lección de la F30. Así que se parte de lo
-     vacío arriba del todo, que es justo lo que esta función tiene que arreglar. */
-  const e = configurarPerfumes(con(['cuerpo', 'skincare', 'perfumes']), { hoy: HOY }).estado;
-  eq(modulosActivos(e).map((m) => m.id), ['cuerpo', 'skincare', 'perfumes'],
+     vacío arriba del todo, que es justo lo que esta función tiene que arreglar.
+     ⚠️ Y el tercero se PREGUNTA AL CATÁLOGO: aquí ponía `cuerpo`, y la F18 le
+     dio pantalla, así que las dos comprobaciones del orden saltaron con algo
+     que estaba bien. */
+  const nadaAun = MODULOS_EH.map((m) => m.id).find((id) => !LINEAS_DE_PLAQUITA[id]);
+  const e = configurarPerfumes(con([nadaAun, 'skincare', 'perfumes']), { hoy: HOY }).estado;
+  eq(modulosActivos(e).map((m) => m.id), [nadaAun, 'skincare', 'perfumes'],
     'de partida, lo vacío arriba del todo');
 
   const sinConfirmar = personalizarAutomaticamente(e, { armario: ARM });
   eq(sinConfirmar.aplicado, false, '⚠️ undécimo `aplicarPlan`: sin `confirmado` no escribe');
   eq(sinConfirmar.estado, normalizarEstiloHombre(e), 'y el estado sale igual');
-  eq(sinConfirmar.propuesta, ['perfumes', 'skincare', 'cuerpo'], 'pero enseña lo que haría');
-  eq(modulosActivos(e).map((m) => m.id), ['cuerpo', 'skincare', 'perfumes'],
+  eq(sinConfirmar.propuesta, ['perfumes', 'skincare', nadaAun], 'pero enseña lo que haría');
+  eq(modulosActivos(e).map((m) => m.id), [nadaAun, 'skincare', 'perfumes'],
     '⚠️ y enseñarlo no ha movido nada');
 
   const hecho = personalizarAutomaticamente(e, { armario: ARM, confirmado: true });
-  eq(modulosActivos(hecho.estado).map((m) => m.id), ['perfumes', 'skincare', 'cuerpo'],
+  eq(modulosActivos(hecho.estado).map((m) => m.id), ['perfumes', 'skincare', nadaAun],
     '⚠️ lo configurado primero, lo vacío después y lo que no tiene pantalla al final');
   eq(hecho.aplicado, true, 'y se aplica');
 
