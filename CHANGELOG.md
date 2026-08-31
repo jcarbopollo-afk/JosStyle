@@ -1,5 +1,71 @@
 # CHANGELOG.md
 
+## v2.14.0 — EH Fase 48/65: auditoría final de funciones y duplicados
+
+### Qué se ha construido
+*"Así evitamos que dentro de seis meses tengamos tres calendarios, dos papeleras, cuatro sistemas de
+favoritos y cinco formas distintas de hacer lo mismo."*
+
+La revisión completa: **los quince sistemas** del apartado 3 clasificados uno a uno con las cuatro
+etiquetas del enunciado —🟢 propio, 🔵 global, 🟠 integrado, 🔴 duplicado—, **las cuatro listas** del
+apartado 20 y **la respuesta del apartado 22**: qué hace exactamente Estilo de hombre, y qué no hace
+porque ya lo hace JosStyle.
+
+### 🔴 "SE ELIMINA" está vacía, y no es un descuido
+No hay ni un duplicado que quitar. Las fases anteriores fueron quitándolos según aparecían: la
+papelera propia (F15), el segundo inventario (F17), el segundo motor de rutinas (F14), el de reglas
+(F16), el calendario propio (F21) y el tercer sitio donde juntar productos (F22). Cuando llega la
+auditoría final **ya no queda nada**, y ese es el resultado.
+
+### 🐛 Lo que sí encontró: cinco librerías que no miraba nadie
+`LIBRERIAS_EH` —la lista sobre la que corren la auditoría de privacidad (F43) y la de duplicados de
+esta fase— **se había quedado sin las cinco librerías de las fases de revisión**: `rendimiento`,
+`estructuraDatos`, `migracion`, `pruebasIntegrales` y `auditoriaFinal`. Una librería que no está en
+esa lista **no la revisa nadie**, y su silencio parecía un aprobado. Lo encontró la comprobación que
+compara la lista con lo que hay de verdad en `src/lib`.
+
+### 🐛 Y al añadirlas, los revisores empezaron a cazarse entre ellos
+Tres veces seguidas, la misma confusión: **una regla no es código**.
+
+- `auditoriaFinal.js` guarda el patrón de `new Audio(` para **buscarlo**, y saltó la regla invariante
+  *"el audio solo se toca en audioEngine.js"*.
+- `privacidadEstilo.js` guarda los patrones de secretos, y **se denunciaba a sí mismo**.
+- `rendimiento.js` **explica en una cadena de texto** dónde vive el guardado, y saltó la regla de
+  *"ninguna librería llama a `saveData`"*.
+
+Ahora hay **dos limpiadores, y no uno**: `soloCodigo` —sin comentarios, sin reglas y **sin textos**—
+para los sistemas duplicados, y `sinReglas` —que **conserva las cadenas**— para los secretos, porque
+una clave filtrada vive justo dentro de una cadena y borrarlas dejaría pasar lo único que se busca.
+Duodécima vez que una comprobación de este proyecto salta con algo que estaba bien, y la primera en
+la que arreglarla de la forma fácil habría roto otra.
+
+### 🐛 Y una regla mal escrita
+La primera versión del revisor buscaba `crearPrenda(` como señal de un armario paralelo — y eso es
+una **llamada** a la fábrica del Armario, que es exactamente lo que hay que hacer (F26). Saltaba con
+`accesorios.js`, que hace lo correcto. Lo que sería un duplicado es **definirla aquí**.
+
+### Las decisiones de la fase
+**1. ⚠️ No se añade nada** (apartado 21, con esas palabras). Lo que se le ocurra a alguien va a
+`SE_POSPONE`, donde ya están los favoritos globales, el puente con el Diario, los conflictos entre
+dispositivos, el catálogo de productos y los archivos de audio — cada uno con su motivo.
+
+**2. ⚠️ Cada cosa tiene un dueño, y se comprueba sobre el código.** No basta con decir que el
+calendario es global: hay un revisor que lee las **cincuenta librerías** y falla si alguna monta el
+suyo.
+
+**3. ⚠️ Un icono por cosa** (apartado 12): ni dos módulos con el mismo, ni una plaquita repitiendo el
+de su módulo.
+
+**4. ⚠️ Y lo que no aporta, fuera** (apartados 17 y 18): cada estadística dice de qué módulo es y
+ninguna guarda un contador; **todos los avisos nacen apagados**, porque menos notificaciones es mejor
+experiencia.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **9 592 comprobaciones de Node** (43
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **447 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
+
 ## v2.13.0 — EH Fase 47/65: pruebas integrales
 
 ### Qué se ha construido

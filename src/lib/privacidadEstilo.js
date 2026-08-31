@@ -99,8 +99,14 @@ export const LIBRERIAS_EH = [
   'objetivosEnEstiloHombre', 'miEstilo', 'pantallaEH', 'ideasEstilo', 'descubrir',
   'preferenciasEstilo', 'progresoEstilo', 'gestionEstilo', 'buscadorEstilo',
   'avisosEstilo', 'integracionEstilo', 'primerUso', 'estadosEstilo', 'accesibilidadEH',
-  // EH F18 y F19 — llegaron después de la auditoría, y entran en ella.
+  // EH F18, F19 y F22 — llegaron después de la auditoría, y entran en ella.
   'cuerpoHigiene', 'rutinasCuerpo', 'manosPies',
+  /* 🐛 ⚠️ **EH F48** — y las cinco de las fases de revisión, que se habían
+     quedado fuera. Una librería que no está en esta lista **no la mira nadie**:
+     ni la auditoría de privacidad (F43) ni la de duplicados de esta fase. Lo
+     encontró la comprobación que compara la lista con lo que hay en `src/lib`. */
+  'rendimiento', 'estructuraDatos', 'migracion', 'pruebasIntegrales', 'auditoriaFinal',
+  'privacidadEstilo',
 ];
 
 /* ===========================================================================
@@ -189,9 +195,36 @@ export const TEXTOS_PRIVACIDAD = {
    ⚠️ Recibe los archivos ya leídos —esta librería no toca el disco— y devuelve
    qué sistema estaría duplicando cada uno. */
 
-const sinComentarios = (t) => String(t || '')
+/* 🐛 ⚠️ **EH F48 — un revisor no puede señalarse a sí mismo.** Un comentario no
+   es código —eso ya estaba—, pero **tampoco lo son las reglas ni los textos**:
+   una regla que busca cierto patrón no ejecuta ese patrón, y una línea que
+   EXPLICA dónde vive el guardado no guarda nada. En cuanto `privacidadEstilo.js`,
+   `auditoriaFinal.js` y `rendimiento.js` entraron en la lista de librerías, los
+   revisores empezaron a cazarse entre ellos.
+
+   ⚠️ **Y por eso son DOS limpiadores, no uno.** Para los sistemas duplicados,
+   una cadena de texto es documentación. Para los **secretos** es justo al revés:
+   una clave filtrada vive **dentro de una cadena**, y borrarlas dejaría pasar lo
+   único que se busca. Duodécima vez que una comprobación salta con algo que
+   estaba bien — y la primera en que arreglarla mal habría roto otra. */
+export const sinComentarios = (t) => String(t || '')
   .replace(/\/\*[\s\S]*?\*\//g, '')
   .replace(/^\s*\/\/.*$/gm, '');
+
+/**
+ * Solo código: sin comentarios, **sin las reglas declaradas** y **sin textos**.
+ * ⚠️ Lo usan los dos revisores de sistemas duplicados (este y el de la F48); el
+ * buscador de secretos usa `sinComentarios`, porque una clave filtrada vive
+ * justo dentro de una cadena.
+ */
+export const sinReglas = (t) => sinComentarios(t)
+  .replace(/(?:prohibido|busca|patron)\s*[:=]\s*\/(?:\\.|[^/])+\/[gimsuy]*/gi, '')
+  .replace(/PATRONES?_[A-Z_]+\s*=\s*\[[\s\S]*?\];/g, '');
+
+export const soloCodigo = (t) => sinReglas(t)
+  .replace(/`[^`]*`/g, '``')
+  .replace(/'(?:[^'\\]|\\.)*'/g, "''")
+  .replace(/"(?:[^"\\]|\\.)*"/g, '""');
 
 /**
  * ¿Alguna librería de Estilo de hombre monta un sistema paralelo?
@@ -200,7 +233,8 @@ const sinComentarios = (t) => String(t || '')
 export function auditarDuplicados(fuentes = {}) {
   const problemas = [];
   Object.entries(fuentes).forEach(([archivo, contenido]) => {
-    const limpio = sinComentarios(contenido);
+    // ⚠️ Solo código: ni comentarios, ni reglas, ni textos (ver arriba).
+    const limpio = soloCodigo(contenido);
     SISTEMAS_CENTRALIZADOS.forEach((s) => {
       if (s.prohibido.test(limpio)) {
         problemas.push({ archivo, sistema: s.id, vive: s.vive });
@@ -257,7 +291,11 @@ export const PATRONES_SECRETO = [
 export function buscarSecretos(fuentes = {}) {
   const encontrados = [];
   Object.entries(fuentes).forEach(([archivo, contenido]) => {
-    const limpio = sinComentarios(contenido);
+    /* ⚠️ Sin comentarios y **sin el propio rulebook**: una clave filtrada vive
+       dentro de una cadena —así que las cadenas NO se tocan aquí—, pero los
+       patrones que la buscan están escritos en este mismo archivo, y sin quitar
+       esa lista el escáner se denuncia a sí mismo (EH F48). */
+    const limpio = sinReglas(contenido);
     PATRONES_SECRETO.forEach((re, i) => {
       if (re.test(limpio)) encontrados.push({ archivo, patron: i });
     });

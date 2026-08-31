@@ -4,10 +4,10 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 90 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 47/65**
-> (hasta v2.13.0). Quedan **20**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (18:
-> **F48-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 91 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 48/65**
+> (hasta v2.14.0). Quedan **19**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (17:
+> **F49-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -3209,29 +3209,37 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] PRUEBA DE DESINSTALACIÓN / REINSTALACIÓN
 - [x] PRUEBA FINAL DEL USUARIO
 
-#### EH · Fase 48/65 — AUDITORÍA FINAL DE FUNCIONES Y DUPLICADOS
-- [ ] INVENTARIO COMPLETO
-- [ ] CLASIFICAR CADA FUNCIÓN
-- [ ] REVISAR DUPLICADOS
-- [ ] PLAQUITAS DUPLICADAS
-- [ ] PREFERENCIAS DUPLICADAS
-- [ ] DATOS DUPLICADOS
-- [ ] SISTEMAS QUE DEBEN SALIR DE ESTILO
-- [ ] SISTEMAS QUE DEBEN QUEDARSE
-- [ ] REVISAR EL FLUJO
-- [ ] REVISAR NAVEGACIÓN
-- [ ] REVISAR NOMBRES
-- [ ] REVISAR ICONOS
-- [ ] REVISAR ACCIONES
-- [ ] REVISAR CONFIGURACIÓN
-- [ ] REVISAR ELIMINACIÓN
-- [ ] REVISAR RECOMENDACIONES
-- [ ] REVISAR ESTADÍSTICAS
-- [ ] REVISAR NOTIFICACIONES
-- [ ] REVISAR PANTALLA PRINCIPAL
-- [ ] DOCUMENTAR DECISIONES
-- [ ] NO AÑADIR FUNCIONES DURANTE LA AUDITORÍA
-- [ ] RESULTADO FINAL
+#### EH · Fase 48/65 — AUDITORÍA FINAL DE FUNCIONES Y DUPLICADOS ✅ COMPLETADA (v2.14.0)
+
+> **`src/lib/auditoriaFinal.js`** (43 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> 🔴 **"Se elimina" está vacía**: no queda ningún duplicado. Las fases anteriores los fueron
+> quitando según aparecían.
+>
+> 🐛 **Encontró cinco librerías fuera de `LIBRERIAS_EH`**, a las que no revisaba nadie — y al
+> añadirlas, que los revisores se cazaban entre ellos: **una regla no es código**.
+- [x] INVENTARIO COMPLETO
+- [x] CLASIFICAR CADA FUNCIÓN
+- [x] REVISAR DUPLICADOS
+- [x] PLAQUITAS DUPLICADAS
+- [x] PREFERENCIAS DUPLICADAS
+- [x] DATOS DUPLICADOS
+- [x] SISTEMAS QUE DEBEN SALIR DE ESTILO
+- [x] SISTEMAS QUE DEBEN QUEDARSE
+- [x] REVISAR EL FLUJO
+- [x] REVISAR NAVEGACIÓN
+- [x] REVISAR NOMBRES
+- [x] REVISAR ICONOS
+- [x] REVISAR ACCIONES
+- [x] REVISAR CONFIGURACIÓN
+- [x] REVISAR ELIMINACIÓN
+- [x] REVISAR RECOMENDACIONES
+- [x] REVISAR ESTADÍSTICAS
+- [x] REVISAR NOTIFICACIONES
+- [x] REVISAR PANTALLA PRINCIPAL
+- [x] DOCUMENTAR DECISIONES
+- [x] NO AÑADIR FUNCIONES DURANTE LA AUDITORÍA
+- [x] RESULTADO FINAL
 
 #### EH · Fase 49/65 — REVISIÓN VISUAL FINAL Y COHERENCIA
 - [ ] IDENTIDAD JC FITNESS

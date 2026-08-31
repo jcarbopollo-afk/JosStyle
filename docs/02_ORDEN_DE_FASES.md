@@ -288,9 +288,11 @@ escribir código.
 
 | v2.13.0 | **EH F47** | Pruebas integrales. **Las treinta del enunciado**, cada una con cómo se comprueba, en qué archivo y **de qué gravedad sería su fallo** (🔴🟠🟡🟢). Y el recorrido de verdad: `test-integrales.mjs` no comprueba funciones sueltas, sino **lo que hace Josué cruzando módulos**. 🐛 **Y lo primero que encontró fue un fallo de la propia verificación**: `vite.kill()` no mata al `node` que escucha el puerto en Windows, así que quedaba un servidor vivo **con el código de la pasada anterior** y la siguiente ejecución se conectaba a él — las comprobaciones nuevas fallaban y las viejas pasaban. Pasó dos veces (F22 y F47). Ahora se mata el árbol. ⚠️ **Una prueba que no se ejecuta no es una prueba**: se comprueba que cada una nombra un archivo que `verificar.sh` corre. ⚠️ **Cinco necesitan el móvil** (R1), incluida la 30 —usarlo sin instrucciones—, que el enunciado llama la más importante. ⚠️ **Y tres no fallan: lo que prueban no existe** —el puente con el Diario, los favoritos globales y el conflicto entre dispositivos—: unas esperan un móvil, estas una decisión |
 
+| v2.14.0 | **EH F48** | Auditoría final de funciones y duplicados. Los **quince sistemas** del apartado 3 clasificados (🟢 propio · 🔵 global · 🟠 integrado · 🔴 duplicado), las **cuatro listas** del apartado 20 y la **respuesta del 22**. 🔴 **"Se elimina" está VACÍA, y no es un descuido**: las fases anteriores fueron quitando los duplicados según aparecían. 🐛 **Lo que sí encontró**: `LIBRERIAS_EH` se había quedado **sin las cinco librerías de las fases de revisión**, y una librería que no está en esa lista **no la revisa nadie** — su silencio parecía un aprobado. 🐛 **Y al añadirlas, los revisores empezaron a cazarse entre ellos**, tres veces la misma confusión: **una regla no es código**. Ahora hay dos limpiadores: `soloCodigo` para los duplicados y `sinReglas` —que conserva las cadenas— para los secretos, porque una clave filtrada vive justo dentro de una cadena. ⚠️ **Y no se añade nada** (apartado 21): lo que aparece va a `SE_POSPONE` |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 47/65** (**F1-F47 seguidas**; queda **F48-F65**).
-Quedan **20** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (18, ninguna bloqueada).
+3/5 y **EH por 48/65** (**F1-F48 seguidas**; queda **F49-F65**).
+Quedan **19** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (17, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

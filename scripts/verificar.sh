@@ -458,6 +458,12 @@ else
   fallo "Fallan las pruebas integrales"; grep '✗' /tmp/jc_eh47.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-auditoria-final.mjs >/tmp/jc_eh48.log 2>&1; then
+  ok "Auditoría final de funciones y duplicados (EH F48) — $(grep -c '✓' /tmp/jc_eh48.log) comprobaciones"
+else
+  fallo "Falla la auditoría final"; grep '✗' /tmp/jc_eh48.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else
@@ -555,8 +561,12 @@ fi
 # Se miran LÍNEAS DE CÓDIGO, no comentarios: `audio.js` explica en su cabecera
 # que el motor es el único que puede tocar un AudioContext, y esa frase no es
 # una violación de la regla. Un `new Audio()` de verdad sí lo sería.
+# ⚠️ Y desde EH F48 tampoco cuenta una REGLA: `auditoriaFinal.js` lleva ese
+# patrón escrito para BUSCARLO, y buscarlo no es hacerlo. Son las líneas que
+# declaran `prohibido:`.
 if grep -rEn 'new Audio\(|AudioContext|webkitAudioContext' src/ --include=*.js --include=*.jsx \
    | grep -v 'src/lib/audioEngine.js' \
+   | grep -v 'prohibido:' \
    | grep -vE ':[[:space:]]*(//|\*|/\*)' >/tmp/jc_r10.log 2>&1; then
   fallo "Alguien toca el audio fuera de audioEngine.js:"; cat /tmp/jc_r10.log
 else
