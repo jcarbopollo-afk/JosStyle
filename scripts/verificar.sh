@@ -470,6 +470,12 @@ else
   fallo "Falla la coherencia visual"; grep '✗' /tmp/jc_eh49.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-microinteracciones.mjs >/tmp/jc_eh50.log 2>&1; then
+  ok "Microinteracciones y animaciones (EH F50) — $(grep -c '✓' /tmp/jc_eh50.log) comprobaciones"
+else
+  fallo "Fallan las microinteracciones"; grep '✗' /tmp/jc_eh50.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

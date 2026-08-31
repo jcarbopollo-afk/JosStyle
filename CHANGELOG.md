@@ -1,5 +1,51 @@
 # CHANGELOG.md
 
+## v2.16.0 — EH Fase 50/65: microinteracciones y animaciones
+
+### Qué se ha construido
+*"Cada acción debe tener una respuesta visual clara, rápida y elegante."*
+
+Las **veinticuatro microinteracciones** del enunciado, cada una con **dónde vive** y **para qué
+sirve** —confirmar, orientar, conectar o suavizar—, y el **revisor de consistencia** que comprueba
+lo que el apartado 22 pide con esas palabras: *"una misma acción debe comportarse igual en todo
+Estilo"*.
+
+### ⚠️ Arrastrar no se construye, y se dice por qué
+Los apartados 2 y 3 piden **mantener pulsado y arrastrar** para mover una plaquita. Eso **ya está
+resuelto con flechas ↑↓** desde la Personalización (Prompt Maestro F19 y ME F2) — y las flechas
+funcionan con el lector de pantalla y no dependen del pulso. Añadir arrastre encima sería **un
+segundo mecanismo para la misma acción**, que es justo lo que la F48 acaba de terminar de quitar.
+Se declara con su motivo, junto a los deslizantes (16), que no existen porque en Estilo de hombre
+no hay nada continuo que configurar: son listas y casillas.
+
+### Lo que el revisor protege
+
+**1. ⚠️ El feedback al tocar es el de JosStyle, no uno propio.** Los `active:scale` viven en
+`ui.jsx` y la vista de Estilo de hombre **no tiene ni uno**. Por eso tocar una plaquita se siente
+igual que tocar cualquier otra cosa de la aplicación, y hay una comprobación que falla si alguien
+se escribe el suyo.
+
+**2. ⚠️ Y la escalera de escalas es deliberada.** `0.96` en las tarjetas grandes, `[0.98]` en las
+filas, `95` en los botones y `90` en los iconos pequeños: cuanto más pequeño es el elemento, más se
+nota el apretón. Queda **declarado para que nadie lo "arregle"** dejándolo todo igual.
+
+**3. ⚠️ Volver es siempre lo mismo:** **cincuenta y un** botones idénticos, `ArrowLeft size={16}`
+con `aria-label="Volver"`. La comprobación cuenta los dos y falla si se separan.
+
+**4. ⚠️ Y el ✓ de "hecho" es uno solo**, con la duración de la F41. Un `setTimeout` con otro
+número sería un segundo feedback.
+
+### 🐛 Y una expresión que no cazaba nada
+La regla del feedback buscaba `setTimeout\([^)]*…` — y **el propio `setTimeout` lleva un `)`
+dentro** (`setTimeout(() => algo(), 3000)`), así que la búsqueda se paraba antes de llegar al
+número. Lo destapó la comprobación de la comprobación, que es exactamente para lo que está.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **9 671 comprobaciones de Node** (38
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **447 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
+
 ## v2.15.0 — EH Fase 49/65: revisión visual final y coherencia
 
 ### Qué se ha construido

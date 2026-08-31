@@ -292,9 +292,11 @@ escribir código.
 
 | v2.15.0 | **EH F49** | Revisión visual final y coherencia. **El revisor no declara cómo debe verse Estilo de hombre —eso caduca—: compara su vocabulario visual con el del RESTO de JosStyle** y falla si inventa algo que no usa nadie más. 🐛 **Y encontró un fallo de contraste de verdad**: cuatro botones pintaban su texto con `#fff` escrito a mano sobre el acento, cuando el resto usa `COLORS.textOnAccent` —que **no es blanco**, sino lo que `bestReadableText()` calcula—; con un acento claro eran blanco sobre claro, y la regla invariante no los veía porque busca hex de **seis** dígitos. ⚠️ **Se compara la familia, no el lado** (`rounded-t-3xl` es la hoja inferior). ⚠️ **Y lo que solo usa Estilo de hombre va a `EXCEPCIONES` con su motivo**: `-m-1.5` viene de la F42. ⚠️ Un spinner sí puede girar. ⚠️ Y dos apartados —tamaños de pantalla y comparar con el Dashboard— son de Josué |
 
+| v2.16.0 | **EH F50** | Microinteracciones y animaciones. Las **veinticuatro** del enunciado, cada una con dónde vive y **para qué sirve** (confirmar · orientar · conectar · suavizar), y el revisor de consistencia del apartado 22. ⚠️ **Arrastrar NO se construye, y se dice por qué**: mover una plaquita ya se hace con flechas desde la Personalización, funcionan con el lector de pantalla, y el arrastre sería **un segundo mecanismo para lo mismo** (la lección de la F48). ⚠️ **El feedback al tocar es el de JosStyle**: los `active:scale` viven en `ui.jsx` y la vista no tiene ni uno propio. ⚠️ **La escalera de escalas es deliberada** y queda declarada para que nadie la "arregle". ⚠️ **Volver es siempre lo mismo**: 51 botones idénticos, contados. 🐛 Y una expresión que no cazaba nada: `[^)]*` se paraba en el `)` del propio `setTimeout` |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 49/65** (**F1-F49 seguidas**; queda **F50-F65**).
-Quedan **18** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (16, ninguna bloqueada).
+3/5 y **EH por 50/65** (**F1-F50 seguidas**; queda **F51-F65**).
+Quedan **17** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (15, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

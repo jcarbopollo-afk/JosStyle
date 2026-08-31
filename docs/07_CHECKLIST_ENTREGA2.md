@@ -4,10 +4,10 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 92 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 49/65**
-> (hasta v2.15.0). Quedan **18**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (16:
-> **F50-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 93 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 50/65**
+> (hasta v2.16.0). Quedan **17**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (15:
+> **F51-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -3273,31 +3273,40 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] COMPARACIÓN CON JC FITNESS
 - [x] RESULTADO
 
-#### EH · Fase 50/65 — MICROINTERACCIONES Y ANIMACIONES
-- [ ] TOCAR UNA PLAQUITA
-- [ ] MANTENER PULSADO
-- [ ] ARRASTRAR
-- [ ] AÑADIR
-- [ ] OCULTAR
-- [ ] DESACTIVAR
-- [ ] RECUPERAR
-- [ ] GUARDAR
-- [ ] ELIMINAR
-- [ ] CAMBIAR TAMAÑO
-- [ ] ABRIR MÓDULO
-- [ ] VOLVER
-- [ ] BUSCADOR
-- [ ] FILTROS
-- [ ] CHECKBOX / SELECTORES
-- [ ] SLIDERS
-- [ ] ERRORES
-- [ ] ÉXITO
-- [ ] CARGA
-- [ ] REDUCIR ANIMACIONES
-- [ ] VELOCIDAD
-- [ ] CONSISTENCIA
-- [ ] SIN ANIMACIONES GRATUITAS
-- [ ] PRUEBA DE MICROINTERACCIONES
+#### EH · Fase 50/65 — MICROINTERACCIONES Y ANIMACIONES ✅ COMPLETADA (v2.16.0)
+
+> **`src/lib/microinteracciones.js`** (38 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> ⚠️ **Tres no se construyen, y se dice por qué**: mantener pulsado y arrastrar ya están
+> resueltos con flechas (accesibles y sin depender del pulso), y no hay deslizantes porque no
+> hay nada continuo que configurar.
+>
+> ⚠️ **El feedback al tocar vive en `ui.jsx`**: la vista de Estilo de hombre no tiene ni uno
+> propio, y hay una comprobación que falla si aparece.
+- [x] TOCAR UNA PLAQUITA
+- [x] MANTENER PULSADO
+- [x] ARRASTRAR
+- [x] AÑADIR
+- [x] OCULTAR
+- [x] DESACTIVAR
+- [x] RECUPERAR
+- [x] GUARDAR
+- [x] ELIMINAR
+- [x] CAMBIAR TAMAÑO
+- [x] ABRIR MÓDULO
+- [x] VOLVER
+- [x] BUSCADOR
+- [x] FILTROS
+- [x] CHECKBOX / SELECTORES
+- [x] SLIDERS
+- [x] ERRORES
+- [x] ÉXITO
+- [x] CARGA
+- [x] REDUCIR ANIMACIONES
+- [x] VELOCIDAD
+- [x] CONSISTENCIA
+- [x] SIN ANIMACIONES GRATUITAS
+- [x] PRUEBA DE MICROINTERACCIONES
 
 #### EH · Fase 51/65 — CONTROL DE CALIDAD DE LA EXPERIENCIA REAL
 - [ ] PRUEBA DEL PRIMER DÍA
