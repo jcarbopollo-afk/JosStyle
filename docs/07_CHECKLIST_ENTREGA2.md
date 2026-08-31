@@ -4,10 +4,10 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 91 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 48/65**
-> (hasta v2.14.0). Quedan **19**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (17:
-> **F49-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 92 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 49/65**
+> (hasta v2.15.0). Quedan **18**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (16:
+> **F50-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -3241,27 +3241,37 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] NO AÑADIR FUNCIONES DURANTE LA AUDITORÍA
 - [x] RESULTADO FINAL
 
-#### EH · Fase 49/65 — REVISIÓN VISUAL FINAL Y COHERENCIA
-- [ ] IDENTIDAD JC FITNESS
-- [ ] PERSONALIDAD PROPIA
-- [ ] PLAQUITAS
-- [ ] JERARQUÍA
-- [ ] ESPACIO
-- [ ] ICONOS
-- [ ] MODO OSCURO
-- [ ] ANIMACIONES
-- [ ] ESTADOS
-- [ ] BOTONES
-- [ ] MODALES
-- [ ] FORMULARIOS
-- [ ] NAVEGACIÓN
-- [ ] ICONO Y TÍTULO
-- [ ] MICRODETALLES
-- [ ] RESPONSIVE
-- [ ] NO SOBREDECORAR
-- [ ] REVISIÓN VISUAL COMPLETA
-- [ ] COMPARACIÓN CON JC FITNESS
-- [ ] RESULTADO
+#### EH · Fase 49/65 — REVISIÓN VISUAL FINAL Y COHERENCIA ✅ COMPLETADA (v2.15.0)
+
+> **`src/lib/coherenciaVisual.js`** (41 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> ⚠️ **La referencia son las otras vistas de JosStyle**, no una lista escrita a mano: así el
+> revisor no se queda viejo.
+>
+> 🐛 **Encontró cuatro botones con `#fff` sobre el acento** —blanco sobre claro si el acento es
+> claro—, ya cambiados a `COLORS.textOnAccent`.
+>
+> ⚠️ **Dos apartados necesitan ojos** (16 y 19) y están en **R1**.
+- [x] IDENTIDAD JC FITNESS
+- [x] PERSONALIDAD PROPIA
+- [x] PLAQUITAS
+- [x] JERARQUÍA
+- [x] ESPACIO
+- [x] ICONOS
+- [x] MODO OSCURO
+- [x] ANIMACIONES
+- [x] ESTADOS
+- [x] BOTONES
+- [x] MODALES
+- [x] FORMULARIOS
+- [x] NAVEGACIÓN
+- [x] ICONO Y TÍTULO
+- [x] MICRODETALLES
+- [x] RESPONSIVE
+- [x] NO SOBREDECORAR
+- [x] REVISIÓN VISUAL COMPLETA
+- [x] COMPARACIÓN CON JC FITNESS
+- [x] RESULTADO
 
 #### EH · Fase 50/65 — MICROINTERACCIONES Y ANIMACIONES
 - [ ] TOCAR UNA PLAQUITA

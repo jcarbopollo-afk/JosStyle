@@ -290,9 +290,11 @@ escribir código.
 
 | v2.14.0 | **EH F48** | Auditoría final de funciones y duplicados. Los **quince sistemas** del apartado 3 clasificados (🟢 propio · 🔵 global · 🟠 integrado · 🔴 duplicado), las **cuatro listas** del apartado 20 y la **respuesta del 22**. 🔴 **"Se elimina" está VACÍA, y no es un descuido**: las fases anteriores fueron quitando los duplicados según aparecían. 🐛 **Lo que sí encontró**: `LIBRERIAS_EH` se había quedado **sin las cinco librerías de las fases de revisión**, y una librería que no está en esa lista **no la revisa nadie** — su silencio parecía un aprobado. 🐛 **Y al añadirlas, los revisores empezaron a cazarse entre ellos**, tres veces la misma confusión: **una regla no es código**. Ahora hay dos limpiadores: `soloCodigo` para los duplicados y `sinReglas` —que conserva las cadenas— para los secretos, porque una clave filtrada vive justo dentro de una cadena. ⚠️ **Y no se añade nada** (apartado 21): lo que aparece va a `SE_POSPONE` |
 
+| v2.15.0 | **EH F49** | Revisión visual final y coherencia. **El revisor no declara cómo debe verse Estilo de hombre —eso caduca—: compara su vocabulario visual con el del RESTO de JosStyle** y falla si inventa algo que no usa nadie más. 🐛 **Y encontró un fallo de contraste de verdad**: cuatro botones pintaban su texto con `#fff` escrito a mano sobre el acento, cuando el resto usa `COLORS.textOnAccent` —que **no es blanco**, sino lo que `bestReadableText()` calcula—; con un acento claro eran blanco sobre claro, y la regla invariante no los veía porque busca hex de **seis** dígitos. ⚠️ **Se compara la familia, no el lado** (`rounded-t-3xl` es la hoja inferior). ⚠️ **Y lo que solo usa Estilo de hombre va a `EXCEPCIONES` con su motivo**: `-m-1.5` viene de la F42. ⚠️ Un spinner sí puede girar. ⚠️ Y dos apartados —tamaños de pantalla y comparar con el Dashboard— son de Josué |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 48/65** (**F1-F48 seguidas**; queda **F49-F65**).
-Quedan **19** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (17, ninguna bloqueada).
+3/5 y **EH por 49/65** (**F1-F49 seguidas**; queda **F50-F65**).
+Quedan **18** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (16, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

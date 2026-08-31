@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v2.14.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v2.15.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 48/65**, quedan 17 — **ninguna bloqueada: C-25 la resolvió Josué
+por 3/5, **Estilo de Hombre va por 49/65**, quedan 16 — **ninguna bloqueada: C-25 la resolvió Josué
 en v2.7.0**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
@@ -126,9 +126,9 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 9592 pruebas unitarias con Node (5 de ellas de auditoría), 1408 casos de renderizado real
+Vite, 9633 pruebas unitarias con Node (5 de ellas de auditoría), 1408 casos de renderizado real
 con `react-dom/server`, 11 reglas invariantes y **447 comprobaciones sobre la aplicación de verdad
-en Chromium** — **11 447 comprobaciones**.
+en Chromium** — **11 488 comprobaciones**.
 
 Eso ya ha encontrado **setenta y cuatro bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -154,7 +154,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 48/65** (v2.14.0: **F1-F48 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 49/65** (v2.15.0: **F1-F49 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
@@ -163,10 +163,10 @@ contradicción— y contestó las tres: **dos apartados separados** (`higiene` y
 dos líneas de `MODULOS_EH`), ***Cuidado de manos* y *Cuidado de pies* son la Fase 22** (la casilla de
 la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. ✅ **Las tres —F18, F19 y F22— están construidas**, así que C-25 no bloquea ya nada.
 
-La siguiente es **EH · Fase 49/65 — Revisión visual final**, y a partir de ahí **F49-F65 seguidas**:
-es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
+La siguiente es **EH · Fase 50/65 — Microinteracciones y animaciones**, y a partir de ahí
+**F50-F65 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F48 dejaron doscientas trece cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F49 dejaron doscientas dieciséis cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -835,6 +835,14 @@ Seis cosas que conviene tener presentes al retomar:
   los secretos, `sinReglas` — que **conserva las cadenas**, porque una clave filtrada vive dentro
   de una.
 - ⚠️ **Lo que se le ocurra a alguien va a `SE_POSPONE`** (EH F48, apartado 21), no al código.
+- 🐛 ⚠️ **El texto sobre el acento es `COLORS.textOnAccent`, nunca `#fff`** (EH F49): ese token lo
+  calcula `bestReadableText()` y es **negro** si el acento es claro. Cuatro botones lo tenían
+  escrito a mano y la regla invariante no los veía, porque busca hex de seis dígitos.
+- ⚠️ **Estilo de hombre no puede usar un token visual que no use el resto** (EH F49): la
+  referencia son las otras vistas, no una lista. Si hace falta uno nuevo, va a `EXCEPCIONES` con
+  su motivo.
+- ⚠️ **Un ejemplo de una violación no es una violación** (EH F48 y F49): los revisores guardan
+  `prohibido:` y `ejemploMalo:` para poder probarse, y `verificar.sh` los excluye.
 ⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
 de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin
 ellos todo funciona menos subir fotos de prenda y fotos de fondo.

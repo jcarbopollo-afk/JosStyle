@@ -391,7 +391,7 @@ function AvisoDesactivar({ aviso, accent, onConfirmar, onCancelar }) {
           <button
             onClick={onConfirmar}
             className="flex-1 rounded-2xl py-2 text-xs font-semibold"
-            style={{ background: accent, color: '#fff' }}
+            style={{ background: accent, color: COLORS.textOnAccent }}
           >
             {aviso.confirmar}
           </button>
@@ -906,7 +906,7 @@ export function MisDatosEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
                       <button
                         onClick={guardar}
                         className="rounded-2xl px-3 py-2 text-[11px] font-semibold flex-shrink-0"
-                        style={{ background: accent, color: '#fff' }}
+                        style={{ background: accent, color: COLORS.textOnAccent }}
                       >
                         Guardar
                       </button>
@@ -1045,7 +1045,7 @@ export function MiEstiloEH({ estado, accent, armario = null, datosGlobales = {},
                 <button
                   onClick={() => anadir(campo.id)}
                   className="rounded-2xl px-3 py-2 text-[11px] font-semibold flex-shrink-0"
-                  style={{ background: accent, color: '#fff' }}
+                  style={{ background: accent, color: COLORS.textOnAccent }}
                 >
                   Añadir
                 </button>
@@ -9564,7 +9564,7 @@ function AvisoDiseno({ aviso, accent, onConfirmar, onCancelar }) {
           <button
             onClick={onConfirmar}
             className="flex-1 rounded-2xl py-2 text-xs font-semibold"
-            style={{ background: accent, color: '#fff' }}
+            style={{ background: accent, color: COLORS.textOnAccent }}
           >
             {aviso.confirmar}
           </button>

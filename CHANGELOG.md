@@ -1,5 +1,61 @@
 # CHANGELOG.md
 
+## v2.15.0 — EH Fase 49/65: revisión visual final y coherencia
+
+### Qué se ha construido
+*"Que tenga personalidad propia, pero que siga pareciendo JC Fitness."*
+
+El revisor visual. Y con una idea que hace que **no se quede viejo**: aquí no se declara cómo debe
+verse Estilo de hombre —eso caduca en dos fases—, sino que **se compara su vocabulario visual con el
+del resto de JosStyle** y se falla si inventa algo que no usa nadie más. El día que el Dashboard
+cambie de radio, esto no se queja; el día que Estilo de hombre se invente uno, sí.
+
+### 🐛 Y encontró un fallo de contraste de verdad
+Cuatro botones de Estilo de hombre pintaban su texto con **`color: '#fff'` escrito a mano** sobre el
+color de acento. El resto de la aplicación usa `COLORS.textOnAccent`, que **no es blanco**: es lo que
+`bestReadableText()` calcula para que el texto se lea sobre el acento que Josué haya elegido — negro
+si el acento es claro. Con un acento amarillo o verde lima, esos cuatro botones eran **blanco sobre
+claro**.
+
+No lo veía nadie: la regla invariante del proyecto busca hex de **seis** dígitos, y `#fff` tiene
+tres. Ahora los cuatro usan el token, como los demás.
+
+### 🐛 Y cuatro veces la misma confusión: un ejemplo no es una violación
+Esta fase y la anterior se han pasado la mitad del tiempo enseñándole a los revisores a no cazarse
+entre ellos. `coherenciaVisual.js` guarda `ejemploMalo: "style={{ color: '#ff0000' }}"` para
+comprobar que su propia regla funciona — y **la regla invariante del proyecto lo contó como un color
+suelto**. Ya está excluido, igual que `prohibido:` en la regla del audio.
+
+### Las decisiones de la fase
+
+**1. ⚠️ La referencia son las otras vistas, no una lista mía.** `soloEn()` saca el vocabulario de las
+dos partes y devuelve lo que solo aparece en una. Sin listas de valores permitidos que mantener.
+
+**2. ⚠️ Se compara la familia, no el lado.** `rounded-t-3xl` —la hoja inferior— y `rounded-3xl` son
+el mismo lenguaje: lo que importa es el tamaño del radio, no la esquina. Sin esa normalización, el
+revisor habría cazado la única hoja inferior de la aplicación, que hace exactamente lo mismo que las
+demás.
+
+**3. ⚠️ Y lo que solo usa Estilo de hombre, con permiso.** `-m-1.5` aparece únicamente aquí porque
+lo introdujo la **F42**: un margen negativo que lleva el área táctil a 44 píxeles **sin cambiar el
+dibujo**. Está declarado como excepción **con su motivo**, en vez de ensanchar la comparación hasta
+que no encuentre nada.
+
+**4. ⚠️ Un spinner sí puede girar.** La regla de *"nada espectacular por sí mismo"* prohíbe lo
+decorativo —`animate-ping`, `bounce`, `pulse`—, no el indicador de carga: uno que no gira no es un
+indicador de carga.
+
+**5. ⚠️ Y dos apartados necesitan ojos** (16 y 19): los tres tamaños de pantalla y comparar Estilo de
+hombre con el Dashboard uno detrás de otro. Van a **R1**, con su motivo. El modo oscuro sí se
+comprueba por código —ni un color literal, ni un hex suelto— y se dice que **verlo** sigue siendo
+cosa suya.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **9 633 comprobaciones de Node** (41
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **447 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
+
 ## v2.14.0 — EH Fase 48/65: auditoría final de funciones y duplicados
 
 ### Qué se ha construido

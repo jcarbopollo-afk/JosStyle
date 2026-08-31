@@ -464,6 +464,12 @@ else
   fallo "Falla la auditoría final"; grep '✗' /tmp/jc_eh48.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-coherencia-visual.mjs >/tmp/jc_eh49.log 2>&1; then
+  ok "Coherencia visual con JosStyle (EH F49) — $(grep -c '✓' /tmp/jc_eh49.log) comprobaciones"
+else
+  fallo "Falla la coherencia visual"; grep '✗' /tmp/jc_eh49.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else
@@ -591,12 +597,15 @@ fi
 #                       identificar la asignatura. Se usa tintado al 16 % detrás del texto
 #                       del tema, así que la legibilidad la sigue dando `COLORS`.
 #   · líneas de comentario — mencionar un hex al explicar una decisión no es usarlo
+#   · `ejemploMalo:` — EH F49: un revisor guarda EJEMPLOS de lo que busca. Un
+#                     ejemplo de una violación no es una violación (igual que
+#                     `prohibido:` en la regla del audio).
 HEX=$(grep -rEn "#[0-9A-Fa-f]{6}" src/ --include=*.jsx --include=*.js \
       | grep -v '^src/tokens.js:' \
       | grep -v '^src/lib/colorEngine.js:' \
       | grep -v '^src/lib/armario.js:' \
       | grep -v '^src/lib/horarioEditor.js:' \
-      | grep -v '#EDEFF2' \
+      | grep -v '#EDEFF2' \n      | grep -v 'ejemploMalo:' \
       | grep -vE ':[0-9]+:[[:space:]]*(//|\*|/\*)' \
       || true)
 if [ -n "$HEX" ]; then
