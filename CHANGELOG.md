@@ -1,5 +1,59 @@
 # CHANGELOG.md
 
+## v2.13.0 — EH Fase 47/65: pruebas integrales
+
+### Qué se ha construido
+*"No sirve de nada tener 50 funciones si dos se rompen al conectarlas."*
+
+Las **treinta pruebas** del enunciado, declaradas una a una con **cómo se comprueba cada una**, **en
+qué archivo** y **de qué gravedad sería su fallo** — con las cuatro etiquetas que pide la condición
+de finalización: 🔴 crítico, 🟠 importante, 🟡 menor, 🟢 mejora. Y, sobre todo, **el recorrido de
+verdad**: `scripts/test-integrales.mjs` no comprueba funciones sueltas, sino lo que hace Josué
+cruzando módulos — crear, borrar, recuperar, borrar del todo, activar, desactivar, migrar, buscar,
+recomendar.
+
+### 🐛 Y lo primero que encontró fue un fallo de la propia verificación
+
+Dos veces durante estas fases —construyendo la F22 y otra vez aquí— **las comprobaciones nuevas de
+Chromium fallaban y las viejas pasaban**. El motivo no estaba en el código: `vite.kill()` mata al
+hijo directo (`npx.cmd`) pero **no al `node` que escucha el puerto**, así que al terminar quedaba un
+servidor vivo con el código de aquella pasada… **y la siguiente ejecución se conectaba a él**.
+
+Una prueba que mira el código de antes y lo aprueba es peor que no tenerla. Ahora en Windows se mata
+**el árbol** (`taskkill /T`), el servidor se cierra también si algo revienta antes de tiempo, y hay
+una comprobación de que el servidor es **el que acaba de arrancar**.
+
+### Las cuatro decisiones de la fase
+
+**1. ⚠️ Una prueba que no se ejecuta no es una prueba.** El catálogo no vale nada si nadie recorre lo
+que declara, así que hay una comprobación de que **cada prueba automática nombra un archivo que
+`verificar.sh` ejecuta de verdad** — y de que lo que no se ejecuta aquí lo ejecuta otro.
+
+**2. ⚠️ Las que necesitan un móvil se dicen, una a una.** La red (15), los dos dispositivos (16), los
+tamaños de pantalla (21), la reinstalación (29) y **usarlo como una persona normal (30)** —que el
+enunciado llama *"probablemente la más importante"*— no se pueden comprobar desde aquí. Se declaran
+con su motivo y son lo que **R1** lleva pidiendo desde la v1.22.0.
+
+**3. ⚠️ Tres pruebas no fallan: lo que prueban no existe.** El puente con el Diario (7) no lo ha
+construido ninguna fase; los favoritos globales (8) siguen sin existir, como dejó dicho la F39; y el
+conflicto entre dispositivos (17) **no es que falte probarlo**, es que `saveData` sobrescribe sin
+leer la versión anterior — declarado ya en la F41, la F45 y la F46. Se distinguen de las de Josué:
+unas esperan un móvil, estas esperan una decisión.
+
+**4. ⚠️ Un fallo se clasifica, no se discute.** Cada prueba dice de qué gravedad sería su fallo, y el
+parte ordena lo crítico primero. Así, el día que algo se rompa, la conversación es *"qué arreglamos
+antes"* y no *"cómo de grave es esto"*.
+
+### El parte
+Las veintidós pruebas automáticas pasan, **ninguna crítica ha fallado**, y las cinco de Josué y las
+tres declaradas salen contadas aparte — porque lo que no se ha ejecutado **no cuenta como aprobado**.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **9 549 comprobaciones de Node** (74
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **447 comprobaciones sobre la
+aplicación de verdad en Chromium** (una nueva: que el servidor es el de esta pasada).
+
+
 ## v2.12.0 — EH Fase 46/65: migración y compatibilidad
 
 ### Qué se ha construido

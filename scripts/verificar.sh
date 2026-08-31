@@ -452,6 +452,12 @@ else
   fallo "Falla la migración"; grep '✗' /tmp/jc_eh46.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-integrales.mjs >/tmp/jc_eh47.log 2>&1; then
+  ok "Pruebas integrales (EH F47) — $(grep -c '✓' /tmp/jc_eh47.log) comprobaciones"
+else
+  fallo "Fallan las pruebas integrales"; grep '✗' /tmp/jc_eh47.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

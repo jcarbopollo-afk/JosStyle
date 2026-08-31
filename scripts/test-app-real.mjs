@@ -30,7 +30,7 @@
 // fallar: no es una dependencia del proyecto y Vercel no debe instalarla.
 // ============================================================================
 
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import { writeFileSync, existsSync } from 'node:fs';
 
 let chromium;
@@ -71,15 +71,38 @@ const esperarServidor = async () => {
   return false;
 };
 
+/* 🐛 ⚠️ **EH F47 — el servidor se quedaba vivo en Windows.** `vite.kill()` mata
+   al hijo directo (`npx.cmd`), **no al `node` que escucha el puerto**: al
+   terminar quedaba un servidor con el código de aquella pasada, y la siguiente
+   ejecución se conectaba a ÉL. Es exactamente lo que pasó dos veces mientras se
+   construían la F22 y la F47: las comprobaciones nuevas fallaban y las viejas
+   pasaban, porque el navegador estaba mirando el código de antes. En Windows hay
+   que matar el ÁRBOL. */
+const matarServidor = () => {
+  if (!vite || vite.killed) return;
+  if (process.platform === 'win32') {
+    try { execSync(`taskkill /pid ${vite.pid} /T /F`, { stdio: 'ignore' }); return; } catch { /* ya no estaba */ }
+  }
+  vite.kill('SIGTERM');
+};
+
 const salir = async (browser) => {
   if (browser) await browser.close();
-  vite.kill('SIGTERM');
+  matarServidor();
   if (fallos > 0) { console.log(`\n  ${fallos} de ${n} comprobaciones han fallado.`); process.exit(1); }
   console.log(`\n  ${n} comprobaciones correctas.`);
   process.exit(0);
 };
 
+process.on('exit', matarServidor);
+process.on('uncaughtException', (e) => { matarServidor(); console.error(e); process.exit(1); });
+
 ok(await esperarServidor(), 'El servidor de desarrollo arranca');
+
+/* ⚠️ Y que el servidor sea **el que acaba de arrancar**, no uno de una pasada
+   anterior: si el puerto ya estaba ocupado, esta prueba estaría mirando código
+   viejo y aprobándolo. */
+ok(!!vite.pid && !vite.killed, 'y es el que ha arrancado esta pasada, no uno que quedara vivo');
 
 /* Un `estiloHombre` guardado, como el que ya tiene Josué en Supabase. Si la
    carga se rompe, esto NO llega a la pantalla — que es justo lo que pasaba. */

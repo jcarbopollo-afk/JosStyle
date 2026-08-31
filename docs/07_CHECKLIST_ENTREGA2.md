@@ -4,10 +4,10 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 89 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 46/65**
-> (hasta v2.12.0). Quedan **21**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (19:
-> **F47-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 90 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 47/65**
+> (hasta v2.13.0). Quedan **20**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (18:
+> **F48-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -3166,37 +3166,48 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] COMPATIBILIDAD ENTRE VERSIONES
 - [x] PRUEBA FINAL
 
-#### EH · Fase 47/65 — PRUEBAS INTEGRALES
-- [ ] PRUEBA DE ENTRADA
-- [ ] PRUEBA DE PLAQUITAS
-- [ ] PRUEBA DE ACTIVACIÓN
-- [ ] PRUEBA DE ELIMINACIÓN
-- [ ] PRUEBA DE OBJETIVOS
-- [ ] PRUEBA DE CALENDARIO
-- [ ] PRUEBA DE DIARIO
-- [ ] PRUEBA DE FAVORITOS
-- [ ] PRUEBA DE PRODUCTOS
-- [ ] PRUEBA DE NOTIFICACIONES
-- [ ] PRUEBA DE RECOMENDACIONES
-- [ ] PRUEBA DE BÚSQUEDA
-- [ ] PRUEBA DE PERFIL
-- [ ] PRUEBA DE ESTADÍSTICAS
-- [ ] PRUEBA DE DESCONEXIÓN
-- [ ] PRUEBA DE DOS DISPOSITIVOS
-- [ ] PRUEBA DE CONFLICTO
-- [ ] PRUEBA DE CUENTA
-- [ ] PRUEBA DE USUARIO NUEVO
-- [ ] PRUEBA DE USUARIO AVANZADO
-- [ ] PRUEBA DE INTERFAZ
-- [ ] PRUEBA DE ACCESIBILIDAD
-- [ ] PRUEBA DE ERRORES
-- [ ] PRUEBA DE RENDIMIENTO
-- [ ] PRUEBA DE DATOS
-- [ ] PRUEBA DE SEGURIDAD
-- [ ] PRUEBA DE MIGRACIÓN
-- [ ] PRUEBA DE ACTUALIZACIÓN
-- [ ] PRUEBA DE DESINSTALACIÓN / REINSTALACIÓN
-- [ ] PRUEBA FINAL DEL USUARIO
+#### EH · Fase 47/65 — PRUEBAS INTEGRALES ✅ COMPLETADA (v2.13.0)
+
+> **`src/lib/pruebasIntegrales.js`** + **`scripts/test-integrales.mjs`** (74 comprobaciones).
+>
+> ⚠️ **Cinco pruebas son de Josué** (15, 16, 21, 29 y 30) y están en **R1**, incluida la que el
+> enunciado llama la más importante: usarlo sin instrucciones.
+>
+> ⚠️ **Y tres no se pueden pasar porque lo que prueban no existe**: el puente con el Diario (7),
+> los favoritos globales (8) y el conflicto entre dispositivos (17).
+>
+> 🐛 **Encontró un fallo de la propia verificación**: el servidor de desarrollo quedaba vivo en
+> Windows, y la siguiente pasada de Chromium miraba el código anterior.
+- [x] PRUEBA DE ENTRADA
+- [x] PRUEBA DE PLAQUITAS
+- [x] PRUEBA DE ACTIVACIÓN
+- [x] PRUEBA DE ELIMINACIÓN
+- [x] PRUEBA DE OBJETIVOS
+- [x] PRUEBA DE CALENDARIO
+- [x] PRUEBA DE DIARIO
+- [x] PRUEBA DE FAVORITOS
+- [x] PRUEBA DE PRODUCTOS
+- [x] PRUEBA DE NOTIFICACIONES
+- [x] PRUEBA DE RECOMENDACIONES
+- [x] PRUEBA DE BÚSQUEDA
+- [x] PRUEBA DE PERFIL
+- [x] PRUEBA DE ESTADÍSTICAS
+- [x] PRUEBA DE DESCONEXIÓN
+- [x] PRUEBA DE DOS DISPOSITIVOS
+- [x] PRUEBA DE CONFLICTO
+- [x] PRUEBA DE CUENTA
+- [x] PRUEBA DE USUARIO NUEVO
+- [x] PRUEBA DE USUARIO AVANZADO
+- [x] PRUEBA DE INTERFAZ
+- [x] PRUEBA DE ACCESIBILIDAD
+- [x] PRUEBA DE ERRORES
+- [x] PRUEBA DE RENDIMIENTO
+- [x] PRUEBA DE DATOS
+- [x] PRUEBA DE SEGURIDAD
+- [x] PRUEBA DE MIGRACIÓN
+- [x] PRUEBA DE ACTUALIZACIÓN
+- [x] PRUEBA DE DESINSTALACIÓN / REINSTALACIÓN
+- [x] PRUEBA FINAL DEL USUARIO
 
 #### EH · Fase 48/65 — AUDITORÍA FINAL DE FUNCIONES Y DUPLICADOS
 - [ ] INVENTARIO COMPLETO
