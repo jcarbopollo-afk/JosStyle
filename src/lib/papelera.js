@@ -115,6 +115,14 @@ export const CATALOGO_PAPELERA = {
   'sonrisa.rutinas': { modulo: 'sonrisa', coleccion: 'rutinas', tipo: 'Rutina de higiene bucal', campos: ['nombre'], icono: 'sonrisa' },
   'sonrisa.revisiones': { modulo: 'sonrisa', coleccion: 'revisiones', tipo: 'Revisión dental', campos: ['fecha'], icono: 'sonrisa' },
   'sonrisa.registros': { modulo: 'sonrisa', coleccion: 'registros', tipo: 'Registro de higiene bucal', campos: ['fecha'], icono: 'sonrisa' },
+  /* 🐛 ⚠️ EH F45, apartado 8 — **tres colecciones que se borraban sin pasar por
+     aquí**: las rutinas de Skincare (F14) y de Pelo (F8), que son anteriores al
+     patrón que estableció la F21, y los perfumes "por probar" (F24). Lo destapó
+     la auditoría de la F45 cruzando `COLECCIONES_EH` con este catálogo — la de
+     ME F4 no podía verlo, porque solo mira lo que se CREA desde `App.jsx`. */
+  'skincare.rutinas': { modulo: 'skincare', coleccion: 'rutinas', tipo: 'Rutina de piel', campos: ['nombre'], icono: 'skincare' },
+  'pelo.rutinas': { modulo: 'pelo', coleccion: 'rutinas', tipo: 'Rutina de pelo', campos: ['nombre'], icono: 'pelo' },
+  'perfumes.porProbar': { modulo: 'perfumes', coleccion: 'porProbar', tipo: 'Perfume por probar', campos: ['nombre'], icono: 'perfumes' },
   /* ⚠️ EH F19, apartado 18 — *"eliminados recientemente… nada duplicado"*.
      Séptima vez que un módulo entra aquí **sin tocar ni una función del motor**:
      dos líneas, una por apartado, porque C-25 dejó dicho que son dos. */

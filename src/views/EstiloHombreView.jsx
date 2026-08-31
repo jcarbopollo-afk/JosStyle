@@ -1190,7 +1190,7 @@ export function PerfilCapilarEH({ estado, accent, datosGlobales = {}, onCambiar,
    "Pendiente" y nada más: ni rojo, ni un aspa, ni una cuenta de días perdidos.
    Hay una prueba de Node que recorre todos los textos buscando reproches. */
 
-export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil }) {
+export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil, onEliminarRutina }) {
   const [zona, setZona] = useState(null);      // null | 'rutina' | 'seguimiento' | 'ajustes'
   const resumen = useMemo(() => resumenPelo(estado), [estado]);
   const perfil = useMemo(() => progresoPelo(estado, datosGlobales), [estado, datosGlobales]);
@@ -1198,7 +1198,7 @@ export function PanelPelo({ estado, accent, datosGlobales = {}, onCambiar, onCer
   const prods = useMemo(() => resumenProductosPelo(estado, datosGlobales), [estado, datosGlobales]);
   const pelu = useMemo(() => resumenPeluqueria(estado, datosGlobales), [estado, datosGlobales]);
 
-  if (zona === 'rutina') return <RutinasPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
+  if (zona === 'rutina') return <RutinasPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} onEliminarRutina={onEliminarRutina} />;
   if (zona === 'seguimiento') return <SeguimientoPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
   if (zona === 'ajustes') return <AjustesPeloEH estado={estado} accent={accent} onCambiar={onCambiar} onCerrar={() => setZona(null)} />;
   if (zona === 'productos') {
@@ -1355,7 +1355,7 @@ export function RutinaDeHoy({ estado, accent, onCambiar }) {
 }
 
 /** Apartados 2, 3, 11, 12 y 14 — crear, editar y borrar rutinas. */
-export function RutinasPeloEH({ estado, accent, onCambiar, onCerrar }) {
+export function RutinasPeloEH({ estado, accent, onCambiar, onCerrar, onEliminarRutina }) {
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
   const [elegidos, setElegidos] = useState([]);
@@ -1486,7 +1486,10 @@ export function RutinasPeloEH({ estado, accent, onCambiar, onCerrar }) {
         accent={accent}
         onConfirmar={() => {
           const r = datos.rutinas.find((x) => x.nombre === aBorrar.nombre);
-          if (r) onCambiar?.(eliminarRutina(estado, r.id).estado);
+          /* ⚠️ EH F45 — por la papelera global si la pantalla está enganchada a
+             ella; si no, se borra sin más: nunca un botón que no hace nada. */
+          if (r && onEliminarRutina) onEliminarRutina(r.id);
+          else if (r) onCambiar?.(eliminarRutina(estado, r.id).estado);
           setABorrar(null);
         }}
         onCancelar={() => setABorrar(null)}
@@ -2753,7 +2756,7 @@ export function PerfilPielEH({ estado, accent, datosGlobales = {}, onCambiar, on
    ⚠️ **Omitir no es fallar** (apartado 10). Un paso omitido sale de la cuenta
    del día, así que dos hechos y uno omitido es una rutina HECHA. Lo decide
    `checklistPiel()`, no esta pantalla. */
-export function RutinasPielEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+export function RutinasPielEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onEliminarRutina }) {
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
   const [momento, setMomento] = useState('manana');
@@ -2935,7 +2938,9 @@ export function RutinasPielEH({ estado, accent, datosGlobales = {}, onCambiar, o
         aviso={confirmar} accent={accent}
         onCancelar={() => setConfirmar(null)}
         onConfirmar={() => {
-          if (confirmar?.id) aplicar(eliminarRutinaPiel(estado, confirmar.id));
+          /* ⚠️ EH F45 — por la papelera global, para que se pueda recuperar. */
+          if (confirmar?.id && onEliminarRutina) onEliminarRutina(confirmar.id);
+          else if (confirmar?.id) aplicar(eliminarRutinaPiel(estado, confirmar.id));
           setConfirmar(null);
         }}
       />
@@ -3722,7 +3727,7 @@ export function ProductosPielEH({ estado, accent, datosGlobales = {}, onCambiar,
  * las dos que todavía no funcionan **dicen en qué fase llegan**, en vez de no
  * hacer nada al tocarlas.
  */
-export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil, onEliminarRegistro }) {
+export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil, onEliminarRegistro, onEliminarRutina }) {
   const [zona, setZona] = useState(null);      // null | 'rutina' | 'seguimiento'
   const prog = useMemo(() => progresoPiel(estado, datosGlobales), [estado, datosGlobales]);
   const rut = useMemo(() => resumenRutinasPiel(estado), [estado]);
@@ -3736,6 +3741,7 @@ export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCer
       <RutinasPielEH
         estado={estado} accent={accent} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={() => setZona(null)}
+        onEliminarRutina={onEliminarRutina}
       />
     );
   }
@@ -5310,7 +5316,7 @@ export function PerfumesEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
             {/* ⚠️ Lo probó: pasa a la colección y sale de aquí, de una vez. */}
             <button onClick={() => aplicar(moverAColeccion(estado, p.id))}
               className="text-[10px] font-semibold" style={{ color: accent }}>Ya lo tengo</button>
-            <button onClick={() => aplicar(quitarPorProbar(estado, p.id))} aria-label={`Quitar ${p.nombre}`}>
+            <button onClick={() => (onEliminar ? onEliminar('porProbar', p.id) : aplicar(quitarPorProbar(estado, p.id)))} aria-label={`Quitar ${p.nombre}`}>
               <X size={13} style={{ color: COLORS.textMuted }} />
             </button>
           </div>
@@ -5685,7 +5691,7 @@ export function RecomendacionesPerfumesEH({ estado, accent, datosGlobales = {}, 
 }
 
 /** Apartado 1 de F13 — la entrada, con sus dos botones. */
-export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onEliminarRegistro }) {
+export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onEliminarRegistro, onEliminarRutina }) {
   const [configurando, setConfigurando] = useState(false);
   const entrada = useMemo(() => estadoDeEntrada(estado, datosGlobales), [estado, datosGlobales]);
   /* ⚠️ Se calcula UNA vez, antes de cualquier `return` (regla 4): si se
@@ -5711,6 +5717,7 @@ export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
         onCambiar={onCambiar} onCerrar={onCerrar}
         onPerfil={() => setConfigurando(true)}
         onEliminarRegistro={onEliminarRegistro}
+        onEliminarRutina={onEliminarRutina}
       />
     );
   }
@@ -9919,7 +9926,7 @@ export function PersonalizarPlaquitas({
 /* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
-export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarRutinaCuerpo, onEliminarRutinaMP, onEliminarRegistroMP, onEliminarSonrisa, onEliminarPerfume, onEliminarAccesorio, onGuardarAccesorio, onEliminarGusto, onGuardarObjetivo, objetivos = null, rachas = null, onEliminarDatosEH, productividad = null, onGuardarTarea }) {
+export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarRutinaCuerpo, onEliminarRutinaMP, onEliminarRegistroMP, onEliminarRutinaPiel, onEliminarRutinaPelo, onEliminarPorProbar, onEliminarSonrisa, onEliminarPerfume, onEliminarAccesorio, onGuardarAccesorio, onEliminarGusto, onGuardarObjetivo, objetivos = null, rachas = null, onEliminarDatosEH, productividad = null, onGuardarTarea }) {
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
@@ -10112,6 +10119,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
         estado={estado} accent={accent} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={() => setPerfilPelo(false)}
         onPerfil={() => setPerfilPelo('perfil')}
+        onEliminarRutina={onEliminarRutinaPelo}
       />
     );
   }
@@ -10124,6 +10132,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
         estado={estado} accent={accent} datosGlobales={datosGlobales}
         onCambiar={onCambiar} onCerrar={() => setSkincare(false)}
         onEliminarRegistro={onEliminarRegistro}
+        onEliminarRutina={onEliminarRutinaPiel}
       />
     );
   }

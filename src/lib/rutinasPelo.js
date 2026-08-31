@@ -39,6 +39,7 @@ import {
   normalizarRutinaGenerica, tocaEnFechaGenerico, estadoDelDia,
   ESTADOS_RUTINA_DIA, TEXTOS_ESTADO_DIA,
 } from './motorRutinas';
+import { prepararEliminacion, prepararRestauracion } from './papelera';
 import { uid, todayISO, addDays } from './helpers';
 
 /* ===========================================================================
@@ -283,6 +284,28 @@ export function eliminarRutina(estado, id) {
 }
 
 /** Apartado 14 — el ORDEN de los pasos también se cambia. */
+/* 🐛 ⚠️ **EH F45, apartado 8** — lo mismo que en Skincare: la F8 es la fase
+   más antigua con rutinas y borraba **sin papelera**. Aquí la lista vive dentro
+   de `config.pelo`, así que se le pasa ese objeto entero: el motor de ME F3 es
+   genérico sobre la lista que se le dé. */
+export function eliminarRutinaConPapeleraPelo(estado, id, { ahora = new Date().toISOString() } = {}) {
+  const d = datosPelo(estado);
+  const r = prepararEliminacion(d, MODULO_PELO, 'rutinas', id, ahora);
+  if (!r) return { estado: normalizarEstiloHombre(estado), error: 'Esa rutina no existe.', entrada: null };
+  return {
+    estado: escribir(estado, { ...r.moduloActualizado, hechos: d.hechos.filter((h) => h.rutinaId !== id) }),
+    error: null,
+    entrada: r.entrada,
+  };
+}
+
+export function restaurarRutinaPelo(estado, entrada) {
+  const d = datosPelo(estado);
+  const r = prepararRestauracion(d, entrada);
+  if (!r) return { estado: normalizarEstiloHombre(estado), error: 'No se ha podido restaurar.' };
+  return { estado: escribir(estado, r.moduloActualizado), error: null, yaExistia: r.yaExistia };
+}
+
 export function ordenarPasos(estado, rutinaId, ordenIds = []) {
   const d = datosPelo(estado);
   const r = d.rutinas.find((x) => x.id === rutinaId);

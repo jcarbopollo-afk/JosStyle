@@ -53,6 +53,7 @@ import {
   historialGenerico, eventosDeRutinas, impactoEliminarRutina, estadoDelDia,
   ESTADOS_RUTINA_DIA, TEXTOS_ESTADO_DIA, DIAS_HISTORIAL,
 } from './motorRutinas';
+import { prepararEliminacion, prepararRestauracion } from './papelera';
 import { uid, todayISO, addDays } from './helpers';
 
 /* ===========================================================================
@@ -252,6 +253,31 @@ export function eliminarRutinaPiel(estado, id) {
 }
 
 /** Apartado 5 — *"el usuario puede cambiar el orden"*. */
+/* 🐛 ⚠️ **EH F45, apartado 8** — *"los elementos eliminados tendrán un registro
+   que permita recuperar"*. Esta rutina se borraba **sin pasar por la papelera
+   global**: la F14 es anterior a que la F21 estableciera el patrón, y la
+   auditoría de ME F4 no lo vio porque solo mira lo que se CREA desde `App.jsx`.
+   Lo destapó la auditoría de esta fase, cruzando `COLECCIONES_EH` con
+   `CATALOGO_PAPELERA`. */
+export function eliminarRutinaPielConPapelera(estado, id, { ahora = new Date().toISOString() } = {}) {
+  const d = datosRutinasPiel(estado);
+  const r = prepararEliminacion(d, MODULO_PIEL, 'rutinas', id, ahora);
+  if (!r) return { estado: normalizarEstiloHombre(estado), error: 'Esa rutina no existe.', entrada: null };
+  return {
+    // Sus marcas se van con ella, como en el borrado de siempre.
+    estado: escribir(estado, { ...r.moduloActualizado, hechos: d.hechos.filter((h) => h.rutinaId !== id) }),
+    error: null,
+    entrada: r.entrada,
+  };
+}
+
+export function restaurarRutinaPiel(estado, entrada) {
+  const d = datosRutinasPiel(estado);
+  const r = prepararRestauracion(d, entrada);
+  if (!r) return { estado: normalizarEstiloHombre(estado), error: 'No se ha podido restaurar.' };
+  return { estado: escribir(estado, r.moduloActualizado), error: null, yaExistia: r.yaExistia };
+}
+
 export function ordenarPasosPiel(estado, rutinaId, ordenIds = []) {
   const d = datosRutinasPiel(estado);
   const r = d.rutinas.find((x) => x.id === rutinaId);

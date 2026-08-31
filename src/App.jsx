@@ -63,6 +63,11 @@ import { eliminarRegistroPiel, restaurarRegistroPiel } from './lib/seguimientoPi
 import { eliminarRegistroBarba, restaurarRegistroBarba, eliminarRutinaConPapelera, restaurarRutinaBarba } from './lib/rutinasBarba';
 // EH F19 — y las rutinas de Higiene y de Cuidado corporal, por la misma puerta.
 import { eliminarRutinaCuerpo, restaurarRutinaCuerpo } from './lib/rutinasCuerpo';
+/* 🐛 EH F45, apartado 8 — las tres colecciones que se borraban sin pasar por la
+   papelera global: las rutinas de Skincare y de Pelo, y los perfumes por probar. */
+import { eliminarRutinaPielConPapelera, restaurarRutinaPiel } from './lib/rutinasPiel';
+import { eliminarRutinaConPapeleraPelo, restaurarRutinaPelo } from './lib/rutinasPelo';
+import { quitarPorProbarConPapelera, restaurarPorProbar } from './lib/perfumes';
 // EH F22 — y las de manos, uñas y pies, que viven en el mismo módulo con
 // nombre de colección propio para que la papelera no las confunda.
 import { eliminarRutinaMP, eliminarRegistroMP, restaurarEnMP } from './lib/manosPies';
@@ -1240,9 +1245,42 @@ export default function App() {
     });
   };
 
+  /* 🐛 EH F45, apartado 8 — las tres que faltaban, cada una por su puerta y a
+     LA MISMA papelera. Viven dentro de la `config` de su módulo, como las de
+     barba, así que `MODULOS_PAPELERA` no las alcanza. */
+  const eliminarRutinaDePiel = (id) => {
+    const r = eliminarRutinaPielConPapelera(estiloHombre, id);
+    if (r.error) return;
+    snapshotAndSave({
+      estiloHombre: r.estado,
+      papelera: { ...papelera, elementos: [...papelera.elementos, r.entrada] },
+    });
+  };
+
+  const eliminarRutinaDePelo = (id) => {
+    const r = eliminarRutinaConPapeleraPelo(estiloHombre, id);
+    if (r.error) return;
+    snapshotAndSave({
+      estiloHombre: r.estado,
+      papelera: { ...papelera, elementos: [...papelera.elementos, r.entrada] },
+    });
+  };
+
+  const eliminarPorProbarDePerfumes = (id) => {
+    const r = quitarPorProbarConPapelera(estiloHombre, id);
+    if (r.error) return;
+    snapshotAndSave({
+      estiloHombre: r.estado,
+      papelera: { ...papelera, elementos: [...papelera.elementos, r.entrada] },
+    });
+  };
+
   const eliminarConPapelera = (modulo, coleccion, id) => {
     // Los registros de piel no son una lista de primer nivel: van por su puerta.
     if (modulo === 'skincare' && coleccion === 'registros') return eliminarRegistroDePiel(id);
+    if (modulo === 'skincare' && coleccion === 'rutinas') return eliminarRutinaDePiel(id);
+    if (modulo === 'pelo' && coleccion === 'rutinas') return eliminarRutinaDePelo(id);
+    if (modulo === 'perfumes' && coleccion === 'porProbar') return eliminarPorProbarDePerfumes(id);
     if (modulo === 'barba') return eliminarDeBarba(coleccion, id);
     if (modulo === 'higiene' && coleccion !== 'rutinas') return eliminarDeManosPies(coleccion, id);
     if (modulo === 'higiene' || modulo === 'cuerpo') return eliminarDeCuerpo(modulo, id);
@@ -1275,11 +1313,32 @@ export default function App() {
       });
       return;
     }
-    // EH F24 — y Perfumes.
+    // EH F45 — las rutinas de Skincare y de Pelo vuelven por su puerta.
+    if (entrada.modulo === 'skincare' && entrada.coleccion === 'rutinas') {
+      const r = restaurarRutinaPiel(estiloHombre, entrada);
+      if (r.error) return;
+      snapshotAndSave({
+        estiloHombre: r.estado,
+        papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
+      });
+      return;
+    }
+    if (entrada.modulo === 'pelo' && entrada.coleccion === 'rutinas') {
+      const r = restaurarRutinaPelo(estiloHombre, entrada);
+      if (r.error) return;
+      snapshotAndSave({
+        estiloHombre: r.estado,
+        papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
+      });
+      return;
+    }
+    // EH F24 — y Perfumes. ⚠️ Con los "por probar" desde la F45.
     if (entrada.modulo === 'perfumes') {
       const r = entrada.coleccion === 'perfumes'
         ? restaurarPerfume(estiloHombre, entrada)
-        : restaurarUso(estiloHombre, entrada);
+        : (entrada.coleccion === 'porProbar'
+          ? restaurarPorProbar(estiloHombre, entrada)
+          : restaurarUso(estiloHombre, entrada));
       if (r.error) return;
       snapshotAndSave({
         estiloHombre: r.estado,
@@ -1934,9 +1993,15 @@ export default function App() {
             relacion={relacion} favoritas={favoritasResueltas}
             productividad={productividad} estudios={estudios}
             /* ⚠️ Con los nombres escritos: la auditoría de ME F4 los busca literales. */
-            onEliminarPerfume={(coleccion, id) => (coleccion === 'perfumes'
-              ? eliminarConPapelera('perfumes', 'perfumes', id)
-              : eliminarConPapelera('perfumes', 'historial', id))}
+            /* ⚠️ EH F45 — tres colecciones, no dos: los "por probar" también van
+               a la papelera desde esta fase. ⚠️ Y **con los tres nombres
+               escritos**: la auditoría de ME F4 lee este archivo buscando el par
+               módulo/colección, y con la variable no veía ninguno. */
+            onEliminarPerfume={(coleccion, id) => {
+              if (coleccion === 'perfumes') return eliminarConPapelera('perfumes', 'perfumes', id);
+              if (coleccion === 'porProbar') return eliminarConPapelera('perfumes', 'porProbar', id);
+              return eliminarConPapelera('perfumes', 'historial', id);
+            }}
             rachas={rachas}
             // BI Fase 1 — el desplegable de situación de "Hoy" cambia el modo desde ahí mismo.
             // Es el MISMO interruptor que Personalización, no un segundo sistema (decisión D2-07).
@@ -2026,9 +2091,15 @@ export default function App() {
         return (
           <RachasView
             /* ⚠️ Con los nombres escritos: la auditoría de ME F4 los busca literales. */
-            onEliminarPerfume={(coleccion, id) => (coleccion === 'perfumes'
-              ? eliminarConPapelera('perfumes', 'perfumes', id)
-              : eliminarConPapelera('perfumes', 'historial', id))}
+            /* ⚠️ EH F45 — tres colecciones, no dos: los "por probar" también van
+               a la papelera desde esta fase. ⚠️ Y **con los tres nombres
+               escritos**: la auditoría de ME F4 lee este archivo buscando el par
+               módulo/colección, y con la variable no veía ninguno. */
+            onEliminarPerfume={(coleccion, id) => {
+              if (coleccion === 'perfumes') return eliminarConPapelera('perfumes', 'perfumes', id);
+              if (coleccion === 'porProbar') return eliminarConPapelera('perfumes', 'porProbar', id);
+              return eliminarConPapelera('perfumes', 'historial', id);
+            }}
             rachas={rachas} gamificacion={gamificacion} habitos={productividad.habitos}
             accent={accent}
             onCrearRacha={crearNuevaRacha}
@@ -2082,6 +2153,11 @@ export default function App() {
                app (ME F3), no por un atajo: así la auditoría de ME F4 ve el
                borrado y lo empareja con su entrada del catálogo. */
             onEliminarRegistro={(id) => eliminarConPapelera('skincare', 'registros', id)}
+            /* 🐛 EH F45, apartado 8 — las dos rutinas que se borraban sin papelera.
+               Los "por probar" entran por `onEliminarPerfume`, que ya recibe la
+               colección. */
+            onEliminarRutinaPiel={(id) => eliminarConPapelera('skincare', 'rutinas', id)}
+            onEliminarRutinaPelo={(id) => eliminarConPapelera('pelo', 'rutinas', id)}
             onEliminarRegistroBarba={(id) => eliminarConPapelera('barba', 'registros', id)}
             onEliminarRutinaBarba={(id) => eliminarConPapelera('barba', 'rutinas', id)}
             /* ⚠️ EH F19 — las dos de Higiene y Cuidado corporal, **con su nombre
@@ -2104,9 +2180,15 @@ export default function App() {
               return eliminarConPapelera('sonrisa', 'registros', id);
             }}
             /* ⚠️ Con los nombres escritos: la auditoría de ME F4 los busca literales. */
-            onEliminarPerfume={(coleccion, id) => (coleccion === 'perfumes'
-              ? eliminarConPapelera('perfumes', 'perfumes', id)
-              : eliminarConPapelera('perfumes', 'historial', id))}
+            /* ⚠️ EH F45 — tres colecciones, no dos: los "por probar" también van
+               a la papelera desde esta fase. ⚠️ Y **con los tres nombres
+               escritos**: la auditoría de ME F4 lee este archivo buscando el par
+               módulo/colección, y con la variable no veía ninguno. */
+            onEliminarPerfume={(coleccion, id) => {
+              if (coleccion === 'perfumes') return eliminarConPapelera('perfumes', 'perfumes', id);
+              if (coleccion === 'porProbar') return eliminarConPapelera('perfumes', 'porProbar', id);
+              return eliminarConPapelera('perfumes', 'historial', id);
+            }}
             /* ⚠️ EH F26 — los dos, con su nombre escrito, por lo mismo. */
             onEliminarAccesorio={(coleccion, id) => (coleccion === 'accesorios'
               ? eliminarConPapelera('accesorios', 'accesorios', id)

@@ -580,6 +580,24 @@ export function editarPorProbar(estado, id, cambios = {}) {
   return { estado: escribir(estado, { ...d, porProbar: d.porProbar.map((x) => (x.id === id ? nuevo : x)) }), error: null };
 }
 
+/* 🐛 ⚠️ **EH F45, apartado 8** — la lista de "por probar" se borraba **sin
+   pasar por la papelera global**, al revés que la colección de al lado. Lo
+   destapó la auditoría de esta fase cruzando `COLECCIONES_EH` con
+   `CATALOGO_PAPELERA`, y es el mismo motor de ME F3: ni una función nueva. */
+export function quitarPorProbarConPapelera(estado, id, { ahora = new Date().toISOString() } = {}) {
+  const d = datosPerfumes(estado);
+  const r = prepararEliminacion(d, MODULO_PERFUMES, 'porProbar', id, ahora);
+  if (!r) return { estado: normalizarEstiloHombre(estado), error: 'Ese no está en la lista.', entrada: null };
+  return { estado: escribir(estado, r.moduloActualizado), error: null, entrada: r.entrada };
+}
+
+export function restaurarPorProbar(estado, entrada) {
+  const d = datosPerfumes(estado);
+  const r = prepararRestauracion(d, entrada);
+  if (!r) return { estado: normalizarEstiloHombre(estado), error: 'No se ha podido restaurar.' };
+  return { estado: escribir(estado, r.moduloActualizado), error: null, yaExistia: r.yaExistia };
+}
+
 export function quitarPorProbar(estado, id) {
   const d = datosPerfumes(estado);
   if (!d.porProbar.some((p) => p.id === id)) return { estado: normalizarEstiloHombre(estado), error: 'Ese no está en la lista.' };

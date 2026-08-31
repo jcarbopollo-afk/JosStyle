@@ -4,10 +4,10 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 87 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 44/65**
-> (hasta v2.10.0). Quedan **23**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (21:
-> **F45-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 88 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 45/65**
+> (hasta v2.11.0). Quedan **22**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (20:
+> **F46-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -3093,33 +3093,45 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] PRUEBAS DE RED
 - [x] PRUEBAS DE MEMORIA
 
-#### EH · Fase 45/65 — ESTRUCTURA INTERNA DE DATOS
-- [ ] USUARIO
-- [ ] MÓDULOS
-- [ ] CONFIGURACIÓN DE PLAQUITAS
-- [ ] PREFERENCIAS
-- [ ] GUSTOS
-- [ ] EXPERIENCIAS
-- [ ] RELACIONES
-- [ ] ELIMINACIÓN
-- [ ] HISTORIAL
-- [ ] FECHAS
-- [ ] SINCRONIZACIÓN
-- [ ] CONFLICTOS
-- [ ] SEGURIDAD
-- [ ] ESCALABILIDAD
-- [ ] NO SOBREDISEÑAR
-- [ ] PRUEBAS
-- [ ] Crear registro.
-- [ ] Modificarlo.
-- [ ] Eliminarlo.
-- [ ] Recuperarlo.
-- [ ] Sincronizarlo.
-- [ ] Abrirlo desde otro dispositivo.
-- [ ] Relacionarlo con otro módulo.
-- [ ] Eliminar la relación.
-- [ ] Comprobar permisos.
-- [ ] Comprobar que no existen duplicados.
+#### EH · Fase 45/65 — ESTRUCTURA INTERNA DE DATOS ✅ COMPLETADA (v2.11.0)
+
+> **`src/lib/estructuraDatos.js`** (59 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> 🚨 **Encontró un agujero real:** las rutinas de Skincare (F14) y de Pelo (F8) y los perfumes
+> *"por probar"* (F24) **se borraban sin pasar por la papelera global**. Arreglado: 49 colecciones.
+>
+> 🐛 **Y la lección de la F41 por tercera vez:** las auditorías leen el camino **en crudo**,
+> porque leyendo con los `datos*()` el normalizador ya ha limpiado el fallo y el silencio parece
+> un aprobado.
+>
+> ⚠️ **El apartado 12 (conflictos) sigue sin poder cumplirse**, declarado con su motivo desde la
+> F41: `saveData` sobrescribe sin leer la versión anterior.
+- [x] USUARIO
+- [x] MÓDULOS
+- [x] CONFIGURACIÓN DE PLAQUITAS
+- [x] PREFERENCIAS
+- [x] GUSTOS
+- [x] EXPERIENCIAS
+- [x] RELACIONES
+- [x] ELIMINACIÓN
+- [x] HISTORIAL
+- [x] FECHAS
+- [x] SINCRONIZACIÓN
+- [x] CONFLICTOS
+- [x] SEGURIDAD
+- [x] ESCALABILIDAD
+- [x] NO SOBREDISEÑAR
+- [x] PRUEBAS
+- [x] Crear registro.
+- [x] Modificarlo.
+- [x] Eliminarlo.
+- [x] Recuperarlo.
+- [x] Sincronizarlo.
+- [x] Abrirlo desde otro dispositivo.
+- [x] Relacionarlo con otro módulo.
+- [x] Eliminar la relación.
+- [x] Comprobar permisos.
+- [x] Comprobar que no existen duplicados.
 
 #### EH · Fase 46/65 — MIGRACIÓN Y COMPATIBILIDAD
 - [ ] NO REHACER LA APP

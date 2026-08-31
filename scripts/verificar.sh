@@ -440,6 +440,12 @@ else
   fallo "Falla el rendimiento"; grep '✗' /tmp/jc_eh44.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-estructura-datos.mjs >/tmp/jc_eh45.log 2>&1; then
+  ok "Estructura interna de datos (EH F45) — $(grep -c '✓' /tmp/jc_eh45.log) comprobaciones"
+else
+  fallo "Falla la estructura de datos"; grep '✗' /tmp/jc_eh45.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

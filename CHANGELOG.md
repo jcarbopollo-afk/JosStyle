@@ -1,5 +1,74 @@
 # CHANGELOG.md
 
+## v2.11.0 — EH Fase 45/65: estructura interna de datos
+
+### Qué se ha construido
+*"Una información = un único lugar = muchas formas de mostrarla."*
+
+Como la F43 y la F44, esta fase **no construye una pantalla: declara y comprueba**. Los dieciséis
+apartados quedan escritos con **la función real** que los resuelve, y con ellos nacen **tres
+auditorías que recorren lo guardado de verdad**: las fechas, los identificadores y las relaciones.
+
+### 🐛 Y la auditoría encontró un agujero de verdad: tres colecciones se borraban sin papelera
+
+El apartado 8 pide que lo eliminado se pueda **recuperar sin perder su estructura**. Cruzando
+`COLECCIONES_EH` (F41) con `CATALOGO_PAPELERA` (ME F3) salieron **tres listas que no estaban**:
+
+- **Las rutinas de Skincare** (F14) y **las de Pelo** (F8) — las dos fases más antiguas con rutinas,
+  anteriores a que la **F21** estableciera el patrón de pasar por la papelera global.
+- **Los perfumes "por probar"** (F24), justo al lado de una colección que sí pasaba.
+
+Se borraban **para siempre y sin aviso**. Ahora las tres entran por `eliminarConPapelera`, la única
+puerta de borrado de la aplicación, con su entrada de papelera y su restauración — **sin tocar ni una
+función del motor de ME F3**: tres líneas de catálogo y sus dos llamadas.
+
+⚠️ **Y por qué no lo vio la auditoría de ME F4:** aquella comprueba que *"toda colección que se puede
+crear se puede borrar"*, y detecta el "se puede crear" por el patrón de los handlers de alta **de
+`App.jsx`**. Estas tres se crean dentro de sus librerías, así que nunca entraron en la lista. Las dos
+auditorías se complementan, y ahora se dice.
+
+### 🐛 Y la lección de la F41, por tercera vez: hay que mirar lo GUARDADO
+
+La primera versión de `revisarRelaciones()` leía las colecciones con sus `datos*()`… que **ya las
+habían normalizado**. Plantarle una ficha entera donde debía ir un id **no saltaba nunca**, porque el
+normalizador la había convertido en `null` antes de que la auditoría la viera: un silencio que parece
+un aprobado. Ahora las tres auditorías leen **el camino en crudo** que la F41 declaró, y las
+colecciones que no lo tienen —las rutinas, que normaliza el motor— **se declaran como no revisadas en
+crudo**, en vez de darse por buenas.
+
+Leyendo en crudo apareció además algo que la versión normalizada no podía ver: **un elemento guardado
+sin `id`**. Al releerlo, su normalizador le pone uno nuevo — **y otro distinto en el otro
+dispositivo**, que es exactamente el duplicado que el apartado 11 quiere evitar.
+
+### Las decisiones de la fase
+
+**1. ⚠️ Ni una tercera lista de colecciones.** `COLECCIONES_EH` ya dice qué listas hay y **cómo se
+leen**; `CATALOGO_PAPELERA`, cuáles se recuperan. Las auditorías recorren esas dos.
+
+**2. ⚠️ La separación por módulos es lógica, no física, y se dice.** El apartado 2 pide *"no mezclar
+todo en una tabla gigante"*: JosStyle guarda **una fila por (usuario, clave)** y Estilo de hombre es
+**una** clave con un módulo por línea, cada uno con su `config` y su normalizador. Eso cumple el
+espíritu —nadie escribe en la `config` de otro— pero **no es una tabla por módulo**, y decirlo
+importa: es lo que hace que el apartado 12 siga sin poder cumplirse.
+
+**3. ⚠️ Los conflictos siguen sin poder detectarse, y no se finge.** La F41 ya lo dejó escrito:
+`saveData` sobrescribe **sin leer la versión anterior**. Se declara con su motivo y **su texto ya
+escrito**, para el día que el esquema lo permita.
+
+**4. ⚠️ Los siete módulos que todavía no guardan nada están dichos.** `fitness`, `sueno`, `salud`,
+`habitos`, `progreso`, `educacion` y `productos` están en el catálogo porque Josué los puso en su
+Fase 2, pero su pantalla llega después. Se declaran con `claves: []` — así la auditoría no los cuenta
+como un olvido, **y se notará el día que uno guarde algo sin decirlo**.
+
+**5. ⚠️ Y no se sobrediseña** (apartado 15, con esas palabras). Aquí no nace ni un campo, ni una
+tabla, ni un almacén.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **9 389 comprobaciones de Node** (59
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **446 comprobaciones sobre la
+aplicación de verdad en Chromium**. La papelera global pasa de **46 a 49 colecciones**.
+
+
 ## v2.10.0 — EH Fase 44/65: rendimiento y optimización
 
 ### Qué se ha construido
