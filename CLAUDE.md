@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v2.9.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v2.10.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 43/65**, quedan 22 — **ninguna bloqueada: C-25 la resolvió Josué
+por 3/5, **Estilo de Hombre va por 44/65**, quedan 21 — **ninguna bloqueada: C-25 la resolvió Josué
 en v2.7.0**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
@@ -126,9 +126,9 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 9259 pruebas unitarias con Node (5 de ellas de auditoría), 1408 casos de renderizado real
+Vite, 9330 pruebas unitarias con Node (5 de ellas de auditoría), 1408 casos de renderizado real
 con `react-dom/server`, 11 reglas invariantes y **446 comprobaciones sobre la aplicación de verdad
-en Chromium** — **11 113 comprobaciones**.
+en Chromium** — **11 184 comprobaciones**.
 
 Eso ya ha encontrado **setenta y cuatro bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -154,7 +154,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 43/65** (v2.9.0: **F1-F43 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 44/65** (v2.10.0: **F1-F44 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
@@ -163,10 +163,10 @@ contradicción— y contestó las tres: **dos apartados separados** (`higiene` y
 dos líneas de `MODULOS_EH`), ***Cuidado de manos* y *Cuidado de pies* son la Fase 22** (la casilla de
 la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. ✅ **Las tres —F18, F19 y F22— están construidas**, así que C-25 no bloquea ya nada.
 
-La siguiente es **EH · Fase 44/65 — Rendimiento y optimización**, y a partir de ahí **F44-F65
+La siguiente es **EH · Fase 45/65 — Estructura interna de datos**, y a partir de ahí **F45-F65
 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F43 dejaron ciento noventa y siete cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F44 dejaron doscientas cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -783,6 +783,18 @@ Seis cosas que conviene tener presentes al retomar:
   la suya la describe. No copiar la decisión de la fase anterior sin releer el enunciado.
 - 🐛 ⚠️ **Si una prueba de navegador falla entera sin motivo, mirar quién está en el puerto 5199**
   (EH F22): un servidor de desarrollo de una sesión anterior seguía vivo y servía el código viejo.
+
+- ⚠️ **Toda búsqueda nueva va con `DEBOUNCE_BUSQUEDA_MS`** (EH F44): el buscador lanzaba una
+  consulta por tecla, y cada una recorre el catálogo entero. El retardo vive en `rendimiento.js`, no
+  escrito a mano en una vista.
+- ⚠️ **Toda lista que pueda tener cientos de elementos va con `paginar()`** (EH F44), y "cuántas se
+  ven" vive en la pantalla, nunca en lo guardado.
+- ⚠️ **Un presupuesto es un número** (EH F44): `PRESUPUESTOS` tiene los milisegundos de la portada,
+  de abrir un apartado y de una búsqueda, medidos sobre el escenario grande. Si una fase futura los
+  empeora, `test-rendimiento` lo canta.
+- 🐛 ⚠️ **Un escenario de prueba tiene que pasar por los normalizadores** (EH F44): los trescientos
+  accesorios del escenario grande salían cero —un accesorio sin `prendaId` no existe (F26)— y se
+  estaba midiendo sobre una lista vacía sin que nada lo dijera.
 
 ⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
 de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin

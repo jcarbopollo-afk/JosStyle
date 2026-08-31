@@ -280,9 +280,11 @@ escribir código.
 
 | v2.9.0 | **EH F22** · 🔓 **C-25 cerrada del todo** | Manos, uñas y pies. ⚠️ **Vive DENTRO de `higiene` y no crea ningún módulo** (respuesta 2 de Josué): sus tres interruptores **son partes de `PARTES_HIGIENE`**, y lo único nuevo en el catálogo es `unas`, apagada. ⚠️ **Ni motor, ni catálogo, ni papelera, ni calendario propios**: los productos son el catálogo compartido de la F19. ⚠️ **El seguimiento SÍ se guarda aquí**, al revés que en la F19, **porque su enunciado lo describe** — se construye lo que pide cada enunciado, no lo que hizo la fase anterior. ⚠️ **Dos listas de rutinas en el mismo módulo, y hay que nombrarlas**: la papelera se indexa por `módulo.colección`, así que con el nombre de la F19 restaurar una rutina de uñas la habría metido entre las de la ducha. ⚠️ Y **el ejemplo del calendario sale de la FRECUENCIA de la sección**, no de una rutina: las secciones se convierten en lo que el motor ya sabe leer. 🐛 Y una del entorno: un servidor de desarrollo de otra sesión seguía vivo en el puerto 5199 y la prueba de navegador miraba **el código de antes** |
 
+| v2.10.0 | **EH F44** | Rendimiento y optimización. ⚠️ **Esta fase no se construye: se MIDE**, como la F42 y la F43. Lo suyo son **el revisor** —cinco reglas, cada una con un ejemplo que sí incumple— y **los tres escenarios del apartado 16**, generados de verdad, pasados por los normalizadores de cada módulo y medidos contra un **presupuesto en milisegundos**. 🐛 **Y arregla las dos cosas que faltaban de verdad**: el buscador **lanzaba una consulta por tecla** —y cada una recorre el catálogo entero de todos los módulos— y las colecciones **se pintaban enteras**, trescientas tarjetas por repintado. ⚠️ **Lo que pide el apartado 6 ya existe y no puede vivir aquí**: *"almacenamiento local"* es lo que la F43 prohíbe en este bloque, así que se declara dónde vive. ⚠️ **Y lo que necesita un móvil se dice** (redes, dispositivos antiguos, memoria): R1, con su motivo. 🐛 Y el escenario grande destapó lo suyo: los trescientos accesorios salían **cero**, porque uno sin `prendaId` no existe (F26) |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 43/65** (**F1-F43 seguidas**; queda **F44-F65**).
-Quedan **24** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (22, ninguna bloqueada).
+3/5 y **EH por 44/65** (**F1-F44 seguidas**; queda **F45-F65**).
+Quedan **23** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (21, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

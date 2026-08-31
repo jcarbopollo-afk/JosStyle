@@ -434,6 +434,12 @@ else
   fallo "Falla manos, uñas y pies"; grep '✗' /tmp/jc_eh22.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-rendimiento.mjs >/tmp/jc_eh44.log 2>&1; then
+  ok "Rendimiento y optimización (EH F44) — $(grep -c '✓' /tmp/jc_eh44.log) comprobaciones"
+else
+  fallo "Falla el rendimiento"; grep '✗' /tmp/jc_eh44.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

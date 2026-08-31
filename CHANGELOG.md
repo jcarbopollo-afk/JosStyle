@@ -1,5 +1,74 @@
 # CHANGELOG.md
 
+## v2.10.0 — EH Fase 44/65: rendimiento y optimización
+
+### Qué se ha construido
+*"Muchísimas funciones por detrás, interfaz rápida por delante."*
+
+Esta fase **no se construye: se mide**. Como la F42 (accesibilidad) y la F43 (privacidad), su
+enunciado no pide una pantalla: pide que lo que ya existe siga siendo rápido. Así que se ha
+construido **el revisor**, **los escenarios de carga del apartado 16** —que se generan de verdad y se
+miden contra un presupuesto en milisegundos— y **las dos piezas que de verdad faltaban**.
+
+### Las dos cosas que faltaban, y salieron de mirar el código
+
+**1. 🐛 El buscador lanzaba una consulta por tecla** (apartado 8, que lo dice con su ejemplo:
+*"«perfu…» no genera cinco consultas innecesarias"*). `BuscadorEstiloEH` recalculaba `panelBuscador`
+en cada pulsación, y cada una **recorre el catálogo entero de todos los módulos**. Ahora lo que se
+escribe y lo que se busca son **dos estados**: el campo responde con cada tecla y la búsqueda se
+queda atrás un cuarto de segundo. Con el escenario grande, cinco pulsaciones seguidas pasaron de
+cinco búsquedas a una.
+
+**2. 🐛 Las listas grandes se pintaban enteras** (apartado 3). Con trescientos perfumes, la colección
+pintaba trescientas tarjetas en cada repintado. Ahora usa `paginar()` con su botón de *"Ver N más"* —
+y **cuántas se están viendo vive en la pantalla**, no en lo guardado: no tiene que sobrevivir a
+cerrar la aplicación.
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Un apartado es una línea, con dónde se cumple.** Los dieciocho están declarados con **la
+función real** que los resuelve, no con una promesa.
+
+**2. ⚠️ Y lo que no se puede comprobar desde aquí, se dice.** Las redes (17), los dispositivos
+antiguos (15) y la memoria de verdad (10 y 18) necesitan **un teléfono**: se declaran con
+`medible: false` y su motivo, como hizo la F41 con los estados que no se pueden detectar. Están en
+**R1**, que es lo que le toca mirar a Josué.
+
+**3. ⚠️ Lo que pide el apartado 6 ya existe, y no puede vivir aquí.** *"Utilizar almacenamiento
+local"* es exactamente lo que la **F43 prohíbe** a las librerías de Estilo de hombre: guardar es de
+`App.jsx` y de Supabase, y hay una auditoría que falla si aparece un `localStorage` en este bloque.
+No es una contradicción entre prompts (regla 49): es un sistema **centralizado** ya resuelto, y se
+declara dónde vive en vez de montar el segundo. Lo mismo con el caché del apartado 5.
+
+**4. ⚠️ El presupuesto es un número, no una sensación.** Cada operación medida tiene sus
+milisegundos escritos y la prueba falla si se pasa. Sin un número, *"va rápido"* es una opinión que
+nadie puede comprobar dos meses después.
+
+**5. ⚠️ Un revisor que no puede fallar no sirve** (la lección de la F42): las cinco reglas traen
+**un ejemplo que sí incumple**, y la prueba comprueba que lo caza.
+
+**6. ⚠️ Y no se optimiza lo que no se ha medido.** Lo demás se declara como está, incluido el límite
+honesto del apartado 7: se sincroniza **por clave** —cambiar un perfume no manda el armario—, pero
+**no hay diff por campo**, porque el esquema guarda un JSON por clave. Se dice, en vez de prometerlo.
+
+### Los escenarios del apartado 16, generados de verdad
+Los tres usuarios del enunciado —**pequeño** (5 perfumes), **medio** (50 perfumes, 100 accesorios,
+200 registros) y **grande** (300 y 300 y **mil registros**)— se generan y **pasan por los
+normalizadores de cada módulo**: un escenario inventado a mano que no pasara por ahí no probaría
+nada de lo que se usa de verdad. Con el usuario grande, la portada y una búsqueda caben en su
+presupuesto.
+
+🐛 **Y eso destapó un fallo en el propio escenario:** los trescientos accesorios salían **cero**. Un
+accesorio es *el envoltorio de una prenda del Armario* (F26) y sin `prendaId` su normalizador lo
+tira, así que la medición se estaba haciendo sobre una lista vacía **sin decir nada**. Lo cazó su
+propia prueba, que comprueba que los tres escenarios llegan enteros.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **9 330 comprobaciones de Node** (71
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **446 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
+
 ## v2.9.0 — EH Fase 22/65: manos, uñas y pies
 
 ### Qué se ha construido

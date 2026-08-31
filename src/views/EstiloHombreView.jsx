@@ -289,6 +289,10 @@ import {
   eliminarRutinaMP, registrarMP, eliminarRegistroMP, anadirProductoMP,
   quitarProductoMP, pasosDeSeccion, TEXTOS_MP,
 } from '../lib/manosPies';
+/* ⚠️ **EH F44** — el retardo del buscador y la paginación de las listas grandes
+   viven en la librería: un número escrito a mano dentro de una vista es el
+   siguiente que elegirá otro distinto. */
+import { DEBOUNCE_BUSQUEDA_MS, paginar, POR_PAGINA } from '../lib/rendimiento';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -5098,6 +5102,10 @@ export function PerfumesEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
   const [marca, setMarca] = useState('');
   const [probar, setProbar] = useState('');
   const [error, setError] = useState(null);
+  /* ⚠️ **EH F44, apartado 3** — cuántas de la colección se están enseñando.
+     Vive en la PANTALLA: "cuántas estoy viendo" no tiene que sobrevivir a
+     cerrar la aplicación, así que no se guarda. */
+  const [visibles, setVisibles] = useState(POR_PAGINA);
 
   const panel = useMemo(() => panelPerfumes(estado, datosGlobales), [estado, datosGlobales]);
   const [yaEntro] = useState(() => panel.estado === 'configurado');
@@ -5199,11 +5207,15 @@ export function PerfumesEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
 
   /* ── 🧴 Mi colección ───────────────────────────────────────────────── */
   if (zona === 'coleccion') {
+    /* ⚠️ **EH F44, apartado 3** — *"si un usuario tiene cientos de elementos, no
+       mostrar todos a la vez"*. Con trescientos perfumes esto pintaba
+       trescientas tarjetas en cada repintado. */
+    const pagina = paginar(panel.perfumes, { visibles });
     return (
       <Card>
         {cabecera('🧴 Mi colección')}
         {error && <p className="text-[10px] mb-2" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>}
-        {panel.perfumes.map((p) => (
+        {pagina.items.map((p) => (
           <div key={p.id} className="rounded-2xl p-2.5 mb-1"
             style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
             <div className="flex items-center gap-2">
@@ -5258,6 +5270,13 @@ export function PerfumesEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
             </div>
           </div>
         ))}
+        {/* ⚠️ **EH F44, apartado 3** — el resto se pide, no se pinta solo. */}
+        {pagina.hayMas && (
+          <button onClick={() => setVisibles(pagina.siguiente)}
+            className="text-[11px] font-semibold mb-2" style={{ color: accent }}>
+            {pagina.verMas}
+          </button>
+        )}
         {panel.perfumes.length === 0 && (
           <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>Añade los que tengas, cuando quieras.</p>
         )}
@@ -7451,11 +7470,20 @@ export function BuscadorEstiloEH({
 }) {
   /* ⚠️ Regla 4 — los hooks, antes de cualquier `return` condicional. */
   const [texto, setTexto] = useState('');
+  /* ⚠️ **EH F44, apartado 8** — lo que se escribe y lo que se busca son DOS
+     cosas: `texto` va con cada tecla (para que el campo responda) y `buscado`
+     se queda atrás un cuarto de segundo. Sin esto, *"perfu…"* lanzaba cinco
+     búsquedas sobre todos los módulos, y cada una recorre el catálogo entero. */
+  const [buscado, setBuscado] = useState('');
   const [soloFavoritos, setSoloFavoritos] = useState(false);
   const [pendiente, setPendiente] = useState(null);   // el apartado oculto o desactivado
+  useEffect(() => {
+    const t = setTimeout(() => setBuscado(texto), DEBOUNCE_BUSQUEDA_MS);
+    return () => clearTimeout(t);
+  }, [texto]);
   const panel = useMemo(
-    () => panelBuscador(estado, texto, { armario, datosGlobales, objetivos, desde, soloFavoritos }),
-    [estado, texto, armario, datosGlobales, objetivos, desde, soloFavoritos],
+    () => panelBuscador(estado, buscado, { armario, datosGlobales, objetivos, desde, soloFavoritos }),
+    [estado, buscado, armario, datosGlobales, objetivos, desde, soloFavoritos],
   );
   const avisoApartado = useMemo(
     () => (pendiente ? resolverApartado(estado, pendiente).aviso : null), [estado, pendiente],

@@ -4,10 +4,10 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 86 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 43/65**
-> (hasta v2.9.0). Quedan **24**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (22:
-> **F44-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 87 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 44/65**
+> (hasta v2.10.0). Quedan **23**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (21:
+> **F45-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -3064,25 +3064,34 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Eliminar cuenta en entorno de pruebas. — *proceso global; le toca a Josué (R1)*
 - [x] Verificar que no quedan datos accesibles.
 
-#### EH · Fase 44/65 — RENDIMIENTO Y OPTIMIZACIÓN
-- [ ] CARGAR SOLO LO NECESARIO
-- [ ] CARGA PROGRESIVA
-- [ ] LISTAS GRANDES
-- [ ] FOTOS
-- [ ] CACHÉ
-- [ ] DATOS LOCALES
-- [ ] SINCRONIZACIÓN EFICIENTE
-- [ ] DEBOUNCE
-- [ ] ANIMACIONES
-- [ ] MEMORIA
-- [ ] COMPONENTES
-- [ ] DATOS DUPLICADOS
-- [ ] ACTUALIZACIONES
-- [ ] ERROR DE RENDIMIENTO
-- [ ] DISPOSITIVOS ANTIGUOS
-- [ ] PRUEBAS DE CARGA
-- [ ] PRUEBAS DE RED
-- [ ] PRUEBAS DE MEMORIA
+#### EH · Fase 44/65 — RENDIMIENTO Y OPTIMIZACIÓN ✅ COMPLETADA (v2.10.0)
+
+> **`src/lib/rendimiento.js`** (71 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> ⚠️ **Esta fase no se construye: se MIDE**, como la F42 y la F43. Lo suyo son el revisor, los
+> tres escenarios del apartado 16 —generados de verdad y medidos contra un presupuesto en
+> milisegundos— y las **dos piezas que faltaban**: el *debounce* del buscador y la paginación.
+>
+> ⚠️ **Seis apartados necesitan un móvil o ya están centralizados** (5, 6, 10, 15, 17 y 18): se
+> declaran con `medible: false` y su motivo, y están en **R1**.
+- [x] CARGAR SOLO LO NECESARIO
+- [x] CARGA PROGRESIVA
+- [x] LISTAS GRANDES
+- [x] FOTOS
+- [x] CACHÉ
+- [x] DATOS LOCALES
+- [x] SINCRONIZACIÓN EFICIENTE
+- [x] DEBOUNCE
+- [x] ANIMACIONES
+- [x] MEMORIA
+- [x] COMPONENTES
+- [x] DATOS DUPLICADOS
+- [x] ACTUALIZACIONES
+- [x] ERROR DE RENDIMIENTO
+- [x] DISPOSITIVOS ANTIGUOS
+- [x] PRUEBAS DE CARGA
+- [x] PRUEBAS DE RED
+- [x] PRUEBAS DE MEMORIA
 
 #### EH · Fase 45/65 — ESTRUCTURA INTERNA DE DATOS
 - [ ] USUARIO
