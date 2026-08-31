@@ -48,6 +48,7 @@ import { datosPelo } from './rutinasPelo';
 import { datosRutinasBarba } from './rutinasBarba';
 // EH F19 — lo que la F18 anunció que llegaría con esta fase.
 import { datosRutinasCuerpo, MODULO_HIGIENE, MODULO_CUERPO } from './rutinasCuerpo';
+import { datosManosPies } from './manosPies';
 import { datosSonrisa } from './sonrisa';
 import { datosPerfumes, perfumeActual } from './perfumes';
 import { misPreferencias } from './gustos';
@@ -186,6 +187,14 @@ export const METRICAS_PROGRESO = [
     nombre: 'Rutinas de higiene hechas',
     icono: '🚿', modulo: 'higiene', tipo: 'periodo', porDefecto: false,
     fuente: (e) => datosRutinasCuerpo(e, MODULO_HIGIENE).hechos,
+    fecha: (x) => x.fecha,
+  },
+  {
+    // ⚠️ EH F22 — apagada por defecto, como las de la F19.
+    id: 'manospies_registros',
+    nombre: 'Manos, uñas y pies',
+    icono: '💅', modulo: 'higiene', tipo: 'periodo', porDefecto: false,
+    fuente: (e) => datosManosPies(e).registrosManosPies,
     fecha: (x) => x.fecha,
   },
   {

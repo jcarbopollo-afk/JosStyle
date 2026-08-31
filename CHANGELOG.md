@@ -1,5 +1,76 @@
 # CHANGELOG.md
 
+## v2.9.0 — EH Fase 22/65: manos, uñas y pies
+
+### Qué se ha construido
+El bloque pequeño de **💅 Uñas**, **🤲 Manos** y **🦶 Pies**: sus tres interruptores, lo que se
+configura dentro de cada uno —longitud, qué cuidar, frecuencia, recordatorio y notas—, sus rutinas
+con checklist, su seguimiento opcional y sus productos.
+
+*"No todo el mundo lo necesita. Por eso será completamente modular y aparecerá únicamente si el
+usuario lo activa."*
+
+Con ella **se cierra lo que C-25 dejó abierto**: la F18 configuró, la F19 hizo las rutinas y esta era
+la tercera que estaba bloqueada. En Higiene ya no queda ninguna plaquita anunciando una fase futura.
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Vive dentro de `higiene`, y no crea ningún módulo.** Es la respuesta 2 de Josué en C-25:
+*"Cuidado de manos y Cuidado de pies son la Fase 22"*, y las casillas de la F18 **solo las
+encienden**. Así que los interruptores de esta fase **son partes de `PARTES_HIGIENE`**, no un
+registro aparte: apagar la sección y apagar su casilla son la misma acción, y no hay dos verdades.
+Lo único que se añade al catálogo es **`unas`**, que su apartado 1 pide con su propio interruptor y
+que no estaba en la lista de casillas de la F18 — y **nace apagada**.
+
+**2. ⚠️ Aquí tampoco se construye una máquina.** Rutinas y checklist son `motorRutinas.js` (F14), la
+papelera es la global (ME F3) y **los productos son el catálogo compartido que ya resolvió la F19**
+(`catalogoParaCuerpo`), no un tercer sitio donde juntarlos. Cuatro ceros en la auditoría.
+
+**3. ⚠️ El seguimiento SÍ se guarda aquí, y no contradice a la F19.** Aquella lo dejó **derivado**
+porque su enunciado no describía ninguna pantalla de registro; el de esta fase la describe con todas
+las letras —*"📈 ¿Quieres registrar cuándo lo haces?"* (apartado 12) y *"cada registro puede tener
+📝 Nota"* (apartado 13)—. Se construye **lo que pide cada enunciado**, no lo que hizo la fase
+anterior. Y nace apagado: *"si dice que no: perfecto, no aparece"*.
+
+**4. ⚠️ Dos listas de rutinas dentro del mismo módulo, y hay que nombrarlas.** La F19 ya guardó unas
+`rutinas` dentro de `higiene`, y la papelera global se indexa por `módulo.colección`: una segunda
+lista llamada igual habría hecho que **restaurar una rutina de uñas la metiera entre las de la
+ducha**. Por eso aquí se llaman `rutinasManosPies` y `registrosManosPies`, y hay una prueba de que
+ninguna clave del catálogo se repite.
+
+**5. ⚠️ Desactivar una sección no toca las otras ni borra nada** (apartados 14 y 15, los dos con esas
+palabras: *"muy importante"*, *"todo sigue exactamente donde estaba"*). Comprobado en Chromium:
+encender las uñas deja manos y pies exactamente como estaban.
+
+**6. ⚠️ Y nunca un diagnóstico** (apartado 5: *"no realizar diagnósticos ni convertirlo en un
+apartado médico"*). Se reutilizan `PALABRAS_CLINICAS` y `sinDiagnostico()` de la F13 —no una segunda
+lista— y una prueba barre todos los textos de la fase.
+
+### El calendario, que es donde más se aprovecha el motor
+El ejemplo del apartado 10 —*"💅 Cortar uñas — domingo"*— **no sale de una rutina**: sale de la
+frecuencia de la propia sección. En vez de escribir un segundo cálculo de "cada cuánto", las
+secciones se convierten en lo que `eventosDeRutinas` ya sabe leer. Séptimo módulo de Estilo de Hombre
+que entra en el calendario global sin crear uno propio, y **sin materializar ni una ocurrencia**
+(regla 11).
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **9 259 comprobaciones de Node** (146
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **446 comprobaciones sobre la
+aplicación de verdad en Chromium** (22 nuevas: abrir la plaquita que llevaba anunciándose desde la
+F18, encender las uñas, elegir frecuencia, usar la plantilla y comprobar que **manos y pies no se
+mueven**).
+
+⚠️ **Tres comprobaciones de fases anteriores se han actualizado, no arreglado:** la F18 contaba *"dos
+partes en la F22"* y ahora son tres; la F19 daba por hecho que la plaquita de manos y pies
+**anunciaba** una fase futura, y ahora abre. En los dos casos la prueba pasó a comprobar la **regla**
+—que ninguna plaquita se quede a medias— en vez del número de aquel día.
+
+🐛 **Y una lección del entorno:** un servidor de desarrollo de una sesión anterior seguía escuchando
+en el puerto 5199, así que la prueba de Chromium estaba mirando **el código de antes** y daba por
+buena la fase anterior. Si una comprobación de navegador falla entera sin motivo, mirar primero quién
+está en ese puerto.
+
+
 ## v2.8.0 — EH Fase 19/65: cuerpo e higiene, rutinas y recomendaciones
 
 ### Qué se ha construido

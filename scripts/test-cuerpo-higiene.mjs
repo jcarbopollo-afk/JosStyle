@@ -73,7 +73,10 @@ console.log('\n🚿 EH · Fase 18/65 — Cuerpo e higiene: configuración y perf
   const pies = parteCH(MODULO_HIGIENE, 'pies');
   eq([manos.enFase, pies.enFase], [22, 22],
     '⚠️ manos y pies se configuran en la Fase 22 (respuesta 2 de Josué)');
-  eq(auditarCH().enFase22, 2, 'y la auditoría lo dice');
+  /* ⚠️ Eran dos cuando se escribió esto; la **F22 añadió `unas`**, que su
+     apartado 1 pide con su propio interruptor. Se cuentan las que declaran esa
+     fase, no un número escrito a mano — y ahora son tres. */
+  eq(auditarCH().enFase22, 3, 'y la auditoría lo dice: las tres de la F22');
   ok(!PREGUNTAS_CH.some((p) => /mano|pie/i.test(p.titulo)),
     '⚠️ y aquí NO se les pregunta nada: solo se encienden');
 }

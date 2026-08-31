@@ -63,6 +63,9 @@ import { eliminarRegistroPiel, restaurarRegistroPiel } from './lib/seguimientoPi
 import { eliminarRegistroBarba, restaurarRegistroBarba, eliminarRutinaConPapelera, restaurarRutinaBarba } from './lib/rutinasBarba';
 // EH F19 — y las rutinas de Higiene y de Cuidado corporal, por la misma puerta.
 import { eliminarRutinaCuerpo, restaurarRutinaCuerpo } from './lib/rutinasCuerpo';
+// EH F22 — y las de manos, uñas y pies, que viven en el mismo módulo con
+// nombre de colección propio para que la papelera no las confunda.
+import { eliminarRutinaMP, eliminarRegistroMP, restaurarEnMP } from './lib/manosPies';
 // EH F23 — y lo mismo para Sonrisa: rutinas, revisiones y registros.
 import {
   eliminarRutinaSonrisa, restaurarRutinaSonrisa, eliminarRevision, restaurarRevision,
@@ -1224,10 +1227,24 @@ export default function App() {
     });
   };
 
+  /* ⚠️ EH F22, apartado 16 — las dos listas de manos, uñas y pies. Viven dentro
+     de `higiene`, como las rutinas de la F19, pero con su propio nombre. */
+  const eliminarDeManosPies = (coleccion, id) => {
+    const r = coleccion === 'rutinasManosPies'
+      ? eliminarRutinaMP(estiloHombre, id)
+      : eliminarRegistroMP(estiloHombre, id);
+    if (r.error) return;
+    snapshotAndSave({
+      estiloHombre: r.estado,
+      papelera: { ...papelera, elementos: [...papelera.elementos, r.entrada] },
+    });
+  };
+
   const eliminarConPapelera = (modulo, coleccion, id) => {
     // Los registros de piel no son una lista de primer nivel: van por su puerta.
     if (modulo === 'skincare' && coleccion === 'registros') return eliminarRegistroDePiel(id);
     if (modulo === 'barba') return eliminarDeBarba(coleccion, id);
+    if (modulo === 'higiene' && coleccion !== 'rutinas') return eliminarDeManosPies(coleccion, id);
     if (modulo === 'higiene' || modulo === 'cuerpo') return eliminarDeCuerpo(modulo, id);
     if (modulo === 'sonrisa') return eliminarDeSonrisa(coleccion, id);
     if (modulo === 'perfumes') return eliminarDePerfumes(coleccion, id);
@@ -1297,6 +1314,16 @@ export default function App() {
       const fn = { rutinas: restaurarRutinaSonrisa, revisiones: restaurarRevision, registros: restaurarRegistroSonrisa }[entrada.coleccion];
       const r = fn ? fn(estiloHombre, entrada) : null;
       if (!r || r.error) return;
+      snapshotAndSave({
+        estiloHombre: r.estado,
+        papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
+      });
+      return;
+    }
+    // EH F22 — las de manos, uñas y pies vuelven a su propia lista.
+    if (entrada.modulo === 'higiene' && entrada.coleccion !== 'rutinas') {
+      const r = restaurarEnMP(estiloHombre, entrada);
+      if (r.error) return;
       snapshotAndSave({
         estiloHombre: r.estado,
         papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
@@ -2064,6 +2091,10 @@ export default function App() {
             onEliminarRutinaCuerpo={(modulo, id) => (modulo === 'higiene'
               ? eliminarConPapelera('higiene', 'rutinas', id)
               : eliminarConPapelera('cuerpo', 'rutinas', id))}
+            /* ⚠️ EH F22 — las dos suyas, también con su nombre escrito: la
+               auditoría de ME F4 lee este archivo buscando el par. */
+            onEliminarRutinaMP={(id) => eliminarConPapelera('higiene', 'rutinasManosPies', id)}
+            onEliminarRegistroMP={(id) => eliminarConPapelera('higiene', 'registrosManosPies', id)}
             /* ⚠️ Las tres, con su nombre escrito: la auditoría de ME F4 comprueba
                sobre el código que toda colección del catálogo tenga un borrado
                de verdad, y una colección pasada como variable no se ve. */

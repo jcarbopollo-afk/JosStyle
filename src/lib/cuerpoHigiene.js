@@ -98,6 +98,11 @@ export const PARTES_HIGIENE = [
   { id: 'rutinas', nombre: 'Rutinas', icono: '📋', porDefecto: true, deApartado1: false, enFase: 19 },
   { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', porDefecto: true, deApartado1: false, enFase: 19 },
   { id: 'productos', nombre: 'Productos', icono: '🧴', porDefecto: true, deApartado1: false, enFase: 19 },
+  /* ⚠️ **F22, apartado 1** — *"💅 Uñas, 🤲 Manos, 🦶 Pies, cada una con su propio
+     interruptor"*. Manos y pies ya estaban desde la F18; **uñas la añade la
+     F22**, y no es una casilla del apartado 1 porque Josué no la puso en aquella
+     lista. Va **apagada**: *"aparecerá únicamente si el usuario lo activa"*. */
+  { id: 'unas', nombre: 'Cuidado de uñas', icono: '💅', porDefecto: false, deApartado1: false, enFase: 22 },
 ];
 
 export const PARTES_CUERPO = [
@@ -503,7 +508,7 @@ export const plaquitasDe = (moduloId) => PLAQUITAS_CH[moduloId] || [];
 /* ⚠️ **Qué fases están construidas, en un sitio y no en un `===`.** La F18
    escribió `fase === 18` porque entonces era verdad; la F19 lo habría dejado
    mintiendo en dos sitios a la vez. Cuando llegue la F22, se añade aquí. */
-export const FASES_CH_LISTAS = [18, 19];
+export const FASES_CH_LISTAS = [18, 19, 22];
 
 /* ===========================================================================
    8 · RESUMEN, AUDITORÍA Y PANEL

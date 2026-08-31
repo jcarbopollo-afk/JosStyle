@@ -1480,8 +1480,12 @@ ok(/Ducha/.test(dentro) && /Higiene íntima/.test(dentro),
   '⚠️ Y lo de dentro de Higiene diaria: ducha, higiene corporal e íntima (apartado 3)');
 ok(/¿Qué buscas principalmente\?/.test(dentro), 'y el formulario del apartado 4');
 ok(/Manos, uñas y pies/.test(dentro), 'con la plaquita de la Fase 22 anunciada');
-ok(/Esto llega más adelante/.test(dentro),
-  '⚠️ Y lo que todavía no existe LO DICE, en vez de abrir una pantalla vacía');
+/* ⚠️ Cuando se escribió esto, "Manos, uñas y pies" anunciaba la F22 y no abría
+   nada (regla 8). **La F22 ya está construida**, así que en Higiene no queda
+   ninguna plaquita por llegar — y lo que se comprueba ahora es que no se anuncia
+   una fase que ya existe, que sería mentir al revés. */
+ok(!/Esto llega más adelante/.test(dentro),
+  '⚠️ Y ya no anuncia ninguna fase pendiente: las de Higiene están construidas');
 ok(!/dermatitis|hongos|infección/i.test(dentro),
   '⚠️ Y ni una palabra de diagnóstico (apartado 7)');
 
@@ -1551,5 +1555,82 @@ ok(/no compra nada/.test(reco), '⚠️ diciendo que esto no compra nada');
 ok(/los productos que ves son los que has añadido/i.test(reco),
   '⚠️ Y que el catálogo está vacío a propósito (D2-03), en vez de inventar productos');
 ok(!/debes|tienes que|deberías/i.test(reco), '⚠️ Y ni un "debes": el tono de siempre');
+
+/* ── 31 · MANOS, UÑAS Y PIES (EH F22) ─────────────────────────────────────
+   Lo que solo se ve usándolo: que la plaquita que llevaba anunciando la F22
+   desde la F18 **por fin abre**, que las tres secciones tienen su interruptor,
+   y que apagar una **no toca las otras ni borra lo suyo** (apartados 14 y 15). */
+
+const volverA = async () => page.evaluate(() => {
+  const b = document.querySelector('button[aria-label="Volver"]');
+  if (!b) return false;
+  b.click();
+  return true;
+});
+
+ok(await volverA(), 'Se vuelve a la portada de Higiene');
+await page.waitForTimeout(900);
+const portadaMP = await ver();
+ok(/Manos, uñas y pies/.test(portadaMP), '⚠️ **EH F22** — la plaquita sigue en su sitio');
+ok(!/Manos, uñas y pies[\s\S]{0,40}Esto llega más adelante/.test(portadaMP),
+  '⚠️ Y ya NO anuncia otra fase: esta es su fase');
+
+ok(await pulsar('Manos, uñas y pies'), 'La plaquita abre');
+await page.waitForTimeout(900);
+const mp = await ver();
+ok(/Cuidado de uñas/.test(mp) && /Cuidado de manos/.test(mp) && /Cuidado de pies/.test(mp),
+  'con las tres secciones del apartado 1');
+ok(/Puedes quitar una y quedarte con las otras/.test(mp),
+  '⚠️ y diciendo que se pueden quitar por separado (apartados 14 y 15)');
+
+/* Las uñas nacen apagadas: hay que encenderlas. */
+guardado.length = 0;
+const encendio = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('[aria-label="Cuidado de uñas"]')].find((x) => x.tagName === 'BUTTON');
+  if (!b) return false;
+  b.click();
+  return true;
+});
+ok(encendio, 'Se encienden las uñas con su interruptor');
+await page.waitForTimeout(1200);
+const escMP = guardado.filter((g) => g && g.key === 'estiloHombre');
+const partesMP = escMP.at(-1)?.value?.modulos?.find((m) => m.id === 'higiene')?.config?.cuerpoHigiene?.partes;
+ok(partesMP?.unas === true, '⚠️ PERSISTENCIA: queda guardado que las ha activado');
+/* ⚠️ Manos y pies quedaron DESMARCADAS unas pantallas más arriba, cuando se
+   probó el apartado 1 de la F18. Lo que importa aquí es que encender las uñas
+   **no las ha movido**: cada interruptor es suyo (apartado 14). */
+ok(partesMP?.manos === false && partesMP?.pies === false,
+  '⚠️ Y las otras dos siguen como estaban: cada una es independiente');
+
+ok(await pulsar('Cuidado de uñas'), 'Se despliega la sección de uñas');
+await page.waitForTimeout(800);
+const dentroMP = await ver();
+ok(/Muy cortas/.test(dentroMP) && /Medias/.test(dentroMP),
+  'con las longitudes del apartado 3');
+ok(/Cada 2 semanas/.test(dentroMP) && /Cada mes/.test(dentroMP),
+  'y las frecuencias del apartado 6');
+ok(/Recordármelo/.test(dentroMP), '⚠️ Y el recordatorio APAGADO, para que lo encienda él');
+ok(/Crear rutina/.test(dentroMP), 'con su "+ Crear rutina" (apartado 8)');
+ok(!/infección|hongos|onicomicosis/i.test(dentroMP),
+  '⚠️ Y ni una palabra de diagnóstico (apartado 5)');
+
+guardado.length = 0;
+ok(await pulsar('Cada 2 semanas'), 'Se elige una frecuencia');
+await page.waitForTimeout(1100);
+const cfgUnas = guardado.filter((g) => g && g.key === 'estiloHombre')
+  .at(-1)?.value?.modulos?.find((m) => m.id === 'higiene')?.config?.manosPies?.secciones?.unas;
+ok(cfgUnas?.frecuencia === 'quincenal', '⚠️ PERSISTENCIA: la frecuencia se guarda');
+ok(typeof cfgUnas?.desde === 'string',
+  '⚠️ Y con la fecha desde la que cuenta, puesta sola');
+
+ok(await pulsar('Usar esta rutina'), 'Se usa la plantilla de uñas');
+await page.waitForTimeout(1200);
+const conRutinaMP = await ver();
+ok(/Cortar/.test(conRutinaMP) && /Limar/.test(conRutinaMP),
+  '⚠️ y aparece su checklist con los tres pasos del ejemplo del apartado 8');
+ok(/¿Quieres registrar cuándo lo haces\?/.test(conRutinaMP),
+  '⚠️ Y la pregunta del apartado 12, con sus palabras');
+ok(/Perfecto, no aparece/.test(conRutinaMP),
+  '⚠️ Y que decir que no es una respuesta completa');
 
 await salir(browser);

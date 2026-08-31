@@ -66,6 +66,8 @@ import { datosPelo } from './rutinasPelo';
 import { datosSonrisa } from './sonrisa';
 // EH F19 — las rutinas de Higiene y de Cuidado corporal, que son dos listas.
 import { datosRutinasCuerpo, MODULO_HIGIENE, MODULO_CUERPO } from './rutinasCuerpo';
+// EH F22 — las rutinas y los registros de manos, uñas y pies.
+import { datosManosPies } from './manosPies';
 
 /* ===========================================================================
    1 · EL CATÁLOGO DE ESTADOS (apartados 1-16)
@@ -313,6 +315,15 @@ export const COLECCIONES_EH = [
     texto: 'Ducha, desodorante: lo que hagas y cada cuánto.',
     boton: 'Crear rutina',
     leer: (e) => datosRutinasCuerpo(e, MODULO_HIGIENE).rutinas,
+    crudo: null,
+    normalizar: null,
+  },
+  {
+    id: 'higiene.rutinasManosPies', modulo: 'higiene', icono: '💅',
+    titulo: 'Todavía no tienes ninguna rutina de manos, uñas o pies',
+    texto: 'Cortar, limar, hidratar: lo que hagas y cada cuánto.',
+    boton: 'Crear rutina',
+    leer: (e) => datosManosPies(e).rutinasManosPies,
     crudo: null,
     normalizar: null,
   },

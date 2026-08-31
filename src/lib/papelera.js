@@ -120,6 +120,14 @@ export const CATALOGO_PAPELERA = {
      dos líneas, una por apartado, porque C-25 dejó dicho que son dos. */
   'higiene.rutinas': { modulo: 'higiene', coleccion: 'rutinas', tipo: 'Rutina de higiene', campos: ['nombre'], icono: 'higiene' },
   'cuerpo.rutinas': { modulo: 'cuerpo', coleccion: 'rutinas', tipo: 'Rutina de cuidado corporal', campos: ['nombre'], icono: 'cuerpo' },
+  /* ⚠️ EH F22, apartado 16 — *"cualquier eliminación utilizará 🗑️ Eliminados
+     recientemente global. **No crear una papelera nueva**"*. ⚠️ Y con **nombre
+     propio**: la F19 ya guardó unas `rutinas` dentro de `higiene`, y este
+     catálogo se indexa por `módulo.colección` — dos listas llamadas igual
+     habrían hecho que restaurar una rutina de uñas la metiera entre las de la
+     ducha. Octava vez que un módulo entra aquí sin tocar el motor. */
+  'higiene.rutinasManosPies': { modulo: 'higiene', coleccion: 'rutinasManosPies', tipo: 'Rutina de manos, uñas y pies', campos: ['nombre'], icono: 'higiene' },
+  'higiene.registrosManosPies': { modulo: 'higiene', coleccion: 'registrosManosPies', tipo: 'Registro de manos, uñas y pies', campos: ['fecha'], icono: 'higiene' },
   // ⚠️ EH F24 — la colección de perfumes y su historial, a la papelera de siempre.
   'perfumes.perfumes': { modulo: 'perfumes', coleccion: 'perfumes', tipo: 'Perfume', campos: ['nombre'], icono: 'perfumes' },
   'perfumes.historial': { modulo: 'perfumes', coleccion: 'historial', tipo: 'Uso de perfume', campos: ['fecha'], icono: 'perfumes' },

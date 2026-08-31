@@ -278,9 +278,14 @@ escribir código.
 
 | v2.8.0 | **EH F19** | Cuerpo e higiene: rutinas y recomendaciones. ⚠️ **Aquí no se construye ni una máquina**: rutinas de `motorRutinas.js` (F14), reglas de `motorRecomendaciones.js` (F16) y productos de `motorProductos.js` (F17) — siete ceros en la auditoría. ⚠️ **El ejemplo del apartado 2 se REPARTE entre los dos apartados**, igual que las siete casillas de la F18: *ducha, higiene y desodorante* son la plantilla de Higiene y *hidratación corporal* la de Cuidado corporal, porque una rutina con un paso del otro módulo se rompería al apagarlo. ⚠️ **El seguimiento no guarda nada nuevo**: el enunciado no describe ninguna pantalla de registro, así que se DERIVA de lo que ya se sabe. ⚠️ **"Ya tienes un producto que podría servir" manda sobre recomendar otro** (apartado 11: *"esto evita gastar dinero sin motivo"*). 🐛 **Y el fallo de UTC por tercera y cuarta vez**: `eventosDeRutinas` e `historialGenerico` leían el día con `toISOString()`, así que **en España cada recordatorio salía en el calendario la víspera** — y afectaba también a Pelo, Skincare y Barba. 🐛 **Además, tres comprobaciones del proyecto no llegaban a ARRANCAR en Windows**, incluida la de Chromium: `verificar.sh` decía "LA APLICACIÓN NO ARRANCA" cuando lo que no arrancaba era la prueba |
 
+| v2.9.0 | **EH F22** · 🔓 **C-25 cerrada del todo** | Manos, uñas y pies. ⚠️ **Vive DENTRO de `higiene` y no crea ningún módulo** (respuesta 2 de Josué): sus tres interruptores **son partes de `PARTES_HIGIENE`**, y lo único nuevo en el catálogo es `unas`, apagada. ⚠️ **Ni motor, ni catálogo, ni papelera, ni calendario propios**: los productos son el catálogo compartido de la F19. ⚠️ **El seguimiento SÍ se guarda aquí**, al revés que en la F19, **porque su enunciado lo describe** — se construye lo que pide cada enunciado, no lo que hizo la fase anterior. ⚠️ **Dos listas de rutinas en el mismo módulo, y hay que nombrarlas**: la papelera se indexa por `módulo.colección`, así que con el nombre de la F19 restaurar una rutina de uñas la habría metido entre las de la ducha. ⚠️ Y **el ejemplo del calendario sale de la FRECUENCIA de la sección**, no de una rutina: las secciones se convierten en lo que el motor ya sabe leer. 🐛 Y una del entorno: un servidor de desarrollo de otra sesión seguía vivo en el puerto 5199 y la prueba de navegador miraba **el código de antes** |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 42/65** (F1-F21, F23-F43; queda **F22**, ya desbloqueada, y F44-F65).
-Quedan **25** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (23, ninguna bloqueada).
+3/5 y **EH por 43/65** (**F1-F43 seguidas**; queda **F44-F65**).
+Quedan **24** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (22, ninguna bloqueada).
+
+✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
+construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.
 
 ⚠️ **Y la cuenta anterior estaba mal por uno:** hasta v2.7.0 aquí ponía *"quedan 27: SO (2) y EH
 (25)"*, pero su propio desglose —F19, F22 y F44-F65— son **24**, no 25. Se corrige aquí, y el

@@ -577,15 +577,19 @@ console.log('\n🚿 EH · Fase 19/65 — Cuerpo e higiene: rutinas y recomendaci
    --------------------------------------------------------------------------- */
 {
   console.log('\n15 · La pantalla');
-  eq(FASES_CH_LISTAS, [18, 19], 'las fases construidas se declaran en un sitio, no en un `===`');
+  eq(FASES_CH_LISTAS, [18, 19, 22], 'las fases construidas se declaran en un sitio, no en un `===`');
   const panel = panelCH(LOS_DOS, MODULO_CUERPO);
   ok(panel.plaquitas.find((p) => p.id === 'rutina').lista,
     '⚠️ la plaquita "Mi rutina" ya está lista, y deja de anunciar otra fase');
   ok(panel.plaquitas.find((p) => p.id === 'recomendaciones').lista, 'y la de recomendaciones');
   ok(plaquitasDe(MODULO_HIGIENE).some((p) => p.id === 'manosPies' && p.fase === 22),
-    '⚠️ y la de manos y pies sigue diciendo que llega en la F22 (regla 8)');
-  eq(panelCH(LOS_DOS, MODULO_HIGIENE).plaquitas.find((p) => p.id === 'manosPies').lista, false,
-    'sin abrir una pantalla vacía');
+    'y la de manos y pies sigue declarando de qué fase es');
+  /* ⚠️ Cuando se escribió esta prueba, esa plaquita **anunciaba** la F22 y no
+     abría nada (regla 8). La F22 ya está construida, así que ahora abre — y lo
+     que se comprueba es que **ninguna plaquita se queda a medias**: o abre, o
+     dice en qué fase llega. */
+  ok(panelCH(LOS_DOS, MODULO_HIGIENE).plaquitas.every((p) => p.lista || !!p.texto),
+    'ninguna plaquita abre una pantalla vacía');
 
   const p = panelRutinasCuerpo(LOS_DOS, MODULO_CUERPO, {});
   eq(p.vacio, 'Crea tu primera rutina', '⚠️ apartado 1 — el vacío, con las palabras del enunciado');

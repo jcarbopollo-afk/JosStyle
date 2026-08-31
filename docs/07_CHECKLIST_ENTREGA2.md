@@ -4,10 +4,10 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 85 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 42/65**
-> (hasta v2.8.0). Quedan **25**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (23:
-> la **F22**, ya desbloqueada, y F44-F65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 86 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 43/65**
+> (hasta v2.9.0). Quedan **24**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (22:
+> **F44-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -1654,46 +1654,58 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] ELIMINAR
 - [x] PRUEBAS
 
-#### EH · Fase 22/65 — MANOS, UÑAS Y PIES: CONFIGURACIÓN 🔓 **DESBLOQUEADA (v2.7.0)**
+#### EH · Fase 22/65 — MANOS, UÑAS Y PIES: CONFIGURACIÓN ✅ COMPLETADA (v2.9.0)
 
-> 🔓 **Estuvo parada por C-25 y la desbloqueó Josué**, con la segunda de sus tres respuestas:
-> ***Cuidado de manos* y *Cuidado de pies* son la Fase 22**, y las casillas de la Fase 18 **solo las
-> encienden**. Así que esta fase vive **dentro del módulo `higiene`** —que es el *"🧼 Cuidado
-> personal"* de su apartado 1— y sus tres partes (💅 Uñas · 🤲 Manos · 🦶 Pies) son las que aquellas
-> casillas activan: **no hay una segunda configuración**. Pendiente de construir.
+> **`src/lib/manosPies.js`** (146 comprobaciones) + la pantalla `ManosPiesEH`. Sin SQL nuevo.
+>
+> 🔓 **Con esta se cierra lo que C-25 dejó abierto**: la F18 configuró, la F19 hizo las rutinas y
+> esta era la tercera bloqueada.
+>
+> ⚠️ **Vive dentro de `higiene` y no crea ningún módulo** (respuesta 2 de Josué): sus tres
+> interruptores **son partes de `PARTES_HIGIENE`**. Lo único nuevo en el catálogo es `unas`, que
+> nace apagada.
+>
+> ⚠️ **Ni motor, ni catálogo, ni papelera, ni calendario propios**: los productos son el catálogo
+> compartido que ya resolvió la F19.
+>
+> ⚠️ **El seguimiento SÍ se guarda aquí**, al revés que en la F19, porque **su enunciado lo
+> describe** (apartados 12 y 13). Se construye lo que pide cada enunciado.
+>
+> ⚠️ **`rutinasManosPies` y `registrosManosPies`**, con ese nombre: la papelera global se indexa
+> por `módulo.colección`, y la F19 ya guardó unas `rutinas` en este mismo módulo.
 
-- [ ] ACTIVACIÓN
-- [ ] UÑAS
-- [ ] LONGITUD
-- [ ] MANOS
-- [ ] PIES
-- [ ] FRECUENCIA
-- [ ] RECORDATORIOS
-- [ ] RUTINAS
-- [ ] CHECKLIST
-- [ ] CALENDARIO
-- [ ] PRODUCTOS
-- [ ] SEGUIMIENTO
-- [ ] NOTAS
-- [ ] DESACTIVACIÓN INDIVIDUAL
-- [ ] DATOS CONSERVADOS
-- [ ] ELIMINADOS RECIENTEMENTE
-- [ ] PRUEBAS
-- [ ] Activar uñas.
-- [ ] Activar manos.
-- [ ] Activar pies.
-- [ ] Activar solo una.
-- [ ] Crear rutina.
-- [ ] Configurar frecuencia.
-- [ ] Crear recordatorio.
-- [ ] Añadir producto.
-- [ ] Registrar seguimiento.
-- [ ] Editar.
-- [ ] Eliminar.
-- [ ] Recuperar.
-- [ ] Desactivar individualmente.
-- [ ] Reactivar.
-- [ ] Comprobar que no existen duplicados.
+- [x] ACTIVACIÓN
+- [x] UÑAS
+- [x] LONGITUD
+- [x] MANOS
+- [x] PIES
+- [x] FRECUENCIA
+- [x] RECORDATORIOS
+- [x] RUTINAS
+- [x] CHECKLIST
+- [x] CALENDARIO
+- [x] PRODUCTOS
+- [x] SEGUIMIENTO
+- [x] NOTAS
+- [x] DESACTIVACIÓN INDIVIDUAL
+- [x] DATOS CONSERVADOS
+- [x] ELIMINADOS RECIENTEMENTE
+- [x] PRUEBAS
+- [x] Activar uñas.
+- [x] Activar manos.
+- [x] Activar pies.
+- [x] Activar solo una.
+- [x] Crear rutina.
+- [x] Configurar frecuencia.
+- [x] Crear recordatorio.
+- [x] Añadir producto.
+- [x] Registrar seguimiento.
+- [x] Editar.
+- [x] Eliminar.
+- [x] Recuperar.
+- [x] Desactivar individualmente.
+- [x] Reactivar.
+- [x] Comprobar que no existen duplicados.
 
 #### EH · Fase 23/65 — HIGIENE BUCAL Y SONRISA ✅ COMPLETADA (v1.86.0)
 

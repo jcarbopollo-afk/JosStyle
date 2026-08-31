@@ -58,6 +58,7 @@ import { datosRutinasPiel } from './rutinasPiel';
 import { datosPelo } from './rutinasPelo';
 import { datosRutinasBarba } from './rutinasBarba';
 import { datosRutinasCuerpo } from './rutinasCuerpo';
+import { datosManosPies, SECCIONES_MP, seccionActiva } from './manosPies';
 import { datosSonrisa } from './sonrisa';
 import {
   PARTES_HIGIENE, PARTES_CUERPO, parteActivaCH, MODULO_HIGIENE, MODULO_CUERPO,
@@ -155,6 +156,15 @@ export const FUENTES_BUSQUEDA = [
   {
     id: 'rutinasCuerpo', modulo: 'cuerpo', grupo: 'Rutinas de cuidado corporal', icono: '🧴', zona: 'rutinas',
     lista: (e) => nombresDe(datosRutinasCuerpo(e, MODULO_CUERPO).rutinas),
+  },
+  /* ⚠️ **EH F22** — lo que se busca aquí son **las secciones que ha encendido** y
+     sus rutinas: buscar "uñas" tiene que llevarle a su apartado. */
+  {
+    id: 'manosPies', modulo: 'higiene', grupo: 'Manos, uñas y pies', icono: '💅', zona: null,
+    lista: (e) => [
+      ...SECCIONES_MP.filter((s) => seccionActiva(e, s.id)).map((s) => ({ id: `mp_${s.id}`, nombre: s.titulo })),
+      ...nombresDe(datosManosPies(e).rutinasManosPies),
+    ],
   },
   {
     id: 'rutinasSonrisa', modulo: 'sonrisa', grupo: 'Rutinas de sonrisa', icono: '😁', zona: null,

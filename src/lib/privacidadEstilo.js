@@ -100,7 +100,7 @@ export const LIBRERIAS_EH = [
   'preferenciasEstilo', 'progresoEstilo', 'gestionEstilo', 'buscadorEstilo',
   'avisosEstilo', 'integracionEstilo', 'primerUso', 'estadosEstilo', 'accesibilidadEH',
   // EH F18 y F19 — llegaron después de la auditoría, y entran en ella.
-  'cuerpoHigiene', 'rutinasCuerpo',
+  'cuerpoHigiene', 'rutinasCuerpo', 'manosPies',
 ];
 
 /* ===========================================================================

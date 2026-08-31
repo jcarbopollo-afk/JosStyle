@@ -22,6 +22,7 @@ import { eventosDePeluqueria } from './peluqueria';
 import { eventosDePiel } from './rutinasPiel';
 import { eventosDeBarba } from './rutinasBarba';
 import { eventosDeCuerpo } from './rutinasCuerpo';
+import { eventosDeManosPies } from './manosPies';
 import { eventosDeSonrisa } from './sonrisa';
 import { eventosDeGustos } from './gustos';
 
@@ -277,6 +278,10 @@ export function eventosDerivados({ objetivos, estudios, calistenia, futbol, prod
        Sexto módulo de Estilo de Hombre por esta misma puerta, y el primero que
        entra con **dos** orígenes, porque C-25 dejó dicho que son dos apartados. */
     ...(estiloHombre && desde && hasta ? eventosDeCuerpo(estiloHombre, desde, hasta) : []),
+    /* EH F22, apartado 10 — *"nunca crear un calendario independiente"*. Séptimo
+       módulo por esta puerta, y el que más aprovecha el motor: sus eventos salen
+       de la FRECUENCIA de cada sección, no de una rutina. */
+    ...(estiloHombre && desde && hasta ? eventosDeManosPies(estiloHombre, desde, hasta) : []),
   ];
 }
 

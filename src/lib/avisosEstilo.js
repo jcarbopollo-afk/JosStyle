@@ -101,6 +101,12 @@ export const TIPOS_AVISO_EH = [
     modulo: 'cuerpo', categoria: 'rutinas', prioridad: 'baja', porDefecto: false,
   },
   {
+    /* ⚠️ EH F22, apartado 7 — el ejemplo del enunciado, con sus palabras:
+       *"🔔 Recordarme cortar las uñas"*. Apagado, como todo lo de aquí. */
+    id: 'cortar_unas', nombre: 'Recordarme cortar las uñas', icono: '💅',
+    modulo: 'higiene', categoria: 'rutinas', prioridad: 'baja', porDefecto: false,
+  },
+  {
     /* ⚠️ Apartado 10 — *"las recomendaciones NO deben convertirse
        automáticamente en notificaciones"*. Es un tipo más, y apagado. */
     id: 'ideas', nombre: 'Avisarme de nuevas ideas', icono: '💡',

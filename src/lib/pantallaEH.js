@@ -83,6 +83,7 @@ import { resumenSonrisa } from './sonrisa';
 /* ⚠️ **EH F18** — y su línea sale de `lineaCH()`, no de un dato nuevo. */
 import { lineaCH, resumenCH, MODULO_HIGIENE, MODULO_CUERPO } from './cuerpoHigiene';
 import { lineaRutinasCuerpo } from './rutinasCuerpo';
+import { lineaMP } from './manosPies';
 import { resumenPerfumes } from './perfumes';
 import { resumenAccesorios } from './accesorios';
 import { resumenGustos } from './gustos';
@@ -529,6 +530,12 @@ export const LINEAS_DE_PLAQUITA = {
       id: 'rutinas',
       nombre: 'Rutinas',
       texto: (e) => lineaRutinasCuerpo(e, MODULO_HIGIENE),
+    },
+    // ⚠️ **EH F22** — los iconos de lo que tenga encendido, o nada.
+    {
+      id: 'manosPies',
+      nombre: 'Manos, uñas y pies',
+      texto: (e) => lineaMP(e),
     },
   ],
   cuerpo: [
