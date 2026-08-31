@@ -4,10 +4,10 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 88 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 45/65**
-> (hasta v2.11.0). Quedan **22**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (20:
-> **F46-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 89 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 46/65**
+> (hasta v2.12.0). Quedan **21**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (19:
+> **F47-F65**, ninguna bloqueada). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -3133,27 +3133,38 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar permisos.
 - [x] Comprobar que no existen duplicados.
 
-#### EH · Fase 46/65 — MIGRACIÓN Y COMPATIBILIDAD
-- [ ] NO REHACER LA APP
-- [ ] ANALIZAR ANTES DE MODIFICAR
-- [ ] MAPEAR DATOS EXISTENTES
-- [ ] MIGRACIÓN
-- [ ] BACKUP ANTES DE MIGRAR
-- [ ] COMPATIBILIDAD
-- [ ] FUNCIONES ANTIGUAS
-- [ ] DUPLICADOS
-- [ ] VERSIONADO
-- [ ] MIGRACIONES FUTURAS
-- [ ] USUARIO ANTIGUO
-- [ ] USUARIO NUEVO
-- [ ] MIGRACIÓN PARCIAL
-- [ ] DATOS INCOMPATIBLES
-- [ ] PRUEBAS
-- [ ] FALLA DURANTE MIGRACIÓN
-- [ ] DESPLIEGUE
-- [ ] COMPATIBILIDAD CON SUPABASE
-- [ ] COMPATIBILIDAD ENTRE VERSIONES
-- [ ] PRUEBA FINAL
+#### EH · Fase 46/65 — MIGRACIÓN Y COMPATIBILIDAD ✅ COMPLETADA (v2.12.0)
+
+> **`src/lib/migracion.js`** (86 comprobaciones) + la llamada al cargar, en `App.jsx`. Sin SQL.
+>
+> 🚨 **El `schema_version` del apartado 9 existía desde la F1 y el normalizador lo pisaba**: era
+> decorativo, y ninguna migración se habría disparado jamás. Ahora se conserva lo guardado.
+>
+> ⚠️ **Se migra lo CRUDO, no lo normalizado**, con copia de seguridad y vuelta atrás si falla.
+>
+> ⚠️ **Tres apartados no se pueden cumplir** (17, 18 y 19), declarados con su motivo: no hay
+> entorno de pruebas, el `schema.sql` lo ejecuta Josué a mano y un cliente antiguo borra lo que
+> no conoce (regla 5).
+- [x] NO REHACER LA APP
+- [x] ANALIZAR ANTES DE MODIFICAR
+- [x] MAPEAR DATOS EXISTENTES
+- [x] MIGRACIÓN
+- [x] BACKUP ANTES DE MIGRAR
+- [x] COMPATIBILIDAD
+- [x] FUNCIONES ANTIGUAS
+- [x] DUPLICADOS
+- [x] VERSIONADO
+- [x] MIGRACIONES FUTURAS
+- [x] USUARIO ANTIGUO
+- [x] USUARIO NUEVO
+- [x] MIGRACIÓN PARCIAL
+- [x] DATOS INCOMPATIBLES
+- [x] PRUEBAS
+- [x] FALLA DURANTE MIGRACIÓN
+- [x] DESPLIEGUE
+- [x] COMPATIBILIDAD CON SUPABASE
+- [x] COMPATIBILIDAD ENTRE VERSIONES
+- [x] PRUEBA FINAL
 
 #### EH · Fase 47/65 — PRUEBAS INTEGRALES
 - [ ] PRUEBA DE ENTRADA

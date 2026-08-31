@@ -284,9 +284,11 @@ escribir código.
 
 | v2.11.0 | **EH F45** | Estructura interna de datos. ⚠️ **Declara y comprueba**, como la F43 y la F44: los dieciséis apartados con la función real que los resuelve, y **tres auditorías sobre lo guardado de verdad** —fechas, ids y relaciones—. 🚨 **Y encontró un agujero real: TRES colecciones se borraban sin papelera** —las rutinas de Skincare (F14) y de Pelo (F8), anteriores al patrón de la F21, y los perfumes "por probar" (F24)—, para siempre y sin aviso. La auditoría de ME F4 no podía verlo porque solo mira lo que se CREA desde `App.jsx`. 🐛 **Y la lección de la F41 por tercera vez**: leer con los `datos*()` es leer lo YA normalizado, así que una ficha copiada donde iba un id **no saltaba nunca**; ahora se lee el camino en crudo — y así apareció **un elemento guardado sin id**, que en cada dispositivo se convertiría en uno distinto. ⚠️ **La separación por módulos es lógica, no física, y se dice**; ⚠️ **los conflictos siguen sin poder detectarse** (declarado desde la F41); ⚠️ y **los siete módulos que aún no guardan nada están declarados** |
 
+| v2.12.0 | **EH F46** | Migración y compatibilidad. 🚨 **El `schema_version` del apartado 9 existía desde la F1… y el normalizador lo PISABA** con la versión del código: cualquier dato viejo decía "estoy al día" en cuanto se leía, y **ninguna migración se habría disparado jamás**. Ahora se conserva lo guardado y solo la sube una migración que ha terminado bien. **La que existe (v1 → v2)**: sellar un id estable en lo que se guardó sin él — el fallo que encontró la F45, que **sin migración se repite en cada carga** y pone un id distinto en cada móvil. ⚠️ **Se migra lo CRUDO, no lo normalizado** (cuarta vez con la misma lección), y hay prueba de que `App.jsx` migra antes de normalizar. ⚠️ **Copia antes de tocar y vuelta atrás si falla**, comprobado con una migración que revienta a propósito. ⚠️ **Y tres apartados no se pueden cumplir, con su motivo**: sin entorno de pruebas, sin migraciones versionadas de base de datos —el `schema.sql` lo ejecuta Josué a mano— y con la regla 5 borrando lo que un cliente antiguo no conoce |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 45/65** (**F1-F45 seguidas**; queda **F46-F65**).
-Quedan **22** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (20, ninguna bloqueada).
+3/5 y **EH por 46/65** (**F1-F46 seguidas**; queda **F47-F65**).
+Quedan **21** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (19, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

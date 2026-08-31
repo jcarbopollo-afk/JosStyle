@@ -14,13 +14,13 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v2.11.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v2.12.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 45/65**, quedan 20 — **ninguna bloqueada: C-25 la resolvió Josué
+por 3/5, **Estilo de Hombre va por 46/65**, quedan 19 — **ninguna bloqueada: C-25 la resolvió Josué
 en v2.7.0**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
@@ -126,9 +126,9 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 9389 pruebas unitarias con Node (5 de ellas de auditoría), 1408 casos de renderizado real
+Vite, 9475 pruebas unitarias con Node (5 de ellas de auditoría), 1408 casos de renderizado real
 con `react-dom/server`, 11 reglas invariantes y **446 comprobaciones sobre la aplicación de verdad
-en Chromium** — **11 243 comprobaciones**.
+en Chromium** — **11 329 comprobaciones**.
 
 Eso ya ha encontrado **setenta y cuatro bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -154,7 +154,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 45/65** (v2.11.0: **F1-F45 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 46/65** (v2.12.0: **F1-F46 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
@@ -163,10 +163,10 @@ contradicción— y contestó las tres: **dos apartados separados** (`higiene` y
 dos líneas de `MODULOS_EH`), ***Cuidado de manos* y *Cuidado de pies* son la Fase 22** (la casilla de
 la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. ✅ **Las tres —F18, F19 y F22— están construidas**, así que C-25 no bloquea ya nada.
 
-La siguiente es **EH · Fase 46/65 — Migración y compatibilidad**, y a partir de ahí **F46-F65
-seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
+La siguiente es **EH · Fase 47/65 — Pruebas integrales**, y a partir de ahí **F47-F65 seguidas**:
+es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F45 dejaron doscientas cuatro cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F46 dejaron doscientas siete cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -808,6 +808,16 @@ Seis cosas que conviene tener presentes al retomar:
 - ⚠️ **La separación por módulos es LÓGICA, no física** (EH F45): `app_data` guarda una fila por
   (usuario, clave), y Estilo de hombre es UNA clave. Por eso el apartado de conflictos sigue sin
   poder cumplirse, y está declarado desde la F41.
+
+- 🚨 ⚠️ **La versión del esquema es `VERSION_EH`, y solo la sube una migración** (EH F46): el
+  normalizador **conserva** la guardada. Antes la pisaba, y por eso el `schema_version` no servía
+  para nada. Si una fase futura cambia una forma guardada, **añade su línea a `MIGRACIONES`** y sube
+  `VERSION_EH`.
+- ⚠️ **Se migra lo CRUDO, no lo normalizado** (EH F46): `App.jsx` llama a `migrarEstiloHombre(eh)`
+  antes de `normalizarEstiloHombre`. Al revés no arregla nada, porque el normalizador ya ha tapado
+  el fallo.
+- ⚠️ **Copia antes de tocar, y si algo falla se devuelve entera** (EH F46, apartados 5 y 16): nunca
+  una migración a medias.
 
 ⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
 de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin

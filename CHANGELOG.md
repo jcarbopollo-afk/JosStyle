@@ -1,5 +1,80 @@
 # CHANGELOG.md
 
+## v2.12.0 — EH Fase 46/65: migración y compatibilidad
+
+### Qué se ha construido
+*"Añadir → adaptar → comprobar → nunca romper."*
+
+El sistema de versiones y migraciones de Estilo de hombre: `schema_version` de verdad, un proceso que
+migra **lo guardado en crudo**, su copia de seguridad, su vuelta atrás si algo falla, los tres
+escenarios de usuario del apartado 15 y el mapa de qué sistema manda sobre cada dato. Y engancha al
+arranque de la aplicación.
+
+### 🚨 Lo que esta fase encontró nada más empezar
+
+El apartado 9 pide un `schema_version`… **y existía desde la Fase 1**: `VERSION_EH`, guardado dentro
+del propio estado. Pero `normalizarEstiloHombre` lo escribía **incondicionalmente** con la versión
+del código:
+
+```js
+version: VERSION_EH,     // <- pisaba lo que hubiera guardado
+```
+
+Así que el campo era **decorativo**: cualquier dato, por viejo que fuera, decía *"soy de la versión
+actual"* en cuanto se leía. Una migración basada en él **no se habría disparado jamás**, y nadie lo
+habría notado hasta perder algo. Ahora el normalizador **conserva la versión guardada**, y lo único
+que la sube es **una migración que ha terminado bien**.
+
+### La migración que existe, y por qué
+
+**v1 → v2 · Sellar un id estable en lo que se guardó sin él.** Lo encontró la auditoría de la **F45**
+leyendo en crudo: un elemento guardado sin `id` recibe **uno nuevo cada vez que se lee** — y por lo
+tanto **uno distinto en cada dispositivo**, que es exactamente el duplicado que aquel apartado quería
+evitar. El normalizador lo tapa (le pone uno y sigue), así que **sin migración el problema se repite
+en cada carga**. Ahora se sella una vez y se guarda.
+
+### Las decisiones de la fase
+
+**1. ⚠️ Se migra lo guardado, no lo normalizado.** Cuarta vez que este proyecto se topa con lo mismo
+(F41, F45 y aquí): el normalizador **ya ha arreglado** lo que la migración tiene que arreglar, así
+que migrar después de él no cambia nada y el dato malo vuelve a guardarse igual de malo.
+`migrarEstiloHombre()` recibe **el objeto crudo de `loadData`**, y hay una prueba de que en `App.jsx`
+se llama **antes** de normalizar.
+
+**2. ⚠️ Copia antes de tocar, y vuelta atrás si falla** (apartados 5 y 16). La migración devuelve la
+copia de lo que había, no muta lo que se le pasa, y si una migración revienta **se para, devuelve lo
+original y dice qué pasó**: *"nunca continuar parcialmente dejando datos corruptos"*. Comprobado con
+una migración que falla a propósito.
+
+**3. ⚠️ Lo que no se puede migrar no se borra: se aparta y se avisa** (apartado 14), con el texto del
+enunciado — *"Hay información que necesita revisión."*
+
+**4. ⚠️ Ni una segunda versión de nada** (apartados 1, 3, 7 y 8). `MAPA_DE_DATOS` dice, para cada cosa
+que ya existía en JosStyle, **quién manda** y qué guarda Estilo de hombre — que siempre es un id. Y
+el que **no existe** se declara: sigue sin haber favoritos globales, como dejó dicho la F39.
+
+**5. ⚠️ Hay precedente, y se sigue.** La migración de Seguridad Centralizada (PIN en texto plano →
+`pinHash`) ya vivía en `App.jsx` con sus banderas para correr una sola vez. Esta hace lo mismo: se
+ejecuta al cargar y **solo guarda si de verdad ha cambiado algo**.
+
+**6. ⚠️ Y tres apartados no se pueden cumplir, con su motivo.** No hay entorno de pruebas intermedio
+(17), no hay **migraciones versionadas de base de datos** —el `schema.sql` lo ejecuta Josué a mano en
+el editor de SQL (18)— y un cliente antiguo leyendo datos nuevos **borra lo que no conoce** por la
+regla 5 (19). Lo que sí se hace es no bajar nunca la versión y avisar cuando los datos vienen de una
+versión más nueva.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **9 475 comprobaciones de Node** (86
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **446 comprobaciones sobre la
+aplicación de verdad en Chromium**. Entre ellas, el recorrido completo del apartado 20 —copia,
+migración, uso, borrado y recuperación— y el usuario avanzado migrando **con sus cincuenta perfumes
+intactos**.
+
+⚠️ **Una comprobación anterior actualizada, no arreglada:** `test-estilo-hombre` daba por buena la
+versión comprobando `VERSION_EH === 1`. Ahora comprueba **la regla** —que hay versión, que es un
+número entero y que nunca baja— en vez del número de aquel día.
+
+
 ## v2.11.0 — EH Fase 45/65: estructura interna de datos
 
 ### Qué se ha construido

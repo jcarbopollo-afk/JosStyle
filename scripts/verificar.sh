@@ -446,6 +446,12 @@ else
   fallo "Falla la estructura de datos"; grep '✗' /tmp/jc_eh45.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-migracion.mjs >/tmp/jc_eh46.log 2>&1; then
+  ok "Migración y compatibilidad (EH F46) — $(grep -c '✓' /tmp/jc_eh46.log) comprobaciones"
+else
+  fallo "Falla la migración"; grep '✗' /tmp/jc_eh46.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

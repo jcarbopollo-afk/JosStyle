@@ -141,7 +141,15 @@ export const IDS_EH = MODULOS_EH.map((m) => m.id);
    futura"*): es lo que permite que la Fase 6 le añada sus ajustes a Skincare
    sin cambiar esta forma. */
 
-export const VERSION_EH = 1;
+/* 🚨 ⚠️ **EH F46** — la versión del esquema, que el apartado 9 pide con ese
+   nombre (`schema_version`). Existe desde la F1… pero hasta la F46 el
+   normalizador la **pisaba** con la del código, así que cualquier dato viejo
+   decía "soy de la versión actual" en cuanto se leía y **ninguna migración se
+   habría disparado jamás**. Ahora se conserva lo guardado y **solo la sube una
+   migración que ha terminado bien** (ver `migracion.js`).
+
+   v1 → v2: sellar un id estable en lo que se guardó sin él. */
+export const VERSION_EH = 2;
 
 export const DEFAULT_ESTILO_HOMBRE = {
   configurado: false,       // ¿ha pasado ya por la primera configuración?
@@ -259,7 +267,11 @@ export function normalizarEstiloHombre(guardado) {
     // `datosEstiloHombre.js`; aquí solo se arrastra, para no importar en
     // círculo. Un campo que el normalizador no conoce se pierde (regla 5).
     datos: g.datos && typeof g.datos === 'object' && !Array.isArray(g.datos) ? g.datos : {},
-    version: VERSION_EH,
+    /* 🚨 ⚠️ **EH F46** — la versión GUARDADA, no la del código. Escribir aquí
+       `VERSION_EH` era decir que todo dato leído ya estaba al día, y con eso el
+       `schema_version` del apartado 9 no servía para nada. Sin versión guardada,
+       es de antes de que esto existiera: la 1. */
+    version: Number.isFinite(Number(g.version)) && Number(g.version) >= 1 ? Number(g.version) : 1,
     creadoEn: g.creadoEn || null,
   };
 }

@@ -253,7 +253,10 @@ console.log('\n═══ Estados de pantalla y resumen ═══\n');
   comprobar('...y los apagados', r.apagados === MODULOS_EH.length - 2);
   comprobar('⚠️ CLAVE · Y dice que HOY NINGUNO tiene contenido todavía', r.conContenido === 0);
   comprobar('CLAVE · ...porque el enunciado prohíbe construirlo en esta fase', r.proximaFase === 2);
-  comprobar('La versión está declarada', VERSION_EH === 1);
+  /* ⚠️ Era 1 cuando se escribió esto. La **F46** la subió a 2 con la primera
+     migración de verdad, así que lo que se comprueba ahora es lo que importa:
+     que hay una versión, que es un número y que **nunca baja**. */
+  comprobar('La versión está declarada', Number.isInteger(VERSION_EH) && VERSION_EH >= 1);
 }
 
 /* ===========================================================================

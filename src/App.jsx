@@ -65,6 +65,8 @@ import { eliminarRegistroBarba, restaurarRegistroBarba, eliminarRutinaConPapeler
 import { eliminarRutinaCuerpo, restaurarRutinaCuerpo } from './lib/rutinasCuerpo';
 /* 🐛 EH F45, apartado 8 — las tres colecciones que se borraban sin pasar por la
    papelera global: las rutinas de Skincare y de Pelo, y los perfumes por probar. */
+/* EH F46 — la migración del esquema de Estilo de hombre, al cargar. */
+import { migrarEstiloHombre } from './lib/migracion';
 import { eliminarRutinaPielConPapelera, restaurarRutinaPiel } from './lib/rutinasPiel';
 import { eliminarRutinaConPapeleraPelo, restaurarRutinaPelo } from './lib/rutinasPelo';
 import { quitarPorProbarConPapelera, restaurarPorProbar } from './lib/perfumes';
@@ -516,7 +518,19 @@ export default function App() {
       setGamificacion(normalizarGamificacion(gam));
       setAudio(normalizarAudio(aud));
       setHorarioTop(normalizarHorarioTop(hor));
-      setEstiloHombre(normalizarEstiloHombre(eh));
+      /* ⚠️ **EH F46** — la migración va **sobre lo que devuelve `loadData`**, no
+         sobre lo normalizado: el normalizador ya habría tapado lo que hay que
+         arreglar (la lección de la F41 y la F45, por cuarta vez). Y solo se
+         guarda **si de verdad ha cambiado algo**, con la copia por delante
+         (apartado 5) — mismo criterio que la migración de Seguridad de arriba.
+
+         Si falla, `migrarEstiloHombre` devuelve la copia intacta y su error:
+         nunca a medias (apartado 16). */
+      const migracionEH = migrarEstiloHombre(eh);
+      setEstiloHombre(normalizarEstiloHombre(migracionEH.estado));
+      if (migracionEH.migrada && !migracionEH.error) {
+        saveData(uidUser, 'estiloHombre', normalizarEstiloHombre(migracionEH.estado));
+      }
       setLoaded(true);
     })();
     return () => { cancelled = true; };
