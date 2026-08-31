@@ -32,11 +32,17 @@
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 let n = 0; let fallos = 0;
 const ok = (c, m) => { n += 1; if (c) console.log(`  ✓ ${m}`); else { fallos += 1; console.log(`  ✗ ${m}`); } };
 
-const RAIZ = new URL('..', import.meta.url).pathname;
+// 🐛 ⚠️ `.pathname` de una URL de archivo devuelve `/C:/...` en Windows, y `join`
+// lo convertía en `C:\C:\...`: la comprobación no llegaba a leer ni un archivo y
+// `verificar.sh` la daba por fallada sin decir por qué. `fileURLToPath` es lo que
+// existe para esto. Lo cazó la EH F19, la primera fase que se verifica entera en
+// la máquina de Windows.
+const RAIZ = fileURLToPath(new URL('..', import.meta.url));
 const LIB = join(RAIZ, 'src/lib');
 
 const sinComentarios = (t) => t

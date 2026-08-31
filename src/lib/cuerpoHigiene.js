@@ -89,6 +89,15 @@ export const PARTES_HIGIENE = [
   // ⚠️ C-25, respuesta 2 — la casilla enciende; la pantalla es la Fase 22.
   { id: 'manos', nombre: 'Cuidado de manos', icono: '🤲', porDefecto: true, deApartado1: true, enFase: 22 },
   { id: 'pies', nombre: 'Cuidado de pies', icono: '🦶', porDefecto: true, deApartado1: true, enFase: 22 },
+  /* ⚠️ **F19, apartado 17** — *"desde Gestionar apartados se pueden desactivar
+     independientemente: rutinas, recomendaciones, productos y seguimiento"*.
+     No son casillas del apartado 1: son interruptores, y por eso `deApartado1`
+     es `false` — volver a elegir "qué utilizo" no puede apagarlos por la
+     espalda. Higiene no lleva `seguimiento`: esa casilla es del apartado 1 y la
+     F18 la puso en Cuidado corporal, que es donde la escribió Josué. */
+  { id: 'rutinas', nombre: 'Rutinas', icono: '📋', porDefecto: true, deApartado1: false, enFase: 19 },
+  { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', porDefecto: true, deApartado1: false, enFase: 19 },
+  { id: 'productos', nombre: 'Productos', icono: '🧴', porDefecto: true, deApartado1: false, enFase: 19 },
 ];
 
 export const PARTES_CUERPO = [
@@ -99,6 +108,9 @@ export const PARTES_CUERPO = [
   /* La rutina no es una casilla del apartado 1: es lo que construye la F19, y
      tiene su propio interruptor para que apagarla no apague el módulo entero. */
   { id: 'rutinas', nombre: 'Rutinas', icono: '📋', porDefecto: true, deApartado1: false, enFase: 19 },
+  // ⚠️ F19, apartado 17 — los otros dos interruptores, con el mismo criterio.
+  { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', porDefecto: true, deApartado1: false, enFase: 19 },
+  { id: 'productos', nombre: 'Productos', icono: '🧴', porDefecto: true, deApartado1: false, enFase: 19 },
 ];
 
 export const PARTES_DE = { [MODULO_HIGIENE]: PARTES_HIGIENE, [MODULO_CUERPO]: PARTES_CUERPO };
@@ -473,17 +485,25 @@ export const PLAQUITAS_CH = {
     { id: 'partes', nombre: 'Qué utilizo', icono: '☑️', fase: 18 },
     { id: 'perfil', nombre: 'Mi perfil', icono: '📝', fase: 18 },
     { id: 'rutina', nombre: 'Mi rutina', icono: '🚿', fase: 19 },
+    // F19, apartado 8 — *"añadir: 💡 Recomendaciones"*.
+    { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', fase: 19 },
     { id: 'manosPies', nombre: 'Manos, uñas y pies', icono: '🤲', fase: 22 },
   ],
   [MODULO_CUERPO]: [
     { id: 'partes', nombre: 'Qué utilizo', icono: '☑️', fase: 18 },
     { id: 'perfil', nombre: 'Mi perfil', icono: '📝', fase: 18 },
     { id: 'rutina', nombre: 'Mi rutina', icono: '🧴', fase: 19 },
+    { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', fase: 19 },
     { id: 'seguimiento', nombre: 'Seguimiento', icono: '📈', fase: 19 },
   ],
 };
 
 export const plaquitasDe = (moduloId) => PLAQUITAS_CH[moduloId] || [];
+
+/* ⚠️ **Qué fases están construidas, en un sitio y no en un `===`.** La F18
+   escribió `fase === 18` porque entonces era verdad; la F19 lo habría dejado
+   mintiendo en dos sitios a la vez. Cuando llegue la F22, se añade aquí. */
+export const FASES_CH_LISTAS = [18, 19];
 
 /* ===========================================================================
    8 · RESUMEN, AUDITORÍA Y PANEL
@@ -492,11 +512,16 @@ export const plaquitasDe = (moduloId) => PLAQUITAS_CH[moduloId] || [];
 export function resumenCH(estado, moduloId, datosGlobales = {}) {
   const d = datosCH(estado, moduloId);
   const p = progresoCH(estado, moduloId, datosGlobales);
+  /* ⚠️ **Se cuentan las CASILLAS, no los interruptores.** La línea de la portada
+     dice *"qué utilizas"*, que es lo que él marcó en el apartado 1; meter dentro
+     los tres interruptores de la F19 —que nacen encendidos— habría cambiado un
+     "2 de 4" por un "5 de 7" sin que él tocara nada. */
+  const casillas = partesDeModulo(moduloId).filter((x) => x.deApartado1);
   return {
     modulo: moduloId,
     estado: estadoDeEntradaCH(estado, moduloId),
-    partesActivas: partesDeModulo(moduloId).filter((x) => d.partes[x.id]).length,
-    partes: partesDeModulo(moduloId).length,
+    partesActivas: casillas.filter((x) => d.partes[x.id]).length,
+    partes: casillas.length,
     contestadas: p.contestadas,
     // ⚠️ `progresoVisible` lo llama `total`, no `de`.
     de: p.total,
@@ -526,7 +551,13 @@ export function textosDeCH() {
 export function auditarCH() {
   const todas = [...PARTES_HIGIENE, ...PARTES_CUERPO];
   const delApartado1 = todas.filter((p) => p.deApartado1);
-  const ids = todas.map((p) => p.id);
+  /* ⚠️ **Las repetidas se miran entre las CASILLAS, no entre las partes.** Las
+     siete del apartado 1 se repartieron y ninguna puede estar en los dos
+     módulos; los interruptores del apartado 17 de la F19 —rutinas,
+     recomendaciones y productos— **están en los dos a propósito**, porque cada
+     apartado apaga los suyos. Mirar la lista entera daba los tres por
+     duplicados: es la comprobación la que se quedó vieja, no el catálogo. */
+  const ids = delApartado1.map((p) => p.id);
   return {
     // ⚠️ C-25 — dos módulos, y las siete casillas repartidas entre ellos.
     modulos: MODULOS_CH.length,
@@ -585,8 +616,8 @@ export function panelCH(estado, moduloId, datosGlobales = {}) {
     plaquitas: plaquitasDe(moduloId).map((pl) => ({
       ...pl,
       // Regla 8 — la que todavía no existe lo dice, en vez de abrir un vacío.
-      lista: pl.fase === 18,
-      texto: pl.fase === 18 ? null : TEXTOS_CH.enOtraFase,
+      lista: FASES_CH_LISTAS.includes(pl.fase),
+      texto: FASES_CH_LISTAS.includes(pl.fase) ? null : TEXTOS_CH.enOtraFase,
     })),
     opcional: TEXTOS_CH.opcional,
     sonDos: TEXTOS_CH.sonDos,
@@ -595,13 +626,16 @@ export function panelCH(estado, moduloId, datosGlobales = {}) {
 }
 
 /*
- * ⚠️ **Lo que esta fase NO añade a los catálogos globales, y por qué.**
+ * ⚠️ **Lo que la F18 NO añadió a los catálogos globales, y por qué.**
  *
  * `METRICAS_PROGRESO` (F35) y `COLECCIONES_EH` (F41) piden **listas** e
- * **historiales**, y la F18 no crea ninguno: sus partes son booleanos y su
- * perfil son respuestas del registro. Añadir una métrica aquí sería contar algo
- * que todavía no existe. Las dos llegan con la **F19**, que es la que crea las
- * rutinas y el seguimiento.
+ * **historiales**, y la F18 no creaba ninguno: sus partes son booleanos y su
+ * perfil son respuestas del registro. Añadir una métrica allí habría sido contar
+ * algo que todavía no existía.
+ *
+ * ✅ **Las dos llegaron con la F19**, que es la que crea las rutinas: sus líneas
+ * están en `progresoEstilo.js` y en `estadosEstilo.js`, y la lista de aquí se
+ * queda como lo que fue — el aviso que se cumplió.
  */
 export const CATALOGOS_QUE_LLEGAN_EN_F19 = ['METRICAS_PROGRESO', 'COLECCIONES_EH'];
 

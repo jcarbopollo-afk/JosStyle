@@ -51,7 +51,18 @@ if (!existsSync('.env.local')) {
   writeFileSync('.env.local', `VITE_SUPABASE_URL=${SUPA}\nVITE_SUPABASE_ANON_KEY=clave-de-prueba\n`);
 }
 
-const vite = spawn('npx', ['vite', '--port', String(PUERTO), '--host', '127.0.0.1'], { stdio: 'ignore' });
+/* 🐛 ⚠️ En Windows el ejecutable es `npx.cmd`: con `npx` a secas, `spawn` daba
+   `ENOENT` y **la comprobación más importante del proyecto no llegaba a
+   arrancar** — `verificar.sh` decía "LA APLICACIÓN NO ARRANCA" cuando lo que no
+   arrancaba era la prueba. Lo cazó la EH F19, la primera fase verificada entera
+   en la máquina de Windows.
+
+   ⚠️ Y además hace falta `shell: true`: desde Node 20, lanzar un `.cmd` sin
+   shell da `EINVAL`. Los argumentos son fijos y sin espacios, así que no hay
+   nada que escapar. */
+const ESWIN = process.platform === 'win32';
+const vite = spawn(ESWIN ? 'npx.cmd' : 'npx', ['vite', '--port', String(PUERTO), '--host', '127.0.0.1'],
+  { stdio: 'ignore', shell: ESWIN });
 const esperarServidor = async () => {
   for (let i = 0; i < 40; i += 1) {
     try { const r = await fetch(`http://127.0.0.1:${PUERTO}/`); if (r.ok) return true; } catch { /* aún no */ }
@@ -98,7 +109,15 @@ const ESTILO_GUARDADO = {
    lo que la app escriba**: así una recarga ve lo de antes, como en el móvil. */
 const almacen = { estiloHombre: ESTILO_GUARDADO };
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+/* 🐛 ⚠️ La ruta del navegador estaba **escrita a mano** (`/opt/pw-browsers/
+   chromium`), que es donde lo tenía el entorno de aquellas sesiones. En Windows
+   no existe, y la prueba moría antes de abrir la aplicación. Ahora se usa esa
+   ruta **solo si está de verdad**, y si no se deja que Playwright encuentre el
+   suyo — que es lo que sabe hacer. */
+const CHROMIUM_FIJO = '/opt/pw-browsers/chromium';
+const browser = await chromium.launch(
+  existsSync(CHROMIUM_FIJO) ? { executablePath: CHROMIUM_FIJO } : {},
+);
 const page = await browser.newPage();
 
 const errores = [];
@@ -1465,5 +1484,72 @@ ok(/Esto llega más adelante/.test(dentro),
   '⚠️ Y lo que todavía no existe LO DICE, en vez de abrir una pantalla vacía');
 ok(!/dermatitis|hongos|infección/i.test(dentro),
   '⚠️ Y ni una palabra de diagnóstico (apartado 7)');
+
+/* ── 30 · RUTINAS Y RECOMENDACIONES DE CUERPO E HIGIENE (EH F19) ──────────
+   Lo que solo se ve usándolo: que la plaquita ABRE, que la plantilla no crea
+   nada hasta que se le da al botón, que marcar marca de verdad (la lección de
+   la F18, cazada aquí mismo) y que omitir no penaliza. */
+
+ok(/Mi rutina/.test(dentro), '⚠️ **EH F19** — la plaquita "Mi rutina" está en la portada del apartado');
+ok(!/Mi rutina[\s\S]{0,40}Esto llega más adelante/.test(dentro),
+  '⚠️ Y ya NO anuncia otra fase: esta es su fase');
+
+ok(await pulsar('Mi rutina'), 'Se abre "Mi rutina"');
+await page.waitForTimeout(800);
+const rut19 = await ver();
+ok(/Crea tu primera rutina/.test(rut19), 'y sin ninguna, lo dice con las palabras del enunciado');
+ok(/Rutina diaria básica/.test(rut19), 'con la plantilla del apartado 2');
+ok(/Ducha · Higiene · Desodorante/.test(rut19),
+  '⚠️ y con SUS tres pasos: el cuarto del ejemplo es de Cuidado corporal (C-25)');
+ok(/Usar esta rutina/.test(rut19) && /Personalizar/.test(rut19) && /Crear desde cero/.test(rut19),
+  'y los tres botones del apartado 2');
+
+guardado.length = 0;
+ok(await pulsar('Usar esta rutina'), 'Se usa la plantilla');
+await page.waitForTimeout(1200);
+const conRutina = await ver();
+ok(/3 pasos/.test(conRutina), '⚠️ y aparece su tarjeta: cuántos pasos, no cuáles (apartado 4)');
+ok(/Pendiente/.test(conRutina), '⚠️ con el checklist de hoy, y "Pendiente" — nunca "has fallado"');
+ok(/Omitir hoy/.test(conRutina), 'con "Omitir hoy" en cada paso (apartado 16)');
+ok(/Recordármelo/.test(conRutina),
+  '⚠️ y el recordatorio APAGADO: hay que encenderlo (apartado 7)');
+
+const escR = guardado.filter((g) => g && g.key === 'estiloHombre');
+const rutinasHig = escR.at(-1)?.value?.modulos?.find((m) => m.id === 'higiene')?.config?.rutinas?.rutinas;
+ok(Array.isArray(rutinasHig) && rutinasHig.length === 1,
+  '⚠️ PERSISTENCIA: la rutina se guarda en la config de su módulo');
+ok(rutinasHig?.[0]?.recordatorio === false, 'y con el recordatorio apagado, escrito en el dato');
+
+/* ⚠️ Marcar un paso: la comprobación que en la F18 destapó que la pantalla
+   pintaba desde lo guardado y alternaba sobre otra cosa. */
+guardado.length = 0;
+ok(await pulsar('Marcarlo todo'), 'Se marca la rutina entera');
+await page.waitForTimeout(1200);
+const marcada = await ver();
+ok(/Hecha/.test(marcada), '⚠️ y el día pasa a "Hecha" de verdad, en la pantalla');
+const hechos = guardado.filter((g) => g && g.key === 'estiloHombre')
+  .at(-1)?.value?.modulos?.find((m) => m.id === 'higiene')?.config?.rutinas?.hechos;
+ok(Array.isArray(hechos) && hechos[0]?.pasos?.length === 3,
+  '⚠️ PERSISTENCIA: lo marcado se guarda con su fecha, no dentro del paso');
+
+/* ⚠️ El botón de volver no lleva texto, lleva `aria-label` — que es justo lo
+   que revisa la F42. Así que se pulsa por ahí. */
+const volvio = await page.evaluate(() => {
+  const b = document.querySelector('button[aria-label="Volver"]');
+  if (!b) return false;
+  b.click();
+  return true;
+});
+ok(volvio, 'Se vuelve a la portada del apartado');
+await page.waitForTimeout(900);
+ok(await pulsar('Recomendaciones'), '⚠️ Y la plaquita de Recomendaciones también abre');
+await page.waitForTimeout(900);
+const reco = await ver();
+ok(/Recomendaciones/.test(reco), 'con su pantalla');
+ok(/Pack básico/.test(reco), 'y el pack del apartado 13');
+ok(/no compra nada/.test(reco), '⚠️ diciendo que esto no compra nada');
+ok(/los productos que ves son los que has añadido/i.test(reco),
+  '⚠️ Y que el catálogo está vacío a propósito (D2-03), en vez de inventar productos');
+ok(!/debes|tienes que|deberías/i.test(reco), '⚠️ Y ni un "debes": el tono de siempre');
 
 await salir(browser);

@@ -59,7 +59,7 @@ console.log('\n🔒 EH · Fase 43/65 — Seguridad, privacidad y control de dato
   ok(!!sistemaCentralizado('papelera') && !sistemaCentralizado('inventado'), 'se buscan por id');
 
   eq(Object.keys(FUENTES).length, LIBRERIAS_EH.length,
-    'se leen las cuarenta y dos librerías de Estilo de hombre');
+    'se leen las cuarenta y cuatro librerías de Estilo de hombre');
   eq(auditarDuplicados(FUENTES), [],
     '⚠️ y NINGUNA monta un sistema paralelo: ni PIN, ni papelera, ni exportación, ni guardado, ni cuentas');
 

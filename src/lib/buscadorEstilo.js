@@ -57,6 +57,7 @@ import { datosGustos } from './gustos';
 import { datosRutinasPiel } from './rutinasPiel';
 import { datosPelo } from './rutinasPelo';
 import { datosRutinasBarba } from './rutinasBarba';
+import { datosRutinasCuerpo } from './rutinasCuerpo';
 import { datosSonrisa } from './sonrisa';
 import {
   PARTES_HIGIENE, PARTES_CUERPO, parteActivaCH, MODULO_HIGIENE, MODULO_CUERPO,
@@ -144,6 +145,16 @@ export const FUENTES_BUSQUEDA = [
     id: 'partesCuerpo', modulo: 'cuerpo', grupo: 'Cuidado corporal', icono: '🧍', zona: null,
     lista: (e) => PARTES_CUERPO.filter((p) => parteActivaCH(e, MODULO_CUERPO, p.id))
       .map((p) => ({ id: `cue_${p.id}`, nombre: p.nombre })),
+  },
+  /* ⚠️ **EH F19** — y ahora también sus rutinas, que es lo que él nombra cuando
+     busca. Dos fuentes, una por apartado (C-25). */
+  {
+    id: 'rutinasHigiene', modulo: 'higiene', grupo: 'Rutinas de higiene', icono: '🚿', zona: 'rutinas',
+    lista: (e) => nombresDe(datosRutinasCuerpo(e, MODULO_HIGIENE).rutinas),
+  },
+  {
+    id: 'rutinasCuerpo', modulo: 'cuerpo', grupo: 'Rutinas de cuidado corporal', icono: '🧴', zona: 'rutinas',
+    lista: (e) => nombresDe(datosRutinasCuerpo(e, MODULO_CUERPO).rutinas),
   },
   {
     id: 'rutinasSonrisa', modulo: 'sonrisa', grupo: 'Rutinas de sonrisa', icono: '😁', zona: null,

@@ -115,6 +115,11 @@ export const CATALOGO_PAPELERA = {
   'sonrisa.rutinas': { modulo: 'sonrisa', coleccion: 'rutinas', tipo: 'Rutina de higiene bucal', campos: ['nombre'], icono: 'sonrisa' },
   'sonrisa.revisiones': { modulo: 'sonrisa', coleccion: 'revisiones', tipo: 'Revisión dental', campos: ['fecha'], icono: 'sonrisa' },
   'sonrisa.registros': { modulo: 'sonrisa', coleccion: 'registros', tipo: 'Registro de higiene bucal', campos: ['fecha'], icono: 'sonrisa' },
+  /* ⚠️ EH F19, apartado 18 — *"eliminados recientemente… nada duplicado"*.
+     Séptima vez que un módulo entra aquí **sin tocar ni una función del motor**:
+     dos líneas, una por apartado, porque C-25 dejó dicho que son dos. */
+  'higiene.rutinas': { modulo: 'higiene', coleccion: 'rutinas', tipo: 'Rutina de higiene', campos: ['nombre'], icono: 'higiene' },
+  'cuerpo.rutinas': { modulo: 'cuerpo', coleccion: 'rutinas', tipo: 'Rutina de cuidado corporal', campos: ['nombre'], icono: 'cuerpo' },
   // ⚠️ EH F24 — la colección de perfumes y su historial, a la papelera de siempre.
   'perfumes.perfumes': { modulo: 'perfumes', coleccion: 'perfumes', tipo: 'Perfume', campos: ['nombre'], icono: 'perfumes' },
   'perfumes.historial': { modulo: 'perfumes', coleccion: 'historial', tipo: 'Uso de perfume', campos: ['fecha'], icono: 'perfumes' },

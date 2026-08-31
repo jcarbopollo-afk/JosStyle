@@ -61,6 +61,8 @@ import { DEFAULT_PAPELERA, purgarCaducados, prepararEliminacion, prepararRestaur
 import { eliminarRegistroPiel, restaurarRegistroPiel } from './lib/seguimientoPiel';
 // EH F21 — lo mismo para barba: rutinas y registros, a la papelera de siempre.
 import { eliminarRegistroBarba, restaurarRegistroBarba, eliminarRutinaConPapelera, restaurarRutinaBarba } from './lib/rutinasBarba';
+// EH F19 — y las rutinas de Higiene y de Cuidado corporal, por la misma puerta.
+import { eliminarRutinaCuerpo, restaurarRutinaCuerpo } from './lib/rutinasCuerpo';
 // EH F23 — y lo mismo para Sonrisa: rutinas, revisiones y registros.
 import {
   eliminarRutinaSonrisa, restaurarRutinaSonrisa, eliminarRevision, restaurarRevision,
@@ -1209,10 +1211,24 @@ export default function App() {
     });
   };
 
+  /* ⚠️ EH F19, apartado 18 — las rutinas de Higiene y de Cuidado corporal viven
+     dentro de la `config` de su módulo, como las de barba, así que entran por
+     esta puerta y acaban en LA MISMA papelera. Son dos módulos (C-25), y por eso
+     el módulo viaja como argumento en vez de estar escrito dentro. */
+  const eliminarDeCuerpo = (modulo, id) => {
+    const r = eliminarRutinaCuerpo(estiloHombre, modulo, id);
+    if (r.error) return;
+    snapshotAndSave({
+      estiloHombre: r.estado,
+      papelera: { ...papelera, elementos: [...papelera.elementos, r.entrada] },
+    });
+  };
+
   const eliminarConPapelera = (modulo, coleccion, id) => {
     // Los registros de piel no son una lista de primer nivel: van por su puerta.
     if (modulo === 'skincare' && coleccion === 'registros') return eliminarRegistroDePiel(id);
     if (modulo === 'barba') return eliminarDeBarba(coleccion, id);
+    if (modulo === 'higiene' || modulo === 'cuerpo') return eliminarDeCuerpo(modulo, id);
     if (modulo === 'sonrisa') return eliminarDeSonrisa(coleccion, id);
     if (modulo === 'perfumes') return eliminarDePerfumes(coleccion, id);
     if (modulo === 'accesorios') return eliminarDeAccesorios(coleccion, id);
@@ -1281,6 +1297,16 @@ export default function App() {
       const fn = { rutinas: restaurarRutinaSonrisa, revisiones: restaurarRevision, registros: restaurarRegistroSonrisa }[entrada.coleccion];
       const r = fn ? fn(estiloHombre, entrada) : null;
       if (!r || r.error) return;
+      snapshotAndSave({
+        estiloHombre: r.estado,
+        papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
+      });
+      return;
+    }
+    // EH F19 — y las de Higiene y Cuidado corporal, con su módulo por delante.
+    if (entrada.modulo === 'higiene' || entrada.modulo === 'cuerpo') {
+      const r = restaurarRutinaCuerpo(estiloHombre, entrada.modulo, entrada);
+      if (r.error) return;
       snapshotAndSave({
         estiloHombre: r.estado,
         papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
@@ -2031,6 +2057,13 @@ export default function App() {
             onEliminarRegistro={(id) => eliminarConPapelera('skincare', 'registros', id)}
             onEliminarRegistroBarba={(id) => eliminarConPapelera('barba', 'registros', id)}
             onEliminarRutinaBarba={(id) => eliminarConPapelera('barba', 'rutinas', id)}
+            /* ⚠️ EH F19 — las dos de Higiene y Cuidado corporal, **con su nombre
+               escrito**, no con el módulo como variable: la auditoría de ME F4
+               lee este archivo buscando el par módulo/colección, y con una
+               variable no habría visto ninguna de las dos. */
+            onEliminarRutinaCuerpo={(modulo, id) => (modulo === 'higiene'
+              ? eliminarConPapelera('higiene', 'rutinas', id)
+              : eliminarConPapelera('cuerpo', 'rutinas', id))}
             /* ⚠️ Las tres, con su nombre escrito: la auditoría de ME F4 comprueba
                sobre el código que toda colección del catálogo tenga un borrado
                de verdad, y una colección pasada como variable no se ve. */

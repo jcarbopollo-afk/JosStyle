@@ -1,5 +1,106 @@
 # CHANGELOG.md
 
+## v2.8.0 — EH Fase 19/65: cuerpo e higiene, rutinas y recomendaciones
+
+### Qué se ha construido
+La parte práctica de **🚿 Higiene** y **🧴 Cuidado corporal**: sus rutinas —plantilla, pasos,
+frecuencia, momento, checklist del día, *omitir hoy*, recordatorio y edición—, sus **recomendaciones
+sin IA** y sus **productos, packs y alternativas**.
+
+*"Debe ser mucho más ligera que Skincare. No queremos convertir una ducha en una lista interminable
+de tareas. La aplicación sugiere → el usuario configura → el usuario decide."*
+
+### Las seis decisiones que gobiernan la fase
+
+**1. ⚠️ Aquí no se construye ni una máquina.** Rutinas, plantillas, checklist, omitir, historial,
+calendario y papelera son de `motorRutinas.js` (F14); las reglas, de `motorRecomendaciones.js` (F16);
+los productos, los packs y las alternativas, de `motorProductos.js` (F17). La fase es, casi entera,
+**llamadas**: lo suyo son sus ocho pasos, sus seis frecuencias, sus dos plantillas y sus siete
+reglas. La auditoría declara **siete ceros**.
+
+**2. ⚠️ El ejemplo del apartado 2 mezcla los dos módulos, y se reparte.** Su *"rutina diaria básica"*
+es *ducha, higiene, desodorante e hidratación corporal*, pero **C-25 dejó dicho que son dos
+apartados** y el 17 exige que quitar uno no toque el otro. Así que los tres primeros son la plantilla
+de Higiene y el cuarto la de Cuidado corporal — **exactamente el mismo reparto que hizo la F18 con
+las siete casillas**, y por el mismo motivo: una rutina de Higiene con un paso de Cuerpo dentro se
+rompería al apagar Cuerpo. Hay una prueba de que un paso del otro apartado **no se cuela**.
+
+**3. ⚠️ El seguimiento no guarda nada nuevo.** La casilla *Seguimiento* la declaró la F18 con
+`enFase: 19`, y el enunciado de esta fase **no describe ninguna pantalla de registro**: describe
+rutinas. Así que el seguimiento es **lo que ya se sabe** —qué días tocaba, qué días marcó, qué
+omitió—, derivado con `historialGenerico`. Inventarle un registro con valoraciones habría sido
+meterle a Cuerpo la pantalla de Barba que aquí nadie ha pedido, y el enunciado abre diciendo *"mucho
+más ligera que Skincare"*. El almacén tiene **cuatro llaves y ninguna es un registro**.
+
+**4. ⚠️ "Ya tienes un producto que podría servir" es una regla, no un adorno.** El apartado 11
+termina: *"esto evita gastar dinero sin motivo"*. Se mira lo que tiene **antes** de mirar el
+catálogo: si ya hay algo suyo de esa categoría, se dice **y no se recomienda otro**. Y el catálogo
+sigue vacío a propósito (D2-03), así que aquí no aparece ni un producto inventado.
+
+**5. ⚠️ Ni un inventario, ni una papelera, ni un calendario nuevos** (apartado 18: *"nada
+duplicado"*). Los productos son los que ya existen y aquí solo se guardan **ids**, como hace Barba;
+eliminar pasa por `papelera.js` —dos líneas de catálogo, **séptima vez sin tocar el motor**—; y los
+recordatorios salen al calendario global derivados, sin materializar ni una ocurrencia (regla 11).
+De los seis sistemas del apartado 18, **cinco existen y el sexto se declara**: no hay favoritos
+globales, y se dice, como hizo la F39.
+
+**6. ⚠️ Y nada se enciende solo.** Los recordatorios nacen apagados (apartado 7: *"nunca activarlos
+automáticamente"*), las plantillas **sugieren** —crear una es otra llamada con `confirmado`, octavo
+`aplicarPlan` del proyecto— y omitir un paso **no penaliza**: dos hechos y uno omitido es una rutina
+**HECHA** (apartado 16, *"sin penalización. No crear rachas obligatorias"*).
+
+### 🐛 Los cinco fallos reales, y el peor lleva desde la F8 en el calendario
+
+- **🚨 El fallo de UTC, por tercera y cuarta vez.** `eventosDeRutinas` e `historialGenerico`
+  construían el día en hora local (`T00:00:00`) y lo leían con `toISOString()`, que lo pasa a UTC:
+  **en España eso resta un día entero**, así que cada recordatorio derivado salía en el calendario
+  **la víspera**, y la ventana del historial empezaba un día antes. Es el mismo fallo que ya tuvieron
+  `todayISO` y `addDays` —arreglado en AR F3, y por eso existe `fechaLocalISO`—, y afectaba a **Pelo
+  (F8), Skincare (F14), Barba (F21)** y a esta fase. Ninguna prueba lo vio porque **ninguna comparaba
+  dos días seguidos**.
+- **🚨 Las categorías de los productos no son las mismas, y había que traducirlas.** Las de la F18 son
+  `gel`, `crema`, `jabon`, `desodorante` y `otros`; las fichas del catálogo compartido llevan las de
+  Skincare (`hidratante`, `limpiador`…) y las de Pelo. Comparar `p.categoria === 'crema'` **no habría
+  encontrado nunca nada** y el apartado 11 no habría saltado jamás: un silencio, no un error. Se
+  declara la equivalencia —dos entradas, ni una inventada— y **`gel` y `desodorante` se declaran sin
+  equivalente**, porque hoy no existen en ningún inventario.
+- **La comprobación de las casillas repetidas se había quedado vieja.** `auditarCH()` miraba la lista
+  entera de partes, y los tres interruptores nuevos —rutinas, recomendaciones y productos— **están en
+  los dos módulos a propósito**. Ahora mira solo las **casillas del apartado 1**, que son las que
+  C-25 repartió.
+- **Y la línea de la portada contaba interruptores.** `resumenCH` sumaba todas las partes, así que
+  añadir los tres de esta fase habría cambiado un *"2 de 4 activados"* por un *"5 de 7"* **sin que
+  Josué tocara nada**. Cuenta las casillas, que es lo que él marcó.
+- **`FASES_CH_LISTAS`, en vez de un `=== 18`.** La F18 escribió `fase === 18` para decidir qué
+  plaquita está lista, porque entonces era verdad; esta fase lo habría dejado mintiendo en dos sitios.
+
+### 🐛 Y tres del entorno: **la mitad de la verificación no llegaba a arrancar en Windows**
+Esta es la primera fase que se verifica entera en la máquina de Windows de Josué, y ahí se vio que
+tres comprobaciones **no fallaban: no empezaban**.
+
+- **`test-app-real.mjs`, la más importante del proyecto**, lanzaba `npx` (que en Windows es
+  `npx.cmd`, y desde Node 20 necesita `shell: true`) y abría Chromium desde **una ruta escrita a
+  mano** (`/opt/pw-browsers/chromium`) que solo existía en el entorno de aquellas sesiones. Resultado:
+  `verificar.sh` decía **"LA APLICACIÓN NO ARRANCA"** cuando lo que no arrancaba era la prueba.
+- **`test-imports.mjs` y `smoke.mjs`** usaban `new URL(...).pathname`, que en Windows devuelve
+  `/C:/...`: uno no leía ni un archivo y el otro no compilaba nada. `fileURLToPath` es lo que existe
+  para esto.
+- **Y cuatro pruebas tenían el fallo de UTC en su propio ayudante de fechas**: `dias(1)` devolvía
+  **hoy** en España, así que tres comprobaciones de `test-avisos-estilo` y una de
+  `test-progreso-estilo` fallaban por la zona horaria, no por el código.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **9 109 comprobaciones de Node** (191
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **424 comprobaciones sobre la
+aplicación de verdad en Chromium** (24 nuevas, con el recorrido completo: abrir la plaquita, usar la
+plantilla, marcar la rutina entera y comprobar que **lo marcado se guarda con su fecha**).
+
+⚠️ **Lo que sigue pendiente de Josué (R1):** Supabase real, la sincronización y el aspecto en su
+iPhone. Y queda anotado que **`calendario.js`, `predicciones.js` y `notificaciones.js` tienen el mismo
+`toISOString().slice(0, 10)`**: no se han tocado porque son de otro bloque (R2 y R4), pero están
+localizados.
+
+
 ## v2.7.0 — EH Fase 18/65: cuerpo e higiene, configuración y perfil · 🔓 **C-25 resuelta**
 
 ### Qué se ha construido

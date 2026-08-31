@@ -46,6 +46,8 @@ import { MODULO_ANFITRION } from './miEstilo';
 import { datosRutinasPiel } from './rutinasPiel';
 import { datosPelo } from './rutinasPelo';
 import { datosRutinasBarba } from './rutinasBarba';
+// EH F19 — lo que la F18 anunció que llegaría con esta fase.
+import { datosRutinasCuerpo, MODULO_HIGIENE, MODULO_CUERPO } from './rutinasCuerpo';
 import { datosSonrisa } from './sonrisa';
 import { datosPerfumes, perfumeActual } from './perfumes';
 import { misPreferencias } from './gustos';
@@ -174,6 +176,23 @@ export const METRICAS_PROGRESO = [
     nombre: 'Rutinas de sonrisa hechas',
     icono: '😁', modulo: 'sonrisa', tipo: 'periodo', porDefecto: false,
     fuente: (e) => datosSonrisa(e).hechos,
+    fecha: (x) => x.fecha,
+  },
+  /* ⚠️ **EH F19** — las dos métricas que la F18 dejó anunciadas. Apagadas por
+     defecto: el enunciado de la F19 pide *"sin penalización, sin rachas
+     obligatorias"*, así que contar lo que hace no puede llegar sin pedirlo. */
+  {
+    id: 'higiene_hechas',
+    nombre: 'Rutinas de higiene hechas',
+    icono: '🚿', modulo: 'higiene', tipo: 'periodo', porDefecto: false,
+    fuente: (e) => datosRutinasCuerpo(e, MODULO_HIGIENE).hechos,
+    fecha: (x) => x.fecha,
+  },
+  {
+    id: 'cuerpo_hechas',
+    nombre: 'Rutinas de cuidado corporal hechas',
+    icono: '🧴', modulo: 'cuerpo', tipo: 'periodo', porDefecto: false,
+    fuente: (e) => datosRutinasCuerpo(e, MODULO_CUERPO).hechos,
     fecha: (x) => x.fecha,
   },
   {

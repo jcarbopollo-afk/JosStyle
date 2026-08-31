@@ -422,6 +422,12 @@ else
   fallo "Falla Cuerpo e higiene"; grep '✗' /tmp/jc_eh18.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-rutinas-cuerpo.mjs >/tmp/jc_eh19.log 2>&1; then
+  ok "Cuerpo e higiene: rutinas y recomendaciones (EH F19) — $(grep -c '✓' /tmp/jc_eh19.log) comprobaciones"
+else
+  fallo "Fallan las rutinas de cuerpo e higiene"; grep '✗' /tmp/jc_eh19.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

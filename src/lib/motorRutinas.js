@@ -32,7 +32,7 @@
 // (regla 11 del proyecto). Nada se materializa.
 // ============================================================================
 
-import { uid, todayISO } from './helpers';
+import { uid, todayISO, fechaLocalISO } from './helpers';
 
 /* ===========================================================================
    1 · LOS CUATRO COMPORTAMIENTOS
@@ -236,14 +236,14 @@ export const DIAS_HISTORIAL = 30;
 export function historialGenerico({ rutinas, hechos, tipoDe, hoy = todayISO(), dias = DIAS_HISTORIAL }) {
   const desde = new Date(`${hoy}T00:00:00`);
   desde.setDate(desde.getDate() - dias);
-  const desdeISO = desde.toISOString().slice(0, 10);
+  const desdeISO = fechaLocalISO(desde);
 
   return rutinas.map((r) => {
     let tocaba = 0;
     for (let i = 0; i <= dias; i += 1) {
       const d = new Date(`${desdeISO}T00:00:00`);
       d.setDate(d.getDate() + i);
-      if (tocaEnFechaGenerico(r, d.toISOString().slice(0, 10), tipoDe)) tocaba += 1;
+      if (tocaEnFechaGenerico(r, fechaLocalISO(d), tipoDe)) tocaba += 1;
     }
     const suyos = hechos.filter((h) => h.rutinaId === r.id && h.fecha >= desdeISO && h.fecha <= hoy);
     const hechas = suyos.filter((h) => h.pasos.length > 0).length;
@@ -268,12 +268,21 @@ export function historialGenerico({ rutinas, hechos, tipoDe, hoy = todayISO(), d
    17 lo dicen con las mismas palabras). La misma forma de evento que el
    Armario, para que encaje sin adaptadores. */
 
+/* 🐛 ⚠️ **EL FALLO DE UTC, POR TERCERA Y CUARTA VEZ (lo cazó EH F19).** Este
+   bucle y el de `historialGenerico` construían el día en hora local
+   (`T00:00:00`) y lo leían con `toISOString()`, que lo pasa a UTC: en España eso
+   **resta un día entero**, así que cada recordatorio derivado salía en el
+   calendario **la víspera**, y la ventana del historial empezaba un día antes.
+   Es exactamente lo que ya le pasó a `todayISO` y a `addDays`, arreglado en AR
+   F3 — y por eso `fechaLocalISO` existe en `helpers.js`. Afectaba a Pelo (F8),
+   Skincare (F14), Barba (F21) y a esta fase, y ninguna prueba lo vio porque
+   ninguna comparaba **dos días seguidos**. */
 export function eventosDeRutinas({ rutinas, tipoDe, desde, hasta, prefijo, origen, icono = '✨' }) {
   if (!desde || !hasta) return [];
   const eventos = [];
   const fin = new Date(`${hasta}T00:00:00`);
   for (let d = new Date(`${desde}T00:00:00`); d <= fin; d.setDate(d.getDate() + 1)) {
-    const fecha = d.toISOString().slice(0, 10);
+    const fecha = fechaLocalISO(d);
     rutinas.forEach((r) => {
       if (!r.recordatorio || !tocaEnFechaGenerico(r, fecha, tipoDe)) return;
       eventos.push({

@@ -88,6 +88,18 @@ export const TIPOS_AVISO_EH = [
     id: 'perfume_rotacion', nombre: 'Cambiar de perfume', icono: '🌫️',
     modulo: 'perfumes', categoria: 'rutinas', prioridad: 'baja', porDefecto: false,
   },
+  /* ⚠️ **EH F19, apartado 7** — *"opcionales… el usuario decide. **Nunca
+     activarlos automáticamente**"*. Dos líneas, apagadas, como todo lo de aquí:
+     el recordatorio de una rutina concreta lo enciende él en la propia rutina, y
+     esto es solo el permiso de la categoría. */
+  {
+    id: 'rutina_higiene', nombre: 'Rutina de higiene pendiente', icono: '🚿',
+    modulo: 'higiene', categoria: 'rutinas', prioridad: 'baja', porDefecto: false,
+  },
+  {
+    id: 'rutina_cuerpo', nombre: 'Rutina de cuidado corporal pendiente', icono: '🧴',
+    modulo: 'cuerpo', categoria: 'rutinas', prioridad: 'baja', porDefecto: false,
+  },
   {
     /* ⚠️ Apartado 10 — *"las recomendaciones NO deben convertirse
        automáticamente en notificaciones"*. Es un tipo más, y apagado. */

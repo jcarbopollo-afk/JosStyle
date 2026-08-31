@@ -2,15 +2,19 @@
 //   node scripts/smoke.mjs                     → prueba de humo de las vistas
 //   node scripts/smoke.mjs test-modulos.jsx    → cualquier otro script JSX de scripts/
 import { build } from 'esbuild';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import { rmSync } from 'node:fs';
 
 const script = process.argv[2] || 'smoke-vistas.jsx';
+/* 🐛 `.pathname` de una URL de archivo devuelve `/C:/...` en Windows, y esbuild
+   no resuelve esa ruta: la prueba de humo no llegaba a compilar. `fileURLToPath`
+   es lo que existe para esto. Lo cazó la EH F19. */
 const salida = new URL('../node_modules/.cache/jc-smoke.mjs', import.meta.url);
+const SALIDA = fileURLToPath(salida);
 
 await build({
-  entryPoints: [new URL(`./${script}`, import.meta.url).pathname],
-  outfile: salida.pathname,
+  entryPoints: [fileURLToPath(new URL(`./${script}`, import.meta.url))],
+  outfile: SALIDA,
   bundle: true,
   format: 'esm',
   platform: 'node',
@@ -59,7 +63,7 @@ await build({
 });
 
 try {
-  await import(pathToFileURL(salida.pathname).href);
+  await import(pathToFileURL(SALIDA).href);
 } finally {
-  rmSync(salida.pathname, { force: true });
+  rmSync(SALIDA, { force: true });
 }

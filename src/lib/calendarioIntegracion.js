@@ -21,6 +21,7 @@ import { eventosDePelo } from './rutinasPelo';
 import { eventosDePeluqueria } from './peluqueria';
 import { eventosDePiel } from './rutinasPiel';
 import { eventosDeBarba } from './rutinasBarba';
+import { eventosDeCuerpo } from './rutinasCuerpo';
 import { eventosDeSonrisa } from './sonrisa';
 import { eventosDeGustos } from './gustos';
 
@@ -272,6 +273,10 @@ export function eventosDerivados({ objetivos, estudios, calistenia, futbol, prod
        no crear automáticamente ningún evento"*. Quinto módulo de Estilo de
        Hombre por esta puerta: derivados, de solo lectura y sin guardar nada. */
     ...(estiloHombre && desde && hasta ? eventosDeGustos(estiloHombre, desde, hasta) : []),
+    /* EH F19, apartado 18 — *"utilizar el calendario global… nada duplicado"*.
+       Sexto módulo de Estilo de Hombre por esta misma puerta, y el primero que
+       entra con **dos** orígenes, porque C-25 dejó dicho que son dos apartados. */
+    ...(estiloHombre && desde && hasta ? eventosDeCuerpo(estiloHombre, desde, hasta) : []),
   ];
 }
 
@@ -282,6 +287,9 @@ export const NOMBRES_ORIGEN = {
   piel: 'Skincare',
   barba: 'Barba y afeitado',
   sonrisa: 'Sonrisa',
+  // EH F19 — los dos apartados, con el nombre que ve Josué en cada uno.
+  higiene: 'Higiene',
+  cuerpo: 'Cuidado corporal',
   gustos: 'Mis gustos',
   objetivos: 'Objetivos',
   estudios: 'Estudios',

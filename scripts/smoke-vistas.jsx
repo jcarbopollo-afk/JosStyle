@@ -140,7 +140,7 @@ import { GAMIFICACION_INICIAL, evaluar as evaluarGam, EVENTOS_GAMIFICACION } fro
 const accent = ACCENTS[0].value;
 const noop = () => {};
 const datosPeloSmoke = (e5) => datosPelo(e5).rutinas[0].id;
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = new Date().toLocaleDateString('sv-SE'); // día local, no UTC
 // RA Fase 1 — los dos días anteriores, para poder montar una racha de verdad en las
 // pruebas. Se calculan con el mismo `addDays` que usa el motor, no a mano.
 const AYER = addDays(HOY, -1);

@@ -4,9 +4,10 @@
 > entregado: un único documento de **953 KB / 50 016 líneas** que contiene **siete
 > especificaciones de módulo independientes**, con **106 fases** en total.
 >
-> **Estado: 53 de las 106 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
-> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 10/65**
-> (hasta v1.76.0). Quedan **53**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (51). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
+> **Estado: 85 de las 110 fases construidas y verificadas** — ME 4/4, BI 4/4, **AR 4/4 (cerrado)**,
+> **FO 12/12 (cerrado)**, **RA 4/4 (cerrado)**, **🔒 HT 12/12 (CERRADO)**, **SO 3/5** y **EH 42/65**
+> (hasta v2.8.0). Quedan **25**: SO (2, con **F2 bloqueada** por los archivos de audio) y EH (23:
+> la **F22**, ya desbloqueada, y F44-F65). Cada fase completada lleva su marca `✅ COMPLETADA (vX.Y.0)` en su
 > encabezado, y ninguna casilla se marca sin estar implementada, comprobada y sin romper nada.
 >
 > ⚠️ **El número "106" no cuadra con el desglose por módulos, y no lo he tocado por mi cuenta.**
@@ -1463,44 +1464,62 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar que los datos permanecen al desactivar módulos.
 - [x] Probar todo en móvil. — *le toca a Josué (R1); aquí, 19 comprobaciones en Chromium*
 
-#### EH · Fase 19/65 — CUERPO E HIGIENE: RUTINAS Y RECOMENDACIONES
-- [ ] PLAQUITA «MI RUTINA»
-- [ ] RUTINA BÁSICA
-- [ ] RUTINAS PERSONALIZADAS
-- [ ] PEQUEÑAS PLAQUITAS
-- [ ] CHECKLIST
-- [ ] FRECUENCIA
-- [ ] RECORDATORIOS
-- [ ] RECOMENDACIONES
-- [ ] RECOMENDACIONES SEGÚN PERFIL
-- [ ] RECOMENDACIONES DE PRODUCTOS
-- [ ] PRODUCTOS QUE YA TIENE
-- [ ] ALTERNATIVAS
-- [ ] PACKS
-- [ ] NIVEL
-- [ ] EDITAR
-- [ ] OMITIR
-- [ ] DESACTIVAR
-- [ ] CONEXIONES GLOBALES
-- [ ] PRUEBAS
-- [ ] Crear rutina.
-- [ ] Usar plantilla.
-- [ ] Personalizar plantilla.
-- [ ] Crear desde cero.
-- [ ] Añadir pasos.
-- [ ] Reordenarlos.
-- [ ] Asociar productos.
-- [ ] Cambiar frecuencia.
-- [ ] Activar/desactivar recordatorio.
-- [ ] Marcar rutina.
-- [ ] Omitir paso.
-- [ ] Recibir recomendación.
-- [ ] Ignorar recomendación.
-- [ ] Guardar producto.
-- [ ] Crear pack.
-- [ ] Desactivar módulos.
-- [ ] Reactivarlos.
-- [ ] Comprobar persistencia.
+#### EH · Fase 19/65 — CUERPO E HIGIENE: RUTINAS Y RECOMENDACIONES ✅ COMPLETADA (v2.8.0)
+
+> **`src/lib/rutinasCuerpo.js`** (191 comprobaciones) + las pantallas `RutinaCuerpoEH` y
+> `RecomendacionesCuerpoEH`. Sin SQL nuevo.
+>
+> ⚠️ **Aquí no se construye ni una máquina**: rutinas de `motorRutinas.js` (F14), reglas de
+> `motorRecomendaciones.js` (F16) y productos de `motorProductos.js` (F17). Siete ceros en la
+> auditoría.
+>
+> ⚠️ **El ejemplo del apartado 2 se REPARTE entre los dos apartados** (C-25): *ducha, higiene y
+> desodorante* son la plantilla de 🚿 Higiene y *hidratación corporal* la de 🧴 Cuidado corporal.
+>
+> ⚠️ **El seguimiento es DERIVADO**: el enunciado no describe ninguna pantalla de registro, así que
+> no se guarda ni uno — se calcula con `historialGenerico` sobre lo que ya hay.
+>
+> ⚠️ **El apartado 11 manda sobre el 10**: lo que ya tiene se dice antes de proponerle nada.
+>
+> ⚠️ **De los seis sistemas del apartado 18, cinco existen y el sexto se declara**: no hay
+> favoritos globales, y se dice, como hizo la F39.
+- [x] PLAQUITA «MI RUTINA»
+- [x] RUTINA BÁSICA
+- [x] RUTINAS PERSONALIZADAS
+- [x] PEQUEÑAS PLAQUITAS
+- [x] CHECKLIST
+- [x] FRECUENCIA
+- [x] RECORDATORIOS
+- [x] RECOMENDACIONES
+- [x] RECOMENDACIONES SEGÚN PERFIL
+- [x] RECOMENDACIONES DE PRODUCTOS
+- [x] PRODUCTOS QUE YA TIENE
+- [x] ALTERNATIVAS
+- [x] PACKS
+- [x] NIVEL
+- [x] EDITAR
+- [x] OMITIR
+- [x] DESACTIVAR
+- [x] CONEXIONES GLOBALES
+- [x] PRUEBAS
+- [x] Crear rutina.
+- [x] Usar plantilla.
+- [x] Personalizar plantilla.
+- [x] Crear desde cero.
+- [x] Añadir pasos.
+- [x] Reordenarlos.
+- [x] Asociar productos.
+- [x] Cambiar frecuencia.
+- [x] Activar/desactivar recordatorio.
+- [x] Marcar rutina.
+- [x] Omitir paso.
+- [x] Recibir recomendación.
+- [x] Ignorar recomendación.
+- [x] Guardar producto.
+- [x] Crear pack.
+- [x] Desactivar módulos.
+- [x] Reactivarlos.
+- [x] Comprobar persistencia.
 
 #### EH · Fase 20/65 — BARBA Y AFEITADO: PERFIL Y CONFIGURACIÓN ✅ COMPLETADA (v1.84.0)
 

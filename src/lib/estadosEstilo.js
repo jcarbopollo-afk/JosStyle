@@ -64,6 +64,8 @@ import { datosGustos, normalizarEntradaGusto } from './gustos';
 import { datosRutinasPiel } from './rutinasPiel';
 import { datosPelo } from './rutinasPelo';
 import { datosSonrisa } from './sonrisa';
+// EH F19 — las rutinas de Higiene y de Cuidado corporal, que son dos listas.
+import { datosRutinasCuerpo, MODULO_HIGIENE, MODULO_CUERPO } from './rutinasCuerpo';
 
 /* ===========================================================================
    1 · EL CATÁLOGO DE ESTADOS (apartados 1-16)
@@ -297,6 +299,29 @@ export const COLECCIONES_EH = [
     texto: 'Cepillado, hilo, enjuague: lo que hagas y cuándo.',
     boton: 'Crear rutina',
     leer: (e) => datosSonrisa(e).rutinas,
+    crudo: null,
+    normalizar: null,
+  },
+  /* ⚠️ **EH F19** — dos líneas, no una: C-25 dejó dicho que Higiene y Cuidado
+     corporal son dos apartados, y cada uno tiene su lista y su vacío. Las
+     rutinas las normaliza el MOTOR con el catálogo de pasos de su módulo, así
+     que aquí se declara que **no se revisan una a una**, igual que en piel y en
+     pelo, en vez de fingir que sí. */
+  {
+    id: 'higiene.rutinas', modulo: 'higiene', icono: '🚿',
+    titulo: 'Todavía no tienes ninguna rutina de higiene',
+    texto: 'Ducha, desodorante: lo que hagas y cada cuánto.',
+    boton: 'Crear rutina',
+    leer: (e) => datosRutinasCuerpo(e, MODULO_HIGIENE).rutinas,
+    crudo: null,
+    normalizar: null,
+  },
+  {
+    id: 'cuerpo.rutinas', modulo: 'cuerpo', icono: '🧴',
+    titulo: 'Todavía no tienes ninguna rutina de cuidado corporal',
+    texto: 'Hidratación y lo que quieras cuidar, cuando te venga bien.',
+    boton: 'Crear rutina',
+    leer: (e) => datosRutinasCuerpo(e, MODULO_CUERPO).rutinas,
     crudo: null,
     normalizar: null,
   },

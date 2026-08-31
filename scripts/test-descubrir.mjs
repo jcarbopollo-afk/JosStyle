@@ -40,7 +40,8 @@ const HOY = '2026-08-29';
 const dias = (d) => {
   const f = new Date(`${HOY}T00:00:00`);
   f.setDate(f.getDate() + d);
-  return f.toISOString().slice(0, 10);
+  // 🐛 Día LOCAL, no UTC: con toISOString, en España dias(1) devolvía HOY.
+  return f.toLocaleDateString('sv-SE');
 };
 const nuevo = () => normalizarEstiloHombre(DEFAULT_ESTILO_HOMBRE);
 const con = (ids) => configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ids);

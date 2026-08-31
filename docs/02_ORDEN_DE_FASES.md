@@ -276,9 +276,15 @@ escribir código.
 
 | v2.7.0 | **EH F18** + 🔓 **C-25 resuelta** | Cuerpo e higiene: configuración y perfil. 🔓 **Llevaba parada desde v1.67.0**, y la desbloqueó Josué: preguntó *"dime en qué se diferencian aseo y cuidado corporal"* —que era la pregunta de C-25— y contestó las tres: **dos apartados separados**, **manos y pies son la F22**, y **se sigue llamando *Higiene***. ⚠️ **Las siete casillas se REPARTEN, no se funden**: `PARTES_HIGIENE` y `PARTES_CUERPO` son dos listas, `MODULOS_EH` no cambia, y el apartado 17 se cumple literalmente —quitar Higiene no toca Cuidado corporal, comprobado en Chromium—. ⚠️ **Y eso cierra un solape del propio enunciado**, que ponía desodorante, manos y pies como casillas sueltas en el apartado 1 y dentro de "Higiene diaria" en el 3. ⚠️ **Aquí no se pregunta lo que ya se sabe**: los aromas los declaró la F24 **con `cuerpo` en su `usan`**, previendo esto — cuarta vez que el registro de la F4 evita una pregunta repetida. ⚠️ **Ni un catálogo nuevo** (*"no crear «Catálogo corporal 2»"*), ni rutinas ni recomendaciones: son la F19, y cada plaquita dice en qué fase llega. 🐛 **Cinco fallos reales**, y el peor lo cazó Chromium: la pantalla de casillas **pintaba desde lo guardado y alternaba sobre otra cosa**, así que marcar desmarcaba |
 
+| v2.8.0 | **EH F19** | Cuerpo e higiene: rutinas y recomendaciones. ⚠️ **Aquí no se construye ni una máquina**: rutinas de `motorRutinas.js` (F14), reglas de `motorRecomendaciones.js` (F16) y productos de `motorProductos.js` (F17) — siete ceros en la auditoría. ⚠️ **El ejemplo del apartado 2 se REPARTE entre los dos apartados**, igual que las siete casillas de la F18: *ducha, higiene y desodorante* son la plantilla de Higiene y *hidratación corporal* la de Cuidado corporal, porque una rutina con un paso del otro módulo se rompería al apagarlo. ⚠️ **El seguimiento no guarda nada nuevo**: el enunciado no describe ninguna pantalla de registro, así que se DERIVA de lo que ya se sabe. ⚠️ **"Ya tienes un producto que podría servir" manda sobre recomendar otro** (apartado 11: *"esto evita gastar dinero sin motivo"*). 🐛 **Y el fallo de UTC por tercera y cuarta vez**: `eventosDeRutinas` e `historialGenerico` leían el día con `toISOString()`, así que **en España cada recordatorio salía en el calendario la víspera** — y afectaba también a Pelo, Skincare y Barba. 🐛 **Además, tres comprobaciones del proyecto no llegaban a ARRANCAR en Windows**, incluida la de Chromium: `verificar.sh` decía "LA APLICACIÓN NO ARRANCA" cuando lo que no arrancaba era la prueba |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 41/65** (F1-F18, F20, F21, F23-F43; quedan **F19 y F22**, ya desbloqueadas, y F44-F65).
-Quedan **27** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (25, ninguna bloqueada).
+3/5 y **EH por 42/65** (F1-F21, F23-F43; queda **F22**, ya desbloqueada, y F44-F65).
+Quedan **25** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (23, ninguna bloqueada).
+
+⚠️ **Y la cuenta anterior estaba mal por uno:** hasta v2.7.0 aquí ponía *"quedan 27: SO (2) y EH
+(25)"*, pero su propio desglose —F19, F22 y F44-F65— son **24**, no 25. Se corrige aquí, y el
+desglose sigue mandando sobre el total.
 
 ⚠️ **El "106" y el desglose por módulos no cuadran** (C-24): la tabla suma 110. Se conserva el
 rótulo por compatibilidad con el resto de documentos; el desglose es el que manda sobre el trabajo.

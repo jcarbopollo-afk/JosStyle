@@ -23,7 +23,7 @@ import { calcularResumenModulo } from '../src/lib/resumenesHub.js';
 
 const accent = ACCENTS[0].value;
 const noop = () => {};
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = new Date().toLocaleDateString('sv-SE'); // día local, no UTC
 
 let fallos = 0;
 const comprobar = (nombre, ok, detalle = '') => {
