@@ -1,5 +1,59 @@
 # CHANGELOG.md
 
+## v2.19.0 — EH Fase 53/65: documentación técnica y mantenimiento
+
+### Qué se ha construido
+*"Si dentro de meses queremos modificar Estilo de hombre, Claude debe poder entender rápidamente
+cómo funciona sin rehacer todo el análisis."*
+
+**`docs/08_ESTILO_DE_HOMBRE_TECNICO.md`**: la memoria técnica del módulo, con los dieciocho
+apartados del enunciado. Qué hace y qué no hace, el mapa de módulos, las doce dependencias
+globales, dónde vive cada dato, los cuatro estados, cómo se elimina, la estructura, las
+migraciones, los componentes que se reutilizan, las reglas de diseño y de UX, las notificaciones,
+la privacidad, las pruebas, el historial, el backlog, la regla para quien venga después y el manual
+de mantenimiento.
+
+### 🚨 Y lo que hace que no se quede viejo
+El apartado 2 pide *"y mantenerlo actualizado"*, y esa frase, sin nada que la obligue, no se cumple
+nunca. Así que **el documento se genera desde el código**: `scripts/generar-doc-eh.mjs` lo escribe
+a partir de `src/lib/documentacionEH.js`, y **cinco apartados se derivan directamente** —el mapa de
+`MODULOS_EH`, las fuentes de `FUENTES_GLOBALES`, los estados de `ESTADOS_GESTION` más la papelera,
+las migraciones de la F46 y el backlog del `SE_POSPONE` de la F48—.
+
+Y hay **una prueba que abre el `.md` de verdad** y comprueba que están los diecisiete módulos, las
+doce dependencias, los cuatro estados, las seis reglas de UX, los seis componentes y las cuatro
+preguntas de mantenimiento. Si alguien añade un módulo y el documento no lo recoge, **la
+verificación se pone roja**.
+
+### 🐛 Y otra vez el mismo fallo del detector que solo caza lo que ya conocía
+La comprobación de la **F48** —*"ninguna librería de Estilo de hombre se queda fuera de la lista que
+auditan la F43 y esta"*— saltó con `documentacionEH`… y **solo con ésa**. Su expresión busca nombres
+que acaban en `EH` o en `Estilo`, así que `coherenciaVisual`, `microinteracciones`, `experienciaReal`
+y `produccion` **llevaban cuatro fases invisibles**: ni la auditoría de privacidad ni la de
+duplicados las miraba, y su silencio parecía un aprobado. Las cinco están ya en `LIBRERIAS_EH`, y la
+expresión las nombra.
+
+### Las decisiones de la fase
+
+**1. 🚨 La documentación se deriva del código, no se escribe al lado.** Nada se teclea dos veces.
+
+**2. ⚠️ Y hay una prueba que lee el documento.** Un documento técnico que nadie comprueba es una
+foto de cómo era el proyecto el día que se escribió.
+
+**3. ⚠️ Lo que NO se usa también se documenta, con su motivo.** El apartado 3 pide listar doce
+sistemas globales y Estilo de hombre usa diez: los **favoritos** (no hay sistema global; cada módulo
+tiene los suyos) y el **Diario** (ninguna fase ha pedido el puente) están en la lista marcados con
+❌ y su porqué. Decir solo los que sí deja al siguiente preguntándose si fue un olvido.
+
+**4. ⚠️ Y ningún componente nombra algo que no existe.** El apartado 9 pide listar los reutilizables,
+y **no hay un componente de modal común**: lo que hay es la regla invariante de `createPortal`. Está
+escrito así, en vez de inventar un `ModalPortal` que mandaría al siguiente a buscar lo que no está.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **9 938 comprobaciones de Node** (98
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.18.0 — EH Fase 52/65: preparación para producción
 
 ### Qué se ha construido

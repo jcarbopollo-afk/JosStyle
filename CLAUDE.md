@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v2.18.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v2.19.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
@@ -154,7 +154,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 52/65** (v2.18.0: **F1-F52 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 53/65** (v2.19.0: **F1-F53 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
@@ -163,10 +163,10 @@ contradicción— y contestó las tres: **dos apartados separados** (`higiene` y
 dos líneas de `MODULOS_EH`), ***Cuidado de manos* y *Cuidado de pies* son la Fase 22** (la casilla de
 la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. ✅ **Las tres —F18, F19 y F22— están construidas**, así que C-25 no bloquea ya nada.
 
-La siguiente es **EH · Fase 53/65 — Documentación técnica y mantenimiento**, y a partir de ahí
-**F53-F65 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
+La siguiente es **EH · Fase 54/65 — Backup, restauración y recuperación avanzada**, y a partir de ahí
+**F54-F65 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F52 dejaron doscientas veintiséis cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F53 dejaron doscientas veintinueve cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -843,6 +843,16 @@ Seis cosas que conviene tener presentes al retomar:
   su motivo.
 - ⚠️ **Un ejemplo de una violación no es una violación** (EH F48 y F49): los revisores guardan
   `prohibido:` y `ejemploMalo:` para poder probarse, y `verificar.sh` los excluye.
+- 🚨 **Antes de tocar Estilo de hombre: leer `docs/08_ESTILO_DE_HOMBRE_TECNICO.md`** (EH F53). Es el
+  apartado 17 de esa fase, y está para eso: qué existe, dónde está, con qué se conecta y qué no debe
+  tocarse.
+- 🚨 **Ese documento NO se edita a mano** (EH F53): se genera con
+  `node --import ./scripts/resolver-vite.mjs scripts/generar-doc-eh.mjs` a partir de
+  `src/lib/documentacionEH.js`. Si añades un módulo y no regeneras, la verificación se pone roja.
+- ⚠️ **Una librería nueva de Estilo de hombre va a `LIBRERIAS_EH`** (EH F48 y F53): la que no está en
+  esa lista **no la audita nadie** —ni privacidad ni duplicados— y su silencio parece un aprobado.
+  Ya se coló cuatro veces.
+
 - 🚨 **`saveData` devuelve `{ ok, error }`, y todavía nadie lo mira** (EH F52): la mitad que faltaba
   para avisar de un fallo al guardar ya está. Mientras el aviso no se encienda en la interfaz,
   `error_guardado` **sigue con `detectable: false`** — no lo cambies sin encender el aviso.

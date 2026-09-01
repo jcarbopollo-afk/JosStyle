@@ -107,6 +107,16 @@ export const LIBRERIAS_EH = [
      encontró la comprobación que compara la lista con lo que hay en `src/lib`. */
   'rendimiento', 'estructuraDatos', 'migracion', 'pruebasIntegrales', 'auditoriaFinal',
   'privacidadEstilo',
+  /* 🐛 ⚠️ **EH F53** — y las CINCO de las fases de revisión siguientes, que se
+     habían vuelto a quedar fuera. La comprobación de la F48 solo cazó
+     `documentacionEH` porque su expresión busca nombres que acaban en `EH`:
+     `coherenciaVisual`, `microinteracciones`, `experienciaReal` y `produccion`
+     **no acaban en nada reconocible**, así que llevaban cuatro fases sin que
+     las mirara ni la auditoría de privacidad ni la de duplicados. La misma
+     lección otra vez: un detector que solo caza lo que se parece a lo de antes
+     deja de cazar en cuanto cambian los nombres. */
+  'coherenciaVisual', 'microinteracciones', 'experienciaReal', 'produccion',
+  'documentacionEH',
 ];
 
 /* ===========================================================================

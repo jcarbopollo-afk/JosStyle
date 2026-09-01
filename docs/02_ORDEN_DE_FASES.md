@@ -298,9 +298,11 @@ escribir código.
 
 | v2.18.0 | **EH F52** | Preparación para producción. `src/lib/produccion.js` y **`PUBLICAR.md`**, la lista de antes de publicar escrita para Josué. 🚨 **Y encontró un fallo de los que no se ven**: `saveData` se tragaba el error y no devolvía nada — sin conexión o con el servidor caído, **la aplicación seguía como si se hubiera guardado**. Ahora devuelve `{ ok, error }`; ⚠️ pero el aviso sigue sin encenderse, así que `error_guardado` **sigue en `detectable: false`**. 🚨 **No hay entorno de pruebas, y se dice**: un solo Supabase, y las vistas previas de Vercel apuntan a la misma base. Lo que lo sustituye es la copia de la F46. ⚠️ **La lista de publicación no se marca sola**: siete líneas con comando, **cuatro con su móvil y sin marcar**. ⚠️ **Cero SQL en 65 fases**, así que el apartado 3 se comprueba contra el `schema.sql` de verdad. ⚠️ **El plan de vuelta atrás son cuatro pasos ejecutables**. 🐛 Y los `create policy` del esquema no llevan `if not exists` |
 
+| v2.19.0 | **EH F53** | Documentación técnica y mantenimiento. **`docs/08_ESTILO_DE_HOMBRE_TECNICO.md`**, con los dieciocho apartados. 🚨 **Y lo que hace que no se quede viejo**: el documento **se genera desde el código**, y cinco apartados se derivan del catálogo de módulos, de `FUENTES_GLOBALES`, de los estados, de las migraciones de la F46 y del `SE_POSPONE` de la F48. ⚠️ **Hay una prueba que abre el `.md` de verdad**: si falta un módulo, una dependencia o una regla, la verificación se pone roja. 🐛 **Y otra vez el detector que solo caza lo que ya conocía**: la comprobación de la F48 solo vio `documentacionEH` porque busca nombres acabados en `EH` — `coherenciaVisual`, `microinteracciones`, `experienciaReal` y `produccion` llevaban **cuatro fases sin que las auditara nadie**. ⚠️ Lo que NO se usa (favoritos y Diario) también se documenta, con su motivo. ⚠️ Y no se inventa un `ModalPortal` que no existe: la regla es `createPortal` |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 52/65** (**F1-F52 seguidas**; queda **F53-F65**).
-Quedan **15** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (13, ninguna bloqueada).
+3/5 y **EH por 53/65** (**F1-F53 seguidas**; queda **F54-F65**).
+Quedan **14** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (12, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

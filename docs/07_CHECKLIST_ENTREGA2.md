@@ -3375,6 +3375,39 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] SI APARECE UN ERROR
 - [x] NO AÑADIR FUNCIONES POST-LANZAMIENTO SIN CONTROL
 
+#### EH · Fase 53/65 — DOCUMENTACIÓN TÉCNICA Y MANTENIMIENTO ✅ COMPLETADA (v2.19.0)
+
+> **`docs/08_ESTILO_DE_HOMBRE_TECNICO.md`** + **`src/lib/documentacionEH.js`** +
+> **`scripts/generar-doc-eh.mjs`** (98 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> 🚨 **El documento se GENERA desde el código.** Cinco apartados se derivan y no pueden quedarse
+> viejos; una prueba abre el `.md` y falla si falta un módulo, una dependencia, un estado o una regla.
+>
+> 🐛 **Y encontró cuatro librerías que no auditaba nadie**: `coherenciaVisual`,
+> `microinteracciones`, `experienciaReal` y `produccion` no acababan en `EH`, así que la
+> comprobación de la F48 no las veía.
+>
+> ⚠️ **Lo que NO se usa también se documenta**: favoritos y Diario, con ❌ y su motivo.
+- [x] DOCUMENTO DEL MÓDULO
+- [x] MAPA DE MÓDULOS — *derivado de `MODULOS_EH`*
+- [x] SISTEMAS GLOBALES UTILIZADOS — *los doce, incluidos los dos que no se usan*
+- [x] FUENTE DE CADA DATO — *derivada de `FUENTES_GLOBALES`*
+- [x] ESTADOS — *derivados; el cuarto es de un elemento, no de un módulo*
+- [x] ELIMINACIÓN
+- [x] ESTRUCTURA DE DATOS
+- [x] MIGRACIONES — *derivadas de la F46*
+- [x] COMPONENTES REUTILIZABLES — *cada uno comprobado contra el código*
+- [x] REGLAS DE DISEÑO
+- [x] REGLAS DE UX
+- [x] NOTIFICACIONES
+- [x] PRIVACIDAD
+- [x] PRUEBAS
+- [x] CAMBIOS FUTUROS
+- [x] BACKLOG — *el `SE_POSPONE` de la F48, no una segunda lista*
+- [x] REGLA PARA CLAUDE
+- [x] DOCUMENTACIÓN PARA MANTENIMIENTO
+
+
 
 
 #### EH · Fase 51/65 — CONTROL DE CALIDAD DE LA EXPERIENCIA REAL
