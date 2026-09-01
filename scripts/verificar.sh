@@ -482,6 +482,12 @@ else
   fallo "Fallan las pruebas de experiencia real"; grep '✗' /tmp/jc_eh51.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-produccion.mjs >/tmp/jc_eh52.log 2>&1; then
+  ok "Preparación para producción (EH F52) — $(grep -c '✓' /tmp/jc_eh52.log) comprobaciones"
+else
+  fallo "Fallan las comprobaciones de producción"; grep '✗' /tmp/jc_eh52.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

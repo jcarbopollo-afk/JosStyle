@@ -296,9 +296,11 @@ escribir código.
 
 | v2.17.0 | **EH F51** | Control de calidad de la experiencia real. **Ya no se pregunta "¿funciona?" sino "¿cuánto cuesta usarlo?"**: los **doce recorridos** con sus toques, las siete preguntas de *"¿dónde está esto?"*, los tres perfiles de uso y las siete cosas que él personaliza. ⚠️ **Un recorrido se mide contra la pantalla de verdad**: cada paso nombra el **componente real** que abre y hay una comprobación que lo busca en la vista — una tabla de toques que yo escriba no vale nada. ⚠️ **La prueba de permanencia se hace, no se declara**: cambiar → pasar por `JSON` como hace `saveData` → volver a leer. Es la **regla 5 convertida en prueba**, y las siete sobreviven. 🐛 **Y lo primero que encontró fue un rojo falso**: doce comprobaciones de Chromium fallaban en la pasada completa y pasaban solas — 800 ms fijos que bajo carga no llegaban. 🚨 **Cuatro apartados necesitan una persona** (el primer día, el tercero, las notificaciones y *"dárselo a alguien que no haya leído ninguna de estas fases"*): R1, y **fuera del veredicto**. ⚠️ Y dos ya los contestaron la F48 y la F49: se importan |
 
+| v2.18.0 | **EH F52** | Preparación para producción. `src/lib/produccion.js` y **`PUBLICAR.md`**, la lista de antes de publicar escrita para Josué. 🚨 **Y encontró un fallo de los que no se ven**: `saveData` se tragaba el error y no devolvía nada — sin conexión o con el servidor caído, **la aplicación seguía como si se hubiera guardado**. Ahora devuelve `{ ok, error }`; ⚠️ pero el aviso sigue sin encenderse, así que `error_guardado` **sigue en `detectable: false`**. 🚨 **No hay entorno de pruebas, y se dice**: un solo Supabase, y las vistas previas de Vercel apuntan a la misma base. Lo que lo sustituye es la copia de la F46. ⚠️ **La lista de publicación no se marca sola**: siete líneas con comando, **cuatro con su móvil y sin marcar**. ⚠️ **Cero SQL en 65 fases**, así que el apartado 3 se comprueba contra el `schema.sql` de verdad. ⚠️ **El plan de vuelta atrás son cuatro pasos ejecutables**. 🐛 Y los `create policy` del esquema no llevan `if not exists` |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 51/65** (**F1-F51 seguidas**; queda **F52-F65**).
-Quedan **16** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (14, ninguna bloqueada).
+3/5 y **EH por 52/65** (**F1-F52 seguidas**; queda **F53-F65**).
+Quedan **15** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (13, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

@@ -3346,6 +3346,36 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] LISTA DE FALLOS
 - [ ] PRUEBA FINAL SIN INSTRUCCIONES — **🚨 R1: es, por definición, la que yo no puedo hacer**
 
+#### EH · Fase 52/65 — PREPARACIÓN PARA PRODUCCIÓN ✅ COMPLETADA (v2.18.0)
+
+> **`src/lib/produccion.js`** + **`PUBLICAR.md`** (78 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> 🚨 **`saveData` se tragaba los errores**: ahora devuelve `{ ok, error }`. ⚠️ El aviso sigue sin
+> encenderse, así que `error_guardado` **se queda en `detectable: false`** (regla 8).
+>
+> 🚨 **No hay entorno de pruebas**, y se dice con su riesgo. Lo que lo sustituye es la copia de la F46.
+>
+> ⚠️ **Cuatro líneas de la lista de publicación son de Josué y NO se marcan aquí.**
+- [x] SEPARAR ENTORNOS — *dos de tres; el que falta, dicho con su riesgo*
+- [x] VARIABLES Y SECRETOS
+- [x] BASE DE DATOS
+- [x] BACKUP
+- [x] MIGRACIONES
+- [x] DATOS EXISTENTES
+- [ ] CUENTA NUEVA — **R1: necesita su cuenta**
+- [ ] CUENTA EXISTENTE — **R1: necesita sus datos**
+- [ ] PRODUCCIÓN MÓVIL — **R1: iPhone y Android**
+- [ ] RENDIMIENTO REAL — **R1: su conexión, no la del ordenador**
+- [x] MONITORIZACIÓN — *no existe, y se dice; la regla queda escrita para el día que se añada*
+- [x] RECUPERACIÓN — *🚨 aquí salió el fallo de `saveData`*
+- [x] DESPLIEGUE GRADUAL — *con su límite: las vistas previas no ensayan datos*
+- [x] PLAN DE RETROCESO
+- [x] CHECKLIST DE PUBLICACIÓN — *siete automáticas; las cuatro suyas, sin marcar*
+- [x] DESPUÉS DE PUBLICAR
+- [x] SI APARECE UN ERROR
+- [x] NO AÑADIR FUNCIONES POST-LANZAMIENTO SIN CONTROL
+
+
 
 #### EH · Fase 51/65 — CONTROL DE CALIDAD DE LA EXPERIENCIA REAL
 - [ ] PRUEBA DEL PRIMER DÍA

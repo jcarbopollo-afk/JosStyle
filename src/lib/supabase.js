@@ -68,11 +68,27 @@ export async function loadData(userId, key, fallback) {
   return data ? data.value : fallback;
 }
 
+/**
+ * 🚨 ⚠️ **EH F52 — guardar puede fallar, y no se enteraba nadie.** Esta función
+ * se tragaba el error con un `console.error` y **no devolvía nada**: si la
+ * escritura fallaba —sin conexión, servidor caído, política de RLS— la
+ * aplicación seguía como si se hubiera guardado, y el usuario se enteraba al
+ * volver y no encontrar su cambio. El estado `error_guardado` existe desde la
+ * F41 con `detectable: false` **por esto exactamente**.
+ *
+ * ⚠️ Ahora **devuelve el resultado**: `{ ok, error }`. Sigue sin lanzar, así que
+ * las llamadas que la usan como `await saveData(...)` funcionan igual que antes;
+ * lo que cambia es que **ya se puede preguntar**. Encender el aviso en la
+ * interfaz es otra cosa, y mientras no esté hecha, `error_guardado` sigue con
+ * `detectable: false`: decir lo contrario sería fingir un aviso que nadie
+ * enciende (regla 8).
+ */
 export async function saveData(userId, key, value) {
   const { error } = await supabase
     .from('app_data')
     .upsert({ user_id: userId, key, value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' });
   if (error) console.error('No se pudo guardar', key, error);
+  return { ok: !error, error: error || null };
 }
 
 /* ---------- Storage: fotos de progreso (bucket privado "progreso", una carpeta por usuario) ----------

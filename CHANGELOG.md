@@ -1,5 +1,65 @@
 # CHANGELOG.md
 
+## v2.18.0 — EH Fase 52/65: preparación para producción
+
+### Qué se ha construido
+*"De 'funciona en desarrollo' a 'está preparado para entrar en la JC Fitness real'."*
+
+Una fase de publicar no se construye: **se comprueba**. Y lo incómodo es que la mitad de lo que el
+enunciado da por hecho —tres entornos, monitorización, despliegue gradual— **no existe en este
+proyecto**, y la otra mitad solo la puede hacer Josué con su móvil y su cuenta. Así que hay
+`src/lib/produccion.js` con lo que hay de verdad y lo que falta, y **`PUBLICAR.md`**: la lista de
+antes de pulsar publicar, escrita para él.
+
+### 🚨 Y encontró un fallo de los que no se ven
+Mirando el apartado 12 —*"comprobar que el usuario puede continuar o recuperarse"*— salió esto:
+`saveData` **se tragaba el error** con un `console.error` y no devolvía nada. Sin conexión, con el
+servidor caído o con una política de RLS mal puesta, **la aplicación seguía como si se hubiera
+guardado**, y el usuario se enteraba al volver y no encontrar su cambio.
+
+El estado `error_guardado` existe desde la F41 marcado como **`detectable: false`**, y ahora se sabe
+por qué: no había forma de detectarlo. Desde esta versión `saveData` **devuelve `{ ok, error }`**,
+sin lanzar, así que las decenas de llamadas que ya existen funcionan igual.
+
+⚠️ **Y el aviso sigue sin encenderse en pantalla, así que `error_guardado` sigue en
+`detectable: false`.** Marcarlo como resuelto por haber arreglado la mitad sería fingir un aviso que
+nadie enciende — la regla 8 del proyecto.
+
+### Las decisiones de la fase
+
+**1. 🚨 No hay entorno de pruebas, y se dice en la primera línea.** El apartado 1 pide tres entornos y
+prohíbe *"probar migraciones destructivas directamente sobre producción"*. Aquí hay **un** proyecto
+de Supabase. Las vistas previas de Vercel apuntan **a la misma base**: no son un entorno de pruebas,
+son producción con otra URL. Lo que lo sustituye —y por eso no es opcional— es la **copia de
+seguridad de la F46**.
+
+**2. ⚠️ La lista de publicación no se marca sola.** Las once líneas del apartado 15, cada una con
+**cómo se comprueba**: siete con un comando, cuatro con el móvil de Josué. Las cuatro **no se marcan
+aquí**, ni siquiera "porque seguramente funcionen".
+
+**3. ⚠️ Estilo de hombre no necesita ni una línea de SQL.** Sesenta y cinco fases y **cero cambios de
+esquema**. Así que el apartado 3 es un inventario de lo que ya hay —una tabla, cuatro políticas con
+`auth.uid() = user_id`, cinco buckets privados—, comprobado **contra el `schema.sql` de verdad**, no
+contra una tabla que yo escriba.
+
+**4. ⚠️ El plan de vuelta atrás son pasos, no una promesa.** Cuatro, con su herramienta: *Instant
+Rollback* de Vercel, `git revert`, `restaurarCopia()` de la F46, y la base de datos —que no hace
+falta tocar porque no se toca.
+
+**5. ⚠️ Y la monitorización no existe.** El *"si JC Fitness dispone"* del enunciado tiene respuesta, y
+es que no. Añadir un servicio externo significa mandarle datos, y eso se decide, no se cuela en la
+última fase antes de publicar. La regla para el día que se añada ya está escrita: nada privado.
+
+### 🐛 Y un detalle del esquema que muerde
+Los `create policy` de `supabase/schema.sql` **no llevan `if not exists`**: volver a ejecutar el
+archivo entero da error de política duplicada. Está comprobado sobre el archivo, no supuesto, y
+queda avisado donde se lee.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **9 840 comprobaciones de Node** (78
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.17.0 — EH Fase 51/65: control de calidad de la experiencia real
 
 ### Qué se ha construido
