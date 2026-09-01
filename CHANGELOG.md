@@ -1,5 +1,70 @@
 # CHANGELOG.md
 
+## v2.17.0 — EH Fase 51/65: control de calidad de la experiencia real
+
+### Qué se ha construido
+*"Hasta ahora hemos comprobado que las funciones existen y funcionan. Ahora toca comprobar algo
+diferente: ¿se siente bien utilizar Estilo de hombre en el día a día?"*
+
+Las cincuenta fases anteriores preguntaban *"¿funciona?"*. Ésta pregunta **"¿cuánto cuesta usarlo?"**,
+y eso sí se puede medir: **los doce recorridos** con sus toques, **las siete preguntas** de *"¿dónde
+está esto?"*, **los tres perfiles** —el que enciende dos apartados, el que los enciende todos y el
+que no enciende ninguno—, **las siete cosas que él personaliza**, **los seis resbalones** y **las
+cinco cosas que debe saber siempre**.
+
+### 🐛 Y lo primero que encontró fue un rojo falso
+Las comprobaciones del primer uso (F40) **fallaban en la pasada completa y pasaban al ejecutar su
+archivo solo**. No era una regresión: la prueba esperaba **800 milisegundos fijos** a que apareciera
+una pantalla, y con las 9 671 comprobaciones de Node por delante la máquina va más cargada y no
+llegaba a tiempo. Doce comprobaciones en rojo, ninguna rota.
+
+Un rojo falso es peor que no tener la prueba: manda a quien lo lea a buscar una regresión que no
+existe, y enseña a desconfiar de la verificación entera. Ahora hay `esperarTexto()`, que **espera a
+que el texto aparezca** con un tope; si de verdad no llega, sigue fallando.
+
+### Las decisiones de la fase
+
+**1. ⚠️ Un recorrido se mide contra la pantalla de verdad, no contra un número que yo escriba.**
+Sería facilísimo poner `toques: 2` en una tabla y declarar la fase superada. Cada paso nombra **el
+componente real** que abre —`PerfumesEH`, `GestionarApartados`— y hay una comprobación que los busca
+en `EstiloHombreView.jsx`. Un recorrido que mienta sobre por dónde pasa no pasa la fase.
+
+**2. ⚠️ La prueba de permanencia (apartado 8) se hace, no se declara.** Cada cosa personalizable trae
+**la función que la cambia y la que la lee**, y la prueba la cambia de verdad, la pasa por `JSON`
+—que es lo que hace `saveData`— y la vuelve a leer. Es **la regla 5 del proyecto convertida en
+prueba**: el campo que el normalizador no conozca, aquí se cae. Las siete sobreviven.
+
+**3. ⚠️ Y el límite se escribe antes de medir.** Una acción de todos los días, 3 toques; una de vez
+en cuando, 4; una de configurar una vez, 5. Puesto por lo que es la acción, no por lo que salió al
+medirla. El día que alguien meta una pantalla intermedia, la prueba se pone roja sola.
+
+**4. 🚨 Cuatro apartados necesitan una persona, y se dicen.** El primer día, el tercer día, varios
+días de notificaciones y —sobre todo— el 19: *"dar Estilo de hombre a alguien que no haya leído
+ninguna de estas fases"*. **Yo las he leído todas: soy justo el único que no puede hacer esa
+prueba.** Van a R1 con su motivo, y **quedan fuera del veredicto**: contarlas como verdes sería la
+mentira exacta que esta fase existe para no contar.
+
+**5. ⚠️ Y dos ya estaban contestados.** La coherencia con el resto de la aplicación (16) la contestó
+la **F49** comparando vocabulario, y *"¿realmente hace falta?"* (17) la contestó la **F48** con su
+`SE_POSPONE`. Se **importan**, no se rehacen: una segunda respuesta a la misma pregunta es
+exactamente el duplicado que la F48 vino a cazar.
+
+### Lo que se midió, y lo que salió
+* **Ni un recorrido se pasa de su límite.** Marcar un favorito y abrir la rutina, dos toques; añadir
+  un perfume, tres.
+* **El toque de más del apartado que aún no se usa** —*"¿Quieres utilizar este apartado?"*— **no es un
+  fallo**: es la puerta de la F13, y se paga una vez, no cada día.
+* **Con dos apartados encendidos la pantalla no se ve vacía**, y con los diecisiete se reparte en
+  siete secciones sin que ninguna pase de seis plaquitas.
+* **Y con ninguno encendido no hay pantalla en blanco:** hay `sin_modulos`, con el texto de la F25.
+* **Quitar la tarjeta de Descubrir cuesta un toque y recuperarla, tres.** Asimétrico a propósito, y
+  apuntado como 🟢 mejora en vez de escondido.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **9 762 comprobaciones de Node** (91
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium** (3 nuevas).
+
 ## v2.16.0 — EH Fase 50/65: microinteracciones y animaciones
 
 ### Qué se ha construido

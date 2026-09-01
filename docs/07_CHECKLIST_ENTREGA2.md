@@ -3308,6 +3308,45 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] SIN ANIMACIONES GRATUITAS
 - [x] PRUEBA DE MICROINTERACCIONES
 
+#### EH · Fase 51/65 — CONTROL DE CALIDAD DE LA EXPERIENCIA REAL ✅ COMPLETADA (v2.17.0)
+
+> **`src/lib/experienciaReal.js`** (91 comprobaciones + 3 en Chromium). Sin pantalla nueva y sin SQL.
+>
+> ⚠️ **Los toques se miden contra los componentes de verdad**: cada paso de cada recorrido nombra el
+> componente que abre, y hay una comprobación que lo busca en `EstiloHombreView.jsx`.
+>
+> ⚠️ **La permanencia se prueba, no se declara**: cambiar → `JSON` → volver a leer, que es
+> literalmente lo que hace `saveData`. Las siete cosas personalizables sobreviven.
+>
+> 🚨 **Cuatro apartados necesitan una persona** (1, 2, 13 y 19) y **no cuentan como verdes**: el 19
+> es *"dárselo a alguien que no haya leído ninguna de estas fases"*, y yo las he leído todas.
+>
+> ⚠️ **Dos ya estaban contestados**: la coherencia (16) por la F49 y *"¿realmente hace falta?"* (17)
+> por la F48. Se importan, no se rehacen.
+>
+> 🐛 **Y encontró un rojo falso en la propia verificación**: 800 ms fijos que bajo carga no llegaban.
+> Ahora `esperarTexto()`.
+- [ ] PRUEBA DEL PRIMER DÍA — **R1: necesita una persona**
+- [ ] PRUEBA DEL TERCER DÍA — **R1: necesita una persona**
+- [x] PRUEBA DE USO RÁPIDO
+- [x] PRUEBA DE DESCUBRIMIENTO
+- [x] PRUEBA DE SOBRECARGA
+- [x] PRUEBA DE USUARIO SIMPLE
+- [x] PRUEBA DE USUARIO AVANZADO
+- [x] PRUEBA DE PERSONALIZACIÓN
+- [x] PRUEBA DE «NO QUIERO ESTO»
+- [x] PRUEBA DE «QUIERO RECUPERARLO»
+- [x] PRUEBA DE ERRORES HUMANOS
+- [x] PRUEBA DE VELOCIDAD
+- [ ] PRUEBA DE NOTIFICACIONES — **R1: necesita varios días de uso**
+- [x] PRUEBA DE RECOMENDACIONES
+- [x] PRUEBA DE CONFIANZA
+- [x] PRUEBA DE COHERENCIA — *contestada por la F49*
+- [x] PRUEBA DE «¿REALMENTE HACE FALTA?» — *contestada por la F48*
+- [x] LISTA DE FALLOS
+- [ ] PRUEBA FINAL SIN INSTRUCCIONES — **🚨 R1: es, por definición, la que yo no puedo hacer**
+
+
 #### EH · Fase 51/65 — CONTROL DE CALIDAD DE LA EXPERIENCIA REAL
 - [ ] PRUEBA DEL PRIMER DÍA
 - [ ] PRUEBA DEL TERCER DÍA

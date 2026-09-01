@@ -294,9 +294,11 @@ escribir código.
 
 | v2.16.0 | **EH F50** | Microinteracciones y animaciones. Las **veinticuatro** del enunciado, cada una con dónde vive y **para qué sirve** (confirmar · orientar · conectar · suavizar), y el revisor de consistencia del apartado 22. ⚠️ **Arrastrar NO se construye, y se dice por qué**: mover una plaquita ya se hace con flechas desde la Personalización, funcionan con el lector de pantalla, y el arrastre sería **un segundo mecanismo para lo mismo** (la lección de la F48). ⚠️ **El feedback al tocar es el de JosStyle**: los `active:scale` viven en `ui.jsx` y la vista no tiene ni uno propio. ⚠️ **La escalera de escalas es deliberada** y queda declarada para que nadie la "arregle". ⚠️ **Volver es siempre lo mismo**: 51 botones idénticos, contados. 🐛 Y una expresión que no cazaba nada: `[^)]*` se paraba en el `)` del propio `setTimeout` |
 
+| v2.17.0 | **EH F51** | Control de calidad de la experiencia real. **Ya no se pregunta "¿funciona?" sino "¿cuánto cuesta usarlo?"**: los **doce recorridos** con sus toques, las siete preguntas de *"¿dónde está esto?"*, los tres perfiles de uso y las siete cosas que él personaliza. ⚠️ **Un recorrido se mide contra la pantalla de verdad**: cada paso nombra el **componente real** que abre y hay una comprobación que lo busca en la vista — una tabla de toques que yo escriba no vale nada. ⚠️ **La prueba de permanencia se hace, no se declara**: cambiar → pasar por `JSON` como hace `saveData` → volver a leer. Es la **regla 5 convertida en prueba**, y las siete sobreviven. 🐛 **Y lo primero que encontró fue un rojo falso**: doce comprobaciones de Chromium fallaban en la pasada completa y pasaban solas — 800 ms fijos que bajo carga no llegaban. 🚨 **Cuatro apartados necesitan una persona** (el primer día, el tercero, las notificaciones y *"dárselo a alguien que no haya leído ninguna de estas fases"*): R1, y **fuera del veredicto**. ⚠️ Y dos ya los contestaron la F48 y la F49: se importan |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 50/65** (**F1-F50 seguidas**; queda **F51-F65**).
-Quedan **17** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (15, ninguna bloqueada).
+3/5 y **EH por 51/65** (**F1-F51 seguidas**; queda **F52-F65**).
+Quedan **16** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (14, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

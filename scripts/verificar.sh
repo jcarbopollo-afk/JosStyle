@@ -476,6 +476,12 @@ else
   fallo "Fallan las microinteracciones"; grep '✗' /tmp/jc_eh50.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-experiencia-real.mjs >/tmp/jc_eh51.log 2>&1; then
+  ok "Control de calidad de la experiencia real (EH F51) — $(grep -c '✓' /tmp/jc_eh51.log) comprobaciones"
+else
+  fallo "Fallan las pruebas de experiencia real"; grep '✗' /tmp/jc_eh51.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

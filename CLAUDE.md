@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v2.16.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v2.17.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
@@ -154,7 +154,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 50/65** (v2.16.0: **F1-F50 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 51/65** (v2.17.0: **F1-F51 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
@@ -163,10 +163,10 @@ contradicción— y contestó las tres: **dos apartados separados** (`higiene` y
 dos líneas de `MODULOS_EH`), ***Cuidado de manos* y *Cuidado de pies* son la Fase 22** (la casilla de
 la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. ✅ **Las tres —F18, F19 y F22— están construidas**, así que C-25 no bloquea ya nada.
 
-La siguiente es **EH · Fase 51/65 — Control de calidad de la experiencia real**, y a partir de ahí
-**F51-F65 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
+La siguiente es **EH · Fase 52/65 — Preparación para producción**, y a partir de ahí
+**F52-F65 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F50 dejaron doscientas dieciocho cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F51 dejaron doscientas veintidós cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -843,6 +843,19 @@ Seis cosas que conviene tener presentes al retomar:
   su motivo.
 - ⚠️ **Un ejemplo de una violación no es una violación** (EH F48 y F49): los revisores guardan
   `prohibido:` y `ejemploMalo:` para poder probarse, y `verificar.sh` los excluye.
+- ⚠️ **Los toques de una acción se miden contra los componentes de verdad** (EH F51): cada paso de
+  `RECORRIDOS` nombra el componente que abre, y hay una comprobación que lo busca en
+  `EstiloHombreView.jsx`. Añadir un recorrido con un componente inventado **falla**.
+- ⚠️ **Los límites de toques están escritos por tipo de acción, no por lo que salió** (EH F51):
+  diaria 3, puntual 4, ajuste 5. Si una fase futura mete una pantalla intermedia en un recorrido, la
+  prueba se pone roja: eso es lo que tiene que pasar, no subir el límite.
+- ⚠️ **Todo lo que el usuario personalice tiene que sobrevivir a `cerrarYVolver()`** (EH F51): si una
+  fase futura añade algo personalizable, va a `LO_QUE_SE_PERSONALIZA` con su `cambia` y su `lee`. Es
+  la regla 5 hecha prueba, y es la que caza el campo sin normalizador.
+- 🚨 **Nunca esperes milisegundos fijos a que aparezca una pantalla** (EH F51): en
+  `test-app-real.mjs` se usa `esperarTexto()`. Un `waitForTimeout` fijo produce **rojos falsos** bajo
+  carga, y un rojo falso manda a buscar una regresión que no existe.
+
 - ⚠️ **El feedback al tocar vive en `ui.jsx`** (EH F50): la vista de Estilo de hombre no tiene ni
   un `active:scale` propio, y hay una comprobación que falla si aparece. La escalera por tamaños
   (`0.96` / `95` / `90`) es deliberada.

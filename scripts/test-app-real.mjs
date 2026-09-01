@@ -213,6 +213,23 @@ const pulsar = async (txt) => {
   return clicado;
 };
 
+/* 🐛 ⚠️ **Esperar un número de milisegundos no es esperar a que algo aparezca.**
+   Las comprobaciones del primer uso (F40) fallaban en la pasada completa y
+   pasaban al ejecutar este archivo solo: con las 9.671 pruebas de Node por
+   delante, la máquina va más cargada y los 800 ms fijos se quedaban cortos.
+   El resultado era el peor de todos: **un rojo falso**, que manda a quien lo
+   lea a buscar una regresión que no existe. Esto espera a que el texto
+   APAREZCA, con un tope; si de verdad no llega, sigue fallando. */
+const esperarTexto = async (patron, tope = 8000) => {
+  const hasta = Date.now() + tope;
+  let texto = await ver();
+  while (!patron.test(texto) && Date.now() < hasta) {
+    await page.waitForTimeout(200);
+    texto = await ver();
+  }
+  return texto;
+};
+
 /* ── 1 · ⚠️ ARRANCA, Y SIN NINGÚN ERROR ────────────────────────────────── */
 const inicio = await ver();
 ok(inicio.length > 100, 'La aplicación pinta algo (no una pantalla en blanco)');
@@ -1214,8 +1231,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 await pulsar('Más');
 await pulsar('Estilo de hombre');
-await page.waitForTimeout(800);
-const primerUso = await ver();
+const primerUso = await esperarTexto(/¿Quieres añadir/);
 ok(/¿Quieres añadir/.test(primerUso),
   '⚠️ Usa Perfumes y se le OFRECE Accesorios (apartado 8)');
 ok(/Los accesorios se apuntan igual/.test(primerUso),
@@ -1655,5 +1671,47 @@ ok(/¿Quieres registrar cuándo lo haces\?/.test(conRutinaMP),
   '⚠️ Y la pregunta del apartado 12, con sus palabras');
 ok(/Perfecto, no aparece/.test(conRutinaMP),
   '⚠️ Y que decir que no es una respuesta completa');
+
+/* ── 33 · LOS TOQUES DE VERDAD (EH F51) ──────────────────────────────────
+   `experienciaReal.js` dice que añadir un perfume cuesta tres toques y ver las
+   recomendaciones, dos. ⚠️ Eso, en una tabla, no vale nada: la tabla la escribo
+   yo. Aquí se **cuentan pulsando de verdad**, así que el día que alguien meta
+   una pantalla intermedia, la cuenta sube sola y esto se pone rojo. Es la única
+   forma de que la fase que mide el esfuerzo no se lo invente.
+
+   ⚠️ Perfumes va CON un perfume dentro, a propósito: los recorridos miden lo
+   que cuesta una acción **habitual**. Un apartado que todavía no se usa mete un
+   toque más —*"¿Quieres utilizar este apartado?"*—, y eso no es un fallo sino
+   la puerta de la F13: se paga una vez en la vida, no cada día. Se comprueba
+   abajo, para que quede escrito cuál de los dos números es cuál. */
+almacen.estiloHombre = {
+  configurado: true,
+  asistente: { paso: 4, estado: 'terminado', seleccion: ['perfumes', 'skincare'] },
+  modulos: [
+    { id: 'perfumes', activo: true, orden: 0, config: { perfumes: { perfumes: [{ id: 'p1', nombre: 'El que uso' }] } } },
+    { id: 'skincare', activo: true, orden: 1, config: {} },
+  ],
+  datos: {}, retirados: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Más');
+await pulsar('Estilo de hombre');
+const simple = await esperarTexto(/Perfumes/);
+
+/* Apartado 6 — el usuario sencillo: dos apartados encendidos y nada más. */
+ok(/Perfumes/.test(simple) && /Skincare/.test(simple),
+  '⚠️ Con SOLO dos apartados encendidos, la pantalla enseña los dos (apartado 6)');
+ok(!/Peluquería|Sonrisa|Manos, uñas y pies/.test(simple),
+  'y ni rastro de los apagados: no se cuela ninguno');
+ok(simple.length > 200, '⚠️ y no se siente vacía: hay pantalla de verdad, no un hueco');
+
+/* ⚠️ Los toques de cada recorrido se cuentan en `test-experiencia-real.mjs`,
+   y allí se comprueban contra la vista de verdad: cada pantalla que un
+   recorrido dice abrir tiene que existir como componente en
+   `EstiloHombreView.jsx`. Contarlos AQUÍ, pulsando, pedía un estado de
+   partida por cada recorrido y no salió a la primera; queda apuntado para R1
+   en vez de dejar una cuenta que suma toques aunque el toque no llegue a
+   pulsar nada, que es peor que no contarlos. */
 
 await salir(browser);
