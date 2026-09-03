@@ -302,9 +302,12 @@ escribir código.
 
 | v2.20.0 | **EH F54** | Backup, restauración y recuperación avanzada. **Los cuatro niveles de la condición**, y el que faltaba era el tercero: ♻️ **`restaurarModulo()`**, restaurar UN apartado sin tocar los demás. 🚨 **Y `activo`, `oculto` y `orden` son de AHORA, no de la copia**: si él lo apagó ayer, recuperar sus rutinas no lo vuelve a encender. ⚠️ **La restauración está PROBADA** (apartado 16): datos → copia → romper → restaurar, comprobando que vuelve lo perdido **y que el otro apartado no se ha movido**. ⚠️ **`validarCopia()` es la cerradura de una puerta que no existe**: la pantalla de importar no está, y por eso se construye antes — con `saveData` sobrescribiendo, un JSON cualquiera lo pierde todo. 🚨 **Cinco apartados dependen de algo que no hay** y ninguno se marca: no hay sistema global de copias (el enunciado **prohíbe crear uno separado**), no hay historial de versiones (`app_data`: una fila por usuario y clave) y **el conflicto entre dispositivos sigue sin detectarse** |
 
+| v2.21.0 | **EH F55** | Escalabilidad y futuras funciones. **Siete sitios donde se escribe UNA LÍNEA** —módulo, categoría, preferencia, línea de plaquita, acceso, colección de papelera y migración—, cada uno con la línea y con lo que **no** hay que tocar. ⚠️ Y una comprobación lee la vista buscando un `case` por módulo: si hiciera falta, el punto de extensión sería mentira. 🚨 **El backlog se DERIVA** del `SE_POSPONE` de la F48, de lo que falta en la F54 y del fallo a medias de la F52: once entradas con sus cinco campos, y las bloqueadas dicen de qué dependen. **Una sola es 🔴 imprescindible** —enseñar el aviso cuando falla al guardar—, y es la única que sale de un fallo y no de una idea. ⚠️ **La prueba de crecimiento no miente**: el enunciado pide 30 módulos, el catálogo tiene 17, así que se mide hasta ahí y se comprueba lo que importa a los 30 — **coste en línea recta, no al cuadrado**. ⚠️ Y crecer tiene freno: si algo duplica, la respuesta no es "no", es **integrar** |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 54/65** (**F1-F54 seguidas**; queda **F55-F65**).
-Quedan **13** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (11, ninguna bloqueada).
+3/5 y **EH por 55/65** (**F1-F55 seguidas**; queda **F56-F65**).
+Quedan **12** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (10). ⚠️ **La EH F56 toca el
+bloque AXION, aparcado por Josué: hay que preguntarle antes de construirla** (regla 49).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

@@ -3437,6 +3437,36 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] PRUEBA DE DESASTRE — *cuatro se recuperan; el conflicto entre dispositivos no*
 - [x] REGISTRO
 
+#### EH · Fase 55/65 — ESCALABILIDAD Y FUTURAS FUNCIONES ✅ COMPLETADA (v2.21.0)
+
+> **`src/lib/escalabilidad.js`** (92 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> ⚠️ **Siete puntos de extensión**, cada uno con la línea que se escribe y lo que no se toca. Una
+> comprobación lee la vista buscando un `case` por módulo.
+>
+> 🚨 **El backlog se deriva** de la F48, la F52 y la F54. Una sola entrada es 🔴 imprescindible.
+>
+> ⚠️ **La prueba de crecimiento mide hasta 17 y lo dice**: lo que se comprueba es que el coste sea
+> lineal, que es lo que de verdad importa a los 30.
+- [x] MÓDULOS MODULARES
+- [x] NUEVAS PLAQUITAS
+- [x] FUNCIONES FUTURAS — *caben, y NO se implementan*
+- [x] SISTEMA DE PLUGINS NO NECESARIO
+- [x] DATOS EXTENSIBLES — *con el aviso de la regla 5*
+- [x] CATEGORÍAS
+- [x] CONFIGURACIÓN
+- [x] INTEGRACIONES
+- [x] IA — *la regla "sugerir → usuario decide"; la F56 la desarrolla*
+- [x] PERSONALIZACIÓN
+- [x] COMPATIBILIDAD
+- [x] VERSIONADO
+- [x] RENDIMIENTO
+- [x] CONTROL DE COMPLEJIDAD
+- [x] BACKLOG
+- [x] PRIORIDADES
+- [x] PRUEBA DE CRECIMIENTO — *5 → 10 → 17, con la razón de por qué no 30*
+
+
 
 
 

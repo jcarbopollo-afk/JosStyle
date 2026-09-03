@@ -1,5 +1,48 @@
 # CHANGELOG.md
 
+## v2.21.0 — EH Fase 55/65: escalabilidad y futuras funciones
+
+### Qué se ha construido
+*"Añadir funciones sin tener que reconstruir lo que ya funciona."*
+
+Esta fase no añade una función: **comprueba que se puedan añadir**. Y aquí eso no es una promesa
+arquitectónica, son **siete sitios concretos donde se escribe una línea** y la aplicación entera se
+entera sola: un módulo, una categoría, una preferencia, una línea de plaquita, un acceso rápido, una
+colección de la papelera y una migración. Cada uno trae **la línea que hay que escribir** y **lo que
+NO hay que tocar**.
+
+Y hay una comprobación que lee la vista buscando un `case` por módulo: si hiciera falta uno, el
+punto de extensión estaría mintiendo.
+
+### 🚨 El backlog se deriva, no se escribe
+Los apartados 15 y 16 piden un backlog con idea, prioridad, motivo, dependencias y estado. En vez de
+una lista nueva —que se queda vieja el mismo día—, `backlog()` **sale de lo que las fases anteriores
+ya han pospuesto**: el `SE_POSPONE` de la F48, lo que la F54 declaró que falta, y el fallo a medias
+de la F52.
+
+Y de las once entradas, **una sola es 🔴 imprescindible**, que además es la única que sale de un
+fallo y no de una idea: **enseñar el aviso cuando falla al guardar**. `saveData` ya devuelve el error
+desde la F52, pero nadie lo mira, así que el usuario sigue creyendo que se guardó. Las que dependen
+de la decisión de esquema salen **bloqueadas**, no pendientes, diciendo de qué dependen.
+
+### ⚠️ La prueba de crecimiento se ejecuta, pero no miente sobre hasta dónde
+El apartado 17 pide *"5 → 10 → 20 → 30 módulos"*. El catálogo tiene **diecisiete**, así que se mide
+de verdad hasta ahí — y lo que se comprueba es lo que de verdad importa a los 30: **que el coste
+crezca en línea recta y no al cuadrado**. Una plaquita por módulo en los tres tamaños, ninguna
+sección por encima de ocho, ni una plaquita huérfana. Inventarme trece módulos de mentira para poder
+decir "probado con 30" habría sido un número bonito sobre datos falsos.
+
+### Y crecer tiene freno
+Las tres preguntas del apartado 14 son una función, `evaluarFuncion()`, con una lectura que importa:
+si **duplica** algo, la respuesta no es "no", es **integrar**; si **complica** la interfaz, es
+**replantear**. Solo el *"no aporta valor"* se contesta con un no — y se contesta el primero, porque
+algo que no aporta no merece ni la conversación sobre si duplica.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 127 comprobaciones de Node** (92
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.20.0 — EH Fase 54/65: backup, restauración y recuperación avanzada
 
 ### Qué se ha construido

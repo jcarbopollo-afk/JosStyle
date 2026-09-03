@@ -180,7 +180,7 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
   /* ⚠️ `horarioEstructura` es de Horario Top, no de aquí: se excluye a mano,
      que es más honesto que ensanchar la expresión hasta que no encuentre nada. */
   const sinRevisar = enDisco.filter((f) => (
-    /Estilo$|EH$|perfil|rutinas|productos|recomendaciones|motor|cuerpo|manos|migracion|rendimiento|estructuraDatos|pruebasIntegrales|auditoriaFinal|coherenciaVisual|microinteracciones|experienciaReal|produccion|recuperacion/i.test(f)
+    /Estilo$|EH$|perfil|rutinas|productos|recomendaciones|motor|cuerpo|manos|migracion|rendimiento|estructuraDatos|pruebasIntegrales|auditoriaFinal|coherenciaVisual|microinteracciones|experienciaReal|produccion|recuperacion|escalabilidad/i.test(f)
     && f !== 'horarioEstructura'
     && !LIBRERIAS_EH.includes(f)
   ));

@@ -500,6 +500,12 @@ else
   fallo "Falla la recuperación avanzada"; grep '✗' /tmp/jc_eh54.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-escalabilidad.mjs >/tmp/jc_eh55.log 2>&1; then
+  ok "Escalabilidad y futuras funciones (EH F55) — $(grep -c '✓' /tmp/jc_eh55.log) comprobaciones"
+else
+  fallo "Falla la escalabilidad"; grep '✗' /tmp/jc_eh55.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

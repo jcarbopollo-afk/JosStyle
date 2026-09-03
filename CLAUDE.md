@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v2.20.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v2.21.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
@@ -154,7 +154,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 54/65** (v2.20.0: **F1-F54 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 55/65** (v2.21.0: **F1-F55 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
@@ -163,10 +163,11 @@ contradicción— y contestó las tres: **dos apartados separados** (`higiene` y
 dos líneas de `MODULOS_EH`), ***Cuidado de manos* y *Cuidado de pies* son la Fase 22** (la casilla de
 la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. ✅ **Las tres —F18, F19 y F22— están construidas**, así que C-25 no bloquea ya nada.
 
-La siguiente es **EH · Fase 55/65 — Escalabilidad y futuras funciones**, y a partir de ahí
-**F55-F65 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
+La siguiente es **EH · Fase 56/65 — Integración profunda con la IA**, y a partir de ahí
+**F56-F65 seguidas**. ⚠️ **La F56 toca el bloque AXION, que Josué dejó aparcado pendiente de
+una conversación de diseño: antes de construirla hay que preguntarle** (regla 49): es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F54 dejaron doscientas treinta y dos cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F55 dejaron doscientas treinta y cinco cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -843,6 +844,15 @@ Seis cosas que conviene tener presentes al retomar:
   su motivo.
 - ⚠️ **Un ejemplo de una violación no es una violación** (EH F48 y F49): los revisores guardan
   `prohibido:` y `ejemploMalo:` para poder probarse, y `verificar.sh` los excluye.
+- ⚠️ **Añadir algo a Estilo de hombre es escribir UNA LÍNEA en una lista** (EH F55): hay siete
+  puntos de extensión (`PUNTOS_DE_EXTENSION`) y cada uno dice la línea y lo que no se toca. Si tu
+  fase necesita un `case` por módulo en la vista, has roto la arquitectura y hay una prueba que lo lee.
+- 🚨 **El backlog es `backlog()`, y se DERIVA** (EH F55): del `SE_POSPONE` de la F48, de
+  `LO_QUE_FALTA` de la F54 y del fallo a medias de la F52. No escribas una segunda lista: se queda
+  vieja el mismo día.
+- ⚠️ **Antes de añadir una función, pásala por `evaluarFuncion()`** (EH F55): si no aporta, no se
+  añade; si duplica, se **integra**; si complica la interfaz, se **replantea**.
+
 - 🚨 **Restaurar un módulo devuelve su `config` y NADA más** (EH F54): `activo`, `oculto` y `orden`
   son del estado actual, no de la copia. Recuperar datos no puede volver a encender un apartado que
   el usuario apagó — restaurar datos y cambiar la pantalla son dos cosas distintas.
