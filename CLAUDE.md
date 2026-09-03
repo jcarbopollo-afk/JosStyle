@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.1.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.1.1**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
@@ -846,6 +846,12 @@ Seis cosas que conviene tener presentes al retomar:
   su motivo.
 - ⚠️ **Un ejemplo de una violación no es una violación** (EH F48 y F49): los revisores guardan
   `prohibido:` y `ejemploMalo:` para poder probarse, y `verificar.sh` los excluye.
+- 🐛 **Quinta vez con el UTC, y la peor: las recurrencias del calendario** (v3.1.1). `toISOString()`
+  sobre una medianoche local **retrocede un día** en España. Un evento diario no avanzaba, uno
+  semanal avanzaba 6 días y uno mensual del 31 se atascaba en el día 3. **Para una fecha local,
+  siempre `fechaLocalISO`.** Y mensual/anual **se cuentan desde el ancla**, nunca encadenando
+  `setMonth(+1)`: el recorte de los meses cortos se queda pegado.
+
 - ⏸ **Sigue sin haber ni un archivo de audio** (SO F2, bloqueada): `public/sonidos/` está vacía y
   `hoySuena` es false. El interruptor nace apagado por eso. El día que aparezcan con los nombres de
   la SO F4, suenan **sin tocar código**.

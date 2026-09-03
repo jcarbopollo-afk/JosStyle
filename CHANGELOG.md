@@ -1,5 +1,43 @@
 # CHANGELOG.md
 
+## v3.1.1 — 🐛 Las recurrencias del Calendario estaban rotas
+
+### Qué pasaba
+Buscando qué quedaba por construir apareció esto, y no es un detalle: **las tres recurrencias del
+Calendario Universal daban fechas equivocadas**, y llevaban así desde la Fase 3. Los tres,
+comprobados ejecutando el expansor antes de tocar nada:
+
+* 🚨 **Un evento DIARIO no avanzaba nunca.** `siguienteOcurrencia` devolvía **la misma fecha**, así
+  que la serie generaba **quinientas copias del mismo día** hasta agotar el tope de seguridad — y el
+  evento **no aparecía en ningún otro día del mes**.
+* 🚨 **Uno SEMANAL avanzaba seis días, no siete**: 1, 7, 13, 19, 25… Un *"todos los lunes"* se iba
+  caminando hacia atrás por la semana.
+* 🚨 **Y uno MENSUAL del día 31** saltaba de enero **al 2 de marzo** —febrero no tiene 31— y a partir
+  de ahí **se quedaba pegado al día 3**.
+
+### Por qué
+Las dos primeras son **el UTC de siempre**: `new Date('2026-06-01T00:00:00')` es medianoche **local**,
+y `toISOString()` la pasa a UTC restando el huso, así que en España el resultado retrocede un día.
+**Quinta vez** que este proyecto pisa la misma trampa (motorRutinas, calendarioIntegracion,
+avisosEstilo y las pruebas de Estilo de hombre). Ahora usa `fechaLocalISO`, como el resto.
+
+La tercera era distinta: encadenar `setMonth(+1)` arrastra el recorte. Ahora **mensual y anual se
+cuentan desde el ancla**, así que cada ocurrencia sabe qué día quería ser: **31 ene → 28 feb → 31
+mar**, no el día 3 para siempre. Y un anual del **29 de febrero** cae el 28 los años normales y
+**vuelve al 29** en el bisiesto.
+
+### Y por qué había sobrevivido tantas versiones
+**No había ni una prueba del calendario.** Ahora hay `scripts/test-calendario.mjs` con 38
+comprobaciones, y las tres primeras son exactamente los tres fallos, clavados para que no vuelvan.
+
+⚠️ Y una nota que importa: **en una máquina en UTC esto no falla**. Por eso pasó desapercibido. La de
+Josué está en España.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **11 034 comprobaciones de Node** (38
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v3.1.0 — SO Fase 5/5: producción, integración y test final
 
 ### Qué se ha construido

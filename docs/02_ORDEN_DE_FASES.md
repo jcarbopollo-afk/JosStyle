@@ -326,6 +326,8 @@ escribir código.
 
 | v3.1.0 | **SO F5** | Producción, integración y test final. **Y por fin la pantalla**: `Ajustes → Sonido y respuesta` con los siete controles del apartado 24, **cableada en `App.jsx`**. ⏸ Y lo primero que dice es **"todavía no suena nada"**: no hay archivos (SO F2). 🚨 **El motor no se reescribe**: la estructura de carpetas del apartado 2 **no se adopta**, con su motivo — y lo que el apartado quiere de verdad sí, con una comprobación de que **ninguna pantalla hace `new Audio(...)`**. ⚠️ El volumen multiplica **maestro × categoría × evento**: un clic suena por debajo de un récord. ⚠️ **Un perfil se deduce, no se guarda**: tocas una casilla y pasas a "Personalizado". 🚨 **Silencio no es "no pasa nada"**: el evento se sigue procesando, y la vibración es otro interruptor. ⚠️ Y cinco pruebas necesitan un teléfono |
 
+| v3.1.1 | **🐛 Calendario** | **Las tres recurrencias estaban rotas desde la Fase 3.** 🚨 Un evento **diario no avanzaba nunca** (500 copias del mismo día, y no salía en ningún otro día del mes); uno **semanal avanzaba 6 días**, no 7; y uno **mensual del 31** saltaba al 2 de marzo y se quedaba pegado al día 3. Las dos primeras eran **el UTC de siempre** —`toISOString` sobre medianoche local, **quinta vez** en el proyecto— y ya usan `fechaLocalISO`; la tercera era encadenar `setMonth(+1)`, y ahora **mensual y anual se cuentan desde el ancla**. ⚠️ Había sobrevivido porque **no existía ninguna prueba del calendario**: ahora hay 38 comprobaciones, con los tres fallos clavados |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4), HT (12/12) y 🏁 EH (65/65)
 cerrados.** SO va por **4/5**.
 ⏸ Queda **1** fase de la Entrega 2: **SO F2, la biblioteca de sonidos**, y **depende de los

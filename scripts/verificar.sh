@@ -572,6 +572,12 @@ else
   fallo "Falla la producción de sonido"; grep '✗' /tmp/jc_so5.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-calendario.mjs >/tmp/jc_cal.log 2>&1; then
+  ok "Calendario Universal · recurrencias — $(grep -c '✓' /tmp/jc_cal.log) comprobaciones"
+else
+  fallo "Fallan las recurrencias del calendario"; grep '✗' /tmp/jc_cal.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else
