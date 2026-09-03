@@ -3668,6 +3668,37 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [ ] ORDEN DE LECTURA — **🚨 R1: solo lo dice VoiceOver o TalkBack en voz alta**
 - [ ] PRUEBA REAL — **R1: con el móvil en la mano**
 
+#### EH · Fase 63/65 — SEGURIDAD, PRIVACIDAD Y CONTROL DE DATOS ✅ COMPLETADA (v2.29.0)
+
+> **`src/lib/seguridadEH.js`** + límites en **`api/ask-ai.js`** (77 comprobaciones). Sin SQL nuevo.
+>
+> 🚨 **`/api/ask-ai` no pide quién eres**: cualquiera con la URL puede gastar el dinero de Josué. No
+> es una fuga de datos, es **una factura**. El apartado 14 **queda sin cumplir**, con el arreglo
+> escrito: la autenticación afecta a seis módulos más y la decide él.
+>
+> ✅ **Los límites de tamaño sí se han puesto** (apartado 15).
+- [x] INVENTARIO DE DATOS
+- [x] DATOS SENSIBLES
+- [x] ACCESO — *RLS, comprobado sobre el schema.sql*
+- [x] AUTENTICACIÓN — *la cuenta global, sin un segundo login*
+- [x] AUTORIZACIÓN
+- [x] IA — *solo lo de la pregunta (F56)*
+- [x] MEMORIA — *borrar lo inferido deja lo suyo (F57)*
+- [x] ELIMINACIÓN — *ocultar ≠ papelera ≠ definitivo*
+- [x] ELIMINACIÓN DEFINITIVA — *confirma, y nunca con un gesto*
+- [x] EXPORTACIÓN
+- [x] PRIVACIDAD DE IA
+- [x] DATOS LOCALES — *Estilo de hombre no guarda nada en el dispositivo*
+- [x] LOGS
+- [ ] SEGURIDAD DE API — **🚨 sin autenticación ni límite de uso: decisión de Josué**
+- [x] VALIDACIÓN — *límites de entrada, nuevos en esta fase*
+- [x] INYECCIONES Y ENTRADAS MALICIOSAS
+- [x] BORRADO DE CUENTA — *cascada; los archivos de Storage se dicen aparte*
+- [x] COPIAS DE SEGURIDAD
+- [x] AUDITORÍA
+- [x] PRUEBA FINAL — *los cinco ataques, con qué los para*
+
+
 
 
 

@@ -548,6 +548,12 @@ else
   fallo "Falla la usabilidad avanzada"; grep '✗' /tmp/jc_eh62.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-seguridad-eh.mjs >/tmp/jc_eh63.log 2>&1; then
+  ok "Seguridad, privacidad y control de datos (EH F63) — $(grep -c '✓' /tmp/jc_eh63.log) comprobaciones"
+else
+  fallo "Falla la revisión de seguridad"; grep '✗' /tmp/jc_eh63.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

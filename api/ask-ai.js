@@ -23,6 +23,31 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Falta el prompt' });
   }
 
+  /* 🚨 ⚠️ **EH F63, apartados 14 y 15 — no confiar en lo que manda el cliente.**
+     Esta función llama a un servicio **que cuesta dinero**, y hasta aquí aceptaba
+     un texto de cualquier tamaño y cualquier número de imágenes.
+
+     Los límites son holgados para lo que la aplicación manda de verdad —el
+     contexto más largo no llega a 20 000 caracteres, y la Fase 5 manda ocho
+     fotogramas—, así que **no cambian nada** para Josué y sí ponen un techo.
+
+     ⚠️ Lo que esto NO arregla, y queda escrito en `seguridadEH.js`: el endpoint
+     **sigue sin pedir quién eres**. Cualquiera que sepa la URL puede llamarlo.
+     Ponerle autenticación afecta a toda la aplicación, no solo a Estilo de
+     hombre, y es una decisión de Josué. */
+  const LIMITE_PROMPT = 40000;
+  const LIMITE_SYSTEM = 20000;
+  const LIMITE_IMAGENES = 10;
+  if (typeof prompt !== 'string' || prompt.length > LIMITE_PROMPT) {
+    return res.status(400).json({ error: 'La petición es demasiado larga.' });
+  }
+  if (system && (typeof system !== 'string' || system.length > LIMITE_SYSTEM)) {
+    return res.status(400).json({ error: 'La petición es demasiado larga.' });
+  }
+  if (Array.isArray(images) && images.length > LIMITE_IMAGENES) {
+    return res.status(400).json({ error: 'Demasiadas imágenes en una sola petición.' });
+  }
+
   // Content de la petición a Anthropic: puede llevar varias imágenes (Fase 5: fotogramas de
   // vídeo), una imagen suelta (Fase 4: escaneo de comida por foto), o solo texto — en ese orden
   // de prioridad. Sin imagen, el comportamiento es idéntico al original.

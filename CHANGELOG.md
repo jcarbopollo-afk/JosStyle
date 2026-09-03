@@ -1,5 +1,46 @@
 # CHANGELOG.md
 
+## v2.29.0 — EH Fase 63/65: seguridad, privacidad y control de datos
+
+### 🚨 Y aquí está el hallazgo más caro de todo el proyecto
+**`api/ask-ai.js` no pide quién eres.** No tiene autenticación, ni límite de uso, ni comprobaba el
+tamaño de lo que le mandan. **Cualquiera que sepa la URL** —`https://…vercel.app/api/ask-ai`— puede
+llamarlo desde una terminal y **gastar el dinero de Josué** en la API de Anthropic, todas las veces
+que quiera.
+
+No es una fuga de datos: con eso **no se puede leer nada de nadie**. Es una **factura**. Y el
+apartado 14 lo pide con estas cuatro palabras: *"autenticación, autorización, límites de uso,
+protección de endpoints"*.
+
+**Lo que sí se ha arreglado** (apartado 15, *"no confiar en datos enviados desde el cliente"*):
+límites de tamaño para el texto, el contexto y el número de imágenes. Son holgados —el contexto más
+largo de la aplicación no llega a 20 000 caracteres— así que **no cambian nada** para Josué, y ponen
+un techo a lo que puede costar una llamada.
+
+**Lo que NO se ha hecho desde aquí, y por qué:** poner autenticación afecta a **Nutrición,
+Calistenia, Biblioteca y el resto** — ese endpoint lo usan seis módulos más. Hacerlo desde una fase
+de Estilo de hombre sería decidir por toda la aplicación, y si se hace mal deja la IA rota en todas.
+**El apartado 14 se queda sin cumplir**, con el arreglo escrito, y es una decisión de Josué.
+
+### El resto de la revisión
+La **F43** ya había revisado la privacidad. Ésta es la de **seguridad**, y mira sitios que aquélla no
+miró:
+
+* **El aislamiento es de la base de datos, no de la pantalla** (apartado 3): las cuatro políticas
+  `auth.uid() = user_id`, comprobadas leyendo el `schema.sql`, y **ninguna del tipo permisivo**.
+* **Las inyecciones**: ni un `dangerouslySetInnerHTML` en todo el proyecto, y no se escribe SQL. Y
+  la tercera —que él le mande instrucciones a la IA— se contesta con honestidad: *"nada lo para, y
+  no hace falta: la IA solo le contesta a él"*.
+* **Borrar la cuenta no deja nada huérfano**: `on delete cascade` se lleva todas sus claves. Y lo
+  que la cascada **no** se lleva —los archivos de Storage— también se dice.
+* **Las tres formas de quitar algo** son tres cosas distintas, y solo la irreversible confirma. Y
+  **no se hace con un gesto**, que es lo que el apartado 9 prohíbe: no hay gestos desde la F61.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 769 comprobaciones de Node** (77
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.28.0 — EH Fase 62/65: accesibilidad y usabilidad avanzada
 
 ### Qué se ha construido
