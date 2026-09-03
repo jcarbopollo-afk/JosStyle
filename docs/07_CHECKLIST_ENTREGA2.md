@@ -3609,6 +3609,36 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] MODO SILENCIOSO
 - [x] PRUEBA DE RELEVANCIA — *las cinco situaciones*
 
+#### EH · Fase 61/65 — ACCIONES RÁPIDAS E INTELIGENTES ✅ COMPLETADA (v2.27.0)
+
+> **`src/lib/accionesRapidas.js`** (75 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> 🚨 **Ninguna acción depende de un gesto**: los apartados 5 y 6 no se construyen, y el 16 —el de
+> accesibilidad— es exactamente el motivo.
+>
+> 🚨 **El "Deshacer" de segundos y las acciones en lote NO existen**, y se dice con lo que hay en su
+> lugar y por qué no basta.
+>
+> ⚠️ **De diez acciones, solo una confirma**: la que no tiene vuelta atrás.
+- [x] ACCIONES RÁPIDAS PRINCIPALES
+- [x] ACCESO RÁPIDO — *los accesos de la F29*
+- [x] BOTÓN + — *cuatro opciones, no veinte*
+- [x] ACCIONES CONTEXTUALES
+- [ ] DESLIZAR — **no se construye: el apartado 16 pide no depender de gestos**
+- [ ] MANTENER PULSADO — **igual (F50: las flechas funcionan con lector de pantalla)**
+- [x] ATAJOS
+- [x] ACCIONES DESDE RECOMENDACIONES
+- [x] ACCIONES DESDE INSIGHTS
+- [x] ACCIONES GLOBALES — *nada de "Tareas de Estilo"*
+- [x] CONFIRMACIONES — *solo la irreversible*
+- [ ] DESHACER — **el de unos segundos no existe; la papelera cuesta tres toques**
+- [ ] ACCIONES EN LOTE — **todavía no aporta, con las palabras del propio apartado**
+- [x] ACCIONES INTELIGENTES — *la IA propone, nunca ejecuta*
+- [x] VELOCIDAD
+- [x] ACCESIBILIDAD
+- [x] PRUEBA — *1–3 toques, medidos con la F51*
+
+
 
 
 

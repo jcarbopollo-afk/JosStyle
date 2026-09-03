@@ -1,5 +1,49 @@
 # CHANGELOG.md
 
+## v2.27.0 — EH Fase 61/65: acciones rápidas e inteligentes
+
+### Qué se ha construido
+*"Si una acción habitual necesita cinco pantallas, está mal diseñada."*
+
+Las **diez acciones** más usadas con su reversibilidad, **qué acciones ofrece cada tipo de
+elemento**, el botón + con cuatro opciones y no veinte, y la medida del apartado 17: **1–3 toques
+para las frecuentes**.
+
+### 🚨 Los gestos de los apartados 5 y 6 no se construyen, y el 16 explica por qué
+El enunciado pide deslizar y mantener pulsado… y **tres apartados más abajo** pide que *"todas las
+acciones rápidas puedan utilizarse sin depender exclusivamente de gestos"*. La **F50** ya había
+resuelto esa tensión: mover una plaquita se hace **con flechas**, que funcionan con el lector de
+pantalla y no dependen del pulso.
+
+Así que aquí se cumple el apartado 16 de la forma más fuerte posible: **la alternativa visible es la
+única forma**, y **ninguna acción depende de un gesto**. Un gesto oculto que es la única manera de
+hacer algo no es una acción rápida: es una acción escondida.
+
+### 🚨 Y lo que falta se dice, en vez de darlo por cubierto
+* **El "Deshacer" de unos segundos (apartado 12) no existe.** Lo que hay es la papelera de treinta
+  días — que aguanta mucho más, pero **cuesta tres toques en vez de uno**. No es lo mismo, y decir
+  que "ya está cubierto" sería tapar un hueco real.
+* **Las acciones en lote (apartado 13) tampoco.** Con el propio apartado diciendo *"solo en módulos
+  donde realmente aporte valor"*, y listas de decenas —no de cientos— con papelera detrás, todavía
+  no aporta.
+
+### Las otras decisiones
+
+**⚠️ Los toques son los de la F51.** El apartado 17 pide medir cuántos hacen falta; ya están medidos
+**contra los componentes reales de la pantalla**. Aquí se importa `RECORRIDOS` y se comprueba el
+objetivo: escribir una segunda tabla sería tener dos números para la misma acción.
+
+**⚠️ Una acción se ofrece solo donde sirve.** Un perfume tiene favorito, editar y eliminar; **no**
+"crear objetivo" ni "compartir". Enseñárselos es ruido que hay que leer para descartarlo.
+
+**⚠️ Y no se confirma lo que se puede deshacer.** De las diez acciones, **solo una pregunta**: la que
+no tiene vuelta atrás. Un aviso delante de cada toque enseña a darle a "Sí" sin leer.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 631 comprobaciones de Node** (75
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.26.0 — EH Fase 60/65: recomendaciones contextuales
 
 ### Qué se ha construido

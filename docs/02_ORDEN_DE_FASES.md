@@ -314,9 +314,11 @@ escribir código.
 
 | v2.26.0 | **EH F60** | Recomendaciones contextuales. 🚨 **Lo normal es no recomendar nada**: `recomendarAhora()` devuelve `{ hay: false }` con su motivo la mayoría de las veces, y la aplicación sabe decir *"no tengo nada útil que decir ahora"*. 🚨 **No hay clima ni ubicación**, y no se fingen: se declaran inexistentes con su motivo y **no se pueden autorizar ni a mano**. 🚨 **Una fuente disponible no es una fuente autorizada**: cada una con su interruptor, todos apagados. ⚠️ Cada regla declara sus fuentes y sus ocasiones; si falta algo **no se evalúa**. ⚠️ Una a la vez, la más relevante, con dos días de descanso. ⚠️ Y guardarla no crea copia: objetivo y tarea van a los sistemas globales. 🐛 Y `momentoDe(null)` devolvía "noche" porque `Number(null)` es `0`: un dato que no está no es un cero |
 
+| v2.27.0 | **EH F61** | Acciones rápidas e inteligentes. Las diez acciones con su reversibilidad, las de cada tipo de elemento y el botón + con cuatro opciones. 🚨 **Los gestos de los apartados 5 y 6 no se construyen, y el 16 explica por qué**: el propio enunciado pide que las acciones no dependan de gestos, y la F50 ya lo resolvió con flechas que funcionan con el lector de pantalla — **ninguna acción depende de un gesto**. 🚨 **Y lo que falta se dice**: el "Deshacer" de unos segundos no existe (la papelera aguanta treinta días pero **cuesta tres toques en vez de uno**) y las acciones en lote tampoco. ⚠️ Los toques son los de la F51, importados. ⚠️ Una ficha solo ofrece lo que le sirve: un perfume no lleva "crear objetivo". ⚠️ Y de las diez acciones **solo una pide confirmación**: la irreversible |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 60/65** (**F1-F60 seguidas**; queda **F61-F65**).
-Quedan **7** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (5, ninguna bloqueada).
+3/5 y **EH por 61/65** (**F1-F61 seguidas**; queda **F62-F65**).
+Quedan **6** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (4, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.
