@@ -4,7 +4,7 @@
 // con el mismo tono "prudente y directo" del resto de la IA de la app. Nada aquí es un modelo
 // estadístico complejo: son medias, tasas y regresiones lineales simples, siempre explicables.
 
-import { todayISO } from './helpers';
+import { todayISO, fechaLocalISO } from './helpers';
 
 function diasEntre(fechaA, fechaB) {
   return Math.round((new Date(fechaB + 'T00:00:00') - new Date(fechaA + 'T00:00:00')) / 86400000);
@@ -35,7 +35,7 @@ export function prediccionObjetivo(objetivo) {
   const hoy = todayISO();
   const fechaLimite = new Date(objetivo.fechaCreacion + 'T00:00:00');
   fechaLimite.setDate(fechaLimite.getDate() + plazoDias);
-  const fechaLimiteISO = fechaLimite.toISOString().slice(0, 10);
+  const fechaLimiteISO = fechaLocalISO(fechaLimite);
   const diasRestantes = diasEntre(hoy, fechaLimiteISO);
   return { suficientesDatos: true, fechaLimiteISO, diasRestantes, superado: diasRestantes < 0 };
 }
@@ -54,7 +54,7 @@ export function prediccionAbandonoHabito(habito) {
   const ventana = Math.min(14, diasDesdeInicio);
   const cutoff = new Date(hoy + 'T00:00:00');
   cutoff.setDate(cutoff.getDate() - (ventana - 1));
-  const cutoffISO = cutoff.toISOString().slice(0, 10);
+  const cutoffISO = fechaLocalISO(cutoff);
   const marcasVentana = fechas.filter((f) => f >= cutoffISO).length;
   const tasa = marcasVentana / ventana;
   const riesgo = tasa < 0.4 ? 'alto' : tasa < 0.7 ? 'medio' : 'bajo';
@@ -95,9 +95,9 @@ export function prediccionFuerza(calistenia) {
 
   const hoy = todayISO();
   const cutoffReciente = new Date(hoy + 'T00:00:00'); cutoffReciente.setDate(cutoffReciente.getDate() - 13);
-  const cutoffRecienteISO = cutoffReciente.toISOString().slice(0, 10);
+  const cutoffRecienteISO = fechaLocalISO(cutoffReciente);
   const cutoffAnterior = new Date(hoy + 'T00:00:00'); cutoffAnterior.setDate(cutoffAnterior.getDate() - 27);
-  const cutoffAnteriorISO = cutoffAnterior.toISOString().slice(0, 10);
+  const cutoffAnteriorISO = fechaLocalISO(cutoffAnterior);
 
   const recientes = sesiones.filter((s) => s.fecha >= cutoffRecienteISO).length;
   const anteriores = sesiones.filter((s) => s.fecha >= cutoffAnteriorISO && s.fecha < cutoffRecienteISO).length;

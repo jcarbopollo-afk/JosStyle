@@ -3,7 +3,7 @@ import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, Mor
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
 import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
-import { uid, todayISO, addDays, hexToRgba } from './lib/helpers';
+import { uid, todayISO, addDays, hexToRgba, fechaLocalISO } from './lib/helpers';
 import { extractPdfText } from './lib/pdfText';
 import { prediccionObjetivo } from './lib/predicciones';
 import { verificarBiometria } from './lib/biometria';
@@ -1926,7 +1926,10 @@ export default function App() {
       ? `${pendientesConPlazo[0].o.texto} (${pendientesConPlazo[0].p.diasRestantes}d)`
       : 'Sin objetivos pendientes';
     const cutoff7 = new Date(); cutoff7.setDate(cutoff7.getDate() - 6);
-    const cutoff7ISO = cutoff7.toISOString().slice(0, 10);
+    /* 🐛 Igual que en el calendario: las entradas del diario llevan fecha LOCAL,
+       y `toISOString` da la de UTC. La media de ánimo de "los últimos 7 días"
+       cogía una ventana corrida un día durante las dos primeras horas. */
+    const cutoff7ISO = fechaLocalISO(cutoff7);
     const entradasRecientes = diario.entradas.filter((e) => e.fecha >= cutoff7ISO);
     valores.animo_medio = entradasRecientes.length
       ? `${Math.round((entradasRecientes.reduce((s, e) => s + Number(e.animo), 0) / entradasRecientes.length) * 10) / 10}/5`

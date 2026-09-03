@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, ChevronDown, Sparkles, Loader2, Video, Trash2, AlertTriangle, CheckCircle2, Circle, Plus } from 'lucide-react';
 import { COLORS, SKILLS } from '../tokens';
-import { uid, formatFecha, todayISO } from '../lib/helpers';
+import { uid, formatFecha, todayISO, fechaLocalISO } from '../lib/helpers';
 import { askAI, askAIWithImages, AI_SYSTEM } from '../lib/ai';
 import { extractFramesFromSrc } from '../lib/videoFrames';
 import { getSignedVideoUrl } from '../lib/supabase';
@@ -17,7 +17,11 @@ function calcularRacha(sesiones) {
   let racha = 0;
   let cursor = new Date();
   for (;;) {
-    const iso = cursor.toISOString().slice(0, 10);
+    /* 🐛 Esto era `cursor.toISOString().slice(0, 10)`, que da la fecha **en UTC**.
+       Las sesiones se guardan con la fecha LOCAL, así que entre medianoche y las
+       dos de la madrugada en España la racha empezaba a contar por el día
+       anterior: si habías entrenado hoy y ayer no, ponía **racha 0**. */
+    const iso = fechaLocalISO(cursor);
     if (!fechas.has(iso)) break;
     racha++;
     cursor.setDate(cursor.getDate() - 1);

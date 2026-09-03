@@ -722,6 +722,29 @@ else
   ok "Ningún hex suelto fuera de tokens.js"
 fi
 
+# ─── INVARIANTE 12 · 🐛 NUNCA `toISOString()` PARA UNA FECHA LOCAL ────────────
+# Sexta vez que este proyecto pisa la misma trampa, y la última que puede pasar
+# desapercibida. `new Date('2026-06-01T00:00:00')` es medianoche LOCAL, y
+# `toISOString()` la pasa a UTC restando el huso: en España el resultado
+# retrocede un día. Ha roto, por orden: los recordatorios de rutinas
+# (motorRutinas), los eventos derivados (calendarioIntegracion), los avisos de
+# Estilo de hombre, cuatro pruebas, y —lo más caro— **las tres recurrencias del
+# calendario**: un evento diario que no avanzaba nunca, uno semanal que avanzaba
+# seis días y uno mensual del 31 que se atascaba en el día 3.
+#
+# La regla: para una fecha local se usa `fechaLocalISO` (helpers.js). Se
+# excluyen los comentarios, que hablan justamente de esto.
+UTC=$(grep -rn "toISOString()" src/ --include=*.jsx --include=*.js \
+      | grep -E "slice\(0, ?10\)|split\('T'\)" \
+      | grep -vE ':[0-9]+:[[:space:]]*(//|\*|/\*)' \
+      | grep -v 'Antes esto era' \
+      || true)
+if [ -n "$UTC" ]; then
+  fallo "🐛 toISOString() usado para una fecha local (usa fechaLocalISO):"; echo "$UTC"
+else
+  ok "Ninguna fecha local sale de toISOString() (la trampa que rompió el calendario)"
+fi
+
 # --- Regla 4: todo overlay 'fixed inset-0' debe montarse con createPortal ---
 # Si un archivo tiene un overlay a pantalla completa pero no importa createPortal,
 # reintroduce el bug del containing block (ver docs/01 §5.7).

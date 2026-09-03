@@ -1,5 +1,35 @@
 # CHANGELOG.md
 
+## v3.1.2 — 🐛 Cuatro fechas más en UTC, y una regla para que no haya una séptima
+
+### Qué pasaba
+Después de arreglar el calendario, un barrido por todo el código buscando el mismo patrón encontró
+**cuatro sitios más** donde una fecha **local** salía de `toISOString()`:
+
+* 🐛 **La racha de entrenamiento** (`TrainingView`): las sesiones se guardan con fecha local y la
+  racha se contaba en UTC. Entre medianoche y las dos de la madrugada, si habías entrenado hoy y
+  ayer no, la pantalla ponía **racha 0**.
+* 🐛 **Las cuatro ventanas de `predicciones.js`** —el plazo de un objetivo, el riesgo de abandono de
+  un hábito y la comparación de las dos últimas quincenas— se corrían un día en esa misma franja.
+* 🐛 **La media de ánimo de los últimos 7 días** en el Dashboard, igual.
+* 🐛 **La marca de "ya te avisé hoy"** de las notificaciones: usaba la clave de ayer, así que un
+  aviso podía repetirse.
+
+Ninguno es tan grave como el del calendario, pero son el mismo fallo y estaban por el mismo motivo:
+`new Date(...)` da una hora **local** y `toISOString()` la pasa a UTC restando el huso.
+
+### 🚨 Y ahora hay una regla invariante que lo impide
+Sexta vez con la misma trampa. Así que `verificar.sh` tiene una **regla invariante nueva, la 12**:
+**ninguna fecha local puede salir de `toISOString()`**. Se ha comprobado que caza el caso metiendo
+una línea mala a propósito, y salta.
+
+Ya no depende de que alguien se acuerde: si vuelve a aparecer, la verificación se pone roja.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **11 034 comprobaciones de Node**, **1 408
+casos de renderizado**, **12 reglas invariantes** (una nueva) y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v3.1.1 — 🐛 Las recurrencias del Calendario estaban rotas
 
 ### Qué pasaba

@@ -11,6 +11,10 @@
 // cualquier aviso: permiso concedido, interruptor global activado, categoría activada y fuera
 // del horario de descanso configurado (apartados 116, 117, 122).
 
+/* 🐛 Para la marca de "ya te avisé hoy". Ver el comentario de `marcaKey`: con
+   `toISOString` la clave era la de ayer durante las dos primeras horas del día. */
+import { fechaLocalISO } from './helpers';
+
 export function permisoNotificaciones() {
   if (typeof window === 'undefined' || !('Notification' in window)) return 'no-soportado';
   return Notification.permission; // 'granted' | 'denied' | 'default'
@@ -50,7 +54,10 @@ export function notificarSiCorresponde(notificaciones, categoria, clave, titulo,
   if (dentroDeHorarioDescanso(notificaciones)) return;
 
   if (typeof window !== 'undefined' && window.localStorage) {
-    const marcaKey = `notif-${clave}-${new Date().toISOString().slice(0, 10)}`;
+    /* 🐛 La marca de "ya te avisé hoy" iba con la fecha **en UTC**: entre
+       medianoche y las dos de la madrugada en España usaba la clave de AYER, así
+       que un aviso podía repetirse. Ahora es la fecha local, como el resto. */
+    const marcaKey = `notif-${clave}-${fechaLocalISO(new Date())}`;
     if (window.localStorage.getItem(marcaKey)) return;
     window.localStorage.setItem(marcaKey, '1');
   }
