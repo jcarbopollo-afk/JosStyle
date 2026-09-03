@@ -3466,6 +3466,37 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] PRIORIDADES
 - [x] PRUEBA DE CRECIMIENTO — *5 → 10 → 17, con la razón de por qué no 30*
 
+#### EH · Fase 56/65 — INTEGRACIÓN PROFUNDA CON LA IA ✅ COMPLETADA (v2.22.0)
+
+> **`src/lib/iaEstilo.js`** (90 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> 🚨 **El interruptor nace apagado** y `contextoParaIA()` devuelve `null`: no "menos datos", ninguno.
+> `estiloHombre` **sigue fuera de `currentState`** (decisión de la F43), con una comprobación que lo lee.
+>
+> 🚨 **El tipo de piel y la sensibilidad no salen ni con el interruptor encendido**, y el contexto
+> dice cuántos ha omitido.
+>
+> ⚠️ **Aprender de los rechazos es el motor de la F16**, no una segunda memoria.
+- [x] CONTEXTO PERSONAL
+- [x] RECOMENDACIONES PERSONALIZADAS
+- [x] APRENDER DE LAS RESPUESTAS
+- [x] NO REPETIR
+- [x] CONTEXTO (situaciones)
+- [x] CONEXIÓN CON OTROS MÓDULOS — *referencia al evento, no copia*
+- [x] OBJETIVOS — *la IA no puede crearlos ni marcarlos*
+- [x] IA CONVERSACIONAL
+- [x] EXPLICACIONES — *sin motivo no se enseña*
+- [x] NIVEL DE CONFIANZA
+- [x] PRIVACIDAD
+- [x] CONTROL DEL USUARIO — *el interruptor, apagado por defecto*
+- [ ] MEMORIA DE LA IA — **no existe: JC Fitness no guarda las conversaciones**
+- [x] CORRECCIÓN DEL USUARIO — *lo que él corrige manda*
+- [x] EVITAR AUTOMATISMOS
+- [x] ACCIONES SUGERIDAS — *"No guardar" por defecto*
+- [x] APRENDIZAJE PROGRESIVO
+- [x] PRUEBAS DE IA
+
+
 
 
 

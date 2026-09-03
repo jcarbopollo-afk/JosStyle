@@ -304,10 +304,11 @@ escribir código.
 
 | v2.21.0 | **EH F55** | Escalabilidad y futuras funciones. **Siete sitios donde se escribe UNA LÍNEA** —módulo, categoría, preferencia, línea de plaquita, acceso, colección de papelera y migración—, cada uno con la línea y con lo que **no** hay que tocar. ⚠️ Y una comprobación lee la vista buscando un `case` por módulo: si hiciera falta, el punto de extensión sería mentira. 🚨 **El backlog se DERIVA** del `SE_POSPONE` de la F48, de lo que falta en la F54 y del fallo a medias de la F52: once entradas con sus cinco campos, y las bloqueadas dicen de qué dependen. **Una sola es 🔴 imprescindible** —enseñar el aviso cuando falla al guardar—, y es la única que sale de un fallo y no de una idea. ⚠️ **La prueba de crecimiento no miente**: el enunciado pide 30 módulos, el catálogo tiene 17, así que se mide hasta ahí y se comprueba lo que importa a los 30 — **coste en línea recta, no al cuadrado**. ⚠️ Y crecer tiene freno: si algo duplica, la respuesta no es "no", es **integrar** |
 
+| v2.22.0 | **EH F56** | Integración profunda con la IA. El **interruptor** del apartado 12, el contexto que se manda y las **cinco cosas que la IA no puede hacer**. 🚨 **Toca la decisión de la F43 sin romperla**: `estiloHombre` sigue fuera de `currentState` y `contextoParaIA()` devuelve **`null`** con el interruptor apagado — no "menos datos", ninguno. 🚨 **Y lo privado no sale ni encendiéndolo**: el tipo de piel lleva `paraIA: false` desde la F13, y el contexto **dice cuántos ha omitido**. ⚠️ No se manda todo cada vez: preguntar por un perfume no manda el seguimiento de la piel. ⚠️ **Aprender de los rechazos ya estaba hecho** (F16): se usa, no se reescribe. ⚠️ Y proponer sí, aplicar no: dos botones, con **"No guardar" por defecto**. 🐛 Y por quinta vez, una declaración no es una violación: el detector cazaba su propia lista de omitidos |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 55/65** (**F1-F55 seguidas**; queda **F56-F65**).
-Quedan **12** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (10). ⚠️ **La EH F56 toca el
-bloque AXION, aparcado por Josué: hay que preguntarle antes de construirla** (regla 49).
+3/5 y **EH por 56/65** (**F1-F56 seguidas**; queda **F57-F65**).
+Quedan **11** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (9, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

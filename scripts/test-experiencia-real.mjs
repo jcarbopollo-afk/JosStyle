@@ -146,9 +146,9 @@ console.log('\n🧭 EH · Fase 51/65 — Control de calidad de la experiencia re
 {
   console.log('\n4 · Lo que él personaliza sigue ahí al volver');
   const r = probarPersistencia();
-  eq(r.length, 7, 'las siete cosas que él puede personalizar');
-  eq(noPermanecen(), [], '🚨 ⚠️ las siete sobreviven a cerrar y volver (regla 5)');
-  eq(r.filter((x) => !x.cambia).map((x) => x.id), [], 'y antes de eso, las siete se cambian de verdad');
+  eq(r.length, 8, 'las ocho cosas que él puede personalizar (la octava, el interruptor de la IA de la F56)');
+  eq(noPermanecen(), [], '🚨 ⚠️ las ocho sobreviven a cerrar y volver (regla 5)');
+  eq(r.filter((x) => !x.cambia).map((x) => x.id), [], 'y antes de eso, las ocho se cambian de verdad');
 
   /* ⚠️ Que la prueba pase por JSON no es un detalle: es lo que hace `saveData`. */
   ok(LO_QUE_SE_PERSONALIZA.every((c) => typeof c.cambia === 'function' && typeof c.lee === 'function'),

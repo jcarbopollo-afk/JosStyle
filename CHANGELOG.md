@@ -1,5 +1,59 @@
 # CHANGELOG.md
 
+## v2.22.0 — EH Fase 56/65: integración profunda con la IA
+
+### Qué se ha construido
+*"La IA aconseja. El usuario decide. Nada debe convertirse automáticamente en una obligación."*
+
+Cómo la IA puede usar Estilo de hombre: **el interruptor** del apartado 12, **el contexto** que se
+manda (solo lo de la pregunta), **las cinco cosas que la IA no puede hacer** y **cómo propone** sin
+aplicar nada sola.
+
+### 🚨 Esta fase toca una decisión de la F43, y conviene ver por qué no la rompe
+La **F43** dejó `estiloHombre` **fuera de `currentState`** a propósito: es la única clave de la
+aplicación que no viaja a la IA, y allí está escrito como decisión, no como olvido. Esta fase pide
+lo contrario… salvo que el apartado 12 exige un interruptor.
+
+Así que la regla de la F43 **se mantiene como valor por defecto**: `contextoParaIA()` devuelve
+**`null`** mientras el interruptor esté apagado. No devuelve menos datos: devuelve **nada**. Y
+`estiloHombre` **sigue fuera de `currentState`** — hay una comprobación que lee `App.jsx` para que
+esa puerta no se abra sola.
+
+### 🚨 Y lo privado no sale ni con el interruptor encendido
+El tipo de piel y su sensibilidad llevan `paraIA: false` desde la **F13** y están en
+`CAMPOS_PRIVADOS` desde la F43. El interruptor del apartado 12 **no los desbloquea**: son otra cosa.
+El contexto los omite y **dice cuántos ha omitido**, para que la ausencia se lea como deliberada y no
+como un dato que falta.
+
+### Las decisiones de la fase
+
+**1. 🚨 El interruptor nace apagado.** Un "por defecto sí, con opción de apagarlo" habría mandado sus
+rutinas y sus perfumes a un servidor sin que él lo pidiera nunca.
+
+**2. ⚠️ No se manda todo cada vez.** El contexto se pide **para algo** —un perfume, una rutina, el
+estilo— y sale solo lo de ese algo. Preguntar por un perfume no manda su seguimiento de la piel, y
+la pregunta abierta manda **el resumen**, no el contenido de todo.
+
+**3. ⚠️ Aprender de los rechazos ya estaba hecho.** El `motorRecomendaciones` guarda el feedback,
+silencia lo descartado y sabe deshacerlo desde la **F16**. Se **usa**, no se reescribe: dos memorias
+de gustos acabarían dando dos opiniones distintas de la misma aplicación.
+
+**4. ⚠️ La IA no hace nada sola.** Comprar, crear objetivos, cambiar preferencias, borrar y tocar la
+configuración: cinco cosas prohibidas, y no como advertencia en un comentario sino como una lista
+que se puede preguntar —`puedeLaIA('eliminar')` → false, con su motivo—. Lo que sí puede es
+**proponer**, con dos botones… y **"No guardar" es el que está por defecto**.
+
+### 🐛 Y por quinta vez: una declaración no es una violación
+El detector de campos privados miraba el contexto entero y cazaba `privadosOmitidos` —que es
+justamente la lista de lo que **no** se manda— y decía que se estaba filtrando el tipo de piel. La
+F48 arregló esta misma confusión tres veces y la F49 una cuarta. Ahora mira **solo la parte que
+viaja**.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 217 comprobaciones de Node** (90
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.21.0 — EH Fase 55/65: escalabilidad y futuras funciones
 
 ### Qué se ha construido

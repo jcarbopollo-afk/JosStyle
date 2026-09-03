@@ -55,6 +55,7 @@
 import { MODULOS_EH, IDS_EH, moduloEH, estadoPantalla, configurarPrimeraVez, alternarModulo, reordenar, modulosActivos, normalizarEstiloHombre, DEFAULT_ESTILO_HOMBRE } from './estiloDeHombre';
 import { seccionesDePantalla, datosPantalla, cambiarTamano, tamanoDe, alternarAcceso, alternarVerAccesos, accesosActivos, alternarLinea, lineasActivas, lineasDisponibles } from './pantallaEH';
 import { alternarOculto, estaOculto, modulosVisibles } from './gestionEstilo';
+import { permisoIA, alternarPermisoIA } from './iaEstilo';
 import { buscarModulos, necesitaConfirmacion } from './gestionModulos';
 import { CATALOGO_PAPELERA } from './papelera';
 import { GRAVEDADES, gravedad, ordenarPorGravedad } from './pruebasIntegrales';
@@ -462,6 +463,18 @@ export const LO_QUE_SE_PERSONALIZA = [
     cambia: (e) => alternarVerAccesos(e),
     lee: (e) => datosPantalla(e).verAccesos,
     esperado: false,
+  },
+  {
+    /* 🚨 **EH F56** — el interruptor de la IA entra aquí el mismo día que nace.
+       Es el campo más caro de perder de todos: si no sobreviviera a cerrar y
+       volver, volvería a su valor por defecto —apagado— y él creería que lo tiene
+       encendido, o al revés. Y esta lista es lo único que lo comprueba. */
+    id: 'ia',
+    nombre: 'Si la IA puede mirar sus datos',
+    guarda: 'config.ia.permitido',
+    cambia: (e) => alternarPermisoIA(e),
+    lee: (e) => permisoIA(e),
+    esperado: true,
   },
 ];
 
