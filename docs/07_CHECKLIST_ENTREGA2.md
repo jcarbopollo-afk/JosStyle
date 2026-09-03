@@ -3496,6 +3496,35 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] APRENDIZAJE PROGRESIVO
 - [x] PRUEBAS DE IA
 
+#### EH · Fase 57/65 — APRENDIZAJE Y PERSONALIZACIÓN PROGRESIVA ✅ COMPLETADA (v2.23.0)
+
+> **`src/lib/aprendizaje.js`** (91 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> 🚨 **Sin el interruptor de la F56 no se aprende nada.** 🚨 **Lo explícito gana siempre**: una
+> contradicción se pregunta, no se cambia sola.
+>
+> 🚨 **Borrar lo aprendido no borra sus datos**, y hay una comprobación que los cuenta.
+>
+> ⚠️ **Seis cosas no se deducen nunca**, con una prueba que intenta deducirlas a propósito.
+- [x] APRENDER DE FORMA NATURAL
+- [x] PREFERENCIAS EXPLÍCITAS
+- [x] PREFERENCIAS INFERIDAS
+- [x] CONFIRMACIÓN — *sí · no · no volver a preguntar*
+- [x] NIVEL DE CONFIANZA — *solo la alta llega a la pantalla*
+- [x] CAMBIO DE GUSTOS
+- [x] PREFERENCIAS ACTUALES
+- [x] CONTRADICCIONES — *se pregunta, nunca se cambia sola*
+- [x] EXPLICAR RECOMENDACIONES
+- [x] CORREGIR EL SISTEMA
+- [x] CONTROL DE MEMORIA
+- [x] BORRAR APRENDIZAJE — *sin tocar los datos originales*
+- [x] NO PERFILAR EN EXCESO
+- [x] NO TOMAR DECISIONES IMPORTANTES — *las cinco prohibidas de la F56*
+- [x] APRENDIZAJE ENTRE MÓDULOS — *una sola fuente de verdad*
+- [x] PRIVACIDAD
+- [x] PRUEBAS — *los cinco usuarios*
+
+
 
 
 

@@ -200,15 +200,29 @@ const ver = () => page.evaluate(() => document.body.innerText);
    "Mi estilo" arriba —que NOMBRA los módulos— empezó a pulsar el título de un
    bloque, que no es pulsable, en vez de la plaquita. Un usuario de verdad pulsa
    un botón; esto hace lo mismo. */
-const pulsar = async (txt) => {
-  const clicado = await page.evaluate((t) => {
-    const botones = [...document.querySelectorAll('button')];
-    const destino = botones.find((x) => x.innerText.trim() === t)
-      || botones.find((x) => x.innerText.includes(t));
-    if (!destino) return false;
-    destino.click();
-    return true;
-  }, txt);
+/* 🐛 ⚠️ **EH F57 — y `pulsar` ESPERA a que el botón aparezca.**
+   Segunda vez que la pasada completa se pone roja y el archivo ejecutado solo
+   pasa: con diez mil comprobaciones de Node por delante, la máquina va cargada
+   y los `waitForTimeout` fijos de después de cada `goto` se quedan cortos. El
+   primer `pulsar('Más')` no encontraba el botón y **toda la sección siguiente
+   caía en cascada** — doce comprobaciones rojas por una que llegó pronto.
+   Arreglarlo aquí, y no en cada sitio, lo arregla en las setenta llamadas: un
+   usuario tampoco pulsa un botón que todavía no se ha pintado, **espera a que
+   salga**. Si de verdad no sale, sigue devolviendo `false` y falla igual. */
+const pulsar = async (txt, tope = 6000) => {
+  const hasta = Date.now() + tope;
+  let clicado = false;
+  do {
+    clicado = await page.evaluate((t) => {
+      const botones = [...document.querySelectorAll('button')];
+      const destino = botones.find((x) => x.innerText.trim() === t)
+        || botones.find((x) => x.innerText.includes(t));
+      if (!destino) return false;
+      destino.click();
+      return true;
+    }, txt);
+    if (!clicado) await page.waitForTimeout(200);
+  } while (!clicado && Date.now() < hasta);
   await page.waitForTimeout(600);
   return clicado;
 };

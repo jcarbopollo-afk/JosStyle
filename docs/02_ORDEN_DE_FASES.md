@@ -306,9 +306,11 @@ escribir código.
 
 | v2.22.0 | **EH F56** | Integración profunda con la IA. El **interruptor** del apartado 12, el contexto que se manda y las **cinco cosas que la IA no puede hacer**. 🚨 **Toca la decisión de la F43 sin romperla**: `estiloHombre` sigue fuera de `currentState` y `contextoParaIA()` devuelve **`null`** con el interruptor apagado — no "menos datos", ninguno. 🚨 **Y lo privado no sale ni encendiéndolo**: el tipo de piel lleva `paraIA: false` desde la F13, y el contexto **dice cuántos ha omitido**. ⚠️ No se manda todo cada vez: preguntar por un perfume no manda el seguimiento de la piel. ⚠️ **Aprender de los rechazos ya estaba hecho** (F16): se usa, no se reescribe. ⚠️ Y proponer sí, aplicar no: dos botones, con **"No guardar" por defecto**. 🐛 Y por quinta vez, una declaración no es una violación: el detector cazaba su propia lista de omitidos |
 
+| v2.23.0 | **EH F57** | Aprendizaje y personalización progresiva. Siete señales con su peso, la confianza (baja → media → alta), la pregunta cuando hay evidencia y su panel para revisar, corregir y borrar. 🚨 **Sin el interruptor de la F56 no se aprende NADA** — ni con veinte señales. 🚨 **Lo que él dice gana siempre**: ni treinta señales pisan una preferencia suya, y una contradicción se **pregunta**, no se cambia sola. ⚠️ Lo reciente pesa más pero lo viejo no se borra (1 → 0,6 → 0,3 → **0,1**, nunca cero). ⚠️ Tres respuestas, no dos: sí, no y **"no volver a preguntar"**, que se respeta aunque llegue más evidencia. 🚨 **Borrar lo aprendido no borra sus datos**, comprobado contando antes y después. ⚠️ Y seis cosas que **no se deducen nunca** —ánimo, salud, dinero, personalidad—, con una prueba que lo intenta a propósito. 🐛 Y por segunda vez un rojo falso: `pulsar` no esperaba a que el botón se pintara y una sección entera caía en cascada |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 56/65** (**F1-F56 seguidas**; queda **F57-F65**).
-Quedan **11** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (9, ninguna bloqueada).
+3/5 y **EH por 57/65** (**F1-F57 seguidas**; queda **F58-F65**).
+Quedan **10** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (8, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

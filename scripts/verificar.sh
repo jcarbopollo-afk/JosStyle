@@ -512,6 +512,12 @@ else
   fallo "Falla la integración con la IA"; grep '✗' /tmp/jc_eh56.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-aprendizaje.mjs >/tmp/jc_eh57.log 2>&1; then
+  ok "Aprendizaje y personalización progresiva (EH F57) — $(grep -c '✓' /tmp/jc_eh57.log) comprobaciones"
+else
+  fallo "Falla el aprendizaje"; grep '✗' /tmp/jc_eh57.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

@@ -1,5 +1,59 @@
 # CHANGELOG.md
 
+## v2.23.0 — EH Fase 57/65: aprendizaje y personalización progresiva
+
+### Qué se ha construido
+*"No queremos que el usuario tenga que rellenar 50 formularios. Utilizar lo que el usuario hace para
+mejorar las sugerencias. Siempre con control."*
+
+El sistema que aprende de lo que él hace: **siete señales** con su peso, **la confianza** (baja →
+media → alta), **la pregunta** de cuando hay bastante evidencia, **la contradicción** entre lo que
+dice y lo que hace, y **su panel** para revisar, corregir y borrar lo aprendido.
+
+### Las decisiones de la fase
+
+**1. 🚨 Sin el interruptor de la F56 aquí no se aprende NADA.** No "se aprende pero no se usa": no se
+toma la nota. `aprender()` devuelve el estado tal cual, y ni con veinte señales seguidas cambia. Un
+sistema que sigue apuntando cosas de alguien que ha dicho que no es justo lo que el apartado 16
+prohíbe.
+
+**2. 🚨 Lo que él dice vale más que lo que yo deduzca.** El apartado 2 lo pide, y aquí no es un
+número más alto: es que **ni treinta señales pisan** una preferencia que él escribió. Si dijo que no
+le gustan los dulces y luego guarda dulces, el sistema **pregunta** —*"¿ha cambiado tu
+preferencia?"*—, no cambia.
+
+**3. ⚠️ Lo reciente pesa más, pero lo viejo no se borra.** Cuatro ventanas de tiempo con factor 1 →
+0,6 → 0,3 → **0,1**. Nunca cero: borrarlo del todo sería olvidar lo que pasó, y que mandara sería lo
+que el apartado 6 prohíbe.
+
+**4. ⚠️ Una sospecha no es una verdad.** Lo inferido nace como *posible* preferencia y solo se
+convierte en preferencia cuando él contesta que sí. Con **tres** respuestas, no dos: sí, no, y **no
+volver a preguntar** — que se guarda y **se respeta aunque llegue más evidencia**.
+
+**5. 🚨 Borrar lo aprendido no borra sus datos.** Se van las deducciones; sus perfumes, sus rutinas y
+sus registros **no se tocan**, y hay una comprobación que los cuenta antes y después. Borrar también
+lo que él dijo a mano se puede, pero **hay que pedirlo aparte**.
+
+**6. ⚠️ Y no se perfila a nadie.** Seis cosas que **no se deducen nunca** —cómo es, cómo está de
+ánimo, cuánto dinero tiene, su salud, con quién queda, qué opina de su cuerpo—, y una comprobación
+que manda señales a propósito para intentar deducirlas y falla. Los campos privados de la F43
+tampoco entran.
+
+### 🐛 Y por segunda vez, un rojo falso en la verificación
+La pasada completa se puso roja en la sección de Sonrisa y el archivo ejecutado solo pasaba entero.
+Otra vez el mismo patrón: con diez mil comprobaciones de Node por delante la máquina va cargada, el
+primer `pulsar('Más')` no encontraba el botón porque la pantalla aún no estaba pintada, y **toda la
+sección siguiente caía en cascada** — doce rojos por una llamada que llegó pronto.
+
+Esta vez se ha arreglado **donde tocaba**: `pulsar` ahora **espera a que el botón aparezca**, con un
+tope. Un usuario tampoco pulsa un botón que no se ha pintado todavía: espera a que salga. Y como el
+arreglo está en la función, vale para las **setenta** llamadas, no para una.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 308 comprobaciones de Node** (91
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.22.0 — EH Fase 56/65: integración profunda con la IA
 
 ### Qué se ha construido
