@@ -3698,6 +3698,45 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] AUDITORÍA
 - [x] PRUEBA FINAL — *los cinco ataques, con qué los para*
 
+#### EH · Fase 64/65 — PRUEBA INTEGRAL END-TO-END ✅ COMPLETADA (v2.30.0)
+
+> **`src/lib/pruebaFinal.js`** (53 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> 🚨 **`recorridoCompleto()`**: trece pasos encadenados, de configurar a migrar. O pasa entero o dice
+> dónde se rompió.
+>
+> 🚨 **Las doce casillas se CALCULAN**, ejecutando la auditoría de cada fase. **Salen diez.**
+>
+> 🔴 Faltan **sincronización** (el último en escribir gana) y **móvil** (nadie lo ha abierto en un
+> iPhone). Y eso es lo que esta fase tiene que decir.
+- [x] USUARIO NUEVO
+- [x] USUARIO EXISTENTE
+- [x] NAVEGACIÓN COMPLETA — *Chromium*
+- [x] PERSONALIZACIÓN
+- [x] DATOS
+- [x] ELIMINACIÓN
+- [x] IA
+- [x] RECOMENDACIONES
+- [x] INSIGHTS
+- [x] RESUMEN SEMANAL
+- [x] RESUMEN MENSUAL
+- [x] CONTEXTO
+- [x] ACCIONES RÁPIDAS
+- [x] OFFLINE
+- [ ] SINCRONIZACIÓN — **R1: hacen falta dos dispositivos**
+- [ ] CONFLICTOS — **🚨 no existe: el último en escribir gana**
+- [ ] MÓVIL — **R1: Safari iPhone y Chrome Android**
+- [ ] MODO OSCURO — **R1: verlo es suyo**
+- [x] ACCESIBILIDAD
+- [x] SEGURIDAD
+- [x] RENDIMIENTO
+- [x] DATOS MASIVOS
+- [x] ERRORES
+- [x] BACKUP
+- [x] PRUEBA DE REGRESIÓN
+- [ ] PRUEBA FINAL DEL USUARIO — **🚨 R1: yo he leído las 65 fases**
+
+
 
 
 

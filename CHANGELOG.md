@@ -1,5 +1,51 @@
 # CHANGELOG.md
 
+## v2.30.0 — EH Fase 64/65: prueba integral end-to-end
+
+### Qué se ha construido
+*"Ahora dejamos de probar cada parte por separado. ¿Todo Estilo de hombre funciona correctamente
+cuando se utiliza como un sistema completo?"*
+
+Dos cosas, y la segunda es la que importa.
+
+**1. Los veintiséis recorridos** del enunciado, cada uno con cómo se comprueba y dónde.
+
+**2. 🚨 `recorridoCompleto()`: una sola cadena de trece pasos que atraviesa el módulo entero.**
+Configurar → añadir datos → personalizar → **cerrar y volver** → encender el permiso de la IA →
+aprender → sacar un insight → montar el resumen → recomendar con un evento → hacer copia → romper un
+módulo → restaurarlo → migrar de v1 a v2. Sesenta y tres fases seguidas en una función que **o pasa
+entera o dice en qué paso se rompió**.
+
+Dentro del recorrido se comprueban las dos cosas que más caras salen: que **todo sobrevive a cerrar
+y volver** —el tamaño de la plaquita, lo que está oculto y los datos— y que **restaurar un módulo no
+toca el otro**.
+
+### 🚨 Y la condición de finalización no se marca a mano
+El enunciado pide doce ✅ —funcionalidad, UX, diseño, datos, IA, sincronización, móvil,
+accesibilidad, seguridad, rendimiento, recuperación e integración— y la tentación evidente es
+escribir doce `true`.
+
+Aquí **cada una se calcula ejecutando la auditoría de su fase**. Si la F63 dice que algo está
+abierto, esa casilla **sale roja sola**, y no hay forma de ponerla verde escribiendo.
+
+### 🚨 Y no salen las doce: salen diez
+Y eso **es el resultado correcto**, porque el enunciado dice *"no declarar Estilo de hombre
+terminado hasta que…"*. Ponerlas verdes le quitaría a la condición su única función.
+
+* **🔴 Sincronización** — no se detectan conflictos entre dispositivos. `app_data` no guarda versión
+  ni marca de tiempo, así que **el último en escribir gana** y el otro cambio se pierde sin aviso. Es
+  una decisión de esquema, no un fallo de una tarde. Lo dijeron la F41, la F45, la F46 y la F54.
+* **🔴 Móvil** — **nadie ha abierto esto en un iPhone.** El simulador de Chromium es lo más cerca que
+  se puede estar sin serlo, y no es lo mismo.
+
+Y una que sale verde **con matiz dicho**: la seguridad. Los datos están protegidos por RLS; lo que
+sigue abierto es `/api/ask-ai`, que no protege datos sino la factura de la IA (F63).
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 822 comprobaciones de Node** (53
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.29.0 — EH Fase 63/65: seguridad, privacidad y control de datos
 
 ### 🚨 Y aquí está el hallazgo más caro de todo el proyecto

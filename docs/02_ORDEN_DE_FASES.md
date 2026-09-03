@@ -320,9 +320,11 @@ escribir código.
 
 | v2.29.0 | **EH F63** | Seguridad, privacidad y control de datos. 🚨 **El hallazgo más caro del proyecto: `api/ask-ai.js` no pide quién eres** — sin autenticación ni límite de uso, cualquiera con la URL puede **gastar el dinero de Josué** en la API de Anthropic. No es una fuga de datos: es **una factura**. ✅ Se han puesto los **límites de tamaño** del apartado 15; ⚠️ la autenticación **no**, porque ese endpoint lo usan seis módulos más y decidir por ellos desde aquí dejaría la IA rota: **el apartado 14 queda sin cumplir**, con el arreglo escrito. El resto: el aislamiento es **de RLS, no de la pantalla** (cuatro políticas, ninguna permisiva); ni un `dangerouslySetInnerHTML`; **borrar la cuenta no deja nada huérfano** —y lo que la cascada no se lleva, también se dice—; y las tres formas de quitar algo son distintas, con confirmación solo en la irreversible y **nunca con un gesto** |
 
+| v2.30.0 | **EH F64** | Prueba integral end-to-end. Los veintiséis recorridos y **🚨 `recorridoCompleto()`: una cadena de trece pasos que atraviesa el módulo entero** —configurar, añadir, personalizar, **cerrar y volver**, permiso de IA, aprender, insight, resumen, recomendar, copia, romper, restaurar y migrar—, que **o pasa entera o dice en qué paso se rompió**. 🚨 **La condición de finalización NO se marca a mano**: las doce ✅ se calculan ejecutando la auditoría de cada fase. 🚨 **Y salen diez de doce, que es el resultado correcto**: faltan **sincronización** (no se detectan conflictos: el último en escribir gana) y **móvil** (nadie ha abierto esto en un iPhone). Ponerlas verdes le quitaría a la condición su única función |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 63/65** (**F1-F63 seguidas**; quedan la **F64** y la **F65**).
-Quedan **4** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (2, ninguna bloqueada).
+3/5 y **EH por 64/65** (**F1-F64 seguidas**; queda la **F65**, el cierre).
+Quedan **3** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (1).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

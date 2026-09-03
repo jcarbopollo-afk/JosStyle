@@ -554,6 +554,12 @@ else
   fallo "Falla la revisión de seguridad"; grep '✗' /tmp/jc_eh63.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-prueba-final.mjs >/tmp/jc_eh64.log 2>&1; then
+  ok "Prueba integral end-to-end (EH F64) — $(grep -c '✓' /tmp/jc_eh64.log) comprobaciones"
+else
+  fallo "Falla la prueba integral"; grep '✗' /tmp/jc_eh64.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else
