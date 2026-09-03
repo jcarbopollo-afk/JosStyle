@@ -7031,6 +7031,50 @@ adelanta en vez de dejar el bloque parado.
 ni un archivo de audio en el proyecto. **SO F2 es justo la fase que los necesita y sigue esperando** a
 que Josué los dé *"cuando la web ya tenga todos los botones activos"*.
 
+#### SO · Fase 5/5 — PRODUCCIÓN, INTEGRACIÓN Y TEST FINAL ✅ COMPLETADA (v3.1.0)
+
+> **`src/lib/sonidoProduccion.js`** + **`BloqueSonido` en `SettingsView.jsx`** (95 comprobaciones).
+> Sin SQL nuevo.
+>
+> ⏸ **Sigue sin haber archivos de audio** (SO F2). `hoySuena` es **false**, y la propia pantalla lo
+> dice arriba del todo.
+>
+> 🚨 **El motor no se reescribe**: la estructura del apartado 2 no se adopta, con su motivo.
+>
+> 🚨 **Silencio no es "no pasa nada"**: el evento se sigue procesando.
+- [x] ESTRUCTURA DE ARCHIVOS — *adaptada: el motor se queda donde está, y se explica*
+- [x] NOMBRES DE ARCHIVO — *SO F4*
+- [x] FORMATOS — *SO F4*
+- [ ] CALIDAD — **⏸ SO F2: se aplica a archivos que no existen**
+- [ ] OPTIMIZACIÓN — **⏸ SO F2**
+- [x] PRELOAD — *grupos A, B y C*
+- [x] CACHE
+- [x] SOUND ENGINE — *ninguna pantalla hace `new Audio(...)`*
+- [x] API DEL MOTOR — *SO F1*
+- [x] NO ACOPLAR UI Y AUDIO
+- [x] PRIORIDADES E INTERRUPCIÓN — *SO F1 y SO F3*
+- [x] SECUENCIAS — *un evento, no tres sonidos*
+- [x] MODO SILENCIOSO — *el evento se sigue procesando*
+- [x] HAPTICS INDEPENDIENTES
+- [x] CONTROL DE VOLUMEN — *maestro × categoría × evento*
+- [x] AJUSTES — *la pantalla «Sonido y respuesta», cableada*
+- [x] PERFILES — *se deducen, no se guardan*
+- [x] BOTONES DE PRUEBA — *suena lo que sonaría el sistema*
+- [x] INDICADOR DE VOLUMEN
+- [x] ACCESIBILIDAD
+- [x] PRIMERA INTERACCIÓN
+- [x] ERROR DE AUDIO
+- [x] FALLBACK — *por familia, a archivos que existen*
+- [x] TELEMETRÍA — *no existe analítica, y se dice*
+- [x] TESTS DEL MOTOR — *los ocho del apartado 33*
+- [x] TEST DE RACHA, RÉCORD, SILENCIO, HAPTICS Y VOLUMEN
+- [ ] TEST EN MÓVIL — **R1: iPhone, iOS PWA y Android**
+- [ ] TEST DE AURICULARES — **R1: hay que enchufarlos**
+- [ ] TEST DE INTERRUPCIÓN Y RECUPERACIÓN — **R1: una llamada de verdad**
+- [ ] TEST DE CARGA — **R1: cien eventos en un teléfono**
+- [ ] CRITERIO DE CALIDAD — **⏸ SO F2**
+- [ ] CONTROL DE VERSIONES DE LOS SONIDOS — **⏸ SO F2**
+
 #### SO · Fase 4/5 — DISEÑO Y ESPECIFICACIÓN DE LOS SONIDOS ✅ COMPLETADA (v1.66.0)
 
 *"Definir y preparar la biblioteca sonora."*

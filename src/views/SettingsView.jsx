@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   User, Download, Upload, RotateCcw, Undo2, Lock, LogOut, ArrowLeft, Search, ChevronRight,
   Palette, LayoutGrid, SlidersHorizontal, Bell, ShieldCheck,
-  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star, ChevronUp, Type,
+  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star, ChevronUp, Type, Volume2,
 } from 'lucide-react';
 import pkg from '../../package.json';
 import {
@@ -17,7 +17,11 @@ import {
 import { calcularEdad, shade, hexToRgba, uid, todayISO } from '../lib/helpers';
 import { permisoNotificaciones, pedirPermisoNotificaciones } from '../lib/notificaciones';
 import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
-import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton, BotonBorrar } from '../components/ui';
+import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton, BotonBorrar, Switch } from '../components/ui';
+/* SO Fase 5 — la pantalla de «Sonido y respuesta». Los interruptores son los de
+   `audio.js` (SO F1): aquí no se inventa ninguna preferencia nueva. */
+import { PERFILES, perfilSonido, perfilActual, aplicarPerfil, CONTROLES, MARCAS_VOLUMEN, ejemploDe, normalizarAudio } from '../lib/sonidoProduccion';
+import { reproducir } from '../lib/audioEngine';
 import PersonalizationView from './PersonalizationView';
 import PapeleraView from './PapeleraView';
 import {
@@ -67,6 +71,7 @@ function useCategorias() {
     { id: 'pantalla-principal', label: 'Pantalla principal', desc: 'Qué ves en "Hoy" y en el menú "Más".', icon: LayoutGrid, listo: true },
     { id: 'preferencias', label: 'Preferencias generales', desc: 'Idioma, zona horaria, país y unidades.', icon: SlidersHorizontal, listo: true, soloInfo: true },
     { id: 'notificaciones', label: 'Notificaciones', desc: 'Permiso, categorías y horario de descanso.', icon: Bell, listo: true },
+    { id: 'sonido', label: 'Sonido y respuesta', desc: 'Qué suena, cuánto y cuándo vibra.', icon: Volume2, listo: true },
     { id: 'seguridad', label: 'Seguridad', desc: 'PIN, biometría y cierre de sesión.', icon: Lock, listo: true },
     { id: 'privacidad', label: 'Privacidad', desc: 'Transparencia, qué usa la IA y borrado por categoría.', icon: EyeOff, listo: true },
     { id: 'datos', label: 'Datos', desc: 'Copia de seguridad y exportación.', icon: Database, listo: true },
@@ -1217,6 +1222,139 @@ export function VistaPreviaGlobal({ fondo, urlFoto, accent }) {
    Apartado 3: "aunque existan muchas opciones, no mostrar absolutamente todo al
    mismo tiempo". Apariencia había llegado a trece tarjetas seguidas, que en un
    iPhone es una pantalla de scroll para encontrar cualquier cosa. */
+/* ────────────────────────────────────────────────────────────────────────────
+   SO Fase 5 — «Sonido y respuesta» (apartados 24, 26, 27 y 28)
+
+   ⚠️ **Los interruptores son los de `audio.js`, no unos nuevos.** El perfil no se
+   guarda: se DEDUCE de las preferencias (`perfilActual`), porque un perfil
+   guardado aparte se desincroniza en cuanto tocas una casilla y entonces la
+   pantalla dice "Equilibrado" mientras suena otra cosa.
+
+   ⏸ **Y hoy no suena nada**, porque no hay archivos de audio (SO F2, bloqueada).
+   La pantalla lo dice arriba en vez de dejar interruptores que no hacen nada:
+   eso es la regla 8 del proyecto.
+   ──────────────────────────────────────────────────────────────────────────── */
+export function BloqueSonido({ audio, accent, onCambiar }) {
+  const prefs = normalizarAudio(audio);
+  const perfil = perfilActual(prefs);
+  const cambiar = (parcial) => onCambiar(normalizarAudio({ ...prefs, ...parcial }));
+  const alternarCategoria = (id) => cambiar({
+    silenciadas: prefs.silenciadas.includes(id)
+      ? prefs.silenciadas.filter((x) => x !== id)
+      : [...prefs.silenciadas, id],
+  });
+
+  return (
+    <div className="space-y-4">
+      {/* ⏸ Lo primero, porque cambia cómo se lee todo lo de abajo. */}
+      <div
+        className="rounded-2xl p-3 text-xs"
+        style={{ background: hexToRgba(accent, 0.08), color: COLORS.textMuted }}
+      >
+        <span className="font-semibold" style={{ color: COLORS.text }}>Todavía no suena nada. </span>
+        Faltan los archivos de sonido. Cuando estén, esto funciona sin tocar nada más — y mientras
+        tanto puedes dejar aquí preparado cómo lo quieres.
+      </div>
+
+      {/* 🔊 Sonidos */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>🔊 Sonidos</p>
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>El interruptor general.</p>
+        </div>
+        <Switch
+          checked={prefs.activado}
+          onChange={(v) => cambiar({ activado: v })}
+          accent={accent}
+          label="Sonidos"
+        />
+      </div>
+
+      {/* 🔉 Volumen — apartado 27: marcas, y el número solo cuando lo mueves. */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>🔉 Volumen</p>
+          <span className="text-[11px] tabular-nums" style={{ color: COLORS.textMuted }}>{prefs.volumen}%</span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="5"
+          value={prefs.volumen}
+          onChange={(e) => cambiar({ volumen: Number(e.target.value) })}
+          aria-label="Volumen general"
+          className="w-full"
+          style={{ accentColor: accent }}
+        />
+        <div className="flex justify-between mt-1">
+          {MARCAS_VOLUMEN.map((m) => (
+            <span key={m} className="text-[10px]" style={{ color: COLORS.textMuted }}>{m}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* 🎛 Perfil — apartado 25. Deducido, no guardado. */}
+      <div>
+        <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>🎛 Perfil</p>
+        <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
+          {perfilSonido(perfil)?.que || 'Lo que tú hayas puesto.'}
+        </p>
+        <OpcionesFila
+          opciones={PERFILES.map((p) => ({ id: p.id, label: `${p.icono} ${p.nombre}` }))}
+          valor={perfil}
+          onChange={(id) => onCambiar(aplicarPerfil(prefs, id))}
+          accent={accent}
+        />
+      </div>
+
+      {/* Las categorías del apartado 24, con el ▶ Escuchar del 26. */}
+      <div className="space-y-2">
+        {CONTROLES.filter((c) => c.categoria).map((c) => (
+          <div key={c.id} className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm" style={{ color: COLORS.text }}>{c.icono} {c.etiqueta}</p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* ⚠️ Apartado 26 — suena EXACTAMENTE el sonido que usaría el sistema. */}
+              <button
+                onClick={() => reproducir(ejemploDe(c.categoria))}
+                aria-label={`Escuchar ${c.etiqueta}`}
+                className="text-[11px] px-2 py-2 -my-1 rounded-lg"
+                style={{ color: COLORS.textMuted }}
+              >
+                ▶ Escuchar
+              </button>
+              <Switch
+                checked={!prefs.silenciadas.includes(c.categoria)}
+                onChange={() => alternarCategoria(c.categoria)}
+                accent={accent}
+                label={c.etiqueta}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 📳 Vibración — apartado 22: es OTRO interruptor, no el mismo. */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>📳 Vibración</p>
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+            Independiente del sonido. En iPhone no está disponible.
+          </p>
+        </div>
+        <Switch
+          checked={prefs.vibracion}
+          onChange={(v) => cambiar({ vibracion: v })}
+          accent={accent}
+          label="Vibración"
+        />
+      </div>
+    </div>
+  );
+}
+
 function Seccion({ titulo, sub, icono: Icono, accent, defecto = false, children }) {
   const [abierta, setAbierta] = useState(defecto);
   return (
@@ -1421,6 +1559,8 @@ export default function SettingsView({
   apariencia, onUpdateApariencia, onSubirFotoFondo, urlFotoFondo, onFirmarFotoFondo,
   onGuardarPreset, onCambiarPresets, onAplicarPreset, onEliminarPreset,
   notificaciones, onUpdateNotificaciones,
+  // SO Fase 5 — las preferencias de audio de la SO F1, tal cual.
+  audio, onUpdateAudio,
   seguridad, onUpdateSeguridad, userId,
   // Fase de Seguridad Centralizada — catálogo de zonas protegibles (App.jsx, a partir de MORE_NAV
   // + 'hoy') y las funciones que de verdad tocan `seguridad.protectedAreas`/`protectedActions` o
@@ -2126,6 +2266,15 @@ export default function SettingsView({
           />
         )}
 
+        {actual.id === 'sonido' && (
+          <>
+            {/* SO Fase 5, apartado 24 — «Sonido y respuesta», con los controles del
+                enunciado y ni uno inventado. */}
+            <Card>
+              <BloqueSonido audio={audio} accent={accent} onCambiar={onUpdateAudio} />
+            </Card>
+          </>
+        )}
         {actual.id === 'seguridad' && (
           <>
             {/* Fase de Seguridad Centralizada — sustituye a "PIN de secciones privadas" (PinSetter,

@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.0.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.1.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
@@ -165,7 +165,8 @@ la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. ✅ **Las t
 
 🏁 **Estilo de hombre está CERRADO (65/65).** Queda **congelado a funciones nuevas**: solo
 correcciones, errores y ajustes imprescindibles (ver `src/lib/cierre.js`). Lo que queda de la
-Entrega 2 es **Sonido F2 y F5**, y las dos dependen de los archivos de audio que dará Josué.
+Entrega 2 es **solo Sonido F2** —la biblioteca—, y **depende de los archivos de audio que dará
+Josué**: no hay nada que yo pueda construir ahí sin ellos.
 El estado final del módulo está en `docs/09_ESTILO_DE_HOMBRE_CIERRE.md`: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
 ⚠️ **EH F1-F65 dejaron doscientas sesenta y dos cosas que cualquier cambio futuro tiene que respetar:**
@@ -845,6 +846,14 @@ Seis cosas que conviene tener presentes al retomar:
   su motivo.
 - ⚠️ **Un ejemplo de una violación no es una violación** (EH F48 y F49): los revisores guardan
   `prohibido:` y `ejemploMalo:` para poder probarse, y `verificar.sh` los excluye.
+- ⏸ **Sigue sin haber ni un archivo de audio** (SO F2, bloqueada): `public/sonidos/` está vacía y
+  `hoySuena` es false. El interruptor nace apagado por eso. El día que aparezcan con los nombres de
+  la SO F4, suenan **sin tocar código**.
+- 🚨 **Ninguna pantalla puede hacer `new Audio(...)`** (SO F1 y F5): el motor es el único que
+  reproduce, y hay una comprobación que lee todas las vistas.
+- ⚠️ **Un perfil de sonido no se guarda: se DEDUCE** (SO F5): `perfilActual()` lo saca de las
+  preferencias. Guardarlo aparte lo desincroniza el primer día.
+
 - 🏁 **Estilo de hombre está CONGELADO** (EH F65): ❌ funciones nuevas, ❌ módulos nuevos, ❌ cambios
   de arquitectura. ✅ Correcciones, errores y ajustes imprescindibles. Y el listón: **si hace falta
   una pantalla nueva para hacerlo, no es un ajuste, es una función**.

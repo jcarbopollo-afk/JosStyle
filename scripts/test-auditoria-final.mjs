@@ -182,6 +182,11 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
   const sinRevisar = enDisco.filter((f) => (
     /Estilo$|EH$|perfil|rutinas|productos|recomendaciones|motor|cuerpo|manos|migracion|rendimiento|estructuraDatos|pruebasIntegrales|auditoriaFinal|coherenciaVisual|microinteracciones|experienciaReal|produccion|recuperacion|escalabilidad|iaEstilo|aprendizaje|insights|resumenPeriodico|contextual|accionesRapidas|usabilidad|seguridadEH|pruebaFinal|cierre/i.test(f)
     && f !== 'horarioEstructura'
+    /* ⚠️ Y `sonidoProduccion` es del bloque SONIDO, no de Estilo de hombre: lo
+       caza la palabra `produccion` que esta expresión busca por la EH F52. Se
+       excluye a mano, igual que el de Horario Top, en vez de estrechar la
+       expresión hasta que se le escape algo de verdad. */
+    && f !== 'sonidoProduccion'
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],

@@ -2412,6 +2412,7 @@ export default function App() {
             onGuardarPreset={guardarPreset} onCambiarPresets={cambiarPresets} onAplicarPreset={aplicarPresetCompleto}
             onEliminarPreset={eliminarPreset}
             notificaciones={notificaciones} onUpdateNotificaciones={updateNotificaciones}
+            audio={audio} onUpdateAudio={updateAudio}
             seguridad={seguridad} onUpdateSeguridad={updateSeguridad} userId={uidUser}
             areasProtegibles={AREAS_PROTEGIBLES}
             onToggleAreaProtegida={toggleAreaProtegida}

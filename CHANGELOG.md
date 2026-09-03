@@ -1,5 +1,57 @@
 # CHANGELOG.md
 
+## v3.1.0 — SO Fase 5/5: producción, integración y test final
+
+### Qué se ha construido
+*"Convertir toda la especificación de las fases anteriores en un sistema de audio real, organizado,
+optimizado y preparado para producción."*
+
+⏸ **Sigue sin haber ni un archivo de audio**, y esta fase no puede traerlos: los da Josué. Pero de
+los cuarenta y ocho apartados, **la mayoría no los necesitan** — y ésos sí se construyen.
+
+**Y por fin existe la pantalla.** `Ajustes → Sonido y respuesta`, la del apartado 24, con sus siete
+controles: 🔊 Sonidos · 🔉 Volumen · 🎛 Perfil · 🔥 racha · 🏆 recompensas · ✨ interfaz ·
+📳 Vibración. La SO F1 dijo *"no empieces todavía la pantalla de Ajustes"*; era de esta fase, y ya
+está — **cableada en `App.jsx`**, no un componente huérfano.
+
+⏸ Lo primero que dice esa pantalla, arriba del todo: **"todavía no suena nada"**. Interruptores que
+no hacen nada sin avisar es lo que la regla 8 prohíbe.
+
+### Las decisiones de la fase
+
+**1. 🚨 El motor no se reescribe.** El apartado 2 propone otra estructura de carpetas
+—`src/audio/engine/…`— y **no se adopta**: mover un motor que funciona y está probado desde la SO F1
+para que el árbol se parezca a un dibujo es el *"cambio de arquitectura innecesario"* que este
+proyecto lleva setenta fases evitando. Lo que el apartado quiere de verdad **sí se cumple**, y hay
+una comprobación: **ninguna pantalla hace `new Audio(...)`**.
+
+**2. ⚠️ El volumen multiplica: maestro × categoría × EVENTO.** La SO F1 ya hacía las dos primeras;
+esta fase añade la tercera, y es lo que permite que **un clic suene por debajo de un récord** sin
+tocar los archivos.
+
+**3. ⚠️ Un perfil no es un sexto sistema.** Aplicar "Equilibrado" **escribe las preferencias que ya
+existen**, y qué perfil tienes puesto **se deduce**, no se guarda: en cuanto tocas una casilla a mano
+pasas a "Personalizado". Un perfil guardado aparte se desincroniza el primer día y entonces la
+pantalla dice una cosa mientras suena otra.
+
+**4. 🚨 Silencio no es "no pasa nada".** Con el sonido apagado el **evento se sigue procesando**: la
+racha sube, el logro se guarda y la pantalla lo enseña. Lo único que no ocurre es el audio. Y la
+vibración es **otro interruptor**: sonido apagado + vibración encendida funciona, y está probado.
+
+**5. ⚠️ Y cinco pruebas necesitan un teléfono.** iPhone, auriculares, una llamada en mitad de un
+sonido, volver a la aplicación y cien eventos seguidos. Van a **R1** con su motivo — el de los
+auriculares es el más honesto: *"hay que enchufarlos"*.
+
+### Lo que sigue bloqueado, y por qué no se disimula
+Cuatro apartados —calidad, optimización, criterio de calidad y control de versiones de los sonidos—
+**se aplican a archivos que no existen**. Quedan marcados ⏸, y `hoySuena` es **false** en el panel.
+El día que estén en `public/sonidos/` con los nombres de la SO F4, **suenan sin tocar una línea**.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 996 comprobaciones de Node** (95
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v3.0.0 — EH Fase 65/65: cierre, congelación y entrega final 🏁
 
 ### 🏁 ESTILO DE HOMBRE: 65/65

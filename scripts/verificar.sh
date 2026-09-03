@@ -566,6 +566,12 @@ else
   fallo "Falla el cierre"; grep '✗' /tmp/jc_eh65.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-sonido-produccion.mjs >/tmp/jc_so5.log 2>&1; then
+  ok "Producción, integración y test final (SO F5) — $(grep -c '✓' /tmp/jc_so5.log) comprobaciones"
+else
+  fallo "Falla la producción de sonido"; grep '✗' /tmp/jc_so5.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

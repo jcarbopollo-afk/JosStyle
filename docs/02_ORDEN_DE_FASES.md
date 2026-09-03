@@ -324,10 +324,12 @@ escribir código.
 
 | v3.0.0 | **EH F65** 🏁 | **Cierre, congelación y entrega final. ESTILO DE HOMBRE: 65/65.** *JC Fitness — Estilo de hombre v1.0*: sesenta y cinco fases, **cero SQL** y **cero sistemas duplicados**. 🚨 **El informe final se CALCULA**, ejecutando la auditoría de cada fase — y **salen ocho de nueve**: falta **🟡 Móvil**, porque nadie ha abierto esto en un iPhone (🟡 y no 🔴: no está roto, está sin comprobar). La seguridad sale ✅ **con su matiz en el propio informe**. 🚨 **Y "bloqueado" no es "pendiente"**: cuatro cosas dependen de otro sistema o de una decisión de Josué, y las cuatro dicen **quién decide y cuál es el arreglo**. **Congelado pero no cerrado con llave**: sí a correcciones y ajustes, con el listón escrito. Y `docs/09_ESTILO_DE_HOMBRE_CIERRE.md` **se genera desde el código** |
 
+| v3.1.0 | **SO F5** | Producción, integración y test final. **Y por fin la pantalla**: `Ajustes → Sonido y respuesta` con los siete controles del apartado 24, **cableada en `App.jsx`**. ⏸ Y lo primero que dice es **"todavía no suena nada"**: no hay archivos (SO F2). 🚨 **El motor no se reescribe**: la estructura de carpetas del apartado 2 **no se adopta**, con su motivo — y lo que el apartado quiere de verdad sí, con una comprobación de que **ninguna pantalla hace `new Audio(...)`**. ⚠️ El volumen multiplica **maestro × categoría × evento**: un clic suena por debajo de un récord. ⚠️ **Un perfil se deduce, no se guarda**: tocas una casilla y pasas a "Personalizado". 🚨 **Silencio no es "no pasa nada"**: el evento se sigue procesando, y la vibración es otro interruptor. ⚠️ Y cinco pruebas necesitan un teléfono |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4), HT (12/12) y 🏁 EH (65/65)
-cerrados.** SO va por 3/5.
-Quedan **2** fases de la Entrega 2, las dos de Sonido, y **las dos dependen de los archivos de
-audio que dará Josué** (F2 la biblioteca, F5 la integración, que la necesita).
+cerrados.** SO va por **4/5**.
+⏸ Queda **1** fase de la Entrega 2: **SO F2, la biblioteca de sonidos**, y **depende de los
+archivos de audio que dará Josué**. No hay nada más que construir sin ellos.
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.
