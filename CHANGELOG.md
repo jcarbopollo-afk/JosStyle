@@ -1,5 +1,54 @@
 # CHANGELOG.md
 
+## v2.25.0 — EH Fase 59/65: resumen semanal y mensual
+
+### Qué se ha construido
+*"En unos segundos entender qué ha pasado con tu estilo."*
+
+El resumen periódico: **semanal**, **mensual** o **desactivado**, con sus secciones —lo más
+destacado, cambios, tendencias, objetivos y una sugerencia—, su aviso opcional, su historial y la
+posibilidad de corregirlo cuando diga algo que no es.
+
+### Las decisiones de la fase
+
+**1. 🚨 Nace apagado, y puede desaparecer del todo.** La condición de finalización lo pide con esas
+palabras y el apartado 5 pone `❌ Desactivado` como una de las tres opciones. Así que el valor por
+defecto es **desactivado**, y apagado **no se genera**: no es que se esconda, es que no existe. Un
+informe semanal que nadie ha pedido es exactamente la *"obligación semanal"* que la condición
+prohíbe.
+
+**2. 🚨 Si no ha pasado nada, no se inventa un resumen** (apartado 3, literal: *"no fabricar un
+resumen artificial"*). Se dice *"esta semana no hay cambios destacables"* y se acabó. Rellenar con
+frases de relleno es lo que hace que el de la semana siguiente tampoco se lea.
+
+**3. ⚠️ El resumen se adapta a cuánto usa la aplicación.** Quien apenas la usa recibe **una
+sección**; quien la usa mucho, cinco. No es un detalle de diseño: mandarle cinco apartados vacíos a
+alguien que ha entrado dos veces es decirle que lo está haciendo mal.
+
+**4. ⚠️ Los contenidos son los insights de la F58.** Esta fase **agrupa y ordena**; no vuelve a mirar
+los datos. Si escribiera sus propias frases acabaría diciendo una cosa en el resumen y otra en la
+pantalla — el duplicado más caro de todos: el que se contradice delante del usuario.
+
+**5. ⚠️ Y el historial guarda lo mínimo.** Se guardan **las fechas y los números**, nunca el texto: el
+texto se vuelve a componer, y así un cambio de redacción no deja doce resúmenes viejos escritos de
+otra manera. Comprobado campo a campo.
+
+### El resumen no depende de la notificación
+El apartado 8 lo pide y aquí se cumple de la única forma que vale: `generarResumen()` **no mira el
+interruptor del aviso para nada**. El aviso es un extra. Y al revés sí manda: **desactivar el
+resumen apaga el aviso**, porque no se avisa de algo que no se genera — ni guardándolo a mano.
+
+### Y si dice algo que no es, se corrige
+`corregirResumen()` apunta esa interpretación y **no se vuelve a repetir**, que es exactamente lo que
+pide el apartado 13. Compartir, en cambio, **no existe**: JC Fitness no tiene sistema de
+compartición, y queda escrito que el día que lo tenga será **solo con una acción suya, nunca
+automáticamente**.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 467 comprobaciones de Node** (86
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.24.0 — EH Fase 58/65: insights y resúmenes inteligentes
 
 ### Qué se ha construido

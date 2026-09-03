@@ -3553,6 +3553,34 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] COMPARACIONES — *sin presión*
 - [x] DATOS VACÍOS
 
+#### EH · Fase 59/65 — RESUMEN SEMANAL Y MENSUAL ✅ COMPLETADA (v2.25.0)
+
+> **`src/lib/resumenPeriodico.js`** (86 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> 🚨 **Nace apagado, y apagado no se genera.** 🚨 **Sin actividad no se inventa un resumen.**
+>
+> ⚠️ **El resumen no depende del aviso**; desactivar el resumen sí apaga el aviso.
+>
+> ⚠️ **El historial guarda fechas y números, nunca el texto.**
+- [x] RESUMEN SEMANAL
+- [x] RESUMEN MENSUAL
+- [x] SIN INFORMACIÓN INNECESARIA
+- [x] PERSONALIZACIÓN — *corto para quien apenas entra*
+- [x] CONFIGURACIÓN — *semanal · mensual · desactivado*
+- [x] PRIVACIDAD
+- [x] NOTIFICACIÓN
+- [x] RESUMEN DENTRO DE LA APP
+- [x] ESTRUCTURA
+- [x] RESUMEN MENSUAL (estructura)
+- [x] COMPARACIÓN — *solo con datos suficientes*
+- [x] IA — *solo sobre datos reales*
+- [x] CORRECCIONES — *no se repite la interpretación equivocada*
+- [ ] COMPARTIR — **no existe el sistema global de compartición**
+- [x] HISTORIAL — *fechas y números, doce como mucho*
+- [x] RENDIMIENTO — *no se recalcula al abrir*
+- [x] PRUEBAS — *los ocho casos*
+
+
 
 
 
