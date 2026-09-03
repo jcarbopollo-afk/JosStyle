@@ -38,9 +38,9 @@ van en `docs/`. La Entrega 1 sigue en `ESPECIFICACION_AJUSTES_ENTREGA1.md`, en l
 
 ## Estado del proyecto en una línea
 
-`package.json` **v2.30.0**. **Entrega 2: 107 de las 110 fases construidas y verificadas** — ME, BI,
+`package.json` **v3.0.0**. **Entrega 2: 108 de las 110 fases construidas y verificadas** — ME, BI,
 AR, FO, RA y HT **cerrados**; **Sonido 3/5** (lo que falta depende de los archivos de audio que dará
-Josué) y **Estilo de Hombre 64/65** (queda la F65, el cierre).
+Josué) y 🏁 **Estilo de Hombre CERRADO: 65/65** (base estable v1.0).
 El Prompt Maestro de 21 fases está **cerrado**; los bloques Ajustes (A1–A7),
 Navegación por áreas (N1–N4) y Personalización Visual Extrema (V1–V4) están **cerrados**; el
 Calendario Universal está en **Fase 3 parcial**; Seguridad Centralizada, Dashboard–Centro de Control

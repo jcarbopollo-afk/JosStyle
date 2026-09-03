@@ -322,9 +322,12 @@ escribir código.
 
 | v2.30.0 | **EH F64** | Prueba integral end-to-end. Los veintiséis recorridos y **🚨 `recorridoCompleto()`: una cadena de trece pasos que atraviesa el módulo entero** —configurar, añadir, personalizar, **cerrar y volver**, permiso de IA, aprender, insight, resumen, recomendar, copia, romper, restaurar y migrar—, que **o pasa entera o dice en qué paso se rompió**. 🚨 **La condición de finalización NO se marca a mano**: las doce ✅ se calculan ejecutando la auditoría de cada fase. 🚨 **Y salen diez de doce, que es el resultado correcto**: faltan **sincronización** (no se detectan conflictos: el último en escribir gana) y **móvil** (nadie ha abierto esto en un iPhone). Ponerlas verdes le quitaría a la condición su única función |
 
-🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 64/65** (**F1-F64 seguidas**; queda la **F65**, el cierre).
-Quedan **3** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (1).
+| v3.0.0 | **EH F65** 🏁 | **Cierre, congelación y entrega final. ESTILO DE HOMBRE: 65/65.** *JC Fitness — Estilo de hombre v1.0*: sesenta y cinco fases, **cero SQL** y **cero sistemas duplicados**. 🚨 **El informe final se CALCULA**, ejecutando la auditoría de cada fase — y **salen ocho de nueve**: falta **🟡 Móvil**, porque nadie ha abierto esto en un iPhone (🟡 y no 🔴: no está roto, está sin comprobar). La seguridad sale ✅ **con su matiz en el propio informe**. 🚨 **Y "bloqueado" no es "pendiente"**: cuatro cosas dependen de otro sistema o de una decisión de Josué, y las cuatro dicen **quién decide y cuál es el arreglo**. **Congelado pero no cerrado con llave**: sí a correcciones y ajustes, con el listón escrito. Y `docs/09_ESTILO_DE_HOMBRE_CIERRE.md` **se genera desde el código** |
+
+🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4), HT (12/12) y 🏁 EH (65/65)
+cerrados.** SO va por 3/5.
+Quedan **2** fases de la Entrega 2, las dos de Sonido, y **las dos dependen de los archivos de
+audio que dará Josué** (F2 la biblioteca, F5 la integración, que la necesita).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

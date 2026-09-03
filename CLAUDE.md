@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v2.30.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.0.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
@@ -154,7 +154,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 64/65** (v2.30.0: **F1-F64 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+CERRADO: 65/65** (v3.0.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
@@ -163,9 +163,12 @@ contradicción— y contestó las tres: **dos apartados separados** (`higiene` y
 dos líneas de `MODULOS_EH`), ***Cuidado de manos* y *Cuidado de pies* son la Fase 22** (la casilla de
 la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. ✅ **Las tres —F18, F19 y F22— están construidas**, así que C-25 no bloquea ya nada.
 
-La siguiente es **EH · Fase 65/65 — Cierre, congelación y entrega final**: la última: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
+🏁 **Estilo de hombre está CERRADO (65/65).** Queda **congelado a funciones nuevas**: solo
+correcciones, errores y ajustes imprescindibles (ver `src/lib/cierre.js`). Lo que queda de la
+Entrega 2 es **Sonido F2 y F5**, y las dos dependen de los archivos de audio que dará Josué.
+El estado final del módulo está en `docs/09_ESTILO_DE_HOMBRE_CIERRE.md`: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F64 dejaron doscientas sesenta cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F65 dejaron doscientas sesenta y dos cosas que cualquier cambio futuro tiene que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -842,6 +845,13 @@ Seis cosas que conviene tener presentes al retomar:
   su motivo.
 - ⚠️ **Un ejemplo de una violación no es una violación** (EH F48 y F49): los revisores guardan
   `prohibido:` y `ejemploMalo:` para poder probarse, y `verificar.sh` los excluye.
+- 🏁 **Estilo de hombre está CONGELADO** (EH F65): ❌ funciones nuevas, ❌ módulos nuevos, ❌ cambios
+  de arquitectura. ✅ Correcciones, errores y ajustes imprescindibles. Y el listón: **si hace falta
+  una pantalla nueva para hacerlo, no es un ajuste, es una función**.
+- 🚨 **Lo BLOQUEADO no es lo pendiente** (EH F65): cuatro cosas dependen de otro sistema o de una
+  decisión de Josué —endpoint sin auth, conflictos entre dispositivos, backup global y favoritos
+  globales—. Están en `BLOQUEADO` con quién decide y cuál es el arreglo. No las "resuelvas" desde aquí.
+
 - 🚨 **Las doce casillas de la condición de finalización se CALCULAN** (EH F64): `condicionFinal()`
   ejecuta la auditoría de cada fase. No las pongas a `true` a mano — si una está roja, es que lo está.
 - 🚨 **Faltan dos, y siguen faltando**: la **sincronización** entre dispositivos (el último en

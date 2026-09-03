@@ -1,5 +1,52 @@
 # CHANGELOG.md
 
+## v3.0.0 — EH Fase 65/65: cierre, congelación y entrega final 🏁
+
+### 🏁 ESTILO DE HOMBRE: 65/65
+
+*"Cuando esta fase termine, Estilo de hombre queda cerrado como módulo funcional. No significa que
+jamás pueda evolucionar. Significa que tenemos una **BASE ESTABLE v1.0**."*
+
+**JC Fitness — Estilo de hombre v1.0.** Sesenta y cinco fases, diecisiete apartados, **cero líneas de
+SQL** y **cero sistemas duplicados**.
+
+### 🚨 El informe final se calcula, no se marca
+El apartado 18 pide nueve líneas con ✅ / 🟡 / 🔴, y la tentación evidente es escribir nueve ✅. Cada
+una **sale de `condicionFinal()`**, que a su vez ejecuta la auditoría de su fase. El informe no es
+una opinión sobre el módulo: es su estado.
+
+**Y salen ocho de nueve.** La que falta es **🟡 Móvil**: nadie ha abierto esto en un iPhone. Es 🟡 y
+no 🔴 a propósito — no está roto, está **sin comprobar donde importa**. El apartado 17 es explícito:
+*"si algo falla: **no ocultarlo**. Registrarlo como pendiente."*
+
+Y la seguridad sale ✅ **con su matiz escrito en el propio informe**: los datos están protegidos por
+RLS; lo que sigue abierto es `/api/ask-ai`, que no protege datos sino la factura de la IA.
+
+### 🚨 Y "bloqueado" no es lo mismo que "pendiente"
+El inventario final separa las cuatro cosas que pide el enunciado, y la distinción que importa es
+ésa: **🟡 pendiente** es *"falta hacerlo"*; **🔴 bloqueado** es *"no se puede hacer desde aquí"*.
+
+Hay **cuatro bloqueados**, y los cuatro dicen **quién lo decide** y **cuál es el arreglo**: el
+endpoint sin autenticación, los conflictos entre dispositivos, el sistema global de copias y los
+favoritos globales. Ninguno es un olvido; los cuatro esperan una decisión que no es de este módulo.
+
+### Congelado, pero no cerrado con llave
+❌ No funciones nuevas, no módulos nuevos, no cambios de arquitectura. ✅ Sí correcciones, errores y
+ajustes imprescindibles — con el listón alto escrito: *"si hace falta una pantalla nueva para
+hacerlo, no es un ajuste: es una función"*.
+
+### Y el documento de cierre también se genera
+**`docs/09_ESTILO_DE_HOMBRE_CIERRE.md`**, como el técnico de la F53: sale del código. Si una fase se
+pone roja mañana, esa página lo dirá sola.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 901 comprobaciones de Node** (79
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
+*Arquitectura → módulos → personalización → datos → UX → IA → contexto → accesibilidad → seguridad →
+copias → escalabilidad → pruebas → producción → cierre.*
+
 ## v2.30.0 — EH Fase 64/65: prueba integral end-to-end
 
 ### Qué se ha construido

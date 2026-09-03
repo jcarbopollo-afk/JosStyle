@@ -560,6 +560,12 @@ else
   fallo "Falla la prueba integral"; grep '✗' /tmp/jc_eh64.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-cierre.mjs >/tmp/jc_eh65.log 2>&1; then
+  ok "Cierre, congelación y entrega final (EH F65) — $(grep -c '✓' /tmp/jc_eh65.log) comprobaciones"
+else
+  fallo "Falla el cierre"; grep '✗' /tmp/jc_eh65.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else
