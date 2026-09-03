@@ -1,5 +1,54 @@
 # CHANGELOG.md
 
+## v2.24.0 — EH Fase 58/65: insights y resúmenes inteligentes
+
+### Qué se ha construido
+*"No queremos llenar Estilo de hombre de gráficas. Queremos que el usuario pueda entrar y entender
+rápidamente: qué está haciendo → qué ha cambiado → qué podría mejorar."*
+
+**Seis tipos de insight** —resumen, cambio destacado, hábito, tendencia de gustos, objetivo y
+sugerencia—, cada uno con **cuántos registros necesita para existir**, un periodo (semana, mes, 3
+meses o personalizado) y a qué apartado lleva.
+
+### Las decisiones de la fase
+
+**1. 🚨 Si no hay datos, no hay conclusión.** El apartado 9 lo dice sin rodeos: *"nunca fabricar
+conclusiones"*. Cada tipo declara su **mínimo**, y por debajo **no se enseña**: se enseña la frase
+del apartado 18. Con dos registros no sale ni uno. Un insight inventado con dos datos es lo que hace
+que el usuario deje de creerse los otros cinco.
+
+**2. ⚠️ Pocos y cortos, contados y medidos.** Máximo **tres a la vez** y **140 caracteres** por
+insight, comprobado sobre los generados —no sobre una intención—. Es lo que separa *"esto me sirve"*
+de *"¿para qué necesito saber esto?"*.
+
+**3. ⚠️ Y no aparece uno cada vez que abre.** Hay un descanso de tres días **por tipo**: la fatiga de
+información no se arregla escribiendo mejor, se arregla **apareciendo menos**.
+
+**4. 🚨 Una comparación no puede sonar a reproche.** El apartado 17 pide evitar la presión
+innecesaria, así que hay una lista de palabras que **no pueden aparecer** —"deberías", "has
+empeorado", **"solo has"**, que es la que se cuela sin querer— y una comprobación que las busca en
+los textos generados. Un cambio se cuenta con **"más" y "menos"**, nunca con "mejor" y "peor": es un
+número, no una nota.
+
+**5. ⚠️ Los números salen de la F35.** El catálogo de lo medible es `METRICAS_PROGRESO`, con sus
+fuentes y sus fechas. Esta fase **compara dos ventanas de tiempo** sobre ese catálogo; una segunda
+lista de métricas acabaría diciendo algo distinto que la pantalla de Progreso.
+
+**6. ⚠️ Y lo que depende de sus gustos respeta el interruptor de la F56.** Contar cuántas rutinas ha
+hecho es **un hecho suyo** y se enseña siempre. Deducir que *"tus últimas elecciones se concentran
+en…"* es personalización, y **sin permiso no se genera** — y queda dicho que es por el permiso, no
+por falta de datos.
+
+### Y ocultar un insight no borra nada
+Se puede ocultar uno, o decir *"no mostrarme más de esto"*. En los dos casos **sus registros siguen
+intactos**, y hay una comprobación que los cuenta antes y después. La portada tampoco se llena de
+📊: las gráficas siguen en Progreso, y solo si él entra.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 381 comprobaciones de Node** (73
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.23.0 — EH Fase 57/65: aprendizaje y personalización progresiva
 
 ### Qué se ha construido

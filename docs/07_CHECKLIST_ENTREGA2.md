@@ -3524,6 +3524,36 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] PRIVACIDAD
 - [x] PRUEBAS — *los cinco usuarios*
 
+#### EH · Fase 58/65 — INSIGHTS Y RESÚMENES INTELIGENTES ✅ COMPLETADA (v2.24.0)
+
+> **`src/lib/insights.js`** (73 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> 🚨 **Con pocos datos no sale ni uno**: cada tipo declara su mínimo, y por debajo se enseña la
+> frase del apartado 18.
+>
+> ⚠️ **Tres a la vez como mucho, 140 caracteres, y descanso de tres días por tipo.**
+>
+> 🚨 **Ninguno puede sonar a reproche**, comprobado sobre los textos generados.
+- [x] RESUMEN PERSONAL
+- [x] EVOLUCIÓN — *los periodos de la F35 más el trimestre*
+- [x] CAMBIOS DESTACADOS
+- [x] HÁBITOS
+- [x] PREFERENCIAS — *tendencia, no verdad*
+- [x] OBJETIVOS
+- [x] RECOMENDACIÓN INTELIGENTE — *no crea tareas*
+- [x] INSIGHTS PEQUEÑOS
+- [x] NO INVENTAR PATRONES
+- [x] CONFIDENCIALIDAD — *lo personalizado pide el permiso de la F56*
+- [x] CONTROL DE FRECUENCIA
+- [x] INSIGHT → ACCIÓN
+- [x] HISTORIAL — *los últimos veinte, no todos*
+- [x] OCULTAR INSIGHTS — *sin tocar sus datos*
+- [x] ESTADÍSTICAS AVANZADAS — *siguen en Progreso, y opcionales*
+- [x] IA + INSIGHTS
+- [x] COMPARACIONES — *sin presión*
+- [x] DATOS VACÍOS
+
+
 
 
 

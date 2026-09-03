@@ -518,6 +518,12 @@ else
   fallo "Falla el aprendizaje"; grep '✗' /tmp/jc_eh57.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-insights.mjs >/tmp/jc_eh58.log 2>&1; then
+  ok "Insights y resúmenes inteligentes (EH F58) — $(grep -c '✓' /tmp/jc_eh58.log) comprobaciones"
+else
+  fallo "Fallan los insights"; grep '✗' /tmp/jc_eh58.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-horario-editor.mjs >/tmp/jc_horario3.log 2>&1; then
   ok "Editor visual de horarios (HT F3) — $(grep -c '✓' /tmp/jc_horario3.log) comprobaciones"
 else

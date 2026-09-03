@@ -308,9 +308,11 @@ escribir código.
 
 | v2.23.0 | **EH F57** | Aprendizaje y personalización progresiva. Siete señales con su peso, la confianza (baja → media → alta), la pregunta cuando hay evidencia y su panel para revisar, corregir y borrar. 🚨 **Sin el interruptor de la F56 no se aprende NADA** — ni con veinte señales. 🚨 **Lo que él dice gana siempre**: ni treinta señales pisan una preferencia suya, y una contradicción se **pregunta**, no se cambia sola. ⚠️ Lo reciente pesa más pero lo viejo no se borra (1 → 0,6 → 0,3 → **0,1**, nunca cero). ⚠️ Tres respuestas, no dos: sí, no y **"no volver a preguntar"**, que se respeta aunque llegue más evidencia. 🚨 **Borrar lo aprendido no borra sus datos**, comprobado contando antes y después. ⚠️ Y seis cosas que **no se deducen nunca** —ánimo, salud, dinero, personalidad—, con una prueba que lo intenta a propósito. 🐛 Y por segunda vez un rojo falso: `pulsar` no esperaba a que el botón se pintara y una sección entera caía en cascada |
 
+| v2.24.0 | **EH F58** | Insights y resúmenes inteligentes. Seis tipos, cada uno con **cuántos registros necesita para existir**. 🚨 **Si no hay datos, no hay conclusión**: con dos registros no sale ni uno, y se enseña la frase del apartado 18. ⚠️ **Pocos y cortos, contados y medidos**: máximo tres a la vez y 140 caracteres, comprobado sobre los generados. ⚠️ Descanso de tres días **por tipo**: la fatiga se arregla apareciendo menos. 🚨 **Ninguno puede sonar a reproche**: lista de palabras prohibidas buscada en los textos, y los cambios se cuentan con "más" y "menos", nunca "mejor" y "peor". ⚠️ Los números salen de `METRICAS_PROGRESO` (F35). ⚠️ Y lo personalizado pide el permiso de la F56, diciendo que es por el permiso y no por falta de datos. Ocultar un insight **no borra nada suyo** |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 57/65** (**F1-F57 seguidas**; queda **F58-F65**).
-Quedan **10** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (8, ninguna bloqueada).
+3/5 y **EH por 58/65** (**F1-F58 seguidas**; queda **F59-F65**).
+Quedan **9** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (7, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

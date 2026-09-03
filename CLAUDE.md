@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v2.23.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v2.24.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
@@ -154,7 +154,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 57/65** (v2.23.0: **F1-F57 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 58/65** (v2.24.0: **F1-F58 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
@@ -163,10 +163,10 @@ contradicción— y contestó las tres: **dos apartados separados** (`higiene` y
 dos líneas de `MODULOS_EH`), ***Cuidado de manos* y *Cuidado de pies* son la Fase 22** (la casilla de
 la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. ✅ **Las tres —F18, F19 y F22— están construidas**, así que C-25 no bloquea ya nada.
 
-La siguiente es **EH · Fase 58/65 — Insights y resúmenes inteligentes**, y a partir de ahí
-**F58-F65 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
+La siguiente es **EH · Fase 59/65 — Resumen semanal y mensual**, y a partir de ahí
+**F59-F65 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F57 dejaron doscientas cuarenta y dos cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F58 dejaron doscientas cuarenta y cinco cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -843,6 +843,13 @@ Seis cosas que conviene tener presentes al retomar:
   su motivo.
 - ⚠️ **Un ejemplo de una violación no es una violación** (EH F48 y F49): los revisores guardan
   `prohibido:` y `ejemploMalo:` para poder probarse, y `verificar.sh` los excluye.
+- 🚨 **Un insight con pocos datos no se enseña** (EH F58): cada tipo declara su `minimo` y por debajo
+  se enseña la frase de "todavía no hay bastante". No rebajes un mínimo para que salga algo.
+- 🚨 **Ni un insight puede sonar a reproche** (EH F58): `PALABRAS_DE_PRESION` se busca en los textos
+  generados. Un cambio se cuenta con "más" y "menos", nunca con "mejor" y "peor".
+- ⚠️ **Los números de los insights salen de `METRICAS_PROGRESO`** (F35): esta fase solo compara
+  ventanas de tiempo. Una segunda lista de métricas acabaría contradiciendo la pantalla de Progreso.
+
 - 🚨 **Sin el permiso de la F56 no se aprende nada** (EH F57): `aprender()` devuelve el estado tal
   cual. No apuntes señales "por si acaso": eso es lo que el apartado 16 prohíbe.
 - 🚨 **Una preferencia explícita no la pisa ninguna cantidad de comportamiento** (EH F57): si él dijo
