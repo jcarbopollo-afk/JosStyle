@@ -312,9 +312,11 @@ escribir código.
 
 | v2.25.0 | **EH F59** | Resumen semanal y mensual. Semanal, mensual o **desactivado**, con sus secciones, su aviso opcional y su historial. 🚨 **Nace apagado y apagado NO se genera**: un informe que nadie ha pedido es la "obligación semanal" que la condición prohíbe. 🚨 **Si no ha pasado nada, no se inventa**: "esta semana no hay cambios destacables" y se acabó. ⚠️ **Se adapta a cuánto usa la aplicación**: quien apenas entra recibe una sección, no cinco vacías. ⚠️ Los contenidos son los **insights de la F58**: esta fase agrupa y ordena, no vuelve a mirar los datos. ⚠️ **El resumen no depende del aviso** (apartado 8), pero desactivar el resumen **sí apaga el aviso**. ⚠️ Y el historial guarda **fechas y números, nunca el texto**. Compartir no existe, y se dice |
 
+| v2.26.0 | **EH F60** | Recomendaciones contextuales. 🚨 **Lo normal es no recomendar nada**: `recomendarAhora()` devuelve `{ hay: false }` con su motivo la mayoría de las veces, y la aplicación sabe decir *"no tengo nada útil que decir ahora"*. 🚨 **No hay clima ni ubicación**, y no se fingen: se declaran inexistentes con su motivo y **no se pueden autorizar ni a mano**. 🚨 **Una fuente disponible no es una fuente autorizada**: cada una con su interruptor, todos apagados. ⚠️ Cada regla declara sus fuentes y sus ocasiones; si falta algo **no se evalúa**. ⚠️ Una a la vez, la más relevante, con dos días de descanso. ⚠️ Y guardarla no crea copia: objetivo y tarea van a los sistemas globales. 🐛 Y `momentoDe(null)` devolvía "noche" porque `Number(null)` es `0`: un dato que no está no es un cero |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 59/65** (**F1-F59 seguidas**; queda **F60-F65**).
-Quedan **8** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (6, ninguna bloqueada).
+3/5 y **EH por 60/65** (**F1-F60 seguidas**; queda **F61-F65**).
+Quedan **7** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (5, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

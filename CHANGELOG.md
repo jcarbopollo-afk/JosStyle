@@ -1,5 +1,51 @@
 # CHANGELOG.md
 
+## v2.26.0 — EH Fase 60/65: recomendaciones contextuales
+
+### Qué se ha construido
+*"No queremos que JC Fitness diga simplemente 'aquí tienes una recomendación'. Queremos: 'ahora
+mismo esto puede tener sentido para ti'."*
+
+Y la condición de finalización es la fase entera: *"Momento adecuado + contexto adecuado + usuario
+adecuado. Si falta alguno: **no recomendar**. La aplicación debe aprender a decir: **no tengo nada
+útil que decir ahora**."*
+
+### Las decisiones de la fase
+
+**1. 🚨 Lo normal es no recomendar nada.** `recomendarAhora()` devuelve `{ hay: false }` **con su
+motivo** siempre que falte una de las tres condiciones, y eso es la mayoría de las veces. Una fase de
+recomendaciones que recomienda siempre no es contextual: es un escaparate.
+
+**2. 🚨 No hay clima ni ubicación, y no se fingen.** El apartado 4 empieza con *"si JC Fitness dispone
+de información meteorológica"*: **no dispone**. Y ubicación no hay ninguna. Las dos están en la lista
+de fuentes marcadas como inexistentes, con su motivo — y **no se pueden autorizar ni guardándolo a
+mano**.
+
+**3. 🚨 Una fuente disponible no es una fuente autorizada.** El apartado 15 lo pide con esas palabras:
+*"no utilizar una fuente simplemente porque técnicamente esté disponible"*. Cada fuente tiene **su
+interruptor**, y **todos nacen apagados**. El calendario lleva ahí veinte fases; que esté no
+significa que Estilo de hombre pueda mirarlo.
+
+**4. ⚠️ Y no se asume nada.** Cada regla declara **qué fuentes necesita** y **en qué ocasiones vale**;
+si falta algo, la regla **no se evalúa**, no se estima. La diferencia entre sugerir y adivinar es
+exactamente ésa.
+
+**5. ⚠️ Una a la vez, y con descanso.** Si hay cinco candidatas se enseña **la más relevante**, y no
+sale otra en dos días. *"No una recomendación cada vez que abre la app"*, literal.
+
+**6. ⚠️ Y guardarla no crea una copia.** Convertirla en objetivo o en tarea usa **los sistemas
+globales**, con una acción suya. Aquí no se queda una segunda versión de nada.
+
+### 🐛 Y un fallo pequeño que era justo el de esta fase
+`momentoDe(null)` devolvía **"noche"**. `Number(null)` es `0`, y las cero horas caen dentro de la
+noche, así que *"no sé qué hora es"* se convertía en *"son las doce de la noche"* — que es
+literalmente lo que el apartado 7 prohíbe. Un dato que no está **no es un cero**.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 556 comprobaciones de Node** (89
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.25.0 — EH Fase 59/65: resumen semanal y mensual
 
 ### Qué se ha construido

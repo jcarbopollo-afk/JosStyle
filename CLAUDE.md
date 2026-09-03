@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v2.25.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v2.26.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
@@ -154,7 +154,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 59/65** (v2.25.0: **F1-F59 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 60/65** (v2.26.0: **F1-F60 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
@@ -163,10 +163,10 @@ contradicción— y contestó las tres: **dos apartados separados** (`higiene` y
 dos líneas de `MODULOS_EH`), ***Cuidado de manos* y *Cuidado de pies* son la Fase 22** (la casilla de
 la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. ✅ **Las tres —F18, F19 y F22— están construidas**, así que C-25 no bloquea ya nada.
 
-La siguiente es **EH · Fase 60/65 — Recomendaciones contextuales**, y a partir de ahí
-**F60-F65 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
+La siguiente es **EH · Fase 61/65 — Acciones rápidas e inteligentes**, y a partir de ahí
+**F61-F65 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F59 dejaron doscientas cuarenta y ocho cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F60 dejaron doscientas cincuenta y una cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -843,6 +843,14 @@ Seis cosas que conviene tener presentes al retomar:
   su motivo.
 - ⚠️ **Un ejemplo de una violación no es una violación** (EH F48 y F49): los revisores guardan
   `prohibido:` y `ejemploMalo:` para poder probarse, y `verificar.sh` los excluye.
+- 🚨 **Una fuente que existe no es una fuente autorizada** (EH F60): calendario, historial y
+  preferencias tienen **cada una su interruptor**, y nacen apagados. No leas una fuente porque esté
+  disponible.
+- 🚨 **Sin ocasión conocida no se recomienda** (EH F60, apartado 7): `recomendarAhora()` devuelve
+  `sin_ocasion`. No estimes lo que no sabes.
+- 🐛 **Un dato que no está no es un cero** (EH F60): `Number(null)` es `0` y por poco convierte "no sé
+  la hora" en "es de noche". Comprueba `null` antes de convertir.
+
 - 🚨 **El resumen periódico nace APAGADO y apagado no se genera** (EH F59): la condición de
   finalización exige que pueda desaparecer del todo. No lo enciendas por defecto "para que lo vea".
 - ⚠️ **El resumen NO depende del aviso** (EH F59, apartado 8): `generarResumen()` no mira `avisar`.

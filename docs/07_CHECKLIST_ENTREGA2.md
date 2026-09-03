@@ -3580,6 +3580,36 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] RENDIMIENTO — *no se recalcula al abrir*
 - [x] PRUEBAS — *los ocho casos*
 
+#### EH · Fase 60/65 — RECOMENDACIONES CONTEXTUALES ✅ COMPLETADA (v2.26.0)
+
+> **`src/lib/contextual.js`** (89 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> 🚨 **Lo normal es no recomendar nada**, con su motivo. La aplicación sabe decir *"no tengo nada
+> útil que decir ahora"*.
+>
+> 🚨 **Clima y ubicación no existen** y no se pueden autorizar. **Ninguna fuente está encendida por
+> defecto.**
+>
+> 🐛 Y `momentoDe(null)` devolvía "noche": un dato que no está no es un cero.
+- [x] CONTEXTO TEMPORAL
+- [x] CONTEXTO DE EVENTOS — *no cambia nada automáticamente*
+- [x] CONTEXTO DE RUTINA — *se puede apagar*
+- [ ] CONTEXTO CLIMÁTICO — **JosStyle no tiene información meteorológica**
+- [x] CONTEXTO DE VIAJE
+- [x] CONTEXTO DE OCASIONES
+- [x] NO ASUMIR
+- [x] FRECUENCIA
+- [x] PRIORIZACIÓN — *una, la más relevante*
+- [x] RECHAZAR
+- [x] GUARDAR — *sin crear copias*
+- [x] CONVERTIR EN OBJETIVO — *acción explícita*
+- [x] CONVERTIR EN TAREA — *sistema global*
+- [x] IA — *permiso de la F56 Y fuentes autorizadas*
+- [x] PRIVACIDAD — *cada fuente con su interruptor, todos apagados*
+- [x] MODO SILENCIOSO
+- [x] PRUEBA DE RELEVANCIA — *las cinco situaciones*
+
+
 
 
 
