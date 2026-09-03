@@ -1,5 +1,48 @@
 # CHANGELOG.md
 
+## v2.28.0 — EH Fase 62/65: accesibilidad y usabilidad avanzada
+
+### Qué se ha construido
+*"No buscamos crear una interfaz diferente para accesibilidad. Buscamos que la propia interfaz
+principal esté bien construida desde el principio."*
+
+La **F42** ya hizo la primera pasada. Ésta es la segunda, con diecinueve apartados, y **seis ya
+estaban contestados**. Así que aquí no se rehace nada de eso: se importa, se comprueba que sigue
+verde, y se construye **lo que la F42 no miró**.
+
+### 🚨 Tres detectores nuevos, que leen la pantalla de verdad
+
+**1. Alturas fijas donde va texto.** El apartado 1 pide que subir el tamaño de letra del sistema
+*"no corte textos"*, y lo que corta un texto es un `h-[40px]` con una frase dentro. No se ve en el
+ordenador de nadie: se ve en el móvil de quien lo necesita. El detector distingue una frase de una
+rayita de 2 px, y no salta con los iconos.
+
+**2. Palabras técnicas en pantalla.** `null`, `token`, `JSON`, `timeout`… buscadas **solo en los
+textos que ve el usuario** —dentro de una etiqueta o de un `aria-label`—, nunca en el código, donde
+`null` es lo normal.
+
+**3. Errores que no explican nada.** El apartado 9 dice que un error debe decir qué corregir, *"no
+simplemente: Error"*. Así que "Error", "Ups" y "Algo ha ido mal" están cazados por su nombre.
+
+### ⚠️ Y el apartado 11 se cumple por no haber construido algo
+*"Si una acción utiliza swipe, drag o long press, debe existir una alternativa."* No hay ninguna: la
+**F50** y la **F61** ya decidieron que todas las acciones viven en botones visibles. Es el único
+apartado de las 62 fases que se cumple **porque algo no existe**.
+
+### 🚨 Siete apartados necesitan un móvil y unos ojos
+El texto aumentado, el teclado abierto, la orientación, la pantalla pequeña, el uso con una mano,
+**el orden de lectura** y la prueba real. Van a **R1** con su motivo — y el 18 con el más claro de
+todos: *"esto solo lo dice VoiceOver o TalkBack leyendo la pantalla en voz alta. Ninguna expresión
+lo comprueba."*
+
+Fingir que los he probado sería mentir justo en la fase que existe para que la aplicación aguante
+configuraciones que no son la mía.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 692 comprobaciones de Node** (61
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.27.0 — EH Fase 61/65: acciones rápidas e inteligentes
 
 ### Qué se ha construido

@@ -3638,6 +3638,37 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] ACCESIBILIDAD
 - [x] PRUEBA — *1–3 toques, medidos con la F51*
 
+#### EH · Fase 62/65 — ACCESIBILIDAD Y USABILIDAD AVANZADA ✅ COMPLETADA (v2.28.0)
+
+> **`src/lib/usabilidad.js`** (61 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> ⚠️ **Seis apartados ya los contestó la F42**, y se importan en vez de reescribirlos.
+>
+> 🚨 **Tres detectores nuevos**: alturas fijas con texto, palabras técnicas en pantalla y errores
+> que no explican nada.
+>
+> 🚨 **Siete apartados necesitan un móvil y unos ojos**, y no se marcan.
+- [x] TAMAÑO DEL TEXTO — *el código se comprueba; verlo es de Josué*
+- [x] CONTRASTE — *F42 y F49*
+- [x] ZONAS TÁCTILES — *F42*
+- [x] ICONOS
+- [x] ESTADOS — *F42*
+- [x] REDUCIR MOVIMIENTO — *F42*
+- [x] NAVEGACIÓN
+- [ ] TECLADO — **R1: depende del teclado de cada teléfono**
+- [x] FORMULARIOS
+- [x] MENSAJES
+- [x] GESTOS — *se cumple porque no hay ninguno (F50 y F61)*
+- [ ] USO CON UNA MANO — **R1**
+- [ ] ORIENTACIÓN — **R1: hay que girar un teléfono**
+- [ ] PANTALLAS PEQUEÑAS — **R1: y no la del ordenador de desarrollo**
+- [x] ESTADOS VACÍOS
+- [x] ERRORES DE RED
+- [x] LECTORES DE PANTALLA — *F42*
+- [ ] ORDEN DE LECTURA — **🚨 R1: solo lo dice VoiceOver o TalkBack en voz alta**
+- [ ] PRUEBA REAL — **R1: con el móvil en la mano**
+
+
 
 
 

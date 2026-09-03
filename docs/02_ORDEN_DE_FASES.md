@@ -316,9 +316,11 @@ escribir código.
 
 | v2.27.0 | **EH F61** | Acciones rápidas e inteligentes. Las diez acciones con su reversibilidad, las de cada tipo de elemento y el botón + con cuatro opciones. 🚨 **Los gestos de los apartados 5 y 6 no se construyen, y el 16 explica por qué**: el propio enunciado pide que las acciones no dependan de gestos, y la F50 ya lo resolvió con flechas que funcionan con el lector de pantalla — **ninguna acción depende de un gesto**. 🚨 **Y lo que falta se dice**: el "Deshacer" de unos segundos no existe (la papelera aguanta treinta días pero **cuesta tres toques en vez de uno**) y las acciones en lote tampoco. ⚠️ Los toques son los de la F51, importados. ⚠️ Una ficha solo ofrece lo que le sirve: un perfume no lleva "crear objetivo". ⚠️ Y de las diez acciones **solo una pide confirmación**: la irreversible |
 
+| v2.28.0 | **EH F62** | Accesibilidad y usabilidad avanzada. Segunda pasada: **seis de los diecinueve apartados ya los contestó la F42**, y se importan en vez de reescribirlos. 🚨 **Tres detectores nuevos que leen la pantalla**: **alturas fijas donde va texto** —lo que corta la frase al subir la letra del sistema, y no se ve en ningún ordenador—, **palabras técnicas** (`null`, `token`) buscadas solo en lo visible, y **errores que no explican nada** ("Error", "Ups"). ⚠️ **El apartado 11 se cumple por no haber construido algo**: pide alternativa a los gestos, y no hay gestos (F50 y F61). 🚨 **Siete apartados necesitan un móvil y unos ojos** —incluido el orden de lectura, que solo lo dice VoiceOver en voz alta—: R1, con su motivo |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 61/65** (**F1-F61 seguidas**; queda **F62-F65**).
-Quedan **6** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (4, ninguna bloqueada).
+3/5 y **EH por 62/65** (**F1-F62 seguidas**; queda **F63-F65**).
+Quedan **5** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (3, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

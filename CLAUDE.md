@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v2.27.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v2.28.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
@@ -154,7 +154,7 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 61/65** (v2.27.0: **F1-F61 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 62/65** (v2.28.0: **F1-F62 seguidas**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
@@ -163,10 +163,10 @@ contradicción— y contestó las tres: **dos apartados separados** (`higiene` y
 dos líneas de `MODULOS_EH`), ***Cuidado de manos* y *Cuidado de pies* son la Fase 22** (la casilla de
 la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. ✅ **Las tres —F18, F19 y F22— están construidas**, así que C-25 no bloquea ya nada.
 
-La siguiente es **EH · Fase 62/65 — Accesibilidad y usabilidad avanzada**, y a partir de ahí
-**F62-F65 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
+La siguiente es **EH · Fase 63/65 — Seguridad, privacidad y control de datos**, y a partir de ahí
+**F63-F65 seguidas**: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F61 dejaron doscientas cincuenta y cuatro cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F62 dejaron doscientas cincuenta y seis cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -843,6 +843,12 @@ Seis cosas que conviene tener presentes al retomar:
   su motivo.
 - ⚠️ **Un ejemplo de una violación no es una violación** (EH F48 y F49): los revisores guardan
   `prohibido:` y `ejemploMalo:` para poder probarse, y `verificar.sh` los excluye.
+- 🚨 **Nada de alturas fijas por debajo de 44 px donde haya texto** (EH F62): con la letra del
+  sistema subida, corta la frase. `alturasQueCortanTexto()` lo lee de la vista.
+- 🚨 **Ni una palabra técnica en un texto que vea el usuario** (EH F62): `null`, `token`, `JSON`…
+  `palabrasTecnicasEnPantalla()` mira lo visible, no el código. Y un error dice **qué corregir**,
+  nunca "Error" a secas.
+
 - 🚨 **Ninguna acción de Estilo de hombre puede depender de un gesto** (EH F50 y F61): deslizar y
   mantener pulsado **no existen**, y eso ES el apartado 16 de accesibilidad. Si añades un gesto,
   añade primero el botón visible que hace lo mismo.
