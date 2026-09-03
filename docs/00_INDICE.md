@@ -38,16 +38,16 @@ van en `docs/`. La Entrega 1 sigue en `ESPECIFICACION_AJUSTES_ENTREGA1.md`, en l
 
 ## Estado del proyecto en una línea
 
-`package.json` **v3.1.2**. **Entrega 2: 109 de las 110 fases construidas y verificadas** — ME, BI,
+`package.json` **v3.2.0**. **Entrega 2: 109 de las 110 fases construidas y verificadas** — ME, BI,
 AR, FO, RA y HT **cerrados**; **Sonido 4/5** (solo falta la F2, la biblioteca, que depende de los archivos de
 audio que dará Josué) y 🏁 **Estilo de Hombre CERRADO: 65/65** (base estable v1.0).
 El Prompt Maestro de 21 fases está **cerrado**; los bloques Ajustes (A1–A7),
 Navegación por áreas (N1–N4) y Personalización Visual Extrema (V1–V4) están **cerrados**; el
-Calendario Universal está en **Fase 3 parcial**; Seguridad Centralizada, Dashboard–Centro de Control
+Calendario Universal está en **Fase 3 casi completa** (quedan las estadísticas temporales y la personalización avanzada; R2.3 y R2.4 hechas en la v3.2.0); Seguridad Centralizada, Dashboard–Centro de Control
 y Optimización móvil están **construidos con pendientes documentados**; **AXION (≈1100 apartados) no
 se ha empezado y está explícitamente bloqueado** hasta una conversación de diseño con Josué.
 **Desde la v1.23.0 todo se compila y se prueba de verdad** con `bash scripts/verificar.sh`: build de
-Vite, 11 034 comprobaciones de Node, 1 408 casos de renderizado, 12 reglas invariantes y 450 sobre la
+Vite, 11 061 comprobaciones de Node, 1 408 casos de renderizado, 12 reglas invariantes y 450 sobre la
 aplicación real en Chromium. ⚠️ **Lo que sigue sin comprobarse es el móvil de Josué**: Supabase real,
 la sincronización y el aspecto en su iPhone (bloque R1).
 

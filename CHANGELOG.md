@@ -1,5 +1,39 @@
 # CHANGELOG.md
 
+## v3.2.0 — Calendario: intervalo personalizado y saltar un día (C3, R2.3 y R2.4)
+
+### Qué se ha construido
+Tres cosas que la Fase 3 del Calendario dejó abiertas y llevaban desde entonces en la lista de
+pendientes:
+
+* **R2.3 — «cada 2 semanas».** Un intervalo por encima de la frecuencia: cada 3 días, cada 2
+  semanas, cada 2 meses. **No es una frecuencia nueva** —«cada 2 semanas» sigue siendo semanal—,
+  así que multiplica el paso y ya está.
+* **R2.4 — saltar un día sin romper la serie.** `saltarOcurrencia()` apunta la fecha en una lista
+  de excepciones. ⚠️ **La serie SIGUE después**: eso es justo lo que separa «salto el martes» de
+  «termina el martes», y hay una comprobación de que las siguientes ocurrencias siguen saliendo.
+* **R2.4 — cambiar solo un día.** `retocarOcurrencia()` guarda **únicamente los campos que
+  cambian**, no una copia del evento. ⚠️ Eso hace que si mañana cambias el título de la serie, el
+  día retocado **hereda el nuevo** salvo en lo que tocaste. Una copia se habría quedado congelada.
+
+Y nada de esto materializa ocurrencias: una excepción es una fecha en una lista y un retoque es un
+objeto con tres campos (regla 11).
+
+### En la pantalla
+El editor de eventos tiene ahora **«Cada cuánto»** —con la frase debajo diciéndolo en cristiano:
+*«Cada 2 semanas · 1 día saltado»*— y, cuando abres **una ocurrencia** de una serie, un botón
+**«Saltar este día»**. ⚠️ Ese botón solo aparece ahí: en un evento suelto no significaría nada.
+
+### ⚠️ Y un detalle que habría roto la serie en silencio
+Un intervalo de **0** —guardado por error, o por un dato antiguo— dejaría la serie parada o en
+bucle. `intervaloDe()` lo trata como **1**, igual que un negativo, un texto o un campo que no
+existe: el comportamiento de siempre. No se confía en el dato guardado.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **11 061 comprobaciones de Node** (27
+nuevas), **1 408 casos de renderizado**, **12 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v3.1.2 — 🐛 Cuatro fechas más en UTC, y una regla para que no haya una séptima
 
 ### Qué pasaba

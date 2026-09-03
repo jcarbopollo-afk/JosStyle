@@ -110,14 +110,26 @@ export function eventosFuturos(eventos, desdeISO, dias) {
  * regla, otra vez: **una fecha local se saca con `fechaLocalISO`, nunca con
  * `toISOString`.**
  */
-function siguienteOcurrencia(fechaISO, frecuencia) {
+function siguienteOcurrencia(fechaISO, frecuencia, cada = 1) {
+  const n = Number.isFinite(Number(cada)) && Number(cada) >= 1 ? Math.floor(Number(cada)) : 1;
   const d = new Date(`${fechaISO}T00:00:00`);
-  if (frecuencia === 'diaria') d.setDate(d.getDate() + 1);
-  else if (frecuencia === 'semanal') d.setDate(d.getDate() + 7);
-  else if (frecuencia === 'mensual') d.setMonth(d.getMonth() + 1);
-  else if (frecuencia === 'anual') d.setFullYear(d.getFullYear() + 1);
+  if (frecuencia === 'diaria') d.setDate(d.getDate() + n);
+  else if (frecuencia === 'semanal') d.setDate(d.getDate() + 7 * n);
+  else if (frecuencia === 'mensual') d.setMonth(d.getMonth() + n);
+  else if (frecuencia === 'anual') d.setFullYear(d.getFullYear() + n);
   else return null; // frecuencia desconocida — no debería pasar, corta la serie por seguridad
   return fechaLocalISO(d);
+}
+
+/**
+ * **R2.3 — cada cuántas veces se repite.** Un entero ≥ 1; cualquier otra cosa
+ * —texto, cero, negativo, `undefined`— vale **1**, que es lo que hacía antes de
+ * que esto existiera. ⚠️ Un `0` que se colara pararía la serie en seco o la
+ * dejaría en bucle: por eso el mínimo es 1 y no se confía en el dato guardado.
+ */
+export function intervaloDe(recurrencia) {
+  const n = Number(recurrencia?.cada);
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
 }
 
 /**
@@ -167,6 +179,19 @@ export function expandirRecurrentes(eventos, desdeISO, hastaISO) {
     }
     const { frecuencia } = ev.recurrencia;
     const limite = ev.recurrencia.hasta && ev.recurrencia.hasta < hastaISO ? ev.recurrencia.hasta : hastaISO;
+    /* **R2.3 — "cada 2 semanas".** Un entero ≥ 1; cualquier otra cosa vale 1, que
+       es el comportamiento de siempre. Multiplica el paso, no crea una frecuencia
+       nueva: "cada 2 semanas" sigue siendo semanal. */
+    const cada = intervaloDe(ev.recurrencia);
+    /* **R2.4 — saltar un día sin romper la serie.** Una lista de fechas que no se
+       emiten. ⚠️ **La serie NO se corta ahí**: las siguientes siguen saliendo,
+       que es justo lo que distingue "saltar el martes" de "termina el martes". */
+    const excepciones = new Set(Array.isArray(ev.recurrencia.excepciones) ? ev.recurrencia.excepciones : []);
+    /* **R2.4 — cambiar solo un día.** `{ '2026-06-10': { titulo, horaInicio… } }`.
+       ⚠️ Se guarda **solo lo que cambia**, no una copia del evento: si mañana
+       cambias el título de la serie, los días retocados heredan el nuevo salvo en
+       el campo que tocaste. Y sigue sin materializarse nada (regla 11). */
+    const cambios = ev.recurrencia.cambios && typeof ev.recurrencia.cambios === 'object' ? ev.recurrencia.cambios : {};
     let fechaActual = ev.fecha;
 
     // Atajo para diaria/semanal: si el ancla queda muy por detrás de la ventana pedida (ej. un
@@ -175,7 +200,9 @@ export function expandirRecurrentes(eventos, desdeISO, hastaISO) {
     // seguridad de abajo con anclas antiguas y ventanas lejanas. Mensual/anual no necesitan este
     // atajo: el propio tope (500 meses ≈ 41 años, 500 años) ya cubre cualquier caso real.
     if (fechaActual < desdeISO && (frecuencia === 'diaria' || frecuencia === 'semanal')) {
-      const pasoDias = frecuencia === 'diaria' ? 1 : 7;
+      // ⚠️ El atajo también multiplica por el intervalo: con "cada 3 días", el
+      // paso son 3 días, no 1. Si no, aterrizaría en una fecha que no es de la serie.
+      const pasoDias = (frecuencia === 'diaria' ? 1 : 7) * cada;
       const diffDias = Math.floor((new Date(`${desdeISO}T00:00:00`) - new Date(`${fechaActual}T00:00:00`)) / 86400000);
       const saltos = Math.max(0, Math.floor(diffDias / pasoDias));
       if (saltos > 0) {
@@ -197,15 +224,91 @@ export function expandirRecurrentes(eventos, desdeISO, hastaISO) {
     let pasos = 0;
     let n = 0;
     while (fechaActual && fechaActual <= limite && pasos < 500) {
-      if (fechaActual >= desdeISO) {
-        resultado.push({ ...ev, fecha: fechaActual, id: `${ev.id}:${fechaActual}`, eventoOrigenId: ev.id, esOcurrencia: fechaActual !== ev.fecha });
+      // R2.4 — un día saltado no se emite, pero la serie sigue.
+      if (fechaActual >= desdeISO && !excepciones.has(fechaActual)) {
+        const retoque = cambios[fechaActual] && typeof cambios[fechaActual] === 'object' ? cambios[fechaActual] : null;
+        resultado.push({
+          ...ev,
+          ...(retoque || {}),
+          fecha: fechaActual,
+          id: `${ev.id}:${fechaActual}`,
+          eventoOrigenId: ev.id,
+          esOcurrencia: fechaActual !== ev.fecha,
+          // ⚠️ Para que la pantalla pueda decir "este día está cambiado" y ofrecer
+          // deshacerlo, sin tener que comparar campo a campo.
+          ...(retoque ? { retocada: true } : {}),
+        });
       }
       n += 1;
       fechaActual = porAncla
-        ? ocurrenciaDesdeAncla(ev.fecha, frecuencia, n)
-        : siguienteOcurrencia(fechaActual, frecuencia);
+        ? ocurrenciaDesdeAncla(ev.fecha, frecuencia, n * cada)
+        : siguienteOcurrencia(fechaActual, frecuencia, cada);
       pasos++;
     }
   });
   return resultado;
+}
+
+/* ===========================================================================
+   R2.4 · SALTAR UN DÍA Y CAMBIAR SOLO UN DÍA
+   ===========================================================================
+   Las dos cosas que faltaban de la Fase 3: *"saltar un día sin romper la
+   serie"* y *"editar una ocurrencia individual"*.
+
+   ⚠️ Las cuatro funciones son **puras y devuelven el evento entero**: quien las
+   llama guarda lo que sale, igual que con cualquier otra edición. Y ninguna
+   materializa nada — la excepción es una fecha en una lista y el retoque es un
+   objeto con **solo los campos cambiados** (regla 11).
+   =========================================================================== */
+
+/** Deja de emitir ese día. ⚠️ La serie **sigue**: no es un "termina aquí". */
+export function saltarOcurrencia(evento, fechaISO) {
+  if (!evento?.recurrencia || !fechaISO) return evento;
+  const previas = Array.isArray(evento.recurrencia.excepciones) ? evento.recurrencia.excepciones : [];
+  if (previas.includes(fechaISO)) return evento;
+  return { ...evento, recurrencia: { ...evento.recurrencia, excepciones: [...previas, fechaISO].sort() } };
+}
+
+/** Vuelve a emitirlo. */
+export function deshacerSalto(evento, fechaISO) {
+  if (!evento?.recurrencia) return evento;
+  const previas = Array.isArray(evento.recurrencia.excepciones) ? evento.recurrencia.excepciones : [];
+  return { ...evento, recurrencia: { ...evento.recurrencia, excepciones: previas.filter((f) => f !== fechaISO) } };
+}
+
+/**
+ * Cambia **solo ese día**. ⚠️ Se guarda el `parche`, no una copia del evento: si
+ * mañana cambia el título de la serie, este día hereda el nuevo salvo en el
+ * campo que se retocó aquí.
+ */
+export function retocarOcurrencia(evento, fechaISO, parche) {
+  if (!evento?.recurrencia || !fechaISO || !parche || typeof parche !== 'object') return evento;
+  const previos = evento.recurrencia.cambios && typeof evento.recurrencia.cambios === 'object' ? evento.recurrencia.cambios : {};
+  return {
+    ...evento,
+    recurrencia: { ...evento.recurrencia, cambios: { ...previos, [fechaISO]: { ...(previos[fechaISO] || {}), ...parche } } },
+  };
+}
+
+/** Ese día vuelve a ser como el resto de la serie. */
+export function deshacerRetoque(evento, fechaISO) {
+  if (!evento?.recurrencia) return evento;
+  const previos = evento.recurrencia.cambios && typeof evento.recurrencia.cambios === 'object' ? evento.recurrencia.cambios : {};
+  const { [fechaISO]: fuera, ...resto } = previos;
+  return { ...evento, recurrencia: { ...evento.recurrencia, cambios: resto } };
+}
+
+/** Cómo se lee una recurrencia en una frase, para la pantalla. */
+export function describirRecurrencia(recurrencia) {
+  if (!recurrencia?.frecuencia) return null;
+  const cada = intervaloDe(recurrencia);
+  const unidad = { diaria: ['día', 'días'], semanal: ['semana', 'semanas'], mensual: ['mes', 'meses'], anual: ['año', 'años'] }[recurrencia.frecuencia];
+  if (!unidad) return null;
+  const base = cada === 1 ? `Cada ${unidad[0]}` : `Cada ${cada} ${unidad[1]}`;
+  const saltados = Array.isArray(recurrencia.excepciones) ? recurrencia.excepciones.length : 0;
+  const retocados = recurrencia.cambios ? Object.keys(recurrencia.cambios).length : 0;
+  const extras = [];
+  if (saltados) extras.push(`${saltados} ${saltados === 1 ? 'día saltado' : 'días saltados'}`);
+  if (retocados) extras.push(`${retocados} ${retocados === 1 ? 'día cambiado' : 'días cambiados'}`);
+  return extras.length ? `${base} · ${extras.join(' · ')}` : base;
 }

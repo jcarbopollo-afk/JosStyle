@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ChevronLeft, ChevronRight, Plus, X, Trash2, Clock, MapPin, Lock, ExternalLink, Search,
-  Target, Flame, Repeat, GraduationCap, Dumbbell, Star, Bell, Circle,
+  Target, Flame, Repeat, GraduationCap, Dumbbell, Star, Bell, Circle, CalendarOff,
 } from 'lucide-react';
 import { COLORS, TIPOS_EVENTO_CALENDARIO, colorDeTipoEvento, FRECUENCIAS_RECURRENCIA } from '../tokens';
 import { uid, todayISO, addDays, hexToRgba } from '../lib/helpers';
-import { celdasMes, eventosDelDia, tiposDelDia, resumenDelDia, eventosFuturos, expandirRecurrentes, isoDeFecha, diasDelMes } from '../lib/calendario';
+import { celdasMes, eventosDelDia, tiposDelDia, resumenDelDia, eventosFuturos, expandirRecurrentes, isoDeFecha, diasDelMes, intervaloDe, describirRecurrencia, saltarOcurrencia } from '../lib/calendario';
 import { NOMBRES_ORIGEN } from '../lib/calendarioIntegracion';
 import { Card, SectionTitle, Field, TextInput, Select, Textarea, PrimaryButton, GhostBtn, ToggleTab, EmptyHint } from '../components/ui';
 
@@ -141,7 +141,7 @@ function nuevoEventoBase(fechaISO) {
 // eventos creados a mano en el propio calendario (`origen: 'calendario'`). Rápido a propósito:
 // solo título/tipo/fecha/hora son visibles siempre; ubicación, notas y repetición están ahí pero
 // no obligan a nadie a rellenar diez campos para anotar algo simple.
-function EditorEvento({ base, accent, onGuardar, onEliminar, onCerrar }) {
+function EditorEvento({ base, accent, onGuardar, onEliminar, onCerrar, fechaOcurrencia = null, onSaltarDia = null }) {
   const [ev, setEv] = useState(base);
   const esNuevo = !base.id;
   const set = (patch) => setEv((prev) => ({ ...prev, ...patch }));
@@ -248,6 +248,28 @@ function EditorEvento({ base, accent, onGuardar, onEliminar, onCerrar }) {
           </Select>
         </Field>
 
+        {/* R2.3 — "cada 2 semanas". Un número al lado de la frecuencia, y la
+            frase de debajo lo dice en cristiano para no dejarlo a interpretación. */}
+        {ev.recurrencia && (
+          <Field label="Cada cuánto">
+            <div className="flex items-center gap-2">
+              <div style={{ width: 84 }}>
+                <TextInput
+                  type="number"
+                  min="1"
+                  max="99"
+                  value={intervaloDe(ev.recurrencia)}
+                  onChange={(e) => set({ recurrencia: { ...ev.recurrencia, cada: Math.max(1, Number(e.target.value) || 1) } })}
+                  aria-label="Cada cuántas veces se repite"
+                />
+              </div>
+              <span className="text-xs" style={{ color: COLORS.textMuted }}>
+                {describirRecurrencia(ev.recurrencia)}
+              </span>
+            </div>
+          </Field>
+        )}
+
         {ev.recurrencia && (
           <Field label="Repetir hasta (opcional — vacío = sin fin)">
             <TextInput
@@ -270,6 +292,16 @@ function EditorEvento({ base, accent, onGuardar, onEliminar, onCerrar }) {
           {!esNuevo && (
             <div style={{ width: 46, flexShrink: 0 }}>
               <GhostBtn onClick={() => onEliminar(ev.id)} icon={Trash2} />
+            </div>
+          )}
+          {/* R2.4 — saltar SOLO este día. Aparece únicamente cuando se ha
+              entrado desde una ocurrencia de una serie: en un evento suelto no
+              significaría nada, y en la propia serie sin fecha tampoco. */}
+          {!esNuevo && ev.recurrencia && fechaOcurrencia && onSaltarDia && (
+            <div style={{ flexShrink: 0 }}>
+              <GhostBtn onClick={() => onSaltarDia(ev, fechaOcurrencia)} icon={CalendarOff}>
+                Saltar este día
+              </GhostBtn>
             </div>
           )}
           <div className="flex-1">
@@ -475,11 +507,24 @@ export default function CalendarView({ calendario, derivados, onAdd, onUpdate, o
     }
     return ev;
   };
+  /* R2.4 — qué día se tocó. `resolverEventoReal` devuelve la SERIE, así que sin
+     esto el editor no sabría de qué ocurrencia venimos y no podría ofrecer
+     "saltar este día". Se guarda la fecha, no una copia del evento. */
+  const [ocurrencia, setOcurrencia] = useState(null);
   const abrirEvento = (evRaw) => {
     const ev = resolverEventoReal(evRaw);
+    setOcurrencia(evRaw.fecha || null);
     if (ev.soloLectura) setDetalle(ev); else setEditor(ev);
   };
-  const cerrarEditor = () => setEditor(null);
+  const cerrarEditor = () => { setEditor(null); setOcurrencia(null); };
+
+  /* Saltar un día concreto sin romper la serie: escribe la excepción en el
+     evento real y guarda, como cualquier otra edición. */
+  const saltarDia = (evento, fechaISO) => {
+    onUpdate(saltarOcurrencia(evento, fechaISO));
+    setEditor(null);
+    setOcurrencia(null);
+  };
 
   const guardar = (ev) => {
     const esNuevo = !(calendario.eventos || []).some((x) => x.id === ev.id);
@@ -668,6 +713,8 @@ export default function CalendarView({ calendario, derivados, onAdd, onUpdate, o
           accent={accent}
           onGuardar={guardar}
           onEliminar={eliminar}
+          fechaOcurrencia={ocurrencia}
+          onSaltarDia={saltarDia}
           onCerrar={cerrarEditor}
         />
       )}

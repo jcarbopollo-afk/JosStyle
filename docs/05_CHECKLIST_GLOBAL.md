@@ -666,9 +666,9 @@
 - [x] **Búsqueda** sobre título y notas (−60/+180 días) con salto al evento
 - [x] `FilaEvento` compartido entre panel de día y Agenda
 - [x] Acceso directo a Agenda desde "Hoy" (una sola implementación, dos puertas)
-- [ ] **Intervalo personalizado** ("cada 2 semanas") → **R2.3**
-- [ ] **Excepciones** (saltar un día sin romper la serie) → **R2.4**
-- [ ] **Edición de una ocurrencia individual** → **R2.4**
+- [x] **Intervalo personalizado** ("cada 2 semanas") → hecho en la **v3.2.0**
+- [x] **Excepciones** (saltar un día sin romper la serie) → hecho en la **v3.2.0**
+- [x] **Edición de una ocurrencia individual** → hecho en la **v3.2.0**
 - [ ] **Estadísticas temporales** del calendario → **R2.5**
 - [ ] **Personalización avanzada** del calendario → **R2.6**
 - [ ] ⚠️ **Automatizaciones / "eventos inteligentes"** — sin especificación; **no construir** → **R2.7**

@@ -21,6 +21,7 @@
 
 import {
   diasDelMes, primerDiaSemanaMes, isoDeFecha, celdasMes,
+  intervaloDe, saltarOcurrencia, deshacerSalto, retocarOcurrencia, deshacerRetoque, describirRecurrencia,
   eventosDelDia, tiposDelDia, resumenDelDia, eventosFuturos, expandirRecurrentes,
 } from '../src/lib/calendario.js';
 
@@ -155,6 +156,84 @@ console.log('\n📅 Calendario Universal — el motor de recurrencias\n');
   eq(resumenDelDia(lista, '2026-06-11'), null, '⚠️ y un día vacío devuelve null, no "0 eventos"');
   eq(eventosFuturos(lista, '2026-06-01', 30).length, 2, 'los próximos treinta días');
   eq(eventosFuturos(lista, '2026-07-01', 30).length, 0, 'y ninguno si ya pasaron');
+}
+
+
+/* ---------------------------------------------------------------------------
+   6 · R2.3 — "CADA 2 SEMANAS"
+   --------------------------------------------------------------------------- */
+{
+  console.log('\n6 · Intervalo personalizado');
+  eq(fechas([ev('s', '2026-06-01', { frecuencia: 'semanal', cada: 2 })], '2026-06-01', '2026-07-31'),
+    ['2026-06-01', '2026-06-15', '2026-06-29', '2026-07-13', '2026-07-27'],
+    'cada 2 semanas salta una');
+  eq(fechas([ev('t', '2026-06-01', { frecuencia: 'diaria', cada: 3 })], '2026-06-01', '2026-06-15'),
+    ['2026-06-01', '2026-06-04', '2026-06-07', '2026-06-10', '2026-06-13'],
+    'cada 3 días');
+  eq(fechas([ev('u', '2026-06-01', { frecuencia: 'mensual', cada: 2 })], '2026-01-01', '2026-12-31'),
+    ['2026-06-01', '2026-08-01', '2026-10-01', '2026-12-01'],
+    'y cada 2 meses');
+
+  /* ⚠️ Lo que pasa con un dato malo, que es donde esto se rompería feo. */
+  eq(intervaloDe({ cada: 0 }), 1, '🚨 un intervalo de 0 vale 1: si no, la serie se para o entra en bucle');
+  eq(intervaloDe({ cada: -5 }), 1, 'un negativo, también');
+  eq(intervaloDe({ cada: 'dos' }), 1, 'y un texto');
+  eq(intervaloDe({ cada: 2.7 }), 2, 'un decimal se trunca');
+  eq(intervaloDe({}), 1, 'y sin nada, uno: el comportamiento de siempre');
+  eq(fechas([ev('v', '2026-06-01', { frecuencia: 'diaria', cada: 0 })], '2026-06-01', '2026-06-04'),
+    ['2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04'],
+    '⚠️ así que un 0 guardado se comporta como antes, no revienta la serie');
+
+  eq(fechas([ev('w', '2025-01-01', { frecuencia: 'semanal', cada: 2 })], '2026-06-01', '2026-06-30'),
+    ['2026-06-03', '2026-06-17'],
+    '⚠️ y el atajo de anclas viejas también multiplica: aterriza en una fecha DE LA SERIE');
+}
+
+/* ---------------------------------------------------------------------------
+   7 · R2.4 — SALTAR UN DÍA Y CAMBIAR SOLO UN DÍA
+   --------------------------------------------------------------------------- */
+{
+  console.log('\n7 · Saltar y retocar un día');
+  const serie = ev('x', '2026-06-01', { frecuencia: 'diaria' });
+
+  const conSalto = saltarOcurrencia(serie, '2026-06-03');
+  eq(fechas([conSalto], '2026-06-01', '2026-06-05'),
+    ['2026-06-01', '2026-06-02', '2026-06-04', '2026-06-05'],
+    '🚨 saltar un día lo quita…');
+  eq(fechas([conSalto], '2026-06-01', '2026-06-10').length, 9,
+    '🚨 ⚠️ …y la serie SIGUE después: saltar no es terminar');
+  eq(fechas([deshacerSalto(conSalto, '2026-06-03')], '2026-06-01', '2026-06-05').length, 5,
+    'y se puede deshacer');
+  eq(saltarOcurrencia(conSalto, '2026-06-03'), conSalto, 'saltar dos veces el mismo día no lo duplica');
+  eq(saltarOcurrencia(ev('y', '2026-06-01'), '2026-06-03').recurrencia, undefined,
+    '⚠️ y un evento sin recurrencia no se toca');
+
+  const retocado = retocarOcurrencia(serie, '2026-06-03', { titulo: 'Ese día distinto' });
+  const oc = expandirRecurrentes([retocado], '2026-06-01', '2026-06-04');
+  eq(oc.map((o) => o.titulo), ['x', 'x', 'Ese día distinto', 'x'],
+    '🚨 cambiar un día cambia SOLO ese día');
+  eq(oc.map((o) => !!o.retocada), [false, false, true, false],
+    '⚠️ y queda marcado, para que la pantalla pueda ofrecer deshacerlo');
+  eq(expandirRecurrentes([deshacerRetoque(retocado, '2026-06-03')], '2026-06-01', '2026-06-04')
+    .map((o) => o.titulo), ['x', 'x', 'x', 'x'], 'y se deshace');
+
+  /* 🚨 Lo que hace que esto no sea una copia: hereda lo que no se tocó. */
+  const conNuevoTipo = { ...retocado, tipo: 'objetivo' };
+  eq(expandirRecurrentes([conNuevoTipo], '2026-06-03', '2026-06-03')[0].tipo, 'objetivo',
+    '🚨 ⚠️ el día retocado HEREDA los cambios de la serie en lo que no se tocó');
+  eq(expandirRecurrentes([conNuevoTipo], '2026-06-03', '2026-06-03')[0].titulo, 'Ese día distinto',
+    '…y conserva lo suyo en lo que sí');
+
+  /* Y las dos cosas a la vez. */
+  const ambas = retocarOcurrencia(saltarOcurrencia(serie, '2026-06-02'), '2026-06-04', { titulo: 'Otro' });
+  eq(fechas([ambas], '2026-06-01', '2026-06-05'),
+    ['2026-06-01', '2026-06-03', '2026-06-04', '2026-06-05'], 'saltar y retocar conviven');
+  ok(/1 día saltado/.test(describirRecurrencia(ambas.recurrencia)), 'y la frase lo cuenta');
+  ok(/1 día cambiado/.test(describirRecurrencia(ambas.recurrencia)), 'las dos cosas');
+  eq(describirRecurrencia({ frecuencia: 'diaria' }), 'Cada día', 'una serie simple se lee en una frase');
+  eq(describirRecurrencia({ frecuencia: 'semanal', cada: 2 }), 'Cada 2 semanas', 'y una con intervalo');
+  eq(describirRecurrencia(null), null, 'y sin recurrencia no hay frase');
+  eq(describirRecurrencia({ frecuencia: 'inventada' }), null, 'ni con una frecuencia que no existe');
 }
 
 console.log(`\n${fallos === 0 ? '✅' : '❌'} ${n - fallos}/${n} comprobaciones\n`);
