@@ -1,5 +1,58 @@
 # CHANGELOG.md
 
+## v2.20.0 — EH Fase 54/65: backup, restauración y recuperación avanzada
+
+### Qué se ha construido
+*"Un error nunca debería convertirse automáticamente en una pérdida irreversible de información."*
+
+La condición de finalización pide **cuatro niveles** de recuperación, y tres ya existían. El que
+faltaba —y es el que trae esta fase— es el tercero:
+
+1. 🗑️ **Un elemento** → la papelera global. Existía (ME F3).
+2. 🔄 **La configuración** → restablecer diseño y estilo. Existía (F31 y F36).
+3. ♻️ **Un módulo entero** → **`restaurarModulo()`, nuevo.**
+4. ☁️ **Todo** → `restaurarTodo()`, con aviso y confirmación.
+
+Y dos cosas más que el enunciado pide y no había: **validar antes de importar** (apartado 15) y
+**dejar registro de lo que se recupera** sin datos personales (18).
+
+### 🚨 Restaurar un apartado no puede tocar a los demás
+*"Si solo se ha perdido un perfume, no obligar a restaurar toda JC Fitness."* `restaurarModulo`
+devuelve **la `config` de un solo módulo** y deja el resto exactamente como estaba. Y hay un detalle
+que importa más de lo que parece: **`activo`, `oculto` y `orden` son de AHORA, no de la copia**. Si
+él apagó ese apartado ayer, recuperar sus rutinas **no vuelve a encenderlo** — restaurar datos y
+cambiar la pantalla son dos cosas distintas.
+
+### ⚠️ Y la restauración está PROBADA, no solo escrita
+El apartado 16 lo dice con todas las letras: *"no basta con crear backups; hay que comprobar que
+realmente pueden restaurarse"*. `ensayoDeRestauracion()` hace el recorrido entero —datos de prueba →
+copia → romper → restaurar— y comprueba **las dos cosas**: que lo perdido vuelve y que **el otro
+apartado no se ha movido**.
+
+### Lo que NO existe, dicho con su nombre
+**Cinco apartados dependen de algo que esta aplicación no tiene**, y ninguno se marca como hecho:
+
+* **No hay sistema global de copias** (1 y 2). El propio enunciado empieza con *"cuando exista el
+  sistema global"*, y prohíbe expresamente *"crear un sistema de backup completamente separado"*.
+  Así que aquí **no se construye uno**.
+* **No hay historial de versiones** (9). *"Hoy 19:30 · Ayer 22:10"* exige guardar las versiones
+  anteriores, y `app_data` tiene **una fila por (usuario, clave)**: no hay dónde ponerlas.
+* **No se detecta el conflicto entre dispositivos** (11 y 12). El último en escribir gana, y el otro
+  cambio se pierde sin aviso. Es la decisión de esquema que la F41 dejó abierta y que la F45, la F46
+  y ahora la F54 se han vuelto a encontrar.
+
+### ⚠️ Y la puerta de importar no existe: esto es la cerradura
+`validarCopia()` comprueba que sea de este módulo, de una versión que se entienda y con la forma
+correcta, y **no devuelve el estado si no pasa** — así nadie puede escribir por error lo que acaba
+de fallar la validación. Se construye ahora porque el día que alguien haga la pantalla, el camino
+corto será `saveData(uid, 'estiloHombre', JSON.parse(texto))`, y con un `saveData` que
+**sobrescribe** eso es perderlo todo de una vez.
+
+### Verificación
+`bash scripts/verificar.sh` **en verde**: build de Vite, **10 035 comprobaciones de Node** (97
+nuevas), **1 408 casos de renderizado**, **11 reglas invariantes** y **450 comprobaciones sobre la
+aplicación de verdad en Chromium**.
+
 ## v2.19.0 — EH Fase 53/65: documentación técnica y mantenimiento
 
 ### Qué se ha construido

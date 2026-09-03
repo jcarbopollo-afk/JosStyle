@@ -3407,6 +3407,37 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] REGLA PARA CLAUDE
 - [x] DOCUMENTACIÓN PARA MANTENIMIENTO
 
+#### EH · Fase 54/65 — BACKUP, RESTAURACIÓN Y RECUPERACIÓN AVANZADA ✅ COMPLETADA (v2.20.0)
+
+> **`src/lib/recuperacion.js`** (97 comprobaciones). Sin pantalla nueva y sin SQL.
+>
+> ♻️ **El nivel que faltaba**: `restaurarModulo()` devuelve la `config` de UN apartado y deja el
+> resto intacto — incluidos `activo`, `oculto` y `orden`, que son de ahora y no de la copia.
+>
+> ⚠️ **La restauración se PRUEBA** (apartado 16): datos → copia → romper → restaurar.
+>
+> 🚨 **Cinco apartados (1, 2, 9, 11 y 12) dependen de algo que no existe** y no se marcan: sistema
+> global de copias, historial de versiones y detección de conflictos entre dispositivos.
+- [ ] BACKUP GLOBAL — **no existe el sistema global; el enunciado prohíbe crear uno separado**
+- [ ] COPIAS AUTOMÁTICAS — **"cuando exista el sistema global", dice el propio enunciado**
+- [x] BACKUP ANTES DE CAMBIOS IMPORTANTES
+- [x] RESTAURACIÓN
+- [x] NO RESTAURAR TODA LA APP SIN NECESIDAD
+- [x] RECUPERACIÓN DE UN ELEMENTO
+- [x] RECUPERACIÓN DE UN MÓDULO — *nuevo en esta fase*
+- [x] RESTAURACIÓN COMPLETA
+- [ ] HISTORIAL DE CAMBIOS — **`app_data` tiene una fila por (usuario, clave): decisión de esquema**
+- [x] RECUPERACIÓN DE CONFIGURACIÓN
+- [ ] RESTAURACIÓN Y SINCRONIZACIÓN — **no hay aviso entre dispositivos**
+- [ ] CONFLICTOS DE RESTAURACIÓN — **no se puede saber cuál es más reciente (F41, F45, F46)**
+- [x] SEGURIDAD
+- [x] EXPORTACIÓN
+- [x] IMPORTACIÓN — *la validación; la pantalla no existe todavía, y se dice*
+- [x] PRUEBA DE RESTAURACIÓN
+- [x] PRUEBA DE DESASTRE — *cuatro se recuperan; el conflicto entre dispositivos no*
+- [x] REGISTRO
+
+
 
 
 

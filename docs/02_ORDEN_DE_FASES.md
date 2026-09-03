@@ -300,9 +300,11 @@ escribir código.
 
 | v2.19.0 | **EH F53** | Documentación técnica y mantenimiento. **`docs/08_ESTILO_DE_HOMBRE_TECNICO.md`**, con los dieciocho apartados. 🚨 **Y lo que hace que no se quede viejo**: el documento **se genera desde el código**, y cinco apartados se derivan del catálogo de módulos, de `FUENTES_GLOBALES`, de los estados, de las migraciones de la F46 y del `SE_POSPONE` de la F48. ⚠️ **Hay una prueba que abre el `.md` de verdad**: si falta un módulo, una dependencia o una regla, la verificación se pone roja. 🐛 **Y otra vez el detector que solo caza lo que ya conocía**: la comprobación de la F48 solo vio `documentacionEH` porque busca nombres acabados en `EH` — `coherenciaVisual`, `microinteracciones`, `experienciaReal` y `produccion` llevaban **cuatro fases sin que las auditara nadie**. ⚠️ Lo que NO se usa (favoritos y Diario) también se documenta, con su motivo. ⚠️ Y no se inventa un `ModalPortal` que no existe: la regla es `createPortal` |
 
+| v2.20.0 | **EH F54** | Backup, restauración y recuperación avanzada. **Los cuatro niveles de la condición**, y el que faltaba era el tercero: ♻️ **`restaurarModulo()`**, restaurar UN apartado sin tocar los demás. 🚨 **Y `activo`, `oculto` y `orden` son de AHORA, no de la copia**: si él lo apagó ayer, recuperar sus rutinas no lo vuelve a encender. ⚠️ **La restauración está PROBADA** (apartado 16): datos → copia → romper → restaurar, comprobando que vuelve lo perdido **y que el otro apartado no se ha movido**. ⚠️ **`validarCopia()` es la cerradura de una puerta que no existe**: la pantalla de importar no está, y por eso se construye antes — con `saveData` sobrescribiendo, un JSON cualquiera lo pierde todo. 🚨 **Cinco apartados dependen de algo que no hay** y ninguno se marca: no hay sistema global de copias (el enunciado **prohíbe crear uno separado**), no hay historial de versiones (`app_data`: una fila por usuario y clave) y **el conflicto entre dispositivos sigue sin detectarse** |
+
 🔒 **Bloques ME (4/4), BI (4/4), AR (4/4), FO (12/12), RA (4/4) y HT (12/12) cerrados.** SO va por
-3/5 y **EH por 53/65** (**F1-F53 seguidas**; queda **F54-F65**).
-Quedan **14** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (12, ninguna bloqueada).
+3/5 y **EH por 54/65** (**F1-F54 seguidas**; queda **F55-F65**).
+Quedan **13** fases de la Entrega 2: SO (2, con **F2 bloqueada**) y EH (11, ninguna bloqueada).
 
 ✅ **C-25 queda cerrada del todo (v2.9.0):** las tres fases que bloqueaba —F18, F19 y F22— están
 construidas, y en Higiene ya no queda ninguna plaquita anunciando una fase futura.

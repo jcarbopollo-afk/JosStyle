@@ -116,7 +116,7 @@ export const LIBRERIAS_EH = [
      lección otra vez: un detector que solo caza lo que se parece a lo de antes
      deja de cazar en cuanto cambian los nombres. */
   'coherenciaVisual', 'microinteracciones', 'experienciaReal', 'produccion',
-  'documentacionEH',
+  'documentacionEH', 'recuperacion',
 ];
 
 /* ===========================================================================
