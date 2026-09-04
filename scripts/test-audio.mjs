@@ -18,6 +18,15 @@ import {
   describirDecision,
 } from '../src/lib/audio.js';
 import { suscribir, emitir, cuentaSuscriptores, reiniciarBus, fallosDeEventos } from '../src/lib/eventos.js';
+/* 🚨 La biblioteca de verdad (SO F4). Se importa aquí, en la prueba, y no en
+   `audio.js`: los dos módulos siguen siendo independientes, y quien impide que
+   se separen es un test, no un acoplamiento. */
+import { listaDeArchivos, FORMATO } from '../src/lib/especificacionSonidos.js';
+import { readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+
+const RAIZ = fileURLToPath(new URL('..', import.meta.url));
 import { EVENTOS_GAMIFICACION } from '../src/lib/rachasGamificacion.js';
 
 let fallos = 0;
@@ -182,6 +191,20 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
   comprobar('...y no se mezclan con los del usuario (apartado 19)',
     SONIDOS_SISTEMA.every((s) => s.origen === 'system' && s.ruta.startsWith('/sonidos/')));
   comprobar('Un sonido del sistema inventado no existe', sonidoDelSistema('zzz') === null);
+
+  /* 🚨 LA COMPROBACIÓN QUE FALTABA. Esta fase (SO F1) se inventó unas rutas
+     —`/sonidos/ui/click_01.webm`— y tres fases después la SO F4 definió la
+     biblioteca de verdad: 46 archivos planos en mp3. Convivieron sin hablarse,
+     y con la carpeta vacía **daban el mismo resultado que un sistema correcto**:
+     silencio. Lo destapó el primer archivo real. Esto lo impide desde ya. */
+  const DECLARADOS = new Set(listaDeArchivos().map((a) => a.ruta));
+  const huerfanas = SONIDOS_SISTEMA.filter((s) => !DECLARADOS.has(s.ruta));
+  comprobar(`🚨 CLAVE · Las nueve rutas del motor están declaradas en la SO F4${huerfanas.length ? ` — huérfanas: ${huerfanas.map((s) => s.ruta).join(', ')}` : ''}`,
+    huerfanas.length === 0);
+  comprobar('⚠️ ...y ninguna en un formato que la SO F4 no pide',
+    SONIDOS_SISTEMA.every((s) => s.ruta.endsWith(`.${FORMATO}`)));
+  comprobar('⚠️ ...ni en subcarpetas, que la SO F4 no usa',
+    SONIDOS_SISTEMA.every((s) => s.ruta.split('/').length === 3));
 }
 
 /* ===========================================================================
@@ -292,11 +315,19 @@ console.log('\n═══ El sonido nunca es el único canal ═══\n');
   comprobar('Con el sonido apagado la decisión sigue siendo legible',
     describirDecision(decidirReproduccion(DEFAULT_AUDIO, 'SUCCESS', { ahora: T0 })).motivo === 'sonido_desactivado');
 
-  // Y el estado de hoy, dicho sin adornos: el motor funciona y no suena nada,
-  // porque no hay archivos. Esta prueba FALLARÁ el día que se añadan, y ahí
-  // habrá que encender `activado` por defecto y quitarla.
-  comprobar('CLAVE · HOY el motor decide "sí" pero no hay archivo que sonar',
-    decidirReproduccion(ON, 'SUCCESS', { ahora: T0 }).sonido.ruta === '/sonidos/feedback/success_01.webm');
+  /* 🚨 Esta prueba estaba escrita PARA FALLAR el día que apareciera un archivo,
+     y decía que entonces había que encender `activado` por defecto y quitarla.
+     Falló el 2026-09-04, como estaba previsto. Pero la instrucción se cumple a
+     medias a propósito: **hay 1 de 46 archivos**, así que encender el sonido por
+     defecto haría que 45 eventos pidieran ficheros que no existen. Sigue
+     apagado, y aquí queda escrito cuándo deja de tener sentido que lo esté. */
+  const ARCHIVOS_QUE_HAY = (() => {
+    try { return readdirSync(join(RAIZ, 'public/sonidos')).filter((f) => f.endsWith(`.${FORMATO}`)).length; } catch { return 0; }
+  })();
+  comprobar('CLAVE · El motor decide "sí" y apunta a un archivo de la SO F4',
+    decidirReproduccion(ON, 'SUCCESS', { ahora: T0 }).sonido.ruta === '/sonidos/success_01.mp3');
+  comprobar(`⚠️ Y el sonido nace apagado mientras falten archivos (hay ${ARCHIVOS_QUE_HAY} de ${listaDeArchivos().length})`,
+    DEFAULT_AUDIO.activado === false || ARCHIVOS_QUE_HAY === listaDeArchivos().length);
 }
 
 console.log('\n  ⚠️ Sin comprobar aquí, y hay que decirlo: iOS, Android, PWA y escritorio.');

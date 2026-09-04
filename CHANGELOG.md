@@ -1,5 +1,51 @@
 # CHANGELOG.md
 
+## v3.5.0 — Los dos catálogos de sonido que nunca se hablaron
+
+### 🚨 El motor pedía archivos que nadie iba a producir
+Al preguntar si `ui_click_01.mp3` sonaría al abrir la web, la respuesta era **no**, y por un motivo
+que no tenía nada que ver con el fallo de la ruta de ayer.
+
+Había **dos catálogos de sonido incompatibles**, de dos fases distintas, conviviendo sin saberlo:
+
+| | Fase | Cuántos | Cómo los nombra |
+|---|---|---|---|
+| El motor | SO F1 (`audio.js`) | 9 | `/sonidos/ui/click_01.webm` — subcarpetas, **webm** |
+| La biblioteca | SO F4 (`especificacionSonidos.js`) | 46 | `/sonidos/ui_click_01.mp3` — plano, **mp3** |
+
+El motor reproduce lo que dice la SO F1. El brief desde el que Josué está grabando es el de la SO F4.
+Su archivo habría dado **404**, igual que los 45 restantes.
+
+**Por qué no saltó en cinco fases de sonido:** con la carpeta vacía, dos sistemas de nombres
+incompatibles producen exactamente el mismo resultado que uno correcto — silencio. Hasta que hubo un
+archivo, no había diferencia observable entre estar bien y estar mal.
+
+### Qué se ha decidido
+**Manda la SO F4**, y no por ser la más nueva: es la que tiene las 46 fichas con duraciones, el
+validador, y el documento desde el que Josué produce. Las nueve rutas del motor se repuntan a
+archivos que esa biblioteca declara.
+
+- Los `id` **no se tocan** (`click_01`, `success_01`…): viven en las preferencias guardadas de Josué
+- La correspondencia es a mano y a propósito — son nueve, y cada una es una decisión: `back_01` va al
+  sonido de cerrar, `milestone_01` al hito de 7 días, que es el genérico
+- `test-audio.mjs` comprueba que **las nueve apuntan a un archivo declarado en la SO F4**, que
+  ninguna use un formato que la SO F4 no pide, y que ninguna vaya en subcarpetas. Verificado
+  revirtiendo una ruta: las tres se ponen rojas
+
+### La prueba que estaba escrita para fallar hoy
+La SO F1 dejó una comprobación con una nota: *"FALLARÁ el día que se añadan archivos, y ahí habrá que
+encender `activado` por defecto y quitarla."* Falló, como estaba previsto.
+
+Se cumple **a medias, a propósito**: hay 1 de 46 archivos, así que encender el sonido por defecto
+haría que 45 eventos pidieran ficheros inexistentes. Sigue apagado, y la condición para encenderlo
+queda escrita en la propia prueba —cuando los 46 estén en el disco— en vez de en la cabeza de nadie.
+
+### ⚠️ Lo que sigue sin estar
+Ningún botón de la aplicación dispara sonido todavía. `reproducir()` se llama desde **un solo sitio**:
+el botón «▶ Escuchar» de Ajustes → Sonido y respuesta. Enganchar los eventos a la interfaz es trabajo
+que no está hecho, y decir lo contrario sería mentir sobre lo que hay.
+
+
 ## v3.4.0 — El primer sonido de verdad (y el fallo que destapó)
 
 ### Qué se ha construido

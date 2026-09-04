@@ -171,20 +171,40 @@ export function normalizarSonido(guardado) {
 }
 
 /**
- * Apartado 21 — la definición central. **Son nombres, no archivos**: ninguno de
- * estos existe todavía, y el motor lo sabe. Cuando Josué deje los archivos con
- * estos nombres en `public/sonidos/`, empiezan a sonar sin tocar código.
+ * Apartado 21 — la definición central: el motor pide **estos nueve**, y los
+ * eventos se reparten entre ellos con `ASIGNACIONES_POR_DEFECTO`.
+ *
+ * 🐛 **Estas rutas estaban inventadas.** Esta fase (SO F1) se sacó unos nombres
+ * —`/sonidos/ui/click_01.webm`, con subcarpetas y en webm— y **tres fases más
+ * tarde la SO F4 definió la biblioteca de verdad**: 46 archivos, planos y en
+ * mp3, con duraciones, validador y el brief que Josué usa para producirlos. Los
+ * dos catálogos convivieron sin hablarse.
+ *
+ * No saltó en ninguna fase porque no había ni un archivo: con la carpeta vacía,
+ * dos sistemas de nombres incompatibles dan exactamente el mismo resultado
+ * —silencio— que uno correcto. Lo destapó el primer MP3 real, `ui_click_01.mp3`,
+ * el 2026-09-04: el motor seguía pidiendo un `.webm` que nadie iba a producir.
+ *
+ * 🚨 **Manda la SO F4**, y no es arbitrario: es la que tiene las 46 fichas, el
+ * validador y el documento desde el que Josué está grabando. Los `id` NO se
+ * tocan —viven en las preferencias guardadas de Josué— y sí las rutas.
+ *
+ * ⚠️ La correspondencia es a mano a propósito: son nueve, y cada una es una
+ * decisión (`back_01` → el sonido de cerrar; `milestone_01` → el hito de 7 días,
+ * que es el genérico). `scripts/test-audio.mjs` comprueba que **las nueve
+ * apuntan a un archivo que la SO F4 declara**, así que no pueden volver a
+ * separarse en silencio.
  */
 export const SONIDOS_SISTEMA = [
-  crearSonido({ id: 'click_01', nombre: 'Toque', categoria: 'ui', ruta: '/sonidos/ui/click_01.webm' }),
-  crearSonido({ id: 'toggle_01', nombre: 'Interruptor', categoria: 'ui', ruta: '/sonidos/ui/toggle_01.webm' }),
-  crearSonido({ id: 'back_01', nombre: 'Volver', categoria: 'ui', ruta: '/sonidos/ui/back_01.webm' }),
-  crearSonido({ id: 'success_01', nombre: 'Hecho', categoria: 'feedback', ruta: '/sonidos/feedback/success_01.webm' }),
-  crearSonido({ id: 'error_01', nombre: 'Error', categoria: 'feedback', ruta: '/sonidos/feedback/error_01.webm' }),
-  crearSonido({ id: 'streak_01', nombre: 'Racha', categoria: 'streak', ruta: '/sonidos/streak/streak_01.webm' }),
-  crearSonido({ id: 'milestone_01', nombre: 'Hito', categoria: 'streak', ruta: '/sonidos/streak/milestone_01.webm' }),
-  crearSonido({ id: 'record_01', nombre: 'Récord', categoria: 'achievement', ruta: '/sonidos/achievements/record_01.webm' }),
-  crearSonido({ id: 'achievement_01', nombre: 'Logro', categoria: 'achievement', ruta: '/sonidos/achievements/achievement_01.webm' }),
+  crearSonido({ id: 'click_01', nombre: 'Toque', categoria: 'ui', ruta: '/sonidos/ui_click_01.mp3' }),
+  crearSonido({ id: 'toggle_01', nombre: 'Interruptor', categoria: 'ui', ruta: '/sonidos/ui_toggle_on.mp3' }),
+  crearSonido({ id: 'back_01', nombre: 'Volver', categoria: 'ui', ruta: '/sonidos/ui_close_01.mp3' }),
+  crearSonido({ id: 'success_01', nombre: 'Hecho', categoria: 'feedback', ruta: '/sonidos/success_01.mp3' }),
+  crearSonido({ id: 'error_01', nombre: 'Error', categoria: 'feedback', ruta: '/sonidos/error.mp3' }),
+  crearSonido({ id: 'streak_01', nombre: 'Racha', categoria: 'streak', ruta: '/sonidos/streak_increment_01.mp3' }),
+  crearSonido({ id: 'milestone_01', nombre: 'Hito', categoria: 'streak', ruta: '/sonidos/streak_milestone_07.mp3' }),
+  crearSonido({ id: 'record_01', nombre: 'Récord', categoria: 'achievement', ruta: '/sonidos/personal_record.mp3' }),
+  crearSonido({ id: 'achievement_01', nombre: 'Logro', categoria: 'achievement', ruta: '/sonidos/achievement_unlocked.mp3' }),
 ];
 
 export const sonidoDelSistema = (id) => SONIDOS_SISTEMA.find((s) => s.id === id) || null;
