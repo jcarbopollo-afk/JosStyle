@@ -24,7 +24,7 @@ import { suscribir, emitir, cuentaSuscriptores, reiniciarBus, fallosDeEventos } 
    se separen es un test, no un acoplamiento. */
 import { listaDeArchivos, FORMATO } from '../src/lib/especificacionSonidos.js';
 import { CATALOGO as CATALOGO_F3 } from '../src/lib/audioEventos.js';
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
@@ -41,6 +41,11 @@ function comprobar(nombre, condicion, detalle = '') {
 const T0 = 1_700_000_000_000;
 /** Preferencias encendidas, que es lo que hará falta para casi todo. */
 const ON = normalizarAudio({ ...DEFAULT_AUDIO, activado: true });
+/* 🚨 El apagado, explícito. Antes estas pruebas usaban DEFAULT_AUDIO como "el
+   estado apagado", y el 2026-09-04 —con los 46 archivos hechos— el sonido pasó
+   a nacer encendido: seis comprobaciones se cayeron de golpe por dar por hecho
+   un valor por defecto en vez de decir cuál querían. */
+const OFF = normalizarAudio({ ...DEFAULT_AUDIO, activado: false });
 
 /* ===========================================================================
    EL BUS (apartados 30 y 31)
@@ -123,7 +128,7 @@ console.log('\n═══ Catálogo, categorías y prioridades ═══\n');
    =========================================================================== */
 console.log('\n═══ Preferencias y volumen ═══\n');
 {
-  comprobar('CLAVE · De fábrica el sonido está APAGADO', DEFAULT_AUDIO.activado === false);
+  comprobar('🚨 CLAVE · De fábrica el sonido está ENCENDIDO, con los 46 archivos hechos', DEFAULT_AUDIO.activado === true);
   /* ⚠️ Esto decía "porque todavía no hay ni un archivo que sonar". Dejó de ser
      verdad el 2026-09-04. Sigue apagado, pero ahora porque **falta biblioteca**,
      no porque no haya nada: encenderlo con 5 de 46 dejaría 41 eventos mudos. */
@@ -138,7 +143,7 @@ console.log('\n═══ Preferencias y volumen ═══\n');
 
   // PRUEBA 1 y 2 del apartado 33 — activado y desactivado.
   comprobar('PRUEBA · Con el sonido ACTIVADO el volumen es mayor que cero', volumenEfectivo(ON, 'feedback') > 0);
-  comprobar('PRUEBA · Con el sonido DESACTIVADO es cero', volumenEfectivo(DEFAULT_AUDIO, 'feedback') === 0);
+  comprobar('PRUEBA · Con el sonido DESACTIVADO es cero', volumenEfectivo(OFF, 'feedback') === 0);
 
   // PRUEBAS 3-5 — volumen 0, 50 y 100.
   comprobar('PRUEBA · Volumen general 0 → nada', volumenEfectivo({ ...ON, volumen: 0 }, 'feedback') === 0);
@@ -317,6 +322,57 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
     .filter(([, d]) => Number.isFinite(d.dias)).map(([, d]) => d.dias).sort((x, y) => x - y);
   comprobar(`🚨 CLAVE · Los días de audio.js y los del catálogo SO F3 coinciden (${delCatalogo.join(', ')})`,
     JSON.stringify(delCatalogo) === JSON.stringify(HITOS_DE_RACHA.map((h) => h.dias)));
+
+  /* 🚨 **El evento tal como lo emite RA F3, con su nombre y sus datos.**
+     Saber elegir el hito no sirve de nada si los días no llegan. Hasta el
+     2026-09-04 `conectarAlBus()` llamaba a `reproducir(evento.tipo)` a secas, así
+     que los diez hitos sonaban igual **con el motor ya arreglado**.
+
+     ⚠️ Se prueba con el nombre de RA F3 (`STREAK_MILESTONE_REACHED`, que
+     `eventoCanonico` traduce), no con el del audio. */
+  const comoLoEmiteRachas = (dias) => decidirReproduccion(ON, 'STREAK_MILESTONE_REACHED',
+    { ahora: T0 + dias * 100000, estado: ESTADO_AUDIO_INICIAL, contexto: { dias } }).sonido.ruta;
+  comprobar('🚨 CLAVE · Con el evento de RA F3, el hito de 30 suena a hito de 30',
+    comoLoEmiteRachas(30) === '/sonidos/streak_milestone_30.mp3');
+  comprobar('...y el de 365 no suena como el de 3', comoLoEmiteRachas(365) !== comoLoEmiteRachas(3));
+
+  /* Y que el enganche del bus pase de verdad los días. Se lee del código porque
+     `conectarAlBus` necesita un bus vivo y un DOM para probarse de otra forma. */
+  comprobar('🚨 CLAVE · Y `conectarAlBus` le pasa los días al motor',
+    /contexto:\s*\{\s*dias:\s*evento\.hito\s*\}/.test(readFileSync(join(RAIZ, 'src/lib/audioEngine.js'), 'utf8')));
+}
+
+/* ---------------------------------------------------------------------------
+   🚨 LOS TOQUES DE LA INTERFAZ
+   ---------------------------------------------------------------------------
+   Hasta el 2026-09-04 la biblioteca estaba entera y **ningún botón sonaba**:
+   `reproducir()` se llamaba desde un solo sitio de todo el proyecto, el botón
+   «▶ Escuchar» de Ajustes.
+   --------------------------------------------------------------------------- */
+{
+  console.log('\n🚨 Los toques de la interfaz');
+  const motorSrc = readFileSync(join(RAIZ, 'src/lib/audioEngine.js'), 'utf8');
+  const appSrc = readFileSync(join(RAIZ, 'src/App.jsx'), 'utf8');
+
+  comprobar('El motor expone un oyente de toques', /export function conectarLosToques/.test(motorSrc));
+  comprobar('CLAVE · Y la aplicación lo engancha', /conectarLosToques\(\)/.test(appSrc));
+  comprobar('...y lo suelta al desmontar, sin dejar oyentes pegados al documento',
+    /soltarToques\?\.\(\)/.test(appSrc));
+
+  /* ⚠️ Un solo oyente, y vive en el motor. Meter un `reproducir()` en cada
+     `onClick` es lo que la cabecera de SO F1 prohíbe, y además garantiza que el
+     botón número veintiuno se quede mudo sin que nadie se entere. La única
+     excepción es el botón de escuchar de Ajustes, que reproduce el ejemplo a
+     propósito y por eso se sale del oyente global. */
+  const vistas = readdirSync(join(RAIZ, 'src/views')).filter((f) => f.endsWith('.jsx'));
+  const conReproducir = vistas.filter((f) => /\breproducir\s*\(/.test(readFileSync(join(RAIZ, 'src/views', f), 'utf8')));
+  comprobar(`🚨 CLAVE · Ninguna pantalla reproduce por su cuenta, salvo Ajustes (${conReproducir.join(', ') || 'ninguna'})`,
+    conReproducir.length === 1 && conReproducir[0] === 'SettingsView.jsx');
+  comprobar('...y ese botón se sale del oyente global para no sonar dos veces',
+    /data-sin-sonido/.test(readFileSync(join(RAIZ, 'src/views/SettingsView.jsx'), 'utf8'))
+    && /data-sin-sonido/.test(motorSrc));
+  comprobar('⚠️ Un interruptor no suena como un botón, y encender no suena como apagar',
+    /UI_TOGGLE_OFF/.test(motorSrc) && /UI_CLICK/.test(motorSrc));
 }
 
 /* ===========================================================================
@@ -326,9 +382,9 @@ console.log('\n═══ Cooldown y colisiones ═══\n');
 {
   // PRUEBA · sonido desactivado → no reproduce.
   comprobar('PRUEBA · Con el sonido apagado no suena nada',
-    decidirReproduccion(DEFAULT_AUDIO, 'SUCCESS', { ahora: T0 }).suena === false);
+    decidirReproduccion(OFF, 'SUCCESS', { ahora: T0 }).suena === false);
   comprobar('...y dice por qué',
-    decidirReproduccion(DEFAULT_AUDIO, 'SUCCESS', { ahora: T0 }).motivo === 'sonido_desactivado');
+    decidirReproduccion(OFF, 'SUCCESS', { ahora: T0 }).motivo === 'sonido_desactivado');
   comprobar('PRUEBA · Con volumen 0 tampoco',
     decidirReproduccion({ ...ON, volumen: 0 }, 'SUCCESS', { ahora: T0 }).motivo === 'volumen_cero');
   comprobar('PRUEBA · Un evento inexistente no rompe la app',
@@ -387,7 +443,7 @@ console.log('\n═══ Precarga ═══\n');
   comprobar('CLAVE · ...que es interfaz y confirmaciones, lo que tiene que sonar YA',
     lista.every((s) => CATEGORIAS_PRECARGA.includes(s.categoria)));
   comprobar('...sin repetir un sonido usado por dos eventos', new Set(lista.map((s) => s.id)).size === lista.length);
-  comprobar('CLAVE · Con el sonido apagado no se descarga NADA', sonidosAPrecargar(DEFAULT_AUDIO).length === 0);
+  comprobar('CLAVE · Con el sonido apagado no se descarga NADA', sonidosAPrecargar(OFF).length === 0);
   comprobar('Una categoría a cero tampoco se precarga',
     sonidosAPrecargar({ ...ON, volumenes: { ...ON.volumenes, ui: 0, feedback: 0 } }).length === 0);
 }
@@ -425,7 +481,7 @@ console.log('\n═══ El sonido nunca es el único canal ═══\n');
   comprobar('CLAVE · No hay forma de que el motor suprima la interfaz',
     !('ocultar' in d) && !('suprimirVisual' in d) && !('enLugarDe' in d));
   comprobar('Con el sonido apagado la decisión sigue siendo legible',
-    describirDecision(decidirReproduccion(DEFAULT_AUDIO, 'SUCCESS', { ahora: T0 })).motivo === 'sonido_desactivado');
+    describirDecision(decidirReproduccion(OFF, 'SUCCESS', { ahora: T0 })).motivo === 'sonido_desactivado');
 
   /* 🚨 Esta prueba estaba escrita PARA FALLAR el día que apareciera un archivo,
      y decía que entonces había que encender `activado` por defecto y quitarla.

@@ -16,7 +16,7 @@ import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosD
 import { urlFirmada, urlEnCache } from './lib/imagenes';
 import { resumenHabito } from './lib/rachas';
 import { DEFAULT_AUDIO, normalizarAudio } from './lib/audio';
-import { iniciarAudio, conectarAlBus, actualizarPreferencias as actualizarAudio, detener as detenerAudio } from './lib/audioEngine';
+import { iniciarAudio, conectarAlBus, conectarLosToques, actualizarPreferencias as actualizarAudio, detener as detenerAudio } from './lib/audioEngine';
 import { emitir } from './lib/eventos';
 import { ESTADO_INICIAL, normalizarEstado, crearRacha as crearRachaServicio, completarDia as completarDiaServicio, deshacerDia as deshacerDiaServicio, eliminarRacha as eliminarRachaServicio } from './lib/rachasServicio';
 import { GAMIFICACION_INICIAL, normalizarGamificacion, evaluar as evaluarRachas, olvidarRacha as olvidarRachaGamificacion } from './lib/rachasGamificacion';
@@ -607,7 +607,12 @@ export default function App() {
   useEffect(() => {
     const soltar = iniciarAudio({ prefs: audio });
     const desconectar = conectarAlBus();
-    return () => { soltar?.(); desconectar?.(); detenerAudio(); };
+    /* SO — los toques de la interfaz. Un oyente para toda la aplicacion, dentro
+       del motor: meter un reproducir() en cada onClick habria sido justo lo que
+       la cabecera de SO F1 prohibe, y garantiza que el boton numero veintiuno se
+       quede mudo sin que nadie se entere. */
+    const soltarToques = conectarLosToques();
+    return () => { soltar?.(); desconectar?.(); soltarToques?.(); detenerAudio(); };
     // Solo al montar: cambiar el volumen no puede reiniciar el motor ni volver a
     // pedir permiso. Las preferencias entran por el efecto de abajo.
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1321,8 +1321,12 @@ export function BloqueSonido({ audio, accent, onCambiar }) {
               <p className="text-sm" style={{ color: COLORS.text }}>{c.icono} {c.etiqueta}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {/* ⚠️ Apartado 26 — suena EXACTAMENTE el sonido que usaría el sistema. */}
+              {/* ⚠️ Apartado 26 — suena EXACTAMENTE el sonido que usaría el sistema.
+                  `data-sin-sonido` lo saca del oyente global de toques: este botón
+                  ya reproduce su propio ejemplo, y si no sonarían los dos a la vez
+                  —el clic de interfaz encima del sonido que se quiere escuchar. */}
               <button
+                data-sin-sonido
                 onClick={() => reproducir(ejemploDe(c.categoria))}
                 aria-label={`Escuchar ${c.etiqueta}`}
                 className="text-[11px] px-2 py-2 -my-1 rounded-lg"

@@ -78,8 +78,13 @@ console.log('\n🔊 SO · Fase 5/5 — Producción, integración y test final\n'
   ok(PRESENTES.every((f) => existsSync(join(RAIZ, 'public/sonidos', f))),
     '⚠️ y cada uno existe en el disco, no solo en una lista');
   ok(/SO F2/.test(BLOQUEADO_POR_LOS_ARCHIVOS.fase), 'la fase bloqueada es la SO F2, la biblioteca');
-  eq(DEFAULT_AUDIO.activado, false,
-    '⚠️ por eso el interruptor nace apagado desde la SO F1: no es un control decorativo');
+  /* 🚨 El interruptor nació apagado desde la SO F1 para no ser un control
+     decorativo: decía "Sonidos: sí" y no había nada que sonar. El 2026-09-04 se
+     completaron los 46 archivos y se encendió, que era la promesa escrita.
+     Ahora lo que se comprueba es la regla, no el valor: **encendido si y solo si
+     la biblioteca está entera.** */
+  eq(DEFAULT_AUDIO.activado, PRESENTES.length === 46,
+    `⚠️ el interruptor nace encendido solo con la biblioteca completa (hay ${PRESENTES.length} de 46)`);
 }
 
 /* ---------------------------------------------------------------------------

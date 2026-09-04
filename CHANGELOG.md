@@ -1,5 +1,56 @@
 # CHANGELOG.md
 
+## v3.24.0 — La aplicación suena
+
+### Qué se ha construido
+La biblioteca estaba entera y el motor la entendía, pero **ningún botón sonaba**. Ya suena.
+
+- **Los toques de la interfaz**: un solo oyente, dentro del motor. Botones, enlaces y pestañas
+  suenan a clic; los interruptores suenan a interruptor, y encender no suena como apagar.
+- **El sonido nace encendido**, con la biblioteca completa.
+
+### Un oyente, no doscientos
+Meter un `reproducir()` en cada `onClick` es exactamente lo que prohíbe la cabecera de SO F1
+—*"no quiero que el audio se implemente directamente dentro de cada componente"*— y además garantiza
+que el botón número veintiuno se quede mudo sin que nadie se entere.
+
+`conectarLosToques()` vive en `audioEngine.js` y escucha el documento entero. Suena solo lo que es un
+control de verdad, no cualquier sitio donde se pueda pinchar. Y hay una prueba que comprueba que
+**ninguna pantalla reproduce por su cuenta**, con una sola excepción declarada: el botón «▶ Escuchar»
+de Ajustes, que lleva `data-sin-sonido` para no sonar dos veces encima del ejemplo.
+
+### 🚨 Los diez hitos volvían a sonar igual, con el motor ya arreglado
+Por la tarde se enseñó al motor a elegir entre los diez archivos de hito según los días. Pero el
+enganche del bus llamaba a `reproducir(evento.tipo)` **a secas**: los días nunca llegaban, y los diez
+volvían a resolver al mismo archivo.
+
+Arreglar el mecanismo y no conectarle el dato deja exactamente el mismo síntoma que no haberlo
+arreglado. Ahora `conectarAlBus()` pasa `contexto: { dias: evento.hito }`, y hay una prueba que usa
+**el nombre y el campo que emite RA F3**, no los del audio: si Rachas renombra `hito`, se pone rojo.
+
+⚠️ Rachas sigue sin saber que existe el audio. Emite su evento con sus datos, como siempre; es el
+motor quien sabe que `hito` son días.
+
+### El interruptor, encendido — la promesa de la SO F1
+Estuvo apagado cinco fases, y el motivo estaba escrito en el propio código: *"encenderlo con una
+biblioteca que todavía no existe daría un interruptor que dice 'Sonidos: sí' y no suena nunca — el
+control decorativo que prohíbe la regla 8. Encenderlo se hará en la fase que traiga los archivos, y
+entonces será verdad."*
+
+Los archivos llegaron. La prueba ya no comprueba el valor sino **la regla**: encendido si y solo si
+están los 46. El día que falte uno, vuelve a exigir que nazca apagado.
+
+🐛 Y al encenderlo se cayeron seis comprobaciones de golpe: usaban `DEFAULT_AUDIO` como *"el estado
+apagado"* en vez de decir cuál querían. Ahora hay un `OFF` explícito. Dar por bueno un valor por
+defecto para decir lo contrario de lo que significa es una trampa que solo se paga cuando el defecto
+cambia.
+
+### ⚠️ Lo que sigue sin sonar
+Guardar, completar una tarea o fallar una conexión **no suenan todavía**: nadie emite esos eventos.
+Los de racha y logros sí, porque RA F3 ya los emitía. Enchufar los demás es ir módulo por módulo, y
+no se ha hecho.
+
+
 ## v3.23.0 — La biblioteca sonora, completa: 46 de 46
 
 ### Qué se ha construido

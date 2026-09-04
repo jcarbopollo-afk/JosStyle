@@ -376,7 +376,7 @@ export const ASIGNACIONES_POR_DEFECTO = {
    arquitectura, intégrate con ella"*). Ni clave nueva ni tabla nueva. */
 
 export const DEFAULT_AUDIO = {
-  activado: false,          // ⚠️ apagado de fábrica — abajo se explica por qué
+  activado: true,           // ✅ encendido desde el 2026-09-04 — abajo, por qué
   volumen: 80,
   vibracion: false,
   volumenes: Object.fromEntries(CATEGORIAS_SONIDO.map((c) => [c.id, c.porDefecto])),
@@ -385,12 +385,22 @@ export const DEFAULT_AUDIO = {
 };
 
 /**
- * ⚠️ **De fábrica el sonido está APAGADO, y es deliberado.**
+ * ✅ **De fábrica el sonido está ENCENDIDO, desde el 2026-09-04.**
  *
- * Encenderlo con una biblioteca que todavía no existe daría un interruptor que
- * dice "Sonidos: sí" y no suena nunca — el control decorativo que prohíbe la
- * regla 8. Encenderlo se hará en la fase que traiga los archivos, y entonces
- * será verdad.
+ * Estuvo apagado cinco fases, y por un motivo escrito aquí mismo: *"encenderlo
+ * con una biblioteca que todavía no existe daría un interruptor que dice
+ * 'Sonidos: sí' y no suena nunca — el control decorativo que prohíbe la regla
+ * 8. Encenderlo se hará en la fase que traiga los archivos, y entonces será
+ * verdad."*
+ *
+ * Los archivos llegaron: Josué produjo los 46 en FL Studio, el motor puede
+ * reproducirlos todos y los toques de la interfaz están conectados. La condición
+ * que se puso entonces se ha cumplido entera, así que se cumple la promesa.
+ *
+ * ⚠️ Y sigue siendo un interruptor de verdad: Ajustes → Sonido y respuesta lo
+ * apaga, y con él apagado el evento **se sigue procesando** (SO F5). Encenderlo
+ * de fábrica no es imponerlo, es que la primera vez que se abre la aplicación
+ * responda — que era el objetivo desde el principio.
  */
 export function normalizarAudio(guardado) {
   const g = guardado || {};

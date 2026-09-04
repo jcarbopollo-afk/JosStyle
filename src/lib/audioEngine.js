@@ -286,7 +286,60 @@ export function detener() {
    Los eventos de RA F3 llegan con SUS nombres y `eventoCanonico` los traduce, de
    modo que ningún módulo tiene que aprenderse un segundo catálogo. */
 export function conectarAlBus() {
-  return suscribir('*', (evento) => { reproducir(evento.tipo); });
+  return suscribir('*', (evento) => {
+    /* 🚨 **Los días del hito tienen que viajar con el evento.**
+       RA F3 emite `STREAK_MILESTONE_REACHED` con `hito: 30` — el número de días—,
+       y desde el 2026-09-04 el motor sabe elegir entre los diez archivos de hito
+       si se lo dicen. Sin esta línea no se lo decía nadie: los diez sonaban
+       igual, y la biblioteca entera de hitos se reducía a uno.
+
+       ⚠️ Rachas sigue sin saber que existe el audio. Emite su evento con sus
+       datos, como siempre; es el motor quien sabe que `hito` son días. */
+    reproducir(evento.tipo, { contexto: { dias: evento.hito } });
+  });
+}
+
+/**
+ * 🚨 **Los toques de la interfaz**, que es lo que de verdad se oye al usar la
+ * aplicación. Un solo oyente en el documento, aquí y no en veinte pantallas.
+ *
+ * *"No quiero que el audio se implemente directamente dentro de cada
+ * componente"* (cabecera de SO F1). Meter un `reproducir()` en cada `onClick`
+ * habría sido justo eso, y además garantiza que el botón número veintiuno se
+ * quede mudo sin que nadie se entere.
+ *
+ * ⚠️ Suena solo lo que es un control de verdad —un botón, un enlace, algo con
+ * `role="button"`—, no cualquier sitio donde se pueda pinchar. Y un elemento con
+ * `data-sin-sonido` queda fuera: lo usa el botón «▶ Escuchar» de Ajustes, que ya
+ * reproduce su propio ejemplo y sonaría dos veces.
+ */
+export function conectarLosToques() {
+  if (!HAY_DOM) return () => {};
+
+  const alTocar = (e) => {
+    const el = e.target?.closest?.('button, a, [role="button"], [role="tab"], input[type="checkbox"], input[type="radio"]');
+    if (!el || el.disabled || el.closest('[data-sin-sonido]')) return;
+
+    /* Un interruptor no suena como un botón, y encenderlo no suena como
+       apagarlo: son tres sonidos distintos y la biblioteca los declara aparte. */
+    const esInterruptor = el.matches('input[type="checkbox"]') || el.getAttribute('role') === 'switch'
+      || el.getAttribute('aria-checked') !== null || el.getAttribute('aria-pressed') !== null;
+    if (esInterruptor) {
+      /* Se lee DESPUÉS del clic, así que `checked` ya es el estado nuevo. Para
+         los que usan aria, el atributo todavía no se ha actualizado en este
+         punto del ciclo de React, así que se invierte lo que hay. */
+      const marcado = el.matches('input[type="checkbox"]')
+        ? el.checked
+        : !(el.getAttribute('aria-checked') === 'true' || el.getAttribute('aria-pressed') === 'true');
+      reproducir(marcado ? 'UI_TOGGLE' : 'UI_TOGGLE_OFF');
+      return;
+    }
+
+    reproducir('UI_CLICK');
+  };
+
+  document.addEventListener('click', alTocar, true);
+  return () => document.removeEventListener('click', alTocar, true);
 }
 
 /* ===========================================================================
