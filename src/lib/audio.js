@@ -136,6 +136,7 @@ export const EVENTOS_SONIDO = {
   // cooldown más largo: un récord que sonara dos veces dejaría de ser un récord.
   NEW_RECORD: { categoria: 'achievement', prioridad: 'HIGH', cooldown: 3000 },
   ACHIEVEMENT_UNLOCKED: { categoria: 'achievement', prioridad: 'HIGH', cooldown: 3000 },
+  BADGE_UNLOCKED: { categoria: 'achievement', prioridad: 'HIGH', cooldown: 3000 },
   MAJOR_GOAL_COMPLETED: { categoria: 'achievement', prioridad: 'CRITICAL', cooldown: 3000 },
 
   // Preparados y **sin conectar** (apartado 4: *"no conectes todavía todos los
@@ -146,6 +147,15 @@ export const EVENTOS_SONIDO = {
   SLEEP_LOGGED: { categoria: 'feedback', prioridad: 'LOW', cooldown: 1000 },
   GOAL_COMPLETED: { categoria: 'achievement', prioridad: 'HIGH', cooldown: 3000 },
   SAVING_COMPLETED: { categoria: 'feedback', prioridad: 'NORMAL', cooldown: 1000 },
+  /* 🚨 `level_up` es de los ocho que el catálogo marca `motor: null` porque
+     RA F3 decidió no construir niveles. Los otros siete no tienen archivo; éste
+     sí —está en la biblioteca de 46 y Josué lo grabó el 2026-09-04—, así que sin
+     evento el archivo existiría y nada podría reproducirlo.
+
+     ⚠️ Tener el evento NO es fingir que hay niveles: es exactamente lo mismo que
+     TRAINING_COMPLETED y los otros "preparados y sin conectar" de más arriba.
+     Hoy no lo emite nadie, y el día que haya niveles suena sin tocar esto. */
+  LEVEL_UP: { categoria: 'achievement', prioridad: 'HIGH', cooldown: 3000 },
   CUSTOM: { categoria: 'custom', prioridad: 'NORMAL', cooldown: 500 },
 };
 
@@ -235,6 +245,43 @@ export function normalizarSonido(guardado) {
  * apuntan a un archivo que la SO F4 declara**, así que no pueden volver a
  * separarse en silencio.
  */
+/**
+ * 🚨 **Los diez hitos de racha, que la SO F4 declara uno a uno.**
+ *
+ * *"El milestone de 7 días y el de 365 no pueden ser el mismo sonido más alto:
+ * debe existir una evolución real de la identidad sonora."* (SO F3)
+ *
+ * Los diez comparten el evento `STREAK_MILESTONE` —misma categoría, misma
+ * prioridad, mismo cooldown— y eso está bien. Lo que los separa no es el evento
+ * sino **los días**, que son del momento y llegan por `contexto`.
+ *
+ * ⚠️ Los días están también en el catálogo de la SO F3. Es duplicación, y se
+ * asume a conciencia: la alternativa era que `audio.js` importara
+ * `audioEventos.js`, que ya importa `audio.js` — una dependencia circular a
+ * cambio de no repetir diez números. `test-audio.mjs` comprueba que las dos
+ * listas coinciden, así que separarse no es posible en silencio.
+ */
+export const HITOS_DE_RACHA = [3, 7, 14, 21, 30, 50, 75, 100, 180, 365].map((dias) => {
+  const nn = String(dias).padStart(dias >= 100 ? 3 : 2, '0');
+  return { dias, id: `hito_${nn}`, ruta: `/sonidos/streak_milestone_${nn}.mp3` };
+});
+
+/**
+ * El hito que corresponde a una racha de `dias` días.
+ *
+ * ⚠️ Exacto si lo hay; si no, **el mayor por debajo**. Una racha de 200 días no
+ * tiene hito propio, pero celebrarla con el de 180 es mejor que callarse — y
+ * mucho mejor que celebrarla con el de 365, que aún no ha llegado.
+ */
+export function hitoDeRacha(dias) {
+  const n = Number(dias);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const exacto = HITOS_DE_RACHA.find((h) => h.dias === n);
+  if (exacto) return exacto;
+  const menores = HITOS_DE_RACHA.filter((h) => h.dias < n);
+  return menores.length > 0 ? menores[menores.length - 1] : null;
+}
+
 export const SONIDOS_SISTEMA = [
   crearSonido({ id: 'click_01', nombre: 'Toque', categoria: 'ui', ruta: '/sonidos/ui_click_01.mp3', variantes: ['/sonidos/ui_click_01.mp3', '/sonidos/ui_click_02.mp3', '/sonidos/ui_click_03.mp3'] }),
   crearSonido({ id: 'toggle_01', nombre: 'Interruptor (encender)', categoria: 'ui', ruta: '/sonidos/ui_toggle_on.mp3' }),
@@ -256,6 +303,11 @@ export const SONIDOS_SISTEMA = [
   crearSonido({ id: 'progreso_01', nombre: 'Progreso de objetivo', categoria: 'feedback', ruta: '/sonidos/goal_progress_01.mp3', variantes: ['/sonidos/goal_progress_01.mp3', '/sonidos/goal_progress_02.mp3'] }),
   crearSonido({ id: 'inicio_racha_01', nombre: 'Racha empezada', categoria: 'streak', ruta: '/sonidos/streak_start.mp3' }),
   crearSonido({ id: 'racha_recuperada_01', nombre: 'Racha recuperada', categoria: 'streak', ruta: '/sonidos/streak_recovered.mp3' }),
+  /* Los diez hitos salen de HITOS_DE_RACHA: escribirlos a mano seria la tercera
+     copia de los mismos numeros. */
+  ...HITOS_DE_RACHA.map((h) => crearSonido({ id: h.id, nombre: `Hito de ${h.dias} dias`, categoria: 'streak', ruta: h.ruta })),
+  crearSonido({ id: 'insignia_01', nombre: 'Insignia', categoria: 'achievement', ruta: '/sonidos/badge_unlocked.mp3' }),
+  crearSonido({ id: 'nivel_01', nombre: 'Subir de nivel', categoria: 'achievement', ruta: '/sonidos/level_up.mp3' }),
   crearSonido({ id: 'sync_01', nombre: 'Sincronizado', categoria: 'ui', ruta: '/sonidos/sync_complete.mp3' }),
   crearSonido({ id: 'sin_conexion_01', nombre: 'Sin conexión', categoria: 'notification', ruta: '/sonidos/connection_lost.mp3' }),
   crearSonido({ id: 'con_conexion_01', nombre: 'Conexión recuperada', categoria: 'notification', ruta: '/sonidos/connection_restored.mp3' }),
@@ -296,6 +348,8 @@ export const ASIGNACIONES_POR_DEFECTO = {
   STREAK_BROKEN: 'error_01',
   NEW_RECORD: 'record_01',
   ACHIEVEMENT_UNLOCKED: 'achievement_01',
+  BADGE_UNLOCKED: 'insignia_01',
+  LEVEL_UP: 'nivel_01',
   MAJOR_GOAL_COMPLETED: 'achievement_01',
   TRAINING_COMPLETED: 'success_01',
   STUDY_COMPLETED: 'success_01',
@@ -394,7 +448,7 @@ export function volumenEfectivo(prefs, categoria) {
 
    *"Si el sonido asignado no existe, está corrupto, no carga o fue eliminado, el
    sistema debe intentar un fallback. Si tampoco existe: silencio."* */
-export function resolverSonido(prefs, tipo, { sonidosUsuario = [] } = {}) {
+export function resolverSonido(prefs, tipo, { sonidosUsuario = [], contexto = {} } = {}) {
   const p = normalizarAudio(prefs);
   const evento = eventoCanonico(tipo);
   if (!EVENTOS_SONIDO[evento]) return null;
@@ -403,6 +457,29 @@ export function resolverSonido(prefs, tipo, { sonidosUsuario = [] } = {}) {
     if (!id) return null;
     return sonidosUsuario.find((s) => s.id === id) || sonidoDelSistema(id) || null;
   };
+
+  /* 🚨 **El hito de 3 días y el de un año no pueden ser el mismo sonido.**
+     La SO F3 lo dice con estas palabras: *"debe existir una evolución real de la
+     identidad sonora"*. Pero los diez hitos comparten el evento
+     `STREAK_MILESTONE` —y está bien que lo compartan: tienen la misma categoría,
+     la misma prioridad y el mismo cooldown—, así que resolver solo por el evento
+     los reducía a uno. Nueve archivos de la biblioteca eran inalcanzables.
+
+     ⚠️ Lo que faltaba no era un evento por hito: era **el dato**. Un hito se
+     distingue por los días, y los días son del momento, no del evento. Por eso
+     entran por `contexto`, igual que `ahora` entra por parámetro en vez de
+     leerse del reloj: así esto sigue siendo una función pura y se prueba sin
+     inventarse una racha.
+
+     Si el emisor no dice los días, se cae en la asignación normal en vez de
+     callarse — el apartado 25 otra vez. */
+  if (evento === 'STREAK_MILESTONE' && Number.isFinite(Number(contexto.dias))) {
+    const hito = hitoDeRacha(Number(contexto.dias));
+    if (hito) {
+      const suyo = buscar(hito.id);
+      if (suyo) return suyo;
+    }
+  }
 
   // Lo que Josué haya elegido manda; si ese sonido ya no está, se cae al de
   // fábrica en vez de callarse — que es lo que pide el apartado 25.
@@ -439,7 +516,7 @@ export const ESTADO_AUDIO_INICIAL = { ultimos: {}, ultimaReproduccion: 0, ultima
  * `motivo` no es decoración: sin él, depurar "por qué no ha sonado" sería
  * adivinar entre cinco causas distintas.
  */
-export function decidirReproduccion(prefs, tipo, { ahora = Date.now(), estado = ESTADO_AUDIO_INICIAL, sonidosUsuario = [] } = {}) {
+export function decidirReproduccion(prefs, tipo, { ahora = Date.now(), estado = ESTADO_AUDIO_INICIAL, sonidosUsuario = [], contexto = {} } = {}) {
   const p = normalizarAudio(prefs);
   const evento = eventoCanonico(tipo);
   const def = EVENTOS_SONIDO[evento];
@@ -468,7 +545,7 @@ export function decidirReproduccion(prefs, tipo, { ahora = Date.now(), estado = 
     return { suena: false, motivo: 'colision', estado: nuevo };
   }
 
-  const elegido = resolverSonido(p, evento, { sonidosUsuario });
+  const elegido = resolverSonido(p, evento, { sonidosUsuario, contexto });
   // Si no hay sonido asignado no es un error — es el "silencio" del apartado 25,
   // y el 26 exige que no rompa nada.
   if (!elegido) return { suena: false, motivo: 'sin_sonido_asignado', estado: nuevo };

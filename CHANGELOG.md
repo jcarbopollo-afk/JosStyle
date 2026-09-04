@@ -1,5 +1,51 @@
 # CHANGELOG.md
 
+## v3.21.0 — Los diez hitos de racha dejan de ser uno solo
+
+### 🚨 El problema
+*"El milestone de 7 días y el de 365 no pueden ser el mismo sonido más alto: debe existir una
+evolución real de la identidad sonora."* — SO F3, en su propia cabecera.
+
+Pero los diez hitos compartían el evento `STREAK_MILESTONE`, y `resolverSonido()` resuelve por
+evento. Los diez daban el mismo archivo: **nueve de la biblioteca eran inalcanzables**, y grabarlos
+habría sido tirar nueve tardes.
+
+### La decisión
+⚠️ **Lo que faltaba no era un evento por hito: era el dato.** Que los diez compartan evento está
+bien — misma categoría, misma prioridad, mismo cooldown. Lo que los distingue son los días, y los
+días son del momento, no del evento.
+
+Así que entran por `contexto`, igual que `ahora` entra por parámetro en vez de leerse del reloj:
+`resolverSonido()` sigue siendo pura y se prueba sin inventarse una racha.
+
+```js
+reproducir('STREAK_MILESTONE', { contexto: { dias: 30 } })   →   streak_milestone_30.mp3
+```
+
+Exacto si lo hay; si no, **el mayor por debajo**. Una racha de 200 días no tiene hito propio, y
+celebrarla con el de 180 es mejor que callarse — y mucho mejor que con el de 365, que no ha llegado:
+un récord celebrado antes de tiempo deja de ser un récord.
+
+⚠️ Los días quedan escritos en dos sitios, `audio.js` y el catálogo de la SO F3. Es duplicación, y
+se asume: la alternativa era que `audio.js` importara `audioEventos.js`, que ya importa `audio.js`.
+Una dependencia circular a cambio de no repetir diez números. Hay una prueba que compara las dos
+listas, así que separarse en silencio no es posible.
+
+### Y `level_up`, que iba a nacer mudo
+Es de los ocho que el catálogo marca `motor: null` porque **RA F3 decidió no construir niveles**.
+Los otros siete no tienen archivo; éste sí —Josué lo estaba grabando—, así que sin evento el archivo
+habría existido sin que nada pudiera reproducirlo.
+
+Tener el evento no es fingir que hay niveles: es lo mismo que `TRAINING_COMPLETED` y los demás
+"preparados y sin conectar". **Sigue sin emisor, y sigue dicho.**
+
+🐛 Eso rompió `sinEmisor()`, que filtraba por `!motor` y daba `level_up` por conectado — haciendo
+desaparecer de la lista la única cosa que había que recordar de él. *Tener evento* y *que alguien lo
+emita* eran lo mismo hasta hoy y han dejado de serlo.
+
+### El recuento
+**De 25 sonidos inalcanzables a 7.** Los siete que quedan son los que no tienen archivo ni lo
+tendrán: XP, recompensas y el congelar racha, que ningún módulo construyó.
 ## v3.20.0 — Entrega 3 · Fase 6 (HC F1): Hoy, el centro del día
 
 Sexta fase de la Entrega 3, y la primera del bloque **Hoy y Calendario**. *"Transformar Hoy en el

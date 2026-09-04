@@ -17,6 +17,9 @@ import {
   progresionCoherente, resumenCatalogo,
 } from '../src/lib/audioEventos.js';
 import { EVENTOS_SONIDO, eventoCanonico } from '../src/lib/audio.js';
+import { readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
 let fallos = 0;
 function comprobar(nombre, condicion, detalle = '') {
@@ -142,10 +145,30 @@ console.log('\n═══ Resumen ═══\n');
     r.sinEmisor.some((s) => s.id === 'level_up'));
 }
 
-console.log('\n  ⚠️ Sin comprobar aquí, y sigue siendo lo mismo desde SO F1: HOY NO SUENA');
-console.log('     NADA, porque no hay ni un archivo de audio en el proyecto. Josué los dará');
-console.log('     "cuando la web ya tenga todos los botones activos". SO F2 es justo la fase');
-console.log('     que los necesita, y sigue esperando.\n');
+/* 🚨 Esto decía "no hay ni un archivo de audio en el proyecto" y que la SO F2
+   "sigue esperando". Dejó de ser verdad el 2026-09-04: Josué se puso a
+   producirlos en FL Studio y la SO F2 dejó de estar bloqueada. Se cuenta lo que
+   hay, leído del disco, en vez de repetir una frase de hace cinco fases. */
+{
+  const hechos = (() => {
+    try {
+      /* 🐛 Con un objeto URL, `readdirSync` devolvía vacío en Windows y el
+         contador decía 0 con veinte archivos en la carpeta. `fileURLToPath` es
+         lo que existe para esto — el mismo fallo que cazó la EH F19 en smoke. */
+      return readdirSync(join(fileURLToPath(new URL('..', import.meta.url)), 'public/sonidos'))
+        .filter((f) => f.endsWith('.mp3')).length;
+    } catch (e) {
+      /* ⚠️ Un contador que devuelve 0 al fallar y se lee como "no hay archivos"
+         miente con confianza. Si esto revienta, se dice. */
+      console.log(`  ✗ No se pudo contar los archivos: ${e.message}`);
+      fallos += 1;
+      return 0;
+    }
+  })();
+  console.log(`\n  ⚠️ Sin comprobar aquí: cómo suenan. Hay ${hechos} de 46 archivos producidos, y`);
+  console.log('     que un sonido sea el correcto no dice si es agradable oírlo doscientas');
+  console.log('     veces al día. Eso solo lo sabe Josué, con la aplicación en la mano.\n');
+}
 
 if (fallos) { console.log(`  ${fallos} fallo(s).\n`); process.exit(1); }
 console.log('  Todo correcto.\n');

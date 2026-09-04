@@ -96,14 +96,17 @@ export const CATALOGO = {
 
   // ── 3 · Logros y niveles ──────────────────────────────────────────────────
   achievement_unlocked: { nivel: 3, motor: 'ACHIEVEMENT_UNLOCKED' },
-  badge_unlocked: { nivel: 3, motor: 'ACHIEVEMENT_UNLOCKED' },
+  badge_unlocked: { nivel: 3, motor: 'BADGE_UNLOCKED' },
   goal_complete: { nivel: 3, motor: 'GOAL_COMPLETED' },
   reward_major: { nivel: 3, motor: null, sinEmisor: 'No hay sistema de recompensas (D2-02).' },
   // ⚠️ XP y niveles: **RA F3 decidió no construirlos** (ver la cabecera).
   xp_small: { nivel: 1, motor: null, sinEmisor: 'No hay XP: RA F3 no lo construyó (D2-02).' },
   xp_medium: { nivel: 2, motor: null, sinEmisor: 'No hay XP: RA F3 no lo construyó (D2-02).' },
   xp_large: { nivel: 3, motor: null, sinEmisor: 'No hay XP: RA F3 no lo construyó (D2-02).' },
-  level_up: { nivel: 3, motor: null, sinEmisor: 'No hay niveles: RA F3 no los construyó (D2-02).' },
+  /* ⚠️ Tiene evento en el motor y sonido grabado, pero SIGUE sin emisor: no hay
+     niveles. Se distingue de sus siete compañeros de `motor: null` en que su
+     archivo existe, así que sin evento habría sido un sonido inalcanzable. */
+  level_up: { nivel: 3, motor: 'LEVEL_UP', sinEmisor: 'No hay niveles: RA F3 no los construyó (D2-02).' },
 
   // ── 4 · Récords y grandes hitos ───────────────────────────────────────────
   /* ⚠️ El récord GANA a un milestone del mismo nivel. La especificación pone el
@@ -133,9 +136,20 @@ export const CATALOGO = {
 
 export const definicion = (id) => CATALOGO[id] || null;
 
-/** Los eventos que hoy no puede emitir nadie, con el motivo. */
+/**
+ * Los eventos que hoy no puede emitir nadie, con el motivo.
+ *
+ * 🚨 **"Tener evento en el motor" y "que alguien lo emita" eran lo mismo hasta
+ * el 2026-09-04, y dejaron de serlo.** `level_up` recibió evento porque su
+ * archivo existe —Josué lo grabó— y sin evento habría sido un sonido
+ * inalcanzable; pero sigue sin niveles que subir, así que nadie lo emite.
+ *
+ * ⚠️ Filtrar por `!d.motor` daba a `level_up` por conectado y hacía desaparecer
+ * de esta lista la única cosa que había que recordar de él. Lo que marca "no lo
+ * emite nadie" es la nota `sinEmisor`, no la ausencia de evento.
+ */
 export const sinEmisor = () => Object.entries(CATALOGO)
-  .filter(([, d]) => !d.motor)
+  .filter(([, d]) => !d.motor || !!d.sinEmisor)
   .map(([id, d]) => ({ id, motivo: d.sinEmisor || 'Todavía sin conectar.' }));
 
 /** Los que sí están conectados al motor de SO F1. */

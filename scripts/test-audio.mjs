@@ -11,6 +11,7 @@ import {
   CATEGORIAS_SONIDO, categoriaSonido, PRIORIDADES_SONIDO, EVENTOS_SONIDO,
   ALIAS_EVENTO, eventoCanonico, definicionEvento,
   ORIGENES_SONIDO, crearSonido, normalizarSonido, SONIDOS_SISTEMA, sonidoDelSistema,
+  HITOS_DE_RACHA, hitoDeRacha,
   ASIGNACIONES_POR_DEFECTO, DEFAULT_AUDIO, normalizarAudio, acotarVolumen,
   volumenEfectivo, resolverSonido, VENTANA_COLISION, ESTADO_AUDIO_INICIAL,
   decidirReproduccion, CATEGORIAS_PRECARGA, sonidosAPrecargar,
@@ -22,6 +23,7 @@ import { suscribir, emitir, cuentaSuscriptores, reiniciarBus, fallosDeEventos } 
    `audio.js`: los dos módulos siguen siendo independientes, y quien impide que
    se separen es un test, no un acoplamiento. */
 import { listaDeArchivos, FORMATO } from '../src/lib/especificacionSonidos.js';
+import { CATALOGO as CATALOGO_F3 } from '../src/lib/audioEventos.js';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
@@ -189,7 +191,7 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
 
   comprobar('Un sonido guardado a medias se normaliza', normalizarSonido({}).origen === 'system');
   comprobar('Una duración imposible se descarta', normalizarSonido({ duracion: -5 }).duracion === 0);
-  comprobar('Los veintidós sonidos del sistema están', SONIDOS_SISTEMA.length === 22);
+  comprobar('Los treinta y cuatro sonidos del sistema están', SONIDOS_SISTEMA.length === 34);
   comprobar('...cada uno con su ruta y su categoría', SONIDOS_SISTEMA.every((s) => s.ruta && s.categoria));
   comprobar('...y no se mezclan con los del usuario (apartado 19)',
     SONIDOS_SISTEMA.every((s) => s.origen === 'system' && s.ruta.startsWith('/sonidos/')));
@@ -274,6 +276,47 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
   comprobar('...y uno con variantes sí (SUCCESS ya tiene dos)',
     decidirReproduccion(ON, 'SUCCESS', { ahora: 5000, estado: ESTADO_AUDIO_INICIAL }).sonido.ruta
     !== decidirReproduccion(ON, 'SUCCESS', { ahora: 9000, estado: decidirReproduccion(ON, 'SUCCESS', { ahora: 5000, estado: ESTADO_AUDIO_INICIAL }).estado }).sonido.ruta);
+}
+
+/* ---------------------------------------------------------------------------
+   🚨 LOS DIEZ HITOS DE RACHA
+   ---------------------------------------------------------------------------
+   *"El milestone de 7 días y el de 365 no pueden ser el mismo sonido más alto:
+   debe existir una evolución real de la identidad sonora."* (SO F3)
+
+   Los diez comparten evento —misma categoría, prioridad y cooldown—, así que
+   resolver solo por el evento los reducía a uno: **nueve archivos de la
+   biblioteca eran inalcanzables**. Lo que los separa son los días, y los días
+   son del momento, así que llegan por `contexto`.
+   --------------------------------------------------------------------------- */
+{
+  console.log('\n🚨 Los hitos de racha');
+  const suena = (dias) => decidirReproduccion(ON, 'STREAK_MILESTONE',
+    { ahora: T0 + dias * 100000, estado: ESTADO_AUDIO_INICIAL, contexto: { dias } }).sonido.ruta;
+
+  comprobar('CLAVE · El hito de 3 días y el de 365 NO son el mismo archivo',
+    suena(3) !== suena(365));
+  comprobar('CLAVE · Y los diez son diez archivos distintos',
+    new Set(HITOS_DE_RACHA.map((h) => suena(h.dias))).size === 10);
+  comprobar('...cada uno el suyo', HITOS_DE_RACHA.every((h) => suena(h.dias) === h.ruta));
+
+  /* ⚠️ Una racha de 200 días no tiene hito propio. Celebrarla con el de 180 es
+     mejor que callarse, y desde luego mejor que con el de 365, que todavía no
+     ha llegado: un récord celebrado antes de tiempo deja de ser un récord. */
+  comprobar('⚠️ Una racha de 200 días cae en el hito de 180, no en el de 365',
+    suena(200) === '/sonidos/streak_milestone_180.mp3');
+  comprobar('...y una de 400 en el de 365', suena(400) === '/sonidos/streak_milestone_365.mp3');
+  comprobar('Sin decir los días no revienta: cae en la asignación normal',
+    !!decidirReproduccion(ON, 'STREAK_MILESTONE', { ahora: T0, estado: ESTADO_AUDIO_INICIAL }).sonido);
+  comprobar('Unos días absurdos tampoco', hitoDeRacha(-5) === null && hitoDeRacha('hola') === null);
+
+  /* 🚨 Los días están aquí y en el catálogo de la SO F3. Es duplicación asumida
+     —importar `audioEventos` desde `audio.js` sería una dependencia circular—,
+     así que esto es lo único que impide que las dos listas se separen. */
+  const delCatalogo = Object.entries(CATALOGO_F3)
+    .filter(([, d]) => Number.isFinite(d.dias)).map(([, d]) => d.dias).sort((x, y) => x - y);
+  comprobar(`🚨 CLAVE · Los días de audio.js y los del catálogo SO F3 coinciden (${delCatalogo.join(', ')})`,
+    JSON.stringify(delCatalogo) === JSON.stringify(HITOS_DE_RACHA.map((h) => h.dias)));
 }
 
 /* ===========================================================================

@@ -218,9 +218,11 @@ export function precargar() {
    **Quién decide no es este archivo**: es `audio.js`, que es puro y está
    probado. Aquí solo se obedece. Esa separación es la que permite comprobar el
    cooldown, las colisiones y el volumen sin un navegador delante. */
-export function reproducir(tipo, { ahora = Date.now() } = {}) {
+export function reproducir(tipo, { ahora = Date.now(), contexto = {} } = {}) {
+  /* `contexto` lleva el dato que distingue sonidos dentro de un mismo evento:
+     hoy solo los dias de racha, para elegir entre los diez hitos. */
   const decision = decidirReproduccion(motor.prefs, tipo, {
-    ahora, estado: motor.estado, sonidosUsuario: motor.sonidosUsuario,
+    ahora, estado: motor.estado, sonidosUsuario: motor.sonidosUsuario, contexto,
   });
   motor.estado = decision.estado;
   if (!decision.suena) return decision;
