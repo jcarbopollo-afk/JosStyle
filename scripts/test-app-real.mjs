@@ -1721,6 +1721,31 @@ ok(!/Peluquería|Sonrisa|Manos, uñas y pies/.test(simple),
 ok(simple.length > 200, '⚠️ y no se siente vacía: hay pantalla de verdad, no un hueco');
 
 /* ===========================================================================
+   ENTREGA 3 · FASE 3 — ROPA INTERIOR EN EL ARMARIO
+   ===========================================================================
+   El apartado 1 pide que funcione *"exactamente igual que el resto de
+   categorías"*. Esto lo comprueba donde importa: guardando una prenda de ropa
+   interior y viéndola en la lista con su filtro. */
+almacen.armario = {
+  prendas: [
+    { id: 'pr1', nombre: 'Bóxer negro', categoria: 'ropa_interior', color: 'negro', estado: 'disponible', favorita: false, creadaEn: '2026-09-01T10:00:00.000Z' },
+    { id: 'pr2', nombre: 'Vaqueros', categoria: 'pantalones', color: 'azul', estado: 'disponible', favorita: false, creadaEn: '2026-09-01T10:00:00.000Z' },
+  ],
+  outfits: [], usos: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Gestión');
+await pulsar('Armario');
+const armario_e3f3 = await esperarTexto(/Bóxer negro/);
+
+ok(/Bóxer negro/.test(armario_e3f3),
+  '🚨 E3 F3 — una prenda de ropa interior se guarda y se ve (apartado 1)');
+ok(/Ropa interior/.test(armario_e3f3),
+  'y su categoría aparece como una más, con su filtro');
+ok(/Pantalones/.test(armario_e3f3),
+  'sin haberse llevado por delante ninguna de las que ya había (apartado 7)');
+
+/* ===========================================================================
    ENTREGA 3 · FASE 2 — EL BLOQUE DE RACHAS EN HOY
    ===========================================================================
    Los apartados 1-5 y 13: que aparezca cuando hay rachas activas, que diga

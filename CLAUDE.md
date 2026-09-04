@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.12.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.13.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 3** (44 fases — **1 hecha**, ver `docs/11_ENTREGA3_ORDEN.md`),
@@ -164,12 +164,21 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 2 de 44.** Hechas la **Fase 1 (Pulido global, v3.10.0)** y la
-**Fase 2 (Rachas, v3.12.0)**; la siguiente es la **3 — AR+ Armario: categorías, iconografía y
-detalle visual**. El índice, con la línea de cada fase dentro de la especificación literal, está en
-**`docs/11_ENTREGA3_ORDEN.md`**.
+▶️ **La Entrega 3 está en marcha: 3 de 44.** Hechas la **Fase 1 (Pulido global, v3.10.0)**, la
+**Fase 2 (Rachas, v3.12.0)** y la **Fase 3 (Armario, v3.13.0)**; la siguiente es la **4 — EC
+Economía: hucha inteligente y pulido final**. El índice, con la línea de cada fase dentro de la
+especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
-⚠️ **Y lo que dejaron las dos primeras, que afecta a todas las demás:**
+⚠️ **Y lo que dejaron las tres primeras, que afecta a todas las demás:**
+
+- 🐛 **UN CAMPO QUE NO LEE NADIE NO FALLA NUNCA** (E3 F3). `CATEGORIAS_ARMARIO` declaraba un `icono`
+  por categoría desde AR F1 y la pantalla pintaba `<Shirt>` a pelo: **los accesorios salieron con
+  una camiseta durante meses** y ocho categorías compartían dibujo. Antes de añadir un campo a un
+  catálogo, comprobar que alguien lo lea.
+- ⚠️ **Añadir una categoría al armario es añadir su línea en `CATEGORIAS_ARMARIO` Y en
+  `ICONOS_CATEGORIA`** (`src/components/iconosPrenda.jsx`): una es de datos y la otra de componentes
+  de React. Los iconos propios van en la gramática de Lucide —24×24, solo trazo, `currentColor`,
+  grosor 2, remates redondeados— y salen de UNA base `<svg>`. **Nada de emojis.**
 
 - ⚠️ **`src/lib/rachasHoy.js` LEE, no escribe** (E3 F2, apartado 9). La racha es **consecuencia del
   registro real**: no hay una función que sume un día, y quien escribe sigue siendo

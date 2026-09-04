@@ -18,6 +18,9 @@ import {
   lugaresDeUsos, personasDeUsos, resumenDeUso, resumenHistorial,
   indiceUsoPrendas, indiceUsoOutfits, diasDesde,
 } from '../lib/armario';
+// E3 F3 — el icono de cada categoría. Vive en un `.jsx` porque son componentes
+// de React y `armario.js` es una librería de datos sin JSX.
+import { IconoCategoria } from '../components/iconosPrenda';
 import {
   PERIODOS_ARMARIO, desdeDelPeriodo, usosDelPeriodo, estadisticasOutfits, estadisticasPrendas,
   diversidadArmario, estadoRepeticion, prendasMuyRepetidas, combinacionesRepetidas,
@@ -67,7 +70,10 @@ function MiniaturaPrenda({ prenda, alto = 104 }) {
       className="w-full flex flex-col items-center justify-center gap-1"
       style={{ height: alto, background: `linear-gradient(160deg, ${hexToRgba(color.muestra, 0.42)}, ${COLORS.surface2} 78%)` }}
     >
-      <Shirt size={22} style={{ color: COLORS.textMuted }} />
+      {/* 🐛 E3 F3, apartados 3 y 5 — aquí salía SIEMPRE una camiseta, fuera la
+          prenda lo que fuera: un reloj, unas zapatillas o unos pantalones. El
+          `icono` de la categoría existía desde AR F1 y no lo leía nadie. */}
+      <IconoCategoria categoria={prenda.categoria} size={22} style={{ color: COLORS.textMuted }} />
       <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>
         {cat.label}
       </span>
@@ -1258,13 +1264,17 @@ function PanelPrendas({ prendas, outfits, usos, hoyISO, onAddPrenda, onUpdatePre
                 <button
                   key={c.id}
                   onClick={() => setFiltros((f) => ({ ...f, categoria: activa ? undefined : c.id }))}
-                  className="text-xs px-3 py-1.5 rounded-full font-semibold flex-shrink-0"
+                  className="text-xs px-3 py-1.5 rounded-full font-semibold flex-shrink-0 flex items-center gap-1.5"
                   style={{
                     background: activa ? accent : COLORS.surface2,
                     color: activa ? COLORS.textOnAccent : COLORS.textMuted,
                     border: `1px solid ${activa ? accent : COLORS.border}`,
                   }}
                 >
+                  {/* E3 F3, apartado 6 — el icono va DENTRO de la píldora que ya
+                      existía: la lista sigue igual de compacta, solo se reconoce
+                      antes. Nada de una tarjeta nueva por categoría. */}
+                  <IconoCategoria categoria={c.id} size={13} />
                   {c.label} {conteo[c.id]}
                 </button>
               );

@@ -38,21 +38,39 @@ import { uid, todayISO } from './helpers';
 // Apartado 3 — categorías iniciales. Es una lista, no un enum cerrado: el apartado
 // pide expresamente que se puedan ampliar, y una prenda cuya categoría desaparezca
 // del catálogo no debe romperse (ver `categoriaDe`).
+/* ⚠️ **Entrega 3 · Fase 3** — dos cosas cambian aquí, y ninguna es cosmética:
+ *
+ *  1. **Ropa interior** (apartado 1), una categoría más y nada más: *"debe
+ *     funcionar exactamente igual que el resto"*, así que no hay un sistema
+ *     aparte, ni un campo nuevo, ni una pantalla propia. Va entre calzado y
+ *     accesorios porque es donde se busca al vestirse.
+ *
+ *  2. 🐛 **El `icono` ya no es un texto muerto.** Estaba aquí desde AR F1 y
+ *     **nadie lo leía**: la pantalla pintaba `<Shirt>` a pelo en todas partes,
+ *     así que los accesorios salían con una camiseta y ocho categorías
+ *     compartían dibujo. El nombre apunta ahora a `ICONOS_CATEGORIA`
+ *     (`src/components/iconosPrenda.jsx`) y hay una prueba que falla si una
+ *     categoría se queda sin el suyo.
+ *
+ *  ⚠️ **Añadir una categoría es añadir su línea aquí Y su línea en
+ *  `ICONOS_CATEGORIA`.** Dos listas cortas, porque una es de datos y la otra de
+ *  componentes de React y este archivo no puede importar JSX. */
 export const CATEGORIAS_ARMARIO = [
-  { id: 'camisetas', label: 'Camisetas', icono: 'Shirt' },
-  { id: 'camisas', label: 'Camisas', icono: 'Shirt' },
-  { id: 'polos', label: 'Polos', icono: 'Shirt' },
-  { id: 'sudaderas', label: 'Sudaderas', icono: 'Shirt' },
-  { id: 'jerseis', label: 'Jerséis', icono: 'Shirt' },
-  { id: 'chaquetas', label: 'Chaquetas', icono: 'Shirt' },
-  { id: 'abrigos', label: 'Abrigos', icono: 'Shirt' },
-  { id: 'pantalones', label: 'Pantalones', icono: 'Grid2x2' },
-  { id: 'shorts', label: 'Shorts', icono: 'Grid2x2' },
-  { id: 'chandal', label: 'Chándal', icono: 'Grid2x2' },
-  { id: 'zapatillas', label: 'Zapatillas', icono: 'Footprints' },
-  { id: 'zapatos', label: 'Zapatos', icono: 'Footprints' },
-  { id: 'accesorios', label: 'Accesorios', icono: 'Watch' },
-  { id: 'otros', label: 'Otros', icono: 'Package' },
+  { id: 'camisetas', label: 'Camisetas', icono: 'Camiseta' },
+  { id: 'camisas', label: 'Camisas', icono: 'Camisa' },
+  { id: 'polos', label: 'Polos', icono: 'Polo' },
+  { id: 'sudaderas', label: 'Sudaderas', icono: 'Sudadera' },
+  { id: 'jerseis', label: 'Jerséis', icono: 'Jersey' },
+  { id: 'chaquetas', label: 'Chaquetas', icono: 'Chaqueta' },
+  { id: 'abrigos', label: 'Abrigos', icono: 'Abrigo' },
+  { id: 'pantalones', label: 'Pantalones', icono: 'Pantalon' },
+  { id: 'shorts', label: 'Shorts', icono: 'Shorts' },
+  { id: 'chandal', label: 'Chándal', icono: 'Chandal' },
+  { id: 'zapatillas', label: 'Zapatillas', icono: 'Zapatilla' },
+  { id: 'zapatos', label: 'Zapatos', icono: 'Zapato' },
+  { id: 'ropa_interior', label: 'Ropa interior', icono: 'RopaInterior' },
+  { id: 'accesorios', label: 'Accesorios', icono: 'Reloj' },
+  { id: 'otros', label: 'Otros', icono: 'Caja' },
 ];
 
 // Apartado 4 — colores. El valor guardado es el id; el hex es SOLO para pintar la
@@ -166,7 +184,7 @@ export function actualizarPrenda(prenda, cambios = {}) {
 const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 export function categoriaDe(id) {
-  return CATEGORIAS_ARMARIO.find((c) => c.id === id) || { id, label: 'Otros', icono: 'Package' };
+  return CATEGORIAS_ARMARIO.find((c) => c.id === id) || { id, label: 'Otros', icono: 'Caja' };
 }
 export function colorDe(id) {
   return COLORES_ARMARIO.find((c) => c.id === id) || COLORES_ARMARIO[COLORES_ARMARIO.length - 1];
@@ -331,7 +349,10 @@ export const ZONAS_OUTFIT = [
   { id: 'calzado', label: 'Calzado', categorias: ['zapatillas', 'zapatos'] },
   { id: 'abrigo', label: 'Abrigo', categorias: ['chaquetas', 'abrigos'] },
   { id: 'accesorios', label: 'Accesorios', categorias: ['accesorios'] },
-  { id: 'otros', label: 'Otros', categorias: ['otros'] },
+  // E3 F3 — la ropa interior entra aquí explícitamente. `zonaDeCategoria` ya la
+  // habría traído por el respaldo, pero dejarlo escrito evita que alguien lea
+  // esta lista, no la vea y piense que se ha quedado fuera del constructor.
+  { id: 'otros', label: 'Otros', categorias: ['otros', 'ropa_interior'] },
 ];
 
 export function zonaDeCategoria(categoriaId) {

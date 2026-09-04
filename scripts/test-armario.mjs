@@ -39,7 +39,18 @@ console.log('\n═══ AR Fases 1 y 2 — armario y outfits ═══\n');
 
 // --- Catálogos (apartados 3, 4, 13) ---
 {
-  comprobar('Las 14 categorías del apartado 3', CATEGORIAS_ARMARIO.length === 14, String(CATEGORIAS_ARMARIO.length));
+  /* ⚠️ **Una cuenta exacta en una prueba es una bomba de relojería**, y ésta
+     estalló en la Entrega 3 · F3 al añadir *Ropa interior* — una categoría con
+     todo el derecho a existir, pedida por el apartado 1 de esa fase. Es la
+     enésima vez que pasa en este proyecto (`MODULOS_EH.length === 13` saltó
+     nueve veces). Lo que hay que comprobar es **que estén las que tienen que
+     estar**, no cuántas hay. */
+  const ESPERADAS = ['camisetas', 'camisas', 'polos', 'sudaderas', 'jerseis', 'chaquetas', 'abrigos',
+    'pantalones', 'shorts', 'chandal', 'zapatillas', 'zapatos', 'accesorios', 'otros'];
+  const ids = CATEGORIAS_ARMARIO.map((c) => c.id);
+  comprobar('Están las categorías del apartado 3 de AR F1',
+    ESPERADAS.every((id) => ids.includes(id)), ESPERADAS.filter((id) => !ids.includes(id)).join(', '));
+  comprobar('Y la ropa interior de la Entrega 3 · F3', ids.includes('ropa_interior'));
   comprobar('Toda categoría tiene id y etiqueta', CATEGORIAS_ARMARIO.every((c) => c.id && c.label));
   comprobar('Ids de categoría únicos', new Set(CATEGORIAS_ARMARIO.map((c) => c.id)).size === CATEGORIAS_ARMARIO.length);
   comprobar('Los 5 estados del apartado 13', ESTADOS_PRENDA.length === 5);

@@ -23,7 +23,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 |---|---|---|---|
 | 1 ✅ | **PG** Pulido global | Safe area, eliminaciones y apariencia — **hecha (v3.10.0)** | 1 |
 | 2 ✅ | **RA+** Rachas | Mantenimiento diario y feedback de recompensa — **hecha (v3.12.0)** | 221 |
-| 3 | **AR+** Armario | Categorías, iconografía y detalle visual | 544 |
+| 3 ✅ | **AR+** Armario | Categorías, iconografía y detalle visual — **hecha (v3.13.0)** | 544 |
 | 4 | **EC** Economía | Hucha inteligente y pulido final | 741 |
 | 5 | **HO+** Horario | UX, navegación y gestión de horarios | 1027 |
 | 6 | **HC** Hoy y Calendario | F1 — Hoy: centro del día | 1227 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 2 de 44 (**PG** v3.10.0, **RA+** v3.12.0). La siguiente es la **3 — AR+ Armario**, línea 544.
+**Por dónde va:** 3 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0). La siguiente es la **4 — EC Economía**, línea 741.
 
 ## Lo que dejó la Fase 1, y que afecta a todas las demás
 
@@ -94,6 +94,18 @@ solo vale como corrección o ajuste — nunca una función nueva.
 - ⚠️ **Registrar un hábito en Hábitos YA mantiene su racha**: nunca pedir la misma acción dos veces.
 - ⚠️ **Las animaciones nuevas van a `index.css`** con `--ease-premium`, y así respetan solas
   "Reducir movimiento". Ninguna dura más de un segundo.
+
+## Y lo que dejó la Fase 3
+
+- ⚠️ **Añadir una categoría al armario es añadir su línea en `CATEGORIAS_ARMARIO` Y en
+  `ICONOS_CATEGORIA`** (`src/components/iconosPrenda.jsx`). Dos listas cortas, porque una es de
+  datos y la otra de componentes de React. Hay una prueba que salta si falta la segunda o si dos
+  categorías comparten icono.
+- 🐛 **Un campo que no lee nadie no falla nunca.** El `icono` de las categorías existía desde AR F1
+  y la pantalla pintaba `<Shirt>` a pelo: los accesorios salían con una camiseta durante meses.
+  Antes de añadir un campo a un catálogo, comprobar que alguien lo lea.
+- ⚠️ **Los iconos propios van en la gramática de Lucide** (24×24, solo trazo, `currentColor`,
+  grosor 2, remates redondeados) y salen de UNA base `<svg>` compartida. Nada de emojis.
 
 ## Dos cosas del documento que conviene saber
 

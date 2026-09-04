@@ -1,5 +1,61 @@
 # CHANGELOG.md
 
+## v3.13.0 — Entrega 3 · Fase 3: el armario deja de vestirlo todo de camiseta
+
+Tercera fase de la Entrega 3. El enunciado avisa igual que la anterior: *"el apartado Armario actual
+está muy bien planteado y no necesita una remodelación […] Esta fase es exclusivamente de pulido
+visual y ampliación de categorías"*. Así que no se ha tocado el constructor de outfits, ni el
+historial, ni la gestión de prendas.
+
+### 🐛 El fallo era peor de lo que se veía
+
+`CATEGORIAS_ARMARIO` **ya declaraba un icono por categoría desde AR F1** —`Shirt`, `Watch`,
+`Footprints`, `Grid2x2`— y **nadie lo leía**. La pantalla pintaba `<Shirt>` a pelo en los dos sitios
+donde sale un icono de prenda, así que:
+
+- los **accesorios salían con una camiseta**, que es lo que Josué señala en el apartado 3;
+- **ocho categorías compartían dibujo**;
+- y los pantalones tenían asignado `Grid2x2` —una rejilla— que además tampoco se pintaba.
+
+Un campo que no lee nadie no falla nunca: se queda ahí pareciendo que funciona. Ahora está
+conectado, y hay una prueba que salta si una categoría se queda sin icono o si dos comparten uno.
+
+### La biblioteca de iconos (apartados 3, 4 y 5)
+
+El apartado 4 marca el camino: *"no utilizar emojis […] utilizar los iconos disponibles más
+apropiados […] si no existe un icono suficientemente preciso, seleccionar la alternativa más
+cercana y mantener coherencia de estilo"*.
+
+**Lucide tiene UNA prenda: `Shirt`.** No hay pantalón, ni sudadera, ni ropa interior. Con solo Lucide
+seguirían compartiendo icono, que es justo lo que la fase viene a arreglar. Así que se hace lo otro
+que pide el apartado —*"crear una biblioteca de iconos suficientemente amplia"*— en
+`src/components/iconosPrenda.jsx`, **en la gramática exacta de Lucide**: lienzo de 24×24, solo trazo,
+`currentColor`, grosor 2 y remates redondeados. Hay una prueba por cada una de esas cuatro cosas.
+
+⚠️ **Lo que SÍ existe en Lucide se coge de Lucide** —camiseta, reloj, huellas, gafas y caja—, no se
+redibuja: dos versiones del mismo icono y la segunda envejece sola. Y hay **una sola base `<svg>`
+compartida**, para que cambiar el grosor de trazo de la app sea cambiar una línea.
+
+Quince iconos, uno por categoría, cero repetidos.
+
+### Ropa interior (apartado 1)
+
+Una categoría más y nada más — *"debe funcionar exactamente igual que el resto"*, así que **no hay
+un sistema aparte**, ni un campo nuevo, ni una pantalla propia. Se crea, se filtra, se edita y
+aparece en el constructor de outfits como cualquier otra.
+
+### Lo que esto deja apuntado
+
+- ⚠️ **Añadir una categoría al armario es añadir su línea en `CATEGORIAS_ARMARIO` Y en
+  `ICONOS_CATEGORIA`.** Dos listas cortas, porque una es de datos y la otra de componentes de React,
+  y `armario.js` no puede importar JSX. Si falta la segunda, la prueba lo dice.
+- 🐛 **Y otra cuenta exacta que estalló**: `test-armario.mjs` comprobaba
+  `CATEGORIAS_ARMARIO.length === 14`, y saltó al añadir *Ropa interior* — una categoría con todo el
+  derecho a existir, pedida por el apartado 1. Es la enésima vez en este proyecto
+  (`MODULOS_EH.length === 13` saltó nueve veces). Ahora comprueba **que estén las que tienen que
+  estar**, no cuántas hay.
+
+
 ## v3.12.0 — Entrega 3 · Fase 2: "hoy tengo que mantener mis rachas"
 
 Segunda fase de la Entrega 3. El enunciado empieza avisando —*"el apartado Rachas actual está
