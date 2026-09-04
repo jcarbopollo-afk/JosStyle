@@ -1,5 +1,106 @@
 # CHANGELOG.md
 
+## v3.10.0 — Entrega 3 · Fase 1: la hora del iPhone, la papelera que no borraba y el título repetido
+
+Primera fase de la **Entrega 3**. No añade nada: arregla tres cosas que Josué encontró usando la
+aplicación de verdad en su móvil. Las tres eran invisibles para las 13 408 comprobaciones que ya
+había, y por motivos distintos.
+
+### 1 · La Safe Area del iPhone (apartado 1)
+
+`index.html` lleva `viewport-fit=cover` desde siempre, que es lo que hace que el fondo llegue hasta
+los bordes. El precio es que la página se dibuja **debajo** de la barra de estado — y los dos
+botones de arriba estaban clavados en `top: 14`, o sea encima de la hora, del Wi-Fi, de la batería y
+de la Dynamic Island.
+
+**No se ha puesto un margen a ojo**, porque no existe un número que valga: un iPhone con isla, uno
+con muesca y uno sin nada reservan alturas distintas. Ahora lo dice el propio sistema operativo con
+`env(safe-area-inset-top)`, declarado una sola vez en `index.css` como `--safe-top` / `--safe-bottom`
+— el mismo criterio que los `--color-*`. En un ordenador vale `0px` y todo queda exactamente igual
+que estaba.
+
+Se ha aprovechado para tres cosas más del mismo apartado:
+
+- Los dos botones pasan a tener **44 px de área táctil** (`toque-44`) sin agrandar el círculo de
+  36 px: un pseudoelemento transparente centrado. Es la regla de EH F42, que estos dos incumplían.
+- El contenido cambia `pt-16` por `pantalla-segura`: los mismos 4 rem **más** lo que reserve iOS.
+- La barra de 5 pestañas deja sitio al indicador de inicio (`nav-segura`), que en un iPhone sin
+  botón se dibujaba encima de las etiquetas.
+
+⚠️ **Y una trampa apuntada para el futuro:** un `top` en el `style={{}}` de esos botones **gana** a
+la clase de CSS y deshace la corrección entera sin que falle nada. Hay una comprobación que lo
+vigila.
+
+### 2 · La papelera de Economía, y las otras 128 (apartado 2)
+
+Josué lo contó exacto: *"crea un movimiento, aparece el icono de papelera, al pulsarlo no ocurre
+nada"*. La causa era de una línea: **`FinanceView` declaraba `onDeleteMovimiento` en su firma y la
+llamaba en el `onClick`, pero `App.jsx` nunca se la pasaba**. `deleteMovimiento` existía desde ME F3
+y va por `eliminarConPapelera`; solo faltaba el cable.
+
+🚨 **Ese fallo no lo puede ver nada de lo que había.** No es un error de compilación, ni de
+renderizado: la pantalla se pinta perfecta y el botón existe. Solo al **tocarlo** salta un
+`TypeError: onDeleteMovimiento is not a function`, que se queda en la consola del iPhone —donde
+nadie mira— y en pantalla no pasa nada.
+
+Así que el apartado 2 se ha cumplido literalmente: `scripts/test-borrados.mjs` busca **los 129
+botones de eliminar de la aplicación** (`<BotonBorrar>`, y cualquier `<button>` cuyo texto,
+`aria-label` o icono hablen de eliminar, borrar, quitar o papelera), saca el identificador que
+llaman y comprueba que haya algo detrás — si es una prop, que **todos** los sitios que usan ese
+componente se la pasen. **Uno estaba roto: el de Josué.** Los otros 128 están bien.
+
+⚠️ Y aprendió una distinción por el camino: `{onEliminar && <BotonBorrar…>}` **no es un botón
+muerto**. Sin la prop no se pinta, que es como una fila reutilizable ofrece la acción solo donde
+tiene sentido. El fallo que hay que cazar es el contrario.
+
+### 3 · Confirmar solo lo que no se puede deshacer (apartado 3)
+
+El enunciado propone *"Esta acción no se puede deshacer"* para un movimiento de Economía, y **en
+esta aplicación eso sería mentira**: desde ME F3 un movimiento va a Eliminados recientemente y
+vuelve de ahí. El mismo apartado dice *"no añadir confirmaciones innecesarias por todas partes"*, y
+`BotonBorrar` ya tenía escrito por qué no pregunta. Se ha respetado.
+
+Lo que sí es irreversible, y **no preguntaba nada**, son las tres cosas que borran un archivo de
+verdad en Supabase Storage: la **foto de progreso** de Salud, el **vídeo** de calistenia y el
+**archivo** de la Biblioteca. Ésas no pueden ir a la papelera —quedaría una fila apuntando a un
+archivo que ya no existe— y un toque sin querer se llevaba la foto para siempre. Ahora las tres
+pasan por `BotonBorrarDefinitivo`, con su aviso por `createPortal` (regla 3) y un texto que dice la
+verdad: *"se borra del todo y no se puede recuperar"*.
+
+En la Biblioteca la distinción es por elemento: un apunte y un enlace no preguntan (van a la
+papelera); un PDF, un vídeo o una foto sí.
+
+### 4 · El título repetido de los desplegables (apartados 4-6)
+
+`<Seccion titulo="Fondo" sub={describirFondo(…)}>` pintaba la cabecera, y `BloqueFondo` volvía a
+escribir **las dos cosas** justo debajo al desplegarlo: *Fondo / Fondo*, y la descripción dos veces.
+Se resuelve con un `sinTitulo` explícito en la llamada, no escondiendo el título para siempre: el
+bloque sigue trayéndolo para quien lo use suelto.
+
+El apartado 6 pedía revisar los demás. **Había un segundo**, del que Josué no se había quejado:
+*Apariencias guardadas*. Los otros cuatro desplegables estaban bien. **No se ha tocado nada más de
+Apariencia** (apartado 7).
+
+### Lo que esto deja apuntado
+
+- ⚠️ **Un botón de eliminar nuevo tiene que pasar por `test-borrados.mjs`.** Si llama a una prop que
+  su pantalla no recibe, salta el mismo día — no dentro de tres meses, tocándolo en el móvil.
+- ⚠️ **Nunca un `top` en línea en los dos botones de arriba**: gana a `accion-superior` y devuelve el
+  botón debajo de la hora.
+- ⚠️ **Un bloque dentro de un `<Seccion>` no repite el título de la sección**: se le pasa `sinTitulo`.
+- 🐛 **Y la enésima vez de la lección de siempre, dos veces seguidas el mismo día**: el detector de
+  títulos duplicados saltó con **su propio comentario**, que cita el título que ya no existe; y la
+  comprobación de que `BotonBorrar` no pregunta saltó porque una ventana de 700 caracteres se
+  llevaba dentro al componente siguiente, que sí tiene `useState`. **Una prueba que lee el código
+  quita los comentarios antes, y no recorta por caracteres a ojo.**
+
+### Una nota de versión
+
+`package.json` se había quedado en **3.4.1** mientras el `CHANGELOG` iba por **3.9.0**: las entradas
+de sonido de los últimos turnos no subieron el número. Se pone al día en **3.10.0**, que es donde
+está de verdad.
+
+
 ## v3.9.0 — `error`: el aviso que no asusta
 
 ### Qué se ha construido

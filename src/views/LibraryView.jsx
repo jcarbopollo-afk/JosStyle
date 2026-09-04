@@ -3,7 +3,7 @@ import { Search, FileText, Video as VideoIcon, Image as ImageIcon, StickyNote, L
 import { COLORS, TIPOS_ARCHIVO_BIBLIOTECA } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedBibliotecaUrl } from '../lib/supabase';
-import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, EmptyHint } from '../components/ui';
+import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, EmptyHint, BotonBorrarDefinitivo } from '../components/ui';
 
 // Fase 11 — Biblioteca: PDFs, vídeos, fotos, apuntes y enlaces conviven en un único listado
 // buscable. Los tres tipos de archivo comparten forma { id, tipo, path, titulo, fecha } +
@@ -94,9 +94,25 @@ function ItemCard({ item, query, url, accent, onDelete }) {
                 {abierto ? <>Ocultar <ChevronUp size={12} /></> : <>Ver completo <ChevronDown size={12} /></>}
               </button>
             )}
-            <button onClick={onDelete} className="flex items-center gap-1 text-xs" style={{ color: COLORS.textMuted }}>
-              <Trash2 size={12} /> Eliminar
-            </button>
+            {/* Entrega 3 · F1, apartado 3 — un apunte y un enlace van a Eliminados recientemente
+                y vuelven de ahí, así que no se pregunta nada. Un ARCHIVO (PDF, vídeo, foto) se
+                borra de verdad del almacenamiento y no puede ir a la papelera: ahí sí. */}
+            {esArchivo ? (
+              <BotonBorrarDefinitivo
+                onConfirm={onDelete}
+                label="Eliminar archivo"
+                titulo="¿Eliminar este archivo?"
+                detalle="El archivo se borra del todo y no se puede recuperar."
+                className="flex items-center gap-1 text-xs"
+                style={{ color: COLORS.textMuted }}
+              >
+                <><Trash2 size={12} /> Eliminar</>
+              </BotonBorrarDefinitivo>
+            ) : (
+              <button onClick={onDelete} className="flex items-center gap-1 text-xs" style={{ color: COLORS.textMuted }}>
+                <Trash2 size={12} /> Eliminar
+              </button>
+            )}
           </div>
 
           {esApunte && abierto && (

@@ -29,6 +29,70 @@ input[type='range']::-webkit-slider-thumb {
   cursor: pointer;
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   Entrega 3 · Fase 1 — SAFE AREA DE iOS (apartado 1)
+
+   `index.html` ya lleva `viewport-fit=cover`, así que en un iPhone la página se
+   pinta DEBAJO de la barra de estado y del indicador de inicio. Eso está bien
+   —es lo que hace que el fondo llegue hasta los bordes—, pero significa que
+   colocar algo en `top: 14` lo mete literalmente encima de la hora, del Wi-Fi,
+   de la batería y de la Dynamic Island. Que es lo que le pasaba a Josué.
+
+   La solución NO es un margen a ojo: los tres iPhone que hay que aguantar
+   reservan alturas distintas (notch, isla, y sin nada), y un número fijo se
+   queda corto en uno y ridículo en otro. `env(safe-area-inset-*)` lo dice el
+   propio sistema operativo en cada dispositivo.
+
+   Se declaran aquí como variables y no sueltas en cada `style={{}}` para que
+   haya UN sitio donde está escrito cuánto reserva iOS — el mismo criterio que
+   `--color-*`. En un navegador que no entienda `env()` (o en un ordenador) el
+   valor de respaldo es `0px` y todo queda exactamente como estaba.
+   ════════════════════════════════════════════════════════════════════════════ */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* Las dos acciones fijas de arriba (buscar/preguntar a la IA y sugerencias).
+   Empiezan SIEMPRE por debajo de lo que iOS reserva, con los mismos 14 px de
+   aire de antes por debajo de esa línea. */
+.accion-superior {
+  top: calc(var(--safe-top) + 14px);
+}
+
+/* El contenido de la app. Mantiene los 4rem (`pt-16`) que ya tenía y les suma
+   lo que reserve el sistema, para que el primer título tampoco se meta debajo
+   de los botones en un iPhone con isla. */
+.pantalla-segura {
+  padding-top: calc(var(--safe-top) + 4rem);
+}
+
+/* La barra inferior de 5 pestañas: en un iPhone sin botón de inicio, el
+   indicador se dibuja encima de las etiquetas. */
+.nav-segura {
+  padding-bottom: var(--safe-bottom);
+}
+
+/* Área táctil de 44 px sin agrandar el dibujo (la regla de EH F42). Los dos
+   botones de arriba miden 36 px de diámetro y quedaban por debajo del mínimo:
+   este pseudoelemento transparente amplía la zona que responde al dedo sin
+   tocar ni un píxel del diseño. Los toques sobre él los recibe el botón, que
+   es su elemento padre. */
+.toque-44 {
+  position: relative;
+}
+.toque-44::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

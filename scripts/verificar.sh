@@ -839,6 +839,24 @@ else
   fallo "Hay algo usado sin importar (ReferenceError en el móvil)"; grep '✗' /tmp/jc_imports.log
 fi
 
+# ⚠️ Entrega 3 · F1, apartado 2 — un botón de eliminar que no elimina. Economía →
+# Movimientos llamaba a una prop que App.jsx nunca le pasaba: la pantalla se
+# pintaba perfecta y al tocar la papelera no pasaba nada.
+if node scripts/test-borrados.mjs >/tmp/jc_borr.log 2>&1; then
+  ok "Botones de eliminar — $(grep -o '[0-9]* en [0-9]* archivos' /tmp/jc_borr.log | head -1 | cut -d' ' -f1) revisados, todos cableados"
+else
+  fallo "Hay un botón de eliminar que no hace nada"; grep '✗' /tmp/jc_borr.log
+fi
+
+# ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
+# duplicados de los desplegables. Las dos son de presentación y solo se ven en
+# el móvil, que es donde no llega ninguna otra prueba.
+if node scripts/test-pulido-global.mjs >/tmp/jc_pulido.log 2>&1; then
+  ok "Pulido global (E3 F1) — $(grep -c '✓' /tmp/jc_pulido.log) comprobaciones (safe area, acordeones, confirmaciones)"
+else
+  fallo "Falla el pulido global (safe area / acordeones / confirmaciones)"; grep '✗' /tmp/jc_pulido.log
+fi
+
 echo ""
 if [ "$FALLOS" -eq 0 ]; then
   printf '\033[32m═══ TODO CORRECTO ═══\033[0m\n\n'; exit 0

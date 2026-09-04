@@ -14,15 +14,25 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.4.1**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.10.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
-Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo de Hombre (65/65)**
-están terminados, y **Sonido va por 4/5**: **queda UNA fase en toda la Entrega 2, SO F2**, la
-biblioteca de sonidos) y el bloque **AXION** de la
-Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
+**Pendiente por delante:** la **Entrega 3** (44 fases — **1 hecha**, ver `docs/11_ENTREGA3_ORDEN.md`),
+que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
+Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
+**106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
+de Hombre (65/65)** están terminados, y **Sonido va por 4/5**: **queda UNA fase, SO F2**, la
+biblioteca de sonidos, ⏸ **bloqueada porque faltan los archivos de audio que produce Josué**); y el
+bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué).
+
+⚠️ **La Entrega 3 no es una continuación de la 2.** Aquélla construía módulos nuevos; ésta **pule y
+rehace apartados que ya existen** —Hoy, Calendario, Biblioteca, Productividad, Bienestar, Nutrición,
+Estudios— y arregla lo que Josué encontró **usando la aplicación en su iPhone**. Casi nada se
+construye desde cero: antes de escribir una línea, mirar qué hay ya en `src/views/` y `src/lib/`.
+
+🔀 **Y `main` la comparten DOS sesiones.** Mientras esto se construye, Josué va subiendo los archivos
+de sonido desde otra conversación. **Antes de cada empuje: `git fetch origin main` y rebase encima.**
+Nunca se pisa su trabajo.
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
 **110** (EH 65 + HT 12 + FO 12 + SR 9 + ME 4 + BI 4 + AR 4). Las fases de EH van numeradas *"x/65"*
@@ -60,8 +70,9 @@ listadas con decisión tomada.
 | Evitar romper algo o repetir un debate ya cerrado | **`docs/03_CONTRADICCIONES_DUPLICADOS_DEPENDENCIAS.md`** |
 | Saber qué archivo tocar | **`docs/04_INVENTARIO_ESTADO_ACTUAL.md`** |
 | Comprobar que no falta nada | **`docs/05_CHECKLIST_GLOBAL.md`** |
+| Trabajar en la **Entrega 3** (44 fases — **es lo que se está haciendo ahora**) | **`docs/11_ENTREGA3_ORDEN.md`** |
 | Trabajar en la **Entrega 2** (7 módulos nuevos, 106 fases) | **`docs/06_ENTREGA2_ANALISIS.md`** y **`docs/07_CHECKLIST_ENTREGA2.md`** |
-| La especificación literal de la Entrega 2 | `especificaciones/` 🔒 **intocable** |
+| La especificación literal de las Entregas 2 y 3 | `especificaciones/` 🔒 **intocable** |
 | El contexto histórico turno a turno | `CHANGELOG.md` |
 | El documento que Josué pasa entre conversaciones | `HANDOFF.md` ⚠️ *sus secciones numeradas están desactualizadas — ver C-20* |
 | La especificación literal de Ajustes | `ESPECIFICACION_AJUSTES_ENTREGA1.md` 🔒 **intocable** |
@@ -152,6 +163,30 @@ de error exacto** antes de asumir nada.
 6. Verificar con `esbuild` si el entorno lo permite; si no, decirlo con honestidad.
 
 ## Lo primero que conviene hacer
+
+▶️ **La Entrega 3 está en marcha: 1 de 44.** La **Fase 1 (Pulido global)** está hecha (v3.10.0); la
+siguiente es la **2 — RA+ Rachas: mantenimiento diario y feedback de recompensa**. El índice, con la
+línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
+
+⚠️ **Y lo que dejó la Fase 1, que afecta a todas las demás:**
+
+- 🚨 **`scripts/test-borrados.mjs` revisa los 129 botones de eliminar de la aplicación.** Nació
+  porque la papelera de **Economía → Movimientos** no borraba nada: la vista declaraba
+  `onDeleteMovimiento` y la llamaba, y **`App.jsx` nunca se la pasaba**. Eso **no lo ve el build, ni
+  el renderizado, ni las pruebas de Node** — la pantalla se pinta perfecta y solo revienta al
+  TOCARLO. Un botón de eliminar nuevo que nazca desconectado salta ahí el mismo día.
+- 🚨 **La Safe Area del iPhone vive en `index.css`**: `--safe-top`, `--safe-bottom`,
+  `.accion-superior`, `.pantalla-segura`, `.nav-segura` y `.toque-44`. Cualquier cosa fija arriba o
+  abajo **usa esas clases**, nunca un número a ojo. ⚠️ **Y nunca un `top` en el `style={{}}`**: gana
+  a la clase y devuelve el botón debajo de la hora del iPhone sin que falle nada.
+- ⚠️ **`BotonBorrar` no pregunta, y es correcto**: lo suyo va a Eliminados recientemente y vuelve.
+  Quien pregunta es **`BotonBorrarDefinitivo`**, y solo para las tres cosas que borran un archivo de
+  verdad en Storage (foto de Salud, vídeo de calistenia, archivo de Biblioteca). **Antes de añadir
+  una confirmación, mirar si eso se recupera** — prometer "no se puede deshacer" de algo que sí se
+  deshace es mentir en pantalla.
+- ⚠️ **Un bloque dentro de un `<Seccion>` no repite el título de la sección**: se le pasa
+  `sinTitulo`. Pasaba con *Fondo* (el que vio Josué) y con *Apariencias guardadas* (el que encontró
+  la revisión).
 
 **🔒 Horario Top está CERRADO (12/12)**, 🏁 **Estilo de Hombre está CERRADO (65/65)** (v3.0.0) y
 **Sonido va por 4/5** (F1, F3, F4 y F5). **Queda UNA fase en toda la Entrega 2: SO F2, la biblioteca

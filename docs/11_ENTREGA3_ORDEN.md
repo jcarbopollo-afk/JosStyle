@@ -21,7 +21,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 
 | # | Bloque | Fase | Línea |
 |---|---|---|---|
-| 1 | **PG** Pulido global | Safe area, eliminaciones y apariencia | 1 |
+| 1 ✅ | **PG** Pulido global | Safe area, eliminaciones y apariencia — **hecha (v3.10.0)** | 1 |
 | 2 | **RA+** Rachas | Mantenimiento diario y feedback de recompensa | 221 |
 | 3 | **AR+** Armario | Categorías, iconografía y detalle visual | 544 |
 | 4 | **EC** Economía | Hucha inteligente y pulido final | 741 |
@@ -65,6 +65,24 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 42 | ES | F4 — Exámenes, entregas y fechas | 19511 |
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
+
+**Por dónde va:** 1 de 44 (**PG**, v3.10.0). La siguiente es la **2 — RA+ Rachas**, línea 221.
+
+## Lo que dejó la Fase 1, y que afecta a todas las demás
+
+- 🚨 **`scripts/test-borrados.mjs` revisa los 129 botones de eliminar de la aplicación.** Una fase
+  que añada un botón de eliminar y no cablee su manejador **salta ahí**, no en el móvil de Josué
+  tres meses después. Fue exactamente el fallo de Economía: la prop estaba en la firma de la vista y
+  `App.jsx` no se la pasaba.
+- 🚨 **La Safe Area vive en `index.css`** (`--safe-top`, `--safe-bottom`, `.accion-superior`,
+  `.pantalla-segura`, `.nav-segura`, `.toque-44`). Una pantalla nueva que ponga algo fijo arriba o
+  abajo **usa esas clases**; nunca un número a ojo, y **nunca un `top` en línea**, que gana a la
+  clase y deshace la corrección sin que falle nada.
+- ⚠️ **`BotonBorrar` no pregunta y eso es correcto**: lo suyo va a Eliminados recientemente. Quien
+  pregunta es `BotonBorrarDefinitivo`, y solo para lo que borra un archivo de verdad
+  (foto de Salud, vídeo de calistenia, archivo de Biblioteca). Antes de añadir una confirmación,
+  mirar si eso se recupera.
+- ⚠️ **Un bloque dentro de un `<Seccion>` no repite el título de la sección**: se le pasa `sinTitulo`.
 
 ## Dos cosas del documento que conviene saber
 

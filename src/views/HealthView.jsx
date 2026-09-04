@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
-import { Camera, Trash2, AlertCircle, HeartPulse } from 'lucide-react';
+import { Camera, AlertCircle, HeartPulse } from 'lucide-react';
 import { COLORS, TIPOS_HISTORIAL_MEDICO } from '../tokens';
 import { uid, formatFecha, todayISO } from '../lib/helpers';
 import { getSignedPhotoUrl } from '../lib/supabase';
-import { BotonBorrar, Card, SectionTitle, Field, TextInput, Select, PrimaryButton, ToggleTab, EmptyHint, AIPanel, PinGate } from '../components/ui';
+import { BotonBorrar, BotonBorrarDefinitivo, Card, SectionTitle, Field, TextInput, Select, PrimaryButton, ToggleTab, EmptyHint, AIPanel, PinGate } from '../components/ui';
 
 function diasDesde(fechaISO) {
   return Math.floor((Date.now() - new Date(fechaISO + 'T00:00:00').getTime()) / (1000 * 60 * 60 * 24));
@@ -211,14 +211,16 @@ function FotosTab({ fotos, onAddFoto, onDeleteFoto, accent }) {
               <p className="text-xs font-semibold" style={{ color: COLORS.text }}>{formatFecha(f.fecha)}</p>
               {f.nota && <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{f.nota}</p>}
             </div>
-            <button
-              onClick={() => onDeleteFoto(f.id, f.path)}
-              className="absolute top-2 right-2 rounded-full p-1.5"
-              style={{ background: 'rgba(10,12,16,0.7)' }}
-              aria-label="Borrar foto"
-            >
-              <Trash2 size={13} color="#EDEFF2" />
-            </button>
+            {/* Entrega 3 · F1, apartado 3 — la foto se borra de verdad del almacenamiento y
+                no pasa por la papelera, así que aquí sí se pregunta antes. */}
+            <BotonBorrarDefinitivo
+              onConfirm={() => onDeleteFoto(f.id, f.path)}
+              label="Borrar foto"
+              titulo="¿Eliminar esta foto?"
+              detalle="La foto se borra del todo y no se puede recuperar."
+              className="absolute top-2 right-2 rounded-full p-2 transition-transform active:scale-90"
+              style={{ border: `1px solid ${COLORS.border}` }}
+            />
           </div>
         ))}
       </div>

@@ -2358,8 +2358,17 @@ export default function App() {
         );
       case 'economia':
         return (
+          /* 🚨 Entrega 3 · F1, apartado 2 — `onDeleteMovimiento` FALTABA aquí, y ese era el
+             fallo entero: `FinanceView` la declara en su firma y la llama en el `onClick` de
+             la papelera, así que sin esta línea el botón lanzaba un
+             `TypeError: onDeleteMovimiento is not a function` y en pantalla no pasaba nada.
+             `deleteMovimiento` existía desde ME F3 y va por `eliminarConPapelera`, la única
+             puerta: recalcula el saldo, persiste y deja el movimiento recuperable.
+             `scripts/test-borrados.mjs` revisa ahora los 129 botones de eliminar de la app
+             para que esto no pueda volver a pasar en silencio. */
           <FinanceView
-            economia={economia} onAddMovimiento={addMovimiento} onUpdateHucha={updateHucha} accent={accent}
+            economia={economia} onAddMovimiento={addMovimiento} onDeleteMovimiento={deleteMovimiento}
+            onUpdateHucha={updateHucha} accent={accent}
             foco={focoPara('economia')} onFocoConsumido={consumirFoco}
           />
         );
@@ -2609,10 +2618,15 @@ export default function App() {
           de sugerencias se va a la derecha. Se intercambian de sitio en vez de quitar uno: son
           cosas distintas (buscar/preguntar vs. sugerencias del día) y la especificación prohíbe
           expresamente eliminar funcionalidad existente. */}
+      {/* Entrega 3 · F1, apartado 1 — `accion-superior` y `toque-44` (index.css): la posición
+          sale de `env(safe-area-inset-top)`, no de un número a ojo, y el área táctil llega a
+          44 px sin agrandar el círculo. Ojo al tocar esto: un `top` en el `style` de aquí
+          GANARÍA a la clase (los estilos en línea tienen más prioridad) y volvería a meter el
+          botón debajo de la hora del iPhone. */}
       <button
         onClick={() => setShowSearch(true)}
-        className="fixed z-30 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
-        style={{ top: 14, left: 14, background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: 'blur(8px)' }}
+        className="accion-superior toque-44 fixed z-30 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
+        style={{ left: 14, background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: 'blur(8px)' }}
         aria-label="Buscar funciones o preguntar a la IA"
       >
         <Search size={16} style={{ color: accent }} />
@@ -2639,7 +2653,10 @@ export default function App() {
       )}
       {modalesRecuperacion}
 
-      <div className="max-w-md mx-auto px-4 pt-16" style={{ paddingBottom: 100 }}>
+      {/* `pantalla-segura` sustituye a `pt-16`: son los mismos 4rem más lo que reserve iOS
+          arriba. Y el hueco de abajo suma el del indicador de inicio, para que la última
+          tarjeta no quede tapada por la barra en un iPhone sin botón. */}
+      <div className="max-w-md mx-auto px-4 pantalla-segura" style={{ paddingBottom: 'calc(100px + var(--safe-bottom))' }}>
         {renderTab()}
       </div>
 
@@ -2648,7 +2665,7 @@ export default function App() {
           dentro de un módulo de esa área (areaActual), no solo en el propio hub. Nunca añadir una
           sexta pestaña — los módulos nuevos van dentro de un área existente (AREAS_NAV arriba). */}
       <nav
-        className="fixed bottom-0 left-0 right-0 flex justify-center"
+        className="nav-segura fixed bottom-0 left-0 right-0 flex justify-center"
         // FO Fase 4, apartado 10 — la barra sale del sistema de colores en vez de llevar
         // un rgba fijo, que además ignoraba el tema claro: en modo claro la barra era
         // negra igual. `navBgAlpha` respeta el tema y la transparencia elegida.

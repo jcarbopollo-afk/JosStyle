@@ -141,6 +141,90 @@ export function BotonBorrar({ onClick, label = 'Eliminar' }) {
   );
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+   Entrega 3 · Fase 1, apartado 3 — la confirmación de un borrado que NO se puede
+   deshacer.
+
+   ⚠️ Y solo de esos. El enunciado propone el texto *"Esta acción no se puede
+   deshacer"* para un movimiento de Economía, pero **en esta aplicación eso sería
+   mentira**: desde ME F3 un movimiento va a Eliminados recientemente y vuelve de
+   ahí. El propio apartado 3 dice *"para elementos donde el sistema ya tenga una
+   interacción de eliminación directa claramente establecida, mantener el
+   comportamiento actual si es seguro"* y *"no añadir confirmaciones innecesarias
+   por todas partes"*, así que `BotonBorrar` sigue sin preguntar nada.
+
+   Lo que sí es irreversible, y no preguntaba, son las TRES cosas que borran un
+   archivo de verdad en Supabase Storage: la foto de progreso de Salud, el vídeo
+   de calistenia y el archivo de la Biblioteca. Ésas no van a la papelera —no
+   pueden: quedaría una fila apuntando a un archivo que ya no existe— y un toque
+   accidental se lleva la foto para siempre. Ahí es donde va la confirmación.
+
+   Va por `createPortal` a `document.body` (regla 3): un `fixed inset-0` colgado
+   dentro de `.module-enter` se ancla al contenedor de la vista, no a la
+   pantalla, y aparece "abajo del todo". Ya pasó una vez.
+   ──────────────────────────────────────────────────────────────────────────── */
+export function BotonBorrarDefinitivo({
+  onConfirm,
+  label = 'Eliminar',
+  titulo = '¿Eliminar?',
+  detalle = 'No se puede deshacer.',
+  className = 'p-1.5 rounded-lg flex-shrink-0 transition-transform active:scale-90',
+  style,
+  colorIcono,
+  children,
+}) {
+  const [preguntando, setPreguntando] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setPreguntando(true)}
+        className={className}
+        style={children ? style : { background: COLORS.surface2, ...style }}
+        aria-label={label}
+        title={label}
+      >
+        {children || <Trash2 size={13} style={{ color: colorIcono || COLORS.textMuted }} />}
+      </button>
+      {preguntando && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          style={{ background: 'rgba(0,0,0,0.55)' }}
+          onClick={() => setPreguntando(false)}
+        >
+          <div
+            className="rounded-2xl p-4 w-full"
+            style={{ maxWidth: 300, background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+            onClick={(ev) => ev.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={titulo}
+          >
+            <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{titulo}</p>
+            <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{detalle}</p>
+            <div className="flex gap-2 justify-end mt-3">
+              <button
+                onClick={() => setPreguntando(false)}
+                className="text-xs font-semibold px-3 py-2 rounded-lg"
+                style={{ color: COLORS.textMuted, background: COLORS.surface2 }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { setPreguntando(false); onConfirm(); }}
+                className="text-xs font-semibold px-3 py-2 rounded-lg"
+                style={{ background: COLORS.negative, color: COLORS.textOnAccent }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
+  );
+}
+
 export function ListRow({ children, onClick, style, className = '', last = false }) {
   const Tag = onClick ? 'button' : 'div';
   return (
@@ -675,10 +759,13 @@ export function SuggestionsButton({ accent, buildPrompt, lado = 'izquierda' }) {
   };
 
   return (
-    <div className="fixed z-30" style={lado === 'derecha' ? { top: 14, right: 14 } : { top: 14, left: 14 }}>
+    /* Entrega 3 · F1, apartado 1 — la altura la pone `accion-superior` (index.css) a partir
+       de `env(safe-area-inset-top)`: en un iPhone con isla este botón caía justo encima de la
+       batería. Nunca devolver aquí un `top` en línea, que ganaría a la clase. */
+    <div className="accion-superior fixed z-30" style={lado === 'derecha' ? { right: 14 } : { left: 14 }}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
+        className="toque-44 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
         style={{ background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: 'blur(8px)' }}
         aria-expanded={open}
         aria-label="Sugerencias de la IA"

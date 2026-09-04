@@ -5,7 +5,7 @@ import { uid, formatFecha, todayISO, fechaLocalISO } from '../lib/helpers';
 import { askAI, askAIWithImages, AI_SYSTEM } from '../lib/ai';
 import { extractFramesFromSrc } from '../lib/videoFrames';
 import { getSignedVideoUrl } from '../lib/supabase';
-import { BotonBorrar, Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
+import { BotonBorrar, BotonBorrarDefinitivo, Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
 
 // Cuántos días seguidos (incluyendo hoy) hay que llevar entrenando la misma habilidad
 // para que aparezca el aviso de "descanso recomendado".
@@ -299,9 +299,16 @@ function VideosTab({ skill, videos, onAddVideo, onDeleteVideo, onSetVideoFeedbac
               <GhostBtn onClick={() => analizar(v)} icon={analizando === v.id ? Loader2 : Sparkles}>
                 {analizando === v.id ? 'Analizando…' : 'Analizar con IA'}
               </GhostBtn>
-              <button onClick={() => onDeleteVideo(v.id, v.path)} className="rounded-xl px-3" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }} aria-label="Borrar vídeo">
-                <Trash2 size={14} style={{ color: COLORS.textMuted }} />
-              </button>
+              {/* Entrega 3 · F1, apartado 3 — el vídeo se borra del almacenamiento y no pasa
+                  por la papelera: un toque sin querer se lo llevaba para siempre. */}
+              <BotonBorrarDefinitivo
+                onConfirm={() => onDeleteVideo(v.id, v.path)}
+                label="Borrar vídeo"
+                titulo="¿Eliminar este vídeo?"
+                detalle="El vídeo se borra del todo y no se puede recuperar."
+                className="rounded-xl px-3 transition-transform active:scale-90"
+                style={{ border: `1px solid ${COLORS.border}` }}
+              />
             </div>
             {v.feedback && <p className="text-xs mt-2 leading-relaxed" style={{ color: COLORS.text }}>{v.feedback}</p>}
           </Card>

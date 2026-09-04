@@ -922,7 +922,11 @@ export function BloqueRecomendado({ analisis, tema, accent, fondo, modoOscuro, o
    Los oficiales van al final de la lista y no al principio: son cuatro y siempre
    están, así que arriba ocuparían la primera pantalla entera y empujarían fuera
    lo que Josué se ha molestado en crear. */
-export function BloquePresets({ presets, apariencia, accent, temaPersonalizado, onGuardar, onCambiarPresets, onAplicar, onEliminar }) {
+/* ⚠️ `sinTitulo` — mismo motivo que en `BloqueFondo` (Entrega 3 · F1, apartados 4-6): dentro
+   de `<Seccion titulo="Apariencias guardadas">` este bloque volvía a escribir el mismo título
+   justo debajo. Josué solo se quejó del de Fondo; la revisión del apartado 6 encontró este.
+   El botón de crear se queda donde estaba: la fila sigue siendo la misma. */
+export function BloquePresets({ presets, apariencia, accent, temaPersonalizado, onGuardar, onCambiarPresets, onAplicar, onEliminar, sinTitulo = false }) {
   const [nombre, setNombre] = useState('');
   const [creando, setCreando] = useState(false);
 
@@ -941,7 +945,8 @@ export function BloquePresets({ presets, apariencia, accent, temaPersonalizado, 
   return (
     <Card>
       <div className="flex items-center justify-between gap-2 mb-1">
-        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Apariencias guardadas</p>
+        {!sinTitulo && <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Apariencias guardadas</p>}
+        {sinTitulo && <span />}
         {(presets || []).length < MAX_PRESETS && !creando && (
           <button onClick={() => setCreando(true)} className="text-xs font-semibold" style={{ color: accent }}>
             Guardar la de ahora
@@ -1380,15 +1385,24 @@ function Seccion({ titulo, sub, icono: Icono, accent, defecto = false, children 
   );
 }
 
-export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFondo, analisisFoto, onAnalisisFoto, onFirmarFoto }) {
+/* ⚠️ Entrega 3 · F1, apartados 4-6 — `sinTitulo`.
+   Dentro de `<Seccion titulo="Fondo" sub={describirFondo(…)}>` este bloque repetía LAS DOS
+   cosas: al desplegar salía "Fondo / Fondo" y la descripción dos veces seguidas. La cabecera
+   del desplegable ya es el título, así que aquí se calla — pero solo cuando se lo dicen: el
+   bloque sigue trayendo su propio título para quien lo use suelto, sin acordeón. */
+export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFondo, analisisFoto, onAnalisisFoto, onFirmarFoto, sinTitulo = false }) {
   const [abierto, setAbierto] = useState(false);
   const disponibles = TIPOS_FONDO.filter((t) => t.implementado);
   const activo = fondo?.activo ? fondo.tipo : 'ninguno';
 
   return (
     <Card>
-      <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Fondo</p>
-      <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>{describirFondo(fondo)}</p>
+      {!sinTitulo && (
+        <>
+          <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Fondo</p>
+          <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>{describirFondo(fondo)}</p>
+        </>
+      )}
 
       <VistaPreviaFondo fondo={fondo} accent={accent} />
 
@@ -2003,6 +2017,7 @@ export default function SettingsView({
                 apartado 5 pide que se integre con el sistema que ya existe, no que compita. */}
             <Seccion titulo="Fondo" sub={describirFondo(apariencia.fondo)} icono={ImageIcon} accent={accent} defecto>
             <BloqueFondo
+              sinTitulo
               fondo={apariencia.fondo}
               accent={accent}
               onCambiar={(f) => onUpdateApariencia({ ...apariencia, fondo: f })}
@@ -2138,6 +2153,7 @@ export default function SettingsView({
 
             <Seccion titulo="Apariencias guardadas" sub="Tus estilos y los incluidos" icono={LayoutGrid} accent={accent}>
             <BloquePresets
+              sinTitulo
               presets={temasGuardados}
               apariencia={apariencia}
               accent={accent}
