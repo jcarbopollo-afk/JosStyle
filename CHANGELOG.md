@@ -1,5 +1,33 @@
 # CHANGELOG.md
 
+## v3.9.0 — `error`: el aviso que no asusta
+
+### Qué se ha construido
+Lo que suena cuando algo no sale: no se ha guardado, ha fallado la conexión, la IA no responde.
+Medido en el archivo:
+
+| Momento | Frecuencia | Nota |
+|---|---|---|
+| 30 ms | 329 Hz | **E4** |
+| 100 ms | 263 Hz | **C4** |
+
+Una tercera descendente. **265 ms**, pico a **-3 dB**. **7 de 46.**
+
+### La decisión de registro
+ queda **una octava por debajo de ** (C4 frente a C5). No es casualidad: el oído
+espera que lo que va mal suene más grave que lo que va bien, y así los dos se distinguen sin
+leer nada.
+
+⚠️ Pero solo una octava. La primera versión salió a **C3, 129 Hz**, y eso no es "más grave": es
+por debajo de donde llega un altavoz de móvil. Se habría oído un resto de armónicos y nada más.
+La app se usa en el teléfono, así que 500 Hz es la frontera que importa, no el gusto en cascos.
+
+### Lo que la ficha prohíbe, y por qué importa aquí
+ incluye **"alarma agresiva"**. Un error en esta aplicación es *"esto no se ha guardado"*,
+no una emergencia. Dos notas que bajan y se apagan avisan; un pitido repetido asusta. Es la
+diferencia entre una app que te acompaña y una que te riñe.
+
+
 ## v3.8.0 — El primer sonido con nota: `success_01`
 
 ### Qué se ha construido
