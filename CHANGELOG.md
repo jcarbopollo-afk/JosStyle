@@ -1,5 +1,39 @@
 # CHANGELOG.md
 
+## v3.8.0 — El primer sonido con nota: `success_01`
+
+### Qué se ha construido
+El "hecho": lo que suena al guardar algo, terminar una tarea, registrar una comida o acabar un
+entreno. Seis usos comparten este sonido, y por eso es de los que más se van a oír.
+
+Medido en el archivo, no supuesto:
+
+| Momento | Frecuencia | Nota |
+|---|---|---|
+| 30 ms | 525 Hz | **C5** |
+| 150 ms | 788 Hz | **G5** |
+
+Una quinta ascendente. **265 ms**, pico a **-3 dB**, 10,6 KB. **6 de 46.**
+
+### ⚠️ Y una corrección que salió de que Josué discutiera el dato
+La primera versión sonaba a **C4 → G4**, dos octavas por debajo de lo que él había escrito en el
+piano roll: el preset de FLEX (`Lucky Pluck`, un pluck de bajo) transpone hacia abajo por su cuenta.
+
+Eso importa porque **los altavoces de móvil rinden mal por debajo de 500 Hz**, y un C4 son 262. En
+cascos no se notaría; en el teléfono, que es donde se va a usar la app, habría llegado flojo.
+
+La primera propuesta fue mover las notas. Josué respondió que eso le obligaba a escribirlas en C7, lo
+cual era absurdo — y tenía razón: lo que había que mover era el `PITCH` del propio instrumento,
+no las notas. Subido a +12, las notas se quedan donde estaban y suena una octava más arriba.
+
+Una objeción suya evitó una chapuza.
+
+### Nota de método
+El eco venía de que el preset traía **Delay y Reverb encendidos de fábrica**. Un sonido de interfaz
+no puede tener reverb: lo mete en una sala imaginaria cuando tiene que sonar como si saliera del
+propio aparato. Y habría reventado el techo de 300 ms.
+
+
 ## v3.7.0 — Los interruptores, y la invariante que protege el trabajo de Josué
 
 ### Qué se ha construido
