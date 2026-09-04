@@ -1,5 +1,47 @@
 # CHANGELOG.md
 
+## v3.22.0 — La firma suena, y el validador dejaba fuera a los diez hitos
+
+### Qué se ha construido
+Once sonidos más. **39 de 46.** Entre ellos los cinco que llevan la identidad sonora del proyecto, y
+la firma se comprueba medida en el archivo, no de oído:
+
+| Archivo | Notas | Intervalos |
+|---|---|---|
+| `level_up` | C5 → F5 → G5 | **0, 5, 7** 🎵 |
+| `achievement_unlocked` | C5 → F5 → G5 | **0, 5, 7** 🎵 |
+| `personal_record` | C5 → F5 → G5 → C6 | **0, 5, 7, 12** 🎵 |
+| `grand_achievement` | C5 → F5 → G5 → C6 | **0, 5, 7, 12** 🎵 |
+| `badge_unlocked` | D5 → F#5 → A5 | 0, 4, 7 |
+| `goal_complete` | E5 → B5 → E6 | 0, 7, 12 |
+
+Los dos grandes **resuelven con la octava** lo que la firma deja abierto. Y los dos que no la llevan
+usan intervalos distintos a propósito: una insignia no es un objetivo cumplido, y ninguno de los dos
+puede confundirse con un récord.
+
+Más los hitos de racha de 3, 14 y 21 días.
+
+### 🐛 El validador rechazaba los diez hitos, todos válidos
+`validarArchivo()` buscaba la ficha quitando el `_NN` final del nombre, porque en `ui_click_01` ese
+número es **el de la variante**. Pero en `streak_milestone_30` el número **es el sonido**: quitarlo
+daba `streak_milestone`, que no existe.
+
+Resultado: los diez hitos se rechazaban con "ese nombre no está en la lista de sonidos", cada uno de
+ellos perfectamente correcto. Ahora se prueba el nombre entero primero, y solo se recorta la variante
+si el nombre completo no es una ficha.
+
+⚠️ Llevaba ahí desde la SO F4 y no saltó hasta que hubo un hito grabado. Es el mismo patrón que las
+rutas con `public/` y que los dos catálogos que no se hablaban: **con la carpeta vacía, roto y
+correcto daban exactamente el mismo resultado.**
+
+### Y dos que no entran, dichos
+- `streak_milestone_07` se quedó en 307 ms y su ficha pide 500. **Fallo de la indicación, no de la
+  grabación**: se le pasó junto al de 3 días como si compartieran ficha, y no la comparten.
+- `streak_milestone_30`, `50` y `75` salieron con la tercera nota cambiada. En el de 30 importa
+  especialmente: es uno de los que **debe llevar la firma**, y con la octava en vez de la quinta no
+  la lleva.
+
+
 ## v3.21.0 — Los diez hitos de racha dejan de ser uno solo
 
 ### 🚨 El problema

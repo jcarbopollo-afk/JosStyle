@@ -228,7 +228,17 @@ export function duracionDe(ficha) {
 
 export function validarArchivo({ nombre = '', duracionMs = 0, tamanoKb = 0 } = {}) {
   const problemas = [];
-  const base = nombre.replace(/\.[a-z0-9]+$/i, '').replace(/_\d{2}$/, '');
+  /* 🐛 **El número de un hito NO es un número de variante.**
+     `ui_click_01` es la primera de tres versiones del mismo sonido, así que para
+     encontrar su ficha hay que quitarle el `_01`. Pero `streak_milestone_30` es
+     un sonido en sí mismo —el hito de 30 días—, y quitarle el `_30` daba
+     `streak_milestone`, que no existe: los diez hitos se rechazaban con "ese
+     nombre no está en la lista de sonidos", cada uno de ellos válido.
+
+     ⚠️ Se prueba el nombre entero **primero**. Si es una ficha, es una ficha; el
+     recorte de variante solo se intenta cuando no lo es. */
+  const sinExtension = nombre.replace(/\.[a-z0-9]+$/i, '');
+  const base = fichaDe(sinExtension) ? sinExtension : sinExtension.replace(/_\d{2}$/, '');
   const ficha = fichaDe(base);
 
   if (!nombre.toLowerCase().endsWith(`.${FORMATO}`)) problemas.push(`Tiene que ser .${FORMATO}.`);

@@ -308,6 +308,11 @@ export const SONIDOS_SISTEMA = [
   ...HITOS_DE_RACHA.map((h) => crearSonido({ id: h.id, nombre: `Hito de ${h.dias} dias`, categoria: 'streak', ruta: h.ruta })),
   crearSonido({ id: 'insignia_01', nombre: 'Insignia', categoria: 'achievement', ruta: '/sonidos/badge_unlocked.mp3' }),
   crearSonido({ id: 'nivel_01', nombre: 'Subir de nivel', categoria: 'achievement', ruta: '/sonidos/level_up.mp3' }),
+  /* 🚨 Los dos apuntaban a `achievement_01`, el logro genérico. Un objetivo
+     completado y el logro más grande de la aplicación no pueden sonar igual que
+     desbloquear cualquier cosa: la biblioteca los declara aparte. */
+  crearSonido({ id: 'objetivo_01', nombre: 'Objetivo completado', categoria: 'achievement', ruta: '/sonidos/goal_complete.mp3' }),
+  crearSonido({ id: 'gran_logro_01', nombre: 'Gran logro', categoria: 'achievement', ruta: '/sonidos/grand_achievement.mp3' }),
   crearSonido({ id: 'sync_01', nombre: 'Sincronizado', categoria: 'ui', ruta: '/sonidos/sync_complete.mp3' }),
   crearSonido({ id: 'sin_conexion_01', nombre: 'Sin conexión', categoria: 'notification', ruta: '/sonidos/connection_lost.mp3' }),
   crearSonido({ id: 'con_conexion_01', nombre: 'Conexión recuperada', categoria: 'notification', ruta: '/sonidos/connection_restored.mp3' }),
@@ -350,11 +355,11 @@ export const ASIGNACIONES_POR_DEFECTO = {
   ACHIEVEMENT_UNLOCKED: 'achievement_01',
   BADGE_UNLOCKED: 'insignia_01',
   LEVEL_UP: 'nivel_01',
-  MAJOR_GOAL_COMPLETED: 'achievement_01',
+  MAJOR_GOAL_COMPLETED: 'gran_logro_01',
   TRAINING_COMPLETED: 'success_01',
   STUDY_COMPLETED: 'success_01',
   SLEEP_LOGGED: 'success_01',
-  GOAL_COMPLETED: 'achievement_01',
+  GOAL_COMPLETED: 'objetivo_01',
   SAVING_COMPLETED: 'success_01',
   CUSTOM: null,
 };
