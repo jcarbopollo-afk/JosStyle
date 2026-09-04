@@ -1730,6 +1730,49 @@ ok(!/Peluquería|Sonrisa|Manos, uñas y pies/.test(simple),
 ok(simple.length > 200, '⚠️ y no se siente vacía: hay pantalla de verdad, no un hueco');
 
 /* ===========================================================================
+   ENTREGA 3 · FASE 6 — HOY: RESUMEN, PROGRESO Y APUNTES
+   ===========================================================================
+   Apartados 2, 17 y 20. Y sobre todo el 25: **una sola fuente de verdad**, así
+   que el resumen tiene que salir de las tareas de siempre, no de una copia.
+
+   ⚠️ Sufijo `_e3f6` en todo: dos `const` iguales aquí no compilan. */
+const hoyISO_e3f6 = new Date().toLocaleDateString('sv-SE');
+almacen.productividad = {
+  tareas: [
+    { id: 'tt1', texto: 'Estudiar 45 min', fecha: hoyISO_e3f6, hecha: false },
+    { id: 'tt2', texto: 'Comprar material', fecha: hoyISO_e3f6, hecha: true },
+  ],
+  habitos: [{ id: 'hb1', nombre: 'Beber agua', historial: {} }],
+  rutinas: [], metas: [], pomodoros: {}, apuntes: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+const hoy_e3f6 = await esperarTexto(/2 tareas/);
+
+ok(/2 tareas/.test(hoy_e3f6), '🚨 E3 F6 — Hoy resume el día con datos reales (apartado 2)');
+ok(/1 hábito/.test(hoy_e3f6), 'y cuenta los hábitos, en singular cuando es uno');
+ok(/33 %|hechos/.test(hoy_e3f6), '⚠️ y el progreso del día, contando solo lo completable (apartado 20)');
+
+/* Apartado 17 — apuntar algo, y que sobreviva a recargar. */
+ok(/Apuntes de hoy/.test(hoy_e3f6), 'la captura rápida existe');
+await page.evaluate(() => {
+  const campo = [...document.querySelectorAll('input')].find((i) => i.getAttribute('aria-label') === '¿Qué tienes en mente?');
+  if (campo) {
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(campo, 'Preguntar lo del proyecto');
+    campo.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+});
+ok(await pulsar('Guardar'), 'se pulsa Guardar');
+const trasApunte_e3f6 = await esperarTexto(/Preguntar lo del proyecto/);
+ok(/Preguntar lo del proyecto/.test(trasApunte_e3f6),
+  '🚨 E3 F6 — el apunte se ve (y `TextInput` da el EVENTO, no el valor: si no, aquí no saldría nada)');
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+const trasRecargar_e3f6 = await esperarTexto(/Preguntar lo del proyecto/);
+ok(/Preguntar lo del proyecto/.test(trasRecargar_e3f6),
+  '⚠️ PERSISTENCIA: y sobrevive a recargar (regla 5 — `apuntes` está en el DEFAULT)');
+
+/* ===========================================================================
    ENTREGA 3 · FASE 5 — ELIMINAR UN HORARIO DE VERDAD
    ===========================================================================
    El apartado 3: *"los horarios no se pueden eliminar completamente; parece que
@@ -1826,6 +1869,13 @@ ok(/Pantalones/.test(armario_e3f3),
    sin que nada más falle. Ya pasó dos veces; `test-imports.mjs` lo caza en un
    segundo, pero es más barato no provocarlo. */
 const hoyISO_e3f2 = new Date().toLocaleDateString('sv-SE');
+/* ⚠️ **Y se limpian los hábitos que dejó la sección de la F6.** Este archivo es
+   un recorrido seguido: lo que una sección mete en `almacen` sigue ahí en la
+   siguiente. La F6 deja un hábito, y `mantenimientoHoy` cuenta los hábitos de
+   Productividad como rachas que mantener (E3 F2, apartado 10) — así que sin esto
+   la cuenta salía 3 en vez de 2 y el bloque seguía apareciendo al vaciar las
+   rachas. **Un escenario que hereda el del vecino no prueba lo que dice.** */
+almacen.productividad = { tareas: [], habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [] };
 almacen.rachas = {
   definiciones: [
     { id: 'ra1', tipo: 'custom', nombre: 'Beber agua', icono: '💧', regla: { clase: 'diaria' }, creadaEn: hoyISO_e3f2, activa: true },

@@ -1,5 +1,63 @@
 # CHANGELOG.md
 
+## v3.20.0 — Entrega 3 · Fase 6 (HC F1): Hoy, el centro del día
+
+Sexta fase de la Entrega 3, y la primera del bloque **Hoy y Calendario**. *"Transformar Hoy en el
+auténtico centro operativo. Al abrir la aplicación, el usuario debe poder entender en pocos segundos
+qué tiene hoy."*
+
+### 🚨 Lo primero fue mirar qué existe ya
+
+Es la lección que dejó HT F6 —*"el 90 % de esa fase fue no duplicar"*— y aquí volvió a valer: de los
+veinticinco apartados, **la mayor parte ya estaban construidos**. La cabecera con saludo y fecha
+dinámica, la agenda del día en orden (`agendaCompleta`), el próximo evento con su *"en 2 h 15 min"*
+(`ahoraMismo`, `siguiente`, `describirMinutos`), las tareas y su marcado, los hábitos y su racha,
+y las tarjetas de entrenamiento, estudios, nutrición, sueño y economía.
+
+Lo que **no** contestaba nadie, y es lo que trae esta fase:
+
+**El resumen del día** (apartado 2) — *"4 tareas · 2 eventos · 5 hábitos"*, de datos reales.
+⚠️ Y un día sin nada **no se anuncia con tres ceros**: el bloque no se pinta.
+
+**El progreso del día** (apartado 20) — *"50 % completado"*, y el enunciado pide que *"el cálculo
+esté claramente definido"*, así que está declarado en `FUENTES_PROGRESO`: cuenta **solo tareas y
+hábitos**. 🚨 **Un evento que simplemente ocurre no se completa**, y el apartado lo dice con esas
+palabras. ⚠️ Sin nada completable **no hay porcentaje**: `null`, no un 0 % — un 0 % todos los
+domingos sería un reproche por un día en el que no tocaba nada.
+
+**Los apuntes de hoy** (apartado 17) — la captura rápida que no existía. *"Escribe algo que no
+quieras olvidar."* Un texto y su día, sin categoría ni prioridad: *"no obligar a clasificarlo
+antes"*. ⏸ Convertirlo en tarea o evento es de la **HC F4**, la fase que el propio documento dedica
+a las acciones rápidas: aquí se declara en qué puede convertirse, con la colección real de cada
+cosa, en vez de fingirlo.
+
+### 🚨 Una sola fuente de verdad (apartados 24 y 25)
+
+*"No crear `today_tasks`, `agenda_tasks` y `calendar_tasks` como tres copias independientes."*
+
+**La forma de cumplirlo no es sincronizar: es no tener copia.** Los recuentos y el progreso se
+derivan de las entidades originales en el momento, así que marcar una tarea en Agenda mueve el
+número de Hoy **solo**. Hay pruebas que leen el código y fallan si aparece cualquier nombre que
+huela a copia, o si esta capa se inventa un almacén.
+
+Lo único que se guarda son los apuntes, y van en `productividad.apuntes` —no en una clave nueva de
+Supabase—, con su línea en `DEFAULT_PRODUCTIVIDAD` (regla 5) y su entrada en `CATALOGO_PAPELERA`,
+porque **toda lista que se pueda borrar va ahí** (EH F45).
+
+### Lo que esto deja apuntado
+
+- ⚠️ **Antes de construir algo de Hoy, mirar si ya existe.** Van dos fases seguidas en las que la
+  mayoría del trabajo era no duplicar.
+- 🐛 **`addApunte` ya existía**, y era de la Biblioteca (`biblioteca.apuntes`, Fase 11). El build lo
+  cazó, pero el fondo es el de siempre: **antes de llamar a algo, mirar si ese nombre ya significa
+  otra cosa**. Los de aquí son `addApunteDelDia` / `deleteApunteDelDia`.
+- 🐛 **Un escenario de prueba que hereda el del vecino no prueba lo que dice.** El recorrido de
+  Chromium es una pasada seguida: lo que una sección deja en el almacén sigue ahí en la siguiente.
+  La sección de la F6 dejaba un hábito, y la de rachas —que cuenta los hábitos como rachas que
+  mantener— pasó de 2 a 3 y siguió pintando el bloque al vaciar las rachas. Cada sección limpia lo
+  que va a mirar.
+
+
 ## v3.19.0 — La racha: empezar, subir y volver
 
 ### Qué se ha construido
@@ -56,6 +114,8 @@ archivos, en v3.16.0.
 Declarar un sonido que aún no existe no es fingir: el motor cae en silencio si falta el archivo
 (apartado 25). Lo que sí era un problema es lo contrario — el archivo existía y ningún evento podía
 elegirlo—, y eso ya no pasa.
+
+
 ## v3.17.0 — Entrega 3 · Fase 5: los horarios se pueden borrar, y "Semana" ya no es "Horario semanal"
 
 Quinta fase de la Entrega 3. Josué nombra **tres problemas** al empezar, y ésta los contesta.

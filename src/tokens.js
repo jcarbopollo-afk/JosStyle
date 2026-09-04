@@ -421,7 +421,12 @@ export const DEFAULT_NEGOCIO = { proyectos: [] };
 // cero — se recalcula en el propio ProductivityView), rutinas/checklists reutilizables, tareas
 // puntuales con fecha opcional, metas a corto plazo (distintas de los Objetivos a 30d-10a de la
 // futura Fase 9) y un contador diario de pomodoros completados.
-export const DEFAULT_PRODUCTIVIDAD = { habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {} };
+// ⚠️ `apuntes` es de la Entrega 3 · F6 (HC F1, apartado 17): la captura rápida
+// de "algo que no quieras olvidar". Va aquí y no en una clave nueva de Supabase
+// porque es de Productividad como las tareas — y al estar en el DEFAULT,
+// `{ ...DEFAULT_PRODUCTIVIDAD, ...guardado }` se lo pone solo a lo guardado
+// antes de esta fase (regla 5).
+export const DEFAULT_PRODUCTIVIDAD = { habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [] };
 export const PERIODOS_META = ['Diaria', 'Semanal', 'Mensual', 'Anual'];
 
 // Fase 9 — Objetivos: narrativa larga (30 días a 10 años), deliberadamente distinta de las

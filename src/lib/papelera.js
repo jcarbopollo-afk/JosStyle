@@ -84,6 +84,9 @@ export const CATALOGO_PAPELERA = {
   'productividad.rutinas': { modulo: 'productividad', coleccion: 'rutinas', tipo: 'Rutina', campos: ['nombre'], icono: 'productividad' },
   'productividad.tareas': { modulo: 'productividad', coleccion: 'tareas', tipo: 'Tarea', campos: ['texto'], icono: 'productividad' },
   'productividad.metas': { modulo: 'productividad', coleccion: 'metas', tipo: 'Meta', campos: ['nombre'], icono: 'productividad' },
+  // E3 F6 — toda lista que se pueda borrar va aquí (EH F45), y los apuntes de
+  // hoy se borran.
+  'productividad.apuntes': { modulo: 'productividad', coleccion: 'apuntes', tipo: 'Apunte', campos: ['texto', 'fecha'], icono: 'productividad' },
   'objetivos.lista': { modulo: 'objetivos', coleccion: 'lista', tipo: 'Objetivo', campos: ['texto'], icono: 'objetivos' },
   'calendario.eventos': { modulo: 'calendario', coleccion: 'eventos', tipo: 'Evento', campos: ['titulo'], icono: 'calendario' },
   'diario.entradas': { modulo: 'diario', coleccion: 'entradas', tipo: 'Entrada del diario', campos: ['fecha'], icono: 'diario' },

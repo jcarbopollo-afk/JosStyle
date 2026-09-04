@@ -26,7 +26,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 3 ✅ | **AR+** Armario | Categorías, iconografía y detalle visual — **hecha (v3.13.0)** | 544 |
 | 4 ✅ | **EC** Economía | Hucha inteligente y pulido final — **hecha (v3.15.0)** | 741 |
 | 5 ✅ | **HO+** Horario | UX, navegación y gestión de horarios — **hecha (v3.17.0)** | 1027 |
-| 6 | **HC** Hoy y Calendario | F1 — Hoy: centro del día | 1227 |
+| 6 ✅ | **HC** Hoy y Calendario | F1 — Hoy: centro del día — **hecha (v3.20.0)** | 1227 |
 | 7 | HC | F2 — Calendario: agenda | 1824 |
 | 8 | HC | F3 — Calendario: vista temporal | 2444 |
 | 9 | HC | F4 — Acciones rápidas e integración | 3035 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 5 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0). La siguiente es la **6 — HC Hoy y Calendario · F1**, línea 1227.
+**Por dónde va:** 6 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0). La siguiente es la **7 — HC F2: Calendario, agenda**, línea 1824.
 
 ## Lo que dejó la Fase 1, y que afecta a todas las demás
 
@@ -134,6 +134,23 @@ solo vale como corrección o ajuste — nunca una función nueva.
 - 🐛 **El limpiador de comentarios de una prueba NO puede usar un patrón de "llave, comentario,
   llave"** para los comentarios JSX: se come el código a partir del primer `(() => {` con comentario
   dentro. Quitar primero los bloques de comentario, después las llaves vacías.
+
+## Y lo que dejó la Fase 6 (HC F1)
+
+- 🚨 **UNA SOLA FUENTE DE VERDAD, Y LA FORMA DE CUMPLIRLO ES NO TENER COPIA** (apartados 24 y 25).
+  El resumen y el progreso de Hoy se derivan de las entidades originales en el momento, así que
+  marcar una tarea en Agenda mueve el número de Hoy **solo**. Hay pruebas que leen el código
+  buscando cualquier nombre que huela a copia.
+- ⚠️ **El progreso del día cuenta SOLO tareas y hábitos** (`FUENTES_PROGRESO`): un evento que
+  simplemente ocurre no se completa. Y sin nada completable **no hay porcentaje**, `null`.
+- ⚠️ **Los apuntes de hoy viven en `productividad.apuntes`**, con su línea en
+  `DEFAULT_PRODUCTIVIDAD` (regla 5) y en `CATALOGO_PAPELERA` (EH F45). Convertirlos en tarea o
+  evento es de la **HC F4**.
+- 🐛 **Antes de llamar a algo, mirar si ese nombre ya significa otra cosa**: `addApunte` era de la
+  Biblioteca desde la Fase 11. Los de aquí son `addApunteDelDia` / `deleteApunteDelDia`.
+- 🐛 **Un escenario del recorrido de Chromium que hereda el del vecino no prueba lo que dice.** Es
+  una pasada seguida: lo que una sección deja en `almacen` sigue ahí en la siguiente. Cada sección
+  limpia lo que va a mirar.
 
 ## Dos cosas del documento que conviene saber
 

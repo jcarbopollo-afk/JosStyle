@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.17.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.20.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 3** (44 fases — **1 hecha**, ver `docs/11_ENTREGA3_ORDEN.md`),
@@ -164,13 +164,23 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 5 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
-**F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)** y la
-**F5 (Horario, v3.17.0)**; la siguiente es la **6 — HC Hoy y Calendario · F1: Hoy, centro del día**.
-El índice, con la línea de cada fase dentro de la especificación literal, está en
-**`docs/11_ENTREGA3_ORDEN.md`**.
+▶️ **La Entrega 3 está en marcha: 6 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+**F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
+**F5 (Horario, v3.17.0)** y la **F6 (Hoy, centro del día, v3.20.0)**; la siguiente es la
+**7 — HC F2: Calendario, agenda**. El índice, con la línea de cada fase dentro de la especificación
+literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
-⚠️ **Y lo que dejaron las cinco primeras, que afecta a todas las demás:**
+⚠️ **Y lo que dejaron las seis primeras, que afecta a todas las demás:**
+
+- 🚨 **UNA SOLA FUENTE DE VERDAD, Y LA FORMA DE CUMPLIRLO ES NO TENER COPIA** (E3 F6, apartados 24 y
+  25). El resumen y el progreso de Hoy se derivan de las entidades originales en el momento, así que
+  marcar una tarea en Agenda mueve el número de Hoy **solo**. Nunca `today_tasks`.
+- ⚠️ **El progreso del día cuenta SOLO tareas y hábitos** (`FUENTES_PROGRESO`): un evento que
+  simplemente ocurre no se completa. Sin nada completable, `null`, no un 0 %.
+- 🐛 **Antes de llamar a algo, mirar si ese nombre ya significa otra cosa**: `addApunte` era de la
+  Biblioteca desde la Fase 11, y el build lo cazó.
+- 🐛 **Un escenario del recorrido de Chromium que hereda el del vecino no prueba lo que dice**: es
+  una pasada seguida, así que cada sección limpia lo que va a mirar.
 
 - 🚨 **UNA FUNCIÓN QUE NADIE LLAMA NO FALLA NUNCA.** Van **dos** en esta entrega:
   `onDeleteMovimiento` en Economía (E3 F1) y `eliminarHorario` en Horario (E3 F5) — las dos escritas,

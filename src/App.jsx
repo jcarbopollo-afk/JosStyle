@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt, Flame, CalendarClock, UserRound } from 'lucide-react';
 import { normalizarEconomiaHucha } from './lib/hucha';
+import { anadirApunte, resumenDelDia, progresoDelDia, apuntesDe } from './lib/centroDelDia';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
 import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
@@ -1731,6 +1732,16 @@ export default function App() {
   const addMeta = (m) => snapshotAndSave({ productividad: { ...productividad, metas: [...productividad.metas, m] } });
   const updateMeta = (m) => snapshotAndSave({ productividad: { ...productividad, metas: productividad.metas.map((x) => (x.id === m.id ? m : x)) } });
   const deleteMeta = (id) => eliminarConPapelera('productividad', 'metas', id);
+  /* E3 F6 (HC F1, apartado 17) — los apuntes de hoy. `anadirApunte` devuelve la
+     `productividad` entera, así que aquí solo se guarda; y el borrado va por
+     `eliminarConPapelera`, la única puerta (ME F3). */
+  /* ⚠️ `addApunteDelDia`, no `addApunte`: **la Biblioteca ya tiene sus apuntes**
+     (`biblioteca.apuntes`) y `addApunte`/`deleteApunte` son suyos desde la Fase
+     11. Dos cosas distintas con el mismo nombre no compilan, y aquí lo cazó el
+     build — pero el fondo es el de siempre: antes de llamar a algo, mirar si ese
+     nombre ya significa otra cosa. */
+  const addApunteDelDia = (texto) => snapshotAndSave({ productividad: anadirApunte(productividad, texto) });
+  const deleteApunteDelDia = (id) => eliminarConPapelera('productividad', 'apuntes', id);
   // El contador de pomodoros no pasa por snapshotAndSave (no tiene sentido "deshacer" un
   // pomodoro completado) — se guarda directo, igual de ligero que un simple contador diario.
   const completarPomodoro = () => {
@@ -2030,6 +2041,13 @@ export default function App() {
               return eliminarConPapelera('perfumes', 'historial', id);
             }}
             rachas={rachas}
+            /* E3 F6 (HC F1, apartados 2, 17 y 20) — el resumen y el progreso del día se
+               DERIVAN aquí de las entidades de siempre: ni una copia (apartados 24 y 25).
+               Los apuntes son lo único nuevo que se guarda, porque no existía en ningún sitio. */
+            resumenHoy={resumenDelDia(horarioTop, { productividad, calendario, salud, nutricion, calistenia, armario, estiloHombre, futbol })}
+            progresoHoy={progresoDelDia(productividad)}
+            apuntesHoy={apuntesDe(productividad)}
+            onAddApunte={addApunteDelDia} onDeleteApunte={deleteApunteDelDia}
             // BI Fase 1 — el desplegable de situación de "Hoy" cambia el modo desde ahí mismo.
             // Es el MISMO interruptor que Personalización, no un segundo sistema (decisión D2-07).
             modo={personalizacion.modo} onSetModo={setModoApp}
@@ -2321,7 +2339,7 @@ export default function App() {
           <LibraryView
             biblioteca={biblioteca} archivos={bibliotecaArchivos}
             onAddArchivo={addArchivoBiblioteca} onDeleteArchivo={deleteArchivoBiblioteca}
-            onAddApunte={addApunte} onDeleteApunte={deleteApunte}
+            onAddApunte={addApunteDelDia} onDeleteApunte={deleteApunteDelDia}
             onAddEnlace={addEnlace} onDeleteEnlace={deleteEnlace}
             accent={accent}
           />

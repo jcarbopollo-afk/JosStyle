@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F6 — Hoy: resumen del día, progreso y apuntes.
+if node --import ./scripts/resolver-vite.mjs scripts/test-centro-dia.mjs >/tmp/jc_cdia.log 2>&1; then
+  ok "Hoy, centro del día (E3 F6) — $(grep -c '✓' /tmp/jc_cdia.log) comprobaciones"
+else
+  fallo "Falla el centro del día (E3 F6)"; grep '✗' /tmp/jc_cdia.log
+fi
+
 # Entrega 3 · F5 — el borrado real de horarios y la jerarquía de Horario.
 if node --import ./scripts/resolver-vite.mjs scripts/test-mis-horarios.mjs >/tmp/jc_mish.log 2>&1; then
   ok "Mis horarios y borrado real (E3 F5) — $(grep -c '✓' /tmp/jc_mish.log) comprobaciones"

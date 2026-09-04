@@ -8,10 +8,12 @@ import {
 import { COLORS, MODOS_APP } from '../tokens';
 import { calcularDuracion, formatHoras, hexToRgba, diasHasta, formatFecha, todayISO, addDays } from '../lib/helpers';
 import { resumenHabito } from '../lib/rachas';
+// Entrega 3 · F6 (HC F1) — los textos y el tope del apunte, del enunciado.
+import { TEXTOS_APUNTES, MAX_APUNTE } from '../lib/centroDelDia';
 import { ResumenRachaHoy } from './RachasView';
 import { resumenDelDia, eventosDelDia } from '../lib/calendario';
 import { puntuacionDelDia, mensajePuntuacion } from '../lib/puntuacion';
-import { Card, AIPanel, ScoreGauge, DashboardModuleCard, MiniAccessCard, QuickActionButton } from '../components/ui';
+import { Card, AIPanel, ScoreGauge, DashboardModuleCard, MiniAccessCard, QuickActionButton, TextInput, PrimaryButton, BotonBorrar } from '../components/ui';
 // Fase A4 — Notificaciones reales: los tres avisos automáticos de "Hoy" (Fase 20) son el primer
 // caso de uso real de src/lib/notificaciones.js — si Josué activa el permiso del sistema y la
 // categoría correspondiente en Ajustes, además de la tarjeta de dentro de la app llega una
@@ -23,6 +25,94 @@ import { notificarSiCorresponde } from '../lib/notificaciones';
 // Se muestra directo, sin pedir el PIN otra vez — es solo la etiqueta y la cuenta atrás,
 // igual de discreto que un recordatorio de calendario; el detalle completo (nombre, lista
 // entera, alta/baja) sigue detrás del PinGate en la pestaña Relación.
+/* ===========================================================================
+   ENTREGA 3 · FASE 6 (HC F1) — EL RESUMEN Y EL PROGRESO DEL DÍA
+   ===========================================================================
+   Apartado 2: *"4 tareas · 2 eventos · 5 hábitos. Los números deben proceder de
+   datos reales."* Apartado 20: *"68 % completado, basado en elementos realmente
+   completables"*.
+
+   ⚠️ **Aquí no se cuenta nada**: los dos vienen de `centroDelDia.js`, derivados
+   de las entidades originales. Si esta tarjeta dijera un número distinto del de
+   Agenda, sería porque alguien contó por su cuenta.
+
+   ⚠️ **Y un día sin nada no se anuncia con tres ceros** (`linea === null`): el
+   bloque no se pinta. Un "0 tareas · 0 eventos" todos los domingos es ruido. */
+function ResumenDelDia({ resumen, progreso, accent }) {
+  if (!resumen || resumen.vacio) return null;
+  return (
+    <Card style={{ padding: '0.85rem 1.1rem' }}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>Hoy</p>
+          <p className="text-sm font-semibold mt-0.5" style={{ color: COLORS.text }}>{resumen.linea}</p>
+        </div>
+        {/* Apartado 20 — solo si hay algo completable. Sin nada que completar no
+            hay porcentaje: un 0 % de un día en el que no tocaba nada es un
+            reproche (la lección de EH F8). */}
+        {progreso?.porcentaje !== null && progreso?.porcentaje !== undefined && (
+          <div className="text-right flex-shrink-0">
+            <p className="text-lg font-extrabold leading-none" style={{ color: progreso.completo ? COLORS.positive : accent, fontFamily: "'Manrope', sans-serif" }}>
+              {progreso.porcentaje} %
+            </p>
+            <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
+              {progreso.hechos}/{progreso.total} hechos
+            </p>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+/* ===========================================================================
+   APUNTES DE HOY (apartado 17)
+   ===========================================================================
+   *"Escribe algo que no quieras olvidar. […] Inicialmente son simplemente
+   apuntes."* Un campo y una lista, sin categoría ni prioridad: *"no obligar a
+   clasificarlo antes"* (apartado 16).
+
+   🚨 **`TextInput` reparte sus props tal cual, así que `onChange` recibe el
+   EVENTO, no el valor.** `onChange={setTexto}` guarda el evento entero en el
+   estado, la pantalla se pinta perfecta y no funciona. Pasó en EH F36 y F37 a la
+   vez, y lo cazó Chromium. */
+function ApuntesDeHoy({ apuntes, accent, onAdd, onDelete }) {
+  const [texto, setTexto] = useState('');
+  const guardar = () => { if (texto.trim()) { onAdd(texto); setTexto(''); } };
+  return (
+    <Card>
+      <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_APUNTES.titulo}</p>
+      <p className="text-xs mt-0.5 mb-2" style={{ color: COLORS.textMuted }}>{TEXTOS_APUNTES.invita}</p>
+      <div className="flex items-center gap-2">
+        <TextInput
+          value={texto}
+          onChange={(ev) => setTexto(ev.target.value)}
+          onKeyDown={(ev) => { if (ev.key === 'Enter') guardar(); }}
+          placeholder={TEXTOS_APUNTES.campo}
+          maxLength={MAX_APUNTE}
+          style={{ flex: 1 }}
+          aria-label={TEXTOS_APUNTES.campo}
+        />
+        <div style={{ width: 96 }}>
+          <PrimaryButton accent={accent} onClick={guardar}>{TEXTOS_APUNTES.guardar}</PrimaryButton>
+        </div>
+      </div>
+      {apuntes.length === 0
+        ? <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>{TEXTOS_APUNTES.vacio}</p>
+        : (
+          <div className="mt-2 space-y-1">
+            {apuntes.map((a) => (
+              <div key={a.id} className="flex items-start gap-2">
+                <p className="text-xs flex-1 leading-relaxed" style={{ color: COLORS.text }}>{a.texto}</p>
+                <BotonBorrar onClick={() => onDelete(a.id)} label="Eliminar apunte" />
+              </div>
+            ))}
+          </div>
+        )}
+    </Card>
+  );
+}
+
 function RecordatorioPareja({ relacion, accent }) {
   if (!relacion || relacion.fechas.length === 0) return null;
   const proxima = [...relacion.fechas].sort((a, b) => diasHasta(a.fecha) - diasHasta(b.fecha))[0];
@@ -381,6 +471,9 @@ export default function DashboardView({
   // Ampliación del Dashboard — Centro de Control
   salud, objetivos, nutricion, negocio, diario, biblioteca, fe, bienestar, resumenes, dashboardOcultos, modulosDesactivados, onNavegar,
   rachas,
+  // Entrega 3 · F6 (HC F1) — el resumen y el progreso vienen DERIVADOS de App.jsx;
+  // los apuntes son lo único que se guarda, y también llegan calculados.
+  resumenHoy, progresoHoy, apuntesHoy, onAddApunte, onDeleteApunte,
   accent,
 }) {
   const hora = new Date().getHours();
@@ -489,6 +582,11 @@ export default function DashboardView({
           (apartado 6) — vive fuera del grupo de avisos condicionales de abajo porque, a
           diferencia de ellos, está SIEMPRE visible (apartado 5: "Rutina normal" es un estado más,
           no la ausencia del componente). */}
+      {/* Entrega 3 · F6 (HC F1, apartados 2 y 20) — el resumen del día y el progreso.
+          Los dos números salen de las entidades de siempre, así que marcar una tarea
+          en Agenda los mueve aquí solos: no hay copia que sincronizar (apartado 25). */}
+      <ResumenDelDia resumen={resumenHoy} progreso={progresoHoy} accent={accent} />
+
       <IndicadorContexto modo={modo} onSetModo={onSetModo} accent={accent} />
 
       <TarjetaPuntuacion puntuacion={puntuacion} mensaje={mensajeScore} accent={accent} />
@@ -665,6 +763,10 @@ export default function DashboardView({
           </div>
         </div>
       )}
+
+      {/* Apartado 17 — los apuntes del día, lo último: es captura, no acción
+          pendiente, y el apartado 18 pide lo accionable arriba. */}
+      <ApuntesDeHoy apuntes={apuntesHoy || []} accent={accent} onAdd={onAddApunte} onDelete={onDeleteApunte} />
 
       <AIPanel
         label="Consejo del día"
