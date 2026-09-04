@@ -67,7 +67,7 @@ export const CATALOGO = {
   // ── 0 · Interfaz ──────────────────────────────────────────────────────────
   ui_click: { nivel: 0, motor: 'UI_CLICK' },
   ui_toggle_on: { nivel: 0, motor: 'UI_TOGGLE' },
-  ui_toggle_off: { nivel: 0, motor: 'UI_TOGGLE' },
+  ui_toggle_off: { nivel: 0, motor: 'UI_TOGGLE_OFF' },
   ui_open: { nivel: 0, motor: 'UI_CLICK' },
   ui_close: { nivel: 0, motor: 'UI_BACK' },
 

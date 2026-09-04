@@ -94,6 +94,11 @@ export const EVENTOS_SONIDO = {
   // Interfaz — discretos a propósito (apartado 12).
   UI_CLICK: { categoria: 'ui', prioridad: 'LOW', cooldown: 60 },
   UI_TOGGLE: { categoria: 'ui', prioridad: 'LOW', cooldown: 60 },
+  /* 🚨 Encender y apagar NO son el mismo sonido: la biblioteca declara
+     `ui_toggle_on` y `ui_toggle_off` por separado, y la SO F3 también. Aquí
+     faltaba el segundo, así que los dos caían en `UI_TOGGLE` y el de apagar no
+     se habría oído nunca. Lo destapó el archivo real, el 2026-09-04. */
+  UI_TOGGLE_OFF: { categoria: 'ui', prioridad: 'LOW', cooldown: 60 },
   UI_BACK: { categoria: 'ui', prioridad: 'LOW', cooldown: 60 },
   UI_SUCCESS: { categoria: 'ui', prioridad: 'LOW', cooldown: 120 },
 
@@ -213,7 +218,8 @@ export function normalizarSonido(guardado) {
  */
 export const SONIDOS_SISTEMA = [
   crearSonido({ id: 'click_01', nombre: 'Toque', categoria: 'ui', ruta: '/sonidos/ui_click_01.mp3', variantes: ['/sonidos/ui_click_01.mp3', '/sonidos/ui_click_02.mp3', '/sonidos/ui_click_03.mp3'] }),
-  crearSonido({ id: 'toggle_01', nombre: 'Interruptor', categoria: 'ui', ruta: '/sonidos/ui_toggle_on.mp3' }),
+  crearSonido({ id: 'toggle_01', nombre: 'Interruptor (encender)', categoria: 'ui', ruta: '/sonidos/ui_toggle_on.mp3' }),
+  crearSonido({ id: 'toggle_off_01', nombre: 'Interruptor (apagar)', categoria: 'ui', ruta: '/sonidos/ui_toggle_off.mp3' }),
   crearSonido({ id: 'back_01', nombre: 'Volver', categoria: 'ui', ruta: '/sonidos/ui_close_01.mp3' }),
   crearSonido({ id: 'success_01', nombre: 'Hecho', categoria: 'feedback', ruta: '/sonidos/success_01.mp3' }),
   crearSonido({ id: 'error_01', nombre: 'Error', categoria: 'feedback', ruta: '/sonidos/error.mp3' }),
@@ -229,6 +235,7 @@ export const sonidoDelSistema = (id) => SONIDOS_SISTEMA.find((s) => s.id === id)
 export const ASIGNACIONES_POR_DEFECTO = {
   UI_CLICK: 'click_01',
   UI_TOGGLE: 'toggle_01',
+  UI_TOGGLE_OFF: 'toggle_off_01',
   UI_BACK: 'back_01',
   UI_SUCCESS: 'click_01',
   ACTION_COMPLETED: 'success_01',

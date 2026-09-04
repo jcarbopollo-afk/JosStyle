@@ -1,5 +1,49 @@
 # CHANGELOG.md
 
+## v3.7.0 — Los interruptores, y la invariante que protege el trabajo de Josué
+
+### Qué se ha construido
+`ui_toggle_on` y `ui_toggle_off`: las mismas dos notas invertidas. Medido en el archivo,
+no supuesto:
+
+| | Golpe 1 → Golpe 2 | |
+|---|---|---|
+| `ui_toggle_on` | 13295 → 13741 Hz | ⬆ sube |
+| `ui_toggle_off` | 13759 → 13223 Hz | ⬇ baja |
+
+Los dos a **125 ms** y con el pico a **-3 dB**. Subir es encender y bajar es apagar: no hay que
+aprendérselo. **Con esto quedan hechos los cinco de interfaz. 5 de 46.**
+
+### 🚨 El de apagar no se habría oído nunca
+La SO F3 declara `ui_toggle_on` y `ui_toggle_off` como dos sonidos distintos. Pero los dos apuntaban
+al mismo evento del motor, `UI_TOGGLE`, que resuelve a **un solo archivo**. El de apagar era
+inalcanzable.
+
+- Se añade el evento `UI_TOGGLE_OFF` y el sonido `toggle_off_01`
+- La SO F3 pasa a mandar el suyo a ese evento
+
+### 🚨 Y la invariante que faltaba
+**Esto ha pasado dos veces en un mismo día.** Josué graba un archivo, cumple su ficha, lo damos por
+bueno — y nada en el motor puede reproducirlo. Primero `ui_click_02/03`, que sin rotación no sonaban.
+Después `ui_toggle_off`, que caía en el evento equivocado.
+
+Las dos veces **el archivo era correcto y el sistema estaba mal**. Y las dos veces se descubrió por
+casualidad, mirando otra cosa.
+
+Ahora hay una prueba que lee `public/sonidos/` y exige que **algo pueda tocar cada archivo que hay
+ahí**. Si un sonido grabado queda mudo, la suite lo dice por su nombre. Verificado quitando
+`toggle_off_01`: sale `MUDOS: ui_toggle_off.mp3`.
+
+Es la única prueba del proyecto que no protege el código, sino el trabajo de Josué. Grabar algo que
+nunca va a sonar es la peor forma de perder una tarde.
+
+### Textos que dejaron de ser verdad
+- *"porque todavía no hay ni un archivo que sonar"* → sigue apagado, pero porque la biblioteca está a
+  medias: encenderlo con 5 de 46 dejaría 41 eventos mudos
+- La cabecera de `audio.js` afirmaba que no había ningún archivo. Se marca como superado **sin
+  borrarlo**: explica por qué el motor está construido como está
+
+
 ## v3.6.0 — Las tres variantes del clic, y la rotación que faltaba
 
 ### Qué se ha construido

@@ -122,7 +122,10 @@ console.log('\n═══ Catálogo, categorías y prioridades ═══\n');
 console.log('\n═══ Preferencias y volumen ═══\n');
 {
   comprobar('CLAVE · De fábrica el sonido está APAGADO', DEFAULT_AUDIO.activado === false);
-  comprobar('...porque todavía no hay ni un archivo que sonar', SONIDOS_SISTEMA.every((s) => s.ruta.startsWith('/sonidos/')));
+  /* ⚠️ Esto decía "porque todavía no hay ni un archivo que sonar". Dejó de ser
+     verdad el 2026-09-04. Sigue apagado, pero ahora porque **falta biblioteca**,
+     no porque no haya nada: encenderlo con 5 de 46 dejaría 41 eventos mudos. */
+  comprobar('...y sigue apagado mientras la biblioteca esté a medias', SONIDOS_SISTEMA.every((s) => s.ruta.startsWith('/sonidos/')));
   comprobar('Cada categoría tiene su volumen por defecto',
     CATEGORIAS_SONIDO.every((c) => DEFAULT_AUDIO.volumenes[c.id] === c.porDefecto));
 
@@ -186,7 +189,7 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
 
   comprobar('Un sonido guardado a medias se normaliza', normalizarSonido({}).origen === 'system');
   comprobar('Una duración imposible se descarta', normalizarSonido({ duracion: -5 }).duracion === 0);
-  comprobar('Los nueve sonidos del sistema están', SONIDOS_SISTEMA.length === 9);
+  comprobar('Los diez sonidos del sistema están', SONIDOS_SISTEMA.length === 10);
   comprobar('...cada uno con su ruta y su categoría', SONIDOS_SISTEMA.every((s) => s.ruta && s.categoria));
   comprobar('...y no se mezclan con los del usuario (apartado 19)',
     SONIDOS_SISTEMA.every((s) => s.origen === 'system' && s.ruta.startsWith('/sonidos/')));
@@ -217,6 +220,23 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
     SONIDOS_SISTEMA.every((s) => s.variantes.length >= 1 && s.variantes[0] === s.ruta));
   comprobar('⚠️ Un sonido de Josué, que nunca tendrá variantes, tampoco se rompe',
     crearSonido({ id: 'suyo', ruta: '/x.mp3', origen: 'custom' }).variantes.length === 1);
+
+  /* 🚨 **LA INVARIANTE QUE FALTABA, Y QUE HABRÍA CAZADO LOS DOS FALLOS.**
+     Ha pasado dos veces en un solo día: Josué graba un archivo, lo damos por
+     bueno porque cumple su ficha, y resulta que **nada en el motor puede
+     reproducirlo**. Primero con `ui_click_02/03`, que sin rotación no sonaban;
+     después con `ui_toggle_off`, que caía en el mismo evento que el de encender.
+
+     Las dos veces el archivo era correcto y el sistema estaba mal. Esto mira lo
+     que hay en el disco y exige que **algo pueda tocarlo**. Es la prueba que
+     protege el trabajo de Josué, no el código. */
+  const ALCANZABLES = new Set(SONIDOS_SISTEMA.flatMap((s) => s.variantes));
+  const enDisco = (() => {
+    try { return readdirSync(join(RAIZ, 'public/sonidos')).filter((f) => f.endsWith(`.${FORMATO}`)); } catch { return []; }
+  })();
+  const mudos = enDisco.filter((f) => !ALCANZABLES.has(`/sonidos/${f}`));
+  comprobar(`🚨 CLAVE · Ningún archivo grabado se queda mudo (${enDisco.length} en el disco)${mudos.length ? ` — MUDOS: ${mudos.join(', ')}` : ''}`,
+    mudos.length === 0);
 }
 
 /* ---------------------------------------------------------------------------
