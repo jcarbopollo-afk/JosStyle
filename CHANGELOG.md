@@ -1,5 +1,32 @@
 # CHANGELOG.md
 
+## v3.19.0 — La racha: empezar, subir y volver
+
+### Qué se ha construido
+Los cinco sonidos de racha que se pueden hacer sin tocar el motor. **30 de 46.**
+
+| Archivo | Notas | |
+|---|---|---|
+| `streak_start` | C5 → G5 → C6 | 357 ms |
+| `streak_increment_01` | E5 → B5 | 278 ms |
+| `streak_increment_02` | F5 → C6 | 277 ms |
+| `streak_increment_03` | F#5 → C#6 | 273 ms |
+| `streak_recovered` | G4 → C5 → G5 | 368 ms |
+
+Correctos a la primera otra vez, y son los primeros con **tres notas**: empezar una racha es más
+que sumarle un día, y su ficha llega a 700 ms.
+
+`streak_recovered` arranca en **G4**, por debajo del `streak_start`. Recuperar una racha rota es
+volver a empezar, pero se vuelve desde abajo, y eso se oye sin que nadie lo explique.
+
+### Lo que queda, y lo que no se puede grabar todavía
+Faltan **16**. De ellos, **10 son los hitos de racha** y siguen bloqueados: el motor los resolvería
+todos al mismo archivo, así que el hito de 3 días y el de un año sonarían idénticos.
+
+⚠️ No es pereza dejarlo: elegir entre diez según los días **no lo permite la API actual**.
+`resolverSonido()` recibe un evento, no cuántos días lleva la racha. Grabarlos antes de arreglarlo
+sería tirar nueve tardes.
+
 ## v3.18.0 — Progreso: la primera tanda que entra sin rescate
 
 ### Qué se ha construido
