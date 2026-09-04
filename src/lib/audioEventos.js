@@ -76,8 +76,8 @@ export const CATALOGO = {
   // ── 1 · Confirmaciones ────────────────────────────────────────────────────
   success: { nivel: 1, motor: 'SUCCESS' },
   error: { nivel: 1, motor: 'ACTION_ERROR' },
-  warning: { nivel: 1, motor: 'ACTION_ERROR' },
-  save: { nivel: 1, motor: 'ACTION_COMPLETED' },
+  warning: { nivel: 1, motor: 'ACTION_WARNING' },
+  save: { nivel: 1, motor: 'ACTION_SAVED' },
   task_complete: { nivel: 1, motor: 'ACTION_COMPLETED' },
   habit_complete: { nivel: 1, motor: 'ACTION_COMPLETED' },
   goal_progress: { nivel: 1, motor: 'ACTION_COMPLETED' },

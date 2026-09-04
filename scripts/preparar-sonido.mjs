@@ -26,11 +26,27 @@ const DESTINO = 'C:/Users/clapi/JosStyle/public/sonidos';
 const TMP = 'C:/Users/clapi/AppData/Local/Temp/claude';
 const SR = 44100;
 
-const nombres = process.argv.slice(2);
-if (nombres.length === 0) { console.log('uso: node procesar.mjs <nombre sin .mp3> ...'); process.exit(1); }
+/* ⚠️ `--octava` sube el sonido una octava, conservando la duración.
+   No es lo mismo que tocar la nota más aguda —el timbre cambia un poco—, así que
+   es un rescate, no la forma normal de trabajar. Se añadió el 2026-09-04, cuando
+   cuatro sonidos salieron una octava por debajo de lo que hacía falta (la tabla
+   de notas daba lo que debía SONAR, y Josué las escribe en el piano roll con el
+   instrumento transponiendo) y él ya no tenía FL Studio a mano para rehacerlos.
+   El resultado se mide igual que todo lo demás: C#4→G#4 quedó en C#5→G#5. */
+const SUBIR_OCTAVA = process.argv.includes('--octava');
+const nombres = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+if (nombres.length === 0) { console.log('uso: node scripts/preparar-sonido.mjs [--octava] <nombre sin .mp3> ...'); process.exit(1); }
 
 for (const n of nombres) {
-  const origen = `${DESCARGAS}/${n}.mp3`;
+  let origen = `${DESCARGAS}/${n}.mp3`;
+
+  if (SUBIR_OCTAVA) {
+    const subido = `${TMP}/_oct_${n}.mp3`;
+    execFileSync('ffmpeg', ['-hide_banner', '-v', 'error', '-i', origen,
+      '-af', 'rubberband=pitch=2', '-codec:a', 'libmp3lame', '-b:a', '320k', '-y', subido]);
+    origen = subido;
+  }
+
   const crudo = `${TMP}/_${n}.raw`;
   execFileSync('ffmpeg', ['-hide_banner', '-v', 'error', '-i', origen, '-ac', '1', '-ar', String(SR), '-f', 's16le', crudo, '-y']);
 

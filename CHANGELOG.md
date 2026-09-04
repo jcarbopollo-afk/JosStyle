@@ -1,5 +1,53 @@
 # CHANGELOG.md
 
+## v3.14.0 — Las confirmaciones: guardar, avisar y la variante del acierto
+
+### Qué se ha construido
+Cuatro sonidos de la familia de confirmaciones. **15 de 46.**
+
+| Archivo | Notas | Para qué |
+|---|---|---|
+| `success_02` | C#5 → G#5 | la variante del "hecho", medio tono por encima |
+| `save_01` | G5 | guardar, más discreto que acertar |
+| `save_02` | G#5 | su variante |
+| `warning` | D5 → D5 | avisar sin decir si es bueno o malo |
+
+`save_02` salió en G#5 y no en A5 como decía la indicación. **Está mejor así**: medio tono de
+diferencia es lo que debe separar a dos variantes del mismo sonido. Un tono entero ya se nota como
+dos sonidos distintos.
+
+### 🚨 25 de los 46 sonidos no habrían sonado nunca
+Al enchufar estos cuatro apareció el patrón entero, y no era un caso suelto. El catálogo de la SO F3
+declara **42 sonidos distintos**; el motor tiene **22 eventos**. Varios sonidos del catálogo caen en
+el mismo evento, y un evento solo puede resolver a un sonido:
+
+| Evento del motor | Sonidos del catálogo que se comía |
+|---|---|
+| `STREAK_MILESTONE` | los **diez** hitos de racha, del de 3 días al de 365 |
+| `ACTION_COMPLETED` | save, task_complete, habit_complete, goal_progress |
+| `ACTION_ERROR` | error, warning, connection_lost |
+| `UI_SUCCESS` | sync_complete, connection_restored |
+| `ACHIEVEMENT_UNLOCKED` | achievement_unlocked, badge_unlocked |
+| `STREAK_STARTED` | streak_start, streak_recovered |
+| `STREAK_CONTINUED` | streak_increment, streak_at_risk |
+| *(ninguno)* | level_up y siete más, con `motor: null` |
+
+**25 sonidos perdidos por colisión.** Más de la mitad de la biblioteca que Josué está grabando a
+mano, uno a uno.
+
+Se cierran los tres que afectan a lo ya producido —`ACTION_WARNING` y `ACTION_SAVED` nuevos, y
+`success_01` con sus dos variantes— y **queda anotado que el resto sigue abierto**: el hito de 30
+días y el de 365 comparten evento, y la propia SO F3 dice en su cabecera que *"no pueden ser el mismo
+sonido más alto"*.
+
+⚠️ Arreglarlo entero es una decisión de arquitectura, no un parche: o se añaden ~20 eventos al
+motor, o el motor pasa a resolver por el identificador del catálogo en vez de por su evento. Lo
+segundo es mejor y es más cambio. **No se hace sobre la marcha.**
+
+### Nota de método: el PITCH que se resetea solo
+Tres de estos cuatro salieron una octava por debajo en el primer intento, y no por descuido: en FLEX,
+**cargar o cambiar el preset devuelve el deslizador PITCH a cero**, y ese control no avisa. Queda
+escrito aquí porque va a volver a pasar con los 31 que faltan.
 ## v3.13.0 — Entrega 3 · Fase 3: el armario deja de vestirlo todo de camiseta
 
 Tercera fase de la Entrega 3. El enunciado avisa igual que la anterior: *"el apartado Armario actual

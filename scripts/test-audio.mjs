@@ -189,7 +189,7 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
 
   comprobar('Un sonido guardado a medias se normaliza', normalizarSonido({}).origen === 'system');
   comprobar('Una duración imposible se descarta', normalizarSonido({ duracion: -5 }).duracion === 0);
-  comprobar('Los once sonidos del sistema están', SONIDOS_SISTEMA.length === 11);
+  comprobar('Los trece sonidos del sistema están', SONIDOS_SISTEMA.length === 13);
   comprobar('...cada uno con su ruta y su categoría', SONIDOS_SISTEMA.every((s) => s.ruta && s.categoria));
   comprobar('...y no se mezclan con los del usuario (apartado 19)',
     SONIDOS_SISTEMA.every((s) => s.origen === 'system' && s.ruta.startsWith('/sonidos/')));
@@ -264,10 +264,16 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
   comprobar('⚠️ El turno viaja en el estado, no en una variable escondida',
     ESTADO_AUDIO_INICIAL.variantes && Object.keys(ESTADO_AUDIO_INICIAL.variantes).length === 0);
 
-  // Un sonido de una sola versión no rota: suena el suyo, siempre.
-  const a = decidirReproduccion(ON, 'SUCCESS', { ahora: 5000, estado: ESTADO_AUDIO_INICIAL });
-  const b = decidirReproduccion(ON, 'SUCCESS', { ahora: 9000, estado: a.estado });
+  /* Un sonido de una sola versión no rota: suena el suyo, siempre.
+     ⚠️ Antes esto usaba SUCCESS, que desde el 2026-09-04 tiene dos variantes
+     (`success_01` y `success_02`). Se cambia a ACTION_ERROR, que sigue teniendo
+     un solo archivo — y el día que tenga dos, esta prueba volverá a avisar. */
+  const a = decidirReproduccion(ON, 'ACTION_ERROR', { ahora: 5000, estado: ESTADO_AUDIO_INICIAL });
+  const b = decidirReproduccion(ON, 'ACTION_ERROR', { ahora: 9000, estado: a.estado });
   comprobar('Un sonido sin variantes no rota nada', a.sonido.ruta === b.sonido.ruta);
+  comprobar('...y uno con variantes sí (SUCCESS ya tiene dos)',
+    decidirReproduccion(ON, 'SUCCESS', { ahora: 5000, estado: ESTADO_AUDIO_INICIAL }).sonido.ruta
+    !== decidirReproduccion(ON, 'SUCCESS', { ahora: 9000, estado: decidirReproduccion(ON, 'SUCCESS', { ahora: 5000, estado: ESTADO_AUDIO_INICIAL }).estado }).sonido.ruta);
 }
 
 /* ===========================================================================

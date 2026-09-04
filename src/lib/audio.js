@@ -106,6 +106,11 @@ export const EVENTOS_SONIDO = {
   // Confirmaciones.
   ACTION_COMPLETED: { categoria: 'feedback', prioridad: 'NORMAL', cooldown: 300 },
   ACTION_ERROR: { categoria: 'feedback', prioridad: 'NORMAL', cooldown: 300 },
+  /* 🚨 Aviso y error NO son lo mismo, y la biblioteca los declara aparte. Sin
+     evento propio, warning.mp3 no sonaría jamás. */
+  ACTION_WARNING: { categoria: 'feedback', prioridad: 'NORMAL', cooldown: 300 },
+  /* Guardar tampoco es 'acción completada': es más discreto, y tiene su sonido. */
+  ACTION_SAVED: { categoria: 'feedback', prioridad: 'LOW', cooldown: 300 },
   SUCCESS: { categoria: 'feedback', prioridad: 'NORMAL', cooldown: 300 },
 
   // Rachas.
@@ -226,7 +231,9 @@ export const SONIDOS_SISTEMA = [
      Abrir un panel y pulsar un botón no son el mismo gesto. */
   crearSonido({ id: 'open_01', nombre: 'Abrir', categoria: 'ui', ruta: '/sonidos/ui_open_01.mp3', variantes: ['/sonidos/ui_open_01.mp3', '/sonidos/ui_open_02.mp3'] }),
   crearSonido({ id: 'back_01', nombre: 'Volver y cerrar', categoria: 'ui', ruta: '/sonidos/ui_close_01.mp3', variantes: ['/sonidos/ui_close_01.mp3', '/sonidos/ui_close_02.mp3'] }),
-  crearSonido({ id: 'success_01', nombre: 'Hecho', categoria: 'feedback', ruta: '/sonidos/success_01.mp3' }),
+  crearSonido({ id: 'success_01', nombre: 'Hecho', categoria: 'feedback', ruta: '/sonidos/success_01.mp3', variantes: ['/sonidos/success_01.mp3', '/sonidos/success_02.mp3'] }),
+  crearSonido({ id: 'save_01', nombre: 'Guardado', categoria: 'feedback', ruta: '/sonidos/save_01.mp3', variantes: ['/sonidos/save_01.mp3', '/sonidos/save_02.mp3'] }),
+  crearSonido({ id: 'warning_01', nombre: 'Aviso', categoria: 'feedback', ruta: '/sonidos/warning.mp3' }),
   crearSonido({ id: 'error_01', nombre: 'Error', categoria: 'feedback', ruta: '/sonidos/error.mp3' }),
   crearSonido({ id: 'streak_01', nombre: 'Racha', categoria: 'streak', ruta: '/sonidos/streak_increment_01.mp3' }),
   crearSonido({ id: 'milestone_01', nombre: 'Hito', categoria: 'streak', ruta: '/sonidos/streak_milestone_07.mp3' }),
@@ -246,6 +253,8 @@ export const ASIGNACIONES_POR_DEFECTO = {
   UI_SUCCESS: 'click_01',
   ACTION_COMPLETED: 'success_01',
   ACTION_ERROR: 'error_01',
+  ACTION_WARNING: 'warning_01',
+  ACTION_SAVED: 'save_01',
   SUCCESS: 'success_01',
   STREAK_STARTED: 'streak_01',
   STREAK_CONTINUED: 'streak_01',
