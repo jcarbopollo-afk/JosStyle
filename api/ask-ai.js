@@ -1,5 +1,69 @@
 // Función serverless de Vercel. Vive en el servidor, nunca en el navegador,
 // así que es el único sitio donde puede existir la clave de Anthropic.
+
+/* 🚨 **Quién puede llamar aquí** (EH F63 → cerrado; decisión de Josué, 4 de
+   septiembre de 2026).
+
+   Hasta hoy este endpoint no preguntaba quién llamaba. No era una fuga de datos
+   —desde aquí no se lee nada de nadie— era una **factura**: cualquiera que
+   supiera la URL podía llamarlo y gastar el saldo de Anthropic de Josué.
+
+   Se cierra comprobando contra Supabase el token de la sesión que manda el
+   navegador. ⚠️ Se comprueba **aquí**, no en el cliente: `src/lib/ai.js` manda la
+   cabecera, pero quien decide si vale es el servidor. Un cliente que decide si
+   hace falta autenticarse no autentica nada.
+
+   ⚠️ Este endpoint lo usan seis módulos (Nutrición, Calistenia, Biblioteca,
+   Estilo de hombre, Hoy y Estadísticas). Si esto falla, la IA se cae en todos a
+   la vez — por eso lo que falla por configuración devuelve 503 **diciendo qué
+   falta**, y no un 401 mudo que parecería un problema de la cuenta. */
+const LIMITE_POR_USUARIO = 30; // peticiones
+const VENTANA_MS = 60 * 60 * 1000; // por hora
+
+/* ⚠️ Honestidad sobre este freno: vive en memoria, y Vercel levanta y tira
+   instancias. Alguien decidido a saltárselo lo consigue repartiendo llamadas.
+   Para un límite de verdad haría falta una tabla en Supabase —infraestructura
+   nueva, no una ampliación—, y queda escrito como pendiente. Lo que esto sí para
+   es lo que de verdad puede pasar: un bucle por un fallo de la app, o una
+   pestaña reintentando sola toda la noche. */
+const usos = new Map();
+
+function pasaElLimite(userId) {
+  const ahora = Date.now();
+  if (usos.size > 500) usos.clear(); // techo de memoria, no de seguridad
+  const previo = usos.get(userId);
+  if (!previo || ahora - previo.desde > VENTANA_MS) {
+    usos.set(userId, { desde: ahora, n: 1 });
+    return true;
+  }
+  previo.n += 1;
+  return previo.n <= LIMITE_POR_USUARIO;
+}
+
+// Le pregunta a Supabase de quién es este token. Si no vale, no dice de quién es.
+async function quienEs(req) {
+  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const anon = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!url || !anon) return { fallo: 'sin-config' };
+
+  const cabecera = req.headers.authorization || req.headers.Authorization || '';
+  const token = cabecera.startsWith('Bearer ') ? cabecera.slice(7).trim() : '';
+  if (!token) return { fallo: 'sin-sesion' };
+
+  try {
+    const r = await fetch(`${url}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: anon },
+    });
+    if (!r.ok) return { fallo: 'sin-sesion' };
+    const u = await r.json();
+    return u && u.id ? { id: u.id } : { fallo: 'sin-sesion' };
+  } catch {
+    /* ⚠️ Si Supabase no contesta, NO se deja pasar. Un fallo de red no puede ser
+       la puerta de atrás: es justo lo que buscaría quien quisiera saltárselo. */
+    return { fallo: 'sin-verificar' };
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
@@ -10,6 +74,22 @@ export default async function handler(req, res) {
     return res.status(503).json({
       error: 'IA no configurada todavía. Añade ANTHROPIC_API_KEY en las variables de entorno del proyecto en Vercel.',
     });
+  }
+
+  const quien = await quienEs(req);
+  if (quien.fallo === 'sin-config') {
+    return res.status(503).json({
+      error: 'IA no configurada del todo: faltan VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en las variables de entorno del proyecto en Vercel.',
+    });
+  }
+  if (quien.fallo === 'sin-verificar') {
+    return res.status(503).json({ error: 'No se ha podido comprobar tu sesión ahora mismo. Inténtalo en un minuto.' });
+  }
+  if (quien.fallo) {
+    return res.status(401).json({ error: 'Inicia sesión para usar la IA.' });
+  }
+  if (!pasaElLimite(quien.id)) {
+    return res.status(429).json({ error: 'Has usado la IA muchas veces seguidas. Espera un rato y vuelve a intentarlo.' });
   }
 
   // El modelo se lee de una variable de entorno para que cambiarlo no exija tocar código ni
@@ -29,12 +109,7 @@ export default async function handler(req, res) {
 
      Los límites son holgados para lo que la aplicación manda de verdad —el
      contexto más largo no llega a 20 000 caracteres, y la Fase 5 manda ocho
-     fotogramas—, así que **no cambian nada** para Josué y sí ponen un techo.
-
-     ⚠️ Lo que esto NO arregla, y queda escrito en `seguridadEH.js`: el endpoint
-     **sigue sin pedir quién eres**. Cualquiera que sepa la URL puede llamarlo.
-     Ponerle autenticación afecta a toda la aplicación, no solo a Estilo de
-     hombre, y es una decisión de Josué. */
+     fotogramas—, así que **no cambian nada** para Josué y sí ponen un techo. */
   const LIMITE_PROMPT = 40000;
   const LIMITE_SYSTEM = 20000;
   const LIMITE_IMAGENES = 10;

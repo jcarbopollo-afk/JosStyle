@@ -1,5 +1,63 @@
 # CHANGELOG.md
 
+## v3.3.0 — El endpoint de la IA ya pide quién eres (EH F63, cerrado)
+
+### Qué se ha construido
+El hallazgo de la Fase 63 era éste: **`/api/ask-ai` no preguntaba quién llamaba.** Cualquiera que
+supiera la URL de Vercel podía llamarlo desde una terminal y gastar el saldo de Anthropic de Josué.
+No era una fuga de datos —desde ahí no se lee nada de nadie— era una **factura**.
+
+No se cerró en la F63 a propósito: ese endpoint lo usan seis módulos (Nutrición, Calistenia,
+Biblioteca, Estilo de hombre, Hoy y Estadísticas), y una fase de Estilo de hombre no decide por toda
+la aplicación. Quedó escrito en `HALLAZGO_ENDPOINT` con el arreglo palabra por palabra, esperando
+una decisión de Josué. **Josué decidió el 4 de septiembre de 2026, y el arreglo fue exactamente el
+que estaba escrito.**
+
+- **`api/ask-ai.js`** le pregunta a Supabase de quién es el token de la cabecera `Authorization`.
+  Sin token válido: 401, y no se llama a Anthropic. Más un tope de 30 peticiones por usuario y hora.
+- **`src/lib/ai.js`** manda ese token en sus tres llamadas (`askAI`, `askAIWithImage`,
+  `askAIWithImages`), sacándolo de la sesión que el navegador ya tiene.
+- **`scripts/test-endpoint-ia.mjs`** (nuevo, 17 comprobaciones) importa el handler de verdad y le
+  pasa un `req` falso.
+
+### Las decisiones que lo gobiernan
+**1. 🚨 Quien decide si vale es el servidor, no el cliente.** `ai.js` manda la cabecera, pero si no
+hay sesión la manda **sin** cabecera y deja que el servidor conteste 401. Un cliente que decide si
+hace falta autenticarse no está autenticando nada.
+
+**2. ⚠️ Supabase caído NO abre la puerta.** Si el verificador no contesta, se devuelve 503 y no se
+pasa. Dejar pasar "por si acaso" cuando el verificador falla es justo lo que buscaría quien quisiera
+saltárselo, y hay una comprobación dedicada a eso.
+
+**3. ⚠️ Lo que falla por configuración devuelve 503 diciendo QUÉ falta, no un 401 mudo.** Como el
+endpoint lo usan seis módulos, un 401 haría pensar que el problema es la cuenta del usuario cuando
+está en las variables de entorno de Vercel.
+
+**4. 🚨 Y el tope por usuario se declara frágil, porque lo es.** Vive en memoria, y Vercel levanta y
+tira instancias: se salta repartiendo llamadas. Para un límite de verdad haría falta una tabla en
+Supabase. Frena lo que de verdad puede pasar —un bucle de la aplicación, una pestaña reintentando
+sola toda la noche—, no a alguien decidido. Queda escrito en `loQueSigueAbierto`, no dado por hecho.
+
+### Lo que el cierre dice ahora
+`BLOQUEADO` pasa de cuatro cosas a tres, pero el endpoint **no se borra**: sale a `DESBLOQUEADO`,
+con quién lo decidió, cuándo, cómo se cerró y qué sigue abierto. Un cierre que hace desaparecer sus
+bloqueos deja de ser el registro de lo que pasó. `docs/09_ESTILO_DE_HOMBRE_CIERRE.md` se regenera
+con una sección nueva, 🔓, y el apartado 14 de seguridad pasa a cumplido —comprobándolo leyendo
+`api/ask-ai.js`, no fiándose de una bandera escrita a mano.
+
+### 🐛 Dos fallos cazados de paso
+**El arnés de renderizado se llevaba el Supabase de verdad.** Su stub filtraba `lib/supabase`, y se
+le escapaba `./supabase` —que es como lo importa `ai.js`, desde dentro de la misma carpeta—. En
+cuanto ai.js pidió el token, **todas** las vistas reventaron con `Cannot read properties of
+undefined (reading 'VITE_SUPABASE_URL')`. El filtro ahora es `(^|/)supabase(.js)?$`.
+
+**🚨 Y una invariante que llevaba tiempo sin poder fallar.** En la comprobación de "ningún hex suelto
+fuera de `tokens.js`" se había colado un `\n` literal en mitad de la tubería. `grep` tomaba `n` como
+nombre de fichero, ignoraba la entrada y devolvía vacío: la regla **daba verde con cualquier
+violación**. Se comprobó metiendo un `#AB12EF` a mano —antes pasaba, ahora lo caza y lo señala con
+archivo y línea—. El proyecto estaba limpio, pero llevaba sin vigilancia.
+
+
 ## v3.2.0 — Calendario: intervalo personalizado y saltar un día (C3, R2.3 y R2.4)
 
 ### Qué se ha construido

@@ -46,17 +46,24 @@ const opciones = { sql: SQL, api: API, fuentes: { vista: VISTA, supabase: SUPA }
 console.log('\n🔒 EH · Fase 63/65 — Seguridad, privacidad y control de datos\n');
 
 /* ---------------------------------------------------------------------------
-   1 · 🚨 EL HALLAZGO: EL ENDPOINT NO PIDE QUIÉN ERES (apartado 14)
+   1 · 🚨 EL HALLAZGO: EL ENDPOINT NO PEDÍA QUIÉN ERES (apartado 14)
+       Cerrado el 2026-09-04 por decisión de Josué.
    --------------------------------------------------------------------------- */
 {
   console.log('1 · El endpoint de la IA');
-  eq(ENDPOINT_IA.autenticacion, false,
-    '🚨 `/api/ask-ai` NO tiene autenticación: cualquiera con la URL puede llamarlo');
-  eq(ENDPOINT_IA.limiteDeUso, false, '🚨 ni límite de uso');
-  eq(auditarSeguridad(opciones).ataquesQueNoSeParan, ['endpoint_sin_auth'],
-    '🚨 ⚠️ y es el único de los cinco ataques que NO se para');
-  eq(auditarSeguridad(opciones).sinCumplir, [14],
-    '🚨 el apartado 14 se queda SIN CUMPLIR: contarlo como verde sería el error de esta fase entera');
+  /* 🚨 Lo importante de estas cuatro líneas: se comprueban leyendo
+     `api/ask-ai.js` de verdad, no la bandera de `ENDPOINT_IA`. Si alguien quita
+     la comprobación del token, esto se pone en rojo solo. */
+  eq(ENDPOINT_IA.autenticacion, true, '🚨 `/api/ask-ai` ya pide quién eres');
+  eq(auditarSeguridad(opciones).endpointPideSesion, true,
+    '🚨 ⚠️ y se ve en el archivo: le pregunta a Supabase por el token y devuelve 401 sin él');
+  eq(auditarSeguridad(opciones).endpointFrena, true, 'con un tope por usuario (429)');
+  ok(/memoria/.test(ENDPOINT_IA.limiteDeUsoEsFragil),
+    '⚠️ y se dice que ese tope es frágil: vive en memoria, no en Supabase');
+  eq(auditarSeguridad(opciones).ataquesQueNoSeParan, [],
+    '🚨 ⚠️ ya no queda ninguno de los cinco ataques sin parar');
+  eq(auditarSeguridad(opciones).sinCumplir, [],
+    '🚨 y el apartado 14 pasa a cumplido — que es lo que había que ganarse, no declararse');
 
   ok(/gastar el dinero/.test(HALLAZGO_ENDPOINT.que), 'con lo que de verdad pasa: se paga');
   ok(/no se puede leer nada/.test(HALLAZGO_ENDPOINT.noEs),
@@ -201,7 +208,7 @@ console.log('\n🔒 EH · Fase 63/65 — Seguridad, privacidad y control de dato
   ok(/no manda `user_id`/.test(ataque('cambiar_id').loPara),
     '🚨 y el cliente ni siquiera manda el `user_id`: lo pone la sesión');
   eq(ataque('datos_invalidos').pasa, true, 'los datos inválidos se paran');
-  eq(ataque('endpoint_sin_auth').pasa, false, '🚨 y el del endpoint NO, y así queda escrito');
+  eq(ataque('endpoint_sin_auth').pasa, true, '🚨 y el del endpoint también, desde el 2026-09-04');
   ok(!ataque('inventado'), 'se buscan por id');
 
   eq(APARTADOS_SEGURIDAD.length, 20, 'los veinte apartados');
@@ -212,8 +219,12 @@ console.log('\n🔒 EH · Fase 63/65 — Seguridad, privacidad y control de dato
   const panel = panelSeguridad(opciones);
   eq(panel.protegido, true,
     '🎯 los datos están protegidos donde importa: en la base de datos');
-  eq(panel.pendienteDeJosue.id, 'endpoint_sin_auth',
-    '🚨 ⚠️ y lo que falta va en el panel como PENDIENTE DE JOSUÉ, no escondido');
+  eq(panel.hallazgo.id, 'endpoint_sin_auth', 'el hallazgo sigue en el panel: es el registro de lo que hubo');
+  eq(panel.pendienteDeJosue, null,
+    '🚨 ⚠️ pero ya no está pendiente, y se calcula: el panel no puede seguir diciendo que falta algo ya hecho');
+  ok(panel.hallazgo.resuelto && panel.hallazgo.loDecidio === 'Josué', 'con quién lo decidió');
+  ok(/memoria/.test(panel.hallazgo.loQueSigueAbierto),
+    '⚠️ y con lo que NO quedó cerrado, para que nadie lo dé por hecho');
   ok(/no se añade al final/.test(panel.condicion), 'con la condición de finalización');
 }
 

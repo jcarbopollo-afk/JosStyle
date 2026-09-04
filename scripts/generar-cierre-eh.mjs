@@ -91,6 +91,23 @@ inv.bloqueado.forEach((b) => {
   p(`- El arreglo: ${b.arreglo}`);
   p();
 });
+/* 🚨 Lo que estuvo bloqueado y dejó de estarlo. Va aquí, y no borrado del
+   documento: un cierre que hace desaparecer sus bloqueos deja de ser el
+   registro de lo que pasó y pasa a ser una foto favorecedora. */
+if (inv.desbloqueado.length > 0) {
+  p('### 🔓 Desbloqueado después de cerrar');
+  p();
+  p('*Estaba en 🔴 esperando una decisión. La decisión llegó.*');
+  p();
+  inv.desbloqueado.forEach((d) => {
+    p(`**${d.que}**`);
+    p();
+    p(`- Lo decidió: **${d.decidio}**, el ${d.cuando}`);
+    p(`- Cómo se cerró: ${d.como}`);
+    p(`- ⚠️ Lo que sigue abierto: ${d.sigueAbierto}`);
+    p();
+  });
+}
 p('### 💡 Futuro');
 p();
 p('*Deliberadamente no implementado.*');

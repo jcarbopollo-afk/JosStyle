@@ -313,8 +313,10 @@ export function condicionFinal({ vista = '', sql = '', api = '', fuentesResto = 
     seguridad: {
       ok: seguridad.protegido,
       de: 'F43 y F63',
-      /* ⚠️ Verde con matiz: los datos están protegidos; el endpoint, no. */
-      matiz: '⚠️ Los datos están protegidos por RLS. Lo que sigue abierto es `/api/ask-ai`, que no protege datos sino la factura de la IA — y su arreglo es de Josué.',
+      /* ⚠️ Verde con matiz. El matiz cambió el 2026-09-04: el endpoint ya pide
+         sesión, así que lo que queda abierto es más pequeño — pero sigue siendo
+         algo, y por eso el matiz no desaparece. */
+      matiz: '⚠️ Los datos están protegidos por RLS, y `/api/ask-ai` ya pide sesión desde el 2026-09-04. Lo que queda: su tope por usuario vive en memoria, no en Supabase, así que frena un bucle de la aplicación pero no a alguien decidido.',
     },
     rendimiento: { ok: escalabilidad.puedeCrecer, de: 'F44 y F55' },
     recuperacion: { ok: recuperacion.protegido && ensayoDeRestauracion().seRecupero, de: 'F54' },

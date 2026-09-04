@@ -26,7 +26,7 @@
 
 > 🟡 **Móvil** — 🚨 Nadie ha abierto esto en un iPhone. El simulador de Chromium es lo más cerca que se puede estar sin serlo, y no es lo mismo.
 
-> ⚠️ Los datos están protegidos por RLS. Lo que sigue abierto es `/api/ask-ai`, que no protege datos sino la factura de la IA — y su arreglo es de Josué.
+> ⚠️ Los datos están protegidos por RLS, y `/api/ask-ai` ya pide sesión desde el 2026-09-04. Lo que queda: su tope por usuario vive en memoria, no en Supabase, así que frena un bucle de la aplicación pero no a alguien decidido.
 
 > Solo se marca 🟢 FINALIZADO si se cumplen todos los requisitos. Si algo falla: no se oculta, se registra como pendiente.
 
@@ -58,12 +58,6 @@ Los **17 apartados** del catálogo, las **65 fases**, los
 
 *Depende de otro sistema de JC Fitness, o de una decisión de Josué.*
 
-**`/api/ask-ai` no pide quién eres. Cualquiera que sepa la URL puede llamarlo y gastar el dinero de Josué en la API de Anthropic.**
-
-- Depende de: Toda la aplicación: ese endpoint lo usan seis módulos más.
-- Lo decide: Josué
-- El arreglo: Comprobar en la función el token de Supabase que ya manda el navegador (cabecera Authorization) y rechazar sin él. Y un límite por usuario y minuto.
-
 **Detectar conflictos entre dispositivos.**
 
 - Depende de: El esquema de `app_data`: hace falta una columna de versión o marca de tiempo.
@@ -81,6 +75,16 @@ Los **17 apartados** del catálogo, las **65 fases**, los
 - Depende de: Los otros módulos, que hoy tienen los suyos.
 - Lo decide: Una fase futura
 - El arreglo: Unificarlos es una fase, no un arreglo (F39 y F48).
+
+### 🔓 Desbloqueado después de cerrar
+
+*Estaba en 🔴 esperando una decisión. La decisión llegó.*
+
+**`/api/ask-ai` no pedía quién eres. Cualquiera que supiera la URL podía llamarlo y gastar el dinero de Josué en la API de Anthropic.**
+
+- Lo decidió: **Josué**, el 2026-09-04
+- Cómo se cerró: `api/ask-ai.js` le pregunta a Supabase de quién es el token de la cabecera `Authorization`, que `src/lib/ai.js` ya manda en sus tres llamadas. Sin token válido: 401, y no se llama a Anthropic.
+- ⚠️ Lo que sigue abierto: El límite por usuario vive en memoria, y Vercel levanta y tira instancias: para un límite de verdad haría falta una tabla en Supabase. Para en seco lo que de verdad puede pasar —un bucle de la aplicación, una pestaña reintentando sola—, no a alguien decidido a saltárselo.
 
 ### 💡 Futuro
 
@@ -116,7 +120,7 @@ Estilo de hombre está **cerrado** a funciones nuevas.
 | | |
 |---|---|
 | **Nombre** | JC Fitness — Estilo de hombre v1.0 |
-| **Fecha** | 2026-09-03 |
+| **Fecha** | 2026-09-04 |
 | **Fases** | 65 de 65 |
 | **Esquema de datos** | v2 |
 | **Estado** | Base estable. Cerrado a funciones nuevas. |

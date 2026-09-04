@@ -88,15 +88,24 @@ export const ESTADOS_CIERRE = [
 
 export const estadoCierre = (id) => ESTADOS_CIERRE.find((e) => e.id === id) || null;
 
-/* 🚨 Decisión 5 — lo bloqueado, uno a uno, con de quién depende. */
-export const BLOQUEADO = [
+/* 🚨 **Lo que se desbloqueó después de cerrar.** Estaba en `BLOQUEADO` porque
+   dependía de una decisión de Josué; Josué decidió, así que sale de allí y se
+   queda escrito aquí. ⚠️ No es un resquicio del congelado: un bloqueo que
+   esperaba una decisión se levanta cuando la decisión llega, no cuando a alguien
+   le apetece tocar el módulo. */
+export const DESBLOQUEADO = [
   {
     id: 'endpoint_sin_auth',
     que: HALLAZGO_ENDPOINT.que,
-    dependeDe: 'Toda la aplicación: ese endpoint lo usan seis módulos más.',
-    decide: 'Josué',
-    arreglo: HALLAZGO_ENDPOINT.arreglo,
+    decidio: HALLAZGO_ENDPOINT.loDecidio,
+    cuando: HALLAZGO_ENDPOINT.cuando,
+    como: HALLAZGO_ENDPOINT.comoSeCerro,
+    sigueAbierto: HALLAZGO_ENDPOINT.loQueSigueAbierto,
   },
+];
+
+/* 🚨 Decisión 5 — lo bloqueado, uno a uno, con de quién depende. */
+export const BLOQUEADO = [
   {
     id: 'conflictos',
     que: 'Detectar conflictos entre dispositivos.',
@@ -151,6 +160,7 @@ export function inventarioFinal() {
     terminado: terminado(),
     pendiente: pendiente(),
     bloqueado: BLOQUEADO,
+    desbloqueado: DESBLOQUEADO,
     futuro: futuro(),
   };
 }

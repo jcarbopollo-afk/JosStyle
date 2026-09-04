@@ -37,6 +37,13 @@
 // afecta a toda la aplicación, no solo a Estilo de hombre, y una fase de este
 // módulo no decide por el resto. Queda como 🔴, con el arreglo escrito.
 //
+// > 🚨 **Y así fue: se escribió, se le enseñó a Josué, y Josué decidió.** El 4 de
+// > septiembre de 2026 dijo que se cerrara, y se cerró — el arreglo era el que
+// > está escrito arriba, palabra por palabra. Esta fase no lo hizo por su cuenta
+// > y por eso pudo hacerse bien: `HALLAZGO_ENDPOINT` lleva el cómo y el qué sigue
+// > abierto (el límite por usuario vive en memoria, no en Supabase). Lo de arriba
+// > se queda tal cual: es el registro de lo que había.
+//
 // **2. ⚠️ EL AISLAMIENTO NO ES DE LA PANTALLA, ES DE LA BASE DE DATOS.**
 // (Apartado 3: *"nunca confiar únicamente en que la interfaz oculte
 // información"*.) Las cuatro políticas de `app_data` son `auth.uid() = user_id`,
@@ -119,9 +126,15 @@ export const AUDITORIA_DE_ACCESO = [
 
 export const ENDPOINT_IA = {
   ruta: '/api/ask-ai',
-  /* 🚨 Lo que NO tiene. */
-  autenticacion: false,
-  limiteDeUso: false,
+  /* 🚨 Lo que NO tenía, y se cerró el 4 de septiembre de 2026. Ver
+     HALLAZGO_ENDPOINT: no se cree esta bandera y ya está, `auditarSeguridad()`
+     lo comprueba leyendo `api/ask-ai.js`. */
+  autenticacion: true,
+  limiteDeUso: true,
+  /* ⚠️ Pero el límite es frágil a propósito, y hay que decirlo: vive en la
+     memoria de la instancia de Vercel. Para un bucle de la aplicación sobra;
+     para alguien decidido, no. */
+  limiteDeUsoEsFragil: 'En memoria, no en Supabase: se salta repartiendo llamadas entre instancias.',
   /* ✅ Lo que sí tiene, desde esta fase. */
   validaEntradas: true,
   ocultaLaClave: true,
@@ -139,12 +152,23 @@ export const LIMITES_ENTRADA = {
 export const HALLAZGO_ENDPOINT = {
   id: 'endpoint_sin_auth',
   gravedad: 'importante',
-  que: '`/api/ask-ai` no pide quién eres. Cualquiera que sepa la URL puede llamarlo y gastar el dinero de Josué en la API de Anthropic.',
+  que: '`/api/ask-ai` no pedía quién eres. Cualquiera que supiera la URL podía llamarlo y gastar el dinero de Josué en la API de Anthropic.',
   noEs: 'Una fuga de datos: con eso no se puede leer nada de nadie.',
   esUna: 'Una factura.',
-  arreglo: 'Comprobar en la función el token de Supabase que ya manda el navegador (cabecera Authorization) y rechazar sin él. Y un límite por usuario y minuto.',
-  porQueNoSeHaceAqui: '⚠️ Ese endpoint lo usan Nutrición, Calistenia, Biblioteca y el resto. Ponerle autenticación desde una fase de Estilo de hombre sería decidir por toda la aplicación, y si se hace mal deja la IA rota en seis módulos. Es una decisión de Josué.',
+  arreglo: 'Comprobar en la función el token de Supabase que ya manda el navegador (cabecera Authorization) y rechazar sin él. Y un límite por usuario.',
+  porQueNoSeHaceAqui: '⚠️ Ese endpoint lo usan Nutrición, Calistenia, Biblioteca y el resto. Ponerle autenticación desde una fase de Estilo de hombre habría sido decidir por toda la aplicación, y hecho mal deja la IA rota en seis módulos. Era una decisión de Josué.',
   loQueSiSeHaHecho: 'Los límites de tamaño del apartado 15: un texto enorme o veinte imágenes ya se rechazan.',
+
+  /* 🚨 **Cerrado.** Josué lo decidió el 4 de septiembre de 2026: se le presentó
+     como lo que era —un gasto, no una fuga— y dijo que se cerrara. Lo de arriba
+     no se toca: es el registro de lo que había, y de por qué no se hizo antes. */
+  resuelto: true,
+  cuando: '2026-09-04',
+  loDecidio: 'Josué',
+  comoSeCerro: '`api/ask-ai.js` le pregunta a Supabase de quién es el token de la cabecera `Authorization`, que `src/lib/ai.js` ya manda en sus tres llamadas. Sin token válido: 401, y no se llama a Anthropic.',
+  /* ⚠️ Lo que NO queda cerrado, dicho aquí para que nadie lo dé por hecho. */
+  loQueSigueAbierto: 'El límite por usuario vive en memoria, y Vercel levanta y tira instancias: para un límite de verdad haría falta una tabla en Supabase. Para en seco lo que de verdad puede pasar —un bucle de la aplicación, una pestaña reintentando sola—, no a alguien decidido a saltárselo.',
+  seProbo: 'scripts/test-endpoint-ia.mjs, incluida la comprobación de que Supabase caído devuelve 503 y NO deja pasar.',
 };
 
 /* ===========================================================================
@@ -301,10 +325,11 @@ export const ATAQUES = [
   },
   {
     id: 'endpoint_sin_auth', que: 'Consultar un endpoint sin autorización',
-    /* 🚨 Éste NO se para, y es el hallazgo de la fase. */
-    loPara: '🚨 NADA en `/api/ask-ai`. Ver HALLAZGO_ENDPOINT.',
+    /* 🚨 Éste era el hallazgo de la fase y NO se paraba. Cerrado el 4 de
+       septiembre de 2026 por decisión de Josué. Ver HALLAZGO_ENDPOINT. */
+    loPara: 'El token de sesión de Supabase, comprobado en el servidor. Sin él, `/api/ask-ai` devuelve 401 y no llama a Anthropic.',
     seProbaraAqui: true,
-    pasa: false,
+    pasa: true,
   },
   {
     id: 'datos_invalidos', que: 'Enviar datos inválidos',
@@ -341,7 +366,7 @@ export const APARTADOS_SEGURIDAD = [
   { id: 11, nombre: 'Privacidad de IA', cumplido: true, donde: 'El interruptor de la F56 y el panel de la F57' },
   { id: 12, nombre: 'Datos locales', cumplido: true, donde: 'DATOS_LOCALES — EH no guarda nada local' },
   { id: 13, nombre: 'Logs', cumplido: true, donde: 'REGISTROS — sin un solo dato personal (F54)' },
-  { id: 14, nombre: 'Seguridad de API', cumplido: false, donde: '🚨 HALLAZGO_ENDPOINT — sin autenticación ni límite de uso' },
+  { id: 14, nombre: 'Seguridad de API', cumplido: true, donde: 'HALLAZGO_ENDPOINT — cerrado el 2026-09-04: token de Supabase comprobado en el servidor y límite por usuario' },
   { id: 15, nombre: 'Validación', cumplido: true, donde: 'LIMITES_ENTRADA en api/ask-ai.js, nuevos en esta fase' },
   { id: 16, nombre: 'Inyecciones', cumplido: true, donde: 'revisarInyecciones()' },
   { id: 17, nombre: 'Borrado de cuenta', cumplido: true, donde: 'BORRADO_DE_CUENTA — `on delete cascade`' },
@@ -372,6 +397,10 @@ export function auditarSeguridad({ sql = '', api = '', fuentes = {} } = {}) {
     // 🚨 Decisión 1
     endpointSinAuth: ENDPOINT_IA.autenticacion === false,
     endpointValida: api ? /LIMITE_PROMPT/.test(api) && /demasiado larga/.test(api) : null,
+    /* 🚨 Se lee del archivo de verdad, no de la bandera de arriba. Si alguien
+       quita la comprobación del token, esto se pone en falso solo. */
+    endpointPideSesion: api ? /auth\/v1\/user/.test(api) && /status\(401\)/.test(api) : null,
+    endpointFrena: api ? /status\(429\)/.test(api) : null,
     // Apartado 16
     inyecciones: revisarInyecciones(fuentes),
     // Decisión 3
@@ -406,8 +435,13 @@ export function panelSeguridad(opciones = {}) {
       && a.inyecciones.length === 0
       && a.borrarInferidoDejaLoSuyo
       && a.endpointValida === true
+      && a.endpointPideSesion === true
       && a.sinDonde.length === 0,
-    pendienteDeJosue: HALLAZGO_ENDPOINT,
+    /* 🚨 El hallazgo sigue estando aquí —es el registro—, pero ya no está
+       pendiente: `pendienteDeJosue` se calcula, para que el panel no pueda
+       seguir diciendo que falta algo que ya se hizo. */
+    hallazgo: HALLAZGO_ENDPOINT,
+    pendienteDeJosue: HALLAZGO_ENDPOINT.resuelto ? null : HALLAZGO_ENDPOINT,
     condicion: CONDICION,
   };
 }

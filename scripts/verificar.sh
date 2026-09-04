@@ -566,6 +566,15 @@ else
   fallo "Falla el cierre"; grep '✗' /tmp/jc_eh65.log
 fi
 
+# 🚨 El hallazgo de la F63, cerrado el 2026-09-04 por decisión de Josué. Importa
+# el handler de verdad y le pasa un req falso: sin sesión tiene que dar 401 y NO
+# llegar a Anthropic. Va sin resolver-vite: api/ está fuera de src/.
+if node scripts/test-endpoint-ia.mjs >/tmp/jc_endpoint.log 2>&1; then
+  ok "El endpoint de la IA pide sesión (F63) — $(grep -c '✓' /tmp/jc_endpoint.log) comprobaciones"
+else
+  fallo "El endpoint de la IA deja pasar a quien no debe"; grep '✗' /tmp/jc_endpoint.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-sonido-produccion.mjs >/tmp/jc_so5.log 2>&1; then
   ok "Producción, integración y test final (SO F5) — $(grep -c '✓' /tmp/jc_so5.log) comprobaciones"
 else
@@ -713,7 +722,8 @@ HEX=$(grep -rEn "#[0-9A-Fa-f]{6}" src/ --include=*.jsx --include=*.js \
       | grep -v '^src/lib/colorEngine.js:' \
       | grep -v '^src/lib/armario.js:' \
       | grep -v '^src/lib/horarioEditor.js:' \
-      | grep -v '#EDEFF2' \n      | grep -v 'ejemploMalo:' \
+      | grep -v '#EDEFF2' \
+      | grep -v 'ejemploMalo:' \
       | grep -vE ':[0-9]+:[[:space:]]*(//|\*|/\*)' \
       || true)
 if [ -n "$HEX" ]; then

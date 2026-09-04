@@ -40,14 +40,22 @@ await build({
     setup(b) {
       const soloNavegador = /(^pdfjs-dist|^@zxing\/library|\?url$)/;
       b.onResolve({ filter: soloNavegador }, (args) => ({ path: args.path, namespace: 'stub' }));
-      b.onResolve({ filter: /lib\/supabase(\.js)?$/ }, (args) => ({ path: args.path, namespace: 'stub-supabase' }));
+      /* 🐛 El filtro era `lib/supabase`, y se le escapaba `./supabase` — que es
+         como lo importa `src/lib/ai.js`, desde dentro de la propia carpeta. En
+         cuanto ai.js pasó a pedirle el token de sesión (F63), el bundle se llevó
+         el módulo de verdad y TODAS las vistas reventaron con "Cannot read
+         properties of undefined (reading 'VITE_SUPABASE_URL')". */
+      b.onResolve({ filter: /(^|\/)supabase(\.js)?$/ }, (args) => ({ path: args.path, namespace: 'stub-supabase' }));
       b.onLoad({ filter: /.*/, namespace: 'stub' }, () => ({
         contents: 'export default {}; export const getDocument = () => ({ promise: Promise.resolve({ numPages: 0 }) }); export const GlobalWorkerOptions = {}; export class BrowserMultiFormatReader {}',
         loader: 'js',
       }));
       b.onLoad({ filter: /.*/, namespace: 'stub-supabase' }, () => ({
         contents: `
-          export const supabase = {};
+          /* ⚠️ Con \`auth.getSession\`, porque \`ai.js\` se lo pide para mandar la
+             cabecera. Devuelve "no hay sesión", que es el caso honesto en un
+             render sin navegador — y así se comprueba que ese camino no revienta. */
+          export const supabase = { auth: { getSession: async () => ({ data: { session: null } }) } };
           const nada = async () => null;
           export const getSession = nada, onAuthChange = nada, onAuthEvent = nada;
           export const sendPasswordReset = nada, loadData = nada, saveData = nada, signOut = nada;

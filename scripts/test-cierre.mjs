@@ -105,11 +105,21 @@ console.log('\n🏁 EH · Fase 65/65 — Cierre, congelación y entrega final\n'
     '🚨 ⚠️ y "bloqueado" NO es "pendiente": es lo que no se puede hacer desde aquí');
 
   const inv = inventarioFinal();
-  eq(inv.bloqueado.length, 4, 'cuatro cosas bloqueadas');
+  eq(inv.bloqueado.length, 3, 'tres cosas bloqueadas');
   eq(auditarCierre(OPCIONES).bloqueadosSinDueno, [],
-    '🚨 y las cuatro dicen QUIÉN lo decide y CUÁL es el arreglo');
-  ok(inv.bloqueado.some((b) => b.id === 'endpoint_sin_auth'),
-    'incluido el endpoint sin autenticación de la F63');
+    '🚨 y las tres dicen QUIÉN lo decide y CUÁL es el arreglo');
+
+  /* 🚨 El endpoint estaba bloqueado esperando una decisión de Josué. Josué
+     decidió el 2026-09-04, así que salió de ahí — pero NO desapareció: un
+     bloqueo que se levanta y se borra deja el cierre mintiendo sobre lo que
+     hubo. Queda en `desbloqueado`, con la fecha y con lo que sigue abierto. */
+  ok(!inv.bloqueado.some((b) => b.id === 'endpoint_sin_auth'),
+    'el endpoint de la F63 ya no está bloqueado');
+  eq(inv.desbloqueado.length, 1, 'y está en lo desbloqueado, no borrado');
+  eq(inv.desbloqueado[0].decidio, 'Josué', 'diciendo quién lo decidió');
+  eq(inv.desbloqueado[0].cuando, '2026-09-04', 'y cuándo');
+  ok(/memoria/.test(inv.desbloqueado[0].sigueAbierto),
+    '⚠️ y qué NO quedó cerrado: el tope por usuario vive en memoria');
   eq(HALLAZGO_ENDPOINT, HALLAZGO_F63, 'importado de allí, no reescrito');
   ok(inv.bloqueado.some((b) => b.id === 'conflictos'),
     'y los conflictos entre dispositivos');
@@ -193,7 +203,8 @@ console.log('\n🏁 EH · Fase 65/65 — Cierre, congelación y entrega final\n'
   ok(/no está escondido/.test(TEXTOS_CIERRE.loQueFalta), 'y con lo que falta, dicho');
   ok(/sesenta y cinco fases/i.test(TEXTOS_CIERRE.gracias), 'y el recorrido de las 65 fases');
   eq(panel.informe.length, 9, 'el panel trae el informe');
-  eq(panel.inventario.bloqueado.length, 4, 'y el inventario');
+  eq(panel.inventario.bloqueado.length, 3, 'y el inventario');
+  eq(panel.inventario.desbloqueado.length, 1, 'con lo que se desbloqueó después');
 }
 
 console.log(`\n${fallos === 0 ? '✅' : '❌'} ${n - fallos}/${n} comprobaciones\n`);
