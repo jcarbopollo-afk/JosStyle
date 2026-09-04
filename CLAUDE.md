@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.2.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.4.1**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
-bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 50/65**, quedan 15 — **ninguna bloqueada: C-25 la resolvió Josué
-en v2.7.0**) y el bloque **AXION** de la
+bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo de Hombre (65/65)**
+están terminados, y **Sonido va por 4/5**: **queda UNA fase en toda la Entrega 2, SO F2**, la
+biblioteca de sonidos) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
@@ -153,9 +153,10 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-**🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-CERRADO: 65/65** (v3.0.0). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
-biblioteca y F5 la integración, que la necesita.
+**🔒 Horario Top está CERRADO (12/12)**, 🏁 **Estilo de Hombre está CERRADO (65/65)** (v3.0.0) y
+**Sonido va por 4/5** (F1, F3, F4 y F5). **Queda UNA fase en toda la Entrega 2: SO F2, la biblioteca
+de sonidos**, y depende de los archivos que produce Josué: **hay 1 de 46**, así que faltan **45**.
+`queFalta()` dice exactamente cuáles y por dónde seguir.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
 *"dime en qué se diferencian aseo y cuidado corporal"* —que era literalmente la pregunta de la
@@ -696,8 +697,8 @@ entero y funciona; lo único que falta son los sonidos.
 Seis cosas que conviene tener presentes al retomar:
 
 - **D2-01: Sonido y Rachas son DOS módulos independientes** (5 fases + 4). Rachas está cerrado 4/4;
-  Sonido va por 3/5 (F1, F3 y F4), y **F3 y F4 se adelantaron a F2 a propósito** porque no
-  necesitan los archivos. Lo que queda (F2 y F5) sí.
+  Sonido va por 4/5 (F1, F3, F4 y F5), y **F3, F4 y F5 se adelantaron a F2 a propósito** porque no
+  necesitan los archivos. La que queda, **F2**, sí: es literalmente la biblioteca.
 - ⚠️ **`especificacionSonidos.js` DEFINE la biblioteca, no la crea** (SO F4). `queFalta()` dice
   exactamente qué archivos tiene que dar Josué y por dónde empezar.
 - ⚠️ **`audioEventos.js` NO redefine el catálogo de SO F1: lo traduce** (SO F3). Y los eventos que
