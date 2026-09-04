@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F5 — el borrado real de horarios y la jerarquía de Horario.
+if node --import ./scripts/resolver-vite.mjs scripts/test-mis-horarios.mjs >/tmp/jc_mish.log 2>&1; then
+  ok "Mis horarios y borrado real (E3 F5) — $(grep -c '✓' /tmp/jc_mish.log) comprobaciones"
+else
+  fallo "Falla la gestión de horarios (E3 F5)"; grep '✗' /tmp/jc_mish.log
+fi
+
 # Entrega 3 · F4 — la hucha de Economía: objetivo, frecuencia y seguimiento.
 if node --import ./scripts/resolver-vite.mjs scripts/test-hucha.mjs >/tmp/jc_hucha.log 2>&1; then
   ok "Hucha de Economía (E3 F4) — $(grep -c '✓' /tmp/jc_hucha.log) comprobaciones"

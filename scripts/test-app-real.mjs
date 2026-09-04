@@ -1730,6 +1730,33 @@ ok(!/Peluquería|Sonrisa|Manos, uñas y pies/.test(simple),
 ok(simple.length > 200, '⚠️ y no se siente vacía: hay pantalla de verdad, no un hueco');
 
 /* ===========================================================================
+   ENTREGA 3 · FASE 5 — ELIMINAR UN HORARIO DE VERDAD
+   ===========================================================================
+   El apartado 3: *"los horarios no se pueden eliminar completamente; parece que
+   solo pueden archivarse"*. `eliminarHorario` existía desde HT F2 y no la
+   llamaba nadie. Esto lo comprueba tocándolo.
+
+   ⚠️ Sufijo `_e3f5`: dos `const` iguales en este archivo plano no compilan. */
+const hoyISO_e3f5 = new Date().toLocaleDateString('sv-SE');
+almacen.horarioTop = {
+  horarios: [
+    { id: 'hh1', nombre: 'Bachillerato', activo: true, archivado: false, creadoEn: hoyISO_e3f5 },
+    { id: 'hh2', nombre: 'Horario de verano', activo: true, archivado: false, creadoEn: hoyISO_e3f5 },
+  ],
+  columnas: [{ id: 'cc1', horarioId: 'hh1', nombre: 'Lunes', orden: 0 }],
+  filas: [], actividades: [], bloques: [], excepciones: [], confirmaciones: [], avisos: [], mochila: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Vida');
+await pulsar('Horario');
+const hor_e3f5 = await esperarTexto(/Bachillerato/);
+
+ok(/PLANIFICACIÓN|Planificación/i.test(hor_e3f5),
+  '🚨 E3 F5 — Horario separa "Planificación" de "Mis horarios" (apartados 2 y 6)');
+ok(/Mis horarios/i.test(hor_e3f5), 'y la segunda sección tiene su rótulo');
+ok(/Horario de verano/.test(hor_e3f5), 'los dos horarios están ahí');
+
+/* ===========================================================================
    ENTREGA 3 · FASE 4 — LA HUCHA CON OBJETIVO
    ===========================================================================
    Los apartados 1, 4, 6 y 10: que la papelera de movimientos borre de verdad

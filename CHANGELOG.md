@@ -1,5 +1,67 @@
 # CHANGELOG.md
 
+## v3.17.0 — Entrega 3 · Fase 5: los horarios se pueden borrar, y "Semana" ya no es "Horario semanal"
+
+Quinta fase de la Entrega 3. Josué nombra **tres problemas** al empezar, y ésta los contesta.
+
+### 🐛 1 · «Los horarios no se pueden eliminar; parece que solo pueden archivarse»
+
+Y era literal — **con el mismo fallo que la papelera de Economía de la Fase 1, en otro sitio**:
+`eliminarHorario` **existe desde HT F2**, con su borrado en cascada de bloques y excepciones,
+escrita y probada… y **ninguna pantalla la llamaba**. La única acción destructiva que ofrecía la
+interfaz era *Archivar*, así que un horario de un curso pasado se quedaba dentro para siempre.
+
+**Una función que nadie llama no falla nunca.** Va por dos.
+
+Ahora el botón existe, y ⚠️ **NO sustituye a Archivar**: el enunciado lo prohíbe expresamente, son
+dos acciones distintas y las dos siguen. Antes de borrar se enseña **lo que se lleva de verdad**
+—*"Se borrará «Bachillerato» y sus 2 clases, y su excepción"*—, contado sobre el estado real, no una
+frase genérica: *nada se mueve en silencio* (HT F4).
+
+🚨 **Y el aviso no promete recuperarlo**, porque **un horario no va a la papelera**: no tiene entrada
+en `CATALOGO_PAPELERA`, y prometerlo sería mentir (la lección de EH F41). Dice *"esta acción es
+permanente"* y también lo que **no** se toca: las asignaturas son de Estudios y las usan los demás
+horarios.
+
+`eliminarDeVerdad` **sin `confirmado` no borra nada** — vigésimo `aplicarPlan` del proyecto. Sin eso,
+la confirmación del apartado 3 sería decorativa.
+
+### 2 · «No hay diferenciación entre mis horarios y las vistas de planificación»
+
+*"Esto evita que el usuario confunda «Semana» con «Horario semanal». Son conceptos relacionados pero
+diferentes."*
+
+Dos rótulos: **PLANIFICACIÓN** sobre Hoy/Semana/Día/Agenda, y **MIS HORARIOS** sobre el selector de
+horario. Nada más — el apartado 9 dice *"no rehacer visualmente todo el apartado"*, y los botones,
+las vistas y el selector son exactamente los de antes. Pero es lo que contesta *"¿estoy viendo mi
+horario o mi agenda?"* de un vistazo.
+
+### 3 · Los archivados, con sus tres acciones (apartado 4)
+
+Estaban en una lista donde tocar la fila los restauraba y ya. Ahora cada uno tiene **Restaurar ·
+Duplicar · Eliminar**, que son las tres que pide el apartado, y su sección aparte con su rótulo.
+
+Y el estado vacío usa las palabras del apartado 7: *"Aún no tienes ningún horario · Crea tu horario
+para organizar automáticamente tu semana · [+ Crear mi primer horario]"*.
+
+⚠️ **"Todos archivados" NO es "vacío"**: ahí sí hay horarios, solo que ninguno en uso, y esconderlos
+dejaría un callejón sin salida — el sitio para recuperarlos estaría dentro del horario que no hay.
+
+### Lo que esto deja apuntado
+
+- 🚨 **Una función que nadie llama no falla nunca.** Van dos en esta entrega: `onDeleteMovimiento` en
+  Economía y `eliminarHorario` en Horario. Ninguna de las dos las veía el build, ni el renderizado,
+  ni las pruebas de Node.
+- ⚠️ **`misHorarios.js` no recalcula nada del horario**: decide qué llamar, como `gestionModulos.js`
+  con `estiloDeHombre.js`. Hay pruebas que leen el archivo y fallan si redefine algo de HT F2 o F4.
+- 🐛 **Y la enésima vez de la lección de siempre, la peor hasta ahora**: el limpiador de comentarios
+  de la prueba usaba un patrón de *"llave, más comentario, más llave"* para quitar los comentarios
+  JSX, y **se comió 500 líneas de código de verdad** — un `(() => {` seguido de un comentario abre la
+  llave, y el cierre del patrón se va a buscar la primera llave que venga después del siguiente
+  cierre de comentario. La comprobación del botón de eliminar saltaba con algo perfectamente escrito.
+  **Lo correcto es al revés: quitar los bloques de comentario y después las llaves vacías.**
+
+
 ## v3.16.0 — Cierra la tanda 2, y las colisiones bajan de 25 a 17
 
 ### Qué se ha construido
@@ -45,6 +107,8 @@ evento, no cuántos días lleva la racha. O se añaden diez eventos al motor, o 
 por el identificador del catálogo. **Es una decisión de arquitectura y no se toma de pasada.**
 
 Hasta entonces, grabar los diez hitos sería tirar nueve tardes.
+
+
 ## v3.15.0 — Entrega 3 · Fase 4: la hucha con objetivo, y la papelera de Economía pulsada de verdad
 
 Cuarta fase de la Entrega 3. El enunciado repite el aviso de las anteriores: *"el apartado Economía

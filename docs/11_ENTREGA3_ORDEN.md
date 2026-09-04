@@ -25,7 +25,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 2 ✅ | **RA+** Rachas | Mantenimiento diario y feedback de recompensa — **hecha (v3.12.0)** | 221 |
 | 3 ✅ | **AR+** Armario | Categorías, iconografía y detalle visual — **hecha (v3.13.0)** | 544 |
 | 4 ✅ | **EC** Economía | Hucha inteligente y pulido final — **hecha (v3.15.0)** | 741 |
-| 5 | **HO+** Horario | UX, navegación y gestión de horarios | 1027 |
+| 5 ✅ | **HO+** Horario | UX, navegación y gestión de horarios — **hecha (v3.17.0)** | 1027 |
 | 6 | **HC** Hoy y Calendario | F1 — Hoy: centro del día | 1227 |
 | 7 | HC | F2 — Calendario: agenda | 1824 |
 | 8 | HC | F3 — Calendario: vista temporal | 2444 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 4 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0). La siguiente es la **5 — HO+ Horario**, línea 1027.
+**Por dónde va:** 5 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0). La siguiente es la **6 — HC Hoy y Calendario · F1**, línea 1227.
 
 ## Lo que dejó la Fase 1, y que afecta a todas las demás
 
@@ -119,6 +119,21 @@ solo vale como corrección o ajuste — nunca una función nueva.
 - 🐛 **`pulsar()` del recorrido de Chromium ya busca por `aria-label`.** Un botón de solo icono no
   tiene texto, así que hasta la F4 la prueba no podía pulsar **ninguna papelera, estrella ni
   flecha** de la aplicación. Ahora sí, y es como los pulsa alguien con VoiceOver.
+
+## Y lo que dejó la Fase 5
+
+- 🚨 **UNA FUNCIÓN QUE NADIE LLAMA NO FALLA NUNCA.** Van **dos** en esta entrega:
+  `onDeleteMovimiento` en Economía (F1) y `eliminarHorario` en Horario (F5) — las dos escritas,
+  probadas y muertas. Ni el build, ni el renderizado, ni las pruebas de Node las veían. **Antes de
+  dar por hecho que algo funciona, comprobar que alguien lo llame.**
+- ⚠️ **Archivar y Eliminar son dos acciones distintas**, y el enunciado prohíbe sustituir una por
+  otra. Solo eliminar pide confirmación (EH F61).
+- ⚠️ **Un horario NO va a la papelera**: no tiene entrada en `CATALOGO_PAPELERA`, así que el aviso
+  dice *"permanente"* y no promete recuperarlo.
+- ⚠️ **`misHorarios.js` no recalcula nada del horario**: decide qué llamar, como `gestionModulos.js`.
+- 🐛 **El limpiador de comentarios de una prueba NO puede usar un patrón de "llave, comentario,
+  llave"** para los comentarios JSX: se come el código a partir del primer `(() => {` con comentario
+  dentro. Quitar primero los bloques de comentario, después las llaves vacías.
 
 ## Dos cosas del documento que conviene saber
 

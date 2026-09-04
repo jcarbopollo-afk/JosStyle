@@ -48,6 +48,11 @@ import {
   duplicarDia, vaciarDia, VISTAS_HORARIO, rejillaSemana, vistaDia, vistaAgenda,
   resumenEditor, PALETA_ACTIVIDADES,
 } from '../lib/horarioEditor';
+// Entrega 3 · F5 — la separación entre planificación y mis horarios, y el
+// borrado real que faltaba (`eliminarHorario` existía y no la llamaba nadie).
+import {
+  seccionHorario, impactoEliminarHorario, eliminarDeVerdad, VACIO_HORARIOS,
+} from '../lib/misHorarios';
 import {
   DENSIDADES, densidad, leerVisual, guardarVisual,
   cicloDe, guardarCiclo, semanaDelCiclo, gruposDe,
@@ -1773,10 +1778,17 @@ export function PanelAvanzado({ estado, horario, accent, asignaturas, visual, ho
               <AlertTriangle size={10} className="mt-0.5 flex-shrink-0" /> {texto}
             </p>
           ))}
+          {/* 🐛 Entrega 3 · F5, apartado 3 — *"Los horarios no se pueden eliminar
+              completamente; actualmente parece que solo pueden archivarse."* Y era
+              literal: `eliminarHorario` existe desde HT F2, con su borrado en
+              cascada, y **ninguna pantalla la llamaba**. Aquí está el botón, y
+              ⚠️ **NO sustituye a Archivar**: el enunciado lo prohíbe expresamente,
+              son dos acciones distintas y las dos siguen. */}
           <div className="flex flex-wrap gap-1.5 mt-2">
             <Accion icono={Copy} label="Duplicar para otro curso"
               onClick={() => onResultado(duplicarHorario(estado, horario.id, { nombre: `${horario.nombre} (copia)`, hoy }))} />
-            <Accion icono={EyeOff} label="Archivar" tono={COLORS.negative} onClick={() => setConfirmando('archivar')} />
+            <Accion icono={EyeOff} label="Archivar" onClick={() => setConfirmando('archivar')} />
+            <Accion icono={Trash2} label="Eliminar" tono={COLORS.negative} onClick={() => setConfirmando('eliminar')} />
           </div>
           {confirmando === 'archivar' && (
             <div className="rounded-xl p-2 mt-2" style={{ background: COLORS.surface2 }}>
@@ -1795,15 +1807,74 @@ export function PanelAvanzado({ estado, horario, accent, asignaturas, visual, ho
               </div>
             </div>
           )}
+          {confirmando === 'eliminar' && (() => {
+            /* Apartado 3, punto 3: *"explicar que la acción es permanente"*. El
+               impacto se calcula sobre lo que hay de verdad — nada se mueve en
+               silencio (HT F4, apartado 30) — y NO promete recuperarlo, porque
+               un horario no va a la papelera. */
+            const imp = impactoEliminarHorario(estado, horario.id);
+            if (!imp) return null;
+            return (
+              <div className="rounded-xl p-2 mt-2" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.negative}` }}>
+                <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>{imp.texto}</p>
+                <p className="text-[11px] mb-1" style={{ color: COLORS.negative }}>{imp.aviso}</p>
+                <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>{imp.seConserva}</p>
+                <div className="flex gap-2">
+                  <PrimaryButton accent={COLORS.negative}
+                    onClick={() => { onCambiar(eliminarDeVerdad(estado, horario.id, { confirmado: true })); setConfirmando(null); }}>
+                    Eliminar horario
+                  </PrimaryButton>
+                  <div style={{ width: 110, flexShrink: 0 }}>
+                    <GhostBtn onClick={() => setConfirmando(null)}>Cancelar</GhostBtn>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          {/* Apartado 4 — los archivados, en su sección aparte y con las tres
+              acciones que pide: restaurar, duplicar y eliminar definitivamente. */}
           {archivados.length > 0 && (
             <>
-              <p className="text-[11px] mt-3 mb-1" style={{ color: COLORS.textMuted }}>Archivados</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide mt-3 mb-1" style={{ color: COLORS.textMuted }}>
+                Archivados
+              </p>
               {archivados.map((h, i) => (
-                <ListRow key={h.id} last={i === archivados.length - 1}
-                  onClick={() => onCambiar(archivarHorario(estado, h.id, false))}>
-                  <span className="text-xs flex-1 truncate" style={{ color: COLORS.text }}>{h.nombre}</span>
-                  <span className="text-[10px]" style={{ color: accent }}>Recuperar</span>
-                </ListRow>
+                <div key={h.id} className="py-1.5" style={{ borderBottom: i === archivados.length - 1 ? 'none' : `1px solid ${COLORS.border}` }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs flex-1 truncate" style={{ color: COLORS.text }}>{h.nombre}</span>
+                    <button onClick={() => onCambiar(archivarHorario(estado, h.id, false))}
+                      className="text-[10px] font-semibold p-1.5 -m-1.5" style={{ color: accent }}>
+                      Restaurar
+                    </button>
+                    <button onClick={() => onResultado(duplicarHorario(estado, h.id, { nombre: `${h.nombre} (copia)`, hoy }))}
+                      className="text-[10px] font-semibold p-1.5 -m-1.5" style={{ color: COLORS.textMuted }}>
+                      Duplicar
+                    </button>
+                    <button onClick={() => setConfirmando(`eliminar:${h.id}`)}
+                      className="text-[10px] font-semibold p-1.5 -m-1.5" style={{ color: COLORS.negative }}>
+                      Eliminar
+                    </button>
+                  </div>
+                  {confirmando === `eliminar:${h.id}` && (() => {
+                    const imp = impactoEliminarHorario(estado, h.id);
+                    if (!imp) return null;
+                    return (
+                      <div className="rounded-xl p-2 mt-1.5" style={{ background: COLORS.bg, border: `1px solid ${COLORS.negative}` }}>
+                        <p className="text-[11px] mb-1" style={{ color: COLORS.text }}>{imp.texto}</p>
+                        <p className="text-[11px] mb-2" style={{ color: COLORS.negative }}>{imp.aviso}</p>
+                        <div className="flex gap-2">
+                          <PrimaryButton accent={COLORS.negative}
+                            onClick={() => { onCambiar(eliminarDeVerdad(estado, h.id, { confirmado: true })); setConfirmando(null); }}>
+                            Eliminar horario
+                          </PrimaryButton>
+                          <div style={{ width: 110, flexShrink: 0 }}>
+                            <GhostBtn onClick={() => setConfirmando(null)}>Cancelar</GhostBtn>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
               ))}
             </>
           )}
@@ -2032,13 +2103,14 @@ export default function HorarioView({
       <CrearHorario accent={accent} onCancelar={() => setCreando(false)}
         onCrear={(datos) => { const { estado: nuevo, horario } = crearDesdePlantilla(estado, { ...datos, hoy }); onCrearHorario(nuevo); setHorarioId(horario.id); setCreando(false); setEdicion(true); }} />
     ) : (
+      /* Entrega 3 · F5, apartado 7 — *"mostrar un estado vacío extremadamente
+         sencillo […] no mostrar demasiadas opciones simultáneamente"*. Los
+         textos son los del enunciado, en `VACIO_HORARIOS`. */
       <Card className="text-center">
         <Calendar size={22} style={{ color: accent }} className="mx-auto mb-2" />
-        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Todavía no tienes horario</p>
-        <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>
-          Elige una plantilla y en unos minutos lo tienes montado.
-        </p>
-        <PrimaryButton accent={accent} icon={Plus} onClick={() => setCreando(true)}>Crear horario</PrimaryButton>
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{VACIO_HORARIOS.titulo}</p>
+        <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{VACIO_HORARIOS.explica}</p>
+        <PrimaryButton accent={accent} icon={Plus} onClick={() => setCreando(true)}>{VACIO_HORARIOS.boton}</PrimaryButton>
         {/* Si están todos archivados, esta pantalla sería un callejón sin salida:
             el sitio para recuperarlos está dentro del horario que no hay. */}
         {horariosArchivados(estado).map((h) => (
@@ -2056,38 +2128,59 @@ export default function HorarioView({
 
   return (
     <div className="space-y-3">
-      {/* Selector de horario, solo si hay más de uno (apartado 58). */}
-      {horarios.length > 1 && (
-        <div className="flex flex-wrap gap-1.5">
-          {horarios.map((h) => (
-            <button key={h.id} onClick={() => setHorarioId(h.id)}
+      {/* ═══ Entrega 3 · F5, apartados 1, 2, 5 y 6 ═══════════════════════════
+          *"Debe existir una separación visual y conceptual evidente"* entre las
+          vistas de planificación y las estructuras que las generan. Josué lo
+          dice con un ejemplo: *"esto evita que el usuario confunda «Semana» con
+          «Horario semanal»"*.
+
+          Es solo un rótulo por bloque —no se rehace nada (apartado 9)—, pero es
+          lo que contesta *"¿estoy viendo mi horario o mi agenda?"* de un
+          vistazo. Los botones, las vistas y el selector son los de siempre. */}
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>
+          {seccionHorario('planificacion').titulo}
+        </p>
+        {/* Vistas + HOY (apartados 49 y 50 de HT, y 6 de esta fase). */}
+        <div className="flex items-center gap-1.5">
+          {VISTAS_HORARIO.map((v) => (
+            <button key={v.id} onClick={() => setVista(v.id)}
               className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold"
-              style={h.id === activo?.id
+              style={v.id === vista
                 ? { background: accent, color: COLORS.textOnAccent }
                 : { background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}>
-              {h.nombre}
+              {v.label}
             </button>
           ))}
+          <button onClick={() => { setFecha(hoy); setVista('dia'); }}
+            className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold ml-auto"
+            style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}>
+            Hoy
+          </button>
+        </div>
+      </div>
+
+      {/* Selector de horario activo, solo si hay más de uno (apartado 58 de HT).
+          Va bajo su propio rótulo: es "cuál de mis horarios estoy mirando", no
+          una vista más. */}
+      {horarios.length > 1 && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>
+            {seccionHorario('mis_horarios').titulo}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {horarios.map((h) => (
+              <button key={h.id} onClick={() => setHorarioId(h.id)}
+                className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold"
+                style={h.id === activo?.id
+                  ? { background: accent, color: COLORS.textOnAccent }
+                  : { background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}>
+                {h.nombre}
+              </button>
+            ))}
+          </div>
         </div>
       )}
-
-      {/* Vistas + HOY (apartados 49 y 50). */}
-      <div className="flex items-center gap-1.5">
-        {VISTAS_HORARIO.map((v) => (
-          <button key={v.id} onClick={() => setVista(v.id)}
-            className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold"
-            style={v.id === vista
-              ? { background: accent, color: COLORS.textOnAccent }
-              : { background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}>
-            {v.label}
-          </button>
-        ))}
-        <button onClick={() => { setFecha(hoy); setVista('dia'); }}
-          className="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold ml-auto"
-          style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}>
-          Hoy
-        </button>
-      </div>
 
       {/* HT F5 · apartados 18 y 30 — las actividades tienen que ser alcanzables
           sin pasar por un bloque: una asignatura archivada ya no tiene ninguno,
