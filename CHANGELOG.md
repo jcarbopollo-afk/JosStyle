@@ -14,7 +14,7 @@ Medido en el archivo:
 Una tercera descendente. **265 ms**, pico a **-3 dB**. **7 de 46.**
 
 ### La decisión de registro
- queda **una octava por debajo de ** (C4 frente a C5). No es casualidad: el oído
+`error` queda **una octava por debajo de `success_01`** (C4 frente a C5). No es casualidad: el oído
 espera que lo que va mal suene más grave que lo que va bien, y así los dos se distinguen sin
 leer nada.
 
@@ -23,7 +23,7 @@ por debajo de donde llega un altavoz de móvil. Se habría oído un resto de arm
 La app se usa en el teléfono, así que 500 Hz es la frontera que importa, no el gusto en cascos.
 
 ### Lo que la ficha prohíbe, y por qué importa aquí
- incluye **"alarma agresiva"**. Un error en esta aplicación es *"esto no se ha guardado"*,
+La lista `EVITAR` incluye **"alarma agresiva"**. Un error en esta aplicación es *"esto no se ha guardado"*,
 no una emergencia. Dos notas que bajan y se apagan avisan; un pitido repetido asusta. Es la
 diferencia entre una app que te acompaña y una que te riñe.
 
