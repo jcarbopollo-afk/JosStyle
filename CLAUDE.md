@@ -126,9 +126,9 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 9671 pruebas unitarias con Node (5 de ellas de auditoría), 1408 casos de renderizado real
-con `react-dom/server`, 11 reglas invariantes y **447 comprobaciones sobre la aplicación de verdad
-en Chromium** — **11 526 comprobaciones**.
+Vite, 11 537 pruebas unitarias con Node (5 de ellas de auditoría), 1408 casos de renderizado real
+con `react-dom/server`, 13 reglas invariantes y **450 comprobaciones sobre la aplicación de verdad
+en Chromium** — **13 408 comprobaciones**.
 
 Eso ya ha encontrado **setenta y cuatro bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,

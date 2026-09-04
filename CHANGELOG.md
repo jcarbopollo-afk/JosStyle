@@ -33,6 +33,33 @@ y por eso no podían cambiar de opinión.
 
 Un panel que no puede cambiar de opinión no informa de nada.
 
+## v3.4.1 — Una regla invariante más: dos `const` con el mismo nombre en el recorrido
+
+### Qué se ha arreglado
+`scripts/test-imports.mjs` tiene una **tercera regla**: ningún recorrido de Chromium puede declarar
+dos veces el mismo `const` de primer nivel.
+
+### Por qué
+`scripts/test-app-real.mjs` es un módulo largo y **plano**: ciento cincuenta y ocho `const` seguidos,
+sin funciones que los separen. Una sección nueva que reutilice un nombre ya usado —`portada`, `rut`—
+**no compila**, y entonces el archivo entero no arranca.
+
+Eso no lo ve nada: ni el build de Vite, ni los 1 408 casos de renderizado, ni las 11 537
+comprobaciones de Node. Lo único que lo ve es **lanzar el recorrido**, que tarda **doce minutos**. Y
+pasó **dos veces seguidas** construyendo la Fase 18 y la Fase 19.
+
+La regla lo caza **en un segundo**, y por eso conviene lanzar `node scripts/test-imports.mjs` antes
+del recorrido, no después.
+
+### Verificación
+`bash scripts/verificar.sh` en verde — build de Vite, **11 537 comprobaciones de Node**, **1 408
+casos de renderizado**, **13 reglas invariantes** y **450 comprobaciones en Chromium**. El recorrido
+actual no tiene ni un `const` repetido, así que la regla entra en verde y se queda vigilando.
+
+### Archivos
+- **Modificados:** `scripts/test-imports.mjs`.
+
+---
 
 ## v3.3.0 — El endpoint de la IA ya pide quién eres (EH F63, cerrado)
 
