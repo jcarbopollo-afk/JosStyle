@@ -93,6 +93,43 @@ input[type='range']::-webkit-slider-thumb {
   transform: translate(-50%, -50%);
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   Entrega 3 · Fase 2 — SUBIR LA RACHA (apartados 6, 7 y 8)
+
+   *"El fuego puede tener una pequeña animación: escala ligeramente, brilla, hace
+   un pequeño pulso, aparece '+1', después vuelve a su estado normal. […] La
+   animación debe ser rápida y elegante. NO hacer una animación exageradamente
+   larga."*
+
+   Dos animaciones de menos de un segundo, con la misma curva que el resto de la
+   app (`--ease-premium`, Fase N1/N2) para que esto no se sienta como una pieza
+   pegada de otro sitio. `drop-shadow` en vez de `box-shadow` porque el fuego es
+   un icono SVG, no una caja: así el brillo sigue la forma de la llama.
+
+   ⚠️ **Respetan "Reducir movimiento" solas**, por la regla global de arriba que
+   fuerza `animation-duration: 0.01ms` en toda la app. No hace falta un `if`.
+   ════════════════════════════════════════════════════════════════════════════ */
+@keyframes fuegoSube {
+  0%   { transform: scale(1);    filter: drop-shadow(0 0 0 transparent); }
+  35%  { transform: scale(1.35); filter: drop-shadow(0 0 6px var(--accent)); }
+  100% { transform: scale(1);    filter: drop-shadow(0 0 0 transparent); }
+}
+.fuego-sube {
+  display: inline-flex;
+  animation: fuegoSube 620ms var(--ease-premium) both;
+}
+
+@keyframes masUnoSube {
+  0%   { opacity: 0; transform: translateY(4px) scale(0.9); }
+  25%  { opacity: 1; transform: translateY(-2px) scale(1); }
+  70%  { opacity: 1; transform: translateY(-6px) scale(1); }
+  100% { opacity: 0; transform: translateY(-12px) scale(1); }
+}
+.racha-mas-uno {
+  animation: masUnoSube 900ms var(--ease-premium) both;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

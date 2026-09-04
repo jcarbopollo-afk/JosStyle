@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F2 — el bloque de mantenimiento de rachas en Hoy y el "+1".
+if node --import ./scripts/resolver-vite.mjs scripts/test-rachas-hoy.mjs >/tmp/jc_rhoy.log 2>&1; then
+  ok "Mantenimiento de rachas en Hoy (E3 F2) — $(grep -c '✓' /tmp/jc_rhoy.log) comprobaciones"
+else
+  fallo "Falla el mantenimiento de rachas (E3 F2)"; grep '✗' /tmp/jc_rhoy.log
+fi
+
 if node scripts/test-pulido-global.mjs >/tmp/jc_pulido.log 2>&1; then
   ok "Pulido global (E3 F1) — $(grep -c '✓' /tmp/jc_pulido.log) comprobaciones (safe area, acordeones, confirmaciones)"
 else

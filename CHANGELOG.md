@@ -1,5 +1,75 @@
 # CHANGELOG.md
 
+## v3.12.0 — Entrega 3 · Fase 2: "hoy tengo que mantener mis rachas"
+
+Segunda fase de la Entrega 3. El enunciado empieza avisando —*"el apartado Rachas actual está
+funcionando muy bien y NO debe ser rediseñado"*— y pide *"una capa muy pequeña de mantenimiento
+diario + recompensa visual"*. Eso es exactamente lo que hay: un archivo de treinta líneas útiles,
+dos animaciones de menos de un segundo y ni una función que escriba.
+
+### El bloque de Hoy (apartados 1-5)
+
+En Hoy ya había una tarjeta de rachas desde RA F4: enseñaba **la racha más larga**. Lo que no
+contestaba nadie es la pregunta de esta fase — **cuántas rachas piden una acción hoy**. Ahora sí:
+
+- **Pendiente** → *🔥 Mantén tus rachas · 3 rachas necesitan registro*
+- **Completado** → *🔥 Rachas mantenidas · 3/3 completadas*
+
+**No se ha creado una segunda tarjeta.** El propio enunciado admite *"una representación equivalente
+más integrada con el diseño actual"*, y dos bloques de rachas en Hoy serían justo el *"Dashboard
+lleno de elementos innecesarios"* que prohíbe su apartado 2. El resumen de la racha principal se
+queda debajo, en la misma tarjeta.
+
+⚠️ **Y ahora se pinta también sin racha viva.** Antes salía solo si la principal llevaba días, así
+que con tres rachas recién creadas y todas a cero Josué **no veía nada** que le recordara
+mantenerlas. Sigue sin pintarse cuando no hay ninguna racha activa (apartado 2) — y devuelve `null`,
+no un objeto con ceros: un cero pintaría *"0 por mantener hoy"* todos los días.
+
+**Los hábitos de Productividad cuentan igual.** Un hábito tiene su racha desde RA F1, y para Josué
+las dos cosas son "algo que mantener hoy". ⚠️ **Y registrarlo en Hábitos ya la mantiene** (apartado
+10): no se pide dos veces la misma acción, y hay una prueba que lo comprueba.
+
+### La recompensa (apartados 6, 7 y 8)
+
+Al marcar el día, el fuego pega un pulso y sube un **+1** que se apaga: *🔥 7 días +1*, todo en
+**900 ms**, porque el apartado 7 pide expresamente que **no** sea larga. Las dos animaciones viven
+en `index.css` con la curva del resto de la app y **respetan solas "Reducir movimiento"**.
+
+🚨 **Y no se guarda nada.** El "cuántos días había antes" es una referencia del render anterior, no
+un dato en disco: guardar un *"ya te lo celebré"* sería el contador que el motor de rachas lleva
+desde RA F1 negándose a tener. ⚠️ **Ni es gamificación** (D2-02): ni puntos, ni niveles, ni monedas
+—hay una prueba que busca esas cinco palabras en el código—. Es el número de días que ya existía,
+dicho más alto durante un instante.
+
+### Lo que esta fase NO puede hacer, y está comprobado
+
+El apartado 9 es tajante: *"No crear un botón independiente para 'sumar racha'. La racha debe seguir
+dependiendo del registro real"*. Así que `rachasHoy.js`:
+
+- **no tiene ni una función que sume, marque o registre** — hay una prueba que lee el código;
+- **no llama a `completarDia`, `registrarCumplimiento` ni `saveData`**;
+- **no recalcula rachas**: los números salen de `panelRachas` y `panelHabitos`, que existen desde
+  RA F1 y RA F4. Un segundo cálculo acabaría diciendo un número distinto del de la pantalla de
+  Rachas, y entonces uno de los dos mentiría.
+
+Quien escribe sigue siendo `rachasServicio.js`, el único sitio del proyecto que puede.
+
+### En el navegador de verdad
+
+El recorrido de Chromium sube de 450 a **459 comprobaciones**, y hace el camino entero: con dos
+rachas activas Hoy dice *"Mantén tus rachas · 2 rachas necesitan registro"*, se pulsa, se llega
+**directo** a Rachas (apartado 3, sin pantalla intermedia), se marca el día, se ve el día ganado —
+y al quitar las rachas **el bloque desaparece**.
+
+### Lo que esto deja apuntado
+
+- ⚠️ **`rachasHoy.js` LEE, no escribe.** Si una fase futura necesita que algo mantenga una racha,
+  lo hace desde donde se registra esa acción, nunca desde aquí.
+- ⚠️ **El `useEffect` del feedback va ANTES del `return` del estado vacío** (regla 4). Hay una
+  prueba que comprueba el orden, porque ya se produjo una vez el *"Rendered more hooks than during
+  the previous render"*.
+
+
 ## v3.11.0 — Abrir y cerrar, y la ficha por fin se comprueba contra los archivos
 
 ### Qué se ha construido
@@ -41,6 +111,8 @@ un bache.
 
 `scripts/preparar-sonido.mjs` hace ahora **dos pasadas**: codifica, mide el archivo resultante, y
 recodifica con la diferencia. Los once están entre -2,7 y -3,2 dB.
+
+
 ## v3.10.0 — Entrega 3 · Fase 1: la hora del iPhone, la papelera que no borraba y el título repetido
 
 Primera fase de la **Entrega 3**. No añade nada: arregla tres cosas que Josué encontró usando la

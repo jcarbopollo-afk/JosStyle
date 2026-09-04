@@ -24,13 +24,14 @@
 //   nadie cuenta.
 // ============================================================================
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Flame, Trophy, ChevronRight, ArrowLeft, Plus, Check, Trash2, Lock, Target } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba, todayISO } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, GhostBtn, ListRow } from '../components/ui';
 import { TIPOS_RACHA, ESTADOS_RACHA, ESTADOS_DIA, CLASES_REGLA } from '../lib/rachas';
 import { panelRachas, panelHabitos } from '../lib/rachasServicio';
+import { mantenimientoHoy, textoMantenimiento, feedbackDeSubida, DURACION_FEEDBACK_MS } from '../lib/rachasHoy';
 import {
   panelGamificacion, diasDelMes, progresoHaciaHito,
   ESTADOS_LOGRO, definicionLogro, EVENTOS_GAMIFICACION, NIVELES_CELEBRACION,
@@ -165,6 +166,21 @@ export function TarjetaRacha({ resumen, accent, onAbrir, compacta = false }) {
 
    El apartado 29 pide además el recordatorio de día pendiente, *"y no mostrarlo
    si ya está completado"*. Eso sale del estado, no de una bandera aparte. */
+/* ⚠️ **Entrega 3 · Fase 2 (apartados 1-5)** — este bloque, que ya existía desde
+   RA F4, es el que la fase pide *"dentro del apartado principal Hoy"*. **No se
+   crea uno nuevo**: el enunciado dice *"o una representación equivalente más
+   integrada con el diseño actual"*, y montar una segunda tarjeta de rachas en
+   Hoy sería exactamente el *"Dashboard lleno de elementos innecesarios"* que su
+   apartado 2 quiere evitar.
+
+   Lo que se añade es la pregunta que nadie contestaba: **cuántas rachas piden
+   una acción HOY**, con sus dos estados (apartado 5). El resumen de la racha
+   principal se queda debajo, como estaba.
+
+   ⚠️ **Y ahora se pinta también sin racha viva.** Antes salía solo si la
+   principal llevaba días; con tres rachas recién creadas y todas a cero, Josué
+   no veía nada que le recordara mantenerlas — que es justo lo que esta fase
+   pide. Sigue sin pintarse cuando no hay ninguna racha activa (apartado 2). */
 export function ResumenRachaHoy({ rachas, habitos, accent, onAbrir, hoy = todayISO() }) {
   const principal = useMemo(() => {
     const dePanel = panelRachas(rachas, hoy).principal;
@@ -173,31 +189,53 @@ export function ResumenRachaHoy({ rachas, habitos, accent, onAbrir, hoy = todayI
     return candidatos.sort((a, b) => (b.actual - a.actual) || (b.record - a.record))[0] || null;
   }, [rachas, habitos, hoy]);
 
-  if (!principal || principal.actual === 0) return null;
+  const mantenimiento = useMemo(() => mantenimientoHoy(rachas, habitos, hoy), [rachas, habitos, hoy]);
+  const texto = textoMantenimiento(mantenimiento);
+  const hayPrincipal = !!principal && principal.actual > 0;
 
-  const pendiente = principal.estadoHoy === ESTADOS_DIA.PENDIENTE;
-  const hito = progresoHaciaHito(principal.actual);
+  // Apartado 2 — sin nada que mantener y sin racha viva, el bloque no existe.
+  if (!texto && !hayPrincipal) return null;
+
+  const pendiente = hayPrincipal && principal.estadoHoy === ESTADOS_DIA.PENDIENTE;
+  const hito = hayPrincipal ? progresoHaciaHito(principal.actual) : null;
 
   return (
     <Card style={{ border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
+      {/* Apartado 3 — un solo toque lleva al Centro de Rachas. Ni una pantalla
+          intermedia: allí es donde se registra. */}
       <button onClick={onAbrir} className="w-full text-left" aria-label="Abrir el Centro de Rachas">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: COLORS.text }}>
-              <Flame size={15} style={{ color: accent, flexShrink: 0 }} />
-              {principal.actual} {plural(principal.actual, 'día', 'días')} · {principal.nombre}
-            </p>
-            <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>
-              {pendiente
-                ? 'Complétalo hoy para mantener la racha.'
-                : principal.record > principal.actual
-                  ? `Tu mejor: ${principal.record} días`
-                  : 'Vas por tu mejor marca.'}
-            </p>
+        {texto && (
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: COLORS.text }}>
+                <Flame size={15} style={{ color: accent, flexShrink: 0 }} />
+                {texto.titulo}
+              </p>
+              <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>{texto.detalle}</p>
+            </div>
+            <ChevronRight size={15} style={{ color: COLORS.textMuted }} className="flex-shrink-0" />
           </div>
-          <ChevronRight size={15} style={{ color: COLORS.textMuted }} className="flex-shrink-0" />
-        </div>
-        <BarraHito hito={hito} accent={accent} />
+        )}
+
+        {hayPrincipal && (
+          <div className={`flex items-center justify-between gap-3${texto ? ' mt-2 pt-2' : ''}`} style={texto ? { borderTop: `1px solid ${hexToRgba(accent, 0.2)}` } : undefined}>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: COLORS.text }}>
+                {!texto && <Flame size={15} style={{ color: accent, flexShrink: 0 }} />}
+                {principal.actual} {plural(principal.actual, 'día', 'días')} · {principal.nombre}
+              </p>
+              <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>
+                {pendiente
+                  ? 'Complétalo hoy para mantener la racha.'
+                  : principal.record > principal.actual
+                    ? `Tu mejor: ${principal.record} días`
+                    : 'Vas por tu mejor marca.'}
+              </p>
+            </div>
+            {!texto && <ChevronRight size={15} style={{ color: COLORS.textMuted }} className="flex-shrink-0" />}
+          </div>
+        )}
+        {hito && <BarraHito hito={hito} accent={accent} />}
       </button>
     </Card>
   );
@@ -500,7 +538,30 @@ function CrearRacha({ accent, onCrear, onCancelar }) {
    Por eso, cuando la racha está rota, el récord y el historial siguen ahí, y el
    mensaje **no castiga**: *"Evita ❌ HAS FALLADO. Prefiero: la racha terminó, hoy
    puedes empezar una nueva."* Está literalmente así abajo. */
-function DetalleRacha({ resumen, rachas, accent, hoy, onVolver, onCompletar, onDeshacer, onEliminar, logros, onAbrirLogro }) {
+/* Entrega 3 · F2, apartados 6, 7 y 8 — *"🔥 +1 día. Una recompensa pequeña,
+   rápida y satisfactoria."*
+
+   El fuego pega un pulso y el "+1" sube y se apaga, todo en menos de un segundo
+   (`DURACION_FEEDBACK_MS`). Las dos animaciones viven en `index.css` y respetan
+   solas "Reducir movimiento".
+
+   ⚠️ **No es gamificación** (D2-02): ni puntos, ni niveles, ni monedas. Es el
+   número de días que Josué acaba de conseguir, que ya existía, dicho más alto
+   durante un instante. */
+function FeedbackSubida({ subida, accent }) {
+  if (!subida) return null;
+  return (
+    <div className="flex items-center gap-2" role="status" aria-live="polite">
+      <span className="fuego-sube">
+        <Flame size={18} style={{ color: accent }} />
+      </span>
+      <span className="text-sm font-extrabold" style={{ color: COLORS.text }}>{subida.textoDias}</span>
+      <span className="racha-mas-uno text-sm font-extrabold" style={{ color: accent }}>{subida.texto}</span>
+    </div>
+  );
+}
+
+function DetalleRacha({ resumen, rachas, accent, hoy, onVolver, onCompletar, onDeshacer, onEliminar, logros, onAbrirLogro, subida }) {
   const [confirmando, setConfirmando] = useState(false);
   const hechoHoy = resumen.estadoHoy === ESTADOS_DIA.COMPLETADO;
   const hito = progresoHaciaHito(resumen.actual);
@@ -520,12 +581,20 @@ function DetalleRacha({ resumen, rachas, accent, hoy, onVolver, onCompletar, onD
         <Card>
           {hechoHoy ? (
             <>
-              <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: accent }}>
-                <Check size={15} /> Día completado
-              </p>
-              <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>
-                Racha: {resumen.actual} {plural(resumen.actual, 'día', 'días')}.
-              </p>
+              {/* Entrega 3 · F2 — mientras dura, el "+1" ocupa el sitio del texto
+                  de siempre. Es un instante: en cuanto se apaga vuelve la frase. */}
+              {subida ? (
+                <div className="mb-3"><FeedbackSubida subida={subida} accent={accent} /></div>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: accent }}>
+                    <Check size={15} /> Día completado
+                  </p>
+                  <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>
+                    Racha: {resumen.actual} {plural(resumen.actual, 'día', 'días')}.
+                  </p>
+                </>
+              )}
               <GhostBtn onClick={() => onDeshacer(resumen.id)}>Deshacer el día de hoy</GhostBtn>
             </>
           ) : (
@@ -663,6 +732,15 @@ export default function RachasView({
   const [logroAbierto, setLogroAbierto] = useState(null);
   const [celebrando, setCelebrando] = useState(null);
 
+  /* Entrega 3 · F2, apartados 6-8 — la recompensa de subir la racha.
+     ⚠️ **No se guarda nada.** `esperandoSubida` es una referencia, no estado
+     guardado: apunta el número de días que había ANTES de marcar, y cuando el
+     estado real vuelve con uno más se enseña el "+1". Guardar un "ya te lo
+     celebré" en disco sería el contador que el motor de rachas lleva desde
+     RA F1 negándose a tener. */
+  const [subida, setSubida] = useState(null);
+  const esperandoSubida = useRef(null);
+
   const panel = useMemo(() => panelGamificacion(rachas, gamificacion, hoy), [rachas, gamificacion, hoy]);
   const deHabitos = useMemo(() => panelHabitos(habitos, hoy), [habitos, hoy]);
 
@@ -676,9 +754,28 @@ export default function RachasView({
     [panel.rachas, deHabitos.rachas],
   );
 
+  /* ⚠️ Va aquí, ANTES del `return` del estado vacío (regla 4 del proyecto: todos
+     los hooks antes de cualquier `return` condicional). Ya se produjo una vez el
+     "Rendered more hooks than during the previous render". */
+  useEffect(() => {
+    const esperando = esperandoSubida.current;
+    if (!esperando) return undefined;
+    const ahora = todas.find((r) => r.id === esperando.id);
+    if (!ahora) return undefined;
+    const fb = feedbackDeSubida(esperando.antes, ahora.actual);
+    if (!fb) return undefined;
+    esperandoSubida.current = null;
+    setSubida({ id: esperando.id, ...fb });
+    const t = setTimeout(() => setSubida(null), DURACION_FEEDBACK_MS);
+    return () => clearTimeout(t);
+  }, [todas]);
+
   const detalle = abierta ? todas.find((r) => r.id === abierta) : null;
 
   const completar = (id) => {
+    // Apartados 6-8 — cuántos días había antes, para saber si de verdad ha
+    // subido. Si no sube (por ejemplo, ya estaba marcado) no se celebra nada.
+    esperandoSubida.current = { id, antes: todas.find((r) => r.id === id)?.actual ?? null };
     onCompletarDia(id);
     // Apartado 19 — una sola celebración agrupada, no cuatro avisos.
     if (onEvaluar) {
@@ -721,6 +818,8 @@ export default function RachasView({
         onCompletar={detalle.propia ? completar : null}
         onDeshacer={detalle.propia ? onDeshacerDia : null}
         onEliminar={detalle.propia ? onEliminarRacha : null}
+        // Entrega 3 · F2 — el "+1", solo en la racha que acaba de subir.
+        subida={subida && subida.id === detalle.id ? subida : null}
       />
     );
   }

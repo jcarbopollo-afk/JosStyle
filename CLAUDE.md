@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.10.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.12.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 3** (44 fases — **1 hecha**, ver `docs/11_ENTREGA3_ORDEN.md`),
@@ -164,11 +164,18 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 1 de 44.** La **Fase 1 (Pulido global)** está hecha (v3.10.0); la
-siguiente es la **2 — RA+ Rachas: mantenimiento diario y feedback de recompensa**. El índice, con la
-línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
+▶️ **La Entrega 3 está en marcha: 2 de 44.** Hechas la **Fase 1 (Pulido global, v3.10.0)** y la
+**Fase 2 (Rachas, v3.12.0)**; la siguiente es la **3 — AR+ Armario: categorías, iconografía y
+detalle visual**. El índice, con la línea de cada fase dentro de la especificación literal, está en
+**`docs/11_ENTREGA3_ORDEN.md`**.
 
-⚠️ **Y lo que dejó la Fase 1, que afecta a todas las demás:**
+⚠️ **Y lo que dejaron las dos primeras, que afecta a todas las demás:**
+
+- ⚠️ **`src/lib/rachasHoy.js` LEE, no escribe** (E3 F2, apartado 9). La racha es **consecuencia del
+  registro real**: no hay una función que sume un día, y quien escribe sigue siendo
+  `rachasServicio.js`. Sus números salen de `panelRachas` y `panelHabitos`, nunca de un cálculo
+  nuevo — un segundo cálculo diría un número distinto del de la pantalla de Rachas.
+- ⚠️ **Registrar un hábito en Hábitos YA mantiene su racha.** Nunca pedir la misma acción dos veces.
 
 - 🚨 **`scripts/test-borrados.mjs` revisa los 129 botones de eliminar de la aplicación.** Nació
   porque la papelera de **Economía → Movimientos** no borraba nada: la vista declaraba

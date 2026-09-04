@@ -1720,6 +1720,55 @@ ok(!/Peluquería|Sonrisa|Manos, uñas y pies/.test(simple),
   'y ni rastro de los apagados: no se cuela ninguno');
 ok(simple.length > 200, '⚠️ y no se siente vacía: hay pantalla de verdad, no un hueco');
 
+/* ===========================================================================
+   ENTREGA 3 · FASE 2 — EL BLOQUE DE RACHAS EN HOY
+   ===========================================================================
+   Los apartados 1-5 y 13: que aparezca cuando hay rachas activas, que diga
+   cuántas hay que mantener, y que pulsarlo lleve **directo** a Rachas.
+
+   ⚠️ Nombres con sufijo `_e3f2`: este archivo es un módulo plano y **dos
+   `const` con el mismo nombre no compilan**, lo que tira las 450 comprobaciones
+   sin que nada más falle. Ya pasó dos veces; `test-imports.mjs` lo caza en un
+   segundo, pero es más barato no provocarlo. */
+const hoyISO_e3f2 = new Date().toLocaleDateString('sv-SE');
+almacen.rachas = {
+  definiciones: [
+    { id: 'ra1', tipo: 'custom', nombre: 'Beber agua', icono: '💧', regla: { clase: 'diaria' }, creadaEn: hoyISO_e3f2, activa: true },
+    { id: 'ra2', tipo: 'custom', nombre: 'Leer', icono: '📖', regla: { clase: 'diaria' }, creadaEn: hoyISO_e3f2, activa: true },
+  ],
+  eventos: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+const hoy_e3f2 = await esperarTexto(/Mantén tus rachas/);
+
+ok(/Mantén tus rachas/.test(hoy_e3f2),
+  '🚨 E3 F2 — con rachas activas, Hoy dice "Mantén tus rachas" (apartados 1 y 5)');
+ok(/2 rachas necesitan registro/.test(hoy_e3f2),
+  'y dice cuántas hay que mantener hoy');
+
+/* Apartado 3 — un solo toque lleva al Centro de Rachas, sin pantalla intermedia. */
+ok(await pulsar('Abrir el Centro de Rachas') || await pulsar('Mantén tus rachas'),
+  'el bloque se puede pulsar');
+const enRachas_e3f2 = await esperarTexto(/Beber agua/);
+ok(/Beber agua/.test(enRachas_e3f2) && /Leer/.test(enRachas_e3f2),
+  '🚨 y lleva DIRECTO a Rachas, con las dos ahí (apartado 3)');
+
+/* Apartados 6-8 — marcar el día y ver el "+1". */
+ok(await pulsar('Beber agua'), 'se entra en la racha');
+ok(await pulsar('Marcar hoy'), 'y se marca el día de hoy');
+const trasMarcar_e3f2 = await esperarTexto(/1 día|Día completado/);
+ok(/1 día/.test(trasMarcar_e3f2),
+  '🚨 al subir la racha se ve el día ganado (apartados 6-8)');
+
+/* Apartado 2 — sin ninguna racha activa, el bloque NO existe. */
+almacen.rachas = { definiciones: [], eventos: [] };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+const sinRachas_e3f2 = await ver();
+ok(!/Mantén tus rachas|rachas necesitan registro/.test(sinRachas_e3f2),
+  '🚨 sin rachas activas el bloque NO se pinta: el Dashboard no se llena (apartado 2)');
+ok(sinRachas_e3f2.length > 200, 'y el resto de Hoy sigue ahí');
+
 /* ⚠️ Los toques de cada recorrido se cuentan en `test-experiencia-real.mjs`,
    y allí se comprueban contra la vista de verdad: cada pantalla que un
    recorrido dice abrir tiene que existir como componente en

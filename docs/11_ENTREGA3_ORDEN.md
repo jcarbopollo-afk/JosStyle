@@ -22,7 +22,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | # | Bloque | Fase | Línea |
 |---|---|---|---|
 | 1 ✅ | **PG** Pulido global | Safe area, eliminaciones y apariencia — **hecha (v3.10.0)** | 1 |
-| 2 | **RA+** Rachas | Mantenimiento diario y feedback de recompensa | 221 |
+| 2 ✅ | **RA+** Rachas | Mantenimiento diario y feedback de recompensa — **hecha (v3.12.0)** | 221 |
 | 3 | **AR+** Armario | Categorías, iconografía y detalle visual | 544 |
 | 4 | **EC** Economía | Hucha inteligente y pulido final | 741 |
 | 5 | **HO+** Horario | UX, navegación y gestión de horarios | 1027 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 1 de 44 (**PG**, v3.10.0). La siguiente es la **2 — RA+ Rachas**, línea 221.
+**Por dónde va:** 2 de 44 (**PG** v3.10.0, **RA+** v3.12.0). La siguiente es la **3 — AR+ Armario**, línea 544.
 
 ## Lo que dejó la Fase 1, y que afecta a todas las demás
 
@@ -83,6 +83,17 @@ solo vale como corrección o ajuste — nunca una función nueva.
   (foto de Salud, vídeo de calistenia, archivo de Biblioteca). Antes de añadir una confirmación,
   mirar si eso se recupera.
 - ⚠️ **Un bloque dentro de un `<Seccion>` no repite el título de la sección**: se le pasa `sinTitulo`.
+
+## Y lo que dejó la Fase 2
+
+- ⚠️ **`src/lib/rachasHoy.js` LEE, no escribe.** Ni una función que sume un día, ni una llamada a
+  `completarDia`, `registrarCumplimiento` o `saveData` — hay pruebas que leen el código. La racha es
+  **consecuencia del registro real** (apartado 9), y quien escribe sigue siendo `rachasServicio.js`.
+- ⚠️ **Los números de rachas salen de `panelRachas` y `panelHabitos`** (RA F1 y RA F4). Un segundo
+  cálculo acabaría diciendo un número distinto del de la pantalla de Rachas.
+- ⚠️ **Registrar un hábito en Hábitos YA mantiene su racha**: nunca pedir la misma acción dos veces.
+- ⚠️ **Las animaciones nuevas van a `index.css`** con `--ease-premium`, y así respetan solas
+  "Reducir movimiento". Ninguna dura más de un segundo.
 
 ## Dos cosas del documento que conviene saber
 
