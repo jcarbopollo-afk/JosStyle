@@ -1,5 +1,46 @@
 # CHANGELOG.md
 
+## v3.11.0 — Abrir y cerrar, y la ficha por fin se comprueba contra los archivos
+
+### Qué se ha construido
+`ui_open_01/02` y `ui_close_01/02`, con un solo golpe cada uno para distinguirse de los toggles, que
+llevan dos. La separación se mide: los `open` a ~13.200 Hz, los `close` a ~12.400. **11 de 46, y los
+nueve de interfaz completos.**
+
+### 🚨 Otra vez tres archivos mudos, y esta vez lo cazó la suite
+`ui_open_01`, `ui_open_02` y `ui_close_02` no tenían quién los reprodujera. El catálogo de la SO F3
+mandaba `ui_open` a `UI_CLICK` —abrir un panel sonaba igual que pulsar un botón— y `ui_close` no
+declaraba variantes.
+
+**La diferencia con las dos veces anteriores: no lo encontré mirando otra cosa.** La invariante que
+se añadió esta mañana los nombró en rojo en cuanto se copiaron a la carpeta. Para eso estaba.
+
+Se añade el evento `UI_OPEN` con su sonido `open_01`, y `back_01` pasa a tener las dos variantes de
+cerrar.
+
+### 🚨 Y la ficha ya no se comprueba contra números escritos a mano
+Hasta ahora las duraciones mínimas y máximas de cada sonido existían y se probaban... contra valores
+escritos en el propio test. **Nadie abría los archivos.** Un `ui_toggle_off` de 400 ms habría pasado
+la suite entera.
+
+`scripts/test-archivos-sonido.mjs` abre cada MP3 de `public/sonidos/` y mide su duración de verdad.
+
+⚠️ **Sin ffmpeg**: la duración sale de leer las cabeceras de trama del propio MP3. `verificar.sh` no
+puede depender de nada que no esté en el repositorio, o deja de correr en otra máquina.
+
+🐛 Y la primera versión del medidor se equivocaba: daba 216 ms para un archivo de 150, y marcaba
+seis sonidos correctos como pasados de largo. Faltaban dos cosas — la primera trama de un MP3 puede
+ser una cabecera de información y no audio, y la subetiqueta LAME dice cuántas muestras de relleno
+metió el codificador al principio y al final. El reproductor las descarta; el medidor no. Corregido
+y contrastado contra `ffprobe`: coinciden al milisegundo.
+
+### El volumen, con la misma vara para toda la biblioteca
+Los `ui_open` salieron a **-1,5 dB** cuando el resto estaba a -3: el MP3 no reproduce el pico exacto
+de la fuente, se pasa entre 1 y 2 dB según el material. Al alternar entre variantes eso se oye como
+un bache.
+
+`scripts/preparar-sonido.mjs` hace ahora **dos pasadas**: codifica, mide el archivo resultante, y
+recodifica con la diferencia. Los once están entre -2,7 y -3,2 dB.
 ## v3.10.0 — Entrega 3 · Fase 1: la hora del iPhone, la papelera que no borraba y el título repetido
 
 Primera fase de la **Entrega 3**. No añade nada: arregla tres cosas que Josué encontró usando la

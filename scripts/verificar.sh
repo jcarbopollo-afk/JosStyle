@@ -566,6 +566,16 @@ else
   fallo "Falla el cierre"; grep '✗' /tmp/jc_eh65.log
 fi
 
+# 🚨 Los archivos de audio de verdad, contra su ficha. Abre cada MP3 de
+# public/sonidos/ y mide su duración leyendo las cabeceras de trama — sin ffmpeg,
+# que la suite no puede depender de nada externo. Hasta que existió, la ficha se
+# probaba contra números escritos a mano y un sonido de 400 ms habría pasado.
+if node --import ./scripts/resolver-vite.mjs scripts/test-archivos-sonido.mjs >/tmp/jc_audiofiles.log 2>&1; then
+  ok "Los archivos de audio cumplen su ficha — $(grep -c '✓' /tmp/jc_audiofiles.log) comprobaciones"
+else
+  fallo "Algún archivo de audio se sale de su ficha"; grep '✗' /tmp/jc_audiofiles.log
+fi
+
 # 🚨 El hallazgo de la F63, cerrado el 2026-09-04 por decisión de Josué. Importa
 # el handler de verdad y le pasa un req falso: sin sesión tiene que dar 401 y NO
 # llegar a Anthropic. Va sin resolver-vite: api/ está fuera de src/.

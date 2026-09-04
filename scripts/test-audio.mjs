@@ -189,7 +189,7 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
 
   comprobar('Un sonido guardado a medias se normaliza', normalizarSonido({}).origen === 'system');
   comprobar('Una duración imposible se descarta', normalizarSonido({ duracion: -5 }).duracion === 0);
-  comprobar('Los diez sonidos del sistema están', SONIDOS_SISTEMA.length === 10);
+  comprobar('Los once sonidos del sistema están', SONIDOS_SISTEMA.length === 11);
   comprobar('...cada uno con su ruta y su categoría', SONIDOS_SISTEMA.every((s) => s.ruta && s.categoria));
   comprobar('...y no se mezclan con los del usuario (apartado 19)',
     SONIDOS_SISTEMA.every((s) => s.origen === 'system' && s.ruta.startsWith('/sonidos/')));

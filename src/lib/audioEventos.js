@@ -68,7 +68,9 @@ export const CATALOGO = {
   ui_click: { nivel: 0, motor: 'UI_CLICK' },
   ui_toggle_on: { nivel: 0, motor: 'UI_TOGGLE' },
   ui_toggle_off: { nivel: 0, motor: 'UI_TOGGLE_OFF' },
-  ui_open: { nivel: 0, motor: 'UI_CLICK' },
+  /* 🚨 Iba a `UI_CLICK`: abrir un panel sonaba igual que pulsar un botón, y los
+     dos archivos de abrir de la biblioteca no se habrían oído nunca. */
+  ui_open: { nivel: 0, motor: 'UI_OPEN' },
   ui_close: { nivel: 0, motor: 'UI_BACK' },
 
   // ── 1 · Confirmaciones ────────────────────────────────────────────────────
