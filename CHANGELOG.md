@@ -1,5 +1,34 @@
 # CHANGELOG.md
 
+## v3.18.0 — Progreso: la primera tanda que entra sin rescate
+
+### Qué se ha construido
+Los cinco sonidos de progreso: `task_complete_02`, `habit_complete_01/02` y `goal_progress_01/02`.
+**25 de 46.**
+
+| Archivo | Notas |
+|---|---|
+| `task_complete_02` | F5 → A#5 |
+| `habit_complete_01` | D5 → G5 |
+| `habit_complete_02` | D#5 → G#5 |
+| `goal_progress_01` | G5 → C6 |
+| `goal_progress_02` | G#5 → C#6 |
+
+Los cinco correctos a la primera, medidos nota por nota, sin una sola corrección. Cada `_02` está
+medio tono por encima de su `_01` con el mismo intervalo, que es lo que hace que suenen a variante
+y no a otro sonido.
+
+### Lo que cambió respecto a las tres tandas anteriores
+**Ninguno se quedó mudo.** Es la primera vez.
+
+En las tres tandas previas pasó lo mismo cada vez: Josué grababa, el archivo cumplía su ficha, y
+nada en el motor podía reproducirlo — había que rescatarlo después. Esta vez los eventos
+(`HABIT_COMPLETED`, `GOAL_PROGRESS`) y las variantes se declararon **antes** de que existieran los
+archivos, en v3.16.0.
+
+Declarar un sonido que aún no existe no es fingir: el motor cae en silencio si falta el archivo
+(apartado 25). Lo que sí era un problema es lo contrario — el archivo existía y ningún evento podía
+elegirlo—, y eso ya no pasa.
 ## v3.17.0 — Entrega 3 · Fase 5: los horarios se pueden borrar, y "Semana" ya no es "Horario semanal"
 
 Quinta fase de la Entrega 3. Josué nombra **tres problemas** al empezar, y ésta los contesta.
