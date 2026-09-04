@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F4 — la hucha de Economía: objetivo, frecuencia y seguimiento.
+if node --import ./scripts/resolver-vite.mjs scripts/test-hucha.mjs >/tmp/jc_hucha.log 2>&1; then
+  ok "Hucha de Economía (E3 F4) — $(grep -c '✓' /tmp/jc_hucha.log) comprobaciones"
+else
+  fallo "Falla la hucha de Economía (E3 F4)"; grep '✗' /tmp/jc_hucha.log
+fi
+
 # Entrega 3 · F3 — la iconografía del armario y la categoría de ropa interior.
 if node scripts/smoke.mjs test-iconos-armario.jsx >/tmp/jc_icon.log 2>&1; then
   ok "Iconografía del armario (E3 F3) — $(grep -c '✓' /tmp/jc_icon.log) comprobaciones"

@@ -215,8 +215,17 @@ const pulsar = async (txt, tope = 6000) => {
   do {
     clicado = await page.evaluate((t) => {
       const botones = [...document.querySelectorAll('button')];
+      /* 🐛 ⚠️ **Y también por `aria-label`** (Entrega 3 · F4). Un botón de solo
+         icono —una papelera, una estrella, una flecha— **no tiene `innerText`**,
+         así que hasta aquí el recorrido no podía pulsar ninguno: y desde EH F42
+         todos ellos llevan su `aria-label` obligatorio, que es justo el nombre
+         por el que un lector de pantalla los anuncia. Pulsar por ahí es lo que
+         hace alguien usando VoiceOver, y es la única forma de comprobar en el
+         navegador el fallo que reportó Josué: la papelera de Movimientos.
+         El texto sigue teniendo preferencia, para no cambiar nada de antes. */
       const destino = botones.find((x) => x.innerText.trim() === t)
-        || botones.find((x) => x.innerText.includes(t));
+        || botones.find((x) => x.innerText.includes(t))
+        || botones.find((x) => (x.getAttribute('aria-label') || '').trim() === t);
       if (!destino) return false;
       destino.click();
       return true;
@@ -1719,6 +1728,40 @@ ok(/Perfumes/.test(simple) && /Skincare/.test(simple),
 ok(!/Peluquería|Sonrisa|Manos, uñas y pies/.test(simple),
   'y ni rastro de los apagados: no se cuela ninguno');
 ok(simple.length > 200, '⚠️ y no se siente vacía: hay pantalla de verdad, no un hueco');
+
+/* ===========================================================================
+   ENTREGA 3 · FASE 4 — LA HUCHA CON OBJETIVO
+   ===========================================================================
+   Los apartados 1, 4, 6 y 10: que la papelera de movimientos borre de verdad
+   (era el fallo que reportó Josué) y que la hucha enseñe su progreso.
+
+   ⚠️ Sufijo `_e3f4` en todos los nombres: dos `const` iguales en este archivo
+   plano NO COMPILAN, y eso tumba las 460 comprobaciones sin que nada más falle. */
+almacen.economia = {
+  saldoInicial: 100,
+  hucha: 125,
+  movimientos: [{ id: 'mv1', fecha: '2026-09-01', tipo: 'gasto', concepto: 'Libro de prueba', cantidad: 12 }],
+  objetivoHucha: { cantidad: 500, porPeriodo: 50, frecuencia: 'semana' },
+  aportaciones: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Gestión');
+await pulsar('Economía');
+const eco_e3f4 = await esperarTexto(/Hucha/);
+
+ok(/125\.00 € \/ 500\.00 €/.test(eco_e3f4), '🚨 E3 F4 — la hucha enseña ahorrado y objetivo (apartado 10)');
+ok(/25 %/.test(eco_e3f4), 'con su porcentaje');
+ok(/█/.test(eco_e3f4) && /░/.test(eco_e3f4), 'y su barra pequeña de caracteres (apartado 6)');
+ok(/Ahorrar 50\.00 € cada semana/.test(eco_e3f4), 'y la línea del objetivo por semana (apartado 5)');
+ok(/faltan 50\.00 €/.test(eco_e3f4), '⚠️ y dice cuánto falta esta semana, sin haber ahorrado nada aún');
+
+/* 🚨 Apartado 1 — el botón que no borraba. Éste es EL fallo que reportó Josué. */
+ok(/Libro de prueba/.test(eco_e3f4), 'el movimiento está ahí');
+ok(await pulsar('Eliminar movimiento'), 'se pulsa su papelera');
+await page.waitForTimeout(600);
+const trasBorrar_e3f4 = await ver();
+ok(!/Libro de prueba/.test(trasBorrar_e3f4),
+  '🚨 E3 F1+F4 — y el movimiento DESAPARECE de verdad: era el fallo que reportó Josué');
 
 /* ===========================================================================
    ENTREGA 3 · FASE 3 — ROPA INTERIOR EN EL ARMARIO

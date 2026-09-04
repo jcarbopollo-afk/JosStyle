@@ -47,11 +47,20 @@ console.log('\n🎨 EH · Fase 49/65 — Revisión visual final y coherencia\n')
   const inventado = soloEn(EH, OTRAS);
   eq(inventado.radios, [], '⚠️ ni un radio de borde que no use el resto de la aplicación');
   eq(inventado.textos, [], 'ni un tamaño de texto');
-  /* ⚠️ Los dos espaciados que solo usa Estilo de hombre son `-m-1.5` y su
-     vertical: los introdujo la F42 para llegar a 44 px de área táctil SIN
-     cambiar el dibujo. Están declarados como excepción, con su motivo. */
-  eq(inventado.espaciados, ['m-1.5', 'my-1.5'],
-    'los dos únicos espaciados suyos son los del área táctil de la F42');
+  /* ⚠️ Los espaciados que solo usa Estilo de hombre son `-m-1.5` y su vertical:
+     los introdujo la F42 para llegar a 44 px de área táctil SIN cambiar el
+     dibujo, y están declarados como excepción con su motivo.
+
+     🐛 **Esto pedía la lista EXACTA, y estalló en la Entrega 3 · F4** al añadir
+     el botón del objetivo de la hucha, que usa el mismo `p-1.5 -m-1.5`: al
+     usarlo OTRA vista, `m-1.5` dejó de ser exclusivo de Estilo de hombre. Y eso
+     es exactamente lo que esta prueba quiere —que EH no se invente nada—, así
+     que saltaba con algo que estaba mejor que antes. Enésima vez de la lección
+     de la cuenta exacta: lo que hay que comprobar es que **no invente nada
+     fuera de las excepciones declaradas**, no que las excepciones sigan siendo
+     suyas en exclusiva. */
+  eq(inventado.espaciados.filter((x) => !esExcepcion(x)), [],
+    '⚠️ ni un espaciado suyo fuera de los declarados como excepción (los del área táctil de la F42)');
   ok(EXCEPCIONES.every((e) => !!e.porque), 'y están declarados con su motivo');
   eq(inventaAlgo(EH, OTRAS), [],
     '⚠️ 🎯 la condición de finalización: nada que parezca de otra aplicación');

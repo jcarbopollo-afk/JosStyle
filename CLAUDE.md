@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.13.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.15.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 3** (44 fases — **1 hecha**, ver `docs/11_ENTREGA3_ORDEN.md`),
@@ -164,12 +164,21 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 3 de 44.** Hechas la **Fase 1 (Pulido global, v3.10.0)**, la
-**Fase 2 (Rachas, v3.12.0)** y la **Fase 3 (Armario, v3.13.0)**; la siguiente es la **4 — EC
-Economía: hucha inteligente y pulido final**. El índice, con la línea de cada fase dentro de la
-especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
+▶️ **La Entrega 3 está en marcha: 4 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+**F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)** y la **F4 (Economía, v3.15.0)**; la siguiente
+es la **5 — HO+ Horario: UX, navegación y gestión de horarios**. El índice, con la línea de cada fase
+dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
-⚠️ **Y lo que dejaron las tres primeras, que afecta a todas las demás:**
+⚠️ **Y lo que dejaron las cuatro primeras, que afecta a todas las demás:**
+
+- 🚨 **LA HUCHA NO SALE DE ECONOMÍA** (E3 F4, apartado 8): ni objetivos globales, ni rachas, ni
+  productividad, ni Dashboard. Hay cinco pruebas que leen `src/lib/hucha.js` buscando esos nombres.
+  Si una fase futura quiere enlazar el ahorro con los objetivos globales, **preguntárselo a Josué**.
+- ⚠️ **El progreso del periodo sale de las aportaciones, no de los movimientos** (E3 F4): un
+  movimiento no dice si el dinero fue a la hucha, y adivinarlo por el concepto sería inventar un dato.
+- 🐛 **`pulsar()` del recorrido de Chromium ya busca por `aria-label`** (E3 F4). Un botón de solo
+  icono no tiene texto: hasta ahora la prueba **no podía pulsar ninguna papelera, estrella ni
+  flecha** de la aplicación. Ahora sí, y es como las pulsa alguien con VoiceOver.
 
 - 🐛 **UN CAMPO QUE NO LEE NADIE NO FALLA NUNCA** (E3 F3). `CATEGORIAS_ARMARIO` declaraba un `icono`
   por categoría desde AR F1 y la pantalla pintaba `<Shirt>` a pelo: **los accesorios salieron con

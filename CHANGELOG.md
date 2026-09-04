@@ -1,5 +1,78 @@
 # CHANGELOG.md
 
+## v3.15.0 — Entrega 3 · Fase 4: la hucha con objetivo, y la papelera de Economía pulsada de verdad
+
+Cuarta fase de la Entrega 3. El enunciado repite el aviso de las anteriores: *"el apartado Economía
+actual está muy bien planteado y su estructura general debe mantenerse"*. Así que balance,
+movimientos, ingresos, gastos y categorías se quedan como estaban.
+
+### El objetivo de ahorro (apartados 4, 5, 6 y 10)
+
+La hucha era **un número que se editaba a mano**. Ahora puede tener objetivo, con sus tres estados:
+
+- **Sin objetivo** → *125,00 € ahorrados* + la puerta para ponerlo. Y **sin barra ni porcentaje**:
+  un 0 % de nada sería una cifra inventada.
+- **Con objetivo** → *125,00 € / 500,00 €*, `███░░░░░░░░░ 25 %`, y *"Ahorrar 50,00 € cada semana ·
+  ⚠️ Esta semana: faltan 15,00 €"*.
+- **Alcanzado** → la barra llena y *🎉 Objetivo alcanzado*.
+
+Las frecuencias son las tres del apartado 5 —día, semana, mes— y la barra son **doce caracteres**,
+como el "gráfico" de EH F35: el apartado 6 pide expresamente *"no crear gráficos grandes ni
+estadísticas complejas"*.
+
+### 🚨 Cómo se sabe si está cumpliendo, sin inventarse nada
+
+El apartado 7 pide usar *"los movimientos de Economía […] sin obligar al usuario a introducir
+constantemente información duplicada"*.
+
+⚠️ **Un movimiento de Economía no dice si el dinero fue a la hucha.** Un gasto es dinero que sale y
+un ingreso dinero que entra; ninguno lleva un campo que diga "esto es ahorro", y adivinarlo por el
+concepto —buscar la palabra "hucha"— sería inventarse un dato.
+
+Lo que sí existe es el botón que el propio apartado 4 dibuja: **`+ Añadir ahorro`**. Cada vez que
+Josué lo usa, **eso ES el movimiento destinado a la hucha**, y queda apuntado con su fecha. De ahí
+sale el progreso del periodo, sin pedirle el dato dos veces — que es exactamente lo que pide el
+apartado 7.
+
+Y el periodo se calcula **en local**: la semana empieza el lunes, y ⚠️ un `toISOString()` habría
+movido ese lunes en España y con él el cumplimiento. Sexta vez que esa trampa aparece en el proyecto.
+
+### 🚨 Y no sale de Economía (apartado 8)
+
+*"Este objetivo de ahorro NO debe aparecer en el apartado global de Objetivos. No crear una relación
+innecesaria con objetivos personales, rachas, productividad, dashboard u otros módulos."*
+
+Hay **cinco pruebas que leen `src/lib/hucha.js`** y fallan si aparece cualquiera de esos nombres, más
+dos que comprueban que ni `ObjectivesView` ni `DashboardView` lo mencionan. Y ni una pantalla nueva:
+la hucha sigue siendo **una fila de la tarjeta de Cuenta principal**, con un icono pequeño
+(`PiggyBank`), su barra, su línea de objetivo y un botón discreto que despliega la configuración
+ahí mismo.
+
+### 🚨 Y la papelera de Movimientos, pulsada de verdad en el navegador
+
+El apartado 1 es el fallo que Josué reportó y que ya se arregló en la Fase 1. Ahora además **se
+comprueba tocándolo**: el recorrido de Chromium carga un movimiento, pulsa su papelera y verifica
+que desaparece.
+
+🐛 **Para eso hubo que arreglar el propio recorrido.** `pulsar()` solo buscaba por texto, y **un
+botón de solo icono no tiene texto**: la papelera, la estrella, las flechas… ninguno se podía pulsar
+desde la prueba. Ahora también busca por `aria-label`, que desde EH F42 todos llevan obligatorio y
+es el nombre por el que un lector de pantalla los anuncia. Pulsar por ahí es lo que hace alguien
+usando VoiceOver.
+
+### Lo que esto deja apuntado
+
+- ⚠️ **`objetivoHucha` y `aportaciones` son dos campos nuevos de `economia`**, y `App.jsx` normaliza
+  al cargar. Sin esa línea, el siguiente guardado se los lleva (regla 5, decimonovena vez).
+- ⚠️ **Quitar el objetivo NO borra el historial de ahorro**: eso lo guardó él, no es del objetivo.
+- ⚠️ **Sin decir cuánto quiere ahorrar por periodo no se inventa un objetivo semanal** a partir del
+  total: sería una cifra que él no ha dicho (regla 8).
+- 🐛 **Y otra lista exacta que estalló**: `test-coherencia-visual` exigía que `-m-1.5` fuera
+  **exclusivo** de Estilo de hombre, y saltó cuando el botón de la hucha usó el mismo truco de área
+  táctil. Eso es *mejor* coherencia, no peor. Ahora comprueba que EH no invente nada **fuera de las
+  excepciones declaradas**, no que las excepciones sigan siendo suyas.
+
+
 ## v3.14.0 — Las confirmaciones: guardar, avisar y la variante del acierto
 
 ### Qué se ha construido
@@ -48,6 +121,8 @@ segundo es mejor y es más cambio. **No se hace sobre la marcha.**
 Tres de estos cuatro salieron una octava por debajo en el primer intento, y no por descuido: en FLEX,
 **cargar o cambiar el preset devuelve el deslizador PITCH a cero**, y ese control no avisa. Queda
 escrito aquí porque va a volver a pasar con los 31 que faltan.
+
+
 ## v3.13.0 — Entrega 3 · Fase 3: el armario deja de vestirlo todo de camiseta
 
 Tercera fase de la Entrega 3. El enunciado avisa igual que la anterior: *"el apartado Armario actual

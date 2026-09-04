@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt, Flame, CalendarClock, UserRound } from 'lucide-react';
+import { normalizarEconomiaHucha } from './lib/hucha';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
 import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
@@ -461,7 +462,11 @@ export default function App() {
       setSueno(s);
       setCalistenia(c);
       setFutbol(f);
-      setEconomia(e);
+      /* ⚠️ Entrega 3 · F4 — `normalizarEconomiaHucha` rellena los DOS campos nuevos de
+         la hucha (`objetivoHucha` y `aportaciones`). Sin esto, lo guardado antes de esta
+         fase llega sin ellos y el siguiente guardado se los lleva (regla 5): es el fallo
+         del normalizador que este proyecto lleva dieciocho veces cazando. */
+      setEconomia(normalizarEconomiaHucha(e));
       setSalud(sal);
       setSaludFotos(sf);
       setNutricion(nut);
@@ -1638,6 +1643,11 @@ export default function App() {
   const addPartido = (entry) => snapshotAndSave({ futbol: [...futbol, entry] });
   const addMovimiento = (mov) => snapshotAndSave({ economia: { ...economia, movimientos: [...economia.movimientos, mov] } });
   const updateHucha = (v) => snapshotAndSave({ economia: { ...economia, hucha: v } });
+  /* Entrega 3 · F4 — añadir ahorro y el objetivo tocan DOS campos a la vez (el total y
+     el historial), así que la librería devuelve la `economia` entera y aquí solo se
+     guarda. 🚨 Y no toca `objetivos`, `rachas` ni `productividad`: el apartado 8 dice
+     que este objetivo de ahorro **no sale de Economía**. */
+  const updateEconomia = (siguiente) => snapshotAndSave({ economia: siguiente });
   const addMedida = (entry) => snapshotAndSave({ salud: { ...salud, medidas: [...salud.medidas, entry] } });
   const addHistorialMedico = (entry) => snapshotAndSave({ salud: { ...salud, historial: [...salud.historial, entry] } });
 
@@ -2368,7 +2378,7 @@ export default function App() {
              para que esto no pueda volver a pasar en silencio. */
           <FinanceView
             economia={economia} onAddMovimiento={addMovimiento} onDeleteMovimiento={deleteMovimiento}
-            onUpdateHucha={updateHucha} accent={accent}
+            onUpdateHucha={updateHucha} onUpdateEconomia={updateEconomia} accent={accent}
             foco={focoPara('economia')} onFocoConsumido={consumirFoco}
           />
         );

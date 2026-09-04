@@ -24,7 +24,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 1 ✅ | **PG** Pulido global | Safe area, eliminaciones y apariencia — **hecha (v3.10.0)** | 1 |
 | 2 ✅ | **RA+** Rachas | Mantenimiento diario y feedback de recompensa — **hecha (v3.12.0)** | 221 |
 | 3 ✅ | **AR+** Armario | Categorías, iconografía y detalle visual — **hecha (v3.13.0)** | 544 |
-| 4 | **EC** Economía | Hucha inteligente y pulido final | 741 |
+| 4 ✅ | **EC** Economía | Hucha inteligente y pulido final — **hecha (v3.15.0)** | 741 |
 | 5 | **HO+** Horario | UX, navegación y gestión de horarios | 1027 |
 | 6 | **HC** Hoy y Calendario | F1 — Hoy: centro del día | 1227 |
 | 7 | HC | F2 — Calendario: agenda | 1824 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 3 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0). La siguiente es la **4 — EC Economía**, línea 741.
+**Por dónde va:** 4 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0). La siguiente es la **5 — HO+ Horario**, línea 1027.
 
 ## Lo que dejó la Fase 1, y que afecta a todas las demás
 
@@ -106,6 +106,19 @@ solo vale como corrección o ajuste — nunca una función nueva.
   Antes de añadir un campo a un catálogo, comprobar que alguien lo lea.
 - ⚠️ **Los iconos propios van en la gramática de Lucide** (24×24, solo trazo, `currentColor`,
   grosor 2, remates redondeados) y salen de UNA base `<svg>` compartida. Nada de emojis.
+
+## Y lo que dejó la Fase 4
+
+- 🚨 **La hucha NO sale de Economía** (apartado 8), y hay cinco pruebas que leen `src/lib/hucha.js`
+  buscando `objetivos`, `rachas`, `productividad`, `dashboard` y `gamificacion`. Si una fase futura
+  quiere enlazar el ahorro con los objetivos globales, **tiene que pedírselo a Josué antes**.
+- ⚠️ **El progreso del periodo sale de las aportaciones, no de los movimientos.** Un movimiento no
+  dice si el dinero fue a la hucha, y adivinarlo por el concepto sería inventarse un dato.
+- ⚠️ **`objetivoHucha` y `aportaciones` son campos nuevos de `economia`**, normalizados en `App.jsx`
+  al cargar. Sin esa línea, el siguiente guardado se los lleva (regla 5).
+- 🐛 **`pulsar()` del recorrido de Chromium ya busca por `aria-label`.** Un botón de solo icono no
+  tiene texto, así que hasta la F4 la prueba no podía pulsar **ninguna papelera, estrella ni
+  flecha** de la aplicación. Ahora sí, y es como los pulsa alguien con VoiceOver.
 
 ## Dos cosas del documento que conviene saber
 
