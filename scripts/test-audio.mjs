@@ -12,7 +12,7 @@ import {
   ALIAS_EVENTO, eventoCanonico, definicionEvento,
   ORIGENES_SONIDO, crearSonido, normalizarSonido, SONIDOS_SISTEMA, sonidoDelSistema,
   HITOS_DE_RACHA, hitoDeRacha,
-  ASIGNACIONES_POR_DEFECTO, DEFAULT_AUDIO, normalizarAudio, acotarVolumen,
+  ASIGNACIONES_POR_DEFECTO, SIN_EMISOR_TODAVIA, DEFAULT_AUDIO, normalizarAudio, acotarVolumen,
   volumenEfectivo, resolverSonido, VENTANA_COLISION, ESTADO_AUDIO_INICIAL,
   decidirReproduccion, CATEGORIAS_PRECARGA, sonidosAPrecargar,
   FORMATOS_SONIDO, MAX_TAMANO_SONIDO, MAX_DURACION_SONIDO, validarSonidoSubido,
@@ -373,6 +373,65 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
     && /data-sin-sonido/.test(motorSrc));
   comprobar('⚠️ Un interruptor no suena como un botón, y encender no suena como apagar',
     /UI_TOGGLE_OFF/.test(motorSrc) && /UI_CLICK/.test(motorSrc));
+}
+
+/* ---------------------------------------------------------------------------
+   🚨 QUIÉN EMITE CADA EVENTO
+   ---------------------------------------------------------------------------
+   El fallo que se ha repetido toda la sesión: el archivo existe, el motor sabe
+   cuál es, y **nadie lo dispara**. Un sonido sin emisor es tan mudo como un
+   archivo que falta, pero cuesta mucho más verlo — porque todo lo demás está.
+
+   Esto lo mira en el código de verdad, no en una lista escrita a mano.
+   --------------------------------------------------------------------------- */
+{
+  console.log('\n🚨 Quién emite cada evento');
+  const appSrc2 = readFileSync(join(RAIZ, 'src/App.jsx'), 'utf8');
+  const supaSrc = readFileSync(join(RAIZ, 'src/lib/supabase.js'), 'utf8');
+  const motor2 = readFileSync(join(RAIZ, 'src/lib/audioEngine.js'), 'utf8');
+  const fuente = [appSrc2, supaSrc, motor2].join('\n');
+
+  const emitidos = new Set([...fuente.matchAll(/emitir\(\s*'([A-Z_]+)'/g)].map((m) => m[1]));
+  /* Los de racha no aparecen como literales: RA F3 los emite desde su propio
+     catálogo, que es justo lo que exige el apartado 30 (no duplicarlo aquí). */
+  Object.values(EVENTOS_GAMIFICACION).forEach((e) => emitidos.add(eventoCanonico(e)));
+  /* Y los de interfaz no salen de un `emitir`, sino del oyente de toques. */
+  if (/conectarLosToques/.test(motor2)) {
+    ['UI_CLICK', 'UI_TOGGLE', 'UI_TOGGLE_OFF', 'UI_BACK', 'UI_OPEN'].forEach((e) => {
+      if (new RegExp(e).test(motor2)) emitidos.add(e);
+    });
+  }
+
+  ['TASK_COMPLETED', 'STUDY_COMPLETED', 'ACTION_ERROR', 'CONNECTION_LOST', 'CONNECTION_RESTORED']
+    .forEach((e) => comprobar(`CLAVE · Alguien emite ${e}`, emitidos.has(e)));
+
+  comprobar('🚨 CLAVE · Un guardado que falla se oye', /emitir\('ACTION_ERROR'[^)]*guardar/.test(supaSrc));
+  comprobar('⚠️ ...y uno que sale bien NO, que son ochenta y seis al día',
+    !/emitir\('ACTION_SAVED'/.test(supaSrc));
+  comprobar('...y el vigía de la red se suelta al desmontar', /soltarRed\?\.\(\)/.test(appSrc2));
+
+  /* ⚠️ Lo que sigue sin emisor, contado en vez de escondido. No es un fallo: es
+     lo que queda por conectar, y tenerlo a la vista es lo que impide darlo por
+     hecho — que es exactamente lo que pasó con los hitos. */
+  const huerfanos = Object.keys(ASIGNACIONES_POR_DEFECTO)
+    .filter((e) => ASIGNACIONES_POR_DEFECTO[e] && !emitidos.has(e));
+
+  /* 🚨 **LA INVARIANTE QUE CIERRA EL FALLO DE TODA LA SESIÓN.**
+     Un sonido sin emisor es tan mudo como un archivo que falta, y muchísimo más
+     difícil de ver, porque todo lo demás está en su sitio. Aquí se exige que
+     **todo evento con sonido esté emitido o esté declarado con su motivo**.
+     Añadir uno y no conectarlo pone la suite en rojo. */
+  const sinDeclarar = huerfanos.filter((e) => !SIN_EMISOR_TODAVIA[e]);
+  comprobar(`🚨 CLAVE · Todo evento con sonido está emitido o declarado${sinDeclarar.length ? ` — SUELTOS: ${sinDeclarar.join(', ')}` : ''}`,
+    sinDeclarar.length === 0);
+  comprobar('⚠️ ...y cada declaración dice POR QUÉ, no solo que falta',
+    Object.values(SIN_EMISOR_TODAVIA).every((m) => typeof m === 'string' && m.length > 25));
+  comprobar('⚠️ Y no se declara pendiente nada que sí se emite',
+    Object.keys(SIN_EMISOR_TODAVIA).every((e) => !emitidos.has(e)),
+    Object.keys(SIN_EMISOR_TODAVIA).filter((e) => emitidos.has(e)).join(','));
+
+  console.log(`\n  ⚠️ ${huerfanos.length} eventos tienen sonido y no los emite nadie, todos con motivo:`);
+  huerfanos.forEach((e) => console.log(`     ${e.padEnd(22)}${SIN_EMISOR_TODAVIA[e]}`));
 }
 
 /* ===========================================================================

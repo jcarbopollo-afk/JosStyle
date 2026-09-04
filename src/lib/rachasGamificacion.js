@@ -299,6 +299,10 @@ export const GAMIFICACION_INICIAL = { desbloqueados: [], hitos: {} };
 
 export const EVENTOS_GAMIFICACION = {
   STREAK_STARTED: 'STREAK_STARTED',
+  /* 🚨 Retomar una racha rota. Añadido el 2026-09-04: la biblioteca de sonido lo
+     declaraba desde la SO F4 y no lo emitía nadie, así que `streak_recovered.mp3`
+     era un archivo inalcanzable. */
+  STREAK_RECOVERED: 'STREAK_RECOVERED',
   STREAK_CONTINUED: 'STREAK_CONTINUED',
   STREAK_MILESTONE_REACHED: 'STREAK_MILESTONE_REACHED',
   STREAK_PERSONAL_RECORD: 'STREAK_PERSONAL_RECORD',
@@ -342,9 +346,22 @@ export function evaluar(estado, gamificacion, hoy = todayISO()) {
 
     // ── Estado de la racha ────────────────────────────────────────────────
     if (hoyCumplido) {
-      // Empezar y continuar son cosas distintas: la primera merece una frase, la
-      // segunda un visto. Es el "microfeedback" del apartado 23.
-      eventos.push({ tipo: ctx.actual === 1 ? EVENTOS_GAMIFICACION.STREAK_STARTED : EVENTOS_GAMIFICACION.STREAK_CONTINUED, ...base });
+      /* Empezar y continuar son cosas distintas: la primera merece una frase, la
+         segunda un visto. Es el "microfeedback" del apartado 23.
+
+         🚨 Y **volver no es empezar.** Si hoy es el día 1 pero en el historial
+         hay otros días, esta racha estuvo rota y se ha retomado — que cuesta
+         más que empezarla de cero, y la biblioteca de sonido lo declara aparte
+         (`streak_recovered`, que arranca más grave: se vuelve desde abajo).
+
+         ⚠️ Se mira el historial y no `ctx.record`, que incluye el día de hoy:
+         una racha estrenada hoy tendría récord 1 y se anunciaría como
+         recuperada sin haber estado nunca rota. */
+      const huboDiasAntes = Object.keys(indice).length > 1;
+      const cual = ctx.actual !== 1
+        ? EVENTOS_GAMIFICACION.STREAK_CONTINUED
+        : (huboDiasAntes ? EVENTOS_GAMIFICACION.STREAK_RECOVERED : EVENTOS_GAMIFICACION.STREAK_STARTED);
+      eventos.push({ tipo: cual, ...base });
     } else if (ctx.actual === 0 && ctx.estado === ESTADOS_RACHA.ROTA) {
       eventos.push({ tipo: EVENTOS_GAMIFICACION.STREAK_BROKEN, ...base, record: ctx.record });
     }

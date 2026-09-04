@@ -86,6 +86,23 @@ console.log('\n═══ Las diez pruebas del apartado 34 ═══\n');
     p1.eventos.some((x) => x.tipo === EVENTOS_GAMIFICACION.STREAK_MILESTONE_REACHED && x.hito === 1));
   comprobar('...y emite STREAK_STARTED, no CONTINUED', tipos(p1.eventos).includes(EVENTOS_GAMIFICACION.STREAK_STARTED));
 
+  /* 🚨 **Volver no es empezar.** Retomar una racha rota cuesta más que
+     estrenarla, y la biblioteca de sonido lo declara aparte desde la SO F4 —
+     pero hasta el 2026-09-04 no lo emitía nadie y `streak_recovered.mp3` era un
+     archivo que nada podía disparar.
+
+     ⚠️ Se distingue por el historial y no por el récord: el récord incluye el
+     día de hoy, así que una racha estrenada tendría récord 1 y se anunciaría
+     como recuperada sin haber estado rota nunca. */
+  const rota = ['2026-08-01', '2026-08-02', HOY].reduce((acc, f) => completarDia(acc, { rachaId: racha.id, fecha: f }).estado, estado);
+  const pR = evaluar(rota, GAMIFICACION_INICIAL, HOY);
+  comprobar('🚨 CLAVE · Retomar una racha rota emite STREAK_RECOVERED',
+    tipos(pR.eventos).includes(EVENTOS_GAMIFICACION.STREAK_RECOVERED));
+  comprobar('...y NO STREAK_STARTED, que es estrenarla',
+    !tipos(pR.eventos).includes(EVENTOS_GAMIFICACION.STREAK_STARTED));
+  comprobar('⚠️ Y una estrenada hoy sigue siendo STARTED, no recuperada',
+    !tipos(p1.eventos).includes(EVENTOS_GAMIFICACION.STREAK_RECOVERED));
+
   // PRUEBA 2 — siete días: desbloquea su logro.
   const p2 = evaluar(seguidos(estado, racha.id, 7), GAMIFICACION_INICIAL, HOY);
   comprobar('PRUEBA 2 · Siete días desbloquean "Primera llama"',

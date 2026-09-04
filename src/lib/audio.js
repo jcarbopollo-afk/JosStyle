@@ -364,6 +364,41 @@ export const ASIGNACIONES_POR_DEFECTO = {
   CUSTOM: null,
 };
 
+/**
+ * 🚨 **Los eventos que tienen sonido y todavía no los emite nadie, con el motivo.**
+ *
+ * Éste es EL fallo que se repitió toda la sesión del 2026-09-04: el archivo
+ * existe, el motor sabe cuál es, y nada lo dispara. Un sonido sin emisor es tan
+ * mudo como un archivo que falta, pero cuesta muchísimo más verlo — porque todo
+ * lo demás está en su sitio.
+ *
+ * ⚠️ Ninguno de éstos es un olvido, y por eso están escritos. Emitirlos exigiría
+ * **construir la función que no existe** —niveles, insignias, metas de ahorro—,
+ * que es justo lo que prohíbe la regla 8: un sonido de "has subido de nivel" sin
+ * niveles es un control decorativo con altavoz.
+ *
+ * `test-audio.mjs` comprueba que **todo evento con sonido está emitido o está
+ * aquí**. Añadir uno nuevo y no conectarlo pone la suite en rojo: no se puede
+ * volver a colar en silencio.
+ */
+export const SIN_EMISOR_TODAVIA = {
+  // Alias que quedaron sueltos al dar evento propio a cada sonido (2026-09-04).
+  SUCCESS: 'Genérico. Cada acción que sale bien tiene ya su evento propio (TASK, HABIT, GOAL, STUDY, SLEEP).',
+  ACTION_COMPLETED: 'Genérico, mismo caso que SUCCESS. Se conserva porque el apartado 4 lo nombra.',
+  UI_SUCCESS: 'Genérico de interfaz. `sync_complete` y `connection_restored` ya tienen el suyo.',
+  ACTION_SAVED: '🚨 A propósito: guardar sale bien decenas de veces por sesión y un sonido en cada una, encima del clic, sería ruido. Solo se oye cuando FALLA.',
+
+  // Funciones que no existen, y no se van a fingir.
+  LEVEL_UP: 'No hay niveles: RA F3 decidió no construirlos (D2-02).',
+  BADGE_UNLOCKED: 'No hay insignias separadas de los logros. Hoy todo logro es ACHIEVEMENT_UNLOCKED.',
+  MAJOR_GOAL_COMPLETED: 'No hay objetivos "mayores": un objetivo se cumple o no, sin tamaño.',
+  GOAL_PROGRESS: 'Un objetivo es `cumplido` sí o no. Sin porcentaje no hay progreso que anunciar.',
+  ACTION_WARNING: 'No hay ningún aviso intermedio todavía: lo que puede ir mal, va mal del todo y suena a error.',
+
+  // Aplazado por su propia fase, con fecha.
+  STREAK_AT_RISK: '⚠️ "En riesgo" depende de la HORA, no del día, y RA F1 lo aplazó expresamente a RA F4 con el resto de estados visuales.',
+};
+
 /* ===========================================================================
    5 · PREFERENCIAS (apartados 7, 27 y 28)
    ===========================================================================

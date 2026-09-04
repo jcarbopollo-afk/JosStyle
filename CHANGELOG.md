@@ -1,5 +1,67 @@
 # CHANGELOG.md
 
+## v3.25.0 — Ahora suena todo lo que tiene sistema detrás
+
+### Qué se ha construido
+De 19 eventos sin emisor a **9 conectados**. Cada uno en el sitio donde ocurre el hecho, no en la
+pantalla que lo enseña:
+
+| Evento | Dónde se emite | Qué se oye |
+|---|---|---|
+| `ACTION_ERROR` | `saveData()`, al fallar | un guardado que no se guardó |
+| `CONNECTION_LOST` / `CONNECTION_RESTORED` | `vigilarLaConexion()` | perder y recuperar la red |
+| `SYNC_COMPLETED` | al terminar la carga inicial | los datos ya están |
+| `TASK_COMPLETED` | pomodoro terminado | una tarea hecha |
+| `STUDY_COMPLETED` | sesión de concentración | estudiar |
+| `HABIT_COMPLETED` | marcar el hábito de hoy | un hábito cumplido |
+| `SLEEP_LOGGED` | registrar sueño | |
+| `TRAINING_COMPLETED` | partido añadido | |
+| `GOAL_COMPLETED` | objetivo que pasa a cumplido | |
+| `SAVING_COMPLETED` | la hucha alcanza su meta | |
+| `STREAK_RECOVERED` | racha rota que se retoma | |
+| `UI_OPEN` / `UI_BACK` | el oyente de toques | abrir un panel, volver |
+
+⚠️ Todos comparan con el estado anterior: **marcar un hábito suena, editarlo no; desmarcarlo,
+tampoco.** Cumplir un objetivo suena una vez, no cada vez que se guarda. Deshacer algo no es un logro.
+
+### La decisión que no se tomó: el sonido de guardar
+`saveData()` se llama desde **86 sitios**. Un sonido en cada guardado correcto, encima del clic que
+ya suena, sería ruido constante. **Se emite el fallo y no el acierto**: lo que hay que oír es lo que
+no se espera. Queda escrito como decisión, no como olvido.
+
+### 🚨 STREAK_RECOVERED: volver no es empezar
+`streak_recovered.mp3` existía desde la SO F4 y no lo emitía nadie. Retomar una racha rota cuesta más
+que estrenarla, y el sonido lo refleja —arranca más grave, se vuelve desde abajo—, pero el motor solo
+sabía decir "empezada" o "continuada".
+
+⚠️ Se distingue por el **historial**, no por el récord: el récord incluye el día de hoy, así que una
+racha estrenada tendría récord 1 y se anunciaría como recuperada sin haber estado rota jamás.
+
+### 🚨 La invariante que cierra el fallo de toda la sesión
+Un sonido sin emisor es tan mudo como un archivo que falta, y **muchísimo más difícil de ver**:
+todo lo demás está en su sitio. Ha pasado cinco veces hoy.
+
+`SIN_EMISOR_TODAVIA` declara los que quedan **con su motivo**, y una prueba exige que todo evento con
+sonido esté emitido **o** declarado. Añadir uno y no conectarlo pone la suite en rojo; declarar como
+pendiente algo que sí se emite, también — lo comprobó en caliente con `SAVING_COMPLETED`.
+
+Los 10 que quedan no son olvidos: cuatro son genéricos que ya tienen evento propio, uno es la
+decisión de arriba, y el resto exigirían **construir la función que no existe** (niveles, insignias,
+avisos intermedios). Un sonido de "has subido de nivel" sin niveles es un control decorativo con
+altavoz — la regla 8 con volumen.
+
+### 🐛 Y un limpiador de comentarios que se comía el código
+`test-hucha.mjs` borra los comentarios antes de buscar en `App.jsx`, y su expresión para los
+comentarios JSX era `\{\s*\/\*`. Bastaba una función que abriera llave y llevara un comentario de
+bloque en la línea siguiente —algo tan normal como esto— para que buscara el cierre `*/}` cientos de
+líneas más abajo y se tragara todo lo de en medio.
+
+Falló al añadir un comentario a `updateObjetivo`: la comprobación de `onUpdateEconomia` se puso roja
+con la línea ahí escrita, porque el limpiador se la había comido antes de mirarla. En este proyecto
+los comentarios JSX van siempre `{/* … */}` pegados, así que exigirlo quita la ambigüedad sin perder
+ninguno.
+
+
 ## v3.24.0 — La aplicación suena
 
 ### Qué se ha construido

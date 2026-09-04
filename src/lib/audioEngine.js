@@ -335,6 +335,24 @@ export function conectarLosToques() {
       return;
     }
 
+    /* 🚨 Abrir un panel, volver atrás y pulsar un botón son tres gestos
+       distintos, y la biblioteca los declara por separado. Se distinguen por lo
+       que el propio elemento ya dice de sí mismo —`aria-expanded`, su etiqueta—,
+       no por una lista de botones que habría que mantener a mano y que se
+       quedaría vieja al añadir la pantalla siguiente. */
+    if (el.getAttribute('aria-expanded') !== null) {
+      /* `aria-expanded` se lee ANTES de que React lo actualice, así que lo que
+         hay es el estado viejo: si ponía "cerrado", este toque lo está abriendo. */
+      reproducir(el.getAttribute('aria-expanded') === 'true' ? 'UI_BACK' : 'UI_OPEN');
+      return;
+    }
+
+    const etiqueta = `${el.getAttribute('aria-label') || ''} ${el.title || ''}`.toLowerCase();
+    if (/volver|atrás|atras|cerrar|cancelar/.test(etiqueta)) {
+      reproducir('UI_BACK');
+      return;
+    }
+
     reproducir('UI_CLICK');
   };
 

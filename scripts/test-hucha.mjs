@@ -34,8 +34,23 @@ const eq = (a, b, m) => ok(JSON.stringify(a) === JSON.stringify(b), `${m} — es
 
 const RAIZ = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const leer = (rel) => readFileSync(join(RAIZ, rel), 'utf8');
+/* 🐛 El comentario JSX se reconoce por `{/*` **pegados**, sin espacios en medio.
+   Con `\{\s*\/\*` bastaba una función que abriera llave y llevara un comentario
+   de bloque en la línea siguiente —algo tan normal como esto:
+
+       const updateObjetivo = (o) => {
+         /* lo que hace *\/
+         ...
+
+   para que la expresión buscara el cierre `*\/}` mucho más abajo y se tragara
+   cientos de líneas de código real. Lo destapó el 2026-09-04 un comentario nuevo
+   en `App.jsx`: la comprobación de `onUpdateEconomia` falló con la línea ahí
+   escrita, porque el limpiador se la había comido antes de mirarla.
+
+   En este proyecto los comentarios JSX se escriben siempre `{/* … *\/}`, así que
+   exigirlos pegados no pierde ninguno y quita la ambigüedad. */
 const sinComentarios = (t) => t
-  .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  .replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
 // Jueves 3 de septiembre de 2026. La semana empieza el lunes 31 de agosto.
 const HOY = '2026-09-03';

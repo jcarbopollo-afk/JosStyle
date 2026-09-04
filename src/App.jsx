@@ -3,7 +3,7 @@ import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, Mor
 import { normalizarEconomiaHucha } from './lib/hucha';
 import { anadirApunte, resumenDelDia, progresoDelDia, apuntesDe } from './lib/centroDelDia';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
-import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl } from './lib/supabase';
+import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl , vigilarLaConexion } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, addDays, hexToRgba, fechaLocalISO } from './lib/helpers';
 import { extractPdfText } from './lib/pdfText';
@@ -538,6 +538,10 @@ export default function App() {
         saveData(uidUser, 'estiloHombre', normalizarEstiloHombre(migracionEH.estado));
       }
       setLoaded(true);
+      /* SO — los datos ya estan en pantalla. Es el unico momento del ciclo en que
+         'sincronizado' significa algo: antes de esto no hay nada que sincronizar,
+         y despues los guardados son de uno en uno. */
+      emitir('SYNC_COMPLETED', {});
     })();
     return () => { cancelled = true; };
   }, [session]);
@@ -612,7 +616,8 @@ export default function App() {
        la cabecera de SO F1 prohibe, y garantiza que el boton numero veintiuno se
        quede mudo sin que nadie se entere. */
     const soltarToques = conectarLosToques();
-    return () => { soltar?.(); desconectar?.(); soltarToques?.(); detenerAudio(); };
+    const soltarRed = vigilarLaConexion();
+    return () => { soltar?.(); desconectar?.(); soltarToques?.(); soltarRed?.(); detenerAudio(); };
     // Solo al montar: cambiar el volumen no puede reiniciar el motor ni volver a
     // pedir permiso. Las preferencias entran por el efecto de abajo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1644,16 +1649,37 @@ export default function App() {
     if (patch.estiloHombre) { setEstiloHombre(patch.estiloHombre); saveData(uidUser, 'estiloHombre', patch.estiloHombre); }
   };
 
-  const addSueno = (entry) => snapshotAndSave({ sueno: [...sueno, entry] });
+  const addSueno = (entry) => {
+    snapshotAndSave({ sueno: [...sueno, entry] });
+    emitir('SLEEP_LOGGED', {});
+  };
   const updateSkill = (skill, data) => snapshotAndSave({ calistenia: { ...calistenia, [skill]: data } });
-  const addPartido = (entry) => snapshotAndSave({ futbol: [...futbol, entry] });
+  const addPartido = (entry) => {
+    snapshotAndSave({ futbol: [...futbol, entry] });
+    emitir('TRAINING_COMPLETED', { de: 'futbol' });
+  };
   const addMovimiento = (mov) => snapshotAndSave({ economia: { ...economia, movimientos: [...economia.movimientos, mov] } });
   const updateHucha = (v) => snapshotAndSave({ economia: { ...economia, hucha: v } });
   /* Entrega 3 · F4 — añadir ahorro y el objetivo tocan DOS campos a la vez (el total y
      el historial), así que la librería devuelve la `economia` entera y aquí solo se
      guarda. 🚨 Y no toca `objetivos`, `rachas` ni `productividad`: el apartado 8 dice
      que este objetivo de ahorro **no sale de Economía**. */
-  const updateEconomia = (siguiente) => snapshotAndSave({ economia: siguiente });
+  const updateEconomia = (siguiente) => {
+    /* SO — llegar al objetivo de la hucha suena, y solo la vez que se cruza.
+       Se compara con lo que había, igual que en los hábitos y los objetivos:
+       seguir ahorrando por encima de la meta ya no es alcanzarla.
+
+       ⚠️ El comentario va DENTRO de la función a propósito, donde se lee. Que
+       eso rompiera el limpiador de comentarios de test-hucha.mjs era un fallo
+       del limpiador, y está arreglado allí. */
+    const meta = Number(siguiente?.objetivoHucha?.cantidad);
+    const antes = Number(economia?.hucha) || 0;
+    const ahora = Number(siguiente?.hucha) || 0;
+    snapshotAndSave({ economia: siguiente });
+    if (Number.isFinite(meta) && meta > 0 && antes < meta && ahora >= meta) {
+      emitir('SAVING_COMPLETED', { meta });
+    }
+  };
   const addMedida = (entry) => snapshotAndSave({ salud: { ...salud, medidas: [...salud.medidas, entry] } });
   const addHistorialMedico = (entry) => snapshotAndSave({ salud: { ...salud, historial: [...salud.historial, entry] } });
 
@@ -1725,7 +1751,17 @@ export default function App() {
   const updateProyecto = (p) => snapshotAndSave({ negocio: { ...negocio, proyectos: negocio.proyectos.map((x) => (x.id === p.id ? p : x)) } });
   const deleteProyecto = (id) => eliminarConPapelera('negocio', 'proyectos', id);
   const addHabito = (h) => snapshotAndSave({ productividad: { ...productividad, habitos: [...productividad.habitos, h] } });
-  const updateHabito = (h) => snapshotAndSave({ productividad: { ...productividad, habitos: productividad.habitos.map((x) => (x.id === h.id ? h : x)) } });
+  const updateHabito = (h) => {
+    /* SO — marcar el hábito de hoy es completarlo; renombrarlo o editarlo no.
+       Se compara con el que había: la vista sigue llamando a lo mismo de siempre
+       y no sabe que existe el audio. Desmarcar tampoco suena — deshacer algo no
+       es un logro. */
+    const antes = productividad.habitos.find((x) => x.id === h.id);
+    const hoyISO = todayISO();
+    const seAcabaDeMarcar = !!h?.historial?.[hoyISO] && !antes?.historial?.[hoyISO];
+    snapshotAndSave({ productividad: { ...productividad, habitos: productividad.habitos.map((x) => (x.id === h.id ? h : x)) } });
+    if (seAcabaDeMarcar) emitir('HABIT_COMPLETED', { habitoId: h.id });
+  };
   const deleteHabito = (id) => eliminarConPapelera('productividad', 'habitos', id);
   const addRutina = (r) => snapshotAndSave({ productividad: { ...productividad, rutinas: [...productividad.rutinas, r] } });
   const updateRutina = (r) => snapshotAndSave({ productividad: { ...productividad, rutinas: productividad.rutinas.map((x) => (x.id === r.id ? r : x)) } });
@@ -1754,10 +1790,19 @@ export default function App() {
     const next = { ...productividad, pomodoros: { ...productividad.pomodoros, [hoy]: (productividad.pomodoros[hoy] || 0) + 1 } };
     setProductividad(next);
     saveData(uidUser, 'productividad', next);
+    /* SO — un pomodoro terminado es una tarea completada. Se emite al bus y
+       quien quiera reacciona: Productividad no sabe que existe el audio. */
+    emitir('TASK_COMPLETED', { de: 'pomodoro' });
   };
 
   const addObjetivo = (o) => snapshotAndSave({ objetivos: { ...objetivos, lista: [...objetivos.lista, o] } });
-  const updateObjetivo = (o) => snapshotAndSave({ objetivos: { ...objetivos, lista: objetivos.lista.map((x) => (x.id === o.id ? o : x)) } });
+  const updateObjetivo = (o) => {
+    /* SO — cumplir un objetivo suena; editarlo no. Y descumplirlo tampoco: se
+       compara con el que habia, igual que en los habitos. */
+    const antes = objetivos.lista.find((x) => x.id === o.id);
+    snapshotAndSave({ objetivos: { ...objetivos, lista: objetivos.lista.map((x) => (x.id === o.id ? o : x)) } });
+    if (o?.cumplido && !antes?.cumplido) emitir('GOAL_COMPLETED', { objetivoId: o.id });
+  };
   const deleteObjetivo = (id) => eliminarConPapelera('objetivos', 'lista', id);
   // La fecha de la última revisión tampoco pasa por el snapshot — es un dato de "seguimiento",
   // no algo que tenga sentido deshacer, igual que el contador de pomodoros.
@@ -1798,7 +1843,11 @@ export default function App() {
   const addDiarioFe = (d) => snapshotAndSave({ fe: { ...fe, diario: [...fe.diario, d] } });
   const deleteDiarioFe = (id) => eliminarConPapelera('fe', 'diario', id);
   const addObjetivoFe = (o) => snapshotAndSave({ fe: { ...fe, objetivos: [...fe.objetivos, o] } });
-  const updateObjetivoFe = (o) => snapshotAndSave({ fe: { ...fe, objetivos: fe.objetivos.map((x) => (x.id === o.id ? o : x)) } });
+  const updateObjetivoFe = (o) => {
+    const antes = fe.objetivos.find((x) => x.id === o.id);
+    snapshotAndSave({ fe: { ...fe, objetivos: fe.objetivos.map((x) => (x.id === o.id ? o : x)) } });
+    if (o?.cumplido && !antes?.cumplido) emitir('GOAL_COMPLETED', { objetivoId: o.id, de: 'fe' });
+  };
   const deleteObjetivoFe = (id) => eliminarConPapelera('fe', 'objetivos', id);
   // Fase 15 — Bienestar digital: las tres sub-áreas son texto puro (sin archivos, sin PIN), así
   // que pasan por snapshotAndSave/deshacer como el resto de módulos de datos de la app — mismo
@@ -1807,8 +1856,10 @@ export default function App() {
   const deleteRegistroTiempoUso = (id) => eliminarConPapelera('bienestar', 'registros', id);
   const addReflexionBienestar = (r) => snapshotAndSave({ bienestar: { ...bienestar, reflexiones: [...bienestar.reflexiones, r] } });
   const deleteReflexionBienestar = (id) => eliminarConPapelera('bienestar', 'reflexiones', id);
-  const completarSesionConcentracion = (minutos) =>
+  const completarSesionConcentracion = (minutos) => {
     snapshotAndSave({ bienestar: { ...bienestar, sesiones: [...bienestar.sesiones, { id: uid(), minutos, fecha: todayISO() }] } });
+    emitir('STUDY_COMPLETED', { minutos });
+  };
 
   // Las fotos de progreso viven fuera del sistema de deshacer: implican un archivo real
   // subido a Supabase Storage, y "deshacer" no debería dejar un archivo huérfano sin referencia.

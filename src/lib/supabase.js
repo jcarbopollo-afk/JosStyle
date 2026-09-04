@@ -1,4 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+/* El bus de eventos (SO F1). Supabase no sabe que existe el audio: emite lo que
+   pasa y quien quiera reacciona — el desacoplamiento del apartado 31. */
+import { emitir } from './eventos';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -87,8 +90,42 @@ export async function saveData(userId, key, value) {
   const { error } = await supabase
     .from('app_data')
     .upsert({ user_id: userId, key, value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' });
-  if (error) console.error('No se pudo guardar', key, error);
+  if (error) {
+    console.error('No se pudo guardar', key, error);
+    /* 🚨 **Un guardado que falla tiene que oírse.** Es el caso que el proyecto
+       persigue desde la F52: Josué escribe algo, cree que está guardado, y no
+       lo está.
+
+       ⚠️ Se emite el fallo y NO el acierto. Guardar sale bien decenas de veces
+       por sesión —esta función se llama desde 86 sitios de App.jsx— y un sonido
+       en cada una, encima del clic, sería ruido. Lo que hay que oír es lo que
+       no se espera. */
+    emitir('ACTION_ERROR', { de: 'guardar', clave: key });
+  }
   return { ok: !error, error: error || null };
+}
+
+/**
+ * 🚨 **Perder y recuperar la conexión, dicho en voz alta.**
+ *
+ * La biblioteca declara `connection_lost` y `connection_restored` como pareja
+ * —la misma frase al revés, una baja y otra sube— y hasta ahora no los emitía
+ * nadie: los dos archivos existían sin que nada pudiera dispararlos.
+ *
+ * ⚠️ Va aquí, con el resto de lo que habla con la red, y no en una pantalla: es
+ * un hecho de la conexión, no de una vista. Devuelve la función de soltar, que
+ * es lo que impide dejar oyentes pegados a `window` entre montajes.
+ */
+export function vigilarLaConexion() {
+  if (typeof window === 'undefined' || !window.addEventListener) return () => {};
+  const perdida = () => emitir('CONNECTION_LOST', {});
+  const vuelta = () => emitir('CONNECTION_RESTORED', {});
+  window.addEventListener('offline', perdida);
+  window.addEventListener('online', vuelta);
+  return () => {
+    window.removeEventListener('offline', perdida);
+    window.removeEventListener('online', vuelta);
+  };
 }
 
 /* ---------- Storage: fotos de progreso (bucket privado "progreso", una carpeta por usuario) ----------
