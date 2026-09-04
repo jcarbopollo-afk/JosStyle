@@ -1,0 +1,93 @@
+# 11 · ENTREGA 3 — ORDEN DE FASES
+
+> Índice de la especificación que Josué pasó el 4 de septiembre de 2026. El texto literal está en
+> **`especificaciones/ORIGINAL_ENTREGA3_PULIDO_Y_MODULOS.txt`** 🔒 **intocable**, y las líneas de
+> este índice apuntan a él.
+
+## Qué es esta entrega
+
+**No es una continuación de la Entrega 2.** Aquélla construía siete módulos nuevos; ésta **pule y
+rehace apartados que ya existen** —Hoy, Calendario, Biblioteca, Productividad, Bienestar, Nutrición,
+Estudios— y arregla problemas encontrados **usando la aplicación de verdad en un iPhone**.
+
+Eso cambia una cosa importante: aquí **casi nada se construye desde cero**. Antes de escribir una
+línea hay que mirar qué hay ya en `src/views/` y en `src/lib/`, porque el 80 % de estas fases son
+rediseños de pantallas que llevan meses funcionando.
+
+⚠️ **Y Estilo de hombre sigue CONGELADO** (EH F65): si una fase de aquí tocara Estilo de hombre,
+solo vale como corrección o ajuste — nunca una función nueva.
+
+## Las 44 fases, en el orden del documento
+
+| # | Bloque | Fase | Línea |
+|---|---|---|---|
+| 1 | **PG** Pulido global | Safe area, eliminaciones y apariencia | 1 |
+| 2 | **RA+** Rachas | Mantenimiento diario y feedback de recompensa | 221 |
+| 3 | **AR+** Armario | Categorías, iconografía y detalle visual | 544 |
+| 4 | **EC** Economía | Hucha inteligente y pulido final | 741 |
+| 5 | **HO+** Horario | UX, navegación y gestión de horarios | 1027 |
+| 6 | **HC** Hoy y Calendario | F1 — Hoy: centro del día | 1227 |
+| 7 | HC | F2 — Calendario: agenda | 1824 |
+| 8 | HC | F3 — Calendario: vista temporal | 2444 |
+| 9 | HC | F4 — Acciones rápidas e integración | 3035 |
+| 10 | HC | F5 — Planificación avanzada y vista semanal | 3874 |
+| 11 | HC | F6 — Notificaciones y recordatorios reales | 4425 |
+| 12 | HC | F7 — Integraciones externas de calendario | 4995 |
+| 13 | HC | F8 — Estadísticas de planificación | 5490 |
+| 14 | HC | F9 — Pulido visual, UX y animaciones | 6315 |
+| 15 | HC | F10 — PWA, iPhone, sincronización y auditoría final | 7088 |
+| 16 | **BL** Biblioteca | F1 — Rediseño como launcher de mini-apps | 7871 |
+| 17 | BL | F2 — Libros | 8280 |
+| 18 | BL | F4 — Guardados | 8669 |
+| 19 | BL | F5 — Ideas | 9119 |
+| 20 | BL | F6 — Documentos | 9565 |
+| 21 | BL | F7 — Colecciones | 10585 |
+| 22 | BL | F8 — Integración y experiencia global | 11028 |
+| 23 | **PR** Productividad | F1 — Rediseño completo del apartado | 11582 |
+| 24 | PR | F2 — Hábitos | 11959 |
+| 25 | PR | F3 — Pomodoro | 12453 |
+| 26 | PR | F4 — Tareas | 12798 |
+| 27 | PR | F5 — Metas y objetivos | 13248 |
+| 28 | PR | F6 — Rutinas | 13738 |
+| 29 | PR | F7 — Integración global y sistema inteligente | 14284 |
+| 30 | **BN** Bienestar | Rediseño y reorganización del apartado | 15109 |
+| 31 | **NU** Nutrición | F1 — Rediseño premium | 15931 |
+| 32 | NU | F2 — Sistema de días e historial | 16289 |
+| 33 | NU | F3 — Configuración y objetivos nutricionales | 16496 |
+| 34 | NU | F4 — Registro de comidas y consumo diario | 16835 |
+| 35 | NU | F5 — Base de alimentos, personalizados y favoritos | 17190 |
+| 36 | NU | F6 — Estadísticas y evolución | 17572 |
+| 37 | NU | F7 — Inteligencia y análisis nutricional | 17919 |
+| 38 | NU | F8 — Pulido final, integración y QA | 18240 |
+| 39 | **ES** Estudios | F1 — Home tipo teléfono y nueva arquitectura | 18766 |
+| 40 | ES | F2 — Estructura en árbol y navegación por ramas | 19030 |
+| 41 | ES | F3 — Asignaturas y gestión académica | 19298 |
+| 42 | ES | F4 — Exámenes, entregas y fechas | 19511 |
+| 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
+| 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
+
+## Dos cosas del documento que conviene saber
+
+⚠️ **BL F3 no está en el documento.** La Biblioteca salta de **F2 (Libros)** a **F4 (Guardados)**, y
+no hay ninguna "Fase 3 — Biblioteca" en ningún sitio del archivo. **No se inventa**: cuando toque
+llegar ahí, se le pregunta a Josué si existe y se la ha dejado fuera, o si la numeración salta a
+propósito. No bloquea nada mientras tanto.
+
+✅ **Dos fases están pegadas dos veces, y son la misma.** *BL F6 — Documentos* (líneas 9565 y 10076)
+y *ES F4 — Exámenes* (19511 y 19773) aparecen repetidas; comparadas línea a línea **solo cambian en
+una frase de presentación**, así que no hay contradicción: es el mismo enunciado copiado dos veces.
+Se usa el primero.
+
+## Cómo se ejecuta cada una
+
+El de siempre, sin cambios:
+
+1. Se construye entera, **reutilizando lo que ya existe**. Nunca un segundo motor, una segunda
+   papelera ni una cuarta lista (D2-07).
+2. `bash scripts/verificar.sh` **en verde**, con el recorrido en Chromium incluido.
+3. Cierre: `docs/07`, este índice (`docs/11`), `docs/04`, `CHANGELOG.md`, `HANDOFF.md`, `CLAUDE.md`, versión.
+4. **Push a `main`**, que es lo que hace que Josué lo vea en la web.
+
+⚠️ **Y `main` la comparten dos sesiones.** Mientras esto se construye, Josué va subiendo los
+archivos de sonido desde otra conversación. **Antes de cada empuje se trae lo suyo y se rebasa
+encima**; nunca se pisa su trabajo.

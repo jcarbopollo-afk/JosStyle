@@ -24,6 +24,10 @@ Léela en este orden la primera vez. Después, entra directo al documento que ne
 | 05 | [`05_CHECKLIST_GLOBAL.md`](05_CHECKLIST_GLOBAL.md) | ~470 casillas verificables que cubren absolutamente todo lo especificado en cualquiera de las tres fuentes, marcadas ✅ hecho / 🟡 parcial / ⬜ pendiente / ⛔ imposible o descartado. | Para comprobar que no falta nada, en cualquier momento. |
 | 06 | [`06_ENTREGA2_ANALISIS.md`](06_ENTREGA2_ANALISIS.md) | **Entrega 2**: análisis de los 7 módulos nuevos (106 fases, 50 016 líneas) — dimensión real, solapamientos con lo ya construido, 7 contradicciones nuevas, orden de ejecución propuesto y **8 preguntas bloqueantes para Josué**. | Antes de empezar cualquier fase de la Entrega 2. |
 | 07 | [`07_CHECKLIST_ENTREGA2.md`](07_CHECKLIST_ENTREGA2.md) | **3 761 casillas** de la Entrega 2, reordenadas ascendentemente por fase, con las reglas transversales de los 7 módulos. Todo ⬜: nada implementado. | Al implementar cualquier fase de la Entrega 2. |
+| 08 | [`08_ESTILO_DE_HOMBRE_TECNICO.md`](08_ESTILO_DE_HOMBRE_TECNICO.md) | Documentación técnica de Estilo de hombre: qué existe, dónde está, con qué se conecta y qué no debe tocarse. ⚠️ **Se genera desde el código**, no se edita a mano. | Antes de tocar cualquier cosa de Estilo de hombre. |
+| 09 | [`09_ESTILO_DE_HOMBRE_CIERRE.md`](09_ESTILO_DE_HOMBRE_CIERRE.md) | El informe de cierre del módulo (EH F65), **calculado** ejecutando la auditoría de cada fase. Dice qué está hecho, qué está bloqueado y quién decide. | Para saber en qué estado quedó Estilo de hombre. |
+| 10 | [`10_SONIDOS_PARA_FL_STUDIO.md`](10_SONIDOS_PARA_FL_STUDIO.md) | El brief de los 46 archivos de audio que faltan (SO F2): qué es cada uno, cuánto dura y cómo debe sonar, para producirlos en FL Studio. | Al producir los sonidos que faltan. |
+| 11 | [`11_ENTREGA3_ORDEN.md`](11_ENTREGA3_ORDEN.md) | **Entrega 3** (4 sept 2026): las **44 fases** de pulido y rediseño de Hoy, Calendario, Biblioteca, Productividad, Bienestar, Nutrición y Estudios, con su línea en el documento original. | Antes de empezar cualquier fase de la Entrega 3. |
 
 ---
 
