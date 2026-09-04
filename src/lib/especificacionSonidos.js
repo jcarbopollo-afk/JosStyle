@@ -114,7 +114,20 @@ export const CON_FIRMA = [
    Y los que se repiten mucho **sí llevan variantes**, porque oír el mismo clic
    doscientas veces al día es exactamente lo que cansa. */
 
-export const CARPETA = 'public/sonidos';
+/* 🐛 **Dónde están los archivos y por dónde los pide el navegador NO son lo
+   mismo**, y confundirlo tuvo el endpoint de audio roto desde la SO F4.
+
+   En Vite, todo lo que está en `public/` se sirve desde la raíz: un archivo en
+   `public/sonidos/ui_click_01.mp3` se pide como `/sonidos/ui_click_01.mp3`. El
+   `public/` **no aparece en la URL**. Y `listaDeArchivos()` estaba montando la
+   ruta con `CARPETA`, así que el motor hacía `fetch('public/sonidos/…')` — un
+   404 garantizado.
+
+   No saltó en 65 fases porque no había ni un archivo que cargar: el primer MP3
+   de verdad, el 2026-09-04, lo destapó en el primer intento. Por eso ahora son
+   dos constantes distintas y con nombres que no se confunden. */
+export const CARPETA = 'public/sonidos'; // dónde se dejan los archivos (disco)
+export const RUTA_WEB = '/sonidos'; // por dónde los pide el navegador (URL)
 export const FORMATO = 'mp3';
 export const MAX_KB = 60;
 
@@ -184,7 +197,9 @@ export function nombresDe(id) {
 export function listaDeArchivos() {
   return ARCHIVOS.flatMap((a) => nombresDe(a.id).map((nombre) => ({
     nombre,
-    ruta: `${CARPETA}/${nombre}`,
+    /* 🐛 `RUTA_WEB`, no `CARPETA`: esto lo consume `fetch()` en el navegador. */
+    ruta: `${RUTA_WEB}/${nombre}`,
+    enDisco: `${CARPETA}/${nombre}`,
     sonido: a.id,
     familia: a.familia,
     tramo: a.tramo,

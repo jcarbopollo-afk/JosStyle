@@ -14,10 +14,21 @@
 
 import {
   FAMILIAS, familia, TRAMOS, CARACTER, EVITAR, FIRMA, CON_FIRMA,
-  CARPETA, FORMATO, MAX_KB, ARCHIVOS, fichaDe, nombresDe, listaDeArchivos,
+  CARPETA, RUTA_WEB, FORMATO, MAX_KB, ARCHIVOS, fichaDe, nombresDe, listaDeArchivos,
   duracionDe, validarArchivo, queFalta, briefing, resumenBiblioteca,
 } from '../src/lib/especificacionSonidos.js';
 import { CATALOGO } from '../src/lib/audioEventos.js';
+import { readdirSync } from 'node:fs';
+
+/* 🚨 Los archivos que hay DE VERDAD en el disco, no una lista escrita a mano.
+   Así este test no puede decir "hay tres sonidos" cuando no hay ninguno. */
+const PRESENTES = (() => {
+  try {
+    return readdirSync(new URL(`../${CARPETA}/`, import.meta.url)).filter((f) => f.endsWith(`.${FORMATO}`));
+  } catch {
+    return []; // la carpeta no existe todavía: cero archivos, que es la verdad
+  }
+})();
 
 let fallos = 0;
 function comprobar(nombre, condicion, detalle = '') {
@@ -101,7 +112,14 @@ console.log('\n═══ La lista de archivos ═══\n');
 {
   const lista = listaDeArchivos();
   comprobar('Hay lista de archivos', lista.length > ARCHIVOS.length);
-  comprobar('CLAVE · Cada uno con su ruta completa', lista.every((a) => a.ruta.startsWith(CARPETA)));
+  /* 🐛 La ruta que consume `fetch()` NO lleva `public/`: en Vite, lo que está en
+     `public/` se sirve desde la raíz. Estuvo mal desde la SO F4 y no saltó
+     porque no había ni un archivo que cargar — lo destapó el primer MP3 de
+     verdad. Estas tres líneas son ese fallo convertido en prueba. */
+  comprobar('CLAVE · Cada uno con su ruta web', lista.every((a) => a.ruta.startsWith(`${RUTA_WEB}/`)));
+  comprobar('🚨 CLAVE · Y ninguna lleva "public/": el navegador no lo ve',
+    lista.every((a) => !a.ruta.includes('public/')));
+  comprobar('CLAVE · Y aparte, dónde va en disco', lista.every((a) => a.enDisco.startsWith(`${CARPETA}/`)));
   comprobar('CLAVE · ...y su rango de duración', lista.every((a) => a.minMs > 0 && a.maxMs > 0));
   comprobar('⚠️ CLAVE · Ningún nombre repetido', new Set(lista.map((a) => a.nombre)).size === lista.length);
 
@@ -185,10 +203,18 @@ console.log('\n═══ El briefing y el resumen ═══\n');
   comprobar('...y el reparto por familia', r.porFamilia.length === 8);
 }
 
-console.log('\n  ⚠️ Sin comprobar aquí, y es LA limitación de esta fase: NO HAY NI UN ARCHIVO');
-console.log('     DE AUDIO. Esta fase DEFINE la biblioteca; no puede crearla. En cuanto los');
-console.log('     archivos estén en public/sonidos/ con estos nombres, suenan sin tocar una');
-console.log('     línea, porque el motor de SO F1 ya los busca ahí.\n');
+/* 🚨 Esto decía "NO HAY NI UN ARCHIVO DE AUDIO" y que en cuanto los hubiera
+   sonarían "sin tocar una línea". Lo primero dejó de ser verdad el 2026-09-04,
+   cuando Josué produjo `ui_click_01.mp3` en FL Studio. Y lo segundo era
+   directamente falso: la ruta llevaba `public/`, que el navegador no ve, así que
+   el primer archivo de verdad habría dado 404. Se cuenta lo que hay. */
+{
+  const hechos = queFalta([]).total - queFalta(PRESENTES).faltan.length;
+  console.log(`\n  ⚠️ Hay ${hechos} de ${queFalta([]).total} archivos producidos. Esta fase DEFINE la biblioteca;`);
+  console.log('     los sonidos los hace Josué en FL Studio, uno a uno.');
+  console.log('     🐛 Y el primero destapó que la ruta llevaba "public/", que el navegador no');
+  console.log('     ve: habría dado 404. Arreglado y con prueba propia más arriba.\n');
+}
 
 if (fallos) { console.log(`  ${fallos} fallo(s).\n`); process.exit(1); }
 console.log('  Todo correcto.\n');

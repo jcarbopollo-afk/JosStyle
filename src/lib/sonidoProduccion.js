@@ -407,7 +407,13 @@ export const BLOQUEADO_POR_LOS_ARCHIVOS = {
   elDiaQue: 'Cuando estén en `public/sonidos/` con los nombres de la SO F4, suenan sin tocar una línea: el motor ya los busca ahí.',
 };
 
-export const cuantosArchivosFaltan = () => queFalta([]).faltan.length;
+/* 🚨 Cuántos faltan **de los que hay de verdad**. Antes era `queFalta([])` fijo:
+   decía "faltan 46" aunque hubiera archivos en la carpeta, porque nadie se la
+   pasaba. El 2026-09-04 apareció el primero (`ui_click_01.mp3`) y la cuenta
+   siguió diciendo 46. Ahora se le pasan los que hay; este módulo vive en el
+   navegador y no puede leer el disco, así que quien los lista es quien puede:
+   el test, con `readdirSync`. */
+export const cuantosArchivosFaltan = (presentes = []) => queFalta(presentes).faltan.length;
 
 /* ===========================================================================
    12 · LOS APARTADOS
@@ -463,7 +469,7 @@ export const CONDICION = 'El sistema de audio queda listo para producción: moto
    13 · EL PARTE
    =========================================================================== */
 
-export function auditarSonidoProduccion({ fuentes = {} } = {}) {
+export function auditarSonidoProduccion({ fuentes = {}, archivosPresentes = [] } = {}) {
   return {
     perfiles: PERFILES.length,
     // Decisión 3 — el perfil se deduce, no se guarda
@@ -483,7 +489,8 @@ export function auditarSonidoProduccion({ fuentes = {} } = {}) {
     silencioProcesaElEvento: queHaceElEvento({ ...DEFAULT_AUDIO, activado: false }, 'SUCCESS').procesaElEvento,
     vibraSinSonido: queHaceElEvento({ ...DEFAULT_AUDIO, activado: false, vibracion: true }, 'SUCCESS').vibra,
     // ⏸ Lo que sigue bloqueado
-    archivosQueFaltan: cuantosArchivosFaltan(),
+    archivosQueFaltan: cuantosArchivosFaltan(archivosPresentes),
+    archivosQueHay: archivosPresentes.length,
     bloqueados: apartadosBloqueados().map((a) => a.id),
     paraJosue: apartadosDeJosueSO().map((a) => a.id),
     sinDonde: APARTADOS_SO5.filter((a) => !a.donde).map((a) => a.id),
@@ -504,14 +511,17 @@ export function panelSonidoProduccion(prefs = DEFAULT_AUDIO, opciones = {}) {
     pruebas: PRUEBAS_MOTOR,
     bloqueadoPorArchivos: BLOQUEADO_POR_LOS_ARCHIVOS,
     apartados: APARTADOS_SO5,
-    /* 🎯 El veredicto: **el sistema está listo; lo que falta son los archivos**.
-       Y eso no se disimula: `hoySuena` es false, y lo será hasta que existan. */
+    /* 🎯 El veredicto: **el sistema está listo desde la SO F5; lo que faltaban
+       eran los archivos**. Y eso no se disimula: `hoySuena` sale de contarlos. */
     listoParaProduccion: a.pantallasQueTocanElAudio.length === 0
       && a.familiasSinFallback.length === 0
       && a.silencioProcesaElEvento
       && a.sinDonde.length === 0
       && a.volumenDeUnClic < a.volumenDeUnRecord,
-    hoySuena: false,
+    /* 🚨 Se calcula, no se declara. Fue `false` fijo hasta el 2026-09-04, y ese
+       día habría seguido diciendo que no suena nada con un archivo ya en la
+       carpeta. Un panel que no puede cambiar de opinión no informa de nada. */
+    hoySuena: a.archivosQueHay > 0,
     condicion: CONDICION,
   };
 }

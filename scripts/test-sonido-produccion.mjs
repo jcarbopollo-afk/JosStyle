@@ -8,7 +8,8 @@
 //   · que el volumen sea maestro × categoría × EVENTO (un clic ≠ un récord)
 //   · que un perfil no sea un sistema aparte: se deduce de las preferencias
 //   · 🚨 que con el sonido apagado el EVENTO se siga procesando
-//   · y que ⏸ siga dicho que hoy no suena nada, porque no hay archivos
+//   · y que lo que el panel dice sobre si hoy suena algo salga de contar los
+//     archivos del disco, no de una constante escrita a mano
 // ============================================================================
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
@@ -46,6 +47,12 @@ readdirSync(VISTAS).filter((f) => f.endsWith('.jsx')).forEach((f) => {
 });
 const SETTINGS = FUENTES['SettingsView.jsx'];
 const APP = readFileSync(join(RAIZ, 'src/App.jsx'), 'utf8');
+
+/* 🚨 Los archivos de audio que hay DE VERDAD, leídos del disco. Este test es el
+   único sitio que puede mirarlo: `sonidoProduccion.js` vive en el navegador. */
+const PRESENTES = (() => {
+  try { return readdirSync(join(RAIZ, 'public/sonidos')).filter((f) => f.endsWith('.mp3')); } catch { return []; }
+})();
 const encendido = { ...DEFAULT_AUDIO, activado: true };
 
 console.log('\n🔊 SO · Fase 5/5 — Producción, integración y test final\n');
@@ -54,17 +61,23 @@ console.log('\n🔊 SO · Fase 5/5 — Producción, integración y test final\n'
    1 · ⏸ LO PRIMERO: HOY NO SUENA NADA
    --------------------------------------------------------------------------- */
 {
-  console.log('1 · Los archivos que no hay');
-  eq(panelSonidoProduccion().hoySuena, false,
-    '⏸ 🚨 hoy NO suena nada, y el panel lo dice: no hay ni un archivo de audio');
-  ok(cuantosArchivosFaltan() > 0, `faltan ${cuantosArchivosFaltan()} archivos`);
-  eq(cuantosArchivosFaltan(), FALTA_F4([]).faltan.length, 'contados con la función de la SO F4');
-  ok(!existsSync(join(RAIZ, 'public/sonidos')) || readdirSync(join(RAIZ, 'public/sonidos')).length === 0,
-    '⏸ y la carpeta `public/sonidos` sigue vacía, comprobado en el disco');
+  console.log(`1 · Los archivos (${PRESENTES.length} hechos, ${46 - PRESENTES.length} por hacer)`);
+
+  /* 🚨 Esto afirmaba que la carpeta estaba vacía y que `hoySuena` era false.
+     Dejó de ser verdad el 2026-09-04, cuando Josué produjo el primer sonido en
+     FL Studio, y la suite se puso roja defendiendo una verdad vieja. Ahora los
+     dos lados se calculan del disco: cuando no haya archivos dirá que no suena,
+     y cuando los haya dirá que sí. Es la misma prueba, pero viva. */
+  const panel = panelSonidoProduccion(undefined, { archivosPresentes: PRESENTES });
+  eq(panel.hoySuena, PRESENTES.length > 0,
+    `⏸ 🚨 el panel dice la verdad sobre si hoy suena algo (${PRESENTES.length} archivos)`);
+  eq(panel.archivosQueHay, PRESENTES.length, 'contando los que hay de verdad');
+  eq(cuantosArchivosFaltan(PRESENTES), FALTA_F4(PRESENTES).faltan.length,
+    'y los que faltan, con la función de la SO F4');
+  eq(cuantosArchivosFaltan(PRESENTES), 46 - PRESENTES.length, 'la cuenta cuadra con el catálogo');
+  ok(PRESENTES.every((f) => existsSync(join(RAIZ, 'public/sonidos', f))),
+    '⚠️ y cada uno existe en el disco, no solo en una lista');
   ok(/SO F2/.test(BLOQUEADO_POR_LOS_ARCHIVOS.fase), 'la fase bloqueada es la SO F2, la biblioteca');
-  ok(/NO SUENA NADA/.test(BLOQUEADO_POR_LOS_ARCHIVOS.mientrasTanto), 'y se dice sin adornos');
-  ok(/sin tocar una línea/.test(BLOQUEADO_POR_LOS_ARCHIVOS.elDiaQue),
-    '⚠️ y qué pasa el día que aparezcan: suenan sin tocar código');
   eq(DEFAULT_AUDIO.activado, false,
     '⚠️ por eso el interruptor nace apagado desde la SO F1: no es un control decorativo');
 }

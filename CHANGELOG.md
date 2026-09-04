@@ -1,5 +1,39 @@
 # CHANGELOG.md
 
+## v3.4.0 — El primer sonido de verdad (y el fallo que destapó)
+
+### Qué se ha construido
+Josué produjo en FL Studio el primer archivo de la biblioteca, `ui_click_01.mp3`: un charles 808
+agudo, recortado a **120 ms** y con el pico a **-4 dB**. Pasa `validarArchivo()` sin una sola pega.
+Quedan 45.
+
+### 🐛 Y ese primer archivo destapó que el audio no habría sonado
+`listaDeArchivos()` montaba la ruta con `CARPETA`, que vale `public/sonidos`. Pero en Vite **todo lo
+que está en `public/` se sirve desde la raíz**: el navegador lo pide como `/sonidos/ui_click_01.mp3`,
+sin el `public/`. El motor habría pedido `public/sonidos/…` y recibido un **404 con cada sonido**.
+
+Llevaba así desde la SO F4 y **no saltó en ninguna fase** por un motivo simple: no había ni un
+archivo que cargar. Se arregla separando dos cosas que nunca fueron la misma:
+
+- **`CARPETA`** = `public/sonidos` — dónde se dejan los archivos, que es lo que dice el brief
+- **`RUTA_WEB`** = `/sonidos` — por dónde los pide el navegador
+- Cada archivo lleva ahora `ruta` (la URL) y `enDisco` (el sitio), y una prueba comprueba que
+  **ninguna ruta contiene `public/`**. Verificado revirtiendo el fallo a propósito: la suite se pone
+  roja en las dos líneas.
+
+### 🚨 Dos afirmaciones que dejaron de ser verdad
+Al aparecer el archivo, la suite se puso roja **defendiendo una verdad vieja**: había pruebas que
+afirmaban que la carpeta estaba vacía y que `hoySuena` era `false`. Eran constantes escritas a mano,
+y por eso no podían cambiar de opinión.
+
+- `hoySuena` **se calcula** ahora contando los archivos que hay
+- `cuantosArchivosFaltan()` acepta los presentes; antes preguntaba siempre por una lista vacía, así
+  que habría seguido diciendo "faltan 46" con archivos ya en la carpeta
+- Los dos tests leen el disco con `readdirSync`: cuentan lo que hay, hoy 1 y mañana los que haya
+
+Un panel que no puede cambiar de opinión no informa de nada.
+
+
 ## v3.3.0 — El endpoint de la IA ya pide quién eres (EH F63, cerrado)
 
 ### Qué se ha construido
