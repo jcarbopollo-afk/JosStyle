@@ -112,10 +112,23 @@ export const EVENTOS_SONIDO = {
   /* Guardar tampoco es 'acción completada': es más discreto, y tiene su sonido. */
   ACTION_SAVED: { categoria: 'feedback', prioridad: 'LOW', cooldown: 300 },
   SUCCESS: { categoria: 'feedback', prioridad: 'NORMAL', cooldown: 300 },
+  /* 🚨 Cada uno con su evento propio. El catálogo de la SO F3 los declara por
+     separado y hasta hoy caían todos en ACTION_COMPLETED o UI_SUCCESS, así que
+     solo sonaba uno de cada grupo. Ver el CHANGELOG de v3.14.0. */
+  TASK_COMPLETED: { categoria: 'feedback', prioridad: 'NORMAL', cooldown: 300 },
+  HABIT_COMPLETED: { categoria: 'feedback', prioridad: 'NORMAL', cooldown: 300 },
+  GOAL_PROGRESS: { categoria: 'feedback', prioridad: 'NORMAL', cooldown: 300 },
+  SYNC_COMPLETED: { categoria: 'ui', prioridad: 'LOW', cooldown: 1000 },
+  CONNECTION_LOST: { categoria: 'notification', prioridad: 'NORMAL', cooldown: 3000 },
+  CONNECTION_RESTORED: { categoria: 'notification', prioridad: 'NORMAL', cooldown: 3000 },
 
   // Rachas.
   STREAK_STARTED: { categoria: 'streak', prioridad: 'NORMAL', cooldown: 1000 },
   STREAK_CONTINUED: { categoria: 'streak', prioridad: 'NORMAL', cooldown: 1000 },
+  /* Que la racha esté en peligro no es que haya subido: son avisos distintos. */
+  STREAK_AT_RISK: { categoria: 'streak', prioridad: 'NORMAL', cooldown: 3000 },
+  /* Recuperar una racha perdida no es empezarla de cero. */
+  STREAK_RECOVERED: { categoria: 'streak', prioridad: 'NORMAL', cooldown: 2000 },
   STREAK_MILESTONE: { categoria: 'streak', prioridad: 'HIGH', cooldown: 2000 },
   STREAK_BROKEN: { categoria: 'streak', prioridad: 'NORMAL', cooldown: 2000 },
 
@@ -234,8 +247,21 @@ export const SONIDOS_SISTEMA = [
   crearSonido({ id: 'success_01', nombre: 'Hecho', categoria: 'feedback', ruta: '/sonidos/success_01.mp3', variantes: ['/sonidos/success_01.mp3', '/sonidos/success_02.mp3'] }),
   crearSonido({ id: 'save_01', nombre: 'Guardado', categoria: 'feedback', ruta: '/sonidos/save_01.mp3', variantes: ['/sonidos/save_01.mp3', '/sonidos/save_02.mp3'] }),
   crearSonido({ id: 'warning_01', nombre: 'Aviso', categoria: 'feedback', ruta: '/sonidos/warning.mp3' }),
+  /* ⚠️ Estos apuntan a archivos que Josué todavía no ha grabado. No es fingir:
+     el motor cae en silencio si el archivo no está (apartado 25), y así el día
+     que aparezcan suenan sin tocar nada — que es justo lo que NO pasaba antes,
+     cuando el sonido existía pero ningún evento podía elegirlo. */
+  crearSonido({ id: 'task_01', nombre: 'Tarea hecha', categoria: 'feedback', ruta: '/sonidos/task_complete_01.mp3', variantes: ['/sonidos/task_complete_01.mp3', '/sonidos/task_complete_02.mp3'] }),
+  crearSonido({ id: 'habito_01', nombre: 'Hábito hecho', categoria: 'feedback', ruta: '/sonidos/habit_complete_01.mp3', variantes: ['/sonidos/habit_complete_01.mp3', '/sonidos/habit_complete_02.mp3'] }),
+  crearSonido({ id: 'progreso_01', nombre: 'Progreso de objetivo', categoria: 'feedback', ruta: '/sonidos/goal_progress_01.mp3', variantes: ['/sonidos/goal_progress_01.mp3', '/sonidos/goal_progress_02.mp3'] }),
+  crearSonido({ id: 'inicio_racha_01', nombre: 'Racha empezada', categoria: 'streak', ruta: '/sonidos/streak_start.mp3' }),
+  crearSonido({ id: 'racha_recuperada_01', nombre: 'Racha recuperada', categoria: 'streak', ruta: '/sonidos/streak_recovered.mp3' }),
+  crearSonido({ id: 'sync_01', nombre: 'Sincronizado', categoria: 'ui', ruta: '/sonidos/sync_complete.mp3' }),
+  crearSonido({ id: 'sin_conexion_01', nombre: 'Sin conexión', categoria: 'notification', ruta: '/sonidos/connection_lost.mp3' }),
+  crearSonido({ id: 'con_conexion_01', nombre: 'Conexión recuperada', categoria: 'notification', ruta: '/sonidos/connection_restored.mp3' }),
+  crearSonido({ id: 'racha_riesgo_01', nombre: 'Racha en peligro', categoria: 'streak', ruta: '/sonidos/streak_at_risk.mp3' }),
   crearSonido({ id: 'error_01', nombre: 'Error', categoria: 'feedback', ruta: '/sonidos/error.mp3' }),
-  crearSonido({ id: 'streak_01', nombre: 'Racha', categoria: 'streak', ruta: '/sonidos/streak_increment_01.mp3' }),
+  crearSonido({ id: 'streak_01', nombre: 'Racha', categoria: 'streak', ruta: '/sonidos/streak_increment_01.mp3', variantes: ['/sonidos/streak_increment_01.mp3', '/sonidos/streak_increment_02.mp3', '/sonidos/streak_increment_03.mp3'] }),
   crearSonido({ id: 'milestone_01', nombre: 'Hito', categoria: 'streak', ruta: '/sonidos/streak_milestone_07.mp3' }),
   crearSonido({ id: 'record_01', nombre: 'Récord', categoria: 'achievement', ruta: '/sonidos/personal_record.mp3' }),
   crearSonido({ id: 'achievement_01', nombre: 'Logro', categoria: 'achievement', ruta: '/sonidos/achievement_unlocked.mp3' }),
@@ -255,8 +281,16 @@ export const ASIGNACIONES_POR_DEFECTO = {
   ACTION_ERROR: 'error_01',
   ACTION_WARNING: 'warning_01',
   ACTION_SAVED: 'save_01',
+  TASK_COMPLETED: 'task_01',
+  SYNC_COMPLETED: 'sync_01',
+  CONNECTION_LOST: 'sin_conexion_01',
+  CONNECTION_RESTORED: 'con_conexion_01',
+  STREAK_AT_RISK: 'racha_riesgo_01',
+  HABIT_COMPLETED: 'habito_01',
+  GOAL_PROGRESS: 'progreso_01',
+  STREAK_RECOVERED: 'racha_recuperada_01',
   SUCCESS: 'success_01',
-  STREAK_STARTED: 'streak_01',
+  STREAK_STARTED: 'inicio_racha_01',
   STREAK_CONTINUED: 'streak_01',
   STREAK_MILESTONE: 'milestone_01',
   STREAK_BROKEN: 'error_01',

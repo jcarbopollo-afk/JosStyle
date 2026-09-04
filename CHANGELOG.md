@@ -1,5 +1,50 @@
 # CHANGELOG.md
 
+## v3.16.0 — Cierra la tanda 2, y las colisiones bajan de 25 a 17
+
+### Qué se ha construido
+Cinco sonidos más. **20 de 46**, y las familias de interfaz, confirmaciones y sistema completas.
+
+| Archivo | Notas | |
+|---|---|---|
+| `sync_complete` | C6 | 144 ms, el más corto de la biblioteca |
+| `task_complete_01` | E5 → A5 | sube una cuarta |
+| `streak_at_risk` | D5 → B4 | baja poco: preocupa, no alarma |
+| `connection_lost` | A5 → E5 | baja |
+| `connection_restored` | E5 → A5 | la misma, del revés |
+
+Los cinco salieron correctos a la primera, nota por nota, medidos en el archivo. `connection_lost` y
+`connection_restored` son la misma pareja invertida, igual que los toggles: perder baja, recuperar
+sube, y no hay que explicárselo a nadie.
+
+### Las colisiones: de 25 a 17
+Ninguno de los cinco habría sonado: `task_complete` caía en `ACTION_COMPLETED` junto a otros tres,
+`sync_complete` y `connection_restored` compartían `UI_SUCCESS`, `connection_lost` estaba con `error`
+y `warning`, y `streak_at_risk` sonaba igual que subir la racha.
+
+Se les da evento propio, y de paso a los que vienen en la siguiente tanda —`habit_complete`,
+`goal_progress`, `streak_recovered`— **antes de que se graben**, para que no haya que rescatarlos
+después. `task_complete`, `habit_complete`, `goal_progress` y `streak_increment` quedan además con
+sus variantes declaradas.
+
+⚠️ Esos sonidos apuntan a archivos que todavía no existen. No es fingir: el motor cae en silencio si
+el archivo no está (apartado 25), y así el día que aparezcan suenan sin tocar nada — que es justo lo
+que **no** pasaba antes, cuando el archivo existía pero ningún evento podía elegirlo.
+
+### 🚨 Lo que queda, y por qué bloquea la siguiente tanda
+**17 sonidos siguen sin poder sonar**, y el grupo grande es el peor:
+
+- **`STREAK_MILESTONE` se come los diez hitos de racha.** El de 3 días y el de 365 resolverían al
+  mismo archivo. La cabecera de la propia SO F3 dice que *"debe existir una evolución real de la
+  identidad sonora"* y que el de 7 y el de 365 *"no pueden ser el mismo sonido más alto"*.
+- `ACHIEVEMENT_UNLOCKED` se come `badge_unlocked`.
+- Ocho tienen `motor: null` —nadie los emite—, `level_up` entre ellos.
+
+Elegir entre diez hitos según los días **no lo permite la API actual**: `resolverSonido()` recibe un
+evento, no cuántos días lleva la racha. O se añaden diez eventos al motor, o el motor pasa a resolver
+por el identificador del catálogo. **Es una decisión de arquitectura y no se toma de pasada.**
+
+Hasta entonces, grabar los diez hitos sería tirar nueve tardes.
 ## v3.15.0 — Entrega 3 · Fase 4: la hucha con objetivo, y la papelera de Economía pulsada de verdad
 
 Cuarta fase de la Entrega 3. El enunciado repite el aviso de las anteriores: *"el apartado Economía

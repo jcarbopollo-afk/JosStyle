@@ -78,15 +78,15 @@ export const CATALOGO = {
   error: { nivel: 1, motor: 'ACTION_ERROR' },
   warning: { nivel: 1, motor: 'ACTION_WARNING' },
   save: { nivel: 1, motor: 'ACTION_SAVED' },
-  task_complete: { nivel: 1, motor: 'ACTION_COMPLETED' },
-  habit_complete: { nivel: 1, motor: 'ACTION_COMPLETED' },
-  goal_progress: { nivel: 1, motor: 'ACTION_COMPLETED' },
+  task_complete: { nivel: 1, motor: 'TASK_COMPLETED' },
+  habit_complete: { nivel: 1, motor: 'HABIT_COMPLETED' },
+  goal_progress: { nivel: 1, motor: 'GOAL_PROGRESS' },
 
   // ── 2 · Racha y recompensas ───────────────────────────────────────────────
   streak_start: { nivel: 2, motor: 'STREAK_STARTED' },
   streak_increment: { nivel: 2, motor: 'STREAK_CONTINUED' },
-  streak_at_risk: { nivel: 2, motor: 'STREAK_CONTINUED' },
-  streak_recovered: { nivel: 2, motor: 'STREAK_STARTED' },
+  streak_at_risk: { nivel: 2, motor: 'STREAK_AT_RISK' },
+  streak_recovered: { nivel: 2, motor: 'STREAK_RECOVERED' },
   // ⚠️ El "congelar racha" NO existe en RA F1-F4: el motor deriva la racha del
   // historial y no tiene comodines. Queda en el catálogo por si algún día se
   // añade, y hoy no lo emite nadie.
@@ -126,9 +126,9 @@ export const CATALOGO = {
   grand_achievement: { nivel: 5, motor: 'MAJOR_GOAL_COMPLETED' },
 
   // ── Sistema ───────────────────────────────────────────────────────────────
-  sync_complete: { nivel: 0, motor: 'UI_SUCCESS' },
-  connection_lost: { nivel: 1, motor: 'ACTION_ERROR' },
-  connection_restored: { nivel: 1, motor: 'UI_SUCCESS' },
+  sync_complete: { nivel: 0, motor: 'SYNC_COMPLETED' },
+  connection_lost: { nivel: 1, motor: 'CONNECTION_LOST' },
+  connection_restored: { nivel: 1, motor: 'CONNECTION_RESTORED' },
 };
 
 export const definicion = (id) => CATALOGO[id] || null;
