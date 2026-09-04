@@ -1,5 +1,46 @@
 # CHANGELOG.md
 
+## v3.6.0 — Las tres variantes del clic, y la rotación que faltaba
+
+### Qué se ha construido
+Josué produjo `ui_click_02` y `ui_click_03` en FL Studio: el mismo charles con la nota movida una
+tecla arriba y otra abajo. **3 de 46.**
+
+Los tres quedan en `public/sonidos/` a **120 ms**, con el pico a **-3 dB** y menos de **0,4 dB** de
+diferencia entre ellos — al alternar no se oye ningún bache de volumen.
+
+### 🐛 Y un fallo mío al procesarlos
+El primer recorte los volvió a comprimir a **128 kbps**, que recorta por encima de 16 kHz. La
+diferencia entre los tres clics vive justo ahí, así que el procesado **estaba borrando la variación
+que Josué había creado**: medido, el orden de timbre pasó de `03 < 01 < 02` (sus originales) a tener
+el 02 por debajo del 01.
+
+Rehechos a 256 kbps sin recorte de agudos, y normalizados uno a uno al mismo pico en vez de con un
+limitador común. El orden queda como lo grabó: `03 (12983 Hz) < 01 (13201) < 02 (13439)`.
+
+### 🚨 Sin esto, dos de los tres no se habrían oído nunca
+Se dijo que "con los tres hechos la app va alternando sola". **Era falso.** El motor resolvía
+`UI_CLICK` a un único archivo, siempre el mismo: `ui_click_02` y `ui_click_03` no se habrían
+reproducido jamás, y el trabajo de grabarlos habría sido para nada.
+
+La rotación no existía. Ahora sí:
+
+- Un sonido puede declarar `variantes`, y quien no lo haga tiene una: la suya. Un sonido subido por
+  Josué, que nunca tendrá variantes, entra por el mismo camino sin romperse
+- `decidirReproduccion()` rota **en orden** 1 → 2 → 3 → 1
+- ⚠️ En orden y no al azar por dos motivos: el azar repite —tres veces seguidas la misma no es raro—
+  y no se puede probar sin inyectar un generador
+- El turno viaja en el mismo `estado` que ya pasaba de forma pura, así que el motor sigue sin guardar
+  nada por su cuenta y la prueba no necesita ni reloj ni audio
+
+Y las variantes se comprueban contra la SO F4 igual que las rutas: declarar archivos en un segundo
+sitio es exactamente lo que hizo que el motor y la biblioteca se separaran durante cuatro fases.
+
+### ⚠️ Lo que sigue sin estar
+Ningún botón de la aplicación dispara sonido. `reproducir()` se llama desde un solo sitio: el botón
+«▶ Escuchar» de Ajustes → Sonido y respuesta. Con los tres clics, ese botón ya alterna entre ellos.
+
+
 ## v3.5.0 — Los dos catálogos de sonido que nunca se hablaron
 
 ### 🚨 El motor pedía archivos que nadie iba a producir

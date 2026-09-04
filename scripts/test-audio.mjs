@@ -205,6 +205,49 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
     SONIDOS_SISTEMA.every((s) => s.ruta.endsWith(`.${FORMATO}`)));
   comprobar('⚠️ ...ni en subcarpetas, que la SO F4 no usa',
     SONIDOS_SISTEMA.every((s) => s.ruta.split('/').length === 3));
+
+  /* 🚨 Las variantes tienen que estar declaradas en la SO F4 igual que las
+     rutas: si no, se repite exactamente el fallo de los dos catálogos, pero un
+     nivel más abajo y más difícil de ver. */
+  const todasLasVariantes = SONIDOS_SISTEMA.flatMap((s) => s.variantes);
+  const variantesHuerfanas = todasLasVariantes.filter((v) => !DECLARADOS.has(v));
+  comprobar(`🚨 CLAVE · Y las variantes también están declaradas en la SO F4${variantesHuerfanas.length ? ` — huérfanas: ${variantesHuerfanas.join(', ')}` : ''}`,
+    variantesHuerfanas.length === 0);
+  comprobar('⚠️ Un sonido sin variantes declaradas tiene una: la suya',
+    SONIDOS_SISTEMA.every((s) => s.variantes.length >= 1 && s.variantes[0] === s.ruta));
+  comprobar('⚠️ Un sonido de Josué, que nunca tendrá variantes, tampoco se rompe',
+    crearSonido({ id: 'suyo', ruta: '/x.mp3', origen: 'custom' }).variantes.length === 1);
+}
+
+/* ---------------------------------------------------------------------------
+   🚨 LAS VARIANTES ROTAN (SO F4)
+   ---------------------------------------------------------------------------
+   Josué produjo `ui_click_01/02/03` el 2026-09-04 — el mismo clic con medio tono
+   de diferencia. Sin rotación, dos de los tres no se oirían NUNCA, y el trabajo
+   de hacerlos habría sido para nada.
+   --------------------------------------------------------------------------- */
+{
+  console.log('\n🚨 La rotación de variantes');
+  const ON = { ...DEFAULT_AUDIO, activado: true };
+  const rutas = [];
+  let est = ESTADO_AUDIO_INICIAL;
+  for (let i = 1; i <= 7; i += 1) {
+    const d = decidirReproduccion(ON, 'UI_CLICK', { ahora: i * 200, estado: est });
+    est = d.estado;
+    rutas.push(d.suena ? d.sonido.ruta : `NO SUENA:${d.motivo}`);
+  }
+  comprobar('CLAVE · Tres clics seguidos son tres archivos distintos',
+    new Set(rutas.slice(0, 3)).size === 3);
+  comprobar('CLAVE · ...en orden 1 → 2 → 3, no al azar',
+    rutas.slice(0, 3).join() === '/sonidos/ui_click_01.mp3,/sonidos/ui_click_02.mp3,/sonidos/ui_click_03.mp3');
+  comprobar('CLAVE · ...y el cuarto vuelve al primero', rutas[3] === rutas[0]);
+  comprobar('⚠️ El turno viaja en el estado, no en una variable escondida',
+    ESTADO_AUDIO_INICIAL.variantes && Object.keys(ESTADO_AUDIO_INICIAL.variantes).length === 0);
+
+  // Un sonido de una sola versión no rota: suena el suyo, siempre.
+  const a = decidirReproduccion(ON, 'SUCCESS', { ahora: 5000, estado: ESTADO_AUDIO_INICIAL });
+  const b = decidirReproduccion(ON, 'SUCCESS', { ahora: 9000, estado: a.estado });
+  comprobar('Un sonido sin variantes no rota nada', a.sonido.ruta === b.sonido.ruta);
 }
 
 /* ===========================================================================

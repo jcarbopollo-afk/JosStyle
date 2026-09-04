@@ -14,6 +14,11 @@
 //
 // ── LO QUE HAY QUE DECIR ANTES DE NADA ─────────────────────────────────────
 //
+// 🚨 **Esto ya no es verdad, y se deja escrito en vez de borrarlo.** El
+// 2026-09-04 Josué produjo en FL Studio los tres primeros archivos
+// (`ui_click_01/02/03.mp3`). Quedan 43. Lo de abajo es lo que fue cierto durante
+// cinco fases, y explica por qué el motor está construido como está.
+//
 // **No hay ni un archivo de audio en el proyecto.** Josué escribió en la
 // especificación de Rachas que los daría *"cuando la web ya tenga todos los
 // botones activos"*, y el apartado 38 de esta fase prohíbe expresamente
@@ -147,8 +152,8 @@ export function definicionEvento(tipo) {
 
 export const ORIGENES_SONIDO = { SISTEMA: 'system', USUARIO: 'custom' };
 
-export function crearSonido({ id = '', nombre = '', categoria = 'feedback', origen = 'system', ruta = '', duracion = 0, formato = '', tamano = 0, creadoEn = null } = {}) {
-  return normalizarSonido({ id: id || uid(), nombre, categoria, origen, ruta, duracion, formato, tamano, creadoEn });
+export function crearSonido({ id = '', nombre = '', categoria = 'feedback', origen = 'system', ruta = '', variantes = null, duracion = 0, formato = '', tamano = 0, creadoEn = null } = {}) {
+  return normalizarSonido({ id: id || uid(), nombre, categoria, origen, ruta, variantes, duracion, formato, tamano, creadoEn });
 }
 
 export function normalizarSonido(guardado) {
@@ -161,6 +166,17 @@ export function normalizarSonido(guardado) {
     categoria: categoriaSonido(g.categoria).id,
     origen: g.origen === ORIGENES_SONIDO.USUARIO ? ORIGENES_SONIDO.USUARIO : ORIGENES_SONIDO.SISTEMA,
     ruta: (g.ruta || '').trim(),
+    /* 🚨 **Las variantes** (SO F4). Los sonidos que se oyen doscientas veces al
+       día llevan varias versiones casi idénticas —`ui_click_01/02/03`— y la
+       aplicación va alternando: lo que cansa es la repetición exacta, no el
+       sonido. Un sonido sin variantes es simplemente uno con una sola.
+
+       ⚠️ Va aquí, en la lista de rutas, y NO en un catálogo aparte: un segundo
+       sitio donde declarar archivos es exactamente lo que llevó a que el motor
+       y la biblioteca se separaran durante cuatro fases. */
+    variantes: Array.isArray(g.variantes) && g.variantes.length > 0
+      ? g.variantes.map((v) => String(v || '').trim()).filter(Boolean)
+      : [(g.ruta || '').trim()].filter(Boolean),
     // Apartado 23 — metadata útil, y nada más. Sin `duracion` no se puede
     // decidir si un sonido personalizado es demasiado largo (apartado 37).
     duracion: Number.isFinite(n) && n > 0 ? n : 0,
@@ -196,7 +212,7 @@ export function normalizarSonido(guardado) {
  * separarse en silencio.
  */
 export const SONIDOS_SISTEMA = [
-  crearSonido({ id: 'click_01', nombre: 'Toque', categoria: 'ui', ruta: '/sonidos/ui_click_01.mp3' }),
+  crearSonido({ id: 'click_01', nombre: 'Toque', categoria: 'ui', ruta: '/sonidos/ui_click_01.mp3', variantes: ['/sonidos/ui_click_01.mp3', '/sonidos/ui_click_02.mp3', '/sonidos/ui_click_03.mp3'] }),
   crearSonido({ id: 'toggle_01', nombre: 'Interruptor', categoria: 'ui', ruta: '/sonidos/ui_toggle_on.mp3' }),
   crearSonido({ id: 'back_01', nombre: 'Volver', categoria: 'ui', ruta: '/sonidos/ui_close_01.mp3' }),
   crearSonido({ id: 'success_01', nombre: 'Hecho', categoria: 'feedback', ruta: '/sonidos/success_01.mp3' }),
@@ -357,7 +373,7 @@ export function resolverSonido(prefs, tipo, { sonidosUsuario = [] } = {}) {
 
 export const VENTANA_COLISION = 180;   // ms
 
-export const ESTADO_AUDIO_INICIAL = { ultimos: {}, ultimaReproduccion: 0, ultimaPrioridad: -1 };
+export const ESTADO_AUDIO_INICIAL = { ultimos: {}, ultimaReproduccion: 0, ultimaPrioridad: -1, variantes: {} };
 
 /**
  * ¿Suena este evento? Devuelve la decisión **y el estado nuevo**, sin mutar el
@@ -371,7 +387,12 @@ export function decidirReproduccion(prefs, tipo, { ahora = Date.now(), estado = 
   const p = normalizarAudio(prefs);
   const evento = eventoCanonico(tipo);
   const def = EVENTOS_SONIDO[evento];
-  const nuevo = { ultimos: { ...estado.ultimos }, ultimaReproduccion: estado.ultimaReproduccion, ultimaPrioridad: estado.ultimaPrioridad };
+  const nuevo = {
+    ultimos: { ...estado.ultimos },
+    ultimaReproduccion: estado.ultimaReproduccion,
+    ultimaPrioridad: estado.ultimaPrioridad,
+    variantes: { ...(estado.variantes || {}) },
+  };
 
   // Un evento que no existe **no rompe nada** (apartado 33). Se ignora y ya.
   if (!def) return { suena: false, motivo: 'evento_desconocido', estado: nuevo };
@@ -391,10 +412,23 @@ export function decidirReproduccion(prefs, tipo, { ahora = Date.now(), estado = 
     return { suena: false, motivo: 'colision', estado: nuevo };
   }
 
-  const sonido = resolverSonido(p, evento, { sonidosUsuario });
-  // Y este es el caso de HOY: el motor dice que sí, pero no hay archivo. No es
-  // un error — es el "silencio" del apartado 25.
-  if (!sonido) return { suena: false, motivo: 'sin_sonido_asignado', estado: nuevo };
+  const elegido = resolverSonido(p, evento, { sonidosUsuario });
+  // Si no hay sonido asignado no es un error — es el "silencio" del apartado 25,
+  // y el 26 exige que no rompa nada.
+  if (!elegido) return { suena: false, motivo: 'sin_sonido_asignado', estado: nuevo };
+
+  /* 🚨 **La rotación de variantes** (SO F4). Un sonido con tres versiones va
+     alternando 1 → 2 → 3 → 1: lo que cansa de un clic oído doscientas veces al
+     día es la repetición idéntica, no el clic.
+
+     ⚠️ Se rota en orden y no al azar, por dos motivos: el azar repite —tres
+     veces seguidas la misma no es raro— y además no se puede probar sin
+     inyectar un generador. El turno vive en el mismo `estado` que ya viajaba de
+     forma pura, así que esto sigue sin guardar nada por su cuenta. */
+  const turno = nuevo.variantes[elegido.id] || 0;
+  const lista = elegido.variantes && elegido.variantes.length > 0 ? elegido.variantes : [elegido.ruta];
+  const sonido = { ...elegido, ruta: lista[turno % lista.length] };
+  if (lista.length > 1) nuevo.variantes[elegido.id] = (turno + 1) % lista.length;
 
   nuevo.ultimos[evento] = ahora;
   nuevo.ultimaReproduccion = ahora;
