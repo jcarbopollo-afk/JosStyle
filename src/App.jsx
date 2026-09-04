@@ -61,6 +61,12 @@ import { DEFAULT_PAPELERA, purgarCaducados, prepararEliminacion, prepararRestaur
 import { eliminarRegistroPiel, restaurarRegistroPiel } from './lib/seguimientoPiel';
 // EH F21 — lo mismo para barba: rutinas y registros, a la papelera de siempre.
 import { eliminarRegistroBarba, restaurarRegistroBarba, eliminarRutinaConPapelera, restaurarRutinaBarba } from './lib/rutinasBarba';
+// EH F19 — Cuerpo e higiene: rutinas, registros y productos, a la MISMA papelera.
+import {
+  eliminarRutinaConPapeleraCuerpo, restaurarRutinaCuerpo,
+  eliminarRegistroCuerpo, restaurarRegistroCuerpo,
+  eliminarProductoCuerpo, restaurarProductoCuerpo,
+} from './lib/rutinasCuerpo';
 // EH F23 — y lo mismo para Sonrisa: rutinas, revisiones y registros.
 import {
   eliminarRutinaSonrisa, restaurarRutinaSonrisa, eliminarRevision, restaurarRevision,
@@ -1176,6 +1182,23 @@ export default function App() {
     });
   };
 
+  /* ⚠️ EH F19, apartado 18 — sus tres listas viven en la `config` de `cuerpo`,
+     así que van por su puerta y acaban en LA MISMA papelera. */
+  const eliminarDeCuerpo = (coleccion, id) => {
+    const fn = {
+      rutinas: eliminarRutinaConPapeleraCuerpo,
+      registros: eliminarRegistroCuerpo,
+      productos: eliminarProductoCuerpo,
+    }[coleccion];
+    if (!fn) return;
+    const r = fn(estiloHombre, id);
+    if (r.error) return;
+    snapshotAndSave({
+      estiloHombre: r.estado,
+      papelera: { ...papelera, elementos: [...papelera.elementos, r.entrada] },
+    });
+  };
+
   const eliminarDePerfumes = (coleccion, id) => {
     const r = coleccion === 'perfumes' ? eliminarPerfume(estiloHombre, id) : eliminarUso(estiloHombre, id);
     if (r.error) return;
@@ -1214,6 +1237,7 @@ export default function App() {
     if (modulo === 'skincare' && coleccion === 'registros') return eliminarRegistroDePiel(id);
     if (modulo === 'barba') return eliminarDeBarba(coleccion, id);
     if (modulo === 'sonrisa') return eliminarDeSonrisa(coleccion, id);
+    if (modulo === 'cuerpo') return eliminarDeCuerpo(coleccion, id);
     if (modulo === 'perfumes') return eliminarDePerfumes(coleccion, id);
     if (modulo === 'accesorios') return eliminarDeAccesorios(coleccion, id);
     if (modulo === 'gustos') return eliminarDeGustos(id);
@@ -1279,6 +1303,21 @@ export default function App() {
     // EH F23 — y Sonrisa, por la misma puerta.
     if (entrada.modulo === 'sonrisa') {
       const fn = { rutinas: restaurarRutinaSonrisa, revisiones: restaurarRevision, registros: restaurarRegistroSonrisa }[entrada.coleccion];
+      const r = fn ? fn(estiloHombre, entrada) : null;
+      if (!r || r.error) return;
+      snapshotAndSave({
+        estiloHombre: r.estado,
+        papelera: { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) },
+      });
+      return;
+    }
+    // EH F19 — y lo mismo para cuerpo e higiene, por la misma puerta.
+    if (entrada.modulo === 'cuerpo') {
+      const fn = {
+        rutinas: restaurarRutinaCuerpo,
+        registros: restaurarRegistroCuerpo,
+        productos: restaurarProductoCuerpo,
+      }[entrada.coleccion];
       const r = fn ? fn(estiloHombre, entrada) : null;
       if (!r || r.error) return;
       snapshotAndSave({
@@ -2031,6 +2070,11 @@ export default function App() {
             onEliminarRegistro={(id) => eliminarConPapelera('skincare', 'registros', id)}
             onEliminarRegistroBarba={(id) => eliminarConPapelera('barba', 'registros', id)}
             onEliminarRutinaBarba={(id) => eliminarConPapelera('barba', 'rutinas', id)}
+            /* ⚠️ EH F19, apartado 18 — las tres listas de Cuerpo e higiene, por
+               la ÚNICA puerta de borrado de la app (ME F3). */
+            onEliminarRutinaCuerpo={(id) => eliminarConPapelera('cuerpo', 'rutinas', id)}
+            onEliminarRegistroCuerpo={(id) => eliminarConPapelera('cuerpo', 'registros', id)}
+            onEliminarProductoCuerpo={(id) => eliminarConPapelera('cuerpo', 'productos', id)}
             /* ⚠️ Las tres, con su nombre escrito: la auditoría de ME F4 comprueba
                sobre el código que toda colección del catálogo tenga un borrado
                de verdad, y una colección pasada como variable no se ve. */

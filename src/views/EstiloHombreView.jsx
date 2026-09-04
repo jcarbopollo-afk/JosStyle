@@ -36,7 +36,7 @@ import { createPortal } from 'react-dom';
 import { Settings, Check, ArrowLeft, Search, X, ChevronUp, ChevronDown, ArrowUpDown, Plus, SlidersHorizontal, Database, Lock, Pencil } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
-import { Card, PrimaryButton, Switch, TextInput } from '../components/ui';
+import { Card, PrimaryButton, Switch, TextInput, Field, Select, EmptyHint } from '../components/ui';
 import {
   modulosActivos, todosLosModulos, alternarModulo, estadoPantalla,
   resumenEstiloHombre, normalizarEstiloHombre,
@@ -270,6 +270,17 @@ import {
   MODULO_HIGIENE, MODULO_CUERPO, TEXTOS_CH, panelCH, elegirPartesCH, alternarParteCH,
   alternarCosaHigiene, decirAhoraNoCH, configurarCH, contestarCH, respuestaCH,
 } from '../lib/cuerpoHigiene';
+/* ⚠️ **EH F19** — sus rutinas, sus recomendaciones y sus productos. Un solo
+   almacén para los dos módulos: la plantilla del apartado 2 mezcla pasos de
+   Higiene y de Cuidado corporal, así que dos listas no podrían guardarla. */
+import {
+  panelRutinasCuerpo, TEXTOS_CUERPO19, PASOS_CUERPO, FRECUENCIAS_CUERPO, MOMENTOS_CUERPO,
+  crearRutinaCuerpo, editarRutinaCuerpo, usarPlantillaCuerpo, marcarPasoCuerpo,
+  omitirPasoCuerpo, alternarRecordatorioCuerpo, alternarFavoritaCuerpo,
+  descartarRecomendacionCuerpo, guardarRecomendacionCuerpo, aplicarRecomendacionCuerpo,
+  crearProductoCuerpo, registrarCuerpo, ESCALA_CUERPO, crearPackCuerpo,
+  CATEGORIAS_PRODUCTO_CH,
+} from '../lib/rutinasCuerpo';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -7842,9 +7853,11 @@ export function PrivacidadEH({ accent, onCerrar, onIr }) {
 
    ⚠️ Y el apartado 17, que es el que la contradicción tenía en el aire: los dos
    son independientes, y la pantalla lo dice. */
-export function CuerpoHigieneEH({ estado, modulo, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+export function CuerpoHigieneEH({ estado, modulo, accent, datosGlobales = {}, onCambiar, onEliminarRutina, onCerrar }) {
   /* ⚠️ Regla 4 — los hooks, antes de cualquier `return` condicional. */
   const [eligiendo, setEligiendo] = useState(false);
+  // ⚠️ **EH F19** — la plaquita "Mi rutina" abre la MISMA lista en los dos módulos.
+  const [verRutina, setVerRutina] = useState(false);
   /* 🐛 ⚠️ `null` significa **"todavía no ha tocado nada"**, y entonces lo marcado
      es lo que hay guardado. La primera versión arrancaba en `[]` y pintaba las
      casillas leyendo el estado guardado: **marcar quitaba y quitar marcaba**,
@@ -7879,6 +7892,18 @@ export function CuerpoHigieneEH({ estado, modulo, accent, datosGlobales = {}, on
       <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>{panel.titulo}</p>
     </div>
   );
+
+  /* ⚠️ **EH F19** — "Mi rutina". Es la misma lista desde Higiene y desde
+     Cuidado corporal: el almacén es uno solo. */
+  if (verRutina) {
+    return (
+      <RutinasCuerpoEH
+        estado={estado} accent={accent} datosGlobales={datosGlobales}
+        onCambiar={onCambiar} onEliminarRutina={onEliminarRutina}
+        onCerrar={() => setVerRutina(false)}
+      />
+    );
+  }
 
   /* ── Apartado 1 — la primera vez, o cuando quiera cambiar qué utiliza ──── */
   if (primeraVez || eligiendo) {
@@ -7947,16 +7972,26 @@ export function CuerpoHigieneEH({ estado, modulo, accent, datosGlobales = {}, on
 
       {/* ── Las plaquitas. La que no existe todavía lo dice (regla 8) ────── */}
       <div className="grid grid-cols-2 gap-2">
-        {panel.plaquitas.map((pl) => (
-          <div key={pl.id} className="rounded-2xl p-2.5"
-            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
-            <p className="text-sm leading-none mb-1" aria-hidden="true">{pl.icono}</p>
-            <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{pl.nombre}</p>
-            {!pl.lista && (
-              <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>{pl.texto}</p>
-            )}
-          </div>
-        ))}
+        {panel.plaquitas.map((pl) => {
+          /* ⚠️ Solo la de la F19 lleva a alguna parte: las de "qué utilizo" y
+             "mi perfil" ya están en esta misma pantalla, y la de la F22
+             todavía no existe y **lo dice** (regla 8). */
+          const abre = pl.lista && (pl.id === 'rutina' || pl.id === 'seguimiento');
+          const Etiqueta = abre ? 'button' : 'div';
+          return (
+            <Etiqueta
+              key={pl.id}
+              {...(abre ? { onClick: () => setVerRutina(true), type: 'button' } : {})}
+              className="rounded-2xl p-2.5 text-left"
+              style={{ background: COLORS.surface2, border: `1px solid ${abre ? accent : COLORS.border}` }}>
+              <p className="text-sm leading-none mb-1" aria-hidden="true">{pl.icono}</p>
+              <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{pl.nombre}</p>
+              {!pl.lista && (
+                <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>{pl.texto}</p>
+              )}
+            </Etiqueta>
+          );
+        })}
       </div>
 
       {/* ── Apartado 17 — cada parte, con su interruptor independiente ───── */}
@@ -8059,6 +8094,361 @@ export function CuerpoHigieneEH({ estado, modulo, accent, datosGlobales = {}, on
 
       <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.opcional}</p>
       <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{panel.catalogo}</p>
+    </div>
+  );
+}
+
+/* ============================================================================
+   EH · Fase 19/65 — CUERPO E HIGIENE: RUTINAS Y RECOMENDACIONES
+   ============================================================================
+   *"Debe ser mucho más ligera que Skincare. No queremos convertir una ducha en
+   una lista interminable de tareas."*
+
+   ⚠️ La pantalla **no decide nada**: qué toca hoy, qué está hecho, qué
+   recomendar y qué pack proponer salen de `rutinasCuerpo.js`, con sus pruebas.
+   Aquí solo se pinta y se llama.  */
+export function RutinasCuerpoEH({ estado, accent, datosGlobales = {}, onCambiar, onEliminarRutina, onCerrar }) {
+  /* ⚠️ Regla 4 — los hooks, antes de cualquier `return` condicional. */
+  const [nombre, setNombre] = useState('');
+  const [abierta, setAbierta] = useState(null);
+  const [confirmando, setConfirmando] = useState(null);
+  const [nota, setNota] = useState('');
+  const [producto, setProducto] = useState('');
+  const panel = useMemo(
+    () => panelRutinasCuerpo(estado, datosGlobales),
+    [estado, datosGlobales],
+  );
+
+  const cabecera = (
+    <div className="flex items-center gap-2">
+      {onCerrar && (
+        <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+          <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+        </button>
+      )}
+      <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>{panel.titulo}</p>
+    </div>
+  );
+
+  /* ⚠️ Apartado 17 — apagado NO es vacío: se dice qué pasa y qué puede hacer. */
+  if (!panel.activo) {
+    return (
+      <div className="space-y-3">
+        {cabecera}
+        <Card>
+          <p className="text-[11px]" style={{ color: COLORS.text }}>
+            Las rutinas están desactivadas. Puedes volver a encenderlas cuando quieras.
+          </p>
+          <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+            {TEXTOS_CUERPO19.desactivar}
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
+  const crear = () => {
+    const r = crearRutinaCuerpo(estado, { nombre });
+    if (!r.error) { onCambiar(r.estado); setNombre(''); }
+  };
+
+  return (
+    <div className="space-y-3">
+      {cabecera}
+
+      {/* ── Apartado 1 — el vacío con su salida ─────────────────────────── */}
+      {panel.vacio && (
+        <Card>
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{panel.vacio.titulo}</p>
+          <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>{panel.vacio.texto}</p>
+        </Card>
+      )}
+
+      {/* ── Apartado 2 — la plantilla. SE OFRECE, no se crea sola ───────── */}
+      {panel.plantillas.map((pl) => (
+        <Card key={pl.id}>
+          <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+            {pl.icono} {pl.nombre}
+          </p>
+          <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
+            {pl.pasosVisibles.map((x) => x.nombre).join(' · ')} — {pl.frecuenciaNombre}
+          </p>
+          <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{TEXTOS_CUERPO19.plantilla}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <PrimaryButton accent={accent}
+              onClick={() => {
+                const r = usarPlantillaCuerpo(estado, pl.id, { confirmado: true });
+                if (!r.error) onCambiar(r.estado);
+              }}>
+              Usar esta rutina
+            </PrimaryButton>
+            <button onClick={() => setNombre(pl.nombre)}
+              className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>
+              Crear desde cero
+            </button>
+          </div>
+        </Card>
+      ))}
+
+      {/* ── Apartado 3 — crear una cualquiera ───────────────────────────── */}
+      <Card>
+        <Field label="Nombre de la rutina">
+          {/* 🚨 `TextInput` es un `<input>` pelado: `onChange` recibe el EVENTO. */}
+          <TextInput value={nombre} onChange={(ev) => setNombre(ev.target.value)}
+            placeholder="Ducha de la mañana" />
+        </Field>
+        <PrimaryButton accent={accent} onClick={crear} icon={Plus}>
+          {TEXTOS_CUERPO19.crear}
+        </PrimaryButton>
+      </Card>
+
+      {/* ── Apartado 4 — una plaquita por rutina, SIN sus pasos dentro ──── */}
+      {(panel.plaquitas || []).map((pl) => (
+        <Card key={pl.id}>
+          <div className="flex items-center gap-2">
+            <span className="text-sm leading-none" aria-hidden="true">{pl.icono}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{pl.nombre}</p>
+              <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{pl.linea}</p>
+            </div>
+            <button onClick={() => setAbierta(abierta === pl.id ? null : pl.id)}
+              className="text-[10px] font-semibold p-1.5 -m-1.5" style={{ color: accent }}>
+              {abierta === pl.id ? 'Cerrar' : 'Abrir'}
+            </button>
+          </div>
+
+          {/* ── Apartado 5 — el checklist, al abrirla ──────────────────── */}
+          {abierta === pl.id && (
+            <div className="mt-2">
+              {(panel.hoy.find((h) => h && h.id === pl.id)?.pasos || []).map((paso) => (
+                <div key={paso.id} className="flex items-center gap-2 mb-1">
+                  <button aria-pressed={paso.hecho}
+                    onClick={() => onCambiar(marcarPasoCuerpo(estado, pl.id, paso.id))}
+                    className="p-1.5 -m-1.5 text-[11px]" aria-label={`Marcar ${paso.etiqueta}`}>
+                    {paso.hecho ? '☑️' : '☐'}
+                  </button>
+                  {/* 🐛 ⚠️ El motor llama `etiqueta` al nombre del paso, no
+                      `nombre`: con `nombre` la lista salía sin texto. */}
+                  <span className="text-[11px] flex-1 min-w-0" style={{ color: COLORS.text }}>
+                    {paso.icono} {paso.etiqueta}
+                  </span>
+                  {/* Apartado 16 — omitir, sin penalización. */}
+                  <button onClick={() => onCambiar(omitirPasoCuerpo(estado, pl.id, paso.id))}
+                    className="text-[10px] font-semibold p-1.5 -m-1.5"
+                    style={{ color: paso.omitido ? accent : COLORS.textMuted }}>
+                    {TEXTOS_CUERPO19.omitir}
+                  </button>
+                </div>
+              ))}
+              <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+                {TEXTOS_CUERPO19.omitirSuave}
+              </p>
+
+              {/* ── Apartados 6, 7 y 15 — frecuencia, recordatorio, editar ── */}
+              <Field label="Frecuencia">
+                <Select value={pl.frecuencia}
+                  onChange={(ev) => {
+                    const r = editarRutinaCuerpo(estado, pl.id, { frecuencia: ev.target.value });
+                    if (!r.error) onCambiar(r.estado);
+                  }}>
+                  {FRECUENCIAS_CUERPO.map((f) => <option key={f.id} value={f.id}>{f.nombre}</option>)}
+                </Select>
+              </Field>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[11px] flex-1 min-w-0" style={{ color: COLORS.text }}>
+                  {TEXTOS_CUERPO19.recordatorio}
+                </span>
+                <Switch
+                  checked={pl.recordatorio} accent={accent} label={TEXTOS_CUERPO19.recordatorio}
+                  onChange={() => {
+                    const r = alternarRecordatorioCuerpo(estado, pl.id);
+                    if (!r.error) onCambiar(r.estado);
+                  }}
+                />
+              </div>
+              <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                {TEXTOS_CUERPO19.recordatorioApagado}
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <button onClick={() => {
+                  const r = alternarFavoritaCuerpo(estado, pl.id);
+                  if (!r.error) onCambiar(r.estado);
+                }} className="text-[10px] font-semibold p-1.5 -m-1.5" style={{ color: accent }}>
+                  {pl.favorita ? '★ Quitar de favoritas' : '☆ Guardar como favorita'}
+                </button>
+                {onEliminarRutina && (
+                  <button onClick={() => onEliminarRutina(pl.id)}
+                    className="text-[10px] font-semibold p-1.5 -m-1.5" style={{ color: COLORS.textMuted }}>
+                    Eliminar
+                  </button>
+                )}
+              </div>
+              <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+                {TEXTOS_CUERPO19.sinFavoritosGlobales}
+              </p>
+            </div>
+          )}
+        </Card>
+      ))}
+
+      {/* ── Apartados 8, 9 y 10 — las recomendaciones ───────────────────── */}
+      {panel.recomendaciones && panel.recomendaciones.recomendaciones.length > 0 && (
+        <Card>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>
+            {TEXTOS_CUERPO19.recomendaciones}
+          </p>
+          {panel.recomendaciones.recomendaciones.map((r) => (
+            <div key={r.id} className="mb-2">
+              <p className="text-[11px]" style={{ color: COLORS.text }}>{r.texto}</p>
+              {/* ⚠️ Apartado 11 — antes de sugerir comprar, lo que ya tiene. */}
+              {r.yaTienes && (
+                <p className="text-[10px] mt-0.5" style={{ color: accent }}>
+                  {r.yaTienes.texto} {r.yaTienes.productos.map((p) => p.nombre).join(', ')}
+                </p>
+              )}
+              <div className="flex items-center gap-2 mt-1">
+                {r.paso && (panel.plaquitas || []).length > 0 && (
+                  <button onClick={() => setConfirmando({ regla: r.id, rutina: panel.plaquitas[0].id })}
+                    className="text-[10px] font-semibold p-1.5 -m-1.5" style={{ color: accent }}>
+                    {r.accion}
+                  </button>
+                )}
+                <button onClick={() => {
+                  const x = guardarRecomendacionCuerpo(estado, r.id);
+                  if (!x.error) onCambiar(x.estado);
+                }} className="text-[10px] font-semibold p-1.5 -m-1.5" style={{ color: COLORS.textMuted }}>
+                  {r.guardada ? 'Guardada' : 'Guardar'}
+                </button>
+                <button onClick={() => {
+                  const x = descartarRecomendacionCuerpo(estado, r.id, 'no_interesa');
+                  if (!x.error) onCambiar(x.estado);
+                }} className="text-[10px] font-semibold p-1.5 -m-1.5" style={{ color: COLORS.textMuted }}>
+                  No me interesa
+                </button>
+              </div>
+              {/* ⚠️ Añadir un paso a su rutina escribe: se confirma antes. */}
+              {confirmando && confirmando.regla === r.id && (
+                <div className="rounded-2xl p-2 mt-1"
+                  style={{ background: hexToRgba(accent, 0.08), border: `1px solid ${hexToRgba(accent, 0.25)}` }}>
+                  <p className="text-[10px]" style={{ color: COLORS.text }}>
+                    Se añadirá a «{panel.plaquitas.find((x) => x.id === confirmando.rutina)?.nombre}».
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <PrimaryButton accent={accent} onClick={() => {
+                      const x = aplicarRecomendacionCuerpo(estado, r.id, confirmando.rutina, { confirmado: true });
+                      if (x.aplicado) onCambiar(x.estado);
+                      setConfirmando(null);
+                    }}>
+                      Añadir
+                    </PrimaryButton>
+                    <button onClick={() => setConfirmando(null)}
+                      className="text-[10px] font-semibold p-1.5 -m-1.5" style={{ color: COLORS.textMuted }}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* ── Apartados 10 a 13 — los productos y el pack ─────────────────── */}
+      {panel.productos !== null && (
+        <Card>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>🧴 Productos</p>
+          {panel.productos.length === 0 && <EmptyHint text={TEXTOS_CUERPO19.catalogo} />}
+          {panel.productos.map((p) => (
+            <div key={p.id} className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] flex-1 min-w-0" style={{ color: COLORS.text }}>
+                {p.nombre}{p.marca ? ` · ${p.marca}` : ''}
+              </span>
+              <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                {CATEGORIAS_PRODUCTO_CH.find((c) => c.id === p.categoria)?.nombre || ''}
+              </span>
+            </div>
+          ))}
+          <Field label="Añadir un producto">
+            <TextInput value={producto} onChange={(ev) => setProducto(ev.target.value)}
+              placeholder="Gel de ducha" />
+          </Field>
+          <PrimaryButton accent={accent} onClick={() => {
+            const r = crearProductoCuerpo(estado, { nombre: producto, categoria: 'gel' });
+            if (!r.error) { onCambiar(r.estado); setProducto(''); }
+          }}>
+            Añadir producto
+          </PrimaryButton>
+          {/* Apartado 13 — el pack SE PROPONE. Crearlo es otra pulsación. */}
+          {panel.sugerido.hay ? (
+            <div className="rounded-2xl p-2 mt-2"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                📦 {panel.sugerido.nombre}
+              </p>
+              <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                {panel.sugerido.productos.map((p) => p.nombre).join(' · ')}
+              </p>
+              <PrimaryButton accent={accent} onClick={() => {
+                const r = crearPackCuerpo(estado, panel.sugerido.nombre, panel.sugerido.productoIds);
+                if (!r.error) onCambiar(r.estado);
+              }}>
+                {panel.sugerido.accion}
+              </PrimaryButton>
+            </div>
+          ) : (
+            <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{panel.sugerido.texto}</p>
+          )}
+          <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>{TEXTOS_CUERPO19.afiliacion}</p>
+        </Card>
+      )}
+
+      {/* ── El seguimiento, si lo ha encendido ──────────────────────────── */}
+      {panel.historial !== null && (
+        <Card>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>📈 Seguimiento</p>
+          {panel.historial.length === 0 && (
+            <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              Todavía no has registrado nada.
+            </p>
+          )}
+          {panel.historial.map((h) => (
+            <p key={h.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+              {h.fecha} — {h.que || 'Cuidado'} {h.como ? h.como.icono : ''} {h.nota}
+            </p>
+          ))}
+          <Field label="Nota de hoy">
+            <TextInput value={nota} onChange={(ev) => setNota(ev.target.value)}
+              placeholder="Cómo ha ido" />
+          </Field>
+          <div className="flex flex-wrap gap-1">
+            {ESCALA_CUERPO.map((x) => (
+              <button key={x.id}
+                onClick={() => {
+                  const r = registrarCuerpo(estado, { como: x.id, nota });
+                  if (!r.error) { onCambiar(r.estado); setNota(''); }
+                }}
+                className="rounded-full px-2.5 py-1"
+                style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+                <span className="text-[10px] font-semibold" style={{ color: COLORS.text }}>
+                  {x.icono} {x.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* ── Apartado 18 — lo que se usa de JosStyle, y lo que NO existe ─── */}
+      <Card>
+        <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.text }}>
+          Esto se conecta con el resto de JosStyle
+        </p>
+        {panel.conexiones.map((c) => (
+          <p key={c.id} className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            {c.existe ? '✓' : '·'} {c.nombre}{c.existe ? '' : ` — ${c.porque}`}
+          </p>
+        ))}
+      </Card>
     </div>
   );
 }
@@ -8953,7 +9343,7 @@ export function PersonalizarPlaquitas({
 /* ===========================================================================
    LA PANTALLA (F1 apartados 2 y 13 · F2 apartados 9, 10 y 11)
    =========================================================================== */
-export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarSonrisa, onEliminarPerfume, onEliminarAccesorio, onGuardarAccesorio, onEliminarGusto, onGuardarObjetivo, objetivos = null, rachas = null, onEliminarDatosEH, productividad = null, onGuardarTarea }) {
+export default function EstiloHombreView({ estiloHombre, accent, datosGlobales = {}, armario = null, onIr, onCambiar, onEliminarRegistro, onEliminarRegistroBarba, onEliminarRutinaBarba, onEliminarRutinaCuerpo, onEliminarSonrisa, onEliminarPerfume, onEliminarAccesorio, onGuardarAccesorio, onEliminarGusto, onGuardarObjetivo, objetivos = null, rachas = null, onEliminarDatosEH, productividad = null, onGuardarTarea }) {
   const [gestionando, setGestionando] = useState(false);
   const [misDatos, setMisDatos] = useState(false);
   const [miEstilo, setMiEstilo] = useState(false);
@@ -9313,6 +9703,8 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
       <CuerpoHigieneEH
         estado={estado} modulo={cuerpoHigiene} accent={accent} datosGlobales={datosGlobales}
         onCambiar={onCambiar}
+        /* ⚠️ EH F19 — borrar una rutina va por la ÚNICA puerta de la app. */
+        onEliminarRutina={onEliminarRutinaCuerpo}
         onCerrar={() => setCuerpoHigiene(null)}
       />
     );

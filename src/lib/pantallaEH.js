@@ -82,6 +82,7 @@ import { resumenBarba } from './perfilBarba';
 import { resumenSonrisa } from './sonrisa';
 /* ⚠️ **EH F18** — y su línea sale de `lineaCH()`, no de un dato nuevo. */
 import { lineaCH, resumenCH, MODULO_HIGIENE, MODULO_CUERPO } from './cuerpoHigiene';
+import { lineaRutinasCuerpo } from './rutinasCuerpo';
 import { resumenPerfumes } from './perfumes';
 import { resumenAccesorios } from './accesorios';
 import { resumenGustos } from './gustos';
@@ -523,6 +524,13 @@ export const LINEAS_DE_PLAQUITA = {
       principal: true,
       texto: (e) => lineaCH(e, MODULO_HIGIENE) || 'Si quieres, configúralo',
     },
+    /* ⚠️ **EH F19** — la MISMA rutina que en Cuidado corporal, porque el
+       almacén es uno solo: la "Rutina diaria básica" mezcla pasos de los dos. */
+    {
+      id: 'rutina',
+      nombre: 'Mi rutina',
+      texto: (e) => lineaRutinasCuerpo(e),
+    },
   ],
   cuerpo: [
     {
@@ -530,6 +538,13 @@ export const LINEAS_DE_PLAQUITA = {
       nombre: 'Qué utilizas',
       principal: true,
       texto: (e) => lineaCH(e, MODULO_CUERPO) || 'Si quieres, configúralo',
+    },
+    /* ⚠️ **EH F19** — y su rutina, apagada de fábrica como todas las extras.
+       Sale de `lineaRutinasCuerpo()`, que es del módulo: ni un dato nuevo. */
+    {
+      id: 'rutina',
+      nombre: 'Mi rutina',
+      texto: (e) => lineaRutinasCuerpo(e),
     },
   ],
   sonrisa: [

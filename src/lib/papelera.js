@@ -125,6 +125,13 @@ export const CATALOGO_PAPELERA = {
   /* ⚠️ EH F27, apartado 14 — *"eliminados recientemente GLOBAL. No crear
      papelera propia"*. Una línea, como todos. */
   'gustos.entradas': { modulo: 'gustos', coleccion: 'entradas', tipo: 'Gusto o interés', campos: ['nombre'], icono: 'gustos' },
+  /* ⚠️ EH F19, apartado 18 — *"Eliminados recientemente"*. Las tres listas de
+     Cuerpo e higiene viven en `cuerpo` porque el almacén es **uno solo**: la
+     "Rutina diaria básica" del apartado 2 mezcla pasos de los dos módulos, así
+     que dos listas no habrían podido guardarla. Tres líneas, ni una función. */
+  'cuerpo.rutinas': { modulo: 'cuerpo', coleccion: 'rutinas', tipo: 'Rutina de cuerpo e higiene', campos: ['nombre'], icono: 'cuerpo' },
+  'cuerpo.registros': { modulo: 'cuerpo', coleccion: 'registros', tipo: 'Registro de cuerpo e higiene', campos: ['fecha'], icono: 'cuerpo' },
+  'cuerpo.productos': { modulo: 'cuerpo', coleccion: 'productos', tipo: 'Producto de cuerpo e higiene', campos: ['nombre'], icono: 'cuerpo' },
   'accesorios.deseos': { modulo: 'accesorios', coleccion: 'deseos', tipo: 'Accesorio que quiere comprar', campos: ['nombre'], icono: 'accesorios' },
   'relacion.fechas': { modulo: 'relacion', coleccion: 'fechas', tipo: 'Fecha importante', campos: ['etiqueta'], icono: 'relacion', privado: true },
 };

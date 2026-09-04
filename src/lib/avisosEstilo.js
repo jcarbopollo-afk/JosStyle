@@ -85,6 +85,12 @@ export const TIPOS_AVISO_EH = [
     modulo: 'barba', categoria: 'rutinas', prioridad: 'baja', porDefecto: false,
   },
   {
+    /* ⚠️ **EH F19, apartado 7** — *"opcionales. El usuario decide. **Nunca
+       activarlos automáticamente.**"* Como todos: nace apagado. */
+    id: 'rutina_cuerpo', nombre: 'Rutina de cuerpo e higiene pendiente', icono: '🚿',
+    modulo: 'cuerpo', categoria: 'rutinas', prioridad: 'baja', porDefecto: false,
+  },
+  {
     id: 'perfume_rotacion', nombre: 'Cambiar de perfume', icono: '🌫️',
     modulo: 'perfumes', categoria: 'rutinas', prioridad: 'baja', porDefecto: false,
   },

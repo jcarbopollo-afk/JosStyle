@@ -177,6 +177,30 @@ if (componentes.length > 0) componentes.forEach((p) => console.log(`  ✗ ${p}`)
 ok(componentes.length === 0,
   '⚠️ Ningún archivo usa un componente JSX sin importarlo (React lanzaría al pintar ese trozo)');
 
+/* ===========================================================================
+   3 · UN `const` DE PRIMER NIVEL DECLARADO DOS VECES
+   ===========================================================================
+   🚨 Existe porque pasó **dos veces en el mismo turno** (EH F18 y F19): el
+   recorrido de Chromium es un módulo largo y plano, y una sección nueva que
+   reutiliza un nombre ya usado —`portada`, `rut`— **no compila**. Ni el build
+   ni las pruebas de renderizado lo ven, y cuesta una ejecución de doce minutos
+   descubrirlo. Esto lo caza en un segundo. */
+
+const PLANOS = ['scripts/test-app-real.mjs'];
+const repetidos = [];
+for (const rel of PLANOS) {
+  const bruto = readFileSync(join(RAIZ, rel), 'utf8');
+  const nombres = [...bruto.matchAll(/^const\s+([A-Za-z_$][\w$]*)\s*=/gm)].map((m) => m[1]);
+  const vistos = new Set();
+  nombres.forEach((x) => {
+    if (vistos.has(x)) repetidos.push(`${rel} declara \`const ${x}\` dos veces`);
+    vistos.add(x);
+  });
+}
+if (repetidos.length > 0) repetidos.forEach((p) => console.log(`  ✗ ${p}`));
+ok(repetidos.length === 0,
+  '⚠️ Ningún recorrido declara dos veces el mismo `const` (no compilaría, y se tarda 12 min en verlo)');
+
 if (fallos > 0) {
   console.log(`\n  ${fallos} de ${n} comprobaciones han fallado.`);
   process.exit(1);

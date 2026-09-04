@@ -314,6 +314,10 @@ export const DONDE_VIVEN = {
   'accesorios.accesorios': (cfg) => cfg?.accesorios?.accesorios,
   'accesorios.deseos': (cfg) => cfg?.accesorios?.deseos,
   'gustos.entradas': (cfg) => cfg?.gustos?.entradas,
+  // ⚠️ EH F19 — las tres listas de Cuerpo e higiene, en su único almacén.
+  'cuerpo.rutinas': (cfg) => cfg?.rutinasCuerpo?.rutinas,
+  'cuerpo.registros': (cfg) => cfg?.rutinasCuerpo?.registros,
+  'cuerpo.productos': (cfg) => cfg?.rutinasCuerpo?.productos,
 };
 
 /** Las claves de la papelera que son de Estilo de hombre. */

@@ -99,6 +99,12 @@ export const PARTES_CUERPO = [
   /* La rutina no es una casilla del apartado 1: es lo que construye la F19, y
      tiene su propio interruptor para que apagarla no apague el módulo entero. */
   { id: 'rutinas', nombre: 'Rutinas', icono: '📋', porDefecto: true, deApartado1: false, enFase: 19 },
+  /* ⚠️ **EH F19, apartado 17** — *"se pueden desactivar independientemente:
+     Rutinas, Recomendaciones, Productos, Seguimiento"*. Las cuatro son partes
+     de este módulo, y ninguna sale en la pantalla del apartado 1 salvo el
+     seguimiento, que Josué puso ahí con ☐. */
+  { id: 'recomendaciones', nombre: 'Recomendaciones', icono: '💡', porDefecto: true, deApartado1: false, enFase: 19 },
+  { id: 'productos', nombre: 'Productos', icono: '🧴', porDefecto: true, deApartado1: false, enFase: 19 },
 ];
 
 export const PARTES_DE = { [MODULO_HIGIENE]: PARTES_HIGIENE, [MODULO_CUERPO]: PARTES_CUERPO };
@@ -485,6 +491,11 @@ export const PLAQUITAS_CH = {
 
 export const plaquitasDe = (moduloId) => PLAQUITAS_CH[moduloId] || [];
 
+/* ⚠️ Qué fases están construidas de verdad. Una plaquita de una fase que no está
+   **dice que llega más adelante** en vez de abrir una pantalla vacía (regla 8),
+   y al construirla basta con añadir su número aquí. */
+export const FASES_CONSTRUIDAS_CH = [18, 19];
+
 /* ===========================================================================
    8 · RESUMEN, AUDITORÍA Y PANEL
    =========================================================================== */
@@ -549,6 +560,8 @@ export function auditarCH() {
     textosClinicos: textosDeCH().filter((t) => !sinDiagnostico(t)),
     // Decisión 6 — lo que llega en otra fase, declarado.
     enFase19: todas.filter((p) => p.enFase === 19).length,
+    // ⚠️ Y qué fases están construidas de verdad (F19 llegó en v2.8.0).
+    fasesConstruidas: FASES_CONSTRUIDAS_CH,
     enFase22: todas.filter((p) => p.enFase === 22).length,
     preguntas: PREGUNTAS_CH.length,
   };
@@ -585,8 +598,8 @@ export function panelCH(estado, moduloId, datosGlobales = {}) {
     plaquitas: plaquitasDe(moduloId).map((pl) => ({
       ...pl,
       // Regla 8 — la que todavía no existe lo dice, en vez de abrir un vacío.
-      lista: pl.fase === 18,
-      texto: pl.fase === 18 ? null : TEXTOS_CH.enOtraFase,
+      lista: FASES_CONSTRUIDAS_CH.includes(pl.fase),
+      texto: FASES_CONSTRUIDAS_CH.includes(pl.fase) ? null : TEXTOS_CH.enOtraFase,
     })),
     opcional: TEXTOS_CH.opcional,
     sonDos: TEXTOS_CH.sonDos,
@@ -603,6 +616,10 @@ export function panelCH(estado, moduloId, datosGlobales = {}) {
  * que todavía no existe. Las dos llegan con la **F19**, que es la que crea las
  * rutinas y el seguimiento.
  */
+/* ✅ **Ya llegaron, en la F19 (v2.8.0)**: `cuerpo_hechas` y `cuerpo_registros` en
+   `METRICAS_PROGRESO`, y `cuerpo.rutinas`, `cuerpo.productos` y `cuerpo.registros`
+   en `COLECCIONES_EH` y en el catálogo de la papelera. Se deja la lista escrita
+   para que se vea que la F18 declaró lo que le faltaba en vez de fingirlo. */
 export const CATALOGOS_QUE_LLEGAN_EN_F19 = ['METRICAS_PROGRESO', 'COLECCIONES_EH'];
 
 export { PALABRAS_CLINICAS, NO_LO_SE, NIVELES_ESTILO };

@@ -64,6 +64,7 @@ import { datosGustos, normalizarEntradaGusto } from './gustos';
 import { datosRutinasPiel } from './rutinasPiel';
 import { datosPelo } from './rutinasPelo';
 import { datosSonrisa } from './sonrisa';
+import { datosRutinasCuerpo, normalizarProductoCuerpo, normalizarRegistroCuerpo } from './rutinasCuerpo';
 
 /* ===========================================================================
    1 · EL CATÁLOGO DE ESTADOS (apartados 1-16)
@@ -299,6 +300,38 @@ export const COLECCIONES_EH = [
     leer: (e) => datosSonrisa(e).rutinas,
     crudo: null,
     normalizar: null,
+  },
+  /* ⚠️ EH F19 — las tres listas que la F18 dejó anunciadas. Las rutinas las
+     normaliza el MOTOR con el catálogo de acciones de su módulo, así que se
+     declara que no se revisan una a una (mismo criterio que Skincare y Pelo);
+     los productos y los registros sí traen su normalizador y su ruta en crudo. */
+  {
+    id: 'cuerpo.rutinas', modulo: 'cuerpo', icono: '🚿',
+    titulo: 'Crea tu primera rutina',
+    texto: 'Una rutina son unos pocos pasos que repites. Ni más.',
+    boton: 'Crear rutina',
+    leer: (e) => datosRutinasCuerpo(e).rutinas,
+    crudo: null,
+    normalizar: null,
+  },
+  {
+    id: 'cuerpo.productos', modulo: 'cuerpo', icono: '🧴',
+    titulo: 'Todavía no has apuntado ningún producto',
+    texto: 'Gel, jabón, desodorante o crema: lo que uses de verdad.',
+    boton: 'Añadir producto',
+    leer: (e) => datosRutinasCuerpo(e).productos,
+    crudo: { modulo: 'cuerpo', camino: ['rutinasCuerpo', 'productos'] },
+    normalizar: normalizarProductoCuerpo,
+  },
+  {
+    id: 'cuerpo.registros', modulo: 'cuerpo', icono: '📈',
+    titulo: 'Todavía no has registrado nada',
+    texto: 'Si quieres, puedes apuntar cómo te ha ido cada día.',
+    // ⚠️ El botón de un vacío **invita a añadir**, y hay una prueba que lo mira.
+    boton: 'Añadir un registro',
+    leer: (e) => datosRutinasCuerpo(e).registros,
+    crudo: { modulo: 'cuerpo', camino: ['rutinasCuerpo', 'registros'] },
+    normalizar: normalizarRegistroCuerpo,
   },
 ];
 

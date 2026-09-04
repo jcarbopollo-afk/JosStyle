@@ -95,6 +95,7 @@ export const LIBRERIAS_EH = [
   'recomendacionesPelo', 'productosPelo', 'peluqueria', 'perfilCapilar', 'cortesPelo',
   'perfilPiel', 'rutinasPiel', 'seguimientoPiel', 'recomendacionesPiel', 'productosPiel',
   'motorRutinas', 'motorRecomendaciones', 'motorProductos', 'perfilBarba', 'rutinasBarba',
+  'cuerpoHigiene', 'rutinasCuerpo',
   'sonrisa', 'perfumes', 'recomendacionesPerfumes', 'accesorios', 'gustos',
   'objetivosEnEstiloHombre', 'miEstilo', 'pantallaEH', 'ideasEstilo', 'descubrir',
   'preferenciasEstilo', 'progresoEstilo', 'gestionEstilo', 'buscadorEstilo',

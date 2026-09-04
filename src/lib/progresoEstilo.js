@@ -47,6 +47,7 @@ import { datosRutinasPiel } from './rutinasPiel';
 import { datosPelo } from './rutinasPelo';
 import { datosRutinasBarba } from './rutinasBarba';
 import { datosSonrisa } from './sonrisa';
+import { datosRutinasCuerpo } from './rutinasCuerpo';
 import { datosPerfumes, perfumeActual } from './perfumes';
 import { misPreferencias } from './gustos';
 
@@ -174,6 +175,22 @@ export const METRICAS_PROGRESO = [
     nombre: 'Rutinas de sonrisa hechas',
     icono: '😁', modulo: 'sonrisa', tipo: 'periodo', porDefecto: false,
     fuente: (e) => datosSonrisa(e).hechos,
+    fecha: (x) => x.fecha,
+  },
+  /* ⚠️ EH F19 — la métrica que la F18 dejó anunciada. Una línea por métrica,
+     con su módulo, su tipo y de dónde sale el dato: ni un `case`, ni un `if`. */
+  {
+    id: 'cuerpo_hechas',
+    nombre: 'Rutinas de cuerpo e higiene hechas',
+    icono: '🚿', modulo: 'cuerpo', tipo: 'periodo', porDefecto: true,
+    fuente: (e) => datosRutinasCuerpo(e).hechos,
+    fecha: (x) => x.fecha,
+  },
+  {
+    id: 'cuerpo_registros',
+    nombre: 'Registros de cuerpo e higiene',
+    icono: '🚿', modulo: 'cuerpo', tipo: 'periodo', porDefecto: false,
+    fuente: (e) => datosRutinasCuerpo(e).registros,
     fecha: (x) => x.fecha,
   },
   {

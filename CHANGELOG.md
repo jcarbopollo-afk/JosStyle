@@ -1,5 +1,98 @@
 # CHANGELOG.md
 
+## v2.8.0 — EH Fase 19/65: cuerpo e higiene, rutinas y recomendaciones
+
+### Qué se ha construido
+**🚿 Mi rutina** dentro de Higiene y de Cuidado corporal: la plantilla *"Rutina diaria básica"*, las
+rutinas que él quiera crear, su checklist con **Omitir hoy**, los recordatorios, las recomendaciones,
+los productos, los packs y el seguimiento.
+
+*"Debe ser mucho más ligera que Skincare. **No queremos convertir una ducha en una lista interminable
+de tareas.**"* · *"La aplicación sugiere → el usuario configura → el usuario decide. Sin IA."*
+
+### 🚨 La decisión que gobierna la fase, y por qué no había otra
+La **C-25** dejó *Higiene* y *Cuidado corporal* como **dos** apartados del catálogo. Pero la
+plantilla del apartado 2 —**Ducha, Higiene, Desodorante, Hidratación corporal**— **cruza los dos**:
+tres pasos son de `higiene` y el cuarto de `cuerpo`. Con dos listas de rutinas, esa rutina **no cabe
+en ninguna**.
+
+Así que el almacén es **uno** (`ALMACEN_CH`, dentro de `cuerpo`), la plaquita *"Mi rutina"* de los
+dos módulos abre **la misma lista**, y `PASOS_CUERPO` dice de qué módulo es cada paso. Hay una
+prueba que comprueba exactamente eso: que la plantilla del enunciado mezcla los dos.
+
+### Las siete decisiones que gobiernan la fase
+
+**1. ⚠️ Ni un motor nuevo.** Rutinas, checklist, omitir, historial, calendario y papelera son
+`motorRutinas.js` (F14); las reglas, `motorRecomendaciones.js` (F16); los productos y los packs,
+`motorProductos.js` (F17). **Cuarta, quinta y tercera** llamada respectivamente. Lo único suyo son
+sus etiquetas: las **seis** frecuencias del apartado 6 van sobre las **cuatro** reglas que el motor
+ya sabe hacer, y cada una declara su `tipo`.
+
+**2. ⚠️ Omitir es una TERCERA cosa** (apartado 16: *"Omitir hoy. **Sin penalización. No crear rachas
+obligatorias.**"*). Ni hecho ni pendiente, y **sale de la cuenta del día**: un paso hecho y tres
+omitidos es una rutina **HECHA**. Y ni un contador de racha, ni puntos, ni niveles (D2-02).
+
+**3. 🚨 Antes de recomendar comprar, lo que ya tiene** (apartado 11, con sus palabras: *"Ya tienes un
+producto que podría servir para esto. **Esto evita gastar dinero sin motivo.**"*).
+`yaTienesAlgoPara()` se consulta **antes**, y un producto apuntado pero **no marcado como suyo** no
+cuenta: apuntar no es tener.
+
+**4. ⚠️ La plantilla, el pack y *"Añadir"* se OFRECEN.** Sin `confirmado` no escriben — vigésimo y
+vigesimoprimer `aplicarPlan` del proyecto. En Chromium se comprueba lo que de verdad importa: **ver
+la plantilla no escribe ni un byte**.
+
+**5. ⚠️ Toda regla declara `requiere`** (F9/F16). Una sin requisitos se dispararía con el contexto
+vacío, o sea **el primer día y sin datos**, y hay una prueba que pasa el contexto vacío a las seis y
+comprueba que no se aplica ninguna. *"No lo sé"* tampoco es un valor.
+
+**6. ⚠️ Los cuatro interruptores del apartado 17 son partes del catálogo**, no un mecanismo nuevo:
+Rutinas, Recomendaciones, Productos y Seguimiento se apagan por separado desde ⚙️ Gestionar
+apartados, y **lo guardado se queda**. Apagado devuelve `null`, no `[]`: apagado y vacío son dos
+cosas (lección de la F25).
+
+**7. ⚠️ Y los favoritos globales del apartado 18 NO existen.** La F39 ya lo dejó declarado: JosStyle
+tiene favoritos **por módulo**. Se dice en pantalla, con `existe: false` en el propio dato, en vez de
+fingir un sistema que no está (regla 8).
+
+### 🐛 Cinco fallos reales, todos de la misma familia
+**La forma de lo que devuelve una función**, que es la lección que la F18 acababa de dejar escrita:
+
+- **`silenciadaEn` devuelve un objeto**, no un booleano. Un `!` sobre él es siempre `false`, así que
+  el filtro se llevaba **todas** las recomendaciones y la pantalla salía vacía sin que nada
+  estuviera mal.
+- **`guardadas` son objetos `{id, reglaId, fecha}`**, no ids: un `includes` habría dicho siempre que
+  no.
+- **`compararGenerico` recibe un objeto `{campo: leer}`**, no una lista de filas.
+- **El paso del checklist se llama `etiqueta`**, no `nombre`: la lista salía sin texto.
+- **Los `motivos` del normalizador son los objetos del catálogo**, no sus ids, así que ningún
+  descarte pasaba y *"No me interesa"* no callaba nada.
+
+### 🚨 Y una regla invariante nueva, por la tercera vez de lo mismo
+El recorrido de Chromium es un módulo largo y plano, y una sección nueva que reutiliza un nombre
+—`portada` en la F18, `rut` en la F19— **no compila**. Ni el build ni las pruebas de renderizado lo
+ven, y cuesta **una ejecución de doce minutos** descubrirlo. `scripts/test-imports.mjs` tiene ahora
+una **tercera regla** que lo caza en un segundo.
+
+### Verificación
+`bash scripts/verificar.sh` en verde — build de Vite, **279 comprobaciones nuevas**, **1432 casos de
+renderizado** y **420 comprobaciones en Chromium** (20 nuevas): la plaquita *"Mi rutina"* lleva a
+alguna parte, el vacío tiene su salida, la plantilla se ofrece **sin escribir nada**, usarla guarda
+la rutina **en el almacén de `cuerpo`**, la plaquita enseña *"4 pasos"* y no los pasos, el checklist
+dice que **omitir no cuenta como fallo**, los recordatorios **nacen apagados** y omitir un paso se
+guarda **como omitido, no como hecho**.
+
+### Archivos
+- **Nuevos:** `src/lib/rutinasCuerpo.js`, `scripts/test-cuerpo-higiene-rutinas.mjs`.
+- **Modificados:** `src/views/EstiloHombreView.jsx` (`RutinasCuerpoEH`), `src/App.jsx` (los tres
+  borrados por la papelera global), `src/lib/cuerpoHigiene.js` (dos partes nuevas y
+  `FASES_CONSTRUIDAS_CH`), `src/lib/papelera.js`, `src/lib/gestionEstilo.js`,
+  `src/lib/progresoEstilo.js`, `src/lib/estadosEstilo.js`, `src/lib/buscadorEstilo.js`,
+  `src/lib/pantallaEH.js`, `src/lib/avisosEstilo.js`, `src/lib/calendarioIntegracion.js`,
+  `src/lib/privacidadEstilo.js`, `scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs`,
+  `scripts/test-imports.mjs` (**la tercera regla invariante**), `scripts/verificar.sh`.
+
+---
+
 ## v2.7.0 — EH Fase 18/65: cuerpo e higiene, configuración y perfil · 🔓 **C-25 resuelta**
 
 ### Qué se ha construido

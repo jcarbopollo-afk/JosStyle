@@ -1466,4 +1466,58 @@ ok(/Esto llega más adelante/.test(dentro),
 ok(!/dermatitis|hongos|infección/i.test(dentro),
   '⚠️ Y ni una palabra de diagnóstico (apartado 7)');
 
+/* ── 30 · LAS RUTINAS DE CUERPO E HIGIENE (EH F19) ────────────────────────
+   *"Sugiere → el usuario configura → el usuario decide."* Lo que importa aquí
+   es que la plantilla **se ofrece y no se crea sola**, que **omitir no es
+   fallar**, y que lo que se marca **se guarda de verdad**. */
+
+ok(/Mi rutina/.test(dentro), 'La plaquita "Mi rutina" ya lleva a alguna parte (F19)');
+ok(await pulsar('Mi rutina'), 'Se entra en las rutinas');
+await page.waitForTimeout(800);
+const rut19 = await ver();
+ok(/Crea tu primera rutina/.test(rut19), 'y sin ninguna, el vacío tiene su salida');
+ok(/Rutina diaria básica/.test(rut19), 'con la plantilla del apartado 2 ofrecida');
+ok(/Ducha/.test(rut19) && /Hidrataci/.test(rut19),
+  '⚠️ Y la plantilla MEZCLA pasos de Higiene y de Cuidado corporal: por eso la lista es una');
+ok(/Usar esta rutina/.test(rut19) && /Crear desde cero/.test(rut19), 'con sus botones');
+
+/* ⚠️ Verla NO la ha creado: el almacén sigue sin rutinas. */
+guardado.length = 0;
+await page.waitForTimeout(400);
+ok(guardado.filter((g) => g && g.key === 'estiloHombre').length === 0,
+  '⚠️ Y verla NO ha escrito nada: la plantilla se ofrece, no se crea');
+
+ok(await pulsar('Usar esta rutina'), 'Se puede usar la plantilla');
+await page.waitForTimeout(1300);
+const escRut19 = guardado.filter((g) => g && g.key === 'estiloHombre');
+const almRut19 = escRut19.at(-1)?.value?.modulos?.find((m) => m.id === 'cuerpo')?.config?.rutinasCuerpo;
+ok(!!almRut19 && almRut19.rutinas?.length === 1,
+  '⚠️ PERSISTENCIA: la rutina se guarda, y en el almacén de `cuerpo`');
+ok(almRut19.rutinas[0].pasos?.length === 4, 'con sus cuatro pasos');
+
+const conRut19 = await ver();
+ok(/4 pasos/.test(conRut19), '⚠️ Y la plaquita enseña UNA LÍNEA, no los pasos (apartado 4)');
+ok(!/Crea tu primera rutina/.test(conRut19), 'y el vacío ya no está');
+
+ok(await pulsar('Abrir'), 'Se abre el checklist');
+await page.waitForTimeout(600);
+const check19 = await ver();
+ok(/Ducha/.test(check19) && /Desodorante/.test(check19), 'con sus pasos dentro (apartado 5)');
+ok(/Omitir hoy/.test(check19), 'y su "Omitir hoy" (apartado 16)');
+ok(/no cuenta como fallo/.test(check19),
+  '⚠️ diciendo que omitir NO es fallar: sin penalización ni rachas obligatorias');
+ok(/Activar recordatorio/.test(check19), 'con el recordatorio del apartado 7');
+ok(/empiezan apagados/.test(check19), '⚠️ y diciendo que nacen apagados');
+ok(/no tiene una lista de favoritos com/.test(check19),
+  '⚠️ Y lo que NO existe se dice: no hay favoritos globales (apartado 18, regla 8)');
+
+/* Se marca un paso y se comprueba que se guarda. */
+guardado.length = 0;
+await pulsar('Omitir hoy');
+await page.waitForTimeout(1300);
+const escOm19 = guardado.filter((g) => g && g.key === 'estiloHombre');
+const almOm19 = escOm19.at(-1)?.value?.modulos?.find((m) => m.id === 'cuerpo')?.config?.rutinasCuerpo;
+ok(!!almOm19 && (almOm19.hechos || []).some((h) => (h.omitidos || []).length > 0),
+  '⚠️ PERSISTENCIA: omitir un paso se guarda, y como OMITIDO, no como hecho');
+
 await salir(browser);

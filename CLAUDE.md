@@ -20,7 +20,7 @@ serverless en Vercel que hace de proxy a Anthropic.
 **Pendiente por delante:** la **Entrega 2** (7 módulos nuevos — Estilo de Hombre, Horario Top,
 Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas — **106 fases**; los
 bloques **ME**, **BI**, **AR**, **FO**, **Rachas** y **Horario Top** están terminados, **Sonido** va
-por 3/5, **Estilo de Hombre va por 41/65**, quedan 24 — **ninguna bloqueada: C-25 la resolvió Josué
+por 3/5, **Estilo de Hombre va por 42/65**, quedan 23 — **ninguna bloqueada: C-25 la resolvió Josué
 en v2.7.0**) y el bloque **AXION** de la
 Entrega 1 (≈1100 apartados, aplazado por decisión de Josué hasta terminar la Entrega 2).
 
@@ -154,20 +154,20 @@ de error exacto** antes de asumir nada.
 ## Lo primero que conviene hacer
 
 **🔒 Horario Top está CERRADO (12/12)**, **Sonido va por 3/5** (F1, F3 y F4) y **Estilo de Hombre va
-por 41/65** (v2.7.0: F1-F18, **F20, F21 y F23-F43**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
+por 42/65** (v2.8.0: **F1-F21 y F23-F43**). **Lo que queda de Sonido depende de los archivos de audio**: F2 es la
 biblioteca y F5 la integración, que la necesita.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
 *"dime en qué se diferencian aseo y cuidado corporal"* —que era literalmente la pregunta de la
 contradicción— y contestó las tres: **dos apartados separados** (`higiene` y `cuerpo` siguen siendo
 dos líneas de `MODULOS_EH`), ***Cuidado de manos* y *Cuidado de pies* son la Fase 22** (la casilla de
-la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. La **F18 ya está construida**;
-quedan la **F19** (rutinas y recomendaciones) y la **F22** (manos, uñas y pies).
+la F18 solo enciende), y **se sigue llamando *Higiene***, no *Aseo*. **La F18 (v2.7.0) y la F19
+(v2.8.0) ya están construidas**; queda la **F22** (manos, uñas y pies).
 
-Las siguientes son **EH · Fase 19/65**, **EH · Fase 22/65** y luego **EH · Fase 44/65 — Rendimiento y
-optimización**. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
+Las siguientes son **EH · Fase 22/65** y luego **EH · Fase 44/65 — Rendimiento y optimización**.
+Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
 
-⚠️ **EH F1-F18, F20, F21 y F23-F43 dejaron ciento ochenta y siete cosas que las fases siguientes tienen que respetar:**
+⚠️ **EH F1-F21 y F23-F43 dejaron ciento noventa y tres cosas que las fases siguientes tienen que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y
   sinónimos de búsqueda van EN ESA LÍNEA. Si una fase futura necesita un `case`, un `if` o un
   registro aparte para su apartado, ha roto el apartado 9 de F1 y el 15 de F2, y hay una prueba que
@@ -679,6 +679,29 @@ optimización**. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
   y `test-gestion-estilo` usaban `cuerpo` como ejemplo de módulo sin pantalla y sin partes; la F18 le
   dio las dos cosas y **cinco comprobaciones saltaron con algo que estaba bien**. Se le pregunta al
   catálogo: `MODULOS_EH.find((m) => !LINEAS_DE_PLAQUITA[m.id])`.
+- 🚨 **UN SOLO ALMACÉN PARA LOS DOS MÓDULOS, Y LA PLANTILLA DEL ENUNCIADO ES LA PRUEBA** (F19). La
+  *"Rutina diaria básica"* —Ducha, Higiene, Desodorante, Hidratación corporal— **cruza `higiene` y
+  `cuerpo`**: tres pasos son de uno y el cuarto del otro, así que con dos listas de rutinas esa
+  rutina no cabe en ninguna. `ALMACEN_CH` lo declara, y la plaquita *"Mi rutina"* de los dos módulos
+  abre **la misma lista**. Antes de partir una lista por módulo, mirar si algo del enunciado la cruza.
+- 🐛 **CINCO FALLOS DE LA MISMA FAMILIA — LA FORMA DE LO QUE DEVUELVE UNA FUNCIÓN** (F19), que es la
+  lección que la F18 acababa de dejar escrita: **`silenciadaEn` devuelve un OBJETO**, no un booleano,
+  así que `!silenciadaEn(...)` se llevaba **todas** las recomendaciones y la pantalla salía vacía;
+  **`guardadas` son objetos `{id, reglaId, fecha}`**, no ids; **`compararGenerico` recibe un objeto
+  `{campo: leer}`**, no una lista de filas; **el paso del checklist se llama `etiqueta`**, no
+  `nombre`; y **los `motivos` del normalizador son los objetos del catálogo**, no sus ids, así que
+  *"No me interesa"* no callaba nada. Antes de leer un campo, mirar qué devuelve la función.
+- 🚨 **DOS `const` CON EL MISMO NOMBRE EN `test-app-real.mjs` NO COMPILAN** (F19, tercera vez de lo
+  mismo). El recorrido es un módulo largo y plano, y una sección nueva que reutiliza `portada` o
+  `rut` lo tumba entero — ni el build ni el renderizado lo ven, y cuesta **doce minutos** de
+  ejecución descubrirlo. `scripts/test-imports.mjs` tiene ahora una **tercera regla invariante** que
+  lo caza en un segundo: **ejecutarlo antes de lanzar el recorrido**.
+- ⚠️ **ANTES DE RECOMENDAR COMPRAR, LO QUE YA TIENE** (F19, apartado 11: *"esto evita gastar dinero
+  sin motivo"*). `yaTienesAlgoPara()` se consulta **antes** que la recomendación, y **apuntar no es
+  tener**: un producto sin marcar como suyo no cuenta.
+- ⚠️ **LOS CUATRO INTERRUPTORES DEL APARTADO 17 SON PARTES DEL CATÁLOGO** (F19), no un mecanismo
+  nuevo: Rutinas, Recomendaciones, Productos y Seguimiento se apagan por separado desde ⚙️ Gestionar
+  apartados y **lo guardado se queda**. Apagado devuelve `null`, no `[]`.
 
 ⚠️ **Y dos lecciones de las pruebas de este bloque:** cuatro veces una comprobación saltó con algo
 que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo llega el calendario, el

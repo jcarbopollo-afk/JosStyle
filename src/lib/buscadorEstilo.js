@@ -57,6 +57,7 @@ import { datosGustos } from './gustos';
 import { datosRutinasPiel } from './rutinasPiel';
 import { datosPelo } from './rutinasPelo';
 import { datosRutinasBarba } from './rutinasBarba';
+import { datosRutinasCuerpo } from './rutinasCuerpo';
 import { datosSonrisa } from './sonrisa';
 import {
   PARTES_HIGIENE, PARTES_CUERPO, parteActivaCH, MODULO_HIGIENE, MODULO_CUERPO,
@@ -130,8 +131,19 @@ export const FUENTES_BUSQUEDA = [
     id: 'rutinasBarba', modulo: 'barba', grupo: 'Rutinas de barba', icono: '🧔', zona: 'rutinas',
     lista: (e) => nombresDe(datosRutinasBarba(e).rutinas),
   },
-  /* ⚠️ **EH F18** — lo que se busca de Higiene y de Cuidado corporal son **sus
-     partes**: es lo único que guardan hasta que llegue la F19. */
+  /* ⚠️ **EH F19** — sus rutinas y sus productos, con la lista de siempre. El
+     almacén es **uno** para los dos módulos, así que esto es UNA fuente, no
+     dos: dos habrían enseñado cada rutina repetida. */
+  {
+    id: 'rutinasCuerpo', modulo: 'cuerpo', grupo: 'Rutinas de cuerpo e higiene', icono: '🚿', zona: 'rutina',
+    lista: (e) => nombresDe(datosRutinasCuerpo(e).rutinas),
+  },
+  {
+    id: 'productosCuerpo', modulo: 'cuerpo', grupo: 'Productos de cuerpo e higiene', icono: '🧴', zona: 'productos',
+    lista: (e) => nombresDe(datosRutinasCuerpo(e).productos),
+  },
+  /* ⚠️ **EH F18** — y sus partes, que es lo que se elige en la pantalla de
+     bienvenida de cada uno de los dos módulos. */
   {
     id: 'partesHigiene', modulo: 'higiene', grupo: 'Higiene', icono: '🧼', zona: null,
     lista: (e) => PARTES_HIGIENE.filter((p) => parteActivaCH(e, MODULO_HIGIENE, p.id))

@@ -21,6 +21,7 @@ import { eventosDePelo } from './rutinasPelo';
 import { eventosDePeluqueria } from './peluqueria';
 import { eventosDePiel } from './rutinasPiel';
 import { eventosDeBarba } from './rutinasBarba';
+import { eventosDeCuerpo } from './rutinasCuerpo';
 import { eventosDeSonrisa } from './sonrisa';
 import { eventosDeGustos } from './gustos';
 
@@ -265,6 +266,8 @@ export function eventosDerivados({ objetivos, estudios, calistenia, futbol, prod
        un calendario de barba**"*. Tercer módulo de Estilo de Hombre que entra
        por esta misma puerta, con la misma forma y el mismo motor. */
     ...(estiloHombre && desde && hasta ? eventosDeBarba(estiloHombre, desde, hasta) : []),
+    // ⚠️ EH F19, apartado 18 — *"calendario global"*. Derivados y de solo lectura.
+    ...(estiloHombre && desde && hasta ? eventosDeCuerpo(estiloHombre, desde, hasta) : []),
     /* EH F23, apartado 15 — *"nunca crear un calendario dental independiente"*.
        Cuarto módulo de Estilo de Hombre por esta misma puerta. */
     ...(estiloHombre && desde && hasta ? eventosDeSonrisa(estiloHombre, desde, hasta) : []),

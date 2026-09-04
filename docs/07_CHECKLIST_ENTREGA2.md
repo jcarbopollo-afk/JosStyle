@@ -1463,44 +1463,86 @@ El módulo más grande de todo el proyecto. Una central personal de salud, cuida
 - [x] Comprobar que los datos permanecen al desactivar módulos.
 - [x] Probar todo en móvil. — *le toca a Josué (R1); aquí, 19 comprobaciones en Chromium*
 
-#### EH · Fase 19/65 — CUERPO E HIGIENE: RUTINAS Y RECOMENDACIONES
-- [ ] PLAQUITA «MI RUTINA»
-- [ ] RUTINA BÁSICA
-- [ ] RUTINAS PERSONALIZADAS
-- [ ] PEQUEÑAS PLAQUITAS
-- [ ] CHECKLIST
-- [ ] FRECUENCIA
-- [ ] RECORDATORIOS
-- [ ] RECOMENDACIONES
-- [ ] RECOMENDACIONES SEGÚN PERFIL
-- [ ] RECOMENDACIONES DE PRODUCTOS
-- [ ] PRODUCTOS QUE YA TIENE
-- [ ] ALTERNATIVAS
-- [ ] PACKS
-- [ ] NIVEL
-- [ ] EDITAR
-- [ ] OMITIR
-- [ ] DESACTIVAR
-- [ ] CONEXIONES GLOBALES
-- [ ] PRUEBAS
-- [ ] Crear rutina.
-- [ ] Usar plantilla.
-- [ ] Personalizar plantilla.
-- [ ] Crear desde cero.
-- [ ] Añadir pasos.
-- [ ] Reordenarlos.
-- [ ] Asociar productos.
-- [ ] Cambiar frecuencia.
-- [ ] Activar/desactivar recordatorio.
-- [ ] Marcar rutina.
-- [ ] Omitir paso.
-- [ ] Recibir recomendación.
-- [ ] Ignorar recomendación.
-- [ ] Guardar producto.
-- [ ] Crear pack.
-- [ ] Desactivar módulos.
-- [ ] Reactivarlos.
-- [ ] Comprobar persistencia.
+#### EH · Fase 19/65 — CUERPO E HIGIENE: RUTINAS Y RECOMENDACIONES ✅ COMPLETADA (v2.8.0)
+
+> **`src/lib/rutinasCuerpo.js`** (279 comprobaciones) + `RutinasCuerpoEH` en
+> `EstiloHombreView.jsx`, con sus altas en los siete catálogos globales. Sin SQL nuevo.
+>
+> 🚨 **UN SOLO ALMACÉN PARA LOS DOS MÓDULOS, Y LA PLANTILLA DEL ENUNCIADO ES LA PRUEBA.** La C-25
+> dejó *Higiene* y *Cuidado corporal* como dos apartados del catálogo, pero la *"Rutina diaria
+> básica"* del apartado 2 —**Ducha, Higiene, Desodorante, Hidratación corporal**— cruza los dos:
+> tres pasos son de `higiene` y el cuarto de `cuerpo`. Con dos listas esa rutina no cabe en
+> ninguna. Así que el almacén es **uno** (`ALMACEN_CH`, en `cuerpo`) y la plaquita *"Mi rutina"*
+> de los dos módulos abre **la misma**. `PASOS_CUERPO` dice de qué módulo es cada paso.
+>
+> ⚠️ **NI UN MOTOR NUEVO.** Cuarta llamada a `motorRutinas.js` (F14), **quinta** a
+> `motorRecomendaciones.js` (F16) y tercera a `motorProductos.js` (F17). Lo único suyo son sus
+> etiquetas: seis frecuencias sobre las **cuatro** reglas que el motor ya sabe hacer.
+>
+> ⚠️ **OMITIR ES UNA TERCERA COSA** (apartado 16, con sus palabras: *"sin penalización. No crear
+> rachas obligatorias"*). Un paso hecho y tres omitidos es una rutina **HECHA**, y hay una prueba
+> que lo comprueba. Ni un contador de racha, ni puntos, ni niveles (D2-02).
+>
+> ⚠️ **ANTES DE RECOMENDAR COMPRAR, LO QUE YA TIENE** (apartado 11: *"esto evita gastar dinero sin
+> motivo"*). `yaTienesAlgoPara()` se consulta **antes** que la recomendación, y un producto
+> apuntado pero no marcado como suyo **no cuenta**.
+>
+> ⚠️ **LA PLANTILLA Y EL PACK SE OFRECEN, NO SE CREAN**: `usarPlantillaCuerpo` sin `confirmado` no
+> escribe (vigésimo `aplicarPlan`), y *"Añadir"* de una recomendación tampoco (vigesimoprimero).
+> Comprobado también en Chromium: **ver la plantilla no escribe ni un byte**.
+>
+> ⚠️ **Y LOS FAVORITOS GLOBALES DEL APARTADO 18 NO EXISTEN**, como dejó declarado la F39. Se dice
+> en pantalla, con `existe: false` en el propio dato, en vez de fingir un sistema que no está.
+>
+> 🐛 **Cuatro fallos reales, todos de la misma familia — LA FORMA DE LO QUE DEVUELVE UNA FUNCIÓN**:
+> `silenciadaEn` devuelve un **objeto**, no un booleano, así que `!silenciadaEn(...)` se llevaba
+> **todas** las recomendaciones; `guardadas` son objetos `{id, reglaId, fecha}`, no ids;
+> `compararGenerico` recibe un **objeto** `{campo: leer}`, no una lista de filas; y el paso del
+> checklist se llama `etiqueta`, no `nombre`, así que la lista salía sin texto. Y una quinta: los
+> `motivos` del normalizador son los **objetos** del catálogo, no sus ids, así que *"No me
+> interesa"* no callaba nada.
+>
+> 🚨 **Y una lección que ya va por la tercera vez, con su regla invariante nueva**: el recorrido de
+> Chromium es un módulo largo y plano, y una sección que reutiliza un nombre —`portada`, `rut`—
+> **no compila**. Cuesta doce minutos descubrirlo. `scripts/test-imports.mjs` tiene ahora una
+> **tercera regla** que lo caza en un segundo.
+- [x] PLAQUITA «MI RUTINA»
+- [x] RUTINA BÁSICA
+- [x] RUTINAS PERSONALIZADAS
+- [x] PEQUEÑAS PLAQUITAS
+- [x] CHECKLIST
+- [x] FRECUENCIA
+- [x] RECORDATORIOS
+- [x] RECOMENDACIONES
+- [x] RECOMENDACIONES SEGÚN PERFIL
+- [x] RECOMENDACIONES DE PRODUCTOS
+- [x] PRODUCTOS QUE YA TIENE
+- [x] ALTERNATIVAS
+- [x] PACKS
+- [x] NIVEL
+- [x] EDITAR
+- [x] OMITIR
+- [x] DESACTIVAR
+- [x] CONEXIONES GLOBALES — *seis, y uno **no existe**: se declara*
+- [x] PRUEBAS
+- [x] Crear rutina.
+- [x] Usar plantilla.
+- [x] Personalizar plantilla.
+- [x] Crear desde cero.
+- [x] Añadir pasos.
+- [x] Reordenarlos.
+- [x] Asociar productos.
+- [x] Cambiar frecuencia.
+- [x] Activar/desactivar recordatorio.
+- [x] Marcar rutina.
+- [x] Omitir paso.
+- [x] Recibir recomendación.
+- [x] Ignorar recomendación.
+- [x] Guardar producto.
+- [x] Crear pack.
+- [x] Desactivar módulos.
+- [x] Reactivarlos.
+- [x] Comprobar persistencia.
 
 #### EH · Fase 20/65 — BARBA Y AFEITADO: PERFIL Y CONFIGURACIÓN ✅ COMPLETADA (v1.84.0)
 
