@@ -1,5 +1,51 @@
 # CHANGELOG.md
 
+## v3.23.0 — La biblioteca sonora, completa: 46 de 46
+
+### Qué se ha construido
+Josué produjo en FL Studio **los cuarenta y seis archivos** de la biblioteca, en una tarde. Los
+últimos cuatro fueron los hitos de 7, 30, 50 y 75 días.
+
+**El motor puede reproducir los 46. Ninguno queda mudo.**
+
+Y la firma —intervalos 0, 5, 7— aparece medida en los siete que la especificación exige:
+`level_up`, `achievement_unlocked`, `personal_record`, `grand_achievement`,
+`streak_milestone_30`, `streak_milestone_100` y `streak_milestone_365`. Los cuatro grandes la
+resuelven además con la octava.
+
+### 🐛 El validador rechazaba tres hitos correctos, por la otra mitad del mismo fallo
+La comprobación de *"este sonido es único, no lleva variantes"* preguntaba por su cuenta si el
+nombre terminaba en `_NN`. En `ui_click_01` ese número es el de la variante; en
+`streak_milestone_30` **es el sonido**.
+
+Resultado: `streak_milestone_30`, `50` y `75` —únicos, correctos y con la firma— se rechazaban por
+"llevar variantes".
+
+⚠️ La primera mitad de este fallo se arregló hace unas horas, en la búsqueda de la ficha. Ésta se
+quedó porque **preguntaba lo mismo en otro sitio**. Ahora se calcula una vez, en `esVariante`, y las
+dos comprobaciones usan el mismo dato. Verificado con los tres casos: un hito único pasa, una
+variante real pasa, y una variante de un sonido que debe ser único (`level_up_02`) se sigue
+rechazando.
+
+### Lo que queda del ámbito del sonido
+**Ocho sonidos del catálogo no los emite nadie**, y ninguno es un olvido:
+
+| | Motivo |
+|---|---|
+| `streak_freeze_used` | No hay comodines de racha (RA F1) |
+| `reward_small` · `reward_medium` · `reward_major` | No hay sistema de recompensas (D2-02) |
+| `xp_small` · `xp_medium` · `xp_large` | No hay XP: RA F3 no lo construyó |
+| `level_up` | No hay niveles: RA F3 no los construyó |
+
+Siete de los ocho **ni siquiera tienen archivo**, porque la biblioteca no los declara. `level_up` sí
+lo tiene y sí puede sonar; lo que no hay es un nivel que subir.
+
+⚠️ **Y sigue faltando lo más importante: ningún botón de la aplicación dispara sonido.**
+`reproducir()` se llama desde un solo sitio, el botón «▶ Escuchar» de Ajustes. La biblioteca está
+entera y el motor la entiende; conectarla a la interfaz es trabajo que no está hecho, y decir lo
+contrario ahora sería la mentira más fácil de contar.
+
+
 ## v3.22.0 — La firma suena, y el validador dejaba fuera a los diez hitos
 
 ### Qué se ha construido

@@ -238,7 +238,11 @@ export function validarArchivo({ nombre = '', duracionMs = 0, tamanoKb = 0 } = {
      ⚠️ Se prueba el nombre entero **primero**. Si es una ficha, es una ficha; el
      recorte de variante solo se intenta cuando no lo es. */
   const sinExtension = nombre.replace(/\.[a-z0-9]+$/i, '');
-  const base = fichaDe(sinExtension) ? sinExtension : sinExtension.replace(/_\d{2}$/, '');
+  /* Si el nombre entero es una ficha, ese \`_NN\` es parte del sonido y no una
+     variante. Se calcula una sola vez: la comprobación de "sonido único" de más
+     abajo se equivocaba igual por preguntarlo por su cuenta. */
+  const esVariante = !fichaDe(sinExtension) && /_\d{2}$/.test(sinExtension);
+  const base = esVariante ? sinExtension.replace(/_\d{2}$/, '') : sinExtension;
   const ficha = fichaDe(base);
 
   if (!nombre.toLowerCase().endsWith(`.${FORMATO}`)) problemas.push(`Tiene que ser .${FORMATO}.`);
@@ -254,8 +258,11 @@ export function validarArchivo({ nombre = '', duracionMs = 0, tamanoKb = 0 } = {
   }
   if (tamanoKb > MAX_KB) problemas.push(`Pesa demasiado: máximo ${MAX_KB} KB.`);
 
-  // ⚠️ Un sonido único con variantes deja de ser un momento.
-  if (ficha.unico && /_\d{2}$/.test(nombre.replace(/\.[a-z0-9]+$/i, ''))) {
+  /* ⚠️ Un sonido único con variantes deja de ser un momento.
+     🐛 Esto miraba el `_NN` por su cuenta, así que `streak_milestone_30` —único
+     y correcto— se rechazaba por llevar "variante 30". Ahora usa `esVariante`,
+     que ya sabe distinguir el número de un hito del de una versión. */
+  if (ficha.unico && esVariante) {
     problemas.push('Este sonido tiene que ser único: no lleva variantes.');
   }
 
