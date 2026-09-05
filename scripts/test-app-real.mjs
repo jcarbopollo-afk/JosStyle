@@ -2263,4 +2263,70 @@ ok(/Tu archivo personal/i.test(docs_bl1),
 ok(!/próximamente|en construcción/i.test(docs_bl1),
   '🚨 y no promete nada que no exista');
 
+/* ── E3 F17 (BL F2) · LIBROS ─────────────────────────────────────────────
+   Se prueba el recorrido entero de un libro: crearlo, verlo, abrirlo,
+   actualizar la página, terminarlo y comprobar que lo que se guarda en Supabase
+   es lo que dice la pantalla. */
+almacen.biblioteca = { apuntes: [], enlaces: [], libros: [], ideas: [], colecciones: [] };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Vida');
+await pulsar('Biblioteca');
+ok(await pulsar('Libros'), 'Libros se abre desde el lanzador');
+ok(await pulsar('Añadir libro'), 'y el estado vacío abre el formulario');
+
+await page.waitForSelector('input[aria-label="Título del libro"]', { timeout: 6000 });
+await page.fill('input[aria-label="Título del libro"]', 'Hábitos atómicos');
+await page.fill('input[aria-label="Autor del libro"]', 'James Clear');
+await page.fill('input[aria-label="Páginas del libro"]', '250');
+await page.selectOption('select[aria-label="Estado del libro"]', 'leyendo');
+ok(await pulsar('Guardar libro'), 'y se guarda');
+
+const trasCrear_bl2 = await esperarTexto(/Hábitos atómicos/i);
+ok(/Hábitos atómicos/i.test(trasCrear_bl2), '🚨 EL LIBRO SE CREA Y SE VE (criterio 1)');
+ok(/continuar leyendo/i.test(trasCrear_bl2),
+  '🚨 y como está LEYENDO sale destacado arriba: la tarjeta de "Continuar leyendo" (criterio 14)');
+ok(/1 leyendo/i.test(trasCrear_bl2),
+  '⚠️ con el resumen de arriba sacado de los datos de verdad (criterio 15)');
+ok(/0 %|0 páginas/i.test(trasCrear_bl2),
+  '⚠️ y su progreso, que empieza a cero porque el total sí se sabe');
+
+/* El detalle, y actualizar la página. */
+ok(await pulsar('Continuar →'), 'la tarjeta destacada abre el detalle (criterio 14)');
+const detalle_bl2 = await esperarTexto(/Página por la que vas/i);
+ok(/James Clear/.test(detalle_bl2), '⚠️ el detalle enseña el autor');
+ok(/Leyendo/i.test(detalle_bl2), 'y su estado');
+
+await page.fill('input[aria-label="Actualizar la página actual"]', '180');
+ok(await pulsar('Guardar la página'), 'se guarda la página por la que va');
+const trasPagina_bl2 = await esperarTexto(/72 %/);
+ok(/180 \/ 250 páginas · 72 %/.test(trasPagina_bl2),
+  '🚨 EL PORCENTAJE SE CALCULA SOLO: 180 de 250 son el 72 % (criterios 5 y 6)');
+
+/* Terminarlo, con su celebración. */
+ok(await pulsar('✓ Terminado'), 'se marca como terminado');
+const trasTerminar_bl2 = await esperarTexto(/Un libro más|100 %/);
+ok(/100 %/.test(trasTerminar_bl2),
+  '🚨 AL TERMINAR, EL PROGRESO LLEGA AL 100 % (criterio 7)');
+ok(/Un libro más/i.test(trasTerminar_bl2),
+  '⚠️ con su celebración discreta, que se cierra al tocar');
+
+const librosGuardados_bl2 = guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value?.libros;
+const guardadoFinal_bl2 = librosGuardados_bl2?.[0];
+ok(guardadoFinal_bl2?.estado === 'terminado' && guardadoFinal_bl2?.paginaActual === 250,
+  '🚨 y LO QUE SE GUARDA es lo que dice la pantalla: terminado y en la página 250');
+ok(Boolean(guardadoFinal_bl2?.fin),
+  '🚨 con su fecha de finalización puesta sola (criterio 8)');
+ok(!('porcentaje' in (guardadoFinal_bl2 || {})),
+  '🚨 y SIN el porcentaje guardado: se deriva, o mentiría en cuanto él corrija las páginas');
+
+ok(await pulsar('Cerrar el detalle del libro'), 'se cierra el detalle');
+const listaFinal_bl2 = await esperarTexto(/Libros terminados/i);
+ok(/Libros terminados/i.test(listaFinal_bl2),
+  '🚨 y el libro aparece en el historial de terminados (criterio 13)');
+ok(!/continuar leyendo/i.test(listaFinal_bl2),
+  '⚠️ mientras que "Continuar leyendo" ya no está: no queda ninguno en marcha');
+ok(/1 terminado/i.test(listaFinal_bl2), '⚠️ y el resumen de arriba lo refleja');
+
 await salir(browser);

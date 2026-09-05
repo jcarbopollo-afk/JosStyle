@@ -1,5 +1,63 @@
 # CHANGELOG.md
 
+## v3.38.0 — Entrega 3 · Fase 17 (BL F2): Biblioteca — Libros
+
+La mini-app entera: estados, progreso, portada, notas, filtros, búsqueda, orden, historial y
+estadísticas básicas. *"Debe ser visual y agradable, **no un gestor bibliográfico complejo**."*
+
+### Una sola fábrica de libro, no dos
+La BL F1 dejó el modelo mínimo —título, autor y fecha— para que su botón de crear escribiera algo
+de verdad. `crearLibro` y `normalizarLibro` **se han mudado a `src/lib/libros.js`**, y
+`biblioteca.js` las importa y las reexporta. Escribir una segunda fábrica habría dejado dos formas
+del mismo libro conviviendo, y la que perdiera se llevaría campos en el siguiente guardado (regla 5).
+
+### Lo que el enunciado prohíbe hacer con los datos, cumplido en el DATO
+- 🚨 **Nunca más de un 100 %.** No se comprueba al pintar: **la página no puede pasar del total**,
+  ni al crear el libro, ni al editarlo, ni al normalizar lo guardado.
+- 🚨 **Sin total de páginas no hay porcentaje**, y devuelve `null` — no un 0 %. Un cero diría que no
+  ha leído nada de un libro cuyo tamaño simplemente no conocemos.
+- 🚨 **El porcentaje no se guarda**: se deriva. Guardarlo haría que mintiera en cuanto él corrija
+  las páginas.
+- 🚨 **Terminar un libro no borra nada de antes.** La fecha de inicio se queda, una fecha de fin que
+  ya tuviera no se pisa, y sacarlo de *Terminado* tampoco la borra.
+- 🚨 **Los terminados no se borran**, y la forma de cumplirlo es que **no exista ninguna función que
+  los quite**.
+- ⚠️ **Volver a un libro tras una pausa no reescribe cuándo lo empezó.**
+
+### 🚨 Y el fallo que encontró el navegador
+`LibraryView` usaba `onUpdateLibro`, `onSubirPortada` y `onBorrarPortada` **sin destructurarlos en
+sus props**. La pantalla de Libros lanzaba `onUpdateLibro is not defined` al abrirse y **se veía en
+blanco**.
+
+No lo vieron **ni el build, ni las 1544 pruebas de renderizado** —que pintan el componente hijo
+directamente, con sus props puestas a mano— **ni las de Node**. Es la misma familia que `<Field>` en
+EH F39, y ahora `scripts/test-imports.mjs` tiene una **regla invariante que lo caza en un segundo**.
+
+🐛 Su primera versión **no cazaba nada**, y por un motivo que merece quedar escrito: en
+`onUpdate={onUpdateLibro}` el nombre usado va seguido de `}`, que es exactamente la forma de una prop
+destructurada — así que **el uso se contaba a sí mismo como declaración**. Se arregla quitando los
+valores de las props antes de buscar declaraciones. Comprobado quitando la línea buena y viendo la
+regla ponerse roja.
+
+### Las portadas usan el almacenamiento que ya existe
+El bucket `biblioteca` de la Fase 11, el mismo de los PDF y los vídeos: *"no crear otro sistema de
+almacenamiento"*. **Ni un bloque de SQL nuevo que Josué tenga que ejecutar.** Se guarda el **camino**,
+nunca la URL firmada —caduca en una hora—, y un libro sin portada dibuja sus iniciales en vez de una
+imagen inventada. Eliminar un libro se lleva su portada del almacenamiento: dejarla sería un archivo
+huérfano ocupando sitio para siempre.
+
+### La pantalla
+Resumen real arriba (*"2 leyendo · 1 pendiente · 1 terminado"*), **Continuar leyendo** con el libro
+que tocó más recientemente —derivado de `actualizado`, sin contador guardado—, rejilla de dos
+columnas, filtros sacados de los propios estados, búsqueda por título y autor **sin acentos ni
+mayúsculas** (nadie escribe tildes en el móvil), cuatro órdenes y el detalle a pantalla completa con
+`createPortal` (regla 3).
+
+Un formulario, no dos: el mismo crea y edita.
+
+**Verificación: `═══ TODO CORRECTO ═══`. 114 comprobaciones nuevas de Node, 52 casos de renderizado
+nuevos y el recorrido de Chromium.**
+
 ## v3.37.0 — Entrega 3 · Fase 16 (BL F1): la Biblioteca como lanzador de mini-apps
 
 Empieza el bloque de **Biblioteca**. *"Biblioteca debe funcionar como una base de conocimiento

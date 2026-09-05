@@ -209,7 +209,57 @@ ok(repetidos.length === 0,
   '⚠️ Ningún recorrido declara dos veces el mismo `const` (no compilaría, y se tarda 12 min en verlo)');
 
 /* ===========================================================================
-   4 · EL STUB DE SUPABASE TIENE QUE EXPORTAR LO MISMO QUE SUPABASE
+   4 · UN MANEJADOR `onAlgo` USADO Y NO DECLARADO
+   ===========================================================================
+   🚨 Existe porque la BL F2 usó `onUpdateLibro`, `onSubirPortada` y
+   `onBorrarPortada` en el JSX de `LibraryView` **sin destructurarlos en las
+   props**, y la pantalla de Libros lanzaba `onUpdateLibro is not defined` al
+   entrar: se veía en blanco.
+
+   No lo vieron **ni el build, ni las 1544 pruebas de renderizado** —que pintan
+   el componente hijo directamente, con sus props puestas a mano— **ni las de
+   Node**. Lo cazó Chromium, como la vez de `<Field>` en EH F39. Esto lo caza en
+   un segundo. */
+
+const manejadores = [];
+for (const ruta of archivos) {
+  if (!ruta.endsWith('.jsx')) continue;
+  const bruto = readFileSync(ruta, 'utf8');
+  const limpio = bruto.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  /* 🐛 Y aquí está la trampa que la primera versión de esta regla pisó: en
+     `onUpdate={onUpdateLibro}` el nombre USADO va seguido de `}`, que es
+     exactamente la forma de una prop destructurada — así que el uso se contaba
+     a sí mismo como declaración y la regla no cazaba nada.
+
+     La solución es **quitar los valores de las props de JSX** (`={…}`) antes de
+     buscar declaraciones: lo que sobrevive son las destructuraciones, los
+     parámetros y las constantes, que es lo que declara de verdad. Es la
+     enésima vez de la lección: una comprobación que no reconoce lo que busca es
+     peor que no tenerla (EH F43). */
+  const soloDeclaraciones = bruto.replace(/=\{[^{}]*\}/g, '=@');
+  const disponibles = new Set([
+    ...[...soloDeclaraciones.matchAll(/\b(on[A-Z]\w*)\s*[,}:=)]/g)].map((m) => m[1]),
+    ...[...soloDeclaraciones.matchAll(/\b(?:const|let|function)\s+(on[A-Z]\w*)/g)].map((m) => m[1]),
+  ]);
+  /* Y lo que USA: `onAlgo` a secas dentro de una expresión de JSX
+     (`onGuardar={onUpdateLibro}`) o llamado (`onUpdateLibro(x)`). */
+  const usados = new Set([
+    ...[...limpio.matchAll(/=\{\s*(on[A-Z]\w*)\s*\}/g)].map((m) => m[1]),
+    ...[...limpio.matchAll(/(?<![.\w])(on[A-Z]\w*)\s*\(/g)].map((m) => m[1]),
+  ]);
+  for (const nombre of usados) {
+    if (!disponibles.has(nombre)) {
+      manejadores.push(`${relative(RAIZ, ruta)} usa \`${nombre}\` sin declararlo (lanzaría al pintar esa pantalla)`);
+    }
+  }
+}
+if (manejadores.length > 0) manejadores.forEach((p) => console.log(`  ✗ ${p}`));
+ok(manejadores.length === 0,
+  '🚨 Ningún manejador `onAlgo` se usa sin declararlo (la pantalla lanzaría al abrirse, y el build no lo ve)');
+
+/* ===========================================================================
+   5 · EL STUB DE SUPABASE TIENE QUE EXPORTAR LO MISMO QUE SUPABASE
    ===========================================================================
    🚨 Existe porque el de `scripts/smoke.mjs` exportaba `getSignedArchivoUrl`,
    un nombre que **`src/lib/supabase.js` no exporta**, y no tenía ninguno de los

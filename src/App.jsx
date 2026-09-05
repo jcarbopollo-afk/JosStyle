@@ -1893,6 +1893,20 @@ export default function App() {
      `snapshotAndSave` (y por tanto por Deshacer) y se borran por la papelera. */
   const addLibro = (l) => l && snapshotAndSave({ biblioteca: { ...biblioteca, libros: [...biblioteca.libros, l] } });
   const deleteLibro = (id) => eliminarConPapelera('biblioteca', 'libros', id);
+  /* E3 F17 (BL F2) — editar un libro, cambiarle el estado, actualizar su página y
+     marcarlo terminado son **la misma escritura**: la vista devuelve el libro ya
+     calculado por `libros.js` y aquí solo se sustituye. Una función por acción
+     habría sido cuatro sitios donde arreglar el mismo fallo. */
+  const updateLibro = (libro) => libro && snapshotAndSave({
+    biblioteca: { ...biblioteca, libros: biblioteca.libros.map((l) => (l.id === libro.id ? libro : l)) },
+  });
+  /* ⚠️ La portada usa el bucket `biblioteca`, el de la Fase 11: mismo modelo de
+     acceso y **ni un bloque de SQL nuevo** que Josué tenga que ejecutar. */
+  const subirPortadaLibro = async (file) => {
+    if (!uidUser || !file) return null;
+    try { return await uploadBibliotecaArchivo(uidUser, file); } catch (e) { console.error(e); return null; }
+  };
+  const borrarPortadaLibro = (path) => { if (path) deleteBibliotecaArchivo(path); };
   const addIdea = (i) => i && snapshotAndSave({ biblioteca: { ...biblioteca, ideas: [...biblioteca.ideas, i] } });
   const deleteIdea = (id) => eliminarConPapelera('biblioteca', 'ideas', id);
   const addColeccion = (c) => c && snapshotAndSave({ biblioteca: { ...biblioteca, colecciones: [...biblioteca.colecciones, c] } });
@@ -2507,7 +2521,8 @@ export default function App() {
             /* E3 F16 (BL F1) — las tres listas nuevas del lanzador. Escriben en la
                misma clave `biblioteca` y se borran por la única puerta que hay,
                `eliminarConPapelera` (ME F3): vuelven de Eliminados recientemente. */
-            onAddLibro={addLibro} onDeleteLibro={deleteLibro}
+            onAddLibro={addLibro} onDeleteLibro={deleteLibro} onUpdateLibro={updateLibro}
+            onSubirPortada={subirPortadaLibro} onBorrarPortada={borrarPortadaLibro}
             onAddIdea={addIdea} onDeleteIdea={deleteIdea}
             onAddColeccion={addColeccion} onDeleteColeccion={deleteColeccion}
             accent={accent}

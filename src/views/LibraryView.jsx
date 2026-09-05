@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Search, FileText, Video as VideoIcon, Image as ImageIcon, StickyNote, Link as LinkIcon,
-  Trash2, ExternalLink, ChevronDown, ChevronUp, Upload, ArrowLeft, Plus,
+  Trash2, ExternalLink, ChevronDown, ChevronUp, Upload, ArrowLeft, Plus, Pencil,
   BookMarked, Bookmark, Lightbulb, FolderOpen,
 } from 'lucide-react';
 import { COLORS, TIPOS_ARCHIVO_BIBLIOTECA } from '../tokens';
@@ -9,9 +10,19 @@ import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedBibliotecaUrl } from '../lib/supabase';
 import {
   MINI_APPS, miniApp, elementosDe, indicadorDe, diferenciaDe,
-  crearLibro, crearIdea, crearColeccion, CLASE_TARJETA, retrasoDeTarjeta,
+  crearIdea, crearColeccion, CLASE_TARJETA, retrasoDeTarjeta,
 } from '../lib/biblioteca';
-import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, EmptyHint, BotonBorrar, BotonBorrarDefinitivo } from '../components/ui';
+/* BL F2 — Libros tiene su propia librería. `crearLibro` y `normalizarLibro`
+   vivían en `biblioteca.js` desde la F1 y se mudaron aquí al desarrollarla:
+   una sola fábrica, no dos. */
+import {
+  ESTADOS_LIBRO, estadoLibro, ESTADO_POR_DEFECTO, crearLibro, editarLibro,
+  progresoDe, actualizarPagina, cambiarEstado, marcarTerminado,
+  lineaResumen, libroActual, FILTROS_LIBROS, ORDENES_LIBROS,
+  filtrarLibros, ordenarLibros, estadisticasLectura, historialLectura,
+  tituloDeLibroValido, revisarPortada, inicialesDe,
+} from '../lib/libros';
+import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, GhostBtn, EmptyHint, BotonBorrar, BotonBorrarDefinitivo } from '../components/ui';
 
 // Fase 11 — Biblioteca: PDFs, vídeos, fotos, apuntes y enlaces conviven en un único listado
 // buscable. Los tres tipos de archivo comparten forma { id, tipo, path, titulo, fecha } +
@@ -226,24 +237,6 @@ export function AnadirNotaRapida({ onAdd, accent }) {
 /* Los formularios de las tres listas nuevas. **Mínimos a propósito**: lo que
    hace falta para que el botón de crear escriba algo de verdad (regla 8). El
    modelo completo de cada una llega en su fase — BL F2, F5 y F7. */
-export function AnadirLibro({ onAdd, accent }) {
-  const [form, setForm] = useState({ titulo: '', autor: '' });
-  const libro = crearLibro(form);
-  return (
-    <Card>
-      <Field label="Título del libro">
-        <TextInput aria-label="Título del libro" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder="Ej: Hábitos atómicos" />
-      </Field>
-      <Field label="Autor (opcional)">
-        <TextInput aria-label="Autor del libro" value={form.autor} onChange={(e) => setForm({ ...form, autor: e.target.value })} />
-      </Field>
-      <PrimaryButton accent={accent} disabled={!libro} onClick={() => { onAdd(crearLibro(form)); setForm({ titulo: '', autor: '' }); }}>
-        Guardar libro
-      </PrimaryButton>
-    </Card>
-  );
-}
-
 export function AnadirIdea({ onAdd, accent }) {
   const [form, setForm] = useState({ titulo: '', detalle: '' });
   const idea = crearIdea(form);
@@ -407,7 +400,7 @@ export default function LibraryView({
   onAddArchivo, onDeleteArchivo,
   onAddApunte, onDeleteApunte,
   onAddEnlace, onDeleteEnlace,
-  onAddLibro, onDeleteLibro,
+  onAddLibro, onDeleteLibro, onUpdateLibro, onSubirPortada, onBorrarPortada,
   onAddIdea, onDeleteIdea,
   onAddColeccion, onDeleteColeccion,
   accent,
@@ -468,7 +461,10 @@ export default function LibraryView({
 
   // Un buscador dentro de la mini-app solo cuando hay bastante que buscar: con
   // tres elementos, una caja de búsqueda es ruido.
-  const conBuscador = elementos.length >= 5;
+  /* ⚠️ Libros tiene su propio buscador dentro de su pantalla (BL F2), con sus
+     filtros y su orden al lado: dos cajas de búsqueda en la misma pantalla
+     serían dos formas de hacer lo mismo. */
+  const conBuscador = abierta !== 'libros' && elementos.length >= 5;
 
   const cabecera = (
     <>
@@ -582,19 +578,25 @@ export default function LibraryView({
 
   // ── Libros ──────────────────────────────────────────────────────────────
   if (abierta === 'libros') {
-    const lista = elementos.filter((l) => coincide([l.titulo, l.autor]));
+    /* 🚨 BL F2 — Libros tiene pantalla propia: resumen, "continuar leyendo",
+       filtros, orden, tarjetas con portada y detalle. La cabecera, el ＋ y el
+       estado vacío siguen siendo los del lanzador (BL F1), no unos nuevos. */
     return (
-      <div className="space-y-3 pb-4">
-        {cabecera}
-        {crear && <AnadirLibro onAdd={(l) => { onAddLibro(l); setCrear(false); }} accent={accent} />}
-        {elementos.length === 0 ? vacio : lista.length === 0 ? nadaCoincide : (
-          <div className="space-y-2">
-            {lista.map((l) => (
-              <FichaSimple key={l.id} titulo={l.titulo} sub={l.autor} fecha={l.fecha} onDelete={() => onDeleteLibro(l.id)} />
-            ))}
-          </div>
-        )}
-      </div>
+      <PantallaLibros
+        app={app}
+        libros={elementos}
+        cabecera={cabecera}
+        crear={crear}
+        onCerrarCrear={() => setCrear(false)}
+        onAbrirCrear={() => setCrear(true)}
+        vacio={vacio}
+        accent={accent}
+        onAdd={onAddLibro}
+        onUpdate={onUpdateLibro}
+        onDelete={onDeleteLibro}
+        onSubirPortada={onSubirPortada}
+        onBorrarPortada={onBorrarPortada}
+      />
     );
   }
 
@@ -628,6 +630,527 @@ export default function LibraryView({
             <FichaSimple key={c.id} titulo={c.nombre} sub={c.descripcion} fecha={c.fecha} onDelete={() => onDeleteColeccion(c.id)} />
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ENTREGA 3 · FASE 17 (BL F2) — LIBROS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* La portada. *"No bloquear el funcionamiento si el usuario no añade portada"*:
+   sin imagen se dibujan sus iniciales, que es un dato de verdad y no una
+   ilustración inventada (regla 8). */
+export function Portada({ libro, url, alto = 132, accent }) {
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt={`Portada de ${libro.titulo}`}
+        className="w-full rounded-xl object-cover"
+        style={{ height: alto, background: COLORS.surface2 }}
+      />
+    );
+  }
+  return (
+    <div
+      className="w-full rounded-xl flex items-center justify-center"
+      style={{ height: alto, background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+      aria-hidden="true"
+    >
+      <span className="text-lg font-bold" style={{ color: accent }}>{inicialesDe(libro)}</span>
+    </div>
+  );
+}
+
+/* La barra de progreso. Sin total de páginas no se pinta: un 0 % diría que no
+   ha leído nada de un libro cuyo tamaño no conocemos. */
+export function BarraProgreso({ libro, accent }) {
+  const p = progresoDe(libro);
+  if (!p) return null;
+  return (
+    <div>
+      <div className="w-full rounded-full overflow-hidden" style={{ height: 6, background: COLORS.surface2 }}>
+        <div
+          className="h-full rounded-full progreso-libro"
+          style={{ width: `${p.porcentaje}%`, background: accent }}
+        />
+      </div>
+      <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+        {p.paginas} / {p.total} páginas · {p.porcentaje} %
+      </p>
+    </div>
+  );
+}
+
+export function EtiquetaEstado({ estado }) {
+  const e = estadoLibro(estado);
+  if (!e) return null;
+  return (
+    <span
+      className="text-[11px] font-semibold rounded-full px-2 py-0.5 inline-block"
+      style={{ background: COLORS.surface2, color: COLORS.textMuted }}
+    >
+      {e.icono} {e.nombre}
+    </span>
+  );
+}
+
+/* "Continuar leyendo": *"esta tarjeta debe tener más protagonismo que el
+   resto"*. Solo existe si hay un libro en marcha. */
+export function ContinuarLeyendo({ libro, url, accent, onAbrir }) {
+  if (!libro) return null;
+  const p = progresoDe(libro);
+  return (
+    <Card style={{ padding: '1rem' }}>
+      <p className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: accent }}>Continuar leyendo</p>
+      <div className="flex gap-3">
+        <div style={{ width: 74, flexShrink: 0 }}>
+          <Portada libro={libro} url={url} alto={104} accent={accent} />
+        </div>
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+          <div>
+            <p className="text-sm font-bold" style={{ color: COLORS.text }}>{libro.titulo}</p>
+            {libro.autor ? <p className="text-xs" style={{ color: COLORS.textMuted }}>{libro.autor}</p> : null}
+            {p ? <p className="text-lg font-bold mt-1" style={{ color: accent }}>{p.porcentaje} %</p> : null}
+          </div>
+          <button
+            onClick={onAbrir}
+            className="self-start text-xs font-semibold toque-44 p-1.5 -m-1.5"
+            style={{ color: accent }}
+          >
+            Continuar →
+          </button>
+        </div>
+      </div>
+      <BarraProgreso libro={libro} accent={accent} />
+    </Card>
+  );
+}
+
+export function TarjetaLibro({ libro, url, accent, indice = 0, onAbrir }) {
+  return (
+    <button
+      onClick={onAbrir}
+      className={`${CLASE_TARJETA} text-left rounded-2xl p-3 w-full transition-transform active:scale-[0.97]`}
+      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, animationDelay: retrasoDeTarjeta(indice) }}
+    >
+      <Portada libro={libro} url={url} accent={accent} />
+      <p className="text-sm font-semibold mt-2 leading-snug" style={{ color: COLORS.text }}>{libro.titulo}</p>
+      {libro.autor ? <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{libro.autor}</p> : null}
+      <div className="mt-1.5"><EtiquetaEstado estado={libro.estado} /></div>
+      <div className="mt-1.5"><BarraProgreso libro={libro} accent={accent} /></div>
+    </button>
+  );
+}
+
+/* El formulario, uno solo para crear y para editar: dos serían dos sitios donde
+   arreglar el mismo fallo. */
+export function FormularioLibro({ libro = null, accent, onGuardar, onCancelar, onSubirPortada }) {
+  const [form, setForm] = useState({
+    titulo: libro?.titulo || '',
+    autor: libro?.autor || '',
+    totalPaginas: libro?.totalPaginas ?? '',
+    paginaActual: libro?.paginaActual ?? '',
+    estado: libro?.estado || ESTADO_POR_DEFECTO,
+    inicio: libro?.inicio || '',
+    fin: libro?.fin || '',
+    nota: libro?.nota || '',
+  });
+  const [portada, setPortada] = useState(libro?.portada || null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [aviso, setAviso] = useState(null);
+
+  const puedeGuardar = tituloDeLibroValido(form.titulo);
+
+  const elegirPortada = async (ev) => {
+    const file = ev.target.files?.[0];
+    ev.target.value = '';
+    if (!file) return;
+    const problema = revisarPortada(file);
+    if (problema) { setAviso(problema); return; }
+    setAviso(null);
+    setSubiendo(true);
+    try {
+      const camino = await onSubirPortada(file);
+      if (camino) setPortada(camino);
+      else setAviso('No se ha podido subir la portada. Comprueba la conexión y prueba otra vez.');
+    } finally {
+      setSubiendo(false);
+    }
+  };
+
+  const guardar = () => {
+    if (!puedeGuardar) return;
+    onGuardar({
+      titulo: form.titulo,
+      autor: form.autor,
+      portada,
+      totalPaginas: form.totalPaginas === '' ? null : Number(form.totalPaginas),
+      paginaActual: form.paginaActual === '' ? null : Number(form.paginaActual),
+      estado: form.estado,
+      inicio: form.inicio || null,
+      fin: form.fin || null,
+      nota: form.nota,
+    });
+  };
+
+  return (
+    <Card>
+      <Field label="Título">
+        <TextInput
+          aria-label="Título del libro"
+          value={form.titulo}
+          onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+          placeholder="Ej: Hábitos atómicos"
+        />
+      </Field>
+      <Field label="Autor (opcional)">
+        <TextInput aria-label="Autor del libro" value={form.autor} onChange={(e) => setForm({ ...form, autor: e.target.value })} />
+      </Field>
+
+      <Field label="Portada (opcional)">
+        <div className="flex items-center gap-3">
+          <div style={{ width: 56, flexShrink: 0 }}>
+            <Portada libro={{ titulo: form.titulo || '?' }} url={null} alto={76} accent={accent} />
+          </div>
+          <label className="flex-1">
+            <div
+              className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold cursor-pointer toque-44"
+              style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}`, opacity: subiendo ? 0.6 : 1 }}
+            >
+              <Upload size={14} />
+              {subiendo ? 'Subiendo…' : portada ? 'Cambiar la portada' : 'Elegir una imagen'}
+            </div>
+            <input type="file" accept="image/*" onChange={elegirPortada} disabled={subiendo} className="hidden" />
+          </label>
+        </div>
+        {aviso ? <p className="text-xs mt-1.5" style={{ color: COLORS.textMuted }}>{aviso}</p> : null}
+      </Field>
+
+      <Field label="Páginas del libro (opcional)">
+        <TextInput
+          aria-label="Páginas del libro"
+          inputMode="numeric"
+          value={form.totalPaginas}
+          onChange={(e) => setForm({ ...form, totalPaginas: e.target.value.replace(/\D/g, '') })}
+          placeholder="Ej: 250"
+        />
+      </Field>
+      <Field label="Página por la que vas (opcional)">
+        <TextInput
+          aria-label="Página actual"
+          inputMode="numeric"
+          value={form.paginaActual}
+          onChange={(e) => setForm({ ...form, paginaActual: e.target.value.replace(/\D/g, '') })}
+        />
+      </Field>
+
+      <Field label="Estado">
+        <Select aria-label="Estado del libro" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
+          {ESTADOS_LIBRO.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+        </Select>
+      </Field>
+      <Field label="Cuándo lo empezaste (opcional)">
+        <TextInput aria-label="Fecha de inicio" type="date" value={form.inicio} onChange={(e) => setForm({ ...form, inicio: e.target.value })} />
+      </Field>
+      <Field label="Cuándo lo terminaste (opcional)">
+        <TextInput aria-label="Fecha de finalización" type="date" value={form.fin} onChange={(e) => setForm({ ...form, fin: e.target.value })} />
+      </Field>
+      <Field label="Tu nota sobre el libro (opcional)">
+        <Textarea
+          aria-label="Nota del libro"
+          rows={3}
+          value={form.nota}
+          onChange={(e) => setForm({ ...form, nota: e.target.value })}
+          placeholder="Ej: Me está gustando especialmente el capítulo 4."
+        />
+      </Field>
+
+      <PrimaryButton accent={accent} disabled={!puedeGuardar} onClick={guardar}>
+        {libro ? 'Guardar cambios' : 'Guardar libro'}
+      </PrimaryButton>
+      {onCancelar ? <div className="mt-2"><GhostBtn onClick={onCancelar}>Cancelar</GhostBtn></div> : null}
+    </Card>
+  );
+}
+
+/* El detalle. Overlay a pantalla completa **con `createPortal`** (regla 3): sin
+   él se ancla al contenedor de `.module-enter` y aparece abajo del todo. */
+export function DetalleLibro({ libro, url, accent, onCerrar, onGuardar, onEliminar, onSubirPortada }) {
+  const [editando, setEditando] = useState(false);
+  const [pagina, setPagina] = useState(String(libro?.paginaActual ?? ''));
+  const [celebra, setCelebra] = useState(false);
+
+  useEffect(() => {
+    const alPulsar = (ev) => { if (ev.key === 'Escape') onCerrar(); };
+    if (typeof document !== 'undefined') document.addEventListener('keydown', alPulsar);
+    return () => { if (typeof document !== 'undefined') document.removeEventListener('keydown', alPulsar); };
+  }, [onCerrar]);
+
+  if (!libro) return null;
+
+  const terminar = () => {
+    onGuardar(marcarTerminado(libro));
+    setCelebra(true);
+  };
+
+  const contenido = (
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto pantalla-segura"
+      style={{ background: COLORS.bg }}
+      role="dialog"
+      aria-label={`Detalle de ${libro.titulo}`}
+    >
+      <div className="max-w-md mx-auto px-4 pb-8 space-y-3">
+        <div className="flex items-center gap-2 pt-1">
+          <button onClick={onCerrar} className="p-1.5 -m-1.5" aria-label="Cerrar el detalle del libro">
+            <ArrowLeft size={18} style={{ color: COLORS.textMuted }} />
+          </button>
+          <p className="text-base font-bold flex-1 truncate" style={{ color: COLORS.text }}>{libro.titulo}</p>
+        </div>
+
+        {editando ? (
+          <FormularioLibro
+            libro={libro}
+            accent={accent}
+            onSubirPortada={onSubirPortada}
+            onCancelar={() => setEditando(false)}
+            onGuardar={(cambios) => { onGuardar(editarLibro(libro, cambios)); setEditando(false); }}
+          />
+        ) : (
+          <>
+            <Card>
+              <div className="flex gap-3">
+                <div style={{ width: 96, flexShrink: 0 }}>
+                  <Portada libro={libro} url={url} alto={136} accent={accent} />
+                </div>
+                <div className="flex-1 min-w-0 space-y-1">
+                  {libro.autor ? <p className="text-sm" style={{ color: COLORS.textMuted }}>{libro.autor}</p> : null}
+                  <EtiquetaEstado estado={libro.estado} />
+                  {libro.inicio ? <p className="text-[11px]" style={{ color: COLORS.textMuted }}>Empezado el {formatFecha(libro.inicio)}</p> : null}
+                  {libro.fin ? <p className="text-[11px]" style={{ color: COLORS.textMuted }}>Terminado el {formatFecha(libro.fin)}</p> : null}
+                </div>
+              </div>
+              <div className="mt-3"><BarraProgreso libro={libro} accent={accent} /></div>
+              {progresoDe(libro) === null && (
+                <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
+                  Sin las páginas del libro no se puede calcular el porcentaje. Puedes añadirlas al editarlo.
+                </p>
+              )}
+            </Card>
+
+            {libro.totalPaginas ? (
+              <Card>
+                <Field label="Página por la que vas">
+                  <TextInput
+                    aria-label="Actualizar la página actual"
+                    inputMode="numeric"
+                    value={pagina}
+                    onChange={(e) => setPagina(e.target.value.replace(/\D/g, ''))}
+                  />
+                </Field>
+                <PrimaryButton accent={accent} onClick={() => onGuardar(actualizarPagina(libro, pagina))}>
+                  Guardar la página
+                </PrimaryButton>
+              </Card>
+            ) : null}
+
+            <Card>
+              <p className="text-xs font-semibold mb-2" style={{ color: COLORS.textMuted }}>Estado</p>
+              <div className="flex flex-wrap gap-2">
+                {ESTADOS_LIBRO.map((e) => (
+                  <FiltroPill
+                    key={e.id}
+                    active={libro.estado === e.id}
+                    accent={accent}
+                    onClick={() => { if (e.id === 'terminado') terminar(); else onGuardar(cambiarEstado(libro, e.id)); }}
+                  >
+                    {e.icono} {e.nombre}
+                  </FiltroPill>
+                ))}
+              </div>
+            </Card>
+
+            {libro.nota ? (
+              <Card>
+                <p className="text-xs font-semibold mb-1" style={{ color: COLORS.textMuted }}>Tu nota</p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: COLORS.text }}>{libro.nota}</p>
+              </Card>
+            ) : null}
+
+            <Card>
+              <div className="flex items-center justify-between">
+                <GhostBtn icon={Pencil} onClick={() => setEditando(true)}>Editar</GhostBtn>
+                <BotonBorrar onClick={() => { onEliminar(libro.id); onCerrar(); }} label="Eliminar el libro" />
+              </div>
+            </Card>
+          </>
+        )}
+      </div>
+
+      {/* La celebración del enunciado: *"animación de finalización… discreta. No
+          exagerar."* Una línea, y se va sola al tocar. */}
+      {celebra && (
+        <button
+          onClick={() => setCelebra(false)}
+          className="fixed left-0 right-0 flex justify-center celebracion-libro"
+          style={{ bottom: 'calc(var(--safe-bottom) + 24px)' }}
+          aria-label="Cerrar el aviso de libro terminado"
+        >
+          <span
+            className="text-xs font-semibold rounded-full px-4 py-2"
+            style={{ background: accent, color: COLORS.textOnAccent }}
+          >
+            ✓ Terminado. Un libro más.
+          </span>
+        </button>
+      )}
+    </div>
+  );
+
+  /* 🚨 Regla 3: todo overlay `fixed inset-0` va con `createPortal(..., document.body)`.
+     Sin él se ancla al contenedor de `.module-enter` y aparece "abajo del todo",
+     que es un fallo real ya corregido en este proyecto. */
+  return typeof document === 'undefined' ? contenido : createPortal(contenido, document.body);
+}
+
+export function PantallaLibros({
+  app, libros, cabecera, crear, onCerrarCrear, onAbrirCrear, vacio, accent,
+  onAdd, onUpdate, onDelete, onSubirPortada, onBorrarPortada,
+}) {
+  const [filtro, setFiltro] = useState('todos');
+  const [orden, setOrden] = useState('recientes');
+  const [texto, setTexto] = useState('');
+  const [abierto, setAbierto] = useState(null);
+  const [urls, setUrls] = useState({});
+
+  const conPortada = libros.filter((l) => l.portada);
+
+  useEffect(() => {
+    let cancelado = false;
+    (async () => {
+      const pares = await Promise.all(conPortada.map(async (l) => [l.id, await getSignedBibliotecaUrl(l.portada)]));
+      if (!cancelado) setUrls(Object.fromEntries(pares));
+    })();
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [libros.map((l) => `${l.id}:${l.portada || ''}`).join('|')]);
+
+  const linea = lineaResumen(libros);
+  const actual = libroActual(libros);
+  const visibles = ordenarLibros(filtrarLibros(libros, { estado: filtro, texto }), orden);
+  const historial = historialLectura(libros);
+  const stats = estadisticasLectura(libros);
+  const abiertoAhora = abierto ? libros.find((l) => l.id === abierto) || null : null;
+
+  /* ⚠️ Eliminar un libro se lleva su portada del almacenamiento: dejarla sería
+     un archivo huérfano ocupando sitio en el bucket de Josué para siempre. */
+  const eliminar = (id) => {
+    const libro = libros.find((l) => l.id === id);
+    if (libro?.portada && onBorrarPortada) onBorrarPortada(libro.portada);
+    onDelete(id);
+  };
+
+  return (
+    <div className="space-y-3 pb-4">
+      {cabecera}
+      {linea ? <p className="text-xs font-semibold" style={{ color: accent }}>{linea}</p> : null}
+
+      {crear && (
+        <FormularioLibro
+          accent={accent}
+          onSubirPortada={onSubirPortada}
+          onCancelar={onCerrarCrear}
+          onGuardar={(datos) => { onAdd(crearLibro(datos)); onCerrarCrear(); }}
+        />
+      )}
+
+      {libros.length === 0 ? vacio : (
+        <>
+          <ContinuarLeyendo libro={actual} url={actual ? urls[actual.id] : null} accent={accent} onAbrir={() => setAbierto(actual.id)} />
+
+          {libros.length >= 4 && (
+            <div className="relative">
+              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: COLORS.textMuted }} />
+              <TextInput
+                aria-label="Buscar por título o autor"
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                placeholder="Buscar por título o autor…"
+                style={{ paddingLeft: 34 }}
+              />
+            </div>
+          )}
+
+          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            {FILTROS_LIBROS.map((f) => (
+              <FiltroPill key={f.id} active={filtro === f.id} accent={accent} onClick={() => setFiltro(f.id)}>{f.nombre}</FiltroPill>
+            ))}
+          </div>
+
+          <Field label="Ordenar por">
+            <Select aria-label="Ordenar los libros" value={orden} onChange={(e) => setOrden(e.target.value)}>
+              {ORDENES_LIBROS.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+            </Select>
+          </Field>
+
+          {visibles.length === 0 ? (
+            <EmptyHint text="Ningún libro coincide con esta búsqueda o este filtro." />
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {visibles.map((l, i) => (
+                <TarjetaLibro key={l.id} libro={l} url={urls[l.id]} accent={accent} indice={i} onAbrir={() => setAbierto(l.id)} />
+              ))}
+            </div>
+          )}
+
+          <Card>
+            <p className="text-xs font-semibold mb-2" style={{ color: COLORS.textMuted }}>Tu lectura</p>
+            <p className="text-sm" style={{ color: COLORS.text }}>
+              {stats.paginasLeidas} {stats.paginasLeidas === 1 ? 'página leída' : 'páginas leídas'} · {stats.terminados} {stats.terminados === 1 ? 'libro terminado' : 'libros terminados'}
+            </p>
+            {stats.sinContar > 0 && (
+              <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+                {stats.sinContar} {stats.sinContar === 1 ? 'libro no cuenta' : 'libros no cuentan'} porque no tienen apuntadas sus páginas.
+              </p>
+            )}
+            {stats.diasDeLectura !== null && (
+              <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+                {stats.diasDeLectura} {stats.diasDeLectura === 1 ? 'día de lectura' : 'días de lectura'} en {stats.conFechas} {stats.conFechas === 1 ? 'libro con sus dos fechas' : 'libros con sus dos fechas'}.
+              </p>
+            )}
+          </Card>
+
+          {historial.length > 0 && (
+            <Card>
+              <p className="text-xs font-semibold mb-2" style={{ color: COLORS.textMuted }}>Libros terminados</p>
+              <div className="space-y-1.5">
+                {historial.map((l) => (
+                  <div key={l.id} className="flex items-center justify-between gap-2">
+                    <p className="text-sm truncate" style={{ color: COLORS.text }}>{l.titulo}</p>
+                    <p className="text-[11px] flex-shrink-0" style={{ color: COLORS.textMuted }}>
+                      {l.fin ? formatFecha(l.fin) : 'Sin fecha'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </>
+      )}
+
+      {abiertoAhora && (
+        <DetalleLibro
+          libro={abiertoAhora}
+          url={urls[abiertoAhora.id]}
+          accent={accent}
+          onCerrar={() => setAbierto(null)}
+          onGuardar={onUpdate}
+          onEliminar={eliminar}
+          onSubirPortada={onSubirPortada}
+        />
       )}
     </div>
   );

@@ -376,3 +376,20 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
 .aviso-entra {
   animation: avisoEntra 260ms var(--ease-premium) both;
 }
+
+/* Entrega 3 · F17 (BL F2) — Libros.
+   La barra de progreso se anima al cambiar de ancho, para que actualizar la página
+   se note sin sacudidas: *"actualización de progreso"* del enunciado. */
+.progreso-libro {
+  transition: width 420ms var(--ease-premium);
+}
+
+/* Y la celebración al terminar un libro: *"animación de finalización… discreta.
+   No exagerar."* Entra desde abajo, se queda y se cierra al tocar. */
+@keyframes celebracionLibro {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.celebracion-libro {
+  animation: celebracionLibro 320ms var(--ease-premium) both;
+}

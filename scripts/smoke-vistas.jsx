@@ -121,7 +121,9 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
-import LibraryView, { TarjetaMiniApp, CabeceraMiniApp, VacioMiniApp, AnadirNotaRapida, AnadirLibro, AnadirIdea, AnadirColeccion, FichaSimple } from '../src/views/LibraryView.jsx';
+import LibraryView, { TarjetaMiniApp, CabeceraMiniApp, VacioMiniApp, AnadirNotaRapida, AnadirIdea, AnadirColeccion, FichaSimple,
+  PantallaLibros, TarjetaLibro, ContinuarLeyendo, FormularioLibro, DetalleLibro, Portada, BarraProgreso, EtiquetaEstado } from '../src/views/LibraryView.jsx';
+import { ESTADOS_LIBRO, crearLibro } from '../src/lib/libros.js';
 import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
 import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
@@ -270,7 +272,45 @@ const CASOS = [
   ['CabeceraMiniApp (cerrada)', CabeceraMiniApp, () => ({ app: miniApp('notas'), accent, abierto: false, onVolver: noop, onToggleCrear: noop })],
   ['CabeceraMiniApp (abierta)', CabeceraMiniApp, () => ({ app: miniApp('libros'), accent, abierto: true, onVolver: noop, onToggleCrear: noop })],
   ['AnadirNotaRapida', AnadirNotaRapida, () => ({ onAdd: noop, accent })],
-  ['AnadirLibro', AnadirLibro, () => ({ onAdd: noop, accent })],
+  /* E3 F17 (BL F2) — la mini-app Libros entera: el formulario (vacío y editando),
+     la tarjeta en sus cuatro estados, "continuar leyendo", el detalle y la
+     pantalla con datos y sin ellos. */
+  ['FormularioLibro (nuevo)', FormularioLibro, () => ({ accent, onGuardar: noop, onSubirPortada: noop })],
+  ['FormularioLibro (editando)', FormularioLibro, () => ({
+    accent, onGuardar: noop, onCancelar: noop, onSubirPortada: noop,
+    libro: { id: 'l1', titulo: 'Hábitos atómicos', autor: 'James Clear', portada: null, totalPaginas: 250, paginaActual: 180, estado: 'leyendo', inicio: '2026-08-01', fin: null, nota: 'Buen capítulo 4', fecha: '2026-08-01', actualizado: '2026-09-01' },
+  })],
+  ...ESTADOS_LIBRO.map((e) => [
+    `TarjetaLibro (${e.id})`, TarjetaLibro,
+    () => ({ accent, indice: 0, onAbrir: noop, url: null, libro: { ...crearLibro({ titulo: 'Un libro', autor: 'Alguien', totalPaginas: 200, paginaActual: 50 }), estado: e.id } }),
+  ]),
+  ['TarjetaLibro (sin páginas ni autor)', TarjetaLibro, () => ({ accent, indice: 1, onAbrir: noop, url: null, libro: crearLibro({ titulo: 'Solo el título' }) })],
+  ['Portada (sin imagen)', Portada, () => ({ accent, url: null, libro: { titulo: 'Hábitos atómicos' } })],
+  ['EtiquetaEstado', EtiquetaEstado, () => ({ estado: 'leyendo' })],
+  ['BarraProgreso (con total)', BarraProgreso, () => ({ accent, libro: crearLibro({ titulo: 'X', totalPaginas: 300, paginaActual: 90 }) })],
+  ['ContinuarLeyendo (uno)', ContinuarLeyendo, () => ({
+    accent, url: null, onAbrir: noop,
+    libro: { ...crearLibro({ titulo: 'Hábitos atómicos', autor: 'James Clear', totalPaginas: 250, paginaActual: 180 }), estado: 'leyendo' },
+  })],
+  ['DetalleLibro', DetalleLibro, () => ({
+    accent, url: null, onCerrar: noop, onGuardar: noop, onEliminar: noop, onSubirPortada: noop,
+    libro: { ...crearLibro({ titulo: 'Hábitos atómicos', autor: 'James Clear', totalPaginas: 250, paginaActual: 180, nota: 'Capítulo 4' }), estado: 'leyendo' },
+  })],
+  ['PantallaLibros (vacía)', PantallaLibros, () => ({
+    app: { id: 'libros', nombre: 'Libros', vacio: { titulo: 'Tu biblioteca empieza aquí', frase: 'Guarda lo que quieres leer.', boton: 'Añadir libro' } },
+    libros: [], cabecera: null, crear: false, onCerrarCrear: noop, onAbrirCrear: noop, vacio: null, accent,
+    onAdd: noop, onUpdate: noop, onDelete: noop, onSubirPortada: noop, onBorrarPortada: noop,
+  })],
+  ['PantallaLibros (con datos)', PantallaLibros, () => ({
+    app: { id: 'libros', nombre: 'Libros', vacio: { titulo: 'Tu biblioteca empieza aquí', frase: 'Guarda lo que quieres leer.', boton: 'Añadir libro' } },
+    libros: [
+      { ...crearLibro({ titulo: 'Hábitos atómicos', autor: 'James Clear', totalPaginas: 250, paginaActual: 180 }), estado: 'leyendo' },
+      { ...crearLibro({ titulo: 'Sin páginas' }), estado: 'por_leer' },
+      { ...crearLibro({ titulo: 'Terminado', totalPaginas: 100, paginaActual: 100, inicio: '2026-08-01', fin: '2026-08-20' }), estado: 'terminado' },
+    ],
+    cabecera: null, crear: false, onCerrarCrear: noop, onAbrirCrear: noop, vacio: null, accent,
+    onAdd: noop, onUpdate: noop, onDelete: noop, onSubirPortada: noop, onBorrarPortada: noop,
+  })],
   ['AnadirIdea', AnadirIdea, () => ({ onAdd: noop, accent })],
   ['AnadirColeccion', AnadirColeccion, () => ({ onAdd: noop, accent })],
   ['FichaSimple', FichaSimple, () => ({ titulo: 'Hábitos atómicos', sub: 'James Clear', fecha: '2026-09-01', onDelete: noop })],

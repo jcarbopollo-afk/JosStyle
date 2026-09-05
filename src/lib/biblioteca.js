@@ -34,6 +34,16 @@
 // ============================================================================
 
 import { uid, fechaLocalISO } from './helpers.js';
+/* 🚨 **La fábrica del libro vive en `libros.js` desde la BL F2, y aquí solo se
+   reexporta.** Escribir una segunda habría dejado dos formas del mismo libro
+   conviviendo, y la que perdiera se llevaría campos en el siguiente guardado
+   (regla 5).
+
+   ⚠️ Y se hace **importando y reexportando**, nunca `export … from`: eso no crea
+   binding local, y este archivo las usa (EH F17). */
+import { crearLibro, normalizarLibro } from './libros.js';
+
+export { crearLibro, normalizarLibro };
 
 /* ── Qué había antes de esta fase ──────────────────────────────────────────
 
@@ -239,16 +249,6 @@ export function tituloValido(t) {
   return typeof t === 'string' && t.trim().length > 0 && t.trim().length <= MAX_TITULO;
 }
 
-export function crearLibro({ titulo, autor = '' }) {
-  if (!tituloValido(titulo)) return null;
-  return {
-    id: uid(),
-    titulo: titulo.trim(),
-    autor: typeof autor === 'string' ? autor.trim() : '',
-    fecha: fechaLocalISO(new Date()),
-  };
-}
-
 export function crearIdea({ titulo, detalle = '' }) {
   if (!tituloValido(titulo)) return null;
   return {
@@ -293,11 +293,6 @@ function normalizarElemento(el, campos) {
     if (typeof base[campo] !== typeof porDefecto) base[campo] = porDefecto;
   }
   return base;
-}
-
-export function normalizarLibro(l) {
-  const n = normalizarElemento(l, { titulo: '', autor: '', fecha: '' });
-  return n && n.titulo ? n : null;
 }
 
 export function normalizarIdea(i) {
