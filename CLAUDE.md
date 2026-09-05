@@ -172,8 +172,9 @@ de error exacto** antes de asumir nada.
 **F9 (acciones rápidas entre Hoy, Agenda y Calendario, v3.29.0)** y la
 **F10 (planificación avanzada y vista semanal, v3.30.0)** y la
 **F11 (notificaciones y recordatorios reales, v3.31.0)** y la
-**F12 (calendarios externos, v3.32.0)**; la siguiente es la
-**13 — HC F8: estadísticas de planificación**. El índice, con la línea de cada fase dentro
+**F12 (calendarios externos, v3.32.0)** y la
+**F13 (estadísticas de planificación, v3.33.0)**; la siguiente es la
+**14 — HC F9: pulido visual, UX y animaciones**. El índice, con la línea de cada fase dentro
 de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y hay algo que necesita a Josué, anotado como DEP-29 en `docs/03`:** conectar **Google Calendar
@@ -183,7 +184,22 @@ construye el botón "Conectar"** —sería un control decorativo, y le haría cr
 están sincronizados—. Lo que sí funciona ya es el **archivo `.ics`**, que es la alternativa que pide
 el propio enunciado para Apple y sirve para los tres. **Los apartados 19 y 20 dependen de lo mismo.**
 
-⚠️ **Y lo que dejaron las doce primeras, que afecta a todas las demás:**
+⚠️ **Y lo que dejaron las trece primeras, que afecta a todas las demás:**
+
+- 🚨 **UNA ESTADÍSTICA ES UNA VISTA, NO UN DATO** (E3 F13, y EH F35 lo dijo primero):
+  `estadisticasPlan.js` **no guarda ni una cifra**. Una estadística guardada miente en cuanto él
+  borra un registro.
+- 🚨 **NUNCA UN PORCENTAJE INVENTADO** (E3 F13, apartado 6): por debajo del mínimo, `null` y *"Sin
+  datos suficientes"*. Y un día **sin nada que completar no tiene porcentaje**: un cero sería
+  inventarse un mal día donde no tocaba nada.
+- 🚨 **NUNCA UNA DURACIÓN ESTIMADA** (E3 F13, apartados 11 y 12): un evento sin hora de fin **no dura
+  una hora por defecto**. No se cuenta, y se dice cuántos quedan fuera.
+- 🚨 **NUNCA UN HISTORIAL RETROACTIVO** (E3 F13, apartado 17): las reprogramaciones **no se pueden
+  medir** —una tarea guarda la fecha que tiene ahora—, y está declarado en `NO_MEDIBLE_TODAVIA`.
+- ⚠️ **NI UNA INTERPRETACIÓN** (E3 F13, apartados 14 y 25): ↑ +8, nunca *"vas mejor"*. Hay una
+  prueba que barre todos los textos generados.
+- ⚠️ **Un evento cuenta como planificación, nunca como incumplimiento** (E3 F13): un evento ocurre,
+  no se completa. Meterlo en el denominador bajaría el porcentaje por cosas que simplemente pasaron.
 
 - 🚨 **UN EVENTO EXTERNO ES UN EVENTO** (E3 F12, apartados 10-12, 22 y 23): `origen`, `idExterno`,
   `calendarioExterno` y `cuentaExterna` son campos **del evento que ya existe**, no de una tabla

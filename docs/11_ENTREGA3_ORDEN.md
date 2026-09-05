@@ -33,7 +33,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 10 ✅ | HC | F5 — Planificación avanzada y vista semanal — **hecha (v3.30.0)** | 3874 |
 | 11 ✅ | HC | F6 — Notificaciones y recordatorios reales — **hecha (v3.31.0)** | 4425 |
 | 12 ✅ | HC | F7 — Integraciones externas de calendario — **hecha (v3.32.0)**, con ⏸ DEP-29 | 4995 |
-| 13 | HC | F8 — Estadísticas de planificación | 5490 |
+| 13 ✅ | HC | F8 — Estadísticas de planificación — **hecha (v3.33.0)** | 5490 |
 | 14 | HC | F9 — Pulido visual, UX y animaciones | 6315 |
 | 15 | HC | F10 — PWA, iPhone, sincronización y auditoría final | 7088 |
 | 16 | **BL** Biblioteca | F1 — Rediseño como launcher de mini-apps | 7871 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 12 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸). La siguiente es la **13 — HC F8: estadísticas de planificación**, línea 5490.
+**Por dónde va:** 13 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0). La siguiente es la **14 — HC F9: pulido visual, UX y animaciones**, línea 6315.
 
 ## Lo que dejó la Fase 1, y que afecta a todas las demás
 
@@ -291,6 +291,23 @@ solo vale como corrección o ajuste — nunca una función nueva.
 - 🐛 **Una hora en UTC de un `.ics` se pasa al reloj del usuario** (24): un evento de las 23:30
   saldría el día siguiente. Séptima vez.
 - ⚠️ **Un evento del archivo sin título se descarta**, en vez de crear uno llamado "sin nombre".
+
+## Y lo que dejó la Fase 13 (HC F8)
+
+- 🚨 **UNA ESTADÍSTICA ES UNA VISTA, NO UN DATO** (EH F35 lo dijo primero): `estadisticasPlan.js` no
+  guarda ni una cifra. Una guardada miente en cuanto él borra un registro.
+- 🚨 **NUNCA UN PORCENTAJE INVENTADO** (6): por debajo del mínimo, `null` y *"Sin datos
+  suficientes"*. Y un día sin nada que completar **no tiene porcentaje**.
+- 🚨 **NUNCA UNA DURACIÓN ESTIMADA** (11 y 12): un evento sin hora de fin no dura una hora por
+  defecto — no se cuenta, y se dice cuántos quedan fuera.
+- 🚨 **NUNCA UN HISTORIAL RETROACTIVO** (17): las reprogramaciones no se pueden medir, y está
+  declarado en `NO_MEDIBLE_TODAVIA` con su motivo.
+- ⚠️ **Ni una interpretación** (14 y 25): ↑ +8, nunca *"vas mejor"*. Una prueba barre los textos.
+- ⚠️ **Un evento cuenta como planificación, nunca como incumplimiento**: ocurre, no se completa.
+- ⚠️ **Lo que ya mide otro módulo se queda ahí** (19-22): las rachas son de Hábitos, y el tiempo de
+  Pomodoro no se mezcla con las horas planificadas.
+- 🐛 **Dos expectativas de la prueba estaban mal**: con una tarea diaria, las apariciones completadas
+  cuentan como tareas completadas, y no queda ni un día sin nada que completar.
 
 ## Dos cosas del documento que conviene saber
 

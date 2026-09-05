@@ -1767,6 +1767,34 @@ ok(/sin hora/i.test(agenda_e3f7) && /Comprar material/.test(agenda_e3f7),
   '🚨 y la que no tiene hora, en su sección: no todo lleva hora (apartado 4)');
 
 /* ===========================================================================
+   ENTREGA 3 · FASE 13 — ESTADÍSTICAS DE PLANIFICACIÓN
+   ===========================================================================
+   🚨 El apartado 6: *"si no hay suficientes datos, mostrar «Sin datos
+   suficientes». **No inventar un porcentaje**."* Con una sola tarea en el
+   periodo, la pantalla tiene que decirlo — y eso solo se ve mirándola.
+
+   ⚠️ Sufijo `_e3f13`, y `/i` en los rótulos. */
+const hoyISO_e3f13 = new Date().toLocaleDateString('sv-SE');
+almacen.calendario = { eventos: [] };
+almacen.productividad = {
+  tareas: [{ id: 'st1', texto: 'Una sola tarea', fecha: hoyISO_e3f13, hecha: true }],
+  habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Vida');
+await pulsar('Calendario');
+await esperarTexto(/Mes/);
+ok(await pulsar('📊'), '🚨 E3 F13 — el Calendario tiene su acceso a Estadísticas (apartado 1)');
+const stats_e3f13 = await esperarTexto(/Planificado|Sin datos/i);
+
+ok(/Planificado/i.test(stats_e3f13), '⚠️ con el resumen del apartado 3');
+ok(/30 días/i.test(stats_e3f13), '⚠️ y el periodo por defecto (apartado 2)');
+ok(/Sin datos suficientes/i.test(stats_e3f13),
+  '🚨 CON UNA SOLA TAREA NO SE INVENTA UN PORCENTAJE: dice "Sin datos suficientes" (apartado 6)');
+ok(!/deberías|vas bien|mejor que/i.test(stats_e3f13),
+  '🚨 y ni una interpretación: *"es simplemente información"* (apartado 14)');
+
+/* ===========================================================================
    ENTREGA 3 · FASE 12 — CALENDARIOS EXTERNOS
    ===========================================================================
    ⏸ La decisión de la fase: Google y Outlook necesitan credenciales que solo

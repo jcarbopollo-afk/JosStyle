@@ -27,6 +27,13 @@ import { tareaEnFecha, tareaEnHora } from '../lib/accionesHoyAgenda';
 import { semanaDe, semanaAnterior, semanaSiguiente, TEXTO_DIA_LIBRE, marcarInstancia, seRepite } from '../lib/semana';
 // Entrega 3 · F11 (HC F6) — el aviso de un evento: dos campos, no una entidad nueva.
 import { ANTICIPACIONES, estadoPermiso, avisoPorDefecto } from '../lib/avisosPlanificacion';
+// Entrega 3 · F13 (HC F8) — estadísticas de planificación, contadas en el momento.
+import {
+  PERIODOS, PERIODO_POR_DEFECTO, TEXTO_SIN_DATOS, resumenPlanificacion, grafico,
+  cumplimientoPorDia, cargaPorDiaSemana, diasMasCargados, distribucionPorTipo,
+  distribucionHoraria, horasPlanificadas, tareasAtrasadas, resumenRecurrentes,
+  comparar, tendencia, NO_MEDIBLE_TODAVIA,
+} from '../lib/estadisticasPlan';
 
 // Un icono por tipo (solo para el resumen del día/agenda y el editor — la cuadrícula mensual usa
 // puntos compactos de color, nunca iconos, spec apartado 4: "no llenar las celdas con textos largos").
@@ -517,6 +524,180 @@ function BuscadorEventos({ eventos, accent, onSeleccionar, onCerrar }) {
       </div>
     </div>,
     document.body
+  );
+}
+
+/* ===========================================================================
+   ENTREGA 3 · FASE 13 (HC F8) — ESTADÍSTICAS DE PLANIFICACIÓN
+   ===========================================================================
+   *"¿En qué estoy utilizando mi tiempo? ¿Cuánto planifico? ¿Cuánto cumplo?"*
+
+   🚨 **Aquí no se guarda ni una cifra**: todo se cuenta en el momento sobre los
+   eventos y las tareas que ya existen. Y **ni una interpretación** (apartado
+   14): se enseña el número y su nombre, nunca un *"deberías"*. */
+function EstadisticasPlan({ estado, accent, onVerAtrasadas }) {
+  const [per, setPer] = useState(PERIODO_POR_DEFECTO);
+  const res = resumenPlanificacion(estado, per);
+  const horas = horasPlanificadas(estado, per);
+  const carga = cargaPorDiaSemana(estado, per);
+  const dist = distribucionPorTipo(estado, per);
+  const horaria = distribucionHoraria(estado, per);
+  const rec = resumenRecurrentes(estado, per);
+  const atrasadas = tareasAtrasadas(estado);
+  const comp = comparar(estado, per);
+  const porDia = cumplimientoPorDia(estado, per);
+
+  const Cifra = ({ nombre, valor, sufijo = '' }) => (
+    <div className="text-center">
+      <p className="text-lg font-extrabold leading-none" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+        {valor === null ? '—' : `${valor}${sufijo}`}
+      </p>
+      <p className="text-[10px] mt-0.5 uppercase tracking-wide" style={{ color: COLORS.textMuted }}>{nombre}</p>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Apartado 2 — el periodo, con 30 días por defecto. */}
+      <div className="flex gap-1.5">
+        {PERIODOS.map((p) => (
+          <ToggleTab key={p.id} active={per === p.id} onClick={() => setPer(p.id)} accent={accent}>{p.nombre}</ToggleTab>
+        ))}
+      </div>
+
+      {/* Apartado 3 — el resumen principal, calculado de verdad. */}
+      <Card>
+        <div className="grid grid-cols-4 gap-2">
+          <Cifra nombre="Planificado" valor={res.planificados} />
+          <Cifra nombre="Hechos" valor={res.completados} />
+          <Cifra nombre="Pendientes" valor={res.pendientes} />
+          <Cifra nombre="Cumplido" valor={res.cumplimiento} sufijo="%" />
+        </div>
+        {/* 🚨 Apartado 6 — *"si no hay suficientes datos: Sin datos suficientes.
+            No inventar un porcentaje."* */}
+        {res.cumplimiento === null && (
+          <p className="text-xs text-center mt-2" style={{ color: COLORS.textMuted }}>{TEXTO_SIN_DATOS}</p>
+        )}
+      </Card>
+
+      {res.planificados === 0 ? (
+        <EmptyHint text="Todavía no hay nada planificado en este periodo." />
+      ) : (
+        <>
+          {/* Apartados 7 y 23 — el gráfico, que son ocho caracteres. */}
+          <Card>
+            <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: COLORS.textMuted }}>Actividad por día</p>
+            <p className="text-lg tracking-widest" style={{ color: accent }} aria-hidden="true">
+              {grafico(porDia.map((x) => x.total))}
+            </p>
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>
+              {porDia.reduce((a, x) => a + x.total, 0)} elementos con algo que completar en {porDia.length} días
+            </p>
+          </Card>
+
+          {/* Apartado 8 — la carga por día de la semana. */}
+          <Card>
+            <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: COLORS.textMuted }}>Elementos por día</p>
+            <div className="grid grid-cols-7 gap-1">
+              {carga.map((c) => (
+                <div key={c.indice} className="text-center">
+                  <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{c.letra}</p>
+                  <p className="text-sm font-bold" style={{ color: COLORS.text }}>{c.elementos}</p>
+                </div>
+              ))}
+            </div>
+            {/* Apartado 14 — información, no una recomendación. */}
+            {diasMasCargados(estado, per).length > 0 && (
+              <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
+                Más elementos: {diasMasCargados(estado, per).map((x) => `${x.nombre} (${x.elementos})`).join(' · ')}
+              </p>
+            )}
+          </Card>
+
+          {/* Apartado 9 — qué planificas. */}
+          {dist.length > 0 && (
+            <Card>
+              <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: COLORS.textMuted }}>Qué planificas</p>
+              {dist.slice(0, 6).map((x) => (
+                <div key={x.id} className="flex items-center justify-between py-0.5">
+                  <span className="text-xs" style={{ color: COLORS.text }}>
+                    {x.id === 'tarea' ? 'Tareas' : (TIPOS_EVENTO_CALENDARIO.find((t) => t.id === x.id)?.labelPlural || x.id)}
+                  </span>
+                  <span className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>{x.porcentaje} % · {x.elementos}</span>
+                </div>
+              ))}
+            </Card>
+          )}
+
+          {/* Apartado 10 — cuándo planificas. ⚠️ Solo si hay algo con hora. */}
+          {horaria.hayDatos && (
+            <Card>
+              <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: COLORS.textMuted }}>Cuándo planificas</p>
+              {horaria.franjas.map((f) => (
+                <div key={f.id} className="flex items-center justify-between py-0.5">
+                  <span className="text-xs" style={{ color: COLORS.text }}>{f.nombre}</span>
+                  <span className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>{f.porcentaje} %</span>
+                </div>
+              ))}
+              {horaria.sinHora > 0 && (
+                <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+                  {horaria.sinHora} sin hora, que no entran aquí.
+                </p>
+              )}
+            </Card>
+          )}
+
+          {/* Apartados 11 y 13 — las horas, sin estimar lo que no existe. */}
+          <Card>
+            <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: COLORS.textMuted }}>Horas planificadas</p>
+            <p className="text-lg font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+              {horas.texto || TEXTO_SIN_DATOS}
+            </p>
+            {horas.aviso && <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{horas.aviso}</p>}
+            {/* ⏸ Lo que no se puede medir se dice, en vez de estimarlo. */}
+            <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+              {NO_MEDIBLE_TODAVIA.find((x) => x.id === 'horas_reales').porque}
+            </p>
+          </Card>
+
+          {/* Apartado 18 — las recurrentes. */}
+          {rec.series > 0 && (
+            <Card>
+              <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: COLORS.textMuted }}>Actividades que se repiten</p>
+              <p className="text-xs" style={{ color: COLORS.text }}>
+                {rec.series} {rec.series === 1 ? 'actividad' : 'actividades'} · {rec.hechas} de {rec.apariciones} veces
+                {rec.porcentaje !== null ? ` · ${rec.porcentaje} %` : ''}
+              </p>
+            </Card>
+          )}
+
+          {/* Apartados 25 y 27 — comparar, sin interpretar. */}
+          {comp.completados.antes > 0 && (
+            <Card>
+              <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: COLORS.textMuted }}>Frente al periodo anterior</p>
+              <p className="text-xs" style={{ color: COLORS.text }}>
+                {tendencia(comp.completados.diferencia)?.icono} {tendencia(comp.completados.diferencia)?.texto} completados
+                {comp.cumplimiento.diferencia !== null
+                  ? ` · ${tendencia(comp.cumplimiento.diferencia).icono} ${tendencia(comp.cumplimiento.diferencia).texto} puntos de cumplimiento`
+                  : ''}
+              </p>
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* Apartado 16 — las atrasadas, que llevan a la lista de verdad. */}
+      {atrasadas.length > 0 && (
+        <button onClick={onVerAtrasadas} className="w-full text-left toque-44">
+          <Card className="flex items-center justify-between" style={{ padding: '0.75rem 1rem' }}>
+            <span className="text-sm" style={{ color: COLORS.text }}>
+              {atrasadas.length} {atrasadas.length === 1 ? 'pendiente atrasada' : 'pendientes atrasadas'}
+            </span>
+            <span className="text-xs font-semibold" style={{ color: accent }}>Ver →</span>
+          </Card>
+        </button>
+      )}
+    </>
   );
 }
 
@@ -1032,6 +1213,10 @@ export default function CalendarView({
         <ToggleTab active={vista === 'semana'} onClick={() => setVista('semana')} accent={accent}>Semana</ToggleTab>
         <ToggleTab active={vista === 'dia'} onClick={() => setVista('dia')} accent={accent}>Día</ToggleTab>
         <ToggleTab active={vista === 'agenda'} onClick={() => setVista('agenda')} accent={accent}>Agenda</ToggleTab>
+        {/* E3 F13 (HC F8, apartado 1) — *"dentro de Agenda o Calendario, añadir
+            acceso 📊 Estadísticas. No crear duplicados."* Aquí, que es donde
+            viven los datos que mide. */}
+        <ToggleTab active={vista === 'stats'} onClick={() => setVista('stats')} accent={accent}>📊</ToggleTab>
       </div>
 
       <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -1057,6 +1242,14 @@ export default function CalendarView({
           onCompletar={onCompletarTarea}
           onAnadir={() => setCreando(true)}
           onMenu={abrirMenu}
+        />
+      )}
+
+      {vista === 'stats' && (
+        <EstadisticasPlan
+          estado={{ calendario, productividad }}
+          accent={accent}
+          onVerAtrasadas={() => onAbrirModulo && onAbrirModulo('productividad')}
         />
       )}
 

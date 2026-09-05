@@ -1,5 +1,63 @@
 # CHANGELOG.md
 
+## v3.33.0 — Entrega 3 · Fase 13 (HC F8): estadísticas de planificación
+
+*"¿En qué estoy utilizando mi tiempo? ¿Cuánto planifico? ¿Cuánto cumplo? ¿Qué días estoy más
+cargado?"*
+
+### 🚨 Y el enunciado lo enmarca en su primera línea
+
+*"Esto NO es un sistema de productividad independiente. Las estadísticas deben utilizar los datos
+que ya existen."*
+
+Así que `estadisticasPlan.js` **no guarda ni una cifra**: cuenta en el momento sobre
+`calendario.eventos` y `productividad.tareas`, igual que `progresoEstilo.js` (EH F35) y por el mismo
+motivo — **una estadística guardada miente en cuanto él borra un registro**.
+
+### Las tres cosas que el enunciado prohíbe
+
+1. 🚨 **No inventar un porcentaje** (apartado 6). Con menos de tres cosas completables,
+   `cumplimiento` devuelve **`null`** y la pantalla dice *"Sin datos suficientes"*. Y un día sin nada
+   que completar **no tiene porcentaje**: dibujarlo como un cero sería inventarse un mal día donde no
+   tocaba nada.
+2. 🚨 **No estimar una duración que no existe** (apartados 11 y 12). Un evento con hora de inicio y
+   **sin hora de fin no dura una hora por defecto**: no se cuenta, y se dice cuántos quedaron fuera —
+   un total sin ese aviso parecería el tiempo real de la semana.
+3. 🚨 **No inventar historial retroactivo** (apartado 17): *"si actualmente NO existe historial de
+   reprogramaciones, NO inventarlo"*. No existe —una tarea guarda la fecha que tiene ahora, no las
+   que tuvo antes—, así que está en `NO_MEDIBLE_TODAVIA` con su motivo, junto a las horas reales y
+   los eventos finalizados.
+
+### Y ni una interpretación (apartados 14 y 25)
+
+*"No convertirlo en una recomendación. Es simplemente información."* Se enseña el número y su
+nombre; la comparación con el periodo anterior da **↑ +8**, nunca *"vas mejor"*. Hay una prueba que
+barre todos los textos que genera el archivo buscando palabras de juicio.
+
+### Lo que trae
+
+- **El resumen** (3 y 5): planificado, hechos, pendientes y cumplimiento, calculados de verdad.
+- **El gráfico, que son ocho caracteres** (7 y 23): `▁▂▃▄▅▆▇█`, agrupados a catorce barras — el
+  enunciado lo pide literalmente así, y es lo que ya usaba EH F35. Ni una librería.
+- **La carga por día** (8) y los días con más elementos (14), como información y no como consejo.
+- **Qué planificas** (9) y **cuándo** (10), con las franjas declaradas — y ⚠️ **sin nada con hora no
+  hay distribución**: repartir el 100 % entre franjas vacías sería inventarlo.
+- **Las atrasadas** (16), que llevan a la lista de Productividad: *"no crear otra base de datos"*.
+- **Las recurrentes** (18), contando apariciones sobre la regla de la F10.
+
+⚠️ **Y lo que ya mide otro módulo, se queda ahí** (19, 20, 21 y 22): las rachas y el cumplimiento de
+hábitos son de Hábitos, y el tiempo de Pomodoro **no se mezcla** con las horas planificadas — son
+métricas distintas, y el apartado lo dice.
+
+### Lo que esto deja apuntado
+
+- ⚠️ **Un evento cuenta como planificación, nunca como incumplimiento**: un evento ocurre, no se
+  completa (la regla de la E3 F6). Meterlo en el denominador bajaría el porcentaje por cosas que
+  simplemente pasaron.
+- 🐛 **Y dos expectativas mías estaban mal**: con una tarea **diaria**, las apariciones completadas
+  cuentan como tareas completadas (eran cuatro, no dos) y **no queda ni un día sin nada que
+  completar**. El código tenía razón las dos veces.
+
 ## v3.32.0 — Entrega 3 · Fase 12 (HC F7): calendarios externos
 
 *"Permitir conectar Apple Calendar / iCloud, Google Calendar y Outlook."* Y la regla que abre el
