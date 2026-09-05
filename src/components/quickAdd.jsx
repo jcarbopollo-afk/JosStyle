@@ -258,7 +258,7 @@ export function AvisoAccion({ accion, accent, onDeshacer, onCerrar }) {
       aria-live="polite"
     >
       <div
-        className="flex items-center gap-3 px-4 py-2.5 rounded-full shadow-lg pointer-events-auto"
+        className="flex items-center gap-3 px-4 py-2.5 rounded-full shadow-lg pointer-events-auto aviso-entra"
         style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
       >
         <Check size={15} style={{ color: accent }} aria-hidden="true" />

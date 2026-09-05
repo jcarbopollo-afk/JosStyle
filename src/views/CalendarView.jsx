@@ -942,8 +942,11 @@ function AgendaDeUnDia({ dia, titulo, tira, accent, onDia, onHoy, onCompletar, o
                   {e.completable ? (
                     <button onClick={() => onCompletar && onCompletar(e.refId)}
                       className="p-1.5 -m-1.5 flex-shrink-0" aria-label={e.hecha ? `Desmarcar ${e.titulo}` : `Completar ${e.titulo}`}>
+                      {/* E3 F14 (HC F9, apartado 16) — *"animación breve"* al completar.
+                          La clase vive en `index.css`, así que respeta "Reducir
+                          movimiento" sola; y son 300 ms, no confeti. */}
                       {e.hecha
-                        ? <CheckSquare size={15} style={{ color: accent }} />
+                        ? <CheckSquare size={15} className="tarea-hecha" style={{ color: accent }} />
                         : <Square size={15} style={{ color: COLORS.textMuted }} />}
                     </button>
                   ) : (

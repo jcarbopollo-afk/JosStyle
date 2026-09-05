@@ -330,3 +330,49 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
 .calendar-sheet {
   animation: calendarSheetIn 240ms var(--ease-premium) both;
 }
+
+/* ===========================================================================
+   ENTREGA 3 · FASE 14 (HC F9) — EL ESQUELETO DE CARGA (apartados 23 y 24)
+   ===========================================================================
+   *"Nunca mostrar una pantalla completamente vacía mientras se cargan datos."*
+
+   ⚠️ Vive aquí, no en un `style` de una vista, por el mismo motivo que el resto
+   de las animaciones del proyecto: así **respeta "Reducir movimiento" solo**, y
+   ése es el apartado 18 cumplido sin escribir una línea más. */
+@keyframes latido {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.9; }
+}
+
+.esqueleto {
+  animation: latido 1400ms var(--ease-premium) infinite;
+  border-radius: 1rem;
+}
+
+/* ===========================================================================
+   ENTREGA 3 · FASE 14 (HC F9) — EL FEEDBACK DE UNA ACCIÓN (apartados 15-17)
+   ===========================================================================
+   *"Añadir feedback cuando se completa una tarea, se crea un evento…"* Y el 16:
+   *"animación breve… **no hacer confeti exagerado para cada tarea**"*, así que
+   son trescientos milisegundos y un desplazamiento pequeño, nada más.
+
+   ⚠️ Viven aquí, con el resto: así respetan "Reducir movimiento" solas. */
+@keyframes tareaHecha {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.tarea-hecha {
+  display: inline-flex;
+  animation: tareaHecha 300ms var(--ease-premium) both;
+}
+
+@keyframes avisoEntra {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.aviso-entra {
+  animation: avisoEntra 260ms var(--ease-premium) both;
+}

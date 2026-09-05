@@ -1,5 +1,57 @@
 # CHANGELOG.md
 
+## v3.34.0 — Entrega 3 · Fase 14 (HC F9): pulido visual, UX y animaciones
+
+*"Hoy + Agenda + Calendario deben sentirse como una única aplicación premium."* Y el enunciado acota
+la fase en su primera línea: *"NO rediseñar módulos que no estén relacionados con este sistema. El
+objetivo es pulir lo existente, no cambiar su lógica."*
+
+Así que aquí **no se rediseña nada**: se declara qué tiene que cumplir cada pantalla del bloque y
+**se comprueba leyendo el código**, como `revisarPantalla()` en EH F42. Una regla escrita en un
+comentario se olvida; una que se ejecuta en cada `verificar.sh`, no.
+
+### 🚨 Y lo que faltaba de verdad era la pantalla de carga
+
+*"Nunca mostrar una pantalla completamente vacía mientras se cargan datos"* (apartado 23). **Y eso
+era exactamente lo que había**: una rueda girando sobre un fondo liso. Ahora se dibuja **la forma de
+Hoy**, que es la pantalla que va a aparecer, así que no hay salto al cargar (apartado 21).
+
+Los esqueletos de las cinco pantallas están en `ESQUELETOS`, y cada uno declara **a qué se parece** —
+*"deben respetar la forma real de las cards"* (24)—. El latido vive en `index.css`, así que respeta
+*"Reducir movimiento"* **solo**: el apartado 18 cumplido sin escribir una línea más.
+
+### Lo demás que no existía
+
+- **Los vacíos del bloque** (26-29), con sus palabras. 🚨 Y el 29 es el que se rompe sin darse
+  cuenta: *"no mostrar falsamente «Todo hecho» si realmente existen elementos pendientes"*. Por eso
+  Hoy tiene **dos** vacíos y `vacioDeHoy()` mira los datos de verdad — con pendientes **no dice
+  ninguno de los dos**.
+- **Los textos de error** (25): *"no mostrar error técnico"*. Cada uno dice qué ha pasado y qué
+  hacer, sin una palabra técnica.
+- **El feedback al completar y al crear** (15, 16 y 17): 300 ms y un desplazamiento pequeño — el
+  apartado 16 dice *"no hacer confeti exagerado para cada tarea"*, y se cumple.
+- **Un revisor de las cinco pantallas**, que corre en cada verificación.
+
+### Lo que esto deja apuntado
+
+- 🐛 **Dos animaciones estaban declaradas y no escritas.** `tarea-hecha` y `aviso-entra` vivían en el
+  catálogo y **no existían en el CSS**: la prueba que comprueba que cada clase declarada existe las
+  cazó en el primer intento. Es la regla 8 en su forma más sutil — un catálogo que promete algo que
+  no está.
+- 🐛 **Y una regla del revisor no cazaba su propio ejemplo malo.** La expresión de las animaciones
+  largas excluía las comillas, así que se paraba en `transition: '` y daba siempre cero problemas.
+  **Un revisor que no puede fallar no sirve** (EH F42), y por eso cada regla trae su `ejemploMalo`
+  con una prueba de que lo caza.
+- ⚠️ **La mitad de los apartados ya los cumplía el proyecto**, y se declaran en `YA_PULIDO` con lo
+  que los resuelve: las cards, los botones, lucide, el ＋ de la F9, las hojas inferiores, los 44 px y
+  *"Reducir movimiento"*. Rehacerlos habría sido el rediseño que la primera línea prohíbe.
+- ⏸ **La posición del scroll (apartado 22) se explica en vez de construirse**: JosStyle no tiene
+  rutas —cambiar de vista es cambiar un estado— y el navegador ya mantiene el scroll de la página.
+  Guardar una posición propia sería un segundo mecanismo para algo que ya pasa.
+- 🐛 **Y mi esqueleto usaba un `pt-16` a ojo.** La Safe Area del iPhone vive en `index.css` desde la
+  E3 F1, y **su propia comprobación lo cazó**: un número fijo mete el contenido debajo de la hora del
+  teléfono. Es la guardia de una fase anterior atrapando a la siguiente, que es para lo que está.
+
 ## v3.33.0 — Entrega 3 · Fase 13 (HC F8): estadísticas de planificación
 
 *"¿En qué estoy utilizando mi tiempo? ¿Cuánto planifico? ¿Cuánto cumplo? ¿Qué días estoy más

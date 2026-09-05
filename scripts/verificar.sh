@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F14 — pulido: esqueletos, vacíos, errores y el revisor de las cinco pantallas.
+if node --import ./scripts/resolver-vite.mjs scripts/test-pulido-hc.mjs >/tmp/jc_pul.log 2>&1; then
+  ok "Pulido visual y UX (E3 F14) — $(grep -c '✓' /tmp/jc_pul.log) comprobaciones"
+else
+  fallo "Falla el pulido del bloque Hoy/Calendario (E3 F14)"; grep '✗' /tmp/jc_pul.log
+fi
+
 # Entrega 3 · F13 — estadísticas de planificación, contadas sin guardar nada.
 if node --import ./scripts/resolver-vite.mjs scripts/test-estadisticas-plan.mjs >/tmp/jc_est.log 2>&1; then
   ok "Estadísticas de planificación (E3 F13) — $(grep -c '✓' /tmp/jc_est.log) comprobaciones"

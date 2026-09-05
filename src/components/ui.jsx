@@ -1116,3 +1116,33 @@ export function ScoreGauge({ value, accent, size = 118 }) {
     </svg>
   );
 }
+
+/* ===========================================================================
+   ENTREGA 3 · FASE 14 (HC F9) — EL ESQUELETO DE CARGA (apartados 23 y 24)
+   ===========================================================================
+   *"Nunca mostrar una pantalla completamente vacía mientras se cargan datos.
+   Utilizar skeletons… deben respetar la forma real de las cards."*
+
+   ⚠️ **Respetar la forma real** es lo que importa: un esqueleto que no se parece
+   a lo que viene después produce un salto al cargar, que es justo lo que el
+   apartado 21 pide evitar. Por eso las alturas salen de `ESQUELETOS`
+   (`pulidoHC.js`), sacadas de la pantalla que imita.
+
+   ⚠️ Y el latido vive en `index.css`, así que respeta "Reducir movimiento" solo.
+
+   🚨 `aria-hidden` + `role="status"` en el contenedor: quien usa un lector de
+   pantalla oye *"Cargando"* una vez, no cinco cajas vacías. */
+export function Esqueleto({ alturas = [72, 96, 72], etiqueta = 'Cargando' }) {
+  return (
+    <div className="space-y-3" role="status" aria-label={etiqueta}>
+      {alturas.map((alto, i) => (
+        <div
+          key={i}
+          className="esqueleto"
+          aria-hidden="true"
+          style={{ height: alto, background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+        />
+      ))}
+    </div>
+  );
+}

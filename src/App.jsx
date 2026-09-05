@@ -5,6 +5,8 @@ import { anadirApunte, resumenDelDia, progresoDelDia, apuntesDe } from './lib/ce
 // Entrega 3 · F8 y F9 — las fábricas de las entidades que crea el ＋ global.
 import { nuevaTareaDeCalendario } from './lib/calendarioMes';
 import { eventoDesdeQuickAdd } from './lib/accionesHoyAgenda';
+// Entrega 3 · F14 (HC F9) — la forma de la pantalla mientras carga (apartados 23 y 24).
+import { esqueleto } from './lib/pulidoHC';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
 import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl , vigilarLaConexion } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
@@ -23,7 +25,7 @@ import { iniciarAudio, conectarAlBus, conectarLosToques, actualizarPreferencias 
 import { emitir } from './lib/eventos';
 import { ESTADO_INICIAL, normalizarEstado, panelRachas, crearRacha as crearRachaServicio, completarDia as completarDiaServicio, deshacerDia as deshacerDiaServicio, eliminarRacha as eliminarRachaServicio } from './lib/rachasServicio';
 import { GAMIFICACION_INICIAL, normalizarGamificacion, evaluar as evaluarRachas, olvidarRacha as olvidarRachaGamificacion } from './lib/rachasGamificacion';
-import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal } from './components/ui';
+import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal, Esqueleto } from './components/ui';
 import HubView from './views/HubView';
 import Auth from './components/Auth';
 import DashboardView from './views/DashboardView';
@@ -168,10 +170,22 @@ const AREAS_NAV = [
 // vive fuera de MORE_NAV (es la pestaña fija de inicio) pero también puede querer protegerse.
 const AREAS_PROTEGIBLES = [{ id: 'hoy', label: 'Hoy', icon: Home }, ...MORE_NAV];
 
+/* Entrega 3 · F14 (HC F9, apartados 23 y 24) — 🚨 *"nunca mostrar una pantalla
+   completamente vacía mientras se cargan datos"*. Antes esto era una rueda
+   girando sobre un fondo liso, que es literalmente lo que el apartado prohíbe.
+   Ahora se dibuja **la forma de Hoy**, que es la pantalla que va a aparecer: así
+   no hay salto al cargar (apartado 21).
+
+   ⚠️ El latido vive en `index.css`, así que respeta "Reducir movimiento" solo. */
 function LoadingScreen() {
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: COLORS.bg }}>
-      <Loader2 className="animate-spin" size={28} style={{ color: ACCENTS[0].value }} />
+    /* 🐛 `pantalla-segura`, NO un `pt-16` a ojo: la Safe Area del iPhone vive en
+       `index.css` desde la E3 F1, y su propia comprobación cazó esto. Un número
+       fijo mete el esqueleto debajo de la hora del teléfono. */
+    <div className="min-h-screen px-4 pantalla-segura" style={{ background: COLORS.bg }}>
+      <div className="max-w-md mx-auto">
+        <Esqueleto alturas={esqueleto('hoy').alturas} etiqueta="Cargando tus datos" />
+      </div>
     </div>
   );
 }

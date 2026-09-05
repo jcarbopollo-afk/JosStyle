@@ -173,9 +173,11 @@ de error exacto** antes de asumir nada.
 **F10 (planificación avanzada y vista semanal, v3.30.0)** y la
 **F11 (notificaciones y recordatorios reales, v3.31.0)** y la
 **F12 (calendarios externos, v3.32.0)** y la
-**F13 (estadísticas de planificación, v3.33.0)**; la siguiente es la
-**14 — HC F9: pulido visual, UX y animaciones**. El índice, con la línea de cada fase dentro
-de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
+**F13 (estadísticas de planificación, v3.33.0)** y la
+**F14 (pulido visual, UX y animaciones, v3.34.0)**; la siguiente es la
+**15 — HC F10: PWA, iPhone, sincronización y auditoría final**, que **cierra el bloque Hoy y
+Calendario**. El índice, con la línea de cada fase dentro de la especificación literal, está en
+**`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y hay algo que necesita a Josué, anotado como DEP-29 en `docs/03`:** conectar **Google Calendar
 y Outlook** exige que él registre JosStyle en Google y en Microsoft **y** que exista un sitio seguro
@@ -184,7 +186,23 @@ construye el botón "Conectar"** —sería un control decorativo, y le haría cr
 están sincronizados—. Lo que sí funciona ya es el **archivo `.ics`**, que es la alternativa que pide
 el propio enunciado para Apple y sirve para los tres. **Los apartados 19 y 20 dependen de lo mismo.**
 
-⚠️ **Y lo que dejaron las trece primeras, que afecta a todas las demás:**
+⚠️ **Y lo que dejaron las catorce primeras, que afecta a todas las demás:**
+
+- 🚨 **UNA PANTALLA DE CARGA NO PUEDE ESTAR VACÍA** (E3 F14, apartado 23). `LoadingScreen` era una
+  rueda sobre un fondo liso, que es literalmente lo que el apartado prohíbe: ahora dibuja **la forma
+  de Hoy** con `<Esqueleto>`. Si una fase futura añade una pantalla que carga, su esqueleto va en
+  `ESQUELETOS` y **declara a qué se parece**.
+- 🚨 **NUNCA "TODO HECHO" CON PENDIENTES** (E3 F14, apartado 29): `vacioDeHoy()` mira los datos de
+  verdad y con pendientes **no dice ninguno de los dos** vacíos.
+- 🐛 **UNA ANIMACIÓN DECLARADA Y NO ESCRITA ES UN CATÁLOGO QUE MIENTE** (E3 F14): `tarea-hecha` y
+  `aviso-entra` estaban en `ANIMACIONES_HC` y **no existían en el CSS**. Hay una prueba que comprueba
+  que cada clase declarada existe de verdad.
+- 🐛 **Y una regla de revisor que no caza su propio ejemplo malo da siempre cero problemas** (E3 F14,
+  la lección de EH F42): cada regla de `REGLAS_PULIDO` trae su `ejemploMalo` con una prueba.
+- ⚠️ **Toda animación nueva va a `index.css`** (E3 F14), nunca a un `style` de una vista: así respeta
+  *"Reducir movimiento"* sola. Y ninguna pasa de `MAX_ANIMACION_MS`.
+- 🐛 **Y la Safe Area vale también para una pantalla de carga** (E3 F14): el esqueleto nació con un
+  `pt-16` a ojo y **lo cazó la comprobación de la E3 F1**. `pantalla-segura`, nunca un número.
 
 - 🚨 **UNA ESTADÍSTICA ES UNA VISTA, NO UN DATO** (E3 F13, y EH F35 lo dijo primero):
   `estadisticasPlan.js` **no guarda ni una cifra**. Una estadística guardada miente en cuanto él

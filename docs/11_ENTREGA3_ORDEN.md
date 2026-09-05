@@ -34,7 +34,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 11 ✅ | HC | F6 — Notificaciones y recordatorios reales — **hecha (v3.31.0)** | 4425 |
 | 12 ✅ | HC | F7 — Integraciones externas de calendario — **hecha (v3.32.0)**, con ⏸ DEP-29 | 4995 |
 | 13 ✅ | HC | F8 — Estadísticas de planificación — **hecha (v3.33.0)** | 5490 |
-| 14 | HC | F9 — Pulido visual, UX y animaciones | 6315 |
+| 14 ✅ | HC | F9 — Pulido visual, UX y animaciones — **hecha (v3.34.0)** | 6315 |
 | 15 | HC | F10 — PWA, iPhone, sincronización y auditoría final | 7088 |
 | 16 | **BL** Biblioteca | F1 — Rediseño como launcher de mini-apps | 7871 |
 | 17 | BL | F2 — Libros | 8280 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 13 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0). La siguiente es la **14 — HC F9: pulido visual, UX y animaciones**, línea 6315.
+**Por dónde va:** 14 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0). La siguiente es la **15 — HC F10: PWA, iPhone, sincronización y auditoría final**, línea 7088, que **cierra el bloque Hoy y Calendario**.
 
 ## Lo que dejó la Fase 1, y que afecta a todas las demás
 
@@ -308,6 +308,24 @@ solo vale como corrección o ajuste — nunca una función nueva.
   Pomodoro no se mezcla con las horas planificadas.
 - 🐛 **Dos expectativas de la prueba estaban mal**: con una tarea diaria, las apariciones completadas
   cuentan como tareas completadas, y no queda ni un día sin nada que completar.
+
+## Y lo que dejó la Fase 14 (HC F9)
+
+- 🚨 **UNA PANTALLA DE CARGA NO PUEDE ESTAR VACÍA** (23). `LoadingScreen` era una rueda sobre un
+  fondo liso —literalmente lo que el apartado prohíbe— y ahora dibuja la forma de Hoy. El esqueleto
+  de una pantalla nueva va en `ESQUELETOS` y **declara a qué se parece** (24).
+- 🚨 **NUNCA "TODO HECHO" CON PENDIENTES** (29): `vacioDeHoy()` mira los datos de verdad.
+- 🐛 **Una animación declarada y no escrita es un catálogo que miente**: `tarea-hecha` y
+  `aviso-entra` estaban en el catálogo y no en el CSS. Hay una prueba que lo comprueba.
+- 🐛 **Y una regla de revisor que no caza su ejemplo malo da siempre cero problemas** (EH F42): cada
+  regla de `REGLAS_PULIDO` trae el suyo con su prueba.
+- ⚠️ **Toda animación va a `index.css`**, nunca a un `style`: así respeta "Reducir movimiento" sola.
+  Y ninguna pasa de `MAX_ANIMACION_MS`.
+- ⚠️ **La mitad de los apartados ya se cumplían**, y están en `YA_PULIDO` con lo que los resuelve.
+- ⏸ **La posición del scroll (22) se explica, no se construye**: JosStyle no tiene rutas y el
+  navegador ya la mantiene.
+- 🐛 **Y la Safe Area vale también para la pantalla de carga**: el esqueleto nació con un `pt-16` a
+  ojo y lo cazó la comprobación de la Fase 1. Una guardia vieja atrapando a la fase nueva.
 
 ## Dos cosas del documento que conviene saber
 
