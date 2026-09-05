@@ -1830,12 +1830,26 @@ export default function App() {
   };
 
   const addObjetivo = (o) => snapshotAndSave({ objetivos: { ...objetivos, lista: [...objetivos.lista, o] } });
+  /* 🚨 Los objetivos SÍ tienen tamaño: `PLAZOS_OBJETIVO` va de "30 días" a "10
+     años". Cumplir uno a diez años vista no es lo mismo que cumplir uno a
+     treinta días, y la biblioteca de sonido declara `grand_achievement` aparte
+     desde la SO F4 sin que nadie lo emitiera. La frontera no se inventa aquí:
+     son los dos plazos que la propia lista pone por encima del año. */
+  const PLAZOS_GRANDES = ['5 años', '10 años'];
+
   const updateObjetivo = (o) => {
     /* SO — cumplir un objetivo suena; editarlo no. Y descumplirlo tampoco: se
        compara con el que habia, igual que en los habitos. */
     const antes = objetivos.lista.find((x) => x.id === o.id);
     snapshotAndSave({ objetivos: { ...objetivos, lista: objetivos.lista.map((x) => (x.id === o.id ? o : x)) } });
-    if (o?.cumplido && !antes?.cumplido) emitir('GOAL_COMPLETED', { objetivoId: o.id });
+    if (o?.cumplido && !antes?.cumplido) {
+      /* Los dos `emitir` van escritos enteros y no dentro de un ternario: la
+         prueba que comprueba quién emite cada evento busca el nombre literal, y
+         un evento escondido en una expresión le parecería un evento sin emisor.
+         Que el código sea legible para esa prueba es parte de que funcione. */
+      if (PLAZOS_GRANDES.includes(o.plazo)) emitir('MAJOR_GOAL_COMPLETED', { objetivoId: o.id, plazo: o.plazo });
+      else emitir('GOAL_COMPLETED', { objetivoId: o.id, plazo: o.plazo });
+    }
   };
   const deleteObjetivo = (id) => eliminarConPapelera('objetivos', 'lista', id);
   // La fecha de la última revisión tampoco pasa por el snapshot — es un dato de "seguimiento",

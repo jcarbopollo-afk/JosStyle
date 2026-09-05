@@ -389,7 +389,6 @@ export const SIN_EMISOR_TODAVIA = {
 
   // Funciones que no existen, y no se van a fingir.
   LEVEL_UP: 'No hay niveles: RA F3 decidió no construirlos (D2-02).',
-  MAJOR_GOAL_COMPLETED: 'No hay objetivos "mayores": un objetivo se cumple o no, sin tamaño.',
 
   // Aplazado por su propia fase, con fecha.
 };
