@@ -308,6 +308,11 @@ export const EVENTOS_GAMIFICACION = {
   STREAK_PERSONAL_RECORD: 'STREAK_PERSONAL_RECORD',
   STREAK_BROKEN: 'STREAK_BROKEN',
   ACHIEVEMENT_UNLOCKED: 'ACHIEVEMENT_UNLOCKED',
+  /* 🚨 Una insignia no es un logro grande. Los de `familia: 'coleccion'` son
+     coleccionables —el propio dato los llama colección— y la biblioteca de
+     sonido declara `badge_unlocked` aparte desde la SO F4 sin que nadie lo
+     emitiera. Añadido el 2026-09-04. */
+  BADGE_UNLOCKED: 'BADGE_UNLOCKED',
 };
 
 /**
@@ -328,7 +333,14 @@ export function evaluar(estado, gamificacion, hoy = todayISO()) {
     if (desbloqueados.some((l) => claveLogro(l.definicionId, l.rachaId) === clave)) return;   // apartado 6
     desbloqueados.push({ id: uid(), definicionId: definicion.id, rachaId: rachaId || null, desbloqueadoEn: hoy });
     eventos.push({
-      tipo: EVENTOS_GAMIFICACION.ACHIEVEMENT_UNLOCKED,
+      /* 🚨 Una insignia no es un logro grande, y la biblioteca de sonido lo
+         declara aparte desde la SO F4. La diferencia no se inventa aquí: está
+         en el propio dato desde la RA F3 — `familia: 'coleccion'` son los
+         coleccionables (constancia, volver, varios frentes), frente a los de
+         `racha` y `record`, que marcan un momento. */
+      tipo: definicion.familia === 'coleccion'
+        ? EVENTOS_GAMIFICACION.BADGE_UNLOCKED
+        : EVENTOS_GAMIFICACION.ACHIEVEMENT_UNLOCKED,
       logroId: definicion.id,
       titulo: definicion.titulo,
       rachaId: rachaId || null,

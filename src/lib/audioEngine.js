@@ -353,6 +353,22 @@ export function conectarLosToques() {
       return;
     }
 
+    /* 🚨 **Guardar a propósito sí suena; los otros ochenta y seis, no.**
+       `saveData()` se llama desde 86 sitios de `App.jsx` —cada cambio de estado
+       se persiste solo— y un sonido en cada uno, encima del clic, sería ruido
+       constante. Pero un botón que pone "Guardar" es otra cosa: ahí guardar **es
+       el propósito del gesto**, no un efecto secundario.
+
+       ⚠️ Suena al pulsar, no al confirmarse. Si el guardado falla, el error
+       llega detrás desde `saveData()` — que es como se comporta cualquier
+       aplicación y sigue siendo información honesta: primero "recibido", luego
+       "no ha podido ser". */
+    const texto = `${etiqueta} ${el.textContent || ''}`.trim().toLowerCase();
+    if (/^guardar\b/.test(texto)) {
+      reproducir('ACTION_SAVED');
+      return;
+    }
+
     reproducir('UI_CLICK');
   };
 

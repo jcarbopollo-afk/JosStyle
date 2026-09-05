@@ -14,11 +14,11 @@ import { calcularResumenModulo } from './lib/resumenesHub';
 import { eventosDerivados } from './lib/calendarioIntegracion';
 import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
 import { urlFirmada, urlEnCache } from './lib/imagenes';
-import { resumenHabito } from './lib/rachas';
+import { resumenHabito, enRiesgo } from './lib/rachas';
 import { DEFAULT_AUDIO, normalizarAudio } from './lib/audio';
 import { iniciarAudio, conectarAlBus, conectarLosToques, actualizarPreferencias as actualizarAudio, detener as detenerAudio } from './lib/audioEngine';
 import { emitir } from './lib/eventos';
-import { ESTADO_INICIAL, normalizarEstado, crearRacha as crearRachaServicio, completarDia as completarDiaServicio, deshacerDia as deshacerDiaServicio, eliminarRacha as eliminarRachaServicio } from './lib/rachasServicio';
+import { ESTADO_INICIAL, normalizarEstado, panelRachas, crearRacha as crearRachaServicio, completarDia as completarDiaServicio, deshacerDia as deshacerDiaServicio, eliminarRacha as eliminarRachaServicio } from './lib/rachasServicio';
 import { GAMIFICACION_INICIAL, normalizarGamificacion, evaluar as evaluarRachas, olvidarRacha as olvidarRachaGamificacion } from './lib/rachasGamificacion';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal } from './components/ui';
 import HubView from './views/HubView';
@@ -542,6 +542,13 @@ export default function App() {
          'sincronizado' significa algo: antes de esto no hay nada que sincronizar,
          y despues los guardados son de uno en uno. */
       emitir('SYNC_COMPLETED', {});
+
+      /* SO — y si alguna racha viva se queda sin cumplir a estas horas, se avisa.
+         Al abrir la aplicacion y no cada segundo: un aviso repetido deja de ser
+         un aviso. El cooldown de 3 s del propio evento hace el resto. */
+      const enPeligro = panelRachas(normalizarEstado(rach)).rachas
+        .filter((r) => enRiesgo(r.estado, new Date().getHours()));
+      if (enPeligro.length) emitir('STREAK_AT_RISK', { cuantas: enPeligro.length });
     })();
     return () => { cancelled = true; };
   }, [session]);
@@ -1459,12 +1466,17 @@ export default function App() {
     const siguiente = { ...papelera, elementos: papelera.elementos.filter((e) => e.id !== entradaId) };
     setPapelera(siguiente);
     saveData(uidUser, 'papelera', siguiente);
+    /* SO — un borrado sin vuelta atras es el unico aviso real que hay hoy en la
+       aplicacion: no es un error (ha salido bien) ni un acierto (no hay nada que
+       celebrar). Es exactamente lo que la biblioteca llama 'warning'. */
+    emitir('ACTION_WARNING', { de: 'borrado_definitivo' });
   };
 
   const vaciarPapelera = () => {
     const siguiente = { ...papelera, elementos: [] };
     setPapelera(siguiente);
     saveData(uidUser, 'papelera', siguiente);
+    emitir('ACTION_WARNING', { de: 'vaciar_papelera', cuantos: papelera.elementos.length });
   };
 
   const setRetencionPapelera = (dias) => {
@@ -1676,8 +1688,13 @@ export default function App() {
     const antes = Number(economia?.hucha) || 0;
     const ahora = Number(siguiente?.hucha) || 0;
     snapshotAndSave({ economia: siguiente });
-    if (Number.isFinite(meta) && meta > 0 && antes < meta && ahora >= meta) {
-      emitir('SAVING_COMPLETED', { meta });
+    if (Number.isFinite(meta) && meta > 0 && antes < meta) {
+      /* Llegar a la meta y acercarse a ella son dos cosas distintas, y la
+         biblioteca las declara aparte. La hucha es el único sitio de la
+         aplicación con progreso medible: un objetivo normal está cumplido o no,
+         sin puntos intermedios que anunciar. */
+      if (ahora >= meta) emitir('SAVING_COMPLETED', { meta });
+      else if (ahora > antes) emitir('GOAL_PROGRESS', { meta, actual: ahora });
     }
   };
   const addMedida = (entry) => snapshotAndSave({ salud: { ...salud, medidas: [...salud.medidas, entry] } });

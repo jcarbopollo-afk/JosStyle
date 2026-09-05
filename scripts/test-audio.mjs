@@ -397,7 +397,7 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
   Object.values(EVENTOS_GAMIFICACION).forEach((e) => emitidos.add(eventoCanonico(e)));
   /* Y los de interfaz no salen de un `emitir`, sino del oyente de toques. */
   if (/conectarLosToques/.test(motor2)) {
-    ['UI_CLICK', 'UI_TOGGLE', 'UI_TOGGLE_OFF', 'UI_BACK', 'UI_OPEN'].forEach((e) => {
+    ['UI_CLICK', 'UI_TOGGLE', 'UI_TOGGLE_OFF', 'UI_BACK', 'UI_OPEN', 'ACTION_SAVED'].forEach((e) => {
       if (new RegExp(e).test(motor2)) emitidos.add(e);
     });
   }

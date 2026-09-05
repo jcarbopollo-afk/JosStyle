@@ -11,7 +11,7 @@ import {
   claseDeRegla, toleranciaDe, describirRegla,
   crearRacha, normalizarRacha, crearEvento, claveEvento,
   registrarCumplimiento, anularCumplimiento, indicePorFecha,
-  ESTADOS_DIA, estadoDeDia, ESTADOS_RACHA, estadoRacha,
+  ESTADOS_DIA, estadoDeDia, ESTADOS_RACHA, estadoRacha, enRiesgo, HORA_EN_RIESGO,
   rachaActual, mejorRacha, historialDeRachas, estadisticasRacha, diasEntre,
   resumenRacha, rachaGlobal,
   REGLA_HABITO, rachaDeHabito, eventosDeHistorial, resumenHabito, alternarHabito,
@@ -384,6 +384,35 @@ console.log('\n═══ Sin gamificación (apartado 22) ═══\n');
     prohibidas.every((p) => !claves.some((k) => k.toLowerCase().includes(p))), claves.join(','));
   comprobar('El motor no guarda ningún contador: todo sale del historial',
     !claves.includes('rachaGuardada') && !claves.includes('contador'));
+}
+
+/* ===========================================================================
+   🚨 EN RIESGO — el estado que esta fase aplazó y nadie recogió
+   ===========================================================================
+   El comentario de `ESTADOS_RACHA` lo dejaba para RA F4 *"con el resto de
+   estados visuales"*, y ahí se quedó: `streak_at_risk.mp3` existía en la
+   biblioteca de sonido sin que nada pudiera dispararlo.
+
+   No hacía falta la interfaz. **En riesgo no es un estado nuevo: es PENDIENTE
+   mirado a una hora**, y la hora entra por parámetro como `hoy` en todo este
+   archivo — así se prueba la medianoche sin esperar a la medianoche.
+   =========================================================================== */
+console.log('\n═══ En riesgo ═══\n');
+{
+  comprobar('CLAVE · Una racha pendiente a las 22:00 está en riesgo',
+    enRiesgo(ESTADOS_RACHA.PENDIENTE, 22) === true);
+  comprobar('...y a las 10:00 no, que queda todo el día por delante',
+    enRiesgo(ESTADOS_RACHA.PENDIENTE, 10) === false);
+  comprobar('⚠️ Una racha YA cumplida no está en riesgo aunque sea tardísimo',
+    enRiesgo(ESTADOS_RACHA.ACTIVA, 23) === false);
+  comprobar('...ni una rota: ahí ya no hay nada que salvar',
+    enRiesgo(ESTADOS_RACHA.ROTA, 23) === false);
+  comprobar('Sin una hora válida no se inventa un riesgo',
+    enRiesgo(ESTADOS_RACHA.PENDIENTE, undefined) === false && enRiesgo(ESTADOS_RACHA.PENDIENTE, 'tarde') === false);
+  /* ⚠️ A las 21:00 y no a las 23:00: un aviso que llega cuando ya no da tiempo
+     a hacer nada no es un aviso, es un reproche. */
+  comprobar('Y el aviso llega con margen para hacer algo, no a medianoche',
+    HORA_EN_RIESGO <= 22 && HORA_EN_RIESGO >= 19, String(HORA_EN_RIESGO));
 }
 
 console.log(fallos === 0 ? '\n  Todo correcto.\n' : `\n  ${fallos} fallo(s).\n`);

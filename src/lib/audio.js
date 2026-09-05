@@ -386,17 +386,12 @@ export const SIN_EMISOR_TODAVIA = {
   SUCCESS: 'Genérico. Cada acción que sale bien tiene ya su evento propio (TASK, HABIT, GOAL, STUDY, SLEEP).',
   ACTION_COMPLETED: 'Genérico, mismo caso que SUCCESS. Se conserva porque el apartado 4 lo nombra.',
   UI_SUCCESS: 'Genérico de interfaz. `sync_complete` y `connection_restored` ya tienen el suyo.',
-  ACTION_SAVED: '🚨 A propósito: guardar sale bien decenas de veces por sesión y un sonido en cada una, encima del clic, sería ruido. Solo se oye cuando FALLA.',
 
   // Funciones que no existen, y no se van a fingir.
   LEVEL_UP: 'No hay niveles: RA F3 decidió no construirlos (D2-02).',
-  BADGE_UNLOCKED: 'No hay insignias separadas de los logros. Hoy todo logro es ACHIEVEMENT_UNLOCKED.',
   MAJOR_GOAL_COMPLETED: 'No hay objetivos "mayores": un objetivo se cumple o no, sin tamaño.',
-  GOAL_PROGRESS: 'Un objetivo es `cumplido` sí o no. Sin porcentaje no hay progreso que anunciar.',
-  ACTION_WARNING: 'No hay ningún aviso intermedio todavía: lo que puede ir mal, va mal del todo y suena a error.',
 
   // Aplazado por su propia fase, con fecha.
-  STREAK_AT_RISK: '⚠️ "En riesgo" depende de la HORA, no del día, y RA F1 lo aplazó expresamente a RA F4 con el resto de estados visuales.',
 };
 
 /* ===========================================================================

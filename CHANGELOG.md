@@ -1,5 +1,60 @@
 # CHANGELOG.md
 
+## v3.26.0 — De diez eventos mudos a cinco, y los cinco tienen motivo
+
+### Qué se ha conectado
+Cinco de los diez que quedaban. Ninguno inventando una función: en los cinco casos **el sistema ya
+estaba** y solo faltaba mirarlo.
+
+| Evento | Dónde estaba el sistema |
+|---|---|
+| `BADGE_UNLOCKED` | Los logros ya tienen `familia`, y una de ellas se llama literalmente **`coleccion`** |
+| `SAVING_COMPLETED` | La hucha de la Entrega 3 tiene meta: se cruza o no se cruza |
+| `GOAL_PROGRESS` | La misma hucha, cuando el ahorro sube sin llegar |
+| `ACTION_WARNING` | El borrado definitivo de la papelera |
+| `STREAK_AT_RISK` | El estado `PENDIENTE`, que ya existía |
+
+### 🚨 "En riesgo" llevaba aplazado desde RA F1, y no hacía falta esperar
+El comentario de `ESTADOS_RACHA` lo dejaba para RA F4 *"con el resto de estados visuales"*. Por eso
+`streak_at_risk.mp3` existía sin que nada pudiera dispararlo.
+
+Pero **en riesgo no es un estado nuevo: es `PENDIENTE` mirado a una hora**. Tres líneas puras, con la
+hora por parámetro igual que `hoy` en todo ese archivo — así se prueba la medianoche sin esperar a la
+medianoche.
+
+⚠️ A las **21:00**, no a las 23:00: un aviso que llega cuando ya no da tiempo a hacer nada no es un
+aviso, es un reproche.
+
+### Una insignia no es un logro, y el dato ya lo sabía
+`badge_unlocked` sonaba igual que `achievement_unlocked`. La diferencia no se ha inventado aquí:
+la RA F3 ya clasifica sus logros en `racha`, `record` y **`coleccion`** — los coleccionables
+(constancia, volver, varios frentes) frente a los que marcan un momento.
+
+### Guardar a propósito sí suena
+`saveData()` se llama desde 86 sitios y **un sonido en cada guardado sería ruido**. Pero un botón que
+pone «Guardar» es otra cosa: ahí guardar **es el propósito del gesto**, no un efecto secundario. El
+oyente de toques lo distingue por su etiqueta.
+
+⚠️ Suena al pulsar, no al confirmarse. Si el guardado falla, el error llega detrás desde
+`saveData()`: primero "recibido", luego "no ha podido ser". Es información honesta, no una mentira.
+
+### Los cinco que quedan, y por qué no se tocan
+- **`SUCCESS`, `ACTION_COMPLETED`, `UI_SUCCESS`** — genéricos. Cada acción que sale bien ya tiene su
+  evento propio; se conservan porque el apartado 4 los nombra.
+- **`LEVEL_UP`** — no hay niveles. RA F3 decidió no construirlos.
+- **`MAJOR_GOAL_COMPLETED`** — no hay objetivos "mayores": uno se cumple o no, sin tamaño.
+
+Los dos últimos exigirían **construir la función que no existe**, y un sonido de "has subido de
+nivel" sin niveles es un control decorativo con altavoz — la regla 8 con volumen. Están declarados en
+`SIN_EMISOR_TODAVIA` con su motivo, y la prueba exige que sigan estándolo.
+
+### La invariante funcionando en caliente
+Dos veces en esta tanda: al conectar `SAVING_COMPLETED` y al conectar `STREAK_AT_RISK`, la suite se
+puso roja porque **seguían declarados como pendientes algo que ya se emitía**. Es la mitad de la
+regla que suele olvidarse — no basta con que lo pendiente esté declarado; lo declarado tiene que
+seguir pendiente.
+
+
 ## v3.25.0 — Ahora suena todo lo que tiene sistema detrás
 
 ### Qué se ha construido

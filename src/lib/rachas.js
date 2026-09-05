@@ -423,6 +423,28 @@ export const ESTADOS_RACHA = {
   ROTA: 'rota',                     // hubo racha y se cortó
 };
 
+/**
+ * 🚨 **"En riesgo", que llevaba aplazado desde esta misma fase.**
+ *
+ * El comentario de arriba lo dejaba para RA F4 *"con el resto de estados
+ * visuales"*, y por eso `streak_at_risk.mp3` existía sin que nadie lo pudiera
+ * disparar. Pero no hacía falta la interfaz: **en riesgo no es un estado nuevo,
+ * es PENDIENTE mirado a una hora concreta**, y eso son tres líneas puras.
+ *
+ * ⚠️ La hora entra por parámetro, como `hoy` en todo este archivo: sin leer el
+ * reloj se puede probar la medianoche sin esperar a la medianoche.
+ *
+ * Las 21:00 y no las 23:00 porque un aviso que llega cuando ya no da tiempo a
+ * hacer nada no es un aviso, es un reproche.
+ */
+export const HORA_EN_RIESGO = 21;
+
+export function enRiesgo(estadoDeLaRacha, hora) {
+  const h = Number(hora);
+  if (!Number.isFinite(h)) return false;
+  return estadoDeLaRacha === ESTADOS_RACHA.PENDIENTE && h >= HORA_EN_RIESGO;
+}
+
 export function estadoRacha(eventos, racha, hoy = todayISO()) {
   const r = normalizarRacha(racha);
   const indice = indicePorFecha(eventos, r.id);
