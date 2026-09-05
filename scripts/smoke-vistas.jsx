@@ -122,8 +122,10 @@ import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
 import LibraryView, { TarjetaMiniApp, CabeceraMiniApp, VacioMiniApp, AnadirNotaRapida, AnadirIdea, AnadirColeccion, FichaSimple,
-  PantallaLibros, TarjetaLibro, ContinuarLeyendo, FormularioLibro, DetalleLibro, Portada, BarraProgreso, EtiquetaEstado } from '../src/views/LibraryView.jsx';
+  PantallaLibros, TarjetaLibro, ContinuarLeyendo, FormularioLibro, DetalleLibro, Portada, BarraProgreso, EtiquetaEstado,
+  PantallaGuardados, TarjetaGuardado, FormularioGuardado, DetalleGuardado, IconoGuardado } from '../src/views/LibraryView.jsx';
 import { ESTADOS_LIBRO, crearLibro } from '../src/lib/libros.js';
+import { TIPOS_GUARDADO, crearGuardado } from '../src/lib/guardados.js';
 import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
 import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
@@ -295,6 +297,49 @@ const CASOS = [
   ['DetalleLibro', DetalleLibro, () => ({
     accent, url: null, onCerrar: noop, onGuardar: noop, onEliminar: noop, onSubirPortada: noop,
     libro: { ...crearLibro({ titulo: 'Hábitos atómicos', autor: 'James Clear', totalPaginas: 250, paginaActual: 180, nota: 'Capítulo 4' }), estado: 'leyendo' },
+  })],
+  /* E3 F18 (BL F4) — Guardados: la tarjeta de los tres tipos, el formulario
+     (nuevo y editando), el detalle y la pantalla con datos y sin ellos. */
+  ...TIPOS_GUARDADO.map((t) => [
+    `TarjetaGuardado (${t.id})`, TarjetaGuardado,
+    () => ({
+      accent, indice: 0, onAbrir: noop, onFavorito: noop,
+      guardado: crearGuardado(t.id === 'link'
+        ? { tipo: 'link', url: 'https://ejemplo.es/articulo', titulo: 'Cómo aprender programación' }
+        : { tipo: t.id, contenido: 'Una técnica que me puede servir para el examen', titulo: '' }),
+    }),
+  ]),
+  ['TarjetaGuardado (favorito y archivado)', TarjetaGuardado, () => ({
+    accent, indice: 1, onAbrir: noop, onFavorito: noop,
+    guardado: { ...crearGuardado({ tipo: 'link', url: 'https://ejemplo.es' }), favorito: true, estado: 'archived' },
+  })],
+  ['IconoGuardado (texto)', IconoGuardado, () => ({ accent, guardado: crearGuardado({ tipo: 'text', contenido: 'x' }) })],
+  ['FormularioGuardado (nuevo)', FormularioGuardado, () => ({ accent, onGuardar: noop })],
+  ['FormularioGuardado (editando)', FormularioGuardado, () => ({
+    accent, onGuardar: noop, onCancelar: noop,
+    guardado: crearGuardado({ tipo: 'link', url: 'https://ejemplo.es', titulo: 'Tutorial', descripcion: 'De React', nota: 'Verlo luego' }),
+  })],
+  ['DetalleGuardado (enlace)', DetalleGuardado, () => ({
+    accent, onCerrar: noop, onGuardar: noop, onEliminar: noop,
+    guardado: crearGuardado({ tipo: 'link', url: 'https://ejemplo.es', titulo: 'Tutorial', nota: 'Verlo luego' }),
+  })],
+  ['DetalleGuardado (texto archivado)', DetalleGuardado, () => ({
+    accent, onCerrar: noop, onGuardar: noop, onEliminar: noop,
+    guardado: { ...crearGuardado({ tipo: 'text', contenido: 'Una frase que me sirve' }), estado: 'archived', favorito: true },
+  })],
+  ['PantallaGuardados (vacía)', PantallaGuardados, () => ({
+    guardados: [], cabecera: null, crear: false, onCerrarCrear: noop, vacio: null, accent,
+    onAdd: noop, onUpdate: noop, onDelete: noop,
+  })],
+  ['PantallaGuardados (con datos)', PantallaGuardados, () => ({
+    guardados: [
+      crearGuardado({ tipo: 'link', url: 'https://ejemplo.es/uno', titulo: 'Uno' }),
+      { ...crearGuardado({ tipo: 'text', contenido: 'Un fragmento' }), favorito: true },
+      { ...crearGuardado({ tipo: 'resource', contenido: 'Un recurso' }), estado: 'archived' },
+      crearGuardado({ tipo: 'link', url: 'https://ejemplo.es/dos' }),
+    ],
+    cabecera: null, crear: false, onCerrarCrear: noop, vacio: null, accent,
+    onAdd: noop, onUpdate: noop, onDelete: noop,
   })],
   ['PantallaLibros (vacía)', PantallaLibros, () => ({
     app: { id: 'libros', nombre: 'Libros', vacio: { titulo: 'Tu biblioteca empieza aquí', frase: 'Guarda lo que quieres leer.', boton: 'Añadir libro' } },

@@ -176,10 +176,19 @@ eq(CATALOGO_PAPELERA['biblioteca.colecciones'].campos, ['nombre'],
 
 console.log('\n═══ 9. 🚨 EL NORMALIZADOR — DECIMONOVENA VEZ (regla 5) ═══\n');
 
-const viejo = { apuntes: [{ id: 'a1', titulo: 'Examen' }], enlaces: [{ id: 'e1' }] };
+/* ⚠️ El enlace del ejemplo lleva su dirección **desde la BL F4**: allí los
+   enlaces pasaron a ser guardados con ficha completa, y uno sin dirección ni
+   contenido no es nada y se descarta. La primera versión de esta prueba usaba
+   `{ id: 'e1' }` a secas, que era un enlace que Josué no puede tener. */
+const viejo = {
+  apuntes: [{ id: 'a1', titulo: 'Examen' }],
+  enlaces: [{ id: 'e1', fecha: '2026-09-01', titulo: 'Repaso', url: 'https://ejemplo.es', descripcion: 'Vídeo' }],
+};
 const migrado = normalizarBiblioteca(viejo);
 eq(migrado.apuntes, viejo.apuntes, '🚨 lo que Josué ya tenía se queda INTACTO: esta fase no toca sus apuntes');
-eq(migrado.enlaces, viejo.enlaces, '🚨 ni sus enlaces');
+eq([migrado.enlaces[0].id, migrado.enlaces[0].titulo, migrado.enlaces[0].url, migrado.enlaces[0].descripcion, migrado.enlaces[0].fecha],
+  ['e1', 'Repaso', 'https://ejemplo.es', 'Vídeo', '2026-09-01'],
+  '🚨 y sus enlaces conservan TODOS sus campos al convertirse en guardados (BL F4)');
 eq([migrado.libros, migrado.ideas, migrado.colecciones], [[], [], []],
   '🚨 y las tres listas nuevas llegan como `[]`, no `undefined`: sin esto el lanzador revienta al contarlas');
 eq(normalizarBiblioteca(null).libros, [], 'sin nada guardado tampoco revienta');

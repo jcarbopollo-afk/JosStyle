@@ -42,8 +42,10 @@ import { uid, fechaLocalISO } from './helpers.js';
    ⚠️ Y se hace **importando y reexportando**, nunca `export … from`: eso no crea
    binding local, y este archivo las usa (EH F17). */
 import { crearLibro, normalizarLibro } from './libros.js';
+/* BL F4 — lo mismo con los guardados: su ficha completa vive en `guardados.js`. */
+import { normalizarGuardado } from './guardados.js';
 
-export { crearLibro, normalizarLibro };
+export { crearLibro, normalizarLibro, normalizarGuardado };
 
 /* ── Qué había antes de esta fase ──────────────────────────────────────────
 
@@ -317,7 +319,11 @@ export function normalizarBiblioteca(guardado) {
   return {
     ...b,
     apuntes: lista(b.apuntes),
-    enlaces: lista(b.enlaces),
+    /* 🚨 BL F4 — los enlaces de la Fase 11 SON los guardados, y su ficha creció:
+       tipo, contenido, nota, favorito, estado y colección. Sin normalizarlos, el
+       primer guardado desde la pantalla nueva se llevaría lo que no conociera
+       (regla 5, vigésima vez). La migración es el propio normalizador. */
+    enlaces: lista(b.enlaces).map(normalizarGuardado).filter(Boolean),
     libros: lista(b.libros).map(normalizarLibro).filter(Boolean),
     ideas: lista(b.ideas).map(normalizarIdea).filter(Boolean),
     colecciones: lista(b.colecciones).map(normalizarColeccion).filter(Boolean),

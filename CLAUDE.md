@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.38.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.39.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 3** (44 fases — **1 hecha**, ver `docs/11_ENTREGA3_ORDEN.md`),
@@ -177,9 +177,9 @@ de error exacto** antes de asumir nada.
 **F14 (pulido visual, UX y animaciones, v3.34.0)** y la
 **F15 (PWA, iPhone y auditoría final, v3.36.0)**, que 🏁 **CIERRÓ EL BLOQUE HOY Y CALENDARIO** —las
 diez fases HC—, y la **F16 (la Biblioteca como lanzador de mini-apps, v3.37.0)**, con la que empieza
-el bloque de **Biblioteca**, y la **F17 (Libros, v3.38.0)**; la siguiente es la **18 — BL F4:
-Guardados**. El índice, con la línea de cada fase dentro de la especificación literal, está en
-**`docs/11_ENTREGA3_ORDEN.md`**.
+el bloque de **Biblioteca**, la **F17 (Libros, v3.38.0)** y la **F18 (Guardados, v3.39.0)**; la
+siguiente es la **19 — BL F5: Ideas**. El índice, con la línea de cada fase dentro de la
+especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
 rótulo dice *"Biblioteca 8"* y el documento va **F1, F2, F4, F5, F6, F6, F7, F8**— y **la Fase 6
@@ -199,7 +199,27 @@ añade a ciegas porque el riesgo es el fallo histórico de este proyecto:** mal 
 aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con `main` sirviendo
 código de agosto mientras él decía *"la web sigue igual"*.
 
-⚠️ **Y lo que dejaron las diecisiete primeras, que afecta a todas las demás:**
+⚠️ **Y lo que dejaron las dieciocho primeras, que afecta a todas las demás:**
+
+- 🚨 **DE UNA DIRECCIÓN SOLO SE PUEDEN SABER EL DOMINIO Y EL FAVICON** (E3 F18). El título y la
+  imagen de portada exigen **descargar la página**, y el navegador no puede: lo impide la política
+  de origen cruzado, y no hay función de servidor para eso. Así que **no se fingen** —se dice en
+  pantalla— y `preview_image_url` **ni existe como campo**: guardar uno que nadie puede rellenar es
+  prometer una función que no existe (regla 8).
+- ⚠️ **El favicon se le pide AL SITIO MISMO** (E3 F18), nunca a un servicio de terceros: ésos verían
+  qué guarda Josué. Y si falla, la tarjeta sigue funcionando con el icono de su tipo.
+- 🚨 **ARCHIVAR NO ES ELIMINAR** (E3 F18, y E3 F5 lo dijo con los horarios): lo archivado
+  **desaparece de lo activo** —si siguiera saliendo, el botón no haría nada visible— y sale **solo
+  en su filtro, entero**. Eliminar sigue siendo la papelera global.
+- ⚠️ **El dominio y el favicon NO se guardan: se derivan** (E3 F18). Guardarlos sería una copia que
+  se queda vieja en cuanto él corrija la dirección.
+- ⚠️ **"Favoritos primero" es un ORDEN, no un filtro** (E3 F18): los demás siguen estando, debajo.
+- ⚠️ **Un guardado sin título se enseña por su dominio o por su texto** (E3 F18), nunca como *"Sin
+  título"*: eso no ayuda a encontrarlo.
+- ⏸ **El *Compartir* del iPhone depende del service worker** (E3 F18 + DEP-30). `crearDesdeCompartido`
+  ya funciona; el manifiesto **no declara `share_target`** a propósito, porque un *Compartir* que
+  Safari ofrezca y que luego no guarde nada sería peor que no ofrecerlo.
+
 
 - 🚨 **UN MANEJADOR `onAlgo` USADO Y NO DECLARADO DEJA LA PANTALLA EN BLANCO** (E3 F17), y no lo ve
   **ni el build, ni el renderizado, ni las pruebas de Node**: las de renderizado pintan el

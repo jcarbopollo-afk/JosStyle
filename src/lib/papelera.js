@@ -91,7 +91,10 @@ export const CATALOGO_PAPELERA = {
   'calendario.eventos': { modulo: 'calendario', coleccion: 'eventos', tipo: 'Evento', campos: ['titulo'], icono: 'calendario' },
   'diario.entradas': { modulo: 'diario', coleccion: 'entradas', tipo: 'Entrada del diario', campos: ['fecha'], icono: 'diario' },
   'biblioteca.apuntes': { modulo: 'biblioteca', coleccion: 'apuntes', tipo: 'Apunte', campos: ['titulo'], icono: 'biblioteca' },
-  'biblioteca.enlaces': { modulo: 'biblioteca', coleccion: 'enlaces', tipo: 'Enlace', campos: ['titulo'], icono: 'biblioteca' },
+  /* E3 F18 (BL F4) — un guardado puede no tener título (el enunciado dice que es
+     opcional), así que la papelera enseña también su dirección o su contenido:
+     una fila en blanco no dice qué se está recuperando. */
+  'biblioteca.enlaces': { modulo: 'biblioteca', coleccion: 'enlaces', tipo: 'Guardado', campos: ['titulo', 'url', 'contenido'], icono: 'biblioteca' },
   // E3 F16 (BL F1) — toda lista que se pueda borrar va aquí (EH F45). Las tres nacen
   // con la fase, así que entran a la vez que su botón de eliminar.
   'biblioteca.libros': { modulo: 'biblioteca', coleccion: 'libros', tipo: 'Libro', campos: ['titulo'], icono: 'biblioteca' },

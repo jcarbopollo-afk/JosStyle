@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Search, FileText, Video as VideoIcon, Image as ImageIcon, StickyNote, Link as LinkIcon,
-  Trash2, ExternalLink, ChevronDown, ChevronUp, Upload, ArrowLeft, Plus, Pencil,
+  Trash2, ExternalLink, ChevronDown, ChevronUp, Upload, ArrowLeft, Plus, Pencil, Star, Archive,
   BookMarked, Bookmark, Lightbulb, FolderOpen,
 } from 'lucide-react';
 import { COLORS, TIPOS_ARCHIVO_BIBLIOTECA } from '../tokens';
@@ -15,6 +15,12 @@ import {
 /* BL F2 — Libros tiene su propia librería. `crearLibro` y `normalizarLibro`
    vivían en `biblioteca.js` desde la F1 y se mudaron aquí al desarrollarla:
    una sola fábrica, no dos. */
+import {
+  TIPOS_GUARDADO, tipoGuardado, dominioDe, faviconDe, nombreDe,
+  crearGuardado, editarGuardado, alternarFavorito, archivar, desarchivar,
+  FILTROS_GUARDADOS, ORDENES_GUARDADOS, ORDEN_POR_DEFECTO,
+  filtrarGuardados, ordenarGuardados, resumenGuardados, DIFERENCIA_CON_NOTAS,
+} from '../lib/guardados';
 import {
   ESTADOS_LIBRO, estadoLibro, ESTADO_POR_DEFECTO, crearLibro, editarLibro,
   progresoDe, actualizarPagina, cambiarEstado, marcarTerminado,
@@ -325,32 +331,6 @@ export function TarjetaMiniApp({ app, indicador, accent, indice, onAbrir }) {
   );
 }
 
-function AnadirEnlace({ onAdd, accent }) {
-  const [form, setForm] = useState({ titulo: '', url: '', descripcion: '' });
-  const puedeGuardar = form.titulo.trim() && form.url.trim();
-  const guardar = () => {
-    if (!puedeGuardar) return;
-    let url = form.url.trim();
-    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
-    onAdd({ id: uid(), fecha: todayISO(), titulo: form.titulo.trim(), url, descripcion: form.descripcion.trim() });
-    setForm({ titulo: '', url: '', descripcion: '' });
-  };
-  return (
-    <Card>
-      <Field label="Título">
-        <TextInput value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder="Ej: Vídeo de repaso de Química" />
-      </Field>
-      <Field label="Enlace">
-        <TextInput value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://…" />
-      </Field>
-      <Field label="Descripción (opcional)">
-        <TextInput value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
-      </Field>
-      <PrimaryButton accent={accent} disabled={!puedeGuardar} onClick={guardar}>Guardar enlace</PrimaryButton>
-    </Card>
-  );
-}
-
 /* ── Cabecera de una mini-app ──────────────────────────────────────────────
    *"Cada mini-app debe tener: título, botón volver, botón de crear contenido,
    estado vacío."* Los cuatro, y en el mismo sitio para las seis. */
@@ -399,7 +379,7 @@ export default function LibraryView({
   biblioteca, archivos,
   onAddArchivo, onDeleteArchivo,
   onAddApunte, onDeleteApunte,
-  onAddEnlace, onDeleteEnlace,
+  onAddEnlace, onDeleteEnlace, onUpdateEnlace,
   onAddLibro, onDeleteLibro, onUpdateLibro, onSubirPortada, onBorrarPortada,
   onAddIdea, onDeleteIdea,
   onAddColeccion, onDeleteColeccion,
@@ -464,7 +444,7 @@ export default function LibraryView({
   /* ⚠️ Libros tiene su propio buscador dentro de su pantalla (BL F2), con sus
      filtros y su orden al lado: dos cajas de búsqueda en la misma pantalla
      serían dos formas de hacer lo mismo. */
-  const conBuscador = abierta !== 'libros' && elementos.length >= 5;
+  const conBuscador = !['libros', 'guardados'].includes(abierta) && elementos.length >= 5;
 
   const cabecera = (
     <>
@@ -518,19 +498,21 @@ export default function LibraryView({
 
   // ── Guardados ───────────────────────────────────────────────────────────
   if (abierta === 'guardados') {
-    const lista = elementos.filter((e) => coincide([e.titulo, e.url, e.descripcion]));
+    /* 🚨 BL F4 — Guardados tiene pantalla propia: tipos, favoritos, archivar,
+       búsqueda por seis campos, filtros, orden y detalle. La cabecera, el ＋ y el
+       estado vacío siguen siendo los del lanzador (BL F1). */
     return (
-      <div className="space-y-3 pb-4">
-        {cabecera}
-        {crear && <AnadirEnlace onAdd={(e) => { onAddEnlace(e); setCrear(false); }} accent={accent} />}
-        {elementos.length === 0 ? vacio : lista.length === 0 ? nadaCoincide : (
-          <div className="space-y-2">
-            {lista.map((e) => (
-              <ItemCard key={e.id} item={{ ...e, _tipo: 'enlace' }} query={q} accent={accent} onDelete={() => onDeleteEnlace(e.id)} />
-            ))}
-          </div>
-        )}
-      </div>
+      <PantallaGuardados
+        guardados={elementos}
+        cabecera={cabecera}
+        crear={crear}
+        onCerrarCrear={() => setCrear(false)}
+        vacio={vacio}
+        accent={accent}
+        onAdd={onAddEnlace}
+        onUpdate={onUpdateEnlace}
+        onDelete={onDeleteEnlace}
+      />
     );
   }
 
@@ -1150,6 +1132,359 @@ export function PantallaLibros({
           onGuardar={onUpdate}
           onEliminar={eliminar}
           onSubirPortada={onSubirPortada}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ENTREGA 3 · FASE 18 (BL F4) — GUARDADOS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* El favicon del propio sitio, con su vuelta atrás. *"Si una preview falla: la
+   tarjeta sigue funcionando."* Se pide **al sitio mismo**, sin pasar por ningún
+   servicio de terceros, y va con `loading="lazy"` para que no bloquee la
+   pantalla (apartado de rendimiento). */
+export function IconoGuardado({ guardado, accent, tam = 18 }) {
+  const [falla, setFalla] = useState(false);
+  const src = guardado.tipo === 'link' ? faviconDe(guardado.url) : null;
+  const tipo = tipoGuardado(guardado.tipo);
+  if (src && !falla) {
+    return (
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        width={tam}
+        height={tam}
+        onError={() => setFalla(true)}
+        style={{ width: tam, height: tam, borderRadius: 4, objectFit: 'contain' }}
+      />
+    );
+  }
+  return <span style={{ fontSize: tam - 2, color: accent }} aria-hidden="true">{tipo?.icono || '📎'}</span>;
+}
+
+export function TarjetaGuardado({ guardado, accent, indice = 0, onAbrir, onFavorito }) {
+  const dominio = dominioDe(guardado.url);
+  const tipo = tipoGuardado(guardado.tipo);
+  return (
+    <Card style={{ padding: '0.85rem 1rem', animationDelay: retrasoDeTarjeta(indice) }} className={CLASE_TARJETA}>
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 mt-0.5"><IconoGuardado guardado={guardado} accent={accent} /></div>
+        <button onClick={onAbrir} className="flex-1 min-w-0 text-left">
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{nombreDe(guardado)}</p>
+          {/* ⚠️ `break-all` porque *"las URLs largas nunca deben romper el layout"*. */}
+          {dominio ? <p className="text-[11px] break-all" style={{ color: COLORS.textMuted }}>{dominio}</p> : null}
+          {guardado.tipo !== 'link' && guardado.titulo && guardado.contenido ? (
+            <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
+              {guardado.contenido.slice(0, 70)}{guardado.contenido.length > 70 ? '…' : ''}
+            </p>
+          ) : null}
+          <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+            {tipo?.nombre} · {formatFecha(guardado.fecha)}
+            {guardado.estado === 'archived' ? ' · Archivado' : ''}
+          </p>
+        </button>
+        <button
+          onClick={onFavorito}
+          className="p-1.5 -m-1.5 flex-shrink-0 transition-transform active:scale-90 favorito-guardado"
+          aria-label={guardado.favorito ? `Quitar ${nombreDe(guardado)} de favoritos` : `Marcar ${nombreDe(guardado)} como favorito`}
+        >
+          <Star
+            size={16}
+            style={{ color: guardado.favorito ? accent : COLORS.textMuted }}
+            fill={guardado.favorito ? accent : 'none'}
+          />
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+/* El formulario. *"Guardar algo debe ser extremadamente rápido… no obligar a
+   rellenar un formulario enorme."* Así que lo primero y único imprescindible es
+   la dirección o el texto; el resto se despliega solo si lo quiere. */
+export function FormularioGuardado({ guardado = null, accent, onGuardar, onCancelar }) {
+  const [tipo, setTipo] = useState(guardado?.tipo || 'link');
+  const [form, setForm] = useState({
+    url: guardado?.url || '',
+    contenido: guardado?.contenido || '',
+    titulo: guardado?.titulo || '',
+    descripcion: guardado?.descripcion || '',
+    nota: guardado?.nota || '',
+  });
+  const [masCampos, setMasCampos] = useState(Boolean(guardado?.descripcion || guardado?.nota));
+
+  const propuesta = crearGuardado({ ...form, tipo });
+  const dominio = dominioDe(form.url);
+
+  return (
+    <Card>
+      <Field label="Qué estás guardando">
+        <div className="flex gap-2">
+          {TIPOS_GUARDADO.map((t) => (
+            <FiltroPill key={t.id} active={tipo === t.id} accent={accent} onClick={() => setTipo(t.id)}>
+              {t.icono} {t.nombre}
+            </FiltroPill>
+          ))}
+        </div>
+      </Field>
+
+      {tipo === 'link' ? (
+        <Field label="Pega la dirección">
+          <TextInput
+            aria-label="Dirección del enlace"
+            inputMode="url"
+            value={form.url}
+            onChange={(e) => setForm({ ...form, url: e.target.value })}
+            placeholder="https://…"
+          />
+        </Field>
+      ) : (
+        <Field label="Lo que quieres conservar">
+          <Textarea
+            aria-label="Contenido del guardado"
+            rows={4}
+            value={form.contenido}
+            onChange={(e) => setForm({ ...form, contenido: e.target.value })}
+            placeholder="Pega o escribe aquí…"
+          />
+        </Field>
+      )}
+
+      {/* 🚨 Lo único que se puede saber de una dirección sin descargarla es su
+          dominio, y se enseña. El título no se puede sacar, y se dice — nunca se
+          finge (regla 8). */}
+      {tipo === 'link' && dominio ? (
+        <p className="text-[11px] -mt-1 mb-2" style={{ color: COLORS.textMuted }}>
+          De {dominio}. El título se escribe a mano: la aplicación no puede leerlo de la página.
+        </p>
+      ) : null}
+
+      <Field label="Título (opcional)">
+        <TextInput
+          aria-label="Título del guardado"
+          value={form.titulo}
+          onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+          placeholder={tipo === 'link' ? 'Ej: Tutorial de React' : 'Sin título'}
+        />
+      </Field>
+
+      {masCampos ? (
+        <>
+          <Field label="Descripción (opcional)">
+            <TextInput aria-label="Descripción del guardado" value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
+          </Field>
+          <Field label="Tu nota (opcional)">
+            <Textarea
+              aria-label="Nota del guardado"
+              rows={2}
+              value={form.nota}
+              onChange={(e) => setForm({ ...form, nota: e.target.value })}
+              placeholder="Ej: Mirar este vídeo cuando termine el proyecto."
+            />
+          </Field>
+        </>
+      ) : (
+        <div className="mb-2"><GhostBtn onClick={() => setMasCampos(true)}>Añadir descripción o nota</GhostBtn></div>
+      )}
+
+      <PrimaryButton accent={accent} disabled={!propuesta} onClick={() => onGuardar({ ...form, tipo })}>
+        {guardado ? 'Guardar cambios' : 'Guardar'}
+      </PrimaryButton>
+      {onCancelar ? <div className="mt-2"><GhostBtn onClick={onCancelar}>Cancelar</GhostBtn></div> : null}
+    </Card>
+  );
+}
+
+export function DetalleGuardado({ guardado, accent, onCerrar, onGuardar, onEliminar }) {
+  const [editando, setEditando] = useState(false);
+
+  useEffect(() => {
+    const alPulsar = (ev) => { if (ev.key === 'Escape') onCerrar(); };
+    if (typeof document !== 'undefined') document.addEventListener('keydown', alPulsar);
+    return () => { if (typeof document !== 'undefined') document.removeEventListener('keydown', alPulsar); };
+  }, [onCerrar]);
+
+  if (!guardado) return null;
+  const dominio = dominioDe(guardado.url);
+  const tipo = tipoGuardado(guardado.tipo);
+
+  const contenido = (
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto pantalla-segura"
+      style={{ background: COLORS.bg }}
+      role="dialog"
+      aria-label={`Detalle de ${nombreDe(guardado)}`}
+    >
+      <div className="max-w-md mx-auto px-4 pb-8 space-y-3">
+        <div className="flex items-center gap-2 pt-1">
+          <button onClick={onCerrar} className="p-1.5 -m-1.5" aria-label="Cerrar el detalle del guardado">
+            <ArrowLeft size={18} style={{ color: COLORS.textMuted }} />
+          </button>
+          <p className="text-base font-bold flex-1 truncate" style={{ color: COLORS.text }}>{nombreDe(guardado)}</p>
+        </div>
+
+        {editando ? (
+          <FormularioGuardado
+            guardado={guardado}
+            accent={accent}
+            onCancelar={() => setEditando(false)}
+            onGuardar={(cambios) => { onGuardar(editarGuardado(guardado, cambios)); setEditando(false); }}
+          />
+        ) : (
+          <>
+            <Card>
+              <div className="flex items-center gap-2 mb-2">
+                <IconoGuardado guardado={guardado} accent={accent} />
+                <span className="text-[11px] font-semibold rounded-full px-2 py-0.5" style={{ background: COLORS.surface2, color: COLORS.textMuted }}>
+                  {tipo?.icono} {tipo?.nombre}
+                </span>
+                {guardado.estado === 'archived' ? (
+                  <span className="text-[11px] font-semibold rounded-full px-2 py-0.5" style={{ background: COLORS.surface2, color: COLORS.textMuted }}>Archivado</span>
+                ) : null}
+              </div>
+              {guardado.url ? <p className="text-xs break-all" style={{ color: COLORS.textMuted }}>{guardado.url}</p> : null}
+              {guardado.contenido ? (
+                <p className="text-sm mt-1 leading-relaxed whitespace-pre-wrap" style={{ color: COLORS.text }}>{guardado.contenido}</p>
+              ) : null}
+              {guardado.descripcion ? <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>{guardado.descripcion}</p> : null}
+              {guardado.nota ? (
+                <p className="text-xs mt-2 leading-relaxed whitespace-pre-wrap" style={{ color: COLORS.text }}>Tu nota: {guardado.nota}</p>
+              ) : null}
+              <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>Guardado el {formatFecha(guardado.fecha)}</p>
+            </Card>
+
+            {/* *"Debe abrirse de forma segura. No ejecutar contenido externo
+                dentro de la aplicación"*: pestaña nueva, con `noreferrer`. */}
+            {guardado.url ? (
+              <Card>
+                <a
+                  href={guardado.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="flex items-center gap-2 text-sm font-semibold toque-44"
+                  style={{ color: accent }}
+                >
+                  <ExternalLink size={15} /> Abrir enlace
+                </a>
+              </Card>
+            ) : null}
+
+            <Card>
+              <div className="flex flex-wrap items-center gap-2">
+                <GhostBtn icon={Star} onClick={() => onGuardar(alternarFavorito(guardado))}>
+                  {guardado.favorito ? 'Quitar de favoritos' : 'Favorito'}
+                </GhostBtn>
+                <GhostBtn icon={Pencil} onClick={() => setEditando(true)}>Editar</GhostBtn>
+                <GhostBtn
+                  icon={Archive}
+                  onClick={() => onGuardar(guardado.estado === 'archived' ? desarchivar(guardado) : archivar(guardado))}
+                >
+                  {guardado.estado === 'archived' ? 'Sacar del archivo' : 'Archivar'}
+                </GhostBtn>
+                <BotonBorrar onClick={() => { onEliminar(guardado.id); onCerrar(); }} label="Eliminar el guardado" />
+              </div>
+              {/* ⚠️ Archivar y eliminar son dos acciones distintas, y se dice cuál
+                  hace qué: prometer lo que no se cumple es mentir en pantalla. */}
+              <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
+                Archivar lo saca de la lista sin borrarlo. Eliminar lo manda a Eliminados recientes, de donde puedes recuperarlo.
+              </p>
+            </Card>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  return typeof document === 'undefined' ? contenido : createPortal(contenido, document.body);
+}
+
+export function PantallaGuardados({ guardados, cabecera, crear, onCerrarCrear, vacio, accent, onAdd, onUpdate, onDelete }) {
+  const [filtro, setFiltro] = useState('todos');
+  const [orden, setOrden] = useState(ORDEN_POR_DEFECTO);
+  const [texto, setTexto] = useState('');
+  const [abierto, setAbierto] = useState(null);
+
+  const resumen = resumenGuardados(guardados);
+  const visibles = ordenarGuardados(filtrarGuardados(guardados, { filtro, texto }), orden);
+  const abiertoAhora = abierto ? guardados.find((g) => g.id === abierto) || null : null;
+
+  return (
+    <div className="space-y-3 pb-4">
+      {cabecera}
+      {resumen ? <p className="text-xs font-semibold" style={{ color: accent }}>{resumen}</p> : null}
+
+      {crear && (
+        <FormularioGuardado
+          accent={accent}
+          onCancelar={onCerrarCrear}
+          onGuardar={(datos) => { onAdd(crearGuardado(datos)); onCerrarCrear(); }}
+        />
+      )}
+
+      {guardados.length === 0 ? vacio : (
+        <>
+          {guardados.length >= 4 && (
+            <div className="relative">
+              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: COLORS.textMuted }} />
+              <TextInput
+                aria-label="Buscar en los guardados"
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                placeholder="Buscar por título, dirección o nota…"
+                style={{ paddingLeft: 34 }}
+              />
+            </div>
+          )}
+
+          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            {FILTROS_GUARDADOS.map((f) => (
+              <FiltroPill key={f.id} active={filtro === f.id} accent={accent} onClick={() => setFiltro(f.id)}>{f.nombre}</FiltroPill>
+            ))}
+          </div>
+
+          <Field label="Ordenar por">
+            <Select aria-label="Ordenar los guardados" value={orden} onChange={(e) => setOrden(e.target.value)}>
+              {ORDENES_GUARDADOS.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+            </Select>
+          </Field>
+
+          {visibles.length === 0 ? (
+            <EmptyHint text={filtro === 'archivados' ? 'No has archivado nada todavía.' : 'Nada coincide con esta búsqueda o este filtro.'} />
+          ) : (
+            <div className="space-y-2">
+              {visibles.map((g, i) => (
+                <TarjetaGuardado
+                  key={g.id}
+                  guardado={g}
+                  accent={accent}
+                  indice={i}
+                  onAbrir={() => setAbierto(g.id)}
+                  onFavorito={() => onUpdate(alternarFavorito(g))}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* 🚨 La diferencia con Notas, dicha en la pantalla: el enunciado la
+              marca como IMPORTANTE para que Guardados no acabe siendo otra
+              aplicación de notas. */}
+          <p className="text-[11px] leading-snug" style={{ color: COLORS.textMuted }}>
+            {DIFERENCIA_CON_NOTAS.ejemplo}
+          </p>
+        </>
+      )}
+
+      {abiertoAhora && (
+        <DetalleGuardado
+          guardado={abiertoAhora}
+          accent={accent}
+          onCerrar={() => setAbierto(null)}
+          onGuardar={onUpdate}
+          onEliminar={onDelete}
         />
       )}
     </div>

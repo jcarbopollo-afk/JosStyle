@@ -2329,4 +2329,61 @@ ok(!/continuar leyendo/i.test(listaFinal_bl2),
   '⚠️ mientras que "Continuar leyendo" ya no está: no queda ninguno en marcha');
 ok(/1 terminado/i.test(listaFinal_bl2), '⚠️ y el resumen de arriba lo refleja');
 
+/* ── E3 F18 (BL F4) · GUARDADOS ──────────────────────────────────────────
+   El recorrido entero: pegar una dirección y guardarla sin nada más, marcarla
+   favorita, archivarla y comprobar que **deja de salir entre lo activo pero
+   sigue existiendo**. */
+almacen.biblioteca = { apuntes: [], enlaces: [], libros: [], ideas: [], colecciones: [] };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Vida');
+await pulsar('Biblioteca');
+ok(await pulsar('Guardados'), 'Guardados se abre desde el lanzador');
+ok(await pulsar('Guardar algo'), 'y el estado vacío abre el formulario');
+
+await page.waitForSelector('input[aria-label="Dirección del enlace"]', { timeout: 6000 });
+await page.fill('input[aria-label="Dirección del enlace"]', 'ejemplo.es/articulo');
+const conDominio_bl4 = await esperarTexto(/ejemplo\.es/);
+ok(/De ejemplo\.es/.test(conDominio_bl4),
+  '🚨 el dominio se detecta solo al pegar la dirección, y sin `https://` delante (criterio 8)');
+ok(/no puede leerlo de la página/i.test(conDominio_bl4),
+  '🚨 y se DICE que el título no se puede sacar de la página, en vez de fingir una previsualización (regla 8)');
+
+ok(await pulsar('Guardar'), 'se guarda sin rellenar nada más');
+const trasGuardar_bl4 = await esperarTexto(/ejemplo\.es/);
+ok(/ejemplo\.es/.test(trasGuardar_bl4),
+  '🚨 GUARDAR ES PEGAR Y DAR A GUARDAR (criterios 4 y 5): sin título, sin descripción y sin nota');
+ok(/1 guardado/i.test(trasGuardar_bl4), '⚠️ con su resumen sacado de los datos de verdad');
+ok(/Un enlace que quieres volver a encontrar/i.test(trasGuardar_bl4),
+  '🚨 y la diferencia con Notas dicha en la propia pantalla (criterio 22)');
+
+const guardadosBL4 = guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value?.enlaces;
+ok(guardadosBL4?.[0]?.url === 'https://ejemplo.es/articulo' && guardadosBL4[0].tipo === 'link',
+  '🚨 y lo guardado lleva su dirección completa y su tipo deducido');
+ok(!('dominio' in (guardadosBL4?.[0] || {})),
+  '⚠️ pero NO el dominio: se deriva, o se quedaría viejo si él corrige la dirección');
+
+/* Favorito desde la propia tarjeta. */
+ok(await pulsar('Marcar ejemplo.es como favorito'), 'la estrella de la tarjeta marca favorito');
+const trasFav_bl4 = await esperarTexto(/1 favorito/i);
+ok(/1 favorito/i.test(trasFav_bl4), '⚠️ y el resumen lo cuenta (criterio 10)');
+
+/* Archivar: deja de salir, pero no se borra. */
+ok(await pulsar('ejemplo.es'), 'se abre el detalle');
+ok(await pulsar('Archivar'), 'y se archiva');
+ok(await pulsar('Cerrar el detalle del guardado'), 'se cierra el detalle');
+const trasArchivar_bl4 = await esperarTexto(/1 archivado/i);
+ok(/1 archivado/i.test(trasArchivar_bl4), '⚠️ el resumen lo dice');
+ok(!/De ejemplo\.es|ejemplo\.es\/articulo/.test(trasArchivar_bl4),
+  '🚨 Y DEJA DE SALIR ENTRE LO ACTIVO (criterio 11): si saliera igual, archivar no haría nada visible');
+
+const trasArchivarGuardado_bl4 = guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value?.enlaces;
+ok(trasArchivarGuardado_bl4?.length === 1 && trasArchivarGuardado_bl4[0].estado === 'archived',
+  '🚨 PERO NO SE HA BORRADO: sigue entero, con estado archivado — archivar y eliminar son dos acciones distintas');
+
+ok(await pulsar('Archivados'), 'y el filtro de archivados lo encuentra');
+const enArchivados_bl4 = await esperarTexto(/ejemplo\.es/);
+ok(/ejemplo\.es/.test(enArchivados_bl4), '⚠️ ahí sí sale');
+
 await salir(browser);

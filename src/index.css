@@ -393,3 +393,15 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
 .celebracion-libro {
   animation: celebracionLibro 320ms var(--ease-premium) both;
 }
+
+/* Entrega 3 · F18 (BL F4) — Guardados.
+   *"Al marcar favorito: animación corta del icono. No utilizar animaciones
+   excesivas."* Un pulso de 240 ms sobre la estrella, y nada más. */
+@keyframes favoritoPulso {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.favorito-guardado:active svg {
+  animation: favoritoPulso 240ms var(--ease-premium);
+}

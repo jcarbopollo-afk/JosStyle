@@ -1,5 +1,58 @@
 # CHANGELOG.md
 
+## v3.39.0 — Entrega 3 · Fase 18 (BL F4): Biblioteca — Guardados
+
+Tipos, favoritos, archivar, búsqueda por seis campos, filtros, orden y detalle. *"Guardados debe
+funcionar como un archivo personal de recursos."*
+
+### La colección sigue siendo la de Josué
+`biblioteca.enlaces`, la de la Fase 11 que la BL F1 identificó como Guardados. Lo que hace esta fase
+es **ampliar la ficha** —tipo, contenido, nota, favorito, estado y colección— **con su migración**:
+un enlace viejo se convierte en un guardado de tipo enlace **sin perder un solo campo** y sin que su
+fecha cambie, porque no lo guardó hoy. Vigésima vez que este proyecto paga el fallo del normalizador.
+
+### 🚨 Lo que se puede saber de una dirección, y lo que no
+El enunciado lo condiciona —*"si técnicamente es posible obtener metadata de una URL"*—, y la
+respuesta honesta es que casi nada:
+
+- El **dominio** sale de la propia dirección. Es un dato de verdad, y además **se busca**: escribir
+  "youtube" encuentra un enlace cuyo título no lo dice.
+- El **favicon** se le pide **al sitio mismo**, sin pasar por ningún servicio de terceros que vería
+  qué guarda Josué. Si falla, la tarjeta usa el icono de su tipo y sigue funcionando.
+- El **título** y la **imagen de portada** exigirían descargar la página y leerle las etiquetas, y
+  el navegador no puede: lo impide la política de origen cruzado. Así que **no se fingen** — la
+  pantalla dice, en una frase, que el título se escribe a mano. Y `preview_image_url` **no existe
+  como campo**: guardar uno que nadie puede rellenar es prometer una función que no existe.
+
+### Guardar es pegar y dar a guardar
+Lo único imprescindible es una dirección o un texto. El tipo **se deduce**, el título es opcional, y
+la descripción y la nota están detrás de un *"Añadir descripción o nota"*: *"no obligar a rellenar un
+formulario enorme"*.
+
+### Archivar no es eliminar
+*"Un elemento archivado deja de aparecer entre los guardados activos. **No eliminarlo.**"* Lo
+archivado desaparece de la lista —si siguiera saliendo, el botón no haría nada visible— y sale
+**solo** en su filtro, entero. Eliminar sigue yendo a Eliminados recientes, la papelera que ya
+existe: *"no crear una segunda papelera exclusiva si no hace falta"*.
+
+Y la papelera enseña ahora también la dirección o el contenido, porque el título es opcional y una
+fila en blanco no dice qué se está recuperando.
+
+### Compartir desde el móvil: preparado, no fingido
+*"Solo dejar la estructura preparada."* `crearDesdeCompartido` **ya existe y funciona** —incluso
+cuando Safari mete la dirección dentro del texto—, y lo que falta está escrito: un `share_target` en
+el manifiesto y **un service worker**, que es exactamente la decisión que la E3 F15 dejó a Josué
+(DEP-30). Por eso el manifiesto **no lo declara**: un *Compartir* que Safari ofrezca y que luego no
+guarde nada sería peor que no ofrecerlo.
+
+### Y la diferencia con Notas, dicha en la pantalla
+El enunciado la marca como IMPORTANTE —*"no permitir que Guardados se convierta en otra app de
+notas"*—, así que no se queda en un comentario: se lee debajo de la lista, y hay una prueba de que
+Guardados no toca `biblioteca.apuntes`.
+
+**Verificación: `═══ TODO CORRECTO ═══`. 109 comprobaciones nuevas de Node, 44 casos de renderizado
+nuevos y 597 en Chromium.**
+
 ## v3.38.0 — Entrega 3 · Fase 17 (BL F2): Biblioteca — Libros
 
 La mini-app entera: estados, progreso, portada, notas, filtros, búsqueda, orden, historial y

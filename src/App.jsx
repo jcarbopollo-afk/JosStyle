@@ -1888,6 +1888,13 @@ export default function App() {
   const deleteApunte = (id) => eliminarConPapelera('biblioteca', 'apuntes', id);
   const addEnlace = (e) => snapshotAndSave({ biblioteca: { ...biblioteca, enlaces: [...biblioteca.enlaces, e] } });
   const deleteEnlace = (id) => eliminarConPapelera('biblioteca', 'enlaces', id);
+  /* E3 F18 (BL F4) — marcar favorito, archivar, sacar del archivo y editar son
+     **la misma escritura**: la vista devuelve el guardado ya calculado por
+     `guardados.js`. Una función por acción serían cuatro sitios donde arreglar
+     el mismo fallo, como en Libros. */
+  const updateEnlace = (g) => g && snapshotAndSave({
+    biblioteca: { ...biblioteca, enlaces: biblioteca.enlaces.map((e) => (e.id === g.id ? g : e)) },
+  });
   /* E3 F16 (BL F1) — las tres listas que estrena el lanzador. Mismo patrón que los
      apuntes y los enlaces: texto puro en la clave `biblioteca`, así que pasan por
      `snapshotAndSave` (y por tanto por Deshacer) y se borran por la papelera. */
@@ -2517,7 +2524,7 @@ export default function App() {
                función que nadie llama no falla nunca"*. No lo vieron ni el build,
                ni el renderizado, ni las pruebas de Node. */
             onAddApunte={addApunte} onDeleteApunte={deleteApunte}
-            onAddEnlace={addEnlace} onDeleteEnlace={deleteEnlace}
+            onAddEnlace={addEnlace} onDeleteEnlace={deleteEnlace} onUpdateEnlace={updateEnlace}
             /* E3 F16 (BL F1) — las tres listas nuevas del lanzador. Escriben en la
                misma clave `biblioteca` y se borran por la única puerta que hay,
                `eliminarConPapelera` (ME F3): vuelven de Eliminados recientemente. */
