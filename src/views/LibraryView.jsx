@@ -2,19 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Search, FileText, Video as VideoIcon, Image as ImageIcon, StickyNote, Link as LinkIcon,
-  Trash2, ExternalLink, ChevronDown, ChevronUp, Upload, ArrowLeft, Plus, Pencil, Star, Archive,
+  Trash2, ExternalLink, ChevronDown, ChevronUp, Upload, ArrowLeft, Plus, Pencil, Star, Archive, Sparkles,
   BookMarked, Bookmark, Lightbulb, FolderOpen,
 } from 'lucide-react';
-import { COLORS, TIPOS_ARCHIVO_BIBLIOTECA } from '../tokens';
+import { COLORS, TIPOS_ARCHIVO_BIBLIOTECA, PERIODOS_META, PLAZOS_OBJETIVO } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedBibliotecaUrl } from '../lib/supabase';
 import {
   MINI_APPS, miniApp, elementosDe, indicadorDe, diferenciaDe,
-  crearIdea, crearColeccion, CLASE_TARJETA, retrasoDeTarjeta,
+  crearColeccion, CLASE_TARJETA, retrasoDeTarjeta,
 } from '../lib/biblioteca';
 /* BL F2 — Libros tiene su propia librería. `crearLibro` y `normalizarLibro`
    vivían en `biblioteca.js` desde la F1 y se mudaron aquí al desarrollarla:
    una sola fábrica, no dos. */
+import {
+  ESTADOS_IDEA, estadoIdea, ESTADO_IDEA_POR_DEFECTO, PRIORIDADES_IDEA, prioridadIdea,
+  PRIORIDAD_POR_DEFECTO, CATEGORIAS_IDEA, crearIdea, editarIdea, cambiarEstadoIdea,
+  archivarIdea, desarchivarIdea, CONVERSIONES, conversion, convertirIdea, generadosDe,
+  textoDeIdea, FILTROS_IDEAS, ORDENES_IDEAS, ORDEN_IDEAS_POR_DEFECTO,
+  filtrarIdeas, ordenarIdeas, estadisticasIdeas, lineaIdeas, DIFERENCIA_IDEAS,
+} from '../lib/ideas';
 import {
   TIPOS_GUARDADO, tipoGuardado, dominioDe, faviconDe, nombreDe,
   crearGuardado, editarGuardado, alternarFavorito, archivar, desarchivar,
@@ -243,24 +250,6 @@ export function AnadirNotaRapida({ onAdd, accent }) {
 /* Los formularios de las tres listas nuevas. **Mínimos a propósito**: lo que
    hace falta para que el botón de crear escriba algo de verdad (regla 8). El
    modelo completo de cada una llega en su fase — BL F2, F5 y F7. */
-export function AnadirIdea({ onAdd, accent }) {
-  const [form, setForm] = useState({ titulo: '', detalle: '' });
-  const idea = crearIdea(form);
-  return (
-    <Card>
-      <Field label="La idea">
-        <TextInput aria-label="La idea" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder="Ej: Crear una app que automatice X" />
-      </Field>
-      <Field label="Desarróllala un poco (opcional)">
-        <Textarea rows={3} value={form.detalle} onChange={(e) => setForm({ ...form, detalle: e.target.value })} />
-      </Field>
-      <PrimaryButton accent={accent} disabled={!idea} onClick={() => { onAdd(crearIdea(form)); setForm({ titulo: '', detalle: '' }); }}>
-        Guardar idea
-      </PrimaryButton>
-    </Card>
-  );
-}
-
 export function AnadirColeccion({ onAdd, accent }) {
   const [form, setForm] = useState({ nombre: '', descripcion: '' });
   const coleccion = crearColeccion(form);
@@ -381,7 +370,7 @@ export default function LibraryView({
   onAddApunte, onDeleteApunte,
   onAddEnlace, onDeleteEnlace, onUpdateEnlace,
   onAddLibro, onDeleteLibro, onUpdateLibro, onSubirPortada, onBorrarPortada,
-  onAddIdea, onDeleteIdea,
+  onAddIdea, onDeleteIdea, onUpdateIdea, onConvertirIdea,
   onAddColeccion, onDeleteColeccion,
   accent,
 }) {
@@ -444,7 +433,7 @@ export default function LibraryView({
   /* ⚠️ Libros tiene su propio buscador dentro de su pantalla (BL F2), con sus
      filtros y su orden al lado: dos cajas de búsqueda en la misma pantalla
      serían dos formas de hacer lo mismo. */
-  const conBuscador = !['libros', 'guardados'].includes(abierta) && elementos.length >= 5;
+  const conBuscador = !['libros', 'guardados', 'ideas'].includes(abierta) && elementos.length >= 5;
 
   const cabecera = (
     <>
@@ -584,19 +573,22 @@ export default function LibraryView({
 
   // ── Ideas ───────────────────────────────────────────────────────────────
   if (abierta === 'ideas') {
-    const lista = elementos.filter((i) => coincide([i.titulo, i.detalle]));
+    /* 🚨 BL F5 — Ideas tiene pantalla propia: cinco estados, prioridad,
+       categorías, notas de desarrollo, conversión a tarea/meta/objetivo,
+       archivado, búsqueda, filtros, orden y estadísticas sencillas. */
     return (
-      <div className="space-y-3 pb-4">
-        {cabecera}
-        {crear && <AnadirIdea onAdd={(i) => { onAddIdea(i); setCrear(false); }} accent={accent} />}
-        {elementos.length === 0 ? vacio : lista.length === 0 ? nadaCoincide : (
-          <div className="space-y-2">
-            {lista.map((i) => (
-              <FichaSimple key={i.id} titulo={i.titulo} sub={i.detalle} fecha={i.fecha} onDelete={() => onDeleteIdea(i.id)} />
-            ))}
-          </div>
-        )}
-      </div>
+      <PantallaIdeas
+        ideas={elementos}
+        cabecera={cabecera}
+        crear={crear}
+        onCerrarCrear={() => setCrear(false)}
+        vacio={vacio}
+        accent={accent}
+        onAdd={onAddIdea}
+        onUpdate={onUpdateIdea}
+        onDelete={onDeleteIdea}
+        onConvertir={onConvertirIdea}
+      />
     );
   }
 
@@ -1485,6 +1477,448 @@ export function PantallaGuardados({ guardados, cabecera, crear, onCerrarCrear, v
           onCerrar={() => setAbierto(null)}
           onGuardar={onUpdate}
           onEliminar={onDelete}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ENTREGA 3 · FASE 19 (BL F5) — IDEAS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+export function EtiquetaIdea({ estado, prioridad }) {
+  const e = estadoIdea(estado);
+  const p = prioridadIdea(prioridad);
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {e ? (
+        <span className="text-[11px] font-semibold rounded-full px-2 py-0.5" style={{ background: COLORS.surface2, color: COLORS.textMuted }}>
+          {e.icono} {e.nombre}
+        </span>
+      ) : null}
+      {p && p.id !== 'media' ? (
+        <span className="text-[11px] rounded-full px-2 py-0.5" style={{ background: COLORS.surface2, color: COLORS.textMuted }}>
+          Prioridad {p.nombre.toLowerCase()}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/* La ficha: *"cada idea debe sentirse como una pequeña ficha visual"*, no como
+   una fila de una lista de tareas — el enunciado lo prohíbe expresamente. */
+export function TarjetaIdea({ idea, accent, indice = 0, onAbrir }) {
+  const preview = String(idea.descripcion || '').trim().replace(/\s+/g, ' ');
+  return (
+    <button
+      onClick={onAbrir}
+      className={`${CLASE_TARJETA} text-left rounded-2xl p-4 w-full transition-transform active:scale-[0.97]`}
+      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, animationDelay: retrasoDeTarjeta(indice) }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span style={{ fontSize: 18 }} aria-hidden="true">💡</span>
+        <p className="text-[11px] flex-shrink-0" style={{ color: COLORS.textMuted }}>{formatFecha(idea.fecha)}</p>
+      </div>
+      <p className="text-sm font-semibold mt-1.5 leading-snug" style={{ color: COLORS.text }}>{textoDeIdea(idea)}</p>
+      {idea.titulo && preview ? (
+        <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.textMuted }}>
+          {preview.slice(0, 90)}{preview.length > 90 ? '…' : ''}
+        </p>
+      ) : null}
+      {idea.categoria ? (
+        <p className="text-[11px] mt-1" style={{ color: accent }}>{idea.categoria}</p>
+      ) : null}
+      <div className="mt-2"><EtiquetaIdea estado={idea.estado} prioridad={idea.prioridad} /></div>
+    </button>
+  );
+}
+
+/* El formulario. *"Debe ser rápido: `+` → título → guardar. Sin obligar a
+   rellenar descripción, categoría o prioridad."* Por eso lo único que se ve al
+   abrirlo son los dos campos de texto; lo demás está detrás de un botón. */
+export function FormularioIdea({ idea = null, accent, onGuardar, onCancelar }) {
+  const [form, setForm] = useState({
+    titulo: idea?.titulo || '',
+    descripcion: idea?.descripcion || '',
+    notas: idea?.notas || '',
+    prioridad: idea?.prioridad || PRIORIDAD_POR_DEFECTO,
+    categoria: idea?.categoria || '',
+    estado: idea?.estado || ESTADO_IDEA_POR_DEFECTO,
+  });
+  const [mas, setMas] = useState(Boolean(idea?.categoria || (idea && idea.prioridad !== PRIORIDAD_POR_DEFECTO)));
+
+  const puedeGuardar = Boolean(crearIdea(form));
+
+  return (
+    <Card>
+      <Field label="Tu idea">
+        <TextInput
+          aria-label="Título de la idea"
+          value={form.titulo}
+          onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+          placeholder="Ej: Crear una app de reservas deportivas"
+        />
+      </Field>
+      <Field label="Desarróllala si quieres (opcional)">
+        <Textarea
+          aria-label="Descripción de la idea"
+          rows={3}
+          value={form.descripcion}
+          onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+          placeholder="Lo que se te ocurra sobre ella…"
+        />
+      </Field>
+
+      {/* Las notas de desarrollo solo tienen sentido en una idea que ya existe y
+          se está trabajando: *"una idea en estado DESARROLLANDO puede tener
+          información adicional"*. */}
+      {idea ? (
+        <Field label="Notas de desarrollo (opcional)">
+          <Textarea
+            aria-label="Notas de desarrollo"
+            rows={3}
+            value={form.notas}
+            onChange={(e) => setForm({ ...form, notas: e.target.value })}
+            placeholder="Ej: Podría usar Supabase para guardar las reservas…"
+          />
+        </Field>
+      ) : null}
+
+      {mas ? (
+        <>
+          <Field label="Prioridad">
+            <Select aria-label="Prioridad de la idea" value={form.prioridad} onChange={(e) => setForm({ ...form, prioridad: e.target.value })}>
+              {PRIORIDADES_IDEA.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+            </Select>
+          </Field>
+          <Field label="Categoría (opcional)">
+            <TextInput
+              aria-label="Categoría de la idea"
+              list="categorias-idea"
+              value={form.categoria}
+              onChange={(e) => setForm({ ...form, categoria: e.target.value })}
+              placeholder="Escribe la tuya o elige una"
+            />
+            {/* ⚠️ Es una LISTA DE SUGERENCIAS, no un desplegable cerrado: el
+                enunciado quiere que pueda crear las suyas, y con un `<select>`
+                haría falta cambiar el código para admitir la primera. */}
+            <datalist id="categorias-idea">
+              {CATEGORIAS_IDEA.map((c) => <option key={c} value={c} />)}
+            </datalist>
+          </Field>
+        </>
+      ) : (
+        <div className="mb-2"><GhostBtn onClick={() => setMas(true)}>Prioridad y categoría</GhostBtn></div>
+      )}
+
+      <PrimaryButton accent={accent} disabled={!puedeGuardar} onClick={() => onGuardar(form)}>
+        {idea ? 'Guardar cambios' : 'Guardar idea'}
+      </PrimaryButton>
+      {onCancelar ? <div className="mt-2"><GhostBtn onClick={onCancelar}>Cancelar</GhostBtn></div> : null}
+    </Card>
+  );
+}
+
+/* Convertir. 🚨 Mostrar y escribir son dos llamadas: aquí se elige lo que falta
+   por decidir y **solo al confirmar** se crea el elemento. */
+export function ConvertirIdea({ idea, accent, onConvertir, onCerrar }) {
+  const [tipo, setTipo] = useState(null);
+  const [opciones, setOpciones] = useState({ periodo: '', plazo: '', objetivo: '' });
+
+  const destino = tipo ? conversion(tipo) : null;
+  const resultado = tipo ? convertirIdea(idea, tipo, opciones, false) : null;
+  const yaGenerados = generadosDe(idea);
+
+  return (
+    <Card>
+      <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Convertir en…</p>
+      <p className="text-[11px] mb-3" style={{ color: COLORS.textMuted }}>
+        La idea se queda donde está: lo que se crea apunta a ella.
+      </p>
+
+      {yaGenerados.length > 0 && (
+        <div className="mb-3 space-y-1">
+          {yaGenerados.map((g) => (
+            <p key={g.tipo} className="text-[11px]" style={{ color: COLORS.textMuted }}>
+              {g.icono} Ya generó {g.nombre.toLowerCase()} — está en {g.donde}.
+            </p>
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2 mb-3">
+        {CONVERSIONES.map((c) => (
+          <FiltroPill
+            key={c.id}
+            active={tipo === c.id}
+            accent={accent}
+            onClick={() => { setTipo(c.id); }}
+          >
+            {c.icono} {c.nombre}
+          </FiltroPill>
+        ))}
+      </div>
+
+      {/* 🚨 Un destino que todavía no existe se dice, no se esconde ni se finge
+          (regla 8): el botón está, y al tocarlo explica por qué no puede ser. */}
+      {destino && !destino.existe ? (
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>{destino.porque}</p>
+      ) : null}
+
+      {destino?.pide.includes('periodo') && (
+        <Field label="Cada cuánto quieres medirla">
+          <Select aria-label="Periodo de la meta" value={opciones.periodo} onChange={(e) => setOpciones({ ...opciones, periodo: e.target.value })}>
+            <option value="">Elige uno…</option>
+            {PERIODOS_META.map((p) => <option key={p} value={p}>{p}</option>)}
+          </Select>
+        </Field>
+      )}
+      {destino?.pide.includes('objetivo') && (
+        <Field label="Cuántas veces">
+          <TextInput
+            aria-label="Veces de la meta"
+            inputMode="numeric"
+            value={opciones.objetivo}
+            onChange={(e) => setOpciones({ ...opciones, objetivo: e.target.value.replace(/\D/g, '') })}
+          />
+        </Field>
+      )}
+      {destino?.pide.includes('plazo') && (
+        <Field label="En cuánto tiempo">
+          <Select aria-label="Plazo del objetivo" value={opciones.plazo} onChange={(e) => setOpciones({ ...opciones, plazo: e.target.value })}>
+            <option value="">Elige uno…</option>
+            {PLAZOS_OBJETIVO.map((p) => <option key={p} value={p}>{p}</option>)}
+          </Select>
+        </Field>
+      )}
+
+      {resultado?.error ? (
+        <p className="text-xs mb-2" style={{ color: COLORS.textMuted }}>{resultado.error}</p>
+      ) : null}
+
+      {resultado?.plan ? (
+        <>
+          <p className="text-xs mb-2" style={{ color: COLORS.textMuted }}>
+            Se creará «{resultado.plan.texto}» en {resultado.plan.destino}.
+          </p>
+          <PrimaryButton accent={accent} onClick={() => { onConvertir(idea, tipo, opciones); onCerrar(); }}>
+            Crear {destino.nombre.toLowerCase()}
+          </PrimaryButton>
+        </>
+      ) : null}
+      <div className="mt-2"><GhostBtn onClick={onCerrar}>Cancelar</GhostBtn></div>
+    </Card>
+  );
+}
+
+export function DetalleIdea({ idea, accent, onCerrar, onGuardar, onEliminar, onConvertir }) {
+  const [editando, setEditando] = useState(false);
+  const [convirtiendo, setConvirtiendo] = useState(false);
+
+  useEffect(() => {
+    const alPulsar = (ev) => { if (ev.key === 'Escape') onCerrar(); };
+    if (typeof document !== 'undefined') document.addEventListener('keydown', alPulsar);
+    return () => { if (typeof document !== 'undefined') document.removeEventListener('keydown', alPulsar); };
+  }, [onCerrar]);
+
+  if (!idea) return null;
+  const generados = generadosDe(idea);
+
+  const contenido = (
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto pantalla-segura"
+      style={{ background: COLORS.bg }}
+      role="dialog"
+      aria-label={`Detalle de ${textoDeIdea(idea)}`}
+    >
+      <div className="max-w-md mx-auto px-4 pb-8 space-y-3">
+        <div className="flex items-center gap-2 pt-1">
+          <button onClick={onCerrar} className="p-1.5 -m-1.5" aria-label="Cerrar el detalle de la idea">
+            <ArrowLeft size={18} style={{ color: COLORS.textMuted }} />
+          </button>
+          <p className="text-base font-bold flex-1 truncate" style={{ color: COLORS.text }}>{textoDeIdea(idea)}</p>
+        </div>
+
+        {editando ? (
+          <FormularioIdea
+            idea={idea}
+            accent={accent}
+            onCancelar={() => setEditando(false)}
+            onGuardar={(cambios) => { onGuardar(editarIdea(idea, cambios)); setEditando(false); }}
+          />
+        ) : convirtiendo ? (
+          <ConvertirIdea idea={idea} accent={accent} onConvertir={onConvertir} onCerrar={() => setConvirtiendo(false)} />
+        ) : (
+          <>
+            <Card>
+              <EtiquetaIdea estado={idea.estado} prioridad={idea.prioridad} />
+              {idea.categoria ? <p className="text-[11px] mt-1.5" style={{ color: accent }}>{idea.categoria}</p> : null}
+              {idea.descripcion ? (
+                <p className="text-sm mt-2 leading-relaxed whitespace-pre-wrap" style={{ color: COLORS.text }}>{idea.descripcion}</p>
+              ) : null}
+              <p className="text-[11px] mt-3" style={{ color: COLORS.textMuted }}>Se te ocurrió el {formatFecha(idea.fecha)}</p>
+              {idea.actualizado !== idea.fecha ? (
+                <p className="text-[11px]" style={{ color: COLORS.textMuted }}>Última vez que la tocaste: {formatFecha(idea.actualizado)}</p>
+              ) : null}
+              {idea.completado ? (
+                <p className="text-[11px]" style={{ color: COLORS.textMuted }}>La hiciste el {formatFecha(idea.completado)}</p>
+              ) : null}
+              {idea.archivada ? (
+                <p className="text-[11px]" style={{ color: COLORS.textMuted }}>Está archivada.</p>
+              ) : null}
+            </Card>
+
+            {idea.notas ? (
+              <Card>
+                <p className="text-xs font-semibold mb-1" style={{ color: COLORS.textMuted }}>Notas de desarrollo</p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: COLORS.text }}>{idea.notas}</p>
+              </Card>
+            ) : null}
+
+            {generados.length > 0 && (
+              <Card>
+                <p className="text-xs font-semibold mb-1" style={{ color: COLORS.textMuted }}>Lo que ha generado</p>
+                {generados.map((g) => (
+                  <p key={g.tipo} className="text-sm" style={{ color: COLORS.text }}>
+                    {g.icono} {g.nombre} — en {g.donde}
+                  </p>
+                ))}
+              </Card>
+            )}
+
+            <Card>
+              <p className="text-xs font-semibold mb-2" style={{ color: COLORS.textMuted }}>Estado</p>
+              <div className="flex flex-wrap gap-2">
+                {ESTADOS_IDEA.map((e) => (
+                  <FiltroPill
+                    key={e.id}
+                    active={idea.estado === e.id}
+                    accent={accent}
+                    onClick={() => onGuardar(cambiarEstadoIdea(idea, e.id))}
+                  >
+                    {e.icono} {e.nombre}
+                  </FiltroPill>
+                ))}
+              </div>
+            </Card>
+
+            <Card>
+              <div className="flex flex-wrap items-center gap-2">
+                <GhostBtn icon={Pencil} onClick={() => setEditando(true)}>Editar</GhostBtn>
+                <GhostBtn icon={Sparkles} onClick={() => setConvirtiendo(true)}>Convertir en…</GhostBtn>
+                <GhostBtn
+                  icon={Archive}
+                  onClick={() => onGuardar(idea.archivada ? desarchivarIdea(idea) : archivarIdea(idea))}
+                >
+                  {idea.archivada ? 'Sacar del archivo' : 'Archivar'}
+                </GhostBtn>
+                <BotonBorrar onClick={() => { onEliminar(idea.id); onCerrar(); }} label="Eliminar la idea" />
+              </div>
+              {/* ⚠️ Descartar, archivar y eliminar son TRES cosas, y se dice cuál
+                  hace qué: el enunciado dedica un apartado a separarlas. */}
+              <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
+                Descartarla la deja aquí para poder revisarla. Archivarla la saca de la lista sin borrarla.
+                Eliminarla la manda a Eliminados recientes, de donde puedes recuperarla.
+              </p>
+            </Card>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  return typeof document === 'undefined' ? contenido : createPortal(contenido, document.body);
+}
+
+export function PantallaIdeas({ ideas, cabecera, crear, onCerrarCrear, vacio, accent, onAdd, onUpdate, onDelete, onConvertir }) {
+  const [filtro, setFiltro] = useState('todas');
+  const [orden, setOrden] = useState(ORDEN_IDEAS_POR_DEFECTO);
+  const [texto, setTexto] = useState('');
+  const [abierta, setAbiertaIdea] = useState(null);
+
+  const linea = lineaIdeas(ideas);
+  const stats = estadisticasIdeas(ideas);
+  const visibles = ordenarIdeas(filtrarIdeas(ideas, { filtro, texto }), orden);
+  const abiertaAhora = abierta ? ideas.find((i) => i.id === abierta) || null : null;
+
+  return (
+    <div className="space-y-3 pb-4">
+      {cabecera}
+      {linea ? <p className="text-xs font-semibold" style={{ color: accent }}>{linea}</p> : null}
+
+      {crear && (
+        <FormularioIdea
+          accent={accent}
+          onCancelar={onCerrarCrear}
+          onGuardar={(datos) => { onAdd(crearIdea(datos)); onCerrarCrear(); }}
+        />
+      )}
+
+      {ideas.length === 0 ? vacio : (
+        <>
+          {ideas.length >= 4 && (
+            <div className="relative">
+              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: COLORS.textMuted }} />
+              <TextInput
+                aria-label="Buscar entre las ideas"
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                placeholder="Buscar por título, descripción o notas…"
+                style={{ paddingLeft: 34 }}
+              />
+            </div>
+          )}
+
+          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            {FILTROS_IDEAS.map((f) => (
+              <FiltroPill key={f.id} active={filtro === f.id} accent={accent} onClick={() => setFiltro(f.id)}>{f.nombre}</FiltroPill>
+            ))}
+          </div>
+
+          <Field label="Ordenar por">
+            <Select aria-label="Ordenar las ideas" value={orden} onChange={(e) => setOrden(e.target.value)}>
+              {ORDENES_IDEAS.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+            </Select>
+          </Field>
+
+          {visibles.length === 0 ? (
+            <EmptyHint text={filtro === 'archivadas' ? 'No has archivado ninguna idea todavía.' : 'Ninguna idea coincide con esta búsqueda o este filtro.'} />
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
+              {visibles.map((i, n) => (
+                <TarjetaIdea key={i.id} idea={i} accent={accent} indice={n} onAbrir={() => setAbiertaIdea(i.id)} />
+              ))}
+            </div>
+          )}
+
+          <Card>
+            <p className="text-xs font-semibold mb-1" style={{ color: COLORS.textMuted }}>Tus ideas</p>
+            <p className="text-sm" style={{ color: COLORS.text }}>
+              {stats.total} en total · {stats.activas} {stats.activas === 1 ? 'activa' : 'activas'} · {stats.realizadas} {stats.realizadas === 1 ? 'realizada' : 'realizadas'}
+            </p>
+            {stats.realizadasEsteMes > 0 && (
+              <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+                {stats.realizadasEsteMes} {stats.realizadasEsteMes === 1 ? 'realizada' : 'realizadas'} este mes.
+              </p>
+            )}
+          </Card>
+
+          {/* La diferencia con Notas, que el enunciado llama fundamental. */}
+          <p className="text-[11px] leading-snug" style={{ color: COLORS.textMuted }}>
+            {DIFERENCIA_IDEAS.ejemplo}
+          </p>
+        </>
+      )}
+
+      {abiertaAhora && (
+        <DetalleIdea
+          idea={abiertaAhora}
+          accent={accent}
+          onCerrar={() => setAbiertaIdea(null)}
+          onGuardar={onUpdate}
+          onEliminar={onDelete}
+          onConvertir={onConvertir}
         />
       )}
     </div>

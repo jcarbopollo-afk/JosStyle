@@ -44,8 +44,10 @@ import { uid, fechaLocalISO } from './helpers.js';
 import { crearLibro, normalizarLibro } from './libros.js';
 /* BL F4 — lo mismo con los guardados: su ficha completa vive en `guardados.js`. */
 import { normalizarGuardado } from './guardados.js';
+/* BL F5 — y con las ideas: la fábrica se muda a `ideas.js` al desarrollarlas. */
+import { crearIdea, normalizarIdea } from './ideas.js';
 
-export { crearLibro, normalizarLibro, normalizarGuardado };
+export { crearLibro, normalizarLibro, normalizarGuardado, crearIdea, normalizarIdea };
 
 /* ── Qué había antes de esta fase ──────────────────────────────────────────
 
@@ -251,16 +253,6 @@ export function tituloValido(t) {
   return typeof t === 'string' && t.trim().length > 0 && t.trim().length <= MAX_TITULO;
 }
 
-export function crearIdea({ titulo, detalle = '' }) {
-  if (!tituloValido(titulo)) return null;
-  return {
-    id: uid(),
-    titulo: titulo.trim(),
-    detalle: typeof detalle === 'string' ? detalle.trim() : '',
-    fecha: fechaLocalISO(new Date()),
-  };
-}
-
 export function crearColeccion({ nombre, descripcion = '' }) {
   if (!tituloValido(nombre)) return null;
   return {
@@ -295,11 +287,6 @@ function normalizarElemento(el, campos) {
     if (typeof base[campo] !== typeof porDefecto) base[campo] = porDefecto;
   }
   return base;
-}
-
-export function normalizarIdea(i) {
-  const n = normalizarElemento(i, { titulo: '', detalle: '', fecha: '' });
-  return n && n.titulo ? n : null;
 }
 
 export function normalizarColeccion(c) {

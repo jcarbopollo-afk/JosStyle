@@ -65,6 +65,7 @@ import { DEFAULT_ESTILO_HOMBRE, normalizarEstiloHombre } from './lib/estiloDeHom
    escrita justo después de cometer el mismo fallo con `eliminarRegistroPiel`. */
 import { DEFAULT_PAPELERA, purgarCaducados, prepararEliminacion, prepararRestauracion, conArrastrados } from './lib/papelera';
 import { normalizarBiblioteca } from './lib/biblioteca';
+import { convertirIdea } from './lib/ideas';
 // EH F15 — los registros de piel entran y salen de la papelera que YA existe.
 import { eliminarRegistroPiel, restaurarRegistroPiel } from './lib/seguimientoPiel';
 // EH F21 — lo mismo para barba: rutinas y registros, a la papelera de siempre.
@@ -1916,6 +1917,38 @@ export default function App() {
   const borrarPortadaLibro = (path) => { if (path) deleteBibliotecaArchivo(path); };
   const addIdea = (i) => i && snapshotAndSave({ biblioteca: { ...biblioteca, ideas: [...biblioteca.ideas, i] } });
   const deleteIdea = (id) => eliminarConPapelera('biblioteca', 'ideas', id);
+  const updateIdea = (i) => i && snapshotAndSave({
+    biblioteca: { ...biblioteca, ideas: biblioteca.ideas.map((x) => (x.id === i.id ? i : x)) },
+  });
+  /* 🚨 E3 F19 (BL F5) — convertir una idea escribe en DOS almacenes a la vez: el
+     elemento nuevo en su módulo de siempre —`productividad.tareas`,
+     `productividad.metas` u `objetivos.lista`— y la idea con el id de lo que
+     generó. Por eso guarda `App.jsx`, que es el dueño de los tres; el módulo
+     solo devuelve el plan. Mismo reparto que `gestionModulos.js` / EH F1.
+
+     ⚠️ Y **la idea no desaparece ni cambia de estado**: *"la idea original no
+     debe desaparecer automáticamente"*. Lo único que se le añade es el id. */
+  const convertirIdeaEn = (idea, tipo, opciones) => {
+    const r = convertirIdea(idea, tipo, opciones, true);
+    if (!r || r.error || !r.elemento) return;
+    const ideasNuevas = biblioteca.ideas.map((x) => (x.id === r.idea.id ? r.idea : x));
+    if (tipo === 'tarea') {
+      snapshotAndSave({
+        biblioteca: { ...biblioteca, ideas: ideasNuevas },
+        productividad: { ...productividad, tareas: [...productividad.tareas, r.elemento] },
+      });
+    } else if (tipo === 'meta') {
+      snapshotAndSave({
+        biblioteca: { ...biblioteca, ideas: ideasNuevas },
+        productividad: { ...productividad, metas: [...productividad.metas, r.elemento] },
+      });
+    } else if (tipo === 'objetivo') {
+      snapshotAndSave({
+        biblioteca: { ...biblioteca, ideas: ideasNuevas },
+        objetivos: { ...objetivos, lista: [...objetivos.lista, r.elemento] },
+      });
+    }
+  };
   const addColeccion = (c) => c && snapshotAndSave({ biblioteca: { ...biblioteca, colecciones: [...biblioteca.colecciones, c] } });
   const deleteColeccion = (id) => eliminarConPapelera('biblioteca', 'colecciones', id);
   // Fase 12 — Relación: módulo privado (PinGate en el render, ver renderTab). Nombre y fechas
@@ -2530,7 +2563,7 @@ export default function App() {
                `eliminarConPapelera` (ME F3): vuelven de Eliminados recientemente. */
             onAddLibro={addLibro} onDeleteLibro={deleteLibro} onUpdateLibro={updateLibro}
             onSubirPortada={subirPortadaLibro} onBorrarPortada={borrarPortadaLibro}
-            onAddIdea={addIdea} onDeleteIdea={deleteIdea}
+            onAddIdea={addIdea} onDeleteIdea={deleteIdea} onUpdateIdea={updateIdea} onConvertirIdea={convertirIdeaEn}
             onAddColeccion={addColeccion} onDeleteColeccion={deleteColeccion}
             accent={accent}
           />

@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.39.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.40.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 3** (44 fases — **1 hecha**, ver `docs/11_ENTREGA3_ORDEN.md`),
@@ -177,9 +177,9 @@ de error exacto** antes de asumir nada.
 **F14 (pulido visual, UX y animaciones, v3.34.0)** y la
 **F15 (PWA, iPhone y auditoría final, v3.36.0)**, que 🏁 **CIERRÓ EL BLOQUE HOY Y CALENDARIO** —las
 diez fases HC—, y la **F16 (la Biblioteca como lanzador de mini-apps, v3.37.0)**, con la que empieza
-el bloque de **Biblioteca**, la **F17 (Libros, v3.38.0)** y la **F18 (Guardados, v3.39.0)**; la
-siguiente es la **19 — BL F5: Ideas**. El índice, con la línea de cada fase dentro de la
-especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
+el bloque de **Biblioteca**, la **F17 (Libros, v3.38.0)**, la **F18 (Guardados, v3.39.0)** y la
+**F19 (Ideas, v3.40.0)**; la siguiente es la **20 — BL F6: Documentos**. El índice, con la línea de
+cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
 rótulo dice *"Biblioteca 8"* y el documento va **F1, F2, F4, F5, F6, F6, F7, F8**— y **la Fase 6
@@ -199,7 +199,23 @@ añade a ciegas porque el riesgo es el fallo histórico de este proyecto:** mal 
 aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con `main` sirviendo
 código de agosto mientras él decía *"la web sigue igual"*.
 
-⚠️ **Y lo que dejaron las dieciocho primeras, que afecta a todas las demás:**
+⚠️ **Y lo que dejaron las diecinueve primeras, que afecta a todas las demás:**
+
+- 🚨 **CONVERTIR UNA IDEA NO LA HACE DESAPARECER** (E3 F19): `convertirIdea` es el **decimoctavo
+  `aplicarPlan`** —sin `confirmado` devuelve un plan y no escribe—, el elemento nace **en su módulo
+  de siempre y con su forma de siempre**, y a la idea **solo se le añade el id** de lo que generó.
+  Ni cambia de estado ni se borra.
+- 🚨 **NI EL PERIODO DE UNA META NI EL PLAZO DE UN OBJETIVO TIENEN VALOR POR DEFECTO** (E3 F19, y
+  HT F3 y EH F28 lo dijeron antes): elegirlos por él metería su idea en «Diaria, 1» sin decírselo.
+- 🚨 **COMPLETAR, DESCARTAR Y ARCHIVAR SON TRES COSAS** (E3 F19). `archivada` es un campo **aparte
+  del estado**, porque una idea puede estar realizada y archivarse después: con uno solo, archivarla
+  le borraría que la hizo. Y **descartar no borra**: no existe ninguna función que lo haga.
+- ⚠️ **Una lista que el usuario debe poder ampliar se guarda como TEXTO** (E3 F19): las categorías de
+  una idea son un `datalist` de sugerencias, no un catálogo cerrado — con uno cerrado habría que
+  tocar el código para admitir la primera suya.
+- ⚠️ **Un destino de conversión que no existe se declara, no se esconde** (E3 F19): Documento lleva
+  `existe: false` y su frase, y al tocarlo explica por qué (regla 8).
+
 
 - 🚨 **DE UNA DIRECCIÓN SOLO SE PUEDEN SABER EL DOMINIO Y EL FAVICON** (E3 F18). El título y la
   imagen de portada exigen **descargar la página**, y el navegador no puede: lo impide la política

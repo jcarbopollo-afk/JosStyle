@@ -39,7 +39,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 16 ✅ | **BL** Biblioteca | F1 — Rediseño como launcher de mini-apps — **hecha (v3.37.0)** | 7871 |
 | 17 ✅ | BL | F2 — Libros — **hecha (v3.38.0)** | 8280 |
 | 18 ✅ | BL | F4 — Guardados — **hecha (v3.39.0)** | 8669 |
-| 19 | BL | F5 — Ideas | 9119 |
+| 19 ✅ | BL | F5 — Ideas — **hecha (v3.40.0)** | 9119 |
 | 20 | BL | F6 — Documentos | 9565 |
 | 21 | BL | F7 — Colecciones | 10585 |
 | 22 | BL | F8 — Integración y experiencia global | 11028 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 18 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0, **BL F1** v3.37.0, **BL F2** v3.38.0, **BL F4** v3.39.0). 🏁 **El bloque Hoy y Calendario está CERRADO (10/10)**, y **el de Biblioteca va por 3 de 7**. La siguiente es la **19 — BL F5: Ideas**, línea 9119.
+**Por dónde va:** 19 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0, **BL F1** v3.37.0, **BL F2** v3.38.0, **BL F4** v3.39.0, **BL F5** v3.40.0). 🏁 **El bloque Hoy y Calendario está CERRADO (10/10)**, y **el de Biblioteca va por 4 de 7**. La siguiente es la **20 — BL F6: Documentos**, línea 9565 (⚠️ el bloque está **duplicado** en el documento: se construye una sola vez, ver C-27).
 
 ⏸ **Y dos cosas del documento que necesitan a Josué, anotadas al llegar aquí:**
 - **La Fase 3 de Biblioteca NO ESTÁ en el documento.** Salta de la F2 (Libros) a la F4 (Guardados), y el rótulo dice *"Biblioteca 8"*: por el orden de las mini-apps, la que falta es **Notas**. La F1 ya deja las notas funcionando —son los apuntes de la Fase 11—, así que **nada se bloquea**, pero el desarrollo completo de esa mini-app no tiene enunciado.

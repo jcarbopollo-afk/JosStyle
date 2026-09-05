@@ -2386,4 +2386,64 @@ ok(await pulsar('Archivados'), 'y el filtro de archivados lo encuentra');
 const enArchivados_bl4 = await esperarTexto(/ejemplo\.es/);
 ok(/ejemplo\.es/.test(enArchivados_bl4), '⚠️ ahí sí sale');
 
+/* ── E3 F19 (BL F5) · IDEAS ──────────────────────────────────────────────
+   Captura rápida, cambio de estado y **convertir en tarea**: lo que hay que
+   demostrar es que la tarea aparece en Productividad **y que la idea sigue
+   estando**, que es lo que el enunciado subraya. */
+almacen.biblioteca = { apuntes: [], enlaces: [], libros: [], ideas: [], colecciones: [] };
+almacen.productividad = { habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [] };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Vida');
+await pulsar('Biblioteca');
+ok(await pulsar('Ideas'), 'Ideas se abre desde el lanzador');
+ok(await pulsar('Nueva idea'), 'y el estado vacío abre el formulario');
+
+await page.waitForSelector('input[aria-label="Título de la idea"]', { timeout: 6000 });
+await page.fill('input[aria-label="Título de la idea"]', 'Crear una app de reservas');
+ok(await pulsar('Guardar idea'), 'se guarda solo con el título');
+
+const trasCrear_bl5 = await esperarTexto(/Crear una app de reservas/i);
+ok(/Crear una app de reservas/i.test(trasCrear_bl5),
+  '🚨 CAPTURA RÁPIDA: título y guardar, sin descripción ni categoría ni prioridad (criterios 1 y 2)');
+ok(/Capturada/i.test(trasCrear_bl5), '⚠️ y nace capturada');
+ok(/1 idea\b/i.test(trasCrear_bl5), '⚠️ con su línea de arriba sacada de los datos de verdad');
+ok(/es una nota/i.test(trasCrear_bl5),
+  '🚨 y la diferencia con Notas dicha en la pantalla: el enunciado la llama fundamental');
+
+const ideasGuardadas_bl5 = guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value?.ideas;
+ok(ideasGuardadas_bl5?.[0]?.prioridad === 'media' && ideasGuardadas_bl5[0].estado === 'captured',
+  '⚠️ y lo guardado lleva su prioridad por defecto, que nunca se pregunta');
+
+/* Cambiar de estado desde el detalle. */
+ok(await pulsar('Crear una app de reservas'), 'se abre el detalle');
+ok(await pulsar('🔧 Desarrollando'), 'y se pasa a Desarrollando');
+const trasEstado_bl5 = await esperarTexto(/Desarrollando/);
+ok(/Desarrollando/.test(trasEstado_bl5), '⚠️ el estado cambia (criterio 5)');
+
+/* 🚨 Convertir en tarea: el punto que más se puede romper. */
+ok(await pulsar('Convertir en…'), 'se abre el conversor');
+const conversor_bl5 = await esperarTexto(/Convertir en/i);
+ok(/La idea se queda donde está/i.test(conversor_bl5),
+  '⚠️ y se dice que la idea no desaparece');
+ok(await pulsar('✅ Tarea'), 'se elige Tarea');
+const plan_bl5 = await esperarTexto(/Se creará/);
+ok(/Se creará «Crear una app de reservas» en Productividad/.test(plan_bl5),
+  '🚨 PRIMERO SE ENSEÑA EL PLAN, y todavía no se ha escrito nada (decimoctavo `aplicarPlan`)');
+
+ok(await pulsar('Crear tarea'), 'y se confirma');
+await page.waitForTimeout(900);
+const prodGuardada_bl5 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value;
+ok(prodGuardada_bl5?.tareas?.[0]?.texto === 'Crear una app de reservas',
+  '🚨 LA TAREA SE CREA EN PRODUCTIVIDAD, no en una lista paralela de Biblioteca (criterio 16)');
+const ideasTrasConvertir_bl5 = guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value?.ideas;
+ok(ideasTrasConvertir_bl5?.length === 1 && ideasTrasConvertir_bl5[0].tareaId === prodGuardada_bl5.tareas[0].id,
+  '🚨 Y LA IDEA SIGUE AHÍ, con el id de lo que generó: *"la idea original no debe desaparecer automáticamente"*');
+ok(ideasTrasConvertir_bl5[0].estado === 'developing',
+  '⚠️ y sin cambiarle el estado por la espalda');
+
+const detalleFinal_bl5 = await esperarTexto(/Lo que ha generado/i);
+ok(/Lo que ha generado/i.test(detalleFinal_bl5), '⚠️ y el detalle lo enseña');
+
 await salir(browser);

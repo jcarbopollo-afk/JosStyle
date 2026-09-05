@@ -141,7 +141,11 @@ const libro = crearLibro({ titulo: '  Hábitos atómicos  ', autor: ' James Clea
 eq([libro.titulo, libro.autor], ['Hábitos atómicos', 'James Clear'], '⚠️ un libro se guarda sin espacios de sobra');
 ok(libro.id && /^\d{4}-\d{2}-\d{2}$/.test(libro.fecha), '⚠️ con su id y su fecha local');
 eq(crearLibro({ titulo: '  ' }), null, '🚨 y sin título no se crea nada: el formulario no guarda un libro en blanco');
-eq(crearIdea({ titulo: 'Crear una app', detalle: 'que automatice X' }).detalle, 'que automatice X', '⚠️ una idea guarda su desarrollo');
+/* ⚠️ El campo largo de una idea se llama `descripcion` **desde la BL F5**; en el
+   modelo mínimo de esta fase era `detalle`, y la fábrica lo sigue aceptando para
+   que nada de lo que ya la llamaba se rompa. */
+eq(crearIdea({ titulo: 'Crear una app', detalle: 'que automatice X' }).descripcion, 'que automatice X',
+  '⚠️ una idea guarda su desarrollo');
 eq(crearIdea({ titulo: '' }), null, 'y sin idea no hay idea');
 eq(crearColeccion({ nombre: 'Aprender programación' }).nombre, 'Aprender programación', '⚠️ una colección guarda su nombre');
 eq(crearColeccion({ nombre: '' }), null, 'y sin nombre tampoco');
@@ -199,7 +203,7 @@ ok(sinId.id, '🚨 un elemento sin `id` recibe uno: al releerlo, cada dispositiv
 eq(normalizarBiblioteca({ libros: [{ autor: 'Nadie' }] }).libros, [],
   '⚠️ y un libro sin título se descarta: guardar un elemento en blanco es guardar una mentira');
 eq(normalizarLibro(null), null, 'lo que no es un objeto no pasa');
-eq(normalizarIdea({ titulo: 'Idea', detalle: 42 }).detalle, '', '⚠️ un campo con el tipo equivocado se corrige');
+eq(normalizarIdea({ titulo: 'Idea', descripcion: 42 }).descripcion, '', '⚠️ un campo con el tipo equivocado se corrige');
 eq(normalizarColeccion({ nombre: 'X' }).descripcion, '', '⚠️ y el que falta se rellena');
 
 // 🚨 Y App.jsx tiene que LLAMARLO: si no, todo lo anterior es decorativo.

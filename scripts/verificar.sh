@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F19 — Biblioteca: Ideas.
+if node --import ./scripts/resolver-vite.mjs scripts/test-ideas.mjs >/tmp/jc_ideas.log 2>&1; then
+  ok "Biblioteca: Ideas (E3 F19) — $(grep -c '✓' /tmp/jc_ideas.log) comprobaciones"
+else
+  fallo "Falla la mini-app Ideas (E3 F19)"; grep '✗' /tmp/jc_ideas.log
+fi
+
 # Entrega 3 · F18 — Biblioteca: Guardados.
 if node --import ./scripts/resolver-vite.mjs scripts/test-guardados.mjs >/tmp/jc_guardados.log 2>&1; then
   ok "Biblioteca: Guardados (E3 F18) — $(grep -c '✓' /tmp/jc_guardados.log) comprobaciones"

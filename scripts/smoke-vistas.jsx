@@ -121,11 +121,13 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
-import LibraryView, { TarjetaMiniApp, CabeceraMiniApp, VacioMiniApp, AnadirNotaRapida, AnadirIdea, AnadirColeccion, FichaSimple,
+import LibraryView, { TarjetaMiniApp, CabeceraMiniApp, VacioMiniApp, AnadirNotaRapida, AnadirColeccion, FichaSimple,
   PantallaLibros, TarjetaLibro, ContinuarLeyendo, FormularioLibro, DetalleLibro, Portada, BarraProgreso, EtiquetaEstado,
-  PantallaGuardados, TarjetaGuardado, FormularioGuardado, DetalleGuardado, IconoGuardado } from '../src/views/LibraryView.jsx';
+  PantallaGuardados, TarjetaGuardado, FormularioGuardado, DetalleGuardado, IconoGuardado,
+  PantallaIdeas, TarjetaIdea, FormularioIdea, DetalleIdea, ConvertirIdea, EtiquetaIdea } from '../src/views/LibraryView.jsx';
 import { ESTADOS_LIBRO, crearLibro } from '../src/lib/libros.js';
 import { TIPOS_GUARDADO, crearGuardado } from '../src/lib/guardados.js';
+import { ESTADOS_IDEA, crearIdea } from '../src/lib/ideas.js';
 import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
 import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
@@ -327,6 +329,40 @@ const CASOS = [
     accent, onCerrar: noop, onGuardar: noop, onEliminar: noop,
     guardado: { ...crearGuardado({ tipo: 'text', contenido: 'Una frase que me sirve' }), estado: 'archived', favorito: true },
   })],
+  /* E3 F19 (BL F5) — Ideas: la ficha en sus cinco estados, el formulario (rápido
+     y editando), el conversor, el detalle y la pantalla con datos y sin ellos. */
+  ...ESTADOS_IDEA.map((e) => [
+    `TarjetaIdea (${e.id})`, TarjetaIdea,
+    () => ({ accent, indice: 0, onAbrir: noop, idea: { ...crearIdea({ titulo: 'App para organizar estudios', descripcion: 'Crear una herramienta que…', categoria: 'Tecnología' }), estado: e.id } }),
+  ]),
+  ['TarjetaIdea (sin título)', TarjetaIdea, () => ({ accent, indice: 1, onAbrir: noop, idea: crearIdea({ descripcion: 'Solo se me ocurrió esto' }) })],
+  ['EtiquetaIdea (prioridad alta)', EtiquetaIdea, () => ({ estado: 'developing', prioridad: 'alta' })],
+  ['FormularioIdea (rápido)', FormularioIdea, () => ({ accent, onGuardar: noop })],
+  ['FormularioIdea (editando)', FormularioIdea, () => ({
+    accent, onGuardar: noop, onCancelar: noop,
+    idea: crearIdea({ titulo: 'Una idea', descripcion: 'Con desarrollo', notas: 'Podría usar X', categoria: 'Negocio', prioridad: 'alta' }),
+  })],
+  ['ConvertirIdea', ConvertirIdea, () => ({
+    accent, onConvertir: noop, onCerrar: noop, idea: crearIdea({ titulo: 'Crear una app de reservas' }),
+  })],
+  ['DetalleIdea', DetalleIdea, () => ({
+    accent, onCerrar: noop, onGuardar: noop, onEliminar: noop, onConvertir: noop,
+    idea: { ...crearIdea({ titulo: 'Crear una app de reservas', descripcion: 'Para el club', notas: 'Podría usar Supabase', categoria: 'Tecnología' }), estado: 'developing', tareaId: 't1' },
+  })],
+  ['PantallaIdeas (vacía)', PantallaIdeas, () => ({
+    ideas: [], cabecera: null, crear: false, onCerrarCrear: noop, vacio: null, accent,
+    onAdd: noop, onUpdate: noop, onDelete: noop, onConvertir: noop,
+  })],
+  ['PantallaIdeas (con datos)', PantallaIdeas, () => ({
+    ideas: [
+      { ...crearIdea({ titulo: 'App de reservas', descripcion: 'Para el club', prioridad: 'alta' }), estado: 'developing' },
+      { ...crearIdea({ descripcion: 'Sin título, solo la idea' }) },
+      { ...crearIdea({ titulo: 'Ya hecha' }), estado: 'completed', completado: '2026-09-01' },
+      { ...crearIdea({ titulo: 'Archivada' }), archivada: true },
+    ],
+    cabecera: null, crear: false, onCerrarCrear: noop, vacio: null, accent,
+    onAdd: noop, onUpdate: noop, onDelete: noop, onConvertir: noop,
+  })],
   ['PantallaGuardados (vacía)', PantallaGuardados, () => ({
     guardados: [], cabecera: null, crear: false, onCerrarCrear: noop, vacio: null, accent,
     onAdd: noop, onUpdate: noop, onDelete: noop,
@@ -356,7 +392,6 @@ const CASOS = [
     cabecera: null, crear: false, onCerrarCrear: noop, onAbrirCrear: noop, vacio: null, accent,
     onAdd: noop, onUpdate: noop, onDelete: noop, onSubirPortada: noop, onBorrarPortada: noop,
   })],
-  ['AnadirIdea', AnadirIdea, () => ({ onAdd: noop, accent })],
   ['AnadirColeccion', AnadirColeccion, () => ({ onAdd: noop, accent })],
   ['FichaSimple', FichaSimple, () => ({ titulo: 'Hábitos atómicos', sub: 'James Clear', fecha: '2026-09-01', onDelete: noop })],
   ['DashboardView', DashboardView, propsDashboard],

@@ -1,5 +1,61 @@
 # CHANGELOG.md
 
+## v3.40.0 — Entrega 3 · Fase 19 (BL F5): Biblioteca — Ideas
+
+Cinco estados, prioridad, categorías, notas de desarrollo, **conversión a tarea, meta u objetivo**,
+archivado, búsqueda, filtros, orden y estadísticas sencillas.
+
+> NOTA: *"quiero conservar esta información."*
+> IDEA: *"se me ha ocurrido algo que podría desarrollar."*
+
+### La captura rápida es de verdad rápida
+*"`+` → título → guardar. **Sin obligar a rellenar descripción, categoría o prioridad.**"* Y el
+título es *"recomendado pero no necesariamente obligatorio"*: **escribir solo la idea en el campo
+grande y guardarla también funciona**. La prioridad nace en Media y nunca se pregunta; la categoría
+y ella están detrás de un botón.
+
+### 🚨 Convertir: nada se escribe sin confirmar
+`convertirIdea` es el **decimoctavo `aplicarPlan`** del proyecto. Sin `confirmado` devuelve un plan
+—*"se creará «Crear una app de reservas» en Productividad"*— y **no construye nada**.
+
+Y cuando se confirma:
+
+- El elemento nace **en su módulo de siempre**: `productividad.tareas`, `productividad.metas` u
+  `objetivos.lista`. Nunca una lista paralela dentro de Biblioteca.
+- Con **su forma de siempre**: una tarea de JosStyle es `{ id, texto, fechaLimite, hecha }` y no se
+  le inventan campos (EH F39); un objetivo, `{ id, texto, plazo, cumplido, fechaCreacion }` (EH F28).
+- 🚨 **La idea no desaparece ni cambia de estado.** Lo único que se le añade es el id de lo que
+  generó — *"la idea original no debe desaparecer automáticamente"*.
+- 🚨 **Ni el periodo de una meta ni el plazo de un objetivo tienen valor por defecto.** Elegirlos por
+  él metería su idea en «Diaria, 1» sin decírselo, que es la lección de `ALCANCES` (HT F3) y del
+  plazo de EH F28.
+
+**Documento no existe todavía** —llega en la BL F6—, así que se declara con `existe: false` y su
+frase, y al tocarlo explica por qué no puede ser. Fingirlo sería el control decorativo de la regla 8.
+
+### Completar, descartar y archivar son TRES cosas
+El enunciado dedica un apartado a separarlas, y con un solo campo no cabrían:
+
+- **Realizada** guarda su fecha, y **volver atrás no la borra**: la hizo de verdad.
+- **Descartada** *"debe conservarse; esto permite revisar posteriormente ideas antiguas"* — y no
+  existe ninguna función que las borre.
+- **Archivada** es un campo aparte del estado, porque *"una idea puede estar realizada y
+  posteriormente archivarse"*. Con uno solo, archivarla le borraría que la hizo.
+
+### Las categorías se guardan como TEXTO
+*"El usuario debe poder crear categorías personalizadas."* Con un catálogo cerrado habría que tocar
+el código para admitir la primera, así que las siete del enunciado son **sugerencias** de un
+`datalist` y lo que se guarda es lo que él escriba.
+
+### Y la migración de siempre
+En el modelo mínimo de la BL F1 el campo largo se llamaba `detalle`. El normalizador lo lee como
+`descripcion`: sin eso, **el texto que Josué escribiera entonces desaparecería de la pantalla sin que
+nada fallara**. Vigesimoprimera vez. Y la fábrica **se muda** a `ideas.js` en lugar de duplicarse,
+como ya hicieron Libros y Guardados.
+
+**Verificación: `═══ TODO CORRECTO ═══`. 110 comprobaciones nuevas de Node, 48 casos de renderizado
+nuevos y 617 en Chromium.**
+
 ## v3.39.0 — Entrega 3 · Fase 18 (BL F4): Biblioteca — Guardados
 
 Tipos, favoritos, archivar, búsqueda por seis campos, filtros, orden y detalle. *"Guardados debe
