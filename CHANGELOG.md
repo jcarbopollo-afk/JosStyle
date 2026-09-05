@@ -60,6 +60,10 @@ mirando el permiso **real**.
   una sesión que está corriendo.
 - ⚠️ **Ni un router paralelo** (apartado 15): JosStyle navega con `setTab` y `navegarDesdeHoy`
   (EH F28), no con URLs, y el apartado pide adaptarse al que existe.
+- 🐛 **Y mi propio texto tenía una palabra técnica**: *"hace falta un service worker"*, en la
+  pantalla que ve Josué. Lo cazó **el recorrido en Chromium**, no el barrido de Node — porque la
+  lista de palabras prohibidas no conocía el término, **y su silencio parecía un aprobado**. Es la
+  lección de EH F48 otra vez: una comprobación que no reconoce lo que busca es peor que no tenerla.
 
 ## v3.30.0 — Entrega 3 · Fase 10 (HC F5): planificación avanzada y vista semanal
 

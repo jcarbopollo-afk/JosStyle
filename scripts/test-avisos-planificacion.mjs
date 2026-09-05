@@ -75,7 +75,10 @@ ok(loQueNo().some((c) => c.id === 'iphone_instalada'),
 ok(CAPACIDADES.every((c) => c.explica && c.explica.length > 20),
   '🚨 cada una con su explicación: *"si una capacidad no puede garantizarse, mostrar una explicación clara. No simularla."*');
 // 🚨 EH F62 — ni una palabra técnica en un texto que ve el usuario.
-const TECNICAS = /\bnull\b|\btoken\b|\bJSON\b|\bAPI\b|\bundefined\b|\bpayload\b/i;
+/* 🐛 **"service worker" es una palabra técnica, y estaba en el texto.** La lista
+   se quedó corta y lo cazó el recorrido en Chromium, no esta prueba: si el
+   barrido de Node no conoce el término, su silencio parece un aprobado. */
+const TECNICAS = /\bnull\b|\btoken\b|\bJSON\b|\bAPI\b|\bundefined\b|\bpayload\b|service worker|push\b|endpoint/i;
 ok(!CAPACIDADES.some((c) => TECNICAS.test(c.explica)),
   '⚠️ y sin palabras técnicas: los lee Josué, no un programador (EH F62)');
 eq(capacidad('inventada'), null, 'una capacidad que no existe no se inventa');

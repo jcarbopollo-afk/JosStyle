@@ -269,6 +269,8 @@ solo vale como corrección o ajuste — nunca una función nueva.
 - ⏸ **Un hábito no guarda hora** (11) y **el Pomodoro no se programa** (12): declarado, no fingido.
 - 🐛 **`pulsar()` del recorrido solo pulsa dentro del diálogo abierto.** Con el ＋ abierto, "Tarea"
   encontraba un botón del fondo llamado exactamente así y el recorrido acababa en otra pantalla.
+- 🐛 **Y una lista de palabras prohibidas que no conoce el término calla**: el texto de Ajustes decía
+  *"service worker"* y el barrido de Node lo aprobó. Lo cazó Chromium (la lección de EH F48).
 
 ## Dos cosas del documento que conviene saber
 

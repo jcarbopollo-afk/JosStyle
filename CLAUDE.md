@@ -191,6 +191,10 @@ de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 - 🐛 **`pulsar()` DEL RECORRIDO SOLO PULSA DENTRO DEL DIÁLOGO ABIERTO** (E3 F11). Con un overlay
   abierto, buscar "Tarea" encontraba **un botón del fondo** llamado exactamente así —la coincidencia
   exacta va primero— y el recorrido acababa en otra pantalla. Un overlay tapa lo de detrás.
+- 🐛 **UNA LISTA DE PALABRAS PROHIBIDAS QUE NO CONOCE EL TÉRMINO CALLA** (E3 F11): mi propio texto
+  de Ajustes decía *"service worker"*, y el barrido de Node lo aprobó porque no lo tenía en la lista.
+  **Lo cazó Chromium.** Es la lección de EH F48: una comprobación que no reconoce lo que busca es
+  peor que no tenerla.
 
 - 🚨 **EL MOTOR DE RECURRENCIAS ES `expandirRecurrentes`** (Calendario Universal F3, confirmado por
   la E3 F10): expande sin materializar, con intervalo, excepciones, cambios y `hasta`. **Las tareas

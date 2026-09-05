@@ -123,15 +123,15 @@ export const CAPACIDADES = [
   },
   {
     id: 'app_cerrada', nombre: 'Avisos con la aplicación cerrada', disponible: false,
-    explica: 'Todavía no. Hacen falta un service worker y un servidor que los envíe, y eso es una pieza nueva del sistema, no un ajuste.',
+    explica: 'Todavía no. Para eso hace falta una pieza que JosStyle no tiene aún: algo que siga despierto y mande el aviso cuando la app no está abierta.',
   },
   {
     id: 'iphone_instalada', nombre: 'Avisos en el iPhone', disponible: false,
-    explica: 'En el iPhone los avisos solo llegan si añades JosStyle a la pantalla de inicio, y aun así hace falta la pieza de arriba.',
+    explica: 'En el iPhone los avisos solo llegan si añades JosStyle a la pantalla de inicio, y aun así hace falta lo de arriba.',
   },
   {
     id: 'accion_al_tocar', nombre: 'Abrir el elemento al tocar el aviso', disponible: false,
-    explica: 'Se abre la aplicación, pero todavía no lleva directamente al elemento: eso también depende del service worker.',
+    explica: 'Se abre la aplicación, pero todavía no lleva directamente al elemento: eso depende de lo mismo.',
   },
   {
     id: 'vibracion', nombre: 'Vibración', disponible: false,
