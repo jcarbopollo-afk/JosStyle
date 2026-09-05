@@ -1767,6 +1767,33 @@ ok(/sin hora/i.test(agenda_e3f7) && /Comprar material/.test(agenda_e3f7),
   '🚨 y la que no tiene hora, en su sección: no todo lleva hora (apartado 4)');
 
 /* ===========================================================================
+   ENTREGA 3 · FASE 12 — CALENDARIOS EXTERNOS
+   ===========================================================================
+   ⏸ La decisión de la fase: Google y Outlook necesitan credenciales que solo
+   puede crear Josué, así que **no hay un botón "Conectar" que no conecte nada**
+   (regla 8). Lo que sí hay es añadir el archivo del calendario, que es lo que el
+   apartado 4 pide para Apple — y eso solo se comprueba mirando la pantalla.
+
+   ⚠️ Sufijo `_e3f12`, y `/i` en los rótulos. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Más');
+await pulsar('Ajustes');
+await esperarTexto(/Integraciones|Apariencia/i);
+ok(await pulsar('Integraciones'), '🚨 E3 F12 — Ajustes tiene su apartado de Integraciones (apartado 1)');
+const integ_e3f12 = await esperarTexto(/Calendarios/i);
+
+ok(/Google Calendar/.test(integ_e3f12) && /Outlook/.test(integ_e3f12) && /Apple/.test(integ_e3f12),
+  '⚠️ con los tres proveedores del enunciado (apartado 1)');
+ok(/Añadir un calendario/i.test(integ_e3f12),
+  '🍎 y lo que SÍ se puede hacer hoy: añadir el archivo (apartado 4)');
+ok(!/Conectar Google Calendar/i.test(integ_e3f12),
+  '⏸ y NO hay un botón "Conectar Google Calendar": no podría conectar nada (regla 8)');
+ok(/tienes que hacer tú/i.test(integ_e3f12),
+  '🚨 se dice qué hace falta para conectar la cuenta entera, y que lo decide él (regla 49)');
+ok(!/OAuth|token|API/i.test(integ_e3f12.split('Calendarios')[1] || ''),
+  '⚠️ sin una palabra técnica: lo lee Josué, no un programador (EH F62)');
+
+/* ===========================================================================
    ENTREGA 3 · FASE 11 — LOS AVISOS, Y LO QUE NO SE PUEDE PROMETER
    ===========================================================================
    🚨 Los apartados 7, 23 y 24: *"no fingir que se programó"*, *"no prometer

@@ -20,6 +20,10 @@ import { permisoNotificaciones, pedirPermisoNotificaciones } from '../lib/notifi
    esta plataforma. *"Si una capacidad no puede garantizarse desde Safari/PWA:
    mostrar una explicación clara. No simularla."* */
 import { CAPACIDADES } from '../lib/avisosPlanificacion';
+/* Entrega 3 · F12 (HC F7) — calendarios externos. ⏸ Google y Outlook necesitan
+   que Josué registre JosStyle en sus portales; lo que SÍ funciona hoy es el
+   archivo `.ics`, que es lo que el apartado 4 pide para Apple. */
+import { PROVEEDORES, LO_QUE_NECESITA_JOSUE, leerICS, planDeImportacion } from '../lib/calendariosExternos';
 import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
 import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton, BotonBorrar, Switch } from '../components/ui';
 /* SO Fase 5 — la pantalla de «Sonido y respuesta». Los interruptores son los de
@@ -1581,6 +1585,11 @@ export default function SettingsView({
   apariencia, onUpdateApariencia, onSubirFotoFondo, urlFotoFondo, onFirmarFotoFondo,
   onGuardarPreset, onCambiarPresets, onAplicarPreset, onEliminarPreset,
   notificaciones, onUpdateNotificaciones,
+  /* Entrega 3 · F12 (HC F7) — los eventos que ya hay (para no duplicar) y quien
+     los escribe. ⚠️ Entran en `calendario.eventos` como cualquier otro: un
+     evento externo se ve en Hoy, en la Agenda y en el Calendario **porque es un
+     evento**, no porque nadie lo copie (apartados 10, 11 y 12). */
+  calendario, onImportarEventos,
   // SO Fase 5 — las preferencias de audio de la SO F1, tal cual.
   audio, onUpdateAudio,
   seguridad, onUpdateSeguridad, userId,
@@ -1715,6 +1724,33 @@ export default function SettingsView({
   // Fase A4 — Notificaciones reales: estado del permiso del navegador (no es reactivo por sí
   // solo, se re-lee tras pedirlo) + exportar/importar/restablecer, mismo patrón que Apariencia.
   const [permisoNotif, setPermisoNotif] = useState(() => permisoNotificaciones());
+
+  /* Entrega 3 · F12 (HC F7) — añadir un calendario desde su archivo. 🚨 No se
+     duplica nada: `planDeImportacion` compara por el identificador REAL del
+     evento, nunca por el título (apartados 13, 21 y 32). */
+  const [resultadoICS, setResultadoICS] = useState(null);
+  const importarCalendario = (e) => {
+    const archivo = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!archivo) return;
+    const lector = new FileReader();
+    lector.onload = () => {
+      const { eventos, error } = leerICS(String(lector.result || ''), { origen: 'apple' });
+      if (error) { setResultadoICS({ error: true, texto: error }); return; }
+      const plan = planDeImportacion(calendario?.eventos || [], eventos);
+      if (plan.entran.length === 0) {
+        setResultadoICS({ error: false, texto: 'Esos eventos ya estaban: no se ha duplicado ninguno.' });
+        return;
+      }
+      onImportarEventos(plan.entran);
+      setResultadoICS({
+        error: false,
+        texto: `Añadidos ${plan.entran.length} eventos${plan.repetidos > 0 ? `, y ${plan.repetidos} que ya estaban se han dejado como estaban` : ''}.`,
+      });
+    };
+    lector.onerror = () => setResultadoICS({ error: true, texto: 'No se ha podido leer ese archivo.' });
+    lector.readAsText(archivo);
+  };
   const solicitarPermisoNotif = async () => {
     const resultado = await pedirPermisoNotificaciones();
     setPermisoNotif(resultado);
@@ -2721,9 +2757,66 @@ export default function SettingsView({
         )}
 
         {actual.id === 'integraciones' && (
-          <InfoOnly>
-            No hay ninguna integración externa conectada a tu cuenta ahora mismo.
-          </InfoOnly>
+          <>
+            <Card>
+              <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>🗓️ Calendarios</p>
+              <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
+                Puedes traer los eventos de otro calendario a JosStyle añadiendo su archivo. Lo que
+                creas aquí sigue siendo tuyo y no se envía a ningún sitio.
+              </p>
+
+              {/* Apartado 1 — cada proveedor con su estado REAL. ⏸ Ninguno pone
+                  "Conectar": un botón que no puede conectar nada sería un control
+                  decorativo (regla 8). */}
+              <div className="space-y-2 mb-3">
+                {PROVEEDORES.map((p) => (
+                  <div key={p.id} className="flex items-start gap-2">
+                    <span className="text-sm leading-none flex-shrink-0 mt-0.5" aria-hidden="true">{p.icono}</span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold" style={{ color: COLORS.text }}>{p.nombre}</p>
+                      <p className="text-xs" style={{ color: COLORS.textMuted }}>{p.comoVa}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <label
+                className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2.5 rounded-xl cursor-pointer toque-44"
+                style={{ background: hexToRgba(accent, 0.14), color: accent }}
+              >
+                Añadir un calendario
+                <input
+                  type="file"
+                  accept=".ics,text/calendar"
+                  className="hidden"
+                  onChange={importarCalendario}
+                />
+              </label>
+
+              {resultadoICS && (
+                <p className="text-xs mt-2" style={{ color: resultadoICS.error ? COLORS.negative : COLORS.textMuted }} role="status">
+                  {resultadoICS.texto}
+                </p>
+              )}
+            </Card>
+
+            {/* ⏸ Lo que hace falta para conectar Google y Outlook de verdad. No es
+                una tarea pendiente: son credenciales que solo puede crear él. */}
+            <Card>
+              <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Conectar la cuenta entera</p>
+              <p className="text-xs mb-2" style={{ color: COLORS.textMuted }}>
+                Para que Google u Outlook se actualicen solos, sin añadir un archivo cada vez, hacen
+                falta tres cosas que tienes que hacer tú:
+              </p>
+              <ul className="space-y-1.5">
+                {LO_QUE_NECESITA_JOSUE.map((x) => (
+                  <li key={x.id} className="text-xs" style={{ color: COLORS.textMuted }}>
+                    <span style={{ color: COLORS.text }}>· {x.que}.</span> {x.porque}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </>
         )}
 
         {actual.id === 'accesibilidad' && (

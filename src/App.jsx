@@ -2539,6 +2539,13 @@ export default function App() {
         };
         return (
           <SettingsView
+            /* Entrega 3 · F12 (HC F7) — añadir un calendario desde su archivo.
+               ⚠️ Los eventos entran en `calendario.eventos`, la lista de siempre:
+               ni una tabla nueva ni una copia (apartados 13, 22 y 23). */
+            calendario={calendario}
+            onImportarEventos={(evs) => snapshotAndSave({
+              calendario: { ...calendario, eventos: [...calendario.eventos, ...evs] },
+            })}
             foco={focoPara('ajustes')} onFocoConsumido={consumirFoco}
             perfil={perfil} onUpdatePerfil={updatePerfil} accent={accent} onUpdateAccent={updateAccent}
             onPreviewAccent={setAccent}

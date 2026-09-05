@@ -32,7 +32,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 9 ✅ | HC | F4 — Acciones rápidas e integración — **hecha (v3.29.0)** | 3035 |
 | 10 ✅ | HC | F5 — Planificación avanzada y vista semanal — **hecha (v3.30.0)** | 3874 |
 | 11 ✅ | HC | F6 — Notificaciones y recordatorios reales — **hecha (v3.31.0)** | 4425 |
-| 12 | HC | F7 — Integraciones externas de calendario | 4995 |
+| 12 ✅ | HC | F7 — Integraciones externas de calendario — **hecha (v3.32.0)**, con ⏸ DEP-29 | 4995 |
 | 13 | HC | F8 — Estadísticas de planificación | 5490 |
 | 14 | HC | F9 — Pulido visual, UX y animaciones | 6315 |
 | 15 | HC | F10 — PWA, iPhone, sincronización y auditoría final | 7088 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 11 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0). La siguiente es la **12 — HC F7: integraciones externas de calendario**, línea 4995.
+**Por dónde va:** 12 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸). La siguiente es la **13 — HC F8: estadísticas de planificación**, línea 5490.
 
 ## Lo que dejó la Fase 1, y que afecta a todas las demás
 
@@ -271,6 +271,26 @@ solo vale como corrección o ajuste — nunca una función nueva.
   encontraba un botón del fondo llamado exactamente así y el recorrido acababa en otra pantalla.
 - 🐛 **Y una lista de palabras prohibidas que no conoce el término calla**: el texto de Ajustes decía
   *"service worker"* y el barrido de Node lo aprobó. Lo cazó Chromium (la lección de EH F48).
+
+## Y lo que dejó la Fase 12 (HC F7)
+
+- ⏸ **CONECTAR GOOGLE Y OUTLOOK NECESITA A JOSUÉ** (DEP-29 en `docs/03`, regla 49): registrar
+  JosStyle en Google y en Microsoft, y un sitio seguro donde guardar el acceso (el apartado 26
+  prohíbe el navegador y el código). **Hasta entonces no hay botón "Conectar"**: sería un control
+  decorativo, y le haría creer que sus exámenes están sincronizados. Los apartados 19 y 20 dependen
+  de lo mismo.
+- 🍎 **Lo que SÍ funciona es el archivo `.ics`**, y es lo que pide el apartado 4 para Apple: no
+  necesita credenciales de nadie y sirve igual para los tres proveedores.
+- 🚨 **Un evento externo es un evento** (10-12, 22 y 23): cuatro campos del evento que ya existe, no
+  una tabla nueva. Por eso sale en Hoy, en la Agenda y en el Calendario sin que nadie lo copie.
+- 🚨 **Nunca vincular dos eventos por el título** (13, 21 y 32): solo por identificadores reales.
+  Unirlos haría desaparecer uno de los dos.
+- 🚨 **Ni un secreto en el frontend** (26): hay una prueba que barre el archivo buscando
+  `client_secret`, `access_token`, `refresh_token` y `localStorage`.
+- ⚠️ **Desconectar no borra lo interno** (25), y el plan **sin `confirmado` no escribe**.
+- 🐛 **Una hora en UTC de un `.ics` se pasa al reloj del usuario** (24): un evento de las 23:30
+  saldría el día siguiente. Séptima vez.
+- ⚠️ **Un evento del archivo sin título se descarta**, en vez de crear uno llamado "sin nombre".
 
 ## Dos cosas del documento que conviene saber
 

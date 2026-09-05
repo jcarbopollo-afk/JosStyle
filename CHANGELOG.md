@@ -1,5 +1,60 @@
 # CHANGELOG.md
 
+## v3.32.0 — Entrega 3 · Fase 12 (HC F7): calendarios externos
+
+*"Permitir conectar Apple Calendar / iCloud, Google Calendar y Outlook."* Y la regla que abre el
+enunciado: *"las integraciones externas NO deben sustituir al calendario interno."*
+
+### ⏸ Lo que no se puede construir hoy, y por qué
+
+**Google y Outlook necesitan OAuth, y OAuth necesita dos cosas que solo puede dar Josué:**
+
+1. **Registrar JosStyle** en Google Cloud Console y en el portal de Microsoft. Nadie más puede: van
+   atadas a su cuenta.
+2. **Un sitio seguro donde guardar el acceso.** El apartado 26 es tajante: *"nunca almacenar en
+   localStorage, código frontend o variables accesibles públicamente"*. Hoy hay **una** función de
+   servidor (`api/ask-ai.js`) y ninguna tabla para esto.
+
+🚨 **Así que el botón «Conectar Google Calendar» NO se construye.** Un botón que no puede conectar
+nada es el control decorativo que prohíbe la regla 8 — y fingir la conexión sería peor: le haría
+creer que sus exámenes están sincronizados cuando no lo están. Queda anotado en `docs/03` como
+**DEP-29** y en `LO_QUE_NECESITA_JOSUE`, con quién decide cada cosa (regla 49).
+
+### 🍎 Y lo que sí queda hecho, que es la mayor parte
+
+**El camino de Apple, entero y funcionando.** El apartado 4 lo dice con sus palabras: *"si el acceso
+directo completo a iCloud no es viable… implementar la alternativa oficialmente soportada más segura.
+Por ejemplo: importación mediante archivo `.ics`"*. Eso **no necesita credenciales de nadie**, y
+sirve igual para iCloud, Google y Outlook: los tres exportan ese formato.
+
+Ajustes → Integraciones tiene ahora **«Añadir un calendario»**, y sus eventos entran en
+`calendario.eventos` como cualquier otro — por eso salen en **Hoy, en la Agenda y en el Calendario**
+(apartados 10, 11 y 12) sin que nadie los copie.
+
+El lector aguanta lo que trae un archivo de verdad: líneas plegadas, comas escapadas, eventos de todo
+el día, y **las horas en UTC pasadas al reloj de Josué** — un evento de las 23:30 no puede salir el
+día siguiente (apartado 24, y séptima vez de esa lección).
+
+### Lo demás
+
+- **Los cuatro campos de un evento externo** (22 y 23): `origen`, `idExterno`, `calendarioExterno`,
+  `cuentaExterna` — campos **del evento que ya existe**, no de una tabla nueva.
+- 🚨 **No se duplica, y nunca por el título** (13, 21 y 32): *"si un evento externo y uno interno
+  tienen el mismo título/hora, **NO** asumir que son el mismo. Solo vincularlos mediante
+  identificadores reales."* Hay una prueba con ese caso exacto.
+- **Se distinguen sin otra interfaz** (9): ⚡ JosStyle · 🔗 Google Calendar · Estudios.
+- **Desconectar no borra lo interno** (25): un plan que **sin `confirmado` no escribe**, y que
+  enumera lo que se va y lo que se queda.
+- **Los estados y la última sincronización** (28, 29, 30 y 31), y los cinco dicen lo mismo al final:
+  *"tus eventos de JosStyle siguen igual"*.
+
+### Lo que esto deja apuntado
+
+- 🚨 **Ni un secreto en el frontend**: hay una prueba que barre el archivo buscando `client_secret`,
+  `access_token`, `refresh_token` y `localStorage`. Es la restricción del apartado 26 hecha código.
+- ⚠️ **Un evento importado nace de solo lectura**: se cambia en su calendario, no aquí.
+- ⚠️ **Un evento del archivo sin título se descarta**, en vez de crear uno llamado «sin nombre».
+
 ## v3.31.0 — Entrega 3 · Fase 11 (HC F6): notificaciones y recordatorios reales
 
 *"El usuario debe poder configurar «avísame de esto a las 17:00» y recibir una notificación real

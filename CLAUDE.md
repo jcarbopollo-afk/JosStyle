@@ -171,11 +171,33 @@ de error exacto** antes de asumir nada.
 **F8 (Calendario: la vista temporal, v3.28.0)** y la
 **F9 (acciones rápidas entre Hoy, Agenda y Calendario, v3.29.0)** y la
 **F10 (planificación avanzada y vista semanal, v3.30.0)** y la
-**F11 (notificaciones y recordatorios reales, v3.31.0)**; la siguiente es la
-**12 — HC F7: integraciones externas de calendario**. El índice, con la línea de cada fase dentro
+**F11 (notificaciones y recordatorios reales, v3.31.0)** y la
+**F12 (calendarios externos, v3.32.0)**; la siguiente es la
+**13 — HC F8: estadísticas de planificación**. El índice, con la línea de cada fase dentro
 de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
-⚠️ **Y lo que dejaron las once primeras, que afecta a todas las demás:**
+⏸ **Y hay algo que necesita a Josué, anotado como DEP-29 en `docs/03`:** conectar **Google Calendar
+y Outlook** exige que él registre JosStyle en Google y en Microsoft **y** que exista un sitio seguro
+donde guardar el acceso (el apartado 26 prohíbe el navegador y el código). **Hasta entonces no se
+construye el botón "Conectar"** —sería un control decorativo, y le haría creer que sus exámenes
+están sincronizados—. Lo que sí funciona ya es el **archivo `.ics`**, que es la alternativa que pide
+el propio enunciado para Apple y sirve para los tres. **Los apartados 19 y 20 dependen de lo mismo.**
+
+⚠️ **Y lo que dejaron las doce primeras, que afecta a todas las demás:**
+
+- 🚨 **UN EVENTO EXTERNO ES UN EVENTO** (E3 F12, apartados 10-12, 22 y 23): `origen`, `idExterno`,
+  `calendarioExterno` y `cuentaExterna` son campos **del evento que ya existe**, no de una tabla
+  nueva. Por eso sale en Hoy, en la Agenda y en el Calendario sin que nadie lo copie.
+- 🚨 **NUNCA VINCULAR DOS EVENTOS POR EL TÍTULO** (E3 F12, apartados 13, 21 y 32): *"si un evento
+  externo y uno interno tienen el mismo título/hora, NO asumir que son el mismo. Solo vincularlos
+  mediante identificadores reales."* Unirlos haría desaparecer uno de los dos.
+- 🚨 **NI UN SECRETO EN EL FRONTEND** (E3 F12, apartado 26): hay una prueba que barre
+  `calendariosExternos.js` buscando `client_secret`, `access_token`, `refresh_token` y
+  `localStorage`. Cualquier fase que toque una integración hereda esa restricción.
+- ⚠️ **Desconectar un calendario NO borra lo interno** (E3 F12, apartado 25), y el plan **sin
+  `confirmado` no escribe**.
+- 🐛 **Una hora en UTC de un `.ics` se pasa al reloj del usuario** (E3 F12, apartado 24): un evento
+  de las 23:30 saldría el día siguiente. Séptima vez de esta lección.
 
 - 🚨 **`avisosPlanificacion.js` DECIDE, `notificaciones.js` MANDA** (E3 F11), como `avisosHorario.js`
   (HT F10) y `avisosEstilo.js` (EH F38). **Nunca un segundo emisor ni un segundo horario de
