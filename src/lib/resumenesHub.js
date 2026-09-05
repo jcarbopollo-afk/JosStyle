@@ -20,6 +20,7 @@ import { resumenHistorial } from './armario';
 import { resumenHabito } from './rachas';
 import { panelRachas, panelHabitos } from './rachasServicio';
 import { resumenHorario } from './horario';
+import { totalBiblioteca } from './biblioteca.js';
 
 function ultimoPorFecha(lista) {
   if (!lista || lista.length === 0) return null;
@@ -130,7 +131,10 @@ export function calcularResumenModulo(id, s) {
       return { linea1: dias === 0 ? 'Última entrada hoy' : `Última entrada hace ${dias} ${plural(dias, 'día', 'días')}`, linea2: estadoAnimo ? `Estado: ${estadoAnimo.label}` : ' ', estado: 'activo' };
     }
     case 'biblioteca': {
-      const total = (s.biblioteca?.apuntes?.length || 0) + (s.biblioteca?.enlaces?.length || 0) + (s.bibliotecaArchivos?.length || 0);
+      /* E3 F16 (BL F1) — la Biblioteca son seis mini-apps, así que el resumen las
+         cuenta las seis. Contar solo tres diría un número más bajo del que Josué ve
+         en el lanzador, y un resumen que no cuadra con la pantalla es peor que nada. */
+      const total = totalBiblioteca({ biblioteca: s.biblioteca, archivos: s.bibliotecaArchivos });
       return { linea1: `${total} ${plural(total, 'documento guardado', 'documentos guardados')}`, linea2: total > 0 ? 'Toca para abrir la biblioteca' : 'Toca para añadir el primero', estado: total > 0 ? 'activo' : 'vacio' };
     }
     case 'economia': {

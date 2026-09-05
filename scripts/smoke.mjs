@@ -57,12 +57,24 @@ await build({
              render sin navegador — y así se comprueba que ese camino no revienta. */
           export const supabase = { auth: { getSession: async () => ({ data: { session: null } }) } };
           const nada = async () => null;
-          export const getSession = nada, onAuthChange = nada, onAuthEvent = nada;
+          /* ⚠️ Ésta devuelve la función para dejar de vigilar, no nada: quien la
+             llama guarda lo que devuelve y lo ejecuta al desmontar. */
+          export const vigilarLaConexion = () => () => {};
+          export const getSession = nada, onAuthChange = nada, onAuthEvent = nada, signUp = nada, signIn = nada;
           export const sendPasswordReset = nada, loadData = nada, saveData = nada, signOut = nada;
           export const uploadProgressPhoto = nada, deleteProgressPhoto = nada, getSignedPhotoUrl = nada;
           export const uploadTrainingVideo = nada, deleteTrainingVideo = nada, getSignedVideoUrl = nada;
-          export const uploadBibliotecaArchivo = nada, deleteBibliotecaArchivo = nada, getSignedArchivoUrl = nada;
+          /* 🚨 E3 F16 — estos nombres estaban MAL: el stub exportaba
+             \`getSignedArchivoUrl\`, que \`supabase.js\` no exporta, y le faltaban los
+             de Fondos. Consecuencia: cualquier vista que importara el nombre de
+             verdad **no compilaba aquí**, y por eso \`LibraryView\` llevaba desde la
+             Fase 11 sin un solo caso de renderizado. Un stub que no coincide con lo
+             que imita no protege nada, y su silencio parece un aprobado.
+             \`scripts/test-imports.mjs\` tiene ahora una regla invariante que compara
+             las dos listas. */
+          export const uploadBibliotecaArchivo = nada, deleteBibliotecaArchivo = nada, getSignedBibliotecaUrl = nada;
           export const uploadPrendaFoto = nada, deletePrendaFoto = nada, getSignedPrendaUrl = nada;
+          export const uploadFondoFoto = nada, deleteFondoFoto = nada, getSignedFondoUrl = nada;
         `,
         loader: 'js',
       }));

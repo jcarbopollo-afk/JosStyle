@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.20.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.37.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 **Pendiente por delante:** la **Entrega 3** (44 fases — **1 hecha**, ver `docs/11_ENTREGA3_ORDEN.md`),
@@ -175,10 +175,15 @@ de error exacto** antes de asumir nada.
 **F12 (calendarios externos, v3.32.0)** y la
 **F13 (estadísticas de planificación, v3.33.0)** y la
 **F14 (pulido visual, UX y animaciones, v3.34.0)** y la
-**F15 (PWA, iPhone y auditoría final, v3.36.0)**, que 🏁 **CIERRA EL BLOQUE HOY Y CALENDARIO** —las
-diez fases HC—; la siguiente es la **16 — BL F1: la Biblioteca como lanzador de mini-apps**, y con
-ella empieza el bloque de **Biblioteca**. El índice, con la línea de cada fase dentro de la
-especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
+**F15 (PWA, iPhone y auditoría final, v3.36.0)**, que 🏁 **CIERRÓ EL BLOQUE HOY Y CALENDARIO** —las
+diez fases HC—, y la **F16 (la Biblioteca como lanzador de mini-apps, v3.37.0)**, con la que empieza
+el bloque de **Biblioteca**; la siguiente es la **17 — BL F2: Libros**. El índice, con la línea de
+cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
+
+⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
+rótulo dice *"Biblioteca 8"* y el documento va **F1, F2, F4, F5, F6, F6, F7, F8**— y **la Fase 6
+está duplicada** palabra por palabra. Por el orden de las seis mini-apps, la que falta es **Notas**.
+🟢 No bloquea nada: la BL F1 ya las deja funcionando. **Preguntárselo a Josué.**
 
 ⏸ **Y hay algo que necesita a Josué, anotado como DEP-29 en `docs/03`:** conectar **Google Calendar
 y Outlook** exige que él registre JosStyle en Google y en Microsoft **y** que exista un sitio seguro
@@ -193,7 +198,32 @@ añade a ciegas porque el riesgo es el fallo histórico de este proyecto:** mal 
 aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con `main` sirviendo
 código de agosto mientras él decía *"la web sigue igual"*.
 
-⚠️ **Y lo que dejaron las quince primeras, que afecta a todas las demás:**
+⚠️ **Y lo que dejaron las dieciséis primeras, que afecta a todas las demás:**
+
+- 🚨 **ANTES DE CREAR UNA LISTA, MIRAR SI ESA COSA YA EXISTE CON OTRO NOMBRE** (E3 F16). Tres de las
+  seis mini-apps de la Biblioteca **ya estaban**: **Notas son `biblioteca.apuntes`**, **Guardados son
+  `biblioteca.enlaces`** y **Documentos son `bibliotecaArchivos`**, las tres desde la Fase 11. Crear
+  `notas` al lado de `apuntes` habría dejado los apuntes de Josué **invisibles en su propia
+  biblioteca**. `MAPEO_EXISTENTE` lo declara, con una prueba que lo recorre.
+- 🚨 **AÑADIR UNA MINI-APP ES UNA LÍNEA EN `MINI_APPS` Y OTRA EN `ICONOS_MINI_APP`** (E3 F16): una es
+  de datos y la otra de componentes de React, el mismo reparto que `CATEGORIAS_ARMARIO` /
+  `ICONOS_CATEGORIA`. Un icono que falte en el segundo sale como un hueco y **no falla en ninguna
+  parte**.
+- 🚨 **Y OTRA FUNCIÓN QUE NADIE LLAMABA** (E3 F16, y van tres en esta entrega): desde la E3 F6,
+  `App.jsx` le pasaba a la Biblioteca **los apuntes de Productividad**, así que guardar una nota
+  escribía en el módulo equivocado y borrar no borraba —sin un solo error por pantalla—, mientras
+  `addApunte` y `deleteApunte` seguían escritas y **muertas**.
+- 🐛 **UN STUB QUE NO COINCIDE CON LO QUE IMITA NO PROTEGE NADA** (E3 F16). El de Supabase en
+  `smoke.mjs` exportaba `getSignedArchivoUrl`, **que `supabase.js` no exporta**, así que toda vista
+  que importara el nombre real **no compilaba en el banco de renderizado** y se quedaba fuera en
+  silencio: `LibraryView` llevaba **desde la Fase 11 sin un solo caso**. `test-imports.mjs` tiene
+  ahora una **quinta regla invariante** que compara las dos listas.
+- ⚠️ **`normalizarBiblioteca` es la decimonovena vez del fallo del normalizador** (E3 F16):
+  `setBiblioteca(bib)` a pelo dejaba las tres listas nuevas en `undefined` para quien ya tenía cuenta.
+  Al añadir un campo a una entidad, añadirlo también a su normalizador.
+- ⚠️ **La cascada de las plaquitas es `.hub-card`, la de los hubs** (E3 F16): escribir una segunda se
+  vería distinta.
+
 
 - 🚨 **LA CONDICIÓN DE FINALIZACIÓN SE CALCULA** (E3 F15, y EH F64 lo dijo primero): `condicionHC()`
   lee el manifiesto, el `index.html`, el `index.css` y el `schema.sql` **de verdad**. Nadie pone una

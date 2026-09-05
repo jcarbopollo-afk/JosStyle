@@ -2173,4 +2173,94 @@ ok(sinRachas_e3f2.length > 200, 'y el resto de Hoy sigue ahí');
    en vez de dejar una cuenta que suma toques aunque el toque no llegue a
    pulsar nada, que es peor que no contarlos. */
 
+/* ── E3 F16 (BL F1) · LA BIBLIOTECA ES UN LANZADOR DE SEIS MINI-APPS ─────
+   🚨 Lo que esta sección tiene que demostrar no es que se vea bonito: es que
+   **las notas de Josué siguen ahí**. Tres de las seis mini-apps son datos que
+   ya existían con otro nombre, y si el lanzador hubiera creado listas nuevas,
+   sus apuntes y sus enlaces habrían desaparecido de su propia biblioteca. */
+almacen.biblioteca = {
+  apuntes: [{ id: 'ap1', fecha: '2026-09-01', titulo: 'Examen de Biología', contenido: 'Es el viernes' }],
+  enlaces: [{ id: 'en1', fecha: '2026-09-01', titulo: 'Repaso de Química', url: 'https://ejemplo.es', descripcion: '' }],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Vida');
+ok(await pulsar('Biblioteca'), 'La Biblioteca se abre desde el área de Vida');
+
+const lanzador_bl1 = await ver();
+for (const nombre of ['Libros', 'Notas', 'Guardados', 'Ideas', 'Documentos', 'Colecciones']) {
+  ok(new RegExp(nombre, 'i').test(lanzador_bl1), `🚨 la mini-app ${nombre} está en el lanzador`);
+}
+ok(/Escribe y guarda/i.test(lanzador_bl1) && /Organiza tu biblioteca/i.test(lanzador_bl1),
+  '⚠️ y cada una con su descripción corta');
+ok(!/Añadir[\s\S]{0,40}Selecciona|PDFs\s+Vídeos\s+Fotos/i.test(lanzador_bl1),
+  '⚠️ el lanzador NO abre con un formulario ni con los filtros: primero las mini-apps (criterio 14)');
+
+/* 🚨 Los indicadores salen de los datos DE VERDAD, y solo cuando existen. */
+ok(/1 nota\b/i.test(lanzador_bl1),
+  '🚨 el apunte guardado se cuenta como UNA NOTA: la mini-app lee `biblioteca.apuntes`, no una lista nueva');
+ok(/1 guardado\b/i.test(lanzador_bl1),
+  '🚨 y el enlace guardado se cuenta como UN GUARDADO');
+ok(!/0 libros|0 ideas/i.test(lanzador_bl1),
+  '⚠️ y lo que está vacío no enseña un cero: *"no inventar números"*');
+
+/* ── Notas: el apunte de Josué sigue ahí, y se escribe rápido ───────────── */
+ok(await pulsar('Notas'), 'Notas se abre');
+const notas_bl1 = await ver();
+ok(/Examen de Biología/i.test(notas_bl1),
+  '🚨 EL APUNTE QUE JOSUÉ TENÍA DESDE LA FASE 11 SIGUE AHÍ, ahora llamado nota');
+ok(/una nota se abre|escribe y se guarda|rápid/i.test(notas_bl1),
+  '⚠️ y la pantalla dice en qué se diferencia de un documento');
+
+/* ⚠️ Con una nota ya guardada NO hay estado vacío, así que "Nueva nota" no está
+   en pantalla: el que abre el formulario es el ＋ de la cabecera, y se pulsa por
+   su nombre accesible. */
+ok(await pulsar('Añadir en Notas'), 'el ＋ abre el formulario rápido');
+await page.waitForSelector('textarea', { timeout: 6000 });
+await page.fill('textarea', 'Especificación para Claude');
+ok(await pulsar('Guardar nota'), 'y se guarda sin pedir título ni categoría');
+const trasNota_bl1 = await esperarTexto(/Especificación para Claude/i);
+ok(/Especificación para Claude/i.test(trasNota_bl1),
+  '🚨 LA NOTA SE GUARDA Y SE VE: entra, escribe y guarda (criterio 10)');
+ok(/Sin título/i.test(trasNota_bl1),
+  '⚠️ y sin título puesto se guarda igual, con esa etiqueta');
+
+const escrituras_bl1 = guardado.filter((g) => g && g.key === 'biblioteca');
+const ultima_bl1 = escrituras_bl1.at(-1)?.value;
+ok(Array.isArray(ultima_bl1?.apuntes) && ultima_bl1.apuntes.length === 2,
+  '🚨 y lo guardado va a `biblioteca.apuntes` —la lista de siempre—, ahora con dos');
+ok(!ultima_bl1?.notas,
+  '🚨 NO hay una lista `notas` paralela: eso es lo que habría escondido su apunte');
+
+/* ── Volver, y una lista nueva que escribe de verdad ─────────────────────── */
+ok(await pulsar('Volver a la biblioteca'), 'el botón de volver devuelve al lanzador');
+ok(await pulsar('Libros'), 'y se entra en Libros');
+const libros_bl1 = await ver();
+ok(/Tu biblioteca empieza aquí/i.test(libros_bl1),
+  '⚠️ una mini-app vacía enseña su estado vacío con salida, no una pantalla en blanco');
+
+ok(await pulsar('Añadir libro'), 'el botón del estado vacío abre el formulario');
+/* 🐛 `TextInput` es un `<input>` sin `type`, así que `input[type="text"]` NO encaja
+   con ninguno de la aplicación: se busca por su nombre accesible, que es como lo
+   encontraría alguien con VoiceOver. */
+await page.waitForSelector('input[aria-label="Título del libro"]', { timeout: 6000 });
+await page.fill('input[aria-label="Título del libro"]', 'Hábitos atómicos');
+ok(await pulsar('Guardar libro'), 'y se añade');
+const trasLibro_bl1 = await esperarTexto(/Hábitos atómicos/i);
+ok(/Hábitos atómicos/i.test(trasLibro_bl1),
+  '🚨 EL BOTÓN DE CREAR ESCRIBE DE VERDAD: nada de un control decorativo (regla 8)');
+const librosGuardados_bl1 = guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value?.libros;
+ok(Array.isArray(librosGuardados_bl1) && librosGuardados_bl1[0]?.titulo === 'Hábitos atómicos',
+  '⚠️ y llega a Supabase, en la misma clave `biblioteca`');
+
+/* ── Documentos: los archivos ya subidos tienen sitio ────────────────────── */
+ok(await pulsar('Volver a la biblioteca'), 'se vuelve otra vez al lanzador');
+ok(await pulsar('Documentos'), 'y se abre Documentos');
+const docs_bl1 = await ver();
+ok(/Tu archivo personal/i.test(docs_bl1),
+  '⚠️ Documentos es el archivo personal: es donde siguen viviendo los PDF, vídeos y fotos ya subidos');
+ok(!/próximamente|en construcción/i.test(docs_bl1),
+  '🚨 y no promete nada que no exista');
+
 await salir(browser);

@@ -121,6 +121,8 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
+import LibraryView, { TarjetaMiniApp, CabeceraMiniApp, VacioMiniApp, AnadirNotaRapida, AnadirLibro, AnadirIdea, AnadirColeccion, FichaSimple } from '../src/views/LibraryView.jsx';
+import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
 import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
@@ -235,6 +237,43 @@ const AREAS_PRUEBA = [
 ];
 
 const CASOS = [
+  /* E3 F16 (BL F1) — la Biblioteca como lanzador. El lanzador con datos y sin
+     ellos, cada plaquita, la cabecera de una mini-app, un estado vacío y los
+     cuatro formularios: nada de esto se pintaba antes de esta fase, porque
+     `LibraryView` no estaba en el banco de renderizado. */
+  ['LibraryView (lanzador, vacío)', LibraryView, () => ({
+    biblioteca: DEFAULT_BIBLIOTECA, archivos: [],
+    onAddArchivo: noop, onDeleteArchivo: noop, onAddApunte: noop, onDeleteApunte: noop,
+    onAddEnlace: noop, onDeleteEnlace: noop, onAddLibro: noop, onDeleteLibro: noop,
+    onAddIdea: noop, onDeleteIdea: noop, onAddColeccion: noop, onDeleteColeccion: noop, accent,
+  })],
+  ['LibraryView (lanzador, con datos)', LibraryView, () => ({
+    biblioteca: {
+      apuntes: [{ id: 'a1', fecha: '2026-09-01', titulo: 'Examen', contenido: 'El viernes' }],
+      enlaces: [{ id: 'e1', fecha: '2026-09-01', titulo: 'Repaso', url: 'https://ejemplo.es', descripcion: '' }],
+      libros: [{ id: 'l1', fecha: '2026-09-01', titulo: 'Hábitos atómicos', autor: 'James Clear' }],
+      ideas: [{ id: 'i1', fecha: '2026-09-01', titulo: 'Una app', detalle: '' }],
+      colecciones: [{ id: 'c1', fecha: '2026-09-01', nombre: 'Estudios', descripcion: '' }],
+    },
+    archivos: [{ id: 'f1', tipo: 'pdf', path: 'x/y.pdf', titulo: 'Tema 3', fecha: '2026-09-01' }],
+    onAddArchivo: noop, onDeleteArchivo: noop, onAddApunte: noop, onDeleteApunte: noop,
+    onAddEnlace: noop, onDeleteEnlace: noop, onAddLibro: noop, onDeleteLibro: noop,
+    onAddIdea: noop, onDeleteIdea: noop, onAddColeccion: noop, onDeleteColeccion: noop, accent,
+  })],
+  ...MINI_APPS.map((app, i) => [
+    `TarjetaMiniApp (${app.id})`, TarjetaMiniApp,
+    () => ({ app, indice: i, indicador: indicadorDe(app.id, { biblioteca: { [app.coleccion]: [{ id: 'x' }] }, archivos: [{ id: 'x' }] }), accent, onAbrir: noop }),
+  ]),
+  ...MINI_APPS.map((app) => [
+    `VacioMiniApp (${app.id})`, VacioMiniApp, () => ({ app, accent, onCrear: noop }),
+  ]),
+  ['CabeceraMiniApp (cerrada)', CabeceraMiniApp, () => ({ app: miniApp('notas'), accent, abierto: false, onVolver: noop, onToggleCrear: noop })],
+  ['CabeceraMiniApp (abierta)', CabeceraMiniApp, () => ({ app: miniApp('libros'), accent, abierto: true, onVolver: noop, onToggleCrear: noop })],
+  ['AnadirNotaRapida', AnadirNotaRapida, () => ({ onAdd: noop, accent })],
+  ['AnadirLibro', AnadirLibro, () => ({ onAdd: noop, accent })],
+  ['AnadirIdea', AnadirIdea, () => ({ onAdd: noop, accent })],
+  ['AnadirColeccion', AnadirColeccion, () => ({ onAdd: noop, accent })],
+  ['FichaSimple', FichaSimple, () => ({ titulo: 'Hábitos atómicos', sub: 'James Clear', fecha: '2026-09-01', onDelete: noop })],
   ['DashboardView', DashboardView, propsDashboard],
   ['SleepView', SleepView, (e) => ({ sueno: e.sueno, onAdd: noop, onDelete: noop, accent })],
   ['FinanceView', FinanceView, (e) => ({ economia: e.economia, onAdd: noop, onDelete: noop, onUpdate: noop, accent })],

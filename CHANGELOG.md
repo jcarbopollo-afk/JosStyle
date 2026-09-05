@@ -1,5 +1,84 @@
 # CHANGELOG.md
 
+## v3.37.0 — Entrega 3 · Fase 16 (BL F1): la Biblioteca como lanzador de mini-apps
+
+Empieza el bloque de **Biblioteca**. *"Biblioteca debe funcionar como una base de conocimiento
+personal, pero presentada visualmente como un launcher de mini-aplicaciones."*
+
+### 🚨 Lo primero que pedía el enunciado no era construir: era mirar
+
+*"Antes de modificar: analiza la implementación actual… identifica si existen notas, documentos,
+libros u otras estructuras. **Identifica posibles duplicaciones. No elimines datos existentes sin
+comprobarlos.**"*
+
+Y al mirarla, **tres de las seis mini-apps ya existían con otro nombre**:
+
+| Mini-app | Lo que ya había | Desde |
+|---|---|---|
+| 📝 Notas | `biblioteca.apuntes` | Fase 11 |
+| 🔖 Guardados | `biblioteca.enlaces` | Fase 11 |
+| 📄 Documentos | `bibliotecaArchivos` (PDF, vídeo, foto) | Fase 11 |
+
+Así que **no se ha creado ni una lista nueva para ellas**. Crear `notas` al lado de `apuntes` habría
+dejado los apuntes de Josué **invisibles en su propia biblioteca**, que es exactamente lo que el
+criterio de éxito 15 prohíbe. `MAPEO_EXISTENTE` lo declara en código, con una prueba que lo recorre.
+
+Las otras tres —**Libros**, **Ideas** y **Colecciones**— sí son nuevas, con el modelo **mínimo** que
+hace falta para que su botón de crear escriba algo de verdad. El gestor completo de cada una es de
+las fases BL F2, F5 y F7.
+
+### 🚨 El fallo que apareció al enchufar la pantalla
+
+Desde la **E3 F6**, `App.jsx` le pasaba a la Biblioteca los apuntes de **Productividad**:
+
+```jsx
+onAddApunte={addApunteDelDia} onDeleteApunte={deleteApunteDelDia}
+```
+
+Guardar una nota en la Biblioteca metía el objeto entero en `productividad.apuntes` —donde se espera
+un texto— y su botón de eliminar buscaba el id en la lista equivocada: **no borraba nada y no daba
+un solo error por pantalla**. Y del otro lado, `addApunte` y `deleteApunte` llevaban desde entonces
+**sin que nadie las llamara**. La firma del proyecto: *una función que nadie llama no falla nunca*.
+
+### 🐛 Y un segundo silencio, éste en las propias pruebas
+
+El stub de Supabase de `scripts/smoke.mjs` exportaba `getSignedArchivoUrl`, **un nombre que
+`supabase.js` no exporta**, y no tenía ninguno de los de Fondos. Consecuencia: cualquier vista que
+importara el nombre de verdad **no compilaba en el banco de renderizado**, y esa vista se quedaba
+fuera sin que nada lo dijera — `LibraryView` llevaba **desde la Fase 11 sin un solo caso**.
+
+Ahora tiene 84, y `scripts/test-imports.mjs` estrena una **quinta regla invariante** que compara las
+dos listas de exportaciones. Al arreglarla salieron dos huecos más: `signUp`, `signIn` y
+`vigilarLaConexion` tampoco estaban.
+
+### La pantalla
+
+Seis plaquitas en dos columnas, con **iconos de Lucide** —el enunciado prohíbe expresamente los
+emojis gigantes como diseño definitivo—, entrando en cascada con `.hub-card`, **la misma animación
+que ya usan los hubs** desde la Fase N2. Cada mini-app tiene su título, su botón de volver, su ＋ y
+su estado vacío con salida. Y **la diferencia con su vecina se dice en pantalla**: el enunciado
+dedica tres apartados a que las seis sean *"claramente diferenciables"*.
+
+Los indicadores (`1 nota`, `2 libros`) salen de los datos de verdad, y **lo que está vacío no enseña
+un cero**: *"no inventar números"*.
+
+**Notas se abre, se escribe y se guarda**: el texto va primero y el título es opcional, sin
+categoría, etiquetas ni proyecto (criterio 10).
+
+### ⏸ Y una contradicción del documento, anotada como C-27
+
+**Falta la Fase 3 de Biblioteca** —el rótulo dice *"Biblioteca 8"* y el documento va F1, F2, F4, F5,
+F6, F6, F7, F8— y **la Fase 6 está duplicada** palabra por palabra. Por el orden de las mini-apps, la
+que falta es **Notas**. No bloquea nada, porque esta fase ya las deja funcionando; queda para
+preguntarle a Josué.
+
+### Ni una tabla nueva, ni un SQL que ejecutar
+La Biblioteca escribe en las dos claves de `app_data` y en el bucket que ya tenía. Cada usuario ve
+solo la suya, y lo garantiza la base de datos: `auth.uid() = user_id`.
+
+**Verificación: build, 107 comprobaciones nuevas de Node, 84 casos de renderizado nuevos y el
+recorrido de Chromium.**
+
 ## v3.36.0 — Entrega 3 · Fase 15 (HC F10): PWA, iPhone y auditoría final
 
 🏁 **Cierra el bloque Hoy y Calendario**: las diez fases HC, de la 6 a la 15.

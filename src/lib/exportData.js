@@ -181,6 +181,18 @@ function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion
     biblioteca.enlaces.forEach((e) =>
       rows.push({ modulo: 'Biblioteca (enlace)', fecha: e.fecha, detalle: e.titulo, valor: e.url, extra: e.descripcion || '' })
     );
+    // E3 F16 (BL F1) — las tres listas del lanzador. La exportación es una sola
+    // (`exportData.js`) y cada módulo devuelve filas con la forma de siempre: si no
+    // entran aquí, no aparecen en la copia de seguridad y su ausencia no falla.
+    (biblioteca.libros || []).forEach((l) =>
+      rows.push({ modulo: 'Biblioteca (libro)', fecha: l.fecha, detalle: l.titulo, valor: l.autor || '', extra: '' })
+    );
+    (biblioteca.ideas || []).forEach((i) =>
+      rows.push({ modulo: 'Biblioteca (idea)', fecha: i.fecha, detalle: i.titulo, valor: '', extra: (i.detalle || '').slice(0, 200) })
+    );
+    (biblioteca.colecciones || []).forEach((c) =>
+      rows.push({ modulo: 'Biblioteca (colección)', fecha: c.fecha, detalle: c.nombre, valor: '', extra: c.descripcion || '' })
+    );
   }
 
   // Fase 14 — Fe: sin PIN, mismo criterio que Diario/Biblioteca — texto puro, se exporta entero.

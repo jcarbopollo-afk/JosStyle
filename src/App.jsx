@@ -64,6 +64,7 @@ import { DEFAULT_ESTILO_HOMBRE, normalizarEstiloHombre } from './lib/estiloDeHom
    invariante que se añadió en esta misma fase (`scripts/test-imports.mjs`),
    escrita justo después de cometer el mismo fallo con `eliminarRegistroPiel`. */
 import { DEFAULT_PAPELERA, purgarCaducados, prepararEliminacion, prepararRestauracion, conArrastrados } from './lib/papelera';
+import { normalizarBiblioteca } from './lib/biblioteca';
 // EH F15 — los registros de piel entran y salen de la papelera que YA existe.
 import { eliminarRegistroPiel, restaurarRegistroPiel } from './lib/seguimientoPiel';
 // EH F21 — lo mismo para barba: rutinas y registros, a la papelera de siempre.
@@ -498,7 +499,14 @@ export default function App() {
       // Supabase para un usuario que ya tenía cuenta antes de esta fase.
       setCalendario({ ...DEFAULT_CALENDARIO, ...cal, eventos: Array.isArray(cal?.eventos) ? cal.eventos : [] });
       setDiario(dia);
-      setBiblioteca(bib);
+      /* 🚨 E3 F16 (BL F1) — DECIMONOVENA vez del mismo fallo, y por eso ya no se
+         escribe `setBiblioteca(bib)` a pelo: `loadData` NO fusiona con el valor
+         por defecto (regla 5), así que la biblioteca de alguien que ya tenía
+         cuenta llegaría **sin `libros`, sin `ideas` y sin `colecciones`**
+         —`undefined`, no `[]`— y el lanzador reventaría al contarlas.
+         `normalizarBiblioteca` deja `apuntes` y `enlaces` intactos: son datos de
+         Josué desde la Fase 11 y esta fase no los toca. */
+      setBiblioteca(normalizarBiblioteca(bib));
       setBibliotecaArchivos(bibArch);
       setRelacion(rel);
       setFe(feData);
@@ -1118,7 +1126,7 @@ export default function App() {
     objetivos: { label: 'Objetivos', default: DEFAULT_OBJETIVOS, setter: setObjetivos },
     calendario: { label: 'Calendario', default: DEFAULT_CALENDARIO, setter: setCalendario },
     diario: { label: 'Diario', default: DEFAULT_DIARIO, setter: setDiario },
-    biblioteca: { label: 'Biblioteca (apuntes y enlaces)', default: DEFAULT_BIBLIOTECA, setter: setBiblioteca },
+    biblioteca: { label: 'Biblioteca (notas, guardados, libros, ideas y colecciones)', default: DEFAULT_BIBLIOTECA, setter: setBiblioteca },
     relacion: { label: 'Relación', default: DEFAULT_RELACION, setter: setRelacion },
     fe: { label: 'Fe', default: DEFAULT_FE, setter: setFe },
     bienestar: { label: 'Bienestar digital', default: DEFAULT_BIENESTAR, setter: setBienestar },
@@ -1880,6 +1888,15 @@ export default function App() {
   const deleteApunte = (id) => eliminarConPapelera('biblioteca', 'apuntes', id);
   const addEnlace = (e) => snapshotAndSave({ biblioteca: { ...biblioteca, enlaces: [...biblioteca.enlaces, e] } });
   const deleteEnlace = (id) => eliminarConPapelera('biblioteca', 'enlaces', id);
+  /* E3 F16 (BL F1) — las tres listas que estrena el lanzador. Mismo patrón que los
+     apuntes y los enlaces: texto puro en la clave `biblioteca`, así que pasan por
+     `snapshotAndSave` (y por tanto por Deshacer) y se borran por la papelera. */
+  const addLibro = (l) => l && snapshotAndSave({ biblioteca: { ...biblioteca, libros: [...biblioteca.libros, l] } });
+  const deleteLibro = (id) => eliminarConPapelera('biblioteca', 'libros', id);
+  const addIdea = (i) => i && snapshotAndSave({ biblioteca: { ...biblioteca, ideas: [...biblioteca.ideas, i] } });
+  const deleteIdea = (id) => eliminarConPapelera('biblioteca', 'ideas', id);
+  const addColeccion = (c) => c && snapshotAndSave({ biblioteca: { ...biblioteca, colecciones: [...biblioteca.colecciones, c] } });
+  const deleteColeccion = (id) => eliminarConPapelera('biblioteca', 'colecciones', id);
   // Fase 12 — Relación: módulo privado (PinGate en el render, ver renderTab). Nombre y fechas
   // importantes son texto puro, sin archivos, así que pasan por snapshotAndSave/deshacer igual
   // que el resto de módulos de datos (mismo criterio que Diario y los apuntes de Biblioteca).
@@ -2474,14 +2491,25 @@ export default function App() {
           <LibraryView
             biblioteca={biblioteca} archivos={bibliotecaArchivos}
             onAddArchivo={addArchivoBiblioteca} onDeleteArchivo={deleteArchivoBiblioteca}
-            onAddApunte={addApunteDelDia} onDeleteApunte={deleteApunteDelDia}
-            /* Entrega 3 · F9 (HC F4) — el ＋ de Hoy escribe en las entidades de
-               siempre (apartados 17, 18 y 28): `addTarea` y `addEvento`. Por eso
-               lo creado aparece a la vez en Hoy, en la Agenda y en el Calendario
-               sin nada que sincronizar (apartado 29). */
-            onAddTarea={(t) => addTarea(nuevaTareaDeCalendario(t.texto, t.fecha, t.hora))}
-            onAddEvento={(ev) => addEvento(eventoDesdeQuickAdd(ev))}
+            /* 🚨 **`addApunte`, no `addApunteDelDia`** (corregido en E3 F16).
+               Desde la E3 F6 esta línea pasaba los apuntes de **Productividad**,
+               así que guardar una nota en la Biblioteca escribía el objeto entero
+               en `productividad.apuntes` —donde se espera un texto— y su botón de
+               eliminar buscaba el id en la lista equivocada, sin borrar nada y sin
+               un solo error por pantalla.
+
+               Y del otro lado, `addApunte` y `deleteApunte` **llevaban desde
+               entonces sin que nadie los llamara**: la firma del proyecto — *"una
+               función que nadie llama no falla nunca"*. No lo vieron ni el build,
+               ni el renderizado, ni las pruebas de Node. */
+            onAddApunte={addApunte} onDeleteApunte={deleteApunte}
             onAddEnlace={addEnlace} onDeleteEnlace={deleteEnlace}
+            /* E3 F16 (BL F1) — las tres listas nuevas del lanzador. Escriben en la
+               misma clave `biblioteca` y se borran por la única puerta que hay,
+               `eliminarConPapelera` (ME F3): vuelven de Eliminados recientemente. */
+            onAddLibro={addLibro} onDeleteLibro={deleteLibro}
+            onAddIdea={addIdea} onDeleteIdea={deleteIdea}
+            onAddColeccion={addColeccion} onDeleteColeccion={deleteColeccion}
             accent={accent}
           />
         );

@@ -92,6 +92,11 @@ export const CATALOGO_PAPELERA = {
   'diario.entradas': { modulo: 'diario', coleccion: 'entradas', tipo: 'Entrada del diario', campos: ['fecha'], icono: 'diario' },
   'biblioteca.apuntes': { modulo: 'biblioteca', coleccion: 'apuntes', tipo: 'Apunte', campos: ['titulo'], icono: 'biblioteca' },
   'biblioteca.enlaces': { modulo: 'biblioteca', coleccion: 'enlaces', tipo: 'Enlace', campos: ['titulo'], icono: 'biblioteca' },
+  // E3 F16 (BL F1) — toda lista que se pueda borrar va aquí (EH F45). Las tres nacen
+  // con la fase, así que entran a la vez que su botón de eliminar.
+  'biblioteca.libros': { modulo: 'biblioteca', coleccion: 'libros', tipo: 'Libro', campos: ['titulo'], icono: 'biblioteca' },
+  'biblioteca.ideas': { modulo: 'biblioteca', coleccion: 'ideas', tipo: 'Idea', campos: ['titulo'], icono: 'biblioteca' },
+  'biblioteca.colecciones': { modulo: 'biblioteca', coleccion: 'colecciones', tipo: 'Colección', campos: ['nombre'], icono: 'biblioteca' },
   'fe.servicio': { modulo: 'fe', coleccion: 'servicio', tipo: 'Servicio', campos: ['tipo', 'fecha'], icono: 'fe' },
   'fe.eventos': { modulo: 'fe', coleccion: 'eventos', tipo: 'Evento de fe', campos: ['titulo'], icono: 'fe' },
   'fe.diario': { modulo: 'fe', coleccion: 'diario', tipo: 'Entrada espiritual', campos: ['fecha'], icono: 'fe' },

@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F16 — la Biblioteca como lanzador de seis mini-apps.
+if node --import ./scripts/resolver-vite.mjs scripts/test-biblioteca.mjs >/tmp/jc_bib.log 2>&1; then
+  ok "Biblioteca: el lanzador de mini-apps (E3 F16) — $(grep -c '✓' /tmp/jc_bib.log) comprobaciones"
+else
+  fallo "Falla el lanzador de la Biblioteca (E3 F16)"; grep '✗' /tmp/jc_bib.log
+fi
+
 # Entrega 3 · F15 — PWA, iPhone y aislamiento: la auditoría que cierra el bloque HC.
 if node --import ./scripts/resolver-vite.mjs scripts/test-auditoria-pwa.mjs >/tmp/jc_pwa.log 2>&1; then
   ok "PWA, iPhone y auditoría final (E3 F15) — $(grep -c '✓' /tmp/jc_pwa.log) comprobaciones"

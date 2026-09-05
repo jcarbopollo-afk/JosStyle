@@ -208,6 +208,44 @@ if (repetidos.length > 0) repetidos.forEach((p) => console.log(`  ✗ ${p}`));
 ok(repetidos.length === 0,
   '⚠️ Ningún recorrido declara dos veces el mismo `const` (no compilaría, y se tarda 12 min en verlo)');
 
+/* ===========================================================================
+   4 · EL STUB DE SUPABASE TIENE QUE EXPORTAR LO MISMO QUE SUPABASE
+   ===========================================================================
+   🚨 Existe porque el de `scripts/smoke.mjs` exportaba `getSignedArchivoUrl`,
+   un nombre que **`src/lib/supabase.js` no exporta**, y no tenía ninguno de los
+   de Fondos. Así que cualquier vista que importara el nombre de verdad **no
+   compilaba en el banco de renderizado**, y esa vista simplemente se quedaba
+   fuera: `LibraryView` llevaba desde la Fase 11 sin un solo caso, y nada lo
+   decía. Un stub que no coincide con lo que imita no protege nada, y su
+   silencio parece un aprobado (EH F48). */
+
+const REAL = readFileSync(join(RAIZ, 'src/lib/supabase.js'), 'utf8');
+/* ⚠️ Solo el bloque del stub de Supabase: `smoke.mjs` tiene un segundo stub
+   —el de pdf.js y el lector de códigos— y mirar el archivo entero mezclaba
+   `getDocument` y `GlobalWorkerOptions` con esta lista. */
+const SMOKE = readFileSync(join(RAIZ, 'scripts/smoke.mjs'), 'utf8');
+const STUB = SMOKE.slice(SMOKE.indexOf("namespace: 'stub-supabase' }, () =>"));
+
+const exportadosReales = new Set([
+  ...[...REAL.matchAll(/^export\s+(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/gm)].map((m) => m[1]),
+  ...[...REAL.matchAll(/^export\s+const\s+([A-Za-z_$][\w$]*)/gm)].map((m) => m[1]),
+]);
+/* 🐛 Un `export const a = nada, b = nada;` declara DOS nombres en una línea, así
+   que se buscan todas las asignaciones a `nada`, no el primer nombre de cada
+   sentencia — que es lo que hacía la primera versión de esta regla, y por eso
+   daba cinco falsos positivos con un stub que ya estaba bien. */
+const exportadosStub = new Set([
+  ...[...STUB.matchAll(/([A-Za-z_$][\w$]*)\s*=\s*nada/g)].map((m) => m[1]),
+  ...[...STUB.matchAll(/export const ([A-Za-z_$][\w$]*)\s*=(?!\s*nada)/g)].map((m) => m[1]),
+]);
+
+const faltan = [...exportadosReales].filter((x) => !exportadosStub.has(x));
+const sobran = [...exportadosStub].filter((x) => !exportadosReales.has(x));
+faltan.forEach((x) => console.log(`  ✗ el stub de smoke.mjs NO exporta \`${x}\`, que sí exporta supabase.js`));
+sobran.forEach((x) => console.log(`  ✗ el stub de smoke.mjs exporta \`${x}\`, que supabase.js NO exporta`));
+ok(faltan.length === 0 && sobran.length === 0,
+  '🚨 El stub de Supabase exporta exactamente lo que exporta `supabase.js` (si no, una vista entera se queda sin renderizar y nadie lo dice)');
+
 if (fallos > 0) {
   console.log(`\n  ${fallos} de ${n} comprobaciones han fallado.`);
   process.exit(1);

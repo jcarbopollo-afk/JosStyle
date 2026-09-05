@@ -36,7 +36,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 13 ✅ | HC | F8 — Estadísticas de planificación — **hecha (v3.33.0)** | 5490 |
 | 14 ✅ | HC | F9 — Pulido visual, UX y animaciones — **hecha (v3.34.0)** | 6315 |
 | 15 ✅ | HC | F10 — PWA, iPhone, sincronización y auditoría final — **hecha (v3.36.0)** 🏁 cierra HC | 7088 |
-| 16 | **BL** Biblioteca | F1 — Rediseño como launcher de mini-apps | 7871 |
+| 16 ✅ | **BL** Biblioteca | F1 — Rediseño como launcher de mini-apps — **hecha (v3.37.0)** | 7871 |
 | 17 | BL | F2 — Libros | 8280 |
 | 18 | BL | F4 — Guardados | 8669 |
 | 19 | BL | F5 — Ideas | 9119 |
@@ -66,7 +66,11 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 15 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0). 🏁 **El bloque Hoy y Calendario está CERRADO (10/10).** La siguiente es la **16 — BL F1: la Biblioteca como lanzador de mini-apps**, línea 7871.
+**Por dónde va:** 16 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0, **BL F1** v3.37.0). 🏁 **El bloque Hoy y Calendario está CERRADO (10/10)**, y **empieza el de Biblioteca**. La siguiente es la **17 — BL F2: Libros**, línea 8280.
+
+⏸ **Y dos cosas del documento que necesitan a Josué, anotadas al llegar aquí:**
+- **La Fase 3 de Biblioteca NO ESTÁ en el documento.** Salta de la F2 (Libros) a la F4 (Guardados), y el rótulo dice *"Biblioteca 8"*: por el orden de las mini-apps, la que falta es **Notas**. La F1 ya deja las notas funcionando —son los apuntes de la Fase 11—, así que **nada se bloquea**, pero el desarrollo completo de esa mini-app no tiene enunciado.
+- **La FASE 6 (Documentos) está DUPLICADA**, palabra por palabra, en las líneas 9565 y 10076. Se construirá **una sola vez**.
 
 ## Lo que dejó la Fase 1, y que afecta a todas las demás
 
