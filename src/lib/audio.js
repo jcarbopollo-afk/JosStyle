@@ -444,7 +444,34 @@ export function normalizarAudio(guardado) {
     volumenes,
     asignaciones: sanearAsignaciones(g.asignaciones),
     silenciadas: (Array.isArray(g.silenciadas) ? g.silenciadas : []).filter((id) => CATEGORIAS_SONIDO.some((c) => c.id === id)),
+    /* 🚨 La marca de que a esta cuenta ya se le encendió el sonido una vez. Ver
+       `migrarSonidoEncendido()`: sin ella, la migración se repetiría en cada
+       arranque y Josué no podría apagarlo nunca. */
+    migradoSonido: !!g.migradoSonido,
   };
+}
+
+/**
+ * 🚨 **Encender el sonido en una cuenta que lo tiene guardado como apagado.**
+ *
+ * Cambiar `DEFAULT_AUDIO.activado` a `true` no sirve de nada para quien ya ha
+ * usado la aplicación: `loadData` devuelve lo guardado, y lo guardado dice que
+ * no. El valor de fábrica solo lo ve una cuenta nueva.
+ *
+ * Es justo lo que pasó el 2026-09-04: se completaron los 46 archivos, se
+ * encendió el interruptor de fábrica, y en el móvil de Josué seguía sin sonar
+ * nada — porque su cuenta llevaba meses con `activado: false` guardado desde
+ * cuando no había ni un archivo.
+ *
+ * ⚠️ **Una sola vez, y queda marcado.** Sin `migradoSonido` esto volvería a
+ * encenderlo en cada arranque, y apagarlo sería imposible: el peor de los
+ * fallos posibles en un ajuste, porque parece que la aplicación te lleva la
+ * contraria. Después de la migración, lo que él decida manda para siempre.
+ */
+export function migrarSonidoEncendido(guardado) {
+  const p = normalizarAudio(guardado);
+  if (p.migradoSonido) return { prefs: p, migrada: false };
+  return { prefs: { ...p, activado: true, migradoSonido: true }, migrada: true };
 }
 
 /** 0-100 y entero. Un volumen de 250 o de -5 no significa nada. */

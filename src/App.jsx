@@ -20,7 +20,7 @@ import { eventosDerivados } from './lib/calendarioIntegracion';
 import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
 import { urlFirmada, urlEnCache } from './lib/imagenes';
 import { resumenHabito, enRiesgo } from './lib/rachas';
-import { DEFAULT_AUDIO, normalizarAudio } from './lib/audio';
+import { DEFAULT_AUDIO, normalizarAudio, migrarSonidoEncendido } from './lib/audio';
 import { iniciarAudio, conectarAlBus, conectarLosToques, actualizarPreferencias as actualizarAudio, detener as detenerAudio } from './lib/audioEngine';
 import { emitir } from './lib/eventos';
 import { ESTADO_INICIAL, normalizarEstado, panelRachas, crearRacha as crearRachaServicio, completarDia as completarDiaServicio, deshacerDia as deshacerDiaServicio, eliminarRacha as eliminarRachaServicio } from './lib/rachasServicio';
@@ -539,7 +539,13 @@ export default function App() {
       // pegados o cumplimientos huérfanos entra limpio.
       setRachas(normalizarEstado(rach));
       setGamificacion(normalizarGamificacion(gam));
-      setAudio(normalizarAudio(aud));
+      /* 🚨 Una cuenta que ya existía tiene el sonido guardado como apagado, de
+         cuando no había ni un archivo. Cambiar el valor de fábrica no la toca:
+         `loadData` devuelve lo guardado. Se enciende UNA vez y queda marcado —
+         a partir de ahí manda lo que él decida. */
+      const migracionSonido = migrarSonidoEncendido(aud);
+      setAudio(migracionSonido.prefs);
+      if (migracionSonido.migrada) saveData(uidUser, 'audio', migracionSonido.prefs);
       setHorarioTop(normalizarHorarioTop(hor));
       /* ⚠️ **EH F46** — la migración va **sobre lo que devuelve `loadData`**, no
          sobre lo normalizado: el normalizador ya habría tapado lo que hay que

@@ -12,7 +12,7 @@ import {
   ALIAS_EVENTO, eventoCanonico, definicionEvento,
   ORIGENES_SONIDO, crearSonido, normalizarSonido, SONIDOS_SISTEMA, sonidoDelSistema,
   HITOS_DE_RACHA, hitoDeRacha,
-  ASIGNACIONES_POR_DEFECTO, SIN_EMISOR_TODAVIA, DEFAULT_AUDIO, normalizarAudio, acotarVolumen,
+  ASIGNACIONES_POR_DEFECTO, SIN_EMISOR_TODAVIA, DEFAULT_AUDIO, normalizarAudio, migrarSonidoEncendido, acotarVolumen,
   volumenEfectivo, resolverSonido, VENTANA_COLISION, ESTADO_AUDIO_INICIAL,
   decidirReproduccion, CATEGORIAS_PRECARGA, sonidosAPrecargar,
   FORMATOS_SONIDO, MAX_TAMANO_SONIDO, MAX_DURACION_SONIDO, validarSonidoSubido,
@@ -129,6 +129,24 @@ console.log('\n═══ Catálogo, categorías y prioridades ═══\n');
 console.log('\n═══ Preferencias y volumen ═══\n');
 {
   comprobar('🚨 CLAVE · De fábrica el sonido está ENCENDIDO, con los 46 archivos hechos', DEFAULT_AUDIO.activado === true);
+
+  /* 🚨 **Y el valor de fábrica no basta.** Josué abrió la aplicación en su móvil
+     con los 46 sonidos publicados y no sonaba nada: su cuenta llevaba meses con
+     `activado: false` GUARDADO, de cuando no había ni un archivo. `loadData`
+     devuelve lo guardado; el valor de fábrica solo lo ve una cuenta nueva.
+
+     ⚠️ Y la migración tiene que dejar de migrar. Sin la marca, se encendería en
+     cada arranque y apagarlo sería imposible — el peor fallo que puede tener un
+     ajuste, porque parece que la aplicación te lleva la contraria. */
+  const cuentaVieja = migrarSonidoEncendido({ activado: false, volumen: 80 });
+  comprobar('🚨 CLAVE · Una cuenta con el sonido guardado apagado se enciende una vez',
+    cuentaVieja.prefs.activado === true && cuentaVieja.migrada === true);
+  comprobar('...y en el siguiente arranque ya no se toca',
+    migrarSonidoEncendido(cuentaVieja.prefs).migrada === false);
+  comprobar('🚨 CLAVE · Y si él lo apaga a propósito, NO se le vuelve a encender',
+    migrarSonidoEncendido({ ...cuentaVieja.prefs, activado: false }).prefs.activado === false);
+  comprobar('⚠️ La migración no toca nada más de sus preferencias',
+    cuentaVieja.prefs.volumen === 80);
   /* ⚠️ Esto decía "porque todavía no hay ni un archivo que sonar". Dejó de ser
      verdad el 2026-09-04. Sigue apagado, pero ahora porque **falta biblioteca**,
      no porque no haya nada: encenderlo con 5 de 46 dejaría 41 eventos mudos. */
