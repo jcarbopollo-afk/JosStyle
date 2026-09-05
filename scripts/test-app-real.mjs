@@ -1730,6 +1730,86 @@ ok(!/Peluquería|Sonrisa|Manos, uñas y pies/.test(simple),
 ok(simple.length > 200, '⚠️ y no se siente vacía: hay pantalla de verdad, no un hueco');
 
 /* ===========================================================================
+   ENTREGA 3 · FASE 7 — LA AGENDA DE UN DÍA
+   ===========================================================================
+   Apartados 1, 3, 4, 19 y 24. ⚠️ Sufijo `_e3f7` en todo. */
+const hoyISO_e3f7 = new Date().toLocaleDateString('sv-SE');
+almacen.productividad = {
+  tareas: [
+    { id: 'ag1', texto: 'Estudiar Biología', fecha: hoyISO_e3f7, hora: '09:00', hecha: false },
+    { id: 'ag2', texto: 'Comprar material', fecha: hoyISO_e3f7, hecha: false },
+  ],
+  habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Vida');
+await pulsar('Calendario');
+await esperarTexto(/Mes/);
+ok(await pulsar('Día'), '🚨 E3 F7 — el Calendario tiene un modo Día');
+/* 🐛 ⚠️ **`innerText` devuelve el texto RENDERIZADO.** El rótulo se pinta con
+   la clase `uppercase`, así que en el navegador llega **"SIN HORA"** y un
+   `/Sin hora/` no lo encuentra nunca: la pantalla estaba bien y la
+   comprobación decía que no. Toda búsqueda de un rótulo va con `/i`. */
+const agenda_e3f7 = await esperarTexto(/sin hora/i);
+
+ok(/Estudiar Biología/.test(agenda_e3f7), 'la tarea con hora sale en la línea temporal (apartado 3)');
+ok(/09:00/.test(agenda_e3f7), 'con su hora');
+ok(/sin hora/i.test(agenda_e3f7) && /Comprar material/.test(agenda_e3f7),
+  '🚨 y la que no tiene hora, en su sección: no todo lleva hora (apartado 4)');
+
+/* ===========================================================================
+   ENTREGA 3 · FASE 8 — CALENDARIO: LA VISTA TEMPORAL
+   ===========================================================================
+   🚨 Lo que esta fase arregla es el apartado 12: *"si una tarea tiene fecha,
+   debe aparecer en Calendario"*. **No aparecía**, y eso solo se ve TOCÁNDOLO:
+   ni el build, ni el renderizado, ni las pruebas de Node podían saber que la
+   pantalla del mes no le pasaba las tareas a nadie.
+
+   ⚠️ Sufijo `_e3f8` en todo, y `/i` en los rótulos: la clase `uppercase` de CSS
+   llega a `innerText` en mayúsculas. */
+const hoyISO_e3f8 = new Date().toLocaleDateString('sv-SE');
+almacen.productividad = {
+  tareas: [
+    { id: 'cm1', texto: 'Repasar Química', fecha: hoyISO_e3f8, hora: '11:00', hecha: false },
+    { id: 'cm2', texto: 'Llamar al dentista', fecha: hoyISO_e3f8, hecha: false },
+  ],
+  habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [],
+};
+// ⚠️ Y el calendario vacío a propósito: así lo que salga son las TAREAS, no un
+// evento que dejó otra sección (la lección de la E3 F6).
+almacen.calendario = { eventos: [] };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Vida');
+await pulsar('Calendario');
+const mes_e3f8 = await esperarTexto(/Repasar Química/);
+
+ok(/Repasar Química/.test(mes_e3f8),
+  '🚨 E3 F8 — una tarea con fecha SALE en el Calendario (apartado 12): antes era invisible aquí');
+ok(/Llamar al dentista/.test(mes_e3f8),
+  '⚠️ y la que no tiene hora también (apartado 14)');
+ok(/2 tareas/.test(mes_e3f8),
+  '🚨 y el resumen del día las cuenta: antes contaba solo eventos (apartado 5)');
+ok(/Día ocupado|Día normal|Día libre/.test(mes_e3f8),
+  '⚠️ con la carga del día, en palabras y no solo en color (apartado 23)');
+ok(/Ver Agenda/.test(mes_e3f8) && /Ver Hoy/.test(mes_e3f8),
+  '⚠️ y los dos accesos, porque el día seleccionado es hoy (apartados 28 y 29)');
+
+// 🚨 Completar desde el Calendario marca LA MISMA tarea (apartados 30 y 31).
+ok(await pulsar('Completar Repasar Química'),
+  '⚠️ la casilla de una tarea se puede pulsar (con su `aria-label`, como con VoiceOver)');
+await page.waitForTimeout(400);
+ok(almacen.productividad?.tareas?.find((t) => t.id === 'cm1')?.hecha === true,
+  '🚨 y marca LA TAREA ORIGINAL en `productividad.tareas`: ni una copia (apartados 30 y 31)');
+
+// Apartado 16 — el ＋ pregunta qué, y la tarea rápida escribe en Productividad.
+ok(await pulsar('Añadir'), 'el botón Añadir abre el selector (apartado 16)');
+const menu_e3f8 = await esperarTexto(/Recordatorio/);
+ok(/Evento/.test(menu_e3f8) && /Tarea/.test(menu_e3f8) && /Recordatorio/.test(menu_e3f8),
+  '⚠️ con las tres cosas del apartado 16');
+ok(!/Pomodoro/.test(menu_e3f8),
+  '⏸ y sin el pomodoro programado, que no existe: nada de botones muertos (regla 8)');
+
+/* ===========================================================================
    ENTREGA 3 · FASE 6 — HOY: RESUMEN, PROGRESO Y APUNTES
    ===========================================================================
    Apartados 2, 17 y 20. Y sobre todo el 25: **una sola fuente de verdad**, así

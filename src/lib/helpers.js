@@ -114,3 +114,15 @@ export function fileToBase64(file) {
     reader.readAsDataURL(file);
   });
 }
+
+/* ⚠️ **La FORMA no basta**: `'25:99'` encaja con `/^\d{2}:\d{2}$/` y no es una
+   hora. Lo encontró una prueba en EH F11 (una cita de peluquería a las 25:99) y
+   volvió a aparecer en la E3 F8, esta vez en una tarea del calendario: una hora
+   imposible la colocaba en el minuto 1599, o sea fuera del día.
+
+   Vive aquí porque ya iban tres sitios comprobándolo, y dos de ellos mal. */
+export function horaValida(h) {
+  if (typeof h !== 'string' || !/^\d{2}:\d{2}$/.test(h)) return false;
+  const [hh, mm] = h.split(':').map(Number);
+  return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
+}

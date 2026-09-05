@@ -1,5 +1,151 @@
 # CHANGELOG.md
 
+## v3.28.0 — Entrega 3 · Fase 8 (HC F3): Calendario, la vista temporal
+
+*"El sistema tiene tres piezas: 🏠 HOY, 📋 AGENDA y 🗓️ CALENDARIO. Las tres deben utilizar las
+mismas entidades y datos. NO crear un calendario independiente."*
+
+La mayor parte del Calendario **ya estaba construida** desde el Calendario Universal: la cuadrícula
+del mes, los puntos por tipo, la navegación entre meses, el día seleccionado, el detalle, la edición,
+el buscador, los filtros y las recurrencias. Así que, como en las dos fases anteriores, el trabajo
+fue mirar qué faltaba **de verdad**.
+
+### 🚨 Y faltaba algo gordo: las tareas no salían en el Calendario
+
+El apartado 12 lo dice con todas las letras: *"si una tarea tiene fecha, debe aparecer en
+Calendario"*. **No aparecía.** Ni un punto en la celda, ni una línea en el panel del día: el
+Calendario enseñaba `calendario.eventos` y los derivados de otros módulos, y las tareas de
+Productividad no estaban en ninguna de las dos listas. Una tarea del 29 de agosto era **invisible**
+hasta abrir la Agenda.
+
+Eso arrastraba tres cosas más:
+
+- **El resumen del día contaba solo eventos** (apartado 5), y el enunciado lo escribe con las tareas
+  dentro: *"4 tareas · 2 eventos · 1 recordatorio"*. Un día que solo tenía tareas no tenía resumen.
+- **No se podía crear una tarea desde el Calendario** (apartados 16 y 18). El ＋ creaba siempre un
+  evento.
+- **El punto verde de las tareas no existía** (apartados 3 y 14).
+
+### Lo demás que faltaba
+
+- 🐛 **Hoy dejaba de notarse justo cuando estaba seleccionado** (apartado 4). El borde solo se
+  pintaba si la celda **no** estaba seleccionada — y al entrar, el día seleccionado ES hoy. Así que
+  la marca desaparecía en el caso más común y hoy se veía igual que cualquier otro día tocado. Ahora
+  `marcaDeHoy` deja siempre tipografía, subrayado y `aria-current`.
+- **El botón «Hoy» solo salía fuera del mes actual**, y el apartado 10 lo quiere *"siempre
+  accesible"*: desde el propio septiembre no había forma de volver al día de hoy tras tocar el 29.
+- **Ver Agenda y Ver Hoy** (apartados 28 y 29), con la regla de los apartados 7 y 24: *"no volver
+  automáticamente a hoy"*, así que Ver Agenda abre **el día seleccionado**.
+- **La carga del día** (apartado 23): libre / normal / ocupado, tres estados y un umbral — con icono
+  **y palabra**, nunca solo un color (EH F42).
+- **El mes vacío** (apartado 38), con las palabras del enunciado.
+
+### 🚨 Ni una copia (apartados 30 y 31)
+
+*"No crear `calendar_tasks` / `calendar_events` si ya existen las entidades globales. El calendario
+es una representación."*
+
+`src/lib/calendarioMes.js` **no tiene almacén, ni normalizador, ni escribe nada**: lee los eventos
+que le pasan ya expandidos y las tareas de `productividad.tareas`. Marcar una tarea desde el
+Calendario la marca en Hoy, en la Agenda y en Productividad **porque es la misma tarea**, y crearla
+llama a `addTarea`, la de siempre. El recorrido de Chromium lo comprueba tocándolo: pulsa la casilla
+y mira que `productividad.tareas` haya cambiado.
+
+### ⏸ Y un recordatorio ya existía — la E3 F7 se equivocó
+
+`TIPOS_EVENTO_CALENDARIO` tiene `recordatorio` desde el Calendario Universal, así que **un
+recordatorio es un evento de ese tipo**. La F7 lo declaró `existe: false` diciendo que no había
+sistema de recordatorios; era falso, y se ha corregido. Lo que no existe es un *módulo* de
+recordatorios aparte, y crearlo habría sido exactamente el duplicado que prohíbe el apartado 31.
+
+Es la lección más repetida del proyecto, esta vez del revés: **antes de declarar que algo no existe,
+mirar si ya existe con otro nombre.**
+
+### Lo que esto deja apuntado
+
+- 🐛 **`'25:99'` encaja con `/^\d{2}:\d{2}$/`, y la FORMA no basta.** El fallo de EH F11 estaba otra
+  vez en dos sitios nuevos: una hora imposible colocaba la tarea en el minuto 1599, o sea fuera del
+  día. `horaValida` sube a `helpers.js` —ya iban tres sitios comprobándolo, y dos mal— y la usan
+  Peluquería, la Agenda y el Calendario.
+- 🐛 **`innerText` devuelve el texto RENDERIZADO.** El rótulo *"Sin hora"* se pinta con la clase
+  `uppercase`, así que en el navegador llega **"SIN HORA"** y un `/Sin hora/` no lo encuentra nunca:
+  la pantalla estaba bien y la comprobación decía que no. Toda búsqueda de un rótulo va con `/i`.
+- 🐛 **`pgrep -f` y `pkill -f` se encuentran a sí mismos.** Un bucle de espera cuyo patrón aparece en
+  su propia línea de comando no termina jamás — pareció media hora que la verificación seguía viva
+  cuando había acabado.
+- ⚠️ **El punto de tarea tiene su hueco reservado.** Con tres tipos de evento y tareas, sin eso el
+  punto verde se caía del tope de tres y las tareas volvían a ser invisibles: justo lo que la fase
+  venía a arreglar.
+- ⚠️ **Y `indicadoresDelDia` reutiliza `tiposDelDia`**, que ya hacía esto desde el Calendario
+  Universal. Reescribirlo habría dejado dos respuestas a la misma pregunta.
+
+## v3.27.0 — Entrega 3 · Fase 7 (HC F2): la agenda de un día
+
+*"Agenda NO debe ser simplemente otra forma de mostrar las tareas. Debe funcionar como la agenda
+personal real del usuario."* Y al entrar, sentir: *"Esta es mi agenda de hoy."*
+
+### ⚠️ Ya había una "Agenda", y no es ésta
+
+La del Calendario (Fase 3) lista **los eventos de los próximos días** en una tira; ésta es de **UN
+día**, con su línea temporal, sus cosas sin hora, la raya de AHORA y el siguiente pendiente. Son dos
+preguntas distintas —*"¿qué viene?"* y *"¿cómo es mi sábado?"*—, así que **conviven**: el Calendario
+tiene ahora tres vistas (Mes · Día · Agenda) y no se ha sustituido nada.
+
+Lo que no puede haber es dos fuentes de datos, y **no las hay**.
+
+### 🚨 Una sola fuente de verdad (apartado 25)
+
+*"No crear `agenda_events` y `calendar_events` como duplicados. El sistema debe tener una fuente de
+verdad."*
+
+`src/lib/agendaDia.js` **no guarda ni un elemento y no tiene normalizador**: junta y ordena lo que ya
+vive en su módulo. Los eventos salen de `agendaCompleta` (HT F6), las tareas de
+`productividad.tareas` y los apuntes de `productividad.apuntes` (E3 F6). Hay pruebas que leen el
+código fuente y fallan si aparece cualquier nombre que huela a copia o a almacén propio.
+
+Por eso el **apartado 14** —*"completar desde Agenda debe actualizar Tareas, Hoy, el progreso diario
+y las rachas"*— **sale gratis**: la casilla de la Agenda llama a `toggleTarea`, exactamente la misma
+función que marca esa tarea en Hoy y en Productividad. No hay nada que sincronizar **porque es la
+misma tarea**.
+
+### El día, entero
+
+- **La cabecera se genera** (apartado 1): *"Jueves, 3 de septiembre"*, con su etiqueta Hoy / Mañana /
+  Ayer — una etiqueta, no un sustituto: la fecha se sigue viendo.
+- **La tira de cinco días** (apartado 2) para saltar entre ellos, y las flechas con su `aria-label`.
+- **Lo que tiene hora va en orden; lo que no, tiene su sección** (apartados 3 y 4). *"No todo tiene
+  que tener hora"*: los eventos de todo el día, las tareas sin hora y los apuntes.
+- **La raya de AHORA, y solo hoy** (apartado 16). En un día pasado o futuro no significaría nada, así
+  que no se pinta —y tampoco el "próximo".
+- ⚠️ **Lo pasado sigue visible** (apartado 15): se distingue, no se esconde.
+- 🚨 **El "próximo" es el siguiente PENDIENTE** (apartado 17): lo que ya está hecho se salta.
+  Proponerle repetir algo que acaba de terminar sería el reproche que este proyecto no hace.
+- 🚨 **Dos cosas a la misma hora se ven las dos** (apartado 18): se marcan como solapadas y se pintan
+  juntas. Esconder una sería perder algo que él puso.
+- **Un día vacío no es una lista vacía** (apartado 19): *"Agenda libre"*, su explicación y su botón.
+
+### ⏸ Lo que no existe se declara, no se finge
+
+Los **recordatorios** y los **pomodoros programados** que el apartado 5 da por hechos **no existen**:
+no hay un sistema global de recordatorios (y el apartado 10 dice *"si ya existe, reutilizarlo"* — no
+existe), y las sesiones de Pomodoro no se programan a una hora, así que no hay nada que colocar en el
+día. Los dos van en `TIPOS_AGENDA` con `existe: false` y **su motivo escrito**, que es lo que hace
+que la pantalla diga la verdad en vez de ofrecer un botón muerto (regla 8).
+
+### Lo que esto deja apuntado
+
+- ⚠️ **Una tarea se completa; un evento ocurre** (apartado 6). `seCompleta` es una línea del catálogo,
+  no un `if` en la pantalla — y solo la tarea la tiene.
+- 🐛 **Cuatro de los cinco fallos de esta fase eran de la prueba, no del código**: las 09:00 SÍ son
+  pasadas a las 10:00, el "próximo" SÍ debe saltarse lo hecho, las completables son tres y no
+  cuatro (un apunte no se completa) y la expresión que buscaba el componente era demasiado estricta.
+  **Mirar qué línea hace saltar una comprobación antes de tocar el código.**
+- ⚠️ **`minutosAhora` entiende texto o `Date`, nunca un número**: un número cae al reloj de verdad y
+  la prueba deja de ser determinista.
+- ⚠️ **Sexta vez del UTC**: las fechas de la tira y de las flechas se construyen en local (`addDays`
+  sobre `fechaLocalISO`). Un `toISOString()` sobre una medianoche local enseñaría la agenda del día
+  equivocado.
+
 ## v3.26.0 — De diez eventos mudos a cinco, y los cinco tienen motivo
 
 ### Qué se ha conectado

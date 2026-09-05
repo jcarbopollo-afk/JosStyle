@@ -27,8 +27,8 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 4 ✅ | **EC** Economía | Hucha inteligente y pulido final — **hecha (v3.15.0)** | 741 |
 | 5 ✅ | **HO+** Horario | UX, navegación y gestión de horarios — **hecha (v3.17.0)** | 1027 |
 | 6 ✅ | **HC** Hoy y Calendario | F1 — Hoy: centro del día — **hecha (v3.20.0)** | 1227 |
-| 7 | HC | F2 — Calendario: agenda | 1824 |
-| 8 | HC | F3 — Calendario: vista temporal | 2444 |
+| 7 ✅ | HC | F2 — Calendario: la agenda de un día — **hecha (v3.27.0)** | 1824 |
+| 8 ✅ | HC | F3 — Calendario: la vista temporal — **hecha (v3.28.0)** | 2444 |
 | 9 | HC | F4 — Acciones rápidas e integración | 3035 |
 | 10 | HC | F5 — Planificación avanzada y vista semanal | 3874 |
 | 11 | HC | F6 — Notificaciones y recordatorios reales | 4425 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 6 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0). La siguiente es la **7 — HC F2: Calendario, agenda**, línea 1824.
+**Por dónde va:** 8 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0). La siguiente es la **9 — HC F4: acciones rápidas e integración**, línea 3035.
 
 ## Lo que dejó la Fase 1, y que afecta a todas las demás
 
@@ -151,6 +151,56 @@ solo vale como corrección o ajuste — nunca una función nueva.
 - 🐛 **Un escenario del recorrido de Chromium que hereda el del vecino no prueba lo que dice.** Es
   una pasada seguida: lo que una sección deja en `almacen` sigue ahí en la siguiente. Cada sección
   limpia lo que va a mirar.
+
+## Y lo que dejó la Fase 7 (HC F2)
+
+- ⚠️ **YA HABÍA UNA "AGENDA", Y NO ERA ÉSTA.** La del Calendario (Fase 3) lista **los eventos de los
+  próximos días**; ésta es de **UN día**. Son dos preguntas distintas —*"¿qué viene?"* y *"¿cómo es
+  mi sábado?"*—, así que **conviven** (Mes · Día · Agenda) y no se sustituyó nada. Antes de rehacer
+  una pantalla que ya existe, mirar qué pregunta contesta.
+- 🚨 **`src/lib/agendaDia.js` NO GUARDA NI UN ELEMENTO Y NO TIENE NORMALIZADOR** (apartado 25):
+  junta y ordena lo que ya vive en su módulo —`agendaCompleta` (HT F6), `productividad.tareas` y
+  `productividad.apuntes`—. Hay pruebas que leen el código fuente y fallan si aparece
+  `agenda_events`, `calendar_events` o un almacén propio.
+- 🚨 **Por eso el apartado 14 sale gratis**: la casilla de la Agenda llama a `toggleTarea`, **la
+  misma función** que marca esa tarea en Hoy y en Productividad. No hay nada que sincronizar
+  **porque es la misma tarea**.
+- ⚠️ **Una tarea se completa; un evento ocurre** (apartado 6). `seCompleta` es una línea de
+  `TIPOS_AGENDA`, no un `if` en la pantalla.
+- ⚠️ **Lo pasado sigue visible** (15), **el "próximo" es el siguiente PENDIENTE** —lo hecho se salta
+  (17)— y **dos cosas a la misma hora se ven las dos** (18): esconder una sería perder algo que él
+  puso. Y la **raya de AHORA solo se pinta en hoy** (16).
+- ⏸ **Los recordatorios y los pomodoros programados NO existen** (apartado 5): van en `TIPOS_AGENDA`
+  con `existe: false` y su motivo escrito, en vez de un botón muerto (regla 8).
+- 🐛 **Cuatro de los cinco fallos de la fase eran de la PRUEBA, no del código.** Mirar qué línea hace
+  saltar una comprobación **antes** de tocar el código.
+- ⚠️ **`minutosAhora` entiende texto o `Date`, nunca un número**: un número cae al reloj de verdad y
+  la prueba deja de ser determinista.
+
+## Y lo que dejó la Fase 8 (HC F3)
+
+- 🚨 **LAS TAREAS NO SALÍAN EN EL CALENDARIO** (apartado 12), y es lo que esta fase arregla. El
+  Calendario enseñaba `calendario.eventos` y los derivados; las tareas de Productividad no estaban
+  en ninguna de las dos listas, así que una tarea del 29 era invisible hasta abrir la Agenda. **Antes
+  de dar por cubierta una entidad en una pantalla, mirar de qué listas se alimenta esa pantalla.**
+- 🚨 **`calendarioMes.js` NO GUARDA NADA** (apartados 30 y 31): *"el calendario es una
+  representación"*. Marcar una tarea llama a `toggleTarea` y crearla a `addTarea`; el recorrido de
+  Chromium lo comprueba **tocándolo**, mirando que `productividad.tareas` cambie de verdad.
+- 🐛 **UN RECORDATORIO YA EXISTÍA, Y LA F7 DIJO QUE NO.** `TIPOS_EVENTO_CALENDARIO` lo tiene desde el
+  Calendario Universal: es **un evento de ese tipo**, y ya salía en la Agenda como evento. Corregido.
+  Lo que no existe es un módulo de recordatorios aparte, que sería el duplicado del apartado 31.
+- 🐛 **`'25:99'` encaja con `/^\d{2}:\d{2}$/`**: tercera vez de la lección de EH F11. `horaValida`
+  sube a `helpers.js` y la usan Peluquería, la Agenda y el Calendario.
+- 🐛 **`innerText` devuelve el texto RENDERIZADO**: `uppercase` llega en mayúsculas, así que
+  `/Sin hora/` no encuentra *"SIN HORA"*. Todo rótulo se busca con `/i`.
+- 🐛 **`pgrep -f` se encuentra a sí mismo**: un bucle de espera cuyo patrón está en su propia línea de
+  comando no termina jamás.
+- ⚠️ **Hoy tiene que notarse también seleccionado** (apartado 4): el borde solo se pintaba sin
+  seleccionar, y al entrar el día seleccionado ES hoy.
+- ⚠️ **El punto de tarea tiene su hueco reservado** entre los tres indicadores: sin eso, un día con
+  tres tipos de evento se comía el punto verde y las tareas volvían a ser invisibles.
+- ⚠️ **La carga del día lleva icono Y palabra** (apartado 23), nunca solo un color (EH F42). Y son
+  **tres estados y un umbral**, no un sistema de puntuación.
 
 ## Dos cosas del documento que conviene saber
 

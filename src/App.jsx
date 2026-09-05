@@ -2386,6 +2386,16 @@ export default function App() {
             onAdd={addEvento} onUpdate={updateEvento} onDelete={deleteEvento}
             onAbrirModulo={setTab}
             accent={accent}
+            /* E3 F7 (HC F2) — la agenda de un día se arma de las fuentes originales, y
+               completar desde ahí marca LA MISMA tarea que Hoy y Productividad
+               (apartados 14 y 25): `toggleTarea`, no una copia. */
+            horarioTop={horarioTop} productividad={productividad}
+            salud={salud} nutricion={nutricion} calistenia={calistenia} futbol={futbol}
+            onCompletarTarea={toggleTarea}
+            /* E3 F8 (HC F3) — crear una tarea desde el Calendario es crear UNA TAREA DE
+               PRODUCTIVIDAD (apartados 18, 30 y 31): la misma `addTarea` de siempre, así
+               que aparece a la vez en el Calendario, en la Agenda y en Hoy. */
+            onAddTarea={addTarea}
             foco={focoPara('calendario')} onFocoConsumido={consumirFoco}
           />
         );

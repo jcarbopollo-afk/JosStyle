@@ -164,14 +164,48 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 6 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 8 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
-**F5 (Horario, v3.17.0)** y la **F6 (Hoy, centro del día, v3.20.0)**; la siguiente es la
-**7 — HC F2: Calendario, agenda**. El índice, con la línea de cada fase dentro de la especificación
-literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
+**F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
+**F7 (Calendario: la agenda de un día, v3.27.0)** y la
+**F8 (Calendario: la vista temporal, v3.28.0)**; la siguiente es la
+**9 — HC F4: acciones rápidas e integración**. El índice, con la línea de cada fase dentro de la
+especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
-⚠️ **Y lo que dejaron las seis primeras, que afecta a todas las demás:**
+⚠️ **Y lo que dejaron las ocho primeras, que afecta a todas las demás:**
 
+- 🚨 **UNA TAREA CON FECHA SALE EN HOY, EN LA AGENDA **Y** EN EL CALENDARIO** (E3 F8, apartado 12).
+  En el Calendario **no salía**: enseñaba `calendario.eventos` y los derivados, y las tareas de
+  Productividad no estaban en ninguna de las dos listas. Antes de dar por cubierta una entidad en
+  una pantalla, **mirar de qué listas se alimenta esa pantalla**.
+- 🚨 **`src/lib/calendarioMes.js` NO GUARDA NADA** (E3 F8, apartados 30 y 31): *"el calendario es una
+  representación"*. Marcar una tarea desde el Calendario la marca en todas partes **porque es la
+  misma tarea**, y crearla llama a `addTarea`. Nunca `calendar_tasks`.
+- 🐛 **UN RECORDATORIO YA EXISTÍA, Y LA E3 F7 DIJO QUE NO** (E3 F8): `TIPOS_EVENTO_CALENDARIO` lo
+  tiene desde el Calendario Universal, así que es **un evento de ese tipo**. La lección de siempre
+  del revés: **antes de declarar que algo NO existe, mirar si ya existe con otro nombre.**
+- 🐛 **`'25:99'` ENCAJA CON `/^\d{2}:\d{2}$/`** (E3 F8, y ya iba por la tercera vez): la **forma no
+  basta**. `horaValida` vive en `helpers.js` y la usan Peluquería, la Agenda y el Calendario — una
+  hora imposible colocaba la tarea en el minuto 1599, fuera del día.
+- 🐛 **`innerText` DEVUELVE EL TEXTO RENDERIZADO** (E3 F8): un rótulo con la clase `uppercase` llega
+  en MAYÚSCULAS, así que `/Sin hora/` no lo encuentra nunca y la comprobación falla con una pantalla
+  que está bien. En el recorrido, todo rótulo se busca con `/i`.
+- 🐛 **`pgrep -f` y `pkill -f` SE ENCUENTRAN A SÍ MISMOS** (E3 F8): un bucle de espera cuyo patrón
+  aparece en su propia línea de comando no termina jamás, y un `pkill` así se mata a sí mismo.
+- ⚠️ **Hoy tiene que notarse TAMBIÉN seleccionado** (E3 F8, apartado 4): el borde solo se pintaba sin
+  seleccionar, y al entrar el día seleccionado ES hoy. `marcaDeHoy` deja siempre tipografía,
+  subrayado y `aria-current`.
+
+- ⚠️ **YA HABÍA UNA "AGENDA", Y NO ERA LA DE LA E3 F7.** La del Calendario (Fase 3) lista **los
+  próximos días**; la de la F7 es **de UN día**. Son dos preguntas distintas —*"¿qué viene?"* y
+  *"¿cómo es mi sábado?"*—, así que **conviven** (Mes · Día · Agenda) y no se sustituyó nada. Antes
+  de rehacer una pantalla que ya existe, mirar qué pregunta contesta.
+- 🚨 **`src/lib/agendaDia.js` NO GUARDA NI UN ELEMENTO Y NO TIENE NORMALIZADOR** (E3 F7, apartado 25):
+  junta y ordena lo que ya vive en su módulo. Por eso completar desde la Agenda actualiza Hoy,
+  Productividad y las rachas **gratis**: llama a `toggleTarea`, la misma función. Nunca
+  `agenda_events`.
+- ⚠️ **Un evento pasado SIGUE VISIBLE y el "próximo" es el siguiente PENDIENTE** (E3 F7): lo hecho se
+  salta. Y **dos cosas a la misma hora se ven las dos** — esconder una sería perder algo que él puso.
 - 🚨 **UNA SOLA FUENTE DE VERDAD, Y LA FORMA DE CUMPLIRLO ES NO TENER COPIA** (E3 F6, apartados 24 y
   25). El resumen y el progreso de Hoy se derivan de las entidades originales en el momento, así que
   marcar una tarea en Agenda mueve el número de Hoy **solo**. Nunca `today_tasks`.

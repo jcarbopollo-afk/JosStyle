@@ -40,7 +40,7 @@
 import { normalizarEstiloHombre, guardarConfig } from './estiloDeHombre';
 import { MODULO_PELO, respuestaPelo } from './perfilCapilar';
 import { datosPelo, parteActiva } from './rutinasPelo';
-import { uid, todayISO, addDays } from './helpers';
+import { uid, todayISO, addDays, horaValida } from './helpers';
 
 export const PARTE_PELUQUERIA = 'peluqueria';
 
@@ -175,12 +175,6 @@ function normalizarCorte(g) {
 function normalizarObjetivo(g) {
   if (!g || typeof g !== 'object' || !g.id) return null;
   return { id: String(g.id), nombre: String(g.nombre || g.id) };
-}
-
-function horaValida(h) {
-  if (typeof h !== 'string' || !/^\d{2}:\d{2}$/.test(h)) return false;
-  const [hh, mm] = h.split(':').map(Number);
-  return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
 }
 
 function normalizarCita(g) {

@@ -3,11 +3,22 @@ import { createPortal } from 'react-dom';
 import {
   ChevronLeft, ChevronRight, Plus, X, Trash2, Clock, MapPin, Lock, ExternalLink, Search,
   Target, Flame, Repeat, GraduationCap, Dumbbell, Star, Bell, Circle, CalendarOff,
+  CheckSquare, Square,
 } from 'lucide-react';
 import { COLORS, TIPOS_EVENTO_CALENDARIO, colorDeTipoEvento, FRECUENCIAS_RECURRENCIA } from '../tokens';
 import { uid, todayISO, addDays, hexToRgba } from '../lib/helpers';
-import { celdasMes, eventosDelDia, tiposDelDia, resumenDelDia, eventosFuturos, expandirRecurrentes, isoDeFecha, diasDelMes, intervaloDe, describirRecurrencia, saltarOcurrencia } from '../lib/calendario';
+import { celdasMes, eventosDelDia, resumenDelDia, eventosFuturos, expandirRecurrentes, isoDeFecha, diasDelMes, intervaloDe, describirRecurrencia, saltarOcurrencia } from '../lib/calendario';
 import { NOMBRES_ORIGEN } from '../lib/calendarioIntegracion';
+// Entrega 3 · F7 (HC F2) — el día entero, armado desde las fuentes de siempre.
+import {
+  agendaDelDia, tituloDelDia, tiraDeDias, diaAnterior, diaSiguiente,
+  VACIO_AGENDA, tipoAgenda,
+} from '../lib/agendaDia';
+// Entrega 3 · F8 (HC F3) — las tareas con fecha entran en el Calendario, y el ＋ crea las tres cosas.
+import {
+  sePuedeCrear, nuevaTareaDeCalendario, tareasDelDia, indicadoresDelDia,
+  resumenDeDia, cargaDelDia, marcaDeHoy, VACIO_MES, mesVacio, accesosDelDia,
+} from '../lib/calendarioMes';
 import { Card, SectionTitle, Field, TextInput, Select, Textarea, PrimaryButton, GhostBtn, ToggleTab, EmptyHint } from '../components/ui';
 
 // Un icono por tipo (solo para el resumen del día/agenda y el editor — la cuadrícula mensual usa
@@ -119,11 +130,124 @@ function FilaEvento({ ev, accent, onClick }) {
   );
 }
 
-function nuevoEventoBase(fechaISO) {
+/* Entrega 3 · F8 (HC F3) — la fila de una TAREA con fecha, que hasta ahora no
+   salía en el Calendario (apartado 12). Se parece a `FilaEvento` a propósito,
+   pero lleva su casilla: 🚨 y esa casilla llama a `onCompletar(refId)`, o sea a
+   `toggleTarea` sobre LA tarea original. No hay copia que sincronizar
+   (apartados 30 y 31). */
+function FilaTarea({ tarea, accent, onCompletar, onAbrir }) {
+  return (
+    <Card className="flex items-center gap-3" style={{ padding: '0.85rem 1rem' }}>
+      <button
+        onClick={() => onCompletar && onCompletar(tarea.refId)}
+        className="p-1.5 -m-1.5 flex-shrink-0"
+        aria-label={tarea.hecha ? `Desmarcar ${tarea.titulo}` : `Completar ${tarea.titulo}`}
+      >
+        {tarea.hecha
+          ? <CheckSquare size={16} style={{ color: accent }} />
+          : <Square size={16} style={{ color: COLORS.textMuted }} />}
+      </button>
+      <button onClick={onAbrir} className="min-w-0 flex-1 text-left">
+        <p
+          className="text-sm font-semibold truncate"
+          style={{ color: COLORS.text, textDecoration: tarea.hecha ? 'line-through' : 'none' }}
+        >
+          {tarea.titulo}
+        </p>
+        <div className="flex items-center gap-1 mt-0.5">
+          <Clock size={11} style={{ color: COLORS.textMuted }} />
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>{tarea.hora || 'Sin hora'}</p>
+        </div>
+      </button>
+      <span className="text-[11px] font-semibold flex-shrink-0" style={{ color: COLORS.textMuted }}>Tarea</span>
+    </Card>
+  );
+}
+
+/* Entrega 3 · F8 (HC F3) — el selector del ＋ (apartados 16, 17 y 18). *"Si el
+   usuario está situado en 29 agosto, la fecha debe venir preseleccionada."*
+
+   ⚠️ Solo salen los tipos que **existen de verdad** (`sePuedeCrear()`): el
+   pomodoro programado se queda fuera con su motivo escrito, en vez de ofrecer
+   un botón que no haría nada (regla 8). */
+function QueCreamos({ fecha, titulo, accent, onEvento, onTarea, onRecordatorio, onCerrar }) {
+  const acciones = { evento: onEvento, tarea: onTarea, recordatorio: onRecordatorio };
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onCerrar}>
+      <div
+        className="w-full max-w-md rounded-t-3xl p-5 space-y-3"
+        style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-base font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Añadir</p>
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>{titulo}</p>
+          </div>
+          <button onClick={onCerrar} className="p-2 rounded-full" style={{ background: COLORS.surface2 }} aria-label="Cerrar">
+            <X size={16} style={{ color: COLORS.text }} />
+          </button>
+        </div>
+        {sePuedeCrear().map((x) => (
+          <button
+            key={x.id}
+            onClick={() => acciones[x.id] && acciones[x.id](fecha)}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left toque-44"
+            style={{ background: COLORS.surface2 }}
+          >
+            <span className="text-lg" aria-hidden="true">{x.icono}</span>
+            <span className="text-sm font-semibold" style={{ color: COLORS.text }}>{x.nombre}</span>
+          </button>
+        ))}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/* Entrega 3 · F8 (HC F3) — la tarea rápida del apartado 18: *"Título · Hora
+   opcional · Guardar."* Tres campos y fuera; y la tarea aparece a la vez en el
+   Calendario, en la Agenda y en Hoy **porque es una tarea de Productividad**,
+   no una copia del Calendario. */
+function TareaRapida({ fecha, titulo, accent, onGuardar, onCerrar }) {
+  const [texto, setTexto] = useState('');
+  const [hora, setHora] = useState('');
+  const nueva = nuevaTareaDeCalendario(texto, fecha, hora);
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onCerrar}>
+      <div
+        className="w-full max-w-md rounded-t-3xl p-5 space-y-4"
+        style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-base font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Nueva tarea</p>
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>{titulo}</p>
+          </div>
+          <button onClick={onCerrar} className="p-2 rounded-full" style={{ background: COLORS.surface2 }} aria-label="Cerrar">
+            <X size={16} style={{ color: COLORS.text }} />
+          </button>
+        </div>
+        <Field label="Título">
+          {/* 🚨 `TextInput` reparte sus props tal cual: `onChange` recibe el EVENTO. */}
+          <TextInput value={texto} onChange={(ev) => setTexto(ev.target.value)} placeholder="Estudiar Biología" />
+        </Field>
+        <Field label="Hora (opcional)">
+          <TextInput type="time" value={hora} onChange={(ev) => setHora(ev.target.value)} />
+        </Field>
+        <PrimaryButton onClick={() => nueva && onGuardar(nueva)} disabled={!nueva} accent={accent}>Guardar</PrimaryButton>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function nuevoEventoBase(fechaISO, tipo = 'personal') {
   return {
     id: null,
     titulo: '',
-    tipo: 'personal',
+    tipo,
     fecha: fechaISO,
     todoElDia: false,
     horaInicio: '09:00',
@@ -416,7 +540,152 @@ function BuscadorEventos({ eventos, accent, onSeleccionar, onCerrar }) {
   );
 }
 
-export default function CalendarView({ calendario, derivados, onAdd, onUpdate, onDelete, onAbrirModulo, accent, foco, onFocoConsumido }) {
+/* ===========================================================================
+   ENTREGA 3 · FASE 7 (HC F2) — LA AGENDA DE UN DÍA
+   ===========================================================================
+   *"Al entrar en Agenda, el usuario debe sentir: esta es mi agenda de hoy."*
+
+   ⚠️ **Aquí no se calcula nada**: el día entero lo arma `agendaDia.js` desde las
+   fuentes de siempre. Si esta pantalla dijera una hora distinta de la del
+   Calendario, sería porque alguien contó por su cuenta. */
+function AgendaDeUnDia({ dia, titulo, tira, accent, onDia, onHoy, onCompletar, onAnadir }) {
+  return (
+    <>
+      {/* Apartado 1 — cabecera con ‹ Hoy › y la fecha, nunca escrita a mano. */}
+      <Card style={{ padding: '0.85rem 1.1rem' }}>
+        <div className="flex items-center justify-between gap-2">
+          <button onClick={() => onDia(diaAnterior(dia.fecha))} aria-label="Día anterior"
+            className="p-2 -m-1 rounded-full" style={{ background: COLORS.surface2 }}>
+            <ChevronLeft size={15} style={{ color: COLORS.text }} />
+          </button>
+          <div className="text-center min-w-0">
+            <p className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+              {titulo.texto}
+            </p>
+            {!titulo.esHoy && (
+              <button onClick={onHoy} className="text-xs font-semibold mt-0.5" style={{ color: accent }}>Hoy</button>
+            )}
+            {titulo.esHoy && <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>Hoy</p>}
+          </div>
+          <button onClick={() => onDia(diaSiguiente(dia.fecha))} aria-label="Día siguiente"
+            className="p-2 -m-1 rounded-full" style={{ background: COLORS.surface2 }}>
+            <ChevronRight size={15} style={{ color: COLORS.text }} />
+          </button>
+        </div>
+
+        {/* Apartado 2 — la tira de días, para cambiar sin abrir el mes. */}
+        <div className="flex gap-1 mt-2 justify-between">
+          {tira.map((d) => (
+            <button key={d.fecha} onClick={() => onDia(d.fecha)}
+              className="flex-1 rounded-xl py-1.5 text-center"
+              style={d.seleccionado
+                ? { background: accent, color: COLORS.textOnAccent }
+                : { background: COLORS.surface2, color: COLORS.textMuted }}
+              aria-label={`Ir al ${d.etiqueta} ${d.dia}`}>
+              <span className="block text-[10px] font-semibold">{d.etiqueta}</span>
+              <span className="block text-sm font-bold">{d.dia}</span>
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {/* Apartado 19 — un día vacío no es una lista vacía. */}
+      {dia.vacio ? (
+        <Card className="text-center">
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{VACIO_AGENDA.titulo}</p>
+          <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{VACIO_AGENDA.explica}</p>
+          <PrimaryButton accent={accent} icon={Plus} onClick={onAnadir}>{VACIO_AGENDA.boton}</PrimaryButton>
+        </Card>
+      ) : (
+        <>
+          {/* Apartado 17 — el siguiente pendiente, destacado LIGERAMENTE. */}
+          {dia.proximo && (
+            <Card style={{ padding: '0.7rem 1.1rem', border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
+              <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>Próximo</p>
+              <p className="text-sm font-semibold mt-0.5" style={{ color: COLORS.text }}>
+                {dia.proximo.inicio} · {dia.proximo.titulo}
+              </p>
+            </Card>
+          )}
+
+          {/* Apartado 3 — la línea temporal. Y el 15: un evento pasado sigue
+              visible, solo se distingue. Y el 18: dos a la misma hora se ven los
+              dos, nunca se esconde uno. */}
+          {dia.conHora.length > 0 && (
+            <Card>
+              {dia.conHora.map((e, i) => (
+                <div key={e.id || i}>
+                  {/* Apartado 16 — la raya de AHORA, y solo en el día de hoy. */}
+                  {dia.ahora !== null && i > 0 && dia.conHora[i - 1].minutos < dia.ahora && e.minutos >= dia.ahora && (
+                    <div className="flex items-center gap-2 my-1.5">
+                      <span className="h-px flex-1" style={{ background: accent }} />
+                      <span className="text-[10px] font-bold" style={{ color: accent }}>AHORA</span>
+                      <span className="h-px flex-1" style={{ background: accent }} />
+                    </div>
+                  )}
+                  <div className="flex items-start gap-2 py-1.5" style={{ opacity: e.pasado ? 0.55 : 1 }}>
+                    <span className="text-xs font-bold tabular-nums flex-shrink-0" style={{ color: COLORS.textMuted, width: 42 }}>
+                      {e.inicio || '—'}
+                    </span>
+                    {e.completable && (
+                      <button onClick={() => onCompletar && onCompletar(e.refId)}
+                        className="p-1.5 -m-1.5 flex-shrink-0" aria-label={e.hecha ? `Desmarcar ${e.titulo}` : `Completar ${e.titulo}`}>
+                        {e.hecha
+                          ? <CheckSquare size={15} style={{ color: accent }} />
+                          : <Square size={15} style={{ color: COLORS.textMuted }} />}
+                      </button>
+                    )}
+                    <span className="text-sm flex-1 min-w-0" style={{ color: COLORS.text, textDecoration: e.hecha ? 'line-through' : 'none' }}>
+                      {e.titulo}
+                      {e.solapado && (
+                        <span className="text-[10px] ml-1" style={{ color: COLORS.textMuted }}>· a la vez que otro</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </Card>
+          )}
+
+          {/* Apartado 4 — lo que pertenece al día pero no tiene hora. */}
+          {dia.sinHora.length > 0 && (
+            <Card>
+              <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>Sin hora</p>
+              {dia.sinHora.map((e, i) => (
+                <div key={e.id || i} className="flex items-start gap-2 py-1">
+                  {e.completable ? (
+                    <button onClick={() => onCompletar && onCompletar(e.refId)}
+                      className="p-1.5 -m-1.5 flex-shrink-0" aria-label={e.hecha ? `Desmarcar ${e.titulo}` : `Completar ${e.titulo}`}>
+                      {e.hecha
+                        ? <CheckSquare size={15} style={{ color: accent }} />
+                        : <Square size={15} style={{ color: COLORS.textMuted }} />}
+                    </button>
+                  ) : (
+                    <span className="text-sm leading-none flex-shrink-0" aria-hidden="true">
+                      {tipoAgenda(e.tipoAgenda)?.icono || '·'}
+                    </span>
+                  )}
+                  <span className="text-sm flex-1 min-w-0" style={{ color: COLORS.text, textDecoration: e.hecha ? 'line-through' : 'none' }}>
+                    {e.titulo}
+                  </span>
+                </div>
+              ))}
+            </Card>
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
+export default function CalendarView({
+  calendario, derivados, onAdd, onUpdate, onDelete, onAbrirModulo, accent, foco, onFocoConsumido,
+  // E3 F7 — las fuentes del día. Llegan tal cual, sin copia: el apartado 25.
+  horarioTop, productividad, salud, nutricion, calistenia, futbol, onCompletarTarea,
+  // E3 F8 — crear una tarea desde el Calendario (apartado 18). Es `addTarea`, la de
+  // Productividad: la tarea nace donde viven todas, no en una lista del calendario.
+  onAddTarea,
+}) {
   const hoy = todayISO();
   const [cursor, setCursor] = useState(() => ({ anio: Number(hoy.slice(0, 4)), mes: Number(hoy.slice(5, 7)) - 1 }));
   const [seleccionado, setSeleccionado] = useState(hoy);
@@ -451,7 +720,12 @@ export default function CalendarView({ calendario, derivados, onAdd, onUpdate, o
   const ultimoDiaMesISO = isoDeFecha(cursor.anio, cursor.mes, diasDelMes(cursor.anio, cursor.mes));
   const eventosMes = expandirRecurrentes(eventosBase, primerDiaMesISO, ultimoDiaMesISO);
   const eventosDia = eventosDelDia(eventosMes, seleccionado);
-  const resumen = resumenDelDia(eventosMes, seleccionado);
+  /* E3 F8 (HC F3) — las tareas con fecha, que hasta ahora no salían aquí (apartado 12).
+     🚨 Se LEEN de `productividad.tareas`: ni una copia, ni un almacén del calendario
+     (apartados 30 y 31). */
+  const tareasDia = tareasDelDia(productividad, seleccionado);
+  const resumen = resumenDeDia(eventosMes, seleccionado, productividad);
+  const carga = cargaDelDia(eventosMes, seleccionado, productividad);
 
   const VENTANA_PROXIMOS_DIAS = 13;
   const eventosProximosBase = expandirRecurrentes(eventosBase, hoy, addDays(hoy, VENTANA_PROXIMOS_DIAS));
@@ -497,7 +771,14 @@ export default function CalendarView({ calendario, derivados, onAdd, onUpdate, o
 
   const toggleTipoOculto = (id) => setTiposOcultos((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
-  const abrirNuevo = () => setEditor(nuevoEventoBase(seleccionado));
+  /* E3 F8, apartado 16 — el ＋ pregunta QUÉ, con el día ya puesto. Antes creaba
+     siempre un evento, así que no había forma de apuntar una tarea desde aquí. */
+  const [creando, setCreando] = useState(false); // el selector Evento/Tarea/Recordatorio
+  const [tareaRapida, setTareaRapida] = useState(false);
+  const abrirNuevo = () => setCreando(true);
+  const crearEvento = (fecha, tipo) => { setCreando(false); setEditor(nuevoEventoBase(fecha, tipo)); };
+  const crearTarea = () => { setCreando(false); setTareaRapida(true); };
+  const guardarTarea = (tarea) => { onAddTarea && onAddTarea(tarea); setTareaRapida(false); };
   // Fase 3 — una ocurrencia de un evento recurrente (`eventoOrigenId`) siempre abre/edita el
   // evento REAL guardado (la serie completa), nunca una copia virtual de un día concreto.
   const resolverEventoReal = (ev) => {
@@ -558,8 +839,14 @@ export default function CalendarView({ calendario, derivados, onAdd, onUpdate, o
         </button>
       </div>
 
+      {/* Entrega 3 · F7 (HC F2) — un tercer modo, "Día", y NO sustituye a los otros
+          dos: la Agenda de la Fase 3 contesta *"¿qué viene?"* (los próximos días) y
+          ésta *"¿cómo es mi sábado?"* (un día entero, con su línea temporal, lo que
+          no tiene hora, la raya de AHORA y el siguiente pendiente). Dos preguntas
+          distintas, una sola fuente de datos (apartado 25). */}
       <div className="flex gap-1.5">
         <ToggleTab active={vista === 'mes'} onClick={() => setVista('mes')} accent={accent}>Mes</ToggleTab>
+        <ToggleTab active={vista === 'dia'} onClick={() => setVista('dia')} accent={accent}>Día</ToggleTab>
         <ToggleTab active={vista === 'agenda'} onClick={() => setVista('agenda')} accent={accent}>Agenda</ToggleTab>
       </div>
 
@@ -568,6 +855,25 @@ export default function CalendarView({ calendario, derivados, onAdd, onUpdate, o
           <FiltroChip key={t.id} tipo={t} activo={!tiposOcultos.includes(t.id)} accent={accent} onClick={() => toggleTipoOculto(t.id)} />
         ))}
       </div>
+
+      {/* Apartado 24 — *"si desde Calendario se selecciona el 29 de agosto, Agenda
+          debe abrir el 29 de agosto. No abrir siempre el día actual."* Por eso el día
+          es `seleccionado`, el mismo que marca la rejilla del mes: cambiar de vista
+          no pierde el contexto (apartado 21). */}
+      {vista === 'dia' && (
+        <AgendaDeUnDia
+          dia={agendaDelDia(horarioTop || {}, seleccionado, {
+            hoy, productividad, calendario, salud, nutricion, calistenia, futbol,
+          })}
+          titulo={tituloDelDia(seleccionado, hoy)}
+          tira={tiraDeDias(seleccionado, { hoy })}
+          accent={accent}
+          onDia={setSeleccionado}
+          onHoy={() => setSeleccionado(hoy)}
+          onCompletar={onCompletarTarea}
+          onAnadir={() => setEditor({ fecha: seleccionado })}
+        />
+      )}
 
       {vista === 'mes' && (
         <>
@@ -578,9 +884,10 @@ export default function CalendarView({ calendario, derivados, onAdd, onUpdate, o
               </button>
               <div className="text-center">
                 <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{tituloMes(cursor.anio, cursor.mes)}</p>
-                {!(cursor.anio === Number(hoy.slice(0, 4)) && cursor.mes === Number(hoy.slice(5, 7)) - 1) && (
-                  <button onClick={irAHoy} className="text-xs font-semibold mt-0.5" style={{ color: accent }}>Volver a hoy</button>
-                )}
+                {/* E3 F8, apartado 10 — *"Debe estar siempre accesible."* Antes solo salía
+                    al estar fuera del mes actual, así que desde el propio agosto no había
+                    forma de volver al día de hoy después de tocar el 29. */}
+                <button onClick={irAHoy} className="text-xs font-semibold mt-0.5 toque-44" style={{ color: accent }}>Hoy</button>
               </div>
               <button onClick={() => irMes(1)} aria-label="Mes siguiente" className="p-2 rounded-full" style={{ background: COLORS.surface2 }}>
                 <ChevronRight size={16} style={{ color: COLORS.text }} />
@@ -596,24 +903,35 @@ export default function CalendarView({ calendario, derivados, onAdd, onUpdate, o
               <div className="grid grid-cols-7 gap-1">
                 {celdasMes(cursor.anio, cursor.mes).map((celda, i) => {
                   if (!celda) return <div key={`vacio-${i}`} />;
-                  const esHoy = celda.fecha === hoy;
                   const esSeleccionado = celda.fecha === seleccionado;
-                  const tipos = tiposDelDia(eventosMes, celda.fecha);
+                  /* E3 F8, apartado 4 — *"Hoy debe destacarse claramente. No depender
+                     únicamente del color."* 🐛 Y había un hueco: el borde solo se
+                     pintaba si la celda NO estaba seleccionada, así que al entrar —cuando
+                     el día seleccionado ES hoy— la marca desaparecía justo en el caso más
+                     común. Ahora `marcaDeHoy` deja siempre algo: borde si se puede,
+                     tipografía y un punto bajo el número, con su nombre para el lector. */
+                  const marca = marcaDeHoy(celda.fecha, { hoy, seleccionado });
+                  // Apartado 14 — un día con tareas ya enseña su punto, aunque no tenga eventos.
+                  const tipos = indicadoresDelDia(eventosMes, celda.fecha, productividad);
                   return (
                     <button
                       key={celda.fecha}
                       onClick={() => setSeleccionado(celda.fecha)}
+                      aria-label={`${celda.dia}${marca.etiqueta ? `, ${marca.etiqueta}` : ''}`}
+                      aria-current={marca.esHoy ? 'date' : undefined}
                       className="aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5"
                       style={{
                         background: esSeleccionado ? accent : 'transparent',
-                        border: esHoy && !esSeleccionado ? `1.5px solid ${accent}` : '1.5px solid transparent',
+                        border: marca.borde ? `1.5px solid ${accent}` : '1.5px solid transparent',
                       }}
                     >
                       <span
-                        className="text-[13px]"
+                        className="text-[13px] relative"
                         style={{
                           color: esSeleccionado ? (COLORS.textOnAccent) : COLORS.text,
-                          fontWeight: esHoy || esSeleccionado ? 800 : 500,
+                          fontWeight: marca.negrita ? 800 : 500,
+                          textDecoration: marca.esHoy ? 'underline' : 'none',
+                          textUnderlineOffset: '2px',
                         }}
                       >
                         {celda.dia}
@@ -623,7 +941,13 @@ export default function CalendarView({ calendario, derivados, onAdd, onUpdate, o
                           <span
                             key={t}
                             className="rounded-full"
-                            style={{ width: 4, height: 4, background: esSeleccionado ? (COLORS.textOnAccent) : colorDeTipoEvento(t, accent) }}
+                            style={{
+                              width: 4,
+                              height: 4,
+                              background: esSeleccionado
+                                ? (COLORS.textOnAccent)
+                                : (t === 'tarea' ? COLORS.positive : colorDeTipoEvento(t, accent)),
+                            }}
                           />
                         ))}
                       </div>
@@ -645,16 +969,76 @@ export default function CalendarView({ calendario, derivados, onAdd, onUpdate, o
               </button>
             </div>
 
-            {resumen && <p className="text-xs px-1 mb-3" style={{ color: COLORS.textMuted }}>{resumen}</p>}
+            {/* E3 F8, apartado 5 — *"4 tareas · 2 eventos · 1 recordatorio"*: el resumen
+                contaba solo eventos, y el enunciado lo escribe con las tareas dentro.
+                Al lado, la carga del apartado 23: tres estados, con icono y palabra —
+                nunca solo un color (EH F42). */}
+            {resumen && (
+              <div className="flex items-center gap-2 px-1 mb-3">
+                <p className="text-xs" style={{ color: COLORS.textMuted }}>{resumen}</p>
+                <span className="text-xs" style={{ color: COLORS.textMuted }}>·</span>
+                <p className="text-xs" style={{ color: COLORS.textMuted }}>
+                  <span aria-hidden="true">{carga.icono}</span> {carga.nombre}
+                </p>
+              </div>
+            )}
 
-            {eventosDia.length === 0 ? (
-              <EmptyHint text="Nada programado este día. Toca «Añadir» para crear un evento." />
+            {eventosDia.length === 0 && tareasDia.length === 0 ? (
+              <EmptyHint text="Nada programado este día. Toca «Añadir» para crear un evento o una tarea." />
             ) : (
               <div className="space-y-2">
                 {eventosDia.map((ev) => <FilaEvento key={ev.id} ev={ev} accent={accent} onClick={() => abrirEvento(ev)} />)}
+                {/* 🚨 Apartado 12 — *"si una tarea tiene fecha, debe aparecer en
+                    Calendario… al pulsarla, abrir la tarea original. No crear una
+                    copia."* La casilla llama a `toggleTarea` sobre `refId`, y abrirla
+                    lleva a Productividad, que es donde vive. */}
+                {tareasDia.map((t) => (
+                  <FilaTarea
+                    key={t.id}
+                    tarea={t}
+                    accent={accent}
+                    onCompletar={onCompletarTarea}
+                    onAbrir={() => onAbrirModulo && onAbrirModulo('productividad')}
+                  />
+                ))}
               </div>
             )}
+
+            {/* E3 F8, apartados 28 y 29 — *"📋 Ver Agenda"* siempre, y *"🏠 Ver Hoy"*
+                solo si el día seleccionado es hoy. ⚠️ Ver Agenda abre **el día
+                seleccionado**, no hoy (apartados 7 y 24): la Agenda de la F7 ya recibe
+                la fecha, así que esto es cambiar de pestaña, no navegar a otro sitio. */}
+            <div className="flex gap-2 mt-3">
+              {accesosDelDia(seleccionado, hoy).map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => (a.vista ? setVista(a.vista) : onAbrirModulo && onAbrirModulo(a.tab))}
+                  className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2.5 rounded-xl toque-44"
+                  style={{ background: COLORS.surface2, color: COLORS.text }}
+                >
+                  <span aria-hidden="true">{a.icono}</span> {a.nombre}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* E3 F8, apartado 38 — *"Tu calendario está libre ✨ / No tienes nada
+              programado para este periodo. / ＋ Añadir"*, con sus palabras, y solo
+              cuando el MES entero está vacío: un día suelto sin nada ya tiene su
+              propio texto arriba. */}
+          {mesVacio(eventosMes, cursor.anio, cursor.mes, productividad) && (
+            <Card className="text-center space-y-2" style={{ padding: '1.5rem 1rem' }}>
+              <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{VACIO_MES.titulo}</p>
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>{VACIO_MES.explica}</p>
+              <button
+                onClick={abrirNuevo}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl toque-44"
+                style={{ background: hexToRgba(accent, 0.14), color: accent }}
+              >
+                <Plus size={15} /> {VACIO_MES.boton}
+              </button>
+            </Card>
+          )}
 
           {proximos.length > 0 && (
             <div>
@@ -725,6 +1109,28 @@ export default function CalendarView({ calendario, derivados, onAdd, onUpdate, o
           accent={accent}
           onAbrirModulo={onAbrirModulo}
           onCerrar={() => setDetalle(null)}
+        />
+      )}
+
+      {creando && (
+        <QueCreamos
+          fecha={seleccionado}
+          titulo={tituloDelDia(seleccionado, hoy).texto}
+          accent={accent}
+          onEvento={(f) => crearEvento(f, 'personal')}
+          onTarea={crearTarea}
+          onRecordatorio={(f) => crearEvento(f, 'recordatorio')}
+          onCerrar={() => setCreando(false)}
+        />
+      )}
+
+      {tareaRapida && (
+        <TareaRapida
+          fecha={seleccionado}
+          titulo={tituloDelDia(seleccionado, hoy).texto}
+          accent={accent}
+          onGuardar={guardarTarea}
+          onCerrar={() => setTareaRapida(false)}
         />
       )}
 

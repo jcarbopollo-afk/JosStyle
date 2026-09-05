@@ -861,6 +861,20 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F8 — el Calendario: las tareas con fecha, el resumen y crear desde ahí.
+if node --import ./scripts/resolver-vite.mjs scripts/test-calendario-mes.mjs >/tmp/jc_cmes.log 2>&1; then
+  ok "Calendario, vista temporal (E3 F8) — $(grep -c '✓' /tmp/jc_cmes.log) comprobaciones"
+else
+  fallo "Falla la vista temporal del Calendario (E3 F8)"; grep '✗' /tmp/jc_cmes.log
+fi
+
+# Entrega 3 · F7 — la agenda de un día: línea temporal, sin hora, ahora y próximo.
+if node --import ./scripts/resolver-vite.mjs scripts/test-agenda-dia.mjs >/tmp/jc_agd.log 2>&1; then
+  ok "Agenda de un día (E3 F7) — $(grep -c '✓' /tmp/jc_agd.log) comprobaciones"
+else
+  fallo "Falla la agenda del día (E3 F7)"; grep '✗' /tmp/jc_agd.log
+fi
+
 # Entrega 3 · F6 — Hoy: resumen del día, progreso y apuntes.
 if node --import ./scripts/resolver-vite.mjs scripts/test-centro-dia.mjs >/tmp/jc_cdia.log 2>&1; then
   ok "Hoy, centro del día (E3 F6) — $(grep -c '✓' /tmp/jc_cdia.log) comprobaciones"
