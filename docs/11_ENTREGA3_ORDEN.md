@@ -35,7 +35,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 12 ✅ | HC | F7 — Integraciones externas de calendario — **hecha (v3.32.0)**, con ⏸ DEP-29 | 4995 |
 | 13 ✅ | HC | F8 — Estadísticas de planificación — **hecha (v3.33.0)** | 5490 |
 | 14 ✅ | HC | F9 — Pulido visual, UX y animaciones — **hecha (v3.34.0)** | 6315 |
-| 15 | HC | F10 — PWA, iPhone, sincronización y auditoría final | 7088 |
+| 15 ✅ | HC | F10 — PWA, iPhone, sincronización y auditoría final — **hecha (v3.36.0)** 🏁 cierra HC | 7088 |
 | 16 | **BL** Biblioteca | F1 — Rediseño como launcher de mini-apps | 7871 |
 | 17 | BL | F2 — Libros | 8280 |
 | 18 | BL | F4 — Guardados | 8669 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 14 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0). La siguiente es la **15 — HC F10: PWA, iPhone, sincronización y auditoría final**, línea 7088, que **cierra el bloque Hoy y Calendario**.
+**Por dónde va:** 15 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0). 🏁 **El bloque Hoy y Calendario está CERRADO (10/10).** La siguiente es la **16 — BL F1: la Biblioteca como lanzador de mini-apps**, línea 7871.
 
 ## Lo que dejó la Fase 1, y que afecta a todas las demás
 
@@ -326,6 +326,22 @@ solo vale como corrección o ajuste — nunca una función nueva.
   navegador ya la mantiene.
 - 🐛 **Y la Safe Area vale también para la pantalla de carga**: el esqueleto nació con un `pt-16` a
   ojo y lo cazó la comprobación de la Fase 1. Una guardia vieja atrapando a la fase nueva.
+
+## Y lo que dejó la Fase 15 (HC F10) — 🏁 cierre del bloque
+
+- 🚨 **LA CONDICIÓN DE FINALIZACIÓN SE CALCULA** (EH F64 lo dijo primero): `condicionHC()` lee el
+  manifiesto, el `index.html`, el `index.css` y el `schema.sql` **de verdad**. Y **cada revisor puede
+  fallar**: hay una prueba por cada uno que le da algo roto y comprueba que lo caza.
+- 🚨 **`viewport-fit=cover` es lo que hace que la Safe Area exista** (7): sin él, `--safe-top` y
+  `--safe-bottom` valen **cero** y todo el trabajo de la Fase 1 sobra.
+- 🚨 **El icono del iPhone es `apple-touch-icon`** (4): sin él, Safari usa una captura de la página.
+  Y sin un icono `maskable`, Android le pone un borde blanco. Faltaban los dos.
+- ⚠️ **El aislamiento es de la base de datos** (15-17): las cuatro políticas de `app_data` son
+  `auth.uid() = user_id`, y el revisor busca expresamente la permisiva.
+- ⏸ **Tres cosas siguen sin poderse, con su riesgo escrito** (`LO_QUE_DECIDE_JOSUE`): el **service
+  worker** (DEP-30 — mal configurado congela la app en una versión vieja, y este proyecto ya perdió
+  meses así), la **sincronización entre dispositivos** (gana el último que escribe) y la
+  **autenticación del endpoint de la IA** (EH F63).
 
 ## Dos cosas del documento que conviene saber
 

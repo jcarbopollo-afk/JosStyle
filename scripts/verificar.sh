@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F15 — PWA, iPhone y aislamiento: la auditoría que cierra el bloque HC.
+if node --import ./scripts/resolver-vite.mjs scripts/test-auditoria-pwa.mjs >/tmp/jc_pwa.log 2>&1; then
+  ok "PWA, iPhone y auditoría final (E3 F15) — $(grep -c '✓' /tmp/jc_pwa.log) comprobaciones"
+else
+  fallo "Falla la auditoría de PWA (E3 F15)"; grep '✗' /tmp/jc_pwa.log
+fi
+
 # Entrega 3 · F14 — pulido: esqueletos, vacíos, errores y el revisor de las cinco pantallas.
 if node --import ./scripts/resolver-vite.mjs scripts/test-pulido-hc.mjs >/tmp/jc_pul.log 2>&1; then
   ok "Pulido visual y UX (E3 F14) — $(grep -c '✓' /tmp/jc_pul.log) comprobaciones"

@@ -174,10 +174,11 @@ de error exacto** antes de asumir nada.
 **F11 (notificaciones y recordatorios reales, v3.31.0)** y la
 **F12 (calendarios externos, v3.32.0)** y la
 **F13 (estadísticas de planificación, v3.33.0)** y la
-**F14 (pulido visual, UX y animaciones, v3.34.0)**; la siguiente es la
-**15 — HC F10: PWA, iPhone, sincronización y auditoría final**, que **cierra el bloque Hoy y
-Calendario**. El índice, con la línea de cada fase dentro de la especificación literal, está en
-**`docs/11_ENTREGA3_ORDEN.md`**.
+**F14 (pulido visual, UX y animaciones, v3.34.0)** y la
+**F15 (PWA, iPhone y auditoría final, v3.36.0)**, que 🏁 **CIERRA EL BLOQUE HOY Y CALENDARIO** —las
+diez fases HC—; la siguiente es la **16 — BL F1: la Biblioteca como lanzador de mini-apps**, y con
+ella empieza el bloque de **Biblioteca**. El índice, con la línea de cada fase dentro de la
+especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y hay algo que necesita a Josué, anotado como DEP-29 en `docs/03`:** conectar **Google Calendar
 y Outlook** exige que él registre JosStyle en Google y en Microsoft **y** que exista un sitio seguro
@@ -186,7 +187,25 @@ construye el botón "Conectar"** —sería un control decorativo, y le haría cr
 están sincronizados—. Lo que sí funciona ya es el **archivo `.ics`**, que es la alternativa que pide
 el propio enunciado para Apple y sirve para los tres. **Los apartados 19 y 20 dependen de lo mismo.**
 
-⚠️ **Y lo que dejaron las catorce primeras, que afecta a todas las demás:**
+⏸ **Y hay una segunda cosa que necesita a Josué, DEP-30 en `docs/03`:** el **service worker**, que
+es la pieza que falta para abrir sin conexión **y** para los avisos con la app cerrada. 🚨 **No se
+añade a ciegas porque el riesgo es el fallo histórico de este proyecto:** mal configurado deja la
+aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con `main` sirviendo
+código de agosto mientras él decía *"la web sigue igual"*.
+
+⚠️ **Y lo que dejaron las quince primeras, que afecta a todas las demás:**
+
+- 🚨 **LA CONDICIÓN DE FINALIZACIÓN SE CALCULA** (E3 F15, y EH F64 lo dijo primero): `condicionHC()`
+  lee el manifiesto, el `index.html`, el `index.css` y el `schema.sql` **de verdad**. Nadie pone una
+  casilla a `true`; si una está roja, es que lo está.
+- 🚨 **`viewport-fit=cover` ES LO QUE HACE QUE LA SAFE AREA EXISTA** (E3 F15, apartado 7): sin él,
+  `--safe-top` y `--safe-bottom` valen **cero** y todo el trabajo de la E3 F1 sobra.
+- 🚨 **EL ICONO DEL iPHONE ES `apple-touch-icon`** (E3 F15, apartado 4): sin él, Safari usa una
+  captura de la página al añadirlo a la pantalla de inicio. Y sin un icono `maskable`, Android le
+  pone un borde blanco.
+- ⚠️ **El aislamiento es de la base de datos** (E3 F15, apartados 15-17, y EH F43 lo dijo primero):
+  las cuatro políticas de `app_data` son `auth.uid() = user_id`, y el revisor busca expresamente la
+  permisiva. Cualquier tabla nueva necesita las suyas.
 
 - 🚨 **UNA PANTALLA DE CARGA NO PUEDE ESTAR VACÍA** (E3 F14, apartado 23). `LoadingScreen` era una
   rueda sobre un fondo liso, que es literalmente lo que el apartado prohíbe: ahora dibuja **la forma

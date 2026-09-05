@@ -1,5 +1,49 @@
 # CHANGELOG.md
 
+## v3.36.0 — Entrega 3 · Fase 15 (HC F10): PWA, iPhone y auditoría final
+
+🏁 **Cierra el bloque Hoy y Calendario**: las diez fases HC, de la 6 a la 15.
+
+*"Conseguir que JosStyle funcione como una aplicación instalada, y no simplemente como una página
+web."* Y el enunciado acota: *"esta fase es de estabilización… **NO añadir nuevas funcionalidades de
+planificación. NO añadir IA.**"* Así que su trabajo es **comprobar**, no construir.
+
+### Lo que estaba mal en la aplicación instalada
+
+- 🚨 **No había icono para el iPhone.** Sin `apple-touch-icon`, al añadir JosStyle a la pantalla de
+  inicio Safari usa **una captura de la página** — que es justo lo que el apartado 4 llama *"un icono
+  provisional"*. Ya está.
+- 🚨 **Ningún icono era recortable.** Sin uno `maskable`, en Android el icono sale con un borde
+  blanco alrededor (apartado 4).
+- **Y al manifiesto le faltaban** la orientación, el ámbito, el idioma y la descripción (apartados 2
+  y 3).
+
+### La auditoría lee archivos de verdad
+
+Cada cosa que el enunciado pide se comprueba **contra el archivo real** —`public/manifest.json`,
+`index.html`, `index.css`, `supabase/schema.sql`—, nunca contra una casilla puesta a mano. Es lo que
+EH F64 dejó escrito: *"las casillas se CALCULAN; no las pongas a `true`"*. Y **cada revisor puede
+fallar**: hay una prueba por cada uno que le da algo roto y comprueba que lo caza.
+
+- **Las seis piezas de la Safe Area** siguen en `index.css` (apartados 6, 7 y 8). Si una fase futura
+  las borra, esto salta.
+- 🚨 **`viewport-fit=cover`**, sin el cual las zonas seguras **valen cero** y todo lo anterior sobra.
+- 🚨 **Las cuatro políticas de `app_data`** atadas a `auth.uid() = user_id`, y **ninguna permisiva**
+  (apartados 15, 16 y 17). El aislamiento es de la base de datos, nunca de la pantalla (EH F43).
+
+### ⏸ Y tres cosas siguen sin poderse, con su riesgo escrito
+
+Ninguna es un descuido, y las tres las decide Josué (`LO_QUE_DECIDE_JOSUE`):
+
+1. 🚨 **El service worker** (apartado 11), que es la pieza que falta para abrir sin conexión **y**
+   para los avisos con la app cerrada. **No se añade a ciegas, y el motivo es el fallo histórico de
+   este proyecto:** mal configurado deja la aplicación **congelada en una versión vieja** — se
+   abriría siempre la de antes por más código que se suba, y JosStyle ya perdió meses exactamente
+   así. Queda como **DEP-30** en `docs/03`.
+2. **La sincronización entre dispositivos** (13 y 14): gana el último que escribe, porque `app_data`
+   no guarda una versión. Declarado desde EH F41.
+3. **La autenticación del endpoint de la IA** (17), que viene de EH F63.
+
 ## v3.35.0 — Los objetivos sí tenían tamaño
 
 ### Qué se ha conectado
