@@ -96,8 +96,25 @@ eq(eventos.length, 2,
 const examen = eventos[0];
 eq(examen.titulo, 'Examen de Biolog,ía',
   '⚠️ y las comas escapadas del formato se deshacen: si no, el título saldría con barras');
-eq([examen.fecha, examen.horaInicio, examen.horaFin], ['2026-09-03', '10:00', '11:30'],
-  '⚠️ con su fecha y sus horas');
+/* 🐛 **El fixture viene en UTC (`…T100000Z`) y esto esperaba `10:00`.**
+   La `Z` significa UTC, y `fechaHoraDeICS` hace lo correcto: pasarla al reloj de
+   quien mira. En España en septiembre eso son las 12:00, así que la prueba
+   pedía justo lo contrario de lo que el propio analizador documenta —y de lo
+   que le conviene a Josué, que si no se presentaría al examen dos horas antes.
+
+   ⚠️ La hora esperada se **calcula**, no se escribe: poner "12:00" arreglaría el
+   rojo aquí y lo devolvería en cuanto alguien ejecutara esto fuera de España, o
+   en invierno. Se convierte igual que en producción y se compara con eso. */
+const local = (aaaa, mm, dd, h, min) => {
+  const d = new Date(Date.UTC(aaaa, mm - 1, dd, h, min));
+  const p = (n) => String(n).padStart(2, '0');
+  return { fecha: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`, hora: `${p(d.getHours())}:${p(d.getMinutes())}` };
+};
+const inicioEsperado = local(2026, 9, 3, 10, 0);
+const finEsperado = local(2026, 9, 3, 11, 30);
+eq([examen.fecha, examen.horaInicio, examen.horaFin],
+  [inicioEsperado.fecha, inicioEsperado.hora, finEsperado.hora],
+  `⚠️ con su fecha y sus horas, convertidas del UTC al reloj de aquí (${inicioEsperado.hora})`);
 eq(examen.ubicacion, 'Aula 3', 'y su sitio');
 eq(examen.idExterno, 'abc-123@google.com',
   '🚨 y SU IDENTIFICADOR de verdad: *"nunca utilizar el título como identificador"* (apartado 23)');
@@ -139,7 +156,10 @@ eq([plan.entran.length, plan.repetidos], [0, 2],
 eq(planDeImportacion([], eventos).entran.length, 2, 'y sobre un calendario vacío entran los dos');
 
 // 🚨 El caso que el apartado 32 nombra expresamente.
-const mismoTitulo = [{ id: 'i1', titulo: 'Examen de Biolog,ía', fecha: '2026-09-03', horaInicio: '10:00', origen: ORIGEN_INTERNO }];
+/* ⚠️ La hora sale de la misma conversión que el evento externo, no escrita a
+   mano: esta prueba dice "mismo título y MISMA HORA no son el mismo evento", y
+   con horas distintas pasaría por el motivo equivocado —sin comparar nada. */
+const mismoTitulo = [{ id: 'i1', titulo: 'Examen de Biolog,ía', fecha: inicioEsperado.fecha, horaInicio: inicioEsperado.hora, origen: ORIGEN_INTERNO }];
 eq(planDeImportacion(mismoTitulo, [examen]).entran.length, 1,
   '🚨 UN EVENTO INTERNO CON EL MISMO TÍTULO Y HORA **NO** SE TOMA POR EL MISMO: *"solo vincularlos mediante identificadores reales"* (apartado 32)');
 
