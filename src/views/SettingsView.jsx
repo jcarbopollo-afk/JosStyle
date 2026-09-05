@@ -16,6 +16,10 @@ import {
 } from '../tokens';
 import { calcularEdad, shade, hexToRgba, uid, todayISO } from '../lib/helpers';
 import { permisoNotificaciones, pedirPermisoNotificaciones } from '../lib/notificaciones';
+/* Entrega 3 · F11 (HC F6, apartados 23 y 24) — qué puede y qué NO puede hacer
+   esta plataforma. *"Si una capacidad no puede garantizarse desde Safari/PWA:
+   mostrar una explicación clara. No simularla."* */
+import { CAPACIDADES } from '../lib/avisosPlanificacion';
 import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
 import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton, BotonBorrar, Switch } from '../components/ui';
 /* SO Fase 5 — la pantalla de «Sonido y respuesta». Los interruptores son los de
@@ -2587,6 +2591,28 @@ export default function SettingsView({
               {permisoNotif === 'default' && (
                 <GhostBtn onClick={solicitarPermisoNotif} icon={Bell}>Activar notificaciones</GhostBtn>
               )}
+            </Card>
+
+            {/* Entrega 3 · F11 (HC F6, apartados 23, 24, 25 y 26) — 🚨 lo que esta
+                plataforma puede y lo que no. El enunciado lo pide con esas
+                palabras: *"no prometer funcionalidad que la plataforma no
+                soporte"*. Lo que falta no es un fallo que se arregle aquí: hace
+                falta una pieza nueva del sistema, y eso se dice. */}
+            <Card>
+              <p className="text-sm font-semibold mb-2" style={{ color: COLORS.text }}>Qué avisos llegan de verdad</p>
+              <div className="space-y-2">
+                {CAPACIDADES.map((c) => (
+                  <div key={c.id} className="flex items-start gap-2">
+                    <span className="text-sm leading-none flex-shrink-0 mt-0.5" aria-hidden="true">{c.disponible ? '✅' : '⏸'}</span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold" style={{ color: COLORS.text }}>
+                        {c.nombre}{c.disponible ? '' : ' — todavía no'}
+                      </p>
+                      <p className="text-xs" style={{ color: COLORS.textMuted }}>{c.explica}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </Card>
 
             <Card>

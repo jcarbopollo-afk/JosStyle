@@ -214,7 +214,16 @@ const pulsar = async (txt, tope = 6000) => {
   let clicado = false;
   do {
     clicado = await page.evaluate((t) => {
-      const botones = [...document.querySelectorAll('button')];
+      /* 🐛 ⚠️ **CON UN DIÁLOGO ABIERTO SOLO SE PULSA DENTRO DE ÉL** (E3 F11).
+         `pulsar` miraba el documento entero, así que al abrir el ＋ de Hoy y
+         buscar "Tarea" ganaba un botón **del fondo** que se llama exactamente
+         así —la coincidencia exacta va primero— y el recorrido acababa en
+         Productividad en vez de en el formulario. Un overlay tapa lo de
+         detrás: quien lo usa no puede pulsar el fondo, y la prueba tampoco
+         debe. */
+      const dialogo = [...document.querySelectorAll('[role="dialog"]')].pop();
+      const raiz = dialogo || document;
+      const botones = [...raiz.querySelectorAll('button')];
       /* 🐛 ⚠️ **Y también por `aria-label`** (Entrega 3 · F4). Un botón de solo
          icono —una papelera, una estrella, una flecha— **no tiene `innerText`**,
          así que hasta aquí el recorrido no podía pulsar ninguno: y desde EH F42
@@ -1756,6 +1765,113 @@ ok(/Estudiar Biología/.test(agenda_e3f7), 'la tarea con hora sale en la línea 
 ok(/09:00/.test(agenda_e3f7), 'con su hora');
 ok(/sin hora/i.test(agenda_e3f7) && /Comprar material/.test(agenda_e3f7),
   '🚨 y la que no tiene hora, en su sección: no todo lleva hora (apartado 4)');
+
+/* ===========================================================================
+   ENTREGA 3 · FASE 11 — LOS AVISOS, Y LO QUE NO SE PUEDE PROMETER
+   ===========================================================================
+   🚨 Los apartados 7, 23 y 24: *"no fingir que se programó"*, *"no prometer
+   funcionalidad que la plataforma no soporte"*. En Chromium sin permiso, el
+   interruptor del aviso tiene que nacer APAGADO y la pantalla tiene que decir
+   por qué — eso solo se ve mirándola.
+
+   ⚠️ Sufijo `_e3f11`, y `/i` en los rótulos. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Más');
+await pulsar('Ajustes');
+await esperarTexto(/Notificaciones|Apariencia/i);
+ok(await pulsar('Notificaciones'), '🚨 E3 F11 — Ajustes tiene su apartado de Notificaciones (apartado 3)');
+const ajustes_e3f11 = await esperarTexto(/avisos llegan/i);
+
+ok(/Qué avisos llegan de verdad/i.test(ajustes_e3f11),
+  '🚨 y dice QUÉ LLEGA DE VERDAD, en vez de prometerlo todo (apartados 23 y 24)');
+ok(/todavía no/i.test(ajustes_e3f11),
+  '🚨 con lo que NO funciona dicho con esas palabras: *"no simularla"* (apartado 24)');
+ok(/pantalla de inicio/i.test(ajustes_e3f11),
+  '⚠️ y el caso del iPhone explicado (apartado 24)');
+ok(!/service worker|API|null/i.test(ajustes_e3f11.split('Qué avisos llegan')[1] || ''),
+  '⚠️ sin una palabra técnica: lo lee Josué, no un programador (EH F62)');
+
+/* ===========================================================================
+   ENTREGA 3 · FASE 10 — LA SEMANA, Y UNA TAREA QUE SE REPITE
+   ===========================================================================
+   🚨 El apartado 24: *"completar una instancia no debe marcar automáticamente
+   todas las demás. La regla permanece."* Eso solo se comprueba TOCÁNDOLO: marcar
+   el día que se ve y mirar que la regla siga entera en `productividad.tareas`,
+   con ese día —y solo ese— dentro de `hechas`.
+
+   ⚠️ Sufijo `_e3f10`, y `/i` en los rótulos. */
+const hoyISO_e3f10 = new Date().toLocaleDateString('sv-SE');
+almacen.calendario = { eventos: [] };
+almacen.productividad = {
+  tareas: [{ id: 'rep1', texto: 'Leer un rato', fecha: hoyISO_e3f10, recurrencia: { frecuencia: 'diaria' } }],
+  habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Vida');
+await pulsar('Calendario');
+await esperarTexto(/Mes/);
+
+ok(await pulsar('Semana'), '🚨 E3 F10 — el Calendario tiene la vista de Semana (apartado 1)');
+const semana_e3f10 = await esperarTexto(/Leer un rato|esta semana/i);
+ok(/Leer un rato/.test(semana_e3f10),
+  '🚨 y una tarea DIARIA aparece en el día que se está viendo: la regla se expande (apartado 10)');
+
+// 🚨 Apartado 24 — marcar una aparición no marca la serie.
+ok(await pulsar('Completar Leer un rato'),
+  '⚠️ su casilla se puede pulsar (con su `aria-label`, como con VoiceOver)');
+await page.waitForTimeout(600);
+
+const regla_e3f10 = (almacen.productividad?.tareas || []).find((t) => t.id === 'rep1');
+ok(regla_e3f10 && regla_e3f10.recurrencia?.frecuencia === 'diaria',
+  '🚨 LA REGLA PERMANECE: sigue siendo una tarea diaria (apartado 24)');
+ok(Array.isArray(regla_e3f10?.recurrencia?.hechas) && regla_e3f10.recurrencia.hechas.includes(hoyISO_e3f10),
+  '🚨 y lo que se guarda es EL DÍA dentro de la regla, no una tarea nueva: ni una instancia independiente (apartado 23)');
+ok((almacen.productividad?.tareas || []).length === 1,
+  '🚨 sigue habiendo UNA tarea: completar no materializó ninguna copia (regla 11)');
+
+/* ===========================================================================
+   ENTREGA 3 · FASE 9 — ACCIONES RÁPIDAS: EL ＋ DE HOY
+   ===========================================================================
+   🚨 El apartado 28: *"desde Hoy, ＋ Tarea debe crear una tarea para hoy"*, y el
+   29: aparece a la vez en Hoy, en la Agenda y en el Calendario. Eso solo se
+   comprueba **tocándolo**: escribir en el formulario y mirar que la tarea llegue
+   a `productividad.tareas`, que es donde viven todas.
+
+   ⚠️ Sufijo `_e3f9`, y `/i` en los rótulos (la lección de la F8). */
+almacen.productividad = { tareas: [], habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [] };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+
+ok(await pulsar('Añadir'), '🚨 E3 F9 — Hoy tiene su ＋ (apartados 1 y 2)');
+const menu_e3f9 = await esperarTexto(/Apunte/);
+ok(/Tarea/.test(menu_e3f9) && /Evento/.test(menu_e3f9) && /Recordatorio/.test(menu_e3f9) && /Apunte/.test(menu_e3f9),
+  '⚠️ con las cuatro cosas del apartado 1');
+
+ok(await pulsar('Tarea'), 'se elige Tarea');
+await esperarTexto(/Nueva tarea/i);
+/* 🚨 `TextInput` reparte sus props: si `onChange` recibiera el valor en vez del
+   evento, esto escribiría y el botón seguiría deshabilitado.
+   🐛 Y se escribe con `fill` de Playwright, esperando al campo: el truco del
+   setter nativo daba **"Illegal invocation"** cuando el campo todavía no estaba,
+   porque `.call(undefined, …)` sobre un setter nativo falla así. `fill` espera
+   y dispara los eventos que React entiende. */
+const CAMPO_TAREA_e3f9 = 'input[placeholder="Estudiar Biología"]';
+await page.waitForSelector(CAMPO_TAREA_e3f9, { timeout: 8000 });
+await page.fill(CAMPO_TAREA_e3f9, 'Repasar Historia');
+await page.waitForTimeout(300);
+ok(await pulsar('Añadir'), 'y se guarda');
+await page.waitForTimeout(600);
+
+const tareaNueva_e3f9 = (almacen.productividad?.tareas || []).find((t) => t.texto === 'Repasar Historia');
+ok(!!tareaNueva_e3f9,
+  '🚨 la tarea llega a `productividad.tareas`: es una tarea de siempre, no una lista del ＋ (apartados 18 y 28)');
+ok(tareaNueva_e3f9?.fecha === new Date().toLocaleDateString('sv-SE'),
+  '🚨 y con la fecha de HOY ya puesta: no se vuelve a preguntar (apartado 2)');
+
+// Apartado 19 — el aviso pequeño.
+const trasCrear_e3f9 = await ver();
+ok(/Tarea añadida/i.test(trasCrear_e3f9),
+  '⚠️ con su aviso pequeño, no un modal (apartado 19)');
 
 /* ===========================================================================
    ENTREGA 3 · FASE 8 — CALENDARIO: LA VISTA TEMPORAL

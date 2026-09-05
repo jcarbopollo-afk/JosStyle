@@ -159,7 +159,10 @@ eq(ORDEN_HOY[1].id, 'tareas', 'y después lo que requiere acción');
 eq(ORDEN_HOY[ORDEN_HOY.length - 1].id, 'secundario', 'lo secundario, al final');
 
 const VISTA = sinComentarios(leer('src/views/DashboardView.jsx'));
-ok(/<ResumenDelDia resumen=\{resumenHoy\}/.test(VISTA), 'la pantalla pinta el resumen que le llega derivado');
+/* ⚠️ En varias líneas desde la E3 F9, que le añadió "Ver todas →" (apartado 18):
+   la expresión no puede dar por hecho que las props caben en una sola. */
+ok(/<ResumenDelDia[\s\S]{0,120}resumen=\{resumenHoy\}/.test(VISTA),
+  'la pantalla pinta el resumen que le llega derivado');
 ok(!/const total = .*tareas.*length/.test(VISTA),
   '⚠️ y no cuenta por su cuenta: si dijera un número distinto del de Agenda, uno de los dos mentiría');
 ok(/<ApuntesDeHoy/.test(VISTA), 'y los apuntes de hoy');

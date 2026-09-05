@@ -22,7 +22,7 @@ import {
   contextoDeAdd, horaParaTipo, tipoQuickAdd,
   validarTarea, validarEvento, validarApunte,
   accionesDe, avisoDe, SEGUNDOS_AVISO,
-} from '../lib/accionesRapidas';
+} from '../lib/accionesHoyAgenda';
 import { Card, Field, TextInput, PrimaryButton } from './ui';
 
 /* ── La hoja inferior que comparten todos (apartado 33) ────────────────────
@@ -67,7 +67,7 @@ function Hoja({ titulo, sub, onCerrar, children }) {
 
 /* El aviso de que un formulario no puede guardarse todavía. Apartado 21:
    *"nunca perder información silenciosamente"*, y EH F62: un error dice **qué
-   corregir**, nunca "Error" a secas. El texto lo pone `accionesRapidas.js`. */
+   corregir**, nunca "Error" a secas. El texto lo pone `accionesHoyAgenda.js`. */
 function Motivo({ texto }) {
   if (!texto) return null;
   return (

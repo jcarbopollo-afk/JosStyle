@@ -164,15 +164,65 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 8 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 9 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
-**F7 (Calendario: la agenda de un día, v3.27.0)** y la
-**F8 (Calendario: la vista temporal, v3.28.0)**; la siguiente es la
-**9 — HC F4: acciones rápidas e integración**. El índice, con la línea de cada fase dentro de la
-especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
+**F7 (Calendario: la agenda de un día, v3.27.0)**, la
+**F8 (Calendario: la vista temporal, v3.28.0)** y la
+**F9 (acciones rápidas entre Hoy, Agenda y Calendario, v3.29.0)** y la
+**F10 (planificación avanzada y vista semanal, v3.30.0)** y la
+**F11 (notificaciones y recordatorios reales, v3.31.0)**; la siguiente es la
+**12 — HC F7: integraciones externas de calendario**. El índice, con la línea de cada fase dentro
+de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
-⚠️ **Y lo que dejaron las ocho primeras, que afecta a todas las demás:**
+⚠️ **Y lo que dejaron las once primeras, que afecta a todas las demás:**
+
+- 🚨 **`avisosPlanificacion.js` DECIDE, `notificaciones.js` MANDA** (E3 F11), como `avisosHorario.js`
+  (HT F10) y `avisosEstilo.js` (EH F38). **Nunca un segundo emisor ni un segundo horario de
+  silencio**: el día que Josué cambie uno, el otro seguiría despertándole.
+- 🚨 **LOS AVISOS CON LA APLICACIÓN CERRADA NO EXISTEN, Y SE DICE** (E3 F11, apartados 23 y 24): no
+  hay service worker con `push`. `CAPACIDADES` lo declara y **Ajustes lo enseña** —*"Qué avisos
+  llegan de verdad"*—. Ninguna fase futura puede darlo por hecho sin construir esa pieza.
+- 🚨 **UN AVISO NACE MIRANDO EL PERMISO REAL** (E3 F11, apartado 7): *"si no hay permisos, no fingir
+  que se programó"*. Y **no hay avisos guardados que cancelar**: se calculan en el momento desde el
+  elemento, así que cambiar su hora, borrarlo o desactivarlo cambia el aviso solo (18, 19 y 21).
+- ⚠️ **Nada de avisos atrasados** (E3 F11, apartado 22): hay una ventana corta. *"No mostrar «evento
+  de hace 3 horas»."*
+- 🐛 **`pulsar()` DEL RECORRIDO SOLO PULSA DENTRO DEL DIÁLOGO ABIERTO** (E3 F11). Con un overlay
+  abierto, buscar "Tarea" encontraba **un botón del fondo** llamado exactamente así —la coincidencia
+  exacta va primero— y el recorrido acababa en otra pantalla. Un overlay tapa lo de detrás.
+
+- 🚨 **EL MOTOR DE RECURRENCIAS ES `expandirRecurrentes`** (Calendario Universal F3, confirmado por
+  la E3 F10): expande sin materializar, con intervalo, excepciones, cambios y `hasta`. **Las tareas
+  que se repiten pasan por ÉL**, no por uno nuevo. Nunca un segundo `tocaEnFecha`.
+- 🚨 **UNA TAREA RECURRENTE NO SON TRES TAREAS** (E3 F10, apartados 23 y 24): se guarda **la regla**,
+  y `hechas` es una lista de fechas **dentro de ella**. Completar el jueves marca ese día; la regla
+  permanece. Nunca una tarea por día.
+- ⚠️ **LAS RACHAS SIGUEN SIENDO DE HÁBITOS** (E3 F10, apartado 25): `semana.js` no importa nada de
+  rachas, y hay una prueba que lee sus imports. La agenda **representa**, no cuenta rachas.
+- ⚠️ **La semana empieza el LUNES y se calcula en local** (E3 F10): séptima vez que el UTC habría
+  devuelto la semana equivocada. Y **"Esta semana" es la que CONTIENE hoy**, no Hoy.
+- ⚠️ **Solo este día / Toda la serie NO tiene valor por defecto** (E3 F10, apartados 12 y 13), como
+  `ALCANCES` en HT F3: elegir por él se cargaría todos los lunes del curso sin avisar.
+- 🐛 **Una prueba que busca escrituras mira los IMPORTS, no la palabra** (E3 F10, decimocuarta vez):
+  un catálogo que NOMBRA a `rachasServicio.js` para decir quién manda hacía saltar el barrido.
+
+- 🚨 **ANTES DE CREAR UN FICHERO, MIRAR SI ESE NOMBRE YA ES DE ALGUIEN** (E3 F9). La fase se escribió
+  primero como `accionesRapidas.js`, que **ya era de EH F61** —congelado—, y se llevó **310 líneas
+  suyas**. Lo cantó `git status`, no el build. Es la lección más repetida del proyecto, esta vez
+  sobre un **fichero**: lo nuevo es `accionesHoyAgenda.js`.
+- 🚨 **EL ＋ ES UNO SOLO** (E3 F9, apartados 1 y 30): `src/components/quickAdd.jsx`, y lo usan Hoy,
+  la Agenda y el Calendario. Una pantalla que necesite crear algo **llama ahí**; escribir otro
+  formulario es el duplicado que prohíbe el apartado 30.
+- ⚠️ **El contexto viaja con el ＋** (E3 F9): desde Hoy la fecha es hoy, desde la Agenda el día que
+  se está viendo, desde el Calendario el seleccionado. **Nunca volver a preguntar la fecha.**
+- 🐛 **`'2026-13-45'` ENCAJA CON `/^\d{4}-\d{2}-\d{2}$/`** (E3 F9, cuarta vez de que la forma no
+  basta): guardar esa fecha dejaba la tarea **invisible en las tres pantallas**. `fechaValida` está
+  en `helpers.js`, al lado de `horaValida`.
+- ⚠️ **Deshacer y borrar son los de siempre** (E3 F9): el histórico de diez pasos de `snapshotAndSave`
+  y `eliminarConPapelera`. Ni una segunda pila, ni una segunda puerta.
+- 🐛 **Una prueba que busca USOS quita los comentarios; una que busca ESCRITURAS busca la llamada**
+  (E3 F9, duodécima y decimotercera vez). `YA_RESUELTO` nombra `saveData` para decir quién sincroniza.
 
 - 🚨 **UNA TAREA CON FECHA SALE EN HOY, EN LA AGENDA **Y** EN EL CALENDARIO** (E3 F8, apartado 12).
   En el Calendario **no salía**: enseñaba `calendario.eventos` y los derivados, y las tareas de

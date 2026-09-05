@@ -1,5 +1,187 @@
 # CHANGELOG.md
 
+## v3.31.0 — Entrega 3 · Fase 11 (HC F6): notificaciones y recordatorios reales
+
+*"El usuario debe poder configurar «avísame de esto a las 17:00» y recibir una notificación real
+cuando corresponda."*
+
+### 🚨 El enunciado abre con la regla que gobierna todo
+
+*"NO crear un sistema paralelo de recordatorios. Las notificaciones deben utilizar las tareas,
+eventos y recordatorios existentes."*
+
+Así que aquí **no nace ninguna entidad**. Un recordatorio es un evento del calendario con
+`tipo: 'recordatorio'` (F8); una tarea es la de Productividad. Lo único nuevo son **dos campos** en
+lo que ya existe —`notificar` y `anticipacion`— y **quién decide** cuándo toca avisar.
+
+⚠️ Y `avisosPlanificacion.js` **decide; `notificaciones.js` manda**, como `avisosHorario.js` (HT F10)
+y `avisosEstilo.js` (EH F38). Un segundo emisor sería **un segundo horario de silencio**, y el día
+que Josué cambiara uno el otro seguiría despertándole. Hay una prueba que falla si aparece
+`new Notification` — y otra que comprueba que **alguien llama** a `avisosPendientes`: una función que
+nadie llama no falla nunca.
+
+### 🚨 Y la segunda regla es la honestidad (apartados 7, 23 y 24)
+
+*"No prometer funcionalidad que la plataforma no soporte."* JosStyle **no tiene un service worker con
+`push`**, así que:
+
+- Con la aplicación **abierta**, el aviso sale de verdad.
+- Con la aplicación **cerrada**, no sale nada — y en el iPhone hace falta además tenerla en la
+  pantalla de inicio.
+
+`CAPACIDADES` declara las cinco cosas con `disponible: true/false` y su frase, **y Ajustes las
+enseña**: *"Qué avisos llegan de verdad"*, con lo que falta marcado *"todavía no"*. Fingir que un
+aviso quedó programado sería el control decorativo que prohíbe la regla 8, y el apartado 7 lo dice
+con sus palabras: *"si no hay permisos, no fingir que se programó"* — por eso `notificar` nace
+mirando el permiso **real**.
+
+### Lo demás que trae
+
+- **Las siete anticipaciones** del apartado 8, ni una más, con *"en el momento"* por defecto.
+- **Un interruptor por tipo** (apartado 27) que **apunta a la categoría que ya existe** en Ajustes:
+  ni un segundo juego de interruptores donde apagar lo mismo.
+- 🚨 **Nada de avisos atrasados** (apartado 22): hay una ventana corta, y pasada esa ventana el aviso
+  **no se da**. *"No mostrar «evento de hace 3 horas»."* Es la diferencia entre avisar y dar la lata.
+- **Desactivar un aviso no borra el elemento** (apartado 20), y reactivarlo lo programa otra vez.
+- 🚨 **Y no hay nada que cancelar** (apartados 18, 19 y 21): los avisos se calculan en el momento
+  desde el propio elemento, así que cambiar su hora, borrarlo o desactivarlo cambia el aviso **solo**.
+  Un sistema que los guardara programados tendría que cancelarlos uno a uno, y dejaría alguno vivo.
+
+### Lo que esto deja apuntado
+
+- 🐛 **`pulsar()` del recorrido ahora respeta los diálogos abiertos**, y esto era un fallo de verdad:
+  con el ＋ de Hoy abierto, buscar *"Tarea"* encontraba **un botón del fondo** que se llama
+  exactamente así —la coincidencia exacta va primero— y el recorrido acababa en Productividad en vez
+  de en el formulario. Un overlay tapa lo de detrás: quien lo usa no puede pulsar el fondo, y la
+  prueba tampoco debe.
+- ⏸ **Un hábito no guarda una hora**, así que su aviso dice *"queda pendiente"*, no una hora
+  inventada (apartado 11: *"NO duplicar el sistema de hábitos"*).
+- ⏸ **El Pomodoro no se programa a una hora**, y se declara: lo único posible es avisar al terminar
+  una sesión que está corriendo.
+- ⚠️ **Ni un router paralelo** (apartado 15): JosStyle navega con `setTab` y `navegarDesdeHoy`
+  (EH F28), no con URLs, y el apartado pide adaptarse al que existe.
+
+## v3.30.0 — Entrega 3 · Fase 10 (HC F5): planificación avanzada y vista semanal
+
+*"Permitir que el usuario pueda pasar de Hoy → Día → Semana → Mes manteniendo siempre los mismos
+datos."* La capa nueva contesta una pregunta que ninguna de las otras contestaba: **"¿cómo tengo
+organizada mi semana?"**
+
+### 🚨 El motor de recurrencias ya existía
+
+El apartado 9 pide *"implementar recurrencias básicas"* y el 14 *"no duplicar manualmente toda la
+serie"* — pero `expandirRecurrentes` (Calendario Universal F3) ya hacía las cinco cosas: expandir sin
+materializar (regla 11), un intervalo (*"cada 2 semanas"*), las **excepciones** de los días saltados,
+los **cambios** de un día suelto y el `hasta`. Escribir un segundo motor habría sido exactamente la
+duplicación que el propio enunciado prohíbe.
+
+**Lo que faltaba es que las TAREAS pudieran repetirse** (apartado 10: *"☐ Leer, repetir cada día"*):
+`productividad.tareas` no tenía `recurrencia`. Ahora la tiene, y pasa **por el motor que ya existe**.
+
+### 🚨 Una tarea recurrente no son tres tareas (apartados 23 y 24)
+
+*"No crear tres instancias independientes."* Se guarda **la regla**, y las apariciones se calculan;
+sale en Hoy, en la Agenda y en el Calendario porque las tres preguntan por su día.
+
+Y completar el jueves marca **ese día**, no la serie: `hechas` es una lista de fechas **dentro de la
+regla**, así que *"la regla permanece"* sale solo. El recorrido de Chromium lo comprueba tocándolo —
+pulsa la casilla y mira que siga habiendo **una** tarea, diaria, con hoy dentro de `hechas`.
+
+⚠️ **Y las rachas siguen siendo de Hábitos** (apartado 25): `semana.js` no importa nada de rachas, y
+hay una prueba que lo lee.
+
+### La semana
+
+- **La semana empieza el lunes**, como las columnas `L M X J V S D` del apartado 2 y como la hucha
+  (E3 F4). Y se calcula en local: séptima vez que el UTC habría devuelto la semana equivocada.
+- **La cabecera dice los dos meses cuando la semana los cruza** — decir solo uno sería mentir la
+  mitad de las veces.
+- ⚠️ **En el móvil no caben siete columnas** (apartado 3): arriba la tira de siete días con su
+  carga, debajo la planificación del día seleccionado. Es lo que el apartado describe.
+- **«Esta semana»** (apartado 6) devuelve a la semana que **contiene** hoy, no a Hoy.
+- **Un día sin nada es «Libre»** (apartado 16), no siete tarjetas vacías.
+- **El orden dentro del día** (apartado 17) es una lista declarada, y coincide con la Agenda a
+  propósito: dos órdenes distintos para lo mismo es cómo se pierde la consistencia que pide.
+- **Solo este día / Toda la serie** (apartados 12 y 13), ⚠️ **sin valor por defecto**: elegir por él
+  se cargaría todos los lunes del curso sin avisar (la lección de HT F3).
+
+### Lo que esto deja apuntado
+
+- ⚠️ **Lo que ya estaba se declara, no se rehace**: `YA_RESUELTO_SEMANA` recoge ocho apartados con la
+  función real que los resuelve — el motor, las excepciones, el `QuickAdd` de la F9 (*"no crear otro
+  Quick Add específico para Semana"*), los filtros, la búsqueda y las rachas.
+- ⏸ **El apartado 30 pide dejar los campos preparados, no las notificaciones**: `fecha`, `hora` y
+  `estado` existen; el **recordatorio de una tarea no**, y se declara con su motivo — añadirle un
+  aviso propio sería un segundo emisor (HT F10, EH F38).
+- ⚠️ **La carga del día es la de la E3 F8**: *"no crear una puntuación artificial"*, y una segunda
+  escala diría un número distinto del de la vista de mes.
+- 🐛 **Una prueba que busca escrituras mira los IMPORTS** (decimocuarta vez de esta familia):
+  `YA_RESUELTO_SEMANA` **nombra** `rachasServicio.js` para decir quién manda, y buscar la palabra
+  saltaba con la línea que lo promete. Sin importar nada de rachas es imposible llamarlas.
+- 🐛 **Y el escenario de una prueba tiene que encajar con lo que afirma**: con una tarea **diaria** no
+  hay ni un día libre en toda la semana, y eso está bien.
+
+## v3.29.0 — Entrega 3 · Fase 9 (HC F4): acciones rápidas entre Hoy, Agenda y Calendario
+
+*"La prioridad ahora es conseguir que el usuario pueda pasar de una pantalla a otra y modificar su
+planificación sin sentir que está utilizando sistemas diferentes."*
+
+Las tres pantallas ya existían —🏠 Hoy (F6), 📋 Agenda (F7) y 🗓️ Calendario (F8)— y **ya compartían
+la fuente de verdad**: completar desde cualquiera de ellas llama a `toggleTarea`, y crear una tarea
+a `addTarea`. Los apartados 10, 15, 17, 18 y 29 salían de ahí sin código nuevo, y se declaran en
+`YA_RESUELTO` **con la función real** que los resuelve.
+
+### 🚨 Un solo ＋ (apartados 1 y 30)
+
+*"Crear un componente reutilizable… no duplicar formularios."*
+
+La F8 dejó el selector y la tarea rápida **dentro de `CalendarView`**, así que Hoy y la Agenda no los
+tenían. Ahora viven una sola vez en `src/components/quickAdd.jsx` —`QuickAdd`, `FormularioTarea`,
+`FormularioEvento`, `FormularioApunte`, `MenuElemento`, `CambiarFecha`, `CambiarHora`,
+`AvisoAccion`— y las tres pantallas usan los mismos.
+
+**Y el contexto viaja con el ＋** (apartados 2, 3, 4 y 26): desde Hoy la fecha es hoy y no se vuelve
+a preguntar; desde la Agenda es **el día que se está viendo**, con su hora si la hay; desde el
+Calendario, el día seleccionado. ⏸ El **apunte** solo se ofrece cuando el día es hoy: un apunte no
+se programa (F6).
+
+### Lo demás que trae
+
+- **Las acciones contextuales `•••`** (apartado 8): *"mostrar solamente las acciones relevantes"*.
+  Una tarea tiene cinco; un evento **no tiene «Completar»**, porque un evento ocurre (F7, apartado
+  6); un apunte solo se elimina; y un elemento derivado de otro módulo no ofrece ninguna — se abre
+  su módulo.
+- **Cambiar fecha y cambiar hora** (11 y 12), que solo existían para eventos. ⚠️ *"Si el nuevo día
+  no es hoy, desaparece de Hoy"* **sale gratis**: se cambia el campo de la tarea original y las tres
+  pantallas la leen de ahí. Y **quitar la hora** es una operación válida: la tarea pasa a «Sin hora».
+- **El aviso pequeño con Deshacer** (14 y 19): *"no usar modales grandes para acciones normales"*.
+  ⚠️ Deshacer **solo se ofrece donde de verdad se puede**, y quien deshace es el histórico de diez
+  pasos que ya existía: ni una segunda pila, ni una segunda puerta de borrado.
+- **Las validaciones** (32): título obligatorio, y la hora de fin nunca antes que la de inicio.
+- **«Ver todas →»** (apartado 18), que abre la agenda del día — *"no crear una nueva pantalla"*.
+
+### 🐛 Y esta fase empezó rompiendo algo
+
+El archivo se llamó primero `accionesRapidas.js`, y **ese nombre ya era de EH F61** —un módulo
+congelado—. Escribirlo encima se llevó **310 líneas suyas**, y lo cantó `git status`, no el build.
+Es la lección más repetida del proyecto, esta vez sobre un **fichero** y no sobre una función: se
+restauró y lo nuevo se llama `accionesHoyAgenda.js`, con una prueba que comprueba que el de la F61
+sigue entero.
+
+### Lo que esto deja apuntado
+
+- 🐛 **`'2026-13-45'` encaja con `/^\d{4}-\d{2}-\d{2}$/`, y la FORMA no basta.** Cuarta vez de esta
+  lección, tras `'25:99'`. Guardar esa fecha dejaba la tarea **invisible en las tres pantallas**,
+  porque ningún día coincide con ella. `fechaValida` sube a `helpers.js` al lado de `horaValida`.
+- 🐛 **Una prueba que busca USOS tiene que quitar los comentarios** (duodécima vez): la cabecera de
+  `quickAdd.jsx` explica el fallo de `onChange={setTexto}` **escribiéndolo**, y el barrido saltaba
+  con la frase que lo previene.
+- 🐛 **Y una que busca escrituras busca la LLAMADA, no la palabra** (decimotercera): `YA_RESUELTO`
+  nombra `saveData` y Supabase para decir **quién** sincroniza. Eso es una declaración.
+- ⚠️ **El apartado 23 sigue sin poder cumplirse del todo, y está dicho**: el último en escribir gana
+  (`app_data` no guarda una versión). Esta fase no lo empeora —cada acción toca un elemento, nunca
+  reescribe el módulo entero— pero tampoco lo resuelve.
+
 ## v3.28.0 — Entrega 3 · Fase 8 (HC F3): Calendario, la vista temporal
 
 *"El sistema tiene tres piezas: 🏠 HOY, 📋 AGENDA y 🗓️ CALENDARIO. Las tres deben utilizar las

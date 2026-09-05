@@ -29,9 +29,9 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 6 ✅ | **HC** Hoy y Calendario | F1 — Hoy: centro del día — **hecha (v3.20.0)** | 1227 |
 | 7 ✅ | HC | F2 — Calendario: la agenda de un día — **hecha (v3.27.0)** | 1824 |
 | 8 ✅ | HC | F3 — Calendario: la vista temporal — **hecha (v3.28.0)** | 2444 |
-| 9 | HC | F4 — Acciones rápidas e integración | 3035 |
-| 10 | HC | F5 — Planificación avanzada y vista semanal | 3874 |
-| 11 | HC | F6 — Notificaciones y recordatorios reales | 4425 |
+| 9 ✅ | HC | F4 — Acciones rápidas e integración — **hecha (v3.29.0)** | 3035 |
+| 10 ✅ | HC | F5 — Planificación avanzada y vista semanal — **hecha (v3.30.0)** | 3874 |
+| 11 ✅ | HC | F6 — Notificaciones y recordatorios reales — **hecha (v3.31.0)** | 4425 |
 | 12 | HC | F7 — Integraciones externas de calendario | 4995 |
 | 13 | HC | F8 — Estadísticas de planificación | 5490 |
 | 14 | HC | F9 — Pulido visual, UX y animaciones | 6315 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 8 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0). La siguiente es la **9 — HC F4: acciones rápidas e integración**, línea 3035.
+**Por dónde va:** 11 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0). La siguiente es la **12 — HC F7: integraciones externas de calendario**, línea 4995.
 
 ## Lo que dejó la Fase 1, y que afecta a todas las demás
 
@@ -201,6 +201,74 @@ solo vale como corrección o ajuste — nunca una función nueva.
   tres tipos de evento se comía el punto verde y las tareas volvían a ser invisibles.
 - ⚠️ **La carga del día lleva icono Y palabra** (apartado 23), nunca solo un color (EH F42). Y son
   **tres estados y un umbral**, no un sistema de puntuación.
+
+## Y lo que dejó la Fase 9 (HC F4)
+
+- 🚨 **ANTES DE CREAR UN FICHERO, MIRAR SI ESE NOMBRE YA ES DE ALGUIEN.** Esta fase se escribió
+  primero como `accionesRapidas.js`, que **ya era de EH F61** —congelado—, y se llevó **310 líneas
+  suyas**. Lo cantó `git status`, no el build. Lo nuevo es `accionesHoyAgenda.js`, y hay una prueba
+  que comprueba que el de la F61 sigue entero.
+- 🚨 **EL ＋ ES UNO SOLO** (apartados 1 y 30): `src/components/quickAdd.jsx`, usado por Hoy, la
+  Agenda y el Calendario. Vivía dentro de `CalendarView` desde la F8, así que las otras dos no lo
+  tenían. Una pantalla que necesite crear algo **llama ahí**.
+- ⚠️ **El contexto viaja con el ＋** (2, 3, 4 y 26): desde Hoy la fecha es hoy, desde la Agenda el
+  día que se está viendo —con su hora—, desde el Calendario el seleccionado. ⏸ Y el **apunte** solo
+  se ofrece cuando el día es hoy: un apunte no se programa (F6).
+- ⚠️ **Un evento no tiene "Completar"** (apartado 8): un evento ocurre (F7, apartado 6). Qué acciones
+  tiene cada tipo lo decide `accionesDe`, no la pantalla.
+- ⚠️ **Cambiar la fecha de una tarea la quita de Hoy sola** (11): se cambia la tarea original y las
+  tres pantallas la leen de ahí. Y **quitar la hora** es válido: pasa a "Sin hora".
+- ⚠️ **Deshacer y borrar son los de siempre**: el histórico de diez pasos de `snapshotAndSave` y
+  `eliminarConPapelera` (ME F3). Ni una segunda pila, ni una segunda puerta.
+- 🐛 **`'2026-13-45'` encaja con `/^\d{4}-\d{2}-\d{2}$/`**: cuarta vez de que la forma no basta.
+  Guardarla dejaba la tarea **invisible en las tres pantallas**. `fechaValida` está en `helpers.js`.
+- 🐛 **Una prueba que busca USOS quita los comentarios** (duodécima vez) **y una que busca ESCRITURAS
+  busca la llamada, no la palabra** (decimotercera): `YA_RESUELTO` nombra `saveData` a propósito.
+- ⚠️ **Lo que ya estaba se declara, no se rehace**: `YA_RESUELTO` recoge los apartados 10, 13, 14, 15,
+  17, 22 y 24 con la función real que los resuelve, como `SISTEMAS_EH` en EH F39.
+
+## Y lo que dejó la Fase 10 (HC F5)
+
+- 🚨 **EL MOTOR DE RECURRENCIAS YA EXISTÍA.** `expandirRecurrentes` (Calendario Universal F3) hace
+  las cinco cosas que pide el apartado 9: expande sin materializar (regla 11), con intervalo,
+  excepciones, cambios y `hasta`. **Las tareas que se repiten pasan por él.** Un segundo motor habría
+  sido la duplicación que prohíbe el apartado 14.
+- 🚨 **UNA TAREA RECURRENTE NO SON TRES TAREAS** (apartados 23 y 24): se guarda **la regla**, y
+  `hechas` es una lista de fechas **dentro de ella**. Sale en Hoy, en la Agenda y en el Calendario
+  porque las tres preguntan por su día; completar el jueves marca ese día y la regla permanece.
+- ⚠️ **Las rachas siguen siendo de Hábitos** (apartado 25): `semana.js` no importa nada de rachas.
+  La agenda **representa** la actividad, no la cuenta.
+- ⚠️ **La semana empieza el lunes y se calcula en local** (séptima vez del UTC). Y la cabecera **dice
+  los dos meses** cuando la semana los cruza.
+- ⚠️ **En el móvil no caben siete columnas** (apartado 3): tira de días arriba, el día seleccionado
+  debajo. Es lo que el apartado describe, no una concesión.
+- ⚠️ **"Esta semana" devuelve a la semana que CONTIENE hoy**, no a Hoy (apartado 6).
+- ⚠️ **Solo este día / Toda la serie no tiene valor por defecto** (12 y 13), como `ALCANCES` en HT F3.
+- ⚠️ **Un día sin nada es "Libre"** (16), y **el orden dentro del día** (17) coincide con la Agenda a
+  propósito: dos órdenes distintos es cómo se pierde la consistencia que pide el apartado.
+- ⏸ **El apartado 30 pide campos preparados, no notificaciones**: `fecha`, `hora` y `estado` existen;
+  el **recordatorio de una tarea no**, y se declara — sería un segundo emisor (HT F10, EH F38).
+- 🐛 **Una prueba que busca escrituras mira los IMPORTS, no la palabra** (decimocuarta vez), y **un
+  escenario tiene que encajar con lo que afirma**: con una tarea diaria no hay ni un día libre.
+
+## Y lo que dejó la Fase 11 (HC F6)
+
+- 🚨 **NO NACE NINGUNA ENTIDAD.** El enunciado abre con *"NO crear un sistema paralelo de
+  recordatorios"*: un recordatorio es un evento con `tipo: 'recordatorio'` (F8) y una tarea es la de
+  Productividad. Lo único nuevo son **dos campos**, `notificar` y `anticipacion`.
+- 🚨 **`avisosPlanificacion.js` DECIDE; `notificaciones.js` MANDA**, como `avisosHorario.js` y
+  `avisosEstilo.js`. Nunca un segundo emisor ni un segundo horario de silencio.
+- 🚨 **LOS AVISOS CON LA APLICACIÓN CERRADA NO EXISTEN** (23 y 24): no hay service worker con `push`.
+  `CAPACIDADES` lo declara y **Ajustes lo enseña**. *"No prometer funcionalidad que la plataforma no
+  soporte."*
+- 🚨 **Un aviso nace mirando el permiso REAL** (7), y **no hay nada que cancelar** (18, 19 y 21): se
+  calculan en el momento desde el elemento.
+- ⚠️ **Nada de avisos atrasados** (22): una ventana corta, y pasada, nada.
+- ⚠️ **Un interruptor por tipo, apuntando a las categorías que YA existen** (27): un segundo juego
+  donde apagar lo mismo acaba en un interruptor apagado y avisos que siguen llegando.
+- ⏸ **Un hábito no guarda hora** (11) y **el Pomodoro no se programa** (12): declarado, no fingido.
+- 🐛 **`pulsar()` del recorrido solo pulsa dentro del diálogo abierto.** Con el ＋ abierto, "Tarea"
+  encontraba un botón del fondo llamado exactamente así y el recorrido acababa en otra pantalla.
 
 ## Dos cosas del documento que conviene saber
 

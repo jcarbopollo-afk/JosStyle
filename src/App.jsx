@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt, Flame, CalendarClock, UserRound } from 'lucide-react';
 import { normalizarEconomiaHucha } from './lib/hucha';
 import { anadirApunte, resumenDelDia, progresoDelDia, apuntesDe } from './lib/centroDelDia';
+// Entrega 3 · F8 y F9 — las fábricas de las entidades que crea el ＋ global.
+import { nuevaTareaDeCalendario } from './lib/calendarioMes';
+import { eventoDesdeQuickAdd } from './lib/accionesHoyAgenda';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
 import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl , vigilarLaConexion } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
@@ -2121,6 +2124,12 @@ export default function App() {
             progresoHoy={progresoDelDia(productividad)}
             apuntesHoy={apuntesDe(productividad)}
             onAddApunte={addApunteDelDia} onDeleteApunte={deleteApunteDelDia}
+            /* Entrega 3 · F9 (HC F4) — el ＋ de Hoy escribe en las entidades de
+               siempre (apartados 17, 18 y 28): `addTarea` y `addEvento`. Por eso
+               lo creado aparece a la vez en Hoy, en la Agenda y en el Calendario
+               sin nada que sincronizar (apartado 29). */
+            onAddTarea={(t) => addTarea(nuevaTareaDeCalendario(t.texto, t.fecha, t.hora))}
+            onAddEvento={(ev) => addEvento(eventoDesdeQuickAdd(ev))}
             // BI Fase 1 — el desplegable de situación de "Hoy" cambia el modo desde ahí mismo.
             // Es el MISMO interruptor que Personalización, no un segundo sistema (decisión D2-07).
             modo={personalizacion.modo} onSetModo={setModoApp}
@@ -2396,6 +2405,15 @@ export default function App() {
                PRODUCTIVIDAD (apartados 18, 30 y 31): la misma `addTarea` de siempre, así
                que aparece a la vez en el Calendario, en la Agenda y en Hoy. */
             onAddTarea={addTarea}
+            /* E3 F9 (HC F4) — cambiar fecha/hora (11 y 12), eliminar (13) y
+               deshacer (14). ⚠️ `eliminarConPapelera` es la ÚNICA puerta de
+               borrado (ME F3) y `undo` el histórico de diez pasos que ya
+               existía: ni una segunda pila, ni un segundo borrado. */
+            onUpdateTarea={(t) => snapshotAndSave({
+              productividad: { ...productividad, tareas: productividad.tareas.map((x) => (x.id === t.id ? t : x)) },
+            })}
+            onDeleteTarea={deleteTarea}
+            onDeshacer={undo}
             foco={focoPara('calendario')} onFocoConsumido={consumirFoco}
           />
         );
@@ -2423,6 +2441,12 @@ export default function App() {
             biblioteca={biblioteca} archivos={bibliotecaArchivos}
             onAddArchivo={addArchivoBiblioteca} onDeleteArchivo={deleteArchivoBiblioteca}
             onAddApunte={addApunteDelDia} onDeleteApunte={deleteApunteDelDia}
+            /* Entrega 3 · F9 (HC F4) — el ＋ de Hoy escribe en las entidades de
+               siempre (apartados 17, 18 y 28): `addTarea` y `addEvento`. Por eso
+               lo creado aparece a la vez en Hoy, en la Agenda y en el Calendario
+               sin nada que sincronizar (apartado 29). */
+            onAddTarea={(t) => addTarea(nuevaTareaDeCalendario(t.texto, t.fecha, t.hora))}
+            onAddEvento={(ev) => addEvento(eventoDesdeQuickAdd(ev))}
             onAddEnlace={addEnlace} onDeleteEnlace={deleteEnlace}
             accent={accent}
           />

@@ -861,6 +861,27 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F11 — los avisos de eventos y tareas, y lo que la plataforma no puede.
+if node --import ./scripts/resolver-vite.mjs scripts/test-avisos-planificacion.mjs >/tmp/jc_avp.log 2>&1; then
+  ok "Notificaciones y recordatorios (E3 F11) — $(grep -c '✓' /tmp/jc_avp.log) comprobaciones"
+else
+  fallo "Fallan los avisos de planificación (E3 F11)"; grep '✗' /tmp/jc_avp.log
+fi
+
+# Entrega 3 · F10 — la semana y las tareas que se repiten.
+if node --import ./scripts/resolver-vite.mjs scripts/test-semana.mjs >/tmp/jc_sem.log 2>&1; then
+  ok "Planificación y vista semanal (E3 F10) — $(grep -c '✓' /tmp/jc_sem.log) comprobaciones"
+else
+  fallo "Falla la vista semanal (E3 F10)"; grep '✗' /tmp/jc_sem.log
+fi
+
+# Entrega 3 · F9 — el ＋ compartido por Hoy, la Agenda y el Calendario.
+if node --import ./scripts/resolver-vite.mjs scripts/test-acciones-hoy-agenda.mjs >/tmp/jc_aha.log 2>&1; then
+  ok "Acciones rápidas Hoy/Agenda/Calendario (E3 F9) — $(grep -c '✓' /tmp/jc_aha.log) comprobaciones"
+else
+  fallo "Fallan las acciones rápidas (E3 F9)"; grep '✗' /tmp/jc_aha.log
+fi
+
 # Entrega 3 · F8 — el Calendario: las tareas con fecha, el resumen y crear desde ahí.
 if node --import ./scripts/resolver-vite.mjs scripts/test-calendario-mes.mjs >/tmp/jc_cmes.log 2>&1; then
   ok "Calendario, vista temporal (E3 F8) — $(grep -c '✓' /tmp/jc_cmes.log) comprobaciones"

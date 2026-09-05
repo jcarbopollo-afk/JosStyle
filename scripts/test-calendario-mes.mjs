@@ -198,7 +198,10 @@ ok(/indicadoresDelDia\(/.test(VISTA), 'los puntos de la celda incluyen el de tar
 ok(/marcaDeHoy\(/.test(VISTA), 'y hoy se marca con `marcaDeHoy`');
 ok(/aria-current=\{marca\.esHoy \? 'date' : undefined\}/.test(VISTA),
   '⚠️ con `aria-current` para quien no ve el borde (apartado 37)');
-ok(/<QueCreamos/.test(VISTA) && /<TareaRapida/.test(VISTA),
+/* ⚠️ Desde la E3 F9 estos dos componentes son COMPARTIDOS (`quickAdd.jsx`):
+   vivían aquí y Hoy no los tenía, que es el duplicado que prohíbe su apartado
+   30. Siguen haciendo lo mismo, con otro nombre y en otro archivo. */
+ok(/<QuickAdd/.test(VISTA) && /<FormularioTarea/.test(VISTA),
   '⚠️ el ＋ pregunta qué se crea, y la tarea rápida existe (apartados 16 y 18)');
 ok(/VACIO_MES\.titulo/.test(VISTA), 'el mes vacío usa los textos del apartado 38');
 ok(/accesosDelDia\(/.test(VISTA), 'y los accesos a Hoy y a la Agenda salen del catálogo');
@@ -206,9 +209,11 @@ ok(/accesosDelDia\(/.test(VISTA), 'y los accesos a Hoy y a la Agenda salen del c
 const cabecera = VISTA.slice(VISTA.indexOf('tituloMes(cursor.anio'), VISTA.indexOf('tituloMes(cursor.anio') + 600);
 ok(!/cursor\.mes === Number\(hoy/.test(cabecera),
   '🚨 el botón "Hoy" ya no depende de estar fuera del mes actual: "debe estar siempre accesible" (apartado 10)');
-// 🚨 Los dos overlays nuevos van por createPortal (regla 3).
-ok((VISTA.match(/createPortal\(/g) || []).length >= 5,
-  '🚨 y los overlays nuevos van con `createPortal`, o se anclarían al contenedor de `.module-enter` (regla 3)');
+/* 🚨 Todo overlay va por createPortal (regla 3), y desde la E3 F9 los del ＋
+   viven en `quickAdd.jsx`: se miran los dos archivos, que es donde están. */
+const QUICK_MES = leer('src/components/quickAdd.jsx');
+ok((VISTA.match(/createPortal\(/g) || []).length >= 3 && (QUICK_MES.match(/createPortal\(/g) || []).length >= 2,
+  '🚨 y los overlays van con `createPortal`, o se anclarían al contenedor de `.module-enter` (regla 3)');
 // 🚨 `TextInput` reparte sus props: `onChange` recibe el EVENTO.
 ok(!/onChange=\{set[A-Z]\w*\}/.test(VISTA),
   '🚨 ningún `onChange={setX}`: `TextInput` pasa el EVENTO, no el valor (la lección de EH F36/F37)');

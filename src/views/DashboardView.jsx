@@ -20,6 +20,12 @@ import { Card, AIPanel, ScoreGauge, DashboardModuleCard, MiniAccessCard, QuickAc
 // notificación real del navegador. `notificarSiCorresponde` ya comprueba todo lo demás
 // (activación global, categoría, horario de descanso, no repetir el mismo aviso el mismo día).
 import { notificarSiCorresponde } from '../lib/notificaciones';
+/* Entrega 3 · F11 (HC F6) — quién decide qué toca avisar. ⚠️ Mandar sigue siendo
+   de `notificarSiCorresponde`: él comprueba el permiso, el interruptor global,
+   la categoría y el horario de silencio de la Fase A4 (HT F10, EH F38). */
+import { avisosPendientes } from '../lib/avisosPlanificacion';
+// Entrega 3 · F9 (HC F4) — el ＋ que comparten Hoy, la Agenda y el Calendario.
+import { QuickAdd, FormularioTarea, FormularioEvento, FormularioApunte, BotonAnadir, AvisoAccion } from '../components/quickAdd';
 
 // Fase 12 — Relación: recordatorio en pantalla principal de la próxima fecha importante.
 // Se muestra directo, sin pedir el PIN otra vez — es solo la etiqueta y la cuenta atrás,
@@ -38,7 +44,7 @@ import { notificarSiCorresponde } from '../lib/notificaciones';
 
    ⚠️ **Y un día sin nada no se anuncia con tres ceros** (`linea === null`): el
    bloque no se pinta. Un "0 tareas · 0 eventos" todos los domingos es ruido. */
-function ResumenDelDia({ resumen, progreso, accent }) {
+function ResumenDelDia({ resumen, progreso, accent, onVerTodas }) {
   if (!resumen || resumen.vacio) return null;
   return (
     <Card style={{ padding: '0.85rem 1.1rem' }}>
@@ -61,6 +67,14 @@ function ResumenDelDia({ resumen, progreso, accent }) {
           </div>
         )}
       </div>
+      {/* E3 F9, apartado 18 — *"Ver todas → abrir Agenda filtrada por tareas del
+          día. No crear una nueva pantalla."* Lleva a la agenda del día, que ya
+          existe desde la E3 F7. */}
+      {onVerTodas && (
+        <button onClick={onVerTodas} className="text-xs font-semibold mt-2 toque-44" style={{ color: accent }}>
+          Ver todas →
+        </button>
+      )}
     </Card>
   );
 }
@@ -474,8 +488,37 @@ export default function DashboardView({
   // Entrega 3 · F6 (HC F1) — el resumen y el progreso vienen DERIVADOS de App.jsx;
   // los apuntes son lo único que se guarda, y también llegan calculados.
   resumenHoy, progresoHoy, apuntesHoy, onAddApunte, onDeleteApunte,
+  /* Entrega 3 · F9 (HC F4) — el ＋ global. Desde Hoy la fecha es HOY y no se
+     vuelve a preguntar (apartado 2), y lo que se crea son entidades de siempre:
+     `addTarea` y `addEvento`, no una lista del Dashboard (apartados 17 y 18). */
+  onAddTarea, onAddEvento,
   accent,
 }) {
+  /* E3 F9 — el ＋ de Hoy. `null` = cerrado; si no, el id del tipo que se está
+     creando. ⚠️ Desde Hoy la fecha es HOY: el apartado 2 dice *"no obligar a
+     seleccionar nuevamente la fecha"*. */
+  /* Entrega 3 · F11 (HC F6) — el reloj de los avisos. Se mira cada minuto porque
+     un aviso de las 16:45 no puede esperar a que Josué toque algo.
+     🚨 Y `avisosPendientes` NO manda nada: devuelve qué toca, y `notificarSiCorresponde`
+     decide si se puede (apartados 9, 10, 13 y 22). */
+  const [minutoAvisos, setMinutoAvisos] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setMinutoAvisos((m) => m + 1), 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    const pendientes = avisosPendientes({ calendario, productividad });
+    pendientes.forEach((av) => {
+      notificarSiCorresponde(notificaciones, av.categoria, av.id, av.titulo, av.cuerpo);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minutoAvisos, calendario, productividad, notificaciones]);
+
+  const [creandoHoy, setCreandoHoy] = useState(false);
+  const [formHoy, setFormHoy] = useState(null); // null | 'tarea' | 'evento' | 'recordatorio' | 'apunte'
+  const [avisoHoy, setAvisoHoy] = useState(null);
+
   const hora = new Date().getHours();
   const saludo = hora < 6 ? 'Buenas noches' : hora < 12 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
   const fechaHoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -585,7 +628,18 @@ export default function DashboardView({
       {/* Entrega 3 · F6 (HC F1, apartados 2 y 20) — el resumen del día y el progreso.
           Los dos números salen de las entidades de siempre, así que marcar una tarea
           en Agenda los mueve aquí solos: no hay copia que sincronizar (apartado 25). */}
-      <ResumenDelDia resumen={resumenHoy} progreso={progresoHoy} accent={accent} />
+      <ResumenDelDia
+        resumen={resumenHoy} progreso={progresoHoy} accent={accent}
+        onVerTodas={onNavegar ? () => onNavegar('calendario', { vista: 'dia' }) : null}
+      />
+
+      {/* Entrega 3 · F9 (HC F4, apartados 1, 2 y 28) — el ＋ global, aquí con la
+          fecha de hoy ya puesta. Lo que crea son entidades de siempre, así que
+          aparece a la vez en Hoy, en la Agenda y en el Calendario (apartado 29):
+          no hay nada que sincronizar. */}
+      <div className="flex justify-end">
+        <BotonAnadir accent={accent} onClick={() => setCreandoHoy(true)} />
+      </div>
 
       <IndicadorContexto modo={modo} onSetModo={onSetModo} accent={accent} />
 
@@ -773,6 +827,48 @@ export default function DashboardView({
         accent={accent}
         buildPrompt={() => `Datos de hoy de Josué — sueño: ${ultimoSueno ? `${formatHoras(calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar))}h, calidad ${ultimoSueno.calidad}/5` : 'sin registrar'}; habilidades de calistenia con progreso: ${habilidadesActivas}; partidos de fútbol registrados: ${futbol.length}; movimientos económicos registrados: ${economia.movimientos.length}. Dame un consejo breve y accionable para hoy.`}
       />
+      {creandoHoy && (
+        <QuickAdd
+          pantalla="hoy"
+          fecha={todayISO()}
+          hoy={todayISO()}
+          titulo="Hoy"
+          onElegir={(tipoId) => { setCreandoHoy(false); setFormHoy(tipoId); }}
+          onCerrar={() => setCreandoHoy(false)}
+        />
+      )}
+
+      {formHoy === 'tarea' && (
+        <FormularioTarea
+          fecha={todayISO()} titulo="Hoy" accent={accent}
+          onGuardar={(t) => { onAddTarea && onAddTarea(t); setFormHoy(null); setAvisoHoy('tarea_creada'); }}
+          onCerrar={() => setFormHoy(null)}
+        />
+      )}
+
+      {(formHoy === 'evento' || formHoy === 'recordatorio') && (
+        <FormularioEvento
+          fecha={todayISO()} titulo="Hoy" tipo={formHoy === 'recordatorio' ? 'recordatorio' : 'personal'} accent={accent}
+          onGuardar={(ev) => {
+            onAddEvento && onAddEvento(ev);
+            setFormHoy(null);
+            setAvisoHoy(formHoy === 'recordatorio' ? 'recordatorio_creado' : 'evento_creado');
+          }}
+          onCerrar={() => setFormHoy(null)}
+        />
+      )}
+
+      {formHoy === 'apunte' && (
+        <FormularioApunte
+          titulo="Hoy" accent={accent}
+          onGuardar={(texto) => { onAddApunte && onAddApunte(texto); setFormHoy(null); setAvisoHoy('apunte_creado'); }}
+          onCerrar={() => setFormHoy(null)}
+        />
+      )}
+
+      {/* Apartado 19 — *"mostrar feedback pequeño… no usar modales grandes"*. */}
+      {avisoHoy && <AvisoAccion accion={avisoHoy} accent={accent} onCerrar={() => setAvisoHoy(null)} />}
+
     </div>
   );
 }

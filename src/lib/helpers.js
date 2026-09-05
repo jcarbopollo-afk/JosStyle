@@ -126,3 +126,18 @@ export function horaValida(h) {
   const [hh, mm] = h.split(':').map(Number);
   return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
 }
+
+/* 🐛 **Y lo mismo con las fechas, que es la cuarta vez de esta lección**:
+   `'2026-13-45'` encaja con `/^\d{4}-\d{2}-\d{2}$/` y no es un día. Lo encontró
+   una prueba en la E3 F9 al mover una tarea: la guardaba con esa fecha y la
+   tarea desaparecía de todas las pantallas, porque ningún día coincide con ella.
+
+   Se comprueba **reconstruyendo la fecha**: si el mes o el día se desbordan,
+   `Date` los normaliza a otro día y deja de coincidir con lo que se pidió. */
+export function fechaValida(f) {
+  if (typeof f !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(f)) return false;
+  const [a, m, d] = f.split('-').map(Number);
+  if (m < 1 || m > 12 || d < 1 || d > 31) return false;
+  const fecha = new Date(a, m - 1, d);
+  return fecha.getFullYear() === a && fecha.getMonth() === m - 1 && fecha.getDate() === d;
+}
