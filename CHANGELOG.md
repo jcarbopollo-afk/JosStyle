@@ -3,16 +3,16 @@
 ## v3.35.0 — Los objetivos sí tenían tamaño
 
 ### Qué se ha conectado
-, que estaba declarado como *"no hay objetivos mayores: uno se cumple o no,
+`MAJOR_GOAL_COMPLETED`, que estaba declarado como *"no hay objetivos mayores: uno se cumple o no,
 sin tamaño"*. **Era falso, y bastaba mirar el modelo.**
 
- va de **30 días a 10 años**. Cumplir un objetivo a diez años vista no es lo mismo
+`PLAZOS_OBJETIVO` va de **30 días a 10 años**. Cumplir un objetivo a diez años vista no es lo mismo
 que cumplir uno a treinta días, y la frontera no se inventa aquí: son los dos plazos que la propia
 lista pone por encima del año.
 
 ### El recuento honesto de archivos
 De los 46 que produjo Josué, **45 los alcanza un camino vivo**. El único que ningún evento emitido
-puede reproducir hoy es ****, porque la aplicación no tiene niveles.
+puede reproducir hoy es **`level_up.mp3`**, porque la aplicación no tiene niveles.
 
 No es un archivo mal hecho ni sobrante del catálogo: está en la biblioteca porque la especificación
 lo pide, y sonará el día que existan los niveles. Pero decir que "todo funciona" sin nombrarlo sería
@@ -20,7 +20,7 @@ mentir por omisión.
 
 ### 🐛 Y un detalle del detector de emisores
 La primera versión escribía el evento dentro de un ternario, y la prueba —que busca el nombre
-literal— lo dio por no emitido. Se corrige escribiendo los dos  enteros.
+literal— lo dio por no emitido. Se corrige escribiendo los dos `emitir` enteros.
 
 ⚠️ No es un apaño para contentar al test: **un evento escondido en una expresión también es más
 difícil de encontrar para una persona**. Que el código sea legible para esa prueba es parte de que
