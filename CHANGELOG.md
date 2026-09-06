@@ -1,5 +1,82 @@
 # CHANGELOG.md
 
+## v3.44.0 — Entrega 3 · Fase 23 (PR F1): Productividad como lanzador de mini-apps
+
+Empieza el bloque de **Productividad** (7 fases). Su pantalla principal deja de ser una fila de
+pestañas y pasa a ser **un lanzador de seis mini-apps**.
+
+> *"EN ESTA FASE NO DESARROLLES TODAVÍA LA LÓGICA INTERNA COMPLETA DE LAS 6 MINI-APPS. Primero
+> queremos conseguir una base visual y de navegación perfecta."*
+
+### ⚠️ Lo primero era mirar qué había, y estaban las seis
+
+Al mirarlo: **Hábitos, Pomodoro, Tareas, Metas y Rutinas ya eran las cinco pestañas de
+Productividad** desde la Fase 6, y **Objetivos existía como módulo aparte** desde la Fase 9. Así que
+esta fase **no crea ni una lista nueva** — es la lección de la BL F1, donde tres de las seis mini-apps
+de la Biblioteca ya existían con otro nombre y crearlas otra vez habría dejado los datos de Josué
+invisibles en su propia pantalla.
+
+Y **ninguna de las seis se ha reescrito**: `HabitosTab`, `RutinasTab`, `PomodoroTab`, `TareasTab` y
+`MetasTab` entran tal cual bajo su cabecera nueva, y Objetivos se pinta con `ObjectivesView`, sin
+tocarla. Hay una prueba por cada una que lo comprueba.
+
+### 🚨 Objetivos deja de ser un módulo, pero sus datos no se mueven
+
+El criterio 9 pide *"que Objetivos ya no aparezca como módulo independiente fuera de Productividad"*
+y el apartado de arquitectura avisa *"no rompas navegación existente, no rompas datos existentes"*.
+Las dos cosas se cumplen porque hablan de cosas distintas:
+
+- **La navegación cambia**: `objetivos` sale de `MORE_NAV` y de `AREAS_NAV`, y su `case` desaparece.
+  Ya no es un apartado del área Vida.
+- **Los datos se quedan**: la clave `objetivos` de `app_data`, con su lista. Moverlos habría roto a la
+  vez el catálogo de la papelera, el `objetivoId` que escriben EH F28 y EH F39, la conversión de una
+  idea en objetivo (BL F5), los eventos derivados del Calendario y las rachas — **a cambio de nada**:
+  dónde se guarda un objetivo no es lo que el enunciado quiere cambiar.
+
+**Y los cinco sitios que llevaban allí siguen llegando**, porque el destino era **una sola
+constante**: `DESTINO_OBJETIVOS` pasa de `'objetivos'` a `'productividad'` y se le añade el foco que
+abre la mini-app. Ése es exactamente el motivo por el que EH F28 la hizo una constante en vez de
+escribir `'objetivos'` cinco veces. Lo mismo con las palabras del buscador: **se mudan a
+Productividad** en vez de borrarse, así buscar «objetivos» los sigue encontrando (D2-07).
+
+Lo que sí se pierde está dicho: al dejar de ser un módulo, Objetivos hereda el PIN y el interruptor de
+Módulos activables de Productividad. Es la consecuencia de dejar de ser un apartado, no un descuido.
+
+### Los indicadores salen de datos reales, y un vacío no enseña un cero
+
+*"Debe mostrar pequeños indicadores visuales **si existen datos disponibles**"* y *"NO inventar datos
+ni crear lógica falsa"*. Así que una mini-app sin nada devuelve `null` y **no pinta nada**. Dos
+detalles que se habrían colado solos:
+
+- **Pomodoro no es una lista**: es `{ '2026-09-06': 3 }`, un contador por día desde la Fase 6.
+  Tratarlo como un array habría dado cero siempre, y nadie lo habría visto.
+- **De Tareas se enseñan las pendientes**, no el total: una lista con doscientas hechas y una
+  pendiente no dice «201».
+
+### Hoy queda preparado, no construido
+
+El enunciado pide dejar la estructura lista para que Productividad pueda contarle cosas a Hoy, y a la
+vez *"NO inventar datos ni crear lógica falsa en esta fase"*. Así que **no hay ni una frase escrita
+para Hoy**: hay `PARA_HOY`, que declara qué podrá decir cada mini-app, de dónde saldría el dato y en
+qué fase llega. Escribir *"te quedan 3 hábitos"* hoy sería fingir una función que no existe (regla 8)
+— y además `hoy.js` (HT F6) ya es quien junta lo del día, así que cuando toque se llama ahí en vez de
+escribir un segundo Hoy.
+
+### Y dos pruebas que saltaron con código que estaba bien
+
+`test-buscador.mjs` usaba *"metas"* como ejemplo de palabra clave compartida por **dos módulos**
+(Objetivos y Productividad). Al dejar Objetivos de serlo, ya no hay dos que empaten y la prueba se
+puso roja **con un buscador correcto**. Es la lección de EH F18 —*una prueba nunca escribe a mano el
+módulo que ejemplifica algo*—: el ejemplo pasa a ser «ingresos», que hoy comparten Negocio y Economía.
+El otro caso esperaba `tab === 'objetivos'` y ahora comprueba el destino nuevo **y su foco**, porque
+sin foco aterrizaría en el lanzador.
+
+### Verificación
+Build de Vite, **125 comprobaciones nuevas de Node** (`scripts/test-productividad-launcher.mjs`),
+**24 casos de renderizado nuevos** —uno por cada mini-app abierta, que si no se quedarían sin
+ninguno, como le pasó a `LibraryView` durante toda la Fase 11— las 6 reglas invariantes, el revisor de
+navegación y una sección nueva del recorrido en Chromium.
+
 ## v3.43.0 — Entrega 3 · Fase 22 (BL F8): Biblioteca — integración y experiencia global
 
 🏁 **CIERRA EL BLOQUE DE BIBLIOTECA (8 de 8).** Recientes, búsqueda global, favoritos, acciones

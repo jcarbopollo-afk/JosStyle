@@ -2667,4 +2667,59 @@ ok(await pulsar('Nueva idea'), 'y lleva a Ideas con el formulario abierto');
 const enIdeas_bl8 = await esperarTexto(/Idea/);
 ok(/Idea/.test(enIdeas_bl8), '🚨 SIN ENTRAR PRIMERO EN LA MINI-APP: el ＋ crea desde la Biblioteca');
 
+/* ── E3 F23 (PR F1) · PRODUCTIVIDAD COMO LANZADOR ────────────────────────
+   Lo que no se puede comprobar en Node: que la pantalla ES un lanzador, que
+   Objetivos **ya no está** en el área Vida, y que sigue llegándose a él. */
+almacen.productividad = {
+  habitos: [{ id: 'h1', nombre: 'Leer 20 min', historial: {} }],
+  rutinas: [],
+  tareas: [{ id: 't1', texto: 'Estudiar mates', hecha: false }],
+  metas: [],
+  pomodoros: {},
+  apuntes: [],
+};
+almacen.objetivos = { lista: [{ id: 'o1', texto: 'Aprender inglés', plazo: '1 año', cumplido: false }], ultimaRevision: null };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Vida');
+const areaVida_pr1 = await esperarTexto(/Productividad/);
+ok(/Productividad/.test(areaVida_pr1), 'Productividad sigue en el área Vida');
+ok(!/^Objetivos$/m.test(areaVida_pr1),
+  '🚨 Y OBJETIVOS YA NO ESTÁ COMO APARTADO INDEPENDIENTE (criterio 9)');
+
+ok(await pulsar('Productividad'), 'Productividad se abre');
+const lanzador_pr1 = await esperarTexto(/Construye constancia cada día/);
+ok(/Construye constancia cada día/.test(lanzador_pr1),
+  '🚨 Y ES UN LANZADOR: lo primero que se ve son las seis mini-apps, no una lista');
+for (const nombre of ['Hábitos', 'Pomodoro', 'Tareas', 'Metas', 'Objetivos', 'Rutinas']) {
+  ok(new RegExp(nombre, 'i').test(lanzador_pr1), `⚠️ y ${nombre} es una de ellas`);
+}
+ok(/Concéntrate sin distracciones/.test(lanzador_pr1) && /Define hacia dónde quieres avanzar/.test(lanzador_pr1),
+  '⚠️ cada una con la descripción del enunciado');
+ok(/1 hábito/.test(lanzador_pr1) && /1 tarea/.test(lanzador_pr1) && /1 objetivo/.test(lanzador_pr1),
+  '🚨 con indicadores de DATOS REALES, incluidos los objetivos leídos de su propia clave');
+ok(!/0 metas|0 rutinas/.test(lanzador_pr1),
+  '🚨 y una mini-app vacía NO enseña un cero: no se pinta nada');
+
+/* Entrar en Objetivos desde dentro de Productividad. */
+ok(await pulsar('Abrir Objetivos'), 'se entra en Objetivos');
+const dentroObj_pr1 = await esperarTexto(/Aprender inglés/);
+ok(/Aprender inglés/.test(dentroObj_pr1),
+  '🚨 Y SUS DATOS SIGUEN AHÍ: el objetivo de siempre, leído de la clave de siempre');
+ok(/Define hacia dónde quieres avanzar/.test(dentroObj_pr1),
+  '⚠️ con la cabecera de su mini-app');
+ok((dentroObj_pr1.match(/Objetivos/g) || []).length < 3,
+  '⚠️ y sin repetir el título dos veces: lo pone la cabecera, no la pantalla de dentro');
+
+ok(await pulsar('Volver a Productividad'), 'y se vuelve al lanzador');
+const vuelta_pr1 = await esperarTexto(/Construye constancia cada día/);
+ok(/Construye constancia cada día/.test(vuelta_pr1), '⚠️ que sigue siendo el lanzador');
+
+/* Y una mini-app de las que ya existían, para comprobar que no se han tocado. */
+ok(await pulsar('Abrir Tareas'), 'se entra en Tareas');
+const tareas_pr1 = await esperarTexto(/Estudiar mates/);
+ok(/Estudiar mates/.test(tareas_pr1),
+  '🚨 Y LAS CINCO DE SIEMPRE SIGUEN INTACTAS: esta fase es la pantalla, no su contenido');
+
 await salir(browser);

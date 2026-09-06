@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.43.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.44.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (44 fases — **22 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (44 fases — **23 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -165,7 +165,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 22 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 23 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -182,9 +182,9 @@ el bloque de **Biblioteca**, la **F17 (Libros, v3.38.0)**, la **F18 (Guardados, 
 **F19 (Ideas, v3.40.0)**, la **F20 (Documentos, v3.41.0)**, la **F21 (Colecciones, v3.42.0)** y la
 **F22 (integración y experiencia global, v3.43.0)**, que 🏁 **CERRÓ EL BLOQUE DE BIBLIOTECA** —las
 ocho fases BL—. Con eso hay **dos bloques cerrados**: Hoy y Calendario (10/10) y Biblioteca (8/8). La
-siguiente es la **23 — PR F1: rediseño completo de Productividad**, con la que empieza el bloque de
-**Productividad** (7 fases). El índice, con la línea de cada fase dentro de la especificación
-literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
+siguiente era la **F23 (Productividad como lanzador, v3.44.0)**, con la que empieza el bloque de
+**Productividad** —va por **1 de 7**—; la que viene es la **24 — PR F2: Hábitos**. El índice, con la
+línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
 rótulo dice *"Biblioteca 8"* y el documento va **F1, F2, F4, F5, F6, F6, F7, F8**— y **la Fase 6
@@ -205,6 +205,26 @@ aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con
 código de agosto mientras él decía *"la web sigue igual"*.
 
 ⚠️ **Y lo que dejaron las veinte primeras, que afecta a todas las demás:**
+
+- 🚨 **ANTES DE REDISEÑAR UN APARTADO, MIRAR SI SUS PIEZAS YA EXISTEN** (E3 F23, y la BL F1 lo dijo
+  primero): las seis mini-apps de Productividad **ya estaban** —cinco como pestañas desde la Fase 6 y
+  Objetivos como módulo aparte desde la Fase 9—, así que la fase es la pantalla y la navegación, no
+  el contenido. **Ninguna se ha reescrito**, con una prueba por cada una.
+- 🚨 **UN MÓDULO PUEDE DEJAR DE SERLO SIN QUE SUS DATOS SE MUEVAN** (E3 F23). Objetivos sale de
+  `MORE_NAV`, de `AREAS_NAV` y del switch, pero su clave `objetivos` de `app_data` **se queda**:
+  moverla habría roto la papelera, el `objetivoId` de EH F28 y EH F39, la conversión de Ideas (BL F5),
+  el Calendario y las rachas. Navegación y datos son dos cosas distintas.
+- 🚨 **Y POR ESO UN DESTINO DE NAVEGACIÓN SE ESCRIBE UNA VEZ** (E3 F23): `DESTINO_OBJETIVOS` (EH F28)
+  era **una constante**, así que cambiarla en una línea redirigió los cinco sitios que llevaban allí.
+  Con `'objetivos'` escrito cinco veces, esta fase habría dejado cuatro enlaces rotos en silencio.
+- ⚠️ **AL QUITAR UN MÓDULO DEL BUSCADOR, SUS PALABRAS SE MUDAN, NO SE BORRAN** (E3 F23): buscar
+  «objetivos» tiene que seguir encontrándolos, y ahora lleva a Productividad (D2-07).
+- 🐛 **UN CONTADOR TIENE QUE SABER QUÉ FORMA TIENE SU DATO** (E3 F23): **Pomodoro no es una lista**,
+  es `{ '2026-09-06': 3 }` desde la Fase 6, y tratarlo como un array habría dado cero siempre sin que
+  fallara nada. Y de Tareas se enseñan **las pendientes**, no el total.
+- 🐛 **UNA PRUEBA NUNCA ESCRIBE A MANO EL MÓDULO QUE EJEMPLIFICA ALGO** (E3 F23, y EH F18 lo dijo
+  primero): `test-buscador` usaba «metas» como palabra compartida por dos módulos, y al dejar
+  Objetivos de serlo saltó **con un buscador que estaba bien**.
 
 - 🚨 **UNA MINI-APP PUEDE ALIMENTARSE DE DOS LISTAS, Y EL CONTADOR SOLO MIRABA UNA** (E3 F22).
   Documentos son los archivos de la Fase 11 **y** los textos de la BL F6: con tres documentos

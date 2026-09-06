@@ -192,7 +192,7 @@ import {
   ponerFechaGusto, completarSuelto, resumenGustos, panelGustos, estadoHacer,
 } from '../lib/gustos';
 import {
-  TEXTOS_PUENTE, DESTINO_OBJETIVOS, PARTE_EXPERIENCIAS, estadoDelObjetivo,
+  TEXTOS_PUENTE, DESTINO_OBJETIVOS, FOCO_OBJETIVOS, PARTE_EXPERIENCIAS, estadoDelObjetivo,
   prepararObjetivo, aplicarObjetivo, marcarYaLoHice, panelPuente,
 } from '../lib/objetivosEnEstiloHombre';
 import {
@@ -6474,7 +6474,7 @@ export function GustosEH({ estado, accent, datosGlobales = {}, objetivos = null,
                         </button>
                       )}
                       {est.enlazado && onIr && (
-                        <button onClick={() => onIr(DESTINO_OBJETIVOS, { id: est.objetivo.id })}
+                        <button onClick={() => onIr(DESTINO_OBJETIVOS, { ...FOCO_OBJETIVOS, id: est.objetivo.id })}
                           className="text-[10px] font-semibold" style={{ color: accent }}>
                           {TEXTOS_PUENTE.verObjetivo}
                         </button>
@@ -6498,7 +6498,7 @@ export function GustosEH({ estado, accent, datosGlobales = {}, objetivos = null,
                                     onGuardarObjetivo?.({ estado: guardado.estado, objetivos: guardado.objetivos });
                                     /* Apartado 2 — se abre el sistema global, y
                                        `ObjectivesView` ya sabe destacar el id. */
-                                    onIr?.(DESTINO_OBJETIVOS, { id: guardado.objetivo.id });
+                                    onIr?.(DESTINO_OBJETIVOS, { ...FOCO_OBJETIVOS, id: guardado.objetivo.id });
                                   }}>
                                   <span className="text-[10px] font-semibold" style={{ color: COLORS.text }}>{pl}</span>
                                 </button>

@@ -62,7 +62,7 @@
 import { normalizarEstiloHombre, MODULOS_EH, FUENTES_GLOBALES, esDatoGlobal } from './estiloDeHombre';
 import { REGISTRO_DATOS, modulosQueUsan, leerDato } from './datosEstiloHombre';
 import { eventosDerivados, NOMBRES_ORIGEN } from './calendarioIntegracion';
-import { DESTINO_OBJETIVOS, prepararObjetivo, aplicarObjetivo } from './objetivosEnEstiloHombre';
+import { DESTINO_OBJETIVOS, MODULO_OBJETIVOS, prepararObjetivo, aplicarObjetivo } from './objetivosEnEstiloHombre';
 import { DESTINO_DIARIO, datosGustos } from './gustos';
 import { DESTINO_ARMARIO, accesoAlArmario } from './armarioEnEstiloHombre';
 import { CATALOGO_PAPELERA } from './papelera';
@@ -607,8 +607,16 @@ export function pruebaMaestra({
   paso('calendario', 'Calendario', 'calendario', Array.isArray(eventos),
     `${eventos.filter((x) => NOMBRES_ORIGEN[String(x.id).split(':')[0]]).length} eventos derivados`);
 
-  // 2 · Objetivos — el puente escribe en Objetivos, no en Estilo.
-  paso('objetivos', 'Objetivos', DESTINO_OBJETIVOS,
+  /* 2 · Objetivos — el puente escribe en Objetivos, no en Estilo.
+
+     🐛 **Y aquí había un fallo latente que la E3 F23 destapó.** El tercer
+     argumento de `paso` es **el sistema global donde se escribe** —`'estiloHombre'`,
+     `'calendario'`…—, no a dónde se navega; y aquí se le estaba pasando
+     `DESTINO_OBJETIVOS`, que es lo segundo. Nadie lo notó porque **valían lo
+     mismo**: hasta la PR F1, Objetivos era a la vez la clave de datos y el módulo
+     al que ir. Al mudarse la pantalla a Productividad, los dos valores se
+     separaron y saltó la prueba. Lo que va aquí es la clave: `MODULO_OBJETIVOS`. */
+  paso('objetivos', 'Objetivos', MODULO_OBJETIVOS,
     typeof prepararObjetivo === 'function' && typeof aplicarObjetivo === 'function',
     'El objetivo se guarda en Objetivos');
 

@@ -287,7 +287,10 @@ console.log('\nTest 7 — ⚠️ *"no repetirla continuamente"*');
    =========================================================================== */
 console.log('\nTest 8 — ⚠️ ni un catálogo, ni un armario, ni un diario nuevos');
 {
-  const DESTINOS = ['armario', 'skincare', 'pelo', 'barba', 'perfumes', 'accesorios', 'gustos', 'objetivos', 'miEstilo'];
+  /* ⚠️ E3 F23 (PR F1) — `objetivos` sale de la lista porque dejó de ser un módulo:
+     ahora se llega a él por Productividad. La prueba sigue comprobando lo mismo
+     —que ninguna acción lleva a un sitio inventado—, con los módulos que hay hoy. */
+  const DESTINOS = ['armario', 'skincare', 'pelo', 'barba', 'perfumes', 'accesorios', 'gustos', 'productividad', 'miEstilo'];
   REGLAS_IDEAS.filter((r) => r.accion).forEach((r) => {
     ok(DESTINOS.includes(r.accion.destino),
       `"${r.id}" lleva a "${r.accion.destino}", que ya existe`);

@@ -1,9 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle2, Circle, Flame, Plus, Trash2, Play, Pause, RotateCcw, ListChecks, Target, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, Circle, Flame, Plus, Trash2, Play, Pause, RotateCcw, ListChecks, Target, ChevronDown, ChevronUp, ArrowLeft, Timer, Compass, Repeat } from 'lucide-react';
 import { COLORS, PERIODOS_META } from '../tokens';
 import { uid, todayISO } from '../lib/helpers';
 import { resumenHabito, alternarHabito } from '../lib/rachas';
 import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
+/* E3 F23 (PR F1) — Productividad pasa a ser un lanzador de seis mini-apps. El
+   catálogo vive en su librería; aquí solo están los componentes. */
+import {
+  MINI_APPS_PR, miniAppPR, indicadorDePR, CLASE_TARJETA_PR, retrasoDeTarjetaPR,
+} from '../lib/productividad';
+import ObjectivesView from './ObjectivesView';
 
 /* ---------- Hábitos ---------- */
 // RA Fase 1 — la racha ya no se guarda: se deriva del historial con el motor de
@@ -368,39 +374,166 @@ function MetasTab({ metas, onAdd, onUpdate, onDelete, accent }) {
 }
 
 /* ---------- Vista principal ---------- */
-export default function ProductivityView({ productividad, onAddHabito, onUpdateHabito, onDeleteHabito, onAddRutina, onUpdateRutina, onDeleteRutina, onAddTarea, onToggleTarea, onDeleteTarea, onAddMeta, onUpdateMeta, onDeleteMeta, onCompletarPomodoro, accent, foco, onFocoConsumido }) {
-  const [sub, setSub] = useState('habitos');
+/* ══════════════════════════════════════════════════════════════════════════
+   ENTREGA 3 · FASE 23 (PR F1) — EL LANZADOR
+   ══════════════════════════════════════════════════════════════════════════
+
+   *"Debe sentir que está entrando en una especie de sistema operativo dentro
+   del sistema operativo."*
+
+   ⚠️ La otra mitad del catálogo: `MINI_APPS_PR` es **datos** y esto son
+   **componentes de React**. El mismo reparto que `MINI_APPS`/`ICONOS_MINI_APP`
+   en la Biblioteca. Un icono que falte aquí sale como un hueco y **no falla en
+   ninguna parte**, así que hay una prueba que compara las dos listas. */
+const ICONOS_MINI_APP_PR = { Flame, Timer, ListChecks, Target, Compass, Repeat };
+
+export const iconoDeMiniAppPR = (id) => {
+  const app = miniAppPR(id);
+  return (app && ICONOS_MINI_APP_PR[app.icono]) || ListChecks;
+};
+
+/* La plaquita. *"Icono grande, nombre, descripción corta, indicador de estado
+   cuando sea posible, microanimación y feedback al tocar… **NO hacer tarjetas
+   gigantes**: deben parecer realmente 6 aplicaciones pequeñas."* */
+export function TarjetaMiniAppPR({ app, indicador, accent, indice = 0, onAbrir }) {
+  const Icono = iconoDeMiniAppPR(app.id);
+  return (
+    <button
+      onClick={onAbrir}
+      className={`w-full text-left ${CLASE_TARJETA_PR}`}
+      style={{ animationDelay: retrasoDeTarjetaPR(indice) }}
+      aria-label={`Abrir ${app.nombre}`}
+    >
+      <Card style={{ padding: '0.95rem' }}>
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: COLORS.surface2 }}>
+          <Icono size={19} style={{ color: accent }} />
+        </div>
+        <p className="text-sm font-bold" style={{ color: COLORS.text }}>{app.nombre}</p>
+        <p className="text-[11px] leading-snug mt-0.5" style={{ color: COLORS.textMuted }}>{app.descripcion}</p>
+        {/* *"NO inventar datos"*: sin nada que contar, no se pinta nada. */}
+        {indicador ? (
+          <p className="text-[11px] font-semibold mt-1.5" style={{ color: accent }}>{indicador}</p>
+        ) : null}
+      </Card>
+    </button>
+  );
+}
+
+/* La cabecera de una mini-app abierta: *"botón para volver, título, navegación
+   coherente"*. Una sola, para las seis. */
+export function CabeceraMiniAppPR({ app, accent, onVolver }) {
+  const Icono = iconoDeMiniAppPR(app.id);
+  return (
+    <div className="flex items-center gap-2">
+      <button onClick={onVolver} className="p-1.5 -m-1.5" aria-label="Volver a Productividad">
+        <ArrowLeft size={18} style={{ color: COLORS.textMuted }} />
+      </button>
+      <Icono size={18} style={{ color: accent }} />
+      <div className="flex-1 min-w-0">
+        <p className="text-base font-bold" style={{ color: COLORS.text }}>{app.nombre}</p>
+        <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{app.descripcion}</p>
+      </div>
+    </div>
+  );
+}
+
+export default function ProductivityView({
+  productividad, onAddHabito, onUpdateHabito, onDeleteHabito,
+  onAddRutina, onUpdateRutina, onDeleteRutina,
+  onAddTarea, onToggleTarea, onDeleteTarea,
+  onAddMeta, onUpdateMeta, onDeleteMeta,
+  onCompletarPomodoro,
+  /* 🚨 E3 F23 (PR F1) — Objetivos entra aquí. Deja de ser un módulo aparte, pero
+     **sus datos siguen en su clave de siempre**: lo que llega son la lista y sus
+     manejadores, los mismos que tenía `case 'objetivos'`. */
+  objetivos, onAddObjetivo, onUpdateObjetivo, onDeleteObjetivo, onRevisionHecha,
+  accent, foco, onFocoConsumido,
+}) {
+  /* `null` = el lanzador. *"Cuando el usuario entre en Productividad, **no se
+     encuentre directamente con listas, formularios o bloques de información**."* */
+  const [abierta, setAbierta] = useState(null);
   const hoy = todayISO();
   const pomodorosHoy = productividad.pomodoros[hoy] || 0;
 
-  // Ampliación del Dashboard — Centro de Control: la tarjeta de Productividad y la acción rápida
-  // "+ Tarea" llegan con `foco.sub === 'tareas'` — cambia a esa subpestaña sola.
+  /* Los enlaces directos siguen funcionando: el Dashboard mandaba `foco.sub`
+     desde la ampliación del Centro de Control, y desde esta fase también llega
+     `foco.app` —el que usan el buscador, EH F28 e Ideas de estilo para abrir
+     Objetivos, que ya no tiene módulo propio—. Se aceptan los dos: quitar
+     `foco.sub` habría roto en silencio la acción rápida "+ Tarea". */
   useEffect(() => {
-    if (foco?.sub) setSub(foco.sub);
+    const destino = foco?.app || foco?.sub;
+    if (destino && miniAppPR(destino)) setAbierta(destino);
   }, [foco]);
 
-  return (
-    <div className="space-y-4 pb-4">
-      <SectionTitle sub="Hábitos, rutinas, concentración y tareas">Productividad</SectionTitle>
+  const datos = { productividad, objetivos };
 
-      <div className="flex gap-1.5 flex-wrap">
-        <ToggleTab active={sub === 'habitos'} onClick={() => setSub('habitos')} accent={accent}>Hábitos</ToggleTab>
-        <ToggleTab active={sub === 'rutinas'} onClick={() => setSub('rutinas')} accent={accent}>Rutinas</ToggleTab>
-        <ToggleTab active={sub === 'pomodoro'} onClick={() => setSub('pomodoro')} accent={accent}>Pomodoro</ToggleTab>
-        <ToggleTab active={sub === 'tareas'} onClick={() => setSub('tareas')} accent={accent}>Tareas</ToggleTab>
-        <ToggleTab active={sub === 'metas'} onClick={() => setSub('metas')} accent={accent}>Metas</ToggleTab>
+  // ── El lanzador ─────────────────────────────────────────────────────────
+  if (!abierta) {
+    return (
+      <div className="space-y-4 pb-4">
+        <SectionTitle sub="Tus seis herramientas para avanzar cada día">Productividad</SectionTitle>
+        <div className="grid grid-cols-2 gap-3">
+          {MINI_APPS_PR.map((app, i) => (
+            <TarjetaMiniAppPR
+              key={app.id}
+              app={app}
+              indice={i}
+              indicador={indicadorDePR(app.id, datos)}
+              accent={accent}
+              onAbrir={() => setAbierta(app.id)}
+            />
+          ))}
+        </div>
       </div>
+    );
+  }
 
-      {sub === 'habitos' && <HabitosTab habitos={productividad.habitos} onAdd={onAddHabito} onUpdate={onUpdateHabito} onDelete={onDeleteHabito} accent={accent} />}
-      {sub === 'rutinas' && <RutinasTab rutinas={productividad.rutinas} onAdd={onAddRutina} onUpdate={onUpdateRutina} onDelete={onDeleteRutina} accent={accent} />}
-      {sub === 'pomodoro' && <PomodoroTab hoyCount={pomodorosHoy} onCompletar={onCompletarPomodoro} accent={accent} />}
-      {sub === 'tareas' && (
+  const app = miniAppPR(abierta);
+  const volver = () => { setAbierta(null); onFocoConsumido?.(); };
+  const cabecera = <CabeceraMiniAppPR app={app} accent={accent} onVolver={volver} />;
+
+  /* 🚨 **Y aquí no se ha reescrito ninguna de las seis.** El enunciado lo pide en
+     mayúsculas: esta fase es la pantalla y la navegación. Lo que había dentro de
+     cada pestaña entra tal cual, con su cabecera nueva encima; su desarrollo
+     completo llega en las fases 2 a 6. */
+  return (
+    <div className="space-y-3 pb-4">
+      {cabecera}
+      {abierta === 'habitos' && (
+        <HabitosTab habitos={productividad.habitos} onAdd={onAddHabito} onUpdate={onUpdateHabito} onDelete={onDeleteHabito} accent={accent} />
+      )}
+      {abierta === 'rutinas' && (
+        <RutinasTab rutinas={productividad.rutinas} onAdd={onAddRutina} onUpdate={onUpdateRutina} onDelete={onDeleteRutina} accent={accent} />
+      )}
+      {abierta === 'pomodoro' && (
+        <PomodoroTab hoyCount={pomodorosHoy} onCompletar={onCompletarPomodoro} accent={accent} />
+      )}
+      {abierta === 'tareas' && (
         <TareasTab
           tareas={productividad.tareas} onAdd={onAddTarea} onToggle={onToggleTarea} onDelete={onDeleteTarea} accent={accent}
           foco={foco} onFocoConsumido={onFocoConsumido}
         />
       )}
-      {sub === 'metas' && <MetasTab metas={productividad.metas} onAdd={onAddMeta} onUpdate={onUpdateMeta} onDelete={onDeleteMeta} accent={accent} />}
+      {abierta === 'metas' && (
+        <MetasTab metas={productividad.metas} onAdd={onAddMeta} onUpdate={onUpdateMeta} onDelete={onDeleteMeta} accent={accent} />
+      )}
+      {/* ⚠️ Objetivos se pinta con SU pantalla de siempre, `ObjectivesView`, sin
+          tocarla: reescribirla habría sido rehacer una mini-app en la fase que
+          dice expresamente que no se rehacen. `sinTitulo` evita repetir el
+          nombre, que ya está en la cabecera de arriba. */}
+      {abierta === 'objetivos' && (
+        <ObjectivesView
+          objetivos={objetivos}
+          onAdd={onAddObjetivo}
+          onUpdate={onUpdateObjetivo}
+          onDelete={onDeleteObjetivo}
+          onRevisionHecha={onRevisionHecha}
+          accent={accent}
+          foco={foco}
+          onFocoConsumido={onFocoConsumido}
+          sinTitulo
+        />
+      )}
     </div>
   );
 }

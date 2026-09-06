@@ -1813,13 +1813,31 @@ const CASOS = [
   // RA Fase 1 — la lista de hábitos con su racha derivada. Antes no se renderizaba en
   // ninguna prueba, que es como un contador guardado podía mentir sin que nada avisara.
   ['ProductivityView', ProductivityView, (e) => ({
-    productividad: e.productividad, accent,
+    productividad: e.productividad, objetivos: e.objetivos, accent,
     onAddHabito: noop, onUpdateHabito: noop, onDeleteHabito: noop,
     onAddRutina: noop, onUpdateRutina: noop, onDeleteRutina: noop,
     onAddTarea: noop, onToggleTarea: noop, onDeleteTarea: noop,
     onAddMeta: noop, onUpdateMeta: noop, onDeleteMeta: noop,
-    onCompletarPomodoro: noop, foco: null, onFocoConsumido: noop,
+    onCompletarPomodoro: noop,
+    onAddObjetivo: noop, onUpdateObjetivo: noop, onDeleteObjetivo: noop, onRevisionHecha: noop,
+    foco: null, onFocoConsumido: noop,
   })],
+  /* E3 F23 (PR F1) — las SEIS mini-apps abiertas. El lanzador ya se pinta arriba
+     con `foco: null`; sin estos casos, las seis pantallas de dentro no tendrían
+     ni uno, que es exactamente cómo `LibraryView` se pasó la Fase 11 entera sin
+     renderizarse (E3 F16). */
+  ...['habitos', 'pomodoro', 'tareas', 'metas', 'objetivos', 'rutinas'].map((app) => [
+    `ProductivityView · ${app}`, ProductivityView, (e) => ({
+      productividad: e.productividad, objetivos: e.objetivos, accent,
+      onAddHabito: noop, onUpdateHabito: noop, onDeleteHabito: noop,
+      onAddRutina: noop, onUpdateRutina: noop, onDeleteRutina: noop,
+      onAddTarea: noop, onToggleTarea: noop, onDeleteTarea: noop,
+      onAddMeta: noop, onUpdateMeta: noop, onDeleteMeta: noop,
+      onCompletarPomodoro: noop,
+      onAddObjetivo: noop, onUpdateObjetivo: noop, onDeleteObjetivo: noop, onRevisionHecha: noop,
+      foco: { app }, onFocoConsumido: noop,
+    }),
+  ]),
   // Un hábito sin historial (recién creado) y otro con un hueco de un día: la regla con
   // margen no debe romperse por ese hueco, y ninguno de los dos puede reventar la vista.
   ['ProductivityView · hábitos límite', ProductivityView, () => ({
@@ -1835,7 +1853,10 @@ const CASOS = [
     onAddRutina: noop, onUpdateRutina: noop, onDeleteRutina: noop,
     onAddTarea: noop, onToggleTarea: noop, onDeleteTarea: noop,
     onAddMeta: noop, onUpdateMeta: noop, onDeleteMeta: noop,
-    onCompletarPomodoro: noop, foco: null, onFocoConsumido: noop,
+    onCompletarPomodoro: noop,
+    onAddObjetivo: noop, onUpdateObjetivo: noop, onDeleteObjetivo: noop, onRevisionHecha: noop,
+    objetivos: { lista: [], ultimaRevision: null },
+    foco: null, onFocoConsumido: noop,
   })],
   ['WellbeingView', WellbeingView, (e) => ({ bienestar: e.bienestar, onAdd: noop, onDelete: noop, onAddReflexion: noop, onCompletarSesion: noop, accent })],
   ['BusinessView', BusinessView, (e) => ({ negocio: e.negocio, onAdd: noop, onUpdate: noop, onDelete: noop, accent })],

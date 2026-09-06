@@ -71,7 +71,12 @@ function RevisionBanner({ ultimaRevision, objetivos, accent, onRevisionHecha }) 
   );
 }
 
-export default function ObjectivesView({ objetivos, onAdd, onUpdate, onDelete, onRevisionHecha, accent, foco, onFocoConsumido }) {
+/* ⚠️ E3 F23 (PR F1) — Objetivos deja de ser un módulo y pasa a ser una mini-app
+   de Productividad. **Esta pantalla no se ha tocado**: la fase que la absorbe
+   dice expresamente que no se rehacen las mini-apps. Lo único que se le añade es
+   `sinTitulo`, porque su nombre ya lo pone la cabecera del lanzador y repetirlo
+   dos veces seguidas es el fallo de *Fondo* que vio Josué. */
+export default function ObjectivesView({ objetivos, onAdd, onUpdate, onDelete, onRevisionHecha, accent, foco, onFocoConsumido, sinTitulo = false }) {
   const [texto, setTexto] = useState('');
   const [plazo, setPlazo] = useState(PLAZOS_OBJETIVO[0]);
   // Ampliación del Dashboard — Centro de Control: `destacadoId` resalta brevemente (apartado 4/6:
@@ -103,7 +108,7 @@ export default function ObjectivesView({ objetivos, onAdd, onUpdate, onDelete, o
 
   return (
     <div className="space-y-4 pb-4">
-      <SectionTitle sub="De 30 días a 10 años — fijos hasta que tú decidas cambiarlos">Objetivos</SectionTitle>
+      {sinTitulo ? null : <SectionTitle sub="De 30 días a 10 años — fijos hasta que tú decidas cambiarlos">Objetivos</SectionTitle>}
 
       <RevisionBanner ultimaRevision={objetivos.ultimaRevision} objetivos={objetivos.lista} accent={accent} onRevisionHecha={onRevisionHecha} />
 

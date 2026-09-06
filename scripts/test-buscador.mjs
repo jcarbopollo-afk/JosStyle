@@ -192,9 +192,16 @@ console.log('\n═══ BI Fases 2, 3 y 4 — buscador, motor e intención ═�
   // El escalón importa: "concentracion" es palabra clave de Bienestar y sinónimo de
   // Productividad. Gana la palabra clave, no el sinónimo.
   comprobar('Una palabra clave gana a un sinónimo', primero('concentracion')?.tab === 'bienestar', titulos('concentracion')[0]);
-  // "metas" en cambio es palabra clave de LOS DOS (Objetivos y Productividad): ahí no hay
-  // escalón que decida, así que salen los dos y manda el desempate, no el azar.
-  comprobar('Cuando dos módulos empatan de verdad, salen los dos', buscar(indice, 'metas').length >= 2, String(buscar(indice, 'metas').length));
+  /* "ingresos" es palabra clave de LOS DOS (Negocio y Economía): ahí no hay escalón
+     que decida, así que salen los dos y manda el desempate, no el azar.
+
+     ⚠️ E3 F23 (PR F1) — antes el ejemplo era "metas", palabra clave de Objetivos y
+     de Productividad. Objetivos dejó de ser un módulo —ahora es una mini-app
+     suya—, así que ya no hay dos que empaten con esa palabra y la prueba saltaba
+     **con un buscador que estaba bien**. Es la lección de EH F18: una prueba nunca
+     escribe a mano el módulo que ejemplifica algo, porque una fase futura se lo
+     lleva. El ejemplo se elige de los que hay ahora. */
+  comprobar('Cuando dos módulos empatan de verdad, salen los dos', buscar(indice, 'ingresos').length >= 2, String(buscar(indice, 'ingresos').length));
 }
 
 // --- Apartados 10 y 11: acciones directas, no solo pantallas ---
@@ -298,9 +305,14 @@ console.log('\n═══ BI Fases 2, 3 y 4 — buscador, motor e intención ═�
   comprobar('Caso 6 · "racha" → no inventa un módulo Rachas',
     !c6.resultados.some((r) => normalizar(r.titulo) === 'rachas'));
 
+  /* ⚠️ E3 F23 (PR F1) — el destino ya no es un módulo Objetivos: es Productividad
+     con su mini-app abierta. Lo que la prueba comprueba sigue siendo lo mismo —que
+     buscar eso lleva a crear un objetivo, y no a la IA—, pero **también se
+     comprueba el foco**: sin él aterrizaría en el lanzador. */
   const c7 = caso('quiero añadir un objetivo');
-  comprobar('Caso 7 · "quiero añadir un objetivo" → Objetivos',
-    c7.resultados.length > 0 && c7.resultados[0].tab === 'objetivos' && !c7.iaPrimero,
+  comprobar('Caso 7 · "quiero añadir un objetivo" → crear un objetivo, dentro de Productividad',
+    c7.resultados.length > 0 && c7.resultados[0].tab === 'productividad'
+      && c7.resultados[0].foco?.app === 'objetivos' && !c7.iaPrimero,
     `${c7.intencion} / ${c7.resultados.map((r) => r.titulo).join(', ') || 'sin resultados'}`);
 
   const c8 = caso('asdfghjkl');

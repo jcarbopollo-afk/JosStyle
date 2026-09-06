@@ -37,7 +37,10 @@ import NutritionView from './views/NutritionView';
 import EstudiosView from './views/EstudiosView';
 import BusinessView from './views/BusinessView';
 import ProductivityView from './views/ProductivityView';
-import ObjectivesView from './views/ObjectivesView';
+/* E3 F23 (PR F1) — `ObjectivesView` ya no se monta desde aquí: Objetivos dejó de
+   ser un módulo y es una mini-app de Productividad, que es quien la pinta. Sus
+   datos y sus manejadores siguen viviendo en este archivo, como los de las otras
+   cinco. */
 import CalendarView from './views/CalendarView';
 import DiaryView from './views/DiaryView';
 import LibraryView from './views/LibraryView';
@@ -133,7 +136,6 @@ const MORE_NAV = [
   { id: 'estudios', label: 'Estudios', icon: GraduationCap },
   { id: 'negocio', label: 'Negocio', icon: Briefcase },
   { id: 'productividad', label: 'Productividad', icon: ListTodo },
-  { id: 'objetivos', label: 'Objetivos', icon: Target },
   { id: 'diario', label: 'Diario', icon: BookOpen },
   { id: 'fe', label: 'Fe', icon: Church },
   { id: 'biblioteca', label: 'Biblioteca', icon: Library },
@@ -159,7 +161,7 @@ const MAX_RECIENTES_BUSQUEDA = 4;
 
 const AREAS_NAV = [
   { id: 'area-salud', label: 'Salud', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno'] },
-  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['calendario', 'horario', 'estudios', 'productividad', 'rachas', 'objetivos', 'diario', 'biblioteca'] },
+  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['calendario', 'horario', 'estudios', 'productividad', 'rachas', 'diario', 'biblioteca'] },
   { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['economia', 'negocio', 'armario'] },
   { id: 'area-mas', label: 'Más', icon: MoreHorizontal, modulos: ['estilo-hombre', 'relacion', 'fe', 'bienestar', 'estadisticas', 'predicciones', 'logros', 'ajustes'] },
 ];
@@ -2501,16 +2503,14 @@ export default function App() {
             onAddTarea={addTarea} onToggleTarea={toggleTarea} onDeleteTarea={deleteTarea}
             onAddMeta={addMeta} onUpdateMeta={updateMeta} onDeleteMeta={deleteMeta}
             onCompletarPomodoro={completarPomodoro}
+            /* 🚨 E3 F23 (PR F1) — Objetivos entra en Productividad. Sus datos
+               siguen en la clave `objetivos` de siempre y sus manejadores son
+               los mismos que tenía su `case`: lo que cambia es dónde se abre. */
+            objetivos={objetivos}
+            onAddObjetivo={addObjetivo} onUpdateObjetivo={updateObjetivo} onDeleteObjetivo={deleteObjetivo}
+            onRevisionHecha={marcarRevisionHecha}
             accent={accent}
             foco={focoPara('productividad')} onFocoConsumido={consumirFoco}
-          />
-        );
-      case 'objetivos':
-        return (
-          <ObjectivesView
-            objetivos={objetivos} onAdd={addObjetivo} onUpdate={updateObjetivo} onDelete={deleteObjetivo}
-            onRevisionHecha={marcarRevisionHecha} accent={accent}
-            foco={focoPara('objetivos')} onFocoConsumido={consumirFoco}
           />
         );
       case 'calendario':

@@ -114,8 +114,12 @@ export const PALABRAS_MODULOS = {
   calendario: ['agenda', 'eventos', 'fechas', 'planificar', 'citas', 'mes'],
   estudios: ['estudiar', 'asignaturas', 'examenes', 'notas', 'clase', 'instituto', 'deberes', 'repaso'],
   negocio: ['proyectos', 'emprender', 'empresa', 'ingresos', 'clientes'],
-  productividad: ['tareas', 'habitos', 'rutinas', 'pomodoro', 'metas', 'pendientes', 'organizar', 'lista'],
-  objetivos: ['metas', 'propositos', 'retos', 'conseguir'],
+  /* 🚨 E3 F23 (PR F1) — Objetivos dejó de ser un módulo y es una mini-app de
+     Productividad, así que **sus palabras se mudan aquí**. Borrarlas sin más
+     habría dejado a Josué sin poder encontrar sus objetivos buscando
+     "objetivos", que es exactamente lo que D2-07 prohíbe. */
+  productividad: ['tareas', 'habitos', 'rutinas', 'pomodoro', 'metas', 'pendientes', 'organizar', 'lista',
+    'objetivos', 'propositos', 'retos', 'conseguir'],
   diario: ['escribir', 'animo', 'reflexion', 'como me siento', 'emociones'],
   fe: ['dios', 'oracion', 'iglesia', 'espiritual', 'biblia', 'servicio'],
   biblioteca: ['apuntes', 'archivos', 'enlaces', 'documentos', 'pdf', 'guardar', 'notas'],
@@ -148,8 +152,7 @@ export const SINONIMOS_MODULOS = {
   calendario: ['horario', 'dia', 'semana', 'organizacion'],
   estudios: ['colegio', 'universidad', 'academico', 'aprender'],
   negocio: ['trabajo', 'dinero extra', 'facturar'],
-  productividad: ['eficiencia', 'concentracion', 'foco', 'planificar'],
-  objetivos: ['objetivo', 'ambicion', 'lograr', 'progreso'],
+  productividad: ['eficiencia', 'concentracion', 'foco', 'planificar', 'objetivo', 'ambicion', 'lograr', 'progreso'],
   diario: ['pensamientos', 'sentimientos', 'desahogo'],
   fe: ['religion', 'creencias', 'gratitud'],
   biblioteca: ['recursos', 'material', 'lectura', 'guardado'],
@@ -294,7 +297,8 @@ export const ACCIONES_DIRECTAS = [
     sinonimos: ['recordar', 'to do', 'hacer'],
   },
   {
-    id: 'accion:objetivo', titulo: 'Crear un objetivo', tab: 'objetivos', foco: { accion: 'nuevo' },
+    /* El destino ya no es un módulo: es Productividad con su mini-app abierta. */
+    id: 'accion:objetivo', titulo: 'Crear un objetivo', tab: 'productividad', foco: { app: 'objetivos', accion: 'nuevo' },
     descripcion: 'Abre el formulario de un objetivo nuevo.',
     palabras: ['nuevo objetivo', 'crear objetivo', 'anadir objetivo', 'proponerme'],
     sinonimos: ['meta', 'reto'],

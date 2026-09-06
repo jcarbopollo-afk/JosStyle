@@ -65,8 +65,13 @@ console.log('Test 1 — ⚠️ el sistema de objetivos es el que ya existía');
   ok(PLAZOS_OBJETIVO === PLAZOS_DE_TOKENS,
     '⚠️ los plazos son LOS DE OBJETIVOS (tokens.js), no una lista nueva');
   eq(PLAZOS_OBJETIVO.length, 5, 'los cinco tramos que ya tenía');
-  eq(DESTINO_OBJETIVOS, 'objetivos', 'y se navega al módulo que ya existe');
-  eq(MODULO_OBJETIVOS, 'objetivos', 'con su nombre de siempre');
+  /* ⚠️ E3 F23 (PR F1) — Objetivos dejó de ser un módulo y pasó a ser una mini-app
+     de Productividad. **Lo que esta fase construyó no ha cambiado**: sigue
+     navegándose a un sitio que ya existe y sin crear un segundo sistema de
+     objetivos; lo que cambió es dónde vive esa pantalla. Y es la prueba de que
+     hacerlo una constante valió la pena: se redirigió en una línea. */
+  eq(DESTINO_OBJETIVOS, 'productividad', 'y se navega a un módulo que ya existe');
+  eq(MODULO_OBJETIVOS, 'objetivos', '⚠️ pero la CLAVE de datos sigue siendo la suya: no se movió un solo objetivo');
 
   const a = auditarPuente(base(), OBJ());
   eq(a.sistemasDeObjetivos, 0, 'la auditoría: cero sistemas de objetivos nuevos');
@@ -326,7 +331,7 @@ console.log('\nTest 10 — el panel que dibuja la pantalla');
   eq(p.experiencias.length, 1, 'las experiencias');
   eq(p.sugerencias.length, 1, 'y lo que se le propone');
   eq(p.plazos, PLAZOS_OBJETIVO, 'ofreciendo los plazos de Objetivos');
-  eq(p.destino, 'objetivos', 'y el destino al que navegar');
+  eq(p.destino, 'productividad', 'y el destino al que navegar — Productividad desde la E3 F23');
 
   const r = resumenPuente(c.estado, objs);
   eq(r.quieroHacer, 1, 'el resumen cuenta las entradas');

@@ -89,8 +89,16 @@ export const TEXTOS_PUENTE = {
   elegirPlazo: '¿Para cuándo te lo pones?',
 };
 
-/** El destino de la navegación (apartado 2). ⚠️ El módulo que ya existe. */
-export const DESTINO_OBJETIVOS = 'objetivos';
+/** El destino de la navegación (apartado 2). ⚠️ El módulo que ya existe.
+ *
+ *  🚨 **E3 F23 (PR F1) — y ha cambiado de sitio, no de existencia.** Objetivos
+ *  dejó de ser un módulo y pasó a ser una mini-app de Productividad. Cambiarlo
+ *  **aquí, en una línea**, redirige los cinco sitios que llevaban allí: éste es
+ *  el motivo de que EH F28 lo hiciera una constante en vez de escribir
+ *  `'objetivos'` cinco veces. Quien navegue tiene que llevar además
+ *  `FOCO_OBJETIVOS`, o aterrizaría en el lanzador en vez de en los objetivos. */
+export const DESTINO_OBJETIVOS = 'productividad';
+export const FOCO_OBJETIVOS = { app: 'objetivos' };
 
 /* ===========================================================================
    1 · LEER: LA ENTRADA Y SU OBJETIVO, JUNTOS

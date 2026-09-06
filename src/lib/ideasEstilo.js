@@ -319,7 +319,8 @@ export const REGLAS_IDEAS = [
     requiere: ['porHacer', 'objetivos'],
     cuando: (c) => c.porHacer > 0 && c.objetivos === 0,
     porque: (c) => `Lo hemos pensado porque tienes ${veces(c.porHacer, 'cosa', 'cosas')} en "Quiero hacer" y ningún objetivo puesto.`,
-    accion: { etiqueta: 'Abrir Objetivos', destino: 'objetivos', zona: null },
+    /* E3 F23 — Objetivos vive dentro de Productividad desde la PR F1. */
+    accion: { etiqueta: 'Abrir Objetivos', destino: 'productividad', zona: null },
   },
 ];
 
