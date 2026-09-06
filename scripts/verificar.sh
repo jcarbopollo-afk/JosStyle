@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F24 — Productividad: Hábitos.
+if node --import ./scripts/resolver-vite.mjs scripts/test-habitos.mjs >/tmp/jc_habitos.log 2>&1; then
+  ok "Productividad: Hábitos (E3 F24) — $(grep -c '✓' /tmp/jc_habitos.log) comprobaciones"
+else
+  fallo "Falla la mini-app Hábitos (E3 F24)"; grep '✗' /tmp/jc_habitos.log
+fi
+
 # Entrega 3 · F23 — Productividad como lanzador de mini-apps.
 if node --import ./scripts/resolver-vite.mjs scripts/test-productividad-launcher.mjs >/tmp/jc_pr1.log 2>&1; then
   ok "Productividad: el lanzador (E3 F23) — $(grep -c '✓' /tmp/jc_pr1.log) comprobaciones"

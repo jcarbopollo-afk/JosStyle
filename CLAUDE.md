@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.44.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.45.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (44 fases — **23 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (44 fases — **24 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -165,7 +165,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 23 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 24 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -182,8 +182,8 @@ el bloque de **Biblioteca**, la **F17 (Libros, v3.38.0)**, la **F18 (Guardados, 
 **F19 (Ideas, v3.40.0)**, la **F20 (Documentos, v3.41.0)**, la **F21 (Colecciones, v3.42.0)** y la
 **F22 (integración y experiencia global, v3.43.0)**, que 🏁 **CERRÓ EL BLOQUE DE BIBLIOTECA** —las
 ocho fases BL—. Con eso hay **dos bloques cerrados**: Hoy y Calendario (10/10) y Biblioteca (8/8). La
-siguiente era la **F23 (Productividad como lanzador, v3.44.0)**, con la que empieza el bloque de
-**Productividad** —va por **1 de 7**—; la que viene es la **24 — PR F2: Hábitos**. El índice, con la
+**F23 (Productividad como lanzador, v3.44.0)** y la **F24 (Hábitos, v3.45.0)**, con las que el bloque
+de **Productividad** va por **2 de 7**; la que viene es la **25 — PR F3: Pomodoro**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
@@ -205,6 +205,28 @@ aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con
 código de agosto mientras él decía *"la web sigue igual"*.
 
 ⚠️ **Y lo que dejaron las veinte primeras, que afecta a todas las demás:**
+
+- 🚨 **UNA FUNCIÓN QUE PONE UN VALOR A PELO DEJA DE SER CORRECTA EN CUANTO ESE VALOR VARÍA** (E3 F24).
+  `rachaDeHabito` le ponía la regla diaria a pelo —lo correcto mientras todos los hábitos eran
+  diarios—, así que al darles frecuencia, uno de lunes-miércoles-viernes **se medía como diario**:
+  racha rota cada martes y un 50 % de cumplimiento con el hábito perfecto, **sin que fallara nada**.
+  Al añadir una variante a una entidad, buscar quién daba por hecho que no la había.
+- 🚨 **UNA FRECUENCIA NUEVA VA AL MOTOR, NO AL MÓDULO** (E3 F24, y EH F14 lo dijo primero):
+  `dias_concretos` y `veces_por_semana` son clases de `CLASES_REGLA`, y el recorrido por semanas está
+  **en el mismo bucle** que el diario. Con dos motores, Hábitos y el Centro de Rachas dirían números
+  distintos. La lista de frecuencias es del módulo; **el comportamiento es del motor**.
+- 🚨 **`NO_TOCA` ES EL QUINTO ESTADO DE UN DÍA** (E3 F24): un día que la regla no pedía **ni cuenta ni
+  rompe**. Sin él, cualquier hábito que no sea diario pierde la racha en cuanto pasa un día libre — y
+  eso es literalmente lo que el enunciado prohíbe. Lo mismo vale para el porcentaje: **el denominador
+  son los días que tocaban**, no los del calendario.
+- ⚠️ **UN PORCENTAJE QUE CASTIGA POR ALGO A LO QUE NO TE COMPROMETISTE NO ES UNA ESTADÍSTICA** (E3
+  F24). Y sin nada que hacer hoy, `null`: un 0 % sería inventarse un mal día donde no tocaba nada.
+- 🚨 **UN ELEMENTO RECIÉN CREADO NO PUEDE DESAPARECER POR EL FILTRO PUESTO** (E3 F24, **y lo encontró
+  Chromium**). Se entra a Hábitos por el filtro *Hoy*: crear uno de lunes, miércoles y viernes **un
+  domingo** lo guardaba perfectamente y **no se veía por ninguna parte**, y los filtros solo salían a
+  partir de tres. Ni el build, ni el renderizado, ni 151 comprobaciones de Node lo vieron. Al crear
+  algo que no cabe en el filtro actual, **cambiar de filtro**; y **una salida que solo existe cuando
+  ya tienes muchos no es una salida**.
 
 - 🚨 **ANTES DE REDISEÑAR UN APARTADO, MIRAR SI SUS PIEZAS YA EXISTEN** (E3 F23, y la BL F1 lo dijo
   primero): las seis mini-apps de Productividad **ya estaban** —cinco como pestañas desde la Fase 6 y

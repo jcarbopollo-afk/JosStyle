@@ -1,5 +1,83 @@
 # CHANGELOG.md
 
+## v3.45.0 — Entrega 3 · Fase 24 (PR F2): Productividad — Hábitos
+
+La primera mini-app de Productividad, completa: crear, editar, pausar, eliminar, marcar con un toque,
+progreso del día, rachas que respetan la frecuencia, historial visual y estadísticas.
+
+### 🚨 Las dos frecuencias nuevas son DEL MOTOR, no de Hábitos
+
+El enunciado pide *"todos los días / días concretos / X veces por semana"*, y las dos últimas no
+existían. Se han añadido a **`CLASES_REGLA`**, el motor de rachas de la RA F1, y con ellas:
+
+- **Un quinto estado de día: `NO_TOCA`.** Es lo que cumple el apartado que más insiste de la fase —
+  *"No implementar una lógica absurda de perder la racha… **la lógica debe respetar la frecuencia
+  configurada**"*. Sin él, un hábito de lunes, miércoles y viernes **habría perdido la racha cada
+  martes**. Ahora el martes ni cuenta ni rompe: es un hueco, no una equis.
+- **El recorrido por semanas**, construido exactamente en el punto que la propia RA F1 dejó escrito
+  —*"una regla con `periodo: 'semana'` recorrería SEMANAS en vez de días"*— y **en el mismo bucle**,
+  no en un motor aparte: con dos motores, la pantalla de Hábitos y el Centro de Rachas acabarían
+  diciendo números distintos, que es el problema que la RA F1 se propuso no volver a tener.
+
+Y es el reparto de EH F14: **la lista de frecuencias es del módulo, el comportamiento es del motor.**
+Cada línea de `FRECUENCIAS_HABITO` declara qué regla la implementa; ninguna reimplementa nada, y hay
+una prueba que lee `habitos.js` y falla si aparece un recorrido de fechas propio.
+
+### 🚨 Dos fallos que se destaparon al darle frecuencia a un hábito
+
+**`rachaDeHabito` ignoraba la regla del hábito.** Le ponía `REGLA_HABITO` a pelo — lo correcto hasta
+ahora, porque todos los hábitos eran diarios. Con la frecuencia nueva, un hábito de lunes, miércoles
+y viernes **se habría medido como si fuera diario**: racha rota cada martes y un 50 % de cumplimiento
+con el hábito hecho a la perfección. **Sin que fallara nada**: la pantalla se pinta igual, solo
+miente. Le quité el arreglo y la prueba se puso roja en tres sitios.
+
+**Y el porcentaje contaba los días que no tocaban.** El denominador de `estadisticasRacha` eran todos
+los días naturales; ahora son **solo los que la regla pedía**. Un porcentaje que castiga por no hacer
+algo a lo que nunca te comprometiste no es una estadística, es un reproche.
+
+### 🚨 Y un tercero, que encontró el navegador: el hábito que desaparecía
+
+Se entra por el filtro **Hoy**. Crear un hábito de lunes, miércoles y viernes **un domingo** lo
+guardaba perfectamente y **no se veía por ninguna parte** — y los filtros solo aparecían a partir de
+tres hábitos, así que con uno no había ni forma de encontrarlo. Se guardaba bien y él lo había
+perdido.
+
+No lo veían ni el build, ni el renderizado, ni las 151 comprobaciones de Node: lo cazó el recorrido
+en Chromium, que es el que lo *usa*. Dos arreglos: al crear uno que no cabe en el filtro puesto **la
+pantalla cambia de filtro**, y los filtros salen **en cuanto algo queda escondido**, no a partir de
+tres — una salida que solo existe cuando ya tienes muchos no es una salida.
+
+### El resto
+
+**Sin nada que hacer hoy no hay porcentaje** (`null`, no 0 %): un cero sería inventarse un mal día
+donde no tocaba nada. **Una racha de cero no se pinta.** **Pausar conserva el historial entero** —es
+archivar, no eliminar—, y **eliminar sí pregunta**, porque se lleva el historial por delante.
+**Editar no toca el historial.** Un hábito de «días concretos» **sin ningún día no se crea**: no
+tocaría nunca y su racha no podría avanzar jamás.
+
+Un hábito de la Fase 6 llega con los nueve campos y **su frecuencia sigue siendo la de siempre**: una
+migración que le pusiera otra le rompería rachas vivas sin avisar.
+
+Hoy queda **preparado, no rehecho**: `paraHoy()` devuelve los números —pendientes, completados,
+progreso, racha destacada— y ni una frase; quien compone lo del día sigue siendo `hoy.js` (HT F6).
+
+### ⏸ Y una contradicción del enunciado, anotada como C-29
+
+Pide *"un registro separado para las completaciones. **No guardar todo el historial dentro de un
+único campo del hábito**"*… y tres párrafos después: *"seguir la arquitectura existente. **No crear
+una segunda base de datos. No crear almacenamiento paralelo innecesario**"*.
+
+Manda la segunda, y no es una decisión propia: la primera describe una base de datos con tablas, y
+**JosStyle no tiene ninguna**. Una "tabla" de completaciones sería otra lista dentro del **mismo**
+JSON, que habría que sincronizar a mano y dejaría marcas colgando de hábitos borrados — y movería el
+suelo de `rachas.js`, `rachasHoy.js`, `hoy.js` y `puntuacion.js`. **Preguntárselo a Josué.**
+
+### Verificación
+Build de Vite, **151 comprobaciones nuevas de Node** (`scripts/test-habitos.mjs`), **52 casos de
+renderizado nuevos** (1820 en total), las 6 reglas invariantes y una sección nueva del recorrido en
+Chromium —738 comprobaciones— que crea un hábito de días concretos desde la pantalla, lo marca, lo
+desmarca y comprueba que el historial y las estadísticas dicen la verdad.
+
 ## v3.44.0 — Entrega 3 · Fase 23 (PR F1): Productividad como lanzador de mini-apps
 
 Empieza el bloque de **Productividad** (7 fases). Su pantalla principal deja de ser una fila de

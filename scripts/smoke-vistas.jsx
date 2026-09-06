@@ -25,7 +25,10 @@ import ObjectivesView from '../src/views/ObjectivesView.jsx';
 import DiaryView from '../src/views/DiaryView.jsx';
 import StatsView from '../src/views/StatsView.jsx';
 import PredictionsView from '../src/views/PredictionsView.jsx';
-import ProductivityView from '../src/views/ProductivityView.jsx';
+import ProductivityView, {
+  ProgresoDelDia, SemanaDeHabito, TarjetaHabito, FormularioHabito, DetalleHabito,
+} from '../src/views/ProductivityView.jsx';
+import { crearHabito as crearHabitoF24, semanaDe as semanaDeF24 } from '../src/lib/habitos.js';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
 import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH, GestionarEstiloEH, BuscadorEstiloEH, AvisosEstiloEH, IntegracionEH, TutorialEH, BienvenidaEH, VacioEH, CargandoEH, AvisoEstadoEH, HechoEH, AvisosDeEstadoEH, PrivacidadEH, CuerpoHigieneEH } from '../src/views/EstiloHombreView.jsx';
@@ -1858,6 +1861,46 @@ const CASOS = [
     objetivos: { lista: [], ultimaRevision: null },
     foco: null, onFocoConsumido: noop,
   })],
+  /* E3 F24 (PR F2) — Hábitos, la mini-app completa. El escenario tiene los TRES
+     tipos de frecuencia, uno pausado y uno recién creado sin historial: así se
+     pintan de verdad el hueco de "no toca", la racha por semanas y el vacío. */
+  ...(() => {
+    const HOY_F24 = HOY;  // el día local que ya declara este archivo, no una segunda forma de calcularlo
+    const hDiario = { ...crearHabitoF24({ nombre: 'Beber agua', icono: 'Droplet' }), id: 'hd', historial: { [HOY_F24]: true } };
+    const hDias = { ...crearHabitoF24({ nombre: 'Gimnasio', frecuencia: 'dias', dias: [0, 2, 4], icono: 'Dumbbell', categoria: 'fitness' }), id: 'hx' };
+    const hSem = { ...crearHabitoF24({ nombre: 'Correr', frecuencia: 'semanal', veces: 3 }), id: 'hs' };
+    const hPausa = { ...crearHabitoF24({ nombre: 'Meditar', icono: 'Brain' }), id: 'hp', activo: false };
+    const hNuevo = { ...crearHabitoF24({ nombre: 'Recién creado' }), id: 'hn' };
+    const todosF24 = [hDiario, hDias, hSem, hPausa, hNuevo];
+    const conHabitos = (extra = {}) => ({
+      productividad: { habitos: todosF24, rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [] },
+      objetivos: { lista: [], ultimaRevision: null }, accent,
+      onAddHabito: noop, onUpdateHabito: noop, onDeleteHabito: noop,
+      onAddRutina: noop, onUpdateRutina: noop, onDeleteRutina: noop,
+      onAddTarea: noop, onToggleTarea: noop, onDeleteTarea: noop,
+      onAddMeta: noop, onUpdateMeta: noop, onDeleteMeta: noop,
+      onCompletarPomodoro: noop,
+      onAddObjetivo: noop, onUpdateObjetivo: noop, onDeleteObjetivo: noop, onRevisionHecha: noop,
+      foco: { app: 'habitos' }, onFocoConsumido: noop, ...extra,
+    });
+    return [
+      ['ProductivityView · hábitos completos', ProductivityView, () => conHabitos()],
+      ['ProductivityView · hábitos vacíos', ProductivityView, () => conHabitos({
+        productividad: { habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [] },
+      })],
+      ['ProgresoDelDia', ProgresoDelDia, () => ({ progreso: { hechos: 1, total: 3, porcentaje: 33, hayQueHacer: true }, accent })],
+      ['ProgresoDelDia (nada hoy)', ProgresoDelDia, () => ({ progreso: { hechos: 0, total: 0, porcentaje: null, hayQueHacer: false }, accent })],
+      ['SemanaDeHabito', SemanaDeHabito, () => ({ dias: semanaDeF24(hDias, HOY_F24), accent })],
+      ['TarjetaHabito', TarjetaHabito, () => ({ habito: hDiario, hoy: HOY_F24, accent, indice: 0, onAlternar: noop, onAbrir: noop })],
+      ['TarjetaHabito (días concretos)', TarjetaHabito, () => ({ habito: hDias, hoy: HOY_F24, accent, indice: 1, onAlternar: noop, onAbrir: noop })],
+      ['TarjetaHabito (pausado)', TarjetaHabito, () => ({ habito: hPausa, hoy: HOY_F24, accent, indice: 2, onAlternar: noop, onAbrir: noop })],
+      ['FormularioHabito', FormularioHabito, () => ({ accent, onGuardar: noop, onCancelar: noop })],
+      ['FormularioHabito (editando días)', FormularioHabito, () => ({ habito: hDias, accent, onGuardar: noop, onCancelar: noop })],
+      ['FormularioHabito (editando semanal)', FormularioHabito, () => ({ habito: hSem, accent, onGuardar: noop, onCancelar: noop })],
+      ['DetalleHabito', DetalleHabito, () => ({ habito: hDiario, hoy: HOY_F24, accent, onCerrar: noop, onGuardar: noop, onEliminar: noop })],
+      ['DetalleHabito (sin historial)', DetalleHabito, () => ({ habito: hNuevo, hoy: HOY_F24, accent, onCerrar: noop, onGuardar: noop, onEliminar: noop })],
+    ];
+  })(),
   ['WellbeingView', WellbeingView, (e) => ({ bienestar: e.bienestar, onAdd: noop, onDelete: noop, onAddReflexion: noop, onCompletarSesion: noop, accent })],
   ['BusinessView', BusinessView, (e) => ({ negocio: e.negocio, onAdd: noop, onUpdate: noop, onDelete: noop, accent })],
   ['ArmarioView', ArmarioView, (e) => ({

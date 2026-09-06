@@ -137,7 +137,93 @@ export const CLASES_REGLA = {
     describir: (regla) => `${regla?.valor ?? 0}${regla?.unidad ? ` ${regla.unidad}` : ''} al día`,
     evaluar: (evento, regla) => !!evento && Number(evento.valor) >= Number(regla?.valor ?? 0),
   },
+
+  /* 🚨 **E3 F24 (PR F2) — "Días concretos".** Lunes, miércoles y viernes; el resto
+     de días **no cuentan y no rompen nada**.
+
+     Ésa es la parte que importa, y es literal del enunciado de Hábitos: *"No
+     implementar una lógica absurda de perder la racha… **La lógica debe respetar
+     la frecuencia configurada**"*. Sin esto, un hábito de tres días por semana
+     perdería la racha cada martes.
+
+     Se resuelve con `toca()`, que es lo único nuevo que entiende el motor: un día
+     que la regla no pide se salta igual que se salta hoy sin cumplir todavía. */
+  dias_concretos: {
+    id: 'dias_concretos',
+    label: 'Días concretos',
+    periodo: 'dia',
+    describir: (regla) => {
+      const dias = diasDeRegla(regla);
+      if (dias.length === 0) return 'Sin días elegidos';
+      if (dias.length === 7) return 'Todos los días';
+      return dias.map((d) => NOMBRES_DIA[d]).join(', ');
+    },
+    evaluar: (evento) => !!evento,
+    toca: (fecha, regla) => diasDeRegla(regla).includes(diaDeLaSemana(fecha)),
+  },
+
+  /* 🚨 **E3 F24 (PR F2) — "X veces por semana".** Tres veces, los días que sean.
+     Aquí lo que se cuenta **no son días: son SEMANAS cumplidas**, y por eso su
+     `periodo` es `'semana'`.
+
+     ⚠️ Este es el punto de integración que la RA F1 dejó escrito más abajo, en
+     `recorrerRacha`: *"una regla con `periodo: 'semana'` recorrería SEMANAS en vez
+     de días"*. Se ha construido ahí, en el mismo bucle, en vez de escribir un
+     segundo motor — que es como acabarían discrepando los números. */
+  veces_por_semana: {
+    id: 'veces_por_semana',
+    label: 'X veces por semana',
+    periodo: 'semana',
+    describir: (regla) => {
+      const v = vecesDeRegla(regla);
+      return v === 1 ? 'Una vez por semana' : `${v} veces por semana`;
+    },
+    evaluar: (evento) => !!evento,
+  },
 };
+
+/* Los días de la semana, empezando por el LUNES. ⚠️ `getDay()` de JavaScript
+   devuelve 0 para el domingo; aquí 0 es el lunes, que es como empieza la semana
+   en España y como la cuenta el resto del proyecto (E3 F10). */
+export const NOMBRES_DIA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+export const NOMBRES_DIA_CORTOS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+/** El día de la semana de una fecha local, con el lunes como 0.
+ *  ⚠️ Se construye con `T00:00:00` para que sea LOCAL: `new Date('2026-09-06')`
+ *  se interpreta como UTC y en España devuelve el día anterior — el fallo que
+ *  este proyecto ya ha pagado siete veces. */
+export function diaDeLaSemana(fecha) {
+  const d = new Date(`${fecha}T00:00:00`).getDay();
+  return (d + 6) % 7;
+}
+
+/** Los días elegidos de una regla, limpios: enteros de 0 a 6, sin repetidos y
+ *  ordenados. Una regla sin días válidos no pide ningún día. */
+export function diasDeRegla(regla) {
+  const brutos = Array.isArray(regla?.dias) ? regla.dias : [];
+  return [...new Set(brutos.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort((a, b) => a - b);
+}
+
+/** Cuántas veces por semana pide una regla. Mínimo 1, máximo 7: pedir cero sería
+ *  una regla que se cumple sin hacer nada, y pedir ocho, una imposible. */
+export function vecesDeRegla(regla) {
+  const v = Math.floor(Number(regla?.veces));
+  if (!Number.isFinite(v) || v < 1) return 1;
+  return Math.min(v, 7);
+}
+
+/** El lunes de la semana de una fecha. La semana empieza el lunes y se calcula en
+ *  local (E3 F10: séptima vez que el UTC habría devuelto la semana equivocada). */
+export function lunesDe(fecha) {
+  return addDays(fecha, -diaDeLaSemana(fecha));
+}
+
+/** ¿La regla pide algo ese día? Las reglas que no declaran `toca` piden todos los
+ *  días, que es como se ha comportado el motor desde la RA F1. */
+export function tocaEseDia(fecha, regla) {
+  const clase = claseDeRegla(regla);
+  return typeof clase.toca === 'function' ? !!clase.toca(fecha, regla) : true;
+}
 
 export const DEFAULT_REGLA = { clase: 'diaria' };
 
@@ -287,12 +373,20 @@ export const ESTADOS_DIA = {
   PERDIDO: 'perdido',         // terminó el día sin cumplirla
   PENDIENTE: 'pendiente',     // es hoy y todavía da tiempo
   FUTURO: 'futuro',           // aún no ha llegado
+  /* 🚨 E3 F24 (PR F2) — el quinto: **ese día la regla no pedía nada**. Un hábito
+     de lunes, miércoles y viernes no falla los martes; sin este estado, el motor
+     los contaría como PERDIDO y la racha se rompería cada semana. */
+  NO_TOCA: 'no_toca',
 };
 
 export function estadoDeDia(fecha, { indice, regla, hoy = todayISO() } = {}) {
   const clase = claseDeRegla(regla);
   if (clase.evaluar(indice?.[fecha], regla)) return ESTADOS_DIA.COMPLETADO;
   if (fecha > hoy) return ESTADOS_DIA.FUTURO;
+  /* ⚠️ Se pregunta DESPUÉS de mirar si está cumplido: si Josué marca un martes que
+     no tocaba, eso es un día cumplido, no un día que no cuenta. Hacerlo bien le da
+     la razón a él en vez de a la regla. */
+  if (!tocaEseDia(fecha, regla)) return ESTADOS_DIA.NO_TOCA;
   // Apartado 8, el que más insiste: *"Un día que todavía está en curso no debe
   // considerarse automáticamente fallido."* A las 10:00 sin entrenar, hoy es
   // PENDIENTE, no perdido. La racha no se rompe hasta que el día termina.
@@ -316,6 +410,13 @@ function recorrerRacha(desde, { indice, regla, hoy, limite = 3650 }) {
   const tolerancia = toleranciaDe(regla);
   const clase = claseDeRegla(regla);
 
+  /* 🚨 E3 F24 (PR F2) — aquí está construido lo que este comentario prometía: una
+     regla con `periodo: 'semana'` recorre SEMANAS. Se ha hecho **en este mismo
+     bucle**, no en un motor aparte: con dos motores, la racha de la pantalla de
+     Hábitos y la del Centro de Rachas acabarían diciendo números distintos, que es
+     el problema del apartado 17 que la RA F1 se propuso no volver a tener. */
+  if (clase.periodo === 'semana') return recorrerSemanas(desde, { indice, regla, hoy, limite });
+
   let dias = 0;
   let inicio = null;
   let fin = null;
@@ -329,9 +430,11 @@ function recorrerRacha(desde, { indice, regla, hoy, limite = 3650 }) {
       if (!fin) fin = cursor;
       fallosSeguidos = 0;
     } else {
-      // Un día futuro o el de hoy sin cumplir no cuenta ni rompe: se salta.
+      /* Un día futuro, el de hoy sin cumplir, o uno que la regla no pedía: no
+         cuenta ni rompe, se salta. 🚨 `NO_TOCA` es de la E3 F24 y es lo que hace
+         que *"la lógica respete la frecuencia configurada"*. */
       const estado = estadoDeDia(cursor, { indice, regla, hoy });
-      if (estado === ESTADOS_DIA.PENDIENTE || estado === ESTADOS_DIA.FUTURO) {
+      if (estado === ESTADOS_DIA.PENDIENTE || estado === ESTADOS_DIA.FUTURO || estado === ESTADOS_DIA.NO_TOCA) {
         cursor = addDays(cursor, -1);
         continue;
       }
@@ -343,6 +446,51 @@ function recorrerRacha(desde, { indice, regla, hoy, limite = 3650 }) {
   }
 
   return { dias, inicio, fin };
+}
+
+/**
+ * El recorrido de las reglas semanales — *"X veces por semana"*.
+ *
+ * ⚠️ **Lo que se cuenta son SEMANAS cumplidas, no días.** Con «3 veces por
+ * semana», una semana con cuatro marcas cuenta una vez, igual que una con tres:
+ * la regla se cumple o no se cumple.
+ *
+ * ⚠️ Y **la semana en curso no rompe la racha**: si estamos a miércoles con una
+ * de tres, todavía da tiempo. Es la política del apartado 8 —*"un periodo que
+ * todavía está en curso no debe considerarse fallido"*— aplicada a la semana en
+ * vez de al día.
+ *
+ * `dias` sigue llamándose así porque es el campo que lee todo lo demás; para una
+ * regla semanal su unidad son semanas, y quien lo enseña lo dice con palabras
+ * (`describirRacha`).
+ */
+function recorrerSemanas(desde, { indice, regla, hoy, limite = 520 }) {
+  const meta = vecesDeRegla(regla);
+  const semanaDeHoy = lunesDe(hoy);
+  let semanas = 0;
+  let inicio = null;
+  let fin = null;
+  let cursor = lunesDe(desde);
+
+  for (let i = 0; i < limite; i++) {
+    let hechos = 0;
+    for (let d = 0; d < 7; d++) if (indice[addDays(cursor, d)]) hechos++;
+
+    if (hechos >= meta) {
+      semanas++;
+      inicio = cursor;
+      if (!fin) fin = cursor;
+    } else if (cursor >= semanaDeHoy) {
+      // La semana en curso (o una futura) no cuenta todavía, pero tampoco rompe.
+      cursor = addDays(cursor, -7);
+      continue;
+    } else {
+      break;
+    }
+    cursor = addDays(cursor, -7);
+  }
+
+  return { dias: semanas, inicio, fin, unidad: 'semana' };
 }
 
 /* ===========================================================================
@@ -471,7 +619,19 @@ export function estadisticasRacha(eventos, racha, hoy = todayISO()) {
   // castigaría a una racha recién empezada con un porcentaje ridículo.
   const primero = fechas[0] || null;
   const ultimo = fechas[fechas.length - 1] || null;
-  const totalDias = primero ? diasEntre(primero, hoy < primero ? primero : hoy) : 0;
+  const hasta = primero ? (hoy < primero ? primero : hoy) : null;
+
+  /* 🚨 E3 F24 (PR F2) — **el denominador cuenta solo los días que la regla PEDÍA.**
+     Antes eran todos los días naturales, y para un hábito de lunes, miércoles y
+     viernes eso significaba un 43 % con el hábito cumplido a la perfección: los
+     martes contaban como fallados. Un porcentaje así no es una estadística, es un
+     reproche por algo que él nunca se comprometió a hacer. */
+  let totalDias = 0;
+  if (hasta) {
+    for (let f = primero; f <= hasta; f = addDays(f, 1)) {
+      if (tocaEseDia(f, r.regla)) totalDias++;
+    }
+  }
   const perdidos = Math.max(0, totalDias - cumplidos);
 
   return {
@@ -595,13 +755,23 @@ export function rachaGlobal(eventos, rachas, hoy = todayISO()) {
 /** La regla con la que se calculan los hábitos: la de siempre, con su margen de un día. */
 export const REGLA_HABITO = { clase: 'diaria_con_gracia', tolerancia: 1 };
 
-/** Un hábito de Productividad, visto como una racha. */
+/** Un hábito de Productividad, visto como una racha.
+ *
+ *  🚨 **E3 F24 (PR F2) — y su regla es LA SUYA.** Hasta esta fase se le ponía
+ *  `REGLA_HABITO` a pelo, porque un hábito no tenía frecuencia: eran todos
+ *  diarios. Con la PR F2 la tiene, y dejarlo así habría hecho que un hábito de
+ *  lunes, miércoles y viernes **se midiera como si fuera diario** —racha rota
+ *  cada martes y cumplimiento del 50 % con el hábito perfecto—, sin que fallara
+ *  nada: la pantalla se pinta igual, solo miente.
+ *
+ *  ⚠️ Un hábito sin `regla` sigue cayendo en la de siempre, así que lo que Josué
+ *  ya tenía se comporta exactamente igual que antes. */
 export function rachaDeHabito(habito) {
   return normalizarRacha({
     id: habito?.id,
     tipo: 'habits',
     nombre: habito?.nombre,
-    regla: REGLA_HABITO,
+    regla: habito?.regla || REGLA_HABITO,
     creadaEn: null,
   });
 }

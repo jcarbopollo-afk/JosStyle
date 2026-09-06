@@ -2722,4 +2722,83 @@ const tareas_pr1 = await esperarTexto(/Estudiar mates/);
 ok(/Estudiar mates/.test(tareas_pr1),
   '🚨 Y LAS CINCO DE SIEMPRE SIGUEN INTACTAS: esta fase es la pantalla, no su contenido');
 
+/* ── E3 F24 (PR F2) · HÁBITOS ────────────────────────────────────────────
+   Lo que no se puede comprobar en Node: crear un hábito de días concretos desde
+   la pantalla, marcarlo, y ver que **el martes no cuenta como fallo**. */
+almacen.productividad = { habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [] };
+almacen.objetivos = { lista: [], ultimaRevision: null };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Vida');
+await pulsar('Productividad');
+ok(await pulsar('Abrir Hábitos'), 'Hábitos se abre');
+
+const vacio_pr2 = await esperarTexto(/Empieza a construir tu constancia/i);
+ok(/Empieza a construir tu constancia/i.test(vacio_pr2),
+  '🚨 y sin hábitos NO hay una pantalla vacía: el estado del enunciado, con su frase');
+ok(/pequeños hábitos repetidos/i.test(vacio_pr2), '⚠️ palabra por palabra');
+
+ok(await pulsar('Crear mi primer hábito'), 'y su botón abre el formulario');
+await page.waitForSelector('input[aria-label="Nombre del hábito"]', { timeout: 6000 });
+await page.fill('input[aria-label="Nombre del hábito"]', 'Leer 20 minutos');
+ok(await pulsar('Icono Leer'), 'se elige un icono');
+ok(await pulsar('Frecuencia Días concretos'), 'y la frecuencia de días concretos');
+ok(await pulsar('Lunes'), 'se marca el lunes');
+ok(await pulsar('Miércoles'), 'y el miércoles');
+ok(await pulsar('Viernes'), 'y el viernes');
+ok(await pulsar('Crear hábito'), 'y se crea');
+
+/* 🚨 Aquí es donde el recorrido encontró el fallo: si hoy no es lunes, miércoles
+   ni viernes, el filtro "Hoy" lo escondía nada más crearlo. Ahora la pantalla
+   cambia de filtro sola, así que **aparece siempre**. */
+const conHabito_pr2 = await esperarTexto(/Leer 20 minutos/);
+ok(/Leer 20 minutos/.test(conHabito_pr2),
+  '🚨 EL HÁBITO APARECE NADA MÁS CREARLO, toque el día que toque: no puede guardarse y desaparecer');
+ok(/Lunes, Miércoles, Viernes/i.test(conHabito_pr2),
+  '🚨 CON SU FRECUENCIA DICHA CON PALABRAS, no un código');
+
+const habGuardado_pr2 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value?.habitos;
+ok(habGuardado_pr2?.length === 1 && habGuardado_pr2[0].nombre === 'Leer 20 minutos',
+  '🚨 y llega a Supabase de verdad');
+ok(habGuardado_pr2[0].regla?.clase === 'dias_concretos',
+  '🚨 CON SU REGLA, que es lo que entiende el motor de rachas');
+ok(Array.isArray(habGuardado_pr2[0].regla.dias) && habGuardado_pr2[0].regla.dias.length === 3,
+  '⚠️ y sus tres días');
+ok(habGuardado_pr2[0].rachaActual === undefined && habGuardado_pr2[0].mejorRacha === undefined,
+  '🚨 y NI UN CONTADOR guardado: la racha se deriva (RA F1)');
+
+/* Crear uno diario y marcarlo, para ver el progreso del día moverse. */
+ok(await pulsar('Nuevo hábito'), 'se crea otro');
+await page.waitForSelector('input[aria-label="Nombre del hábito"]', { timeout: 6000 });
+await page.fill('input[aria-label="Nombre del hábito"]', 'Beber agua');
+ok(await pulsar('Crear hábito'), 'esta vez diario');
+
+const dosHabitos_pr2 = await esperarTexto(/Beber agua/);
+ok(/Beber agua/.test(dosHabitos_pr2), 'y aparece');
+ok(await pulsar('Completar Beber agua'), 'se marca con un toque');
+await page.waitForTimeout(700);
+
+const trasMarcar_pr2 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value?.habitos;
+const agua = trasMarcar_pr2.find((h) => h.nombre === 'Beber agua');
+ok(Object.keys(agua.historial || {}).length === 1,
+  '🚨 Y SE GUARDA EN SU HISTORIAL, que es donde lleva viviendo desde la Fase 6');
+
+const conProgreso_pr2 = await esperarTexto(/completados/i);
+ok(/completados/i.test(conProgreso_pr2), '⚠️ y el progreso del día lo dice');
+ok(await pulsar('Desmarcar Beber agua'), 'y se puede desmarcar');
+await page.waitForTimeout(700);
+const trasDesmarcar_pr2 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value?.habitos;
+ok(Object.keys(trasDesmarcar_pr2.find((h) => h.nombre === 'Beber agua').historial || {}).length === 0,
+  '⚠️ dejando el historial como estaba');
+
+/* El detalle: estadísticas e historial. */
+ok(await pulsar('Ver Leer 20 minutos'), 'se abre el detalle de un hábito');
+const detalle_pr2 = await esperarTexto(/Cumplimiento/i);
+ok(/Cumplimiento/i.test(detalle_pr2) && /Mejor racha/i.test(detalle_pr2),
+  '🚨 CON SUS ESTADÍSTICAS: cumplimiento, mejor racha y veces completado');
+ok(/no tocaban/i.test(detalle_pr2),
+  '🚨 y el historial DICE que los días que no tocaban no son un fallo');
+ok(await pulsar('Cerrar el detalle del hábito'), 'y se cierra');
+
 await salir(browser);

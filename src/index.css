@@ -405,3 +405,25 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
 .favorito-guardado:active svg {
   animation: favoritoPulso 240ms var(--ease-premium);
 }
+
+/* Entrega 3 · F24 (PR F2) — Hábitos.
+   *"Al completar: ✓ aparece mediante una animación… la barra de progreso puede
+   animarse. Todo debe ser rápido. Nada exagerado."*
+
+   ⚠️ Viven aquí, con el resto, y no en un `style` de la vista: así respetan
+   "Reducir movimiento" solas (E3 F14). Y ninguna pasa de `MAX_ANIMACION_MS`. */
+@keyframes habitoHecho {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+.habito-hecho {
+  animation: habitoHecho 280ms var(--ease-premium) both;
+}
+
+/* La barra del progreso del día se anima al cambiar de ancho, para que marcar un
+   hábito se note sin sacudidas. */
+.barra-progreso {
+  transition: width 380ms var(--ease-premium), background 380ms var(--ease-premium);
+}

@@ -151,6 +151,12 @@ export const ANIMACIONES_HC = [
   { id: 'aviso', apartado: 17, nombre: 'El aviso de "añadido"', ms: 260, clase: 'aviso-entra' },
   { id: 'cambio_mes', apartado: 19, nombre: 'Cambiar de mes', ms: 260, clase: 'calendar-month-grid' },
   { id: 'esqueleto', apartado: 23, nombre: 'El latido del esqueleto', ms: 1400, clase: 'esqueleto', repetida: true },
+  /* E3 F24 (PR F2) — las dos de Hábitos. Entran aquí y no en un catálogo aparte
+     porque la prueba de la E3 F14 recorre ESTA lista comprobando que cada clase
+     declarada existe de verdad en el CSS: una animación declarada y no escrita es
+     un catálogo que miente, y ya pasó con `tarea-hecha` y `aviso-entra`. */
+  { id: 'habito_hecho', apartado: 16, nombre: 'Completar un hábito', ms: 280, clase: 'habito-hecho' },
+  { id: 'progreso_dia', apartado: 16, nombre: 'La barra del progreso del día', ms: 380, clase: 'barra-progreso' },
 ];
 
 export const animacionHC = (id) => ANIMACIONES_HC.find((a) => a.id === id) || null;
