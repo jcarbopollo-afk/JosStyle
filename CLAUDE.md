@@ -1102,10 +1102,15 @@ que estaba **bien** —"conseguir" contiene "seguir", la frase que dice cuándo 
 línea la hace saltar antes de tocar el código.** Y la otra: **el fallo del normalizador ya va por la
 decimoctava vez** (F9 lo cazó en el mismo turno). Al añadir un campo, añadirlo a su normalizador.
 
-⏸ **SO · Fase 2 (biblioteca de sonidos) está bloqueada, y por un motivo real:** no hay ni un archivo
-de audio en el proyecto. Josué escribió en la especificación que los daría *"cuando la web ya tenga
-todos los botones activos"*, y F2 es literalmente la fase que los necesita. El motor de F1 está
-entero y funciona; lo único que falta son los sonidos.
+🔓 **SO · Fase 2 (biblioteca de sonidos) ya NO está bloqueada.** Lo estuvo, y por un motivo real:
+no había ni un archivo de audio. Josué escribió que los daría *"cuando la web ya tenga todos los
+botones activos"*, y cumplió: **los 46 están en `public/sonidos/`** desde el 2026-09-04, grabados
+por él en FL Studio y medidos uno a uno contra su ficha.
+
+⚠️ Esta frase decía lo contrario hasta el 2026-09-07, y era la **tercera** copia de la misma
+mentira: la primera se la decía el panel de Ajustes a Josué en la cara mientras intentaba entender
+por qué no le sonaba el móvil, y la segunda estaba dos veces en este mismo archivo. Un documento que
+contradice a la aplicación manda a la siguiente sesión a perseguir un bloqueo que no existe.
 
 Seis cosas que conviene tener presentes al retomar:
 

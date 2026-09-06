@@ -47,6 +47,9 @@ import {
   normalizarAudio, decidirReproduccion, ESTADO_AUDIO_INICIAL,
   sonidosAPrecargar, CATEGORIAS_SONIDO, volumenEfectivo,
 } from './audio';
+/* ⚠️ Los patrones de vibración viven en la SO F2 con el resto de la
+   especificación. El motor no se los inventa: los pide. */
+import { patronDe } from './sonidoProduccion';
 import { suscribir, emitir } from './eventos';
 
 /* ===========================================================================
@@ -62,6 +65,7 @@ const motor = {
   sonidosUsuario: [],
   estado: ESTADO_AUDIO_INICIAL,
   soltarGestos: null,
+  palanca: null,            // el interruptor invisible de iOS — ver `vibrar()`
   fallos: [],
 };
 
@@ -268,6 +272,72 @@ export function precargar() {
 }
 
 /* ===========================================================================
+   2 bis · VIBRAR (apartado 22)
+   ===========================================================================
+   🚨 **Esto no existía, y el interruptor llevaba cinco fases puesto.**
+
+   `vibracion` estaba en las preferencias, tenía su casilla en Ajustes y su
+   patrón por categoría escrito en la SO F2… y **nadie llamaba a
+   `navigator.vibrate` en toda la aplicación**. Josué lo encendía y no pasaba
+   nada. Es la regla 8 —ningún control decorativo— incumplida a la vista de
+   todos, y sobrevivió porque *parecía* implementada: había preferencia, había
+   casilla y había especificación. Faltaba la línea que la usa.
+
+   ⚠️ **Y en iPhone Apple no deja.** No es un fallo que se pueda arreglar aquí:
+   `navigator.vibrate` no existe en Safari de iOS, ni en Chrome de iOS (que por
+   dentro es Safari). Lo único que hay desde iOS 17.4 es que un interruptor
+   nativo —`<input type="checkbox" switch>`— da un toque háptico al cambiar. Se
+   intenta con eso, se detecta si existe, y **la pantalla dice la verdad sobre
+   lo que puede pasar**. No se promete lo que no se puede cumplir.
+   =========================================================================== */
+
+/** El interruptor invisible de iOS 17.4+. Se crea una sola vez, y solo si hace falta. */
+function palancaHaptica() {
+  if (!HAY_DOM) return null;
+  if (motor.palanca) return motor.palanca;
+  // Si el navegador no entiende el atributo `switch`, no hay nada que intentar.
+  const prueba = document.createElement('input');
+  if (!('switch' in prueba)) return null;
+  prueba.type = 'checkbox';
+  prueba.switch = true;
+  prueba.setAttribute('aria-hidden', 'true');
+  prueba.tabIndex = -1;
+  /* ⚠️ Ni `display:none` ni `visibility:hidden`: un elemento que no se pinta no
+     da háptica. Se deja pintado, de un píxel y transparente, y fuera del alcance
+     del ratón para que nadie pueda tocarlo sin querer. */
+  prueba.style.cssText = 'position:fixed;bottom:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;';
+  document.body.appendChild(prueba);
+  motor.palanca = prueba;
+  return prueba;
+}
+
+/** Qué se puede hacer aquí: 'vibrar' (Android y escritorio), 'toque' (iOS 17.4+) o null. */
+export function soporteVibracion() {
+  if (!HAY_DOM) return null;
+  if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') return 'vibrar';
+  if ('switch' in document.createElement('input')) return 'toque';
+  return null;
+}
+
+/**
+ * Vibra con el patrón del evento. **Nunca sube un error**: un móvil que ignora
+ * la orden, una pestaña en segundo plano o un iPhone que no puede acaban en
+ * `false`, y la aplicación sigue igual (apartado 26).
+ */
+export function vibrar(tipo) {
+  const soporte = soporteVibracion();
+  if (!soporte) return false;
+  try {
+    if (soporte === 'vibrar') return navigator.vibrate(patronDe(tipo).ms) === true;
+    const palanca = palancaHaptica();
+    if (!palanca) return false;
+    palanca.checked = !palanca.checked;   // el cambio es lo que da el toque
+    palanca.dispatchEvent(new Event('change', { bubbles: false }));
+    return true;
+  } catch (e) { anotar(`vibrar:${tipo}`, e); return false; }
+}
+
+/* ===========================================================================
    3 · REPRODUCIR (apartados 6, 10, 11 y 26)
    ===========================================================================
    La interfaz entera del apartado 6 pasa por aquí. Un componente escribe
@@ -283,6 +353,13 @@ export function reproducir(tipo, { ahora = Date.now(), contexto = {} } = {}) {
     ahora, estado: motor.estado, sonidosUsuario: motor.sonidosUsuario, contexto,
   });
   motor.estado = decision.estado;
+
+  /* 🚨 La vibración va ANTES del `return`, y por eso está aquí y no dentro del
+     bloque que reproduce: son dos interruptores (apartado 22). Con el sonido
+     apagado y la vibración encendida, `decision.suena` es `false` y `vibra` es
+     `true` — y ése es justo el caso de una clase, que es cuando más falta hace. */
+  if (decision.vibra) vibrar(tipo);
+
   if (!decision.suena) return decision;
 
   // Sin contexto o sin desbloquear no se fuerza nada: se devuelve la decisión
@@ -323,6 +400,8 @@ export async function reanudar() { try { await motor.contexto?.resume(); } catch
  */
 export function detener() {
   try { motor.soltarGestos?.(); } catch (e) { anotar('detener', e); }
+  try { motor.palanca?.remove(); } catch (e) { anotar('detener', e); }
+  motor.palanca = null;
   try { motor.contexto?.close(); } catch (e) { anotar('detener', e); }
   motor.contexto = null;
   motor.ganancias.clear();

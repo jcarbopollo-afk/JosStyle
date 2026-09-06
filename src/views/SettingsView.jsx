@@ -28,8 +28,8 @@ import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
 import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton, BotonBorrar, Switch } from '../components/ui';
 /* SO Fase 5 — la pantalla de «Sonido y respuesta». Los interruptores son los de
    `audio.js` (SO F1): aquí no se inventa ninguna preferencia nueva. */
-import { PERFILES, perfilSonido, perfilActual, aplicarPerfil, CONTROLES, MARCAS_VOLUMEN, ejemploDe, normalizarAudio } from '../lib/sonidoProduccion';
-import { reproducir, diagnosticoAudio } from '../lib/audioEngine';
+import { CONTROLES, MARCAS_VOLUMEN, ejemploDe, normalizarAudio } from '../lib/sonidoProduccion';
+import { reproducir, diagnosticoAudio, soporteVibracion } from '../lib/audioEngine';
 import { suscribir } from '../lib/eventos';
 import PersonalizationView from './PersonalizationView';
 import PapeleraView from './PapeleraView';
@@ -1239,19 +1239,32 @@ export function VistaPreviaGlobal({ fondo, urlFoto, accent }) {
 /* ────────────────────────────────────────────────────────────────────────────
    SO Fase 5 — «Sonido y respuesta» (apartados 24, 26, 27 y 28)
 
-   ⚠️ **Los interruptores son los de `audio.js`, no unos nuevos.** El perfil no se
-   guarda: se DEDUCE de las preferencias (`perfilActual`), porque un perfil
-   guardado aparte se desincroniza en cuanto tocas una casilla y entonces la
-   pantalla dice "Equilibrado" mientras suena otra cosa.
+   ⚠️ **Los interruptores son los de `audio.js`, no unos nuevos.** Ninguna
+   preferencia de sonido se guarda dos veces: lo que se ve aquí es lo que hay
+   guardado, y no hay una segunda copia que se pueda desincronizar.
 
-   ⏸ **Y hoy no suena nada**, porque no hay archivos de audio (SO F2, bloqueada).
-   La pantalla lo dice arriba en vez de dejar interruptores que no hacen nada:
-   eso es la regla 8 del proyecto.
+   🚨 **Ya no hay perfiles.** El apartado 25 pedía cuatro —Silencioso,
+   Equilibrado, Inmersivo, Personalizado— y estuvieron puestos hasta que Josué
+   los miró de verdad el 2026-09-07: *«son inútiles»*. Lo eran. Los tres
+   preajustes escribían combinaciones del interruptor general, el volumen y las
+   tres casillas que están justo debajo, y el cuarto no era un botón sino la
+   etiqueta de «has tocado algo». Cuatro controles que no abrían ni una puerta
+   nueva, en la pantalla que la regla 3 quiere corta.
    ──────────────────────────────────────────────────────────────────────────── */
+
+/* ⚠️ Qué puede hacer ESTE móvil, dicho sin engañar. El tercero es el que le toca
+   a Josué, y es el que no se puede prometer: Apple no deja que una web vibre. */
+const TEXTO_VIBRACION = {
+  vibrar: 'Independiente del sonido: aunque lo tengas apagado, el móvil vibra.',
+  toque: 'En iPhone Apple no deja vibrar a las webs. Se intenta con lo único que existe (un toque corto, iOS 17.4 o más nuevo) y puede que no lo notes.',
+  ninguno: 'Este dispositivo no puede vibrar.',
+};
+
 export function BloqueSonido({ audio, accent, onCambiar }) {
   const prefs = normalizarAudio(audio);
-  const perfil = perfilActual(prefs);
   const { activado } = prefs;
+  // Se pregunta una vez: no cambia mientras la pantalla esté abierta.
+  const [soporte] = useState(() => soporteVibracion());
 
   /* 🚨 El diagnostico se refresca con CADA evento del bus, no con un temporizador:
      lo que cambia el estado del sonido es que pase algo —el primer toque que lo
@@ -1335,19 +1348,16 @@ export function BloqueSonido({ audio, accent, onCambiar }) {
         </div>
       </div>
 
-      {/* 🎛 Perfil — apartado 25. Deducido, no guardado. */}
-      <div>
-        <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>🎛 Perfil</p>
-        <p className="text-[11px] mb-2" style={{ color: COLORS.textMuted }}>
-          {perfilSonido(perfil)?.que || 'Lo que tú hayas puesto.'}
-        </p>
-        <OpcionesFila
-          opciones={PERFILES.map((p) => ({ id: p.id, label: `${p.icono} ${p.nombre}` }))}
-          valor={perfil}
-          onChange={(id) => onCambiar(aplicarPerfil(prefs, id))}
-          accent={accent}
-        />
-      </div>
+      {/* 🚨 Aquí estaba «🎛 Perfil», con cuatro botones: Silencioso, Equilibrado,
+          Inmersivo y Personalizado. Los quitó Josué el 2026-09-07 —«son
+          inútiles»— y tenía razón: los tres preajustes no hacían nada que no
+          hicieran ya el interruptor general y las tres casillas de abajo, y el
+          cuarto ni siquiera era un botón, era el cartel de «has tocado algo a
+          mano». Cuatro controles para no añadir ni una posibilidad.
+
+          Lo que sí valía de esa idea —que un perfil no fuera un sistema aparte,
+          sino las mismas preferencias— sigue vivo: quien manda son el
+          interruptor, el volumen y las categorías, que es lo que quedó. */}
 
       {/* Las categorías del apartado 24, con el ▶ Escuchar del 26. */}
       <div className="space-y-2">
@@ -1381,19 +1391,22 @@ export function BloqueSonido({ audio, accent, onCambiar }) {
         ))}
       </div>
 
-      {/* 📳 Vibración — apartado 22: es OTRO interruptor, no el mismo. */}
+      {/* 📳 Vibración — apartado 22: es OTRO interruptor, no el mismo.
+          🚨 Y hasta el 2026-09-07 no era ninguno: la casilla estaba, la
+          preferencia se guardaba, y nadie llamaba nunca a `navigator.vibrate`.
+          Ahora vibra de verdad, y el texto dice lo que este móvil puede hacer en
+          vez de dar por hecho que no puede (regla 8). */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold" style={{ color: COLORS.text }}>📳 Vibración</p>
-          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
-            Independiente del sonido. En iPhone no está disponible.
-          </p>
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{TEXTO_VIBRACION[soporte] || TEXTO_VIBRACION.ninguno}</p>
         </div>
         <Switch
           checked={prefs.vibracion}
           onChange={(v) => cambiar({ vibracion: v })}
           accent={accent}
           label="Vibración"
+          disabled={soporte === null}
         />
       </div>
     </div>

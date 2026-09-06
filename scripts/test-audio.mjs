@@ -24,6 +24,9 @@ import { suscribir, emitir, cuentaSuscriptores, reiniciarBus, fallosDeEventos } 
    se separen es un test, no un acoplamiento. */
 import { listaDeArchivos, FORMATO } from '../src/lib/especificacionSonidos.js';
 import { CATALOGO as CATALOGO_F3 } from '../src/lib/audioEventos.js';
+/* Los patrones de vibración y la lectura de los dos interruptores viven en la
+   SO F2, donde está el resto de la especificación. */
+import { patronDe, queHaceElEvento } from '../src/lib/sonidoProduccion.js';
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
@@ -601,6 +604,93 @@ console.log('\n═══ El sonido nunca es el único canal ═══\n');
 }
 
 /* ===========================================================================
+   LA VIBRACIÓN, QUE NO EXISTÍA (apartado 22 · EH F65)
+   ===========================================================================
+   🚨 El interruptor 📳 Vibración llevaba cinco fases en Ajustes. La preferencia
+   se guardaba, los patrones por categoría estaban escritos en la SO F2, había
+   pruebas de `queHaceElEvento()` en verde… y **`navigator.vibrate` no se
+   llamaba en ningún sitio de la aplicación**. Josué lo encendía y no pasaba
+   nada: la regla 8 —ningún control decorativo— incumplida a la vista de todos.
+
+   Sobrevivió porque *parecía* implementado. Por eso las pruebas de aquí abajo
+   no preguntan si la decisión dice "vibra": preguntan si el móvil VIBRA. */
+console.log('\n═══ Vibración ═══\n');
+{
+  const CON_VIBRACION = { ...ON, vibracion: true };
+
+  comprobar('Sin el interruptor de vibración no vibra nada',
+    decidirReproduccion(ON, 'SUCCESS', { ahora: T0 }).vibra === false);
+  comprobar('Con el interruptor puesto, vibra',
+    decidirReproduccion(CON_VIBRACION, 'SUCCESS', { ahora: T0 }).vibra === true);
+
+  /* 🚨 El caso de una clase, y el motivo entero de que sean dos interruptores. */
+  const enClase = { ...CON_VIBRACION, activado: false };
+  const d = decidirReproduccion(enClase, 'SUCCESS', { ahora: T0 });
+  comprobar('🚨 CLAVE · Con el SONIDO APAGADO y la vibración puesta, vibra igual',
+    d.suena === false && d.vibra === true);
+  comprobar('...y el motivo sigue diciendo por qué no ha sonado',
+    d.motivo === 'sonido_desactivado');
+
+  /* ⚠️ Y con su propio ritmo: si el estado no avanzara al vibrar sin sonido, la
+     vibración no tendría cooldown y zumbaría en cada toque. */
+  const segundo = decidirReproduccion(enClase, 'SUCCESS', { ahora: T0 + 10, estado: d.estado });
+  comprobar('🚨 CLAVE · Dos veces seguidas sin sonido: la segunda NO vibra (tiene cooldown propio)',
+    segundo.vibra === false);
+
+  const callada = { ...CON_VIBRACION, silenciadas: ['ui'] };
+  comprobar('⚠️ Si ha callado una categoría, tampoco le vibra: un interruptor por área',
+    decidirReproduccion(callada, 'UI_CLICK', { ahora: T0 }).vibra === false);
+  comprobar('...pero las demás siguen vibrando',
+    decidirReproduccion(callada, 'SUCCESS', { ahora: T0 }).vibra === true);
+
+  comprobar('Un evento que no existe no vibra ni revienta',
+    decidirReproduccion(CON_VIBRACION, 'INVENTADO', { ahora: T0 }).vibra === false);
+
+  // El patrón sale de la categoría, no del evento suelto.
+  comprobar('Un clic vibra más flojo que un logro',
+    patronDe('UI_CLICK').ms[0] < patronDe('ACHIEVEMENT_UNLOCKED').ms[0]);
+  comprobar('Y `queHaceElEvento` cuenta lo mismo que la decisión, no una copia suya',
+    queHaceElEvento(enClase, 'SUCCESS').vibra === true
+    && queHaceElEvento(ON, 'SUCCESS').vibra === false);
+}
+
+/* ---------------------------------------------------------------------------
+   Y AHORA EL MOTOR, QUE ES DONDE FALTABA LA LÍNEA
+   --------------------------------------------------------------------------- */
+{
+  const vibraciones = [];
+  Object.defineProperty(globalThis, 'navigator', {
+    value: { vibrate: (ms) => { vibraciones.push(ms); return true; } },
+    configurable: true, writable: true,
+  });
+  globalThis.window = { AudioContext: function AudioContextFalso() {} };
+  globalThis.document = { addEventListener() {}, removeEventListener() {} };
+
+  const motor = await import('../src/lib/audioEngine.js');
+  comprobar('El motor sabe que aquí se puede vibrar', motor.soporteVibracion() === 'vibrar');
+
+  /* 🚨 LA prueba. Sonido apagado, vibración encendida — y el móvil vibra. Esto
+     es literalmente lo que no pasaba: había interruptor, había preferencia,
+     había patrón, y no había llamada. */
+  motor.actualizarPreferencias({ ...ON, activado: false, vibracion: true });
+  motor.reproducir('SUCCESS', { ahora: T0 });
+  comprobar('🚨 CLAVE · `reproducir()` VIBRA de verdad con el sonido apagado',
+    vibraciones.length === 1, `llamadas a navigator.vibrate: ${vibraciones.length}`);
+  comprobar('...con el patrón de su categoría, no uno inventado',
+    JSON.stringify(vibraciones[0]) === JSON.stringify(patronDe('SUCCESS').ms));
+
+  vibraciones.length = 0;
+  motor.actualizarPreferencias({ ...ON, activado: false, vibracion: false });
+  motor.reproducir('SUCCESS', { ahora: T0 + 100000 });
+  comprobar('⚠️ Y con el interruptor quitado no vibra: es un interruptor, no un adorno',
+    vibraciones.length === 0);
+
+  motor.detener();
+  delete globalThis.window;
+  delete globalThis.document;
+}
+
+/* ===========================================================================
    EL DIAGNÓSTICO, EJECUTADO DE VERDAD (EH F64)
    ===========================================================================
    🚨 Las pruebas de arriba miran el TEXTO de `SettingsView.jsx`. Eso vale para
@@ -619,9 +709,10 @@ console.log('\n═══ El aviso de por qué no suena ═══\n');
   globalThis.document = { addEventListener() {}, removeEventListener() {} };
   const { diagnosticoAudio } = await import('../src/lib/audioEngine.js');
 
-  /* El motor está recién cargado: su copia de las preferencias dice `activado:
-     false`. Esa es exactamente la situación del fallo — el interruptor ya
-     encendido en pantalla, la copia todavía no. */
+  /* Se le deja al motor la copia en `apagado`, que es exactamente la situación
+     del fallo: el interruptor ya encendido en pantalla y la copia todavía no. */
+  const { actualizarPreferencias } = await import('../src/lib/audioEngine.js');
+  actualizarPreferencias({ ...OFF, vibracion: false });
   comprobar('🚨 CLAVE · Con el interruptor encendido, el aviso NO dice que esté apagado',
     !/apagado/i.test(diagnosticoAudio({ activado: true }).texto),
     diagnosticoAudio({ activado: true }).texto);

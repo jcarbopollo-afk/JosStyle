@@ -32,10 +32,17 @@
 // añade **el del evento**, que es lo que permite que un `ui_click` suene por
 // debajo de un `level_up` sin tocar los archivos.
 //
-// **3. ⚠️ LOS PERFILES NO SON UN SEXTO SISTEMA** (apartado 25). Un perfil es
-// **un atajo que escribe las preferencias que ya existen**: no guarda nada
-// aparte, no compite con los interruptores, y en cuanto tocas uno a mano pasas a
-// `personalizado`. Sin eso serían dos verdades sobre el mismo ajuste.
+// **3. 🚨 LOS PERFILES SE RETIRARON** (apartado 25), el 2026-09-07, porque Josué
+// los miró en su móvil y dijo *«son inútiles»*. Y lo eran: Silencioso,
+// Equilibrado e Inmersivo solo escribían combinaciones del interruptor general,
+// el volumen y las tres casillas de categoría —los controles que están dos
+// centímetros más abajo en la misma pantalla— y Personalizado ni siquiera era un
+// botón, era el cartel de «has tocado algo a mano».
+//
+// ⚠️ La decisión de diseño que traían sí era buena y se queda: **un perfil no
+// puede ser un sistema aparte**, porque entonces habría dos verdades sobre el
+// mismo ajuste. La forma de cumplirla ahora es más simple todavía — no hay
+// perfiles, solo hay preferencias.
 //
 // **4. 🚨 SILENCIO NO ES "NO PASA NADA"** (apartado 21). Con el sonido apagado el
 // motor **sigue procesando el evento**: la interfaz enseña el milestone, la racha
@@ -87,60 +94,30 @@ export function pantallasQueTocanElAudio(fuentes = {}) {
 }
 
 /* ===========================================================================
-   2 · LOS PERFILES (apartado 25) — decisión 3
+   2 · LOS PERFILES (apartado 25) — 🚨 RETIRADOS EL 2026-09-07
    ===========================================================================
-   *"SILENCIOSO · EQUILIBRADO · INMERSIVO · PERSONALIZADO."* */
+   El enunciado pedía cuatro: *"SILENCIOSO · EQUILIBRADO · INMERSIVO ·
+   PERSONALIZADO"*. Se hicieron, se cablearon en Ajustes y estuvieron puestos
+   cinco fases. Josué los usó y dijo lo que había que decir: **son inútiles**.
 
-export const PERFILES = [
-  {
-    id: 'silencioso', icono: '🔇', nombre: 'Silencioso',
-    que: 'Todo apagado.',
-    prefs: { activado: false, silenciadas: CATEGORIAS_SONIDO.map((c) => c.id) },
-  },
-  {
-    id: 'equilibrado', icono: '🎚️', nombre: 'Equilibrado',
-    que: 'Lo recomendado: se oye lo que importa y no molesta lo de siempre.',
-    /* ⚠️ La interfaz callada es lo que hace que el resto no canse. */
-    prefs: { activado: true, silenciadas: ['ui'], volumen: 70 },
-  },
-  {
-    id: 'inmersivo', icono: '🔊', nombre: 'Inmersivo',
-    que: 'Todos los sonidos importantes activos.',
-    prefs: { activado: true, silenciadas: [], volumen: 90 },
-  },
-  {
-    /* ⚠️ No es un preajuste: es **dónde acabas** en cuanto tocas algo a mano. */
-    id: 'personalizado', icono: '🎛️', nombre: 'Personalizado',
-    que: 'Lo que tú hayas puesto.',
-    prefs: null,
-  },
-];
+   Y era verdad, mirándolo sin cariño de autor:
 
-export const perfilSonido = (id) => PERFILES.find((p) => p.id === id) || null;
+     · «Silencioso» = apagar el interruptor general, que está encima.
+     · «Equilibrado» = ese interruptor, el volumen al 70 y callar la interfaz;
+       las tres cosas tienen su propio control a dos centímetros.
+     · «Inmersivo» = lo mismo con otros números.
+     · «Personalizado» no era ni un botón: era el cartel de "has tocado algo a
+       mano", dibujado como si se pudiera pulsar.
 
-/** Aplica un perfil **escribiendo las preferencias que ya existen** (decisión 3). */
-export function aplicarPerfil(prefs, id) {
-  const p = perfilSonido(id);
-  const base = normalizarAudio(prefs);
-  if (!p || !p.prefs) return base;
-  return normalizarAudio({ ...base, ...p.prefs });
-}
+   Cuatro controles que no abrían ni una posibilidad nueva, en la pantalla que
+   la regla 3 quiere corta. Se van enteros —no se dejan las funciones muertas
+   "por si acaso", que es como se acumula el código que nadie se atreve a
+   borrar—, y aquí queda escrito qué eran y por qué se fueron.
 
-/**
- * ⚠️ Y al revés: **qué perfil tienes puesto** se deduce de tus preferencias, no
- * se guarda. Un perfil guardado aparte se desincroniza en cuanto tocas un
- * interruptor, y entonces la pantalla dice "Equilibrado" mientras suena otra cosa.
- */
-export function perfilActual(prefs) {
-  const p = normalizarAudio(prefs);
-  const iguales = (a, b) => JSON.stringify([...(a || [])].sort()) === JSON.stringify([...(b || [])].sort());
-  const encontrado = PERFILES.filter((x) => x.prefs).find((x) => (
-    x.prefs.activado === p.activado
-    && iguales(x.prefs.silenciadas, p.silenciadas)
-    && (x.prefs.volumen === undefined || x.prefs.volumen === p.volumen)
-  ));
-  return encontrado ? encontrado.id : 'personalizado';
-}
+   ⚠️ **Lo que valía de ellos se queda**: la decisión de que un perfil NO fuera
+   un sistema aparte, para que no hubiera dos verdades sobre el mismo ajuste.
+   Hoy se cumple mejor que nunca, porque solo hay una: las preferencias.
+   =========================================================================== */
 
 /* ===========================================================================
    3 · EL VOLUMEN: MAESTRO × CATEGORÍA × EVENTO (apartado 23) — decisión 2
@@ -268,8 +245,14 @@ export const HAPTICS = {
   separado: true,
   porque: 'El usuario puede querer sonido apagado y vibración encendida. Son dos interruptores, no uno.',
   interruptor: 'vibracion',
-  /* ⚠️ Y con lo que hay de verdad: `navigator.vibrate`, que en iOS no existe. */
-  soporte: 'navigator.vibrate — no existe en iOS Safari, así que allí no vibra y no pasa nada.',
+  /* 🚨 **Y desde el 2026-09-07 esto se cumple de verdad.** Hasta ese día el
+     interruptor existía, la preferencia se guardaba, los patrones de aquí abajo
+     estaban escritos… y nadie llamaba nunca a `navigator.vibrate`. Cinco fases
+     con un control decorativo, que es justo lo que prohíbe la regla 8, y colaba
+     porque *parecía* hecho: había preferencia, había casilla y había
+     especificación. Faltaba la línea que lo usa. Está en `audioEngine.vibrar()`. */
+  donde: 'audioEngine.js · vibrar() — lo llama reproducir() ANTES de mirar si suena',
+  soporte: 'navigator.vibrate en Android y escritorio. En iOS no existe (ni en Chrome de iOS, que por dentro es Safari): allí se intenta el interruptor háptico nativo de iOS 17.4+, y si tampoco, no vibra y la pantalla lo dice.',
 };
 
 export const PATRONES_VIBRACION = [
@@ -294,8 +277,11 @@ export function queHaceElEvento(prefs, tipo) {
   return {
     procesaElEvento: true,
     suena: !!d.suena,
-    vibra: p.vibracion === true,
-    patron: p.vibracion ? patronDe(tipo).id : null,
+    /* ⚠️ Sale de la decisión, no de leer la preferencia por segunda vez: la
+       vibración también respeta el cooldown y la ventana de colisión, y una
+       copia de la regla aquí acabaría contradiciendo a la de verdad. */
+    vibra: !!d.vibra,
+    patron: d.vibra ? patronDe(tipo).id : null,
     motivo: d.motivo,
   };
 }
@@ -304,7 +290,10 @@ export function queHaceElEvento(prefs, tipo) {
    8 · LA PANTALLA DE AJUSTES (apartados 24, 26, 27 y 28)
    ===========================================================================
    *"Sonido y respuesta: 🔊 Sonidos · 🔉 Volumen · 🎛 Perfil · 🔥 racha ·
-   🏆 recompensas · ✨ interfaz · 📳 Vibración."* */
+   🏆 recompensas · ✨ interfaz · 📳 Vibración."*
+
+   🚨 Son seis y no siete: **🎛 Perfil se retiró el 2026-09-07** (apartado 2 de
+   este archivo). El enunciado lo pedía; Josué lo usó y no servía para nada. */
 
 export const PANTALLA_SONIDO = {
   titulo: 'Sonido y respuesta',
@@ -314,7 +303,6 @@ export const PANTALLA_SONIDO = {
 export const CONTROLES = [
   { id: 'activado', icono: '🔊', etiqueta: 'Sonidos', tipo: 'interruptor' },
   { id: 'volumen', icono: '🔉', etiqueta: 'Volumen', tipo: 'deslizante' },
-  { id: 'perfil', icono: '🎛', etiqueta: 'Perfil', tipo: 'opciones' },
   { id: 'streak', icono: '🔥', etiqueta: 'Sonidos de racha', tipo: 'interruptor', categoria: 'streak' },
   { id: 'reward', icono: '🏆', etiqueta: 'Sonidos de recompensas', tipo: 'interruptor', categoria: 'reward' },
   { id: 'ui', icono: '✨', etiqueta: 'Sonidos de interfaz', tipo: 'interruptor', categoria: 'ui' },
@@ -398,13 +386,27 @@ export const PRUEBAS_DE_JOSUE = [
    11 · ⏸ LO QUE SIGUE BLOQUEADO
    =========================================================================== */
 
-export const BLOQUEADO_POR_LOS_ARCHIVOS = {
+/**
+ * 🚨 **Esto decía "No hay ni un archivo de audio" y "HOY NO SUENA NADA".**
+ *
+ * Era verdad durante cinco fases y dejó de serlo el 2026-09-04, cuando Josué
+ * grabó los 46 en FL Studio. Aquí siguió escrito, en el mismo módulo que se
+ * llama a sí mismo «el parte», mientras el panel de Ajustes le decía lo mismo a
+ * él en la cara. Dos sitios repitiendo una frase que ya no era cierta, y ninguno
+ * capaz de cambiar de opinión.
+ *
+ * Se queda como REGISTRO —de qué bloqueaba y cómo se desbloqueó—, en pasado y
+ * con la fecha. Lo que no se queda es el presente falso.
+ */
+export const LOS_ARCHIVOS_DE_JOSUE = {
   fase: 'SO F2 — la biblioteca de sonidos',
-  que: 'No hay ni un archivo de audio en `public/sonidos/`.',
-  loDijoJosue: 'Los dará "cuando la web ya tenga todos los botones activos".',
-  /* ⚠️ Y lo que pasa mientras tanto, dicho sin adornos. */
-  mientrasTanto: 'HOY NO SUENA NADA. El interruptor de sonido nace apagado desde la SO F1 justo para que no sea un control decorativo.',
-  elDiaQue: 'Cuando estén en `public/sonidos/` con los nombres de la SO F4, suenan sin tocar una línea: el motor ya los busca ahí.',
+  estuvoBloqueada: 'Desde la SO F1 hasta el 2026-09-04: no había ni un archivo en `public/sonidos/`.',
+  loDijoJosue: 'Los daría "cuando la web ya tenga todos los botones activos". Cumplió.',
+  comoSeResolvio: 'Los grabó él en FL Studio, uno a uno, con las notas y las duraciones medidas archivo por archivo.',
+  hoy: 'Los 46 están en `public/sonidos/`, y `scripts/test-archivos-sonido.mjs` comprueba en cada verificación que siguen ahí y que cada uno cumple su ficha.',
+  /* ⚠️ Quién cuenta los archivos es el test, que puede leer el disco. Este
+     módulo vive en el navegador y no debe fingir que los ha visto. */
+  quienLoComprueba: 'scripts/test-archivos-sonido.mjs',
 };
 
 /* 🚨 Cuántos faltan **de los que hay de verdad**. Antes era `queFalta([])` fijo:
@@ -431,10 +433,10 @@ export const APARTADOS_SO5 = [
   { id: 16, nombre: 'Interrupción', estado: 'hecho', donde: 'decidirReproduccion()' },
   { id: 17, nombre: 'Secuencias', estado: 'hecho', donde: 'SECUENCIAS' },
   { id: 21, nombre: 'Modo silencioso', estado: 'hecho', donde: 'queHaceElEvento()' },
-  { id: 22, nombre: 'Haptics independientes', estado: 'hecho', donde: 'HAPTICS · PATRONES_VIBRACION' },
+  { id: 22, nombre: 'Haptics independientes', estado: 'hecho', donde: 'audioEngine.vibrar() · HAPTICS · PATRONES_VIBRACION' },
   { id: 23, nombre: 'Control de volumen', estado: 'hecho', donde: 'volumenFinal()' },
   { id: 24, nombre: 'Ajustes', estado: 'hecho', donde: 'PANTALLA_SONIDO · CONTROLES' },
-  { id: 25, nombre: 'Perfiles', estado: 'hecho', donde: 'PERFILES · aplicarPerfil() · perfilActual()' },
+  { id: 25, nombre: 'Perfiles', estado: 'retirado', donde: '🚨 los quitó Josué el 2026-09-07 — «son inútiles», y lo eran (apartado 2 de este archivo)' },
   { id: 26, nombre: 'Botones de prueba', estado: 'hecho', donde: 'EJEMPLOS_PARA_ESCUCHAR' },
   { id: 27, nombre: 'Indicador de volumen', estado: 'hecho', donde: 'MARCAS_VOLUMEN' },
   { id: 28, nombre: 'Accesibilidad', estado: 'hecho', donde: 'ACCESIBILIDAD_CONTROLES' },
@@ -446,24 +448,27 @@ export const APARTADOS_SO5 = [
   { id: 34, nombre: 'Test de racha', estado: 'hecho', donde: 'SO F3 · los diez milestones' },
   { id: 35, nombre: 'Test de récord', estado: 'hecho', donde: 'SO F3' },
   { id: 38, nombre: 'Test de modo silencioso', estado: 'hecho', donde: 'queHaceElEvento()' },
-  { id: 39, nombre: 'Test de haptics', estado: 'hecho', donde: 'queHaceElEvento()' },
+  { id: 39, nombre: 'Test de haptics', estado: 'hecho', donde: 'queHaceElEvento() · decidirReproduccion().vibra' },
   { id: 40, nombre: 'Cambio de volumen en caliente', estado: 'hecho', donde: 'volumenFinal() es puro' },
-  { id: 41, nombre: 'Cambio de perfil en caliente', estado: 'hecho', donde: 'aplicarPerfil()' },
+  { id: 41, nombre: 'Cambio de perfil en caliente', estado: 'retirado', donde: '🚨 sin perfiles no hay nada que cambiar en caliente — ver apartado 25' },
   { id: 42, nombre: 'Test en móvil', estado: 'josue', donde: 'R1' },
   { id: 43, nombre: 'Test de auriculares', estado: 'josue', donde: 'R1' },
   { id: 44, nombre: 'Test de interrupción', estado: 'josue', donde: 'R1' },
   { id: 46, nombre: 'Test de carga', estado: 'josue', donde: 'R1' },
-  { id: 5, nombre: 'Calidad de los sonidos', estado: 'bloqueado', donde: '⏸ SO F2 — no hay archivos' },
-  { id: 6, nombre: 'Optimización', estado: 'bloqueado', donde: '⏸ SO F2' },
-  { id: 47, nombre: 'Criterio de calidad', estado: 'bloqueado', donde: '⏸ SO F2 — se aplica a archivos que no existen' },
-  { id: 48, nombre: 'Control de versiones de los sonidos', estado: 'bloqueado', donde: '⏸ SO F2' },
+  /* 🚨 Estos cuatro estuvieron 'bloqueado' hasta el 2026-09-07 diciendo "no hay
+     archivos", con los 46 grabados desde el día 4. Un apartado bloqueado por algo
+     que ya se resolvió es una tarea pendiente que nadie va a mirar nunca. */
+  { id: 5, nombre: 'Calidad de los sonidos', estado: 'hecho', donde: 'test-archivos-sonido.mjs — duración y tamaño reales de los 46 contra su ficha' },
+  { id: 6, nombre: 'Optimización', estado: 'hecho', donde: 'MP3 a 256k con corte en 20 kHz, y el test rechaza el que pase de MAX_KB' },
+  { id: 47, nombre: 'Criterio de calidad', estado: 'hecho', donde: 'validarArchivo() — cada archivo cumple la ficha de la SO F4 o la verificación falla' },
+  { id: 48, nombre: 'Control de versiones de los sonidos', estado: 'no_existe', donde: 'los 46 van en git con nombre fijo; un sistema de versiones aparte para ficheros que solo cambian si Josué los regraba sería un segundo sistema (regla 8)' },
 ];
 
 export const apartadoSO5 = (id) => APARTADOS_SO5.find((a) => a.id === id) || null;
 export const apartadosBloqueados = () => APARTADOS_SO5.filter((a) => a.estado === 'bloqueado');
 export const apartadosDeJosueSO = () => APARTADOS_SO5.filter((a) => a.estado === 'josue');
 
-export const CONDICION = 'El sistema de audio queda listo para producción: motor, perfiles, volumen, precarga, fallback, ajustes y pruebas. Lo único que falta son los archivos, y esos los da Josué.';
+export const CONDICION = 'El sistema de audio está entero: motor, volumen, precarga, fallback, ajustes, vibración, los 46 archivos y las pruebas que los vigilan.';
 
 /* ===========================================================================
    13 · EL PARTE
@@ -471,10 +476,6 @@ export const CONDICION = 'El sistema de audio queda listo para producción: moto
 
 export function auditarSonidoProduccion({ fuentes = {}, archivosPresentes = [] } = {}) {
   return {
-    perfiles: PERFILES.length,
-    // Decisión 3 — el perfil se deduce, no se guarda
-    perfilPorDefecto: perfilActual(DEFAULT_AUDIO),
-    sinPrefs: PERFILES.filter((p) => !p.prefs).map((p) => p.id),
     // Decisión 2 — el volumen multiplica
     volumenDeUnClic: volumenFinal({ ...DEFAULT_AUDIO, activado: true }, 'UI_CLICK'),
     volumenDeUnRecord: volumenFinal({ ...DEFAULT_AUDIO, activado: true }, 'NEW_RECORD'),
@@ -503,13 +504,11 @@ export function panelSonidoProduccion(prefs = DEFAULT_AUDIO, opciones = {}) {
   return {
     ...a,
     prefs: p,
-    perfil: perfilActual(p),
-    perfilesLista: PERFILES,
     controles: CONTROLES,
     marcas: MARCAS_VOLUMEN,
     grupos: GRUPOS_PRECARGA,
     pruebas: PRUEBAS_MOTOR,
-    bloqueadoPorArchivos: BLOQUEADO_POR_LOS_ARCHIVOS,
+    archivos: LOS_ARCHIVOS_DE_JOSUE,
     apartados: APARTADOS_SO5,
     /* 🎯 El veredicto: **el sistema está listo desde la SO F5; lo que faltaban
        eran los archivos**. Y eso no se disimula: `hoySuena` sale de contarlos. */

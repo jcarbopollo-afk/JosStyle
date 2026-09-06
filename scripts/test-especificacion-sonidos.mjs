@@ -1,9 +1,10 @@
 // ============================================================================
 // SO · Fase 4/5 — Pruebas de la biblioteca sonora definida
 //
-// ⚠️ Esta fase NO crea sonidos, y no puede: no hay ni un archivo de audio en el
-// proyecto. Lo que define es **la especificación de cada uno**, y eso sí se
-// puede comprobar entero:
+// ⚠️ Esta fase NO creó sonidos, y no podía: cuando se escribió no había ni un
+// archivo de audio en el proyecto (los grabó Josué el 2026-09-04, y quien los
+// mide contra esta especificación es `test-archivos-sonido.mjs`). Lo que define
+// es **la especificación de cada uno**, y eso sí se puede comprobar entero:
 //
 //   1. Que las duraciones **no se contradicen** (un `ui_click` no puede durar
 //      lo que un logro).

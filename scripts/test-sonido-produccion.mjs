@@ -20,7 +20,6 @@ import { CATALOGO as CATALOGO_F3 } from '../src/lib/audioEventos.js';
 import { FAMILIAS as FAMILIAS_F4, fichaDe as FICHA_F4, queFalta as FALTA_F4 } from '../src/lib/especificacionSonidos.js';
 import {
   ESTRUCTURA_REAL, ESTRUCTURA_PROPUESTA_NO_ADOPTADA, pantallasQueTocanElAudio,
-  PERFILES, perfilSonido, aplicarPerfil, perfilActual,
   PESO_POR_INTENSIDAD, pesoDeEvento, volumenFinal,
   GRUPOS_PRECARGA, grupoPrecarga, grupoDe,
   FALLBACK_POR_FAMILIA, conFallback,
@@ -29,7 +28,7 @@ import {
   PANTALLA_SONIDO, CONTROLES, control, MARCAS_VOLUMEN, EJEMPLOS_PARA_ESCUCHAR, ejemploDe,
   ACCESIBILIDAD_CONTROLES, PRIMERA_INTERACCION, ANTE_UN_ERROR, TELEMETRIA,
   PRUEBAS_MOTOR, PRUEBAS_DE_JOSUE,
-  BLOQUEADO_POR_LOS_ARCHIVOS, cuantosArchivosFaltan,
+  LOS_ARCHIVOS_DE_JOSUE, cuantosArchivosFaltan,
   APARTADOS_SO5, apartadoSO5, apartadosBloqueados, apartadosDeJosueSO,
   CONDICION, auditarSonidoProduccion, panelSonidoProduccion,
   DEFAULT_AUDIO, CATEGORIAS_SONIDO, normalizarAudio, FAMILIAS, fichaDe,
@@ -58,7 +57,7 @@ const encendido = { ...DEFAULT_AUDIO, activado: true };
 console.log('\n🔊 SO · Fase 5/5 — Producción, integración y test final\n');
 
 /* ---------------------------------------------------------------------------
-   1 · ⏸ LO PRIMERO: HOY NO SUENA NADA
+   1 · ✅ LO PRIMERO: LOS ARCHIVOS, CONTADOS DEL DISCO
    --------------------------------------------------------------------------- */
 {
   console.log(`1 · Los archivos (${PRESENTES.length} hechos, ${46 - PRESENTES.length} por hacer)`);
@@ -77,7 +76,7 @@ console.log('\n🔊 SO · Fase 5/5 — Producción, integración y test final\n'
   eq(cuantosArchivosFaltan(PRESENTES), 46 - PRESENTES.length, 'la cuenta cuadra con el catálogo');
   ok(PRESENTES.every((f) => existsSync(join(RAIZ, 'public/sonidos', f))),
     '⚠️ y cada uno existe en el disco, no solo en una lista');
-  ok(/SO F2/.test(BLOQUEADO_POR_LOS_ARCHIVOS.fase), 'la fase bloqueada es la SO F2, la biblioteca');
+  ok(/SO F2/.test(LOS_ARCHIVOS_DE_JOSUE.fase), 'la fase que ESTUVO bloqueada es la SO F2, la biblioteca');
   /* 🚨 El interruptor nació apagado desde la SO F1 para no ser un control
      decorativo: decía "Sonidos: sí" y no había nada que sonar. El 2026-09-04 se
      completaron los 46 archivos y se encendió, que era la promesa escrita.
@@ -124,34 +123,36 @@ console.log('\n🔊 SO · Fase 5/5 — Producción, integración y test final\n'
 }
 
 /* ---------------------------------------------------------------------------
-   4 · LOS PERFILES NO SON UN SISTEMA APARTE (apartado 25)
-   --------------------------------------------------------------------------- */
+   4 · 🚨 LOS PERFILES YA NO ESTÁN (apartado 25, retirado el 2026-09-07)
+   ---------------------------------------------------------------------------
+   Aquí había once comprobaciones sobre los cuatro perfiles del enunciado, y
+   todas pasaban. Ninguna preguntaba lo único que importaba: **si servían para
+   algo**. Eso lo contestó Josué usando la aplicación —«son inútiles»—, y tenía
+   razón: los tres preajustes escribían combinaciones de controles que estaban
+   en la misma pantalla, dos centímetros más abajo.
+
+   Lo que se comprueba ahora es que se fueron ENTEROS. Dejar las funciones sin
+   usar habría sido lo cómodo, y es como se acumula el código que nadie borra. */
 {
-  console.log('\n4 · Perfiles');
-  eq(PERFILES.map((p) => p.id), ['silencioso', 'equilibrado', 'inmersivo', 'personalizado'],
-    'los cuatro del enunciado');
-  eq(perfilSonido('personalizado').prefs, null,
-    '⚠️ y "personalizado" no tiene preajuste: es DONDE ACABAS al tocar algo a mano');
-
-  const silencio = aplicarPerfil(DEFAULT_AUDIO, 'silencioso');
-  eq(silencio.activado, false, 'silencioso apaga el sonido');
-  eq(silencio.silenciadas.length, CATEGORIAS_SONIDO.length, 'y todas las categorías');
-  eq(perfilActual(silencio), 'silencioso', '🚨 y el perfil se DEDUCE de las preferencias…');
-
-  const equilibrado = aplicarPerfil(DEFAULT_AUDIO, 'equilibrado');
-  eq(perfilActual(equilibrado), 'equilibrado', '…también el equilibrado');
-  eq(equilibrado.silenciadas, ['ui'],
-    '⚠️ que calla la interfaz: es lo que hace que el resto no canse');
-
-  /* 🚨 Lo que importa de la decisión 3. */
-  const tocado = { ...equilibrado, volumen: 33 };
-  eq(perfilActual(tocado), 'personalizado',
-    '🚨 ⚠️ y en cuanto tocas UNA cosa a mano pasa a "personalizado": no hay dos verdades');
-  eq(aplicarPerfil(DEFAULT_AUDIO, 'inventado'), NORM_F1(DEFAULT_AUDIO),
-    'un perfil que no existe no cambia nada');
-  eq(aplicarPerfil(DEFAULT_AUDIO, 'personalizado'), NORM_F1(DEFAULT_AUDIO),
-    'y "personalizado" tampoco escribe nada');
-  ok(!perfilSonido('inventado'), 'se buscan por id');
+  console.log('\n4 · Los perfiles, retirados');
+  const FUENTE_SP = readFileSync(join(RAIZ, 'src/lib/sonidoProduccion.js'), 'utf8');
+  /* Sin comentarios: el bloque que explica por qué se fueron los nombra a los
+     cuatro, y ése es el falso positivo que hace que alguien borre la explicación
+     para poner un test en verde. */
+  const SP_VIVO = FUENTE_SP.replace(/\/\*[\s\S]*?\*\//g, '');
+  ok(!/export const PERFILES|export function aplicarPerfil|export function perfilActual/.test(SP_VIVO),
+    '🚨 CLAVE · no quedan funciones de perfiles vivas en `sonidoProduccion.js`');
+  ok(!/perfilActual|aplicarPerfil|PERFILES\b/.test(SETTINGS),
+    '🚨 CLAVE · ni la pantalla de Ajustes las llama');
+  ok(!CONTROLES.some((c) => c.id === 'perfil'),
+    '…y el control desaparece de la lista de la pantalla');
+  eq(apartadoSO5(25).estado, 'retirado',
+    '⚠️ y el apartado 25 no dice "hecho": dice que se retiró, con el motivo');
+  ok(/2026-09-07/.test(apartadoSO5(25).donde), '…y cuándo');
+  eq(apartadoSO5(41).estado, 'retirado',
+    '⚠️ el 41 (cambio de perfil en caliente) se va con él: sin perfiles no hay nada que cambiar');
+  ok(/RETIRADOS EL 2026-09-07/.test(FUENTE_SP),
+    '⚠️ y queda escrito qué eran y por qué se fueron, no borrados sin más');
 }
 
 /* ---------------------------------------------------------------------------
@@ -216,9 +217,11 @@ console.log('\n🔊 SO · Fase 5/5 — Producción, integración y test final\n'
 {
   console.log('\n7 · «Sonido y respuesta»');
   eq(PANTALLA_SONIDO.titulo, 'Sonido y respuesta', 'la sección del apartado 24');
+  /* 🚨 Seis, no los siete del enunciado: «perfil» se retiró el 2026-09-07.
+     Y siguen sin sobrar: cada uno de estos hace algo que ningún otro hace. */
   eq(CONTROLES.map((c) => c.id),
-    ['activado', 'volumen', 'perfil', 'streak', 'reward', 'ui', 'vibracion'],
-    'los siete controles del enunciado, ni uno más');
+    ['activado', 'volumen', 'streak', 'reward', 'ui', 'vibracion'],
+    'los seis controles que quedan, ni uno más');
   ok(CONTROLES.every((c) => !!c.icono && !!c.etiqueta), 'cada uno con su icono y su etiqueta');
   eq(MARCAS_VOLUMEN, [0, 25, 50, 75, 100], 'apartado 27 — las cinco marcas del deslizante');
 
@@ -229,8 +232,19 @@ console.log('\n🔊 SO · Fase 5/5 — Producción, integración y test final\n'
   ok(/Sonido y respuesta/.test(SETTINGS), 'y su nombre');
   ok(/audio=\{audio\} onUpdateAudio=\{updateAudio\}/.test(APP),
     '🚨 y está CABLEADA en `App.jsx`: no es un componente huérfano');
-  ok(/Todavía no suena nada/.test(SETTINGS),
-    '⏸ ⚠️ y la propia pantalla avisa de que todavía no suena nada (regla 8)');
+  /* 🚨 Esto pedía lo CONTRARIO hasta el 2026-09-07: exigía que la pantalla
+     dijera "Todavía no suena nada". Dejó de ser verdad el día 4 con los 46
+     archivos grabados, y el test siguió en verde por un motivo que da más miedo
+     que el fallo: la frase sobrevivía dentro del comentario que explicaba por
+     qué se había quitado. Un test aprobado por un comentario.
+
+     ⚠️ Por eso ahora se mira el código SIN comentarios, y se exige lo que de
+     verdad tiene que pasar: que el aviso salga de `diagnosticoAudio()`. */
+  const SETTINGS_VIVO = SETTINGS.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  ok(!/Todavía no suena nada/.test(SETTINGS_VIVO),
+    '🚨 CLAVE · la pantalla ya NO afirma a mano que no suene nada: hay 46 archivos');
+  ok(/diagnosticoAudio\(/.test(SETTINGS_VIVO),
+    '…y lo que dice sale del diagnóstico de verdad (regla 8)');
 
   /* Apartado 26 — el botón ▶ suena lo que sonaría el sistema. */
   eq(ejemploDe('streak'), 'STREAK_MILESTONE', 'el ▶ de racha suena un milestone de verdad…');
@@ -266,8 +280,14 @@ console.log('\n🔊 SO · Fase 5/5 — Producción, integración y test final\n'
   ok(/enchufarlos/.test(PRUEBAS_DE_JOSUE.find((p) => p.apartado === 43).porque),
     'los auriculares, porque hay que enchufarlos');
 
-  eq(apartadosBloqueados().map((a) => a.id), [5, 6, 47, 48],
-    '⏸ cuatro apartados están bloqueados por los archivos que no hay');
+  /* 🚨 Eran cuatro, y lo fueron hasta el 2026-09-07 — tres días después de que
+     los archivos existieran. Un apartado bloqueado por algo ya resuelto es una
+     tarea pendiente que nadie vuelve a mirar. */
+  eq(apartadosBloqueados().map((a) => a.id), [],
+    '🚨 CLAVE · ya no queda ningún apartado bloqueado: los archivos llegaron');
+  eq(apartadoSO5(5).estado, 'hecho', '…el 5 (calidad) lo comprueba el test de archivos');
+  eq(apartadoSO5(48).estado, 'no_existe',
+    '⚠️ y el 48 (versiones de los sonidos) dice que NO existe, en vez de fingir que sí');
   eq(auditarSonidoProduccion().sinDonde, [], 'y todos los apartados dicen dónde se contestan');
   ok(APARTADOS_SO5.length >= 35, `${APARTADOS_SO5.length} apartados recogidos`);
   ok(!apartadoSO5(999), 'se buscan por id');
@@ -275,8 +295,16 @@ console.log('\n🔊 SO · Fase 5/5 — Producción, integración y test final\n'
   const panel = panelSonidoProduccion(DEFAULT_AUDIO, { fuentes: FUENTES });
   eq(panel.listoParaProduccion, true,
     '🎯 el sistema está listo para producción: lo único que falta son los archivos');
-  eq(panel.hoySuena, false, '⏸ y eso no se disimula');
-  ok(/los da Josué|los da/.test(CONDICION) || /archivos/.test(CONDICION), 'con la condición de la fase');
+  /* 🚨 Esto comprobaba `hoySuena === false`… llamando al panel SIN decirle qué
+     archivos hay. O sea: comprobaba que si no le cuentas nada, contesta que no
+     hay nada. Pasaba igual con 0 archivos que con 46. Ahora se le pasan los que
+     están de verdad en el disco. */
+  const panelReal = panelSonidoProduccion(DEFAULT_AUDIO, { fuentes: FUENTES, archivosPresentes: PRESENTES });
+  eq(panelReal.hoySuena, true, '🚨 CLAVE · y hoy SÍ suena: los 46 archivos están en el disco');
+  eq(panelReal.archivosQueFaltan, 0, '…no falta ninguno');
+  ok(/46|archivos/.test(LOS_ARCHIVOS_DE_JOSUE.hoy), 'el registro de la SO F2 habla en pasado y dice cómo acabó');
+  ok(!/HOY NO SUENA NADA/.test(JSON.stringify(LOS_ARCHIVOS_DE_JOSUE)),
+    '🚨 CLAVE · y ya no afirma que no suene nada');
   eq(normalizarAudio, NORM_F1, '⚠️ y las preferencias son las de la SO F1, importadas');
   eq(CATEGORIAS_SONIDO, CATS_F1, 'igual que las categorías');
   eq(DEFAULT_AUDIO, DEFAULT_F1, 'y los valores por defecto');

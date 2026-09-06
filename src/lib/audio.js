@@ -15,9 +15,12 @@
 // ── LO QUE HAY QUE DECIR ANTES DE NADA ─────────────────────────────────────
 //
 // 🚨 **Esto ya no es verdad, y se deja escrito en vez de borrarlo.** El
-// 2026-09-04 Josué produjo en FL Studio los tres primeros archivos
-// (`ui_click_01/02/03.mp3`). Quedan 43. Lo de abajo es lo que fue cierto durante
-// cinco fases, y explica por qué el motor está construido como está.
+// 2026-09-04 Josué produjo en FL Studio **los 46 archivos**, uno a uno. Lo de
+// abajo es lo que fue cierto durante cinco fases, y explica por qué el motor
+// está construido como está.
+//
+// ⚠️ Esta misma nota decía "los tres primeros… quedan 43" hasta el 2026-09-07.
+// Un aviso de que algo está obsoleto **también se queda obsoleto**.
 //
 // **No hay ni un archivo de audio en el proyecto.** Josué escribió en la
 // especificación de Rachas que los daría *"cuando la web ya tenga todos los
@@ -26,11 +29,14 @@
 // sonidos…"*. El 21 lo remata: *"NO es necesario crear todavía una biblioteca
 // completa de sonidos. Esta fase solo necesita dejar la arquitectura lista."*
 //
-// Así que el motor está entero y **hoy no suena nada**, porque no hay nada que
-// sonar. Eso no es una función a medias: es exactamente el camino de fallback
-// del apartado 25 —*"si tampoco existe: silencio"*—, y el apartado 26 exige que
-// eso no rompa nada. En cuanto Josué deje los archivos en `public/sonidos/`,
-// suena sin tocar una línea de código.
+// Así que esta fase dejó el motor entero **sin un solo archivo que sonar**, y
+// eso no era una función a medias: es el camino de fallback del apartado 25
+// —*"si tampoco existe: silencio"*—, que el 26 exige que no rompa nada.
+//
+// ✅ **Y suena desde el 2026-09-04.** Josué grabó los 46 en FL Studio, se
+// dejaron en `public/sonidos/` con los nombres de la SO F4, y sonaron **sin
+// tocar una línea de este archivo**, que era la promesa. La cabecera decía "hoy
+// no suena nada" tres días después de que sonara: corregido el 2026-09-07.
 //
 // Lo que **no** se ha hecho es fingir. Nada de un interruptor de sonido en
 // Ajustes que no haga nada (regla 8), ni un `click.mp3` inventado.
@@ -599,27 +605,56 @@ export function decidirReproduccion(prefs, tipo, { ahora = Date.now(), estado = 
   };
 
   // Un evento que no existe **no rompe nada** (apartado 33). Se ignora y ya.
-  if (!def) return { suena: false, motivo: 'evento_desconocido', estado: nuevo };
-  if (!p.activado) return { suena: false, motivo: 'sonido_desactivado', estado: nuevo };
+  if (!def) return { suena: false, vibra: false, motivo: 'evento_desconocido', estado: nuevo };
 
-  const volumen = volumenEfectivo(p, def.categoria);
-  if (volumen <= 0) return { suena: false, motivo: 'volumen_cero', estado: nuevo };
-
-  const desdeElMismo = ahora - (estado.ultimos[evento] || 0);
-  if (desdeElMismo < def.cooldown) return { suena: false, motivo: 'cooldown', estado: nuevo };
-
+  const prioridad = PRIORIDADES_SONIDO[def.prioridad] ?? PRIORIDADES_SONIDO.NORMAL;
+  const enCooldown = (ahora - (estado.ultimos[evento] || 0)) < def.cooldown;
   // Colisión: dentro de la ventana, solo pasa algo MÁS importante que lo último
   // que sonó. Igual de importante tampoco: dos hitos a la vez son un hito.
-  const prioridad = PRIORIDADES_SONIDO[def.prioridad] ?? PRIORIDADES_SONIDO.NORMAL;
-  const desdeElUltimo = ahora - estado.ultimaReproduccion;
-  if (desdeElUltimo < VENTANA_COLISION && prioridad <= estado.ultimaPrioridad) {
-    return { suena: false, motivo: 'colision', estado: nuevo };
-  }
+  const enColision = (ahora - estado.ultimaReproduccion) < VENTANA_COLISION
+    && prioridad <= estado.ultimaPrioridad;
+
+  /* 🚨 **La vibración es el OTRO interruptor** (apartado 22), y hasta el
+     2026-09-07 no era ningún interruptor: existía en las preferencias, tenía su
+     casilla en Ajustes y **nadie llamaba nunca a `navigator.vibrate`**. Un
+     control que no hace nada es exactamente lo que prohíbe la regla 8, y este
+     llevaba cinco fases puesto.
+
+     Qué manda sobre ella y qué no:
+     · El interruptor de SONIDO no manda — son dos, no uno. Con el sonido
+       apagado y la vibración encendida, vibra. Ése es el caso de una clase.
+     · El ritmo SÍ manda: el mismo cooldown y la misma ventana de colisión. Sin
+       eso, veinte toques seguidos serían veinte zumbidos, que es la máquina
+       tragaperras del apartado 10 con otro sentido.
+     · Y la categoría también: si ha callado los sonidos de interfaz, no quiere
+       que el móvil le vibre en cada botón. Un solo interruptor por área. */
+  const categoriaViva = !p.silenciadas.includes(def.categoria);
+  const vibra = p.vibracion === true && categoriaViva && !enCooldown && !enColision;
+
+  /* ⚠️ Y si vibra, el ritmo se apunta aunque no haya sonado nada: si no, la
+     vibración no tendría cooldown propio y zumbaría sin parar con el sonido
+     apagado — justo la combinación que más se va a usar en clase. */
+  const apuntarElRitmo = () => {
+    nuevo.ultimos[evento] = ahora;
+    nuevo.ultimaReproduccion = ahora;
+    nuevo.ultimaPrioridad = prioridad;
+  };
+  const soloVibra = (motivo) => {
+    if (vibra) apuntarElRitmo();
+    return { suena: false, vibra, motivo, categoria: def.categoria, estado: nuevo };
+  };
+
+  if (!p.activado) return soloVibra('sonido_desactivado');
+
+  const volumen = volumenEfectivo(p, def.categoria);
+  if (volumen <= 0) return soloVibra('volumen_cero');
+  if (enCooldown) return { suena: false, vibra: false, motivo: 'cooldown', categoria: def.categoria, estado: nuevo };
+  if (enColision) return { suena: false, vibra: false, motivo: 'colision', categoria: def.categoria, estado: nuevo };
 
   const elegido = resolverSonido(p, evento, { sonidosUsuario, contexto });
   // Si no hay sonido asignado no es un error — es el "silencio" del apartado 25,
   // y el 26 exige que no rompa nada.
-  if (!elegido) return { suena: false, motivo: 'sin_sonido_asignado', estado: nuevo };
+  if (!elegido) return soloVibra('sin_sonido_asignado');
 
   /* 🚨 **La rotación de variantes** (SO F4). Un sonido con tres versiones va
      alternando 1 → 2 → 3 → 1: lo que cansa de un clic oído doscientas veces al
@@ -634,10 +669,8 @@ export function decidirReproduccion(prefs, tipo, { ahora = Date.now(), estado = 
   const sonido = { ...elegido, ruta: lista[turno % lista.length] };
   if (lista.length > 1) nuevo.variantes[elegido.id] = (turno + 1) % lista.length;
 
-  nuevo.ultimos[evento] = ahora;
-  nuevo.ultimaReproduccion = ahora;
-  nuevo.ultimaPrioridad = prioridad;
-  return { suena: true, motivo: 'ok', sonido, volumen, categoria: def.categoria, prioridad: def.prioridad, estado: nuevo };
+  apuntarElRitmo();
+  return { suena: true, vibra, motivo: 'ok', sonido, volumen, categoria: def.categoria, prioridad: def.prioridad, estado: nuevo };
 }
 
 /* ===========================================================================
