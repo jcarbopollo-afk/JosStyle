@@ -147,6 +147,23 @@ console.log('\n═══ Preferencias y volumen ═══\n');
     migrarSonidoEncendido({ ...cuentaVieja.prefs, activado: false }).prefs.activado === false);
   comprobar('⚠️ La migración no toca nada más de sus preferencias',
     cuentaVieja.prefs.volumen === 80);
+
+  /* 🚨 El panel de Ajustes decía "Todavía no suena nada. Faltan los archivos de
+     sonido" escrito a mano, y siguió diciéndolo con los 46 grabados — justo
+     mientras Josué intentaba averiguar por qué no le sonaba el móvil. Un aviso
+     que no puede cambiar de opinión no informa: engaña. */
+  const settingsSrc = readFileSync(join(RAIZ, 'src/views/SettingsView.jsx'), 'utf8');
+  /* ⚠️ Sin comentarios: la frase vieja sigue escrita en el comentario que explica
+     por qué se quitó, y esa es exactamente la clase de falso positivo que hace
+     que alguien borre el comentario para poner la prueba en verde. Lo que
+     importa es que no la diga la INTERFAZ. */
+  const settingsVivo = settingsSrc.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  comprobar('🚨 CLAVE · El panel de sonido ya no afirma a mano que falten archivos',
+    !/Faltan los archivos de sonido/.test(settingsVivo));
+  comprobar('...y su estado sale de `diagnosticoAudio()`, no de un texto fijo',
+    /diagnosticoAudio\(\)/.test(settingsSrc) && /diag\.texto/.test(settingsSrc));
+  comprobar('⚠️ Y el diagnóstico avisa del interruptor de silencio del iPhone, que es lo único que el código no puede saber',
+    /interruptor de silencio/.test(readFileSync(join(RAIZ, 'src/lib/audioEngine.js'), 'utf8')));
   /* ⚠️ Esto decía "porque todavía no hay ni un archivo que sonar". Dejó de ser
      verdad el 2026-09-04. Sigue apagado, pero ahora porque **falta biblioteca**,
      no porque no haya nada: encenderlo con 5 de 46 dejaría 41 eventos mudos. */

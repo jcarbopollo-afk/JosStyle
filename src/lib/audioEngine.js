@@ -162,6 +162,47 @@ export const estadoAudio = () => ({
   activado: motor.prefs.activado,
 });
 
+/**
+ * 🚨 **Por qué no suena, dicho para Josué y no para un programador.**
+ *
+ * Nació de una tarde entera de adivinar: los 46 archivos publicados, el motor
+ * conectado, y en su iPhone no sonaba nada — mientras que en el de su hermano
+ * sí. Tres mensajes preguntando cosas a ciegas.
+ *
+ * Con esto lo mira él y me lo dice en una frase. `estadoAudio()` ya tenía los
+ * datos; lo que faltaba era que alguien los enseñara.
+ *
+ * ⚠️ Nada de "AudioContext suspended" ni "0 buffers": eso es lo que la EH F62
+ * prohíbe en un texto que lee él. Cada estado dice **qué hacer**, no qué pasa.
+ */
+export function diagnosticoAudio() {
+  const e = estadoAudio();
+  if (!e.disponible) {
+    return { ok: false, texto: 'Este navegador no puede reproducir sonido. Prueba con Safari o Chrome.' };
+  }
+  if (!e.activado) {
+    return { ok: false, texto: 'El sonido está apagado. Enciende el interruptor de arriba.' };
+  }
+  if (!e.desbloqueado) {
+    /* No es un fallo: iOS y Safari exigen que la primera vez el sonido nazca de
+       un toque de verdad. Se explica en vez de dejar un "no funciona". */
+    return { ok: false, texto: 'Toca cualquier botón para activar el sonido. Los navegadores del móvil lo piden la primera vez.' };
+  }
+  const fallos = fallosDeAudio().length;
+  if (fallos > 0) {
+    return { ok: false, texto: `El sonido está listo, pero ${fallos} ${fallos === 1 ? 'archivo no se pudo cargar' : 'archivos no se pudieron cargar'}. Puede ser la conexión.` };
+  }
+  return {
+    ok: true,
+    texto: e.cargados > 0
+      ? `Todo listo. ${e.cargados} ${e.cargados === 1 ? 'sonido cargado' : 'sonidos cargados'}.`
+      : 'Todo listo. Los sonidos se cargan al usarlos.',
+    /* ⚠️ Lo único que el código no puede saber, y que hay que decir: en iPhone
+       el interruptor lateral de silencio calla también el sonido de las webs. */
+    aviso: 'Si tienes un iPhone y sigues sin oír nada, mira el interruptor de silencio del lateral: silencia también las webs.',
+  };
+}
+
 /* ===========================================================================
    2 · CARGA Y PRECARGA (apartados 17, 18 y 25)
    =========================================================================== */

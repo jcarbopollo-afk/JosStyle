@@ -29,7 +29,8 @@ import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton, 
 /* SO Fase 5 — la pantalla de «Sonido y respuesta». Los interruptores son los de
    `audio.js` (SO F1): aquí no se inventa ninguna preferencia nueva. */
 import { PERFILES, perfilSonido, perfilActual, aplicarPerfil, CONTROLES, MARCAS_VOLUMEN, ejemploDe, normalizarAudio } from '../lib/sonidoProduccion';
-import { reproducir } from '../lib/audioEngine';
+import { reproducir, diagnosticoAudio } from '../lib/audioEngine';
+import { suscribir } from '../lib/eventos';
 import PersonalizationView from './PersonalizationView';
 import PapeleraView from './PapeleraView';
 import {
@@ -1250,6 +1251,17 @@ export function VistaPreviaGlobal({ fondo, urlFoto, accent }) {
 export function BloqueSonido({ audio, accent, onCambiar }) {
   const prefs = normalizarAudio(audio);
   const perfil = perfilActual(prefs);
+
+  /* 🚨 El diagnostico se refresca con CADA evento del bus, no con un temporizador:
+     lo que cambia el estado del sonido es que pase algo —el primer toque que lo
+     desbloquea, un sonido que se carga—, y eso siempre pasa por el bus. Un
+     intervalo estaria preguntando cada dos segundos por si acaso. */
+  const [diag, setDiag] = useState(() => diagnosticoAudio());
+  useEffect(() => {
+    const refrescar = () => setDiag(diagnosticoAudio());
+    refrescar();
+    return suscribir('*', refrescar);
+  }, [prefs.activado]);
   const cambiar = (parcial) => onCambiar(normalizarAudio({ ...prefs, ...parcial }));
   const alternarCategoria = (id) => cambiar({
     silenciadas: prefs.silenciadas.includes(id)
@@ -1259,14 +1271,19 @@ export function BloqueSonido({ audio, accent, onCambiar }) {
 
   return (
     <div className="space-y-4">
-      {/* ⏸ Lo primero, porque cambia cómo se lee todo lo de abajo. */}
+      {/* 🚨 Esto decía "Todavía no suena nada. Faltan los archivos de sonido".
+          Dejó de ser verdad el 2026-09-04, cuando Josué grabó los 46 en FL
+          Studio — y ahí siguió, diciéndole que faltaban archivos justo mientras
+          intentaba averiguar por qué no le sonaba el móvil.
+
+          Ahora dice el estado de VERDAD, y cuando algo va mal dice qué hacer.
+          Un aviso que no puede cambiar de opinión no informa: engaña. */}
       <div
         className="rounded-2xl p-3 text-xs"
         style={{ background: hexToRgba(accent, 0.08), color: COLORS.textMuted }}
       >
-        <span className="font-semibold" style={{ color: COLORS.text }}>Todavía no suena nada. </span>
-        Faltan los archivos de sonido. Cuando estén, esto funciona sin tocar nada más — y mientras
-        tanto puedes dejar aquí preparado cómo lo quieres.
+        <span className="font-semibold" style={{ color: COLORS.text }}>{diag.ok ? '✅ ' : '⚠️ '}{diag.texto} </span>
+        {diag.aviso || ''}
       </div>
 
       {/* 🔊 Sonidos */}
