@@ -161,7 +161,15 @@ console.log('\n═══ Preferencias y volumen ═══\n');
   comprobar('🚨 CLAVE · El panel de sonido ya no afirma a mano que falten archivos',
     !/Faltan los archivos de sonido/.test(settingsVivo));
   comprobar('...y su estado sale de `diagnosticoAudio()`, no de un texto fijo',
-    /diagnosticoAudio\(\)/.test(settingsSrc) && /diag\.texto/.test(settingsSrc));
+    /diagnosticoAudio\(/.test(settingsSrc) && /diag\.texto/.test(settingsSrc));
+  /* 🚨 **Y se le pasan las preferencias.** Sin el argumento, el panel le pregunta
+     al motor —que guarda una COPIA que pone al día un efecto de `App.jsx`— y
+     React ejecuta los efectos de los hijos ANTES que los del padre: contesta con
+     el interruptor de antes, y ahí se queda hasta que pase algo en el bus. Es lo
+     que le pasó a Josué el 2026-09-06 en su iPhone: el interruptor encendido
+     delante y el recuadro pidiéndole que lo encendiera. */
+  comprobar('🚨 CLAVE · El panel le pasa las preferencias al diagnóstico, no le pregunta a la copia del motor',
+    /diagnosticoAudio\(\s*(prefs|\{)/.test(settingsVivo) && !/diagnosticoAudio\(\s*\)/.test(settingsVivo));
   comprobar('⚠️ Y el diagnóstico avisa del interruptor de silencio del iPhone, que es lo único que el código no puede saber',
     /interruptor de silencio/.test(readFileSync(join(RAIZ, 'src/lib/audioEngine.js'), 'utf8')));
   /* ⚠️ Esto decía "porque todavía no hay ni un archivo que sonar". Dejó de ser
@@ -590,6 +598,44 @@ console.log('\n═══ El sonido nunca es el único canal ═══\n');
     decidirReproduccion(ON, 'SUCCESS', { ahora: T0 }).sonido.ruta === '/sonidos/success_01.mp3');
   comprobar(`⚠️ Y el sonido nace apagado mientras falten archivos (hay ${ARCHIVOS_QUE_HAY} de ${listaDeArchivos().length})`,
     DEFAULT_AUDIO.activado === false || ARCHIVOS_QUE_HAY === listaDeArchivos().length);
+}
+
+/* ===========================================================================
+   EL DIAGNÓSTICO, EJECUTADO DE VERDAD (EH F64)
+   ===========================================================================
+   🚨 Las pruebas de arriba miran el TEXTO de `SettingsView.jsx`. Eso vale para
+   que nadie vuelva a escribir el aviso a mano, pero no habría cazado esto: el
+   panel llamaba bien a `diagnosticoAudio()` y aun así mentía, porque la función
+   preguntaba a la copia del motor en vez de a las preferencias.
+
+   Así que aquí se EJECUTA. `audioEngine.js` necesita un navegador —mide
+   `window` al cargarse—, por eso hasta hoy solo se leía su código; con un
+   `window` mínimo y un `import` dinámico se puede probar de verdad la parte que
+   no toca el `AudioContext`. Es la única forma de reproducir el fallo del
+   2026-09-06 sin un iPhone delante. */
+console.log('\n═══ El aviso de por qué no suena ═══\n');
+{
+  globalThis.window = { AudioContext: function AudioContextFalso() {} };
+  globalThis.document = { addEventListener() {}, removeEventListener() {} };
+  const { diagnosticoAudio } = await import('../src/lib/audioEngine.js');
+
+  /* El motor está recién cargado: su copia de las preferencias dice `activado:
+     false`. Esa es exactamente la situación del fallo — el interruptor ya
+     encendido en pantalla, la copia todavía no. */
+  comprobar('🚨 CLAVE · Con el interruptor encendido, el aviso NO dice que esté apagado',
+    !/apagado/i.test(diagnosticoAudio({ activado: true }).texto),
+    diagnosticoAudio({ activado: true }).texto);
+  comprobar('...y con el interruptor apagado sí lo dice, y dice dónde está',
+    /apagado/i.test(diagnosticoAudio({ activado: false }).texto)
+    && /debajo/i.test(diagnosticoAudio({ activado: false }).texto));
+  comprobar('⚠️ El interruptor que nombra el aviso es el que existe («🔊 Sonidos»)',
+    /Sonidos/.test(diagnosticoAudio({ activado: false }).texto)
+    && /🔊 Sonidos/.test(readFileSync(join(RAIZ, 'src/views/SettingsView.jsx'), 'utf8')));
+  comprobar('Sin preferencias delante se cae a la copia del motor, que aquí dice apagado',
+    /apagado/i.test(diagnosticoAudio().texto));
+
+  delete globalThis.window;
+  delete globalThis.document;
 }
 
 console.log('\n  ⚠️ Sin comprobar aquí, y hay que decirlo: iOS, Android, PWA y escritorio.');

@@ -174,14 +174,31 @@ export const estadoAudio = () => ({
  *
  * ⚠️ Nada de "AudioContext suspended" ni "0 buffers": eso es lo que la EH F62
  * prohíbe en un texto que lee él. Cada estado dice **qué hacer**, no qué pasa.
+ *
+ * 🚨 **`prefs` no es un adorno: sin él este aviso va un paso por detrás.**
+ *
+ * `motor.prefs` es una COPIA. Quien la pone al día es el efecto de `App.jsx`, y
+ * React ejecuta los efectos de los hijos ANTES que los del padre — así que en el
+ * mismo renderizado en que Josué enciende el interruptor, el panel de Ajustes ya
+ * ha preguntado y el motor todavía contesta "apagado". Y ahí se queda, porque el
+ * panel solo vuelve a preguntar cuando pasa algo en el bus.
+ *
+ * Eso fue exactamente lo del 2026-09-06 en su iPhone: **el interruptor encendido
+ * y el recuadro diciéndole que lo encendiera.** El mismo sitio que acababa de
+ * dejar de mentirle sobre los archivos, mintiéndole ahora sobre el interruptor.
+ *
+ * Quien tiene las preferencias delante las pasa, y entonces manda la verdad en
+ * vez del reflejo. El motor queda de respaldo, para quien no las tenga.
  */
-export function diagnosticoAudio() {
+export function diagnosticoAudio(prefs = null) {
   const e = estadoAudio();
+  const activado = prefs ? !!prefs.activado : e.activado;
   if (!e.disponible) {
     return { ok: false, texto: 'Este navegador no puede reproducir sonido. Prueba con Safari o Chrome.' };
   }
-  if (!e.activado) {
-    return { ok: false, texto: 'El sonido está apagado. Enciende el interruptor de arriba.' };
+  if (!activado) {
+    // «Aquí debajo», no «arriba»: el interruptor va justo bajo este recuadro.
+    return { ok: false, texto: 'El sonido está apagado. Enciende el interruptor 🔊 Sonidos, aquí debajo.' };
   }
   if (!e.desbloqueado) {
     /* No es un fallo: iOS y Safari exigen que la primera vez el sonido nazca de

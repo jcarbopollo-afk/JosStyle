@@ -1251,17 +1251,28 @@ export function VistaPreviaGlobal({ fondo, urlFoto, accent }) {
 export function BloqueSonido({ audio, accent, onCambiar }) {
   const prefs = normalizarAudio(audio);
   const perfil = perfilActual(prefs);
+  const { activado } = prefs;
 
   /* 🚨 El diagnostico se refresca con CADA evento del bus, no con un temporizador:
      lo que cambia el estado del sonido es que pase algo —el primer toque que lo
      desbloquea, un sonido que se carga—, y eso siempre pasa por el bus. Un
-     intervalo estaria preguntando cada dos segundos por si acaso. */
-  const [diag, setDiag] = useState(() => diagnosticoAudio());
+     intervalo estaria preguntando cada dos segundos por si acaso.
+
+     🚨 **Y se le pasan `prefs`.** El motor guarda una copia de las preferencias
+     que actualiza un efecto de `App.jsx`, y React ejecuta los efectos de los
+     hijos antes que los del padre: preguntándole a él, este recuadro contestaba
+     con el interruptor de ANTES. El 2026-09-06 eso le decía a Josué "enciende el
+     interruptor" con el interruptor ya encendido delante. Lo que Josué acaba de
+     tocar está aquí, en `prefs`; no hay que ir a buscarlo a una copia. */
+  const [diag, setDiag] = useState(() => diagnosticoAudio(prefs));
   useEffect(() => {
-    const refrescar = () => setDiag(diagnosticoAudio());
+    const refrescar = () => setDiag(diagnosticoAudio({ activado }));
     refrescar();
     return suscribir('*', refrescar);
-  }, [prefs.activado]);
+    // `activado` y no `prefs`: el objeto es nuevo en cada renderizado y esto se
+    // volveria a suscribir sin parar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activado]);
   const cambiar = (parcial) => onCambiar(normalizarAudio({ ...prefs, ...parcial }));
   const alternarCategoria = (id) => cambiar({
     silenciadas: prefs.silenciadas.includes(id)
