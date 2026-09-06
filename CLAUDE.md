@@ -22,7 +22,8 @@ que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 mód
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
 de Hombre (65/65)** están terminados, y **Sonido va por 4/5**: **queda UNA fase, SO F2**, la
-biblioteca de sonidos, ⏸ **bloqueada porque faltan los archivos de audio que produce Josué**); y el
+biblioteca de sonidos, 🔓 **ya desbloqueada: los 46 archivos están en `public/sonidos/`, y la lleva
+la otra conversación**); y el
 bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué).
 
 ⚠️ **La Entrega 3 no es una continuación de la 2.** Aquélla construía módulos nuevos; ésta **pule y
@@ -539,8 +540,9 @@ código de agosto mientras él decía *"la web sigue igual"*.
 
 **🔒 Horario Top está CERRADO (12/12)**, 🏁 **Estilo de Hombre está CERRADO (65/65)** (v3.0.0) y
 **Sonido va por 4/5** (F1, F3, F4 y F5). **Queda UNA fase en toda la Entrega 2: SO F2, la biblioteca
-de sonidos**, y depende de los archivos que produce Josué: **hay 1 de 46**, así que faltan **45**.
-`queFalta()` dice exactamente cuáles y por dónde seguir.
+de sonidos** — y 🔓 **ya no está bloqueada: los 46 archivos están en `public/sonidos/`** desde el
+2026-09-04, con los nombres de la SO F4. **La lleva la otra conversación**, que es la que subió los
+archivos y arregló el aviso de Ajustes. `queFalta()` dice qué queda.
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
 *"dime en qué se diferencian aseo y cuidado corporal"* —que era literalmente la pregunta de la
@@ -1237,9 +1239,12 @@ Seis cosas que conviene tener presentes al retomar:
   siempre `fechaLocalISO`.** Y mensual/anual **se cuentan desde el ancla**, nunca encadenando
   `setMonth(+1)`: el recorte de los meses cortos se queda pegado.
 
-- ⏸ **Sigue sin haber ni un archivo de audio** (SO F2, bloqueada): `public/sonidos/` está vacía y
-  `hoySuena` es false. El interruptor nace apagado por eso. El día que aparezcan con los nombres de
-  la SO F4, suenan **sin tocar código**.
+- 🔓 **YA ESTÁN LOS 46 ARCHIVOS DE AUDIO** (comprobado el 2026-09-06): `public/sonidos/` los tiene
+  con los nombres exactos de la SO F4 —`ui_click_01.mp3`, `streak_milestone_365.mp3`…—, así que
+  **suenan sin tocar código**, como estaba previsto. ⚠️ Lo que decía este bloque hasta hoy —*"sigue
+  sin haber ni un archivo"*— **dejó de ser verdad el 2026-09-04**, y el panel de Ajustes arrastró la
+  misma frase escrita a mano hasta que la otra sesión la sustituyó por `diagnosticoAudio()`. **SO F2
+  la lleva esa conversación**: no tocarla desde aquí sin hablarlo.
 - 🚨 **Ninguna pantalla puede hacer `new Audio(...)`** (SO F1 y F5): el motor es el único que
   reproduce, y hay una comprobación que lee todas las vistas.
 - ⚠️ **Un perfil de sonido no se guarda: se DEDUCE** (SO F5): `perfilActual()` lo saca de las
