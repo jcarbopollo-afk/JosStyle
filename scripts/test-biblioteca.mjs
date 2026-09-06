@@ -78,13 +78,19 @@ eq(miniApp('guardados').coleccion, 'enlaces', '⚠️ igual con los guardados');
 // 🚨 La comprobación que caza el duplicado si una fase futura lo intenta.
 ok(!/['"]notas['"]\s*:\s*\[/.test(LIB) && !Object.keys(DEFAULT_BIBLIOTECA).includes('notas'),
   '🚨 NO existe una lista `notas` al lado de `apuntes`: eso dejaría los apuntes de Josué invisibles');
-ok(!Object.keys(DEFAULT_BIBLIOTECA).includes('guardados') && !Object.keys(DEFAULT_BIBLIOTECA).includes('documentos'),
-  '🚨 ni `guardados` al lado de `enlaces`, ni `documentos` al lado de los archivos');
+ok(!Object.keys(DEFAULT_BIBLIOTECA).includes('guardados'),
+  '🚨 ni `guardados` al lado de `enlaces`');
+/* ⚠️ `biblioteca.documentos` SÍ existe desde la BL F6, pero es para los documentos
+   de TEXTO: los archivos que Josué subió siguen en `bibliotecaArchivos`, su propia
+   clave, y la mini-app los sigue leyendo de ahí. Lo que esta comprobación vigila es
+   que nadie los MUEVA. */
+eq(miniApp('documentos').de, 'archivos',
+  '🚨 la mini-app Documentos sigue leyendo los archivos de `bibliotecaArchivos`: la lista de textos de la BL F6 no se los lleva');
 
 eq(COLECCIONES_NUEVAS, ['libros', 'ideas', 'colecciones'],
   '⚠️ solo TRES listas nuevas, que son las tres que no existían');
-eq(Object.keys(DEFAULT_BIBLIOTECA).sort(), ['apuntes', 'colecciones', 'enlaces', 'ideas', 'libros'],
-  '⚠️ y el valor por defecto tiene exactamente esas cinco (los archivos van en su propia clave)');
+eq(Object.keys(DEFAULT_BIBLIOTECA).sort(), ['apuntes', 'colecciones', 'documentos', 'enlaces', 'ideas', 'libros'],
+  '⚠️ y el valor por defecto tiene esas cinco más los documentos de texto de la BL F6 (los archivos van en su propia clave)');
 
 console.log('\n═══ 3. EN QUÉ SE DIFERENCIAN, DICHO EN LA PANTALLA (criterios 11, 12 y 13) ═══\n');
 

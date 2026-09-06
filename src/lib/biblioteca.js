@@ -46,8 +46,13 @@ import { crearLibro, normalizarLibro } from './libros.js';
 import { normalizarGuardado } from './guardados.js';
 /* BL F5 — y con las ideas: la fábrica se muda a `ideas.js` al desarrollarlas. */
 import { crearIdea, normalizarIdea } from './ideas.js';
+/* 🚨 BL F6 — los documentos de TEXTO son una lista nueva, y conviven con los
+   ARCHIVOS de `bibliotecaArchivos` bajo la misma mini-app: son dos cosas
+   distintas —un PDF en Storage y algo que él escribe— y ninguna se lleva por
+   delante a la otra. */
+import { normalizarDocumento } from './documentos.js';
 
-export { crearLibro, normalizarLibro, normalizarGuardado, crearIdea, normalizarIdea };
+export { crearLibro, normalizarLibro, normalizarGuardado, crearIdea, normalizarIdea, normalizarDocumento };
 
 /* ── Qué había antes de esta fase ──────────────────────────────────────────
 
@@ -314,6 +319,7 @@ export function normalizarBiblioteca(guardado) {
     libros: lista(b.libros).map(normalizarLibro).filter(Boolean),
     ideas: lista(b.ideas).map(normalizarIdea).filter(Boolean),
     colecciones: lista(b.colecciones).map(normalizarColeccion).filter(Boolean),
+    documentos: lista(b.documentos).map(normalizarDocumento).filter(Boolean),
   };
 }
 

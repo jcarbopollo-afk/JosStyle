@@ -312,17 +312,22 @@ export function SelectInput({ children, style, className = '', ...rest }) {
 // Fase 10 — Diario: primera vez que se necesita texto libre de varias líneas (hasta ahora
 // TextInput cubría inputs de una sola línea). Mismo estilo visual que TextInput para que no
 // desentone, solo cambia la etiqueta y que crece en altura en vez de desbordar.
-export function Textarea(props) {
+/* 🚨 E3 F20 (BL F6) — con `ref`, como `TextInput`. Sin él, un `ref` que le pasen
+   se pierde **en silencio**: el editor de Documentos lo usa para saber dónde está
+   el cursor al poner un título o una viñeta, y sin eso la barra de formato
+   escribiría siempre al principio del texto sin que nada fallara. */
+export const Textarea = React.forwardRef(function Textarea(props, ref) {
   const { style, className, rows = 3, ...rest } = props;
   return (
     <textarea
       {...rest}
+      ref={ref}
       rows={rows}
       className={`w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none ${className || ''}`}
       style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontFamily: 'inherit', ...style }}
     />
   );
-}
+});
 
 export function Select({ children, ...rest }) {
   return (

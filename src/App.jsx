@@ -1949,6 +1949,14 @@ export default function App() {
       });
     }
   };
+  /* E3 F20 (BL F6) — los documentos de TEXTO. Los archivos que Josué subió desde
+     la Fase 11 siguen en su clave, `bibliotecaArchivos`: esta lista no se los
+     lleva, conviven bajo la misma mini-app. */
+  const addDocumento = (d) => d && snapshotAndSave({ biblioteca: { ...biblioteca, documentos: [...(biblioteca.documentos || []), d] } });
+  const deleteDocumento = (id) => eliminarConPapelera('biblioteca', 'documentos', id);
+  const updateDocumento = (d) => d && snapshotAndSave({
+    biblioteca: { ...biblioteca, documentos: (biblioteca.documentos || []).map((x) => (x.id === d.id ? d : x)) },
+  });
   const addColeccion = (c) => c && snapshotAndSave({ biblioteca: { ...biblioteca, colecciones: [...biblioteca.colecciones, c] } });
   const deleteColeccion = (id) => eliminarConPapelera('biblioteca', 'colecciones', id);
   // Fase 12 — Relación: módulo privado (PinGate en el render, ver renderTab). Nombre y fechas
@@ -2564,6 +2572,7 @@ export default function App() {
             onAddLibro={addLibro} onDeleteLibro={deleteLibro} onUpdateLibro={updateLibro}
             onSubirPortada={subirPortadaLibro} onBorrarPortada={borrarPortadaLibro}
             onAddIdea={addIdea} onDeleteIdea={deleteIdea} onUpdateIdea={updateIdea} onConvertirIdea={convertirIdeaEn}
+            onAddDocumento={addDocumento} onDeleteDocumento={deleteDocumento} onUpdateDocumento={updateDocumento}
             onAddColeccion={addColeccion} onDeleteColeccion={deleteColeccion}
             accent={accent}
           />

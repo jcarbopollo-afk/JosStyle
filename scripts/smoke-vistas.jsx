@@ -124,10 +124,13 @@ import PapeleraView from '../src/views/PapeleraView.jsx';
 import LibraryView, { TarjetaMiniApp, CabeceraMiniApp, VacioMiniApp, AnadirNotaRapida, AnadirColeccion, FichaSimple,
   PantallaLibros, TarjetaLibro, ContinuarLeyendo, FormularioLibro, DetalleLibro, Portada, BarraProgreso, EtiquetaEstado,
   PantallaGuardados, TarjetaGuardado, FormularioGuardado, DetalleGuardado, IconoGuardado,
-  PantallaIdeas, TarjetaIdea, FormularioIdea, DetalleIdea, ConvertirIdea, EtiquetaIdea } from '../src/views/LibraryView.jsx';
+  PantallaIdeas, TarjetaIdea, FormularioIdea, DetalleIdea, ConvertirIdea, EtiquetaIdea,
+  PantallaDocumentos, TarjetaDocumento, EditorDocumento, LecturaDocumento, CuerpoDocumento,
+  IndiceDocumento, BarraFormato, TextoConMarcas } from '../src/views/LibraryView.jsx';
 import { ESTADOS_LIBRO, crearLibro } from '../src/lib/libros.js';
 import { TIPOS_GUARDADO, crearGuardado } from '../src/lib/guardados.js';
 import { ESTADOS_IDEA, crearIdea } from '../src/lib/ideas.js';
+import { crearDocumento } from '../src/lib/documentos.js';
 import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
 import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
@@ -348,6 +351,37 @@ const CASOS = [
   ['DetalleIdea', DetalleIdea, () => ({
     accent, onCerrar: noop, onGuardar: noop, onEliminar: noop, onConvertir: noop,
     idea: { ...crearIdea({ titulo: 'Crear una app de reservas', descripcion: 'Para el club', notas: 'Podría usar Supabase', categoria: 'Tecnología' }), estado: 'developing', tareaId: 't1' },
+  })],
+  /* E3 F20 (BL F6) — Documentos: la tarjeta, el editor, el cuerpo en modo lectura
+     con TODAS las marcas, el índice, la barra de formato y la pantalla. */
+  ['TarjetaDocumento', TarjetaDocumento, () => ({ accent, indice: 0, onAbrir: noop, documento: crearDocumento({ titulo: 'Especificación de Productividad', descripcion: 'Las siete fases', contenido: '# Introducción\nUn párrafo con **negrita**, *cursiva*, ~~tachado~~ y `código`.\n\n## Arquitectura\n- Una viñeta\n- Otra\n\n1. Primero\n2. Segundo\n\n- [ ] Sin hacer\n- [x] Hecho\n\n> Una cita\n\n---\n\n### Seguridad\nEl final.', categoria: 'Programación', etiquetas: ['claude', 'supabase'] }) })],
+  ['TarjetaDocumento (borrador sin título)', TarjetaDocumento, () => ({
+    accent, indice: 1, onAbrir: noop,
+    documento: crearDocumento({ contenido: 'Solo escribí esto y lo dejé a medias' }),
+  })],
+  ['CuerpoDocumento (todas las marcas)', CuerpoDocumento, () => ({ accent, contenido: crearDocumento({ titulo: 'Especificación de Productividad', descripcion: 'Las siete fases', contenido: '# Introducción\nUn párrafo con **negrita**, *cursiva*, ~~tachado~~ y `código`.\n\n## Arquitectura\n- Una viñeta\n- Otra\n\n1. Primero\n2. Segundo\n\n- [ ] Sin hacer\n- [x] Hecho\n\n> Una cita\n\n---\n\n### Seguridad\nEl final.', categoria: 'Programación', etiquetas: ['claude', 'supabase'] }).contenido })],
+  ['CuerpoDocumento (vacío)', CuerpoDocumento, () => ({ accent, contenido: '' })],
+  ['TextoConMarcas', TextoConMarcas, () => ({ texto: 'Con **negrita** y `código`' })],
+  ['IndiceDocumento', IndiceDocumento, () => ({ accent, contenido: crearDocumento({ titulo: 'Especificación de Productividad', descripcion: 'Las siete fases', contenido: '# Introducción\nUn párrafo con **negrita**, *cursiva*, ~~tachado~~ y `código`.\n\n## Arquitectura\n- Una viñeta\n- Otra\n\n1. Primero\n2. Segundo\n\n- [ ] Sin hacer\n- [x] Hecho\n\n> Una cita\n\n---\n\n### Seguridad\nEl final.', categoria: 'Programación', etiquetas: ['claude', 'supabase'] }).contenido })],
+  ['BarraFormato', BarraFormato, () => ({ accent, onMarca: noop })],
+  ['EditorDocumento (nuevo)', EditorDocumento, () => ({ accent, documento: null, onGuardar: noop, onCerrar: noop })],
+  ['EditorDocumento (editando)', EditorDocumento, () => ({ accent, documento: crearDocumento({ titulo: 'Especificación de Productividad', descripcion: 'Las siete fases', contenido: '# Introducción\nUn párrafo con **negrita**, *cursiva*, ~~tachado~~ y `código`.\n\n## Arquitectura\n- Una viñeta\n- Otra\n\n1. Primero\n2. Segundo\n\n- [ ] Sin hacer\n- [x] Hecho\n\n> Una cita\n\n---\n\n### Seguridad\nEl final.', categoria: 'Programación', etiquetas: ['claude', 'supabase'] }), onGuardar: noop, onCerrar: noop })],
+  ['LecturaDocumento', LecturaDocumento, () => ({
+    accent, documento: crearDocumento({ titulo: 'Especificación de Productividad', descripcion: 'Las siete fases', contenido: '# Introducción\nUn párrafo con **negrita**, *cursiva*, ~~tachado~~ y `código`.\n\n## Arquitectura\n- Una viñeta\n- Otra\n\n1. Primero\n2. Segundo\n\n- [ ] Sin hacer\n- [x] Hecho\n\n> Una cita\n\n---\n\n### Seguridad\nEl final.', categoria: 'Programación', etiquetas: ['claude', 'supabase'] }), onCerrar: noop, onGuardar: noop, onEliminar: noop,
+  })],
+  ['PantallaDocumentos (vacía)', PantallaDocumentos, () => ({
+    documentos: [], archivos: [], urlsArchivos: {}, cabecera: null, crear: false, onCerrarCrear: noop,
+    vacio: null, accent, onAdd: noop, onUpdate: noop, onDelete: noop, onAddArchivo: noop, onDeleteArchivo: noop,
+  })],
+  ['PantallaDocumentos (con datos)', PantallaDocumentos, () => ({
+    documentos: [
+      crearDocumento({ titulo: 'Especificación de Productividad', descripcion: 'Las siete fases', contenido: '# Introducción\nUn párrafo con **negrita**, *cursiva*, ~~tachado~~ y `código`.\n\n## Arquitectura\n- Una viñeta\n- Otra\n\n1. Primero\n2. Segundo\n\n- [ ] Sin hacer\n- [x] Hecho\n\n> Una cita\n\n---\n\n### Seguridad\nEl final.', categoria: 'Programación', etiquetas: ['claude', 'supabase'] }),
+      { ...crearDocumento({ titulo: 'Un favorito' }), favorito: true, estado: 'ready' },
+      { ...crearDocumento({ titulo: 'Archivado' }), archivado: true },
+    ],
+    archivos: [{ id: 'f1', tipo: 'pdf', path: 'x/y.pdf', titulo: 'Tema 3', fecha: '2026-09-01' }],
+    urlsArchivos: {}, cabecera: null, crear: false, onCerrarCrear: noop,
+    vacio: null, accent, onAdd: noop, onUpdate: noop, onDelete: noop, onAddArchivo: noop, onDeleteArchivo: noop,
   })],
   ['PantallaIdeas (vacía)', PantallaIdeas, () => ({
     ideas: [], cabecera: null, crear: false, onCerrarCrear: noop, vacio: null, accent,

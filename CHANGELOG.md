@@ -1,5 +1,71 @@
 # CHANGELOG.md
 
+## v3.41.0 — Entrega 3 · Fase 20 (BL F6): Biblioteca — Documentos
+
+Editor con formato, autoguardado, modo lectura, índice, borradores, favoritos, archivado,
+etiquetas, categorías, búsqueda por contenido, filtros y orden.
+
+> NOTAS: pienso → escribo → guardo.
+> DOCUMENTOS: creo un documento → **lo desarrollo** → **lo organizo** → lo consulto después.
+
+### 🚨 Los archivos de Josué no se han movido
+La BL F1 mapeó Documentos a `bibliotecaArchivos` —los PDF, vídeos y fotos de la Fase 11—, porque su
+subtítulo es *"tu archivo personal"* y ninguna otra mini-app los recogía. Esta fase **no se los
+quita**: añade **una segunda lista** para los textos, y las dos conviven. Son dos cosas distintas —un
+archivo en Storage y algo que él escribe— y el estado vacío del propio enunciado las abarca a las
+dos. Los archivos siguen con su botón de subir y su papelera, en su apartado.
+
+### 🚨 El formato es Markdown, y es una decisión
+El enunciado pide títulos, negrita, cursiva, tachado, listas, checklists, citas, separadores y
+código, y a la vez avisa: *"no convertirlo en Microsoft Word"*. Un editor visual exigiría una
+librería nueva —que Josué tendría que instalar a mano y que nadie podría verificar aquí (DEP-26)— y
+`contenteditable` en el teclado del iPhone es un campo de minas. Con Markdown:
+
+- el contenido **es texto**, así que el autoguardado, la persistencia y la búsqueda *"por
+  contenido"* funcionan sin nada especial — buscar «Supabase» encuentra el documento aunque la
+  palabra no esté en el título, que es el ejemplo literal del enunciado;
+- **copiarlo entero** devuelve algo que sirve —una especificación para pegar en otra
+  conversación—, no una sopa de etiquetas;
+- y **el índice sale de leer los títulos**, sin infraestructura ninguna.
+
+La barra de formato tiene una pastilla por marca, sacadas del catálogo, y **el mismo botón la quita
+si ya está**: poner una viñeta por error no obliga a borrarla a mano.
+
+🚨 **Y el documento se pinta con elementos de React, nunca con `dangerouslySetInnerHTML`.** Lo que
+hay dentro lo escribe Josué, pero un texto pegado de cualquier sitio no tiene por qué ser
+inofensivo, y una vez que existe ese camino ya no se cierra.
+
+### El autoguardado, que el enunciado llama MUY IMPORTANTE
+Escribe con retardo —más largo que el del buscador, porque una búsqueda se lanza mientras se escribe
+una palabra y un guardado mientras se escribe un párrafo— y **al cerrar guarda lo que quede
+pendiente**: sin eso, escribir una frase y salir en menos de un segundo la perdería.
+
+*"Sin conexión"* **se detecta de verdad**, con `navigator.onLine`. Lo que sigue sin poder detectarse
+es que el guardado falle: `saveData` se traga su error (EH F52), y su texto queda escrito con
+`detectable: false` para el día que lo devuelva.
+
+### 🚨 Y el fallo que apareció en un componente compartido
+`Textarea` **se comía el `ref`**. El editor lo usa para saber dónde está el cursor al poner un título
+o una viñeta, y sin él la barra de formato habría escrito siempre al principio del texto **sin que
+nada fallara**. Ahora lo reenvía, como `TextInput`.
+
+### Lo demás
+Un documento nace como **borrador** y sale de serlo cuando él quiere; **archivar es un campo aparte
+del estado**, porque uno terminado se puede archivar sin dejar de estar terminado (la lección de
+Ideas). Las etiquetas se guardan **sin almohadilla y en minúsculas** —`#Claude`, `claude` y `#claude`
+son la misma— y **dentro del documento**: una tabla aparte en un almacén de una fila por clave habría
+que sincronizarla a mano, y dejaría etiquetas colgando de documentos borrados.
+
+Las **relaciones futuras** están declaradas con cuál existe y cuál no, pero **no se han añadido cinco
+campos vacíos**: uno que nadie puede rellenar es media función (regla 8).
+
+🐛 Y dos comprobaciones saltaron con código que estaba bien: `donde: 'bibliotecaArchivos'` es la tabla
+que documenta dónde viven los archivos, y *"apuntes largos"* es español corriente. Para buscar si el
+código toca otra lista hay que quitar también **las cadenas**.
+
+**Verificación: `═══ TODO CORRECTO ═══`. 149 comprobaciones nuevas de Node, 48 casos de renderizado
+nuevos y 636 en Chromium.**
+
 ## v3.40.0 — Entrega 3 · Fase 19 (BL F5): Biblioteca — Ideas
 
 Cinco estados, prioridad, categorías, notas de desarrollo, **conversión a tarea, meta u objetivo**,

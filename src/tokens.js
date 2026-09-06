@@ -463,7 +463,7 @@ export const TIPOS_ARCHIVO_BIBLIOTECA = [
 // Notas y `enlaces` los Guardados desde la Fase 11: no se renombran ni se duplican. Las tres
 // listas nuevas se normalizan en `normalizarBiblioteca` (src/lib/biblioteca.js), porque
 // `loadData` NO fusiona con el default (regla 5) y sin eso llegarían `undefined`.
-export const DEFAULT_BIBLIOTECA = { apuntes: [], enlaces: [], libros: [], ideas: [], colecciones: [] };
+export const DEFAULT_BIBLIOTECA = { apuntes: [], enlaces: [], libros: [], ideas: [], colecciones: [], documentos: [] };
 
 // Fase 12 — Relación: módulo privado, protegido por el mismo PIN que ya usa la pestaña Fotos
 // de Salud (PinGate). Solo nombre + lista de fechas importantes, entrada manual, sin IA (no la

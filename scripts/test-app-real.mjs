@@ -2446,4 +2446,66 @@ ok(ideasTrasConvertir_bl5[0].estado === 'developing',
 const detalleFinal_bl5 = await esperarTexto(/Lo que ha generado/i);
 ok(/Lo que ha generado/i.test(detalleFinal_bl5), '⚠️ y el detalle lo enseña');
 
+/* ── E3 F20 (BL F6) · DOCUMENTOS ─────────────────────────────────────────
+   El recorrido entero: escribir con formato, comprobar que **el autoguardado
+   guarda solo**, que el modo lectura pinta la estructura y que **los archivos
+   que Josué ya tenía siguen ahí**. */
+almacen.biblioteca = { apuntes: [], enlaces: [], libros: [], ideas: [], colecciones: [], documentos: [] };
+almacen.bibliotecaArchivos = [{ id: 'ar1', tipo: 'pdf', path: 'u/tema3.pdf', titulo: 'Tema 3 de Biología', fecha: '2026-09-01' }];
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Vida');
+await pulsar('Biblioteca');
+const lanzador_bl6 = await ver();
+ok(/1 documento|1 archivo/i.test(lanzador_bl6),
+  '🚨 el archivo que Josué subió en la Fase 11 sigue contando en el lanzador');
+
+ok(await pulsar('Documentos'), 'Documentos se abre');
+ok(await pulsar('Añadir en Documentos'), 'y el ＋ abre el editor directamente');
+
+await page.waitForSelector('input[aria-label="Título del documento"]', { timeout: 6000 });
+await page.fill('input[aria-label="Título del documento"]', 'Especificación de Productividad');
+await page.fill('textarea[aria-label="Contenido del documento"]', '# Introducción\nEsto va de Supabase.\n\n- Una viñeta\n- Otra');
+
+/* 🚨 No se pulsa ningún botón de guardar: el autoguardado tiene que hacerlo solo. */
+const trasAuto_bl6 = await esperarTexto(/Guardado/);
+ok(/Guardado/.test(trasAuto_bl6),
+  '🚨 EL AUTOGUARDADO GUARDA SOLO, sin pulsar nada, y lo dice discretamente (criterio 6)');
+
+const docsGuardados_bl6 = guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value?.documentos;
+ok(docsGuardados_bl6?.[0]?.titulo === 'Especificación de Productividad',
+  '🚨 y lo guardado llega a Supabase');
+ok(docsGuardados_bl6[0].estado === 'draft', '⚠️ como borrador, que es como nace (criterio 7)');
+ok(/Supabase/.test(docsGuardados_bl6[0].contenido || ''), '⚠️ con su contenido entero');
+
+/* Cerrar el editor y leer el documento. */
+ok(await pulsar('Cerrar el editor'), 'se cierra el editor');
+const lista_bl6 = await esperarTexto(/Especificación de Productividad/);
+ok(/Especificación de Productividad/.test(lista_bl6), '⚠️ y el documento está en la lista');
+ok(/Borrador/i.test(lista_bl6), '⚠️ marcado como borrador');
+ok(/Archivos subidos/i.test(lista_bl6),
+  '🚨 Y LOS ARCHIVOS DE LA FASE 11 SIGUEN AHÍ, en su apartado: esta fase no se los lleva');
+
+ok(await pulsar('Especificación de Productividad'), 'se abre en modo lectura');
+/* 🐛 Con `/i`: el rótulo del índice lleva la clase `uppercase`, así que
+   `innerText` lo devuelve como CONTENIDO y `/Contenido/` no lo encuentra nunca.
+   Es la lección de la E3 F8, y ya van dos veces. */
+const lectura_bl6 = await esperarTexto(/1\. Introducción/);
+ok(/contenido/i.test(lectura_bl6) && /1\. Introducción/.test(lectura_bl6),
+  '🚨 EL ÍNDICE SALE DE LOS TÍTULOS DEL DOCUMENTO');
+ok(/Esto va de Supabase/.test(lectura_bl6), '⚠️ y el texto se lee');
+ok(!/^#/m.test(lectura_bl6.split('Contenido')[1] || ''),
+  '⚠️ ya sin las marcas: en lectura se ve el documento, no lo que se escribió');
+
+/* Buscar por el contenido, que es lo que el enunciado pone de ejemplo. */
+/* Sacarlo de borrador desde su propia ficha, y comprobar que se guarda. */
+ok(await pulsar('Ya no es un borrador'), 'se saca de borrador desde su ficha');
+await page.waitForTimeout(700);
+const trasPublicar_bl6 = guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value?.documentos;
+ok(trasPublicar_bl6?.[0]?.estado === 'ready',
+  '⚠️ y deja de ser un borrador **sin perder nada**: su contenido sigue entero');
+ok(/Supabase/.test(trasPublicar_bl6[0].contenido || ''), '🚨 el texto no se toca al cambiar de estado');
+ok(await pulsar('Cerrar el documento'), 'se cierra la lectura');
+
 await salir(browser);

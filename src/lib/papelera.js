@@ -100,6 +100,10 @@ export const CATALOGO_PAPELERA = {
   'biblioteca.libros': { modulo: 'biblioteca', coleccion: 'libros', tipo: 'Libro', campos: ['titulo'], icono: 'biblioteca' },
   'biblioteca.ideas': { modulo: 'biblioteca', coleccion: 'ideas', tipo: 'Idea', campos: ['titulo'], icono: 'biblioteca' },
   'biblioteca.colecciones': { modulo: 'biblioteca', coleccion: 'colecciones', tipo: 'Colección', campos: ['nombre'], icono: 'biblioteca' },
+  // E3 F20 (BL F6) — los documentos de texto. Su título es opcional, así que la
+  // papelera enseña también su descripción: una fila en blanco no dice qué se
+  // está recuperando.
+  'biblioteca.documentos': { modulo: 'biblioteca', coleccion: 'documentos', tipo: 'Documento', campos: ['titulo', 'descripcion'], icono: 'biblioteca' },
   'fe.servicio': { modulo: 'fe', coleccion: 'servicio', tipo: 'Servicio', campos: ['tipo', 'fecha'], icono: 'fe' },
   'fe.eventos': { modulo: 'fe', coleccion: 'eventos', tipo: 'Evento de fe', campos: ['titulo'], icono: 'fe' },
   'fe.diario': { modulo: 'fe', coleccion: 'diario', tipo: 'Entrada espiritual', campos: ['fecha'], icono: 'fe' },

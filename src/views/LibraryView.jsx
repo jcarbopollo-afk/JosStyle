@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Search, FileText, Video as VideoIcon, Image as ImageIcon, StickyNote, Link as LinkIcon,
-  Trash2, ExternalLink, ChevronDown, ChevronUp, Upload, ArrowLeft, Plus, Pencil, Star, Archive, Sparkles,
+  Trash2, ExternalLink, ChevronDown, ChevronUp, Upload, ArrowLeft, Plus, Pencil, Star, Archive, Sparkles, Copy,
   BookMarked, Bookmark, Lightbulb, FolderOpen,
 } from 'lucide-react';
 import { COLORS, TIPOS_ARCHIVO_BIBLIOTECA, PERIODOS_META, PLAZOS_OBJETIVO } from '../tokens';
@@ -15,6 +15,14 @@ import {
 /* BL F2 — Libros tiene su propia librería. `crearLibro` y `normalizarLibro`
    vivían en `biblioteca.js` desde la F1 y se mudaron aquí al desarrollarla:
    una sola fábrica, no dos. */
+import {
+  ESTADOS_DOCUMENTO, estadoDocumento, CATEGORIAS_DOCUMENTO, MARCAS_FORMATO, aplicarMarca,
+  crearDocumento, editarDocumento, alternarFavoritoDoc, archivarDocumento, desarchivarDocumento,
+  guardarEnBiblioteca, volverABorrador, RETRASO_AUTOGUARDADO_MS, estadoDeGuardado,
+  bloquesDe, trozosDe, indiceDe, adelantoDe, nombreDoc,
+  FILTROS_DOCUMENTOS, ORDENES_DOCUMENTOS, ORDEN_DOC_POR_DEFECTO,
+  filtrarDocumentos, ordenarDocumentos, etiquetasUsadas, lineaDocumentos, EJEMPLO_DIFERENCIA,
+} from '../lib/documentos';
 import {
   ESTADOS_IDEA, estadoIdea, ESTADO_IDEA_POR_DEFECTO, PRIORIDADES_IDEA, prioridadIdea,
   PRIORIDAD_POR_DEFECTO, CATEGORIAS_IDEA, crearIdea, editarIdea, cambiarEstadoIdea,
@@ -371,6 +379,7 @@ export default function LibraryView({
   onAddEnlace, onDeleteEnlace, onUpdateEnlace,
   onAddLibro, onDeleteLibro, onUpdateLibro, onSubirPortada, onBorrarPortada,
   onAddIdea, onDeleteIdea, onUpdateIdea, onConvertirIdea,
+  onAddDocumento, onDeleteDocumento, onUpdateDocumento,
   onAddColeccion, onDeleteColeccion,
   accent,
 }) {
@@ -433,7 +442,7 @@ export default function LibraryView({
   /* ⚠️ Libros tiene su propio buscador dentro de su pantalla (BL F2), con sus
      filtros y su orden al lado: dos cajas de búsqueda en la misma pantalla
      serían dos formas de hacer lo mismo. */
-  const conBuscador = !['libros', 'guardados', 'ideas'].includes(abierta) && elementos.length >= 5;
+  const conBuscador = !['libros', 'guardados', 'ideas', 'documentos'].includes(abierta) && elementos.length >= 5;
 
   const cabecera = (
     <>
@@ -507,47 +516,28 @@ export default function LibraryView({
 
   // ── Documentos ──────────────────────────────────────────────────────────
   if (abierta === 'documentos') {
-    const lista = elementos
-      .filter((a) => filtro === 'todos' || a.tipo === filtro)
-      .filter((a) => coincide([a.titulo, a.textoExtraido]))
-      .sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+    /* 🚨 BL F6 — Documentos guarda DOS cosas bajo el mismo techo: los archivos
+       que Josué subió desde la Fase 11 y los documentos de texto que estrena esta
+       fase. Ninguna se lleva por delante a la otra. */
     return (
-      <div className="space-y-3 pb-4">
-        {cabecera}
-        {crear && (
-          <>
-            <Card>
-              <Field label="Qué vas a subir">
-                <Select value={tipoArchivo} onChange={(e) => setTipoArchivo(e.target.value)}>
-                  <option value="pdf">PDF</option>
-                  <option value="video">Vídeo</option>
-                  <option value="foto">Foto</option>
-                </Select>
-              </Field>
-            </Card>
-            <AnadirArchivo tipo={tipoArchivo} onAdd={onAddArchivo} accent={accent} />
-          </>
-        )}
-        {elementos.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-            <FiltroPill active={filtro === 'todos'} onClick={() => setFiltro('todos')} accent={accent}>Todos</FiltroPill>
-            {FILTROS.map((f) => (
-              <FiltroPill key={f.id} active={filtro === f.id} onClick={() => setFiltro(f.id)} accent={accent}>{f.label}</FiltroPill>
-            ))}
-          </div>
-        )}
-        {elementos.length === 0 ? vacio : lista.length === 0 ? nadaCoincide : (
-          <div className="space-y-2">
-            {lista.map((a) => (
-              <ItemCard key={a.id} item={{ ...a, _tipo: a.tipo }} query={q} url={urls[a.id]} accent={accent} onDelete={() => onDeleteArchivo(a.id, a.path)} />
-            ))}
-          </div>
-        )}
-      </div>
+      <PantallaDocumentos
+        documentos={biblioteca.documentos || []}
+        archivos={elementos}
+        urlsArchivos={urls}
+        cabecera={cabecera}
+        crear={crear}
+        onCerrarCrear={() => setCrear(false)}
+        vacio={vacio}
+        accent={accent}
+        onAdd={onAddDocumento}
+        onUpdate={onUpdateDocumento}
+        onDelete={onDeleteDocumento}
+        onAddArchivo={onAddArchivo}
+        onDeleteArchivo={onDeleteArchivo}
+      />
     );
   }
 
-  // ── Libros ──────────────────────────────────────────────────────────────
   if (abierta === 'libros') {
     /* 🚨 BL F2 — Libros tiene pantalla propia: resumen, "continuar leyendo",
        filtros, orden, tarjetas con portada y detalle. La cabecera, el ＋ y el
@@ -1919,6 +1909,563 @@ export function PantallaIdeas({ ideas, cabecera, crear, onCerrarCrear, vacio, ac
           onGuardar={onUpdate}
           onEliminar={onDelete}
           onConvertir={onConvertir}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ENTREGA 3 · FASE 20 (BL F6) — DOCUMENTOS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Un trozo de texto con su marca. 🚨 Se pinta con elementos de React, **nunca
+   con `dangerouslySetInnerHTML`**: lo que hay dentro lo escribe Josué, pero un
+   texto pegado de cualquier sitio no tiene por qué ser inofensivo, y una vez
+   que existe ese camino ya no se cierra. */
+export function TextoConMarcas({ texto }) {
+  return (
+    <>
+      {trozosDe(texto).map((t, i) => {
+        if (t.codigo) {
+          return (
+            <code key={i} className="text-[0.9em] rounded px-1 py-0.5" style={{ background: COLORS.surface2, color: COLORS.text }}>
+              {t.texto}
+            </code>
+          );
+        }
+        const estilo = {};
+        if (t.negrita) estilo.fontWeight = 700;
+        if (t.cursiva) estilo.fontStyle = 'italic';
+        if (t.tachado) estilo.textDecoration = 'line-through';
+        return <span key={i} style={estilo}>{t.texto}</span>;
+      })}
+    </>
+  );
+}
+
+/* El modo lectura. *"El documento debe verse como contenido editorial. Especial
+   atención a: anchura máxima del texto, interlineado, títulos, separación de
+   secciones."* */
+export function CuerpoDocumento({ contenido, accent }) {
+  const bloques = bloquesDe(contenido);
+  if (bloques.length === 0) {
+    return <p className="text-sm" style={{ color: COLORS.textMuted }}>Este documento todavía está vacío.</p>;
+  }
+  const tamanos = { 1: 'text-lg', 2: 'text-base', 3: 'text-sm' };
+  return (
+    <div style={{ maxWidth: '68ch' }}>
+      {bloques.map((b, i) => {
+        if (b.tipo === 'separador') {
+          return <hr key={i} className="my-4" style={{ border: 0, borderTop: `1px solid ${COLORS.border}` }} />;
+        }
+        if (b.tipo === 'titulo') {
+          return (
+            <p key={i} className={`${tamanos[b.nivel]} font-bold mt-4 mb-1.5 leading-snug`} style={{ color: COLORS.text }}>
+              <TextoConMarcas texto={b.texto} />
+            </p>
+          );
+        }
+        if (b.tipo === 'cita') {
+          return (
+            <p key={i} className="text-sm my-2 pl-3 leading-relaxed" style={{ color: COLORS.textMuted, borderLeft: `2px solid ${accent}` }}>
+              <TextoConMarcas texto={b.texto} />
+            </p>
+          );
+        }
+        if (b.tipo === 'checklist') {
+          return (
+            <div key={i} className="my-2 space-y-1">
+              {b.elementos.map((el, j) => (
+                <p key={j} className="text-sm leading-relaxed" style={{ color: el.hecho ? COLORS.textMuted : COLORS.text }}>
+                  <span aria-hidden="true">{el.hecho ? '☑' : '☐'}</span>{' '}
+                  <span style={el.hecho ? { textDecoration: 'line-through' } : undefined}><TextoConMarcas texto={el.texto} /></span>
+                </p>
+              ))}
+            </div>
+          );
+        }
+        if (b.tipo === 'vinetas' || b.tipo === 'numerada') {
+          return (
+            <div key={i} className="my-2 space-y-1">
+              {b.elementos.map((el, j) => (
+                <p key={j} className="text-sm leading-relaxed pl-4" style={{ color: COLORS.text, textIndent: '-1rem' }}>
+                  <span style={{ color: COLORS.textMuted }}>{b.tipo === 'vinetas' ? '• ' : `${j + 1}. `}</span>
+                  <TextoConMarcas texto={el.texto} />
+                </p>
+              ))}
+            </div>
+          );
+        }
+        return (
+          <p key={i} className="text-sm my-2 leading-relaxed" style={{ color: COLORS.text }}>
+            <TextoConMarcas texto={b.texto} />
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+/* El índice, si el documento tiene títulos. `null` si no: uno vacío ocupa sitio
+   y no dice nada. */
+export function IndiceDocumento({ contenido, accent }) {
+  const indice = indiceDe(contenido);
+  if (!indice) return null;
+  return (
+    <Card>
+      <p className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: accent }}>Contenido</p>
+      {indice.map((t) => (
+        <p key={t.n} className="text-xs leading-relaxed" style={{ color: COLORS.textMuted, paddingLeft: (t.nivel - 1) * 12 }}>
+          {t.n}. {t.texto}
+        </p>
+      ))}
+    </Card>
+  );
+}
+
+export function TarjetaDocumento({ documento, accent, indice = 0, onAbrir }) {
+  const adelanto = adelantoDe(documento);
+  const estado = estadoDocumento(documento.estado);
+  return (
+    <Card style={{ padding: '0.9rem 1rem', animationDelay: retrasoDeTarjeta(indice) }} className={CLASE_TARJETA}>
+      <button onClick={onAbrir} className="w-full text-left">
+        <div className="flex items-start justify-between gap-2">
+          <span style={{ fontSize: 16 }} aria-hidden="true">📄</span>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {documento.favorito ? <Star size={13} style={{ color: accent }} fill={accent} /> : null}
+            <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{formatFecha(documento.actualizado)}</p>
+          </div>
+        </div>
+        <p className="text-sm font-semibold mt-1 leading-snug" style={{ color: COLORS.text }}>{nombreDoc(documento)}</p>
+        {adelanto ? <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.textMuted }}>{adelanto}</p> : null}
+        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+          {documento.estado === 'draft' ? (
+            <span className="text-[11px] font-semibold rounded-full px-2 py-0.5" style={{ background: COLORS.surface2, color: COLORS.textMuted }}>
+              {estado?.icono} {estado?.nombre}
+            </span>
+          ) : null}
+          {documento.categoria ? <span className="text-[11px]" style={{ color: accent }}>{documento.categoria}</span> : null}
+          {(documento.etiquetas || []).slice(0, 3).map((t) => (
+            <span key={t} className="text-[11px]" style={{ color: COLORS.textMuted }}>#{t}</span>
+          ))}
+        </div>
+      </button>
+    </Card>
+  );
+}
+
+/* La barra de formato. Una pastilla por marca, sacadas del catálogo: añadir una
+   marca es añadir una línea, nunca un botón a mano. */
+export function BarraFormato({ accent, onMarca }) {
+  return (
+    <div className="flex gap-1.5 overflow-x-auto py-1" style={{ scrollbarWidth: 'none' }}>
+      {MARCAS_FORMATO.map((m) => (
+        <button
+          key={m.id}
+          onClick={() => onMarca(m.id)}
+          aria-label={m.nombre}
+          className="rounded-lg px-2.5 py-1.5 text-xs font-semibold flex-shrink-0 toque-44 transition-transform active:scale-90"
+          style={{ background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}
+        >
+          {m.muestra}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* El editor. 🚨 El autoguardado es lo que el enunciado llama MUY IMPORTANTE:
+   escribe con retardo, y **al cerrar guarda lo que quede pendiente** — sin eso,
+   escribir una frase y salir en menos de un segundo la perdería. */
+export function EditorDocumento({ documento, accent, onGuardar, onCerrar }) {
+  const [form, setForm] = useState({
+    titulo: documento?.titulo || '',
+    descripcion: documento?.descripcion || '',
+    contenido: documento?.contenido || '',
+    categoria: documento?.categoria || '',
+    etiquetas: (documento?.etiquetas || []).join(' '),
+  });
+  const [mas, setMas] = useState(Boolean(documento?.categoria || (documento?.etiquetas || []).length));
+  const [guardando, setGuardando] = useState(false);
+  const [guardadoAlguna, setGuardadoAlguna] = useState(false);
+  const [enLinea, setEnLinea] = useState(true);
+  const areaRef = React.useRef(null);
+  const pendiente = React.useRef(null);
+
+  /* ⚠️ Todos los hooks van ANTES de cualquier `return` condicional (regla 4). */
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return undefined;
+    const mirar = () => setEnLinea(navigator.onLine !== false);
+    mirar();
+    if (typeof window === 'undefined') return undefined;
+    window.addEventListener('online', mirar);
+    window.addEventListener('offline', mirar);
+    return () => { window.removeEventListener('online', mirar); window.removeEventListener('offline', mirar); };
+  }, []);
+
+  useEffect(() => {
+    pendiente.current = form;
+    setGuardando(true);
+    const t = setTimeout(() => {
+      onGuardar(form);
+      pendiente.current = null;
+      setGuardando(false);
+      setGuardadoAlguna(true);
+    }, RETRASO_AUTOGUARDADO_MS);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.titulo, form.descripcion, form.contenido, form.categoria, form.etiquetas]);
+
+  const cerrar = () => {
+    /* 🚨 Lo que estuviera esperando al retardo se guarda AHORA. */
+    if (pendiente.current) onGuardar(pendiente.current);
+    onCerrar();
+  };
+
+  const aviso = estadoDeGuardado({ guardando, enLinea, guardadoAlguna });
+
+  const marcar = (id) => {
+    const area = areaRef.current;
+    const ini = area ? area.selectionStart : form.contenido.length;
+    const fin = area ? area.selectionEnd : ini;
+    const r = aplicarMarca(form.contenido, ini, fin, id);
+    setForm({ ...form, contenido: r.texto });
+    /* El cursor se recoloca tras el repintado, para que se pueda seguir
+       escribiendo donde toca sin volver a tocar la pantalla. */
+    if (area) {
+      requestAnimationFrame(() => { area.focus(); area.setSelectionRange(r.inicio, r.fin); });
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <button onClick={cerrar} className="p-1.5 -m-1.5" aria-label="Cerrar el editor">
+          <ArrowLeft size={18} style={{ color: COLORS.textMuted }} />
+        </button>
+        <p className="text-sm font-semibold flex-1 truncate" style={{ color: COLORS.text }}>
+          {form.titulo || 'Documento sin título'}
+        </p>
+        {aviso ? <p className="text-[11px] flex-shrink-0" style={{ color: COLORS.textMuted }}>{aviso.texto}</p> : null}
+      </div>
+
+      <Card>
+        <Field label="Título">
+          <TextInput
+            aria-label="Título del documento"
+            value={form.titulo}
+            onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+            placeholder="Ej: Especificación de Productividad"
+          />
+        </Field>
+
+        <BarraFormato accent={accent} onMarca={marcar} />
+
+        <Textarea
+          ref={areaRef}
+          aria-label="Contenido del documento"
+          rows={16}
+          value={form.contenido}
+          onChange={(e) => setForm({ ...form, contenido: e.target.value })}
+          placeholder="Escribe aquí. Los botones de arriba ponen títulos, listas y demás."
+          style={{ lineHeight: 1.7 }}
+        />
+
+        {mas ? (
+          <div className="mt-2">
+            <Field label="Descripción (opcional)">
+              <TextInput aria-label="Descripción del documento" value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
+            </Field>
+            <Field label="Categoría (opcional)">
+              <TextInput
+                aria-label="Categoría del documento"
+                list="categorias-documento"
+                value={form.categoria}
+                onChange={(e) => setForm({ ...form, categoria: e.target.value })}
+                placeholder="Escribe la tuya o elige una"
+              />
+              <datalist id="categorias-documento">
+                {CATEGORIAS_DOCUMENTO.map((c) => <option key={c} value={c} />)}
+              </datalist>
+            </Field>
+            <Field label="Etiquetas (opcional, separadas por espacios)">
+              <TextInput
+                aria-label="Etiquetas del documento"
+                value={form.etiquetas}
+                onChange={(e) => setForm({ ...form, etiquetas: e.target.value })}
+                placeholder="claude supabase productividad"
+              />
+            </Field>
+          </div>
+        ) : (
+          <div className="mt-2"><GhostBtn onClick={() => setMas(true)}>Descripción, categoría y etiquetas</GhostBtn></div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+export function LecturaDocumento({ documento, accent, onCerrar, onGuardar, onEliminar }) {
+  const [editando, setEditando] = useState(false);
+  const [copiado, setCopiado] = useState(false);
+
+  useEffect(() => {
+    const alPulsar = (ev) => { if (ev.key === 'Escape' && !editando) onCerrar(); };
+    if (typeof document !== 'undefined') document.addEventListener('keydown', alPulsar);
+    return () => { if (typeof document !== 'undefined') document.removeEventListener('keydown', alPulsar); };
+  }, [onCerrar, editando]);
+
+  if (!documento) return null;
+
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(documento.contenido || '');
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      /* ⚠️ Copiar puede no estar permitido, y entonces se dice qué hacer en vez
+         de fingir que se copió (regla 8). */
+      setCopiado(false);
+    }
+  };
+
+  const contenido = (
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto pantalla-segura"
+      style={{ background: COLORS.bg }}
+      role="dialog"
+      aria-label={`Documento ${nombreDoc(documento)}`}
+    >
+      <div className="max-w-md mx-auto px-4 pb-8 space-y-3">
+        {editando ? (
+          <EditorDocumento
+            documento={documento}
+            accent={accent}
+            onCerrar={() => setEditando(false)}
+            onGuardar={(cambios) => onGuardar(editarDocumento(documento, { ...cambios, etiquetas: cambios.etiquetas }))}
+          />
+        ) : (
+          <>
+            <div className="flex items-center gap-2 pt-1">
+              <button onClick={onCerrar} className="p-1.5 -m-1.5" aria-label="Cerrar el documento">
+                <ArrowLeft size={18} style={{ color: COLORS.textMuted }} />
+              </button>
+              <p className="text-base font-bold flex-1 truncate" style={{ color: COLORS.text }}>{nombreDoc(documento)}</p>
+              <button
+                onClick={() => onGuardar(alternarFavoritoDoc(documento))}
+                className="p-1.5 -m-1.5 flex-shrink-0 transition-transform active:scale-90 favorito-guardado"
+                aria-label={documento.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}
+              >
+                <Star size={16} style={{ color: documento.favorito ? accent : COLORS.textMuted }} fill={documento.favorito ? accent : 'none'} />
+              </button>
+            </div>
+
+            {documento.descripcion ? (
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>{documento.descripcion}</p>
+            ) : null}
+            <div className="flex items-center gap-2 flex-wrap">
+              {documento.estado === 'draft' ? (
+                <span className="text-[11px] font-semibold rounded-full px-2 py-0.5" style={{ background: COLORS.surface2, color: COLORS.textMuted }}>
+                  ✎ Borrador
+                </span>
+              ) : null}
+              {documento.categoria ? <span className="text-[11px]" style={{ color: accent }}>{documento.categoria}</span> : null}
+              {(documento.etiquetas || []).map((t) => (
+                <span key={t} className="text-[11px]" style={{ color: COLORS.textMuted }}>#{t}</span>
+              ))}
+            </div>
+
+            <IndiceDocumento contenido={documento.contenido} accent={accent} />
+
+            {/* *"No mostrar demasiados controles mientras se lee."* Por eso el
+                cuerpo va suelto, sin tarjeta ni botones alrededor. */}
+            <CuerpoDocumento contenido={documento.contenido} accent={accent} />
+
+            <p className="text-[11px] pt-2" style={{ color: COLORS.textMuted }}>
+              Creado el {formatFecha(documento.fecha)} · Última vez que lo tocaste: {formatFecha(documento.actualizado)}
+            </p>
+
+            <Card>
+              <div className="flex flex-wrap items-center gap-2">
+                <GhostBtn icon={Pencil} onClick={() => setEditando(true)}>Editar</GhostBtn>
+                <GhostBtn icon={Copy} onClick={copiar}>{copiado ? 'Copiado' : 'Copiar el texto'}</GhostBtn>
+                {documento.estado === 'draft' ? (
+                  <GhostBtn onClick={() => onGuardar(guardarEnBiblioteca(documento))}>Ya no es un borrador</GhostBtn>
+                ) : (
+                  <GhostBtn onClick={() => onGuardar(volverABorrador(documento))}>Volver a borrador</GhostBtn>
+                )}
+                <GhostBtn
+                  icon={Archive}
+                  onClick={() => onGuardar(documento.archivado ? desarchivarDocumento(documento) : archivarDocumento(documento))}
+                >
+                  {documento.archivado ? 'Sacar del archivo' : 'Archivar'}
+                </GhostBtn>
+                <BotonBorrar onClick={() => { onEliminar(documento.id); onCerrar(); }} label="Eliminar el documento" />
+              </div>
+              <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
+                Archivarlo lo saca de la lista sin borrarlo. Eliminarlo lo manda a Eliminados recientes, de donde puedes recuperarlo.
+              </p>
+            </Card>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  return typeof document === 'undefined' ? contenido : createPortal(contenido, document.body);
+}
+
+export function PantallaDocumentos({
+  documentos, archivos, urlsArchivos, cabecera, crear, onCerrarCrear, vacio, accent,
+  onAdd, onUpdate, onDelete, onAddArchivo, onDeleteArchivo,
+}) {
+  const [filtroDoc, setFiltroDoc] = useState('todos');
+  const [orden, setOrden] = useState(ORDEN_DOC_POR_DEFECTO);
+  const [texto, setTexto] = useState('');
+  const [etiqueta, setEtiqueta] = useState('');
+  const [abierto, setAbierto] = useState(null);
+  const [nuevo, setNuevo] = useState(null);
+  const [verArchivos, setVerArchivos] = useState(false);
+  const [tipoArchivo, setTipoArchivo] = useState('pdf');
+
+  const linea = lineaDocumentos(documentos, archivos);
+  const visibles = ordenarDocumentos(filtrarDocumentos(documentos, { filtro: filtroDoc, texto, etiqueta }), orden);
+  const abiertoAhora = abierto ? documentos.find((d) => d.id === abierto) || null : null;
+  const etiquetas = etiquetasUsadas(documentos);
+  const vacioDelTodo = documentos.length === 0 && archivos.length === 0;
+
+  /* El ＋ del lanzador abre el editor directamente: *"abrir directamente el
+     editor… no obligar al usuario a rellenar campos organizativos antes de
+     escribir"*. El documento se crea con el primer autoguardado. */
+  const editandoNuevo = crear || nuevo !== null;
+
+  if (editandoNuevo) {
+    return (
+      <div className="space-y-3 pb-4">
+        <EditorDocumento
+          documento={nuevo}
+          accent={accent}
+          onCerrar={() => { setNuevo(null); onCerrarCrear(); }}
+          onGuardar={(datos) => {
+            if (nuevo) { const d = editarDocumento(nuevo, datos); setNuevo(d); onUpdate(d); return; }
+            const d = crearDocumento(datos);
+            if (d) { setNuevo(d); onAdd(d); }
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 pb-4">
+      {cabecera}
+      {linea ? <p className="text-xs font-semibold" style={{ color: accent }}>{linea}</p> : null}
+
+      {vacioDelTodo ? vacio : (
+        <>
+          {documentos.length >= 4 && (
+            <div className="relative">
+              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: COLORS.textMuted }} />
+              <TextInput
+                aria-label="Buscar en los documentos"
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                placeholder="Buscar por título, contenido o etiqueta…"
+                style={{ paddingLeft: 34 }}
+              />
+            </div>
+          )}
+
+          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            {FILTROS_DOCUMENTOS.map((f) => (
+              <FiltroPill key={f.id} active={filtroDoc === f.id} accent={accent} onClick={() => setFiltroDoc(f.id)}>{f.nombre}</FiltroPill>
+            ))}
+          </div>
+
+          {etiquetas.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+              <FiltroPill active={!etiqueta} accent={accent} onClick={() => setEtiqueta('')}>Todas las etiquetas</FiltroPill>
+              {etiquetas.map((t) => (
+                <FiltroPill key={t.etiqueta} active={etiqueta === t.etiqueta} accent={accent} onClick={() => setEtiqueta(t.etiqueta)}>
+                  #{t.etiqueta}
+                </FiltroPill>
+              ))}
+            </div>
+          )}
+
+          {documentos.length > 0 && (
+            <Field label="Ordenar por">
+              <Select aria-label="Ordenar los documentos" value={orden} onChange={(e) => setOrden(e.target.value)}>
+                {ORDENES_DOCUMENTOS.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+              </Select>
+            </Field>
+          )}
+
+          {documentos.length === 0 ? (
+            <EmptyHint text="Todavía no has escrito ningún documento. Toca el ＋ para empezar uno." />
+          ) : visibles.length === 0 ? (
+            <EmptyHint text={filtroDoc === 'archivados' ? 'No has archivado ningún documento todavía.' : 'Ningún documento coincide con esta búsqueda o este filtro.'} />
+          ) : (
+            <div className="space-y-2">
+              {visibles.map((d, i) => (
+                <TarjetaDocumento key={d.id} documento={d} accent={accent} indice={i} onAbrir={() => setAbierto(d.id)} />
+              ))}
+            </div>
+          )}
+
+          {/* 🚨 Los archivos que Josué subió desde la Fase 11 siguen aquí, en su
+              propio apartado. Esta fase no se los lleva. */}
+          <Card>
+            <button
+              onClick={() => setVerArchivos(!verArchivos)}
+              className="w-full flex items-center justify-between toque-44"
+              aria-label={verArchivos ? 'Ocultar los archivos subidos' : 'Ver los archivos subidos'}
+            >
+              <p className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>
+                Archivos subidos{archivos.length ? ` · ${archivos.length}` : ''}
+              </p>
+              {verArchivos ? <ChevronUp size={15} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={15} style={{ color: COLORS.textMuted }} />}
+            </button>
+            {verArchivos && (
+              <div className="mt-2 space-y-2">
+                <Field label="Qué vas a subir">
+                  <Select aria-label="Tipo de archivo" value={tipoArchivo} onChange={(e) => setTipoArchivo(e.target.value)}>
+                    <option value="pdf">PDF</option>
+                    <option value="video">Vídeo</option>
+                    <option value="foto">Foto</option>
+                  </Select>
+                </Field>
+                <AnadirArchivo tipo={tipoArchivo} onAdd={onAddArchivo} accent={accent} />
+                {archivos.length === 0 ? (
+                  <EmptyHint text="Todavía no has subido ningún archivo." />
+                ) : archivos.map((a) => (
+                  <ItemCard
+                    key={a.id}
+                    item={{ ...a, _tipo: a.tipo }}
+                    query=""
+                    url={urlsArchivos[a.id]}
+                    accent={accent}
+                    onDelete={() => onDeleteArchivo(a.id, a.path)}
+                  />
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <p className="text-[11px] leading-snug" style={{ color: COLORS.textMuted }}>
+            {EJEMPLO_DIFERENCIA}
+          </p>
+        </>
+      )}
+
+      {abiertoAhora && (
+        <LecturaDocumento
+          documento={abiertoAhora}
+          accent={accent}
+          onCerrar={() => setAbierto(null)}
+          onGuardar={onUpdate}
+          onEliminar={onDelete}
         />
       )}
     </div>
