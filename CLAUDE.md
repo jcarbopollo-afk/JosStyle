@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.41.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.42.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (44 fases — **1 hecha**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (44 fases — **21 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -164,7 +164,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 9 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 21 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -178,9 +178,10 @@ de error exacto** antes de asumir nada.
 **F15 (PWA, iPhone y auditoría final, v3.36.0)**, que 🏁 **CIERRÓ EL BLOQUE HOY Y CALENDARIO** —las
 diez fases HC—, y la **F16 (la Biblioteca como lanzador de mini-apps, v3.37.0)**, con la que empieza
 el bloque de **Biblioteca**, la **F17 (Libros, v3.38.0)**, la **F18 (Guardados, v3.39.0)** y la
-**F19 (Ideas, v3.40.0)** y la **F20 (Documentos, v3.41.0)**; la siguiente es la **21 — BL F7:
-Colecciones**. El índice, con la línea de cada fase dentro de la especificación literal, está en
-**`docs/11_ENTREGA3_ORDEN.md`**.
+**F19 (Ideas, v3.40.0)**, la **F20 (Documentos, v3.41.0)** y la **F21 (Colecciones, v3.42.0)**, con
+la que quedan construidas 🎉 **las seis mini-apps de la Biblioteca**; la siguiente es la **22 — BL F8:
+integración y experiencia global**, que cierra el bloque. El índice, con la línea de cada fase dentro
+de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
 rótulo dice *"Biblioteca 8"* y el documento va **F1, F2, F4, F5, F6, F6, F7, F8**— y **la Fase 6
@@ -201,6 +202,30 @@ aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con
 código de agosto mientras él decía *"la web sigue igual"*.
 
 ⚠️ **Y lo que dejaron las veinte primeras, que afecta a todas las demás:**
+
+- 🚨 **UNA COLECCIÓN GUARDA REFERENCIAS, NO CONTENIDO** (E3 F21). Añadir una nota a «Estudios» guarda
+  `{ tipo, id }` y **nada más**, así que *"quitarla no la borra"* y *"eliminar la colección no elimina
+  su contenido"* **no hay que programarlos**: salen de no tener copia. Ni un título, ni un texto, ni
+  una URL copiados, con una prueba que lo barre.
+- 🚨 **LA RELACIÓN VIVE DENTRO DE LA COLECCIÓN, Y ESO LO AUTORIZA EL ENUNCIADO** (E3 F21). Describe
+  una tabla `COLLECTION_ITEMS` y a continuación dice *"si la base de datos actual usa relaciones
+  específicas por tabla, **respetar la arquitectura existente**"*. La de JosStyle es `app_data`, una
+  fila por (usuario, clave): no hay dónde poner una tabla de relación. Con `elementos: [{tipo, id}]`
+  dentro salen gratis el borrado en cascada, el «un elemento en varias colecciones» y el aislamiento.
+- 🚨 **CUANDO DOS FASES SE CONTRADICEN, MANDA LA QUE CONSTRUYE LA FUNCIÓN** (E3 F21). La BL F4 preparó
+  un `coleccionId` por guardado; la BL F7 dice *"no asumir un `collection_id` único"*.
+  `absorberColeccionId` lo convierte en una relación y lo deja a `null` **desde el normalizador**:
+  dos fuentes de verdad para lo mismo es como se acaba enseñando una cosa distinta en cada pantalla.
+- ⚠️ **UNA RELACIÓN HUÉRFANA NO SE LIMPIA AL BORRAR, Y ES A PROPÓSITO** (E3 F21): lo borrado va a
+  *Eliminados recientes* y **vuelve**, así que quitar la relación en ese momento le arrebataría en
+  silencio algo que él había organizado. No resuelve —no se cuenta ni se pinta— y `limpiarRelaciones`
+  está para cuando el elemento ya no existe en ninguna parte.
+- ⚠️ **UN ACENTO SE GUARDA COMO TOKEN, NUNCA COMO HEX** (E3 F21, y es la regla 2): `'info'`, no
+  `'#6C99C9'`. Un hex guardado se queda fijo cuando Josué cambia de tema. Mismo reparto que
+  `TIPOS_EVENTO_CALENDARIO.colorToken`.
+- 🐛 **Y una prueba busca el MECANISMO, no la palabra** (E3 F21, sexta vez): la constante que promete
+  que los elementos **no** se eliminan se llama `AVISO_ELIMINAR`, y el barrido de borrados saltaba
+  con la frase que hace la promesa.
 
 - 🚨 **`Textarea` SE COMÍA EL `ref`** (E3 F20), y no lo veía nadie: el editor de Documentos lo usa
   para saber dónde está el cursor, y sin él la barra de formato habría escrito siempre al principio

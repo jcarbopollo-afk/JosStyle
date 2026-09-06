@@ -1957,8 +1957,20 @@ export default function App() {
   const updateDocumento = (d) => d && snapshotAndSave({
     biblioteca: { ...biblioteca, documentos: (biblioteca.documentos || []).map((x) => (x.id === d.id ? d : x)) },
   });
+  /* E3 F21 (BL F7) — las colecciones. Una colección **no guarda contenido**:
+     guarda referencias `{ tipo, id }` a lo que ya vive en su mini-app. Por eso
+     `updateColeccion` y `setColecciones` escriben en `biblioteca.colecciones` y
+     **no tocan ninguna otra lista** — quitar un elemento de una colección no
+     puede borrarlo porque desde aquí no hay forma de hacerlo. */
   const addColeccion = (c) => c && snapshotAndSave({ biblioteca: { ...biblioteca, colecciones: [...biblioteca.colecciones, c] } });
   const deleteColeccion = (id) => eliminarConPapelera('biblioteca', 'colecciones', id);
+  const updateColeccion = (c) => c && snapshotAndSave({
+    biblioteca: { ...biblioteca, colecciones: (biblioteca.colecciones || []).map((x) => (x.id === c.id ? c : x)) },
+  });
+  /* El sistema único de *"Añadir a colección"*: `alternarEnColeccion` devuelve la
+     lista entera, así que la puerta también recibe la lista entera. Una sola,
+     para las cinco mini-apps. */
+  const setColecciones = (lista) => Array.isArray(lista) && snapshotAndSave({ biblioteca: { ...biblioteca, colecciones: lista } });
   // Fase 12 — Relación: módulo privado (PinGate en el render, ver renderTab). Nombre y fechas
   // importantes son texto puro, sin archivos, así que pasan por snapshotAndSave/deshacer igual
   // que el resto de módulos de datos (mismo criterio que Diario y los apuntes de Biblioteca).
@@ -2574,6 +2586,7 @@ export default function App() {
             onAddIdea={addIdea} onDeleteIdea={deleteIdea} onUpdateIdea={updateIdea} onConvertirIdea={convertirIdeaEn}
             onAddDocumento={addDocumento} onDeleteDocumento={deleteDocumento} onUpdateDocumento={updateDocumento}
             onAddColeccion={addColeccion} onDeleteColeccion={deleteColeccion}
+            onUpdateColeccion={updateColeccion} onSetColecciones={setColecciones}
             accent={accent}
           />
         );

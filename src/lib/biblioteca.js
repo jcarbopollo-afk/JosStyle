@@ -33,7 +33,9 @@
 // libros, sistema completo de ideas, sistema completo de colecciones"*.
 // ============================================================================
 
-import { uid, fechaLocalISO } from './helpers.js';
+/* ⚠️ BL F7 — este archivo ya no fabrica ni normaliza ninguna entidad: las seis
+   mini-apps tienen su librería. Lo que queda aquí es el **catálogo** del
+   lanzador y las cuentas que se derivan de él. */
 /* 🚨 **La fábrica del libro vive en `libros.js` desde la BL F2, y aquí solo se
    reexporta.** Escribir una segunda habría dejado dos formas del mismo libro
    conviviendo, y la que perdiera se llevaría campos en el siguiente guardado
@@ -51,8 +53,18 @@ import { crearIdea, normalizarIdea } from './ideas.js';
    distintas —un PDF en Storage y algo que él escribe— y ninguna se lleva por
    delante a la otra. */
 import { normalizarDocumento } from './documentos.js';
+/* 🚨 BL F7 — y la sexta se muda igual. La colección de la BL F1 tenía tres
+   campos; la de verdad tiene diez y **guarda referencias a las otras cinco
+   mini-apps**, así que su fábrica y su normalizador viven en `colecciones.js`.
+   `absorberColeccionId` se llama desde `normalizarBiblioteca`: es donde se
+   resuelve la contradicción entre el `collection_id` que preparó la BL F4 y el
+   *"no asumir un `collection_id` único"* de la BL F7. */
+import { crearColeccion, normalizarColeccion, absorberColeccionId } from './colecciones.js';
 
-export { crearLibro, normalizarLibro, normalizarGuardado, crearIdea, normalizarIdea, normalizarDocumento };
+export {
+  crearLibro, normalizarLibro, normalizarGuardado, crearIdea, normalizarIdea, normalizarDocumento,
+  crearColeccion, normalizarColeccion,
+};
 
 /* ── Qué había antes de esta fase ──────────────────────────────────────────
 
@@ -258,15 +270,13 @@ export function tituloValido(t) {
   return typeof t === 'string' && t.trim().length > 0 && t.trim().length <= MAX_TITULO;
 }
 
-export function crearColeccion({ nombre, descripcion = '' }) {
-  if (!tituloValido(nombre)) return null;
-  return {
-    id: uid(),
-    nombre: nombre.trim(),
-    descripcion: typeof descripcion === 'string' ? descripcion.trim() : '',
-    fecha: fechaLocalISO(new Date()),
-  };
-}
+/* 🚨 **BL F7 — `crearColeccion` y `normalizarColeccion` se MUDARON a
+   `colecciones.js`.** Estaban aquí con el modelo mínimo de la BL F1 —nombre,
+   descripción y fecha— y al desarrollar la mini-app crecieron a diez campos, con
+   las referencias dentro. Se reexportan arriba con `export { X }` para que quien
+   las importe de aquí siga encontrándolas; escribir una segunda versión habría
+   dejado dos formas de la misma colección, y la que perdiera se llevaría las
+   relaciones en el siguiente guardado (regla 5). */
 
 /* ── El normalizador ───────────────────────────────────────────────────────
 
@@ -285,20 +295,6 @@ export function crearColeccion({ nombre, descripcion = '' }) {
    releerlo, cada dispositivo le pondría uno distinto. Se le pone aquí. */
 const lista = (x) => (Array.isArray(x) ? x : []);
 
-function normalizarElemento(el, campos) {
-  if (!el || typeof el !== 'object') return null;
-  const base = { ...el, id: el.id || uid() };
-  for (const [campo, porDefecto] of Object.entries(campos)) {
-    if (typeof base[campo] !== typeof porDefecto) base[campo] = porDefecto;
-  }
-  return base;
-}
-
-export function normalizarColeccion(c) {
-  const n = normalizarElemento(c, { nombre: '', descripcion: '', fecha: '' });
-  return n && n.nombre ? n : null;
-}
-
 /**
  * 🚨 Se llama desde `App.jsx` **al cargar**, sobre lo guardado en Supabase.
  *
@@ -308,17 +304,24 @@ export function normalizarColeccion(c) {
  */
 export function normalizarBiblioteca(guardado) {
   const b = guardado && typeof guardado === 'object' ? guardado : {};
+  /* 🚨 BL F4 — los enlaces de la Fase 11 SON los guardados, y su ficha creció:
+     tipo, contenido, nota, favorito, estado y colección. Sin normalizarlos, el
+     primer guardado desde la pantalla nueva se llevaría lo que no conociera
+     (regla 5, vigésima vez). La migración es el propio normalizador. */
+  const enlaces = lista(b.enlaces).map(normalizarGuardado).filter(Boolean);
+  const cols = lista(b.colecciones).map(normalizarColeccion).filter(Boolean);
+  /* 🚨 BL F7 — y aquí se resuelve la contradicción: cualquier `coleccionId`
+     guardado en un enlace pasa a ser una relación de verdad dentro de su
+     colección, y el campo se queda a `null`. Una sola fuente de verdad sobre en
+     qué colección está un guardado. */
+  const absorbido = absorberColeccionId(cols, enlaces);
   return {
     ...b,
     apuntes: lista(b.apuntes),
-    /* 🚨 BL F4 — los enlaces de la Fase 11 SON los guardados, y su ficha creció:
-       tipo, contenido, nota, favorito, estado y colección. Sin normalizarlos, el
-       primer guardado desde la pantalla nueva se llevaría lo que no conociera
-       (regla 5, vigésima vez). La migración es el propio normalizador. */
-    enlaces: lista(b.enlaces).map(normalizarGuardado).filter(Boolean),
+    enlaces: absorbido.guardados,
     libros: lista(b.libros).map(normalizarLibro).filter(Boolean),
     ideas: lista(b.ideas).map(normalizarIdea).filter(Boolean),
-    colecciones: lista(b.colecciones).map(normalizarColeccion).filter(Boolean),
+    colecciones: absorbido.colecciones,
     documentos: lista(b.documentos).map(normalizarDocumento).filter(Boolean),
   };
 }

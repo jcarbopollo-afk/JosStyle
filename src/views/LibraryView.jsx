@@ -4,14 +4,30 @@ import {
   Search, FileText, Video as VideoIcon, Image as ImageIcon, StickyNote, Link as LinkIcon,
   Trash2, ExternalLink, ChevronDown, ChevronUp, Upload, ArrowLeft, Plus, Pencil, Star, Archive, Sparkles, Copy,
   BookMarked, Bookmark, Lightbulb, FolderOpen,
+  GraduationCap, Code, Briefcase, Heart, Rocket, Dumbbell, Paperclip, Check, Minus,
 } from 'lucide-react';
 import { COLORS, TIPOS_ARCHIVO_BIBLIOTECA, PERIODOS_META, PLAZOS_OBJETIVO } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedBibliotecaUrl } from '../lib/supabase';
 import {
   MINI_APPS, miniApp, elementosDe, indicadorDe, diferenciaDe,
-  crearColeccion, CLASE_TARJETA, retrasoDeTarjeta,
+  CLASE_TARJETA, retrasoDeTarjeta,
 } from '../lib/biblioteca';
+/* BL F7 — Colecciones tiene su propia librería. `crearColeccion` y
+   `normalizarColeccion` vivían en `biblioteca.js` desde la F1 y se mudaron allí
+   al desarrollarla: una sola fábrica, no dos. */
+import {
+  TIPOS_ELEMENTO, tipoElemento, ICONOS_DISPONIBLES, ACENTOS_COLECCION, ACENTO_POR_DEFECTO,
+  ICONO_POR_DEFECTO, crearColeccion, editarColeccion, alternarFavoritaColeccion,
+  archivarColeccion, desarchivarColeccion, contieneElemento, anadirElementos, quitarElemento,
+  alternarEnColeccion, coleccionesDe, elementosDeColeccion, contarColeccion, agruparPorTipo,
+  tiposDe, previewDe, nombreDelElemento, buscarColecciones, buscarDentro,
+  FILTROS_COLECCIONES, FILTRO_COLECCIONES_POR_DEFECTO, filtrarColecciones,
+  ORDENES_COLECCIONES, ORDEN_COLECCIONES_POR_DEFECTO, ordenarColecciones,
+  FILTROS_DENTRO, filtrarDentro, ORDENES_DENTRO, ORDEN_DENTRO_POR_DEFECTO, ordenarDentro,
+  avisoDeEliminar, estadisticasColecciones, lineaColecciones,
+  VACIO_COLECCIONES, VACIO_DENTRO,
+} from '../lib/colecciones';
 /* BL F2 — Libros tiene su propia librería. `crearLibro` y `normalizarLibro`
    vivían en `biblioteca.js` desde la F1 y se mudaron aquí al desarrollarla:
    una sola fábrica, no dos. */
@@ -95,15 +111,21 @@ function snippet(texto, query) {
   return (start > 0 ? '…' : '') + texto.slice(start, end).trim() + (end < texto.length ? '…' : '');
 }
 
-function ItemCard({ item, query, url, accent, onDelete }) {
-  const [abierto, setAbierto] = useState(false);
+function ItemCard({
+  item, query, url, accent, onDelete,
+  /* BL F7 — las tres props del sistema único de colecciones. Son **opcionales**:
+     sin `colecciones` la ficha se pinta exactamente igual que antes. */
+  destacado = false, colecciones = null, tipoColeccion = null, onAlternarColeccion = null,
+}) {
+  const [abierto, setAbierto] = useState(destacado);
   const Icon = ICONOS[item._tipo];
   const esApunte = item._tipo === 'apunte';
   const esArchivo = item._tipo === 'pdf' || item._tipo === 'video' || item._tipo === 'foto';
   const trozo = item._tipo === 'pdf' ? snippet(item.textoExtraido, query) : '';
+  const conColecciones = !!(colecciones && tipoColeccion && onAlternarColeccion);
 
   return (
-    <Card style={{ padding: '1rem' }}>
+    <Card style={destacado ? { padding: '1rem', border: `1px solid ${accent}` } : { padding: '1rem' }}>
       <div className="flex items-start gap-3">
         {item._tipo === 'foto' && url ? (
           <img src={url} alt={item.titulo} className="w-11 h-11 rounded-lg object-cover flex-shrink-0" />
@@ -165,6 +187,16 @@ function ItemCard({ item, query, url, accent, onDelete }) {
               </button>
             )}
           </div>
+
+          {conColecciones && (
+            <AnadirAColeccion
+              colecciones={colecciones}
+              tipo={tipoColeccion}
+              id={item.id}
+              accent={accent}
+              onAlternar={onAlternarColeccion}
+            />
+          )}
 
           {esApunte && abierto && (
             <p className="text-sm mt-2 leading-relaxed whitespace-pre-wrap" style={{ color: COLORS.text }}>{item.contenido}</p>
@@ -255,45 +287,12 @@ export function AnadirNotaRapida({ onAdd, accent }) {
   );
 }
 
-/* Los formularios de las tres listas nuevas. **Mínimos a propósito**: lo que
-   hace falta para que el botón de crear escriba algo de verdad (regla 8). El
-   modelo completo de cada una llega en su fase — BL F2, F5 y F7. */
-export function AnadirColeccion({ onAdd, accent }) {
-  const [form, setForm] = useState({ nombre: '', descripcion: '' });
-  const coleccion = crearColeccion(form);
-  return (
-    <Card>
-      <Field label="Nombre de la colección">
-        <TextInput aria-label="Nombre de la colección" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej: Aprender programación" />
-      </Field>
-      <Field label="Descripción (opcional)">
-        <TextInput value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
-      </Field>
-      <PrimaryButton accent={accent} disabled={!coleccion} onClick={() => { onAdd(crearColeccion(form)); setForm({ nombre: '', descripcion: '' }); }}>
-        Crear colección
-      </PrimaryButton>
-    </Card>
-  );
-}
-
-/* Una ficha de libro, idea o colección. Sin acciones que todavía no existen:
-   *"una ficha solo ofrece las acciones que le sirven"* (EH F61). */
-export function FichaSimple({ titulo, sub, fecha, onDelete }) {
-  return (
-    <Card style={{ padding: '0.85rem 1rem' }}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{titulo}</p>
-          {sub ? <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{sub}</p> : null}
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{formatFecha(fecha)}</p>
-          <BotonBorrar onClick={onDelete} />
-        </div>
-      </div>
-    </Card>
-  );
-}
+/* 🚨 **BL F7 — `AnadirColeccion` y `FichaSimple` se han ido.** Eran el formulario
+   y la ficha mínimos de la BL F1, escritos *"para que el botón de crear escriba
+   algo de verdad"* hasta que llegara la fase de Colecciones. Ya ha llegado:
+   quien crea una colección es `FormularioColeccion` y quien la enseña es
+   `TarjetaColeccion`. Dejar los dos vivos al lado habría sido un segundo
+   formulario para lo mismo — el duplicado que la propia BL F7 prohíbe. */
 
 /* La plaquita del lanzador. *"Icono grande, nombre, descripción muy corta,
    posible indicador de contenido, microanimación y feedback al tocar."*
@@ -380,7 +379,7 @@ export default function LibraryView({
   onAddLibro, onDeleteLibro, onUpdateLibro, onSubirPortada, onBorrarPortada,
   onAddIdea, onDeleteIdea, onUpdateIdea, onConvertirIdea,
   onAddDocumento, onDeleteDocumento, onUpdateDocumento,
-  onAddColeccion, onDeleteColeccion,
+  onAddColeccion, onDeleteColeccion, onUpdateColeccion, onSetColecciones,
   accent,
 }) {
   // `null` = el lanzador. El enunciado quiere que **lo primero** que se vea sean
@@ -391,6 +390,12 @@ export default function LibraryView({
   const [tipoArchivo, setTipoArchivo] = useState('pdf');
   const [filtro, setFiltro] = useState('todos');
   const [urls, setUrls] = useState({});
+  /* 🚨 BL F7 — *"Al pulsar un elemento dentro de una colección: **abrir el
+     elemento original**. No crear una copia de la nota."* Ésta es la pieza que lo
+     cumple: la colección no enseña una copia, manda a la mini-app del elemento y
+     le dice cuál abrir. Cada pantalla ya sabía abrir un detalle por id; lo único
+     nuevo es decirle desde fuera cuál. */
+  const [foco, setFoco] = useState(null);
 
   const datos = { biblioteca, archivos };
   const conArchivo = archivos.filter((a) => a.tipo === 'foto' || a.tipo === 'pdf' || a.tipo === 'video');
@@ -408,8 +413,20 @@ export default function LibraryView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [archivos]);
 
-  const volver = () => { setAbierta(null); setCrear(false); setQuery(''); setFiltro('todos'); };
-  const abrir = (id) => { setAbierta(id); setCrear(false); setQuery(''); setFiltro('todos'); };
+  const volver = () => { setAbierta(null); setCrear(false); setQuery(''); setFiltro('todos'); setFoco(null); };
+  const abrir = (id) => { setAbierta(id); setCrear(false); setQuery(''); setFiltro('todos'); setFoco(null); };
+
+  /** Llevar a la mini-app del elemento y abrir el original. `null` si el tipo no
+   *  está en el catálogo — nunca una pantalla en blanco. */
+  const abrirOriginal = (tipo, id) => {
+    const t = tipoElemento(tipo);
+    if (!t) return;
+    setAbierta(t.miniApp);
+    setCrear(false);
+    setQuery('');
+    setFiltro('todos');
+    setFoco({ tipo, id });
+  };
 
   // ── El lanzador ─────────────────────────────────────────────────────────
   if (!abierta) {
@@ -476,6 +493,14 @@ export default function LibraryView({
   const vacio = <VacioMiniApp app={app} accent={accent} onCrear={() => setCrear(true)} />;
   const nadaCoincide = <EmptyHint text="Nada coincide con esta búsqueda." />;
 
+  /* 🚨 BL F7 — *"Esto debe reutilizar el mismo sistema. **No crear cinco
+     sistemas distintos.**"* Éste es el sistema, y es uno: las cinco mini-apps
+     reciben las mismas dos props y ninguna sabe cómo se guarda una relación. */
+  const colecciones = biblioteca.colecciones || [];
+  const alternarColeccion = (coleccionId, tipo, id) =>
+    onSetColecciones(alternarEnColeccion(colecciones, coleccionId, tipo, id));
+  const focoDe = (tipo) => (foco && foco.tipo === tipo ? foco.id : null);
+
   // ── Notas ───────────────────────────────────────────────────────────────
   if (abierta === 'notas') {
     const lista = elementos.filter((a) => coincide([a.titulo, a.contenido]));
@@ -486,7 +511,20 @@ export default function LibraryView({
         {elementos.length === 0 ? vacio : lista.length === 0 ? nadaCoincide : (
           <div className="space-y-2">
             {lista.map((a) => (
-              <ItemCard key={a.id} item={{ ...a, _tipo: 'apunte' }} query={q} accent={accent} onDelete={() => onDeleteApunte(a.id)} />
+              <ItemCard
+                key={a.id}
+                item={{ ...a, _tipo: 'apunte' }}
+                query={q}
+                accent={accent}
+                onDelete={() => onDeleteApunte(a.id)}
+                /* ⚠️ Una nota no tiene pantalla de detalle propia: se despliega
+                   en su ficha. Así que *"abrir el original"* es dejarla marcada
+                   y abierta en la lista, no inventarle una pantalla. */
+                destacado={focoDe('nota') === a.id}
+                colecciones={colecciones}
+                tipoColeccion="nota"
+                onAlternarColeccion={alternarColeccion}
+              />
             ))}
           </div>
         )}
@@ -510,6 +548,9 @@ export default function LibraryView({
         onAdd={onAddEnlace}
         onUpdate={onUpdateEnlace}
         onDelete={onDeleteEnlace}
+        colecciones={colecciones}
+        onAlternarColeccion={alternarColeccion}
+        foco={focoDe('guardado')}
       />
     );
   }
@@ -534,6 +575,10 @@ export default function LibraryView({
         onDelete={onDeleteDocumento}
         onAddArchivo={onAddArchivo}
         onDeleteArchivo={onDeleteArchivo}
+        colecciones={colecciones}
+        onAlternarColeccion={alternarColeccion}
+        foco={focoDe('documento')}
+        focoArchivo={focoDe('archivo')}
       />
     );
   }
@@ -557,6 +602,9 @@ export default function LibraryView({
         onDelete={onDeleteLibro}
         onSubirPortada={onSubirPortada}
         onBorrarPortada={onBorrarPortada}
+        colecciones={colecciones}
+        onAlternarColeccion={alternarColeccion}
+        foco={focoDe('libro')}
       />
     );
   }
@@ -578,24 +626,32 @@ export default function LibraryView({
         onUpdate={onUpdateIdea}
         onDelete={onDeleteIdea}
         onConvertir={onConvertirIdea}
+        colecciones={colecciones}
+        onAlternarColeccion={alternarColeccion}
+        foco={focoDe('idea')}
       />
     );
   }
 
   // ── Colecciones ─────────────────────────────────────────────────────────
-  const lista = elementos.filter((c) => coincide([c.nombre, c.descripcion]));
+  /* 🚨 BL F7 — Colecciones tiene pantalla propia: tarjetas visuales con preview,
+     detalle con el contenido agrupado por tipo, selector múltiple para añadir,
+     filtros, orden, búsqueda dentro y estadísticas. La cabecera, el ＋ y el
+     estado vacío siguen siendo los del lanzador (BL F1). */
   return (
-    <div className="space-y-3 pb-4">
-      {cabecera}
-      {crear && <AnadirColeccion onAdd={(c) => { onAddColeccion(c); setCrear(false); }} accent={accent} />}
-      {elementos.length === 0 ? vacio : lista.length === 0 ? nadaCoincide : (
-        <div className="space-y-2">
-          {lista.map((c) => (
-            <FichaSimple key={c.id} titulo={c.nombre} sub={c.descripcion} fecha={c.fecha} onDelete={() => onDeleteColeccion(c.id)} />
-          ))}
-        </div>
-      )}
-    </div>
+    <PantallaColecciones
+      colecciones={elementos}
+      datos={datos}
+      cabecera={cabecera}
+      crear={crear}
+      onCerrarCrear={() => setCrear(false)}
+      onAbrirCrear={() => setCrear(true)}
+      accent={accent}
+      onAdd={onAddColeccion}
+      onUpdate={onUpdateColeccion}
+      onDelete={onDeleteColeccion}
+      onAbrirOriginal={abrirOriginal}
+    />
   );
 }
 
@@ -842,7 +898,10 @@ export function FormularioLibro({ libro = null, accent, onGuardar, onCancelar, o
 
 /* El detalle. Overlay a pantalla completa **con `createPortal`** (regla 3): sin
    él se ancla al contenedor de `.module-enter` y aparece abajo del todo. */
-export function DetalleLibro({ libro, url, accent, onCerrar, onGuardar, onEliminar, onSubirPortada }) {
+export function DetalleLibro({
+  libro, url, accent, onCerrar, onGuardar, onEliminar, onSubirPortada,
+  colecciones = null, onAlternarColeccion = null,
+}) {
   const [editando, setEditando] = useState(false);
   const [pagina, setPagina] = useState(String(libro?.paginaActual ?? ''));
   const [celebra, setCelebra] = useState(false);
@@ -949,6 +1008,15 @@ export function DetalleLibro({ libro, url, accent, onCerrar, onGuardar, onElimin
                 <GhostBtn icon={Pencil} onClick={() => setEditando(true)}>Editar</GhostBtn>
                 <BotonBorrar onClick={() => { onEliminar(libro.id); onCerrar(); }} label="Eliminar el libro" />
               </div>
+              {onAlternarColeccion ? (
+                <AnadirAColeccion
+                  colecciones={colecciones}
+                  tipo="libro"
+                  id={libro.id}
+                  accent={accent}
+                  onAlternar={onAlternarColeccion}
+                />
+              ) : null}
             </Card>
           </>
         )}
@@ -983,6 +1051,7 @@ export function DetalleLibro({ libro, url, accent, onCerrar, onGuardar, onElimin
 export function PantallaLibros({
   app, libros, cabecera, crear, onCerrarCrear, onAbrirCrear, vacio, accent,
   onAdd, onUpdate, onDelete, onSubirPortada, onBorrarPortada,
+  colecciones = null, onAlternarColeccion = null, foco = null,
 }) {
   const [filtro, setFiltro] = useState('todos');
   const [orden, setOrden] = useState('recientes');
@@ -1001,6 +1070,9 @@ export function PantallaLibros({
     return () => { cancelado = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [libros.map((l) => `${l.id}:${l.portada || ''}`).join('|')]);
+
+  /* BL F7 — *"abrir el elemento original"* desde una colección. */
+  useEffect(() => { if (foco) setAbierto(foco); }, [foco]);
 
   const linea = lineaResumen(libros);
   const actual = libroActual(libros);
@@ -1114,6 +1186,8 @@ export function PantallaLibros({
           onGuardar={onUpdate}
           onEliminar={eliminar}
           onSubirPortada={onSubirPortada}
+          colecciones={colecciones}
+          onAlternarColeccion={onAlternarColeccion}
         />
       )}
     </div>
@@ -1281,7 +1355,10 @@ export function FormularioGuardado({ guardado = null, accent, onGuardar, onCance
   );
 }
 
-export function DetalleGuardado({ guardado, accent, onCerrar, onGuardar, onEliminar }) {
+export function DetalleGuardado({
+  guardado, accent, onCerrar, onGuardar, onEliminar,
+  colecciones = null, onAlternarColeccion = null,
+}) {
   const [editando, setEditando] = useState(false);
 
   useEffect(() => {
@@ -1374,6 +1451,15 @@ export function DetalleGuardado({ guardado, accent, onCerrar, onGuardar, onElimi
               <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
                 Archivar lo saca de la lista sin borrarlo. Eliminar lo manda a Eliminados recientes, de donde puedes recuperarlo.
               </p>
+              {onAlternarColeccion ? (
+                <AnadirAColeccion
+                  colecciones={colecciones}
+                  tipo="guardado"
+                  id={guardado.id}
+                  accent={accent}
+                  onAlternar={onAlternarColeccion}
+                />
+              ) : null}
             </Card>
           </>
         )}
@@ -1384,11 +1470,18 @@ export function DetalleGuardado({ guardado, accent, onCerrar, onGuardar, onElimi
   return typeof document === 'undefined' ? contenido : createPortal(contenido, document.body);
 }
 
-export function PantallaGuardados({ guardados, cabecera, crear, onCerrarCrear, vacio, accent, onAdd, onUpdate, onDelete }) {
+export function PantallaGuardados({
+  guardados, cabecera, crear, onCerrarCrear, vacio, accent, onAdd, onUpdate, onDelete,
+  colecciones = null, onAlternarColeccion = null, foco = null,
+}) {
   const [filtro, setFiltro] = useState('todos');
   const [orden, setOrden] = useState(ORDEN_POR_DEFECTO);
   const [texto, setTexto] = useState('');
   const [abierto, setAbierto] = useState(null);
+
+  /* BL F7 — *"abrir el elemento original"*: la colección dice cuál, y esta
+     pantalla lo abre con el detalle que ya tenía. */
+  useEffect(() => { if (foco) setAbierto(foco); }, [foco]);
 
   const resumen = resumenGuardados(guardados);
   const visibles = ordenarGuardados(filtrarGuardados(guardados, { filtro, texto }), orden);
@@ -1467,6 +1560,8 @@ export function PantallaGuardados({ guardados, cabecera, crear, onCerrarCrear, v
           onCerrar={() => setAbierto(null)}
           onGuardar={onUpdate}
           onEliminar={onDelete}
+          colecciones={colecciones}
+          onAlternarColeccion={onAlternarColeccion}
         />
       )}
     </div>
@@ -1702,7 +1797,10 @@ export function ConvertirIdea({ idea, accent, onConvertir, onCerrar }) {
   );
 }
 
-export function DetalleIdea({ idea, accent, onCerrar, onGuardar, onEliminar, onConvertir }) {
+export function DetalleIdea({
+  idea, accent, onCerrar, onGuardar, onEliminar, onConvertir,
+  colecciones = null, onAlternarColeccion = null,
+}) {
   const [editando, setEditando] = useState(false);
   const [convirtiendo, setConvirtiendo] = useState(false);
 
@@ -1811,6 +1909,15 @@ export function DetalleIdea({ idea, accent, onCerrar, onGuardar, onEliminar, onC
                 Descartarla la deja aquí para poder revisarla. Archivarla la saca de la lista sin borrarla.
                 Eliminarla la manda a Eliminados recientes, de donde puedes recuperarla.
               </p>
+              {onAlternarColeccion ? (
+                <AnadirAColeccion
+                  colecciones={colecciones}
+                  tipo="idea"
+                  id={idea.id}
+                  accent={accent}
+                  onAlternar={onAlternarColeccion}
+                />
+              ) : null}
             </Card>
           </>
         )}
@@ -1821,11 +1928,17 @@ export function DetalleIdea({ idea, accent, onCerrar, onGuardar, onEliminar, onC
   return typeof document === 'undefined' ? contenido : createPortal(contenido, document.body);
 }
 
-export function PantallaIdeas({ ideas, cabecera, crear, onCerrarCrear, vacio, accent, onAdd, onUpdate, onDelete, onConvertir }) {
+export function PantallaIdeas({
+  ideas, cabecera, crear, onCerrarCrear, vacio, accent, onAdd, onUpdate, onDelete, onConvertir,
+  colecciones = null, onAlternarColeccion = null, foco = null,
+}) {
   const [filtro, setFiltro] = useState('todas');
   const [orden, setOrden] = useState(ORDEN_IDEAS_POR_DEFECTO);
   const [texto, setTexto] = useState('');
   const [abierta, setAbiertaIdea] = useState(null);
+
+  /* BL F7 — *"abrir el elemento original"* desde una colección. */
+  useEffect(() => { if (foco) setAbiertaIdea(foco); }, [foco]);
 
   const linea = lineaIdeas(ideas);
   const stats = estadisticasIdeas(ideas);
@@ -1909,6 +2022,8 @@ export function PantallaIdeas({ ideas, cabecera, crear, onCerrarCrear, vacio, ac
           onGuardar={onUpdate}
           onEliminar={onDelete}
           onConvertir={onConvertir}
+          colecciones={colecciones}
+          onAlternarColeccion={onAlternarColeccion}
         />
       )}
     </div>
@@ -2206,7 +2321,10 @@ export function EditorDocumento({ documento, accent, onGuardar, onCerrar }) {
   );
 }
 
-export function LecturaDocumento({ documento, accent, onCerrar, onGuardar, onEliminar }) {
+export function LecturaDocumento({
+  documento, accent, onCerrar, onGuardar, onEliminar,
+  colecciones = null, onAlternarColeccion = null,
+}) {
   const [editando, setEditando] = useState(false);
   const [copiado, setCopiado] = useState(false);
 
@@ -2306,6 +2424,15 @@ export function LecturaDocumento({ documento, accent, onCerrar, onGuardar, onEli
               <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
                 Archivarlo lo saca de la lista sin borrarlo. Eliminarlo lo manda a Eliminados recientes, de donde puedes recuperarlo.
               </p>
+              {onAlternarColeccion ? (
+                <AnadirAColeccion
+                  colecciones={colecciones}
+                  tipo="documento"
+                  id={documento.id}
+                  accent={accent}
+                  onAlternar={onAlternarColeccion}
+                />
+              ) : null}
             </Card>
           </>
         )}
@@ -2319,6 +2446,7 @@ export function LecturaDocumento({ documento, accent, onCerrar, onGuardar, onEli
 export function PantallaDocumentos({
   documentos, archivos, urlsArchivos, cabecera, crear, onCerrarCrear, vacio, accent,
   onAdd, onUpdate, onDelete, onAddArchivo, onDeleteArchivo,
+  colecciones = null, onAlternarColeccion = null, foco = null, focoArchivo = null,
 }) {
   const [filtroDoc, setFiltroDoc] = useState('todos');
   const [orden, setOrden] = useState(ORDEN_DOC_POR_DEFECTO);
@@ -2328,6 +2456,12 @@ export function PantallaDocumentos({
   const [nuevo, setNuevo] = useState(null);
   const [verArchivos, setVerArchivos] = useState(false);
   const [tipoArchivo, setTipoArchivo] = useState('pdf');
+
+  /* BL F7 — *"abrir el elemento original"* desde una colección. Un documento de
+     texto tiene pantalla de lectura y se abre; un ARCHIVO no tiene una —se abre
+     en el navegador—, así que se despliega la lista y se le marca. */
+  useEffect(() => { if (foco) setAbierto(foco); }, [foco]);
+  useEffect(() => { if (focoArchivo) setVerArchivos(true); }, [focoArchivo]);
 
   const linea = lineaDocumentos(documentos, archivos);
   const visibles = ordenarDocumentos(filtrarDocumentos(documentos, { filtro: filtroDoc, texto, etiqueta }), orden);
@@ -2447,6 +2581,10 @@ export function PantallaDocumentos({
                     url={urlsArchivos[a.id]}
                     accent={accent}
                     onDelete={() => onDeleteArchivo(a.id, a.path)}
+                    destacado={focoArchivo === a.id}
+                    colecciones={colecciones}
+                    tipoColeccion={onAlternarColeccion ? 'archivo' : null}
+                    onAlternarColeccion={onAlternarColeccion}
                   />
                 ))}
               </div>
@@ -2466,8 +2604,724 @@ export function PantallaDocumentos({
           onCerrar={() => setAbierto(null)}
           onGuardar={onUpdate}
           onEliminar={onDelete}
+          colecciones={colecciones}
+          onAlternarColeccion={onAlternarColeccion}
         />
       )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ENTREGA 3 · FASE 21 (BL F7) — COLECCIONES
+   ══════════════════════════════════════════════════════════════════════════
+
+   *"Colecciones debe sentirse como espacios personales de organización. **No
+   como carpetas antiguas.** Las tarjetas deben ser visuales."*
+
+   🚨 Y todo lo que se pinta aquí sale de **resolver referencias**: no hay ni un
+   título, ni un texto, ni una URL copiados dentro de una colección. Por eso
+   renombrar una nota cambia lo que se ve aquí sin que nadie sincronice nada. */
+
+/* ⚠️ La otra mitad de los dos catálogos de `colecciones.js`: aquéllos son datos
+   —una línea por icono, una por tipo— y esto son **componentes de React**. El
+   mismo reparto que `MINI_APPS` / `ICONOS_MINI_APP` y `CATEGORIAS_ARMARIO` /
+   `ICONOS_CATEGORIA`. Un icono que falte aquí sale como un hueco y **no falla en
+   ninguna parte**, así que hay una prueba que compara las dos listas. */
+const ICONOS_COLECCION = {
+  FolderOpen, GraduationCap, Code, Briefcase, Heart, Rocket, Dumbbell, Sparkles,
+};
+
+const ICONOS_TIPO_ELEMENTO = {
+  BookMarked, StickyNote, Bookmark, Lightbulb, FileText, Paperclip,
+};
+
+export const iconoDeColeccion = (id) => ICONOS_COLECCION[id] || FolderOpen;
+export const iconoDeTipo = (id) => {
+  const t = tipoElemento(id);
+  return (t && ICONOS_TIPO_ELEMENTO[t.icono]) || FileText;
+};
+
+/* 🚨 *"Utilizar el sistema de colores existente. **No crear una paleta
+   independiente.**"* Un acento guardado es el nombre de un token, y aquí se
+   traduce — exactamente como `colorDeTipoEvento` en `tokens.js`. Nunca un hex
+   dentro de una vista (regla 2). */
+export function colorDeAcento(id, accent) {
+  return !id || id === 'accent' ? accent : (COLORS[id] || accent);
+}
+
+/* ── El sistema único de "Añadir a colección" ──────────────────────────────
+
+   🚨 *"En una Nota: ••• → Añadir a colección… Esto debe reutilizar el mismo
+   sistema. **No crear cinco sistemas distintos.**"* Éste es. Lo montan Libros,
+   Notas, Guardados, Ideas y Documentos con las mismas props, y ninguno sabe cómo
+   se guarda una relación.
+
+   ⚠️ Sin ninguna colección creada **no se pinta nada**: un botón que abre una
+   lista vacía es un control decorativo (regla 8). */
+export function AnadirAColeccion({ colecciones, tipo, id, accent, onAlternar }) {
+  const [abierto, setAbierto] = useState(false);
+  const lista = Array.isArray(colecciones) ? colecciones : [];
+  if (lista.length === 0) return null;
+
+  const dentro = coleccionesDe(lista, tipo, id);
+  const activas = lista.filter((c) => !c.archivada);
+  const archivadas = lista.filter((c) => c.archivada);
+  const ordenadas = [...activas, ...archivadas];
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setAbierto(!abierto)}
+        className="flex items-center gap-1.5 text-xs font-semibold toque-44"
+        style={{ color: dentro.length > 0 ? accent : COLORS.textMuted }}
+        aria-label={`Añadir a colección`}
+        aria-expanded={abierto}
+      >
+        <FolderOpen size={13} />
+        {dentro.length === 0
+          ? 'Añadir a colección'
+          : `En ${dentro.length === 1 ? dentro[0].nombre : `${dentro.length} colecciones`}`}
+        {abierto ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+      </button>
+
+      {abierto && (
+        <div className="mt-2 space-y-1">
+          {ordenadas.map((c) => {
+            const marcada = contieneElemento(c, tipo, id);
+            const Icono = iconoDeColeccion(c.icono);
+            return (
+              <button
+                key={c.id}
+                onClick={() => onAlternar(c.id, tipo, id)}
+                className="w-full flex items-center gap-2 rounded-xl px-2.5 py-2 text-left toque-44"
+                style={{
+                  background: COLORS.surface2,
+                  border: `1px solid ${marcada ? colorDeAcento(c.acento, accent) : COLORS.border}`,
+                }}
+                aria-label={`${marcada ? 'Quitar de' : 'Añadir a'} ${c.nombre}`}
+                aria-pressed={marcada}
+              >
+                <Icono size={14} style={{ color: colorDeAcento(c.acento, accent) }} />
+                <span className="text-xs flex-1 truncate" style={{ color: COLORS.text }}>{c.nombre}</span>
+                {c.archivada ? (
+                  <span className="text-[10px]" style={{ color: COLORS.textMuted }}>Archivada</span>
+                ) : null}
+                {marcada ? <Check size={14} style={{ color: colorDeAcento(c.acento, accent) }} /> : <Plus size={14} style={{ color: COLORS.textMuted }} />}
+              </button>
+            );
+          })}
+          {/* ⚠️ Se dice qué hace quitar, porque es la duda entera de esta fase. */}
+          <p className="text-[11px] leading-snug" style={{ color: COLORS.textMuted }}>
+            Quitarlo de una colección no lo elimina de tu biblioteca.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── La tarjeta ────────────────────────────────────────────────────────────
+
+   *"Cada colección puede tener: icono, color/acento, número de elementos,
+   preview de algunos elementos. **La preview debe utilizar datos reales.**"* */
+export function TarjetaColeccion({ coleccion, datos, accent, indice = 0, onAbrir }) {
+  const Icono = iconoDeColeccion(coleccion.icono);
+  const color = colorDeAcento(coleccion.acento, accent);
+  const n = contarColeccion(coleccion, datos);
+  const tipos = tiposDe(coleccion, datos);
+  const preview = previewDe(coleccion, datos);
+
+  return (
+    <button
+      onClick={onAbrir}
+      className={`w-full text-left ${CLASE_TARJETA}`}
+      style={{ animationDelay: retrasoDeTarjeta(indice) }}
+      aria-label={`Abrir la colección ${coleccion.nombre}`}
+    >
+      <Card style={{ padding: '1rem', borderLeft: `3px solid ${color}` }}>
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: COLORS.surface2 }}>
+            <Icono size={19} style={{ color }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-bold truncate" style={{ color: COLORS.text }}>{coleccion.nombre}</p>
+              {coleccion.favorita ? <Star size={12} style={{ color }} fill={color} /> : null}
+              {coleccion.archivada ? (
+                <span className="text-[10px] rounded-full px-1.5 py-0.5" style={{ background: COLORS.surface2, color: COLORS.textMuted }}>Archivada</span>
+              ) : null}
+            </div>
+            {coleccion.descripcion ? (
+              <p className="text-xs mt-0.5 truncate" style={{ color: COLORS.textMuted }}>{coleccion.descripcion}</p>
+            ) : null}
+            {/* ⚠️ **Sin elementos no se enseña "0 elementos"**: se dice que está
+                vacía, que es lo que hay que hacer con ella. */}
+            <p className="text-xs mt-1.5 font-semibold" style={{ color }}>
+              {n === 0 ? 'Vacía' : `${n} ${n === 1 ? 'elemento' : 'elementos'}`}
+            </p>
+            {tipos.length > 0 ? (
+              <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>{tipos.join(' · ')}</p>
+            ) : null}
+            {preview.length > 0 ? (
+              <div className="flex items-center gap-1.5 mt-2">
+                {preview.map((p) => {
+                  const IconoTipo = iconoDeTipo(p.tipo);
+                  return (
+                    <div key={`${p.tipo}-${p.ref.id}`} className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: COLORS.surface2 }}>
+                      <IconoTipo size={12} style={{ color: COLORS.textMuted }} />
+                    </div>
+                  );
+                })}
+                {n > preview.length ? (
+                  <span className="text-[11px]" style={{ color: COLORS.textMuted }}>+{n - preview.length}</span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </Card>
+    </button>
+  );
+}
+
+/* ── El formulario ─────────────────────────────────────────────────────────
+
+   *"Nombre: obligatorio. Descripción: opcional. Icono: seleccionable.
+   Color/acento: opcional."* Cuatro campos y ni uno más. */
+export function FormularioColeccion({ coleccion = null, accent, onGuardar, onCancelar }) {
+  const [form, setForm] = useState({
+    nombre: coleccion?.nombre || '',
+    descripcion: coleccion?.descripcion || '',
+    icono: coleccion?.icono || ICONO_POR_DEFECTO,
+    acento: coleccion?.acento || ACENTO_POR_DEFECTO,
+  });
+  const valido = !!crearColeccion(form);
+
+  return (
+    <Card>
+      <Field label="Nombre">
+        <TextInput
+          aria-label="Nombre de la colección"
+          value={form.nombre}
+          onChange={(ev) => setForm({ ...form, nombre: ev.target.value })}
+          placeholder="Ej: Estudios"
+        />
+      </Field>
+      <Field label="Descripción (opcional)">
+        <TextInput
+          aria-label="Descripción de la colección"
+          value={form.descripcion}
+          onChange={(ev) => setForm({ ...form, descripcion: ev.target.value })}
+          placeholder="Para qué es esta colección"
+        />
+      </Field>
+
+      <Field label="Icono">
+        <div className="flex flex-wrap gap-2">
+          {ICONOS_DISPONIBLES.map((i) => {
+            const Icono = iconoDeColeccion(i.id);
+            const puesto = form.icono === i.id;
+            return (
+              <button
+                key={i.id}
+                onClick={() => setForm({ ...form, icono: i.id })}
+                className="w-11 h-11 rounded-xl flex items-center justify-center"
+                style={{
+                  background: COLORS.surface2,
+                  border: `1px solid ${puesto ? colorDeAcento(form.acento, accent) : COLORS.border}`,
+                }}
+                aria-label={`Icono ${i.nombre}`}
+                aria-pressed={puesto}
+              >
+                <Icono size={17} style={{ color: puesto ? colorDeAcento(form.acento, accent) : COLORS.textMuted }} />
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+
+      <Field label="Color">
+        <div className="flex flex-wrap gap-2">
+          {ACENTOS_COLECCION.map((a) => {
+            const puesto = form.acento === a.id;
+            const color = colorDeAcento(a.id, accent);
+            return (
+              <button
+                key={a.id}
+                onClick={() => setForm({ ...form, acento: a.id })}
+                className="rounded-full px-3 py-1.5 text-xs font-semibold toque-44"
+                style={{
+                  background: puesto ? color : COLORS.surface2,
+                  color: puesto ? COLORS.textOnAccent : COLORS.textMuted,
+                  border: `1px solid ${puesto ? color : COLORS.border}`,
+                }}
+                aria-label={`Color ${a.nombre}`}
+                aria-pressed={puesto}
+              >
+                {a.nombre}
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+
+      <div className="flex gap-2 mt-2">
+        <PrimaryButton
+          accent={accent}
+          disabled={!valido}
+          onClick={() => onGuardar(form)}
+        >
+          {coleccion ? 'Guardar cambios' : 'Crear colección'}
+        </PrimaryButton>
+        <GhostBtn onClick={onCancelar}>Cancelar</GhostBtn>
+      </div>
+    </Card>
+  );
+}
+
+/* ── El selector de contenido ──────────────────────────────────────────────
+
+   *"+ Añadir. Mostrar selector: Libros, Notas, Guardados, Ideas, Documentos.
+   **Permitir seleccionar múltiples elementos.** Botón: Añadir seleccionados."*
+
+   ⚠️ Las pestañas salen del **catálogo**, no de un `if` por tipo: un tipo nuevo
+   trae su pestaña sola. Y **lo que ya está dentro no se ofrece**: volver a
+   marcarlo no haría nada y parecería roto. */
+export function SelectorDeElementos({ coleccion, datos, accent, onCancelar, onAnadir }) {
+  const [tipo, setTipo] = useState(TIPOS_ELEMENTO[0].id);
+  const [texto, setTexto] = useState('');
+  const [marcados, setMarcados] = useState([]);
+
+  const t = tipoElemento(tipo);
+  const origen = t.de === 'archivos'
+    ? (datos.archivos || [])
+    : ((datos.biblioteca || {})[t.coleccion] || []);
+  const q = texto.trim().toLowerCase();
+  const disponibles = origen
+    .filter((x) => x && !contieneElemento(coleccion, tipo, x.id))
+    .filter((x) => !q || t.textos(x).filter(Boolean).join(' ').toLowerCase().includes(q));
+
+  const marcado = (id) => marcados.some((m) => m.tipo === tipo && m.id === id);
+  const alternar = (id) => setMarcados(marcado(id)
+    ? marcados.filter((m) => !(m.tipo === tipo && m.id === id))
+    : [...marcados, { tipo, id }]);
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className="text-sm font-bold" style={{ color: COLORS.text }}>Añadir contenido</p>
+        <GhostBtn onClick={onCancelar}>Cancelar</GhostBtn>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+        {TIPOS_ELEMENTO.map((x) => (
+          <FiltroPill key={x.id} active={tipo === x.id} accent={accent} onClick={() => { setTipo(x.id); setTexto(''); }}>
+            {x.plural}
+          </FiltroPill>
+        ))}
+      </div>
+
+      {origen.length >= 4 && (
+        <div className="relative mt-2">
+          <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: COLORS.textMuted }} />
+          <TextInput
+            aria-label={`Buscar en ${t.plural.toLowerCase()}`}
+            value={texto}
+            onChange={(ev) => setTexto(ev.target.value)}
+            placeholder={`Buscar en ${t.plural.toLowerCase()}…`}
+            style={{ paddingLeft: 34 }}
+          />
+        </div>
+      )}
+
+      <div className="space-y-1 mt-2">
+        {disponibles.length === 0 ? (
+          <EmptyHint text={
+            origen.length === 0
+              ? `Todavía no tienes ${t.plural.toLowerCase()} en tu biblioteca.`
+              : q
+                ? 'Nada coincide con esta búsqueda.'
+                : `Ya has añadido todos tus ${t.plural.toLowerCase()} a esta colección.`
+          } />
+        ) : disponibles.map((x) => {
+          const IconoTipo = iconoDeTipo(tipo);
+          const puesto = marcado(x.id);
+          return (
+            <button
+              key={x.id}
+              onClick={() => alternar(x.id)}
+              className="w-full flex items-center gap-2 rounded-xl px-2.5 py-2 text-left toque-44"
+              style={{ background: COLORS.surface2, border: `1px solid ${puesto ? accent : COLORS.border}` }}
+              aria-label={`${puesto ? 'Quitar de la selección' : 'Seleccionar'} ${nombreDelElemento(tipo, x)}`}
+              aria-pressed={puesto}
+            >
+              <IconoTipo size={14} style={{ color: puesto ? accent : COLORS.textMuted }} />
+              <span className="text-xs flex-1 truncate" style={{ color: COLORS.text }}>{nombreDelElemento(tipo, x)}</span>
+              {puesto ? <Check size={14} style={{ color: accent }} /> : null}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-3">
+        <PrimaryButton
+          accent={accent}
+          disabled={marcados.length === 0}
+          onClick={() => { onAnadir(marcados); setMarcados([]); }}
+        >
+          {marcados.length === 0
+            ? 'Añadir seleccionados'
+            : `Añadir ${marcados.length} seleccionado${marcados.length === 1 ? '' : 's'}`}
+        </PrimaryButton>
+      </div>
+    </Card>
+  );
+}
+
+/* ── El detalle: dentro de una colección ───────────────────────────────────
+
+   *"Al tocar una colección: mostrar nombre, descripción, número de elementos.
+   Después: CONTENIDO, agrupado visualmente por tipo. **No mostrar categorías
+   vacías.**"* */
+export function DetalleColeccion({
+  coleccion, datos, accent, onCerrar, onGuardar, onEliminar, onAbrirOriginal,
+}) {
+  const [editando, setEditando] = useState(false);
+  const [anadiendo, setAnadiendo] = useState(false);
+  const [filtro, setFiltro] = useState('todo');
+  const [orden, setOrden] = useState(ORDEN_DENTRO_POR_DEFECTO);
+  const [texto, setTexto] = useState('');
+
+  useEffect(() => {
+    const alPulsar = (ev) => { if (ev.key === 'Escape') onCerrar(); };
+    if (typeof document !== 'undefined') document.addEventListener('keydown', alPulsar);
+    return () => { if (typeof document !== 'undefined') document.removeEventListener('keydown', alPulsar); };
+  }, [onCerrar]);
+
+  if (!coleccion) return null;
+
+  const color = colorDeAcento(coleccion.acento, accent);
+  const Icono = iconoDeColeccion(coleccion.icono);
+  const resueltos = elementosDeColeccion(coleccion, datos);
+  const visibles = ordenarDentro(filtrarDentro(buscarDentro(resueltos, texto), filtro), orden);
+  const grupos = agruparPorTipo(visibles);
+  const aviso = avisoDeEliminar(coleccion, datos);
+
+  const contenido = (
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto pantalla-segura"
+      style={{ background: COLORS.bg }}
+      role="dialog"
+      aria-label={`Colección ${coleccion.nombre}`}
+    >
+      <div className="max-w-md mx-auto px-4 pb-8 space-y-3">
+        <div className="flex items-center gap-2 pt-1">
+          <button onClick={onCerrar} className="p-1.5 -m-1.5" aria-label="Cerrar la colección">
+            <ArrowLeft size={18} style={{ color: COLORS.textMuted }} />
+          </button>
+          <Icono size={17} style={{ color }} />
+          <p className="text-base font-bold flex-1 truncate" style={{ color: COLORS.text }}>{coleccion.nombre}</p>
+        </div>
+
+        {editando ? (
+          <FormularioColeccion
+            coleccion={coleccion}
+            accent={accent}
+            onCancelar={() => setEditando(false)}
+            onGuardar={(cambios) => { onGuardar(editarColeccion(coleccion, cambios)); setEditando(false); }}
+          />
+        ) : (
+          <>
+            <Card style={{ borderLeft: `3px solid ${color}` }}>
+              {coleccion.descripcion ? (
+                <p className="text-sm leading-relaxed" style={{ color: COLORS.text }}>{coleccion.descripcion}</p>
+              ) : null}
+              <p className="text-xs mt-1 font-semibold" style={{ color }}>
+                {resueltos.length === 0 ? 'Sin contenido todavía' : `${resueltos.length} ${resueltos.length === 1 ? 'elemento' : 'elementos'}`}
+              </p>
+              {coleccion.archivada ? (
+                <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+                  Archivada. Su contenido sigue intacto en su mini-app.
+                </p>
+              ) : null}
+            </Card>
+
+            <Card>
+              <div className="flex flex-wrap items-center gap-2">
+                <GhostBtn icon={Plus} onClick={() => setAnadiendo(!anadiendo)}>Añadir contenido</GhostBtn>
+                <GhostBtn icon={Star} onClick={() => onGuardar(alternarFavoritaColeccion(coleccion))}>
+                  {coleccion.favorita ? 'Quitar de favoritas' : 'Favorita'}
+                </GhostBtn>
+                <GhostBtn icon={Pencil} onClick={() => setEditando(true)}>Editar</GhostBtn>
+                <GhostBtn
+                  icon={Archive}
+                  onClick={() => onGuardar(coleccion.archivada ? desarchivarColeccion(coleccion) : archivarColeccion(coleccion))}
+                >
+                  {coleccion.archivada ? 'Sacar del archivo' : 'Archivar'}
+                </GhostBtn>
+                <BotonBorrar onClick={() => { onEliminar(coleccion.id); onCerrar(); }} label="Eliminar la colección" />
+              </div>
+              {/* 🚨 *"Mostrar claramente: «Los elementos de esta colección no se
+                  eliminarán»."* Y es verdad por construcción: esta pantalla no
+                  tiene ninguna función capaz de tocar la lista de un elemento. */}
+              <p className="text-[11px] mt-2 leading-snug" style={{ color: COLORS.textMuted }}>
+                Archivar la saca de las activas sin tocar su contenido. {aviso.seQueda}
+              </p>
+            </Card>
+
+            {anadiendo && (
+              <SelectorDeElementos
+                coleccion={coleccion}
+                datos={datos}
+                accent={accent}
+                onCancelar={() => setAnadiendo(false)}
+                onAnadir={(refs) => { onGuardar(anadirElementos(coleccion, refs)); setAnadiendo(false); }}
+              />
+            )}
+
+            {resueltos.length === 0 ? (
+              <Card>
+                <p className="text-sm font-bold" style={{ color: COLORS.text }}>{VACIO_DENTRO.titulo}</p>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.textMuted }}>{VACIO_DENTRO.frase}</p>
+                <div className="mt-3">
+                  <PrimaryButton accent={accent} icon={Plus} onClick={() => setAnadiendo(true)}>{VACIO_DENTRO.boton}</PrimaryButton>
+                </div>
+              </Card>
+            ) : (
+              <>
+                {resueltos.length >= 4 && (
+                  <div className="relative">
+                    <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: COLORS.textMuted }} />
+                    <TextInput
+                      aria-label="Buscar en esta colección"
+                      value={texto}
+                      onChange={(ev) => setTexto(ev.target.value)}
+                      placeholder="Buscar en esta colección…"
+                      style={{ paddingLeft: 34 }}
+                    />
+                  </div>
+                )}
+
+                <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                  {FILTROS_DENTRO.map((f) => (
+                    <FiltroPill key={f.id} active={filtro === f.id} accent={accent} onClick={() => setFiltro(f.id)}>{f.label}</FiltroPill>
+                  ))}
+                </div>
+
+                <Field label="Ordenar por">
+                  <Select aria-label="Ordenar el contenido de la colección" value={orden} onChange={(ev) => setOrden(ev.target.value)}>
+                    {ORDENES_DENTRO.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                  </Select>
+                </Field>
+
+                {visibles.length === 0 ? (
+                  <EmptyHint text="Nada coincide con esta búsqueda o este filtro." />
+                ) : orden === 'recientes' || orden === 'alfabetico' ? (
+                  /* Agrupado por tipo salvo cuando el orden pedido es otro: si
+                     "Tipo" ya ordena, agrupar además sería decirlo dos veces. */
+                  grupos.map((g) => (
+                    <div key={g.tipo.id} className="space-y-1.5">
+                      <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>
+                        {g.tipo.emoji} {g.tipo.plural}
+                      </p>
+                      {g.elementos.map((r) => (
+                        <FilaDeColeccion
+                          key={`${r.tipo}-${r.ref.id}`}
+                          resuelto={r}
+                          accent={accent}
+                          onAbrir={() => onAbrirOriginal(r.tipo, r.ref.id)}
+                          onQuitar={() => onGuardar(quitarElemento(coleccion, r.tipo, r.ref.id))}
+                        />
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  <div className="space-y-1.5">
+                    {visibles.map((r) => (
+                      <FilaDeColeccion
+                        key={`${r.tipo}-${r.ref.id}`}
+                        resuelto={r}
+                        accent={accent}
+                        onAbrir={() => onAbrirOriginal(r.tipo, r.ref.id)}
+                        onQuitar={() => onGuardar(quitarElemento(coleccion, r.tipo, r.ref.id))}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  return typeof document === 'undefined' ? contenido : createPortal(contenido, document.body);
+}
+
+/* Una fila dentro de una colección. Al pulsarla **se abre el elemento
+   original**; el botón de la derecha quita **solo la relación**. */
+export function FilaDeColeccion({ resuelto, accent, onAbrir, onQuitar }) {
+  const IconoTipo = iconoDeTipo(resuelto.tipo);
+  const t = tipoElemento(resuelto.tipo);
+  const nombre = nombreDelElemento(resuelto.tipo, resuelto.elemento);
+  return (
+    <Card style={{ padding: '0.7rem 0.85rem' }}>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onAbrir}
+          className="flex items-center gap-2 flex-1 min-w-0 text-left toque-44"
+          aria-label={`Abrir ${nombre}`}
+        >
+          <IconoTipo size={15} style={{ color: accent, flexShrink: 0 }} />
+          <span className="text-sm truncate" style={{ color: COLORS.text }}>{nombre}</span>
+        </button>
+        <span className="text-[10px] flex-shrink-0" style={{ color: COLORS.textMuted }}>{t ? t.nombre : ''}</span>
+        {/* ⚠️ **No es una papelera**, y por eso no lleva el icono de una: quitar
+            de la colección **no borra nada**. Un icono de basura aquí haría creer
+            lo contrario, y ese miedo es lo que el enunciado quiere evitar. */}
+        <button
+          onClick={onQuitar}
+          className="p-1.5 -m-1.5 flex-shrink-0"
+          aria-label={`Quitar ${nombre} de la colección`}
+          title="Quitar de la colección"
+        >
+          <Minus size={15} style={{ color: COLORS.textMuted }} />
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+/* ── La pantalla ───────────────────────────────────────────────────────────
+
+   *"Colecciones. «Organiza tu biblioteca.» Botón: + Nueva colección. Mostrar
+   las colecciones como tarjetas visuales."* */
+export function PantallaColecciones({
+  colecciones, datos, cabecera, crear, onCerrarCrear, onAbrirCrear, accent,
+  onAdd, onUpdate, onDelete, onAbrirOriginal,
+}) {
+  const [filtro, setFiltro] = useState(FILTRO_COLECCIONES_POR_DEFECTO);
+  const [orden, setOrden] = useState(ORDEN_COLECCIONES_POR_DEFECTO);
+  const [texto, setTexto] = useState('');
+  const [abierta, setAbierta] = useState(null);
+
+  const stats = estadisticasColecciones(colecciones, datos);
+  const linea = lineaColecciones(colecciones, datos);
+  const visibles = ordenarColecciones(
+    buscarColecciones(filtrarColecciones(colecciones, filtro), texto),
+    orden,
+    datos,
+  );
+  const abiertaAhora = abierta ? colecciones.find((c) => c.id === abierta) || null : null;
+
+  return (
+    <div className="space-y-3 pb-4">
+      {cabecera}
+      {linea ? <p className="text-xs font-semibold" style={{ color: accent }}>{linea}</p> : null}
+
+      {crear && (
+        <FormularioColeccion
+          accent={accent}
+          onCancelar={onCerrarCrear}
+          onGuardar={(form) => { onAdd(crearColeccion(form)); onCerrarCrear(); }}
+        />
+      )}
+
+      {colecciones.length === 0 ? (
+        <Card>
+          <p className="text-sm font-bold" style={{ color: COLORS.text }}>{VACIO_COLECCIONES.titulo}</p>
+          <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.textMuted }}>{VACIO_COLECCIONES.frase}</p>
+          <div className="mt-3">
+            <PrimaryButton accent={accent} icon={Plus} onClick={onAbrirCrear}>{VACIO_COLECCIONES.boton}</PrimaryButton>
+          </div>
+        </Card>
+      ) : (
+        <>
+          {colecciones.length >= 4 && (
+            <div className="relative">
+              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: COLORS.textMuted }} />
+              <TextInput
+                aria-label="Buscar entre las colecciones"
+                value={texto}
+                onChange={(ev) => setTexto(ev.target.value)}
+                placeholder="Buscar por nombre o descripción…"
+                style={{ paddingLeft: 34 }}
+              />
+            </div>
+          )}
+
+          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            {FILTROS_COLECCIONES.map((f) => (
+              <FiltroPill key={f.id} active={filtro === f.id} accent={accent} onClick={() => setFiltro(f.id)}>{f.label}</FiltroPill>
+            ))}
+          </div>
+
+          <Field label="Ordenar por">
+            <Select aria-label="Ordenar las colecciones" value={orden} onChange={(ev) => setOrden(ev.target.value)}>
+              {ORDENES_COLECCIONES.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+            </Select>
+          </Field>
+
+          {visibles.length === 0 ? (
+            <EmptyHint text={filtro === 'archivadas' ? 'No has archivado ninguna colección.' : 'Nada coincide con esta búsqueda o este filtro.'} />
+          ) : (
+            <div className="space-y-2">
+              {visibles.map((c, i) => (
+                <TarjetaColeccion
+                  key={c.id}
+                  coleccion={c}
+                  datos={datos}
+                  accent={accent}
+                  indice={i}
+                  onAbrir={() => setAbierta(c.id)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* *"ESTADÍSTICAS. Mostrar información sencilla… no crear estadísticas
+              complejas."* Cuatro cifras, todas derivadas en el momento. */}
+          <Card>
+            <p className="text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>Resumen</p>
+            <div className="grid grid-cols-3 gap-2">
+              <Cifra n={stats.total} label="Total" accent={accent} />
+              <Cifra n={stats.activas} label="Activas" accent={accent} />
+              <Cifra n={stats.archivadas} label="Archivadas" accent={accent} />
+            </div>
+            <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
+              {stats.elementosOrganizados === 0
+                ? 'Todavía no has organizado ningún elemento.'
+                : `${stats.elementosOrganizados} ${stats.elementosOrganizados === 1 ? 'elemento organizado' : 'elementos organizados'}.`}
+              {stats.coleccionMasGrande
+                ? ` La más llena es ${stats.coleccionMasGrande.nombre}, con ${stats.coleccionMasGrande.elementos}.`
+                : ''}
+            </p>
+          </Card>
+        </>
+      )}
+
+      {abiertaAhora && (
+        <DetalleColeccion
+          coleccion={abiertaAhora}
+          datos={datos}
+          accent={accent}
+          onCerrar={() => setAbierta(null)}
+          onGuardar={onUpdate}
+          onEliminar={onDelete}
+          onAbrirOriginal={(tipo, id) => { setAbierta(null); onAbrirOriginal(tipo, id); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function Cifra({ n, label, accent }) {
+  return (
+    <div className="rounded-xl px-2 py-2 text-center" style={{ background: COLORS.surface2 }}>
+      <p className="text-lg font-bold" style={{ color: accent }}>{n}</p>
+      <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{label}</p>
     </div>
   );
 }

@@ -121,12 +121,15 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
-import LibraryView, { TarjetaMiniApp, CabeceraMiniApp, VacioMiniApp, AnadirNotaRapida, AnadirColeccion, FichaSimple,
+import LibraryView, { TarjetaMiniApp, CabeceraMiniApp, VacioMiniApp, AnadirNotaRapida,
   PantallaLibros, TarjetaLibro, ContinuarLeyendo, FormularioLibro, DetalleLibro, Portada, BarraProgreso, EtiquetaEstado,
   PantallaGuardados, TarjetaGuardado, FormularioGuardado, DetalleGuardado, IconoGuardado,
   PantallaIdeas, TarjetaIdea, FormularioIdea, DetalleIdea, ConvertirIdea, EtiquetaIdea,
   PantallaDocumentos, TarjetaDocumento, EditorDocumento, LecturaDocumento, CuerpoDocumento,
-  IndiceDocumento, BarraFormato, TextoConMarcas } from '../src/views/LibraryView.jsx';
+  IndiceDocumento, BarraFormato, TextoConMarcas,
+  PantallaColecciones, TarjetaColeccion, FormularioColeccion, DetalleColeccion,
+  SelectorDeElementos, AnadirAColeccion, FilaDeColeccion } from '../src/views/LibraryView.jsx';
+import { crearColeccion, anadirElemento } from '../src/lib/colecciones.js';
 import { ESTADOS_LIBRO, crearLibro } from '../src/lib/libros.js';
 import { TIPOS_GUARDADO, crearGuardado } from '../src/lib/guardados.js';
 import { ESTADOS_IDEA, crearIdea } from '../src/lib/ideas.js';
@@ -426,8 +429,63 @@ const CASOS = [
     cabecera: null, crear: false, onCerrarCrear: noop, onAbrirCrear: noop, vacio: null, accent,
     onAdd: noop, onUpdate: noop, onDelete: noop, onSubirPortada: noop, onBorrarPortada: noop,
   })],
-  ['AnadirColeccion', AnadirColeccion, () => ({ onAdd: noop, accent })],
-  ['FichaSimple', FichaSimple, () => ({ titulo: 'Hábitos atómicos', sub: 'James Clear', fecha: '2026-09-01', onDelete: noop })],
+  /* E3 F21 (BL F7) — Colecciones. El escenario tiene una colección con elementos
+     de CUATRO tipos, una vacía y una archivada: así se pintan de verdad el
+     agrupado por tipo, la preview, el estado vacío de dentro y el filtro. */
+  ...(() => {
+    const bib = {
+      apuntes: [{ id: 'n1', titulo: 'Repaso biología', contenido: 'La mitosis', fecha: '2026-09-01' }],
+      enlaces: [{ ...crearGuardado({ titulo: 'MDN', url: 'https://developer.mozilla.org/es/' }), id: 'g1' }],
+      libros: [{ ...crearLibro({ titulo: 'Hábitos atómicos', autor: 'James Clear' }), id: 'l1' }],
+      ideas: [{ ...crearIdea({ titulo: 'App de rachas' }), id: 'i1' }],
+      documentos: [],
+      colecciones: [],
+    };
+    const datosCol = { biblioteca: bib, archivos: [] };
+    let llena = crearColeccion({ nombre: 'Estudios', descripcion: 'Todo el curso', icono: 'GraduationCap', acento: 'info' });
+    for (const [tipo, id] of [['nota', 'n1'], ['guardado', 'g1'], ['libro', 'l1'], ['idea', 'i1']]) {
+      llena = anadirElemento(llena, tipo, id);
+    }
+    llena = { ...llena, id: 'c1', favorita: true };
+    const vaciaCol = { ...crearColeccion({ nombre: 'Programación', icono: 'Code' }), id: 'c2' };
+    const archivada = { ...crearColeccion({ nombre: 'Verano', icono: 'Rocket' }), id: 'c3', archivada: true };
+    const todas = [llena, vaciaCol, archivada];
+    bib.colecciones = todas;
+    return [
+      ['PantallaColecciones', PantallaColecciones, () => ({
+        colecciones: todas, datos: datosCol, cabecera: null, crear: false,
+        onCerrarCrear: noop, onAbrirCrear: noop, accent,
+        onAdd: noop, onUpdate: noop, onDelete: noop, onAbrirOriginal: noop,
+      })],
+      ['PantallaColecciones (vacía)', PantallaColecciones, () => ({
+        colecciones: [], datos: { biblioteca: { colecciones: [] }, archivos: [] }, cabecera: null, crear: false,
+        onCerrarCrear: noop, onAbrirCrear: noop, accent,
+        onAdd: noop, onUpdate: noop, onDelete: noop, onAbrirOriginal: noop,
+      })],
+      ['TarjetaColeccion', TarjetaColeccion, () => ({ coleccion: llena, datos: datosCol, accent, indice: 0, onAbrir: noop })],
+      ['TarjetaColeccion (vacía)', TarjetaColeccion, () => ({ coleccion: vaciaCol, datos: datosCol, accent, indice: 1, onAbrir: noop })],
+      ['FormularioColeccion', FormularioColeccion, () => ({ accent, onGuardar: noop, onCancelar: noop })],
+      ['FormularioColeccion (editando)', FormularioColeccion, () => ({ coleccion: llena, accent, onGuardar: noop, onCancelar: noop })],
+      ['DetalleColeccion', DetalleColeccion, () => ({
+        coleccion: llena, datos: datosCol, accent,
+        onCerrar: noop, onGuardar: noop, onEliminar: noop, onAbrirOriginal: noop,
+      })],
+      ['DetalleColeccion (vacía)', DetalleColeccion, () => ({
+        coleccion: vaciaCol, datos: datosCol, accent,
+        onCerrar: noop, onGuardar: noop, onEliminar: noop, onAbrirOriginal: noop,
+      })],
+      ['SelectorDeElementos', SelectorDeElementos, () => ({
+        coleccion: vaciaCol, datos: datosCol, accent, onCancelar: noop, onAnadir: noop,
+      })],
+      ['AnadirAColeccion', AnadirAColeccion, () => ({
+        colecciones: todas, tipo: 'nota', id: 'n1', accent, onAlternar: noop,
+      })],
+      ['FilaDeColeccion', FilaDeColeccion, () => ({
+        resuelto: { ref: { tipo: 'nota', id: 'n1' }, tipo: 'nota', elemento: bib.apuntes[0], fecha: '2026-09-01' },
+        accent, onAbrir: noop, onQuitar: noop,
+      })],
+    ];
+  })(),
   ['DashboardView', DashboardView, propsDashboard],
   ['SleepView', SleepView, (e) => ({ sueno: e.sueno, onAdd: noop, onDelete: noop, accent })],
   ['FinanceView', FinanceView, (e) => ({ economia: e.economia, onAdd: noop, onDelete: noop, onUpdate: noop, accent })],

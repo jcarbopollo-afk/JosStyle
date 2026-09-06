@@ -1,5 +1,105 @@
 # CHANGELOG.md
 
+## v3.42.0 — Entrega 3 · Fase 21 (BL F7): Biblioteca — Colecciones
+
+La capa de organización de la Biblioteca. Con ella quedan construidas **las seis mini-apps**.
+
+> Colecciones **no es una séptima mini-app**: no guarda contenido propio.
+> Su función es **agrupar contenido que ya existe**.
+
+### 🚨 Una colección guarda REFERENCIAS, no contenido
+
+Es lo que el enunciado repite tres veces —*"IMPORTANTE: NO DUPLICAR"*, *"RELACIÓN"*, *"DETALLE DE
+ELEMENTOS"*—, y decide toda la arquitectura. Añadir «Repaso biología» a «Estudios» **no crea una
+copia de la nota**: guarda `{ tipo: 'nota', id: 'n1' }` y nada más. De ahí salen solas tres cosas
+que el criterio de éxito pide por separado:
+
+- **Quitarla de la colección no la borra** (criterio 8), porque no hay ninguna función aquí capaz de
+  tocar la lista de una nota.
+- **Eliminar la colección no elimina su contenido** (criterio 9), y la frase *"Los elementos de esta
+  colección no se eliminarán"* es verdad por construcción, no una promesa.
+- **Renombrar la nota cambia lo que se ve en la colección** sin que nadie sincronice nada: la
+  colección no tiene copia que enseñar, así que la única forma de pintarla es ir a buscarla.
+
+### 🚨 Dónde vive la relación, y por qué ahí
+
+El enunciado describe una tabla `COLLECTION_ITEMS` polimórfica… y acto seguido dice: *"Si la base de
+datos actual utiliza relaciones específicas por tabla en vez de una relación polimórfica, **respetar
+la arquitectura existente. No introducir una arquitectura incompatible únicamente por esta
+especificación**"*.
+
+La arquitectura de JosStyle es `app_data`: **una fila por (usuario, clave)** con un JSON dentro. No
+hay tablas por entidad, así que no hay dónde poner una tabla de relación. Las relaciones viven
+**dentro de la colección**, como `elementos: [{ tipo, id, fecha }]` — y eso da gratis lo que el
+enunciado pide:
+
+- **Borrar la colección borra sus relaciones** porque están dentro de ella. No hay una segunda lista
+  que barrer a mano, que es el fallo que la E3 F20 ya se negó a repetir con las etiquetas.
+- **Un elemento puede estar en varias colecciones** porque cada una lleva su propia lista. Nada que
+  limitar: *"no limitar artificialmente a una sola colección"*.
+- **La seguridad sale sola**: todo vive en la clave `biblioteca` del propio usuario, y las cuatro
+  políticas de `app_data` son `auth.uid() = user_id`. Una colección **no puede** referenciar un
+  elemento de otro usuario porque no existe ningún camino para llegar a él. Ni una tabla nueva, ni
+  un SQL que Josué tenga que ejecutar.
+
+### 🚨 Y eso resolvió una contradicción con la BL F4
+
+Aquella fase preparó un `coleccionId` en cada guardado —*"preparar `collection_id` pero no
+implementar Colecciones todavía"*— y ésta dice literalmente lo contrario: *"**No asumir que todos los
+elementos pueden tener un `collection_id` único.** Como un elemento puede pertenecer a múltiples
+colecciones, utilizar tablas de relación."*
+
+Manda la fase que construye la función. `absorberColeccionId` convierte cualquier `coleccionId`
+guardado en una relación de verdad y deja el campo a `null`, desde el propio normalizador. Hoy no
+mueve un solo dato de Josué —ninguna pantalla llegó a escribirlo—, pero deja **una sola fuente de
+verdad** sobre en qué colección está un guardado.
+
+### Un solo sistema de "Añadir a colección"
+
+*"En una Nota: ••• → Añadir a colección. En un Documento… En un Guardado… En una Idea… En un
+Libro… **No crear cinco sistemas distintos.**"* Es **un componente**, `AnadirAColeccion`, montado por
+las cinco con las mismas props, y ninguna sabe cómo se guarda una relación. Enseña en qué colecciones
+está ya el elemento, y el mismo botón lo quita.
+
+### Los tipos son un catálogo, y son SEIS
+
+El enunciado enumera cinco `item_type`. En JosStyle, *Documentos* enseña **dos listas bajo el mismo
+techo** (E3 F20): los documentos de texto y los archivos que Josué subió en la Fase 11. Dejar fuera
+los archivos habría significado que un PDF suyo no cabe en «Estudios» mientras el documento de al
+lado sí, y esa asimetría no se ve en el código pero se nota en la mano. `archivo` es el primer uso de
+*"preparar la arquitectura para que pueda incorporar nuevos tipos en el futuro"*: **una línea en
+`TIPOS_ELEMENTO`**, sin un solo `case` por tipo.
+
+### El color sale del sistema de siempre
+
+*"Utilizar el sistema de colores existente. **No crear una paleta independiente.**"* Un acento se
+guarda como el **nombre de un token** —`accent`, `info`, `positive`…—, jamás como un hex: la regla 2
+lo prohíbe fuera de `tokens.js`, y un hex guardado se quedaría fijo cuando Josué cambie de tema. Es
+el mismo reparto que `TIPOS_EVENTO_CALENDARIO`, que ya lo resolvía desde el Calendario Universal. Hay
+una prueba que barre la librería entera buscando hexes.
+
+### Lo demás
+
+**Archivar no toca el contenido** (*"los elementos internos NO se archivan"*). **Una referencia a
+algo que ya no existe no se cuenta ni se pinta**, así que una relación huérfana no puede enseñarse
+aunque siga guardada — y no se limpia en el momento del borrado a propósito: una nota eliminada va a
+*Eliminados recientes* y **vuelve**, así que borrar la relación le quitaría en silencio algo que él
+había organizado. Las estadísticas son **una vista, no un dato**: *"elementos organizados"* cuenta
+elementos **distintos**, porque una nota en tres colecciones está organizada una vez.
+
+Y **la fábrica se mudó, no se duplicó**: `crearColeccion` y `normalizarColeccion` vivían en
+`biblioteca.js` desde la BL F1 con tres campos y ahora tienen diez; `biblioteca.js` las importa y las
+reexporta con `export { X }`, nunca `export … from`. Con ellas se fueron `AnadirColeccion` y
+`FichaSimple`, el formulario y la ficha mínimos que la BL F1 escribió *"para que el botón de crear
+escriba algo de verdad"* hasta que llegara esta fase.
+
+### Verificación
+Build de Vite, **250 comprobaciones nuevas de Node** (`scripts/test-colecciones.mjs`), **36 casos de
+renderizado nuevos** (1720 en total), las 6 reglas invariantes y una sección nueva del recorrido en
+Chromium —671 comprobaciones— que
+crea una colección, le mete la nota que ya existía, comprueba que **su contenido no está dentro de la
+colección**, la quita y comprueba que **la nota sigue entera**.
+
 ## v3.41.0 — Entrega 3 · Fase 20 (BL F6): Biblioteca — Documentos
 
 Editor con formato, autoguardado, modo lectura, índice, borradores, favoritos, archivado,

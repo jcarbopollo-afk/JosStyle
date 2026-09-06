@@ -2508,4 +2508,95 @@ ok(trasPublicar_bl6?.[0]?.estado === 'ready',
 ok(/Supabase/.test(trasPublicar_bl6[0].contenido || ''), '🚨 el texto no se toca al cambiar de estado');
 ok(await pulsar('Cerrar el documento'), 'se cierra la lectura');
 
+/* ── E3 F21 (BL F7) · COLECCIONES ────────────────────────────────────────
+   Las tres promesas que hay que ver en la pantalla, no en una prueba de Node:
+   **una colección agrupa lo que ya existe**, **quitar un elemento no lo borra**
+   y **eliminar la colección no se lleva su contenido**. */
+almacen.biblioteca = {
+  apuntes: [{ id: 'n1', titulo: 'Repaso biología', contenido: 'La mitosis', fecha: '2026-09-01' }],
+  enlaces: [], libros: [], ideas: [], colecciones: [], documentos: [],
+};
+almacen.bibliotecaArchivos = [];
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Vida');
+await pulsar('Biblioteca');
+ok(await pulsar('Colecciones'), 'Colecciones se abre');
+
+const vacio_bl7 = await esperarTexto(/Organiza tu biblioteca/i);
+ok(/Organiza tu biblioteca/i.test(vacio_bl7),
+  '⚠️ y sin ninguna, el estado vacío del enunciado');
+ok(/Crea una colección para reunir/i.test(vacio_bl7), '⚠️ con su frase entera');
+
+ok(await pulsar('Nueva colección'), 'y su botón abre el formulario');
+await page.waitForSelector('input[aria-label="Nombre de la colección"]', { timeout: 6000 });
+await page.fill('input[aria-label="Nombre de la colección"]', 'Estudios');
+await page.fill('input[aria-label="Descripción de la colección"]', 'Todo el curso');
+ok(await pulsar('Icono Estudios'), 'se elige un icono');
+ok(await pulsar('Color Azul'), 'y un color del sistema de siempre');
+ok(await pulsar('Crear colección'), 'y se crea');
+
+const conUna_bl7 = await esperarTexto(/Estudios/);
+ok(/Estudios/.test(conUna_bl7), '⚠️ la colección aparece en la lista');
+ok(/Vac[íi]a/i.test(conUna_bl7),
+  '⚠️ y recién creada dice que está vacía, no "0 elementos"');
+
+const colGuardada_bl7 = guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value?.colecciones;
+ok(colGuardada_bl7?.length === 1 && colGuardada_bl7[0].nombre === 'Estudios',
+  '🚨 y llega a Supabase de verdad');
+ok(colGuardada_bl7[0].icono === 'GraduationCap' && colGuardada_bl7[0].acento === 'info',
+  '⚠️ con el icono y el acento que se eligieron');
+ok(Array.isArray(colGuardada_bl7[0].elementos) && colGuardada_bl7[0].elementos.length === 0,
+  '⚠️ y con su lista de relaciones, vacía');
+
+/* Entrar, añadir la nota que ya existía y comprobar que NO se ha copiado. */
+ok(await pulsar('Abrir la colección Estudios'), 'se entra en la colección');
+const dentro_bl7 = await esperarTexto(/Esta colección está vacía/i);
+ok(/Esta colección está vacía/i.test(dentro_bl7), '⚠️ y dentro, su propio estado vacío');
+ok(/Los elementos de esta colección no se eliminarán/i.test(dentro_bl7),
+  '🚨 Y LA FRASE DEL ENUNCIADO SE LEE EN LA PANTALLA, no solo en el código');
+
+ok(await pulsar('Añadir contenido'), 'se abre el selector de contenido');
+const selector_bl7 = await esperarTexto(/Añadir seleccionados/i);
+ok(/Añadir seleccionados/i.test(selector_bl7), '⚠️ con el botón del enunciado');
+ok(await pulsar('Notas'), 'se elige el tipo Notas');
+ok(await pulsar('Seleccionar Repaso biología'), 'y se marca la nota que ya existía');
+ok(await pulsar('Añadir 1 seleccionado'), 'se añade');
+
+const conNota_bl7 = await esperarTexto(/Repaso biología/);
+ok(/Repaso biología/.test(conNota_bl7), '🚨 LA NOTA SALE DENTRO DE LA COLECCIÓN');
+ok(/1 elemento\b/.test(conNota_bl7), '⚠️ y la cuenta es de verdad');
+
+const trasAnadir_bl7 = guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value;
+ok(trasAnadir_bl7.colecciones[0].elementos.length === 1
+  && trasAnadir_bl7.colecciones[0].elementos[0].id === 'n1',
+  '🚨 lo guardado es UNA REFERENCIA `{ tipo, id }`');
+ok(!JSON.stringify(trasAnadir_bl7.colecciones[0]).includes('mitosis'),
+  '🚨 **NO DUPLICAR**: el contenido de la nota NO está dentro de la colección');
+ok(trasAnadir_bl7.apuntes.length === 1 && trasAnadir_bl7.apuntes[0].contenido === 'La mitosis',
+  '⚠️ y la nota sigue entera en su lista de siempre');
+
+/* Quitarla: se va de la colección y **sigue existiendo**. */
+ok(await pulsar('Quitar Repaso biología de la colección'), 'se quita de la colección');
+await page.waitForTimeout(700);
+const trasQuitar_bl7 = guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value;
+ok(trasQuitar_bl7.colecciones[0].elementos.length === 0, 'la relación desaparece');
+ok(trasQuitar_bl7.apuntes.length === 1,
+  '🚨 Y LA NOTA SIGUE EXISTIENDO: *"si se elimina de la colección, la nota sigue existiendo"*');
+ok(trasQuitar_bl7.apuntes[0].contenido === 'La mitosis', '⚠️ con su contenido intacto');
+
+ok(await pulsar('Cerrar la colección'), 'se cierra la colección');
+
+/* Y desde la propia nota: el mismo sistema, en la otra dirección. */
+ok(await pulsar('Volver a la biblioteca'), 'se vuelve al lanzador');
+ok(await pulsar('Notas'), 'se abre Notas');
+ok(await pulsar('Añadir a colección'),
+  '🚨 Y LA NOTA TIENE EL MISMO SISTEMA: *"no crear cinco sistemas distintos"*');
+ok(await pulsar('Añadir a Estudios'), 'se añade desde aquí');
+await page.waitForTimeout(700);
+const desdeLaNota_bl7 = guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value?.colecciones;
+ok(desdeLaNota_bl7?.[0]?.elementos?.length === 1,
+  '⚠️ y escribe exactamente la misma relación que el selector de dentro');
+
 await salir(browser);
