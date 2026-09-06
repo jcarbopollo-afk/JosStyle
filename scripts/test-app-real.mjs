@@ -2599,4 +2599,72 @@ const desdeLaNota_bl7 = guardado.filter((g) => g && g.key === 'biblioteca').at(-
 ok(desdeLaNota_bl7?.[0]?.elementos?.length === 1,
   '⚠️ y escribe exactamente la misma relación que el selector de dentro');
 
+/* ── E3 F22 (BL F8) · INTEGRACIÓN Y EXPERIENCIA GLOBAL ───────────────────
+   La prueba de integración del apartado 33, hecha en el navegador: entrar,
+   buscar algo desde la Biblioteca, abrirlo, volver, modificarlo y comprobar que
+   sube en Recientes. */
+almacen.biblioteca = {
+  apuntes: [{ id: 'n1', titulo: 'Repaso biología', contenido: 'Supabase y la mitosis', fecha: '2026-08-01' }],
+  enlaces: [],
+  libros: [{ id: 'l1', titulo: 'Hábitos atómicos', autor: 'James Clear', estado: 'leyendo', totalPaginas: 250, paginaActual: 30, fecha: '2026-08-05', actualizado: '2026-08-05' }],
+  ideas: [],
+  colecciones: [],
+  documentos: [{ id: 'd1', titulo: 'Arquitectura Supabase', contenido: 'RLS y app_data', estado: 'ready', etiquetas: [], favorito: true, archivado: false, fecha: '2026-08-10', actualizado: '2026-08-10' }],
+};
+almacen.bibliotecaArchivos = [];
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Vida');
+await pulsar('Biblioteca');
+
+const principal_bl8 = await esperarTexto(/Recientes/i);
+ok(/Tu espacio personal para guardar, crear y organizar/i.test(principal_bl8),
+  '⚠️ la Biblioteca se presenta con la frase del enunciado');
+ok(/Recientes/i.test(principal_bl8),
+  '🚨 🕘 RECIENTES ESTÁ DEBAJO DE LOS SEIS CUADRADITOS');
+ok(/Arquitectura Supabase/.test(principal_bl8),
+  '🚨 y enseña elementos de VERDAD, no un hueco');
+ok(/Favoritos/i.test(principal_bl8),
+  '⚠️ ⭐ FAVORITOS aparece, porque hay uno de verdad');
+ok(/documento/i.test(principal_bl8) && /libro/i.test(principal_bl8),
+  '⚠️ y cada fila dice de qué tipo es');
+ok(!/hace \d+ min/i.test(principal_bl8),
+  '🚨 Y NI UN "HACE 20 MIN": la fecha guardada es el día, así que decirlo sería inventarse la hora');
+
+/* La búsqueda global: el ejemplo literal del enunciado. */
+await page.fill('input[aria-label="Buscar en la Biblioteca"]', 'Supabase');
+const busqueda_bl8 = await esperarTexto(/Arquitectura Supabase/);
+ok(/Arquitectura Supabase/.test(busqueda_bl8),
+  '🚨 BUSCAR «Supabase» ENCUENTRA EL DOCUMENTO POR SU CONTENIDO');
+ok(/Repaso biología/.test(busqueda_bl8),
+  '🚨 y la NOTA, que también lo menciona: la búsqueda cruza las seis mini-apps');
+
+/* Abrirlo desde la búsqueda: se abre el ORIGINAL, no una copia. */
+ok(await pulsar('Abrir Arquitectura Supabase'), 'se abre desde el resultado de búsqueda');
+const abierto_bl8 = await esperarTexto(/RLS y app_data/);
+ok(/RLS y app_data/.test(abierto_bl8),
+  '🚨 Y ES EL DOCUMENTO ORIGINAL, con su contenido: *"no crear copias"*');
+
+/* Modificarlo y comprobar que sube en Recientes (apartado 33, pasos 14-16). */
+ok(await pulsar('Volver a borrador'), 'se cambia algo del documento');
+await page.waitForTimeout(700);
+ok(await pulsar('Cerrar el documento'), 'se cierra');
+ok(await pulsar('Volver a la biblioteca'), 'y se vuelve a la Biblioteca');
+
+const trasTocar_bl8 = await esperarTexto(/Recientes/i);
+const ordenRecientes = trasTocar_bl8.split(/Recientes/i)[1] || '';
+ok(ordenRecientes.indexOf('Arquitectura Supabase') >= 0
+  && ordenRecientes.indexOf('Arquitectura Supabase') < ordenRecientes.indexOf('Hábitos atómicos'),
+  '🚨 Y LO QUE ACABA DE TOCAR SUBE A LO ALTO DE RECIENTES, sin que nadie sincronice nada');
+
+/* Las acciones rápidas: crear sin entrar antes en la mini-app. */
+ok(await pulsar('Crear algo nuevo en la Biblioteca'), 'el ＋ de la Biblioteca abre las acciones rápidas');
+const acciones_bl8 = await esperarTexto(/Nueva idea/i);
+ok(/Nueva idea/i.test(acciones_bl8) && /Guardar algo/i.test(acciones_bl8),
+  '⚠️ con una acción por mini-app (apartado 10)');
+ok(await pulsar('Nueva idea'), 'y lleva a Ideas con el formulario abierto');
+const enIdeas_bl8 = await esperarTexto(/Idea/);
+ok(/Idea/.test(enIdeas_bl8), '🚨 SIN ENTRAR PRIMERO EN LA MINI-APP: el ＋ crea desde la Biblioteca');
+
 await salir(browser);

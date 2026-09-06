@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F22 — Biblioteca: integración y experiencia global.
+if node --import ./scripts/resolver-vite.mjs scripts/test-biblioteca-global.mjs >/tmp/jc_blglobal.log 2>&1; then
+  ok "Biblioteca: integración global (E3 F22) — $(grep -c '✓' /tmp/jc_blglobal.log) comprobaciones"
+else
+  fallo "Falla la integración de la Biblioteca (E3 F22)"; grep '✗' /tmp/jc_blglobal.log
+fi
+
 # Entrega 3 · F21 — Biblioteca: Colecciones.
 if node --import ./scripts/resolver-vite.mjs scripts/test-colecciones.mjs >/tmp/jc_cols.log 2>&1; then
   ok "Biblioteca: Colecciones (E3 F21) — $(grep -c '✓' /tmp/jc_cols.log) comprobaciones"

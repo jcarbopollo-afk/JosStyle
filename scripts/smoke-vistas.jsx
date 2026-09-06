@@ -128,7 +128,9 @@ import LibraryView, { TarjetaMiniApp, CabeceraMiniApp, VacioMiniApp, AnadirNotaR
   PantallaDocumentos, TarjetaDocumento, EditorDocumento, LecturaDocumento, CuerpoDocumento,
   IndiceDocumento, BarraFormato, TextoConMarcas,
   PantallaColecciones, TarjetaColeccion, FormularioColeccion, DetalleColeccion,
-  SelectorDeElementos, AnadirAColeccion, FilaDeColeccion } from '../src/views/LibraryView.jsx';
+  SelectorDeElementos, AnadirAColeccion, FilaDeColeccion,
+  PantallaBiblioteca, BuscadorDeBiblioteca, AccionesRapidas, FilaDeBiblioteca,
+  EtiquetaDeTipo } from '../src/views/LibraryView.jsx';
 import { crearColeccion, anadirElemento } from '../src/lib/colecciones.js';
 import { ESTADOS_LIBRO, crearLibro } from '../src/lib/libros.js';
 import { TIPOS_GUARDADO, crearGuardado } from '../src/lib/guardados.js';
@@ -484,6 +486,35 @@ const CASOS = [
         resuelto: { ref: { tipo: 'nota', id: 'n1' }, tipo: 'nota', elemento: bib.apuntes[0], fecha: '2026-09-01' },
         accent, onAbrir: noop, onQuitar: noop,
       })],
+    ];
+  })(),
+  /* E3 F22 (BL F8) — la pantalla principal integrada. El escenario tiene algo de
+     cada tipo, con favoritos y con fechas distintas, para que Recientes ordene de
+     verdad y la sección de favoritos aparezca. */
+  ...(() => {
+    const bibF8 = {
+      apuntes: [{ id: 'n1', titulo: 'Repaso biología', contenido: 'Supabase y mitosis', fecha: '2026-09-05' }],
+      enlaces: [{ ...crearGuardado({ titulo: 'MDN', url: 'https://developer.mozilla.org/' }), id: 'g1', favorito: true, actualizado: '2026-09-06' }],
+      libros: [{ ...crearLibro({ titulo: 'Hábitos atómicos', autor: 'James Clear' }), id: 'l1', actualizado: '2026-08-20' }],
+      ideas: [{ ...crearIdea({ titulo: 'App de rachas' }), id: 'i1', actualizado: '2026-09-04' }],
+      documentos: [{ ...crearDocumento({ titulo: 'Arquitectura Supabase', contenido: 'RLS y app_data' }), id: 'd1', actualizado: '2026-09-06' }],
+      colecciones: [{ ...crearColeccion({ nombre: 'Estudios' }), id: 'c1', favorita: true, actualizado: '2026-09-03' }],
+    };
+    const datosF8 = { biblioteca: bibF8, archivos: [{ id: 'a1', tipo: 'pdf', path: 'x', titulo: 'Tema 3', fecha: '2026-07-01' }] };
+    const vacioF8 = { biblioteca: { apuntes: [], enlaces: [], libros: [], ideas: [], colecciones: [], documentos: [] }, archivos: [] };
+    return [
+      ['PantallaBiblioteca', PantallaBiblioteca, () => ({
+        datos: datosF8, accent, onAbrirMiniApp: noop, onAbrirOriginal: noop, onCrearEn: noop,
+      })],
+      ['PantallaBiblioteca (vacía)', PantallaBiblioteca, () => ({
+        datos: vacioF8, accent, onAbrirMiniApp: noop, onAbrirOriginal: noop, onCrearEn: noop,
+      })],
+      ['BuscadorDeBiblioteca', BuscadorDeBiblioteca, () => ({ datos: datosF8, accent, onAbrirOriginal: noop })],
+      ['AccionesRapidas', AccionesRapidas, () => ({ accent, onCrearEn: noop, onCerrar: noop })],
+      ['FilaDeBiblioteca', FilaDeBiblioteca, () => ({
+        tipo: 'documento', nombre: 'Arquitectura Supabase', detalle: 'Hoy', accent, indice: 0, onAbrir: noop,
+      })],
+      ['EtiquetaDeTipo', EtiquetaDeTipo, () => ({ tipo: 'nota' })],
     ];
   })(),
   ['DashboardView', DashboardView, propsDashboard],

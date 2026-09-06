@@ -1,5 +1,96 @@
 # CHANGELOG.md
 
+## v3.43.0 — Entrega 3 · Fase 22 (BL F8): Biblioteca — integración y experiencia global
+
+🏁 **CIERRA EL BLOQUE DE BIBLIOTECA (8 de 8).** Recientes, búsqueda global, favoritos, acciones
+rápidas, auditoría de las seis mini-apps y la condición de finalización, calculada.
+
+> *"El objetivo es que Biblioteca deje de sentirse como 6 herramientas separadas y pase a sentirse
+> como **un único sistema personal de información**."*
+
+### 🚨 El contador de Documentos llevaba mal desde la BL F6
+
+Documentos se alimenta de **dos listas** —los archivos que Josué subió en la Fase 11 y los
+documentos de texto que estrenó la BL F6— y `elementosDe` **solo miraba la primera**. Con tres
+documentos escritos y un PDF, la plaquita decía *"1 documento"*. No lo veían ni el build, ni el
+renderizado, ni las pruebas de Node: la pantalla se pinta perfecta. Es exactamente lo que el apartado
+14 de esta fase prohíbe —*"los números deben proceder de datos reales"*—, y es la razón de que exista
+una fase de integración.
+
+El arreglo va donde tenía que estar: **en el catálogo**. La línea de Documentos declara ahora
+`fuentes`, y una mini-app que mañana se alimente de dos sitios añade su línea y el contador se entera
+solo. Hay una prueba que se pone roja si se quita.
+
+### 🚨 Nada de esta capa guarda un dato
+
+Recientes, la búsqueda, los favoritos y los contadores **se derivan en el momento** de las listas que
+ya existen. `bibliotecaGlobal.js` no tiene almacén, ni normalizador, ni valor por defecto — hay
+pruebas que leen el código y lo comprueban. Por eso, en cuanto Josué toca un documento, **sube solo**
+a lo alto de Recientes: no hay nada que sincronizar. Es la lección de `hoy.js` (HT F6),
+`agendaDia.js` (E3 F7) y `estadisticasPlan.js` (E3 F13).
+
+Y **Recientes no es un séptimo cuadrado** (apartado 3), ni Favoritos (apartado 9): son secciones de
+la pantalla principal. `MINI_APPS` sigue teniendo seis, con una prueba.
+
+### 🚨 "Hace 20 min" no se puede calcular, así que no se finge
+
+El enunciado lo pone de ejemplo. En JosStyle una fecha se guarda con `fechaLocalISO`, que es **el día
+sin hora**: escribir *"hace 20 min"* sería inventarse una precisión que el dato no tiene (regla 8).
+Se dice con la granularidad que hay —*Hoy*, *Ayer*, *Hace 3 días*, *Hace 2 semanas*—, que es verdad y
+ordena igual. Hay una prueba que barre los textos de Recientes buscando minutos y horas.
+
+Lo mismo con la prioridad 3 del apartado 4, *"registrar cuándo el usuario abre un elemento"*: el
+propio enunciado la condiciona a *"si la arquitectura actual lo permite"*, y aquí sería **una
+escritura en Supabase por cada toque** sobre un almacén donde guardar sobrescribe el paquete entero
+(regla 5), para responder algo que la fecha de modificación ya responde. Está declarado, no fingido.
+
+### Cuál de las tres búsquedas tocaba
+
+En JosStyle ya había tres: `indiceBusqueda.js` (BI F3) busca **pantallas, ajustes y acciones**;
+`buscadorEstilo.js` (EH F37) busca los **elementos** de Estilo de hombre; `buscarModulos()` busca sus
+apartados. Ninguna busca dentro de lo que Josué guarda en la Biblioteca — el índice de la BI F3 es de
+**navegación**: buscar «Supabase» ahí ofrece *ir a Biblioteca*, no el documento.
+
+Así que ésta es la cuarta, con la forma de la de EH F37: **una línea por tipo y ningún índice
+guardado**, porque un índice guardado se queda viejo en cuanto él borra algo y entonces enseña cosas
+que ya no están. Buscar «Supabase» encuentra el documento **por su contenido** y la nota que lo
+menciona — el ejemplo literal del enunciado.
+
+### Favoritos: los que existen, y se dice cuáles no
+
+El enunciado da por hecho que Libros tiene favoritos. **No los tiene**: los tienen Guardados (BL F4),
+Documentos (BL F6) y Colecciones (BL F7). El propio apartado lo condiciona —*"si existen"*— y esta
+fase **no puede añadir funcionalidades nuevas** (apartado 31), así que se reconocen los tres que hay
+y se declara cuál no y por qué, en vez de inventarle a Libros una estrella que luego no tendría ni
+botón ni filtro. Y sigue **sin haber favoritos globales** (EH F39): esto es leer la marca que cada
+mini-app ya guarda.
+
+### La auditoría de las seis, y una casilla roja que se queda roja
+
+`auditoriaMiniApps()` **calcula** las capacidades del apartado 32, cada una nombrando la función real
+que la implementa. Cinco salen completas. **Notas sale en rojo: una nota no se puede editar** — la
+Fase 11 le dio crear, leer y borrar, y esta fase no añade funciones. Ponerla en verde sería mentir en
+la propia auditoría, así que se dice, con su motivo, y queda en `PENDIENTE_DE_JOSUE`.
+
+Igual con el **botón atrás del móvil** (apartado 20): JosStyle navega con estado de React, no con
+rutas, así que no hay entradas de historial que retroceder y el gesto de atrás sale de la aplicación.
+Arreglarlo es meter `history.pushState` en la navegación **de toda la app** —a medias sería peor—, y
+está declarado con el arreglo exacto en vez de fingido.
+
+### Lo demás
+
+Los **enlaces internos** quedan preparados con la pieza que construyó la BL F7 (`abrirOriginal`), sin
+estrenar un enrutador que el enunciado no pide. De los **diez componentes** del apartado 27, ocho ya
+estaban compartidos: esta fase escribe **dos**, `FilaDeBiblioteca` y `EtiquetaDeTipo`, y las usan
+Recientes, la búsqueda y los favoritos — una, no tres. El estado vacío de Documentos, que se había
+quedado hablando solo de PDFs y vídeos, ya nombra los textos.
+
+### Verificación
+Build de Vite, **159 comprobaciones nuevas de Node** (`scripts/test-biblioteca-global.mjs`), **24
+casos de renderizado nuevos** (1744 en total), las 6 reglas invariantes y una sección nueva del
+recorrido en Chromium —689 comprobaciones— que hace la prueba de integración del apartado 33: buscar, abrir el original,
+modificarlo, volver y comprobar que **sube en Recientes**.
+
 ## v3.42.0 — Entrega 3 · Fase 21 (BL F7): Biblioteca — Colecciones
 
 La capa de organización de la Biblioteca. Con ella quedan construidas **las seis mini-apps**.

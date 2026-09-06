@@ -4,7 +4,7 @@ import {
   Search, FileText, Video as VideoIcon, Image as ImageIcon, StickyNote, Link as LinkIcon,
   Trash2, ExternalLink, ChevronDown, ChevronUp, Upload, ArrowLeft, Plus, Pencil, Star, Archive, Sparkles, Copy,
   BookMarked, Bookmark, Lightbulb, FolderOpen,
-  GraduationCap, Code, Briefcase, Heart, Rocket, Dumbbell, Paperclip, Check, Minus,
+  GraduationCap, Code, Briefcase, Heart, Rocket, Dumbbell, Paperclip, Check, Minus, X,
 } from 'lucide-react';
 import { COLORS, TIPOS_ARCHIVO_BIBLIOTECA, PERIODOS_META, PLAZOS_OBJETIVO } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
@@ -13,6 +13,14 @@ import {
   MINI_APPS, miniApp, elementosDe, indicadorDe, diferenciaDe,
   CLASE_TARJETA, retrasoDeTarjeta,
 } from '../lib/biblioteca';
+/* BL F8 — la capa de integración: Recientes, la búsqueda global de la Biblioteca,
+   los favoritos y las acciones rápidas. Ninguna guarda un solo dato. */
+import {
+  CABECERA_BIBLIOTECA, TIPOS_BIBLIOTECA, tipoBiblioteca, recientes, MAX_RECIENTES,
+  buscarEnBiblioteca, resumenDeBusqueda, LIMITE_RESULTADOS,
+  favoritosDe, ACCIONES_RAPIDAS, contadores, totalElementos,
+} from '../lib/bibliotecaGlobal';
+import { DEBOUNCE_BUSQUEDA_MS } from '../lib/rendimiento';
 /* BL F7 — Colecciones tiene su propia librería. `crearColeccion` y
    `normalizarColeccion` vivían en `biblioteca.js` desde la F1 y se mudaron allí
    al desarrollarla: una sola fábrica, no dos. */
@@ -430,22 +438,19 @@ export default function LibraryView({
 
   // ── El lanzador ─────────────────────────────────────────────────────────
   if (!abierta) {
+    /* 🚨 BL F8 — *"que Biblioteca deje de sentirse como 6 herramientas separadas
+       y pase a sentirse como un único sistema personal de información"*. Debajo
+       de los seis cuadraditos —que siguen siendo **los protagonistas**— van
+       Recientes, la búsqueda global y los favoritos. **Ninguna de las tres es una
+       séptima mini-app**: son secciones de esta pantalla (apartados 3 y 9). */
     return (
-      <div className="space-y-4 pb-4">
-        <SectionTitle>Biblioteca</SectionTitle>
-        <div className="grid grid-cols-2 gap-3">
-          {MINI_APPS.map((app, i) => (
-            <TarjetaMiniApp
-              key={app.id}
-              app={app}
-              indice={i}
-              indicador={indicadorDe(app.id, datos)}
-              accent={accent}
-              onAbrir={() => abrir(app.id)}
-            />
-          ))}
-        </div>
-      </div>
+      <PantallaBiblioteca
+        datos={datos}
+        accent={accent}
+        onAbrirMiniApp={abrir}
+        onAbrirOriginal={abrirOriginal}
+        onCrearEn={(id) => { setAbierta(id); setCrear(true); setQuery(''); setFiltro('todos'); setFoco(null); }}
+      />
     );
   }
 
@@ -559,11 +564,16 @@ export default function LibraryView({
   if (abierta === 'documentos') {
     /* 🚨 BL F6 — Documentos guarda DOS cosas bajo el mismo techo: los archivos
        que Josué subió desde la Fase 11 y los documentos de texto que estrena esta
-       fase. Ninguna se lleva por delante a la otra. */
+       fase. Ninguna se lleva por delante a la otra.
+
+       ⚠️ BL F8 — `elementos` es ahora la SUMA de las dos listas, porque el
+       contador de la plaquita tenía que contarlas las dos y solo miraba una. La
+       pantalla las sigue necesitando separadas: los textos por un lado y los
+       archivos por otro, cada uno con su botón y su papelera. */
     return (
       <PantallaDocumentos
         documentos={biblioteca.documentos || []}
-        archivos={elementos}
+        archivos={archivos}
         urlsArchivos={urls}
         cabecera={cabecera}
         crear={crear}
@@ -3322,6 +3332,272 @@ function Cifra({ n, label, accent }) {
     <div className="rounded-xl px-2 py-2 text-center" style={{ background: COLORS.surface2 }}>
       <p className="text-lg font-bold" style={{ color: accent }}>{n}</p>
       <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{label}</p>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ENTREGA 3 · FASE 22 (BL F8) — INTEGRACIÓN Y EXPERIENCIA GLOBAL
+   ══════════════════════════════════════════════════════════════════════════
+
+   *"Todo debe sentirse como una única Biblioteca, no como seis módulos
+   pegados."*
+
+   🚨 Nada de lo que hay aquí guarda un dato: Recientes, la búsqueda, los
+   favoritos y los contadores **se derivan** de las listas que ya existen. Por
+   eso, en cuanto Josué toca una nota, sube sola en Recientes sin que nadie
+   sincronice nada. */
+
+/* La etiqueta de tipo que pide el apartado 27 (`ContentTypeBadge`). Una, usada
+   por Recientes, por la búsqueda y por los favoritos — no tres. */
+export function EtiquetaDeTipo({ tipo }) {
+  const t = tipoBiblioteca(tipo);
+  if (!t) return null;
+  return (
+    <span className="text-[10px] font-semibold rounded-full px-1.5 py-0.5 whitespace-nowrap" style={{ background: COLORS.surface2, color: COLORS.textMuted }}>
+      {t.nombre}
+    </span>
+  );
+}
+
+/* La fila de un elemento cualquiera de la Biblioteca (`RecentItem` del apartado
+   27). *"Al pulsar un elemento: **abrir directamente el contenido original**"* —
+   por eso solo recibe el tipo y el id, y quien navega es la pantalla. */
+export function FilaDeBiblioteca({ tipo, nombre, detalle, accent, indice = 0, onAbrir }) {
+  const Icono = iconoDeTipo(tipo);
+  return (
+    <button
+      onClick={onAbrir}
+      className={`w-full text-left ${CLASE_TARJETA}`}
+      style={{ animationDelay: retrasoDeTarjeta(indice) }}
+      aria-label={`Abrir ${nombre}`}
+    >
+      <Card style={{ padding: '0.7rem 0.85rem' }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: COLORS.surface2 }}>
+            <Icono size={15} style={{ color: accent }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{nombre}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <EtiquetaDeTipo tipo={tipo} />
+              {detalle ? <span className="text-[11px]" style={{ color: COLORS.textMuted }}>{detalle}</span> : null}
+            </div>
+          </div>
+        </div>
+      </Card>
+    </button>
+  );
+}
+
+/* ── La búsqueda global de la Biblioteca ──────────────────────────────────
+
+   *"La búsqueda debe sentirse instantánea. **No abrir una página nueva
+   obligatoriamente.** Puede utilizar: barra desplegable, overlay, modal, página
+   dedicada. Elegir la opción que mejor encaje con la arquitectura existente."*
+
+   ⚠️ Se despliega **debajo de la caja**, sin overlay: es lo que ya hacen el resto
+   de buscadores de la Biblioteca, y en un iPhone con el teclado abierto un modal
+   deja la lista en los 200 px que quedan.
+
+   ⚠️ Y el retardo es `DEBOUNCE_BUSQUEDA_MS`, el que usa toda la aplicación
+   (EH F44): escribir aquí un número a mano sería el segundo retardo. */
+export function BuscadorDeBiblioteca({ datos, accent, onAbrirOriginal }) {
+  const [texto, setTexto] = useState('');
+  const [consulta, setConsulta] = useState('');
+
+  useEffect(() => {
+    const t = setTimeout(() => setConsulta(texto), DEBOUNCE_BUSQUEDA_MS);
+    return () => clearTimeout(t);
+  }, [texto]);
+
+  const resultados = buscarEnBiblioteca(datos, consulta, LIMITE_RESULTADOS);
+  const resumen = resumenDeBusqueda(resultados);
+  const buscando = consulta.trim().length > 0;
+
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: COLORS.textMuted }} />
+        <TextInput
+          aria-label="Buscar en la Biblioteca"
+          value={texto}
+          onChange={(ev) => setTexto(ev.target.value)}
+          placeholder="Buscar en Biblioteca…"
+          style={{ paddingLeft: 34 }}
+        />
+        {texto ? (
+          <button
+            onClick={() => { setTexto(''); setConsulta(''); }}
+            className="absolute p-1.5"
+            style={{ right: 6, top: '50%', transform: 'translateY(-50%)' }}
+            aria-label="Borrar la búsqueda"
+          >
+            <X size={15} style={{ color: COLORS.textMuted }} />
+          </button>
+        ) : null}
+      </div>
+
+      {buscando && (
+        resultados.length === 0 ? (
+          <EmptyHint text="Nada en tu biblioteca coincide con esta búsqueda." />
+        ) : (
+          <>
+            {/* *"Cada resultado debe indicar claramente su tipo"*, y arriba
+                cuántos hay de cada uno — solo de los que tienen alguno. */}
+            <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+              {resumen.map((r) => `${r.n} ${r.n === 1 ? tipoBiblioteca(r.tipo).nombre.toLowerCase() : r.etiqueta.toLowerCase()}`).join(' · ')}
+            </p>
+            <div className="space-y-1.5">
+              {resultados.map((r, i) => (
+                <FilaDeBiblioteca
+                  key={`${r.tipo}-${r.id}`}
+                  tipo={r.tipo}
+                  nombre={r.nombre}
+                  accent={accent}
+                  indice={i}
+                  onAbrir={() => onAbrirOriginal(r.tipo, r.id)}
+                />
+              ))}
+            </div>
+          </>
+        )
+      )}
+    </div>
+  );
+}
+
+/* ── Las acciones rápidas ─────────────────────────────────────────────────
+
+   *"Desde Biblioteca: ＋ … Esto permite crear contenido sin entrar primero en
+   una mini-app."*
+
+   ⚠️ **Y no hay seis formularios aquí**: cada acción abre su mini-app con el
+   creador desplegado, que es el formulario que ya existe. Escribir otros seis
+   sería el duplicado que prohíbe el apartado 27. */
+export function AccionesRapidas({ accent, onCrearEn, onCerrar }) {
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className="text-sm font-bold" style={{ color: COLORS.text }}>Crear</p>
+        <GhostBtn onClick={onCerrar}>Cancelar</GhostBtn>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {ACCIONES_RAPIDAS.map((a) => {
+          const Icono = ICONOS_MINI_APP[a.icono] || FileText;
+          return (
+            <button
+              key={a.id}
+              onClick={() => onCrearEn(a.miniApp)}
+              className="flex items-center gap-2 rounded-xl px-2.5 py-2.5 text-left toque-44"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+              aria-label={a.etiqueta}
+            >
+              <Icono size={15} style={{ color: accent, flexShrink: 0 }} />
+              <span className="text-xs truncate" style={{ color: COLORS.text }}>{a.etiqueta}</span>
+            </button>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+/* ── La pantalla principal ────────────────────────────────────────────────
+
+   El orden es el del apartado 34: cabecera, los seis cuadraditos, Recientes,
+   buscar, favoritos, crear. */
+export function PantallaBiblioteca({ datos, accent, onAbrirMiniApp, onAbrirOriginal, onCrearEn }) {
+  const [creando, setCreando] = useState(false);
+  const ultimos = recientes(datos, MAX_RECIENTES);
+  const favoritos = favoritosDe(datos);
+  const total = totalElementos(datos);
+
+  return (
+    <div className="space-y-4 pb-4">
+      <div>
+        <SectionTitle>{CABECERA_BIBLIOTECA.titulo}</SectionTitle>
+        <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{CABECERA_BIBLIOTECA.frase}</p>
+      </div>
+
+      {/* *"Mantener los 6 cuadraditos como elemento PROTAGONISTA"*: van los
+          primeros y ocupan la pantalla, con su contador real debajo. */}
+      <div className="grid grid-cols-2 gap-3">
+        {MINI_APPS.map((app, i) => (
+          <TarjetaMiniApp
+            key={app.id}
+            app={app}
+            indice={i}
+            indicador={indicadorDe(app.id, datos)}
+            accent={accent}
+            onAbrir={() => onAbrirMiniApp(app.id)}
+          />
+        ))}
+      </div>
+
+      {/* El ＋ de crear cualquier cosa sin entrar antes en una mini-app. */}
+      {creando ? (
+        <AccionesRapidas
+          accent={accent}
+          onCerrar={() => setCreando(false)}
+          onCrearEn={(id) => { setCreando(false); onCrearEn(id); }}
+        />
+      ) : (
+        <button
+          onClick={() => setCreando(true)}
+          className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 toque-44"
+          style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: accent }}
+          aria-label="Crear algo nuevo en la Biblioteca"
+        >
+          <Plus size={15} strokeWidth={2.5} />
+          <span className="text-xs font-semibold">Crear</span>
+        </button>
+      )}
+
+      {/* La búsqueda global: solo cuando hay algo que buscar. Una caja de
+          búsqueda sobre una biblioteca vacía es un control que no hace nada. */}
+      {total > 0 && <BuscadorDeBiblioteca datos={datos} accent={accent} onAbrirOriginal={onAbrirOriginal} />}
+
+      {/* 🕘 Recientes. *"Esta sección es MUY IMPORTANTE."* Y no es una séptima
+          mini-app: vive solo aquí. */}
+      {ultimos.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>🕘 Recientes</p>
+          <div className="space-y-1.5">
+            {ultimos.map((r, i) => (
+              <FilaDeBiblioteca
+                key={`${r.tipo}-${r.id}`}
+                tipo={r.tipo}
+                nombre={r.nombre}
+                detalle={r.hace}
+                accent={accent}
+                indice={i}
+                onAbrir={() => onAbrirOriginal(r.tipo, r.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ⭐ Favoritos. *"Solo mostrarla si existen favoritos"*: sin ninguno, la
+          sección no existe. */}
+      {favoritos.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>⭐ Favoritos</p>
+          <div className="space-y-1.5">
+            {favoritos.map((f, i) => (
+              <FilaDeBiblioteca
+                key={`${f.tipo}-${f.id}`}
+                tipo={f.tipo}
+                nombre={f.nombre}
+                accent={accent}
+                indice={i}
+                onAbrir={() => onAbrirOriginal(f.tipo, f.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

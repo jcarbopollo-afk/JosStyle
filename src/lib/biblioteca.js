@@ -191,13 +191,29 @@ export const MINI_APPS = [
     emoji: '📄',
     de: 'archivos',
     coleccion: 'archivos',
+    /* 🚨 **BL F8 — Documentos se alimenta de DOS listas, y el contador solo miraba
+       una.** Desde que la BL F6 añadió los documentos de texto, la plaquita
+       enseñaba únicamente los archivos de la Fase 11: con tres documentos escritos
+       y un PDF decía *"1 documento"*, **sin que fallara nada**. Es justo lo que el
+       apartado 14 de esta fase prohíbe —*"los números deben proceder de datos
+       reales"*—, y no lo veían ni el build, ni el renderizado, ni las pruebas.
+
+       `fuentes` lo arregla en el sitio donde tenía que estar: **el catálogo**. Una
+       mini-app que mañana se alimente de dos sitios añade su línea aquí y el
+       contador se entera solo. */
+    fuentes: [
+      { de: 'archivos', coleccion: 'archivos' },
+      { de: 'biblioteca', coleccion: 'documentos' },
+    ],
     nueva: false,
     fase: 'BL F6',
     contador: ['documento', 'documentos'],
     vacio: {
       titulo: 'Tu archivo personal',
-      frase: 'PDFs, vídeos y fotos que quieras tener a mano.',
-      boton: 'Subir un archivo',
+      /* ⚠️ BL F8, apartado 15 — este texto se quedó viejo en la BL F6: Documentos
+         ya no son solo los archivos, también los textos que él escribe. */
+      frase: 'Guarda aquí tus textos y la documentación que quieras tener a mano.',
+      boton: 'Escribir un documento',
     },
   },
   {
@@ -333,11 +349,18 @@ export function normalizarBiblioteca(guardado) {
 
    Así que `contarMiniApp` cuenta la lista de verdad, y una mini-app vacía
    devuelve **0**, que la pantalla no pinta. */
+export function fuentesDe(app) {
+  if (!app) return [];
+  /* Una sola fuente es el caso normal; `fuentes` solo lo declara quien tiene más
+     de una, para no repetir lo mismo dos veces en cada línea. */
+  return app.fuentes || [{ de: app.de, coleccion: app.coleccion }];
+}
+
 export function elementosDe(id, { biblioteca, archivos } = {}) {
   const app = miniApp(id);
   if (!app) return [];
-  if (app.de === 'archivos') return lista(archivos);
-  return lista((biblioteca || {})[app.coleccion]);
+  return fuentesDe(app).flatMap((f) =>
+    (f.de === 'archivos' ? lista(archivos) : lista((biblioteca || {})[f.coleccion])));
 }
 
 export function contarMiniApp(id, datos) {

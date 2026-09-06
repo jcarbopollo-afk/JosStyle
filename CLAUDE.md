@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.42.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.43.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (44 fases — **21 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (44 fases — **22 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -165,7 +165,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 21 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 22 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -179,10 +179,12 @@ de error exacto** antes de asumir nada.
 **F15 (PWA, iPhone y auditoría final, v3.36.0)**, que 🏁 **CIERRÓ EL BLOQUE HOY Y CALENDARIO** —las
 diez fases HC—, y la **F16 (la Biblioteca como lanzador de mini-apps, v3.37.0)**, con la que empieza
 el bloque de **Biblioteca**, la **F17 (Libros, v3.38.0)**, la **F18 (Guardados, v3.39.0)** y la
-**F19 (Ideas, v3.40.0)**, la **F20 (Documentos, v3.41.0)** y la **F21 (Colecciones, v3.42.0)**, con
-la que quedan construidas 🎉 **las seis mini-apps de la Biblioteca**; la siguiente es la **22 — BL F8:
-integración y experiencia global**, que cierra el bloque. El índice, con la línea de cada fase dentro
-de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
+**F19 (Ideas, v3.40.0)**, la **F20 (Documentos, v3.41.0)**, la **F21 (Colecciones, v3.42.0)** y la
+**F22 (integración y experiencia global, v3.43.0)**, que 🏁 **CERRÓ EL BLOQUE DE BIBLIOTECA** —las
+ocho fases BL—. Con eso hay **dos bloques cerrados**: Hoy y Calendario (10/10) y Biblioteca (8/8). La
+siguiente es la **23 — PR F1: rediseño completo de Productividad**, con la que empieza el bloque de
+**Productividad** (7 fases). El índice, con la línea de cada fase dentro de la especificación
+literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
 rótulo dice *"Biblioteca 8"* y el documento va **F1, F2, F4, F5, F6, F6, F7, F8**— y **la Fase 6
@@ -203,6 +205,31 @@ aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con
 código de agosto mientras él decía *"la web sigue igual"*.
 
 ⚠️ **Y lo que dejaron las veinte primeras, que afecta a todas las demás:**
+
+- 🚨 **UNA MINI-APP PUEDE ALIMENTARSE DE DOS LISTAS, Y EL CONTADOR SOLO MIRABA UNA** (E3 F22).
+  Documentos son los archivos de la Fase 11 **y** los textos de la BL F6: con tres documentos
+  escritos y un PDF, la plaquita decía *"1 documento"* — **y no lo veían ni el build, ni el
+  renderizado, ni las pruebas de Node**, porque la pantalla se pinta perfecta. Se arregló en el
+  catálogo, con `fuentes`. Antes de dar por bueno un número, **mirar de cuántas listas sale**.
+- 🚨 **RECIENTES Y FAVORITOS NO SON UNA SÉPTIMA MINI-APP** (E3 F22, apartados 3 y 9): son secciones
+  de la pantalla principal. `MINI_APPS` sigue teniendo seis, con una prueba que lo comprueba.
+- 🚨 **"HACE 20 MIN" NO SE PUEDE CALCULAR** (E3 F22): `fechaLocalISO` guarda **el día, sin hora**, así
+  que decirlo sería inventarse una precisión que el dato no tiene (regla 8). Se dice *Hoy*, *Ayer*,
+  *Hace 3 días*. Si una fase futura necesita la hora, primero hay que guardarla.
+- ⚠️ **ANTES DE ESCRIBIR UN BUSCADOR, MIRAR CUÁL DE LOS CUATRO TOCA** (E3 F22, y EH F37 lo dijo
+  primero): `indiceBusqueda.js` busca **pantallas y acciones**, `buscarModulos()` los apartados de
+  Estilo de hombre, `buscadorEstilo.js` sus **elementos**, y `bibliotecaGlobal.js` los de la
+  Biblioteca. **Ninguno guarda un índice**: se quedaría viejo en cuanto él borre algo.
+- ⚠️ **UNA CASILLA ROJA DE UNA AUDITORÍA SE QUEDA ROJA** (E3 F22): *"una nota no se puede editar"* es
+  verdad —la Fase 11 le dio crear, leer y borrar— y la fase de integración no añade funciones.
+  Ponerla en verde sería mentir en la propia auditoría; va a `PENDIENTE_DE_JOSUE` con su motivo.
+- ⏸ **EL BOTÓN ATRÁS DEL MÓVIL NO ESTÁ RESUELTO, Y ESTÁ DICHO** (E3 F22, apartado 20). JosStyle
+  navega con estado de React, no con rutas: no hay entradas de historial que retroceder, así que el
+  gesto de atrás sale de la aplicación. El arreglo es `history.pushState` en la navegación de **toda
+  la app**; a medias sería peor. **Lo decide Josué.**
+- ⚠️ **EL ENUNCIADO PUEDE DAR POR HECHO ALGO QUE NO EXISTE** (E3 F22): da por hecho que Libros tiene
+  favoritos y **no los tiene**. Se reconocen los tres que sí (Guardados, Documentos, Colecciones) y
+  se declara cuál no y por qué — inventarle una estrella sin botón ni filtro es media función.
 
 - 🚨 **UNA COLECCIÓN GUARDA REFERENCIAS, NO CONTENIDO** (E3 F21). Añadir una nota a «Estudios» guarda
   `{ tipo, id }` y **nada más**, así que *"quitarla no la borra"* y *"eliminar la colección no elimina
