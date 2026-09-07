@@ -80,8 +80,18 @@ eq(r[0].texto, '1050 kcal', '🚨 el texto es lo consumido a secas, sin un «/ 2
    se busca el **mecanismo**, no la cifra—, así que lo que se comprueba es que la
    pantalla llame a `resumenDelDia` **sin objetivos**, que es lo que de verdad
    impide que aparezca un «/ 2.400» inventado. */
-ok(/resumenDelDia\(comidas, fecha, null\)/.test(soloCodigo(VISTA)),
-  '🚨 la pantalla pide el resumen SIN objetivos, y por eso no puede pintar ninguno');
+/* ⚠️ **Y esta comprobación cambió de guardia en la E3 F35**, como la de la
+   ventana de Sueño entre la SU F1 y la SU F2. Mientras los objetivos no
+   existían, vigilaba que la pantalla pidiera el resumen **con `null`**; la F35
+   es la fase que los trae, así que ahora vigila lo de después: que se los pase
+   **derivados de lo guardado** —nunca una cifra escrita a mano— y que la NU F1
+   siga siendo verdad **sin ellos**, que es lo que esta fase construyó. */
+ok(/resumenDelDia\(comidas, fecha, objetivos\)/.test(soloCodigo(VISTA)),
+  '🚨 la pantalla pide el resumen con los objetivos que él haya configurado (E3 F35)');
+ok(/objetivosParaResumen\(/.test(soloCodigo(VISTA)),
+  '⚠️ y salen de lo guardado, no de un número escrito en la pantalla');
+eq(resumenDelDia(comidas, HOY, null)[0].texto, '1050 kcal',
+  '🚨 y SIN configurarlos sigue siendo lo consumido a secas: la NU F1 no se ha roto');
 ok(!/objetivos\s*=\s*\{/.test(CODIGO_VISTA),
   '⚠️ y no hay ningún objeto de objetivos escrito en la vista');
 ok(!/2\.?400|1\.?850/.test(CODIGO_VISTA), '⚠️ ni los números del ejemplo del enunciado');
@@ -129,8 +139,14 @@ const n = normalizarNutricionDe({ comidas: [{ id: 'a' }], agua: { [HOY]: 1500 },
 eq(n.agua[HOY], 1500, '🚨 `normalizarNutricionDe` devuelve el módulo ENTERO: perder `agua` la borraría (regla 5)');
 eq(n.favoritos.length, 1, 'y los favoritos');
 eq(normalizarNutricionDe(null).comidas.length, 0, '⚠️ con basura tampoco revienta');
-ok(APP.includes('setNutricion(normalizarNutricionDe(nut))'),
+/* ⚠️ La E3 F35 y la E3 F36 lo envolvieron con los suyos —`normalizarNutricionF4(
+   normalizarNutricionObjetivos(normalizarNutricionDe(nut)))`—, así que lo que se
+   comprueba es que **siga siendo el de dentro**: el orden importa, porque cada
+   uno amplía lo que devuelve el anterior. */
+ok(/setNutricion\([^)]*normalizarNutricionDe\(nut\)/.test(APP),
   '🚨 y corre AL CARGAR, antes de que nadie lo lea (EH F46)');
+ok(APP.indexOf('normalizarNutricionObjetivos(normalizarNutricionDe(nut)') > 0,
+  '⚠️ con los de las fases siguientes por encima, en su orden');
 
 console.log('\n── 5. El selector de días (apartado 5) ──────────────────────────');
 eq(etiquetaDeDia(HOY, HOY), 'Hoy', '«HOY»');

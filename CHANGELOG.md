@@ -79,6 +79,16 @@ que es justo lo que hace que la app proponga y él decida, así que su valor se 
 `test-imports.mjs` cazó además **un `const` duplicado** en el recorrido, que no compila y cuesta doce
 minutos descubrir a las bravas: van dos en dos fases.
 
+### 🐛 Y dos comprobaciones de la NU F1 que estas dos fases dejaron viejas
+
+Es la lección de la SU F1 → SU F2 otra vez: **al cerrar una fase que cambia algo que otra vigilaba,
+buscar su comprobación.** La NU F1 tenía dos escritas a propósito para guardar lo que entonces no
+existía —que la pantalla pidiera el resumen **con `null`**, y el normalizador de carga a secas—, y
+son justo las dos cosas que traen la F35 y la F36. Ahora vigilan lo de después: que los objetivos
+salgan **de lo guardado**, que **sin configurarlos la NU F1 siga siendo verdad**, y que el
+normalizador de la F33 **siga siendo el de dentro**, con los de las fases siguientes por encima en
+su orden.
+
 ### Archivos
 
 - **Nuevo:** `src/lib/alimentos.js`, `scripts/test-alimentos.mjs` (151 comprobaciones).
