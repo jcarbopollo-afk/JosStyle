@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.53.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.54.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (46 fases — **32 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (46 fases — **33 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -138,11 +138,11 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **15 466 pruebas unitarias** con Node repartidas en **135 suites** (5 de ellas de auditoría),
-**2000 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **949
-comprobaciones sobre la aplicación de verdad en Chromium** — **18 426 comprobaciones**.
+Vite, **15 574 pruebas unitarias** con Node repartidas en **136 suites** (5 de ellas de auditoría),
+**2012 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **972
+comprobaciones sobre la aplicación de verdad en Chromium** — **18 569 comprobaciones**.
 
-Eso ya ha encontrado **noventa bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **noventa y dos bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`), una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles, una
@@ -168,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 32 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 33 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -190,9 +190,10 @@ v3.46.0)**, la **F26 (Tareas, v3.47.0)**, la **F27 (Metas y Objetivos, v3.48.0)*
 (Rutinas, v3.49.0)** y la **F29 (integración global, v3.50.0)**, que 🏁 **CERRÓ EL BLOQUE DE
 PRODUCTIVIDAD** —las siete fases PR—, y la **F30 (el apartado Bienestar, v3.51.0)**, que 🏁
 **CERRÓ EL BLOQUE BN**, la **F31 (Sueño, el registro simple, v3.52.0)** y la **F32 (la gráfica de
-7 días móviles, v3.53.0)**, que 🏁 **CERRÓ SUEÑO**. Con eso hay **cinco bloques cerrados**: Hoy y
-Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1) y Sueño (2/2). La que
-viene es la **33 — NU F1: Nutrición, rediseño premium**. El índice, con la
+7 días móviles, v3.53.0)**, que 🏁 **CERRÓ SUEÑO**, y la **F33 (Nutrición, rediseño premium,
+v3.54.0)**, con la que empieza el bloque de **Nutrición**. Con eso hay **cinco bloques cerrados**
+—Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1) y Sueño (2/2)— y
+**Nutrición va por 1 de 8**. La que viene es la **34 — NU F2: sistema de días e historial**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -327,6 +328,32 @@ código de agosto mientras él decía *"la web sigue igual"*.
 - 🐛 **Y una prueba busca el MECANISMO, no la palabra** (E3 F21, sexta vez): la constante que promete
   que los elementos **no** se eliminan se llama `AVISO_ELIMINAR`, y el barrido de borrados saltaba
   con la frase que hace la promesa.
+
+- 🚨 **UN NÚMERO DEL ENUNCIADO PUEDE SER UNA MAQUETA, NO UN DATO** (E3 F33). El apartado 2 de
+  Nutrición pide *"1.850 / 2.400 kcal"* **y en la línea siguiente prohíbe hardcodearlos**. Los
+  objetivos son la Fase 3, así que `objetivo` es **un campo del indicador**: sin él se ve lo
+  consumido y ya; con él aparecen el «de X» y la barra **sin tocar la pantalla**. Antes de pintar un
+  número de un enunciado, mirar si existe el dato que representa.
+- 🚨 **Y LA REGLA 7 PESA MÁS QUE UN APARTADO** (E3 F33): JosStyle no le pone objetivos calóricos
+  estrictos a un chaval de 16 años. Ni siquiera se usa el **TDEE que Ajustes ya calcula**, porque
+  sería la aplicación poniéndole una cifra. Los pondrá él.
+- 🚨 **UN SELECTOR QUE NO CAMBIA NADA ES UN CONTROL DECORATIVO** (E3 F33, regla 8). El enunciado
+  permitía que la zona de comidas fuera *"visual/no funcional si es necesario"* — pero el registro de
+  comidas **ya funcionaba** desde la Fase 4, así que un botón muerto habría sido un paso atrás. Cada
+  «+ Añadir» abre el formulario de siempre, y guarda **en el día y el momento elegidos**: el
+  formulario escribía `todayISO()` a pelo, lo que habría dejado el selector decorativo.
+- 🚨 **A LO GUARDADO ANTES NO SE LE INVENTA EL CAMPO NUEVO** (E3 F33): una comida sin `momento` se
+  queda en `null` y cae en **Extras**, el cajón que el propio enunciado define. Escribirle
+  `'desayuno'` sería inventarse cuándo se la comió.
+- 🐛 **DOS VISTAS SIN NI UN CASO DE RENDERIZADO EN LA MISMA ENTREGA** (E3 F30 y F33): `HealthView` y
+  `NutritionView`. **Al tocar una pantalla, comprobar primero que está en `smoke-vistas.jsx`** — que
+  se pinte en producción no significa que la pruebe nadie.
+- 🐛 **UN ESCENARIO DE PRUEBA CON LOS CAMPOS MAL NO FALLA: CALLA** (E3 F33, y EH F44 lo dijo primero).
+  El de Nutrición escribía `kcal`, `prot` y `carbs`, y **nadie lee esos campos**: el resumen del hub
+  venía calculando **0 kcal sobre una comida de 350** sin que ninguna prueba lo dijera.
+- 🐛 **Y una comprobación mía volvió a buscar UNA CIFRA en vez del MECANISMO** (E3 F33): barría la
+  librería buscando «2400» y saltaba con la línea que **demuestra** que el indicador sabe pintar un
+  objetivo cuando se lo dan. Lo que se comprueba es que la pantalla pida el resumen **sin objetivos**.
 
 - 🚨 **SIETE DÍAS DE CALENDARIO NO SON SIETE REGISTROS** (E3 F32, apartados 13 y 18). La gráfica de
   Sueño hacía `sueno.slice(-7)`, así que **si Josué no registraba tres días los sustituía por tres

@@ -13,6 +13,11 @@ import { completarTarea, normalizarTareasDe } from './lib/tareas';
    cargar, antes de que nadie lo lea (EH F46), y **no reescribe el campo viejo**: un
    `siesta: 0` de antes es un «no», nunca un sí. */
 import { normalizarSueno } from './lib/sueno';
+/* 🚨 E3 F33 (NU F1) — las comidas ganan `momento` (desayuno/comida/…). El
+   normalizador corre al cargar y **NO le inventa uno a lo guardado antes**: se
+   queda en `null` y al agrupar cae en Extras. Devuelve el módulo entero, porque
+   `saveData` sobrescribe (regla 5). */
+import { normalizarNutricionDe } from './lib/nutricion';
 /* 🚨 E3 F27 (PR F5) — Metas y Objetivos. Los normalizadores corren al cargar
    porque esta fase AÑADE campos a dos entidades que ya existían: sin ellos, lo
    guardado antes llega sin `estado`, sin `prioridad` y sin `tipo`, y el
@@ -526,7 +531,7 @@ export default function App() {
       setEconomia(normalizarEconomiaHucha(e));
       setSalud(sal);
       setSaludFotos(sf);
-      setNutricion(nut);
+      setNutricion(normalizarNutricionDe(nut));
       setCalisteniaVideos(cv);
       setEstudios(est);
       setNegocio(neg);

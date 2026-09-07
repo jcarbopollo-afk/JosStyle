@@ -1,5 +1,69 @@
 # CHANGELOG.md
 
+## v3.54.0 — Entrega 3 · Fase 33 (NU F1): rediseño premium del apartado Nutrición
+
+Empieza el bloque de **Nutrición** (8 fases). Ésta es de pantalla: el enunciado enumera siete cosas
+que **no** hay que implementar todavía —configuración, cálculo de objetivos, base de alimentos,
+registro funcional, historial, estadísticas e IA nutricional— y pide una *"base visual premium,
+sólida y escalable"*.
+
+### 🚨 El «/ 2.400 kcal» del enunciado es un ejemplo, no un dato
+
+El apartado 2 pide enseñar *"1.850 / 2.400 kcal"* con su porcentaje. Pero **los objetivos
+nutricionales no existen todavía** —son la Fase 3— y el propio apartado avisa: *"Los números son
+únicamente ejemplos visuales… NO hardcodear estos valores como datos reales del usuario"*. Pintar un
+objetivo inventado sería la cifra falsa que prohíben la regla 8 y el criterio de finalización de la
+propia fase.
+
+**Y la regla 7 va más lejos:** JosStyle no le pone a Josué objetivos calóricos estrictos. Tiene 16
+años y está creciendo. Los pondrá él, en la Fase 3.
+
+Así que `objetivo` es **un campo del indicador**, no un número escrito en el código: sin objetivo se
+ve lo consumido, grande y solo; con objetivo aparecen el «de X» y la barra, **sin tocar esta
+pantalla**. Hay pruebas de las dos cosas — el componente ya sabe hacerlo y hoy no puede.
+
+⚠️ Tampoco se usa el TDEE que Ajustes ya calcula: sería la aplicación poniéndole una cifra.
+
+### Lo que sí es real
+
+Todo lo demás. Los totales del día salen de **las comidas que ya tenía guardadas** desde la Fase 4
+del proyecto, y **el selector de días funciona**: las comidas ya llevan fecha, así que un selector
+que no cambiara nada sería un control decorativo (regla 8). Lo que se guarda va **al día elegido y
+al momento desde el que se abrió el formulario** — antes escribía `todayISO()` a pelo.
+
+### La pantalla
+
+- **Las kcal con jerarquía superior** y los tres macros en 2×2 debajo, compactos (apartados 4 y 9).
+- **‹ Ayer · Hoy · Mañana ›** con «Volver a hoy» cuando se ha ido.
+- **Los cinco momentos** —Desayuno, Comida, Merienda, Cena, Extras— cada uno con sus comidas, sus
+  kcal y su «+ Añadir», que abre el formulario de siempre: el del escáner de códigos y la foto del
+  plato.
+- **Estados vacíos con salida**, no un mensaje de error (apartado 7).
+
+### 🚨 Y a lo guardado antes no se le inventa un momento
+
+Una comida de antes de esta fase no tenía `momento`, y **no se le escribe uno**: se queda en `null` y
+al agrupar cae en **Extras**, que es el cajón que el propio enunciado define. Decir que aquella
+tostada fue un desayuno sería inventarse cuándo se la comió.
+
+### 🐛 Y dos agujeros que aparecieron por el camino
+
+- **`NutritionView` no tenía ni un caso de renderizado.** Es la **segunda** vista sin cobertura que
+  aparece en esta entrega, después de `HealthView` en la F30. Ahora tiene 12.
+- **El escenario de pruebas escribía `kcal`, `prot` y `carbs`** en la comida, y **nadie lee esos
+  campos**: se guarda con `calorias`, `proteinas` y `carbohidratos` desde la Fase 4. El resumen del
+  hub venía calculando **0 kcal sobre una comida de 350** y ninguna prueba lo decía. Es la lección de
+  EH F44: un escenario tiene que tener la forma de verdad del dato.
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde: **84 comprobaciones nuevas** en `scripts/test-nutricion.mjs`,
+**12 casos de renderizado nuevos** para una vista que no tenía ninguno (2012) y una sección nueva del
+recorrido que comprueba que **los números cambian al cambiar de día** y que la comida sin momento
+sigue apareciendo.
+
+---
+
 ## v3.53.0 — Entrega 3 · Fase 32 (SU F2): la gráfica de 7 días móviles 🏁 CIERRA SUEÑO
 
 La frase que sostiene la fase entera está en el apartado 13: **«7 días de calendario, no 7

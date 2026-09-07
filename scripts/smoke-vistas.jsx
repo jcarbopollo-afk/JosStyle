@@ -147,6 +147,7 @@ import AchievementsView from '../src/views/AchievementsView.jsx';
 import HubView from '../src/views/HubView.jsx';
 import WellbeingView from '../src/views/WellbeingView.jsx';
 import HealthView from '../src/views/HealthView.jsx';
+import NutritionView from '../src/views/NutritionView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
@@ -239,7 +240,12 @@ const lleno = {
   futbol: [{ id: 'f', fecha: HOY, resultado: '3-2' }],
   economia: { saldoInicial: 100, hucha: 50, movimientos: [{ id: 'm', fecha: HOY, tipo: 'gasto', cantidad: 12, concepto: 'Café' }] },
   salud: { medidas: [{ id: 'x', fecha: HOY, peso: 72, grasa: 12 }], historial: [] },
-  nutricion: { comidas: [{ id: 'c', fecha: HOY, nombre: 'Avena', kcal: 350, prot: 12, carbs: 55, grasas: 8 }], agua: { [HOY]: 1500 }, favoritos: [] },
+  /* 🐛 E3 F33 — el escenario escribía `kcal`, `prot` y `carbs`, y **nadie lee esos
+     campos**: la comida se guarda con `calorias`, `proteinas` y `carbohidratos`
+     desde la Fase 4. Así que el resumen del hub venía calculando 0 kcal sobre una
+     comida de 350 y ninguna prueba lo decía. Es la lección de EH F44: un escenario
+     tiene que tener la forma de verdad del dato. */
+  nutricion: { comidas: [{ id: 'c', fecha: HOY, nombre: 'Avena', calorias: 350, proteinas: 12, carbohidratos: 55, grasas: 8, fibra: 6, momento: 'desayuno' }], agua: { [HOY]: 1500 }, favoritos: [] },
   // RA Fase 1 — el hábito ya no guarda `rachaActual` ni `mejorRacha`: la racha sale del
   // historial. Se dejan tres días seguidos para que la tarjeta enseñe una racha de verdad.
   productividad: { habitos: [{ id: 'h', nombre: 'Leer', historial: { [AYER2]: true, [AYER]: true, [HOY]: true } }], rutinas: [], tareas: [{ id: 't', texto: 'Repasar', hecha: false, fecha: HOY }], metas: [], pomodoros: { [HOY]: 2 } },
@@ -2231,6 +2237,33 @@ const CASOS = [
     ];
   })(),
   ['WellbeingView', WellbeingView, (e) => ({ bienestar: e.bienestar, onAdd: noop, onDelete: noop, onAddReflexion: noop, onCompletarSesion: noop, accent })],
+
+  /* 🚨 Entrega 3 · F33 (NU F1) — **`NutritionView` tampoco tenía ni un caso**, y
+     es la segunda vista que aparece sin cobertura en esta entrega (la otra fue
+     `HealthView` en la F30). Al tocar una pantalla, comprobar primero si está
+     aquí. */
+  ...(() => {
+    const propsNu = (nutricion) => ({
+      nutricion, onAddComida: noop, onDeleteComida: noop, onAddFavorito: noop,
+      onRegistrarFavorito: noop, onEliminarFavorito: noop, onSetAgua: noop, accent,
+    });
+    return [
+      ['NutritionView', NutritionView, (e) => propsNu(e.nutricion)],
+      /* Un día entero con sus momentos, y una comida **sin momento** —de antes de
+         esta fase— que tiene que caer en Extras sin perderse. */
+      ['NutritionView · el día con momentos', NutritionView, () => propsNu({
+        comidas: [
+          { id: 'n1', fecha: HOY, nombre: 'Avena', calorias: 350, proteinas: 12, carbohidratos: 55, grasas: 8, fibra: 6, momento: 'desayuno' },
+          { id: 'n2', fecha: HOY, nombre: 'Pollo', calorias: 500, proteinas: 45, carbohidratos: 10, grasas: 15, fibra: 2, momento: 'comida' },
+          { id: 'n3', fecha: HOY, nombre: 'De antes', calorias: 200, proteinas: 5, carbohidratos: 30, grasas: 4, fibra: 1 },
+          { id: 'n4', fecha: AYER, nombre: 'Ayer', calorias: 900, proteinas: 30, carbohidratos: 90, grasas: 20, fibra: 5, momento: 'cena' },
+        ],
+        agua: { [HOY]: 1500 }, favoritos: [],
+      })],
+      /* Y el día vacío, que tiene que enseñar el estado vacío del apartado 7. */
+      ['NutritionView · sin nada hoy', NutritionView, () => propsNu({ comidas: [], agua: {}, favoritos: [] })],
+    ];
+  })(),
 
   /* 🚨 Entrega 3 · F30 (BN) — **`HealthView` no tenía ni un caso de renderizado.**
      Ni uno, desde que existe este banco: la pantalla de Salud se pintaba en

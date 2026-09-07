@@ -3456,4 +3456,63 @@ ok(guardado.filter((g) => g && g.key === 'sueno').length === escriturasAntes_sg,
 ok(almacen.sueno.length === 5 && almacen.sueno.some((n) => n.id === 'sg_1'),
   '🚨 y la noche de hace veinte días sigue guardada, aunque no salga en la gráfica');
 
+/* ── E3 F33 (NU F1) · EL APARTADO NUTRICIÓN ───────────────────────────────
+   🚨 **Lo que ninguna prueba de Node puede ver:** que la pantalla enseña las kcal
+   del día de verdad **sin inventarse un objetivo**, que el selector de días
+   cambia lo que se ve, que los cinco momentos están y que una comida guardada
+   antes de esta fase —sin momento— **sigue apareciendo**, en Extras. */
+const DN = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toLocaleDateString('sv-SE');
+};
+almacen.nutricion = {
+  comidas: [
+    { id: 'nu_1', fecha: DN(0), nombre: 'Avena con plátano', calorias: 350, proteinas: 12, carbohidratos: 55, grasas: 8, fibra: 6, momento: 'desayuno' },
+    { id: 'nu_2', fecha: DN(0), nombre: 'Pollo con arroz', calorias: 500, proteinas: 45, carbohidratos: 10, grasas: 15, fibra: 2, momento: 'comida' },
+    { id: 'nu_3', fecha: DN(0), nombre: 'Comida de antes de la fase', calorias: 200, proteinas: 5, carbohidratos: 30, grasas: 4, fibra: 1 },
+    { id: 'nu_4', fecha: DN(1), nombre: 'Cena de ayer', calorias: 900, proteinas: 30, carbohidratos: 90, grasas: 20, fibra: 5, momento: 'cena' },
+  ],
+  agua: {}, favoritos: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+ok(await pulsar('Bienestar'), 'se abre el área Bienestar');
+ok(await pulsar('Abrir Nutrición'), 'se entra en Nutrición');
+const nu = await esperarTexto(/Calorías/i);
+ok(/1050/.test(nu), '🚨 E3 F33 — LAS KCAL DEL DÍA, SUMADAS DE LAS COMIDAS DE VERDAD (apartado 2)');
+ok(/62/.test(nu) && /95/.test(nu), '⚠️ con sus macros');
+ok(!/2\.?400|1\.?850/.test(nu),
+  '🚨 Y SIN NINGÚN OBJETIVO INVENTADO: los del enunciado son un ejemplo de maqueta (apartado 2 + regla 8)');
+ok(!/\/ *\d+ *kcal/.test(nu),
+  '⚠️ ni un «/ X kcal»: los objetivos son la Fase 3 y todavía no existen');
+ok(/Hoy/.test(nu), '⚠️ el selector dice qué día se está mirando (apartado 5)');
+
+/* Apartado 6: los cinco momentos, con la comida sin momento en Extras. */
+for (const m of ['Desayuno', 'Comida', 'Merienda', 'Cena', 'Extras']) {
+  ok(new RegExp(m, 'i').test(nu), `⚠️ y está ${m}`);
+}
+ok(/Avena con plátano/i.test(nu), '⚠️ con su comida dentro');
+ok(/Comida de antes de la fase/i.test(nu),
+  '🚨 Y LA COMIDA SIN MOMENTO NO SE HA PERDIDO: cae en Extras, sin inventarle un desayuno');
+
+/* El selector de día cambia lo que se ve de verdad (regla 8). */
+ok(await pulsar('Día anterior'), 'se retrocede un día');
+const ayer_nu = await esperarTexto(/Ayer/i);
+ok(/Ayer/i.test(ayer_nu), '⚠️ y el rótulo lo dice');
+ok(/900/.test(ayer_nu) && !/1050/.test(ayer_nu),
+  '🚨 Y LOS NÚMEROS CAMBIAN CON EL DÍA: el selector no es decorativo (regla 8)');
+ok(/Cena de ayer/i.test(ayer_nu), '⚠️ con la comida de ese día');
+ok(await pulsar('Volver a hoy'), 'y se vuelve a hoy de un toque');
+const hoy_nu = await esperarTexto(/1050/);
+ok(/1050/.test(hoy_nu), '⚠️ con los números de hoy otra vez');
+
+/* Y el estado vacío del apartado 7, en un día sin nada. */
+ok(await pulsar('Día siguiente'), 'se va a mañana');
+const manana_nu = await esperarTexto(/Todavía no has registrado ninguna comida/i);
+ok(/Todavía no has registrado ninguna comida/i.test(manana_nu),
+  '🚨 UN DÍA SIN COMIDAS TIENE SU ESTADO VACÍO, con su salida (apartado 7)');
+ok(!/error/i.test(manana_nu), '⚠️ y no suena a mensaje de error');
+
 await salir(browser);

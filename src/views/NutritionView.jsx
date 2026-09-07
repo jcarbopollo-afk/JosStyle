@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
-import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2 } from 'lucide-react';
+import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { COLORS, VASO_ML } from '../tokens';
-import { uid, todayISO, formatFecha } from '../lib/helpers';
+import { uid, todayISO, addDays, hexToRgba } from '../lib/helpers';
+/* Entrega 3 · F33 (NU F1) — el catálogo de indicadores y momentos, el resumen del
+   día y los estados vacíos. 🚨 Los objetivos NO están: son la Fase 3, y aquí no
+   se inventa ninguno (`NO_EN_NU1`). */
+import {
+  MOMENTOS, resumenDelDia, porMomento, hayAlgoRegistrado,
+  etiquetaDeDia, VACIO_DIA, VACIO_MOMENTO,
+} from '../lib/nutricion';
 import { buscarProductoPorCodigoBarras } from '../lib/openFoodFacts';
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
@@ -19,7 +26,11 @@ function fileToBase64(file) {
   });
 }
 
-function MealForm({ onSave, onSaveFavorite, accent }) {
+/* 🚨 E3 F33 (NU F1) — el formulario recibe **el día que se está mirando y el
+   momento desde el que se ha abierto**. Antes escribía `todayISO()` a pelo, así
+   que con un selector de días que funciona habría guardado siempre en hoy: el
+   selector habría sido decorativo (regla 8). */
+function MealForm({ onSave, onSaveFavorite, accent, fecha, momentoId }) {
   const [form, setForm] = useState(emptyForm());
   const [scanning, setScanning] = useState(false);
   const [productoEscaneado, setProductoEscaneado] = useState(null);
@@ -108,7 +119,8 @@ function MealForm({ onSave, onSaveFavorite, accent }) {
     if (!form.nombre) return;
     const entry = {
       id: uid(),
-      fecha: todayISO(),
+      fecha: fecha || todayISO(),
+      momento: momentoId || null,
       nombre: form.nombre,
       calorias: Number(form.calorias) || 0,
       proteinas: Number(form.proteinas) || 0,
@@ -183,50 +195,196 @@ function MealForm({ onSave, onSaveFavorite, accent }) {
   );
 }
 
-function ComidasTab({ comidas, onAdd, onAddFavorito, onDeleteComida, accent }) {
-  const hoy = todayISO();
-  const deHoy = comidas.filter((c) => c.fecha === hoy);
-  const totales = deHoy.reduce(
-    (acc, c) => ({
-      calorias: acc.calorias + c.calorias,
-      proteinas: acc.proteinas + c.proteinas,
-      carbohidratos: acc.carbohidratos + c.carbohidratos,
-      grasas: acc.grasas + c.grasas,
-    }),
-    { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 }
-  );
-
+/* ── El resumen del día — apartados 2, 3 y 4 ───────────────────────────────
+   🚨 **Sin objetivo no se pinta un objetivo.** `resumenDelDia` deja `objetivo` y
+   `porcentaje` en `null` mientras no exista la Fase 3, así que aquí se ve lo
+   consumido y ya: ni un «/ 2.400» inventado, ni una barra al 0 %. El día que la
+   Fase 3 traiga los objetivos, esta pantalla **no cambia**. */
+function Indicador({ dato, accent, principal = false, indice = 0 }) {
   return (
-    <div className="space-y-4">
-      <Card>
-        <p className="text-xs" style={{ color: COLORS.textMuted }}>Hoy</p>
-        <p className="text-3xl font-extrabold mt-1" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-          {totales.calorias} <span className="text-base font-medium" style={{ color: COLORS.textMuted }}>kcal</span>
+    <div
+      className="hub-card rounded-2xl p-3"
+      style={{
+        animationDelay: `${indice * 60}ms`,
+        background: principal
+          ? `linear-gradient(135deg, ${hexToRgba(accent, 0.14)}, ${hexToRgba(accent, 0.04)})`
+          : COLORS.surface2,
+        border: `1px solid ${principal ? hexToRgba(accent, 0.3) : COLORS.border}`,
+      }}
+    >
+      <p className="text-xs flex items-center gap-1.5" style={{ color: COLORS.textMuted }}>
+        <span>{dato.emoji}</span>{dato.nombre}
+      </p>
+      <p
+        className={`${principal ? 'text-3xl' : 'text-xl'} font-extrabold mt-1 leading-none`}
+        style={{ color: principal ? accent : COLORS.text, fontFamily: "'Manrope', sans-serif" }}
+      >
+        {dato.consumido}
+        <span className={`${principal ? 'text-sm' : 'text-xs'} font-bold ml-1`} style={{ color: COLORS.textMuted }}>{dato.unidad}</span>
+      </p>
+      {/* Solo cuando de verdad hay un objetivo (apartados 3 y 4). */}
+      {dato.objetivo !== null && (
+        <>
+          <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>de {dato.objetivo} {dato.unidad}</p>
+          <div className="h-1 rounded-full mt-2 overflow-hidden" style={{ background: COLORS.border }}>
+            <div className="h-full rounded-full nu-progreso" style={{ width: `${dato.porcentajePintado}%`, background: accent }} />
+          </div>
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{dato.porcentaje} %</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ── El selector de días — apartado 5 ────────────────────────────────────── */
+function SelectorDia({ fecha, hoy, accent, onCambiar }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <button
+        onClick={() => onCambiar(addDays(fecha, -1))}
+        aria-label="Día anterior"
+        className="toque-44 p-1.5 -m-1.5 rounded-xl"
+        style={{ color: COLORS.text }}
+      >
+        <ChevronLeft size={18} />
+      </button>
+      <div className="text-center min-w-0">
+        <p className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+          {etiquetaDeDia(fecha, hoy)}
         </p>
-        <div className="flex gap-4 mt-2 text-xs" style={{ color: COLORS.textMuted }}>
-          <span>{round1(totales.proteinas)} g prot.</span>
-          <span>{round1(totales.carbohidratos)} g carb.</span>
-          <span>{round1(totales.grasas)} g grasa</span>
+        {fecha !== hoy && (
+          <button onClick={() => onCambiar(hoy)} className="text-xs font-semibold toque-44" style={{ color: accent }}>
+            Volver a hoy
+          </button>
+        )}
+      </div>
+      <button
+        onClick={() => onCambiar(addDays(fecha, 1))}
+        aria-label="Día siguiente"
+        className="toque-44 p-1.5 -m-1.5 rounded-xl"
+        style={{ color: COLORS.text }}
+      >
+        <ChevronRight size={18} />
+      </button>
+    </div>
+  );
+}
+
+/* ── Un momento del día, con sus comidas — apartado 6 ──────────────────────
+   🚨 *"Ahora mismo los botones pueden ser visuales/no funcionales si es
+   necesario"*, dice el enunciado — pero **el registro de comidas ya funciona**
+   desde la Fase 4 del proyecto, así que un botón que no hiciera nada sería un
+   control decorativo (regla 8). Cada «Añadir» abre el formulario que ya existe,
+   con su escáner de códigos y su foto, y guarda **en ese momento y en ese día**. */
+function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha, onAdd, onAddFavorito, onDeleteComida, indice }) {
+  const kcal = comidas.reduce((a, c) => a + (Number(c.calorias) || 0), 0);
+  return (
+    <div
+      className="hub-card rounded-2xl overflow-hidden"
+      style={{ animationDelay: `${indice * 60}ms`, background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+    >
+      <div className="flex items-center gap-2 p-3.5">
+        <span className="text-base">{mom.emoji}</span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{mom.nombre}</p>
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>
+            {comidas.length ? `${comidas.length} ${comidas.length === 1 ? 'comida' : 'comidas'} · ${kcal} kcal` : VACIO_MOMENTO}
+          </p>
         </div>
-      </Card>
+        <button
+          onClick={() => (abierto ? onCerrar() : onAbrir(mom.id))}
+          aria-label={`Añadir a ${mom.nombre}`}
+          className="toque-44 rounded-xl px-3 py-2 text-xs font-semibold flex-shrink-0 transition-transform active:scale-95"
+          style={{ background: abierto ? COLORS.surface2 : hexToRgba(accent, 0.14), color: abierto ? COLORS.textMuted : accent, border: `1px solid ${abierto ? COLORS.border : hexToRgba(accent, 0.3)}` }}
+        >
+          {abierto ? 'Cerrar' : '+ Añadir'}
+        </button>
+      </div>
 
-      <MealForm onSave={onAdd} onSaveFavorite={onAddFavorito} accent={accent} />
-
-      <div className="space-y-2">
-        {deHoy.length === 0 && <EmptyHint text="Todavía no has registrado ninguna comida hoy." />}
-        {[...deHoy].reverse().map((c) => (
-          <Card key={c.id} style={{ padding: '1rem' }}>
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold min-w-0 truncate" style={{ color: COLORS.text }}>{c.nombre}</p>
+      {comidas.length > 0 && (
+        <div className="px-3.5 pb-3 space-y-1.5">
+          {comidas.map((c) => (
+            <div key={c.id} className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm truncate" style={{ color: COLORS.text }}>{c.nombre}</p>
+                <p className="text-xs" style={{ color: COLORS.textMuted }}>
+                  {round1(c.proteinas)}g prot. · {round1(c.carbohidratos)}g carb. · {round1(c.grasas)}g grasa
+                </p>
+              </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <p className="text-sm font-bold" style={{ color: COLORS.text }}>{c.calorias} kcal</p>
                 <BotonBorrar onClick={() => onDeleteComida(c.id)} label="Eliminar comida" />
               </div>
             </div>
-            <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
-              {round1(c.proteinas)}g prot. · {round1(c.carbohidratos)}g carb. · {round1(c.grasas)}g grasa · {round1(c.fibra)}g fibra
-            </p>
-          </Card>
+          ))}
+        </div>
+      )}
+
+      {abierto && (
+        <div className="px-3.5 pb-3.5">
+          <MealForm onSave={onAdd} onSaveFavorite={onAddFavorito} accent={accent} fecha={fecha} momentoId={mom.id} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ComidasTab({ comidas, onAdd, onAddFavorito, onDeleteComida, accent }) {
+  const hoy = todayISO();
+  const [fecha, setFecha] = useState(hoy);
+  const [momentoAbierto, setMomentoAbierto] = useState(null);
+
+  /* 🚨 Los números salen de las comidas de verdad, del día que se está mirando.
+     `objetivos` va en `null` a propósito: son la Fase 3 (ver `NO_EN_NU1`). */
+  const resumen = resumenDelDia(comidas, fecha, null);
+  const principal = resumen.find((r) => r.principal);
+  const macros = resumen.filter((r) => !r.principal);
+  const grupos = porMomento(comidas, fecha);
+  const hayComidas = hayAlgoRegistrado(comidas, fecha);
+
+  const cambiarDia = (f) => { setFecha(f); setMomentoAbierto(null); };
+
+  return (
+    <div className="space-y-4">
+      <SelectorDia fecha={fecha} hoy={hoy} accent={accent} onCambiar={cambiarDia} />
+
+      {/* Apartado 4 — las kcal con jerarquía superior, y los tres macros en 2×2
+          debajo (apartado 9: móvil primero, sin desplazamiento horizontal). */}
+      <div className="space-y-2.5">
+        <Indicador dato={principal} accent={accent} principal indice={0} />
+        <div className="grid grid-cols-2 gap-2.5">
+          {macros.map((m, i) => <Indicador key={m.id} dato={m} accent={accent} indice={i + 1} />)}
+        </div>
+      </div>
+
+      {/* Apartado 7 — el estado vacío, que no es un mensaje de error. */}
+      {!hayComidas && (
+        <Card>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{VACIO_DIA.titulo}</p>
+          <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{VACIO_DIA.detalle}</p>
+          <div style={{ width: 170 }}>
+            <PrimaryButton accent={accent} icon={Plus} onClick={() => setMomentoAbierto(MOMENTOS[0].id)}>{VACIO_DIA.accion}</PrimaryButton>
+          </div>
+        </Card>
+      )}
+
+      {/* Apartado 6 — la zona de comidas, con los cinco momentos. */}
+      <div className="space-y-2.5">
+        {MOMENTOS.map((m, i) => (
+          <MomentoDelDia
+            key={m.id}
+            mom={m}
+            comidas={grupos[m.id]}
+            abierto={momentoAbierto === m.id}
+            onAbrir={setMomentoAbierto}
+            onCerrar={() => setMomentoAbierto(null)}
+            accent={accent}
+            fecha={fecha}
+            onAdd={onAdd}
+            onAddFavorito={onAddFavorito}
+            onDeleteComida={onDeleteComida}
+            indice={i}
+          />
         ))}
       </div>
     </div>

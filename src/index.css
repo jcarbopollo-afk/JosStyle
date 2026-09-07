@@ -428,6 +428,13 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
   transition: width 380ms var(--ease-premium), background 380ms var(--ease-premium);
 }
 
+/* Entrega 3 · F33 (NU F1) — *"Progreso animado"* (apartado 10) en los indicadores
+   de Nutrición. Va aquí, y no en un `style` de la vista, para que respete solo
+   «Reducir movimiento» como todas las demás (E3 F14). */
+.nu-progreso {
+  transition: width 420ms var(--ease-premium);
+}
+
 /* Entrega 3 · F25 (PR F3) — Pomodoro.
    *"Debe existir una animación/progreso circular que represente el tiempo
    restante… animaciones fluidas y que no consuman recursos innecesariamente."*
