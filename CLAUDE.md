@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.51.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.52.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (46 fases — **30 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (46 fases — **31 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -138,11 +138,11 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **15 265 pruebas unitarias** con Node repartidas en **133 suites** (5 de ellas de auditoría),
-**1980 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **908
-comprobaciones sobre la aplicación de verdad en Chromium** — **18 164 comprobaciones**.
+Vite, **15 384 pruebas unitarias** con Node repartidas en **134 suites** (5 de ellas de auditoría),
+**1992 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **935
+comprobaciones sobre la aplicación de verdad en Chromium** — **18 322 comprobaciones**.
 
-Eso ya ha encontrado **ochenta y seis bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **ochenta y nueve bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`), una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles, una
@@ -168,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 30 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 31 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -189,9 +189,10 @@ ocho fases BL—. La
 v3.46.0)**, la **F26 (Tareas, v3.47.0)**, la **F27 (Metas y Objetivos, v3.48.0)**, la **F28
 (Rutinas, v3.49.0)** y la **F29 (integración global, v3.50.0)**, que 🏁 **CERRÓ EL BLOQUE DE
 PRODUCTIVIDAD** —las siete fases PR—, y la **F30 (el apartado Bienestar, v3.51.0)**, que 🏁
-**CERRÓ EL BLOQUE BN**. Con eso hay **cuatro bloques cerrados**: Hoy y Calendario
-(10/10), Biblioteca (8/8), Productividad (7/7) y Bienestar (1/1). La que viene es
-la **31 — SU F1: Sueño, registro simple y experiencia premium**. El índice, con la
+**CERRÓ EL BLOQUE BN**, y la **F31 (Sueño, el registro simple, v3.52.0)**. Con eso hay **cuatro
+bloques cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7) y Bienestar
+(1/1)— y **Sueño va por 1 de 2**. La que viene es
+la **32 — SU F2: la gráfica de 7 días móviles**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -326,6 +327,31 @@ código de agosto mientras él decía *"la web sigue igual"*.
 - 🐛 **Y una prueba busca el MECANISMO, no la palabra** (E3 F21, sexta vez): la constante que promete
   que los elementos **no** se eliminan se llama `AVISO_ELIMINAR`, y el barrido de borrados saltaba
   con la frase que hace la promesa.
+
+- 🚨 **`Number(null)` ES 0, Y POR TERCERA VEZ** (E3 F31; EH F11 y EH F60 fueron las otras). Una
+  noche **sin contestar la calidad** se redondeaba a 1 y la pantalla encendía 😫 **Fatal**: una cara
+  que Josué no eligió, sobre una pregunta que no contestó. **Un dato que no está no es un cero**, y
+  la guarda va en el código, no en un comentario: `v === null || v === undefined || v === ''`.
+- 🚨 **UN CAMPO QUE PASA A PODER SER `null` ROMPE A TODOS LOS QUE LO ESCRIBÍAN** (E3 F31): el hub de
+  área, la tarjeta de Hoy y la exportación ponían `Calidad ${x}/5`, o sea **«Calidad null/5»** en la
+  cara de Josué (EH F62). Y la exportación leía `e.siesta` a secas, así que toda noche nueva habría
+  salido como **«siesta undefinedmin»**. **Al hacer opcional un campo, buscar quién lo daba por
+  hecho** — es la lección de la E3 F24 sobre las frecuencias, en otro sitio.
+- 🚨 **CUANDO EL ENUNCIADO SE CONTRADICE A SÍ MISMO, MANDA LA REGLA DEL PROYECTO** (E3 F31): el
+  apartado 9 pide guardar *"la duración calculada"* y el 10 dice *"No dupliques sistemas de
+  almacenamiento"*. `calcularDuracion()` ya la calcula y la usan la gráfica, Hoy, el hub, las
+  correlaciones y la exportación: guardarla sería una copia que miente al corregir una hora. **Se
+  deriva, y se declara por qué** en `NO_SE_GUARDA`.
+- ⚠️ **UNA ESCALA QUE OTROS LEEN NO SE CAMBIA: SE TRADUCE** (E3 F31). La calidad se contesta con tres
+  caras y **se sigue guardando 1-5**, que es lo que pide el apartado 2 y lo que ya leían cuatro
+  sitios. Cambiar la escala habría roto todos para no ganar nada.
+- ⚠️ **UN «3+» NO ES UN 3** (E3 F31): las interrupciones se guardan acotadas a 3 y **se enseñan como
+  «3+»**, porque no se sabe si fueron tres o siete. Enseñar «3» sería una precisión inventada.
+- ⚠️ **NINGUNA RESPUESTA VIENE PUESTA** (E3 F31, y HT F3, EH F28 y la E3 F19 lo dijeron antes): ni
+  una cara, ni un número de interrupciones, ni un «sí» a la siesta. Solo las horas, que son un reloj.
+- ⚠️ **Y UNA MIGRACIÓN NO CONVIERTE UN CERO EN UN SÍ** (E3 F31): un `siesta: 0` guardado era «no hice
+  siesta», que es exactamente lo que ahora dice `false`. Corre al cargar (`normalizarSueno` en
+  `App.jsx`) y **no reescribe el campo viejo**.
 
 - 🚨 **UN APARTADO Y EL MÓDULO DE DENTRO NO PUEDEN LLAMARSE IGUAL** (E3 F30, apartado 3). El área de
   la barra inferior era «Salud» y su primer módulo también, así que al entrar se leía el mismo nombre

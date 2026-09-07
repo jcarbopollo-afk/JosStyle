@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F31 — Sueño: el registro simple.
+if node --import ./scripts/resolver-vite.mjs scripts/test-sueno.mjs >/tmp/jc_sueno.log 2>&1; then
+  ok "Sueño: registro simple (E3 F31) — $(grep -c '✓' /tmp/jc_sueno.log) comprobaciones"
+else
+  fallo "Falla el registro de Sueño (E3 F31)"; grep '✗' /tmp/jc_sueno.log
+fi
+
 # Entrega 3 · F30 — el apartado Bienestar.
 if node --import ./scripts/resolver-vite.mjs scripts/test-bienestar.mjs >/tmp/jc_bienestar.log 2>&1; then
   ok "Bienestar: rediseño del apartado (E3 F30) — $(grep -c '✓' /tmp/jc_bienestar.log) comprobaciones"

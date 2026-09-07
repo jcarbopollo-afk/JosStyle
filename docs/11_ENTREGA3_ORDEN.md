@@ -51,7 +51,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 28 ✅ | PR | F6 — Rutinas — **hecha (v3.49.0)** 🚨 separa plantilla y ejecución | 13738 |
 | 29 ✅ | PR | F7 — Integración global y sistema inteligente — **hecha (v3.50.0)** 🏁 cierra PR | 14284 |
 | 30 ✅ | **BN** Bienestar | Rediseño y reorganización del apartado — **hecha (v3.51.0)** 🏁 cierra BN | 15109 |
-| 31 | **SU** Sueño | F1 — Registro simple y experiencia premium | 15282 |
+| 31 ✅ | **SU** Sueño | F1 — Registro simple y experiencia premium — **hecha (v3.52.0)** | 15282 |
 | 32 | SU | F2 — Gráfica de 7 días móviles | 15543 |
 | 33 | **NU** Nutrición | F1 — Rediseño premium | 15931 |
 | 34 | NU | F2 — Sistema de días e historial | 16289 |
@@ -68,7 +68,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 45 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 46 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 30 de 46 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0, **BL F1** v3.37.0, **BL F2** v3.38.0, **BL F4** v3.39.0, **BL F5** v3.40.0, **BL F6** v3.41.0, **BL F7** v3.42.0, **BL F8** v3.43.0, **PR F1** v3.44.0, **PR F2** v3.45.0, **PR F3** v3.46.0, **PR F4** v3.47.0, **PR F5** v3.48.0, **PR F6** v3.49.0, **PR F7** v3.50.0, **BN** v3.51.0). 🏁 **CUATRO BLOQUES CERRADOS: Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7) y Bienestar (1/1)**. La siguiente es la **31 — SU F1: Sueño, registro simple y experiencia premium**, línea 15282.
+**Por dónde va:** 31 de 46 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0, **BL F1** v3.37.0, **BL F2** v3.38.0, **BL F4** v3.39.0, **BL F5** v3.40.0, **BL F6** v3.41.0, **BL F7** v3.42.0, **BL F8** v3.43.0, **PR F1** v3.44.0, **PR F2** v3.45.0, **PR F3** v3.46.0, **PR F4** v3.47.0, **PR F5** v3.48.0, **PR F6** v3.49.0, **PR F7** v3.50.0, **BN** v3.51.0, **SU F1** v3.52.0). 🏁 **CUATRO BLOQUES CERRADOS: Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7) y Bienestar (1/1)**; **Sueño va por 1 de 2**. La siguiente es la **32 — SU F2: la gráfica de 7 días móviles**, línea 15543.
 
 🔢 **Y el índice decía 44 cuando son 46** (corregido el 2026-09-07, al cerrar la fase 29). Entre
 **BN — Bienestar** (línea 15109) y **NU F1 — Nutrición** (15931) el documento trae **dos fases de

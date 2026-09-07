@@ -8,6 +8,11 @@ import { anadirApunte, resumenDelDia, progresoDelDia, apuntesDe } from './lib/ce
    Josué no salían en ninguna de las cuatro. Se migra al cargar, antes de que
    nada las lea. */
 import { completarTarea, normalizarTareasDe } from './lib/tareas';
+/* 🚨 E3 F31 (SU F1) — la siesta dejó de ser «un número de minutos» y pasó a ser una
+   pregunta de sí o no con sus minutos aparte. `normalizarSueno` MIGRA lo guardado al
+   cargar, antes de que nadie lo lea (EH F46), y **no reescribe el campo viejo**: un
+   `siesta: 0` de antes es un «no», nunca un sí. */
+import { normalizarSueno } from './lib/sueno';
 /* 🚨 E3 F27 (PR F5) — Metas y Objetivos. Los normalizadores corren al cargar
    porque esta fase AÑADE campos a dos entidades que ya existían: sin ellos, lo
    guardado antes llega sin `estado`, sin `prioridad` y sin `tipo`, y el
@@ -511,7 +516,7 @@ export default function App() {
       // no se quede con esos campos en `undefined` — mismo patrón que ya se usaba en
       // Calistenia (Fase 5) para no romper datos antiguos al añadir campos nuevos.
       setPerfil({ ...DEFAULT_PERFIL, ...p });
-      setSueno(s);
+      setSueno(normalizarSueno(s));
       setCalistenia(c);
       setFutbol(f);
       /* ⚠️ Entrega 3 · F4 — `normalizarEconomiaHucha` rellena los DOS campos nuevos de

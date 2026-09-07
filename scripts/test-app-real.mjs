@@ -3330,4 +3330,65 @@ ok(/Historial/i.test(plegado_bn), '⚠️ pero la sección sigue ahí para volve
 ok(!/(^|[^a-zA-ZáéíóúñÁÉÍÓÚÑ])Salud([^a-zA-ZáéíóúñÁÉÍÓÚÑ]|$)/.test(plegado_bn.replace(/Analizar mi salud/gi, '')),
   '🚨 Y «SALUD» A SECAS NO SE LEE EN NINGUNA PARTE: la redundancia del apartado 3 ha desaparecido');
 
+/* ── E3 F31 (SU F1) · EL REGISTRO DE SUEÑO ────────────────────────────────
+   🚨 **Lo que ninguna prueba de Node puede ver:** que la calidad se contesta con
+   una cara y no escribiendo un número, que la duración se ve MIENTRAS elige las
+   horas, que los minutos de siesta solo salen si dice que sí, y que lo que
+   guarda tiene la forma nueva.
+
+   ⚠️ Y una noche guardada con la forma VIEJA —`siesta` en minutos— para
+   comprobar que la migración funciona en la aplicación de verdad. */
+almacen.sueno = [
+  { id: 'su_v1', fecha: '2026-09-01', horaDormir: '23:30', horaDespertar: '07:00', calidad: 4, interrupciones: 1, siesta: 30 },
+  { id: 'su_v2', fecha: '2026-09-02', horaDormir: '00:15', horaDespertar: '08:00', calidad: 1, interrupciones: 0, siesta: 0 },
+];
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+ok(await pulsar('Bienestar'), 'se abre el área Bienestar');
+ok(await pulsar('Abrir Sueño'), 'se entra en Sueño');
+const su = await esperarTexto(/Media últimos/i);
+ok(/Media últimos/i.test(su), '🚨 E3 F31 — LA MEDIA DE SIEMPRE SIGUE AHÍ (apartado 8)');
+ok(/🙂/.test(su), '🚨 Y LA LISTA ENSEÑA LA CARA, no el «4/5» de antes');
+ok(/😫/.test(su), '⚠️ y la noche floja, la suya');
+ok(/7 h 30 min/.test(su), '⚠️ con la duración escrita como pide el apartado 1');
+ok(/siesta de 30 min/.test(su),
+  '🚨 Y LA SIESTA GUARDADA EN MINUTOS SE HA MIGRADO: aparece como una siesta, no como un campo perdido');
+
+ok(await pulsar('Registrar'), 'se abre el formulario');
+const form_su = await esperarTexto(/¿Cómo has dormido\?/i);
+ok(/Tu noche/i.test(form_su), '🚨 EL REGISTRO SON CUATRO BLOQUES: 🌙 Tu noche…');
+ok(/¿Cómo has dormido\?/i.test(form_su), '⚠️ …¿Cómo has dormido?…');
+ok(/Durante la noche/i.test(form_su), '⚠️ …🌙 Durante la noche…');
+ok(/Ayer/i.test(form_su), '⚠️ …y ☀️ Ayer');
+ok(/8 h/.test(form_su),
+  '🚨 Y LA DURACIÓN SE VE MIENTRAS ELIGE, sin haber guardado nada todavía (apartado 1)');
+ok(/De maravilla/i.test(form_su) && /Fatal/i.test(form_su),
+  '🚨 la calidad son TRES CARAS con su palabra, no un número que escribir');
+ok(/3\+/.test(form_su), '⚠️ y las interrupciones traen su «3+» (apartado 3)');
+ok(!/¿Cuántos minutos\?/i.test(form_su),
+  '🚨 Y LOS MINUTOS DE SIESTA NO SE VEN TODAVÍA: solo salen si dice que sí (apartado 4)');
+
+ok(await pulsar('Sí dormí siesta'), 'se dice que sí hubo siesta');
+const conSiesta_su = await esperarTexto(/¿Cuántos minutos\?/i);
+ok(/¿Cuántos minutos\?/i.test(conSiesta_su), '🚨 Y AHORA SÍ aparecen los minutos');
+
+ok(await pulsar('De maravilla'), 'se elige 🤩 De maravilla');
+ok(await pulsar('2 interrupciones'), 'y dos interrupciones');
+ok(await pulsar('Guardar noche'), 'se guarda la noche');
+await page.waitForTimeout(900);
+
+const guardadoSueno = guardado.filter((g) => g && g.key === 'sueno').at(-1)?.value;
+const nueva_su = (guardadoSueno || []).at(-1);
+ok(!!nueva_su, '🚨 PERSISTENCIA: la noche se ESCRIBE en Supabase');
+ok(nueva_su && nueva_su.calidad === 5,
+  '🚨 Y POR DENTRO SE GUARDA UN 5, no el nombre de la cara: la escala 1-5 es la que leen las otras pantallas');
+ok(nueva_su && nueva_su.interrupciones === 2, '⚠️ con sus interrupciones');
+ok(nueva_su && nueva_su.siestaAyer === true, '⚠️ y la siesta como un sí, no como un número de minutos');
+ok(nueva_su && !('duracion' in nueva_su),
+  '🚨 Y SIN NINGÚN CAMPO DE DURACIÓN: se calcula de las dos horas, no se copia (apartado 10)');
+/* 🚨 Y la noche vieja SIGUE ESTANDO: migrar no es perder. */
+ok((guardadoSueno || []).some((n) => n.id === 'su_v1'),
+  '🚨 y las dos noches de antes siguen ahí: la migración no pierde nada (apartado 9)');
+
 await salir(browser);

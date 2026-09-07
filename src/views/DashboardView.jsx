@@ -19,6 +19,7 @@ import { resumenParaHoy } from '../lib/integracionPR';
    forma educada de decir «hay dos». Ahora hay una, y devuelve `null` en vez de un `Infinity`
    cuando falta la altura. */
 import { imcDe } from '../lib/salud';
+import { calidadDe } from '../lib/sueno';
 import { ResumenRachaHoy } from './RachasView';
 import { resumenDelDia, eventosDelDia } from '../lib/calendario';
 import { puntuacionDelDia, mensajePuntuacion } from '../lib/puntuacion';
@@ -724,7 +725,11 @@ export default function DashboardView({
               icon={Moon} accent={accent} titulo="Sueño"
               vacio={!ultimoSueno}
               valor={ultimoSueno ? `${formatHoras(calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar))} h` : undefined}
-              sub={ultimoSueno ? `Calidad ${ultimoSueno.calidad}/5` : 'Toca para registrar tu primera noche'}
+              /* Entrega 3 · F31 (SU F1) — la cara que eligió, no el número; y si esa
+                 noche no contestó la calidad, se dice, nunca «Calidad null/5». */
+              sub={ultimoSueno
+                ? (calidadDe(ultimoSueno.calidad) ? `${calidadDe(ultimoSueno.calidad).emoji} ${calidadDe(ultimoSueno.calidad).nombre}` : 'Sin calidad anotada')
+                : 'Toca para registrar tu primera noche'}
               onClick={() => onNavegar('sueno')}
             />
           )}
@@ -865,7 +870,7 @@ export default function DashboardView({
       <AIPanel
         label="Consejo del día"
         accent={accent}
-        buildPrompt={() => `Datos de hoy de Josué — sueño: ${ultimoSueno ? `${formatHoras(calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar))}h, calidad ${ultimoSueno.calidad}/5` : 'sin registrar'}; habilidades de calistenia con progreso: ${habilidadesActivas}; partidos de fútbol registrados: ${futbol.length}; movimientos económicos registrados: ${economia.movimientos.length}. Dame un consejo breve y accionable para hoy.`}
+        buildPrompt={() => `Datos de hoy de Josué — sueño: ${ultimoSueno ? `${formatHoras(calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar))}h, calidad ${ultimoSueno.calidad == null ? 'sin contestar' : `${ultimoSueno.calidad}/5`}` : 'sin registrar'}; habilidades de calistenia con progreso: ${habilidadesActivas}; partidos de fútbol registrados: ${futbol.length}; movimientos económicos registrados: ${economia.movimientos.length}. Dame un consejo breve y accionable para hoy.`}
       />
       {creandoHoy && (
         <QuickAdd

@@ -21,6 +21,10 @@ import { resumenHabito } from './rachas';
 import { panelRachas, panelHabitos } from './rachasServicio';
 import { resumenHorario } from './horario';
 import { totalBiblioteca } from './biblioteca.js';
+/* Entrega 3 · F31 (SU F1) — la calidad se enseña con su cara, que es la respuesta
+   que dio, y **puede no haberla**: `Calidad null/5` es una palabra técnica en la
+   pantalla de Josué (EH F62). */
+import { calidadDe } from './sueno.js';
 
 function ultimoPorFecha(lista) {
   if (!lista || lista.length === 0) return null;
@@ -52,7 +56,8 @@ export function calcularResumenModulo(id, s) {
       const ultimo = ultimoPorFecha(s.sueno);
       if (!ultimo) return { linea1: 'Sin registros todavía', linea2: 'Toca para registrar cómo dormiste', estado: 'vacio' };
       const horas = calcularDuracion(ultimo.horaDormir, ultimo.horaDespertar);
-      return { linea1: `${formatHoras(horas)} h dormidas`, linea2: `Calidad ${ultimo.calidad}/5`, estado: 'activo' };
+      const cal = calidadDe(ultimo.calidad);
+      return { linea1: `${formatHoras(horas)} h dormidas`, linea2: cal ? `${cal.emoji} ${cal.nombre}` : 'Sin calidad anotada', estado: 'activo' };
     }
     case 'nutricion': {
       const hoy = todayISO();

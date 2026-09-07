@@ -548,6 +548,24 @@ const CASOS = [
   })(),
   ['DashboardView', DashboardView, propsDashboard],
   ['SleepView', SleepView, (e) => ({ sueno: e.sueno, onAdd: noop, onDelete: noop, accent })],
+  /* Entrega 3 · F31 (SU F1) — el registro nuevo y, sobre todo, **lo guardado con
+     la forma vieja**: `siesta` en minutos y sin `siestaAyer`. Y una noche sin
+     calidad contestada, que es la que pintaba 😫 Fatal sin que él la eligiera. */
+  ['SleepView · con el formulario abierto', SleepView, (e) => ({
+    sueno: e.sueno, onAdd: noop, onDelete: noop, accent,
+    foco: { accion: 'registrar' }, onFocoConsumido: noop,
+  })],
+  ['SleepView · datos con la forma vieja', SleepView, () => ({
+    sueno: [
+      { id: 's1', fecha: AYER2, horaDormir: '23:30', horaDespertar: '07:00', calidad: 4, interrupciones: 1, siesta: 30 },
+      { id: 's2', fecha: AYER, horaDormir: '00:15', horaDespertar: '08:00', calidad: 1, interrupciones: 0, siesta: 0 },
+    ],
+    onAdd: noop, onDelete: noop, accent,
+  })],
+  ['SleepView · una noche sin calidad', SleepView, () => ({
+    sueno: [{ id: 's3', fecha: HOY, horaDormir: '23:00', horaDespertar: '07:00', interrupciones: 0 }],
+    onAdd: noop, onDelete: noop, accent,
+  })],
   ['FinanceView', FinanceView, (e) => ({ economia: e.economia, onAdd: noop, onDelete: noop, onUpdate: noop, accent })],
   ['ObjectivesView', ObjectivesView, (e) => ({ objetivos: e.objetivos, onAdd: noop, onToggle: noop, onDelete: noop, onRevisar: noop, accent })],
   ['DiaryView', DiaryView, (e) => ({ diario: e.diario, onAdd: noop, onDelete: noop, accent })],

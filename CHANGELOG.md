@@ -1,5 +1,84 @@
 # CHANGELOG.md
 
+## v3.52.0 — Entrega 3 · Fase 31 (SU F1): Sueño, registro simple y experiencia premium
+
+El enunciado empieza pidiendo lo contrario de lo que suele pedirse: *"El apartado Sueño de JC STYLE
+ya tiene una estructura y una gráfica que funcionan muy bien conceptualmente. **NO quiero rehacer el
+apartado desde cero**."* Así que la gráfica, la media, la lista y el panel de IA **son los mismos**.
+Lo que cambia es el registro.
+
+### 🚨 Contestar «¿cómo has dormido?» abría el teclado numérico
+
+La calidad era un `<input type="number">` de 1 a 5. En un iPhone, eso significa que para decir que
+has dormido bien te sale el teclado. Ahora son **tres caras** —😫 Fatal · 🙂 Muy bien · 🤩 De
+maravilla—, que es lo que pide el apartado 2.
+
+**Y por dentro se sigue guardando 1-5**, exactamente como el enunciado dice y como ya leen el
+Dashboard, el hub de área y la exportación. Cambiar la escala habría roto cuatro sitios para no
+ganar nada.
+
+### 🚨 `Number(null)` es 0, y eso pintaba una cara que él no había elegido
+
+Una noche **sin contestar la calidad** se redondeaba a 1 y la pantalla encendía 😫 **Fatal**. Es la
+tercera vez que este mismo `Number(null)` aparece en el proyecto (EH F11, EH F60). Un dato que no
+está no es un cero: ahora no se enciende ninguna cara, y hay una prueba por cada forma de «no hay
+valor» (`null`, sin campo, cadena vacía).
+
+### 🚨 Y tres pantallas escribían «Calidad null/5»
+
+En cuanto la calidad puede no estar, el hub de área, la tarjeta de Hoy y la exportación —que la
+escribían como `Calidad ${x}/5`— pasaban a enseñar **`null` en la cara de Josué**, que es
+exactamente lo que prohíbe EH F62. Las tres dicen ahora la cara que eligió, o que no la anotó.
+
+La exportación tenía además lo suyo: leía `e.siesta` a secas, así que toda noche nueva habría salido
+en el CSV como **«siesta undefinedmin»**.
+
+### La siesta pasa a ser una pregunta
+
+*"¿Has dormido siesta ayer? No · Sí"*, y los minutos **solo aparecen si dice que sí** (apartado 4).
+Lo guardado antes era un número de minutos: `normalizarRegistro` lo migra al cargar, **sin
+reescribir el campo viejo**, y un **`siesta: 0` de antes no se convierte en un sí** — era «no hice
+siesta», que es justo lo que ahora dice `false`.
+
+### 🚨 La duración no se guarda, y es a propósito
+
+El apartado 9 la pide guardada; el apartado 10 del mismo enunciado dice *"No dupliques sistemas de
+almacenamiento"*. `calcularDuracion()` ya la calcula desde las dos horas y la usan la gráfica, el
+Dashboard, el hub, las correlaciones y la exportación: guardarla sería una copia que **miente en
+cuanto Josué corrija una hora**. Se deriva, se sirve igual con `duracionDe()` y `textoDuracion()`, y
+está declarado en `NO_SE_GUARDA` con su motivo.
+
+Ahora se ve *"8 h 30 min"*, el formato literal del apartado 1 — y **mientras elige las horas**, no
+después de guardar.
+
+### Lo demás del registro
+
+- **Ninguna respuesta viene puesta.** Ni una cara, ni un número de interrupciones, ni un «sí» a la
+  siesta: elegir por él guardaría algo que no ha dicho. Solo las horas traen valor de partida,
+  porque son un reloj que él mueve.
+- **Interrupciones: 0 · 1 · 2 · 3+**, y el 3 guardado significa *tres o más* — enseñarlo como «3»
+  diría una precisión que la pregunta no tiene.
+- **Cuatro bloques y ya**: 🌙 Tu noche · ¿Cómo has dormido? · 🌙 Durante la noche · ☀️ Ayer. El
+  apartado 6 prohíbe expresamente *"decenas de preguntas"* y *"formularios largos"*.
+- El estado elegido se nota **con fondo, borde y peso de letra**, no solo con color (EH F42), y cada
+  opción lleva su `aria-pressed`.
+
+### ⚠️ Y la ventana de la gráfica NO se ha tocado
+
+*"NO implementar todavía el cambio de ventana de 7 días de la gráfica. Eso corresponde
+exclusivamente a la FASE 2 de Sueño."* Sigue enseñando las siete últimas noches **registradas**, con
+una constante y su recordatorio al lado.
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde: **92 comprobaciones nuevas** en `scripts/test-sueno.mjs`,
+**12 casos de renderizado nuevos** (1992) —incluida una noche guardada con la forma vieja y otra sin
+calidad— y una sección nueva del recorrido que abre el formulario, comprueba que **los minutos de
+siesta no están hasta decir que sí**, guarda una noche y verifica que **se escribe un 5, no el
+nombre de la cara**.
+
+---
+
 ## v3.51.0 — Entrega 3 · Fase 30 (BN): el apartado Bienestar
 
 El primer rediseño puro de la entrega: **no añade ni una función**. Su apartado 1 lo dice con estas

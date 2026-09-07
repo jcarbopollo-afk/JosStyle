@@ -34,7 +34,13 @@ function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion
       fecha: e.fecha,
       detalle: `Dormir ${e.horaDormir} - Despertar ${e.horaDespertar}`,
       valor: `${formatHoras(calcularDuracion(e.horaDormir, e.horaDespertar))} h`,
-      extra: `calidad ${e.calidad}/5, interrupciones ${e.interrupciones}, siesta ${e.siesta}min`,
+      /* Entrega 3 · F31 (SU F1) — la siesta dejó de ser «un número de minutos» y
+         pasó a ser una pregunta de sí o no con sus minutos aparte. Leer `e.siesta`
+         a secas escribía **«siesta undefinedmin»** en el CSV de toda noche nueva.
+         Y una calidad sin contestar se dice, no se escribe como «null/5». */
+      extra: `calidad ${e.calidad == null ? 'sin contestar' : `${e.calidad}/5`}, `
+        + `interrupciones ${e.interrupciones ?? 0}, `
+        + `siesta ${e.siestaAyer ? `${e.siestaMinutos || 0} min` : 'no'}`,
     })
   );
   Object.entries(calistenia).forEach(([skill, d]) => {
