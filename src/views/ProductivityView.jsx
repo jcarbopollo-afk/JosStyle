@@ -48,6 +48,15 @@ import {
   resumenTareas, estadisticasDeTareas, vacioDeTareas, planConcentrarse, tareaDeSesion,
   aperturaInicial,
 } from '../lib/tareas';
+/* E3 F27 (PR F5) — Metas y Objetivos, con su jerarquía. 🚨 Ni una lista nueva:
+   se amplían `productividad.metas` (Fase 6) y `objetivos.lista` (Fase 9). */
+import {
+  TIPOS_META, TIPO_META_POR_DEFECTO, tipoMeta,
+  crearMeta, editarMeta, completarMeta, actualizarProgreso, vincularMeta,
+  progresoDeMeta, metaCompletada, textoDeFechaMeta,
+  FILTROS_META, filtrarMetas, VACIO_METAS, metasDeObjetivo,
+  tareasDeMeta, PESOS_DE_META,
+} from '../lib/metasObjetivos';
 import ObjectivesView from './ObjectivesView';
 
 /* ---------- Hábitos ---------- */
@@ -1470,60 +1479,338 @@ function TareasTab({ tareas, onAdd, onUpdate, onToggle, onDelete, onConcentrarse
   );
 }
 
-/* ---------- Metas a corto plazo ---------- */
-function MetasTab({ metas, onAdd, onUpdate, onDelete, accent }) {
-  const [nombre, setNombre] = useState('');
-  const [periodo, setPeriodo] = useState(PERIODOS_META[0]);
-  const [objetivo, setObjetivo] = useState('1');
+/* ---------- Metas (E3 F27 · PR F5) ---------- */
+/* *"Convierte tus planes en resultados."* Una meta es lo MEDIBLE; el objetivo es
+   la dirección. 🚨 El progreso nunca se pinta por encima del 100 %, aunque el
+   valor guardado sí pueda pasarse — es literal del enunciado. */
 
-  const submit = () => {
-    if (!nombre.trim()) return;
-    onAdd({ id: uid(), nombre: nombre.trim(), periodo, objetivo: Number(objetivo) || 1, progreso: 0 });
-    setNombre('');
-    setObjetivo('1');
+function BarraMeta({ porcentaje, accent }) {
+  return (
+    <div className="h-2 rounded-full mt-2 overflow-hidden" style={{ background: COLORS.border }}>
+      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: 'width 0.4s ease' }} />
+    </div>
+  );
+}
+
+function TarjetaMeta({ meta, objetivos, accent, onAbrir, onCompletar }) {
+  const p = progresoDeMeta(meta);
+  const hecha = metaCompletada(meta);
+  const suObjetivo = meta.objetivoId ? (objetivos || []).find((o) => o.id === meta.objetivoId) : null;
+  const fecha = textoDeFechaMeta(meta);
+  return (
+    <Card className="flex items-start gap-3" style={{ opacity: hecha ? 0.65 : 1 }}>
+      <button
+        onClick={() => onCompletar(meta)}
+        aria-label={hecha ? `Marcar ${meta.nombre} como pendiente` : `Completar ${meta.nombre}`}
+        className="toque-44 p-1.5 -m-1.5 shrink-0"
+      >
+        {hecha ? <CheckCircle2 size={20} style={{ color: accent }} /> : <Circle size={20} style={{ color: COLORS.textMuted }} />}
+      </button>
+      <button onClick={() => onAbrir(meta)} className="flex-1 text-left min-w-0">
+        <p className="text-sm font-semibold truncate" style={{ color: COLORS.text, textDecoration: hecha ? 'line-through' : 'none' }}>
+          {meta.nombre}
+        </p>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          <span className="text-xs" style={{ color: COLORS.textMuted }}>{p.texto}</span>
+          {p.superado && <span className="text-xs" style={{ color: COLORS.textMuted }}>Objetivo superado</span>}
+          {fecha && <span className="text-xs" style={{ color: fecha === 'Vencida' ? COLORS.danger : COLORS.textMuted }}>{fecha}</span>}
+        </div>
+        {/* ⚠️ El objetivo del que cuelga, si lo tiene: es lo que hace visible la
+            jerarquía sin necesidad de una pantalla de relaciones. */}
+        {suObjetivo && <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>🎯 {suObjetivo.texto}</p>}
+        <BarraMeta porcentaje={p.porcentaje} accent={accent} />
+      </button>
+    </Card>
+  );
+}
+
+export function FormularioMeta({ meta = null, objetivos = [], accent, onGuardar, onCancelar }) {
+  const [form, setForm] = useState({
+    nombre: meta?.nombre || '',
+    descripcion: meta?.descripcion || '',
+    tipo: meta?.tipo || TIPO_META_POR_DEFECTO,
+    objetivo: String(meta?.objetivo ?? 1),
+    unidad: meta?.unidad || '',
+    periodo: meta?.periodo || '',
+    objetivoId: meta?.objetivoId || '',
+    prioridad: meta?.prioridad || PRIORIDAD_POR_DEFECTO,
+    fechaObjetivo: meta?.fechaObjetivo || '',
+  });
+  const t = tipoMeta(form.tipo);
+  // 🚨 Una meta de frecuencia sin periodo no se crea: elegirlo por él la metería
+  // en «Diaria» sin decírselo (E3 F19).
+  const valido = !!form.nombre.trim() && (!t.pidePeriodo || PERIODOS_META.includes(form.periodo));
+
+  const guardar = () => {
+    if (!valido) return;
+    const campos = {
+      nombre: form.nombre,
+      descripcion: form.descripcion,
+      tipo: form.tipo,
+      objetivo: Number(form.objetivo) || 1,
+      unidad: form.unidad,
+      periodo: form.periodo || null,
+      objetivoId: form.objetivoId || null,
+      fechaObjetivo: form.fechaObjetivo || null,
+    };
+    onGuardar(meta
+      ? editarMeta(meta, { ...campos, prioridad: form.prioridad })
+      : crearMeta({ ...campos, prioridadId: form.prioridad }));
   };
+
+  return (
+    <Card>
+      <Field label="Meta">
+        <TextInput
+          aria-label="Nombre de la meta" value={form.nombre}
+          onChange={(ev) => setForm({ ...form, nombre: ev.target.value })}
+          placeholder="Ej. conseguir 15 dominadas"
+        />
+      </Field>
+      <Field label="Descripción (opcional)">
+        <TextInput
+          aria-label="Descripción de la meta" value={form.descripcion}
+          onChange={(ev) => setForm({ ...form, descripcion: ev.target.value })}
+        />
+      </Field>
+
+      <Field label="Cómo se mide">
+        <Select value={form.tipo} onChange={(ev) => setForm({ ...form, tipo: ev.target.value })} aria-label="Tipo de progreso">
+          {TIPOS_META.map((x) => <option key={x.id} value={x.id}>{x.nombre} — {x.ejemplo}</option>)}
+        </Select>
+      </Field>
+      <p className="text-xs -mt-1 mb-2" style={{ color: COLORS.textMuted }}>{t.explica}</p>
+
+      {t.pideObjetivo && (
+        <Field label={t.id === 'frecuencia' ? 'Veces por periodo' : 'Objetivo (número)'}>
+          <TextInput
+            type="number" min="1" aria-label="Valor objetivo" value={form.objetivo}
+            onChange={(ev) => setForm({ ...form, objetivo: ev.target.value })}
+          />
+        </Field>
+      )}
+      {t.pideUnidad && (
+        <Field label="Unidad (opcional)">
+          <TextInput
+            aria-label="Unidad de la meta" value={form.unidad}
+            onChange={(ev) => setForm({ ...form, unidad: ev.target.value })}
+            placeholder="Ej. dominadas, libros, kg"
+          />
+        </Field>
+      )}
+      {t.pidePeriodo && (
+        <Field label="Periodo">
+          <Select value={form.periodo} onChange={(ev) => setForm({ ...form, periodo: ev.target.value })} aria-label="Periodo de la meta">
+            <option value="">Elige un periodo</option>
+            {PERIODOS_META.map((x) => <option key={x} value={x}>{x}</option>)}
+          </Select>
+        </Field>
+      )}
+
+      <Field label="Fecha objetivo (opcional)">
+        <TextInput
+          type="date" aria-label="Fecha objetivo de la meta" value={form.fechaObjetivo}
+          onChange={(ev) => setForm({ ...form, fechaObjetivo: ev.target.value })}
+        />
+      </Field>
+
+      {/* ⚠️ Vincular es OPCIONAL: *"también debe poder existir una meta
+          independiente"*. */}
+      <Field label="Objetivo (opcional)">
+        <Select value={form.objetivoId} onChange={(ev) => setForm({ ...form, objetivoId: ev.target.value })} aria-label="Objetivo al que pertenece">
+          <option value="">Sin objetivo</option>
+          {objetivos.map((o) => <option key={o.id} value={o.id}>{o.texto}</option>)}
+        </Select>
+      </Field>
+
+      <Field label="Prioridad">
+        <div className="flex gap-2">
+          {PRIORIDADES.map((pr) => (
+            <button
+              key={pr.id} onClick={() => setForm({ ...form, prioridad: pr.id })}
+              aria-label={`Prioridad ${pr.nombre}`} aria-pressed={form.prioridad === pr.id}
+              className="flex-1 rounded-xl py-2 text-xs font-semibold toque-44"
+              style={{
+                background: form.prioridad === pr.id ? accent : COLORS.card,
+                color: form.prioridad === pr.id ? COLORS.textOnAccent : COLORS.text,
+                border: `1px solid ${COLORS.border}`,
+              }}
+            >
+              <span aria-hidden="true">{pr.icono}</span> {pr.nombre}
+            </button>
+          ))}
+        </div>
+      </Field>
+
+      <div className="flex gap-2 mt-3">
+        <PrimaryButton accent={accent} icon={meta ? Pencil : Target} onClick={guardar} disabled={!valido}>
+          {meta ? 'Guardar cambios' : 'Añadir meta'}
+        </PrimaryButton>
+        <GhostBtn onClick={onCancelar}>Cancelar</GhostBtn>
+      </div>
+    </Card>
+  );
+}
+
+function DetalleMeta({ meta, objetivos, tareas, accent, onGuardar, onCompletar, onDelete, onCerrar }) {
+  const [editando, setEditando] = useState(false);
+  const [valor, setValor] = useState(String(meta.progreso));
+  const p = progresoDeMeta(meta);
+  const suObjetivo = meta.objetivoId ? (objetivos || []).find((o) => o.id === meta.objetivoId) : null;
+  const suyas = tareasDeMeta(meta.id, tareas);
+
+  if (editando) {
+    return (
+      <FormularioMeta
+        meta={meta} objetivos={objetivos} accent={accent}
+        onGuardar={(m) => { if (m) onGuardar(m); setEditando(false); }}
+        onCancelar={() => setEditando(false)}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <button onClick={onCerrar} className="flex items-center gap-1 text-xs toque-44" style={{ color: COLORS.textMuted }}>
+        <ArrowLeft size={14} /> Volver a las metas
+      </button>
+
+      <Card>
+        <p className="text-base font-bold" style={{ color: COLORS.text }}>{meta.nombre}</p>
+        {meta.descripcion && <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>{meta.descripcion}</p>}
+        <p className="text-sm mt-2 font-semibold" style={{ color: COLORS.text }}>{p.texto}</p>
+        <BarraMeta porcentaje={p.porcentaje} accent={accent} />
+        {p.superado && (
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+            Objetivo superado · {p.porcentajeReal} %
+          </p>
+        )}
+        {suObjetivo && <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>🎯 {suObjetivo.texto}</p>}
+      </Card>
+
+      {meta.tipo !== 'check' && (
+        <Card>
+          <SectionTitle>Actualizar progreso</SectionTitle>
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <TextInput
+                type="number" min="0" aria-label="Progreso de la meta"
+                value={valor} onChange={(ev) => setValor(ev.target.value)}
+              />
+            </div>
+            <PrimaryButton accent={accent} onClick={() => onGuardar(actualizarProgreso(meta, Number(valor)))}>
+              Guardar
+            </PrimaryButton>
+          </div>
+        </Card>
+      )}
+
+      <Card>
+        <SectionTitle>Acciones</SectionTitle>
+        <div className="flex gap-2 flex-wrap">
+          <GhostBtn onClick={() => onCompletar(meta)}>
+            {metaCompletada(meta) ? 'Marcar sin completar' : 'Completar'}
+          </GhostBtn>
+          <GhostBtn onClick={() => setEditando(true)}>Editar</GhostBtn>
+        </div>
+      </Card>
+
+      <Card>
+        <SectionTitle>Tareas de esta meta</SectionTitle>
+        {suyas.length === 0 && (
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>
+            Ninguna todavía. Una tarea se enlaza con esta meta desde la propia tarea, en Tareas.
+          </p>
+        )}
+        {suyas.map((t) => (
+          <p key={t.id} className="text-sm py-1" style={{ color: COLORS.text, textDecoration: t.hecha ? 'line-through' : 'none' }}>
+            {t.texto}
+          </p>
+        ))}
+      </Card>
+
+      <Card>
+        <button
+          onClick={() => { onDelete(meta.id); onCerrar(); }}
+          aria-label={`Eliminar la meta ${meta.nombre}`}
+          className="flex items-center gap-2 text-xs font-semibold toque-44"
+          style={{ color: COLORS.danger }}
+        >
+          <Trash2 size={15} /> Eliminar meta
+        </button>
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+          Puedes recuperarla desde Eliminados recientemente.
+        </p>
+      </Card>
+    </div>
+  );
+}
+
+function MetasTab({ metas, objetivos = [], tareas = [], onAdd, onUpdate, onDelete, accent }) {
+  const [crear, setCrear] = useState(false);
+  const [abierta, setAbierta] = useState(null);
+  const [filtro, setFiltro] = useState('activas');
+
+  const detalle = abierta ? metas.find((m) => m.id === abierta) : null;
+  const visibles = filtrarMetas(metas, filtro);
+
+  if (detalle) {
+    return (
+      <DetalleMeta
+        meta={detalle} objetivos={objetivos} tareas={tareas} accent={accent}
+        onGuardar={onUpdate}
+        onCompletar={(m) => onUpdate(completarMeta(m))}
+        onDelete={onDelete}
+        onCerrar={() => setAbierta(null)}
+      />
+    );
+  }
+
+  if (crear) {
+    return (
+      <FormularioMeta
+        objetivos={objetivos} accent={accent}
+        onGuardar={(m) => { if (m) onAdd(m); setCrear(false); }}
+        onCancelar={() => setCrear(false)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-3">
       <Card>
-        <Field label="Meta">
-          <TextInput value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej. leer 12 libros" />
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Periodo">
-            <Select value={periodo} onChange={(e) => setPeriodo(e.target.value)}>
-              {PERIODOS_META.map((p) => <option key={p} value={p}>{p}</option>)}
-            </Select>
-          </Field>
-          <Field label="Objetivo (número)">
-            <TextInput type="number" min="1" value={objetivo} onChange={(e) => setObjetivo(e.target.value)} />
-          </Field>
-        </div>
-        <PrimaryButton accent={accent} icon={Target} onClick={submit}>Añadir meta</PrimaryButton>
+        <p className="text-sm" style={{ color: COLORS.textMuted }}>Convierte tus planes en resultados.</p>
       </Card>
 
-      {metas.length === 0 && <EmptyHint text="Añade una meta a corto plazo (esto no sustituye a los grandes Objetivos, que llegarán en la próxima fase)." />}
-      {metas.map((m) => {
-        const pct = Math.min(100, Math.round((m.progreso / m.objetivo) * 100));
-        return (
-          <Card key={m.id}>
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{m.nombre}</p>
-                <p className="text-xs" style={{ color: COLORS.textMuted }}>{m.periodo} · {m.progreso}/{m.objetivo}</p>
-              </div>
-              <button onClick={() => onDelete(m.id)} aria-label="Eliminar meta"><Trash2 size={15} style={{ color: COLORS.textMuted }} /></button>
-            </div>
-            <div className="h-2 rounded-full mb-3" style={{ background: COLORS.surface2 }}>
-              <div className="h-2 rounded-full" style={{ width: `${pct}%`, background: accent, transition: 'width 0.3s ease' }} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <GhostBtn onClick={() => onUpdate({ ...m, progreso: Math.max(0, m.progreso - 1) })}>-1</GhostBtn>
-              <PrimaryButton accent={accent} onClick={() => onUpdate({ ...m, progreso: m.progreso + 1 })}>+1 progreso</PrimaryButton>
-            </div>
-          </Card>
-        );
-      })}
+      <PrimaryButton accent={accent} icon={Target} onClick={() => setCrear(true)}>Nueva meta</PrimaryButton>
+
+      {metas.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {FILTROS_META.map((f) => (
+            <ToggleTab key={f.id} active={filtro === f.id} accent={accent} onClick={() => setFiltro(f.id)}>
+              {f.nombre}
+            </ToggleTab>
+          ))}
+        </div>
+      )}
+
+      {metas.length === 0 && (
+        <Card className="text-center">
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{VACIO_METAS.titulo}</p>
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{VACIO_METAS.texto}</p>
+        </Card>
+      )}
+      {metas.length > 0 && visibles.length === 0 && (
+        <EmptyHint text="Ninguna encaja con este filtro. Prueba con “Todas”." />
+      )}
+
+      {visibles.map((m) => (
+        <TarjetaMeta
+          key={m.id} meta={m} objetivos={objetivos} accent={accent}
+          onAbrir={(x) => setAbierta(x.id)}
+          onCompletar={(x) => onUpdate(completarMeta(x))}
+        />
+      ))}
     </div>
   );
 }
@@ -1604,7 +1891,7 @@ export default function ProductivityView({
   /* 🚨 E3 F23 (PR F1) — Objetivos entra aquí. Deja de ser un módulo aparte, pero
      **sus datos siguen en su clave de siempre**: lo que llega son la lista y sus
      manejadores, los mismos que tenía `case 'objetivos'`. */
-  objetivos, onAddObjetivo, onUpdateObjetivo, onDeleteObjetivo, onRevisionHecha,
+  objetivos, onAddObjetivo, onUpdateObjetivo, onDeleteObjetivo, onRevisionHecha, onGuardarListaObjetivos,
   accent, foco, onFocoConsumido,
 }) {
   /* `null` = el lanzador. *"Cuando el usuario entre en Productividad, **no se
@@ -1693,7 +1980,10 @@ export default function ProductivityView({
         />
       )}
       {abierta === 'metas' && (
-        <MetasTab metas={productividad.metas} onAdd={onAddMeta} onUpdate={onUpdateMeta} onDelete={onDeleteMeta} accent={accent} />
+        <MetasTab
+          metas={productividad.metas} objetivos={objetivos?.lista || []} tareas={productividad.tareas}
+          onAdd={onAddMeta} onUpdate={onUpdateMeta} onDelete={onDeleteMeta} accent={accent}
+        />
       )}
       {/* ⚠️ Objetivos se pinta con SU pantalla de siempre, `ObjectivesView`, sin
           tocarla: reescribirla habría sido rehacer una mini-app en la fase que
@@ -1702,6 +1992,8 @@ export default function ProductivityView({
       {abierta === 'objetivos' && (
         <ObjectivesView
           objetivos={objetivos}
+          metas={productividad.metas}
+          onGuardarLista={onGuardarListaObjetivos}
           onAdd={onAddObjetivo}
           onUpdate={onUpdateObjetivo}
           onDelete={onDeleteObjetivo}

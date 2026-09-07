@@ -2970,4 +2970,97 @@ const sesion_pr4 = guardado.filter((g) => g && g.key === 'productividad').at(-1)
 ok(sesion_pr4 && sesion_pr4.tareaId === 'vieja_pr4',
   '🚨 y la sesión guarda el id de la tarea, no una copia de su nombre');
 
+/* ── E3 F27 (PR F5) · METAS + OBJETIVOS ──────────────────────────────────
+   🚨 Lo que ninguna prueba de Node puede ver: que **un objetivo guardado con la
+   forma vieja se abre y funciona**, y que el progreso de un objetivo sale de
+   sus metas de verdad. */
+almacen.objetivos = {
+  // La forma VIEJA, tal como la tiene guardada Josué desde la Fase 9.
+  lista: [{ id: 'o_pr5', texto: 'Mejorar mi físico', plazo: '1 año', cumplido: false, fechaCreacion: '2026-01-01' }],
+  ultimaRevision: new Date().toLocaleDateString('sv-SE'),
+};
+almacen.productividad = {
+  habitos: [], rutinas: [], tareas: [], pomodoros: {}, apuntes: [],
+  pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+  // Y una meta guardada con la forma vieja, ya enlazada al objetivo.
+  metas: [{ id: 'm_pr5', nombre: 'Leer 12 libros', periodo: 'Mensual', objetivo: 12, progreso: 3 }],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Vida');
+await pulsar('Productividad');
+ok(await pulsar('Abrir Objetivos'), 'Objetivos se abre');
+
+const obj_pr5 = await esperarTexto(/Define hacia dónde quieres avanzar/i);
+ok(/Define hacia dónde quieres avanzar/i.test(obj_pr5), '⚠️ con la frase del enunciado');
+ok(/Mejorar mi físico/i.test(obj_pr5),
+  '🚨 Y EL OBJETIVO GUARDADO A LA VIEJA SE VE: la fase amplía la lista de siempre, no crea otra');
+ok(/Sin metas todavía/i.test(obj_pr5),
+  '🚨 y sin metas NO se pinta un 0 %: se dice que aún no tiene ninguna');
+
+ok(await pulsar('Mejorar mi físico'), 'se abre su detalle');
+const det_pr5 = await esperarTexto(/Marcar como principal/i);
+ok(/Marcar como principal/i.test(det_pr5), '⚠️ con la estrella de objetivo principal');
+ok(/Archivar/i.test(det_pr5) && /Pausar/i.test(det_pr5), '⚠️ y los estados del enunciado');
+ok(/Metas de este objetivo/i.test(det_pr5), '⚠️ y sus metas');
+
+ok(await pulsar('Marcar como principal'), 'se marca como principal');
+await page.waitForTimeout(900);
+const trasPpal_pr5 = guardado.filter((g) => g && g.key === 'objetivos').at(-1)?.value;
+ok(trasPpal_pr5?.lista?.[0]?.principal === true, '⚠️ PERSISTENCIA: se escribe en Supabase');
+ok(trasPpal_pr5?.lista?.[0]?.texto === 'Mejorar mi físico' && trasPpal_pr5.lista[0].plazo === '1 año',
+  '🚨 Y CONSERVA SUS CAMPOS DE SIEMPRE: `texto`, `plazo` y `cumplido` los leen otros veinticuatro archivos');
+ok(trasPpal_pr5?.lista?.[0]?.estado === 'activo',
+  '⚠️ y le llegan los campos nuevos de la PR F5, así que el normalizador no se los come');
+ok(trasPpal_pr5?.ultimaRevision, '🚨 y `ultimaRevision` sigue ahí: guardar la lista no se lleva el resto de la clave');
+
+ok(await pulsar('Completar'), 'se completa el objetivo');
+await page.waitForTimeout(900);
+ok(await pulsar('Archivar'), 'y se archiva');
+await page.waitForTimeout(900);
+const trasArch_pr5 = guardado.filter((g) => g && g.key === 'objetivos').at(-1)?.value?.lista?.[0];
+ok(trasArch_pr5?.cumplido === true && trasArch_pr5?.estado === 'archivado',
+  '🚨 ARCHIVAR UN OBJETIVO CUMPLIDO NO LE BORRA QUE LO CUMPLIÓ: son dos campos, no uno');
+ok(trasArch_pr5?.cumplidoEn, '⚠️ y queda apuntado cuándo se cumplió');
+
+ok(await pulsar('Volver a los objetivos'), 'se vuelve a la lista');
+ok(await pulsar('Volver a Productividad'), 'y al lanzador');
+ok(await pulsar('Abrir Metas'), 'Metas se abre');
+const metas_pr5 = await esperarTexto(/Convierte tus planes en resultados/i);
+ok(/Convierte tus planes en resultados/i.test(metas_pr5), '⚠️ con SU frase, distinta de la de Objetivos');
+ok(/Leer 12 libros/i.test(metas_pr5), '🚨 y la meta guardada a la vieja se ve');
+ok(/3 \/ 12/.test(metas_pr5), '⚠️ con su progreso, "3 / 12"');
+
+ok(await pulsar('Nueva meta'), 'se abre el formulario');
+const formMeta_pr5 = await esperarTexto(/Cómo se mide/i);
+ok(/Numérico/i.test(formMeta_pr5) && /Porcentaje/i.test(formMeta_pr5) && /Frecuencia/i.test(formMeta_pr5),
+  '⚠️ con los cuatro tipos de progreso');
+await page.fill('input[aria-label="Nombre de la meta"]', '15 dominadas');
+await page.fill('input[aria-label="Valor objetivo"]', '15');
+ok(await pulsar('Añadir meta'), 'se añade');
+await page.waitForTimeout(900);
+const metasEscritas_pr5 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value?.metas || [];
+ok(metasEscritas_pr5.length === 2, '⚠️ PERSISTENCIA: la meta se escribe en Supabase');
+const nueva_pr5 = metasEscritas_pr5.find((m) => m.nombre === '15 dominadas');
+ok(nueva_pr5 && nueva_pr5.objetivo === 15 && nueva_pr5.tipo === 'numerico', '⚠️ con su tipo y su objetivo');
+const vieja_pr5 = metasEscritas_pr5.find((m) => m.id === 'm_pr5');
+ok(vieja_pr5 && vieja_pr5.periodo === 'Mensual' && vieja_pr5.progreso === 3,
+  '🚨 Y LA META VIEJA CONSERVA LO SUYO: ni un campo se renombra');
+
+ok(await pulsar('15 dominadas'), 'se abre el detalle de la meta');
+const detMeta_pr5 = await esperarTexto(/Actualizar progreso/i);
+ok(/Actualizar progreso/i.test(detMeta_pr5), '⚠️ con su actualización de progreso');
+ok(/Tareas de esta meta/i.test(detMeta_pr5), '⚠️ y sus tareas, que es la jerarquía del enunciado');
+await page.fill('input[aria-label="Progreso de la meta"]', '20');
+ok(await pulsar('Guardar'), 'se pone un progreso por encima del objetivo');
+await page.waitForTimeout(900);
+const superada_pr5 = (guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value?.metas || [])
+  .find((m) => m.nombre === '15 dominadas');
+ok(superada_pr5?.progreso === 20,
+  '🚨 EL VALOR SUPERIOR SÍ SE GUARDA: *"aunque internamente pueda registrarse un valor superior"*');
+const pintado_pr5 = await esperarTexto(/Objetivo superado/i);
+ok(/Objetivo superado/i.test(pintado_pr5),
+  '🚨 Y AL PINTARLO NO PASA DEL 100 %: se dice "Objetivo superado", que es lo que pide el enunciado');
+
 await salir(browser);

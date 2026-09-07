@@ -342,8 +342,14 @@ ok(!/duracionMs\s*[:=]/.test(codigo), 'ni una duración propia: el motor es `pom
 
 console.log('\n── 15. Metas y Objetivos: se declaran, no se fingen ─────────────');
 eq(RELACIONES_FUTURAS.map((r2) => r2.campo), ['metaId', 'objetivoId'], 'los dos campos que pide el enunciado');
-ok(RELACIONES_FUTURAS.every((r2) => r2.enlazable === false && r2.porque && r2.llega),
-  '⚠️ DECLARADOS, con por qué y cuándo llegan: un campo que nadie puede rellenar es media función (regla 8)');
+/* ⚠️ **Actualizado en la E3 F27**: los dos campos ya son enlazables, porque la
+   PR F5 construyó Metas y Objetivos — que es exactamente lo que decía su
+   `llega`. Lo que se sigue comprobando es lo de siempre: que estén DECLARADOS,
+   con adónde apuntan y por qué (regla 8). */
+ok(RELACIONES_FUTURAS.every((r2) => r2.campo && r2.hacia && r2.porque && r2.llega),
+  '⚠️ DECLARADOS, con adónde apuntan y por qué: un campo que nadie puede rellenar es media función (regla 8)');
+ok(RELACIONES_FUTURAS.every((r2) => r2.enlazable === true),
+  '✅ y desde la PR F5 son enlazables de verdad: la promesa de la fase anterior se cumplió');
 eq(relacionFutura('metaId').hacia, 'productividad.metas', 'y adónde apuntará');
 eq(relacionFutura('inventado'), null, 'preguntar por uno que no existe devuelve null');
 ok(!/crearMeta|crearObjetivo|normalizarMeta|normalizarObjetivo/.test(codigoLimpio),

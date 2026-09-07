@@ -21,18 +21,25 @@ import { renderToString } from 'react-dom/server';
 import DashboardView from '../src/views/DashboardView.jsx';
 import SleepView from '../src/views/SleepView.jsx';
 import FinanceView from '../src/views/FinanceView.jsx';
-import ObjectivesView from '../src/views/ObjectivesView.jsx';
+import ObjectivesView, { FormularioObjetivo as FormularioObjetivoF27 } from '../src/views/ObjectivesView.jsx';
 import DiaryView from '../src/views/DiaryView.jsx';
 import StatsView from '../src/views/StatsView.jsx';
 import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView, {
   ProgresoDelDia, SemanaDeHabito, TarjetaHabito, FormularioHabito, DetalleHabito,
   TemporizadorCircular, ConfigPomodoro, EstadisticasPomodoro,
-  FormularioTarea,
+  FormularioTarea, FormularioMeta,
 } from '../src/views/ProductivityView.jsx';
 /* E3 F26 (PR F4) — Tareas. El escenario cubre las cinco secciones a la vez:
    vencida, de hoy, de mañana, sin fecha y completada. */
 import { crearTarea as crearTareaF26 } from '../src/lib/tareas.js';
+/* E3 F27 (PR F5) — Metas y Objetivos. El escenario mete a propósito un objetivo
+   guardado con la forma VIEJA (sin `estado`, sin `prioridad`) y metas de los
+   cuatro tipos, una de ellas con el objetivo superado. */
+import {
+  crearObjetivo as crearObjF27, crearMeta as crearMetaF27,
+  actualizarProgreso as actProgF27, completarMeta as compMetaF27,
+} from '../src/lib/metasObjetivos.js';
 import {
   CONFIG_POMODORO_POR_DEFECTO as CFG_F25, iniciarSesion as iniciarSesionF25,
   completar as completarF25, cancelar as cancelarF25, estadisticasHoy as statsHoyF25,
@@ -2006,6 +2013,58 @@ const CASOS = [
       ['FormularioTarea (nueva)', FormularioTarea, () => ({ hoy: HOY_F26, accent, onGuardar: noop, onCancelar: noop })],
       ['FormularioTarea (editando)', FormularioTarea, () => ({ tarea: tareasF26[0], hoy: HOY_F26, accent, onGuardar: noop, onCancelar: noop })],
       ['FormularioTarea (sin fecha)', FormularioTarea, () => ({ tarea: tareasF26[3], hoy: HOY_F26, accent, onGuardar: noop, onCancelar: noop })],
+    ];
+  })(),
+  ...(() => {
+    const HOY_F27 = '2026-09-07';
+    const listaF27 = [
+      { ...crearObjF27({ texto: 'Mejorar mi físico', plazo: '1 año', categoria: 'fitness', prioridadId: 'alta', hoy: HOY_F27 }), id: 'o1', principal: true },
+      { id: 'viejo_f27', texto: 'Aprender inglés', plazo: '5 años', cumplido: false, fechaCreacion: '2026-01-01' },
+      { ...crearObjF27({ texto: 'Terminado', plazo: '30 días', hoy: HOY_F27 }), id: 'o3', cumplido: true, cumplidoEn: HOY_F27, estado: 'archivado' },
+    ];
+    const metasF27 = [
+      { ...actProgF27(crearMetaF27({ nombre: '15 dominadas', objetivo: 15, unidad: 'dominadas', hoy: HOY_F27 }), 8, { hoy: HOY_F27 }), objetivoId: 'o1' },
+      { ...actProgF27(crearMetaF27({ nombre: 'Bajar a 75 kg', tipo: 'porcentaje', hoy: HOY_F27 }), 72, { hoy: HOY_F27 }), objetivoId: 'o1' },
+      compMetaF27(crearMetaF27({ nombre: 'Handstand', tipo: 'check', hoy: HOY_F27 }), { hoy: HOY_F27 }),
+      crearMetaF27({ nombre: 'Entrenar 4 días', tipo: 'frecuencia', periodo: 'Semanal', objetivo: 4, hoy: HOY_F27 }),
+      // Una que superó su objetivo: 20 de 15.
+      actProgF27(crearMetaF27({ nombre: 'Leer libros', objetivo: 15, hoy: HOY_F27 }), 20, { hoy: HOY_F27 }),
+      // Y una guardada con la forma vieja.
+      { id: 'metavieja', nombre: 'Ahorrar', periodo: 'Mensual', objetivo: 50, progreso: 20 },
+    ];
+    const conMetas = (extra = {}) => ({
+      productividad: {
+        habitos: [], rutinas: [], tareas: [], metas: metasF27, pomodoros: {}, apuntes: [],
+        pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+      },
+      objetivos: { lista: listaF27, ultimaRevision: HOY_F27 }, accent,
+      onAddHabito: noop, onUpdateHabito: noop, onDeleteHabito: noop,
+      onAddRutina: noop, onUpdateRutina: noop, onDeleteRutina: noop,
+      onAddTarea: noop, onUpdateTarea: noop, onToggleTarea: noop, onDeleteTarea: noop,
+      onAddMeta: noop, onUpdateMeta: noop, onDeleteMeta: noop,
+      onCompletarPomodoro: noop,
+      onGuardarConfigPomodoro: noop, onCambiarSesionPomodoro: noop, onFinalizarSesionPomodoro: noop,
+      onAddObjetivo: noop, onUpdateObjetivo: noop, onDeleteObjetivo: noop, onRevisionHecha: noop,
+      onGuardarListaObjetivos: noop,
+      foco: { app: 'metas' }, onFocoConsumido: noop, ...extra,
+    });
+    return [
+      ['ProductivityView · metas', ProductivityView, () => conMetas()],
+      ['ProductivityView · metas (vacío)', ProductivityView, () => conMetas({
+        productividad: {
+          habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [],
+          pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+        },
+      })],
+      ['ProductivityView · objetivos', ProductivityView, () => conMetas({ foco: { app: 'objetivos' } })],
+      ['ProductivityView · objetivos (vacío)', ProductivityView, () => conMetas({
+        foco: { app: 'objetivos' }, objetivos: { lista: [], ultimaRevision: HOY_F27 },
+      })],
+      ['FormularioMeta (nueva)', FormularioMeta, () => ({ objetivos: listaF27, accent, onGuardar: noop, onCancelar: noop })],
+      ['FormularioMeta (frecuencia)', FormularioMeta, () => ({ meta: metasF27[3], objetivos: listaF27, accent, onGuardar: noop, onCancelar: noop })],
+      ['FormularioMeta (sí o no)', FormularioMeta, () => ({ meta: metasF27[2], objetivos: listaF27, accent, onGuardar: noop, onCancelar: noop })],
+      ['FormularioObjetivo (nuevo)', FormularioObjetivoF27, () => ({ accent, onGuardar: noop, onCancelar: noop })],
+      ['FormularioObjetivo (editando)', FormularioObjetivoF27, () => ({ objetivo: listaF27[0], accent, onGuardar: noop, onCancelar: noop })],
     ];
   })(),
   ['WellbeingView', WellbeingView, (e) => ({ bienestar: e.bienestar, onAdd: noop, onDelete: noop, onAddReflexion: noop, onCompletarSesion: noop, accent })],

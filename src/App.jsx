@@ -8,6 +8,11 @@ import { anadirApunte, resumenDelDia, progresoDelDia, apuntesDe } from './lib/ce
    Josué no salían en ninguna de las cuatro. Se migra al cargar, antes de que
    nada las lea. */
 import { completarTarea, normalizarTareasDe } from './lib/tareas';
+/* 🚨 E3 F27 (PR F5) — Metas y Objetivos. Los normalizadores corren al cargar
+   porque esta fase AÑADE campos a dos entidades que ya existían: sin ellos, lo
+   guardado antes llega sin `estado`, sin `prioridad` y sin `tipo`, y el
+   siguiente guardado se los llevaría (regla 5). */
+import { normalizarObjetivosDe, normalizarMetasDe } from './lib/metasObjetivos';
 // Entrega 3 · F8 y F9 — las fábricas de las entidades que crea el ＋ global.
 import { nuevaTareaDeCalendario } from './lib/calendarioMes';
 import { eventoDesdeQuickAdd } from './lib/accionesHoyAgenda';
@@ -510,8 +515,11 @@ export default function App() {
          semanal— filtran por `t.fecha`, y la pantalla de Productividad guardaba
          `fechaLimite`. Es el mismo reparto que `migrarEstiloHombre` (EH F46):
          se migra lo crudo, no lo normalizado. */
-      setProductividad(normalizarTareasDe(prod));
-      setObjetivos(obj);
+      setProductividad(normalizarMetasDe(normalizarTareasDe(prod)));
+      /* 🚨 E3 F27 — los objetivos llegan con los campos de la PR F5 (`estado`,
+         `prioridad`, `categoria`, `principal`, `fechaObjetivo`) y **conservan
+         los cinco de siempre**, que leen otros veinticuatro archivos. */
+      setObjetivos(normalizarObjetivosDe(obj));
       // Fase 1 del Calendario Universal: solo nos aseguramos de que `eventos` sea de verdad un
       // array (mismo criterio que `temasGuardados`), por si `calendario` no existe todavía en
       // Supabase para un usuario que ya tenía cuenta antes de esta fase.
@@ -1922,6 +1930,10 @@ export default function App() {
     });
   };
 
+  /* E3 F27 (PR F5) — ⭐ marcar el objetivo principal toca TODA la lista, porque
+     solo hay uno: `marcarPrincipal` devuelve la lista con el anterior
+     desmarcado. Por eso hay un manejador que guarda la lista entera. */
+  const guardarListaObjetivos = (lista) => snapshotAndSave({ objetivos: { ...objetivos, lista } });
   const addObjetivo = (o) => snapshotAndSave({ objetivos: { ...objetivos, lista: [...objetivos.lista, o] } });
   /* 🚨 Los objetivos SÍ tienen tamaño: `PLAZOS_OBJETIVO` va de "30 días" a "10
      años". Cumplir uno a diez años vista no es lo mismo que cumplir uno a
@@ -2588,6 +2600,7 @@ export default function App() {
             objetivos={objetivos}
             onAddObjetivo={addObjetivo} onUpdateObjetivo={updateObjetivo} onDeleteObjetivo={deleteObjetivo}
             onRevisionHecha={marcarRevisionHecha}
+            onGuardarListaObjetivos={guardarListaObjetivos}
             accent={accent}
             foco={focoPara('productividad')} onFocoConsumido={consumirFoco}
           />

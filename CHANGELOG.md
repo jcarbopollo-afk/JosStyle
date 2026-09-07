@@ -1,5 +1,81 @@
 # CHANGELOG.md
 
+## v3.48.0 — Entrega 3 · Fase 27 (PR F5): Productividad — Metas + Objetivos
+
+La cuarta y quinta mini-apps a la vez, con la jerarquía que el enunciado pide:
+
+    OBJETIVO  — la dirección grande ("Mejorar mi físico durante 2026")
+       ↓
+    METAS     — resultados medibles ("Conseguir 15 dominadas")
+       ↓
+    TAREAS    — acciones ("Entrenar hoy")
+
+### 🚨 Ni una lista nueva: se amplían las dos que ya existían
+
+Los objetivos viven en la clave `objetivos` desde la **Fase 9** y las metas en `productividad.metas`
+desde la **Fase 6**. Crear listas nuevas al lado habría dejado **los objetivos de Josué invisibles en
+su propia mini-app** — que es exactamente el fallo que la E3 F16 cazó con las notas de la Biblioteca.
+
+Por eso **ni un campo se renombra**. `texto` sigue siendo el nombre de un objetivo y `nombre` el de
+una meta, porque así los leen el catálogo de la papelera, la exportación, `predicciones.js`,
+`logros.js`, el Dashboard, el Calendario y el `objetivoId` de EH F28. Lo que hace esta fase es
+**añadir**, con sus normalizadores corriendo al cargar para que lo guardado antes no pierda nada.
+
+### 🚨 `cumplido` y `estado` son dos ejes, no dos nombres de lo mismo
+
+El enunciado pide cuatro estados —Activo · En pausa · Completado · Archivado— y un booleano no puede
+con cuatro. Pero `cumplido` lo leen **veinticuatro archivos**, Fe incluido (que tiene sus propios
+objetivos espirituales con la misma forma).
+
+La solución es la de EH F36 con `activo`/`oculto`: **dos campos independientes**. `cumplido` dice si
+está hecho; `estado` dice dónde está. Y *"Completado"* **se deriva** — `estadoDeObjetivo()` es la
+única respuesta a *"¿en qué estado está?"*.
+
+De ahí sale gratis la lección de la E3 F19: **archivar un objetivo cumplido no le borra que lo
+cumplió**. Con un solo campo, sí.
+
+### 🚨 Una fecha límite con dos orígenes y una sola respuesta
+
+`plazo` (30 días … 10 años) es lo que ya existía y lo que usa `predicciones.js`; el enunciado pide
+además una *"fecha objetivo"* concreta y opcional. **No son el mismo campo con dos nombres** —el
+fallo que arregló la fase anterior—: son un horizonte y un día. `fechaLimiteDeObjetivo()` da **una
+sola** respuesta —la fecha concreta manda, el plazo rellena el hueco— y **el choque se enseña**,
+como `tallaDe()` (EH F5) y `frecuenciaDeCorte()` (EH F11).
+
+### Lo que traen las dos mini-apps
+
+- **Objetivos**: tarjeta grande con progreso derivado de sus metas, ⭐ objetivo principal (uno solo,
+  porque es lo que hace posible el *"Objetivo principal: …"* que Hoy podrá pintar), estados,
+  categorías que declaran su módulo, prioridades y filtros.
+- **Metas**: cuatro tipos de progreso —numérico, porcentaje, sí/no y frecuencia—, valor actual y
+  objetivo con unidad, fecha objetivo, prioridad, y vínculo **opcional** con un objetivo.
+- **El progreso nunca se pinta por encima del 100 %**, pero **el valor superior sí se guarda**: es
+  literal del enunciado, y son dos cosas distintas (`porcentaje` y `porcentajeReal`).
+- **Sin metas no hay porcentaje**, y no es un 0 %: un cero diría que va mal cuando lo que pasa es que
+  aún no ha puesto ninguna.
+- **Una meta se completa a mano *o* llegando al objetivo**, y las dos cosas las responde una sola
+  función.
+
+### ⚠️ Y lo que NO se ha hecho, a propósito
+
+- **Ni Rutinas**, que es la fase siguiente.
+- **Ni campos nuevos en las tareas**: `metaId` y `objetivoId` ya existían desde la E3 F26 —*"si ya
+  existe goal_id y objective_id, reutilizarlo. No crear campos duplicados"*—, así que esta fase solo
+  los volvió **enlazables**, que era exactamente lo que decía su `llega: PR F5`.
+- **Ni una lista de tareas dentro de una meta**: la relación la guarda la tarea. Con las dos habría
+  que sincronizarlas a mano al borrar (la lección de las etiquetas de la E3 F20).
+- **Ni pesos por meta**: se declaran en `PESOS_DE_META` con cómo serían, porque el enunciado pide
+  dejarlo preparado *"y no complicar ahora el cálculo"*. Sin un campo vacío que nadie rellena.
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde: **152 comprobaciones nuevas** en
+`scripts/test-metas-objetivos.mjs`, **36 casos de renderizado nuevos** (1916) y una sección nueva del
+recorrido en Chromium que **abre la aplicación con un objetivo y una meta guardados a la vieja**,
+los usa, y comprueba que al archivar uno cumplido sigue constando que se cumplió.
+
+---
+
 ## v3.47.0 — Entrega 3 · Fase 26 (PR F4): Productividad — Tareas
 
 La tercera mini-app de Productividad: secciones por fecha, prioridades, vencidas, filtros, búsqueda,

@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F27 — Productividad: Metas + Objetivos.
+if node --import ./scripts/resolver-vite.mjs scripts/test-metas-objetivos.mjs >/tmp/jc_metasobj.log 2>&1; then
+  ok "Productividad: Metas + Objetivos (E3 F27) — $(grep -c '✓' /tmp/jc_metasobj.log) comprobaciones"
+else
+  fallo "Fallan Metas y Objetivos (E3 F27)"; grep '✗' /tmp/jc_metasobj.log
+fi
+
 # Entrega 3 · F26 — Productividad: Tareas.
 if node --import ./scripts/resolver-vite.mjs scripts/test-tareas.mjs >/tmp/jc_tareas.log 2>&1; then
   ok "Productividad: Tareas (E3 F26) — $(grep -c '✓' /tmp/jc_tareas.log) comprobaciones"

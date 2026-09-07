@@ -105,14 +105,23 @@ export const categoriaTarea = (id) => CATEGORIAS_TAREA.find((c) => c.id === id) 
    nadie puede rellenar es media función (regla 8). Cuando la PR F5 construya
    Metas y Objetivos, `enlazable` pasa a `true` y la tarjeta ofrece el enlace;
    hasta entonces la pantalla dice qué falta si alguien pregunta. */
+/* ✅ **LLEGARON EN LA PR F5** (E3 F27), que es lo que decía su `llega`. Los dos
+   campos ya existían aquí desde la E3 F26 —*"si ya existe goal_id y
+   objective_id, reutilizarlo. No crear campos duplicados"*—, así que la fase
+   siguiente **no añadió nada**: solo los volvió enlazables.
+
+   ⚠️ Y la relación la guarda **la tarea**, no la meta: una meta con una lista de
+   tareas dentro habría que sincronizarla a mano al borrar una (la lección de las
+   etiquetas de la E3 F20). Quien pregunta *"¿qué tareas tiene esta meta?"* es
+   `tareasDeMeta()` en `metasObjetivos.js`. */
 export const RELACIONES_FUTURAS = [
   {
     campo: 'metaId', hacia: 'productividad.metas', nombre: 'Meta',
-    enlazable: false, llega: 'PR F5', porque: 'Metas todavía no es una mini-app: se construye en la fase siguiente.',
+    enlazable: true, llega: 'PR F5', porque: 'Metas ya es una mini-app: una tarea puede colgar de una meta.',
   },
   {
     campo: 'objetivoId', hacia: 'objetivos', nombre: 'Objetivo',
-    enlazable: false, llega: 'PR F5', porque: 'Objetivos todavía no es una mini-app: se construye en la fase siguiente.',
+    enlazable: true, llega: 'PR F5', porque: 'Objetivos ya es una mini-app: una tarea puede colgar de un objetivo.',
   },
 ];
 
@@ -605,7 +614,9 @@ export function condicionPR4({ tareas = [], hoy = todayISO() } = {}) {
     { id: 11, texto: 'Preparado para recurrencia', ok: typeof seRepite === 'function' && typeof marcarInstancia === 'function', via: 'semana.js (E3 F10)' },
     { id: 12, texto: 'Se puede lanzar Pomodoro desde una tarea', ok: typeof planConcentrarse === 'function' },
     { id: 13, texto: 'El id de la tarea llega a Pomodoro', ok: POMODORO_DESDE_TAREA.campo === 'tareaId' },
-    { id: 14, texto: 'Preparado para Metas y Objetivos', ok: RELACIONES_FUTURAS.length === 2 && RELACIONES_FUTURAS.every((r) => !r.enlazable && r.porque) },
+    // ⚠️ Actualizado en la E3 F27: los dos ya son enlazables, y lo que se comprueba
+    // sigue siendo lo mismo — que estén DECLARADOS y digan por qué (regla 8).
+    { id: 14, texto: 'Preparado para Metas y Objetivos', ok: RELACIONES_FUTURAS.length === 2 && RELACIONES_FUTURAS.every((r) => r.campo && r.hacia && r.porque) },
     { id: 15, texto: 'Hoy puede recibir el resumen', ok: typeof paraHoy === 'function' },
     {
       id: 16,

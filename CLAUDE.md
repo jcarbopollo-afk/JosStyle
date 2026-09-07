@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.46.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.48.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (44 fases — **25 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (44 fases — **27 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -165,7 +165,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 26 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 27 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -183,8 +183,8 @@ el bloque de **Biblioteca**, la **F17 (Libros, v3.38.0)**, la **F18 (Guardados, 
 **F22 (integración y experiencia global, v3.43.0)**, que 🏁 **CERRÓ EL BLOQUE DE BIBLIOTECA** —las
 ocho fases BL—. Con eso hay **dos bloques cerrados**: Hoy y Calendario (10/10) y Biblioteca (8/8). La
 **F23 (Productividad como lanzador, v3.44.0)**, la **F24 (Hábitos, v3.45.0)**, la **F25 (Pomodoro,
-v3.46.0)** y la **F26 (Tareas, v3.47.0)**, con las que el bloque de **Productividad** va por
-**4 de 7**; la que viene es la **27 — PR F5: Metas y objetivos**. El índice, con la
+v3.46.0)**, la **F26 (Tareas, v3.47.0)** y la **F27 (Metas y Objetivos, v3.48.0)**, con las que el
+bloque de **Productividad** va por **5 de 7**; la que viene es la **28 — PR F6: Rutinas**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
@@ -312,6 +312,27 @@ código de agosto mientras él decía *"la web sigue igual"*.
 - 🐛 **Y una prueba busca el MECANISMO, no la palabra** (E3 F21, sexta vez): la constante que promete
   que los elementos **no** se eliminan se llama `AVISO_ELIMINAR`, y el barrido de borrados saltaba
   con la frase que hace la promesa.
+
+- 🚨 **AMPLIAR UNA ENTIDAD NO ES RENOMBRAR SUS CAMPOS** (E3 F27). Los objetivos viven en la clave
+  `objetivos` desde la Fase 9 y las metas en `productividad.metas` desde la Fase 6; `texto`, `plazo`
+  y `cumplido` los leen **veinticuatro archivos**, Fe incluido. La fase **añade** campos y sus
+  normalizadores corren **al cargar**, así que lo guardado antes no pierde nada (regla 5).
+- 🚨 **`cumplido` Y `estado` SON DOS EJES** (E3 F27, y EH F36 lo dijo con `activo`/`oculto`). El
+  enunciado pide cuatro estados y un booleano no puede con cuatro: `cumplido` dice si está hecho,
+  `estado` dónde está, y *"Completado"* **se deriva**. Por eso **archivar un objetivo cumplido no le
+  borra que lo cumplió** — con un solo campo, sí (E3 F19).
+- 🚨 **DOS ORÍGENES PARA UNA FECHA NO SON EL FALLO DE LA E3 F26, SI HAY UNA SOLA FUNCIÓN QUE
+  RESPONDE** (E3 F27). `plazo` es un horizonte y `fechaObjetivo` un día: son preguntas distintas.
+  `fechaLimiteDeObjetivo()` da **una** respuesta —la fecha elegida manda— **y enseña el choque**,
+  como `tallaDe()` (EH F5) y `frecuenciaDeCorte()` (EH F11).
+- ⚠️ **EL 100 % ES DEL PINTADO, NO DEL DATO** (E3 F27): *"nunca permitir que visualmente supere el
+  100 %, **aunque internamente pueda registrarse un valor superior**"*. `porcentaje` se topa y
+  `porcentajeReal` no. **No copiar la decisión de otra fase sin releer el enunciado**: la E3 F17 hizo
+  lo contrario con las páginas de un libro, y también era lo correcto **allí**.
+- ⚠️ **UNA RELACIÓN LA GUARDA UN LADO SOLO** (E3 F27): la tarea lleva `metaId`, y una meta **no**
+  lleva una lista de tareas. Con las dos habría que sincronizarlas a mano al borrar.
+- ⚠️ **SIN METAS UN OBJETIVO NO TIENE PORCENTAJE** (E3 F27): un 0 % diría que va mal cuando lo que
+  pasa es que todavía no ha puesto ninguna. `null` no es cero (E3 F13, EH F25).
 
 - 🚨 **DOS ESCRITURAS SEGUIDAS EN EL MISMO TURNO SE PISAN** (E3 F26, fallo real de la E3 F25). La
   pantalla de Pomodoro llamaba a `onRegistrar(...)` y justo después a `onCambiarSesion(...)`: las dos
