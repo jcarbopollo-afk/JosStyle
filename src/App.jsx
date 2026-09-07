@@ -146,7 +146,12 @@ const firmarFotoFondo = (path) => urlFirmada(path, getSignedFondoUrl);
 // preparada para que una Fase 2 futura conecte aquí Objetivos/Hábitos/Estudios/etc. sin duplicar
 // datos).
 const MORE_NAV = [
-  { id: 'salud', label: 'Salud', icon: HeartPulse },
+  /* Entrega 3 · F30 (BN), apartados 2 y 3 — el área pasa a llamarse **Bienestar**, así que este
+     módulo NO puede llamarse «Salud»: sería la redundancia «Salud → Salud» que el apartado 3
+     prohíbe con esas palabras. El id se queda como está — es la clave de `app_data` donde viven
+     sus medidas, sus fotos y su historial, y el apartado 2 dice expresamente que no se tocan las
+     estructuras internas. */
+  { id: 'salud', label: 'Mi salud', icon: HeartPulse },
   { id: 'sueno', label: 'Sueño', icon: Moon },
   { id: 'nutricion', label: 'Nutrición', icon: Apple },
   { id: 'entreno', label: 'Entrenamiento', icon: Dumbbell },
@@ -158,7 +163,11 @@ const MORE_NAV = [
   { id: 'fe', label: 'Fe', icon: Church },
   { id: 'biblioteca', label: 'Biblioteca', icon: Library },
   { id: 'relacion', label: 'Relación', icon: Heart },
-  { id: 'bienestar', label: 'Bienestar', icon: Smartphone },
+  /* Entrega 3 · F30 (BN) — 🚨 **choque de nombres que el enunciado no podía saber.** Al pasar el
+     área a llamarse «Bienestar» había dos cosas con ese nombre en dos sitios distintos. Su propia
+     pantalla ya se titula «Bienestar digital» desde que se construyó: lo que estaba corto era la
+     etiqueta del menú, y es lo único que cambia. El id se queda. */
+  { id: 'bienestar', label: 'Bienestar digital', icon: Smartphone },
   { id: 'estadisticas', label: 'Estadísticas', icon: BarChart3 },
   { id: 'predicciones', label: 'Predicciones', icon: TrendingUp },
   { id: 'logros', label: 'Logros', icon: Trophy },
@@ -178,7 +187,10 @@ const MORE_NAV = [
 const MAX_RECIENTES_BUSQUEDA = 4;
 
 const AREAS_NAV = [
-  { id: 'area-salud', label: 'Salud', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno'] },
+  /* Entrega 3 · F30 (BN), apartado 2 — *"SALUD → BIENESTAR"*, y la navegación queda
+     **Inicio · Bienestar · Vida · Gestión**. El id `area-salud` NO se toca: lo guarda la
+     personalización de la Fase 19 (orden y ocultos), y cambiarlo perdería lo que Josué eligió. */
+  { id: 'area-salud', label: 'Bienestar', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno'] },
   { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['calendario', 'horario', 'estudios', 'productividad', 'rachas', 'diario', 'biblioteca'] },
   { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['economia', 'negocio', 'armario'] },
   { id: 'area-mas', label: 'Más', icon: MoreHorizontal, modulos: ['estilo-hombre', 'relacion', 'fe', 'bienestar', 'estadisticas', 'predicciones', 'logros', 'ajustes'] },
@@ -2403,9 +2415,14 @@ export default function App() {
         // de FUNCIÓN real (apartado 2), no de pantalla entera: antes HealthView protegía la
         // pestaña de fotos siempre, sin opción; ahora depende de `protectedActions`, con la
         // migración de carga activándola sola para no cambiar nada a quien ya tenía PIN.
+        //
+        // Entrega 3 · F30 (BN) — `perfil` llega para dos cosas, y ninguna es un dato nuevo: el
+        // IMC (que ya salía del perfil en Hoy y en Ajustes, con la fórmula escrita a mano en las
+        // dos) y las lesiones relevantes, que se ENSEÑAN dentro del Historial y se siguen
+        // editando donde siempre, en Ajustes → Perfil. Ni una copia.
         return (
           <HealthView
-            salud={salud} fotos={saludFotos}
+            salud={salud} fotos={saludFotos} perfil={perfil}
             onAddMedida={addMedida} onAddHistorial={addHistorialMedico}
             onDeleteMedida={deleteMedida} onDeleteHistorial={deleteHistorialMedico}
             onAddFoto={addFoto} onDeleteFoto={deleteFoto}

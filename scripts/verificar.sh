@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F30 — el apartado Bienestar.
+if node --import ./scripts/resolver-vite.mjs scripts/test-bienestar.mjs >/tmp/jc_bienestar.log 2>&1; then
+  ok "Bienestar: rediseño del apartado (E3 F30) — $(grep -c '✓' /tmp/jc_bienestar.log) comprobaciones"
+else
+  fallo "Falla el apartado Bienestar (E3 F30)"; grep '✗' /tmp/jc_bienestar.log
+fi
+
 # Entrega 3 · F29 — Productividad: integración global.
 if node --import ./scripts/resolver-vite.mjs scripts/test-integracion-pr.mjs >/tmp/jc_intpr.log 2>&1; then
   ok "Productividad: integración global (E3 F29) — $(grep -c '✓' /tmp/jc_intpr.log) comprobaciones"

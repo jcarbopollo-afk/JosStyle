@@ -15,13 +15,13 @@ import { construirIndice, buscar, pareceUnaPregunta, normalizar, normalizarRaiz,
 
 // Copia de MORE_NAV (App.jsx). Solo id y label: el icono no se usa en el motor.
 const MODULOS = [
-  { id: 'salud', label: 'Salud' }, { id: 'sueno', label: 'Sueño' },
+  { id: 'salud', label: 'Mi salud' }, { id: 'sueno', label: 'Sueño' },
   { id: 'nutricion', label: 'Nutrición' }, { id: 'entreno', label: 'Entrenamiento' },
   { id: 'calendario', label: 'Calendario' }, { id: 'estudios', label: 'Estudios' },
   { id: 'negocio', label: 'Negocio' }, { id: 'productividad', label: 'Productividad' },
   { id: 'objetivos', label: 'Objetivos' }, { id: 'diario', label: 'Diario' },
   { id: 'fe', label: 'Fe' }, { id: 'biblioteca', label: 'Biblioteca' },
-  { id: 'relacion', label: 'Relación' }, { id: 'bienestar', label: 'Bienestar' },
+  { id: 'relacion', label: 'Relación' }, { id: 'bienestar', label: 'Bienestar digital' },
   { id: 'estadisticas', label: 'Estadísticas' }, { id: 'predicciones', label: 'Predicciones' },
   { id: 'logros', label: 'Logros' }, { id: 'economia', label: 'Economía' },
   { id: 'ajustes', label: 'Ajustes' },
@@ -108,7 +108,15 @@ console.log('\n═══ BI Fases 2, 3 y 4 — buscador, motor e intención ═�
   // El ejemplo literal de la especificación: buscando "color", "Colores" gana a
   // cualquier entrada que solo mencione la palabra de pasada.
   comprobar('"color" → el título gana a la descripción', primero('color')?.id === 'ajuste:apariencia', titulos('color')[0]);
-  comprobar('"Salud" exacto sale el primero', primero('Salud')?.tab === 'salud');
+  /* 🚨 E3 F30 (BN) — el módulo pasó a llamarse «Mi salud» y su área «Bienestar»,
+     así que «Salud» ya no coincide con ningún título. Lo que tiene que seguir
+     siendo verdad —y es lo que esta línea protege— es que **buscarlo lleva
+     ahí**: la palabra se mudó a `PALABRAS_MODULOS.salud`, igual que las de
+     Objetivos en la E3 F23. Un renombrado que deja a Josué sin encontrar su
+     apartado es exactamente lo que D2-07 prohíbe. */
+  comprobar('"Salud" sigue llevando a su apartado aunque ya no se llame así', primero('Salud')?.tab === 'salud');
+  comprobar('"Mi salud" también', primero('Mi salud')?.tab === 'salud');
+  comprobar('y "lesiones" lleva ahí, que es donde se consultan (apartado 9)', primero('lesiones')?.tab === 'salud');
   // "notas" está en las palabras de Estudios y de Biblioteca: ambas valen, no debe
   // quedarse sin resultados ni devolver una sola.
   comprobar('"notas" devuelve más de una opción razonable', buscar(indice, 'notas').length >= 2, String(buscar(indice, 'notas').length));

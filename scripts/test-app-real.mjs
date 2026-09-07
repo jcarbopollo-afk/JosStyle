@@ -3240,4 +3240,94 @@ ok(await pulsar('Pomodoro — abre pomodoro'), 'una acción rápida abre su mini
 const pom_pr7 = await esperarTexto(/Concéntrate/i);
 ok(/Concéntrate/i.test(pom_pr7), '⚠️ y llega al Pomodoro que ya existía, sin un temporizador nuevo');
 
+
+
+/* ── E3 F30 (BN) · EL APARTADO BIENESTAR ──────────────────────────────────
+   🚨 **Lo que ninguna prueba de Node puede ver:** que la redundancia «Salud →
+   Salud» ha desaparecido de la pantalla de verdad, que las tres secciones se
+   pliegan y se despliegan, y que las lesiones se ven **dentro del Historial**
+   sin que exista ninguna sección con ese nombre.
+
+   ⚠️ Y una cosa más que solo se ve aquí: `HealthView` **no tenía ni un caso de
+   renderizado** hasta esta fase, así que hasta ahora esta pantalla no la
+   probaba absolutamente nadie. */
+const HOY_BN = new Date().toLocaleDateString('sv-SE');
+almacen.salud = {
+  medidas: [
+    { id: 'bn_m1', fecha: '2026-08-20', peso: 70 },
+    { id: 'bn_m2', fecha: HOY_BN, peso: 71.5, grasaCorporal: 14, frecuenciaCardiaca: 58 },
+  ],
+  historial: [
+    { id: 'bn_h1', fecha: HOY_BN, tipo: 'Lesión', descripcion: 'Esguince de tobillo jugando al fútbol' },
+    { id: 'bn_h2', fecha: '2026-08-01', tipo: 'Vacuna', descripcion: 'Gripe' },
+  ],
+};
+almacen.perfil = {
+  nombre: 'Josué', fechaNacimiento: '2010-07-29', altura: 187, peso: 72, actividad: 'moderado',
+  lesiones: [{ id: 'bn_l1', zona: 'Hombro izquierdo', estado: 'En recuperación', fecha: '2026-07-10' }],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+/* Apartado 2: la barra inferior dice Bienestar, no Salud. */
+const barra_bn = await ver();
+ok(/Bienestar/i.test(barra_bn), '🚨 E3 F30 — la barra inferior dice BIENESTAR (apartado 2)');
+/* 🐛 **Y esto lo cazó esta misma sección:** el acceso de Hoy al módulo del tiempo
+   de pantalla seguía diciendo «Bienestar» a secas, así que con el área llamada
+   igual el recorrido pulsaba el de Hoy y acababa en la pantalla equivocada. Un
+   renombrado a medias es peor que ninguno. */
+ok(/Bienestar digital/i.test(barra_bn),
+  '🚨 y el acceso de Hoy al tiempo de pantalla dice «Bienestar digital»: dos cosas no pueden llamarse igual');
+
+ok(await pulsar('Bienestar'), 'se abre el área Bienestar');
+const hub_bn = await esperarTexto(/Mi salud/i);
+ok(/Mi salud/i.test(hub_bn), '🚨 Y DENTRO NO SE REPITE EL NOMBRE: la tarjeta es «Mi salud» (apartado 3)');
+ok(/Sueño/i.test(hub_bn) && /Nutrición/i.test(hub_bn),
+  '⚠️ con el resto del área intacto: no se ha movido ningún módulo');
+ok(/71\.5 kg/i.test(hub_bn), '⚠️ y la tarjeta enseña su último peso de verdad');
+
+ok(await pulsar('Abrir Mi salud'), 'se entra en Mi salud');
+const bn = await esperarTexto(/Medidas/i);
+ok(/71\.5/.test(bn), '🚨 EL ESTADO DE UN VISTAZO: el peso de la última medida arriba del todo');
+ok(/20\.4/.test(bn), '⚠️ con su IMC, calculado con la altura del perfil');
+ok(/Medidas/i.test(bn) && /Fotos/i.test(bn) && /Historial/i.test(bn),
+  '🚨 y las tres secciones del apartado 4');
+ok(/Analizar mi salud/i.test(bn), '🚨 Y «ANALIZAR MI SALUD» SIGUE AHÍ (apartado 4: no eliminarla, no esconderla)');
+ok(/2 registros/i.test(bn), '⚠️ cada sección con su número real');
+ok(!/Lesiones/i.test(bn.split('Historial')[0] || ''),
+  '🚨 y NO hay ninguna sección llamada «Lesiones» (apartado 9)');
+
+/* Medidas nace abierta: la pantalla nunca sale en blanco (E3 F26). */
+ok(/Registrar medidas/i.test(bn), '🚨 MEDIDAS NACE ABIERTA: una pantalla toda plegada saldría en blanco');
+ok(/Evolución del peso/i.test(bn), '⚠️ con su gráfica, la de siempre');
+
+/* Y el Historial, con las lesiones de las DOS fuentes dentro. */
+ok(await pulsar('Desplegar Historial'), 'se despliega el Historial');
+const hist_bn = await esperarTexto(/Esguince de tobillo/i);
+ok(/Esguince de tobillo/i.test(hist_bn), '🚨 LAS LESIONES SE CONSULTAN DENTRO DEL HISTORIAL (apartado 4)');
+ok(/Hombro izquierdo/i.test(hist_bn),
+  '🚨 Y TAMBIÉN LAS DEL PERFIL, sin copiarlas: se leen de `perfil.lesiones`');
+ok(/Ajustes → Perfil/i.test(hist_bn),
+  '⚠️ diciendo dónde se editan — una sola fuente de verdad, y el sitio escrito en la pantalla');
+ok(/Vacuna/i.test(hist_bn), '⚠️ y el resto del historial sigue entero');
+
+/* El filtro por tipo, que es lo que hace encontrable una lesión vieja. */
+ok(await pulsar('Lesión'), 'se filtra por Lesión');
+await page.waitForTimeout(400);
+const filtrado_bn = await ver();
+ok(/Esguince de tobillo/i.test(filtrado_bn) && !/Gripe/i.test(filtrado_bn),
+  '⚠️ y el filtro deja solo las lesiones');
+
+/* Plegar de verdad pliega. */
+ok(await pulsar('Plegar Historial'), 'se pliega el Historial');
+await page.waitForTimeout(400);
+const plegado_bn = await ver();
+ok(!/Esguince de tobillo/i.test(plegado_bn), '⚠️ y su contenido desaparece');
+ok(/Historial/i.test(plegado_bn), '⚠️ pero la sección sigue ahí para volver a abrirla');
+
+/* 🚨 Y lo que de verdad prohíbe el apartado 3: en ningún sitio de esta pantalla
+   se lee «Salud» a secas. */
+ok(!/(^|[^a-zA-ZáéíóúñÁÉÍÓÚÑ])Salud([^a-zA-ZáéíóúñÁÉÍÓÚÑ]|$)/.test(plegado_bn.replace(/Analizar mi salud/gi, '')),
+  '🚨 Y «SALUD» A SECAS NO SE LEE EN NINGUNA PARTE: la redundancia del apartado 3 ha desaparecido');
+
 await salir(browser);

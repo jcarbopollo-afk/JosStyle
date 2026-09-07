@@ -1,5 +1,94 @@
 # CHANGELOG.md
 
+## v3.51.0 — Entrega 3 · Fase 30 (BN): el apartado Bienestar
+
+El primer rediseño puro de la entrega: **no añade ni una función**. Su apartado 1 lo dice con estas
+palabras — *"El objetivo principal NO es añadir funcionalidades nuevas, sino mejorar la jerarquía,
+nomenclatura y presentación de las funcionalidades que ya existen"*.
+
+### 🚨 «Salud → Salud» ha desaparecido
+
+El área de la barra inferior se llamaba **Salud** y el primer módulo de dentro también, así que al
+entrar se leía el mismo nombre dos veces seguidas. Ahora el área es **Bienestar** —*Inicio ·
+Bienestar · Vida · Gestión*— y el módulo es **Mi salud**.
+
+**Ni un id se ha tocado.** `area-salud`, `salud` y `bienestar` siguen exactamente igual, porque el
+apartado 2 lo pide y porque son la clave de `app_data` donde viven las medidas, las fotos y el
+historial, y lo que la personalización de la Fase 19 tiene guardado.
+
+### 🚨 Y un choque de nombres que el enunciado no podía saber
+
+Ya existía un módulo llamado **Bienestar** —el digital, el del tiempo de pantalla— en el área «Más».
+Con el área llamada Bienestar habría dos cosas con el mismo nombre en dos sitios. Su propia pantalla
+se titula *"Bienestar digital"* desde que se construyó: lo que estaba corto era su etiqueta en el
+menú, y es lo único que cambia.
+
+### 🚨 Las lesiones estaban en dos sitios, y ahora se ven juntas
+
+El apartado 9 prohíbe una sección de Lesiones y el 4 pide que se gestionen *"dentro del Historial,
+aprovechando la estructura existente"*. Existían **dos** estructuras:
+
+1. `salud.historial` con `tipo: 'Lesión'` — eventos con fecha (Fase 3).
+2. `perfil.lesiones` — las lesiones relevantes de ahora, que se editan en Ajustes → Perfil (Fase A2).
+
+El Historial las enseña **las dos**, sin copiar ninguna, y dice dónde se edita cada una. Es
+`leerDato()` de EH F4 otra vez: una sola respuesta y el sitio escrito en la pantalla.
+
+⚠️ Y el resumen de la sección **no las suma**: las del historial ya están dentro de *"3 entradas"*,
+así que un *"3 entradas · 3 lesiones"* parecería que hay seis cosas. Dice *"3 entradas · 1 lesión en
+tu perfil"*.
+
+### 🚨 `HealthView` no tenía NI UN caso de renderizado
+
+Ni uno, desde que existe el banco de pruebas. La pantalla de Salud se pintaba en producción y **no
+la probaba absolutamente nadie** — es el agujero de `LibraryView` de la E3 F16 otra vez, aunque aquí
+el stub de Supabase sí exportaba lo que hacía falta y sencillamente nadie la añadió. Ahora tiene
+**24 casos**: vacía, con datos, con las lesiones del perfil, sin altura, con fotos y con el PIN
+puesto.
+
+### 🐛 La fórmula del IMC estaba escrita a mano en dos pantallas
+
+Y el comentario del Dashboard lo decía: *"misma fórmula exacta que ya usa SettingsView"*, que es la
+forma educada de decir «hay dos». Ahora hay una, `imcDe()`, y **devuelve `null` cuando falta la
+altura** en vez del `Infinity` que se pintaría tal cual.
+
+### Lo que cambia en la pantalla
+
+Antes eran tres pestañas que obligaban a elegir una y escondían las otras dos. Ahora es **una sola
+pantalla**, sin un nivel de navegación nuevo:
+
+- El **estado de un vistazo** arriba: peso e IMC, y cuándo fue el último registro. Si el peso viene
+  del perfil porque todavía no hay medidas, **lo dice**.
+- Tres **secciones plegables** —Medidas, Fotos, Historial— en el orden del apartado 10: *qué puedo
+  consultar → qué puedo registrar → dónde está mi historial*. Cada una con su número real, y
+  **nunca un cero**: sin nada dice qué se hace ahí.
+- **Medidas nace abierta**, así que la pantalla no puede salir en blanco (la lección de la E3 F26).
+- Un **filtro por tipo** en el Historial, que sale de los tipos que él usa de verdad y vuelve solo a
+  «Todo» si borra la última entrada de un tipo.
+- Y **Analizar mi salud** al final, con su prompt intacto.
+
+### Ni un dato nuevo
+
+Ni una tabla, ni una clave en `app_data`, ni un campo, ni una función eliminada. `src/lib/salud.js`
+no llama a `saveData`, no toca Supabase y no tiene normalizador, porque no tiene almacén propio.
+
+### 🐛 Y un renombrado a medias que cazó el recorrido en Chromium
+
+La tarjeta de acceso de **Hoy** al módulo del tiempo de pantalla seguía diciendo *"Bienestar"* a
+secas, escrito a mano en `DashboardView`. Con el área llamada igual, había **dos botones con el
+mismo nombre en la misma pantalla** — y el recorrido, que pulsa como pulsaría Josué, acabó en la
+pantalla equivocada. Ni el build ni las 1980 pruebas de renderizado lo veían: las dos pantallas se
+pintan perfectas por separado. **Un renombrado a medias es peor que ninguno.**
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde: **124 comprobaciones nuevas** en `scripts/test-bienestar.mjs`,
+**24 casos de renderizado nuevos** para una vista que no tenía ninguno (1980) y una sección nueva del
+recorrido en Chromium que entra por la barra inferior, despliega el Historial, ve la lesión del
+perfil dentro y comprueba que **«Salud» a secas no se lee en ninguna parte**.
+
+---
+
 ## v3.50.0 — Entrega 3 · Fase 29 (PR F7): Productividad — Integración global
 
 🏁 **CIERRA EL BLOQUE DE PRODUCTIVIDAD** — las siete fases PR. Productividad deja de ser seis

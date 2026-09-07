@@ -14,6 +14,11 @@ import { TEXTOS_APUNTES, MAX_APUNTE } from '../lib/centroDelDia';
    🚨 *"No convertir Hoy en otra copia de Productividad"*: son cinco líneas y un
    enlace, y cada número lo da la mini-app que lo tiene. */
 import { resumenParaHoy } from '../lib/integracionPR';
+/* Entrega 3 · F30 (BN) — la fórmula del IMC estaba escrita a mano aquí y en Ajustes; este
+   comentario decía literalmente *"misma fórmula exacta que ya usa SettingsView"*, que es la
+   forma educada de decir «hay dos». Ahora hay una, y devuelve `null` en vez de un `Infinity`
+   cuando falta la altura. */
+import { imcDe } from '../lib/salud';
 import { ResumenRachaHoy } from './RachasView';
 import { resumenDelDia, eventosDelDia } from '../lib/calendario';
 import { puntuacionDelDia, mensajePuntuacion } from '../lib/puntuacion';
@@ -630,13 +635,12 @@ export default function DashboardView({
     .filter((t) => !t.hecha)
     .sort((a, b) => (a.fecha || '9999').localeCompare(b.fecha || '9999'))[0] || null;
 
-  // Salud: peso/IMC — misma fórmula exacta que ya usa SettingsView (categoría Perfil, "Cálculos
-  // corporales"), con el peso más reciente de Salud si existe, o el del Perfil si todavía no hay
-  // ninguna medida registrada.
+  // Mi salud: peso/IMC — con el peso más reciente si existe, o el del Perfil si todavía no hay
+  // ninguna medida registrada. El cálculo lo hace `imcDe` (E3 F30), que es el único sitio donde
+  // vive esa fórmula.
   const ultimaMedida = ultimoPorFechaLocal(salud?.medidas);
   const pesoActual = ultimaMedida?.peso || perfil?.peso;
-  const alturaM = (perfil?.altura || 0) / 100;
-  const imc = pesoActual && alturaM ? pesoActual / (alturaM * alturaM) : null;
+  const imc = imcDe(pesoActual, perfil?.altura);
 
   const rEconomia = resumenes?.economia;
   const rNutricion = resumenes?.nutricion;
@@ -811,7 +815,7 @@ export default function DashboardView({
           )}
           {!oculto('salud') && (
             <DashboardModuleCard
-              icon={HeartPulse} accent={accent} titulo="Salud"
+              icon={HeartPulse} accent={accent} titulo="Mi salud"
               vacio={!pesoActual}
               valor={pesoActual ? `${pesoActual} kg` : undefined}
               sub={imc ? `IMC ${imc.toFixed(1)}` : 'Toca para registrar una medida'}
@@ -830,7 +834,10 @@ export default function DashboardView({
         {!oculto('relacion') && <MiniAccessCard icon={Heart} label="Relación" accent={accent} onClick={() => onNavegar('relacion')} />}
         {!oculto('biblioteca') && <MiniAccessCard icon={Library} label="Biblioteca" accent={accent} onClick={() => onNavegar('biblioteca')} />}
         {!oculto('fe') && <MiniAccessCard icon={Church} label="Fe" accent={accent} onClick={() => onNavegar('fe')} />}
-        {!oculto('bienestar') && <MiniAccessCard icon={Smartphone} label="Bienestar" accent={accent} onClick={() => onNavegar('bienestar')} />}
+        {/* Entrega 3 · F30 (BN) — «Bienestar digital», como en el menú y como en su propia
+            pantalla. Con el área llamada Bienestar, un acceso llamado igual desde Hoy llevaba
+            al sitio equivocado — y **lo cazó el recorrido en Chromium**, no el build. */}
+        {!oculto('bienestar') && <MiniAccessCard icon={Smartphone} label="Bienestar digital" accent={accent} onClick={() => onNavegar('bienestar')} />}
       </div>
 
       {/* Ampliación del Dashboard — Centro de Control, apartado 13/14: "Acciones rápidas" —

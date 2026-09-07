@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.50.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.51.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (46 fases — **29 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (46 fases — **30 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -138,11 +138,11 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **14 230 pruebas unitarias** con Node repartidas en **131 suites** (5 de ellas de auditoría),
-**1956 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **882
-comprobaciones sobre la aplicación de verdad en Chromium** — **17 079 comprobaciones**.
+Vite, **15 265 pruebas unitarias** con Node repartidas en **133 suites** (5 de ellas de auditoría),
+**1980 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **908
+comprobaciones sobre la aplicación de verdad en Chromium** — **18 164 comprobaciones**.
 
-Eso ya ha encontrado **ochenta y cinco bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **ochenta y seis bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`), una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles, una
@@ -168,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 29 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 30 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -188,9 +188,10 @@ ocho fases BL—. La
 **F23 (Productividad como lanzador, v3.44.0)**, la **F24 (Hábitos, v3.45.0)**, la **F25 (Pomodoro,
 v3.46.0)**, la **F26 (Tareas, v3.47.0)**, la **F27 (Metas y Objetivos, v3.48.0)**, la **F28
 (Rutinas, v3.49.0)** y la **F29 (integración global, v3.50.0)**, que 🏁 **CERRÓ EL BLOQUE DE
-PRODUCTIVIDAD** —las siete fases PR—. Con eso hay **tres bloques cerrados**: Hoy y Calendario
-(10/10), Biblioteca (8/8) y Productividad (7/7). La que viene es
-la **30 — BN: Bienestar, rediseño y reorganización del apartado**. El índice, con la
+PRODUCTIVIDAD** —las siete fases PR—, y la **F30 (el apartado Bienestar, v3.51.0)**, que 🏁
+**CERRÓ EL BLOQUE BN**. Con eso hay **cuatro bloques cerrados**: Hoy y Calendario
+(10/10), Biblioteca (8/8), Productividad (7/7) y Bienestar (1/1). La que viene es
+la **31 — SU F1: Sueño, registro simple y experiencia premium**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -325,6 +326,43 @@ código de agosto mientras él decía *"la web sigue igual"*.
 - 🐛 **Y una prueba busca el MECANISMO, no la palabra** (E3 F21, sexta vez): la constante que promete
   que los elementos **no** se eliminan se llama `AVISO_ELIMINAR`, y el barrido de borrados saltaba
   con la frase que hace la promesa.
+
+- 🚨 **UN APARTADO Y EL MÓDULO DE DENTRO NO PUEDEN LLAMARSE IGUAL** (E3 F30, apartado 3). El área de
+  la barra inferior era «Salud» y su primer módulo también, así que al entrar se leía el mismo nombre
+  dos veces. Ahora el área es **Bienestar** y el módulo **Mi salud**. ⚠️ **Y ni un id se toca**:
+  `area-salud`, `salud` y `bienestar` son claves de `app_data` y lo que guarda la personalización de
+  la Fase 19 — renombrar lo que se ve y renombrar lo que se guarda son dos cosas distintas.
+- 🚨 **ANTES DE PONERLE UN NOMBRE A ALGO, MIRAR SI ESE NOMBRE YA ES DE OTRO** (E3 F30, y es la
+  lección más repetida del proyecto, esta vez sobre una **etiqueta**): ya había un módulo llamado
+  **Bienestar** —el digital, el del tiempo de pantalla— en el área «Más». Su propia pantalla se
+  titulaba «Bienestar digital» desde que se construyó; lo que estaba corto era su etiqueta del menú.
+- 🐛 **UN RENOMBRADO A MEDIAS ES PEOR QUE NINGUNO** (E3 F30, **y lo cazó Chromium**). El acceso de
+  Hoy al tiempo de pantalla seguía diciendo «Bienestar» a secas, escrito a mano en `DashboardView`,
+  así que con el área llamada igual había **dos botones con el mismo nombre en la misma pantalla** y
+  el recorrido acabó en la equivocada. Ni el build ni los 1980 casos de renderizado lo ven: cada
+  pantalla se pinta perfecta por separado. **Al renombrar algo, barrer TODOS los sitios donde está
+  escrito a mano**, no solo su catálogo.
+- 🚨 **LAS LESIONES ESTABAN EN DOS SITIOS, Y NINGUNO ERA UNA SECCIÓN** (E3 F30, apartado 9):
+  `salud.historial` con `tipo: 'Lesión'` (Fase 3) y `perfil.lesiones` (Fase A2). El Historial **las
+  enseña las dos sin copiar ninguna** y dice dónde se edita cada una — `leerDato()` de EH F4 otra
+  vez. ⚠️ Y **no las suma**: las del historial ya están dentro de *"3 entradas"*, así que un
+  *"3 entradas · 3 lesiones"* parecería que hay seis cosas.
+- 🚨 **`HealthView` NO TENÍA NI UN CASO DE RENDERIZADO** (E3 F30), desde que existe el banco: la
+  pantalla de Salud se pintaba en producción y **no la probaba nadie**. Es el agujero de
+  `LibraryView` de la E3 F16 otra vez, y aquí ni siquiera había un stub que lo explicara — nadie la
+  añadió. **Al tocar una vista, comprobar primero que está en `smoke-vistas.jsx`.**
+- 🐛 **LA FÓRMULA DEL IMC ESTABA ESCRITA A MANO EN DOS PANTALLAS** (E3 F30), y el comentario del
+  Dashboard lo confesaba: *"misma fórmula exacta que ya usa SettingsView"*. Con la altura a cero daba
+  **`Infinity`**, que se pintaría tal cual. Ahora es `imcDe()` y devuelve `null` (regla 8).
+- ⚠️ **UN RENOMBRADO MUDA SUS PALABRAS AL BUSCADOR** (E3 F30, y la E3 F23 lo dijo con Objetivos):
+  buscar «salud» tiene que seguir encontrando el apartado aunque ya no se llame así, y «lesiones»
+  también, porque no hay ninguna pantalla con ese nombre.
+- ⚠️ **UNA TABLA DE RENOMBRADOS SE COMPRUEBA CONTRA LOS ARCHIVOS** (E3 F30): `RENOMBRADO` dice dónde,
+  qué decía y qué dice, y la prueba **abre cada archivo** — una lista que solo se cuenta a sí misma
+  no demuestra nada (EH F42).
+- 🐛 **Y otra vez el fallo de la E3 F28**: una comprobación mía comparaba el resultado **consigo
+  mismo**, así que no podía ponerse roja jamás. Se arregla dándole un `hoy` fijo a la función y
+  escribiendo el texto esperado entero.
 
 - 🚨 **DOS FUNCIONES HERMANAS PUEDEN NO TENER LA MISMA FIRMA, Y LA QUE NO LA TIENE NO FALLA: CALLA**
   (E3 F29). `filtrarMetas`, `filtrarObjetivos` y `filtrarRutinas` reciben una **cadena**;

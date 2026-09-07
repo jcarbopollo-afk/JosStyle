@@ -107,7 +107,13 @@ function margenErratas(q) {
 // exacto. Es lo único que no se puede derivar: "dinero" no aparece en ningún
 // sitio del código, pero es como se busca Economía.
 export const PALABRAS_MODULOS = {
-  salud: ['peso', 'imc', 'medidas', 'medico', 'historial', 'altura', 'cuerpo', 'analitica'],
+  /* 🚨 E3 F30 (BN) — el módulo pasó a llamarse «Mi salud» y su área «Bienestar»,
+     así que buscar "salud" ya no encuentra un título exacto: la palabra se muda
+     aquí, igual que las de Objetivos en la E3 F23. Y "lesiones" también, porque
+     el apartado 9 dice que se consultan dentro del Historial y no hay ninguna
+     pantalla que se llame así. */
+  salud: ['salud', 'peso', 'imc', 'medidas', 'medico', 'historial', 'altura', 'cuerpo', 'analitica',
+    'lesion', 'lesiones', 'fotos de progreso', 'tension', 'grasa corporal'],
   sueno: ['dormir', 'descanso', 'noche', 'siesta', 'despertar', 'insomnio', 'horas de sueno'],
   nutricion: ['comida', 'comer', 'calorias', 'dieta', 'agua', 'alimentacion', 'macros', 'desayuno', 'cena'],
   entreno: ['entrenar', 'entrenamiento', 'calistenia', 'gimnasio', 'ejercicio', 'futbol', 'deporte', 'habilidades', 'dominadas', 'partido'],
@@ -124,7 +130,8 @@ export const PALABRAS_MODULOS = {
   fe: ['dios', 'oracion', 'iglesia', 'espiritual', 'biblia', 'servicio'],
   biblioteca: ['apuntes', 'archivos', 'enlaces', 'documentos', 'pdf', 'guardar', 'notas'],
   relacion: ['pareja', 'novia', 'aniversario', 'privado'],
-  bienestar: ['movil', 'pantallas', 'tiempo de uso', 'digital', 'concentracion', 'desconectar'],
+  bienestar: ['movil', 'pantallas', 'tiempo de uso', 'digital', 'concentracion', 'desconectar',
+    'bienestar digital'],
   estadisticas: ['graficas', 'datos', 'analisis', 'tendencias', 'evolucion', 'numeros'],
   predicciones: ['futuro', 'proyeccion', 'estimacion', 'prevision'],
   logros: ['insignias', 'medallas', 'trofeos', 'conseguidos'],

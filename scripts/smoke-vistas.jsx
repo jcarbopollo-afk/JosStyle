@@ -146,6 +146,7 @@ import { crearDesdePlantilla, crearBloqueRapido, editarBloque, ALCANCES } from '
 import AchievementsView from '../src/views/AchievementsView.jsx';
 import HubView from '../src/views/HubView.jsx';
 import WellbeingView from '../src/views/WellbeingView.jsx';
+import HealthView from '../src/views/HealthView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
@@ -2194,6 +2195,50 @@ const CASOS = [
     ];
   })(),
   ['WellbeingView', WellbeingView, (e) => ({ bienestar: e.bienestar, onAdd: noop, onDelete: noop, onAddReflexion: noop, onCompletarSesion: noop, accent })],
+
+  /* 🚨 Entrega 3 · F30 (BN) — **`HealthView` no tenía ni un caso de renderizado.**
+     Ni uno, desde que existe este banco: la pantalla de Salud se pintaba en
+     producción y en ninguna prueba. Es el agujero de `LibraryView` en la E3 F16
+     otra vez, aunque por otro motivo —aquí el stub de Supabase sí exportaba lo
+     que hacía falta, sencillamente nadie la añadió—. Ahora tiene seis casos. */
+  ...(() => {
+    const props = (e, extra = {}) => ({
+      salud: e.salud, fotos: [], perfil: e.perfil,
+      onAddMedida: noop, onDeleteMedida: noop, onAddHistorial: noop, onDeleteHistorial: noop,
+      onAddFoto: async () => {}, onDeleteFoto: noop,
+      protegidoFotos: false, pinHash: null, pinSalt: null,
+      desbloqueadoFotos: true, onDesbloquearFotos: noop, onOlvidoPin: noop,
+      accent, ...extra,
+    });
+    return [
+      ['HealthView', HealthView, (e) => props(e)],
+      /* Con historial de los dos tipos: los filtros solo salen a partir de dos. */
+      ['HealthView · historial con tipos', HealthView, (e) => props(e, {
+        salud: {
+          medidas: e.salud.medidas,
+          historial: [
+            { id: 'h1', fecha: HOY, tipo: 'Lesión', descripcion: 'Esguince de tobillo' },
+            { id: 'h2', fecha: AYER, tipo: 'Vacuna', descripcion: 'Gripe' },
+          ],
+        },
+      })],
+      /* 🚨 Las lesiones del perfil se ENSEÑAN dentro del Historial, sin copiarlas. */
+      ['HealthView · lesiones del perfil', HealthView, (e) => props(e, {
+        perfil: { ...e.perfil, lesiones: [{ id: 'l1', zona: 'Tobillo derecho', estado: 'Recuperada', fecha: AYER }] },
+      })],
+      /* 🚨 Sin altura NO hay IMC: `imcDe` devuelve `null` en vez de un `Infinity`
+         que se pintaría tal cual en la pantalla. */
+      ['HealthView · sin altura', HealthView, (e) => props(e, { perfil: { ...e.perfil, altura: 0 } })],
+      /* Con fotos, que es lo que arrastra el `useEffect` de las URLs firmadas. */
+      ['HealthView · con fotos', HealthView, (e) => props(e, {
+        fotos: [{ id: 'f1', fecha: HOY, path: 'u/1.jpg', nota: 'Tras 3 meses' }],
+      })],
+      /* Y con el PIN puesto: la sección de Fotos entra por `PinGate`. */
+      ['HealthView · fotos con PIN', HealthView, (e) => props(e, {
+        protegidoFotos: true, desbloqueadoFotos: false, pinHash: 'x', pinSalt: 'y',
+      })],
+    ];
+  })(),
   ['BusinessView', BusinessView, (e) => ({ negocio: e.negocio, onAdd: noop, onUpdate: noop, onDelete: noop, accent })],
   ['ArmarioView', ArmarioView, (e) => ({
     armario: e.armario, onAddPrenda: noop, onUpdatePrenda: noop, onDeletePrenda: noop,
