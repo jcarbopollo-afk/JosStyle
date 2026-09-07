@@ -729,6 +729,53 @@ console.log('\n═══ El aviso de por qué no suena ═══\n');
   delete globalThis.document;
 }
 
+/* ===========================================================================
+   EL DESBLOQUEO, QUE SOLO TENÍA UN INTENTO (EH F66)
+   ===========================================================================
+   🚨 Josué, 2026-09-07: en su PC sonaba y en su iPhone no, y el aviso de Ajustes
+   le decía siempre lo mismo — "toca cualquier botón" — con todo encendido y
+   después de tocar veinte.
+
+   Era verdad: el motor nunca llegaba a desbloquearse. Los oyentes del primer
+   gesto se ponían con `{ once: true }`, o sea **un único intento**, y en un
+   móvil el primer gesto casi nunca es pulsar: es **arrastrar para bajar la
+   pantalla**. Ese roce gastaba la única oportunidad, Safari no concedía permiso
+   durante un desplazamiento, y los oyentes ya no existían. En un ordenador el
+   primer gesto es un clic de verdad, y por eso allí no se veía.
+
+   ⚠️ Lo que sigue no comprueba iOS —eso solo lo puede probar él—, sino la regla
+   que lo hacía imposible: **no se deja de escuchar hasta que funcione**. */
+console.log('\n═══ El desbloqueo insiste hasta que funciona ═══\n');
+{
+  const motorSrc3 = readFileSync(join(RAIZ, 'src/lib/audioEngine.js'), 'utf8');
+  const motorVivo = motorSrc3.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+  comprobar('🚨 CLAVE · Los oyentes del gesto NO se ponen con `once`: un solo intento era el fallo',
+    !/addEventListener\([^)]*once:\s*true/.test(motorVivo));
+  comprobar('🚨 CLAVE · Y solo se sueltan si el desbloqueo ha salido BIEN',
+    /desbloquear\(\)\.then\(\(listo\) => \{ if \(listo\)/.test(motorVivo));
+  comprobar('⚠️ Se escucha también `touchend` y `click`, que son los que iOS acepta seguro',
+    /'touchend'/.test(motorVivo) && /'click'/.test(motorVivo));
+  comprobar('🚨 CLAVE · Se empuja una muestra muda: iOS no despierta un contexto hasta que suena algo',
+    /createBuffer\(1, 1, 22050\)/.test(motorVivo) && /empujarElSilencio\(ctx\)/.test(motorVivo));
+  comprobar('⚠️ Y si el contexto se vuelve a dormir (llamada, Siri, pantalla bloqueada) se re-arma',
+    /statechange/.test(motorVivo) && /if \(!despierto\) armarLosGestos\(\)/.test(motorVivo));
+
+  /* El aviso tiene que distinguir "aún no has tocado nada" de "lo he intentado y
+     no me deja": los dos daban el MISMO texto, y por eso él leía veinte veces
+     que tocara un botón después de tocarlos todos. */
+  globalThis.window = { AudioContext: function AudioContextFalso() {} };
+  globalThis.document = { addEventListener() {}, removeEventListener() {} };
+  const { diagnosticoAudio: diag2 } = await import('../src/lib/audioEngine.js');
+  const sinTocar = diag2({ activado: true });
+  comprobar('Antes de tocar nada, el aviso pide un toque',
+    /Toca cualquier botón/.test(sinTocar.texto));
+  comprobar('🚨 CLAVE · Y no es el mismo texto para cuando ya se ha intentado y no ha podido',
+    !/Lo he intentado/.test(sinTocar.texto));
+  delete globalThis.window;
+  delete globalThis.document;
+}
+
 console.log('\n  ⚠️ Sin comprobar aquí, y hay que decirlo: iOS, Android, PWA y escritorio.');
 console.log('     Son del navegador real y solo los puede ver Josué (mismo límite que R1).\n');
 

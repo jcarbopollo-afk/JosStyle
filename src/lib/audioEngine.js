@@ -96,17 +96,70 @@ export function iniciarAudio({ prefs = null, sonidosUsuario = [] } = {}) {
   motor.prefs = normalizarAudio(prefs);
   motor.sonidosUsuario = Array.isArray(sonidosUsuario) ? sonidosUsuario : [];
   if (!HAY_DOM) return () => {};
+  armarLosGestos();
+  /* ⚠️ Se devuelve un envoltorio y no `motor.soltarGestos` directamente: los
+     oyentes se sueltan y se vuelven a poner solos, así que una referencia
+     guardada al montar apuntaría a la tanda de hace media hora. */
+  return () => { motor.soltarGestos?.(); };
+}
 
-  // Un solo desbloqueo, en el primer gesto que llegue, sea cual sea.
-  const alPrimerGesto = () => { desbloquear(); };
-  const eventos = ['pointerdown', 'touchstart', 'keydown'];
-  for (const e of eventos) document.addEventListener(e, alPrimerGesto, { once: true, passive: true });
+/* ===========================================================================
+   🚨 **EL FALLO DEL IPHONE, y por qué en el PC no se veía**
+   ===========================================================================
+   Josué, 2026-09-07: *"en mi cuenta y en este PC funciona, pero en el iPhone no,
+   y encienda o apague el interruptor me sale siempre el aviso: apagado, que lo
+   encienda; encendido, que toque algún botón — con todo activado."*
 
+   Ese aviso es literal: el motor NUNCA llegaba a desbloquearse. Dos motivos, y
+   los dos explican por qué en un ordenador no pasaba.
+
+   **1 · Había UNA sola oportunidad, y se la llevaba el primer roce.** Los
+   oyentes se ponían con `{ once: true }`: se borran al PRIMER evento, haya
+   servido o no. En un ordenador el primer gesto es un clic de verdad y funciona.
+   En un móvil el primer gesto casi siempre es **arrastrar para bajar la
+   pantalla** — un `touchstart` que empieza un desplazamiento, durante el cual
+   Safari no concede permiso de audio. Se gastaba el único intento con el dedo
+   deslizando, se borraban los oyentes, y ya no había forma de desbloquear nada
+   sin recargar. Por eso podía funcionarle al hermano y a él no: depende de si tu
+   primer toque fue pulsar o deslizar.
+
+   **2 · Y en iOS no basta con `resume()`.** Safari no da un contexto por
+   despierto hasta que ha SONADO algo por él. Hay que empujarle un sonido mudo
+   dentro del mismo gesto; sin eso, `resume()` puede resolverse y el contexto
+   quedarse igual de dormido.
+
+   Ahora se insiste hasta que funciona de verdad, y los oyentes solo se sueltan
+   cuando el contexto está `running`. Insistir es barato; quedarse mudo, no.
+   =========================================================================== */
+function armarLosGestos() {
+  if (!HAY_DOM || motor.soltarGestos) return;
+  const alGesto = () => {
+    desbloquear().then((listo) => { if (listo) motor.soltarGestos?.(); });
+  };
+  /* `touchend` y `click` van con los demás a propósito: son los que iOS acepta
+     con más seguridad, y llegan cuando el dedo ya ha terminado de moverse. */
+  const eventos = ['pointerdown', 'touchstart', 'touchend', 'click', 'keydown'];
+  for (const e of eventos) document.addEventListener(e, alGesto, { passive: true });
   motor.soltarGestos = () => {
-    for (const e of eventos) document.removeEventListener(e, alPrimerGesto);
+    for (const e of eventos) document.removeEventListener(e, alGesto);
     motor.soltarGestos = null;
   };
-  return motor.soltarGestos;
+}
+
+/**
+ * 🚨 El contexto se puede volver a dormir solo: en iOS pasa a `interrupted` con
+ * una llamada, con Siri o al bloquear la pantalla, y ahí se queda. Sin esto, el
+ * motor seguiría creyéndose desbloqueado y no sonaría nada nunca más.
+ */
+function alCambiarDeEstado() {
+  const ctx = motor.contexto;
+  if (!ctx) return;
+  const despierto = ctx.state === 'running';
+  if (despierto === motor.desbloqueado) return;
+  motor.desbloqueado = despierto;
+  // Dormido otra vez: se vuelve a esperar un gesto, como al principio.
+  if (!despierto) armarLosGestos();
+  emitir('AUDIO_ESTADO', { estado: ctx.state });
 }
 
 /** Las preferencias cambian; el motor las lee de un sitio (apartado 7). */
@@ -129,6 +182,7 @@ function crearContexto() {
   if (!Ctx) return null;                       // se usará el respaldo
   try {
     motor.contexto = new Ctx();
+    motor.contexto.addEventListener('statechange', alCambiarDeEstado);
     for (const c of CATEGORIAS_SONIDO) {
       const g = motor.contexto.createGain();
       g.gain.value = volumenEfectivo(motor.prefs, c.id);
@@ -140,14 +194,37 @@ function crearContexto() {
 }
 
 /**
- * Apartado 16 — reanudar el contexto tras un gesto. Es lo único que iOS exige, y
+ * 🚨 **El empujón mudo.** Safari de iOS no da un contexto por despierto hasta
+ * que ha reproducido algo por él: una muestra de silencio basta, y es
+ * inaudible. Se lanza DENTRO del gesto, que es el único momento en que vale.
+ *
+ * Si el contexto todavía está dormido, la muestra se queda en la cola y suena en
+ * cuanto despierte — que es justo lo que hace falta.
+ */
+function empujarElSilencio(ctx) {
+  try {
+    const mudo = ctx.createBuffer(1, 1, 22050);
+    const fuente = ctx.createBufferSource();
+    fuente.buffer = mudo;
+    fuente.connect(ctx.destination);
+    fuente.start(0);
+  } catch (e) { anotar('empujarElSilencio', e); }
+}
+
+/**
+ * Apartado 16 — despertar el contexto con un gesto. Es lo único que iOS exige, y
  * no hay forma de saltárselo ni se intenta.
+ *
+ * ⚠️ Devuelve si lo ha conseguido, y eso **no es decoración**: quien la llama
+ * suelta los oyentes solo cuando dice que sí. Antes no lo miraba nadie y el
+ * único intento se gastaba con el primer dedo que rozara la pantalla.
  */
 export async function desbloquear() {
   if (!HAY_DOM) return false;
   const ctx = crearContexto();
   if (!ctx) return false;
   try {
+    empujarElSilencio(ctx);                       // primero, y dentro del gesto
     if (ctx.state === 'suspended') await ctx.resume();
     motor.desbloqueado = ctx.state === 'running';
     if (motor.desbloqueado) {
@@ -206,8 +283,20 @@ export function diagnosticoAudio(prefs = null) {
   }
   if (!e.desbloqueado) {
     /* No es un fallo: iOS y Safari exigen que la primera vez el sonido nazca de
-       un toque de verdad. Se explica en vez de dejar un "no funciona". */
-    return { ok: false, texto: 'Toca cualquier botón para activar el sonido. Los navegadores del móvil lo piden la primera vez.' };
+       un toque de verdad. Se explica en vez de dejar un "no funciona".
+
+       🚨 Y se distinguen dos situaciones que antes daban el MISMO texto, que es
+       lo que dejó a Josué dando vueltas: si el contexto ni siquiera existe es
+       que aún no ha tocado nada; si existe y sigue dormido es que se ha
+       intentado y el navegador no ha dejado — y entonces el consejo es otro. */
+    if (e.contexto === 'sin_crear') {
+      return { ok: false, texto: 'Toca cualquier botón para activar el sonido. Los navegadores del móvil lo piden la primera vez.' };
+    }
+    return {
+      ok: false,
+      texto: 'Lo he intentado y el navegador todavía no deja sonar. Pulsa un botón de verdad —deslizar para bajar la pantalla no cuenta— y vuelve a mirar aquí.',
+      aviso: 'Si tienes un iPhone: el interruptor de silencio del lateral también calla las webs.',
+    };
   }
   const fallos = fallosDeAudio().length;
   if (fallos > 0) {
