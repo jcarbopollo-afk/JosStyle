@@ -566,6 +566,24 @@ const CASOS = [
     sueno: [{ id: 's3', fecha: HOY, horaDormir: '23:00', horaDespertar: '07:00', interrupciones: 0 }],
     onAdd: noop, onDelete: noop, accent,
   })],
+  /* Entrega 3 · F32 (SU F2) — la ventana móvil. Un historial **con huecos** y otro
+     con noches viejas, que son los dos casos que rompían con `slice(-7)`. */
+  ['SleepView · la ventana con huecos', SleepView, () => ({
+    sueno: [
+      { id: 'w1', fecha: addDays(HOY, -6), horaDormir: '23:00', horaDespertar: '07:00', calidad: 4 },
+      { id: 'w2', fecha: addDays(HOY, -5), horaDormir: '23:30', horaDespertar: '07:00', calidad: 5 },
+      // -4 y -3 sin registrar: son los huecos que no se rellenan
+      { id: 'w3', fecha: addDays(HOY, -2), horaDormir: '00:00', horaDespertar: '07:00', calidad: 2 },
+      { id: 'w4', fecha: HOY, horaDormir: '23:00', horaDespertar: '07:30', calidad: 4 },
+    ],
+    onAdd: noop, onDelete: noop, accent,
+  })],
+  ['SleepView · con historia vieja', SleepView, () => ({
+    sueno: Array.from({ length: 40 }, (_, i) => ({
+      id: `h${i}`, fecha: addDays(HOY, -(39 - i)), horaDormir: '23:00', horaDespertar: '07:00', calidad: 4,
+    })),
+    onAdd: noop, onDelete: noop, accent,
+  })],
   ['FinanceView', FinanceView, (e) => ({ economia: e.economia, onAdd: noop, onDelete: noop, onUpdate: noop, accent })],
   ['ObjectivesView', ObjectivesView, (e) => ({ objetivos: e.objetivos, onAdd: noop, onToggle: noop, onDelete: noop, onRevisar: noop, accent })],
   ['DiaryView', DiaryView, (e) => ({ diario: e.diario, onAdd: noop, onDelete: noop, accent })],

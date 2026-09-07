@@ -1,5 +1,83 @@
 # CHANGELOG.md
 
+## v3.53.0 — Entrega 3 · Fase 32 (SU F2): la gráfica de 7 días móviles 🏁 CIERRA SUEÑO
+
+La frase que sostiene la fase entera está en el apartado 13: **«7 días de calendario, no 7
+registros»**.
+
+### 🚨 La gráfica sustituía los días que faltaban por noches viejas
+
+Hasta aquí hacía `sueno.slice(-7)`, que es literalmente lo que el apartado 18 prohíbe (*"No utilizar
+«últimos 7 registros»"*). El efecto práctico: **si Josué no registraba tres días, la gráfica los
+rellenaba con tres noches anteriores** y parecía que había dormido todas — sin un solo hueco a la
+vista. Con el escenario de la prueba —cinco noches en los últimos siete días— se veían **cuatro
+puntos seguidos** en vez de siete días con dos huecos.
+
+Ahora la ventana la manda **la fecha real del dispositivo** (apartado 13): siete días consecutivos
+que avanzan solos, y **un día sin registrar es un hueco** —`null`, ni cero ni la media (apartados 3
+y 18)—. `connectNulls` va expresamente en falso: una línea recta cruzando el hueco sería el dato
+inventado que el enunciado prohíbe.
+
+### Lo que trae
+
+- **‹ Últimos 7 días ›** con las dos flechas y ni un control más (apartado 11). Hacia atrás solo
+  mientras haya datos; hacia delante, nunca más allá del presente.
+- **Volver al presente de un toque**, y el rótulo lo dice: *"Últimos 7 días"* cuando está en el
+  presente, el rango de fechas cuando ha retrocedido (apartado 5).
+- **Fechas de verdad**: *"L 24 · M 25 · X 26"*, con la X del miércoles (apartado 9). Nunca
+  *"1 2 3 4 5 6 7"*.
+- **HOY señalado** dentro de los siete (apartado 10).
+- **Con poca historia, solo los días que hay** (apartado 15): con una sola noche registrada se ven
+  dos días, no siete vacíos.
+- **Cuántas noches faltan**, dicho con palabras: *"2 noches sin registrar en este periodo"*.
+- Y la media de la ventana **no baja por los huecos**: no se cuentan como noches de cero horas.
+
+### 🚨 Mover la ventana no borra nada
+
+El apartado 12 es explícito, y hay una comprobación en el recorrido que navega adelante y atrás y
+verifica que **no se escribe nada**: la noche de hace veinte días sigue guardada.
+
+### ⚠️ Y el análisis largo sigue igual
+
+El apartado 6 lo llama MUY IMPORTANTE. Lo que existe hoy son las correlaciones de Estadísticas
+—sueño ↔ estudio y sueño ↔ ánimo— y el panel de IA de la propia pantalla: siguen leyendo **la lista
+entera**, no la ventana, y hay pruebas que las ejecutan. No se sustituye ninguna y **no se crea un
+sistema de análisis nuevo** (apartado 18).
+
+### 🐛 Dos cosas que cazaron mis propias pruebas
+
+- El recorte del apartado 15 estaba escrito sin comprobar que dejara días dentro, así que una ventana
+  **anterior a la primera noche registrada** salía con el inicio después del fin y **cero puntos**:
+  la gráfica en blanco sin decir por qué. `puedeRetroceder` ya impide llegar ahí desde la pantalla,
+  pero una función que devuelve un rango imposible es una trampa para la fase siguiente.
+- Y la cabecera decía *"Media últimos 7: X h"*. Con la ventana móvil ese número pasó a ser el de la
+  ventana **que esté mirando**, así que al retroceder una semana **el título de la pantalla habría
+  dicho la media de agosto**. La media vive ahora en la tarjeta de la gráfica, que es de quien es.
+
+### Rendimiento
+
+El apartado 17 pide no recorrer todo el historial cada vez que se mueve la ventana: se indexa por
+fecha una sola vez y la ventana hace siete búsquedas. Con 1500 noches guardadas se monta en menos de
+200 ms, y hay una prueba que lo mide.
+
+### 🐛 Y tres rojos del recorrido, los tres míos
+
+Otra vez la aritmética a mano: conté **dos** noches sin registrar en la ventana cuando eran **tres**.
+Y una comprobación de *"mover la ventana no escribe nada"* que miraba **el contenido de la última
+escritura** en vez de contar cuántas hubo — como la sección anterior ya había guardado su noche, esa
+seguía siendo la última y el número no cuadraba nunca. Lo que hay que demostrar es que navegar **no
+escribe**, así que se cuentan las escrituras antes y después. La tercera era la cabecera, que en esta
+misma fase dejó de decir la media.
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde: **68 comprobaciones nuevas** en
+`scripts/test-sueno-grafica.mjs`, **8 casos de renderizado nuevos** (2000) y una sección nueva del
+recorrido que **lee las etiquetas del eje de la gráfica de verdad** para comprobar que son siete y
+que cada una es una fecha real.
+
+---
+
 ## v3.52.0 — Entrega 3 · Fase 31 (SU F1): Sueño, registro simple y experiencia premium
 
 El enunciado empieza pidiendo lo contrario de lo que suele pedirse: *"El apartado Sueño de JC STYLE

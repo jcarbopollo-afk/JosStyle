@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F32 — Sueño: la ventana móvil de 7 días.
+if node --import ./scripts/resolver-vite.mjs scripts/test-sueno-grafica.mjs >/tmp/jc_suenograf.log 2>&1; then
+  ok "Sueño: la ventana móvil de 7 días (E3 F32) — $(grep -c '✓' /tmp/jc_suenograf.log) comprobaciones"
+else
+  fallo "Falla la ventana móvil de Sueño (E3 F32)"; grep '✗' /tmp/jc_suenograf.log
+fi
+
 # Entrega 3 · F31 — Sueño: el registro simple.
 if node --import ./scripts/resolver-vite.mjs scripts/test-sueno.mjs >/tmp/jc_sueno.log 2>&1; then
   ok "Sueño: registro simple (E3 F31) — $(grep -c '✓' /tmp/jc_sueno.log) comprobaciones"

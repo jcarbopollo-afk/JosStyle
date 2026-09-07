@@ -3347,8 +3347,11 @@ await page.waitForTimeout(2200);
 
 ok(await pulsar('Bienestar'), 'se abre el área Bienestar');
 ok(await pulsar('Abrir Sueño'), 'se entra en Sueño');
-const su = await esperarTexto(/Media últimos/i);
-ok(/Media últimos/i.test(su), '🚨 E3 F31 — LA MEDIA DE SIEMPRE SIGUE AHÍ (apartado 8)');
+const su = await esperarTexto(/noches registradas/i);
+/* ⚠️ La media dejó la cabecera en la E3 F32: con la ventana móvil ese número
+   pasaba a ser el de la ventana que estuviera mirando. Vive dentro de la tarjeta
+   de la gráfica, y allí la comprueba la sección de la F32. */
+ok(/noches registradas/i.test(su), '🚨 E3 F31 — LA CABECERA DICE CUÁNTAS NOCHES LLEVA');
 ok(/🙂/.test(su), '🚨 Y LA LISTA ENSEÑA LA CARA, no el «4/5» de antes');
 ok(/😫/.test(su), '⚠️ y la noche floja, la suya');
 ok(/7 h 30 min/.test(su), '⚠️ con la duración escrita como pide el apartado 1');
@@ -3390,5 +3393,67 @@ ok(nueva_su && !('duracion' in nueva_su),
 /* 🚨 Y la noche vieja SIGUE ESTANDO: migrar no es perder. */
 ok((guardadoSueno || []).some((n) => n.id === 'su_v1'),
   '🚨 y las dos noches de antes siguen ahí: la migración no pierde nada (apartado 9)');
+
+/* ── E3 F32 (SU F2) · LA VENTANA MÓVIL DE 7 DÍAS ──────────────────────────
+   🚨 **Lo que ninguna prueba de Node puede ver:** que la gráfica pinta los siete
+   días de calendario **con sus huecos**, que las etiquetas son fechas de verdad
+   («L 24»), que las flechas navegan y que volver al presente funciona.
+
+   El escenario tiene una noche de hace seis días, otra de hace cinco, **dos días
+   sin registrar**, una de hace dos y la de hoy: con `sueno.slice(-7)` se habrían
+   visto cuatro puntos seguidos y los dos días que faltan **no habrían existido**. */
+const D = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toLocaleDateString('sv-SE');
+};
+almacen.sueno = [
+  { id: 'sg_1', fecha: D(20), horaDormir: '23:00', horaDespertar: '07:00', calidad: 4, interrupciones: 0, siestaAyer: false, siestaMinutos: 0 },
+  { id: 'sg_2', fecha: D(6), horaDormir: '23:00', horaDespertar: '07:00', calidad: 4, interrupciones: 0, siestaAyer: false, siestaMinutos: 0 },
+  { id: 'sg_3', fecha: D(5), horaDormir: '23:30', horaDespertar: '07:00', calidad: 5, interrupciones: 0, siestaAyer: false, siestaMinutos: 0 },
+  { id: 'sg_4', fecha: D(2), horaDormir: '00:00', horaDespertar: '07:00', calidad: 2, interrupciones: 1, siestaAyer: false, siestaMinutos: 0 },
+  { id: 'sg_5', fecha: D(0), horaDormir: '23:00', horaDespertar: '07:30', calidad: 4, interrupciones: 0, siestaAyer: false, siestaMinutos: 0 },
+];
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+ok(await pulsar('Bienestar'), 'se abre el área Bienestar');
+ok(await pulsar('Abrir Sueño'), 'se entra en Sueño');
+const graf = await esperarTexto(/Últimos 7 días/i);
+ok(/Últimos 7 días/i.test(graf), '🚨 E3 F32 — LA GRÁFICA SE LLAMA «Últimos 7 días» (apartado 5)');
+ok(/5 noches registradas/i.test(graf),
+  '⚠️ y la cabecera cuenta las noches que lleva, no la media de la ventana que esté mirando');
+/* La ventana va de D-6 a hoy; registradas están D-6, D-5, D-2 y hoy, así que
+   faltan D-4, D-3 y D-1: **tres**. */
+ok(/3 noches sin registrar en este periodo/i.test(graf),
+  '🚨 Y DICE CUÁNTAS NOCHES FALTAN: los tres días sin registro existen y se cuentan (apartados 3 y 19)');
+/* 🚨 Las etiquetas del eje son fechas de verdad, con su día de la semana. */
+const etiquetasEje = await page.evaluate(() =>
+  [...document.querySelectorAll('.recharts-xAxis text')].map((t) => t.textContent.trim()));
+ok(etiquetasEje.length === 7,
+  '🚨 SIETE PUNTOS CON CINCO NOCHES: son días de calendario, no registros (apartado 13)');
+ok(etiquetasEje.every((e) => /^[LMXJVSD] \d{1,2}$/.test(e)),
+  '🚨 y cada uno con su fecha real, «L 24» — nunca «1 2 3 4 5 6 7» (apartado 9)');
+ok(/HOY es el último punto/i.test(graf), '⚠️ con HOY señalado dentro de los siete (apartado 10)');
+
+/* Apartado 4: se puede retroceder, y volver. */
+/* 🚨 Se cuentan las escrituras ANTES de navegar: comprobar el contenido de la
+   última no sirve, porque la sección anterior ya escribió su noche y ésa es la
+   que sigue ahí. Lo que hay que demostrar es que navegar **no escribe**. */
+const escriturasAntes_sg = guardado.filter((g) => g && g.key === 'sueno').length;
+ok(await pulsar('Semana anterior'), 'se retrocede una semana');
+const atras_sg = await esperarTexto(/[0-9]+.*–.*[0-9]+/);
+ok(!/Últimos 7 días/i.test(atras_sg.split('Registrar')[0] || atras_sg) || /–/.test(atras_sg),
+  '⚠️ y el rótulo pasa a decir el rango de fechas');
+ok(await pulsar('Semana siguiente'), 'y se vuelve con la flecha');
+const vuelta_sg = await esperarTexto(/Últimos 7 días/i);
+ok(/Últimos 7 días/i.test(vuelta_sg),
+  '🚨 Y SE VUELVE SIEMPRE A LOS ÚLTIMOS 7 DÍAS: no se queda en una semana antigua (apartado 5)');
+
+/* 🚨 Y lo más importante del apartado 12: retroceder NO borra nada. */
+ok(guardado.filter((g) => g && g.key === 'sueno').length === escriturasAntes_sg,
+  '🚨 MOVER LA VENTANA NO ESCRIBE NI BORRA NADA: navegar es mirar (apartado 12)');
+ok(almacen.sueno.length === 5 && almacen.sueno.some((n) => n.id === 'sg_1'),
+  '🚨 y la noche de hace veinte días sigue guardada, aunque no salga en la gráfica');
 
 await salir(browser);

@@ -264,9 +264,197 @@ export function condicionSU1({ vista } = {}) {
     { id: 6, texto: 'Y por dentro se guarda en 1-5', ok: CALIDADES.every((c) => c.valor >= MIN_CALIDAD && c.valor <= MAX_CALIDAD) && valorDeCalidad('maravilla') === 5 },
     { id: 7, texto: 'Se registran las interrupciones, con su 3+', ok: INTERRUPCIONES.length === 4 && etiquetaInterrupciones(3) === '3+' },
     { id: 8, texto: 'Se puede decir si hubo siesta, y solo entonces cuánto', ok: normalizarRegistro({ siestaAyer: false, siestaMinutos: 45 }).siestaMinutos === 0 },
-    { id: 9, texto: 'La gráfica de siempre sigue ahí', ok: codigo.includes('LineChart') && codigo.includes('calcularDuracion') },
-    { id: 10, texto: 'Y no se ha tocado su ventana temporal: eso es la Fase 2', ok: codigo.includes('VENTANA_GRAFICA') && AUDITORIA_SU1.graficasRehechas === 0 },
+    /* ⚠️ La duración de la gráfica la sirve `duracionDe`, que llama a
+       `calcularDuracion`: desde la SU F2 la vista pide la ventana ya montada en
+       vez de calcular ella. Sigue siendo la misma función, un salto más abajo. */
+    { id: 9, texto: 'La gráfica de siempre sigue ahí', ok: codigo.includes('LineChart') && codigo.includes('ventanaDeDias') },
+    { id: 10, texto: 'Y sigue siendo la gráfica de siempre: solo cambian sus fechas', ok: codigo.includes('VENTANA_GRAFICA') && AUDITORIA_SU1.graficasRehechas === 0 },
     { id: 11, texto: 'Lo guardado antes no se pierde: la siesta en minutos se migra', ok: normalizarRegistro({ siesta: 30 }).siestaAyer === true && normalizarRegistro({ siesta: 30 }).siestaMinutos === 30 },
     { id: 12, texto: 'Y un “sin siesta” de antes no se convierte en un sí', ok: normalizarRegistro({ siesta: 0 }).siestaAyer === false },
+  ];
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   9 · LA VENTANA MÓVIL DE 7 DÍAS — Entrega 3 · Fase 32 (SU F2)
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 **SIETE DÍAS DE CALENDARIO, NO SIETE REGISTROS.** El apartado 13 lo dice
+   con esas palabras y el 18 lo repite en la lista de lo prohibido: *"No utilizar
+   «últimos 7 registros»"*. Hasta la fase anterior la gráfica hacía
+   `sueno.slice(-7)`, que es exactamente eso: **si Josué no registraba tres días,
+   la gráfica los sustituía por tres noches viejas** y parecía que había dormido
+   todos los días. Ahora la ventana la manda **la fecha real del dispositivo**
+   (apartado 13) y un día sin registrar es **un hueco**, nunca un dato inventado
+   (apartados 3 y 18).
+
+   ⚠️ **Y no se rehace nada más.** El apartado 8 es explícito: *"Únicamente
+   modificar el conjunto de fechas que representa."* Mismo tipo de gráfica, misma
+   estética, mismo indicador (las horas dormidas). */
+
+import { DIAS_SEMANA, diaDeFecha } from './horario';
+import { addDays } from './helpers';
+
+export const DIAS_VENTANA = 7;
+
+/* Las etiquetas del apartado 9: *"L 24 · M 25 · X 26 · J 27…"*. Fechas de
+   verdad, nunca *"1 2 3 4 5 6 7"*, que no dice de qué días habla. */
+export function etiquetaDeDia(fechaISO) {
+  const d = diaDeFecha(fechaISO);
+  const corto = d ? DIAS_SEMANA[d - 1].corto : '';
+  const dia = Number(String(fechaISO).slice(8, 10));
+  return `${corto} ${Number.isFinite(dia) ? dia : ''}`.trim();
+}
+
+/** La fecha más antigua con registro. `null` si todavía no hay ninguno. */
+export function primeraFechaConRegistro(lista) {
+  const fechas = (Array.isArray(lista) ? lista : []).map((r) => r && r.fecha).filter(Boolean).sort();
+  return fechas.length ? fechas[0] : null;
+}
+
+/* 🚨 **Rendimiento (apartado 17):** *"No recalcular innecesariamente todo el
+   historial cada vez que se mueve la ventana."* Se indexa por fecha una sola vez
+   y la ventana hace siete búsquedas, no un recorrido del historial entero por
+   cada día. Con años de noches guardadas sigue costando lo mismo. */
+export function indicePorFecha(lista) {
+  const mapa = new Map();
+  for (const r of (Array.isArray(lista) ? lista : [])) {
+    /* Con dos registros del mismo día gana el último, que es el que él acaba de
+       escribir. */
+    if (r && r.fecha) mapa.set(r.fecha, r);
+  }
+  return mapa;
+}
+
+/* 🚨 **La ventana.** `desplazamiento` es cuántos bloques de siete días se ha ido
+   hacia atrás: 0 son los últimos siete, 1 los siete anteriores, y así.
+
+   ⚠️ **Apartado 15:** *"Si la aplicación acaba de empezar y todavía no existen 7
+   días, mostrar únicamente los días disponibles. No inventar los días
+   restantes."* Por eso la ventana **se recorta por delante** hasta la primera
+   noche que registró: los días anteriores a su primer registro no son huecos, es
+   que la aplicación no existía. */
+export function ventanaDeDias(lista, { hoy = todayISO(), desplazamiento = 0, dias = DIAS_VENTANA } = {}) {
+  const paso = Math.max(1, Math.round(dias));
+  const atras = Math.max(0, Math.round(desplazamiento));
+  const fin = addDays(hoy, -atras * paso);
+  const inicioTeorico = addDays(fin, -(paso - 1));
+  /* 🐛 **Y el recorte solo vale si deja una ventana con días dentro.** Escrito
+     como `primera > inicioTeorico ? primera : inicioTeorico` a secas, una ventana
+     anterior a la primera noche registrada salía con el inicio DESPUÉS del fin y
+     **cero puntos**: la gráfica se quedaba en blanco sin decir por qué.
+     `puedeRetroceder` ya impide llegar ahí desde la pantalla, pero una función
+     que devuelve un rango imposible es una trampa para la siguiente fase. */
+  const primera = primeraFechaConRegistro(lista);
+  const inicio = primera && primera > inicioTeorico && primera <= fin ? primera : inicioTeorico;
+
+  const mapa = indicePorFecha(lista);
+  const puntos = [];
+  for (let f = inicio; f <= fin; f = addDays(f, 1)) {
+    const registro = mapa.get(f) || null;
+    puntos.push({
+      fecha: f,
+      etiqueta: etiquetaDeDia(f),
+      /* 🚨 **`null`, no cero, y no la media** (apartados 3 y 18): la gráfica pinta
+         un hueco. Un cero diría que durmió cero horas. */
+      horas: registro ? duracionDe(registro) : null,
+      registro,
+      sinRegistro: !registro,
+      esHoy: f === hoy,
+    });
+  }
+  return { inicio, fin, puntos, esActual: atras === 0 };
+}
+
+/* ⚠️ **Apartado 4:** solo se retrocede *"según los datos históricos
+   disponibles"*. Sin nada más atrás, la flecha se apaga en vez de llevarle a
+   siete días en blanco. */
+export function puedeRetroceder(lista, { hoy = todayISO(), desplazamiento = 0, dias = DIAS_VENTANA } = {}) {
+  const primera = primeraFechaConRegistro(lista);
+  if (!primera) return false;
+  const paso = Math.max(1, Math.round(dias));
+  const finSiguiente = addDays(hoy, -(Math.max(0, desplazamiento) + 1) * paso);
+  return primera <= finSiguiente;
+}
+
+/** Y hacia delante solo hasta los últimos siete días (apartado 5). */
+export const puedeAvanzar = (desplazamiento = 0) => desplazamiento > 0;
+
+/* El rótulo de la ventana: *"Últimos 7 días"* cuando está en el presente, y el
+   rango de fechas cuando ha retrocedido. */
+export const TITULO_ACTUAL = 'Últimos 7 días';
+
+export function tituloDeVentana(v) {
+  if (!v) return TITULO_ACTUAL;
+  if (v.esActual) return TITULO_ACTUAL;
+  const dia = (f) => Number(String(f).slice(8, 10));
+  const mes = (f) => new Date(`${f}T00:00:00`).toLocaleDateString('es-ES', { month: 'short' }).replace('.', '');
+  return mes(v.inicio) === mes(v.fin)
+    ? `${dia(v.inicio)}–${dia(v.fin)} ${mes(v.fin)}`
+    : `${dia(v.inicio)} ${mes(v.inicio)} – ${dia(v.fin)} ${mes(v.fin)}`;
+}
+
+/* ⚠️ La media **de lo que se ve**, y solo de las noches registradas: los huecos
+   no bajan el número. Sin ninguna, `null`. */
+export function mediaDeVentana(v) {
+  return mediaDeHoras((v?.puntos || []).map((p) => p.registro).filter(Boolean));
+}
+
+/* ⚠️ *"Los días sin registro no generen datos falsos"* (criterio 19), dicho en
+   la propia pantalla: cuántos huecos hay en esta ventana. */
+export function huecosDeVentana(v) {
+  return (v?.puntos || []).filter((p) => p.sinRegistro).length;
+}
+
+/* 🚨 **Lo que esta fase NO toca** (apartados 6, 7 y 18). El análisis largo que
+   existe hoy son las correlaciones de Estadísticas —sueño ↔ estudio y sueño ↔
+   ánimo—, y siguen leyendo la lista entera, no la ventana. **No se sustituyen y
+   no se crea un sistema de análisis nuevo.** */
+export const ANALISIS_LARGO = [
+  { que: 'Correlación sueño ↔ horas de estudio', donde: 'Estadísticas', lee: 'la lista entera de noches', fase: 'ya existía' },
+  { que: 'Correlación sueño ↔ ánimo del diario', donde: 'Estadísticas', lee: 'la lista entera de noches', fase: 'ya existía' },
+  { que: 'Analizar mi sueño con la IA', donde: 'la propia pantalla de Sueño', lee: 'las últimas noches registradas', fase: 'ya existía' },
+];
+
+export const NO_EN_SU2 = [
+  { que: 'Borrar los días que salen de la ventana', porque: 'el apartado 12 es explícito: mover la ventana no borra nada, los datos siguen ahí para el histórico y las estadísticas.' },
+  { que: 'Sustituir el análisis largo', porque: 'el apartado 6 lo llama MUY IMPORTANTE: son dos niveles distintos y conviven.' },
+  { que: 'Crear un sistema de análisis nuevo', porque: 'está en la lista del apartado 18.' },
+  { que: 'Convertir la gráfica en mensual o enseñar 30 días', porque: 'el apartado 18 lo prohíbe: la principal responde "¿cómo estoy durmiendo últimamente?".' },
+  { que: 'Rellenar las noches que faltan', porque: 'ni con ceros ni con la media (apartados 3 y 18): un hueco es un hueco.' },
+  { que: 'Cambiar el tipo de gráfica, su estética o su indicador', porque: 'el apartado 8 dice "únicamente modificar el conjunto de fechas que representa".' },
+];
+
+export const AUDITORIA_SU2 = { datosBorrados: 0, analisisSustituidos: 0, graficasNuevas: 0, diasInventados: 0 };
+
+/* 🚨 Se calculan (EH F64), y con datos de verdad: cada casilla ejecuta la
+   ventana sobre un historial con huecos. */
+export function condicionSU2({ vista } = {}) {
+  const codigo = typeof vista === 'string' ? vista : '';
+  const HOY = '2026-08-30';
+  const historial = [
+    { id: 'a', fecha: '2026-08-24', horaDormir: '23:00', horaDespertar: '07:00' },
+    { id: 'b', fecha: '2026-08-25', horaDormir: '23:30', horaDespertar: '07:00' },
+    /* 26 y 27 sin registrar: son los huecos. */
+    { id: 'c', fecha: '2026-08-28', horaDormir: '00:00', horaDespertar: '07:00' },
+    { id: 'd', fecha: '2026-08-30', horaDormir: '23:00', horaDespertar: '07:30' },
+  ];
+  const v = ventanaDeDias(historial, { hoy: HOY });
+  const anterior = ventanaDeDias(historial, { hoy: HOY, desplazamiento: 1 });
+
+  return [
+    { id: 1, texto: 'La gráfica muestra una ventana de 7 días de CALENDARIO', ok: v.puntos.length === DIAS_VENTANA },
+    { id: 2, texto: 'Y no «los últimos 7 registros»: un día sin registrar sigue ocupando su sitio', ok: v.puntos.filter((p) => p.sinRegistro).length === 3 },
+    { id: 3, texto: 'Un día sin registro no inventa un dato', ok: v.puntos.every((p) => (p.sinRegistro ? p.horas === null : p.horas !== null)) },
+    { id: 4, texto: 'La ventana avanza sola con el día del sistema', ok: ventanaDeDias(historial, { hoy: '2026-08-31' }).fin === '2026-08-31' && ventanaDeDias(historial, { hoy: '2026-08-31' }).inicio === '2026-08-25' },
+    { id: 5, texto: 'El día que sale de la ventana NO se borra', ok: historial.length === 4 && AUDITORIA_SU2.datosBorrados === 0 },
+    { id: 6, texto: 'Se pueden consultar periodos anteriores', ok: anterior.fin === '2026-08-23' && anterior.esActual === false },
+    { id: 7, texto: 'Y se vuelve siempre a los últimos 7 días', ok: tituloDeVentana(v) === TITULO_ACTUAL && codigo.includes('TITULO_ACTUAL') },
+    { id: 8, texto: 'No se retrocede a un vacío sin datos', ok: puedeRetroceder(historial, { hoy: HOY }) === false },
+    { id: 9, texto: 'Las fechas son reales, con su día de la semana', ok: etiquetaDeDia('2026-08-24') === 'L 24' },
+    { id: 10, texto: 'Hoy está marcado', ok: v.puntos.filter((p) => p.esHoy).length === 1 && codigo.includes('esHoy') },
+    { id: 11, texto: 'Con menos de 7 días de historia se enseñan solo los que hay', ok: ventanaDeDias([{ id: 'x', fecha: '2026-08-29', horaDormir: '23:00', horaDespertar: '07:00' }], { hoy: HOY }).puntos.length === 2 },
+    { id: 12, texto: 'El análisis largo que existía sigue funcionando y no se sustituye', ok: ANALISIS_LARGO.length === 3 && AUDITORIA_SU2.analisisSustituidos === 0 },
+    { id: 13, texto: 'La gráfica sigue siendo la misma: solo cambian sus fechas', ok: codigo.includes('LineChart') && AUDITORIA_SU2.graficasNuevas === 0 },
+    { id: 14, texto: 'La ventana se filtra, no se recorre el historial entero por cada día', ok: /indicePorFecha/.test(codigo) || /indicePorFecha/.test(String(ventanaDeDias)) },
   ];
 }

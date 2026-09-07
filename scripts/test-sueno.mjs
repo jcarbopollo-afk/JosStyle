@@ -14,7 +14,7 @@ import {
   PREGUNTA_CALIDAD, CALIDADES, MIN_CALIDAD, MAX_CALIDAD, calidadDe, valorDeCalidad, calidadPorId,
   PREGUNTA_INTERRUPCIONES, INTERRUPCIONES, MAX_INTERRUPCIONES, etiquetaInterrupciones,
   PREGUNTA_SIESTA, MAX_SIESTA_MIN,
-  HORA_DORMIR_DEFECTO, HORA_DESPERTAR_DEFECTO,
+  HORA_DORMIR_DEFECTO, HORA_DESPERTAR_DEFECTO, DIAS_VENTANA,
   crearRegistroSueno, normalizarRegistro, normalizarSueno,
   NO_SE_GUARDA, duracionDe, textoDuracion, mediaDeHoras, resumenNoche,
   BLOQUES_REGISTRO, MAX_PREGUNTAS, NO_EN_SU1, AUDITORIA_SU1, condicionSU1,
@@ -162,22 +162,31 @@ ok(VISTA.includes('toque-44'), '⚠️ con área táctil de 44 px (EH F42)');
 console.log('\n── 8. 🚨 Lo que ya funcionaba sigue ahí (apartados 8 y 10) ──────');
 ok(VISTA.includes('LineChart') && VISTA.includes('CartesianGrid') && VISTA.includes('recharts'),
   '🚨 LA GRÁFICA ES LA MISMA: el apartado 8 dice que está bien planteada');
-ok(VISTA.includes('calcularDuracion'), '⚠️ alimentada por la misma función de siempre');
+ok(VISTA.includes('ventanaDeDias'), '⚠️ alimentada por la ventana, que a su vez usa `calcularDuracion` de siempre');
 ok(VISTA.includes('AIPanel') && VISTA.includes('Analizar mi sueño'), '⚠️ el panel de IA sigue');
 ok(VISTA.includes('BotonBorrar') && VISTA.includes('onDelete'), '⚠️ y se puede seguir borrando una noche');
-ok(VISTA.includes('Media últimos'), '⚠️ y la media sigue en su sitio');
+/* 🐛 E3 F32 — la media dejó la cabecera y vive dentro de la tarjeta de la
+   gráfica: allí es la de la ventana que está mirando, y en la cabecera cambiaba
+   al retroceder una semana. Sigue estando, y sigue saliendo de `mediaDeHoras`. */
+ok(VISTA.includes('mediaDeVentana') && VISTA.includes('Media '), '⚠️ y la media sigue, ahora dentro de la gráfica');
 ok(VISTA.includes("foco?.accion === 'registrar'"),
   '⚠️ y la acción rápida «+ Sueño» del Dashboard sigue abriendo este formulario, sin uno nuevo');
 /* 🚨 Y la ventana de la gráfica NO se toca: es la fase siguiente. */
 eq(AUDITORIA_SU1.graficasRehechas, 0, '🚨 ni una gráfica rehecha');
 eq(AUDITORIA_SU1.tablasNuevas, 0, 'ni una tabla nueva');
 eq(AUDITORIA_SU1.clavesNuevas, 0, '🚨 ni una clave nueva: sigue siendo `sueno`, la lista de siempre');
-ok(/const VENTANA_GRAFICA = 7/.test(VISTA),
-  '🚨 y la ventana sigue siendo «las 7 últimas REGISTRADAS»: el cambio a 7 días de calendario es la Fase 2');
-ok(!/eachDay|rellenarDias|diasDelCalendario/.test(soloCodigo(VISTA)),
-  '⚠️ sin rellenar huecos de calendario: *"NO implementar todavía el cambio de ventana"*');
+/* 🚨 **Esta comprobación decía lo contrario hasta la SU F2, y era correcta las
+   dos veces.** La SU F1 tenía prohibido tocar la ventana —*"NO implementar
+   todavía el cambio de ventana de 7 días"*— y esto lo vigilaba. La SU F2 es
+   justo la fase que lo hace, así que ahora vigila lo de después: que la ventana
+   sea de DÍAS DE CALENDARIO y no de registros. Lo que no cambia es que sigan
+   siendo siete y que la gráfica sea la misma. */
+ok(/const VENTANA_GRAFICA = DIAS_VENTANA/.test(VISTA) && DIAS_VENTANA === 7,
+  '🚨 siguen siendo siete días, y el número vive en una sola constante');
+ok(!/sueno\.slice\(-VENTANA_GRAFICA\)[\s\S]{0,200}chartData/.test(VISTA),
+  '🚨 y la gráfica ya NO se alimenta de `sueno.slice(-7)`: eso eran «los 7 últimos registros» (apartado 18)');
 ok(NO_EN_SU1.some((n) => /ventana móvil de 7 días/i.test(n.que)),
-  '⚠️ y está declarado como trabajo de la fase siguiente');
+  '⚠️ y la SU F1 lo dejó declarado como trabajo de la fase siguiente, que es la que lo ha hecho');
 
 console.log('\n── 9. 🚨 Y los que leían la calidad siguen sin romperse ─────────');
 /* Una calidad sin contestar es `null`, y tres pantallas la escribían como

@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, ChevronLeft, ChevronRight } from 'lucide-react';
 import { COLORS } from '../tokens';
-import { calcularDuracion, formatHoras, formatFecha, hexToRgba } from '../lib/helpers';
+import { formatHoras, formatFecha, hexToRgba } from '../lib/helpers';
 import {
   CALIDADES, PREGUNTA_CALIDAD, PREGUNTA_INTERRUPCIONES, PREGUNTA_SIESTA,
   INTERRUPCIONES, MAX_SIESTA_MIN, HORA_DORMIR_DEFECTO, HORA_DESPERTAR_DEFECTO,
-  crearRegistroSueno, calidadDe, valorDeCalidad, textoDuracion, mediaDeHoras, resumenNoche,
+  crearRegistroSueno, calidadDe, valorDeCalidad, textoDuracion, resumenNoche,
+  /* Entrega 3 · F32 (SU F2) — la ventana móvil de 7 días de CALENDARIO. */
+  DIAS_VENTANA, ventanaDeDias, puedeRetroceder, puedeAvanzar, tituloDeVentana,
+  TITULO_ACTUAL, mediaDeVentana, huecosDeVentana,
 } from '../lib/sueno';
 import { Card, ListCard, ListRow, BotonBorrar, SectionTitle, TextInput, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
 
@@ -25,10 +28,13 @@ import { Card, ListCard, ListRow, BotonBorrar, SectionTitle, TextInput, PrimaryB
    7 días de la gráfica. Eso corresponde exclusivamente a la FASE 2 de Sueño."*
    Por eso `VENTANA_GRAFICA` es una constante con ese recordatorio al lado. */
 
-/* 🚨 La gráfica enseña las últimas siete noches REGISTRADAS, que es lo que hacía
-   antes de esta fase (`sueno.slice(-7)`). Lo que la Fase 2 va a cambiar es que
-   sean los siete últimos **días de calendario**, con sus huecos. No tocar aquí. */
-const VENTANA_GRAFICA = 7;
+/* 🚨 **Entrega 3 · F32 (SU F2) — SIETE DÍAS DE CALENDARIO, NO SIETE REGISTROS.**
+   Hasta aquí la gráfica hacía `sueno.slice(-7)`, y eso es exactamente lo que el
+   apartado 18 prohíbe: **si Josué no registraba tres días, la gráfica los
+   sustituía por tres noches viejas** y parecía que había dormido todas. Ahora la
+   ventana la manda la fecha del dispositivo (apartado 13) y un día sin registrar
+   es un hueco (apartados 3 y 18). Toda la lógica está en `ventanaDeDias`. */
+const VENTANA_GRAFICA = DIAS_VENTANA;
 
 /* ── Un bloque del registro ────────────────────────────────────────────────── */
 function BloqueRegistro({ emoji, icono: Icono, titulo, accent, children }) {
@@ -198,13 +204,23 @@ export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFoco
     }
   }, [foco]);
 
-  /* 🚨 La gráfica, la media y la lista son **exactamente** las de antes de esta
-     fase (apartados 8 y 10). La media sale ahora de `mediaDeHoras`, que hace el
-     mismo cálculo con el mismo filtro de noches incompletas — estaba escrito
-     dentro de la vista y ahora se puede probar. */
+  /* 🚨 E3 F32 (SU F2) — la ventana móvil. `desplazamiento` es cuántos bloques de
+     siete días ha retrocedido; 0 son *"Últimos 7 días"* (apartado 5). */
+  const [desplazamiento, setDesplazamiento] = useState(0);
+  const ventana = ventanaDeDias(sueno, { desplazamiento, dias: VENTANA_GRAFICA });
+  /* ⚠️ Los puntos ya vienen con su etiqueta de fecha real (apartado 9) y con
+     `horas: null` en los días sin registrar, que recharts pinta como un hueco:
+     **no se rellena nada** (apartados 3 y 18). */
+  const chartData = ventana.puntos.map((p) => ({ fecha: p.etiqueta, horas: p.horas, esHoy: p.esHoy }));
+  const media = mediaDeVentana(ventana);
+  const huecos = huecosDeVentana(ventana);
+  const atras = puedeRetroceder(sueno, { desplazamiento, dias: VENTANA_GRAFICA });
+  const adelante = puedeAvanzar(desplazamiento);
+
+  /* ⚠️ Las noches de la lista de abajo siguen siendo las últimas REGISTRADAS: la
+     ventana es de la gráfica, no del historial (apartado 12 — mover la ventana no
+     esconde nada del resto de la aplicación). */
   const ultimos = sueno.slice(-VENTANA_GRAFICA);
-  const chartData = ultimos.map((e) => ({ fecha: formatFecha(e.fecha), horas: calcularDuracion(e.horaDormir, e.horaDespertar) }));
-  const media = mediaDeHoras(ultimos);
 
   const handleGuardar = (registro) => {
     onAdd(registro);
@@ -214,7 +230,13 @@ export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFoco
   return (
     <div className="space-y-4 pb-4">
       <div className="flex items-center justify-between gap-3">
-        <SectionTitle sub={ultimos.length ? `Media últimos ${ultimos.length}: ${formatHoras(media)} h` : 'Todavía sin registros'}>Sueño</SectionTitle>
+        {/* 🐛 E3 F32 — antes esto decía *"Media últimos 7: X h"*. Con la ventana
+            móvil ese número pasó a ser el de la ventana **que esté mirando**, así
+            que al retroceder una semana la cabecera cambiaba con ella: el título
+            de la pantalla acabaría diciendo la media de agosto. La media vive
+            ahora dentro de la tarjeta de la gráfica, que es de quien es; aquí se
+            dice cuántas noches lleva, que no depende de dónde esté mirando. */}
+        <SectionTitle sub={sueno.length ? `${sueno.length} ${sueno.length === 1 ? 'noche registrada' : 'noches registradas'}` : 'Todavía sin registros'}>Sueño</SectionTitle>
         <div style={{ width: 130 }}>
           <PrimaryButton accent={accent} onClick={() => setShowForm((s) => !s)}>Registrar</PrimaryButton>
         </div>
@@ -222,17 +244,70 @@ export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFoco
 
       {showForm && <FormularioNoche accent={accent} onGuardar={handleGuardar} onCancelar={() => setShowForm(false)} />}
 
-      {chartData.length > 1 && (
+      {chartData.length > 0 && (
         <Card>
+          {/* Apartado 11 — *"‹ Últimos 7 días ›"*, y ni un control más. */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <button
+              onClick={() => setDesplazamiento((d) => d + 1)}
+              disabled={!atras}
+              aria-label="Semana anterior"
+              className="toque-44 p-1.5 -m-1.5 rounded-xl"
+              style={{ color: atras ? COLORS.text : COLORS.border }}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <p className="text-xs font-bold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>
+              {tituloDeVentana(ventana)}
+            </p>
+            <button
+              onClick={() => setDesplazamiento((d) => Math.max(0, d - 1))}
+              disabled={!adelante}
+              aria-label="Semana siguiente"
+              className="toque-44 p-1.5 -m-1.5 rounded-xl"
+              style={{ color: adelante ? COLORS.text : COLORS.border }}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
           <ResponsiveContainer width="100%" height={150}>
             <LineChart data={chartData}>
               <CartesianGrid stroke={COLORS.border} vertical={false} />
-              <XAxis dataKey="fecha" stroke={COLORS.textMuted} fontSize={11} />
+              {/* ⚠️ Apartado 9 — fechas de verdad («L 24 · M 25»), nunca «1 2 3». */}
+              <XAxis dataKey="fecha" stroke={COLORS.textMuted} fontSize={11} interval={0} />
               <YAxis stroke={COLORS.textMuted} fontSize={11} width={26} />
               <Tooltip contentStyle={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text }} />
-              <Line type="monotone" dataKey="horas" stroke={accent} strokeWidth={2.5} dot={{ r: 3 }} />
+              {/* 🚨 `connectNulls` NO se activa: un día sin registrar tiene que
+                  verse como un hueco, no como una línea recta que lo cruza — sería
+                  el dato inventado que prohíben los apartados 3 y 18. */}
+              <Line type="monotone" dataKey="horas" stroke={accent} strokeWidth={2.5} dot={{ r: 3 }} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
+
+          {/* Apartado 10 — dónde está HOY dentro de los siete días. */}
+          <div className="flex items-center justify-between gap-2 mt-1 text-xs" style={{ color: COLORS.textMuted }}>
+            <span>
+              {ventana.puntos.some((p) => p.esHoy) ? 'HOY es el último punto' : `${ventana.inicio.slice(8)} → ${ventana.fin.slice(8)}`}
+            </span>
+            <span>{media === null ? 'Sin noches registradas' : `Media ${formatHoras(media)} h`}</span>
+          </div>
+          {/* ⚠️ *"Los días sin registro no generen datos falsos"*, dicho también
+              con palabras: si hay huecos, se cuentan. */}
+          {huecos > 0 && (
+            <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+              {huecos === 1 ? '1 noche sin registrar en este periodo' : `${huecos} noches sin registrar en este periodo`}
+            </p>
+          )}
+          {!ventana.esActual && (
+            <button
+              onClick={() => setDesplazamiento(0)}
+              className="text-xs font-semibold mt-2 toque-44"
+              style={{ color: accent }}
+            >
+              {TITULO_ACTUAL} →
+            </button>
+          )}
         </Card>
       )}
 
