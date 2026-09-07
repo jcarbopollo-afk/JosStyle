@@ -1,5 +1,78 @@
 # CHANGELOG.md
 
+## v3.46.0 — Entrega 3 · Fase 25 (PR F3): Productividad — Pomodoro
+
+La segunda mini-app de Productividad: temporizador circular, ciclo completo, configuración,
+historial de sesiones y estadísticas de hoy y de la semana.
+
+### 🚨 El temporizador ya no cuenta hacia atrás
+
+*"**No implementar un contador que simplemente se base en restar segundos continuamente. Utilizar
+timestamps** para calcular el tiempo real restante. Así se evita que el temporizador se desincronice
+si la pestaña queda en segundo plano."*
+
+Lo que había era exactamente eso: un `setInterval` restando un segundo cada vez. Con aquello,
+bloquear el iPhone diez minutos y volver dejaba el reloj **diez minutos por detrás de la realidad**,
+porque Safari congela los temporizadores de una pestaña que no se ve.
+
+Ahora se guardan cuatro números —cuándo empezó, cuánto dura, cuándo se pausó y cuánto lleva parado— y
+**lo que queda se calcula restando**. De ahí salen gratis tres cosas que el enunciado pide por
+separado:
+
+- **Sobrevive al segundo plano.** El móvil puede congelar la pestaña, pero no puede cambiar la hora a
+  la que se pulsó ▶.
+- **Sobrevive a recargar y a cambiar de pantalla** (criterio 12): son cuatro números, se guardan y se
+  releen. El recorrido en Chromium recarga la aplicación entera y comprueba que sigue donde estaba.
+- **Y la pausa no es un caso aparte**: es sumar el rato parado. Con dos pausas la cuenta sigue siendo
+  exacta.
+
+El intervalo de la pantalla **solo redibuja**; no lleva la cuenta.
+
+### El sonido es el del sistema, y no se inventa uno nuevo
+
+*"Utilizar el sistema de sonidos existente. **NO crear un sistema paralelo de volumen.**"* Aquí no se
+llama a `reproducir` ni se toca `audioEngine`: se **emite un evento en el bus**, como hace Rachas, y
+quien decide si suena —y a qué volumen, y si el móvil está en silencio— sigue siendo el motor de
+SO F1. Hay una prueba que lee la librería y falla si aparece `new Audio`, `reproducir(` o `volumen`.
+
+Y **no se declara un sonido nuevo**: la biblioteca es de SO F4, tiene sus 46 archivos y ninguno es una
+campana de pomodoro. Se emite `success`, que existe y tiene archivo. Declarar un evento sin archivo
+habría sido declarar un sonido que no suena.
+
+### El contador de siempre no se rompe
+
+`productividad.pomodoros` es `{ '2026-09-07': 3 }` desde la Fase 6, y lo leen **`avisosPlanificacion`
+y `estadisticasPlan`**. Esta fase añade la lista de sesiones —que es lo que el enunciado pide,
+*"no guardar todo en un único objeto gigante"*— y **recalcula el contador desde ellas**. Así hay una
+sola fuente de verdad y una proyección que no puede desviarse; guardar el número a mano al lado
+habría sido el duplicado que acaba diciendo dos cifras distintas.
+
+### Lo demás
+
+**Cancelar registra la sesión pero no cuenta como pomodoro** —*"no contarla como completado"*—, y
+guarda **lo que de verdad duró**, no lo que iba a durar: siete minutos de concentración son un dato
+honesto. **Los dos automatismos nacen apagados**: un descanso que arranca solo cuando él ya ha
+guardado el móvil deja un pomodoro a medias. **Con una sesión en marcha, las estadísticas y el
+historial desaparecen** (*"modo concentración: pocas distracciones"*). **Sin tiempo concentrado se
+enseña un guion, no «0 min»**. Y el campo `tareaId` existe y viaja al historial, pero **no hay ningún
+selector que lo llene**: *"no mostrar una interfaz de tareas falsa"*.
+
+Los avisos reutilizan `notificaciones.js`, y se dice lo que no puede hacerse: **con la aplicación
+cerrada no llega nada**, porque no hay service worker (DEP-30).
+
+### Y una prueba que saltó con código correcto
+
+`test-productividad-launcher` y `test-habitos` comprobaban que `DEFAULT_PRODUCTIVIDAD` tuviera
+**exactamente seis claves**, y saltaron en cuanto esta fase añadió las tres de Pomodoro con todo el
+derecho. Es la lección de EH F21 y EH F23: **una cuenta exacta de llaves es una bomba de relojería** —
+lo que hay que comprobar es que sigan estando las que tenían que estar, no cuántas hay.
+
+### Verificación
+Build de Vite, **146 comprobaciones nuevas de Node** (`scripts/test-pomodoro.mjs`), **32 casos de
+renderizado nuevos** (1852 en total), las 6 reglas invariantes y una sección nueva del recorrido en
+Chromium que arranca el temporizador, lo pausa, **recarga la aplicación entera** y comprueba que la
+sesión sigue donde estaba.
+
 ## v3.45.0 — Entrega 3 · Fase 24 (PR F2): Productividad — Hábitos
 
 La primera mini-app de Productividad, completa: crear, editar, pausar, eliminar, marcar con un toque,

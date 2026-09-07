@@ -157,6 +157,9 @@ export const ANIMACIONES_HC = [
      un catálogo que miente, y ya pasó con `tarea-hecha` y `aviso-entra`. */
   { id: 'habito_hecho', apartado: 16, nombre: 'Completar un hábito', ms: 280, clase: 'habito-hecho' },
   { id: 'progreso_dia', apartado: 16, nombre: 'La barra del progreso del día', ms: 380, clase: 'barra-progreso' },
+  /* E3 F25 (PR F3) — el aro del temporizador. Entra aquí por lo mismo: la prueba
+     de la E3 F14 recorre esta lista y comprueba que cada clase existe en el CSS. */
+  { id: 'aro_pomodoro', apartado: 16, nombre: 'El aro del temporizador', ms: 300, clase: 'aro-pomodoro' },
 ];
 
 export const animacionHC = (id) => ANIMACIONES_HC.find((a) => a.id === id) || null;

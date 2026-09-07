@@ -426,7 +426,22 @@ export const DEFAULT_NEGOCIO = { proyectos: [] };
 // porque es de Productividad como las tareas — y al estar en el DEFAULT,
 // `{ ...DEFAULT_PRODUCTIVIDAD, ...guardado }` se lo pone solo a lo guardado
 // antes de esta fase (regla 5).
-export const DEFAULT_PRODUCTIVIDAD = { habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [] };
+/* 🚨 E3 F25 (PR F3) — Pomodoro añade tres campos, y `pomodoros` se queda:
+   · `pomodoroConfig`   — duraciones y automatismos, configurables.
+   · `pomodoroEnCurso`  — la sesión que está corriendo, para que **sobreviva a
+                          recargar y a cambiar de pantalla** (criterio 12). Son
+                          cuatro números, no un contador.
+   · `pomodoroSesiones` — el historial, que es lo que pide el enunciado
+                          (*"no guardar todo en un único objeto gigante"*).
+
+   ⚠️ Y `pomodoros` —el contador por día de la Fase 6— **no se toca**, porque lo
+   leen `avisosPlanificacion.js` y `estadisticasPlan.js`. Se recalcula desde las
+   sesiones (`contadorDesdeSesiones`), así que hay una sola fuente de verdad y una
+   proyección que no puede desviarse. */
+export const DEFAULT_PRODUCTIVIDAD = {
+  habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [],
+  pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+};
 export const PERIODOS_META = ['Diaria', 'Semanal', 'Mensual', 'Anual'];
 
 // Fase 9 — Objetivos: narrativa larga (30 días a 10 años), deliberadamente distinta de las

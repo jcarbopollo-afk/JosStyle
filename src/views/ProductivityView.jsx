@@ -16,6 +16,17 @@ import {
 } from '../lib/productividad';
 /* E3 F24 (PR F2) — Hábitos, la mini-app completa. Ni una racha se calcula en esta
    vista: todo sale de `habitos.js`, que se lo pregunta al motor de `rachas.js`. */
+/* E3 F25 (PR F3) — Pomodoro. 🚨 El tiempo se calcula restando instantes, nunca
+   contando segundos: por eso sobrevive a que el móvil congele la pestaña. */
+import {
+  TIPOS_SESION, tipoSesion, CONFIG_POMODORO_POR_DEFECTO, DURACIONES_SUGERIDAS, normalizarConfig,
+  duracionDe, iniciarSesion, normalizarSesionEnCurso, estaPausada, restanteMs, haTerminado,
+  progreso, formatearTiempo, pausar, reanudar, reiniciar, completar, cancelar,
+  siguienteEnElCiclo, posicionEnElCiclo, EVENTO_AL_TERMINAR,
+  estadisticasHoy, estadisticasSemana, formatearDuracionLarga, historialReciente,
+  CABECERA_POMODORO, VACIO_POMODORO,
+} from '../lib/pomodoro';
+import { emitir } from '../lib/eventos';
 import {
   FRECUENCIAS_HABITO, FRECUENCIA_POR_DEFECTO, frecuenciaDe, reglaDe, describirRegla,
   CATEGORIAS_HABITO, ICONOS_HABITO, ICONO_HABITO_POR_DEFECTO,
@@ -671,67 +682,305 @@ function RutinasTab({ rutinas, onAdd, onUpdate, onDelete, accent }) {
 }
 
 /* ---------- Pomodoro ---------- */
-const POMODORO_TRABAJO = 25 * 60;
-const POMODORO_DESCANSO = 5 * 60;
+/* ⚠️ E3 F25 (PR F3) — las dos constantes de la Fase 6 se han ido: las duraciones
+   son configurables y sus valores por defecto viven en `CONFIG_POMODORO_POR_DEFECTO`.
+   Dejarlas aquí habría sido un segundo sitio donde dice cuánto dura un pomodoro. */
 
-function PomodoroTab({ hoyCount, onCompletar, accent }) {
-  const [modo, setModo] = useState('trabajo');
-  const [segundos, setSegundos] = useState(POMODORO_TRABAJO);
-  const [corriendo, setCorriendo] = useState(false);
-  const intervalRef = useRef(null);
+/* ══════════════════════════════════════════════════════════════════════════
+   ENTREGA 3 · FASE 25 (PR F3) — POMODORO
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 **El temporizador ya no cuenta hacia atrás.** Lo que había era un
+   `setInterval` restando un segundo cada vez — exactamente lo que el enunciado
+   prohíbe: *"no implementar un contador que simplemente se base en restar
+   segundos… utilizar timestamps"*. Con aquello, bloquear el iPhone diez minutos
+   y volver dejaba el reloj diez minutos por detrás de la realidad.
+
+   Ahora el intervalo **solo redibuja**: el tiempo restante se calcula en
+   `pomodoro.js` restando instantes, así que da igual que la pestaña se congele. */
+
+/* El círculo. *"Debe existir una animación/progreso circular que represente el
+   tiempo restante."* SVG, sin librería. */
+export function TemporizadorCircular({ restante, fraccion, tipo, accent, corriendo }) {
+  const R = 78;
+  const circunferencia = 2 * Math.PI * R;
+  const t = tipoSesion(tipo);
+  const color = t.esDescanso ? COLORS.positive : accent;
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: 200, height: 200 }}>
+      <svg width="200" height="200" viewBox="0 0 200 200" style={{ transform: 'rotate(-90deg)' }} aria-hidden="true">
+        <circle cx="100" cy="100" r={R} fill="none" stroke={COLORS.surface2} strokeWidth="10" />
+        <circle
+          cx="100" cy="100" r={R} fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"
+          strokeDasharray={circunferencia}
+          strokeDashoffset={circunferencia * Math.min(1, Math.max(0, fraccion))}
+          className="aro-pomodoro"
+        />
+      </svg>
+      <div className="absolute flex flex-col items-center">
+        <p
+          className="text-4xl font-extrabold tabular-nums"
+          style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}
+          aria-live="polite"
+        >
+          {restante}
+        </p>
+        <p className="text-[11px] mt-1" style={{ color: corriendo ? color : COLORS.textMuted }}>{t.frase}</p>
+      </div>
+    </div>
+  );
+}
+
+/* *"Crear una sección/modal de configuración."* Los seis ajustes del enunciado y
+   ni uno más. */
+export function ConfigPomodoro({ config, accent, onGuardar, onCerrar }) {
+  const [form, setForm] = useState(normalizarConfig(config));
+  const minutos = (campo, label) => (
+    <Field key={campo} label={label}>
+      <div className="flex gap-1.5 flex-wrap">
+        {DURACIONES_SUGERIDAS.map((v) => (
+          <button
+            key={v}
+            onClick={() => setForm({ ...form, [campo]: v })}
+            className="rounded-full px-3 py-1.5 text-xs font-semibold toque-44"
+            style={form[campo] === v
+              ? { background: accent, color: COLORS.textOnAccent }
+              : { background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}
+            aria-label={`${label}: ${v} minutos`}
+            aria-pressed={form[campo] === v}
+          >
+            {v} min
+          </button>
+        ))}
+      </div>
+    </Field>
+  );
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className="text-sm font-bold" style={{ color: COLORS.text }}>Configuración</p>
+        <GhostBtn onClick={onCerrar}>Cancelar</GhostBtn>
+      </div>
+
+      {minutos('enfoqueMin', 'Tiempo de enfoque')}
+      {minutos('cortoMin', 'Descanso corto')}
+      {minutos('largoMin', 'Descanso largo')}
+
+      <Field label="Sesiones antes del descanso largo">
+        <Select
+          aria-label="Sesiones antes del descanso largo"
+          value={String(form.sesionesAntesDelLargo)}
+          onChange={(ev) => setForm({ ...form, sesionesAntesDelLargo: Number(ev.target.value) })}
+        >
+          {[2, 3, 4, 5, 6, 8].map((v) => <option key={v} value={v}>{v}</option>)}
+        </Select>
+      </Field>
+
+      {/* ⚠️ Los dos automatismos nacen apagados: un descanso que arranca solo
+          cuando él ya ha guardado el móvil deja un pomodoro a medias. */}
+      <div className="space-y-2 mt-1">
+        {[
+          ['autoDescanso', 'Empezar el descanso automáticamente'],
+          ['autoSiguiente', 'Empezar la siguiente sesión automáticamente'],
+        ].map(([campo, label]) => (
+          <button
+            key={campo}
+            onClick={() => setForm({ ...form, [campo]: !form[campo] })}
+            className="w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 toque-44"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+            aria-label={label}
+            aria-pressed={form[campo]}
+          >
+            <span className="text-xs text-left" style={{ color: COLORS.text }}>{label}</span>
+            <span
+              className="text-[10px] font-bold rounded-full px-2 py-0.5"
+              style={form[campo]
+                ? { background: accent, color: COLORS.textOnAccent }
+                : { background: COLORS.bg, color: COLORS.textMuted }}
+            >
+              {form[campo] ? 'Sí' : 'No'}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3">
+        <PrimaryButton accent={accent} onClick={() => onGuardar(form)}>Guardar</PrimaryButton>
+      </div>
+    </Card>
+  );
+}
+
+/* *"HOY: pomodoros completados, tiempo concentrado. ESTA SEMANA: …"* */
+export function EstadisticasPomodoro({ hoy, semana, accent }) {
+  const bloque = (titulo, e) => (
+    <div>
+      <p className="text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>{titulo}</p>
+      <div className="grid grid-cols-2 gap-2">
+        <Cifra n={e.pomodoros} label={e.pomodoros === 1 ? 'pomodoro' : 'pomodoros'} accent={accent} />
+        {/* ⚠️ Sin tiempo concentrado se dice con un guion, no con «0 min»: un cero
+            de minutos no informa de nada. */}
+        <Cifra n={e.tiempo || '—'} label="concentrado" accent={accent} />
+      </div>
+    </div>
+  );
+  return (
+    <Card>
+      <div className="space-y-3">
+        {bloque('Hoy', hoy)}
+        {bloque('Esta semana', semana)}
+      </div>
+      {hoy.interrumpidas > 0 ? (
+        <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
+          {hoy.interrumpidas} {hoy.interrumpidas === 1 ? 'sesión cancelada' : 'sesiones canceladas'} hoy. No cuentan como pomodoro.
+        </p>
+      ) : null}
+    </Card>
+  );
+}
+
+function PomodoroTab({ config, sesionEnCurso, sesiones, accent, onGuardarConfig, onCambiarSesion, onRegistrar }) {
+  const [ajustes, setAjustes] = useState(false);
+  /* 🚨 Este estado **no es el tiempo**: es solo un latido que fuerza a redibujar.
+     El tiempo sale de `restanteMs`, que resta instantes. Si el móvil congela la
+     pestaña, el latido se para y el reloj se pone al día solo al volver. */
+  const [, latir] = useState(0);
+  const sesion = normalizarSesionEnCurso(sesionEnCurso);
+  const corriendo = !!sesion && !estaPausada(sesion);
+  const cfg = normalizarConfig(config);
 
   useEffect(() => {
-    if (corriendo) {
-      intervalRef.current = setInterval(() => {
-        setSegundos((s) => {
-          if (s <= 1) {
-            if (modo === 'trabajo') onCompletar();
-            const siguienteModo = modo === 'trabajo' ? 'descanso' : 'trabajo';
-            setModo(siguienteModo);
-            return siguienteModo === 'trabajo' ? POMODORO_TRABAJO : POMODORO_DESCANSO;
-          }
-          return s - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(intervalRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [corriendo, modo]);
+    if (!corriendo) return undefined;
+    const id = setInterval(() => latir((n) => n + 1), 250);
+    return () => clearInterval(id);
+  }, [corriendo]);
 
-  const reiniciar = () => {
-    setCorriendo(false);
-    setModo('trabajo');
-    setSegundos(POMODORO_TRABAJO);
+  /* Cuando el tiempo llega a cero: registrar, sonar y pasar a lo siguiente. Va en
+     un efecto y no en el intervalo para que también salte al **volver** de tener
+     el móvil bloqueado, que es cuando de verdad ha terminado. */
+  useEffect(() => {
+    if (!sesion || !haTerminado(sesion)) return;
+    onRegistrar(completar(sesion));
+    /* 🚨 Se EMITE, no se reproduce: el motor de SO F1 decide si suena. */
+    emitir(EVENTO_AL_TERMINAR, { de: 'pomodoro', tipo: sesion.tipo });
+    const siguiente = siguienteEnElCiclo(sesion, cfg);
+    const auto = tipoSesion(siguiente.tipo).esDescanso ? cfg.autoDescanso : cfg.autoSiguiente;
+    onCambiarSesion(auto
+      ? iniciarSesion(siguiente.tipo, cfg, { sesionesHechas: siguiente.sesionesHechas })
+      : { ...iniciarSesion(siguiente.tipo, cfg, { sesionesHechas: siguiente.sesionesHechas }), pausadoEn: Date.now() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sesion && haTerminado(sesion)]);
+
+  const hoy = todayISO();
+  const eHoy = estadisticasHoy(sesiones, hoy);
+  const eSemana = estadisticasSemana(sesiones, hoy);
+  const enMarcha = sesion || iniciarSesion('focus', cfg, { ahora: Date.now() });
+  const restante = sesion ? restanteMs(sesion) : duracionDe('focus', cfg);
+  const fraccion = sesion ? 1 - progreso(sesion) : 1;
+  const posicion = posicionEnElCiclo(sesion, cfg);
+
+  const empezar = () => onCambiarSesion(iniciarSesion(sesion ? sesion.tipo : 'focus', cfg, {
+    sesionesHechas: sesion ? sesion.sesionesHechas : 0,
+  }));
+
+  const cancelarSesion = () => {
+    if (sesion) onRegistrar(cancelar(sesion));
+    onCambiarSesion(null);
   };
 
-  const mm = String(Math.floor(segundos / 60)).padStart(2, '0');
-  const ss = String(segundos % 60).padStart(2, '0');
+  if (ajustes) {
+    return (
+      <ConfigPomodoro
+        config={cfg}
+        accent={accent}
+        onCerrar={() => setAjustes(false)}
+        onGuardar={(c) => { onGuardarConfig(c); setAjustes(false); }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-3">
-      <Card className="flex flex-col items-center py-10">
-        <p className="text-xs font-semibold mb-2" style={{ color: modo === 'trabajo' ? accent : COLORS.positive }}>
-          {modo === 'trabajo' ? 'CONCENTRACIÓN' : 'DESCANSO'}
+      <p className="text-xs" style={{ color: COLORS.textMuted }}>{CABECERA_POMODORO.frase}</p>
+
+      {/* *"MODO DE CONCENTRACIÓN: cuando haya una sesión activa, reducir
+          visualmente elementos innecesarios."* Con una sesión corriendo,
+          las estadísticas y el historial se apartan. */}
+      <Card className="flex flex-col items-center py-6">
+        <p className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: COLORS.textMuted }}>
+          {posicion.texto}
         </p>
-        <p className="text-5xl font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{mm}:{ss}</p>
-        <div className="flex items-center gap-3 mt-6">
-          <button
-            onClick={() => setCorriendo((c) => !c)}
-            className="w-14 h-14 rounded-full flex items-center justify-center"
-            style={{ background: accent, color: COLORS.textOnAccent }}
-          >
-            {corriendo ? <Pause size={22} /> : <Play size={22} />}
-          </button>
-          <button
-            onClick={reiniciar}
-            className="w-11 h-11 rounded-full flex items-center justify-center"
-            style={{ background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}
-          >
-            <RotateCcw size={16} />
-          </button>
+        <TemporizadorCircular
+          restante={formatearTiempo(restante)}
+          fraccion={fraccion}
+          tipo={enMarcha.tipo}
+          accent={accent}
+          corriendo={corriendo}
+        />
+
+        <div className="flex items-center gap-2 mt-5 flex-wrap justify-center">
+          {!sesion || estaPausada(sesion) ? (
+            <button
+              onClick={() => (sesion ? onCambiarSesion(reanudar(sesion)) : empezar())}
+              className="rounded-full px-6 py-3 text-sm font-bold toque-44 transition-transform active:scale-95"
+              style={{ background: accent, color: COLORS.textOnAccent }}
+              aria-label={sesion ? 'Continuar la sesión' : 'Iniciar la sesión'}
+            >
+              {sesion ? '▶ Continuar' : '▶ Iniciar'}
+            </button>
+          ) : (
+            <button
+              onClick={() => onCambiarSesion(pausar(sesion))}
+              className="rounded-full px-6 py-3 text-sm font-bold toque-44 transition-transform active:scale-95"
+              style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+              aria-label="Pausar la sesión"
+            >
+              ⏸ Pausar
+            </button>
+          )}
+
+          {sesion ? (
+            <>
+              <GhostBtn icon={RotateCcw} onClick={() => onCambiarSesion(reiniciar(sesion))}>Reiniciar</GhostBtn>
+              <GhostBtn onClick={cancelarSesion}>Cancelar</GhostBtn>
+            </>
+          ) : (
+            <GhostBtn onClick={() => setAjustes(true)}>Configurar</GhostBtn>
+          )}
         </div>
-        <p className="text-xs mt-5" style={{ color: COLORS.textMuted }}>Pomodoros hoy: {hoyCount}</p>
       </Card>
+
+      {/* Con una sesión en marcha, lo demás desaparece: *"pocas distracciones"*. */}
+      {!corriendo && (
+        <>
+          <EstadisticasPomodoro hoy={eHoy} semana={eSemana} accent={accent} />
+
+          {sesiones.length === 0 ? (
+            <Card>
+              <p className="text-sm font-bold" style={{ color: COLORS.text }}>{VACIO_POMODORO.titulo}</p>
+              <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.textMuted }}>{VACIO_POMODORO.frase}</p>
+            </Card>
+          ) : (
+            <Card>
+              <p className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: COLORS.textMuted }}>Últimas sesiones</p>
+              <div className="space-y-1">
+                {historialReciente(sesiones, 8).map((s) => (
+                  <div key={s.id} className="flex items-center justify-between gap-2">
+                    <span className="text-xs truncate" style={{ color: COLORS.text }}>
+                      {tipoSesion(s.tipo).nombre}
+                      {s.interrumpida ? ' · cancelada' : ''}
+                    </span>
+                    <span className="text-[11px] flex-shrink-0" style={{ color: COLORS.textMuted }}>
+                      {formatearDuracionLarga(s.duracionMs) || 'menos de un minuto'} · {formatFecha(s.fecha)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -944,6 +1193,9 @@ export default function ProductivityView({
   onAddTarea, onToggleTarea, onDeleteTarea,
   onAddMeta, onUpdateMeta, onDeleteMeta,
   onCompletarPomodoro,
+  /* E3 F25 (PR F3) — Pomodoro guarda tres cosas: su configuración, la sesión en
+     curso (para que sobreviva a recargar) y el historial de sesiones. */
+  onGuardarConfigPomodoro, onCambiarSesionPomodoro, onRegistrarSesionPomodoro,
   /* 🚨 E3 F23 (PR F1) — Objetivos entra aquí. Deja de ser un módulo aparte, pero
      **sus datos siguen en su clave de siempre**: lo que llega son la lista y sus
      manejadores, los mismos que tenía `case 'objetivos'`. */
@@ -954,7 +1206,6 @@ export default function ProductivityView({
      encuentre directamente con listas, formularios o bloques de información**."* */
   const [abierta, setAbierta] = useState(null);
   const hoy = todayISO();
-  const pomodorosHoy = productividad.pomodoros[hoy] || 0;
 
   /* Los enlaces directos siguen funcionando: el Dashboard mandaba `foco.sub`
      desde la ampliación del Centro de Control, y desde esta fase también llega
@@ -1007,7 +1258,15 @@ export default function ProductivityView({
         <RutinasTab rutinas={productividad.rutinas} onAdd={onAddRutina} onUpdate={onUpdateRutina} onDelete={onDeleteRutina} accent={accent} />
       )}
       {abierta === 'pomodoro' && (
-        <PomodoroTab hoyCount={pomodorosHoy} onCompletar={onCompletarPomodoro} accent={accent} />
+        <PomodoroTab
+          config={productividad.pomodoroConfig}
+          sesionEnCurso={productividad.pomodoroEnCurso}
+          sesiones={productividad.pomodoroSesiones || []}
+          accent={accent}
+          onGuardarConfig={onGuardarConfigPomodoro}
+          onCambiarSesion={onCambiarSesionPomodoro}
+          onRegistrar={onRegistrarSesionPomodoro}
+        />
       )}
       {abierta === 'tareas' && (
         <TareasTab

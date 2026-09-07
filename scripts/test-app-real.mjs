@@ -2801,4 +2801,79 @@ ok(/no tocaban/i.test(detalle_pr2),
   '🚨 y el historial DICE que los días que no tocaban no son un fallo');
 ok(await pulsar('Cerrar el detalle del hábito'), 'y se cierra');
 
+/* ── E3 F25 (PR F3) · POMODORO ───────────────────────────────────────────
+   Lo que no se puede comprobar en Node: que el temporizador se ve, que arranca,
+   que se pausa, y que **la sesión sobrevive a recargar la aplicación**. */
+almacen.productividad = {
+  habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [],
+  pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Vida');
+await pulsar('Productividad');
+ok(await pulsar('Abrir Pomodoro'), 'Pomodoro se abre');
+
+const inicio_pr3 = await esperarTexto(/25:00/);
+ok(/25:00/.test(inicio_pr3), '🚨 Y SE VE EL TEMPORIZADOR, con los 25 minutos de siempre');
+ok(/Concéntrate\. Una sesión cada vez/i.test(inicio_pr3), '⚠️ con la frase del enunciado');
+ok(/Sesión 1 de 4/i.test(inicio_pr3), '⚠️ y el contador del ciclo');
+ok(/Sesión de enfoque/i.test(inicio_pr3), '⚠️ y de qué tipo es');
+
+ok(await pulsar('Iniciar la sesión'), 'se inicia');
+await page.waitForTimeout(1500);
+const corriendo_pr3 = await ver();
+ok(/24:5\d|24:4\d/.test(corriendo_pr3), '🚨 Y EL RELOJ CORRE DE VERDAD');
+
+const sesionGuardada_pr3 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value?.pomodoroEnCurso;
+ok(sesionGuardada_pr3 && sesionGuardada_pr3.tipo === 'focus',
+  '🚨 y la sesión se guarda en Supabase nada más empezar');
+ok(Number.isFinite(sesionGuardada_pr3.inicio) && sesionGuardada_pr3.inicio > 0,
+  '🚨 CON SU INSTANTE DE INICIO: es un timestamp, no un contador de segundos');
+ok(sesionGuardada_pr3.duracionMs === 25 * 60 * 1000, '⚠️ y su duración');
+
+ok(await pulsar('Pausar la sesión'), 'se pausa');
+await page.waitForTimeout(1200);
+const pausado_pr3 = await ver();
+const marcaPausa = (pausado_pr3.match(/2[0-4]:\d\d/) || [''])[0];
+await page.waitForTimeout(2000);
+const seguido_pr3 = await ver();
+ok(marcaPausa && seguido_pr3.includes(marcaPausa),
+  '🚨 Y PAUSADO EL RELOJ NO SE MUEVE: dos segundos después marca lo mismo');
+ok(/Continuar/i.test(seguido_pr3), '⚠️ y el botón ofrece continuar');
+
+/* 🚨 La prueba que de verdad importa: recargar la aplicación entera. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Vida');
+await pulsar('Productividad');
+ok(await pulsar('Abrir Pomodoro'), 'se vuelve a entrar en Pomodoro tras recargar');
+const trasRecargar_pr3 = await esperarTexto(/2[0-4]:\d\d/);
+ok(/2[0-4]:\d\d/.test(trasRecargar_pr3),
+  '🚨 Y LA SESIÓN SIGUE AHÍ TRAS RECARGAR: el temporizador no vuelve a empezar de cero');
+ok(/Continuar/i.test(trasRecargar_pr3), '⚠️ y sigue pausada, como se dejó');
+
+ok(await pulsar('Cancelar'), 'se cancela la sesión');
+await page.waitForTimeout(900);
+const trasCancelar_pr3 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value;
+ok(trasCancelar_pr3.pomodoroEnCurso === null, '⚠️ y deja de haber sesión en curso');
+ok((trasCancelar_pr3.pomodoroSesiones || []).length === 1,
+  '⚠️ pero SE REGISTRA que fue interrumpida, para las estadísticas');
+ok(trasCancelar_pr3.pomodoroSesiones[0].interrumpida === true, '⚠️ marcada como interrumpida');
+ok(Object.keys(trasCancelar_pr3.pomodoros || {}).length === 0,
+  '🚨 Y NO CUENTA COMO POMODORO: el contador por día sigue vacío');
+
+const vueltaAlInicio_pr3 = await esperarTexto(/25:00/);
+ok(/25:00/.test(vueltaAlInicio_pr3), '⚠️ y el temporizador vuelve a su duración entera');
+
+ok(await pulsar('Configurar'), 'se abre la configuración');
+const config_pr3 = await esperarTexto(/Tiempo de enfoque/i);
+ok(/Tiempo de enfoque/i.test(config_pr3) && /Descanso largo/i.test(config_pr3),
+  '⚠️ con las duraciones del enunciado');
+ok(await pulsar('Tiempo de enfoque: 45 minutos'), 'se cambia el enfoque a 45 minutos');
+ok(await pulsar('Guardar'), 'y se guarda');
+const con45_pr3 = await esperarTexto(/45:00/);
+ok(/45:00/.test(con45_pr3), '🚨 Y EL TEMPORIZADOR PASA A 45 MINUTOS: las duraciones son configurables de verdad');
+
 await salir(browser);

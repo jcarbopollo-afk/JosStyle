@@ -90,8 +90,13 @@ eq(MAPEO_EXISTENTE_PR.find((m) => m.app === 'objetivos').clave, 'objetivos.lista
 ok(MAPEO_EXISTENTE_PR.filter((m) => m.app !== 'objetivos').every((m) => m.clave.startsWith('productividad.')),
   '⚠️ y las otras cinco eran pestañas de Productividad');
 ok(!/DEFAULT_[A-Z]/.test(LIB_CODIGO), '🚨 y no se declara ningún almacén nuevo');
-eq(Object.keys(DEFAULT_PRODUCTIVIDAD).sort(), ['apuntes', 'habitos', 'metas', 'pomodoros', 'rutinas', 'tareas'],
-  '⚠️ la forma de `productividad` no ha cambiado');
+/* ⚠️ **Una cuenta exacta de llaves en una prueba es una bomba de relojería**
+   (EH F21 y EH F23): esto comprobaba que las claves fueran EXACTAMENTE seis, y
+   saltó en cuanto la E3 F25 añadió las tres de Pomodoro **con todo el derecho**.
+   Lo que hay que comprobar es que **sigan estando las que tenían que estar**, no
+   cuántas hay. */
+ok(['apuntes', 'habitos', 'metas', 'pomodoros', 'rutinas', 'tareas'].every((k) => k in DEFAULT_PRODUCTIVIDAD),
+  '⚠️ las listas de `productividad` que ya existían siguen todas ahí: esta fase no se lleva ninguna');
 eq(Object.keys(DEFAULT_OBJETIVOS).sort(), ['lista', 'ultimaRevision'],
   '⚠️ ni la de `objetivos`');
 

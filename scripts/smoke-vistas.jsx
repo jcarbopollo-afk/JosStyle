@@ -27,7 +27,13 @@ import StatsView from '../src/views/StatsView.jsx';
 import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView, {
   ProgresoDelDia, SemanaDeHabito, TarjetaHabito, FormularioHabito, DetalleHabito,
+  TemporizadorCircular, ConfigPomodoro, EstadisticasPomodoro,
 } from '../src/views/ProductivityView.jsx';
+import {
+  CONFIG_POMODORO_POR_DEFECTO as CFG_F25, iniciarSesion as iniciarSesionF25,
+  completar as completarF25, cancelar as cancelarF25, estadisticasHoy as statsHoyF25,
+  estadisticasSemana as statsSemF25, pausar as pausarF25,
+} from '../src/lib/pomodoro.js';
 import { crearHabito as crearHabitoF24, semanaDe as semanaDeF24 } from '../src/lib/habitos.js';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
@@ -1899,6 +1905,61 @@ const CASOS = [
       ['FormularioHabito (editando semanal)', FormularioHabito, () => ({ habito: hSem, accent, onGuardar: noop, onCancelar: noop })],
       ['DetalleHabito', DetalleHabito, () => ({ habito: hDiario, hoy: HOY_F24, accent, onCerrar: noop, onGuardar: noop, onEliminar: noop })],
       ['DetalleHabito (sin historial)', DetalleHabito, () => ({ habito: hNuevo, hoy: HOY_F24, accent, onCerrar: noop, onGuardar: noop, onEliminar: noop })],
+    ];
+  })(),
+  /* E3 F25 (PR F3) — Pomodoro. El escenario tiene una sesión corriendo, una
+     pausada, historial con una completada y una cancelada, y el caso vacío. */
+  ...(() => {
+    const AHORA_F25 = Date.now();
+    const corriendo = iniciarSesionF25('focus', CFG_F25, { ahora: AHORA_F25 - 600000 });
+    const pausada = pausarF25(corriendo, AHORA_F25 - 60000);
+    const hecha = completarF25(iniciarSesionF25('focus', CFG_F25, { ahora: AHORA_F25 - 3600000 }), AHORA_F25 - 2100000);
+    const rota = cancelarF25(iniciarSesionF25('focus', CFG_F25, { ahora: AHORA_F25 - 7200000 }), AHORA_F25 - 7000000);
+    const sesionesF25 = [hecha, rota];
+    const conPomodoro = (extra = {}) => ({
+      productividad: {
+        habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [],
+        pomodoroConfig: CFG_F25, pomodoroEnCurso: null, pomodoroSesiones: sesionesF25,
+      },
+      objetivos: { lista: [], ultimaRevision: null }, accent,
+      onAddHabito: noop, onUpdateHabito: noop, onDeleteHabito: noop,
+      onAddRutina: noop, onUpdateRutina: noop, onDeleteRutina: noop,
+      onAddTarea: noop, onToggleTarea: noop, onDeleteTarea: noop,
+      onAddMeta: noop, onUpdateMeta: noop, onDeleteMeta: noop,
+      onCompletarPomodoro: noop,
+      onGuardarConfigPomodoro: noop, onCambiarSesionPomodoro: noop, onRegistrarSesionPomodoro: noop,
+      onAddObjetivo: noop, onUpdateObjetivo: noop, onDeleteObjetivo: noop, onRevisionHecha: noop,
+      foco: { app: 'pomodoro' }, onFocoConsumido: noop, ...extra,
+    });
+    return [
+      ['ProductivityView · pomodoro', ProductivityView, () => conPomodoro()],
+      ['ProductivityView · pomodoro corriendo', ProductivityView, () => conPomodoro({
+        productividad: {
+          habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [],
+          pomodoroConfig: CFG_F25, pomodoroEnCurso: corriendo, pomodoroSesiones: sesionesF25,
+        },
+      })],
+      ['ProductivityView · pomodoro pausado', ProductivityView, () => conPomodoro({
+        productividad: {
+          habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [],
+          pomodoroConfig: CFG_F25, pomodoroEnCurso: pausada, pomodoroSesiones: [],
+        },
+      })],
+      ['TemporizadorCircular', TemporizadorCircular, () => ({
+        restante: '24:37', fraccion: 0.8, tipo: 'focus', accent, corriendo: true,
+      })],
+      ['TemporizadorCircular (descanso)', TemporizadorCircular, () => ({
+        restante: '04:12', fraccion: 0.3, tipo: 'short_break', accent, corriendo: true,
+      })],
+      ['ConfigPomodoro', ConfigPomodoro, () => ({ config: CFG_F25, accent, onGuardar: noop, onCerrar: noop })],
+      ['EstadisticasPomodoro', EstadisticasPomodoro, () => ({
+        hoy: statsHoyF25(sesionesF25, sesionesF25[0].fecha),
+        semana: statsSemF25(sesionesF25, sesionesF25[0].fecha),
+        accent,
+      })],
+      ['EstadisticasPomodoro (vacío)', EstadisticasPomodoro, () => ({
+        hoy: statsHoyF25([]), semana: statsSemF25([]), accent,
+      })],
     ];
   })(),
   ['WellbeingView', WellbeingView, (e) => ({ bienestar: e.bienestar, onAdd: noop, onDelete: noop, onAddReflexion: noop, onCompletarSesion: noop, accent })],

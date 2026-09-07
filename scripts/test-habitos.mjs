@@ -326,8 +326,13 @@ eq(AISLAMIENTO_HABITOS.tablasNuevas, 0, '⚠️ ni una tabla nueva');
 ok(/auth\.uid\(\) = user_id/.test(AISLAMIENTO_HABITOS.politicas), '⚠️ y el aislamiento es de la base de datos');
 ok(!/create table|create policy/i.test(LIB), '⚠️ esta fase no trae SQL');
 ok(!/saveData|supabase|localStorage/.test(LIB_CODIGO), '🚨 y la librería no guarda nada: quien escribe es `App.jsx`');
-eq(Object.keys(DEFAULT_PRODUCTIVIDAD).sort(), ['apuntes', 'habitos', 'metas', 'pomodoros', 'rutinas', 'tareas'],
-  '⚠️ la forma de `productividad` no ha cambiado');
+/* ⚠️ **Una cuenta exacta de llaves en una prueba es una bomba de relojería**
+   (EH F21 y EH F23): esto comprobaba que las claves fueran EXACTAMENTE seis, y
+   saltó en cuanto la E3 F25 añadió las tres de Pomodoro **con todo el derecho**.
+   Lo que hay que comprobar es que **sigan estando las que tenían que estar**, no
+   cuántas hay. */
+ok(['apuntes', 'habitos', 'metas', 'pomodoros', 'rutinas', 'tareas'].every((k) => k in DEFAULT_PRODUCTIVIDAD),
+  '⚠️ las listas de `productividad` que ya existían siguen todas ahí: esta fase no se lleva ninguna');
 eq(MINI_APPS_PR.length, 6, '⚠️ y siguen siendo seis mini-apps');
 
 console.log('\n═══ 15. LO QUE ESTA FASE NO HACE ═══\n');

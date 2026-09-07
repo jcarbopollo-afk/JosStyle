@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.45.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.46.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (44 fases — **24 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (44 fases — **25 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -165,7 +165,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 24 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 25 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -182,8 +182,9 @@ el bloque de **Biblioteca**, la **F17 (Libros, v3.38.0)**, la **F18 (Guardados, 
 **F19 (Ideas, v3.40.0)**, la **F20 (Documentos, v3.41.0)**, la **F21 (Colecciones, v3.42.0)** y la
 **F22 (integración y experiencia global, v3.43.0)**, que 🏁 **CERRÓ EL BLOQUE DE BIBLIOTECA** —las
 ocho fases BL—. Con eso hay **dos bloques cerrados**: Hoy y Calendario (10/10) y Biblioteca (8/8). La
-**F23 (Productividad como lanzador, v3.44.0)** y la **F24 (Hábitos, v3.45.0)**, con las que el bloque
-de **Productividad** va por **2 de 7**; la que viene es la **25 — PR F3: Pomodoro**. El índice, con la
+**F23 (Productividad como lanzador, v3.44.0)**, la **F24 (Hábitos, v3.45.0)** y la **F25 (Pomodoro,
+v3.46.0)**, con las que el bloque de **Productividad** va por **3 de 7**; la que viene es la
+**26 — PR F4: Tareas**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
@@ -205,6 +206,21 @@ aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con
 código de agosto mientras él decía *"la web sigue igual"*.
 
 ⚠️ **Y lo que dejaron las veinte primeras, que afecta a todas las demás:**
+
+- 🚨 **UN TEMPORIZADOR SE HACE CON TIMESTAMPS, NUNCA RESTANDO SEGUNDOS** (E3 F25). El Pomodoro de la
+  Fase 6 era un `setInterval` que restaba uno cada vez: **bloquear el iPhone diez minutos dejaba el
+  reloj diez minutos por detrás**, porque Safari congela los temporizadores de una pestaña que no se
+  ve. Se guardan cuándo empezó y cuánto dura, y lo que queda **se resta**: sobrevive al segundo
+  plano, a recargar y a cambiar de pantalla, y la pausa es sumar el rato parado.
+- ⚠️ **UN INTERVALO EN UNA PANTALLA SOLO DEBE REDIBUJAR** (E3 F25), nunca llevar la cuenta. Si lleva
+  la cuenta, el dato depende de que el navegador le dé tiempo de ejecución — y no se lo da.
+- ⚠️ **UN NÚMERO QUE OTROS MÓDULOS YA LEEN SE PROYECTA, NO SE DUPLICA** (E3 F25):
+  `productividad.pomodoros` lo leen `avisosPlanificacion` y `estadisticasPlan` desde la Fase 6, así
+  que se **recalcula desde las sesiones** en vez de incrementarse a mano al lado. Una sola fuente de
+  verdad y una proyección que no puede desviarse.
+- ⚠️ **NO SE DECLARA UN SONIDO QUE NO EXISTE** (E3 F25): la biblioteca es de SO F4 y tiene sus 46
+  archivos. Se emite uno que ya existe; declarar un evento nuevo sin archivo es declarar un sonido
+  que no suena. Y **se EMITE al bus**, nunca se reproduce desde una pantalla.
 
 - 🚨 **UNA FUNCIÓN QUE PONE UN VALOR A PELO DEJA DE SER CORRECTA EN CUANTO ESE VALOR VARÍA** (E3 F24).
   `rachaDeHabito` le ponía la regla diaria a pelo —lo correcto mientras todos los hábitos eran

@@ -23,6 +23,9 @@ import { resumenHabito, enRiesgo } from './lib/rachas';
 import { DEFAULT_AUDIO, normalizarAudio, migrarSonidoEncendido } from './lib/audio';
 import { iniciarAudio, conectarAlBus, conectarLosToques, actualizarPreferencias as actualizarAudio, detener as detenerAudio } from './lib/audioEngine';
 import { emitir } from './lib/eventos';
+/* E3 F25 (PR F3) — el contador por día se recalcula desde las sesiones, y la
+   configuración se normaliza antes de guardarla. */
+import { contadorDesdeSesiones, normalizarConfig as normalizarConfigPomodoro } from './lib/pomodoro';
 import { ESTADO_INICIAL, normalizarEstado, panelRachas, crearRacha as crearRachaServicio, completarDia as completarDiaServicio, deshacerDia as deshacerDiaServicio, eliminarRacha as eliminarRachaServicio } from './lib/rachasServicio';
 import { GAMIFICACION_INICIAL, normalizarGamificacion, evaluar as evaluarRachas, olvidarRacha as olvidarRachaGamificacion } from './lib/rachasGamificacion';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal, Esqueleto } from './components/ui';
@@ -1846,6 +1849,37 @@ export default function App() {
     emitir('TASK_COMPLETED', { de: 'pomodoro' });
   };
 
+  /* ── E3 F25 (PR F3) — Pomodoro ──────────────────────────────────────────
+
+     🚨 Ninguna de las tres pasa por `snapshotAndSave`: un temporizador no es algo
+     que tenga sentido deshacer, y meterlo en el histórico de diez pasos lo
+     llenaría de estados de un reloj. Es el mismo criterio que ya tenía el
+     contador de pomodoros.
+
+     ⚠️ Y `pomodoros` **se recalcula desde las sesiones**, no se incrementa a
+     mano: así el contador que leen `avisosPlanificacion` y `estadisticasPlan` no
+     puede desviarse de la lista. Una sola fuente de verdad. */
+  const guardarProductividadSinDeshacer = (next) => {
+    setProductividad(next);
+    saveData(uidUser, 'productividad', next);
+  };
+
+  const guardarConfigPomodoro = (config) =>
+    guardarProductividadSinDeshacer({ ...productividad, pomodoroConfig: normalizarConfigPomodoro(config) });
+
+  const cambiarSesionPomodoro = (sesion) =>
+    guardarProductividadSinDeshacer({ ...productividad, pomodoroEnCurso: sesion || null });
+
+  const registrarSesionPomodoro = (sesion) => {
+    if (!sesion) return;
+    const sesiones = [...(productividad.pomodoroSesiones || []), sesion];
+    guardarProductividadSinDeshacer({
+      ...productividad,
+      pomodoroSesiones: sesiones,
+      pomodoros: contadorDesdeSesiones(sesiones),
+    });
+  };
+
   const addObjetivo = (o) => snapshotAndSave({ objetivos: { ...objetivos, lista: [...objetivos.lista, o] } });
   /* 🚨 Los objetivos SÍ tienen tamaño: `PLAZOS_OBJETIVO` va de "30 días" a "10
      años". Cumplir uno a diez años vista no es lo mismo que cumplir uno a
@@ -2503,6 +2537,9 @@ export default function App() {
             onAddTarea={addTarea} onToggleTarea={toggleTarea} onDeleteTarea={deleteTarea}
             onAddMeta={addMeta} onUpdateMeta={updateMeta} onDeleteMeta={deleteMeta}
             onCompletarPomodoro={completarPomodoro}
+            onGuardarConfigPomodoro={guardarConfigPomodoro}
+            onCambiarSesionPomodoro={cambiarSesionPomodoro}
+            onRegistrarSesionPomodoro={registrarSesionPomodoro}
             /* 🚨 E3 F23 (PR F1) — Objetivos entra en Productividad. Sus datos
                siguen en la clave `objetivos` de siempre y sus manejadores son
                los mismos que tenía su `case`: lo que cambia es dónde se abre. */

@@ -427,3 +427,15 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
 .barra-progreso {
   transition: width 380ms var(--ease-premium), background 380ms var(--ease-premium);
 }
+
+/* Entrega 3 · F25 (PR F3) — Pomodoro.
+   *"Debe existir una animación/progreso circular que represente el tiempo
+   restante… animaciones fluidas y que no consuman recursos innecesariamente."*
+
+   ⚠️ El aro se anima con una transición del `stroke-dashoffset`, no con una
+   animación por fotograma: el navegador la hace sola y no cuesta nada aunque el
+   temporizador esté veinticinco minutos en marcha. Y vive aquí, con el resto, así
+   que respeta "Reducir movimiento" sola (E3 F14). */
+.aro-pomodoro {
+  transition: stroke-dashoffset 300ms linear, stroke 300ms var(--ease-premium);
+}
