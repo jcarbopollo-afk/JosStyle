@@ -861,6 +861,20 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F36 — Nutrición: el registro de alimentos.
+if node --import ./scripts/resolver-vite.mjs scripts/test-alimentos.mjs >/tmp/jc_alim.log 2>&1; then
+  ok "Nutrición: el registro de alimentos (E3 F36) — $(grep -c '✓' /tmp/jc_alim.log) comprobaciones"
+else
+  fallo "Falla el registro de alimentos (E3 F36)"; grep '✗' /tmp/jc_alim.log
+fi
+
+# Entrega 3 · F35 — Nutrición: los objetivos nutricionales.
+if node --import ./scripts/resolver-vite.mjs scripts/test-objetivos-nutricion.mjs >/tmp/jc_nuobj.log 2>&1; then
+  ok "Nutrición: los objetivos (E3 F35) — $(grep -c '✓' /tmp/jc_nuobj.log) comprobaciones"
+else
+  fallo "Fallan los objetivos de Nutrición (E3 F35)"; grep '✗' /tmp/jc_nuobj.log
+fi
+
 # Entrega 3 · F34 — Nutrición: el sistema de días e historial.
 if node --import ./scripts/resolver-vite.mjs scripts/test-nutricion-dias.mjs >/tmp/jc_nudias.log 2>&1; then
   ok "Nutrición: el sistema de días (E3 F34) — $(grep -c '✓' /tmp/jc_nudias.log) comprobaciones"

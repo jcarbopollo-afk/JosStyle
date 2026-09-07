@@ -18,6 +18,15 @@ import { normalizarSueno } from './lib/sueno';
    queda en `null` y al agrupar cae en Extras. Devuelve el módulo entero, porque
    `saveData` sobrescribe (regla 5). */
 import { normalizarNutricionDe } from './lib/nutricion';
+/* 🚨 E3 F35 (NU F3) — los objetivos nutricionales. Viven DENTRO de la clave
+   `nutricion`, no en una nueva, y su normalizador devuelve el módulo entero
+   (regla 5). Sin configurar, `configurado: false` y Nutrición sigue igual. */
+import { normalizarNutricionObjetivos } from './lib/objetivosNutricion';
+/* E3 F36 (NU F4) — la comida ampliada con `cantidad`, `unidad` y `por100`. ⚠️ El
+   normalizador corre AL CARGAR y devuelve el módulo entero: sin él, el siguiente
+   guardado se llevaría los tres campos y editar la cantidad dejaría de funcionar
+   sin un solo error por pantalla (regla 5, vigésima vez). */
+import { normalizarNutricionF4 } from './lib/alimentos';
 /* 🚨 E3 F27 (PR F5) — Metas y Objetivos. Los normalizadores corren al cargar
    porque esta fase AÑADE campos a dos entidades que ya existían: sin ellos, lo
    guardado antes llega sin `estado`, sin `prioridad` y sin `tipo`, y el
@@ -531,7 +540,7 @@ export default function App() {
       setEconomia(normalizarEconomiaHucha(e));
       setSalud(sal);
       setSaludFotos(sf);
-      setNutricion(normalizarNutricionDe(nut));
+      setNutricion(normalizarNutricionF4(normalizarNutricionObjetivos(normalizarNutricionDe(nut))));
       setCalisteniaVideos(cv);
       setEstudios(est);
       setNegocio(neg);
@@ -1788,6 +1797,15 @@ export default function App() {
   const registrarFavorito = (fav) => snapshotAndSave({ nutricion: { ...nutricion, comidas: [...nutricion.comidas, { ...fav, id: uid(), fecha: todayISO() }] } });
   const eliminarFavorito = (id) => snapshotAndSave({ nutricion: { ...nutricion, favoritos: nutricion.favoritos.filter((f) => f.id !== id) } });
   const setAgua = (fecha, ml) => snapshotAndSave({ nutricion: { ...nutricion, agua: { ...nutricion.agua, [fecha]: ml } } });
+  /* E3 F35 (NU F3) — los objetivos ya vienen calculados y CONFIRMADOS por
+     `planObjetivos`: aquí solo se guardan, dentro de la clave de siempre. */
+  const guardarObjetivosNutricion = (objetivos) => snapshotAndSave({ nutricion: { ...nutricion, objetivos } });
+  /* E3 F36 (NU F4), apartado 7 — *"no obligar al usuario a eliminar y volver a
+     crear el alimento"*. La comida ya viene recalculada por `cambiarCantidad` o
+     movida por `cambiarMomento`: aquí solo se sustituye **la misma**, por su id. */
+  const actualizarComida = (comida) => snapshotAndSave({
+    nutricion: { ...nutricion, comidas: nutricion.comidas.map((c) => (c.id === comida.id ? comida : c)) },
+  });
 
   const addPrograma = (p) => snapshotAndSave({ estudios: { ...estudios, programas: [...estudios.programas, p] } });
   // Segundo borrado en cascada, encontrado por la auditoría de ME Fase 4: un programa se podía
@@ -2447,7 +2465,9 @@ export default function App() {
       case 'nutricion':
         return (
           <NutritionView
-            nutricion={nutricion} onAddComida={addComida} onDeleteComida={deleteComida} onAddFavorito={addFavorito}
+            nutricion={nutricion} perfil={perfil} onAddComida={addComida} onDeleteComida={deleteComida}
+            onActualizarComida={actualizarComida} onAddFavorito={addFavorito}
+            onGuardarObjetivos={guardarObjetivosNutricion}
             onRegistrarFavorito={registrarFavorito} onEliminarFavorito={eliminarFavorito}
             onSetAgua={setAgua} accent={accent}
           />

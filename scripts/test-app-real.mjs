@@ -3585,4 +3585,210 @@ ok(!/Añade la primera/i.test(futuro_nd),
 const escriturasNu = guardado.filter((g) => g && g.key === 'nutricion').length;
 ok(escriturasNu === 0, '🚨 Y NAVEGAR ENTRE DÍAS NO ESCRIBE NADA: consultar es mirar');
 
+
+/* ── E3 F35 (NU F3) · LOS OBJETIVOS NUTRICIONALES ─────────────────────────
+   🔒 **Lo que ninguna prueba de Node puede ver:** que la app PROPONE y él
+   confirma — que recorrer los cuatro pasos **no escribe nada** hasta tocar
+   «Guardar objetivos», que los números salen de su perfil sin copiarlo, y que
+   al guardarlos el día pasa de «1.850 kcal» a «1.850 / 3.149 kcal».
+
+   Es la regla 7 y el §7.4 (*"ni Salud ni Nutrición pueden prescribir objetivos
+   calóricos estrictos"*) comprobados en la aplicación de verdad. */
+almacen.nutricion = {
+  comidas: [
+    { id: 'no_1', fecha: DN(0), nombre: 'Avena', calorias: 350, proteinas: 12, carbohidratos: 55, grasas: 8, fibra: 6, momento: 'desayuno' },
+    { id: 'no_2', fecha: DN(0), nombre: 'Pollo con arroz', calorias: 700, proteinas: 45, carbohidratos: 80, grasas: 15, fibra: 4, momento: 'comida' },
+  ],
+  agua: {}, favoritos: [],
+};
+/* Su perfil de verdad: 16 años, 187 cm, 72 kg y masculino. **La configuración
+   los lee de aquí** (apartado 2): ni uno se copia dentro de `nutricion`. */
+almacen.perfil = {
+  nombre: 'Josué', fechaNacimiento: '2010-07-29', altura: 187, peso: 72,
+  actividad: 'moderado', sexo: 'Masculino', lesiones: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+guardado.length = 0;
+
+ok(await pulsar('Bienestar'), 'se abre el área Bienestar');
+ok(await pulsar('Nutrición'), 'se entra en Nutrición');
+
+/* Apartado 1 — sin configurar hay un CTA, y la pantalla sigue funcionando. */
+const sinObj = await esperarTexto(/Configura tus objetivos/i);
+ok(/Configura tus objetivos/i.test(sinObj),
+  '🚨 E3 F35 — SIN OBJETIVOS HAY UN CTA PARA CREARLOS (apartado 1)');
+ok(/1050/.test(sinObj),
+  '⚠️ y la pantalla NO se rompe sin ellos: sigue enseñando lo consumido, como en la NU F1');
+ok(!/\/\s*\d+\s*kcal/i.test(sinObj),
+  '⚠️ sin un objetivo inventado al lado');
+
+ok(await pulsar('Configurar nutrición'), 'se abre la configuración');
+const paso1 = await esperarTexto(/Paso 1 de/i);
+ok(/Paso 1 de 4/i.test(paso1), '🚨 SON CUATRO PASOS, y dice por cuál va (apartados 2-8)');
+/* 🚨 Apartado 2 — los datos vienen del PERFIL, no se le vuelven a pedir. */
+const valoresPaso1 = await page.evaluate(() =>
+  [...document.querySelectorAll('input[type="number"]')].map((i) => i.value));
+ok(valoresPaso1.includes('187') && valoresPaso1.includes('72'),
+  '🚨 Y LOS DATOS LLEGAN PUESTOS DESDE EL PERFIL: no se le piden dos veces (apartado 2)');
+ok(valoresPaso1.includes('16'),
+  '⚠️ con la edad DERIVADA de su fecha de nacimiento, que es la única que hay guardada');
+
+ok(await pulsar('Continuar'), 'se pasa al nivel de actividad');
+const paso2 = await esperarTexto(/Paso 2 de/i);
+ok(/Entreno 3-4 días por semana/i.test(paso2),
+  '⚠️ CADA OPCIÓN TRAE SU EXPLICACIÓN, no una lista técnica (apartado 3)');
+ok(await pulsar('Moderado'), 'se elige Moderado');
+ok(await pulsar('Continuar'), 'se pasa al objetivo');
+
+const paso3 = await esperarTexto(/Paso 3 de/i);
+ok(/Superávit suave/i.test(paso3), '⚠️ y el objetivo también se explica (apartado 4)');
+ok(await pulsar('Ganar masa'), 'se elige Ganar masa');
+ok(await pulsar('Continuar'), 'se llega al resumen');
+
+const resumen = await esperarTexto(/Tu objetivo diario/i);
+ok(/3149|3\.149/.test(resumen),
+  '🚨 EL CÁLCULO ES EL DE MIFFLIN-ST JEOR CON SU FACTOR: 3149 kcal para 72 kg, 187 cm, 16 años, moderado y ganar');
+ok(/orientativ/i.test(resumen),
+  '🔒 CON LA FRASE QUE LO HACE ORIENTATIVO Y NO UNA DIETA (§7.4 y §7.5)');
+
+/* 🚨 Lo más importante de la fase: hasta aquí NO se ha escrito nada. */
+const antesDeGuardar = guardado.filter((g) => g && g.key === 'nutricion').length;
+ok(antesDeGuardar === 0,
+  '🚨 Y RECORRER LOS CUATRO PASOS NO ESCRIBE NADA: `planObjetivos` sin `confirmado` propone (regla 7)');
+
+ok(await pulsar('Guardar objetivos'), 'se confirman los objetivos');
+await page.waitForTimeout(600);
+const escriturasObj = guardado.filter((g) => g && g.key === 'nutricion');
+ok(escriturasObj.length >= 1, '🚨 Y AL CONFIRMAR SÍ SE ESCRIBE, una sola vez');
+const guardadoNu = escriturasObj[escriturasObj.length - 1]?.value?.objetivos || {};
+ok(guardadoNu.configurado === true && guardadoNu.kcal === 3149,
+  '⚠️ con los objetivos calculados dentro de `nutricion`, sin una clave nueva (apartado 15)');
+ok(guardadoNu.altura === undefined && guardadoNu.edad === undefined,
+  '🚨 Y NI LA ALTURA NI LA EDAD SE COPIAN: los datos vivos son los del perfil (apartado 12)');
+ok(guardadoNu.pesoAlCalcular === 72,
+  '⚠️ solo el peso CON EL QUE SE CALCULÓ, que es lo que permite avisar si cambia');
+
+/* Apartado 10 — y ahora el día enseña consumo y objetivo. */
+const conObj = await esperarTexto(/3149|3\.149/);
+ok(/1050/.test(conObj) && /3149|3\.149/.test(conObj),
+  '🚨 EL DÍA PASA A DECIR «1.050 / 3.149 kcal»: consumo a la izquierda, objetivo a la derecha (apartado 10)');
+ok(/Configurar nutrición/i.test(conObj),
+  '⚠️ y el acceso para volver a cambiarlos sigue ahí (apartado 11)');
+ok(!/Configura tus objetivos/i.test(conObj), '⚠️ pero ya no el CTA de crearlos');
+
+
+/* ── E3 F36 (NU F4) · EL REGISTRO DE ALIMENTOS ────────────────────────────
+   🚨 **Lo que ninguna prueba de Node puede ver:** que el flujo entero
+   —*"Comida → Añadir alimento → Buscar → Cantidad → Añadir"*— se puede hacer
+   con el dedo, que los totales suben **al instante** (apartado 6) y que la
+   cantidad de un alimento ya registrado se puede cambiar **sin borrarlo y
+   volver a crearlo** (apartado 7).
+
+   El escenario empieza con un objetivo puesto y un solo alimento, para poder
+   medir el «antes» y el «después» del apartado 6. */
+almacen.nutricion = {
+  comidas: [
+    { id: 'al_1', fecha: DN(0), nombre: 'Tostadas', calorias: 300, proteinas: 9, carbohidratos: 50, grasas: 6, fibra: 3, momento: 'desayuno' },
+  ],
+  agua: {}, favoritos: [],
+  objetivos: {
+    configurado: true, actividad: 'moderado', objetivo: 'ganar',
+    kcal: 3149, proteinas: 130, carbohidratos: 437, grasas: 98,
+    manual: {}, pesoAlCalcular: 72, fecha: DN(0),
+  },
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+guardado.length = 0;
+
+ok(await pulsar('Bienestar'), 'se abre el área Bienestar');
+ok(await pulsar('Nutrición'), 'se entra en Nutrición');
+
+const antes = await esperarTexto(/300/);
+ok(/300/.test(antes), '🚨 E3 F36 — el día empieza con 300 kcal');
+/* Apartado 9 — la línea de resumen de la comida, con sus macros. */
+ok(/300 kcal · 9 g proteína/.test(antes),
+  '🚨 Y CADA COMIDA TIENE SU RESUMEN: «300 kcal · 9 g proteína · …» (apartado 9)');
+/* Apartado 14 — una comida sin alimentos lo dice, y no con un error. */
+ok(/Todavía no has añadido alimentos/i.test(antes),
+  '⚠️ y una comida vacía tiene su estado vacío (apartado 14)');
+
+/* El flujo del apartado 2, de principio a fin. */
+ok(await pulsar('Añadir alimento a Comida'), 'se abre el flujo desde Comida');
+const buscadorAl = await esperarTexto(/Busca: pollo/i);
+ok(/Busca: pollo/i.test(buscadorAl), '⚠️ y lo primero es el buscador, no un formulario gigantesco (apartado 2)');
+
+await page.fill('input[placeholder^="Busca"]', 'avena');
+await page.waitForTimeout(400);
+const conResultados = await ver();
+ok(/389 kcal/.test(conResultados),
+  '🚨 EL BUSCADOR ENCUENTRA LA AVENA CON SUS 389 kcal POR 100 g — los del apartado 5, no inventados');
+ok(await pulsar('Avena'), 'se elige');
+
+const pasoCantidad = await esperarTexto(/Cantidad \(g\)/i);
+ok(/Cantidad \(g\)/i.test(pasoCantidad), '⚠️ y el segundo paso es la cantidad (apartado 4)');
+const cantidadVacia = await page.evaluate(() => {
+  const i = [...document.querySelectorAll('input[type="number"]')].find((x) => x.placeholder && /Ej\./.test(x.placeholder));
+  return i ? i.value : 'no-encontrado';
+});
+ok(cantidadVacia === '',
+  '🚨 Y LA CANTIDAD NO VIENE PUESTA: 100 g de aceite y 100 g de lechuga no son el mismo plato');
+
+await page.fill('input[placeholder="Ej. 60"]', '60');
+await page.waitForTimeout(400);
+const previa = await ver();
+ok(/233 kcal/.test(previa),
+  '🚨 Y LOS NÚMEROS SE CALCULAN DELANTE: 60 g de avena son 233 kcal (apartado 5)');
+ok(/39\.8 g carbohidratos/.test(previa), '⚠️ con sus macros escalados');
+ok(/referencia/i.test(previa),
+  '🔒 y se dice que son valores de referencia editables, no la etiqueta de su bote');
+
+ok(await pulsar('Añadir alimento'), 'se añade');
+await page.waitForTimeout(600);
+
+/* 🚨 Apartado 6 — *"los totales diarios deben actualizarse inmediatamente"*. */
+const despues = await esperarTexto(/533/);
+ok(/533/.test(despues),
+  '🚨 Y EL TOTAL DEL DÍA SUBE AL INSTANTE: 300 + 233 = 533 kcal (apartado 6)');
+ok(/3149|3\.149/.test(despues), '⚠️ contra el objetivo, que sigue ahí (apartado 10)');
+ok(/60 g/.test(despues), '⚠️ y el alimento se ve con su cantidad');
+
+const escritasAl = guardado.filter((g) => g && g.key === 'nutricion');
+const comidasGuardadas = escritasAl[escritasAl.length - 1]?.value?.comidas || [];
+const nueva = comidasGuardadas.find((c) => c.nombre === 'Avena');
+ok(!!nueva && nueva.calorias === 233,
+  '🚨 y se guarda en `nutricion.comidas`, la lista de siempre: no hay una segunda (apartado 17)');
+ok(nueva.cantidad === 60 && nueva.por100 && nueva.por100.calorias === 389,
+  '⚠️ con su cantidad y sus valores por 100 g, que es lo que permitirá editarla');
+ok(nueva.momento === 'comida', '⚠️ y en la comida desde la que se abrió');
+ok(nueva.fecha === DN(0), '⚠️ y en el día que se estaba mirando');
+
+/* 🚨 Apartado 7 — editar la cantidad SIN borrar y volver a crear. */
+ok(await pulsar('Editar Avena'), 'se abre la ficha del alimento ya registrado');
+const edicion = await esperarTexto(/Guardar cantidad/i);
+ok(/Guardar cantidad/i.test(edicion), '⚠️ con su campo de cantidad');
+await page.fill('input[type="number"][value="60"]', '120');
+ok(await pulsar('Guardar cantidad'), 'se guarda la cantidad nueva');
+await page.waitForTimeout(600);
+const recalculado = await esperarTexto(/467/);
+ok(/467/.test(recalculado),
+  '🚨 Y RECALCULA: 120 g de avena son 467 kcal, no las 233 de antes (apartado 7)');
+ok(/767/.test(recalculado), '⚠️ y el total del día también: 300 + 467');
+const trasEditar = guardado.filter((g) => g && g.key === 'nutricion');
+const comidasTrasEditar = trasEditar[trasEditar.length - 1]?.value?.comidas || [];
+ok(comidasTrasEditar.filter((c) => c.nombre === 'Avena').length === 1,
+  '🚨 Y SIGUE HABIENDO UNA SOLA AVENA: se editó, no se borró y se creó otra (apartado 7)');
+ok(comidasTrasEditar.find((c) => c.nombre === 'Avena')?.id === nueva.id,
+  '⚠️ con el mismo id');
+
+/* Apartado 7 — *"cambiar de comida"*. */
+ok(await pulsar('Editar Avena'), 'se vuelve a abrir la ficha');
+ok(await pulsar('🌙 Cena'), 'se mueve a Cena');
+await page.waitForTimeout(600);
+const movidaFinal = guardado.filter((g) => g && g.key === 'nutricion');
+const avenaMovida = (movidaFinal[movidaFinal.length - 1]?.value?.comidas || []).find((c) => c.nombre === 'Avena');
+ok(avenaMovida?.momento === 'cena', '🚨 Y CAMBIA DE COMIDA: de Comida a Cena');
+ok(avenaMovida?.calorias === 467, '⚠️ sin tocar ni un número: moverla no la recalcula');
+
 await salir(browser);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2, ChevronLeft, ChevronRight, CalendarDays, Settings, Check } from 'lucide-react';
 import { COLORS, VASO_ML } from '../tokens';
-import { uid, todayISO, addDays, hexToRgba } from '../lib/helpers';
+import { uid, todayISO, addDays, hexToRgba, calcularEdad } from '../lib/helpers';
 /* Entrega 3 · F33 (NU F1) — el catálogo de indicadores y momentos, el resumen del
    día y los estados vacíos. 🚨 Los objetivos NO están: son la Fase 3, y aquí no
    se inventa ninguno (`NO_EN_NU1`). */
@@ -12,7 +12,25 @@ import {
      —que reutiliza `celdasMes`, no una cuadrícula nueva— y el estado de un día. */
   tiraDeDias, mesDeNutricion, tituloDeMes, tituloDelDia, estadoDeDia,
 } from '../lib/nutricion';
-import { buscarProductoPorCodigoBarras } from '../lib/openFoodFacts';
+/* Entrega 3 · F35 (NU F3) — los objetivos, que la NU F1 dejó declarados como
+   «los pondrá él». 🔒 La app **propone**; sin confirmar no escribe, y los cuatro
+   números se pueden cambiar uno a uno. */
+import {
+  DATOS_DEL_PERFIL, SEXO_BMR, sexoDesdePerfil, NIVELES_ACTIVIDAD, OBJETIVOS_NUTRICION,
+  PASOS_CONFIG, validar, planObjetivos, editarObjetivo, coherencia,
+  objetivosParaResumen, avisoDePeso, CTA_SIN_CONFIGURAR, AVISO_ORIENTATIVO,
+  normalizarObjetivosNut,
+} from '../lib/objetivosNutricion';
+/* Entrega 3 · F36 (NU F4) — el registro de alimentos: la base con sus valores de
+   referencia, el buscador, la cantidad y el cálculo proporcional. 🚨 `escalar()`
+   sale del escáner, que ya lo hacía: no es una cuenta nueva. */
+import {
+  BASE_ALIMENTOS, buscarAlimentos, alimentoDesdeOFF, escalar, validarCantidad,
+  crearComidaDesdeAlimento, cambiarCantidad, cambiarMomento, unidad, textoCantidad,
+  lineaDeMomento, estadoDeIndicador, excesoDe, AVISO_REFERENCIA, VACIO_MOMENTO_F4,
+  MINIMO_BUSQUEDA,
+} from '../lib/alimentos';
+import { buscarProductoPorCodigoBarras, buscarAlimentosPorNombre } from '../lib/openFoodFacts';
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
 import BarcodeScanner from '../components/BarcodeScanner';
@@ -204,6 +222,8 @@ function MealForm({ onSave, onSaveFavorite, accent, fecha, momentoId }) {
    consumido y ya: ni un «/ 2.400» inventado, ni una barra al 0 %. El día que la
    Fase 3 traiga los objetivos, esta pantalla **no cambia**. */
 function Indicador({ dato, accent, principal = false, indice = 0 }) {
+  const estado = estadoDeIndicador(dato);
+  const sobra = excesoDe(dato);
   return (
     <div
       className="hub-card rounded-2xl p-3"
@@ -229,10 +249,18 @@ function Indicador({ dato, accent, principal = false, indice = 0 }) {
       {dato.objetivo !== null && (
         <>
           <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>de {dato.objetivo} {dato.unidad}</p>
+          {/* 🚨 E3 F36 (NU F4), apartado 11 — *"no romper la barra ni generar
+              porcentajes visualmente absurdos"*: el ancho es `porcentajePintado`,
+              que se topa en 100 desde la F35, y el dato de al lado **no**. */}
           <div className="h-1 rounded-full mt-2 overflow-hidden" style={{ background: COLORS.border }}>
-            <div className="h-full rounded-full nu-progreso" style={{ width: `${dato.porcentajePintado}%`, background: accent }} />
+            <div
+              className="h-full rounded-full nu-progreso"
+              style={{ width: `${dato.porcentajePintado}%`, background: estado.id === 'superado' ? COLORS.warning : accent }}
+            />
           </div>
-          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{dato.porcentaje} %</p>
+          <p className="text-xs mt-1" style={{ color: estado.id === 'superado' ? COLORS.warning : COLORS.textMuted }}>
+            {dato.porcentaje} %{sobra !== null ? ` · ${sobra} ${dato.unidad} por encima` : ''}
+          </p>
         </>
       )}
     </div>
@@ -401,8 +429,279 @@ function SelectorDia({ comidas, fecha, hoy, accent, onCambiar, calendarioAbierto
    desde la Fase 4 del proyecto, así que un botón que no hiciera nada sería un
    control decorativo (regla 8). Cada «Añadir» abre el formulario que ya existe,
    con su escáner de códigos y su foto, y guarda **en ese momento y en ese día**. */
-function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha, onAdd, onAddFavorito, onDeleteComida, indice }) {
-  const kcal = comidas.reduce((a, c) => a + (Number(c.calorias) || 0), 0);
+/* ── Añadir alimento — Entrega 3 · F36 (NU F4), apartados 2, 3, 4 y 5 ──────
+   El flujo del apartado 2, en dos pasos y sin un formulario gigantesco:
+
+       Buscar alimento → Cantidad → Añadir
+
+   ⚠️ **El formulario a mano no desaparece**: es la salida para lo que no está en
+   ninguna base —la tortilla de su madre—, y sigue teniendo el escáner y la foto,
+   que existen desde la Fase 4 del proyecto (apartado 18: *"no implementar"* no
+   es *"quitar"*). */
+function AnadirAlimento({ momentoId, fecha, accent, onAdd, onAddFavorito, onCerrar }) {
+  const [texto, setTexto] = useState('');
+  const [elegido, setElegido] = useState(null);
+  const [cantidad, setCantidad] = useState('');
+  const [resultadosOFF, setResultadosOFF] = useState([]);
+  const [buscandoOFF, setBuscandoOFF] = useState(false);
+  const [avisoOFF, setAvisoOFF] = useState('');
+  const [aMano, setAMano] = useState(false);
+
+  const resultados = buscarAlimentos(texto, BASE_ALIMENTOS);
+  const errorCantidad = cantidad === '' ? null : validarCantidad(cantidad);
+  const previsualizacion = elegido && !errorCantidad ? escalar(elegido.por100, cantidad, elegido.unidad || 'g') : null;
+
+  /* Apartado 3 — la segunda fuente, la misma de siempre y sin clave. ⚠️ **A
+     petición**, no en cada tecla: cada búsqueda es una llamada de red. */
+  const buscarEnOFF = async () => {
+    setBuscandoOFF(true);
+    setAvisoOFF('');
+    try {
+      const productos = await buscarAlimentosPorNombre(texto);
+      const comoAlimentos = productos.map(alimentoDesdeOFF).filter(Boolean);
+      setResultadosOFF(comoAlimentos);
+      if (comoAlimentos.length === 0) setAvisoOFF('No he encontrado ningún producto con ese nombre. Puedes escribirlo a mano.');
+    } catch (e) {
+      setAvisoOFF('No he podido consultar la base de productos ahora mismo. Puedes escribirlo a mano.');
+    } finally {
+      setBuscandoOFF(false);
+    }
+  };
+
+  const elegir = (a) => {
+    setElegido(a);
+    /* ⚠️ La cantidad **no viene puesta**: 100 g de aceite y 100 g de lechuga no
+       son el mismo plato, y darle un valor por defecto sería registrar algo que
+       él no ha dicho. Lo que sí se hereda es la unidad del alimento. */
+    setCantidad('');
+  };
+
+  const confirmar = () => {
+    const comida = crearComidaDesdeAlimento({ alimento: elegido, cantidad, momentoId, fecha });
+    if (!comida) return;
+    onAdd(comida);
+    setElegido(null); setTexto(''); setCantidad(''); setResultadosOFF([]); setAvisoOFF('');
+    onCerrar();
+  };
+
+  if (aMano) {
+    return (
+      <div className="space-y-2">
+        <button onClick={() => setAMano(false)} className="toque-44 text-xs font-semibold" style={{ color: accent }}>
+          ← Volver al buscador
+        </button>
+        <MealForm onSave={onAdd} onSaveFavorite={onAddFavorito} accent={accent} fecha={fecha} momentoId={momentoId} />
+      </div>
+    );
+  }
+
+  /* Paso 2 — la cantidad, con los números calculándose delante (apartados 4 y 5). */
+  if (elegido) {
+    const u = unidad(elegido.unidad || 'g');
+    return (
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-sm font-bold" style={{ color: COLORS.text }}>{elegido.nombre}</p>
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>
+              {elegido.marca ? `${elegido.marca} · ` : ''}{elegido.por100.calorias} kcal por {u.referencia} {u.corto}
+            </p>
+          </div>
+          <button onClick={() => setElegido(null)} className="toque-44 text-xs font-semibold flex-shrink-0" style={{ color: COLORS.textMuted }}>
+            Cambiar
+          </button>
+        </div>
+
+        <Field label={`Cantidad (${u.corto})`}>
+          <TextInput
+            type="number" inputMode="numeric" value={cantidad} autoFocus
+            onChange={(e) => setCantidad(e.target.value)}
+            placeholder={u.id === 'ud' ? 'Ej. 2' : 'Ej. 60'}
+          />
+        </Field>
+        {errorCantidad && <p className="text-xs" style={{ color: COLORS.warning }}>{errorCantidad}</p>}
+
+        {previsualizacion && (
+          <div className="rounded-2xl p-3" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-lg font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+              {previsualizacion.calorias} kcal
+            </p>
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>
+              {previsualizacion.proteinas} g proteína · {previsualizacion.carbohidratos} g carbohidratos · {previsualizacion.grasas} g grasas
+            </p>
+          </div>
+        )}
+
+        <p className="text-xs leading-relaxed" style={{ color: COLORS.textMuted }}>{AVISO_REFERENCIA}</p>
+
+        <PrimaryButton accent={accent} icon={Plus} onClick={confirmar} disabled={!previsualizacion}>
+          Añadir alimento
+        </PrimaryButton>
+      </div>
+    );
+  }
+
+  /* Paso 1 — el buscador (apartado 3). */
+  return (
+    <div className="space-y-2.5">
+      <TextInput
+        value={texto} autoFocus placeholder="Busca: pollo, arroz, avena, plátano…"
+        onChange={(e) => { setTexto(e.target.value); setResultadosOFF([]); setAvisoOFF(''); }}
+      />
+
+      {texto.trim().length > 0 && texto.trim().length < MINIMO_BUSQUEDA && (
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>Escribe al menos {MINIMO_BUSQUEDA} letras.</p>
+      )}
+
+      {resultados.length > 0 && (
+        <div className="space-y-1.5">
+          {resultados.slice(0, 8).map((a) => (
+            <button
+              key={a.id} onClick={() => elegir(a)}
+              className="w-full text-left rounded-xl px-3 py-2.5 toque-44 transition-transform active:scale-[0.98]"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+            >
+              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{a.nombre}</p>
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>
+                {a.marca ? `${a.marca} · ` : ''}{a.tipo} · {a.por100.calorias} kcal / {unidad(a.unidad).referencia} {unidad(a.unidad).corto}
+              </p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {resultadosOFF.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-xs font-bold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>Productos con marca</p>
+          {resultadosOFF.map((a) => (
+            <button
+              key={a.id} onClick={() => elegir(a)}
+              className="w-full text-left rounded-xl px-3 py-2.5 toque-44 transition-transform active:scale-[0.98]"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+            >
+              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{a.nombre}</p>
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>
+                {a.marca ? `${a.marca} · ` : ''}{a.por100.calorias} kcal / 100 g — valores de la etiqueta
+              </p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {avisoOFF && <p className="text-xs" style={{ color: COLORS.textMuted }}>{avisoOFF}</p>}
+
+      {texto.trim().length >= 3 && (
+        <GhostBtn onClick={buscarEnOFF} icon={buscandoOFF ? Loader2 : Search} disabled={buscandoOFF}>
+          {buscandoOFF ? 'Buscando…' : 'Buscar productos con marca'}
+        </GhostBtn>
+      )}
+
+      {texto.trim().length >= MINIMO_BUSQUEDA && resultados.length === 0 && resultadosOFF.length === 0 && !buscandoOFF && (
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>
+          Nada en la lista básica. Prueba con los productos con marca, o escríbelo a mano.
+        </p>
+      )}
+
+      <button onClick={() => setAMano(true)} className="toque-44 text-xs font-semibold" style={{ color: accent }}>
+        Escribirlo a mano, escanear un código o hacer una foto
+      </button>
+    </div>
+  );
+}
+
+
+/* ── Un alimento ya registrado — apartados 7 y 8 ──────────────────────────
+   *"Cada alimento registrado debe poder editarse, cambiar cantidad, cambiar de
+   comida y eliminarse. **No obligar al usuario a eliminar y volver a crear.**"*
+
+   🚨 Cambiar la cantidad **recalcula**, y solo se ofrece si hay `por100` de
+   dónde calcular: una comida escrita a mano antes de esta fase no lo tiene, así
+   que se dice en vez de enseñar un control que no haría nada (regla 8). */
+function AlimentoRegistrado({ comida, accent, onActualizar, onEliminar }) {
+  const [abierto, setAbierto] = useState(false);
+  const [cant, setCant] = useState(comida.cantidad != null ? String(comida.cantidad) : '');
+  const [error, setError] = useState(null);
+  const cantidadTexto = textoCantidad(comida);
+  const puedeEscalar = !!comida.por100;
+
+  const guardarCantidad = () => {
+    const r = cambiarCantidad(comida, cant);
+    setError(r.error);
+    if (r.ok) { onActualizar(r.comida); setAbierto(false); }
+  };
+
+  return (
+    <div className="rounded-xl" style={{ background: abierto ? COLORS.surface2 : 'transparent' }}>
+      <div className="flex items-center justify-between gap-2 p-1.5">
+        <button
+          onClick={() => setAbierto(!abierto)}
+          className="min-w-0 flex-1 text-left toque-44"
+          aria-expanded={abierto}
+          aria-label={`Editar ${comida.nombre}`}
+        >
+          <p className="text-sm truncate" style={{ color: COLORS.text }}>
+            {comida.nombre}{cantidadTexto ? ` · ${cantidadTexto}` : ''}
+          </p>
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>
+            {round1(comida.proteinas)}g prot. · {round1(comida.carbohidratos)}g carb. · {round1(comida.grasas)}g grasa
+          </p>
+        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <p className="text-sm font-bold" style={{ color: COLORS.text }}>{comida.calorias} kcal</p>
+          <BotonBorrar onClick={() => onEliminar(comida.id)} label={`Eliminar ${comida.nombre}`} />
+        </div>
+      </div>
+
+      {abierto && (
+        <div className="px-2.5 pb-2.5 space-y-2.5">
+          {puedeEscalar ? (
+            <>
+              <Field label={`Cantidad (${unidad(comida.unidad || 'g').corto})`}>
+                <TextInput type="number" inputMode="numeric" value={cant} onChange={(e) => setCant(e.target.value)} />
+              </Field>
+              {error && <p className="text-xs" style={{ color: COLORS.warning }}>{error}</p>}
+              <button
+                onClick={guardarCantidad}
+                className="toque-44 rounded-xl px-3 py-2 text-xs font-semibold"
+                style={{ background: hexToRgba(accent, 0.14), color: accent, border: `1px solid ${hexToRgba(accent, 0.3)}` }}
+              >
+                Guardar cantidad
+              </button>
+            </>
+          ) : (
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>
+              Esto se escribió a mano, así que no hay valores por 100 g de los que calcular. Para cambiar los números, bórralo y vuelve a añadirlo desde el buscador.
+            </p>
+          )}
+
+          {/* Apartado 7 — *"cambiar de comida"*, sin tocar ni un número. */}
+          <div>
+            <p className="text-xs mb-1.5" style={{ color: COLORS.textMuted }}>Moverlo a:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {MOMENTOS.filter((m) => m.id !== (comida.momento || 'extras')).map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => { onActualizar(cambiarMomento(comida, m.id)); setAbierto(false); }}
+                  className="toque-44 rounded-xl px-2.5 py-1.5 text-xs font-semibold"
+                  style={{ background: COLORS.surface, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}
+                >
+                  {m.emoji} {m.nombre}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha, onAdd, onAddFavorito, onDeleteComida, onActualizarComida, indice }) {
+  /* Apartado 9 — el resumen de la comida, **derivado**: guardarlo mentiría en
+     cuanto él borre un alimento. Y sin alimentos es `null`, no una línea de
+     ceros. */
+  const linea = lineaDeMomento(comidas);
   return (
     <div
       className="hub-card rounded-2xl overflow-hidden"
@@ -413,12 +712,12 @@ function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{mom.nombre}</p>
           <p className="text-xs" style={{ color: COLORS.textMuted }}>
-            {comidas.length ? `${comidas.length} ${comidas.length === 1 ? 'comida' : 'comidas'} · ${kcal} kcal` : VACIO_MOMENTO}
+            {linea ? `${linea.kcal} · ${linea.macros}` : VACIO_MOMENTO}
           </p>
         </div>
         <button
           onClick={() => (abierto ? onCerrar() : onAbrir(mom.id))}
-          aria-label={`Añadir a ${mom.nombre}`}
+          aria-label={`Añadir alimento a ${mom.nombre}`}
           className="toque-44 rounded-xl px-3 py-2 text-xs font-semibold flex-shrink-0 transition-transform active:scale-95"
           style={{ background: abierto ? COLORS.surface2 : hexToRgba(accent, 0.14), color: abierto ? COLORS.textMuted : accent, border: `1px solid ${abierto ? COLORS.border : hexToRgba(accent, 0.3)}` }}
         >
@@ -427,44 +726,253 @@ function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha
       </div>
 
       {comidas.length > 0 && (
-        <div className="px-3.5 pb-3 space-y-1.5">
+        <div className="px-2.5 pb-3 space-y-0.5">
           {comidas.map((c) => (
-            <div key={c.id} className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm truncate" style={{ color: COLORS.text }}>{c.nombre}</p>
-                <p className="text-xs" style={{ color: COLORS.textMuted }}>
-                  {round1(c.proteinas)}g prot. · {round1(c.carbohidratos)}g carb. · {round1(c.grasas)}g grasa
-                </p>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <p className="text-sm font-bold" style={{ color: COLORS.text }}>{c.calorias} kcal</p>
-                <BotonBorrar onClick={() => onDeleteComida(c.id)} label="Eliminar comida" />
-              </div>
-            </div>
+            <AlimentoRegistrado
+              key={c.id} comida={c} accent={accent}
+              onActualizar={onActualizarComida} onEliminar={onDeleteComida}
+            />
           ))}
+        </div>
+      )}
+
+      {/* Apartado 14 — el estado vacío de una comida, con su salida. */}
+      {comidas.length === 0 && !abierto && (
+        <div className="px-3.5 pb-3.5">
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>{VACIO_MOMENTO_F4.titulo}</p>
         </div>
       )}
 
       {abierto && (
         <div className="px-3.5 pb-3.5">
-          <MealForm onSave={onAdd} onSaveFavorite={onAddFavorito} accent={accent} fecha={fecha} momentoId={mom.id} />
+          <AnadirAlimento
+            momentoId={mom.id} fecha={fecha} accent={accent}
+            onAdd={onAdd} onAddFavorito={onAddFavorito} onCerrar={onCerrar}
+          />
         </div>
       )}
     </div>
   );
 }
 
-function ComidasTab({ comidas, onAdd, onAddFavorito, onDeleteComida, accent }) {
+
+/* ── La configuración de objetivos — Entrega 3 · F35 (NU F3) ───────────────
+   🔒 **La app PROPONE y él confirma.** `planObjetivos` sin `confirmado` devuelve
+   los números y **no escribe nada**; los cuatro se pueden cambiar a mano en el
+   propio resumen, y lo editado manda sobre lo calculado.
+
+   ⚠️ Los datos físicos **salen del perfil** (apartado 2): aquí no se guarda ni
+   una copia de la altura ni del peso. Lo que se escriba en estos campos vale
+   para el cálculo de ahora; el perfil se sigue editando en Ajustes. */
+function ConfiguracionNutricion({ nutricion, perfil, accent, onGuardar, onCerrar }) {
+  const guardados = normalizarObjetivosNut(nutricion?.objetivos);
+  const [paso, setPaso] = useState(0);
+  const [datos, setDatos] = useState(() => ({
+    sexo: sexoDesdePerfil(perfil),
+    edad: perfil?.fechaNacimiento ? String(calcularEdad(perfil.fechaNacimiento)) : '',
+    altura: perfil?.altura != null ? String(perfil.altura) : '',
+    peso: perfil?.peso != null ? String(perfil.peso) : '',
+    actividad: guardados.actividad || perfil?.actividad || null,
+    objetivo: guardados.objetivo || null,
+  }));
+  const [borrador, setBorrador] = useState(null);
+  const [errorEdicion, setErrorEdicion] = useState(null);
+
+  const plan = planObjetivos({ datos, actual: guardados, hoy: todayISO() });
+  const propuesta = borrador || (plan.ok ? plan.resultado : null);
+  const coh = propuesta ? coherencia(propuesta) : null;
+  const actual = PASOS_CONFIG[paso];
+
+  const cambiarNumero = (campo, valor) => {
+    const base = propuesta;
+    if (!base) return;
+    const r = editarObjetivo(base, campo, valor);
+    setErrorEdicion(r.error);
+    if (!r.error) setBorrador(r.objetivos);
+  };
+
+  const confirmar = () => {
+    /* 🚨 El plan solo escribe con `confirmado`. Si él tocó un número, se parte de
+       su versión, que lleva su marca de `manual`. */
+    const definitivo = planObjetivos({ datos, actual: borrador || guardados, hoy: todayISO(), confirmado: true });
+    if (definitivo.ok) { onGuardar(definitivo.objetivos); onCerrar(); }
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>
+            Paso {paso + 1} de {PASOS_CONFIG.length}
+          </p>
+          <p className="text-base font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{actual.nombre}</p>
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>{actual.que}</p>
+        </div>
+        <button onClick={onCerrar} className="toque-44 text-xs font-semibold" style={{ color: COLORS.textMuted }}>Cerrar</button>
+      </div>
+
+      {/* Paso 1 — los datos, que vienen del perfil (apartado 2). */}
+      {actual.id === 'datos' && (
+        <div className="space-y-3">
+          {/* 🐛 Aquí había un `<Opcion>`, que **vive en `SleepView.jsx`, no aquí**:
+              React habría lanzado al pintar este paso y la pantalla se habría
+              quedado en blanco — el fallo de la E3 F17 y la EH F39. Lo cazó la
+              regla invariante de `test-imports.mjs`, no el build. Se usa el mismo
+              botón que los otros dos pasos, que además los deja iguales. */}
+          <div className="flex gap-2">
+            {SEXO_BMR.map((x) => (
+              <button
+                key={x.id}
+                onClick={() => setDatos({ ...datos, sexo: x.id })}
+                aria-pressed={datos.sexo === x.id}
+                className="flex-1 rounded-2xl px-3 py-2.5 text-sm toque-44 transition-transform active:scale-95"
+                style={{
+                  background: datos.sexo === x.id ? hexToRgba(accent, 0.16) : COLORS.surface2,
+                  color: datos.sexo === x.id ? accent : COLORS.textMuted,
+                  border: `1px solid ${datos.sexo === x.id ? hexToRgba(accent, 0.45) : COLORS.border}`,
+                  fontWeight: datos.sexo === x.id ? 700 : 500,
+                }}
+              >
+                {x.nombre}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {DATOS_DEL_PERFIL.filter((d) => d.id !== 'sexo').map((d) => (
+              <label key={d.id} className="block">
+                <span className="text-xs block mb-1" style={{ color: COLORS.textMuted }}>{d.nombre}{d.unidad ? ` (${d.unidad})` : ''}</span>
+                <TextInput
+                  type="number" inputMode="numeric" value={datos[d.id]}
+                  onChange={(e) => setDatos({ ...datos, [d.id]: e.target.value })}
+                />
+                {validar(d.id, datos[d.id]) && (
+                  <span className="text-xs block mt-1" style={{ color: COLORS.warning }}>{validar(d.id, datos[d.id])}</span>
+                )}
+              </label>
+            ))}
+          </div>
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>
+            Salen de tu perfil. Si cambian de verdad, cámbialos en Ajustes → Perfil: aquí solo se usan para este cálculo.
+          </p>
+        </div>
+      )}
+
+      {/* Paso 2 — la actividad, con su explicación (apartado 3). */}
+      {actual.id === 'actividad' && (
+        <div className="space-y-2">
+          {NIVELES_ACTIVIDAD.map((n) => (
+            <button
+              key={n.id}
+              onClick={() => setDatos({ ...datos, actividad: n.id })}
+              aria-pressed={datos.actividad === n.id}
+              className="w-full text-left rounded-2xl px-3.5 py-3 toque-44 transition-transform active:scale-95"
+              style={{
+                background: datos.actividad === n.id ? hexToRgba(accent, 0.14) : COLORS.surface2,
+                border: `1px solid ${datos.actividad === n.id ? hexToRgba(accent, 0.4) : COLORS.border}`,
+              }}
+            >
+              <p className="text-sm font-bold" style={{ color: datos.actividad === n.id ? accent : COLORS.text }}>{n.nombre}</p>
+              <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{n.explica}</p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Paso 3 — el objetivo (apartado 4). ⚠️ Ninguno viene elegido. */}
+      {actual.id === 'objetivo' && (
+        <div className="space-y-2">
+          {OBJETIVOS_NUTRICION.map((o) => (
+            <button
+              key={o.id}
+              onClick={() => { setDatos({ ...datos, objetivo: o.id }); setBorrador(null); }}
+              aria-pressed={datos.objetivo === o.id}
+              className="w-full text-left rounded-2xl px-3.5 py-3 toque-44 transition-transform active:scale-95"
+              style={{
+                background: datos.objetivo === o.id ? hexToRgba(accent, 0.14) : COLORS.surface2,
+                border: `1px solid ${datos.objetivo === o.id ? hexToRgba(accent, 0.4) : COLORS.border}`,
+              }}
+            >
+              <p className="text-sm font-bold" style={{ color: datos.objetivo === o.id ? accent : COLORS.text }}>{o.nombre}</p>
+              <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{o.explica}</p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Paso 4 — el resumen antes de guardar (apartado 8), con todo editable. */}
+      {actual.id === 'resumen' && (
+        <div className="space-y-3">
+          {!plan.ok && (
+            <div className="space-y-1">
+              {Object.values(plan.errores).map((e, i) => (
+                <p key={i} className="text-xs" style={{ color: COLORS.warning }}>{e}</p>
+              ))}
+            </div>
+          )}
+          {propuesta && (
+            <>
+              <p className="text-xs font-bold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>Tu objetivo diario</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { campo: 'kcal', nombre: '🔥 Calorías', unidad: 'kcal' },
+                  { campo: 'proteinas', nombre: '💪 Proteína', unidad: 'g' },
+                  { campo: 'carbohidratos', nombre: '🍚 Carbohidratos', unidad: 'g' },
+                  { campo: 'grasas', nombre: '🥑 Grasas', unidad: 'g' },
+                ].map((f) => (
+                  <label key={f.campo} className="block rounded-2xl p-2.5" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+                    <span className="text-xs block mb-1" style={{ color: COLORS.textMuted }}>{f.nombre} ({f.unidad})</span>
+                    <TextInput
+                      type="number" inputMode="numeric" value={propuesta[f.campo] ?? ''}
+                      onChange={(e) => cambiarNumero(f.campo, e.target.value)}
+                    />
+                  </label>
+                ))}
+              </div>
+              {errorEdicion && <p className="text-xs" style={{ color: COLORS.warning }}>{errorEdicion}</p>}
+              {/* 🚨 Apartado 7 — si los macros dejan de cuadrar con las kcal, se DICE. */}
+              {coh && !coh.cuadra && <p className="text-xs" style={{ color: COLORS.warning }}>{coh.texto}</p>}
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>
+                Objetivo: {OBJETIVOS_NUTRICION.find((o) => o.id === datos.objetivo)?.nombre} · Actividad: {NIVELES_ACTIVIDAD.find((n) => n.id === datos.actividad)?.nombre}
+              </p>
+              {/* 🔒 La frase que hace que esto sea orientativo y no una dieta. */}
+              <p className="text-xs leading-relaxed" style={{ color: COLORS.textMuted }}>{AVISO_ORIENTATIVO}</p>
+            </>
+          )}
+        </div>
+      )}
+
+      <div className="flex gap-2 mt-4">
+        {paso > 0 && (
+          <button onClick={() => setPaso((p) => p - 1)} className="toque-44 px-4 rounded-xl text-sm font-semibold" style={{ color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}>
+            Atrás
+          </button>
+        )}
+        <div className="flex-1">
+          {actual.id === 'resumen'
+            ? <PrimaryButton accent={accent} icon={Check} onClick={confirmar} disabled={!plan.ok}>Guardar objetivos</PrimaryButton>
+            : <PrimaryButton accent={accent} onClick={() => setPaso((p) => p + 1)}>Continuar</PrimaryButton>}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function ComidasTab({ comidas, nutricion, perfil, onAdd, onAddFavorito, onDeleteComida, onActualizarComida, onGuardarObjetivos, accent }) {
   const hoy = todayISO();
   /* 🚨 Apartado 2 — *"Abrir automáticamente en HOY"*, siempre: el día que se
      estaba mirando no se guarda, es de la pantalla (EH F40). */
   const [fecha, setFecha] = useState(hoy);
   const [momentoAbierto, setMomentoAbierto] = useState(null);
   const [calendario, setCalendario] = useState(false);
+  const [configurando, setConfigurando] = useState(false);
 
   /* 🚨 Los números salen de las comidas de verdad, del día que se está mirando.
-     `objetivos` va en `null` a propósito: son la Fase 3 (ver `NO_EN_NU1`). */
-  const resumen = resumenDelDia(comidas, fecha, null);
+     ➕ E3 F35 (NU F3) — y desde aquí, **con sus objetivos si los ha configurado**.
+     `objetivosParaResumen` devuelve `null` mientras no lo haya hecho, así que la
+     pantalla sigue enseñando lo consumido a secas, como en la NU F1. */
+  const objetivos = objetivosParaResumen(nutricion);
+  const resumen = resumenDelDia(comidas, fecha, objetivos);
+  const avisoPeso = avisoDePeso(nutricion, perfil);
   const principal = resumen.find((r) => r.principal);
   const macros = resumen.filter((r) => !r.principal);
   const grupos = porMomento(comidas, fecha);
@@ -487,6 +995,30 @@ function ComidasTab({ comidas, onAdd, onAddFavorito, onDeleteComida, accent }) {
         />
       )}
 
+      {/* Apartado 1 — el acceso a la configuración, y el CTA si todavía no la ha
+          hecho. ⚠️ Sin objetivos la pantalla NO se rompe: enseña lo consumido. */}
+      {configurando ? (
+        <ConfiguracionNutricion
+          nutricion={nutricion} perfil={perfil} accent={accent}
+          onGuardar={onGuardarObjetivos} onCerrar={() => setConfigurando(false)}
+        />
+      ) : (
+        !objetivos && (
+          <Card>
+            <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{CTA_SIN_CONFIGURAR.titulo}</p>
+            <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{CTA_SIN_CONFIGURAR.detalle}</p>
+            <div style={{ width: 200 }}>
+              <PrimaryButton accent={accent} icon={Settings} onClick={() => setConfigurando(true)}>{CTA_SIN_CONFIGURAR.accion}</PrimaryButton>
+            </div>
+          </Card>
+        )
+      )}
+
+      {/* Apartado 12 — si su peso ha cambiado, se le DICE; no se recalcula solo. */}
+      {avisoPeso && !configurando && (
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>{avisoPeso}</p>
+      )}
+
       {/* Apartado 4 — las kcal con jerarquía superior, y los tres macros en 2×2
           debajo (apartado 9: móvil primero, sin desplazamiento horizontal).
           ⚠️ `key={fecha}` repite la cascada de entrada al cambiar de día
@@ -497,6 +1029,17 @@ function ComidasTab({ comidas, onAdd, onAddFavorito, onDeleteComida, accent }) {
           {macros.map((m, i) => <Indicador key={m.id} dato={m} accent={accent} indice={i + 1} />)}
         </div>
       </div>
+
+      {/* Apartado 11 — se puede volver a la configuración cuando quiera. */}
+      {objetivos && !configurando && (
+        <button
+          onClick={() => setConfigurando(true)}
+          className="toque-44 text-xs font-semibold flex items-center gap-1.5"
+          style={{ color: accent }}
+        >
+          <Settings size={13} /> Configurar nutrición
+        </button>
+      )}
 
       {/* Apartado 7 de la F1 — el estado vacío, que no es un mensaje de error.
           ⚠️ Y desde la F2 (apartados 6 y 7) **un día futuro se distingue de uno
@@ -532,6 +1075,7 @@ function ComidasTab({ comidas, onAdd, onAddFavorito, onDeleteComida, accent }) {
             onAdd={onAdd}
             onAddFavorito={onAddFavorito}
             onDeleteComida={onDeleteComida}
+            onActualizarComida={onActualizarComida}
             indice={i}
           />
         ))}
@@ -598,7 +1142,7 @@ function FavoritosTab({ favoritos, onRegistrar, onEliminar, accent }) {
   );
 }
 
-export default function NutritionView({ nutricion, onAddComida, onDeleteComida, onAddFavorito, onRegistrarFavorito, onEliminarFavorito, onSetAgua, accent }) {
+export default function NutritionView({ nutricion, perfil, onAddComida, onDeleteComida, onActualizarComida, onAddFavorito, onRegistrarFavorito, onEliminarFavorito, onSetAgua, onGuardarObjetivos, accent }) {
   const [sub, setSub] = useState('comidas');
 
   return (
@@ -611,7 +1155,14 @@ export default function NutritionView({ nutricion, onAddComida, onDeleteComida, 
         <ToggleTab active={sub === 'favoritos'} onClick={() => setSub('favoritos')} accent={accent}>Favoritos</ToggleTab>
       </div>
 
-      {sub === 'comidas' && <ComidasTab comidas={nutricion.comidas} onAdd={onAddComida} onAddFavorito={onAddFavorito} accent={accent} onDeleteComida={onDeleteComida} />}
+      {sub === 'comidas' && (
+        <ComidasTab
+          comidas={nutricion.comidas} nutricion={nutricion} perfil={perfil}
+          onAdd={onAddComida} onAddFavorito={onAddFavorito} onDeleteComida={onDeleteComida}
+          onActualizarComida={onActualizarComida}
+          onGuardarObjetivos={onGuardarObjetivos} accent={accent}
+        />
+      )}
       {sub === 'agua' && <AguaTab agua={nutricion.agua} onSetAgua={onSetAgua} accent={accent} />}
       {sub === 'favoritos' && (
         <FavoritosTab favoritos={nutricion.favoritos} onRegistrar={onRegistrarFavorito} onEliminar={onEliminarFavorito} accent={accent} />

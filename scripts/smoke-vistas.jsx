@@ -2243,9 +2243,11 @@ const CASOS = [
      `HealthView` en la F30). Al tocar una pantalla, comprobar primero si está
      aquí. */
   ...(() => {
-    const propsNu = (nutricion) => ({
-      nutricion, onAddComida: noop, onDeleteComida: noop, onAddFavorito: noop,
-      onRegistrarFavorito: noop, onEliminarFavorito: noop, onSetAgua: noop, accent,
+    const propsNu = (nutricion, extra = {}) => ({
+      nutricion, perfil: { peso: 72, altura: 187, edad: 16 },
+      onAddComida: noop, onDeleteComida: noop, onAddFavorito: noop,
+      onRegistrarFavorito: noop, onEliminarFavorito: noop, onSetAgua: noop,
+      onGuardarObjetivos: noop, accent, ...extra,
     });
     return [
       ['NutritionView', NutritionView, (e) => propsNu(e.nutricion)],
@@ -2271,6 +2273,60 @@ const CASOS = [
           { id: 'd3', fecha: HOY, nombre: 'Hoy', calorias: 350, proteinas: 12, carbohidratos: 55, grasas: 8, momento: 'desayuno' },
         ],
         agua: {}, favoritos: [],
+      })],
+      /* Entrega 3 · F35 (NU F3) — con los objetivos configurados, que es lo que
+         convierte «1.850 kcal» en «1.850 / 2.400 kcal» y enciende la barra. */
+      ['NutritionView · con objetivos configurados', NutritionView, () => propsNu({
+        comidas: [
+          { id: 'o1', fecha: HOY, nombre: 'Avena', calorias: 350, proteinas: 12, carbohidratos: 55, grasas: 8, momento: 'desayuno' },
+          { id: 'o2', fecha: HOY, nombre: 'Pollo', calorias: 1500, proteinas: 90, carbohidratos: 120, grasas: 45, momento: 'comida' },
+        ],
+        agua: {}, favoritos: [],
+        objetivos: {
+          configurado: true, actividad: 'moderado', objetivo: 'ganar',
+          kcal: 3149, proteinas: 130, carbohidratos: 437, grasas: 98,
+          manual: {}, pesoAlCalcular: 72, fecha: HOY,
+        },
+      })],
+      /* Y con un objetivo editado a mano y el peso cambiado seis kilos: la
+         plaquita de «tu peso ha cambiado» y la marca de manual (apartado 12). */
+      ['NutritionView · objetivos a mano y peso cambiado', NutritionView, () => propsNu({
+        comidas: [], agua: {}, favoritos: [],
+        objetivos: {
+          configurado: true, actividad: 'ligero', objetivo: 'mantener',
+          kcal: 2600, proteinas: 140, carbohidratos: 300, grasas: 80,
+          manual: { kcal: true }, pesoAlCalcular: 66, fecha: HOY,
+        },
+      }, { perfil: { peso: 72, altura: 187, edad: 16 } })],
+      /* Sin perfil no se puede calcular nada: la pantalla tiene que decirlo, no
+         inventarse una altura (regla 8). */
+      ['NutritionView · objetivos sin perfil', NutritionView, () => propsNu(
+        { comidas: [], agua: {}, favoritos: [] },
+        { perfil: {} },
+      )],
+      /* Entrega 3 · F36 (NU F4) — alimentos con su cantidad y sus valores por
+         100 g, que es lo que permite editar la cantidad sin volver a buscarlos. */
+      ['NutritionView · alimentos con cantidad', NutritionView, () => propsNu({
+        comidas: [
+          { id: 'a1', fecha: HOY, momento: 'desayuno', nombre: 'Avena', calorias: 233, proteinas: 10.1, carbohidratos: 39.8, grasas: 4.1, fibra: 6.4, cantidad: 60, unidad: 'g', por100: { calorias: 389, proteinas: 16.9, carbohidratos: 66.3, grasas: 6.9, fibra: 10.6 }, alimentoId: 'avena' },
+          { id: 'a2', fecha: HOY, momento: 'comida', nombre: 'Pechuga de pollo', calorias: 248, proteinas: 46.5, carbohidratos: 0, grasas: 5.4, fibra: 0, cantidad: 150, unidad: 'g', por100: { calorias: 165, proteinas: 31, carbohidratos: 0, grasas: 3.6, fibra: 0 }, alimentoId: 'pollo_pechuga' },
+          /* Y una escrita a mano, de antes: sin `por100` no se le puede cambiar
+             la cantidad, y la pantalla tiene que decirlo, no fingir el control. */
+          { id: 'a3', fecha: HOY, momento: 'cena', nombre: 'Tortilla de mi madre', calorias: 400, proteinas: 20, carbohidratos: 15, grasas: 28, fibra: 1 },
+        ],
+        agua: {}, favoritos: [],
+      })],
+      /* 🚨 Apartado 11 — el día que se pasa del objetivo: la barra no se rompe. */
+      ['NutritionView · por encima del objetivo', NutritionView, () => propsNu({
+        comidas: [
+          { id: 's1', fecha: HOY, momento: 'comida', nombre: 'Día grande', calorias: 2550, proteinas: 150, carbohidratos: 320, grasas: 90, cantidad: 800, unidad: 'g', por100: { calorias: 319, proteinas: 18.8, carbohidratos: 40, grasas: 11.3, fibra: 0 } },
+        ],
+        agua: {}, favoritos: [],
+        objetivos: {
+          configurado: true, actividad: 'moderado', objetivo: 'mantener',
+          kcal: 2400, proteinas: 140, carbohidratos: 300, grasas: 70,
+          manual: {}, pesoAlCalcular: 72, fecha: HOY,
+        },
       })],
     ];
   })(),

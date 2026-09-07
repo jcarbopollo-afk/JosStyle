@@ -168,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 34 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 36 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -191,10 +191,12 @@ v3.46.0)**, la **F26 (Tareas, v3.47.0)**, la **F27 (Metas y Objetivos, v3.48.0)*
 PRODUCTIVIDAD** —las siete fases PR—, y la **F30 (el apartado Bienestar, v3.51.0)**, que 🏁
 **CERRÓ EL BLOQUE BN**, la **F31 (Sueño, el registro simple, v3.52.0)** y la **F32 (la gráfica de
 7 días móviles, v3.53.0)**, que 🏁 **CERRÓ SUEÑO**, y la **F33 (Nutrición, rediseño premium,
-v3.54.0)**, con la que empieza el bloque de **Nutrición**, y la **F34 (el sistema de días,
-v3.55.0)**. Con eso hay **cinco bloques cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8),
-Productividad (7/7), Bienestar (1/1) y Sueño (2/2)— y **Nutrición va por 2 de 8**. La que viene es
-la **35 — NU F3: configuración y objetivos nutricionales**. El índice, con la
+v3.54.0)**, con la que empieza el bloque de **Nutrición**, la **F34 (el sistema de días,
+v3.55.0)**, la **F35 (los objetivos nutricionales, v3.56.0)** y la **F36 (el registro de
+alimentos, v3.57.0)**. Con eso hay **cinco bloques
+cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1) y
+Sueño (2/2)— y **Nutrición va por 4 de 8**. La que viene es
+la **37 — NU F5: base de alimentos, personalizados y favoritos**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -497,6 +499,52 @@ código de agosto mientras él decía *"la web sigue igual"*.
   E3 F23 escrita con las palabras de entonces, que el rediseño de esta fase cambió con todo el
   derecho. **Mirar qué línea la hace saltar antes de tocar el código**: de los cuatro rojos, **uno
   solo era del código** —la racha decía *"🔥 1 días"*—, y ése sí es de los que ve Josué.
+
+- 🚨 **UNA ENTIDAD NUEVA QUE YA EXISTE CON OTRO NOMBRE NO SE CREA: SE AMPLÍA** (E3 F36). *"Un
+  alimento registrado"* **es una comida**, la entidad de la Fase 4 que leen el hub, el Dashboard, la
+  exportación y el contexto de la IA. Una lista `alimentos` al lado habría dejado **lo que Josué ya
+  tiene registrado invisible en su propia pantalla** — el fallo de la E3 F16 con las notas. Se
+  **añaden** `cantidad`, `unidad` y `por100`, y su normalizador corre **al cargar** (regla 5,
+  vigésima vez).
+- 🚨 **UN CÁLCULO ESCRITO A MANO DENTRO DE UNA VISTA ES UN CÁLCULO QUE NADIE MÁS PUEDE USAR**
+  (E3 F36): el escalado por gramos vivía dentro del escáner desde la Fase 4. Sacarlo a `escalar()`
+  fue lo que permitió que el buscador lo usara **sin escribir una segunda copia**.
+- 🚨 **UNOS VALORES NUTRICIONALES SE TOMAN DE UNA REFERENCIA, NUNCA SE INVENTAN** (E3 F36,
+  apartado 5, literal). Treinta y seis alimentos con los valores habituales —la avena lleva los
+  389/16,9/66,3/6,9 del propio enunciado—, **declarados en pantalla como orientativos y editables**,
+  más Open Food Facts, que da los de la etiqueta. ⚠️ Y se descarta la ficha **sin calorías**:
+  registrar un plato que no suma nada es un dato falso (regla 8).
+- ⚠️ **UNA CANTIDAD NO TIENE VALOR POR DEFECTO** (E3 F36): 100 g de aceite y 100 g de lechuga no son
+  el mismo plato. Es `ALCANCES` de HT F3 otra vez.
+- 🚨 **EDITAR NO ES BORRAR Y VOLVER A CREAR** (E3 F36, apartado 7): cambiar la cantidad **recalcula**
+  los cuatro números y devuelve **la misma comida, con su id**; mover de comida no toca ninguno. Y
+  una comida escrita a mano **no tiene de qué escalar**, así que se dice en vez de enseñar un control
+  que no haría nada (regla 8).
+- ⚠️ **AL EDITAR LOS NÚMEROS A MANO SE PIERDE LA REFERENCIA** (E3 F36): si `por100` se quedara, el
+  siguiente cambio de cantidad los pisaría con los viejos. Dos fuentes de verdad para lo mismo, otra
+  vez (E3 F21).
+
+- 🔒 **CUANDO EL ENUNCIADO PIDE ALGO QUE UNA REGLA PROHÍBE, SE CONSTRUYE CON LA APP PROPONIENDO Y
+  ÉL CONFIRMANDO** (E3 F35). La NU F3 pide tres objetivos calóricos y el §7.4 dice que *"ni Salud ni
+  Nutrición pueden **prescribir** objetivos calóricos o de peso **estrictos**"*. `planObjetivos`
+  **sin `confirmado` no escribe nada** —decimonoveno `aplicarPlan`—, los cuatro números son
+  editables a mano, y **ni un objetivo de peso**: el apartado 16 lo excluye y está en `NO_EN_NU3`
+  con la regla que lo prohíbe. Queda anotado como **C-30** en `docs/03`; Josué contestó que siga.
+- 🚨 **UN DATO DEL PERFIL SE LEE, NO SE COPIA** (E3 F35, y `leerDato()` de EH F4 lo dijo primero):
+  altura, peso, sexo y la edad **derivada** de la fecha de nacimiento. Lo único guardado es
+  **`pesoAlCalcular`**, y solo porque es lo que permite avisar *"lo calculaste con 66 kg y ahora
+  pesas 72"* — ⚠️ **y no se recalcula solo** (apartado 12): un objetivo que cambia mientras él no
+  mira es la app decidiendo por él.
+- ⚠️ **UNA ESCALA QUE YA EXISTE NO SE ESCRIBE OTRA VEZ** (E3 F35): los cuatro primeros niveles de
+  actividad son `ACTIVIDAD_FACTORES` de `tokens.js`, que Ajustes usa desde la Fase A2. Solo el
+  quinto —*"Muy alto"*, que pide el enunciado— es nuevo.
+- ⚠️ **UNOS MACROS QUE NO SUMAN SUS KCAL SON TRES CIFRAS SUELTAS** (E3 F35): proteína por kilo,
+  28 % en grasas y **los carbohidratos son el resto**, así que cuadran siempre. Y si él los cambia a
+  mano y dejan de cuadrar, `coherencia()` **lo dice** en vez de corregirle por la espalda.
+- 🐛 **Y LAS REGLAS INVARIANTES CAZARON DOS COSAS EN UN SEGUNDO CADA UNA** (E3 F35): un `<Opcion>`
+  **usado y no importado** —vive en `SleepView.jsx`— que habría dejado **el primer paso en blanco**
+  con el build en verde (tercera vez: E3 F17 y EH F39), y un `const` duplicado en el recorrido, que
+  no compila y cuesta doce minutos descubrir a las bravas.
 
 - 🚨 **UN ESTADO GUARDADO DENTRO DE LA PLANTILLA BORRA EL HISTORIAL** (E3 F28). Un paso de rutina
   llevaba `hecho` **dentro de la rutina** desde la Fase 6, así que **hacerla el martes borraba lo del

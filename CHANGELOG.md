@@ -1,5 +1,138 @@
 # CHANGELOG.md
 
+## v3.57.0 — Entrega 3 · Fase 36 (NU F4): registro de comidas y consumo diario
+
+La fase que convierte Nutrición en un sistema de registro de verdad: buscar un alimento, decir
+cuánto, y que los números salgan solos.
+
+### 🚨 Dos piezas ya existían, y no se han vuelto a escribir
+
+El apartado 17 empieza así: *"Analiza el código existente. Reutiliza componentes. **No dupliques
+modelos de datos**"*. Antes de escribir nada se miró qué hay:
+
+1. **El cálculo proporcional por gramos ya estaba**, dentro del escáner de códigos de la Fase 4 del
+   proyecto: `openFoodFacts.js` devuelve los valores por 100 g y la pantalla los escalaba **a mano,
+   en la vista**. Lo que hacía falta era sacar esa cuenta para que la use también el buscador — es
+   `escalar()`, y el escáner sigue funcionando igual.
+2. 🚨 **Un alimento registrado ES una comida.** La entidad existe desde la Fase 4 con `fecha`,
+   `nombre`, `calorias` y sus macros, y la leen el hub, el Dashboard, la exportación y el contexto de
+   la IA. Crear una lista `alimentos` al lado habría dejado **lo que Josué ya tiene registrado
+   invisible en su propia pantalla** — el fallo exacto que la E3 F16 cazó con las notas de la
+   Biblioteca. Esta fase **añade** `cantidad`, `unidad` y `por100`, y su normalizador corre al
+   cargar, así que lo guardado antes no pierde nada (regla 5, vigésima vez).
+
+### 🚨 Y los valores no se inventan
+
+El apartado 5 lo dice con esas palabras: *"No utilizar valores inventados como datos definitivos"*.
+El buscador tiene **dos fuentes, las dos reales**:
+
+- **`BASE_ALIMENTOS`**, treinta y seis alimentos genéricos —los seis que el apartado 3 pone de
+  ejemplo incluidos— con los valores de referencia habituales por 100 g. La avena lleva **389 kcal,
+  16,9 de proteína, 66,3 de carbohidratos y 6,9 de grasa**, que son los cuatro números que el propio
+  enunciado escribe. Y la pantalla dice que **son de referencia y editables**: cada marca y cada
+  forma de cocinar dan un número distinto.
+- **Open Food Facts por nombre**, la misma base pública y sin clave que ya usa el escáner. Sus
+  valores son los de la etiqueta. ⚠️ Se descartan las fichas sin calorías: registrar un plato que no
+  suma nada sería un dato falso (regla 8).
+
+### Lo que trae
+
+- **El flujo del apartado 2 en dos pasos**: buscar → cantidad → añadir. ⚠️ **La cantidad no viene
+  puesta**: 100 g de aceite y 100 g de lechuga no son el mismo plato.
+- **Editar sin borrar y volver a crear** (apartado 7): cambiar la cantidad **recalcula** los cuatro
+  números y es **la misma comida**, con su id; y se puede **mover de Desayuno a Cena** sin tocar
+  ninguno. 🚨 Una comida escrita a mano no tiene valores por 100 g de los que escalar, así que **se
+  dice** en vez de enseñar un control que no haría nada.
+- **El resumen de cada comida** (apartado 9), derivado: guardarlo mentiría en cuanto borre un
+  alimento.
+- **Superar el objetivo** (apartado 11): la barra se topa en 100 % y el dato no, que es la decisión
+  que ya tomó la F35 — más *"150 kcal por encima"*, que es un número, no un reproche.
+- **El escáner, la foto del plato y el formulario a mano siguen ahí.** El apartado 18 dice *"no
+  implementar"* el escáner y **ya existe**: «no implementar» no es «quitar». Misma lección que la
+  E3 F34.
+
+### 🐛 Y la regla invariante, otra vez
+
+`test-imports.mjs` cazó **un `const` duplicado** en el recorrido de Chromium — no compila, y
+descubrirlo por las bravas cuesta los doce minutos que tarda. Van dos en dos fases.
+
+### Archivos
+
+- **Nuevo:** `src/lib/alimentos.js`, `scripts/test-alimentos.mjs` (151 comprobaciones).
+- **Tocados:** `src/lib/openFoodFacts.js` (`buscarAlimentosPorNombre`), `src/views/NutritionView.jsx`
+  (`AnadirAlimento`, `AlimentoRegistrado`, el estado de superar el objetivo), `src/App.jsx`
+  (`actualizarComida` y `normalizarNutricionF4` al cargar), `scripts/verificar.sh`,
+  `scripts/smoke-vistas.jsx` (+8 casos), `scripts/test-app-real.mjs` (sección nueva).
+
+## v3.56.0 — Entrega 3 · Fase 35 (NU F3): configuración y objetivos nutricionales
+
+La fase que le pone un objetivo al día. **Con una decisión escrita en el propio código: la
+aplicación PROPONE y Josué CONFIRMA.**
+
+### 🔒 Lo primero, porque condiciona todo lo demás
+
+El enunciado pide tres objetivos —perder grasa, mantener, ganar masa—, y la regla 7 del proyecto y
+el §7.4 de la especificación maestra dicen que *"ni Salud ni Nutrición pueden **prescribir**
+objetivos calóricos o de peso **estrictos**"*. Está anotado como **C-30** en `docs/03`, y Josué
+contestó que siga. La forma de cumplir las dos cosas:
+
+- **`planObjetivos` sin `confirmado` no escribe nada.** Devuelve los números y ya está: recorrer los
+  cuatro pasos enteros no guarda ni un byte. Es el decimonoveno `aplicarPlan` del proyecto, y hay una
+  comprobación en Chromium que lo mide contando escrituras de verdad.
+- **Los cuatro números son editables a mano**, y lo editado manda sobre lo calculado —con su marca de
+  `manual`, para que un recálculo no le pise lo que él puso.
+- **Ni un objetivo de peso.** El apartado 16 lo excluye expresamente y está en `NO_EN_NU3` con la
+  regla que lo prohíbe: la app no dice a un chico de 16 años cuánto tiene que pesar.
+- **La frase orientativa va en el resumen**, antes de guardar, no escondida en un aviso legal.
+
+### El cálculo
+
+**Mifflin-St Jeor** (`10·peso + 6.25·altura − 5·edad + constante`) por el factor de actividad, con un
+ajuste de **±12 %** según el objetivo. Los cuatro primeros factores son `ACTIVIDAD_FACTORES`, que
+existen en `tokens.js` desde la Fase A2 y ya usa Ajustes: **no se escriben otra vez**. El quinto
+—*"Muy alto"*, que el enunciado sí pide— es el único añadido.
+
+Los macros salen de la proteína por kilo (2 g si pierde, 1.8 si mantiene o gana) y un **28 %** de las
+kcal en grasas; **los carbohidratos son el resto**, así que las tres cifras suman siempre las kcal del
+objetivo. Y si él las cambia a mano y dejan de cuadrar, `coherencia()` **lo dice** en vez de
+corregirle por la espalda.
+
+### 🚨 Los datos vienen del perfil, y no se copian
+
+El apartado 2 dice *"reutilizar los datos del perfil"*. Se leen de ahí —altura, peso, sexo y la edad
+**derivada** de su fecha de nacimiento, que es lo único guardado— y **no se copia ninguno** dentro de
+`nutricion`. Lo único que se guarda es **`pesoAlCalcular`**, y solo porque es lo que permite avisar
+después: *"calculaste esto con 66 kg y ahora pesas 72"*.
+
+⚠️ **Y no se recalcula solo** (apartado 12). Un objetivo que cambia por la espalda mientras él no
+mira es exactamente la app decidiendo, que es lo que la regla 7 prohíbe.
+
+### Lo que trae
+
+- **Cuatro pasos** —datos, actividad, objetivo y resumen—, cada opción con su explicación en
+  castellano llano; el apartado 3 prohíbe expresamente *"una lista técnica difícil de entender"*.
+- **El día pasa a decir «1.050 / 3.149 kcal»** con su porcentaje y su barra (apartado 10). Sin
+  configurar, la pantalla **sigue funcionando**: enseña lo consumido, como en la NU F1.
+- **Un acceso para volver a cambiarlos** cuando quiera (apartado 11), y un CTA mientras no los tenga.
+- **`condicionNU3`** — los dieciséis puntos del criterio de finalización, **calculados**, no puestos
+  a mano. Con una pantalla vacía se pone roja: una auditoría que no puede fallar no sirve (EH F42).
+
+### 🐛 Lo que cazaron las pruebas esta vez
+
+- **La regla invariante de `test-imports.mjs` encontró un `<Opcion>` usado y no importado** —vive en
+  `SleepView.jsx`, no aquí—. El build pasaba; React habría dejado **el primer paso en blanco**. Es el
+  fallo de la E3 F17 y la EH F39 por tercera vez, y esta vez costó un segundo en vez de doce minutos.
+- **Y la tercera regla invariante cazó un `const escrituras` duplicado** en el recorrido de Chromium:
+  no compila, y descubrirlo por las bravas cuesta los doce minutos que tarda el recorrido.
+
+### Archivos
+
+- **Nuevo:** `src/lib/objetivosNutricion.js`, `scripts/test-objetivos-nutricion.mjs` (114
+  comprobaciones).
+- **Tocados:** `src/views/NutritionView.jsx` (`ConfiguracionNutricion`), `src/App.jsx`
+  (`normalizarNutricionObjetivos` al cargar y `guardarObjetivosNutricion`), `scripts/verificar.sh`,
+  `scripts/smoke-vistas.jsx` (+12 casos), `scripts/test-app-real.mjs` (sección nueva).
+
 ## v3.55.0 — Entrega 3 · Fase 34 (NU F2): sistema de días e historial de Nutrición
 
 La Fase 1 hizo la pantalla; ésta la convierte en un sistema por días.
