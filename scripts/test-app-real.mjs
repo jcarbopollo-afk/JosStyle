@@ -3063,4 +3063,89 @@ const pintado_pr5 = await esperarTexto(/Objetivo superado/i);
 ok(/Objetivo superado/i.test(pintado_pr5),
   '🚨 Y AL PINTARLO NO PASA DEL 100 %: se dice "Objetivo superado", que es lo que pide el enunciado');
 
+/* ── E3 F28 (PR F6) · RUTINAS ────────────────────────────────────────────
+   🚨 Lo que ninguna prueba de Node puede ver: que **una rutina guardada con la
+   forma vieja se abre y funciona**, que el modo de ejecución existe de verdad, y
+   que **recargar la aplicación a mitad de una rutina la recupera donde estaba**. */
+almacen.productividad = {
+  habitos: [], tareas: [], metas: [], pomodoros: {}, apuntes: [],
+  pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+  rutinaEjecuciones: [], rutinaEnCurso: null,
+  // La forma VIEJA de la Fase 6: el paso guardaba `hecho` DENTRO de la plantilla.
+  rutinas: [{
+    id: 'r_pr6',
+    nombre: 'Rutina de mañana',
+    pasos: [
+      { id: 'p1', texto: 'Levantarse', hecho: true },
+      { id: 'p2', texto: 'Beber agua', hecho: false },
+    ],
+  }],
+};
+almacen.objetivos = { lista: [], ultimaRevision: null };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Vida');
+await pulsar('Productividad');
+ok(await pulsar('Abrir Rutinas'), 'Rutinas se abre');
+
+const inicio_pr6 = await esperarTexto(/Convierte tus acciones en rutina/i);
+ok(/Convierte tus acciones en rutina/i.test(inicio_pr6), '⚠️ con la frase del enunciado');
+ok(/Rutina de mañana/i.test(inicio_pr6),
+  '🚨 Y LA RUTINA GUARDADA A LA VIEJA SE VE: la fase amplía la lista de siempre, no crea otra');
+ok(/2 pasos/i.test(inicio_pr6), '⚠️ con sus pasos contados');
+ok(/Manual/i.test(inicio_pr6), '⚠️ y sin programación se dice "Manual", no una fecha inventada');
+
+ok(await pulsar('Iniciar Rutina de mañana'), 'se inicia la rutina desde la tarjeta');
+const ejec_pr6 = await esperarTexto(/Paso 1 \/ 2/i);
+ok(/Paso 1 \/ 2/i.test(ejec_pr6), '🚨 Y SE ENTRA EN EL MODO DE EJECUCIÓN, que es una pantalla distinta');
+ok(/Levantarse/i.test(ejec_pr6), '⚠️ con el paso actual bien grande');
+ok(/Completar/i.test(ejec_pr6) && /Pausar/i.test(ejec_pr6) && /Salir/i.test(ejec_pr6),
+  '⚠️ y los controles del enunciado');
+await page.waitForTimeout(900);
+const enCurso_pr6 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value;
+ok(enCurso_pr6?.rutinaEnCurso?.rutinaId === 'r_pr6',
+  '⚠️ PERSISTENCIA: la ejecución en curso se ESCRIBE en Supabase nada más empezar');
+ok(enCurso_pr6?.rutinaEnCurso?.inicio > 0,
+  '🚨 CON SU INSTANTE DE INICIO: es un timestamp, no un contador de segundos');
+const plantilla_pr6 = (enCurso_pr6?.rutinas || []).find((r) => r.id === 'r_pr6');
+ok(plantilla_pr6 && !('hecho' in (plantilla_pr6.pasos[0] || {})),
+  '🚨 Y EL `hecho` DE LA PLANTILLA HA DESAPARECIDO: era lo que borraba el historial de ayer al hacerla hoy');
+
+ok(await pulsar('Completar'), 'se completa el primer paso');
+const paso2_pr6 = await esperarTexto(/Beber agua/i);
+ok(/Paso 2 \/ 2/i.test(paso2_pr6), '⚠️ y pasa al segundo');
+await page.waitForTimeout(900);
+
+/* 🚨 LA COMPROBACIÓN QUE NINGUNA PRUEBA DE NODE PUEDE HACER. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Vida');
+await pulsar('Productividad');
+ok(await pulsar('Abrir Rutinas'), 'se vuelve a entrar en Rutinas tras recargar');
+const trasRecargar_pr6 = await esperarTexto(/Beber agua/i);
+ok(/Beber agua/i.test(trasRecargar_pr6) && /Paso 2 \/ 2/i.test(trasRecargar_pr6),
+  '🚨 Y LA RUTINA SIGUE DONDE ESTABA TRAS RECARGAR: *"no perder accidentalmente una ejecución en curso"*');
+
+ok(await pulsar('Completar'), 'se completa el último paso');
+const fin_pr6 = await esperarTexto(/Rutina completada/i);
+ok(/Rutina completada/i.test(fin_pr6), '🚨 Y SALE LA PANTALLA DE FINALIZACIÓN');
+ok(/2 \/ 2 pasos/i.test(fin_pr6), '⚠️ con los pasos que hizo');
+
+ok(await pulsar('Volver a Rutinas'), 'se vuelve a la lista');
+await page.waitForTimeout(900);
+const trasFin_pr6 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value;
+ok((trasFin_pr6?.rutinaEjecuciones || []).length === 1,
+  '🚨 Y LA EJECUCIÓN QUEDA EN EL HISTORIAL: la plantilla y lo que pasó son dos listas');
+ok(trasFin_pr6?.rutinaEjecuciones[0].estado === 'completada', '⚠️ marcada como completada');
+ok(trasFin_pr6?.rutinaEnCurso === null,
+  '🚨 y deja de haber una en curso: registrar e limpiar van en UNA escritura, no en dos que se pisan');
+const plantillaFinal_pr6 = (trasFin_pr6?.rutinas || []).find((r) => r.id === 'r_pr6');
+ok(plantillaFinal_pr6 && plantillaFinal_pr6.pasos.length === 2
+  && !plantillaFinal_pr6.pasos.some((p) => 'completado' in p || 'hecho' in p),
+  '🚨 Y LA PLANTILLA SIGUE LIMPIA: ejecutarla no le ha dejado ni un campo de estado (apartado «DUPLICACIÓN»)');
+
+const lista_pr6 = await esperarTexto(/Última vez/i);
+ok(/Última vez: Hoy/i.test(lista_pr6), '⚠️ y la tarjeta dice cuándo fue la última vez');
+
 await salir(browser);

@@ -1,5 +1,82 @@
 # CHANGELOG.md
 
+## v3.49.0 — Entrega 3 · Fase 28 (PR F6): Productividad — Rutinas
+
+La sexta y última mini-app de Productividad. Con ella el bloque PR queda en **6 de 7**: solo falta la
+integración global.
+
+### 🚨 La plantilla guardaba si el paso estaba hecho — y por eso no había historial
+
+Lo que existía desde la Fase 6 era una lista con `pasos: [{ texto, hecho }]` y un botón de
+*Reiniciar*: el paso guardaba **dentro de la plantilla** si estaba hecho. Así que **hacer la rutina el
+martes borraba lo del lunes**, y de todas las veces que Josué la hubiera hecho no quedaba nada.
+
+El enunciado lo prohíbe con estas palabras: *"Una rutina NO debe crear copias permanentes… La
+ejecución debe generar un registro de ejecución. Los elementos originales permanecen como
+plantillas."*
+
+Ahora son **dos listas**: `rutinas` (las plantillas, sin un solo campo de estado) y
+`rutinaEjecuciones` (lo que pasó). `normalizarPaso` **se lleva `hecho`** a propósito, y hay una
+prueba que comprueba que ejecutar no le deja ni un campo a la plantilla.
+
+### 🚨 Una ejecución sí copia el título de sus pasos, y es lo correcto
+
+*"Las modificaciones futuras no deben destruir el historial pasado."* Si la ejecución guardara solo el
+`pasoId`, renombrar un paso **reescribiría el pasado** y borrarlo dejaría huecos. Un registro
+histórico es la única cosa de este proyecto que **debe** llevar copia — porque describe algo que ya no
+puede cambiar. Guarda el `pasoId` **también**, que es lo que permite volver al paso vivo.
+
+### 🚨 Ni un segundo motor de frecuencias, ni una segunda racha
+
+La programación que pide el enunciado —diaria, días concretos, semanal— es **exactamente**
+`CLASES_REGLA` de `rachas.js`, que la E3 F24 ya amplió con `dias_concretos` y `veces_por_semana`. Y su
+quinto estado de día, `NO_TOCA`, es literalmente lo que esta fase pide: *"si la rutina no estaba
+programada para un día concreto, no penalizar la racha"*.
+
+*"Son sistemas independientes"* se cumple igual: la racha de una rutina y la de un hábito no se
+mezclan —cada una con su tipo y su historial—, pero **comparten el motor**, que es lo que impide que
+dos pantallas digan números distintos (RA F1). Y **sin programación no hay racha**: `null`, no un
+cero.
+
+### Lo que trae la mini-app
+
+- **Tarjeta de flujo**: icono, pasos, duración estimada, próxima ejecución, última vez y ▶.
+- **Modo de ejecución**, que es una pantalla distinta de la de edición: paso actual grande, progreso,
+  cuánto llevas, cuántos quedan, anterior/siguiente/saltar/pausar/salir.
+- **Salir sin perder nada**: Continuar · Guardar progreso · Salir, y las tres hacen tres cosas
+  distintas. Lo abandonado **queda en el historial** como abandonado.
+- **Reordenar con flechas, no arrastrando** (EH F50): funcionan con el lector de pantalla, y el
+  arrastre sería un segundo mecanismo para lo mismo. En los extremos la flecha se apaga.
+- **Cuatro tipos de paso** —acción, tarea, Pomodoro y descanso—, y cada uno declara **a qué mini-app
+  abre** en vez de traerse su lógica.
+- **Sin ningún paso con duración, `null`**: un cero diría que la rutina no lleva tiempo, y lo que pasa
+  es que no se sabe. Igual con el cumplimiento sin ejecuciones.
+
+### ⚠️ Y lo que NO se ha hecho, a propósito
+
+- **Ni un segundo temporizador**: un paso de Pomodoro dice dónde está el que ya existe.
+- **Ni notificaciones**: *"solo guardar correctamente la programación"*, y la pantalla lo dice.
+- **Ni la vinculación con hábitos**: `habitId` está declarado en `VINCULOS_PASO` con quién lo
+  rellenará, porque el enunciado dice que *"no es obligatorio implementarla"* (regla 8).
+- **Ni se rehace Hoy**: `paraHoy()` es la línea que Hoy podrá pintar.
+
+### 🐛 Dos cosas que cazaron el build y las pruebas
+
+- **`estaPausada` ya era de `pomodoro.js`** y **`NOMBRES_DIA` ya llegaba por `habitos.js`**: una
+  sesión pausada y una ejecución pausada son dos cosas con el mismo nombre. Lo cantó el build, como
+  `addApunte` en la E3 F6.
+- **Y una comprobación mía se comparaba consigo misma**, así que no podía fallar nunca mirara lo que
+  mirara. Es *"un revisor que no puede fallar no sirve"* (EH F42) en una sola línea.
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde: **154 comprobaciones nuevas** en `scripts/test-rutinas.mjs`,
+**28 casos de renderizado nuevos** (1944) y una sección nueva del recorrido que abre la aplicación con
+una rutina guardada a la vieja, la ejecuta, **recarga la aplicación a mitad** y comprueba que sigue
+donde estaba.
+
+---
+
 ## v3.48.0 — Entrega 3 · Fase 27 (PR F5): Productividad — Metas + Objetivos
 
 La cuarta y quinta mini-apps a la vez, con la jerarquía que el enunciado pide:

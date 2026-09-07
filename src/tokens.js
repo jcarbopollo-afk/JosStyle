@@ -441,6 +441,10 @@ export const DEFAULT_NEGOCIO = { proyectos: [] };
 export const DEFAULT_PRODUCTIVIDAD = {
   habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [],
   pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+  /* 🚨 E3 F28 (PR F6) — la plantilla y la ejecución son dos cosas:
+     · `rutinaEjecuciones` — el historial, que sobrevive a editar la plantilla.
+     · `rutinaEnCurso`     — la que está corriendo, para que sobreviva a recargar. */
+  rutinaEjecuciones: [], rutinaEnCurso: null,
 };
 export const PERIODOS_META = ['Diaria', 'Semanal', 'Mensual', 'Anual'];
 

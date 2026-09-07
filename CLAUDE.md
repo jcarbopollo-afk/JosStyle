@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.48.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.49.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (44 fases — **27 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (44 fases — **28 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -165,7 +165,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 27 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 28 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -183,8 +183,9 @@ el bloque de **Biblioteca**, la **F17 (Libros, v3.38.0)**, la **F18 (Guardados, 
 **F22 (integración y experiencia global, v3.43.0)**, que 🏁 **CERRÓ EL BLOQUE DE BIBLIOTECA** —las
 ocho fases BL—. Con eso hay **dos bloques cerrados**: Hoy y Calendario (10/10) y Biblioteca (8/8). La
 **F23 (Productividad como lanzador, v3.44.0)**, la **F24 (Hábitos, v3.45.0)**, la **F25 (Pomodoro,
-v3.46.0)**, la **F26 (Tareas, v3.47.0)** y la **F27 (Metas y Objetivos, v3.48.0)**, con las que el
-bloque de **Productividad** va por **5 de 7**; la que viene es la **28 — PR F6: Rutinas**. El índice, con la
+v3.46.0)**, la **F26 (Tareas, v3.47.0)**, la **F27 (Metas y Objetivos, v3.48.0)** y la **F28
+(Rutinas, v3.49.0)**, con las que el bloque de **Productividad** va por **6 de 7**; la que viene es
+la **29 — PR F7: integración global y sistema inteligente**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
@@ -312,6 +313,24 @@ código de agosto mientras él decía *"la web sigue igual"*.
 - 🐛 **Y una prueba busca el MECANISMO, no la palabra** (E3 F21, sexta vez): la constante que promete
   que los elementos **no** se eliminan se llama `AVISO_ELIMINAR`, y el barrido de borrados saltaba
   con la frase que hace la promesa.
+
+- 🚨 **UN ESTADO GUARDADO DENTRO DE LA PLANTILLA BORRA EL HISTORIAL** (E3 F28). Un paso de rutina
+  llevaba `hecho` **dentro de la rutina** desde la Fase 6, así que **hacerla el martes borraba lo del
+  lunes** y de todas las veces que la hubiera hecho no quedaba nada. La plantilla no guarda estado:
+  `rutinas` y `rutinaEjecuciones` son **dos listas**, y `normalizarPaso` se lleva `hecho`.
+- 🚨 **UN REGISTRO HISTÓRICO SÍ LLEVA COPIA, Y ES LA ÚNICA COSA QUE DEBE** (E3 F28). Si la ejecución
+  guardara solo el `pasoId`, renombrar un paso **reescribiría el pasado** y borrarlo dejaría huecos.
+  Guarda el título **y** el id: el título para que el historial no cambie, el id para poder volver al
+  paso vivo. No confundirlo con duplicar un dato que sí puede cambiar.
+- 🚨 **UNA PROGRAMACIÓN ES UNA REGLA DE `rachas.js`** (E3 F28): diaria, días concretos y semanal son
+  `CLASES_REGLA`, que la E3 F24 ya amplió. *"Son sistemas independientes"* se cumple con **el tipo y
+  el historial**, no escribiendo un segundo motor — con dos, dos pantallas dirían números distintos.
+  Y **sin programación no hay racha**: `null`, no un cero.
+- 🐛 **Y UNA REGLA QUE IDENTIFICA UN MÓDULO POR SU NOMBRE ACABA SEÑALANDO ALGO QUE ESTÁ BIEN**
+  (E3 F28, **tercera vez**, tras `horarioEstructura` y `sonidoProduccion`): la auditoría de EH busca
+  `rutinas` por `rutinasPiel` y `motorRutinas`, así que marcó la mini-app de Productividad. Se excluye
+  a mano —como las otras dos—, porque estrechar la expresión hasta que calle deja escapar una de
+  verdad.
 
 - 🚨 **AMPLIAR UNA ENTIDAD NO ES RENOMBRAR SUS CAMPOS** (E3 F27). Los objetivos viven en la clave
   `objetivos` desde la Fase 9 y las metas en `productividad.metas` desde la Fase 6; `texto`, `plazo`

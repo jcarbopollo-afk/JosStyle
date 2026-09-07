@@ -13,6 +13,10 @@ import { completarTarea, normalizarTareasDe } from './lib/tareas';
    guardado antes llega sin `estado`, sin `prioridad` y sin `tipo`, y el
    siguiente guardado se los llevaría (regla 5). */
 import { normalizarObjetivosDe, normalizarMetasDe } from './lib/metasObjetivos';
+/* 🚨 E3 F28 (PR F6) — Rutinas. El normalizador corre al cargar porque la fase
+   separa la PLANTILLA de la EJECUCIÓN: lo guardado desde la Fase 6 trae `hecho`
+   dentro del paso, y ese campo se va (era lo que borraba el historial). */
+import { normalizarRutinasDe } from './lib/rutinas';
 // Entrega 3 · F8 y F9 — las fábricas de las entidades que crea el ＋ global.
 import { nuevaTareaDeCalendario } from './lib/calendarioMes';
 import { eventoDesdeQuickAdd } from './lib/accionesHoyAgenda';
@@ -515,7 +519,7 @@ export default function App() {
          semanal— filtran por `t.fecha`, y la pantalla de Productividad guardaba
          `fechaLimite`. Es el mismo reparto que `migrarEstiloHombre` (EH F46):
          se migra lo crudo, no lo normalizado. */
-      setProductividad(normalizarMetasDe(normalizarTareasDe(prod)));
+      setProductividad(normalizarRutinasDe(normalizarMetasDe(normalizarTareasDe(prod))));
       /* 🚨 E3 F27 — los objetivos llegan con los campos de la PR F5 (`estado`,
          `prioridad`, `categoria`, `principal`, `fechaObjetivo`) y **conservan
          los cinco de siempre**, que leen otros veinticuatro archivos. */
@@ -1840,6 +1844,24 @@ export default function App() {
   const addRutina = (r) => snapshotAndSave({ productividad: { ...productividad, rutinas: [...productividad.rutinas, r] } });
   const updateRutina = (r) => snapshotAndSave({ productividad: { ...productividad, rutinas: productividad.rutinas.map((x) => (x.id === r.id ? r : x)) } });
   const deleteRutina = (id) => eliminarConPapelera('productividad', 'rutinas', id);
+  /* 🚨 E3 F28 (PR F6) — la ejecución de una rutina. Son DOS escrituras posibles
+     y **una sola llamada cada una**, que es la lección de la E3 F26: dos
+     `save` seguidos parten del mismo estado del cierre y se pisan.
+
+     · `cambiarEjecucionRutina` guarda la que está corriendo (o la deja a medias
+       y sale, que es *"Guardar progreso"*).
+     · `registrarEjecucionRutina` la mete en el historial Y limpia la en curso,
+       las dos cosas de una vez. */
+  const cambiarEjecucionRutina = (ejecucion, { salir = false } = {}) =>
+    guardarProductividadSinDeshacer({ ...productividad, rutinaEnCurso: salir ? null : (ejecucion || null) });
+  const registrarEjecucionRutina = (ejecucion) => {
+    if (!ejecucion) return;
+    guardarProductividadSinDeshacer({
+      ...productividad,
+      rutinaEjecuciones: [...(productividad.rutinaEjecuciones || []), ejecucion],
+      rutinaEnCurso: null,
+    });
+  };
   const addTarea = (t) => snapshotAndSave({ productividad: { ...productividad, tareas: [...productividad.tareas, t] } });
   /* 🚨 E3 F26 (PR F4) — completar pasa por `completarTarea`, no por un `!x.hecha`
      a pelo: es quien apunta **cuándo** se completó (`completadaEn`) y quien
@@ -2588,6 +2610,7 @@ export default function App() {
             productividad={productividad}
             onAddHabito={addHabito} onUpdateHabito={updateHabito} onDeleteHabito={deleteHabito}
             onAddRutina={addRutina} onUpdateRutina={updateRutina} onDeleteRutina={deleteRutina}
+            onCambiarEjecucionRutina={cambiarEjecucionRutina} onRegistrarEjecucionRutina={registrarEjecucionRutina}
             onAddTarea={addTarea} onUpdateTarea={updateTarea} onToggleTarea={toggleTarea} onDeleteTarea={deleteTarea}
             onAddMeta={addMeta} onUpdateMeta={updateMeta} onDeleteMeta={deleteMeta}
             onCompletarPomodoro={completarPomodoro}

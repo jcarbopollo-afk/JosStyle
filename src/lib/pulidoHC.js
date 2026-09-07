@@ -160,6 +160,7 @@ export const ANIMACIONES_HC = [
   /* E3 F25 (PR F3) — el aro del temporizador. Entra aquí por lo mismo: la prueba
      de la E3 F14 recorre esta lista y comprueba que cada clase existe en el CSS. */
   { id: 'aro_pomodoro', apartado: 16, nombre: 'El aro del temporizador', ms: 300, clase: 'aro-pomodoro' },
+  { id: 'rutina_fin', apartado: 16, nombre: 'Terminar una rutina', ms: 420, clase: 'rutina-fin' },
 ];
 
 export const animacionHC = (id) => ANIMACIONES_HC.find((a) => a.id === id) || null;

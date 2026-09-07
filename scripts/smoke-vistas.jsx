@@ -28,7 +28,7 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView, {
   ProgresoDelDia, SemanaDeHabito, TarjetaHabito, FormularioHabito, DetalleHabito,
   TemporizadorCircular, ConfigPomodoro, EstadisticasPomodoro,
-  FormularioTarea, FormularioMeta,
+  FormularioTarea, FormularioMeta, FormularioRutina, ModoEjecucion,
 } from '../src/views/ProductivityView.jsx';
 /* E3 F26 (PR F4) — Tareas. El escenario cubre las cinco secciones a la vez:
    vencida, de hoy, de mañana, sin fecha y completada. */
@@ -40,6 +40,14 @@ import {
   crearObjetivo as crearObjF27, crearMeta as crearMetaF27,
   actualizarProgreso as actProgF27, completarMeta as compMetaF27,
 } from '../src/lib/metasObjetivos.js';
+/* E3 F28 (PR F6) — Rutinas. El escenario tiene una rutina programada con pasos
+   de los cuatro tipos, una guardada a la VIEJA (con `hecho` dentro del paso) y
+   una ejecución a medias, que es lo que hay que poder recuperar al volver. */
+import {
+  crearRutina as crearRutF28, crearPaso as crearPasoF28, anadirPaso as anadirPasoF28,
+  editarRutina as editarRutF28, iniciarEjecucion as iniciarEjF28,
+  completarPaso as completarPasoF28, finalizarEjecucion as finalizarEjF28,
+} from '../src/lib/rutinas.js';
 import {
   CONFIG_POMODORO_POR_DEFECTO as CFG_F25, iniciarSesion as iniciarSesionF25,
   completar as completarF25, cancelar as cancelarF25, estadisticasHoy as statsHoyF25,
@@ -2065,6 +2073,69 @@ const CASOS = [
       ['FormularioMeta (sí o no)', FormularioMeta, () => ({ meta: metasF27[2], objetivos: listaF27, accent, onGuardar: noop, onCancelar: noop })],
       ['FormularioObjetivo (nuevo)', FormularioObjetivoF27, () => ({ accent, onGuardar: noop, onCancelar: noop })],
       ['FormularioObjetivo (editando)', FormularioObjetivoF27, () => ({ objetivo: listaF27[0], accent, onGuardar: noop, onCancelar: noop })],
+    ];
+  })(),
+  ...(() => {
+    const HOY_F28 = '2026-09-07';
+    const T_F28 = Date.parse('2026-09-07T08:00:00Z');
+    let base = crearRutF28({ nombre: 'Rutina de mañana', icono: '☀️', categoria: 'manana', hoy: HOY_F28 });
+    base = anadirPasoF28(base, crearPasoF28({ texto: 'Levantarse', minutos: 2 }));
+    base = anadirPasoF28(base, crearPasoF28({ texto: 'Beber agua', minutos: 5, tipo: 'accion' }));
+    base = anadirPasoF28(base, crearPasoF28({ texto: 'Estudiar', minutos: 25, tipo: 'pomodoro' }));
+    base = anadirPasoF28(base, crearPasoF28({ texto: 'Descansar', minutos: 5, tipo: 'descanso' }));
+    base = editarRutF28(base, { programacion: { tipo: 'dias', dias: [0, 2, 4], hora: '08:00' } });
+    const enCursoF28 = completarPasoF28(iniciarEjF28(base, { ahora: T_F28 }), { ahora: T_F28 + 60000 });
+    const acabadaF28 = finalizarEjF28(
+      [0, 1, 2, 3].reduce((e) => completarPasoF28(e, { ahora: T_F28 }), iniciarEjF28(base, { ahora: T_F28 })),
+      { ahora: T_F28 + 1500000 },
+    );
+    const rutinasF28 = [
+      base,
+      // La forma VIEJA de la Fase 6: pasos con `hecho` dentro de la plantilla.
+      { id: 'vieja_f28', nombre: 'Rutina guardada antes', pasos: [{ id: 'p1', texto: 'Un paso', hecho: true }] },
+    ];
+    const conRutinas = (extra = {}) => ({
+      productividad: {
+        habitos: [], rutinas: rutinasF28, tareas: [], metas: [], pomodoros: {}, apuntes: [],
+        pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+        rutinaEjecuciones: [acabadaF28], rutinaEnCurso: null,
+      },
+      objetivos: { lista: [], ultimaRevision: null }, accent,
+      onAddHabito: noop, onUpdateHabito: noop, onDeleteHabito: noop,
+      onAddRutina: noop, onUpdateRutina: noop, onDeleteRutina: noop,
+      onCambiarEjecucionRutina: noop, onRegistrarEjecucionRutina: noop,
+      onAddTarea: noop, onUpdateTarea: noop, onToggleTarea: noop, onDeleteTarea: noop,
+      onAddMeta: noop, onUpdateMeta: noop, onDeleteMeta: noop,
+      onCompletarPomodoro: noop,
+      onGuardarConfigPomodoro: noop, onCambiarSesionPomodoro: noop, onFinalizarSesionPomodoro: noop,
+      onAddObjetivo: noop, onUpdateObjetivo: noop, onDeleteObjetivo: noop, onRevisionHecha: noop,
+      onGuardarListaObjetivos: noop,
+      foco: { app: 'rutinas' }, onFocoConsumido: noop, ...extra,
+    });
+    return [
+      ['ProductivityView · rutinas', ProductivityView, () => conRutinas()],
+      ['ProductivityView · rutinas (vacío)', ProductivityView, () => conRutinas({
+        productividad: {
+          habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [],
+          pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+          rutinaEjecuciones: [], rutinaEnCurso: null,
+        },
+      })],
+      ['ProductivityView · rutina en curso', ProductivityView, () => conRutinas({
+        productividad: {
+          habitos: [], rutinas: rutinasF28, tareas: [], metas: [], pomodoros: {}, apuntes: [],
+          pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+          rutinaEjecuciones: [], rutinaEnCurso: enCursoF28,
+        },
+      })],
+      ['FormularioRutina (nueva)', FormularioRutina, () => ({ accent, onGuardar: noop, onCancelar: noop })],
+      ['FormularioRutina (editando)', FormularioRutina, () => ({ rutina: base, accent, onGuardar: noop, onCancelar: noop })],
+      ['ModoEjecucion (a medias)', ModoEjecucion, () => ({
+        ejecucion: enCursoF28, accent, onCambiar: noop, onTerminar: noop, onSalir: noop,
+      })],
+      ['ModoEjecucion (terminada)', ModoEjecucion, () => ({
+        ejecucion: acabadaF28, accent, onCambiar: noop, onTerminar: noop, onSalir: noop,
+      })],
     ];
   })(),
   ['WellbeingView', WellbeingView, (e) => ({ bienestar: e.bienestar, onAdd: noop, onDelete: noop, onAddReflexion: noop, onCompletarSesion: noop, accent })],

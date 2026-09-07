@@ -187,6 +187,14 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
        excluye a mano, igual que el de Horario Top, en vez de estrechar la
        expresión hasta que se le escape algo de verdad. */
     && f !== 'sonidoProduccion'
+    /* ⚠️ Y `rutinas` es **la mini-app de Productividad** (E3 F28), no una
+       librería de Estilo de hombre: la caza la palabra `rutinas` que esta
+       expresión busca por `rutinasPiel`, `rutinasCuerpo`, `rutinasManosPies` y
+       `motorRutinas`. Es la **tercera** exclusión a mano, tras la de Horario Top
+       y la de Sonido, y se hace igual: una regla que identifica un módulo por su
+       NOMBRE acaba señalando algo que está bien, y estrechar la expresión hasta
+       que calle sería peor — se le escaparía una de verdad. */
+    && f !== 'rutinas'
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],

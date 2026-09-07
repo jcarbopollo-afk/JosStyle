@@ -57,6 +57,26 @@ import {
   FILTROS_META, filtrarMetas, VACIO_METAS, metasDeObjetivo,
   tareasDeMeta, PESOS_DE_META,
 } from '../lib/metasObjetivos';
+/* E3 F28 (PR F6) — Rutinas. 🚨 La plantilla y la ejecución son DOS listas: la
+   Fase 6 guardaba `hecho` dentro del paso, así que hacer la rutina el martes
+   borraba lo del lunes y no quedaba historial de nada. */
+import {
+  CABECERA_RUTINAS, VACIO_RUTINAS, ICONOS_RUTINA, ICONO_RUTINA_POR_DEFECTO,
+  CATEGORIAS_RUTINA, categoriaRutina, TIPOS_PASO, TIPO_PASO_POR_DEFECTO, tipoPaso,
+  PROGRAMACIONES, PROGRAMACION_POR_DEFECTO, programacion, reglaDeRutina,
+  crearRutina, editarRutina, archivarRutina, crearPaso, anadirPaso, editarPaso,
+  quitarPaso, moverPaso, textoDuracion, proximaEjecucion, ultimaEjecucion,
+  iniciarEjecucion, pasoActual, progresoEjecucion, completarPaso, saltarPaso,
+  pasoAnterior, pasoSiguiente, pausarEjecucion, reanudarEjecucion,
+  todosLosPasosHechos, finalizarEjecucion, abandonarEjecucion, SALIDAS_EJECUCION,
+  /* 🐛 `estaPausada` YA ES DE `pomodoro.js`: una sesión pausada y una ejecución
+     pausada son dos cosas distintas con el mismo nombre, y el build lo cazó. */
+  estaPausada as ejecucionPausada,
+  textoDuracionEjecucion, historialDeRutina, estadisticasRutinas, rachaDeRutina,
+  /* ⚠️ `NOMBRES_DIA` no se importa aquí: ya llega por `habitos.js`, y las dos
+     salen de `rachas.js`. Dos importaciones del mismo nombre no compilan. */
+  FILTROS_RUTINA, filtrarRutinas, fechaDeEjecucion,
+} from '../lib/rutinas';
 import ObjectivesView from './ObjectivesView';
 
 /* ---------- Hábitos ---------- */
@@ -616,87 +636,523 @@ function HabitosTab({ habitos, onAdd, onUpdate, onDelete, accent }) {
   );
 }
 
-/* ---------- Rutinas / checklists ---------- */
-function RutinaCard({ rutina, onUpdate, onDelete, accent }) {
-  const [expanded, setExpanded] = useState(false);
-  const [pasoTexto, setPasoTexto] = useState('');
-  const hechos = rutina.pasos.filter((p) => p.hecho).length;
+/* ---------- Rutinas (E3 F28 · PR F6) ---------- */
+/* *"Convierte tus acciones en rutina."* La idea visual es **flujo / secuencia /
+   ejecución**, no una lista: por eso la tarjeta lleva ▶ y el modo de ejecución
+   es una pantalla distinta de la de edición. */
 
-  const addPaso = () => {
-    if (!pasoTexto.trim()) return;
-    onUpdate({ ...rutina, pasos: [...rutina.pasos, { id: uid(), texto: pasoTexto.trim(), hecho: false }] });
-    setPasoTexto('');
-  };
-  const togglePaso = (id) =>
-    onUpdate({ ...rutina, pasos: rutina.pasos.map((p) => (p.id === id ? { ...p, hecho: !p.hecho } : p)) });
-  const eliminarPaso = (id) => onUpdate({ ...rutina, pasos: rutina.pasos.filter((p) => p.id !== id) });
-  const reiniciar = () => onUpdate({ ...rutina, pasos: rutina.pasos.map((p) => ({ ...p, hecho: false })) });
-
+function BarraFlujo({ porcentaje, accent }) {
   return (
-    <Card>
-      <button className="w-full flex items-center justify-between" onClick={() => setExpanded((s) => !s)}>
-        <div className="flex items-center gap-2">
-          <ListChecks size={16} style={{ color: accent }} />
-          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{rutina.nombre}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs" style={{ color: COLORS.textMuted }}>{hechos}/{rutina.pasos.length}</span>
-          {expanded ? <ChevronUp size={16} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={16} style={{ color: COLORS.textMuted }} />}
+    <div className="h-2 rounded-full overflow-hidden" style={{ background: COLORS.border }}>
+      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: 'width 0.4s ease' }} />
+    </div>
+  );
+}
+
+function TarjetaRutina({ rutina, ejecuciones, hoy, accent, onAbrir, onIniciar }) {
+  const prox = proximaEjecucion(rutina, hoy);
+  const ult = ultimaEjecucion(rutina.id, ejecuciones, hoy);
+  const cat = categoriaRutina(rutina.categoria);
+  return (
+    <Card className="flex items-start gap-3" style={{ opacity: rutina.archivada ? 0.6 : 1 }}>
+      <button onClick={() => onAbrir(rutina)} className="flex-1 text-left min-w-0">
+        <p className="text-base font-bold truncate" style={{ color: COLORS.text }}>
+          <span aria-hidden="true">{rutina.icono}</span> {rutina.nombre}
+        </p>
+        <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{textoDuracion(rutina)}</p>
+        <div className="flex items-center gap-3 mt-1 flex-wrap">
+          <span className="text-xs" style={{ color: COLORS.textMuted }}>
+            {prox.programada ? `Próxima: ${prox.texto}` : prox.texto}
+          </span>
+          {ult && <span className="text-xs" style={{ color: COLORS.textMuted }}>Última vez: {ult.texto}</span>}
+          {cat && <span className="text-xs" style={{ color: COLORS.textMuted }}>{cat.icono} {cat.nombre}</span>}
         </div>
       </button>
-
-      {expanded && (
-        <div className="mt-3 pt-3 space-y-2" style={{ borderTop: `1px solid ${COLORS.border}` }}>
-          {rutina.pasos.map((p) => (
-            <div key={p.id} className="flex items-center justify-between">
-              <button onClick={() => togglePaso(p.id)} className="flex items-center gap-2 flex-1 text-left">
-                {p.hecho ? <CheckCircle2 size={16} style={{ color: accent }} /> : <Circle size={16} style={{ color: COLORS.textMuted }} />}
-                <span className="text-sm" style={{ color: p.hecho ? COLORS.textMuted : COLORS.text, textDecoration: p.hecho ? 'line-through' : 'none' }}>
-                  {p.texto}
-                </span>
-              </button>
-              <button onClick={() => eliminarPaso(p.id)} aria-label="Eliminar paso">
-                <Trash2 size={13} style={{ color: COLORS.textMuted }} />
-              </button>
-            </div>
-          ))}
-          <div className="flex items-center gap-2 pt-1">
-            <TextInput value={pasoTexto} onChange={(e) => setPasoTexto(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addPaso()} placeholder="Nuevo paso…" />
-            <div style={{ width: 70, flexShrink: 0 }}>
-              <PrimaryButton accent={accent} onClick={addPaso}>+</PrimaryButton>
-            </div>
-          </div>
-          <div className="flex items-center justify-between pt-1">
-            <button onClick={reiniciar} className="text-xs font-semibold flex items-center gap-1" style={{ color: COLORS.textMuted }}>
-              <RotateCcw size={12} /> Reiniciar para hoy
-            </button>
-            <button onClick={() => onDelete(rutina.id)} className="text-xs font-semibold" style={{ color: COLORS.negative }}>
-              Eliminar rutina
-            </button>
-          </div>
-        </div>
+      {/* ⚠️ Una rutina sin pasos no ofrece ▶: arrancar un flujo vacío dejaría una
+          pantalla de ejecución sin nada que hacer (regla 8). */}
+      {!rutina.archivada && rutina.pasos.length > 0 && (
+        <button
+          onClick={() => onIniciar(rutina)}
+          aria-label={`Iniciar ${rutina.nombre}`}
+          className="toque-44 p-1.5 -m-1.5 shrink-0 rounded-full"
+          style={{ background: accent, color: COLORS.textOnAccent, padding: 10 }}
+        >
+          <Play size={16} />
+        </button>
       )}
     </Card>
   );
 }
 
-function RutinasTab({ rutinas, onAdd, onUpdate, onDelete, accent }) {
-  const [nombre, setNombre] = useState('');
+export function FormularioRutina({ rutina = null, accent, onGuardar, onCancelar }) {
+  const [form, setForm] = useState({
+    nombre: rutina?.nombre || '',
+    descripcion: rutina?.descripcion || '',
+    icono: rutina?.icono || ICONO_RUTINA_POR_DEFECTO,
+    categoria: rutina?.categoria || '',
+  });
+  const valido = !!form.nombre.trim();
+  const guardar = () => {
+    if (!valido) return;
+    const campos = { nombre: form.nombre, descripcion: form.descripcion, icono: form.icono, categoria: form.categoria || null };
+    onGuardar(rutina ? editarRutina(rutina, campos) : crearRutina(campos));
+  };
+  return (
+    <Card>
+      <Field label="Nombre">
+        <TextInput
+          aria-label="Nombre de la rutina" value={form.nombre}
+          onChange={(ev) => setForm({ ...form, nombre: ev.target.value })}
+          placeholder="Ej. rutina de mañana"
+        />
+      </Field>
+      <Field label="Descripción (opcional)">
+        <TextInput
+          aria-label="Descripción de la rutina" value={form.descripcion}
+          onChange={(ev) => setForm({ ...form, descripcion: ev.target.value })}
+        />
+      </Field>
+      <Field label="Icono">
+        <div className="flex gap-2 flex-wrap">
+          {ICONOS_RUTINA.map((ic) => (
+            <button
+              key={ic} onClick={() => setForm({ ...form, icono: ic })}
+              aria-label={`Icono ${ic}`} aria-pressed={form.icono === ic}
+              className="rounded-xl toque-44"
+              style={{
+                background: form.icono === ic ? accent : COLORS.card,
+                border: `1px solid ${COLORS.border}`, padding: '8px 10px', fontSize: 18,
+              }}
+            >
+              <span aria-hidden="true">{ic}</span>
+            </button>
+          ))}
+        </div>
+      </Field>
+      <Field label="Categoría (opcional)">
+        <Select value={form.categoria} onChange={(ev) => setForm({ ...form, categoria: ev.target.value })} aria-label="Categoría de la rutina">
+          <option value="">Sin categoría</option>
+          {CATEGORIAS_RUTINA.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+        </Select>
+      </Field>
+      <div className="flex gap-2 mt-3">
+        <PrimaryButton accent={accent} icon={rutina ? Pencil : Plus} onClick={guardar} disabled={!valido}>
+          {rutina ? 'Guardar cambios' : 'Crear rutina'}
+        </PrimaryButton>
+        <GhostBtn onClick={onCancelar}>Cancelar</GhostBtn>
+      </div>
+    </Card>
+  );
+}
+
+function EditorPasos({ rutina, accent, onGuardar }) {
+  const [texto, setTexto] = useState('');
+  const [minutos, setMinutos] = useState('');
+  const [tipo, setTipo] = useState(TIPO_PASO_POR_DEFECTO);
+
+  const anadir = () => {
+    const paso = crearPaso({ texto, minutos: minutos || null, tipo });
+    if (!paso) return;
+    onGuardar(anadirPaso(rutina, paso));
+    setTexto(''); setMinutos(''); setTipo(TIPO_PASO_POR_DEFECTO);
+  };
+
+  return (
+    <Card>
+      <SectionTitle>Pasos</SectionTitle>
+      {rutina.pasos.length === 0 && (
+        <p className="text-xs mb-2" style={{ color: COLORS.textMuted }}>
+          Todavía no tiene pasos. El orden es lo que convierte una lista en un flujo.
+        </p>
+      )}
+      {rutina.pasos.map((p, i) => {
+        const t = tipoPaso(p.tipo);
+        return (
+          <div key={p.id} className="flex items-center gap-2 py-1.5">
+            <span className="text-xs w-5 shrink-0" style={{ color: COLORS.textMuted }}>{i + 1}.</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm truncate" style={{ color: COLORS.text }}>
+                <span aria-hidden="true">{t.icono}</span> {p.texto}
+              </p>
+              {p.minutos && <p className="text-xs" style={{ color: COLORS.textMuted }}>{p.minutos} min</p>}
+            </div>
+            {/* ⚠️ Flechas, no arrastre: funcionan con el lector de pantalla, y el
+                arrastre sería un segundo mecanismo para lo mismo (EH F50). */}
+            <button
+              onClick={() => { const r = moverPaso(rutina, p.id, 'arriba'); if (r) onGuardar(r); }}
+              aria-label={`Subir el paso ${p.texto}`} disabled={i === 0}
+              className="toque-44 p-1.5 -m-1.5" style={{ opacity: i === 0 ? 0.3 : 1 }}
+            >
+              <ChevronUp size={16} style={{ color: COLORS.textMuted }} />
+            </button>
+            <button
+              onClick={() => { const r = moverPaso(rutina, p.id, 'abajo'); if (r) onGuardar(r); }}
+              aria-label={`Bajar el paso ${p.texto}`} disabled={i === rutina.pasos.length - 1}
+              className="toque-44 p-1.5 -m-1.5" style={{ opacity: i === rutina.pasos.length - 1 ? 0.3 : 1 }}
+            >
+              <ChevronDown size={16} style={{ color: COLORS.textMuted }} />
+            </button>
+            <button
+              onClick={() => onGuardar(quitarPaso(rutina, p.id))}
+              aria-label={`Eliminar el paso ${p.texto}`} className="toque-44 p-1.5 -m-1.5"
+            >
+              <Trash2 size={15} style={{ color: COLORS.textMuted }} />
+            </button>
+          </div>
+        );
+      })}
+
+      <div className="mt-3 space-y-2">
+        <TextInput
+          aria-label="Nombre del paso" value={texto}
+          onChange={(ev) => setTexto(ev.target.value)} placeholder="Ej. beber agua"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <Select value={tipo} onChange={(ev) => setTipo(ev.target.value)} aria-label="Tipo de paso">
+            {TIPOS_PASO.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+          </Select>
+          <TextInput
+            type="number" min="1" aria-label="Minutos del paso" value={minutos}
+            onChange={(ev) => setMinutos(ev.target.value)} placeholder="min (opcional)"
+          />
+        </div>
+        <PrimaryButton accent={accent} icon={Plus} onClick={anadir} disabled={!texto.trim()}>Añadir paso</PrimaryButton>
+      </div>
+    </Card>
+  );
+}
+
+function EditorProgramacion({ rutina, accent, onGuardar }) {
+  const prog = rutina.programacion;
+  const p = programacion(prog.tipo);
+  const alternarDia = (d) => {
+    const dias = prog.dias.includes(d) ? prog.dias.filter((x) => x !== d) : [...prog.dias, d];
+    onGuardar(editarRutina(rutina, { programacion: { ...prog, dias } }));
+  };
+  return (
+    <Card>
+      <SectionTitle>Programación</SectionTitle>
+      <Select
+        value={prog.tipo} aria-label="Programación de la rutina"
+        onChange={(ev) => onGuardar(editarRutina(rutina, { programacion: { ...prog, tipo: ev.target.value } }))}
+      >
+        {PROGRAMACIONES.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
+      </Select>
+      <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{p.explica}</p>
+      {p.pideDias && (
+        <div className="flex gap-1 mt-2 flex-wrap">
+          {NOMBRES_DIA.map((n, d) => (
+            <button
+              key={n} onClick={() => alternarDia(d)}
+              aria-label={n} aria-pressed={prog.dias.includes(d)}
+              className="rounded-xl text-xs font-semibold toque-44"
+              style={{
+                background: prog.dias.includes(d) ? accent : COLORS.card,
+                color: prog.dias.includes(d) ? COLORS.textOnAccent : COLORS.text,
+                border: `1px solid ${COLORS.border}`, padding: '8px 10px',
+              }}
+            >
+              {n.slice(0, 1)}
+            </button>
+          ))}
+        </div>
+      )}
+      {p.clase && (
+        <Field label="Hora (opcional)">
+          <TextInput
+            type="time" aria-label="Hora de la rutina" value={prog.hora}
+            onChange={(ev) => onGuardar(editarRutina(rutina, { programacion: { ...prog, hora: ev.target.value } }))}
+          />
+        </Field>
+      )}
+      {/* Regla 8: se guarda la programación, y se dice que todavía no avisa. */}
+      <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
+        Se guarda cuándo toca. Los avisos llegarán cuando estén los de Productividad.
+      </p>
+    </Card>
+  );
+}
+
+function DetalleRutina({ rutina, ejecuciones, hoy, accent, onGuardar, onDelete, onIniciar, onCerrar }) {
+  const [editando, setEditando] = useState(false);
+  const historial = historialDeRutina(rutina.id, ejecuciones);
+  const stats = estadisticasRutinas(ejecuciones, { rutinaId: rutina.id });
+  const racha = rachaDeRutina(rutina, ejecuciones, hoy);
+
+  if (editando) {
+    return (
+      <FormularioRutina
+        rutina={rutina} accent={accent}
+        onGuardar={(r) => { if (r) onGuardar(r); setEditando(false); }}
+        onCancelar={() => setEditando(false)}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <button onClick={onCerrar} className="flex items-center gap-1 text-xs toque-44" style={{ color: COLORS.textMuted }}>
+        <ArrowLeft size={14} /> Volver a las rutinas
+      </button>
+
+      <Card>
+        <p className="text-lg font-bold" style={{ color: COLORS.text }}>
+          <span aria-hidden="true">{rutina.icono}</span> {rutina.nombre}
+        </p>
+        {rutina.descripcion && <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>{rutina.descripcion}</p>}
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{textoDuracion(rutina)}</p>
+        {rutina.pasos.length > 0 && !rutina.archivada && (
+          <div className="mt-3">
+            <PrimaryButton accent={accent} icon={Play} onClick={() => onIniciar(rutina)}>Iniciar</PrimaryButton>
+          </div>
+        )}
+      </Card>
+
+      <EditorPasos rutina={rutina} accent={accent} onGuardar={onGuardar} />
+      <EditorProgramacion rutina={rutina} accent={accent} onGuardar={onGuardar} />
+
+      <Card>
+        <SectionTitle>Cómo va</SectionTitle>
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>Completadas · {stats.completadas}</p>
+        <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>Tiempo total · {stats.tiempoTotal}</p>
+        {/* ⚠️ Sin ni una ejecución no hay cumplimiento: un 0 % diría que lo hace
+            mal cuando lo que pasa es que aún no la ha ejecutado. */}
+        {stats.cumplimiento !== null && (
+          <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>Cumplimiento · {stats.cumplimiento} %</p>
+        )}
+        {/* ⚠️ Y sin programación no hay racha: no se penaliza lo que no se
+            comprometió a hacer. */}
+        {racha && <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>Racha · {racha.actual} días</p>}
+        {!racha && (
+          <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
+            Sin programación no hay racha: la inicias cuando quieres.
+          </p>
+        )}
+      </Card>
+
+      <Card>
+        <SectionTitle>Historial</SectionTitle>
+        {historial.length === 0 && (
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>Todavía no la has hecho ninguna vez.</p>
+        )}
+        {historial.slice(0, 10).map((e) => {
+          const pr = progresoEjecucion(e);
+          const f = fechaDeEjecucion(e);
+          return (
+            <p key={e.id} className="text-xs py-1" style={{ color: COLORS.textMuted }}>
+              {f === hoy ? 'Hoy' : f.split('-').reverse().slice(0, 2).join('/')} ·{' '}
+              {e.estado === 'completada' ? '✓' : '·'} {pr.hechos}/{pr.total} pasos · {textoDuracionEjecucion(e)}
+              {e.estado === 'abandonada' ? ' · abandonada' : ''}
+            </p>
+          );
+        })}
+      </Card>
+
+      <Card>
+        <div className="flex gap-2 flex-wrap">
+          <GhostBtn icon={Pencil} onClick={() => setEditando(true)}>Editar</GhostBtn>
+          <GhostBtn icon={Archive} onClick={() => onGuardar(archivarRutina(rutina))}>
+            {rutina.archivada ? 'Desarchivar' : 'Archivar'}
+          </GhostBtn>
+        </div>
+        <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
+          Archivar la saca de las activas. El historial se queda entero.
+        </p>
+      </Card>
+
+      <Card>
+        <button
+          onClick={() => { onDelete(rutina.id); onCerrar(); }}
+          aria-label={`Eliminar la rutina ${rutina.nombre}`}
+          className="flex items-center gap-2 text-xs font-semibold toque-44"
+          style={{ color: COLORS.danger }}
+        >
+          <Trash2 size={15} /> Eliminar rutina
+        </button>
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+          Puedes recuperarla desde Eliminados recientemente.
+        </p>
+      </Card>
+    </div>
+  );
+}
+
+export function ModoEjecucion({ ejecucion, accent, onCambiar, onTerminar, onSalir }) {
+  const [preguntandoSalida, setPreguntandoSalida] = useState(false);
+  /* 🚨 Un latido que SOLO redibuja. El tiempo sale de restar instantes, así que
+     si el móvil congela la pestaña el reloj se pone al día solo (E3 F25). */
+  const [, latir] = useState(0);
+  const corriendo = !ejecucionPausada(ejecucion) && ejecucion.estado === 'en_curso';
+  useEffect(() => {
+    if (!corriendo) return undefined;
+    const id = setInterval(() => latir((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [corriendo]);
+
+  const paso = pasoActual(ejecucion);
+  const pr = progresoEjecucion(ejecucion);
+  const acabada = todosLosPasosHechos(ejecucion);
+  const t = tipoPaso(paso.tipo);
+
+  if (acabada) {
+    return (
+      <div className="space-y-3">
+        <Card className="text-center rutina-fin">
+          <p className="text-lg font-bold" style={{ color: COLORS.text }}>Rutina completada ✓</p>
+          <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>{textoDuracionEjecucion(ejecucion)}</p>
+          <p className="text-sm" style={{ color: COLORS.textMuted }}>{pr.hechos} / {pr.total} pasos</p>
+          {pr.saltados > 0 && (
+            <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{pr.saltados} saltados</p>
+          )}
+        </Card>
+        <PrimaryButton accent={accent} onClick={onTerminar}>Volver a Rutinas</PrimaryButton>
+      </div>
+    );
+  }
+
+  if (preguntandoSalida) {
+    return (
+      <Card>
+        <SectionTitle>¿Salir de la rutina?</SectionTitle>
+        {SALIDAS_EJECUCION.map((op) => (
+          <div key={op.id} className="py-1.5">
+            <GhostBtn onClick={() => {
+              setPreguntandoSalida(false);
+              if (op.id === 'guardar') onSalir('guardar');
+              if (op.id === 'salir') onSalir('salir');
+            }}
+            >
+              {op.nombre}
+            </GhostBtn>
+            <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{op.explica}</p>
+          </div>
+        ))}
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <Card>
-        <div className="flex items-center gap-2">
-          <TextInput value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej. rutina de la mañana" />
-          <div style={{ width: 84, flexShrink: 0 }}>
-            <PrimaryButton accent={accent} icon={Plus} onClick={() => { if (!nombre.trim()) return; onAdd({ id: uid(), nombre: nombre.trim(), pasos: [] }); setNombre(''); }}>
-              Añadir
-            </PrimaryButton>
-          </div>
-        </div>
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>
+          <span aria-hidden="true">{ejecucion.icono}</span> {ejecucion.nombre}
+        </p>
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>Paso {pr.texto}</p>
+        <div className="mt-2"><BarraFlujo porcentaje={pr.porcentaje} accent={accent} /></div>
+        <p className="text-2xl font-bold mt-3" style={{ color: COLORS.text }}>
+          <span aria-hidden="true">{t.icono}</span> {paso.texto}
+        </p>
+        {paso.minutos && <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>{paso.minutos} min</p>}
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+          Llevas {textoDuracionEjecucion(ejecucion)} · quedan {pr.total - pr.hechos - pr.saltados} pasos
+        </p>
+        {/* ⚠️ Un paso de Pomodoro NO trae un temporizador: dice dónde está el que
+            ya existe. Aquí no se abre solo, porque salir de la rutina a mitad la
+            dejaría en curso sin que él lo haya pedido. */}
+        {paso.tipo === 'pomodoro' && (
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+            Este paso se cronometra en Pomodoro, la mini-app de al lado.
+          </p>
+        )}
       </Card>
-      {rutinas.length === 0 && <EmptyHint text="Crea una rutina y añádele pasos (ej. 'estirar', 'hacer la cama')." />}
-      {rutinas.map((r) => (
-        <RutinaCard key={r.id} rutina={r} onUpdate={(next) => onUpdate(next)} onDelete={onDelete} accent={accent} />
+
+      <PrimaryButton accent={accent} icon={CheckCircle2} onClick={() => onCambiar(completarPaso(ejecucion))}>
+        Completar
+      </PrimaryButton>
+
+      <div className="flex gap-2 flex-wrap">
+        <GhostBtn icon={ArrowLeft} onClick={() => { const e = pasoAnterior(ejecucion); if (e) onCambiar(e); }}>Anterior</GhostBtn>
+        <GhostBtn onClick={() => { const e = pasoSiguiente(ejecucion); if (e) onCambiar(e); }}>Siguiente</GhostBtn>
+        <GhostBtn onClick={() => onCambiar(saltarPaso(ejecucion))}>Saltar</GhostBtn>
+        {ejecucionPausada(ejecucion)
+          ? <GhostBtn icon={Play} onClick={() => onCambiar(reanudarEjecucion(ejecucion))}>Continuar</GhostBtn>
+          : <GhostBtn icon={Pause} onClick={() => onCambiar(pausarEjecucion(ejecucion))}>Pausar</GhostBtn>}
+        <GhostBtn onClick={() => setPreguntandoSalida(true)}>Salir</GhostBtn>
+      </div>
+    </div>
+  );
+}
+
+function RutinasTab({ rutinas, ejecuciones, enCurso, accent, onAdd, onUpdate, onDelete, onCambiarEjecucion, onRegistrarEjecucion }) {
+  const hoy = todayISO();
+  const [crear, setCrear] = useState(false);
+  const [abierta, setAbierta] = useState(null);
+  const [filtro, setFiltro] = useState('activas');
+
+  // 🚨 La ejecución en curso manda sobre todo: se recupera al volver, porque
+  // está guardada (criterio 12 y 22).
+  if (enCurso) {
+    return (
+      <ModoEjecucion
+        ejecucion={enCurso} accent={accent}
+        onCambiar={(e) => { if (e) onCambiarEjecucion(e); }}
+        onTerminar={() => onRegistrarEjecucion(finalizarEjecucion(enCurso))}
+        onSalir={(que) => {
+          if (que === 'guardar') onCambiarEjecucion(enCurso, { salir: true });
+          if (que === 'salir') onRegistrarEjecucion(abandonarEjecucion(enCurso));
+        }}
+      />
+    );
+  }
+
+  const detalle = abierta ? rutinas.find((r) => r.id === abierta) : null;
+  const visibles = filtrarRutinas(rutinas, filtro);
+
+  if (detalle) {
+    return (
+      <DetalleRutina
+        rutina={detalle} ejecuciones={ejecuciones} hoy={hoy} accent={accent}
+        onGuardar={onUpdate} onDelete={onDelete}
+        onIniciar={(r) => onCambiarEjecucion(iniciarEjecucion(r))}
+        onCerrar={() => setAbierta(null)}
+      />
+    );
+  }
+
+  if (crear) {
+    return (
+      <FormularioRutina
+        accent={accent}
+        onGuardar={(r) => { if (r) { onAdd(r); setAbierta(r.id); } setCrear(false); }}
+        onCancelar={() => setCrear(false)}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <p className="text-sm" style={{ color: COLORS.textMuted }}>{CABECERA_RUTINAS.frase}</p>
+      </Card>
+
+      <PrimaryButton accent={accent} icon={Plus} onClick={() => setCrear(true)}>Nueva rutina</PrimaryButton>
+
+      {rutinas.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {FILTROS_RUTINA.map((f) => (
+            <ToggleTab key={f.id} active={filtro === f.id} accent={accent} onClick={() => setFiltro(f.id)}>
+              {f.nombre}
+            </ToggleTab>
+          ))}
+        </div>
+      )}
+
+      {rutinas.length === 0 && (
+        <Card className="text-center">
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{VACIO_RUTINAS.titulo}</p>
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{VACIO_RUTINAS.texto}</p>
+        </Card>
+      )}
+      {rutinas.length > 0 && visibles.length === 0 && (
+        <EmptyHint text="Ninguna encaja con este filtro. Prueba con “Todas”." />
+      )}
+
+      {visibles.map((r) => (
+        <TarjetaRutina
+          key={r.id} rutina={r} ejecuciones={ejecuciones} hoy={hoy} accent={accent}
+          onAbrir={(x) => setAbierta(x.id)}
+          onIniciar={(x) => onCambiarEjecucion(iniciarEjecucion(x))}
+        />
       ))}
     </div>
   );
@@ -1882,6 +2338,7 @@ export function CabeceraMiniAppPR({ app, accent, onVolver }) {
 export default function ProductivityView({
   productividad, onAddHabito, onUpdateHabito, onDeleteHabito,
   onAddRutina, onUpdateRutina, onDeleteRutina,
+  onCambiarEjecucionRutina, onRegistrarEjecucionRutina,
   onAddTarea, onUpdateTarea, onToggleTarea, onDeleteTarea,
   onAddMeta, onUpdateMeta, onDeleteMeta,
   onCompletarPomodoro,
@@ -1958,7 +2415,15 @@ export default function ProductivityView({
         <HabitosTab habitos={productividad.habitos} onAdd={onAddHabito} onUpdate={onUpdateHabito} onDelete={onDeleteHabito} accent={accent} />
       )}
       {abierta === 'rutinas' && (
-        <RutinasTab rutinas={productividad.rutinas} onAdd={onAddRutina} onUpdate={onUpdateRutina} onDelete={onDeleteRutina} accent={accent} />
+        <RutinasTab
+          rutinas={productividad.rutinas}
+          ejecuciones={productividad.rutinaEjecuciones || []}
+          enCurso={productividad.rutinaEnCurso || null}
+          onAdd={onAddRutina} onUpdate={onUpdateRutina} onDelete={onDeleteRutina}
+          onCambiarEjecucion={onCambiarEjecucionRutina}
+          onRegistrarEjecucion={onRegistrarEjecucionRutina}
+          accent={accent}
+        />
       )}
       {abierta === 'pomodoro' && (
         <PomodoroTab

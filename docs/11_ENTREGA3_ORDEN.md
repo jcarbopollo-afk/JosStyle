@@ -48,7 +48,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 25 ✅ | PR | F3 — Pomodoro — **hecha (v3.46.0)** | 12453 |
 | 26 ✅ | PR | F4 — Tareas — **hecha (v3.47.0)** 🚨 arregla la fecha de las tareas | 12798 |
 | 27 ✅ | PR | F5 — Metas y objetivos — **hecha (v3.48.0)** 🚨 amplía las dos listas de siempre | 13248 |
-| 28 | PR | F6 — Rutinas | 13738 |
+| 28 ✅ | PR | F6 — Rutinas — **hecha (v3.49.0)** 🚨 separa plantilla y ejecución | 13738 |
 | 29 | PR | F7 — Integración global y sistema inteligente | 14284 |
 | 30 | **BN** Bienestar | Rediseño y reorganización del apartado | 15109 |
 | 31 | **NU** Nutrición | F1 — Rediseño premium | 15931 |
@@ -66,7 +66,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 43 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 44 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 27 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0, **BL F1** v3.37.0, **BL F2** v3.38.0, **BL F4** v3.39.0, **BL F5** v3.40.0, **BL F6** v3.41.0, **BL F7** v3.42.0, **BL F8** v3.43.0, **PR F1** v3.44.0, **PR F2** v3.45.0, **PR F3** v3.46.0, **PR F4** v3.47.0, **PR F5** v3.48.0). 🏁 **DOS BLOQUES CERRADOS: Hoy y Calendario (10/10) y Biblioteca (8/8)** — *"BIBLIOTECA QUEDA CERRADA AL FINAL DE ESTA FASE"*. El bloque de **Productividad** va por **5 de 7**. La siguiente es la **28 — PR F6: Rutinas**, línea 13738.
+**Por dónde va:** 28 de 44 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0, **BL F1** v3.37.0, **BL F2** v3.38.0, **BL F4** v3.39.0, **BL F5** v3.40.0, **BL F6** v3.41.0, **BL F7** v3.42.0, **BL F8** v3.43.0, **PR F1** v3.44.0, **PR F2** v3.45.0, **PR F3** v3.46.0, **PR F4** v3.47.0, **PR F5** v3.48.0, **PR F6** v3.49.0). 🏁 **DOS BLOQUES CERRADOS: Hoy y Calendario (10/10) y Biblioteca (8/8)** — *"BIBLIOTECA QUEDA CERRADA AL FINAL DE ESTA FASE"*. El bloque de **Productividad** va por **6 de 7**. La siguiente es la **29 — PR F7: Integración global y sistema inteligente**, línea 14284.
 
 ⏸ **Y dos cosas del documento que necesitan a Josué, anotadas al llegar aquí:**
 - **La Fase 3 de Biblioteca NO ESTÁ en el documento.** Salta de la F2 (Libros) a la F4 (Guardados), y el rótulo dice *"Biblioteca 8"*: por el orden de las mini-apps, la que falta es **Notas**. La F1 ya deja las notas funcionando —son los apuntes de la Fase 11—, así que **nada se bloquea**, pero el desarrollo completo de esa mini-app no tiene enunciado.
