@@ -54,7 +54,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 31 ✅ | **SU** Sueño | F1 — Registro simple y experiencia premium — **hecha (v3.52.0)** | 15282 |
 | 32 ✅ | SU | F2 — Gráfica de 7 días móviles — **hecha (v3.53.0)** 🏁 cierra SU | 15543 |
 | 33 ✅ | **NU** Nutrición | F1 — Rediseño premium — **hecha (v3.54.0)** | 15931 |
-| 34 | NU | F2 — Sistema de días e historial | 16289 |
+| 34 ✅ | NU | F2 — Sistema de días e historial — **hecha (v3.55.0)** | 16289 |
 | 35 | NU | F3 — Configuración y objetivos nutricionales | 16496 |
 | 36 | NU | F4 — Registro de comidas y consumo diario | 16835 |
 | 37 | NU | F5 — Base de alimentos, personalizados y favoritos | 17190 |
@@ -68,7 +68,7 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 45 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 46 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 33 de 46 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0, **BL F1** v3.37.0, **BL F2** v3.38.0, **BL F4** v3.39.0, **BL F5** v3.40.0, **BL F6** v3.41.0, **BL F7** v3.42.0, **BL F8** v3.43.0, **PR F1** v3.44.0, **PR F2** v3.45.0, **PR F3** v3.46.0, **PR F4** v3.47.0, **PR F5** v3.48.0, **PR F6** v3.49.0, **PR F7** v3.50.0, **BN** v3.51.0, **SU F1** v3.52.0, **SU F2** v3.53.0, **NU F1** v3.54.0). 🏁 **CINCO BLOQUES CERRADOS: Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1) y Sueño (2/2)**; **Nutrición va por 1 de 8**. La siguiente es la **34 — NU F2: sistema de días e historial**, línea 16289.
+**Por dónde va:** 34 de 46 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0, **BL F1** v3.37.0, **BL F2** v3.38.0, **BL F4** v3.39.0, **BL F5** v3.40.0, **BL F6** v3.41.0, **BL F7** v3.42.0, **BL F8** v3.43.0, **PR F1** v3.44.0, **PR F2** v3.45.0, **PR F3** v3.46.0, **PR F4** v3.47.0, **PR F5** v3.48.0, **PR F6** v3.49.0, **PR F7** v3.50.0, **BN** v3.51.0, **SU F1** v3.52.0, **SU F2** v3.53.0, **NU F1** v3.54.0, **NU F2** v3.55.0). 🏁 **CINCO BLOQUES CERRADOS: Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1) y Sueño (2/2)**; **Nutrición va por 2 de 8**. La siguiente es la **35 — NU F3: configuración y objetivos nutricionales**, línea 16496.
 
 🔢 **Y el índice decía 44 cuando son 46** (corregido el 2026-09-07, al cerrar la fase 29). Entre
 **BN — Bienestar** (línea 15109) y **NU F1 — Nutrición** (15931) el documento trae **dos fases de

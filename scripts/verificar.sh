@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F34 — Nutrición: el sistema de días e historial.
+if node --import ./scripts/resolver-vite.mjs scripts/test-nutricion-dias.mjs >/tmp/jc_nudias.log 2>&1; then
+  ok "Nutrición: el sistema de días (E3 F34) — $(grep -c '✓' /tmp/jc_nudias.log) comprobaciones"
+else
+  fallo "Falla el sistema de días de Nutrición (E3 F34)"; grep '✗' /tmp/jc_nudias.log
+fi
+
 # Entrega 3 · F33 — Nutrición: el rediseño del apartado.
 if node --import ./scripts/resolver-vite.mjs scripts/test-nutricion.mjs >/tmp/jc_nutricion.log 2>&1; then
   ok "Nutrición: rediseño del apartado (E3 F33) — $(grep -c '✓' /tmp/jc_nutricion.log) comprobaciones"

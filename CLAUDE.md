@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.54.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.55.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (46 fases — **33 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (46 fases — **34 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -138,9 +138,9 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **15 574 pruebas unitarias** con Node repartidas en **136 suites** (5 de ellas de auditoría),
-**2012 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **972
-comprobaciones sobre la aplicación de verdad en Chromium** — **18 569 comprobaciones**.
+Vite, **15 664 pruebas unitarias** con Node repartidas en **137 suites** (5 de ellas de auditoría),
+**2016 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **993
+comprobaciones sobre la aplicación de verdad en Chromium** — **18 684 comprobaciones**.
 
 Eso ya ha encontrado **noventa y dos bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -168,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 33 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 34 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -191,9 +191,10 @@ v3.46.0)**, la **F26 (Tareas, v3.47.0)**, la **F27 (Metas y Objetivos, v3.48.0)*
 PRODUCTIVIDAD** —las siete fases PR—, y la **F30 (el apartado Bienestar, v3.51.0)**, que 🏁
 **CERRÓ EL BLOQUE BN**, la **F31 (Sueño, el registro simple, v3.52.0)** y la **F32 (la gráfica de
 7 días móviles, v3.53.0)**, que 🏁 **CERRÓ SUEÑO**, y la **F33 (Nutrición, rediseño premium,
-v3.54.0)**, con la que empieza el bloque de **Nutrición**. Con eso hay **cinco bloques cerrados**
-—Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1) y Sueño (2/2)— y
-**Nutrición va por 1 de 8**. La que viene es la **34 — NU F2: sistema de días e historial**. El índice, con la
+v3.54.0)**, con la que empieza el bloque de **Nutrición**, y la **F34 (el sistema de días,
+v3.55.0)**. Con eso hay **cinco bloques cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8),
+Productividad (7/7), Bienestar (1/1) y Sueño (2/2)— y **Nutrición va por 2 de 8**. La que viene es
+la **35 — NU F3: configuración y objetivos nutricionales**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -328,6 +329,26 @@ código de agosto mientras él decía *"la web sigue igual"*.
 - 🐛 **Y una prueba busca el MECANISMO, no la palabra** (E3 F21, sexta vez): la constante que promete
   que los elementos **no** se eliminan se llama `AVISO_ELIMINAR`, y el barrido de borrados saltaba
   con la frase que hace la promesa.
+
+- 🚨 **UN ENUNCIADO PUEDE DIBUJAR UNA ARQUITECTURA Y PROHIBIRLA DOS PÁRRAFOS DESPUÉS** (E3 F34). El
+  apartado 4 de Nutrición dibuja `nutrition ├── 2026-08-28 …` y el 5 dice *"No crear una arquitectura
+  paralela innecesaria"*. Manda el 5, porque lo que pide el 4 **ya se cumplía**: cada comida lleva su
+  `fecha`, así que **un día es un filtro, no una carpeta**. Y un árbol por fecha habría roto el agua
+  y los favoritos, que no son por día.
+- 🚨 **ANTES DE DIBUJAR UN MES, MIRAR SI YA HAY UNA CUADRÍCULA** (E3 F34): `celdasMes` existe desde el
+  Calendario Universal y ya resuelve el hueco antes del día 1 y los meses de cuatro a seis filas.
+  `mesDeNutricion` se apoya en ella y solo añade lo que Nutrición necesita saber de cada celda.
+- ⚠️ **UNA TIRA DE DÍAS TERMINA EN EL SELECCIONADO, NO EN HOY** (E3 F34): así al retroceder se sigue
+  viendo dónde está. Puesto en hoy, es exactamente *"los últimos días"* que pide el apartado 9.
+- ⚠️ **UN DÍA FUTURO NO ES UN DÍA VACÍO** (E3 F34, apartados 6 y 7): no es que no registrara nada, es
+  que no ha llegado — y por eso tampoco se le ofrece añadirle una comida.
+- ⚠️ **«NO IMPLEMENTAR» NO ES «QUITAR»** (E3 F34). El apartado 14 lista el escáner de códigos entre lo
+  que no se hace en esta fase, pero **ya existía** desde la Fase 4 del proyecto: quitarlo habría roto
+  un apartado que funciona, que es justo lo que el criterio de finalización prohíbe.
+- 🐛 **Y DOS COMPROBACIONES DE LA FASE ANTERIOR QUE ÉSTA DEJÓ VIEJAS** (E3 F34, como la SU F1 → SU F2):
+  la cabecera pasó a decir «HOY · 7 SEPT» en mayúsculas —`innerText` devuelve el texto **renderizado**
+  (E3 F8)— y el día vacío hay que probarlo ahora en un día **pasado**, porque mañana tiene su propio
+  texto. **Al cerrar una fase que cambia textos, buscar las comprobaciones de la anterior.**
 
 - 🚨 **UN NÚMERO DEL ENUNCIADO PUEDE SER UNA MAQUETA, NO UN DATO** (E3 F33). El apartado 2 de
   Nutrición pide *"1.850 / 2.400 kcal"* **y en la línea siguiente prohíbe hardcodearlos**. Los

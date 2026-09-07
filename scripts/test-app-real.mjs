@@ -3487,7 +3487,10 @@ ok(!/2\.?400|1\.?850/.test(nu),
   '🚨 Y SIN NINGÚN OBJETIVO INVENTADO: los del enunciado son un ejemplo de maqueta (apartado 2 + regla 8)');
 ok(!/\/ *\d+ *kcal/.test(nu),
   '⚠️ ni un «/ X kcal»: los objetivos son la Fase 3 y todavía no existen');
-ok(/Hoy/.test(nu), '⚠️ el selector dice qué día se está mirando (apartado 5)');
+/* ⚠️ La F34 cambió esta cabecera a «HOY · 7 SEPT» —mayúsculas y con la fecha,
+   que es lo que pide su apartado 8—, así que se busca sin distinguir mayúsculas.
+   Es la lección de la E3 F8: `innerText` devuelve el texto RENDERIZADO. */
+ok(/hoy/i.test(nu), '⚠️ el selector dice qué día se está mirando (apartado 5)');
 
 /* Apartado 6: los cinco momentos, con la comida sin momento en Extras. */
 for (const m of ['Desayuno', 'Comida', 'Merienda', 'Cena', 'Extras']) {
@@ -3508,11 +3511,78 @@ ok(await pulsar('Volver a hoy'), 'y se vuelve a hoy de un toque');
 const hoy_nu = await esperarTexto(/1050/);
 ok(/1050/.test(hoy_nu), '⚠️ con los números de hoy otra vez');
 
-/* Y el estado vacío del apartado 7, en un día sin nada. */
-ok(await pulsar('Día siguiente'), 'se va a mañana');
-const manana_nu = await esperarTexto(/Todavía no has registrado ninguna comida/i);
-ok(/Todavía no has registrado ninguna comida/i.test(manana_nu),
+/* Y el estado vacío del apartado 7, en un día PASADO sin nada.
+   ⚠️ No en mañana: desde la E3 F34 un día futuro tiene su propio texto —no es
+   que no registrara nada, es que no ha llegado—, y esa sección lo comprueba. */
+ok(await pulsar('Día anterior'), 'se retrocede al día de ayer');
+await page.waitForTimeout(400);
+ok(await pulsar('Día anterior'), 'y a anteayer, que está vacío');
+const vacio_nu = await esperarTexto(/Todavía no has registrado ninguna comida/i);
+ok(/Todavía no has registrado ninguna comida/i.test(vacio_nu),
   '🚨 UN DÍA SIN COMIDAS TIENE SU ESTADO VACÍO, con su salida (apartado 7)');
-ok(!/error/i.test(manana_nu), '⚠️ y no suena a mensaje de error');
+ok(!/error/i.test(vacio_nu), '⚠️ y no suena a mensaje de error');
+
+/* ── E3 F34 (NU F2) · EL SISTEMA DE DÍAS DE NUTRICIÓN ─────────────────────
+   🚨 **Lo que ninguna prueba de Node puede ver:** que la tira de días marca los
+   que tienen comidas, que el calendario se despliega y lleva a la fecha que se
+   toca, y que un día futuro **no dice lo mismo** que uno vacío del pasado.
+
+   El escenario reutiliza el de la fase anterior (hoy y ayer con comidas) y añade
+   una de hace cinco días, para que la tira tenga tres días marcados. */
+almacen.nutricion = {
+  comidas: [
+    { id: 'nd_1', fecha: DN(5), nombre: 'De hace cinco días', calorias: 1200, proteinas: 60, carbohidratos: 120, grasas: 30, fibra: 8, momento: 'comida' },
+    { id: 'nd_2', fecha: DN(1), nombre: 'Cena de ayer', calorias: 900, proteinas: 30, carbohidratos: 90, grasas: 20, fibra: 5, momento: 'cena' },
+    { id: 'nd_3', fecha: DN(0), nombre: 'Avena de hoy', calorias: 350, proteinas: 12, carbohidratos: 55, grasas: 8, fibra: 6, momento: 'desayuno' },
+  ],
+  agua: {}, favoritos: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+ok(await pulsar('Bienestar'), 'se abre el área Bienestar');
+ok(await pulsar('Nutrición'), 'se entra en Nutrición');
+const nd = await esperarTexto(/HOY ·/);
+ok(/HOY ·/.test(nd), '🚨 E3 F34 — LA CABECERA DICE «HOY · fecha» (apartados 2 y 8)');
+ok(/350/.test(nd), '⚠️ con los números de hoy');
+
+/* Apartado 9 — la tira de días, con los que tienen datos marcados. */
+const puntosTira = await page.evaluate(() =>
+  [...document.querySelectorAll('button[aria-label^="Ir al día"]')].length);
+ok(puntosTira === 7, '🚨 LA TIRA SON SIETE DÍAS, y cada uno se puede tocar (apartado 9)');
+
+/* Apartado 10 — el calendario se despliega y lleva a la fecha que se toca. */
+ok(await pulsar('Elegir una fecha'), 'se abre el calendario');
+const cal = await esperarTexto(/El punto marca los días con comidas/i);
+ok(/El punto marca los días con comidas/i.test(cal),
+  '🚨 Y ES UN CALENDARIO MENSUAL, con los días que tienen registros marcados (apartado 10)');
+const celdasCal = await page.evaluate(() =>
+  [...document.querySelectorAll('button[aria-label^="Ir al "]')].filter((b) => !/Ir al día/.test(b.getAttribute('aria-label'))).length);
+ok(celdasCal >= 28, '⚠️ con todos los días del mes');
+ok(await pulsar('Mes anterior'), '⚠️ y se puede cambiar de mes');
+ok(await pulsar('Mes siguiente'), 'y volver');
+
+/* Apartado 8 — cambiar de día cambia TODO lo que se ve. */
+ok(await pulsar('Día anterior'), 'se retrocede un día');
+const ayer_nd = await esperarTexto(/AYER ·/);
+ok(/AYER ·/.test(ayer_nd), '⚠️ y la cabecera lo dice, con su fecha');
+ok(/900/.test(ayer_nd) && !/350/.test(ayer_nd),
+  '🚨 Y LOS NÚMEROS SON LOS DE ESE DÍA: no se reutilizan los de hoy (apartado 8)');
+ok(/Cena de ayer/i.test(ayer_nd), '⚠️ con su comida');
+
+/* Apartados 6 y 7 — un día vacío del pasado y uno futuro no dicen lo mismo. */
+ok(await pulsar('Volver a hoy'), 'se vuelve a hoy');
+await page.waitForTimeout(500);
+ok(await pulsar('Día siguiente'), 'y se va a mañana');
+const futuro_nd = await esperarTexto(/MAÑANA ·/);
+ok(/MAÑANA ·/.test(futuro_nd), '⚠️ la cabecera dice MAÑANA');
+ok(/no ha llegado/i.test(futuro_nd),
+  '🚨 Y UN DÍA FUTURO NO ES UN DÍA VACÍO: no es que no registrara nada, es que no ha llegado (apartado 7)');
+ok(!/Añade la primera/i.test(futuro_nd),
+  '⚠️ así que tampoco se le ofrece añadir una comida a un día que no existe todavía');
+
+/* 🚨 Y consultar días no escribe nada. */
+const escriturasNu = guardado.filter((g) => g && g.key === 'nutricion').length;
+ok(escriturasNu === 0, '🚨 Y NAVEGAR ENTRE DÍAS NO ESCRIBE NADA: consultar es mirar');
 
 await salir(browser);

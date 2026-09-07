@@ -1,5 +1,65 @@
 # CHANGELOG.md
 
+## v3.55.0 — Entrega 3 · Fase 34 (NU F2): sistema de días e historial de Nutrición
+
+La Fase 1 hizo la pantalla; ésta la convierte en un sistema por días.
+
+### 🚨 La arquitectura por días ya existía, y es la correcta
+
+El apartado 4 dibuja un árbol —`nutrition ├── 2026-08-28 ├── 2026-08-29 …`— y pide que *"la
+estructura no mezcle datos de diferentes días"*. **Eso ya se cumplía**: cada comida lleva su `fecha`
+desde la Fase 4 del proyecto, así que un día es un **filtro**, no una carpeta.
+
+Y el apartado 5, dos párrafos después, lo confirma: *"Utilizar el sistema de persistencia que ya
+utilice el proyecto. **No crear una arquitectura paralela innecesaria**"*. Montar un objeto
+`{ '2026-08-28': {…} }` habría sido exactamente esa arquitectura paralela: `saveData` guarda la clave
+`nutricion` entera de todas formas, así que no ahorra nada, obliga a migrar lo guardado y **rompe el
+agua y los favoritos**, que no son por día. `ARQUITECTURA_DIAS` lo deja escrito, y hay pruebas de que
+un día no hereda las comidas del vecino.
+
+### Lo que trae
+
+- **El mini-historial** (apartado 9): siete días con su inicial, su número y un punto en los que
+  tienen comidas. Termina en **el día seleccionado**, no en hoy, para que al retroceder se siga viendo
+  dónde está. No es una gráfica — el apartado lo prohíbe expresamente.
+- **Un calendario mensual** (apartado 10) que distingue hoy, el día elegido, los que tienen registros
+  y los futuros. Es un panel que se despliega, no una pantalla a pantalla completa.
+- **«HOY · 7 SEPT»** en la cabecera (apartado 8): la etiqueta relativa **y** la fecha, siempre. Y
+  cuando la etiqueta ya es la fecha, no se repite.
+- **Nutrición abre siempre en HOY** (apartado 2): el día que estaba mirando no se guarda, es de la
+  pantalla.
+- **Un día futuro no es un día vacío** (apartados 6 y 7): no es que no registrara nada, es que no ha
+  llegado — y por eso tampoco se le ofrece añadir una comida.
+
+### 🚨 Y la cuadrícula del mes no se ha escrito otra vez
+
+`celdasMes` existe desde el Calendario Universal y ya resuelve el hueco antes del día 1 y los meses
+de cuatro a seis filas. `mesDeNutricion` se apoya en ella y solo le añade lo que Nutrición necesita
+saber de cada celda. Una segunda cuadrícula habría dado un mes distinto el día que una de las dos se
+tocara.
+
+### ⚠️ Y una prohibición que había que leer al revés
+
+El apartado 14 dice *"❌ Barcode scanner"*. Pero **el escáner ya existía** desde la Fase 4 del
+proyecto: «no implementar» no es «quitar», y quitarlo habría roto un apartado que funciona — que es
+justo lo que el criterio de finalización prohíbe. Está declarado en `NO_EN_NU2` con ese motivo.
+
+### 🐛 Y dos comprobaciones de la fase anterior que ésta dejó viejas
+
+Como la SU F1 → SU F2: la cabecera pasó a decir **«HOY · 7 SEPT»** en mayúsculas —y `innerText`
+devuelve el texto **renderizado**, la lección de la E3 F8—, y el día vacío hay que probarlo ahora en
+un día **pasado**, porque mañana tiene su propio texto desde esta fase. Al cerrar una fase que cambia
+textos, buscar las comprobaciones de la anterior.
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde: **69 comprobaciones nuevas** en
+`scripts/test-nutricion-dias.mjs`, **4 casos de renderizado nuevos** (2016) y una sección nueva del
+recorrido que despliega el calendario, cambia de mes, comprueba que **los números cambian con el
+día** y que **navegar no escribe nada**.
+
+---
+
 ## v3.54.0 — Entrega 3 · Fase 33 (NU F1): rediseño premium del apartado Nutrición
 
 Empieza el bloque de **Nutrición** (8 fases). Ésta es de pantalla: el enunciado enumera siete cosas

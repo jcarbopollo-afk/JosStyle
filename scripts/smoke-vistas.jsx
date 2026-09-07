@@ -2262,6 +2262,16 @@ const CASOS = [
       })],
       /* Y el día vacío, que tiene que enseñar el estado vacío del apartado 7. */
       ['NutritionView · sin nada hoy', NutritionView, () => propsNu({ comidas: [], agua: {}, favoritos: [] })],
+      /* Entrega 3 · F34 (NU F2) — con historia repartida por días, que es lo que
+         alimenta la tira del mini-historial y los puntos del calendario. */
+      ['NutritionView · con historia por días', NutritionView, () => propsNu({
+        comidas: [
+          { id: 'd1', fecha: addDays(HOY, -5), nombre: 'Hace cinco días', calorias: 1200, proteinas: 60, carbohidratos: 120, grasas: 30, momento: 'comida' },
+          { id: 'd2', fecha: addDays(HOY, -2), nombre: 'Anteayer', calorias: 800, proteinas: 40, carbohidratos: 80, grasas: 20, momento: 'cena' },
+          { id: 'd3', fecha: HOY, nombre: 'Hoy', calorias: 350, proteinas: 12, carbohidratos: 55, grasas: 8, momento: 'desayuno' },
+        ],
+        agua: {}, favoritos: [],
+      })],
     ];
   })(),
 

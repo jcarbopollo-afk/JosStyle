@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { COLORS, VASO_ML } from '../tokens';
 import { uid, todayISO, addDays, hexToRgba } from '../lib/helpers';
 /* Entrega 3 · F33 (NU F1) — el catálogo de indicadores y momentos, el resumen del
@@ -7,7 +7,10 @@ import { uid, todayISO, addDays, hexToRgba } from '../lib/helpers';
    se inventa ninguno (`NO_EN_NU1`). */
 import {
   MOMENTOS, resumenDelDia, porMomento, hayAlgoRegistrado,
-  etiquetaDeDia, VACIO_DIA, VACIO_MOMENTO,
+  VACIO_DIA, VACIO_MOMENTO,
+  /* Entrega 3 · F34 (NU F2) — el sistema de días: la tira, el calendario mensual
+     —que reutiliza `celdasMes`, no una cuadrícula nueva— y el estado de un día. */
+  tiraDeDias, mesDeNutricion, tituloDeMes, tituloDelDia, estadoDeDia,
 } from '../lib/nutricion';
 import { buscarProductoPorCodigoBarras } from '../lib/openFoodFacts';
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
@@ -236,36 +239,158 @@ function Indicador({ dato, accent, principal = false, indice = 0 }) {
   );
 }
 
-/* ── El selector de días — apartado 5 ────────────────────────────────────── */
-function SelectorDia({ fecha, hoy, accent, onCambiar }) {
+/* ── El calendario del mes — apartado 10 ───────────────────────────────────
+   🚨 **La cuadrícula NO se escribe otra vez**: `mesDeNutricion` se apoya en
+   `celdasMes`, que existe desde el Calendario Universal y ya resuelve el hueco
+   antes del día 1 y los meses de cuatro a seis filas.
+
+   ⚠️ Y es un panel que se despliega, no una pantalla a pantalla completa: *"No
+   crear una pantalla gigante que ocupe innecesariamente todo el espacio"*. */
+const INICIALES_SEMANA = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+function CalendarioNutricion({ comidas, fecha, hoy, accent, onElegir }) {
+  const [cursor, setCursor] = useState(() => {
+    const d = new Date(`${fecha}T00:00:00`);
+    return { anio: d.getFullYear(), mes: d.getMonth() };
+  });
+  const celdas = mesDeNutricion(comidas, { anio: cursor.anio, mes: cursor.mes, seleccionado: fecha, hoy });
+  const mover = (n) => setCursor((c) => {
+    const d = new Date(c.anio, c.mes + n, 1);
+    return { anio: d.getFullYear(), mes: d.getMonth() };
+  });
+
   return (
-    <div className="flex items-center justify-between gap-2">
-      <button
-        onClick={() => onCambiar(addDays(fecha, -1))}
-        aria-label="Día anterior"
-        className="toque-44 p-1.5 -m-1.5 rounded-xl"
-        style={{ color: COLORS.text }}
-      >
-        <ChevronLeft size={18} />
-      </button>
-      <div className="text-center min-w-0">
-        <p className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-          {etiquetaDeDia(fecha, hoy)}
-        </p>
-        {fecha !== hoy && (
-          <button onClick={() => onCambiar(hoy)} className="text-xs font-semibold toque-44" style={{ color: accent }}>
-            Volver a hoy
-          </button>
-        )}
+    <Card style={{ padding: '0.9rem' }}>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <button onClick={() => mover(-1)} aria-label="Mes anterior" className="toque-44 p-1.5 -m-1.5 rounded-xl" style={{ color: COLORS.text }}>
+          <ChevronLeft size={16} />
+        </button>
+        <p className="text-xs font-bold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>{tituloDeMes(cursor.anio, cursor.mes)}</p>
+        <button onClick={() => mover(1)} aria-label="Mes siguiente" className="toque-44 p-1.5 -m-1.5 rounded-xl" style={{ color: COLORS.text }}>
+          <ChevronRight size={16} />
+        </button>
       </div>
-      <button
-        onClick={() => onCambiar(addDays(fecha, 1))}
-        aria-label="Día siguiente"
-        className="toque-44 p-1.5 -m-1.5 rounded-xl"
-        style={{ color: COLORS.text }}
-      >
-        <ChevronRight size={18} />
-      </button>
+
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {INICIALES_SEMANA.map((d, i) => (
+          <p key={i} className="text-center text-[10px] font-bold" style={{ color: COLORS.textMuted }}>{d}</p>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {celdas.map((c, i) => {
+          if (!c) return <div key={`h${i}`} />;
+          return (
+            <button
+              key={c.fecha}
+              onClick={() => onElegir(c.fecha)}
+              aria-label={`Ir al ${c.dia}`}
+              aria-current={c.seleccionado ? 'date' : undefined}
+              className="aspect-square rounded-xl flex flex-col items-center justify-center transition-transform active:scale-90"
+              style={{
+                background: c.seleccionado ? hexToRgba(accent, 0.18) : 'transparent',
+                border: `1px solid ${c.seleccionado ? hexToRgba(accent, 0.45) : (c.hoy ? hexToRgba(accent, 0.3) : 'transparent')}`,
+                /* ⚠️ Un día futuro se distingue (apartado 7) y uno sin registros
+                   también, pero **con más de un color**: el futuro va apagado y
+                   los que tienen datos llevan un punto (EH F42). */
+                opacity: c.futuro ? 0.45 : 1,
+              }}
+            >
+              <span
+                className={`text-xs ${c.hoy || c.seleccionado ? 'font-extrabold' : 'font-medium'}`}
+                style={{ color: c.seleccionado || c.hoy ? accent : COLORS.text }}
+              >
+                {c.dia}
+              </span>
+              <span
+                className="w-1 h-1 rounded-full mt-0.5"
+                style={{ background: c.conRegistros ? accent : 'transparent' }}
+              />
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[10px] mt-2 text-center" style={{ color: COLORS.textMuted }}>
+        El punto marca los días con comidas registradas.
+      </p>
+    </Card>
+  );
+}
+
+/* ── El selector de días y el mini-historial — apartados 1, 2, 3, 8 y 9 ──── */
+function SelectorDia({ comidas, fecha, hoy, accent, onCambiar, calendarioAbierto, onAlternarCalendario }) {
+  const tira = tiraDeDias(comidas, fecha, { hoy });
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <button
+          onClick={() => onCambiar(addDays(fecha, -1))}
+          aria-label="Día anterior"
+          className="toque-44 p-1.5 -m-1.5 rounded-xl"
+          style={{ color: COLORS.text }}
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <div className="text-center min-w-0">
+          {/* Apartado 8 — «HOY · 7 SEPT»: la etiqueta relativa Y la fecha, para
+              que sepa siempre qué día está mirando (apartado 2). */}
+          <p className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+            {tituloDelDia(fecha, hoy)}
+          </p>
+          {fecha !== hoy && (
+            <button onClick={() => onCambiar(hoy)} className="text-xs font-semibold toque-44" style={{ color: accent }}>
+              Volver a hoy
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onAlternarCalendario}
+            aria-label={calendarioAbierto ? 'Cerrar el calendario' : 'Elegir una fecha'}
+            aria-expanded={calendarioAbierto}
+            className="toque-44 p-1.5 -m-1.5 rounded-xl"
+            style={{ color: calendarioAbierto ? accent : COLORS.textMuted }}
+          >
+            <CalendarDays size={17} />
+          </button>
+          <button
+            onClick={() => onCambiar(addDays(fecha, 1))}
+            aria-label="Día siguiente"
+            className="toque-44 p-1.5 -m-1.5 rounded-xl"
+            style={{ color: COLORS.text }}
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      </div>
+
+      {/* Apartado 9 — la tira de días. ⚠️ *"No convertir esto en una gráfica
+          compleja"*: son siete botones con su inicial, su número y un punto. */}
+      <div className="flex gap-1.5">
+        {tira.map((d) => (
+          <button
+            key={d.fecha}
+            onClick={() => onCambiar(d.fecha)}
+            aria-label={`Ir al día ${d.dia}`}
+            aria-current={d.seleccionado ? 'date' : undefined}
+            className="flex-1 rounded-xl py-1.5 flex flex-col items-center transition-transform active:scale-95"
+            style={{
+              background: d.seleccionado ? hexToRgba(accent, 0.16) : COLORS.surface2,
+              border: `1px solid ${d.seleccionado ? hexToRgba(accent, 0.4) : COLORS.border}`,
+              opacity: d.futuro ? 0.5 : 1,
+            }}
+          >
+            <span className="text-[10px]" style={{ color: COLORS.textMuted }}>{d.inicial}</span>
+            <span
+              className={`text-xs ${d.seleccionado || d.hoy ? 'font-extrabold' : 'font-semibold'}`}
+              style={{ color: d.seleccionado || d.hoy ? accent : COLORS.text }}
+            >
+              {d.dia}
+            </span>
+            <span className="w-1 h-1 rounded-full mt-0.5" style={{ background: d.conRegistros ? accent : 'transparent' }} />
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -331,8 +456,11 @@ function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha
 
 function ComidasTab({ comidas, onAdd, onAddFavorito, onDeleteComida, accent }) {
   const hoy = todayISO();
+  /* 🚨 Apartado 2 — *"Abrir automáticamente en HOY"*, siempre: el día que se
+     estaba mirando no se guarda, es de la pantalla (EH F40). */
   const [fecha, setFecha] = useState(hoy);
   const [momentoAbierto, setMomentoAbierto] = useState(null);
+  const [calendario, setCalendario] = useState(false);
 
   /* 🚨 Los números salen de las comidas de verdad, del día que se está mirando.
      `objetivos` va en `null` a propósito: son la Fase 3 (ver `NO_EN_NU1`). */
@@ -342,29 +470,50 @@ function ComidasTab({ comidas, onAdd, onAddFavorito, onDeleteComida, accent }) {
   const grupos = porMomento(comidas, fecha);
   const hayComidas = hayAlgoRegistrado(comidas, fecha);
 
+  const estado = estadoDeDia(comidas, fecha, hoy);
   const cambiarDia = (f) => { setFecha(f); setMomentoAbierto(null); };
 
   return (
     <div className="space-y-4">
-      <SelectorDia fecha={fecha} hoy={hoy} accent={accent} onCambiar={cambiarDia} />
+      <SelectorDia
+        comidas={comidas} fecha={fecha} hoy={hoy} accent={accent} onCambiar={cambiarDia}
+        calendarioAbierto={calendario} onAlternarCalendario={() => setCalendario((v) => !v)}
+      />
+
+      {calendario && (
+        <CalendarioNutricion
+          comidas={comidas} fecha={fecha} hoy={hoy} accent={accent}
+          onElegir={(f) => { cambiarDia(f); setCalendario(false); }}
+        />
+      )}
 
       {/* Apartado 4 — las kcal con jerarquía superior, y los tres macros en 2×2
-          debajo (apartado 9: móvil primero, sin desplazamiento horizontal). */}
-      <div className="space-y-2.5">
+          debajo (apartado 9: móvil primero, sin desplazamiento horizontal).
+          ⚠️ `key={fecha}` repite la cascada de entrada al cambiar de día
+          (apartado 11 de la F2): transición suave, sin recargar nada. */}
+      <div className="space-y-2.5" key={fecha}>
         <Indicador dato={principal} accent={accent} principal indice={0} />
         <div className="grid grid-cols-2 gap-2.5">
           {macros.map((m, i) => <Indicador key={m.id} dato={m} accent={accent} indice={i + 1} />)}
         </div>
       </div>
 
-      {/* Apartado 7 — el estado vacío, que no es un mensaje de error. */}
+      {/* Apartado 7 de la F1 — el estado vacío, que no es un mensaje de error.
+          ⚠️ Y desde la F2 (apartados 6 y 7) **un día futuro se distingue de uno
+          vacío**: no es que no registrara nada, es que no ha llegado. */}
       {!hayComidas && (
         <Card>
-          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{VACIO_DIA.titulo}</p>
-          <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{VACIO_DIA.detalle}</p>
-          <div style={{ width: 170 }}>
-            <PrimaryButton accent={accent} icon={Plus} onClick={() => setMomentoAbierto(MOMENTOS[0].id)}>{VACIO_DIA.accion}</PrimaryButton>
-          </div>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>
+            {estado.id === 'futuro' ? estado.nombre : VACIO_DIA.titulo}
+          </p>
+          <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>
+            {estado.id === 'futuro' ? estado.texto : VACIO_DIA.detalle}
+          </p>
+          {estado.id !== 'futuro' && (
+            <div style={{ width: 170 }}>
+              <PrimaryButton accent={accent} icon={Plus} onClick={() => setMomentoAbierto(MOMENTOS[0].id)}>{VACIO_DIA.accion}</PrimaryButton>
+            </div>
+          )}
         </Card>
       )}
 

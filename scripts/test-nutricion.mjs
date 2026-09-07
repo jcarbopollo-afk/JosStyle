@@ -141,7 +141,9 @@ ok(/sept|sep/.test(etiquetaDeDia('2026-09-01', HOY)),
 eq(esFuturo('2026-09-08', HOY), true, '`esFuturo` distingue lo que todavía no ha pasado');
 eq(esFuturo(HOY, HOY), false, 'y hoy no es futuro');
 /* 🚨 Y funciona: no es un control decorativo. */
-ok(CODIGO_VISTA.includes('setFecha') && CODIGO_VISTA.includes('etiquetaDeDia'),
+/* ⚠️ Desde la F2 la pantalla llama a `tituloDelDia`, que usa `etiquetaDeDia`
+   por dentro: se comprueba lo que la vista usa, no un import que podría sobrar. */
+ok(CODIGO_VISTA.includes('setFecha') && CODIGO_VISTA.includes('tituloDelDia'),
   '🚨 EL SELECTOR FUNCIONA DE VERDAD: cambia el día que se mira (regla 8)');
 ok(CODIGO_VISTA.includes('fecha={fecha}') && /fecha: fecha \|\| todayISO\(\)/.test(soloCodigo(VISTA)),
   '🚨 y lo que se guarda va al DÍA ELEGIDO: escribir `todayISO()` a pelo lo habría dejado decorativo');
