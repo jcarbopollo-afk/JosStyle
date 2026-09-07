@@ -60,6 +60,13 @@ export const CATALOGO_PAPELERA = {
   'salud.medidas': { modulo: 'salud', coleccion: 'medidas', tipo: 'Medida', campos: ['fecha'], icono: 'salud' },
   'salud.historial': { modulo: 'salud', coleccion: 'historial', tipo: 'Entrada médica', campos: ['descripcion', 'tipo'], icono: 'salud' },
   'nutricion.comidas': { modulo: 'nutricion', coleccion: 'comidas', tipo: 'Comida', campos: ['nombre'], icono: 'nutricion' },
+  /* 🚨 E3 F37 (NU F5) — **toda lista que se pueda borrar va aquí** (EH F45): sin
+     esta línea, eliminar un alimento propio lo borraría **para siempre**, y la
+     auditoría de ME F4 no lo vería porque solo mira lo que se CREA desde
+     `App.jsx`. ⚠️ Se llama `alimentosPropios`, no `alimentos`: la papelera se
+     indexa por `módulo.colección`, y dos listas del mismo módulo no pueden
+     llamarse igual (EH F22). */
+  'nutricion.alimentosPropios': { modulo: 'nutricion', coleccion: 'alimentosPropios', tipo: 'Alimento propio', campos: ['nombre', 'marca'], icono: 'nutricion' },
   'estudios.programas': { modulo: 'estudios', coleccion: 'programas', tipo: 'Programa de estudios', campos: ['nombre'], icono: 'estudios' },
   'estudios.asignaturas': { modulo: 'estudios', coleccion: 'asignaturas', tipo: 'Asignatura', campos: ['nombre'], icono: 'estudios' },
   'estudios.examenes': { modulo: 'estudios', coleccion: 'examenes', tipo: 'Examen', campos: ['tema'], icono: 'estudios' },

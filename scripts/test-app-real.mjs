@@ -3801,4 +3801,100 @@ const avenaMovida = (movidaFinal[movidaFinal.length - 1]?.value?.comidas || []).
 ok(avenaMovida?.momento === 'cena', '🚨 Y CAMBIA DE COMIDA: de Comida a Cena');
 ok(avenaMovida?.calorias === 467, '⚠️ sin tocar ni un número: moverla no la recalcula');
 
+
+/* ── E3 F37 (NU F5) · LOS ALIMENTOS PROPIOS, FAVORITOS Y RECIENTES ────────
+   🚨 **Lo que ninguna prueba de Node puede ver:** que al abrir el selector
+   —*antes de escribir nada*— ya están sus favoritos, sus recientes y sus
+   alimentos, que es lo que el apartado 12 pide; que crear uno propio funciona
+   de principio a fin; y que **un alimento de la base protegida no se puede
+   editar** (apartado 6).
+
+   El escenario trae un alimento suyo, un favorito y dos días con comidas que
+   **sí** llevan `alimentoId`, para que los recientes tengan de dónde salir. */
+almacen.nutricion = {
+  comidas: [
+    { id: 'mp_1', fecha: DN(0), momento: 'desayuno', nombre: 'Avena', calorias: 233, proteinas: 10.1, carbohidratos: 39.8, grasas: 4.1, fibra: 6.4, cantidad: 60, unidad: 'g', por100: { calorias: 389, proteinas: 16.9, carbohidratos: 66.3, grasas: 6.9, fibra: 10.6 }, alimentoId: 'avena' },
+    { id: 'mp_2', fecha: DN(1), momento: 'comida', nombre: 'Pechuga de pollo', calorias: 248, proteinas: 46.5, carbohidratos: 0, grasas: 5.4, fibra: 0, cantidad: 150, unidad: 'g', por100: { calorias: 165, proteinas: 31, carbohidratos: 0, grasas: 3.6, fibra: 0 }, alimentoId: 'pollo_pechuga' },
+  ],
+  agua: {}, favoritos: [],
+  alimentosPropios: [
+    { id: 'propio_yog', nombre: 'Yogur de mi madre', marca: '', tipo: 'lácteo', unidad: 'g', por100: { calorias: 80, proteinas: 8, carbohidratos: 5, grasas: 3, fibra: 0 }, propio: true, creado: DN(3) },
+  ],
+  favoritosAlimentos: ['avena'],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+guardado.length = 0;
+
+ok(await pulsar('Bienestar'), 'se abre el área Bienestar');
+ok(await pulsar('Nutrición'), 'se entra en Nutrición');
+ok(await pulsar('Añadir alimento a Merienda'), 'se abre el selector desde Merienda');
+await page.waitForTimeout(700);
+
+/* 🚨 Apartado 12 — **sin escribir nada** ya hay de dónde elegir. */
+const selector = await esperarTexto(/Mis alimentos/i);
+ok(/Favoritos/i.test(selector),
+  '🚨 E3 F37 — EL SELECTOR ABRE CON SUS FAVORITOS, sin escribir nada (apartado 12)');
+ok(/Recientes/i.test(selector), '⚠️ y con sus recientes (apartado 8)');
+ok(/Mis alimentos/i.test(selector), '⚠️ y con los alimentos que ha creado él (apartado 4)');
+ok(/Yogur de mi madre/.test(selector), '⚠️ que se ven con su nombre');
+ok(/Crear alimento/i.test(selector), '⚠️ y el botón de crear uno nuevo (apartado 12)');
+/* Apartado 8 — los recientes salen de las comidas, agrupados por día. */
+ok(/Hoy/.test(selector) && /Avena/.test(selector),
+  '🚨 «Hoy: Avena» — los recientes SE DERIVAN de las comidas, no se guardan (apartado 8)');
+ok(/Ayer/.test(selector) && /Pechuga de pollo/.test(selector), '⚠️ y «Ayer: Pollo»');
+
+/* Apartado 2 — la línea resumida de cada alimento. */
+ok(/389 kcal · 16\.9 P · 66\.3 C · 6\.9 G \/ 100 g/.test(selector),
+  '🚨 CON SU INFORMACIÓN NUTRICIONAL RESUMIDA: «389 kcal · 16,9 P · 66,3 C · 6,9 G / 100 g» (apartado 2)');
+
+/* Apartado 7 — la ★ marca y desmarca, y es un id lo que se guarda. */
+ok(await pulsar('Marcar Yogur de mi madre como favorito'), 'se marca su yogur como favorito');
+await page.waitForTimeout(600);
+const trasFav = guardado.filter((g) => g && g.key === 'nutricion');
+const favs = trasFav[trasFav.length - 1]?.value?.favoritosAlimentos || [];
+ok(favs.includes('propio_yog'),
+  '🚨 Y SE GUARDA EL ID, no una copia del alimento (apartado 15)');
+ok(favs.every((x) => typeof x === 'string'), '⚠️ la lista entera son ids');
+
+/* Apartados 4 y 5 — crear un alimento propio, de principio a fin. */
+ok(await pulsar('Crear alimento'), 'se abre el formulario');
+const formu = await esperarTexto(/Se mide en/i);
+ok(/Categoría/.test(formu), '⚠️ con su categoría (apartado 3)');
+ok(/Se mide en/.test(formu), '⚠️ y su unidad de referencia (apartado 10)');
+await page.fill('input[type="text"]', 'Batido de proteína');
+const numeros = await page.$$('input[type="number"]');
+await numeros[0].fill('370');
+await numeros[1].fill('75');
+await numeros[2].fill('8');
+await numeros[3].fill('4');
+ok(await pulsar('Crear alimento'), 'se crea');
+await page.waitForTimeout(700);
+const trasCrear = guardado.filter((g) => g && g.key === 'nutricion');
+const propiosGuardados = trasCrear[trasCrear.length - 1]?.value?.alimentosPropios || [];
+const nuevoAlim = propiosGuardados.find((a) => a.nombre === 'Batido de proteína');
+ok(!!nuevoAlim, '🚨 Y SE GUARDA EN `nutricion.alimentosPropios`, sin una clave nueva (apartado 14)');
+ok(nuevoAlim?.por100?.calorias === 370 && nuevoAlim?.por100?.proteinas === 75,
+  '⚠️ con sus valores por 100 g');
+ok(nuevoAlim?.propio === true, '⚠️ marcado como suyo, que es lo único que lo distingue de uno de la base');
+ok(propiosGuardados.length === 2, '⚠️ y sin tocar el que ya tenía');
+
+/* Y se puede usar como cualquier otro: el buscador lo encuentra. */
+await page.fill('input[placeholder^="Busca"]', 'batido');
+await page.waitForTimeout(600);
+const buscado = await ver();
+ok(/Batido de proteína/.test(buscado),
+  '🚨 Y EL BUSCADOR LO ENCUENTRA: es el MISMO buscador de la F4, con la base ampliada (apartado 2)');
+ok(/tuyo/.test(buscado), '⚠️ distinguido de los de la base (apartado 15)');
+
+/* 🚨 Apartado 6 — un alimento de la base NO se puede editar. */
+await page.fill('input[placeholder^="Busca"]', 'avena');
+await page.waitForTimeout(600);
+const conAvena = await ver();
+ok(/Avena/.test(conAvena), 'el buscador encuentra la avena de la base');
+const lapices = await page.evaluate(() =>
+  [...document.querySelectorAll('button[aria-label^="Editar "]')].map((b) => b.getAttribute('aria-label')));
+ok(!lapices.includes('Editar Avena'),
+  '🚨 Y NO SE PUEDE EDITAR: sus valores son de referencia y no se tocan (apartado 6)');
+
 await salir(browser);

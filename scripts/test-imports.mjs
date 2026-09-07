@@ -118,9 +118,28 @@ for (const ruta of archivos) {
   for (const [nombre, origen] of exportaciones) {
     if (importados.has(nombre) || declarados.has(nombre)) continue;
     // Un uso de verdad: llamada, o referencia suelta que no sea una propiedad.
-    const usado = new RegExp(`(?<![.\\w$])${nombre}\\s*\\(`).test(src);
-    if (usado) {
+    const llamada = new RegExp(`(?<![.\\w$])${nombre}\\s*\\(`).test(src);
+    if (llamada) {
       problemas.push(`${relative(RAIZ, ruta)} usa ${nombre}() (de ${origen.join(', ')}) sin importarla`);
+      continue;
+    }
+    /* 🚨 **Y una CONSTANTE cuenta igual que una función** (E3 F37, tercera
+       puerta del mismo fallo). `UNIDADES.map(...)` dentro del JSX no es una
+       llamada a `UNIDADES`, así que la regla no lo veía — y `UNIDADES` sin
+       importar deja **el formulario en blanco** al abrirlo, con el build en
+       verde. Van tres: `<Componente>` (EH F39), `icon={Componente}` (E3 F36) y
+       ahora `CONSTANTE.loQueSea`.
+
+       ⚠️ **Solo para los nombres en MAYÚSCULAS**, que es como este proyecto
+       escribe sus catálogos. Con los de minúscula la regla daba ocho falsos
+       positivos —`recientes`, `progreso`, `pendiente`, `seccion`…—: son
+       variables locales o props desestructuradas que **casualmente** se llaman
+       igual que algo de `src/lib/`, y ensancharla hasta cazarlas es como se
+       consigue que nadie mire los avisos. */
+    if (!/^[A-Z][A-Z0-9_]*$/.test(nombre)) continue;
+    const comoConstante = new RegExp(`(?<![.\\w$])${nombre}\\s*[.[]`).test(src);
+    if (comoConstante) {
+      problemas.push(`${relative(RAIZ, ruta)} usa ${nombre} (de ${origen.join(', ')}) sin importarla`);
     }
   }
 }

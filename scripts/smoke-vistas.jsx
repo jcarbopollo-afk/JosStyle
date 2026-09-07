@@ -2247,7 +2247,12 @@ const CASOS = [
       nutricion, perfil: { peso: 72, altura: 187, edad: 16 },
       onAddComida: noop, onDeleteComida: noop, onAddFavorito: noop,
       onRegistrarFavorito: noop, onEliminarFavorito: noop, onSetAgua: noop,
-      onGuardarObjetivos: noop, accent, ...extra,
+      onGuardarObjetivos: noop,
+      /* Entrega 3 · F37 (NU F5) — los alimentos propios, sus favoritos y el
+         selector. */
+      onGuardarAlimentoPropio: noop, onEliminarAlimentoPropio: noop,
+      onAlternarFavoritoAlimento: noop,
+      accent, ...extra,
     });
     return [
       ['NutritionView', NutritionView, (e) => propsNu(e.nutricion)],
@@ -2315,6 +2320,25 @@ const CASOS = [
           { id: 'a3', fecha: HOY, momento: 'cena', nombre: 'Tortilla de mi madre', calorias: 400, proteinas: 20, carbohidratos: 15, grasas: 28, fibra: 1 },
         ],
         agua: {}, favoritos: [],
+      })],
+      /* Entrega 3 · F37 (NU F5) — con alimentos propios y favoritos marcados,
+         que es lo que llena las secciones del selector. */
+      ['NutritionView · con alimentos propios y favoritos', NutritionView, () => propsNu({
+        comidas: [
+          { id: 'p1', fecha: HOY, momento: 'desayuno', nombre: 'Avena', calorias: 233, proteinas: 10.1, carbohidratos: 39.8, grasas: 4.1, cantidad: 60, unidad: 'g', por100: { calorias: 389, proteinas: 16.9, carbohidratos: 66.3, grasas: 6.9, fibra: 10.6 }, alimentoId: 'avena' },
+          { id: 'p2', fecha: addDays(HOY, -1), momento: 'comida', nombre: 'Pechuga de pollo', calorias: 248, proteinas: 46.5, carbohidratos: 0, grasas: 5.4, cantidad: 150, unidad: 'g', por100: { calorias: 165, proteinas: 31, carbohidratos: 0, grasas: 3.6, fibra: 0 }, alimentoId: 'pollo_pechuga' },
+        ],
+        agua: {}, favoritos: [],
+        alimentosPropios: [
+          { id: 'propio_1', nombre: 'Yogur de mi madre', marca: '', tipo: 'lácteo', unidad: 'g', por100: { calorias: 80, proteinas: 8, carbohidratos: 5, grasas: 3, fibra: 0 }, propio: true, creado: HOY },
+        ],
+        favoritosAlimentos: ['avena', 'propio_1'],
+      })],
+      /* ⚠️ Y un favorito que apunta a un alimento borrado: no se pinta, y la
+         pantalla no revienta (EH F24). */
+      ['NutritionView · favorito de algo que ya no existe', NutritionView, () => propsNu({
+        comidas: [], agua: {}, favoritos: [],
+        alimentosPropios: [], favoritosAlimentos: ['propio_borrado', 'avena'],
       })],
       /* 🚨 Apartado 11 — el día que se pasa del objetivo: la barra no se rompe. */
       ['NutritionView · por encima del objetivo', NutritionView, () => propsNu({

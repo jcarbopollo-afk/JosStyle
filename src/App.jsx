@@ -27,6 +27,10 @@ import { normalizarNutricionObjetivos } from './lib/objetivosNutricion';
    guardado se llevaría los tres campos y editar la cantidad dejaría de funcionar
    sin un solo error por pantalla (regla 5, vigésima vez). */
 import { normalizarNutricionF4 } from './lib/alimentos';
+/* E3 F37 (NU F5) — los alimentos que crea Josué y sus favoritos de alimento.
+   ⚠️ Vigesimoprimera vez del fallo del normalizador: sin esto, el siguiente
+   guardado se llevaría las dos listas. Y devuelve el módulo entero (regla 5). */
+import { normalizarMisAlimentosDe, alternarFavoritoAlimento } from './lib/misAlimentos';
 /* 🚨 E3 F27 (PR F5) — Metas y Objetivos. Los normalizadores corren al cargar
    porque esta fase AÑADE campos a dos entidades que ya existían: sin ellos, lo
    guardado antes llega sin `estado`, sin `prioridad` y sin `tipo`, y el
@@ -540,7 +544,7 @@ export default function App() {
       setEconomia(normalizarEconomiaHucha(e));
       setSalud(sal);
       setSaludFotos(sf);
-      setNutricion(normalizarNutricionF4(normalizarNutricionObjetivos(normalizarNutricionDe(nut))));
+      setNutricion(normalizarMisAlimentosDe(normalizarNutricionF4(normalizarNutricionObjetivos(normalizarNutricionDe(nut)))));
       setCalisteniaVideos(cv);
       setEstudios(est);
       setNegocio(neg);
@@ -1806,6 +1810,26 @@ export default function App() {
   const actualizarComida = (comida) => snapshotAndSave({
     nutricion: { ...nutricion, comidas: nutricion.comidas.map((c) => (c.id === comida.id ? comida : c)) },
   });
+  /* E3 F37 (NU F5) — crear o editar un alimento propio. `crearAlimentoPropio` y
+     `editarAlimentoPropio` ya lo han validado; aquí solo se guarda, y **por su
+     id**: editar uno no crea otro (apartado 6). */
+  const guardarAlimentoPropio = (alimento) => {
+    const lista = Array.isArray(nutricion.alimentosPropios) ? nutricion.alimentosPropios : [];
+    const existe = lista.some((a) => a.id === alimento.id);
+    snapshotAndSave({
+      nutricion: {
+        ...nutricion,
+        alimentosPropios: existe ? lista.map((a) => (a.id === alimento.id ? alimento : a)) : [...lista, alimento],
+      },
+    });
+  };
+  /* ⚠️ Y eliminar pasa por la papelera, la única puerta (ME F3): un alimento
+     propio se recupera desde Eliminados recientes, como todo lo demás. */
+  const eliminarAlimentoPropio = (id) => eliminarConPapelera('nutricion', 'alimentosPropios', id);
+  /* 🚨 El favorito es **un id**, no una copia del alimento (apartado 15). */
+  const alternarFavoritoAlim = (id) => snapshotAndSave({
+    nutricion: { ...nutricion, favoritosAlimentos: alternarFavoritoAlimento(nutricion.favoritosAlimentos, id) },
+  });
 
   const addPrograma = (p) => snapshotAndSave({ estudios: { ...estudios, programas: [...estudios.programas, p] } });
   // Segundo borrado en cascada, encontrado por la auditoría de ME Fase 4: un programa se podía
@@ -2468,6 +2492,9 @@ export default function App() {
             nutricion={nutricion} perfil={perfil} onAddComida={addComida} onDeleteComida={deleteComida}
             onActualizarComida={actualizarComida} onAddFavorito={addFavorito}
             onGuardarObjetivos={guardarObjetivosNutricion}
+            onGuardarAlimentoPropio={guardarAlimentoPropio}
+            onEliminarAlimentoPropio={eliminarAlimentoPropio}
+            onAlternarFavoritoAlimento={alternarFavoritoAlim}
             onRegistrarFavorito={registrarFavorito} onEliminarFavorito={eliminarFavorito}
             onSetAgua={setAgua} accent={accent}
           />

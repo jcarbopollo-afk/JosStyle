@@ -1,5 +1,70 @@
 # CHANGELOG.md
 
+## v3.58.0 — Entrega 3 · Fase 37 (NU F5): base de alimentos, personalizados y favoritos
+
+*"El usuario no debería tener que introducir manualmente la información nutricional de un alimento
+cada vez que lo consume."*
+
+### 🚨 Nada de la F4 se reescribe
+
+El apartado 16 lo pide con esas palabras —*"no romper ninguna funcionalidad existente"*— y el 15
+añade *"no duplicar innecesariamente el mismo alimento"*. Así que `misAlimentos.js` **importa** la
+base, el buscador, el escalado y las unidades de `alimentos.js`, y solo trae lo que la F4 no tenía.
+El buscador es **el mismo**: ya recibía la base por parámetro precisamente para esto, y ahora busca
+en la global **y en los alimentos de Josué**, con los suyos primero.
+
+### 🚨 Los recientes NO se guardan: se derivan
+
+El apartado 14 pide que persistan, y persisten — **porque las comidas persisten**, y cada una lleva
+su `alimentoId` desde la F4. Una lista `recientes` guardada aparte sería una copia que se queda
+vieja en cuanto él borre una comida, y entonces el selector le ofrecería alimentos de días que ya no
+existen. Es la decisión de `estadisticasPlan.js` (E3 F13) y `progresoEstilo.js` (EH F35) otra vez.
+
+Se agrupan por día —*"Hoy: Avena, Leche · Ayer: Pollo, Arroz"*— y **un alimento que ya salió hoy no
+se repite ayer**: verlo dos veces no ayuda a encontrarlo.
+
+### ⚠️ Y «favoritos» ya significaba otra cosa aquí
+
+`nutricion.favoritos` existe desde la Fase 4 del proyecto y son **comidas guardadas enteras**. Lo que
+pide el apartado 7 son **alimentos marcados**, que es otra cosa, así que se llaman
+`favoritosAlimentos`. Dos listas del mismo módulo no pueden llamarse igual (EH F22) — y la papelera
+se indexa justamente por `módulo.colección`.
+
+Un favorito es **un id y nada más** (apartado 15): de ahí sale gratis que editar el alimento cambie
+su favorito, y que quitarlo de favoritos no lo borre. ⚠️ Y un id que apunta a algo que ya no existe
+**lo limpia el normalizador**: guardar el id de algo borrado es guardar una mentira (EH F24).
+
+### Lo que trae
+
+- **El selector del apartado 12**: sin escribir nada ya están sus **favoritos**, sus **recientes** y
+  **sus alimentos**, más el botón de crear. Con texto escrito, los resultados — nunca las dos cosas
+  a la vez, que sería una pantalla larga.
+- **Crear un alimento propio** con sus cinco campos validados y la marca opcional, su **categoría**
+  (una de `CATEGORIAS_ALIMENTO`, no un mapa aparte) y su **unidad** — g, ml o unidades.
+- **Editarlos y eliminarlos**, conservando el id: cambiarlo no deja sus favoritos apuntando al viejo,
+  y eliminarlo **pasa por la papelera**, la única puerta.
+- 🚨 **Y los de la base NO se tocan** (apartado 6): sus valores son de referencia. Se dice, y se le
+  ofrece la salida —hacerse una copia propia—, porque prohibir sin alternativa es un botón muerto.
+- **Repetir una comida de otro día** con su cantidad ya puesta (apartado 9). ⚠️ Funciona **también
+  con las escritas a mano**, que son justo las que más cuesta volver a escribir.
+
+### 🐛 Y la tercera puerta del mismo fallo
+
+`UNIDADES.map(...)` sin importar `UNIDADES` **deja el formulario en blanco**, y ninguna regla lo
+veía: la primera busca `funcion(`, la que se añadió en la F36 busca `prop={Componente}`, y esto es
+**una constante**. Ahora también se comprueba `CONSTANTE.loQueSea` — solo para los nombres en
+mayúsculas, porque con los de minúscula daba ocho falsos positivos (`recientes`, `progreso`,
+`pendiente`…) que son variables locales que **casualmente** se llaman igual que algo de `src/lib/`.
+Se le quitó el arreglo y se comprobó que se pone roja.
+
+### Archivos
+
+- **Nuevo:** `src/lib/misAlimentos.js`, `scripts/test-mis-alimentos.mjs` (123 comprobaciones).
+- **Tocados:** `src/views/NutritionView.jsx` (`FormularioAlimento`, `FilaAlimento`, el selector),
+  `src/App.jsx` (tres manejadores y `normalizarMisAlimentosDe` al cargar), `src/lib/papelera.js`
+  (la línea de `nutricion.alimentosPropios`), `scripts/test-imports.mjs` (la regla ampliada),
+  `scripts/verificar.sh`, `scripts/smoke-vistas.jsx` (+8 casos), `scripts/test-app-real.mjs`.
+
 ## v3.57.0 — Entrega 3 · Fase 36 (NU F4): registro de comidas y consumo diario
 
 La fase que convierte Nutrición en un sistema de registro de verdad: buscar un alimento, decir

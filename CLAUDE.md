@@ -168,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 36 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 37 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -192,11 +192,11 @@ PRODUCTIVIDAD** —las siete fases PR—, y la **F30 (el apartado Bienestar, v3.
 **CERRÓ EL BLOQUE BN**, la **F31 (Sueño, el registro simple, v3.52.0)** y la **F32 (la gráfica de
 7 días móviles, v3.53.0)**, que 🏁 **CERRÓ SUEÑO**, y la **F33 (Nutrición, rediseño premium,
 v3.54.0)**, con la que empieza el bloque de **Nutrición**, la **F34 (el sistema de días,
-v3.55.0)**, la **F35 (los objetivos nutricionales, v3.56.0)** y la **F36 (el registro de
-alimentos, v3.57.0)**. Con eso hay **cinco bloques
-cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1) y
-Sueño (2/2)— y **Nutrición va por 4 de 8**. La que viene es
-la **37 — NU F5: base de alimentos, personalizados y favoritos**. El índice, con la
+v3.55.0)**, la **F35 (los objetivos nutricionales, v3.56.0)**, la **F36 (el registro de
+alimentos, v3.57.0)** y la **F37 (alimentos propios y favoritos, v3.58.0)**. Con eso hay **cinco
+bloques cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1)
+y Sueño (2/2)— y **Nutrición va por 5 de 8**. La que viene es
+la **38 — NU F6: estadísticas y evolución**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -499,6 +499,27 @@ código de agosto mientras él decía *"la web sigue igual"*.
   E3 F23 escrita con las palabras de entonces, que el rediseño de esta fase cambió con todo el
   derecho. **Mirar qué línea la hace saltar antes de tocar el código**: de los cuatro rojos, **uno
   solo era del código** —la racha decía *"🔥 1 días"*—, y ése sí es de los que ve Josué.
+
+- 🚨 **UN HISTORIAL QUE SE PUEDE DERIVAR NO SE GUARDA, AUNQUE EL ENUNCIADO DIGA «GUARDAR»** (E3 F37).
+  El apartado 14 pide que los recientes persistan, y persisten — **porque las comidas persisten** y
+  cada una lleva su `alimentoId` desde la F4. Una lista guardada aparte se queda vieja en cuanto él
+  borre una comida, y entonces el selector le ofrece alimentos de días que ya no existen.
+- ⚠️ **«FAVORITOS» YA SIGNIFICABA OTRA COSA EN NUTRICIÓN** (E3 F37): `nutricion.favoritos` son
+  **comidas guardadas enteras** desde la Fase 4, y lo que pide el apartado 7 son **alimentos
+  marcados**. Por eso son `favoritosAlimentos`: dos listas del mismo módulo no pueden llamarse igual
+  (EH F22), y la papelera se indexa justo por `módulo.colección`.
+- 🚨 **UN FAVORITO ES UN ID, NUNCA UNA COPIA** (E3 F37, apartado 15, y la BL F7 lo dijo con las
+  colecciones): de ahí sale gratis que editar el alimento cambie su favorito. Y el que apunta a algo
+  borrado **lo limpia el normalizador** (EH F24).
+- 🚨 **PROHIBIR SIN OFRECER LA ALTERNATIVA ES UN BOTÓN MUERTO** (E3 F37, apartado 6): los alimentos
+  de la base **no se pueden editar** —sus valores son de referencia—, y por eso se le ofrece
+  **hacerse una copia propia** que sí puede tocar.
+- 🐛 **Y LA TERCERA PUERTA DEL MISMO FALLO** (E3 F37): `UNIDADES.map(...)` sin importar `UNIDADES`
+  **deja el formulario en blanco**. La primera regla busca `funcion(`, la de la E3 F36 busca
+  `prop={Componente}`, y esto es **una constante**. Ahora también se mira `CONSTANTE.loQueSea` —
+  ⚠️ **solo en mayúsculas**: con los nombres en minúscula daba ocho falsos positivos que eran
+  variables locales llamadas igual que algo de `src/lib/`, y ensanchar una regla hasta cazarlas es
+  como se consigue que nadie mire los avisos.
 
 - 🚨 **UNA ENTIDAD NUEVA QUE YA EXISTE CON OTRO NOMBRE NO SE CREA: SE AMPLÍA** (E3 F36). *"Un
   alimento registrado"* **es una comida**, la entidad de la Fase 4 que leen el hub, el Dashboard, la

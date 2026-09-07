@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2, ChevronLeft, ChevronRight, CalendarDays, Settings, Check, Search } from 'lucide-react';
+import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2, ChevronLeft, ChevronRight, CalendarDays, Settings, Check, Search, Pencil, Repeat } from 'lucide-react';
 import { COLORS, VASO_ML } from '../tokens';
 import { uid, todayISO, addDays, hexToRgba, calcularEdad } from '../lib/helpers';
 /* Entrega 3 · F33 (NU F1) — el catálogo de indicadores y momentos, el resumen del
@@ -26,10 +26,19 @@ import {
    sale del escáner, que ya lo hacía: no es una cuenta nueva. */
 import {
   BASE_ALIMENTOS, buscarAlimentos, alimentoDesdeOFF, escalar, validarCantidad,
-  crearComidaDesdeAlimento, cambiarCantidad, cambiarMomento, unidad, textoCantidad,
+  crearComidaDesdeAlimento, cambiarCantidad, cambiarMomento, unidad, UNIDADES, textoCantidad,
   lineaDeMomento, estadoDeIndicador, excesoDe, AVISO_REFERENCIA, VACIO_MOMENTO_F4,
   MINIMO_BUSQUEDA,
 } from '../lib/alimentos';
+/* Entrega 3 · F37 (NU F5) — los alimentos propios, los favoritos y los recientes.
+   🚨 Este archivo NO redefine nada de `alimentos.js`: el buscador, el escalado y
+   las unidades son suyos y se importan de allí. */
+import {
+  CATEGORIAS_ALIMENTO, CATEGORIA_POR_DEFECTO, CAMPOS_PROPIO, validarPropio,
+  crearAlimentoPropio, editarAlimentoPropio, esFavorito, recientesPorDia,
+  reutilizarComida, catalogoCompleto, buscarEnTodos, resumenNutricional,
+  SECCIONES_SELECTOR, seccionSelector, ACCION_CREAR, selectorInicial,
+} from '../lib/misAlimentos';
 import { buscarProductoPorCodigoBarras, buscarAlimentosPorNombre } from '../lib/openFoodFacts';
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
@@ -438,16 +447,178 @@ function SelectorDia({ comidas, fecha, hoy, accent, onCambiar, calendarioAbierto
    ninguna base —la tortilla de su madre—, y sigue teniendo el escáner y la foto,
    que existen desde la Fase 4 del proyecto (apartado 18: *"no implementar"* no
    es *"quitar"*). */
-function AnadirAlimento({ momentoId, fecha, accent, onAdd, onAddFavorito, onCerrar }) {
+/* ── Crear un alimento propio — Entrega 3 · F37 (NU F5), apartados 4 y 5 ───
+   *"Permitir al usuario crear un alimento propio… un formulario sencillo"*, con
+   sus cinco campos obligatorios y la marca opcional.
+
+   ⚠️ Un alimento propio tiene **la misma forma** que uno de la base, así que el
+   buscador, el escalado y el registro de la F4 lo tratan igual, sin un `if`. */
+function FormularioAlimento({ accent, inicial, onGuardar, onCancelar }) {
+  const [campos, setCampos] = useState(() => ({
+    nombre: inicial?.nombre || '',
+    marca: inicial?.marca || '',
+    tipo: inicial?.tipo || CATEGORIA_POR_DEFECTO,
+    unidad: inicial?.unidad || 'g',
+    calorias: inicial?.por100?.calorias ?? '',
+    proteinas: inicial?.por100?.proteinas ?? '',
+    carbohidratos: inicial?.por100?.carbohidratos ?? '',
+    grasas: inicial?.por100?.grasas ?? '',
+  }));
+  const [tocado, setTocado] = useState(false);
+  const { errores, valido } = validarPropio(campos);
+
+  const guardar = () => {
+    setTocado(true);
+    if (!valido) return;
+    const r = inicial
+      ? editarAlimentoPropio(inicial, campos)
+      : crearAlimentoPropio(campos);
+    if (r.ok) onGuardar(r.alimento);
+  };
+
+  const campo = (id) => (
+    <div key={id}>
+      <span className="text-xs block mb-1" style={{ color: COLORS.textMuted }}>
+        {CAMPOS_PROPIO.find((c) => c.id === id).nombre}
+        {CAMPOS_PROPIO.find((c) => c.id === id).por ? ` (por ${CAMPOS_PROPIO.find((c) => c.id === id).por})` : ''}
+        {CAMPOS_PROPIO.find((c) => c.id === id).nota ? ` · ${CAMPOS_PROPIO.find((c) => c.id === id).nota}` : ''}
+      </span>
+      <TextInput
+        type={CAMPOS_PROPIO.find((c) => c.id === id).tipo === 'numero' ? 'number' : 'text'}
+        inputMode={CAMPOS_PROPIO.find((c) => c.id === id).tipo === 'numero' ? 'numeric' : undefined}
+        value={campos[id]}
+        onChange={(e) => setCampos({ ...campos, [id]: e.target.value })}
+      />
+      {tocado && errores[id] && <span className="text-xs block mt-1" style={{ color: COLORS.warning }}>{errores[id]}</span>}
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+          {inicial ? 'Editar alimento' : ACCION_CREAR}
+        </p>
+        <button onClick={onCancelar} className="toque-44 text-xs font-semibold" style={{ color: COLORS.textMuted }}>Cancelar</button>
+      </div>
+
+      {campo('nombre')}
+      {campo('marca')}
+
+      {/* La categoría: una línea de `CATEGORIAS_ALIMENTO`, no un mapa aparte. */}
+      <div>
+        <span className="text-xs block mb-1.5" style={{ color: COLORS.textMuted }}>Categoría</span>
+        <div className="flex flex-wrap gap-1.5">
+          {CATEGORIAS_ALIMENTO.map((c) => (
+            <button
+              key={c.id} onClick={() => setCampos({ ...campos, tipo: c.id })}
+              aria-pressed={campos.tipo === c.id}
+              className="toque-44 rounded-xl px-2.5 py-1.5 text-xs font-semibold"
+              style={{
+                background: campos.tipo === c.id ? hexToRgba(accent, 0.16) : COLORS.surface2,
+                color: campos.tipo === c.id ? accent : COLORS.textMuted,
+                border: `1px solid ${campos.tipo === c.id ? hexToRgba(accent, 0.4) : COLORS.border}`,
+              }}
+            >
+              {c.emoji} {c.nombre}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* La unidad de referencia (apartado 10). */}
+      <div>
+        <span className="text-xs block mb-1.5" style={{ color: COLORS.textMuted }}>Se mide en</span>
+        <div className="flex gap-1.5">
+          {UNIDADES.map((u) => (
+            <button
+              key={u.id} onClick={() => setCampos({ ...campos, unidad: u.id })}
+              aria-pressed={campos.unidad === u.id}
+              className="flex-1 toque-44 rounded-xl px-2.5 py-2 text-xs font-semibold"
+              style={{
+                background: campos.unidad === u.id ? hexToRgba(accent, 0.16) : COLORS.surface2,
+                color: campos.unidad === u.id ? accent : COLORS.textMuted,
+                border: `1px solid ${campos.unidad === u.id ? hexToRgba(accent, 0.4) : COLORS.border}`,
+              }}
+            >
+              {u.nombre}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {campo('calorias')}
+        {campo('proteinas')}
+        {campo('carbohidratos')}
+        {campo('grasas')}
+      </div>
+
+      <PrimaryButton accent={accent} icon={Check} onClick={guardar} disabled={tocado && !valido}>
+        {inicial ? 'Guardar cambios' : 'Crear alimento'}
+      </PrimaryButton>
+    </div>
+  );
+}
+
+
+/* Una fila de alimento del selector, con su ★ (apartado 7). */
+function FilaAlimento({ alimento, accent, favorito, onElegir, onFavorito, onEditar, onEliminar }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <button
+        onClick={() => onElegir(alimento)}
+        className="flex-1 min-w-0 text-left rounded-xl px-3 py-2.5 toque-44 transition-transform active:scale-[0.98]"
+        style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+      >
+        <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>
+          {alimento.nombre}{alimento.propio ? ' ·' : ''}
+          {alimento.propio && <span className="text-xs font-normal" style={{ color: accent }}> tuyo</span>}
+        </p>
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>
+          {alimento.marca ? `${alimento.marca} · ` : ''}{resumenNutricional(alimento)}
+        </p>
+      </button>
+      {onFavorito && (
+        <button
+          onClick={() => onFavorito(alimento.id)}
+          aria-label={favorito ? `Quitar ${alimento.nombre} de favoritos` : `Marcar ${alimento.nombre} como favorito`}
+          className="toque-44 p-1.5 -m-1.5 flex-shrink-0"
+        >
+          <Star size={16} style={{ color: favorito ? accent : COLORS.textMuted }} fill={favorito ? accent : 'none'} />
+        </button>
+      )}
+      {onEditar && (
+        <button onClick={() => onEditar(alimento)} aria-label={`Editar ${alimento.nombre}`} className="toque-44 p-1.5 -m-1.5 flex-shrink-0">
+          <Pencil size={15} style={{ color: COLORS.textMuted }} />
+        </button>
+      )}
+      {onEliminar && <BotonBorrar onClick={() => onEliminar(alimento.id)} label={`Eliminar ${alimento.nombre}`} />}
+    </div>
+  );
+}
+
+
+function AnadirAlimento({ momentoId, fecha, accent, onAdd, onAddFavorito, onCerrar, nutricion, onGuardarAlimentoPropio, onEliminarAlimentoPropio, onAlternarFavoritoAlimento }) {
   const [texto, setTexto] = useState('');
   const [elegido, setElegido] = useState(null);
   const [cantidad, setCantidad] = useState('');
+  /* E3 F37 (NU F5) — crear o editar un alimento propio, y qué sección se ve. */
+  const [creando, setCreando] = useState(false);
+  const [editando, setEditando] = useState(null);
   const [resultadosOFF, setResultadosOFF] = useState([]);
   const [buscandoOFF, setBuscandoOFF] = useState(false);
   const [avisoOFF, setAvisoOFF] = useState('');
   const [aMano, setAMano] = useState(false);
 
-  const resultados = buscarAlimentos(texto, BASE_ALIMENTOS);
+  /* 🚨 E3 F37 (NU F5) — el buscador es **el mismo de la F4**, que ya recibía la
+     base por parámetro precisamente para esto: ahora busca en la base global
+     **y en los alimentos que ha creado Josué**, con los suyos primero. */
+  const propios = nutricion?.alimentosPropios;
+  const favoritosAlim = nutricion?.favoritosAlimentos;
+  const resultados = buscarEnTodos(texto, propios);
+  const inicio = selectorInicial({ favoritos: favoritosAlim, alimentosPropios: propios, comidas: nutricion?.comidas, hoy: todayISO() });
+  const recientesDias = recientesPorDia(nutricion?.comidas, catalogoCompleto(propios), todayISO());
   const errorCantidad = cantidad === '' ? null : validarCantidad(cantidad);
   const previsualizacion = elegido && !errorCantidad ? escalar(elegido.por100, cantidad, elegido.unidad || 'g') : null;
 
@@ -541,7 +712,18 @@ function AnadirAlimento({ momentoId, fecha, accent, onAdd, onAddFavorito, onCerr
     );
   }
 
-  /* Paso 1 — el buscador (apartado 3). */
+  /* E3 F37 (NU F5), apartados 4, 5 y 6 — crear o editar un alimento propio. */
+  if (creando || editando) {
+    return (
+      <FormularioAlimento
+        accent={accent} inicial={editando}
+        onGuardar={(a) => { onGuardarAlimentoPropio(a); setCreando(false); setEditando(null); }}
+        onCancelar={() => { setCreando(false); setEditando(null); }}
+      />
+    );
+  }
+
+  /* Paso 1 — el selector (apartados 3 y 12). */
   return (
     <div className="space-y-2.5">
       <TextInput
@@ -553,19 +735,78 @@ function AnadirAlimento({ momentoId, fecha, accent, onAdd, onAddFavorito, onCerr
         <p className="text-xs" style={{ color: COLORS.textMuted }}>Escribe al menos {MINIMO_BUSQUEDA} letras.</p>
       )}
 
+      {/* 🚨 Apartado 12 — **sin escribir nada** se ven sus favoritos y sus
+          recientes, que es lo que le ahorra la búsqueda. Con texto escrito, los
+          resultados; nunca las dos cosas a la vez, que sería una pantalla larga. */}
+      {texto.trim().length < MINIMO_BUSQUEDA && (
+        <>
+          {inicio.favoritos.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>
+                ★ {seccionSelector('favoritos').nombre}
+              </p>
+              {inicio.favoritos.map((a) => (
+                <FilaAlimento
+                  key={a.id} alimento={a} accent={accent} favorito
+                  onElegir={elegir} onFavorito={onAlternarFavoritoAlimento}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Apartado 8 — *"Hoy: Avena, Leche · Ayer: Pollo, Arroz"*. ⚠️ No se
+              guardan: salen de las comidas, que ya llevan su `alimentoId`. */}
+          {recientesDias.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>
+                🕒 {seccionSelector('recientes').nombre}
+              </p>
+              {recientesDias.slice(0, 3).map((d) => (
+                <div key={d.fecha} className="space-y-1.5">
+                  <p className="text-xs" style={{ color: COLORS.textMuted }}>{d.etiqueta}</p>
+                  {d.alimentos.map((a) => (
+                    <FilaAlimento
+                      key={a.id} alimento={a} accent={accent}
+                      favorito={esFavorito(favoritosAlim, a.id)}
+                      onElegir={elegir} onFavorito={onAlternarFavoritoAlimento}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Apartado 6 — los suyos, con editar y eliminar. Los de la base NO
+              se pueden tocar: son valores de referencia (apartado 6). */}
+          {inicio.propios.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>Mis alimentos</p>
+              {inicio.propios.map((a) => (
+                <FilaAlimento
+                  key={a.id} alimento={a} accent={accent}
+                  favorito={esFavorito(favoritosAlim, a.id)}
+                  onElegir={elegir} onFavorito={onAlternarFavoritoAlimento}
+                  onEditar={setEditando} onEliminar={onEliminarAlimentoPropio}
+                />
+              ))}
+            </div>
+          )}
+
+          {inicio.favoritos.length === 0 && recientesDias.length === 0 && (
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>{seccionSelector('recientes').vacio}</p>
+          )}
+        </>
+      )}
+
       {resultados.length > 0 && (
         <div className="space-y-1.5">
           {resultados.slice(0, 8).map((a) => (
-            <button
-              key={a.id} onClick={() => elegir(a)}
-              className="w-full text-left rounded-xl px-3 py-2.5 toque-44 transition-transform active:scale-[0.98]"
-              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
-            >
-              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{a.nombre}</p>
-              <p className="text-xs" style={{ color: COLORS.textMuted }}>
-                {a.marca ? `${a.marca} · ` : ''}{a.tipo} · {a.por100.calorias} kcal / {unidad(a.unidad).referencia} {unidad(a.unidad).corto}
-              </p>
-            </button>
+            <FilaAlimento
+              key={a.id} alimento={a} accent={accent}
+              favorito={esFavorito(favoritosAlim, a.id)}
+              onElegir={elegir} onFavorito={onAlternarFavoritoAlimento}
+              onEditar={a.propio ? setEditando : null}
+            />
           ))}
         </div>
       )}
@@ -602,6 +843,9 @@ function AnadirAlimento({ momentoId, fecha, accent, onAdd, onAddFavorito, onCerr
         </p>
       )}
 
+      {/* Apartado 12 — el botón de crear, siempre a la vista. */}
+      <GhostBtn onClick={() => setCreando(true)} icon={Plus}>{ACCION_CREAR}</GhostBtn>
+
       <button onClick={() => setAMano(true)} className="toque-44 text-xs font-semibold" style={{ color: accent }}>
         Escribirlo a mano, escanear un código o hacer una foto
       </button>
@@ -617,7 +861,7 @@ function AnadirAlimento({ momentoId, fecha, accent, onAdd, onAddFavorito, onCerr
    🚨 Cambiar la cantidad **recalcula**, y solo se ofrece si hay `por100` de
    dónde calcular: una comida escrita a mano antes de esta fase no lo tiene, así
    que se dice en vez de enseñar un control que no haría nada (regla 8). */
-function AlimentoRegistrado({ comida, accent, onActualizar, onEliminar }) {
+function AlimentoRegistrado({ comida, accent, onActualizar, onEliminar, onRepetir }) {
   const [abierto, setAbierto] = useState(false);
   const [cant, setCant] = useState(comida.cantidad != null ? String(comida.cantidad) : '');
   const [error, setError] = useState(null);
@@ -674,6 +918,20 @@ function AlimentoRegistrado({ comida, accent, onActualizar, onEliminar }) {
             </p>
           )}
 
+          {/* 🚨 E3 F37 (NU F5), apartado 9 — *"desde una comida registrada
+              anteriormente, volver a añadir el mismo alimento rápidamente"*, con
+              su cantidad ya puesta. ⚠️ Funciona **también con las escritas a
+              mano**, que son justo las que más cuesta volver a escribir. */}
+          {onRepetir && (
+            <button
+              onClick={() => { onRepetir(comida); setAbierto(false); }}
+              className="toque-44 rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5"
+              style={{ background: COLORS.surface, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+            >
+              <Repeat size={13} /> Repetir hoy{cantidadTexto ? ` · ${cantidadTexto}` : ''}
+            </button>
+          )}
+
           {/* Apartado 7 — *"cambiar de comida"*, sin tocar ni un número. */}
           <div>
             <p className="text-xs mb-1.5" style={{ color: COLORS.textMuted }}>Moverlo a:</p>
@@ -697,7 +955,7 @@ function AlimentoRegistrado({ comida, accent, onActualizar, onEliminar }) {
 }
 
 
-function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha, onAdd, onAddFavorito, onDeleteComida, onActualizarComida, indice }) {
+function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha, onAdd, onAddFavorito, onDeleteComida, onActualizarComida, onRepetirComida, nutricion, onGuardarAlimentoPropio, onEliminarAlimentoPropio, onAlternarFavoritoAlimento, indice }) {
   /* Apartado 9 — el resumen de la comida, **derivado**: guardarlo mentiría en
      cuanto él borre un alimento. Y sin alimentos es `null`, no una línea de
      ceros. */
@@ -731,6 +989,7 @@ function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha
             <AlimentoRegistrado
               key={c.id} comida={c} accent={accent}
               onActualizar={onActualizarComida} onEliminar={onDeleteComida}
+              onRepetir={onRepetirComida}
             />
           ))}
         </div>
@@ -748,6 +1007,10 @@ function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha
           <AnadirAlimento
             momentoId={mom.id} fecha={fecha} accent={accent}
             onAdd={onAdd} onAddFavorito={onAddFavorito} onCerrar={onCerrar}
+            nutricion={nutricion}
+            onGuardarAlimentoPropio={onGuardarAlimentoPropio}
+            onEliminarAlimentoPropio={onEliminarAlimentoPropio}
+            onAlternarFavoritoAlimento={onAlternarFavoritoAlimento}
           />
         </div>
       )}
@@ -957,7 +1220,7 @@ function ConfiguracionNutricion({ nutricion, perfil, accent, onGuardar, onCerrar
   );
 }
 
-function ComidasTab({ comidas, nutricion, perfil, onAdd, onAddFavorito, onDeleteComida, onActualizarComida, onGuardarObjetivos, accent }) {
+function ComidasTab({ comidas, nutricion, perfil, onAdd, onAddFavorito, onDeleteComida, onActualizarComida, onGuardarObjetivos, onGuardarAlimentoPropio, onEliminarAlimentoPropio, onAlternarFavoritoAlimento, accent }) {
   const hoy = todayISO();
   /* 🚨 Apartado 2 — *"Abrir automáticamente en HOY"*, siempre: el día que se
      estaba mirando no se guarda, es de la pantalla (EH F40). */
@@ -1076,6 +1339,14 @@ function ComidasTab({ comidas, nutricion, perfil, onAdd, onAddFavorito, onDelete
             onAddFavorito={onAddFavorito}
             onDeleteComida={onDeleteComida}
             onActualizarComida={onActualizarComida}
+            /* E3 F37 (NU F5), apartado 9 — repetir una comida la añade AL DÍA QUE
+               SE ESTÁ MIRANDO, con su cantidad: es la misma decisión que el ＋ de
+               la E3 F9, donde el contexto viaja con la acción. */
+            onRepetirComida={(c) => onAdd(reutilizarComida(c, { fecha, momentoId: c.momento }))}
+            nutricion={nutricion}
+            onGuardarAlimentoPropio={onGuardarAlimentoPropio}
+            onEliminarAlimentoPropio={onEliminarAlimentoPropio}
+            onAlternarFavoritoAlimento={onAlternarFavoritoAlimento}
             indice={i}
           />
         ))}
@@ -1142,7 +1413,7 @@ function FavoritosTab({ favoritos, onRegistrar, onEliminar, accent }) {
   );
 }
 
-export default function NutritionView({ nutricion, perfil, onAddComida, onDeleteComida, onActualizarComida, onAddFavorito, onRegistrarFavorito, onEliminarFavorito, onSetAgua, onGuardarObjetivos, accent }) {
+export default function NutritionView({ nutricion, perfil, onAddComida, onDeleteComida, onActualizarComida, onAddFavorito, onRegistrarFavorito, onEliminarFavorito, onSetAgua, onGuardarObjetivos, onGuardarAlimentoPropio, onEliminarAlimentoPropio, onAlternarFavoritoAlimento, accent }) {
   const [sub, setSub] = useState('comidas');
 
   return (
@@ -1160,7 +1431,10 @@ export default function NutritionView({ nutricion, perfil, onAddComida, onDelete
           comidas={nutricion.comidas} nutricion={nutricion} perfil={perfil}
           onAdd={onAddComida} onAddFavorito={onAddFavorito} onDeleteComida={onDeleteComida}
           onActualizarComida={onActualizarComida}
-          onGuardarObjetivos={onGuardarObjetivos} accent={accent}
+          onGuardarObjetivos={onGuardarObjetivos}
+          onGuardarAlimentoPropio={onGuardarAlimentoPropio}
+          onEliminarAlimentoPropio={onEliminarAlimentoPropio}
+          onAlternarFavoritoAlimento={onAlternarFavoritoAlimento} accent={accent}
         />
       )}
       {sub === 'agua' && <AguaTab agua={nutricion.agua} onSetAgua={onSetAgua} accent={accent} />}
