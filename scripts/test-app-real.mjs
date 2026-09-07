@@ -2699,7 +2699,14 @@ for (const nombre of ['Hábitos', 'Pomodoro', 'Tareas', 'Metas', 'Objetivos', 'R
 }
 ok(/Concéntrate sin distracciones/.test(lanzador_pr1) && /Define hacia dónde quieres avanzar/.test(lanzador_pr1),
   '⚠️ cada una con la descripción del enunciado');
-ok(/1 hábito/.test(lanzador_pr1) && /1 tarea/.test(lanzador_pr1) && /1 objetivo/.test(lanzador_pr1),
+/* Desde la E3 F29 cada cuadradito habla el idioma de SU mini-app —"0/1 hoy",
+   "1 activo"— en vez de contar elementos todos igual. Lo que esta comprobación
+   protege sigue siendo lo mismo: que los números salen de los módulos de verdad
+   y que **los objetivos se leen de su propia clave**, no de `productividad`.
+   ⚠️ Tareas no aparece aquí a propósito: la tarea del escenario **no tiene
+   fecha** (es el caso de la E3 F26, unas líneas más abajo), y "pendientes" son
+   las de hoy y las vencidas — una sin fecha no toca hoy, así que no se pinta. */
+ok(/0\/1 hoy/.test(lanzador_pr1) && /1 activo/.test(lanzador_pr1),
   '🚨 con indicadores de DATOS REALES, incluidos los objetivos leídos de su propia clave');
 ok(!/0 metas|0 rutinas/.test(lanzador_pr1),
   '🚨 y una mini-app vacía NO enseña un cero: no se pinta nada');
@@ -3147,5 +3154,90 @@ ok(plantillaFinal_pr6 && plantillaFinal_pr6.pasos.length === 2
 
 const lista_pr6 = await esperarTexto(/Última vez/i);
 ok(/Última vez: Hoy/i.test(lista_pr6), '⚠️ y la tarjeta dice cuándo fue la última vez');
+
+/* ── E3 F29 (PR F7) · INTEGRACIÓN GLOBAL ─────────────────────────────────
+   🚨 Lo que ninguna prueba de Node puede ver: que el centro de control **se pinta
+   con los números de las seis mini-apps a la vez**, que la barra **sube al
+   completar algo**, y que Hoy enseña su resumen. */
+const HOY_PR7 = new Date().toLocaleDateString('sv-SE');
+almacen.productividad = {
+  habitos: [
+    { id: 'h1_pr7', nombre: 'Leer 20 min', activo: true, historial: { [HOY_PR7]: true } },
+    { id: 'h2_pr7', nombre: 'Beber agua', activo: true, historial: {} },
+  ],
+  tareas: [
+    { id: 't1_pr7', texto: 'Estudiar biología', fecha: HOY_PR7, prioridad: 'alta', hecha: false },
+    { id: 't2_pr7', texto: 'Llamar al dentista', fecha: '2026-01-05', prioridad: 'media', hecha: false },
+  ],
+  metas: [{ id: 'm_pr7', nombre: '15 dominadas', tipo: 'numerico', objetivo: 15, progreso: 8, objetivoId: 'o_pr7' }],
+  rutinas: [], rutinaEjecuciones: [], rutinaEnCurso: null,
+  /* 🚨 El número de sesiones de hoy sale de `pomodoroSesiones`, NUNCA del mapa
+     `pomodoros`: la E3 F25 lo dejó como una proyección con una sola fuente de
+     verdad. Sembrar el mapa y dejar las sesiones vacías es sembrar la copia. */
+  pomodoros: { [HOY_PR7]: 2 }, apuntes: [],
+  pomodoroConfig: null, pomodoroEnCurso: null,
+  pomodoroSesiones: [
+    { id: 's1_pr7', tipo: 'focus', inicio: Date.now() - 5400000, fin: Date.now() - 3900000, duracionMs: 1500000, completada: true, fecha: HOY_PR7 },
+    { id: 's2_pr7', tipo: 'focus', inicio: Date.now() - 3000000, fin: Date.now() - 1500000, duracionMs: 1500000, completada: true, fecha: HOY_PR7 },
+  ],
+};
+almacen.objetivos = {
+  lista: [{ id: 'o_pr7', texto: 'Mejorar mi físico', plazo: '1 año', cumplido: false, fechaCreacion: HOY_PR7, principal: true }],
+  ultimaRevision: HOY_PR7,
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+/* Apartado 19: Hoy enseña el resumen de Productividad. */
+const hoy_pr7 = await esperarTexto(/PRODUCTIVIDAD/i);
+ok(/PRODUCTIVIDAD/i.test(hoy_pr7), '🚨 HOY ENSEÑA EL RESUMEN DE PRODUCTIVIDAD (apartado 19)');
+ok(/2 tareas pendientes/i.test(hoy_pr7), '⚠️ con las tareas pendientes de verdad');
+ok(/1\/2 hábitos/i.test(hoy_pr7), '⚠️ y los hábitos, contados por su propia mini-app');
+
+await pulsar('Vida');
+ok(await pulsar('Productividad'), 'Productividad se abre');
+
+const centro_pr7 = await esperarTexto(/Tu productividad hoy/i);
+ok(/Tu productividad hoy/i.test(centro_pr7), '🚨 Y ES UN CENTRO DE CONTROL, no solo seis cuadraditos');
+/* Dos tareas (la de hoy y la vencida) + dos hábitos = 4 completables; hecho, el
+   hábito de leer. El Pomodoro NO entra: no hay un número de sesiones que «toque»
+   hacer (`FUENTES_RESUMEN_DIA`). */
+ok(/1 \/ 4 completado/i.test(centro_pr7),
+  '⚠️ con el resumen del día de datos reales: dos tareas y dos hábitos, uno hecho');
+ok(/Te quedan/i.test(centro_pr7), '⚠️ y "¿qué me queda por hacer hoy?" (apartado 20)');
+ok(/2 tareas/i.test(centro_pr7) && /1 hábito/i.test(centro_pr7), '⚠️ con sus cifras');
+
+/* Apartado 5: la prioridad determinista — lo vencido primero. */
+ok(/Para hoy/i.test(centro_pr7), '⚠️ y la sección PARA HOY');
+const posVencida = centro_pr7.indexOf('Llamar al dentista');
+const posAlta = centro_pr7.indexOf('Estudiar biología');
+ok(posVencida > -1 && posAlta > -1 && posVencida < posAlta,
+  '🚨 Y LA TAREA VENCIDA VA ANTES QUE LA DE ALTA PRIORIDAD: el orden literal del enunciado');
+
+/* Apartado 1: los seis cuadraditos con información real. */
+ok(/1\/2 hoy/i.test(centro_pr7), '🚨 el cuadradito de Hábitos dice "1/2 hoy"');
+ok(/2 pendientes/i.test(centro_pr7), '⚠️ el de Tareas, sus pendientes');
+ok(/2 sesiones/i.test(centro_pr7), '⚠️ el de Pomodoro, sus sesiones de hoy');
+ok(/1 activa/i.test(centro_pr7), '⚠️ el de Metas, las activas');
+ok(/⭐ Mejorar mi físico/i.test(centro_pr7), '⚠️ y el de Objetivos destaca el principal');
+
+/* Apartado 6: la cadena Objetivo → Meta → Tarea. */
+ok(/De tus objetivos a hoy/i.test(centro_pr7), '⚠️ y se ve la cadena Objetivo → Meta → Tarea');
+ok(/8 \/ 15/.test(centro_pr7), '⚠️ con el progreso de la meta');
+
+/* 🚨 Completar algo tiene que MOVER el número. */
+ok(await pulsar('Abrir Tareas'), 'se entra en Tareas');
+ok(await pulsar('Completar Estudiar biología'), 'y se completa una tarea');
+await page.waitForTimeout(900);
+ok(await pulsar('Volver a Productividad'), 'se vuelve al centro de control');
+const trasCompletar_pr7 = await esperarTexto(/2 \/ 4 completado/i);
+ok(/2 \/ 4 completado/i.test(trasCompletar_pr7),
+  '🚨 Y LA BARRA SUBE SIN QUE CAMBIE EL TOTAL: completar no puede sacar la tarea de los dos lados');
+ok(/1 tarea/i.test(trasCompletar_pr7), '⚠️ y "te quedan" baja a una');
+
+/* Apartado 3: las acciones rápidas abren su mini-app. */
+ok(await pulsar('Pomodoro — abre pomodoro'), 'una acción rápida abre su mini-app');
+const pom_pr7 = await esperarTexto(/Concéntrate/i);
+ok(/Concéntrate/i.test(pom_pr7), '⚠️ y llega al Pomodoro que ya existía, sin un temporizador nuevo');
 
 await salir(browser);

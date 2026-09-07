@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.49.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.50.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (44 fases — **28 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (46 fases — **29 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -71,7 +71,7 @@ listadas con decisión tomada.
 | Evitar romper algo o repetir un debate ya cerrado | **`docs/03_CONTRADICCIONES_DUPLICADOS_DEPENDENCIAS.md`** |
 | Saber qué archivo tocar | **`docs/04_INVENTARIO_ESTADO_ACTUAL.md`** |
 | Comprobar que no falta nada | **`docs/05_CHECKLIST_GLOBAL.md`** |
-| Trabajar en la **Entrega 3** (44 fases — **es lo que se está haciendo ahora**) | **`docs/11_ENTREGA3_ORDEN.md`** |
+| Trabajar en la **Entrega 3** (46 fases — **es lo que se está haciendo ahora**) | **`docs/11_ENTREGA3_ORDEN.md`** |
 | Trabajar en la **Entrega 2** (7 módulos nuevos, 106 fases) | **`docs/06_ENTREGA2_ANALISIS.md`** y **`docs/07_CHECKLIST_ENTREGA2.md`** |
 | La especificación literal de las Entregas 2 y 3 | `especificaciones/` 🔒 **intocable** |
 | El contexto histórico turno a turno | `CHANGELOG.md` |
@@ -138,14 +138,17 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, 11 537 pruebas unitarias con Node (5 de ellas de auditoría), 1408 casos de renderizado real
-con `react-dom/server`, 13 reglas invariantes y **450 comprobaciones sobre la aplicación de verdad
-en Chromium** — **13 408 comprobaciones**.
+Vite, **14 230 pruebas unitarias** con Node repartidas en **131 suites** (5 de ellas de auditoría),
+**1956 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **882
+comprobaciones sobre la aplicación de verdad en Chromium** — **17 079 comprobaciones**.
 
-Eso ya ha encontrado **setenta y cuatro bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **ochenta y cinco bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
-dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`) y una
-comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles.
+dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`), una
+comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles, una
+tarea que se guardaba con **dos fechas distintas** y no salía en ninguna de las cuatro pantallas que
+la buscaban, y una barra de progreso que **no podía subir nunca** porque completar algo lo sacaba
+del numerador y del denominador a la vez.
 
 ⚠️ **Lo que las pruebas NO cubren, y sigue pendiente de que lo mire Josué (R1):** Supabase real, la
 sincronización entre dispositivos, los permisos del navegador, el aspecto en un iPhone y el
@@ -165,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 28 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 29 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -181,12 +184,21 @@ diez fases HC—, y la **F16 (la Biblioteca como lanzador de mini-apps, v3.37.0)
 el bloque de **Biblioteca**, la **F17 (Libros, v3.38.0)**, la **F18 (Guardados, v3.39.0)** y la
 **F19 (Ideas, v3.40.0)**, la **F20 (Documentos, v3.41.0)**, la **F21 (Colecciones, v3.42.0)** y la
 **F22 (integración y experiencia global, v3.43.0)**, que 🏁 **CERRÓ EL BLOQUE DE BIBLIOTECA** —las
-ocho fases BL—. Con eso hay **dos bloques cerrados**: Hoy y Calendario (10/10) y Biblioteca (8/8). La
+ocho fases BL—. La
 **F23 (Productividad como lanzador, v3.44.0)**, la **F24 (Hábitos, v3.45.0)**, la **F25 (Pomodoro,
-v3.46.0)**, la **F26 (Tareas, v3.47.0)**, la **F27 (Metas y Objetivos, v3.48.0)** y la **F28
-(Rutinas, v3.49.0)**, con las que el bloque de **Productividad** va por **6 de 7**; la que viene es
-la **29 — PR F7: integración global y sistema inteligente**. El índice, con la
+v3.46.0)**, la **F26 (Tareas, v3.47.0)**, la **F27 (Metas y Objetivos, v3.48.0)**, la **F28
+(Rutinas, v3.49.0)** y la **F29 (integración global, v3.50.0)**, que 🏁 **CERRÓ EL BLOQUE DE
+PRODUCTIVIDAD** —las siete fases PR—. Con eso hay **tres bloques cerrados**: Hoy y Calendario
+(10/10), Biblioteca (8/8) y Productividad (7/7). La que viene es
+la **30 — BN: Bienestar, rediseño y reorganización del apartado**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
+
+🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
+**Bienestar** y **Nutrición** el documento trae **dos fases de Sueño** —*"Sueño 2"*, el mismo
+rótulo que *"Biblioteca 8"*—: **SU F1, registro simple** (línea 15282) y **SU F2, gráfica de 7 días
+móviles** (15543). No estaban en la tabla de `docs/11`. **No es una contradicción de Josué, es un
+fallo del índice**, así que se corrigió sin preguntarle: lo que iba de la 31 a la 44 va ahora de la
+33 a la 46. ⚠️ El *"12. SUEÑO"* de la línea 1407 **no** es una fase, es un apartado de HC F1.
 
 ⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
 rótulo dice *"Biblioteca 8"* y el documento va **F1, F2, F4, F5, F6, F6, F7, F8**— y **la Fase 6
@@ -313,6 +325,40 @@ código de agosto mientras él decía *"la web sigue igual"*.
 - 🐛 **Y una prueba busca el MECANISMO, no la palabra** (E3 F21, sexta vez): la constante que promete
   que los elementos **no** se eliminan se llama `AVISO_ELIMINAR`, y el barrido de borrados saltaba
   con la frase que hace la promesa.
+
+- 🚨 **DOS FUNCIONES HERMANAS PUEDEN NO TENER LA MISMA FIRMA, Y LA QUE NO LA TIENE NO FALLA: CALLA**
+  (E3 F29). `filtrarMetas`, `filtrarObjetivos` y `filtrarRutinas` reciben una **cadena**;
+  `filtrarTareas(tareas, { filtro, categoria, hoy })` recibe un **objeto**. Pasarle `'hoy'` por
+  posición dejaba `filtro` en `undefined`, así que **devolvía todas las tareas**: el resumen del día,
+  *"qué me queda"*, la lista por prioridad y el bloque de Hoy contaban de más, con las pantallas
+  pintándose perfectas. Cinco sitios. **Antes de llamar a la cuarta hermana, mirar su firma.**
+- 🚨 **UNA BARRA DE PROGRESO NECESITA LO YA HECHO EN EL DENOMINADOR** (E3 F29). El filtro `'hoy'`
+  excluye lo completado —correcto para una lista de pendientes—, así que marcar una tarea la quitaba
+  del numerador **y del total**: la barra no podía subir nunca. `tareasDelDiaConHechas()` es la lista
+  de la barra; el recorrido completa una tarea y comprueba que pasa de `1 / 3` a `2 / 3` **sin que
+  cambie el total**. Una lista de pendientes y una base de progreso son dos preguntas distintas.
+- 🚨 **ANTES DE LEER UN CAMPO DE OTRO MÓDULO, MIRAR QUÉ FORMA TIENE** (E3 F29, y EH F18 lo dijo
+  primero): `habitos.paraHoy()` devuelve `pendientes` como **número** y la racha en `rachaDestacada`,
+  no en `racha`. Leer `.racha` da `undefined`, que no falla: deja la línea vacía para siempre.
+- ⚠️ **UN PANEL ROTO NO PUEDE TUMBAR LA PANTALLA** (E3 F29): `panelSeguro` envuelve cada mini-app, así
+  que un módulo con datos corruptos se queda con su aviso y las otras cinco siguen funcionando. Una
+  pantalla que junta seis fuentes hereda los seis riesgos.
+- ⚠️ **EL PROGRESO GLOBAL NO SE MEZCLA** (E3 F29, apartado 13): un porcentaje **por módulo**, nunca
+  uno solo sobre cosas que no se miden igual — un 47 % de "productividad" no significa nada.
+- ⚠️ **UNA FRASE DE RESUMEN ES UNA TABLA POR UMBRALES** (E3 F29): `FRASES_RESUMEN`, sin azar y sin
+  juicio. Ni *"vas mejor"*, ni *"flojo"*. Es la lección de la E3 F13 en otra pantalla.
+- ⚠️ **`integracionPR.js` NO GUARDA NI UNA CIFRA** (E3 F29): el centro de control, las cadenas
+  Objetivo → Meta → Tarea, las estadísticas y la racha de días productivos se derivan en el momento.
+  La racha sale del **historial real**, como todas las de este proyecto.
+- 🐛 **UN ESCENARIO DE PRUEBA NO SE SIEMBRA CON LA COPIA, SE SIEMBRA CON EL DATO** (E3 F29). El
+  recorrido puso `pomodoros: { hoy: 2 }` y dejó `pomodoroSesiones` vacío — pero desde la E3 F25 ese
+  mapa **es una proyección**: el número sale de las sesiones. La prueba salió roja con el código
+  bien. **Antes de sembrar un campo, mirar si es la fuente o el reflejo.**
+- 🐛 **Y DOS ROJOS MÁS QUE ERAN DE LA PRUEBA** (E3 F29, y ya van cinco veces en la entrega): una
+  suma mal hecha a mano —*"1 / 3"* donde eran cuatro cosas completables— y una comprobación de la
+  E3 F23 escrita con las palabras de entonces, que el rediseño de esta fase cambió con todo el
+  derecho. **Mirar qué línea la hace saltar antes de tocar el código**: de los cuatro rojos, **uno
+  solo era del código** —la racha decía *"🔥 1 días"*—, y ése sí es de los que ve Josué.
 
 - 🚨 **UN ESTADO GUARDADO DENTRO DE LA PLANTILLA BORRA EL HISTORIAL** (E3 F28). Un paso de rutina
   llevaba `hecho` **dentro de la rutina** desde la Fase 6, así que **hacerla el martes borraba lo del

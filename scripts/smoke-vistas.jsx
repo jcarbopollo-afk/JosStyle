@@ -2138,6 +2138,61 @@ const CASOS = [
       })],
     ];
   })(),
+  /* E3 F29 (PR F7) — el centro de control, con las seis mini-apps con datos de
+     verdad y también con todo vacío. */
+  ...(() => {
+    const HOY_F29 = '2026-09-07';
+    const objF29 = { ...crearObjF27({ texto: 'Mejorar mi físico', plazo: '1 año', hoy: HOY_F29 }), id: 'o_f29', principal: true };
+    const metaF29 = { ...actProgF27(crearMetaF27({ nombre: '15 dominadas', objetivo: 15, hoy: HOY_F29 }), 8, { hoy: HOY_F29 }), objetivoId: 'o_f29' };
+    let rutF29 = crearRutF28({ nombre: 'Rutina de mañana', hoy: HOY_F29 });
+    rutF29 = anadirPasoF28(rutF29, crearPasoF28({ texto: 'Levantarse', minutos: 5 }));
+    rutF29 = editarRutF28(rutF29, { programacion: { tipo: 'diaria', hora: '08:00' } });
+    const centro = (extra = {}) => ({
+      productividad: {
+        habitos: [
+          { id: 'h1', nombre: 'Leer', activo: true, historial: { [HOY_F29]: true } },
+          { id: 'h2', nombre: 'Beber agua', activo: true, historial: {} },
+        ],
+        rutinas: [rutF29],
+        tareas: [
+          crearTareaF26({ texto: 'Estudiar biología', fecha: HOY_F29, prioridadId: 'alta' }),
+          crearTareaF26({ texto: 'Llamar', fecha: '2026-09-01' }),
+          { ...crearTareaF26({ texto: 'Entrenar dominadas', fecha: HOY_F29 }), metaId: metaF29.id },
+        ],
+        metas: [metaF29], pomodoros: { [HOY_F29]: 2 }, apuntes: [],
+        pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+        rutinaEjecuciones: [], rutinaEnCurso: null,
+      },
+      objetivos: { lista: [objF29], ultimaRevision: HOY_F29 }, accent,
+      onAddHabito: noop, onUpdateHabito: noop, onDeleteHabito: noop,
+      onAddRutina: noop, onUpdateRutina: noop, onDeleteRutina: noop,
+      onCambiarEjecucionRutina: noop, onRegistrarEjecucionRutina: noop,
+      onAddTarea: noop, onUpdateTarea: noop, onToggleTarea: noop, onDeleteTarea: noop,
+      onAddMeta: noop, onUpdateMeta: noop, onDeleteMeta: noop,
+      onCompletarPomodoro: noop,
+      onGuardarConfigPomodoro: noop, onCambiarSesionPomodoro: noop, onFinalizarSesionPomodoro: noop,
+      onAddObjetivo: noop, onUpdateObjetivo: noop, onDeleteObjetivo: noop, onRevisionHecha: noop,
+      onGuardarListaObjetivos: noop,
+      foco: null, onFocoConsumido: noop, ...extra,
+    });
+    return [
+      ['ProductivityView · centro de control', ProductivityView, () => centro()],
+      ['ProductivityView · centro de control (vacío)', ProductivityView, () => centro({
+        productividad: {
+          habitos: [], rutinas: [], tareas: [], metas: [], pomodoros: {}, apuntes: [],
+          pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+          rutinaEjecuciones: [], rutinaEnCurso: null,
+        },
+        objetivos: { lista: [], ultimaRevision: null },
+      })],
+      ['ProductivityView · centro con Pomodoro en marcha', ProductivityView, () => centro({
+        productividad: {
+          ...centro().productividad,
+          pomodoroEnCurso: { tipo: 'focus', inicio: Date.now() - 60000, duracionMs: 1500000, pausaAcumuladaMs: 0, pausadoEn: null, sesionesHechas: 0 },
+        },
+      })],
+    ];
+  })(),
   ['WellbeingView', WellbeingView, (e) => ({ bienestar: e.bienestar, onAdd: noop, onDelete: noop, onAddReflexion: noop, onCompletarSesion: noop, accent })],
   ['BusinessView', BusinessView, (e) => ({ negocio: e.negocio, onAdd: noop, onUpdate: noop, onDelete: noop, accent })],
   ['ArmarioView', ArmarioView, (e) => ({

@@ -10,6 +10,10 @@ import { calcularDuracion, formatHoras, hexToRgba, diasHasta, formatFecha, today
 import { resumenHabito } from '../lib/rachas';
 // Entrega 3 · F6 (HC F1) — los textos y el tope del apunte, del enunciado.
 import { TEXTOS_APUNTES, MAX_APUNTE } from '../lib/centroDelDia';
+/* E3 F29 (PR F7, apartado 19) — el resumen de Productividad en Hoy.
+   🚨 *"No convertir Hoy en otra copia de Productividad"*: son cinco líneas y un
+   enlace, y cada número lo da la mini-app que lo tiene. */
+import { resumenParaHoy } from '../lib/integracionPR';
 import { ResumenRachaHoy } from './RachasView';
 import { resumenDelDia, eventosDelDia } from '../lib/calendario';
 import { puntuacionDelDia, mensajePuntuacion } from '../lib/puntuacion';
@@ -235,6 +239,32 @@ function AvisoRachaEnRiesgo({ productividad, accent, notificaciones }) {
         Tu racha de <span className="font-semibold">"{enRiesgo.nombre}"</span> ({enRiesgo.dias} días) se rompe si no la marcas hoy.
       </p>
     </Card>
+  );
+}
+
+/* E3 F29 (PR F7, apartado 19) — *"Hoy debe poder mostrar un resumen compacto…
+   Al pulsar: entrar directamente en Productividad."*
+
+   🚨 **Ni un número se calcula aquí**: `resumenParaHoy` le pregunta a cada
+   mini-app por su propia función, y devuelve **solo las líneas que tienen algo
+   que decir**. Con nada que contar, no se pinta la tarjeta — nunca un cero. */
+function ResumenProductividadHoy({ productividad, objetivos, accent, onNavegar }) {
+  if (!productividad) return null;
+  const r = resumenParaHoy({ productividad, objetivos });
+  if (r.vacio) return null;
+  return (
+    <button
+      onClick={() => onNavegar && onNavegar(r.destino)}
+      aria-label="Abrir Productividad"
+      className="w-full text-left rounded-3xl transition-transform active:scale-[0.96]"
+    >
+      <Card style={{ padding: '0.85rem 1.1rem' }}>
+        <p className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>PRODUCTIVIDAD</p>
+        {r.lineas.map((l) => (
+          <p key={l} className="text-sm mt-0.5" style={{ color: COLORS.text }}>{l}</p>
+        ))}
+      </Card>
+    </button>
   );
 }
 
@@ -672,6 +702,9 @@ export default function DashboardView({
           />
         )}
         {!oculto('productividad') && <AvisoRachaEnRiesgo productividad={productividad} accent={accent} notificaciones={notificaciones} />}
+        {!oculto('productividad') && (
+          <ResumenProductividadHoy productividad={productividad} objetivos={objetivos} accent={accent} onNavegar={onNavegar} />
+        )}
         {!oculto('estudios') && <AvisoExamenSinHoras estudios={estudios} accent={accent} notificaciones={notificaciones} />}
       </div>
 

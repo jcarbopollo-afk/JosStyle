@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F29 — Productividad: integración global.
+if node --import ./scripts/resolver-vite.mjs scripts/test-integracion-pr.mjs >/tmp/jc_intpr.log 2>&1; then
+  ok "Productividad: integración global (E3 F29) — $(grep -c '✓' /tmp/jc_intpr.log) comprobaciones"
+else
+  fallo "Falla la integración de Productividad (E3 F29)"; grep '✗' /tmp/jc_intpr.log
+fi
+
 # Entrega 3 · F28 — Productividad: Rutinas.
 if node --import ./scripts/resolver-vite.mjs scripts/test-rutinas.mjs >/tmp/jc_rutinas.log 2>&1; then
   ok "Productividad: Rutinas (E3 F28) — $(grep -c '✓' /tmp/jc_rutinas.log) comprobaciones"

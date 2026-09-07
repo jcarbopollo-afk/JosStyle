@@ -12,7 +12,11 @@ import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, GhostBtn, 
 /* E3 F23 (PR F1) — Productividad pasa a ser un lanzador de seis mini-apps. El
    catálogo vive en su librería; aquí solo están los componentes. */
 import {
-  MINI_APPS_PR, miniAppPR, indicadorDePR, CLASE_TARJETA_PR, retrasoDeTarjetaPR,
+  /* ⚠️ `indicadorDePR` (PR F1) ya no se usa aquí: los indicadores de los seis
+     cuadraditos los da `panelDeMiniApp`, que le pregunta a cada mini-app por su
+     propia función. La de la PR F1 sigue viva en `productividad.js`, que la usa
+     en su condición de finalización. */
+  MINI_APPS_PR, miniAppPR, CLASE_TARJETA_PR, retrasoDeTarjetaPR,
 } from '../lib/productividad';
 /* E3 F24 (PR F2) — Hábitos, la mini-app completa. Ni una racha se calcula en esta
    vista: todo sale de `habitos.js`, que se lo pregunta al motor de `rachas.js`. */
@@ -77,6 +81,13 @@ import {
      salen de `rachas.js`. Dos importaciones del mismo nombre no compilan. */
   FILTROS_RUTINA, filtrarRutinas, fechaDeEjecucion,
 } from '../lib/rutinas';
+/* E3 F29 (PR F7) — la integración global. 🚨 Aquí no se calcula nada: cada
+   número sale de la función de SU mini-app, importada en `FUENTES_PR`. */
+import {
+  panelDeMiniApp, panelSeguro, resumenDelDia, queMeQueda, paraHoyPR,
+  PESOS_PRIORIDAD, ACCIONES_RAPIDAS_PR, cadenas, progresoGlobal,
+  PERIODOS_PR, estadisticasPR, rachaProductividad, DEFINICION_DIA_PRODUCTIVO,
+} from '../lib/integracionPR';
 import ObjectivesView from './ObjectivesView';
 
 /* ---------- Hábitos ---------- */
@@ -2293,7 +2304,7 @@ export const iconoDeMiniAppPR = (id) => {
 /* La plaquita. *"Icono grande, nombre, descripción corta, indicador de estado
    cuando sea posible, microanimación y feedback al tocar… **NO hacer tarjetas
    gigantes**: deben parecer realmente 6 aplicaciones pequeñas."* */
-export function TarjetaMiniAppPR({ app, indicador, accent, indice = 0, onAbrir }) {
+export function TarjetaMiniAppPR({ app, indicador, secundaria = null, accent, indice = 0, onAbrir }) {
   const Icono = iconoDeMiniAppPR(app.id);
   return (
     <button
@@ -2311,6 +2322,11 @@ export function TarjetaMiniAppPR({ app, indicador, accent, indice = 0, onAbrir }
         {/* *"NO inventar datos"*: sin nada que contar, no se pinta nada. */}
         {indicador ? (
           <p className="text-[11px] font-semibold mt-1.5" style={{ color: accent }}>{indicador}</p>
+        ) : null}
+        {/* E3 F29: la segunda línea es opcional — la racha, la tarea prioritaria,
+            el objetivo principal… y `null` cuando no hay nada que decir. */}
+        {secundaria ? (
+          <p className="text-[11px] leading-snug mt-0.5 truncate" style={{ color: COLORS.textMuted }}>{secundaria}</p>
         ) : null}
       </Card>
     </button>
@@ -2331,6 +2347,216 @@ export function CabeceraMiniAppPR({ app, accent, onVolver }) {
         <p className="text-base font-bold" style={{ color: COLORS.text }}>{app.nombre}</p>
         <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{app.descripcion}</p>
       </div>
+    </div>
+  );
+}
+
+/* ---------- El centro de control (E3 F29 · PR F7) ---------- */
+
+function BarraDia({ porcentaje, accent }) {
+  // ⚠️ `null` no es 0: sin nada que completar hoy no se pinta barra.
+  if (porcentaje === null) return null;
+  return (
+    <div className="h-2.5 rounded-full mt-2 overflow-hidden" style={{ background: COLORS.border }}>
+      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: 'width 0.5s ease' }} />
+    </div>
+  );
+}
+
+function CentroDeControlPR({ productividad, objetivos, accent, onAbrir, onToggleTarea, onUpdateHabito }) {
+  const [periodo, setPeriodo] = useState('hoy');
+  const [verMas, setVerMas] = useState(false);
+  const d = { productividad, objetivos, hoy: todayISO() };
+
+  const resumen = resumenDelDia(d);
+  const queda = queMeQueda(d);
+  const paraHoyLista = paraHoyPR(d);
+  const progreso = progresoGlobal(d);
+  const stats = estadisticasPR(d, periodo);
+  const racha = rachaProductividad(d);
+  const cadenasOMT = cadenas(d);
+
+  return (
+    <div className="space-y-4 pb-4">
+      <SectionTitle sub="Tus seis herramientas para avanzar cada día">Productividad</SectionTitle>
+
+      {/* 2 · RESUMEN SUPERIOR — el porcentaje sale de datos reales. */}
+      <Card>
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>Tu productividad hoy</p>
+        {resumen.texto
+          ? <p className="text-xl font-bold mt-0.5" style={{ color: COLORS.text }}>{resumen.texto}</p>
+          : <p className="text-sm font-semibold mt-0.5" style={{ color: COLORS.text }}>{resumen.frase}</p>}
+        <BarraDia porcentaje={resumen.porcentaje} accent={accent} />
+        {resumen.texto && <p className="text-xs mt-1.5" style={{ color: COLORS.textMuted }}>{resumen.frase}</p>}
+        {/* ⚠️ La racha global tiene su definición escrita, y si no hay ninguna no
+            se pinta un cero. No sustituye a la de hábitos ni a la de rutinas. */}
+        {racha && racha.actual > 0 && (
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+            🔥 Racha de productividad · {racha.actual} {racha.actual === 1 ? 'día' : 'días'}
+          </p>
+        )}
+      </Card>
+
+      {/* 3 · ACCIONES RÁPIDAS — abren el flujo de su mini-app, sin formulario propio. */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {ACCIONES_RAPIDAS_PR.map((a) => (
+          <button
+            key={a.id}
+            onClick={() => onAbrir(a.abre)}
+            aria-label={`${a.nombre} — abre ${a.abre}`}
+            className="rounded-xl text-xs font-semibold whitespace-nowrap toque-44"
+            style={{ background: COLORS.card, color: COLORS.text, border: `1px solid ${COLORS.border}`, padding: '10px 14px' }}
+          >
+            <span aria-hidden="true">{a.icono}</span> {a.nombre}
+          </button>
+        ))}
+      </div>
+
+      {/* 20 · QUÉ ME QUEDA */}
+      <Card>
+        {queda.queda ? (
+          <>
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>{queda.titulo}</p>
+            <div className="flex gap-3 mt-1 flex-wrap">
+              {queda.partes.map((p) => (
+                <button
+                  key={p.app} onClick={() => onAbrir(p.app)}
+                  aria-label={`Abrir ${p.app}: ${p.texto}`}
+                  className="text-sm font-semibold toque-44"
+                  style={{ color: COLORS.text }}
+                >
+                  {p.texto}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>
+            <span aria-hidden="true">{queda.emoji}</span> {queda.titulo}
+          </p>
+        )}
+      </Card>
+
+      {/* 4 y 5 · PARA HOY, ordenado por la prioridad determinista. */}
+      {paraHoyLista.length > 0 && (
+        <Card>
+          <SectionTitle>Para hoy</SectionTitle>
+          {paraHoyLista.map((e) => (
+            <button
+              key={e.id} onClick={() => onAbrir(e.app)}
+              aria-label={`${e.texto} — abrir ${e.app}`}
+              className="w-full flex items-center gap-2 py-1.5 text-left toque-44"
+            >
+              {e.hecho
+                ? <CheckCircle2 size={16} style={{ color: accent, flexShrink: 0 }} />
+                : <Circle size={16} style={{ color: COLORS.textMuted, flexShrink: 0 }} />}
+              <span
+                className="text-sm flex-1 truncate"
+                style={{ color: COLORS.text, textDecoration: e.hecho ? 'line-through' : 'none' }}
+              >
+                {e.texto}
+              </span>
+            </button>
+          ))}
+        </Card>
+      )}
+
+      {/* 1 · LOS SEIS CUADRADITOS, con información real. */}
+      <div className="grid grid-cols-2 gap-3">
+        {MINI_APPS_PR.map((app, i) => {
+          /* ⚠️ Cada tarjeta se calcula por separado: un módulo con datos rotos no
+             se lleva por delante el resto (apartado 26). */
+          const seguro = panelSeguro(app.id, d);
+          return (
+            <TarjetaMiniAppPR
+              key={app.id}
+              app={app}
+              indice={i}
+              indicador={seguro.ok ? seguro.panel?.principal : null}
+              secundaria={seguro.ok ? seguro.panel?.secundaria : seguro.aviso}
+              accent={accent}
+              onAbrir={() => onAbrir(app.id)}
+            />
+          );
+        })}
+      </div>
+
+      {/* 6 · OBJETIVO → META → TAREA */}
+      {cadenasOMT.length > 0 && (
+        <Card>
+          <SectionTitle>De tus objetivos a hoy</SectionTitle>
+          {cadenasOMT.slice(0, 2).map((c) => (
+            <div key={c.objetivo.id} className="py-1.5">
+              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>🎯 {c.objetivo.texto}</p>
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>{c.objetivo.progreso.texto}</p>
+              {c.metas.slice(0, 3).map((m) => (
+                <div key={m.id} className="mt-1 pl-3">
+                  <p className="text-xs" style={{ color: COLORS.textMuted, textDecoration: m.completada ? 'line-through' : 'none' }}>
+                    ↳ {m.nombre} · {m.progreso.texto}
+                  </p>
+                  {m.tareas.slice(0, 2).map((t) => (
+                    <p key={t.id} className="text-xs pl-3" style={{ color: COLORS.textMuted, textDecoration: t.hecha ? 'line-through' : 'none' }}>
+                      ↳ {t.texto}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* 11 y 13 · PROGRESO Y ESTADÍSTICAS, con su filtro temporal. */}
+      <Card>
+        <SectionTitle>Cómo vas</SectionTitle>
+        {/* ⚠️ Uno por módulo: no se mezclan en un número inventado. */}
+        {progreso.map((p) => (
+          <p key={p.app} className="text-xs py-0.5" style={{ color: COLORS.textMuted }}>
+            {p.nombre} ·{' '}
+            {p.valor === null
+              ? 'sin datos todavía'
+              : (p.tipo === 'porcentaje' ? `${p.valor} %` : `${p.valor}`)}{' '}
+            <span style={{ opacity: 0.7 }}>({p.de})</span>
+          </p>
+        ))}
+
+        <div className="flex gap-2 mt-3 mb-2">
+          {PERIODOS_PR.map((p) => (
+            <ToggleTab key={p.id} active={periodo === p.id} accent={accent} onClick={() => setPeriodo(p.id)}>
+              {p.nombre}
+            </ToggleTab>
+          ))}
+        </div>
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>Tareas completadas · {stats.tareas}</p>
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>Hábitos marcados · {stats.habitos}</p>
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>Pomodoros · {stats.pomodoros}</p>
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>Rutinas completadas · {stats.rutinas}</p>
+        {stats.tiempoConcentrado && (
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>Tiempo concentrado · {stats.tiempoConcentrado}</p>
+        )}
+        {stats.metasMedia !== null && (
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>Metas · {stats.metasMedia} % de media</p>
+        )}
+
+        <button
+          onClick={() => setVerMas(!verMas)}
+          aria-expanded={verMas}
+          className="text-xs mt-2 toque-44"
+          style={{ color: COLORS.textMuted }}
+        >
+          {verMas ? 'Ocultar cómo se cuenta' : 'Cómo se cuenta'}
+        </button>
+        {/* Regla 8: qué significa la racha, con sus palabras, en vez de un número
+            que nadie sabe de dónde sale. */}
+        {verMas && (
+          <div className="mt-1">
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>{DEFINICION_DIA_PRODUCTIVO.texto}</p>
+            <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+              Lo primero que sale arriba: {PESOS_PRIORIDAD.map((x) => x.que.toLowerCase()).join(', ')}.
+            </p>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
@@ -2381,22 +2607,17 @@ export default function ProductivityView({
 
   // ── El lanzador ─────────────────────────────────────────────────────────
   if (!abierta) {
+    /* 🚨 E3 F29 (PR F7) — el centro de control. *"El usuario debe poder entrar y
+       entender en pocos segundos: ¿qué tengo que hacer hoy? y ¿cómo estoy
+       avanzando?"* Ni un número se calcula aquí: todos salen de la mini-app que
+       los tiene. */
     return (
-      <div className="space-y-4 pb-4">
-        <SectionTitle sub="Tus seis herramientas para avanzar cada día">Productividad</SectionTitle>
-        <div className="grid grid-cols-2 gap-3">
-          {MINI_APPS_PR.map((app, i) => (
-            <TarjetaMiniAppPR
-              key={app.id}
-              app={app}
-              indice={i}
-              indicador={indicadorDePR(app.id, datos)}
-              accent={accent}
-              onAbrir={() => setAbierta(app.id)}
-            />
-          ))}
-        </div>
-      </div>
+      <CentroDeControlPR
+        productividad={productividad} objetivos={objetivos} accent={accent}
+        onAbrir={setAbierta}
+        onToggleTarea={onToggleTarea}
+        onUpdateHabito={onUpdateHabito}
+      />
     );
   }
 

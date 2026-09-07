@@ -1,5 +1,90 @@
 # CHANGELOG.md
 
+## v3.50.0 — Entrega 3 · Fase 29 (PR F7): Productividad — Integración global
+
+🏁 **CIERRA EL BLOQUE DE PRODUCTIVIDAD** — las siete fases PR. Productividad deja de ser seis
+herramientas sueltas y pasa a ser un centro de control: al entrar se ve **qué hay que hacer hoy** y
+**cómo se va avanzando**, sin abrir ninguna mini-app.
+
+### 🚨 Aquí no se calcula nada: se pregunta
+
+`FUENTES_PR` es **una línea por mini-app con la función de verdad, importada** —el `paraHoy()` de
+Hábitos, Pomodoro, Tareas, Metas, Objetivos y Rutinas—. Renombrar una en su módulo **no compila**.
+
+Es el apartado 22 del enunciado en código: *"cada módulo debe mantener su propia fuente de verdad…
+la integración únicamente consulta y relaciona estos datos. No crear copias paralelas."* Esta
+librería **no tiene almacén ni normalizador**, y hay una prueba que lee el código para comprobarlo.
+
+### 🚨 Y dos fallos que salieron de leer mal funciones de otras fases
+
+**1 · `habitos.paraHoy()` devuelve `pendientes` como un número**, y la racha en `rachaDestacada`.
+Leerlo como una lista reventaba; leer `.racha` daba `undefined` —que es falso—, así que la segunda
+línea del cuadradito de Hábitos **habría salido siempre vacía sin que fallara nada**.
+
+**2 · `filtrarTareas` recibe un objeto de opciones**, no argumentos sueltos, al revés que
+`filtrarMetas`, `filtrarObjetivos` y `filtrarRutinas`. Pasarle `'hoy'` en el segundo hueco dejaba el
+filtro sin valor, así que **devolvía todas las tareas**: el resumen del día, «qué me queda», la lista
+de prioridad y el bloque de Hoy contaban de más, **sin fallar**.
+
+Las dos son la lección de EH F18: **antes de llamar a una función de otra fase, mirar qué devuelve y
+cómo recibe lo que recibe.**
+
+### 🚨 Y una barra que no habría subido nunca
+
+El filtro `'hoy'` de Tareas devuelve **solo lo pendiente** —correcto para *"qué me queda"*—, y usarlo
+para *"2 / 5 completado"* sacaba la tarea completada **del numerador y del denominador a la vez**:
+la barra no se movía por mucho que Josué completara cosas. Ahora el denominador incluye lo hecho, con
+una prueba que completa una tarea y comprueba que el número sube sin que cambie el total.
+
+### Lo que trae la integración
+
+- **Los seis cuadraditos con información real**: *"1/2 hoy · 🔥 12 días"*, *"18:42"* si hay un
+  Pomodoro en marcha, la tarea prioritaria, el objetivo principal, la próxima rutina.
+- **Resumen del día** con barra, y **`null` si hoy no tocaba nada** — nunca un 0 % que parezca
+  un mal día.
+- **Prioridad determinista**: seis pesos, el orden literal del enunciado, y los mismos datos dan
+  siempre el mismo orden. Ni azar ni IA.
+- **«¿Qué me queda por hacer hoy?»** y su 🎉 cuando no queda nada.
+- **La cadena Objetivo → Meta → Tarea**, leída de las relaciones que ya existían.
+- **Progreso por módulo** —nunca mezclado en un número inventado— y estadísticas con filtro
+  Hoy · Semana · Mes.
+- **Racha de productividad** con su definición escrita, y que **no sustituye** a la de hábitos ni a
+  la de rutinas.
+- **Un módulo roto no tumba la pantalla**: cada tarjeta se calcula por separado y enseña su aviso.
+- **Y Hoy enseña el resumen** (apartado 19), con cinco líneas y un enlace — no una copia de
+  Productividad.
+
+### ⚠️ La frase del resumen
+
+El enunciado pide una (*"Vas por buen camino"*) y a la vez prohíbe *"frases falsas o aleatorias"*. Se
+resuelve con una tabla de umbrales sobre el número real: sin azar, y **sin juzgar a Josué** —
+describen el número, no a él—, con una prueba que las barre buscando reproches.
+
+### 🐛 Y tres expectativas mías que estaban mal, no el código
+
+El recorrido en Chromium se puso rojo cuatro veces, y las cuatro **eran de la prueba**:
+
+- Esperaba *"1 / 3 completado"* donde el sistema dice **1 / 4**: dos tareas (la de hoy y la vencida)
+  más dos hábitos son cuatro cosas completables. La suma la hice mal yo.
+- Sembraba el escenario con `pomodoros: { hoy: 2 }` y las sesiones vacías. Desde la E3 F25 **ese mapa
+  es una proyección**: el número sale de `pomodoroSesiones`, así que **sembré la copia**, no el dato.
+- Y una comprobación de la E3 F23 buscaba *"1 hábito · 1 tarea"* con las palabras de entonces. Los
+  cuadraditos ahora hablan el idioma de cada mini-app —*"0/1 hoy"*, *"1 activo"*—, que es lo que pide
+  esta fase; lo que protege esa comprobación —que los números son reales y **los objetivos se leen de
+  su propia clave**— sigue exactamente igual.
+
+Lo único que sí era del código: la racha del cuadradito de Hábitos decía **"🔥 1 días"**. Un número
+que se pinta se escribe en el idioma de Josué, singular incluido.
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde: **116 comprobaciones nuevas** en
+`scripts/test-integracion-pr.mjs`, **12 casos de renderizado nuevos** (1956) y una sección nueva del
+recorrido que abre el centro de control con las seis mini-apps con datos, **completa una tarea y
+comprueba que la barra sube**.
+
+---
+
 ## v3.49.0 — Entrega 3 · Fase 28 (PR F6): Productividad — Rutinas
 
 La sexta y última mini-app de Productividad. Con ella el bloque PR queda en **6 de 7**: solo falta la

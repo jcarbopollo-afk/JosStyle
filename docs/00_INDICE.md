@@ -27,7 +27,7 @@ Léela en este orden la primera vez. Después, entra directo al documento que ne
 | 08 | [`08_ESTILO_DE_HOMBRE_TECNICO.md`](08_ESTILO_DE_HOMBRE_TECNICO.md) | Documentación técnica de Estilo de hombre: qué existe, dónde está, con qué se conecta y qué no debe tocarse. ⚠️ **Se genera desde el código**, no se edita a mano. | Antes de tocar cualquier cosa de Estilo de hombre. |
 | 09 | [`09_ESTILO_DE_HOMBRE_CIERRE.md`](09_ESTILO_DE_HOMBRE_CIERRE.md) | El informe de cierre del módulo (EH F65), **calculado** ejecutando la auditoría de cada fase. Dice qué está hecho, qué está bloqueado y quién decide. | Para saber en qué estado quedó Estilo de hombre. |
 | 10 | [`10_SONIDOS_PARA_FL_STUDIO.md`](10_SONIDOS_PARA_FL_STUDIO.md) | El brief de los 46 archivos de audio que faltan (SO F2): qué es cada uno, cuánto dura y cómo debe sonar, para producirlos en FL Studio. | Al producir los sonidos que faltan. |
-| 11 | [`11_ENTREGA3_ORDEN.md`](11_ENTREGA3_ORDEN.md) | **Entrega 3** (4 sept 2026): las **44 fases** de pulido y rediseño de Hoy, Calendario, Biblioteca, Productividad, Bienestar, Nutrición y Estudios, con su línea en el documento original. | Antes de empezar cualquier fase de la Entrega 3. |
+| 11 | [`11_ENTREGA3_ORDEN.md`](11_ENTREGA3_ORDEN.md) | **Entrega 3** (4 sept 2026): las **46 fases** de pulido y rediseño de Hoy, Calendario, Biblioteca, Productividad, Bienestar, Sueño, Nutrición y Estudios, con su línea en el documento original. | Antes de empezar cualquier fase de la Entrega 3. |
 
 ---
 
