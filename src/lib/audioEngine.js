@@ -66,6 +66,7 @@ const motor = {
   estado: ESTADO_AUDIO_INICIAL,
   soltarGestos: null,
   palanca: null,            // el interruptor invisible de iOS — ver `vibrar()`
+  contextoImposible: false, // crear el AudioContext fallo: no insistir (iOS limita cuantos)
   fallos: [],
 };
 
@@ -176,12 +177,35 @@ export function actualizarPreferencias(prefs, sonidosUsuario = null) {
   if (!motor.prefs.activado) motor.buffers.clear();
 }
 
+/**
+ * 🚨 **Dos trampas aquí, y la segunda la habría creado el arreglo de arriba.**
+ *
+ * **1 · Un `catch` que tiraba el contexto entero.** Si fallaba UN nodo de
+ * volumen, se ponía `motor.contexto = null` y se perdía un contexto que estaba
+ * perfectamente creado. Y sin nodos no pasa nada grave: `reproducir()` ya sabe
+ * caer al destino directo. Ahora se separan los dos errores.
+ *
+ * **2 · Y ahora que se reintenta en cada gesto, insistir sería peor.** Safari de
+ * iOS **limita cuántos `AudioContext` puede crear una página** (unos pocos, y no
+ * se recuperan). Con el contexto puesto a `null` en cada fallo, cada toque
+ * crearía uno nuevo, se agotaría el cupo en segundos y el móvil quedaría mudo
+ * para siempre — que es exactamente el síntoma que se está persiguiendo. Si
+ * crear uno falla, se apunta y **no se vuelve a intentar**.
+ */
 function crearContexto() {
   if (motor.contexto || !HAY_DOM) return motor.contexto;
+  if (motor.contextoImposible) return null;
   const Ctx = window.AudioContext || window.webkitAudioContext;
   if (!Ctx) return null;                       // se usará el respaldo
   try {
     motor.contexto = new Ctx();
+  } catch (e) {
+    anotar('crearContexto', e);
+    motor.contextoImposible = true;            // otro daría el mismo error y gastaría cupo
+    return null;
+  }
+  // A partir de aquí el contexto YA existe: lo que falle no puede costarlo.
+  try {
     motor.contexto.addEventListener('statechange', alCambiarDeEstado);
     for (const c of CATEGORIAS_SONIDO) {
       const g = motor.contexto.createGain();
@@ -189,7 +213,7 @@ function crearContexto() {
       g.connect(motor.contexto.destination);
       motor.ganancias.set(c.id, g);
     }
-  } catch (e) { anotar('crearContexto', e); motor.contexto = null; }
+  } catch (e) { anotar('crearContexto:nodos', e); }
   return motor.contexto;
 }
 
@@ -292,10 +316,15 @@ export function diagnosticoAudio(prefs = null) {
     if (e.contexto === 'sin_crear') {
       return { ok: false, texto: 'Toca cualquier botón para activar el sonido. Los navegadores del móvil lo piden la primera vez.' };
     }
+    /* ⚠️ Y si al intentarlo saltó un error, se enseña. Estaba apuntado desde el
+       primer día en `motor.fallos` y no lo leía nadie: tres días adivinando con
+       la respuesta guardada en memoria. */
+    const ultimo = motor.fallos[motor.fallos.length - 1];
     return {
       ok: false,
       texto: 'Lo he intentado y el navegador todavía no deja sonar. Pulsa un botón de verdad —deslizar para bajar la pantalla no cuenta— y vuelve a mirar aquí.',
       aviso: 'Si tienes un iPhone: el interruptor de silencio del lateral también calla las webs.',
+      detalle: ultimo ? `${ultimo.donde}: ${ultimo.mensaje}` : '',
     };
   }
   const fallos = fallosDeAudio().length;
@@ -497,6 +526,7 @@ export function detener() {
   motor.buffers.clear();
   motor.cargando.clear();
   motor.desbloqueado = false;
+  motor.contextoImposible = false;
   motor.estado = ESTADO_AUDIO_INICIAL;
 }
 

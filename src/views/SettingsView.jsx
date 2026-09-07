@@ -30,6 +30,7 @@ import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton, 
    `audio.js` (SO F1): aquí no se inventa ninguna preferencia nueva. */
 import { CONTROLES, MARCAS_VOLUMEN, ejemploDe, normalizarAudio } from '../lib/sonidoProduccion';
 import { reproducir, diagnosticoAudio, soporteVibracion } from '../lib/audioEngine';
+import { sello } from '../lib/version';
 import { suscribir } from '../lib/eventos';
 import PersonalizationView from './PersonalizationView';
 import PapeleraView from './PapeleraView';
@@ -1308,6 +1309,15 @@ export function BloqueSonido({ audio, accent, onCambiar }) {
       >
         <span className="font-semibold" style={{ color: COLORS.text }}>{diag.ok ? '✅ ' : '⚠️ '}{diag.texto} </span>
         {diag.aviso || ''}
+        {/* 🚨 La versión, aquí y no en un «acerca de» que nadie abre. Tres días
+            se fueron en no saber si el arreglo fallaba o si no le había llegado
+            al móvil —lo tiene en la pantalla de inicio, y iOS puede servir la
+            página vieja durante días—. Son dos problemas opuestos y se veían
+            exactamente igual. Con esta línea se distinguen en una frase. */}
+        <p className="mt-2 text-[10px] tabular-nums" style={{ color: COLORS.textMuted }}>
+          {sello()}
+          {diag.detalle ? ` · ${diag.detalle}` : ''}
+        </p>
       </div>
 
       {/* 🔊 Sonidos */}
