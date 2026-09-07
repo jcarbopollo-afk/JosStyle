@@ -51,10 +51,33 @@ El buscador tiene **dos fuentes, las dos reales**:
   implementar"* el escáner y **ya existe**: «no implementar» no es «quitar». Misma lección que la
   E3 F34.
 
-### 🐛 Y la regla invariante, otra vez
+### 🚨 Y el recorrido encontró un fallo de los gordos — mío, y otro de la F28
 
-`test-imports.mjs` cazó **un `const` duplicado** en el recorrido de Chromium — no compila, y
-descubrirlo por las bravas cuesta los doce minutos que tarda. Van dos en dos fases.
+**`<GhostBtn icon={Search}>` con `Search` sin importar deja el panel en blanco.** React lanza al
+pintar ese trozo, así que **escribir tres letras en el buscador de alimentos vaciaba la pantalla** —
+con el build en verde, los 2036 casos de renderizado en verde y las 151 comprobaciones de Node en
+verde. Solo lo vio Chromium, porque ese trozo únicamente aparece **con texto escrito**.
+
+Es el fallo de la E3 F17 y la EH F39 por una **puerta nueva**: la regla invariante buscaba
+`<Componente>`, y esto es un componente pasado **como valor de una prop**. Ahora la regla mira las
+dos cosas — y al ponerla, **encontró el mismo fallo en producción desde la E3 F28**:
+`<GhostBtn icon={Archive}>` en Rutinas, con `Archive` sin importar, que habría vaciado el panel al
+archivar una rutina. Los dos arreglados.
+
+🐛 **Y la regla nueva no cazaba nada en su primera versión**, que es la lección de la E3 F17 otra
+vez: el patrón que reconoce un renombrado al desestructurar (`{ icono: Icono }`) también encajaba con
+un ternario (`icon={cargando ? Loader2 : Search}`), así que daba `Search` por **declarado**. Se le
+quitó el arreglo y se comprobó que se pone roja. Y traía tres falsos positivos —`Math`, `'Enter'` y
+`\D`—, así que ahora quita las cadenas, excluye los globales del lenguaje y no confunde una clase de
+caracteres con un nombre.
+
+### 🐛 Y dos comprobaciones mías que leían mal la pantalla
+
+**`innerText` no incluye ni el valor de un `<input>` ni un `placeholder`** — primo de la lección de
+la E3 F8 sobre las mayúsculas. Los cuatro números del resumen de objetivos son **campos editables**,
+que es justo lo que hace que la app proponga y él decida, así que su valor se lee del campo. Y
+`test-imports.mjs` cazó además **un `const` duplicado** en el recorrido, que no compila y cuesta doce
+minutos descubrir a las bravas: van dos en dos fases.
 
 ### Archivos
 

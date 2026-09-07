@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   CheckCircle2, Circle, Flame, Plus, Trash2, Play, Pause, RotateCcw, ListChecks, Target,
   ChevronDown, ChevronUp, ArrowLeft, Timer, Compass, Repeat, Pencil,
-  Droplet, BookOpen, Dumbbell, Moon, Apple, Brain, Heart,
+  Droplet, BookOpen, Dumbbell, Moon, Apple, Brain, Heart, Archive,
 } from 'lucide-react';
 import { COLORS, PERIODOS_META } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';

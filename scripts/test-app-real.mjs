@@ -3647,8 +3647,16 @@ ok(await pulsar('Ganar masa'), 'se elige Ganar masa');
 ok(await pulsar('Continuar'), 'se llega al resumen');
 
 const resumen = await esperarTexto(/Tu objetivo diario/i);
-ok(/3149|3\.149/.test(resumen),
+/* 🐛 **`innerText` NO INCLUYE EL VALOR DE UN `<input>`** (E3 F36, y es primo de
+   la lección de la E3 F8 sobre las mayúsculas). Los cuatro números del resumen
+   son **campos editables** —que es justo lo que hace que la app proponga y él
+   decida—, así que su valor se lee del campo, nunca del texto de la pantalla. */
+const numerosResumen = await page.evaluate(() =>
+  [...document.querySelectorAll('input[type="number"]')].map((i) => i.value));
+ok(numerosResumen.includes('3149'),
   '🚨 EL CÁLCULO ES EL DE MIFFLIN-ST JEOR CON SU FACTOR: 3149 kcal para 72 kg, 187 cm, 16 años, moderado y ganar');
+ok(numerosResumen.includes('130') && numerosResumen.includes('98'),
+  '⚠️ con sus macros, y los cuatro EDITABLES: son campos, no una cifra impuesta (apartado 8)');
 ok(/orientativ/i.test(resumen),
   '🔒 CON LA FRASE QUE LO HACE ORIENTATIVO Y NO UNA DIETA (§7.4 y §7.5)');
 
@@ -3716,8 +3724,10 @@ ok(/Todavía no has añadido alimentos/i.test(antes),
 
 /* El flujo del apartado 2, de principio a fin. */
 ok(await pulsar('Añadir alimento a Comida'), 'se abre el flujo desde Comida');
-const buscadorAl = await esperarTexto(/Busca: pollo/i);
-ok(/Busca: pollo/i.test(buscadorAl), '⚠️ y lo primero es el buscador, no un formulario gigantesco (apartado 2)');
+/* 🐛 Y lo mismo con un **placeholder**: tampoco está en el `innerText`. El
+   buscador se reconoce por su campo. */
+const hayBuscador = await page.evaluate(() => !!document.querySelector('input[placeholder^="Busca"]'));
+ok(hayBuscador, '⚠️ y lo primero es el buscador, no un formulario gigantesco (apartado 2)');
 
 await page.fill('input[placeholder^="Busca"]', 'avena');
 await page.waitForTimeout(400);

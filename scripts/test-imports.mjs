@@ -168,14 +168,56 @@ for (const ruta of archivos) {
     ...[...bruto.matchAll(/\bfunction\s+([A-Z][\w$]*)/g)].map((m) => m[1]),
     ...[...bruto.matchAll(/\b(?:const|let|var)\s+([A-Z][\w$]*)/g)].map((m) => m[1]),
     /* ⚠️ Y el renombrado al desestructurar, que es como este proyecto recibe un
-       icono: `function Bloque({ icono: Icono })`, y luego `<Icono …/>`. */
-    ...[...bruto.matchAll(/:\s*([A-Z][\w$]*)\s*[,}=]/g)].map((m) => m[1]),
+       icono: `function Bloque({ icono: Icono })`, y luego `<Icono …/>`.
+       🐛 **El nombre va precedido de `{` o `,`, y eso importa** (E3 F36): sin esa
+       parte, un ternario `icon={cargando ? Loader2 : Search}` daba `Search` por
+       **declarado**, y la regla nueva de las props no cazaba el fallo real que la
+       hizo nacer. Antes de dar una regla por buena, quitarle el arreglo y ver si
+       se pone roja (E3 F17). */
+    ...[...bruto.matchAll(/[{,]\s*[\w$]+\s*:\s*([A-Z][\w$]*)\s*[,}=]/g)].map((m) => m[1]),
   ]);
 
   const usados = new Set([...usos.matchAll(/<([A-Z][\w$]*)[\s/>]/g)].map((m) => m[1]));
   for (const nombre of usados) {
     if (importados.has(nombre) || definidos.has(nombre)) continue;
     componentes.push(`${relative(RAIZ, ruta)} usa <${nombre}> sin importarlo ni definirlo`);
+  }
+
+  /* 🚨 **Y un componente pasado como VALOR DE UNA PROP cuenta igual** (E3 F36).
+     `<GhostBtn icon={Search}>` no es `<Search>`, así que la regla de arriba no lo
+     veía — y `Search` sin importar deja la pantalla **en blanco al abrirla**,
+     con el build en verde. Pasó en la propia fase que escribió esta línea: la
+     panel de añadir alimento reventaba al escribir tres letras, y **solo lo vio
+     Chromium**, porque ese trozo únicamente aparece con texto escrito.
+
+     ⚠️ Se miran los nombres en mayúscula dentro de `algo={Nombre}` — que es como
+     este proyecto pasa iconos de `lucide-react` — y también los ternarios
+     `algo={x ? Uno : Otro}`, que es lo que había en el fallo real. */
+  /* 🐛 ⚠️ Y esta regla nació con dos falsos positivos, que es la lección de
+     siempre: `Math.round(...)` dentro de una prop y `e.key === 'Enter'` dentro de
+     una cadena. Así que **se quitan las cadenas** —una prop que contiene texto no
+     está usando un componente— y **se excluyen los objetos globales del
+     lenguaje**, que no se importan de ninguna parte. */
+  const GLOBALES = new Set(['Math', 'JSON', 'Object', 'Array', 'Number', 'String', 'Boolean',
+    'Date', 'Promise', 'Error', 'Map', 'Set', 'RegExp', 'Infinity', 'NaN', 'Intl', 'React']);
+  const propsSinTexto = usos
+    .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
+    .replace(/"(?:[^"\\\n]|\\.)*"/g, '""')
+    .replace(/`(?:[^`\\]|\\.)*`/g, '``');
+  const enProps = new Set();
+  for (const m of propsSinTexto.matchAll(/\b[\w$]+=\{([^{}]*)\}/g)) {
+    /* 🐛 Y un tercer falso positivo: `\D` de una expresión regular. Una letra
+       precedida de barra invertida es una clase de caracteres, no un nombre. */
+    for (const n of m[1].matchAll(/(^|[^\\\w$.])([A-Z][\w$]*)\b/g)) {
+      if (!GLOBALES.has(n[2])) enProps.add(n[2]);
+    }
+  }
+  for (const nombre of enProps) {
+    if (importados.has(nombre) || definidos.has(nombre)) continue;
+    /* ⚠️ Las mayúsculas de una constante importada de otro sitio ya las cubre la
+       primera regla; aquí solo interesa lo que no está en ninguna parte. */
+    if (usados.has(nombre)) continue;
+    componentes.push(`${relative(RAIZ, ruta)} pasa {${nombre}} como prop sin importarlo ni definirlo`);
   }
 }
 

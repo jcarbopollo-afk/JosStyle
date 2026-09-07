@@ -506,6 +506,22 @@ código de agosto mientras él decía *"la web sigue igual"*.
   tiene registrado invisible en su propia pantalla** — el fallo de la E3 F16 con las notas. Se
   **añaden** `cantidad`, `unidad` y `por100`, y su normalizador corre **al cargar** (regla 5,
   vigésima vez).
+- 🚨 **UN COMPONENTE PASADO COMO VALOR DE UNA PROP CUENTA COMO USADO** (E3 F36).
+  `<GhostBtn icon={Search}>` con `Search` sin importar **deja el panel en blanco**, y la regla
+  invariante no lo veía porque buscaba `<Componente>`. Escribir tres letras en el buscador de
+  alimentos vaciaba la pantalla **con el build, el renderizado y 151 comprobaciones de Node en
+  verde**: solo lo vio Chromium, porque ese trozo únicamente aparece con texto escrito. Al ampliar
+  la regla salió **el mismo fallo en producción desde la E3 F28** —`icon={Archive}` en Rutinas—.
+- 🐛 **Y ESA REGLA NO CAZABA NADA EN SU PRIMERA VERSIÓN** (E3 F36, y la E3 F17 lo dijo primero): el
+  patrón del renombrado al desestructurar (`{ icono: Icono }`) también encajaba con un ternario
+  (`icon={cargando ? Loader2 : Search}`), así que daba el nombre por **declarado**. **Antes de dar
+  una regla por buena, quitarle el arreglo y ver si se pone roja.** Y traía tres falsos positivos
+  —`Math`, `'Enter'` y `\D`—: quita las cadenas, excluye los globales y no confunde una clase de
+  caracteres con un nombre.
+- 🐛 **`innerText` NO INCLUYE NI EL VALOR DE UN `<input>` NI UN `placeholder`** (E3 F36, primo de la
+  lección de la E3 F8 sobre las mayúsculas). Dos comprobaciones mías saltaron con pantallas que
+  estaban bien: los cuatro números del resumen de objetivos son **campos editables** —que es lo que
+  hace que la app proponga y él decida—, así que se leen del campo, no del texto de la página.
 - 🚨 **UN CÁLCULO ESCRITO A MANO DENTRO DE UNA VISTA ES UN CÁLCULO QUE NADIE MÁS PUEDE USAR**
   (E3 F36): el escalado por gramos vivía dentro del escáner desde la Fase 4. Sacarlo a `escalar()`
   fue lo que permitió que el buscador lo usara **sin escribir una segunda copia**.

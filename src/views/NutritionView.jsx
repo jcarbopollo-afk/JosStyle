@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2, ChevronLeft, ChevronRight, CalendarDays, Settings, Check } from 'lucide-react';
+import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2, ChevronLeft, ChevronRight, CalendarDays, Settings, Check, Search } from 'lucide-react';
 import { COLORS, VASO_ML } from '../tokens';
 import { uid, todayISO, addDays, hexToRgba, calcularEdad } from '../lib/helpers';
 /* Entrega 3 · F33 (NU F1) — el catálogo de indicadores y momentos, el resumen del
