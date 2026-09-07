@@ -90,10 +90,10 @@ console.log('\n═══ puntuacionDelDia ═══\n');
 
 // 8. Tareas vencidas sin hacer penalizan; sin tareas vencidas, el área no cuenta.
 {
-  const vencida = { productividad: { tareas: [{ hecha: false, fechaLimite: AYER }] } };
+  const vencida = { productividad: { tareas: [{ hecha: false, fecha: AYER }] } };
   comprobar('Tarea vencida sin hacer → área en uso y no cumplida', puntuacionDelDia(vencida, HOY).valor === 0);
 
-  const futura = { productividad: { tareas: [{ hecha: false, fechaLimite: '2027-01-01' }] } };
+  const futura = { productividad: { tareas: [{ hecha: false, fecha: '2027-01-01' }] } };
   comprobar('Tarea futura → el área no entra en el cálculo', puntuacionDelDia(futura, HOY).hayDatos === false);
 }
 

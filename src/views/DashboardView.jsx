@@ -598,7 +598,7 @@ export default function DashboardView({
   // Tarea pendiente más próxima (apartado 6: "Trabajo de Biología pendiente → abrir esa tarea").
   const tareaDestacada = (productividad?.tareas || [])
     .filter((t) => !t.hecha)
-    .sort((a, b) => (a.fechaLimite || '9999').localeCompare(b.fechaLimite || '9999'))[0] || null;
+    .sort((a, b) => (a.fecha || '9999').localeCompare(b.fecha || '9999'))[0] || null;
 
   // Salud: peso/IMC — misma fórmula exacta que ya usa SettingsView (categoría Perfil, "Cálculos
   // corporales"), con el peso más reciente de Salud si existe, o el del Perfil si todavía no hay
@@ -771,7 +771,7 @@ export default function DashboardView({
               vacio={!tareaDestacada}
               valor={tareaDestacada ? tareaDestacada.texto : undefined}
               sub={tareaDestacada
-                ? (tareaDestacada.fechaLimite ? `Antes del ${tareaDestacada.fechaLimite.split('-').reverse().join('/')}` : 'Sin fecha límite')
+                ? (tareaDestacada.fecha ? `Antes del ${tareaDestacada.fecha.split('-').reverse().join('/')}` : 'Sin fecha límite')
                 : 'Sin tareas pendientes'}
               onClick={() => onNavegar('productividad', tareaDestacada ? { sub: 'tareas', tareaId: tareaDestacada.id } : { sub: 'tareas' })}
             />

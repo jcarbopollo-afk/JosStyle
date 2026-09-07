@@ -40,7 +40,7 @@ const base = {
   salud: { medidas: [{ id: 'x', fecha: HOY, peso: 72 }], historial: [] },
   nutricion: { comidas: [{ id: 'c', fecha: HOY, nombre: 'Avena', calorias: 350 }], agua: {}, favoritos: [] },
   estudios: DEFAULT_ESTUDIOS, negocio: DEFAULT_NEGOCIO,
-  productividad: { ...DEFAULT_PRODUCTIVIDAD, tareas: [{ id: 't', texto: 'Repasar', hecha: false, fechaLimite: HOY }] },
+  productividad: { ...DEFAULT_PRODUCTIVIDAD, tareas: [{ id: 't', texto: 'Repasar', hecha: false, fecha: HOY }] },
   objetivos: { lista: [{ id: 'o', texto: 'Handstand 30s', plazo: '90 días', cumplido: false, fechaCreacion: HOY }], ultimaRevision: null },
   diario: DEFAULT_DIARIO, biblioteca: DEFAULT_BIBLIOTECA,
   relacion: { nombre: 'María', fechas: [{ id: 'r', etiqueta: 'Aniversario', fecha: HOY }] },

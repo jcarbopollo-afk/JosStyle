@@ -36,6 +36,18 @@ import {
   FILTROS_HABITOS, FILTRO_HABITOS_POR_DEFECTO, filtrarHabitos, vacioDeFiltro,
   VACIO_HABITOS, ESTADOS_DIA, NOMBRES_DIA, NOMBRES_DIA_CORTOS, diasDeRegla, vecesDeRegla,
 } from '../lib/habitos';
+/* E3 F26 (PR F4) — Tareas. 🚨 La fecha de una tarea es `fecha`, no
+   `fechaLimite`: con el campo viejo la tarea no salía en Hoy, ni en la Agenda,
+   ni en el Calendario, que filtran los tres por `t.fecha`. */
+import {
+  PRIORIDADES, PRIORIDAD_POR_DEFECTO, etiquetaDePrioridad,
+  CATEGORIAS_TAREA, categoriaTarea,
+  crearTarea, editarTarea, completarTarea, reprogramar, DESTINOS_REPROGRAMAR,
+  estadoDeFecha, textoDeFecha, SECCIONES_TAREAS, porSecciones,
+  ORDENES_TAREA, ORDEN_POR_DEFECTO, FILTROS_TAREA, filtrarTareas, buscarTareas,
+  resumenTareas, estadisticasDeTareas, vacioDeTareas, planConcentrarse, tareaDeSesion,
+  aperturaInicial,
+} from '../lib/tareas';
 import ObjectivesView from './ObjectivesView';
 
 /* ---------- Hábitos ---------- */
@@ -840,7 +852,7 @@ export function EstadisticasPomodoro({ hoy, semana, accent }) {
   );
 }
 
-function PomodoroTab({ config, sesionEnCurso, sesiones, accent, onGuardarConfig, onCambiarSesion, onRegistrar }) {
+function PomodoroTab({ config, sesionEnCurso, sesiones, tareas = [], accent, onGuardarConfig, onCambiarSesion, onFinalizar }) {
   const [ajustes, setAjustes] = useState(false);
   /* 🚨 Este estado **no es el tiempo**: es solo un latido que fuerza a redibujar.
      El tiempo sale de `restanteMs`, que resta instantes. Si el móvil congela la
@@ -861,14 +873,15 @@ function PomodoroTab({ config, sesionEnCurso, sesiones, accent, onGuardarConfig,
      el móvil bloqueado, que es cuando de verdad ha terminado. */
   useEffect(() => {
     if (!sesion || !haTerminado(sesion)) return;
-    onRegistrar(completar(sesion));
     /* 🚨 Se EMITE, no se reproduce: el motor de SO F1 decide si suena. */
     emitir(EVENTO_AL_TERMINAR, { de: 'pomodoro', tipo: sesion.tipo });
     const siguiente = siguienteEnElCiclo(sesion, cfg);
     const auto = tipoSesion(siguiente.tipo).esDescanso ? cfg.autoDescanso : cfg.autoSiguiente;
-    onCambiarSesion(auto
-      ? iniciarSesion(siguiente.tipo, cfg, { sesionesHechas: siguiente.sesionesHechas })
-      : { ...iniciarSesion(siguiente.tipo, cfg, { sesionesHechas: siguiente.sesionesHechas }), pausadoEn: Date.now() });
+    const nacida = iniciarSesion(siguiente.tipo, cfg, { sesionesHechas: siguiente.sesionesHechas });
+    /* 🚨 UNA SOLA LLAMADA. Con dos —registrar y luego cambiar— la segunda parte
+       del mismo estado del cierre y borra lo que escribió la primera (regla 5).
+       Así se perdía la sesión completada, y con ella el contador del día. */
+    onFinalizar(completar(sesion), auto ? nacida : { ...nacida, pausadoEn: Date.now() });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sesion && haTerminado(sesion)]);
 
@@ -884,10 +897,8 @@ function PomodoroTab({ config, sesionEnCurso, sesiones, accent, onGuardarConfig,
     sesionesHechas: sesion ? sesion.sesionesHechas : 0,
   }));
 
-  const cancelarSesion = () => {
-    if (sesion) onRegistrar(cancelar(sesion));
-    onCambiarSesion(null);
-  };
+  // 🚨 Igual que al terminar: registrar y limpiar van en la misma escritura.
+  const cancelarSesion = () => onFinalizar(sesion ? cancelar(sesion) : null, null);
 
   if (ajustes) {
     return (
@@ -903,6 +914,13 @@ function PomodoroTab({ config, sesionEnCurso, sesiones, accent, onGuardarConfig,
   return (
     <div className="space-y-3">
       <p className="text-xs" style={{ color: COLORS.textMuted }}>{CABECERA_POMODORO.frase}</p>
+      {/* ⚠️ Si la sesión salió de una tarea, se dice cuál: el `tareaId` que
+          guarda `iniciarSesion` no sirve de nada si no se ve (E3 F26). */}
+      {tareaDeSesion(sesion, tareas) && (
+        <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
+          Concentrándote en: {tareaDeSesion(sesion, tareas).texto}
+        </p>
+      )}
 
       {/* *"MODO DE CONCENTRACIÓN: cuando haya una sesión activa, reducir
           visualmente elementos innecesarios."* Con una sesión corriendo,
@@ -985,21 +1003,343 @@ function PomodoroTab({ config, sesionEnCurso, sesiones, accent, onGuardarConfig,
   );
 }
 
-/* ---------- Tareas ---------- */
-function TareasTab({ tareas, onAdd, onToggle, onDelete, accent, foco, onFocoConsumido }) {
-  const [texto, setTexto] = useState('');
-  const [fecha, setFecha] = useState('');
-  // Ampliación del Dashboard — Centro de Control: resalta brevemente la tarea a la que se ha
-  // llegado por deep-link (apartado 6: "Trabajo de Biología pendiente → abrir esa tarea").
+/* ---------- Tareas (E3 F26 · PR F4) ---------- */
+/* *"abrir → ver qué tengo que hacer → completar → seguir."*
+   🚨 Ni un temporizador aquí dentro: "Concentrarme" abre el Pomodoro que ya
+   existe con el id de la tarea (apartado «INTEGRACIÓN CON POMODORO»). */
+
+function ChipPrioridad({ id, size = 'sm' }) {
+  const e = etiquetaDePrioridad(id);
+  const color = COLORS[e.token] || COLORS.textMuted;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 ${size === 'sm' ? 'text-xs' : 'text-sm'} font-semibold`}
+      style={{ color }}
+    >
+      {/* ⚠️ El icono Y la palabra: la prioridad nunca se distingue solo por el
+          color (apartado «PRIORIDADES»). */}
+      <span aria-hidden="true">{e.icono}</span>
+      {e.nombre}
+    </span>
+  );
+}
+
+function TarjetaTarea({ tarea, hoy, accent, onCompletar, onAbrir, onConcentrarse, destacada }) {
+  const cat = categoriaTarea(tarea.categoria);
+  const estado = estadoDeFecha(tarea, hoy);
+  const vencida = estado === 'vencida';
+  const plan = planConcentrarse(tarea);
+
+  return (
+    <Card
+      id={`tarea-${tarea.id}`}
+      className="flex items-start gap-3"
+      style={{
+        transition: 'box-shadow 0.3s ease, opacity 0.3s ease',
+        boxShadow: destacada ? `0 0 0 2px ${accent}` : 'none',
+        opacity: tarea.hecha ? 0.6 : 1,
+      }}
+    >
+      <button
+        onClick={() => onCompletar(tarea)}
+        aria-label={tarea.hecha ? `Marcar ${tarea.texto} como pendiente` : `Completar ${tarea.texto}`}
+        className="toque-44 p-1.5 -m-1.5 shrink-0"
+      >
+        {tarea.hecha
+          ? <CheckCircle2 size={20} className="tarea-hecha" style={{ color: accent }} />
+          : <Circle size={20} style={{ color: COLORS.textMuted }} />}
+      </button>
+
+      <button onClick={() => onAbrir(tarea)} className="flex-1 text-left min-w-0">
+        <p
+          className="text-sm font-semibold truncate"
+          style={{ color: COLORS.text, textDecoration: tarea.hecha ? 'line-through' : 'none' }}
+        >
+          {tarea.texto}
+        </p>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          <span className="text-xs" style={{ color: vencida ? COLORS.danger : COLORS.textMuted }}>
+            {textoDeFecha(tarea, hoy)}
+          </span>
+          {!tarea.hecha && <ChipPrioridad id={tarea.prioridad} />}
+          {cat && (
+            <span className="text-xs" style={{ color: COLORS.textMuted }}>
+              <span aria-hidden="true">{cat.icono}</span> {cat.nombre}
+            </span>
+          )}
+        </div>
+      </button>
+
+      {plan && (
+        <button
+          onClick={() => onConcentrarse(tarea)}
+          aria-label={`Concentrarme en ${tarea.texto} con Pomodoro`}
+          className="toque-44 p-1.5 -m-1.5 shrink-0"
+        >
+          <Timer size={16} style={{ color: COLORS.textMuted }} />
+        </button>
+      )}
+    </Card>
+  );
+}
+
+function SeccionTareas({ seccion, tareas, hoy, accent, abierta, onAlternar, ...resto }) {
+  if (!tareas.length) return null;
+  return (
+    <div className="space-y-2">
+      <button
+        onClick={onAlternar}
+        className="w-full flex items-center justify-between toque-44"
+        aria-expanded={abierta}
+      >
+        <span className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>
+          {seccion.nombre} · {tareas.length}
+        </span>
+        {abierta
+          ? <ChevronUp size={14} style={{ color: COLORS.textMuted }} />
+          : <ChevronDown size={14} style={{ color: COLORS.textMuted }} />}
+      </button>
+      {abierta && tareas.map((t) => (
+        <TarjetaTarea key={t.id} tarea={t} hoy={hoy} accent={accent} {...resto} />
+      ))}
+    </div>
+  );
+}
+
+export function FormularioTarea({ tarea = null, hoy, accent, onGuardar, onCancelar }) {
+  const [form, setForm] = useState({
+    texto: tarea?.texto || '',
+    descripcion: tarea?.descripcion || '',
+    fecha: tarea?.fecha || '',
+    hora: tarea?.hora || '',
+    prioridad: tarea?.prioridad || PRIORIDAD_POR_DEFECTO,
+    categoria: tarea?.categoria || '',
+  });
+  const valido = !!form.texto.trim();
+
+  const guardar = () => {
+    if (!valido) return;
+    const campos = {
+      texto: form.texto,
+      descripcion: form.descripcion,
+      fecha: form.fecha || null,
+      hora: form.hora,
+      categoria: form.categoria || null,
+    };
+    // ⚠️ `crearTarea` recibe `prioridadId`; `editarTarea` fusiona la tarea, así
+    // que el campo se llama `prioridad`. No son el mismo objeto.
+    onGuardar(tarea
+      ? editarTarea(tarea, { ...campos, prioridad: form.prioridad })
+      : crearTarea({ ...campos, prioridadId: form.prioridad }));
+  };
+
+  return (
+    <Card>
+      <Field label="Título">
+        <TextInput
+          aria-label="Título de la tarea"
+          value={form.texto}
+          onChange={(ev) => setForm({ ...form, texto: ev.target.value })}
+          placeholder="Ej: Estudiar biología"
+        />
+      </Field>
+      <Field label="Descripción (opcional)">
+        <TextInput
+          aria-label="Descripción de la tarea"
+          value={form.descripcion}
+          onChange={(ev) => setForm({ ...form, descripcion: ev.target.value })}
+          placeholder="Detalles, si hacen falta"
+        />
+      </Field>
+
+      {/* Fecha: los tres atajos del enunciado más el día suelto. Sin fecha es
+          una opción válida, no un olvido. */}
+      <Field label="Fecha (opcional)">
+        <div className="flex gap-2 flex-wrap mb-2">
+          <GhostBtn onClick={() => setForm({ ...form, fecha: hoy })}>Hoy</GhostBtn>
+          <GhostBtn onClick={() => setForm({ ...form, fecha: addDiaISO(hoy) })}>Mañana</GhostBtn>
+          <GhostBtn onClick={() => setForm({ ...form, fecha: '' })}>Sin fecha</GhostBtn>
+        </div>
+        <TextInput
+          type="date" aria-label="Fecha de la tarea"
+          value={form.fecha}
+          onChange={(ev) => setForm({ ...form, fecha: ev.target.value })}
+        />
+      </Field>
+      <Field label="Hora (opcional)">
+        <TextInput
+          type="time" aria-label="Hora de la tarea"
+          value={form.hora}
+          onChange={(ev) => setForm({ ...form, hora: ev.target.value })}
+        />
+      </Field>
+
+      <Field label="Prioridad">
+        <div className="flex gap-2">
+          {PRIORIDADES.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setForm({ ...form, prioridad: p.id })}
+              aria-label={`Prioridad ${p.nombre}`}
+              aria-pressed={form.prioridad === p.id}
+              className="flex-1 rounded-xl py-2 text-xs font-semibold toque-44"
+              style={{
+                background: form.prioridad === p.id ? accent : COLORS.card,
+                color: form.prioridad === p.id ? COLORS.textOnAccent : COLORS.text,
+                border: `1px solid ${COLORS.border}`,
+              }}
+            >
+              <span aria-hidden="true">{p.icono}</span> {p.nombre}
+            </button>
+          ))}
+        </div>
+      </Field>
+
+      <Field label="Categoría (opcional)">
+        <Select value={form.categoria} onChange={(ev) => setForm({ ...form, categoria: ev.target.value })} aria-label="Categoría de la tarea">
+          <option value="">Sin categoría</option>
+          {CATEGORIAS_TAREA.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+        </Select>
+      </Field>
+
+      <div className="flex gap-2 mt-3">
+        <PrimaryButton accent={accent} icon={tarea ? Pencil : Plus} onClick={guardar} disabled={!valido}>
+          {tarea ? 'Guardar cambios' : 'Añadir tarea'}
+        </PrimaryButton>
+        <GhostBtn onClick={onCancelar}>Cancelar</GhostBtn>
+      </div>
+    </Card>
+  );
+}
+
+/* Un día más, en local. ⚠️ Nunca `toISOString()` sobre una medianoche local:
+   en España retrocede un día (la lección repetida del proyecto). */
+function addDiaISO(iso) {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() + 1);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function DetalleTarea({ tarea, hoy, accent, onEditar, onCompletar, onReprogramar, onConcentrarse, onDelete, onCerrar }) {
+  const [editando, setEditando] = useState(false);
+  const [eligiendoFecha, setEligiendoFecha] = useState(false);
+  const [fechaElegida, setFechaElegida] = useState(tarea.fecha || hoy);
+  const cat = categoriaTarea(tarea.categoria);
+  const plan = planConcentrarse(tarea);
+
+  if (editando) {
+    return (
+      <FormularioTarea
+        tarea={tarea} hoy={hoy} accent={accent}
+        onGuardar={(t) => { if (t) onEditar(t); setEditando(false); }}
+        onCancelar={() => setEditando(false)}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <button onClick={onCerrar} className="flex items-center gap-1 text-xs toque-44" style={{ color: COLORS.textMuted }}>
+        <ArrowLeft size={14} /> Volver a las tareas
+      </button>
+
+      <Card>
+        <p className="text-base font-bold" style={{ color: COLORS.text }}>{tarea.texto}</p>
+        {tarea.descripcion && <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>{tarea.descripcion}</p>}
+        <div className="flex items-center gap-3 mt-2 flex-wrap">
+          <span className="text-xs" style={{ color: estadoDeFecha(tarea, hoy) === 'vencida' ? COLORS.danger : COLORS.textMuted }}>
+            {textoDeFecha(tarea, hoy)}
+          </span>
+          <ChipPrioridad id={tarea.prioridad} />
+          {cat && <span className="text-xs" style={{ color: COLORS.textMuted }}>{cat.icono} {cat.nombre}</span>}
+        </div>
+      </Card>
+
+      <Card>
+        <SectionTitle>Acciones</SectionTitle>
+        <div className="flex gap-2 flex-wrap">
+          <GhostBtn onClick={() => onCompletar(tarea)}>
+            {tarea.hecha ? 'Marcar como pendiente' : 'Completar'}
+          </GhostBtn>
+          <GhostBtn onClick={() => setEditando(true)}>Editar</GhostBtn>
+          {plan && <GhostBtn onClick={() => onConcentrarse(tarea)}>Concentrarme</GhostBtn>}
+        </div>
+      </Card>
+
+      {!tarea.hecha && (
+        <Card>
+          <SectionTitle>Reprogramar</SectionTitle>
+          <div className="flex gap-2 flex-wrap">
+            {DESTINOS_REPROGRAMAR.map((d) => (
+              <GhostBtn
+                key={d.id}
+                onClick={() => (d.pideFecha ? setEligiendoFecha(true) : onReprogramar(tarea, d.id))}
+              >
+                {d.nombre}
+              </GhostBtn>
+            ))}
+          </div>
+          {eligiendoFecha && (
+            <div className="mt-2 space-y-2">
+              <TextInput
+                type="date" aria-label="Nueva fecha de la tarea"
+                value={fechaElegida}
+                onChange={(ev) => setFechaElegida(ev.target.value)}
+              />
+              <PrimaryButton accent={accent} onClick={() => { onReprogramar(tarea, 'elegir', fechaElegida); setEligiendoFecha(false); }}>
+                Mover a esa fecha
+              </PrimaryButton>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* ⚠️ Eliminar pide confirmación porque el enunciado lo pide
+          expresamente. Va a Eliminados recientemente, así que el aviso no
+          promete nada que no se pueda deshacer. */}
+      <Card>
+        {/* ⚠️ El enunciado pide confirmación al eliminar, y `BotonBorrarDefinitivo`
+            es quien pregunta. Pero **una tarea sí se recupera**: va a Eliminados
+            recientemente. Por eso el detalle dice eso y no "no se puede
+            deshacer", que sería mentir en pantalla. */}
+        <BotonBorrarDefinitivo
+          label="Eliminar tarea"
+          titulo="¿Eliminar la tarea?"
+          detalle="Puedes recuperarla desde Eliminados recientemente."
+          onConfirm={() => { onDelete(tarea.id); onCerrar(); }}
+        >
+          Eliminar tarea
+        </BotonBorrarDefinitivo>
+      </Card>
+    </div>
+  );
+}
+
+function TareasTab({ tareas, onAdd, onUpdate, onToggle, onDelete, onConcentrarse, accent, foco, onFocoConsumido }) {
+  const hoy = todayISO();
+  const [crear, setCrear] = useState(false);
+  const [abierta, setAbierta] = useState(null);
+  const [filtro, setFiltro] = useState('todas');
+  const [orden, setOrden] = useState(ORDEN_POR_DEFECTO);
+  const [busqueda, setBusqueda] = useState('');
+  // 🚨 `null` = todavía no ha tocado ningún acordeón. El valor efectivo lo
+  // decide `aperturaInicial`, que **abre lo que haga falta para que la pantalla
+  // no se vea vacía**. Con un estado inicial fijo, una sola tarea sin fecha
+  // dejaba la lista en blanco (lo cazó Chromium). Es `marcadas ?? loGuardado`
+  // de EH F18 otra vez.
+  const [plegadasTocadas, setPlegadasTocadas] = useState(null);
   const [destacadoId, setDestacadoId] = useState(null);
 
+  // Deep-link desde el Centro de Control y desde el buscador global.
   useEffect(() => {
-    if (!foco) return;
+    if (!foco) return undefined;
     if (foco.accion === 'nueva') {
-      document.getElementById('nueva-tarea-input')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      document.getElementById('nueva-tarea-input')?.querySelector('input')?.focus();
+      setCrear(true);
       onFocoConsumido && onFocoConsumido();
-    } else if (foco.tareaId) {
+      return undefined;
+    }
+    if (foco.tareaId) {
       const el = document.getElementById(`tarea-${foco.tareaId}`);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setDestacadoId(foco.tareaId);
@@ -1007,59 +1347,124 @@ function TareasTab({ tareas, onAdd, onToggle, onDelete, accent, foco, onFocoCons
       const t = setTimeout(() => setDestacadoId(null), 2200);
       return () => clearTimeout(t);
     }
+    return undefined;
   }, [foco]);
 
-  const pendientes = [...tareas].filter((t) => !t.hecha).sort((a, b) => (a.fechaLimite || '9999').localeCompare(b.fechaLimite || '9999'));
-  const hechas = tareas.filter((t) => t.hecha);
+  const resumen = resumenTareas(tareas, hoy);
+  const stats = estadisticasDeTareas(tareas, hoy);
+  const vacio = vacioDeTareas(tareas, hoy);
+  const visibles = buscarTareas(filtrarTareas(tareas, { filtro, hoy }), busqueda);
+  const secciones = porSecciones(visibles, { hoy, orden });
+  const abiertasPorDefecto = aperturaInicial(secciones);
+  const plegadas = plegadasTocadas !== null
+    ? plegadasTocadas
+    : SECCIONES_TAREAS.filter((s) => !abiertasPorDefecto.includes(s.id)).map((s) => s.id);
+  const detalle = abierta ? tareas.find((t) => t.id === abierta) : null;
 
-  const submit = () => {
-    if (!texto.trim()) return;
-    onAdd({ id: uid(), texto: texto.trim(), fechaLimite: fecha || null, hecha: false });
-    setTexto('');
-    setFecha('');
-  };
+  if (detalle) {
+    return (
+      <DetalleTarea
+        tarea={detalle} hoy={hoy} accent={accent}
+        onEditar={onUpdate}
+        onCompletar={(t) => onToggle(t.id)}
+        onReprogramar={(t, destino, fecha) => {
+          const nueva = reprogramar(t, destino, { hoy, fecha });
+          if (nueva) onUpdate(nueva);
+        }}
+        onConcentrarse={onConcentrarse}
+        onDelete={onDelete}
+        onCerrar={() => setAbierta(null)}
+      />
+    );
+  }
+
+  if (crear) {
+    return (
+      <FormularioTarea
+        hoy={hoy} accent={accent}
+        onGuardar={(t) => { if (t) onAdd(t); setCrear(false); }}
+        onCancelar={() => setCrear(false)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-3">
-      <Card id="nueva-tarea-input">
-        <Field label="Tarea">
-          <TextInput value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !fecha && submit()} placeholder="Ej. preparar la mochila" />
-        </Field>
-        <Field label="Fecha límite (opcional)">
-          <TextInput type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
-        </Field>
-        <PrimaryButton accent={accent} icon={Plus} onClick={submit}>Añadir tarea</PrimaryButton>
+      {/* CABECERA — "Hoy · 4 pendientes" y, si corresponde, "2 completadas" */}
+      <Card>
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>
+          Hoy · {resumen.pendientesHoy + resumen.vencidas} {resumen.pendientesHoy + resumen.vencidas === 1 ? 'pendiente' : 'pendientes'}
+        </p>
+        {resumen.completadasHoy > 0 && (
+          <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
+            {resumen.completadasHoy} {resumen.completadasHoy === 1 ? 'completada' : 'completadas'}
+          </p>
+        )}
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>Organiza lo que tienes que hacer.</p>
       </Card>
 
-      {pendientes.length === 0 && hechas.length === 0 && <EmptyHint text="Sin tareas pendientes." />}
-      {pendientes.map((t) => (
-        <Card
-          key={t.id} id={`tarea-${t.id}`} className="flex items-center justify-between"
-          style={{ transition: 'box-shadow 0.3s ease', boxShadow: destacadoId === t.id ? `0 0 0 2px ${accent}` : 'none' }}
-        >
-          <button onClick={() => onToggle(t.id)} className="flex items-center gap-3 flex-1 text-left">
-            <Circle size={18} style={{ color: COLORS.textMuted }} />
-            <div>
-              <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{t.texto}</p>
-              {t.fechaLimite && <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>Antes del {t.fechaLimite.split('-').reverse().join('/')}</p>}
-            </div>
-          </button>
-          <button onClick={() => onDelete(t.id)} aria-label="Eliminar tarea"><Trash2 size={15} style={{ color: COLORS.textMuted }} /></button>
+      <PrimaryButton accent={accent} icon={Plus} onClick={() => setCrear(true)}>Nueva tarea</PrimaryButton>
+
+      {vacio && (
+        <Card className="text-center">
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{vacio.titulo}</p>
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{vacio.texto}</p>
         </Card>
+      )}
+
+      {/* FILTROS y BÚSQUEDA — solo cuando hay algo que filtrar: con tres tareas
+          sobran, y el enunciado los quiere "visualmente ligeros". */}
+      {tareas.length > 2 && (
+        <>
+          <TextInput
+            aria-label="Buscar una tarea"
+            value={busqueda}
+            onChange={(ev) => setBusqueda(ev.target.value)}
+            placeholder="Buscar una tarea…"
+          />
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {FILTROS_TAREA.map((f) => (
+              <ToggleTab key={f.id} active={filtro === f.id} accent={accent} onClick={() => setFiltro(f.id)}>
+                {f.nombre}
+              </ToggleTab>
+            ))}
+          </div>
+          <Select value={orden} onChange={(ev) => setOrden(ev.target.value)} aria-label="Cómo se ordenan las tareas">
+            {ORDENES_TAREA.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+          </Select>
+        </>
+      )}
+
+      {SECCIONES_TAREAS.map((s) => (
+        <SeccionTareas
+          key={s.id}
+          seccion={s}
+          tareas={secciones[s.id]}
+          hoy={hoy}
+          accent={accent}
+          abierta={!plegadas.includes(s.id)}
+          onAlternar={() => setPlegadasTocadas(plegadas.includes(s.id) ? plegadas.filter((x) => x !== s.id) : [...plegadas, s.id])}
+          onCompletar={(t) => onToggle(t.id)}
+          onAbrir={(t) => setAbierta(t.id)}
+          onConcentrarse={onConcentrarse}
+          destacada={false}
+        />
       ))}
-      {hechas.length > 0 && (
-        <div className="pt-2 space-y-2">
-          <p className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>Hechas</p>
-          {hechas.map((t) => (
-            <Card key={t.id} className="flex items-center justify-between" style={{ opacity: 0.6 }}>
-              <button onClick={() => onToggle(t.id)} className="flex items-center gap-3 flex-1 text-left">
-                <CheckCircle2 size={18} style={{ color: accent }} />
-                <p className="text-sm" style={{ color: COLORS.textMuted, textDecoration: 'line-through' }}>{t.texto}</p>
-              </button>
-              <button onClick={() => onDelete(t.id)} aria-label="Eliminar tarea"><Trash2 size={15} style={{ color: COLORS.textMuted }} /></button>
-            </Card>
-          ))}
-        </div>
+
+      {/* ESTADÍSTICAS BÁSICAS — se cuentan en el momento; no se guarda ni una
+          cifra (E3 F13). Sin nada que completar hoy no hay porcentaje. */}
+      {(stats.hoy || stats.semana.completadas > 0) && (
+        <Card>
+          <SectionTitle>Cómo va</SectionTitle>
+          {stats.hoy && (
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>
+              Hoy · completadas {stats.hoy.completadas} / {stats.hoy.total}
+            </p>
+          )}
+          <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
+            Últimos 7 días · completadas {stats.semana.completadas}
+          </p>
+        </Card>
       )}
     </div>
   );
@@ -1190,12 +1595,12 @@ export function CabeceraMiniAppPR({ app, accent, onVolver }) {
 export default function ProductivityView({
   productividad, onAddHabito, onUpdateHabito, onDeleteHabito,
   onAddRutina, onUpdateRutina, onDeleteRutina,
-  onAddTarea, onToggleTarea, onDeleteTarea,
+  onAddTarea, onUpdateTarea, onToggleTarea, onDeleteTarea,
   onAddMeta, onUpdateMeta, onDeleteMeta,
   onCompletarPomodoro,
   /* E3 F25 (PR F3) — Pomodoro guarda tres cosas: su configuración, la sesión en
      curso (para que sobreviva a recargar) y el historial de sesiones. */
-  onGuardarConfigPomodoro, onCambiarSesionPomodoro, onRegistrarSesionPomodoro,
+  onGuardarConfigPomodoro, onCambiarSesionPomodoro, onFinalizarSesionPomodoro,
   /* 🚨 E3 F23 (PR F1) — Objetivos entra aquí. Deja de ser un módulo aparte, pero
      **sus datos siguen en su clave de siempre**: lo que llega son la lista y sus
      manejadores, los mismos que tenía `case 'objetivos'`. */
@@ -1206,6 +1611,17 @@ export default function ProductivityView({
      encuentre directamente con listas, formularios o bloques de información**."* */
   const [abierta, setAbierta] = useState(null);
   const hoy = todayISO();
+
+  /* 🚨 «Concentrarme» (E3 F26, apartado «INTEGRACIÓN CON POMODORO»): abre **el
+     Pomodoro que ya existe** con el id de la tarea. Ni un temporizador nuevo, ni
+     un segundo motor — `iniciarSesion` acepta `tareaId` desde la E3 F25. */
+  const concentrarseEnTarea = (tarea) => {
+    const plan = planConcentrarse(tarea);
+    if (!plan) return;
+    const cfg = normalizarConfig(productividad.pomodoroConfig);
+    onCambiarSesionPomodoro(iniciarSesion('focus', cfg, { tareaId: plan.tareaId }));
+    setAbierta(plan.miniApp);
+  };
 
   /* Los enlaces directos siguen funcionando: el Dashboard mandaba `foco.sub`
      desde la ampliación del Centro de Control, y desde esta fase también llega
@@ -1262,15 +1678,17 @@ export default function ProductivityView({
           config={productividad.pomodoroConfig}
           sesionEnCurso={productividad.pomodoroEnCurso}
           sesiones={productividad.pomodoroSesiones || []}
+          tareas={productividad.tareas}
           accent={accent}
           onGuardarConfig={onGuardarConfigPomodoro}
           onCambiarSesion={onCambiarSesionPomodoro}
-          onRegistrar={onRegistrarSesionPomodoro}
+          onFinalizar={onFinalizarSesionPomodoro}
         />
       )}
       {abierta === 'tareas' && (
         <TareasTab
-          tareas={productividad.tareas} onAdd={onAddTarea} onToggle={onToggleTarea} onDelete={onDeleteTarea} accent={accent}
+          tareas={productividad.tareas} onAdd={onAddTarea} onUpdate={onUpdateTarea}
+          onToggle={onToggleTarea} onDelete={onDeleteTarea} onConcentrarse={concentrarseEnTarea} accent={accent}
           foco={foco} onFocoConsumido={onFocoConsumido}
         />
       )}

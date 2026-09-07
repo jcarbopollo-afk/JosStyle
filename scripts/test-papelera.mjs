@@ -82,14 +82,14 @@ console.log('\n═══ ME Fase 3 — papelera global ═══\n');
 
 // --- Restaurar: la recuperación tiene que ser REAL ---
 {
-  const original = { tareas: [{ id: 'a', texto: 'Uno' }, { id: 'b', texto: 'Dos', hecha: true, fechaLimite: '2026-09-01' }, { id: 'c', texto: 'Tres' }] };
+  const original = { tareas: [{ id: 'a', texto: 'Uno' }, { id: 'b', texto: 'Dos', hecha: true, fecha: '2026-09-01' }, { id: 'c', texto: 'Tres' }] };
   const del = prepararEliminacion(original, 'productividad', 'tareas', 'b', AHORA);
   const res = prepararRestauracion(del.moduloActualizado, del.entrada);
 
   comprobar('Restaurar devuelve el elemento a su posición exacta',
     res.moduloActualizado.tareas.map((t) => t.id).join() === 'a,b,c');
   comprobar('Restaurar conserva TODOS sus campos',
-    res.moduloActualizado.tareas[1].hecha === true && res.moduloActualizado.tareas[1].fechaLimite === '2026-09-01');
+    res.moduloActualizado.tareas[1].hecha === true && res.moduloActualizado.tareas[1].fecha === '2026-09-01');
   comprobar('Restaurar conserva el id original (no es una copia nueva)',
     res.moduloActualizado.tareas[1].id === 'b');
   comprobar('El resultado es idéntico al estado de partida',

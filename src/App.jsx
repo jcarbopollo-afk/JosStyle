@@ -2,6 +2,12 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt, Flame, CalendarClock, UserRound } from 'lucide-react';
 import { normalizarEconomiaHucha } from './lib/hucha';
 import { anadirApunte, resumenDelDia, progresoDelDia, apuntesDe } from './lib/centroDelDia';
+/* 🚨 E3 F26 (PR F4) — Tareas. `normalizarTareasDe` es lo que MIGRA la fecha:
+   la pantalla de Productividad guardaba `fechaLimite` y Hoy, la Agenda, el
+   Calendario y la vista semanal filtran por `fecha`, así que las tareas de
+   Josué no salían en ninguna de las cuatro. Se migra al cargar, antes de que
+   nada las lea. */
+import { completarTarea, normalizarTareasDe } from './lib/tareas';
 // Entrega 3 · F8 y F9 — las fábricas de las entidades que crea el ＋ global.
 import { nuevaTareaDeCalendario } from './lib/calendarioMes';
 import { eventoDesdeQuickAdd } from './lib/accionesHoyAgenda';
@@ -498,7 +504,13 @@ export default function App() {
       setCalisteniaVideos(cv);
       setEstudios(est);
       setNegocio(neg);
-      setProductividad(prod);
+      /* 🚨 E3 F26 (PR F4) — LA MIGRACIÓN DE LA FECHA DE LAS TAREAS. Se hace aquí,
+         al cargar y ANTES de que nada las lea, porque las cuatro pantallas que
+         enseñan una tarea con fecha —Hoy, la Agenda, el Calendario y la vista
+         semanal— filtran por `t.fecha`, y la pantalla de Productividad guardaba
+         `fechaLimite`. Es el mismo reparto que `migrarEstiloHombre` (EH F46):
+         se migra lo crudo, no lo normalizado. */
+      setProductividad(normalizarTareasDe(prod));
       setObjetivos(obj);
       // Fase 1 del Calendario Universal: solo nos aseguramos de que `eventos` sea de verdad un
       // array (mismo criterio que `temasGuardados`), por si `calendario` no existe todavía en
@@ -1821,8 +1833,23 @@ export default function App() {
   const updateRutina = (r) => snapshotAndSave({ productividad: { ...productividad, rutinas: productividad.rutinas.map((x) => (x.id === r.id ? r : x)) } });
   const deleteRutina = (id) => eliminarConPapelera('productividad', 'rutinas', id);
   const addTarea = (t) => snapshotAndSave({ productividad: { ...productividad, tareas: [...productividad.tareas, t] } });
+  /* 🚨 E3 F26 (PR F4) — completar pasa por `completarTarea`, no por un `!x.hecha`
+     a pelo: es quien apunta **cuándo** se completó (`completadaEn`) y quien
+     sabe que una tarea que se repite marca **su día**, no la serie entera
+     (E3 F10, apartado 24). Sin la marca de tiempo, *"2 completadas hoy"* y las
+     estadísticas de la semana dirían siempre cero. */
   const toggleTarea = (id) =>
-    snapshotAndSave({ productividad: { ...productividad, tareas: productividad.tareas.map((x) => (x.id === id ? { ...x, hecha: !x.hecha } : x)) } });
+    snapshotAndSave({
+      productividad: {
+        ...productividad,
+        tareas: productividad.tareas.map((x) => (x.id === id ? (completarTarea(x) || x) : x)),
+      },
+    });
+  /* E3 F26 (PR F4) — editar y reprogramar una tarea. La vista devuelve **la
+     tarea entera**, ya normalizada; aquí solo se guarda, como con hábitos y
+     rutinas. */
+  const updateTarea = (t) =>
+    snapshotAndSave({ productividad: { ...productividad, tareas: productividad.tareas.map((x) => (x.id === t.id ? t : x)) } });
   const deleteTarea = (id) => eliminarConPapelera('productividad', 'tareas', id);
   const addMeta = (m) => snapshotAndSave({ productividad: { ...productividad, metas: [...productividad.metas, m] } });
   const updateMeta = (m) => snapshotAndSave({ productividad: { ...productividad, metas: productividad.metas.map((x) => (x.id === m.id ? m : x)) } });
@@ -1870,13 +1897,28 @@ export default function App() {
   const cambiarSesionPomodoro = (sesion) =>
     guardarProductividadSinDeshacer({ ...productividad, pomodoroEnCurso: sesion || null });
 
-  const registrarSesionPomodoro = (sesion) => {
-    if (!sesion) return;
-    const sesiones = [...(productividad.pomodoroSesiones || []), sesion];
+  /* 🚨 E3 F26 — REGISTRAR LA SESIÓN Y CAMBIAR LA QUE ESTÁ EN CURSO SON **UNA
+     SOLA ESCRITURA**, y esto era un fallo de verdad de la E3 F25 que solo cazó
+     el recorrido en Chromium.
+
+     La pantalla llamaba a `onRegistrar(...)` y justo después a
+     `onCambiarSesion(...)`. Las dos parten del **mismo `productividad` del
+     cierre** —React no ha vuelto a pintar entre medias—, así que la segunda
+     escribía encima de la lista que acababa de guardar la primera (regla 5:
+     `saveData` sobrescribe, no fusiona). Resultado: **cancelar o completar un
+     pomodoro no guardaba la sesión**, y con ella se perdía el contador por día
+     que leen `avisosPlanificacion` y `estadisticasPlan` desde la Fase 6.
+
+     ⚠️ Dos escrituras seguidas en el mismo turno son siempre este fallo. Si una
+     acción tiene que tocar dos campos, se tocan en la misma llamada. */
+  const finalizarSesionPomodoro = (sesion, siguiente = null) => {
+    const previas = productividad.pomodoroSesiones || [];
+    const sesiones = sesion ? [...previas, sesion] : previas;
     guardarProductividadSinDeshacer({
       ...productividad,
       pomodoroSesiones: sesiones,
       pomodoros: contadorDesdeSesiones(sesiones),
+      pomodoroEnCurso: siguiente || null,
     });
   };
 
@@ -2534,12 +2576,12 @@ export default function App() {
             productividad={productividad}
             onAddHabito={addHabito} onUpdateHabito={updateHabito} onDeleteHabito={deleteHabito}
             onAddRutina={addRutina} onUpdateRutina={updateRutina} onDeleteRutina={deleteRutina}
-            onAddTarea={addTarea} onToggleTarea={toggleTarea} onDeleteTarea={deleteTarea}
+            onAddTarea={addTarea} onUpdateTarea={updateTarea} onToggleTarea={toggleTarea} onDeleteTarea={deleteTarea}
             onAddMeta={addMeta} onUpdateMeta={updateMeta} onDeleteMeta={deleteMeta}
             onCompletarPomodoro={completarPomodoro}
             onGuardarConfigPomodoro={guardarConfigPomodoro}
             onCambiarSesionPomodoro={cambiarSesionPomodoro}
-            onRegistrarSesionPomodoro={registrarSesionPomodoro}
+            onFinalizarSesionPomodoro={finalizarSesionPomodoro}
             /* 🚨 E3 F23 (PR F1) — Objetivos entra en Productividad. Sus datos
                siguen en la clave `objetivos` de siempre y sus manejadores son
                los mismos que tenía su `case`: lo que cambia es dónde se abre. */

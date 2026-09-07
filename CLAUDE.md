@@ -165,7 +165,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 25 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 26 de 44.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -182,9 +182,9 @@ el bloque de **Biblioteca**, la **F17 (Libros, v3.38.0)**, la **F18 (Guardados, 
 **F19 (Ideas, v3.40.0)**, la **F20 (Documentos, v3.41.0)**, la **F21 (Colecciones, v3.42.0)** y la
 **F22 (integración y experiencia global, v3.43.0)**, que 🏁 **CERRÓ EL BLOQUE DE BIBLIOTECA** —las
 ocho fases BL—. Con eso hay **dos bloques cerrados**: Hoy y Calendario (10/10) y Biblioteca (8/8). La
-**F23 (Productividad como lanzador, v3.44.0)**, la **F24 (Hábitos, v3.45.0)** y la **F25 (Pomodoro,
-v3.46.0)**, con las que el bloque de **Productividad** va por **3 de 7**; la que viene es la
-**26 — PR F4: Tareas**. El índice, con la
+**F23 (Productividad como lanzador, v3.44.0)**, la **F24 (Hábitos, v3.45.0)**, la **F25 (Pomodoro,
+v3.46.0)** y la **F26 (Tareas, v3.47.0)**, con las que el bloque de **Productividad** va por
+**4 de 7**; la que viene es la **27 — PR F5: Metas y objetivos**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 ⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
@@ -312,6 +312,42 @@ código de agosto mientras él decía *"la web sigue igual"*.
 - 🐛 **Y una prueba busca el MECANISMO, no la palabra** (E3 F21, sexta vez): la constante que promete
   que los elementos **no** se eliminan se llama `AVISO_ELIMINAR`, y el barrido de borrados saltaba
   con la frase que hace la promesa.
+
+- 🚨 **DOS ESCRITURAS SEGUIDAS EN EL MISMO TURNO SE PISAN** (E3 F26, fallo real de la E3 F25). La
+  pantalla de Pomodoro llamaba a `onRegistrar(...)` y justo después a `onCambiarSesion(...)`: las dos
+  parten del **mismo estado del cierre** —React no ha vuelto a pintar entre medias—, así que la
+  segunda borraba lo que acababa de escribir la primera. **Cancelar o completar un pomodoro no
+  guardaba la sesión**, y con ella se perdía el contador por día de `avisosPlanificacion` y
+  `estadisticasPlan`. Es la regla 5 en forma nueva. **Si una acción toca dos campos, se tocan en la
+  misma llamada.** Lo cazó Chromium; ni el build, ni el renderizado, ni las pruebas de Node lo vieron.
+- 🚨 **UNA SECCIÓN QUE NACE PLEGADA NO PUEDE DEJAR LA PANTALLA EN BLANCO** (E3 F26). «Sin fecha»
+  nacía cerrada, así que **una sola tarea sin fecha** —el caso más normal— dejaba la lista vacía, y el
+  estado vacío no se disparaba porque sí había una tarea. `abiertaPorDefecto` es una **preferencia**,
+  no una orden: `aperturaInicial` abre lo que haga falta. Es el hábito que desaparecía de la E3 F24.
+- 🚨 **UNA TAREA TENÍA DOS FECHAS, Y POR ESO NO SALÍA EN NINGUNA PARTE** (E3 F26). La pantalla de
+  Productividad guardaba `fechaLimite`; **Hoy** (`centroDelDia`), **la Agenda** (`agendaDia`), **el
+  Calendario** (`calendarioMes`) y **la vista semanal** (`semana.js`) filtran las cuatro por
+  `t.fecha`. Una tarea creada aquí con fecha para hoy **no aparecía en ninguna de las cuatro**, y una
+  creada desde el Calendario salía aquí *sin fecha* — con las dos pantallas pintándose perfectas. Es
+  la lección de siempre sobre un **campo**: **antes de escribir un campo, mirar si esa cosa ya existe
+  con otro nombre.** `fecha` es la única; `normalizarTarea` migra y **no reescribe el campo viejo**.
+- 🚨 **UNA MIGRACIÓN DE UN CAMPO CORRE AL CARGAR, ANTES DE QUE NADA LO LEA** (E3 F26, y EH F46 lo dijo
+  primero): `normalizarTareasDe(prod)` en `App.jsx`. Y devuelve **el objeto entero**: `saveData`
+  sobrescribe, así que perder una clave ahí borraría los hábitos (regla 5).
+- 🚨 **COMPLETAR UNA TAREA APUNTA CUÁNDO** (E3 F26): sin `completadaEn`, *"2 completadas hoy"* y las
+  estadísticas de la semana dirían siempre cero. Por eso se pasa por `completarTarea`, que además
+  sabe que **una tarea que se repite marca su día, no la serie** (E3 F10, apartado 24).
+- ⚠️ **UNA PRIORIDAD NUNCA ES SOLO UN COLOR** (E3 F26): cada línea de `PRIORIDADES` trae **icono y
+  palabra**, y el color es un **token**, nunca un hex. Es `etiquetaDeEstado()` de EH F42 otra vez.
+- ⚠️ **UNA RELACIÓN FUTURA SE DECLARA** (E3 F26, y la E3 F20 lo dijo primero): `metaId` y `objetivoId`
+  viven en `RELACIONES_FUTURAS` con quién los rellenará y cuándo, no como dos huecos vacíos (regla 8).
+- ⚠️ **CONFIRMAR UN BORRADO NO ES PROMETER QUE NO SE PUEDE DESHACER** (E3 F26): el enunciado pide
+  confirmación al eliminar una tarea, pero **la tarea va a la papelera**, así que el aviso dice que se
+  recupera. Prometer lo contrario sería mentir en pantalla.
+- 🐛 **Y DOS VECES EN EL MISMO TURNO, LA LECCIÓN DE SIEMPRE** (E3 F26): una prueba que busca si el
+  código **hace** algo tiene que quitar **los comentarios y las cadenas**. Mi cabecera decía *"si
+  aparece un `setInterval`"* para prometer que no lo hay, y `RELACIONES_FUTURAS` **nombra** a Metas y
+  a Objetivos justamente para declarar que no se construyen. Las dos hacían saltar el barrido.
 
 - 🚨 **`Textarea` SE COMÍA EL `ref`** (E3 F20), y no lo veía nadie: el editor de Documentos lo usa
   para saber dónde está el cursor, y sin él la barra de formato habría escrito siempre al principio

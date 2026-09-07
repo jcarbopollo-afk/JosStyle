@@ -1,5 +1,107 @@
 # CHANGELOG.md
 
+## v3.47.0 — Entrega 3 · Fase 26 (PR F4): Productividad — Tareas
+
+La tercera mini-app de Productividad: secciones por fecha, prioridades, vencidas, filtros, búsqueda,
+reprogramar y «Concentrarme», que abre el Pomodoro que ya existe.
+
+### 🚨 Una tarea tenía DOS fechas, y por eso no salía en ninguna parte
+
+Éste es el fallo de la fase, y llevaba meses ahí sin que nada lo dijera.
+
+La pantalla de Productividad guardaba la fecha de una tarea en **`fechaLimite`**. Pero **Hoy**
+(`centroDelDia.tareasDeHoy`), **la Agenda** (`agendaDia`), **el Calendario**
+(`calendarioMes.tareasDelDia`) y **la vista semanal** (`semana.tareasConRepeticion`) filtran las
+cuatro por **`t.fecha`**.
+
+O sea: **una tarea que Josué creara en Productividad con fecha para hoy no aparecía en Hoy, ni en la
+Agenda, ni en el Calendario, ni en la semana.** Y al revés, una creada desde el Calendario salía en
+Productividad *sin fecha*, la última de la lista, ordenada como si no tuviera ninguna.
+
+No lo veía nadie porque **las dos pantallas se pintan perfectas**, cada una con su campo. Y
+contradecía de frente lo que la E3 F8 dio por cerrado: *"una tarea con fecha sale en Hoy, en la
+Agenda **y** en el Calendario"* — salía, pero solo si la habías creado desde una de esas tres.
+
+Es la lección más repetida del proyecto —*"antes de crear una lista, mirar si esa cosa ya existe con
+otro nombre"*— esta vez sobre un **campo**.
+
+**`fecha` es ahora la única fecha de una tarea.** `normalizarTarea` migra lo guardado con
+`fechaLimite`, y **no vuelve a escribir ese campo**: dejar los dos sincronizados habría sido el
+duplicado por la puerta de atrás. La migración corre en `App.jsx` al cargar, antes de que nada las
+lea, así que las tareas que Josué ya tenía aparecen desde el primer render. Hay una prueba que quita
+la migración y comprueba que **se pone roja**.
+
+Se movieron con ella los seis sitios que leían el campo viejo: `puntuacion.js`,
+`calendarioIntegracion.js`, `ideas.js`, `integracionEstilo.js`, `exportData.js` y `DashboardView`.
+
+### 🚨 Y DE PASO, DOS FALLOS MÁS QUE CAZÓ EL RECORRIDO EN CHROMIUM
+
+**1 · Cancelar o completar un pomodoro no guardaba la sesión** (fallo de la E3 F25).
+
+La pantalla llamaba a `onRegistrar(...)` y justo después a `onCambiarSesion(...)`. Las dos parten del
+**mismo `productividad` del cierre** —React no ha vuelto a pintar entre medias—, así que la segunda
+escribía encima de la lista que acababa de guardar la primera. Es la regla 5 (*`saveData` sobrescribe,
+no fusiona*) en una forma nueva: **dos escrituras seguidas en el mismo turno se pisan**.
+
+Se perdía la sesión completada **y con ella el contador por día** que leen `avisosPlanificacion` y
+`estadisticasPlan` desde la Fase 6. Ahora hay una sola llamada, `finalizarSesionPomodoro`, que escribe
+los tres campos a la vez. ⚠️ **Si una acción tiene que tocar dos campos, se tocan en la misma llamada.**
+
+**2 · Una tarea sin fecha dejaba la pantalla en blanco.**
+
+«Sin fecha» y «Completadas» nacen plegadas, porque el enunciado dice *"no mostrar todas las secciones
+simultáneamente"*. Pero con **una sola tarea sin fecha** —el caso más normal del mundo— lo único
+visible era un rótulo cerrado: la lista salía vacía y el estado vacío no se disparaba, porque sí había
+una tarea. `aperturaInicial` convierte `abiertaPorDefecto` en una **preferencia**, no en una orden: si
+todo lo que hay está en una sección plegada, esa sección se abre. Es el hábito que desaparecía de la
+E3 F24 otra vez.
+
+### Lo que trae la mini-app
+
+- **Cinco secciones**: Vencidas, Hoy, Próximas, Sin fecha y Completadas. Las dos últimas nacen
+  plegadas, porque el enunciado dice *"no mostrar todas las secciones simultáneamente"*.
+- **Prioridades con icono y palabra**, nunca solo color (*"NO depender exclusivamente del color"*), y
+  el color es un **token**, no un hex.
+- **Vencidas sin alarmismo**: *"Vencida · ayer"*, el ejemplo literal del enunciado. Ni un signo de
+  exclamación, y hay una prueba que lo barre.
+- **Reprogramar en un toque**: Hoy · Mañana · Elegir fecha.
+- **Orden inteligente** —vencidas, alta prioridad, lo más próximo— y tres criterios más que él puede
+  elegir. Cuál usa se guarda en la pantalla, no en los datos.
+- **Filtros y búsqueda** que solo aparecen cuando hay algo que filtrar.
+- **Categorías compatibles con el sistema general**: cada una declara **su módulo** de JosStyle, y
+  las tres que no tienen uno lo dicen con `null` en vez de inventárselo.
+
+### ⚠️ Y tres cosas que NO se han construido, a propósito
+
+- **Ni un segundo temporizador.** *"NO duplicar el temporizador dentro de Tareas."* «Concentrarme»
+  abre el Pomodoro de la fase anterior con el `tareaId`, que `iniciarSesion` ya aceptaba. Hay una
+  prueba que lee este archivo y falla si aparece un `setInterval`.
+- **Ni un segundo motor de recurrencia.** El enunciado dice *"si implementarla es seguro, puede
+  implementarse"*: **ya estaba implementada** desde la E3 F10, sobre `expandirRecurrentes`. Aquí se
+  usa. *"No crear una lógica frágil de duplicación de tareas"* se cumple porque **no existe una tarea
+  por día**: se guarda la regla y una lista de fechas hechas dentro.
+- **Ni Metas ni Objetivos.** `metaId` y `objetivoId` se **declaran** en `RELACIONES_FUTURAS` con
+  quién los rellenará y cuándo, en vez de dejar dos huecos que nadie puede llenar (regla 8, la
+  lección de la E3 F20).
+
+### 🐛 Y dos comprobaciones que saltaron con código que estaba bien
+
+Las dos, la misma lección de siempre, dos veces en el mismo turno: **una prueba que busca si el
+código HACE algo tiene que quitar los comentarios y las cadenas.** Mi propia cabecera dice *"si
+aparece un `setInterval`"* para prometer que no lo hay, y `RELACIONES_FUTURAS` **nombra** a Metas y a
+Objetivos justamente para declarar que no se construyen. `soloCodigo` lo arregla, y cada regla trae
+ahora su ejemplo malo con una prueba de que lo caza.
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde: build de Vite, **185 comprobaciones nuevas** en
+`scripts/test-tareas.mjs` (más 9 en `test-pomodoro.mjs` por el fallo de arriba), **28 casos de
+renderizado nuevos** (1880) y una sección nueva del
+recorrido en Chromium que **abre la aplicación con una tarea guardada a la vieja y comprueba que sale
+en Hoy** — que es justo lo que ninguna prueba de Node podía ver.
+
+---
+
 ## v3.46.0 — Entrega 3 · Fase 25 (PR F3): Productividad — Pomodoro
 
 La segunda mini-app de Productividad: temporizador circular, ciclo completo, configuración,

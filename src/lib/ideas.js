@@ -201,7 +201,9 @@ export const CONVERSIONES = [
     existe: true,
     donde: 'Productividad → Tareas',
     campo: 'tareaId',
-    /* ⚠️ Una tarea de JosStyle es `{ id, texto, fechaLimite, hecha }` (EH F39).
+    /* ⚠️ Una tarea de JosStyle es `{ id, texto, fecha, hecha }` (EH F39; el
+       campo paso de `fechaLimite` a `fecha` en la E3 F26, que es el que leen
+       Hoy, la Agenda y el Calendario).
        No se le inventan campos: sería el segundo sistema de tareas. */
     pide: [],
   },
@@ -284,7 +286,7 @@ export function convertirIdea(idea, tipo, opciones = {}, confirmado = false) {
   const hoy = fechaLocalISO(new Date());
   let elemento = null;
   if (tipo === 'tarea') {
-    elemento = { id: uid(), texto, fechaLimite: opciones.fechaLimite || null, hecha: false };
+    elemento = { id: uid(), texto, fecha: opciones.fechaLimite || opciones.fecha || null, hecha: false };
   } else if (tipo === 'meta') {
     elemento = { id: uid(), nombre: texto, periodo: opciones.periodo, objetivo: Number(opciones.objetivo), progreso: 0 };
   } else if (tipo === 'objetivo') {

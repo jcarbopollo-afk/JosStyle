@@ -106,7 +106,10 @@ function construirAreas(estado, hoy) {
       etiqueta: 'Tareas',
       // Solo cuenta si hay algo que vencía hoy o antes; si no hay nada pendiente
       // para hoy, el área no entra en el cálculo (no se puede "cumplir" la nada).
-      usa: tareas.some((t) => !t.hecha && t.fechaLimite && t.fechaLimite <= hoy),
+      // E3 F26 (PR F4): el campo es `fecha`. Era `fechaLimite`, que solo escribia
+      // la pantalla de Productividad, asi que las tareas creadas desde Hoy, la
+      // Agenda o el Calendario no contaban aqui.
+      usa: tareas.some((t) => !t.hecha && t.fecha && t.fecha <= hoy),
       hecho: false, // si hay vencidas sin hacer, por definición no está cumplido
     },
     {

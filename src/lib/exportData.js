@@ -128,7 +128,7 @@ function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion
       rows.push({ modulo: 'Productividad (hábito)', fecha: '', detalle: h.nombre, valor: `racha ${r.actual}`, extra: `mejor racha: ${r.record}` });
     });
     productividad.tareas.forEach((t) =>
-      rows.push({ modulo: 'Productividad (tarea)', fecha: t.fechaLimite || '', detalle: t.texto, valor: t.hecha ? 'hecha' : 'pendiente', extra: '' })
+      rows.push({ modulo: 'Productividad (tarea)', fecha: t.fecha || '', detalle: t.texto, valor: t.hecha ? 'hecha' : 'pendiente', extra: '' })
     );
     productividad.metas.forEach((m) =>
       rows.push({ modulo: 'Productividad (meta)', fecha: '', detalle: m.nombre, valor: `${m.progreso}/${m.objetivo}`, extra: m.periodo })

@@ -28,7 +28,11 @@ import PredictionsView from '../src/views/PredictionsView.jsx';
 import ProductivityView, {
   ProgresoDelDia, SemanaDeHabito, TarjetaHabito, FormularioHabito, DetalleHabito,
   TemporizadorCircular, ConfigPomodoro, EstadisticasPomodoro,
+  FormularioTarea,
 } from '../src/views/ProductivityView.jsx';
+/* E3 F26 (PR F4) — Tareas. El escenario cubre las cinco secciones a la vez:
+   vencida, de hoy, de mañana, sin fecha y completada. */
+import { crearTarea as crearTareaF26 } from '../src/lib/tareas.js';
 import {
   CONFIG_POMODORO_POR_DEFECTO as CFG_F25, iniciarSesion as iniciarSesionF25,
   completar as completarF25, cancelar as cancelarF25, estadisticasHoy as statsHoyF25,
@@ -222,7 +226,7 @@ const lleno = {
   nutricion: { comidas: [{ id: 'c', fecha: HOY, nombre: 'Avena', kcal: 350, prot: 12, carbs: 55, grasas: 8 }], agua: { [HOY]: 1500 }, favoritos: [] },
   // RA Fase 1 — el hábito ya no guarda `rachaActual` ni `mejorRacha`: la racha sale del
   // historial. Se dejan tres días seguidos para que la tarjeta enseñe una racha de verdad.
-  productividad: { habitos: [{ id: 'h', nombre: 'Leer', historial: { [AYER2]: true, [AYER]: true, [HOY]: true } }], rutinas: [], tareas: [{ id: 't', texto: 'Repasar', hecha: false, fechaLimite: HOY }], metas: [], pomodoros: { [HOY]: 2 } },
+  productividad: { habitos: [{ id: 'h', nombre: 'Leer', historial: { [AYER2]: true, [AYER]: true, [HOY]: true } }], rutinas: [], tareas: [{ id: 't', texto: 'Repasar', hecha: false, fecha: HOY }], metas: [], pomodoros: { [HOY]: 2 } },
   objetivos: { lista: [{ id: 'o', texto: 'Handstand 30s', plazo: '90 días', cumplido: false, fechaCreacion: HOY }], ultimaRevision: null },
   diario: { entradas: [{ id: 'd', fecha: HOY, animo: 4, comoMeSiento: 'Bien', queHeAprendido: 'Algo', queMejorareManana: 'Otra cosa' }] },
   relacion: { nombre: 'A', fechas: [{ id: 'r', etiqueta: 'Aniversario', fecha: HOY, tipo: 'aniversario', repetir: true }] },
@@ -1960,6 +1964,48 @@ const CASOS = [
       ['EstadisticasPomodoro (vacío)', EstadisticasPomodoro, () => ({
         hoy: statsHoyF25([]), semana: statsSemF25([]), accent,
       })],
+    ];
+  })(),
+  /* E3 F26 (PR F4) — Tareas. 🚨 El escenario mete a propósito una tarea guardada
+     con `fechaLimite`: es la forma vieja, y la pantalla tiene que enseñarla. */
+  ...(() => {
+    const HOY_F26 = '2026-09-07';
+    const tareasF26 = [
+      crearTareaF26({ texto: 'Estudiar biología', fecha: HOY_F26, hora: '18:00', prioridadId: 'alta', categoria: 'estudios' }),
+      crearTareaF26({ texto: 'Llamar al dentista', fecha: '2026-09-06', prioridadId: 'media' }),
+      crearTareaF26({ texto: 'Preparar la mochila', fecha: '2026-09-08', prioridadId: 'baja', categoria: 'casa' }),
+      crearTareaF26({ texto: 'Leer el libro nuevo' }),
+      { ...crearTareaF26({ texto: 'Entrenar', fecha: HOY_F26 }), hecha: true, completadaEn: `${HOY_F26}T09:00:00.000Z` },
+      // La forma vieja, sin migrar: la pantalla la recibe tal cual.
+      { id: 'vieja', texto: 'Guardada antes de la F26', fechaLimite: HOY_F26, hecha: false },
+    ];
+    const conTareas = (tareas, extra = {}) => ({
+      productividad: {
+        habitos: [], rutinas: [], tareas, metas: [], pomodoros: {}, apuntes: [],
+        pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+      },
+      objetivos: { lista: [], ultimaRevision: null }, accent,
+      onAddHabito: noop, onUpdateHabito: noop, onDeleteHabito: noop,
+      onAddRutina: noop, onUpdateRutina: noop, onDeleteRutina: noop,
+      onAddTarea: noop, onUpdateTarea: noop, onToggleTarea: noop, onDeleteTarea: noop,
+      onAddMeta: noop, onUpdateMeta: noop, onDeleteMeta: noop,
+      onCompletarPomodoro: noop,
+      onGuardarConfigPomodoro: noop, onCambiarSesionPomodoro: noop, onRegistrarSesionPomodoro: noop,
+      onAddObjetivo: noop, onUpdateObjetivo: noop, onDeleteObjetivo: noop, onRevisionHecha: noop,
+      foco: { app: 'tareas' }, onFocoConsumido: noop, ...extra,
+    });
+    return [
+      ['ProductivityView · tareas', ProductivityView, () => conTareas(tareasF26)],
+      ['ProductivityView · tareas (vacío)', ProductivityView, () => conTareas([])],
+      ['ProductivityView · tareas (nada hoy)', ProductivityView, () => conTareas([
+        crearTareaF26({ texto: 'Futura', fecha: '2026-09-20' }),
+      ])],
+      ['ProductivityView · tareas (todo hecho)', ProductivityView, () => conTareas([
+        { ...crearTareaF26({ texto: 'Hecha' }), hecha: true, completadaEn: `${HOY_F26}T09:00:00.000Z` },
+      ])],
+      ['FormularioTarea (nueva)', FormularioTarea, () => ({ hoy: HOY_F26, accent, onGuardar: noop, onCancelar: noop })],
+      ['FormularioTarea (editando)', FormularioTarea, () => ({ tarea: tareasF26[0], hoy: HOY_F26, accent, onGuardar: noop, onCancelar: noop })],
+      ['FormularioTarea (sin fecha)', FormularioTarea, () => ({ tarea: tareasF26[3], hoy: HOY_F26, accent, onGuardar: noop, onCancelar: noop })],
     ];
   })(),
   ['WellbeingView', WellbeingView, (e) => ({ bienestar: e.bienestar, onAdd: noop, onDelete: noop, onAddReflexion: noop, onCompletarSesion: noop, accent })],

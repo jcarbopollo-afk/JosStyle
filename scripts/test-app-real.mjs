@@ -1220,8 +1220,10 @@ ok(escTareas.length > 0, '⚠️ PERSISTENCIA: la tarea se guarda en PRODUCTIVID
 const tareas = escTareas.at(-1)?.value?.tareas || [];
 ok(tareas.length === 1 && tareas[0].texto === 'Comprar Reloj negro (Casio)',
   'con el texto del enunciado');
-ok(tareas[0].hecha === false && 'fechaLimite' in tareas[0],
+ok(tareas[0].hecha === false && 'fecha' in tareas[0],
   '⚠️ y con la forma REAL de una tarea, ni un campo inventado');
+ok(!('fechaLimite' in tareas[0]),
+  '🚨 E3 F26: la fecha es `fecha`. Con `fechaLimite` esta tarea no salía en Hoy, ni en la Agenda, ni en el Calendario');
 
 const escEH39 = guardado.filter((g) => g && g.key === 'estiloHombre');
 const cfgAcc = escEH39.at(-1)?.value?.modulos?.find((m) => m.id === 'accesorios')?.config || {};
@@ -2721,6 +2723,13 @@ ok(await pulsar('Abrir Tareas'), 'se entra en Tareas');
 const tareas_pr1 = await esperarTexto(/Estudiar mates/);
 ok(/Estudiar mates/.test(tareas_pr1),
   '🚨 Y LAS CINCO DE SIEMPRE SIGUEN INTACTAS: esta fase es la pantalla, no su contenido');
+/* 🚨 **Y ÉSTE ES EL CASO QUE CAZÓ UN FALLO EN LA E3 F26:** esta tarea **no tiene
+   fecha**, así que cae en la sección «Sin fecha», que nace plegada. Con el
+   acordeón cerrado la pantalla salía **en blanco** —y el estado vacío no se
+   disparaba, porque sí había una tarea—. `aperturaInicial` abre la sección que
+   haga falta para que eso no pase. */
+ok(!/Todo despejado/.test(tareas_pr1),
+  '⚠️ y con una tarea NO se dice "Todo despejado": nunca un vacío con pendientes');
 
 /* ── E3 F24 (PR F2) · HÁBITOS ────────────────────────────────────────────
    Lo que no se puede comprobar en Node: crear un hábito de días concretos desde
@@ -2875,5 +2884,90 @@ ok(await pulsar('Tiempo de enfoque: 45 minutos'), 'se cambia el enfoque a 45 min
 ok(await pulsar('Guardar'), 'y se guarda');
 const con45_pr3 = await esperarTexto(/45:00/);
 ok(/45:00/.test(con45_pr3), '🚨 Y EL TEMPORIZADOR PASA A 45 MINUTOS: las duraciones son configurables de verdad');
+
+/* ── E3 F26 (PR F4) · TAREAS ─────────────────────────────────────────────
+   🚨 Lo que ninguna prueba de Node puede ver: que **una tarea guardada con la
+   forma vieja aparece de verdad en Hoy**. Ése era el fallo — la pantalla de
+   Productividad guardaba `fechaLimite` y Hoy, la Agenda y el Calendario leen
+   `fecha`, así que las tareas de Josué no salían en ninguna de las tres y las
+   tres se pintaban perfectas. */
+const HOY_PR4 = new Date().toLocaleDateString('sv-SE');
+almacen.productividad = {
+  habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [],
+  pomodoroConfig: null, pomodoroEnCurso: null, pomodoroSesiones: [],
+  // La forma VIEJA, tal como la tiene guardada Josué.
+  tareas: [{ id: 'vieja_pr4', texto: 'Tarea guardada antes', fechaLimite: HOY_PR4, hecha: false }],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+const hoy_pr4 = await esperarTexto(/Tarea guardada antes/i);
+ok(/Tarea guardada antes/i.test(hoy_pr4),
+  '🚨 LA TAREA VIEJA SALE EN HOY: es el fallo que arregla la E3 F26, y solo se ve abriendo la aplicación');
+
+await pulsar('Vida');
+await pulsar('Productividad');
+ok(await pulsar('Abrir Tareas'), 'Tareas se abre');
+
+const inicio_pr4 = await esperarTexto(/Organiza lo que tienes que hacer/i);
+ok(/Organiza lo que tienes que hacer/i.test(inicio_pr4), '⚠️ con la frase del enunciado');
+ok(/1 pendiente/i.test(inicio_pr4), '⚠️ y el resumen de la cabecera: "Hoy · 1 pendiente"');
+ok(/Tarea guardada antes/i.test(inicio_pr4), '⚠️ y la tarea vieja también se ve aquí');
+
+ok(await pulsar('Nueva tarea'), 'se abre el formulario');
+const form_pr4 = await esperarTexto(/Prioridad/i);
+ok(/Título/i.test(form_pr4) && /Prioridad/i.test(form_pr4) && /Categoría/i.test(form_pr4),
+  '⚠️ con los campos del enunciado');
+ok(/Alta/i.test(form_pr4) && /Media/i.test(form_pr4) && /Baja/i.test(form_pr4),
+  '⚠️ y las tres prioridades, con su palabra: nunca solo un color');
+await page.fill('input[aria-label="Título de la tarea"]', 'Estudiar biología');
+ok(await pulsar('Hoy'), 'se pone para hoy con el atajo');
+ok(await pulsar('Prioridad Alta'), 'y con prioridad alta');
+ok(await pulsar('Añadir tarea'), 'se añade');
+await page.waitForTimeout(900);
+
+const escrito_pr4 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value;
+const tareas_pr4 = escrito_pr4?.tareas || [];
+ok(tareas_pr4.length === 2, '⚠️ PERSISTENCIA: la tarea se ESCRIBE en Supabase');
+const nueva_pr4 = tareas_pr4.find((t) => t.texto === 'Estudiar biología');
+ok(nueva_pr4 && nueva_pr4.fecha === HOY_PR4,
+  '🚨 CON `fecha`, que es el campo que leen Hoy, la Agenda y el Calendario');
+ok(nueva_pr4 && !('fechaLimite' in nueva_pr4), '🚨 y sin el campo viejo: ni un duplicado');
+ok(nueva_pr4 && nueva_pr4.prioridad === 'alta', '⚠️ con su prioridad');
+const migrada_pr4 = tareas_pr4.find((t) => t.id === 'vieja_pr4');
+ok(migrada_pr4 && migrada_pr4.fecha === HOY_PR4 && !('fechaLimite' in migrada_pr4),
+  '🚨 Y LA VIEJA SE GUARDA YA MIGRADA: el arreglo se queda, no hay que repetirlo cada vez');
+
+const lista_pr4 = await esperarTexto(/Estudiar biología/i);
+ok(/Estudiar biología/i.test(lista_pr4), '⚠️ y la pantalla la enseña');
+ok(/Alta/i.test(lista_pr4), '⚠️ con su prioridad en palabra, no solo en color');
+ok(/2 pendientes/i.test(lista_pr4), '⚠️ y el contador de la cabecera se mueve solo');
+
+ok(await pulsar('Completar Estudiar biología'), 'se completa con un toque');
+await page.waitForTimeout(900);
+const trasCompletar_pr4 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value;
+const hecha_pr4 = (trasCompletar_pr4?.tareas || []).find((t) => t.texto === 'Estudiar biología');
+ok(hecha_pr4 && hecha_pr4.hecha === true, '⚠️ y se guarda completada');
+ok(hecha_pr4 && typeof hecha_pr4.completadaEn === 'string' && hecha_pr4.completadaEn.slice(0, 10) === HOY_PR4,
+  '🚨 Y CON LA MARCA DE CUÁNDO: sin ella, "completadas hoy" diría siempre cero');
+const trasCompletarPantalla_pr4 = await esperarTexto(/1 completada/i);
+ok(/1 completada/i.test(trasCompletarPantalla_pr4), '⚠️ y la cabecera lo dice: "1 completada"');
+
+ok(await pulsar('Tarea guardada antes'), 'se abre el detalle de una tarea');
+const detalle_pr4 = await esperarTexto(/Reprogramar/i);
+ok(/Reprogramar/i.test(detalle_pr4), '⚠️ con sus acciones');
+ok(/Concentrarme/i.test(detalle_pr4), '⚠️ y con «Concentrarme», que abre el Pomodoro que ya existe');
+ok(/Eliminar tarea/i.test(detalle_pr4), '⚠️ y eliminar');
+
+ok(await pulsar('Concentrarme'), 'se toca «Concentrarme»');
+const pomodoro_pr4 = await esperarTexto(/Concentrándote en/i);
+ok(/Concentrándote en: Tarea guardada antes/i.test(pomodoro_pr4),
+  '🚨 Y SE ABRE EL POMODORO DICIENDO EN QUÉ: el `tareaId` llega de verdad (criterio 13)');
+ok(/25:00/.test(pomodoro_pr4) || /2[0-5]:\d\d/.test(pomodoro_pr4),
+  '⚠️ con el temporizador de siempre: ni uno nuevo dentro de Tareas');
+await page.waitForTimeout(900);
+const sesion_pr4 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value?.pomodoroEnCurso;
+ok(sesion_pr4 && sesion_pr4.tareaId === 'vieja_pr4',
+  '🚨 y la sesión guarda el id de la tarea, no una copia de su nombre');
 
 await salir(browser);

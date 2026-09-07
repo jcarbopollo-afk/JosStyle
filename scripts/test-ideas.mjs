@@ -124,8 +124,8 @@ ok(/Productividad/.test(sinConfirmar.plan.destino), '⚠️ y el plan dice dónd
 const aTarea = convertirIdea(idea(), 'tarea', {}, true);
 eq([aTarea.tipo, aTarea.elemento.texto, aTarea.elemento.hecha], ['tarea', 'Crear una app de reservas', false],
   '⚠️ una tarea nace con la forma de siempre');
-eq(Object.keys(aTarea.elemento).sort(), ['fechaLimite', 'hecha', 'id', 'texto'],
-  '🚨 y con SUS CUATRO CAMPOS, ni uno más: una tarea de JosStyle es `{ id, texto, fechaLimite, hecha }` (EH F39)');
+eq(Object.keys(aTarea.elemento).sort(), ['fecha', 'hecha', 'id', 'texto'],
+  '🚨 y con SUS CUATRO CAMPOS, ni uno más: una tarea de JosStyle es `{ id, texto, fecha, hecha }` (EH F39 + E3 F26)');
 eq(aTarea.idea.tareaId, aTarea.elemento.id, '🚨 y la idea guarda el id de lo que generó');
 eq([aTarea.idea.titulo, aTarea.idea.estado], ['Crear una app de reservas', 'captured'],
   '🚨 LA IDEA NO DESAPARECE NI CAMBIA DE ESTADO: *"la idea original no debe desaparecer automáticamente"*');

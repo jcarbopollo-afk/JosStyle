@@ -12,7 +12,7 @@
 // ============================================================================
 
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   TIPOS_SESION, tipoSesion, IDS_TIPOS_SESION,
@@ -279,8 +279,17 @@ eq(VINCULACION_CON_TAREAS.interfaz, false,
 eq(iniciarSesion('focus', CFG, { ahora: T0, tareaId: 't1' }).tareaId, 't1', '⚠️ el campo viaja en la sesión');
 eq(completar(iniciarSesion('focus', CFG, { ahora: T0, tareaId: 't1' }), T0 + MIN).tareaId, 't1', '⚠️ y llega al historial');
 eq(iniciarSesion('focus', CFG, { ahora: T0 }).tareaId, null, '⚠️ y sin tarea es `null`');
-ok(!/Tarea|tarea/.test((VISTA_LIMPIA.split('function PomodoroTab')[1] || '').split('function ')[0]),
-  '⚠️ y no hay ni un selector de tareas en la pantalla de Pomodoro');
+/* ⚠️ **Actualizado en la E3 F26:** la PR F4 ya existe, así que el Pomodoro **sí
+   dice en qué tarea se está concentrando** cuando la sesión salió de una. Lo que
+   sigue sin haber —y es lo que prohíbe el apartado— es un **selector**: desde
+   aquí no se elige una tarea; se entra desde Tareas con «Concentrarme». */
+{
+  const cuerpo = (VISTA_LIMPIA.split('function PomodoroTab')[1] || '').split('\nfunction ')[0];
+  ok(!/<Select|<option|onChange=\{\(ev\) => set[A-Z]\w*Tarea/.test(cuerpo),
+    '🚨 y no hay ni un SELECTOR de tareas en la pantalla de Pomodoro: se entra desde Tareas');
+  ok(/tareaDeSesion/.test(cuerpo),
+    '⚠️ pero sí dice en qué tarea se concentra (E3 F26): un `tareaId` que no se ve no sirve de nada');
+}
 
 console.log('\n═══ 13. LOS TEXTOS Y LA PANTALLA ═══\n');
 
@@ -323,6 +332,54 @@ ok(pr3Terminada(CFG, sesiones), 'la fase está terminada');
 ok(pr3Terminada(CFG, []), '⚠️ y sin sesiones: la condición es del sistema, no de sus datos');
 ok(!/ok: true,/.test(LIB_CODIGO.replace(/existe: true|completada: true|propio: false/g, '')),
   '🚨 y ninguna casilla está puesta a `true` a mano');
+
+console.log('\n═══ 16. 🚨 REGISTRAR Y CAMBIAR DE SESIÓN SON UNA ESCRITURA (E3 F26) ═══\n');
+
+/* 🚨 **EL FALLO QUE CAZÓ EL RECORRIDO EN CHROMIUM.** La pantalla llamaba a
+   `onRegistrar(...)` y justo después a `onCambiarSesion(...)`. Las dos parten
+   del **mismo `productividad` del cierre** —React no ha vuelto a pintar entre
+   medias—, así que la segunda escribía encima de la lista que acababa de
+   guardar la primera (regla 5: `saveData` sobrescribe, no fusiona). Resultado:
+   **cancelar o completar un pomodoro no guardaba la sesión**, y con ella se
+   perdía el contador por día que leen `avisosPlanificacion` y
+   `estadisticasPlan` desde la Fase 6. */
+{
+  const base = { pomodoroSesiones: [], pomodoros: {}, pomodoroEnCurso: null, habitos: [] };
+  const enCurso = iniciarSesion('focus', CONFIG_POMODORO_POR_DEFECTO, { ahora: Date.parse('2026-09-07T10:00:00Z') });
+  const acabada = completar(enCurso, Date.parse('2026-09-07T10:25:00Z'));
+
+  // Lo que hacía antes: dos escrituras, las dos partiendo de `base`.
+  const primera = { ...base, pomodoroSesiones: [acabada], pomodoros: contadorDesdeSesiones([acabada]) };
+  const segunda = { ...base, pomodoroEnCurso: null };
+  ok(primera.pomodoroSesiones.length === 1, 'la primera escritura guardaba bien la sesión');
+  ok(segunda.pomodoroSesiones.length === 0,
+    '🐛 PERO LA SEGUNDA, PARTIENDO DEL MISMO ESTADO, LA BORRABA: dos escrituras seguidas se pisan');
+
+  // Lo que hace ahora: una sola.
+  const unaSola = {
+    ...base,
+    pomodoroSesiones: [acabada],
+    pomodoros: contadorDesdeSesiones([acabada]),
+    pomodoroEnCurso: null,
+  };
+  ok(unaSola.pomodoroSesiones.length === 1 && unaSola.pomodoroEnCurso === null,
+    '🚨 UNA SOLA ESCRITURA guarda las dos cosas: la sesión queda registrada Y deja de haber una en curso');
+  ok(Object.keys(unaSola.pomodoros).length === 1,
+    '🚨 y el contador por día sobrevive: es el que leen `avisosPlanificacion` y `estadisticasPlan`');
+}
+
+{
+  const raiz = join(dirname(fileURLToPath(import.meta.url)), '..');
+  const vista = readFileSync(join(raiz, 'src/views/ProductivityView.jsx'), 'utf8');
+  const app = readFileSync(join(raiz, 'src/App.jsx'), 'utf8');
+  ok(!/onRegistrar\(/.test(vista),
+    '🚨 y la pantalla ya NO tiene un `onRegistrar` suelto que se pise con el cambio de sesión');
+  ok(/onFinalizar\(/.test(vista), 'lo que hay es `onFinalizar`, que hace las dos cosas de una vez');
+  ok(/const finalizarSesionPomodoro = /.test(app) && /onFinalizarSesionPomodoro=\{finalizarSesionPomodoro\}/.test(app),
+    '🚨 Y ALGUIEN LO LLAMA: una función que nadie llama no falla nunca');
+  ok(/pomodoroEnCurso: siguiente \|\| null/.test(app),
+    '⚠️ y escribe la sesión en curso en la MISMA llamada que la lista');
+}
 
 console.log(`\n${fallos === 0 ? '✅' : '❌'} ${n} comprobaciones, ${fallos} fallos\n`);
 process.exit(fallos === 0 ? 0 : 1);

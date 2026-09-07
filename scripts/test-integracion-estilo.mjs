@@ -151,11 +151,12 @@ console.log('\n🔗 EH · Fase 39/65 — Integración con el resto de JosStyle\n
 
   const plan = prepararTarea(e, 'accesorio_deseado', acciones[0].elementoId, { fechaLimite: '2026-09-10' });
   ok(plan && plan.tarea, 'el plan trae la tarea');
-  eq(Object.keys(plan.tarea).sort(), ['fechaLimite', 'hecha', 'id', 'texto'],
+  eq(Object.keys(plan.tarea).sort(), ['fecha', 'hecha', 'id', 'texto'],
     '⚠️ con la forma REAL de una tarea de Productividad, ni un campo inventado');
   eq(plan.destino, 'productividad', 'y su destino');
-  eq(plan.tarea.fechaLimite, '2026-09-10', 'la fecha, si la puso');
-  eq(prepararTarea(e, 'accesorio_deseado', acciones[0].elementoId, { fechaLimite: '10/09/2026' }).tarea.fechaLimite,
+  eq(plan.tarea.fecha, '2026-09-10',
+    '🚨 E3 F26: la fecha se guarda en `fecha`, que es el campo que leen Hoy, la Agenda y el Calendario');
+  eq(prepararTarea(e, 'accesorio_deseado', acciones[0].elementoId, { fechaLimite: '10/09/2026' }).tarea.fecha,
     null, '⚠️ y una fecha con otra forma no se cuela');
   eq(prepararTarea(e, 'inventada', 'x'), null, 'una fuente que no existe no da plan');
   eq(prepararTarea(e, 'accesorio_deseado', 'no-existe'), null, 'ni un elemento que no está');
@@ -203,7 +204,7 @@ console.log('\n🔗 EH · Fase 39/65 — Integración con el resto de JosStyle\n
   const r2 = aplicarTarea(e, { tareas: [] }, plan2, { confirmado: true });
   eq(datosPerfumes(r2.estiloHombre).porProbar[0].tareaId, plan2.tarea.id,
     'un perfume por probar también se enlaza');
-  eq(plan2.tarea.fechaLimite, null, 'y sin fecha si no la puso');
+  eq(plan2.tarea.fecha, null, 'y sin fecha si no la puso');
   eq(textoDeTarea(fuenteTarea('perfume_por_probar'), { nombre: 'Uno' }), 'Probar Uno',
     'sin marca, el texto no lleva paréntesis vacío');
 }

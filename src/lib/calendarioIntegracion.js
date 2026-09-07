@@ -130,11 +130,11 @@ function eventosDeEntrenamiento(calistenia, futbol) {
 function eventosDeTareas(productividad) {
   if (!productividad) return [];
   return productividad.tareas
-    .filter((t) => t.fechaLimite && !t.hecha)
+    .filter((t) => t.fecha && !t.hecha)
     .map((t) => ({
       id: `productividad:${t.id}`,
       titulo: t.texto,
-      fecha: t.fechaLimite,
+      fecha: t.fecha,
       todoElDia: true,
       horaInicio: null,
       horaFin: null,

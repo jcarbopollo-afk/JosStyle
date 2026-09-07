@@ -266,7 +266,7 @@ export const TEXTOS_INTEGRACION = {
    Ejemplo: 'Comprar producto X'. **No crear una lista de tareas dentro de
    Estilo.**"*
 
-   ⚠️ Una tarea de JosStyle es `{ id, texto, fechaLimite, hecha }` —lo que de
+   ⚠️ Una tarea de JosStyle es `{ id, texto, fecha, hecha }` —lo que de
    verdad tiene Productividad—, y **no se le inventan campos**, igual que la F28
    no se los inventó a un objetivo. Lo que Estilo guarda es **el id**, en la
    entrada de la que salió. */
@@ -365,7 +365,11 @@ export function prepararTarea(estado, fuenteId, elementoId, { fechaLimite = null
     elementoId,
     destino: DESTINO_TAREAS,
     // La forma real de una tarea de Productividad, ni un campo más.
-    tarea: { id: uid(), texto: textoDeTarea(f, elemento), fechaLimite: fecha, hecha: false },
+    /* 🚨 E3 F26 (PR F4): el campo es `fecha`. Con `fechaLimite` la tarea que
+       creaba Estilo de hombre no salia en Hoy, ni en la Agenda, ni en el
+       Calendario, que filtran los tres por `t.fecha`. El parametro sigue
+       llamandose `fechaLimite` porque es el vocabulario de quien llama. */
+    tarea: { id: uid(), texto: textoDeTarea(f, elemento), fecha, hecha: false },
   };
 }
 
