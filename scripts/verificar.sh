@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F44 — Estudios: exámenes, entregas y fechas académicas.
+if node --import ./scripts/resolver-vite.mjs scripts/test-fechas-academicas.mjs >/tmp/jc_fechas.log 2>&1; then
+  ok "Estudios: exámenes, entregas y fechas (E3 F44) — $(grep -c '✓' /tmp/jc_fechas.log) comprobaciones"
+else
+  fallo "Fallan las fechas académicas (E3 F44)"; grep '✗' /tmp/jc_fechas.log
+fi
+
 # Entrega 3 · F43 — Estudios: asignaturas, temario y gestión académica.
 if node --import ./scripts/resolver-vite.mjs scripts/test-asignaturas.mjs >/tmp/jc_asig.log 2>&1; then
   ok "Estudios: asignaturas y temario (E3 F43) — $(grep -c '✓' /tmp/jc_asig.log) comprobaciones"

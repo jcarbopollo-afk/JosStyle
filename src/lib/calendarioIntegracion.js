@@ -25,6 +25,7 @@ import { eventosDeCuerpo } from './rutinasCuerpo';
 import { eventosDeManosPies } from './manosPies';
 import { eventosDeSonrisa } from './sonrisa';
 import { eventosDeGustos } from './gustos';
+import { fechasAcademicas, tipoDeFecha } from './fechasAcademicas';
 
 // Objetivos con plazo estimable (prediccionObjetivo, Fase 17) y todavía no cumplidos — un
 // objetivo ya marcado como cumplido no aporta nada al calendario, solo ruido. El plazo es una
@@ -62,20 +63,30 @@ function eventosDeObjetivos(objetivos) {
 function eventosDeEstudios(estudios) {
   if (!estudios) return [];
   const nombreAsignatura = (id) => estudios.asignaturas.find((a) => a.id === id)?.nombre || '';
-  return estudios.examenes.map((ex) => ({
-    id: `estudios:${ex.id}`,
-    titulo: `Examen — ${nombreAsignatura(ex.asignaturaId)}${ex.tema ? `: ${ex.tema}` : ''}`,
-    fecha: ex.fecha,
-    todoElDia: true,
-    horaInicio: null,
-    horaFin: null,
-    tipo: 'estudio',
-    notas: ex.notaObjetivo ? `Objetivo: ${ex.notaObjetivo}` : '',
-    ubicacion: '',
-    origen: 'estudios',
-    origenId: ex.id,
-    soloLectura: true,
-  }));
+
+  // E3 F44 (ES F4), apartado 16 — *"no crear un calendario independiente si ya existe un calendario
+  // global"*. Las tres fechas académicas entran por `fechasAcademicas()`, la única que las junta
+  // (apartado 19), y siguen siendo **derivadas y de solo lectura**: el Calendario representa, no
+  // guarda (regla 11). Cambiar la fecha de una entrega la mueve aquí sola.
+  return fechasAcademicas(estudios)
+    .filter((f) => f.fecha)
+    .map((f) => ({
+      id: `estudios:${f.tipo}:${f.id}`,
+      titulo: f.tipo === 'examen'
+        ? `Examen — ${nombreAsignatura(f.asignaturaId)}${f.nombre && f.nombre !== 'Examen' ? `: ${f.nombre}` : ''}`
+        : `${tipoDeFecha(f.tipo)?.nombre || 'Evento'} — ${nombreAsignatura(f.asignaturaId)}: ${f.nombre}`,
+      fecha: f.fecha,
+      // ⚠️ Con hora deja de ser de todo el día: es el dato que él ha puesto, no uno inventado.
+      todoElDia: !f.hora,
+      horaInicio: f.hora || null,
+      horaFin: null,
+      tipo: 'estudio',
+      notas: f.notas || '',
+      ubicacion: '',
+      origen: 'estudios',
+      origenId: f.id,
+      soloLectura: true,
+    }));
 }
 
 // Sesiones de calistenia (una por habilidad y fecha) y partidos de fútbol — ambos ya registrados

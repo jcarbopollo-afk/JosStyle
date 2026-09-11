@@ -1,5 +1,47 @@
 # CHANGELOG.md
 
+## v3.65.0 — Entrega 3 · Fase 44 (ES F4): exámenes, entregas y fechas
+
+La fase que por fin construye **las entregas** — lo que la ES F1 y la ES F3 tuvieron que declarar
+imposible dos veces.
+
+### 🚨 Un solo registro, visto desde muchos sitios
+
+El apartado 19 es el que manda: *"Un examen no debe existir como examen dentro de asignatura, evento
+diferente en Home y evento diferente en calendario. **Debe existir un único registro que pueda
+visualizarse desde diferentes lugares**."*
+
+`fechasAcademicas()` es **la única función que junta las tres listas**, y leen de ella el Home, la
+asignatura, el área y el Calendario. Ni una copia: **cambiar la fecha de una entrega reordena el
+Home solo**, porque no hay nada que sincronizar. Hay una comprobación en Chromium que crea una
+entrega dentro de una asignatura y va a buscarla al Home.
+
+- **Los exámenes ya existían** y se amplían con `hora`, `estado` y `notas`. ⚠️ **No se les añade un
+  `nombre`**: el título ya es `tema` desde la Fase 6 — un campo nuevo para lo mismo es el fallo de
+  la E3 F26, donde una tarea acabó con dos fechas y no salía en ninguna parte. Y conservan su **plan
+  de repaso**, que la IA genera.
+- **Entregas** (apartados 4 y 5) con sus tres estados: Pendiente, En progreso, Entregada.
+- **Eventos** (apartado 6) en **una sola lista con tipo configurable** —presentación, exposición,
+  recuperación, práctica—, porque el apartado dice *"no crear una categoría para cada caso"*.
+- ⚠️ Cada tipo y cada estado con **icono Y palabra**: *"no depender únicamente del color"*
+  (apartado 12).
+- **La cuenta atrás** (apartado 11) solo dentro de dos semanas: *«Hoy»*, *«Mañana»*, *«En 3 días»*.
+  Más allá, la fecha dice más que «en 47 días».
+- **Lo pasado deja de salir como próximo pero sigue guardado** (apartado 10): es un filtro de
+  lectura, no un borrado ni un archivado.
+
+### ⚠️ Y el estado de un examen se guarda, no se deriva de la fecha
+
+Que un examen haya **pasado** no significa que se haya **hecho** — es la lección de HT F8, *pasada
+no es completada*. Así que «Realizado» es una confirmación suya, no una deducción del calendario.
+
+### 🔓 Tres promesas de fases anteriores, cumplidas
+
+La ES F1 declaró que las entregas no se podían enseñar en el Home; la ES F3, que no se podía contar
+*«1 entrega pendiente»* en el resumen de una asignatura, ni pintar su sección. **Las tres
+comprobaciones que guardaban esas promesas pasan ahora a vigilar que se hayan cumplido**, que es
+para lo que estaban escritas.
+
 ## v3.64.0 — Entrega 3 · Fase 43 (ES F3): asignaturas y gestión académica
 
 *"Estudios → Bachillerato → Asignaturas → Asignatura"*, con su espacio propio y su temario.

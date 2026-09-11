@@ -218,7 +218,10 @@ ok(NO_HAY_ENTREGAS.porque, 'y está declarado con su motivo');
 console.log('\n── 8. Las secciones de una asignatura (apartado 4) ──');
 
 ok(SECCIONES_QUE_EXISTEN.length >= 2, `${SECCIONES_QUE_EXISTEN.length} secciones existen de verdad`);
-ok(SECCIONES_ASIGNATURA.some((s) => s.id === 'entregas' && !s.existe && s.porque), '🚨 Entregas se declara con su motivo, no se pinta');
+// 🔓 La ES F3 declaró Entregas como imposible y la ES F4 la construyó: esta comprobación pasa a
+// vigilar que exista de verdad, que es lo que la promesa prometía.
+ok(SECCIONES_ASIGNATURA.some((s) => s.id === 'entregas' && s.existe), '🔓 Entregas ya existe: la construyó la ES F4');
+ok(SECCIONES_ASIGNATURA.some((s) => s.id === 'eventos' && s.existe), '🔓 y Eventos también');
 eq(seccionAsignatura('contenido').nombre, 'Contenido', 'seccionAsignatura encuentra una');
 eq(seccionAsignatura('inventada'), null, 'y no se inventa ninguna');
 const secs = seccionesDeAsignatura(norm, 'a1');

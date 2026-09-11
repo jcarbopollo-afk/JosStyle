@@ -21,6 +21,7 @@
 // que hace `MODULOS_EH` con `{ id: 'higiene', icono: '🧼' }`.
 
 import { uid, todayISO } from './helpers';
+import { fechasAcademicas, proximasFechas, tipoDeFecha } from './fechasAcademicas';
 
 // 🚨 `diasHasta()` de `helpers.js` cuenta contra **el reloj del dispositivo**, no contra la fecha que
 // se le pase. Estas funciones reciben `hoy` para poder probarse, así que usarla dejaba una función
@@ -226,7 +227,27 @@ export const SISTEMAS_DE_RAMA = {
     singular: 'sesión',
     plural: 'sesiones',
   },
+  // ES F4 — las entregas y los eventos académicos ya existen, así que sus ramas dejan de ser un
+  // sitio sin sistema y pasan a enseñar lo suyo (apartado 20: *"Estudios → Bachillerato → Exámenes
+  // para ver todos los exámenes de Bachillerato"*).
+  entregas: {
+    cuenta: (estudios, programaId) => fechasDeArea(estudios, programaId, 'entregas').length,
+    singular: 'entrega',
+    plural: 'entregas',
+  },
+  eventos: {
+    cuenta: (estudios, programaId) => fechasDeArea(estudios, programaId, 'eventos').length,
+    singular: 'evento',
+    plural: 'eventos',
+  },
 };
+
+// Las entregas o los eventos de TODAS las asignaturas de un área.
+export function fechasDeArea(estudios, programaId, clave) {
+  const ids = idsAsignaturaDe(estudios, programaId);
+  const lista = Array.isArray(estudios?.[clave]) ? estudios[clave] : [];
+  return lista.filter((x) => x && ids.includes(x.asignaturaId));
+}
 
 export const IDS_SISTEMA = Object.keys(SISTEMAS_DE_RAMA);
 
@@ -238,13 +259,15 @@ export const RAMAS_POR_DEFECTO = [
   { id: 'asignaturas', nombre: 'Asignaturas', icono: '📚', sistema: 'asignaturas' },
   { id: 'examenes', nombre: 'Exámenes', icono: '📝', sistema: 'examenes' },
   { id: 'horas', nombre: 'Horas de estudio', icono: '⏱️', sistema: 'horas' },
+  // ES F4 — estas dos existen desde que hay entregas y eventos de verdad.
+  { id: 'entregas', nombre: 'Entregas', icono: '📋', sistema: 'entregas' },
+  { id: 'eventos', nombre: 'Eventos', icono: '📅', sistema: 'eventos' },
 ];
 
 // Apartado 4, con sus propios ejemplos. Son SUGERENCIAS al añadir una rama, no una estructura
 // impuesta: *"No asumir que todas las áreas tienen la misma estructura."*
 export const SUGERENCIAS_RAMA = {
   formal: [
-    { nombre: 'Trabajos y entregas', icono: '📋' },
     { nombre: 'Apuntes', icono: '🗒️' },
     { nombre: 'Progreso', icono: '📊' },
   ],
@@ -404,47 +427,46 @@ export function lineaDeApp(estudios, programaId, hoy = todayISO()) {
 // enseñar — pero **los exámenes existen desde la Fase 6, con su fecha**. Una zona vacía con datos de
 // verdad detrás sería la regla 8 al revés: esconder una función que sí existe. Así que lee los
 // exámenes de verdad, y `LO_QUE_FALTA_EN_PROXIMO` declara lo que todavía no puede salir.
-export const LO_QUE_FALTA_EN_PROXIMO = [
-  { que: 'Entregas y trabajos', porque: 'No existe la entidad todavía.', enFase: 'ES F2' },
-];
+// 🔓 **La ES F1 declaró aquí que las entregas no se podían enseñar, y la ES F4 las construyó.** Se
+// conserva la lista —vacía— para que se vea que la promesa se cumplió y no quede nada pendiente.
+export const LO_QUE_FALTA_EN_PROXIMO = [];
 
-export const DIAS_PROXIMO = 30;
+export const DIAS_PROXIMO = 60;
 export const MAX_PROXIMO = 5;
 
+// 🚨 ES F4, apartados 8, 9 y 10 — el Home lee **las tres listas** a través de `fechasAcademicas()`,
+// que es la única función que las junta (apartado 19). Antes leía solo los exámenes, que era lo
+// único que existía. Ni una copia: cambiar la fecha de una entrega mueve esto sola.
 export function proximosEventos(estudios, hoy = todayISO(), { limite = MAX_PROXIMO, dias = DIAS_PROXIMO } = {}) {
   const programas = Array.isArray(estudios?.programas) ? estudios.programas : [];
   const asignaturas = Array.isArray(estudios?.asignaturas) ? estudios.asignaturas : [];
-  const examenes = Array.isArray(estudios?.examenes) ? estudios.examenes : [];
-
   const nombreAsignatura = (id) => asignaturas.find((a) => a.id === id)?.nombre || '';
   const programaDe = (asignaturaId) => {
     const a = asignaturas.find((x) => x.id === asignaturaId);
     return a ? programas.find((p) => p.id === a.programaId) : null;
   };
 
-  return examenes
-    .filter((e) => {
-      if (!e?.fecha || e.fecha < hoy) return false;
-      const d = diasEntre(hoy, e.fecha);
-      return Number.isFinite(d) && d <= dias;
-    })
-    .map((e) => {
-      const prog = programaDe(e.asignaturaId);
-      return {
-        id: e.id,
-        tipo: 'examen',
-        icono: '📝',
-        titulo: `Examen de ${nombreAsignatura(e.asignaturaId) || 'una asignatura'}`,
-        detalle: e.tema || null,
-        fecha: e.fecha,
-        dias: diasEntre(hoy, e.fecha),
-        programaId: prog?.id || null,
-        programa: prog?.nombre || null,
-        asignaturaId: e.asignaturaId,
-      };
-    })
-    .sort((a, b) => a.fecha.localeCompare(b.fecha))
-    .slice(0, limite);
+  return proximasFechas(estudios, hoy, { limite, dias }).map((f) => {
+    const prog = programaDe(f.asignaturaId);
+    const t = tipoDeFecha(f.tipo);
+    return {
+      id: f.id,
+      tipo: f.tipo,
+      icono: t ? t.icono : '📅',
+      // Apartado 12 — el icono Y el texto dicen el tipo, nunca solo el color.
+      titulo: f.tipo === 'examen'
+        ? `Examen de ${nombreAsignatura(f.asignaturaId) || 'una asignatura'}`
+        : f.nombre,
+      detalle: f.tipo === 'examen' ? (f.nombre !== 'Examen' ? f.nombre : null) : nombreAsignatura(f.asignaturaId) || null,
+      fecha: f.fecha,
+      hora: f.hora,
+      cuenta: f.cuenta,
+      dias: f.dias,
+      programaId: prog?.id || null,
+      programa: prog?.nombre || null,
+      asignaturaId: f.asignaturaId,
+    };
+  });
 }
 
 // ── Navegación (apartados 11 y 12) ───────────────────────────────────────────────────────────────
@@ -508,6 +530,8 @@ export function migas(ruta, programas = [], asignaturas = []) {
 // allí, esta lista se queda vieja — por eso hay una prueba que las compara.
 export const SECCIONES_DE_ASIGNATURA = [
   { id: 'examenes', nombre: 'Exámenes', icono: '📝' },
+  { id: 'entregas', nombre: 'Entregas', icono: '📋' },
+  { id: 'eventos', nombre: 'Eventos', icono: '📅' },
   { id: 'contenido', nombre: 'Contenido', icono: '📚' },
 ];
 

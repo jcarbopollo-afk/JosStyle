@@ -2392,6 +2392,9 @@ const CASOS = [
       onAddPrograma: noop, onUpdateProgramas: noop, onDeletePrograma: noop,
       onAddAsignatura: noop, onUpdateAsignaturas: noop, onDeleteAsignatura: noop,
       onAddTema: noop, onUpdateTemas: noop, onDeleteTema: noop,
+      onAddEntrega: noop, onUpdateEntregas: noop, onDeleteEntrega: noop,
+      onAddEvento: noop, onUpdateEventos: noop, onDeleteEvento: noop,
+      onUpdateExamenes: noop,
       onAddExamen: noop, onUpdateExamen: noop, onDeleteExamen: noop,
       onAddHoras: noop, onDeleteHoras: noop,
       accent, foco: null, onFocoConsumido: noop, ...extra,
@@ -2465,6 +2468,33 @@ const CASOS = [
           { id: 't2', asignaturaId: 'a1', nombre: 'Tema 2 — Genética', estado: 'progreso', orden: 1 },
           { id: 't3', asignaturaId: 'a1', nombre: 'Tema 3 — Metabolismo', estado: 'pendiente', orden: 2 },
         ],
+      })],
+      /* Entrega 3 · F44 (ES F4) — con entregas y eventos académicos de verdad. */
+      ['EstudiosView · con entregas y eventos', EstudiosView, () => propsEs({
+        ...conApps,
+        asignaturas: [
+          { id: 'a1', programaId: 'bachillerato', nombre: 'Biología', icono: '🧬', orden: 0, oculto: false },
+          { id: 'a2', programaId: 'bachillerato', nombre: 'Historia', orden: 1, oculto: false },
+        ],
+        examenes: [
+          { id: 'e1', asignaturaId: 'a1', fecha: addDays(HOY, 3), tema: 'Genética', hora: '09:00', estado: 'proximo', notas: 'Temas 1 a 3', notaObjetivo: '9', notaObtenida: '', planRepaso: [] },
+          { id: 'e2', asignaturaId: 'a1', fecha: addDays(HOY, -40), tema: 'El que ya pasó', estado: 'realizado', notaObjetivo: '', notaObtenida: '8', planRepaso: [] },
+        ],
+        entregas: [
+          { id: 't1', asignaturaId: 'a2', nombre: 'Trabajo de Historia', fecha: addDays(HOY, 5), hora: '23:59', estado: 'pendiente', notas: null },
+          { id: 't2', asignaturaId: 'a2', nombre: 'En marcha', fecha: addDays(HOY, 12), hora: null, estado: 'progreso', notas: null },
+          { id: 't3', asignaturaId: 'a2', nombre: 'Ya entregado', fecha: addDays(HOY, 20), hora: null, estado: 'entregada', notas: null },
+        ],
+        eventos: [
+          { id: 'v1', asignaturaId: 'a1', nombre: 'Exposición de clase', fecha: addDays(HOY, 8), hora: '11:30', tipo: 'exposicion', notas: null },
+        ],
+      })],
+      /* ⚠️ Y una fecha SIN fecha y otra con la hora mal: la pantalla no puede reventar. */
+      ['EstudiosView · fechas incompletas', EstudiosView, () => propsEs({
+        ...conApps,
+        asignaturas: [{ id: 'a1', programaId: 'bachillerato', nombre: 'Biología', orden: 0, oculto: false }],
+        entregas: [{ id: 't1', asignaturaId: 'a1', nombre: 'Sin fecha', fecha: null, hora: null, estado: 'pendiente', notas: null }],
+        eventos: [{ id: 'v1', asignaturaId: 'a1', nombre: 'Sin tipo', fecha: addDays(HOY, 2), hora: null, tipo: 'otro', notas: null }],
       })],
       /* 🚨 Y un tema huérfano —su asignatura ya no está— no puede tumbar la pantalla. */
       ['EstudiosView · tema de una asignatura borrada', EstudiosView, () => propsEs({

@@ -4298,7 +4298,10 @@ const dentroAsig2 = await esperarTexto(/Contenido/i);
 ok(/Exámenes/i.test(dentroAsig2) && /Contenido/i.test(dentroAsig2), '🚨 Y LA ASIGNATURA TIENE SU PROPIO ESPACIO, con sus secciones (apartado 4)');
 ok(/Estudios › Bachillerato › Asignaturas › Matemáticas/i.test(dentroAsig2), '⚠️ y las migas llegan hasta ella (apartado 3)');
 ok(/1 examen próximo/i.test(dentroAsig2), '⚠️ con su resumen compacto (apartado 8)');
-ok(!/entrega/i.test(dentroAsig2), '🚨 y NI UNA línea de entregas: no existe la entidad (regla 8)');
+/* 🔓 La ES F43 tuvo que comprobar aquí que NO había ni una línea de entregas, porque la entidad no
+   existía. La ES F44 la construyó, así que esta comprobación pasa a vigilar que la promesa se haya
+   cumplido — es la cuarta de esta tanda, y están escritas a propósito para este momento. */
+ok(/Entregas/i.test(dentroAsig2), '🔓 y la asignatura YA tiene su sección de Entregas (la construyó la ES F4)');
 /* 🐛 `innerText` NO incluye el `placeholder` de un `<input>` (E3 F36), y el registro de horas es
    justamente un campo con marcador de posición: se busca el campo, no el texto de la página. */
 ok(await page.$('input[placeholder="Horas estudiadas hoy"]'),
@@ -4332,5 +4335,58 @@ const guardadoEs3 = guardado.filter((g) => g && g.key === 'estudios').at(-1)?.va
 ok((guardadoEs3?.temas || []).some((t) => t.nombre === 'Tema 1 — Derivadas' && t.estado === 'progreso'),
   '🚨 EL TEMA Y SU ESTADO SE HAN GUARDADO (apartado 11)');
 ok((guardadoEs3?.temas || []).every((t) => t.asignaturaId), '⚠️ y cada tema con su asignatura (apartado 12)');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   E3 · FASE 44 (ES F4) — EXÁMENES, ENTREGAS Y FECHAS
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 **Lo que ninguna prueba de Node puede ver:** que una entrega creada con el
+   dedo aparece **en el Home de Estudios** sin que nadie la copie (apartado 19),
+   que su estado cambia de un toque y que el detalle se abre. Todo eso está detrás
+   de seis toques y de tres pantallas distintas. */
+ok(await pulsar('Volver atrás'), 'se vuelve a la asignatura');
+await esperarTexto(/Contenido/i);
+ok(await pulsar('Entregas'), 'se entra en las entregas de la asignatura');
+const sinEntregas = await esperarTexto(/Añadir entrega/i);
+ok(/Añadir entrega/i.test(sinEntregas), '⚠️ con su botón de crear (apartado 4)');
+
+ok(await pulsar('Añadir entrega'), 'se abre el formulario');
+await esperarTexto(/Nuevo\/a entrega/i);
+await page.fill('input[placeholder^="Ej: Trabajo"]', 'Trabajo de Historia');
+/* ⚠️ La fecha viene puesta a hoy; se pone una futura para que salga en el Home. */
+await page.fill('input[type="date"]', DN(-4));
+ok(await pulsar('Crear'), 'se crea la entrega');
+const conEntrega = await esperarTexto(/Trabajo de Historia/i);
+ok(/Trabajo de Historia/i.test(conEntrega), '🚨 LA ENTREGA APARECE EN SU ASIGNATURA');
+ok(/Entrega/i.test(conEntrega) && /Pendiente/i.test(conEntrega),
+  '🚨 con su TIPO y su ESTADO en palabra, no solo en color (apartado 12)');
+
+/* Apartado 13 — el detalle, y el estado de un toque. */
+ok(await pulsar('Trabajo de Historia'), 'se abre su detalle');
+const detalle = await esperarTexto(/Editar/i);
+ok(/Editar/i.test(detalle) && /Eliminar/i.test(detalle), '⚠️ con sus dos acciones (apartado 13)');
+ok(await pulsar('◐ En progreso'), 'se cambia su estado');
+const enMarcha = await esperarTexto(/En progreso/i);
+ok(/En progreso/i.test(enMarcha), '🚨 Y EL ESTADO CAMBIA DE UN TOQUE (apartado 5)');
+
+/* 🚨 Y lo que de verdad prueba el apartado 19: sale en el HOME sin que nadie la copie. */
+ok(await pulsar('Volver atrás'), 'se vuelve a la asignatura');
+await esperarTexto(/Contenido/i);
+ok(await pulsar('Volver atrás'), 'a la lista de asignaturas');
+await esperarTexto(/Matemáticas/i);
+ok(await pulsar('Volver atrás'), 'al área');
+await esperarTexto(/Asignaturas/i);
+ok(await pulsar('Volver atrás'), 'y al Home de Estudios');
+const homeConEntrega = await esperarTexto(/PRÓXIMO/i);
+ok(/Trabajo de Historia/i.test(homeConEntrega),
+  '🚨 LA ENTREGA SALE EN EL HOME SIN QUE NADIE LA COPIE: un solo registro visto desde dos sitios (apartados 8 y 19)');
+ok(/Examen de Matemáticas/i.test(homeConEntrega), '⚠️ junto al examen, las dos en la misma lista');
+
+/* Y persiste con todo lo demás (apartado 17). */
+const guardadoEs4 = guardado.filter((g) => g && g.key === 'estudios').at(-1)?.value;
+ok((guardadoEs4?.entregas || []).some((t) => t.nombre === 'Trabajo de Historia' && t.estado === 'progreso'),
+  '🚨 LA ENTREGA Y SU ESTADO SE HAN GUARDADO (apartado 17)');
+ok((guardadoEs4?.entregas || []).every((t) => t.asignaturaId), '⚠️ y vinculada a su asignatura (apartado 7)');
+ok((guardadoEs4?.examenes || []).length === 1, '⚠️ sin haberse llevado el examen por delante');
 
 await salir(browser);

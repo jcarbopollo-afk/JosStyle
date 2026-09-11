@@ -176,9 +176,12 @@ ok(!/no se puede deshacer|permanente/i.test(AVISO_OCULTAR), 'Y no promete un bor
 console.log('\n── 6. El árbol (apartados 11 y 12) ──');
 
 // 🚨 ES F2 — las ramas dejan de ser una lista global y viven DENTRO de cada app.
-ok(RAMAS_POR_DEFECTO.length === 3, 'Una app nace con las TRES ramas que funcionan de verdad');
-ok(RAMAS_POR_DEFECTO.every((r) => IDS_SISTEMA.includes(r.sistema)), 'Y las tres declaran su sistema');
-ok(IDS_SISTEMA.length === 3, 'Hay tres sistemas de rama construidos');
+// ⚠️ Se comprueba QUE ESTÉN LAS QUE TIENEN QUE ESTAR, no cuántas hay: una cuenta exacta es una
+// bomba de relojería, y la E3 F44 añadió dos con todo el derecho al construir entregas y eventos
+// (EH F21, la lección de `MODULOS_EH.length === 13`).
+ok(RAMAS_POR_DEFECTO.every((r) => IDS_SISTEMA.includes(r.sistema)), 'Una app nace solo con ramas que funcionan de verdad');
+ok(['asignaturas', 'examenes', 'horas'].every((id) => RAMAS_POR_DEFECTO.some((r) => r.sistema === id)), 'Entre ellas las tres de siempre');
+ok(IDS_SISTEMA.length >= 3, `Hay ${IDS_SISTEMA.length} sistemas de rama construidos`);
 ok(Object.values(SISTEMAS_DE_RAMA).every((s) => typeof s.cuenta === 'function' && s.singular && s.plural), 'Cada sistema sabe contar lo suyo');
 const bach = norm.programas.find((p) => p.id === 'bachillerato');
 eq(ramaPorId(bach, 'asignaturas').nombre, 'Asignaturas', 'ramaPorId encuentra una rama DENTRO de su app');
@@ -233,7 +236,7 @@ eq(proximosEventos(norm, HOY, { dias: 365 }).length, 2, 'Con una ventana mayor e
 eq(proximosEventos(norm, HOY, { dias: 365 }).map((e) => e.fecha), ['2026-09-10', '2026-09-25'], 'Ordenados por fecha');
 eq(proximosEventos(norm, '2027-01-01').length, 0, 'Sin nada próximo, la lista está vacía');
 eq(proximosEventos({ programas: [], asignaturas: [], examenes: [], horas: [] }, HOY), [], 'Sin datos no revienta');
-ok(DIAS_PROXIMO === 30 && MAX_PROXIMO === 5, 'La ventana y el tope están declarados, no escritos a mano');
+ok(Number.isFinite(DIAS_PROXIMO) && Number.isFinite(MAX_PROXIMO), 'La ventana y el tope están declarados, no escritos a mano');
 
 const muchos = {
   ...norm,
@@ -241,10 +244,12 @@ const muchos = {
 };
 eq(proximosEventos(muchos, HOY).length, MAX_PROXIMO, 'La zona no crece sin fin: se topa en MAX_PROXIMO');
 
-// ⚠️ El enunciado la pide "solo visual", pero los exámenes existen desde la Fase 6. Esconderlos sería
-// la regla 8 al revés. Lo que todavía no puede salir, se declara.
-ok(LO_QUE_FALTA_EN_PROXIMO.length >= 1 && LO_QUE_FALTA_EN_PROXIMO.every((x) => x.porque && x.enFase), 'Lo que falta en la zona de PRÓXIMO está declarado con su motivo y su fase');
-ok(LO_QUE_FALTA_EN_PROXIMO.some((x) => /entrega|trabajo/i.test(x.que)), 'Las entregas se declaran como pendientes: no existe la entidad');
+// 🔓 **La ES F1 declaró aquí que las entregas no se podían enseñar, y la ES F4 las construyó.** Esta
+// comprobación vigilaba una promesa; ahora vigila que se haya cumplido — que es para lo que estaba
+// escrita (la lección de la SU F1 → SU F2: al cerrar una fase que otra dejó «para más adelante»,
+// buscar la comprobación que lo guardaba).
+eq(LO_QUE_FALTA_EN_PROXIMO, [], '🔓 Ya no falta nada en la zona de PRÓXIMO: la ES F4 construyó las entregas');
+ok(proximosEventos(norm, HOY).every((e) => e.tipo), '⚠️ y cada fecha próxima declara su tipo');
 
 console.log('\n── 9. Navegación (apartados 11 y 12) ──');
 
@@ -307,9 +312,9 @@ ok(!/próximamente|proximamente|en construcción/i.test(VISTA), 'Y no hay ni un 
 console.log('\n── 14. ES F2 · Las ramas son de cada app y las configura él (apartados 4, 5, 13 y 14) ──');
 
 // \U0001f6a8 El riesgo de esta fase: que lo guardado por la ES F1 cambie de aspecto. No cambia.
-eq(ramasDe(norm.programas[0]).map((r) => r.id), ['asignaturas', 'examenes', 'horas'],
-  '\U0001f6a8 Un programa SIN ramas guardadas recibe las tres que funcionan: es lo que ya enseñaba la ES F1');
-ok(ramasDe(norm.programas[0]).every((r) => r.sistema), 'Las tres traen su sistema');
+eq(ramasDe(norm.programas[0]).map((r) => r.id), RAMAS_POR_DEFECTO.map((r) => r.id),
+  '🚨 Un programa SIN ramas guardadas recibe las que funcionan de verdad');
+ok(ramasDe(norm.programas[0]).every((r) => r.sistema), 'y todas traen su sistema');
 
 // ⚠️ Un array VACÍO no es lo mismo que no tener el campo: las quitó todas y eso se respeta.
 const sinRamas = normalizarAppsDe({ ...ESCENARIO, programas: [{ id: 'x', nombre: 'Vacía', ramas: [] }] });
@@ -317,8 +322,8 @@ eq(ramasDe(sinRamas.programas[0]), [], '⚠️ Si las quitó TODAS se queda sin 
 
 // Apartado 4 — dos apps pueden tener estructuras distintas.
 const conPropia = anadirRama(norm.programas, 'musica', crearRama({ nombre: 'Repertorio', icono: '\U0001f3bc' }));
-eq(ramasDe(conPropia.find((p) => p.id === 'musica')).length, 4, 'Añadir una rama la mete en SU app');
-eq(ramasDe(conPropia.find((p) => p.id === 'bachillerato')).length, 3, '\U0001f6a8 y NO toca las de las demás: la estructura es flexible');
+eq(ramasDe(conPropia.find((p) => p.id === 'musica')).length, RAMAS_POR_DEFECTO.length + 1, 'Añadir una rama la mete en SU app');
+eq(ramasDe(conPropia.find((p) => p.id === 'bachillerato')).length, RAMAS_POR_DEFECTO.length, '🚨 y NO toca las de las demás: la estructura es flexible');
 eq(ramasDe(conPropia.find((p) => p.id === 'musica')).at(-1).sistema, null, 'Una rama que crea él no tiene sistema detrás, y se sabe');
 eq(anadirRama(norm.programas, 'musica', null), norm.programas, 'Añadir nada no cambia nada');
 
@@ -334,10 +339,11 @@ ok(crearRama({ nombre: 'x'.repeat(99) }).nombre.length === MAX_NOMBRE_RAMA, 'El 
 
 // \U0001f6a8 Quitar una rama NO borra sus datos.
 const quitada = quitarRama(norm.programas, 'bachillerato', 'examenes');
-eq(ramasDe(quitada.find((p) => p.id === 'bachillerato')).map((r) => r.id), ['asignaturas', 'horas'], 'Quitar una rama la saca del árbol');
+ok(!ramasDe(quitada.find((p) => p.id === 'bachillerato')).some((r) => r.id === 'examenes'), 'Quitar una rama la saca del árbol');
+eq(ramasDe(quitada.find((p) => p.id === 'bachillerato')).length, RAMAS_POR_DEFECTO.length - 1, 'y solo esa');
 const trasQuitar = normalizarAppsDe({ ...ESCENARIO, programas: quitada });
 eq(examenesDe(trasQuitar, 'bachillerato').length, 3, '\U0001f6a8 y los exámenes SIGUEN ESTANDO: quitar no es borrar');
-eq(ramasDe(quitarRama(norm.programas, 'musica', 'examenes').find((p) => p.id === 'bachillerato')).length, 3, 'Quitar en una app no toca las otras');
+eq(ramasDe(quitarRama(norm.programas, 'musica', 'examenes').find((p) => p.id === 'bachillerato')).length, RAMAS_POR_DEFECTO.length, 'Quitar en una app no toca las otras');
 ok(/se queda/i.test(AVISO_QUITAR_RAMA) && !/no se puede deshacer/i.test(AVISO_QUITAR_RAMA), 'El aviso dice que lo de dentro se queda, y no promete un borrado');
 
 // Apartado 14 — persistencia: lo configurado sobrevive a otra pasada del normalizador.

@@ -18,6 +18,9 @@
 
 import { uid, todayISO } from './helpers';
 import { ACENTOS_COLECCION, ACENTO_POR_DEFECTO, acentoColeccion } from './colecciones';
+// ES F4 — las fechas académicas son de `fechasAcademicas.js`, que es la única que las junta
+// (apartado 19). Aquí solo se leen para contar; ni una copia.
+import { cuentasDeAsignatura, fechasAcademicas } from './fechasAcademicas';
 
 export { ACENTOS_COLECCION, ACENTO_POR_DEFECTO, acentoColeccion };
 
@@ -255,9 +258,14 @@ export function moverTema(temas = [], asignaturaId, id, direccion) {
 //
 // 🚨 Y no hay línea de entregas, porque **no existe la entidad**: el apartado 8 la pone de ejemplo
 // —*"1 entrega pendiente"*— y escribirla sería una cifra inventada (regla 8). Está declarado.
+// 🔓 **La ES F3 tuvo que declarar esta línea imposible, y la ES F4 la construye.** El apartado 8 de
+// la F3 ponía *"1 entrega pendiente"* de ejemplo cuando la entidad no existía; ahora existe, así que
+// la frase deja de ser una cifra inventada y pasa a ser un dato. Se conserva la constante para que
+// se vea de dónde viene la promesa y quién la cumplió.
 export const NO_HAY_ENTREGAS = {
   que: 'Entregas pendientes',
-  porque: 'La entidad no existe todavía, así que no hay nada que contar.',
+  porque: 'Ya existen: las construyó la ES F4 y esta línea las cuenta.',
+  resueltoEn: 'ES F4',
 };
 
 export const DIAS_EXAMEN_PROXIMO = 30;
@@ -266,14 +274,13 @@ export function resumenAsignatura(estudios, asignaturaId, hoy = todayISO()) {
   const temas = temasDe(estudios, asignaturaId);
   const pendientes = temas.filter((t) => t.estado === 'pendiente').length;
   const enProgreso = temas.filter((t) => t.estado === 'progreso').length;
-
-  const examenes = (Array.isArray(estudios?.examenes) ? estudios.examenes : [])
-    .filter((e) => e && e.asignaturaId === asignaturaId && e.fecha && e.fecha >= hoy);
+  const { examenesProximos, entregasPendientes } = cuentasDeAsignatura(estudios, asignaturaId, hoy);
 
   const lineas = [];
   if (pendientes) lineas.push(`${pendientes} ${pendientes === 1 ? 'tema pendiente' : 'temas pendientes'}`);
   if (enProgreso) lineas.push(`${enProgreso} en progreso`);
-  if (examenes.length) lineas.push(`${examenes.length} ${examenes.length === 1 ? 'examen próximo' : 'exámenes próximos'}`);
+  if (examenesProximos) lineas.push(`${examenesProximos} ${examenesProximos === 1 ? 'examen próximo' : 'exámenes próximos'}`);
+  if (entregasPendientes) lineas.push(`${entregasPendientes} ${entregasPendientes === 1 ? 'entrega pendiente' : 'entregas pendientes'}`);
   return lineas;
 }
 
@@ -285,22 +292,34 @@ export function lineaDeAsignatura(estudios, asignaturaId, hoy = todayISO()) {
 // ── Las secciones de una asignatura (apartado 4) ─────────────────────────────────────────────────
 // Mismo reparto que las ramas de la ES F2: cada sección declara el sistema que enseña, y la que no
 // tiene uno **no se pinta como una tarjeta que no lleva a ninguna parte**.
+// 🔓 **Entregas deja de estar declarada como imposible: la ES F4 la construye.** Y se suma Eventos,
+// el cajón con tipo configurable del apartado 6 de esa fase.
 export const SECCIONES_ASIGNATURA = [
   { id: 'examenes', nombre: 'Exámenes', icono: '📝', existe: true },
+  { id: 'entregas', nombre: 'Entregas', icono: '📋', existe: true },
+  { id: 'eventos', nombre: 'Eventos', icono: '📅', existe: true },
   { id: 'contenido', nombre: 'Contenido', icono: '📚', existe: true },
-  { id: 'entregas', nombre: 'Entregas', icono: '📋', existe: false, porque: NO_HAY_ENTREGAS.porque },
 ];
 
 export const SECCIONES_QUE_EXISTEN = SECCIONES_ASIGNATURA.filter((s) => s.existe);
 export const seccionAsignatura = (id) => SECCIONES_ASIGNATURA.find((s) => s.id === id) || null;
 
+// ⚠️ Los tres tipos de fecha se cuentan con `fechasAcademicas()`, la única fuente (ES F4, apartado
+// 19): ni una lista se recorre por su cuenta aquí.
+const PALABRAS_SECCION = {
+  contenido: ['tema', 'temas'],
+  examenes: ['examen', 'exámenes'],
+  entregas: ['entrega', 'entregas'],
+  eventos: ['evento', 'eventos'],
+};
+
 export function seccionesDeAsignatura(estudios, asignaturaId) {
+  const suyas = fechasAcademicas(estudios, { asignaturaId });
   return SECCIONES_QUE_EXISTEN.map((s) => {
     const n = s.id === 'contenido'
       ? temasDe(estudios, asignaturaId).length
-      : (estudios?.examenes || []).filter((e) => e && e.asignaturaId === asignaturaId).length;
-    const sing = s.id === 'contenido' ? 'tema' : 'examen';
-    const plur = s.id === 'contenido' ? 'temas' : 'exámenes';
+      : suyas.filter((f) => `${f.tipo}s` === s.id || (f.tipo === 'examen' && s.id === 'examenes')).length;
+    const [sing, plur] = PALABRAS_SECCION[s.id] || ['elemento', 'elementos'];
     return { ...s, cuantos: n, linea: n === 0 ? null : `${n} ${n === 1 ? sing : plur}` };
   });
 }
@@ -313,8 +332,12 @@ export function impactoDeEliminarAsignatura(estudios, asignaturaId) {
   const examenes = (estudios?.examenes || []).filter((e) => e && e.asignaturaId === asignaturaId);
   const horas = (estudios?.horas || []).filter((h) => h && h.asignaturaId === asignaturaId);
   const temas = temasDe(estudios, asignaturaId);
+  const entregas = (estudios?.entregas || []).filter((t) => t && t.asignaturaId === asignaturaId);
+  const eventos = (estudios?.eventos || []).filter((v) => v && v.asignaturaId === asignaturaId);
   const arrastra = [];
   if (examenes.length) arrastra.push(`${examenes.length} ${examenes.length === 1 ? 'examen' : 'exámenes'}`);
+  if (entregas.length) arrastra.push(`${entregas.length} ${entregas.length === 1 ? 'entrega' : 'entregas'}`);
+  if (eventos.length) arrastra.push(`${eventos.length} ${eventos.length === 1 ? 'evento' : 'eventos'}`);
   if (temas.length) arrastra.push(`${temas.length} ${temas.length === 1 ? 'tema' : 'temas'}`);
   if (horas.length) arrastra.push(`${horas.length} ${horas.length === 1 ? 'sesión de estudio' : 'sesiones de estudio'}`);
   return {

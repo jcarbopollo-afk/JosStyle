@@ -21,7 +21,14 @@ import {
   temasDe, crearTema, editarTema, avanzarTema, moverTema,
   resumenAsignatura, lineaDeAsignatura, seccionesDeAsignatura, impactoDeEliminarAsignatura,
 } from '../lib/asignaturas';
-import { Card, SectionTitle, Field, TextInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel } from '../components/ui';
+import {
+  TIPOS_EVENTO_ACADEMICO, TIPO_EVENTO_POR_DEFECTO, tipoEventoAcademico, tipoDeFecha,
+  ESTADOS_EXAMEN, ESTADOS_ENTREGA, estadoExamen, estadoEntrega,
+  MAX_NOMBRE_FECHA, MAX_NOTAS_FECHA, cuentaAtras, fechasAcademicas,
+  crearEntrega, crearEventoAcademico, editarExamenFecha, editarEntrega, editarEventoAcademico,
+  cambiarEstadoExamen, cambiarEstadoEntrega, impactoDeEliminarFecha,
+} from '../lib/fechasAcademicas';
+import { Card, SectionTitle, Field, TextInput, SelectInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel } from '../components/ui';
 
 function diasHasta(fechaISO) {
   return Math.ceil((new Date(fechaISO + 'T00:00:00').getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -372,28 +379,249 @@ function FormTema({ accent, inicial, onGuardar, onCerrar }) {
   );
 }
 
-/* El formulario de examen y el registro de horas salen de aquí: vivían dentro del acordeón que
-   esta fase retira, y son funciones que ya tenía Josué — no se pierden, se mudan. */
-function FormExamen({ accent, asignaturaId, onAdd, onCerrar }) {
-  const [form, setForm] = useState({ tema: '', fecha: todayISO(), notaObjetivo: '' });
+/* ══════════════════════════════════════════════════════════════════════════
+   ENTREGA 3 · ES FASE 4 — EXÁMENES, ENTREGAS Y FECHAS
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 Apartado 12: *"No depender únicamente del color. El icono y el texto deben
+   indicar claramente el tipo."* Por eso cada fila lleva su icono Y su palabra. */
+
+function FilaFecha({ fila, nombreAsignatura, accent, onAbrir }) {
+  const t = tipoDeFecha(fila.tipo);
+  const est = fila.tipo === 'examen' ? estadoExamen(fila.estado)
+    : fila.tipo === 'entrega' ? estadoEntrega(fila.estado) : null;
+  const colEst = est?.acento ? (COLORS[est.acento] || accent) : COLORS.textMuted;
+  const cuenta = cuentaAtras(fila.fecha);
+
   return (
-    <Card style={{ background: COLORS.surface2 }}>
-      <Field label="Tema / descripción">
-        <TextInput value={form.tema} onChange={(e) => setForm({ ...form, tema: e.target.value })} />
+    <button
+      onClick={onAbrir}
+      className="w-full rounded-2xl p-3 flex items-center gap-2.5 text-left transition-transform active:scale-[0.99]"
+      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+    >
+      <span aria-hidden="true" style={{ fontSize: 20 }}>{t?.icono || '📅'}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold truncate" style={{ color: COLORS.text }}>{fila.nombre}</span>
+        <span className="block text-[11px] truncate" style={{ color: COLORS.textMuted }}>
+          {/* El TIPO en palabra, nunca solo el color. */}
+          {t?.nombre}
+          {fila.subtipo && fila.subtipo !== 'otro' ? ` · ${tipoEventoAcademico(fila.subtipo).nombre}` : ''}
+          {nombreAsignatura ? ` · ${nombreAsignatura}` : ''}
+          {fila.fecha ? ` · ${formatFecha(fila.fecha)}` : ' · Sin fecha'}
+          {fila.hora ? ` · ${fila.hora}` : ''}
+        </span>
+        {est && (
+          <span className="block text-[11px]" style={{ color: colEst }}>{est.icono} {est.nombre}</span>
+        )}
+      </span>
+      {cuenta && <span className="text-[11px] font-semibold flex-shrink-0" style={{ color: accent }}>{cuenta}</span>}
+    </button>
+  );
+}
+
+/* Apartados 2, 4, 6 y 18 — un formulario corto: *"Añadir → seleccionar asignatura → fecha →
+   guardar"*. Sirve para crear y para editar los tres tipos. */
+function FormFecha({ accent, tipo, asignaturas, inicial, asignaturaFija, onGuardar, onCerrar }) {
+  const [nombre, setNombre] = useState(inicial?.nombre || '');
+  const [asignaturaId, setAsignaturaId] = useState(inicial?.asignaturaId || asignaturaFija || '');
+  const [fecha, setFecha] = useState(inicial?.fecha || todayISO());
+  const [hora, setHora] = useState(inicial?.hora || '');
+  const [notas, setNotas] = useState(inicial?.notas || '');
+  const [subtipo, setSubtipo] = useState(inicial?.subtipo || TIPO_EVENTO_POR_DEFECTO);
+  const t = tipoDeFecha(tipo);
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>
+          {inicial ? `Editar ${t.nombre.toLowerCase()}` : `${t.icono} Nuevo/a ${t.nombre.toLowerCase()}`}
+        </p>
+        <button onClick={onCerrar} className="toque-44 p-1.5 -m-1.5" aria-label="Cerrar">
+          <X size={16} style={{ color: COLORS.textMuted }} />
+        </button>
+      </div>
+
+      <Field label="Nombre">
+        <TextInput
+          value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={MAX_NOMBRE_FECHA}
+          placeholder={tipo === 'examen' ? 'Ej: Derivadas' : tipo === 'entrega' ? 'Ej: Trabajo de Historia' : 'Ej: Exposición de clase'}
+        />
       </Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Fecha">
-          <TextInput type="date" value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} />
+
+      {/* Si se crea desde una asignatura no se vuelve a preguntar: el contexto viaja (E3 F9). */}
+      {!asignaturaFija && (
+        <Field label="Asignatura">
+          <SelectInput value={asignaturaId} onChange={(e) => setAsignaturaId(e.target.value)}>
+            <option value="">Elige una asignatura</option>
+            {asignaturas.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+          </SelectInput>
         </Field>
-        <Field label="Nota objetivo">
-          <TextInput value={form.notaObjetivo} onChange={(e) => setForm({ ...form, notaObjetivo: e.target.value })} placeholder="Ej: 9" />
+      )}
+
+      {tipo === 'evento' && (
+        <Field label="Tipo">
+          <SelectInput value={subtipo} onChange={(e) => setSubtipo(e.target.value)}>
+            {TIPOS_EVENTO_ACADEMICO.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
+          </SelectInput>
+        </Field>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={tipo === 'entrega' ? 'Fecha límite' : 'Fecha'}>
+          <TextInput type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+        </Field>
+        <Field label="Hora (opcional)">
+          <TextInput type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
         </Field>
       </div>
-      <PrimaryButton accent={accent} disabled={!form.tema.trim()} onClick={() => {
-        onAdd({ id: uid(), asignaturaId, ...form, notaObtenida: '', planRepaso: [] });
-        onCerrar();
-      }}>Guardar examen</PrimaryButton>
+
+      <Field label="Notas (opcional)">
+        <TextInput value={notas} onChange={(e) => setNotas(e.target.value)} maxLength={MAX_NOTAS_FECHA} placeholder="Lo que quieras recordar" />
+      </Field>
+
+      <PrimaryButton
+        accent={accent}
+        disabled={!nombre.trim() || !(asignaturaFija || asignaturaId)}
+        onClick={() => onGuardar({ nombre, asignaturaId: asignaturaFija || asignaturaId, fecha, hora, notas, tipo: subtipo })}
+      >
+        {inicial ? 'Guardar' : 'Crear'}
+      </PrimaryButton>
     </Card>
+  );
+}
+
+/* Apartado 13 — la vista de detalle, con sus dos acciones. */
+function DetalleFecha({ fila, nombreAsignatura, accent, onEstado, onEditar, onEliminar, onCerrar }) {
+  const t = tipoDeFecha(fila.tipo);
+  const estados = fila.tipo === 'examen' ? ESTADOS_EXAMEN : fila.tipo === 'entrega' ? ESTADOS_ENTREGA : null;
+  const actual = fila.tipo === 'examen' ? estadoExamen(fila.estado) : fila.tipo === 'entrega' ? estadoEntrega(fila.estado) : null;
+  const impacto = impactoDeEliminarFecha(fila);
+  const [confirmar, setConfirmar] = useState(false);
+  const cuenta = cuentaAtras(fila.fecha);
+
+  return (
+    <Card>
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <p className="text-sm font-bold min-w-0" style={{ color: COLORS.text }}>
+          <span aria-hidden="true">{t?.icono}</span> {fila.nombre}
+        </p>
+        <button onClick={onCerrar} className="toque-44 p-1.5 -m-1.5" aria-label="Cerrar">
+          <X size={16} style={{ color: COLORS.textMuted }} />
+        </button>
+      </div>
+      <p className="text-xs" style={{ color: COLORS.textMuted }}>
+        {t?.nombre}
+        {fila.subtipo && fila.subtipo !== 'otro' ? ` · ${tipoEventoAcademico(fila.subtipo).nombre}` : ''}
+        {nombreAsignatura ? ` · ${nombreAsignatura}` : ''}
+        {fila.fecha ? ` · ${formatFecha(fila.fecha)}` : ' · Sin fecha'}
+        {fila.hora ? ` · ${fila.hora}` : ''}
+        {cuenta ? ` · ${cuenta}` : ''}
+      </p>
+      {fila.notas && <p className="text-sm mt-2 leading-relaxed" style={{ color: COLORS.text }}>{fila.notas}</p>}
+
+      {estados && (
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {estados.map((e) => (
+            <button
+              key={e.id} onClick={() => onEstado(e.id)} aria-pressed={actual?.id === e.id}
+              className="toque-44 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-transform active:scale-95"
+              style={{
+                background: actual?.id === e.id ? hexToRgba(accent, 0.16) : COLORS.surface2,
+                border: `1px solid ${actual?.id === e.id ? accent : COLORS.border}`,
+                color: actual?.id === e.id ? accent : COLORS.textMuted,
+              }}
+            >{e.icono} {e.nombre}</button>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-2 mt-3">
+        <button onClick={onEditar} className="text-xs font-semibold" style={{ color: accent }}>Editar</button>
+        <button onClick={() => setConfirmar(true)} className="text-xs font-semibold" style={{ color: COLORS.negative }}>Eliminar</button>
+      </div>
+
+      {/* Apartado 15 — se confirma, y se dice que se recupera: va a la papelera. */}
+      {confirmar && (
+        <div className="mt-3 rounded-2xl p-2.5" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+          <p className="text-xs leading-relaxed" style={{ color: COLORS.textMuted }}>{impacto.aviso}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <button onClick={() => setConfirmar(false)} className="flex-1 rounded-xl py-2 text-xs font-semibold" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, color: COLORS.text }}>
+              Cancelar
+            </button>
+            <button onClick={onEliminar} className="flex-1 rounded-xl py-2 text-xs font-semibold" style={{ background: COLORS.negative, color: COLORS.textOnAccent }}>
+              Eliminar
+            </button>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/* El panel de una lista de fechas. Lo usan **las seis pantallas** que enseñan fechas —las tres del
+   área y las tres de una asignatura—, porque el apartado 19 dice que hay un solo registro visto
+   desde muchos sitios: seis copias de esta lista serían seis sitios donde equivocarse. */
+function PanelFechas({ tipo, filas, asignaturas, accent, asignaturaFija, abierta, onAbrir,
+  onCrear, onEditar, onEstado, onEliminar }) {
+  const [form, setForm] = useState(null); // null | 'nueva' | id
+  const t = tipoDeFecha(tipo);
+  const nombreDe = (id) => asignaturas.find((a) => a.id === id)?.nombre || '';
+  const enDetalle = filas.find((f) => f.id === abierta) || null;
+
+  return (
+    <>
+      {filas.length === 0 && !form && (
+        <EmptyHint text={`Todavía no hay ${t.nombre.toLowerCase()}s aquí.`} />
+      )}
+
+      <div className="space-y-1.5">
+        {filas.map((f) => (
+          form === f.id ? (
+            <FormFecha
+              key={f.id} accent={accent} tipo={tipo} asignaturas={asignaturas} inicial={f}
+              asignaturaFija={f.asignaturaId}
+              onGuardar={(datos) => { onEditar(f.id, datos); setForm(null); }}
+              onCerrar={() => setForm(null)}
+            />
+          ) : (
+            <div key={f.id}>
+              <FilaFecha
+                fila={f} nombreAsignatura={nombreDe(f.asignaturaId)} accent={accent}
+                onAbrir={() => onAbrir(abierta === f.id ? null : f.id)}
+              />
+              {enDetalle?.id === f.id && (
+                <div className="mt-1.5">
+                  <DetalleFecha
+                    fila={f} nombreAsignatura={nombreDe(f.asignaturaId)} accent={accent}
+                    onEstado={(e) => onEstado(f.id, e)}
+                    onEditar={() => { setForm(f.id); onAbrir(null); }}
+                    onEliminar={() => { onEliminar(f.id); onAbrir(null); }}
+                    onCerrar={() => onAbrir(null)}
+                  />
+                </div>
+              )}
+            </div>
+          )
+        ))}
+      </div>
+
+      {form === 'nueva' ? (
+        <FormFecha
+          accent={accent} tipo={tipo} asignaturas={asignaturas} asignaturaFija={asignaturaFija}
+          onGuardar={(datos) => { onCrear(datos); setForm(null); }}
+          onCerrar={() => setForm(null)}
+        />
+      ) : (
+        <button
+          onClick={() => setForm('nueva')}
+          className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 transition-transform active:scale-[0.99]"
+          style={{ background: COLORS.surface2, border: `1px dashed ${COLORS.border}` }}
+        >
+          <Plus size={16} style={{ color: accent }} />
+          <span className="text-sm font-semibold" style={{ color: COLORS.textMuted }}>Añadir {t.nombre.toLowerCase()}</span>
+        </button>
+      )}
+    </>
   );
 }
 
@@ -625,7 +853,7 @@ function ProximoEnEstudios({ estudios, accent, onIr }) {
   );
 }
 
-export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateProgramas, onDeletePrograma, onAddAsignatura, onUpdateAsignaturas, onDeleteAsignatura, onAddTema, onUpdateTemas, onDeleteTema, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
+export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateProgramas, onDeletePrograma, onAddAsignatura, onUpdateAsignaturas, onDeleteAsignatura, onAddTema, onUpdateTemas, onDeleteTema, onAddEntrega, onUpdateEntregas, onDeleteEntrega, onAddEvento, onUpdateEventos, onDeleteEvento, onUpdateExamenes, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
   const [ruta, setRuta] = useState(RUTA_RAIZ);
   const [creando, setCreando] = useState(false);
   const [organizando, setOrganizando] = useState(false);
@@ -638,6 +866,8 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
   const [formExamen, setFormExamen] = useState(false);
   const [horasRapidas, setHorasRapidas] = useState('');
   const [confirmarBorrado, setConfirmarBorrado] = useState(false);
+  // ES F4 — qué fecha está abierta en detalle (apartado 13).
+  const [fechaAbierta, setFechaAbierta] = useState(null);
 
   // Ampliación del Dashboard — Centro de Control (apartado 6): el examen destacado puede vivir en
   // cualquier app — se abre su app y su rama de asignaturas; AsignaturaCard y ExamenItem se
@@ -661,6 +891,40 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
   const app = programas.find((p) => p.id === ruta.appId) || null;
   const asignaturasApp = app ? asignaturasOrdenadas(estudios, app.id) : [];
 
+
+  /* ES F4 — los tres tipos de fecha se crean, editan, cambian de estado y se borran por AQUÍ, sea
+     cual sea la pantalla desde la que se toque: una sola puerta por tipo (apartado 19). */
+  const accionesFecha = {
+    examen: {
+      crear: (d) => onAddExamen({ id: uid(), asignaturaId: d.asignaturaId, tema: d.nombre, fecha: d.fecha, hora: d.hora, notas: d.notas, estado: 'proximo', notaObjetivo: '', notaObtenida: '', planRepaso: [] }),
+      editar: (id, d) => onUpdateExamenes(editarExamenFecha(estudios.examenes || [], id, { tema: d.nombre, fecha: d.fecha, hora: d.hora, notas: d.notas })),
+      estado: (id, e) => onUpdateExamenes(cambiarEstadoExamen(estudios.examenes || [], id, e)),
+      eliminar: onDeleteExamen,
+    },
+    entrega: {
+      crear: (d) => { const t = crearEntrega(d); if (t) onAddEntrega(t); },
+      editar: (id, d) => onUpdateEntregas(editarEntrega(estudios.entregas || [], id, d)),
+      estado: (id, e) => onUpdateEntregas(cambiarEstadoEntrega(estudios.entregas || [], id, e)),
+      eliminar: onDeleteEntrega,
+    },
+    evento: {
+      crear: (d) => { const v = crearEventoAcademico(d); if (v) onAddEvento(v); },
+      editar: (id, d) => onUpdateEventos(editarEventoAcademico(estudios.eventos || [], id, d)),
+      estado: () => {},
+      eliminar: onDeleteEvento,
+    },
+  };
+
+  const panelDe = (tipo, filas, asignaturasDisponibles, asignaturaFija = null) => {
+    const a = accionesFecha[tipo];
+    return (
+      <PanelFechas
+        tipo={tipo} filas={filas} asignaturas={asignaturasDisponibles} accent={accent}
+        asignaturaFija={asignaturaFija} abierta={fechaAbierta} onAbrir={setFechaAbierta}
+        onCrear={a.crear} onEditar={a.editar} onEstado={a.estado} onEliminar={a.eliminar}
+      />
+    );
+  };
 
   const cabecera = (
     <div className="flex items-center gap-2">
@@ -873,21 +1137,45 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
         <div className="space-y-4 pb-4 module-enter">
           {cabecera}
 
+          {/* ⚠️ Los exámenes conservan `ExamenItem` con su **plan de repaso**, que existe desde la
+              Fase 6 y la IA rellena: cambiarlos por la fila genérica lo habría borrado de la
+              pantalla. Debajo va el formulario nuevo, con hora y notas (apartados 1 y 2). */}
           {ruta.seccion === 'examenes' && (
             <>
               {examenesAsig.length === 0 && !formExamen && (
                 <EmptyHint text="Todavía no hay exámenes en esta asignatura." />
               )}
               <div className="space-y-2">
-                {[...examenesAsig].sort((a, b) => (a.fecha > b.fecha ? 1 : -1)).map((ex) => (
-                  <ExamenItem
-                    key={ex.id} examen={ex} onUpdate={onUpdateExamen} onDelete={onDeleteExamen} accent={accent}
-                    forzarAbierta={foco?.examenId === ex.id} onFocoConsumido={onFocoConsumido}
-                  />
+                {[...examenesAsig].sort((a, b) => ((a.fecha || '9999') > (b.fecha || '9999') ? 1 : -1)).map((ex) => (
+                  <div key={ex.id}>
+                    <ExamenItem
+                      examen={ex} onUpdate={onUpdateExamen} onDelete={onDeleteExamen} accent={accent}
+                      forzarAbierta={foco?.examenId === ex.id} onFocoConsumido={onFocoConsumido}
+                    />
+                    {/* Apartado 3 — su estado, con icono y palabra. */}
+                    <div className="flex flex-wrap gap-1.5 mt-1 mb-1">
+                      {ESTADOS_EXAMEN.map((e) => (
+                        <button
+                          key={e.id} onClick={() => accionesFecha.examen.estado(ex.id, e.id)}
+                          aria-pressed={(ex.estado || 'proximo') === e.id}
+                          className="toque-44 rounded-xl px-2.5 py-1 text-[11px] font-semibold transition-transform active:scale-95"
+                          style={{
+                            background: (ex.estado || 'proximo') === e.id ? hexToRgba(accent, 0.16) : COLORS.surface2,
+                            border: `1px solid ${(ex.estado || 'proximo') === e.id ? accent : COLORS.border}`,
+                            color: (ex.estado || 'proximo') === e.id ? accent : COLORS.textMuted,
+                          }}
+                        >{e.icono} {e.nombre}</button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
               {formExamen ? (
-                <FormExamen accent={accent} asignaturaId={asig.id} onAdd={onAddExamen} onCerrar={() => setFormExamen(false)} />
+                <FormFecha
+                  accent={accent} tipo="examen" asignaturas={asignaturasApp} asignaturaFija={asig.id}
+                  onGuardar={(d) => { accionesFecha.examen.crear(d); setFormExamen(false); }}
+                  onCerrar={() => setFormExamen(false)}
+                />
               ) : (
                 <button
                   onClick={() => setFormExamen(true)}
@@ -900,6 +1188,10 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
               )}
             </>
           )}
+
+          {/* Apartados 4, 5 y 6 — las entregas y los eventos de ESTA asignatura. */}
+          {ruta.seccion === 'entregas' && panelDe('entrega', fechasAcademicas(estudios, { asignaturaId: asig.id }).filter((f) => f.tipo === 'entrega'), asignaturasApp, asig.id)}
+          {ruta.seccion === 'eventos' && panelDe('evento', fechasAcademicas(estudios, { asignaturaId: asig.id }).filter((f) => f.tipo === 'evento'), asignaturasApp, asig.id)}
 
           {ruta.seccion === 'contenido' && (
             <>
@@ -1047,6 +1339,7 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
   if (!app) return <div className="space-y-4 pb-4">{cabecera}<EmptyHint text="Esa área ya no existe." /></div>;
 
   const visiblesApp = asignaturasVisibles(estudios, app.id);
+  const idsAsig = asignaturasApp.map((a) => a.id);
   const examenesApp = examenesDe(estudios, app.id);
   const horasApp = horasDe(estudios, app.id);
   const nombreAsignatura = (id) => estudios.asignaturas.find((a) => a.id === id)?.nombre || '';
@@ -1132,6 +1425,10 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
           )}
         </>
       )}
+
+      {/* Apartado 20 — desde el área se ven las de TODAS sus asignaturas. */}
+      {sistema === 'entregas' && panelDe('entrega', fechasAcademicas(estudios, { asignaturaIds: idsAsig }).filter((f) => f.tipo === 'entrega'), asignaturasApp)}
+      {sistema === 'eventos' && panelDe('evento', fechasAcademicas(estudios, { asignaturaIds: idsAsig }).filter((f) => f.tipo === 'evento'), asignaturasApp)}
 
       {sistema === 'examenes' && (
         <>

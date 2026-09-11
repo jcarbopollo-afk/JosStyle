@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.64.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.65.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (46 fases — **43 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (46 fases — **44 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -138,9 +138,9 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **16 931 pruebas unitarias** con Node repartidas en **143 suites** (5 de ellas de auditoría),
-**2092 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **1208
-comprobaciones sobre la aplicación de verdad en Chromium** — **20 242 comprobaciones**.
+Vite, **17 068 pruebas unitarias** con Node repartidas en **144 suites** (5 de ellas de auditoría),
+**2100 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **1228
+comprobaciones sobre la aplicación de verdad en Chromium** — **20 407 comprobaciones**.
 
 Eso ya ha encontrado **noventa y seis bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -168,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 43 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 44 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -200,9 +200,9 @@ NU—. Con eso hay **seis
 bloques cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1),
 Sueño (2/2) y Nutrición (8/8)—, y la **F41 (Estudios, home tipo teléfono y nueva arquitectura,
 v3.62.0)**, con la que empieza el **último bloque de la entrega**, y la **F42 (estructura en árbol y
-navegación por ramas, v3.63.0)** y la **F43 (asignaturas y gestión académica, v3.64.0)**: **ES va
-por 3 de 6**. La que viene
-es la **44 — ES F4: exámenes, entregas y fechas**. El índice, con la
+navegación por ramas, v3.63.0)**, la **F43 (asignaturas y gestión académica, v3.64.0)** y la
+**F44 (exámenes, entregas y fechas, v3.65.0)**: **ES va por 4 de 6**. La que viene
+es la **45 — ES F5: apps de aprendizaje independientes**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -505,6 +505,36 @@ código de agosto mientras él decía *"la web sigue igual"*.
   E3 F23 escrita con las palabras de entonces, que el rediseño de esta fase cambió con todo el
   derecho. **Mirar qué línea la hace saltar antes de tocar el código**: de los cuatro rojos, **uno
   solo era del código** —la racha decía *"🔥 1 días"*—, y ése sí es de los que ve Josué.
+
+- 🚨 **UN SOLO REGISTRO VISTO DESDE MUCHOS SITIOS SE CONSIGUE CON UNA SOLA FUNCIÓN QUE LO LEA**
+  (E3 F44, apartado 19). `fechasAcademicas()` junta las tres listas y de ella leen **el Home, la
+  asignatura, el área y el Calendario**. Así *"cambiar la fecha reordena el Home"* (apartado 14) **no
+  hay que programarlo**: sale de no tener copias. Si una fase futura quiere enseñar fechas académicas
+  en otro sitio, **llama ahí** — no hace una cuarta lista.
+- 🚨 **A UNA ENTIDAD QUE YA TIENE TÍTULO NO SE LE AÑADE UN `nombre`** (E3 F44). El título de un
+  examen es `tema` desde la Fase 6, y así lo rotula su formulario. Añadirle `nombre` habría dejado dos
+  campos para lo mismo — el fallo de la E3 F26, donde una tarea acabó con `fecha` y `fechaLimite` y
+  **no salía en ninguna de las cuatro pantallas que la buscaban**.
+- ⚠️ **UN ESTADO SE GUARDA CUANDO ES UNA CONFIRMACIÓN, Y SE DERIVA CUANDO ES UN CÁLCULO** (E3 F44, y
+  HT F8 lo dijo primero): que un examen haya **pasado** se calcula del reloj; que se haya **hecho** lo
+  dice él. Por eso `estado` se guarda y «lo próximo» se filtra por fecha, no por estado.
+- ⚠️ **UN FILTRO DE LECTURA NO ES UN ARCHIVADO** (E3 F44, apartado 10): lo pasado deja de salir en
+  PRÓXIMAMENTE **y sigue guardado**, sin mover ni marcar nada. Hay una comprobación de que la lista
+  original no encoge.
+- ⚠️ **UNA FECHA RELATIVA SOLO CUANDO MEJORA LA COMPRENSIÓN** (E3 F44, apartado 11): *«En 3 días»* sí,
+  *«en 47 días»* no — ahí la fecha dice más. `cuentaAtras` devuelve `null` fuera de dos semanas.
+- ⚠️ **«NO CREAR UNA CATEGORÍA PARA CADA CASO» ES UN CAMPO, NO CUATRO LISTAS** (E3 F44, apartado 6):
+  presentación, exposición, recuperación y práctica son un `tipo` dentro de `eventos`. Hay una
+  comprobación de que la papelera no tiene una colección por cada uno.
+- 🔓 **UNA COMPROBACIÓN QUE GUARDA UNA PROMESA PASA A VIGILAR QUE SE CUMPLA** (E3 F44, y la SU F1 →
+  SU F2 lo dijo primero). La ES F1 y la ES F3 declararon **tres veces** que las entregas no existían,
+  cada una con su prueba. Al construirlas, esas tres pruebas se pusieron rojas **con el código bien**:
+  no se borran, se dan la vuelta. Están escritas a propósito para este momento.
+- 🐛 **UNA CUENTA EXACTA EN UNA PRUEBA ES UNA BOMBA DE RELOJERÍA** (E3 F44, y EH F21 lo dijo con
+  `MODULOS_EH.length === 13`, nueve veces). `RAMAS_POR_DEFECTO.length === 3` saltó al añadir las dos
+  ramas nuevas, con todo el derecho. **Se comprueba que estén las que tienen que estar**, no cuántas.
+- 🐛 **Y OTRA FUNCIÓN QUE SE QUEDÓ SIN QUIEN LA LLAMARA** (E3 F44, y van cuatro en la entrega):
+  `FormExamen`, sustituido por el formulario común, se quedó escrito y muerto. Retirado.
 
 - 🚨 **UNA LISTA QUE SE PUEDE BORRAR VA DE PRIMER NIVEL, NO DENTRO DE SU PADRE** (E3 F43). Los temas
   de una asignatura son `estudios.temas` con su `asignaturaId`, igual que `examenes` y `horas` desde
