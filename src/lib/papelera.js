@@ -71,6 +71,9 @@ export const CATALOGO_PAPELERA = {
   'estudios.asignaturas': { modulo: 'estudios', coleccion: 'asignaturas', tipo: 'Asignatura', campos: ['nombre'], icono: 'estudios' },
   'estudios.examenes': { modulo: 'estudios', coleccion: 'examenes', tipo: 'Examen', campos: ['tema'], icono: 'estudios' },
   'estudios.horas': { modulo: 'estudios', coleccion: 'horas', tipo: 'Horas de estudio', campos: ['fecha'], icono: 'estudios' },
+  // E3 F43 (ES F3) — los temas del contenido de una asignatura. Van aquí porque son una lista de
+  // primer nivel: dentro de la asignatura no los vería la papelera (EH F45).
+  'estudios.temas': { modulo: 'estudios', coleccion: 'temas', tipo: 'Tema', campos: ['nombre'], icono: 'estudios' },
   'armario.prendas': { modulo: 'armario', coleccion: 'prendas', tipo: 'Prenda', campos: ['nombre'], icono: 'armario' },
   'armario.outfits': { modulo: 'armario', coleccion: 'outfits', tipo: 'Outfit', campos: ['nombre'], icono: 'armario' },
   // Un uso es un día concreto del historial. Va a la papelera como todo lo demás porque

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GraduationCap, BookOpen, Clock, Plus, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, HelpCircle, TrendingUp, Loader2, Sparkles, X, Eye, EyeOff } from 'lucide-react';
+import { GraduationCap, Clock, Plus, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, HelpCircle, TrendingUp, Loader2, Sparkles, X, Eye, EyeOff, Pencil } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { uid, formatFecha, todayISO, hexToRgba } from '../lib/helpers';
 import { askAI, AI_SYSTEM } from '../lib/ai';
@@ -9,10 +9,18 @@ import {
   MAX_NOMBRE_APP, crearApp, nombreYaUsado, moverApp, AVISO_OCULTAR, alternarOcultaApp,
   appsOrdenadas, appsVisibles,
   asignaturasDe, examenesDe, horasDe, ramasDeApp, ramaPorId, lineaDeApp, proximosEventos,
-  RUTA_RAIZ, abrirApp, abrirRama, atras, migas,
+  RUTA_RAIZ, abrirApp, abrirRama, abrirAsignatura, abrirSeccion, atras, migas,
   TIPOS_ESTUDIO, MAX_NOMBRE_RAMA, ICONO_RAMA_POR_DEFECTO, sugerenciasDeRama,
   crearRama, anadirRama, quitarRama, AVISO_QUITAR_RAMA, TEXTO_RAMA_SIN_SISTEMA,
 } from '../lib/estudiosApps';
+import {
+  ACENTOS_COLECCION, ICONOS_ASIGNATURA, ICONO_ASIGNATURA_POR_DEFECTO, sugerirIconoAsignatura,
+  iconoDeAsignatura, MAX_NOMBRE_ASIGNATURA, MAX_NOMBRE_TEMA, MAX_DESCRIPCION_TEMA,
+  estadoTema, crearAsignatura, editarAsignatura, alternarOcultaAsignatura, AVISO_OCULTAR_ASIGNATURA,
+  asignaturasOrdenadas, asignaturasVisibles, moverAsignatura,
+  temasDe, crearTema, editarTema, avanzarTema, moverTema,
+  resumenAsignatura, lineaDeAsignatura, seccionesDeAsignatura, impactoDeEliminarAsignatura,
+} from '../lib/asignaturas';
 import { Card, SectionTitle, Field, TextInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel } from '../components/ui';
 
 function diasHasta(fechaISO) {
@@ -193,118 +201,198 @@ function ExamenItem({ examen, onUpdate, onDelete, accent, forzarAbierta, onFocoC
   );
 }
 
-function AsignaturaCard({ asignatura, examenes, horas, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, onDeleteAsignatura, accent, focoExamenId, onFocoConsumido }) {
-  const [abierto, setAbierto] = useState(false);
-  const [showExamenForm, setShowExamenForm] = useState(false);
-  const [examenForm, setExamenForm] = useState({ tema: '', fecha: todayISO(), notaObjetivo: '' });
-  const [horasHoy, setHorasHoy] = useState('');
+/* ══════════════════════════════════════════════════════════════════════════
+   ENTREGA 3 · ES FASE 3 — ASIGNATURAS Y GESTIÓN ACADÉMICA
+   ══════════════════════════════════════════════════════════════════════════
 
-  // Ampliación del Dashboard — Centro de Control: si el examen destacado pertenece a esta
-  // asignatura, se despliega sola (el `ExamenItem` concreto se abre él mismo con `forzarAbierta`).
-  const contieneFoco = !!focoExamenId && examenes.some((e) => e.id === focoExamenId);
-  useEffect(() => {
-    if (contieneFoco) setAbierto(true);
-  }, [contieneFoco]);
+   🚨 `AsignaturaCard` —el acordeón que metía exámenes y horas dentro de la lista—
+   **ya no existe**: el apartado 14 dice *"no volver a la estructura antigua de
+   página larga"*. Sus dos funciones **no se han perdido**, se han mudado a la
+   pantalla de la asignatura, que es donde el árbol las pone. */
 
-  const totalSemana = horas
-    .filter((h) => diasHasta(h.fecha) > -7 && diasHasta(h.fecha) <= 0)
-    .reduce((acc, h) => acc + Number(h.horas || 0), 0);
+function FilaAsignatura({ asignatura, linea, accent, onAbrir }) {
+  const col = asignatura.acento ? (COLORS[asignatura.acento] || accent) : accent;
+  return (
+    <button
+      onClick={onAbrir}
+      className="w-full rounded-2xl p-3 flex items-center gap-2.5 text-left transition-transform active:scale-[0.99]"
+      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+    >
+      <span aria-hidden="true" style={{ fontSize: 22 }}>{iconoDeAsignatura(asignatura)}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold truncate" style={{ color: COLORS.text }}>{asignatura.nombre}</span>
+        {/* Apartado 9 — el profesor y el aula son información SECUNDARIA: nunca compiten con
+            los exámenes ni con el contenido. */}
+        {linea
+          ? <span className="block text-xs truncate" style={{ color: col }}>{linea}</span>
+          : (asignatura.profesor || asignatura.aula)
+            ? <span className="block text-xs truncate" style={{ color: COLORS.textMuted }}>{[asignatura.profesor, asignatura.aula].filter(Boolean).join(' · ')}</span>
+            : null}
+      </span>
+      <ChevronRight size={16} style={{ color: COLORS.textMuted }} />
+    </button>
+  );
+}
 
-  const horasRecientes = [...horas].sort((a, b) => (a.fecha > b.fecha ? -1 : 1)).slice(0, 5);
-
-  const submitExamen = () => {
-    if (!examenForm.tema.trim()) return;
-    onAddExamen({ id: uid(), asignaturaId: asignatura.id, ...examenForm, notaObtenida: '', planRepaso: [] });
-    setShowExamenForm(false);
-    setExamenForm({ tema: '', fecha: todayISO(), notaObjetivo: '' });
-  };
-
-  const registrarHoras = () => {
-    const h = Number(horasHoy);
-    if (!h) return;
-    onAddHoras({ id: uid(), asignaturaId: asignatura.id, fecha: todayISO(), horas: h });
-    setHorasHoy('');
-  };
-
-  const examenesOrdenados = [...examenes].sort((a, b) => (a.fecha > b.fecha ? 1 : -1));
+/* Apartado 2 — crear una asignatura. ⚠️ Solo el nombre es obligatorio: *"los datos secundarios no
+   deben ser obligatorios"*. Sirve también para editar. */
+function FormAsignatura({ accent, inicial, onGuardar, onCerrar }) {
+  const [nombre, setNombre] = useState(inicial?.nombre || '');
+  const [icono, setIcono] = useState(inicial?.icono || '');
+  const [acento, setAcento] = useState(inicial?.acento || '');
+  const [profesor, setProfesor] = useState(inicial?.profesor || '');
+  const [aula, setAula] = useState(inicial?.aula || '');
+  const propuesto = icono || sugerirIconoAsignatura(nombre) || ICONO_ASIGNATURA_POR_DEFECTO;
 
   return (
-    <Card id={`asignatura-${asignatura.id}`}>
-      <button onClick={() => setAbierto((a) => !a)} className="w-full flex items-center justify-between text-left">
-        <div className="flex items-center gap-2">
-          <BookOpen size={16} style={{ color: accent }} />
-          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{asignatura.nombre}</p>
+    <Card>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>
+          {inicial ? 'Editar asignatura' : 'Nueva asignatura'}
+        </p>
+        <button onClick={onCerrar} className="toque-44 p-1.5 -m-1.5" aria-label="Cerrar">
+          <X size={16} style={{ color: COLORS.textMuted }} />
+        </button>
+      </div>
+
+      <Field label="Nombre">
+        <TextInput value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={MAX_NOMBRE_ASIGNATURA} placeholder="Ej: Biología" />
+      </Field>
+
+      <Field label="Icono">
+        <div className="flex items-center gap-2 mb-2">
+          <span aria-hidden="true" style={{ fontSize: 24 }}>{propuesto}</span>
+          <TextInput value={icono} onChange={(e) => setIcono(e.target.value)} placeholder="O pega el que quieras" />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs" style={{ color: COLORS.textMuted }}>{totalSemana}h esta semana</span>
-          {abierto ? <ChevronUp size={16} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={16} style={{ color: COLORS.textMuted }} />}
-        </div>
-      </button>
-
-      {abierto && (
-        <div className="mt-3 space-y-3">
-          <div className="flex items-center gap-2">
-            <TextInput type="number" step="0.5" inputMode="decimal" placeholder="Horas estudiadas hoy" value={horasHoy} onChange={(e) => setHorasHoy(e.target.value)} />
-            <div style={{ width: 90, flexShrink: 0 }}>
-              <PrimaryButton accent={accent} disabled={!horasHoy} onClick={registrarHoras} icon={Clock}>Sumar</PrimaryButton>
-            </div>
-          </div>
-
-          {/* Entrega 2 · ME Fase 4 — hasta ahora las horas se sumaban y no había forma de ver ni
-              corregir un registro concreto: un "8" tecleado por error se quedaba dentro del total
-              para siempre. Se listan las últimas, con su borrado, sin convertir la tarjeta en una
-              tabla: el dato principal sigue siendo el total de la semana. */}
-          {horasRecientes.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold mb-1.5" style={{ color: COLORS.textMuted }}>Horas registradas</p>
-              <div className="space-y-1.5">
-                {horasRecientes.map((h) => (
-                  <div key={h.id} className="flex items-center justify-between gap-2">
-                    <p className="text-xs min-w-0 truncate" style={{ color: COLORS.text }}>
-                      {formatFecha(h.fecha)} · {h.horas}h
-                    </p>
-                    <BotonBorrar onClick={() => onDeleteHoras(h.id)} label="Eliminar horas de estudio" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>Exámenes</p>
-            <button onClick={() => setShowExamenForm((s) => !s)} className="flex items-center gap-1 text-xs font-semibold" style={{ color: accent }}>
-              <Plus size={12} /> Añadir examen
-            </button>
-          </div>
-
-          {showExamenForm && (
-            <Card style={{ background: COLORS.surface2 }}>
-              <Field label="Tema / descripción">
-                <TextInput value={examenForm.tema} onChange={(e) => setExamenForm({ ...examenForm, tema: e.target.value })} />
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Fecha">
-                  <TextInput type="date" value={examenForm.fecha} onChange={(e) => setExamenForm({ ...examenForm, fecha: e.target.value })} />
-                </Field>
-                <Field label="Nota objetivo">
-                  <TextInput value={examenForm.notaObjetivo} onChange={(e) => setExamenForm({ ...examenForm, notaObjetivo: e.target.value })} placeholder="Ej: 9" />
-                </Field>
-              </div>
-              <PrimaryButton accent={accent} onClick={submitExamen}>Guardar examen</PrimaryButton>
-            </Card>
-          )}
-
-          {examenesOrdenados.length === 0 && <EmptyHint text="Todavía no hay exámenes en esta asignatura." />}
-          {examenesOrdenados.map((ex) => (
-            <ExamenItem
-              key={ex.id} examen={ex} onUpdate={onUpdateExamen} onDelete={onDeleteExamen} accent={accent}
-              forzarAbierta={focoExamenId === ex.id} onFocoConsumido={onFocoConsumido}
-            />
+        <div className="flex flex-wrap gap-1.5">
+          {ICONOS_ASIGNATURA.map((ic) => (
+            <button
+              key={ic} onClick={() => setIcono(ic)} aria-label={`Usar el icono ${ic}`} aria-pressed={icono === ic}
+              className="toque-44 rounded-xl transition-transform active:scale-90"
+              style={{
+                fontSize: 18, width: 38, height: 38,
+                background: icono === ic ? hexToRgba(accent, 0.16) : COLORS.surface2,
+                border: `1px solid ${icono === ic ? accent : COLORS.border}`,
+              }}
+            >{ic}</button>
           ))}
-
-          <button onClick={() => onDeleteAsignatura(asignatura.id)} className="text-xs" style={{ color: COLORS.negative }}>Borrar asignatura</button>
         </div>
-      )}
+      </Field>
+
+      {/* ⚠️ El acento se guarda como TOKEN, nunca como hex: un hex se queda fijo cuando Josué
+          cambia de tema (regla 2). Es el catálogo de la BL F7, no uno nuevo. */}
+      <Field label="Color (opcional)">
+        <div className="flex flex-wrap gap-1.5">
+          {ACENTOS_COLECCION.map((a) => (
+            <button
+              key={a.id} onClick={() => setAcento(acento === a.id ? '' : a.id)} aria-pressed={acento === a.id}
+              className="toque-44 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-transform active:scale-95"
+              style={{
+                background: acento === a.id ? hexToRgba(accent, 0.16) : COLORS.surface2,
+                border: `1px solid ${acento === a.id ? accent : COLORS.border}`,
+                color: COLORS[a.id] || accent,
+              }}
+            >{a.nombre}</button>
+          ))}
+        </div>
+      </Field>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Profesor (opcional)">
+          <TextInput value={profesor} onChange={(e) => setProfesor(e.target.value)} placeholder="Ej: Marta" />
+        </Field>
+        <Field label="Aula (opcional)">
+          <TextInput value={aula} onChange={(e) => setAula(e.target.value)} placeholder="Ej: 204" />
+        </Field>
+      </div>
+
+      <PrimaryButton accent={accent} disabled={!nombre.trim()} onClick={() => onGuardar({ nombre, icono, acento, profesor, aula })}>
+        {inicial ? 'Guardar' : 'Crear asignatura'}
+      </PrimaryButton>
+    </Card>
+  );
+}
+
+/* Apartados 5, 6 y 7 — el contenido por temas. Tres estados, con icono y palabra: el color nunca
+   va solo (EH F42). */
+function FilaTema({ tema, primero, ultimo, accent, onAvanzar, onEditar, onSubir, onBajar, onEliminar }) {
+  const est = estadoTema(tema.estado);
+  const col = est.acento ? (COLORS[est.acento] || accent) : COLORS.textMuted;
+  return (
+    <div className="rounded-2xl p-2.5 flex items-center gap-2" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
+      <button
+        onClick={onAvanzar} className="toque-44 p-1.5 -m-1.5 flex items-center gap-1.5"
+        aria-label={`${tema.nombre}: ${est.nombre}. Cambiar de estado`}
+      >
+        <span aria-hidden="true" style={{ color: col, fontSize: 16 }}>{est.icono}</span>
+      </button>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm truncate" style={{ color: COLORS.text, textDecoration: tema.estado === 'completado' ? 'line-through' : 'none' }}>
+          {tema.nombre}
+        </span>
+        <span className="block text-[11px] truncate" style={{ color: col }}>
+          {est.nombre}{tema.descripcion ? ` · ${tema.descripcion}` : ''}
+        </span>
+      </span>
+      <button onClick={onSubir} disabled={primero} className="toque-44 p-1.5 -m-1.5 disabled:opacity-30" aria-label={`Subir ${tema.nombre}`}>
+        <ChevronUp size={15} style={{ color: COLORS.textMuted }} />
+      </button>
+      <button onClick={onBajar} disabled={ultimo} className="toque-44 p-1.5 -m-1.5 disabled:opacity-30" aria-label={`Bajar ${tema.nombre}`}>
+        <ChevronDown size={15} style={{ color: COLORS.textMuted }} />
+      </button>
+      <button onClick={onEditar} className="toque-44 p-1.5 -m-1.5" aria-label={`Editar ${tema.nombre}`}>
+        <Pencil size={14} style={{ color: COLORS.textMuted }} />
+      </button>
+      <BotonBorrar onClick={onEliminar} label={`Eliminar el tema ${tema.nombre}`} />
+    </div>
+  );
+}
+
+function FormTema({ accent, inicial, onGuardar, onCerrar }) {
+  const [nombre, setNombre] = useState(inicial?.nombre || '');
+  const [descripcion, setDescripcion] = useState(inicial?.descripcion || '');
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{inicial ? 'Editar tema' : 'Nuevo tema'}</p>
+        <button onClick={onCerrar} className="toque-44 p-1.5 -m-1.5" aria-label="Cerrar">
+          <X size={16} style={{ color: COLORS.textMuted }} />
+        </button>
+      </div>
+      <Field label="Nombre">
+        <TextInput value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={MAX_NOMBRE_TEMA} placeholder="Ej: Tema 1 — La célula" />
+      </Field>
+      <Field label="Descripción (opcional)">
+        <TextInput value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={MAX_DESCRIPCION_TEMA} placeholder="Lo que quieras recordar" />
+      </Field>
+      <PrimaryButton accent={accent} disabled={!nombre.trim()} onClick={() => onGuardar({ nombre, descripcion })}>
+        {inicial ? 'Guardar' : 'Crear tema'}
+      </PrimaryButton>
+    </Card>
+  );
+}
+
+/* El formulario de examen y el registro de horas salen de aquí: vivían dentro del acordeón que
+   esta fase retira, y son funciones que ya tenía Josué — no se pierden, se mudan. */
+function FormExamen({ accent, asignaturaId, onAdd, onCerrar }) {
+  const [form, setForm] = useState({ tema: '', fecha: todayISO(), notaObjetivo: '' });
+  return (
+    <Card style={{ background: COLORS.surface2 }}>
+      <Field label="Tema / descripción">
+        <TextInput value={form.tema} onChange={(e) => setForm({ ...form, tema: e.target.value })} />
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Fecha">
+          <TextInput type="date" value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} />
+        </Field>
+        <Field label="Nota objetivo">
+          <TextInput value={form.notaObjetivo} onChange={(e) => setForm({ ...form, notaObjetivo: e.target.value })} placeholder="Ej: 9" />
+        </Field>
+      </div>
+      <PrimaryButton accent={accent} disabled={!form.tema.trim()} onClick={() => {
+        onAdd({ id: uid(), asignaturaId, ...form, notaObtenida: '', planRepaso: [] });
+        onCerrar();
+      }}>Guardar examen</PrimaryButton>
     </Card>
   );
 }
@@ -537,13 +625,19 @@ function ProximoEnEstudios({ estudios, accent, onIr }) {
   );
 }
 
-export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateProgramas, onDeletePrograma, onAddAsignatura, onDeleteAsignatura, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
+export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateProgramas, onDeletePrograma, onAddAsignatura, onUpdateAsignaturas, onDeleteAsignatura, onAddTema, onUpdateTemas, onDeleteTema, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
   const [ruta, setRuta] = useState(RUTA_RAIZ);
-  const [nuevaAsignatura, setNuevaAsignatura] = useState('');
   const [creando, setCreando] = useState(false);
   const [organizando, setOrganizando] = useState(false);
   const [anadiendoRama, setAnadiendoRama] = useState(false);
   const [organizandoRamas, setOrganizandoRamas] = useState(false);
+  // ES F3
+  const [formAsig, setFormAsig] = useState(null);      // null | 'nueva' | id
+  const [organizandoAsigs, setOrganizandoAsigs] = useState(false);
+  const [formTema, setFormTema] = useState(null);      // null | 'nuevo' | id
+  const [formExamen, setFormExamen] = useState(false);
+  const [horasRapidas, setHorasRapidas] = useState('');
+  const [confirmarBorrado, setConfirmarBorrado] = useState(false);
 
   // Ampliación del Dashboard — Centro de Control (apartado 6): el examen destacado puede vivir en
   // cualquier app — se abre su app y su rama de asignaturas; AsignaturaCard y ExamenItem se
@@ -552,20 +646,21 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
     if (!foco?.examenId) return;
     const ex = estudios.examenes.find((e) => e.id === foco.examenId);
     const asig = ex && estudios.asignaturas.find((a) => a.id === ex.asignaturaId);
-    if (asig) setRuta(abrirRama(asig.programaId, 'asignaturas'));
+    if (asig) {
+      // ES F3 — el examen destacado vive dentro de SU asignatura, así que se abre su sección de
+      // exámenes; `ExamenItem` se encarga de desplegarse solo.
+      const prog = (estudios.programas || []).find((p) => p.id === asig.programaId);
+      const ramaAsig = (prog?.ramas || []).find((r) => r.sistema === 'asignaturas');
+      if (ramaAsig) setRuta(abrirSeccion(asig.programaId, ramaAsig.id, asig.id, 'examenes'));
+    }
   }, [foco]);
 
   const programas = estudios.programas || [];
   const visibles = appsVisibles(programas);
   const todas = appsOrdenadas(programas);
   const app = programas.find((p) => p.id === ruta.appId) || null;
-  const asignaturasApp = app ? asignaturasDe(estudios, app.id) : [];
+  const asignaturasApp = app ? asignaturasOrdenadas(estudios, app.id) : [];
 
-  const anadirAsignatura = () => {
-    if (!nuevaAsignatura.trim() || !app) return;
-    onAddAsignatura({ id: uid(), programaId: app.id, nombre: nuevaAsignatura.trim() });
-    setNuevaAsignatura('');
-  };
 
   const cabecera = (
     <div className="flex items-center gap-2">
@@ -576,7 +671,7 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
       )}
       <div className="min-w-0 flex-1">
         <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
-          {migas(ruta, programas).map((m) => m.texto).join(' › ')}
+          {migas(ruta, programas, estudios.asignaturas || []).map((m) => m.texto).join(' › ')}
         </p>
       </div>
     </div>
@@ -747,9 +842,211 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
     );
   }
 
+  /* ── UNA ASIGNATURA Y SUS SECCIONES (ES F3, apartados 4 a 9) ─────────────── */
+  if (ruta.vista === 'asignatura' || ruta.vista === 'seccion') {
+    const asig = (estudios.asignaturas || []).find((a) => a.id === ruta.asignaturaId);
+    if (!app || !asig) {
+      return <div className="space-y-4 pb-4">{cabecera}<EmptyHint text="Esa asignatura ya no existe." /></div>;
+    }
+
+    const cabeceraAsig = (
+      <div className="flex items-center gap-3">
+        <span aria-hidden="true" style={{ fontSize: 30 }}>{iconoDeAsignatura(asig)}</span>
+        <div className="min-w-0">
+          <p className="text-lg font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{asig.nombre}</p>
+          {/* Apartado 9 — el profesor y el aula, como información secundaria. */}
+          {(asig.profesor || asig.aula) && (
+            <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
+              {[asig.profesor, asig.aula].filter(Boolean).join(' · ')}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+
+    /* ── Una sección de la asignatura ── */
+    if (ruta.vista === 'seccion') {
+      const examenesAsig = (estudios.examenes || []).filter((e) => e.asignaturaId === asig.id);
+      const temas = temasDe(estudios, asig.id);
+
+      return (
+        <div className="space-y-4 pb-4 module-enter">
+          {cabecera}
+
+          {ruta.seccion === 'examenes' && (
+            <>
+              {examenesAsig.length === 0 && !formExamen && (
+                <EmptyHint text="Todavía no hay exámenes en esta asignatura." />
+              )}
+              <div className="space-y-2">
+                {[...examenesAsig].sort((a, b) => (a.fecha > b.fecha ? 1 : -1)).map((ex) => (
+                  <ExamenItem
+                    key={ex.id} examen={ex} onUpdate={onUpdateExamen} onDelete={onDeleteExamen} accent={accent}
+                    forzarAbierta={foco?.examenId === ex.id} onFocoConsumido={onFocoConsumido}
+                  />
+                ))}
+              </div>
+              {formExamen ? (
+                <FormExamen accent={accent} asignaturaId={asig.id} onAdd={onAddExamen} onCerrar={() => setFormExamen(false)} />
+              ) : (
+                <button
+                  onClick={() => setFormExamen(true)}
+                  className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 transition-transform active:scale-[0.99]"
+                  style={{ background: COLORS.surface2, border: `1px dashed ${COLORS.border}` }}
+                >
+                  <Plus size={16} style={{ color: accent }} />
+                  <span className="text-sm font-semibold" style={{ color: COLORS.textMuted }}>Añadir examen</span>
+                </button>
+              )}
+            </>
+          )}
+
+          {ruta.seccion === 'contenido' && (
+            <>
+              {temas.length === 0 && !formTema && (
+                <EmptyHint text="Todavía no has añadido ningún tema. Organiza aquí el temario de la asignatura." />
+              )}
+              <div className="space-y-1.5">
+                {temas.map((t, i) => (
+                  formTema === t.id ? (
+                    <FormTema
+                      key={t.id} accent={accent} inicial={t}
+                      onGuardar={(datos) => { onUpdateTemas(editarTema(estudios.temas || [], t.id, datos)); setFormTema(null); }}
+                      onCerrar={() => setFormTema(null)}
+                    />
+                  ) : (
+                    <FilaTema
+                      key={t.id} tema={t} primero={i === 0} ultimo={i === temas.length - 1} accent={accent}
+                      onAvanzar={() => onUpdateTemas(avanzarTema(estudios.temas || [], t.id))}
+                      onEditar={() => setFormTema(t.id)}
+                      onSubir={() => onUpdateTemas(moverTema(estudios.temas || [], asig.id, t.id, 'arriba'))}
+                      onBajar={() => onUpdateTemas(moverTema(estudios.temas || [], asig.id, t.id, 'abajo'))}
+                      onEliminar={() => onDeleteTema(t.id)}
+                    />
+                  )
+                ))}
+              </div>
+              {formTema === 'nuevo' ? (
+                <FormTema
+                  accent={accent}
+                  onGuardar={(datos) => {
+                    const nuevo = crearTema({ ...datos, asignaturaId: asig.id }, estudios.temas || []);
+                    if (!nuevo) return;
+                    onAddTema(nuevo);
+                    setFormTema(null);
+                  }}
+                  onCerrar={() => setFormTema(null)}
+                />
+              ) : (
+                <button
+                  onClick={() => setFormTema('nuevo')}
+                  className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 transition-transform active:scale-[0.99]"
+                  style={{ background: COLORS.surface2, border: `1px dashed ${COLORS.border}` }}
+                >
+                  <Plus size={16} style={{ color: accent }} />
+                  <span className="text-sm font-semibold" style={{ color: COLORS.textMuted }}>Añadir tema</span>
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      );
+    }
+
+    /* ── La pantalla de la asignatura ── */
+    const resumen = resumenAsignatura(estudios, asig.id);
+    const secciones = seccionesDeAsignatura(estudios, asig.id);
+    const impacto = impactoDeEliminarAsignatura(estudios, asig.id);
+
+    return (
+      <div className="space-y-4 pb-4 module-enter">
+        {cabecera}
+        {cabeceraAsig}
+
+        {/* Apartado 8 — compacto, y SOLO las líneas que tienen algo que decir: `[]` cuando no hay
+            nada, nunca una fila de ceros. Y ni una línea de entregas, que no existen. */}
+        {resumen.length > 0 && (
+          <p className="text-xs" style={{ color: accent }}>{resumen.join(' · ')}</p>
+        )}
+
+        {formAsig === asig.id ? (
+          <FormAsignatura
+            accent={accent} inicial={asig}
+            onGuardar={(datos) => { onUpdateAsignaturas(editarAsignatura(estudios.asignaturas, asig.id, datos)); setFormAsig(null); }}
+            onCerrar={() => setFormAsig(null)}
+          />
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              {secciones.map((sec) => (
+                <button
+                  key={sec.id} onClick={() => setRuta(abrirSeccion(app.id, ruta.ramaId, asig.id, sec.id))}
+                  className="rounded-2xl p-3 flex flex-col items-start text-left transition-transform active:scale-95"
+                  style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, minHeight: 88 }}
+                >
+                  <span aria-hidden="true" style={{ fontSize: 22 }}>{sec.icono}</span>
+                  <span className="text-sm font-semibold mt-1.5 w-full truncate" style={{ color: COLORS.text }}>{sec.nombre}</span>
+                  {sec.linea && <span className="text-xs w-full truncate" style={{ color: COLORS.textMuted }}>{sec.linea}</span>}
+                </button>
+              ))}
+            </div>
+
+            {/* Apartado 13 — una acción rápida: registrar lo estudiado sin salir de aquí. Vivía
+                dentro del acordeón que esta fase retira, y no se pierde. */}
+            <div className="flex items-center gap-2">
+              <TextInput
+                type="number" step="0.5" inputMode="decimal" placeholder="Horas estudiadas hoy"
+                value={horasRapidas} onChange={(e) => setHorasRapidas(e.target.value)}
+              />
+              <div style={{ width: 90, flexShrink: 0 }}>
+                <PrimaryButton accent={accent} disabled={!Number(horasRapidas)} icon={Clock} onClick={() => {
+                  const h = Number(horasRapidas);
+                  if (!h) return;
+                  onAddHoras({ id: uid(), asignaturaId: asig.id, fecha: todayISO(), horas: h });
+                  setHorasRapidas('');
+                }}>Sumar</PrimaryButton>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <button onClick={() => setFormAsig(asig.id)} className="text-xs font-semibold" style={{ color: accent }}>
+                Editar asignatura
+              </button>
+              <button onClick={() => setConfirmarBorrado(true)} className="text-xs font-semibold" style={{ color: COLORS.negative }}>
+                Eliminar
+              </button>
+            </div>
+
+            {/* 🚨 Apartado 3 — antes de eliminar se enseña lo que se va con ella. Y como va a la
+                papelera, el aviso dice que se recupera: prometer lo contrario sería mentir. */}
+            {confirmarBorrado && (
+              <Card style={{ background: COLORS.surface2 }}>
+                <p className="text-sm font-semibold" style={{ color: COLORS.text }}>¿Eliminar {asig.nombre}?</p>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.textMuted }}>{impacto.aviso}</p>
+                <div className="flex items-center gap-2 mt-3">
+                  <button onClick={() => setConfirmarBorrado(false)} className="flex-1 rounded-xl py-2.5 text-sm font-semibold" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, color: COLORS.text }}>
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => { onDeleteAsignatura(asig.id); setConfirmarBorrado(false); setRuta(abrirRama(app.id, ruta.ramaId)); }}
+                    className="flex-1 rounded-xl py-2.5 text-sm font-semibold"
+                    style={{ background: COLORS.negative, color: COLORS.textOnAccent }}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </Card>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
   /* ── UNA RAMA ───────────────────────────────────────────────────────────── */
   if (!app) return <div className="space-y-4 pb-4">{cabecera}<EmptyHint text="Esa área ya no existe." /></div>;
 
+  const visiblesApp = asignaturasVisibles(estudios, app.id);
   const examenesApp = examenesDe(estudios, app.id);
   const horasApp = horasDe(estudios, app.id);
   const nombreAsignatura = (id) => estudios.asignaturas.find((a) => a.id === id)?.nombre || '';
@@ -763,34 +1060,76 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
     <div className="space-y-4 pb-4 module-enter">
       {cabecera}
 
+      {/* ES F3, apartados 1 y 14 — una lista compacta que LLEVA a la asignatura, no un acordeón
+          que la abre dentro: *"las asignaturas deben sentirse como elementos dentro del árbol"*. */}
       {sistema === 'asignaturas' && (
         <>
-          <div className="flex items-center gap-2">
-            <TextInput value={nuevaAsignatura} onChange={(e) => setNuevaAsignatura(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && anadirAsignatura()} placeholder={`Nueva asignatura en ${app.nombre}`} />
-            <button onClick={anadirAsignatura} className="p-2.5 rounded-xl" style={{ background: accent, flexShrink: 0 }} aria-label="Añadir asignatura">
-              <Plus size={16} color={COLORS.textOnAccent} />
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {asignaturasApp.length === 0 && <EmptyHint text="Todavía no has añadido ninguna asignatura a esta área." />}
-            {asignaturasApp.map((a) => (
-              <AsignaturaCard
-                key={a.id}
-                asignatura={a}
-                examenes={estudios.examenes.filter((e) => e.asignaturaId === a.id)}
-                horas={estudios.horas.filter((h) => h.asignaturaId === a.id)}
-                onAddExamen={onAddExamen}
-                onUpdateExamen={onUpdateExamen}
-                onDeleteExamen={onDeleteExamen}
-                onAddHoras={onAddHoras}
-                onDeleteHoras={onDeleteHoras}
-                onDeleteAsignatura={onDeleteAsignatura}
-                accent={accent}
-                focoExamenId={foco?.examenId} onFocoConsumido={onFocoConsumido}
+          <div className="space-y-1.5">
+            {visiblesApp.length === 0 && !formAsig && (
+              <EmptyHint text="Todavía no has añadido ninguna asignatura a esta área." />
+            )}
+            {visiblesApp.map((a) => (
+              <FilaAsignatura
+                key={a.id} asignatura={a} linea={lineaDeAsignatura(estudios, a.id)} accent={accent}
+                onAbrir={() => setRuta(abrirAsignatura(app.id, ruta.ramaId, a.id))}
               />
             ))}
           </div>
+
+          {formAsig === 'nueva' ? (
+            <FormAsignatura
+              accent={accent}
+              onGuardar={(datos) => {
+                const nueva = crearAsignatura({ ...datos, programaId: app.id }, estudios.asignaturas || []);
+                if (!nueva) return;
+                onAddAsignatura(nueva);
+                setFormAsig(null);
+              }}
+              onCerrar={() => setFormAsig(null)}
+            />
+          ) : (
+            <button
+              onClick={() => setFormAsig('nueva')}
+              className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 transition-transform active:scale-[0.99]"
+              style={{ background: COLORS.surface2, border: `1px dashed ${COLORS.border}` }}
+            >
+              <Plus size={16} style={{ color: accent }} />
+              <span className="text-sm font-semibold" style={{ color: COLORS.textMuted }}>Añadir asignatura</span>
+            </button>
+          )}
+
+          {/* Apartados 3 y 10 — reordenar y ocultar. ⚠️ Ocultar no borra nada. */}
+          {asignaturasApp.length > 1 && (
+            <div>
+              <button onClick={() => setOrganizandoAsigs((o) => !o)} className="text-xs font-semibold" style={{ color: accent }}>
+                {organizandoAsigs ? 'Listo' : 'Organizar asignaturas'}
+              </button>
+              {organizandoAsigs && (
+                <Card style={{ marginTop: '0.5rem' }}>
+                  <div className="space-y-1.5">
+                    {asignaturasApp.map((a, i) => (
+                      <div key={a.id} className="flex items-center gap-2">
+                        <span aria-hidden="true" style={{ fontSize: 15 }}>{iconoDeAsignatura(a)}</span>
+                        <span className="text-xs min-w-0 flex-1 truncate" style={{ color: a.oculto ? COLORS.textMuted : COLORS.text }}>
+                          {a.nombre}{a.oculto ? ' · oculta' : ''}
+                        </span>
+                        <button onClick={() => onUpdateAsignaturas(moverAsignatura(estudios.asignaturas, app.id, a.id, 'arriba'))} disabled={i === 0} className="toque-44 p-1.5 -m-1.5 disabled:opacity-30" aria-label={`Subir ${a.nombre}`}>
+                          <ChevronUp size={15} style={{ color: COLORS.text }} />
+                        </button>
+                        <button onClick={() => onUpdateAsignaturas(moverAsignatura(estudios.asignaturas, app.id, a.id, 'abajo'))} disabled={i === asignaturasApp.length - 1} className="toque-44 p-1.5 -m-1.5 disabled:opacity-30" aria-label={`Bajar ${a.nombre}`}>
+                          <ChevronDown size={15} style={{ color: COLORS.text }} />
+                        </button>
+                        <button onClick={() => onUpdateAsignaturas(alternarOcultaAsignatura(estudios.asignaturas, a.id))} className="toque-44 p-1.5 -m-1.5" aria-label={a.oculto ? `Mostrar ${a.nombre}` : `Ocultar ${a.nombre}`}>
+                          {a.oculto ? <Eye size={15} style={{ color: COLORS.textMuted }} /> : <EyeOff size={15} style={{ color: COLORS.textMuted }} />}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>{AVISO_OCULTAR_ASIGNATURA}</p>
+                </Card>
+              )}
+            </div>
+          )}
         </>
       )}
 

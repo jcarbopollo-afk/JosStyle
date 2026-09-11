@@ -32,6 +32,7 @@ import { normalizarNutricionF4 } from './lib/alimentos';
    guardado se llevaría las dos listas. Y devuelve el módulo entero (regla 5). */
 import { normalizarMisAlimentosDe, alternarFavoritoAlimento } from './lib/misAlimentos';
 import { normalizarAppsDe } from './lib/estudiosApps';
+import { normalizarAsignaturasDe } from './lib/asignaturas';
 /* 🚨 E3 F27 (PR F5) — Metas y Objetivos. Los normalizadores corren al cargar
    porque esta fase AÑADE campos a dos entidades que ya existían: sin ellos, lo
    guardado antes llega sin `estado`, sin `prioridad` y sin `tipo`, y el
@@ -552,7 +553,7 @@ export default function App() {
          AQUÍ, al cargar y antes de que nada los lea (regla 5, EH F46): sin esto,
          el primer guardado se llevaría los cuatro campos. Devuelve el módulo
          ENTERO, así que asignaturas, exámenes y horas siguen intactos. */
-      setEstudios(normalizarAppsDe(est));
+      setEstudios(normalizarAsignaturasDe(normalizarAppsDe(est)));
       setNegocio(neg);
       /* 🚨 E3 F26 (PR F4) — LA MIGRACIÓN DE LA FECHA DE LAS TAREAS. Se hace aquí,
          al cargar y ANTES de que nada las lea, porque las cuatro pantallas que
@@ -1852,6 +1853,7 @@ export default function App() {
     const idsAsignatura = asignaturas.map((a) => a.id);
     const examenes = estudios.examenes.filter((e) => idsAsignatura.includes(e.asignaturaId));
     const horas = estudios.horas.filter((h) => idsAsignatura.includes(h.asignaturaId));
+    const temasDelArea = (estudios.temas || []).filter((t) => idsAsignatura.includes(t.asignaturaId));
     const entrada = conArrastrados(resultado.entrada, [
       { coleccion: 'asignaturas', elementos: asignaturas },
       { coleccion: 'examenes', elementos: examenes },
@@ -1863,6 +1865,7 @@ export default function App() {
         asignaturas: estudios.asignaturas.filter((a) => a.programaId !== id),
         examenes: estudios.examenes.filter((e) => !idsAsignatura.includes(e.asignaturaId)),
         horas: estudios.horas.filter((h) => !idsAsignatura.includes(h.asignaturaId)),
+        temas: (estudios.temas || []).filter((t) => !idsAsignatura.includes(t.asignaturaId)),
       },
       papelera: { ...papelera, elementos: [...papelera.elementos, entrada] },
     });
@@ -1880,19 +1883,30 @@ export default function App() {
     if (!resultado) return;
     const examenesArrastrados = estudios.examenes.filter((e) => e.asignaturaId === id);
     const horasArrastradas = estudios.horas.filter((h) => h.asignaturaId === id);
+    // E3 F43 (ES F3) — y sus temas, que son la tercera lista que cuelga de una asignatura. Sin esto
+    // se quedarían huérfanos e invisibles, y restaurarla devolvería una asignatura sin su contenido.
+    const temasArrastrados = (estudios.temas || []).filter((t) => t.asignaturaId === id);
     const entrada = conArrastrados(resultado.entrada, [
       { coleccion: 'examenes', elementos: examenesArrastrados },
       { coleccion: 'horas', elementos: horasArrastradas },
+      { coleccion: 'temas', elementos: temasArrastrados },
     ]);
     snapshotAndSave({
       estudios: {
         ...resultado.moduloActualizado,
         examenes: estudios.examenes.filter((e) => e.asignaturaId !== id),
         horas: estudios.horas.filter((h) => h.asignaturaId !== id),
+        temas: (estudios.temas || []).filter((t) => t.asignaturaId !== id),
       },
       papelera: { ...papelera, elementos: [...papelera.elementos, entrada] },
     });
   };
+  // E3 F43 (ES F3) — editar y ocultar una asignatura, y su contenido por temas.
+  const updateAsignaturas = (asignaturas) => snapshotAndSave({ estudios: { ...estudios, asignaturas } });
+  const addTema = (t) => snapshotAndSave({ estudios: { ...estudios, temas: [...(estudios.temas || []), t] } });
+  const updateTemas = (temas) => snapshotAndSave({ estudios: { ...estudios, temas } });
+  const deleteTema = (id) => eliminarConPapelera('estudios', 'temas', id);
+
   const addExamen = (ex) => snapshotAndSave({ estudios: { ...estudios, examenes: [...estudios.examenes, ex] } });
   const updateExamen = (ex) => snapshotAndSave({ estudios: { ...estudios, examenes: estudios.examenes.map((e) => (e.id === ex.id ? ex : e)) } });
   const deleteExamen = (id) => eliminarConPapelera('estudios', 'examenes', id);
@@ -2513,7 +2527,8 @@ export default function App() {
           <EstudiosView
             estudios={estudios} sueno={sueno}
             onAddPrograma={addPrograma} onUpdateProgramas={updateProgramas} onDeletePrograma={deletePrograma}
-            onAddAsignatura={addAsignatura} onDeleteAsignatura={deleteAsignatura}
+            onAddAsignatura={addAsignatura} onUpdateAsignaturas={updateAsignaturas} onDeleteAsignatura={deleteAsignatura}
+            onAddTema={addTema} onUpdateTemas={updateTemas} onDeleteTema={deleteTema}
             onAddExamen={addExamen} onUpdateExamen={updateExamen} onDeleteExamen={deleteExamen}
             onAddHoras={addHoras} onDeleteHoras={deleteHorasEstudio} accent={accent}
             foco={focoPara('estudios')} onFocoConsumido={consumirFoco}

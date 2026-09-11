@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F43 — Estudios: asignaturas, temario y gestión académica.
+if node --import ./scripts/resolver-vite.mjs scripts/test-asignaturas.mjs >/tmp/jc_asig.log 2>&1; then
+  ok "Estudios: asignaturas y temario (E3 F43) — $(grep -c '✓' /tmp/jc_asig.log) comprobaciones"
+else
+  fallo "Falla el sistema de asignaturas (E3 F43)"; grep '✗' /tmp/jc_asig.log
+fi
+
 # Entrega 3 · F41 — Estudios: el home tipo teléfono y la arquitectura en árbol.
 if node --import ./scripts/resolver-vite.mjs scripts/test-estudios-apps.mjs >/tmp/jc_esapps.log 2>&1; then
   ok "Estudios: el home y el árbol (E3 F41-F42) — $(grep -c '✓' /tmp/jc_esapps.log) comprobaciones"

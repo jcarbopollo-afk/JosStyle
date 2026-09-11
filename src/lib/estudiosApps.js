@@ -460,25 +460,56 @@ export function abrirRama(appId, ramaId) {
   return { vista: 'rama', appId, ramaId };
 }
 
+// ES F3 — los dos niveles de dentro: Estudios → Área → Asignaturas → Asignatura → Sección.
+export function abrirAsignatura(appId, ramaId, asignaturaId) {
+  return { vista: 'asignatura', appId, ramaId, asignaturaId, seccion: null };
+}
+
+export function abrirSeccion(appId, ramaId, asignaturaId, seccion) {
+  return { vista: 'seccion', appId, ramaId, asignaturaId, seccion };
+}
+
+// ⚠️ `atras()` NUNCA devuelve `null` (EH F37, apartado 9): de la raíz se vuelve a la raíz, y así es
+// como no se sale de JosStyle sin querer. Cada nivel vuelve al suyo, nunca al Home de golpe.
 export function atras(ruta) {
   if (!ruta || ruta.vista === 'home') return RUTA_RAIZ;
+  if (ruta.vista === 'seccion') return abrirAsignatura(ruta.appId, ruta.ramaId, ruta.asignaturaId);
+  if (ruta.vista === 'asignatura') return abrirRama(ruta.appId, ruta.ramaId);
   if (ruta.vista === 'rama') return abrirApp(ruta.appId);
   return RUTA_RAIZ;
 }
 
 // Las migas son una FUNCIÓN, no un estado guardado (EH F37): un estado se queda viejo en cuanto él
 // renombre la app.
-export function migas(ruta, programas = []) {
+export function migas(ruta, programas = [], asignaturas = []) {
   const trozos = [{ id: 'home', texto: 'Estudios' }];
   if (!ruta || ruta.vista === 'home') return trozos;
   const app = programas.find((p) => p.id === ruta.appId);
   if (app) trozos.push({ id: `app:${app.id}`, texto: app.nombre, icono: iconoDeApp(app) });
-  if (ruta.vista === 'rama') {
+  if (ruta.vista !== 'app') {
     const r = ramaPorId(app, ruta.ramaId);
     if (r) trozos.push({ id: `rama:${r.id}`, texto: r.nombre, icono: r.icono });
   }
+  // ES F3 — los dos niveles de dentro. Las migas siguen siendo una FUNCIÓN: el nombre sale de la
+  // asignatura de verdad, así que renombrarla cambia la miga sola (EH F37).
+  if (ruta.asignaturaId && (ruta.vista === 'asignatura' || ruta.vista === 'seccion')) {
+    const a = (asignaturas || []).find((x) => x.id === ruta.asignaturaId);
+    if (a) trozos.push({ id: `asig:${a.id}`, texto: a.nombre, icono: a.icono || null });
+  }
+  if (ruta.vista === 'seccion') {
+    const sec = SECCIONES_DE_ASIGNATURA.find((x) => x.id === ruta.seccion);
+    if (sec) trozos.push({ id: `sec:${sec.id}`, texto: sec.nombre, icono: sec.icono });
+  }
   return trozos;
 }
+
+// ⚠️ Los nombres de las secciones de una asignatura viven en `asignaturas.js` (ES F3). Aquí solo se
+// necesita el rótulo para las migas, y se declara con los mismos ids: si una fase futura los cambia
+// allí, esta lista se queda vieja — por eso hay una prueba que las compara.
+export const SECCIONES_DE_ASIGNATURA = [
+  { id: 'examenes', nombre: 'Exámenes', icono: '📝' },
+  { id: 'contenido', nombre: 'Contenido', icono: '📚' },
+];
 
 // ── El texto que se va del Home (apartados 7 y 8) ────────────────────────────────────────────────
 // Se declara qué se quita y adónde va lo que no se elimina, porque el apartado 8 dice expresamente

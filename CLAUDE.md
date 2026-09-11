@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.63.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.64.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (46 fases — **42 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (46 fases — **43 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -138,9 +138,9 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **16 751 pruebas unitarias** con Node repartidas en **142 suites** (5 de ellas de auditoría),
-**2084 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **1183
-comprobaciones sobre la aplicación de verdad en Chromium** — **20 029 comprobaciones**.
+Vite, **16 931 pruebas unitarias** con Node repartidas en **143 suites** (5 de ellas de auditoría),
+**2092 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **1208
+comprobaciones sobre la aplicación de verdad en Chromium** — **20 242 comprobaciones**.
 
 Eso ya ha encontrado **noventa y seis bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -168,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 42 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 43 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -200,8 +200,9 @@ NU—. Con eso hay **seis
 bloques cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1),
 Sueño (2/2) y Nutrición (8/8)—, y la **F41 (Estudios, home tipo teléfono y nueva arquitectura,
 v3.62.0)**, con la que empieza el **último bloque de la entrega**, y la **F42 (estructura en árbol y
-navegación por ramas, v3.63.0)**: **ES va por 2 de 6**. La que viene
-es la **43 — ES F3: asignaturas y gestión académica**. El índice, con la
+navegación por ramas, v3.63.0)** y la **F43 (asignaturas y gestión académica, v3.64.0)**: **ES va
+por 3 de 6**. La que viene
+es la **44 — ES F4: exámenes, entregas y fechas**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -504,6 +505,40 @@ código de agosto mientras él decía *"la web sigue igual"*.
   E3 F23 escrita con las palabras de entonces, que el rediseño de esta fase cambió con todo el
   derecho. **Mirar qué línea la hace saltar antes de tocar el código**: de los cuatro rojos, **uno
   solo era del código** —la racha decía *"🔥 1 días"*—, y ése sí es de los que ve Josué.
+
+- 🚨 **UNA LISTA QUE SE PUEDE BORRAR VA DE PRIMER NIVEL, NO DENTRO DE SU PADRE** (E3 F43). Los temas
+  de una asignatura son `estudios.temas` con su `asignaturaId`, igual que `examenes` y `horas` desde
+  la Fase 6. Meterlos **dentro** de la asignatura habría sido más corto y los habría dejado
+  **invisibles para la papelera**, que se indexa por `módulo.colección` — es la lección de EH F45,
+  donde tres listas se borraban para siempre sin que nadie lo viera. ⚠️ Y la cascada se los lleva
+  **en la misma entrada**, para que restaurar la asignatura la devuelva entera.
+- 🚨 **RETIRAR UNA PANTALLA NO PUEDE LLEVARSE SUS FUNCIONES** (E3 F43, apartado 14). El acordeón
+  `AsignaturaCard` metía el formulario de examen y el registro de horas dentro de la lista, y el
+  enunciado pide *"no volver a la estructura antigua de página larga"*. Las dos funciones **se mudan
+  a la pantalla de la asignatura**, no se pierden — y hay una comprobación en Chromium de cada una,
+  porque un formulario que desaparece al rediseñar no lo ve ni el build ni el renderizado.
+- ⚠️ **UN ACENTO SE GUARDA COMO TOKEN, Y EL CATÁLOGO YA EXISTÍA** (E3 F43, y la E3 F21 lo dijo con las
+  colecciones): `ACENTOS_COLECCION` de la BL F7, no un segundo catálogo de colores. Un hex guardado
+  se queda fijo cuando Josué cambia de tema (regla 2), y hay una prueba que barre la librería.
+- ⚠️ **UN EJEMPLO DEL ENUNCIADO PUEDE SER UNA CIFRA QUE NO EXISTE** (E3 F43, apartado 8, y es la E3
+  F33 otra vez): el resumen de la asignatura se ejemplifica con *"1 entrega pendiente"* y **la
+  entidad no existe**. No se escribe la línea, se declara en `NO_HAY_ENTREGAS` con su motivo, y hay
+  una comprobación que barre el resumen buscando la palabra.
+- ⚠️ **UN HIJO SIN PADRE SE DESCARTA EN EL NORMALIZADOR** (E3 F43, y EH F26 lo dijo con los
+  accesorios): un tema sin `asignaturaId` no se puede pintar en ninguna pantalla, así que sería un
+  huérfano invisible. ⚠️ Pero `programaId` **sí se conserva tal cual** aunque apunte a un área
+  borrada: quien limpia una cascada es `App.jsx`, y adivinar en el normalizador escondería la
+  asignatura sin decírselo a nadie.
+- ⚠️ **NI EL ID NI EL PADRE SE CAMBIAN AL EDITAR** (E3 F43): `editarAsignatura` los descarta de los
+  cambios. Mover una asignatura de área es otra operación, y hacerlo por la puerta de atrás dejaría
+  sus exámenes en el área equivocada.
+- ⚠️ **UN BORRADO GRANDE ENSEÑA LO QUE SE LLEVA, Y DICE QUE SE RECUPERA** (E3 F43, apartado 3, y la
+  E3 F26 lo dijo con las tareas): *"se va con ella 2 exámenes, 3 temas y 1 sesión de estudio"*. Va a
+  la papelera, así que prometer un borrado definitivo sería mentir en pantalla.
+- 🐛 **Y DOS COMPROBACIONES MÍAS QUE NO PODÍAN PONERSE ROJAS** (E3 F43): las dos que debían demostrar
+  que `condicionES3` puede fallar afirmaban `true` sobre una casilla que no podía cambiar. Una
+  auditoría que no puede fallar no sirve (EH F42) — y una comprobación que **parece** vigilarla es
+  peor, porque nadie vuelve a mirarla. Se sustituyeron por un caso que sí la pone roja.
 
 - 🚨 **UNA ESTRUCTURA QUE VALE PARA TODOS NO ES UNA ESTRUCTURA FLEXIBLE** (E3 F42, apartado 4:
   *"No asumir que todas las áreas tienen la misma estructura"*). Las ramas eran un catálogo global y

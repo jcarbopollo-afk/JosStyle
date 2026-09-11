@@ -4253,10 +4253,15 @@ ok(await pulsar('Quitar Exámenes de Bachillerato'), 'se quita la sección de Ex
 const sinExamenes = await esperarTexto(/Asignaturas/i);
 ok(!/Exámenes/i.test(sinExamenes), '⚠️ la sección desaparece de la pantalla del área');
 
-/* Y el examen sigue existiendo: se comprueba donde de verdad vive. */
+/* Y el examen sigue existiendo: se comprueba donde de verdad vive.
+   ⚠️ Desde la E3 F43 una asignatura **no se despliega en la lista, se abre**: hay que entrar en
+   ella y luego en su sección de exámenes. Esta comprobación estaba escrita con la navegación de
+   antes y se puso roja con el código bien — la lección de siempre, esta vez sobre una ruta. */
 ok(await pulsar('Asignaturas'), 'se entra en las asignaturas');
 await esperarTexto(/Matemáticas/i);
 ok(await pulsar('Matemáticas'), 'se abre Matemáticas');
+await esperarTexto(/Contenido/i);
+ok(await pulsar('Exámenes'), 'se entra en su sección de exámenes');
 const dentroAsig = await esperarTexto(/Derivadas/i);
 ok(/Derivadas/i.test(dentroAsig),
   '🚨 EL EXAMEN SIGUE AHÍ DESPUÉS DE QUITAR SU SECCIÓN: quitar no es borrar');
@@ -4268,5 +4273,64 @@ const ultimoEs = guardadoEs.at(-1)?.value;
 ok((ultimoEs?.programas || []).find((p) => p.id === 'musica')?.ramas?.some((r) => r.nombre === 'Repertorio'),
   '⚠️ con la sección nueva dentro de SU área');
 ok((ultimoEs?.examenes || []).length === 1, '🚨 y sin haberse llevado ni un examen por delante');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   E3 · FASE 43 (ES F3) — ASIGNATURAS, SU ESPACIO Y SU TEMARIO
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 **Lo que ninguna prueba de Node puede ver:** que la lista de asignaturas
+   LLEVA a la asignatura en vez de desplegarla, que dentro están sus secciones,
+   que un tema se crea y cambia de estado con el dedo, y sobre todo que **el
+   formulario de examen y el registro de horas no se han perdido** al retirar el
+   acordeón de la página larga. Todo eso solo existe tras cuatro o cinco toques. */
+/* Se vuelve a la lista de asignaturas, que es donde empieza esta sección. */
+ok(await pulsar('Volver atrás'), 'se vuelve a la asignatura');
+await esperarTexto(/Contenido/i);
+ok(await pulsar('Volver atrás'), 'y a la lista de asignaturas');
+const listaAsig = await esperarTexto(/Matemáticas/i);
+ok(/Matemáticas/i.test(listaAsig) && /Biología/i.test(listaAsig), '⚠️ están las dos asignaturas guardadas');
+ok(/Añadir asignatura/i.test(listaAsig), '⚠️ con el botón de crear (apartado 2)');
+/* 🚨 Apartado 14 — la lista ya NO despliega el examen dentro: lleva a la asignatura. */
+ok(!/Derivadas/i.test(listaAsig), '🚨 LA LISTA NO ABRE EL EXAMEN DENTRO: se acabó la página larga (apartado 14)');
+
+ok(await pulsar('Matemáticas'), 'se abre la asignatura');
+const dentroAsig2 = await esperarTexto(/Contenido/i);
+ok(/Exámenes/i.test(dentroAsig2) && /Contenido/i.test(dentroAsig2), '🚨 Y LA ASIGNATURA TIENE SU PROPIO ESPACIO, con sus secciones (apartado 4)');
+ok(/Estudios › Bachillerato › Asignaturas › Matemáticas/i.test(dentroAsig2), '⚠️ y las migas llegan hasta ella (apartado 3)');
+ok(/1 examen próximo/i.test(dentroAsig2), '⚠️ con su resumen compacto (apartado 8)');
+ok(!/entrega/i.test(dentroAsig2), '🚨 y NI UNA línea de entregas: no existe la entidad (regla 8)');
+/* 🐛 `innerText` NO incluye el `placeholder` de un `<input>` (E3 F36), y el registro de horas es
+   justamente un campo con marcador de posición: se busca el campo, no el texto de la página. */
+ok(await page.$('input[placeholder="Horas estudiadas hoy"]'),
+  '🚨 Y EL REGISTRO DE HORAS NO SE HA PERDIDO al retirar el acordeón');
+
+/* 🚨 El temario: crear un tema y cambiarle el estado con el dedo (apartados 5, 6 y 7). */
+ok(await pulsar('Contenido'), 'se entra en el contenido');
+await esperarTexto(/Añadir tema/i);
+ok(await pulsar('Añadir tema'), 'se abre el formulario de tema');
+await esperarTexto(/Nuevo tema/i);
+await page.fill('input[placeholder^="Ej: Tema 1"]', 'Tema 1 — Derivadas');
+ok(await pulsar('Crear tema'), 'se crea el tema');
+const conTema = await esperarTexto(/Tema 1 — Derivadas/i);
+ok(/Tema 1 — Derivadas/i.test(conTema), '🚨 EL TEMA APARECE EN SU ASIGNATURA');
+ok(/Pendiente/i.test(conTema), '⚠️ y nace Pendiente, con su palabra al lado del icono (EH F42)');
+
+ok(await pulsar('Tema 1 — Derivadas: Pendiente. Cambiar de estado'), 'se toca el estado del tema');
+const enProgreso = await esperarTexto(/En progreso/i);
+ok(/En progreso/i.test(enProgreso), '🚨 Y CAMBIA DE ESTADO CON UN TOQUE (apartado 7)');
+
+/* 🚨 Y el formulario de examen tampoco se ha perdido. */
+ok(await pulsar('Volver atrás'), 'se vuelve a la asignatura');
+await esperarTexto(/Contenido/i);
+ok(await pulsar('Exámenes'), 'se entra en sus exámenes');
+const susExamenes = await esperarTexto(/Añadir examen/i);
+ok(/Derivadas/i.test(susExamenes), '⚠️ está el examen que ya tenía');
+ok(/Añadir examen/i.test(susExamenes), '🚨 Y EL FORMULARIO DE EXAMEN SIGUE AHÍ: se mudó, no se perdió');
+
+/* Y todo persiste (apartado 11). */
+const guardadoEs3 = guardado.filter((g) => g && g.key === 'estudios').at(-1)?.value;
+ok((guardadoEs3?.temas || []).some((t) => t.nombre === 'Tema 1 — Derivadas' && t.estado === 'progreso'),
+  '🚨 EL TEMA Y SU ESTADO SE HAN GUARDADO (apartado 11)');
+ok((guardadoEs3?.temas || []).every((t) => t.asignaturaId), '⚠️ y cada tema con su asignatura (apartado 12)');
 
 await salir(browser);

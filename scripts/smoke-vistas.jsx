@@ -2390,7 +2390,8 @@ const CASOS = [
     const propsEs = (estudios, extra = {}) => ({
       estudios, sueno: [],
       onAddPrograma: noop, onUpdateProgramas: noop, onDeletePrograma: noop,
-      onAddAsignatura: noop, onDeleteAsignatura: noop,
+      onAddAsignatura: noop, onUpdateAsignaturas: noop, onDeleteAsignatura: noop,
+      onAddTema: noop, onUpdateTemas: noop, onDeleteTema: noop,
       onAddExamen: noop, onUpdateExamen: noop, onDeleteExamen: noop,
       onAddHoras: noop, onDeleteHoras: noop,
       accent, foco: null, onFocoConsumido: noop, ...extra,
@@ -2449,6 +2450,26 @@ const CASOS = [
           if (p.id === 'idi') return { ...p, tipo: null, ramas: [] };
           return p;
         }),
+      })],
+      /* Entrega 3 · F43 (ES F3) — asignaturas con sus campos nuevos y con temas.
+         ⚠️ Y una guardada ANTES de la fase, sin icono ni acento ni orden. */
+      ['EstudiosView · asignaturas con temas', EstudiosView, () => propsEs({
+        ...conApps,
+        asignaturas: [
+          { id: 'a1', programaId: 'bachillerato', nombre: 'Biología', icono: '🧬', acento: 'positive', profesor: 'Marta', aula: '204', orden: 0, oculto: false },
+          { id: 'a2', programaId: 'bachillerato', nombre: 'Matemáticas' },
+          { id: 'a3', programaId: 'musica', nombre: 'Piano', orden: 0, oculto: true },
+        ],
+        temas: [
+          { id: 't1', asignaturaId: 'a1', nombre: 'Tema 1 — La célula', descripcion: 'Orgánulos', estado: 'completado', orden: 0 },
+          { id: 't2', asignaturaId: 'a1', nombre: 'Tema 2 — Genética', estado: 'progreso', orden: 1 },
+          { id: 't3', asignaturaId: 'a1', nombre: 'Tema 3 — Metabolismo', estado: 'pendiente', orden: 2 },
+        ],
+      })],
+      /* 🚨 Y un tema huérfano —su asignatura ya no está— no puede tumbar la pantalla. */
+      ['EstudiosView · tema de una asignatura borrada', EstudiosView, () => propsEs({
+        ...conApps,
+        temas: [{ id: 'th', asignaturaId: 'ya-no-existe', nombre: 'Huérfano', estado: 'pendiente', orden: 0 }],
       })],
       /* 🚨 Y un área cuyas ramas tienen un `sistema` que no existe: la pantalla
          tiene que decir lo suyo, no reventar. */

@@ -1,5 +1,49 @@
 # CHANGELOG.md
 
+## v3.64.0 — Entrega 3 · Fase 43 (ES F3): asignaturas y gestión académica
+
+*"Estudios → Bachillerato → Asignaturas → Asignatura"*, con su espacio propio y su temario.
+
+### 🚨 Una asignatura YA EXISTÍA, y la lee medio proyecto
+
+`{ id, programaId, nombre }` desde la Fase 6, y la leen el **Horario Top** —*sus asignaturas son
+las de Estudios*—, la papelera, `calendarioIntegracion.js` y la exportación. Así que la entidad
+**se amplía** con `icono`, `acento`, `profesor`, `aula`, `orden` y `oculto`, y su normalizador corre
+**al cargar**. Ni un campo renombrado.
+
+⚠️ **El acento se guarda como TOKEN**, nunca como hex — un hex se queda fijo cuando Josué cambia de
+tema (regla 2) — y **no se escribe un catálogo de colores nuevo**: se reutiliza el de la BL F7.
+
+### 🚨 Y los temas son una lista de primer nivel, no un campo dentro de la asignatura
+
+`estudios.temas` con su `asignaturaId`, igual que `examenes` y `horas`. Meterlos **dentro** habría
+sido más corto y los habría dejado **invisibles para la papelera**, que se indexa por
+`módulo.colección`: es la lección de EH F45, donde tres listas se borraban para siempre sin que
+nadie lo viera. Ahora se recuperan, y la cascada de la asignatura **se los lleva en la misma
+entrada**, para que restaurarla la devuelva entera.
+
+- **La lista de asignaturas** (apartado 1) es compacta y **lleva** a la asignatura. 🚨 El acordeón
+  que metía exámenes y horas dentro de la lista **ha desaparecido** — el apartado 14 dice *"no
+  volver a la estructura antigua de página larga"* —, y sus dos funciones **no se han perdido**: se
+  han mudado a la pantalla de la asignatura, que es donde el árbol las pone.
+- **Crear** (apartado 2) con nombre, icono, color, profesor y aula; ⚠️ **solo el nombre es
+  obligatorio**. **Editar, ocultar y reordenar** (apartados 3 y 10).
+- **El espacio de la asignatura** (apartado 4): su resumen compacto, sus secciones en cuadrícula, y
+  el profesor y el aula como **información secundaria** (apartado 9).
+- **El temario** (apartados 5, 6 y 7): temas con nombre, descripción y **tres estados** —Pendiente,
+  En progreso, Completado— que cambian con un toque. ⚠️ Cada estado con **icono y palabra**: el
+  color nunca va solo. Sin porcentajes, que es lo que pide el apartado 7.
+- **Eliminar enseña el impacto antes** (apartado 3): *"se va con ella 2 exámenes, 3 temas y 1 sesión
+  de estudio"*. ⚠️ Y dice que **se recupera**, porque va a la papelera: prometer lo contrario sería
+  mentir en pantalla.
+
+### ⚠️ Y no hay ni una línea de entregas
+
+El apartado 8 pone *"1 entrega pendiente"* como ejemplo del resumen. **La entidad no existe**, así
+que escribirla sería una cifra inventada (regla 8). Queda declarado en `NO_HAY_ENTREGAS` con su
+motivo, y la sección de Entregas se declara sin pintarse como una tarjeta que no lleva a ninguna
+parte.
+
 ## v3.63.0 — Entrega 3 · Fase 42 (ES F2): estructura en árbol y navegación por ramas
 
 *"Estudios → Área → Categoría → Contenido, sin encontrarse una pantalla gigantesca con todas las

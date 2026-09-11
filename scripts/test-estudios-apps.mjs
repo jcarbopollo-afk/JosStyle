@@ -285,7 +285,11 @@ ok(/module-enter|animate-|transition/.test(VISTA), 'Hay microinteracciones de en
 ok(/aria-label/.test(VISTA), 'Los botones de solo icono llevan nombre accesible');
 
 // 🚨 La comprobación del apartado 16: ningún dato existente desaparece de la pantalla.
-ok(/AsignaturaCard/.test(CODIGO_VISTA), 'Las asignaturas se siguen pudiendo abrir: no se ha borrado la pantalla que ya existía');
+// ⚠️ Esta comprobación buscaba `AsignaturaCard` por su NOMBRE, y la E3 F43 lo retiró con todo el
+// derecho: su apartado 14 prohíbe la página larga. Lo que la frase promete es que **las asignaturas
+// se sigan pudiendo abrir**, así que se busca el mecanismo de ahora (E3 F29, enésima vez).
+ok(/FilaAsignatura/.test(CODIGO_VISTA) && /abrirAsignatura/.test(CODIGO_VISTA),
+  'Las asignaturas se siguen pudiendo abrir: no se ha borrado la pantalla que ya existía');
 ok(/onAddAsignatura/.test(CODIGO_VISTA), 'Se siguen pudiendo añadir asignaturas');
 ok(/onAddExamen/.test(CODIGO_VISTA), 'Se siguen pudiendo añadir exámenes');
 ok(/onAddHoras/.test(CODIGO_VISTA), 'Se siguen pudiendo registrar horas');

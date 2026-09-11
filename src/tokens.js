@@ -411,6 +411,9 @@ export const DEFAULT_ESTUDIOS = {
   asignaturas: [], // { id, programaId, nombre }
   examenes: [],    // { id, asignaturaId, fecha, tema, notaObjetivo, notaObtenida, planRepaso: [{id, texto, hecho}] }
   horas: [],       // { id, asignaturaId, fecha, horas, notas }
+  // E3 F43 (ES F3) — el contenido de una asignatura, por temas. Lista de primer nivel como las de
+  // arriba: dentro de la asignatura no la vería la papelera (EH F45).
+  temas: [],       // { id, asignaturaId, nombre, descripcion, estado, orden }
 };
 
 // Fase 7 — Negocio: Josué pidió explícitamente que este módulo sea simple y no sea prioritario.
