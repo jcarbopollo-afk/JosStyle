@@ -3887,14 +3887,29 @@ ok(/Batido de proteína/.test(buscado),
   '🚨 Y EL BUSCADOR LO ENCUENTRA: es el MISMO buscador de la F4, con la base ampliada (apartado 2)');
 ok(/tuyo/.test(buscado), '⚠️ distinguido de los de la base (apartado 15)');
 
-/* 🚨 Apartado 6 — un alimento de la base NO se puede editar. */
-await page.fill('input[placeholder^="Busca"]', 'avena');
+/* 🚨 Apartado 6 — un alimento de la base NO se puede editar.
+
+   🐛 **Y esta comprobación buscaba «Editar Avena», que es DE OTRA COSA.** La
+   comida registrada se llama «Avena» y su lápiz existe con todo el derecho —es
+   el de cambiarle la cantidad, de la F4—, así que el barrido lo encontraba y
+   daba por editable un alimento de la base. La lección de siempre: se busca el
+   **mecanismo**, no la etiqueta, y se elige un alimento que **no** esté también
+   registrado. Va la duodécima vez en el proyecto. */
+await page.fill('input[placeholder^="Busca"]', 'merluza');
 await page.waitForTimeout(600);
-const conAvena = await ver();
-ok(/Avena/.test(conAvena), 'el buscador encuentra la avena de la base');
-const lapices = await page.evaluate(() =>
+const conBase = await ver();
+ok(/Merluza/.test(conBase), 'el buscador encuentra un alimento de la base');
+const lapicesBase = await page.evaluate(() =>
   [...document.querySelectorAll('button[aria-label^="Editar "]')].map((b) => b.getAttribute('aria-label')));
-ok(!lapices.includes('Editar Avena'),
+ok(!lapicesBase.includes('Editar Merluza'),
   '🚨 Y NO SE PUEDE EDITAR: sus valores son de referencia y no se tocan (apartado 6)');
+
+/* ⚠️ Y la otra mitad, que es la que hace que esto pueda fallar: **el suyo SÍ**. */
+await page.fill('input[placeholder^="Busca"]', 'batido');
+await page.waitForTimeout(600);
+const lapicesPropio = await page.evaluate(() =>
+  [...document.querySelectorAll('button[aria-label^="Editar "]')].map((b) => b.getAttribute('aria-label')));
+ok(lapicesPropio.includes('Editar Batido de proteína'),
+  '⚠️ pero el que ha creado él sí se edita (apartado 6)');
 
 await salir(browser);
