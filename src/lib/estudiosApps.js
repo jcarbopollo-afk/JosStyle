@@ -114,7 +114,11 @@ export function normalizarPrograma(p, indice = 0) {
   const ramas = Array.isArray(p.ramas)
     ? p.ramas.map(normalizarRama).filter(Boolean)
     : RAMAS_POR_DEFECTO.map((r) => ({ ...r }));
-  return { ...p, id, nombre, icono, categoria, orden, oculto: p.oculto === true, tipo, ramas };
+  // ES F5, apartado 15 — la plantilla usada y los objetivos vinculados. ⚠️ `objetivoIds` son SOLO
+  // ids: el texto, el plazo y el cumplido viven en la clave `objetivos` desde la Fase 9.
+  const plantilla = typeof p.plantilla === 'string' && p.plantilla ? p.plantilla : null;
+  const objetivoIds = Array.isArray(p.objetivoIds) ? p.objetivoIds.filter((x) => typeof x === 'string' && x) : [];
+  return { ...p, id, nombre, icono, categoria, orden, oculto: p.oculto === true, tipo, ramas, plantilla, objetivoIds };
 }
 
 // ⚠️ Devuelve el módulo ENTERO: `saveData` sobrescribe, así que perder `asignaturas`, `examenes` u
@@ -129,7 +133,7 @@ export function normalizarAppsDe(estudios) {
 // ── Crear, reordenar, ocultar ────────────────────────────────────────────────────────────────────
 export const MAX_NOMBRE_APP = 40;
 
-export function crearApp({ nombre, icono, categoria, tipo } = {}, programasExistentes = []) {
+export function crearApp({ nombre, icono, categoria, tipo, plantilla, ramas } = {}, programasExistentes = []) {
   const n = String(nombre || '').trim().slice(0, MAX_NOMBRE_APP);
   if (!n) return null;
   const orden = programasExistentes.reduce((max, p) => Math.max(max, Number.isFinite(p?.orden) ? p.orden : 0), -1) + 1;
@@ -142,7 +146,11 @@ export function crearApp({ nombre, icono, categoria, tipo } = {}, programasExist
     oculto: false,
     // ES F2 — el tipo es opcional (apartado 12) y las ramas nacen con las tres que funcionan.
     tipo: IDS_TIPO.includes(tipo) ? tipo : null,
-    ramas: RAMAS_POR_DEFECTO.map((r) => ({ ...r })),
+    // ES F5 — si viene de una plantilla, sus ramas; si él eligió «empezar desde cero», ninguna
+    // (`[]` es una elección suya, no un hueco). Y sin decir nada, las de siempre.
+    plantilla: typeof plantilla === 'string' && plantilla ? plantilla : null,
+    objetivoIds: [],
+    ramas: Array.isArray(ramas) ? ramas : RAMAS_POR_DEFECTO.map((r) => ({ ...r })),
   };
 }
 
@@ -189,12 +197,22 @@ export function appsVisibles(programas = []) {
 // solo decide qué ramas se le PROPONEN al añadir una. Por eso un programa sin tipo (`null`) no es un
 // problema — se le ofrecen todas—, y **no se le adivina el tipo a lo que escribió Josué**: sería la
 // aplicación clasificándole sus estudios por su cuenta.
+// ⚠️ La ES F5 amplía esta lista con `idioma` y le cambia el NOMBRE a `mental`, que su apartado 2
+// llama «Hobby». **El id no se toca** —es lo que se guarda—, solo el rótulo: renombrar lo que se ve
+// y renombrar lo que se guarda son dos cosas distintas (E3 F30).
+// ⚠️ Y «Personalizada», el sexto tipo de su apartado 2, **no es un valor guardado**: es `null`, que
+// es lo que ya significaba no elegir tipo desde la ES F2. Inventarle un id habría sido un valor para
+// decir «ninguno».
 export const TIPOS_ESTUDIO = [
-  { id: 'formal', nombre: 'Educación formal', icono: '🎓', ejemplos: 'Bachillerato, universidad, cursos' },
-  { id: 'habilidad', nombre: 'Habilidad', icono: '🎹', ejemplos: 'Piano, programación, idiomas' },
+  { id: 'formal', nombre: 'Académica', icono: '🎓', ejemplos: 'Bachillerato, universidad, cursos' },
+  { id: 'habilidad', nombre: 'Habilidad', icono: '🎹', ejemplos: 'Piano, programación, dibujo' },
   { id: 'deporte', nombre: 'Deporte', icono: '⚽', ejemplos: 'Fútbol, calistenia' },
-  { id: 'mental', nombre: 'Entrenamiento mental', icono: '♟️', ejemplos: 'Ajedrez y otros pasatiempos' },
+  { id: 'idioma', nombre: 'Idioma', icono: '🌍', ejemplos: 'Inglés, francés' },
+  { id: 'mental', nombre: 'Hobby', icono: '♟️', ejemplos: 'Ajedrez y otros pasatiempos' },
 ];
+
+// El sexto del apartado 2 de la ES F5, que no se guarda porque es la ausencia de los otros cinco.
+export const TIPO_PERSONALIZADA = { id: null, nombre: 'Personalizada', icono: '🧩', ejemplos: 'Tú eliges las secciones' };
 
 export const IDS_TIPO = TIPOS_ESTUDIO.map((t) => t.id);
 export const tipoDeEstudio = (id) => TIPOS_ESTUDIO.find((t) => t.id === id) || null;
@@ -239,6 +257,17 @@ export const SISTEMAS_DE_RAMA = {
     cuenta: (estudios, programaId) => fechasDeArea(estudios, programaId, 'eventos').length,
     singular: 'evento',
     plural: 'eventos',
+  },
+  // ES F5 — las dos ramas que una app de aprendizaje necesita y un área académica no. ⚠️ `objetivos`
+  // NO cuenta aquí: sus datos son los **globales**, y contarlos exigiría la clave `objetivos`, que
+  // este módulo no recibe. La pantalla los cuenta donde sí los tiene (`progresoDeApp`).
+  objetivos: { cuenta: () => null, singular: 'objetivo', plural: 'objetivos' },
+  progreso: {
+    cuenta: (estudios, programaId) => (Array.isArray(estudios?.actividades)
+      ? estudios.actividades.filter((a) => a && a.appId === programaId).length
+      : 0),
+    singular: 'actividad',
+    plural: 'actividades',
   },
 };
 
@@ -623,7 +652,8 @@ export function condicionES2(estudios) {
     { id: 'crear_rama', ok: typeof crearRama === 'function' && typeof anadirRama === 'function' && typeof quitarRama === 'function', texto: 'Se pueden añadir y quitar ramas dentro de una app' },
     { id: 'volver', ok: atras(abrirRama('x', 'y')).vista === 'app' && atras(RUTA_RAIZ).vista === 'home', texto: 'Se puede volver atrás fácilmente, y nunca se sale de Estudios sin querer' },
     { id: 'persistencia', ok: persiste, texto: 'Las apps y las ramas son persistentes' },
-    { id: 'tipos', ok: TIPOS_ESTUDIO.length === 4 && TIPOS_ESTUDIO.every((t) => t.nombre && t.ejemplos), texto: 'La arquitectura distingue los cuatro tipos de estudio' },
+    // ⚠️ Se comprueba que estén los tipos, no cuántos: la ES F5 añadió `idioma` con todo el derecho.
+    { id: 'tipos', ok: TIPOS_ESTUDIO.length >= 4 && TIPOS_ESTUDIO.every((t) => t.nombre && t.ejemplos), texto: 'La arquitectura distingue los tipos de estudio' },
     { id: 'sin_datos_perdidos', ok: norm.asignaturas?.length === (estudios?.asignaturas?.length || 0) && norm.examenes?.length === (estudios?.examenes?.length || 0), texto: 'No se ha roto ninguna funcionalidad existente' },
     { id: 'no_implementado_2', ok: NO_EN_ES2.length >= 6 && NO_EN_ES2.every((x) => x.porque), texto: 'Lo que no se implementa todavía está declarado con su motivo' },
   ];

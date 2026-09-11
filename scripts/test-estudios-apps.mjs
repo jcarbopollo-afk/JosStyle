@@ -363,10 +363,13 @@ ok(normalizarRama({ nombre: 'Algo' }).id, 'Una rama sin id recibe uno');
 
 console.log('\n── 15. ES F2 · Los cuatro tipos de estudio (apartado 12) ──');
 
-eq(TIPOS_ESTUDIO.length, 4, 'Son cuatro tipos');
-eq(IDS_TIPO, ['formal', 'habilidad', 'deporte', 'mental'], 'Educación formal, habilidad, deporte y entrenamiento mental');
+// ⚠️ Otra cuenta exacta que saltó con el código bien: la ES F5 añadió `idioma` y renombró los
+// rótulos, con todo el derecho (su apartado 2). Se comprueba QUE ESTÉN LOS QUE TIENEN QUE ESTAR.
+ok(TIPOS_ESTUDIO.length >= 4, `Hay ${TIPOS_ESTUDIO.length} tipos de estudio`);
+ok(['formal', 'habilidad', 'deporte', 'mental'].every((id) => IDS_TIPO.includes(id)),
+  'entre ellos los cuatro de la ES F2 — 🚨 sus ids NO cambian al renombrarlos (E3 F30)');
 ok(TIPOS_ESTUDIO.every((t) => t.nombre && t.icono && t.ejemplos), 'Cada uno con su nombre, su icono y sus ejemplos');
-eq(tipoDeEstudio('formal').nombre, 'Educación formal', 'tipoDeEstudio encuentra uno');
+ok(tipoDeEstudio('formal')?.nombre, 'tipoDeEstudio encuentra uno');
 eq(tipoDeEstudio('inventado'), null, 'y no se inventa ninguno');
 eq(norm.programas.find((p) => p.id === 'bachillerato').tipo, 'formal', 'Bachillerato es educación formal');
 eq(norm.programas.find((p) => p.id === 'musica').tipo, 'habilidad', 'Música es una habilidad');

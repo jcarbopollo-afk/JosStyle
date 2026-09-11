@@ -417,6 +417,8 @@ export const DEFAULT_ESTUDIOS = {
   // E3 F44 (ES F4) — las otras dos fechas académicas. `examenes` NO se toca: ya existía.
   entregas: [],    // { id, asignaturaId, nombre, fecha, hora, estado, notas }
   eventos: [],     // { id, asignaturaId, nombre, fecha, hora, tipo, notas }
+  // E3 F45 (ES F5) — lo que Josué registra dentro de una app de aprendizaje.
+  actividades: [], // { id, appId, titulo, fecha, minutos, notas }
 };
 
 // Fase 7 — Negocio: Josué pidió explícitamente que este módulo sea simple y no sea prioritario.

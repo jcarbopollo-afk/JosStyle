@@ -77,6 +77,8 @@ export const CATALOGO_PAPELERA = {
   // E3 F44 (ES F4) — las entregas y los eventos académicos.
   'estudios.entregas': { modulo: 'estudios', coleccion: 'entregas', tipo: 'Entrega', campos: ['nombre'], icono: 'estudios' },
   'estudios.eventos': { modulo: 'estudios', coleccion: 'eventos', tipo: 'Evento académico', campos: ['nombre'], icono: 'estudios' },
+  // E3 F45 (ES F5) — las actividades registradas dentro de una app de aprendizaje.
+  'estudios.actividades': { modulo: 'estudios', coleccion: 'actividades', tipo: 'Actividad de estudio', campos: ['titulo'], icono: 'estudios' },
   'armario.prendas': { modulo: 'armario', coleccion: 'prendas', tipo: 'Prenda', campos: ['nombre'], icono: 'armario' },
   'armario.outfits': { modulo: 'armario', coleccion: 'outfits', tipo: 'Outfit', campos: ['nombre'], icono: 'armario' },
   // Un uso es un día concreto del historial. Va a la papelera como todo lo demás porque

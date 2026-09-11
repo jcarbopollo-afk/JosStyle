@@ -252,6 +252,8 @@ const pulsar = async (txt, tope = 6000) => {
    El resultado era el peor de todos: **un rojo falso**, que manda a quien lo
    lea a buscar una regresión que no existe. Esto espera a que el texto
    APAREZCA, con un tope; si de verdad no llega, sigue fallando. */
+const eqReal = (a, b, m) => ok(JSON.stringify(a) === JSON.stringify(b), `${m}${JSON.stringify(a) === JSON.stringify(b) ? '' : ` — esperaba ${JSON.stringify(b)}, salió ${JSON.stringify(a)}`}`);
+
 const esperarTexto = async (patron, tope = 8000) => {
   const hasta = Date.now() + tope;
   let texto = await ver();
@@ -4388,5 +4390,84 @@ ok((guardadoEs4?.entregas || []).some((t) => t.nombre === 'Trabajo de Historia' 
   '🚨 LA ENTREGA Y SU ESTADO SE HAN GUARDADO (apartado 17)');
 ok((guardadoEs4?.entregas || []).every((t) => t.asignaturaId), '⚠️ y vinculada a su asignatura (apartado 7)');
 ok((guardadoEs4?.examenes || []).length === 1, '⚠️ sin haberse llevado el examen por delante');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   E3 · FASE 45 (ES F5) — APPS DE APRENDIZAJE INDEPENDIENTES
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 **Lo que ninguna prueba de Node puede ver:** que crear un área con plantilla
+   la deja con SUS secciones, que un objetivo creado desde ahí **acaba en la
+   pantalla de Objetivos de siempre** —que es lo que demuestra que no hay un
+   segundo sistema— y que sin objetivos no se enseña un 0 % inventado. */
+almacen.estudios = {
+  programas: [{ id: 'bachillerato', nombre: 'Bachillerato', tipo: 'formal' }],
+  asignaturas: [], examenes: [], horas: [], temas: [], entregas: [], eventos: [], actividades: [],
+};
+almacen.objetivos = { lista: [], ultimaRevision: null };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Vida'), 'se entra en Vida');
+ok(await pulsar('Estudios'), 'y en Estudios');
+await esperarTexto(/Bachillerato/i);
+
+ok(await pulsar('Añadir'), 'se abre el formulario de área');
+const formApp = await esperarTexto(/Estructura inicial/i);
+ok(/Estructura inicial/i.test(formApp), '⚠️ con su estructura recomendada (apartado 4)');
+ok(/Empezar desde cero/i.test(formApp), '⚠️ y la salida de empezar desde cero');
+/* ⚠️ Se usa **Fútbol** y no Ajedrez porque su plantilla es la que trae la rama de Objetivos
+   —Ajedrez trae Aperturas—, y así el recorrido prueba plantilla, progreso y objetivos de una
+   pasada. Antes de escribir un recorrido, mirar qué ramas trae de verdad la plantilla elegida. */
+await page.fill('input[placeholder="Ej: Idiomas"]', 'Fútbol');
+ok(await pulsar('⚽ Fútbol'), 'se elige la plantilla de Fútbol');
+ok(await pulsar('Crear'), 'se crea el área');
+
+const dentroAjedrez = await esperarTexto(/Partidos/i);
+ok(/Entrenamiento/i.test(dentroAjedrez) && /Partidos/i.test(dentroAjedrez) && /Objetivos/i.test(dentroAjedrez),
+  '🚨 EL ÁREA NACE CON LAS SECCIONES DE SU PLANTILLA (apartado 3)');
+ok(/Progreso/i.test(dentroAjedrez), 'incluida la de progreso');
+ok(!/Asignaturas/i.test(dentroAjedrez),
+  '🚨 y NO con las de un área académica, NI un «0 asignaturas»: no todo funciona como Bachillerato (apartado 1)');
+
+/* 🚨 Apartado 9 — sin objetivos, «Sin datos todavía», nunca un 0 %. */
+ok(await pulsar('Progreso'), 'se entra en Progreso');
+const sinDatos = await esperarTexto(/Sin datos todav/i);
+ok(/Sin datos todav/i.test(sinDatos), '🚨 SIN OBJETIVOS NO SE INVENTA UN PORCENTAJE (apartado 9)');
+ok(!/0 ?%|0 \/ 0/.test(sinDatos), 'ni un cero disfrazado');
+
+/* Apartado 10 — registrar una actividad. */
+ok(await pulsar('Registrar actividad'), 'se abre el registro');
+await esperarTexto(/Qué has hecho/i);
+await page.fill('input[placeholder="Ej: 30 min de práctica"]', '3 partidas');
+ok(await pulsar('Registrar'), 'se registra');
+const conActividad = await esperarTexto(/3 partidas/i);
+ok(/3 partidas/i.test(conActividad), '🚨 LA ACTIVIDAD QUEDA REGISTRADA EN SU ÁREA (apartados 10 y 11)');
+
+/* 🚨 Y lo que de verdad prueba que no hay un segundo sistema: el objetivo acaba en Objetivos. */
+ok(await pulsar('Volver atrás'), 'se vuelve al área');
+await esperarTexto(/Partidos/i);
+ok(await pulsar('Objetivos'), 'se entra en los objetivos del área');
+await esperarTexto(/Añadir objetivo/i);
+ok(await pulsar('Añadir objetivo'), 'se abre el formulario');
+await esperarTexto(/Nuevo objetivo/i);
+await page.fill('input[placeholder="Ej: Mejorar resistencia"]', 'Llegar a 1200 Elo');
+await page.selectOption('select', { index: 1 });
+ok(await pulsar('Crear objetivo'), 'se crea el objetivo');
+const conObjetivo = await esperarTexto(/Llegar a 1200 Elo/i);
+ok(/Llegar a 1200 Elo/i.test(conObjetivo), 'El objetivo sale en el área');
+ok(/Objetivos de siempre|Se gestiona en Objetivos/i.test(conObjetivo),
+  '⚠️ y la pantalla DICE que vive en Objetivos: no finge que sea suyo');
+
+const guardadoObj = guardado.filter((g) => g && g.key === 'objetivos').at(-1)?.value;
+ok((guardadoObj?.lista || []).some((o) => o.texto === 'Llegar a 1200 Elo'),
+  '🚨 EL OBJETIVO SE HA GUARDADO EN LA CLAVE `objetivos` DE SIEMPRE: ni un segundo sistema (apartado 8)');
+const guardadoEs5 = guardado.filter((g) => g && g.key === 'estudios').at(-1)?.value;
+const appAjedrez = (guardadoEs5?.programas || []).find((p) => p.nombre === 'Fútbol');
+ok(appAjedrez?.objetivoIds?.length === 1, '⚠️ y el área guarda SOLO su id');
+ok(!JSON.stringify(appAjedrez?.objetivoIds || []).includes('Elo'), '🚨 ni una copia del texto');
+eqReal(appAjedrez?.plantilla, 'futbol', '⚠️ y la plantilla usada queda guardada (apartado 15)');
+ok((guardadoEs5?.actividades || []).some((a) => a.titulo === '3 partidas' && a.appId === appAjedrez.id),
+  '⚠️ y la actividad, vinculada a su área');
+ok((guardadoEs5?.actividades || []).every((a) => a.minutos === null || a.minutos > 0),
+  '🚨 y sin minutos escritos se guarda `null`, no un 0');
 
 await salir(browser);

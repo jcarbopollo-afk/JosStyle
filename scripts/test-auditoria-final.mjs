@@ -202,6 +202,11 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
        igual: eso es la regla funcionando, no fallando. Se excluye a mano y se
        sigue; estrecharla hasta que calle sola es como se le escapa una de verdad. */
     && f !== 'cierreNutricion'
+    /* ⚠️ Y `appsAprendizaje` es de **Estudios** (E3 F45), no de Estilo de hombre:
+       lo caza la palabra `aprendizaje`, que esta expresión busca por el
+       `aprendizaje.js` de la EH F57. **Quinta** exclusión a mano, y la propia
+       cabecera de ese archivo lo avisa antes de que a nadie le cueste el rato. */
+    && f !== 'appsAprendizaje'
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],

@@ -1857,10 +1857,20 @@ export default function App() {
     const temasDelArea = (estudios.temas || []).filter((t) => idsAsignatura.includes(t.asignaturaId));
     const entregasDelArea = (estudios.entregas || []).filter((t) => idsAsignatura.includes(t.asignaturaId));
     const eventosDelArea = (estudios.eventos || []).filter((v) => idsAsignatura.includes(v.asignaturaId));
+    // E3 F45 — las actividades cuelgan del ÁREA, no de una asignatura.
+    const actividadesDelArea = (estudios.actividades || []).filter((a) => a.appId === id);
+    /* 🚨 TODO lo que se saca del módulo tiene que ir en la MISMA entrada de papelera, o restaurar el
+       área la devolvería **sin sus temas, sus entregas ni sus eventos** — se quitaban de `estudios`
+       y no se guardaban en ninguna parte. Lo arrastró la ES F5 al añadir las actividades y mirar la
+       lista entera: las tres que faltaban las había dejado yo en la ES F3 y la ES F4. */
     const entrada = conArrastrados(resultado.entrada, [
       { coleccion: 'asignaturas', elementos: asignaturas },
       { coleccion: 'examenes', elementos: examenes },
       { coleccion: 'horas', elementos: horas },
+      { coleccion: 'temas', elementos: temasDelArea },
+      { coleccion: 'entregas', elementos: entregasDelArea },
+      { coleccion: 'eventos', elementos: eventosDelArea },
+      { coleccion: 'actividades', elementos: actividadesDelArea },
     ]);
     snapshotAndSave({
       estudios: {
@@ -1871,6 +1881,7 @@ export default function App() {
         temas: (estudios.temas || []).filter((t) => !idsAsignatura.includes(t.asignaturaId)),
         entregas: (estudios.entregas || []).filter((t) => !idsAsignatura.includes(t.asignaturaId)),
         eventos: (estudios.eventos || []).filter((v) => !idsAsignatura.includes(v.asignaturaId)),
+        actividades: (estudios.actividades || []).filter((a) => a.appId !== id),
       },
       papelera: { ...papelera, elementos: [...papelera.elementos, entrada] },
     });
@@ -1927,6 +1938,16 @@ export default function App() {
   const addEventoEstudio = (v) => snapshotAndSave({ estudios: { ...estudios, eventos: [...(estudios.eventos || []), v] } });
   const updateEventosEstudio = (eventos) => snapshotAndSave({ estudios: { ...estudios, eventos } });
   const deleteEventoEstudio = (id) => eliminarConPapelera('estudios', 'eventos', id);
+  // E3 F45 (ES F5) — las actividades de una app de aprendizaje.
+  const addActividadEstudio = (a) => snapshotAndSave({ estudios: { ...estudios, actividades: [...(estudios.actividades || []), a] } });
+  const deleteActividadEstudio = (id) => eliminarConPapelera('estudios', 'actividades', id);
+  /* 🚨 ES F5, apartado 8 — crear un objetivo desde una app escribe en LOS DOS almacenes: el objetivo
+     va a la clave `objetivos` de siempre y la app se queda solo con su id. Se hace en UNA llamada,
+     porque dos escrituras seguidas en el mismo turno se pisan (E3 F26). */
+  const crearObjetivoDeApp = (objetivo, programas) => snapshotAndSave({
+    objetivos: { ...objetivos, lista: [...objetivos.lista, objetivo] },
+    estudios: { ...estudios, programas },
+  });
   const updateExamenes = (examenes) => snapshotAndSave({ estudios: { ...estudios, examenes } });
 
   const addExamen = (ex) => snapshotAndSave({ estudios: { ...estudios, examenes: [...estudios.examenes, ex] } });
@@ -2554,6 +2575,8 @@ export default function App() {
             onAddEntrega={addEntrega} onUpdateEntregas={updateEntregas} onDeleteEntrega={deleteEntrega}
             onAddEvento={addEventoEstudio} onUpdateEventos={updateEventosEstudio} onDeleteEvento={deleteEventoEstudio}
             onUpdateExamenes={updateExamenes}
+            onAddActividad={addActividadEstudio} onDeleteActividad={deleteActividadEstudio}
+            objetivos={objetivos} onCrearObjetivoApp={crearObjetivoDeApp}
             onAddExamen={addExamen} onUpdateExamen={updateExamen} onDeleteExamen={deleteExamen}
             onAddHoras={addHoras} onDeleteHoras={deleteHorasEstudio} accent={accent}
             foco={focoPara('estudios')} onFocoConsumido={consumirFoco}

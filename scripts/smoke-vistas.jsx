@@ -2395,6 +2395,8 @@ const CASOS = [
       onAddEntrega: noop, onUpdateEntregas: noop, onDeleteEntrega: noop,
       onAddEvento: noop, onUpdateEventos: noop, onDeleteEvento: noop,
       onUpdateExamenes: noop,
+      onAddActividad: noop, onDeleteActividad: noop,
+      objetivos: { lista: [], ultimaRevision: null }, onCrearObjetivoApp: noop,
       onAddExamen: noop, onUpdateExamen: noop, onDeleteExamen: noop,
       onAddHoras: noop, onDeleteHoras: noop,
       accent, foco: null, onFocoConsumido: noop, ...extra,
@@ -2488,6 +2490,42 @@ const CASOS = [
         eventos: [
           { id: 'v1', asignaturaId: 'a1', nombre: 'Exposición de clase', fecha: addDays(HOY, 8), hora: '11:30', tipo: 'exposicion', notas: null },
         ],
+      })],
+      /* Entrega 3 · F45 (ES F5) — una app de aprendizaje con plantilla, objetivos y actividades. */
+      ['EstudiosView · app de aprendizaje', EstudiosView, () => propsEs({
+        ...conApps,
+        programas: [{
+          id: 'ajedrez', nombre: 'Ajedrez', icono: '♟️', categoria: null, orden: 0, oculto: false,
+          tipo: 'mental', plantilla: 'ajedrez', objetivoIds: ['o1', 'o2', 'borrado'],
+          ramas: [
+            { id: 'r1', nombre: 'Entrenamiento', icono: '🏋️', sistema: null },
+            { id: 'r2', nombre: 'Objetivos', icono: '🎯', sistema: 'objetivos' },
+            { id: 'r3', nombre: 'Progreso', icono: '📊', sistema: 'progreso' },
+          ],
+        }],
+        asignaturas: [], examenes: [], horas: [], temas: [], entregas: [], eventos: [],
+        actividades: [
+          { id: 'ac1', appId: 'ajedrez', titulo: '3 partidas', fecha: HOY, minutos: 45, notas: null },
+          { id: 'ac2', appId: 'ajedrez', titulo: 'Aperturas', fecha: addDays(HOY, -2), minutos: null, notas: 'Siciliana' },
+        ],
+      }, {
+        objetivos: {
+          lista: [
+            { id: 'o1', texto: 'Llegar a 1200 Elo', plazo: 'largo', cumplido: false },
+            { id: 'o2', texto: 'Estudiar 10 aperturas', plazo: 'medio', cumplido: true },
+          ],
+          ultimaRevision: null,
+        },
+      })],
+      /* 🚨 Y una app SIN objetivos ni actividades: «Sin datos todavía», nunca un 0 %. */
+      ['EstudiosView · app sin datos todavía', EstudiosView, () => propsEs({
+        ...conApps,
+        programas: [{
+          id: 'futbol', nombre: 'Fútbol', icono: '⚽', categoria: null, orden: 0, oculto: false,
+          tipo: 'deporte', plantilla: 'futbol', objetivoIds: [],
+          ramas: [{ id: 'r1', nombre: 'Progreso', icono: '📊', sistema: 'progreso' }],
+        }],
+        asignaturas: [], examenes: [], horas: [], temas: [], entregas: [], eventos: [], actividades: [],
       })],
       /* ⚠️ Y una fecha SIN fecha y otra con la hora mal: la pantalla no puede reventar. */
       ['EstudiosView · fechas incompletas', EstudiosView, () => propsEs({

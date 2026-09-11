@@ -1,5 +1,40 @@
 # CHANGELOG.md
 
+## v3.66.0 — Entrega 3 · Fase 45 (ES F5): apps de aprendizaje independientes
+
+*"No todo debe funcionar como Bachillerato."*
+
+### 🚨 Ni un segundo sistema de objetivos
+
+El apartado 8 pide que una app pueda tener objetivos, y la condición de finalización cierra con
+*"no se hayan creado sistemas duplicados"*. JosStyle ya tiene los suyos en la clave `objetivos`
+desde la Fase 9, así que **un área guarda solo los ids** —como el `objetivoId` de EH F28 y la
+`prendaId` de EH F26—: el texto, el plazo y el cumplido siguen viviendo donde siempre, y **la
+pantalla lo dice**. Crear uno desde el área escribe en los dos almacenes **en una sola llamada**,
+porque dos escrituras seguidas en el mismo turno se pisan (E3 F26).
+
+Hay una comprobación en Chromium que crea el objetivo desde Ajedrez y va a mirar que se haya
+guardado en la clave `objetivos`, que es lo único que demuestra que no hay un sistema paralelo.
+
+- **Áreas académicas y apps de aprendizaje** (apartado 1) se distinguen **por su tipo**, que existe
+  desde la ES F2: ni un campo nuevo.
+- **Cinco tipos** (apartado 2): Académica, Habilidad, Deporte, Idioma y Hobby. ⚠️ El sexto,
+  «Personalizada», **no es un valor guardado**: es `null`, que ya significaba «sin tipo».
+- **Plantillas** (apartados 3 y 4) para Fútbol, Ajedrez, Música, Idiomas y áreas académicas, con la
+  salida de **empezar desde cero**, que nace sin secciones. ⚠️ Cada área recibe **sus propias**
+  secciones con ids propios: compartirlos haría que quitar una en un área la quitara en la otra.
+- **Progreso** (apartado 9): *«1 / 2 objetivos»*, y ⚠️ **sin objetivos, «Sin datos todavía»** —
+  nunca un 0 % que diría que va mal cuando lo que pasa es que no ha puesto ninguno.
+- **Actividades** (apartados 10 y 11): qué, cuándo, cuántos minutos y notas. ⚠️ **Los minutos son
+  opcionales y se guardan `null`, no 0** — un cero diría que no practicó nada.
+
+### 🐛 Y un fallo real que encontró esta fase, mío, de las dos anteriores
+
+Al borrar un **área**, sus temas, entregas y eventos se sacaban del módulo **y no se metían en la
+entrada de papelera**: restaurarla la habría devuelto sin ellos. Los tres los dejé yo así en la
+ES F3 y la ES F4, y solo se vio al mirar la lista entera para añadir las actividades. Arreglado, con
+una comprobación por colección.
+
 ## v3.65.0 — Entrega 3 · Fase 44 (ES F4): exámenes, entregas y fechas
 
 La fase que por fin construye **las entregas** — lo que la ES F1 y la ES F3 tuvieron que declarar

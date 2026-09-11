@@ -28,6 +28,12 @@ import {
   crearEntrega, crearEventoAcademico, editarExamenFecha, editarEntrega, editarEventoAcademico,
   cambiarEstadoExamen, cambiarEstadoEntrega, impactoDeEliminarFecha,
 } from '../lib/fechasAcademicas';
+import {
+  PLANTILLAS_APP, DESDE_CERO, plantillaApp, plantillaParaTipo, ramasDePlantilla,
+  objetivosDeApp, planObjetivoDeApp, desvincularObjetivo, progresoDeApp, SIN_DATOS,
+  MAX_TITULO_ACTIVIDAD, crearActividadEstudio, actividadesDeApp, resumenActividades,
+} from '../lib/appsAprendizaje';
+import { PLAZOS_OBJETIVO } from '../lib/metasObjetivos';
 import { Card, SectionTitle, Field, TextInput, SelectInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel } from '../components/ui';
 
 function diasHasta(fechaISO) {
@@ -686,8 +692,19 @@ function CrearApp({ accent, programas, onCrear, onCerrar }) {
   const propuesto = icono || sugerirIcono(nombre) || ICONO_POR_DEFECTO;
   const repetido = nombreYaUsado(nombre, programas);
 
+  // ES F5, apartado 4 — *"¿Quieres utilizar una estructura recomendada? Sí / Empezar desde cero"*.
+  // ⚠️ `undefined` es «todavía no ha elegido»; `null` es «desde cero», que es una elección suya.
+  const [plantilla, setPlantilla] = useState(undefined);
+  const propuestaPlantilla = plantillaParaTipo(tipo);
+
   const crear = () => {
-    const app = crearApp({ nombre, icono: icono || sugerirIcono(nombre) || '', categoria, tipo }, programas);
+    const elegida = plantilla === undefined ? (propuestaPlantilla?.id || null) : plantilla;
+    const app = crearApp({
+      nombre, icono: icono || sugerirIcono(nombre) || '', categoria, tipo,
+      plantilla: elegida,
+      // Sin plantilla y habiéndolo elegido él, el área nace SIN secciones: las pone después.
+      ramas: elegida ? ramasDePlantilla(elegida) : (plantilla === null ? [] : undefined),
+    }, programas);
     if (!app) return;
     onCrear(app);
   };
@@ -751,6 +768,31 @@ function CrearApp({ accent, programas, onCrear, onCerrar }) {
 
       <Field label="Categoría (opcional)">
         <TextInput value={categoria} onChange={(e) => setCategoria(e.target.value)} placeholder="Ej: Extraescolares" />
+      </Field>
+
+      {/* ES F5, apartados 3 y 4 — la estructura recomendada. Son plantillas iniciales, no sistemas
+          cerrados: después puede añadir y quitar secciones con lo de siempre. */}
+      <Field label="Estructura inicial">
+        <div className="flex flex-wrap gap-1.5">
+          {[...PLANTILLAS_APP, DESDE_CERO].map((pl) => {
+            const elegida = plantilla === undefined ? (propuestaPlantilla?.id || null) : plantilla;
+            const activa = elegida === pl.id;
+            return (
+              <button
+                key={pl.id || 'cero'} onClick={() => setPlantilla(pl.id)} aria-pressed={activa}
+                className="toque-44 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-transform active:scale-95"
+                style={{
+                  background: activa ? hexToRgba(accent, 0.16) : COLORS.surface2,
+                  border: `1px solid ${activa ? accent : COLORS.border}`,
+                  color: activa ? accent : COLORS.textMuted,
+                }}
+              >{pl.icono} {pl.nombre}</button>
+            );
+          })}
+        </div>
+        <p className="text-[11px] mt-1.5" style={{ color: COLORS.textMuted }}>
+          {(plantilla === undefined ? propuestaPlantilla : plantillaApp(plantilla))?.descripcion || DESDE_CERO.descripcion}
+        </p>
       </Field>
 
       {/* Avisa del nombre repetido; no lo prohíbe. Puede tener dos "Inglés". */}
@@ -853,7 +895,7 @@ function ProximoEnEstudios({ estudios, accent, onIr }) {
   );
 }
 
-export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateProgramas, onDeletePrograma, onAddAsignatura, onUpdateAsignaturas, onDeleteAsignatura, onAddTema, onUpdateTemas, onDeleteTema, onAddEntrega, onUpdateEntregas, onDeleteEntrega, onAddEvento, onUpdateEventos, onDeleteEvento, onUpdateExamenes, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
+export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateProgramas, onDeletePrograma, onAddAsignatura, onUpdateAsignaturas, onDeleteAsignatura, onAddTema, onUpdateTemas, onDeleteTema, onAddEntrega, onUpdateEntregas, onDeleteEntrega, onAddEvento, onUpdateEventos, onDeleteEvento, onUpdateExamenes, onAddActividad, onDeleteActividad, objetivos, onCrearObjetivoApp, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
   const [ruta, setRuta] = useState(RUTA_RAIZ);
   const [creando, setCreando] = useState(false);
   const [organizando, setOrganizando] = useState(false);
@@ -868,6 +910,14 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
   const [confirmarBorrado, setConfirmarBorrado] = useState(false);
   // ES F4 — qué fecha está abierta en detalle (apartado 13).
   const [fechaAbierta, setFechaAbierta] = useState(null);
+  // ES F5
+  const [nuevoObjetivo, setNuevoObjetivo] = useState(false);
+  const [textoObjetivo, setTextoObjetivo] = useState('');
+  const [plazoObjetivo, setPlazoObjetivo] = useState('');
+  const [nuevaActividad, setNuevaActividad] = useState(false);
+  const [tituloAct, setTituloAct] = useState('');
+  const [fechaAct, setFechaAct] = useState(todayISO());
+  const [minutosAct, setMinutosAct] = useState('');
 
   // Ampliación del Dashboard — Centro de Control (apartado 6): el examen destacado puede vivir en
   // cualquier app — se abre su app y su rama de asignaturas; AsignaturaCard y ExamenItem se
@@ -1097,8 +1147,13 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
         {/* Entrega 2 · ME Fase 4 — eliminar se lleva sus asignaturas (y con ellas exámenes y horas) a
             la papelera en una sola entrada, así que restaurarla la devuelve entera. */}
         <div className="flex items-center justify-between gap-2 pt-1">
+          {/* ⚠️ Un área de aprendizaje —Ajedrez, Fútbol— NO tiene asignaturas, así que aquí decía
+              «0 asignaturas»: un cero de algo que en esa app no existe (ES F5, apartado 1). Se dice
+              solo cuando hay algo que decir, como la línea de las plaquitas del Home. */}
           <p className="text-xs min-w-0 truncate" style={{ color: COLORS.textMuted }}>
-            {asignaturasApp.length} {asignaturasApp.length === 1 ? 'asignatura' : 'asignaturas'}
+            {asignaturasApp.length > 0
+              ? `${asignaturasApp.length} ${asignaturasApp.length === 1 ? 'asignatura' : 'asignaturas'}`
+              : ''}
           </p>
           <BotonBorrar onClick={() => { onDeletePrograma(app.id); setRuta(RUTA_RAIZ); }} label={`Eliminar el área ${app.nombre}`} />
         </div>
@@ -1340,6 +1395,11 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
 
   const visiblesApp = asignaturasVisibles(estudios, app.id);
   const idsAsig = asignaturasApp.map((a) => a.id);
+  // ES F5 — derivados de la app: sus objetivos (los globales), su progreso y lo que ha registrado.
+  const objetivosApp = objetivosDeApp(app, objetivos);
+  const progresoApp = progresoDeApp(app, objetivos);
+  const actividadesApp = actividadesDeApp(estudios, app.id);
+  const resumenAct = resumenActividades(estudios, app.id);
   const examenesApp = examenesDe(estudios, app.id);
   const horasApp = horasDe(estudios, app.id);
   const nombreAsignatura = (id) => estudios.asignaturas.find((a) => a.id === id)?.nombre || '';
@@ -1422,6 +1482,150 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
                 </Card>
               )}
             </div>
+          )}
+        </>
+      )}
+
+      {/* ══ ES F5 — las dos ramas de una app de aprendizaje ══
+          🚨 Los objetivos son LOS GLOBALES: aquí solo viven sus ids. Crear uno escribe en la clave
+          `objetivos` de siempre, no en una lista paralela (apartado 8 + criterio de finalización). */}
+      {sistema === 'objetivos' && (
+        <>
+          {objetivosApp.length === 0 && !nuevoObjetivo && (
+            <EmptyHint text="Todavía no has puesto ningún objetivo en esta área. Son opcionales." />
+          )}
+          <div className="space-y-1.5">
+            {objetivosApp.map((o) => (
+              <div key={o.id} className="rounded-2xl p-3 flex items-center gap-2.5" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
+                <span aria-hidden="true" style={{ fontSize: 16, color: o.cumplido ? COLORS.positive : COLORS.textMuted }}>
+                  {o.cumplido ? '●' : '○'}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm truncate" style={{ color: COLORS.text, textDecoration: o.cumplido ? 'line-through' : 'none' }}>{o.texto}</span>
+                  <span className="block text-[11px]" style={{ color: COLORS.textMuted }}>
+                    {o.cumplido ? 'Cumplido' : 'En marcha'} · Se gestiona en Objetivos
+                  </span>
+                </span>
+                {/* ⚠️ Desvincular NO borra el objetivo: sigue en Objetivos, donde vive. */}
+                <button
+                  onClick={() => onUpdateProgramas(programas.map((p2) => (p2.id === app.id ? desvincularObjetivo(p2, o.id) : p2)))}
+                  className="toque-44 p-1.5 -m-1.5" aria-label={`Quitar ${o.texto} de esta área`}
+                >
+                  <X size={15} style={{ color: COLORS.textMuted }} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {nuevoObjetivo ? (
+            <Card>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Nuevo objetivo</p>
+                <button onClick={() => setNuevoObjetivo(false)} className="toque-44 p-1.5 -m-1.5" aria-label="Cerrar">
+                  <X size={16} style={{ color: COLORS.textMuted }} />
+                </button>
+              </div>
+              <Field label="Objetivo">
+                <TextInput value={textoObjetivo} onChange={(e) => setTextoObjetivo(e.target.value)} placeholder="Ej: Mejorar resistencia" />
+              </Field>
+              {/* ⚠️ El plazo NO viene puesto: elegirlo por él metería su objetivo en «30 días» sin
+                  decírselo (EH F28). Sin plazo, el botón no escribe nada. */}
+              <Field label="Plazo">
+                <SelectInput value={plazoObjetivo} onChange={(e) => setPlazoObjetivo(e.target.value)}>
+                  <option value="">Elige un plazo</option>
+                  {PLAZOS_OBJETIVO.map((pl) => <option key={pl} value={pl}>{pl}</option>)}
+                </SelectInput>
+              </Field>
+              <PrimaryButton
+                accent={accent} disabled={!textoObjetivo.trim() || !plazoObjetivo}
+                onClick={() => {
+                  const plan = planObjetivoDeApp({ app, texto: textoObjetivo, plazo: plazoObjetivo }, true);
+                  if (!plan || plan.falta) return;
+                  onCrearObjetivoApp(plan.objetivo, programas.map((p2) => (p2.id === app.id ? plan.appActualizada : p2)));
+                  setTextoObjetivo(''); setPlazoObjetivo(''); setNuevoObjetivo(false);
+                }}
+              >Crear objetivo</PrimaryButton>
+              <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
+                Se guarda en tus Objetivos de siempre; aquí solo queda enlazado.
+              </p>
+            </Card>
+          ) : (
+            <button
+              onClick={() => setNuevoObjetivo(true)}
+              className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 transition-transform active:scale-[0.99]"
+              style={{ background: COLORS.surface2, border: `1px dashed ${COLORS.border}` }}
+            >
+              <Plus size={16} style={{ color: accent }} />
+              <span className="text-sm font-semibold" style={{ color: COLORS.textMuted }}>Añadir objetivo</span>
+            </button>
+          )}
+        </>
+      )}
+
+      {/* Apartados 9, 10 y 11 — el progreso y lo registrado. 🚨 Sin datos NO se inventa un número. */}
+      {sistema === 'progreso' && (
+        <>
+          <Card>
+            <p className="text-xs font-bold tracking-wide mb-1" style={{ color: COLORS.textMuted }}>PROGRESO</p>
+            <p className="text-sm" style={{ color: COLORS.text }}>
+              {progresoApp ? progresoApp.texto : SIN_DATOS}
+            </p>
+            {resumenAct && <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{resumenAct.texto}</p>}
+          </Card>
+
+          <div className="space-y-1.5">
+            {actividadesApp.length === 0 && !nuevaActividad && (
+              <EmptyHint text="Todavía no has registrado nada aquí." />
+            )}
+            {actividadesApp.map((a) => (
+              <div key={a.id} className="rounded-2xl p-2.5 flex items-center gap-2" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm truncate" style={{ color: COLORS.text }}>{a.titulo}</span>
+                  <span className="block text-[11px] truncate" style={{ color: COLORS.textMuted }}>
+                    {formatFecha(a.fecha)}{a.minutos ? ` · ${a.minutos} min` : ''}{a.notas ? ` · ${a.notas}` : ''}
+                  </span>
+                </span>
+                <BotonBorrar onClick={() => onDeleteActividad(a.id)} label={`Eliminar ${a.titulo}`} />
+              </div>
+            ))}
+          </div>
+
+          {nuevaActividad ? (
+            <Card>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Registrar actividad</p>
+                <button onClick={() => setNuevaActividad(false)} className="toque-44 p-1.5 -m-1.5" aria-label="Cerrar">
+                  <X size={16} style={{ color: COLORS.textMuted }} />
+                </button>
+              </div>
+              <Field label="Qué has hecho">
+                <TextInput value={tituloAct} onChange={(e) => setTituloAct(e.target.value)} maxLength={MAX_TITULO_ACTIVIDAD} placeholder="Ej: 30 min de práctica" />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Fecha">
+                  <TextInput type="date" value={fechaAct} onChange={(e) => setFechaAct(e.target.value)} />
+                </Field>
+                {/* ⚠️ Los minutos son opcionales: en blanco se guarda `null`, no un cero. */}
+                <Field label="Minutos (opcional)">
+                  <TextInput type="number" inputMode="numeric" value={minutosAct} onChange={(e) => setMinutosAct(e.target.value)} placeholder="30" />
+                </Field>
+              </div>
+              <PrimaryButton accent={accent} disabled={!tituloAct.trim()} onClick={() => {
+                const a = crearActividadEstudio({ appId: app.id, titulo: tituloAct, fecha: fechaAct, minutos: minutosAct });
+                if (!a) return;
+                onAddActividad(a);
+                setTituloAct(''); setMinutosAct(''); setNuevaActividad(false);
+              }}>Registrar</PrimaryButton>
+            </Card>
+          ) : (
+            <button
+              onClick={() => setNuevaActividad(true)}
+              className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 transition-transform active:scale-[0.99]"
+              style={{ background: COLORS.surface2, border: `1px dashed ${COLORS.border}` }}
+            >
+              <Plus size={16} style={{ color: accent }} />
+              <span className="text-sm font-semibold" style={{ color: COLORS.textMuted }}>Registrar actividad</span>
+            </button>
           )}
         </>
       )}
