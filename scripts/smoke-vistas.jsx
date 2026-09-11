@@ -2340,6 +2340,31 @@ const CASOS = [
         comidas: [], agua: {}, favoritos: [],
         alimentosPropios: [], favoritosAlimentos: ['propio_borrado', 'avena'],
       })],
+      /* Entrega 3 · F38 (NU F6) — con varios días registrados, que es lo que
+         llena las estadísticas. Con menos de dos sale el estado vacío. */
+      ['NutritionView · con historia para estadísticas', NutritionView, () => propsNu({
+        comidas: [
+          { id: 'e1', fecha: HOY, momento: 'comida', nombre: 'Hoy', calorias: 2000, proteinas: 120, carbohidratos: 250, grasas: 60 },
+          { id: 'e2', fecha: addDays(HOY, -1), momento: 'comida', nombre: 'Ayer', calorias: 2400, proteinas: 140, carbohidratos: 300, grasas: 70 },
+          { id: 'e3', fecha: addDays(HOY, -2), momento: 'comida', nombre: 'Anteayer', calorias: 1600, proteinas: 100, carbohidratos: 200, grasas: 50 },
+          { id: 'e4', fecha: addDays(HOY, -4), momento: 'cena', nombre: 'Hace cuatro', calorias: 2200, proteinas: 130, carbohidratos: 270, grasas: 65 },
+        ],
+        agua: {}, favoritos: [],
+        objetivos: {
+          configurado: true, actividad: 'moderado', objetivo: 'mantener',
+          kcal: 2400, proteinas: 140, carbohidratos: 300, grasas: 70,
+          manual: {}, pesoAlCalcular: 72, fecha: HOY,
+        },
+      })],
+      /* ⚠️ Y con historia pero SIN objetivos: los promedios se enseñan, el
+         cumplimiento no se inventa. */
+      ['NutritionView · estadísticas sin objetivos', NutritionView, () => propsNu({
+        comidas: [
+          { id: 's1', fecha: HOY, momento: 'comida', nombre: 'Hoy', calorias: 2000, proteinas: 120, carbohidratos: 250, grasas: 60 },
+          { id: 's2', fecha: addDays(HOY, -1), momento: 'comida', nombre: 'Ayer', calorias: 2400, proteinas: 140, carbohidratos: 300, grasas: 70 },
+        ],
+        agua: {}, favoritos: [],
+      })],
       /* 🚨 Apartado 11 — el día que se pasa del objetivo: la barra no se rompe. */
       ['NutritionView · por encima del objetivo', NutritionView, () => propsNu({
         comidas: [

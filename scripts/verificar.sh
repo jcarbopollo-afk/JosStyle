@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F38 — Nutrición: las estadísticas y la evolución.
+if node --import ./scripts/resolver-vite.mjs scripts/test-estadisticas-nutricion.mjs >/tmp/jc_statsnu.log 2>&1; then
+  ok "Nutrición: estadísticas y evolución (E3 F38) — $(grep -c '✓' /tmp/jc_statsnu.log) comprobaciones"
+else
+  fallo "Fallan las estadísticas de Nutrición (E3 F38)"; grep '✗' /tmp/jc_statsnu.log
+fi
+
 # Entrega 3 · F37 — Nutrición: la base de alimentos, los propios y los favoritos.
 if node --import ./scripts/resolver-vite.mjs scripts/test-mis-alimentos.mjs >/tmp/jc_misalim.log 2>&1; then
   ok "Nutrición: alimentos propios y favoritos (E3 F37) — $(grep -c '✓' /tmp/jc_misalim.log) comprobaciones"

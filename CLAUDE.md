@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.58.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.59.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (46 fases — **37 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (46 fases — **38 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -168,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 37 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 38 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -193,10 +193,11 @@ PRODUCTIVIDAD** —las siete fases PR—, y la **F30 (el apartado Bienestar, v3.
 7 días móviles, v3.53.0)**, que 🏁 **CERRÓ SUEÑO**, y la **F33 (Nutrición, rediseño premium,
 v3.54.0)**, con la que empieza el bloque de **Nutrición**, la **F34 (el sistema de días,
 v3.55.0)**, la **F35 (los objetivos nutricionales, v3.56.0)**, la **F36 (el registro de
-alimentos, v3.57.0)** y la **F37 (alimentos propios y favoritos, v3.58.0)**. Con eso hay **cinco
+alimentos, v3.57.0)**, la **F37 (alimentos propios y favoritos, v3.58.0)** y la **F38 (las
+estadísticas, v3.59.0)**. Con eso hay **cinco
 bloques cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1)
-y Sueño (2/2)— y **Nutrición va por 5 de 8**. La que viene es
-la **38 — NU F6: estadísticas y evolución**. El índice, con la
+y Sueño (2/2)— y **Nutrición va por 6 de 8**. La que viene es
+la **39 — NU F7: inteligencia y análisis nutricional**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -499,6 +500,25 @@ código de agosto mientras él decía *"la web sigue igual"*.
   E3 F23 escrita con las palabras de entonces, que el rediseño de esta fase cambió con todo el
   derecho. **Mirar qué línea la hace saltar antes de tocar el código**: de los cuatro rojos, **uno
   solo era del código** —la racha decía *"🔥 1 días"*—, y ése sí es de los que ve Josué.
+
+- 🚨 **UN PROMEDIO SE DIVIDE ENTRE LOS DÍAS CON DATOS, NO ENTRE LOS DEL CALENDARIO** (E3 F38,
+  criterio literal del apartado 14). Dividir entre los siete castigaría por los días que no
+  registró, que es inventarse un mal día donde no hay dato (E3 F24 y E3 F13). Y **un día vacío no es
+  un día perfecto** (apartado 7): ni cuenta a favor ni en contra.
+- 🚨 **LA CONSTANCIA NO ES UNA RACHA, Y LA PRUEBA MIRA EL COMPORTAMIENTO** (E3 F38, apartado 8
+  literal). Es un recuento —*"4 de 7 días registrados"*—, no se importa nada de `rachas.js`, y lo que
+  lo demuestra es que **tres días sueltos cuenten lo mismo que tres seguidos**: una racha diría 1 y 3.
+- 🚨 **UNA DIFERENCIA NO SE INTERPRETA** (E3 F38, apartado 11 literal: *"no interpretar
+  automáticamente esta diferencia como buena o mala"*): ↓ −350 kcal, nunca *"te estás quedando
+  corto"* — menos que el objetivo no es «mal» si está perdiendo grasa. Es la E3 F13 y EH F58 otra
+  vez, con una prueba que barre todos los textos generados.
+- ⚠️ **PASARSE DE UN MACRO NO COMPENSA QUEDARSE CORTO DE OTRO** (E3 F38): el cumplimiento de un día
+  se topa al 100 % **por indicador** antes de promediarlos. Sin eso, un día de 4800 kcal saldría como
+  el mejor de la semana.
+- 🐛 **ANTES DE PASARLE UN OBJETO A UNA FUNCIÓN DE OTRA FASE, MIRAR QUÉ FORMA ESPERA** (E3 F38, y
+  EH F18 lo dijo primero): los objetivos se **guardan** con las calorías en `kcal` y
+  `objetivosParaResumen` las devuelve como `calorias`. Darle la forma guardada dejaba las calorías
+  fuera del cálculo **sin fallar**: el número salía, y era otro.
 
 - 🚨 **UN HISTORIAL QUE SE PUEDE DERIVAR NO SE GUARDA, AUNQUE EL ENUNCIADO DIGA «GUARDAR»** (E3 F37).
   El apartado 14 pide que los recientes persistan, y persisten — **porque las comidas persisten** y

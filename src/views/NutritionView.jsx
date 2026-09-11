@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2, ChevronLeft, ChevronRight, CalendarDays, Settings, Check, Search, Pencil, Repeat } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, ReferenceLine } from 'recharts';
+import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2, ChevronLeft, ChevronRight, CalendarDays, Settings, Check, Search, Pencil, Repeat, BarChart3 } from 'lucide-react';
 import { COLORS, VASO_ML } from '../tokens';
 import { uid, todayISO, addDays, hexToRgba, calcularEdad } from '../lib/helpers';
 /* Entrega 3 · F33 (NU F1) — el catálogo de indicadores y momentos, el resumen del
@@ -39,6 +40,14 @@ import {
   reutilizarComida, catalogoCompleto, buscarEnTodos, resumenNutricional,
   SECCIONES_SELECTOR, seccionSelector, ACCION_CREAR, selectorInicial,
 } from '../lib/misAlimentos';
+/* Entrega 3 · F38 (NU F6) — las estadísticas. 🚨 No guardan ni una cifra: se
+   cuentan en el momento sobre las comidas que ya existen. */
+import {
+  PERIODOS_NUT, PERIODO_NUT_POR_DEFECTO, promediosDelPeriodo, cumplimientoDelPeriodo,
+  evolucion, MACROS_EVOLUCION, constancia, NO_ES_RACHA, mejorYPeorDia,
+  analisisProteina, analisisCalorias, hayEstadisticas,
+  VACIO_ESTADISTICAS, ACCESO_ESTADISTICAS, TEXTO_SIN_DATOS_NUT,
+} from '../lib/estadisticasNutricion';
 import { buscarProductoPorCodigoBarras, buscarAlimentosPorNombre } from '../lib/openFoodFacts';
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
@@ -1413,6 +1422,235 @@ function FavoritosTab({ favoritos, onRegistrar, onEliminar, accent }) {
   );
 }
 
+/* ── Estadísticas de Nutrición — Entrega 3 · F38 (NU F6) ──────────────────
+   *"¿Estoy cumpliendo mis objetivos nutricionales y cómo estoy evolucionando?"*
+
+   🚨 **Ni una cifra guardada** (apartado 16): todo se cuenta en el momento sobre
+   las comidas que ya existen. Y **ni un dato inventado** (apartado 13): un día
+   sin registrar es un hueco, no un cero.
+
+   ⚠️ El apartado 17 pide no recalcular en cada pintado, así que los siete
+   cálculos salen de **un solo `useMemo`** por periodo. */
+function EstadisticasNutricion({ nutricion, accent }) {
+  const [periodoId, setPeriodoId] = useState(PERIODO_NUT_POR_DEFECTO);
+  const [macro, setMacro] = useState(MACROS_EVOLUCION[0]);
+
+  const datos = useMemo(() => ({
+    hay: hayEstadisticas(nutricion?.comidas, periodoId),
+    prom: promediosDelPeriodo(nutricion?.comidas, periodoId),
+    cump: cumplimientoDelPeriodo(nutricion, periodoId),
+    kcalEvo: evolucion(nutricion, 'calorias', periodoId),
+    macroEvo: evolucion(nutricion, macro, periodoId),
+    cons: constancia(nutricion?.comidas, periodoId),
+    mp: mejorYPeorDia(nutricion, periodoId),
+    prot: analisisProteina(nutricion, periodoId),
+    kcal: analisisCalorias(nutricion, periodoId),
+  }), [nutricion, periodoId, macro]);
+
+  const selectorPeriodo = (
+    <div className="flex gap-1.5">
+      {PERIODOS_NUT.map((p) => (
+        <button
+          key={p.id} onClick={() => setPeriodoId(p.id)} aria-pressed={periodoId === p.id}
+          className="flex-1 toque-44 rounded-xl px-2 py-2 text-xs font-semibold transition-transform active:scale-95"
+          style={{
+            background: periodoId === p.id ? hexToRgba(accent, 0.16) : COLORS.surface2,
+            color: periodoId === p.id ? accent : COLORS.textMuted,
+            border: `1px solid ${periodoId === p.id ? hexToRgba(accent, 0.4) : COLORS.border}`,
+          }}
+        >
+          {p.dias} días
+        </button>
+      ))}
+    </div>
+  );
+
+  /* 🚨 Apartado 12 — *"no mostrar gráficas vacías"*: con menos de dos días
+     registrados, la pantalla entera es el estado vacío. */
+  if (!datos.hay) {
+    return (
+      <div className="space-y-3">
+        {selectorPeriodo}
+        <Card>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{VACIO_ESTADISTICAS.titulo}</p>
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{VACIO_ESTADISTICAS.detalle}</p>
+        </Card>
+      </div>
+    );
+  }
+
+  const grafica = (evo, color) => (
+    <div style={{ height: 170 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={evo.puntos}>
+          <CartesianGrid stroke={COLORS.border} vertical={false} />
+          <XAxis dataKey="etiqueta" stroke={COLORS.textMuted} fontSize={11} interval="preserveStartEnd" />
+          <YAxis stroke={COLORS.textMuted} fontSize={11} width={38} />
+          <Tooltip
+            contentStyle={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 12, fontSize: 12 }}
+            labelStyle={{ color: COLORS.textMuted }}
+            formatter={(v) => [`${v} ${evo.indicador.unidad}`, evo.indicador.nombre]}
+          />
+          {/* El objetivo como línea de referencia (apartado 4): se ve de un
+              vistazo si el día quedó por encima o por debajo. */}
+          {evo.objetivo !== null && (
+            <ReferenceLine y={evo.objetivo} stroke={COLORS.textMuted} strokeDasharray="4 4" />
+          )}
+          {/* 🚨 `connectNulls` en falso: un día sin registrar es un HUECO, y la
+              línea no lo cruza — cruzarlo inventaría un dato (E3 F32). */}
+          <Line type="monotone" dataKey="valor" stroke={color} strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
+      {selectorPeriodo}
+
+      {/* Apartado 2 — el promedio diario, con sus cuatro indicadores. */}
+      <Card>
+        <p className="text-xs font-bold uppercase mb-2" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>
+          Promedio diario
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {datos.cump.lineas.map((l) => (
+            <div key={l.id} className="rounded-2xl p-2.5" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <p className="text-xs flex items-center gap-1.5" style={{ color: COLORS.textMuted }}>
+                <span>{l.emoji}</span>{l.nombre}
+              </p>
+              <p className="text-lg font-extrabold mt-0.5 leading-none" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+                {l.promedio === null ? '—' : l.promedio}
+                <span className="text-xs font-bold ml-1" style={{ color: COLORS.textMuted }}>{l.unidad}</span>
+              </p>
+              {/* Apartado 3 — el cumplimiento, con el mismo lenguaje visual que
+                  la pantalla principal. ⚠️ Solo si de verdad hay objetivo. */}
+              {l.objetivo !== null && (
+                <>
+                  <div className="h-1 rounded-full mt-2 overflow-hidden" style={{ background: COLORS.border }}>
+                    <div className="h-full rounded-full" style={{ width: `${l.porcentajePintado}%`, background: accent }} />
+                  </div>
+                  <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{l.porcentaje} % de {l.objetivo} {l.unidad}</p>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+        <p className="text-xs mt-2.5" style={{ color: COLORS.textMuted }}>
+          Media de los {datos.prom.diasConDatos} {datos.prom.diasConDatos === 1 ? 'día' : 'días'} que registraste, de {datos.prom.diasDelRango}.
+        </p>
+        {!datos.cump.hayObjetivos && (
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+            Configura tus objetivos en Comidas para ver también el cumplimiento.
+          </p>
+        )}
+      </Card>
+
+      {/* Apartado 8 — la constancia. 🚨 Es un RECUENTO, no una racha. */}
+      <Card>
+        <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+          {datos.cons.texto}
+        </p>
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{NO_ES_RACHA}</p>
+      </Card>
+
+      {/* Apartado 4 — la evolución de las kcal. */}
+      <Card>
+        <p className="text-xs font-bold uppercase mb-1" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>
+          Calorías por día
+        </p>
+        {grafica(datos.kcalEvo, accent)}
+        {datos.kcalEvo.huecos > 0 && (
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+            {datos.kcalEvo.huecos} {datos.kcalEvo.huecos === 1 ? 'día sin registrar' : 'días sin registrar'}: la línea se corta ahí.
+          </p>
+        )}
+      </Card>
+
+      {/* Apartado 5 — los macros, con su selector: tres gráficas a la vez no se
+          leen en un móvil, y el enunciado lo dice. */}
+      <Card>
+        <div className="flex gap-1.5 mb-2">
+          {MACROS_EVOLUCION.map((id) => {
+            const ind = datos.cump.lineas.find((l) => l.id === id);
+            return (
+              <button
+                key={id} onClick={() => setMacro(id)} aria-pressed={macro === id}
+                className="flex-1 toque-44 rounded-xl px-2 py-1.5 text-xs font-semibold"
+                style={{
+                  background: macro === id ? hexToRgba(accent, 0.16) : COLORS.surface2,
+                  color: macro === id ? accent : COLORS.textMuted,
+                  border: `1px solid ${macro === id ? hexToRgba(accent, 0.4) : COLORS.border}`,
+                }}
+              >
+                {ind?.emoji} {ind?.nombre}
+              </button>
+            );
+          })}
+        </div>
+        {grafica(datos.macroEvo, COLORS.info)}
+      </Card>
+
+      {/* Apartado 10 — la proteína, que «merece especial atención». */}
+      <Card>
+        <p className="text-xs font-bold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>💪 Proteína</p>
+        <p className="text-xl font-extrabold mt-1 leading-none" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+          {datos.prot.texto || '—'}
+        </p>
+        {datos.prot.porcentaje !== null && (
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+            {datos.prot.porcentaje} % del objetivo · alcanzado {datos.prot.diasAlcanzados} de {datos.prot.diasConDatos} {datos.prot.diasConDatos === 1 ? 'día' : 'días'}
+          </p>
+        )}
+      </Card>
+
+      {/* Apartado 11 — las calorías. 🚨 La diferencia NO se interpreta. */}
+      <Card>
+        <p className="text-xs font-bold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>🔥 Calorías</p>
+        <p className="text-xl font-extrabold mt-1 leading-none" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+          {datos.kcal.promedio} <span className="text-xs font-bold" style={{ color: COLORS.textMuted }}>kcal de media</span>
+        </p>
+        {datos.kcal.objetivo !== null && (
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+            Objetivo: {datos.kcal.objetivo} kcal · diferencia media: {datos.kcal.diferencia > 0 ? '+' : ''}{datos.kcal.diferencia} kcal
+          </p>
+        )}
+        {datos.kcal.tendencia && (
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+            {datos.kcal.tendencia.flecha} {datos.kcal.tendencia.diferencia > 0 ? '+' : ''}{datos.kcal.tendencia.diferencia} kcal respecto al periodo anterior
+          </p>
+        )}
+      </Card>
+
+      {/* Apartado 9 — mejor y peor día, o la frase honesta. */}
+      <Card>
+        <p className="text-xs font-bold uppercase mb-2" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>Por días</p>
+        {datos.mp.hay ? (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-2xl p-2.5" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>Mayor cumplimiento</p>
+              <p className="text-sm font-bold mt-0.5" style={{ color: COLORS.text }}>{datos.mp.mejor.nombre}</p>
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>{datos.mp.mejor.cumplimiento} %</p>
+            </div>
+            <div className="rounded-2xl p-2.5" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>Menor cumplimiento</p>
+              <p className="text-sm font-bold mt-0.5" style={{ color: COLORS.text }}>{datos.mp.peor.nombre}</p>
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>{datos.mp.peor.cumplimiento} %</p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>
+            {datos.mp.motivo === 'sin_objetivos'
+              ? 'Para comparar días hacen falta tus objetivos. Los configuras en Comidas.'
+              : TEXTO_SIN_DATOS_NUT}
+          </p>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+
 export default function NutritionView({ nutricion, perfil, onAddComida, onDeleteComida, onActualizarComida, onAddFavorito, onRegistrarFavorito, onEliminarFavorito, onSetAgua, onGuardarObjetivos, onGuardarAlimentoPropio, onEliminarAlimentoPropio, onAlternarFavoritoAlimento, accent }) {
   const [sub, setSub] = useState('comidas');
 
@@ -1424,6 +1662,11 @@ export default function NutritionView({ nutricion, perfil, onAddComida, onDelete
         <ToggleTab active={sub === 'comidas'} onClick={() => setSub('comidas')} accent={accent}>Comidas</ToggleTab>
         <ToggleTab active={sub === 'agua'} onClick={() => setSub('agua')} accent={accent}>Agua</ToggleTab>
         <ToggleTab active={sub === 'favoritos'} onClick={() => setSub('favoritos')} accent={accent}>Favoritos</ToggleTab>
+        {/* Entrega 3 · F38 (NU F6), apartado 1 — el acceso a las estadísticas,
+            dentro de Nutrición y con la navegación de siempre. */}
+        <ToggleTab active={sub === 'stats'} onClick={() => setSub('stats')} accent={accent}>
+          {ACCESO_ESTADISTICAS.emoji} {ACCESO_ESTADISTICAS.nombre}
+        </ToggleTab>
       </div>
 
       {sub === 'comidas' && (
@@ -1441,6 +1684,7 @@ export default function NutritionView({ nutricion, perfil, onAddComida, onDelete
       {sub === 'favoritos' && (
         <FavoritosTab favoritos={nutricion.favoritos} onRegistrar={onRegistrarFavorito} onEliminar={onEliminarFavorito} accent={accent} />
       )}
+      {sub === 'stats' && <EstadisticasNutricion nutricion={nutricion} accent={accent} />}
 
       <AIPanel
         label="Analizar mi nutrición"

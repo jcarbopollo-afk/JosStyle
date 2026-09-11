@@ -1,5 +1,71 @@
 # CHANGELOG.md
 
+## v3.59.0 — Entrega 3 · Fase 38 (NU F6): estadísticas y evolución nutricional
+
+*"¿Estoy cumpliendo mis objetivos nutricionales y cómo estoy evolucionando?"*, contestado con los
+datos que ya hay. `src/lib/estadisticasNutricion.js` **no guarda ni una cifra**: es la lección de
+`estadisticasPlan.js` (E3 F13) y `progresoEstilo.js` (EH F35) — una estadística guardada miente en
+cuanto él borra un registro.
+
+### 🚨 Un día sin registrar no es un día a cero
+
+El apartado 7 lo dice con esas palabras —*"no considerar un día vacío como un día perfecto"*— y el
+13 lo remata: *"NO inventar datos, rellenar días automáticamente, mostrar porcentajes falsos,
+simular una evolución"*.
+
+- **El promedio se calcula sobre los días CON datos**, que es el criterio literal del apartado 14:
+  `(día 1 + … + día 7) / días con datos`. Dividir entre los siete castigaría por los días que no
+  registró — la lección de la E3 F24.
+- **En la gráfica, un día sin registrar es un hueco (`null`) y la línea no lo cruza**
+  (`connectNulls={false}`), como en Sueño (E3 F32). Cruzarlo inventaría un dato que nadie registró; un
+  cero diría que ese día comió cero. Y **se dice cuántos huecos hay**, en vez de disimularlos.
+- **Sin objetivos configurados no hay cumplimiento**: `null`, nunca un 0 % que diría que va fatal.
+  Los promedios sí se enseñan, porque eso sí es un dato suyo.
+
+### 🚨 Y la constancia NO es una racha
+
+El apartado 8 es explícito: *"no crear todavía un sistema de rachas independiente que duplique el
+sistema global"*. Lo que se enseña es **un recuento** —*"4 de 7 días registrados"*—, y la pantalla lo
+dice. No se importa nada de `rachas.js`, y la prueba que lo garantiza **comprueba el comportamiento**:
+tres días sueltos cuentan lo mismo que tres seguidos. Una racha diría 1 y 3.
+
+### Lo que trae
+
+- **7 / 30 / 90 días** (apartado 6), que son los periodos de la E3 F13 **declarados por su id**: no
+  se reescribe cuántos días son, y ampliar la lista es añadir un id.
+- **El promedio diario** con el cumplimiento de cada objetivo, con el mismo lenguaje visual que la
+  pantalla principal — barra topada al 100 %, dato sin topar (E3 F35).
+- **La evolución de kcal** con el objetivo como línea de referencia, y el eje en **L M X J V S D**
+  (apartado 4); en 30 días pasa al día del mes, porque treinta iniciales seguidas no se leen.
+- **Los tres macros con selector** (apartado 5): tres gráficas a la vez no se leen en un móvil.
+- **Proteína**: media, objetivo, porcentaje y **en cuántos días se alcanzó**.
+- **Calorías**: media, objetivo, diferencia **con su signo** y tendencia contra el periodo anterior
+  de verdad. 🚨 **Sin interpretarla**, que es literal del apartado 11: ↓ −350 kcal, nunca *"te estás
+  quedando corto"*. Hay una prueba que barre todos los textos generados.
+- **Mejor y peor día** (apartado 9), y cuando no hay bastante, la frase del enunciado en vez de dos
+  tarjetas vacías. ⚠️ Pasarse de carbohidratos **no compensa** quedarse corto de proteína: cada
+  indicador se topa al 100 % por separado.
+- **El estado vacío** (apartado 12): con menos de dos días registrados, la pantalla entera es el
+  estado vacío y **no se pinta ni una gráfica**.
+
+### 🐛 Y cuatro comprobaciones mías que salieron rojas con el código bien
+
+Tres eran de la prueba y una enseña algo: **`cumplimientoDeUnDia` recibe lo que devuelve
+`objetivosParaResumen`**, donde las kcal se llaman `calorias`; pasarle la forma **guardada** —que las
+llama `kcal`— dejaba las calorías fuera del cálculo **sin fallar**. Es la lección de EH F18: antes de
+pasarle un objeto a una función de otra fase, mirar qué forma espera.
+
+Las otras: una suma de días mal hecha a mano, un emoji que la vista no escribe porque sale del
+catálogo (correcto), y **un barrido de «racha» que saltaba con `NO_ES_RACHA`** — la constante que
+hace la promesa. Decimotercera vez de esa lección; ahora se comprueba el comportamiento.
+
+### Archivos
+
+- **Nuevo:** `src/lib/estadisticasNutricion.js`, `scripts/test-estadisticas-nutricion.mjs` (112
+  comprobaciones).
+- **Tocados:** `src/views/NutritionView.jsx` (`EstadisticasNutricion` y su pestaña),
+  `scripts/verificar.sh`, `scripts/smoke-vistas.jsx` (+8 casos), `scripts/test-app-real.mjs`.
+
 ## v3.58.0 — Entrega 3 · Fase 37 (NU F5): base de alimentos, personalizados y favoritos
 
 *"El usuario no debería tener que introducir manualmente la información nutricional de un alimento

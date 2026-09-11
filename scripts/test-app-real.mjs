@@ -3912,4 +3912,111 @@ const lapicesPropio = await page.evaluate(() =>
 ok(lapicesPropio.includes('Editar Batido de proteína'),
   '⚠️ pero el que ha creado él sí se edita (apartado 6)');
 
+
+/* ── E3 F38 (NU F6) · LAS ESTADÍSTICAS DE NUTRICIÓN ───────────────────────
+   🚨 **Lo que ninguna otra prueba puede ver:** los 2052 casos de renderizado
+   entran por la pestaña de Comidas, así que **la pantalla de estadísticas solo
+   se pinta aquí** — es el agujero de la EH F39 (*"esa tarjeta solo aparece tras
+   pulsar un botón"*), y por eso esta sección pulsa la pestaña de verdad.
+
+   El escenario trae cuatro días registrados de siete, con objetivos puestos:
+   suficiente para promedios, gráfica, mejor/peor día y tendencia. */
+almacen.nutricion = {
+  comidas: [
+    { id: 'es_1', fecha: DN(0), momento: 'comida', nombre: 'Hoy', calorias: 2000, proteinas: 120, carbohidratos: 250, grasas: 60, fibra: 20 },
+    { id: 'es_2', fecha: DN(1), momento: 'comida', nombre: 'Ayer', calorias: 2400, proteinas: 140, carbohidratos: 300, grasas: 70, fibra: 25 },
+    { id: 'es_3', fecha: DN(2), momento: 'comida', nombre: 'Anteayer', calorias: 1600, proteinas: 100, carbohidratos: 200, grasas: 50, fibra: 15 },
+    { id: 'es_4', fecha: DN(4), momento: 'cena', nombre: 'Hace cuatro', calorias: 2200, proteinas: 130, carbohidratos: 270, grasas: 65, fibra: 22 },
+  ],
+  agua: {}, favoritos: [],
+  objetivos: {
+    configurado: true, actividad: 'moderado', objetivo: 'mantener',
+    kcal: 2400, proteinas: 140, carbohidratos: 300, grasas: 70,
+    manual: {}, pesoAlCalcular: 72, fecha: DN(0),
+  },
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+guardado.length = 0;
+
+ok(await pulsar('Bienestar'), 'se abre el área Bienestar');
+ok(await pulsar('Nutrición'), 'se entra en Nutrición');
+ok(await pulsar('Estadísticas'), '🚨 E3 F38 — hay un acceso a Estadísticas dentro de Nutrición (apartado 1)');
+
+const stats = await esperarTexto(/Promedio diario/i);
+ok(/Promedio diario/i.test(stats), '⚠️ y lo primero es el promedio diario (apartado 2)');
+/* 🚨 Apartado 14 — la media es sobre los días CON datos: (2000+2400+1600+2200)/4 = 2050. */
+ok(/2050/.test(stats),
+  '🚨 LA MEDIA SE CALCULA SOBRE LOS DÍAS CON DATOS: (2000+2400+1600+2200)/4 = 2050 (apartado 14)');
+ok(/de 7/.test(stats), '⚠️ y se dice de cuántos días del rango sale');
+/* Apartado 3 — el cumplimiento de cada objetivo. 2050 de 2400 es un 85 %. */
+ok(/85 % de 2400/.test(stats),
+  '🚨 CON EL CUMPLIMIENTO DE CADA OBJETIVO: 85 % de 2400 kcal (apartado 3)');
+
+/* Apartado 8 — la constancia, que NO es una racha. */
+ok(/4 de 7 días registrados/.test(stats),
+  '🚨 Y LA CONSTANCIA: «4 de 7 días registrados» (apartado 7)');
+ok(/no mira si son seguidos/i.test(stats),
+  '🚨 Y SE DICE QUE NO ES UNA RACHA, que es lo que el apartado 8 prohíbe duplicar');
+
+/* Apartados 4 y 5 — las gráficas, con sus huecos declarados. */
+ok(/Calorías por día/i.test(stats), '⚠️ hay una gráfica de kcal por día (apartado 4)');
+ok(/3 días sin registrar/.test(stats),
+  '🚨 Y LOS DÍAS SIN REGISTRAR SE DICEN: la línea se corta ahí, no se inventa el dato (apartado 13)');
+const ejes = await page.evaluate(() =>
+  [...document.querySelectorAll('.recharts-xAxis text')].map((t) => t.textContent).join(''));
+ok(/^[LMXJVSD]+$/.test(ejes) && ejes.length >= 2,
+  `🚨 Y EL EJE SON LAS INICIALES DE LOS DÍAS, «L M X J V S D» (apartado 4) — salió «${ejes}»`);
+
+/* Apartado 5 — el selector de macros cambia la gráfica. */
+ok(await pulsar('💪 Proteína'), 'se cambia el macro de la segunda gráfica');
+await page.waitForTimeout(500);
+const conProteina = await ver();
+ok(/Proteína/.test(conProteina), '⚠️ y la gráfica pasa a la proteína (apartado 5)');
+
+/* Apartado 10 — el análisis de proteína, con los días alcanzados. */
+ok(/122\.5 g \/ 140 g|122 g \/ 140 g/.test(conProteina),
+  '🚨 LA PROTEÍNA TIENE SU ANÁLISIS: media contra objetivo (apartado 10)');
+ok(/alcanzado 1 de 4/.test(conProteina),
+  '⚠️ con en cuántos días se alcanzó el objetivo: 1 de 4');
+
+/* Apartado 11 — la diferencia, con su signo y SIN interpretarla. */
+ok(/diferencia media: -350 kcal|diferencia media: −350 kcal/.test(conProteina),
+  '🚨 Y LA DIFERENCIA LLEVA SU SIGNO: −350 kcal (apartado 11)');
+ok(!/(vas bien|vas mal|deberías|te has pasado|demasiado)/i.test(conProteina),
+  '🚨 Y NO SE INTERPRETA: el apartado 11 lo prohíbe expresamente');
+
+/* Apartado 9 — mejor y peor día. */
+ok(/Mayor cumplimiento/i.test(conProteina) && /Menor cumplimiento/i.test(conProteina),
+  '⚠️ y están el mejor y el peor día (apartado 9)');
+
+/* Apartado 6 — cambiar el periodo cambia los números. */
+ok(await pulsar('30 días'), 'se cambia a 30 días');
+await page.waitForTimeout(600);
+const treinta = await ver();
+ok(/4 de 30 días registrados/.test(treinta),
+  '🚨 Y EL PERIODO CAMBIA DE VERDAD: «4 de 30 días registrados» (apartado 6)');
+ok(/2050/.test(treinta),
+  '⚠️ con la media igual, porque sigue siendo sobre los días con datos (apartado 14)');
+
+/* 🚨 Y consultar estadísticas NO escribe nada: es una vista, no un dato. */
+const escriturasStats = guardado.filter((g) => g && g.key === 'nutricion').length;
+ok(escriturasStats === 0,
+  '🚨 Y MIRAR LAS ESTADÍSTICAS NO ESCRIBE NADA: no se guarda ni un promedio (E3 F13)');
+
+/* Apartado 12 — sin datos suficientes, el estado vacío y NI UNA gráfica. */
+almacen.nutricion = { comidas: [], agua: {}, favoritos: [] };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar'), 'se vuelve a entrar sin datos');
+ok(await pulsar('Nutrición'), 'en Nutrición');
+ok(await pulsar('Estadísticas'), 'y en Estadísticas');
+const vacioStats = await esperarTexto(/Tu evolución aparecerá aquí/i);
+ok(/Tu evolución aparecerá aquí/i.test(vacioStats),
+  '🚨 SIN DATOS SUFICIENTES SALE EL ESTADO VACÍO, con el texto del apartado 12');
+ok(/Registra tus comidas/i.test(vacioStats), '⚠️ y su explicación');
+const graficasVacias = await page.evaluate(() => document.querySelectorAll('.recharts-wrapper').length);
+ok(graficasVacias === 0,
+  '🚨 Y NI UNA GRÁFICA VACÍA: *"no mostrar gráficas vacías"* es literal del apartado 12');
+
 await salir(browser);
