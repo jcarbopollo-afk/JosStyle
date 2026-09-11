@@ -31,6 +31,7 @@ import { normalizarNutricionF4 } from './lib/alimentos';
    ⚠️ Vigesimoprimera vez del fallo del normalizador: sin esto, el siguiente
    guardado se llevaría las dos listas. Y devuelve el módulo entero (regla 5). */
 import { normalizarMisAlimentosDe, alternarFavoritoAlimento } from './lib/misAlimentos';
+import { normalizarAppsDe } from './lib/estudiosApps';
 /* 🚨 E3 F27 (PR F5) — Metas y Objetivos. Los normalizadores corren al cargar
    porque esta fase AÑADE campos a dos entidades que ya existían: sin ellos, lo
    guardado antes llega sin `estado`, sin `prioridad` y sin `tipo`, y el
@@ -546,7 +547,12 @@ export default function App() {
       setSaludFotos(sf);
       setNutricion(normalizarMisAlimentosDe(normalizarNutricionF4(normalizarNutricionObjetivos(normalizarNutricionDe(nut)))));
       setCalisteniaVideos(cv);
-      setEstudios(est);
+      /* 🚨 E3 F41 (ES F1) — LAS APPS DE ESTUDIOS SON LOS PROGRAMAS DE SIEMPRE. El
+         normalizador les añade `icono`, `categoria`, `orden` y `oculto` y corre
+         AQUÍ, al cargar y antes de que nada los lea (regla 5, EH F46): sin esto,
+         el primer guardado se llevaría los cuatro campos. Devuelve el módulo
+         ENTERO, así que asignaturas, exámenes y horas siguen intactos. */
+      setEstudios(normalizarAppsDe(est));
       setNegocio(neg);
       /* 🚨 E3 F26 (PR F4) — LA MIGRACIÓN DE LA FECHA DE LAS TAREAS. Se hace aquí,
          al cargar y ANTES de que nada las lea, porque las cuatro pantallas que
@@ -1832,6 +1838,9 @@ export default function App() {
   });
 
   const addPrograma = (p) => snapshotAndSave({ estudios: { ...estudios, programas: [...estudios.programas, p] } });
+  // E3 F41 (ES F1) — reordenar y ocultar un área. Recibe la lista ya calculada por `moverApp` /
+  // `alternarOcultaApp`, que son quienes saben; aquí solo se guarda.
+  const updateProgramas = (programas) => snapshotAndSave({ estudios: { ...estudios, programas } });
   // Segundo borrado en cascada, encontrado por la auditoría de ME Fase 4: un programa se podía
   // crear y no quitar, así que un "Idiomas" creado por probar se quedaba en la barra para siempre.
   // Arrastra sus asignaturas y, con ellas, los exámenes y las horas de cada una — todo en la misma
@@ -2503,7 +2512,7 @@ export default function App() {
         return (
           <EstudiosView
             estudios={estudios} sueno={sueno}
-            onAddPrograma={addPrograma} onDeletePrograma={deletePrograma}
+            onAddPrograma={addPrograma} onUpdateProgramas={updateProgramas} onDeletePrograma={deletePrograma}
             onAddAsignatura={addAsignatura} onDeleteAsignatura={deleteAsignatura}
             onAddExamen={addExamen} onUpdateExamen={updateExamen} onDeleteExamen={deleteExamen}
             onAddHoras={addHoras} onDeleteHoras={deleteHorasEstudio} accent={accent}

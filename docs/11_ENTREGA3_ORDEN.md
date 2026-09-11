@@ -61,14 +61,14 @@ solo vale como corrección o ajuste — nunca una función nueva.
 | 38 ✅ | NU | F6 — Estadísticas y evolución — **hecha (v3.59.0)** 🚨 la constancia no es una racha | 17572 |
 | 39 ✅ | NU | F7 — Inteligencia y análisis nutricional — **hecha (v3.60.0)** 🔒 interpreta mirando SU objetivo | 17919 |
 | 40 ✅ | NU | F8 — Pulido final, integración y QA — **hecha (v3.61.0)** 🏁 **CIERRA NUTRICIÓN (8/8)** | 18240 |
-| 41 | **ES** Estudios | F1 — Home tipo teléfono y nueva arquitectura | 18766 |
+| 41 ✅ | **ES** Estudios | F1 — Home tipo teléfono y nueva arquitectura — **hecha (v3.62.0)** 🚨 una «app» es el `programa` de la Fase 6 | 18766 |
 | 42 | ES | F2 — Estructura en árbol y navegación por ramas | 19030 |
 | 43 | ES | F3 — Asignaturas y gestión académica | 19298 |
 | 44 | ES | F4 — Exámenes, entregas y fechas | 19511 |
 | 45 | ES | F5 — Apps de aprendizaje independientes | 20034 |
 | 46 | ES | F6 — Próximos eventos, resumen e integración final | 20329 |
 
-**Por dónde va:** 40 de 46 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0, **BL F1** v3.37.0, **BL F2** v3.38.0, **BL F4** v3.39.0, **BL F5** v3.40.0, **BL F6** v3.41.0, **BL F7** v3.42.0, **BL F8** v3.43.0, **PR F1** v3.44.0, **PR F2** v3.45.0, **PR F3** v3.46.0, **PR F4** v3.47.0, **PR F5** v3.48.0, **PR F6** v3.49.0, **PR F7** v3.50.0, **BN** v3.51.0, **SU F1** v3.52.0, **SU F2** v3.53.0, **NU F1** v3.54.0, **NU F2** v3.55.0, **NU F3** v3.56.0, **NU F4** v3.57.0, **NU F5** v3.58.0, **NU F6** v3.59.0, **NU F7** v3.60.0, **NU F8** v3.61.0). 🏁 **SEIS BLOQUES CERRADOS: Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1), Sueño (2/2) y Nutrición (8/8)**. La siguiente es la **41 — ES F1: Estudios, home tipo teléfono y nueva arquitectura**, línea 18766, con la que empieza el **último bloque de la Entrega 3**.
+**Por dónde va:** 41 de 46 (**PG** v3.10.0, **RA+** v3.12.0, **AR+** v3.13.0, **EC** v3.15.0, **HO+** v3.17.0, **HC F1** v3.20.0, **HC F2** v3.27.0, **HC F3** v3.28.0, **HC F4** v3.29.0, **HC F5** v3.30.0, **HC F6** v3.31.0, **HC F7** v3.32.0 ⏸, **HC F8** v3.33.0, **HC F9** v3.34.0, **HC F10** v3.36.0, **BL F1** v3.37.0, **BL F2** v3.38.0, **BL F4** v3.39.0, **BL F5** v3.40.0, **BL F6** v3.41.0, **BL F7** v3.42.0, **BL F8** v3.43.0, **PR F1** v3.44.0, **PR F2** v3.45.0, **PR F3** v3.46.0, **PR F4** v3.47.0, **PR F5** v3.48.0, **PR F6** v3.49.0, **PR F7** v3.50.0, **BN** v3.51.0, **SU F1** v3.52.0, **SU F2** v3.53.0, **NU F1** v3.54.0, **NU F2** v3.55.0, **NU F3** v3.56.0, **NU F4** v3.57.0, **NU F5** v3.58.0, **NU F6** v3.59.0, **NU F7** v3.60.0, **NU F8** v3.61.0, **ES F1** v3.62.0). 🏁 **SEIS BLOQUES CERRADOS: Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1), Sueño (2/2) y Nutrición (8/8)**. La siguiente es la **42 — ES F2: estructura en árbol y navegación por ramas**, línea 19030. El **último bloque** (ES, 6 fases) va por **1 de 6**.
 
 🔢 **Y el índice decía 44 cuando son 46** (corregido el 2026-09-07, al cerrar la fase 29). Entre
 **BN — Bienestar** (línea 15109) y **NU F1 — Nutrición** (15931) el documento trae **dos fases de

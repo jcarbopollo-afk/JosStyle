@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { GraduationCap, BookOpen, Calendar, Clock, Plus, Trash2, ChevronDown, ChevronUp, HelpCircle, TrendingUp, Loader2, Sparkles } from 'lucide-react';
+import { GraduationCap, BookOpen, Clock, Plus, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, HelpCircle, TrendingUp, Loader2, Sparkles, X, Eye, EyeOff } from 'lucide-react';
 import { COLORS } from '../tokens';
-import { uid, formatFecha, todayISO } from '../lib/helpers';
+import { uid, formatFecha, todayISO, hexToRgba } from '../lib/helpers';
 import { askAI, AI_SYSTEM } from '../lib/ai';
 import { correlacionSuenoEstudio } from '../lib/correlaciones';
-import { Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, BotonBorrar, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
+import {
+  ICONOS_ESTUDIOS, ICONO_POR_DEFECTO, sugerirIcono, iconoDeApp,
+  MAX_NOMBRE_APP, crearApp, nombreYaUsado, moverApp, AVISO_OCULTAR, alternarOcultaApp,
+  appsOrdenadas, appsVisibles, RAMAS_PENDIENTES,
+  asignaturasDe, examenesDe, horasDe, ramasDeApp, lineaDeApp, proximosEventos,
+  RUTA_RAIZ, abrirApp, abrirRama, atras, migas,
+} from '../lib/estudiosApps';
+import { Card, SectionTitle, Field, TextInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel } from '../components/ui';
 
 function diasHasta(fechaISO) {
   return Math.ceil((new Date(fechaISO + 'T00:00:00').getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -322,119 +329,404 @@ function CorrelacionEstudio({ sueno, horas, accent }) {
   );
 }
 
-export default function EstudiosView({ estudios, sueno, onAddPrograma, onDeletePrograma, onAddAsignatura, onDeleteAsignatura, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
-  const [programaActivo, setProgramaActivo] = useState(estudios.programas[0]?.id);
+/* ══════════════════════════════════════════════════════════════════════════
+   ENTREGA 3 · ES FASE 1 — HOME TIPO TELÉFONO Y NUEVA ARQUITECTURA
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 Lo que aquí se llama **app** es el `programa` que existe desde la Fase 6.
+   El enunciado propone 🎓 Bachillerato, 🎹 Música, ⚽ Fútbol, ♟️ Ajedrez y
+   🌍 Idiomas, y este módulo ya traía **Bachillerato y Música**. Una lista nueva
+   habría dejado sus asignaturas, exámenes y horas invisibles (apartado 16).
+
+   La pantalla es un navegador de tres niveles —Home → app → rama— y **nada de lo
+   que ya funcionaba se ha reescrito**: `AsignaturaCard`, `ExamenItem`,
+   `PlanRepaso`, `ExplicarConcepto` y `CorrelacionEstudio` son los de siempre; lo
+   que cambia es dónde viven. */
+
+function Plaquita({ app, linea, accent, onAbrir }) {
+  return (
+    <button
+      onClick={onAbrir}
+      className="rounded-2xl p-3 flex flex-col items-center justify-start text-center transition-transform active:scale-95"
+      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, minHeight: 108 }}
+    >
+      <span aria-hidden="true" style={{ fontSize: 28, lineHeight: '34px' }}>{iconoDeApp(app)}</span>
+      <span className="text-xs font-semibold mt-1 w-full truncate" style={{ color: COLORS.text }}>{app.nombre}</span>
+      {/* Apartado 6 — una línea como mucho, y solo si aporta. `null` no pinta nada. */}
+      {linea && <span className="text-[10px] mt-0.5 w-full truncate" style={{ color: accent }}>{linea}</span>}
+    </button>
+  );
+}
+
+function CrearApp({ accent, programas, onCrear, onCerrar }) {
+  const [nombre, setNombre] = useState('');
+  const [icono, setIcono] = useState('');
+  const [categoria, setCategoria] = useState('');
+
+  // El icono se PROPONE según lo que escribe, y el campo sigue siendo suyo.
+  const propuesto = icono || sugerirIcono(nombre) || ICONO_POR_DEFECTO;
+  const repetido = nombreYaUsado(nombre, programas);
+
+  const crear = () => {
+    const app = crearApp({ nombre, icono: icono || sugerirIcono(nombre) || '', categoria }, programas);
+    if (!app) return;
+    onCrear(app);
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Nueva área de estudio</p>
+        <button onClick={onCerrar} className="toque-44 p-1.5 -m-1.5" aria-label="Cerrar">
+          <X size={16} style={{ color: COLORS.textMuted }} />
+        </button>
+      </div>
+
+      <Field label="Nombre">
+        <TextInput value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={MAX_NOMBRE_APP} placeholder="Ej: Idiomas" />
+      </Field>
+
+      <Field label="Icono">
+        <div className="flex items-center gap-2 mb-2">
+          <span aria-hidden="true" style={{ fontSize: 26 }}>{propuesto}</span>
+          <TextInput value={icono} onChange={(e) => setIcono(e.target.value)} placeholder="O pega el que quieras" />
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {ICONOS_ESTUDIOS.map((ic) => (
+            <button
+              key={ic} onClick={() => setIcono(ic)} aria-label={`Usar el icono ${ic}`}
+              aria-pressed={icono === ic}
+              className="toque-44 rounded-xl transition-transform active:scale-90"
+              style={{
+                fontSize: 20, width: 40, height: 40,
+                background: icono === ic ? hexToRgba(accent, 0.16) : COLORS.surface2,
+                border: `1px solid ${icono === ic ? accent : COLORS.border}`,
+              }}
+            >
+              {ic}
+            </button>
+          ))}
+        </div>
+      </Field>
+
+      <Field label="Categoría (opcional)">
+        <TextInput value={categoria} onChange={(e) => setCategoria(e.target.value)} placeholder="Ej: Extraescolares" />
+      </Field>
+
+      {/* Avisa del nombre repetido; no lo prohíbe. Puede tener dos "Inglés". */}
+      {repetido && (
+        <p className="text-xs mb-2" style={{ color: COLORS.textMuted }}>
+          Ya tienes un área con ese nombre. Puedes crearla igualmente.
+        </p>
+      )}
+
+      <PrimaryButton accent={accent} disabled={!nombre.trim()} onClick={crear}>Crear</PrimaryButton>
+    </Card>
+  );
+}
+
+function ProximoEnEstudios({ estudios, accent, onIr }) {
+  const eventos = proximosEventos(estudios);
+
+  return (
+    <div>
+      <p className="text-xs font-bold tracking-wide mb-2" style={{ color: COLORS.textMuted }}>PRÓXIMO</p>
+      {eventos.length === 0 ? (
+        <EmptyHint text="No tienes exámenes apuntados para los próximos 30 días." />
+      ) : (
+        <div className="space-y-1.5">
+          {eventos.map((e) => (
+            <button
+              key={e.id} onClick={() => onIr(e)}
+              className="w-full rounded-2xl p-2.5 flex items-center gap-2.5 text-left transition-transform active:scale-[0.99]"
+              style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+            >
+              <span aria-hidden="true" style={{ fontSize: 18 }}>{e.icono}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs font-semibold truncate" style={{ color: COLORS.text }}>{e.titulo}</span>
+                <span className="block text-[11px] truncate" style={{ color: COLORS.textMuted }}>
+                  {formatFecha(e.fecha)}{e.programa ? ` · ${e.programa}` : ''}
+                </span>
+              </span>
+              <span className="text-[11px] font-semibold flex-shrink-0" style={{ color: accent }}>
+                {e.dias === 0 ? 'Hoy' : e.dias === 1 ? 'Mañana' : `${e.dias} días`}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+      {/* Regla 8 — lo que todavía no puede salir aquí se dice, no se finge. */}
+      <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
+        Por ahora solo salen los exámenes: los trabajos y las entregas todavía no se pueden apuntar.
+      </p>
+    </div>
+  );
+}
+
+export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateProgramas, onDeletePrograma, onAddAsignatura, onDeleteAsignatura, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
+  const [ruta, setRuta] = useState(RUTA_RAIZ);
   const [nuevaAsignatura, setNuevaAsignatura] = useState('');
-  const [showNuevoPrograma, setShowNuevoPrograma] = useState(false);
-  const [nuevoPrograma, setNuevoPrograma] = useState('');
+  const [creando, setCreando] = useState(false);
+  const [organizando, setOrganizando] = useState(false);
 
   // Ampliación del Dashboard — Centro de Control (apartado 6): el examen destacado puede vivir en
-  // un programa que no sea el activo — cambia de pestaña de programa primero; AsignaturaCard y
-  // ExamenItem se encargan de desplegarse y hacer scroll hasta el examen en sí.
+  // cualquier app — se abre su app y su rama de asignaturas; AsignaturaCard y ExamenItem se
+  // encargan de desplegarse y hacer scroll hasta el examen en sí.
   useEffect(() => {
     if (!foco?.examenId) return;
     const ex = estudios.examenes.find((e) => e.id === foco.examenId);
     const asig = ex && estudios.asignaturas.find((a) => a.id === ex.asignaturaId);
-    if (asig) setProgramaActivo(asig.programaId);
+    if (asig) setRuta(abrirRama(asig.programaId, 'asignaturas'));
   }, [foco]);
 
-  const programa = estudios.programas.find((p) => p.id === programaActivo) || estudios.programas[0];
-  const asignaturasPrograma = estudios.asignaturas.filter((a) => a.programaId === programa?.id);
+  const programas = estudios.programas || [];
+  const visibles = appsVisibles(programas);
+  const todas = appsOrdenadas(programas);
+  const app = programas.find((p) => p.id === ruta.appId) || null;
+  const asignaturasApp = app ? asignaturasDe(estudios, app.id) : [];
 
   const anadirAsignatura = () => {
-    if (!nuevaAsignatura.trim() || !programa) return;
-    onAddAsignatura({ id: uid(), programaId: programa.id, nombre: nuevaAsignatura.trim() });
+    if (!nuevaAsignatura.trim() || !app) return;
+    onAddAsignatura({ id: uid(), programaId: app.id, nombre: nuevaAsignatura.trim() });
     setNuevaAsignatura('');
   };
 
-  const anadirPrograma = () => {
-    if (!nuevoPrograma.trim()) return;
-    const id = uid();
-    onAddPrograma({ id, nombre: nuevoPrograma.trim() });
-    setProgramaActivo(id);
-    setNuevoPrograma('');
-    setShowNuevoPrograma(false);
-  };
-
-  return (
-    <div className="space-y-4 pb-4">
-      <SectionTitle sub="Un programa por pestaña — la IA aconseja el plan, tú decides y lo ejecutas">
-        <span className="flex items-center gap-2"><GraduationCap size={18} style={{ color: accent }} /> Estudios</span>
-      </SectionTitle>
-
-      <div className="flex gap-2 flex-wrap">
-        {estudios.programas.map((p) => (
-          <ToggleTab key={p.id} active={programaActivo === p.id} onClick={() => setProgramaActivo(p.id)} accent={accent}>{p.nombre}</ToggleTab>
-        ))}
-        <GhostBtn icon={Plus} onClick={() => setShowNuevoPrograma((s) => !s)}>Programa</GhostBtn>
+  const cabecera = (
+    <div className="flex items-center gap-2">
+      {ruta.vista !== 'home' && (
+        <button onClick={() => setRuta(atras(ruta))} className="toque-44 p-1.5 -m-1.5" aria-label="Volver atrás">
+          <ChevronLeft size={20} style={{ color: COLORS.text }} />
+        </button>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
+          {migas(ruta, programas).map((m) => m.texto).join(' › ')}
+        </p>
       </div>
+    </div>
+  );
 
-      {/* Entrega 2 · ME Fase 4 — borrar el programa abierto. Se lleva sus asignaturas (y con ellas
-          exámenes y horas) a la papelera en una sola entrada, así que restaurarlo lo devuelve entero. */}
-      {programa && (
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-xs min-w-0 truncate" style={{ color: COLORS.textMuted }}>
-            Programa abierto: {programa.nombre} · {asignaturasPrograma.length} {asignaturasPrograma.length === 1 ? 'asignatura' : 'asignaturas'}
-          </p>
-          <BotonBorrar onClick={() => onDeletePrograma(programa.id)} label={`Eliminar el programa ${programa.nombre}`} />
-        </div>
-      )}
+  /* ── HOME ───────────────────────────────────────────────────────────────── */
+  if (ruta.vista === 'home') {
+    return (
+      <div className="space-y-4 pb-4 module-enter">
+        <SectionTitle>
+          <span className="flex items-center gap-2"><GraduationCap size={18} style={{ color: accent }} /> Estudios</span>
+        </SectionTitle>
 
-      {showNuevoPrograma && (
-        <Card>
-          <div className="flex items-center gap-2">
-            <TextInput value={nuevoPrograma} onChange={(e) => setNuevoPrograma(e.target.value)} placeholder="Ej: Idiomas" />
-            <div style={{ width: 90, flexShrink: 0 }}><PrimaryButton accent={accent} onClick={anadirPrograma}>Crear</PrimaryButton></div>
-          </div>
-        </Card>
-      )}
-
-      <ExplicarConcepto accent={accent} />
-
-      {!programa ? (
-        <EmptyHint text="Crea un programa para empezar a añadir asignaturas." />
-      ) : (
-        <div className="flex items-center gap-2">
-          <TextInput value={nuevaAsignatura} onChange={(e) => setNuevaAsignatura(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && anadirAsignatura()} placeholder={`Nueva asignatura en ${programa.nombre}`} />
-          <button onClick={anadirAsignatura} className="p-2.5 rounded-xl" style={{ background: accent, flexShrink: 0 }} aria-label="Añadir asignatura">
-            <Plus size={16} color={COLORS.textOnAccent} />
+        {/* Apartado 14 — tres columnas, iconos grandes, sin scroll horizontal. */}
+        <div className="grid grid-cols-3 gap-3">
+          {visibles.map((p) => (
+            <Plaquita key={p.id} app={p} linea={lineaDeApp(estudios, p.id)} accent={accent} onAbrir={() => setRuta(abrirApp(p.id))} />
+          ))}
+          <button
+            onClick={() => setCreando((c) => !c)}
+            className="rounded-2xl p-3 flex flex-col items-center justify-center text-center transition-transform active:scale-95"
+            style={{ background: COLORS.surface2, border: `1px dashed ${COLORS.border}`, minHeight: 108 }}
+          >
+            <Plus size={24} style={{ color: accent }} />
+            <span className="text-xs font-semibold mt-1" style={{ color: COLORS.textMuted }}>Añadir</span>
           </button>
         </div>
+
+        {creando && (
+          <CrearApp
+            accent={accent} programas={programas}
+            onCrear={(nueva) => { onAddPrograma(nueva); setCreando(false); setRuta(abrirApp(nueva.id)); }}
+            onCerrar={() => setCreando(false)}
+          />
+        )}
+
+        {/* Apartado 4 — reordenar, ocultar y eliminar, sin un panel de configuración enorme. */}
+        {todas.length > 0 && (
+          <div>
+            <button onClick={() => setOrganizando((o) => !o)} className="text-xs font-semibold" style={{ color: accent }}>
+              {organizando ? 'Listo' : 'Organizar'}
+            </button>
+            {organizando && (
+              <Card style={{ marginTop: '0.5rem' }}>
+                <div className="space-y-1.5">
+                  {todas.map((p, i) => (
+                    <div key={p.id} className="flex items-center gap-2">
+                      <span aria-hidden="true" style={{ fontSize: 16 }}>{iconoDeApp(p)}</span>
+                      <span className="text-xs min-w-0 flex-1 truncate" style={{ color: p.oculto ? COLORS.textMuted : COLORS.text }}>
+                        {p.nombre}{p.oculto ? ' · oculta' : ''}
+                      </span>
+                      <button onClick={() => onUpdateProgramas(moverApp(programas, p.id, 'arriba'))} disabled={i === 0} className="toque-44 p-1.5 -m-1.5 disabled:opacity-30" aria-label={`Subir ${p.nombre}`}>
+                        <ChevronUp size={16} style={{ color: COLORS.text }} />
+                      </button>
+                      <button onClick={() => onUpdateProgramas(moverApp(programas, p.id, 'abajo'))} disabled={i === todas.length - 1} className="toque-44 p-1.5 -m-1.5 disabled:opacity-30" aria-label={`Bajar ${p.nombre}`}>
+                        <ChevronDown size={16} style={{ color: COLORS.text }} />
+                      </button>
+                      <button onClick={() => onUpdateProgramas(alternarOcultaApp(programas, p.id))} className="toque-44 p-1.5 -m-1.5" aria-label={p.oculto ? `Mostrar ${p.nombre}` : `Ocultar ${p.nombre}`}>
+                        {p.oculto ? <Eye size={16} style={{ color: COLORS.textMuted }} /> : <EyeOff size={16} style={{ color: COLORS.textMuted }} />}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>{AVISO_OCULTAR}</p>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* Apartado 9 — jerarquía: 2.º los próximos eventos. */}
+        <ProximoEnEstudios estudios={estudios} accent={accent} onIr={(e) => setRuta(abrirRama(e.programaId, 'asignaturas'))} />
+
+        {/* Apartado 9 — y 3.º la información secundaria. */}
+        <CorrelacionEstudio sueno={sueno} horas={estudios.horas} accent={accent} />
+      </div>
+    );
+  }
+
+  /* ── UNA APP ────────────────────────────────────────────────────────────── */
+  if (ruta.vista === 'app') {
+    if (!app) return <div className="space-y-4 pb-4">{cabecera}<EmptyHint text="Esa área ya no existe." /></div>;
+    const ramas = ramasDeApp(estudios, app.id);
+
+    return (
+      <div className="space-y-4 pb-4 module-enter">
+        {cabecera}
+
+        <div className="flex items-center gap-3">
+          <span aria-hidden="true" style={{ fontSize: 34 }}>{iconoDeApp(app)}</span>
+          <div className="min-w-0">
+            <p className="text-lg font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{app.nombre}</p>
+            {app.categoria && <p className="text-xs" style={{ color: COLORS.textMuted }}>{app.categoria}</p>}
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          {ramas.map((r) => (
+            <button
+              key={r.id} onClick={() => setRuta(abrirRama(app.id, r.id))}
+              className="w-full rounded-2xl p-3 flex items-center gap-2.5 text-left transition-transform active:scale-[0.99]"
+              style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+            >
+              <span aria-hidden="true" style={{ fontSize: 20 }}>{r.icono}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold" style={{ color: COLORS.text }}>{r.nombre}</span>
+                {r.linea && <span className="block text-xs" style={{ color: COLORS.textMuted }}>{r.linea}</span>}
+              </span>
+              <ChevronRight size={16} style={{ color: COLORS.textMuted }} />
+            </button>
+          ))}
+        </div>
+
+        {/* Regla 8 — las ramas que todavía no existen se dicen, no se pintan como botones muertos. */}
+        {RAMAS_PENDIENTES.length > 0 && (
+          <p className="text-[11px] leading-relaxed" style={{ color: COLORS.textMuted }}>
+            {RAMAS_PENDIENTES.map((r) => `${r.icono} ${r.nombre}`).join(' · ')} todavía no se pueden usar.
+          </p>
+        )}
+
+        {/* Entrega 2 · ME Fase 4 — eliminar se lleva sus asignaturas (y con ellas exámenes y horas) a
+            la papelera en una sola entrada, así que restaurarla la devuelve entera. */}
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <p className="text-xs min-w-0 truncate" style={{ color: COLORS.textMuted }}>
+            {asignaturasApp.length} {asignaturasApp.length === 1 ? 'asignatura' : 'asignaturas'}
+          </p>
+          <BotonBorrar onClick={() => { onDeletePrograma(app.id); setRuta(RUTA_RAIZ); }} label={`Eliminar el área ${app.nombre}`} />
+        </div>
+      </div>
+    );
+  }
+
+  /* ── UNA RAMA ───────────────────────────────────────────────────────────── */
+  if (!app) return <div className="space-y-4 pb-4">{cabecera}<EmptyHint text="Esa área ya no existe." /></div>;
+
+  const examenesApp = examenesDe(estudios, app.id);
+  const horasApp = horasDe(estudios, app.id);
+  const nombreAsignatura = (id) => estudios.asignaturas.find((a) => a.id === id)?.nombre || '';
+
+  return (
+    <div className="space-y-4 pb-4 module-enter">
+      {cabecera}
+
+      {ruta.ramaId === 'asignaturas' && (
+        <>
+          <div className="flex items-center gap-2">
+            <TextInput value={nuevaAsignatura} onChange={(e) => setNuevaAsignatura(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && anadirAsignatura()} placeholder={`Nueva asignatura en ${app.nombre}`} />
+            <button onClick={anadirAsignatura} className="p-2.5 rounded-xl" style={{ background: accent, flexShrink: 0 }} aria-label="Añadir asignatura">
+              <Plus size={16} color={COLORS.textOnAccent} />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {asignaturasApp.length === 0 && <EmptyHint text="Todavía no has añadido ninguna asignatura a esta área." />}
+            {asignaturasApp.map((a) => (
+              <AsignaturaCard
+                key={a.id}
+                asignatura={a}
+                examenes={estudios.examenes.filter((e) => e.asignaturaId === a.id)}
+                horas={estudios.horas.filter((h) => h.asignaturaId === a.id)}
+                onAddExamen={onAddExamen}
+                onUpdateExamen={onUpdateExamen}
+                onDeleteExamen={onDeleteExamen}
+                onAddHoras={onAddHoras}
+                onDeleteHoras={onDeleteHoras}
+                onDeleteAsignatura={onDeleteAsignatura}
+                accent={accent}
+                focoExamenId={foco?.examenId} onFocoConsumido={onFocoConsumido}
+              />
+            ))}
+          </div>
+        </>
       )}
 
-      <div className="space-y-3">
-        {programa && asignaturasPrograma.length === 0 && <EmptyHint text="Todavía no has añadido ninguna asignatura a este programa." />}
-        {asignaturasPrograma.map((a) => (
-          <AsignaturaCard
-            key={a.id}
-            asignatura={a}
-            examenes={estudios.examenes.filter((e) => e.asignaturaId === a.id)}
-            horas={estudios.horas.filter((h) => h.asignaturaId === a.id)}
-            onAddExamen={onAddExamen}
-            onUpdateExamen={onUpdateExamen}
-            onDeleteExamen={onDeleteExamen}
-            onAddHoras={onAddHoras}
-            onDeleteHoras={onDeleteHoras}
-            onDeleteAsignatura={onDeleteAsignatura}
+      {ruta.ramaId === 'examenes' && (
+        <>
+          {examenesApp.length === 0 ? (
+            <EmptyHint text="Todavía no hay exámenes en esta área. Se añaden desde cada asignatura." />
+          ) : (
+            <div className="space-y-2">
+              {[...examenesApp].sort((a, b) => (a.fecha > b.fecha ? 1 : -1)).map((ex) => (
+                <div key={ex.id}>
+                  <p className="text-[11px] mb-1" style={{ color: COLORS.textMuted }}>{nombreAsignatura(ex.asignaturaId)}</p>
+                  <ExamenItem
+                    examen={ex} onUpdate={onUpdateExamen} onDelete={onDeleteExamen} accent={accent}
+                    forzarAbierta={foco?.examenId === ex.id} onFocoConsumido={onFocoConsumido}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 🚨 Apartado 8 — la inteligencia NO se elimina: sale del Home y vive aquí. */}
+          <ExplicarConcepto accent={accent} />
+
+          <AIPanel
+            label="Analizar mis estudios"
             accent={accent}
-            focoExamenId={foco?.examenId} onFocoConsumido={onFocoConsumido}
+            buildPrompt={() =>
+              `Asignaturas de Josué (JSON): ${JSON.stringify(asignaturasApp)}. ` +
+              `Exámenes próximos y pasados (JSON): ${JSON.stringify(examenesApp.slice(-15))}. ` +
+              `Horas de estudio recientes (JSON): ${JSON.stringify(horasApp.slice(-20))}. ` +
+              `Dale una lectura breve de cómo lo lleva y qué priorizaría esta semana según fechas de examen — ` +
+              `aconseja, no decidas por él. Si detectas un patrón simple, cita el dato concreto; si hay pocos datos, dilo abiertamente.`
+            }
           />
-        ))}
-      </div>
+        </>
+      )}
 
-      <CorrelacionEstudio sueno={sueno} horas={estudios.horas} accent={accent} />
-
-      <AIPanel
-        label="Analizar mis estudios"
-        accent={accent}
-        buildPrompt={() =>
-          `Asignaturas de Josué (JSON): ${JSON.stringify(estudios.asignaturas)}. ` +
-          `Exámenes próximos y pasados (JSON): ${JSON.stringify(estudios.examenes.slice(-15))}. ` +
-          `Horas de estudio recientes (JSON): ${JSON.stringify(estudios.horas.slice(-20))}. ` +
-          `Dale una lectura breve de cómo lo lleva y qué priorizaría esta semana según fechas de examen — ` +
-          `aconseja, no decidas por él. Si detectas un patrón simple, cita el dato concreto; si hay pocos datos, dilo abiertamente.`
-        }
-      />
+      {ruta.ramaId === 'horas' && (
+        horasApp.length === 0 ? (
+          <EmptyHint text="Todavía no has registrado horas en esta área. Se suman desde cada asignatura." />
+        ) : (
+          <Card>
+            <div className="space-y-1.5">
+              {[...horasApp].sort((a, b) => (a.fecha > b.fecha ? -1 : 1)).map((h) => (
+                <div key={h.id} className="flex items-center justify-between gap-2">
+                  <p className="text-xs min-w-0 truncate" style={{ color: COLORS.text }}>
+                    {formatFecha(h.fecha)} · {h.horas}h · {nombreAsignatura(h.asignaturaId)}
+                  </p>
+                  <BotonBorrar onClick={() => onDeleteHoras(h.id)} label="Eliminar horas de estudio" />
+                </div>
+              ))}
+            </div>
+          </Card>
+        )
+      )}
     </div>
   );
 }

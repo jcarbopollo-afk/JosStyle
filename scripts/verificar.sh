@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F41 — Estudios: el home tipo teléfono y la arquitectura en árbol.
+if node --import ./scripts/resolver-vite.mjs scripts/test-estudios-apps.mjs >/tmp/jc_esapps.log 2>&1; then
+  ok "Estudios: home tipo teléfono y árbol (E3 F41) — $(grep -c '✓' /tmp/jc_esapps.log) comprobaciones"
+else
+  fallo "Falla el home de Estudios (E3 F41)"; grep '✗' /tmp/jc_esapps.log
+fi
+
 # Entrega 3 · F40 — Nutrición: el cierre, la QA y el informe final.
 if node --import ./scripts/resolver-vite.mjs scripts/test-cierre-nutricion.mjs >/tmp/jc_cierrenu.log 2>&1; then
   ok "Nutrición: cierre y QA (E3 F40) — $(grep -c '✓' /tmp/jc_cierrenu.log) comprobaciones"

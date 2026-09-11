@@ -1,5 +1,55 @@
 # CHANGELOG.md
 
+## v3.62.0 — Entrega 3 · Fase 41 (ES F1): Estudios, home tipo teléfono y nueva arquitectura
+
+Empieza el **último bloque de la Entrega 3**. Al entrar en Estudios ya no hay una lista de funciones
+con dos párrafos explicando cómo va: hay **un centro de apps**.
+
+### 🚨 Una "app" de Estudios YA EXISTÍA, y se llamaba `programa`
+
+El enunciado propone 🎓 Bachillerato, 🎹 Música, ⚽ Fútbol, ♟️ Ajedrez y 🌍 Idiomas. Este módulo ya
+traía **Bachillerato y Música** desde la Fase 6, y el formulario de "nuevo programa" llevaba de
+marcador de posición literalmente *"Ej: Idiomas"*. Crear una lista `apps` al lado habría dejado **los
+programas, las asignaturas, los exámenes y las horas de Josué invisibles en su propia pantalla** — el
+fallo de la E3 F16 con las notas y el de la E3 F36 con los alimentos, por tercera vez.
+
+Así que la entidad **se amplía**: un programa suma `icono`, `categoria`, `orden` y `oculto`, y su
+normalizador corre **al cargar** (regla 5). Ni un campo renombrado: `id` y `nombre` los leen la
+papelera, el Horario —*sus asignaturas son las de Estudios*—, el Calendario y la exportación.
+
+- **El Home** (apartados 1, 13 y 14): cuadrícula de tres columnas con icono, nombre y **una línea
+  como mucho** —*«Examen en 3 días»*, *«2 asignaturas»*, o **nada** si no hay nada que decir: un
+  *«0 exámenes»* llenaría la pantalla de ceros—.
+- **Crear un área** (apartados 2 y 3): nombre, icono y categoría opcional. El icono **se propone**
+  según lo que escribe —«Ajedrez» → ♟️— y sigue siendo suyo; hay paleta y campo libre, porque el
+  apartado 2 prohíbe limitar el sistema a las áreas del ejemplo. Un nombre repetido **avisa, no
+  prohíbe**: puede tener dos "Inglés".
+- **Organizar** (apartado 4): flechas para reordenar —no arrastre, que no funciona con VoiceOver— y
+  ocultar. ⚠️ **Ocultar no es eliminar**: sus asignaturas, exámenes y horas se quedan enteros.
+- **El árbol** (apartados 11 y 12): Estudios → app → rama, con migas y un atrás que **sube un nivel**,
+  nunca saca de Estudios. Cada app abre **las ramas que tiene de verdad**; las dos que aún no existen
+  —Trabajos y Progreso— se dicen con una frase en vez de pintarse como botones muertos.
+- **PRÓXIMO** (apartado 10): el enunciado la pide *"solo visual"* porque da por hecho que no hay nada
+  que enseñar — pero **los exámenes existen desde la Fase 6, con su fecha**. Esconderlos sería la
+  regla 8 al revés, así que lee los de verdad y declara que las entregas todavía no se pueden apuntar.
+- **Fuera del Home** (apartados 7 y 8): el subtítulo explicativo **se elimina**; *"Explícame un
+  concepto"* y *"Analizar mis estudios"* **se mudan dentro de cada app**, porque el apartado 8 dice
+  expresamente que la inteligencia no se elimina.
+
+### 🐛 Y un fallo propio que cazaron las pruebas
+
+`lineaDeApp` y `proximosEventos` reciben `hoy` para poder probarse, pero contaban los días con
+`diasHasta()`, que **le pregunta al reloj del dispositivo**. Filtraban por un día y contaban desde
+otro: con un examen ayer y otro dentro de dos semanas, la plaquita decía *«2 exámenes»* en vez de
+*«Examen en 3 días»*. **Una función que acepta `hoy` y luego mira el reloj contesta a una pregunta
+distinta de la que le han hecho.**
+
+### 🐛 Y `EstudiosView` no tenía ni un caso de renderizado
+
+La cuarta vista sin cobertura de esta entrega, tras `LibraryView` (F16), `HealthView` (F30) y
+`NutritionView` (F33). Ahora tiene seis, incluido **el de los programas guardados antes de esta fase**
+—sin icono, sin orden y sin oculto—, que es el caso que más importa.
+
 ## v3.61.0 — Entrega 3 · Fase 40 (NU F8): pulido final, integración y QA 🏁 **CIERRA NUTRICIÓN**
 
 La regla final del enunciado: *"No des por terminada la fase simplemente porque el código compile."*

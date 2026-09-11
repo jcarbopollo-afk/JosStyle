@@ -195,6 +195,13 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
        NOMBRE acaba señalando algo que está bien, y estrechar la expresión hasta
        que calle sería peor — se le escaparía una de verdad. */
     && f !== 'rutinas'
+    /* ⚠️ Y `cierreNutricion` es el cierre del bloque NU (E3 F40), no de aquí: lo
+       caza la palabra `cierre`, que esta expresión busca por el `cierre.js` de la
+       EH F65. **Cuarta** exclusión a mano, y por el mismo motivo que las tres de
+       arriba. ⚠️ La que venga después —un `cierreEstudios.js`, por ejemplo— caerá
+       igual: eso es la regla funcionando, no fallando. Se excluye a mano y se
+       sigue; estrecharla hasta que calle sola es como se le escapa una de verdad. */
+    && f !== 'cierreNutricion'
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],

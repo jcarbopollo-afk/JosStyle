@@ -399,9 +399,12 @@ export const VASO_ML = 250;
 // Fase 6 — Estudios: varios "programas" en paralelo (por defecto Bachillerato y Música, pero
 // se pueden añadir más), cada uno con sus propias asignaturas. Exámenes y horas estudiadas
 // referencian su asignatura por id (mismo criterio relacional que el resto de la app).
+// E3 F41 (ES F1) — un programa es lo que la pantalla llama ahora un "área" o una "app", y suma
+// `icono`, `categoria`, `orden` y `oculto`. Los de aquí son los que trae la aplicación; a los que
+// escriba Josué no se les adivina el icono (`normalizarPrograma` en `estudiosApps.js`).
 export const DEFAULT_PROGRAMAS_ESTUDIO = [
-  { id: 'bachillerato', nombre: 'Bachillerato' },
-  { id: 'musica', nombre: 'Música' },
+  { id: 'bachillerato', nombre: 'Bachillerato', icono: '🎓', categoria: null, orden: 0, oculto: false },
+  { id: 'musica', nombre: 'Música', icono: '🎹', categoria: null, orden: 1, oculto: false },
 ];
 export const DEFAULT_ESTUDIOS = {
   programas: DEFAULT_PROGRAMAS_ESTUDIO,

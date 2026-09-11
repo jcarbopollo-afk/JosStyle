@@ -89,7 +89,15 @@ eq(tiraDeDias(comidas, '2026-09-20', { hoy: HOY }).filter((d) => d.futuro).lengt
   '🚨 y en el futuro los siete van marcados como futuros (apartado 7)');
 eq(diasConRegistro(comidas).size, 2, '`diasConRegistro` cuenta los días, no las comidas');
 eq(diasConRegistro(null).size, 0, '⚠️ y con basura, ninguno');
-ok(!/recharts|LineChart|BarChart/.test(CODIGO_VISTA.split('AguaTab')[0] || ''),
+// ⚠️ Esta comprobación miraba «todo lo que hay antes de AguaTab», así que la E3 F38 la puso roja con
+// el código bien: su gráfica de evolución vive en `EstadisticasNutricion` —que es literalmente su
+// apartado 13— y basta el `import … from 'recharts'` de la línea 2 para hacerla saltar. Lo que esta
+// fase promete es que **la tira de días** no sea una gráfica, así que se mira la tira: el componente
+// `SelectorDia`, que es quien la pinta. Un barrido que abarca más de lo que su frase promete acaba
+// señalando algo que está bien (E3 F29, E3 F32, E3 F33 y ya van unas cuantas).
+const COMPONENTE_TIRA = (CODIGO_VISTA.split('function SelectorDia')[1] || '').split('\nfunction ')[0];
+ok(COMPONENTE_TIRA.length > 200, 'se encuentra el componente que pinta la tira de días');
+ok(!/recharts|LineChart|BarChart|ResponsiveContainer|<svg/.test(COMPONENTE_TIRA),
   '⚠️ y la tira NO es una gráfica: *"No convertir esto en una gráfica compleja"*');
 
 console.log('\n── 3. 🚨 El calendario reutiliza la cuadrícula que ya existe ─────');

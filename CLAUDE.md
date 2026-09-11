@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.61.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.62.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (46 fases — **40 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (46 fases — **41 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -138,11 +138,11 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **15 664 pruebas unitarias** con Node repartidas en **137 suites** (5 de ellas de auditoría),
-**2016 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **993
-comprobaciones sobre la aplicación de verdad en Chromium** — **18 684 comprobaciones**.
+Vite, **16 661 pruebas unitarias** con Node repartidas en **142 suites** (5 de ellas de auditoría),
+**2076 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **1157
+comprobaciones sobre la aplicación de verdad en Chromium** — **19 905 comprobaciones**.
 
-Eso ya ha encontrado **noventa y dos bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **noventa y seis bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`), una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles, una
@@ -168,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 40 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 41 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -198,9 +198,9 @@ estadísticas, v3.59.0)**, la **F39 (inteligencia y análisis nutricional, v3.60
 **F40 (integración y cierre, v3.61.0)**, que 🏁 **CERRÓ EL BLOQUE DE NUTRICIÓN** —las ocho fases
 NU—. Con eso hay **seis
 bloques cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1),
-Sueño (2/2) y Nutrición (8/8)—. La que viene es
-la **41 — ES F1: Estudios, home tipo teléfono y nueva arquitectura**, con la que empieza el último
-bloque de la entrega. El índice, con la
+Sueño (2/2) y Nutrición (8/8)—, y la **F41 (Estudios, home tipo teléfono y nueva arquitectura,
+v3.62.0)**, con la que empieza el **último bloque de la entrega**: **ES va por 1 de 6**. La que viene
+es la **42 — ES F2: estructura en árbol y navegación por ramas**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -503,6 +503,48 @@ código de agosto mientras él decía *"la web sigue igual"*.
   E3 F23 escrita con las palabras de entonces, que el rediseño de esta fase cambió con todo el
   derecho. **Mirar qué línea la hace saltar antes de tocar el código**: de los cuatro rojos, **uno
   solo era del código** —la racha decía *"🔥 1 días"*—, y ése sí es de los que ve Josué.
+
+- 🚨 **UNA «APP» DE ESTUDIOS YA EXISTÍA, Y SE LLAMA `programa`** (E3 F41, y es la lección más
+  repetida del proyecto — tercera vez en esta entrega, tras las notas de la E3 F16 y los alimentos de
+  la E3 F36). El enunciado propone 🎓 Bachillerato, 🎹 Música, ⚽ Fútbol, ♟️ Ajedrez y 🌍 Idiomas, y
+  `DEFAULT_PROGRAMAS_ESTUDIO` **ya traía Bachillerato y Música** desde la Fase 6, con *"Ej: Idiomas"*
+  de marcador en su formulario. Una lista `apps` al lado habría dejado **los programas, las
+  asignaturas, los exámenes y las horas de Josué invisibles en su propia pantalla**. La entidad
+  **se amplía** con `icono`, `categoria`, `orden` y `oculto`; ni un campo se renombra, porque `id` y
+  `nombre` los leen la papelera, el Horario, el Calendario y la exportación.
+- 🚨 **UNA FUNCIÓN QUE ACEPTA `hoy` Y LUEGO MIRA EL RELOJ CONTESTA A OTRA PREGUNTA** (E3 F41).
+  `lineaDeApp` y `proximosEventos` reciben `hoy` para poder probarse, pero contaban los días con
+  `diasHasta()` de `helpers.js`, que **cuenta contra el reloj del dispositivo**: filtraban por un día
+  y contaban desde otro, así que con un examen ayer y otro dentro de dos semanas la plaquita decía
+  *«2 exámenes»* en vez de *«Examen en 3 días»*. `diasEntre(desde, hasta)` lo arregla — ⚠️ y se
+  construye en **local** (`T00:00:00`), que es la trampa del UTC por sexta vez.
+- ⚠️ **AQUÍ LOS ICONOS SÍ SON EMOJIS, Y NO CONTRADICE A LA E3 F3** (E3 F41). Las categorías del
+  Armario son **un catálogo fijo que dibuja la aplicación** (componentes de Lucide, que nadie puede
+  elegir desde un dato); las apps de Estudios **las crea Josué** (apartado 2: *"NO limitar el sistema
+  a las áreas anteriores"*), así que su icono tiene que ser algo que él pueda escoger desde un
+  iPhone. Es lo mismo que hace `MODULOS_EH` con `{ id: 'higiene', icono: '🧼' }`. **Antes de aplicar
+  una regla de otro módulo, mirar qué problema resolvía allí.**
+- ⚠️ **UN ICONO SE PROPONE, NO SE ADIVINA** (E3 F41): `sugerirIcono` rellena el campo al crear y él
+  puede cambiarlo, pero `normalizarPrograma` **no le escribe icono a lo que ya escribió Josué** — se
+  queda en `ICONO_POR_DEFECTO` al pintarlo. Solo los **dos ids que creó la propia aplicación** llevan
+  el suyo. Es la comida sin `momento` de la E3 F33: pintar un valor por defecto no es escribirlo.
+- ⚠️ **«SOLO VISUAL» DEJA DE SERLO SI EL DATO YA EXISTE** (E3 F41, apartado 10, y es la E3 F33 con el
+  selector de comidas). La zona de PRÓXIMO se pide *"solo estructura visual"* porque el enunciado da
+  por hecho que no hay nada que enseñar — pero **los exámenes existen desde la Fase 6, con su
+  fecha**. Esconderlos habría sido la regla 8 al revés. Lo que todavía no puede salir —las entregas—
+  se declara en `LO_QUE_FALTA_EN_PROXIMO` y **se dice en pantalla**.
+- ⚠️ **UNA RAMA QUE NO EXISTE SE DICE, NO SE PINTA** (E3 F41): `RAMAS_ESTUDIOS` declara `existe` y,
+  cuando es `false`, `enFase` y `porque`. Trabajos y Progreso salen como una frase, nunca como un
+  botón que no lleva a ninguna parte (regla 8). Y **cada app abre solo las ramas que tiene de
+  verdad** (apartado 12: *"no abrir una pantalla genérica idéntica para todas"*).
+- 🐛 **`EstudiosView` NO TENÍA NI UN CASO DE RENDERIZADO** (E3 F41): la **cuarta** vista sin cobertura
+  de esta entrega, tras `LibraryView` (F16), `HealthView` (F30) y `NutritionView` (F33). **Al tocar
+  una pantalla, mirar primero si está en `smoke-vistas.jsx`.** ⚠️ Y el caso que más importa es el de
+  **lo guardado antes de la fase** — sin icono, sin orden y sin oculto.
+- 🐛 **Y LA CUARTA EXCLUSIÓN A MANO DE LA MISMA REGLA** (E3 F41, tras `horarioEstructura`,
+  `sonidoProduccion` y `rutinas`): la auditoría de EH busca `cierre` por su `cierre.js`, así que
+  marcó `cierreNutricion`. Se excluye a mano; estrechar la expresión hasta que calle sola es como se
+  le escapa una de verdad. **La que venga después caerá igual, y eso es la regla funcionando.**
 
 - 🚨 **UNA AUDITORÍA DE CIERRE EJECUTA LAS AUDITORÍAS DE SUS FASES, NO LAS RESUME** (E3 F40, y la
   EH F64 lo dijo primero): `FASES_NUTRICION` guarda **la función** `condicionNU1…condicionNU7`

@@ -199,7 +199,11 @@ ok(VISTA.includes('BarcodeScanner') && VISTA.includes('buscarProductoPorCodigoBa
   '🚨 el escáner de códigos de barras sigue');
 ok(VISTA.includes('askAIWithImage'), '🚨 y la foto del plato');
 ok(VISTA.includes('FavoritosTab') && VISTA.includes('AguaTab'), '⚠️ y las pestañas de Agua y Favoritos');
-ok(VISTA.includes('AIPanel') && VISTA.includes('Analizar mi nutrición'), '⚠️ y el panel de IA');
+// ⚠️ Buscaba el rótulo literal *"Analizar mi nutrición"*, y la E3 F39 lo cambió por «Analizar mi
+// semana» con todo el derecho: ese panel pasó a mandar el contexto semanal de `contextoIANutricion`.
+// Lo que esta fase promete es que **el panel siga estando**, así que se busca el mecanismo —el
+// componente con su rótulo—, no las palabras de entonces (E3 F29).
+ok(/<AIPanel[\s\S]{0,200}?label="Analizar/.test(VISTA), '⚠️ y el panel de IA');
 ok(VISTA.includes('No des objetivos calóricos estrictos'),
   '🚨 con su prompt intacto: la IA sigue sin dar objetivos calóricos estrictos (regla 7)');
 ok(VISTA.includes('BotonBorrar') && VISTA.includes('onDeleteComida'), '⚠️ y se puede seguir borrando una comida');

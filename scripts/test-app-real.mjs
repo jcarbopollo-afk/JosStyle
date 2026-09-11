@@ -4080,20 +4080,44 @@ ok(llamadasIA === 0, '🚨 Y EL PANEL NO HA LLAMADO A LA IA: el análisis es loc
 ok(/Analizar mi semana/i.test(an),
   '⚠️ la IA generativa sigue siendo un botón de un toque, con el nombre del apartado 13');
 
-/* 🚨 Apartado 8 — con un solo día, ni una conclusión. */
-almacen.nutricion = {
-  comidas: [{ id: 'uno', fecha: DN(0), momento: 'comida', nombre: 'Solo hoy', calorias: 2000, proteinas: 110, carbohidratos: 250, grasas: 60 }],
-  agua: {}, favoritos: [],
-  objetivos: almacen.nutricion.objetivos,
-};
+/* 🚨 Apartado 8 — con pocos días, ni una conclusión.
+   ⚠️ Y hay DOS pantallas distintas según cuántos días haya, porque la E3 F38 tiene
+   su propio apartado 12 —*"no mostrar gráficas vacías"*— con el umbral en
+   `MINIMO_DIAS_ESTADISTICA = 2`:
+     · con UN día, el estado vacío de la F38 ocupa la pestaña entera y el panel de
+       la F39 **ni se pinta**, porque va debajo de ese `return`;
+     · con DOS, el panel sí se pinta y es **ahí** donde se ve la puerta de la F39,
+       que pide tres días para la primera observación.
+   La versión anterior de esta comprobación buscaba el panel de la F39 con un solo
+   día —o sea, en la pantalla en la que no existe— y salía roja con el código bien.
+   Se comprueban las dos, que es lo que de verdad ve Josué. */
+const nutObjetivos = almacen.nutricion.objetivos;
+const comidaDe = (dias, nombre) => ({ id: `un-${dias}`, fecha: DN(dias), momento: 'comida', nombre, calorias: 2000, proteinas: 110, carbohidratos: 250, grasas: 60 });
+
+almacen.nutricion = { comidas: [comidaDe(0, 'Solo hoy')], agua: {}, favoritos: [], objetivos: nutObjetivos };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 ok(await pulsar('Bienestar'), 'se vuelve a entrar con un solo día');
 ok(await pulsar('Nutrición'), 'en Nutrición');
 ok(await pulsar('Estadísticas'), 'y en Estadísticas');
-const unDia = await esperarTexto(/Análisis nutricional/i);
-ok(/Necesitamos más datos/i.test(unDia),
-  '🚨 CON UN SOLO DÍA NO SE DICE NADA ESPECÍFICO: «necesitamos más datos» (apartado 8)');
+const unDia = await esperarTexto(/Tu evolución aparecerá aquí/i);
+ok(/Tu evolución aparecerá aquí/i.test(unDia),
+  '🚨 CON UN SOLO DÍA LA PESTAÑA ENTERA ES EL ESTADO VACÍO (E3 F38, apartado 12)');
+ok(!/Comes bastante|Te faltan|de media|tiendes a/i.test(unDia),
+  '🚨 y NI UNA conclusión específica con un solo día (apartado 8)');
+
+/* 🚨 Y con DOS días, que es donde la puerta de la F39 se puede ver de verdad. */
+almacen.nutricion = { comidas: [comidaDe(0, 'Hoy'), comidaDe(1, 'Ayer')], agua: {}, favoritos: [], objetivos: nutObjetivos };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar'), 'se vuelve a entrar con dos días');
+ok(await pulsar('Nutrición'), 'en Nutrición');
+ok(await pulsar('Estadísticas'), 'y en Estadísticas');
+const dosDias = await esperarTexto(/Análisis nutricional/i);
+ok(/Necesitamos más datos/i.test(dosDias),
+  '🚨 CON DOS DÍAS NO SE DICE NADA ESPECÍFICO: «necesitamos más datos» (apartado 8)');
+ok(!/tiendes a|de media comes|patrón/i.test(dosDias),
+  '🚨 y por debajo de tres días no se cuela ni un patrón');
 ok(!/va por debajo de tu objetivo|cambia bastante entre días/i.test(unDia),
   '🚨 ni una conclusión sobre la proteína ni sobre la variación');
 ok(!/no suele aparecer en tus registros/i.test(unDia),
@@ -4102,5 +4126,77 @@ ok(!/no suele aparecer en tus registros/i.test(unDia),
 /* 🚨 Y mirar el análisis no escribe nada. */
 const escriturasAn = guardado.filter((g) => g && g.key === 'nutricion').length;
 ok(escriturasAn === 0, '🚨 Y MIRAR EL ANÁLISIS NO ESCRIBE NADA: es una vista, como las estadísticas');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   E3 · FASE 41 (ES F1) — ESTUDIOS: EL HOME TIPO TELÉFONO
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 **Lo que ninguna prueba de Node puede ver:** que al entrar en Estudios se ven
+   las apps, que **las de antes de esta fase siguen ahí con sus asignaturas**
+   (apartado 16 — el riesgo real de la fase), que pulsar una abre SU espacio y no
+   una pantalla genérica, que dentro se llega a las ramas, y que el botón de atrás
+   sube un nivel en vez de sacarte de Estudios. Las 2076 pruebas de renderizado
+   pintan el Home y nada más: las otras dos pantallas **solo existen tras pulsar**,
+   que es justo donde se esconden los fallos de esta entrega. */
+almacen.estudios = {
+  programas: [
+    { id: 'bachillerato', nombre: 'Bachillerato' },
+    { id: 'musica', nombre: 'Música' },
+  ],
+  asignaturas: [
+    { id: 'ea1', programaId: 'bachillerato', nombre: 'Matemáticas' },
+    { id: 'ea2', programaId: 'bachillerato', nombre: 'Biología' },
+    { id: 'ea3', programaId: 'musica', nombre: 'Piano' },
+  ],
+  examenes: [{ id: 'eex1', asignaturaId: 'ea1', fecha: DN(-3), tema: 'Derivadas', notaObjetivo: '9', notaObtenida: '', planRepaso: [] }],
+  horas: [{ id: 'eh1', asignaturaId: 'ea1', fecha: DN(0), horas: 2 }],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Vida'), 'se entra en el área Vida');
+ok(await pulsar('Estudios'), 'y en Estudios');
+
+const homeEs = await esperarTexto(/Bachillerato/i);
+/* 🚨 El apartado 16: los programas de antes de la fase SIGUEN AHÍ. */
+ok(/Bachillerato/i.test(homeEs) && /Música/i.test(homeEs),
+  '🚨 LAS ÁREAS DE ANTES DE LA FASE SIGUEN EN EL HOME: un `programa` es una "app" (apartado 16)');
+ok(/Añadir/i.test(homeEs), '⚠️ con el ＋ Añadir del apartado 3');
+ok(/PRÓXIMO/i.test(homeEs), '⚠️ y la zona de PRÓXIMO del apartado 10');
+ok(/Examen de Matemáticas/i.test(homeEs),
+  '🚨 que enseña el examen de VERDAD que ya estaba guardado, no una maqueta');
+
+/* Apartados 7 y 8 — los textos largos y el panel de IA no están en el Home. */
+ok(!/Un programa por pestaña/i.test(homeEs), '🚨 EL SUBTÍTULO EXPLICATIVO HA DESAPARECIDO (apartado 7)');
+ok(!/Analizar mis estudios/i.test(homeEs), '🚨 Y EL PANEL DE IA NO OCUPA EL HOME (apartado 8)');
+ok(!/Explícame un concepto/i.test(homeEs), '🚨 ni el de explicar un concepto');
+
+/* Apartado 12 — pulsar una app abre SU espacio, con sus ramas. */
+ok(await pulsar('Bachillerato'), 'se abre el área Bachillerato');
+const dentroEs = await esperarTexto(/Asignaturas/i);
+ok(/Asignaturas/i.test(dentroEs) && /Exámenes/i.test(dentroEs),
+  '🚨 Y DENTRO ESTÁN SUS RAMAS: el árbol del apartado 11');
+ok(/2 asignaturas/i.test(dentroEs),
+  '⚠️ con la cuenta de lo que hay de verdad en ESA app, no en todas');
+ok(/Estudios › Bachillerato/i.test(dentroEs), '⚠️ y las migas dicen dónde está');
+
+/* La rama de asignaturas es la pantalla de siempre: no se ha perdido nada. */
+ok(await pulsar('Asignaturas'), 'se entra en la rama de asignaturas');
+const ramaEs = await esperarTexto(/Matemáticas/i);
+ok(/Matemáticas/i.test(ramaEs) && /Biología/i.test(ramaEs),
+  '🚨 LAS ASIGNATURAS GUARDADAS SIGUEN ESTANDO, con su tarjeta de siempre');
+ok(!/Piano/i.test(ramaEs), '⚠️ y no se cuela la de otra app');
+
+/* 🚨 El botón de atrás sube UN nivel, no saca de Estudios (EH F37). */
+ok(await pulsar('Volver atrás'), 'se pulsa atrás');
+const volvioEs = await esperarTexto(/Exámenes/i);
+ok(/Exámenes/i.test(volvioEs) && !/Matemáticas/i.test(volvioEs),
+  '🚨 ATRÁS DESDE UNA RAMA VUELVE A SU APP, no al Home ni fuera de Estudios');
+ok(await pulsar('Volver atrás'), 'se pulsa atrás otra vez');
+const homeOtraVez = await esperarTexto(/PRÓXIMO/i);
+ok(/Música/i.test(homeOtraVez), '🚨 y desde una app se vuelve al Home con todas las áreas');
+
+/* 🚨 Y navegar por el árbol NO ESCRIBE NADA: mirar es mirar (E3 F32). */
+const escriturasEs = guardado.filter((g) => g && g.key === 'estudios').length;
+ok(escriturasEs === 0, '🚨 Y RECORRER EL ÁRBOL NO GUARDA NADA: la navegación es una vista');
 
 await salir(browser);

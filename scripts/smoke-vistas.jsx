@@ -148,6 +148,7 @@ import HubView from '../src/views/HubView.jsx';
 import WellbeingView from '../src/views/WellbeingView.jsx';
 import HealthView from '../src/views/HealthView.jsx';
 import NutritionView from '../src/views/NutritionView.jsx';
+import EstudiosView from '../src/views/EstudiosView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
@@ -2377,6 +2378,63 @@ const CASOS = [
           manual: {}, pesoAlCalcular: 72, fecha: HOY,
         },
       })],
+    ];
+  })(),
+
+  /* 🚨 Entrega 3 · F41 (ES F1) — **`EstudiosView` tampoco tenía ni un caso**, y es
+     la CUARTA vista que aparece sin cobertura en esta entrega, tras `LibraryView`
+     (F16), `HealthView` (F30) y `NutritionView` (F33). Al tocar una pantalla,
+     comprobar primero si está aquí: que se pinte en producción no significa que
+     la pruebe nadie. */
+  ...(() => {
+    const propsEs = (estudios, extra = {}) => ({
+      estudios, sueno: [],
+      onAddPrograma: noop, onUpdateProgramas: noop, onDeletePrograma: noop,
+      onAddAsignatura: noop, onDeleteAsignatura: noop,
+      onAddExamen: noop, onUpdateExamen: noop, onDeleteExamen: noop,
+      onAddHoras: noop, onDeleteHoras: noop,
+      accent, foco: null, onFocoConsumido: noop, ...extra,
+    });
+    const conApps = {
+      programas: [
+        { id: 'bachillerato', nombre: 'Bachillerato', icono: '🎓', categoria: null, orden: 0, oculto: false },
+        { id: 'musica', nombre: 'Música', icono: '🎹', categoria: null, orden: 1, oculto: false },
+        { id: 'idi', nombre: 'Idiomas', icono: '🌍', categoria: 'Extraescolares', orden: 2, oculto: false },
+      ],
+      asignaturas: [
+        { id: 'a1', programaId: 'bachillerato', nombre: 'Matemáticas' },
+        { id: 'a2', programaId: 'bachillerato', nombre: 'Biología' },
+        { id: 'a3', programaId: 'musica', nombre: 'Piano' },
+      ],
+      examenes: [
+        { id: 'e1', asignaturaId: 'a1', fecha: addDays(HOY, 3), tema: 'Derivadas', notaObjetivo: '9', notaObtenida: '', planRepaso: [] },
+        { id: 'e2', asignaturaId: 'a2', fecha: addDays(HOY, 18), tema: 'Genética', notaObjetivo: '', notaObtenida: '', planRepaso: [] },
+      ],
+      horas: [
+        { id: 'h1', asignaturaId: 'a1', fecha: HOY, horas: 2 },
+        { id: 'h2', asignaturaId: 'a3', fecha: addDays(HOY, -1), horas: 1 },
+      ],
+    };
+    return [
+      ['EstudiosView', EstudiosView, (e) => propsEs(e.estudios)],
+      /* El Home con sus apps, su línea de estado y su zona de PRÓXIMO. */
+      ['EstudiosView · el home con apps', EstudiosView, () => propsEs(conApps)],
+      /* 🚨 Lo guardado ANTES de esta fase: sin icono, sin orden y sin oculto. La
+         pantalla tiene que pintarlo igual, con el icono de por defecto. */
+      ['EstudiosView · programas de antes de la fase', EstudiosView, () => propsEs({
+        programas: [{ id: 'viejo', nombre: 'Lo de siempre' }],
+        asignaturas: [{ id: 'v1', programaId: 'viejo', nombre: 'Una asignatura' }],
+        examenes: [], horas: [],
+      })],
+      /* Un área oculta no sale en el Home, pero sus datos siguen enteros. */
+      ['EstudiosView · con un área oculta', EstudiosView, () => propsEs({
+        ...conApps,
+        programas: conApps.programas.map((p) => (p.id === 'musica' ? { ...p, oculto: true } : p)),
+      })],
+      /* Sin ni un área: el Home es el ＋ y poco más. */
+      ['EstudiosView · sin áreas', EstudiosView, () => propsEs({ programas: [], asignaturas: [], examenes: [], horas: [] })],
+      /* Y con un examen destacado desde el Dashboard, que abre su rama sola. */
+      ['EstudiosView · con foco en un examen', EstudiosView, () => propsEs(conApps, { foco: { examenId: 'e1' } })],
     ];
   })(),
 
