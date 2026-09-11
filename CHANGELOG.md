@@ -1,5 +1,83 @@
 # CHANGELOG.md
 
+## v3.61.0 — Entrega 3 · Fase 40 (NU F8): pulido final, integración y QA 🏁 **CIERRA NUTRICIÓN**
+
+La regla final del enunciado: *"No des por terminada la fase simplemente porque el código compile."*
+
+### 🚨 El informe se CALCULA, y puede decir PENDIENTE
+
+`src/lib/cierreNutricion.js` **no pone ni una casilla a `true` a mano**. `informeFinal()` ejecuta
+**las siete auditorías de las fases anteriores** —importadas de verdad, así que renombrar una rompe
+la compilación—, recorre la cadena de cálculos con números reales, construye los siete estados
+extremos y prueba las seis entradas incorrectas. Con la pantalla vacía, el informe dice **PENDIENTE**;
+con la de verdad, **COMPLETADO**. Es `condicionFinal()` de EH F64 otra vez.
+
+- **Los cálculos, de punta a punta** (apartado 6): alimento → cantidad → comida → día → objetivo →
+  estadísticas, y cada eslabón se comprueba **contra el anterior**, nunca contra un número escrito a
+  mano — así un cálculo roto no puede aprobar.
+- **Objetivo y consumido** (apartado 7): *«1.850 / 2.400 kcal»*, lo consumido primero. Y sin objetivo
+  **no hay barra**: un *«1850 / —»* invitaría a leer un objetivo que no existe.
+- **Los siete estados extremos** (apartado 8), construidos y mirados: día vacío, un alimento, el
+  objetivo justo, superado, sin datos, **200 alimentos** y **120 días**.
+- **Las seis entradas incorrectas** (apartado 14): todas avisan, ninguna dice «Error» a secas, y con
+  datos malos **no se escribe nada ni pidiéndolo con `confirmado`**.
+- **La persistencia** (apartado 15): los seis campos pasan por los normalizadores y **no se pierde
+  ninguno** — la regla 5, comprobada.
+- **Lo pendiente se documenta, no se implementa** (apartado 23): cuatro cosas con su motivo y quién
+  decide. Y **la deuda heredada se dice con su nombre**: el conflicto entre dispositivos y
+  `/api/ask-ai` sin autenticación.
+
+## v3.60.0 — Entrega 3 · Fase 39 (NU F7): inteligencia y análisis nutricional
+
+### 🔒 La tensión que esta fase resuelve
+
+El apartado 11 de la **F6** prohibía interpretar una desviación *"como buena o mala **sin tener en
+cuenta el objetivo del usuario**"*, y el apartado 10 de **ésta** pide exactamente eso. No se
+contradicen: la F6 prohibía interpretar **sin** el objetivo, y ésta es la fase que lo trae (E3 F21 —
+*cuando dos fases se contradicen, manda la que construye la función*).
+
+Así que **la misma cifra se cuenta distinto según lo que él busque**: comer por debajo, queriendo
+perder grasa, *"va en esa dirección"*; la misma cifra, queriendo ganar masa, es *"has comido por
+debajo de lo que calculaste"*. Y estar **cerca** también significa algo distinto según el objetivo —
+dejarlo fuera era construir el apartado 10 a medias.
+
+### 🚨 «No registrado» no es «no consumido»
+
+El enunciado lo marca como **MUY IMPORTANTE**, y da el ejemplo exacto:
+
+> ✅ «La merienda no suele aparecer en tus registros.» ❌ «Nunca meriendas.»
+
+**Toda frase de esta fase habla de los registros**, y hay un barrido sobre los catorce textos
+generados que lo comprueba. El panel lo dice entero debajo: *"si un día no apuntaste algo, aquí no
+aparece — pero eso no quiere decir que no lo comieras"*.
+
+### 🚨 Y nada de esto llama a la IA
+
+El apartado 13 lo pide —*"NO conectar automáticamente la API a cada renderizado"*— y por eso el
+apartado 15 —*"si la IA no está disponible, la aplicación debe seguir funcionando perfectamente"*—
+**sale gratis**: el análisis es local y de reglas, y la IA nunca fue el camino principal. Lo que sí
+cambió es **qué se le manda**: el análisis ya resumido, no veinte fichas de comida con su marca y sus
+gramos (apartado 14, *"no enviar datos innecesarios"*). Ni el peso ni la altura viajan.
+
+### Lo demás
+
+- **El nivel de confianza** (apartado 8): con **un día no se dice nada**, con 3-6 observaciones
+  básicas, con 7+ tendencias y con 30+ análisis sólido. 🐛 **Y ahí salió un fallo real**: el patrón de
+  *"días con registros incompletos"* no dependía de ningún análisis, así que **se colaba con un solo
+  día registrado** — justo lo que el apartado 8 prohíbe. La puerta del nivel se cierra ahora antes de
+  construir ningún patrón.
+- **Proteína** con su porcentaje y su acción: *"te faltan 15 g"*, que es mejor que un párrafo.
+- **Regularidad** con el coeficiente de variación, y su matiz: *"no tiene por qué ser algo malo"*.
+- **El resumen reutilizable para Hoy** (apartado 11), que **se usa de verdad** en la cabecera del
+  panel: una función que nadie llama no falla nunca.
+
+### Archivos
+
+- **Nuevo:** `src/lib/inteligenciaNutricion.js`, `src/lib/cierreNutricion.js`,
+  `scripts/test-inteligencia-nutricion.mjs` (97), `scripts/test-cierre-nutricion.mjs` (63).
+- **Tocados:** `src/views/NutritionView.jsx` (`AnalisisNutricional` y el contexto de la IA),
+  `scripts/verificar.sh`, `scripts/test-app-real.mjs`.
+
 ## v3.59.0 — Entrega 3 · Fase 38 (NU F6): estadísticas y evolución nutricional
 
 *"¿Estoy cumpliendo mis objetivos nutricionales y cómo estoy evolucionando?"*, contestado con los

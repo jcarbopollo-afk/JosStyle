@@ -48,6 +48,12 @@ import {
   analisisProteina, analisisCalorias, hayEstadisticas,
   VACIO_ESTADISTICAS, ACCESO_ESTADISTICAS, TEXTO_SIN_DATOS_NUT,
 } from '../lib/estadisticasNutricion';
+/* Entrega 3 · F39 (NU F7) — el análisis. 🚨 Es LOCAL y de reglas: no llama a la
+   IA en ningún renderizado (apartado 13), así que si la IA no contesta la
+   pantalla no pierde nada (apartado 15). */
+import {
+  TITULO_PANEL, analizarNutricion, resumenParaHoy, contextoIANutricion,
+} from '../lib/inteligenciaNutricion';
 import { buscarProductoPorCodigoBarras, buscarAlimentosPorNombre } from '../lib/openFoodFacts';
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
@@ -1422,6 +1428,86 @@ function FavoritosTab({ favoritos, onRegistrar, onEliminar, accent }) {
   );
 }
 
+/* ── Análisis nutricional — Entrega 3 · F39 (NU F7) ───────────────────────
+   🔒 **Toda frase de aquí mira su objetivo** (apartado 10) y **habla de sus
+   REGISTROS**, nunca de lo que comió (apartados 6 y 7, marcados como *"MUY
+   IMPORTANTE"*): *"la merienda no suele aparecer en tus registros"*, jamás
+   *"nunca meriendas"*.
+
+   ⚠️ *"Evitar textos largos"* y *"no convertirlo en un chatbot gigante"*
+   (apartados 1 y 16): un resumen de dos frases, lo detectado en líneas sueltas,
+   y una recomendación con su número. */
+function AnalisisNutricional({ nutricion, periodoId, accent }) {
+  const a = useMemo(() => analizarNutricion(nutricion, periodoId), [nutricion, periodoId]);
+  const paraHoy = useMemo(() => resumenParaHoy(nutricion), [nutricion]);
+
+  return (
+    <Card>
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+          {TITULO_PANEL}
+        </p>
+        {/* Apartado 11 — el resumen pequeño y reutilizable. Vive aquí y el día
+            que Hoy lo quiera, llama a la misma función. */}
+        {paraHoy && (
+          <span className="text-xs font-semibold flex-shrink-0" style={{ color: accent }}>
+            {paraHoy.emoji} {paraHoy.texto}
+          </span>
+        )}
+      </div>
+
+      {/* 🚨 Apartado 8 — con pocos datos NO se dice nada específico. */}
+      {a.sinDatos ? (
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>{a.sinDatos}</p>
+      ) : (
+        <>
+          <p className="text-sm" style={{ color: COLORS.text }}>{a.resumen}</p>
+
+          {a.patrones.length > 0 && (
+            <div className="mt-2.5 space-y-1">
+              {a.patrones.map((p, i) => (
+                <p key={`${p.id}-${i}`} className="text-xs" style={{ color: COLORS.textMuted }}>· {p.texto}</p>
+              ))}
+            </div>
+          )}
+
+          {/* Apartado 3 — la proteína, con su estado y su acción. */}
+          {a.proteina.hay && (
+            <div className="mt-2.5 rounded-2xl p-2.5" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <p className="text-xs font-bold" style={{ color: COLORS.text }}>💪 {a.proteina.titulo}</p>
+              <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{a.proteina.texto}</p>
+            </div>
+          )}
+
+          {/* 🔒 Apartado 10 — qué significa esa desviación PARA SU objetivo. */}
+          {a.calorias.hay && a.calorias.segunObjetivo && (
+            <div className="mt-2 rounded-2xl p-2.5" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <p className="text-xs font-bold" style={{ color: COLORS.text }}>🔥 {a.calorias.texto}</p>
+              <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{a.calorias.segunObjetivo}</p>
+            </div>
+          )}
+
+          {/* Apartado 5 — la regularidad, con su matiz. */}
+          {a.regularidad.hay && !a.regularidad.estable && (
+            <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
+              {a.regularidad.texto} {a.regularidad.matiz}
+            </p>
+          )}
+
+          {/* Apartado 9 — la recomendación, simple y con su cifra. */}
+          {a.recomendaciones.map((r, i) => (
+            <p key={i} className="text-xs mt-2 leading-relaxed" style={{ color: accent }}>{r}</p>
+          ))}
+        </>
+      )}
+
+      {/* 🚨 Apartados 6 y 7 — la frase que sostiene todo el panel. */}
+      <p className="text-xs mt-3 leading-relaxed" style={{ color: COLORS.textMuted }}>{a.aviso}</p>
+    </Card>
+  );
+}
+
+
 /* ── Estadísticas de Nutrición — Entrega 3 · F38 (NU F6) ──────────────────
    *"¿Estoy cumpliendo mis objetivos nutricionales y cómo estoy evolucionando?"*
 
@@ -1507,6 +1593,10 @@ function EstadisticasNutricion({ nutricion, accent }) {
   return (
     <div className="space-y-3">
       {selectorPeriodo}
+
+      {/* Entrega 3 · F39 (NU F7) — el análisis, arriba del todo: es lo que
+          contesta la pregunta, y los números de abajo lo sostienen. */}
+      <AnalisisNutricional nutricion={nutricion} periodoId={periodoId} accent={accent} />
 
       {/* Apartado 2 — el promedio diario, con sus cuatro indicadores. */}
       <Card>
@@ -1686,13 +1776,21 @@ export default function NutritionView({ nutricion, perfil, onAddComida, onDelete
       )}
       {sub === 'stats' && <EstadisticasNutricion nutricion={nutricion} accent={accent} />}
 
+      {/* 🚨 Entrega 3 · F39 (NU F7), apartados 13 y 14 — la IA sigue siendo **de
+          un toque** (regla 7), y ahora se le manda **el análisis**, no las
+          comidas una a una: *"no enviar datos innecesarios"*. Veinte fichas de
+          comida con su marca y sus gramos no le dicen nada que no diga el
+          promedio, y salen de aquí sin necesidad. */}
       <AIPanel
-        label="Analizar mi nutrición"
+        label="Analizar mi semana"
         accent={accent}
         buildPrompt={() =>
-          `Comidas registradas por Josué, 16 años, recientemente (JSON): ${JSON.stringify(nutricion.comidas.slice(-20))}. ` +
+          `Análisis nutricional de Josué, 16 años, con SUS datos ya resumidos (JSON): ` +
+          `${JSON.stringify(contextoIANutricion(nutricion))}. ` +
           `Agua de los últimos días (JSON, ml por fecha): ${JSON.stringify(nutricion.agua)}. ` +
           `No des objetivos calóricos estrictos ni un plan de dieta — céntrate en hábitos, constancia, variedad y energía. ` +
+          `Ten en cuenta SU objetivo: una desviación no significa lo mismo para perder grasa que para ganar masa. ` +
+          `Y lo que no está registrado no es lo mismo que no consumido: no supongas que se salta comidas. ` +
           `Si detectas un patrón simple, cítalo con el dato concreto; si hay pocos datos, dilo abiertamente.`
         }
       />

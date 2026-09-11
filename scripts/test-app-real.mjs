@@ -4019,4 +4019,88 @@ const graficasVacias = await page.evaluate(() => document.querySelectorAll('.rec
 ok(graficasVacias === 0,
   '🚨 Y NI UNA GRÁFICA VACÍA: *"no mostrar gráficas vacías"* es literal del apartado 12');
 
+
+/* ── E3 F39 + F40 (NU F7 y F8) · EL ANÁLISIS Y EL CIERRE ──────────────────
+   🔒 Lo que hay que ver con el dedo: que el panel **mire su objetivo**
+   (apartado 10 de la F7), que hable de **sus registros** y nunca de lo que no
+   come (apartados 6 y 7, marcados como MUY IMPORTANTE), y que **con un solo día
+   no diga nada específico** (apartado 8).
+
+   El escenario son ocho días con desayuno y comida —nunca merienda— y la
+   proteína corta, con el objetivo puesto en **ganar masa**. */
+const DIAS_AN = [];
+for (let i = 0; i < 8; i += 1) {
+  DIAS_AN.push({ id: `an${i}`, fecha: DN(i), momento: 'comida', nombre: 'Comida', calorias: 2000, proteinas: 110, carbohidratos: 250, grasas: 60, fibra: 20 });
+  DIAS_AN.push({ id: `ad${i}`, fecha: DN(i), momento: 'desayuno', nombre: 'Desayuno', calorias: 300, proteinas: 15, carbohidratos: 40, grasas: 8, fibra: 5 });
+}
+almacen.nutricion = {
+  comidas: DIAS_AN, agua: {}, favoritos: [],
+  objetivos: {
+    configurado: true, actividad: 'moderado', objetivo: 'ganar',
+    kcal: 2400, proteinas: 140, carbohidratos: 300, grasas: 70,
+    manual: {}, pesoAlCalcular: 72, fecha: DN(0),
+  },
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+guardado.length = 0;
+
+ok(await pulsar('Bienestar'), 'se abre el área Bienestar');
+ok(await pulsar('Nutrición'), 'se entra en Nutrición');
+ok(await pulsar('Estadísticas'), 'y en Estadísticas, donde vive el análisis');
+
+const an = await esperarTexto(/Análisis nutricional/i);
+ok(/Análisis nutricional/i.test(an), '🚨 E3 F39 — hay un panel de análisis (apartado 1)');
+ok(/Tu proteína va por debajo de tu objetivo/i.test(an),
+  '⚠️ con un resumen corto sacado de sus datos (apartado 1)');
+
+/* 🔒 Apartado 10 — la frase mira SU objetivo, que es ganar masa. */
+ok(/ganar masa/i.test(an),
+  '🔒 Y MIRA SU OBJETIVO: «ganar masa» aparece en la interpretación (apartado 10)');
+
+/* 🚨 Apartados 6 y 7 — habla de registros, nunca de lo que no come. */
+ok(/no suele aparecer en tus registros/i.test(an),
+  '🚨 «La merienda no suele aparecer en tus registros» — la forma del apartado 6');
+ok(!/(nunca meriendas|no meriendas|te saltas)/i.test(an),
+  '🚨 Y NUNCA «nunca meriendas»: el apartado 7 lo marca como MUY IMPORTANTE');
+ok(/no quiere decir que no lo comieras/i.test(an),
+  '🚨 con la frase que lo sostiene, debajo del panel entero');
+
+/* Apartado 9 — la recomendación, con su número. */
+ok(/15 g de proteína/.test(an),
+  '⚠️ y la recomendación lleva su cifra: «te faltan 15 g» (apartado 9)');
+
+/* Apartado 11 — el resumen pequeño y reutilizable, en la cabecera. */
+ok(/Te quedan \d+ g de proteína|Te quedan \d+ kcal|objetivo calórico/i.test(an),
+  '⚠️ con el resumen pequeño del apartado 11, el que Hoy podrá usar');
+
+/* 🚨 Apartado 13 — y nada de esto ha llamado a la IA. */
+const llamadasIA = await page.evaluate(() => window.__llamadasIA || 0);
+ok(llamadasIA === 0, '🚨 Y EL PANEL NO HA LLAMADO A LA IA: el análisis es local (apartado 13)');
+ok(/Analizar mi semana/i.test(an),
+  '⚠️ la IA generativa sigue siendo un botón de un toque, con el nombre del apartado 13');
+
+/* 🚨 Apartado 8 — con un solo día, ni una conclusión. */
+almacen.nutricion = {
+  comidas: [{ id: 'uno', fecha: DN(0), momento: 'comida', nombre: 'Solo hoy', calorias: 2000, proteinas: 110, carbohidratos: 250, grasas: 60 }],
+  agua: {}, favoritos: [],
+  objetivos: almacen.nutricion.objetivos,
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar'), 'se vuelve a entrar con un solo día');
+ok(await pulsar('Nutrición'), 'en Nutrición');
+ok(await pulsar('Estadísticas'), 'y en Estadísticas');
+const unDia = await esperarTexto(/Análisis nutricional/i);
+ok(/Necesitamos más datos/i.test(unDia),
+  '🚨 CON UN SOLO DÍA NO SE DICE NADA ESPECÍFICO: «necesitamos más datos» (apartado 8)');
+ok(!/va por debajo de tu objetivo|cambia bastante entre días/i.test(unDia),
+  '🚨 ni una conclusión sobre la proteína ni sobre la variación');
+ok(!/no suele aparecer en tus registros/i.test(unDia),
+  '⚠️ ni sobre las comidas que no aparecen: con un día no se sabe');
+
+/* 🚨 Y mirar el análisis no escribe nada. */
+const escriturasAn = guardado.filter((g) => g && g.key === 'nutricion').length;
+ok(escriturasAn === 0, '🚨 Y MIRAR EL ANÁLISIS NO ESCRIBE NADA: es una vista, como las estadísticas');
+
 await salir(browser);

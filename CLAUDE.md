@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.59.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.61.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (46 fases — **38 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (46 fases — **40 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -168,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 38 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 40 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -193,11 +193,14 @@ PRODUCTIVIDAD** —las siete fases PR—, y la **F30 (el apartado Bienestar, v3.
 7 días móviles, v3.53.0)**, que 🏁 **CERRÓ SUEÑO**, y la **F33 (Nutrición, rediseño premium,
 v3.54.0)**, con la que empieza el bloque de **Nutrición**, la **F34 (el sistema de días,
 v3.55.0)**, la **F35 (los objetivos nutricionales, v3.56.0)**, la **F36 (el registro de
-alimentos, v3.57.0)**, la **F37 (alimentos propios y favoritos, v3.58.0)** y la **F38 (las
-estadísticas, v3.59.0)**. Con eso hay **cinco
-bloques cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1)
-y Sueño (2/2)— y **Nutrición va por 6 de 8**. La que viene es
-la **39 — NU F7: inteligencia y análisis nutricional**. El índice, con la
+alimentos, v3.57.0)**, la **F37 (alimentos propios y favoritos, v3.58.0)**, la **F38 (las
+estadísticas, v3.59.0)**, la **F39 (inteligencia y análisis nutricional, v3.60.0)** y la
+**F40 (integración y cierre, v3.61.0)**, que 🏁 **CERRÓ EL BLOQUE DE NUTRICIÓN** —las ocho fases
+NU—. Con eso hay **seis
+bloques cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1),
+Sueño (2/2) y Nutrición (8/8)—. La que viene es
+la **41 — ES F1: Estudios, home tipo teléfono y nueva arquitectura**, con la que empieza el último
+bloque de la entrega. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -500,6 +503,46 @@ código de agosto mientras él decía *"la web sigue igual"*.
   E3 F23 escrita con las palabras de entonces, que el rediseño de esta fase cambió con todo el
   derecho. **Mirar qué línea la hace saltar antes de tocar el código**: de los cuatro rojos, **uno
   solo era del código** —la racha decía *"🔥 1 días"*—, y ése sí es de los que ve Josué.
+
+- 🚨 **UNA AUDITORÍA DE CIERRE EJECUTA LAS AUDITORÍAS DE SUS FASES, NO LAS RESUME** (E3 F40, y la
+  EH F64 lo dijo primero): `FASES_NUTRICION` guarda **la función** `condicionNU1…condicionNU7`
+  importada, así que renombrar una rompe la compilación y `informeFinal()` **calcula**
+  COMPLETADO o PENDIENTE. Una casilla puesta a `true` a mano es una auditoría que no puede fallar.
+- 🚨 **UNA CADENA DE CÁLCULO SE COMPRUEBA ESLABÓN CONTRA ESLABÓN** (E3 F40, apartado 2):
+  `auditoriaCalculos` va de los valores por 100 g al cumplimiento del periodo **comparando cada
+  paso con el anterior**, no cada paso con un número escrito a mano. Así el día que uno cambie,
+  salta el eslabón que se desvía y no los ocho a la vez.
+- ⚠️ **LOS ESTADOS EXTREMOS SE PRUEBAN CON LOS EXTREMOS DE VERDAD** (E3 F40, apartado 4): 200
+  alimentos en un día y 120 días de historial, no «unos cuantos». Y las validaciones, con las
+  entradas malas que Josué puede teclear —cantidad negativa, texto, cero, un número absurdo—.
+- ⚠️ **LO QUE NO SE HA HECHO SE DECLARA, NO SE OMITE** (E3 F40): `PENDIENTE` y `DEUDA_TECNICA` van
+  en el propio cierre con su motivo y quién decide. Un informe que solo enumera lo verde miente por
+  omisión, igual que una casilla roja pintada de verde (E3 F22).
+
+- 🚨 **UN ANÁLISIS NO PUEDE HABLAR ANTES DE TENER DATOS, Y LA PUERTA VA ARRIBA DEL TODO** (E3 F39,
+  apartado 8). Los `NIVELES_CONFIANZA` declaran qué se permite decir con 0, 3, 7 y 30 días, pero un
+  patrón —`dias_sin_registrar`— se colaba **con un solo día registrado**, porque la comprobación
+  estaba dentro de cada patrón y no en la entrada. Ahora `analizarNutricion` hace un `return`
+  temprano si el nivel no permite ni una observación. **Una regla que se comprueba en cada rama se
+  olvida en una.**
+- 🚨 **NO REGISTRADO NO ES NO CONSUMIDO** (E3 F39, y es la lección de la E3 F32 sobre los huecos de
+  la gráfica dicha en palabras): `NO_REGISTRADO_NO_ES_NO_CONSUMIDO` lo declara y `hablaDeRegistros`
+  barre los textos. Se dice *"registraste"*, nunca *"comiste"* — el dato que hay es lo que él
+  apuntó, no lo que se llevó a la boca.
+- ⚠️ **UN ANÁLISIS DESCRIBE, NO DIAGNOSTICA NI ALARMA** (E3 F39): `FORMAS_PROHIBIDAS`,
+  `PALABRAS_PROHIBIDAS_NUT` y `sinAlarmismo` sobre todos los textos generados. Es
+  `PALABRAS_CLINICAS` de EH F13 en otro módulo, y por el mismo motivo: Josué tiene 16 años.
+- ⚠️ **UN OBJETIVO CAMBIA LO QUE SIGNIFICA UN NÚMERO** (E3 F39, apartado 10): las mismas 2 100 kcal
+  son una cosa con objetivo de mantener y otra con objetivo de ganar. `segunObjetivo` tiene sus tres
+  casos **y el de estar cerca**, que era el que faltaba: sin él, acertar el objetivo no decía nada.
+- ⚠️ **EL CONTEXTO QUE VIAJA A LA IA NO LLEVA NI LAS COMIDAS NI EL PESO** (E3 F39):
+  `contextoIANutricion` manda promedios y cumplimientos, nunca qué cenó ni cuánto pesa. Es la regla
+  del perfil de piel (EH F13, apartado 17) aplicada aquí — **antes de meter un campo en un contexto
+  de IA, mirar si hace falta para la pregunta**.
+- 🐛 **UN ESCENARIO DE PRUEBA CON DOS ENTRADAS POR DÍA NO VARÍA ALTERNANDO SOBRE EL ARRAY** (E3 F39,
+  y es primo del fallo de la E3 F33): mi `i % 2` alternaba **dentro del mismo día**, así que los
+  siete días salían idénticos y la variación era 0 con el código bien. **Antes de sembrar
+  variación, mirar cuántas filas hay por día.**
 
 - 🚨 **UN PROMEDIO SE DIVIDE ENTRE LOS DÍAS CON DATOS, NO ENTRE LOS DEL CALENDARIO** (E3 F38,
   criterio literal del apartado 14). Dividir entre los siete castigaría por los días que no

@@ -861,6 +861,20 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F40 — Nutrición: el cierre, la QA y el informe final.
+if node --import ./scripts/resolver-vite.mjs scripts/test-cierre-nutricion.mjs >/tmp/jc_cierrenu.log 2>&1; then
+  ok "Nutrición: cierre y QA (E3 F40) — $(grep -c '✓' /tmp/jc_cierrenu.log) comprobaciones"
+else
+  fallo "Falla el cierre de Nutrición (E3 F40)"; grep '✗' /tmp/jc_cierrenu.log
+fi
+
+# Entrega 3 · F39 — Nutrición: la inteligencia y el análisis.
+if node --import ./scripts/resolver-vite.mjs scripts/test-inteligencia-nutricion.mjs >/tmp/jc_intnu.log 2>&1; then
+  ok "Nutrición: inteligencia y análisis (E3 F39) — $(grep -c '✓' /tmp/jc_intnu.log) comprobaciones"
+else
+  fallo "Falla la inteligencia nutricional (E3 F39)"; grep '✗' /tmp/jc_intnu.log
+fi
+
 # Entrega 3 · F38 — Nutrición: las estadísticas y la evolución.
 if node --import ./scripts/resolver-vite.mjs scripts/test-estadisticas-nutricion.mjs >/tmp/jc_statsnu.log 2>&1; then
   ok "Nutrición: estadísticas y evolución (E3 F38) — $(grep -c '✓' /tmp/jc_statsnu.log) comprobaciones"
