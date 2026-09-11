@@ -1,5 +1,47 @@
 # CHANGELOG.md
 
+## v3.63.0 — Entrega 3 · Fase 42 (ES F2): estructura en árbol y navegación por ramas
+
+*"Estudios → Área → Categoría → Contenido, sin encontrarse una pantalla gigantesca con todas las
+funciones mezcladas."*
+
+### 🚨 Las ramas dejan de ser una lista global y pasan a ser de cada área
+
+Hasta la F1 las tres ramas —Asignaturas, Exámenes y Horas— eran un catálogo único que valía para
+todas. El apartado 4 dice lo contrario: *"No asumir que todas las áreas tienen la misma
+estructura"*. Ahora `ramas[]` vive **dentro del programa** (el `branches[]` del apartado 13), así que
+persiste con todo lo demás en la clave `estudios` — **ni una tabla nueva** (apartado 14).
+
+- **Cada rama declara su `sistema`**: cuál de los tres que existen de verdad enseña. La pantalla se
+  elige por ahí, **nunca por el id** — desde esta fase los ids los pone `uid()` y dos áreas pueden
+  tener una «Entrenamiento» cada una.
+- **Añadir una sección** (apartado 5): nombre e icono, con las sugerencias del apartado 4 según el
+  tipo del área. Se pueden **quitar** (apartado 14), y ⚠️ **quitar no borra nada de lo que hay
+  dentro**: los exámenes viven en `estudios`, no dentro de la rama.
+- **Los cuatro tipos** (apartado 12): educación formal, habilidad, deporte y entrenamiento mental.
+  ⚠️ El tipo **no restringe nada** — solo decide qué secciones se le proponen —, así que se puede
+  dejar sin elegir, y entonces se le ofrecen todas.
+- **La pantalla de un área** es ahora la misma cuadrícula de tarjetas del Home (apartados 2 y 16).
+
+### 🚨 Y las secciones de los ejemplos NO vienen de serie
+
+El apartado 4 propone Instrumentos, Repertorio, Práctica, Partidas, Aperturas… Servirlas por defecto
+habría significado **nueve pantallas vacías** el día que abriera Música: tres cards que al tocarlas
+no llevan a ninguna parte, que es el control decorativo que prohíbe la regla 8. Un área nace con
+**las tres que funcionan** —lo mismo que enseñaba la F1, así que nada cambia de aspecto— y el resto
+se **ofrecen al añadir una sección**, que es donde él decide.
+
+Una sección sin sistema detrás dice, en una frase, que todavía no se puede guardar nada dentro.
+⚠️ **Ni «próximamente» ni el número de una fase** — eso son las reglas 8 y 9.
+
+### ⚠️ Y las Entregas siguen sin poder existir
+
+El apartado 9 pide la rama de trabajos y entregas, y el 17 prohíbe hacerla funcional. Se miró si
+había algo real detrás: la única vía habría sido **cazar tareas que mencionen la asignatura**, y eso
+es exactamente lo que prohíbe la E3 F12 —*"no vincular dos cosas por el título, solo por
+identificadores reales"*—. Así que es una sección más, con su frase honesta, y está declarada en
+`NO_EN_ES2` con su motivo.
+
 ## v3.62.0 — Entrega 3 · Fase 41 (ES F1): Estudios, home tipo teléfono y nueva arquitectura
 
 Empieza el **último bloque de la Entrega 3**. Al entrar en Estudios ya no hay una lista de funciones

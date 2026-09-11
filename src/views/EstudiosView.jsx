@@ -7,9 +7,11 @@ import { correlacionSuenoEstudio } from '../lib/correlaciones';
 import {
   ICONOS_ESTUDIOS, ICONO_POR_DEFECTO, sugerirIcono, iconoDeApp,
   MAX_NOMBRE_APP, crearApp, nombreYaUsado, moverApp, AVISO_OCULTAR, alternarOcultaApp,
-  appsOrdenadas, appsVisibles, RAMAS_PENDIENTES,
-  asignaturasDe, examenesDe, horasDe, ramasDeApp, lineaDeApp, proximosEventos,
+  appsOrdenadas, appsVisibles,
+  asignaturasDe, examenesDe, horasDe, ramasDeApp, ramaPorId, lineaDeApp, proximosEventos,
   RUTA_RAIZ, abrirApp, abrirRama, atras, migas,
+  TIPOS_ESTUDIO, MAX_NOMBRE_RAMA, ICONO_RAMA_POR_DEFECTO, sugerenciasDeRama,
+  crearRama, anadirRama, quitarRama, AVISO_QUITAR_RAMA, TEXTO_RAMA_SIN_SISTEMA,
 } from '../lib/estudiosApps';
 import { Card, SectionTitle, Field, TextInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel } from '../components/ui';
 
@@ -362,13 +364,14 @@ function CrearApp({ accent, programas, onCrear, onCerrar }) {
   const [nombre, setNombre] = useState('');
   const [icono, setIcono] = useState('');
   const [categoria, setCategoria] = useState('');
+  const [tipo, setTipo] = useState(null);
 
   // El icono se PROPONE según lo que escribe, y el campo sigue siendo suyo.
   const propuesto = icono || sugerirIcono(nombre) || ICONO_POR_DEFECTO;
   const repetido = nombreYaUsado(nombre, programas);
 
   const crear = () => {
-    const app = crearApp({ nombre, icono: icono || sugerirIcono(nombre) || '', categoria }, programas);
+    const app = crearApp({ nombre, icono: icono || sugerirIcono(nombre) || '', categoria, tipo }, programas);
     if (!app) return;
     onCrear(app);
   };
@@ -409,6 +412,27 @@ function CrearApp({ accent, programas, onCrear, onCerrar }) {
         </div>
       </Field>
 
+      {/* ES F2, apartado 12 — el tipo NO restringe nada: decide qué secciones se le proponen
+          después. Por eso se puede dejar sin elegir, y entonces se le ofrecen todas. */}
+      <Field label="Tipo (opcional)">
+        <div className="flex flex-wrap gap-1.5">
+          {TIPOS_ESTUDIO.map((t) => (
+            <button
+              key={t.id} onClick={() => setTipo(tipo === t.id ? null : t.id)}
+              aria-pressed={tipo === t.id}
+              className="toque-44 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-transform active:scale-95"
+              style={{
+                background: tipo === t.id ? hexToRgba(accent, 0.16) : COLORS.surface2,
+                border: `1px solid ${tipo === t.id ? accent : COLORS.border}`,
+                color: tipo === t.id ? accent : COLORS.textMuted,
+              }}
+            >
+              {t.icono} {t.nombre}
+            </button>
+          ))}
+        </div>
+      </Field>
+
       <Field label="Categoría (opcional)">
         <TextInput value={categoria} onChange={(e) => setCategoria(e.target.value)} placeholder="Ej: Extraescolares" />
       </Field>
@@ -421,6 +445,56 @@ function CrearApp({ accent, programas, onCrear, onCerrar }) {
       )}
 
       <PrimaryButton accent={accent} disabled={!nombre.trim()} onClick={crear}>Crear</PrimaryButton>
+    </Card>
+  );
+}
+
+/* ES F2, apartado 5 — añadir una sección dentro de un área. Las sugerencias son las del apartado 4 y
+   dependen del tipo, pero **no imponen nada**: puede escribir la suya. */
+function CrearRama({ accent, app, onCrear, onCerrar }) {
+  const [nombre, setNombre] = useState('');
+  const [icono, setIcono] = useState('');
+  const sugerencias = sugerenciasDeRama(app?.tipo);
+  const yaEstan = new Set((app?.ramas || []).map((r) => r.nombre.toLowerCase()));
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Nueva sección</p>
+        <button onClick={onCerrar} className="toque-44 p-1.5 -m-1.5" aria-label="Cerrar">
+          <X size={16} style={{ color: COLORS.textMuted }} />
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {sugerencias.filter((s) => !yaEstan.has(s.nombre.toLowerCase())).map((s) => (
+          <button
+            key={s.nombre} onClick={() => { setNombre(s.nombre); setIcono(s.icono); }}
+            className="toque-44 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-transform active:scale-95"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
+          >
+            {s.icono} {s.nombre}
+          </button>
+        ))}
+      </div>
+
+      <Field label="Nombre">
+        <TextInput value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={MAX_NOMBRE_RAMA} placeholder="Ej: Oposiciones" />
+      </Field>
+
+      <Field label="Icono">
+        <div className="flex items-center gap-2">
+          <span aria-hidden="true" style={{ fontSize: 24 }}>{icono || ICONO_RAMA_POR_DEFECTO}</span>
+          <TextInput value={icono} onChange={(e) => setIcono(e.target.value)} placeholder="Pega el que quieras" />
+        </div>
+      </Field>
+
+      {/* ⚠️ No se llama «Añadir»: la tarjeta ＋ de la cuadrícula ya se llama así, y dos botones con
+          el mismo nombre en la misma pantalla acaban llevando al sitio equivocado (E3 F30). */}
+      <PrimaryButton accent={accent} disabled={!nombre.trim()} onClick={() => {
+        const r = crearRama({ nombre, icono });
+        if (r) onCrear(r);
+      }}>Crear sección</PrimaryButton>
     </Card>
   );
 }
@@ -468,6 +542,8 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
   const [nuevaAsignatura, setNuevaAsignatura] = useState('');
   const [creando, setCreando] = useState(false);
   const [organizando, setOrganizando] = useState(false);
+  const [anadiendoRama, setAnadiendoRama] = useState(false);
+  const [organizandoRamas, setOrganizandoRamas] = useState(false);
 
   // Ampliación del Dashboard — Centro de Control (apartado 6): el examen destacado puede vivir en
   // cualquier app — se abre su app y su rama de asignaturas; AsignaturaCard y ExamenItem se
@@ -582,7 +658,7 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
   /* ── UNA APP ────────────────────────────────────────────────────────────── */
   if (ruta.vista === 'app') {
     if (!app) return <div className="space-y-4 pb-4">{cabecera}<EmptyHint text="Esa área ya no existe." /></div>;
-    const ramas = ramasDeApp(estudios, app.id);
+    const ramas = ramasDeApp(estudios, app);
 
     return (
       <div className="space-y-4 pb-4 module-enter">
@@ -596,28 +672,67 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        {/* ES F2, apartados 2 y 16 — la misma cuadrícula de tarjetas del Home: las pantallas
+            interiores se sienten como una continuación, no como otra aplicación. */}
+        <div className="grid grid-cols-2 gap-3">
           {ramas.map((r) => (
             <button
               key={r.id} onClick={() => setRuta(abrirRama(app.id, r.id))}
-              className="w-full rounded-2xl p-3 flex items-center gap-2.5 text-left transition-transform active:scale-[0.99]"
-              style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+              className="rounded-2xl p-3 flex flex-col items-start text-left transition-transform active:scale-95"
+              style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, minHeight: 92 }}
             >
-              <span aria-hidden="true" style={{ fontSize: 20 }}>{r.icono}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold" style={{ color: COLORS.text }}>{r.nombre}</span>
-                {r.linea && <span className="block text-xs" style={{ color: COLORS.textMuted }}>{r.linea}</span>}
-              </span>
-              <ChevronRight size={16} style={{ color: COLORS.textMuted }} />
+              <span aria-hidden="true" style={{ fontSize: 24 }}>{r.icono}</span>
+              <span className="text-sm font-semibold mt-1.5 w-full truncate" style={{ color: COLORS.text }}>{r.nombre}</span>
+              {/* Una rama sin sistema no finge un número: ni un cero, que diría que está vacía. */}
+              {r.linea && <span className="text-xs w-full truncate" style={{ color: COLORS.textMuted }}>{r.linea}</span>}
             </button>
           ))}
+          <button
+            onClick={() => setAnadiendoRama((a) => !a)}
+            className="rounded-2xl p-3 flex flex-col items-center justify-center transition-transform active:scale-95"
+            style={{ background: COLORS.surface2, border: `1px dashed ${COLORS.border}`, minHeight: 92 }}
+          >
+            <Plus size={20} style={{ color: accent }} />
+            <span className="text-xs font-semibold mt-1" style={{ color: COLORS.textMuted }}>Añadir</span>
+          </button>
         </div>
 
-        {/* Regla 8 — las ramas que todavía no existen se dicen, no se pintan como botones muertos. */}
-        {RAMAS_PENDIENTES.length > 0 && (
-          <p className="text-[11px] leading-relaxed" style={{ color: COLORS.textMuted }}>
-            {RAMAS_PENDIENTES.map((r) => `${r.icono} ${r.nombre}`).join(' · ')} todavía no se pueden usar.
-          </p>
+        {ramas.length === 0 && !anadiendoRama && (
+          <EmptyHint text="Esta área no tiene ninguna sección. Añade la primera con ＋." />
+        )}
+
+        {anadiendoRama && (
+          <CrearRama
+            accent={accent} app={app}
+            onCrear={(nueva) => { onUpdateProgramas(anadirRama(programas, app.id, nueva)); setAnadiendoRama(false); }}
+            onCerrar={() => setAnadiendoRama(false)}
+          />
+        )}
+
+        {/* Apartado 14 — quitar una rama. ⚠️ No borra nada de lo que hay dentro. */}
+        {ramas.length > 0 && (
+          <div>
+            <button onClick={() => setOrganizandoRamas((o) => !o)} className="text-xs font-semibold" style={{ color: accent }}>
+              {organizandoRamas ? 'Listo' : 'Organizar secciones'}
+            </button>
+            {organizandoRamas && (
+              <Card style={{ marginTop: '0.5rem' }}>
+                <div className="space-y-1.5">
+                  {ramas.map((r) => (
+                    <div key={r.id} className="flex items-center gap-2">
+                      <span aria-hidden="true" style={{ fontSize: 16 }}>{r.icono}</span>
+                      <span className="text-xs min-w-0 flex-1 truncate" style={{ color: COLORS.text }}>{r.nombre}</span>
+                      <BotonBorrar
+                        onClick={() => onUpdateProgramas(quitarRama(programas, app.id, r.id))}
+                        label={`Quitar ${r.nombre} de ${app.nombre}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>{AVISO_QUITAR_RAMA}</p>
+              </Card>
+            )}
+          </div>
         )}
 
         {/* Entrega 2 · ME Fase 4 — eliminar se lleva sus asignaturas (y con ellas exámenes y horas) a
@@ -639,11 +754,16 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
   const horasApp = horasDe(estudios, app.id);
   const nombreAsignatura = (id) => estudios.asignaturas.find((a) => a.id === id)?.nombre || '';
 
+  /* 🚨 ES F2 — la pantalla se elige por el SISTEMA de la rama, nunca por su id: desde esta fase los
+     ids los pone `uid()` al crearlas y dos apps pueden tener una «Entrenamiento» cada una. */
+  const rama = ramaPorId(app, ruta.ramaId);
+  const sistema = rama?.sistema || null;
+
   return (
     <div className="space-y-4 pb-4 module-enter">
       {cabecera}
 
-      {ruta.ramaId === 'asignaturas' && (
+      {sistema === 'asignaturas' && (
         <>
           <div className="flex items-center gap-2">
             <TextInput value={nuevaAsignatura} onChange={(e) => setNuevaAsignatura(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && anadirAsignatura()} placeholder={`Nueva asignatura en ${app.nombre}`} />
@@ -674,7 +794,7 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
         </>
       )}
 
-      {ruta.ramaId === 'examenes' && (
+      {sistema === 'examenes' && (
         <>
           {examenesApp.length === 0 ? (
             <EmptyHint text="Todavía no hay exámenes en esta área. Se añaden desde cada asignatura." />
@@ -709,7 +829,7 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
         </>
       )}
 
-      {ruta.ramaId === 'horas' && (
+      {sistema === 'horas' && (
         horasApp.length === 0 ? (
           <EmptyHint text="Todavía no has registrado horas en esta área. Se suman desde cada asignatura." />
         ) : (
@@ -727,6 +847,22 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
           </Card>
         )
       )}
+
+      {/* 🚨 Una sección sin sistema detrás. Ni una lista falsa ni un botón que no haría nada
+          (regla 8): una frase que dice qué es y que todavía no se puede guardar nada dentro. */}
+      {rama && !sistema && (
+        <Card>
+          <p className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.text }}>
+            <span aria-hidden="true">{rama.icono}</span> {rama.nombre}
+          </p>
+          <p className="text-xs mt-1.5 leading-relaxed" style={{ color: COLORS.textMuted }}>
+            {TEXTO_RAMA_SIN_SISTEMA}
+          </p>
+        </Card>
+      )}
+
+      {/* Una rama que ya no existe —la quitó mientras la miraba— no deja la pantalla en blanco. */}
+      {!rama && <EmptyHint text="Esa sección ya no está en esta área." />}
     </div>
   );
 }

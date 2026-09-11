@@ -863,9 +863,9 @@ fi
 # el móvil, que es donde no llega ninguna otra prueba.
 # Entrega 3 · F41 — Estudios: el home tipo teléfono y la arquitectura en árbol.
 if node --import ./scripts/resolver-vite.mjs scripts/test-estudios-apps.mjs >/tmp/jc_esapps.log 2>&1; then
-  ok "Estudios: home tipo teléfono y árbol (E3 F41) — $(grep -c '✓' /tmp/jc_esapps.log) comprobaciones"
+  ok "Estudios: el home y el árbol (E3 F41-F42) — $(grep -c '✓' /tmp/jc_esapps.log) comprobaciones"
 else
-  fallo "Falla el home de Estudios (E3 F41)"; grep '✗' /tmp/jc_esapps.log
+  fallo "Falla el home o el árbol de Estudios (E3 F41-F42)"; grep '✗' /tmp/jc_esapps.log
 fi
 
 # Entrega 3 · F40 — Nutrición: el cierre, la QA y el informe final.

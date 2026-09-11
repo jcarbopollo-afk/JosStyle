@@ -4199,4 +4199,74 @@ ok(/Música/i.test(homeOtraVez), '🚨 y desde una app se vuelve al Home con tod
 const escriturasEs = guardado.filter((g) => g && g.key === 'estudios').length;
 ok(escriturasEs === 0, '🚨 Y RECORRER EL ÁRBOL NO GUARDA NADA: la navegación es una vista');
 
+/* ══════════════════════════════════════════════════════════════════════════
+   E3 · FASE 42 (ES F2) — LAS RAMAS SON DE CADA APP Y LAS CONFIGURA ÉL
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 **Lo que ninguna prueba de Node puede ver:** que añadir una sección con el
+   dedo la deja en SU área y no en las demás, que al abrirla dice lo que es en vez
+   de enseñar una lista falsa, y que quitarla **no se lleva los exámenes**. Todo
+   eso solo existe tras varios toques. */
+ok(await pulsar('Música'), 'se abre el área Música');
+const dentroMus = await esperarTexto(/Asignaturas/i);
+ok(/Asignaturas/i.test(dentroMus) && /Añadir/i.test(dentroMus),
+  '⚠️ un área trae sus secciones y el ＋ para añadir otra (apartado 5)');
+
+ok(await pulsar('Añadir'), 'se abre el formulario de sección');
+const formRama = await esperarTexto(/Nueva secci[óo]n/i);
+ok(/Nueva secci[óo]n/i.test(formRama), 'con su formulario');
+/* Apartado 4 — las sugerencias son las de SU tipo. Música no lo tiene puesto en
+   este escenario, así que se le ofrecen todas: no saber su tipo no puede dejarle
+   sin sugerencias. */
+ok(/Repertorio/i.test(formRama), '⚠️ y con las sugerencias del apartado 4');
+ok(await pulsar('🎼 Repertorio'), 'se elige una sugerencia');
+ok(await pulsar('Crear sección'), 'y se añade');
+
+const conRama = await esperarTexto(/Repertorio/i);
+ok(/Repertorio/i.test(conRama), '🚨 LA SECCIÓN NUEVA APARECE EN SU ÁREA');
+
+/* 🚨 Y una sección sin sistema detrás DICE lo que es: ni lista falsa ni botón muerto. */
+ok(await pulsar('Repertorio'), 'se abre la sección nueva');
+const dentroRama = await esperarTexto(/Todav[íi]a no se puede guardar/i);
+ok(/Todav[íi]a no se puede guardar/i.test(dentroRama),
+  '🚨 UNA SECCIÓN SIN SISTEMA DICE QUE TODAVÍA NO GUARDA NADA (regla 8)');
+ok(!/pr[óo]ximamente|en construcci[óo]n|Fase \d/i.test(dentroRama),
+  '🚨 y NO dice "próximamente" ni nombra una fase (reglas 8 y 9)');
+ok(/Estudios › Música › Repertorio/i.test(dentroRama), '⚠️ y las migas dicen dónde está');
+
+ok(await pulsar('Volver atrás'), 'se vuelve al área');
+await esperarTexto(/Repertorio/i);
+
+/* 🚨 Y NO se ha colado en las demás áreas. */
+ok(await pulsar('Volver atrás'), 'se vuelve al Home');
+await esperarTexto(/PRÓXIMO/i);
+ok(await pulsar('Bachillerato'), 'se abre Bachillerato');
+const otraApp = await esperarTexto(/Asignaturas/i);
+ok(!/Repertorio/i.test(otraApp),
+  '🚨 LA SECCIÓN DE MÚSICA NO ESTÁ EN BACHILLERATO: cada área tiene su estructura (apartado 4)');
+
+/* 🚨 Quitar una sección NO borra lo que hay dentro. */
+ok(/2 asignaturas/i.test(otraApp), '⚠️ Bachillerato sigue con sus dos asignaturas');
+ok(await pulsar('Organizar secciones'), 'se abre el organizador de secciones');
+await esperarTexto(/se queda donde está/i);
+ok(await pulsar('Quitar Exámenes de Bachillerato'), 'se quita la sección de Exámenes');
+const sinExamenes = await esperarTexto(/Asignaturas/i);
+ok(!/Exámenes/i.test(sinExamenes), '⚠️ la sección desaparece de la pantalla del área');
+
+/* Y el examen sigue existiendo: se comprueba donde de verdad vive. */
+ok(await pulsar('Asignaturas'), 'se entra en las asignaturas');
+await esperarTexto(/Matemáticas/i);
+ok(await pulsar('Matemáticas'), 'se abre Matemáticas');
+const dentroAsig = await esperarTexto(/Derivadas/i);
+ok(/Derivadas/i.test(dentroAsig),
+  '🚨 EL EXAMEN SIGUE AHÍ DESPUÉS DE QUITAR SU SECCIÓN: quitar no es borrar');
+
+/* Y todo esto SÍ se ha guardado (apartado 14): las ramas configuradas persisten. */
+const guardadoEs = guardado.filter((g) => g && g.key === 'estudios');
+ok(guardadoEs.length >= 2, '🚨 Y LAS SECCIONES CONFIGURADAS SE GUARDAN (apartado 14)');
+const ultimoEs = guardadoEs.at(-1)?.value;
+ok((ultimoEs?.programas || []).find((p) => p.id === 'musica')?.ramas?.some((r) => r.nombre === 'Repertorio'),
+  '⚠️ con la sección nueva dentro de SU área');
+ok((ultimoEs?.examenes || []).length === 1, '🚨 y sin haberse llevado ni un examen por delante');
+
 await salir(browser);

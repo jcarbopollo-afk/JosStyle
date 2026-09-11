@@ -2435,6 +2435,28 @@ const CASOS = [
       ['EstudiosView · sin áreas', EstudiosView, () => propsEs({ programas: [], asignaturas: [], examenes: [], horas: [] })],
       /* Y con un examen destacado desde el Dashboard, que abre su rama sola. */
       ['EstudiosView · con foco en un examen', EstudiosView, () => propsEs(conApps, { foco: { examenId: 'e1' } })],
+      /* Entrega 3 · F42 (ES F2) — con ramas propias por área: una sección que él
+         ha creado (sin sistema detrás) y un área a la que le quitó una. */
+      ['EstudiosView · con ramas propias', EstudiosView, () => propsEs({
+        ...conApps,
+        programas: conApps.programas.map((p) => {
+          if (p.id === 'musica') {
+            return { ...p, tipo: 'habilidad', ramas: [
+              { id: 'asignaturas', nombre: 'Asignaturas', icono: '📚', sistema: 'asignaturas' },
+              { id: 'r-rep', nombre: 'Repertorio', icono: '🎼', sistema: null },
+            ] };
+          }
+          if (p.id === 'idi') return { ...p, tipo: null, ramas: [] };
+          return p;
+        }),
+      })],
+      /* 🚨 Y un área cuyas ramas tienen un `sistema` que no existe: la pantalla
+         tiene que decir lo suyo, no reventar. */
+      ['EstudiosView · rama con un sistema desconocido', EstudiosView, () => propsEs({
+        ...conApps,
+        programas: [{ id: 'raro', nombre: 'Raro', icono: '📘', categoria: null, orden: 0, oculto: false, tipo: null,
+          ramas: [{ id: 'x', nombre: 'Lo que sea', icono: '📁', sistema: 'inventado' }] }],
+      })],
     ];
   })(),
 

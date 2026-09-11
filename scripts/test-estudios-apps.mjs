@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════════════════
-// E3 · FASE 41 (ES F1) — ESTUDIOS: HOME TIPO TELÉFONO Y NUEVA ARQUITECTURA
+// E3 · FASES 41 y 42 (ES F1 y ES F2) — ESTUDIOS: EL HOME Y EL ÁRBOL
 // ══════════════════════════════════════════════════════════════════════════
 //
 // Lo que más se comprueba aquí es el apartado 16: **no eliminar información
@@ -17,7 +17,11 @@ import {
   normalizarPrograma, normalizarAppsDe,
   MAX_NOMBRE_APP, crearApp, nombreYaUsado, moverApp, AVISO_OCULTAR,
   alternarOcultaApp, appsOrdenadas, appsVisibles,
-  RAMAS_ESTUDIOS, RAMAS_QUE_EXISTEN, RAMAS_PENDIENTES, ramaPorId,
+  RAMAS_POR_DEFECTO, SISTEMAS_DE_RAMA, IDS_SISTEMA, ramaPorId, ramasDe,
+  TIPOS_ESTUDIO, IDS_TIPO, tipoDeEstudio, TIPO_DE_LOS_QUE_TRAE_LA_APP,
+  SUGERENCIAS_RAMA, sugerenciasDeRama, MAX_NOMBRE_RAMA, ICONO_RAMA_POR_DEFECTO,
+  normalizarRama, crearRama, anadirRama, quitarRama, AVISO_QUITAR_RAMA,
+  TEXTO_RAMA_SIN_SISTEMA, NO_EN_ES2, condicionES2,
   asignaturasDe, idsAsignaturaDe, examenesDe, horasDe, ramasDeApp,
   lineaDeApp, LO_QUE_FALTA_EN_PROXIMO, DIAS_PROXIMO, MAX_PROXIMO, proximosEventos,
   RUTA_RAIZ, abrirApp, abrirRama, atras, migas,
@@ -171,16 +175,19 @@ ok(!/no se puede deshacer|permanente/i.test(AVISO_OCULTAR), 'Y no promete un bor
 
 console.log('\n── 6. El árbol (apartados 11 y 12) ──');
 
-ok(RAMAS_QUE_EXISTEN.length >= 3, `${RAMAS_QUE_EXISTEN.length} ramas existen de verdad hoy`);
-ok(RAMAS_PENDIENTES.length >= 2, `${RAMAS_PENDIENTES.length} ramas están declaradas como pendientes`);
-ok(RAMAS_PENDIENTES.every((r) => r.enFase && r.porque), 'Cada rama pendiente declara en qué fase llega y por qué no está');
-ok(RAMAS_QUE_EXISTEN.every((r) => typeof r.cuenta === 'function' && r.singular && r.plural), 'Cada rama que existe sabe contar lo suyo');
-eq(RAMAS_ESTUDIOS.length, RAMAS_QUE_EXISTEN.length + RAMAS_PENDIENTES.length, 'No hay ramas fuera de las dos listas');
-eq(ramaPorId('asignaturas').nombre, 'Asignaturas', 'ramaPorId encuentra una rama');
-eq(ramaPorId('inventada'), null, 'ramaPorId no se inventa ramas');
+// 🚨 ES F2 — las ramas dejan de ser una lista global y viven DENTRO de cada app.
+ok(RAMAS_POR_DEFECTO.length === 3, 'Una app nace con las TRES ramas que funcionan de verdad');
+ok(RAMAS_POR_DEFECTO.every((r) => IDS_SISTEMA.includes(r.sistema)), 'Y las tres declaran su sistema');
+ok(IDS_SISTEMA.length === 3, 'Hay tres sistemas de rama construidos');
+ok(Object.values(SISTEMAS_DE_RAMA).every((s) => typeof s.cuenta === 'function' && s.singular && s.plural), 'Cada sistema sabe contar lo suyo');
+const bach = norm.programas.find((p) => p.id === 'bachillerato');
+eq(ramaPorId(bach, 'asignaturas').nombre, 'Asignaturas', 'ramaPorId encuentra una rama DENTRO de su app');
+eq(ramaPorId(bach, 'inventada'), null, 'ramaPorId no se inventa ramas');
+eq(ramaPorId(null, 'asignaturas'), null, 'Sin app no hay rama');
 
 const ramasBach = ramasDeApp(norm, 'bachillerato');
-eq(ramasBach.length, RAMAS_QUE_EXISTEN.length, 'Una app abre solo las ramas que existen de verdad');
+eq(ramasBach.length, RAMAS_POR_DEFECTO.length, 'Una app abre las ramas que tiene');
+eq(ramasDeApp(norm, bach).map((r) => r.id), ramasBach.map((r) => r.id), 'ramasDeApp acepta el id o la app entera');
 eq(ramasBach.find((r) => r.id === 'asignaturas').cuantos, 2, 'Bachillerato tiene dos asignaturas');
 eq(ramasBach.find((r) => r.id === 'examenes').cuantos, 3, 'Bachillerato tiene tres exámenes');
 eq(ramasBach.find((r) => r.id === 'horas').cuantos, 1, 'Bachillerato tiene una sesión de estudio');
@@ -293,6 +300,120 @@ ok(NO_EN_ES1.some((x) => /entrega|trabajo/i.test(x.que)), 'Las entregas están e
 ok(NO_EN_ES1.some((x) => /estad[íi]stica/i.test(x.que)), 'Las estadísticas también');
 ok(!/próximamente|proximamente|en construcción/i.test(VISTA), 'Y no hay ni un "próximamente" en pantalla (regla 9)');
 
+console.log('\n── 14. ES F2 · Las ramas son de cada app y las configura él (apartados 4, 5, 13 y 14) ──');
+
+// \U0001f6a8 El riesgo de esta fase: que lo guardado por la ES F1 cambie de aspecto. No cambia.
+eq(ramasDe(norm.programas[0]).map((r) => r.id), ['asignaturas', 'examenes', 'horas'],
+  '\U0001f6a8 Un programa SIN ramas guardadas recibe las tres que funcionan: es lo que ya enseñaba la ES F1');
+ok(ramasDe(norm.programas[0]).every((r) => r.sistema), 'Las tres traen su sistema');
+
+// ⚠️ Un array VACÍO no es lo mismo que no tener el campo: las quitó todas y eso se respeta.
+const sinRamas = normalizarAppsDe({ ...ESCENARIO, programas: [{ id: 'x', nombre: 'Vacía', ramas: [] }] });
+eq(ramasDe(sinRamas.programas[0]), [], '⚠️ Si las quitó TODAS se queda sin ninguna: `[]` no es "no tiene el campo"');
+
+// Apartado 4 — dos apps pueden tener estructuras distintas.
+const conPropia = anadirRama(norm.programas, 'musica', crearRama({ nombre: 'Repertorio', icono: '\U0001f3bc' }));
+eq(ramasDe(conPropia.find((p) => p.id === 'musica')).length, 4, 'Añadir una rama la mete en SU app');
+eq(ramasDe(conPropia.find((p) => p.id === 'bachillerato')).length, 3, '\U0001f6a8 y NO toca las de las demás: la estructura es flexible');
+eq(ramasDe(conPropia.find((p) => p.id === 'musica')).at(-1).sistema, null, 'Una rama que crea él no tiene sistema detrás, y se sabe');
+eq(anadirRama(norm.programas, 'musica', null), norm.programas, 'Añadir nada no cambia nada');
+
+// Apartado 5 — crear una rama.
+const oposiciones = crearRama({ nombre: 'Oposiciones', icono: '\U0001f4d6' });
+eq(oposiciones.nombre, 'Oposiciones', 'crearRama guarda el nombre');
+eq(oposiciones.icono, '\U0001f4d6', 'y el icono');
+eq(oposiciones.sistema, null, 'y nace sin sistema');
+ok(oposiciones.id, 'con su id');
+eq(crearRama({ nombre: '  ' }), null, 'Sin nombre no se crea nada');
+eq(crearRama({ nombre: 'Sin icono' }).icono, ICONO_RAMA_POR_DEFECTO, 'Sin icono se usa el de por defecto');
+ok(crearRama({ nombre: 'x'.repeat(99) }).nombre.length === MAX_NOMBRE_RAMA, 'El nombre se acota');
+
+// \U0001f6a8 Quitar una rama NO borra sus datos.
+const quitada = quitarRama(norm.programas, 'bachillerato', 'examenes');
+eq(ramasDe(quitada.find((p) => p.id === 'bachillerato')).map((r) => r.id), ['asignaturas', 'horas'], 'Quitar una rama la saca del árbol');
+const trasQuitar = normalizarAppsDe({ ...ESCENARIO, programas: quitada });
+eq(examenesDe(trasQuitar, 'bachillerato').length, 3, '\U0001f6a8 y los exámenes SIGUEN ESTANDO: quitar no es borrar');
+eq(ramasDe(quitarRama(norm.programas, 'musica', 'examenes').find((p) => p.id === 'bachillerato')).length, 3, 'Quitar en una app no toca las otras');
+ok(/se queda/i.test(AVISO_QUITAR_RAMA) && !/no se puede deshacer/i.test(AVISO_QUITAR_RAMA), 'El aviso dice que lo de dentro se queda, y no promete un borrado');
+
+// Apartado 14 — persistencia: lo configurado sobrevive a otra pasada del normalizador.
+const rehecho = normalizarAppsDe({ ...ESCENARIO, programas: conPropia });
+ok(ramasDe(rehecho.programas.find((p) => p.id === 'musica')).some((r) => r.nombre === 'Repertorio'),
+  '\U0001f6a8 Una rama creada por él SOBREVIVE al normalizador (apartado 14)');
+eq(ramasDe(rehecho.programas.find((p) => p.id === 'musica')).find((r) => r.nombre === 'Repertorio').sistema, null,
+  'y sigue sin sistema, no se le inventa uno');
+
+// El normalizador de una rama.
+eq(normalizarRama({ nombre: '  ' }), null, 'Una rama sin nombre se descarta');
+eq(normalizarRama(null), null, 'Y una que no es un objeto también');
+eq(normalizarRama({ nombre: 'Algo', sistema: 'inventado' }).sistema, null,
+  '\U0001f6a8 Un sistema que no existe se queda en `null`, no revienta la pantalla');
+eq(normalizarRama({ nombre: 'Algo', sistema: 'examenes' }).sistema, 'examenes', 'Un sistema que existe se respeta');
+ok(normalizarRama({ nombre: 'Algo' }).id, 'Una rama sin id recibe uno');
+
+console.log('\n── 15. ES F2 · Los cuatro tipos de estudio (apartado 12) ──');
+
+eq(TIPOS_ESTUDIO.length, 4, 'Son cuatro tipos');
+eq(IDS_TIPO, ['formal', 'habilidad', 'deporte', 'mental'], 'Educación formal, habilidad, deporte y entrenamiento mental');
+ok(TIPOS_ESTUDIO.every((t) => t.nombre && t.icono && t.ejemplos), 'Cada uno con su nombre, su icono y sus ejemplos');
+eq(tipoDeEstudio('formal').nombre, 'Educación formal', 'tipoDeEstudio encuentra uno');
+eq(tipoDeEstudio('inventado'), null, 'y no se inventa ninguno');
+eq(norm.programas.find((p) => p.id === 'bachillerato').tipo, 'formal', 'Bachillerato es educación formal');
+eq(norm.programas.find((p) => p.id === 'musica').tipo, 'habilidad', 'Música es una habilidad');
+eq(norm.programas.find((p) => p.id === 'idi').tipo, null,
+  '\U0001f6a8 A lo que escribió Josué NO se le adivina el tipo: sería la app clasificándole sus estudios');
+eq(Object.keys(TIPO_DE_LOS_QUE_TRAE_LA_APP), ['bachillerato', 'musica'], 'Solo los dos ids que creó la propia aplicación');
+eq(normalizarPrograma({ id: 'x', nombre: 'X', tipo: 'inventado' }).tipo, null, 'Un tipo que no existe se descarta');
+
+// ⚠️ El tipo NO restringe: solo decide qué se le PROPONE.
+ok(sugerenciasDeRama('habilidad').some((x) => x.nombre === 'Repertorio'), 'A una habilidad se le proponen sus secciones');
+ok(sugerenciasDeRama('mental').some((x) => x.nombre === 'Aperturas'), 'Y a un entrenamiento mental, las suyas');
+ok(sugerenciasDeRama('deporte').some((x) => x.nombre === 'Partidos'), 'Y a un deporte, las suyas');
+ok(!sugerenciasDeRama('habilidad').some((x) => x.nombre === 'Aperturas'), 'Cada tipo propone lo suyo, no todo');
+ok(sugerenciasDeRama(null).length >= 9, '\U0001f6a8 Sin tipo se le ofrecen TODAS: no saber su tipo no puede dejarle sin sugerencias');
+eq(new Set(sugerenciasDeRama(null).map((x) => x.nombre)).size, sugerenciasDeRama(null).length, 'y sin repetir');
+ok(Object.values(SUGERENCIAS_RAMA).flat().every((x) => x.nombre && x.icono), 'Cada sugerencia trae nombre e icono');
+
+// \U0001f6a8 Las de los ejemplos del apartado 4 NO se sirven de serie: serían pantallas vacías.
+ok(!RAMAS_POR_DEFECTO.some((r) => ['Repertorio', 'Partidas', 'Aperturas', 'Instrumentos'].includes(r.nombre)),
+  '\U0001f6a8 Ninguna rama sin sistema viene de serie: abrir Música no puede dar tres pantallas vacías');
+
+console.log('\n── 16. ES F2 · Una rama sin sistema dice lo que es (apartados 6, 9 y 10) ──');
+
+const ramasMusica = ramasDeApp(rehecho, rehecho.programas.find((p) => p.id === 'musica'));
+const repertorio = ramasMusica.find((r) => r.nombre === 'Repertorio');
+eq(repertorio.cuantos, null, '\U0001f6a8 Una rama sin sistema no finge un número: `null`, no un 0 que diría que está vacía');
+eq(repertorio.linea, null, 'y no pinta línea');
+eq(ramasMusica.find((r) => r.id === 'asignaturas').cuantos, 1, 'La que sí tiene sistema sigue contando');
+ok(!/pr[óo]ximamente|en construcci[óo]n|fase \d/i.test(TEXTO_RAMA_SIN_SISTEMA),
+  '\U0001f6a8 Y su texto NO dice "próximamente" ni nombra una fase (reglas 8 y 9)');
+ok(/todav[íi]a no se puede guardar/i.test(TEXTO_RAMA_SIN_SISTEMA), 'Dice con una frase corta que aún no se guarda nada dentro (regla 8)');
+ok(VISTA.includes('TEXTO_RAMA_SIN_SISTEMA'), 'y la pantalla lo usa');
+
+console.log('\n── 17. ES F2 · La pantalla de un área (apartados 2, 3, 15 y 16) ──');
+
+ok(/grid-cols-2/.test(VISTA), 'Las ramas se pintan en cuadrícula de tarjetas, como el Home (apartado 2)');
+ok(/CrearRama/.test(CODIGO_VISTA), 'Hay un formulario para añadir una sección (apartado 5)');
+ok(/quitarRama/.test(CODIGO_VISTA), 'y se puede quitar (apartado 14)');
+ok(/sugerenciasDeRama/.test(CODIGO_VISTA), 'con las sugerencias de su tipo (apartado 4)');
+ok(/TIPOS_ESTUDIO/.test(CODIGO_VISTA), 'y el tipo se elige al crear el área (apartado 12)');
+// \U0001f6a8 La pantalla se elige por el SISTEMA, no por el id: desde la F2 los ids los pone uid().
+ok(/sistema === /.test(CODIGO_VISTA), '\U0001f6a8 La rama abre su pantalla por su SISTEMA, no por su id');
+ok(!/ruta\.ramaId === /.test(CODIGO_VISTA), 'y ya no queda ni un `ramaId === ` escrito a mano');
+
+console.log('\n── 18. ES F2 · La condición de finalización (apartado 18) ──');
+
+const cond2 = condicionES2(ESCENARIO);
+ok(cond2.length >= 9, `La condición de la F2 tiene ${cond2.length} casillas`);
+ok(cond2.every((c) => c.id && c.texto && typeof c.ok === 'boolean'), 'Cada casilla dice qué comprueba');
+ok(cond2.every((c) => c.ok), `Todas en verde: ${cond2.filter((c) => !c.ok).map((c) => c.texto).join(', ') || 'ninguna roja'}`);
+// \U0001f6a8 Y puede ponerse roja.
+const rota2 = condicionES2({ programas: [{ id: 'a', nombre: 'A', ramas: [] }], asignaturas: [], examenes: [], horas: [] });
+eq(rota2.find((c) => c.id === 'ramas_propias').ok, false, '\U0001f6a8 con un área sin ramas, la casilla de ramas propias SE PONE ROJA');
+ok(NO_EN_ES2.length >= 6 && NO_EN_ES2.every((x) => x.que && x.porque), 'Lo que la F2 no implementa está declarado con su motivo');
+ok(NO_EN_ES2.some((x) => /entregas/i.test(x.que)), 'Las entregas funcionales están entre lo que no se hace');
+ok(NO_EN_ES2.some((x) => /estad[íi]stica/i.test(x.que)), 'Y las estadísticas académicas');
+
 console.log('\n── 13. La condición de finalización se CALCULA (apartado 18) ──');
 
 const cond = condicionES1(ESCENARIO);
@@ -306,5 +427,5 @@ const rota = condicionES1({ programas: ESCENARIO.programas, asignaturas: 'esto n
 eq(rota.find((c) => c.id === 'datos').ok, false, '🚨 con las asignaturas rotas, la casilla de datos conservados SE PONE ROJA');
 eq(condicionES1(ESCENARIO).find((c) => c.id === 'datos').ok, true, '…y con el módulo bueno, verde');
 
-console.log(`\n  ${fallos.length ? '✗' : '✓'} ES F1 — ${pasa} comprobaciones${fallos.length ? `, ${fallos.length} FALLOS` : ''}`);
+console.log(`\n  ${fallos.length ? '✗' : '✓'} ES F1 + F2 — ${pasa} comprobaciones${fallos.length ? `, ${fallos.length} FALLOS` : ''}`);
 if (fallos.length) { fallos.forEach((f) => console.log(`      ✗ ${f}`)); process.exit(1); }

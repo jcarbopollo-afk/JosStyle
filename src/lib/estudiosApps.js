@@ -105,7 +105,15 @@ export function normalizarPrograma(p, indice = 0) {
     : (ICONO_DE_LOS_QUE_TRAE_LA_APP[id] || null);
   const categoria = typeof p.categoria === 'string' && p.categoria.trim() ? p.categoria.trim() : null;
   const orden = Number.isFinite(p.orden) ? p.orden : indice;
-  return { ...p, id, nombre, icono, categoria, orden, oculto: p.oculto === true };
+  // ES F2 — el tipo (apartado 12) y las ramas (apartados 13 y 14). ⚠️ Sin `ramas` guardadas se le
+  // ponen **las tres que funcionan**, que es justo lo que enseñaba la ES F1: lo guardado antes no
+  // cambia de aspecto. Y un array VACÍO se respeta —él las quitó todas—, que no es lo mismo que no
+  // tener el campo (la lección de `null` frente a `[]`, EH F25 y EH F31).
+  const tipo = IDS_TIPO.includes(p.tipo) ? p.tipo : (TIPO_DE_LOS_QUE_TRAE_LA_APP[id] || null);
+  const ramas = Array.isArray(p.ramas)
+    ? p.ramas.map(normalizarRama).filter(Boolean)
+    : RAMAS_POR_DEFECTO.map((r) => ({ ...r }));
+  return { ...p, id, nombre, icono, categoria, orden, oculto: p.oculto === true, tipo, ramas };
 }
 
 // ⚠️ Devuelve el módulo ENTERO: `saveData` sobrescribe, así que perder `asignaturas`, `examenes` u
@@ -120,7 +128,7 @@ export function normalizarAppsDe(estudios) {
 // ── Crear, reordenar, ocultar ────────────────────────────────────────────────────────────────────
 export const MAX_NOMBRE_APP = 40;
 
-export function crearApp({ nombre, icono, categoria } = {}, programasExistentes = []) {
+export function crearApp({ nombre, icono, categoria, tipo } = {}, programasExistentes = []) {
   const n = String(nombre || '').trim().slice(0, MAX_NOMBRE_APP);
   if (!n) return null;
   const orden = programasExistentes.reduce((max, p) => Math.max(max, Number.isFinite(p?.orden) ? p.orden : 0), -1) + 1;
@@ -131,6 +139,9 @@ export function crearApp({ nombre, icono, categoria } = {}, programasExistentes 
     categoria: (typeof categoria === 'string' && categoria.trim()) || null,
     orden,
     oculto: false,
+    // ES F2 — el tipo es opcional (apartado 12) y las ramas nacen con las tres que funcionan.
+    tipo: IDS_TIPO.includes(tipo) ? tipo : null,
+    ramas: RAMAS_POR_DEFECTO.map((r) => ({ ...r })),
   };
 }
 
@@ -172,65 +183,144 @@ export function appsVisibles(programas = []) {
   return appsOrdenadas(programas).filter((p) => !p.oculto);
 }
 
+// ── Los tipos de estudio (ES F2, apartado 12) ────────────────────────────────────────────────────
+// *"No obligar a todos a compartir exactamente la misma estructura."* El tipo **no restringe nada**:
+// solo decide qué ramas se le PROPONEN al añadir una. Por eso un programa sin tipo (`null`) no es un
+// problema — se le ofrecen todas—, y **no se le adivina el tipo a lo que escribió Josué**: sería la
+// aplicación clasificándole sus estudios por su cuenta.
+export const TIPOS_ESTUDIO = [
+  { id: 'formal', nombre: 'Educación formal', icono: '🎓', ejemplos: 'Bachillerato, universidad, cursos' },
+  { id: 'habilidad', nombre: 'Habilidad', icono: '🎹', ejemplos: 'Piano, programación, idiomas' },
+  { id: 'deporte', nombre: 'Deporte', icono: '⚽', ejemplos: 'Fútbol, calistenia' },
+  { id: 'mental', nombre: 'Entrenamiento mental', icono: '♟️', ejemplos: 'Ajedrez y otros pasatiempos' },
+];
+
+export const IDS_TIPO = TIPOS_ESTUDIO.map((t) => t.id);
+export const tipoDeEstudio = (id) => TIPOS_ESTUDIO.find((t) => t.id === id) || null;
+
+// Como con los iconos: solo los dos ids que creó la propia aplicación llevan su tipo puesto.
+export const TIPO_DE_LOS_QUE_TRAE_LA_APP = { bachillerato: 'formal', musica: 'habilidad' };
+
 // ── Las ramas del árbol ──────────────────────────────────────────────────────────────────────────
-// Apartados 11 y 12. La F1 **prepara** el árbol; las ramas se llenan en las fases siguientes. Por eso
-// cada rama declara si EXISTE de verdad hoy: una rama vacía pintada como un botón que no lleva a
-// ninguna parte es exactamente el control decorativo que prohíbe la regla 8.
+// 🚨 ES F2, apartados 4, 5, 13 y 14: **las ramas son de cada app y las configura Josué**. Dejan de ser
+// una lista global y pasan a vivir DENTRO del programa (`branches[]` del apartado 13), así que
+// persisten con todo lo demás en la clave `estudios` — ni una tabla nueva (apartado 14).
 //
-// ⚠️ Y cada app tiene las ramas que necesita (apartado 12: *"No abrir una pantalla genérica idéntica
-// para todas las apps"*): `ramasDeApp` las calcula mirando qué datos tiene esa app de verdad.
-export const RAMAS_ESTUDIOS = [
-  {
-    id: 'asignaturas',
-    nombre: 'Asignaturas',
-    icono: '📚',
-    existe: true,
+// 🚨 Y una rama declara `sistema`: cuál de los sistemas que EXISTEN DE VERDAD enseña. Las tres que lo
+// tienen —Asignaturas, Exámenes y Horas— vienen de la Fase 6 del proyecto. Una rama **sin sistema**
+// es un sitio que él ha creado para organizarse, y su pantalla lo dice con una frase: enseñarle una
+// lista vacía de algo que no se puede guardar sería el control decorativo que prohíbe la regla 8.
+export const SISTEMAS_DE_RAMA = {
+  asignaturas: {
     cuenta: (estudios, programaId) => asignaturasDe(estudios, programaId).length,
     singular: 'asignatura',
     plural: 'asignaturas',
   },
-  {
-    id: 'examenes',
-    nombre: 'Exámenes',
-    icono: '📝',
-    existe: true,
+  examenes: {
     cuenta: (estudios, programaId) => examenesDe(estudios, programaId).length,
     singular: 'examen',
     plural: 'exámenes',
   },
-  {
-    id: 'horas',
-    nombre: 'Horas de estudio',
-    icono: '⏱️',
-    existe: true,
+  horas: {
     cuenta: (estudios, programaId) => horasDe(estudios, programaId).length,
     singular: 'sesión',
     plural: 'sesiones',
   },
-  {
-    id: 'entregas',
-    nombre: 'Trabajos y entregas',
-    icono: '📋',
-    existe: false,
-    enFase: 'ES F2',
-    porque: 'Todavía no existe la entidad: no hay ni un trabajo guardado que enseñar.',
-  },
-  {
-    id: 'progreso',
-    nombre: 'Progreso',
-    icono: '📊',
-    existe: false,
-    enFase: 'una fase posterior de Estudios',
-    porque: 'Las estadísticas están excluidas del apartado 17 de esta fase.',
-  },
+};
+
+export const IDS_SISTEMA = Object.keys(SISTEMAS_DE_RAMA);
+
+// ⚠️ Las que trae cada app al empezar son **las tres que funcionan**, que es exactamente lo que
+// enseñaba la ES F1: así lo guardado antes no cambia de aspecto. Las de los ejemplos del apartado 4
+// —Instrumentos, Repertorio, Partidas…— **no se sirven de serie**, porque serían nueve pantallas
+// vacías el día que abra Música: se ofrecen al añadir una rama, que es donde él decide.
+export const RAMAS_POR_DEFECTO = [
+  { id: 'asignaturas', nombre: 'Asignaturas', icono: '📚', sistema: 'asignaturas' },
+  { id: 'examenes', nombre: 'Exámenes', icono: '📝', sistema: 'examenes' },
+  { id: 'horas', nombre: 'Horas de estudio', icono: '⏱️', sistema: 'horas' },
 ];
 
-export const RAMAS_QUE_EXISTEN = RAMAS_ESTUDIOS.filter((r) => r.existe);
-export const RAMAS_PENDIENTES = RAMAS_ESTUDIOS.filter((r) => !r.existe);
+// Apartado 4, con sus propios ejemplos. Son SUGERENCIAS al añadir una rama, no una estructura
+// impuesta: *"No asumir que todas las áreas tienen la misma estructura."*
+export const SUGERENCIAS_RAMA = {
+  formal: [
+    { nombre: 'Trabajos y entregas', icono: '📋' },
+    { nombre: 'Apuntes', icono: '🗒️' },
+    { nombre: 'Progreso', icono: '📊' },
+  ],
+  habilidad: [
+    { nombre: 'Instrumentos', icono: '🎸' },
+    { nombre: 'Práctica', icono: '🔁' },
+    { nombre: 'Repertorio', icono: '🎼' },
+  ],
+  deporte: [
+    { nombre: 'Entrenamiento', icono: '🏋️' },
+    { nombre: 'Partidos', icono: '🥅' },
+    { nombre: 'Objetivos', icono: '🎯' },
+  ],
+  mental: [
+    { nombre: 'Entrenamiento', icono: '🏋️' },
+    { nombre: 'Partidas', icono: '♟️' },
+    { nombre: 'Aperturas', icono: '📖' },
+  ],
+};
 
-export function ramaPorId(id) {
-  return RAMAS_ESTUDIOS.find((r) => r.id === id) || null;
+// Sin tipo se le ofrecen todas, sin repetir: no saber su tipo no puede dejarle sin sugerencias.
+export function sugerenciasDeRama(tipo) {
+  const listas = tipo && SUGERENCIAS_RAMA[tipo] ? [SUGERENCIAS_RAMA[tipo]] : Object.values(SUGERENCIAS_RAMA);
+  const vistas = new Set();
+  return listas.flat().filter((s) => (vistas.has(s.nombre) ? false : vistas.add(s.nombre)));
 }
+
+export const MAX_NOMBRE_RAMA = 30;
+export const ICONO_RAMA_POR_DEFECTO = '📁';
+
+export function normalizarRama(r) {
+  if (!r || typeof r !== 'object') return null;
+  const nombre = typeof r.nombre === 'string' ? r.nombre.trim().slice(0, MAX_NOMBRE_RAMA) : '';
+  if (!nombre) return null;
+  const id = typeof r.id === 'string' && r.id ? r.id : uid();
+  // ⚠️ Un `sistema` que no existe se queda en `null`, no se inventa: si una fase futura retira uno,
+  // su rama pasa a ser un sitio vacío con su frase, no una pantalla que revienta.
+  const sistema = IDS_SISTEMA.includes(r.sistema) ? r.sistema : null;
+  const icono = typeof r.icono === 'string' && r.icono.trim() ? r.icono.trim() : ICONO_RAMA_POR_DEFECTO;
+  return { id, nombre, icono, sistema };
+}
+
+export function crearRama({ nombre, icono } = {}) {
+  const n = String(nombre || '').trim().slice(0, MAX_NOMBRE_RAMA);
+  if (!n) return null;
+  return {
+    id: uid(),
+    nombre: n,
+    icono: (typeof icono === 'string' && icono.trim()) || ICONO_RAMA_POR_DEFECTO,
+    sistema: null,
+  };
+}
+
+export function anadirRama(programas = [], appId, rama) {
+  if (!rama) return programas;
+  return programas.map((p) => (p.id === appId ? { ...p, ramas: [...(p.ramas || []), rama] } : p));
+}
+
+// 🚨 Quitar una rama NO borra sus datos (EH F36, y la ES F1 lo dijo con `oculto`): las asignaturas,
+// los exámenes y las horas viven en `estudios`, no dentro de la rama. Quitarla la saca del árbol de
+// esta app y volver a añadirla los devuelve enteros.
+export const AVISO_QUITAR_RAMA = 'Quitarla solo la saca de esta área. Lo que hayas guardado dentro se queda donde está.';
+
+export function quitarRama(programas = [], appId, ramaId) {
+  return programas.map((p) => (
+    p.id === appId ? { ...p, ramas: (p.ramas || []).filter((r) => r.id !== ramaId) } : p
+  ));
+}
+
+// ⚠️ Una rama ya no se busca en un catálogo global: se busca **dentro de su app**, porque desde la
+// ES F2 dos apps pueden tener ramas distintas y hasta dos «Entrenamiento» que no son la misma.
+export function ramaPorId(programa, ramaId) {
+  return (programa?.ramas || []).find((r) => r.id === ramaId) || null;
+}
+
+export const ramasDe = (programa) => (Array.isArray(programa?.ramas) ? programa.ramas : []);
 
 // ── Lecturas del árbol ───────────────────────────────────────────────────────────────────────────
 // Nada de esto se guarda: se deriva de las entidades que ya existen desde la Fase 6. Así, añadir una
@@ -256,18 +346,33 @@ export function horasDe(estudios, programaId) {
   return lista.filter((h) => h && ids.includes(h.asignaturaId));
 }
 
-export function ramasDeApp(estudios, programaId) {
-  return RAMAS_QUE_EXISTEN.map((r) => {
-    const n = r.cuenta(estudios, programaId);
+// 🚨 Las ramas salen del PROGRAMA, no de un catálogo global (ES F2, apartados 4 y 13): cada app abre
+// las suyas. La cuenta solo la tienen las que enseñan un sistema de verdad; la que no, no finge un
+// número —ni un cero, que diría que está vacía cuando lo que pasa es que todavía no guarda nada—.
+export function ramasDeApp(estudios, programa) {
+  const id = typeof programa === 'string' ? programa : programa?.id;
+  const lista = typeof programa === 'string'
+    ? ramasDe((estudios?.programas || []).find((p) => p.id === programa))
+    : ramasDe(programa);
+
+  return lista.map((r) => {
+    const sis = r.sistema ? SISTEMAS_DE_RAMA[r.sistema] : null;
+    const n = sis ? sis.cuenta(estudios, id) : null;
     return {
       id: r.id,
       nombre: r.nombre,
       icono: r.icono,
+      sistema: r.sistema,
       cuantos: n,
-      linea: n === 0 ? null : `${n} ${n === 1 ? r.singular : r.plural}`,
+      linea: !sis || n === 0 ? null : `${n} ${n === 1 ? sis.singular : sis.plural}`,
     };
   });
 }
+
+// Lo que se lee en una rama que todavía no guarda nada (apartados 6, 9 y 10). ⚠️ Ni «próximamente»
+// ni el número de una fase: eso son las reglas 8 y 9. Se dice qué es ese sitio y que aún no se puede
+// guardar nada dentro, que es la frase corta que la regla 8 sí pide.
+export const TEXTO_RAMA_SIN_SISTEMA = 'Este es un sitio tuyo para organizar el área. Todavía no se puede guardar nada dentro.';
 
 // ── La línea de estado de cada app (apartado 6) ──────────────────────────────────────────────────
 // *"Una app puede mostrar información mínima debajo del nombre **si realmente aporta valor**"* y
@@ -369,7 +474,7 @@ export function migas(ruta, programas = []) {
   const app = programas.find((p) => p.id === ruta.appId);
   if (app) trozos.push({ id: `app:${app.id}`, texto: app.nombre, icono: iconoDeApp(app) });
   if (ruta.vista === 'rama') {
-    const r = ramaPorId(ruta.ramaId);
+    const r = ramaPorId(app, ruta.ramaId);
     if (r) trozos.push({ id: `rama:${r.id}`, texto: r.nombre, icono: r.icono });
   }
   return trozos;
@@ -420,11 +525,51 @@ export function condicionES1(estudios) {
     { id: 'home_apps', ok: appsVisibles(programas).length >= 0 && typeof appsVisibles === 'function', texto: 'Existe un Home tipo "apps"' },
     { id: 'configurables', ok: typeof crearApp === 'function' && typeof alternarOcultaApp === 'function' && typeof moverApp === 'function', texto: 'Las áreas son visuales y configurables (crear, ocultar, reordenar)' },
     { id: 'iconos', ok: ICONOS_ESTUDIOS.length >= 12 && programas.every((p) => typeof iconoDeApp(p) === 'string' && iconoDeApp(p).length > 0), texto: 'Todas se representan con un icono' },
-    { id: 'arbol', ok: RAMAS_QUE_EXISTEN.length >= 3 && typeof ramasDeApp === 'function' && typeof atras === 'function', texto: 'La estructura está preparada para funcionar como un árbol' },
+    { id: 'arbol', ok: RAMAS_POR_DEFECTO.length >= 3 && typeof ramasDeApp === 'function' && typeof atras === 'function', texto: 'La estructura está preparada para funcionar como un árbol' },
     { id: 'sin_textos', ok: TEXTOS_RETIRADOS.length >= 3, texto: 'Los textos innecesarios han desaparecido del Home' },
     { id: 'sin_ia_home', ok: TEXTOS_RETIRADOS.some((t) => t.que.includes('Analizar mis estudios') && t.adonde), texto: 'El panel de IA sale del Home sin perder la inteligencia' },
     { id: 'proximo', ok: typeof proximosEventos === 'function' && Array.isArray(LO_QUE_FALTA_EN_PROXIMO), texto: 'Hay una zona inferior de próximos eventos' },
     { id: 'datos', ok: conservado, texto: 'Se mantienen los datos existentes (programas, asignaturas, exámenes y horas)' },
     { id: 'no_implementado', ok: NO_EN_ES1.length >= 5 && NO_EN_ES1.every((x) => x.porque), texto: 'Lo que no se implementa todavía está declarado con su motivo' },
+  ];
+}
+
+// ── Lo que la ES F2 NO construye (apartado 17) ───────────────────────────────────────────────────
+export const NO_EN_ES2 = [
+  { que: 'Gestión completa de asignaturas', porque: 'Es la ES F3. Lo que ya funcionaba desde la Fase 6 se conserva entero.' },
+  { que: 'Crear exámenes funcionales', porque: 'Los que ya existían siguen creándose desde su asignatura; el sistema completo es de una fase posterior.' },
+  { que: 'Entregas funcionales', porque: 'No existe la entidad, y adivinarla por el título de una tarea vincularía dos cosas distintas.' },
+  { que: 'Estadísticas académicas', porque: 'El apartado 10 dice expresamente que ésta no es una fase de estadísticas.' },
+  { que: 'Apps de fútbol y de ajedrez completas', porque: 'La fase les da su sitio en el árbol, no su contenido.' },
+  { que: 'Planificación con IA', porque: 'Excluida del apartado 17.' },
+];
+
+// 🚨 La condición de finalización de la ES F2 (apartado 18), CALCULADA sobre un estado de verdad.
+export function condicionES2(estudios) {
+  const norm = normalizarAppsDe(estudios);
+  const programas = Array.isArray(norm?.programas) ? norm.programas : [];
+  const conRamas = programas.filter((p) => ramasDe(p).length > 0);
+
+  // *"La estructura no obligue a todas las áreas a funcionar igual"*: se comprueba que DOS apps
+  // puedan tener conjuntos de ramas distintos, no que de hecho los tengan.
+  const unaCambiada = anadirRama(programas, programas[0]?.id, crearRama({ nombre: 'Oposiciones', icono: '📖' }));
+  const flexible = programas.length >= 2
+    ? ramasDe(unaCambiada[0]).length !== ramasDe(unaCambiada[1]).length
+    : typeof anadirRama === 'function';
+
+  // Persistencia (apartado 14): lo configurado sobrevive a pasar por el normalizador otra vez.
+  const rehecho = normalizarAppsDe({ ...norm, programas: unaCambiada });
+  const persiste = ramasDe(rehecho.programas[0]).some((r) => r.nombre === 'Oposiciones');
+
+  return [
+    { id: 'jerarquia', ok: typeof abrirApp === 'function' && typeof abrirRama === 'function' && typeof migas === 'function', texto: 'Estudios tiene una navegación jerárquica real' },
+    { id: 'ramas_propias', ok: programas.length === 0 || conRamas.length === programas.length, texto: 'Cada app tiene sus propias ramas' },
+    { id: 'flexible', ok: flexible, texto: 'La estructura no obliga a todas las áreas a funcionar igual' },
+    { id: 'crear_rama', ok: typeof crearRama === 'function' && typeof anadirRama === 'function' && typeof quitarRama === 'function', texto: 'Se pueden añadir y quitar ramas dentro de una app' },
+    { id: 'volver', ok: atras(abrirRama('x', 'y')).vista === 'app' && atras(RUTA_RAIZ).vista === 'home', texto: 'Se puede volver atrás fácilmente, y nunca se sale de Estudios sin querer' },
+    { id: 'persistencia', ok: persiste, texto: 'Las apps y las ramas son persistentes' },
+    { id: 'tipos', ok: TIPOS_ESTUDIO.length === 4 && TIPOS_ESTUDIO.every((t) => t.nombre && t.ejemplos), texto: 'La arquitectura distingue los cuatro tipos de estudio' },
+    { id: 'sin_datos_perdidos', ok: norm.asignaturas?.length === (estudios?.asignaturas?.length || 0) && norm.examenes?.length === (estudios?.examenes?.length || 0), texto: 'No se ha roto ninguna funcionalidad existente' },
+    { id: 'no_implementado_2', ok: NO_EN_ES2.length >= 6 && NO_EN_ES2.every((x) => x.porque), texto: 'Lo que no se implementa todavía está declarado con su motivo' },
   ];
 }

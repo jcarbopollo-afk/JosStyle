@@ -14,10 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.62.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.63.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-**Pendiente por delante:** la **Entrega 3** (46 fases — **41 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
+**Pendiente por delante:** la **Entrega 3** (46 fases — **42 hechas**, ver `docs/11_ENTREGA3_ORDEN.md`),
 que es donde se está trabajando ahora; lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
 Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
 **106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
@@ -138,9 +138,9 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **16 661 pruebas unitarias** con Node repartidas en **142 suites** (5 de ellas de auditoría),
-**2076 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **1157
-comprobaciones sobre la aplicación de verdad en Chromium** — **19 905 comprobaciones**.
+Vite, **16 751 pruebas unitarias** con Node repartidas en **142 suites** (5 de ellas de auditoría),
+**2084 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **1183
+comprobaciones sobre la aplicación de verdad en Chromium** — **20 029 comprobaciones**.
 
 Eso ya ha encontrado **noventa y seis bugs reales** que la revisión a mano no vio, entre ellos una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
@@ -168,7 +168,7 @@ de error exacto** antes de asumir nada.
 
 ## Lo primero que conviene hacer
 
-▶️ **La Entrega 3 está en marcha: 41 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
+▶️ **La Entrega 3 está en marcha: 42 de 46.** Hechas la **F1 (Pulido global, v3.10.0)**, la
 **F2 (Rachas, v3.12.0)**, la **F3 (Armario, v3.13.0)**, la **F4 (Economía, v3.15.0)**, la
 **F5 (Horario, v3.17.0)**, la **F6 (Hoy, centro del día, v3.20.0)**, la
 **F7 (Calendario: la agenda de un día, v3.27.0)**, la
@@ -199,8 +199,9 @@ estadísticas, v3.59.0)**, la **F39 (inteligencia y análisis nutricional, v3.60
 NU—. Con eso hay **seis
 bloques cerrados** —Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1),
 Sueño (2/2) y Nutrición (8/8)—, y la **F41 (Estudios, home tipo teléfono y nueva arquitectura,
-v3.62.0)**, con la que empieza el **último bloque de la entrega**: **ES va por 1 de 6**. La que viene
-es la **42 — ES F2: estructura en árbol y navegación por ramas**. El índice, con la
+v3.62.0)**, con la que empieza el **último bloque de la entrega**, y la **F42 (estructura en árbol y
+navegación por ramas, v3.63.0)**: **ES va por 2 de 6**. La que viene
+es la **43 — ES F3: asignaturas y gestión académica**. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -503,6 +504,36 @@ código de agosto mientras él decía *"la web sigue igual"*.
   E3 F23 escrita con las palabras de entonces, que el rediseño de esta fase cambió con todo el
   derecho. **Mirar qué línea la hace saltar antes de tocar el código**: de los cuatro rojos, **uno
   solo era del código** —la racha decía *"🔥 1 días"*—, y ése sí es de los que ve Josué.
+
+- 🚨 **UNA ESTRUCTURA QUE VALE PARA TODOS NO ES UNA ESTRUCTURA FLEXIBLE** (E3 F42, apartado 4:
+  *"No asumir que todas las áreas tienen la misma estructura"*). Las ramas eran un catálogo global y
+  pasan a vivir **dentro del programa** (`branches[]` del apartado 13), así que persisten en la clave
+  `estudios` sin una tabla nueva (apartado 14). ⚠️ **Y una rama se abre por su `sistema`, nunca por su
+  id**: desde esta fase los ids los pone `uid()` y dos áreas pueden tener una «Entrenamiento» cada una.
+- 🚨 **LOS EJEMPLOS DE UN ENUNCIADO NO SON UNA LISTA POR DEFECTO** (E3 F42). El apartado 4 propone
+  Instrumentos, Repertorio, Práctica, Partidas y Aperturas; servirlas de serie habría dado **nueve
+  pantallas vacías** al abrir Música —tres tarjetas que no llevan a ninguna parte, el control
+  decorativo de la regla 8—. Un área nace con **las tres que funcionan** y el resto **se ofrecen al
+  añadir una sección**, que es donde decide él. Es la E3 F33 otra vez: *un número del enunciado puede
+  ser una maqueta*, y aquí lo era una lista.
+- ⚠️ **UN TIPO QUE RESTRINGE SERÍA LA APP DECIDIENDO** (E3 F42, apartado 12): los cuatro tipos de
+  estudio **solo deciden qué secciones se le proponen**. Por eso se puede dejar sin elegir —y entonces
+  se le ofrecen todas—, y **a lo que escribió Josué no se le adivina el tipo**: solo los dos ids que
+  creó la propia aplicación llevan el suyo, igual que con los iconos de la E3 F41.
+- ⚠️ **QUITAR UNA RAMA NO BORRA LO QUE HAY DENTRO** (E3 F42, y EH F36 lo dijo con `oculto`): las
+  asignaturas, los exámenes y las horas viven en `estudios`, no dentro de la rama. Hay una
+  comprobación en Chromium que quita la sección de Exámenes y **va a buscar el examen donde de verdad
+  vive**, que es la única forma de demostrarlo.
+- ⚠️ **UN ARRAY VACÍO NO ES «NO TIENE EL CAMPO»** (E3 F42, y es `null` frente a `[]` por cuarta vez):
+  un programa **sin** `ramas` recibe las tres que funcionan —lo que ya enseñaba la F1, así que nada
+  cambia de aspecto—, pero uno con `ramas: []` **se queda sin ninguna**, porque las quitó él.
+- ⚠️ **LAS ENTREGAS NO SE PUEDEN CONSTRUIR, Y SE DICE POR QUÉ** (E3 F42, apartados 9 y 17). La única
+  vía real habría sido **cazar tareas que mencionen la asignatura**, y eso es exactamente lo que
+  prohíbe la E3 F12: *"no vincular dos cosas por el título, solo por identificadores reales"*. Va a
+  `NO_EN_ES2` con su motivo, no a la pantalla como un botón muerto.
+- ⚠️ **DOS BOTONES CON EL MISMO NOMBRE EN LA MISMA PANTALLA** (E3 F42, y la E3 F30 lo pagó caro): la
+  tarjeta ＋ de la cuadrícula se llama «Añadir», así que el formulario de sección **no puede llamarse
+  igual** — es «Crear sección». El recorrido habría acabado en el sitio equivocado.
 
 - 🚨 **UNA «APP» DE ESTUDIOS YA EXISTÍA, Y SE LLAMA `programa`** (E3 F41, y es la lección más
   repetida del proyecto — tercera vez en esta entrega, tras las notas de la E3 F16 y los alimentos de
