@@ -463,6 +463,24 @@ export const LO_QUE_FALTA_EN_PROXIMO = [];
 export const DIAS_PROXIMO = 60;
 export const MAX_PROXIMO = 5;
 
+// 🚨 CÓMO SE LEE UNA FECHA EN PANTALLA SE ESCRIBE UNA SOLA VEZ (ES F6). Los apartados 1 y 4 de la
+// ES F6 la enseñan como *"📝 Examen de Biología"* —**el tipo Y la asignatura**, nunca el tema a
+// secas—, y el tema pasa al renglón de abajo, donde también va la asignatura del resto de tipos.
+// Con la regla escrita en dos sitios, el Home y la asignatura acabarían diciendo cosas distintas
+// **del mismo examen**, que es exactamente lo que el apartado 19 de la ES F4 prohíbe.
+export function etiquetasDeFecha(fila, nombreAsignatura) {
+  if (!fila) return { titulo: '', detalle: null };
+  if (fila.tipo === 'examen') {
+    return {
+      titulo: `Examen de ${nombreAsignatura || 'una asignatura'}`,
+      // ⚠️ 'Examen' es el relleno de `fechasAcademicas` cuando no hay tema: repetirlo debajo del
+      // título no dice nada nuevo.
+      detalle: fila.nombre && fila.nombre !== 'Examen' ? fila.nombre : null,
+    };
+  }
+  return { titulo: fila.nombre || '', detalle: nombreAsignatura || null };
+}
+
 // 🚨 ES F4, apartados 8, 9 y 10 — el Home lee **las tres listas** a través de `fechasAcademicas()`,
 // que es la única función que las junta (apartado 19). Antes leía solo los exámenes, que era lo
 // único que existía. Ni una copia: cambiar la fecha de una entrega mueve esto sola.
@@ -478,15 +496,15 @@ export function proximosEventos(estudios, hoy = todayISO(), { limite = MAX_PROXI
   return proximasFechas(estudios, hoy, { limite, dias }).map((f) => {
     const prog = programaDe(f.asignaturaId);
     const t = tipoDeFecha(f.tipo);
+    // Apartado 12 — el icono Y el texto dicen el tipo, nunca solo el color. La regla del título vive
+    // en `etiquetasDeFecha`, que es de donde la lee también la pantalla (ES F6).
+    const { titulo, detalle } = etiquetasDeFecha(f, nombreAsignatura(f.asignaturaId));
     return {
       id: f.id,
       tipo: f.tipo,
       icono: t ? t.icono : '📅',
-      // Apartado 12 — el icono Y el texto dicen el tipo, nunca solo el color.
-      titulo: f.tipo === 'examen'
-        ? `Examen de ${nombreAsignatura(f.asignaturaId) || 'una asignatura'}`
-        : f.nombre,
-      detalle: f.tipo === 'examen' ? (f.nombre !== 'Examen' ? f.nombre : null) : nombreAsignatura(f.asignaturaId) || null,
+      titulo,
+      detalle,
       fecha: f.fecha,
       hora: f.hora,
       cuenta: f.cuenta,

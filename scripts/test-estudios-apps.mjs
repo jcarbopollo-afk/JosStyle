@@ -307,7 +307,16 @@ ok(NO_EN_ES1.length >= 5, `${NO_EN_ES1.length} cosas declaradas como no implemen
 ok(NO_EN_ES1.every((x) => x.que && x.porque), 'Cada una con su motivo');
 ok(NO_EN_ES1.some((x) => /entrega|trabajo/i.test(x.que)), 'Las entregas están entre lo que no se hace');
 ok(NO_EN_ES1.some((x) => /estad[íi]stica/i.test(x.que)), 'Las estadísticas también');
-ok(!/próximamente|proximamente|en construcción/i.test(VISTA), 'Y no hay ni un "próximamente" en pantalla (regla 9)');
+/* ⚠️ El rótulo «PRÓXIMAMENTE» del Home es el que pide la ES F6 en sus apartados 1 y 4: es el TÍTULO
+   de una sección con eventos de verdad dentro, no la promesa de una función que no existe. Se quita
+   **esa forma exacta, en mayúsculas** antes de barrer; todo lo demás —la palabra dentro de una
+   frase, en minúsculas, o un «en construcción»— sigue poniendo esto rojo. */
+const PROMESA_VACIA = /próximamente|proximamente|en construcción/i;
+const VISTA_SIN_ROTULO = VISTA.replace(/PRÓXIMAMENTE/g, '');
+ok(!PROMESA_VACIA.test(VISTA_SIN_ROTULO), 'Y no hay ni un "próximamente" en pantalla (regla 9)');
+// 🚨 Y que la regla siga pudiendo fallar: una que no caza su propio ejemplo malo da siempre cero.
+ok(PROMESA_VACIA.test('Estadísticas disponibles próximamente'),
+  '🚨 y el barrido sigue cazando la promesa de verdad, que es lo que prohíbe la regla 9');
 
 console.log('\n── 14. ES F2 · Las ramas son de cada app y las configura él (apartados 4, 5, 13 y 14) ──');
 

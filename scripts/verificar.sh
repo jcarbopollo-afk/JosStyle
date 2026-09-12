@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Entrega 3 · F46 — Estudios: integración, cierre y auditoría final del bloque.
+if node --import ./scripts/resolver-vite.mjs scripts/test-cierre-estudios.mjs >/tmp/jc_cierrees.log 2>&1; then
+  ok "Estudios: integración y cierre (E3 F46) — $(grep -c '✓' /tmp/jc_cierrees.log) comprobaciones"
+else
+  fallo "Falla el cierre de Estudios (E3 F46)"; grep '✗' /tmp/jc_cierrees.log
+fi
+
 # Entrega 3 · F45 — Estudios: apps de aprendizaje, plantillas, objetivos y actividades.
 if node --import ./scripts/resolver-vite.mjs scripts/test-apps-aprendizaje.mjs >/tmp/jc_apps5.log 2>&1; then
   ok "Estudios: apps de aprendizaje (E3 F45) — $(grep -c '✓' /tmp/jc_apps5.log) comprobaciones"

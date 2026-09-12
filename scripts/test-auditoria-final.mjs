@@ -207,6 +207,10 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
        `aprendizaje.js` de la EH F57. **Quinta** exclusión a mano, y la propia
        cabecera de ese archivo lo avisa antes de que a nadie le cueste el rato. */
     && f !== 'appsAprendizaje'
+    /* ⚠️ Y `cierreEstudios` es el cierre del bloque ES (E3 F46), no de aquí: lo
+       caza `cierre`, igual que `cierreNutricion`. **Sexta** exclusión a mano, y
+       la última de la Entrega 3. */
+    && f !== 'cierreEstudios'
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],

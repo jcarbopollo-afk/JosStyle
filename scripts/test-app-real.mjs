@@ -4163,7 +4163,7 @@ const homeEs = await esperarTexto(/Bachillerato/i);
 ok(/Bachillerato/i.test(homeEs) && /Música/i.test(homeEs),
   '🚨 LAS ÁREAS DE ANTES DE LA FASE SIGUEN EN EL HOME: un `programa` es una "app" (apartado 16)');
 ok(/Añadir/i.test(homeEs), '⚠️ con el ＋ Añadir del apartado 3');
-ok(/PRÓXIMO/i.test(homeEs), '⚠️ y la zona de PRÓXIMO del apartado 10');
+ok(/PRÓXIMAMENTE/i.test(homeEs), '⚠️ y la zona de PRÓXIMAMENTE del apartado 10 (la ES F6 le cambió el rótulo)');
 ok(/Examen de Matemáticas/i.test(homeEs),
   '🚨 que enseña el examen de VERDAD que ya estaba guardado, no una maqueta');
 
@@ -4191,10 +4191,14 @@ ok(!/Piano/i.test(ramaEs), '⚠️ y no se cuela la de otra app');
 /* 🚨 El botón de atrás sube UN nivel, no saca de Estudios (EH F37). */
 ok(await pulsar('Volver atrás'), 'se pulsa atrás');
 const volvioEs = await esperarTexto(/Exámenes/i);
-ok(/Exámenes/i.test(volvioEs) && !/Matemáticas/i.test(volvioEs),
+/* ⚠️ Esto comprobaba que «Matemáticas» ya no se leía, y era un atajo: desde la ES F6 el área enseña
+   su propio PRÓXIMAMENTE, donde «Examen de Matemáticas» sale **con todo el derecho** (apartado 11).
+   Lo que dice de verdad en qué nivel estás son **las migas**, así que se mira eso. */
+ok(/Exámenes/i.test(volvioEs) && /Estudios › Bachillerato/i.test(volvioEs)
+  && !/Bachillerato › Asignaturas/i.test(volvioEs),
   '🚨 ATRÁS DESDE UNA RAMA VUELVE A SU APP, no al Home ni fuera de Estudios');
 ok(await pulsar('Volver atrás'), 'se pulsa atrás otra vez');
-const homeOtraVez = await esperarTexto(/PRÓXIMO/i);
+const homeOtraVez = await esperarTexto(/PRÓXIMAMENTE/i);
 ok(/Música/i.test(homeOtraVez), '🚨 y desde una app se vuelve al Home con todas las áreas');
 
 /* 🚨 Y navegar por el árbol NO ESCRIBE NADA: mirar es mirar (E3 F32). */
@@ -4241,7 +4245,7 @@ await esperarTexto(/Repertorio/i);
 
 /* 🚨 Y NO se ha colado en las demás áreas. */
 ok(await pulsar('Volver atrás'), 'se vuelve al Home');
-await esperarTexto(/PRÓXIMO/i);
+await esperarTexto(/PRÓXIMAMENTE/i);
 ok(await pulsar('Bachillerato'), 'se abre Bachillerato');
 const otraApp = await esperarTexto(/Asignaturas/i);
 ok(!/Repertorio/i.test(otraApp),
@@ -4379,7 +4383,7 @@ await esperarTexto(/Matemáticas/i);
 ok(await pulsar('Volver atrás'), 'al área');
 await esperarTexto(/Asignaturas/i);
 ok(await pulsar('Volver atrás'), 'y al Home de Estudios');
-const homeConEntrega = await esperarTexto(/PRÓXIMO/i);
+const homeConEntrega = await esperarTexto(/PRÓXIMAMENTE/i);
 ok(/Trabajo de Historia/i.test(homeConEntrega),
   '🚨 LA ENTREGA SALE EN EL HOME SIN QUE NADIE LA COPIE: un solo registro visto desde dos sitios (apartados 8 y 19)');
 ok(/Examen de Matemáticas/i.test(homeConEntrega), '⚠️ junto al examen, las dos en la misma lista');
@@ -4469,5 +4473,86 @@ ok((guardadoEs5?.actividades || []).some((a) => a.titulo === '3 partidas' && a.a
   '⚠️ y la actividad, vinculada a su área');
 ok((guardadoEs5?.actividades || []).every((a) => a.minutos === null || a.minutos > 0),
   '🚨 y sin minutos escritos se guarda `null`, no un 0');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   E3 · FASE 46 (ES F6) — PRÓXIMAMENTE, VER TODOS Y EL CIERRE 🏁
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 **Lo que ninguna prueba de Node puede ver:** que lo de HOY sale arriba y
+   aparte, que «Ver todos» abre la vista completa con sus filtros, y sobre todo
+   que **pulsar un evento del Home aterriza en su detalle**, cuatro niveles más
+   abajo — que es el apartado 7 y la auditoría de navegación del 20. */
+almacen.estudios = {
+  programas: [{
+    id: 'bachillerato', nombre: 'Bachillerato', tipo: 'formal',
+    ramas: [
+      { id: 'r-asig', nombre: 'Asignaturas', icono: '📚', sistema: 'asignaturas' },
+      { id: 'r-exam', nombre: 'Exámenes', icono: '📝', sistema: 'examenes' },
+    ],
+  }],
+  asignaturas: [{ id: 'a1', programaId: 'bachillerato', nombre: 'Biología', orden: 0, oculto: false }],
+  examenes: [
+    { id: 'e1', asignaturaId: 'a1', fecha: DN(0), tema: 'Genética', hora: '09:00', estado: 'proximo', planRepaso: [] },
+    { id: 'e2', asignaturaId: 'a1', fecha: DN(-6), tema: 'Metabolismo', estado: 'proximo', planRepaso: [] },
+    { id: 'e3', asignaturaId: 'a1', fecha: DN(60), tema: 'El que ya pasó', estado: 'realizado', planRepaso: [] },
+  ],
+  entregas: [{ id: 't1', asignaturaId: 'a1', nombre: 'Trabajo de Biología', fecha: DN(-3), estado: 'pendiente' }],
+  eventos: [], horas: [], temas: [], actividades: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Vida'), 'se entra en Vida');
+ok(await pulsar('Estudios'), 'y en Estudios');
+
+const homeFinal = await esperarTexto(/PRÓXIMAMENTE/i);
+ok(/HOY/.test(homeFinal), '🚨 LO DE HOY TIENE SU PROPIO BLOQUE, arriba (apartado 4)');
+ok(/Examen de Biología/i.test(homeFinal), 'con el examen de hoy');
+ok(/Trabajo de Biología/i.test(homeFinal), '⚠️ y debajo lo que viene, exámenes y entregas juntos');
+ok(!/El que ya pasó/i.test(homeFinal), '🚨 y lo que ya pasó NO sale (apartado 5)');
+ok(/Ver todos/i.test(homeFinal), '⚠️ con el acceso a la vista completa (apartado 3)');
+ok(/2 exámenes|1 entrega/i.test(homeFinal), '⚠️ y el resumen rápido, solo con lo que tiene algo (apartado 13)');
+
+/* Apartados 8 y 9 — la vista completa y sus filtros. */
+ok(await pulsar('Ver todos →'), 'se abre la vista completa');
+const completa = await esperarTexto(/PASADOS/i);
+ok(/PRÓXIMOS/i.test(completa) && /PASADOS/i.test(completa), '🚨 con próximos y pasados separados (apartado 8)');
+ok(/El que ya pasó/i.test(completa), '⚠️ y lo pasado SIGUE guardado: se puede consultar (apartado 5)');
+ok(await pulsar('Entregas'), 'se filtra por entregas');
+const soloEntregas = await esperarTexto(/Trabajo de Biología/i);
+ok(!/Genética/i.test(soloEntregas), '🚨 y el filtro deja SOLO las entregas (apartado 9)');
+ok(await pulsar('Todos'), 'se vuelve a todos');
+await esperarTexto(/Genética/i);
+
+/* 🚨 Apartado 7 y auditoría del 20 — pulsar un evento aterriza en su detalle. */
+ok(await pulsar('Volver atrás'), 'se vuelve al Home');
+await esperarTexto(/PRÓXIMAMENTE/i);
+ok(await pulsar('Examen de Biología'), 'se pulsa el examen de hoy');
+const enDetalle = await esperarTexto(/Genética/i);
+ok(/Genética/i.test(enDetalle), '🚨 Y SE ATERRIZA EN SU EXAMEN, cuatro niveles más abajo (apartado 7)');
+ok(/Estudios › Bachillerato › Asignaturas › Biología › Exámenes/i.test(enDetalle),
+  '🚨 con las migas enteras: la navegación no deja estados incorrectos (apartado 20)');
+
+/* Apartado 10 — y la asignatura enseña lo suyo, del mismo sistema. */
+ok(await pulsar('Volver atrás'), 'se sube a la asignatura');
+const asigFinal = await esperarTexto(/PRÓXIMAMENTE/i);
+ok(/PRÓXIMAMENTE/i.test(asigFinal), '🚨 LA ASIGNATURA ENSEÑA LO SUYO (apartado 10)');
+ok(/Genética/i.test(asigFinal) && /Trabajo de Biología/i.test(asigFinal), 'con su examen y su entrega');
+
+/* 🚨 Y todo el recorrido de vuelta, sin dejar nada roto (apartado 20). */
+ok(await pulsar('Volver atrás'), 'a la lista de asignaturas');
+await esperarTexto(/Biología/i);
+ok(await pulsar('Volver atrás'), 'al área');
+await esperarTexto(/Asignaturas/i);
+ok(await pulsar('Volver atrás'), 'y al Home');
+const vuelta = await esperarTexto(/PRÓXIMAMENTE/i);
+ok(/HOY/.test(vuelta) && /Bachillerato/i.test(vuelta),
+  '🏁 EL RECORRIDO ENTERO, IDA Y VUELTA, DEJA EL HOME COMO ESTABA (apartado 20)');
+
+/* 🚨 Y mirar todo esto no ha escrito nada: el Home es una vista. */
+const escriturasF6 = guardado.filter((g) => g && g.key === 'estudios').length;
+await pulsar('Ver todos →');
+await esperarTexto(/PASADOS/i);
+ok(guardado.filter((g) => g && g.key === 'estudios').length === escriturasF6,
+  '🚨 Y RECORRER PRÓXIMAMENTE NO GUARDA NADA: es una vista sobre lo que ya existe');
 
 await salir(browser);

@@ -9,6 +9,7 @@ import {
   MAX_NOMBRE_APP, crearApp, nombreYaUsado, moverApp, AVISO_OCULTAR, alternarOcultaApp,
   appsOrdenadas, appsVisibles,
   asignaturasDe, examenesDe, horasDe, ramasDeApp, ramaPorId, lineaDeApp, proximosEventos,
+  etiquetasDeFecha,
   RUTA_RAIZ, abrirApp, abrirRama, abrirAsignatura, abrirSeccion, atras, migas,
   TIPOS_ESTUDIO, MAX_NOMBRE_RAMA, ICONO_RAMA_POR_DEFECTO, sugerenciasDeRama,
   crearRama, anadirRama, quitarRama, AVISO_QUITAR_RAMA, TEXTO_RAMA_SIN_SISTEMA,
@@ -34,6 +35,10 @@ import {
   MAX_TITULO_ACTIVIDAD, crearActividadEstudio, actividadesDeApp, resumenActividades,
 } from '../lib/appsAprendizaje';
 import { PLAZOS_OBJETIVO } from '../lib/metasObjetivos';
+import {
+  panelDelHome, VACIO_PROXIMO, FILTROS_EVENTOS, todasLasFechas, resumenRapido,
+  proximoDeAsignatura, proximoDeApp, rutaDeFecha,
+} from '../lib/cierreEstudios';
 import { Card, SectionTitle, Field, TextInput, SelectInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel } from '../components/ui';
 
 function diasHasta(fechaISO) {
@@ -857,40 +862,146 @@ function CrearRama({ accent, app, onCrear, onCerrar }) {
   );
 }
 
-function ProximoEnEstudios({ estudios, accent, onIr }) {
-  const eventos = proximosEventos(estudios);
+/* Una fila de PRÓXIMAMENTE. La usan el Home, la vista completa, la asignatura y el área: **la misma
+   fila para el mismo dato** (ES F6, apartados 10 y 11 — *"no duplicar el evento"*). */
+function FilaProxima({ fila, nombreAsignatura, accent, destacada, onIr }) {
+  const t = tipoDeFecha(fila.tipo);
+  // 🚨 El título NO se compone aquí: sale de `etiquetasDeFecha` (ES F1), que es la misma regla que
+  // usa `proximosEventos`. Escribirlo a mano dejaba el examen como *"Derivadas"* en unas pantallas
+  // y como *"Examen de Matemáticas"* en otras — y el apartado 1 pide lo segundo.
+  const { titulo, detalle } = etiquetasDeFecha(fila, nombreAsignatura);
+  return (
+    <button
+      onClick={onIr}
+      className="w-full rounded-2xl p-2.5 flex items-center gap-2.5 text-left transition-transform active:scale-[0.99]"
+      style={{
+        background: destacada ? hexToRgba(accent, 0.1) : COLORS.surface,
+        border: `1px solid ${destacada ? accent : COLORS.border}`,
+      }}
+    >
+      <span aria-hidden="true" style={{ fontSize: 18 }}>{t?.icono || '📅'}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-xs font-semibold truncate" style={{ color: COLORS.text }}>
+          {titulo}
+        </span>
+        <span className="block text-[11px] truncate" style={{ color: COLORS.textMuted }}>
+          {/* Apartado 12 de la ES F4 — el tipo en palabra, nunca solo el color. */}
+          {t?.nombre}{fila.hora ? ` · ${fila.hora}` : ''}
+          {detalle ? ` · ${detalle}` : (fila.programa ? ` · ${fila.programa}` : '')}
+          {fila.fecha ? ` · ${formatFecha(fila.fecha)}` : ''}
+        </span>
+      </span>
+      {fila.cuenta && <span className="text-[11px] font-semibold flex-shrink-0" style={{ color: accent }}>{fila.cuenta}</span>}
+    </button>
+  );
+}
+
+function ProximoEnEstudios({ estudios, accent, onIr, onVerTodos }) {
+  const panel = panelDelHome(estudios);
+  const resumen = resumenRapido(estudios);
+  const nombreDe = (id) => (estudios.asignaturas || []).find((a) => a.id === id)?.nombre || '';
 
   return (
     <div>
-      <p className="text-xs font-bold tracking-wide mb-2" style={{ color: COLORS.textMuted }}>PRÓXIMO</p>
-      {eventos.length === 0 ? (
-        <EmptyHint text="No tienes exámenes apuntados para los próximos 30 días." />
+      {/* 🚨 Apartado 4 — lo de HOY va arriba y con su marca: *"no esconder un evento importante
+          debajo de eventos futuros"*. */}
+      {panel.hoy.length > 0 && (
+        <>
+          <p className="text-xs font-bold tracking-wide mb-2" style={{ color: accent }}>HOY</p>
+          <div className="space-y-1.5 mb-3">
+            {panel.hoy.map((f) => (
+              <FilaProxima key={`${f.tipo}-${f.id}`} fila={f} nombreAsignatura={nombreDe(f.asignaturaId)} accent={accent} destacada onIr={() => onIr(f)} />
+            ))}
+          </div>
+        </>
+      )}
+
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-bold tracking-wide" style={{ color: COLORS.textMuted }}>PRÓXIMAMENTE</p>
+        {/* ⚠️ «Ver todos» solo si hay algo más que ver: si no, sería un botón que lleva a lo mismo. */}
+        {panel.hayMas && (
+          <button onClick={onVerTodos} className="text-xs font-semibold" style={{ color: accent }}>Ver todos →</button>
+        )}
+      </div>
+
+      {panel.vacio ? (
+        /* Apartado 6 — un vacío elegante y CON SALIDA, no un hueco. */
+        <Card>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{VACIO_PROXIMO.titulo}</p>
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{VACIO_PROXIMO.detalle}</p>
+        </Card>
       ) : (
         <div className="space-y-1.5">
-          {eventos.map((e) => (
-            <button
-              key={e.id} onClick={() => onIr(e)}
-              className="w-full rounded-2xl p-2.5 flex items-center gap-2.5 text-left transition-transform active:scale-[0.99]"
-              style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-            >
-              <span aria-hidden="true" style={{ fontSize: 18 }}>{e.icono}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs font-semibold truncate" style={{ color: COLORS.text }}>{e.titulo}</span>
-                <span className="block text-[11px] truncate" style={{ color: COLORS.textMuted }}>
-                  {formatFecha(e.fecha)}{e.programa ? ` · ${e.programa}` : ''}
-                </span>
-              </span>
-              <span className="text-[11px] font-semibold flex-shrink-0" style={{ color: accent }}>
-                {e.dias === 0 ? 'Hoy' : e.dias === 1 ? 'Mañana' : `${e.dias} días`}
-              </span>
-            </button>
+          {panel.proximas.map((f) => (
+            <FilaProxima key={`${f.tipo}-${f.id}`} fila={f} nombreAsignatura={nombreDe(f.asignaturaId)} accent={accent} onIr={() => onIr(f)} />
           ))}
+          {panel.proximas.length === 0 && panel.hoy.length > 0 && (
+            <p className="text-[11px]" style={{ color: COLORS.textMuted }}>Nada más por ahora.</p>
+          )}
         </div>
       )}
-      {/* Regla 8 — lo que todavía no puede salir aquí se dice, no se finge. */}
-      <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
-        Por ahora solo salen los exámenes: los trabajos y las entregas todavía no se pueden apuntar.
-      </p>
+
+      {/* Apartado 13 — tres cifras como mucho, y solo las que tienen algo que decir. */}
+      {resumen.length > 0 && (
+        <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>
+          {resumen.map((r) => `${r.icono} ${r.texto}`).join(' · ')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* Apartados 8 y 9 — la vista completa. **No es otro sistema**: la misma lista, separada. */
+function TodosLosEventos({ estudios, accent, onIr, onCerrar }) {
+  const [filtro, setFiltro] = useState('todos');
+  const listas = todasLasFechas(estudios, todayISO(), filtro);
+  const nombreDe = (id) => (estudios.asignaturas || []).find((a) => a.id === id)?.nombre || '';
+
+  const bloque = (titulo, filas) => (filas.length > 0 ? (
+    <div>
+      <p className="text-xs font-bold tracking-wide mb-2" style={{ color: COLORS.textMuted }}>{titulo}</p>
+      <div className="space-y-1.5">
+        {filas.map((f) => (
+          <FilaProxima key={`${f.tipo}-${f.id}`} fila={f} nombreAsignatura={nombreDe(f.asignaturaId)} accent={accent} onIr={() => onIr(f)} />
+        ))}
+      </div>
+    </div>
+  ) : null);
+
+  const vacia = listas.proximas.length === 0 && listas.pasadas.length === 0 && listas.sinFecha.length === 0;
+
+  return (
+    <div className="space-y-4 pb-4 module-enter">
+      <div className="flex items-center gap-2">
+        <button onClick={onCerrar} className="toque-44 p-1.5 -m-1.5" aria-label="Volver atrás">
+          <ChevronLeft size={20} style={{ color: COLORS.text }} />
+        </button>
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>Estudios › Todos los eventos</p>
+      </div>
+
+      <div className="flex gap-1.5">
+        {FILTROS_EVENTOS.map((f) => (
+          <button
+            key={f.id} onClick={() => setFiltro(f.id)} aria-pressed={filtro === f.id}
+            className="flex-1 toque-44 rounded-xl px-2 py-2 text-xs font-semibold transition-transform active:scale-95"
+            style={{
+              background: filtro === f.id ? hexToRgba(accent, 0.16) : COLORS.surface2,
+              color: filtro === f.id ? accent : COLORS.textMuted,
+              border: `1px solid ${filtro === f.id ? hexToRgba(accent, 0.4) : COLORS.border}`,
+            }}
+          >{f.nombre}</button>
+        ))}
+      </div>
+
+      {vacia
+        ? <EmptyHint text="No hay nada con este filtro." />
+        : (
+          <>
+            {bloque('PRÓXIMOS', listas.proximas)}
+            {bloque('SIN FECHA', listas.sinFecha)}
+            {bloque('PASADOS', listas.pasadas)}
+          </>
+        )}
     </div>
   );
 }
@@ -918,6 +1029,8 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
   const [tituloAct, setTituloAct] = useState('');
   const [fechaAct, setFechaAct] = useState(todayISO());
   const [minutosAct, setMinutosAct] = useState('');
+  // ES F6 — la vista completa de eventos (apartado 8).
+  const [verTodos, setVerTodos] = useState(false);
 
   // Ampliación del Dashboard — Centro de Control (apartado 6): el examen destacado puede vivir en
   // cualquier app — se abre su app y su rama de asignaturas; AsignaturaCard y ExamenItem se
@@ -991,6 +1104,20 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
     </div>
   );
 
+  /* ── TODOS LOS EVENTOS (ES F6, apartados 8 y 9) ──────────────────────────── */
+  if (verTodos) {
+    return (
+      <TodosLosEventos
+        estudios={estudios} accent={accent}
+        onCerrar={() => setVerTodos(false)}
+        onIr={(f) => {
+          const r = rutaDeFecha(estudios, f);
+          if (r) { setVerTodos(false); setRuta(abrirSeccion(r.appId, r.ramaId, r.asignaturaId, r.seccion)); setFechaAbierta(f.id); }
+        }}
+      />
+    );
+  }
+
   /* ── HOME ───────────────────────────────────────────────────────────────── */
   if (ruta.vista === 'home') {
     return (
@@ -1056,7 +1183,16 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
         )}
 
         {/* Apartado 9 — jerarquía: 2.º los próximos eventos. */}
-        <ProximoEnEstudios estudios={estudios} accent={accent} onIr={(e) => setRuta(abrirRama(e.programaId, 'asignaturas'))} />
+        {/* 🚨 Apartado 7 — pulsar un evento abre SU detalle, en su asignatura y su sección. La ruta
+            se CALCULA desde el evento: no se guarda, así que renombrar el área no la deja vieja. */}
+        <ProximoEnEstudios
+          estudios={estudios} accent={accent}
+          onVerTodos={() => setVerTodos(true)}
+          onIr={(f) => {
+            const r = rutaDeFecha(estudios, f);
+            if (r) { setRuta(abrirSeccion(r.appId, r.ramaId, r.asignaturaId, r.seccion)); setFechaAbierta(f.id); }
+          }}
+        />
 
         {/* Apartado 9 — y 3.º la información secundaria. */}
         <CorrelacionEstudio sueno={sueno} horas={estudios.horas} accent={accent} />
@@ -1068,6 +1204,7 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
   if (ruta.vista === 'app') {
     if (!app) return <div className="space-y-4 pb-4">{cabecera}<EmptyHint text="Esa área ya no existe." /></div>;
     const ramas = ramasDeApp(estudios, app);
+    const proximoApp = proximoDeApp(estudios, app.id);
 
     return (
       <div className="space-y-4 pb-4 module-enter">
@@ -1105,6 +1242,27 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
             <span className="text-xs font-semibold mt-1" style={{ color: COLORS.textMuted }}>Añadir</span>
           </button>
         </div>
+
+        {/* 🚨 ES F6, apartado 11 — lo próximo del ÁREA entera, del mismo sistema: *"no duplicar el
+            evento"*. Sale de `proximoDeApp`, que lee `fechasAcademicas`. */}
+        {proximoApp.length > 0 && (
+          <div>
+            <p className="text-xs font-bold tracking-wide mb-2" style={{ color: COLORS.textMuted }}>PRÓXIMAMENTE</p>
+            <div className="space-y-1.5">
+              {proximoApp.map((f) => (
+                <FilaProxima
+                  key={`${f.tipo}-${f.id}`} fila={f}
+                  nombreAsignatura={(estudios.asignaturas || []).find((a) => a.id === f.asignaturaId)?.nombre || ''}
+                  accent={accent}
+                  onIr={() => {
+                    const r = rutaDeFecha(estudios, f);
+                    if (r) { setRuta(abrirSeccion(r.appId, r.ramaId, r.asignaturaId, r.seccion)); setFechaAbierta(f.id); }
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {ramas.length === 0 && !anadiendoRama && (
           <EmptyHint text="Esta área no tiene ninguna sección. Añade la primera con ＋." />
@@ -1304,6 +1462,7 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
     const resumen = resumenAsignatura(estudios, asig.id);
     const secciones = seccionesDeAsignatura(estudios, asig.id);
     const impacto = impactoDeEliminarAsignatura(estudios, asig.id);
+    const proximoAsig = proximoDeAsignatura(estudios, asig.id);
 
     return (
       <div className="space-y-4 pb-4 module-enter">
@@ -1311,9 +1470,25 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
         {cabeceraAsig}
 
         {/* Apartado 8 — compacto, y SOLO las líneas que tienen algo que decir: `[]` cuando no hay
-            nada, nunca una fila de ceros. Y ni una línea de entregas, que no existen. */}
+            nada, nunca una fila de ceros. */}
         {resumen.length > 0 && (
           <p className="text-xs" style={{ color: accent }}>{resumen.join(' · ')}</p>
+        )}
+
+        {/* 🚨 ES F6, apartado 10 — lo próximo de ESTA asignatura, del mismo sistema de eventos: ni
+            una copia, y por eso cambiar la fecha lo mueve aquí solo. */}
+        {proximoAsig.length > 0 && (
+          <div>
+            <p className="text-xs font-bold tracking-wide mb-2" style={{ color: COLORS.textMuted }}>PRÓXIMAMENTE</p>
+            <div className="space-y-1.5">
+              {proximoAsig.map((f) => (
+                <FilaProxima
+                  key={`${f.tipo}-${f.id}`} fila={f} accent={accent}
+                  onIr={() => { setRuta(abrirSeccion(app.id, ruta.ramaId, asig.id, f.tipo === 'examen' ? 'examenes' : f.tipo === 'entrega' ? 'entregas' : 'eventos')); setFechaAbierta(f.id); }}
+                />
+              ))}
+            </div>
+          </div>
         )}
 
         {formAsig === asig.id ? (

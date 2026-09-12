@@ -1,5 +1,42 @@
 # CHANGELOG.md
 
+## v3.67.0 — Entrega 3 · Fase 46 (ES F6): próximos eventos, resumen e integración final
+
+🏁 **La última fase de la Entrega 3.** Con ella se cierran **Estudios (6/6)** y **la entrega entera
+(46/46)**: los siete bloques —Hoy y Calendario, Biblioteca, Productividad, Bienestar, Sueño,
+Nutrición y Estudios— están construidos.
+
+### 🚨 Esta fase no añade ni un sistema, y ése era el encargo
+
+El apartado 21 lo enumera: *"no añadir segundo calendario, segundo sistema de eventos,
+notificaciones independientes"*. Así que las **cinco** vistas nuevas —el Próximamente del Home,
+«Ver todos», el de dentro de una asignatura, el de dentro de un área y el resumen rápido— **leen
+todas de `fechasAcademicas()`**, que es la única fuente desde la ES F4. Eso no es una promesa del
+documento: `auditoriaConsistencia()` lo **ejecuta** —crea un examen, le cambia la fecha, lo borra,
+oculta un área— y comprueba que el Home cambie solo.
+
+- **Lo de hoy va arriba y aparte** (apartado 4, literal: *"no esconder un evento importante debajo
+  de eventos futuros"*). No es otro orden: es la misma lista repartida en dos bloques.
+- **«Ver todos» solo aparece si hay algo más que ver**, porque un enlace que lleva a la lista que ya
+  estás viendo es un botón que no hace nada (regla 8).
+- **El vacío tiene salida**: *"Todo despejado"* con su botón, no un hueco (EH F41).
+- **La vista completa** (apartados 8 y 9): próximos y pasados, con cuatro filtros. ⚠️ Lo pasado
+  **no se borra ni se archiva**, solo deja de ser próximo.
+- **La ruta se calcula, no se guarda** (apartado 7): *Estudios → Bachillerato → Biología → Examen*
+  sale del evento en el momento, así que renombrar el área no la deja vieja (EH F37).
+- **El informe final** (apartado 23) **ejecuta las cinco condiciones** de las fases ES anteriores,
+  importadas: renombrar una rompe la compilación (EH F64). Las doce casillas se calculan; ninguna
+  está puesta a mano.
+- **Y lo que no se hace se declara**: la deuda técnica y lo recomendado para después van escritos
+  con quién decide, no omitidos.
+
+### 🐛 Un fallo real, mío, que encontró la propia fase
+
+`proximoDeAsignatura` **topaba a tres antes de filtrar por asignatura**: cogía los tres eventos más
+cercanos de todo Estudios y luego se quedaba con los de ésta. Con dos asignaturas cargadas de
+exámenes, entrar en la tercera enseñaba **«Nada próximo»** teniendo un examen el jueves — y la
+pantalla se pintaba perfecta. **El límite va después del filtro**, siempre.
+
 ## v3.66.0 — Entrega 3 · Fase 45 (ES F5): apps de aprendizaje independientes
 
 *"No todo debe funcionar como Bachillerato."*

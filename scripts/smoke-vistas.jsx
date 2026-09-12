@@ -2517,6 +2517,24 @@ const CASOS = [
           ultimaRevision: null,
         },
       })],
+      /* Entrega 3 · F46 (ES F6) — con un evento HOY, que tiene que salir arriba y aparte. */
+      ['EstudiosView · con algo hoy', EstudiosView, () => propsEs({
+        ...conApps,
+        asignaturas: [{ id: 'a1', programaId: 'bachillerato', nombre: 'Biología', orden: 0, oculto: false }],
+        examenes: [
+          { id: 'e1', asignaturaId: 'a1', fecha: HOY, tema: 'Genética', hora: '09:00', estado: 'proximo', notas: null, notaObjetivo: '', notaObtenida: '', planRepaso: [] },
+          { id: 'e2', asignaturaId: 'a1', fecha: addDays(HOY, 6), tema: 'Metabolismo', hora: null, estado: 'proximo', notas: null, notaObjetivo: '', notaObtenida: '', planRepaso: [] },
+          { id: 'e3', asignaturaId: 'a1', fecha: addDays(HOY, -60), tema: 'El que pasó', hora: null, estado: 'realizado', notas: null, notaObjetivo: '', notaObtenida: '7', planRepaso: [] },
+        ],
+        entregas: [{ id: 't1', asignaturaId: 'a1', nombre: 'Trabajo', fecha: addDays(HOY, 3), hora: null, estado: 'pendiente', notas: null }],
+        eventos: [], horas: [], temas: [], actividades: [],
+      })],
+      /* 🚨 Y el estado «Todo despejado»: sin eventos, ni un hueco enorme. */
+      ['EstudiosView · todo despejado', EstudiosView, () => propsEs({
+        ...conApps,
+        asignaturas: [{ id: 'a1', programaId: 'bachillerato', nombre: 'Biología', orden: 0, oculto: false }],
+        examenes: [], entregas: [], eventos: [], horas: [], temas: [], actividades: [],
+      })],
       /* 🚨 Y una app SIN objetivos ni actividades: «Sin datos todavía», nunca un 0 %. */
       ['EstudiosView · app sin datos todavía', EstudiosView, () => propsEs({
         ...conApps,
