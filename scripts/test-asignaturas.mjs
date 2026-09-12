@@ -142,11 +142,23 @@ console.log('\n── 5. Crear, editar, ocultar y ordenar (apartados 2, 3 y 10) 
 const nueva = crearAsignatura({ nombre: 'Física', programaId: 'bach' }, norm.asignaturas);
 ok(nueva && nueva.id, 'crearAsignatura devuelve una asignatura con id');
 eq(nueva.nombre, 'Física', 'con su nombre');
-eq(nueva.programaId, 'bach', 'y su área');
+/* 🔓 AS F1 — la relación con el programa pasó a ser una LISTA. La asignatura es
+   una identidad compartida y en qué programas se usa es otra cosa (apartado 4),
+   así que `programaId` se absorbe en `programaIds` desde el normalizador — el
+   mismo movimiento que `absorberColeccionId` en la BL F7. Esta comprobación
+   guardaba el modelo viejo y pasa a guardar el nuevo. */
+eq(nueva.programaIds[0], 'bach', 'y su área');
 eq(nueva.icono, '⚛️', 'con el icono propuesto por el nombre');
 eq(nueva.orden, 2, 'y la última del área');
 eq(nueva.profesor, null, '⚠️ Los datos secundarios NO son obligatorios (apartado 2)');
-eq(crearAsignatura({ nombre: 'X' }), null, '🚨 Sin área no se crea: una asignatura sin `programaId` no existe');
+/* 🔓 Y ésta decía lo contrario de lo que AS F1 construye. Una asignatura SIN
+   programa es justo lo que hace falta para poder crearla desde Horario: está en
+   el catálogo, disponible, y **dentro de ningún programa** hasta que él la meta
+   en uno (apartado 4 y PRUEBA C). Lo que sigue sin poder crearse es una sin
+   nombre, que es lo que de verdad no se puede pintar. */
+ok(crearAsignatura({ nombre: 'X' })?.programaIds.length === 0,
+  '🚨 AS F1 — sin área SÍ se crea: nace en el catálogo y dentro de ningún programa');
+eq(crearAsignatura({ nombre: '  ' }), null, '🚨 Pero sin nombre no se crea: eso no se puede pintar');
 eq(crearAsignatura({ programaId: 'bach' }), null, 'Y sin nombre tampoco');
 ok(crearAsignatura({ nombre: 'x'.repeat(99), programaId: 'bach' }).nombre.length === MAX_NOMBRE_ASIGNATURA, 'El nombre se acota');
 
@@ -300,7 +312,7 @@ ok(cond.every((c) => c.ok), `Todas en verde: ${cond.filter((c) => !c.ok).map((c)
 // 🚨 Y PUEDE PONERSE ROJA: una auditoría que no puede fallar no sirve (EH F42). Estas dos
 // comprobaciones son las que lo demuestran — sin ellas, las doce casillas de arriba no prueban nada.
 const rota = condicionES3({
-  programas: [], asignaturas: [{ id: 'z', nombre: 'Sin área', programaId: 404 }], examenes: [], horas: [], temas: [],
+  programas: [], asignaturas: [{ id: 'z', nombre: 'Sin área', programaIds: [404] }], examenes: [], horas: [], temas: [],
 });
 eq(rota.find((c) => c.id === 'relacion').ok, false,
   '🚨 con una asignatura cuyo área no es un id, la casilla de la relación SE PONE ROJA');

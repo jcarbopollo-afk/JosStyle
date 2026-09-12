@@ -1914,7 +1914,7 @@ export function PanelAvanzado({ estado, horario, accent, asignaturas, visual, ho
 }
 
 export default function HorarioView({
-  horarioTop, asignaturas = [], accent, hoy = todayISO(),
+  horarioTop, asignaturas = [], accent, hoy = todayISO(), onCambiarConAsignatura = null,
   // HT F5 — se LEEN, nunca se escriben: los exámenes son de Estudios y las
   // tareas de Productividad (apartado 92, "referencia única").
   estudios = null, productividad = null, calendario = null,
@@ -1968,7 +1968,17 @@ export default function HorarioView({
      guarda y alimenta el "Deshacer" global. Por eso aquí no hay ni botón de
      guardar ni historial propio (apartados 36 y 38). */
   const aplicar = (nuevo) => { onCambiar(nuevo); return { error: null }; };
-  const aplicarResultado = (r) => { if (!r.error) onCambiar(r.estado); return r; };
+  /* 🚨 AS F1 — si la operación ha creado una asignatura para el catálogo
+     compartido, el horario y el catálogo se guardan en LA MISMA llamada: dos
+     `snapshotAndSave` seguidos se pisan (E3 F26). Sin `onCambiarConAsignatura`
+     —una pantalla antigua, una prueba— se cae al `onCambiar` de siempre, así
+     que nunca se queda sin guardar el horario. */
+  const aplicarResultado = (r) => {
+    if (r.error) return r;
+    if (r.asignaturaNueva && onCambiarConAsignatura) onCambiarConAsignatura(r.estado, r.asignaturaNueva);
+    else onCambiar(r.estado);
+    return r;
+  };
 
   /* HT F5 — la ficha y su impacto. Los dos son derivados: se recalculan solos
      al cambiar el estado, así que "está en 6 clases" nunca dice 6 cuando

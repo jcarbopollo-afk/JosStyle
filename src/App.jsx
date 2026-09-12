@@ -32,7 +32,7 @@ import { normalizarNutricionF4 } from './lib/alimentos';
    guardado se llevaría las dos listas. Y devuelve el módulo entero (regla 5). */
 import { normalizarMisAlimentosDe, alternarFavoritoAlimento } from './lib/misAlimentos';
 import { normalizarAppsDe } from './lib/estudiosApps';
-import { normalizarAsignaturasDe } from './lib/asignaturas';
+import { normalizarAsignaturasDe, usaPrograma } from './lib/asignaturas';
 import { normalizarFechasDe } from './lib/fechasAcademicas';
 /* 🚨 E3 F27 (PR F5) — Metas y Objetivos. Los normalizadores corren al cargar
    porque esta fase AÑADE campos a dos entidades que ya existían: sin ellos, lo
@@ -1883,7 +1883,11 @@ export default function App() {
   const deletePrograma = (id) => {
     const resultado = prepararEliminacion(estudios, 'estudios', 'programas', id, new Date().toISOString());
     if (!resultado) return;
-    const asignaturas = estudios.asignaturas.filter((a) => a.programaId === id);
+    /* ⚠️ AS F1 — se lee de la RELACIÓN, no del `programaId` de antes. El
+       comportamiento no cambia: las asignaturas de este programa siguen yéndose
+       con él, en la misma entrada de papelera. Quien lo cambia es AS F2, que es
+       donde Josué pidió que eliminar un programa **deje de** eliminarlas. */
+    const asignaturas = estudios.asignaturas.filter((a) => usaPrograma(a, id));
     const idsAsignatura = asignaturas.map((a) => a.id);
     const examenes = estudios.examenes.filter((e) => idsAsignatura.includes(e.asignaturaId));
     const horas = estudios.horas.filter((h) => idsAsignatura.includes(h.asignaturaId));
@@ -1908,7 +1912,7 @@ export default function App() {
     snapshotAndSave({
       estudios: {
         ...resultado.moduloActualizado,
-        asignaturas: estudios.asignaturas.filter((a) => a.programaId !== id),
+        asignaturas: estudios.asignaturas.filter((a) => !usaPrograma(a, id)),
         examenes: estudios.examenes.filter((e) => !idsAsignatura.includes(e.asignaturaId)),
         horas: estudios.horas.filter((h) => !idsAsignatura.includes(h.asignaturaId)),
         temas: (estudios.temas || []).filter((t) => !idsAsignatura.includes(t.asignaturaId)),
@@ -2802,6 +2806,17 @@ export default function App() {
             accent={accent}
             onCambiar={(nuevo) => snapshotAndSave({ horarioTop: nuevo })}
             onCrearHorario={(nuevo) => snapshotAndSave({ horarioTop: nuevo })}
+            /* 🚨 AS F1 — escribir una clase puede tocar DOS almacenes: el horario
+               y el catálogo compartido de asignaturas, cuando Josué escribe una
+               que todavía no existía. Se guardan en **la misma llamada**: dos
+               `snapshotAndSave` seguidos parten del mismo estado del cierre y el
+               segundo borra lo que acaba de escribir el primero (E3 F26). */
+            onCambiarConAsignatura={(nuevo, asignaturaNueva) => snapshotAndSave({
+              horarioTop: nuevo,
+              ...(asignaturaNueva
+                ? { estudios: { ...estudios, asignaturas: [...(estudios.asignaturas || []), asignaturaNueva] } }
+                : {}),
+            })}
           />
         );
       case 'negocio':

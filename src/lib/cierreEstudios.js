@@ -16,7 +16,7 @@ import {
   TIPOS_FECHA, tipoDeFecha, condicionES4,
 } from './fechasAcademicas';
 import { condicionES1, condicionES2, appsVisibles } from './estudiosApps';
-import { condicionES3 } from './asignaturas';
+import { condicionES3, usaPrograma, programaDeAsignatura } from './asignaturas';
 import { condicionES5 } from './appsAprendizaje';
 
 // ── Hoy va primero (apartado 4) ──────────────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ export function proximoDeAsignatura(estudios, asignaturaId, hoy = todayISO(), li
 
 export function proximoDeApp(estudios, programaId, hoy = todayISO(), limite = 3) {
   const ids = (Array.isArray(estudios?.asignaturas) ? estudios.asignaturas : [])
-    .filter((a) => a && a.programaId === programaId).map((a) => a.id);
+    .filter((a) => a && usaPrograma(a, programaId)).map((a) => a.id);
   return proximasFechas(estudios, hoy, { limite, dias: 3650, asignaturaIds: ids });
 }
 
@@ -109,7 +109,7 @@ export function rutaDeFecha(estudios, fila) {
   if (!fila) return null;
   const asig = (estudios?.asignaturas || []).find((a) => a.id === fila.asignaturaId);
   if (!asig) return null;
-  const prog = (estudios?.programas || []).find((p) => p.id === asig.programaId);
+  const prog = (estudios?.programas || []).find((p) => p.id === programaDeAsignatura(asig));
   if (!prog) return null;
   const rama = (prog.ramas || []).find((r) => r.sistema === 'asignaturas');
   if (!rama) return null;

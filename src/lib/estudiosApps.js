@@ -22,6 +22,7 @@
 
 import { uid, todayISO } from './helpers';
 import { fechasAcademicas, proximasFechas, tipoDeFecha } from './fechasAcademicas';
+import { usaPrograma, programaDeAsignatura } from './asignaturas';
 
 // 🚨 `diasHasta()` de `helpers.js` cuenta contra **el reloj del dispositivo**, no contra la fecha que
 // se le pase. Estas funciones reciben `hoy` para poder probarse, así que usarla dejaba una función
@@ -379,7 +380,7 @@ export const ramasDe = (programa) => (Array.isArray(programa?.ramas) ? programa.
 // asignatura desde cualquier pantalla mueve el número del Home solo (E3 F6).
 export function asignaturasDe(estudios, programaId) {
   const lista = Array.isArray(estudios?.asignaturas) ? estudios.asignaturas : [];
-  return lista.filter((a) => a && a.programaId === programaId);
+  return lista.filter((a) => a && usaPrograma(a, programaId));
 }
 
 export function idsAsignaturaDe(estudios, programaId) {
@@ -490,7 +491,7 @@ export function proximosEventos(estudios, hoy = todayISO(), { limite = MAX_PROXI
   const nombreAsignatura = (id) => asignaturas.find((a) => a.id === id)?.nombre || '';
   const programaDe = (asignaturaId) => {
     const a = asignaturas.find((x) => x.id === asignaturaId);
-    return a ? programas.find((p) => p.id === a.programaId) : null;
+    return a ? programas.find((p) => p.id === programaDeAsignatura(a)) : null;
   };
 
   return proximasFechas(estudios, hoy, { limite, dias }).map((f) => {

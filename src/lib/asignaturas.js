@@ -102,6 +102,20 @@ export const MAX_NOMBRE_TEMA = 60;
 export const MAX_DESCRIPCION_TEMA = 200;
 
 // ── Normalizadores (regla 5) ─────────────────────────────────────────────────────────────────────
+/**
+ * Los programas que usan una asignatura, leyendo lo viejo y lo nuevo.
+ *
+ * ⚠️ El orden importa: si ya hay `programaIds`, manda esa; el `programaId`
+ * suelto solo se lee cuando todavía no se ha migrado. Al revés, editar la
+ * relación no serviría de nada porque el campo viejo la volvería a pisar.
+ */
+function relacionDeProgramas(a) {
+  if (Array.isArray(a.programaIds)) {
+    return [...new Set(a.programaIds.filter((p) => typeof p === 'string' && p))];
+  }
+  return typeof a.programaId === 'string' && a.programaId ? [a.programaId] : [];
+}
+
 export function normalizarAsignatura(a, indice = 0) {
   if (!a || typeof a !== 'object') return null;
   const nombre = typeof a.nombre === 'string' ? a.nombre.trim().slice(0, MAX_NOMBRE_ASIGNATURA) : '';
@@ -112,6 +126,18 @@ export function normalizarAsignatura(a, indice = 0) {
     id: typeof a.id === 'string' && a.id ? a.id : uid(),
     // ⚠️ `programaId` se conserva TAL CUAL, incluso si apunta a un área borrada: quien limpia una
     // cascada es `App.jsx`, y adivinar aquí escondería la asignatura sin decírselo a nadie.
+    /* 🚨 **AS F1 — el `programaId` de siempre SE ABSORBE en una relación.** La
+       asignatura es una **identidad compartida** (el apartado 4: *"asignatura
+       existente" no es lo mismo que "asignatura utilizada"*), y en qué programas
+       se usa es **otra cosa**. Con el `programaId` dentro, una asignatura tenía
+       que pertenecer a un programa y **no existía el estado "está en el catálogo
+       y todavía no la usa nadie"**, que es justo lo que hace falta para poder
+       crearla desde Horario.
+       ⚠️ Es `absorberColeccionId` de la BL F7 (E3 F21) otra vez: se convierte en
+       relación **desde el normalizador**, así que **lo que Josué ya tiene
+       guardado no se pierde ni se mueve** —su Matemáticas de Bachillerato sigue
+       en Bachillerato— y no quedan dos fuentes de verdad para lo mismo. */
+    programaIds: relacionDeProgramas(a),
     nombre,
     icono: typeof a.icono === 'string' && a.icono.trim() ? a.icono.trim() : null,
     acento: ACENTOS_COLECCION.some((x) => x.id === a.acento) ? a.acento : null,
@@ -154,13 +180,22 @@ export function normalizarAsignaturasDe(estudios) {
 }
 
 // ── Crear y editar ───────────────────────────────────────────────────────────────────────────────
-export function crearAsignatura({ nombre, programaId, icono, acento, profesor, aula } = {}, existentes = []) {
+/**
+ * Crear una asignatura.
+ *
+ * 🚨 **AS F1 — `programaId` es OPCIONAL.** Sin él nace en el catálogo y **sin
+ * programa**: disponible para que Josué la elija, dentro de ninguno todavía.
+ * Es lo que permite crearla desde Horario, y es el apartado 4 y la PRUEBA C
+ * (*"crear una asignatura no debe hacer que aparezca automáticamente dentro de
+ * todos los programas"*).
+ */
+export function crearAsignatura({ nombre, programaId = null, icono, acento, profesor, aula } = {}, existentes = []) {
   const n = String(nombre || '').trim().slice(0, MAX_NOMBRE_ASIGNATURA);
-  if (!n || !programaId) return null;
-  const delArea = existentes.filter((a) => a.programaId === programaId);
+  if (!n) return null;
+  const delArea = existentes.filter((a) => usaPrograma(a, programaId));
   const orden = delArea.reduce((max, a) => Math.max(max, Number.isFinite(a?.orden) ? a.orden : 0), -1) + 1;
   return normalizarAsignatura({
-    id: uid(), programaId, nombre: n,
+    id: uid(), programaIds: programaId ? [programaId] : [], nombre: n,
     icono: (typeof icono === 'string' && icono.trim()) || sugerirIconoAsignatura(n) || null,
     acento: acento || null, profesor: profesor || null, aula: aula || null,
     orden, oculto: false,
@@ -183,11 +218,101 @@ export const alternarOcultaAsignatura = (asignaturas = [], id) =>
 // ⚠️ Ocultar no es eliminar (EH F36, y ya van tres veces en este bloque).
 export const AVISO_OCULTAR_ASIGNATURA = 'Ocultarla solo la quita de la lista. Sus exámenes, sus horas y sus temas se quedan como están.';
 
-export function asignaturasOrdenadas(estudios, programaId) {
+/* ═══════════════════════════════════════════════════════════════════════════
+   AS F1 · EL CATÁLOGO COMPARTIDO
+   ═══════════════════════════════════════════════════════════════════════════
+
+   🚨 **No hay un almacén nuevo, y no puede haberlo.** El catálogo **es**
+   `estudios.asignaturas`, la lista que ya existía desde la Fase 6 y que
+   `App.jsx` le pasa a `HorarioView` desde HT F1. Una segunda lista sería el
+   sistema paralelo que el enunciado prohíbe, y dejaría las asignaturas de
+   Josué invisibles en uno de los dos módulos.
+
+   Lo único que cambia es que ahora se distinguen dos preguntas:
+
+     · «¿qué asignaturas existen?»        → `catalogoAsignaturas`
+     · «¿cuáles usa ESTE programa?»       → `asignaturasDePrograma`
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/** Todas las asignaturas que existen, sin importar quién las use. */
+export function catalogoAsignaturas(estudios) {
   const lista = Array.isArray(estudios?.asignaturas) ? estudios.asignaturas : [];
   return lista
-    .filter((a) => a && a.programaId === programaId)
+    .filter(Boolean)
+    .slice()
+    .sort((a, b) => String(a.nombre || '').localeCompare(String(b.nombre || '')));
+}
+
+/**
+ * El programa de una asignatura, para navegar y para las migas.
+ *
+ * ⚠️ La relación puede tener varios o ninguno; esto contesta *"¿de dónde la
+ * abro?"*, que es una pregunta de pantalla. Quien necesite saber **todos** los
+ * que la usan llama a `programasDeAsignatura`.
+ */
+export const programasDeAsignatura = (asignatura) => relacionDeProgramas(asignatura || {});
+export const programaDeAsignatura = (asignatura) => relacionDeProgramas(asignatura || {})[0] || null;
+
+/** ¿Usa esta asignatura ese programa? */
+export const usaPrograma = (asignatura, programaId) =>
+  relacionDeProgramas(asignatura || {}).includes(programaId);
+
+/** Las de un programa concreto, en su orden. */
+export function asignaturasDePrograma(estudios, programaId) {
+  const lista = Array.isArray(estudios?.asignaturas) ? estudios.asignaturas : [];
+  return lista
+    .filter((a) => a && usaPrograma(a, programaId))
     .sort((a, b) => (Number.isFinite(a.orden) ? a.orden : 0) - (Number.isFinite(b.orden) ? b.orden : 0));
+}
+
+/**
+ * Buscar por nombre, para no duplicar (apartado 6).
+ *
+ * ⚠️ **Sin agresividad**: se compara el nombre entero, sin acentos y sin
+ * mayúsculas, pero **nada más**. El apartado 14 de la fase siguiente lo dice
+ * con todas las letras: *"Física y Física avanzada pueden ser asignaturas
+ * diferentes"*, así que aquí no hay parecidos ni prefijos.
+ */
+const claveNombre = (s) => String(s || '').trim().toLowerCase()
+  .normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+export function buscarAsignaturaPorNombre(estudios, nombre) {
+  const q = claveNombre(nombre);
+  if (!q) return null;
+  return catalogoAsignaturas(estudios).find((a) => claveNombre(a.nombre) === q) || null;
+}
+
+/* ⚠️ Se OFRECE la que hay, no se bloquea la creación: impedirlo dejaría a Josué
+   sin poder crear algo legítimamente distinto. */
+export const MISMO_NOMBRE = 'Ya existe una asignatura con ese nombre. ¿Quieres usar la que tienes?';
+
+/** Empezar a usar una asignatura del catálogo en un programa. */
+export function anadirAPrograma(asignaturas = [], id, programaId) {
+  if (!programaId) return asignaturas;
+  return asignaturas.map((a) => {
+    if (a.id !== id) return a;
+    const ids = relacionDeProgramas(a);
+    return ids.includes(programaId) ? { ...a, programaIds: ids } : { ...a, programaIds: [...ids, programaId] };
+  });
+}
+
+/**
+ * Dejar de usarla en un programa.
+ *
+ * 🚨 **Esto NO la elimina.** Sigue en el catálogo, disponible para Horario y
+ * para los demás programas — es la diferencia entre «quitar» y «eliminar» que
+ * desarrolla la fase siguiente, y la parte de «quitar» ya funciona aquí.
+ */
+export function quitarDePrograma(asignaturas = [], id, programaId) {
+  return asignaturas.map((a) => (a.id === id
+    ? { ...a, programaIds: relacionDeProgramas(a).filter((p) => p !== programaId) }
+    : a));
+}
+
+/* ⚠️ La de siempre, que usan las pantallas de Estudio, pasa a apoyarse en la
+   relación. Así ninguna de ellas se entera del cambio. */
+export function asignaturasOrdenadas(estudios, programaId) {
+  return asignaturasDePrograma(estudios, programaId);
 }
 
 export const asignaturasVisibles = (estudios, programaId) =>
@@ -196,7 +321,7 @@ export const asignaturasVisibles = (estudios, programaId) =>
 // Flechas, no arrastre (EH F50): funcionan con VoiceOver y no son un segundo mecanismo.
 export function moverAsignatura(asignaturas = [], programaId, id, direccion) {
   const orden = asignaturas
-    .filter((a) => a.programaId === programaId)
+    .filter((a) => usaPrograma(a, programaId))
     .sort((a, b) => (Number.isFinite(a.orden) ? a.orden : 0) - (Number.isFinite(b.orden) ? b.orden : 0));
   const i = orden.findIndex((a) => a.id === id);
   const j = direccion === 'arriba' ? i - 1 : i + 1;
@@ -368,7 +493,7 @@ export function condicionES3(estudios) {
   const a1 = asigs[0];
 
   // Persistencia: lo creado sobrevive a otra pasada del normalizador.
-  const creada = crearAsignatura({ nombre: 'Prueba', programaId: a1?.programaId || 'x' }, asigs);
+  const creada = crearAsignatura({ nombre: 'Prueba', programaId: programaDeAsignatura(a1) || 'x' }, asigs);
   const conTema = creada ? crearTema({ nombre: 'Tema 1', asignaturaId: creada.id }, norm.temas || []) : null;
   const rehecho = normalizarAsignaturasDe({
     ...norm,
@@ -387,7 +512,22 @@ export function condicionES3(estudios) {
     { id: 'temas', ok: typeof crearTema === 'function' && typeof editarTema === 'function' && typeof temasDe === 'function', texto: 'Existe la estructura de temas, y se crean, editan y eliminan' },
     { id: 'progreso', ok: ESTADOS_TEMA.length === 3 && ESTADOS_TEMA.every((e) => e.nombre && e.icono), texto: 'Se puede marcar el progreso de un tema' },
     { id: 'orden', ok: typeof moverAsignatura === 'function' && typeof moverTema === 'function', texto: 'Se puede ordenar el contenido' },
-    { id: 'relacion', ok: asigs.every((a) => typeof a.programaId === 'string'), texto: 'Las asignaturas están relacionadas con su área' },
+    /* 🚨 AS F1 — la relación se comprueba sobre lo GUARDADO, no sobre lo
+       normalizado (E3 F41). El normalizador ya ha tirado un `programaId` que no
+       era un id, así que mirarlo después no encuentra nunca nada y **la casilla
+       no podría ponerse roja jamás** — una auditoría que no puede fallar no
+       sirve (EH F42). ⚠️ Y una asignatura SIN programa ya no es un fallo: desde
+       esta fase puede estar en el catálogo sin que la use nadie. Lo que sí lo
+       es, es una relación con la forma rota. */
+    {
+      id: 'relacion',
+      ok: (Array.isArray(estudios?.asignaturas) ? estudios.asignaturas : []).every((a) => {
+        if (!a || typeof a !== 'object') return true;
+        if (Array.isArray(a.programaIds)) return a.programaIds.every((p) => typeof p === 'string' && p);
+        return a.programaId === undefined || a.programaId === null || (typeof a.programaId === 'string' && !!a.programaId);
+      }),
+      texto: 'Las asignaturas están relacionadas con su área',
+    },
     { id: 'preparado', ok: RELACION_FECHAS.length >= 3 && RELACION_FECHAS.every((r) => r.campo === 'asignaturaId'), texto: 'La arquitectura está preparada para exámenes y entregas' },
     { id: 'persiste', ok: persiste, texto: 'Todo persiste correctamente' },
     // ⚠️ No basta con contar: se comprueba que los exámenes y las horas vuelvan **idénticos**, porque

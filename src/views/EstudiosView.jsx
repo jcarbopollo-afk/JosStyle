@@ -19,6 +19,7 @@ import {
   iconoDeAsignatura, MAX_NOMBRE_ASIGNATURA, MAX_NOMBRE_TEMA, MAX_DESCRIPCION_TEMA,
   estadoTema, crearAsignatura, editarAsignatura, alternarOcultaAsignatura, AVISO_OCULTAR_ASIGNATURA,
   asignaturasOrdenadas, asignaturasVisibles, moverAsignatura,
+  catalogoAsignaturas, usaPrograma, anadirAPrograma, buscarAsignaturaPorNombre, programaDeAsignatura,
   temasDe, crearTema, editarTema, avanzarTema, moverTema,
   resumenAsignatura, lineaDeAsignatura, seccionesDeAsignatura, impactoDeEliminarAsignatura,
 } from '../lib/asignaturas';
@@ -1042,9 +1043,9 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
     if (asig) {
       // ES F3 — el examen destacado vive dentro de SU asignatura, así que se abre su sección de
       // exámenes; `ExamenItem` se encarga de desplegarse solo.
-      const prog = (estudios.programas || []).find((p) => p.id === asig.programaId);
+      const prog = (estudios.programas || []).find((p) => p.id === programaDeAsignatura(asig));
       const ramaAsig = (prog?.ramas || []).find((r) => r.sistema === 'asignaturas');
-      if (ramaAsig) setRuta(abrirSeccion(asig.programaId, ramaAsig.id, asig.id, 'examenes'));
+      if (ramaAsig) setRuta(abrirSeccion(programaDeAsignatura(asig), ramaAsig.id, asig.id, 'examenes'));
     }
   }, [foco]);
 
@@ -1053,6 +1054,12 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
   const todas = appsOrdenadas(programas);
   const app = programas.find((p) => p.id === ruta.appId) || null;
   const asignaturasApp = app ? asignaturasOrdenadas(estudios, app.id) : [];
+  /* 🚨 AS F1 — el catálogo compartido menos las que este programa ya usa. Es la
+     diferencia entre «asignatura que existe» y «asignatura que uso aquí»
+     (apartado 4): tener Piano no significa que Bachillerato lo tenga. */
+  const disponiblesAsig = app
+    ? catalogoAsignaturas(estudios).filter((a) => !usaPrograma(a, app.id))
+    : [];
 
 
   /* ES F4 — los tres tipos de fecha se crean, editan, cambian de estado y se borran por AQUÍ, sea
@@ -1604,10 +1611,48 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
             ))}
           </div>
 
+          {/* 🚨 AS F1, apartado 5 — las que YA EXISTEN en el catálogo compartido.
+              Hasta ahora «Añadir asignatura» solo dejaba crear una nueva, así que
+              una asignatura creada en Horario no se podía usar aquí: había que
+              escribirla otra vez, y eso es el duplicado. Salen las del catálogo
+              que este programa todavía no usa. */}
+          {formAsig === 'nueva' && disponiblesAsig.length > 0 && (
+            <Card style={{ marginBottom: '0.5rem' }}>
+              <p className="text-[11px] font-semibold mb-1.5" style={{ color: COLORS.textMuted }}>
+                Ya tienes estas asignaturas
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {disponiblesAsig.map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => { onUpdateAsignaturas(anadirAPrograma(estudios.asignaturas || [], a.id, app.id)); setFormAsig(null); }}
+                    className="rounded-xl px-2.5 py-1.5 text-xs font-semibold toque-44"
+                    style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
+                  >
+                    {iconoDeAsignatura(a)} {a.nombre}
+                  </button>
+                ))}
+              </div>
+              {/* ⚠️ Se usa LA MISMA asignatura: no se copia nada, solo se añade
+                  este programa a su relación. */}
+              <p className="text-[11px] mt-1.5" style={{ color: COLORS.textMuted }}>
+                Se usará la misma asignatura, con sus temas y sus exámenes.
+              </p>
+            </Card>
+          )}
           {formAsig === 'nueva' ? (
             <FormAsignatura
               accent={accent}
               onGuardar={(datos) => {
+                /* ⚠️ AS F1 — si ya existe una con ese nombre, se usa la que hay
+                   en vez de crear una segunda (apartado 6). No se bloquea nada:
+                   simplemente deja de duplicarse lo que es lo mismo. */
+                const yaEsta = buscarAsignaturaPorNombre(estudios, datos?.nombre);
+                if (yaEsta) {
+                  onUpdateAsignaturas(anadirAPrograma(estudios.asignaturas || [], yaEsta.id, app.id));
+                  setFormAsig(null);
+                  return;
+                }
                 const nueva = crearAsignatura({ ...datos, programaId: app.id }, estudios.asignaturas || []);
                 if (!nueva) return;
                 onAddAsignatura(nueva);

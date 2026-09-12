@@ -46,6 +46,10 @@ import {
   normalizarHora, minutosDe, duracionMinutos, diaDeFecha, DIAS_SEMANA,
   resolverDia, seSolapan, nombreDeActividad, cuadriculaInicial,
 } from './horario';
+/* 🚨 AS F1 — la fábrica de asignaturas es la de Estudios, no una copia. El
+   catálogo compartido es `estudios.asignaturas` y su dueño es `asignaturas.js`;
+   aquí solo se PIDE una asignatura nueva, y quien la guarda es `App.jsx`. */
+import { crearAsignatura } from './asignaturas';
 
 /* ===========================================================================
    1 · PLANTILLAS (apartados 2 y 3)
@@ -296,12 +300,40 @@ export function crearBloqueRapido(estado, { horarioId, columnaId, filaId = null,
 
   // 1-3 · buscar, reutilizar o crear.
   let actividades = e.actividades;
+  let asignaturaNueva = null;
   let actividad = buscarActividad(e, nombre, asignaturas);
   if (!actividad) {
+    /* 🚨 **AS F1 — antes de crear nada, mirar el catálogo compartido.** Si esa
+       asignatura ya existe en Estudios, la actividad nace **apuntando a ella**
+       por `asignaturaId`, no copiando su nombre: es lo que hace que sea LA
+       MISMA asignatura y no una copia (PRUEBA B del enunciado). */
+    const yaExiste = buscarAsignaturaDelCatalogo(nombre, asignaturas);
+    /* ⚠️ Y si NO existe y esto es un horario escolar, se crea **en el catálogo
+       compartido**, no solo aquí dentro: sin esto, «Filosofía» escrita en
+       Horario no aparecería nunca en Estudio (PRUEBA A).
+       🚨 Se DEVUELVE para que la escriba `App.jsx`: esta función solo conoce
+       `horarioTop`, y el catálogo vive en `estudios`. Quien toca dos almacenes
+       los toca en **una sola llamada** (E3 F26). */
+    if (!yaExiste && horario.tipo === 'escolar') {
+      asignaturaNueva = crearAsignatura({ nombre });
+    }
+    const asignaturaId = yaExiste ? yaExiste.id : (asignaturaNueva ? asignaturaNueva.id : null);
     // 5 · el color se asigna solo (apartado 30, "color automático"): que Josué
     // tenga que elegir uno por asignatura convertiría seis clases en seis
     // decisiones antes de haber escrito nada.
-    actividad = crearActividad({ nombre, tipo: horario.tipo === 'escolar' ? 'asignatura' : 'otro', color: colorAutomatico(e), hoy });
+    actividad = crearActividad({
+      /* ⚠️ **El nombre se guarda IGUAL aunque haya `asignaturaId`**, y no es una
+         copia: `nombreDeActividad` da preferencia a la asignatura y solo cae al
+         nombre guardado si no la encuentra. Así renombrarla en Estudio sigue
+         cambiando el horario solo, **y** la actividad tiene nombre en el rato en
+         que la asignatura todavía no está guardada — que es justo lo que pasa
+         cuando se crea desde aquí. Dejarlo vacío la dejaba como «Sin nombre» y
+         rompía el reutilizar, las sugerencias y el aviso de duplicado. */
+      nombre,
+      asignaturaId,
+      tipo: horario.tipo === 'escolar' ? 'asignatura' : 'otro',
+      color: colorAutomatico(e), hoy,
+    });
     actividades = [...actividades, actividad];
   }
 
@@ -309,10 +341,13 @@ export function crearBloqueRapido(estado, { horarioId, columnaId, filaId = null,
   const bloque = crearBloque({ horarioId, columnaId, filaId, actividadId: actividad.id, inicio: i, fin: f, hoy });
   const choques = conflictosCon(e, bloque);
   if (choques.length && !forzar) {
-    return { estado: e, error: 'Ahí ya hay otra cosa.', conflictos: choques, propuesta: bloque, actividad };
+    return { estado: e, error: 'Ahí ya hay otra cosa.', conflictos: choques, propuesta: bloque, actividad, asignaturaNueva };
   }
 
-  return { estado: { ...e, actividades, bloques: [...e.bloques, bloque] }, bloque, actividad, error: null };
+  /* ⚠️ `asignaturaNueva` es `null` casi siempre: solo trae algo cuando de verdad
+     hay una asignatura que añadir al catálogo compartido. Quien la guarda es
+     `App.jsx`, en la misma llamada que el horario. */
+  return { estado: { ...e, actividades, bloques: [...e.bloques, bloque] }, bloque, actividad, asignaturaNueva, error: null };
 }
 
 /**
@@ -326,6 +361,29 @@ export function buscarActividad(estado, texto, asignaturas = []) {
   const q = (texto || '').trim().toLowerCase();
   if (!q) return null;
   return e.actividades.find((a) => nombreDeActividad(a, asignaturas).toLowerCase() === q) || null;
+}
+
+/**
+ * 🚨 **AS F1 — la asignatura del catálogo que se llama así.**
+ *
+ * `buscarActividad` solo mira `horarioTop.actividades`, así que una asignatura
+ * que Josué creó en Estudios y **todavía no ha usado en el horario** no se
+ * encontraba: el `if (!actividad)` de `crearBloqueRapido` creaba una actividad
+ * nueva **con el nombre copiado y `asignaturaId: null`**. El desplegable se la
+ * ofrecía, él la elegía, y nacía desconectada — **ése era el duplicado** entre
+ * Horario y Estudio.
+ *
+ * ⚠️ Se compara sin acentos y sin mayúsculas, pero **el nombre entero**: ni
+ * prefijos ni parecidos, porque «Física» y «Física avanzada» son dos
+ * asignaturas distintas.
+ */
+const claveAsignatura = (s) => String(s || '').trim().toLowerCase()
+  .normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+export function buscarAsignaturaDelCatalogo(texto, asignaturas = []) {
+  const q = claveAsignatura(texto);
+  if (!q) return null;
+  return (asignaturas || []).find((a) => claveAsignatura(a?.nombre) === q) || null;
 }
 
 export function sugerencias(estado, texto, { asignaturas = [], limite = 5 } = {}) {
