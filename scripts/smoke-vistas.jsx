@@ -150,6 +150,11 @@ import HubView from '../src/views/HubView.jsx';
    un solo caso de renderizado (`LibraryView`, `HealthView`, `NutritionView` y
    `EstudiosView`). Al tocar una pantalla, lo primero es mirar si está aquí. */
 import NumbersView from '../src/views/NumbersView.jsx';
+/* NAV F3 — 🐛 **`RelationView` NO TENÍA NI UN CASO DE RENDERIZADO**, y es la
+   QUINTA vista que aparece así (tras `LibraryView`, `HealthView`,
+   `NutritionView` y `EstudiosView`). Se pintaba en producción y no la probaba
+   nadie — detrás del PIN, que es justo donde menos se mira. */
+import RelationView, { AlbumTab } from '../src/views/RelationView.jsx';
 import WellbeingView from '../src/views/WellbeingView.jsx';
 import HealthView from '../src/views/HealthView.jsx';
 import NutritionView from '../src/views/NutritionView.jsx';
@@ -257,7 +262,10 @@ const lleno = {
   productividad: { habitos: [{ id: 'h', nombre: 'Leer', historial: { [AYER2]: true, [AYER]: true, [HOY]: true } }], rutinas: [], tareas: [{ id: 't', texto: 'Repasar', hecha: false, fecha: HOY }], metas: [], pomodoros: { [HOY]: 2 } },
   objetivos: { lista: [{ id: 'o', texto: 'Handstand 30s', plazo: '90 días', cumplido: false, fechaCreacion: HOY }], ultimaRevision: null },
   diario: { entradas: [{ id: 'd', fecha: HOY, animo: 4, comoMeSiento: 'Bien', queHeAprendido: 'Algo', queMejorareManana: 'Otra cosa' }] },
-  relacion: { nombre: 'A', fechas: [{ id: 'r', etiqueta: 'Aniversario', fecha: HOY, tipo: 'aniversario', repetir: true }] },
+  /* NAV F3 — con fotos, para que el grid del Álbum se pinte de verdad. ⚠️ Lo
+     guardado es el CAMINO, como en producción: nunca una URL. */
+  relacion: { nombre: 'A', fechas: [{ id: 'r', etiqueta: 'Aniversario', fecha: HOY, tipo: 'aniversario', repetir: true }],
+    album: [{ id: 'a1', path: 'usuario/1.jpg', fecha: HOY, nota: 'Playa' }, { id: 'a2', path: 'usuario/2.jpg', fecha: HOY, nota: '' }] },
   bienestar: { registros: [{ id: 'b', fecha: HOY, categoria: 'productivo', minutos: 60 }], reflexiones: [], sesiones: [{ id: 'z', fecha: HOY, minutos: 25 }] },
   negocio: { proyectos: [{ id: 'n', nombre: 'Idea', estado: 'Idea', notas: '', ingresos: 0, gastos: 0 }] },
   papelera: { retencionDias: 30, elementos: [
@@ -2840,6 +2848,23 @@ const CASOS = [
     objetivos: e.objetivos, productividad: e.productividad, salud: e.salud,
     economia: e.economia, bienestar: e.bienestar, fe: e.fe, nutricion: e.nutricion,
     accent,
+  })],
+  /* ⚠️ El caso que más importa es el de **lo guardado antes de esta fase**: sin
+     `album`, que es como lo tiene quien ya usaba Relación. */
+  ['RelationView', RelationView, (e) => ({
+    relacion: e.relacion || { nombre: '', fechas: [] },
+    onUpdateNombre: noop, onAddFecha: noop, onUpdateFecha: noop, onDeleteFecha: noop,
+    onSubirFotoAlbum: noop, onFirmarFotoAlbum: () => Promise.resolve(null), onBorrarFotoAlbum: noop,
+    accent,
+  })],
+  /* 🚨 **El Álbum se prueba APARTE, y hace falta.** `RelationView` arranca en la
+     pestaña de Fechas, así que renderizarla NO pinta ni una línea del álbum —
+     y encima el módulo entero vive detrás del PIN, que es por donde el recorrido
+     de Chromium no puede pasar. Sin estos casos, la pantalla nueva no la probaría
+     nadie: es exactamente el agujero que dejó `LibraryView` desde la Fase 11. */
+  ['AlbumTab', AlbumTab, (e) => ({
+    relacion: e.relacion || { nombre: '', fechas: [] },
+    accent, onSubir: noop, onFirmar: () => Promise.resolve(null), onBorrar: noop,
   })],
   ['HubView', HubView, (e) => ({
     area: { id: 'area-salud', label: 'Salud', modulos: ['salud', 'sueno'] },

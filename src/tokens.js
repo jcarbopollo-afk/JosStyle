@@ -512,7 +512,11 @@ export const DEFAULT_BIBLIOTECA = { apuntes: [], enlaces: [], libros: [], ideas:
 // propósito — las fechas ya existentes antes de esta fase no los tienen (`tipo` se trata como
 // 'otro', `repetir` como `false`) y no se migran solas: activar la repetición es una decisión que
 // toma Josué al editar cada fecha, nunca un cambio de comportamiento silencioso.
-export const DEFAULT_RELACION = { nombre: '', fechas: [] }; // fechas: [{ id, etiqueta, fecha, tipo?, repetir? }]
+/* NAV F3 — `album` es la tercera lista de Relación. ⚠️ Guarda el CAMINO de cada
+   foto en Storage, nunca su URL firmada, que caduca en una hora (E3 F17).
+   Ver `src/lib/albumRelacion.js`. */
+export const DEFAULT_RELACION = { nombre: '', fechas: [], album: [] };
+// fechas: [{ id, etiqueta, fecha, tipo?, repetir? }] · album: [{ id, path, fecha, nota }]
 
 export const TIPOS_FECHA_RELACION = [
   { id: 'cumpleanos', label: 'Cumpleaños', emoji: '🎂' },

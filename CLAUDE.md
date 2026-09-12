@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.71.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.72.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **LA ENTREGA 3 ESTÁ CERRADA: 46 de 46** (ver `docs/11_ENTREGA3_ORDEN.md`). Los siete bloques
@@ -236,7 +236,11 @@ prompts** de una vez y dijo que se podían dividir; la división es ésta:
 | **NAV F1** | La nueva arquitectura (Vida · Gestión · Bienestar · Además) + el apartado **Números** | ✅ **v3.69.0** |
 | **NAV F4** | Eliminar una tarea desde la fila + icono nuevo de Hábitos | ✅ **v3.70.0** |
 | **NAV F2** | 🏷️ **«Estilo de hombre» → «Imagen personal»** | ✅ **v3.71.0** |
-| **NAV F3** | **Álbum** dentro de Relación: fotos reales, con su bucket y su SQL | ⬜ |
+| **NAV F3** | 📸 **Álbum** dentro de Relación: fotos reales, con su bucket propio | ✅ **v3.72.0** |
+
+🏁 **Las cuatro están hechas.** ⏸ Lo único que queda en manos de Josué: **ejecutar el bloque de SQL
+del bucket `relacion`** (al final de `supabase/schema.sql`) para que el Álbum pueda subir fotos, y
+contestar **C-31**.
 
 ⚠️ **Y una contradicción suya que necesita respuesta, C-31 en `docs/03`:** pide **Tareas y Rutinas
 en Gestión** y **Objetivos y Hábitos en Vida**, pero las cuatro son **mini-apps de Productividad**,
@@ -282,6 +286,35 @@ aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con
 código de agosto mientras él decía *"la web sigue igual"*.
 
 ⚠️ **Y lo que dejaron las veinte primeras, que afecta a todas las demás:**
+
+- 🐛 **EL BARRIDO DE HEX SOLO SE SALTA LAS LÍNEAS QUE *EMPIEZAN* POR `//`, `*` O `/*`** (NAV F3, y es
+  la decimosexta vez de la lección de siempre en otra forma). Un comentario de varias líneas sin
+  asterisco al margen —el estilo que usa medio proyecto— que mencione un color de seis dígitos
+  **hace saltar la regla 2 con el código bien**. Si hay que explicar un color en un comentario, se
+  dice **con palabras**, no con el literal.
+
+- 🚨 **UNA FOTO SE GUARDA COMO CAMINO, NUNCA COMO URL FIRMADA** (NAV F3, y la E3 F17 lo dijo con las
+  portadas de los libros): una URL de Supabase caduca en **una hora**, así que guardarla es guardar
+  algo que deja de funcionar mientras él duerme. La entidad del álbum **ni siquiera tiene campo
+  `url`**, y su condición de fase se pone roja si alguien guardara una.
+- 🚨 **EL AISLAMIENTO DE UN BUCKET ES DE LA BASE DE DATOS** (NAV F3, EH F43, EH F63). La primera
+  carpeta del camino es el `auth.uid()` y las tres políticas RLS exigen que coincida, así que **un
+  usuario no puede ver ni borrar las fotos de otro aunque sepa el camino**. Hay una prueba que busca
+  expresamente la permisiva `auth.uid() IS NOT NULL` para asegurarse de que **no** está.
+- ⚠️ **UN BUCKET NUEVO ANTES QUE UNA CARPETA DENTRO DE OTRO** (NAV F3): meter las fotos de Relación
+  en `biblioteca` o `armario` obligaría a distinguirlas **por convenio de nombre de archivo**, que es
+  el acuerdo implícito que se rompe solo. Mismo motivo por el que `fondos` no vive dentro de
+  `armario`.
+- 🐛 **`RelationView` NO TENÍA NI UN CASO DE RENDERIZADO** (NAV F3): la **quinta** vista así, tras
+  `LibraryView`, `HealthView`, `NutritionView` y `EstudiosView`. Se pintaba en producción y no la
+  probaba nadie — **detrás del PIN, que es justo donde menos se mira**. ⚠️ Y el Álbum necesita sus
+  propios casos: `RelationView` arranca en la pestaña de Fechas, así que renderizarla **no pinta ni
+  una línea del álbum**. Al tocar una pantalla, mirar primero si está en `smoke-vistas.jsx` — **y si
+  lo que tocas solo aparece tras pulsar algo, exportarlo y probarlo aparte**.
+- ⏸ **EL RECORRIDO NO PUEDE ENTRAR EN RELACIÓN** (NAV F3): el módulo vive detrás del `PinGate` y el
+  recorrido no crea un PIN. Así que el Álbum está probado en el dato, en la pantalla y en las
+  políticas, **pero la subida de verdad la tiene que probar Josué** — como todo lo que toca Supabase
+  (R1). Está dicho en vez de dado por bueno.
 
 - 🏷️ **EL APARTADO SE LLAMA «IMAGEN PERSONAL», Y SUS IDS SIGUEN SIENDO LOS DE ANTES** (NAV F2). El
   rótulo cambió porque Josué no quería un apartado limitado por género; **`estilo-hombre`,
@@ -2232,6 +2265,11 @@ Seis cosas que conviene tener presentes al retomar:
   (`0.96` / `95` / `90`) es deliberada.
 - ⚠️ **Mover una plaquita se hace con flechas, no arrastrando** (EH F50): las flechas funcionan
   con el lector de pantalla, y el arrastre sería un segundo mecanismo para lo mismo.
+🚨 **HAY UN BLOQUE DE SQL NUEVO SIN EJECUTAR** (NAV F3, v3.72.0): el del bucket **`relacion`**, al
+final de `supabase/schema.sql`. Sin él, Relación funciona entera **menos el Álbum** — las fechas y los
+días especiales no tocan Storage para nada, pero **subir una foto fallará**. Es lo primero que hay que
+mirar si Josué dice que el Álbum no le guarda.
+
 ✅ **Los dos bloques de SQL que faltaban YA ESTÁN EJECUTADOS** — el del bucket `armario` (AR F1) y el
 del bucket `fondos` (FO F2). Lo hizo Josué y lo confirmó el 2026-09-12, así que **ya se suben fotos
 de prenda y fondos de pantalla**. ⚠️ Esto **no lo puede comprobar una prueba**: Supabase queda fuera

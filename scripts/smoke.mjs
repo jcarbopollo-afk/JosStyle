@@ -74,6 +74,10 @@ await build({
              las dos listas. */
           export const uploadBibliotecaArchivo = nada, deleteBibliotecaArchivo = nada, getSignedBibliotecaUrl = nada;
           export const uploadPrendaFoto = nada, deletePrendaFoto = nada, getSignedPrendaUrl = nada;
+          // NAV F3 — el Álbum de Relación. ⚠️ Va aquí el mismo día: un stub que no
+          // coincide con lo que imita deja la vista entera sin renderizar EN SILENCIO
+          // (E3 F16), y hay una regla invariante que compara las dos listas.
+          export const uploadFotoRelacion = nada, deleteFotoRelacion = nada, getSignedFotoRelacionUrl = nada;
           export const uploadFondoFoto = nada, deleteFondoFoto = nada, getSignedFondoUrl = nada;
         `,
         loader: 'js',

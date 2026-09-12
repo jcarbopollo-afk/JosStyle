@@ -224,6 +224,44 @@ export async function deletePrendaFoto(path) {
 }
 
 // ---------------------------------------------------------------------------
+// NAV F3 — el Álbum de Relación.
+//
+// Mismo patrón exacto que las fotos de prenda, las de Salud, los vídeos de
+// Calistenia, los archivos de Biblioteca y los fondos: **el archivo va a
+// Storage y lo que se guarda en `app_data` es el CAMINO**, nunca la URL
+// firmada — que caduca en una hora, así que guardarla sería guardar algo que
+// deja de funcionar mientras Josué duerme (E3 F17).
+//
+// 🚨 **Bucket propio y privado**, no una carpeta dentro de otro: estas fotos son
+// lo más privado de la aplicación —viven detrás del PIN— y meterlas en
+// `biblioteca` o en `armario` obligaría a distinguirlas por convenio de nombre
+// de archivo, que es el tipo de acuerdo implícito que se rompe solo (el mismo
+// motivo por el que `fondos` no está dentro de `armario`).
+//
+// ⚠️ El aislamiento lo da **la base de datos**, no la pantalla: la primera
+// carpeta del camino es el `auth.uid()`, y las políticas RLS del bucket exigen
+// que coincida. Esconder un botón no protege nada (EH F43, EH F63).
+// ---------------------------------------------------------------------------
+export async function uploadFotoRelacion(userId, file) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from('relacion').upload(path, file);
+  if (error) throw error;
+  return path;
+}
+
+export async function getSignedFotoRelacionUrl(path) {
+  const { data, error } = await supabase.storage.from('relacion').createSignedUrl(path, 3600);
+  if (error) { console.error('No se pudo firmar la foto del álbum', path, error); return null; }
+  return data.signedUrl;
+}
+
+export async function deleteFotoRelacion(path) {
+  const { error } = await supabase.storage.from('relacion').remove([path]);
+  if (error) console.error('No se pudo borrar la foto del álbum', path, error);
+}
+
+// ---------------------------------------------------------------------------
 // Entrega 2 · FO Fase 2 — la fotografía de fondo.
 //
 // Mismo patrón que las fotos de prenda, de Salud y los vídeos de Calistenia:

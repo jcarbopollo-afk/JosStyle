@@ -49,10 +49,11 @@ import { eventoDesdeQuickAdd } from './lib/accionesHoyAgenda';
 // Entrega 3 · F14 (HC F9) — la forma de la pantalla mientras carga (apartados 23 y 24).
 import { esqueleto } from './lib/pulidoHC';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
-import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl , vigilarLaConexion } from './lib/supabase';
+import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl, uploadFotoRelacion, getSignedFotoRelacionUrl, deleteFotoRelacion, vigilarLaConexion } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, addDays, hexToRgba, fechaLocalISO } from './lib/helpers';
 import { normalizarPerfilFoto } from './lib/fotoPerfil';
+import { normalizarRelacion, anadirFotoAlAlbum, quitarFotoDelAlbum, pathDeFoto, crearFotoAlbum } from './lib/albumRelacion';
 import { extractPdfText } from './lib/pdfText';
 import { prediccionObjetivo } from './lib/predicciones';
 import { verificarBiometria } from './lib/biometria';
@@ -607,7 +608,13 @@ export default function App() {
          Josué desde la Fase 11 y esta fase no los toca. */
       setBiblioteca(normalizarBiblioteca(bib));
       setBibliotecaArchivos(bibArch);
-      setRelacion(rel);
+      /* NAV F3 — ⚠️ **Esto era `setRelacion(rel)` a pelo**, y es el fallo del
+         normalizador por vigésima vez en este proyecto: quien ya tiene cuenta
+         no tiene `album` en lo guardado, así que se quedaba en `undefined` y la
+         pantalla reventaría al recorrerlo. `normalizarRelacion` devuelve el
+         objeto ENTERO —nombre, fechas y álbum—, porque `saveData` sobrescribe
+         y perder una clave aquí la borraría en el siguiente guardado (regla 5). */
+      setRelacion(normalizarRelacion(rel));
       setFe(feData);
       setBienestar(bien);
       // Ampliación del Dashboard — Centro de Control: `personalizacion` nunca se fusionaba con su
@@ -2246,6 +2253,29 @@ export default function App() {
   const addFechaImportante = (f) => snapshotAndSave({ relacion: { ...relacion, fechas: [...relacion.fechas, f] } });
   const updateFechaImportante = (f) => snapshotAndSave({ relacion: { ...relacion, fechas: relacion.fechas.map((x) => (x.id === f.id ? f : x)) } });
   const deleteFechaImportante = (id) => eliminarConPapelera('relacion', 'fechas', id);
+
+  /* NAV F3 — el Álbum. Mismo reparto que el Armario y los Fondos: **la vista
+     elige el archivo, `App.jsx` es quien sube y quien guarda**, porque es el
+     dueño de los dos almacenes (Storage y `app_data`).
+
+     🚨 Y las dos cosas van en **una sola llamada** a `snapshotAndSave`: dos
+     escrituras seguidas en el mismo turno se pisan, porque parten del mismo
+     estado del cierre — es el fallo que costó la sesión de Pomodoro en la
+     E3 F26. */
+  const subirFotoAlbum = async (file, nota) => {
+    const path = await uploadFotoRelacion(uidUser, file);
+    snapshotAndSave({ relacion: anadirFotoAlAlbum(relacion, crearFotoAlbum(path, { nota })) });
+    return path;
+  };
+  const firmarFotoAlbum = (path) => getSignedFotoRelacionUrl(path);
+  /* ⚠️ Borra **el archivo y la ficha**, en ese orden. Y NO va a la papelera: la
+     papelera guarda elementos de una lista, no archivos de Storage — por eso su
+     aviso dice que no se puede deshacer, y es verdad (`BORRADO_ALBUM`). */
+  const borrarFotoAlbum = async (id) => {
+    const path = pathDeFoto(relacion, id);
+    if (path) await deleteFotoRelacion(path);
+    snapshotAndSave({ relacion: quitarFotoDelAlbum(relacion, id) });
+  };
   // Fase 14 — Fe: cuatro sub-áreas de texto puro, todas sin PIN (Josué no pidió privacidad
   // extra aquí), así que las cuatro pasan por snapshotAndSave/deshacer como el resto de módulos
   // de datos de la app.
@@ -2885,6 +2915,13 @@ export default function App() {
             onAddFecha={addFechaImportante}
             onUpdateFecha={updateFechaImportante}
             onDeleteFecha={deleteFechaImportante}
+            /* NAV F3 — el Álbum. ⚠️ Si una de estas tres no se pasara, la
+               pantalla se pintaría perfecta y el botón no haría nada: es el
+               fallo de `onDeleteMovimiento` en Economía, que `test-borrados`
+               existe para cazar. */
+            onSubirFotoAlbum={subirFotoAlbum}
+            onFirmarFotoAlbum={firmarFotoAlbum}
+            onBorrarFotoAlbum={borrarFotoAlbum}
             accent={accent}
           />
         );

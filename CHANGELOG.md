@@ -1,5 +1,70 @@
 # CHANGELOG.md
 
+## v3.72.0 — NAV F3: el Álbum dentro de Relación
+
+Josué: *"que el usuario pueda subir/guardar fotos relacionadas con su pareja y que funcione
+literalmente como un pequeño álbum privado dentro de la aplicación"*, con una condición explícita:
+**"que sea una funcionalidad REAL, no un mockup"**.
+
+### Qué trae
+
+Una tercera pestaña en Relación —**Álbum**— con su cuadrícula de fotos, una nota opcional por foto,
+y añadir y eliminar de verdad. ⚠️ **Las dos pestañas de siempre no se tocan**: él dijo que las fechas
+le gustaban *"prácticamente tal cual"*, y hay pruebas que lo comprueban.
+
+### 🚨 Se guarda el CAMINO, nunca la URL
+
+Una URL firmada de Supabase caduca en una hora, así que guardarla sería guardar algo que deja de
+funcionar mientras él duerme — la lección de la E3 F17 con las portadas de los libros. La entidad
+**ni siquiera tiene campo `url`**, y la condición de la fase se pone roja si alguien guardara una.
+
+### 🚨 El aislamiento es de la base de datos, no de la pantalla
+
+Bucket **`relacion`**, privado, con sus tres políticas RLS: la primera carpeta del camino es el
+`auth.uid()` y las políticas exigen que coincida. **Un usuario no puede ver ni borrar las fotos de
+otro aunque sepa el camino.** Esconder un botón no protege nada (EH F43, EH F63), y hay una prueba
+que busca expresamente la política permisiva `auth.uid() IS NOT NULL` para asegurarse de que no está.
+
+⚠️ Bucket propio y no una carpeta dentro de `biblioteca` o `armario`: son lo más privado de la
+aplicación y mezclarlas obligaría a distinguirlas por convenio de nombre de archivo — el acuerdo
+implícito que se rompe solo. Mismo motivo por el que `fondos` no vive dentro de `armario`.
+
+### ⚠️ Borrar una foto NO se recupera, y se dice
+
+Es de las pocas cosas de JosStyle que preguntan antes, y es la excepción correcta: se borra un
+archivo de verdad en Storage, y la papelera guarda **elementos de una lista, no archivos**. Mismo
+caso que la foto de Salud, el vídeo de calistenia y el archivo de Biblioteca — las tres únicas que ya
+usaban `BotonBorrarDefinitivo`. Prometer que se recupera sería mentir en pantalla.
+
+### 🐛 Y la regla 2 saltó con la primera versión de la nota
+
+La nota de cada foto se pintaba **encima**, sobre un velo negro con `#000000` y `#fff` escritos a
+mano. La regla invariante de hex sueltos la cazó, y con razón: un hex fuera de `tokens.js` se queda
+fijo cuando Josué cambia de tema. Inventar un token de velo para un solo sitio habría sido el segundo
+sistema de color que la regla existe para impedir, así que **la nota pasó a ir debajo de la foto**,
+con los tokens de siempre — y además ya no la tapa.
+
+### 🐛 `RelationView` no tenía ni un caso de renderizado
+
+La **quinta** vista así, tras `LibraryView`, `HealthView`, `NutritionView` y `EstudiosView`. Se
+pintaba en producción y no la probaba nadie — detrás del PIN, que es justo donde menos se mira. Ya
+tiene los suyos, y el Álbum **se prueba aparte**: `RelationView` arranca en la pestaña de Fechas, así
+que renderizarla no pinta ni una línea del álbum.
+
+### ⚠️ Y lo que ninguna prueba puede decir, dicho
+
+**Que la subida funcione de verdad depende de dos cosas que están fuera del alcance de las pruebas**:
+
+1. **Que Josué ejecute el bloque de SQL** del bucket `relacion` (está al final de
+   `supabase/schema.sql`, listo para pegar). Hasta entonces, Relación funciona entera **menos el
+   Álbum** — las fechas no tocan Storage para nada.
+2. **Supabase real**, que es el punto R1 de siempre: ninguna de las ~19 600 comprobaciones habla con
+   Storage. Y el recorrido en Chromium **tampoco puede entrar en Relación**, porque el módulo vive
+   detrás del PIN y el recorrido no lo crea.
+
+Así que esto es lo que hay: el dato, la pantalla y las políticas están probados; **la subida la tiene
+que probar él en su iPhone**.
+
 ## v3.71.0 — NAV F2: «Estilo de hombre» pasa a llamarse «Imagen personal»
 
 Josué: *"quiero eliminar la referencia exclusiva a hombre; no quiero que el apartado esté limitado

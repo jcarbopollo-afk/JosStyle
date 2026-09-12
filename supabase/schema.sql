@@ -201,3 +201,36 @@ using (bucket_id = 'fondos' and (storage.foldername(name))[1] = auth.uid()::text
 create policy "Borrar fondos propios"
 on storage.objects for delete
 using (bucket_id = 'fondos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ============================================================
+-- NAV F3 — EL ÁLBUM DE RELACIÓN (bucket 'relacion')
+--
+-- Las fotos del apartado Relación. Van en su propio bucket y no dentro de
+-- 'biblioteca' ni de 'armario' a propósito: son lo más privado de la
+-- aplicación —viven detrás del PIN— y mezclarlas obligaría a distinguirlas
+-- por convenio de nombre de archivo, que es el tipo de acuerdo implícito
+-- que se rompe solo. Mismo motivo por el que 'fondos' no está en 'armario'.
+--
+-- 🚨 El aislamiento lo da ESTO, no la pantalla: la primera carpeta del
+-- camino es el auth.uid(), y las tres políticas exigen que coincida. Un
+-- usuario no puede ver ni borrar las fotos de otro aunque sepa el camino.
+--
+-- Josué: pega y ejecuta SOLO este bloque en el SQL Editor.
+-- Hasta que lo hagas, Relación funciona entera **menos el Álbum** — las
+-- fechas y los días especiales no tocan Storage para nada.
+-- ============================================================
+insert into storage.buckets (id, name, public)
+values ('relacion', 'relacion', false)
+on conflict (id) do nothing;
+
+create policy "Subir fotos de relacion propias"
+on storage.objects for insert
+with check (bucket_id = 'relacion' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Ver fotos de relacion propias"
+on storage.objects for select
+using (bucket_id = 'relacion' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Borrar fotos de relacion propias"
+on storage.objects for delete
+using (bucket_id = 'relacion' and (storage.foldername(name))[1] = auth.uid()::text);

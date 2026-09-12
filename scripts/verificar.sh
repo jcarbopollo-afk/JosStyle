@@ -861,6 +861,14 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# NAV F3 — el Álbum dentro de Relación: fotos reales en su propio bucket
+# privado, con el camino guardado (nunca una URL firmada, que caduca).
+if node --import ./scripts/resolver-vite.mjs scripts/test-album-relacion.mjs >/tmp/jc_album.log 2>&1; then
+  ok "Álbum de Relación (NAV F3) — $(grep -c '✓' /tmp/jc_album.log) comprobaciones"
+else
+  fallo "Falla el Álbum de Relación"; grep '✗' /tmp/jc_album.log
+fi
+
 # NAV F2 — «Estilo de hombre» pasa a llamarse «Imagen personal». Comprueba que
 # no quede el nombre viejo en nada que se lea, y que NI UN ID se haya tocado.
 if node --import ./scripts/resolver-vite.mjs scripts/test-renombrado-estilo.mjs >/tmp/jc_renombre.log 2>&1; then

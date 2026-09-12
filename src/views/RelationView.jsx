@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Heart, Trash2, CalendarHeart, Repeat, Pencil, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Heart, Trash2, CalendarHeart, Repeat, Pencil, X, ImagePlus, Loader2 } from 'lucide-react';
 import { COLORS, TIPOS_FECHA_RELACION } from '../tokens';
 import { uid, formatFecha, diasHasta } from '../lib/helpers';
-import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, ToggleTab, EmptyHint } from '../components/ui';
+import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, ToggleTab, EmptyHint, BotonBorrarDefinitivo } from '../components/ui';
+import { fotosDelAlbum, validarFotoAlbum, TIPOS_FOTO_ALBUM, MAX_NOTA_ALBUM, BORRADO_ALBUM } from '../lib/albumRelacion';
 
 // Fase 13 — solo la lista de nombres del Prompt Maestro. Tocar uno abre el formulario de fecha
 // para que Josué la escriba él mismo.
@@ -247,7 +248,158 @@ function EspecialesTab({ fechas, onAdd, accent }) {
   );
 }
 
-export default function RelationView({ relacion, onUpdateNombre, onAddFecha, onUpdateFecha, onDeleteFecha, accent }) {
+
+/* ===========================================================================
+   ÁLBUM (NAV F3) — el pequeño álbum privado que pidió Josué.
+
+   🚨 **Una foto se pinta con su URL FIRMADA, que se pide en el momento.** Lo
+   guardado es el camino: una URL de Supabase caduca en una hora, así que
+   guardarla sería guardar algo que deja de funcionar mientras él duerme
+   (E3 F17). Por eso cada tarjeta la pide al montarse.
+
+   ⚠️ Y esto vive **dentro de Relación**, que ya está detrás del `PinGate`
+   (regla 6): el álbum hereda el PIN sin escribir una línea.
+   =========================================================================== */
+
+export function FotoDelAlbum({ foto, accent, onFirmar, onBorrar }) {
+  const [url, setUrl] = useState(null);
+  const [falla, setFalla] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    setUrl(null);
+    setFalla(false);
+    Promise.resolve(onFirmar(foto.path))
+      .then((u) => { if (vivo) { if (u) setUrl(u); else setFalla(true); } })
+      .catch(() => { if (vivo) setFalla(true); });
+    return () => { vivo = false; };
+  }, [foto.path]);
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+      <div className="relative" style={{ aspectRatio: '1 / 1' }}>
+        {url && <img src={url} alt={foto.nota || 'Foto del álbum'} className="w-full h-full object-cover" />}
+        {!url && !falla && (
+          <div className="w-full h-full flex items-center justify-center">
+            <Loader2 size={18} className="animate-spin" style={{ color: COLORS.textMuted }} />
+          </div>
+        )}
+        {/* ⚠️ Si la foto no se puede cargar se DICE, no se deja un cuadro gris:
+            un hueco mudo parece un fallo de la aplicación (EH F41). */}
+        {falla && (
+          <div className="w-full h-full flex items-center justify-center p-2 text-center">
+            <p className="text-[11px]" style={{ color: COLORS.textMuted }}>No se ha podido cargar esta foto.</p>
+          </div>
+        )}
+      </div>
+
+      {/* ⚠️ **La nota va DEBAJO de la foto, no encima.** La primera versión la
+          pintaba sobre un velo oscuro con dos colores escritos a mano, y **la
+          regla 2 saltó**: un hex fuera de `tokens.js` se queda fijo cuando Josué
+          cambia de tema. Inventar un token de velo para un solo sitio habría
+          sido el segundo sistema de color que la regla existe para impedir; con
+          la nota debajo valen los tokens de siempre — y además no tapa la foto.
+
+          🐛 Y ojo al escribir esto: **el barrido de hex solo se salta las líneas
+          que EMPIEZAN por `//`, `*` o `/*`**, así que un comentario de varias
+          líneas sin asterisco al margen —como éste— que mencione un color de
+          seis dígitos vuelve a hacerlo saltar. Por eso aquí se dice con
+          palabras. */}
+      {foto.nota && (
+        <p className="px-2 py-1.5 text-[11px] truncate" style={{ color: COLORS.textMuted }}>
+          {foto.nota}
+        </p>
+      )}
+
+      {/* 🚨 Preguntar aquí ES lo correcto, y es la excepción: esto borra un
+          archivo de verdad en Storage y NO va a Eliminados recientes, igual que
+          la foto de Salud, el vídeo de calistenia y el archivo de Biblioteca. */}
+      <div className="absolute top-1.5 right-1.5">
+        <BotonBorrarDefinitivo
+          label="Eliminar foto del álbum"
+          titulo="¿Eliminar la foto?"
+          detalle={BORRADO_ALBUM.aviso}
+          onConfirm={() => onBorrar(foto.id)}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function AlbumTab({ relacion, accent, onSubir, onFirmar, onBorrar }) {
+  const fileRef = useRef(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [error, setError] = useState(null);
+  const [nota, setNota] = useState('');
+  const fotos = fotosDelAlbum(relacion);
+
+  const elegir = async (ev) => {
+    const file = ev.target.files?.[0];
+    // El input se limpia SIEMPRE: si no, elegir la misma foto dos veces seguidas
+    // no dispara `onChange` y parece que la aplicación se ha colgado.
+    ev.target.value = '';
+    if (!file) return;
+    const v = validarFotoAlbum(file);
+    if (!v.ok) { setError(v.motivo); return; }
+    setError(null);
+    setSubiendo(true);
+    try {
+      await onSubir(file, nota);
+      setNota('');
+    } catch {
+      // ⚠️ El error dice QUÉ hacer, no "Error" a secas (EH F62).
+      setError('No se ha podido guardar la foto. Comprueba la conexión y vuelve a intentarlo.');
+    } finally {
+      setSubiendo(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <Field label="Nota para la próxima foto (opcional)">
+          <TextInput
+            value={nota}
+            maxLength={MAX_NOTA_ALBUM}
+            placeholder="Dónde fue, qué día…"
+            onChange={(ev) => setNota(ev.target.value)}
+          />
+        </Field>
+        <div className="mt-3">
+          <PrimaryButton
+            onClick={() => { if (!subiendo) fileRef.current?.click(); }}
+            accent={accent}
+            icon={subiendo ? Loader2 : ImagePlus}
+            disabled={subiendo}
+          >
+            {subiendo ? 'Guardando…' : 'Añadir foto'}
+          </PrimaryButton>
+        </div>
+        {error && <p className="text-xs mt-2" style={{ color: COLORS.negative }}>{error}</p>}
+        <input
+          ref={fileRef}
+          type="file"
+          accept={TIPOS_FOTO_ALBUM.join(',')}
+          onChange={elegir}
+          className="hidden"
+          aria-label="Elegir una foto para el álbum"
+        />
+      </Card>
+
+      {fotos.length === 0 ? (
+        <EmptyHint>Todavía no has guardado ninguna foto. Añade la primera con el botón de arriba.</EmptyHint>
+      ) : (
+        <div className="grid grid-cols-2 gap-2.5">
+          {fotos.map((f) => (
+            <FotoDelAlbum key={f.id} foto={f} accent={accent} onFirmar={onFirmar} onBorrar={onBorrar} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function RelationView({ relacion, onUpdateNombre, onAddFecha, onUpdateFecha, onDeleteFecha, onSubirFotoAlbum, onFirmarFotoAlbum, onBorrarFotoAlbum, accent }) {
   const [sub, setSub] = useState('fechas');
 
   return (
@@ -261,12 +413,25 @@ export default function RelationView({ relacion, onUpdateNombre, onAddFecha, onU
       <div className="flex gap-1.5">
         <ToggleTab active={sub === 'fechas'} onClick={() => setSub('fechas')} accent={accent}>Fechas</ToggleTab>
         <ToggleTab active={sub === 'especiales'} onClick={() => setSub('especiales')} accent={accent}>Días especiales</ToggleTab>
+        {/* NAV F3 — la tercera pestaña. ⚠️ Las dos de antes NO se tocan: Josué
+            dijo "las fechas, estructura y funcionalidades actuales me gustan
+            mucho, quiero mantenerlo prácticamente tal cual". */}
+        <ToggleTab active={sub === 'album'} onClick={() => setSub('album')} accent={accent}>Álbum</ToggleTab>
       </div>
 
       {sub === 'fechas' && (
         <FechasTab fechas={relacion.fechas} onAdd={onAddFecha} onUpdate={onUpdateFecha} onDelete={onDeleteFecha} accent={accent} />
       )}
       {sub === 'especiales' && <EspecialesTab fechas={relacion.fechas} onAdd={onAddFecha} accent={accent} />}
+      {sub === 'album' && (
+        <AlbumTab
+          relacion={relacion}
+          accent={accent}
+          onSubir={onSubirFotoAlbum}
+          onFirmar={onFirmarFotoAlbum}
+          onBorrar={onBorrarFotoAlbum}
+        />
+      )}
     </div>
   );
 }
