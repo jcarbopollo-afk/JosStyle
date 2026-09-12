@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# AS F2 — quitar no es eliminar: los usos en los DOS módulos antes de borrar.
+if node --import ./scripts/resolver-vite.mjs scripts/test-usos-asignatura.mjs >/tmp/jc_usosasig.log 2>&1; then
+  ok "Usos y eliminación de asignaturas (AS F2) — $(grep -c '✓' /tmp/jc_usosasig.log) comprobaciones"
+else
+  fallo "Falla la eliminación de asignaturas"; grep '✗' /tmp/jc_usosasig.log
+fi
+
 # AS F1 — el catálogo compartido de asignaturas entre Horario y Estudio.
 if node --import ./scripts/resolver-vite.mjs scripts/test-asignaturas-compartidas.mjs >/tmp/jc_asigcomp.log 2>&1; then
   ok "Asignaturas compartidas (AS F1) — $(grep -c '✓' /tmp/jc_asigcomp.log) comprobaciones"

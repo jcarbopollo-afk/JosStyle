@@ -32,7 +32,10 @@ import { normalizarNutricionF4 } from './lib/alimentos';
    guardado se llevaría las dos listas. Y devuelve el módulo entero (regla 5). */
 import { normalizarMisAlimentosDe, alternarFavoritoAlimento } from './lib/misAlimentos';
 import { normalizarAppsDe } from './lib/estudiosApps';
-import { normalizarAsignaturasDe, usaPrograma } from './lib/asignaturas';
+import { normalizarAsignaturasDe } from './lib/asignaturas';
+/* AS F2 — quitar ≠ eliminar: los usos y la limpieza de referencias viven en una
+   sola librería, que es lo que pide el apartado 5 (misma fuente de verdad). */
+import { limpiarHorarioDeAsignatura, desligarPrograma } from './lib/usosAsignatura';
 import { normalizarFechasDe } from './lib/fechasAcademicas';
 /* 🚨 E3 F27 (PR F5) — Metas y Objetivos. Los normalizadores corren al cargar
    porque esta fase AÑADE campos a dos entidades que ya existían: sin ellos, lo
@@ -1883,41 +1886,30 @@ export default function App() {
   const deletePrograma = (id) => {
     const resultado = prepararEliminacion(estudios, 'estudios', 'programas', id, new Date().toISOString());
     if (!resultado) return;
-    /* ⚠️ AS F1 — se lee de la RELACIÓN, no del `programaId` de antes. El
-       comportamiento no cambia: las asignaturas de este programa siguen yéndose
-       con él, en la misma entrada de papelera. Quien lo cambia es AS F2, que es
-       donde Josué pidió que eliminar un programa **deje de** eliminarlas. */
-    const asignaturas = estudios.asignaturas.filter((a) => usaPrograma(a, id));
-    const idsAsignatura = asignaturas.map((a) => a.id);
-    const examenes = estudios.examenes.filter((e) => idsAsignatura.includes(e.asignaturaId));
-    const horas = estudios.horas.filter((h) => idsAsignatura.includes(h.asignaturaId));
-    const temasDelArea = (estudios.temas || []).filter((t) => idsAsignatura.includes(t.asignaturaId));
-    const entregasDelArea = (estudios.entregas || []).filter((t) => idsAsignatura.includes(t.asignaturaId));
-    const eventosDelArea = (estudios.eventos || []).filter((v) => idsAsignatura.includes(v.asignaturaId));
-    // E3 F45 — las actividades cuelgan del ÁREA, no de una asignatura.
+    /* 🚨 **AS F2, apartado 10 — ELIMINAR UN PROGRAMA YA NO ELIMINA SUS
+       ASIGNATURAS.** Josué: *"Si elimino Bachillerato científico NO quiero que
+       se eliminen Matemáticas, Física, Química, Biología. Las asignaturas son
+       entidades independientes y compartidas."* Hasta v3.75.0 se las llevaba a
+       la papelera con él; ahora **solo se rompe la relación**, y con ella se van
+       sus temas, exámenes y horas **solo si no las usa nadie más** — que no es
+       el caso, porque la asignatura sigue viva.
+       ⚠️ Así que aquí ya no se arrastra ninguna asignatura: lo único que cae con
+       el programa es lo suyo propio (sus actividades de aprendizaje). */
+    // E3 F45 — las actividades cuelgan del ÁREA, no de una asignatura, así que
+    // éstas sí se van con ella: no las usa nadie más.
     const actividadesDelArea = (estudios.actividades || []).filter((a) => a.appId === id);
-    /* 🚨 TODO lo que se saca del módulo tiene que ir en la MISMA entrada de papelera, o restaurar el
-       área la devolvería **sin sus temas, sus entregas ni sus eventos** — se quitaban de `estudios`
-       y no se guardaban en ninguna parte. Lo arrastró la ES F5 al añadir las actividades y mirar la
-       lista entera: las tres que faltaban las había dejado yo en la ES F3 y la ES F4. */
+    /* 🚨 Lo que se saca del módulo tiene que ir en la MISMA entrada de papelera, o restaurar el área
+       lo devolvería a medias (ES F5). ⚠️ Y en la entrada de papelera ya no van sus asignaturas ni el contenido de
+       éstas: **siguen vivas**, así que meterlas ahí las habría borrado de
+       `estudios` sin que Josué lo pidiera. Lo único que cae con el área es lo
+       que solo era suyo. */
     const entrada = conArrastrados(resultado.entrada, [
-      { coleccion: 'asignaturas', elementos: asignaturas },
-      { coleccion: 'examenes', elementos: examenes },
-      { coleccion: 'horas', elementos: horas },
-      { coleccion: 'temas', elementos: temasDelArea },
-      { coleccion: 'entregas', elementos: entregasDelArea },
-      { coleccion: 'eventos', elementos: eventosDelArea },
       { coleccion: 'actividades', elementos: actividadesDelArea },
     ]);
     snapshotAndSave({
       estudios: {
         ...resultado.moduloActualizado,
-        asignaturas: estudios.asignaturas.filter((a) => !usaPrograma(a, id)),
-        examenes: estudios.examenes.filter((e) => !idsAsignatura.includes(e.asignaturaId)),
-        horas: estudios.horas.filter((h) => !idsAsignatura.includes(h.asignaturaId)),
-        temas: (estudios.temas || []).filter((t) => !idsAsignatura.includes(t.asignaturaId)),
-        entregas: (estudios.entregas || []).filter((t) => !idsAsignatura.includes(t.asignaturaId)),
-        eventos: (estudios.eventos || []).filter((v) => !idsAsignatura.includes(v.asignaturaId)),
+        asignaturas: desligarPrograma(estudios.asignaturas, id),
         actividades: (estudios.actividades || []).filter((a) => a.appId !== id),
       },
       papelera: { ...papelera, elementos: [...papelera.elementos, entrada] },
@@ -1958,6 +1950,12 @@ export default function App() {
         entregas: (estudios.entregas || []).filter((t) => t.asignaturaId !== id),
         eventos: (estudios.eventos || []).filter((v) => v.asignaturaId !== id),
       },
+      /* 🚨 AS F2, apartados 7 y 9 — Y SE LIMPIA EL HORARIO EN LA MISMA LLAMADA.
+         Hasta ahora eliminar una asignatura solo tocaba `estudios`, así que las
+         clases del horario se quedaban apuntando a un id que ya no existía: el
+         «Caso 4» que el enunciado prohíbe. ⚠️ Va aquí dentro y no en otro
+         `snapshotAndSave` porque dos escrituras seguidas se pisan (E3 F26). */
+      horarioTop: limpiarHorarioDeAsignatura(horarioTop, id, { confirmado: true }),
       papelera: { ...papelera, elementos: [...papelera.elementos, entrada] },
     });
   };
@@ -2629,6 +2627,10 @@ export default function App() {
         return (
           <EstudiosView
             estudios={estudios} sueno={sueno}
+            /* 🚨 AS F2 — el horario se LEE para saber en cuántas clases se usa
+               una asignatura antes de eliminarla. Nunca se escribe desde aquí:
+               quien lo hace es `deleteAsignatura`, en una sola llamada. */
+            horarioTop={horarioTop}
             onAddPrograma={addPrograma} onUpdateProgramas={updateProgramas} onDeletePrograma={deletePrograma}
             onAddAsignatura={addAsignatura} onUpdateAsignaturas={updateAsignaturas} onDeleteAsignatura={deleteAsignatura}
             onAddTema={addTema} onUpdateTemas={updateTemas} onDeleteTema={deleteTema}

@@ -23,6 +23,9 @@ import {
   temasDe, crearTema, editarTema, avanzarTema, moverTema,
   resumenAsignatura, lineaDeAsignatura, seccionesDeAsignatura, impactoDeEliminarAsignatura,
 } from '../lib/asignaturas';
+/* 🚨 AS F2 — los usos y el aviso salen de UNA sola librería, la misma que mira
+   Horario: el apartado 5 pide expresamente que no haya dos fuentes de verdad. */
+import { usosDeAsignatura, avisoEliminarAsignatura } from '../lib/usosAsignatura';
 import {
   TIPOS_EVENTO_ACADEMICO, TIPO_EVENTO_POR_DEFECTO, tipoEventoAcademico, tipoDeFecha,
   ESTADOS_EXAMEN, ESTADOS_ENTREGA, estadoExamen, estadoEntrega,
@@ -1007,7 +1010,7 @@ function TodosLosEventos({ estudios, accent, onIr, onCerrar }) {
   );
 }
 
-export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateProgramas, onDeletePrograma, onAddAsignatura, onUpdateAsignaturas, onDeleteAsignatura, onAddTema, onUpdateTemas, onDeleteTema, onAddEntrega, onUpdateEntregas, onDeleteEntrega, onAddEvento, onUpdateEventos, onDeleteEvento, onUpdateExamenes, onAddActividad, onDeleteActividad, objetivos, onCrearObjetivoApp, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
+export default function EstudiosView({ estudios, horarioTop = null, sueno, onAddPrograma, onUpdateProgramas, onDeletePrograma, onAddAsignatura, onUpdateAsignaturas, onDeleteAsignatura, onAddTema, onUpdateTemas, onDeleteTema, onAddEntrega, onUpdateEntregas, onDeleteEntrega, onAddEvento, onUpdateEventos, onDeleteEvento, onUpdateExamenes, onAddActividad, onDeleteActividad, objetivos, onCrearObjetivoApp, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
   const [ruta, setRuta] = useState(RUTA_RAIZ);
   const [creando, setCreando] = useState(false);
   const [organizando, setOrganizando] = useState(false);
@@ -1469,6 +1472,9 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
     const resumen = resumenAsignatura(estudios, asig.id);
     const secciones = seccionesDeAsignatura(estudios, asig.id);
     const impacto = impactoDeEliminarAsignatura(estudios, asig.id);
+    /* 🚨 AS F2, apartados 2 y 5 — los usos salen de la MISMA función que usa
+       Horario, para que los dos avisos no digan números distintos. */
+    const avisoBorrado = avisoEliminarAsignatura(usosDeAsignatura(estudios, horarioTop, asig.id), asig.nombre);
     const proximoAsig = proximoDeAsignatura(estudios, asig.id);
 
     return (
@@ -1547,11 +1553,21 @@ export default function EstudiosView({ estudios, sueno, onAddPrograma, onUpdateP
             </div>
 
             {/* 🚨 Apartado 3 — antes de eliminar se enseña lo que se va con ella. Y como va a la
-                papelera, el aviso dice que se recupera: prometer lo contrario sería mentir. */}
+                papelera, el aviso dice que se recupera: prometer lo contrario sería mentir.
+                🚨 **AS F2** — y ahora también DÓNDE SE USA, mirando los dos módulos: antes solo
+                contaba lo de Estudios, así que eliminar una asignatura se llevaba por delante las
+                clases del horario **sin avisar**. */}
             {confirmarBorrado && (
               <Card style={{ background: COLORS.surface2 }}>
-                <p className="text-sm font-semibold" style={{ color: COLORS.text }}>¿Eliminar {asig.nombre}?</p>
+                <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{avisoBorrado.titulo}</p>
+                {avisoBorrado.hayUsos && (
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.text }}>{avisoBorrado.texto}</p>
+                )}
                 <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.textMuted }}>{impacto.aviso}</p>
+                {/* ⚠️ Y lo que NO vuelve, aparte: el horario no tiene papelera. */}
+                {avisoBorrado.noVuelve && (
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.negative }}>{avisoBorrado.noVuelve}</p>
+                )}
                 <div className="flex items-center gap-2 mt-3">
                   <button onClick={() => setConfirmarBorrado(false)} className="flex-1 rounded-xl py-2.5 text-sm font-semibold" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, color: COLORS.text }}>
                     Cancelar
