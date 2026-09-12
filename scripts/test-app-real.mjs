@@ -3216,12 +3216,25 @@ ok(/1 \/ 4 completado/i.test(centro_pr7),
 ok(/Te quedan/i.test(centro_pr7), '⚠️ y "¿qué me queda por hacer hoy?" (apartado 20)');
 ok(/2 tareas/i.test(centro_pr7) && /1 hábito/i.test(centro_pr7), '⚠️ con sus cifras');
 
-/* Apartado 5: la prioridad determinista — lo vencido primero. */
+/* Apartado 5: la prioridad determinista — lo vencido primero.
+
+   ⚠️ **Y desde GE F1 esto comprueba otra cosa, con todo el derecho.** Josué
+   pidió quitar de «Para hoy» la copia de las tareas del día —*"esa duplicación
+   no aporta valor"*—, así que «Estudiar biología», que es de HOY y de prioridad
+   alta, **ya no puede salir aquí**: su sitio es Día. Lo que sí sigue es
+   «Llamar al dentista», que está **vencida** y por tanto no sale en Día: si
+   tampoco saliera aquí, se quedaría invisible en toda la aplicación.
+
+   Esta comprobación afirmaba el orden literal de entonces y se puso roja con el
+   código bien — la misma bomba de relojería que `MODULOS_EH.length === 13`. Se
+   comprueba **el mecanismo**, no la lista de aquel día. */
 ok(/Para hoy/i.test(centro_pr7), '⚠️ y la sección PARA HOY');
 const posVencida = centro_pr7.indexOf('Llamar al dentista');
 const posAlta = centro_pr7.indexOf('Estudiar biología');
-ok(posVencida > -1 && posAlta > -1 && posVencida < posAlta,
-  '🚨 Y LA TAREA VENCIDA VA ANTES QUE LA DE ALTA PRIORIDAD: el orden literal del enunciado');
+ok(posVencida > -1,
+  '🚨 GE F1 — LA TAREA VENCIDA SIGUE EN «PARA HOY»: no sale en Día, así que es su única lista');
+ok(posAlta === -1,
+  '🚨 GE F1 — Y LA DE HOY YA NO SE COPIA AQUÍ, ni siendo de prioridad alta: su sitio es Día');
 
 /* Apartado 1: los seis cuadraditos con información real. */
 ok(/1\/2 hoy/i.test(centro_pr7), '🚨 el cuadradito de Hábitos dice "1/2 hoy"');
