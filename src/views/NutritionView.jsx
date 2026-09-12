@@ -1768,7 +1768,20 @@ export default function NutritionView({ nutricion, perfil, onAddComida, onDelete
     <div className="space-y-4 pb-4">
       <SectionTitle sub="Registra para que la IA vea tus hábitos, no para perseguir cifras exactas">Nutrición</SectionTitle>
 
-      <div className="flex gap-2">
+      {/* 🐛 GE F1 — `flex-wrap`, y lo encontró la comprobación nueva de esta fase.
+          Las cuatro pestañas **no caben en 375 px** —el ancho del iPhone de
+          Josué—: «📊 Estadísticas» necesita 123 px y le tocaban 80, así que se
+          salía 6 px y **la página entera se podía arrastrar a lo ancho**. Es un
+          fallo anterior a esta fase, de cuando la E3 F38 añadió la cuarta.
+
+          ⚠️ **No se recorta con `truncate`**: dejaría «📊 Esta…» y una pestaña
+          que no se puede leer no dice a dónde lleva (regla 8). Al envolver, la
+          cuarta baja a su propia línea **entera**, y en una pantalla ancha
+          siguen las cuatro en fila porque `flex-wrap` solo actúa si no caben.
+
+          ⚠️ Y va aquí, no en `ToggleTab`: ese componente lo usan **diez vistas**
+          y cambiarlo sería tocar toda la aplicación desde una fase de Nutrición. */}
+      <div className="flex flex-wrap gap-2">
         <ToggleTab active={sub === 'comidas'} onClick={() => setSub('comidas')} accent={accent}>Comidas</ToggleTab>
         <ToggleTab active={sub === 'agua'} onClick={() => setSub('agua')} accent={accent}>Agua</ToggleTab>
         <ToggleTab active={sub === 'favoritos'} onClick={() => setSub('favoritos')} accent={accent}>Favoritos</ToggleTab>

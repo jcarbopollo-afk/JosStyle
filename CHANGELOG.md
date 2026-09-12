@@ -59,6 +59,23 @@ pantalla.
 conserva el nombre entero. **Ni una métrica ni un dato han cambiado**: son los mismos tres, en el
 mismo orden, con su campo y su unidad.
 
+### 🐛 Y la comprobación nueva encontró un fallo que no era de esta fase
+
+Medir el ancho a 375 px destapó que **las cuatro pestañas de Nutrición no caben en el iPhone de
+Josué**: «📊 Estadísticas» necesita 123 px y le tocaban 80, así que la pantalla se salía 6 px y **se
+podía arrastrar a lo ancho**. Viene de la E3 F38, que añadió la cuarta pestaña, y ninguna de las
+19 578 comprobaciones lo miraba — porque nadie medía el ancho.
+
+⚠️ **No se arregla recortando el texto.** `truncate` quita el desbordamiento y deja «📊 Esta…», y una
+pestaña que no se puede leer no dice a dónde lleva (regla 8) — medido: con recorte, *Favoritos* y
+*Estadísticas* salían cortadas. Se arregla con **`flex-wrap` en su contenedor**: la cuarta baja a su
+propia línea **entera**, y en una pantalla ancha las cuatro siguen en fila, porque `flex-wrap` solo
+actúa cuando no caben. Comprobado a 375 px (sin desbordar, sin recortar) y a 1280 px (las cuatro en
+la misma fila).
+
+⚠️ **Y va en el contenedor, no en `ToggleTab`**: ese componente lo usan **diez vistas** con hasta seis
+pestañas, y cambiarlo desde una fase de Nutrición habría sido tocar toda la aplicación.
+
 ### Verificado
 
 `scripts/test-gestion-tareas.mjs` (34 comprobaciones) y una sección nueva del recorrido de Chromium

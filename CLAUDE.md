@@ -318,6 +318,20 @@ código de agosto mientras él decía *"la web sigue igual"*.
   tarjeta grande de kcal conserva el nombre entero. Y **el número de columnas sale de la longitud de
   la lista** (`macros.length === 3 ? 'grid-cols-3' : 'grid-cols-2'`), no escrito a mano: un «3» a
   mano se queda viejo el día que haya un cuarto macro.
+- 🚨 **NADIE MEDÍA EL ANCHO, Y POR ESO LA PANTALLA SE ARRASTRABA EN SU iPHONE** (GE F1). La
+  comprobación nueva de esta fase —`scrollWidth > innerWidth` a 375 px— destapó que **las cuatro
+  pestañas de Nutrición no caben**: «📊 Estadísticas» pide 123 px y le tocaban 80, así que la página
+  se salía 6 px. Venía de la **E3 F38**, que añadió la cuarta, y las 19 578 comprobaciones no lo
+  veían porque **ninguna miraba el ancho**. **Una comprobación nueva sobre una pantalla vieja
+  encuentra lo que llevaba ahí desde antes**: al añadir una medida, no dar por hecho que lo que
+  destape es tuyo.
+- ⚠️ **UN DESBORDAMIENTO NO SE ARREGLA RECORTANDO EL TEXTO** (GE F1): `truncate` lo quita y deja
+  «📊 Esta…», y una pestaña que no se puede leer no dice a dónde lleva (regla 8) — medido, además
+  cortaba *Favoritos*. Se envuelve (`flex-wrap`): la que no cabe baja a su línea **entera**, y en una
+  pantalla ancha siguen todas en fila porque `flex-wrap` solo actúa si hace falta.
+- ⚠️ **Y SE ARREGLA EN EL CONTENEDOR, NO EN EL COMPONENTE COMPARTIDO** (GE F1): `ToggleTab` lo usan
+  **diez vistas** con hasta seis pestañas; tocarlo desde una fase de Nutrición habría cambiado toda
+  la aplicación. **Antes de arreglar algo en `ui.jsx`, contar cuántas pantallas lo usan.**
 - 🐛 **UNA COMPROBACIÓN QUE AFIRMA EL ORDEN LITERAL DE UNA LISTA ES UNA BOMBA DE RELOJERÍA** (GE F1,
   y es la lección de `MODULOS_EH.length === 13` por enésima vez). La de la E3 F29 afirmaba la
   secuencia exacta de motivos de `paraHoyPR` **incluido `tarea_alta_hoy`**, que desde esta fase ya no

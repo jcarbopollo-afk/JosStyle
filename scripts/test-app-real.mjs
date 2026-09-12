@@ -5015,7 +5015,14 @@ const filaMovil = await page.evaluate(() => {
 });
 ok(filaMovil.every((x) => x !== null) && Math.max(...filaMovil) - Math.min(...filaMovil) < 8,
   '🚨 …y TAMBIÉN en 375 px de ancho, que es el iPhone de Josué');
+/* 🐛 **Y esta comprobación encontró un fallo que NO era de esta fase.** Las
+   cuatro pestañas de Nutrición no cabían en 375 px —«📊 Estadísticas» pedía
+   123 px y le tocaban 80—, así que la pantalla se salía 6 px y **se podía
+   arrastrar a lo ancho** en el iPhone de Josué. Venía de la E3 F38, que añadió
+   la cuarta pestaña. Se arregló con `flex-wrap` en su contenedor (no en
+   `ToggleTab`, que lo usan diez vistas). **Una comprobación nueva sobre una
+   pantalla vieja encuentra lo que llevaba ahí desde antes.** */
 const desborda = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
-ok(!desborda, '⚠️ …sin desbordar a lo ancho');
+ok(!desborda, '⚠️ …sin desbordar a lo ancho (y aquí saltó el desbordamiento de las pestañas)');
 
 await salir(browser);
