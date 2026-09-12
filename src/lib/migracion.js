@@ -284,7 +284,7 @@ export const restaurarCopia = (copia) => JSON.parse(JSON.stringify(copia));
    =========================================================================== */
 
 export const APARTADOS_MIGRACION = [
-  { apartado: 1, id: 'no_rehacer', nombre: 'No rehacer la aplicación', cumplido: true, donde: 'Estilo de hombre es un módulo más de JosStyle: una clave, una vista y su sitio en la barra.' },
+  { apartado: 1, id: 'no_rehacer', nombre: 'No rehacer la aplicación', cumplido: true, donde: 'Imagen personal es un módulo más de JosStyle: una clave, una vista y su sitio en la barra.' },
   { apartado: 2, id: 'analizar', nombre: 'Analizar antes de modificar', cumplido: true, donde: '`docs/04_INVENTARIO_ESTADO_ACTUAL.md`, que se actualiza en cada fase.' },
   { apartado: 3, id: 'mapear', nombre: 'Mapear los datos existentes', cumplido: true, donde: '`MAPA_DE_DATOS` + `FUENTES_GLOBALES` (F4).' },
   { apartado: 4, id: 'migracion', nombre: 'Proceso de migración', cumplido: true, donde: '`migrarEstiloHombre()`, sobre el objeto crudo.' },

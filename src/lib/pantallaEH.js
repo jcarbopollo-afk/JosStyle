@@ -90,7 +90,7 @@ import { resumenGustos } from './gustos';
 
 /** Apartado 1 — la cabecera, literal. *"Nada más."* */
 export const CABECERA_EH = {
-  titulo: '🧔 Estilo de hombre',
+  titulo: '🧔 Imagen personal',
   sub: 'Tu cuidado, estilo y preferencias.',
 };
 

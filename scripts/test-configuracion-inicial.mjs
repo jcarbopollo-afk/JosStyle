@@ -63,7 +63,7 @@ ok(PASOS_ASISTENTE.every((p) => p.titulo && p.texto && p.boton && p.icono), 'Cad
 ok(pasoAsistente('bienvenida').texto.includes('Puedes cambiarlo todo más adelante'), 'Bienvenida literal');
 ok(pasoAsistente('explicacion').titulo === 'Tú decides qué aparece', 'Explicación literal');
 ok(pasoAsistente('final').titulo === 'Tu espacio está listo', 'Final literal');
-ok(pasoAsistente('final').boton.includes('Entrar en Estilo de hombre'), 'Y su botón');
+ok(pasoAsistente('final').boton.includes('Entrar en Imagen personal'), 'Y su botón');
 eq(pasoAsistente('inventado'), null, 'Un paso que no existe devuelve null');
 
 // Apartado 6 — omitir está en todos menos en el último.
@@ -337,7 +337,7 @@ console.log('  ⚠️  Test 10 (flujo completo en móvil) necesita un iPhone: es
 const guardadoFinal = JSON.stringify(normalizarEstiloHombre(terminarAsistente(seleccionarTodos(s))));
 ['Josué', '2010-07-29', '187', 'Masculino'].forEach((dato) => {
   ok(!guardadoFinal.includes(dato),
-    `⚠️ Apartado 7: "${dato}" NO se copia dentro de Estilo de hombre`);
+    `⚠️ Apartado 7: "${dato}" NO se copia dentro de Imagen personal`);
 });
 eq(Object.keys(DEFAULT_ASISTENTE).sort(), ['empezadoEn', 'estado', 'paso', 'seleccion', 'terminadoEn'],
   '⚠️ El asistente guarda cinco cosas, y ninguna es un dato de Josué');

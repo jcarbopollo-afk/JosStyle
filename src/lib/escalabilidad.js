@@ -401,7 +401,7 @@ export const CARGA_PEREZOSA = [
 export const COMPATIBILIDAD = {
   datosAntiguos: 'El normalizador rellena lo que falte y aparta lo que no conozca, en vez de reventar.',
   configuracionAntigua: '`alternarModulo` no toca `config`, y un módulo retirado se guarda en cuarentena con sus datos.',
-  integraciones: 'Estilo de hombre guarda ids, no copias: si el otro lado cambia, aquí no se rompe nada.',
+  integraciones: 'Imagen personal guarda ids, no copias: si el otro lado cambia, aquí no se rompe nada.',
   version: VERSION_ACTUAL,
   migraciones: MIGRACIONES.length,
   historial: 'CHANGELOG.md, una entrada por fase.',

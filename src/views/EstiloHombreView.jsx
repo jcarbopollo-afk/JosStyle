@@ -9399,11 +9399,11 @@ export function AvisosEstiloEH({
       <Card>
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-semibold flex-1" style={{ color: COLORS.text }}>
-            Avisos de Estilo de hombre
+            Avisos de Imagen personal
           </span>
           <Switch
             checked={panel.activados} accent={accent}
-            label="Avisos de Estilo de hombre"
+            label="Avisos de Imagen personal"
             onChange={() => onCambiar(panel.activados
               ? desactivarAvisosEH(estado)
               : activarAvisosEH(estado))}

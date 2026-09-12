@@ -232,7 +232,7 @@ export function leerDato(estado, id, datosGlobales = {}) {
     tiene,
     // Apartado 8 — *"Nunca bloquear la información introducida."*
     editableAqui: true,
-    donde: 'Estilo de hombre',
+    donde: 'Imagen personal',
     texto: tiene ? String(entrada.valor) : TEXTO_SIN_DATO,
     actualizadoEn: entrada ? entrada.actualizadoEn : null,
     privado: !!cat?.privado,
@@ -260,7 +260,7 @@ export function solicitarDato(estado, id, datosGlobales = {}) {
    =========================================================================== */
 
 export const MOTIVOS_RECHAZO_DATO = {
-  global: 'Ese dato vive fuera de Estilo de hombre y se edita allí.',
+  global: 'Ese dato vive fuera de Imagen personal y se edita allí.',
   desconocido: 'Ese dato no está en el registro.',
 };
 
@@ -473,7 +473,7 @@ export function hayQuePreguntar(estado, id, datosGlobales = {}) {
     return {
       preguntar: false,
       motivo: otros.length > 1 ? `Ya lo tenemos, y lo comparten ${otros.join(' y ')}.` : 'Ya lo tenemos.',
-      donde: 'Estilo de hombre',
+      donde: 'Imagen personal',
       valor: d.valor,
     };
   }

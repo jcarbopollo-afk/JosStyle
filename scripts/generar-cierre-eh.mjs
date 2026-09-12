@@ -118,7 +118,7 @@ p();
 /* 1 y 15 — congelación */
 p('## Congelado');
 p();
-p(`Estilo de hombre está **${CONGELADO ? 'cerrado' : 'abierto'}** a funciones nuevas.`);
+p(`Imagen personal está **${CONGELADO ? 'cerrado' : 'abierto'}** a funciones nuevas.`);
 p();
 p('**No se puede:**');
 p();

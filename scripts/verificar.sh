@@ -861,6 +861,14 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# NAV F2 — «Estilo de hombre» pasa a llamarse «Imagen personal». Comprueba que
+# no quede el nombre viejo en nada que se lea, y que NI UN ID se haya tocado.
+if node --import ./scripts/resolver-vite.mjs scripts/test-renombrado-estilo.mjs >/tmp/jc_renombre.log 2>&1; then
+  ok "Renombrado a «Imagen personal» (NAV F2) — $(grep -c '✓' /tmp/jc_renombre.log) comprobaciones"
+else
+  fallo "Falla el renombrado del apartado de estilo"; grep '✗' /tmp/jc_renombre.log
+fi
+
 # NAV F4 — eliminar una tarea desde la fila (ya existía, pero escondida en el
 # detalle) y el icono de Hábitos, que era la llama de Rachas.
 if node --import ./scripts/resolver-vite.mjs scripts/test-tareas-habitos.mjs >/tmp/jc_tarhab.log 2>&1; then

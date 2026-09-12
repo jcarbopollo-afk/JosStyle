@@ -95,7 +95,7 @@ console.log('\n🚀 EH · Fase 52/65 — Preparación para producción\n');
    --------------------------------------------------------------------------- */
 {
   console.log('\n3 · La base de datos, contra el `schema.sql` de verdad');
-  eq(SIN_SQL_NUEVO, true, '⚠️ Estilo de hombre no añade ni una línea de SQL en 65 fases');
+  eq(SIN_SQL_NUEVO, true, '⚠️ Imagen personal no añade ni una línea de SQL en 65 fases');
   eq(revisarEsquema(SQL).filter((r) => !r.encontrado).map((r) => r.id), [],
     '🚨 y las seis cosas que esta fase declara están DE VERDAD en `supabase/schema.sql`');
   eq(REVISION_BASE_DE_DATOS.length, 7, 'los siete puntos del apartado 3');
@@ -123,7 +123,7 @@ console.log('\n🚀 EH · Fase 52/65 — Preparación para producción\n');
 {
   console.log('\n4 · Lo que ya tenía Josué');
   eq(DATOS_QUE_NO_SE_TOCAN.length, 7, 'las siete cosas que el apartado 6 enumera');
-  eq(CLAVE_DE_ESTILO, 'estiloHombre', 'Estilo de hombre vive en una sola clave');
+  eq(CLAVE_DE_ESTILO, 'estiloHombre', 'Imagen personal vive en una sola clave');
   eq(escrituraFueraDeSuClave({ 'EstiloHombreView.jsx': VISTA }), [],
     '🚨 ⚠️ y la vista no escribe en la clave de ningún otro módulo (regla 5)');
   eq(escrituraFueraDeSuClave({ malo: "saveData(uid, 'armario', x)" }).length, 1,

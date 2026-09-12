@@ -196,7 +196,7 @@ export const OBJETIVOS_INTEGRACION = {
     'Los eventos derivados del Calendario y las rachas de objetivos.',
   ],
   porQueNoSeMuevenLosDatos:
-    'Moverlos rompería a la vez la papelera, los ids que guardan Estilo de hombre e Ideas, el Calendario y las rachas — a cambio de nada: dónde se guarda un objetivo no es lo que el enunciado quiere cambiar.',
+    'Moverlos rompería a la vez la papelera, los ids que guardan Imagen personal e Ideas, el Calendario y las rachas — a cambio de nada: dónde se guarda un objetivo no es lo que el enunciado quiere cambiar.',
 };
 
 /* ⚠️ **Y hay una cosa que sí se pierde, y se dice.** Al salir de `MORE_NAV`,

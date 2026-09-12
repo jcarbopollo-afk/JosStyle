@@ -156,7 +156,7 @@ export const gesto = (id) => GESTOS.find((g) => g.id === id) || null;
  * la forma más fuerte posible: **la alternativa visible es la única forma**, así
  * que no hay ninguna acción que dependa de un gesto.
  */
-export const REGLA_SIN_GESTOS = 'Ninguna acción de Estilo de hombre necesita un gesto. Todas están en un botón que se ve y se puede leer en voz alta.';
+export const REGLA_SIN_GESTOS = 'Ninguna acción de Imagen personal necesita un gesto. Todas están en un botón que se ve y se puede leer en voz alta.';
 
 export const accionesQueDependenDeUnGesto = () => GESTOS.filter((g) => g.existe).map((g) => g.id);
 

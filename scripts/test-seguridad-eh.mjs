@@ -71,7 +71,7 @@ console.log('\n🔒 EH · Fase 63/65 — Seguridad, privacidad y control de dato
   eq(HALLAZGO_ENDPOINT.esUna, 'Una factura.', 'es una factura');
   ok(/Authorization/.test(HALLAZGO_ENDPOINT.arreglo), '⚠️ con el arreglo escrito: el token de Supabase');
   ok(/seis módulos|toda la aplicación/.test(HALLAZGO_ENDPOINT.porQueNoSeHaceAqui),
-    '🚨 y por qué NO se arregla desde una fase de Estilo de hombre: lo usan otros seis módulos');
+    '🚨 y por qué NO se arregla desde una fase de Imagen personal: lo usan otros seis módulos');
   ok(!!gravedadValida(HALLAZGO_ENDPOINT.gravedad), 'con una gravedad de las de la F47');
   ok(GRAVEDADES === GRAVEDADES_F47, 'importadas');
 }
@@ -181,9 +181,9 @@ console.log('\n🔒 EH · Fase 63/65 — Seguridad, privacidad y control de dato
   eq(SECRETOS_LOCALES(), ['sesion'],
     '⚠️ apartado 12 — lo único con valor guardado en el dispositivo es el token de sesión…');
   ok(/librería de Supabase/.test(DATOS_LOCALES.find((d) => d.id === 'sesion').porque),
-    '…que lo pone Supabase y caduca, no Estilo de hombre');
-  ok(/ninguna librería de Estilo de hombre toca/.test(DATOS_LOCALES.find((d) => d.id === 'estiloHombre').porque),
-    '🚨 y Estilo de hombre no guarda NADA en el dispositivo, comprobado por la F43');
+    '…que lo pone Supabase y caduca, no Imagen personal');
+  ok(/ninguna librería de Imagen personal toca/.test(DATOS_LOCALES.find((d) => d.id === 'estiloHombre').porque),
+    '🚨 y Imagen personal no guarda NADA en el dispositivo, comprobado por la F43');
 
   ok(/on delete cascade/.test(BORRADO_DE_CUENTA.arrastra),
     '🚨 apartado 17 — al borrar la cuenta se van todas sus filas, por la cascada');

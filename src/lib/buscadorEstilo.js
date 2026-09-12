@@ -196,7 +196,7 @@ export const FUENTES_BUSQUEDA = [
 export const fuenteBusqueda = (id) => FUENTES_BUSQUEDA.find((f) => f.id === id) || null;
 
 export const TEXTOS_BUSCADOR = {
-  titulo: '🔍 Buscar en Estilo de hombre',
+  titulo: '🔍 Buscar en Imagen personal',
   // Apartado 4, literal.
   sinResultados: 'No hemos encontrado nada.',
   explorar: 'Explorar todos los apartados',
@@ -208,7 +208,7 @@ export const TEXTOS_BUSCADOR = {
   dondeEstanFavoritos: 'Los favoritos son los de cada apartado: no hay una lista aparte.',
   soloFavoritos: 'Solo favoritos',
   // Apartados 7, 8 y 9.
-  volver: '← Estilo de hombre',
+  volver: '← Imagen personal',
   // Apartado 13.
   oculto: '👁️ Apartado oculto',
   mostrarApartado: 'Mostrar apartado',

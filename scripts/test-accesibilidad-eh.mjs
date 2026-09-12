@@ -68,7 +68,7 @@ console.log('\n♿ EH · Fase 42/65 — Accesibilidad y usabilidad\n');
 {
   console.log('\n2 · La aplicación entera, revisada');
   const r = revisarPantalla(VISTA);
-  eq(r.problemas, [], '⚠️ Estilo de hombre no incumple ninguna regla');
+  eq(r.problemas, [], '⚠️ Imagen personal no incumple ninguna regla');
   eq(r.limpia, true, 'y el revisor lo dice');
 
   // Y el resto de la aplicación, de paso.

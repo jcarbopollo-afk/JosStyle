@@ -100,7 +100,7 @@ export const TEXTOS_PREFERENCIAS = {
   // Apartado 14.
   exportacion: 'Esto se incluye en la exportación de datos de JosStyle.',
   // Apartado 11.
-  privacidad: 'Aquí solo se ve lo de Estilo de hombre. Nada de otros apartados.',
+  privacidad: 'Aquí solo se ve lo de Imagen personal. Nada de otros apartados.',
 };
 
 /* ===========================================================================
@@ -270,7 +270,7 @@ export const LO_QUE_NO_SE_BORRA = [
   'Tus fotos y tus fondos',
 ];
 
-export const TEXTO_BORRADO_FUERTE = 'Esto vacía Estilo de hombre entero y no se puede deshacer.';
+export const TEXTO_BORRADO_FUERTE = 'Esto vacía Imagen personal entero y no se puede deshacer.';
 
 /**
  * ⚠️ Decimocuarto `aplicarPlan`: **sin `confirmado` no borra**, y el aviso
@@ -283,7 +283,7 @@ export function eliminarDatosDeEstilo(estado, { confirmado = false } = {}) {
       estado: e,
       aplicado: false,
       aviso: {
-        titulo: '🗑️ Eliminar datos de Estilo de hombre',
+        titulo: '🗑️ Eliminar datos de Imagen personal',
         texto: TEXTO_BORRADO_FUERTE,
         seBorra: loQueSeBorra(e),
         seQueda: LO_QUE_NO_SE_BORRA,
@@ -353,7 +353,7 @@ export function filasParaExportar(estado, datosGlobales = {}) {
 
   modulosActivos(e).forEach((m) => {
     filas.push({
-      modulo: 'Estilo de hombre',
+      modulo: 'Imagen personal',
       fecha: '',
       detalle: moduloEH(m.id)?.nombre || m.id,
       valor: 'activo',
@@ -368,7 +368,7 @@ export function filasParaExportar(estado, datosGlobales = {}) {
       const leido = leerDato(e, d.id, datosGlobales);
       if (!leido.tiene) return;
       filas.push({
-        modulo: 'Estilo de hombre (preferencia)',
+        modulo: 'Imagen personal (preferencia)',
         fecha: '',
         detalle: d.nombre,
         valor: leido.texto,

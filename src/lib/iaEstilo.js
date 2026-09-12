@@ -423,10 +423,10 @@ export const APARTADOS_IA = [
 export const apartadoIA = (id) => APARTADOS_IA.find((a) => a.id === id) || null;
 
 export const TEXTOS_CONDICION = {
-  condicion: 'La IA de Estilo de hombre debe sentirse como un asesor personal opcional, no como un sistema que manda sobre el usuario.',
+  condicion: 'La IA de Imagen personal debe sentirse como un asesor personal opcional, no como un sistema que manda sobre el usuario.',
   ideal: 'IA sugiere → usuario valora → usuario decide → JC Fitness aprende si el usuario quiere.',
   /* 🚨 Y la frase que resume la decisión 1, para que nadie la cambie sin verla. */
-  porDefecto: 'Apagado. Sin que él lo encienda, de Estilo de hombre no sale nada hacia la IA.',
+  porDefecto: 'Apagado. Sin que él lo encienda, de Imagen personal no sale nada hacia la IA.',
 };
 
 /* ===========================================================================

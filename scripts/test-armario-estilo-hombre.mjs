@@ -289,7 +289,7 @@ ok(PUENTE_PRODUCTOS.contexto.length > 0, 'Declara qué le pasará');
 /* ── 10 · AUDITORÍA (apartado 15) ────────────────────────────────────────── */
 
 const aud = auditarIntegracionArmario(conEstilo(), ARMARIO, GLOBAL);
-eq(aud.prendasEnEstiloHombre, 0, '⚠️ Test 9: CERO prendas guardadas en Estilo de hombre');
+eq(aud.prendasEnEstiloHombre, 0, '⚠️ Test 9: CERO prendas guardadas en Imagen personal');
 eq(aud.outfitsEnEstiloHombre, 0, '⚠️ Test 9: y cero outfits');
 eq(aud.prendasDuplicadas, 0, 'Test 7: sin prendas duplicadas');
 eq(aud.perfilesDeTalla, 1, '⚠️ Test 8: UN perfil de tallas');

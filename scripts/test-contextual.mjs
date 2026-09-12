@@ -151,7 +151,7 @@ console.log('\n🧭 EH · Fase 60/65 — Recomendaciones contextuales\n');
   eq(recomendarAhora(callado, { ocasion: 'evento', hora: 20, hoy: HOY }).porque, 'silencio',
     'con su motivo');
   ok(/funciona igual/.test(TEXTO_SILENCIO.que),
-    '⚠️ y se dice que Estilo de hombre sigue funcionando: solo deja de proponer');
+    '⚠️ y se dice que Imagen personal sigue funcionando: solo deja de proponer');
   eq(enSilencio(alternarSilencio(callado)), false, 'y se vuelve a apagar');
 }
 
@@ -192,7 +192,7 @@ console.log('\n🧭 EH · Fase 60/65 — Recomendaciones contextuales\n');
   eq(ACCIONES_POSIBLES.map((a) => a.id),
     ['no_interesa', 'no_este_tipo', 'guardar', 'objetivo', 'tarea'], 'las cinco acciones');
   ok(ACCIONES_POSIBLES.filter((a) => a.crea).every((a) => a.copia === false),
-    '🚨 ⚠️ apartado 11 — ninguna crea una copia dentro de Estilo de hombre');
+    '🚨 ⚠️ apartado 11 — ninguna crea una copia dentro de Imagen personal');
   eq(CREA_COPIA, false, 'y queda escrito');
   ok(accion('objetivo').explicita, '⚠️ apartado 12 — convertir en objetivo requiere acción suya');
   ok(accion('tarea').explicita, 'y en tarea, también');

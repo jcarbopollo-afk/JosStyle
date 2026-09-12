@@ -55,11 +55,11 @@ console.log('\n🔒 EH · Fase 43/65 — Seguridad, privacidad y control de dato
     'los cinco sistemas que el enunciado prohíbe duplicar');
   ok(SISTEMAS_CENTRALIZADOS.every((s) => !!s.vive), 'y cada uno dice dónde vive de verdad');
   ok(SISTEMAS_CENTRALIZADOS.every((s) => s.prohibido instanceof RegExp),
-    'con lo que NO puede aparecer en Estilo de hombre');
+    'con lo que NO puede aparecer en Imagen personal');
   ok(!!sistemaCentralizado('papelera') && !sistemaCentralizado('inventado'), 'se buscan por id');
 
   eq(Object.keys(FUENTES).length, LIBRERIAS_EH.length,
-    'se leen las cuarenta y cinco librerías de Estilo de hombre');
+    'se leen las cuarenta y cinco librerías de Imagen personal');
   eq(auditarDuplicados(FUENTES), [],
     '⚠️ y NINGUNA monta un sistema paralelo: ni PIN, ni papelera, ni exportación, ni guardado, ni cuentas');
 
@@ -103,7 +103,7 @@ console.log('\n🔒 EH · Fase 43/65 — Seguridad, privacidad y control de dato
   ok(/upsert\(\{ user_id: userId/.test(SUPABASE), 'y guardar escribe su id');
   ok(/onConflict: 'user_id,key'/.test(SUPABASE), 'una fila por usuario y clave');
   ok(/loadData\(uidUser, 'estiloHombre'/.test(APP),
-    '⚠️ y Estilo de hombre se carga con el id del usuario, como todo lo demás');
+    '⚠️ y Imagen personal se carga con el id del usuario, como todo lo demás');
 }
 
 /* ---------------------------------------------------------------------------
@@ -132,7 +132,7 @@ console.log('\n🔒 EH · Fase 43/65 — Seguridad, privacidad y control de dato
    --------------------------------------------------------------------------- */
 {
   console.log('\n4 · Ni un secreto en el cliente');
-  eq(buscarSecretos(FUENTES), [], '⚠️ ninguna librería de Estilo de hombre lleva una clave');
+  eq(buscarSecretos(FUENTES), [], '⚠️ ninguna librería de Imagen personal lleva una clave');
   eq(buscarSecretos({ app: APP, supabase: SUPABASE, ai: AI }), [],
     '⚠️ ni `App.jsx`, ni el cliente de Supabase, ni el de la IA');
   ok(PATRONES_SECRETO.length >= 4, 'hay varios patrones que buscar');

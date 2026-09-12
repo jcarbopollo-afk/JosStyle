@@ -123,7 +123,7 @@ console.log('\nTest 3 — añadir accesorio');
     'y esa categoría es del armario, no inventada aquí');
   eq(r.armario.prendas[0].subcategoria, 'relojes',
     '⚠️ el tipo de accesorio ES la subcategoría de la prenda: no se guarda dos veces');
-  eq(datosAccesorios(r.estado).accesorios.length, 1, 'y el envoltorio en Estilo de hombre');
+  eq(datosAccesorios(r.estado).accesorios.length, 1, 'y el envoltorio en Imagen personal');
   eq(datosAccesorios(r.estado).accesorios[0].prendaId, r.armario.prendas[0].id,
     'apuntando a la prenda por su id');
 
@@ -198,7 +198,7 @@ console.log('\nTest 5 — editarlo');
   eq(cambio.armario.prendas[0].nombre, 'Casio plateado', 'y el cambio va al armario');
   eq(accesorio(e2, cambio.armario, id).nombre, 'Casio plateado', 'y se ve desde aquí, derivado');
   eq(datosAccesorios(e2).accesorios[0].nombre, undefined,
-    '⚠️ sin que el nombre entre en lo guardado de Estilo de hombre');
+    '⚠️ sin que el nombre entre en lo guardado de Imagen personal');
 
   const vacio = editarPrendaDeAccesorio(e2, r.armario, id, { nombre: '  ' });
   ok(!!vacio.error, 'un nombre vacío no se acepta');
@@ -247,7 +247,7 @@ console.log('\nTest 7 — el favorito es el global');
   eq(fav.error, null, 'se marca sin error');
   eq(fav.armario.prendas[0].favorita, true,
     '⚠️ y el favorito se escribe EN LA PRENDA: *"utilizar favoritos globales"*');
-  ok(!('estado' in fav), '⚠️ no devuelve un estado de Estilo de hombre: no hay favorito aquí');
+  ok(!('estado' in fav), '⚠️ no devuelve un estado de Imagen personal: no hay favorito aquí');
   eq(accesorio(r.estado, fav.armario, id).favorito, true, 'y se lee derivado de ella');
   ok(!('favorito' in datosAccesorios(r.estado).accesorios[0]),
     'lo guardado en el módulo no tiene el campo');

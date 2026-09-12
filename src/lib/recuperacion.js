@@ -93,7 +93,7 @@ export const NIVELES = [
     icono: '🔄',
     id: 'configuracion',
     cuando: 'Ha cambiado el orden, los tamaños o lo que se ve, y quiere lo de antes.',
-    con: 'Restablecer diseño, o restablecer Estilo de hombre entero.',
+    con: 'Restablecer diseño, o restablecer Imagen personal entero.',
     funcion: 'restablecerDiseno · restablecerEstilo',
     existe: true,
     deLaFase: 'F31 y F36',
@@ -135,7 +135,7 @@ export const LO_QUE_FALTA = [
     apartado: 1,
     id: 'sistema_global',
     que: 'Un sistema global de copias de seguridad de JC Fitness',
-    porque: 'No existe. Y el enunciado prohíbe expresamente crear uno separado para este módulo, así que aquí NO se construye: se construye la pieza que sí es de Estilo de hombre.',
+    porque: 'No existe. Y el enunciado prohíbe expresamente crear uno separado para este módulo, así que aquí NO se construye: se construye la pieza que sí es de Imagen personal.',
     loQueHay: 'La exportación a CSV/XLSX (Mis datos) y la copia que la F46 hace antes de migrar.',
     quienLoDecide: 'Josué',
   },
@@ -191,7 +191,7 @@ export const MOMENTOS_DE_COPIA = [
   { id: 'migracion', que: 'Antes de una migración', automatica: true, donde: 'migrarEstiloHombre (F46)' },
   { id: 'restauracion', que: 'Antes de restaurar', automatica: true, donde: 'restaurarModulo y restaurarTodo (esta fase)' },
   { id: 'borrado_masivo', que: 'Antes de un borrado masivo', automatica: true, donde: 'eliminarDatosDeEstilo (F43) y planEliminarDatos (F36)' },
-  { id: 'cambio_estructural', que: 'Antes de un cambio estructural', automatica: false, donde: 'No hay ninguno pendiente: Estilo de hombre no cambia el esquema.' },
+  { id: 'cambio_estructural', que: 'Antes de un cambio estructural', automatica: false, donde: 'No hay ninguno pendiente: Imagen personal no cambia el esquema.' },
 ];
 
 /**
@@ -230,7 +230,7 @@ export function restaurarModulo(estado, moduloId, copia, { hoy = todayISO() } = 
     return { estado: actual, antes, hecho: false, error: 'Ese apartado no existe.' };
   }
   if (!esCopia(copia)) {
-    return { estado: actual, antes, hecho: false, error: 'Eso no es una copia de Estilo de hombre.' };
+    return { estado: actual, antes, hecho: false, error: 'Eso no es una copia de Imagen personal.' };
   }
 
   const guardado = normalizarEstiloHombre(copia.estado);
@@ -288,7 +288,7 @@ export function loQueSePierde(estado, copia) {
 }
 
 export const TEXTOS_RECUPERACION = {
-  avisoTodo: 'Esto devuelve Estilo de hombre a como estaba en la copia. Lo que hayas apuntado después no estará.',
+  avisoTodo: 'Esto devuelve Imagen personal a como estaba en la copia. Lo que hayas apuntado después no estará.',
   avisoModulo: 'Esto devuelve solo este apartado. El resto se queda como está.',
   sinFechas: 'No se puede comparar cuál es más reciente: la aplicación no guarda la fecha de cada cosa por separado.',
   noBorraDatos: 'Restablecer la pantalla no borra nada: solo devuelve el orden, los tamaños y lo que se ve.',
@@ -299,7 +299,7 @@ export function restaurarTodo(estado, copia, { confirmado = false, hoy = todayIS
   const actual = normalizarEstiloHombre(estado);
   const antes = copiaDeSeguridad(actual, { hoy });
   if (!esCopia(copia)) {
-    return { estado: actual, antes, hecho: false, error: 'Eso no es una copia de Estilo de hombre.' };
+    return { estado: actual, antes, hecho: false, error: 'Eso no es una copia de Imagen personal.' };
   }
   if (!confirmado) {
     return {
@@ -335,7 +335,7 @@ export const IMPORTAR_EXISTE = false;
 
 export const MOTIVOS_INVALIDA = [
   { id: 'no_json', que: 'No es un JSON que se pueda leer.' },
-  { id: 'no_es_copia', que: 'No es una copia de Estilo de hombre.' },
+  { id: 'no_es_copia', que: 'No es una copia de Imagen personal.' },
   { id: 'version_futura', que: 'Es de una versión más nueva que esta aplicación.' },
   { id: 'sin_modulos', que: 'No tiene la lista de apartados.' },
   { id: 'modulos_desconocidos', que: 'Trae apartados que aquí no existen.' },

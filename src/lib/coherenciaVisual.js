@@ -200,7 +200,7 @@ export function revisarEstados() {
    =========================================================================== */
 
 export const APARTADOS_VISUALES = [
-  { apartado: 1, id: 'identidad', nombre: 'La identidad de JosStyle', comprobable: true, donde: '`soloEn()`: Estilo de hombre no usa ningún token que el resto no use.' },
+  { apartado: 1, id: 'identidad', nombre: 'La identidad de JosStyle', comprobable: true, donde: '`soloEn()`: Imagen personal no usa ningún token que el resto no use.' },
   { apartado: 2, id: 'personalidad', nombre: 'Personalidad propia', comprobable: true, donde: 'Los emojis de cada módulo, que son su seña — y nada más.' },
   { apartado: 3, id: 'plaquitas', nombre: 'Plaquitas pequeñas y limpias', comprobable: true, donde: 'La misma tarjeta que el resto: `rounded-2xl p-2.5`.' },
   { apartado: 4, id: 'jerarquia', nombre: 'Título, resumen, apartados y acciones', comprobable: true, donde: '`panelPantalla` (F30): cabecera, resumen, secciones y accesos.' },
@@ -217,7 +217,7 @@ export const APARTADOS_VISUALES = [
   { apartado: 11, id: 'modales', nombre: 'Modales pequeños', comprobable: true, donde: '`AvisoDesactivar` y las confirmaciones: explicación, acción y cancelar.' },
   { apartado: 12, id: 'formularios', nombre: 'Formularios por pasos', comprobable: true, donde: 'El motor de cuestionarios (F7), que enseña de sección en sección.' },
   { apartado: 13, id: 'navegacion', nombre: 'El patrón de siempre', comprobable: true, donde: 'Las cinco pestañas y el volver de siempre (regla 10).' },
-  { apartado: 14, id: 'icono_titulo', nombre: 'Icono y nombre claros', comprobable: true, donde: '🧔 Estilo de hombre, con el nombre definitivo de C-21.' },
+  { apartado: 14, id: 'icono_titulo', nombre: 'Icono y nombre claros', comprobable: true, donde: '🧔 Imagen personal, con el nombre definitivo de C-21.' },
   { apartado: 15, id: 'microdetalles', nombre: 'Márgenes, radios y tamaños', comprobable: true, donde: '`soloEn()`, por categorías.' },
   {
     apartado: 16, id: 'responsive', nombre: 'Móvil pequeño, grande y pantalla grande', comprobable: false,
@@ -228,7 +228,7 @@ export const APARTADOS_VISUALES = [
   { apartado: 18, id: 'recorrido', nombre: 'Recorrer todas las pantallas', comprobable: true, donde: 'Los 1 408 casos de renderizado y las 447 comprobaciones en Chromium.' },
   {
     apartado: 19, id: 'comparacion', nombre: 'Comparar con el resto de JosStyle', comprobable: false,
-    donde: 'R1 — mirar el Dashboard y Estilo de hombre uno detrás de otro.',
+    donde: 'R1 — mirar el Dashboard y Imagen personal uno detrás de otro.',
     porque: 'La comparación del vocabulario se hace aquí; que "parezcan lo mismo" lo dicen los ojos.',
   },
   { apartado: 20, id: 'resultado', nombre: 'JosStyle + personalidad propia', comprobable: true, donde: 'La suma de todo lo anterior, en `auditarCoherencia()`.' },
@@ -241,7 +241,7 @@ export const apartadoVisual = (id) => APARTADOS_VISUALES.find((a) => a.id === id
    =========================================================================== */
 
 export const TEXTOS_COHERENCIA = {
-  meta: 'Estilo de hombre = JosStyle + personalidad propia.',
+  meta: 'Imagen personal = JosStyle + personalidad propia.',
   // La condición de finalización, en una frase.
   fallo: 'Esto parece de otra aplicación.',
 };

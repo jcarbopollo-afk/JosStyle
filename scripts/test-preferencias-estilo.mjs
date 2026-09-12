@@ -322,13 +322,13 @@ console.log('\nTest 10 — 📤 dentro de la exportación que ya existe');
 {
   const e = conPrefs();
   const filas = filasParaExportar(e);
-  ok(filas.length > 0, 'Estilo de hombre aporta filas (prueba 9)');
+  ok(filas.length > 0, 'Imagen personal aporta filas (prueba 9)');
   ok(filas.every((f) => 'modulo' in f && 'fecha' in f && 'detalle' in f && 'valor' in f && 'extra' in f),
     '⚠️ con la MISMA forma que las demás: no es otro sistema de exportación');
   eq(auditarPreferencias().exportacionesNuevas, 0, 'cero sistemas nuevos (apartado 14)');
   ok(!/downloadBlob|Papa\.|XLSX/.test(FUENTE),
     '⚠️ y el archivo no escribe ni un fichero: solo devuelve filas');
-  ok(filas.some((f) => f.modulo === 'Estilo de hombre (preferencia)'),
+  ok(filas.some((f) => f.modulo === 'Imagen personal (preferencia)'),
     'las preferencias configuradas salen');
   ok(filas.some((f) => f.detalle === 'Tipo de piel'), 'con su nombre de verdad');
 

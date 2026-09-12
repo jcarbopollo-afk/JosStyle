@@ -91,7 +91,7 @@ export const MICROINTERACCIONES = [
   { apartado: 15, id: 'selectores', nombre: 'Casillas y selectores', existe: true, funcion: 'confirmar', donde: '`Switch` y las casillas: `aria-pressed` cambia en el mismo toque.' },
   {
     apartado: 16, id: 'sliders', nombre: 'Deslizantes', existe: false,
-    donde: 'Estilo de hombre no tiene ninguno.',
+    donde: 'Imagen personal no tiene ninguno.',
     porque: 'Nada de lo que se configura aquí es un número continuo: son listas y casillas.',
   },
   { apartado: 17, id: 'errores', nombre: 'Errores', existe: true, funcion: 'orientar', donde: 'Un texto pequeño junto a lo que falló (F41), sin animaciones alarmantes.' },

@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.69.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.71.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **LA ENTREGA 3 ESTÁ CERRADA: 46 de 46** (ver `docs/11_ENTREGA3_ORDEN.md`). Los siete bloques
@@ -234,9 +234,9 @@ prompts** de una vez y dijo que se podían dividir; la división es ésta:
 | | Fase | Estado |
 |---|---|---|
 | **NAV F1** | La nueva arquitectura (Vida · Gestión · Bienestar · Además) + el apartado **Números** | ✅ **v3.69.0** |
-| **NAV F2** | Renombrar «Estilo de hombre» a un nombre inclusivo (199 apariciones) | ⬜ |
+| **NAV F4** | Eliminar una tarea desde la fila + icono nuevo de Hábitos | ✅ **v3.70.0** |
+| **NAV F2** | 🏷️ **«Estilo de hombre» → «Imagen personal»** | ✅ **v3.71.0** |
 | **NAV F3** | **Álbum** dentro de Relación: fotos reales, con su bucket y su SQL | ⬜ |
-| **NAV F4** | Eliminar una tarea desde la fila + icono nuevo de Hábitos | ⬜ |
 
 ⚠️ **Y una contradicción suya que necesita respuesta, C-31 en `docs/03`:** pide **Tareas y Rutinas
 en Gestión** y **Objetivos y Hábitos en Vida**, pero las cuatro son **mini-apps de Productividad**,
@@ -282,6 +282,39 @@ aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con
 código de agosto mientras él decía *"la web sigue igual"*.
 
 ⚠️ **Y lo que dejaron las veinte primeras, que afecta a todas las demás:**
+
+- 🏷️ **EL APARTADO SE LLAMA «IMAGEN PERSONAL», Y SUS IDS SIGUEN SIENDO LOS DE ANTES** (NAV F2). El
+  rótulo cambió porque Josué no quería un apartado limitado por género; **`estilo-hombre`,
+  `estiloHombre`, `MODULOS_EH` y `EstiloHombreView.jsx` NO se tocaron**, porque son claves de
+  `app_data` y de la personalización de la Fase 19. ⚠️ Y **los comentarios siguen diciendo «Estilo de
+  hombre» a propósito**, como el proyecto conserva *JC Fitness*: si lees ese nombre en un comentario,
+  es este módulo. Elegido *Imagen personal* y no *Cuidado personal* por dos motivos que salen del
+  contenido real: ocho de sus diecisiete apartados están escritos en términos de **cómo te
+  presentas** (*"Físico y postura"*, *"Descanso y aspecto"*, *"Lo que se nota fuera"*), y la
+  categoría más grande de dentro **ya se llama «Cuidado»** — habría sido *«Cuidado personal →
+  Cuidado»*, la redundancia de la E3 F30.
+- 🐛 **UN REEMPLAZO MASIVO SE COME EL SITIO QUE GUARDA LO QUE ESTÁS REEMPLAZANDO** (NAV F2).
+  `NOMBRE_ANTERIOR_ESTILO = 'Estilo de hombre'` **es código**, así que el barrido lo dejó diciendo
+  `'Imagen personal'`: el nombre anterior era el nuevo. Lo cazó su propia prueba. **Al renombrar en
+  masa, mirar quién guarda el nombre viejo a propósito.**
+- 🐛 **`scripts/generar-doc-eh.mjs` TENÍA LA RUTA DE SALIDA ESCRITA A MANO** apuntando a
+  `C:/Users/clapi/JosStyle` — el ordenador de quien lo escribió (NAV F2). En cualquier otro sitio
+  reventaba, así que la promesa de este archivo —*"si añades un módulo y no regeneras, la
+  verificación se pone roja"*— **llevaba tiempo sin poder cumplirse**. Ya se calcula desde el propio
+  archivo. **Una herramienta que solo funciona en una máquina es una herramienta que no existe.**
+- 🚨 **«ELIMINAR» PUEDE EXISTIR Y AUN ASÍ NO EXISTIR** (NAV F4). El botón de borrar una tarea llevaba
+  ahí desde la E3 F26, **dentro del detalle**, y Josué reportó que no había forma de eliminar una
+  tarea sin completarla. Tenía razón: **si hay que abrir algo para encontrar su salida, no hay
+  salida** (E3 F24). El arreglo fue sacar la de siempre a la fila —**el mismo `onDelete`**, no una
+  segunda puerta—, no añadir un borrado nuevo.
+- ⚠️ **UN ICONO REPETIDO HACE QUE DOS APARTADOS PAREZCAN EL MISMO** (NAV F4): Hábitos llevaba
+  `Flame`, que es el icono del módulo **Rachas**. Ahora es `ArrowUpRight` (↗), comprobado que no se
+  usa en ninguna otra parte. ⚠️ Y **la llama se queda donde sí significa algo**: en Rachas y junto al
+  número de racha de un hábito. El concepto no se movió; dejó de repetirse.
+- 🐛 **Y UNA COMPROBACIÓN QUE PASÓ EN FALSO** (NAV F4): con el icono a `null`,
+  `!/flame/.test(null || '')` es `true` — decía que ya no era la llama **sin haber encontrado ningún
+  icono**. Un verde por no haber mirado es peor que un rojo: **antes de negar algo de un valor,
+  exigir que el valor exista.**
 
 - 🚨 **UN ÁREA ES UNA LISTA DE IDS: REORGANIZARLA ES NAVEGACIÓN, NO DATOS** (NAV F1, y la E3 F23 lo
   dijo con Objetivos). Mover Calendario y Horario a Gestión, y el apartado de estilo a Bienestar,

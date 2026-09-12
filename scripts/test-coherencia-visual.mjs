@@ -39,7 +39,7 @@ console.log('\n🎨 EH · Fase 49/65 — Revisión visual final y coherencia\n')
    1 · EL VOCABULARIO, COMPARADO CON EL RESTO (decisión 1)
    --------------------------------------------------------------------------- */
 {
-  console.log('1 · Estilo de hombre no se inventa nada');
+  console.log('1 · Imagen personal no se inventa nada');
   ok(OTRAS.length >= 20, `se compara contra las otras ${OTRAS.length} vistas de JosStyle`);
   const vocab = vocabulario(EH);
   ok(vocab.radios.length > 0 && vocab.textos.length > 0, 'y se saca su vocabulario de verdad');
@@ -91,7 +91,7 @@ console.log('\n🎨 EH · Fase 49/65 — Revisión visual final y coherencia\n')
   });
 
   eq(revisarVisual('EstiloHombreView.jsx', EH), [],
-    '⚠️ y la vista de Estilo de hombre no rompe ninguna');
+    '⚠️ y la vista de Imagen personal no rompe ninguna');
   eq(revisarVisual('ui.jsx', UI), [], 'ni los componentes globales');
   eq(revisarVisual('x.jsx', '// bg-gradient-to-r\n/* text-white */'), [],
     '⚠️ pero un ejemplo dentro de un comentario NO cuenta');

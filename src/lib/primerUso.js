@@ -97,7 +97,7 @@ const FUNCIONES_YA = {
 };
 
 export const TEXTOS_PRIMER_USO = {
-  titulo: '🧔 Estilo de hombre',
+  titulo: '🧔 Imagen personal',
   sub: 'Tu espacio para cuidar tu imagen, descubrir tu estilo y organizar tus preferencias.',
   empezar: 'Empezar',
   ahoraNo: 'Ahora no',

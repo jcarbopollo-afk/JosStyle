@@ -273,7 +273,7 @@ console.log('\nTest 7 — 🕘 recientes, sin espiar la navegación');
    =========================================================================== */
 console.log('\nTest 8 — ⚠️ *"no sacar al usuario accidentalmente de JosStyle"*');
 {
-  eq(TEXTOS_BUSCADOR.volver, '← Estilo de hombre', 'el botón del apartado 7, literal');
+  eq(TEXTOS_BUSCADOR.volver, '← Imagen personal', 'el botón del apartado 7, literal');
 
   eq(migas().map((m) => m.nombre), [RAIZ], 'en la raíz, una sola miga');
   eq(migas('perfumes').map((m) => m.nombre), ['Estilo', 'Perfumes'], 'dentro de un módulo, dos');
@@ -317,7 +317,7 @@ console.log('\nTest 9 — una línea por fuente');
 
   const e = conCosas();
   const p = panelBuscador(e, 'perfume', { desde: 'perfumes' });
-  eq(p.titulo, '🔍 Buscar en Estilo de hombre', 'el título del apartado 1');
+  eq(p.titulo, '🔍 Buscar en Imagen personal', 'el título del apartado 1');
   ok(p.grupos.length > 0, 'con sus grupos');
   eq(p.migas.map((m) => m.nombre), ['Estilo', 'Perfumes'], 'y sus migas');
   ok(p.sinRecientes.length > 0, 'sin recientes, se dice');

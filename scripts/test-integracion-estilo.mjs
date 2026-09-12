@@ -175,7 +175,7 @@ console.log('\n🔗 EH · Fase 39/65 — Integración con el resto de JosStyle\n
 
   // ⚠️ Apartado 18 — en Estilo solo queda el id.
   const deseo = deseosAccesorios(r.estiloHombre)[0];
-  eq(deseo.tareaId, plan.tarea.id, '⚠️ y en Estilo de hombre queda SOLO su id');
+  eq(deseo.tareaId, plan.tarea.id, '⚠️ y en Imagen personal queda SOLO su id');
   ok(!('texto' in deseo) && !('hecha' in deseo),
     '⚠️ ni el texto ni el "hecha": eso vive en Tareas (fuente única, apartado 18)');
 

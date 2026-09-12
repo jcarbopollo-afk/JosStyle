@@ -126,7 +126,7 @@ export const fuenteAutorizada = (estado, id) => datosContextual(estado).fuentes.
 
 export const TEXTO_SILENCIO = {
   titulo: '🔕 Sin sugerencias',
-  que: 'Estilo de hombre funciona igual: solo deja de proponerte cosas.',
+  que: 'Imagen personal funciona igual: solo deja de proponerte cosas.',
 };
 
 export const alternarSilencio = (estado) => {

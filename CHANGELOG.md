@@ -1,5 +1,55 @@
 # CHANGELOG.md
 
+## v3.71.0 — NAV F2: «Estilo de hombre» pasa a llamarse «Imagen personal»
+
+Josué: *"quiero eliminar la referencia exclusiva a hombre; no quiero que el apartado esté limitado
+por género"*. Dio seis candidatos y pidió elegir **después de revisar el contenido real**.
+
+### Por qué «Imagen personal» y no «Cuidado personal»
+
+Sus dos preferencias eran ésas. Se miraron los diecisiete apartados de dentro:
+
+- **Seis son cuidado** (Pelo, Barba, Skincare, Higiene, Cuidado corporal, Sonrisa).
+- **Tres son estilo** (Estilo y armario, Perfumes, Accesorios).
+- **Los ocho restantes están escritos en términos de cómo te presentas**: Fitness es *"Físico y
+  postura"*, Sueño *"Descanso y aspecto"*, Salud *"Lo que se nota fuera"*.
+
+«Cuidado personal» dejaría esos ocho fuera del paraguas. Y hay un motivo técnico que lo decide:
+**la categoría más grande de dentro se llama literalmente «Cuidado»**, así que la pantalla habría
+leído *«Cuidado personal → Cuidado»* — la redundancia exacta que la E3 F30 tuvo que arreglar con
+*«Salud → Salud»*.
+
+### ⚠️ Lo único que cambia es el nombre que se lee
+
+- **Ni un id se toca.** `estilo-hombre` es la clave de navegación y `estiloHombre` la de `app_data`;
+  las leen la personalización de la Fase 19, la papelera, el buscador y las migraciones. Renombrar
+  lo que se ve y renombrar lo que se guarda son dos cosas distintas (E3 F30).
+- **Ni un archivo se renombra.** `EstiloHombreView.jsx` se queda: mover ficheros no es cambiar un
+  rótulo, y habría churn de imports a cambio de nada.
+- **Ni una funcionalidad se toca.** Las 24 librerías del apartado siguen enteras, con una prueba.
+- 🚨 **Y buscar el nombre viejo sigue funcionando.** «estilo», «hombre» y «estilo de hombre» siguen
+  en el índice: durante meses se ha llamado así, y Josué lo buscará así (lección de la E3 F23).
+- ⚠️ **Los comentarios conservan el nombre viejo a propósito**, igual que el proyecto conserva
+  *JC Fitness*: son historia, y reescribirla haría ilegibles las decisiones que explican. El
+  reemplazo se hizo **solo fuera de comentarios** — 84 sitios en `src/` y 110 en `scripts/`.
+
+### 🐛 Dos fallos, los dos míos, los dos la misma lección
+
+1. **El reemplazo masivo se comió el valor de la constante que guarda el nombre viejo.**
+   `NOMBRE_ANTERIOR_ESTILO = 'Estilo de hombre'` **es código**, así que acabó diciendo
+   `'Imagen personal'`: el nombre anterior era el nuevo. Lo cazó su propia prueba.
+2. **Y la comprobación del generador saltó con el código bien**, por decimoquinta vez: el comentario
+   que *explica* el arreglo menciona la ruta que se eliminó, así que buscarla en el archivo entero
+   la encuentra. Hay que quitar los comentarios antes de barrer.
+
+### 🐛 Y uno heredado, que llevaba tiempo
+
+**`scripts/generar-doc-eh.mjs` tenía la ruta de salida escrita a mano apuntando a
+`C:/Users/clapi/JosStyle`** — el ordenador de quien lo escribió. En cualquier otro sitio reventaba
+con un ENOENT, así que la promesa de `CLAUDE.md` —*"si añades un módulo y no regeneras, la
+verificación se pone roja"*— **llevaba tiempo sin poder cumplirse**. Ahora la ruta se calcula desde
+el propio archivo, y `docs/08` se ha regenerado (273 líneas).
+
 ## v3.70.0 — NAV F4: eliminar una tarea desde la fila, y el icono de Hábitos
 
 Los dos encargos pequeños de Josué. Los dos parecían *"añadir algo"* y los dos eran **arreglar algo

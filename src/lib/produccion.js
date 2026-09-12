@@ -104,7 +104,7 @@ export const ENTORNOS = [
     donde: 'Vercel',
     variables: 'Environment Variables del proyecto en Vercel',
     baseDeDatos: 'Supabase, proyecto de Josué',
-    aviso: 'El `schema.sql` lo ejecuta él a mano desde el panel de Supabase. No hay migraciones de base de datos automáticas, y Estilo de hombre no necesita ninguna.',
+    aviso: 'El `schema.sql` lo ejecuta él a mano desde el panel de Supabase. No hay migraciones de base de datos automáticas, y Imagen personal no necesita ninguna.',
   },
 ];
 
@@ -209,7 +209,7 @@ export const REVISION_BASE_DE_DATOS = [
   },
   {
     id: 'buckets', que: 'Archivos', estado: 'ok',
-    hay: 'Cinco buckets privados, con una carpeta por usuario y URLs firmadas. Estilo de hombre no usa ninguno.',
+    hay: 'Cinco buckets privados, con una carpeta por usuario y URLs firmadas. Imagen personal no usa ninguno.',
     busca: /storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text/,
   },
   {
@@ -412,7 +412,7 @@ export const PLAN_DE_VUELTA_ATRAS = [
   {
     paso: 4, que: 'La base de datos',
     /* ⚠️ Y aquí la verdad incómoda: no hay vuelta atrás automática del esquema. */
-    como: 'No hace falta: Estilo de hombre no cambia el esquema. Si alguna vez lo cambiara, habría que escribir el SQL inverso A MANO y probarlo antes.',
+    como: 'No hace falta: Imagen personal no cambia el esquema. Si alguna vez lo cambiara, habría que escribir el SQL inverso A MANO y probarlo antes.',
     cuanto: '—',
     herramienta: null,
   },

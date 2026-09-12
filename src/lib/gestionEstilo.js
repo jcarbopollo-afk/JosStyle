@@ -117,7 +117,7 @@ export const TEXTOS_GESTION_EH = {
   vanALaPapelera: 'Van a 🗑️ Eliminados recientemente, así que puedes recuperarlos.',
   sinDatos: 'Este apartado todavía no tiene datos que eliminar.',
   // Apartado 8.
-  restablecer: '🔄 Restablecer Estilo de hombre',
+  restablecer: '🔄 Restablecer Imagen personal',
   // Apartado 14.
   buscar: '🔍 Buscar apartado',
   // Apartado 13.

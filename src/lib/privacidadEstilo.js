@@ -182,7 +182,7 @@ export const NO_EXISTE = [
 
 export const TEXTOS_PRIVACIDAD = {
   titulo: '🔒 Tus datos',
-  sub: 'Todo lo de Estilo de hombre es tuyo y va con tu cuenta.',
+  sub: 'Todo lo de Imagen personal es tuyo y va con tu cuenta.',
   soloTuyo: 'Solo tú puedes verlo: se guarda con tu cuenta, no en el teléfono.',
   entreDispositivos: 'Por eso lo ves igual en el móvil y en el ordenador.',
   alCerrarSesion: 'Al cerrar sesión deja de estar disponible aquí, y vuelve al entrar de nuevo.',

@@ -156,7 +156,7 @@ export const HALLAZGO_ENDPOINT = {
   noEs: 'Una fuga de datos: con eso no se puede leer nada de nadie.',
   esUna: 'Una factura.',
   arreglo: 'Comprobar en la función el token de Supabase que ya manda el navegador (cabecera Authorization) y rechazar sin él. Y un límite por usuario.',
-  porQueNoSeHaceAqui: '⚠️ Ese endpoint lo usan Nutrición, Calistenia, Biblioteca y el resto. Ponerle autenticación desde una fase de Estilo de hombre habría sido decidir por toda la aplicación, y hecho mal deja la IA rota en seis módulos. Era una decisión de Josué.',
+  porQueNoSeHaceAqui: '⚠️ Ese endpoint lo usan Nutrición, Calistenia, Biblioteca y el resto. Ponerle autenticación desde una fase de Imagen personal habría sido decidir por toda la aplicación, y hecho mal deja la IA rota en seis módulos. Era una decisión de Josué.',
   loQueSiSeHaHecho: 'Los límites de tamaño del apartado 15: un texto enorme o veinte imágenes ya se rechazan.',
 
   /* 🚨 **Cerrado.** Josué lo decidió el 4 de septiembre de 2026: se le presentó
@@ -269,7 +269,7 @@ export const DATOS_LOCALES = [
   {
     id: 'sesion', que: 'El token de sesión de Supabase', donde: 'localStorage',
     esSecreto: true,
-    porque: 'Lo pone la librería de Supabase, es cómo se mantiene la sesión, y caduca. No es de Estilo de hombre.',
+    porque: 'Lo pone la librería de Supabase, es cómo se mantiene la sesión, y caduca. No es de Imagen personal.',
   },
   {
     id: 'avisos', que: 'La marca de "ya te avisé hoy"', donde: 'localStorage',
@@ -278,9 +278,9 @@ export const DATOS_LOCALES = [
   },
   {
     /* 🚨 Y lo importante: Estilo de hombre **no guarda nada local**. */
-    id: 'estiloHombre', que: 'Los datos de Estilo de hombre', donde: 'Supabase, no el dispositivo',
+    id: 'estiloHombre', que: 'Los datos de Imagen personal', donde: 'Supabase, no el dispositivo',
     esSecreto: false,
-    porque: 'La F43 lo comprueba leyendo el código: ninguna librería de Estilo de hombre toca `localStorage`.',
+    porque: 'La F43 lo comprueba leyendo el código: ninguna librería de Imagen personal toca `localStorage`.',
   },
 ];
 
@@ -296,7 +296,7 @@ export const BORRADO_DE_CUENTA = {
   arrastra: '`on delete cascade` en `app_data.user_id`: se van TODAS sus claves, incluida `estiloHombre`.',
   huerfano: 'Nada. Ni una fila queda sin dueño.',
   comprobable: true,
-  loQueFalta: 'Los archivos de Storage (fotos, vídeos) no se borran con la cascada: eso hay que mirarlo aparte, y no es de Estilo de hombre, que no usa ningún bucket.',
+  loQueFalta: 'Los archivos de Storage (fotos, vídeos) no se borran con la cascada: eso hay que mirarlo aparte, y no es de Imagen personal, que no usa ningún bucket.',
 };
 
 export const COPIAS = {

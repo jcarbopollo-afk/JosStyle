@@ -163,7 +163,7 @@ export function avisoDesactivar(estado, id, { tieneDatos = null } = {}) {
   const m = moduloEH(id);
   return {
     titulo: 'Desactivar apartado',
-    texto: `${m.nombre} dejará de aparecer en tu Estilo de hombre, pero tus datos no se eliminarán.`,
+    texto: `${m.nombre} dejará de aparecer en tu Imagen personal, pero tus datos no se eliminarán.`,
     confirmar: 'Desactivar',
     cancelar: 'Cancelar',
   };

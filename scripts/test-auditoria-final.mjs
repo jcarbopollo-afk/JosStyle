@@ -74,7 +74,7 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
 {
   console.log('\n2 · Ni un sistema paralelo en las librerías');
   ok(Object.keys(FUENTES).length >= 40,
-    `se leen las ${Object.keys(FUENTES).length} librerías de Estilo de hombre`);
+    `se leen las ${Object.keys(FUENTES).length} librerías de Imagen personal`);
   eq(revisarDuplicados(FUENTES), [],
     '⚠️ y NINGUNA monta un calendario, una papelera, un audio ni unas fotos propios');
 
@@ -121,7 +121,7 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
   ok(SE_POSPONE.some((x) => x.id === 'favoritos_globales'), 'los favoritos globales se posponen');
   ok(SE_POSPONE.some((x) => x.id === 'conflictos'), 'y los conflictos entre dispositivos, también');
   ok(SE_INTEGRA.every((x) => !!x.vive && !!x.enEH),
-    '⚠️ y cada cosa integrada dice quién manda y qué guarda Estilo de hombre');
+    '⚠️ y cada cosa integrada dice quién manda y qué guarda Imagen personal');
 
   // Apartado 21 — esta fase no añade nada.
   eq([a.funcionesNuevas, a.almacenesNuevos], [0, 0],
@@ -149,7 +149,7 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
    --------------------------------------------------------------------------- */
 {
   console.log('\n6 · Qué hace, y qué no hace');
-  ok(RESPUESTA_FINAL.hace.length > 80, 'la respuesta a "¿qué hace Estilo de hombre?" está escrita');
+  ok(RESPUESTA_FINAL.hace.length > 80, 'la respuesta a "¿qué hace Imagen personal?" está escrita');
   ok(/no guarda su peso|ya lo hace JosStyle/i.test(RESPUESTA_FINAL.noHace),
     '⚠️ y la de "¿qué NO hace porque ya lo hace JosStyle?", también');
   ok(/Los módulos guardan los datos/.test(RESPUESTA_FINAL.regla),
@@ -160,7 +160,7 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
   ok(panel.sistemas.every((s) => !!s.etiquetaNombre), 'con el nombre de su etiqueta');
   eq(panel.seElimina, [], 'y con la lista de eliminar vacía');
   ok(panel.auditoria.enPapelera >= 20,
-    `las ${panel.auditoria.enPapelera} colecciones de Estilo de hombre están en la papelera global`);
+    `las ${panel.auditoria.enPapelera} colecciones de Imagen personal están en la papelera global`);
 }
 
 /* ---------------------------------------------------------------------------
@@ -222,7 +222,7 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],
-    '🐛 ⚠️ y NINGUNA librería de Estilo de hombre se queda fuera de la lista que auditan la F43 y esta');
+    '🐛 ⚠️ y NINGUNA librería de Imagen personal se queda fuera de la lista que auditan la F43 y esta');
   ok(LIBRERIAS_EH.includes('rendimiento') && LIBRERIAS_EH.includes('migracion')
     && LIBRERIAS_EH.includes('auditoriaFinal'),
     '⚠️ las cinco de las fases de revisión ya están dentro: antes no las miraba nadie');

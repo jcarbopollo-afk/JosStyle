@@ -1,6 +1,6 @@
 # ESTILO DE HOMBRE — DOCUMENTACIÓN TÉCNICA
 
-> **EH Fase 53/65.** Si dentro de meses queremos modificar Estilo de hombre, hay que poder entenderlo sin rehacer todo el análisis.
+> **EH Fase 53/65.** Si dentro de meses queremos modificar Imagen personal, hay que poder entenderlo sin rehacer todo el análisis.
 >
 > 🚨 **Este documento se genera desde `src/lib/documentacionEH.js`.** El documento se deriva del código. Si el código cambia y el documento no lo recoge, la prueba se pone roja.
 > No lo edites a mano: edita la librería y vuelve a generarlo.
@@ -9,7 +9,7 @@
 
 ## 1 · Qué hace y qué no hace
 
-**Qué hace.** Estilo de hombre guarda lo que Josué quiere cuidar de sí mismo —piel, pelo, barba, cuerpo, higiene, perfumes, accesorios y gustos—, lo organiza en apartados que enciende y apaga él, y le propone ideas y rutinas a partir de lo que ha contestado.
+**Qué hace.** Imagen personal guarda lo que Josué quiere cuidar de sí mismo —piel, pelo, barba, cuerpo, higiene, perfumes, accesorios y gustos—, lo organiza en apartados que enciende y apaga él, y le propone ideas y rutinas a partir de lo que ha contestado.
 
 **Qué NO hace.** No guarda su peso, su calendario, sus objetivos, sus tareas, sus fotos, sus rachas ni lo que borra: todo eso ya lo hace JosStyle, y aquí solo se consulta o se apunta su id.
 
@@ -76,14 +76,14 @@
 | **Calendario** | ✅ | Los eventos de las rutinas se derivan; nunca se materializan (regla 11). | `calendarioIntegracion.js` |
 | **Objetivos** | ✅ | Se guarda el id del objetivo, no una copia. | `objetivosEnEstiloHombre.js` |
 | **Tareas** | ✅ | Una acción como "Comprar producto X" crea una tarea en Productividad; aquí queda solo su id. | `integracionEstilo.js` |
-| **Notificaciones** | ✅ | Las genera el sistema global. Estilo de hombre solo dice qué y cuándo. | `avisosEstilo.js` |
+| **Notificaciones** | ✅ | Las genera el sistema global. Imagen personal solo dice qué y cuándo. | `avisosEstilo.js` |
 | **Favoritos** | ❌ | 🚨 No hay un sistema global de favoritos: cada módulo tiene los suyos. Unificarlos es una fase (F39), no un arreglo, y está en el backlog de la F48. | — |
 | **Productos** | ✅ | El inventario de productos es el de la aplicación, con `motorProductos`. | `motorProductos.js` |
 | **Diario** | ❌ | El puente entre una experiencia y el Diario no lo ha pedido ninguna fase. La F47 lo declaró como lo que es: pendiente, no roto. | — |
 | **Armario** | ✅ | Se consultan las prendas; no se copia ninguna. | `armarioEnEstiloHombre.js` |
-| **Eliminados** | ✅ | La papelera global de ME F3. Estilo de hombre NO tiene la suya. | `papelera.js` |
+| **Eliminados** | ✅ | La papelera global de ME F3. Imagen personal NO tiene la suya. | `papelera.js` |
 | **Búsqueda** | ✅ | El índice global, más el buscador propio de la F39 dentro del módulo. | `indiceBusqueda.js · buscadorEstilo.js` |
-| **Autenticación** | ✅ | La sesión de Supabase. Estilo de hombre no toca el login. | `supabase.js` |
+| **Autenticación** | ✅ | La sesión de Supabase. Imagen personal no toca el login. | `supabase.js` |
 | **Sincronización** | ✅ | `loadData` y `saveData`. ⚠️ `saveData` SOBRESCRIBE (regla 5). | `supabase.js` |
 
 ## 4 · Dónde vive cada dato
@@ -102,16 +102,16 @@
 | calendario | 🌍 global | calendario | `calendario` |
 | rachas | 🌍 global | rachas | `rachas` |
 | armario | 🌍 global | armario | `armario` |
-| registros | 🧔 Estilo de hombre | skincare | `estiloHombre.skincare.registros` |
-| rutinas | 🧔 Estilo de hombre | barba | `estiloHombre.barba.rutinas` |
-| registros | 🧔 Estilo de hombre | barba | `estiloHombre.barba.registros` |
-| rutinas | 🧔 Estilo de hombre | sonrisa | `estiloHombre.sonrisa.rutinas` |
-| revisiones | 🧔 Estilo de hombre | sonrisa | `estiloHombre.sonrisa.revisiones` |
-| perfumes | 🧔 Estilo de hombre | perfumes | `estiloHombre.perfumes.perfumes` |
-| historial | 🧔 Estilo de hombre | perfumes | `estiloHombre.perfumes.historial` |
-| accesorios | 🧔 Estilo de hombre | accesorios | `estiloHombre.accesorios.accesorios` |
-| deseos | 🧔 Estilo de hombre | accesorios | `estiloHombre.accesorios.deseos` |
-| entradas | 🧔 Estilo de hombre | gustos | `estiloHombre.gustos.entradas` |
+| registros | 🧔 Imagen personal | skincare | `estiloHombre.skincare.registros` |
+| rutinas | 🧔 Imagen personal | barba | `estiloHombre.barba.rutinas` |
+| registros | 🧔 Imagen personal | barba | `estiloHombre.barba.registros` |
+| rutinas | 🧔 Imagen personal | sonrisa | `estiloHombre.sonrisa.rutinas` |
+| revisiones | 🧔 Imagen personal | sonrisa | `estiloHombre.sonrisa.revisiones` |
+| perfumes | 🧔 Imagen personal | perfumes | `estiloHombre.perfumes.perfumes` |
+| historial | 🧔 Imagen personal | perfumes | `estiloHombre.perfumes.historial` |
+| accesorios | 🧔 Imagen personal | accesorios | `estiloHombre.accesorios.accesorios` |
+| deseos | 🧔 Imagen personal | accesorios | `estiloHombre.accesorios.deseos` |
+| entradas | 🧔 Imagen personal | gustos | `estiloHombre.gustos.entradas` |
 
 ## 5 · Estados
 
@@ -131,7 +131,7 @@
 
 > 🚨 Una colección nueva que se pueda borrar necesita su entrada en `CATALOGO_PAPELERA`. Sin ella, el borrado es IRREVERSIBLE y no lo avisa nadie: ya pasó con las rutinas de Skincare, las de Pelo y los perfumes por probar.
 
-La papelera global cubre **49 colecciones**, de las cuales **21** son de Estilo de hombre.
+La papelera global cubre **59 colecciones**, de las cuales **21** son de Imagen personal.
 
 ## 7 · Estructura de datos
 
@@ -191,8 +191,8 @@ La papelera global cubre **49 colecciones**, de las cuales **21** son de Estilo 
 
 ## 12 · Notificaciones
 
-- **Qué genera Estilo de hombre:** Recordatorios de rutinas, avisos de seguimiento y sugerencias por uso.
-- **Qué usa del sistema global:** El sistema global de notificaciones. Estilo de hombre no habla con el navegador.
+- **Qué genera Imagen personal:** Recordatorios de rutinas, avisos de seguimiento y sugerencias por uso.
+- **Qué usa del sistema global:** El sistema global de notificaciones. Imagen personal no habla con el navegador.
 - **Qué requiere que él lo encienda:** 🚨 TODAS. Cada recordatorio nace APAGADO y lo enciende él. Nunca se pide el permiso dos veces.
 - **Frecuencia:** Configurable desde ⋮ Personalizar → Avisos.
 
@@ -200,7 +200,7 @@ La papelera global cubre **49 colecciones**, de las cuales **21** son de Estilo 
 
 - **Qué se guarda:** Lo que él escribe: rutinas, registros, productos, perfumes, gustos y las respuestas de los cuestionarios.
 - **Cómo se protege:** RLS en Supabase (`auth.uid() = user_id`) y, si lo enciende, el PIN de la aplicación.
-- **Cómo se elimina:** Por elemento (papelera), por módulo, o Estilo de hombre entero desde Mis datos.
+- **Cómo se elimina:** Por elemento (papelera), por módulo, o Imagen personal entero desde Mis datos.
 - **Cómo se exporta:** Desde Mis datos, en JSON, con todo lo que hay.
 - **Qué no sale de aquí:** Nada sale del dispositivo salvo a Supabase. La IA solo recibe lo que él manda, y no se le manda un registro entero.
 
@@ -212,7 +212,7 @@ bash scripts/verificar.sh
 
 Build de Vite, las comprobaciones de Node, los casos de renderizado, las reglas invariantes y la aplicación de verdad en Chromium. La prueba en un navegador de verdad es `scripts/test-app-real.mjs`, y hay **30 recorridos integrales** declarados.
 
-> ⚠️ Cada cambio en Estilo de hombre pasa por ahí ANTES de darse por hecho. Una fase sin su archivo de pruebas no está terminada.
+> ⚠️ Cada cambio en Imagen personal pasa por ahí ANTES de darse por hecho. Una fase sin su archivo de pruebas no está terminada.
 
 ## 15 · Historial de cambios
 
@@ -229,11 +229,11 @@ Build de Vite, las comprobaciones de Node, los casos de renderizado, las reglas 
 - **El puente entre una experiencia y el Diario** — Ninguna fase lo ha pedido todavía; la F47 lo declaró como lo que es.
 - **Detectar conflictos entre dispositivos** — Exige versión o marca de tiempo en `app_data`: es una decisión de esquema (F41, F45 y F46).
 - **Un catálogo de productos de verdad** — D2-03: arquitectura sí, catálogo no. Entra el día que Josué dé los datos.
-- **Los sonidos de Estilo de hombre** — El motor está entero; faltan los archivos, que dará Josué (C-23).
+- **Los sonidos de Imagen personal** — El motor está entero; faltan los archivos, que dará Josué (C-23).
 
 ## 17 · Regla para Claude
 
-> 🚨 **Antes de modificar Estilo de hombre: leer `docs/08_ESTILO_DE_HOMBRE_TECNICO.md` y comprobar las dependencias globales. Si el dato ya vive fuera, se consulta; no se copia.**
+> 🚨 **Antes de modificar Imagen personal: leer `docs/08_ESTILO_DE_HOMBRE_TECNICO.md` y comprobar las dependencias globales. Si el dato ya vive fuera, se consulta; no se copia.**
 
 Es decir: antes de tocar nada, leer `docs/08_ESTILO_DE_HOMBRE_TECNICO.md`.
 
@@ -253,7 +253,7 @@ Mirar `SISTEMAS_REVISADOS` (F48): dice quién es el dueño de cada sistema. El d
 
 ### ¿Qué hago si se rompe una integración?
 
-Buscarla en `DEPENDENCIAS_GLOBALES`: dice en qué archivo vive el puente. Si lo que falla es un dato, la regla es que Estilo de hombre guarda **el id**, no la copia: el arreglo casi siempre está al otro lado.
+Buscarla en `DEPENDENCIAS_GLOBALES`: dice en qué archivo vive el puente. Si lo que falla es un dato, la regla es que Imagen personal guarda **el id**, no la copia: el arreglo casi siempre está al otro lado.
 
 *Dónde mirar: `src/lib/documentacionEH.js`*
 

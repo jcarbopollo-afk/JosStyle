@@ -54,6 +54,51 @@ import { todayISO } from './helpers';
    permite que la pantalla diga la verdad sobre lo que todavía está vacío, en
    vez de enseñar una plaquita que no lleva a ninguna parte (regla 8). */
 
+/* ===========================================================================
+   EL NOMBRE DEL APARTADO (NAV F2)
+   ===========================================================================
+
+   🚨 **El módulo se llamaba «Estilo de hombre» y ahora se llama «Imagen
+   personal».** Lo pidió Josué: *"quiero eliminar la referencia exclusiva a
+   hombre; no quiero que el apartado esté limitado por género"*, y dio seis
+   candidatos. Se eligió **Imagen personal** después de mirar el contenido real,
+   que es lo que él pidió expresamente. Los dos motivos:
+
+   1. **El contenido es más ancho que el aseo.** De los diecisiete apartados,
+      seis son cuidado (Pelo, Barba, Skincare, Higiene, Cuidado corporal,
+      Sonrisa), tres son estilo (Estilo y armario, Perfumes, Accesorios) — pero
+      los demás están escritos en términos de **cómo se presenta uno**: Fitness
+      es *"Físico y postura"*, Sueño es *"Descanso y aspecto"* y Salud es *"Lo
+      que se nota fuera"*. «Cuidado personal» dejaría esos tres fuera del
+      paraguas; «Imagen personal» los cubre.
+   2. **«Cuidado personal» chocaría con una categoría de dentro.** La categoría
+      más grande de `CATEGORIAS_EH` se llama literalmente **«Cuidado»**, así que
+      la pantalla habría leído *«Cuidado personal → Cuidado»* — la redundancia
+      exacta que la E3 F30 tuvo que arreglar con *«Salud → Salud»*.
+
+   ⚠️ **Y esto es lo ÚNICO que cambia: el nombre que se lee.** Ni un id se toca.
+   `estilo-hombre` es la clave de navegación, `estiloHombre` la de `app_data`, y
+   los dos los leen la personalización de la Fase 19, la papelera, el buscador y
+   las migraciones. **Renombrar lo que se ve y renombrar lo que se guarda son dos
+   cosas distintas** (E3 F30), y aquí solo se hace lo primero.
+
+   ⚠️ Los comentarios y el historial (`CHANGELOG.md`, `docs/`, las cabeceras de
+   las 42 librerías) **siguen diciendo «Estilo de hombre»** a propósito, igual
+   que el proyecto conserva *JC Fitness*: son historia, y reescribirla haría
+   ilegibles las decisiones que explican. Si lees ese nombre en un comentario,
+   es este módulo.
+   =========================================================================== */
+export const NOMBRE_ESTILO = 'Imagen personal';
+
+/* El nombre viejo, declarado — para que el buscador lo siga encontrando y para
+   que nadie tenga que adivinar de dónde viene. */
+/* 🐛 ⚠️ **Este valor se lo comió el propio renombrado.** El barrido sustituía
+   «Estilo de hombre» en todo el código, y esta constante **es código**: acabó
+   diciendo `NOMBRE_ANTERIOR_ESTILO = 'Imagen personal'`, o sea que el nombre
+   anterior era el nuevo. Lo cazó su prueba. Un reemplazo masivo se come también
+   el sitio que guarda lo que estás reemplazando. */
+export const NOMBRE_ANTERIOR_ESTILO = 'Estilo de' + ' hombre';
+
 /* ── Las categorías (EH F2, apartado 3) ────────────────────────────────────
    *"Como habrá muchos módulos, no queremos una lista interminable."* Y a
    renglón seguido: *"Estas categorías son principalmente organizativas. No

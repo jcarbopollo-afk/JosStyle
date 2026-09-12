@@ -42,7 +42,7 @@ import { todayISO } from './helpers';
 export const PASOS_ASISTENTE = [
   {
     id: 'bienvenida',
-    titulo: 'Estilo de hombre',
+    titulo: 'Imagen personal',
     icono: '🧔',
     texto: 'Personaliza este espacio según lo que realmente necesitas. Puedes cambiarlo todo más adelante.',
     boton: 'Empezar',
@@ -51,7 +51,7 @@ export const PASOS_ASISTENTE = [
     id: 'explicacion',
     titulo: 'Tú decides qué aparece',
     icono: '👋',
-    texto: 'Estilo de hombre tiene muchas herramientas, pero no tienes que utilizar todas. Elige lo que te interese y podrás añadir o quitar apartados cuando quieras.',
+    texto: 'Imagen personal tiene muchas herramientas, pero no tienes que utilizar todas. Elige lo que te interese y podrás añadir o quitar apartados cuando quieras.',
     boton: 'Continuar',
   },
   {
@@ -65,8 +65,8 @@ export const PASOS_ASISTENTE = [
     id: 'final',
     titulo: 'Tu espacio está listo',
     icono: '🎉',
-    texto: 'Hemos preparado Estilo de hombre según lo que has elegido. Puedes cambiar tus apartados cuando quieras.',
-    boton: 'Entrar en Estilo de hombre',
+    texto: 'Hemos preparado Imagen personal según lo que has elegido. Puedes cambiar tus apartados cuando quieras.',
+    boton: 'Entrar en Imagen personal',
   },
 ];
 

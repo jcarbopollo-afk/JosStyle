@@ -50,7 +50,7 @@ console.log('\n📱  EH · Fase 30/65 — Pantalla principal y organización\n')
    =========================================================================== */
 console.log('Test 1 — la cabecera, y nada más');
 {
-  eq(CABECERA_EH.titulo, '🧔 Estilo de hombre', 'el título del enunciado');
+  eq(CABECERA_EH.titulo, '🧔 Imagen personal', 'el título del enunciado');
   eq(CABECERA_EH.sub, 'Tu cuidado, estilo y preferencias.', 'y su frase, literal');
   eq(Object.keys(CABECERA_EH), ['titulo', 'sub'],
     '⚠️ dos campos y ya: *"nada más"* (apartado 1)');

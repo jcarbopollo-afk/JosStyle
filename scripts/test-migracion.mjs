@@ -215,7 +215,7 @@ console.log('\n📦 EH · Fase 46/65 — Migración y compatibilidad\n');
     '⚠️ y el sistema que NO existe se declara, como hizo la F39');
   ok(!!mapaDe('favoritos').porque, 'con su motivo');
   ok(mapaDe('armario').guardaEH.includes('id'),
-    'del armario, Estilo de hombre solo guarda el id de la prenda');
+    'del armario, Imagen personal solo guarda el id de la prenda');
   ok(/derivan/.test(mapaDe('calendario').guardaEH), 'y del calendario, nada: se derivan');
   ok(a.fuentesGlobales > 0, '`FUENTES_GLOBALES` sigue siendo la lista de la F4');
 }

@@ -623,7 +623,7 @@ export const RESBALONES = [
   },
   {
     id: 'borrar_todo',
-    que: 'Vaciar Estilo de hombre entero',
+    que: 'Vaciar Imagen personal entero',
     protege: 'confirmacion_fuerte',
     como: 'Dice exactamente qué se borra, qué no, y que no se puede deshacer.',
     porque: null,
@@ -709,7 +709,7 @@ export const APARTADOS_EXPERIENCIA = [
   { id: 16, nombre: 'Prueba de coherencia', como: 'hecho', cumplido: true, donde: 'F49 · coherenciaVisual.js', porque: 'Comparar Estilo con el resto de la aplicación es exactamente lo que hace `soloEn()`. Escribirlo otra vez sería el duplicado que la F48 caza.' },
   { id: 17, nombre: 'Prueba de «¿realmente hace falta?»', como: 'hecho', cumplido: true, donde: 'F48 · SE_POSPONE', porque: 'La F48 ya pasó función por función decidiendo qué se queda, qué se integra y qué se pospone. Ésa es esta pregunta.' },
   { id: 18, nombre: 'Lista de fallos', como: 'node', cumplido: true, donde: 'FALLOS_DE_EXPERIENCIA' },
-  { id: 19, nombre: 'Prueba final sin instrucciones', como: 'josue', cumplido: false, donde: 'R1', porque: '🚨 "Dar Estilo de hombre a alguien que no haya leído ninguna de estas fases." Yo las he leído todas. Soy la única persona del mundo que NO puede hacer esta prueba.' },
+  { id: 19, nombre: 'Prueba final sin instrucciones', como: 'josue', cumplido: false, donde: 'R1', porque: '🚨 "Dar Imagen personal a alguien que no haya leído ninguna de estas fases." Yo las he leído todas. Soy la única persona del mundo que NO puede hacer esta prueba.' },
 ];
 
 export const apartadoExperiencia = (id) => APARTADOS_EXPERIENCIA.find((a) => a.id === id) || null;
@@ -755,7 +755,7 @@ export const criticos = () => FALLOS_DE_EXPERIENCIA.filter((f) => f.gravedad ===
    =========================================================================== */
 
 export const TEXTOS_EXPERIENCIA = {
-  condicion: 'Estilo de hombre no está terminado porque "todo funciona": lo estará cuando todo funciona y utilizarlo resulta natural.',
+  condicion: 'Imagen personal no está terminado porque "todo funciona": lo estará cuando todo funciona y utilizarlo resulta natural.',
   sinInstrucciones: 'La prueba más importante es la que yo no puedo hacer: dárselo a alguien que no haya leído ninguna de estas fases.',
   simplificar: 'Si una acción sencilla requiere demasiados pasos, se simplifica.',
   sinSacrificar: 'Menos toques, sí. Pero sin sacrificar claridad.',

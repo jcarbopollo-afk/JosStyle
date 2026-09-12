@@ -1,6 +1,7 @@
 /* Genera docs/08_ESTILO_DE_HOMBRE_TECNICO.md a partir de documentacionEH.js.
    ⚠️ El documento SALE del código, no se teclea al lado. */
 import { writeFileSync } from 'node:fs';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   QUE_HACE, QUE_NO_HACE, LA_REGLA, COMO_ESTA_ORGANIZADO,
@@ -74,7 +75,7 @@ p();
 p('| Dato | Vive en | Módulo | Clave |');
 p('|---|---|---|---|');
 fuenteDeCadaDato().forEach((f) => {
-  p(`| ${f.dato} | ${f.vive === 'global' ? '🌍 global' : '🧔 Estilo de hombre'} | ${f.modulo} | \`${f.clave}\` |`);
+  p(`| ${f.dato} | ${f.vive === 'global' ? '🌍 global' : '🧔 Imagen personal'} | ${f.modulo} | \`${f.clave}\` |`);
 });
 p();
 
@@ -93,7 +94,7 @@ CICLO_DE_ELIMINACION.forEach((c) => p(`${c.paso}. **${c.que}** — ${c.como}`));
 p();
 p(`> ${AVISO_ELIMINACION}`);
 p();
-p(`La papelera global cubre **${coleccionesTotalesEnLaPapelera()} colecciones**, de las cuales **${coleccionesConPapelera()}** son de Estilo de hombre.`);
+p(`La papelera global cubre **${coleccionesTotalesEnLaPapelera()} colecciones**, de las cuales **${coleccionesConPapelera()}** son de Imagen personal.`);
 p();
 
 /* 7 */
@@ -148,7 +149,7 @@ p();
 /* 12 */
 p('## 12 · Notificaciones');
 p();
-p(`- **Qué genera Estilo de hombre:** ${NOTIFICACIONES_DOC.queGenera}`);
+p(`- **Qué genera Imagen personal:** ${NOTIFICACIONES_DOC.queGenera}`);
 p(`- **Qué usa del sistema global:** ${NOTIFICACIONES_DOC.queUsa}`);
 p(`- **Qué requiere que él lo encienda:** ${NOTIFICACIONES_DOC.requiereActivacion}`);
 p(`- **Frecuencia:** ${NOTIFICACIONES_DOC.frecuencia}`);
@@ -222,5 +223,13 @@ p();
 p(`*Los ${SECCIONES_DOC.length} apartados del enunciado están contestados; ${SECCIONES_DOC.filter((s) => s.derivado).length} de ellos se derivan del código y no pueden quedarse viejos.*`);
 p();
 
-writeFileSync('C:/Users/clapi/JosStyle/docs/08_ESTILO_DE_HOMBRE_TECNICO.md', L.join('\r\n'));
+/* 🐛 **La ruta estaba escrita a mano y apuntaba a `C:/Users/clapi/JosStyle`.**
+   O sea: el generador solo funcionaba en el ordenador de quien lo escribió, y en
+   cualquier otro sitio reventaba con un ENOENT. `CLAUDE.md` dice *"si añades un
+   módulo y no regeneras, la verificación se pone roja"* — pero **no se podía
+   regenerar**, así que esa promesa llevaba tiempo sin poder cumplirse.
+   Ahora la ruta se calcula desde el propio archivo, como en el resto de
+   `scripts/` (`fileURLToPath`, la lección de EH F19 sobre correr en Windows). */
+const DESTINO_DOC = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'docs', '08_ESTILO_DE_HOMBRE_TECNICO.md');
+writeFileSync(DESTINO_DOC, L.join('\r\n'));
 console.log(`✅ documento generado — ${L.length} líneas`);

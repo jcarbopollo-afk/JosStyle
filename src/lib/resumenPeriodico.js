@@ -165,7 +165,7 @@ export const TEXTOS_RESUMEN = {
   sinCambiosMes: 'Este mes no hay cambios destacables.',
   apagado: 'Los resúmenes están apagados. Si los quieres, se encienden en Personalizar.',
   aviso: 'Tu resumen semanal de Estilo está listo.',
-  dentro: 'El resumen está siempre dentro de Estilo de hombre, aunque no tengas avisos.',
+  dentro: 'El resumen está siempre dentro de Imagen personal, aunque no tengas avisos.',
   compartir: 'Compartirlo es cosa tuya: no se manda nada solo.',
   corregido: 'Apuntado. No te lo vuelvo a decir así.',
 };

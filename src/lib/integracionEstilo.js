@@ -169,7 +169,7 @@ export const SISTEMAS_EH = [
     apartado: 13, id: 'busqueda', nombre: 'Búsqueda', icono: '🔍', existe: true,
     global: 'buscador', destino: null,
     entra: ['PALABRAS_MODULOS'],
-    que: 'Estilo de hombre sale en el buscador de la aplicación.',
+    que: 'Imagen personal sale en el buscador de la aplicación.',
   },
   {
     apartado: 14, id: 'notificaciones', nombre: 'Notificaciones', icono: '🔔', existe: true,
@@ -187,7 +187,7 @@ export const SISTEMAS_EH = [
     apartado: 16, id: 'cuenta', nombre: 'Tu cuenta', icono: '👤', existe: true,
     global: 'ajustes', destino: 'ajustes',
     entra: [],
-    que: 'Todo lo de Estilo de hombre se guarda con tu cuenta y solo tú lo ves.',
+    que: 'Todo lo de Imagen personal se guarda con tu cuenta y solo tú lo ves.',
   },
   {
     apartado: 17, id: 'sincronizacion', nombre: 'Sincronización', icono: '☁️', existe: true,
@@ -231,13 +231,13 @@ const FUNCIONES_REALES = {
 
 export const TEXTOS_INTEGRACION = {
   titulo: '🔗 Cómo se conecta con el resto',
-  sub: 'Estilo de hombre no guarda nada dos veces: usa lo que ya tienes.',
+  sub: 'Imagen personal no guarda nada dos veces: usa lo que ya tienes.',
   abrir: 'Abrir',
   todavia: 'Todavía no existe',
   /* Apartado 18 — dicho con las palabras del enunciado. */
   fuenteUnica: 'Un dato existe una sola vez. Si lo cambias en su módulo, cambia aquí también.',
   /* Apartado 20 — lo que más preocupa al apagar algo. */
-  desactivarNoBorra: 'Desactivar Estilo de hombre no borra nada: deja de mostrarse y de funcionar, y al volver a activarlo está todo.',
+  desactivarNoBorra: 'Desactivar Imagen personal no borra nada: deja de mostrarse y de funcionar, y al volver a activarlo está todo.',
   /* Apartado 19 — antes de borrar, lo que se va y lo que se queda. */
   seVa: 'Se irá a Eliminados recientemente:',
   /* ⚠️ Apartado 19 — *"se actualizan favoritos, se eliminan las referencias que
@@ -600,7 +600,7 @@ export function pruebaMaestra({
   const paso = (id, nombre, global, ok, detalle) => pasos.push({ id, nombre, global, ok, detalle });
 
   // 0 · Estilo — el punto de partida.
-  paso('estilo', 'Estilo de hombre', 'estiloHombre', Array.isArray(e.modulos) && e.modulos.length > 0,
+  paso('estilo', 'Imagen personal', 'estiloHombre', Array.isArray(e.modulos) && e.modulos.length > 0,
     `${e.modulos.length} apartados en el catálogo`);
 
   // 1 · Calendario — sus eventos entran en el calendario global.

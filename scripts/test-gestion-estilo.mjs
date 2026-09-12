@@ -195,7 +195,7 @@ console.log('\nTest 4 — 🗑️ eliminar, con recuperación');
   /* ⚠️ El plan sale del CATÁLOGO de la papelera, no de una lista propia. */
   ok(CLAVES_PAPELERA_EH.every((k) => !!CATALOGO_PAPELERA[k]),
     '⚠️ las claves salen del catálogo de ME F3');
-  ok(CLAVES_PAPELERA_EH.length >= 10, 'y son las de Estilo de hombre, todas');
+  ok(CLAVES_PAPELERA_EH.length >= 10, 'y son las de Imagen personal, todas');
   Object.keys(DONDE_VIVEN).forEach((k) => {
     ok(!!CATALOGO_PAPELERA[k], `"${k}" existe en el catálogo de la papelera`);
   });
@@ -219,7 +219,7 @@ console.log('\nTest 4 — 🗑️ eliminar, con recuperación');
 /* ===========================================================================
    Test 5 — RESTABLECER (apartado 8 · prueba 8)
    =========================================================================== */
-console.log('\nTest 5 — 🔄 restablecer Estilo de hombre');
+console.log('\nTest 5 — 🔄 restablecer Imagen personal');
 {
   const base = con(TODOS_EH);
   const tocado = desactivarModulo(ocultarModulo(cambiarTamano(base, 'skincare', 'grande'), 'perfumes'), 'barba');

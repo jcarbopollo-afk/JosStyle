@@ -72,7 +72,7 @@ export const ordenarPorGravedad = (fallos) => [...fallos].sort(
    `test-app-real.mjs` en un navegador de verdad · 'josue' necesita su móvil. */
 
 export const PRUEBAS_INTEGRALES = [
-  { apartado: 1, id: 'entrada', nombre: 'Abrir Estilo de hombre', como: 'chromium', donde: 'test-app-real.mjs', siFalla: 'critico' },
+  { apartado: 1, id: 'entrada', nombre: 'Abrir Imagen personal', como: 'chromium', donde: 'test-app-real.mjs', siFalla: 'critico' },
   { apartado: 2, id: 'plaquitas', nombre: 'Mostrar, abrir, volver, ocultar y mover una plaquita', como: 'node', donde: 'test-integrales.mjs', siFalla: 'importante' },
   { apartado: 3, id: 'activacion', nombre: 'Activar, configurar, usar, desactivar y reactivar', como: 'node', donde: 'test-integrales.mjs', siFalla: 'critico' },
   { apartado: 4, id: 'eliminacion', nombre: 'Crear, eliminar, recuperar y eliminar del todo', como: 'node', donde: 'test-integrales.mjs', siFalla: 'critico' },
@@ -80,7 +80,7 @@ export const PRUEBAS_INTEGRALES = [
   { apartado: 6, id: 'calendario', nombre: 'Una fecha llega al calendario global', como: 'node', donde: 'test-integrales.mjs', siFalla: 'importante' },
   {
     apartado: 7, id: 'diario', nombre: 'La relación con el Diario permanece', como: 'declarado',
-    donde: 'Estilo de hombre NO escribe en el Diario: no hay tal enlace todavía.',
+    donde: 'Imagen personal NO escribe en el Diario: no hay tal enlace todavía.',
     porque: 'Ninguna fase ha construido el puente con el Diario; inventarlo aquí sería adelantar trabajo.',
     siFalla: 'mejora',
   },

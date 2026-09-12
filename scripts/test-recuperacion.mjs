@@ -271,7 +271,7 @@ console.log('\n♻️ EH · Fase 54/65 — Backup, restauración y recuperación
 
   ok(Object.keys(PAPELERA).length >= 45, `la papelera cubre ${Object.keys(PAPELERA).length} colecciones`);
   ok(auditarRecuperacion().coleccionesRecuperables > 0,
-    `${auditarRecuperacion().coleccionesRecuperables} de ellas son de Estilo de hombre`);
+    `${auditarRecuperacion().coleccionesRecuperables} de ellas son de Imagen personal`);
 
   const panel = panelRecuperacion();
   eq(panel.protegido, true, '🎯 los cuatro niveles existen y la restauración está probada');

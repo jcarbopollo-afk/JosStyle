@@ -70,7 +70,7 @@ console.log('\n✨ EH · Fase 50/65 — Microinteracciones y animaciones\n');
    --------------------------------------------------------------------------- */
 {
   console.log('\n3 · Consistencia en las 51 pantallas');
-  eq(revisarConsistencia(VISTA), [], '⚠️ ni una inconsistencia en la vista de Estilo de hombre');
+  eq(revisarConsistencia(VISTA), [], '⚠️ ni una inconsistencia en la vista de Imagen personal');
 
   const volver = (VISTA.match(/aria-label="Volver"/g) || []).length;
   ok(volver >= 40, `${volver} botones de volver, y todos iguales`);

@@ -95,7 +95,7 @@ export const clavesDe = (modulo) => CLAVES_POR_MODULO.find((m) => m.modulo === m
  */
 export const COMO_SE_GUARDA = {
   tabla: 'app_data',
-  fila: 'Una por (usuario, clave). Estilo de hombre es UNA clave: `estiloHombre`.',
+  fila: 'Una por (usuario, clave). Imagen personal es UNA clave: `estiloHombre`.',
   dentro: 'Una lista de módulos, y cada módulo con su `config` y su propio normalizador.',
   // Lo que sí se cumple del apartado 2.
   cumple: 'Cada módulo manda sobre lo suyo: nadie escribe en la `config` de otro.',

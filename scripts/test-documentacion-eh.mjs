@@ -164,7 +164,7 @@ console.log('\n📘 EH · Fase 53/65 — Documentación técnica y mantenimiento
     '🚨 con el aviso que ya hizo falta tres veces en este proyecto');
   eq(coleccionesTotalesEnLaPapelera(), Object.keys(PAPELERA).length,
     'y las colecciones de la papelera se cuentan del catálogo de verdad');
-  ok(coleccionesConPapelera() > 0, `${coleccionesConPapelera()} de ellas son de Estilo de hombre`);
+  ok(coleccionesConPapelera() > 0, `${coleccionesConPapelera()} de ellas son de Imagen personal`);
 }
 
 /* ---------------------------------------------------------------------------
@@ -220,7 +220,7 @@ console.log('\n📘 EH · Fase 53/65 — Documentación técnica y mantenimiento
   ok(/TODAS/.test(NOTIFICACIONES_DOC.requiereActivacion),
     '⚠️ todas las notificaciones nacen apagadas, y se dice');
   ok(/no habla con el navegador/.test(NOTIFICACIONES_DOC.queUsa),
-    'y Estilo de hombre no habla con el navegador: usa el sistema global');
+    'y Imagen personal no habla con el navegador: usa el sistema global');
 
   ok(/RLS/.test(PRIVACIDAD_DOC.comoSeProtege), 'la privacidad, con RLS y el PIN');
   ok(/JSON/.test(PRIVACIDAD_DOC.comoSeExporta), 'y cómo se exporta');

@@ -215,7 +215,7 @@ const MORE_NAV = [
   // Entrega 2 · EH Fase 1 — Estilo de Hombre entra como UN módulo más del área
   // "Más". La barra inferior sigue con cinco pestañas (regla 10): un apartado
   // nuevo va a un área existente, nunca a la barra.
-  { id: 'estilo-hombre', label: 'Estilo de hombre', icon: UserRound },
+  { id: 'estilo-hombre', label: 'Imagen personal', icon: UserRound },
   { id: 'ajustes', label: 'Ajustes', icon: Settings },
 ];
 

@@ -81,7 +81,7 @@ ok(REGISTRO_DATOS.every((d) => !DATOS_GLOBALES_EH.some((g) => g.campo === d.id))
 eq(ORIGENES_DATO, ['global', 'propio', 'desconocido'], 'Tres orígenes posibles');
 eq(origenDe('peso'), 'global', 'El peso es de JosStyle');
 eq(origenDe('altura'), 'global', 'La altura también');
-eq(origenDe('tipoPiel'), 'propio', 'El tipo de piel es de Estilo de hombre');
+eq(origenDe('tipoPiel'), 'propio', 'El tipo de piel es de Imagen personal');
 eq(origenDe('loQueSea'), 'desconocido', 'Y lo que no está en ningún sitio se dice');
 
 /* ── 3 · LEER: LA MISMA FUNCIÓN PARA TODO (apartados 2, 3 y 15) ──────────── */
@@ -127,7 +127,7 @@ eq(normalizarDatosEH(r1.estado.datos).tipoPiel.porModulo, 'skincare', 'Y quién 
 // ⚠️ Apartado 3 — escribir un dato global se RECHAZA, y no en silencio.
 const r2 = guardarDato(base(), 'peso', 70, { hoy: HOY });
 ok(r2.error !== null, '⚠️ Apartado 3: NO se puede escribir el peso desde aquí');
-ok(r2.error.includes('fuera de Estilo de hombre'), 'Con el motivo escrito');
+ok(r2.error.includes('fuera de Imagen personal'), 'Con el motivo escrito');
 eq(r2.donde, 'Perfil y Salud', '⚠️ Y con el sitio donde SÍ se edita');
 eq(leerDato(r2.estado, 'peso', GLOBAL).valor, 73, '⚠️ Y el peso sigue siendo el de Salud: 73, no 70');
 eq(normalizarDatosEH(r2.estado.datos).peso, undefined, '⚠️ No se ha creado ninguna copia');
@@ -196,7 +196,7 @@ ok(eliminarDato(base(), 'tipoPiel').sinEfecto, 'Borrar algo que no existe no es 
 
 // ⚠️ Apartado 12 — pero NO se borran datos globales desde aquí.
 const noBorra = eliminarDato(cambiado, 'peso');
-ok(noBorra.error !== null, '⚠️ Apartado 12: el peso NO se borra desde Estilo de hombre');
+ok(noBorra.error !== null, '⚠️ Apartado 12: el peso NO se borra desde Imagen personal');
 eq(leerDato(noBorra.estado, 'peso', GLOBAL).valor, 73, 'Y sigue ahí');
 
 /* ── 8 · HISTORIAL (apartado 9) ──────────────────────────────────────────── */

@@ -75,7 +75,7 @@ console.log('Test 1 — ⚠️ el sistema de objetivos es el que ya existía');
 
   const a = auditarPuente(base(), OBJ());
   eq(a.sistemasDeObjetivos, 0, 'la auditoría: cero sistemas de objetivos nuevos');
-  eq(a.objetivosGuardadosAqui, 0, 'ni un objetivo guardado en Estilo de hombre');
+  eq(a.objetivosGuardadosAqui, 0, 'ni un objetivo guardado en Imagen personal');
   eq(a.gestoresNuevos, 0, 'cero gestores nuevos (apartado 4)');
   eq(a.diariosNuevos, 0, 'cero diarios (apartado 6)');
   eq(a.galeriasNuevas, 0, 'cero galerías (apartado 7)');

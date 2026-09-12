@@ -108,7 +108,7 @@ export const DEPENDENCIAS_GLOBALES = [
   { id: 'calendario', nombre: 'Calendario', usa: true, como: 'Los eventos de las rutinas se derivan; nunca se materializan (regla 11).', donde: 'calendarioIntegracion.js' },
   { id: 'objetivos', nombre: 'Objetivos', usa: true, como: 'Se guarda el id del objetivo, no una copia.', donde: 'objetivosEnEstiloHombre.js' },
   { id: 'tareas', nombre: 'Tareas', usa: true, como: 'Una acción como "Comprar producto X" crea una tarea en Productividad; aquí queda solo su id.', donde: 'integracionEstilo.js' },
-  { id: 'notificaciones', nombre: 'Notificaciones', usa: true, como: 'Las genera el sistema global. Estilo de hombre solo dice qué y cuándo.', donde: 'avisosEstilo.js' },
+  { id: 'notificaciones', nombre: 'Notificaciones', usa: true, como: 'Las genera el sistema global. Imagen personal solo dice qué y cuándo.', donde: 'avisosEstilo.js' },
   {
     id: 'favoritos', nombre: 'Favoritos', usa: false,
     porque: '🚨 No hay un sistema global de favoritos: cada módulo tiene los suyos. Unificarlos es una fase (F39), no un arreglo, y está en el backlog de la F48.',
@@ -121,9 +121,9 @@ export const DEPENDENCIAS_GLOBALES = [
     donde: null,
   },
   { id: 'armario', nombre: 'Armario', usa: true, como: 'Se consultan las prendas; no se copia ninguna.', donde: 'armarioEnEstiloHombre.js' },
-  { id: 'eliminados', nombre: 'Eliminados', usa: true, como: 'La papelera global de ME F3. Estilo de hombre NO tiene la suya.', donde: 'papelera.js' },
+  { id: 'eliminados', nombre: 'Eliminados', usa: true, como: 'La papelera global de ME F3. Imagen personal NO tiene la suya.', donde: 'papelera.js' },
   { id: 'busqueda', nombre: 'Búsqueda', usa: true, como: 'El índice global, más el buscador propio de la F39 dentro del módulo.', donde: 'indiceBusqueda.js · buscadorEstilo.js' },
-  { id: 'autenticacion', nombre: 'Autenticación', usa: true, como: 'La sesión de Supabase. Estilo de hombre no toca el login.', donde: 'supabase.js' },
+  { id: 'autenticacion', nombre: 'Autenticación', usa: true, como: 'La sesión de Supabase. Imagen personal no toca el login.', donde: 'supabase.js' },
   { id: 'sincronizacion', nombre: 'Sincronización', usa: true, como: '`loadData` y `saveData`. ⚠️ `saveData` SOBRESCRIBE (regla 5).', donde: 'supabase.js' },
 ];
 
@@ -289,7 +289,7 @@ export const REGLAS_UX = [
 
 export const NOTIFICACIONES_DOC = {
   queGenera: 'Recordatorios de rutinas, avisos de seguimiento y sugerencias por uso.',
-  queUsa: 'El sistema global de notificaciones. Estilo de hombre no habla con el navegador.',
+  queUsa: 'El sistema global de notificaciones. Imagen personal no habla con el navegador.',
   requiereActivacion: '🚨 TODAS. Cada recordatorio nace APAGADO y lo enciende él. Nunca se pide el permiso dos veces.',
   frecuencia: 'Configurable desde ⋮ Personalizar → Avisos.',
 };
@@ -297,7 +297,7 @@ export const NOTIFICACIONES_DOC = {
 export const PRIVACIDAD_DOC = {
   queSeGuarda: 'Lo que él escribe: rutinas, registros, productos, perfumes, gustos y las respuestas de los cuestionarios.',
   comoSeProtege: 'RLS en Supabase (`auth.uid() = user_id`) y, si lo enciende, el PIN de la aplicación.',
-  comoSeElimina: 'Por elemento (papelera), por módulo, o Estilo de hombre entero desde Mis datos.',
+  comoSeElimina: 'Por elemento (papelera), por módulo, o Imagen personal entero desde Mis datos.',
   comoSeExporta: 'Desde Mis datos, en JSON, con todo lo que hay.',
   queNoSale: 'Nada sale del dispositivo salvo a Supabase. La IA solo recibe lo que él manda, y no se le manda un registro entero.',
 };
@@ -311,7 +311,7 @@ export const SUITE_DE_PRUEBAS = {
   que: 'Build de Vite, las comprobaciones de Node, los casos de renderizado, las reglas invariantes y la aplicación de verdad en Chromium.',
   integrales: PRUEBAS_INTEGRALES.length,
   navegador: 'scripts/test-app-real.mjs',
-  regla: '⚠️ Cada cambio en Estilo de hombre pasa por ahí ANTES de darse por hecho. Una fase sin su archivo de pruebas no está terminada.',
+  regla: '⚠️ Cada cambio en Imagen personal pasa por ahí ANTES de darse por hecho. Una fase sin su archivo de pruebas no está terminada.',
 };
 
 /* ===========================================================================
@@ -331,7 +331,7 @@ export const IDEAS_FUTURAS = SE_POSPONE;
    17 · LA REGLA PARA CLAUDE (apartado 17)
    =========================================================================== */
 
-export const REGLA_PARA_CLAUDE = 'Antes de modificar Estilo de hombre: leer `docs/08_ESTILO_DE_HOMBRE_TECNICO.md` y comprobar las dependencias globales. Si el dato ya vive fuera, se consulta; no se copia.';
+export const REGLA_PARA_CLAUDE = 'Antes de modificar Imagen personal: leer `docs/08_ESTILO_DE_HOMBRE_TECNICO.md` y comprobar las dependencias globales. Si el dato ya vive fuera, se consulta; no se copia.';
 
 /* ===========================================================================
    18 · EL MANUAL DE MANTENIMIENTO (apartado 18)
@@ -354,7 +354,7 @@ export const MANTENIMIENTO = [
   {
     id: 'integracion_rota',
     pregunta: '¿Qué hago si se rompe una integración?',
-    respuesta: 'Buscarla en `DEPENDENCIAS_GLOBALES`: dice en qué archivo vive el puente. Si lo que falla es un dato, la regla es que Estilo de hombre guarda **el id**, no la copia: el arreglo casi siempre está al otro lado.',
+    respuesta: 'Buscarla en `DEPENDENCIAS_GLOBALES`: dice en qué archivo vive el puente. Si lo que falla es un dato, la regla es que Imagen personal guarda **el id**, no la copia: el arreglo casi siempre está al otro lado.',
     donde: 'src/lib/documentacionEH.js',
   },
   {
@@ -398,7 +398,7 @@ export const DOCUMENTO = 'docs/08_ESTILO_DE_HOMBRE_TECNICO.md';
 
 export const TEXTOS_DOC = {
   condicion: 'Quien vuelva dentro de meses debe poder entender: qué existe → dónde está → cómo funciona → con qué se conecta → qué no debe tocarse.',
-  porQue: 'Si dentro de meses queremos modificar Estilo de hombre, hay que poder entenderlo sin rehacer todo el análisis.',
+  porQue: 'Si dentro de meses queremos modificar Imagen personal, hay que poder entenderlo sin rehacer todo el análisis.',
   actualizado: 'El documento se deriva del código. Si el código cambia y el documento no lo recoge, la prueba se pone roja.',
 };
 

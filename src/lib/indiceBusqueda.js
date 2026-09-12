@@ -145,7 +145,13 @@ export const PALABRAS_MODULOS = {
   armario: ['ropa', 'prendas', 'vestir', 'camiseta', 'pantalon', 'zapatillas', 'outfit', 'closet', 'que me pongo', 'recomendar outfit'],
   // EH Fase 1 — el espacio nuevo. Las palabras son las de los apartados que
   // ofrece, para que buscar "skincare" o "barba" lleve aquí desde el primer día.
-  'estilo-hombre': ['estilo', 'hombre', 'skincare', 'piel', 'cara', 'pelo', 'barba', 'higiene', 'cuidado', 'aspecto', 'imagen', 'productos'],
+  /* NAV F2 — el apartado pasó a llamarse «Imagen personal». 🚨 **«estilo» y
+     «hombre» SIGUEN AQUÍ**: durante meses se ha llamado así, y buscar el nombre
+     viejo tiene que seguir encontrándolo. Es la lección de la E3 F23 —las
+     palabras se mudan, no se borran— aplicada a un renombrado en vez de a una
+     mudanza. */
+  'estilo-hombre': ['imagen', 'imagen personal', 'personal', 'estilo', 'hombre', 'estilo de hombre',
+    'skincare', 'piel', 'cara', 'pelo', 'barba', 'higiene', 'cuidado', 'cuidado personal', 'aspecto', 'productos'],
   rachas: ['racha', 'rachas', 'dias seguidos', 'constancia', 'cadena', 'hito', 'hitos', 'logro', 'logros', 'record', 'mejor racha', 'no romper la racha'],
   horario: ['horario', 'clases', 'clase', 'asignatura', 'cuadricula', 'franja', 'que tengo hoy', 'que tengo manana', 'instituto', 'colegio', 'aula'],
   ajustes: ['configuracion', 'opciones', 'preferencias', 'settings'],

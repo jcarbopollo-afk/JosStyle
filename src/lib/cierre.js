@@ -118,7 +118,7 @@ export const BLOQUEADO = [
     que: 'Un sistema global de copias de seguridad.',
     dependeDe: 'JC Fitness entero. Y el enunciado de la F54 prohíbe crear uno separado.',
     decide: 'Josué',
-    arreglo: 'Cuando exista, Estilo de hombre se engancha: ya tiene su `copiaDeSeguridad()`.',
+    arreglo: 'Cuando exista, Imagen personal se engancha: ya tiene su `copiaDeSeguridad()`.',
   },
   {
     id: 'favoritos_globales',
@@ -170,7 +170,7 @@ export function inventarioFinal() {
    =========================================================================== */
 
 export const VERSION = {
-  nombre: 'JC Fitness — Estilo de hombre v1.0',
+  nombre: 'JC Fitness — Imagen personal v1.0',
   esquemaDeDatos: VERSION_EH,
   fases: '65 de 65',
   estado: 'Base estable. Cerrado a funciones nuevas.',
@@ -266,7 +266,7 @@ export const ES_MODULO_OFICIAL = {
 
 export const TEXTOS_CIERRE = {
   criterio: 'Solo se marca 🟢 FINALIZADO si se cumplen todos los requisitos. Si algo falla: no se oculta, se registra como pendiente.',
-  condicion: 'Estilo de hombre queda cerrado como módulo funcional. No significa que jamás pueda evolucionar: significa que hay una BASE ESTABLE v1.0 sobre la que construir sin volver a empezar.',
+  condicion: 'Imagen personal queda cerrado como módulo funcional. No significa que jamás pueda evolucionar: significa que hay una BASE ESTABLE v1.0 sobre la que construir sin volver a empezar.',
   loQueFalta: 'Lo que falta no está escondido: está en el inventario, con quién lo decide y cuál es el arreglo.',
   gracias: 'Sesenta y cinco fases: arquitectura → módulos → personalización → datos → UX → IA → contexto → accesibilidad → seguridad → copias → escalabilidad → pruebas → producción → cierre.',
 };

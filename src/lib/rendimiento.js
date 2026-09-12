@@ -58,7 +58,7 @@ import { MODULOS_EH } from './estiloDeHombre';
    se ve en pantalla lo mide Josué (R1). */
 
 export const PRESUPUESTOS = [
-  { id: 'portada', nombre: 'La portada de Estilo de hombre', ms: 120 },
+  { id: 'portada', nombre: 'La portada de Imagen personal', ms: 120 },
   { id: 'panel', nombre: 'Abrir un apartado', ms: 120 },
   { id: 'buscador', nombre: 'Una búsqueda', ms: 150 },
   { id: 'lista', nombre: 'Pintar una lista paginada', ms: 60 },
@@ -161,7 +161,7 @@ export const APARTADOS_RENDIMIENTO = [
     apartado: 4, id: 'fotos', nombre: 'Fotos optimizadas', medible: true,
     /* ⚠️ Las fotos de Estilo de Hombre son **las del Armario**: viven en Storage
        y se sirven con URL firmada. Aquí no se sube ni una. */
-    donde: 'Las fotos son del Armario (AR F1) y de Fondos (FO F2); Estilo de hombre no guarda ninguna.',
+    donde: 'Las fotos son del Armario (AR F1) y de Fondos (FO F2); Imagen personal no guarda ninguna.',
     como: 'revisor',
   },
   {
@@ -170,12 +170,12 @@ export const APARTADOS_RENDIMIENTO = [
        recarga al volver a entrar. Un caché propio de este bloque sería el
        segundo sistema de guardado que la F43 prohíbe. */
     donde: 'El estado vive en `App.jsx` y se refresca al recargar; no hay un caché propio (F43).',
-    porque: 'Un caché de Estilo de hombre sería un segundo sistema de guardado, y está prohibido.',
+    porque: 'Un caché de Imagen personal sería un segundo sistema de guardado, y está prohibido.',
   },
   {
     apartado: 6, id: 'datos_locales', nombre: 'Datos locales y sincronizar', medible: false,
     donde: 'Es `saveData`/`loadData` de `App.jsx` sobre Supabase: centralizado desde la Fase 2.',
-    porque: 'La F43 prohíbe expresamente `localStorage` en las librerías de Estilo de hombre.',
+    porque: 'La F43 prohíbe expresamente `localStorage` en las librerías de Imagen personal.',
   },
   {
     apartado: 7, id: 'sync_eficiente', nombre: 'Sincronización eficiente', medible: true,

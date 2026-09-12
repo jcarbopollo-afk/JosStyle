@@ -127,14 +127,14 @@ export const SISTEMAS_REVISADOS = [
   {
     id: 'fotos', nombre: 'Fotos', etiqueta: 'integrado',
     vive: 'El Armario (AR F1) y Fondos (FO F2), en Storage.',
-    enEH: 'Nada: Estilo de hombre no sube ni una foto.',
+    enEH: 'Nada: Imagen personal no sube ni una foto.',
     prohibido: /uploadFoto|subirFotoEstilo|createObjectURL/,
   },
   {
     id: 'productos', nombre: 'Productos', etiqueta: 'propio',
     vive: 'Los inventarios de Skincare y Pelo, con `motorProductos.js`.',
     enEH: 'La ficha, en su módulo; los demás guardan su id.',
-    nota: 'Es de Estilo de hombre, pero con UN motor y sin catálogos paralelos (F17).',
+    nota: 'Es de Imagen personal, pero con UN motor y sin catálogos paralelos (F17).',
   },
   {
     id: 'armario', nombre: 'Armario', etiqueta: 'integrado',
@@ -162,7 +162,7 @@ export const SISTEMAS_REVISADOS = [
     id: 'busqueda', nombre: 'Búsqueda', etiqueta: 'propio',
     vive: '`buscadorEstilo.js`, sobre el buscador global de BI F2-F4.',
     enEH: 'Sus fuentes y sus recientes.',
-    nota: 'Busca DENTRO de Estilo de hombre; el buscador general es el de BI.',
+    nota: 'Busca DENTRO de Imagen personal; el buscador general es el de BI.',
   },
   {
     id: 'estadisticas', nombre: 'Estadísticas', etiqueta: 'propio',
@@ -265,7 +265,7 @@ export const SE_POSPONE = [
     porque: 'D2-03: arquitectura sí, catálogo no. Entra el día que Josué dé los datos.',
   },
   {
-    id: 'audio', que: 'Los sonidos de Estilo de hombre',
+    id: 'audio', que: 'Los sonidos de Imagen personal',
     porque: 'El motor está entero; faltan los archivos, que dará Josué (C-23).',
   },
 ];
@@ -277,7 +277,7 @@ export const SE_POSPONE = [
    JC Fitness?"* Dos frases, para no tener que reconstruirlas nunca más. */
 
 export const RESPUESTA_FINAL = {
-  hace: 'Estilo de hombre guarda lo que Josué quiere cuidar de sí mismo —piel, pelo, barba, cuerpo, higiene, perfumes, accesorios y gustos—, lo organiza en apartados que enciende y apaga él, y le propone ideas y rutinas a partir de lo que ha contestado.',
+  hace: 'Imagen personal guarda lo que Josué quiere cuidar de sí mismo —piel, pelo, barba, cuerpo, higiene, perfumes, accesorios y gustos—, lo organiza en apartados que enciende y apaga él, y le propone ideas y rutinas a partir de lo que ha contestado.',
   noHace: 'No guarda su peso, su calendario, sus objetivos, sus tareas, sus fotos, sus rachas ni lo que borra: todo eso ya lo hace JosStyle, y aquí solo se consulta o se apunta su id.',
   regla: 'Los módulos guardan los datos. Los sistemas globales gestionan sus funciones. Las plaquitas muestran.',
 };

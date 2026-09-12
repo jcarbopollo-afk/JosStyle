@@ -123,7 +123,7 @@ export const tipoAvisoEH = (id) => TIPOS_AVISO_EH.find((t) => t.id === id) || nu
 export const IDS_TIPOS_EH = TIPOS_AVISO_EH.map((t) => t.id);
 
 export const TEXTOS_AVISOS_EH = {
-  titulo: '🔔 Avisos de Estilo de hombre',
+  titulo: '🔔 Avisos de Imagen personal',
   // La regla principal, dicha en la propia pantalla.
   todoApagado: 'Todo empieza apagado. Solo te avisamos de lo que enciendas tú.',
   // Apartados 1, 7 y 11 — y de quién es lo demás.

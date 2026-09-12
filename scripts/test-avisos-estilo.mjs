@@ -312,7 +312,7 @@ console.log('\nTest 8 — una línea por tipo, y lo que sobrevive');
   ok('avisos' in cfg, 'vive en el módulo anfitrión');
 
   const p = panelAvisosEH(e, { hoy: HOY });
-  eq(p.titulo, '🔔 Avisos de Estilo de hombre', 'el panel trae su título');
+  eq(p.titulo, '🔔 Avisos de Imagen personal', 'el panel trae su título');
   eq(p.tipos.length, TIPOS_AVISO_EH.length, 'y los seis tipos');
   ok(p.tipos.every((t) => 'puesto' in t && 'silenciado' in t), 'con su marca y su silencio');
   eq(p.silenciados.map((m) => m.id), ['pelo'], 'los módulos silenciados');

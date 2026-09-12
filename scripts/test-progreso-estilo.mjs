@@ -270,7 +270,7 @@ console.log('\nTest 7 — ⚠️ los globales, y solo si los tiene');
   eq(r.length, 1, 'con una suya, se trae');
   eq(r[0].eventos.length, 1, '⚠️ y solo SUS eventos, no los de otra racha');
   eq(rachaDeEstilo({ definiciones: [{ id: 'x', origen: 'nutricion' }] }), null,
-    '⚠️ y una racha de otro módulo NO es de Estilo de hombre');
+    '⚠️ y una racha de otro módulo NO es de Imagen personal');
 
   eq(objetivosDeEstilo(null), null, '⚠️ sin objetivos, `null` (prueba 11)');
   eq(objetivosDeEstilo({ lista: [] }), null, 'con la lista vacía, tampoco');
@@ -378,7 +378,7 @@ console.log('\nTest 11 — el panel que dibuja la pantalla');
   const e = conHistorial();
   const p = panelProgreso(e, { hoy: HOY });
   eq(p.titulo, '📊 Mi progreso', 'el título del apartado 1');
-  eq(p.zona.dentroDe, MODULO_ANFITRION, 'y vive dentro de Estilo de hombre');
+  eq(p.zona.dentroDe, MODULO_ANFITRION, 'y vive dentro de Imagen personal');
   eq(p.encabezado, 'Esta semana', '⚠️ con el encabezado del apartado 4, literal');
   eq(panelProgreso(cambiarPeriodo(e, 'mes'), { hoy: HOY }).encabezado, 'Este mes', 'y el del mes');
   ok(p.metricas.length > 0, 'sus métricas');

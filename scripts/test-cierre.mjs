@@ -143,7 +143,7 @@ console.log('\n🏁 EH · Fase 65/65 — Cierre, congelación y entrega final\n'
    --------------------------------------------------------------------------- */
 {
   console.log('\n4 · La etiqueta y el módulo oficial');
-  eq(VERSION.nombre, 'JC Fitness — Estilo de hombre v1.0', 'la versión, con el nombre del enunciado');
+  eq(VERSION.nombre, 'JC Fitness — Imagen personal v1.0', 'la versión, con el nombre del enunciado');
   eq(VERSION.esquemaDeDatos, VERSION_EH, 'y el esquema de datos que conoce la migración');
   eq(VERSION.fases, '65 de 65', 'las sesenta y cinco');
   ok(/Ninguno/.test(VERSION.sql), '🚨 y cero SQL en sesenta y cinco fases');

@@ -159,7 +159,7 @@ for (const p of ['objetivo', 'ambicion', 'lograr', 'progreso']) {
   ok(SINONIMOS_MODULOS.productividad.includes(p), `⚠️ y el sinónimo "${p}"`);
 }
 ok(/FOCO_OBJETIVOS/.test(sinComentarios(leer('src/views/EstiloHombreView.jsx'))),
-  '🚨 y los dos botones de Estilo de hombre llevan el foco: si no, EH F28 aterrizaría en el lanzador');
+  '🚨 y los dos botones de Imagen personal llevan el foco: si no, EH F28 aterrizaría en el lanzador');
 
 /* 🐛 **Y un fallo latente que esta fase destapó.** El tercer argumento de `paso()`
    en `integracionEstilo.js` es **el sistema global donde se escribe**, no a dónde
