@@ -351,6 +351,10 @@ export const ACTIVIDAD_FACTORES = { sedentario: 1.2, ligero: 1.375, moderado: 1.
 export const DEFAULT_PERFIL = {
   nombre: 'Josué', fechaNacimiento: '2010-07-29', altura: 187, peso: 72, actividad: 'moderado',
   apellidos: '', nombreMostrado: '', sexo: '', pronombres: '', manoDominante: '',
+  // La foto de perfil vive aquí, como `data:` URI cuadrado de 256 px, y no en un
+  // bucket: `src/lib/fotoPerfil.js` explica por qué. `null` = todavía no tiene,
+  // que es distinto de una cadena vacía.
+  foto: null,
   pesoObjetivo: null, objetivoPrincipal: '', deportesPracticados: [], nivelDeportivo: '',
   aniosExperiencia: '', lesiones: [],
   nivelEducativo: '', estudiosActuales: '', profesion: '',

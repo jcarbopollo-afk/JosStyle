@@ -355,11 +355,19 @@ export function PrimaryButton({ children, onClick, accent, disabled, icon: Icon 
   );
 }
 
-export function GhostBtn({ children, onClick, icon: Icon }) {
+/* 🐛 `disabled` SE REPARTÍA Y NO SE USABA, y eso no lo ve nadie. `GhostBtn` solo
+   recogía `onClick` e `icon`, así que el «Cancelar» de la foto de fondo —escrito
+   con `disabled={subiendo}` a propósito, al lado de un `PrimaryButton` que sí lo
+   honra— **seguía pulsándose mientras se subía la imagen**. Es el fallo del `ref`
+   que se comía `Textarea` (E3 F20): la pantalla se pinta perfecta y la prop no
+   hace nada. Mismo `disabled:opacity-60` que `PrimaryButton`, para que además se
+   vea que está apagado. */
+export function GhostBtn({ children, onClick, icon: Icon, disabled }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold"
+      disabled={disabled}
+      className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold disabled:opacity-60"
       style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
     >
       {Icon && <Icon size={14} />}

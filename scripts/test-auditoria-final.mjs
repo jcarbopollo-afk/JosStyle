@@ -211,6 +211,14 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
        caza `cierre`, igual que `cierreNutricion`. **Sexta** exclusión a mano, y
        la última de la Entrega 3. */
     && f !== 'cierreEstudios'
+    /* ⚠️ Y `fotoPerfil` es de **Ajustes** (v3.68.0), no de Estilo de hombre: lo
+       caza `perfil`, que esta expresión busca por el `perfilEstilo` de la EH F6.
+       **Séptima** exclusión a mano, y van todas por el mismo motivo: la regla
+       identifica los módulos por su NOMBRE, así que cada vez que otro apartado
+       estrena una librería con una palabra compartida, salta. Eso es la regla
+       funcionando — estrecharla hasta que calle sola es como se le escapa una
+       de verdad. La cabecera de `fotoPerfil.js` avisa de que esto pasaría. */
+    && f !== 'fotoPerfil'
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],

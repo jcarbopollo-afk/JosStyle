@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.67.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.68.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **LA ENTREGA 3 ESTÁ CERRADA: 46 de 46** (ver `docs/11_ENTREGA3_ORDEN.md`). Los siete bloques
@@ -215,6 +215,12 @@ Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1), Sue�
 (8/8) y Estudios (6/6)—. El índice, con la
 línea de cada fase dentro de la especificación literal, está en **`docs/11_ENTREGA3_ORDEN.md`**.
 
+📸 **Y después de la Entrega 3, una fase suelta que pidió Josué: Ajustes · Perfil (v3.68.0).** La
+foto de perfil —elegirla del dispositivo, que se guarde de verdad, que siga ahí al recargar, que se
+vea redonda, cambiarla y quitarla— y que el nombre de los saludos salga del perfil. Su enunciado
+repetía tres veces **qué NO tocar**: Apariencia, Pantalla principal y Preferencias generales. Vive
+en `src/lib/fotoPerfil.js`, con `scripts/test-foto-perfil.mjs` detrás.
+
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
 1. **Preguntarle a Josué qué quiere hacer a continuación.** No hay una fase siguiente que ejecutar:
@@ -256,6 +262,40 @@ aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con
 código de agosto mientras él decía *"la web sigue igual"*.
 
 ⚠️ **Y lo que dejaron las veinte primeras, que afecta a todas las demás:**
+
+- 🚨 **UN BUCKET QUE NADIE HA CREADO ES UN BOTÓN QUE NO GUARDA NADA** (Ajustes · Perfil). La foto de
+  perfil pedía a gritos un sexto bucket de Storage, y habría sido lo natural —los otros cinco están
+  ahí—. Pero **dos de ellos, `armario` y `fondos`, llevan meses sin existir de verdad**: su SQL sigue
+  sin ejecutarse en Supabase, y es el recordatorio que arrastra este archivo. Un séptimo habría
+  nacido igual de muerto y el botón «Elegir foto» habría fallado en silencio en el iPhone de Josué —
+  regla 8 exacta. Va **dentro de `perfil`**, como `data:` URI recortado a 256 px y topado a 96 KB,
+  que es la fila de `app_data` que ya tiene sus cuatro políticas `auth.uid() = user_id`. **Antes de
+  elegir dónde se guarda algo, mirar si ese sitio existe de verdad.**
+- 🚨 **UN CAMPO QUE NADIE LEE NO FALLA NUNCA, Y ÉSTE LLEVABA ASÍ DESDE LA FASE A2** (Ajustes ·
+  Perfil). `nombreMostrado` estaba en `DEFAULT_PERFIL`, tenía su campo en Ajustes y hasta prometía
+  *"Se usará el nombre"* en el marcador — **y no lo leía ni una pantalla**. Josué podía escribirlo y
+  no pasaba nada en ninguna parte. `nombreParaSaludo()` es ahora la única respuesta a *"¿cómo le
+  llamo?"*, como `tallaDe()` y `frecuenciaDeCorte()`. Es la lección de la E3 F3 (`icono` en
+  `CATEGORIAS_ARMARIO`) por segunda vez: **al añadir un campo, comprobar que alguien lo lea**.
+- 🚨 **`GhostBtn` REPARTÍA `disabled` SIN USARLO** (Ajustes · Perfil, y lo cazó una prueba mía al
+  ponerse roja). El «Cancelar» de la foto de fondo llevaba **desde que existe** siendo pulsable en
+  mitad de una subida: la pantalla se pinta perfecta y el atributo simplemente no llega al `<button>`.
+  Es el `ref` que se comía `Textarea` (E3 F20) otra vez. **Antes de pasarle una prop a un componente
+  de `ui.jsx`, comprobar que la acepta.**
+- ⚠️ **SIN FOTO SE PINTAN SUS INICIALES, NO UNA SILUETA GRIS** (Ajustes · Perfil): un hueco con tus
+  iniciales parece tuyo; uno con el monigote de desconocido parece un error. El icono de persona
+  queda solo para cuando tampoco hay nombre.
+- ⚠️ **QUITAR LA FOTO SÍ PREGUNTA, Y ES LA EXCEPCIÓN CORRECTA** (Ajustes · Perfil): esto **no va a
+  Eliminados recientes** —la papelera guarda elementos de una lista, no un campo de un perfil—, así
+  que no se recupera y el aviso lo dice. Prometer lo contrario sería mentir en pantalla; no preguntar,
+  perder la foto de un toque.
+- 🐛 **`pulsar()` COMPARA EL `aria-label` ENTERO Y EL TEXTO POR TROZOS** (Ajustes · Perfil, **tres
+  rojos míos en una sola sección**). Escribí «Volver atrás» donde el botón se llama «Volver a
+  Ajustes»; me salté el toque en **«Más»**, que es por donde se entra a Ajustes —las cinco pestañas
+  son Inicio + las cuatro áreas—; y usé «Hoy» para volver a la portada, **que se llama «Inicio»**:
+  ése no falló, encontró **otro** botón que contiene la palabra y salió **verde habiendo acabado en
+  otra pantalla**, que es peor que un rojo. Y una navegación rota arrastra las treinta siguientes:
+  dos salieron verdes por casualidad. **Mirar cómo se llama de verdad antes de escribirlo.**
 
 - 🚨 **UN TEMPORIZADOR SE HACE CON TIMESTAMPS, NUNCA RESTANDO SEGUNDOS** (E3 F25). El Pomodoro de la
   Fase 6 era un `setInterval` que restaba uno cada vez: **bloquear el iPhone diez minutos dejaba el

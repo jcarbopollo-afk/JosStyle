@@ -4555,4 +4555,169 @@ await esperarTexto(/PASADOS/i);
 ok(guardado.filter((g) => g && g.key === 'estudios').length === escriturasF6,
   '🚨 Y RECORRER PRÓXIMAMENTE NO GUARDA NADA: es una vista sobre lo que ya existe');
 
+/* ⚠️ Aquí terminaba el recorrido. La sección de Perfil que viene después
+   reutiliza el mismo navegador: `salir` solo se llama UNA vez, al final. */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   AJUSTES · PERFIL — LA FOTO DE PERFIL Y EL NOMBRE DE LOS SALUDOS
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 **Esto es lo único que demuestra lo que Josué pidió comprobar.** Su lista
+   no habla de código: dice *"se puede seleccionar una foto"*, *"la foto se
+   guarda realmente"* y *"sigue apareciendo después de cerrar/recargar"*. Las
+   pruebas de Node miran el dato y los casos de renderizado pintan el círculo,
+   pero **ninguno de los dos elige un archivo ni recarga la aplicación**. */
+almacen.perfil = {
+  nombre: 'Josué', apellidos: 'Carbonell', nombreMostrado: '',
+  fechaNacimiento: '2010-07-29', altura: 187, peso: 72, actividad: 'moderado',
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+/* El saludo de Hoy, antes de tocar nada. */
+const hoyAntes_fp = await ver();
+ok(/Bu[eé]n[oa]s\s+(d[ií]as|tardes|noches), Josué/i.test(hoyAntes_fp),
+  'El saludo de Hoy usa el nombre del perfil');
+
+/* ── El nombre mostrado, que hasta esta fase no lo leía nadie ──────────────── */
+/* 🐛 ⚠️ **A AJUSTES SE ENTRA POR «MÁS», NO DESDE LA BARRA** (las cinco pestañas
+   son Inicio + las cuatro áreas, regla 10). Se me olvidó el primer toque y las
+   **treinta** comprobaciones de esta sección salieron rojas de golpe **con la
+   pantalla perfecta**: una navegación que falla arrastra todo lo que viene
+   detrás, y dos de ellas hasta salieron VERDES por casualidad —«las iniciales
+   desaparecen» se cumple trivialmente en una pantalla donde nunca hubo
+   iniciales—. Un rojo en cascada esconde qué se está probando de verdad. */
+await pulsar('Más');
+ok(await pulsar('Ajustes'), 'se abre Ajustes');
+await esperarTexto(/Apariencia/i);
+ok(await pulsar('Perfil'), 'y la categoría Perfil');
+const perfilAbierto = await esperarTexto(/Datos básicos/i);
+
+// 🚨 Sin foto se ven SUS INICIALES, no una silueta de desconocido.
+ok(/JC/.test(perfilAbierto), '🚨 Sin foto, el círculo enseña sus iniciales (JC), no un avatar genérico');
+ok(/Elegir foto/i.test(perfilAbierto), '⚠️ …y el botón dice «Elegir foto», no «Cambiar»');
+ok(/Todavía no has puesto una foto/i.test(perfilAbierto), '…y lo dice con una frase, sin fingir que hay una');
+
+// 🚨 El círculo es un círculo DE VERDAD: se mide en el navegador, no se confía
+// en que la clase esté escrita (`rounded-full` podría estar sobrescrita).
+const redondo = await page.evaluate(() => {
+  const cont = [...document.querySelectorAll('div')].find((d) => {
+    const r = d.getBoundingClientRect();
+    return Math.abs(r.width - 88) < 2 && Math.abs(r.height - 88) < 2;
+  });
+  if (!cont) return null;
+  const br = getComputedStyle(cont).borderRadius;
+  return { br, lado: Math.round(cont.getBoundingClientRect().width) };
+});
+ok(redondo && parseFloat(redondo.br) >= redondo.lado / 2,
+  `🚨 EL AVATAR ES CIRCULAR DE VERDAD (radio ${redondo?.br} sobre ${redondo?.lado} px)`);
+
+/* ── Elegir una foto de verdad, desde el "dispositivo" ─────────────────────── */
+// Un PNG mínimo pero decodificable: el `<canvas>` tiene que poder dibujarlo.
+const PNG_1PX = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
+const escrituras_fpAntes = guardado.filter((g) => g && g.key === 'perfil').length;
+await page.setInputFiles('input[type="file"][accept*="image"]', {
+  name: 'yo.png', mimeType: 'image/png', buffer: PNG_1PX,
+});
+await page.waitForTimeout(1200);
+
+const conFoto = await ver();
+ok(/Cambiar foto/i.test(conFoto), '🚨 SE HA PODIDO ELEGIR UNA FOTO: el botón pasa a «Cambiar foto»');
+ok(/Esta es tu foto de perfil/i.test(conFoto), '…y la pantalla lo dice');
+ok(!/JC/.test(conFoto), '⚠️ …y las iniciales desaparecen: la foto SUSTITUYE al hueco, no se apila encima');
+
+// 🚨 Y se ha GUARDADO, que es distinto de haberse pintado.
+const guardadoFoto = guardado.filter((g) => g && g.key === 'perfil').at(-1)?.value;
+ok(guardado.filter((g) => g && g.key === 'perfil').length > escrituras_fpAntes,
+  '🚨 ELEGIR LA FOTO ESCRIBE EN `perfil` de verdad');
+ok(typeof guardadoFoto?.foto === 'string' && guardadoFoto.foto.startsWith('data:image/jpeg'),
+  '🚨 …y lo guardado es un JPEG cuadrado, no el PNG original sin tocar');
+ok(guardadoFoto?.nombre === 'Josué' && guardadoFoto?.altura === 187,
+  '⚠️ …sin llevarse por delante el resto del perfil (regla 5: `saveData` sobrescribe)');
+
+// 🚨 Y que la etiqueta <img> la esté pintando de verdad, no solo que esté en el dato.
+const pintada = await page.evaluate(() => {
+  const img = [...document.querySelectorAll('img')].find((i) => (i.src || '').startsWith('data:image/jpeg'));
+  return img ? { ok: true, alto: Math.round(img.getBoundingClientRect().height) } : { ok: false };
+});
+ok(pintada.ok, '🚨 Y la foto se PINTA en un <img>, no se queda solo en el dato');
+
+/* ── 🚨 LO QUE MÁS PIDIÓ: que siga ahí después de recargar ─────────────────── */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Más');
+ok(await pulsar('Ajustes'), 'se recarga la aplicación entera y se vuelve a Ajustes');
+await esperarTexto(/Apariencia/i);
+ok(await pulsar('Perfil'), '…y a Perfil');
+const trasRecargar = await esperarTexto(/Datos básicos/i);
+ok(/Cambiar foto/i.test(trasRecargar) && /Esta es tu foto de perfil/i.test(trasRecargar),
+  '🚨 LA FOTO SIGUE AHÍ DESPUÉS DE RECARGAR — no era una imagen temporal');
+const sigueP = await page.evaluate(() => [...document.querySelectorAll('img')].some((i) => (i.src || '').startsWith('data:image/jpeg')));
+ok(sigueP, '…y se vuelve a pintar sola, sin volver a elegirla');
+
+/* ── Cambiar el nombre mostrado y ver que el saludo obedece ────────────────── */
+// 🐛 Esto es el campo que NO LEÍA NADIE hasta esta fase: se escribía y no pasaba
+// nada en ninguna pantalla.
+/* 🐛 ⚠️ **UN `blur` DESPACHADO A MANO NO LLEGA A REACT** — y éste fue el último
+   rojo de la fase, con el código bien. Desde React 17 `onBlur` se cablea al
+   evento nativo **`focusout`**, no a `blur` (que no burbujea y no se delega),
+   así que un `dispatchEvent(new Event('blur'))` actualiza el estado local del
+   campo y **nunca llama a `onUpdatePerfil`**: el nombre se escribía y no salía
+   de la pantalla. Se escribe como escribe una persona —`fill` y luego salir del
+   campo con el tabulador—, que es lo que dispara el `focusout` de verdad. */
+const CAMPO_MOSTRADO = 'input[placeholder="Josué"]'; // `placeholder={local.nombre || …}`
+await page.fill(CAMPO_MOSTRADO, 'Jos');
+await page.keyboard.press('Tab');
+await page.waitForTimeout(900);
+ok((guardado.filter((g) => g && g.key === 'perfil').at(-1)?.value || {}).nombreMostrado === 'Jos',
+  '⚠️ El «Nombre mostrado» se guarda al salir del campo');
+/* 🐛 ⚠️ **LA PESTAÑA DE LA PANTALLA DE HOY SE LLAMA «INICIO»** (`App.jsx`, la
+   barra inferior). `pulsar('Hoy')` no fallaba: encontraba **otro** botón que
+   contiene esa palabra —los atajos de fecha se llaman así— y la comprobación
+   salía VERDE habiendo acabado en otra pantalla, que es peor que un rojo.
+   Es la lección de la E3 F30 (dos botones con el mismo nombre) desde el lado
+   de quien escribe la prueba. */
+ok(await pulsar('Inicio'), 'se vuelve a la pantalla de Hoy');
+const hoyConMostrado = await esperarTexto(/Bu[eé]n[oa]s/i);
+ok(/Bu[eé]n[oa]s\s+(d[ií]as|tardes|noches), Jos\b/i.test(hoyConMostrado),
+  '🚨 EL SALUDO USA EL «NOMBRE MOSTRADO»: cambiarlo cambia el saludo (era un campo muerto)');
+ok(!/, Josué/.test(hoyConMostrado), '…y ya no usa el nombre largo');
+
+/* ── Quitar la foto ───────────────────────────────────────────────────────── */
+await pulsar('Más');
+ok(await pulsar('Ajustes'), 'se vuelve a Ajustes');
+await esperarTexto(/Apariencia/i);
+ok(await pulsar('Perfil'), 'y a Perfil');
+await esperarTexto(/Cambiar foto/i);
+ok(await pulsar('Quitar'), 'se pulsa Quitar');
+const avisoQuitar = await esperarTexto(/Sí, quitar la foto/i);
+ok(/no se recupera desde Eliminados recientes/i.test(avisoQuitar),
+  '⚠️ …y el aviso NO promete recuperarla: esto no va a la papelera, y decirlo sería mentir');
+ok(await pulsar('Sí, quitar la foto'), 'se confirma');
+await page.waitForTimeout(900);
+const sinFoto = await ver();
+ok(/Elegir foto/i.test(sinFoto), '🚨 LA FOTO SE PUEDE QUITAR: el botón vuelve a «Elegir foto»');
+const quitada = guardado.filter((g) => g && g.key === 'perfil').at(-1)?.value;
+ok(quitada?.foto === null, '…y en el dato queda `null`, no una cadena vacía ni el rastro de la anterior');
+ok(quitada?.nombre === 'Josué', '⚠️ …sin tocar el resto del perfil');
+
+/* ── Y lo que NO se ha tocado, que Josué pidió tres veces ──────────────────── */
+/* 🐛 ⚠️ **`pulsar` COMPARA EL `aria-label` ENTERO, NO UN TROZO** (E3 F4 lo dejó
+   así a propósito). El botón de volver de una categoría de Ajustes se llama
+   «Volver a Ajustes», y yo escribí «Volver atrás»: no lo encuentra, devuelve
+   `false` y la comprobación sale roja **con la pantalla bien**. Es la lección
+   de siempre —mirar cómo se llama de verdad antes de escribirlo— en el sitio
+   donde más cuesta: cuarenta minutos de recorrido para descubrirlo. */
+ok(await pulsar('Volver a Ajustes'), 'se vuelve al índice de Ajustes');
+const indiceAjustes = await esperarTexto(/Apariencia/i);
+ok(/Apariencia/.test(indiceAjustes), '⚠️ Apariencia sigue en su sitio');
+ok(/Pantalla principal/.test(indiceAjustes), '⚠️ Pantalla principal sigue en su sitio');
+ok(/Preferencias generales/.test(indiceAjustes), '⚠️ Preferencias generales sigue en su sitio');
+ok(await pulsar('Apariencia'), 'y Apariencia sigue abriéndose…');
+const apar = await esperarTexto(/Tema|Acento/i);
+ok(/Tema|Acento/i.test(apar), '…con su contenido de siempre, intacto');
+
 await salir(browser);

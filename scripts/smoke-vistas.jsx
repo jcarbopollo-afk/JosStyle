@@ -168,7 +168,7 @@ import { TIPOS_GUARDADO, crearGuardado } from '../src/lib/guardados.js';
 import { ESTADOS_IDEA, crearIdea } from '../src/lib/ideas.js';
 import { crearDocumento } from '../src/lib/documentos.js';
 import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
-import { BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal } from '../src/views/SettingsView.jsx';
+import { AvatarPerfil, BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal } from '../src/views/SettingsView.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
@@ -2637,6 +2637,28 @@ const CASOS = [
     usos: e.armario.usos, outfits: e.armario.outfits, prendas: e.armario.prendas,
     hoyISO: HOY, onAbrirOutfit: noop, onAbrirPrenda: noop, onRegistrarUso: noop, accent,
   })],
+  /* Ajustes · Perfil — la foto de perfil. Los cuatro estados en los que se puede
+     encontrar, porque el que más fácil es dejar roto NO es el de la foto puesta:
+     es el hueco. Sin foto se pintan las iniciales; sin nombre tampoco hay
+     iniciales y entra el icono de persona. */
+  ['SettingsView · Avatar con foto', AvatarPerfil, () => ({
+    perfil: { ...DEFAULT_PERFIL, foto: `data:image/jpeg;base64,${'A'.repeat(400)}` },
+    accent, onCambiar: noop, onQuitar: noop,
+  })],
+  ['SettingsView · Avatar sin foto (iniciales)', AvatarPerfil, () => ({
+    perfil: { ...DEFAULT_PERFIL, nombre: 'Josué', apellidos: 'Carbonell', foto: null },
+    accent, onCambiar: noop, onQuitar: noop,
+  })],
+  ['SettingsView · Avatar sin nombre', AvatarPerfil, () => ({
+    perfil: { ...DEFAULT_PERFIL, nombre: '', apellidos: '', foto: null },
+    accent, onCambiar: noop, onQuitar: noop,
+  })],
+  // ⚠️ Y el caso de lo guardado ANTES de esta fase: sin el campo `foto` siquiera.
+  ['SettingsView · Avatar de un perfil viejo', AvatarPerfil, () => ({
+    perfil: { nombre: 'Josué' },
+    accent, onCambiar: noop, onQuitar: noop,
+  })],
+
   // FO Fase 1 — el bloque de fondo de Ajustes. Se renderiza aparte porque SettingsView
   // entera pide ~40 props; lo que hay que comprobar aquí es que el fondo se pinta con
   // cualquier configuración, incluida una guardada por una versión anterior.

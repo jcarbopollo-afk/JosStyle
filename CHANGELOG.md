@@ -1,5 +1,47 @@
 # CHANGELOG.md
 
+## v3.68.0 — Ajustes · Perfil: la foto de perfil y el nombre de los saludos
+
+Fase pedida por Josué después de cerrar la Entrega 3, y deliberadamente estrecha: **Perfil y nada
+más**. Apariencia, Pantalla principal y Preferencias generales se quedan exactamente como estaban,
+y hay comprobaciones que lo verifican contra el código en vez de prometerlo en un comentario.
+
+### 🚨 Por qué la foto NO va a un bucket de Supabase
+
+Las otras cinco fotos del proyecto viven en buckets de Storage. Ésta no, y el motivo es que **dos
+de esos buckets llevan meses sin crearse**: el de `armario` y el de `fondos` esperan a que Josué
+ejecute su bloque de SQL. Un sexto bucket habría significado que al elegir su foto no se guardara
+nada — un control decorativo, que es la regla 8.
+
+Y un avatar es el único caso de foto de este proyecto que **cabe en el dato**: cuadrado y de 256 px
+son unos 20 KB. Vive como `perfil.foto` en la clave `perfil` de `app_data`, que ya es una fila por
+usuario con RLS — así que *"vinculada al usuario"* y *"persistente"* salen gratis, sin SQL nuevo.
+⚠️ Con un **tope duro**: si la imagen no baja de 96 KB no se guarda y se dice. Esto no es el sistema
+de fotos general que la EH F39 declaró inexistente, y `NO_ES_UN_SISTEMA_DE_FOTOS` lo deja escrito.
+
+- **Circular de verdad**, y el recorrido lo **mide en el navegador** en vez de fiarse de que la
+  clase esté puesta.
+- **Recorte cuadrado y centrado**, que es distinto de escalar: `calcularDimensiones` de
+  `imagenes.js` conserva la proporción —correcto para un fondo— y en un avatar dejaría la cara
+  descentrada. `recorteCuadrado` es una función pura, probada con Node.
+- ⚠️ **Sin foto no se pinta una silueta de desconocido**: se pintan sus iniciales. El icono de
+  persona solo aparece si tampoco hay nombre.
+- **Quitar la foto pregunta**, y es la excepción correcta: esto no va a Eliminados recientes, así
+  que el aviso dice que no se recupera en vez de prometer lo contrario.
+
+### 🐛 Dos campos que se rellenaban y no hacían nada
+
+1. **«Nombre mostrado» no lo leía nadie.** Existía en `DEFAULT_PERFIL` desde la Fase A2, Ajustes lo
+   ofrecía con el marcador *"Se usará el nombre"*… y el saludo de Hoy hacía
+   `perfil.nombre.split(' ')[0]` por su cuenta. Escribirlo no cambiaba nada en ninguna pantalla.
+   Ahora `nombreParaSaludo()` es la única respuesta a *"¿cómo se le llama?"*, como `tallaDe()` o
+   `frecuenciaDeCorte()`. ⚠️ Y sin nombre devuelve `null`, no `''`: así el saludo no queda como
+   *«Buenos días, »* con la coma colgando.
+2. **`GhostBtn` repartía `disabled` y no lo usaba.** Lo encontró una comprobación de esta fase que
+   buscaba justo lo contrario. El «Cancelar» de la foto de fondo está escrito con
+   `disabled={subiendo}` a propósito, al lado de un `PrimaryButton` que sí lo honra, y **seguía
+   pulsándose mientras subía la imagen**. Es el fallo del `ref` que se comía `Textarea` (E3 F20).
+
 ## v3.67.0 — Entrega 3 · Fase 46 (ES F6): próximos eventos, resumen e integración final
 
 🏁 **La última fase de la Entrega 3.** Con ella se cierran **Estudios (6/6)** y **la entrega entera

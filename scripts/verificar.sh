@@ -861,6 +861,13 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# Ajustes · Perfil — la foto de perfil y el nombre de los saludos.
+if node --import ./scripts/resolver-vite.mjs scripts/test-foto-perfil.mjs >/tmp/jc_fotoperfil.log 2>&1; then
+  ok "Ajustes: foto de perfil y saludos — $(grep -c '✓' /tmp/jc_fotoperfil.log) comprobaciones"
+else
+  fallo "Falla la foto de perfil o el nombre de los saludos"; grep '✗' /tmp/jc_fotoperfil.log
+fi
+
 # Entrega 3 · F46 — Estudios: integración, cierre y auditoría final del bloque.
 if node --import ./scripts/resolver-vite.mjs scripts/test-cierre-estudios.mjs >/tmp/jc_cierrees.log 2>&1; then
   ok "Estudios: integración y cierre (E3 F46) — $(grep -c '✓' /tmp/jc_cierrees.log) comprobaciones"

@@ -23,6 +23,7 @@ import { calidadDe } from '../lib/sueno';
 import { ResumenRachaHoy } from './RachasView';
 import { resumenDelDia, eventosDelDia } from '../lib/calendario';
 import { puntuacionDelDia, mensajePuntuacion } from '../lib/puntuacion';
+import { saludoCompleto } from '../lib/fotoPerfil';
 import { Card, AIPanel, ScoreGauge, DashboardModuleCard, MiniAccessCard, QuickActionButton, TextInput, PrimaryButton, BotonBorrar } from '../components/ui';
 // Fase A4 — Notificaciones reales: los tres avisos automáticos de "Hoy" (Fase 20) son el primer
 // caso de uso real de src/lib/notificaciones.js — si Josué activa el permiso del sistema y la
@@ -556,6 +557,11 @@ export default function DashboardView({
   const [avisoHoy, setAvisoHoy] = useState(null);
 
   const hora = new Date().getHours();
+  // ⚠️ El saludo por hora se queda tal cual: funcionaba. Lo que cambia es de dónde
+  // sale el NOMBRE. Antes esta pantalla hacía `perfil.nombre.split(' ')[0]` por su
+  // cuenta, así que el campo «Nombre mostrado» de Ajustes —que existe desde la
+  // Fase A2 y promete *"Se usará el nombre"*— no lo leía nadie. `saludoCompleto`
+  // es la única respuesta, y sin nombre no deja la coma colgando.
   const saludo = hora < 6 ? 'Buenas noches' : hora < 12 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
   const fechaHoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
@@ -651,7 +657,7 @@ export default function DashboardView({
       <div>
         <p className="text-sm capitalize" style={{ color: COLORS.textMuted }}>{fechaHoy}</p>
         <h1 className="text-2xl font-extrabold mt-0.5" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-          {saludo}, {perfil.nombre.split(' ')[0]}
+          {saludoCompleto(saludo, perfil)}
         </h1>
       </div>
 

@@ -15,6 +15,7 @@ import {
   OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, OPCIONES_SESION_PIN,
 } from '../tokens';
 import { calcularEdad, shade, hexToRgba, uid, todayISO } from '../lib/helpers';
+import { prepararFotoPerfil, esFotoValida, inicialesDe, nombreParaSaludo, TIPOS_ACEPTADOS } from '../lib/fotoPerfil';
 import { permisoNotificaciones, pedirPermisoNotificaciones } from '../lib/notificaciones';
 /* Entrega 3 · F11 (HC F6, apartados 23 y 24) — qué puede y qué NO puede hacer
    esta plataforma. *"Si una capacidad no puede garantizarse desde Safari/PWA:
@@ -1626,6 +1627,126 @@ function OpcionesFila({ opciones, valor, onChange, accent }) {
   );
 }
 
+/* ---------------------------------------------------------------------------
+   La foto de perfil (Ajustes → Perfil).
+
+   El círculo es el de siempre en cualquier aplicación: `rounded-full` +
+   `object-cover`, que es lo que recorta sin deformar. La foto ya llega cuadrada
+   desde `prepararFotoPerfil`, así que el círculo no corta nada de la cara.
+
+   ⚠️ Sin foto NO se pinta un avatar de desconocido: se pintan sus iniciales, y
+   solo si tampoco hay nombre aparece el icono de persona. Un hueco con tus
+   iniciales parece tuyo; uno con la silueta gris parece un error.
+   --------------------------------------------------------------------------- */
+export function AvatarPerfil({ perfil, accent, onCambiar, onQuitar }) {
+  const fileRef = useRef(null);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState(null);
+  const [confirmandoQuitar, setConfirmandoQuitar] = useState(false);
+
+  const foto = esFotoValida(perfil.foto) ? perfil.foto : null;
+  const iniciales = inicialesDe(perfil);
+
+  const elegir = async (ev) => {
+    const file = ev.target.files?.[0];
+    // El input se limpia SIEMPRE: si no, elegir la misma foto dos veces seguidas
+    // no dispara `onChange` y parece que la aplicación se ha quedado colgada.
+    ev.target.value = '';
+    if (!file) return;
+    setError(null);
+    setCargando(true);
+    const res = await prepararFotoPerfil(file);
+    setCargando(false);
+    if (!res.ok) { setError(res.motivo); return; }
+    onCambiar(res.foto);
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center gap-4">
+        <div
+          className="rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden"
+          style={{
+            width: 88, height: 88,
+            background: foto ? 'transparent' : hexToRgba(accent, 0.14),
+            border: `2px solid ${hexToRgba(accent, foto ? 0.35 : 0.25)}`,
+          }}
+        >
+          {foto ? (
+            <img src={foto} alt="Tu foto de perfil" className="w-full h-full object-cover" />
+          ) : iniciales ? (
+            <span className="text-2xl font-extrabold" style={{ color: accent, fontFamily: "'Manrope', sans-serif" }}>{iniciales}</span>
+          ) : (
+            <User size={34} style={{ color: accent }} aria-hidden="true" />
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="text-base font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+            {nombreParaSaludo(perfil) || 'Sin nombre todavía'}
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
+            {foto ? 'Esta es tu foto de perfil.' : 'Todavía no has puesto una foto.'}
+          </p>
+          <div className="flex flex-wrap gap-2 mt-2.5">
+            {/* `disabled` funciona desde esta fase: `GhostBtn` lo repartía sin
+                usarlo, así que el «Cancelar» de la foto de fondo llevaba tiempo
+                siendo pulsable mientras subía. Se corta igualmente la reentrada
+                en el manejador: el estado visual y el efectivo, los dos. */}
+            <GhostBtn
+              onClick={() => { if (!cargando) fileRef.current?.click(); }}
+              icon={cargando ? Loader2 : ImageIcon}
+              disabled={cargando}
+            >
+              {cargando ? 'Preparando…' : foto ? 'Cambiar foto' : 'Elegir foto'}
+            </GhostBtn>
+            {foto && !confirmandoQuitar && (
+              <GhostBtn onClick={() => setConfirmandoQuitar(true)} icon={Trash2}>Quitar</GhostBtn>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ⚠️ Quitar la foto SÍ pregunta, y es la excepción correcta: esto no va a
+          Eliminados recientes (la papelera guarda elementos de una lista, no un
+          campo de un perfil), así que no se puede deshacer. Prometer lo contrario
+          sería mentir en pantalla; no preguntar, perder la foto de un toque. */}
+      {confirmandoQuitar && (
+        <div className="mt-3 rounded-xl p-3" style={{ background: hexToRgba(COLORS.negative, 0.08) }}>
+          <p className="text-xs mb-2" style={{ color: COLORS.text }}>
+            Se quita tu foto y vuelven tus iniciales. Esto no se recupera desde Eliminados recientes: tendrías que volver a elegirla.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => { onQuitar(); setConfirmandoQuitar(false); }}
+              className="text-xs font-semibold toque-44"
+              style={{ color: COLORS.negative }}
+            >
+              Sí, quitar la foto
+            </button>
+            <button onClick={() => setConfirmandoQuitar(false)} className="text-xs toque-44" style={{ color: COLORS.textMuted }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <p className="text-xs mt-3" style={{ color: COLORS.negative }}>{error}</p>
+      )}
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept={TIPOS_ACEPTADOS.join(',')}
+        onChange={elegir}
+        className="hidden"
+        aria-label="Elegir una foto de perfil desde el dispositivo"
+      />
+    </Card>
+  );
+}
+
 export default function SettingsView({
   perfil, onUpdatePerfil, accent, onUpdateAccent, onPreviewAccent,
   historialColor, onRegistrarColorReciente, onToggleFavoritoColor,
@@ -1894,6 +2015,15 @@ export default function SettingsView({
 
         {actual.id === 'perfil' && (
           <>
+            {/* La foto va ARRIBA del todo: al entrar en Perfil se ve quién eres
+                antes que ningún campo, que es lo que pide el encargo ("su foto
+                circular, su nombre, y las opciones de su perfil"). */}
+            <AvatarPerfil
+              perfil={local}
+              accent={accent}
+              onCambiar={(foto) => commit({ ...local, foto })}
+              onQuitar={() => commit({ ...local, foto: null })}
+            />
             <Card>
               <p className="text-sm font-semibold mb-3" style={{ color: COLORS.text }}>Datos básicos</p>
               <div className="grid grid-cols-2 gap-3">

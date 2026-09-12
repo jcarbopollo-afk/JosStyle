@@ -52,6 +52,7 @@ import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, 
 import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl , vigilarLaConexion } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, addDays, hexToRgba, fechaLocalISO } from './lib/helpers';
+import { normalizarPerfilFoto } from './lib/fotoPerfil';
 import { extractPdfText } from './lib/pdfText';
 import { prediccionObjetivo } from './lib/predicciones';
 import { verificarBiometria } from './lib/biometria';
@@ -536,7 +537,11 @@ export default function App() {
       // (sin los campos nuevos: apellidos, sexo, deportesPracticados, idioma, unidades...)
       // no se quede con esos campos en `undefined` — mismo patrón que ya se usaba en
       // Calistenia (Fase 5) para no romper datos antiguos al añadir campos nuevos.
-      setPerfil({ ...DEFAULT_PERFIL, ...p });
+      // Y `normalizarPerfilFoto` encima del merge: el merge repone el campo `foto`
+      // que falte, pero no mira si lo guardado se puede pintar. Una foto corrupta o
+      // que se pasa del tope se descarta AL CARGAR, antes de que ninguna pantalla
+      // intente dibujarla (EH F46: se normaliza lo crudo, no después).
+      setPerfil(normalizarPerfilFoto({ ...DEFAULT_PERFIL, ...p }));
       setSueno(normalizarSueno(s));
       setCalistenia(c);
       setFutbol(f);
