@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.75.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.76.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **LA ENTREGA 3 ESTÁ CERRADA: 46 de 46** (ver `docs/11_ENTREGA3_ORDEN.md`). Los siete bloques
@@ -254,7 +254,7 @@ prompts** de una vez y dijo que se podían dividir; la división es ésta:
 | | Fase | Estado |
 |---|---|---|
 | **AS F1** | El **catálogo compartido** de asignaturas entre Horario y Estudio | ✅ **v3.75.0** |
-| **AS F2** | Quitar ≠ eliminar, con sus usos y su confirmación | ⏳ **siguiente** |
+| **AS F2** | Quitar ≠ eliminar, con sus usos y su confirmación | ✅ **v3.76.0** |
 
 ⚠️ **Él mismo separó las dos:** *"NO modifiques todavía el problema interno de solapamientos del
 Horario. Ese será la Fase 2."* 🏁 **Las dos están hechas y en `main`.**
@@ -325,6 +325,30 @@ código de agosto mientras él decía *"la web sigue igual"*.
   tarjeta grande de kcal conserva el nombre entero. Y **el número de columnas sale de la longitud de
   la lista** (`macros.length === 3 ? 'grid-cols-3' : 'grid-cols-2'`), no escrito a mano: un «3» a
   mano se queda viejo el día que haya un cuarto macro.
+- 🚨 **QUITAR NO ES ELIMINAR, Y CONFUNDIRLO PIERDE DATOS** (AS F2, y es la fase entera). Quitar una
+  asignatura de un programa o de una clase **rompe esa relación y nada más**; eliminarla es otra
+  acción, más protegida, que **sin `confirmado` no toca nada** (el patrón `aplicarPlan`, y ya van más
+  de veinte). Lo mismo vale hacia arriba: **borrar un programa o un horario no borra sus
+  asignaturas** — las usan, no las contienen.
+- 🚨 **UN AVISO QUE SOLO MIRA SU MÓDULO SE LLEVA POR DELANTE EL OTRO** (AS F2).
+  `impactoDeEliminarAsignatura` contaba exámenes, temas y horas — y **ni un bloque del horario**, así
+  que eliminar una asignatura borraba las clases de Josué **sin decirle que existían**. Y el borrado
+  **nunca tocaba `horarioTop`**, dejando actividades con un `asignaturaId` muerto. **Antes de escribir
+  un aviso de borrado, buscar TODOS los módulos que apuntan a esa entidad.**
+- 🚨 **«DÓNDE SE USA ESTO» SE CONTESTA UNA VEZ, PARA TODOS** (AS F2, apartado 5): `usosAsignatura.js`
+  mira los dos almacenes y de él leen Estudio y Horario. Con una cuenta por módulo, **los dos avisos
+  dirían números distintos sobre la misma asignatura** — y el usuario creería al que le convenga.
+  ⚠️ Y **no guarda nada**: una lista de «dónde se usa» se queda vieja en cuanto él borre un bloque, y
+  entonces miente justo cuando más importa.
+- ⚠️ **LO QUE VUELVE Y LO QUE NO VUELVE SE DICEN POR SEPARADO** (AS F2, y regla 8): la asignatura va a
+  Eliminados recientes, pero **el horario no tiene papelera** (E3 F5), así que sus clases se borran de
+  verdad. Meterlo todo en la misma frase habría prometido una recuperación que no existe.
+- 🔓 **TRES COMPROBACIONES DE LA E3 F45 SE DAN LA VUELTA, Y EL INVARIANTE SIGUE EN PIE** (AS F2).
+  Vigilaban que al borrar un área sus temas fueran a la papelera —un fallo real que aquella fase
+  arregló—. El apartado 10 pide que el área **ya no se los lleve**, así que *lo que se saca del módulo
+  tiene que ir a la entrada* sigue siendo cierto: **lo que ha cambiado es que ya no se saca**.
+  ⚠️ Y el resultado es **más seguro que antes: antes se recuperaban, ahora ni se pierden.**
+
 - 🚨 **ANTES DE CONSTRUIR UN SISTEMA COMPARTIDO, MIRAR SI YA LO ESTÁ** (AS F1, y es la lección más
   repetida del proyecto). El encargo pedía *"que dejen de funcionar como sistemas independientes"*, y
   **no eran dos sistemas**: el catálogo **es** `estudios.asignaturas` desde la Fase 6, `App.jsx` se lo

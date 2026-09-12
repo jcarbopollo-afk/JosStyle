@@ -1,5 +1,59 @@
 # CHANGELOG.md
 
+## v3.76.0 — AS F2: quitar no es eliminar
+
+> *"**Quitar una asignatura de un lugar NO es lo mismo que eliminar la asignatura del sistema.**"*
+
+Toda la fase es esa frase.
+
+### 🚨 Una sola fuente de verdad, y por eso existe `usosAsignatura.js`
+
+El apartado 5 lo pide con todas las letras: *"no quiero dos sistemas diferentes […] Horario y Estudio
+deben consultar la misma fuente de verdad"*. Así que quien pregunte **«¿dónde se usa Matemáticas?»**
+llama a la misma función, venga del módulo que venga. Con una cuenta por módulo, el aviso de Horario
+y el de Estudio acabarían diciendo números distintos sobre la misma asignatura.
+
+⚠️ **Y no guarda nada.** Los usos se cuentan en el momento sobre `estudios` y `horarioTop`. Una lista
+guardada de «dónde se usa» se queda vieja en cuanto él borre un bloque, y entonces el aviso miente
+justo en el momento en el que más importa.
+
+### 🐛 Dos agujeros reales que tenía la aplicación
+
+1. **El aviso solo contaba lo de Estudios.** `impactoDeEliminarAsignatura` miraba exámenes, temas,
+   horas, entregas y eventos — y **ni un bloque del horario**. Así que eliminar una asignatura se
+   llevaba por delante las clases de Josué **sin avisar de que existían**.
+2. **El borrado nunca tocaba `horarioTop`.** Las actividades del horario se quedaban apuntando a un
+   `asignaturaId` que ya no existía: el **«Caso 4»** que el enunciado prohíbe expresamente. Ahora se
+   limpia **en la misma llamada** que `estudios` (E3 F26).
+
+### El aviso, con sus dos formas
+
+Usada: *"Se está usando en 2 bloques de tu horario y 1 programa de Estudio."* Sin usar, la corta del
+apartado 3. Y **lo que vuelve se dice aparte de lo que no vuelve**: 🚨 **el horario no tiene
+papelera** —lo confirmó la E3 F5—, así que sus clases se borran de verdad, y eso va escrito en rojo.
+Prometer que se recupera todo sería mentir en pantalla (regla 8).
+
+### ⚠️ Un cambio de comportamiento sobre datos reales: el apartado 10
+
+> *"Si elimino Bachillerato científico NO quiero que se eliminen Matemáticas, Física, Química,
+> Biología."*
+
+**Hasta v3.75.0, borrar un programa se llevaba sus asignaturas a la papelera.** Desde AS F2 **solo se
+rompe la relación**: son entidades compartidas y pueden estar en el horario o en otro programa. Queda
+dicho aquí a propósito, porque cambia lo que le pasa a sus datos respecto a ayer.
+
+🔓 Y eso puso rojas **tres comprobaciones de la E3 F45** que vigilaban justo lo contrario — que al
+borrar un área sus temas, entregas y eventos fueran a la papelera. El invariante de entonces sigue en
+pie (*lo que se saca del módulo tiene que ir a la entrada*); lo que ha cambiado es que **ya no se
+saca**. Se les da la vuelta, no se borran. ⚠️ Y el resultado es más seguro que antes: **antes se
+recuperaban, ahora ni se pierden.**
+
+### Verificado
+
+`scripts/test-usos-asignatura.mjs` (46 comprobaciones) con las **ocho pruebas obligatorias** del
+enunciado, incluida una que comprueba que `referenciasColgando` **pueda ponerse roja** si alguien
+olvidara limpiar el horario — una comprobación que no puede fallar no sirve (EH F42).
+
 ## v3.75.0 — AS F1: el catálogo compartido de asignaturas
 
 > *"Quiero que las asignaturas de Horario y Estudio dejen de funcionar como sistemas
