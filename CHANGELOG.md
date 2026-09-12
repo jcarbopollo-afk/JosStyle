@@ -1,5 +1,42 @@
 # CHANGELOG.md
 
+## 2026-09-12 — 🏁 Las Entregas 2 y 3 están las dos cerradas (saneado documental)
+
+Sin cambios de código. Josué confirmó dos cosas que la documentación daba por pendientes desde hacía
+semanas, y esto las pone al día en los seis documentos que las citaban.
+
+### 🏁 Sonido está cerrado (5/5), y con él la Entrega 2 entera (110/110)
+
+*"Lo de los sonidos está acabado oficialmente."* La **SO F2 —la biblioteca— la cerró la otra
+conversación**, que subió los 46 archivos y sustituyó el aviso escrito a mano de Ajustes por
+`diagnosticoAudio()`. Comprobado desde aquí antes de escribirlo:
+
+- Los 46 archivos están en `public/sonidos/` **y en `main`**.
+- `hoySuena` **los cuenta** (`archivosQueHay > 0`): no está escrito a mano, así que la pantalla dejó
+  de decir *"todavía no suena nada"* sola.
+- `scripts/test-archivos-sonido.mjs` los mide contra su ficha en cada pasada — 94 comprobaciones.
+
+### ✅ Los dos bloques de SQL ya están ejecutados
+
+Los buckets `armario` (AR F1) y `fondos` (FO F2). Ya se suben fotos de prenda y fondos de pantalla.
+
+⚠️ **Esto es lo único que no puede comprobar una prueba**: Supabase queda fuera de las 19 578
+comprobaciones (R1). Queda anotado como lo que es —su palabra—, y si algún día falla una subida de
+foto es lo primero que hay que volver a mirar.
+
+⚠️ **La foto de perfil no se mueve por esto.** Sigue dentro de `perfil`: llevarla a un bucket ahora
+sería una migración a cambio de nada — 20 KB en una fila que ya se carga no cuestan una petición
+aparte ni una URL firmada que caduca (E3 F17). Una decisión bien tomada no se revisa porque cambie
+el paisaje que la motivó.
+
+### 🚨 La lección
+
+Las tres afirmaciones que se han caído hoy llevaban semanas siendo falsas, y **una se la decía la
+aplicación a Josué en la cara** mientras intentaba entender por qué no le sonaba el móvil. Un dato
+que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre — y manda a la siguiente
+sesión a perseguir un bloqueo que no existe. El arreglo bueno es el de `hoySuena`: **que el dato se
+cuente, no que se escriba**.
+
 ## v3.68.0 — Ajustes · Perfil: la foto de perfil y el nombre de los saludos
 
 Fase pedida por Josué después de cerrar la Entrega 3, y deliberadamente estrecha: **Perfil y nada

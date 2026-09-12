@@ -22,13 +22,15 @@ serverless en Vercel que hace de proxy a Anthropic.
 Nutrición (8/8) y Estudios (6/6)— más las cinco fases sueltas del principio (Pulido global, Rachas,
 Armario, Economía y Horario). **No queda ninguna fase de esa entrega por construir.**
 
-**Pendiente por delante:** lo que queda de la **Entrega 2** (7 módulos nuevos — Estilo de
-Hombre, Horario Top, Armario ✅, Fondos ✅, Buscador+IA ✅, Módulos activables ✅, Sonido y Rachas —
-**106 fases**; los bloques **ME**, **BI**, **AR**, **FO**, **Rachas**, **Horario Top** y 🏁 **Estilo
-de Hombre (65/65)** están terminados, y **Sonido va por 4/5**: **queda UNA fase, SO F2**, la
-biblioteca de sonidos, 🔓 **ya desbloqueada: los 46 archivos están en `public/sonidos/`, y la lleva
-la otra conversación**); y el
-bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué).
+🏁 **Y LA ENTREGA 2 TAMBIÉN ESTÁ CERRADA: 110 de 110.** Sus siete bloques —**EH** 65/65 ✅, **HT**
+12/12 ✅, **FO** 12/12 ✅, **SR** 9/9 ✅ (Sonido 5/5 + Rachas 4/4, dos módulos independientes por
+D2-01), **ME** 4/4 ✅, **BI** 4/4 ✅ y **AR** 4/4 ✅— están terminados. La última en caer, **SO F2 —la
+biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirmó el 2026-09-12: *"lo de
+los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
+con su suite verde (94 comprobaciones).
+
+**Pendiente por delante:** solo el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado por
+decisión de Josué), y lo que él vaya pidiendo fase a fase.
 
 ⚠️ **La Entrega 3 no fue una continuación de la 2.** Aquélla construía módulos nuevos; ésta **pulió y
 rehízo apartados que ya existían** —Hoy, Calendario, Biblioteca, Productividad, Bienestar, Nutrición,
@@ -36,9 +38,10 @@ Estudios— y arregló lo que Josué encontró **usando la aplicación en su iPh
 construyó desde cero, y ésa es la lección que hay que llevarse: **antes de escribir una línea, mirar
 qué hay ya en `src/views/` y `src/lib/`.**
 
-🔀 **Y `main` la comparten DOS sesiones.** Mientras esto se construye, Josué va subiendo los archivos
-de sonido desde otra conversación. **Antes de cada empuje: `git fetch origin main` y rebase encima.**
-Nunca se pisa su trabajo.
+🔀 **Y `main` la pueden compartir DOS sesiones.** Josué rota entre cuentas de Claude, y la otra
+conversación fue la que subió los archivos de sonido y cerró la SO F2. Ese trabajo ya está, pero la
+regla se queda: **antes de cada empuje, `git fetch origin main` y rebase encima.** Nunca se pisa lo
+que haya subido él desde otro sitio.
 
 ⚠️ **El "106" es un rótulo, no una suma** (C-24, detectada en v1.67.0): el desglose por módulos da
 **110** (EH 65 + HT 12 + FO 12 + SR 9 + ME 4 + BI 4 + AR 4). Las fases de EH van numeradas *"x/65"*
@@ -227,14 +230,12 @@ en `src/lib/fotoPerfil.js`, con `scripts/test-foto-perfil.mjs` detrás.
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. **Preguntarle a Josué qué quiere hacer a continuación.** No hay una fase siguiente que ejecutar:
-   lo que queda de la Entrega 2 es **SO F2**, y la lleva la otra conversación. Las opciones reales
-   son las cuatro decisiones abiertas de abajo, el bloque **AXION** de la Entrega 1 (que él aplazó)
-   o una entrega nueva.
-2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las 20 000 comprobaciones
-   cubre (R1), y ahora hay siete bloques rehechos que nadie ha tocado con el dedo.
-3. **Los dos bloques de SQL que siguen sin ejecutar** en el editor de Supabase: el del bucket
-   `armario` y el del bucket `fondos`. Sin ellos no se suben fotos de prenda ni fondos.
+1. **Esperar la fase que pase Josué.** Las Entregas 2 y 3 están cerradas, así que **no hay una fase
+   siguiente que ejecutar por tu cuenta**: él las va pasando de una en una (2026-09-12: *"ahora te
+   paso más fases"*). Si no hay ninguna encima de la mesa, las opciones son las decisiones abiertas
+   de abajo o el bloque **AXION** de la Entrega 1, que él aplazó.
+2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las 19 578 comprobaciones
+   cubre (R1), y hay siete bloques rehechos que nadie ha tocado con el dedo.
 
 ⏸ **Y las cuatro decisiones que siguen esperándole**, ninguna de ellas trabajo que yo pueda hacer
 solo: **DEP-29** (registrar JosStyle en Google y en Microsoft), **DEP-30** (el service worker),
@@ -268,13 +269,17 @@ código de agosto mientras él decía *"la web sigue igual"*.
 ⚠️ **Y lo que dejaron las veinte primeras, que afecta a todas las demás:**
 
 - 🚨 **UN BUCKET QUE NADIE HA CREADO ES UN BOTÓN QUE NO GUARDA NADA** (Ajustes · Perfil). La foto de
-  perfil pedía a gritos un sexto bucket de Storage, y habría sido lo natural —los otros cinco están
-  ahí—. Pero **dos de ellos, `armario` y `fondos`, llevan meses sin existir de verdad**: su SQL sigue
-  sin ejecutarse en Supabase, y es el recordatorio que arrastra este archivo. Un séptimo habría
-  nacido igual de muerto y el botón «Elegir foto» habría fallado en silencio en el iPhone de Josué —
-  regla 8 exacta. Va **dentro de `perfil`**, como `data:` URI recortado a 256 px y topado a 96 KB,
-  que es la fila de `app_data` que ya tiene sus cuatro políticas `auth.uid() = user_id`. **Antes de
-  elegir dónde se guarda algo, mirar si ese sitio existe de verdad.**
+  perfil pedía a gritos un sexto bucket de Storage, y habría sido lo natural. Pero cuando se
+  construyó, **dos de los cinco —`armario` y `fondos`— llevaban meses sin existir de verdad**: su SQL
+  seguía sin ejecutarse en Supabase. Un sexto habría nacido igual de muerto y el botón «Elegir foto»
+  habría fallado en silencio en el iPhone de Josué — regla 8 exacta. Va **dentro de `perfil`**, como
+  `data:` URI recortado a 256 px y topado a 96 KB, en la fila de `app_data` que ya tiene sus cuatro
+  políticas `auth.uid() = user_id`. ✅ **Josué ejecutó esos dos bloques el 2026-09-12**, así que el
+  hecho ya no vale — **pero la decisión sí, y no se revisa**: mover la foto a un bucket ahora sería
+  una migración de datos a cambio de nada, porque 20 KB en la fila que ya se carga no cuestan una
+  petición aparte ni una URL firmada que caduca (E3 F17). **Antes de elegir dónde se guarda algo,
+  mirar si ese sitio existe de verdad** — y una vez elegido bien, no se mueve porque cambie el
+  paisaje.
 - 🚨 **UN CAMPO QUE NADIE LEE NO FALLA NUNCA, Y ÉSTE LLEVABA ASÍ DESDE LA FASE A2** (Ajustes ·
   Perfil). `nombreMostrado` estaba en `DEFAULT_PERFIL`, tenía su campo en Ajustes y hasta prometía
   *"Se usará el nombre"* en el marcador — **y no lo leía ni una pantalla**. Josué podía escribirlo y
@@ -1303,10 +1308,10 @@ código de agosto mientras él decía *"la web sigue igual"*.
   la revisión).
 
 **🔒 Horario Top está CERRADO (12/12)**, 🏁 **Estilo de Hombre está CERRADO (65/65)** (v3.0.0) y
-**Sonido va por 4/5** (F1, F3, F4 y F5). **Queda UNA fase en toda la Entrega 2: SO F2, la biblioteca
-de sonidos** — y 🔓 **ya no está bloqueada: los 46 archivos están en `public/sonidos/`** desde el
-2026-09-04, con los nombres de la SO F4. **La lleva la otra conversación**, que es la que subió los
-archivos y arregló el aviso de Ajustes. `queFalta()` dice qué queda.
+🏁 **Sonido está CERRADO (5/5)**. La última, **SO F2 —la biblioteca de sonidos—, la cerró la otra
+conversación**, que es la que subió los 46 archivos y arregló el aviso de Ajustes; Josué lo confirmó
+el 2026-09-12. Los archivos están en `public/sonidos/` **y en `main`**, con los nombres de la SO F4,
+y `scripts/test-archivos-sonido.mjs` los mide contra su ficha en cada pasada (94 comprobaciones).
 
 🔓 **C-25 está RESUELTA (v2.7.0), y con ella se desbloquearon EH F18, F19 y F22.** Josué preguntó
 *"dime en qué se diferencian aseo y cuidado corporal"* —que era literalmente la pregunta de la
@@ -1851,11 +1856,11 @@ contradice a la aplicación manda a la siguiente sesión a perseguir un bloqueo 
 
 Seis cosas que conviene tener presentes al retomar:
 
-- **D2-01: Sonido y Rachas son DOS módulos independientes** (5 fases + 4). Rachas está cerrado 4/4;
-  Sonido va por 4/5 (F1, F3, F4 y F5), y **F3, F4 y F5 se adelantaron a F2 a propósito** porque no
-  necesitan los archivos. La que queda, **F2**, sí: es literalmente la biblioteca.
-- ⚠️ **`especificacionSonidos.js` DEFINE la biblioteca, no la crea** (SO F4). `queFalta()` dice
-  exactamente qué archivos tiene que dar Josué y por dónde empezar.
+- **D2-01: Sonido y Rachas son DOS módulos independientes** (5 fases + 4), y los dos están
+  **cerrados**: Rachas 4/4 y Sonido 5/5. ⚠️ **F3, F4 y F5 se adelantaron a F2 a propósito** porque no
+  necesitaban los archivos; la F2 sí, y por eso fue la última en caer.
+- ⚠️ **`especificacionSonidos.js` DEFINE la biblioteca, no la crea** (SO F4). `queFalta()` sigue ahí
+  y hoy no devuelve nada: si una fase futura añade un evento, **dirá qué archivo falta**.
 - ⚠️ **`audioEventos.js` NO redefine el catálogo de SO F1: lo traduce** (SO F3). Y los eventos que
   nadie emite —XP, niveles, recompensas— llevan escrito por qué, con prueba.
 - **D2-02 sigue en pie: no sobregamificar.** XP y niveles solo dentro de Sonido/Rachas.
@@ -2008,12 +2013,13 @@ Seis cosas que conviene tener presentes al retomar:
   siempre `fechaLocalISO`.** Y mensual/anual **se cuentan desde el ancla**, nunca encadenando
   `setMonth(+1)`: el recorte de los meses cortos se queda pegado.
 
-- 🔓 **YA ESTÁN LOS 46 ARCHIVOS DE AUDIO** (comprobado el 2026-09-06): `public/sonidos/` los tiene
-  con los nombres exactos de la SO F4 —`ui_click_01.mp3`, `streak_milestone_365.mp3`…—, así que
-  **suenan sin tocar código**, como estaba previsto. ⚠️ Lo que decía este bloque hasta hoy —*"sigue
-  sin haber ni un archivo"*— **dejó de ser verdad el 2026-09-04**, y el panel de Ajustes arrastró la
-  misma frase escrita a mano hasta que la otra sesión la sustituyó por `diagnosticoAudio()`. **SO F2
-  la lleva esa conversación**: no tocarla desde aquí sin hablarlo.
+- 🏁 **SONIDO ESTÁ CERRADO, Y LOS 46 ARCHIVOS ESTÁN EN `main`** (confirmado por Josué el 2026-09-12):
+  `public/sonidos/` los tiene con los nombres exactos de la SO F4 —`ui_click_01.mp3`,
+  `streak_milestone_365.mp3`…—, así que **suenan sin tocar código**, como estaba previsto. ⚠️ Y la
+  historia de este bloque es la lección: decía *"sigue sin haber ni un archivo"* **mucho después de
+  que dejara de ser verdad**, el panel de Ajustes le repetía esa mentira a Josué en la cara mientras
+  intentaba entender por qué no le sonaba el móvil, y la frase estaba escrita a mano en tres sitios.
+  Ahora lo dice `diagnosticoAudio()`, que **lo mira**. Un dato que nadie vuelve a comprobar caduca.
 - 🚨 **Ninguna pantalla puede hacer `new Audio(...)`** (SO F1 y F5): el motor es el único que
   reproduce, y hay una comprobación que lee todas las vistas.
 - ⚠️ **Un perfil de sonido no se guarda: se DEDUCE** (SO F5): `perfilActual()` lo saca de las
@@ -2151,9 +2157,11 @@ Seis cosas que conviene tener presentes al retomar:
   (`0.96` / `95` / `90`) es deliberada.
 - ⚠️ **Mover una plaquita se hace con flechas, no arrastrando** (EH F50): las flechas funcionan
   con el lector de pantalla, y el arrastre sería un segundo mecanismo para lo mismo.
-⚠️ **Recordatorio para Josué:** faltan por ejecutar en el SQL Editor de Supabase **dos** bloques
-de `supabase/schema.sql` — el del bucket `armario` (AR F1) y el del bucket `fondos` (FO F2). Sin
-ellos todo funciona menos subir fotos de prenda y fotos de fondo.
+✅ **Los dos bloques de SQL que faltaban YA ESTÁN EJECUTADOS** — el del bucket `armario` (AR F1) y el
+del bucket `fondos` (FO F2). Lo hizo Josué y lo confirmó el 2026-09-12, así que **ya se suben fotos
+de prenda y fondos de pantalla**. ⚠️ Esto **no lo puede comprobar una prueba**: Supabase queda fuera
+de las 19 578 comprobaciones (R1). Si algún día falla una subida de foto, **es lo primero que hay que
+volver a mirar** — pero no se reabre el aviso sin que él reporte un fallo.
 
 El bloque **R0** ya está completo (v1.23.0) y **C-11** —el modelo de IA obsoleto— está resuelto:
 `api/ask-ai.js` lee `ANTHROPIC_MODEL` y por defecto usa un modelo vigente.

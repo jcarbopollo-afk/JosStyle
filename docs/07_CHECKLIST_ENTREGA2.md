@@ -4802,8 +4802,8 @@ verificación automática.
 fallaba por uno. La `h12` es la foto **activa**, así que la primera de las *anteriores* es la
 `h11`, no la `h12`. El código estaba bien; la expectativa, mal.
 
-⚠️ **Recordatorio para Josué:** el bucket `fondos` de `supabase/schema.sql` sigue pendiente de
-ejecutar en el SQL Editor. Sin él, subir fotos de fondo no funciona (todo lo demás sí).
+✅ **El bucket `fondos` YA ESTÁ CREADO.** Josué ejecutó su bloque de `supabase/schema.sql` en el
+SQL Editor y lo confirmó el 2026-09-12, así que **ya se suben fotos de fondo**.
 
 ---
 
@@ -6233,10 +6233,10 @@ la confirmación lo dice: cambia según la prenda tenga foto o no.
    filas de botones, que funcionan con 3 o 4 opciones. El Armario tiene 14 categorías y 13 colores,
    y catorce pastillas en fila no caben en un iPhone. Un desplegable nativo abre además la rueda de
    iOS, que se maneja con el pulgar mucho mejor.
-2. **El bucket `armario`** en `supabase/schema.sql`. ⚠️ **Josué tiene que ejecutar ese bloque en el
-   SQL Editor de Supabase.** Hasta que lo haga, el Armario funciona **entero sin fotos** — la
-   fotografía es opcional por diseño; lo único que fallará es subir una imagen, y la prenda se
-   guarda igual con un aviso en vez de perder lo escrito.
+2. **El bucket `armario`** en `supabase/schema.sql`. ✅ **Josué ya ejecutó ese bloque** (confirmado
+   el 2026-09-12), así que las fotos de prenda se suben. ⚠️ Y lo que se diseñó para cuando no
+   existía **sigue siendo correcto y no se toca**: la fotografía es opcional, y si una subida falla
+   la prenda se guarda igual con un aviso en vez de perder lo escrito.
 
 **Un fallo que destapó el smoke test:** `ArmarioView` es la primera vista de la prueba de
 renderizado que toca Storage, y `lib/supabase.js` lee `import.meta.env` al cargarse — algo que solo
@@ -6985,9 +6985,10 @@ un control que dice "Sonidos: sí" y no suena nunca — lo que prohíbe la regla
       prioridad/cooldown → reproducir → fallback, sin que ningún módulo sepa nada de audio.
 - [x] **40 · Informe final** — los doce puntos, en `CHANGELOG.md` y `HANDOFF.md`.
 
-**Lo que queda para la Fase 2:** la biblioteca de sonidos, sus categorías y las asignaciones — que es
-justo lo que necesita los archivos que Josué dará *"cuando la web ya tenga todos los botones
-activos"*.
+🏁 **La Fase 2 —la biblioteca de sonidos, sus categorías y las asignaciones— YA ESTÁ CERRADA.** Era
+justo la que necesitaba los archivos, y Josué los produjo en FL Studio *"cuando la web ya tenía todos
+los botones activos"*, como había dicho. **La cerró la otra conversación**; los 46 están en
+`public/sonidos/` y en `main`, medidos uno a uno contra la ficha de la SO F4.
 
 ---
 
@@ -7001,9 +7002,10 @@ que el motor necesitaba; esta fase trae **los 42 del catálogo**, la escala de 0
 de la racha. ⚠️ **No se redefine nada de F1**: se traduce, porque dos catálogos que se separan es lo
 que su apartado 30 prohíbe.
 
-⚠️ **Se construye ANTES que SO F2 a propósito**: F2 es la biblioteca de sonidos y **está bloqueada**
-por los archivos de audio, que no existen. El catálogo y la jerarquía no los necesitan, así que se
-adelanta en vez de dejar el bloque parado.
+⚠️ **Se construyó ANTES que SO F2 a propósito**: la F2 es la biblioteca de sonidos y entonces
+estaba bloqueada por los archivos de audio, que no existían. El catálogo y la jerarquía no los
+necesitaban, así que se adelantó en vez de dejar el bloque parado. 🏁 **La F2 se cerró después**, con
+los 46 archivos ya producidos.
 
 - [x] **El catálogo completo** — los 42 exactos: 5 de interfaz, 4 de confirmación, 4 de
       tarea/objetivo, 3 de XP, 5 de nivel/recompensa/insignia, 2 de racha, 10 milestones, 4 de estado
@@ -7027,17 +7029,19 @@ adelanta en vez de dejar el bloque parado.
       en RA F1 porque el motor deriva del historial y no tiene comodines. **Está dicho en el código y
       comprobado en una prueba, en vez de dejar eventos fantasma.**
 
-**Lo que sigue sin estar probado, y es lo mismo desde SO F1:** ⏸ **HOY NO SUENA NADA**, porque no hay
-ni un archivo de audio en el proyecto. **SO F2 es justo la fase que los necesita y sigue esperando** a
-que Josué los dé *"cuando la web ya tenga todos los botones activos"*.
+🏁 **YA SUENA.** Esto decía *"hoy no suena nada"* porque no había ni un archivo de audio, y **SO F2
+era justo la fase que los necesitaba**. Josué los produjo en FL Studio y la otra conversación cerró la
+fase: los 46 están en `public/sonidos/` y en `main`. ⚠️ Lo que **sigue** sin comprobar es cómo suena
+en el iPhone de verdad (R1).
 
 #### SO · Fase 5/5 — PRODUCCIÓN, INTEGRACIÓN Y TEST FINAL ✅ COMPLETADA (v3.1.0)
 
 > **`src/lib/sonidoProduccion.js`** + **`BloqueSonido` en `SettingsView.jsx`** (95 comprobaciones).
 > Sin SQL nuevo.
 >
-> ⏸ **Sigue sin haber archivos de audio** (SO F2). `hoySuena` es **false**, y la propia pantalla lo
-> dice arriba del todo.
+> 🏁 **Los archivos llegaron con la SO F2**, así que `hoySuena` es **true**. ⚠️ Y el acierto fue no
+> escribirlo a mano: `hoySuena` **cuenta los archivos que hay**, así que la pantalla dejó de decir
+> *"todavía no suena nada"* sola, sin tocar una línea.
 >
 > 🚨 **El motor no se reescribe**: la estructura del apartado 2 no se adopta, con su motivo.
 >

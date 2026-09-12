@@ -26,7 +26,7 @@ Léela en este orden la primera vez. Después, entra directo al documento que ne
 | 07 | [`07_CHECKLIST_ENTREGA2.md`](07_CHECKLIST_ENTREGA2.md) | **3 761 casillas** de la Entrega 2, reordenadas ascendentemente por fase, con las reglas transversales de los 7 módulos. Todo ⬜: nada implementado. | Al implementar cualquier fase de la Entrega 2. |
 | 08 | [`08_ESTILO_DE_HOMBRE_TECNICO.md`](08_ESTILO_DE_HOMBRE_TECNICO.md) | Documentación técnica de Estilo de hombre: qué existe, dónde está, con qué se conecta y qué no debe tocarse. ⚠️ **Se genera desde el código**, no se edita a mano. | Antes de tocar cualquier cosa de Estilo de hombre. |
 | 09 | [`09_ESTILO_DE_HOMBRE_CIERRE.md`](09_ESTILO_DE_HOMBRE_CIERRE.md) | El informe de cierre del módulo (EH F65), **calculado** ejecutando la auditoría de cada fase. Dice qué está hecho, qué está bloqueado y quién decide. | Para saber en qué estado quedó Estilo de hombre. |
-| 10 | [`10_SONIDOS_PARA_FL_STUDIO.md`](10_SONIDOS_PARA_FL_STUDIO.md) | El brief de los 46 archivos de audio que faltan (SO F2): qué es cada uno, cuánto dura y cómo debe sonar, para producirlos en FL Studio. | Al producir los sonidos que faltan. |
+| 10 | [`10_SONIDOS_PARA_FL_STUDIO.md`](10_SONIDOS_PARA_FL_STUDIO.md) | El brief de los 46 archivos de audio (SO F2): qué es cada uno, cuánto dura y cómo debe sonar. 🏁 **Ya producidos** y en `public/sonidos/`; queda como la ficha contra la que se miden. | Si hay que rehacer o añadir un sonido. |
 | 11 | [`11_ENTREGA3_ORDEN.md`](11_ENTREGA3_ORDEN.md) | **Entrega 3** (4 sept 2026): las **46 fases** de pulido y rediseño de Hoy, Calendario, Biblioteca, Productividad, Bienestar, Sueño, Nutrición y Estudios, con su línea en el documento original. | Antes de empezar cualquier fase de la Entrega 3. |
 
 ---
@@ -42,9 +42,10 @@ van en `docs/`. La Entrega 1 sigue en `ESPECIFICACION_AJUSTES_ENTREGA1.md`, en l
 
 ## Estado del proyecto en una línea
 
-`package.json` **v3.2.0**. **Entrega 2: 109 de las 110 fases construidas y verificadas** — ME, BI,
-AR, FO, RA y HT **cerrados**; **Sonido 4/5** (solo falta la F2, la biblioteca, que depende de los archivos de
-audio que dará Josué) y 🏁 **Estilo de Hombre CERRADO: 65/65** (base estable v1.0).
+`package.json` **v3.68.0**. 🏁 **Entrega 2 CERRADA: 110 de 110** — ME, BI, AR, FO, RA y HT
+**cerrados**, 🏁 **Sonido 5/5** (la F2, la biblioteca, la cerró la otra conversación: los 46 archivos
+están en `public/sonidos/` y en `main`) y 🏁 **Estilo de Hombre CERRADO: 65/65**.
+🏁 **Y la Entrega 3 también: 46 de 46.**
 El Prompt Maestro de 21 fases está **cerrado**; los bloques Ajustes (A1–A7),
 Navegación por áreas (N1–N4) y Personalización Visual Extrema (V1–V4) están **cerrados**; el
 Calendario Universal está en **Fase 3 casi completa** (quedan las estadísticas temporales y la personalización avanzada; R2.3 y R2.4 hechas en la v3.2.0); Seguridad Centralizada, Dashboard–Centro de Control
