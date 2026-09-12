@@ -2302,10 +2302,12 @@ Seis cosas que conviene tener presentes al retomar:
   (`0.96` / `95` / `90`) es deliberada.
 - ⚠️ **Mover una plaquita se hace con flechas, no arrastrando** (EH F50): las flechas funcionan
   con el lector de pantalla, y el arrastre sería un segundo mecanismo para lo mismo.
-🚨 **HAY UN BLOQUE DE SQL NUEVO SIN EJECUTAR** (NAV F3, v3.72.0): el del bucket **`relacion`**, al
-final de `supabase/schema.sql`. Sin él, Relación funciona entera **menos el Álbum** — las fechas y los
-días especiales no tocan Storage para nada, pero **subir una foto fallará**. Es lo primero que hay que
-mirar si Josué dice que el Álbum no le guarda.
+✅ **Y EL TERCERO TAMBIÉN: el bucket `relacion` (NAV F3) YA ESTÁ EJECUTADO.** Josué lo confirmó el
+mismo 2026-09-12 (*"ya lo he ejecutado, salió success"*), así que el Álbum sube fotos de verdad.
+⚠️ **Este aviso decía lo contrario hasta que se volvió a mirar**, y es la tercera vez que pasa en
+este archivo —los sonidos lo hicieron dos veces—: **un aviso que nadie vuelve a comprobar manda a la
+siguiente sesión a perseguir un bloqueo que ya no existe.** Si algún día el Álbum no guarda, es lo
+primero que hay que volver a mirar; pero no se reabre sin que él reporte un fallo.
 
 ✅ **Los dos bloques de SQL que faltaban YA ESTÁN EJECUTADOS** — el del bucket `armario` (AR F1) y el
 del bucket `fondos` (FO F2). Lo hizo Josué y lo confirmó el 2026-09-12, así que **ya se suben fotos
