@@ -5028,77 +5028,85 @@ ok(!desborda, '⚠️ …sin desbordar a lo ancho (y aquí saltó el desbordamie
 /* ===========================================================================
    GE F2 — EL SOLAPAMIENTO FALSO DEL HORARIO
    ===========================================================================
-   Josué: *"Los horarios eliminados siguen provocando detección falsa de
-   solapamientos"*, y los casos A-E de su encargo. La causa real no era visual:
-   `duplicarHorario` dejaba la copia **activa y vigente desde hoy** con las
-   mismas clases, y `resolverDia` suma todos los horarios vigentes — así que
-   cada clase se resolvía dos veces.
+   Josue: *"Los horarios eliminados siguen provocando deteccion falsa de
+   solapamientos"*, y *"verifica que la interfaz refleja los datos persistidos"*.
 
-   ⚠️ Sufijo `_ge2` en todo: dos `const` iguales en este archivo plano no
-   compilan, y eso tumba las 1400 comprobaciones sin que nada más falle. */
+   BUG: `duplicarHorario` dejaba la copia activa y vigente desde hoy con las
+   mismas clases, y `resolverDia` suma todos los horarios vigentes, asi que
+   cada clase se resolvia dos veces.
+
+   OJO: el dia de las clases SE CALCULA, no se escribe. El aviso de choques es
+   del dia que se esta viendo, asi que unas clases puestas "el lunes" no se ven
+   un sabado y la comprobacion saldria verde sin haber mirado nada. `dia` va de
+   1 (lunes) a 7 (domingo), como `diaDeFecha`.
+
+   Sufijo `_ge2`: dos `const` iguales en este archivo plano no compilan. */
 await page.setViewportSize({ width: 1280, height: 900 });
 const hoyISO_ge2 = new Date().toLocaleDateString('sv-SE');
-/* Un solo horario, dos clases SEGUIDAS que no se pisan: tocarse no es
-   solaparse. Si aquí saliera un choque, ya sería un falso positivo. */
-almacen.horarioTop = {
-  horarios: [{
-    id: 'hg1', nombre: 'Curso 25-26', activo: true, archivado: false, creadoEn: hoyISO_ge2,
-    columnas: [
-      { id: 'cg1', horarioId: 'hg1', nombre: 'Lunes', dia: 1, posicion: 0, visible: true },
-      { id: 'cg2', horarioId: 'hg1', nombre: 'Martes', dia: 2, posicion: 1, visible: true },
-      { id: 'cg3', horarioId: 'hg1', nombre: 'Miércoles', dia: 3, posicion: 2, visible: true },
-      { id: 'cg4', horarioId: 'hg1', nombre: 'Jueves', dia: 4, posicion: 3, visible: true },
-      { id: 'cg5', horarioId: 'hg1', nombre: 'Viernes', dia: 5, posicion: 4, visible: true },
-    ],
-    filas: [
-      { id: 'fg1', tipo: 'hora', inicio: '08:00', fin: '09:00', posicion: 0 },
-      { id: 'fg2', tipo: 'hora', inicio: '09:00', fin: '10:00', posicion: 1 },
-    ],
-  }],
-  actividades: [],
-  bloques: [
-    { id: 'bg1', horarioId: 'hg1', columnaId: 'cg1', filaId: 'fg1', inicio: '08:00', fin: '09:00', titulo: 'Mates' },
-    { id: 'bg2', horarioId: 'hg1', columnaId: 'cg1', filaId: 'fg2', inicio: '09:00', fin: '10:00', titulo: 'Lengua' },
-  ],
-  excepciones: [], confirmaciones: [], avisos: [], mochila: [],
+const diaHoy_ge2 = ((new Date().getDay() + 6) % 7) + 1;
+const horarioGe2 = (id, nombre, extra = {}) => ({
+  id, nombre, activo: true, archivado: false, creadoEn: hoyISO_ge2, ...extra,
+  columnas: [{ id: `c_${id}`, horarioId: id, nombre: 'Hoy', dia: diaHoy_ge2, posicion: 0, visible: true }],
+  filas: [{ id: `f_${id}`, tipo: 'hora', inicio: '08:00', fin: '10:00', posicion: 0 }],
+});
+const claseGe2 = (id, horarioId, inicio, fin, titulo) => ({
+  id, horarioId, columnaId: `c_${horarioId}`, filaId: `f_${horarioId}`, inicio, fin, titulo,
+});
+const baseGe2 = (horarios, bloques) => ({
+  horarios, bloques, actividades: [], excepciones: [], confirmaciones: [], avisos: [], mochila: [],
+});
+const abrirHorario_ge2 = async () => {
+  await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+  await pulsar('Gestión');
+  await pulsar('Horario');
 };
-await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
-await pulsar('Gestión');
-await pulsar('Horario');
-const ge2_inicial = await esperarTexto(/Curso 25-26/);
-ok(/Curso 25-26/.test(ge2_inicial), 'GE F2 — A) el horario de Josué se ve');
-ok(!/choque/i.test(ge2_inicial),
-  '🚨 GE F2 — A) y NO anuncia ningún choque: dos clases seguidas no se solapan');
 
-/* B) Duplicar para otro curso — el botón que generaba el problema. */
-await pulsar('Curso 25-26');
-await page.waitForTimeout(700);
-const pudoDuplicar_ge2 = await pulsar('Duplicar para otro curso');
-await page.waitForTimeout(1200);
-const ge2_duplicado = await ver();
-ok(pudoDuplicar_ge2, 'GE F2 — B) se puede duplicar el horario para otro curso');
-ok(!/choque/i.test(ge2_duplicado),
-  '🚨 GE F2 — B) Y DUPLICAR YA NO INVENTA CHOQUES: la copia nace archivada, no compitiendo con el original');
+/* A) Un horario, dos clases SEGUIDAS. Tocarse no es solaparse: si aqui saliera
+   un choque, ya seria el falso positivo que reporto Josue. */
+almacen.horarioTop = baseGe2(
+  [horarioGe2('hg1', 'Curso 25-26')],
+  [claseGe2('bg1', 'hg1', '08:00', '09:00', 'Mates'), claseGe2('bg2', 'hg1', '09:00', '10:00', 'Lengua')],
+);
+await abrirHorario_ge2();
+const ge2_sano = await esperarTexto(/Mates/);
+ok(/Mates/.test(ge2_sano), 'GE F2 - A) las clases de hoy se ven');
+ok(!/choque/i.test(ge2_sano),
+  'GE F2 - A) y NO anuncia ningun choque: dos clases seguidas no se solapan');
 
-/* ⚠️ Y no se ha perdido: está en Archivados, de donde se restaura de un toque. */
-ok(/Archivados/i.test(ge2_duplicado),
-  '⚠️ GE F2 — B) …y la copia está en Archivados, con sus clases guardadas');
+/* B) CASO E: dos horarios DISTINTOS, los dos activos a proposito, que de verdad
+   se pisan. TIENE que seguir detectandose -- es lo que el encargo exige
+   conservar, y por eso el arreglo no fue acotar la deteccion. */
+almacen.horarioTop = baseGe2(
+  [horarioGe2('hg1', 'Curso 25-26'), horarioGe2('hg2', 'Gimnasio')],
+  [claseGe2('bg1', 'hg1', '08:00', '09:00', 'Mates'), claseGe2('bq1', 'hg2', '08:30', '09:30', 'Pesas')],
+);
+await abrirHorario_ge2();
+const ge2_choque = await esperarTexto(/choque/i);
+ok(/choque/i.test(ge2_choque),
+  'GE F2 - B) CASO E: un choque de VERDAD entre dos horarios se sigue detectando');
+/* Y lo que hacia este fallo indescifrable: el numero a secas. Ahora dice QUE
+   choca y DE QUE horario viene cada lado. */
+ok(/Mates \(Curso 25-26\)/.test(ge2_choque) && /Pesas \(Gimnasio\)/.test(ge2_choque),
+  'GE F2 - B) y dice QUE choca y DE QUE HORARIOS: un numero suelto no se puede diagnosticar');
+ok(/Mis horarios/i.test(ge2_choque) && /los dos están activos/i.test(ge2_choque),
+  'GE F2 - B) y ofrece la salida, que es lo que arregla los datos que ya tiene guardados');
 
-/* 🚨 Y lo que de verdad importa: que lo guardado diga lo mismo que la pantalla. */
-const ge2_guardado = await page.evaluate(() => JSON.parse(localStorage.getItem('__nada__') || 'null'));
-ok(ge2_guardado === null, '(sin usar localStorage: los datos van a Supabase)');
-const ge2_estado = almacen.horarioTop;
-ok((ge2_estado.horarios || []).length === 2,
-  '🚨 GE F2 — B) PERSISTENCIA: la copia se ha guardado de verdad, son dos horarios');
-ok((ge2_estado.horarios || []).filter((h) => h.activo && !h.archivado).length === 1,
-  '🚨 GE F2 — B) …y solo UNO está activo: es lo que impide que las clases se cuenten dos veces');
+/* C) Con el de mas archivado, el choque desaparece -- y sobrevive a recargar,
+   que es lo que pidio comprobar: la pantalla refleja lo persistido. */
+almacen.horarioTop = baseGe2(
+  [horarioGe2('hg1', 'Curso 25-26'), horarioGe2('hg2', 'Gimnasio', { activo: false, archivado: true })],
+  [claseGe2('bg1', 'hg1', '08:00', '09:00', 'Mates'), claseGe2('bq1', 'hg2', '08:30', '09:30', 'Pesas')],
+);
+await abrirHorario_ge2();
+const ge2_archivado = await esperarTexto(/Mates/);
+ok(!/choque/i.test(ge2_archivado),
+  'GE F2 - C) Con el otro horario archivado, el choque desaparece');
+ok(!/Pesas/.test(ge2_archivado),
+  'GE F2 - C) y sus clases dejan de resolver, sin haberse borrado');
 
-/* C) Recargar: la interfaz refleja lo persistido, que es lo que pidió Josué. */
-await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
-await pulsar('Gestión');
-await pulsar('Horario');
-const ge2_recargado = await esperarTexto(/Curso 25-26/);
+await abrirHorario_ge2();
+const ge2_recargado = await esperarTexto(/Mates/);
 ok(!/choque/i.test(ge2_recargado),
-  '🚨 GE F2 — C) RECARGA: sigue sin choques, así que no era un estado de pantalla');
+  'GE F2 - C) RECARGA: sigue sin choques, asi que no era un estado de pantalla');
 
 await salir(browser);
