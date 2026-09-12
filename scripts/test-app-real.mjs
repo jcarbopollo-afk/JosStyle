@@ -4793,4 +4793,87 @@ const aj_n1 = await esperarTexto(/Apariencia/i);
 ok(/Perfil/.test(aj_n1) && /Apariencia/.test(aj_n1) && /Preferencias generales/.test(aj_n1),
   '🚨 …y conserva TODAS sus categorías: mover no es recortar');
 
+/* ══════════════════════════════════════════════════════════════════════════
+   NAV F4 — ELIMINAR UNA TAREA SIN COMPLETARLA, Y EL ICONO DE HÁBITOS
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 Las pruebas de Node comprueban que el botón está ESCRITO. Lo único que
+   demuestra lo que Josué reportó —*"no existe una opción para eliminarla"*— es
+   **verlo y pulsarlo**, porque su queja no era que faltara el código: era que no
+   se veía. */
+/* ⚠️ `HOY` a secas no existe en este archivo: cada sección declara la suya
+   (`HOY_PR4`, `HOY_PR7`…) porque dos `const` con el mismo nombre no compilan y
+   cuestan doce minutos descubrir — hay una regla invariante que lo caza. */
+const HOY_F4 = new Date().toLocaleDateString('sv-SE');
+almacen.productividad = {
+  tareas: [
+    { id: 'tf4-1', texto: 'Tarea que quiero borrar', fecha: HOY_F4, hecha: false, prioridad: 'media' },
+    { id: 'tf4-2', texto: 'Tarea que se queda', fecha: HOY_F4, hecha: false, prioridad: 'media' },
+  ],
+  habitos: [], rutinas: [], metas: [], pomodoros: {}, pomodoroSesiones: [], apuntes: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Vida');
+ok(await pulsar('Productividad'), 'se abre Productividad');
+ok(await pulsar('Tareas'), 'y la mini-app Tareas');
+const tareas_f4 = await esperarTexto(/Tarea que quiero borrar/i);
+ok(/Tarea que quiero borrar/i.test(tareas_f4), 'las dos tareas están ahí');
+
+/* 🚨 El botón se pulsa POR SU `aria-label`, que es como lo pulsaría alguien con
+   VoiceOver — y es la única forma de demostrar que existe **en la fila**, sin
+   abrir el detalle. */
+const escrituras_f4 = guardado.filter((g) => g && g.key === 'productividad').length;
+ok(await pulsar('Eliminar Tarea que quiero borrar'),
+  '🚨 NAV F4 — SE PUEDE ELIMINAR DESDE LA FILA, sin abrir la tarea y sin completarla');
+await page.waitForTimeout(900);
+
+const trasBorrar_f4 = await ver();
+ok(!/Tarea que quiero borrar/i.test(trasBorrar_f4), '🚨 …y desaparece de la lista');
+ok(/Tarea que se queda/i.test(trasBorrar_f4), '⚠️ …sin llevarse por delante la otra');
+
+// 🚨 Y se ha borrado DE VERDAD, que es distinto de haberse ocultado.
+ok(guardado.filter((g) => g && g.key === 'productividad').length > escrituras_f4,
+  '🚨 EL BORRADO ES REAL: escribe en `productividad`, no esconde la fila');
+const prodTras_f4 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value;
+ok(Array.isArray(prodTras_f4?.tareas) && !prodTras_f4.tareas.some((x) => x.id === 'tf4-1'),
+  '🚨 …y la tarea ya no está en los datos');
+ok(prodTras_f4.tareas.some((x) => x.id === 'tf4-2'), '⚠️ …y la otra sigue guardada');
+
+// ⚠️ Y sobrevive a recargar, que es lo que él pidió comprobar.
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Vida');
+await pulsar('Productividad');
+await pulsar('Tareas');
+const tras_f4 = await esperarTexto(/Tarea que se queda/i);
+ok(!/Tarea que quiero borrar/i.test(tras_f4),
+  '🚨 …y SIGUE BORRADA DESPUÉS DE RECARGAR: no era un ocultar visual');
+
+/* ── El icono de Hábitos ──────────────────────────────────────────────────── */
+/* 🐛 `pulsar('Productividad')` no vuelve al lanzador: dentro de una mini-app el
+   botón de volver es de solo icono y se llama **«Volver a Productividad»** —
+   `pulsar` compara el `aria-label` ENTERO, así que hay que darle el nombre
+   exacto. Tercera vez de la misma lección en dos fases. */
+ok(await pulsar('Volver a Productividad'), 'se vuelve al lanzador de Productividad');
+await esperarTexto(/H[aá]bitos/i);
+// 🚨 Se mira el SVG de verdad, no que la clase esté escrita: `ArrowUpRight`
+// dibuja una línea diagonal y una punta; `Flame` no.
+const iconoHabitos_f4 = await page.evaluate(() => {
+  const btn = [...document.querySelectorAll('button')].find((b) => /Hábitos/i.test(b.innerText || ''));
+  if (!btn) return null;
+  const svg = btn.querySelector('svg');
+  return svg ? svg.getAttribute('class') || svg.outerHTML.slice(0, 200) : null;
+});
+/* 🐛 ⚠️ **Y esta comprobación pasó EN FALSO la primera vez.** Con
+   `iconoHabitos_f4` a `null`, `!/flame/.test(null || '')` es `true`: decía que el
+   icono ya no era la llama **sin haber encontrado ningún icono**. Un verde por
+   no haber mirado es peor que un rojo. Ahora se exige encontrarlo primero. */
+ok(typeof iconoHabitos_f4 === 'string' && iconoHabitos_f4.length > 0,
+  '🚨 la plaquita de Hábitos dibuja su icono');
+ok(typeof iconoHabitos_f4 === 'string' && !/flame/i.test(iconoHabitos_f4),
+  '🚨 NAV F4 — EL ICONO DE HÁBITOS YA NO ES LA LLAMA (era el de Rachas)');
+ok(typeof iconoHabitos_f4 === 'string' && /arrow-up-right/i.test(iconoHabitos_f4),
+  '…es la flecha ascendente ↗, que no se usa en ninguna otra parte de JosStyle');
+
 await salir(browser);

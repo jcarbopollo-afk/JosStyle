@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   CheckCircle2, Circle, Flame, Plus, Trash2, Play, Pause, RotateCcw, ListChecks, Target,
-  ChevronDown, ChevronUp, ArrowLeft, Timer, Compass, Repeat, Pencil,
+  ChevronDown, ChevronUp, ArrowLeft, Timer, Compass, Repeat, Pencil, ArrowUpRight,
   Droplet, BookOpen, Dumbbell, Moon, Apple, Brain, Heart, Archive,
 } from 'lucide-react';
 import { COLORS, PERIODOS_META } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { resumenHabito, alternarHabito } from '../lib/rachas';
-import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, BotonBorrarDefinitivo } from '../components/ui';
+import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, BotonBorrar, BotonBorrarDefinitivo } from '../components/ui';
 /* E3 F23 (PR F1) — Productividad pasa a ser un lanzador de seis mini-apps. El
    catálogo vive en su librería; aquí solo están los componentes. */
 import {
@@ -1500,7 +1500,20 @@ function ChipPrioridad({ id, size = 'sm' }) {
   );
 }
 
-function TarjetaTarea({ tarea, hoy, accent, onCompletar, onAbrir, onConcentrarse, destacada }) {
+/* NAV F4 — 🚨 **«Eliminar tarea» YA EXISTÍA, pero estaba dentro del detalle.**
+   Josué lo reportó como *"no existe una opción para eliminarla; la única forma de
+   que desaparezca es marcarla como completada"*, y tenía razón en lo que
+   importa: **si hay que abrir la tarea para encontrarlo, no existe.** Es la
+   lección de la E3 F24 —*una salida que solo aparece cuando ya sabes buscarla no
+   es una salida*— aplicada a un botón.
+
+   ⚠️ Así que esto **no es una segunda puerta de borrado**: es el mismo `onDelete`
+   de siempre, puesto donde se ve. Y usa `BotonBorrar`, que es el patrón de fila
+   del resto de la aplicación **y no pregunta**, porque una tarea va a Eliminados
+   recientemente y vuelve: preguntar *"¿seguro?"* delante de algo que se deshace
+   enseña a no leer los avisos (EH F61). El detalle conserva el suyo, que sí
+   confirma, porque así lo pedía el enunciado de la E3 F26. */
+function TarjetaTarea({ tarea, hoy, accent, onCompletar, onAbrir, onConcentrarse, onEliminar, destacada }) {
   const cat = categoriaTarea(tarea.categoria);
   const estado = estadoDeFecha(tarea, hoy);
   const vencida = estado === 'vencida';
@@ -1554,6 +1567,12 @@ function TarjetaTarea({ tarea, hoy, accent, onCompletar, onAbrir, onConcentrarse
         >
           <Timer size={16} style={{ color: COLORS.textMuted }} />
         </button>
+      )}
+
+      {/* ⚠️ Se puede borrar **esté pendiente o completada**: el enunciado lo pide
+          con esas palabras, y no hay motivo para atar el borrado al estado. */}
+      {onEliminar && (
+        <BotonBorrar onClick={() => onEliminar(tarea)} label={`Eliminar ${tarea.texto}`} />
       )}
     </Card>
   );
@@ -1923,6 +1942,9 @@ function TareasTab({ tareas, onAdd, onUpdate, onToggle, onDelete, onConcentrarse
           onCompletar={(t) => onToggle(t.id)}
           onAbrir={(t) => setAbierta(t.id)}
           onConcentrarse={onConcentrarse}
+          /* NAV F4 — el MISMO `onDelete` que ya usaba el detalle: una sola
+             puerta de borrado, ahora también visible desde la lista. */
+          onEliminar={(t) => onDelete(t.id)}
           destacada={false}
         />
       ))}
@@ -2294,7 +2316,11 @@ function MetasTab({ metas, objetivos = [], tareas = [], onAdd, onUpdate, onDelet
    **componentes de React**. El mismo reparto que `MINI_APPS`/`ICONOS_MINI_APP`
    en la Biblioteca. Un icono que falte aquí sale como un hueco y **no falla en
    ninguna parte**, así que hay una prueba que compara las dos listas. */
-const ICONOS_MINI_APP_PR = { Flame, Timer, ListChecks, Target, Compass, Repeat };
+/* NAV F4 — `Flame` sale de aquí: la llama vuelve a ser exclusiva de **Rachas**.
+   ⚠️ Y si `ArrowUpRight` faltara en este mapa, la plaquita saldría con el icono
+   por defecto **sin fallar en ninguna parte** — por eso hay una prueba que cruza
+   `MINI_APPS_PR` con este catálogo (E3 F16). */
+const ICONOS_MINI_APP_PR = { ArrowUpRight, Timer, ListChecks, Target, Compass, Repeat };
 
 export const iconoDeMiniAppPR = (id) => {
   const app = miniAppPR(id);

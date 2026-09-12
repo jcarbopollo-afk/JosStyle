@@ -1,5 +1,45 @@
 # CHANGELOG.md
 
+## v3.70.0 — NAV F4: eliminar una tarea desde la fila, y el icono de Hábitos
+
+Los dos encargos pequeños de Josué. Los dos parecían *"añadir algo"* y los dos eran **arreglar algo
+que ya estaba mal**.
+
+### 🚨 «Eliminar tarea» ya existía — escondida dentro del detalle
+
+Josué lo reportó así: *"parece que no existe una opción para eliminarla; la única forma de hacer que
+desaparezca es marcarla como completada"*. Al mirarlo, el botón **estaba**: `BotonBorrarDefinitivo`
+dentro de `DetalleTarea`, con su confirmación, desde la E3 F26.
+
+Tenía razón en lo que importa: **si hay que abrir la tarea para encontrarlo, no existe.** Es la
+lección de la E3 F24 —*una salida que solo aparece cuando ya sabes buscarla no es una salida*—
+aplicada a un botón.
+
+Así que esto **no añade una segunda puerta de borrado**, que habría sido el sistema duplicado que él
+prohíbe: saca la de siempre a donde se ve. La fila llama al **mismo `onDelete`**, y hay una prueba
+que comprueba justamente eso.
+
+- ⚠️ Usa **`BotonBorrar`**, el patrón de fila del resto de JosStyle, **y no pregunta**: una tarea va
+  a Eliminados recientemente y vuelve. Confirmar delante de algo que se deshace enseña a no leer los
+  avisos (EH F61). El detalle conserva el suyo, que sí confirma, porque así lo pedía su enunciado.
+- ⚠️ Se puede borrar **pendiente o completada**: no hay motivo para atar el borrado al estado.
+- 🚨 Y el recorrido lo **pulsa por su `aria-label`** —como con VoiceOver—, comprueba que escribe en
+  los datos y **recarga la aplicación** para ver que sigue borrada. Ocultar una fila no es borrar.
+
+### 🚨 La llama de Hábitos era la de Rachas
+
+Josué: *"visualmente se relaciona demasiado con Rachas, y ya tenemos ese concepto representado en
+otra parte"*. Era literal: `Flame` es el icono del módulo **Rachas** en `MORE_NAV`, así que dos
+apartados distintos se dibujaban igual.
+
+Ahora Hábitos lleva **`ArrowUpRight` (↗)**, la flecha ascendente que él pidió, y se comprobó que
+**no la usa nada más en toda la aplicación** — `TrendingUp`, la otra candidata, es de Predicciones.
+
+⚠️ **Y la llama se queda donde sí significa algo**: sigue siendo el icono de Rachas, y sigue
+acompañando al número de racha de un hábito. El concepto no se ha movido; ha dejado de repetirse.
+Los iconos que Josué puede elegir para **cada** hábito tampoco se tocan: él pidió cambiar el del
+apartado, y *"no cambies los iconos de otras secciones"*.
+
 ## v3.69.0 — NAV F1: la nueva arquitectura de navegación y el apartado Números
 
 Primera de las cuatro fases en que se dividen los tres encargos de Josué. Ésta es **solo

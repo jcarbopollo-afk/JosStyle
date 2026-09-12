@@ -67,8 +67,16 @@ export const MINI_APPS_PR = [
     id: 'habitos',
     nombre: 'Hábitos',
     descripcion: 'Construye constancia cada día.',
-    icono: 'Flame',
-    emoji: '🔥',
+    /* NAV F4 — 🚨 **la llama era de Rachas, no de Hábitos.** Josué: *"visualmente
+       se relaciona demasiado con Rachas, y ya tenemos ese concepto representado
+       en otra parte"* — y era verdad: `Flame` es el icono del módulo **Rachas**
+       en `MORE_NAV`, así que dos apartados distintos se dibujaban igual.
+       ⚠️ El sustituto es `ArrowUpRight` (↗), que es la flecha ascendente que él
+       pidió, **y estaba sin usar en toda la aplicación**: ni `TrendingUp` (que es
+       de Predicciones) ni ningún otro se repiten. Representa lo que son los
+       hábitos aquí: subir poco a poco, no arder. */
+    icono: 'ArrowUpRight',
+    emoji: '↗',
     de: 'productividad',
     coleccion: 'habitos',
     contador: ['hábito', 'hábitos'],

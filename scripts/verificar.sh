@@ -861,6 +861,14 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# NAV F4 — eliminar una tarea desde la fila (ya existía, pero escondida en el
+# detalle) y el icono de Hábitos, que era la llama de Rachas.
+if node --import ./scripts/resolver-vite.mjs scripts/test-tareas-habitos.mjs >/tmp/jc_tarhab.log 2>&1; then
+  ok "Tareas y Hábitos (NAV F4) — $(grep -c '✓' /tmp/jc_tarhab.log) comprobaciones"
+else
+  fallo "Falla el borrado de tareas o el icono de Hábitos"; grep '✗' /tmp/jc_tarhab.log
+fi
+
 # NAV F1 — la nueva arquitectura (Vida/Gestión/Bienestar/Además) y el apartado
 # Números, que agrupa Estadísticas, Predicciones y Logros sin reescribirlas.
 if node --import ./scripts/resolver-vite.mjs scripts/test-numeros-navegacion.mjs >/tmp/jc_numeros.log 2>&1; then
