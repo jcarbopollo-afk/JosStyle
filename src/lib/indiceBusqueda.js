@@ -132,9 +132,15 @@ export const PALABRAS_MODULOS = {
   relacion: ['pareja', 'novia', 'aniversario', 'privado'],
   bienestar: ['movil', 'pantallas', 'tiempo de uso', 'digital', 'concentracion', 'desconectar',
     'bienestar digital'],
-  estadisticas: ['graficas', 'datos', 'analisis', 'tendencias', 'evolucion', 'numeros'],
-  predicciones: ['futuro', 'proyeccion', 'estimacion', 'prevision'],
-  logros: ['insignias', 'medallas', 'trofeos', 'conseguidos'],
+  /* NAV F1 — 🚨 **AL DEJAR DE SER MÓDULOS, SUS PALABRAS SE MUDAN: NO SE BORRAN**
+     (la lección de la E3 F23 con Objetivos). Buscar «gráficas», «insignias» o
+     «futuro» tiene que seguir encontrando algo, y ahora lleva a **Números**, que
+     es donde están de verdad. Si se hubieran borrado, Josué escribiría «logros»
+     y el buscador le diría que no existe nada — teniéndolos a dos toques. */
+  numeros: ['numeros', 'números', 'graficas', 'gráficas', 'datos', 'analisis', 'análisis',
+    'tendencias', 'evolucion', 'evolución', 'estadisticas', 'estadísticas', 'informes', 'metricas', 'métricas',
+    'predicciones', 'futuro', 'proyeccion', 'proyección', 'estimacion', 'estimación', 'prevision', 'previsión',
+    'logros', 'insignias', 'medallas', 'trofeos', 'conseguidos', 'hitos', 'mapa de vida'],
   economia: ['dinero', 'gastos', 'ahorro', 'hucha', 'saldo', 'presupuesto', 'finanzas', 'gastar', 'ingresos'],
   armario: ['ropa', 'prendas', 'vestir', 'camiseta', 'pantalon', 'zapatillas', 'outfit', 'closet', 'que me pongo', 'recomendar outfit'],
   // EH Fase 1 — el espacio nuevo. Las palabras son las de los apartados que
@@ -165,9 +171,8 @@ export const SINONIMOS_MODULOS = {
   biblioteca: ['recursos', 'material', 'lectura', 'guardado'],
   relacion: ['amor', 'citas'],
   bienestar: ['descanso mental', 'salud mental', 'adiccion', 'uso del movil'],
-  estadisticas: ['informes', 'metricas', 'resumen'],
-  predicciones: ['tendencia', 'que pasara'],
-  logros: ['recompensas', 'hitos', 'progreso'],
+  // NAV F1 — los sinónimos de las tres, mudados también a Números.
+  numeros: ['resumen', 'tendencia', 'que pasara', 'qué pasará', 'recompensas', 'cuanto llevo', 'cuánto llevo'],
   economia: ['pagar', 'cobrar', 'euros', 'cuenta', 'economico'],
   armario: ['estilo', 'moda', 'vestuario', 'looks'],
   'estilo-hombre': ['apariencia', 'grooming', 'rutina facial', 'verse bien'],

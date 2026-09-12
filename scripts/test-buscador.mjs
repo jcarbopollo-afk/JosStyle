@@ -22,8 +22,12 @@ const MODULOS = [
   { id: 'objetivos', label: 'Objetivos' }, { id: 'diario', label: 'Diario' },
   { id: 'fe', label: 'Fe' }, { id: 'biblioteca', label: 'Biblioteca' },
   { id: 'relacion', label: 'Relación' }, { id: 'bienestar', label: 'Bienestar digital' },
-  { id: 'estadisticas', label: 'Estadísticas' }, { id: 'predicciones', label: 'Predicciones' },
-  { id: 'logros', label: 'Logros' }, { id: 'economia', label: 'Economía' },
+  /* NAV F1 — Estadísticas, Predicciones y Logros dejaron de ser módulos: son las
+     tres sub-apps de **Números**. ⚠️ Esta lista está escrita a mano, así que se
+     queda vieja sola — es la tercera vez que pasa (E3 F23 con Objetivos, EH F18
+     con `cuerpo`). Lo que se comprueba abajo es que **la palabra siga
+     encontrando algo**, no a qué módulo concreto llevaba en su día. */
+  { id: 'numeros', label: 'Números' }, { id: 'economia', label: 'Economía' },
   { id: 'ajustes', label: 'Ajustes' },
 ];
 
@@ -84,8 +88,15 @@ console.log('\n═══ BI Fases 2, 3 y 4 — buscador, motor e intención ═�
   const casos = [
     ['peso', 'salud'], ['comida', 'nutricion'], ['calistenia', 'entreno'],
     ['tareas', 'productividad'], ['agenda', 'calendario'], ['examenes', 'estudios'],
-    ['gastos', 'economia'], ['apuntes', 'biblioteca'], ['graficas', 'estadisticas'],
-    ['oracion', 'fe'], ['pantallas', 'bienestar'], ['insignias', 'logros'],
+    ['gastos', 'economia'], ['apuntes', 'biblioteca'],
+    ['oracion', 'fe'], ['pantallas', 'bienestar'],
+    /* NAV F1 — 🚨 «gráficas» e «insignias» llevaban a `estadisticas` y `logros`,
+       que **ya no son módulos**: son las dos sub-apps de Números. Esta prueba
+       escribía el destino A MANO, así que se puso roja con el buscador bien —
+       es la lección de la E3 F23, donde `test-buscador` usaba «metas» como
+       ejemplo y saltó al dejar Objetivos de ser módulo. Lo que importa es que
+       **la palabra siga encontrando algo**, y ahora encuentra Números. */
+    ['graficas', 'numeros'], ['insignias', 'numeros'],
   ];
   for (const [q, tab] of casos) {
     comprobar(`"${q}" → ${tab}`, primero(q)?.tab === tab, titulos(q)[0] || 'sin resultados');

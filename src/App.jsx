@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, BarChart3, TrendingUp, Search, Trophy, Lock, ArrowLeft, Calendar, Shirt, Flame, CalendarClock, UserRound } from 'lucide-react';
+import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, Search, Lock, ArrowLeft, Calendar, Shirt, Flame, CalendarClock, UserRound, Sigma } from 'lucide-react';
 import { normalizarEconomiaHucha } from './lib/hucha';
 import { anadirApunte, resumenDelDia, progresoDelDia, apuntesDe } from './lib/centroDelDia';
 /* 🚨 E3 F26 (PR F4) — Tareas. `normalizarTareasDe` es lo que MIGRA la fecha:
@@ -92,9 +92,13 @@ import LibraryView from './views/LibraryView';
 import RelationView from './views/RelationView';
 import FaithView from './views/FaithView';
 import WellbeingView from './views/WellbeingView';
-import StatsView from './views/StatsView';
-import PredictionsView from './views/PredictionsView';
-import AchievementsView from './views/AchievementsView';
+/* NAV F1 — 🚨 **`StatsView`, `PredictionsView` y `AchievementsView` ya no se
+   importan aquí**, y es a propósito: quien las renderiza ahora es `NumbersView`,
+   que las usa **tal cual**, sin copiar una línea de su contenido. Dejarlas
+   importadas y sin usar habría sido código muerto del que este proyecto ya se
+   ha comido cuatro casos (`onDeleteMovimiento`, `eliminarHorario`, `addApunte`,
+   `FormExamen`). Siguen probándose una a una en `smoke-vistas.jsx`. */
+import NumbersView from './views/NumbersView';
 import SettingsView from './views/SettingsView';
 import { construirIndice } from './lib/indiceBusqueda';
 import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda, crearOutfit, actualizarOutfit, duplicarOutfit, crearUso, actualizarUso } from './lib/armario';
@@ -195,9 +199,15 @@ const MORE_NAV = [
      pantalla ya se titula «Bienestar digital» desde que se construyó: lo que estaba corto era la
      etiqueta del menú, y es lo único que cambia. El id se queda. */
   { id: 'bienestar', label: 'Bienestar digital', icon: Smartphone },
-  { id: 'estadisticas', label: 'Estadísticas', icon: BarChart3 },
-  { id: 'predicciones', label: 'Predicciones', icon: TrendingUp },
-  { id: 'logros', label: 'Logros', icon: Trophy },
+  /* NAV F1 — 🚨 **Estadísticas, Predicciones y Logros dejan de ser tres módulos
+     y pasan a ser las tres sub-apps de NÚMEROS**, que es lo que pidió Josué.
+     Es exactamente lo que la E3 F23 hizo con Objetivos: **sale de `MORE_NAV`,
+     de `AREAS_NAV` y del switch, y sus datos no se mueven ni un milímetro** —
+     aquí ni siquiera hay datos que mover, porque las tres derivan sus cifras de
+     los módulos originales y no guardan nada.
+     ⚠️ Sus ids siguen vivos en `resumenesHub.js`, en los presets de `tokens.js`
+     y en dos auditorías: navegación y datos son dos cosas distintas (E3 F23). */
+  { id: 'numeros', label: 'Números', icon: Sigma },
   { id: 'economia', label: 'Economía', icon: Wallet },
   { id: 'armario', label: 'Armario', icon: Shirt },
   { id: 'rachas', label: 'Rachas', icon: Flame },
@@ -217,10 +227,21 @@ const AREAS_NAV = [
   /* Entrega 3 · F30 (BN), apartado 2 — *"SALUD → BIENESTAR"*, y la navegación queda
      **Inicio · Bienestar · Vida · Gestión**. El id `area-salud` NO se toca: lo guarda la
      personalización de la Fase 19 (orden y ocultos), y cambiarlo perdería lo que Josué eligió. */
-  { id: 'area-salud', label: 'Bienestar', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno'] },
-  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['calendario', 'horario', 'estudios', 'productividad', 'rachas', 'diario', 'biblioteca'] },
-  { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['economia', 'negocio', 'armario'] },
-  { id: 'area-mas', label: 'Más', icon: MoreHorizontal, modulos: ['estilo-hombre', 'relacion', 'fe', 'bienestar', 'estadisticas', 'predicciones', 'logros', 'ajustes'] },
+  /* NAV F1 — la lógica que pidió Josué, con sus palabras:
+       Vida      → *"cómo vivo, evoluciono y construyo mi vida personal"*
+       Gestión   → *"cómo organizo y administro mi vida"*
+       Bienestar → *"mi bienestar, cuidado, relaciones y desarrollo personal"*
+       Además    → *"áreas complementarias"*, y **no un cajón de sastre**.
+
+     ⚠️ **Ni un id de módulo cambia y ni un dato se mueve.** Un área es una lista
+     de ids: reorganizarla es navegación, no datos (E3 F23). Lo que Josué tenga
+     guardado en `calendario`, `horario` o `estiloHombre` sigue exactamente donde
+     estaba, y la personalización de la Fase 19 —orden y ocultos, indexada por id—
+     tampoco se entera. */
+  { id: 'area-salud', label: 'Bienestar', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno', 'estilo-hombre'] },
+  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['estudios', 'productividad', 'rachas', 'diario', 'biblioteca'] },
+  { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['calendario', 'horario', 'economia', 'negocio', 'armario'] },
+  { id: 'area-mas', label: 'Además', icon: MoreHorizontal, modulos: ['relacion', 'fe', 'bienestar', 'numeros', 'ajustes'] },
 ];
 
 // Fase de Seguridad Centralizada — catálogo de "áreas protegibles" (apartado 1 de la
@@ -2877,22 +2898,19 @@ export default function App() {
             accent={accent}
           />
         );
-      case 'estadisticas':
-        return <StatsView sueno={sueno} estudios={estudios} diario={diario} calistenia={calistenia} accent={accent} />;
-      case 'predicciones':
+      /* NAV F1 — 🚨 **un solo `case` donde había tres.** Estadísticas,
+         Predicciones y Logros se abren desde dentro de Números, y `NumbersView`
+         **renderiza las tres vistas de siempre tal cual**: no se ha copiado ni
+         una línea de su contenido (E3 F23 con Productividad, E3 F16 con la
+         Biblioteca).
+         ⚠️ Recibe el estado que necesitan las tres juntas, y ni un campo más:
+         lo que llega aquí es exactamente lo que llegaba a cada una por separado. */
+      case 'numeros':
         return (
-          <PredictionsView
+          <NumbersView
+            sueno={sueno} estudios={estudios} diario={diario} calistenia={calistenia}
             objetivos={objetivos} productividad={productividad} salud={salud}
-            calistenia={calistenia} economia={economia} estudios={estudios}
-            accent={accent}
-          />
-        );
-      case 'logros':
-        return (
-          <AchievementsView
-            productividad={productividad} diario={diario} objetivos={objetivos}
-            bienestar={bienestar} fe={fe} nutricion={nutricion} salud={salud}
-            calistenia={calistenia} economia={economia} sueno={sueno}
+            economia={economia} bienestar={bienestar} fe={fe} nutricion={nutricion}
             accent={accent}
           />
         );

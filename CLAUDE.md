@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.68.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.69.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **LA ENTREGA 3 ESTÁ CERRADA: 46 de 46** (ver `docs/11_ENTREGA3_ORDEN.md`). Los siete bloques
@@ -228,6 +228,21 @@ vea redonda, cambiarla y quitarla— y que el nombre de los saludos salga del pe
 repetía tres veces **qué NO tocar**: Apariencia, Pantalla principal y Preferencias generales. Vive
 en `src/lib/fotoPerfil.js`, con `scripts/test-foto-perfil.mjs` detrás.
 
+🧭 **Y después, la reorganización de la navegación que pidió Josué (2026-09-12).** Pasó **tres
+prompts** de una vez y dijo que se podían dividir; la división es ésta:
+
+| | Fase | Estado |
+|---|---|---|
+| **NAV F1** | La nueva arquitectura (Vida · Gestión · Bienestar · Además) + el apartado **Números** | ✅ **v3.69.0** |
+| **NAV F2** | Renombrar «Estilo de hombre» a un nombre inclusivo (199 apariciones) | ⬜ |
+| **NAV F3** | **Álbum** dentro de Relación: fotos reales, con su bucket y su SQL | ⬜ |
+| **NAV F4** | Eliminar una tarea desde la fila + icono nuevo de Hábitos | ⬜ |
+
+⚠️ **Y una contradicción suya que necesita respuesta, C-31 en `docs/03`:** pide **Tareas y Rutinas
+en Gestión** y **Objetivos y Hábitos en Vida**, pero las cuatro son **mini-apps de Productividad**,
+que es UNA pantalla (E3 F23-F29). Repartirlas exigiría partir ese lanzador — justo lo que su encargo
+prohíbe. **Productividad se queda entera en Vida** hasta que él conteste. No bloquea nada (regla 49).
+
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
 1. **Esperar la fase que pase Josué.** Las Entregas 2 y 3 están cerradas, así que **no hay una fase
@@ -267,6 +282,33 @@ aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con
 código de agosto mientras él decía *"la web sigue igual"*.
 
 ⚠️ **Y lo que dejaron las veinte primeras, que afecta a todas las demás:**
+
+- 🚨 **UN ÁREA ES UNA LISTA DE IDS: REORGANIZARLA ES NAVEGACIÓN, NO DATOS** (NAV F1, y la E3 F23 lo
+  dijo con Objetivos). Mover Calendario y Horario a Gestión, y el apartado de estilo a Bienestar,
+  **no toca ni una clave de `app_data`**: lo guardado sigue donde estaba y la personalización de la
+  Fase 19 —orden y ocultos, indexada por id— no se entera. **Antes de mover un módulo de sitio,
+  separar qué es el acceso y qué es el dato.**
+- 🚨 **AGRUPAR TRES PANTALLAS ES RENDERIZARLAS, NUNCA COPIARLAS** (NAV F1). `NumbersView` importa
+  `StatsView`, `PredictionsView` y `AchievementsView` y las pinta **tal cual**; hay una prueba que
+  comprueba que se importan y se usan, porque el día que alguien las «integre» copiando su contenido
+  habrá **dos versiones de la misma pantalla** y acabarán diciendo cosas distintas.
+- ⚠️ **UN ID PUEDE SOBREVIVIR A SU MÓDULO** (NAV F1): `estadisticas`, `predicciones` y `logros` ya no
+  están en `MORE_NAV`, pero sus ids siguen vivos en los presets de `tokens.js`, en `experienciaReal`,
+  en `auditoriaFinal` y en `resumenesHub`. Quitar sus `case` habría dejado esos cuatro sitios cayendo
+  al `default` con dos líneas en blanco — el fallo silencioso de siempre.
+- 🐛 **UN NÚMERO QUE SIEMPRE ES VERDAD NO ES UN DATO** (NAV F1). `hayDatosPara('logros')` devolvía
+  `true` a secas —*"siempre hay insignias que enseñar, aunque estén bloqueadas"*, que es cierto—, y
+  con la aplicación recién estrenada la pantalla decía **«1 de 3 con datos»** teniendo Josué cero
+  registros. La pantalla no pregunta *"¿hay algo que dibujar?"*: pregunta **"¿tiene datos?"**. Una
+  insignia bloqueada no es un dato suyo.
+- 🐛 **«Más» NO ES SUBCADENA DE «Además»** (NAV F1), por la `M` mayúscula — y `pulsar` busca el texto
+  tal cual. Renombrar el área habría puesto **las 44 entradas del recorrido rojas en cascada**, y una
+  cascada esconde qué se está probando de verdad. Cazado **antes** de gastar los 28 minutos de
+  navegador: al renombrar algo por lo que se navega, lo primero es barrer el recorrido.
+- 🐛 **Y LA TERCERA VEZ DE LA PRUEBA QUE ESCRIBE A MANO UN MÓDULO** (NAV F1, tras la E3 F23 con
+  «metas» y la EH F18 con `cuerpo`): `test-buscador` tenía la lista de módulos escrita a mano con los
+  tres que dejaron de serlo, y esperaba que «gráficas» llevara a `estadisticas`. **Lo que se
+  comprueba es que la palabra siga encontrando algo**, no a qué módulo llevaba en su día.
 
 - 🚨 **UN BUCKET QUE NADIE HA CREADO ES UN BOTÓN QUE NO GUARDA NADA** (Ajustes · Perfil). La foto de
   perfil pedía a gritos un sexto bucket de Storage, y habría sido lo natural. Pero cuando se

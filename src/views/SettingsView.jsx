@@ -79,7 +79,7 @@ function useCategorias() {
   return useMemo(() => ([
     { id: 'perfil', label: 'Perfil', desc: 'Tu información personal, usada por el sistema.', icon: User, listo: true },
     { id: 'apariencia', label: 'Apariencia', desc: 'Tema, acento, texto, bordes y animaciones.', icon: Palette, listo: true },
-    { id: 'pantalla-principal', label: 'Pantalla principal', desc: 'Qué ves en "Hoy" y en el menú "Más".', icon: LayoutGrid, listo: true },
+    { id: 'pantalla-principal', label: 'Pantalla principal', desc: 'Qué ves en "Hoy" y en el menú "Además".', icon: LayoutGrid, listo: true },
     { id: 'preferencias', label: 'Preferencias generales', desc: 'Idioma, zona horaria, país y unidades.', icon: SlidersHorizontal, listo: true, soloInfo: true },
     { id: 'notificaciones', label: 'Notificaciones', desc: 'Permiso, categorías y horario de descanso.', icon: Bell, listo: true },
     { id: 'sonido', label: 'Sonido y respuesta', desc: 'Qué suena, cuánto y cuándo vibra.', icon: Volume2, listo: true },

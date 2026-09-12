@@ -1,5 +1,59 @@
 # CHANGELOG.md
 
+## v3.69.0 — NAV F1: la nueva arquitectura de navegación y el apartado Números
+
+Primera de las cuatro fases en que se dividen los tres encargos de Josué. Ésta es **solo
+reorganización**: ni una pantalla rediseñada, ni una funcionalidad nueva, ni un dato movido.
+
+### La lógica, con sus palabras
+
+| Área | Qué es | Qué tiene |
+|---|---|---|
+| **Vida** | *"cómo vivo, evoluciono y construyo mi vida personal"* | Estudios, Productividad, Rachas, Diario, Biblioteca |
+| **Gestión** | *"cómo organizo y administro mi vida"* | **Calendario**, **Horario**, Economía, Negocio, Armario |
+| **Bienestar** | *"mi bienestar, cuidado, relaciones y desarrollo personal"* | Mi salud, Sueño, Nutrición, Entrenamiento, **el apartado de estilo** |
+| **Además** | *"áreas complementarias"* | Relación, Fe, Bienestar digital, **Números**, Ajustes |
+
+El área que se llamaba «Más» pasa a llamarse **«Además»**, que es como la llama él.
+
+### 🚨 Números agrupa, no reescribe
+
+Estadísticas, Predicciones y Logros dejan de ser tres módulos del menú y pasan a ser las tres
+sub-apps de **Números**. `NumbersView` **renderiza las tres vistas de siempre tal cual**: no se ha
+copiado ni una línea de su contenido, y hay una prueba que lo comprueba —si una fase futura las
+«integrara» copiándolas, habría dos versiones de la misma pantalla diciendo cosas distintas.
+
+Es exactamente lo que la E3 F23 hizo con Objetivos, incluidas sus dos consecuencias:
+
+- ⚠️ **Sus ids siguen vivos.** Los leen los presets de `tokens.js`, `experienciaReal.js`,
+  `auditoriaFinal.js` y `resumenesHub.js`. Navegación y datos son dos cosas distintas.
+- 🚨 **Sus palabras se mudan al buscador, no se borran.** Buscar «logros», «gráficas» o «futuro»
+  sigue encontrando algo, y ahora lleva a Números.
+
+### ⚠️ Ni un dato se ha movido
+
+Un área es una lista de ids: reorganizarla es navegación. `calendario`, `horario` y `estiloHombre`
+siguen en su clave de `app_data`, y la personalización de la Fase 19 —orden y ocultos, indexada por
+id— no se entera. El recorrido abre el Calendario en su sitio nuevo y comprueba que está entero.
+
+### 🐛 Lo que encontró la propia fase
+
+1. **Números decía «1 de 3 con datos» con la aplicación vacía.** `hayDatosPara('logros')` devolvía
+   `true` a secas —*"siempre hay insignias que enseñar"*—, pero la pantalla no pregunta si hay algo
+   que dibujar: pregunta si **él** tiene datos. Una insignia bloqueada no es un dato suyo. Ahora se
+   deriva de sus registros, y sin ninguno dice qué falta en vez de un número (E3 F13, E3 F24).
+2. **Ajustes seguía diciendo «el menú "Más"»**, escrito a mano, con el área ya llamada Además. Es el
+   renombrado a medias de la E3 F30, cazado esta vez por el barrido en vez de por Josué.
+3. **Tres imports muertos en `App.jsx`.** `StatsView`, `PredictionsView` y `AchievementsView` se
+   quedaban importadas sin usarlas. Van cuatro casos de código muerto en este proyecto.
+4. 🚨 **Y las 44 entradas del recorrido se habrían puesto rojas en cascada**: `pulsar('Más')` no
+   encuentra «Además», porque «Más» **no es subcadena de «Además»** —la `M` mayúscula—. Cazado antes
+   de lanzar los 28 minutos de navegador, no después.
+
+Nuevo: `src/lib/numeros.js`, `src/components/iconosNumeros.jsx`, `src/views/NumbersView.jsx` y
+`scripts/test-numeros-navegacion.mjs` (59 comprobaciones), más 4 casos de renderizado y una sección
+del recorrido en Chromium.
+
 ## 2026-09-12 — 🏁 Las Entregas 2 y 3 están las dos cerradas (saneado documental)
 
 Sin cambios de código. Josué confirmó dos cosas que la documentación daba por pendientes desde hacía

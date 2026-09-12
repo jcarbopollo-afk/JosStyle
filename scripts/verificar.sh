@@ -861,6 +861,14 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# NAV F1 — la nueva arquitectura (Vida/Gestión/Bienestar/Además) y el apartado
+# Números, que agrupa Estadísticas, Predicciones y Logros sin reescribirlas.
+if node --import ./scripts/resolver-vite.mjs scripts/test-numeros-navegacion.mjs >/tmp/jc_numeros.log 2>&1; then
+  ok "Navegación y Números (NAV F1) — $(grep -c '✓' /tmp/jc_numeros.log) comprobaciones"
+else
+  fallo "Falla la navegación o el apartado Números"; grep '✗' /tmp/jc_numeros.log
+fi
+
 # Ajustes · Perfil — la foto de perfil y el nombre de los saludos.
 if node --import ./scripts/resolver-vite.mjs scripts/test-foto-perfil.mjs >/tmp/jc_fotoperfil.log 2>&1; then
   ok "Ajustes: foto de perfil y saludos — $(grep -c '✓' /tmp/jc_fotoperfil.log) comprobaciones"

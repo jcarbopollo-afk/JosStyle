@@ -145,6 +145,11 @@ import { DEFAULT_HORARIO_TOP } from '../src/lib/horario.js';
 import { crearDesdePlantilla, crearBloqueRapido, editarBloque, ALCANCES } from '../src/lib/horarioEditor.js';
 import AchievementsView from '../src/views/AchievementsView.jsx';
 import HubView from '../src/views/HubView.jsx';
+/* NAV F1 — el lanzador de Números. ⚠️ Va aquí **desde el primer día**: la
+   entrega anterior descubrió CUATRO vistas que se pintaban en producción sin
+   un solo caso de renderizado (`LibraryView`, `HealthView`, `NutritionView` y
+   `EstudiosView`). Al tocar una pantalla, lo primero es mirar si está aquí. */
+import NumbersView from '../src/views/NumbersView.jsx';
 import WellbeingView from '../src/views/WellbeingView.jsx';
 import HealthView from '../src/views/HealthView.jsx';
 import NutritionView from '../src/views/NutritionView.jsx';
@@ -2826,6 +2831,15 @@ const CASOS = [
   ['PapeleraView', PapeleraView, (e) => ({
     papelera: e.papelera, relacionDesbloqueada: false,
     onRestaurar: noop, onEliminarDefinitivo: noop, onVaciar: noop, onSetRetencion: noop, accent,
+  })],
+  /* NAV F1 — Números con el estado entero, que es como lo recibe de `App.jsx`.
+     ⚠️ El caso que más importa es el de datos vacíos: sin nada registrado, las
+     tres plaquitas tienen que decir QUÉ FALTA, nunca un cero. */
+  ['NumbersView', NumbersView, (e) => ({
+    sueno: e.sueno, estudios: e.estudios, diario: e.diario, calistenia: e.calistenia,
+    objetivos: e.objetivos, productividad: e.productividad, salud: e.salud,
+    economia: e.economia, bienestar: e.bienestar, fe: e.fe, nutricion: e.nutricion,
+    accent,
   })],
   ['HubView', HubView, (e) => ({
     area: { id: 'area-salud', label: 'Salud', modulos: ['salud', 'sueno'] },

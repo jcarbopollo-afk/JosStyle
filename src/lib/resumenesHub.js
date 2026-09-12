@@ -25,6 +25,7 @@ import { totalBiblioteca } from './biblioteca.js';
    que dio, y **puede no haberla**: `Calidad null/5` es una palabra técnica en la
    pantalla de Josué (EH F62). */
 import { calidadDe } from './sueno.js';
+import { resumenNumeros } from './numeros';
 
 function ultimoPorFecha(lista) {
   if (!lista || lista.length === 0) return null;
@@ -237,12 +238,22 @@ export function calcularResumenModulo(id, s) {
       const minutosHoy = (s.bienestar?.registros || []).filter((r) => r.fecha === hoy).reduce((a, r) => a + Number(r.minutos || 0), 0);
       return { linea1: minutosHoy > 0 ? `${minutosHoy} min de pantalla hoy` : 'Nada registrado hoy', linea2: 'Toca para ver el detalle', estado: minutosHoy > 0 ? 'activo' : 'vacio' };
     }
+    /* NAV F1 — Estadísticas, Predicciones y Logros ya no son módulos del menú:
+       son las tres sub-apps de **Números**. ⚠️ **Sus tres `case` se quedan**, y
+       no es descuido: `resumenesHub` se llama con el id de un módulo, y los ids
+       siguen vivos en los presets de `tokens.js` (`activos: [… 'estadisticas']`),
+       en `experienciaReal.js` y en `auditoriaFinal.js`. Quitarlos habría dejado
+       esos tres sitios cayendo al `default` con dos líneas en blanco — el fallo
+       silencioso de siempre. Navegación y datos son dos cosas distintas (E3 F23). */
     case 'estadisticas':
       return { linea1: 'Correlaciones entre módulos', linea2: 'Sueño, ánimo, entreno y más', estado: 'info' };
     case 'predicciones':
       return { linea1: 'Estimaciones sobre tus datos', linea2: 'Objetivos, peso, hábitos, notas', estado: 'info' };
     case 'logros':
       return { linea1: 'Insignias y mapa de vida', linea2: 'Toca para ver tu progreso', estado: 'info' };
+    // Y la línea del módulo nuevo, derivada como todas las demás.
+    case 'numeros':
+      return resumenNumeros(s);
     case 'ajustes':
       return { linea1: 'Cuenta, apariencia y seguridad', linea2: 'Notificaciones, privacidad y más', estado: 'info' };
     default:

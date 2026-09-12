@@ -204,7 +204,7 @@ const ver = () => page.evaluate(() => document.body.innerText);
    Segunda vez que la pasada completa se pone roja y el archivo ejecutado solo
    pasa: con diez mil comprobaciones de Node por delante, la máquina va cargada
    y los `waitForTimeout` fijos de después de cada `goto` se quedan cortos. El
-   primer `pulsar('Más')` no encontraba el botón y **toda la sección siguiente
+   primer `pulsar('Además')` no encontraba el botón y **toda la sección siguiente
    caía en cascada** — doce comprobaciones rojas por una que llegó pronto.
    Arreglarlo aquí, y no en cada sitio, lo arregla en las setenta llamadas: un
    usuario tampoco pulsa un botón que todavía no se ha pintado, **espera a que
@@ -275,8 +275,8 @@ ok(errores.length === 0, `Sin errores de JavaScript${errores.length ? ` — ${er
 ok(/Josué/.test(inicio), 'Y se ve el Inicio de Josué');
 
 /* ── 2 · ⚠️ LO GUARDADO LLEGA A LA PANTALLA ────────────────────────────── */
-await pulsar('Más');
-ok(await pulsar('Estilo de hombre'), 'Estilo de hombre se abre desde Más');
+await pulsar('Bienestar');
+ok(await pulsar('Estilo de hombre'), 'Estilo de hombre se abre desde Bienestar (NAV F1: se mudó de área)');
 const eh = await ver();
 ok(/Pelo/.test(eh) && /Skincare/.test(eh),
   '⚠️ LOS DATOS GUARDADOS LLEGAN: salen los módulos que había en Supabase, no los de por defecto');
@@ -313,7 +313,7 @@ ok(/Último corte/.test(await ver()), '⚠️ Y la pantalla lo enseña: el usuar
 /* ⚠️ Se recarga: así se comprueba también que lo de antes **sobrevive**. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 ok(await pulsar('Skincare'), 'Skincare se abre');
 const piel = await ver();
@@ -352,7 +352,7 @@ ok(/Disponible en/.test(tras),
 /* ── 6 · BARBA Y AFEITADO, DE PRINCIPIO A FIN (EH F20) ─────────────────── */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 ok(await pulsar('Barba'), 'Barba (EH F20) se abre desde Estilo de hombre');
 const barba = await ver();
@@ -408,7 +408,7 @@ ok(/1 de \d/.test(await ver()), '⚠️ Y la pantalla lo enseña, contando solo 
    porque el almacén simulado se ha quedado con lo que la app escribió. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await pulsar('Barba');
 const panelBarba = await ver();
@@ -451,7 +451,7 @@ ok(/Omitido hoy/.test(await ver()), 'Y la pantalla lo dice');
 /* ── 8 · SONRISA, DE PRINCIPIO A FIN (EH F23) ──────────────────────────── */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 ok(await pulsar('Sonrisa'), 'Sonrisa (EH F23) se abre desde Estilo de hombre');
 const son = await ver();
@@ -497,7 +497,7 @@ ok(/Pendiente|Empezada|Hecha/.test(trasPlantilla), 'Y el estado del día en pala
 /* ── 9 · PERFUMES, DE PRINCIPIO A FIN (EH F24) ─────────────────────────── */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 ok(await pulsar('Perfumes'), 'Perfumes (EH F24) se abre desde Estilo de hombre');
 ok(/¿Quieres utilizar este apartado\?/.test(await ver()), 'Y pregunta si lo quiere usar');
@@ -543,7 +543,7 @@ ok((trasActual.perfumes || [])[0]?.favorito === false,
 /* ⚠️ Recargando: aquí se comprueba también que el perfume de la F24 sobrevive. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await pulsar('Perfumes');
 const panelP2 = await ver();
@@ -570,7 +570,7 @@ ok(/Uno que tengo/.test(conOcasion) || /todavía no podemos/.test(conOcasion),
 /* ── 11 · ACCESORIOS, Y LA PRENDA VA AL ARMARIO (EH F26) ───────────────── */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 ok(await pulsar('Accesorios'), 'Accesorios (EH F26) se abre desde Estilo de hombre');
 ok(/¿Quieres utilizar este apartado\?/.test(await ver()), 'Y pregunta si lo quiere usar');
@@ -626,7 +626,7 @@ ok(guardado.filter((g) => g && g.key === 'armario').length === 0,
 /* ⚠️ Y al recargar sigue estando: la prenda en el armario y su estilo aquí. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await pulsar('Accesorios');
 await pulsar('Mis accesorios');
@@ -636,7 +636,7 @@ ok(/Casio negro/.test(await ver()), '⚠️ PERSISTENCIA: sigue ahí después de
 /* ── 12 · MIS GUSTOS, Y NI UNA SEGUNDA LISTA (EH F27) ──────────────────── */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 ok(await pulsar('Mis gustos'), 'Mis gustos (EH F27) se abre desde Estilo de hombre');
 ok(/¿Quieres utilizar este apartado\?/.test(await ver()), 'Y pregunta si lo quiere usar');
@@ -674,7 +674,7 @@ ok(/Viajar a Londres/.test(await ver()), '⚠️ Y la pantalla lo enseña');
 /* ⚠️ Y al recargar sigue estando, con su ficha y su nombre en el registro. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await pulsar('Mis gustos');
 await pulsar('Quiero hacer');
@@ -684,7 +684,7 @@ ok(/Viajar a Londres/.test(await ver()), '⚠️ PERSISTENCIA: sigue ahí despu�
 /* ── 13 · CONVERTIR EN OBJETIVO, SIN UN SEGUNDO SISTEMA (EH F28) ───────── */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await pulsar('Mis gustos');
 ok(/Experiencias/.test(await ver()), 'La plaquita 🌟 Experiencias (EH F28) está ahí');
@@ -735,7 +735,7 @@ ok(/Objetivos/.test(await ver()), '⚠️ Y navega a OBJETIVOS, el módulo que y
 /* ── 14 · "MI ESTILO": EL RESUMEN DE ARRIBA (EH F29) ───────────────────── */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(500);
 const miEstilo = await ver();
@@ -759,7 +759,7 @@ ok(/Mi colección|¿Quieres utilizar este apartado\?/.test(await ver()),
 /* Apartado 10 — ocultar, y que no se lleve nada por delante. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 guardado.length = 0;
 ok(await pulsar('⚙️ Ocultar "Mi estilo"'), 'Se puede ocultar');
@@ -781,7 +781,7 @@ ok(/Mi estilo personal/.test(await ver()), '⚠️ Y vuelve entera');
 /* ── 15 · LA PANTALLA PRINCIPAL, POR SECCIONES (EH F30) ────────────────── */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(500);
 const portada = await ver();
@@ -809,7 +809,7 @@ ok((cfgPantalla.pantalla?.accesos || []).includes('afeitarme'), 'Con el acceso q
 /* ⚠️ Y al recargar sigue ahí, y abre su módulo. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(500);
 ok(/🪒 Afeitarme/.test(await ver()), '⚠️ PERSISTENCIA: el acceso sigue tras recargar');
@@ -823,7 +823,7 @@ ok(/Barba|¿Quieres utilizar este apartado\?/.test(await ver()),
    plaquita, recargar y comprobar que sigue** (apartado 11, pruebas 9 a 11). */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(500);
 ok(await pulsar('⋮ Personalizar'), '⋮ Personalizar abre el modo edición (apartado 1)');
@@ -858,7 +858,7 @@ await page.waitForTimeout(400);
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(500);
 await pulsar('⋮ Personalizar');
@@ -900,7 +900,7 @@ ok(cfgIdeas.ideas?.frecuencia === 'normal',
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(600);
 ok(/Ideas para ti/.test(await ver()),
@@ -938,7 +938,7 @@ ok(/¿Qué quieres descubrir\?/.test(await ver()), 'con la pregunta del enunciad
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(600);
 ok(/Quitar de guardados/.test(await ver()),
@@ -969,7 +969,7 @@ ok(!/Mis preferencias/.test(await ver()), '⚠️ Y sale de esta pantalla: no du
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(500);
 await pulsar('⚙️ Mis preferencias');
@@ -989,7 +989,7 @@ ok(/Mis preferencias/.test(await ver()), 'y cancelar no borra nada');
    no hay datos en vez de enseñar un cero, y que el periodo se guarde. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(700);
 const progreso = await ver();
@@ -1015,7 +1015,7 @@ ok(!('total' in (cfgProg.progreso || {})) && !('cifras' in (cfgProg.progreso || 
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(700);
 ok(/Este mes/.test(await ver()), '⚠️ PERSISTENCIA: tras recargar sigue en el mes');
@@ -1029,7 +1029,7 @@ ok(/Volver a ver mi progreso/.test(await ver()),
    la portada SIN desactivarlo**, y eso sigue tras recargar. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(600);
 ok(/Perfumes/.test(await ver()), 'De partida, Perfumes sale en la portada');
@@ -1062,7 +1062,7 @@ ok(ocultoAlguno && ocultoAlguno.activo === true,
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(700);
 /* ⚠️ Y el módulo oculto YA NO SALE en la portada, tras recargar. */
@@ -1086,7 +1086,7 @@ ok(!/⚪ Oculto/.test(await ver()), 'y vuelve a estar visible');
    abrir un resultado apunte el reciente y NO active nada por su cuenta. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(700);
 ok(/Buscar en Estilo de hombre/.test(await ver()),
@@ -1121,7 +1121,7 @@ ok((cfgBusc.buscador?.recientes || []).includes('barba'),
    la pantalla diga que el interruptor general es el de JosStyle. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(600);
 await pulsar('⋮ Personalizar');
@@ -1159,7 +1159,7 @@ ok(Object.keys(cfgAv.avisos?.tipos || {}).length === 0,
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(600);
 await pulsar('⋮ Personalizar');
@@ -1187,7 +1187,7 @@ almacen.productividad = { habitos: [], rutinas: [], tareas: [], metas: [], pomod
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(600);
 await pulsar('⋮ Personalizar');
@@ -1237,7 +1237,7 @@ ok(!('hecha' in deseoGuardado) && !('texto' in deseoGuardado),
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(600);
 await pulsar('⋮ Personalizar');
@@ -1265,7 +1265,7 @@ almacen.estiloHombre = {
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 const primerUso = await esperarTexto(/¿Quieres añadir/);
 ok(/¿Quieres añadir/.test(primerUso),
@@ -1316,7 +1316,7 @@ ok(cfgTuto.primerUso?.tutorial === 'visto',
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(800);
 ok(!/1\/4/.test(await ver()),
@@ -1350,7 +1350,7 @@ almacen.estiloHombre = {
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(900);
 const estados = await ver();
@@ -1388,7 +1388,7 @@ almacen.estiloHombre = {
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(700);
 await pulsar('⋮ Personalizar');
@@ -1448,7 +1448,7 @@ almacen.estiloHombre = {
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(700);
 await pulsar('⋮ Personalizar');
@@ -1477,7 +1477,7 @@ await pulsar('Volver');
 await page.waitForTimeout(400);
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Más');
+await pulsar('Además');
 await page.waitForTimeout(500);
 await pulsar('Ajustes');
 await page.waitForTimeout(800);
@@ -1510,7 +1510,7 @@ almacen.estiloHombre = {
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 await page.waitForTimeout(900);
 const portadaCH = await ver();
@@ -1731,7 +1731,7 @@ almacen.estiloHombre = {
 };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Más');
+await pulsar('Bienestar');
 await pulsar('Estilo de hombre');
 const simple = await esperarTexto(/Perfumes/);
 
@@ -1755,7 +1755,7 @@ almacen.productividad = {
   habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [],
 };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
-await pulsar('Vida');
+await pulsar('Gestión');
 await pulsar('Calendario');
 await esperarTexto(/Mes/);
 ok(await pulsar('Día'), '🚨 E3 F7 — el Calendario tiene un modo Día');
@@ -1785,7 +1785,7 @@ almacen.productividad = {
   habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [],
 };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
-await pulsar('Vida');
+await pulsar('Gestión');
 await pulsar('Calendario');
 await esperarTexto(/Mes/);
 ok(await pulsar('📊'), '🚨 E3 F13 — el Calendario tiene su acceso a Estadísticas (apartado 1)');
@@ -1808,7 +1808,7 @@ ok(!/deberías|vas bien|mejor que/i.test(stats_e3f13),
 
    ⚠️ Sufijo `_e3f12`, y `/i` en los rótulos. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
-await pulsar('Más');
+await pulsar('Además');
 await pulsar('Ajustes');
 await esperarTexto(/Integraciones|Apariencia/i);
 ok(await pulsar('Integraciones'), '🚨 E3 F12 — Ajustes tiene su apartado de Integraciones (apartado 1)');
@@ -1835,7 +1835,7 @@ ok(!/OAuth|token|API/i.test(integ_e3f12.split('Calendarios')[1] || ''),
 
    ⚠️ Sufijo `_e3f11`, y `/i` en los rótulos. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
-await pulsar('Más');
+await pulsar('Además');
 await pulsar('Ajustes');
 await esperarTexto(/Notificaciones|Apariencia/i);
 ok(await pulsar('Notificaciones'), '🚨 E3 F11 — Ajustes tiene su apartado de Notificaciones (apartado 3)');
@@ -1866,7 +1866,7 @@ almacen.productividad = {
   habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [],
 };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
-await pulsar('Vida');
+await pulsar('Gestión');
 await pulsar('Calendario');
 await esperarTexto(/Mes/);
 
@@ -1954,7 +1954,7 @@ almacen.productividad = {
 // evento que dejó otra sección (la lección de la E3 F6).
 almacen.calendario = { eventos: [] };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
-await pulsar('Vida');
+await pulsar('Gestión');
 await pulsar('Calendario');
 const mes_e3f8 = await esperarTexto(/Repasar Química/);
 
@@ -2045,7 +2045,7 @@ almacen.horarioTop = {
   filas: [], actividades: [], bloques: [], excepciones: [], confirmaciones: [], avisos: [], mochila: [],
 };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
-await pulsar('Vida');
+await pulsar('Gestión');
 await pulsar('Horario');
 const hor_e3f5 = await esperarTexto(/Bachillerato/);
 
@@ -4587,7 +4587,7 @@ ok(/Bu[eé]n[oa]s\s+(d[ií]as|tardes|noches), Josué/i.test(hoyAntes_fp),
    detrás, y dos de ellas hasta salieron VERDES por casualidad —«las iniciales
    desaparecen» se cumple trivialmente en una pantalla donde nunca hubo
    iniciales—. Un rojo en cascada esconde qué se está probando de verdad. */
-await pulsar('Más');
+await pulsar('Además');
 ok(await pulsar('Ajustes'), 'se abre Ajustes');
 await esperarTexto(/Apariencia/i);
 ok(await pulsar('Perfil'), 'y la categoría Perfil');
@@ -4648,7 +4648,7 @@ ok(pintada.ok, '🚨 Y la foto se PINTA en un <img>, no se queda solo en el dato
 /* ── 🚨 LO QUE MÁS PIDIÓ: que siga ahí después de recargar ─────────────────── */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Más');
+await pulsar('Además');
 ok(await pulsar('Ajustes'), 'se recarga la aplicación entera y se vuelve a Ajustes');
 await esperarTexto(/Apariencia/i);
 ok(await pulsar('Perfil'), '…y a Perfil');
@@ -4687,7 +4687,7 @@ ok(/Bu[eé]n[oa]s\s+(d[ií]as|tardes|noches), Jos\b/i.test(hoyConMostrado),
 ok(!/, Josué/.test(hoyConMostrado), '…y ya no usa el nombre largo');
 
 /* ── Quitar la foto ───────────────────────────────────────────────────────── */
-await pulsar('Más');
+await pulsar('Además');
 ok(await pulsar('Ajustes'), 'se vuelve a Ajustes');
 await esperarTexto(/Apariencia/i);
 ok(await pulsar('Perfil'), 'y a Perfil');
@@ -4719,5 +4719,78 @@ ok(/Preferencias generales/.test(indiceAjustes), '⚠️ Preferencias generales 
 ok(await pulsar('Apariencia'), 'y Apariencia sigue abriéndose…');
 const apar = await esperarTexto(/Tema|Acento/i);
 ok(/Tema|Acento/i.test(apar), '…con su contenido de siempre, intacto');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NAV F1 — LA NUEVA ARQUITECTURA Y EL APARTADO NÚMEROS
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 Las pruebas de Node leen `App.jsx` y comprueban las listas. Eso demuestra
+   que están bien **escritas**, no que se pueda navegar por ellas: lo único que
+   lo demuestra es entrar, tocar y ver que sale lo que tiene que salir. Es la
+   lección de la E3 F30, donde un renombrado a medias dejó dos botones con el
+   mismo nombre y solo lo vio Chromium. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+/* ── Además, con sus cinco cosas y ni una más ─────────────────────────────── */
+ok(await pulsar('Además'), '🚨 NAV F1 — la pestaña se llama «Además»');
+const ademas_n1 = await esperarTexto(/Relaci[oó]n/i);
+for (const rotulo of [/Relaci[oó]n/i, /\bFe\b/, /Bienestar digital/i, /N[uú]meros/i, /Ajustes/i]) {
+  ok(rotulo.test(ademas_n1), `⚠️ Además tiene ${rotulo.source}`);
+}
+// 🚨 Y el apartado de estilo YA NO está aquí: se ha mudado a Bienestar.
+ok(!/Estilo de hombre/i.test(ademas_n1),
+  '🚨 El apartado de estilo ya no está en Además — se ha mudado, no duplicado');
+
+/* ── Números: una puerta donde había tres ─────────────────────────────────── */
+ok(await pulsar('Números'), '🚨 se abre NÚMEROS');
+const num_n1 = await esperarTexto(/Estad[ií]sticas/i);
+for (const rotulo of [/Estad[ií]sticas/i, /Predicciones/i, /Logros/i]) {
+  ok(rotulo.test(num_n1), `⚠️ Números contiene ${rotulo.source}`);
+}
+
+// 🚨 Y las tres ABREN DE VERDAD la pantalla de siempre, que es lo que ninguna
+// prueba de Node puede decir.
+ok(await pulsar('Logros'), 'se abre Logros desde dentro de Números');
+const logros_n1 = await esperarTexto(/Logros|Insignias|Mapa/i);
+ok(/Logros|Insignias|Mapa/i.test(logros_n1), '🚨 …y es la pantalla de Logros de siempre, no una copia');
+ok(await pulsar('Números'), 'y se vuelve a Números con su botón');
+await esperarTexto(/Predicciones/i);
+
+/* ── El apartado de estilo, ahora en Bienestar ────────────────────────────── */
+ok(await pulsar('Bienestar'), '🚨 se entra en el área BIENESTAR');
+const bien_n1 = await esperarTexto(/Mi salud/i);
+ok(/Estilo de hombre/i.test(bien_n1),
+  '🚨 NAV F1 — el apartado de estilo vive ahora en Bienestar');
+ok(/Mi salud/i.test(bien_n1) && /Sue[nñ]o/i.test(bien_n1) && /Nutrici[oó]n/i.test(bien_n1),
+  '⚠️ …sin haberse llevado por delante nada de lo que ya había ahí');
+
+/* ── Calendario y Horario, ahora en Gestión ───────────────────────────────── */
+ok(await pulsar('Gestión'), '🚨 se entra en GESTIÓN');
+const ges_n1 = await esperarTexto(/Econom[ií]a/i);
+ok(/Calendario/i.test(ges_n1), '🚨 Calendario está en Gestión');
+ok(/Horario/i.test(ges_n1), '🚨 Horario está en Gestión');
+
+// 🚨 Y lo que más importa: **el dato sigue ahí**. Mover un módulo de área es
+// navegación; si esta fase hubiera tocado una clave, lo guardado se habría
+// quedado huérfano.
+ok(await pulsar('Calendario'), 'se abre el Calendario desde su sitio nuevo');
+const cal_n1 = await esperarTexto(/HOY|Mes|Agenda/i);
+ok(/HOY|Mes|Agenda/i.test(cal_n1), '🚨 …y es el Calendario entero, con sus datos');
+
+ok(await pulsar('Vida'), 'se entra en VIDA');
+const vida_n1 = await esperarTexto(/Diario|Biblioteca/i);
+ok(!/Calendario/i.test(vida_n1) && !/Horario/i.test(vida_n1),
+  '⚠️ …y Calendario y Horario NO siguen también en Vida: un módulo vive en un área, o se ve dos veces');
+ok(/Diario/i.test(vida_n1) && /Biblioteca/i.test(vida_n1) && /Rachas/i.test(vida_n1),
+  '⚠️ Vida conserva Diario, Biblioteca y Rachas');
+
+/* ── Ajustes sigue funcionando dentro de Además ───────────────────────────── */
+await pulsar('Además');
+await esperarTexto(/Ajustes/i);
+ok(await pulsar('Ajustes'), '🚨 Ajustes se abre desde Además');
+const aj_n1 = await esperarTexto(/Apariencia/i);
+ok(/Perfil/.test(aj_n1) && /Apariencia/.test(aj_n1) && /Preferencias generales/.test(aj_n1),
+  '🚨 …y conserva TODAS sus categorías: mover no es recortar');
 
 await salir(browser);

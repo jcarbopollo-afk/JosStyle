@@ -488,6 +488,43 @@ desglose real son 110?
 
 ---
 
+### C-31 — ⏸ PENDIENTE DE JOSUÉ · Productividad no se puede repartir entre Vida y Gestión
+
+**Dónde:** su encargo de la reorganización de áreas (2026-09-12), puntos 1 y 2.
+
+**Qué dice.** Pide dos listas que se solapan:
+
+- **Vida** = Objetivos, Diario, Biblioteca, Rachas, **Hábitos**
+- **Gestión** = **Tareas**, Calendario, Horario, **Rutinas**, Economía, **Metas/planificación**
+
+**El problema.** *Objetivos, Hábitos, Tareas, Rutinas y Metas no son módulos*: son **cinco de las
+seis mini-apps de Productividad**, que es **una sola pantalla** construida entre la E3 F23 y la
+E3 F29. Repartirlas entre dos áreas exigiría **partir ese lanzador**, y eso es exactamente lo que su
+propio encargo prohíbe dos párrafos más abajo: *"No quiero rediseñar Jos Style desde cero. No
+eliminar funcionalidades. No crear módulos duplicados."*
+
+⚠️ Y él ya lo sospechaba, porque escribió: *"Revisa cómo están implementados actualmente y
+mantenlos funcionales. No crees módulos duplicados."* Esto es el resultado de esa revisión.
+
+**Lo que se ha hecho mientras tanto (NAV F1, v3.69.0):** todo lo demás de su encargo, que **no
+depende de esto**. Calendario y Horario están en Gestión, el resto de Vida está como él lo quiere, y
+**Productividad se queda entera en Vida**, que es donde estaba: no se parte, no se duplica y no se
+mueve a medias.
+
+**⏸ Lo que se le pregunta a Josué**, con las tres salidas reales:
+
+1. **Productividad entera a Gestión.** Es donde caen 4 de sus 6 mini-apps (Tareas, Rutinas, Metas,
+   Pomodoro). Objetivos y Hábitos se abrirían desde Gestión. Un cambio de una línea.
+2. **Productividad se queda entera en Vida** (lo que hay ahora). Tareas y Rutinas se abren desde
+   Vida.
+3. **Partir el lanzador de verdad**: convertir las seis mini-apps en módulos independientes y
+   repartirlas. Es una fase grande, deshace la E3 F23 y hay que decirlo: **no es reorganizar, es
+   rediseñar**.
+
+**No bloquea nada** (regla 49): se anota, se sigue con el resto y se le pregunta al cerrar el turno.
+
+---
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos
