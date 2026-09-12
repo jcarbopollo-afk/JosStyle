@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.73.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.74.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **LA ENTREGA 3 ESTÁ CERRADA: 46 de 46** (ver `docs/11_ENTREGA3_ORDEN.md`). Los siete bloques
@@ -247,10 +247,10 @@ prompts** de una vez y dijo que se podían dividir; la división es ésta:
 | | Fase | Estado |
 |---|---|---|
 | **GE F1** | Tareas (eliminar, desmarcar), Día sin duplicar Productividad, y los tres macros en una fila | ✅ **v3.73.0** |
-| **GE F2** | 🐛 El **solapamiento falso** del Horario | ⏳ **en curso** |
+| **GE F2** | 🐛 El **solapamiento falso** del Horario | ✅ **v3.74.0** |
 
 ⚠️ **Él mismo separó las dos:** *"NO modifiques todavía el problema interno de solapamientos del
-Horario. Ese será la Fase 2."*
+Horario. Ese será la Fase 2."* 🏁 **Las dos están hechas y en `main`.**
 
 ⚠️ **Y una contradicción suya que necesita respuesta, C-31 en `docs/03`:** pide **Tareas y Rutinas
 en Gestión** y **Objetivos y Hábitos en Vida**, pero las cuatro son **mini-apps de Productividad**,
@@ -318,6 +318,38 @@ código de agosto mientras él decía *"la web sigue igual"*.
   tarjeta grande de kcal conserva el nombre entero. Y **el número de columnas sale de la longitud de
   la lista** (`macros.length === 3 ? 'grid-cols-3' : 'grid-cols-2'`), no escrito a mano: un «3» a
   mano se queda viejo el día que haya un cuarto macro.
+- 🚨 **UN DETECTOR PUEDE ESTAR BIEN Y ESTAR DANDO UN NÚMERO FALSO: MIRAR QUÉ LISTA LE DAN** (GE F2,
+  y es el fallo que reportó Josué). El aviso decía *"2 choques de horario"* sobre un horario sin un
+  solo solape — pero `conflictosDelDia` estaba perfecto. Lo que pasaba es que **`duplicarHorario`
+  dejaba la copia activa y vigente desde hoy con las mismas clases**, y `resolverDia` **suma todos
+  los horarios vigentes** (que es su función: así conviven el del instituto y el del gimnasio), así
+  que **cada clase se resolvía dos veces**. **Antes de tocar un cálculo que da un número raro, mirar
+  de qué lista sale.**
+- 🚨 **EL ARREGLO OBVIO ERA EL QUE ROMPÍA EL CASO QUE HAY QUE CONSERVAR** (GE F2). Acotar la
+  detección al horario que se está mirando —`contextoTemporal` ya tiene el `horarioId` y no se lo
+  pasa— quitaba el aviso falso **y escondía el choque de verdad** entre dos horarios distintos, que
+  es justo lo que el enunciado exige detectar: medido, de 1 a 0. **Antes de acotar algo para que
+  calle, comprobar qué deja de decir.**
+- ⚠️ **QUE UNA FUNCIÓN IGNORE UN PARÁMETRO NO ES SIEMPRE UN FALLO** (GE F2): `tiempoLibre`,
+  `avisosDelDia` y `materialDelDia` también descartan el `horarioId`, y **es correcto** — son hechos
+  de la vida real del día, no el dibujo de una rejilla. Acotarlos haría que la aplicación dijera que
+  tiene la tarde libre teniendo entrenamiento, o dejara fuera de la mochila el material del otro
+  horario. **Cuatro llamadas iguales, y solo una estaba mal.**
+- ⚠️ **«DUPLICAR PARA OTRO CURSO» NO PUEDE EMPEZAR HOY** (GE F2): la copia nace **archivada** —de
+  donde se restaura de un toque, con sus clases intactas—, **salvo** si trae un `desde` futuro: ahí
+  se queda activa porque `horarioVigente` ya la deja fuera hasta esa fecha y **se enciende sola**.
+  Archivar también ésa habría sido «arreglar» lo que no estaba roto. **El límite de un arreglo se
+  encuentra mirando quién más llama a la función** — lo dijo una prueba que ya existía y siguió verde.
+- 🚨 **UN NÚMERO SUELTO NO SE PUEDE DIAGNOSTICAR** (GE F2). *"2 choques de horario"*, sin decir
+  cuáles ni de qué horarios, hizo este fallo indescifrable — y el evento **ya traía `horarioNombre`
+  desde HT F1**, sin que lo usara nadie. Ahora cada choque se enseña entero y, si viene de dos
+  horarios, se dice cuáles y qué hacer. ⚠️ **Eso es lo que arregla los datos que Josué YA tiene
+  guardados**; lo demás solo evita volver a crearlos.
+- 🐛 **UNA FÁBRICA DE ESCENARIOS QUE LLAMA A `uid()` DEVUELVE IDS DISTINTOS CADA VEZ** (GE F2, y lo
+  cazó mi propia prueba): `escenario()` creaba un horario nuevo en cada llamada, así que pasarle el
+  `h.id` de fuera **no encontraba nada** —`duplicarHorario` devolvía su error y el estado no
+  cambiaba— y dos comprobaciones fallaban **diciendo otra cosa**. Lo que no varía se crea una vez.
+
 - 🚨 **NADIE MEDÍA EL ANCHO, Y POR ESO LA PANTALLA SE ARRASTRABA EN SU iPHONE** (GE F1). La
   comprobación nueva de esta fase —`scrollWidth > innerWidth` a 375 px— destapó que **las cuatro
   pestañas de Nutrición no caben**: «📊 Estadísticas» pide 123 px y le tocaban 80, así que la página

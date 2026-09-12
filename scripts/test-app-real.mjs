@@ -5025,4 +5025,80 @@ ok(filaMovil.every((x) => x !== null) && Math.max(...filaMovil) - Math.min(...fi
 const desborda = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
 ok(!desborda, '⚠️ …sin desbordar a lo ancho (y aquí saltó el desbordamiento de las pestañas)');
 
+/* ===========================================================================
+   GE F2 — EL SOLAPAMIENTO FALSO DEL HORARIO
+   ===========================================================================
+   Josué: *"Los horarios eliminados siguen provocando detección falsa de
+   solapamientos"*, y los casos A-E de su encargo. La causa real no era visual:
+   `duplicarHorario` dejaba la copia **activa y vigente desde hoy** con las
+   mismas clases, y `resolverDia` suma todos los horarios vigentes — así que
+   cada clase se resolvía dos veces.
+
+   ⚠️ Sufijo `_ge2` en todo: dos `const` iguales en este archivo plano no
+   compilan, y eso tumba las 1400 comprobaciones sin que nada más falle. */
+await page.setViewportSize({ width: 1280, height: 900 });
+const hoyISO_ge2 = new Date().toLocaleDateString('sv-SE');
+/* Un solo horario, dos clases SEGUIDAS que no se pisan: tocarse no es
+   solaparse. Si aquí saliera un choque, ya sería un falso positivo. */
+almacen.horarioTop = {
+  horarios: [{
+    id: 'hg1', nombre: 'Curso 25-26', activo: true, archivado: false, creadoEn: hoyISO_ge2,
+    columnas: [
+      { id: 'cg1', horarioId: 'hg1', nombre: 'Lunes', dia: 1, posicion: 0, visible: true },
+      { id: 'cg2', horarioId: 'hg1', nombre: 'Martes', dia: 2, posicion: 1, visible: true },
+      { id: 'cg3', horarioId: 'hg1', nombre: 'Miércoles', dia: 3, posicion: 2, visible: true },
+      { id: 'cg4', horarioId: 'hg1', nombre: 'Jueves', dia: 4, posicion: 3, visible: true },
+      { id: 'cg5', horarioId: 'hg1', nombre: 'Viernes', dia: 5, posicion: 4, visible: true },
+    ],
+    filas: [
+      { id: 'fg1', tipo: 'hora', inicio: '08:00', fin: '09:00', posicion: 0 },
+      { id: 'fg2', tipo: 'hora', inicio: '09:00', fin: '10:00', posicion: 1 },
+    ],
+  }],
+  actividades: [],
+  bloques: [
+    { id: 'bg1', horarioId: 'hg1', columnaId: 'cg1', filaId: 'fg1', inicio: '08:00', fin: '09:00', titulo: 'Mates' },
+    { id: 'bg2', horarioId: 'hg1', columnaId: 'cg1', filaId: 'fg2', inicio: '09:00', fin: '10:00', titulo: 'Lengua' },
+  ],
+  excepciones: [], confirmaciones: [], avisos: [], mochila: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Gestión');
+await pulsar('Horario');
+const ge2_inicial = await esperarTexto(/Curso 25-26/);
+ok(/Curso 25-26/.test(ge2_inicial), 'GE F2 — A) el horario de Josué se ve');
+ok(!/choque/i.test(ge2_inicial),
+  '🚨 GE F2 — A) y NO anuncia ningún choque: dos clases seguidas no se solapan');
+
+/* B) Duplicar para otro curso — el botón que generaba el problema. */
+await pulsar('Curso 25-26');
+await page.waitForTimeout(700);
+const pudoDuplicar_ge2 = await pulsar('Duplicar para otro curso');
+await page.waitForTimeout(1200);
+const ge2_duplicado = await ver();
+ok(pudoDuplicar_ge2, 'GE F2 — B) se puede duplicar el horario para otro curso');
+ok(!/choque/i.test(ge2_duplicado),
+  '🚨 GE F2 — B) Y DUPLICAR YA NO INVENTA CHOQUES: la copia nace archivada, no compitiendo con el original');
+
+/* ⚠️ Y no se ha perdido: está en Archivados, de donde se restaura de un toque. */
+ok(/Archivados/i.test(ge2_duplicado),
+  '⚠️ GE F2 — B) …y la copia está en Archivados, con sus clases guardadas');
+
+/* 🚨 Y lo que de verdad importa: que lo guardado diga lo mismo que la pantalla. */
+const ge2_guardado = await page.evaluate(() => JSON.parse(localStorage.getItem('__nada__') || 'null'));
+ok(ge2_guardado === null, '(sin usar localStorage: los datos van a Supabase)');
+const ge2_estado = almacen.horarioTop;
+ok((ge2_estado.horarios || []).length === 2,
+  '🚨 GE F2 — B) PERSISTENCIA: la copia se ha guardado de verdad, son dos horarios');
+ok((ge2_estado.horarios || []).filter((h) => h.activo && !h.archivado).length === 1,
+  '🚨 GE F2 — B) …y solo UNO está activo: es lo que impide que las clases se cuenten dos veces');
+
+/* C) Recargar: la interfaz refleja lo persistido, que es lo que pidió Josué. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Gestión');
+await pulsar('Horario');
+const ge2_recargado = await esperarTexto(/Curso 25-26/);
+ok(!/choque/i.test(ge2_recargado),
+  '🚨 GE F2 — C) RECARGA: sigue sin choques, así que no era un estado de pantalla');
+
 await salir(browser);

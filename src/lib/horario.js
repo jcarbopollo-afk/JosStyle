@@ -1129,10 +1129,17 @@ export function revisarHorario(estado, { asignaturas = [] } = {}) {
 export function resumenHorario(estado, { asignaturas = [], fecha = todayISO() } = {}) {
   const e = normalizarHorarioTop(estado);
   const linea = lineaDelDia(estado, fecha, { asignaturas });
+  /* ⚠️ **GE F2 — los bloques son los de los horarios VIGENTES.** Antes era
+     `e.bloques.length`, o sea **todos**: los del curso pasado archivado y los
+     huérfanos —los de un horario que ya no existe, que `normalizarHorarioTop`
+     conserva a propósito—. El hub decía *"60 bloques en la semana"* teniendo
+     treinta, porque contaba dos cursos. ⚠️ Un bloque huérfano **nunca produjo un
+     choque** —`resolverDia` los filtra por su horario—, pero sí inflaba esto. */
+  const vigentes = new Set(e.horarios.filter((h) => horarioVigente(h, fecha)).map((h) => h.id));
   return {
-    horarios: e.horarios.filter((h) => horarioVigente(h, fecha)).length,
+    horarios: vigentes.size,
     actividades: e.actividades.length,
-    bloques: e.bloques.length,
+    bloques: e.bloques.filter((b) => vigentes.has(b.horarioId)).length,
     hoy: linea.total,
     libre: linea.libre,
     minutosHoy: linea.minutos,

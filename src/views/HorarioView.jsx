@@ -1128,12 +1128,41 @@ export function HoyView({
         </div>
       </Card>
 
-      {/* Apartado 39 — un choque se ve arriba, no escondido. */}
+      {/* Apartado 39 — un choque se ve arriba, no escondido.
+
+          🚨 **GE F2 — y ahora dice CUÁL, y de qué horarios.** Antes era el
+          número a secas, así que un choque real entre el instituto y el
+          gimnasio era **indistinguible** de dos copias del mismo horario
+          pisándose — y eso es lo que hizo imposible entender el fallo que
+          reportó Josué. El evento ya traía `horarioNombre` desde HT F1 y no lo
+          usaba nadie.
+
+          ⚠️ Y el nombre del horario solo se enseña **cuando los dos lados vienen
+          de horarios distintos**: dentro de un mismo horario repetirlo en las dos
+          líneas sería ruido. */}
       {conflictos.length > 0 && (
         <Card style={{ border: `1px solid ${COLORS.negative}` }}>
           <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: COLORS.negative }}>
             <AlertTriangle size={12} /> {conflictos.length} {plural(conflictos.length, 'choque', 'choques')} de horario
           </p>
+          {conflictos.map(([a, b], i) => {
+            const entreHorarios = a.horarioId !== b.horarioId;
+            const comoSeLlama = (ev) => (entreHorarios && ev.horarioNombre ? ` (${ev.horarioNombre})` : '');
+            return (
+              <p key={i} className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
+                {a.titulo}{comoSeLlama(a)} {a.inicio}–{a.fin}
+                {' · '}
+                {b.titulo}{comoSeLlama(b)} {b.inicio}–{b.fin}
+              </p>
+            );
+          })}
+          {/* ⚠️ Y si vienen de dos horarios, se dice qué hacer: es el caso que
+              Josué no podía diagnosticar. No se toca nada por su cuenta. */}
+          {conflictos.some(([a, b]) => a.horarioId !== b.horarioId) && (
+            <p className="text-[11px] mt-1.5" style={{ color: COLORS.textMuted }}>
+              Son horarios distintos y los dos están activos. Si uno ya no lo usas, archívalo en Mis horarios.
+            </p>
+          )}
         </Card>
       )}
 

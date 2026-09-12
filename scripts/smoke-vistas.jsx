@@ -710,6 +710,15 @@ const CASOS = [
     const conChoque = crearBloqueRapido(lleno, {
       horarioId: base.horario.id, columnaId: col(1).id, inicio: '08:30', fin: '09:30', texto: 'Física', forzar: true, hoy: HOY,
     }).estado;
+    /* 🚨 GE F2 — y un choque ENTRE DOS HORARIOS distintos, que es la rama nueva
+       del aviso: enseña de qué horario viene cada lado y ofrece archivar el que
+       ya no use. El de arriba choca dentro de un mismo horario, así que **no la
+       pintaba nadie**. */
+    const gimnasio = crearDesdePlantilla(lleno, { nombre: 'Gimnasio', tipo: 'entrenamiento', plantillaId: 'colegio', hoy: HOY });
+    const colGim = gimnasio.horario.columnas.find((c) => c.dia === 1);
+    const choqueEntreHorarios = crearBloqueRapido(gimnasio.estado, {
+      horarioId: gimnasio.horario.id, columnaId: colGim.id, inicio: '08:30', fin: '09:30', texto: 'Pesas', forzar: true, hoy: HOY,
+    }).estado;
     // Y un cambio de un solo día, para que la vista de día lo marque.
     const conExcepcion = editarBloque(lleno, lleno.bloques[0].id, { inicio: '10:00', fin: '11:00' },
       { alcance: ALCANCES.SOLO_ESTE_DIA, fecha: HOY }).estado;
@@ -918,6 +927,7 @@ const CASOS = [
           // El caso del apartado 69: nada programado. Y el del 39: un choque.
           ['HoyView · día sin nada', HoyView, () => propsHoy(DEFAULT_HORARIO_TOP)],
           ['HoyView · con un choque', HoyView, () => propsHoy(conChoque)],
+          ['HoyView · choque entre DOS horarios (GE F2)', HoyView, () => propsHoy(choqueEntreHorarios)],
         ];
       })(),
       // HT Fase 12 — el panel avanzado ahora tiene la pestaña de copia.

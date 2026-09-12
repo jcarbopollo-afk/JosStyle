@@ -861,6 +861,14 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# GE F2 — el solapamiento falso del Horario: duplicar dejaba dos horarios
+# activos con las mismas clases, así que cada clase se resolvía dos veces.
+if node --import ./scripts/resolver-vite.mjs scripts/test-solapamientos-horario.mjs >/tmp/jc_solapes.log 2>&1; then
+  ok "Solapamientos del horario (GE F2) — $(grep -c '✓' /tmp/jc_solapes.log) comprobaciones"
+else
+  fallo "Falla la detección de solapamientos del horario"; grep '✗' /tmp/jc_solapes.log
+fi
+
 # GE F1 — tareas (marcar, desmarcar, eliminar), Día sin duplicar Productividad
 # y los tres macros de Nutrición en una sola fila.
 if node --import ./scripts/resolver-vite.mjs scripts/test-gestion-tareas.mjs >/tmp/jc_gestion.log 2>&1; then

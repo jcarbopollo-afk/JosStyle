@@ -329,6 +329,28 @@ export function duplicarHorario(estado, horarioId, { nombre = '', periodo = '', 
     return { ...f, id: nuevoId };
   });
 
+  /* 🚨 **GE F2 — LA COPIA NO PUEDE EMPEZAR A CONTAR HOY.**
+
+     Éste era el origen del solapamiento falso que reportó Josué. La copia
+     heredaba `...original`, así que nacía `activo: true` y `archivado: false`
+     **sin fechas**: vigente desde hoy, con **las mismas clases**. Y como
+     `resolverDia` suma todos los horarios vigentes —que es su función, así es
+     como conviven el del instituto y el del gimnasio—, cada clase se resolvía
+     **dos veces** y `conflictosDelDia` informaba fielmente de un choque por
+     clase. El detector nunca estuvo roto: le estaban dando la lista mal.
+
+     ⚠️ **Y por eso el arreglo va aquí y no en la detección.** Acotar los choques
+     al horario que se está mirando habría escondido un choque de verdad entre
+     dos horarios distintos, que es justo lo que el enunciado exige detectar.
+
+     ⚠️ **Solo se archiva la que podría chocar HOY.** Si al duplicar dice cuándo
+     empieza el curso nuevo, la copia se queda **activa**: `horarioVigente` ya la
+     deja fuera de toda fecha anterior a su `desde`, así que no duplica ni una
+     clase, y **se enciende sola** el día que toque. Archivarla también obligaría
+     a Josué a acordarse de restaurarla en septiembre. */
+  const empiezaMasAdelante = Boolean(desde) && desde > hoy;
+  const copiaActiva = empiezaMasAdelante && original.activo && !original.archivado;
+
   const copia = normalizarHorarioObj({
     ...original, id: uid(),
     nombre: (nombre || '').trim() || `${original.nombre} (copia)`,
@@ -336,6 +358,10 @@ export function duplicarHorario(estado, horarioId, { nombre = '', periodo = '', 
     desde, hasta,
     columnas, filas,
     porDefecto: false,
+    // Archivada NO es borrada: sus clases se copian igual y «Restaurar» la
+    // devuelve activa de un toque, desde la sección que ya existe.
+    activo: copiaActiva,
+    archivado: !copiaActiva,
     creadoEn: hoy, actualizadoEn: hoy,
   });
 

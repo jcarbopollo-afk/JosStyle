@@ -1,5 +1,81 @@
 # CHANGELOG.md
 
+## v3.74.0 — GE F2: el solapamiento falso del Horario
+
+> *"Los horarios eliminados siguen provocando detección falsa de solapamientos. **NO asumas que el
+> problema es únicamente visual.** Quiero que encuentres la causa real."*
+
+No lo era. Y no era el borrado: **`eliminarHorario` funciona**, borra en cascada horario, bloques y
+excepciones, y tras eliminar los choques bajan a cero. Archivar también basta. Se comprobó **antes**
+de tocar nada.
+
+### 🚨 La causa real, en tres piezas encadenadas
+
+1. **`duplicarHorario` dejaba dos horarios activos a la vez.** La copia heredaba `...original`, así
+   que nacía `activo: true`, `archivado: false` y **sin fechas**: vigente desde hoy, con **las mismas
+   clases**. El botón se llama *"Duplicar para otro curso"*, y el otro curso empezaba a contar hoy.
+2. **`resolverDia` suma todos los horarios vigentes** — que es su función, así es como conviven el
+   del instituto y el del gimnasio. Con dos copias del mismo horario, **cada clase se resolvía dos
+   veces** y `conflictosDelDia` informaba fielmente de un choque por clase. **El detector nunca
+   estuvo roto: le estaban dando la lista mal.**
+3. **Y el aviso decía «2 choques de horario» y nada más**, así que era indistinguible de un choque
+   real dentro de un mismo horario. Por eso no había forma de entender qué pasaba.
+
+Reproducido: un horario con dos clases seguidas → 2 eventos, 0 choques. Tras duplicar → **4 eventos,
+2 choques**. Y mirando **solo** el horario original, la línea del día traía **una clase** mientras el
+banner anunciaba **un choque**.
+
+### 🚨 Y por eso NO se ha acotado la detección
+
+Lo que parecía obvio —pasar el `horarioId` que se está mirando a `conflictosDelDia`— **escondería el
+caso E** que el propio encargo exige conservar: Insti «Mates 08:00-09:00» contra Gimnasio «Pesas
+08:30-09:30» son dos horarios distintos, activos a propósito, y **eso es un choque de verdad**.
+Medido: con `horarioId` fijado pasa de 1 a 0. Hay una comprobación de ello.
+
+⚠️ Lo mismo con `tiempoLibre`, `avisosDelDia` y `materialDelDia`, que también ignoran `horarioId`:
+**es correcto**. Son hechos de la vida real del día, no el dibujo de una rejilla. Acotarlos haría que
+la aplicación dijera que tiene la tarde libre teniendo entrenamiento, o dejara fuera de la mochila el
+material del otro horario.
+
+### Qué cambia
+
+- **La copia nace archivada** — *salvo* si dice cuándo empieza el curso nuevo. Con un `desde` futuro
+  se queda **activa**, porque `horarioVigente` ya la deja fuera de toda fecha anterior: no duplica ni
+  una clase hoy y **se enciende sola** el día que toque. Archivarla también obligaría a Josué a
+  acordarse de restaurarla en septiembre. ⚠️ Archivada **no es borrada**: sus clases se copian igual y
+  «Restaurar» la devuelve de un toque.
+- **Un choque dice de qué horarios es.** El evento ya traía `horarioNombre` desde HT F1 y no lo usaba
+  nadie. Ahora cada choque se lista con sus horas, y cuando los dos lados vienen de horarios distintos
+  se nombra cada uno y se ofrece la salida: *"Son horarios distintos y los dos están activos. Si uno
+  ya no lo usas, archívalo en Mis horarios."* ⚠️ **Esto es lo que arregla los datos que Josué ya tiene
+  guardados**; lo anterior solo evita crearlo otra vez.
+- **`resumenHorario` deja de contar bloques que no son de esta semana.** Contaba `e.bloques.length`,
+  o sea **todos**: los del curso archivado y los huérfanos. El hub decía *"60 bloques en la semana"*
+  teniendo treinta. ⚠️ Un bloque huérfano **nunca produjo un choque** —`resolverDia` los filtra—, pero
+  sí inflaba esa cifra.
+
+### Lo que NO se ha tocado
+
+> *"NO hagas ningún cambio adicional que no esté relacionado con este bug."*
+
+`conflictosDelDia`, `resolverDia`, `normalizarHorarioTop`, `eliminarHorario`, `archivarHorario`,
+`conflictosCon`, `validarEstructura`, `resumenEditor` y las tres llamadas globales de `hoy.js`. Hay
+cinco comprobaciones que leen el código y fallan si alguna cambia.
+
+🚨 **Y el normalizador sigue conservando los bloques huérfanos a propósito**: lo llaman docenas de
+funciones y tirar bloques ahí sería destructivo si alguna pasara un estado parcial.
+
+### Verificado
+
+`scripts/test-solapamientos-horario.mjs` (41 comprobaciones) con los casos A-E, una sección nueva del
+recorrido de Chromium que duplica un horario **tocándolo** y comprueba que no aparecen choques ni
+antes ni después de recargar, y un caso de renderizado del choque **entre dos horarios**, que era la
+rama que no pintaba nadie.
+
+🐛 **Y dos fallos de la propia prueba, antes del código:** `escenario()` creaba un horario nuevo en
+cada llamada —`crearHorario` usa `uid()`—, así que pasarle el `h.id` de fuera no encontraba nada y dos
+comprobaciones fallaban **diciendo otra cosa**.
+
 ## v3.73.0 — GE F1: cada tarea en un sitio, y los tres macros en una fila
 
 Cuatro encargos de Josué que comparten una idea: **una sola fuente de verdad, y cada cosa en su
