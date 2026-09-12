@@ -52,23 +52,26 @@ const sinComentarios = (s) => s
 const LUNES = '2026-09-14';
 const HOY = '2026-09-01';
 
-/** Un horario con dos clases seguidas que NO se solapan entre ellas. */
-function escenario() {
-  const h = crearHorario({ nombre: 'Curso 25-26', hoy: HOY });
-  const lunes = h.columnas.find((c) => c.dia === 1);
-  const estado = normalizarHorarioTop({
-    horarios: [h],
-    bloques: [
-      crearBloque({ horarioId: h.id, columnaId: lunes.id, inicio: '08:00', fin: '09:00', titulo: 'Mates', hoy: HOY }),
-      crearBloque({ horarioId: h.id, columnaId: lunes.id, inicio: '09:00', fin: '10:00', titulo: 'Lengua', hoy: HOY }),
-    ],
-  });
-  return { h, lunes, estado };
-}
+/* ⚠️ **El horario y su columna se crean UNA vez.** `crearHorario` llama a
+   `uid()`, así que una fábrica que lo cree cada vez devuelve ids distintos y
+   pasarle el `h.id` de fuera a un estado recién hecho **no encuentra nada** —
+   `duplicarHorario` devuelve su error, el estado no cambia y la comprobación
+   falla diciendo otra cosa. Lo cazó mi propia prueba en la primera pasada. */
+const h = crearHorario({ nombre: 'Curso 25-26', hoy: HOY });
+const lunes = h.columnas.find((c) => c.dia === 1);
+
+/** Un estado NUEVO con las dos clases seguidas, siempre sobre el MISMO horario. */
+const escenario = () => normalizarHorarioTop({
+  horarios: [h],
+  bloques: [
+    crearBloque({ horarioId: h.id, columnaId: lunes.id, inicio: '08:00', fin: '09:00', titulo: 'Mates', hoy: HOY }),
+    crearBloque({ horarioId: h.id, columnaId: lunes.id, inicio: '09:00', fin: '10:00', titulo: 'Lengua', hoy: HOY }),
+  ],
+});
 
 console.log('\n── 1. El punto de partida: un horario sano ──');
 
-const { h, lunes, estado } = escenario();
+const estado = escenario();
 eq(resolverDia(estado, LUNES).length, 2, 'Un horario con dos clases resuelve dos clases');
 eq(conflictosDelDia(estado, LUNES).length, 0, '🚨 Y NO hay ningún choque: tocarse no es solaparse');
 
@@ -178,7 +181,7 @@ console.log('\n── 6. Eliminar y archivar funcionan, y siguen funcionando ─
 
 /* ⚠️ Esto NO era la causa —se comprobó antes de tocar nada— pero es lo que Josué
    nombra en el encargo, así que queda con su prueba para que no se rompa. */
-const conDos = duplicarHorario(escenario().estado, h.id, { hoy: HOY }).estado;
+const conDos = duplicarHorario(escenario(), h.id, { hoy: HOY }).estado;
 const idCopia = conDos.horarios.find((x) => x.id !== h.id).id;
 
 const trasBorrar = eliminarDeVerdad(conDos, idCopia, { confirmado: true });
@@ -221,7 +224,7 @@ ok(revisarHorario(huerfano).problemas.some((p) => p.tipo === 'bloque_sin_horario
 
 /* ⚠️ Y el de un horario ARCHIVADO tampoco cuenta como «esta semana»: está
    guardado, pero no es lo que tiene por delante. */
-eq(resumenHorario(archivarHorario(duplicarHorario(escenario().estado, h.id, { hoy: HOY }).estado, h.id), { fecha: LUNES }).bloques, 0,
+eq(resumenHorario(archivarHorario(duplicarHorario(escenario(), h.id, { hoy: HOY }).estado, h.id), { fecha: LUNES }).bloques, 0,
   '⚠️ Con todo archivado, cero bloques «en la semana» — están guardados, no vigentes');
 
 console.log('\n── 8. Lo que esta fase NO ha tocado ──');
