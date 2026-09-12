@@ -5068,10 +5068,19 @@ almacen.horarioTop = baseGe2(
   [claseGe2('bg1', 'hg1', '08:00', '09:00', 'Mates'), claseGe2('bg2', 'hg1', '09:00', '10:00', 'Lengua')],
 );
 await abrirHorario_ge2();
-const ge2_sano = await esperarTexto(/Mates/);
-ok(/Mates/.test(ge2_sano), 'GE F2 - A) las clases de hoy se ven');
+/* La CUENTA del dia no depende de la hora; los nombres si. A partir de las
+   10:00 las dos clases ya han pasado y el dia las pliega detras de "Ver lo
+   pasado", asi que la prueba fallaba por la tarde y pasaba por la manana.
+   Es el mismo error que el dia de la semana: una prueba no puede depender del
+   reloj. Se comprueba la cuenta, y despues se abren las pasadas si las hay. */
+const ge2_sano = await esperarTexto(/actividades/);
+ok(/2 actividades/.test(ge2_sano), 'GE F2 - A) el dia trae las dos clases de hoy');
 ok(!/choque/i.test(ge2_sano),
   'GE F2 - A) y NO anuncia ningun choque: dos clases seguidas no se solapan');
+await pulsar('Ver lo pasado', 1500);
+const ge2_clases = await ver();
+ok(/Mates/.test(ge2_clases) && /Lengua/.test(ge2_clases),
+  'GE F2 - A) y las dos se ven por su nombre, hayan pasado ya o no');
 
 /* B) CASO E: dos horarios DISTINTOS, los dos activos a proposito, que de verdad
    se pisan. TIENE que seguir detectandose -- es lo que el encargo exige
@@ -5098,15 +5107,25 @@ almacen.horarioTop = baseGe2(
   [claseGe2('bg1', 'hg1', '08:00', '09:00', 'Mates'), claseGe2('bq1', 'hg2', '08:30', '09:30', 'Pesas')],
 );
 await abrirHorario_ge2();
-const ge2_archivado = await esperarTexto(/Mates/);
+const ge2_archivado = await esperarTexto(/actividades|Nada programado/);
 ok(!/choque/i.test(ge2_archivado),
   'GE F2 - C) Con el otro horario archivado, el choque desaparece');
-ok(!/Pesas/.test(ge2_archivado),
-  'GE F2 - C) y sus clases dejan de resolver, sin haberse borrado');
+/* Y se comprueba EN POSITIVO que la clase del horario activo sigue estando,
+   porque si no lo que se ve es una pantalla equivocada y el "no hay Pesas" de
+   abajo saldria verde sin haber mirado nada. */
+await pulsar('Ver lo pasado', 1500);
+const ge2_soloUno = await ver();
+ok(/Mates/.test(ge2_soloUno), 'GE F2 - C) la clase del horario activo sigue ahi');
+ok(!/Pesas/.test(ge2_soloUno),
+  'GE F2 - C) y las del archivado dejan de resolver, sin haberse borrado');
 
 await abrirHorario_ge2();
-const ge2_recargado = await esperarTexto(/Mates/);
+const ge2_recargado = await esperarTexto(/actividades|Nada programado/);
 ok(!/choque/i.test(ge2_recargado),
   'GE F2 - C) RECARGA: sigue sin choques, asi que no era un estado de pantalla');
+await pulsar('Ver lo pasado', 1500);
+const ge2_trasRecarga = await ver();
+ok(/Mates/.test(ge2_trasRecarga) && !/Pesas/.test(ge2_trasRecarga),
+  'GE F2 - C) RECARGA: y sigue viendose solo lo del horario activo');
 
 await salir(browser);
