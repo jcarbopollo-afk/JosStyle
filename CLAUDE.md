@@ -143,15 +143,19 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **16 044 pruebas unitarias** con Node repartidas en **147 suites** (5 de ellas de auditoría),
-**2116 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **1282
-comprobaciones sobre la aplicación de verdad en Chromium** — **19 453 comprobaciones**.
+Vite, **16 117 pruebas unitarias** con Node repartidas en **148 suites** (5 de ellas de auditoría),
+**2132 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **1318
+comprobaciones sobre la aplicación de verdad en Chromium** — **19 578 comprobaciones**.
 
-⚠️ **Estas cifras están contadas del `verificar.sh` de v3.67.0, una a una.** Las que había aquí antes
-—*"17 207 en 145 suites"*— no salían de ninguna pasada: se habían ido arrastrando de turno en turno.
-Un número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
+⚠️ **Estas cifras están contadas del `verificar.sh` de v3.68.0, una a una**, como las de v3.67.0. Y
+se vuelven a contar cada vez por lo que pasó antes de aquélla: las que había aquí —*"17 207 en 145
+suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un número de
+este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 
-Eso ya ha encontrado **noventa y ocho bugs reales** que la revisión a mano no vio, entre ellos una
+Eso ya ha encontrado **cien bugs reales** que la revisión a mano no vio. Los dos últimos: un
+`GhostBtn` que **repartía `disabled` sin usarlo** —así que un «Cancelar» llevaba tiempo siendo
+pulsable en mitad de una subida— y el campo «Nombre mostrado», que **no lo leía ninguna pantalla**
+desde la Fase A2. Antes de ésos, una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`), una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles, una
