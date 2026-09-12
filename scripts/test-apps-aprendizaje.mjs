@@ -213,13 +213,29 @@ ok(PLANTILLAS_APP.some((p) => p.ramas.some((r) => r.sistema === 'progreso')), 'y
 
 console.log('\n── 7. La cascada y la persistencia (apartado 15) ──');
 
-// 🚨 Un fallo real que encontró esta fase: al borrar un ÁREA se sacaban del módulo los temas, las
-// entregas y los eventos y NO se metían en la entrada de papelera — restaurarla la habría devuelto
-// sin ellos.
-ok(/coleccion: 'temas', elementos: temasDelArea/.test(APP), '🚨 Borrar un área se lleva sus temas a la papelera');
-ok(/coleccion: 'entregas', elementos: entregasDelArea/.test(APP), 'sus entregas');
-ok(/coleccion: 'eventos', elementos: eventosDelArea/.test(APP), 'sus eventos');
-ok(/coleccion: 'actividades', elementos: actividadesDelArea/.test(APP), 'y sus actividades');
+/* 🔓 **AS F2, apartado 10 — Y ESTA PROMESA SE DA LA VUELTA, A PROPÓSITO.**
+   La E3 F45 arregló aquí un fallo real: al borrar un área se sacaban del módulo
+   los temas, las entregas y los eventos **sin meterlos en la entrada de
+   papelera**, así que restaurarla la devolvía sin ellos.
+   Josué pidió después lo contrario y más fuerte: *"si elimino Bachillerato
+   científico NO quiero que se eliminen Matemáticas, Física, Química,
+   Biología"*. Al no llevarse ya las asignaturas, **tampoco hay temas, entregas
+   ni eventos que arrastrar**: no se sacan del módulo, así que no hay nada que
+   guardar. El invariante de la E3 F45 —*lo que se saca tiene que ir a la
+   entrada*— sigue cumpliéndose; lo que ha cambiado es que **ya no se saca**.
+   ⚠️ Y esto es más seguro que antes: antes se recuperaban, ahora ni se pierden. */
+ok(!/coleccion: 'asignaturas'/.test(APP),
+  '🚨 AS F2 — borrar un área ya NO se lleva sus asignaturas: son compartidas (apartado 10)');
+ok(/desligarPrograma\(estudios\.asignaturas, id\)/.test(APP),
+  '🚨 …solo se rompe la relación con ese programa');
+for (const col of ['temas', 'entregas', 'eventos']) {
+  ok(!new RegExp(`coleccion: '${col}', elementos: ${col}DelArea`).test(APP),
+    `⚠️ …así que tampoco hay ${col} que arrastrar: no se sacan del módulo`);
+  ok(!new RegExp(`${col}: \\(estudios\\.${col} \\|\\| \\[\\]\\)\\.filter\\(\\(\\w\\) => !idsAsignatura`).test(APP),
+    `⚠️ …y ni uno se quita de \`estudios.${col}\``);
+}
+ok(/coleccion: 'actividades', elementos: actividadesDelArea/.test(APP),
+  '⚠️ Sus actividades de aprendizaje SÍ se van con ella: cuelgan del área y no las usa nadie más');
 ok(/actividades: \(estudios\.actividades \|\| \[\]\)\.filter\(\(a\) => a\.appId !== id\)/.test(APP),
   '⚠️ y las saca del módulo, que es lo que hace falta para que no queden huérfanas');
 
