@@ -1,5 +1,73 @@
 # CHANGELOG.md
 
+## v3.75.0 — AS F1: el catálogo compartido de asignaturas
+
+> *"Quiero que las asignaturas de Horario y Estudio dejen de funcionar como sistemas
+> independientes. **Antes de modificar nada, analiza cómo están implementados actualmente ambos
+> módulos.**"*
+
+### 🚨 Y al analizarlo, el catálogo compartido YA EXISTÍA
+
+No había dos sistemas. El catálogo **es** `estudios.asignaturas`, `App.jsx` se lo pasa a
+`HorarioView`, y está escrito en el código desde HT F1:
+
+> *"JosStyle ya tiene las asignaturas de Josué. Una actividad de horario **no las copia: apunta a
+> ellas** por `asignaturaId`. Sin eso habría dos «Biología» —una en Estudios y otra en Horario."*
+
+Así que esta fase **no crea un sistema nuevo** —eso habría sido el segundo sistema que el enunciado
+prohíbe—: **termina de conectar el que había**. Los tres agujeros reales:
+
+1. 🚨 **Elegir una asignatura de Estudios en Horario creaba una copia suelta.** `buscarActividad`
+   solo miraba `horarioTop.actividades`, así que una asignatura que todavía no se había usado en el
+   horario **no se encontraba**: nacía una actividad con el nombre copiado y `asignaturaId: null`.
+   El desplegable te la ofrecía y aun así salía desconectada. **Ése era el duplicado.**
+2. 🚨 **Crear desde Horario no escribía en el catálogo**, así que la PRUEBA A no podía pasar.
+3. 🚨 **`programaId` vivía DENTRO de la asignatura**, así que pertenecía a un programa y **no existía
+   el estado «está en el catálogo y todavía no la usa nadie»** — que es literalmente el apartado 4.
+
+### Qué cambia
+
+- **La relación con los programas es una lista.** El `programaId` de siempre **se absorbe** en
+  `programaIds` **desde el normalizador** — el mismo movimiento que `absorberColeccionId` en la BL F7
+  (E3 F21) — así que **lo que Josué ya tiene guardado no se pierde ni se mueve**: su Matemáticas de
+  Bachillerato sigue en Bachillerato, y no quedan dos fuentes de verdad para lo mismo.
+- **Escribir una clase en Horario mira primero el catálogo**: si esa asignatura existe, la actividad
+  nace **apuntando a ella**; si no, se crea **en el catálogo compartido** y queda disponible en
+  Estudio. ⚠️ Como toca dos almacenes, se devuelve y **guarda `App.jsx` en una sola llamada**: dos
+  `snapshotAndSave` seguidos se pisan (E3 F26).
+- **En Estudio, «Añadir asignatura» ofrece primero las que ya tienes** (apartado 5) — antes solo
+  dejaba crear una nueva, que es como se acababa escribiendo dos veces lo mismo. Y si escribes un
+  nombre que ya existe, **usa esa** (apartado 6), sin impedir crear «Física avanzada» junto a
+  «Física».
+- ⚠️ **Crear una asignatura no la mete en ningún programa** (apartado 4 y PRUEBA C).
+
+### ⚠️ Lo que NO se ha tocado, a propósito
+
+**Borrar un programa sigue llevándose sus asignaturas a la papelera, exactamente como antes.**
+Cambiarlo es el apartado 10 de la fase siguiente, y no se cambia un comportamiento sobre los datos de
+Josué por la puerta de atrás en una fase que no lo pedía. La cascada solo pasa a leer la relación.
+
+Y **ni una línea de eliminación de asignaturas** (apartado 9): eso es AS F2.
+
+### 🐛 Un fallo propio, y tres promesas que esta fase revoca
+
+Puse el nombre de la actividad a `''` cuando había `asignaturaId`, pensando que el nombre bueno lo
+pone la asignatura. Pero hasta que el catálogo está guardado la actividad se queda como **«Sin
+nombre»**, y eso rompía reutilizarla, las sugerencias y el aviso de duplicado — **diez rojos en
+`test-horario-editor`**. El nombre se guarda igual: `nombreDeActividad` da preferencia a la
+asignatura y solo cae al guardado si no la encuentra, así que renombrarla en Estudio sigue mandando.
+
+🔓 Y **tres comprobaciones de la E3 F43 se pusieron rojas con el código bien**: afirmaban que una
+asignatura sin programa no podía existir. Eran promesas que esta fase revoca a propósito, así que se
+les da la vuelta, no se borran. ⚠️ Y la casilla `relacion` de la auditoría pasa a leer **lo guardado**
+y no lo normalizado (E3 F41): el normalizador ya ha limpiado el campo malo, así que mirarlo después
+no encuentra nunca nada y **la casilla no podría ponerse roja jamás** (EH F42).
+
+### Verificado
+
+`scripts/test-asignaturas-compartidas.mjs` (41 comprobaciones) con las **PRUEBAS A, B y C** de su
+criterio de éxito, más las suites de Horario, Estudios, la papelera y el cierre, todas en verde.
+
 ## v3.74.0 — GE F2: el solapamiento falso del Horario
 
 > *"Los horarios eliminados siguen provocando detección falsa de solapamientos. **NO asumas que el

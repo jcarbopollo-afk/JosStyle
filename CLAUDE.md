@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.74.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.75.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **LA ENTREGA 3 ESTÁ CERRADA: 46 de 46** (ver `docs/11_ENTREGA3_ORDEN.md`). Los siete bloques
@@ -249,6 +249,13 @@ prompts** de una vez y dijo que se podían dividir; la división es ésta:
 | **GE F1** | Tareas (eliminar, desmarcar), Día sin duplicar Productividad, y los tres macros en una fila | ✅ **v3.73.0** |
 | **GE F2** | 🐛 El **solapamiento falso** del Horario | ✅ **v3.74.0** |
 
+🔗 **Y después, dos fases sobre las asignaturas compartidas (2026-09-12):**
+
+| | Fase | Estado |
+|---|---|---|
+| **AS F1** | El **catálogo compartido** de asignaturas entre Horario y Estudio | ✅ **v3.75.0** |
+| **AS F2** | Quitar ≠ eliminar, con sus usos y su confirmación | ⏳ **siguiente** |
+
 ⚠️ **Él mismo separó las dos:** *"NO modifiques todavía el problema interno de solapamientos del
 Horario. Ese será la Fase 2."* 🏁 **Las dos están hechas y en `main`.**
 
@@ -318,6 +325,39 @@ código de agosto mientras él decía *"la web sigue igual"*.
   tarjeta grande de kcal conserva el nombre entero. Y **el número de columnas sale de la longitud de
   la lista** (`macros.length === 3 ? 'grid-cols-3' : 'grid-cols-2'`), no escrito a mano: un «3» a
   mano se queda viejo el día que haya un cuarto macro.
+- 🚨 **ANTES DE CONSTRUIR UN SISTEMA COMPARTIDO, MIRAR SI YA LO ESTÁ** (AS F1, y es la lección más
+  repetida del proyecto). El encargo pedía *"que dejen de funcionar como sistemas independientes"*, y
+  **no eran dos sistemas**: el catálogo **es** `estudios.asignaturas` desde la Fase 6, `App.jsx` se lo
+  pasa a `HorarioView`, y `horario.js` lo declara desde HT F1 —*"una actividad no las copia: apunta a
+  ellas por `asignaturaId`"*—. Construir uno nuevo habría dejado las asignaturas de Josué invisibles
+  en uno de los dos módulos. **Lo que faltaba eran tres conexiones, no una arquitectura.**
+- 🚨 **UN DESPLEGABLE QUE TE OFRECE ALGO Y AL ELEGIRLO CREA UNA COPIA ES PEOR QUE NO OFRECERLO**
+  (AS F1). `sugerencias()` ya listaba las asignaturas de Estudios, pero `buscarActividad` solo miraba
+  `horarioTop.actividades`: una asignatura **todavía sin actividad no se encontraba**, y el
+  `if (!actividad)` creaba una con el nombre copiado y `asignaturaId: null`. **Ése era el duplicado
+  que reportó Josué**, y lo ofrecía la propia aplicación.
+- 🚨 **UN CAMPO DENTRO DE LA ENTIDAD CONFUNDE IDENTIDAD CON USO** (AS F1, apartado 4). Con
+  `programaId` dentro, una asignatura **tenía** que pertenecer a un programa, así que no existía el
+  estado *"está en el catálogo y todavía no la usa nadie"* — y sin ese estado no se puede crear una
+  desde Horario. Se absorbe en `programaIds` **desde el normalizador**, que es `absorberColeccionId`
+  de la BL F7 otra vez: **lo guardado no se pierde ni se mueve**, y no quedan dos fuentes de verdad.
+- ⚠️ **UNA FASE NO CAMBIA UN COMPORTAMIENTO QUE NO LE HAN PEDIDO** (AS F1): borrar un programa sigue
+  llevándose sus asignaturas a la papelera, **exactamente como antes**. Que deje de hacerlo es el
+  apartado 10 de AS F2; hacerlo aquí habría cambiado lo que pasa con sus datos por la puerta de atrás,
+  en una fase que solo pedía conectar. La cascada solo pasa a leer la relación.
+- 🐛 **UN NOMBRE VACÍO «PORQUE YA LO PONE OTRO» DEJA UN HUECO MIENTRAS EL OTRO NO ESTÁ** (AS F1, y son
+  **diez rojos** míos). Puse el `nombre` de la actividad a `''` al enlazarla con una asignatura — el
+  nombre bueno lo pone ella—, pero **hasta que `App.jsx` guarda el catálogo la asignatura no existe
+  todavía**, así que la actividad se quedaba como «Sin nombre» y se rompían reutilizarla, las
+  sugerencias y el aviso de duplicado. Se guarda igual: `nombreDeActividad` **da preferencia** a la
+  asignatura y solo cae al guardado si no la encuentra, así que renombrar en Estudio sigue mandando
+  **y** hay nombre en el hueco.
+- 🔓 **TRES COMPROBACIONES QUE GUARDABAN EL MODELO VIEJO PASAN A GUARDAR EL NUEVO** (AS F1, y la
+  SU F1 → SU F2 lo dijo primero): las de la E3 F43 afirmaban que **una asignatura sin programa no
+  podía existir**, que es justo lo que esta fase construye. Se les da la vuelta, no se borran.
+  ⚠️ Y la casilla `relacion` de la auditoría pasa a leer **lo guardado**, no lo normalizado (E3 F41):
+  el normalizador ya ha limpiado el campo malo, así que **no podría ponerse roja jamás** (EH F42).
+
 - 🚨 **UN DETECTOR PUEDE ESTAR BIEN Y ESTAR DANDO UN NÚMERO FALSO: MIRAR QUÉ LISTA LE DAN** (GE F2,
   y es el fallo que reportó Josué). El aviso decía *"2 choques de horario"* sobre un horario sin un
   solo solape — pero `conflictosDelDia` estaba perfecto. Lo que pasaba es que **`duplicarHorario`
