@@ -861,6 +861,14 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# GE F1 — tareas (marcar, desmarcar, eliminar), Día sin duplicar Productividad
+# y los tres macros de Nutrición en una sola fila.
+if node --import ./scripts/resolver-vite.mjs scripts/test-gestion-tareas.mjs >/tmp/jc_gestion.log 2>&1; then
+  ok "Gestión: tareas, Día y macros (GE F1) — $(grep -c '✓' /tmp/jc_gestion.log) comprobaciones"
+else
+  fallo "Falla la gestión de tareas o la fila de macros"; grep '✗' /tmp/jc_gestion.log
+fi
+
 # NAV F3 — el Álbum dentro de Relación: fotos reales en su propio bucket
 # privado, con el camino guardado (nunca una URL firmada, que caduca).
 if node --import ./scripts/resolver-vite.mjs scripts/test-album-relacion.mjs >/tmp/jc_album.log 2>&1; then

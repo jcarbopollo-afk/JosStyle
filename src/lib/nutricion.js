@@ -47,10 +47,18 @@ import { todayISO, addDays } from './helpers';
    comida sale**. Añadir uno (la fibra, por ejemplo, que ya se guarda) es una
    línea aquí: ni un `case`, ni un `if` en la pantalla. */
 export const INDICADORES = [
-  { id: 'calorias', emoji: '🔥', nombre: 'Calorías', unidad: 'kcal', campo: 'calorias', principal: true, decimales: 0 },
-  { id: 'proteinas', emoji: '💪', nombre: 'Proteína', unidad: 'g', campo: 'proteinas', principal: false, decimales: 1 },
-  { id: 'carbohidratos', emoji: '🍚', nombre: 'Carbohidratos', unidad: 'g', campo: 'carbohidratos', principal: false, decimales: 1 },
-  { id: 'grasas', emoji: '🥑', nombre: 'Grasas', unidad: 'g', campo: 'grasas', principal: false, decimales: 1 },
+  /* GE F1 — `corto` es el nombre para la fila compacta de tres columnas. En un
+     iPhone, un tercio de ancho no da para «Carbohidratos» en una línea, y un
+     rótulo partido en dos en una sola de las tres tarjetas es justo lo contrario
+     de la simetría que pidió Josué.
+     ⚠️ **Es una línea del catálogo, no un `if` en la pantalla** (la regla de
+     `MODULOS_EH`): el día que haga falta abreviar otro, se abrevia aquí.
+     ⚠️ Y **no cambia el dato ni la métrica**: `nombre` sigue siendo el de
+     siempre y es el que se usa en todos los demás sitios. */
+  { id: 'calorias', emoji: '🔥', nombre: 'Calorías', corto: 'Calorías', unidad: 'kcal', campo: 'calorias', principal: true, decimales: 0 },
+  { id: 'proteinas', emoji: '💪', nombre: 'Proteína', corto: 'Proteína', unidad: 'g', campo: 'proteinas', principal: false, decimales: 1 },
+  { id: 'carbohidratos', emoji: '🍚', nombre: 'Carbohidratos', corto: 'Carbos', unidad: 'g', campo: 'carbohidratos', principal: false, decimales: 1 },
+  { id: 'grasas', emoji: '🥑', nombre: 'Grasas', corto: 'Grasas', unidad: 'g', campo: 'grasas', principal: false, decimales: 1 },
 ];
 
 export const indicador = (id) => INDICADORES.find((i) => i.id === id) || null;

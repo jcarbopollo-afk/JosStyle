@@ -1,5 +1,76 @@
 # CHANGELOG.md
 
+## v3.73.0 — GE F1: cada tarea en un sitio, y los tres macros en una fila
+
+Cuatro encargos de Josué que comparten una idea: **una sola fuente de verdad, y cada cosa en su
+sitio**. Ninguno pide una función nueva; lo que sobraba era una duplicación, y lo que faltaba era un
+botón que ya existía en otra pantalla.
+
+> *"No hagas un rediseño general. No elimines funcionalidades existentes. No dupliques información
+> innecesariamente. Mantén el diseño actual de Jos Style. Haz cambios reales y funcionales, no
+> mockups. Respeta la persistencia de datos existente."*
+
+### 🐛 «La única forma de que desaparezca es marcarla como completada»
+
+Y era literal. El menú `⋯` de acciones de un elemento del día —donde vive **Eliminar**— se pintaba
+en el bloque de las tareas **con hora** y **no en el de las de sin hora**, que son justo las normales
+cuando apuntas algo para hoy. La acción existía (`ACCIONES_ELEMENTO` la tiene desde la E3 F9), la
+librería la ejecutaba y **la fila no la ofrecía**. Ahora el menú está en los dos bloques.
+
+⚠️ **Y desmarcar ya funcionaba**: `completarTarea` **alterna**, no pone `true`. Se comprueba que
+volver a tocarla la devuelve a pendiente, le borra el `completadaEn` y **sigue siendo la misma
+tarea** — ni se borra ni se crea una copia. Una hecha se **tacha**, no desaparece.
+
+### 🚨 Productividad ya no copia las tareas de hoy
+
+> *"«Para hoy» duplica todas las tareas del día. Esa duplicación no aporta valor."*
+
+`paraHoyPR` dejaba caer en «Para hoy» **todas** las tareas con fecha de hoy, que es exactamente lo
+que ya enseña Día. Ahora solo entran las **vencidas**.
+
+⚠️ **Y eso no es una excepción de conveniencia, es la única forma de no perder nada:** una tarea de
+ayer **no sale en Día**, porque Día es hoy. Si tampoco saliera aquí, dejaría de verse en **ninguna
+parte** — justo lo contrario de lo que él pide.
+
+⚠️ **Las herramientas de Productividad siguen enteras**: Hábitos, Rachas, Objetivos, Pomodoro y
+Tareas. Él lo dijo con todas las letras —*"no elimines la funcionalidad de tareas de Productividad;
+reorganízala"*—, así que se ha quitado la copia, no la sección.
+
+### ⚠️ Día y Agenda siguen siendo dos preguntas distintas
+
+> *"DÍA = qué tengo que hacer hoy. AGENDA = qué tengo programado próximamente."*
+
+No se ha tocado ninguna de las cuatro vistas del Calendario. Y **no hay nada que sincronizar porque
+no hay copia**: `agendaDia.js` no guarda ni un elemento y no tiene normalizador propio (E3 F7,
+apartado 25), y Día y el Calendario completan con `toggleTarea`, **la misma función**. Marcar en una
+vista marca en todas **gratis**.
+
+### 🚨 Los tres macros, en UNA fila
+
+> *"Proteína | Carbohidratos | Grasas deben estar en la MISMA fila. Actualmente uno de ellos queda
+> solo en una segunda fila."*
+
+La rejilla era de dos columnas, así que el tercero caía solo. Ahora **el número de columnas sale de
+la longitud de la lista**, no escrito a mano: si un día hay cuatro macros vuelven a 2×2 sin tocar la
+pantalla.
+
+⚠️ **Y «Carbohidratos» no cabe en un tercio de ancho**, así que la fila compacta usa un rótulo corto
+— que es **un campo del catálogo** (`corto`), no un `if` en el JSX. La tarjeta grande de calorías
+conserva el nombre entero. **Ni una métrica ni un dato han cambiado**: son los mismos tres, en el
+mismo orden, con su campo y su unidad.
+
+### Verificado
+
+`scripts/test-gestion-tareas.mjs` (34 comprobaciones) y una sección nueva del recorrido de Chromium
+con las doce comprobaciones que pidió Josué, **incluida la de los macros medida dos veces**: en
+escritorio y a 375 px, comparando el `top` real de los tres para demostrar que están en la misma
+fila.
+
+🐛 **Y una comprobación de la E3 F29 saltó con el código bien**: afirmaba el orden literal de
+`paraHoyPR` incluyendo `tarea_alta_hoy`, un motivo que **ya no puede aparecer**. Se cambió por una
+comprobación del mecanismo —que la lista siga ordenada de más peso a menos— en vez de por la lista
+de entonces. Mirar qué línea la hace saltar antes de tocar el código.
+
 ## v3.72.0 — NAV F3: el Álbum dentro de Relación
 
 Josué: *"que el usuario pueda subir/guardar fotos relacionadas con su pareja y que funcione

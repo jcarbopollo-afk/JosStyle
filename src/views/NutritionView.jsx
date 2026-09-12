@@ -259,8 +259,12 @@ function Indicador({ dato, accent, principal = false, indice = 0 }) {
         border: `1px solid ${principal ? hexToRgba(accent, 0.3) : COLORS.border}`,
       }}
     >
-      <p className="text-xs flex items-center gap-1.5" style={{ color: COLORS.textMuted }}>
-        <span>{dato.emoji}</span>{dato.nombre}
+      {/* GE F1 — en la fila de tres, el rótulo corto; en la tarjeta grande de
+          kcal, el de siempre. ⚠️ `?? dato.nombre` para que un indicador sin
+          `corto` siga pintando algo: un catálogo puede crecer, y un hueco no
+          falla en ninguna parte (E3 F16). */}
+      <p className="text-xs flex items-center gap-1 whitespace-nowrap" style={{ color: COLORS.textMuted }}>
+        <span>{dato.emoji}</span>{principal ? dato.nombre : (dato.corto ?? dato.nombre)}
       </p>
       <p
         className={`${principal ? 'text-3xl' : 'text-xl'} font-extrabold mt-1 leading-none`}
@@ -1297,13 +1301,29 @@ function ComidasTab({ comidas, nutricion, perfil, onAdd, onAddFavorito, onDelete
         <p className="text-xs" style={{ color: COLORS.textMuted }}>{avisoPeso}</p>
       )}
 
-      {/* Apartado 4 — las kcal con jerarquía superior, y los tres macros en 2×2
-          debajo (apartado 9: móvil primero, sin desplazamiento horizontal).
+      {/* Apartado 4 — las kcal con jerarquía superior y los tres macros debajo
+          (apartado 9: móvil primero, sin desplazamiento horizontal).
+
+          🐛 **GE F1 — esto era `grid-cols-2` con TRES macros**, así que Grasas
+          caía sola a una segunda fila y dejaba un hueco a su derecha. Lo reportó
+          Josué: *"no quiero que una de ellas pase a una segunda fila dejando un
+          hueco vacío"*. Son tres y ahora van en **tres columnas**, que es lo que
+          hace que la fila cuadre.
+
+          ⚠️ **El número de columnas sale de `macros.length`, no está escrito a
+          mano**: el día que `INDICADORES` gane un cuarto macro —fibra, por
+          ejemplo— volvería a descuadrar solo. Con esto, cuatro caen en 2×2 y
+          tres en una fila, sin tocar esta línea.
+
+          ⚠️ Y se mantiene `gap-2` en vez de `gap-2.5` porque con tres columnas
+          el ancho de cada tarjeta baja: en un iPhone pequeño, el separador de
+          antes dejaba las cifras demasiado justas.
+
           ⚠️ `key={fecha}` repite la cascada de entrada al cambiar de día
           (apartado 11 de la F2): transición suave, sin recargar nada. */}
       <div className="space-y-2.5" key={fecha}>
         <Indicador dato={principal} accent={accent} principal indice={0} />
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className={`grid gap-2 ${macros.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
           {macros.map((m, i) => <Indicador key={m.id} dato={m} accent={accent} indice={i + 1} />)}
         </div>
       </div>

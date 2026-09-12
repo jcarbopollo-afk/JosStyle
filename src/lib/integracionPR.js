@@ -305,19 +305,35 @@ export function paraHoyPR(d = {}, { limite = 8 } = {}) {
   const x = datos(d);
   const elementos = [];
 
-  ordenarTareas(filtrarTareas(x.productividad.tareas, { filtro: 'hoy', hoy: x.hoy }), 'inteligente', x.hoy).forEach((t) => {
-    const vencida = estadoDeFecha(t, x.hoy) === 'vencida';
-    elementos.push({
-      id: `tarea:${t.id}`,
-      app: 'tareas',
-      texto: t.texto,
-      hecho: !!t.hecha,
-      motivo: vencida ? 'tarea_vencida' : (t.prioridad === 'alta' ? 'tarea_alta_hoy' : 'otro'),
-      peso: vencida ? pesoDe('tarea_vencida') : (t.prioridad === 'alta' ? pesoDe('tarea_alta_hoy') : pesoDe('otro')),
-      // El desempate es la prioridad de la propia tarea, que ya existe.
-      desempate: -(prioridadTarea(t.prioridad)?.peso || 0),
+  /* 🚨 **GE F1 — LAS TAREAS DE HOY YA NO ENTRAN AQUÍ.** Josué: *"no quiero que
+     Productividad tenga una sección que simplemente copie todas las tareas que
+     he creado para hoy si esas tareas ya tienen su lugar específico en Día"*.
+     Y tenía razón: esta lista repetía **entera** la de Día, así que la misma
+     tarea se leía dos veces en dos sitios sin añadir nada.
+
+     ⚠️ **Lo que SÍ se queda son las vencidas**, y no es una excepción de
+     conveniencia: una tarea vencida **no sale en Día**, porque Día es el día de
+     hoy y ésa es de otro día. Si se quitaran también, dejarían de verse en
+     ninguna parte — que es justo lo contrario de lo que él pide. Es la lección
+     de la E3 F23 al quitar un módulo del buscador: lo que se muda no se borra.
+
+     ⚠️ Y esto **no toca las tareas**: `productividad.tareas` sigue siendo la
+     única fuente, la mini-app Tareas sigue entera, y Día lee de ahí. Lo único
+     que cambia es qué se RESUME en la portada de Productividad. */
+  ordenarTareas(filtrarTareas(x.productividad.tareas, { filtro: 'hoy', hoy: x.hoy }), 'inteligente', x.hoy)
+    .filter((t) => estadoDeFecha(t, x.hoy) === 'vencida')
+    .forEach((t) => {
+      elementos.push({
+        id: `tarea:${t.id}`,
+        app: 'tareas',
+        texto: t.texto,
+        hecho: !!t.hecha,
+        motivo: 'tarea_vencida',
+        peso: pesoDe('tarea_vencida'),
+        // El desempate es la prioridad de la propia tarea, que ya existe.
+        desempate: -(prioridadTarea(t.prioridad)?.peso || 0),
+      });
     });
-  });
 
   /* ⚠️ `paraHoy()` de Hábitos da el NÚMERO de pendientes, no la lista. Los
      hábitos en sí se filtran con `tocaHoy` y `hechoHoy`, que son de su módulo:

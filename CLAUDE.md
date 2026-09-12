@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.72.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.73.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **LA ENTREGA 3 ESTÁ CERRADA: 46 de 46** (ver `docs/11_ENTREGA3_ORDEN.md`). Los siete bloques
@@ -238,9 +238,19 @@ prompts** de una vez y dijo que se podían dividir; la división es ésta:
 | **NAV F2** | 🏷️ **«Estilo de hombre» → «Imagen personal»** | ✅ **v3.71.0** |
 | **NAV F3** | 📸 **Álbum** dentro de Relación: fotos reales, con su bucket propio | ✅ **v3.72.0** |
 
-🏁 **Las cuatro están hechas.** ⏸ Lo único que queda en manos de Josué: **ejecutar el bloque de SQL
-del bucket `relacion`** (al final de `supabase/schema.sql`) para que el Álbum pueda subir fotos, y
-contestar **C-31**.
+🏁 **Las cuatro están hechas**, y Josué ya **ejecutó el bloque de SQL del bucket `relacion`**
+(*"ya lo he ejecutado, salió success"*, 2026-09-12), así que el Álbum sube fotos de verdad. ⏸ Lo
+único que sigue en sus manos de esta tanda es contestar **C-31**.
+
+🗂️ **Y después pasó dos prompts más, divididos en GE F1 y GE F2:**
+
+| | Fase | Estado |
+|---|---|---|
+| **GE F1** | Tareas (eliminar, desmarcar), Día sin duplicar Productividad, y los tres macros en una fila | ✅ **v3.73.0** |
+| **GE F2** | 🐛 El **solapamiento falso** del Horario | ⏳ **en curso** |
+
+⚠️ **Él mismo separó las dos:** *"NO modifiques todavía el problema interno de solapamientos del
+Horario. Ese será la Fase 2."*
 
 ⚠️ **Y una contradicción suya que necesita respuesta, C-31 en `docs/03`:** pide **Tareas y Rutinas
 en Gestión** y **Objetivos y Hábitos en Vida**, pero las cuatro son **mini-apps de Productividad**,
@@ -286,6 +296,33 @@ aplicación **congelada en una versión vieja**, y JosStyle ya perdió meses con
 código de agosto mientras él decía *"la web sigue igual"*.
 
 ⚠️ **Y lo que dejaron las veinte primeras, que afecta a todas las demás:**
+
+- 🚨 **UNA ACCIÓN QUE SOLO ESTÁ EN UNO DE LOS DOS BLOQUES DE UNA LISTA NO EXISTE PARA EL USUARIO**
+  (GE F1, y es el fallo que reportó Josué con sus palabras: *"la única forma de que desaparezca es
+  marcarla como completada"*). El menú `⋯` de un elemento del día —donde vive **Eliminar**— se
+  pintaba en el bloque de las tareas **con hora** y **no en el de las de sin hora**, que son
+  justamente las normales cuando apuntas algo para hoy. La acción existía en `ACCIONES_ELEMENTO`
+  desde la E3 F9, la librería la ejecutaba, había pruebas de la librería en verde **y la fila no la
+  ofrecía**. Una pantalla que reparte sus elementos en dos bloques tiene que repartir también sus
+  acciones: **al añadir una acción a una lista, mirar cuántos caminos de pintado tiene esa lista.**
+- 🚨 **QUITAR UNA DUPLICACIÓN OBLIGA A MIRAR DÓNDE SE VE CADA CASO** (GE F1). «Para hoy» de
+  Productividad copiaba todas las tareas de hoy, que es lo que ya enseña Día — pero **una tarea
+  vencida no sale en Día**, porque Día es hoy. Quitarlas todas la habría dejado invisible en **toda
+  la aplicación**, justo lo contrario de lo que él pedía. Por eso `paraHoyPR` deja entrar **solo las
+  vencidas**, y eso no es una excepción de conveniencia: es la única lista que las enseña.
+- ⚠️ **«REORGANÍZALA» NO ES «ELIMÍNALA»** (GE F1, y él lo escribió así: *"no elimines la
+  funcionalidad de tareas de Productividad si forma parte de la aplicación; reorganízala"*). Las seis
+  mini-apps siguen enteras; lo que se ha quitado es la copia, no la sección.
+- ⚠️ **UN RÓTULO QUE NO CABE SE ACORTA EN EL CATÁLOGO, NUNCA CON UN `if` EN EL JSX** (GE F1):
+  «Carbohidratos» no entra en un tercio de ancho, así que `INDICADORES` tiene un campo `corto` y la
+  tarjeta grande de kcal conserva el nombre entero. Y **el número de columnas sale de la longitud de
+  la lista** (`macros.length === 3 ? 'grid-cols-3' : 'grid-cols-2'`), no escrito a mano: un «3» a
+  mano se queda viejo el día que haya un cuarto macro.
+- 🐛 **UNA COMPROBACIÓN QUE AFIRMA EL ORDEN LITERAL DE UNA LISTA ES UNA BOMBA DE RELOJERÍA** (GE F1,
+  y es la lección de `MODULOS_EH.length === 13` por enésima vez). La de la E3 F29 afirmaba la
+  secuencia exacta de motivos de `paraHoyPR` **incluido `tarea_alta_hoy`**, que desde esta fase ya no
+  puede aparecer: saltó con el código bien. Se comprueba **el mecanismo** —que siga ordenada de más
+  peso a menos—, no la lista de entonces.
 
 - 🐛 **EL BARRIDO DE HEX SOLO SE SALTA LAS LÍNEAS QUE *EMPIEZAN* POR `//`, `*` O `/*`** (NAV F3, y es
   la decimosexta vez de la lección de siempre en otra forma). Un comentario de varias líneas sin

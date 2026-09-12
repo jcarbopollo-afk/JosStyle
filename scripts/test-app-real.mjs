@@ -4883,4 +4883,126 @@ ok(typeof iconoHabitos_f4 === 'string' && !/flame/i.test(iconoHabitos_f4),
 ok(typeof iconoHabitos_f4 === 'string' && /arrow-up-right/i.test(iconoHabitos_f4),
   '…es la flecha ascendente ↗, que no se usa en ninguna otra parte de JosStyle');
 
+/* ══════════════════════════════════════════════════════════════════════════
+   GE F1 — EL RECORRIDO DE UNA TAREA: CREAR, MARCAR, DESMARCAR Y ELIMINAR
+   ══════════════════════════════════════════════════════════════════════════
+
+   🚨 Ésta es la lista de comprobaciones que pidió Josué, una a una, y en el
+   navegador de verdad — que es el único sitio donde se ve si un botón **existe
+   para el dedo**. Su queja era literalmente que no había forma de eliminar una
+   tarea pendiente, y el botón estaba: escondido en el bloque de las tareas CON
+   hora. */
+const HOY_GE1 = new Date().toLocaleDateString('sv-SE');
+almacen.productividad = {
+  tareas: [
+    { id: 'ge-1', texto: 'Tarea de hoy sin hora', fecha: HOY_GE1, hecha: false, prioridad: 'media' },
+  ],
+  habitos: [], rutinas: [], rutinaEjecuciones: [], metas: [], pomodoros: {}, pomodoroSesiones: [], apuntes: [],
+};
+almacen.calendario = { eventos: [] };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+await pulsar('Gestión');
+ok(await pulsar('Calendario'), 'se abre el Calendario');
+ok(await pulsar('Día'), 'y la vista Día');
+const dia_ge1 = await esperarTexto(/Tarea de hoy sin hora/i);
+ok(/Tarea de hoy sin hora/i.test(dia_ge1), '🚨 2 — la tarea de hoy APARECE en Día');
+
+// 🚨 3 — y aparece UNA vez, no dos: Día no crea una copia.
+const veces_ge1 = (dia_ge1.match(/Tarea de hoy sin hora/gi) || []).length;
+ok(veces_ge1 === 1, `🚨 3 — aparece UNA sola vez (${veces_ge1}): no hay copia independiente`);
+
+/* ── 4 · Completarla ─────────────────────────────────────────────────────── */
+ok(await pulsar('Completar Tarea de hoy sin hora'), '🚨 4 — se marca como completada');
+await page.waitForTimeout(900);
+const hecha_ge1 = await ver();
+ok(/Tarea de hoy sin hora/i.test(hecha_ge1), '⚠️ …y SIGUE VISIBLE: lo hecho no desaparece del día');
+const guardadaHecha = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value;
+ok(guardadaHecha?.tareas?.[0]?.hecha === true, '…y en los datos queda marcada');
+
+/* ── 5 · Desmarcarla ─────────────────────────────────────────────────────── */
+ok(await pulsar('Desmarcar Tarea de hoy sin hora'),
+  '🚨 5 — el MISMO botón la desmarca (se anuncia como «Desmarcar»)');
+await page.waitForTimeout(900);
+const vuelta_ge1 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value;
+ok(vuelta_ge1?.tareas?.[0]?.hecha === false, '🚨 …y vuelve a PENDIENTE en los datos');
+ok(vuelta_ge1?.tareas?.[0]?.id === 'ge-1', '⚠️ …siendo la misma tarea: ni se borró ni se duplicó');
+
+/* ── 6 y 7 · Eliminarla estando PENDIENTE ────────────────────────────────── */
+ok(await pulsar('Acciones de Tarea de hoy sin hora'),
+  '🚨 6 — una tarea SIN HORA tiene su menú de acciones (esto es lo que faltaba)');
+const menu_ge1 = await esperarTexto(/Eliminar/i);
+ok(/Eliminar/i.test(menu_ge1), '…con «Eliminar» dentro, estando pendiente');
+ok(await pulsar('Eliminar'), 'se elimina');
+await page.waitForTimeout(1000);
+
+const trasBorrar_ge1 = await ver();
+ok(!/Tarea de hoy sin hora/i.test(trasBorrar_ge1), '🚨 7 — desaparece de Día');
+const borrada_ge1 = guardado.filter((g) => g && g.key === 'productividad').at(-1)?.value;
+ok(!(borrada_ge1?.tareas || []).some((x) => x.id === 'ge-1'),
+  '🚨 …y se borra DE VERDAD de los datos: no era un ocultar visual');
+
+/* ── 8 · La Agenda sigue enseñando lo programado ─────────────────────────── */
+ok(await pulsar('Agenda'), '8 — se abre la Agenda');
+const agenda_ge1 = await esperarTexto(/Agenda|Próxim|Nada/i);
+ok(agenda_ge1.length > 0, '⚠️ …y sigue funcionando: es lo PRÓXIMO, no una copia del día');
+
+/* ── 9 · Productividad ya no duplica las tareas de hoy ───────────────────── */
+almacen.productividad = {
+  tareas: [{ id: 'ge-2', texto: 'Otra tarea de hoy', fecha: HOY_GE1, hecha: false, prioridad: 'alta' }],
+  habitos: [], rutinas: [], rutinaEjecuciones: [], metas: [], pomodoros: {}, pomodoroSesiones: [], apuntes: [],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Vida');
+ok(await pulsar('Productividad'), '9 — se abre Productividad');
+const prod_ge1 = await esperarTexto(/H[aá]bitos/i);
+ok(!/Para hoy/i.test(prod_ge1) || !/Otra tarea de hoy/i.test(prod_ge1),
+  '🚨 9 — Productividad ya NO copia la tarea de hoy: su sitio es Día');
+ok(/H[aá]bitos/i.test(prod_ge1) && /Pomodoro/i.test(prod_ge1),
+  '⚠️ …y sus herramientas siguen enteras: el encargo era quitar la copia, no vaciar la portada');
+
+// Y la tarea sigue existiendo: se puede abrir su mini-app y verla.
+ok(await pulsar('Tareas'), 'se abre la mini-app Tareas');
+const tareas_ge1 = await esperarTexto(/Otra tarea de hoy/i);
+ok(/Otra tarea de hoy/i.test(tareas_ge1),
+  '🚨 …porque la tarea NO se ha tocado: sigue en `productividad.tareas`, que es la única fuente');
+
+/* ── 10 · Nutrición: los tres macros en una fila ─────────────────────────── */
+await pulsar('Bienestar');
+ok(await pulsar('Nutrición'), '10 — se abre Nutrición');
+await esperarTexto(/Calor[ií]as/i);
+
+/* 🚨 Se mide la POSICIÓN REAL en el navegador: que los tres estén a la misma
+   altura es lo único que demuestra que van en una fila. Fiarse de la clase
+   `grid-cols-3` sería fiarse de que nadie la haya sobrescrito. */
+const filaMacros = await page.evaluate(() => {
+  const textos = ['Proteína', 'Carbos', 'Grasas'];
+  const tops = textos.map((txt) => {
+    const el = [...document.querySelectorAll('p')].find((p) => (p.innerText || '').includes(txt));
+    return el ? Math.round(el.getBoundingClientRect().top) : null;
+  });
+  return tops;
+});
+ok(filaMacros.every((x) => x !== null),
+  `🚨 los tres macros se ven en pantalla (${JSON.stringify(filaMacros)})`);
+ok(filaMacros.every((x) => x !== null) && Math.max(...filaMacros) - Math.min(...filaMacros) < 8,
+  '🚨 10 — LOS TRES ESTÁN EN LA MISMA FILA: ninguno cae a una segunda línea dejando hueco');
+
+// ⚠️ Y en el ancho de un iPhone, que es donde no cabían.
+await page.setViewportSize({ width: 375, height: 812 });
+await page.waitForTimeout(600);
+const filaMovil = await page.evaluate(() => {
+  const textos = ['Proteína', 'Carbos', 'Grasas'];
+  return textos.map((txt) => {
+    const el = [...document.querySelectorAll('p')].find((p) => (p.innerText || '').includes(txt));
+    return el ? Math.round(el.getBoundingClientRect().top) : null;
+  });
+});
+ok(filaMovil.every((x) => x !== null) && Math.max(...filaMovil) - Math.min(...filaMovil) < 8,
+  '🚨 …y TAMBIÉN en 375 px de ancho, que es el iPhone de Josué');
+const desborda = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
+ok(!desborda, '⚠️ …sin desbordar a lo ancho');
+
 await salir(browser);

@@ -179,8 +179,25 @@ ok(PESOS_PRIORIDAD.every((p) => p.que), 'cada uno dice qué es');
 eq(pesoDe('tarea_vencida'), 60, 'lo vencido pesa lo más');
 eq(pesoDe('inventado'), 0, 'y lo que no existe pesa cero');
 const lista1 = paraHoyPR(D);
-eq(lista1.slice(0, 3).map((e) => e.motivo), ['tarea_vencida', 'tarea_alta_hoy', 'habito_pendiente'],
-  '🚨 EL ORDEN LITERAL DEL ENUNCIADO: vencidas, alta de hoy, hábitos');
+/* 🔓 **GE F1 — esta comprobación cambió, y a propósito.** Hasta ahora exigía el
+   orden literal del enunciado de la E3 F29 —vencidas, **alta de hoy**, hábitos—,
+   pero Josué pidió que Productividad **dejara de copiar las tareas de hoy**,
+   porque ya tienen su sitio en Día. Así que `tarea_alta_hoy` ya no puede salir
+   de `paraHoyPR`: no es que el orden se haya roto, es que esa categoría dejó de
+   entrar. Es la SU F1 → SU F2 otra vez: una prueba que guardaba una promesa pasa
+   a vigilar la promesa nueva; no se borra, se da la vuelta.
+
+   ⚠️ Y lo que se comprueba ahora es **el mecanismo**, no la lista: que salga
+   ordenado de más peso a menos. Con la lista escrita a mano, cualquier cambio
+   legítimo de categorías la vuelve a poner roja sin que nada esté mal. */
+ok(lista1.every((e, i, a) => i === 0 || pesoDe(a[i - 1].motivo) >= pesoDe(e.motivo)),
+  '🚨 LA PRIORIDAD SIGUE SIENDO DETERMINISTA: de más peso a menos, sin azar');
+ok(lista1[0]?.motivo === 'tarea_vencida',
+  '🚨 …y lo vencido sigue primero, que es lo que más urge');
+ok(!lista1.some((e) => e.motivo === 'tarea_alta_hoy'),
+  '🚨 GE F1 — una tarea de HOY ya no entra aquí: su sitio es Día, y copiarla era la duplicación que reportó Josué');
+ok(lista1.some((e) => e.motivo === 'habito_pendiente'),
+  '⚠️ …pero los hábitos SÍ, que son herramienta de Productividad y no salen en Día');
 ok(lista1.some((e) => e.app === 'rutinas'), 'y las rutinas programadas entran');
 /* 🚨 Determinista: dos llamadas con los mismos datos dan lo mismo. */
 eq(paraHoyPR(D).map((e) => e.id), paraHoyPR(D).map((e) => e.id),

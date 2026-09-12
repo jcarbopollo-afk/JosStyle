@@ -957,6 +957,21 @@ function AgendaDeUnDia({ dia, titulo, tira, accent, onDia, onHoy, onCompletar, o
                   <span className="text-sm flex-1 min-w-0" style={{ color: COLORS.text, textDecoration: e.hecha ? 'line-through' : 'none' }}>
                     {e.titulo}
                   </span>
+                  {/* 🐛 **GE F1 — ESTE MENÚ NO ESTABA, y es el fallo que reportó
+                      Josué.** El bloque de arriba (lo que tiene hora) sí lo
+                      pintaba, pero **una tarea de hoy sin hora es el caso
+                      normal**, y aquí no había forma de eliminarla: solo la
+                      casilla de completar. De ahí su *"la única forma de que
+                      desaparezca es marcarla como completada"*.
+                      ⚠️ Y es el MISMO menú y el MISMO `onMenu` de arriba —donde
+                      «Eliminar» ya existía como acción—, no una segunda puerta
+                      de borrado. */}
+                  {e.tipoAgenda === 'tarea' && (
+                    <button onClick={() => onMenu && onMenu(e)} className="p-1.5 -m-1.5 flex-shrink-0"
+                      aria-label={`Acciones de ${e.titulo}`}>
+                      <MoreHorizontal size={15} style={{ color: COLORS.textMuted }} />
+                    </button>
+                  )}
                 </div>
               ))}
             </Card>
