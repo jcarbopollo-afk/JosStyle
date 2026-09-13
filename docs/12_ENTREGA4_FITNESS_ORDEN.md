@@ -1,0 +1,94 @@
+# docs/12_ENTREGA4_FITNESS_ORDEN.md — las 45 fases del módulo de Entrenamiento
+
+> **Qué es esto.** Josué pasó el 2026-09-13 un documento de **33 251 líneas** con **45 fases** para
+> el módulo de **Entrenamiento (Fitness)**. Es una entrega entera, del tamaño de la 2 o la 3.
+> La especificación literal está en `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt` 🔒 **intocable**.
+
+## 🚨 EL DOCUMENTO VA DEL REVÉS, Y ÉL LO AVISÓ
+
+*"he puesto las fases al revés bro ósea que analiza esto y hazlas por orden"*.
+
+La **F45 abre el archivo (línea 1)** y la **F1 lo cierra (línea 32 639)**. Esta tabla existe
+justamente para eso: **se construye de la F1 a la F45**, y aquí está dónde vive cada una. Sin ella,
+cada sesión vuelve a perder un rato averiguando por dónde empezar — y el riesgo real es empezar por
+la 45, que es el cierre.
+
+⚠️ **No se reordena el archivo.** Es transcripción literal de lo que él escribió, como
+`ORIGINAL_ENTREGA3_PULIDO_Y_MODULOS.txt` y `ORIGINAL_JC_FITNESS_ESTILO_DE_HOMBRE.txt`. Lo que se
+ordena es **el trabajo**, no el documento.
+
+## El orden de construcción
+
+| | Fase | Líneas | Tamaño |
+|---|---|---|---|
+| **F1** | Fundación arquitectónica del módulo fitness | 32639–33252 | 614 |
+| **F2** | Sistema y catálogo maestro de ejercicios | 32042–32638 | 597 |
+| **F3** | Constructor de entrenamientos | 31493–32041 | 549 |
+| **F4** | Gestión de entrenamientos y plantillas propias | 31018–31492 | 475 |
+| **F5** | Biblioteca de planificaciones | 30514–31017 | 504 |
+| **F6** | Tu plan | 29737–30513 | 777 |
+| **F7** | Motor de entrenamiento en vivo | 29053–29736 | 684 |
+| **F8** | Finalización y guardado del entrenamiento | 28456–29052 | 597 |
+| **F9** | Ux avanzada del entrenamiento en vivo | 27781–28455 | 675 |
+| **F10** | Historial de entrenamientos y detalle de sesiones | 27177–27780 | 604 |
+| **F11** | Progresión y comparación del rendimiento | 26534–27176 | 643 |
+| **F12** | Pantalla de progreso por ejercicio | 25916–26533 | 618 |
+| **F13** | Progreso por grupos musculares | 25198–25915 | 718 |
+| **F14** | Objetivos y metas de progreso | 24481–25197 | 717 |
+| **F15** | Sistema base de rangos y clasificación | 23746–24480 | 735 |
+| **F16** | Pantalla principal de rangos | 23042–23745 | 704 |
+| **F17** | Clasificación de ejercicios mediante cuestionario | 22318–23041 | 724 |
+| **F18** | Detalle de rankings musculares | 21573–22317 | 745 |
+| **F19** | Actualización dinámica y evolución de rangos | 20856–21572 | 717 |
+| **F20** | Explicación y comparación de rangos | 20159–20855 | 697 |
+| **F21** | Contribución de ejercicios a rangos musculares | 19476–20158 | 683 |
+| **F22** | Historial y evolución de rangos | 18745–19475 | 731 |
+| **F23** | Objetivo del siguiente rango | 18070–18744 | 675 |
+| **F24** | Priorización inteligente de clasificación | 17422–18069 | 648 |
+| **F25** | Resumen inteligente de rangos | 16772–17421 | 650 |
+| **F26** | Sistema de progreso físico mediante fotos | 16079–16771 | 693 |
+| **F27** | Comparador avanzado de progreso físico | 15567–16078 | 512 |
+| **F28** | Integración completa del progreso físico | 14875–15566 | 692 |
+| **F29** | Análisis avanzado de rendimiento por ejercicio | 14154–14874 | 721 |
+| **F30** | Sistema avanzado de objetivos fitness | 13244–14153 | 910 |
+| **F31** | Consistencia y actividad de entrenamiento | 12540–13243 | 704 |
+| **F32** | Planificación semanal avanzada de entrenamiento | 11860–12539 | 680 |
+| **F33** | Sistema avanzado de sustitución de ejercicios | 11529–11859 | 331 |
+| **F34** | Biblioteca y detalle avanzado de ejercicios | 10709–11528 | 820 |
+| **F35** | Calidad, validación y administración del catálogo fitness | 10008–10708 | 701 |
+| **F36** | Integración global del sistema fitness | 8963–10007 | 1045 |
+| **F37** | Microinteracciones y feedback premium de fitness | 8083–8962 | 880 |
+| **F38** | Ux móvil extrema y optimización para iphone | 7164–8082 | 919 |
+| **F39** | Accesibilidad, estados límite y robustez de fitness | 6176–7163 | 988 |
+| **F40** | Rendimiento y optimización técnica de fitness | 5219–6175 | 957 |
+| **F41** | Persistencia, recuperación y resiliencia de datos de fitness | 4287–5218 | 932 |
+| **F42** | Auditoría visual y acabado premium de fitness | 3281–4286 | 1006 |
+| **F43** | Auditoría funcional integral de fitness | 2183–3280 | 1098 |
+| **F44** | Limpieza arquitectónica y deuda técnica de fitness | 1652–2182 | 531 |
+| **F45** | Pulido final, qa extremo y release de fitness | 1–1651 | 1651 |
+
+## Los bloques, leídos de un vistazo
+
+| Bloque | Fases | De qué va |
+|---|---|---|
+| **Fundación** | F1–F2 | La arquitectura del módulo y el catálogo maestro de ejercicios |
+| **Construir un entreno** | F3–F6 | Constructor, plantillas propias, biblioteca de planificaciones y «Tu plan» |
+| **Entrenar de verdad** | F7–F9 | El motor en vivo, el guardado al terminar y la UX durante la sesión |
+| **Mirar atrás** | F10–F14 | Historial, progresión, progreso por ejercicio y por grupo muscular, metas |
+| **Rangos** | F15–F25 | Clasificación muscular, rankings, evolución, comparación y resumen |
+| **Progreso físico** | F26–F28 | Fotos, comparador e integración con el resto del progreso |
+| **Inteligencia** | F29–F35 | Análisis por ejercicio, objetivos, consistencia, planificación semanal, sustituciones, biblioteca y calidad del catálogo |
+| **Acabado** | F36–F42 | Integración global, microinteracciones, UX de iPhone, accesibilidad, rendimiento, persistencia y acabado visual |
+| **Cierre** | F43–F45 | Auditoría funcional, limpieza de deuda técnica y release |
+
+## ⚠️ Antes de escribir una línea de la F1
+
+🚨 **ENTRENAMIENTO YA EXISTE.** Es la lección más repetida de este proyecto, y aquí el riesgo es el
+más alto que ha habido: el módulo está en la barra de Bienestar desde hace mucho, con su vista, sus
+datos guardados y su sitio en la exportación. **Un `fitness` nuevo al lado dejaría todo lo que Josué
+tiene registrado invisible en su propia pantalla** — que es exactamente lo que estuvo a punto de
+pasar con las notas (E3 F16), los alimentos (E3 F36) y los programas de Estudios (E3 F41).
+
+**Lo primero de la F1 es inventariar lo que hay**, no crear: qué clave de `app_data` usa, qué vistas
+lo pintan, quién lo lee (Hoy, el hub de área, las rachas, la exportación, el contexto de la IA) y qué
+entidades tiene ya. Y a partir de ahí, **ampliar**.
