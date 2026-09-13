@@ -5848,13 +5848,30 @@ ok(desborde_fit.ancho <= desborde_fit.ventana + 1,
    🚨 Y lo que más importa: **los porcentajes que se ven en pantalla son los del
    catálogo**, no una estimación que se invente la vista. Se abre un ejercicio
    concreto y se mira su número. */
+/* 🐛 **`innerText` NO INCLUYE NI EL `placeholder` NI EL `aria-label` DE UN
+   `<input>`** (E3 F36, y es la tercera vez). «Buscar un ejercicio» es el
+   marcador del campo, así que buscarlo con `esperarTexto` esperaba ocho
+   segundos y salía rojo **con la pantalla perfecta** — la búsqueda de las dos
+   líneas siguientes funcionaba. Se le pregunta al campo, que es donde vive. */
+const hayCampo = async (etiqueta) => page.evaluate((e) => [...document.querySelectorAll('input, textarea')]
+  .some((i) => (i.getAttribute('aria-label') || i.placeholder || '') === e), etiqueta);
+
+const esperarCampo = async (etiqueta, tope = 8000) => {
+  const hasta = Date.now() + tope;
+  while (Date.now() < hasta) {
+    if (await hayCampo(etiqueta)) return true;
+    await page.waitForTimeout(200);
+  }
+  return false;
+};
+
 console.log('\n── FIT F2 · El catálogo de ejercicios ──');
 ok(await pulsar('Bienestar'), 'FIT F2 — se abre el área Bienestar');
 ok(await pulsar('Fitness'), '…y Fitness');
 await esperarTexto(/Rangos/i);
 ok(await pulsar('Ejercicios'), '🚨 FIT F2 — se abre el catálogo desde Entrenamiento (apartado 23)');
-const catalogo_f2 = await esperarTexto(/Buscar un ejercicio/i);
-ok(/Buscar un ejercicio/i.test(catalogo_f2), '…con su buscador');
+ok(await esperarCampo('Buscar un ejercicio'), '…con su buscador');
+const catalogo_f2 = await ver();
 ok(/ejercicios/i.test(catalogo_f2), '…y diciendo cuántos hay');
 
 /* El catálogo carga de verdad: al menos ochenta fichas (apartado 19). */
@@ -5914,7 +5931,7 @@ ok(/Todav[ií]a no hay v[ií]deo/i.test(detalle_f2),
 /* Y se puede volver, que es lo que convierte el detalle en una pantalla y no en
    un callejón. */
 ok(await pulsar('Catálogo'), 'se vuelve al catálogo desde la ficha');
-await esperarTexto(/Buscar un ejercicio/i);
+await esperarCampo('Buscar un ejercicio');
 
 /* Los filtros (apartado 29, punto 5). */
 ok(await escribirBusqueda(''), 'se limpia la búsqueda');
@@ -5998,8 +6015,7 @@ await page.waitForTimeout(300);
 
 /* Apartado 5: el selector ES el catálogo de la F2. */
 ok(await pulsar('Añadir ejercicio'), 'se abre el selector de ejercicios');
-const selector_f3 = await esperarTexto(/Buscar un ejercicio/i);
-ok(/Buscar un ejercicio/i.test(selector_f3),
+ok(await esperarCampo('Buscar un ejercicio'),
   '🚨 FIT F3 — y es el catálogo de la F2, con su buscador: no hay un segundo buscador (E3 F22)');
 
 const buscarEnSelector = async (texto) => page.evaluate((t) => {
@@ -6019,7 +6035,7 @@ await page.waitForTimeout(400);
 /* Apartado 6: *"El usuario debe poder seguir añadiendo ejercicios sin perder el
    contexto"* — así que se queda en el selector. */
 const trasAnadir_f3 = await ver();
-ok(/Buscar un ejercicio/i.test(trasAnadir_f3),
+ok(await hayCampo('Buscar un ejercicio'),
   '⚠️ …y se queda en el selector, para poder seguir añadiendo sin perder el contexto');
 ok(/Ya est[áa]/i.test(trasAnadir_f3), '…diciendo cuál ya está puesto');
 
