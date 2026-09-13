@@ -241,6 +241,28 @@ export function informeDIST({ moreNav = [], areasNav = [], codigoApp = '', texto
 }
 
 /* ---------------------------------------------------------------------------
+   ⏸ DONDE LO CONSTRUIDO NO COINCIDE CON EL ENUNCIADO, Y POR QUÉ.
+
+   🚨 Esto es lo que de verdad ha encontrado la auditoría, y no se arregla por
+   cuenta propia: **su encargo choca consigo mismo**, y él dio la regla para ese
+   caso — *"Si algo de esta especificación entra en conflicto con la
+   arquitectura actual, adapta la implementación **sin romper funcionalidades
+   existentes**."* Se deja como está, se declara, y lo decide Josué.
+   --------------------------------------------------------------------------- */
+export const DESVIACIONES = [
+  {
+    que: 'Los hubs de Bienestar, Vida y Gestión siguen siendo una lista vertical de tarjetas anchas, no una cuadrícula de icono y nombre',
+    pidio: 'Presentación tipo mini-app: icono, nombre debajo, cuadrícula limpia. Y «evitar listas verticales interminables de módulos».',
+    porque: 'Cada tarjeta del hub lleva DOS líneas de resumen derivadas —«2 tareas pendientes», «1 clase hoy»— que existen desde la Fase N1 y se calculan en `resumenesHub.js`. '
+      + 'Una cuadrícula compacta de icono y nombre no tiene sitio para ellas, así que cumplir el apartado al pie de la letra habría BORRADO una funcionalidad, '
+      + 'que es lo que el mismo encargo prohíbe. Y con cinco módulos por área la lista no es «interminable»: son cinco filas.',
+    donde: 'src/views/HubView.jsx',
+    hecho: 'La cuadrícula tipo mini-app SÍ está, en las agrupadoras nuevas (Mente, Organización y Progreso), que no tienen líneas de resumen que perder.',
+    decide: 'Josué: si prefiere la cuadrícula en los hubs, se hace y se pierden las dos líneas de cada módulo.',
+  },
+];
+
+/* ---------------------------------------------------------------------------
    Lo que esta auditoría NO puede comprobar, declarado.
 
    Un informe que solo enumera lo verde miente por omisión (E3 F46).

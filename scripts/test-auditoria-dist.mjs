@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import {
   ARBOL_DIST, auditarArbol, auditarReubicados, auditarVueltaAtras,
   auditarClaves, auditarNombresViejos, auditarIconos, informeDIST,
-  CLAVES_QUE_NO_SE_TOCAN, NOMBRES_VIEJOS, FUERA_DEL_ALCANCE,
+  CLAVES_QUE_NO_SE_TOCAN, NOMBRES_VIEJOS, FUERA_DEL_ALCANCE, DESVIACIONES,
 } from '../src/lib/auditoriaDist.js';
 import { AGRUPADORES, APPS_DE_AGRUPADORES, agrupadorDeApp, appProtegida } from '../src/lib/agrupadores.js';
 import { MINI_APPS_PR, IDS_MINI_APPS_PR } from '../src/lib/productividad.js';
@@ -181,7 +181,25 @@ ok(informe.casillas.length === 6, 'y son seis, calculadas una a una');
 ok(!informeDIST({ moreNav, areasNav, codigoApp: '', textoEnPantalla: 'Mi salud', iconos: iconosNav }).ok,
   '⚠️ …y el informe entero se pone ROJO si algo se rompe');
 
-console.log('\n── 10. Lo que esta auditoría NO puede comprobar, dicho ──');
+console.log('\n── 10. Lo que NO coincide con el enunciado, declarado ──');
+/* 🚨 Lo que de verdad ha encontrado la auditoría: los hubs de área siguen
+   siendo una lista vertical, y el enunciado pedía una cuadrícula tipo mini-app.
+   No se arregla por cuenta propia porque **cumplirlo al pie de la letra habría
+   borrado las dos líneas de resumen de cada módulo**, que es lo que el mismo
+   encargo prohíbe. Se declara y lo decide él. */
+ok(DESVIACIONES.length >= 1, 'se declara dónde lo construido no coincide con el enunciado');
+ok(DESVIACIONES.every((d) => d.que && d.pidio && d.porque && d.donde && d.hecho && d.decide),
+  '⚠️ cada una con lo que él pidió, por qué no se hizo así, dónde está y quién decide');
+ok(/HubView/.test(DESVIACIONES[0].donde),
+  '⚠️ …y la que hay señala el archivo de verdad, no una descripción vaga');
+/* ⚠️ Y se comprueba que sigue siendo cierta: si un día el hub pasa a
+   cuadrícula, esta línea salta y la desviación hay que retirarla. */
+ok(/hub-card w-full/.test(leer('src/views/HubView.jsx')),
+  '⚠️ …y sigue siendo cierta: el hub pinta tarjetas a lo ancho, no una cuadrícula');
+ok(/grid-cols-2/.test(VISTA_AGR),
+  '🚨 mientras que las agrupadoras SÍ son cuadrícula: ahí no había resúmenes que perder');
+
+console.log('\n── 11. Lo que esta auditoría NO puede comprobar, dicho ──');
 ok(FUERA_DEL_ALCANCE.length >= 3, 'se declara lo que queda fuera de alcance');
 ok(FUERA_DEL_ALCANCE.every((x) => x.que && x.porque && x.decide),
   '⚠️ cada cosa con su motivo y quién decide: un informe que solo enumera lo verde miente por omisión');
