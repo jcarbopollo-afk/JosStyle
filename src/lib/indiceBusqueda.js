@@ -116,7 +116,11 @@ export const PALABRAS_MODULOS = {
     'lesion', 'lesiones', 'fotos de progreso', 'tension', 'grasa corporal'],
   sueno: ['dormir', 'descanso', 'noche', 'siesta', 'despertar', 'insomnio', 'horas de sueno'],
   nutricion: ['comida', 'comer', 'calorias', 'dieta', 'agua', 'alimentacion', 'macros', 'desayuno', 'cena'],
-  entreno: ['entrenar', 'entrenamiento', 'calistenia', 'gimnasio', 'ejercicio', 'futbol', 'deporte', 'habilidades', 'dominadas', 'partido'],
+  /* 🏷️ FIT F1 — el modulo pasa a llamarse «Fitness», asi que su palabra nueva
+     entra aqui **y las de siempre se quedan**: buscar «entrenamiento» o
+     «calistenia» tiene que seguir encontrandolo (E3 F23 y E3 F30 con «salud»).
+     Un renombrado muda sus palabras al buscador, no las borra. */
+  entreno: ['fitness', 'entrenar', 'entrenamiento', 'calistenia', 'gimnasio', 'ejercicio', 'futbol', 'deporte', 'habilidades', 'dominadas', 'partido', 'pesas', 'rangos'],
   estudios: ['estudiar', 'asignaturas', 'examenes', 'notas', 'clase', 'instituto', 'deberes', 'repaso'],
   negocio: ['proyectos', 'emprender', 'empresa', 'ingresos', 'clientes'],
   /* 🚨 E3 F23 (PR F1) — Objetivos dejó de ser un módulo y es una mini-app de

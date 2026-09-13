@@ -62,6 +62,7 @@ import { prediccionObjetivo } from './lib/predicciones';
 import { verificarBiometria } from './lib/biometria';
 import { crearPinHash, verificarPin } from './lib/pin';
 import { calcularResumenModulo } from './lib/resumenesHub';
+import { DEFAULT_FITNESS, normalizarFitness } from './lib/fitness';
 import { eventosDerivados } from './lib/calendarioIntegracion';
 import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
 import { urlFirmada, urlEnCache } from './lib/imagenes';
@@ -79,7 +80,11 @@ import HubView from './views/HubView';
 import Auth from './components/Auth';
 import DashboardView from './views/DashboardView';
 import SleepView from './views/SleepView';
-import TrainingView from './views/TrainingView';
+/* FIT F1 — la pantalla de `entreno` pasa a ser `FitnessView`, que **renderiza
+   `TrainingView` entera** dentro de su área de Entrenamiento (E3 F23): agrupar
+   pantallas es renderizarlas, nunca copiarlas. Por eso aquí ya no hace falta
+   importarla: la importa quien la pinta. */
+import FitnessView from './views/FitnessView';
 import FinanceView from './views/FinanceView';
 import HealthView from './views/HealthView';
 import NutritionView from './views/NutritionView';
@@ -206,7 +211,13 @@ const MORE_NAV = [
   { id: 'salud', label: 'Salud física', icon: HeartPulse },
   { id: 'sueno', label: 'Sueño', icon: Moon },
   { id: 'nutricion', label: 'Nutrición', icon: Apple },
-  { id: 'entreno', label: 'Entrenamiento', icon: Dumbbell },
+  /* 🏷️ FIT F1 — el apartado 4 de la Entrega 4 pide que la entrada se llame
+     **«Fitness»**. Es la cuarta etiqueta que se cambia sin tocar el id: `entreno`
+     sigue siendo la clave de la navegación, de la personalización de la Fase 19 y
+     de todo lo que apunta aquí, y `calistenia` sigue siendo la de sus datos
+     (NAV F2 con «Imagen personal»). Renombrar lo que se ve y renombrar lo que se
+     guarda son dos cosas distintas. */
+  { id: 'entreno', label: 'Fitness', icon: Dumbbell },
   { id: 'estudios', label: 'Estudios', icon: GraduationCap },
   { id: 'negocio', label: 'Negocio', icon: Briefcase },
   { id: 'productividad', label: 'Productividad', icon: ListTodo },
@@ -422,6 +433,11 @@ export default function App() {
   const [perfil, setPerfil] = useState(DEFAULT_PERFIL);
   const [sueno, setSueno] = useState([]);
   const [calistenia, setCalistenia] = useState(DEFAULT_CALISTENIA);
+  /* FIT F1 — la clave `fitness` de `app_data`, para lo que el módulo guarda de
+     nuevo: ejercicios, planes, plantillas, sesiones y rangos. ⚠️ **`calistenia`
+     NO se toca** — son las siete habilidades de siempre, y moverlas habría sido
+     una migración a cambio de nada. */
+  const [fitness, setFitness] = useState(DEFAULT_FITNESS);
   const [futbol, setFutbol] = useState([]);
   const [economia, setEconomia] = useState(DEFAULT_ECONOMIA);
   const [salud, setSalud] = useState(DEFAULT_SALUD);
@@ -521,7 +537,7 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud, hor, eh] = await Promise.all([
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud, hor, eh, fit] = await Promise.all([
         loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
@@ -559,6 +575,7 @@ export default function App() {
         loadData(uidUser, 'audio', DEFAULT_AUDIO),
         loadData(uidUser, 'horarioTop', DEFAULT_HORARIO_TOP),
         loadData(uidUser, 'estiloHombre', DEFAULT_ESTILO_HOMBRE),
+        loadData(uidUser, 'fitness', DEFAULT_FITNESS),
       ]);
       if (cancelled) return;
       setAccent(a.accent || ACCENTS[0].value);
@@ -732,6 +749,10 @@ export default function App() {
       if (migracionEH.migrada && !migracionEH.error) {
         saveData(uidUser, 'estiloHombre', normalizarEstiloHombre(migracionEH.estado));
       }
+      /* FIT F1 — regla 5: `loadData` no fusiona con el valor por defecto, así que
+         lo guardado antes de esta fase entra por su normalizador, que devuelve el
+         objeto entero con todas sus claves. */
+      setFitness(normalizarFitness(fit));
       setLoaded(true);
       /* SO — los datos ya estan en pantalla. Es el unico momento del ciclo en que
          'sincronizado' significa algo: antes de esto no hay nada que sincronizar,
@@ -1279,7 +1300,11 @@ export default function App() {
   // Storage — habría que borrar cada archivo uno a uno primero, fuera de alcance de esta fase.
   const RESET_MODULOS = {
     sueno: { label: 'Sueño', default: [], setter: setSueno },
-    calistenia: { label: 'Calistenia', default: DEFAULT_CALISTENIA, setter: setCalistenia },
+    calistenia: { label: 'Calistenia (habilidades)', default: DEFAULT_CALISTENIA, setter: setCalistenia },
+    /* FIT F1 — lo que Fitness guarda de nuevo se puede borrar como todo lo demás.
+       Va aparte de `calistenia` a propósito: son dos listas distintas del mismo
+       módulo, y borrar los planes no puede llevarse las habilidades. */
+    fitness: { label: 'Fitness (planes, sesiones y rangos)', default: DEFAULT_FITNESS, setter: setFitness },
     futbol: { label: 'Fútbol', default: [], setter: setFutbol },
     economia: { label: 'Economía', default: DEFAULT_ECONOMIA, setter: setEconomia },
     salud: { label: 'Salud (medidas e historial médico)', default: DEFAULT_SALUD, setter: setSalud },
@@ -2660,12 +2685,20 @@ export default function App() {
       case 'sueno':
         return <SleepView sueno={sueno} onAdd={addSueno} onDelete={deleteRegistroSueno} accent={accent} foco={focoPara('sueno')} onFocoConsumido={consumirFoco} />;
       case 'entreno':
+        /* FIT F1 — la misma entrada de siempre, con Fitness por fuera. `TrainingView`
+           recibe EXACTAMENTE las mismas props que recibía aquí: las pasa `FitnessView`
+           tal cual a su área de Entrenamiento, sin tocar ni una.
+           ⚠️ `fotos={saludFotos}` es de solo lectura: el área de Progreso las CUENTA y
+           lleva a Salud física, que es donde se suben, se borran y se protegen con PIN
+           desde la Fase 3. Aquí no se gestiona ninguna. */
         return (
-          <TrainingView
+          <FitnessView
+            fitness={fitness}
             calistenia={calistenia} onUpdateSkill={updateSkill}
             futbol={futbol} onAddPartido={addPartido} onDeletePartido={deletePartido}
             videos={calisteniaVideos} onAddVideo={addVideo} onDeleteVideo={deleteVideo} onSetVideoFeedback={setVideoFeedback}
-            accent={accent}
+            fotos={saludFotos} rachas={rachas}
+            accent={accent} onIr={setTab}
             foco={focoPara('entreno')} onFocoConsumido={consumirFoco}
           />
         );

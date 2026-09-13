@@ -309,7 +309,7 @@ export const NOMBRES_ORIGEN = {
   gustos: 'Mis gustos',
   objetivos: 'Objetivos',
   estudios: 'Estudios',
-  entreno: 'Entrenamiento',
+  entreno: 'Fitness',
   productividad: 'Productividad',
   relacion: 'Relación',
   armario: 'Armario',

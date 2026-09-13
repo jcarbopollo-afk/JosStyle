@@ -27,6 +27,18 @@ Personalización Visual y Calendario), y una "Fase 3" del Calendario que no tien
 
 *(Más un track de limpieza, **L**, sin numeración: la auditoría de notas internas de v1.22.0.)*
 
+🏋️ **Y desde el 2026-09-13 hay un décimo track: FIT — Entrega 4, Fitness.** Cuarenta y cinco fases
+para convertir Entrenamiento en una aplicación de fitness completa, con su especificación literal en
+`especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt` y su índice —**la línea de cada fase**— en
+**`docs/12_ENTREGA4_FITNESS_ORDEN.md`**.
+
+| Track | Nombre | Origen | Numeración | Estado |
+|---|---|---|---|---|
+| **FIT** | Entrega 4 — Fitness | Documento propio de Josué, 33 251 líneas | Fases 1–45 | 🟡 **EN MARCHA** — F1 hecha (v3.83.0) |
+
+⚠️ **El documento va del revés y él lo avisó:** la F45 abre el archivo y la F1 lo cierra. **Se
+construye de la F1 a la F45**, en orden.
+
 ---
 
 ## PARTE B — Historia real, versión a versión
