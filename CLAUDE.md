@@ -78,11 +78,16 @@ Las contestó él por escrito al empezar la Entrega 2. Están desarrolladas en
 | **D2-07** | **Inicio, Buscador y Módulos son un solo sistema.** Prohibido crear una cuarta lista de "qué se ve en Inicio". |
 | **D2-08** | **El proyecto se llama JosStyle.** |
 
-⚠️ **Regla 49 (nueva, de Josué):** *"Si encuentras cualquier otra contradicción entre las 100
-prompts, no la resuelvas por tu cuenta: detente y pregúntamela antes de implementar esa parte."*
-Detiene **la fase afectada, no la sesión**: se anota en `docs/03` como ⏸ PENDIENTE DE JOSUÉ, se sigue
-con lo que no dependa de ella y se le pregunta al cerrar el turno. No aplica a las contradicciones ya
-listadas con decisión tomada.
+⚠️ **Regla 49 (de Josué):** *"Si encuentras cualquier otra contradicción entre las 100 prompts, no la
+resuelvas por tu cuenta: detente y pregúntamela antes de implementar esa parte."*
+
+🔓 **Y la matizó él mismo el 2026-09-13, al contestar C-33:** *"Tienes permiso para eso que me has
+preguntado. Siempre: no me preguntes, porque si no paras el flujo."* Así que **ya no se detiene
+nada**: una contradicción se resuelve con **la lectura que respeta las dos partes**, se anota en
+`docs/03` con su motivo y sus palabras, y **se sigue construyendo**; se le cuenta al cerrar el turno,
+sin esperar respuesta. Lo único que sí se para es lo que **no se puede hacer sin él** —un bloque de
+SQL que tenga que ejecutar, una cuenta que tenga que registrar—, y eso no es una contradicción: es
+una dependencia (DEP-29, DEP-30). No aplica a las contradicciones ya listadas con decisión tomada.
 
 ## Documentación: qué leer y en qué orden
 
@@ -151,6 +156,11 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
   que mete un mensaje en esta misma sesión): al cerrar una fase, se deja programado el aviso de
   seguir. Lo único que puede detenerlo de verdad es **el límite de uso de su cuenta**, y eso se le
   dice, no se disimula.
+  🔓 **Y NO SE LE PREGUNTA NADA** (2026-09-13, con sus palabras): *"Tienes permiso para eso que me
+  has preguntado. Siempre: no me preguntes, porque si no paras el flujo."* Lo que se haría con una
+  pregunta se hace así: **se elige la lectura que respeta lo que él ya ha decidido, se anota en
+  `docs/03` con el motivo, y se sigue** — se lo cuentas al cerrar, no antes. Eso incluye **subir a
+  `main`**: si la verificación está en verde, se sube; no hay que pedir permiso para entregar.
   ⚠️ **Esta línea decía lo contrario hasta hoy** —*"una fase por turno, y se para"*—, y era cierto
   entonces: él lo pidió así en su día. Manda lo último que ha dicho.
 - **Al terminar, decirle siempre dos cosas:** qué se ha hecho y hasta dónde se ha llegado.
@@ -324,12 +334,14 @@ dejó, y que vale para las 44 que quedan:
   la etiqueta pasa a «Fitness» y **`entreno` y `calistenia` no se tocan** — son la clave de
   `app_data`, la de la personalización de la Fase 19 y la de la navegación. Ni una migración de
   datos.
-- ⚠️ **UNA CIFRA DEL ENUNCIADO PUEDE CHOCAR CON UNA DECISIÓN CERRADA, Y ENTONCES SE ESCRIBE LA
-  LECTURA** (FIT F1, **C-33**): el apartado 22 fija diez niveles de rango y **D2-02** prohíbe niveles
-  fuera de Sonido y Rachas. Se construye como **medida física, nunca premio** —no se gana usando la
-  aplicación, no se canjea, no desbloquea nada, no existe sin datos, y los diez se llaman por lo que
-  miden, jamás «Nivel 4»—, queda anotado en `docs/03` y **se le dice**. No se para la fase y no se
-  decide en silencio.
+- 🔓 **UNA CIFRA DEL ENUNCIADO PUEDE CHOCAR CON UNA DECISIÓN CERRADA, Y ENTONCES SE ESCRIBE LA
+  LECTURA Y SE SIGUE** (FIT F1, **C-33**, y **la contestó él el mismo día**). El apartado 22 fija
+  diez niveles de rango y **D2-02** prohíbe niveles fuera de Sonido y Rachas. Se construyó como
+  **medida física, nunca premio** —no se gana usando la aplicación, no se canjea, no desbloquea
+  nada, no existe sin datos, y los diez se llaman por lo que miden, jamás «Nivel 4»— y él dijo:
+  *"Tienes permiso para eso que me has preguntado. Siempre: no me preguntes, porque si no paras el
+  flujo."* ⚠️ **D2-02 sigue en pie para todo lo demás**: lo autorizado es el rango como medida, no
+  gamificar Bienestar.
 - 🚨 **ANTES DE PONER UN NÚMERO EN UN CTA, MIRAR SI LA LISTA QUE CUENTA EXISTE** (FIT F1): el
   apartado 9 propone *"Clasificar ejercicios · 0 restantes"*, y sin catálogo de ejercicios ese cero
   cuenta una lista que aún no existe. El CTA se ve, el contador no (regla 8). Igual con el chevron
@@ -439,8 +451,9 @@ había que adivinarlo.**
    encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
-3. ⏸ **Y contarle C-33**: los diez rangos de Fitness contra su D2-02. Está construido con la lectura
-   que respeta las dos y **no bloquea nada**, pero la decisión es suya.
+3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día
+   y, de paso, la instrucción que manda sobre todas las que vengan — **no se pregunta, se anota y se
+   sigue**.
 
 ⏸ **Y las cinco decisiones que siguen esperándole**, ninguna de ellas trabajo que yo pueda hacer
 solo: **DEP-29** (registrar JosStyle en Google y en Microsoft), **DEP-30** (el service worker),

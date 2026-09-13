@@ -579,7 +579,7 @@ Es R1 puro.
 
 ---
 
-### C-33 — 🟢 RESUELTA POR LECTURA (FIT F1, v3.83.0) · Los diez rangos de Fitness contra D2-02
+### C-33 — 🔓 RESUELTA POR JOSUÉ (FIT F1, v3.83.0) · Los diez rangos de Fitness contra D2-02
 
 **La Entrega 4 fija *"Rangos: 10 niveles"* como decisión de producto (apartado 22 de la FIT F1), y
 D2-02 —decisión cerrada de Josué— dice que no hay niveles fuera de Sonido y Rachas:** *"Nada de
@@ -602,8 +602,17 @@ como los estándares de fuerza que usa cualquier gimnasio:
 - y los diez se llaman por **lo que miden** —Iniciación, Intermedio, Avanzado, Élite—, nunca
   «Nivel 4»: hay otra comprobación para eso.
 
-**Si Josué prefiere otra cosa**, se cambia `NIVELES_RANGO` en `src/lib/fitness.js` y ya está: es un
-catálogo, no una arquitectura. Queda dicho en vez de dado por bueno.
+🔓 **Y LA CONTESTÓ ÉL EL MISMO DÍA (2026-09-13):** *"Tienes permiso para eso que me has preguntado.
+Siempre: no me preguntes, porque si no paras el flujo."* Los diez rangos se quedan como están, con
+esta lectura, y **D2-02 sigue en pie para todo lo demás**: lo que él ha autorizado es el rango como
+medida física, no gamificar Bienestar.
+
+⚠️ **Y hay una segunda cosa dicha ahí, que vale para todas las fases que quedan:** no se para a
+preguntar. Una contradicción se **anota con la lectura elegida y su motivo** —como ésta— y se sigue;
+la regla 49 se cumple dejándolo escrito y contándoselo al cerrar, nunca deteniendo el trabajo.
+
+**Si algún día cambia de opinión**, se cambia `NIVELES_RANGO` en `src/lib/fitness.js` y ya está: es
+un catálogo, no una arquitectura.
 
 ---
 
