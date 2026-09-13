@@ -469,6 +469,7 @@ export function normalizarWorkoutExercise(g) {
 export function crearWorkoutPlan({
   nombre = '', descripcion = '', entorno = '', frecuencia = null,
   duracion = null, thumbnail = '', ejercicios = [], meta = {},
+  creadoEn = '', editadoEn = '',
 } = {}) {
   return {
     id: uid(),
@@ -480,6 +481,14 @@ export function crearWorkoutPlan({
     thumbnail: texto(thumbnail),
     ejercicios: lista(ejercicios).map(normalizarWorkoutExercise).filter(Boolean),
     meta: meta && typeof meta === 'object' ? meta : {},
+    /* FIT F4 — *"fecha de última modificación"* (apartado 3) y el `updatedAt`
+       del apartado 6. ⚠️ Van AQUÍ, en el modelo, no en la librería de
+       plantillas: este normalizador corre en cada carga, así que un campo que
+       no conozca se lo lleva el siguiente guardado (regla 5). Y nacen vacías:
+       lo guardado antes de la F4 no tiene fecha, y **no se le inventa una** —
+       la pantalla se calla en vez de decir «Editado hace 20 000 días». */
+    creadoEn: texto(creadoEn),
+    editadoEn: texto(editadoEn),
   };
 }
 

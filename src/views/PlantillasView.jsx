@@ -139,7 +139,19 @@ export function ConfirmarEliminarPlantilla({ plantilla, onCancelar, onEliminar }
       <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{aviso.vuelve}</p>
       <div className="flex gap-2 mt-3">
         <GhostBtn onClick={onCancelar}>{aviso.cancelar}</GhostBtn>
-        <GhostBtn icon={Trash2} onClick={onEliminar}>{aviso.eliminar}</GhostBtn>
+        {/* ⚠️ Botón crudo, no `GhostBtn`, por una razón: necesita `aria-label`
+            propio —«Confirmar eliminar X»— y `GhostBtn` no reparte esa prop.
+            Sin él, «Eliminar» del menú y «Eliminar» de la confirmación son el
+            mismo nombre en la misma pantalla, que es el fallo de la E3 F30. */}
+        <button
+          onClick={onEliminar}
+          aria-label={`Confirmar eliminar ${plantilla.nombre || 'la plantilla'}`}
+          className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold toque-44"
+          style={{ background: COLORS.surface2, color: COLORS.negative, border: `1px solid ${COLORS.border}` }}
+        >
+          <Trash2 size={14} />
+          {aviso.eliminar}
+        </button>
       </div>
     </Card>
   );

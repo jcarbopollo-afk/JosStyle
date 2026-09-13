@@ -39,8 +39,11 @@ import TrainingView from './TrainingView';
 import EjerciciosView from './EjerciciosView';
 /* FIT F3 — el constructor, renderizado entero aquí dentro (E3 F23). */
 import ConstructorView from './ConstructorView';
+/* FIT F4 — la gestión de plantillas, renderizada entera aquí dentro (E3 F23). */
+import PlantillasView from './PlantillasView';
+import { duplicarPlantilla, fichaDePlantilla, ordenarPlantillas } from '../lib/plantillas';
 import {
-  crearRutina, planARutina, resumenRutina, leerBorrador, borrarBorrador,
+  crearRutina, planARutina, leerBorrador, borrarBorrador,
 } from '../lib/constructor';
 
 /* ── La cabecera (apartado 6) ──────────────────────────────────────────────
@@ -335,6 +338,7 @@ export function AreaProgreso({ fotos, accent, onIr = null }) {
    ninguna parte (regla 8). */
 export function AreaEntrenamiento({
   fitness, calistenia, accent, entrenoProps, onAbrirConstructor = null,
+  onGuardarFitness = null, onEliminarPlantilla = null,
 }) {
   const resumen = resumenEntrenamiento(fitness, calistenia);
   const propios = (fitness || {}).ejercicios || [];
@@ -355,6 +359,9 @@ export function AreaEntrenamiento({
      sin preguntar, le pondría delante algo que quizá ya no quiere. */
   const [borrador, setBorrador] = useState(() => leerBorrador());
   const aMedias = borrador && borrador.lineas.length > 0;
+  /* FIT F4, apartado 20: *"No llenar la pantalla de cards."* El área enseña las
+     tres últimas y la gestión entera vive en su propia pantalla. */
+  const ultimas = ordenarPlantillas(plantillas, 'recientes').slice(0, 3);
 
   if (dentro === 'ejercicios') {
     return (
@@ -362,6 +369,26 @@ export function AreaEntrenamiento({
         propios={propios}
         accent={accent}
         onVolver={() => setDentro(null)}
+      />
+    );
+  }
+
+  /* FIT F4 — la gestión completa: buscar, filtrar, ordenar, ver el detalle,
+     duplicar y eliminar. */
+  if (dentro === 'plantillas') {
+    return (
+      <PlantillasView
+        plantillas={plantillas}
+        propios={propios}
+        accent={accent}
+        onVolver={() => setDentro(null)}
+        onCrear={onAbrirConstructor ? () => onAbrirConstructor(null) : null}
+        onEditar={onAbrirConstructor ? (p) => onAbrirConstructor(planARutina(p)) : null}
+        onDuplicar={onGuardarFitness ? (p) => {
+          const r = duplicarPlantilla(plantillas, p.id);
+          if (r.ok) onGuardarFitness({ ...(fitness || {}), plantillas: r.plantillas });
+        } : null}
+        onEliminar={onEliminarPlantilla ? (p) => onEliminarPlantilla(p.id) : null}
       />
     );
   }
@@ -402,13 +429,13 @@ export function AreaEntrenamiento({
                acciones, duplicar, buscar, filtrar, ordenar—, que es la FIT F4:
                es la lista mínima que impide que lo guardado quede encerrado. */
             <div className="space-y-2">
-              {plantillas.map((p) => {
-                const res = resumenRutina(planARutina(p), propios);
+              {ultimas.map((p) => {
+                const res = fichaDePlantilla(p, propios) || { ejercicios: 0, duracion: '' };
                 return (
                   <button
                     key={p.id}
-                    onClick={() => onAbrirConstructor && onAbrirConstructor(planARutina(p))}
-                    aria-label={`Editar ${p.nombre || 'entrenamiento sin nombre'}`}
+                    onClick={() => setDentro('plantillas')}
+                    aria-label={`Ver ${p.nombre || 'entrenamiento sin nombre'}`}
                     className="hub-card w-full text-left rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99]"
                     style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
                   >
@@ -427,10 +454,18 @@ export function AreaEntrenamiento({
                         {res.duracion ? ` · ${res.duracion}` : ''}
                       </p>
                     </div>
-                    <Pencil size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />
+                    <ChevronRight size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />
                   </button>
                 );
               })}
+              {/* ⚠️ «Ver las N» solo si queda algo fuera: un botón que lleva a la
+                  lista que ya estás viendo no hace nada (E3 F46, regla 8). */}
+              {plantillas.length > ultimas.length && (
+                <GhostBtn icon={ChevronRight} onClick={() => setDentro('plantillas')}>
+                  Ver las {plantillas.length}
+                </GhostBtn>
+              )}
+              <GhostBtn icon={Pencil} onClick={() => setDentro('plantillas')}>Gestionarlas</GhostBtn>
             </div>
           )
           : (
@@ -518,6 +553,7 @@ export default function FitnessView({
   fitness, calistenia, onUpdateSkill, futbol, onAddPartido, onDeletePartido,
   videos, onAddVideo, onDeleteVideo, onSetVideoFeedback,
   fotos = [], rachas, accent, foco, onFocoConsumido, onIr, onGuardarFitness = null,
+  onEliminarPlantilla = null,
 }) {
   const [area, setArea] = useState(AREA_INICIAL);
 
@@ -572,6 +608,8 @@ export default function FitnessView({
       {area === 'entrenamiento' && (
         <AreaEntrenamiento
           fitness={fitness} calistenia={calistenia} accent={accent} entrenoProps={entrenoProps}
+          onGuardarFitness={onGuardarFitness}
+          onEliminarPlantilla={onEliminarPlantilla}
           onAbrirConstructor={onGuardarFitness
             ? (rutina) => setCreando({ rutina: rutina || crearRutina({}) })
             : null}

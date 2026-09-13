@@ -1406,6 +1406,10 @@ export default function App() {
     diario: [diario, setDiario], biblioteca: [biblioteca, setBiblioteca],
     relacion: [relacion, setRelacion], fe: [fe, setFe], bienestar: [bienestar, setBienestar],
     armario: [armario, setArmario],
+    /* FIT F4 — las plantillas de entrenamiento entran en la papelera universal.
+       Es una lista dentro de `fitness`, como `comidas` dentro de `nutricion`:
+       el motor de ME F3 ya lo soportaba. */
+    fitness: [fitness, setFitness],
     // FO Fase 12 — las apariencias guardadas entran en la papelera universal. Es una
     // lista plana, como `sueno` o `futbol`; el motor de ME F3 ya lo soportaba.
     temasGuardados: [temasGuardados, setTemasGuardados],
@@ -1727,6 +1731,9 @@ export default function App() {
   const deleteRegistroSueno = (id) => eliminarConPapelera('sueno', null, id);
   const deletePartido = (id) => eliminarConPapelera('futbol', null, id);
   const deleteMovimiento = (id) => eliminarConPapelera('economia', 'movimientos', id);
+  /* FIT F4 — y por la misma puerta que todo lo demás (ME F3): la plantilla va a
+     Eliminados recientes y vuelve entera, con sus ejercicios y su orden. */
+  const deletePlantillaFitness = (id) => eliminarConPapelera('fitness', 'plantillas', id);
   const deleteMedida = (id) => eliminarConPapelera('salud', 'medidas', id);
   const deleteHistorialMedico = (id) => eliminarConPapelera('salud', 'historial', id);
   const deleteComida = (id) => eliminarConPapelera('nutricion', 'comidas', id);
@@ -1866,7 +1873,7 @@ export default function App() {
   // al restaurarse duplicaría el elemento. Con la papelera dentro del snapshot, deshacer revierte
   // las dos cosas a la vez y los dos sistemas de recuperación no se pisan.
   const snapshotAndSave = (patch) => {
-    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion, horarioTop };
+    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion, horarioTop, fitness };
     const nextHist = [...history, snapshot].slice(-10);
     setHistory(nextHist);
     saveData(uidUser, 'historial', nextHist);
@@ -1892,6 +1899,10 @@ export default function App() {
     if (patch.gamificacion) { setGamificacion(patch.gamificacion); saveData(uidUser, 'gamificacionRachas', patch.gamificacion); }
     if (patch.horarioTop) { setHorarioTop(patch.horarioTop); saveData(uidUser, 'horarioTop', patch.horarioTop); }
     if (patch.estiloHombre) { setEstiloHombre(patch.estiloHombre); saveData(uidUser, 'estiloHombre', patch.estiloHombre); }
+    /* FIT F4 — sin esta línea, eliminar una plantilla no guardaría nada y la
+       pantalla se pintaría perfecta: `snapshotAndSave` solo escribe lo que
+       conoce. */
+    if (patch.fitness) { setFitness(patch.fitness); saveData(uidUser, 'fitness', patch.fitness); }
   };
 
   const addSueno = (entry) => {
@@ -2712,6 +2723,7 @@ export default function App() {
             videos={calisteniaVideos} onAddVideo={addVideo} onDeleteVideo={deleteVideo} onSetVideoFeedback={setVideoFeedback}
             fotos={saludFotos} rachas={rachas}
             onGuardarFitness={guardarFitness}
+            onEliminarPlantilla={deletePlantillaFitness}
             accent={accent} onIr={setTab}
             foco={focoPara('entreno')} onFocoConsumido={consumirFoco}
           />

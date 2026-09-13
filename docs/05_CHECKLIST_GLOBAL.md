@@ -857,7 +857,13 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       corregir, el borrador en el dispositivo y el aviso de salir sin guardar.
       🚨 **La separación crítica del apartado 28**: `Exercise` es el catálogo y `WorkoutExercise` la
       configuración dentro de UNA rutina. 🐛 Y dos recortes de normalizador arreglados (regla 5).
-- [ ] F4–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F4 — Gestión de entrenamientos y plantillas propias** (v3.86.0): ver, buscar, filtrar por
+      entorno, ordenar, el detalle con su distribución muscular, duplicar con la copia independiente
+      y eliminar con confirmación — y todo persiste de verdad.
+      🚨 **Sin duplicar nada**: `UserTemplate` ya era `fitness.plantillas` y el ida y vuelta con el
+      constructor ya era bidireccional. 🚨 Y eliminar **va a la papelera**, así que el aviso promete
+      que se recupera en vez de mentir.
+- [ ] F5–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

@@ -60,6 +60,12 @@ export const CATALOGO_PAPELERA = {
   'salud.medidas': { modulo: 'salud', coleccion: 'medidas', tipo: 'Medida', campos: ['fecha'], icono: 'salud' },
   'salud.historial': { modulo: 'salud', coleccion: 'historial', tipo: 'Entrada médica', campos: ['descripcion', 'tipo'], icono: 'salud' },
   'nutricion.comidas': { modulo: 'nutricion', coleccion: 'comidas', tipo: 'Comida', campos: ['nombre'], icono: 'nutricion' },
+  /* 🚨 FIT F4 — **toda lista que se pueda borrar va aquí** (EH F45). Sin esta
+     línea, eliminar una plantilla la borraría **para siempre**, y el aviso de
+     la pantalla —que promete que se recupera— sería mentira. ⚠️ Se llama
+     `plantillas`, no `planes`: son dos listas distintas del mismo módulo, y
+     la papelera se indexa por `módulo.colección` (EH F22). */
+  'fitness.plantillas': { modulo: 'fitness', coleccion: 'plantillas', tipo: 'Plantilla de entrenamiento', campos: ['nombre'], icono: 'entreno' },
   /* 🚨 E3 F37 (NU F5) — **toda lista que se pueda borrar va aquí** (EH F45): sin
      esta línea, eliminar un alimento propio lo borraría **para siempre**, y la
      auditoría de ME F4 no lo vería porque solo mira lo que se CREA desde

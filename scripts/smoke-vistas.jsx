@@ -169,6 +169,10 @@ import EjerciciosView, { DetalleEjercicio, TarjetaEjercicio } from '../src/views
    aparecen tras pulsar algo**: renderizar `ConstructorView` no pinta ni una
    línea del editor de un ejercicio, que es el agujero del Álbum (NAV F3). */
 import ConstructorView, { FilaEjercicio, EditorLinea, ResumenConstructor } from '../src/views/ConstructorView.jsx';
+/* FIT F4 — la gestión de plantillas. ⚠️ Sus tres piezas sueltas, porque el
+   detalle y la confirmación **solo aparecen tras pulsar algo** (NAV F3). */
+import PlantillasView, { TarjetaPlantilla, DetallePlantilla, ConfirmarEliminarPlantilla } from '../src/views/PlantillasView.jsx';
+import { rutinaAPlan as rutinaAPlanF4 } from '../src/lib/constructor.js';
 import { crearRutina as crearRutinaF3, anadirEjercicio as anadirF3, editarLinea as editarF3 } from '../src/lib/constructor.js';
 import { CATALOGO_EJERCICIOS } from '../src/lib/ejercicios.js';
 import WellbeingView from '../src/views/WellbeingView.jsx';
@@ -2976,6 +2980,49 @@ const CASOS = [
   ['ResumenConstructor', ResumenConstructor, () => ({
     rutina: anadirF3(anadirF3(crearRutinaF3({ nombre: 'Push' }), 'press-banca-barra'), 'dominada-prona'),
     accent,
+  })],
+  /* FIT F4 — Tus plantillas. El caso que más importa es el de **una plantilla
+     con un ejercicio que ya no está en el catálogo**: tiene que decirlo, no
+     romper la pantalla entera (apartado 24). */
+  ['PlantillasView', PlantillasView, () => ({
+    plantillas: [], propios: [], accent, hoy: HOY,
+    onVolver: noop, onCrear: noop, onEditar: noop, onDuplicar: noop, onEliminar: noop,
+  })],
+  ['PlantillasView', PlantillasView, () => ({
+    plantillas: [
+      { ...rutinaAPlanF4(anadirF3(anadirF3(crearRutinaF3({ nombre: 'Push', entornos: ['gym'] }), 'press-banca-barra'), 'dominada-prona')), creadoEn: HOY, editadoEn: HOY },
+      { ...rutinaAPlanF4(anadirF3(crearRutinaF3({ nombre: 'Core', entornos: ['casa'] }), 'l-sit')), creadoEn: HOY, editadoEn: HOY },
+    ],
+    propios: [], accent, hoy: HOY,
+    onVolver: noop, onCrear: noop, onEditar: noop, onDuplicar: noop, onEliminar: noop,
+  })],
+  ['TarjetaPlantilla', TarjetaPlantilla, () => ({
+    plantilla: { ...rutinaAPlanF4(anadirF3(crearRutinaF3({ nombre: 'Push', entornos: ['gym'] }), 'press-banca-barra')), creadoEn: HOY, editadoEn: HOY },
+    accent, hoy: HOY, onVer: noop, onEditar: noop, onDuplicar: noop, onEliminar: noop,
+  })],
+  /* ⚠️ Y una plantilla sin ejercicios, que es un caso real: se puede guardar y
+     luego quitárselos todos desde el constructor. */
+  ['TarjetaPlantilla', TarjetaPlantilla, () => ({
+    plantilla: { ...rutinaAPlanF4(crearRutinaF3({ nombre: 'Vacía' })), creadoEn: HOY, editadoEn: HOY },
+    accent, hoy: HOY, onVer: noop, onEditar: noop, onDuplicar: noop, onEliminar: noop,
+  })],
+  ['DetallePlantilla', DetallePlantilla, () => ({
+    plantilla: { ...rutinaAPlanF4(anadirF3(anadirF3(crearRutinaF3({ nombre: 'Push', entornos: ['gym'] }), 'press-banca-barra'), 'l-sit')), creadoEn: HOY, editadoEn: HOY },
+    accent, hoy: HOY, onVolver: noop, onEditar: noop, onDuplicar: noop, onEliminar: noop,
+  })],
+  ['DetallePlantilla', DetallePlantilla, () => {
+    const base = rutinaAPlanF4(anadirF3(crearRutinaF3({ nombre: 'Con fantasma' }), 'press-banca-barra'));
+    return {
+      plantilla: { ...base, ejercicios: [{ ...base.ejercicios[0], exerciseId: 'ya-no-existe' }], creadoEn: HOY, editadoEn: HOY },
+      accent, hoy: HOY, onVolver: noop, onEditar: noop, onDuplicar: noop, onEliminar: noop,
+    };
+  }],
+  ['DetallePlantilla', DetallePlantilla, () => ({
+    plantilla: null, accent, hoy: HOY, onVolver: noop, onEditar: noop, onDuplicar: noop, onEliminar: noop,
+  })],
+  ['ConfirmarEliminarPlantilla', ConfirmarEliminarPlantilla, () => ({
+    plantilla: { ...rutinaAPlanF4(anadirF3(crearRutinaF3({ nombre: 'Push' }), 'press-banca-barra')), creadoEn: HOY, editadoEn: HOY },
+    onCancelar: noop, onEliminar: noop,
   })],
   ['AreaProgreso', AreaProgreso, () => ({
     fotos: [{ id: 'f1', path: 'x', fecha: HOY, nota: '' }], accent, onIr: noop,

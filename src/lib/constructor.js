@@ -1,4 +1,4 @@
-import { uid } from './helpers';
+import { uid, todayISO } from './helpers';
 import { GRUPOS_MUSCULARES, subgrupoMuscular, crearWorkoutPlan, normalizarWorkoutPlan } from './fitness';
 import {
   ejercicioPorId, nombreCompleto, ENTORNOS, baseDe, variantesDe,
@@ -280,6 +280,9 @@ export function rutinaAPlan(rutina) {
   };
 }
 
+/* ⚠️ `creadoEn` y `editadoEn` NO viajan a la rutina del constructor: son de la
+   plantilla guardada, y el constructor no los toca. Quien los sella es
+   `guardarRutina`, una sola vez y en un solo sitio. */
 export function planARutina(plan) {
   const p = normalizarWorkoutPlan(plan);
   if (!p) return null;
@@ -535,12 +538,20 @@ export function validarRutina(rutina, propios = []) {
    ya existía la **sustituye** en su sitio en vez de añadir una copia: es lo que
    convierte el apartado 24 —*"abrir una rutina guardada y editarla"*— en algo
    que funciona de verdad. */
-export function guardarRutina(planes, rutina, propios = []) {
+export function guardarRutina(planes, rutina, propios = [], hoy = todayISO()) {
   const v = validarRutina(rutina, propios);
   if (!v.ok) return { ok: false, problemas: v.problemas, planes: lista(planes) };
-  const plan = rutinaAPlan(rutina);
   const actuales = lista(planes);
-  const i = actuales.findIndex((p) => p.id === plan.id);
+  const i = actuales.findIndex((p) => p.id === (rutina || {}).id);
+  /* FIT F4, apartado 6: *"actualizar la plantilla existente, mantener su mismo
+     ID, actualizar updatedAt"*. ⚠️ `creadoEn` se conserva si ya existía: una
+     edición no puede reescribir cuándo se creó. */
+  const antes = i === -1 ? null : actuales[i];
+  const plan = {
+    ...rutinaAPlan(rutina),
+    creadoEn: (antes && antes.creadoEn) || hoy,
+    editadoEn: hoy,
+  };
   const siguientes = i === -1 ? [...actuales, plan] : actuales.map((p) => (p.id === plan.id ? plan : p));
   return { ok: true, problemas: [], planes: siguientes, plan };
 }

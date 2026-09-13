@@ -6171,6 +6171,131 @@ ok(await pulsar('Descartar'), '…y se puede descartar');
 await page.waitForTimeout(300);
 ok(!/a medias/i.test(await ver()), '…y entonces desaparece');
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F4 — gestión de entrenamientos y plantillas propias (Entrega 4 · 4/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El apartado 25 es una lista de validaciones obligatorias, y el criterio de
+   finalización las resume: *"Crear → Guardar → Ver → Editar → Duplicar →
+   Eliminar una rutina creada por mí y comprobar que todos los cambios son
+   reales y persistentes"*.
+
+   🚨 Y la que el enunciado pide comprobar EXPLÍCITAMENTE (apartado 7): que
+   editar la copia **no toca el original**. Aquí se hace tocando la pantalla.
+
+   ⚠️ Esta sección se apoya en la plantilla «Push» que dejó guardada la sección
+   de la FIT F3: es el único camino por el que se crea una, y probar sobre lo
+   que de verdad hay es la lección de EH F44. */
+console.log('\n── FIT F4 · Tus plantillas ──');
+ok(await pulsar('Bienestar'), 'FIT F4 — se abre el área Bienestar');
+ok(await pulsar('Fitness'), '…y Fitness');
+const area_fit4 = await esperarTexto(/Tus plantillas/i);
+ok(/Push/i.test(area_fit4), 'FIT F4 — la plantilla guardada se ve en el área');
+
+ok(await pulsar('Gestionarlas'), 'se abre la gestión de plantillas');
+const lista_fit4 = await esperarTexto(/plantilla/i);
+ok(/Push/i.test(lista_fit4), '…con la plantilla dentro');
+ok(/Editado hoy/i.test(lista_fit4),
+  '🚨 FIT F4 — con su fecha de última modificación (apartado 3)');
+ok(/Gimnasio|Calistenia|Casa/i.test(lista_fit4), '…y los filtros de entorno (apartado 16)');
+
+/* Apartado 4: el menú de acciones. */
+ok(await pulsar('Acciones de Push'), 'se abre el menú de tres puntos de la plantilla');
+const menu_fit4 = await ver();
+ok(/Editar/i.test(menu_fit4) && /Duplicar/i.test(menu_fit4) && /Eliminar/i.test(menu_fit4),
+  '🚨 FIT F4 — con Editar, Duplicar y Eliminar (apartado 4)');
+/* 🚨 Apartado 19: *"Si esto genera una acción muerta, es preferible NO mostrar
+   todavía el botón"*. El motor de entrenamiento es la FIT F7. */
+ok(!/Empezar entrenamiento/i.test(menu_fit4),
+  '🚨 FIT F4 — y SIN «Empezar entrenamiento»: sin motor sería una acción muerta (apartado 19)');
+
+/* Apartado 7 — duplicar, y que la copia sea independiente. */
+const antesDup_fit4 = guardado.filter((g) => g && g.key === 'fitness').length;
+ok(await pulsar('Duplicar'), 'se duplica la plantilla (apartado 7)');
+await page.waitForTimeout(700);
+const trasDup_fit4 = await ver();
+ok(/Copia/i.test(trasDup_fit4), '🚨 FIT F4 — y aparece «Push — Copia»');
+const escrituras_fit4 = guardado.filter((g) => g && g.key === 'fitness');
+ok(escrituras_fit4.length > antesDup_fit4, '…y se ha guardado de verdad en `app_data`');
+const plantillas_fit4 = escrituras_fit4.at(-1)?.value?.plantillas || [];
+ok(plantillas_fit4.length === 2, `…y ahora hay dos plantillas (${plantillas_fit4.length})`);
+ok(plantillas_fit4[0].id !== plantillas_fit4[1].id, '🚨 …con ids distintos');
+const idsLineas_fit4 = new Set([
+  ...(plantillas_fit4[0].ejercicios || []).map((e) => e.id),
+  ...(plantillas_fit4[1].ejercicios || []).map((e) => e.id),
+]);
+ok(idsLineas_fit4.size === (plantillas_fit4[0].ejercicios.length + plantillas_fit4[1].ejercicios.length),
+  '🚨 FIT F4 — y CADA LÍNEA con su propio id: con el mismo, editar la copia editaría el original');
+
+/* Apartado 9 — el detalle. */
+ok(await pulsar('Ver Push — Copia'), 'se abre el detalle de la copia (apartado 9)');
+const detalle_fit4 = await esperarTexto(/Distribuci[oó]n muscular/i);
+ok(/Distribuci[oó]n muscular/i.test(detalle_fit4),
+  '🚨 FIT F4 — con la distribución muscular derivada (apartado 10)');
+ok(/%/.test(detalle_fit4), '…con sus porcentajes');
+ok(/≈ \d+ min/.test(detalle_fit4), '…y la duración estimada, con su «≈» (apartado 11)');
+ok(/Press de banca/i.test(detalle_fit4), '…y sus ejercicios (apartado 9)');
+ok(/× /.test(detalle_fit4), '…con sus series');
+
+/* Apartado 6 y 7 — editar la copia y comprobar que el original no se entera. */
+ok(await pulsar('Editar'), 'se abre el constructor con la copia dentro (apartado 6)');
+await esperarTexto(/A[ñn]adir ejercicio/i);
+ok(await pulsar('Configurar'), 'se configura su primer ejercicio');
+await esperarTexto(/Series/i);
+ok(await pulsar('Subir Series'), 'se le sube una serie');
+await page.waitForTimeout(300);
+ok(await pulsar('Hecho'), 'se cierra la configuración');
+await page.waitForTimeout(300);
+ok(await pulsar('Guardar'), 'y se guarda la copia');
+await page.waitForTimeout(700);
+const trasEditar_fit4 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.plantillas || [];
+ok(trasEditar_fit4.length === 2,
+  '🚨 FIT F4 — guardar una que ya existía la SUSTITUYE: siguen siendo dos (apartado 6)');
+const original_fit4 = trasEditar_fit4.find((p) => !/Copia/.test(p.nombre));
+const copia_fit4 = trasEditar_fit4.find((p) => /Copia/.test(p.nombre));
+ok(copia_fit4?.ejercicios?.[0]?.series !== original_fit4?.ejercicios?.[0]?.series,
+  '🚨 FIT F4 — y el ORIGINAL no se ha enterado: la copia es independiente (apartado 7)');
+ok(copia_fit4?.editadoEn, '…y la copia lleva su fecha de edición actualizada');
+
+/* Apartado 8 — eliminar, con confirmación de verdad. */
+ok(await pulsar('Volver a Entrenamiento'), 'se vuelve de la copia');
+await page.waitForTimeout(400);
+ok(await pulsar('Gestionarlas'), 'se vuelve a la gestión');
+await esperarTexto(/plantilla/i);
+ok(await pulsar('Acciones de Push — Copia'), 'se abre el menú de la copia');
+ok(await pulsar('Eliminar'), 'se pulsa eliminar (apartado 8)');
+const confirma_fit4 = await esperarTexto(/¿Eliminar esta plantilla\?/i);
+ok(/¿Eliminar esta plantilla\?/i.test(confirma_fit4),
+  '🚨 FIT F4 — y NO se borra de golpe: pregunta antes (apartado 8)');
+ok(/Eliminados recientes/i.test(confirma_fit4),
+  '🚨 FIT F4 — diciendo que se recupera, porque va a la papelera: prometer lo contrario sería mentir (E3 F26)');
+ok(!/no se puede deshacer|para siempre/i.test(confirma_fit4),
+  '⚠️ …y sin prometer que es definitivo');
+ok(await pulsar('Cancelar'), 'se cancela');
+await page.waitForTimeout(400);
+ok(!/¿Eliminar esta plantilla\?/i.test(await ver()), '…y no pasa nada (apartado 25)');
+const antesBorrar_fit4 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.plantillas || []).length;
+ok(antesBorrar_fit4 === 2, '…la copia sigue ahí');
+
+ok(await pulsar('Eliminar'), 'se vuelve a pulsar eliminar');
+await esperarTexto(/¿Eliminar esta plantilla\?/i);
+ok(await pulsar('Confirmar eliminar Push — Copia'), 'y esta vez se confirma');
+await page.waitForTimeout(800);
+const trasBorrar_fit4 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.plantillas || [];
+ok(trasBorrar_fit4.length === 1, '🚨 FIT F4 — la plantilla se va de verdad de `app_data`');
+ok(!trasBorrar_fit4.some((p) => /Copia/.test(p.nombre)), '…y es la que se eligió');
+const papelera_fit4 = guardado.filter((g) => g && g.key === 'papelera').at(-1)?.value?.elementos || [];
+ok(papelera_fit4.some((e) => e.modulo === 'fitness' && e.coleccion === 'plantillas'),
+  '🚨 FIT F4 — y aparece en Eliminados recientes, como prometía el aviso');
+ok(!/Copia/i.test(await ver()), '…y desaparece de la lista (apartado 8)');
+
+/* Y a 375 px no se desborda, con el menú abierto (apartado 21). */
+const desborde_fit4 = await page.evaluate(() => ({
+  ancho: document.documentElement.scrollWidth, ventana: window.innerWidth,
+}));
+ok(desborde_fit4.ancho <= desborde_fit4.ventana + 1,
+  `🚨 FIT F4 — a 375 px Tus plantillas no se desborda de lado (${desborde_fit4.ancho} vs ${desborde_fit4.ventana})`);
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

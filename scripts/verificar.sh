@@ -911,6 +911,16 @@ else
   fallo "Falla el constructor de entrenamientos"; grep '✗' /tmp/jc_constructor.log
 fi
 
+# FIT F4 — la gestión de plantillas propias. Lo que más se vigila es el apartado
+# 7, que el enunciado pide comprobar EXPLÍCITAMENTE: editar la copia no puede
+# tocar el original — y para eso cada LÍNEA necesita su propio id, no solo el
+# plan.
+if node --import ./scripts/resolver-vite.mjs scripts/test-plantillas.mjs >/tmp/jc_plantillas.log 2>&1; then
+  ok "Tus plantillas (FIT F4) — $(grep -c '✓' /tmp/jc_plantillas.log) comprobaciones"
+else
+  fallo "Falla la gestión de plantillas"; grep '✗' /tmp/jc_plantillas.log
+fi
+
 # SC F1 — scroll, cabeceras fijas y el acordeón que dejaba un hueco en el iPhone.
 # Los tres los reportó Josué usando la aplicación, y los tres tenían una causa
 # real: la cabecera no era `sticky`, la banda no existía y al elemento de rejilla

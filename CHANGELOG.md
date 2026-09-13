@@ -1,5 +1,72 @@
 # CHANGELOG.md
 
+## v3.86.0 — FIT F4/45: Tus plantillas, con todo funcionando de verdad
+
+El objetivo lo dice en una línea: *"No quiero simplemente una lista visual. Todas las acciones deben
+funcionar realmente y persistir los cambios"*. Y el criterio de finalización lo remata: **Crear →
+Guardar → Ver → Editar → Duplicar → Eliminar**, real y persistente.
+
+### 🚨 Lo que ya existía, y era casi todo
+
+El apartado 2 pide reutilizar en vez de crear modelos duplicados, y aquí había que decirlo claro:
+**`UserTemplate` ES `fitness.plantillas`**, de la F1, donde la F3 ya guarda. Un modelo nuevo al lado
+habría dejado **lo que Josué ya se ha construido invisible en la pantalla que se llama «Tus
+plantillas»** — el fallo de la E3 F16, la E3 F36 y la E3 F41 por quinta vez.
+
+Y **el ida y vuelta con el constructor ya era bidireccional** (apartado 23): `planARutina()` y
+`rutinaAPlan()` son de la F3, y `guardarRutina()` sustituye por id. *"No crear un segundo constructor
+paralelo"* no hubo que programarlo: no había dónde meterlo.
+
+### Lo que sí añade esta fase
+
+- **Ver**: la tarjeta con su icono del grupo dominante —derivado, no una imagen inventada—, el
+  entorno, los ejercicios, la duración y *«Editado hace 2 días»*, que es el ejemplo literal del
+  apartado 3.
+- **Buscar** por nombre sin acentos ni mayúsculas, **filtrar** por entorno con su recuento por
+  pastilla, y **ordenar** por recientes / antiguas / A-Z / Z-A.
+- **El detalle**: cabecera, descripción, distribución muscular y los ejercicios con sus series, su
+  descanso y su músculo principal.
+- **Duplicar**, con la copia **completamente independiente**.
+- **Eliminar**, con confirmación de verdad.
+
+### 🚨 Duplicar: el id nuevo no bastaba
+
+El apartado 7 pide comprobarlo **explícitamente**: *"cualquier modificación posterior de la copia NO
+debe modificar la original"*. Con un id nuevo solo para el plan no habría llegado: **si las líneas
+comparten id, editar una serie en la copia edita la del original**. Cada línea estrena el suyo, y hay
+una comprobación en Node y otra en Chromium que lo miden línea a línea.
+
+### 🚨 Eliminar va a la papelera, y por eso el aviso no miente
+
+En JosStyle **toda lista que se puede borrar va a `CATALOGO_PAPELERA`** (EH F45): sin esa línea, la
+plantilla se borraría para siempre. Así que va a *Eliminados recientes* y el aviso **lo dice** —
+prometer un borrado definitivo de algo que vuelve es mentir en pantalla (E3 F26).
+
+⚠️ Y eso obligó a meter `fitness` en `MODULOS_PAPELERA` **y en `snapshotAndSave`**, que no lo
+conocía: sin esa segunda línea el borrado no habría guardado nada y la pantalla se habría pintado
+perfecta.
+
+### Lo que el enunciado nombra y no se puede construir
+
+- **El «objetivo» de una plantilla** (apartados 3 y 9): el apartado 6 enumera **todo** lo editable
+  —nombre, descripción, entorno, ejercicios, orden, series, repeticiones, rangos, duración
+  isométrica, peso, descanso y notas— y el objetivo no está. Un campo que nadie puede rellenar es
+  media función (regla 8), así que está declarado en `SIN_OBJETIVO` con su motivo.
+- **«Empezar entrenamiento»** (apartado 19): el propio enunciado lo autoriza — *"Si esto genera una
+  acción muerta, es preferible NO mostrar todavía el botón"*. El motor es la FIT F7.
+
+### Y las fechas van en el modelo, no en la librería
+
+`creadoEn` y `editadoEn` se añaden a `crearWorkoutPlan`, en `fitness.js`: `App.jsx` normaliza
+`fitness` en cada carga, así que un campo que ese modelo no conozca se lo lleva el siguiente guardado
+(regla 5). ⚠️ Nacen **vacías**, y lo guardado antes de la F4 no tiene fecha: la pantalla se calla en
+vez de decir *«Editado hace 20 000 días»*.
+
+**Archivos:** `src/lib/plantillas.js`, `src/views/PlantillasView.jsx` y
+`scripts/test-plantillas.mjs` (nuevos, 92 comprobaciones), más las fechas en `src/lib/fitness.js`,
+el sellado en `src/lib/constructor.js`, la entrada en `src/lib/papelera.js`, la papelera y el
+deshacer en `src/App.jsx` y el enganche en `src/views/FitnessView.jsx`.
+
 ## v3.85.0 — FIT F3/45: el constructor de entrenamientos
 
 La tercera de las cuarenta y cinco, y la primera en la que Fitness **hace** algo en vez de

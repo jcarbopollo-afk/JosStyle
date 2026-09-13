@@ -2,6 +2,25 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.86.0 — FIT F4/45: Tus plantillas):** La gestión completa de lo que se
+> construye: ver, buscar por nombre, filtrar por entorno con su recuento, ordenar (recientes /
+> antiguas / A-Z / Z-A), el detalle con su distribución muscular y sus ejercicios, duplicar y
+> eliminar. 🚨 **Lo que ya existía era casi todo** (apartado 2): `UserTemplate` **ES**
+> `fitness.plantillas`, de la F1, y el ida y vuelta con el constructor ya era bidireccional por
+> `planARutina` y `rutinaAPlan`, de la F3 — un modelo nuevo al lado habría dejado lo suyo invisible
+> en la pantalla que lo enseña, por quinta vez. 🚨 **Duplicar: el id nuevo no bastaba** — el apartado
+> 7 pide comprobar explícitamente que editar la copia no toque el original, y **con las líneas
+> compartiendo id, editar una serie en la copia editaría la del original**; cada línea estrena el
+> suyo. 🚨 **Eliminar va a la papelera** (`CATALOGO_PAPELERA`, EH F45), y por eso el aviso dice que se
+> recupera en vez de prometer un borrado definitivo (E3 F26) — ⚠️ y eso obligó a meter `fitness` en
+> `MODULOS_PAPELERA` **y en `snapshotAndSave`**, que no lo conocía: sin esa segunda línea el borrado
+> no habría guardado nada con la pantalla pintándose perfecta. **Lo que el enunciado nombra y no se
+> puede construir, declarado con su motivo:** el «objetivo» de una plantilla —el apartado 6 enumera
+> todo lo editable y no está— y «Empezar entrenamiento», que el apartado 19 prefiere no enseñar a
+> enseñar muerto. Y `creadoEn`/`editadoEn` van **en `crearWorkoutPlan`**, no en la librería nueva:
+> `App.jsx` normaliza `fitness` en cada carga (regla 5). Archivos nuevos: `src/lib/plantillas.js`,
+> `src/views/PlantillasView.jsx` y `scripts/test-plantillas.mjs` (92 comprobaciones).
+
 > **🏋️ ACTUALIZACIÓN (v3.85.0 — FIT F3/45: el constructor de entrenamientos):** La tercera de las
 > cuarenta y cinco, y la primera en la que Fitness **hace** algo: el flujo entero del objetivo
 > —*"Entrenamiento → Crear entrenamiento → Añadir ejercicio → Configurar → Ordenar → Guardar"*—

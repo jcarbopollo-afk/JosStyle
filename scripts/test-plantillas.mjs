@@ -101,7 +101,12 @@ ok(textoEditado({ editadoEn: HOY }, HOY) === 'Editado hoy', 'Hoy se dice «Edita
 ok(textoEditado({ editadoEn: '2026-09-12' }, HOY) === 'Editado ayer', '…y ayer, «Editado ayer»');
 ok(textoEditado({}, HOY) === '',
   '⚠️ Y sin fecha no se inventa ninguna: no se dice nada (regla 8)');
-ok(!/hace \$\{.*\} min|minutos/.test(LIB),
+/* 🐛 Y la vigésima quinta vez de la lección: esto barría el ARCHIVO buscando
+   «minutos», y la cabecera de la librería nombra «hace 20 min» justamente para
+   prometer que no está. Se comprueba **lo que sale**, no lo que se escribe. */
+ok(![HOY, '2026-09-12', '2026-09-01', '2025-01-01']
+  .map((f) => textoEditado({ editadoEn: f }, HOY))
+  .some((t) => /min|hora|segundo/i.test(t)),
   '⚠️ Nunca «hace 20 min»: lo guardado es el día, sin hora (E3 F22)');
 ok(grupoDominante(PUSH)?.nombre, 'El grupo dominante sale de la propia rutina, no de una foto');
 ok(fichaDePlantilla(null) === null, 'Una plantilla que no existe devuelve nada, sin reventar');

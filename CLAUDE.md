@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.85.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.86.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -22,8 +22,8 @@ para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
 construye de la F1 a la F45**. Hechas la **F1 (fundación arquitectónica, v3.83.0)**, la
-**F2 (el catálogo maestro de ejercicios, v3.84.0)** y la **F3 (el constructor de entrenamientos,
-v3.85.0)**.
+**F2 (el catálogo maestro de ejercicios, v3.84.0)**, la **F3 (el constructor de entrenamientos,
+v3.85.0)** y la **F4 (Tus plantillas, v3.86.0)**.
 
 🚨 **Y la lección de la F1, que vale para las 44 que quedan: ENTRENAMIENTO YA EXISTÍA, y no era una
 cosa, eran tres.** El módulo es `entreno` + `calistenia` desde la Fase 2; **las fotos de progreso son
@@ -44,7 +44,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 42 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 41 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -322,7 +322,33 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 | **SF F1** | 🍎 El **barrido de Safari** (ésta no la pidió él: sale de la SC F1) | ✅ **v3.82.0** |
 
 🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, con la **FIT F1 (v3.83.0)**, la **FIT F2
-(v3.84.0)** y la **FIT F3 (v3.85.0)** hechas. Lo que dejaron, y que vale para las 42 que quedan:
+(v3.84.0)**, la **FIT F3 (v3.85.0)** y la **FIT F4 (v3.86.0)** hechas. Lo que dejaron, y que vale
+para las 41 que quedan:
+
+- 🚨 **`UserTemplate` ES `fitness.plantillas`, Y EL IDA Y VUELTA CON EL CONSTRUCTOR YA ERA
+  BIDIRECCIONAL** (FIT F4, apartado 2, y es la lección más repetida del proyecto por quinta vez en
+  esta entrega). Un modelo de plantilla nuevo al lado habría dejado **lo que Josué ya se ha
+  construido invisible en la pantalla que se llama «Tus plantillas»**. Lo que faltaba era la
+  gestión, no la arquitectura.
+- 🚨 **DUPLICAR ALGO EXIGE UN ID NUEVO POR CADA PIEZA, NO SOLO PARA EL PADRE** (FIT F4, apartado 7,
+  que pide comprobarlo **explícitamente**): con las líneas compartiendo id, editar una serie en la
+  copia **edita la del original**. Hay una comprobación en Node y otra en Chromium que lo miden
+  línea a línea.
+- 🚨 **UNA LISTA NUEVA EN LA PAPELERA NO ES UNA LÍNEA, SON TRES** (FIT F4): la entrada en
+  `CATALOGO_PAPELERA`, el módulo en `MODULOS_PAPELERA` **y su `if` en `snapshotAndSave`**. Sin el
+  tercero el borrado **no guarda nada** y la pantalla se pinta perfecta — `snapshotAndSave` solo
+  escribe lo que conoce, y no conocía `fitness`.
+- ⚠️ **UN CAMPO QUE EL ENUNCIADO ENSEÑA Y NO DEJA EDITAR EN NINGUNA PARTE NO SE CONSTRUYE** (FIT F4):
+  los apartados 3 y 9 pintan el «objetivo» de una plantilla y el 6, que enumera **todo** lo editable,
+  no lo incluye. Va a `SIN_OBJETIVO` con su motivo, como el *"1 entrega pendiente"* de la E3 F43.
+- ⚠️ **Y UN BOTÓN QUE SERÍA UNA ACCIÓN MUERTA NO SE PINTA, Y EL PROPIO ENUNCIADO LO AUTORIZA**
+  (FIT F4, apartado 19): *"Si esto genera una acción muerta, es preferible NO mostrar todavía el
+  botón"*. «Empezar entrenamiento» llega con el motor, en la FIT F7.
+- 🐛 **`GhostBtn` NO REPARTE `aria-label`** (FIT F4, y es el `disabled` de Ajustes · Perfil otra vez):
+  la confirmación de borrado necesitaba uno propio para no llamarse «Eliminar» igual que el botón del
+  menú —dos nombres iguales en la misma pantalla, el fallo de la E3 F30—, así que ese va como
+  `<button>` crudo. **Antes de pasarle una prop a un componente de `ui.jsx`, comprobar que la
+  acepta.**
 
 - 🚨 **LO QUE CONSTRUYE JOSUÉ SON PLANTILLAS, NO PLANES** (FIT F3, y lo dejó escrito la F1). El
   constructor guardaba en `fitness.planes` hasta que se leyó el enunciado de la F4 y, sobre todo, el
@@ -540,13 +566,14 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F4/45 — gestión de entrenamientos y plantillas propias** (líneas
-   31 018–31 492 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). **Ya no hay que esperar a que
-   él pase nada**: la Entrega 4 está entera encima de la mesa y se construye de la F1 a la F45, en
-   orden, encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
-   ⚠️ **Y lo primero de esa fase es mirar lo que ya hay**: `guardarRutina`, `abrirParaEditar` y la
-   lista de rutinas de «Tu Plan» son de la F3, y `plantillas` es una clave de `DEFAULT_FITNESS`
-   desde la F1.
+1. 🏋️ **SEGUIR POR LA FIT F5/45 — la biblioteca de planificaciones** (líneas 30 514–31 017 de
+   `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). **Ya no hay que esperar a que él pase nada**:
+   la Entrega 4 está entera encima de la mesa y se construye de la F1 a la F45, en orden,
+   encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+   ⚠️ **Y lo primero de esa fase es mirar lo que ya hay**: `fitness.planes` existe desde la F1 y
+   **está vacía a propósito** —es justo la biblioteca de esta fase—, mientras que lo que se crea
+   Josué vive en `fitness.plantillas`. Las dos son `WorkoutPlan`, así que la pantalla, el detalle y
+   el duplicado de la F4 ya saben leerlas.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

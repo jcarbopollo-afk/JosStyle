@@ -24,7 +24,7 @@ ordena es **el trabajo**, no el documento.
 | **F1** ✅ **v3.83.0** | Fundación arquitectónica del módulo fitness | 32639–33252 | 614 |
 | **F2** ✅ **v3.84.0** | Sistema y catálogo maestro de ejercicios | 32042–32638 | 597 |
 | **F3** ✅ **v3.85.0** | Constructor de entrenamientos | 31493–32041 | 549 |
-| **F4** | Gestión de entrenamientos y plantillas propias | 31018–31492 | 475 |
+| **F4** ✅ **v3.86.0** | Gestión de entrenamientos y plantillas propias | 31018–31492 | 475 |
 | **F5** | Biblioteca de planificaciones | 30514–31017 | 504 |
 | **F6** | Tu plan | 29737–30513 | 777 |
 | **F7** | Motor de entrenamiento en vivo | 29053–29736 | 684 |
@@ -164,3 +164,17 @@ hay que respetar a partir de aquí:
   `bloques` en la rutina. La interfaz la traerá quien la necesite.
 - ⚠️ **El borrador es de `localStorage` y cada acceso va en `try`** (SF F1). Y se **ofrece** al
   volver, nunca se recupera solo.
+
+## ✅ Lo que dejó la F4 (v3.86.0)
+
+- 🚨 **`UserTemplate` es `fitness.plantillas`**, de la F1. Ninguna fase futura crea un modelo de
+  plantilla nuevo.
+- 🚨 **Duplicar exige un id nuevo POR LÍNEA**, no solo para el plan: con el mismo, editar la copia
+  edita el original. El apartado 7 pide comprobarlo explícitamente, y se comprueba.
+- 🚨 **Eliminar una plantilla va a la papelera** (`CATALOGO_PAPELERA['fitness.plantillas']`), y por
+  eso el aviso promete que se recupera. ⚠️ `fitness` está ahora en `MODULOS_PAPELERA` **y** en
+  `snapshotAndSave`: sin lo segundo, el borrado no guardaría nada.
+- ⚠️ **`creadoEn` y `editadoEn` viven en `crearWorkoutPlan`**, no en `plantillas.js` (regla 5), y
+  nacen vacías: a lo guardado antes no se le inventa una fecha.
+- ⚠️ **La ficha de una plantilla se deriva entera** (`fichaDePlantilla`): duración, distribución,
+  número de ejercicios y el icono del grupo dominante. Ni un dato guardado por duplicado.
