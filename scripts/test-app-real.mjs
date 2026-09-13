@@ -5231,4 +5231,114 @@ const ge2_trasRecarga = await ver();
 ok(/Mates/.test(ge2_trasRecarga) && !/Pesas/.test(ge2_trasRecarga),
   'GE F2 - C) RECARGA: y sigue viendose solo lo del horario activo');
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   DIST F2 — LA AUDITORÍA: VOLVER ATRÁS Y EL ANCHO DE UN iPHONE
+   ═══════════════════════════════════════════════════════════════════════════
+
+   🚨 Lo que las pruebas de Node NO pueden decir. Ellas leen los catálogos y
+   demuestran que la navegación está bien **escrita**; esto demuestra que se
+   puede **andar** por ella con el dedo y que cabe en 375 px, que es el iPhone
+   de Josué. Es la lección de la E3 F30 (un renombrado a medias que solo vio
+   Chromium) y la de GE F1 (nadie medía el ancho, y la pantalla se arrastraba).
+
+   Josué: *"No conviertas las nuevas agrupaciones en callejones sin salida"* y
+   *"La cuadrícula de módulos debe mantenerse limpia, no desbordarse."* */
+await page.setViewportSize({ width: 375, height: 812 });
+almacen.productividad = { tareas: [], habitos: [], rutinas: [], rutinaEjecuciones: [], metas: [], pomodoros: {}, pomodoroSesiones: [], apuntes: [] };
+almacen.horarioTop = null;
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+const desbordaAncho = () => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
+
+/* ── 1 · Las cinco pestañas caben y se leen ───────────────────────────────── */
+const barra_d2 = await page.evaluate(() => {
+  const nav = document.querySelector('nav');
+  if (!nav) return null;
+  const botones = [...nav.querySelectorAll('button')];
+  return {
+    cuantos: botones.length,
+    rotulos: botones.map((b) => (b.innerText || '').trim()),
+    // ¿Alguno se sale de su hueco? Eso es un rótulo cortado.
+    cortados: botones.filter((b) => b.scrollWidth > b.clientWidth + 1).map((b) => (b.innerText || '').trim()),
+  };
+});
+ok(barra_d2?.cuantos === 5, `🚨 DIST F2 — CINCO pestañas en la barra, ni una más (${barra_d2?.cuantos})`);
+ok(['Inicio', 'Bienestar', 'Vida', 'Gestión', 'Ajustes'].every((t) => barra_d2.rotulos.includes(t)),
+  `🚨 …y son las que pidió Josué: ${JSON.stringify(barra_d2?.rotulos)}`);
+ok((barra_d2?.cortados || []).length === 0,
+  `🚨 …y ninguna se corta a 375 px${(barra_d2?.cortados || []).length ? ` — ${JSON.stringify(barra_d2.cortados)}` : ''}`);
+ok(!(await desbordaAncho()), '⚠️ …y la portada no se arrastra a lo ancho');
+
+/* ── 2 · Las tres cuadrículas de área, a 375 px ───────────────────────────── */
+for (const area of ['Bienestar', 'Vida', 'Gestión']) {
+  ok(await pulsar(area), `se entra en ${area} a 375 px`);
+  await page.waitForTimeout(700);
+  ok(!(await desbordaAncho()), `🚨 …y la cuadrícula de ${area} NO desborda a lo ancho`);
+  /* ⚠️ Y las tarjetas se alinean en columnas: si una midiera distinto que las
+     demás, la rejilla estaría rota aunque no desbordara. */
+  const anchos = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll('.hub-card')];
+    return cards.map((c) => Math.round(c.getBoundingClientRect().width));
+  });
+  ok(anchos.length >= 4 && new Set(anchos).size <= 2,
+    `⚠️ …y sus tarjetas miden igual (${JSON.stringify([...new Set(anchos)])})`);
+}
+
+/* ── 3 · Volver atrás: sección → módulo → submódulo → y de vuelta ─────────── */
+/* 🚨 La jerarquía que pidió Josué, andada entera. Un submódulo que no sabe
+   volver a su agrupador es el callejón sin salida que él prohíbe. */
+ok(await pulsar('Organización'), '🚨 DIST F2 — Gestión → Organización');
+await esperarTexto(/Calendario/i);
+ok(await pulsar('Horario'), '…→ Horario (tercer nivel)');
+await page.waitForTimeout(700);
+ok(await pulsar('Organización'), '🚨 …y el volver devuelve a ORGANIZACIÓN, no al área');
+const orgVuelta_d2 = await esperarTexto(/Calendario/i);
+ok(/Tareas/i.test(orgVuelta_d2) && /Horario/i.test(orgVuelta_d2),
+  '⚠️ …con sus tres cosas otra vez a la vista');
+ok(await pulsar('Gestión'), '🚨 …y desde Organización se vuelve a GESTIÓN');
+const gesVuelta_d2 = await esperarTexto(/Econom[ií]a/i);
+ok(/Organizaci[oó]n/i.test(gesVuelta_d2) && /Progreso/i.test(gesVuelta_d2),
+  '⚠️ …que sigue entera: ni un módulo se ha perdido por el camino');
+
+/* Y lo mismo en Mente, que es la otra agrupadora. */
+ok(await pulsar('Vida'), 'se entra en Vida');
+ok(await pulsar('Mente'), '🚨 Vida → Mente');
+await esperarTexto(/Bienestar digital/i);
+ok(!(await desbordaAncho()), '⚠️ …y Mente tampoco desborda a 375 px');
+ok(await pulsar('Fe'), '…→ Fe (tercer nivel)');
+await page.waitForTimeout(700);
+ok(await pulsar('Mente'), '🚨 …y el volver devuelve a MENTE');
+await esperarTexto(/Relaci[oó]n/i);
+ok(await pulsar('Vida'), '🚨 …y de Mente se vuelve a VIDA');
+await esperarTexto(/Estudios/i);
+
+/* ── 4 · Ajustes conserva TODAS sus categorías ────────────────────────────── */
+/* Josué: *"Comprueba que todas las opciones que existían anteriormente dentro
+   de Ajustes sigan accesibles."* */
+ok(await pulsar('Ajustes'), '🚨 DIST F2 — Ajustes se abre de un toque desde la barra');
+const aj_d2 = await esperarTexto(/Apariencia/i);
+for (const cat of [/Perfil/, /Apariencia/, /Preferencias generales/, /Notificaciones/, /Seguridad/, /Integraciones/]) {
+  ok(cat.test(aj_d2), `⚠️ …y conserva ${cat.source}`);
+}
+ok(!(await desbordaAncho()), '⚠️ …y Ajustes tampoco desborda a 375 px');
+
+/* ── 5 · Ningún nombre retirado se lee por ninguna parte ──────────────────── */
+/* 🚨 Josué: *"No debe quedar ninguna referencia visible a «Estilo de hombre»"*.
+   Se barren las pantallas por las que se acaba de pasar. */
+const barrido_d2 = [];
+for (const [area, modulo] of [['Bienestar', 'Imagen personal'], ['Bienestar', 'Salud física'], ['Gestión', 'Progreso']]) {
+  await pulsar(area);
+  await pulsar(modulo);
+  await page.waitForTimeout(800);
+  barrido_d2.push(await ver());
+}
+const todo_d2 = barrido_d2.join(' ');
+ok(!/Estilo de hombre/i.test(todo_d2),
+  '🚨 DIST F2 — «Estilo de hombre» NO se lee en ninguna de las pantallas visitadas');
+ok(!/Mi salud/i.test(todo_d2), '🏷️ …ni «Mi salud»: el módulo es «Salud física»');
+ok(!/\bNúmeros\b/.test(todo_d2), '🏷️ …ni «Números»: el apartado es «Progreso»');
+
+await page.setViewportSize({ width: 1280, height: 900 });
+
 await salir(browser);

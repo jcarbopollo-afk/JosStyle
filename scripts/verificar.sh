@@ -866,6 +866,14 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# DIST F2 — la auditoría de la reorganización: la aplicación se mide contra el
+# árbol que escribió Josué, no solo contra sí misma.
+if node --import ./scripts/resolver-vite.mjs scripts/test-auditoria-dist.mjs >/tmp/jc_auditdist.log 2>&1; then
+  ok "Auditoría de la reorganización (DIST F2) — $(grep -c '✓' /tmp/jc_auditdist.log) comprobaciones"
+else
+  fallo "Falla la auditoría de la reorganización"; grep '✗' /tmp/jc_auditdist.log
+fi
+
 # AS F2 — quitar no es eliminar: los usos en los DOS módulos antes de borrar.
 if node --import ./scripts/resolver-vite.mjs scripts/test-usos-asignatura.mjs >/tmp/jc_usosasig.log 2>&1; then
   ok "Usos y eliminación de asignaturas (AS F2) — $(grep -c '✓' /tmp/jc_usosasig.log) comprobaciones"
