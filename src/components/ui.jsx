@@ -27,6 +27,10 @@ export function Card({ children, style, className = '', id }) {
         border: `1px solid ${COLORS.borderAlpha || COLORS.border}`,
         boxShadow: COLORS.cardShadow && COLORS.cardShadow !== 'none' ? COLORS.cardShadow : undefined,
         backdropFilter: COLORS.surfaceAlpha && COLORS.surfaceAlpha !== COLORS.surface ? 'blur(12px)' : undefined,
+        // 🚨 SF F1 — sin la versión con prefijo, un iPhone con iOS anterior al 18 NO aplica el
+        // desenfoque: la tarjeta se queda plana sobre la foto de fondo y el texto pierde
+        // legibilidad. `HubView` ya lo llevaba desde la Fase N4; aquí faltaba.
+        WebkitBackdropFilter: COLORS.surfaceAlpha && COLORS.surfaceAlpha !== COLORS.surface ? 'blur(12px)' : undefined,
         ...style,
       }}
     >
@@ -779,7 +783,7 @@ export function SuggestionsButton({ accent, buildPrompt, lado = 'izquierda' }) {
       <button
         onClick={() => setOpen((o) => !o)}
         className="toque-44 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
-        style={{ background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: 'blur(8px)' }}
+        style={{ background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         aria-expanded={open}
         aria-label="Sugerencias de la IA"
       >

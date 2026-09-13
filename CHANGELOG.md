@@ -1,5 +1,61 @@
 # CHANGELOG.md
 
+## v3.82.0 — SF F1: el barrido de Safari, y la lupa que nunca estuvo fija
+
+Esta fase no la pidió Josué: **sale de lo que enseñó la SC F1**, y de la pregunta incómoda que dejó.
+
+🚨 **EL CUADRADO VACÍO DEL ACORDEÓN LLEVABA AHÍ DESDE LA v1.21.0 Y NINGUNA DE LAS 19 578
+COMPROBACIONES PODÍA VERLO**, porque todas —build, renderizado y recorrido— corren en **Chromium**, y
+la aplicación **solo se usa en un iPhone**. Todo lo que los dos navegadores resuelven distinto sale
+verde en la verificación y mal en su pantalla. Así que esto es buscar **más casos de esa familia**
+antes de que los encuentre él.
+
+### 🚨 Y apareció uno mucho peor: LOS DOS ACCESOS DE ARRIBA NUNCA HAN ESTADO FIJOS
+
+La lupa y el botón de sugerencias se declaran `className="accion-superior toque-44 fixed z-30"`. La
+clase `.toque-44` —la que amplía el área táctil a 44 px, de la E3 F1— declaraba `position: relative`.
+**Misma especificidad que la utilidad `fixed`, y esta hoja va después**, así que ganaba ella. Desde
+la E3 F1:
+
+- los dos botones **se iban con el scroll** — que es literalmente lo que Josué escribió: *"el icono
+  de Buscar… no desaparezca al hacer scroll"*;
+- y al estar en el flujo **ocupaban 36 px que empujaban hacia abajo el contenido de todas las
+  pantallas**.
+
+⚠️ **Y la lección más cara del día: un `className` no es una prueba de nada.** Leí `fixed` en el
+código y escribí en la propia librería de la SC F1 que la lupa *"ya estaba fija, no se toca"*. Lo
+destapó **medirlo**: `getComputedStyle(lupa).position` devolvía `relative`, y al desplazar 169 px su
+posición pasaba de 14 a −155. Él lo estaba viendo en su pantalla y yo lo estaba descartando leyendo
+el fuente. El arreglo es `:where(.toque-44)`, que tiene especificidad cero: sigue dando el ancestro
+posicionado que necesita el pseudoelemento de 44 px y deja de pisar a quien declara su posición.
+
+### Los otros tres hallazgos
+
+- 🚨 **`backdrop-filter` sin `-webkit-` en siete de ocho sitios.** En un iPhone con iOS anterior al
+  18 **no hay desenfoque**: la barra inferior, la lupa, el botón de sugerencias, la `Card` que usa
+  media aplicación y dos paneles de Ajustes se ven como un bloque plano. ⚠️ Y el proyecto **ya lo
+  sabía**: `HubView.jsx` lo lleva desde la Fase N4 con un comentario que lo explica. Estaba en uno de
+  los ocho. Ahora hay una **regla invariante** que caza al siguiente.
+- 🚨 **`min-height: 100vh` en la raíz.** En Safari de iOS `100vh` no es la altura visible —incluye lo
+  que tapan las barras del navegador—, así que la página se podía arrastrar dejando una franja vacía.
+  Pasa a `100dvh` **con `100vh` delante como respaldo**, y ⚠️ **se muda a `index.css`**: en un objeto
+  de estilo de React dos claves iguales **no son un respaldo**, la segunda borra a la primera. El
+  respaldo solo existe de verdad en CSS.
+- 🚨 **`localStorage.setItem` sin `try` en el emisor de avisos.** En una ventana privada de Safari
+  **lanza**, y esa escritura va antes de mandar el aviso: no es que se perdiera la marca, **es que no
+  llegaba el aviso**. ⚠️ Comprobar que `localStorage` EXISTE no es comprobar que DEJA escribir — y el
+  mismo proyecto ya lo tenía bien hecho en `horarioEstructura.js` desde HT F4.
+
+### Y lo que se miró y NO se toca, declarado
+
+`.at(-1)` (Safari 15.4) y `gap` en flex (Safari 14.1) se quedan: cambiarlos haría el código peor a
+cambio de nada. Las fechas ya usan todas `new Date(\`${'${iso}'}T00:00:00\`)`, que es la forma que Safari
+acepta. La Notification API ya estaba guardada. **Sin esa lista, la siguiente sesión vuelve a barrer
+lo mismo.**
+
+⏸ **Lo que esto NO demuestra**, y es la pescadilla: que los arreglos se vean bien **en Safari**. La
+verificación corre en el único navegador donde ninguno de los cuatro fallaba.
+
 ## v3.81.0 — NAVO F1: atrás vuelve de donde viniste, no al área del módulo
 
 > *"Si entro desde Inicio a una funcionalidad, por ejemplo Tareas o Productividad, y después pulso

@@ -51,13 +51,13 @@ export const CAPAS_SUPERIORES = [
     que: 'La lupa de buscar',
     comoSeQuedaQuieto: 'fixed',
     z: 30,
-    nota: 'YA estaba fija desde la BI F2: no se ha cambiado ni su posición, ni su función, ni su diseño, que es lo que él pidió. Lo que fallaba es que no había nada detrás, así que las tarjetas asomaban por debajo al desplazarse y parecía que se movía o que estaba cortada.',
+    nota: 'Se declaraba `fixed` desde la BI F2 y NO LO ERA: la clase `.toque-44` de index.css le ponía `position: relative` y le ganaba por orden en la hoja. Se iba con el scroll, que es literalmente lo que él reportó. Su función y su diseño no se tocan; lo que se arregla es la regla que la pisaba.',
   },
   {
     que: 'El botón de sugerencias de la IA',
     comoSeQuedaQuieto: 'fixed',
     z: 30,
-    nota: 'Es otra cosa distinta de la lupa y sigue siéndolo (apartado 2: "no interfiera con el botón de la Guía"). Ni se toca.',
+    nota: 'Tenía el mismo fallo y por el mismo motivo, porque comparte la clase `.toque-44`. Sigue siendo otra cosa distinta de la lupa (apartado 2: "no interfiera con el botón de la Guía"): lo único que cambia es que ahora los dos se quedan donde dicen que se quedan.',
   },
   {
     que: 'La cabecera del área (ÁREA / Vida)',
@@ -70,6 +70,41 @@ export const CAPAS_SUPERIORES = [
 /** El z-index de la banda pegada. Nunca igual o mayor que el de los dos botones. */
 export const Z_CABECERA = 20;
 export const Z_ACCESOS_FIJOS = 30;
+
+/* ---------------------------------------------------------------------------
+   🚨 EL HALLAZGO GORDO DE ESTA FASE, Y NO ESTABA EN EL ENUNCIADO.
+
+   Josué escribió *"el icono de Buscar… no desaparezca al hacer scroll"*, y al
+   leerlo di por hecho que ya estaba fijo: lo pone su `className`
+   (`accion-superior toque-44 fixed z-30`). **No lo estaba.**
+
+   `.toque-44` —la clase que amplía el área táctil a 44 px, de la E3 F1— declaraba
+   `position: relative`. Las dos reglas tienen la misma especificidad (una clase),
+   así que **gana la que va después en la hoja, y `index.css` va después de las
+   utilidades de Tailwind**. Resultado: desde la E3 F1, los DOS accesos de arriba
+   se han desplazado con la página. Y además, al estar en el flujo, ocupaban 36 px
+   que empujaban hacia abajo todo el contenido de todas las pantallas.
+
+   ⚠️ **MEDIDO, NO SUPUESTO**, que es lo único que lo sacó a la luz:
+   `getComputedStyle(lupa).position` devolvía `relative`, y al desplazar 169 px su
+   posición pasaba de 14 a −155. La clase decía una cosa y el navegador hacía otra.
+
+   🚨 **Y LA LECCIÓN, QUE ES LA MÁS CARA DE HOY: UN `className` NO ES UNA PRUEBA DE
+   NADA.** Leí `fixed` en el código y escribí *"ya estaba fija, no se toca"* en
+   esta misma librería. Lo que dice el atributo y lo que calcula el navegador son
+   dos cosas distintas, y la única forma de saber cuál gana es **preguntárselo al
+   navegador**. Él lo estaba viendo en su pantalla y yo lo estaba descartando
+   leyendo el fuente.
+   --------------------------------------------------------------------------- */
+export const FIXED_QUE_NO_LO_ERA = {
+  cuantoLlevaba: 'Desde la E3 F1, cuando nació `.toque-44`',
+  quienLoPisaba: '.toque-44 { position: relative }',
+  porque: 'Misma especificidad que la utilidad `fixed` de Tailwind, y esta hoja se aplica después.',
+  seVeiaAsi: 'Los dos accesos de arriba se iban con el scroll, y su hueco de 36 px empujaba hacia abajo el contenido de TODAS las pantallas.',
+  arreglo: ':where(.toque-44), que tiene especificidad cero: sigue dando el ancestro posicionado que necesita el pseudoelemento de 44 px, y deja de pisar a quien declara su propia posición.',
+  loQueNoSeHizo: 'Tocar el `className` de las vistas. El fallo estaba en la hoja, así que se arregla ahí una vez, para los dos botones y para el que venga.',
+  loQueLoDestapo: 'Medirlo en el navegador. Leyendo el código parecía correcto, y de hecho esta misma librería llegó a afirmar que la lupa "ya estaba fija".',
+};
 
 /* ---------------------------------------------------------------------------
    3 · POR QUÉ LA BANDA SE SALE DE SU CAJA.

@@ -1204,6 +1204,7 @@ export function VistaPreviaGlobal({ fondo, urlFoto, accent }) {
             border: `1px solid ${COLORS.borderAlpha || COLORS.border}`,
             boxShadow: COLORS.cardShadow !== 'none' ? COLORS.cardShadow : undefined,
             backdropFilter: COLORS.surfaceAlpha !== COLORS.surface ? 'blur(12px)' : undefined,
+            WebkitBackdropFilter: COLORS.surfaceAlpha !== COLORS.surface ? 'blur(12px)' : undefined,
           }}
         >
           <p className="text-xs font-semibold" style={{ color: COLORS.text }}>Una tarjeta</p>
@@ -1223,6 +1224,7 @@ export function VistaPreviaGlobal({ fondo, urlFoto, accent }) {
             background: COLORS.navBgAlpha || COLORS.surface,
             border: `1px solid ${COLORS.borderAlpha || COLORS.border}`,
             backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
           }}
         >
           <Palette size={13} style={{ color: COLORS.iconActive || accent }} />

@@ -293,6 +293,27 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 |---|---|---|
 | **SC F1** | Scroll, cabeceras fijas y el acordeón que dejaba un hueco en el iPhone | ✅ **v3.80.0** |
 | **NAVO F1** | **Atrás vuelve de donde viniste**, no al área del módulo | ✅ **v3.81.0** |
+| **SF F1** | 🍎 El **barrido de Safari** (ésta no la pidió él: sale de la SC F1) | ✅ **v3.82.0** |
+
+- 🚨 **UN `className` NO ES UNA PRUEBA DE NADA, Y ESTO COSTÓ CARO** (SF F1). La lupa y el botón de
+  sugerencias se declaran `fixed`… y **nunca lo han estado**: `.toque-44` —el área táctil de la
+  E3 F1— pone `position: relative`, misma especificidad, y `index.css` va después de las utilidades
+  de Tailwind. Desde entonces **se iban con el scroll** (lo que Josué reportó, y que yo di por bueno
+  leyendo el `className`) y **ocupaban 36 px que empujaban el contenido de TODAS las pantallas**.
+  ⚠️ Lo destapó **medirlo**: `getComputedStyle(lupa).position` decía `relative`. Arreglado con
+  `:where(.toque-44)`, que tiene especificidad cero. **Antes de afirmar que algo está posicionado,
+  preguntárselo al navegador, no al atributo.**
+- 🚨 **TODAS LAS PRUEBAS CORREN EN CHROMIUM Y LA APLICACIÓN SOLO SE USA EN UN iPHONE** (SF F1). Lo
+  que los dos navegadores resuelven distinto **sale verde en la verificación y mal en su pantalla**,
+  y así estuvo el acordeón desde la v1.21.0. `src/lib/safari.js` guarda los patrones concretos que
+  este código usa, lo que se arregló, **y lo que se miró y estaba bien** — sin esa última lista, la
+  siguiente sesión vuelve a barrer lo mismo.
+- ⚠️ **EN UN OBJETO DE ESTILO DE REACT, DOS CLAVES IGUALES NO SON UN RESPALDO** (SF F1): la segunda
+  borra a la primera. El truco de `min-height: 100vh` seguido de `100dvh` **solo funciona en CSS**,
+  y por eso vive en `index.css` (`.alto-visible`), no en un `style={{}}`.
+- ⚠️ **COMPROBAR QUE `localStorage` EXISTE NO ES COMPROBAR QUE DEJA ESCRIBIR** (SF F1): en una
+  ventana privada de Safari `setItem` **lanza**, y como esa escritura iba antes del aviso, **no era
+  que se perdiera la marca: es que no llegaba el aviso**.
 
 - 🚨 **EL CUADRADO VACÍO DE LA TARJETA DESPLEGABLE ERA `min-height: auto`, Y NINGUNA DE LAS 19 578
   COMPROBACIONES PODÍA VERLO** (SC F1). Un elemento de rejilla se niega a encogerse por debajo de su

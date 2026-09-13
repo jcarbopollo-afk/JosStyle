@@ -398,6 +398,46 @@ ok(faltan.length === 0 && sobran.length === 0,
     '🚨 Todo acordeón `grid-template-rows: 0fr` lleva `minHeight: 0` en su elemento de rejilla (si no, en el iPhone queda un cuadrado vacío debajo y en el ordenador no se ve)');
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   REGLA INVARIANTE — un desenfoque sin su versión con prefijo (SF F1)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   🚨 **ESTABA EN UNO DE LOS OCHO SITIOS.** `HubView.jsx` lleva
+   `WebkitBackdropFilter` desde la Fase N4, con un comentario que dice
+   literalmente que hace falta para que Safari/iOS aplique el desenfoque. Los
+   otros siete —la barra inferior, la lupa, el botón de sugerencias, la `Card`
+   que usa media aplicación y dos paneles de Ajustes— no lo llevaban. En un
+   iPhone con iOS anterior al 18 eso es **un bloque plano en vez de cristal**, y
+   ninguna prueba podía verlo: todas corren en Chromium, que no necesita prefijo.
+
+   Por eso es una regla invariante y no una comprobación de la fase: el siguiente
+   que alguien escriba cae aquí el mismo día.
+   ═══════════════════════════════════════════════════════════════════════════ */
+{
+  const archivos = [
+    ...readdirSync(join(RAIZ, 'src/views')).filter((f) => f.endsWith('.jsx')).map((f) => `src/views/${f}`),
+    ...readdirSync(join(RAIZ, 'src/components')).filter((f) => f.endsWith('.jsx')).map((f) => `src/components/${f}`),
+    'src/App.jsx', 'src/index.css',
+  ];
+  const sueltos = [];
+  archivos.forEach((rel) => {
+    let src;
+    try { src = readFileSync(join(RAIZ, rel), 'utf8'); } catch { return; }
+    /* ⚠️ Se quitan los comentarios: este proyecto EXPLICA el prefijo en varios sitios, y buscar la
+       palabra sin limpiar haría saltar la regla con las frases que la promete (la lección de
+       siempre, que ya va por la vigesimoprimera vez). */
+    const codigo = src
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/(^|[^:])\/\/.*$/gm, '$1 ');
+    const conPrefijo = (codigo.match(/WebkitBackdropFilter|-webkit-backdrop-filter/g) || []).length;
+    const total = (codigo.match(/(?<!Webkit)backdropFilter|(?<!-webkit-)backdrop-filter/g) || []).length;
+    if (total > conPrefijo) sueltos.push(`${rel} (${total - conPrefijo} sin pareja)`);
+  });
+  sueltos.forEach((x) => console.log(`  ✗ desenfoque sin \`-webkit-\` en ${x} — en un iPhone antiguo no se aplica`));
+  ok(sueltos.length === 0,
+    '🚨 Todo `backdrop-filter` lleva su versión con prefijo (sin ella, Safari de iOS no desenfoca y la pieza se ve plana)');
+}
+
 if (fallos > 0) {
   console.log(`\n  ${fallos} de ${n} comprobaciones han fallado.`);
   process.exit(1);

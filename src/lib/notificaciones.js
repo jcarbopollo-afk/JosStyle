@@ -53,14 +53,24 @@ export function notificarSiCorresponde(notificaciones, categoria, clave, titulo,
   if (permisoNotificaciones() !== 'granted') return;
   if (dentroDeHorarioDescanso(notificaciones)) return;
 
-  if (typeof window !== 'undefined' && window.localStorage) {
-    /* 🐛 La marca de "ya te avisé hoy" iba con la fecha **en UTC**: entre
-       medianoche y las dos de la madrugada en España usaba la clave de AYER, así
-       que un aviso podía repetirse. Ahora es la fecha local, como el resto. */
-    const marcaKey = `notif-${clave}-${fechaLocalISO(new Date())}`;
-    if (window.localStorage.getItem(marcaKey)) return;
-    window.localStorage.setItem(marcaKey, '1');
-  }
+  /* 🚨 SF F1 — ESTO NO ESTABA EN UN `try`, Y EN SAFARI ESO SE LLEVABA EL AVISO ENTERO.
+     En una ventana privada de Safari —o con el almacenamiento lleno— `localStorage.setItem`
+     **lanza**. Y esta escritura va ANTES de mandar el aviso, así que no es que se perdiera la
+     marca: es que **el aviso no llegaba**, y el error se llevaba por delante la llamada.
+     Comprobar que `localStorage` EXISTE no es lo mismo que comprobar que DEJA escribir.
+     ⚠️ Y si falla, se sigue: perder la marca repite un aviso como mucho; perderlo lo pierde del
+     todo. Es el mismo patrón que `leerVisual`/`guardarVisual` en `horarioEstructura.js`, que ya
+     lo tenía bien desde HT F4. */
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      /* 🐛 La marca de "ya te avisé hoy" iba con la fecha **en UTC**: entre
+         medianoche y las dos de la madrugada en España usaba la clave de AYER, así
+         que un aviso podía repetirse. Ahora es la fecha local, como el resto. */
+      const marcaKey = `notif-${clave}-${fechaLocalISO(new Date())}`;
+      if (window.localStorage.getItem(marcaKey)) return;
+      window.localStorage.setItem(marcaKey, '1');
+    }
+  } catch { /* modo privado o cuota llena: se avisa igual, que es lo que importa */ }
 
   try {
     // eslint-disable-next-line no-new

@@ -3368,6 +3368,7 @@ export default function App() {
 
   return (
     <div
+      className="alto-visible"
       style={{
         '--accent': accent,
         // Fase 1 del Sistema de Personalización Visual Extrema — variables CSS que reflejan los
@@ -3382,7 +3383,13 @@ export default function App() {
         '--color-text': COLORS.text,
         '--color-text-muted': COLORS.textMuted,
         background: COLORS.bg,
-        minHeight: '100vh',
+        /* 🚨 SF F1 — EL ALTO MÍNIMO SE MUDA A `index.css` (clase `alto-visible`), Y NO ES UN CAPRICHO.
+           `100vh` no es la altura visible en Safari de iOS: incluye la franja que tapan la barra de
+           direcciones y la de herramientas, así que este contenedor medía MÁS que la pantalla y la
+           página se podía arrastrar hacia abajo dejando una banda vacía. La solución es `100dvh`
+           **con `100vh` delante como respaldo** — y eso aquí no se puede escribir: en un objeto de
+           estilo de React dos claves iguales no son un respaldo, la segunda borra a la primera.
+           Solo en CSS conviven las dos declaraciones. */
         fontFamily: "'Inter', sans-serif",
         // FO Fase 1 — `isolation: isolate` convierte este contenedor en un contexto de
         // apilamiento propio. Hace falta para que las capas de fondo puedan ir con
@@ -3432,7 +3439,7 @@ export default function App() {
       <button
         onClick={() => setShowSearch(true)}
         className="accion-superior toque-44 fixed z-30 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
-        style={{ left: 14, background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: 'blur(8px)' }}
+        style={{ left: 14, background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         aria-label="Buscar funciones o preguntar a la IA"
       >
         <Search size={16} style={{ color: accent }} />
@@ -3475,7 +3482,7 @@ export default function App() {
         // FO Fase 4, apartado 10 — la barra sale del sistema de colores en vez de llevar
         // un rgba fijo, que además ignoraba el tema claro: en modo claro la barra era
         // negra igual. `navBgAlpha` respeta el tema y la transparencia elegida.
-        style={{ background: COLORS.navBgAlpha || COLORS.surface, backdropFilter: 'blur(20px)', borderTop: `1px solid ${COLORS.border}` }}
+        style={{ background: COLORS.navBgAlpha || COLORS.surface, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderTop: `1px solid ${COLORS.border}` }}
       >
         <div className="max-w-md w-full flex px-2 py-2">
           <button onClick={() => irAPestana('hoy')} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">

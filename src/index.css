@@ -75,12 +75,50 @@ input[type='range']::-webkit-slider-thumb {
   padding-bottom: var(--safe-bottom);
 }
 
+/* 🚨 SF F1 — EL ALTO DE LA RAÍZ, Y POR QUÉ ESTÁ AQUÍ Y NO EN UN `style={{}}`.
+
+   `100vh` **no es la altura visible en Safari de iOS**: incluye la franja que
+   tapan la barra de direcciones y la de herramientas. Con `min-height: 100vh` el
+   contenedor raíz medía más que la pantalla, así que la página se podía arrastrar
+   hacia abajo dejando una banda vacía aunque el contenido cupiera de sobra. Es el
+   fallo de iOS más conocido que existe, y estaba debajo de las 46 fases.
+
+   `100dvh` sí es la altura VISIBLE y cambia sola cuando esas barras aparecen o
+   desaparecen.
+
+   ⚠️ **Las dos declaraciones están a propósito y en este orden**: un navegador que
+   no conozca `dvh` descarta la segunda y se queda con la primera. Y **esto no se
+   puede escribir en un objeto de estilo de React**, que es donde estaba: allí dos
+   claves iguales no son un respaldo, la segunda borra a la primera. Solo en CSS
+   conviven. */
+.alto-visible {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 /* Área táctil de 44 px sin agrandar el dibujo (la regla de EH F42). Los dos
    botones de arriba miden 36 px de diámetro y quedaban por debajo del mínimo:
    este pseudoelemento transparente amplía la zona que responde al dedo sin
    tocar ni un píxel del diseño. Los toques sobre él los recibe el botón, que
    es su elemento padre. */
-.toque-44 {
+/* 🚨 SC F1 — `:where()` NO ES UN ADORNO: ES EL ARREGLO DE UN FALLO QUE JOSUÉ REPORTÓ Y QUE LLEVABA
+   AQUÍ DESDE LA E3 F1.
+
+   Esta regla ponía `position: relative` a secas. La lupa y el botón de sugerencias se declaran con
+   `className="accion-superior toque-44 fixed z-30"` — o sea, con la `fixed` de Tailwind — pero las
+   dos reglas tienen la misma especificidad (una clase), así que **gana la que va después en la hoja,
+   y ésta va después**. Resultado: los dos accesos de arriba **nunca han estado fijos**. Se iban con
+   el scroll, que es exactamente lo que él escribió: *"el icono de Buscar… no desaparezca al hacer
+   scroll"*. Y de paso ocupaban 36 px de flujo, que empujaban hacia abajo TODO el contenido.
+
+   ⚠️ **Medido, no supuesto:** `getComputedStyle(lupa).position` devolvía `relative`, y su posición
+   pasaba de 14 a −155 al desplazar 169 px.
+
+   `:where()` tiene especificidad CERO, así que esta regla sigue aplicándose a cualquier botón que no
+   diga otra cosa —que es su trabajo: dar un ancestro posicionado al pseudoelemento de 44 px— **y
+   deja de pisar a quien sí la dice**. No se toca ni un `className` de las vistas: el fallo estaba
+   aquí, y aquí se arregla, para los dos botones a la vez y para el que venga. */
+:where(.toque-44) {
   position: relative;
 }
 .toque-44::after {

@@ -866,6 +866,15 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# SF F1 — el barrido de Safari: lo que Chromium perdona y Safari no. Nace de la
+# SC F1, donde un fallo llevaba meses invisible porque todas las pruebas corren
+# en Chromium y la aplicación solo se usa en un iPhone.
+if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
+  ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
+else
+  fallo "Falla el barrido de Safari"; grep '✗' /tmp/jc_safari.log
+fi
+
 # NAVO F1 — atrás vuelve de donde viniste, no al área a la que pertenece el
 # módulo. Una pila real en vez de `areaActual.id`, que era la línea del fallo.
 if node --import ./scripts/resolver-vite.mjs scripts/test-navegacion.mjs >/tmp/jc_navorigen.log 2>&1; then

@@ -5618,9 +5618,17 @@ ok(desdeInicio_nv !== null, 'hay un botón de atrás');
 ok(/inicio/i.test(desdeInicio_nv || ''),
   `🚨 NAVO F1 — abierta desde INICIO, atrás dice «Inicio» (decía «Gestión»): «${desdeInicio_nv}»`);
 ok(await pulsar(desdeInicio_nv), '…y se pulsa');
-const volvioAInicio_nv = await esperarTexto(/hoy|inicio/i);
-ok(!/Área/i.test(volvioAInicio_nv),
-  '🚨 …y acaba en Inicio DE VERDAD, no en el hub de un área');
+await esperarTexto(/hoy|inicio/i);
+await page.waitForTimeout(500);
+/* ⚠️ Se comprueba con la ESTRUCTURA, no con una palabra suelta: un hub siempre pinta su cabecera
+   pegada y un módulo siempre pinta su barra de atrás. Buscar «Área» en el texto era frágil —
+   cualquier pantalla podría llegar a decir esa palabra por otro motivo. */
+const dondeAcabo_nv = await page.evaluate(() => ({
+  hub: !!document.querySelector('.hub-sticky'),
+  back: !!document.querySelector('button.back-bar'),
+}));
+ok(!dondeAcabo_nv.hub && !dondeAcabo_nv.back,
+  '🚨 …y acaba en Inicio DE VERDAD: ni cabecera de área ni barra de atrás');
 
 /* ── 2 · La MISMA pantalla desde Gestión vuelve a Gestión ─────────────────── */
 ok(await pulsar('Gestión'), 'se entra en Gestión por la barra de abajo');
@@ -5667,6 +5675,7 @@ ok(await pulsar('Inicio'), 'se vuelve a Inicio');
 await esperarTexto(/hoy/i);
 ok(await pulsar('Nutrición'), 'se abre Nutrición desde Inicio');
 await esperarTexto(/nutric/i);
+await page.waitForTimeout(500);
 const nutri_nv = await rotuloAtras();
 ok(/inicio/i.test(nutri_nv || ''),
   `🚨 NAVO F1 — y otro módulo distinto hace lo mismo sin una regla propia: «${nutri_nv}»`);

@@ -14,7 +14,7 @@ import { dirname, join } from 'node:path';
 import {
   DONDE_HAY_SCROLL, CAPAS_SUPERIORES, Z_CABECERA, Z_ACCESOS_FIJOS, BANDA,
   COMPACTADO, LINEAS_QUE_SE_CONSERVAN, ACORDEON, ACORDEONES, NO_SE_TOCA,
-  condicionSC, FUERA_DEL_ALCANCE_SC,
+  condicionSC, FUERA_DEL_ALCANCE_SC, FIXED_QUE_NO_LO_ERA,
 } from '../src/lib/scrollCabecera.js';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -62,6 +62,22 @@ ok(Z_CABECERA < Z_ACCESOS_FIJOS,
 ok(/\.hub-sticky\s*\{[^}]*z-index:\s*20/.test(CSS), '…y el CSS lleva ese mismo número');
 ok(/accion-superior toque-44 fixed z-30/.test(APP),
   '⚠️ la lupa sigue siendo `fixed` y en z-30: no se le ha cambiado ni la posición ni la función');
+
+/* 🚨 EL HALLAZGO GORDO: `.toque-44` le ponía `position: relative` y le GANABA, así que los dos
+   accesos de arriba llevaban sin estar fijos desde la E3 F1 — se iban con el scroll, que es
+   literalmente lo que reportó Josué, y su hueco de 36 px empujaba TODO el contenido hacia abajo. */
+ok(/:where\(\.toque-44\)\s*\{[^}]*position:\s*relative/.test(CSS),
+  '🚨 SC F1 — `.toque-44` ya no pisa a `fixed`: va con `:where()`, que tiene especificidad cero');
+ok(!/(^|\n)\.toque-44\s*\{[^}]*position:/.test(CSS),
+  '🚨 …y no queda ninguna versión sin `:where()` que vuelva a ganarle');
+ok(/\.toque-44::after/.test(CSS),
+  '⚠️ …y el pseudoelemento de 44 px sigue igual: lo que cambia es quién manda, no el área táctil');
+ok(FIXED_QUE_NO_LO_ERA.quienLoPisaba && FIXED_QUE_NO_LO_ERA.seVeiaAsi && FIXED_QUE_NO_LO_ERA.arreglo,
+  'el hallazgo queda declarado: qué lo pisaba, qué se veía y cómo se arregla');
+ok(/E3 F1/.test(FIXED_QUE_NO_LO_ERA.cuantoLlevaba),
+  '⚠️ …con desde cuándo llevaba ahí, que es lo que explica por qué nadie lo vio');
+ok(/Medirlo en el navegador/.test(FIXED_QUE_NO_LO_ERA.loQueLoDestapo),
+  '🚨 …y lo que lo destapó: medirlo. Un `className` no es una prueba de nada');
 /* ⚠️ Él lo pidió expresamente: "No quiero que el icono de Buscar se comporte como el botón de la
    guía". Son dos componentes distintos y siguen siéndolo. */
 ok(/SuggestionsButton/.test(APP) && /setShowSearch\(true\)/.test(APP),
