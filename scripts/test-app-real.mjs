@@ -5349,6 +5349,85 @@ ok(!/Mi salud/i.test(todo_d2.replace(/Analizar mi salud/gi, '')),
   '🏷️ …ni «Mi salud» como nombre de módulo: es «Salud física»');
 ok(!/\bNúmeros\b/.test(todo_d2), '🏷️ …ni «Números»: el apartado es «Progreso»');
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   PF F1 — EL AVATAR EN LA CABECERA DE AJUSTES
+   ═══════════════════════════════════════════════════════════════════════════
+
+   🚨 Lo que ninguna prueba de Node dice: que el avatar **se ve arriba** y que
+   **se puede tocar**. Se prueba a 375 px, que es donde tiene que caber junto al
+   título sin empujarlo. */
+almacen.perfil = { nombre: 'Josué', nombreMostrado: 'Josué', foto: null };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Ajustes'), '🚨 PF F1 — se abre Ajustes');
+await esperarTexto(/Apariencia/i);
+
+/* ⚠️ Se busca el botón por su `aria-label`, que es como lo encontraría alguien
+   con VoiceOver — y es lo único que demuestra que el avatar es PULSABLE y no un
+   dibujo. Sin foto, su etiqueta es «Elegir». */
+const avatar_pf = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button')]
+    .find((x) => /tu foto de perfil/i.test(x.getAttribute('aria-label') || ''));
+  if (!b) return null;
+  const r = b.getBoundingClientRect();
+  return { etiqueta: b.getAttribute('aria-label'), top: Math.round(r.top), lado: Math.round(r.width), derecha: Math.round(r.right) };
+});
+ok(!!avatar_pf, '🚨 el avatar existe en la cabecera y es un botón, no un dibujo');
+ok(/elegir/i.test(avatar_pf?.etiqueta || ''),
+  `⚠️ …y sin foto invita a elegir una (${avatar_pf?.etiqueta})`);
+/* 🚨 «En la parte superior»: tiene que estar arriba del todo, por encima del
+   buscador y de la lista de categorías. */
+ok(avatar_pf.top < 220, `🚨 …y está EN LA PARTE SUPERIOR de la pantalla (${avatar_pf.top} px)`);
+ok(avatar_pf.derecha <= 375, `⚠️ …sin salirse por la derecha en un iPhone (${avatar_pf.derecha} px de 375)`);
+ok(avatar_pf.lado >= 44, `⚠️ …y con zona de toque suficiente (${avatar_pf.lado} px)`);
+ok(!(await desbordaAncho()), '⚠️ …y la cabecera no desborda a lo ancho');
+
+/* 🚨 Y CON FOTO: se ve la suya, redonda, y la etiqueta cambia a «Cambiar».
+   Se siembra una imagen de verdad —un PNG de 1 px en `data:`— porque el
+   selector de archivos del sistema no se puede abrir desde una prueba. */
+const PNG_PF = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+almacen.perfil = { nombre: 'Josué', nombreMostrado: 'Josué', foto: PNG_PF };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Ajustes');
+await esperarTexto(/Apariencia/i);
+const conFoto_pf = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button')]
+    .find((x) => /tu foto de perfil/i.test(x.getAttribute('aria-label') || ''));
+  const img = b?.querySelector('img');
+  const circulo = b?.querySelector('div');
+  return {
+    etiqueta: b?.getAttribute('aria-label') || null,
+    hayImagen: !!img,
+    src: (img?.getAttribute('src') || '').slice(0, 14),
+    radio: circulo ? getComputedStyle(circulo).borderRadius : null,
+  };
+});
+ok(conFoto_pf.hayImagen, '🚨 PF F1 — CON FOTO, la cabecera pinta SU imagen');
+ok(conFoto_pf.src === 'data:image/png', `⚠️ …que es la suya, la guardada (${conFoto_pf.src})`);
+ok(/9999px|50%/.test(conFoto_pf.radio || ''), `🚨 …y se ve REDONDA (${conFoto_pf.radio})`);
+ok(/cambiar/i.test(conFoto_pf.etiqueta || ''),
+  `⚠️ …y ahora invita a cambiarla, no a elegirla (${conFoto_pf.etiqueta})`);
+
+/* 🚨 **Y SIGUE AHÍ DESPUÉS DE RECARGAR**, que es el punto 3 de su encargo. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Ajustes');
+await esperarTexto(/Apariencia/i);
+const trasRecargar_pf = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button')]
+    .find((x) => /tu foto de perfil/i.test(x.getAttribute('aria-label') || ''));
+  return !!b?.querySelector('img');
+});
+ok(trasRecargar_pf, '🚨 PF F1 — y la foto SIGUE AHÍ después de recargar la aplicación');
+
+/* ⚠️ Y no se ha roto la categoría Perfil: su tarjeta grande sigue entera, con
+   el «Quitar», que es donde vive lo irreversible. */
+ok(await pulsar('Perfil'), 'se abre la categoría Perfil');
+const perfil_pf = await esperarTexto(/foto de perfil/i);
+ok(/Quitar/i.test(perfil_pf), '🚨 …y sigue teniendo su «Quitar», que NO está en la cabecera a propósito');
+ok(/Datos básicos/i.test(perfil_pf), '⚠️ …y el resto de la categoría, intacto');
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 await salir(browser);

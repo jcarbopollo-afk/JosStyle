@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   User, Download, Upload, RotateCcw, Undo2, Lock, LogOut, ArrowLeft, Search, ChevronRight,
   Palette, LayoutGrid, SlidersHorizontal, Bell, ShieldCheck,
-  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star, ChevronUp, Type, Volume2,
+  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star, ChevronUp, Type, Volume2, Camera,
 } from 'lucide-react';
 import pkg from '../../package.json';
 import {
@@ -1638,6 +1638,134 @@ function OpcionesFila({ opciones, valor, onChange, accent }) {
    solo si tampoco hay nombre aparece el icono de persona. Un hueco con tus
    iniciales parece tuyo; uno con la silueta gris parece un error.
    --------------------------------------------------------------------------- */
+/* ═══════════════════════════════════════════════════════════════════════════
+   PF F1 — EL AVATAR, DIBUJADO UNA SOLA VEZ
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Josué: *"En la parte superior de la pantalla de Ajustes debe aparecer el
+   avatar/foto de perfil del usuario como icono"*, y en el mismo encargo:
+   *"Si ya existe algún sistema de perfil/usuario en el proyecto, **reutilízalo
+   en lugar de crear otro sistema paralelo**."*
+
+   🚨 **Y existe entero desde la v3.68.0.** Elegir la foto del dispositivo,
+   recortarla cuadrada, topar su tamaño, guardarla y que siga ahí al recargar es
+   `src/lib/fotoPerfil.js`; la tarjeta grande de la categoría Perfil es
+   `AvatarPerfil`. Lo único que faltaba era **verla desde arriba**. Así que esta
+   fase no añade almacenamiento, ni pantalla, ni un segundo sistema: **saca el
+   círculo a su propio componente** y lo pinta también en la cabecera.
+
+   ⚠️ Con dos dibujos —uno aquí y otro en la cabecera— acabarían distintos en
+   cuanto alguien tocara uno: el borde, el recorte o las iniciales. Es la lección
+   de siempre del proyecto sobre las copias, aplicada a un círculo. */
+export function CirculoAvatar({ perfil, accent, lado = 88, aria = 'Tu foto de perfil' }) {
+  const foto = esFotoValida(perfil?.foto) ? perfil.foto : null;
+  const iniciales = inicialesDe(perfil || {});
+  return (
+    <div
+      className="rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden"
+      style={{
+        width: lado, height: lado,
+        background: foto ? 'transparent' : hexToRgba(accent, 0.14),
+        border: `2px solid ${hexToRgba(accent, foto ? 0.35 : 0.25)}`,
+      }}
+    >
+      {foto ? (
+        <img src={foto} alt={aria} className="w-full h-full object-cover" />
+      ) : iniciales ? (
+        /* ⚠️ Sin foto se pintan SUS INICIALES, no una silueta gris: un hueco con
+           tus iniciales parece tuyo; el monigote de desconocido parece un error.
+           El tamaño de la letra va con el círculo, o a 56 px se sale. */
+        <span
+          className="font-extrabold"
+          style={{ color: accent, fontFamily: "'Manrope', sans-serif", fontSize: Math.round(lado * 0.34) }}
+        >
+          {iniciales}
+        </span>
+      ) : (
+        <User size={Math.round(lado * 0.39)} style={{ color: accent }} aria-hidden="true" />
+      )}
+    </div>
+  );
+}
+
+/* 🚨 PF F1 — **EL AVATAR DE LA CABECERA.** Josué: *"Al pulsar sobre el avatar,
+   debe poderse seleccionar/cambiar la foto de perfil"*, así que pulsarlo abre
+   **el selector de archivos directamente**, no una pantalla intermedia: es lo
+   que dice su encargo y es un toque en vez de tres.
+
+   ⚠️ **Ni un sistema nuevo:** el círculo es `CirculoAvatar`, la preparación de
+   la imagen es `prepararFotoPerfil` (v3.68.0) y quien guarda es el mismo
+   `commit` que usa la categoría Perfil. Si esto tuviera su propio guardado,
+   cambiar la foto desde arriba y desde dentro acabarían escribiendo cosas
+   distintas.
+
+   ⚠️ Y **quitar la foto sigue estando solo en Perfil**, con su confirmación: es
+   lo irreversible, y un borrado a un toque desde la cabecera sería justo lo que
+   la regla 8 y la v3.68.0 evitaron. */
+export function AvatarCabecera({ perfil, accent, onCambiar, lado = 56 }) {
+  const fileRef = useRef(null);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState(null);
+
+  const elegir = async (ev) => {
+    const file = ev.target.files?.[0];
+    // Se limpia SIEMPRE: elegir la misma foto dos veces seguidas no dispara
+    // `onChange` y parecería que la aplicación se ha quedado colgada.
+    ev.target.value = '';
+    if (!file) return;
+    setError(null);
+    setCargando(true);
+    const res = await prepararFotoPerfil(file);
+    setCargando(false);
+    if (!res.ok) { setError(res.motivo); return; }
+    onCambiar(res.foto);
+  };
+
+  const tieneFoto = esFotoValida(perfil?.foto);
+
+  return (
+    <div className="flex flex-col items-end">
+      <button
+        type="button"
+        onClick={() => { if (!cargando) fileRef.current?.click(); }}
+        disabled={cargando}
+        className="relative rounded-full toque-44 active:scale-[0.96]"
+        style={{ opacity: cargando ? 0.6 : 1 }}
+        aria-label={tieneFoto ? 'Cambiar tu foto de perfil' : 'Elegir tu foto de perfil'}
+      >
+        <CirculoAvatar perfil={perfil} accent={accent} lado={lado} />
+        {/* La pastillita de la cámara: dice que se puede tocar sin añadir texto,
+            que es lo que mantiene la cabecera limpia. */}
+        <span
+          className="absolute rounded-full flex items-center justify-center"
+          style={{
+            right: -2, bottom: -2, width: 22, height: 22,
+            background: accent, border: `2px solid ${COLORS.surface}`,
+          }}
+        >
+          {cargando
+            ? <Loader2 size={11} className="animate-spin" style={{ color: COLORS.textOnAccent }} />
+            : <Camera size={11} style={{ color: COLORS.textOnAccent }} />}
+        </span>
+      </button>
+      {/* ⚠️ El error se dice aquí mismo, con lo que hay que corregir: un fallo
+          silencioso al elegir una foto es la regla 8 exacta. */}
+      {error && (
+        <p className="text-[11px] mt-1.5 text-right max-w-[170px]" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>
+      )}
+      <input
+        ref={fileRef}
+        type="file"
+        accept={TIPOS_ACEPTADOS.join(',')}
+        onChange={elegir}
+        className="hidden"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
+    </div>
+  );
+}
+
 export function AvatarPerfil({ perfil, accent, onCambiar, onQuitar }) {
   const fileRef = useRef(null);
   const [cargando, setCargando] = useState(false);
@@ -1645,7 +1773,7 @@ export function AvatarPerfil({ perfil, accent, onCambiar, onQuitar }) {
   const [confirmandoQuitar, setConfirmandoQuitar] = useState(false);
 
   const foto = esFotoValida(perfil.foto) ? perfil.foto : null;
-  const iniciales = inicialesDe(perfil);
+  // Las iniciales las dibuja `CirculoAvatar`: aquí ya no hacen falta.
 
   const elegir = async (ev) => {
     const file = ev.target.files?.[0];
@@ -1664,22 +1792,7 @@ export function AvatarPerfil({ perfil, accent, onCambiar, onQuitar }) {
   return (
     <Card>
       <div className="flex items-center gap-4">
-        <div
-          className="rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden"
-          style={{
-            width: 88, height: 88,
-            background: foto ? 'transparent' : hexToRgba(accent, 0.14),
-            border: `2px solid ${hexToRgba(accent, foto ? 0.35 : 0.25)}`,
-          }}
-        >
-          {foto ? (
-            <img src={foto} alt="Tu foto de perfil" className="w-full h-full object-cover" />
-          ) : iniciales ? (
-            <span className="text-2xl font-extrabold" style={{ color: accent, fontFamily: "'Manrope', sans-serif" }}>{iniciales}</span>
-          ) : (
-            <User size={34} style={{ color: accent }} aria-hidden="true" />
-          )}
-        </div>
+        <CirculoAvatar perfil={perfil} accent={accent} lado={88} />
 
         <div className="min-w-0 flex-1">
           <p className="text-base font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
@@ -3024,7 +3137,24 @@ export default function SettingsView({
 
   return (
     <div className="space-y-4 pb-4">
-      <SectionTitle>Ajustes</SectionTitle>
+      {/* 🚨 PF F1 — la cabecera: el título a la izquierda y **su cara a la
+          derecha**, que es donde la buscas y donde la ponen las aplicaciones que
+          él usa. Se alinean por la base para que el círculo no empuje el título.
+          ⚠️ `min-w-0` en el título: sin él, un nombre largo empujaría el avatar
+          fuera de la pantalla en un iPhone. */}
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <SectionTitle>Ajustes</SectionTitle>
+          {nombreParaSaludo(local) && (
+            <p className="text-xs -mt-1 truncate" style={{ color: COLORS.textMuted }}>{nombreParaSaludo(local)}</p>
+          )}
+        </div>
+        <AvatarCabecera
+          perfil={local}
+          accent={accent}
+          onCambiar={(foto) => commit({ ...local, foto })}
+        />
+      </div>
 
       <div className="relative">
         <Search size={15} style={{ color: COLORS.textMuted, position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />

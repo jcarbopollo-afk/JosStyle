@@ -1,5 +1,43 @@
 # CHANGELOG.md
 
+## v3.79.0 — PF F1: la foto de perfil en la cabecera de Ajustes
+
+> *"En la parte superior de la pantalla de Ajustes debe aparecer el avatar/foto de perfil del
+> usuario como icono"*, y en el mismo encargo: *"Si ya existe algún sistema de perfil/usuario en el
+> proyecto, **reutilízalo en lugar de crear otro sistema paralelo**."*
+
+🚨 **Y existía entero desde la v3.68.0.** Elegir la foto del dispositivo, recortarla cuadrada, topar
+su tamaño, guardarla y que siga ahí al recargar es `src/lib/fotoPerfil.js`; la tarjeta grande vive en
+la categoría Perfil. **Lo único que faltaba era verla desde arriba.** Así que esta fase no añade
+almacenamiento, ni pantalla nueva, ni un segundo sistema: saca el círculo a su propio componente y lo
+pinta también en la cabecera.
+
+### Lo que hay que llevarse
+
+- 🚨 **UN SOLO DIBUJO DEL CÍRCULO.** `CirculoAvatar` lo pintan **los dos** —la cabecera y la tarjeta
+  de Perfil—. Con dos copias acabarían distintos en cuanto alguien tocara una: el borde, el recorte o
+  las iniciales. Es la lección de siempre del proyecto sobre las copias, aplicada a un círculo.
+- 🚨 **Y UN SOLO GUARDADO.** La cabecera llama al **mismo `commit`** que la categoría Perfil. Si
+  tuviera el suyo, cambiar la foto desde arriba y desde dentro acabarían escribiendo cosas distintas
+  — que es exactamente lo que él prohíbe al decir *"no crear otro sistema paralelo"*.
+- ⚠️ **PULSARLO ABRE EL SELECTOR, NO UNA PANTALLA.** Es lo que dice su encargo —*"al pulsar sobre el
+  avatar, debe poderse seleccionar/cambiar la foto"*— y es **un toque en vez de tres**.
+- 🚨 **QUITAR LA FOTO SIGUE SOLO EN PERFIL, CON SU CONFIRMACIÓN.** Es lo irreversible: no va a
+  *Eliminados recientes*, así que no se recupera. Un borrado a un toque desde la cabecera habría
+  deshecho lo que la v3.68.0 decidió a propósito. Hay una comprobación de que la cabecera **no**
+  recibe el `onQuitar`.
+- ⚠️ **EL TAMAÑO DE LA LETRA VA CON EL CÍRCULO.** Las iniciales estaban a `text-2xl` fijo para 88 px;
+  a 56 px se habrían salido. Ahora se calculan del lado, así que el mismo componente sirve para los
+  dos tamaños y para el que venga.
+- ⚠️ **`min-w-0` EN EL TÍTULO.** Sin él, un nombre largo empujaría el avatar fuera de la pantalla en
+  un iPhone. Y un fallo al elegir la imagen **se dice ahí mismo**, con lo que hay que corregir
+  (regla 8).
+
+**Verificado** con 82 comprobaciones de Node y una sección del recorrido que lo mide a 375 px: que el
+avatar existe **como botón** y no como dibujo, que está arriba, que cabe sin salirse, que con foto
+pinta **la suya** y **redonda**, que **sigue ahí después de recargar** y que la categoría Perfil no se
+ha roto.
+
 ## v3.78.0 — DIST F2: la auditoría de la reorganización
 
 > *"Quiero que hagas una auditoría completa de lo realizado. No cambies la arquitectura definida en

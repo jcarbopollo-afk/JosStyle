@@ -211,5 +211,48 @@ ok(TIPOS_ACEPTADOS.includes('image/heic'), '⚠️ Se acepta HEIC: es lo que hac
 eq(LADO_AVATAR, 256, 'El avatar son 256 px (el doble de los 128 a los que se pinta)');
 ok(CALIDAD_AVATAR > 0 && CALIDAD_AVATAR < 1, 'Y la calidad del JPEG es una fracción');
 
+console.log('\n── 11. PF F1 · El avatar en la cabecera de Ajustes ──');
+
+/* 🚨 Josué: *"En la parte superior de la pantalla de Ajustes debe aparecer el
+   avatar/foto de perfil del usuario como icono"*, y *"si ya existe algún
+   sistema de perfil/usuario, **reutilízalo en lugar de crear otro sistema
+   paralelo**"*. Lo que se comprueba es justo eso: que hay avatar arriba y que
+   **no hay un segundo sistema debajo**. */
+ok(/export function AvatarCabecera/.test(VISTA),
+  '🚨 PF F1 — hay un avatar propio de la cabecera');
+ok(/<AvatarCabecera/.test(VISTA), '…y se pinta de verdad en la pantalla de Ajustes');
+
+/* 🚨 **UN SOLO DIBUJO DEL CÍRCULO.** Con dos —el de la cabecera y el de la
+   tarjeta de Perfil— acabarían distintos en cuanto alguien tocara uno: el
+   borde, el recorte o las iniciales. */
+ok(/export function CirculoAvatar/.test(VISTA),
+  '🚨 el círculo se dibuja UNA vez, en `CirculoAvatar`');
+eq((VISTA.match(/<CirculoAvatar/g) || []).length, 2,
+  '⚠️ …y lo usan los dos: la cabecera y la tarjeta de Perfil');
+
+/* 🚨 **UN SOLO GUARDADO.** Si la cabecera tuviera el suyo, cambiar la foto
+   desde arriba y desde dentro acabarían escribiendo cosas distintas. */
+ok(/<AvatarCabecera[\s\S]{0,220}onCambiar=\{\(foto\) => commit\(\{ \.\.\.local, foto \}\)\}/.test(VISTA),
+  '🚨 y guarda con el MISMO `commit` que la categoría Perfil: ni un segundo almacenamiento');
+ok(/prepararFotoPerfil\(file\)/.test(VISTA),
+  '⚠️ y prepara la imagen con `prepararFotoPerfil`, la de la v3.68.0: no hay un segundo recorte');
+
+/* ⚠️ Pulsar el avatar abre el selector, que es lo que él pidió — no una
+   pantalla intermedia. */
+ok(/aria-label=\{tieneFoto \? 'Cambiar tu foto de perfil' : 'Elegir tu foto de perfil'\}/.test(VISTA),
+  '🚨 pulsarlo abre el selector, y lo dice su `aria-label` (como con VoiceOver)');
+ok(/type="file"[\s\S]{0,200}accept=\{TIPOS_ACEPTADOS\.join\(','\)\}/.test(VISTA),
+  '⚠️ …aceptando los mismos tipos de siempre, HEIC incluido');
+
+/* 🚨 **QUITAR LA FOTO SIGUE SOLO EN PERFIL, CON SU CONFIRMACIÓN.** Un borrado a
+   un toque desde la cabecera sería lo que la v3.68.0 evitó a propósito: no va a
+   Eliminados recientes, así que no se recupera. */
+ok(!/AvatarCabecera[\s\S]{0,600}onQuitar/.test(VISTA),
+  '🚨 la cabecera NO puede quitar la foto: eso es irreversible y vive en Perfil, con su aviso');
+
+// ⚠️ Y un fallo al elegir se DICE, ahí mismo: un error silencioso es la regla 8.
+ok(/\{error && \(/.test(VISTA) && /setError\(res\.motivo\)/.test(VISTA),
+  '⚠️ y si la imagen no vale, se dice en la propia cabecera en vez de no hacer nada');
+
 console.log(`\n  ${fallos.length ? '✗' : '✓'} Foto de perfil — ${pasa} comprobaciones${fallos.length ? `, ${fallos.length} FALLOS` : ''}`);
 if (fallos.length) { fallos.forEach((f) => console.log(`      ✗ ${f}`)); process.exit(1); }
