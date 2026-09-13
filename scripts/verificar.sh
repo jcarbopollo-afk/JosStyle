@@ -883,6 +883,15 @@ else
   fallo "Falla la navegación por origen"; grep '✗' /tmp/jc_navorigen.log
 fi
 
+# FIT F1 — la fundación de Fitness (Entrega 4). Lo que más se vigila no es lo que
+# se ha construido, sino lo que NO se ha duplicado: las fotos de progreso ya son
+# `saludFotos` y las habilidades ya son `calistenia`.
+if node --import ./scripts/resolver-vite.mjs scripts/test-fitness.mjs >/tmp/jc_fitness.log 2>&1; then
+  ok "Fundación de Fitness (FIT F1) — $(grep -c '✓' /tmp/jc_fitness.log) comprobaciones"
+else
+  fallo "Falla la fundación de Fitness"; grep '✗' /tmp/jc_fitness.log
+fi
+
 # SC F1 — scroll, cabeceras fijas y el acordeón que dejaba un hueco en el iPhone.
 # Los tres los reportó Josué usando la aplicación, y los tres tenían una causa
 # real: la cabecera no era `sticky`, la banda no existía y al elemento de rejilla

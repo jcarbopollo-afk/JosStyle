@@ -1,5 +1,85 @@
 # CHANGELOG.md
 
+## v3.83.0 — FIT F1/45: la fundación de Fitness, y tres cosas que ya existían
+
+**Empieza la Entrega 4**, 45 fases para convertir Entrenamiento en una aplicación de fitness
+completa. Ésta es la primera y solo construye **cimientos**: el enunciado lo dice dos veces —*"NO
+quiero que intentes implementar todavía todo Fitness"*, *"Esta fase debe construir los CIMIENTOS"*—
+y el apartado 27 remata prohibiendo adelantar la siguiente.
+
+### 🚨 El apartado 1 pedía inspeccionar antes de tocar nada, y eso cambió la fase entera
+
+Eran **tres** las cosas que ya existían, no una:
+
+| El enunciado pide… | …y ya era | Dónde se gestiona |
+|---|---|---|
+| El módulo **Fitness** | `entreno` + `calistenia` | `TrainingView.jsx`, desde la Fase 2 |
+| **ProgressPhoto** (el área Progreso) | `saludFotos`, con su archivo, su fecha, su nota y su PIN | `HealthView.jsx`, desde la Fase 3 |
+| La **racha** de la cabecera | El motor de rachas, tipo `training` | `rachas.js` |
+| La **línea del hub** y de Inicio | `calcularResumenModulo('entreno', …)` | `resumenesHub.js`, desde la Fase 19 |
+
+Las fotos son el caso más claro: la función que las sube se llama `uploadProgressPhoto()` y el
+estado vacío de Salud dice literalmente *"Todavía no has subido ninguna foto de progreso"*. **Una
+lista `progreso` nueva habría dejado las fotos que Josué ya tiene invisibles en la pantalla que se
+llama Progreso** — el fallo de la E3 F16 con las notas, la E3 F36 con los alimentos y la E3 F41 con
+los programas de Estudios, por cuarta vez. Está declarado en `MAPEO_EXISTENTE`, con una comprobación
+por línea.
+
+**Así que Fitness no nace al lado de Entrenamiento: nace SIENDO Entrenamiento.** Mismo id `entreno`,
+misma clave `calistenia`, **ni una migración de datos**. Lo único que cambia de nombre es la
+etiqueta, como *Imagen personal* en NAV F2. Y el área de Entrenamiento **renderiza `TrainingView`
+entera**, no la copia (E3 F23): las siete habilidades, sus récords, sus sesiones, sus vídeos y los
+partidos siguen exactamente donde estaban.
+
+### Lo que sí es nuevo
+
+- **Las tres áreas** que fija el apartado 22: **Rangos · Progreso · Entrenamiento**, en un control
+  segmentado —*"NO quiero tres botones gigantes que parezcan una pantalla provisional"*—.
+- **Los siete grupos musculares con sus dieciocho subgrupos** (apartados 9 y 10), una sola lista que
+  compartirán Rangos y el entrenamiento en vivo, con **iconos propios dibujados en la gramática de
+  lucide**: con un icono genérico los siete rankings parecerían el mismo (E3 F3).
+- **Los diez niveles de rango**, con sus insignias hexagonales y sus tres estados.
+- **Los siete modelos del apartado 13** —Exercise, MuscleGroup, WorkoutExercise, WorkoutPlan,
+  WorkoutSession, ProgressPhoto y MuscleRank—, cada uno con su fábrica y su normalizador, y el
+  normalizador corriendo **al cargar** (regla 5).
+- **La persistencia que ya existía**: una clave `fitness` en `app_data`, con sus políticas de
+  siempre. El apartado 14 lo pedía así — *"Si ya existe un sistema adecuado: UTILÍZALO"*.
+
+### ⏸ Y una contradicción que hay que contarle: C-33
+
+El apartado 22 fija *"Rangos: 10 niveles"* y **D2-02 —decisión cerrada de él— dice que no hay
+niveles fuera de Sonido y Rachas**. No se ha parado la fase; se ha construido con la lectura que
+respeta las dos: **un rango de Fitness es una medida de lo que hace su cuerpo, no un premio.** No se
+gana usando la aplicación, no se canjea, no desbloquea nada, no existe hasta que hay ejercicios
+registrados, y los diez se llaman por lo que miden —Iniciación, Intermedio, Avanzado, Élite—, nunca
+«Nivel 4». Hay una comprobación que barre todos los textos buscando XP, monedas, recompensas y
+premios. **Está en `docs/03` como C-33 y se lo digo, por si prefiere otra cosa: es un catálogo, se
+cambia en una línea.**
+
+### Lo que esta fase decidió NO hacer, y por qué
+
+- **El CTA «Clasificar ejercicios» del apartado 9 existe y se ve, pero sin el «· 0 restantes»**: sin
+  catálogo de ejercicios eso sería el contador de una lista que aún no existe (regla 8).
+- **La tarjeta de un grupo muscular no es un botón todavía, y no lleva chevron**: una flecha promete
+  navegación, y la pantalla de un grupo es de una fase posterior. El componente ya acepta `onAbrir`
+  para cuando llegue.
+- **La racha no dice «0 días»**, que es lo que ofrecía el apartado 6: JosStyle ya tiene un motor de
+  rachas, y un cero propio sería mentira el día que lleve cuatro seguidos. Si no la tiene definida,
+  no se pinta nada (EH F23).
+- **No hay un segundo resumen de hub.** El de `resumenesHub` dice cosas mejores —*"2 habilidades
+  activas · Última sesión hoy"*— y dos acabarían diciendo cosas distintas (D2-07).
+
+### 🐛 Y dos fallos cazados por mis propias pruebas
+
+- **«Experto» contiene «xp».** El barrido de palabras de juego buscaba subcadenas y ponía roja la
+  escala de rangos entera **con el código bien**. Es la lección de la EH F40 —un `uid()` con «xp»
+  dentro tumbaba `verificar.sh` dos veces de cada cien— ahora en un nombre de verdad. Van con límite
+  de palabra, y hay dos comprobaciones que demuestran que el arreglo no tapa nada: «Experto» pasa,
+  «100 XP» no.
+- **`TrainingView` era la SEXTA vista sin un solo caso de renderizado**, tras `LibraryView`,
+  `HealthView`, `NutritionView`, `EstudiosView` y `RelationView`. La pantalla de calistenia se
+  pintaba en producción desde la Fase 2 y no la probaba nadie. Ahora entra con Fitness.
+
 ## v3.82.0 — SF F1: el barrido de Safari, y la lupa que nunca estuvo fija
 
 Esta fase no la pidió Josué: **sale de lo que enseñó la SC F1**, y de la pregunta incómoda que dejó.
@@ -60,6 +140,27 @@ lo mismo.**
 
 ⏸ **Lo que esto NO demuestra**, y es la pescadilla: que los arreglos se vean bien **en Safari**. La
 verificación corre en el único navegador donde ninguno de los cuatro fallaba.
+
+### 🐛 Y al cerrar las tres, un rojo que era mío: un acordeón cerrado sigue teniendo su texto
+
+La pasada completa dejó **una** comprobación en rojo, de la sección nueva de NAVO F1: *"y otro
+módulo distinto hace lo mismo sin una regla propia"*. Abría **Nutrición desde Inicio** con
+`pulsar('Nutrición')` y la barra de atrás no aparecía nunca. Con la aplicación recién estrenada
+funciona perfectamente —se midió—, así que el fallo no estaba en la navegación.
+
+**Lo que pasaba:** `pulsar`, cuando no hay coincidencia exacta, se queda con **el primer botón que
+CONTENGA la palabra**. Y el primero de Inicio no es la tarjeta del módulo: es **la tarjeta de
+puntuación**, que en cuanto hay datos se convierte en un botón con su desglose dentro —«Sueño»,
+«Entrenamiento», «Nutrición», «Tareas»—. Ese desglose se pliega con `grid-template-rows: 0fr` y
+`overflow: hidden`, **no con `display: none`**, así que **sigue contando para `innerText` aunque no
+se vea**. El recorrido abría y cerraba el acordeón, `pulsar` devolvía `true` y nadie navegaba a
+ninguna parte.
+
+Se arregla pulsando **lo que se quería pulsar** —la tarjeta de un módulo lleva su nombre en la
+primera línea— y exigiendo estar en Inicio **de verdad** antes, para que un clic sobre la pantalla
+anterior no pueda colarse. ⚠️ Y la lección va más allá de esa línea: **buscar por texto en Inicio
+encuentra el desglose de la puntuación antes que cualquier tarjeta**. Se barrieron las demás: las
+otras diecisiete entran desde un hub, donde esa tarjeta no está.
 
 ## v3.81.0 — NAVO F1: atrás vuelve de donde viniste, no al área del módulo
 

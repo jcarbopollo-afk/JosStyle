@@ -155,6 +155,12 @@ import NumbersView from '../src/views/NumbersView.jsx';
    `NutritionView` y `EstudiosView`). Se pintaba en producción y no la probaba
    nadie — detrás del PIN, que es justo donde menos se mira. */
 import RelationView, { AlbumTab } from '../src/views/RelationView.jsx';
+/* FIT F1 — la pantalla de Fitness, aquí **desde el primer día** por lo de
+   siempre: cinco vistas han llegado a producción sin un solo caso de
+   renderizado. Y el caso que más importa no es el lleno: es el de **lo guardado
+   antes de esta fase**, sin la clave `fitness`, que es como lo tiene quien ya
+   usaba la aplicación. */
+import FitnessView, { AreaRangos, AreaProgreso } from '../src/views/FitnessView.jsx';
 import WellbeingView from '../src/views/WellbeingView.jsx';
 import HealthView from '../src/views/HealthView.jsx';
 import NutritionView from '../src/views/NutritionView.jsx';
@@ -189,6 +195,7 @@ import {
 } from '../src/tokens.js';
 import { DEFAULT_PAPELERA } from '../src/lib/papelera.js';
 import { DEFAULT_ARMARIO, crearPrenda, crearOutfit, crearUso } from '../src/lib/armario.js';
+import { DEFAULT_FITNESS, crearWorkoutPlan, crearMuscleRank } from '../src/lib/fitness.js';
 import { calcularResumenModulo } from '../src/lib/resumenesHub.js';
 import { addDays } from '../src/lib/helpers.js';
 import { ESTADO_INICIAL, crearRacha as crearRachaSrv, completarDia as completarDiaSrv } from '../src/lib/rachasServicio.js';
@@ -213,6 +220,7 @@ const vacio = {
   calendario: DEFAULT_CALENDARIO, personalizacion: DEFAULT_PERSONALIZACION,
   notificaciones: DEFAULT_NOTIFICACIONES, papelera: DEFAULT_PAPELERA,
   armario: DEFAULT_ARMARIO, apariencia: DEFAULT_APARIENCIA,
+  fitness: DEFAULT_FITNESS,
 };
 
 const lleno = {
@@ -249,6 +257,15 @@ const lleno = {
   sueno: [{ id: '1', fecha: HOY, horaDormir: '23:30', horaDespertar: '07:00', calidad: 4, notas: '' }],
   calistenia: { ...DEFAULT_CALISTENIA, Planche: { nivel: 35, progresion: [{ id: 'p', texto: 'Tuck', hecho: true }], prs: [{ id: 'r', fecha: HOY, valor: '20s' }], sesiones: [{ id: 's', fecha: HOY }] } },
   futbol: [{ id: 'f', fecha: HOY, resultado: '3-2' }],
+  /* FIT F1 — con un plan guardado y un rango calculado, para que la pantalla de
+     Rangos tenga que pintar la insignia actual y las bloqueadas, no solo el
+     estado vacío. Se construyen con sus fábricas: un escenario con los campos
+     mal no falla, calla (EH F44, E3 F33). */
+  fitness: {
+    ...DEFAULT_FITNESS,
+    planes: [crearWorkoutPlan({ nombre: 'Torso', frecuencia: 3, duracion: 45 })],
+    rangos: [crearMuscleRank({ grupoId: 'pecho', nivel: 5, puntuacion: 62 })],
+  },
   economia: { saldoInicial: 100, hucha: 50, movimientos: [{ id: 'm', fecha: HOY, tipo: 'gasto', cantidad: 12, concepto: 'Café' }] },
   salud: { medidas: [{ id: 'x', fecha: HOY, peso: 72, grasa: 12 }], historial: [] },
   /* 🐛 E3 F33 — el escenario escribía `kcal`, `prot` y `carbs`, y **nadie lee esos
@@ -2858,6 +2875,36 @@ const CASOS = [
     objetivos: e.objetivos, productividad: e.productividad, salud: e.salud,
     economia: e.economia, bienestar: e.bienestar, fe: e.fe, nutricion: e.nutricion,
     accent,
+  })],
+  /* FIT F1 — Fitness entero, tal y como lo recibe de `App.jsx`.
+     🐛 **Y con él entra `TrainingView`, que era la SEXTA vista sin un solo caso
+     de renderizado** —tras `LibraryView`, `HealthView`, `NutritionView`,
+     `EstudiosView` y `RelationView`—: la pantalla de calistenia se pintaba en
+     producción desde la Fase 2 y no la probaba nadie. Fitness arranca en el área
+     de Entrenamiento, que la renderiza, así que a partir de aquí sí. */
+  ['FitnessView', FitnessView, (e) => ({
+    fitness: e.fitness, calistenia: e.calistenia, onUpdateSkill: noop,
+    futbol: e.futbol, onAddPartido: noop, onDeletePartido: noop,
+    videos: [], onAddVideo: noop, onDeleteVideo: noop, onSetVideoFeedback: noop,
+    fotos: [], rachas: e.rachas, accent, onIr: noop,
+  })],
+  /* ⚠️ **Lo guardado ANTES de esta fase**: sin la clave `fitness`, que es como
+     lo tiene quien ya usaba la aplicación. `loadData` no fusiona con el valor
+     por defecto, así que este caso es el real, no el teórico (regla 5). */
+  ['FitnessView', FitnessView, (e) => ({
+    fitness: undefined, calistenia: e.calistenia, onUpdateSkill: noop,
+    futbol: e.futbol, onAddPartido: noop, onDeletePartido: noop,
+    videos: [], onAddVideo: noop, onDeleteVideo: noop, onSetVideoFeedback: noop,
+    fotos: undefined, rachas: undefined, accent, onIr: noop,
+  })],
+  /* 🚨 **Las otras dos áreas se prueban APARTE, y hace falta.** `FitnessView`
+     arranca en Entrenamiento, así que renderizarla NO pinta ni una línea de
+     Rangos ni de Progreso — es el agujero del Álbum de Relación (NAV F3). */
+  ['AreaRangos', AreaRangos, () => ({ rangos: [], accent })],
+  ['AreaRangos', AreaRangos, (e) => ({ rangos: (e.fitness || {}).rangos || [], accent })],
+  ['AreaProgreso', AreaProgreso, () => ({ fotos: [], accent, onIr: noop })],
+  ['AreaProgreso', AreaProgreso, () => ({
+    fotos: [{ id: 'f1', path: 'x', fecha: HOY, nota: '' }], accent, onIr: noop,
   })],
   /* ⚠️ El caso que más importa es el de **lo guardado antes de esta fase**: sin
      `album`, que es como lo tiene quien ya usaba Relación. */

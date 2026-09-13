@@ -14,8 +14,21 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.78.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.83.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
+
+🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
+para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
+él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
+que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
+construye de la F1 a la F45**. Hecha la **F1 (fundación arquitectónica, v3.83.0)**.
+
+🚨 **Y la lección de la F1, que vale para las 44 que quedan: ENTRENAMIENTO YA EXISTÍA, y no era una
+cosa, eran tres.** El módulo es `entreno` + `calistenia` desde la Fase 2; **las fotos de progreso son
+`saludFotos`** —la función que las sube se llama `uploadProgressPhoto()`—; y la racha la lleva el
+motor de rachas. **Fitness no nació al lado: nació SIENDO `entreno`**, con su id y su clave de datos
+intactos. Antes de escribir una lista en cualquier fase de esta entrega, mirar `MAPEO_EXISTENTE` en
+`src/lib/fitness.js`.
 
 🏁 **LA ENTREGA 3 ESTÁ CERRADA: 46 de 46** (ver `docs/11_ENTREGA3_ORDEN.md`). Los siete bloques
 —Hoy y Calendario (10/10), Biblioteca (8/8), Productividad (7/7), Bienestar (1/1), Sueño (2/2),
@@ -29,8 +42,9 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** solo el bloque **AXION** de la Entrega 1 (≈1100 apartados, aplazado por
-decisión de Josué), y lo que él vaya pidiendo fase a fase.
+**Pendiente por delante:** **las 44 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
+fase.
 
 ⚠️ **La Entrega 3 no fue una continuación de la 2.** Aquélla construía módulos nuevos; ésta **pulió y
 rehízo apartados que ya existían** —Hoy, Calendario, Biblioteca, Productividad, Bienestar, Nutrición,
@@ -295,6 +309,48 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 | **NAVO F1** | **Atrás vuelve de donde viniste**, no al área del módulo | ✅ **v3.81.0** |
 | **SF F1** | 🍎 El **barrido de Safari** (ésta no la pidió él: sale de la SC F1) | ✅ **v3.82.0** |
 
+🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, que empieza por la **FIT F1 (v3.83.0)**. Lo que
+dejó, y que vale para las 44 que quedan:
+
+- 🚨 **LO QUE PIDE UNA ENTREGA NUEVA PUEDE EXISTIR YA TRES VECES** (FIT F1, y es la lección más
+  repetida del proyecto elevada a entrega entera). El enunciado pedía un módulo Fitness con un área
+  de fotos de progreso y una racha en la cabecera: **el módulo es `entreno` + `calistenia` desde la
+  Fase 2**, **las fotos son `saludFotos`** —la función que las sube se llama `uploadProgressPhoto()`
+  y el estado vacío de Salud dice literalmente *"Todavía no has subido ninguna foto de progreso"*— y
+  **la racha la lleva el motor de rachas**. Una lista nueva de cualquiera de las tres habría dejado
+  lo que Josué ya tiene **invisible en su propia pantalla**. Está en `MAPEO_EXISTENTE`, con una
+  comprobación por línea.
+- 🚨 **UN MÓDULO SE RENOMBRA POR FUERA, NUNCA POR DENTRO** (FIT F1, y es NAV F2 por segunda vez):
+  la etiqueta pasa a «Fitness» y **`entreno` y `calistenia` no se tocan** — son la clave de
+  `app_data`, la de la personalización de la Fase 19 y la de la navegación. Ni una migración de
+  datos.
+- ⚠️ **UNA CIFRA DEL ENUNCIADO PUEDE CHOCAR CON UNA DECISIÓN CERRADA, Y ENTONCES SE ESCRIBE LA
+  LECTURA** (FIT F1, **C-33**): el apartado 22 fija diez niveles de rango y **D2-02** prohíbe niveles
+  fuera de Sonido y Rachas. Se construye como **medida física, nunca premio** —no se gana usando la
+  aplicación, no se canjea, no desbloquea nada, no existe sin datos, y los diez se llaman por lo que
+  miden, jamás «Nivel 4»—, queda anotado en `docs/03` y **se le dice**. No se para la fase y no se
+  decide en silencio.
+- 🚨 **ANTES DE PONER UN NÚMERO EN UN CTA, MIRAR SI LA LISTA QUE CUENTA EXISTE** (FIT F1): el
+  apartado 9 propone *"Clasificar ejercicios · 0 restantes"*, y sin catálogo de ejercicios ese cero
+  cuenta una lista que aún no existe. El CTA se ve, el contador no (regla 8). Igual con el chevron
+  de una tarjeta: **una flecha promete navegación**, así que no se pinta hasta que lleve a algo.
+- ⚠️ **UN ESTADO NEUTRO QUE EL ENUNCIADO OFRECE PUEDE SER UNA MENTIRA** (FIT F1): el apartado 6
+  proponía enseñar *"0 días"* de racha. JosStyle **ya tiene un motor de rachas**, así que ese cero
+  sería falso el día que lleve cuatro seguidos. Si no la tiene definida, **no se pinta nada**
+  (EH F23).
+- 🐛 **«EXPERTO» CONTIENE «XP»** (FIT F1, y es la EH F40 en un nombre de verdad): el barrido de
+  palabras de juego buscaba subcadenas y ponía roja la escala entera **con el código bien**. Van con
+  límite de palabra, y hay dos comprobaciones que demuestran que el arreglo no tapa nada.
+- 🐛 **`TrainingView` ERA LA SEXTA VISTA SIN UN SOLO CASO DE RENDERIZADO** (FIT F1), tras
+  `LibraryView`, `HealthView`, `NutritionView`, `EstudiosView` y `RelationView`. Se pintaba en
+  producción desde la Fase 2 y no la probaba nadie. **Al tocar una pantalla, mirar primero si está en
+  `smoke-vistas.jsx`.**
+- 🐛 **UN ACORDEÓN CERRADO SIGUE TENIENDO SU TEXTO EN LA PÁGINA** (y por eso `pulsar('Nutrición')`
+  desde Inicio pulsaba **la tarjeta de puntuación**, no el módulo): se pliega con
+  `grid-template-rows: 0fr` y `overflow: hidden`, **no con `display: none`**, así que su desglose
+  —«Sueño», «Entrenamiento», «Nutrición»— cuenta para `innerText`. **Buscar por texto en Inicio
+  encuentra ese desglose antes que cualquier tarjeta.**
+
 - 🚨 **UN `className` NO ES UNA PRUEBA DE NADA, Y ESTO COSTÓ CARO** (SF F1). La lupa se declara
   `fixed`… y **nunca lo ha estado**: `.toque-44` —el área táctil de la E3 F1— pone
   `position: relative`, misma especificidad, y `index.css` va después de las utilidades de Tailwind.
@@ -377,12 +433,14 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. **Esperar la fase que pase Josué.** Las Entregas 2 y 3 están cerradas, así que **no hay una fase
-   siguiente que ejecutar por tu cuenta**: él las va pasando de una en una (2026-09-12: *"ahora te
-   paso más fases"*). Si no hay ninguna encima de la mesa, las opciones son las decisiones abiertas
-   de abajo o el bloque **AXION** de la Entrega 1, que él aplazó.
-2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las 19 578 comprobaciones
-   cubre (R1), y hay siete bloques rehechos que nadie ha tocado con el dedo.
+1. 🏋️ **SEGUIR POR LA FIT F2/45 — el catálogo maestro de ejercicios** (líneas 32 042–32 638 de
+   `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). **Ya no hay que esperar a que él pase nada**:
+   la Entrega 4 está entera encima de la mesa y se construye de la F1 a la F45, en orden,
+   encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
+   (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
+3. ⏸ **Y contarle C-33**: los diez rangos de Fitness contra su D2-02. Está construido con la lectura
+   que respeta las dos y **no bloquea nada**, pero la decisión es suya.
 
 ⏸ **Y las cinco decisiones que siguen esperándole**, ninguna de ellas trabajo que yo pueda hacer
 solo: **DEP-29** (registrar JosStyle en Google y en Microsoft), **DEP-30** (el service worker),

@@ -829,3 +829,22 @@ prácticamente todo está sin probar**, **(2) Notificaciones**, que es la catego
 apartados sin construir, **(3) AXION**, que está entero por delante y bloqueado por una decisión, y
 **(4) un puñado de piezas concretas que se dieron por cerradas sin estarlo** — la puntuación diaria,
 la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calendario.
+
+---
+
+## Ω. ENTREGA 4 — FITNESS (45 fases)
+
+> El desglose completo, con la línea de cada fase dentro de la especificación literal, está en
+> **`docs/12_ENTREGA4_FITNESS_ORDEN.md`**. ⚠️ El documento va del revés: la F45 abre el archivo y la
+> F1 lo cierra. **Se construye de la F1 a la F45.**
+
+- [x] **F1 — Fundación arquitectónica** (v3.83.0): entrada, tres áreas (Rangos · Progreso ·
+      Entrenamiento), shell reutilizable, siete grupos musculares con sus subgrupos, diez niveles de
+      rango, los siete modelos del apartado 13, persistencia sobre `app_data` y estados vacíos.
+      🚨 **Sin duplicar nada**: el módulo ya era `entreno` + `calistenia`, las fotos de progreso ya
+      eran `saludFotos` y la racha ya la llevaba el motor de rachas.
+- [ ] F2 — Sistema y catálogo maestro de ejercicios
+- [ ] F3–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+
+⏸ **C-33 pendiente de Josué**: los diez rangos del apartado 22 contra D2-02. Construido como medida
+física, nunca como premio; anotado en `docs/03` y **no bloquea ninguna fase**.

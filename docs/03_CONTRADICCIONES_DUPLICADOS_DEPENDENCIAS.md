@@ -579,6 +579,34 @@ Es R1 puro.
 
 ---
 
+### C-33 — 🟢 RESUELTA POR LECTURA (FIT F1, v3.83.0) · Los diez rangos de Fitness contra D2-02
+
+**La Entrega 4 fija *"Rangos: 10 niveles"* como decisión de producto (apartado 22 de la FIT F1), y
+D2-02 —decisión cerrada de Josué— dice que no hay niveles fuera de Sonido y Rachas:** *"Nada de
+puntos, niveles ni monedas en Bienestar. XP y niveles solo dentro de Sonido/Rachas, sin salir de
+ahí."* Fitness vive en Bienestar.
+
+**No se ha parado la fase, y ésta es la lectura con la que se ha construido**, escrita para que él
+pueda desmontarla en una línea si no le convence:
+
+Lo que D2-02 prohíbe es **gamificar la aplicación**: puntos por usarla, monedas, niveles que suben
+por abrir pantallas. Un rango de Fitness no es eso, es **una medida de lo que hace su cuerpo**,
+como los estándares de fuerza que usa cualquier gimnasio:
+
+- **no se gana usando la aplicación**, sino registrando ejercicios reales;
+- **no se canjea por nada** y **no desbloquea nada**;
+- **no existe hasta que hay datos**: sin ejercicios clasificados el rango es `null` y la pantalla
+  dice «Sin Rango», que es lo que pide el propio enunciado;
+- **ni XP, ni monedas, ni recompensas, ni premios**: hay una comprobación en `test-fitness.mjs` que
+  barre todos los textos que ve Josué buscando esas palabras;
+- y los diez se llaman por **lo que miden** —Iniciación, Intermedio, Avanzado, Élite—, nunca
+  «Nivel 4»: hay otra comprobación para eso.
+
+**Si Josué prefiere otra cosa**, se cambia `NIVELES_RANGO` en `src/lib/fitness.js` y ya está: es un
+catálogo, no una arquitectura. Queda dicho en vez de dado por bueno.
+
+---
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

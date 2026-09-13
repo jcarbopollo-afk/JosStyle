@@ -21,7 +21,7 @@ ordena es **el trabajo**, no el documento.
 
 | | Fase | Líneas | Tamaño |
 |---|---|---|---|
-| **F1** | Fundación arquitectónica del módulo fitness | 32639–33252 | 614 |
+| **F1** ✅ **v3.83.0** | Fundación arquitectónica del módulo fitness | 32639–33252 | 614 |
 | **F2** | Sistema y catálogo maestro de ejercicios | 32042–32638 | 597 |
 | **F3** | Constructor de entrenamientos | 31493–32041 | 549 |
 | **F4** | Gestión de entrenamientos y plantillas propias | 31018–31492 | 475 |
@@ -92,3 +92,28 @@ pasar con las notas (E3 F16), los alimentos (E3 F36) y los programas de Estudios
 **Lo primero de la F1 es inventariar lo que hay**, no crear: qué clave de `app_data` usa, qué vistas
 lo pintan, quién lo lee (Hoy, el hub de área, las rachas, la exportación, el contexto de la IA) y qué
 entidades tiene ya. Y a partir de ahí, **ampliar**.
+
+## ✅ Lo que encontró ese inventario (FIT F1, v3.83.0)
+
+El aviso de arriba se quedó corto: **no era una cosa que ya existía, eran tres.**
+
+| El enunciado pide… | …y ya existe como | Dónde se gestiona |
+|---|---|---|
+| El módulo **Fitness** | `entreno` (navegación) + `calistenia` (datos) | `src/views/TrainingView.jsx` |
+| **ProgressPhoto** (área Progreso) | `saludFotos`, con su archivo, su fecha, su nota y su PIN | `src/views/HealthView.jsx` |
+| La **racha** de la cabecera | El motor de rachas, tipo `training` | `src/lib/rachas.js` |
+| La **línea del hub** y de Inicio | `calcularResumenModulo('entreno', …)` | `src/lib/resumenesHub.js` |
+
+**Ninguna se ha duplicado.** Fitness **es** `entreno`: mismo id, misma clave de datos, la etiqueta
+cambia a «Fitness» y ya está (el precedente de NAV F2 con *Imagen personal*). El área de
+Entrenamiento **renderiza `TrainingView` entera**, no la copia (E3 F23), y el área de Progreso
+cuenta las fotos que hay y lleva a donde se suben. Está declarado en `MAPEO_EXISTENTE`, dentro de
+`src/lib/fitness.js`, con una comprobación por línea.
+
+⚠️ **Y hay una contradicción anotada: C-33** en `docs/03` — los diez rangos del apartado 22 contra
+D2-02. Se construyó con la lectura que respeta las dos (un rango es una medida física, no un premio)
+y **está por decirle a Josué**.
+
+⚠️ **Lo que la F1 NO construye** está enumerado en `NO_EN_FIT1`, con la fase que lo traerá. El
+apartado 27 lo pide expresamente: *"NO empieces automáticamente a construir el catálogo de
+ejercicios"*.

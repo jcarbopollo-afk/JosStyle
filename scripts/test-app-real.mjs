@@ -4795,7 +4795,12 @@ await page.waitForTimeout(2200);
 /* ── DIST F1 · BIENESTAR: cinco módulos exactos ───────────────────────────── */
 ok(await pulsar('Bienestar'), '🚨 DIST F1 — se entra en BIENESTAR');
 const bien_n1 = await esperarTexto(/Salud f[ií]sica/i);
-for (const rotulo of [/Salud f[ií]sica/i, /Sue[nñ]o/i, /Nutrici[oó]n/i, /Entrenamiento/i, /Imagen personal/i]) {
+/* 🏷️ FIT F1 — el cuarto es **«Fitness»** desde la Entrega 4. Es el mismo módulo
+   de siempre: `entreno` sigue siendo su id y `calistenia` su clave de datos, y
+   lo único que cambia es la etiqueta, como en NAV F2 con «Imagen personal». La
+   comprobación se actualiza en vez de aflojarse: el árbol que escribió Josué en
+   DIST F1 sigue teniendo sus cinco módulos exactos, con un nombre nuevo. */
+for (const rotulo of [/Salud f[ií]sica/i, /Sue[nñ]o/i, /Nutrici[oó]n/i, /Fitness/i, /Imagen personal/i]) {
   ok(rotulo.test(bien_n1), `⚠️ Bienestar tiene ${rotulo.source}`);
 }
 // 🏷️ El módulo pasó de «Mi salud» a «Salud física», y su id NO se ha tocado.
@@ -5718,7 +5723,7 @@ ok(/Inicio/.test(barra_nv.join(' ')) && /Ajustes/.test(barra_nv.join(' ')),
    tarjeta de un módulo del Inicio tiene el nombre en su PRIMERA línea, así que
    se busca por ahí. Y antes se exige estar en Inicio **de verdad** —ni cabecera
    de área ni barra de atrás—, para que un clic sobre la pantalla anterior no
-   pueda colarse. */
+   pueda colarse como si nada. */
 const pulsarTarjetaInicio = async (titulo, tope = 6000) => {
   const hasta = Date.now() + tope;
   do {
@@ -5745,6 +5750,92 @@ ok(await pulsarTarjetaInicio('Nutrición'), 'se abre Nutrición desde su tarjeta
 const nutri_nv = await rotuloAtras();
 ok(/inicio/i.test(nutri_nv || ''),
   `🚨 NAVO F1 — y otro módulo distinto hace lo mismo sin una regla propia: «${nutri_nv}»`);
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F1 — Fitness, la fundación (Entrega 4 · Fase 1/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El apartado 26 pide comprobar cuatro cosas en el navegador: que se entra, que
+   se cambia entre las tres áreas, que el móvil se ve bien y que las tres se ven
+   correctamente **sin datos**. Y el criterio de éxito remata: que parezca *"una
+   parte real de la aplicación"*.
+
+   🚨 Lo que más importa aquí no es lo que se ve, sino lo que NO se ha perdido:
+   la pantalla de calistenia —siete habilidades, récords, sesiones, vídeos y los
+   partidos— tiene que seguir estando dentro, entera. Si un día alguien
+   «integra» Fitness copiando su contenido, esta sección se pone roja. */
+console.log('\n── FIT F1 · Fitness: la fundación ──');
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+ok(await pulsar('Bienestar'), 'FIT F1 — se abre el área Bienestar');
+ok(await pulsar('Fitness'), '🚨 FIT F1 — la entrada del módulo se llama «Fitness» (apartado 4)');
+const enFitness = await esperarTexto(/Rangos/i);
+ok(/Rangos/i.test(enFitness) && /Progreso/i.test(enFitness) && /Entrenamiento/i.test(enFitness),
+  '🚨 …y dentro están las tres áreas: Rangos · Progreso · Entrenamiento (apartado 5)');
+
+/* El apartado 4 dice *"No crees una navegación global nueva"*. */
+const barra_fit = await page.evaluate(() => {
+  const nav = document.querySelector('nav');
+  return nav ? [...nav.querySelectorAll('button')].map((b) => b.innerText.trim()).filter(Boolean) : [];
+});
+ok(barra_fit.length === 5, `⚠️ la barra de abajo sigue con sus cinco pestañas (${barra_fit.join(' · ')})`);
+
+/* Arranca en Entrenamiento, y ahí tiene que seguir estando TODO lo de antes. */
+ok(/Habilidades/i.test(enFitness), '⚠️ el área de Entrenamiento abre por defecto, con sus Habilidades');
+ok(/Handstand|Planche|Front Lever/i.test(enFitness),
+  '🚨 FIT F1 — la pantalla de calistenia sigue DENTRO, entera: no se ha copiado ni se ha perdido');
+ok(/Tu Plan/i.test(enFitness), '…y la estructura nueva: «Tu Plan» (apartado 12)');
+
+/* Área RANGOS, sin datos: «Sin Rango» y el texto literal del apartado 9. */
+ok(await pulsar('Rangos'), 'se cambia al área de Rangos');
+const enRangos = await esperarTexto(/Sin Rango/i);
+ok(/Rango Predicho/i.test(enRangos), '🚨 FIT F1 — «Rango Predicho» (apartado 9)');
+ok(/Sin Rango/i.test(enRangos), '…y sin datos dice «Sin Rango», no un nivel 1 inventado');
+ok(/Completa ejercicios para comenzar a establecer tu nivel/i.test(enRangos),
+  '…con el texto exacto que pide el enunciado');
+ok(/Brazos/i.test(enRangos) && /Piernas/i.test(enRangos) && /Cuello/i.test(enRangos),
+  '⚠️ y los siete rankings musculares están (apartado 9)');
+ok(/Clasificar ejercicios/i.test(enRangos),
+  '⚠️ el CTA de clasificar existe y se ve…');
+ok(!/0 restantes/i.test(enRangos),
+  '🚨 …pero sin «0 restantes»: sería el contador de una lista que todavía no existe (regla 8)');
+
+/* Área PROGRESO, sin fotos: estado vacío con salida, no una pantalla en blanco. */
+ok(await pulsar('Progreso'), 'se cambia al área de Progreso');
+const enProgreso_fit = await esperarTexto(/Tu progreso/i);
+ok(/Todavía no has añadido fotograf/i.test(enProgreso_fit),
+  '🚨 FIT F1 — el estado vacío de Progreso, con las palabras del apartado 11');
+ok(/Añadir foto/i.test(enProgreso_fit),
+  '⚠️ y con su salida: el botón lleva a donde las fotos se suben de verdad');
+
+/* 🚨 Y eso es lo que más importa de esta área: **las fotos de progreso ya
+   existen**, en Salud física, con su archivo y su PIN. El botón no finge una
+   subida: lleva allí. */
+ok(await pulsar('Añadir foto'), 'se pulsa «Añadir foto»');
+const trasFoto = await esperarTexto(/Medidas|Fotos|Historial/i);
+ok(/Medidas/i.test(trasFoto) || /Fotos/i.test(trasFoto),
+  '🚨 FIT F1 — …y acaba en Salud física, donde las fotos se gestionan de verdad');
+
+/* Nada de esto ha escrito un solo dato: entrar y mirar es mirar. */
+const escrituras_fit = guardado.length;
+await pulsar('Bienestar');
+await pulsar('Fitness');
+await esperarTexto(/Rangos/i);
+await pulsar('Rangos');
+await page.waitForTimeout(400);
+await pulsar('Progreso');
+await page.waitForTimeout(400);
+ok(guardado.length === escrituras_fit,
+  '⚠️ FIT F1 — cambiar de área NO guarda nada: cuál está abierta es de la pantalla (EH F40)');
+
+/* Y en un iPhone pequeño no se sale del ancho (apartado 18). */
+const desborde_fit = await page.evaluate(() => ({
+  ancho: document.documentElement.scrollWidth,
+  ventana: window.innerWidth,
+}));
+ok(desborde_fit.ancho <= desborde_fit.ventana + 1,
+  `🚨 FIT F1 — a 375 px no se desborda de lado (${desborde_fit.ancho} vs ${desborde_fit.ventana})`);
 
 await page.setViewportSize({ width: 1280, height: 900 });
 
