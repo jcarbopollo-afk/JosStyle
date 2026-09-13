@@ -3259,7 +3259,12 @@ ok(posAlta === -1,
 
 /* Apartado 1: los seis cuadraditos con información real. */
 ok(/1\/2 hoy/i.test(centro_pr7), '🚨 el cuadradito de Hábitos dice "1/2 hoy"');
-ok(/2 pendientes/i.test(centro_pr7), '⚠️ el de Tareas, sus pendientes');
+/* ⚠️ DIST F1 — el cuadradito de Tareas ya no está: su pantalla vive en
+   Organización. Lo que sí sigue —y es integración, no copia— es que el centro
+   de control informe de las vencidas, que es la comprobación de GE F1 de unas
+   líneas más arriba. */
+ok(!/Organiza lo que tienes que hacer/i.test(centro_pr7),
+  '🚨 DIST F1 — y NO hay cuadradito de Tareas: su sitio es Organización');
 ok(/2 sesiones/i.test(centro_pr7), '⚠️ el de Pomodoro, sus sesiones de hoy');
 ok(/1 activa/i.test(centro_pr7), '⚠️ el de Metas, las activas');
 ok(/⭐ Mejorar mi físico/i.test(centro_pr7), '⚠️ y el de Objetivos destaca el principal');
@@ -3329,13 +3334,16 @@ ok(/Bienestar digital/i.test(barra_bn),
   '🚨 y el acceso de Hoy al tiempo de pantalla dice «Bienestar digital»: dos cosas no pueden llamarse igual');
 
 ok(await pulsar('Bienestar'), 'se abre el área Bienestar');
-const hub_bn = await esperarTexto(/Mi salud/i);
-ok(/Mi salud/i.test(hub_bn), '🚨 Y DENTRO NO SE REPITE EL NOMBRE: la tarjeta es «Mi salud» (apartado 3)');
+/* 🏷️ DIST F1 — el módulo pasó de «Mi salud» a «Salud física». Lo que el
+   apartado 3 de la E3 F30 prohíbe —repetir el nombre del área— se sigue
+   cumpliendo igual, que es lo que esta comprobación protege. */
+const hub_bn = await esperarTexto(/Salud f[ií]sica/i);
+ok(/Salud f[ií]sica/i.test(hub_bn), '🚨 Y DENTRO NO SE REPITE EL NOMBRE: la tarjeta es «Salud física» (apartado 3)');
 ok(/Sueño/i.test(hub_bn) && /Nutrición/i.test(hub_bn),
   '⚠️ con el resto del área intacto: no se ha movido ningún módulo');
 ok(/71\.5 kg/i.test(hub_bn), '⚠️ y la tarjeta enseña su último peso de verdad');
 
-ok(await pulsar('Abrir Mi salud'), 'se entra en Mi salud');
+ok(await pulsar('Abrir Salud física'), 'se entra en Salud física');
 const bn = await esperarTexto(/Medidas/i);
 ok(/71\.5/.test(bn), '🚨 EL ESTADO DE UN VISTAZO: el peso de la última medida arriba del todo');
 ok(/20\.4/.test(bn), '⚠️ con su IMC, calculado con la altura del perfil');
@@ -3376,7 +3384,12 @@ ok(/Historial/i.test(plegado_bn), '⚠️ pero la sección sigue ahí para volve
 
 /* 🚨 Y lo que de verdad prohíbe el apartado 3: en ningún sitio de esta pantalla
    se lee «Salud» a secas. */
-ok(!/(^|[^a-zA-ZáéíóúñÁÉÍÓÚÑ])Salud([^a-zA-ZáéíóúñÁÉÍÓÚÑ]|$)/.test(plegado_bn.replace(/Analizar mi salud/gi, '')),
+/* ⚠️ Se descuenta también «Salud física», que es el nombre del módulo desde
+   DIST F1: la regla es que no se lea «Salud» **a secas**, no que la palabra
+   desaparezca. Sin este descuento la comprobación saltaría con la pantalla
+   perfectamente bien — un rojo por no haber mirado qué mide. */
+const limpio_bn = plegado_bn.replace(/Analizar mi salud/gi, '').replace(/Salud f[ií]sica/gi, '');
+ok(!/(^|[^a-zA-ZáéíóúñÁÉÍÓÚÑ])Salud([^a-zA-ZáéíóúñÁÉÍÓÚÑ]|$)/.test(limpio_bn),
   '🚨 Y «SALUD» A SECAS NO SE LEE EN NINGUNA PARTE: la redundancia del apartado 3 ha desaparecido');
 
 /* ── E3 F31 (SU F1) · EL REGISTRO DE SUEÑO ────────────────────────────────
