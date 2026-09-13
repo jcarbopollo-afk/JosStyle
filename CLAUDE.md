@@ -14,15 +14,16 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.84.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.85.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. Hechas la **F1 (fundación arquitectónica, v3.83.0)** y la
-**F2 (el catálogo maestro de ejercicios, v3.84.0)**.
+construye de la F1 a la F45**. Hechas la **F1 (fundación arquitectónica, v3.83.0)**, la
+**F2 (el catálogo maestro de ejercicios, v3.84.0)** y la **F3 (el constructor de entrenamientos,
+v3.85.0)**.
 
 🚨 **Y la lección de la F1, que vale para las 44 que quedan: ENTRENAMIENTO YA EXISTÍA, y no era una
 cosa, eran tres.** El módulo es `entreno` + `calistenia` desde la Fase 2; **las fotos de progreso son
@@ -43,7 +44,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 43 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 42 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -320,8 +321,65 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 | **NAVO F1** | **Atrás vuelve de donde viniste**, no al área del módulo | ✅ **v3.81.0** |
 | **SF F1** | 🍎 El **barrido de Safari** (ésta no la pidió él: sale de la SC F1) | ✅ **v3.82.0** |
 
-🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, con la **FIT F1 (v3.83.0)** y la **FIT F2
-(v3.84.0)** hechas. Lo que dejaron, y que vale para las 43 que quedan:
+🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, con la **FIT F1 (v3.83.0)**, la **FIT F2
+(v3.84.0)** y la **FIT F3 (v3.85.0)** hechas. Lo que dejaron, y que vale para las 42 que quedan:
+
+- 🚨 **LO QUE CONSTRUYE JOSUÉ SON PLANTILLAS, NO PLANES** (FIT F3, y lo dejó escrito la F1). El
+  constructor guardaba en `fitness.planes` hasta que se leyó el enunciado de la F4 y, sobre todo, el
+  comentario de `crearWorkoutPlan`: *"un plan y una plantilla son la misma forma: lo que cambia es si
+  él lo creó (`plantillas`) o viene de la biblioteca (`planes`)"*. Escribir en `planes` habría
+  mezclado sus rutinas con la biblioteca de planificaciones de la FIT F5 —y habría obligado a migrar
+  al construir «Tus plantillas»—. **Antes de elegir en qué clave se guarda algo, leer lo que dijo la
+  fase que creó la clave.**
+- 🚨 **`Exercise` Y `WorkoutExercise` SON DOS COSAS, Y EL ENUNCIADO LO MARCA COMO CRÍTICO** (FIT F3,
+  apartado 28). El ejercicio maestro *Press banca* **no puede guardar «4 series»**, porque otra
+  rutina puede usar tres. Una línea de rutina guarda `exerciseId` y **nada más del ejercicio** —ni
+  el nombre, ni los músculos, ni el equipamiento—, y `nombreDeLinea()` **le pregunta al catálogo**:
+  así renombrar uno lo renombra en las veinte rutinas donde esté (AS F1).
+- 🚨 **UN CAMPO NUEVO DE UNA LÍNEA VA A `crearWorkoutExercise`, EN `fitness.js`** (FIT F3, y es la
+  regla 5 por enésima vez). `App.jsx` normaliza `fitness` **en cada carga**, así que lo que ese
+  modelo no conozca **se lo lleva el siguiente guardado**: los cinco campos del constructor —`modo`,
+  `repsHasta`, `duracion`, `tipoCarga`, `bloqueId`— se borraban, y un L-sit guardado a 20 segundos
+  volvía como repeticiones **con la pantalla pintándose perfecta**.
+- 🚨 **Y LA PUERTA DE CARGA DE `fitness` ES `normalizarFitnessCompleto()`, EN `ejercicios.js`**
+  (FIT F3). La de `fitness.js` pasa los ejercicios del usuario por el modelo **reducido** de la F1
+  —sin `entornos`, sin `medidas`, sin `dificultad`, sin `papel` en los músculos—, y no se puede
+  arreglar allí porque importar `ejercicios.js` desde `fitness.js` sería un ciclo. Estaba latente
+  desde la F2: nadie escribe todavía `fitness.ejercicios`, pero en cuanto una fase le deje crearse
+  uno habría sido pérdida de datos silenciosa. **Una sola puerta, y en el archivo que tiene el
+  modelo completo.**
+- 🚨 **EL SELECTOR DE EJERCICIOS ES `EjerciciosView`, NO UNO NUEVO** (FIT F3, apartado 5). Pide un
+  selector *"basado directamente en el catálogo de la Fase 2"* con búsqueda, filtros y navegación:
+  eso ya existía. Con `onElegir`, tocar una tarjeta **añade** y te deja donde estás para seguir
+  añadiendo. Un segundo buscador de ejercicios sería el duplicado de la E3 F22.
+- ⚠️ **`distribucionMuscular()` ES LA FUNCIÓN DE LA DISTRIBUCIÓN, PARA TODOS** (FIT F3, apartado 19,
+  que la quiere *"preparada para ser reutilizada"* en el detalle del plan, los rangos, la IA y las
+  estadísticas). Devuelve **por grupo y por subgrupo**, ponderando por series, y **se deriva de los
+  porcentajes de la F2**: *"No introduzcas porcentajes manuales"*.
+- ⚠️ **UNA ESTIMACIÓN TIENE QUE PARECERLO** (FIT F3, apartado 20): *"No inventes una precisión falsa
+  […] Puede mostrar algo como ≈ 60 min. No: 61 min 13 s."* La duración se redondea a cinco minutos y
+  **el «≈» va en el texto**. Si una fase futura la afina, que no se lo quite.
+- ⚠️ **«GUARDAR» NO SE APAGA CUANDO FALTA ALGO** (FIT F3, y es EH F62): un botón apagado no dice QUÉ
+  corregir. Se pulsa, y la validación contesta con palabras.
+- ⚠️ **QUITAR UNA LÍNEA NO USA `BotonBorrar`** (FIT F3): aquel componente promete que lo suyo va a
+  Eliminados recientes y vuelve (E3 F1), y la papelera guarda elementos de una lista guardada, no
+  una línea de algo que todavía no existe. Prometerlo sería mentir en pantalla.
+- ⚠️ **EL BORRADOR ES DEL DISPOSITIVO, Y SE OFRECE** (FIT F3, apartado 25): vive en `localStorage`
+  como el zoom del Horario (HT F4), **cada acceso en `try`** porque en una ventana privada de Safari
+  `setItem` lanza (SF F1), y al volver a Entrenamiento se ofrece con Continuar o Descartar.
+  Guardarlo y no volver a mencionarlo sería guardarlo para nada; recuperarlo solo le pondría delante
+  algo que quizá ya no quiere.
+- ⚠️ **LOS BLOQUES EXISTEN EN EL DATO Y NO EN LA PANTALLA** (FIT F3, apartado 18): `bloqueId` en la
+  línea y `bloques` en la rutina, declarados en `PREPARADO_PARA`. *"NO es necesario construir una
+  interfaz avanzada de bloques en esta fase"*, y un selector con un solo bloque sería un control
+  decorativo.
+- 🐛 **UN COMPONENTE QUE DEVUELVE `null` A PROPÓSITO NO ENTRA EN `smoke-vistas.jsx`** (FIT F3, y es
+  el precedente de `BloqueRecomendado` y `Recomendados`): el arnés cuenta un render vacío como
+  fallo. `ResumenConstructor` sin ejercicios no pinta nada —un «0 ejercicios · ≈ 0 min» sería el cero
+  inventado de la regla 8—, así que eso se comprueba en la prueba de Node, no ahí.
+- 🐛 **Y UN REEMPLAZO POR TEXTO SE CAE CON UN ESPACIO DURO** (FIT F3): el separador de los entornos
+  en `EjerciciosView` es `'\u00a0· '`, no `' · '`, y el parche no encontraba el ancla. **Antes de
+  anclar un reemplazo en una línea con puntuación, mirar los bytes** (`cat -A`), no cómo se ve.
 
 - 🚨 **EL `Exercise` SE AMPLÍA, NUNCA SE SUSTITUYE** (FIT F2, apartado 1). El de la F1 conserva todos
   sus campos y suma los que faltaban; el `entorno` en singular **se absorbe** en `entornos` desde el
@@ -482,10 +540,13 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F3/45 — el constructor de entrenamientos** (líneas 31 493–32 041 de
-   `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). **Ya no hay que esperar a que él pase nada**:
-   la Entrega 4 está entera encima de la mesa y se construye de la F1 a la F45, en orden,
-   encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+1. 🏋️ **SEGUIR POR LA FIT F4/45 — gestión de entrenamientos y plantillas propias** (líneas
+   31 018–31 492 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). **Ya no hay que esperar a que
+   él pase nada**: la Entrega 4 está entera encima de la mesa y se construye de la F1 a la F45, en
+   orden, encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+   ⚠️ **Y lo primero de esa fase es mirar lo que ya hay**: `guardarRutina`, `abrirParaEditar` y la
+   lista de rutinas de «Tu Plan» son de la F3, y `plantillas` es una clave de `DEFAULT_FITNESS`
+   desde la F1.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

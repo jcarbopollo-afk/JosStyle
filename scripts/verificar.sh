@@ -901,6 +901,16 @@ else
   fallo "Falla el catálogo de ejercicios"; grep '✗' /tmp/jc_ejercicios.log
 fi
 
+# FIT F3 — el constructor de entrenamientos. Lo que más se vigila es el apartado
+# 28, que el propio enunciado marca como CRÍTICO: `Exercise` es el catálogo y
+# `WorkoutExercise` la configuración dentro de UNA rutina. Y el ida y vuelta:
+# un normalizador que no conoce un campo lo BORRA en la siguiente carga.
+if node --import ./scripts/resolver-vite.mjs scripts/test-constructor.mjs >/tmp/jc_constructor.log 2>&1; then
+  ok "Constructor de entrenamientos (FIT F3) — $(grep -c '✓' /tmp/jc_constructor.log) comprobaciones"
+else
+  fallo "Falla el constructor de entrenamientos"; grep '✗' /tmp/jc_constructor.log
+fi
+
 # SC F1 — scroll, cabeceras fijas y el acordeón que dejaba un hueco en el iPhone.
 # Los tres los reportó Josué usando la aplicación, y los tres tenían una causa
 # real: la cabecera no era `sticky`, la banda no existía y al elemento de rejilla

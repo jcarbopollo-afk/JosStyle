@@ -22,7 +22,9 @@ import {
   ejerciciosDeGrupo, ejerciciosDeSubgrupo, sustitutosDe, variantesDe, baseDe, progresionesDe,
   nombreCompleto, buscarEjercicios, filtrarEjercicios, recuentos, auditarCatalogo, NO_EN_FIT2,
 } from '../src/lib/ejercicios.js';
-import { GRUPOS_MUSCULARES, TODOS_LOS_SUBGRUPOS } from '../src/lib/fitness.js';
+import {
+  GRUPOS_MUSCULARES, TODOS_LOS_SUBGRUPOS, ACCESOS_ENTRENAMIENTO, DEFAULT_FITNESS,
+} from '../src/lib/fitness.js';
 
 const RAIZ_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (p) => readFileSync(join(RAIZ_DIR, p), 'utf8');
@@ -255,6 +257,38 @@ ok(roto.sumaMal.length === 2, '…cuáles no suman 100');
 ok(roto.colgados.length === 1, '…y qué referencia apunta a la nada');
 const conEnlace = auditarCatalogo([{ id: 'b', entornos: ['casa'], musculos: [{ subgrupoId: 'biceps', porcentaje: 100, papel: 'principal' }], sustitutos: [], progresiones: [], variantes: [], tutorial: { notas: 'mira en https://ejemplo.test' } }]);
 ok(conEnlace.conEnlace.includes('b'), '…y caza un enlace escondido dentro de una nota');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   13. Y el catálogo se puede ABRIR
+
+   🚨 Una pantalla que no llama nadie no falla nunca: pasó con
+   `onDeleteMovimiento` en Economía (E3 F1), con `eliminarHorario` (E3 F5) y
+   con `addApunte` (E3 F16), las tres escritas, probadas y muertas. Así que
+   aquí se comprueba lo que ninguna prueba de la librería puede ver: que el
+   acceso existe en el catálogo de accesos, que la pantalla de Fitness la
+   IMPORTA y la RENDERIZA —nunca la copia (E3 F23)— y que la subpantalla
+   abierta es estado de React, no un campo guardado (EH F40).
+   ══════════════════════════════════════════════════════════════════════════ */
+console.log('\n── 13. El catálogo se puede abrir desde Fitness ──');
+const VISTA_FIT = leer('src/views/FitnessView.jsx');
+const VISTA_FIT_CODIGO = sinCadenas(sinComentarios(VISTA_FIT));
+const accesoCatalogo = ACCESOS_ENTRENAMIENTO.find((a) => a.id === 'ejercicios');
+ok(!!accesoCatalogo, '🚨 El catálogo tiene su acceso en el área de Entrenamiento (apartado 23)');
+ok(accesoCatalogo?.existe === true,
+  '…y está marcado como que EXISTE: si no, se pintaría como una frase y no como un botón');
+ok(accesoCatalogo?.enFase === null,
+  '…sin «llega en una fase posterior», porque ya ha llegado');
+ok(/import EjerciciosView from '\.\/EjerciciosView'/.test(VISTA_FIT),
+  '🚨 `FitnessView` importa la pantalla del catálogo');
+ok(/<EjerciciosView/.test(VISTA_FIT_CODIGO),
+  '…y la renderiza entera: agrupar pantallas es renderizarlas, nunca copiarlas (E3 F23)');
+ok(!/CATALOGO_EJERCICIOS|buscarEjercicios|filtrarEjercicios/.test(VISTA_FIT_CODIGO),
+  '⚠️ Y no reimplementa ni el catálogo ni su búsqueda: habría dos versiones diciendo cosas distintas');
+ok(/setDentro\(a\.id\)/.test(VISTA_FIT_CODIGO),
+  '🚨 El acceso que existe se pinta como BOTÓN y abre de verdad (regla 8)');
+ok(!Object.prototype.hasOwnProperty.call(DEFAULT_FITNESS, 'dentro')
+  && !Object.prototype.hasOwnProperty.call(DEFAULT_FITNESS, 'area'),
+  '⚠️ Qué subpantalla está abierta NO se guarda: es de la pantalla, no un dato (EH F40)');
 
 console.log(`\n${fallos === 0 ? '\x1b[32m✓' : '\x1b[31m✗'} ${total - fallos}/${total} comprobaciones\x1b[0m`);
 process.exit(fallos === 0 ? 0 : 1);

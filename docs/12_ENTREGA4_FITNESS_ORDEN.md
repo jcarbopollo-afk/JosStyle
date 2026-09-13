@@ -23,7 +23,7 @@ ordena es **el trabajo**, no el documento.
 |---|---|---|---|
 | **F1** ✅ **v3.83.0** | Fundación arquitectónica del módulo fitness | 32639–33252 | 614 |
 | **F2** ✅ **v3.84.0** | Sistema y catálogo maestro de ejercicios | 32042–32638 | 597 |
-| **F3** | Constructor de entrenamientos | 31493–32041 | 549 |
+| **F3** ✅ **v3.85.0** | Constructor de entrenamientos | 31493–32041 | 549 |
 | **F4** | Gestión de entrenamientos y plantillas propias | 31018–31492 | 475 |
 | **F5** | Biblioteca de planificaciones | 30514–31017 | 504 |
 | **F6** | Tu plan | 29737–30513 | 777 |
@@ -134,3 +134,33 @@ respetar a partir de aquí:
 - **El catálogo no vive en `app_data`.** Son datos de la aplicación; lo del usuario va en
   `fitness.ejercicios`, y `ejercicioPorId` mira en los dos sitios.
 - **Ni un enlace inventado** (apartado 22): hay una comprobación que barre el JSON entero.
+
+## ✅ Lo que dejó la F3 (v3.85.0)
+
+El constructor entero, y con él la **primera escritura de la clave `fitness`** en `app_data`. Lo que
+hay que respetar a partir de aquí:
+
+- 🚨 **Lo que construye Josué son PLANTILLAS (`fitness.plantillas`), no planes.** `planes` es la
+  biblioteca de planificaciones de la F5. La F1 dejó esa división escrita en `crearWorkoutPlan`, y
+  el enunciado de la F4 la confirma: *«Tus plantillas» = las rutinas que te crees tú*.
+- 🚨 **`Exercise` y `WorkoutExercise` son dos cosas, y el enunciado lo marca como CRÍTICO**
+  (apartado 28). Una línea de rutina guarda `exerciseId` y **nada más del ejercicio**: ni el nombre,
+  ni los músculos, ni el equipamiento. Si una fase necesita saber cómo se llama, **le pregunta al
+  catálogo** (`nombreDeLinea`).
+- 🚨 **Un campo nuevo de una línea va a `crearWorkoutExercise`, en `fitness.js`.** `App.jsx`
+  normaliza `fitness` en cada carga, así que lo que ese modelo no conozca **se lo lleva el siguiente
+  guardado** (regla 5). Ya pasó con los cinco de esta fase antes de arreglarlo.
+- 🚨 **La puerta de carga de `fitness` es `normalizarFitnessCompleto()`, en `ejercicios.js`** — no
+  `normalizarFitness`. La de `fitness.js` recorta los ejercicios del usuario al modelo reducido de la
+  F1, y no se puede arreglar allí porque importar `ejercicios.js` desde `fitness.js` sería un ciclo.
+- 🚨 **El selector de ejercicios es `EjerciciosView` en modo `onElegir`.** Ninguna fase futura
+  escribe un segundo buscador de ejercicios (E3 F22).
+- ⚠️ **`distribucionMuscular()` es la función de la distribución, para todos.** El apartado 19 la
+  quiere reutilizable en el detalle del plan, los rangos, la IA y las estadísticas: devuelve por
+  grupo **y** por subgrupo, ponderando por series. Nunca un porcentaje escrito a mano.
+- ⚠️ **La duración es una estimación y tiene que parecerlo**: redondeada a cinco minutos y con el
+  «≈» en el texto. Si una fase futura la afina, que no le quite el «≈».
+- ⚠️ **Los bloques existen en el dato y no en la pantalla** (apartado 18): `bloqueId` en la línea,
+  `bloques` en la rutina. La interfaz la traerá quien la necesite.
+- ⚠️ **El borrador es de `localStorage` y cada acceso va en `try`** (SF F1). Y se **ofrece** al
+  volver, nunca se recupera solo.

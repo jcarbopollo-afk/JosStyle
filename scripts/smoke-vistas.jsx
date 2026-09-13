@@ -165,6 +165,11 @@ import FitnessView, { AreaRangos, AreaProgreso } from '../src/views/FitnessView.
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
    Relación (NAV F3), y sin estos casos no lo probaría nadie. */
 import EjerciciosView, { DetalleEjercicio, TarjetaEjercicio } from '../src/views/EjerciciosView.jsx';
+/* FIT F3 — el constructor. ⚠️ Sus tres piezas se importan sueltas porque **solo
+   aparecen tras pulsar algo**: renderizar `ConstructorView` no pinta ni una
+   línea del editor de un ejercicio, que es el agujero del Álbum (NAV F3). */
+import ConstructorView, { FilaEjercicio, EditorLinea, ResumenConstructor } from '../src/views/ConstructorView.jsx';
+import { crearRutina as crearRutinaF3, anadirEjercicio as anadirF3, editarLinea as editarF3 } from '../src/lib/constructor.js';
 import { CATALOGO_EJERCICIOS } from '../src/lib/ejercicios.js';
 import WellbeingView from '../src/views/WellbeingView.jsx';
 import HealthView from '../src/views/HealthView.jsx';
@@ -2921,6 +2926,56 @@ const CASOS = [
   ['DetalleEjercicio', DetalleEjercicio, () => ({ ejercicio: null, accent })],
   ['TarjetaEjercicio', TarjetaEjercicio, () => ({
     ejercicio: CATALOGO_EJERCICIOS[0], accent, onAbrir: noop,
+  })],
+  /* FIT F3 — el constructor. El caso que más importa es el de **una rutina con
+     un isométrico dentro**: se mide en segundos, así que la fila y el editor
+     tienen que pintar otra cosa que con un ejercicio de repeticiones. */
+  ['ConstructorView', ConstructorView, () => ({
+    planes: [], propios: [], accent, onGuardar: noop, onVolver: noop,
+  })],
+  ['ConstructorView', ConstructorView, () => ({
+    planes: [], propios: [], accent, onGuardar: noop, onVolver: noop,
+    rutinaInicial: anadirF3(
+      anadirF3(crearRutinaF3({ nombre: 'Push', entornos: ['gym'] }), 'press-banca-barra'),
+      'l-sit',
+    ),
+  })],
+  ['FilaEjercicio', FilaEjercicio, () => ({
+    linea: anadirF3(crearRutinaF3({ nombre: 'X' }), 'press-banca-barra').lineas[0],
+    accent, onEditar: noop, onSubir: noop, onBajar: noop, onDuplicar: noop, onEliminar: noop,
+  })],
+  ['FilaEjercicio', FilaEjercicio, () => {
+    const r = anadirF3(crearRutinaF3({ nombre: 'X' }), 'l-sit');
+    return {
+      linea: editarF3(r, r.lineas[0].id, { duracion: 20, notas: 'Piernas rectas' }).lineas[0],
+      accent, primera: true, ultima: true,
+      onEditar: noop, onSubir: noop, onBajar: noop, onDuplicar: noop, onEliminar: noop,
+    };
+  }],
+  /* ⚠️ Y una línea que apunta a un ejercicio que ya no está: la fila tiene que
+     decirlo, no dejar un hueco en blanco (EH F62). */
+  ['FilaEjercicio', FilaEjercicio, () => ({
+    linea: { id: 'x', exerciseId: 'ya-no-existe', orden: 0, series: 3, modo: 'reps', repeticiones: null, repsHasta: null, duracion: null, peso: null, tipoCarga: 'externo', descanso: 90, notas: '', bloqueId: null, config: {} },
+    accent, onEditar: noop, onSubir: noop, onBajar: noop, onDuplicar: noop, onEliminar: noop,
+  })],
+  ['EditorLinea', EditorLinea, () => ({
+    linea: anadirF3(crearRutinaF3({ nombre: 'X' }), 'press-banca-barra').lineas[0],
+    accent, onCambiar: noop, onCerrar: noop,
+  })],
+  ['EditorLinea', EditorLinea, () => ({
+    linea: anadirF3(crearRutinaF3({ nombre: 'X' }), 'l-sit').lineas[0],
+    accent, onCambiar: noop, onCerrar: noop,
+  })],
+  ['EditorLinea', EditorLinea, () => ({ linea: null, accent, onCambiar: noop, onCerrar: noop })],
+  /* ⚠️ La rutina VACÍA no entra aquí, y es el precedente de `BloqueRecomendado`
+     y `Recomendados`: `ResumenConstructor` devuelve `null` a propósito —un
+     resumen de «0 ejercicios · ≈ 0 min» sería el cero inventado de la regla 8—
+     y este arnés cuenta un render vacío como fallo. Que no pinte nada está
+     comprobado en `test-constructor.mjs`, donde `resumenRutina` de una rutina
+     sin líneas da cero ejercicios y duración en blanco. */
+  ['ResumenConstructor', ResumenConstructor, () => ({
+    rutina: anadirF3(anadirF3(crearRutinaF3({ nombre: 'Push' }), 'press-banca-barra'), 'dominada-prona'),
+    accent,
   })],
   ['AreaProgreso', AreaProgreso, () => ({
     fotos: [{ id: 'f1', path: 'x', fecha: HOY, nota: '' }], accent, onIr: noop,

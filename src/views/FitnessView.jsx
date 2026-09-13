@@ -23,10 +23,10 @@
    =========================================================================== */
 
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Lock, Camera, Flame } from 'lucide-react';
+import { ChevronRight, Lock, Camera, Flame, Dumbbell, Plus, Pencil, X } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
-import { Card, SectionTitle, GhostBtn } from '../components/ui';
+import { Card, SectionTitle, GhostBtn, PrimaryButton } from '../components/ui';
 import {
   AREAS_FITNESS, AREA_INICIAL, GRUPOS_MUSCULARES, NIVELES_RANGO, SIN_RANGO,
   estadoDeNivel, nombreDeRango, ESTADOS_VACIOS, CTA_CLASIFICAR, ACCESOS_ENTRENAMIENTO,
@@ -34,6 +34,14 @@ import {
 } from '../lib/fitness';
 import { iconoDeArea, iconoDeGrupo } from '../components/iconosFitness';
 import TrainingView from './TrainingView';
+/* FIT F2 — el catálogo se renderiza entero aquí dentro, como `TrainingView`:
+   agrupar pantallas es renderizarlas, nunca copiarlas (E3 F23). */
+import EjerciciosView from './EjerciciosView';
+/* FIT F3 — el constructor, renderizado entero aquí dentro (E3 F23). */
+import ConstructorView from './ConstructorView';
+import {
+  crearRutina, planARutina, resumenRutina, leerBorrador, borrarBorrador,
+} from '../lib/constructor';
 
 /* ── La cabecera (apartado 6) ──────────────────────────────────────────────
    *"El header debe poder utilizarse posteriormente en todas las pantallas del
@@ -325,27 +333,158 @@ export function AreaProgreso({ fotos, accent, onIr = null }) {
    constructor, la biblioteca y el historial, así que los accesos que aún no
    existen **se dicen** en vez de ofrecerse como botones que no llevan a
    ninguna parte (regla 8). */
-export function AreaEntrenamiento({ fitness, calistenia, accent, entrenoProps }) {
+export function AreaEntrenamiento({
+  fitness, calistenia, accent, entrenoProps, onAbrirConstructor = null,
+}) {
   const resumen = resumenEntrenamiento(fitness, calistenia);
-  const hayPlan = resumen.planes > 0;
+  const propios = (fitness || {}).ejercicios || [];
+  /* 🚨 Lo que construye Josué son **plantillas**, no planes. Lo dejó escrito la
+     F1 en `crearWorkoutPlan`: *"un plan y una plantilla son la misma forma: lo
+     que cambia es si él lo creó (`plantillas`) o viene de la biblioteca
+     (`planes`)"*. Guardarlo en `planes` habría chocado con la biblioteca de
+     planificaciones de una fase posterior y habría dejado lo suyo mezclado con
+     lo que no es suyo. */
+  const plantillas = (fitness || {}).plantillas || [];
+  const hayPlantillas = plantillas.length > 0;
+  /* ⚠️ Qué subpantalla está abierta es estado de la pantalla, no un dato
+     (EH F40): `DEFAULT_FITNESS` no tiene el campo, y volver a Fitness siempre
+     te deja donde se entra, no donde lo dejaste hace dos semanas. */
+  const [dentro, setDentro] = useState(null);
+  /* FIT F3, apartado 25 — el borrador se LEE al entrar y se OFRECE. Guardarlo
+     y no volver a mencionarlo sería guardarlo para nada; y recuperarlo solo,
+     sin preguntar, le pondría delante algo que quizá ya no quiere. */
+  const [borrador, setBorrador] = useState(() => leerBorrador());
+  const aMedias = borrador && borrador.lineas.length > 0;
+
+  if (dentro === 'ejercicios') {
+    return (
+      <EjerciciosView
+        propios={propios}
+        accent={accent}
+        onVolver={() => setDentro(null)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-5">
+      {/* Apartado 25: *"si el usuario cierra accidentalmente, navega atrás,
+          recarga, no debería perder todo el trabajo"*. */}
+      {aMedias && onAbrirConstructor && (
+        <Card style={{ border: `1px solid ${accent}` }}>
+          <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+            Tienes un entrenamiento a medias
+          </p>
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+            {borrador.nombre || 'Sin nombre todavía'} · {borrador.lineas.length}
+            {borrador.lineas.length === 1 ? ' ejercicio' : ' ejercicios'}
+          </p>
+          <div className="flex gap-2 mt-3">
+            <GhostBtn icon={Pencil} onClick={() => onAbrirConstructor(borrador)}>Continuar</GhostBtn>
+            <GhostBtn icon={X} onClick={() => { borrarBorrador(); setBorrador(null); }}>Descartar</GhostBtn>
+          </div>
+        </Card>
+      )}
+
       <div>
         <SectionTitle sub="Lo que estás entrenando ahora">Tu Plan</SectionTitle>
-        {hayPlan
+        {/* ⚠️ El plan ACTIVO es otra cosa que las plantillas, y llega en una fase
+            posterior: aquí sigue el estado vacío de la F1. */}
+        <VacioFitness estado={ESTADOS_VACIOS.entrenamiento} accent={accent} />
+      </div>
+
+      <div>
+        <SectionTitle sub="Las rutinas que te has creado tú">Tus plantillas</SectionTitle>
+        {hayPlantillas
           ? (
+            /* Apartado 24: *"una rutina guardada puede volver a abrirse y
+               editarse"*. Esto NO es la gestión completa de plantillas —menú de
+               acciones, duplicar, buscar, filtrar, ordenar—, que es la FIT F4:
+               es la lista mínima que impide que lo guardado quede encerrado. */
+            <div className="space-y-2">
+              {plantillas.map((p) => {
+                const res = resumenRutina(planARutina(p), propios);
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => onAbrirConstructor && onAbrirConstructor(planARutina(p))}
+                    aria-label={`Editar ${p.nombre || 'entrenamiento sin nombre'}`}
+                    className="hub-card w-full text-left rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99]"
+                    style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: hexToRgba(accent, 0.14), color: accent }}
+                    >
+                      <Dumbbell size={20} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+                        {p.nombre || 'Sin nombre'}
+                      </p>
+                      <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
+                        {res.ejercicios} {res.ejercicios === 1 ? 'ejercicio' : 'ejercicios'}
+                        {res.duracion ? ` · ${res.duracion}` : ''}
+                      </p>
+                    </div>
+                    <Pencil size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </div>
+          )
+          : (
             <Card>
-              <p className="text-sm" style={{ color: COLORS.text }}>
-                {resumen.planes} {resumen.planes === 1 ? 'plan guardado' : 'planes guardados'}.
+              <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+                Todavía no te has creado ninguna
+              </p>
+              <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+                La que construyas aparecerá aquí, y podrás volver a abrirla.
               </p>
             </Card>
-          )
-          : <VacioFitness estado={ESTADOS_VACIOS.entrenamiento} accent={accent} />}
+          )}
+
+        {/* 🚨 El CTA del apartado 2, y lleva de verdad al constructor. Si nadie
+            puede guardar no se pinta: sería el control decorativo de la
+            regla 8. */}
+        {onAbrirConstructor && (
+          <div className="mt-3">
+            <PrimaryButton accent={accent} icon={Plus} onClick={() => onAbrirConstructor(null)}>
+              Crear entrenamiento
+            </PrimaryButton>
+          </div>
+        )}
       </div>
 
       <div>
         <SectionTitle sub="Lo que vendrá y lo que ya puedes usar">Secciones</SectionTitle>
         <div className="space-y-2">
+          {/* 🚨 El que EXISTE es un botón; el que no, una frase que dice cuándo
+              llega. Un botón que no lleva a ninguna parte es el control
+              decorativo de la regla 8. */}
+          {ACCESOS_ENTRENAMIENTO.filter((a) => a.existe && a.id !== 'habilidades' && a.id !== 'plantillas').map((a) => (
+            <button
+              key={a.id}
+              onClick={() => setDentro(a.id)}
+              aria-label={`Abrir ${a.nombre}`}
+              className="hub-card w-full text-left rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99]"
+              style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: hexToRgba(accent, 0.14), color: accent }}
+              >
+                <Dumbbell size={20} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+                  {a.nombre}
+                </p>
+                <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>{a.que}</p>
+              </div>
+              <ChevronRight size={18} style={{ color: COLORS.textMuted }} aria-hidden="true" />
+            </button>
+          ))}
           {ACCESOS_ENTRENAMIENTO.filter((a) => !a.existe).map((a) => (
             <Card key={a.id}>
               <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
@@ -378,7 +517,7 @@ export function AreaEntrenamiento({ fitness, calistenia, accent, entrenoProps })
 export default function FitnessView({
   fitness, calistenia, onUpdateSkill, futbol, onAddPartido, onDeletePartido,
   videos, onAddVideo, onDeleteVideo, onSetVideoFeedback,
-  fotos = [], rachas, accent, foco, onFocoConsumido, onIr,
+  fotos = [], rachas, accent, foco, onFocoConsumido, onIr, onGuardarFitness = null,
 }) {
   const [area, setArea] = useState(AREA_INICIAL);
 
@@ -390,12 +529,38 @@ export default function FitnessView({
     if (foco) setArea('entrenamiento');
   }, [foco]);
 
+  /* FIT F3 — qué se está construyendo es estado de la pantalla, nunca un dato
+     guardado (EH F40). `null` = no se está construyendo nada. */
+  const [creando, setCreando] = useState(null);
+
   const racha = rachaDeFitness(rachas);
   const rangos = (fitness?.rangos) || [];
+  /* 🚨 Lo que se crea Josué vive en `plantillas`, no en `planes`: la F1 dejó esa
+     división escrita, y `planes` es la biblioteca de una fase posterior. */
+  const plantillas = (fitness?.plantillas) || [];
+  const propios = (fitness?.ejercicios) || [];
   const entrenoProps = {
     calistenia, onUpdateSkill, futbol, onAddPartido, onDeletePartido,
     videos, onAddVideo, onDeleteVideo, onSetVideoFeedback, foco, onFocoConsumido,
   };
+
+  /* 🚨 FIT F3 — el constructor es PANTALLA ENTERA, sin cabecera ni pestañas. El
+     apartado 4 le da su propio encabezado —volver, título, guardar—, y dejar
+     las pestañas debajo permitiría irse a Rangos en mitad de una rutina, que es
+     la puerta de atrás por la que se pierde el trabajo. Va DESPUÉS de todos los
+     hooks (regla 4). */
+  if (creando) {
+    return (
+      <ConstructorView
+        planes={plantillas}
+        propios={propios}
+        accent={accent}
+        rutinaInicial={creando.rutina}
+        onGuardar={(siguientes) => onGuardarFitness && onGuardarFitness({ ...(fitness || {}), plantillas: siguientes })}
+        onVolver={() => setCreando(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-1">
@@ -407,6 +572,9 @@ export default function FitnessView({
       {area === 'entrenamiento' && (
         <AreaEntrenamiento
           fitness={fitness} calistenia={calistenia} accent={accent} entrenoProps={entrenoProps}
+          onAbrirConstructor={onGuardarFitness
+            ? (rutina) => setCreando({ rutina: rutina || crearRutina({}) })
+            : null}
         />
       )}
     </div>

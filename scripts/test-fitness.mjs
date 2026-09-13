@@ -282,7 +282,13 @@ ok(CTA_CLASIFICAR.existe === false && CTA_CLASIFICAR.porque,
   'Declarado con su motivo en vez de ofrecido como un botón que no clasifica nada');
 ok(!/0 restantes/.test(JSON.stringify(CTA_CLASIFICAR)),
   '⚠️ Y sin el «· 0 restantes»: sería el contador de una lista que aún no existe');
-ok(ACCESOS_ENTRENAMIENTO.length === 3, 'Tres accesos en el área de Entrenamiento');
+/* 🐛 Aquí decía `ACCESOS_ENTRENAMIENTO.length === 3`, y la FIT F2 añadió el
+   cuarto —el catálogo— con todo el derecho: saltó con el código bien. Es la
+   bomba de relojería de `MODULOS_EH.length === 13` por enésima vez. Se
+   comprueba **que estén los que tienen que estar**, no cuántos hay. */
+ok(['planificaciones', 'plantillas', 'habilidades']
+  .every((id) => ACCESOS_ENTRENAMIENTO.some((a) => a.id === id)),
+  'Los accesos del área de Entrenamiento están, y se comprueban por su id, no por su número');
 ok(ACCESOS_ENTRENAMIENTO.filter((a) => !a.existe).every((a) => a.enFase),
   'Los que no existen dicen cuándo llegan');
 ok(ACCESOS_ENTRENAMIENTO.find((a) => a.id === 'habilidades')?.existe === true,

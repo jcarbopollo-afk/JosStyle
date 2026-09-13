@@ -1,5 +1,7 @@
 import { uid } from './helpers';
-import { GRUPOS_MUSCULARES, subgrupoMuscular, TODOS_LOS_SUBGRUPOS } from './fitness';
+import {
+  GRUPOS_MUSCULARES, subgrupoMuscular, TODOS_LOS_SUBGRUPOS, normalizarFitness,
+} from './fitness';
 import { CATALOGO_BRUTO } from './catalogoEjercicios';
 
 /* Entrega 4 · Fase 2/45 — «Sistema y catálogo maestro de ejercicios».
@@ -303,6 +305,32 @@ export function crearEjercicioCompleto({
 export function normalizarEjercicioCompleto(g) {
   if (!g || !texto(g.id)) return null;
   return crearEjercicioCompleto(g);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2 bis · LA PUERTA DE CARGA DE `fitness` (FIT F3)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   🚨 `normalizarFitness` vive en `fitness.js` y normaliza los ejercicios del
+   usuario con el modelo REDUCIDO de la F1 — sin `entornos`, sin `medidas`, sin
+   `dificultad`, sin `papel` en los músculos—. Cargar por ahí recortaría todo lo
+   que añadió la F2 **en cada carga**, y con ello el constructor perdería de qué
+   proponer el modo (`medidas`) y cuál es el músculo principal (`papel`).
+
+   No se arregla dentro de `fitness.js`: importar este archivo desde allí sería
+   un ciclo. Se arregla teniendo **una sola puerta**, y está aquí, que es donde
+   vive el modelo completo. `App.jsx` llama a ésta.
+
+   ⚠️ Si una fase futura amplía el `Exercise`, no hace falta tocar esto: basta
+   con que el campo esté en `crearEjercicioCompleto`. */
+export function normalizarFitnessCompleto(guardado) {
+  const base = normalizarFitness(guardado);
+  return {
+    ...base,
+    ejercicios: lista((guardado || {}).ejercicios)
+      .map(normalizarEjercicioCompleto)
+      .filter(Boolean),
+  };
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

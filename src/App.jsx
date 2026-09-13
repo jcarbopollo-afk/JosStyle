@@ -62,7 +62,11 @@ import { prediccionObjetivo } from './lib/predicciones';
 import { verificarBiometria } from './lib/biometria';
 import { crearPinHash, verificarPin } from './lib/pin';
 import { calcularResumenModulo } from './lib/resumenesHub';
-import { DEFAULT_FITNESS, normalizarFitness } from './lib/fitness';
+import { DEFAULT_FITNESS } from './lib/fitness';
+/* FIT F3 — la carga pasa por la puerta de `ejercicios.js`, no por la de
+   `fitness.js`: la de allí recorta los ejercicios del usuario al modelo
+   reducido de la F1 y se llevaría lo que añadió la F2 (regla 5). */
+import { normalizarFitnessCompleto } from './lib/ejercicios';
 import { eventosDerivados } from './lib/calendarioIntegracion';
 import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
 import { urlFirmada, urlEnCache } from './lib/imagenes';
@@ -752,7 +756,7 @@ export default function App() {
       /* FIT F1 — regla 5: `loadData` no fusiona con el valor por defecto, así que
          lo guardado antes de esta fase entra por su normalizador, que devuelve el
          objeto entero con todas sus claves. */
-      setFitness(normalizarFitness(fit));
+      setFitness(normalizarFitnessCompleto(fit));
       setLoaded(true);
       /* SO — los datos ya estan en pantalla. Es el unico momento del ciclo en que
          'sincronizado' significa algo: antes de esto no hay nada que sincronizar,
@@ -989,6 +993,15 @@ export default function App() {
   const updateApariencia = async (next) => { setApariencia(next); await saveData(uidUser, 'ajustes', { accent, pin: null, apariencia: next, seguridad }); };
   const updateSeguridad = async (next) => { setSeguridad(next); await saveData(uidUser, 'ajustes', { accent, pin: null, apariencia, seguridad: next }); };
   const updatePerfil = async (next) => { setPerfil(next); await saveData(uidUser, 'perfil', next); };
+
+  /* FIT F3 — la PRIMERA escritura de la clave `fitness`. La F1 la creó y solo
+     la leía, porque no había todavía nada que guardar; el constructor es lo
+     primero que escribe ahí.
+     ⚠️ Se manda el objeto ENTERO, como en todo el proyecto: `saveData`
+     sobrescribe, no fusiona, así que guardar solo `planes` se llevaría por
+     delante los ejercicios propios, las plantillas, las sesiones y los rangos
+     (regla 5). */
+  const guardarFitness = async (next) => { setFitness(next); await saveData(uidUser, 'fitness', next); };
 
   // ---------- Ampliación del Dashboard — Centro de Control ----------
   // Única función de navegación con deep-link de toda la app (apartado 5: "utiliza la
@@ -2698,6 +2711,7 @@ export default function App() {
             futbol={futbol} onAddPartido={addPartido} onDeletePartido={deletePartido}
             videos={calisteniaVideos} onAddVideo={addVideo} onDeleteVideo={deleteVideo} onSetVideoFeedback={setVideoFeedback}
             fotos={saludFotos} rachas={rachas}
+            onGuardarFitness={guardarFitness}
             accent={accent} onIr={setTab}
             foco={focoPara('entreno')} onFocoConsumido={consumirFoco}
           />

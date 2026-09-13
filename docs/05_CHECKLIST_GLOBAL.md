@@ -850,8 +850,15 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       sustitutos; más la pantalla con buscador, cinco filtros y el detalle reutilizable.
       🚨 **Sin duplicar nada**: los grupos musculares son los de la F1 y el catálogo no vive en
       `app_data`.
-- [ ] F3 — Constructor de entrenamientos
+- [x] **F3 — Constructor de entrenamientos** (v3.85.0): el flujo entero —crear, añadir desde el
+      catálogo de la F2, configurar series / repeticiones o segundos / peso / descanso / nota,
+      ordenar, duplicar, eliminar, cambiar de variante, guardar y volver a abrir—, con la
+      distribución muscular derivada, la duración estimada con su «≈», la validación que dice qué
+      corregir, el borrador en el dispositivo y el aviso de salir sin guardar.
+      🚨 **La separación crítica del apartado 28**: `Exercise` es el catálogo y `WorkoutExercise` la
+      configuración dentro de UNA rutina. 🐛 Y dos recortes de normalizador arreglados (regla 5).
 - [ ] F4–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
-⏸ **C-33 pendiente de Josué**: los diez rangos del apartado 22 contra D2-02. Construido como medida
-física, nunca como premio; anotado en `docs/03` y **no bloquea ninguna fase**.
+🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
+Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción
+que manda sobre todas las que vengan — **no se pregunta, se anota y se sigue**.

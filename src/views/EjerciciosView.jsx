@@ -14,6 +14,14 @@
    dice que *"esta pantalla será reutilizada posteriormente"*, y además sin
    exportarla no la probaría nadie — solo aparece tras pulsar una tarjeta, que
    es el agujero del Álbum de Relación (NAV F3).
+
+   🚨 **Y DESDE LA FIT F3 ESTA MISMA PANTALLA ES EL SELECTOR DEL CONSTRUCTOR.**
+   El apartado 5 de aquella fase pide un selector *"basado directamente en el
+   catálogo de la Fase 2"* con búsqueda, filtros y navegación: es esto. Con
+   `onElegir`, tocar una tarjeta **añade** en vez de abrir el detalle —el
+   apartado 6 lo quiere inmediato— y se queda aquí, para poder seguir añadiendo
+   *"sin perder el contexto"*. Una segunda pantalla de catálogo habría sido el
+   duplicado de la E3 F22: dos buscadores encontrando cosas distintas.
    =========================================================================== */
 
 import React, { useState, useMemo } from 'react';
@@ -56,7 +64,7 @@ function Pastilla({ activa, children, cuantos = null, accent, onClick }) {
 /* ── Una tarjeta de la lista (apartados 23 y 25) ───────────────────────────
    *"nombre; entorno; dificultad; músculo principal; equipamiento principal"*,
    y el apartado 25 pide que sean *"visuales, compactas, fáciles de escanear"*. */
-export function TarjetaEjercicio({ ejercicio, accent, onAbrir }) {
+export function TarjetaEjercicio({ ejercicio, accent, onAbrir, accion = 'Ver', marca = null }) {
   const principal = musculoPrincipal(ejercicio);
   const Icono = iconoDeGrupo(principal?.grupoId);
   const dif = dificultadDe(ejercicio.dificultad);
@@ -66,7 +74,7 @@ export function TarjetaEjercicio({ ejercicio, accent, onAbrir }) {
   return (
     <button
       onClick={onAbrir}
-      aria-label={`Ver ${nombreCompleto(ejercicio)}`}
+      aria-label={`${accion} ${nombreCompleto(ejercicio)}`}
       className="hub-card w-full text-left rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99]"
       style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
     >
@@ -89,8 +97,13 @@ export function TarjetaEjercicio({ ejercicio, accent, onAbrir }) {
           {equipoPrincipal ? ` · ${equipo(equipoPrincipal)?.nombre || equipoPrincipal}` : ''}
         </p>
       </div>
-      <span className="text-[10px] font-semibold shrink-0 text-right" style={{ color: COLORS.textMuted }}>
-        {entornos.join(' · ')}
+      {/* ⚠️ En modo selector se dice si ya está en el entrenamiento, pero NO se
+          bloquea: duplicar un ejercicio es el apartado 17 de la FIT F3. */}
+      <span
+        className="text-[10px] font-semibold shrink-0 text-right"
+        style={{ color: marca ? accent : COLORS.textMuted }}
+      >
+        {marca || entornos.join(' · ')}
       </span>
     </button>
   );
@@ -293,7 +306,10 @@ export function DetalleEjercicio({ ejercicio, accent, onVolver = null, onAbrirOt
 /* ── El catálogo (apartado 23) ─────────────────────────────────────────────
    ⚠️ **Cuál filtro está puesto y qué se está buscando NO se guardan**: son
    estado de la pantalla, no un dato (EH F40). */
-export default function EjerciciosView({ propios = [], accent, onVolver = null }) {
+export default function EjerciciosView({
+  propios = [], accent, onVolver = null, volverA = 'Fitness',
+  onElegir = null, yaElegidos = [],
+}) {
   const [consulta, setConsulta] = useState('');
   const [filtros, setFiltros] = useState({});
   const [abierto, setAbierto] = useState(null);
@@ -331,11 +347,11 @@ export default function EjerciciosView({ propios = [], accent, onVolver = null }
       {onVolver && (
         <button
           onClick={onVolver}
-          aria-label="Volver a Fitness"
+          aria-label={`Volver a ${volverA}`}
           className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
           style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
         >
-          <ArrowLeft size={16} /> Fitness
+          <ArrowLeft size={16} /> {volverA}
         </button>
       )}
 
@@ -435,7 +451,14 @@ export default function EjerciciosView({ propios = [], accent, onVolver = null }
       ) : (
         <div className="space-y-2">
           {lista.map((e) => (
-            <TarjetaEjercicio key={e.id} ejercicio={e} accent={accent} onAbrir={() => setAbierto(e.id)} />
+            <TarjetaEjercicio
+              key={e.id}
+              ejercicio={e}
+              accent={accent}
+              accion={onElegir ? 'Añadir' : 'Ver'}
+              marca={onElegir && yaElegidos.includes(e.id) ? 'Ya está' : null}
+              onAbrir={() => (onElegir ? onElegir(e.id) : setAbierto(e.id))}
+            />
           ))}
         </div>
       )}

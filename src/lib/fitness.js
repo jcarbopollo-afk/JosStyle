@@ -423,10 +423,18 @@ export function grupoConEjercicios(grupoId, ejercicios) {
    tiene que renombrarlo en los veinte sitios donde esté (la lección de AS F1).
 
    `series`, `repeticiones`, `peso` y `descanso` son `null` mientras él no los
-   escriba: un cero diría que levantó cero kilos. */
+   escriba: un cero diría que levantó cero kilos.
+
+   🚨 **Y la FIT F3 le añadió cinco campos AQUÍ, no en su propia librería**:
+   `modo`, `repsHasta`, `duracion`, `tipoCarga` y `bloqueId`. `App.jsx`
+   normaliza `fitness` al cargar, así que un campo que este normalizador no
+   conozca **se lo lleva el siguiente guardado** (regla 5, y ya van más de
+   veinte): un L-sit guardado a 20 s volvería como repeticiones al recargar.
+   Si una fase futura añade un campo a una línea, se añade aquí. */
 export function crearWorkoutExercise({
   exerciseId = '', orden = 0, series = null, repeticiones = null,
   peso = null, descanso = null, notas = '', config = {},
+  modo = null, repsHasta = null, duracion = null, tipoCarga = null, bloqueId = null,
 } = {}) {
   return {
     id: uid(),
@@ -438,6 +446,14 @@ export function crearWorkoutExercise({
     descanso: enteroONull(descanso),
     notas: texto(notas),
     config: config && typeof config === 'object' ? config : {},
+    /* Los cinco de la FIT F3. Se conservan tal cual: quien PROPONE un valor es
+       `crearLinea()` en `constructor.js`, no este modelo — aquí inventarlos
+       escribiría una decisión que él no ha tomado. */
+    modo: texto(modo) || null,
+    repsHasta: enteroONull(repsHasta),
+    duracion: enteroONull(duracion),
+    tipoCarga: texto(tipoCarga) || null,
+    bloqueId: texto(bloqueId) || null,
   };
 }
 
@@ -687,8 +703,15 @@ export const CTA_CLASIFICAR = {
    un botón muerto. */
 export const ACCESOS_ENTRENAMIENTO = [
   { id: 'planificaciones', nombre: 'Planificaciones', que: 'La biblioteca de planes.', existe: false, enFase: 'Una fase posterior de Fitness' },
-  { id: 'plantillas', nombre: 'Tus plantillas', que: 'Las rutinas que te crees tú.', existe: false, enFase: 'Una fase posterior de Fitness' },
+  /* FIT F3 — ya existen: son las rutinas que guarda el constructor, en la clave
+     `plantillas`. ⚠️ **No se pinta como botón en «Secciones»**, igual que
+     `habilidades`: tiene su propia sección en esta misma pantalla, y dos
+     entradas al mismo sitio en una pantalla es la redundancia de la E3 F30. */
+  { id: 'plantillas', nombre: 'Tus plantillas', que: 'Las rutinas que te crees tú.', existe: true, enFase: null },
   { id: 'habilidades', nombre: 'Habilidades', que: 'Calistenia: progresión, récords, sesiones y vídeos.', existe: true, enFase: null },
+  /* FIT F2 — el catálogo maestro. Es el primero de los accesos nuevos que
+     existe de verdad, así que se pinta como un botón y no como una frase. */
+  { id: 'ejercicios', nombre: 'Ejercicios', que: 'El catálogo completo, con sus músculos, su material y su técnica.', existe: true, enFase: null },
 ];
 
 /* El resumen del área PROGRESO. Cuenta las fotos que hay de verdad, así que la

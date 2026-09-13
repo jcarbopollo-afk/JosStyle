@@ -5952,6 +5952,209 @@ const desborde_f2 = await page.evaluate(() => ({
 ok(desborde_f2.ancho <= desborde_f2.ventana + 1,
   `🚨 FIT F2 — a 375 px el catálogo no se desborda de lado (${desborde_f2.ancho} vs ${desborde_f2.ventana})`);
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F3 — el constructor de entrenamientos (Entrega 4 · Fase 3/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El apartado 32 es una lista de trece validaciones obligatorias, y tres de
+   ellas **solo se pueden comprobar tocando la pantalla**: que el flujo entero
+   funcione, que la rutina persista de verdad y que se pueda volver a abrir.
+   Eso es esta sección.
+
+   🚨 Y la que más importa: **el ejercicio maestro no se mueve** (apartado 28).
+   Se configuran cuatro series dentro de la rutina y se comprueba que lo que
+   viaja a `app_data` son las series de LA LÍNEA, no del catálogo. */
+console.log('\n── FIT F3 · El constructor de entrenamientos ──');
+ok(await pulsar('Bienestar'), 'FIT F3 — se abre el área Bienestar');
+ok(await pulsar('Fitness'), '…y Fitness');
+await esperarTexto(/Tu Plan/i);
+ok(await pulsar('Crear entrenamiento'),
+  '🚨 FIT F3 — el CTA del apartado 2 existe y abre el constructor');
+const constructor_f3 = await esperarTexto(/Nombre/i);
+ok(/A[ñn]adir ejercicio/i.test(constructor_f3), '…con su «Añadir ejercicio» (apartado 4)');
+ok(/Guardar/i.test(constructor_f3), '…y su «Guardar»');
+ok(/Todav[ií]a no hay ning[uú]n ejercicio/i.test(constructor_f3),
+  '⚠️ …y un vacío que dice qué hacer, no una lista en blanco');
+
+/* 🚨 Las pestañas de Fitness NO están debajo: el constructor es pantalla
+   entera (apartado 4), y con ellas se podría salir a Rangos en mitad de una
+   rutina. */
+ok(!/Rangos/i.test(constructor_f3),
+  '🚨 FIT F3 — el constructor ocupa la pantalla: no quedan pestañas por las que salirse');
+
+const escribirCampo = async (etiqueta, texto) => page.evaluate(([e, t]) => {
+  const campo = [...document.querySelectorAll('input, textarea')]
+    .find((i) => (i.getAttribute('aria-label') || '') === e);
+  if (!campo) return false;
+  const proto = campo.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement : window.HTMLInputElement;
+  const setter = Object.getOwnPropertyDescriptor(proto.prototype, 'value').set;
+  setter.call(campo, t);
+  campo.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}, [etiqueta, texto]);
+
+ok(await escribirCampo('Nombre del entrenamiento', 'Push'), 'se le pone nombre: «Push»');
+await page.waitForTimeout(300);
+
+/* Apartado 5: el selector ES el catálogo de la F2. */
+ok(await pulsar('Añadir ejercicio'), 'se abre el selector de ejercicios');
+const selector_f3 = await esperarTexto(/Buscar un ejercicio/i);
+ok(/Buscar un ejercicio/i.test(selector_f3),
+  '🚨 FIT F3 — y es el catálogo de la F2, con su buscador: no hay un segundo buscador (E3 F22)');
+
+const buscarEnSelector = async (texto) => page.evaluate((t) => {
+  const campo = [...document.querySelectorAll('input')]
+    .find((i) => /buscar un ejercicio/i.test(i.getAttribute('aria-label') || i.placeholder || ''));
+  if (!campo) return false;
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+  setter.call(campo, t);
+  campo.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}, texto);
+
+ok(await buscarEnSelector('press de banca'), 'se busca el press de banca');
+await page.waitForTimeout(500);
+ok(await pulsar('Press de banca'), '🚨 FIT F3 — y tocarlo lo AÑADE (apartado 6), sin más pasos');
+await page.waitForTimeout(400);
+/* Apartado 6: *"El usuario debe poder seguir añadiendo ejercicios sin perder el
+   contexto"* — así que se queda en el selector. */
+const trasAnadir_f3 = await ver();
+ok(/Buscar un ejercicio/i.test(trasAnadir_f3),
+  '⚠️ …y se queda en el selector, para poder seguir añadiendo sin perder el contexto');
+ok(/Ya est[áa]/i.test(trasAnadir_f3), '…diciendo cuál ya está puesto');
+
+ok(await buscarEnSelector('dominadas pronas'), 'se busca otro más');
+await page.waitForTimeout(500);
+ok(await pulsar('Dominadas pronas'), 'y se añade un segundo ejercicio (apartado 32)');
+await page.waitForTimeout(400);
+
+ok(await pulsar('Volver a Entrenamiento'), 'se vuelve al constructor');
+const conDos_f3 = await esperarTexto(/Ejercicios/i);
+ok(/Press de banca/i.test(conDos_f3) && /Dominadas pronas/i.test(conDos_f3),
+  '🚨 FIT F3 — los dos ejercicios están en la lista, en el orden en que se añadieron');
+ok(/3 × |3 series/i.test(conDos_f3), '…con sus tres series por defecto (apartado 9)');
+ok(/90 s descanso/i.test(conDos_f3), '…y sus noventa segundos de descanso (apartado 13)');
+ok(/Pecho|Espalda/i.test(conDos_f3), '…y sus músculos resumidos (apartado 7)');
+/* Apartados 21 y 22: el número y la duración se CALCULAN. */
+ok(/2 ejercicios/i.test(conDos_f3), '🚨 FIT F3 — «2 ejercicios», contados, no escritos a mano (apartado 21)');
+ok(/≈ \d+ min/.test(conDos_f3),
+  '🚨 FIT F3 — y una duración que PARECE una estimación: «≈ X min» (apartado 20)');
+ok(/Distribuci[oó]n muscular/i.test(conDos_f3) && /%/.test(conDos_f3),
+  '🚨 FIT F3 — con la distribución muscular derivada de los porcentajes de la F2 (apartado 19)');
+
+/* Apartado 8: ordenar. */
+ok(await pulsar('Bajar Press de banca · Con barra'), 'se baja el primer ejercicio (apartado 8)');
+await page.waitForTimeout(400);
+const ordenado_f3 = await page.evaluate(() => {
+  const t = document.body.innerText;
+  return t.indexOf('Dominadas pronas') < t.indexOf('Press de banca');
+});
+ok(ordenado_f3, '🚨 FIT F3 — y el orden cambia de verdad en la pantalla');
+ok(await pulsar('Subir Press de banca · Con barra'), '…y se vuelve a subir');
+await page.waitForTimeout(400);
+
+/* Apartado 17: duplicar. */
+ok(await pulsar('Duplicar'), 'se duplica un ejercicio (apartado 17)');
+await page.waitForTimeout(400);
+ok(/3 ejercicios/i.test(await ver()), '…y pasan a ser tres');
+
+/* Apartado 15: configurar. */
+ok(await pulsar('Configurar'), 'se abre la configuración de un ejercicio (apartado 15)');
+const editor_f3 = await esperarTexto(/Series/i);
+ok(/Repeticiones/i.test(editor_f3), '…con sus repeticiones (apartado 10)');
+ok(/Carga/i.test(editor_f3), '…su carga (apartado 12)');
+ok(/Descanso/i.test(editor_f3), '…su descanso (apartado 13)');
+ok(/Nota/i.test(editor_f3), '…y su nota de plantilla (apartado 14)');
+ok(await pulsar('Subir Series'), 'se sube a cuatro series');
+await page.waitForTimeout(300);
+ok(await pulsar('Subir Repeticiones'), 'y se le ponen repeticiones');
+await page.waitForTimeout(300);
+ok(await pulsar('Hecho'), 'se cierra la configuración');
+await page.waitForTimeout(400);
+const configurado_f3 = await ver();
+ok(/4 × /.test(configurado_f3),
+  '🚨 FIT F3 — la fila enseña «4 × …»: lo configurado se ve (apartados 7 y 15)');
+
+/* Apartado 16: eliminar. */
+ok(await pulsar('Quitar Dominadas pronas · Agarre prono'), 'se elimina un ejercicio (apartado 16)');
+await page.waitForTimeout(400);
+ok(/2 ejercicios/i.test(await ver()), '…y vuelven a ser dos');
+
+/* Apartado 23: guardar, con persistencia de verdad. */
+const antesDeGuardar_f3 = guardado.filter((g) => g && g.key === 'fitness').length;
+ok(await pulsar('Guardar'), 'se guarda el entrenamiento (apartado 23)');
+await page.waitForTimeout(700);
+ok(/Entrenamiento guardado/i.test(await ver()),
+  '🚨 FIT F3 — y lo dice: *"mostrar feedback de éxito"* (apartado 23)');
+const escrituras_f3 = guardado.filter((g) => g && g.key === 'fitness');
+ok(escrituras_f3.length > antesDeGuardar_f3,
+  '🚨 FIT F3 — la rutina se escribe en `app_data`, en la clave `fitness`');
+/* 🚨 Lo que se crea Josué son PLANTILLAS, no planes: `planes` es la biblioteca
+   de una fase posterior, y mezclarlos dejaría lo suyo perdido entre lo que no
+   es suyo. La F1 dejó esa división escrita en `crearWorkoutPlan`. */
+const guardadoFit_f3 = escrituras_f3.at(-1)?.value || {};
+ok((guardadoFit_f3.planes || []).length === 0,
+  '🚨 FIT F3 — y NO se ha tocado `planes`, que es la biblioteca de una fase posterior');
+const planGuardado_f3 = guardadoFit_f3.plantillas?.[0];
+ok(planGuardado_f3?.nombre === 'Push', `…con su nombre («${planGuardado_f3?.nombre}»)`);
+ok(planGuardado_f3?.ejercicios?.length === 2, '…y sus dos ejercicios');
+/* 🚨 Apartado 28, en el dato que de verdad se guarda: la línea lleva las cuatro
+   series y **el `exerciseId`**, nunca el nombre ni los músculos copiados. */
+const linea_f3 = planGuardado_f3?.ejercicios?.find((e) => e.series === 4);
+ok(!!linea_f3, '🚨 FIT F3 — las cuatro series están en la LÍNEA de la rutina (apartado 28)');
+ok(!!linea_f3?.exerciseId && !linea_f3?.nombre && !linea_f3?.musculos,
+  '🚨 …que apunta al catálogo por id y no copia ni el nombre ni los músculos');
+ok(JSON.stringify(escrituras_f3.at(-1)?.value || {}).includes('"ejercicios"'),
+  '⚠️ Y se guarda el objeto `fitness` ENTERO, no solo los planes (regla 5)');
+
+/* Apartado 24: volver a abrirla. */
+ok(await pulsar('Volver a Entrenamiento'), 'se vuelve a Entrenamiento');
+const vueltaF3 = await esperarTexto(/Tu Plan/i);
+ok(/Tus plantillas/i.test(vueltaF3), '🚨 FIT F3 — y hay una sección «Tus plantillas»');
+ok(/Push/i.test(vueltaF3), '…con el entrenamiento guardado dentro');
+ok(/2 ejercicios/i.test(vueltaF3), '…con lo que tiene dentro');
+ok(await pulsar('Editar Push'), '🚨 FIT F3 — y se puede volver a abrir para editarla (apartado 24)');
+const reabierta_f3 = await esperarTexto(/A[ñn]adir ejercicio/i);
+ok(/Press de banca/i.test(reabierta_f3), '…con sus ejercicios dentro');
+ok(/4 × /.test(reabierta_f3),
+  '🚨 FIT F3 — y con la configuración que se le puso: las cuatro series siguen ahí');
+
+/* Apartado 26: salir sin guardar avisa **solo si hay cambios**. */
+ok(await pulsar('Volver a Entrenamiento'), 'se sale sin haber tocado nada');
+await page.waitForTimeout(400);
+ok(/Tu Plan/i.test(await ver()),
+  '🚨 FIT F3 — y NO pregunta nada: *"No muestres esta alerta si no existen cambios"* (apartado 26)');
+
+/* Y a 375 px el constructor no se desborda (apartado 29 y la lección de GE F1). */
+ok(await pulsar('Editar Push'), 'se abre otra vez para medirla');
+await esperarTexto(/A[ñn]adir ejercicio/i);
+const desborde_f3 = await page.evaluate(() => ({
+  ancho: document.documentElement.scrollWidth, ventana: window.innerWidth,
+}));
+ok(desborde_f3.ancho <= desborde_f3.ventana + 1,
+  `🚨 FIT F3 — a 375 px el constructor no se desborda de lado (${desborde_f3.ancho} vs ${desborde_f3.ventana})`);
+ok(await escribirCampo('Nombre del entrenamiento', 'Push A'), 'se le cambia el nombre');
+await page.waitForTimeout(400);
+ok(await pulsar('Volver a Entrenamiento'), 'y ahora se intenta salir');
+await page.waitForTimeout(400);
+ok(/Salir sin guardar/i.test(await ver()),
+  '🚨 FIT F3 — con cambios sin guardar, SÍ avisa, con sus dos salidas (apartado 26)');
+ok(await pulsar('Seguir editando'), '…y «Seguir editando» te deja donde estabas');
+await page.waitForTimeout(300);
+ok(/A[ñn]adir ejercicio/i.test(await ver()), '…comprobado: sigue en el constructor');
+ok(await pulsar('Volver a Entrenamiento'), 'se vuelve a intentar salir');
+await page.waitForTimeout(300);
+ok(await pulsar('Salir'), '…y esta vez se sale');
+await page.waitForTimeout(500);
+const trasSalir_f3 = await ver();
+ok(/Tu Plan/i.test(trasSalir_f3), 'se está otra vez en Entrenamiento');
+/* Apartado 25: el borrador no se pierde, y se OFRECE. */
+ok(/a medias/i.test(trasSalir_f3),
+  '🚨 FIT F3 — y lo que quedó a medias se ofrece al volver: el borrador no se pierde (apartado 25)');
+ok(await pulsar('Descartar'), '…y se puede descartar');
+await page.waitForTimeout(300);
+ok(!/a medias/i.test(await ver()), '…y entonces desaparece');
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

@@ -1,5 +1,105 @@
 # CHANGELOG.md
 
+## v3.85.0 — FIT F3/45: el constructor de entrenamientos
+
+La tercera de las cuarenta y cinco, y la primera en la que Fitness **hace** algo en vez de
+enseñarlo. El flujo entero del objetivo, funcionando: *"Entrenamiento → Crear entrenamiento →
+Añadir ejercicio → Configurar → Ordenar → Guardar"*, y el criterio de éxito remata que *"debe
+sentirse como el principio de un constructor de entrenamientos profesional, no como un formulario
+básico"*.
+
+### 🚨 La separación que el enunciado marca como CRÍTICA
+
+El apartado 28 lo pone en mayúsculas y lo explica con un ejemplo: el ejercicio maestro *Press
+banca* **no puede guardar «4 series»**, porque otra rutina puede usar tres. Las series pertenecen
+al `WorkoutExercise`, no al `Exercise`.
+
+Y eso ya estaba resuelto desde la F1: una línea de rutina guarda `exerciseId` y **nada más del
+ejercicio** — ni el nombre, ni los músculos, ni el equipamiento. `nombreDeLinea()` **le pregunta al
+catálogo**, así que renombrar un ejercicio lo renombra en las veinte rutinas donde esté. Hay una
+comprobación que edita las series dentro de una rutina y verifica que el catálogo no se ha movido
+ni un milímetro, y otra en Chromium que mira lo que de verdad se escribe en `app_data`.
+
+### 🚨 Y lo que se guarda son PLANTILLAS, no planes
+
+Esto estuvo mal hasta el final de la fase: el constructor escribía en `fitness.planes`. Lo dejó
+escrito la F1 en `crearWorkoutPlan` —*"un plan y una plantilla son la misma forma: lo que cambia es
+si él lo creó (`plantillas`) o viene de la biblioteca (`planes`)"*— y lo confirma el enunciado de la
+F4, que titula la sección **«Tus plantillas»** y la define como *"las rutinas que te crees tú"*.
+Guardarlo en `planes` habría mezclado lo suyo con la biblioteca de planificaciones de la FIT F5 y
+habría obligado a migrar en la fase siguiente. **Antes de elegir en qué clave se guarda algo, leer lo
+que dijo la fase que creó la clave.**
+
+### 🐛 Y un recorte silencioso que habría borrado la mitad de esta fase
+
+`App.jsx` normaliza `fitness` **en cada carga**, y `normalizarWorkoutExercise` —el de la F1— no
+conocía los cinco campos que añade el constructor (`modo`, `repsHasta`, `duracion`, `tipoCarga`,
+`bloqueId`). Un L-sit guardado a 20 segundos habría vuelto como repeticiones al recargar, **con la
+pantalla pintándose perfecta**. Es la regla 5 por enésima vez, y por eso los cinco campos se han
+añadido **al modelo de la F1**, no a una entidad paralela.
+
+🚨 **Y había un segundo recorte, del mismo tipo, latente desde la F2:** `normalizarFitness` pasa
+los ejercicios del usuario por `normalizarEjercicio`, que es el modelo **reducido** de la F1 — sin
+`entornos`, sin `medidas`, sin `dificultad`, sin `papel` en los músculos—. Hoy no los escribe nadie,
+así que no se ha perdido nada; en cuanto una fase le deje crearse uno, habría sido pérdida de datos
+silenciosa. No se puede arreglar dentro de `fitness.js` —importar `ejercicios.js` desde allí sería
+un ciclo—, así que **la puerta de carga se ha movido** a `normalizarFitnessCompleto()`, en
+`ejercicios.js`, que es donde vive el modelo completo. `App.jsx` llama ahí.
+
+### Lo que se puede hacer, apartado por apartado
+
+- **Crear** una rutina con nombre, descripción y **varios entornos o ninguno** (apartado 3: *"una
+  rutina puede utilizar ejercicios de diferentes entornos"*).
+- **Añadir** ejercicios desde el catálogo de la F2 — 🚨 **el selector ES `EjerciciosView`**, con su
+  buscador y sus cinco filtros. Escribir un segundo buscador habría sido el duplicado de la E3 F22.
+  Tocar una tarjeta **añade**, y te deja en el selector para seguir añadiendo (apartado 6).
+- **Configurar** series (1-20), repeticiones exactas o **en rango** (8-12), **duración en segundos**
+  para los isométricos, peso corporal / añadido / externo, descanso y una **nota de plantilla**.
+- **Ordenar** con flechas arriba y abajo — el apartado 8 lo admite y es la decisión de EH F50: una
+  flecha funciona con el lector de pantalla y en un dedo sobre una lista con scroll.
+- **Duplicar** y **eliminar** una línea, y **cambiar de variante** cuando el ejercicio tiene familia.
+- **Guardar**, con validación que dice **qué corregir**, y **volver a abrirla** para editarla.
+
+### Lo que se calcula y nunca se guarda
+
+- **El número de ejercicios** se cuenta (apartado 21: *"No debe ser un campo manual"*).
+- **La distribución muscular** sale de los porcentajes de la F2, ponderada por series y normalizada
+  a 100 (apartado 19: *"No introduzcas porcentajes manuales"*). Devuelve **por grupo y por
+  subgrupo**, porque el apartado la quiere reutilizable en el detalle del plan, los rangos, la IA y
+  las estadísticas.
+- **La duración** se redondea a cinco minutos y el texto lleva el **«≈»** delante (apartado 20: *"No
+  inventes una precisión falsa […] No: 61 min 13 s"*).
+
+### El borrador, y salir sin perder nada
+
+El apartado 25 pide que cerrar, navegar atrás o recargar no se lleve el trabajo. El borrador vive en
+`localStorage` —es de **este** dispositivo y de **este** rato, como el zoom del Horario (HT F4)— y
+🚨 **cada escritura va en `try`**: en una ventana privada de Safari `setItem` **lanza** (SF F1). Al
+volver a Entrenamiento, si quedó algo a medias **se ofrece**, con Continuar o Descartar: guardarlo y
+no volver a mencionarlo sería guardarlo para nada. Y al guardar de verdad, se limpia.
+
+⚠️ Y la alerta de salir **solo aparece si hay cambios** (apartado 26), comparando lo que importa —no
+el objeto entero, cuyos ids se recalculan y darían un falso positivo cada vez.
+
+### Decisiones que conviene no reabrir
+
+- **«Guardar» no se apaga cuando falta algo**, a propósito: un botón apagado no dice QUÉ corregir, y
+  eso es lo que prohíbe EH F62. Se pulsa, y la validación contesta con palabras.
+- **Quitar una línea no usa `BotonBorrar`**: ese componente promete que lo suyo va a Eliminados
+  recientes y vuelve, y aquí sería mentir en pantalla — la papelera guarda elementos de una lista
+  guardada, no una línea de algo que todavía no existe.
+- **El constructor es pantalla entera**, sin las pestañas de Fitness debajo: con ellas se podría
+  salir a Rangos en mitad de una rutina.
+- **Los bloques** (Calentamiento, Fuerza, Core…) tienen su arquitectura —`bloqueId` en la línea,
+  `bloques` en la rutina— y **no se pinta ninguno**: el apartado 18 dice expresamente que no hace
+  falta la interfaz, y un selector con un solo bloque sería un control decorativo.
+
+**Archivos:** `src/lib/constructor.js` y `src/views/ConstructorView.jsx` (nuevos),
+`scripts/test-constructor.mjs` (nuevo, 150 comprobaciones), más los cinco campos en
+`src/lib/fitness.js`, la puerta de carga en `src/lib/ejercicios.js`, el modo selector en
+`src/views/EjerciciosView.jsx`, el CTA y la lista de rutinas en `src/views/FitnessView.jsx` y
+`guardarFitness` en `src/App.jsx` — la primera escritura de la clave `fitness`.
+
 ## v3.84.0 — FIT F2/45: el catálogo maestro, cien ejercicios que suman 100
 
 La segunda de las cuarenta y cinco. El enunciado lo dice en su objetivo: este catálogo va a ser *"la
