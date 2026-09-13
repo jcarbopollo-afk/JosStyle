@@ -377,14 +377,24 @@ function IndicadorContexto({ modo, onSetModo, accent }) {
 
       {/* Apartado 3 y 13: el espacio ocupado cambia FÍSICAMENTE. `grid-template-rows` 0fr↔1fr
           anima la altura real sin medirla a mano ni reservar de antemano el alto del estado
-          abierto; cerrado no queda ni un píxel de hueco. */}
+          abierto; cerrado no queda ni un píxel de hueco.
+
+          🚨 SC F1 — `minHeight: 0` NO ES ADORNO: ES LO QUE HACÍA QUE EN EL iPHONE QUEDARA UN
+          CUADRADO VACÍO DEBAJO. Un elemento de rejilla nace con `min-height: auto`, que significa
+          "no te encojas por debajo de tu contenido". Con la fila a `0fr` el navegador tiene dos
+          órdenes contradictorias —"mide cero" y "no bajes de tu contenido"— y Safari resuelve a
+          favor de la segunda: el contenido no se VE (por el `overflow: hidden`) pero **sigue
+          ocupando su alto**. Chrome resuelve a favor de la primera, y por eso en el ordenador se
+          veía perfecto y en el móvil no. Esto es la causa, no un parche: no hay ni una altura fija,
+          ni un `max-height`, ni un `@media` — el alto cerrado sigue siendo el del contenido
+          compacto y el abierto el del contenido entero, en móvil pequeño, tablet y escritorio. */}
       <div
         id={idPanel}
         role="region"
         aria-label="Opciones de la situación actual"
         style={{ display: 'grid', gridTemplateRows: expandido ? '1fr' : '0fr', transition: 'grid-template-rows 300ms var(--ease-premium)' }}
       >
-        <div style={{ overflow: 'hidden' }}>
+        <div style={{ overflow: 'hidden', minHeight: 0 }}>
           <div
             style={{
               opacity: expandido ? 1 : 0,
@@ -484,9 +494,13 @@ function TarjetaPuntuacion({ puntuacion, mensaje, accent }) {
           </div>
         </div>
         {/* Mismo acordeón de `grid-template-rows` 0fr↔1fr que IndicadorContexto y el resto de
-            tarjetas desplegables de la app — ni una técnica de animación nueva. */}
+            tarjetas desplegables de la app — ni una técnica de animación nueva.
+            🚨 SC F1 — y por eso llevaba el MISMO fallo: sin `minHeight: 0` el elemento de rejilla
+            se niega a bajar de su contenido y deja el hueco vacío en Safari. Los dos acordeones de
+            Inicio son los dos únicos de la aplicación y los dos están arreglados; hay una regla
+            invariante en `test-imports.mjs` que caza al siguiente que se escriba sin él. */}
         <div style={{ display: 'grid', gridTemplateRows: expandido ? '1fr' : '0fr', transition: 'grid-template-rows 300ms var(--ease-premium)' }}>
-          <div style={{ overflow: 'hidden' }}>
+          <div style={{ overflow: 'hidden', minHeight: 0 }}>
             <div style={{ opacity: expandido ? 1 : 0, transition: `opacity ${expandido ? '260ms 60ms' : '120ms'} ease`, paddingTop: '0.9rem' }}>
               <ul className="space-y-1">
                 {puntuacion.detalle.map((d) => (

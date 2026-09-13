@@ -357,6 +357,47 @@ sobran.forEach((x) => console.log(`  ✗ el stub de smoke.mjs exporta \`${x}\`, 
 ok(faltan.length === 0 && sobran.length === 0,
   '🚨 El stub de Supabase exporta exactamente lo que exporta `supabase.js` (si no, una vista entera se queda sin renderizar y nadie lo dice)');
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   REGLA INVARIANTE — un acordeón `0fr ↔ 1fr` sin `minHeight: 0` (SC F1)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   🚨 **ESTO DEJÓ UN CUADRADO VACÍO EN EL iPHONE DE JOSUÉ DESDE LA v1.21.0, Y NO
+   LO VIO NADIE.** La técnica de plegar con `grid-template-rows: 0fr` necesita que
+   el elemento de rejilla lleve `min-height: 0`: sin él nace con `min-height:
+   auto` —«no te encojas por debajo de tu contenido»— y el navegador tiene dos
+   órdenes contradictorias. **Chromium resuelve a favor de la fila y Safari a
+   favor del contenido**, así que la pantalla salía perfecta en el build, en los
+   casos de renderizado y en el recorrido, y mal justo donde vive esta PWA.
+
+   ⚠️ Por eso es una regla invariante y no una comprobación de la fase: el
+   siguiente acordeón que alguien escriba caerá aquí **el mismo día**, en un
+   segundo, en vez de dentro de tres meses cuando Josué vuelva a reportarlo. Es
+   la misma idea que la regla del componente sin importar (EH F39).
+   ═══════════════════════════════════════════════════════════════════════════ */
+{
+  const vistasJsx = readdirSync(join(RAIZ, 'src/views')).filter((f) => f.endsWith('.jsx'));
+  const archivos = [...vistasJsx.map((f) => `src/views/${f}`), 'src/components/ui.jsx', 'src/components/quickAdd.jsx'];
+  const sinMinHeight = [];
+  archivos.forEach((rel) => {
+    let src;
+    try { src = readFileSync(join(RAIZ, rel), 'utf8'); } catch { return; }
+    /* Cada acordeón es un `gridTemplateRows` con `0fr`; el elemento de rejilla es
+       el primer hijo, que es el que lleva el `overflow: hidden`. Se mira el trozo
+       que va desde el `gridTemplateRows` hasta el siguiente `>` de cierre más el
+       primer `<div style={...}>` de dentro. */
+    const trozos = src.split('gridTemplateRows:').slice(1);
+    trozos.forEach((trozo, i) => {
+      const cabeza = trozo.slice(0, 420);
+      if (!/0fr/.test(cabeza)) return;               // no es un plegable
+      if (!/overflow:\s*'hidden'/.test(cabeza)) return; // no es este patrón
+      if (!/minHeight:\s*0/.test(cabeza)) sinMinHeight.push(`${rel} (acordeón ${i + 1})`);
+    });
+  });
+  sinMinHeight.forEach((x) => console.log(`  ✗ acordeón \`0fr\` sin \`minHeight: 0\` en ${x} — dejará un hueco vacío en Safari`));
+  ok(sinMinHeight.length === 0,
+    '🚨 Todo acordeón `grid-template-rows: 0fr` lleva `minHeight: 0` en su elemento de rejilla (si no, en el iPhone queda un cuadrado vacío debajo y en el ordenador no se ve)');
+}
+
 if (fallos > 0) {
   console.log(`\n  ${fallos} de ${n} comprobaciones han fallado.`);
   process.exit(1);

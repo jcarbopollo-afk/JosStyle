@@ -55,16 +55,26 @@ export default function HubView({ area, modulos, personalizacion, resumenes, acc
   const idsFinales = [...visibles, ...fijos];
 
   return (
-    <div className="space-y-5 pb-4">
+    <div className="space-y-3 pb-4">
       {/* Fase N2 — key={area.id} fuerza que el fundido del encabezado se repita cada vez que se
           entra a un área distinta, no solo la primera vez (mismo motivo que key={tab} en App.jsx).
           Fase N4 — "Área" pasa a mayúsculas con tracking amplio (estilo "eyebrow" de apps premium),
-          separada del título por más aire para reforzar la jerarquía tipográfica. */}
-      <div key={area.id} className="hub-header">
-        <p className="text-xs font-semibold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.08em' }}>Área</p>
-        <h1 className="text-2xl font-extrabold mt-1 tracking-tight" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-          {area.label}
-        </h1>
+          separada del título por más aire para reforzar la jerarquía tipográfica.
+
+          🚨 SC F1 — `.hub-sticky` (index.css) es lo que hace que esto se quede quieto mientras las
+          tarjetas se desplazan. Va FUERA de `.hub-header` a propósito: ese de dentro lleva una
+          animación que mueve el elemento (`transform`), y montar las dos cosas en el mismo nodo es
+          pedir que la posición pegada pelee con la animación de entrada. Uno se queda quieto, el
+          otro se funde. ⚠️ El color va aquí y no en el CSS porque `COLORS` es el único sitio del que
+          puede salir un color (regla 2), y se usa el MISMO token que la barra de abajo: así la
+          franja de arriba y la de abajo se ven como la misma pieza y no como un parche. */}
+      <div className="hub-sticky" style={{ background: COLORS.navBgAlpha || COLORS.bg }}>
+        <div key={area.id} className="hub-header">
+          <p className="text-xs font-semibold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.08em' }}>Área</p>
+          <h1 className="text-2xl font-extrabold mt-1 tracking-tight" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+            {area.label}
+          </h1>
+        </div>
       </div>
 
       {idsFinales.map((id, i) => {
@@ -74,13 +84,21 @@ export default function HubView({ area, modulos, personalizacion, resumenes, acc
         const resumen = resumenes[id] || { linea1: '', linea2: '', estado: 'info' };
         const expandiendoEsta = expandingId === id;
         const otraExpandiendo = !!expandingId && !expandiendoEsta;
+        // 🚨 SC F1 — un punto menos de relleno y de hueco entre tarjetas (`p-4` y `space-y-3`, antes
+        // `p-5` y `space-y-5`), y el círculo del icono de 56 a 48 px. Josué: *"revisa si es posible
+        // hacer las filas/tarjetas ligeramente más finas/compactas, pero sin cambiar radicalmente el
+        // diseño"*, y el motivo real es que con cinco módulos por área la quinta fila quedaba
+        // cortada por la barra de abajo en una pantalla de 375×667.
+        // ⚠️ Se toca AQUÍ y no en la clase `.hub-card` de `index.css`: esa clase la comparten las
+        // plaquitas de otras pantallas (E3 F16), y cambiarla desde una fase de los hubs les
+        // cambiaría el aspecto a todas — es la lección de `ToggleTab` en GE F1.
         return (
           <button
             key={id}
             onClick={() => handleAbrir(id)}
             disabled={!!expandingId}
             aria-label={`Abrir ${mod.label}`}
-            className={`hub-card w-full text-left rounded-3xl p-5 flex items-center gap-4 ${expandiendoEsta ? 'hub-card-expanding' : ''} ${otraExpandiendo ? 'hub-card-receding' : ''}`}
+            className={`hub-card w-full text-left rounded-3xl p-4 flex items-center gap-3.5 ${expandiendoEsta ? 'hub-card-expanding' : ''} ${otraExpandiendo ? 'hub-card-receding' : ''}`}
             style={{
               // Fase N4 — "cristal": superficie translúcida + desenfoque + un ligerísimo brillo
               // diagonal (el gradiente blanco casi imperceptible), en vez del color sólido de
@@ -98,10 +116,10 @@ export default function HubView({ area, modulos, personalizacion, resumenes, acc
             }}
           >
             <div
-              className="hub-card-icon w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+              className="hub-card-icon w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
               style={{ background: hexToRgba(accent, 0.14), border: `1px solid ${hexToRgba(accent, 0.25)}` }}
             >
-              <Icon size={26} style={{ color: accent }} />
+              <Icon size={22} style={{ color: accent }} />
             </div>
             <div className="min-w-0 flex-1">
               {/* Fase N4 — indicador de estado (punto): acento si el módulo tiene datos reales que

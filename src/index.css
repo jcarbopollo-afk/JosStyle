@@ -224,6 +224,42 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
   animation: hubHeaderIn 320ms var(--ease-premium) both;
 }
 
+/* SC F1 — LA CABECERA DEL ÁREA SE QUEDA QUIETA MIENTRAS LAS TARJETAS SE DESPLAZAN.
+   Josué: *"al hacer scroll vertical dentro de estas pantallas, parte de la interfaz superior se
+   desplaza junto con las tarjetas… HEADER / CONTROLES SUPERIORES → FIJOS, CONTENIDO / TARJETAS →
+   SCROLL"*.
+
+   🚨 **QUIEN HACE SCROLL AQUÍ ES LA PÁGINA ENTERA**, no un contenedor interno: el cuerpo mide
+   `min-h-screen`, la barra inferior y los dos botones de arriba son `fixed`, y todo lo demás fluye.
+   Por eso esto es `sticky` y no un contenedor con `overflow` propio: meter un scroll interno habría
+   obligado a calcular su altura a mano, y en el iPhone eso es exactamente lo que rompe el rebote y
+   deja filas cortadas.
+
+   ⚠️ **Y POR ESO LA BANDA SE SALE DE SU CAJA.** El margen negativo la lleva hasta el borde de la
+   pantalla y hasta arriba del todo, y el relleno del mismo tamaño devuelve el texto a donde estaba:
+   la cabecera **no se mueve ni un píxel** al empezar a desplazar (nada de un salto al "pegarse"), y
+   las tarjetas pasan por DETRÁS en vez de asomar por el hueco que quedaba entre los dos botones.
+   Sin ella, la lupa se veía "cortada" por lo que subía por debajo.
+
+   ⚠️ `z-index: 20` a propósito: por debajo de los dos accesos `fixed` (que van a 30) y por encima
+   del contenido. Nunca subirlo a 30 o más — taparía la lupa y el botón de sugerencias.
+   ⚠️ Y el color va en línea desde `COLORS` (HubView.jsx), nunca aquí: `index.css` no puede tener un
+   color suelto (regla 2). */
+.hub-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin-left: -1rem;
+  margin-right: -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-top: calc(-1 * (var(--safe-top) + 4rem));
+  padding-top: calc(var(--safe-top) + 4rem);
+  padding-bottom: 0.5rem;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
 /* Transición de pantalla al entrar en un módulo desde un hub: fundido + deslizamiento horizontal
    + un ligerísimo escalado (0.98→1), para que la vista nueva se sienta como si "entrara" en primer
    plano en vez de solo desplazarse por encima — aplicada por App.jsx a la vista del módulo activo. */
