@@ -127,9 +127,18 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
   seguridad. Si vuelve a decir *"la web sigue igual"*, **mirar en qué versión está `main`**.
 - **Rota entre varias cuentas de Claude**, pasando `HANDOFF.md` + zip. Puede haber resuelto en otra
   conversación algo que aquí parece pendiente.
-- ⚠️ **UNA FASE POR TURNO, y se para.** Josué cambió el modo de trabajo: él pasa la fase, se
-  construye entera y verificada, se le avisa con `PushNotification` y **se espera**. No encadenar
-  fases ni adelantar la siguiente aunque parezca obvia cuál es. (Antes pedía lo contrario; ya no.)
+- 🔓 **YA NO ES «UNA FASE POR TURNO»: ES ENCADENAR SIN PARAR** (2026-09-13, y lo dijo él con estas
+  palabras: *"no pares de currar… no pares hasta el límite… la cosa está en que literal puedas
+  continuar sin que yo te diga nada"*). Se va a ir de casa y va a pasar **45 fases de una vez**. Así
+  que se construye una, se verifica, se sube a `main` y **se encadena la siguiente sola**, sin
+  esperarle. ⚠️ **Lo que NO cambia es el listón:** cada fase se sube con `bash scripts/verificar.sh`
+  **en verde**. Subirle una fase rota mientras no está mirando es peor que ir más lento.
+  ⚠️ **Y la forma de no pararse** es programarse el turno siguiente con `send_later` (la herramienta
+  que mete un mensaje en esta misma sesión): al cerrar una fase, se deja programado el aviso de
+  seguir. Lo único que puede detenerlo de verdad es **el límite de uso de su cuenta**, y eso se le
+  dice, no se disimula.
+  ⚠️ **Esta línea decía lo contrario hasta hoy** —*"una fase por turno, y se para"*—, y era cierto
+  entonces: él lo pidió así en su día. Manda lo último que ha dicho.
 - **Al terminar, decirle siempre dos cosas:** qué se ha hecho y hasta dónde se ha llegado.
 - **Lo que más le importa es recibir la entrega actualizada cuanto antes.** Priorizarlo sobre
   explicaciones largas; nunca dejar un turno a medias sin entregarla.
@@ -266,6 +275,17 @@ Horario. Ese será la Fase 2."* 🏁 **Las dos están hechas y en `main`.**
 |---|---|---|
 | **DIST F1** | La nueva arquitectura: **Inicio · Bienestar · Vida · Gestión · Ajustes** | ✅ **v3.77.0** |
 | **DIST F2** | La **auditoría** de esa reorganización | ✅ **v3.78.0** |
+
+🔓 **Y la única desviación que dejó la auditoría LA CONTESTÓ ÉL (v3.79.1, 2026-09-13).** Los hubs de
+Bienestar, Vida y Gestión siguen siendo tarjetas anchas y su enunciado pedía *"icono, nombre debajo,
+cuadrícula limpia"*; no se tocó porque la cuadrícula compacta **no tiene sitio para las dos líneas de
+resumen de cada módulo** —«2 tareas pendientes», «1 clase hoy»—, o sea que cumplirlo al pie de la
+letra habría borrado una función. Su respuesta **dice qué quería decir el apartado**: *"SE QUEDA COMO
+ESTA pq as mini apps las qria para los sub modulos q estsn dentro de los mudulos de las areas"* — la
+cuadrícula era para **los submódulos de dentro de los módulos de un área**, y ahí está: Mente,
+Organización y Progreso. ⚠️ **La entrada de `DESVIACIONES` se queda escrita, resuelta, con sus
+palabras y su fecha, en vez de borrarse**: borrarla dejaría la pregunta viva y la respuesta perdida,
+que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres sitios.
 
 Josué pasó el árbol entero escrito. **«Además» desaparece como categoría** y **Ajustes deja de ser
 un módulo dentro de un área para ser la quinta pestaña** (siguen siendo cinco, regla 10):

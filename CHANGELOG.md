@@ -1,5 +1,36 @@
 # CHANGELOG.md
 
+## v3.79.1 — La desviación de DIST F2, contestada por Josué
+
+> *"SE QUEDA COMO ESTA pq as mini apps las qria para los sub modulos q estsn dentro de los mudulos
+> de las areas"* (2026-09-13).
+
+La auditoría de DIST F2 dejó **una** desviación declarada y pendiente de él: los hubs de Bienestar,
+Vida y Gestión siguen siendo una lista de tarjetas anchas, y su enunciado pedía *"presentación tipo
+mini-app: icono, nombre debajo, cuadrícula limpia"*. No se cambió por cuenta propia porque cumplirlo
+al pie de la letra habría **borrado las dos líneas de resumen de cada módulo** —«2 tareas
+pendientes», «1 clase hoy»—, que es justo lo que el mismo encargo prohibía.
+
+**Ha contestado, y su respuesta no es solo un «déjalo»: dice qué quería decir el apartado.** La
+cuadrícula tipo mini-app era para **los submódulos que viven dentro de los módulos de un área**, y
+ahí está desde DIST F1: Fe, Relación y Bienestar digital dentro de **Mente**; Tareas, Calendario y
+Horario dentro de **Organización**; Estadísticas, Predicciones y Logros dentro de **Progreso**. No
+había nada que cambiar.
+
+### Lo que hay que llevarse
+
+- 🔓 **UNA DESVIACIÓN CONTESTADA SE QUEDA ESCRITA, RESUELTA, NO SE BORRA.** La diferencia entre el
+  enunciado y lo construido sigue siendo real, y quien lea las dos cosas dentro de seis meses se va a
+  hacer la misma pregunta. Lo que cambia es que **ya no está pendiente de nadie**. Borrar la entrada
+  dejaría la pregunta viva y la respuesta perdida — que es exactamente cómo este proyecto acabó con
+  la mentira de los sonidos escrita en tres sitios a la vez.
+- 🚨 **Y SE GUARDA CON SUS PALABRAS, NO CON MI RESUMEN.** `dijo` lleva su frase literal y `cuando` la
+  fecha; hay una comprobación que exige las dos en toda desviación marcada como resuelta, **con su
+  caso rojo** (EH F42). Una decisión anotada como *"lo dijo él"* y sin más no se puede volver a
+  comprobar: es el dato que caduca.
+- ⚠️ **Ni una línea de producto ha cambiado.** Esto es la auditoría anotando una respuesta, no una
+  fase: `src/lib/auditoriaDist.js` y su prueba, que pasa de 57 a **62 comprobaciones**.
+
 ## v3.79.0 — PF F1: la foto de perfil en la cabecera de Ajustes
 
 > *"En la parte superior de la pantalla de Ajustes debe aparecer el avatar/foto de perfil del

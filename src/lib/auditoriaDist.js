@@ -247,13 +247,20 @@ export function informeDIST({ moreNav = [], areasNav = [], codigoApp = '', texto
 }
 
 /* ---------------------------------------------------------------------------
-   ⏸ DONDE LO CONSTRUIDO NO COINCIDE CON EL ENUNCIADO, Y POR QUÉ.
+   🔓 DONDE LO CONSTRUIDO NO COINCIDE CON EL ENUNCIADO, Y POR QUÉ.
 
-   🚨 Esto es lo que de verdad ha encontrado la auditoría, y no se arregla por
-   cuenta propia: **su encargo choca consigo mismo**, y él dio la regla para ese
-   caso — *"Si algo de esta especificación entra en conflicto con la
-   arquitectura actual, adapta la implementación **sin romper funcionalidades
-   existentes**."* Se deja como está, se declara, y lo decide Josué.
+   🚨 Esto es lo que de verdad encontró la auditoría, y no se arregló por cuenta
+   propia: **su encargo chocaba consigo mismo**, y él dio la regla para ese caso
+   — *"Si algo de esta especificación entra en conflicto con la arquitectura
+   actual, adapta la implementación **sin romper funcionalidades existentes**."*
+   Se dejó como estaba, se declaró, y **la decidió Josué el 2026-09-13**.
+
+   ⚠️ Y esta entrada se queda escrita, resuelta, en vez de borrarse: la
+   diferencia entre el enunciado y lo construido sigue siendo real, y quien lea
+   las dos cosas dentro de seis meses va a preguntarse lo mismo. Lo que cambia
+   es que ya **no está pendiente de nadie**. Borrarla dejaría la pregunta viva y
+   la respuesta perdida — que es cómo este proyecto acabó con la mentira de los
+   sonidos escrita en tres sitios.
    --------------------------------------------------------------------------- */
 export const DESVIACIONES = [
   {
@@ -264,7 +271,17 @@ export const DESVIACIONES = [
       + 'que es lo que el mismo encargo prohíbe. Y con cinco módulos por área la lista no es «interminable»: son cinco filas.',
     donde: 'src/views/HubView.jsx',
     hecho: 'La cuadrícula tipo mini-app SÍ está, en las agrupadoras nuevas (Mente, Organización y Progreso), que no tienen líneas de resumen que perder.',
-    decide: 'Josué: si prefiere la cuadrícula en los hubs, se hace y se pierden las dos líneas de cada módulo.',
+    decide: 'Josué, y ya está decidido: se queda como está.',
+    resuelto: true,
+    cuando: '2026-09-13',
+    dijo: 'SE QUEDA COMO ESTA pq as mini apps las qria para los sub modulos q estsn dentro de los mudulos de las areas',
+    /* 🔓 Su respuesta no es solo un «déjalo»: dice **qué quería decir el
+       apartado**. La cuadrícula tipo mini-app era para los submódulos que viven
+       dentro de los módulos de un área —Fe, Relación y Bienestar digital dentro
+       de Mente; Tareas, Calendario y Horario dentro de Organización;
+       Estadísticas, Predicciones y Logros dentro de Progreso—, que es
+       exactamente donde está. No había que cambiar nada. */
+    porQueSeQueda: 'Él aclaró que la cuadrícula la quería para los submódulos de dentro de los módulos de cada área, que es donde se construyó (Mente, Organización y Progreso). Los hubs de área conservan sus dos líneas de resumen.',
   },
 ];
 

@@ -182,16 +182,35 @@ ok(!informeDIST({ moreNav, areasNav, codigoApp: '', textoEnPantalla: 'Mi salud',
   '⚠️ …y el informe entero se pone ROJO si algo se rompe');
 
 console.log('\n── 10. Lo que NO coincide con el enunciado, declarado ──');
-/* 🚨 Lo que de verdad ha encontrado la auditoría: los hubs de área siguen
-   siendo una lista vertical, y el enunciado pedía una cuadrícula tipo mini-app.
-   No se arregla por cuenta propia porque **cumplirlo al pie de la letra habría
+/* 🚨 Lo que de verdad encontró la auditoría: los hubs de área siguen siendo una
+   lista vertical, y el enunciado pedía una cuadrícula tipo mini-app. No se
+   arregló por cuenta propia porque **cumplirlo al pie de la letra habría
    borrado las dos líneas de resumen de cada módulo**, que es lo que el mismo
-   encargo prohíbe. Se declara y lo decide él. */
+   encargo prohíbe. Se declaró y **lo decidió él el 2026-09-13**. */
 ok(DESVIACIONES.length >= 1, 'se declara dónde lo construido no coincide con el enunciado');
 ok(DESVIACIONES.every((d) => d.que && d.pidio && d.porque && d.donde && d.hecho && d.decide),
   '⚠️ cada una con lo que él pidió, por qué no se hizo así, dónde está y quién decide');
 ok(/HubView/.test(DESVIACIONES[0].donde),
   '⚠️ …y la que hay señala el archivo de verdad, no una descripción vaga');
+
+/* 🔓 Y la decisión, cuando llega, **se anota con sus palabras**. Una desviación
+   marcada como resuelta sin decir quién lo dijo ni cuándo es exactamente el
+   dato que caduca: dentro de seis meses nadie sabe si sigue valiendo. */
+const resueltas = DESVIACIONES.filter((d) => d.resuelto);
+ok(resueltas.length === 1, 'la desviación de los hubs está RESUELTA (Josué, 2026-09-13)');
+ok(resueltas.every((d) => d.cuando && d.dijo && d.porQueSeQueda),
+  '🚨 …y toda desviación resuelta dice CUÁNDO, con SUS palabras y qué significaron');
+ok(/mini apps/i.test(resueltas[0].dijo) && /sub ?modulos/i.test(resueltas[0].dijo),
+  '⚠️ …y lo guardado es su respuesta literal, no un resumen mío');
+/* ⚠️ Y el caso rojo, que es lo que hace que esta comprobación sirva (EH F42):
+   una resuelta sin sus palabras tiene que saltar. */
+ok(!([{ resuelto: true, cuando: '2026-09-13' }]).every((d) => d.cuando && d.dijo && d.porQueSeQueda),
+  '⚠️ …y una resuelta sin lo que él dijo se pondría ROJA');
+/* 🚨 Lo que su respuesta aclara: la cuadrícula era para los submódulos de
+   dentro de los módulos de un área, y ahí está. Si un día una agrupadora deja
+   de ser cuadrícula, su decisión deja de estar cumplida y esto salta. */
+ok(/Mente/.test(resueltas[0].porQueSeQueda) && /Organización/.test(resueltas[0].porQueSeQueda),
+  '🔓 …y dice dónde SÍ está la cuadrícula que él quería: en las agrupadoras');
 /* ⚠️ Y se comprueba que sigue siendo cierta: si un día el hub pasa a
    cuadrícula, esta línea salta y la desviación hay que retirarla. */
 ok(/hub-card w-full/.test(leer('src/views/HubView.jsx')),
