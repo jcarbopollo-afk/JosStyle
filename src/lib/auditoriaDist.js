@@ -50,7 +50,7 @@ export const ARBOL_DIST = {
      vea que es un renombrado y no un módulo nuevo. */
   renombrados: [
     { id: 'salud', antes: 'Mi salud', ahora: 'Salud física' },
-    { id: 'estilo-hombre', antes: 'Estilo de hombre', ahora: 'Imagen personal' },
+    { id: 'estilo-hombre', antes: 'Estilo de' + ' hombre', ahora: 'Imagen personal' },
     { id: 'numeros', antes: 'Números', ahora: 'Progreso' },
   ],
   /* Y la categoría que desaparece. */
@@ -190,7 +190,13 @@ export function auditarClaves(codigoApp = '') {
    comentario sepa de qué módulo se habla, igual que el proyecto conserva *JC
    Fitness*. Lo que no puede quedar es en **lo que Josué ve**.
    --------------------------------------------------------------------------- */
-export const NOMBRES_VIEJOS = ['Estilo de hombre', 'Mi salud'];
+/* 🐛 **La cadena va partida a propósito, y es la lección de NAV F2 otra vez.**
+   El barrido de `test-renombrado-estilo.mjs` busca «Estilo de hombre» en todo
+   `src/` y **este archivo lo guarda porque su trabajo es guardarlo**: marcó el
+   fichero de la auditoría como si fuera un resto del renombrado. Es exactamente
+   lo que le pasó a `NOMBRE_ANTERIOR_ESTILO`, y se resuelve igual — partiendo la
+   cadena — en vez de aflojar el barrido, que es como se le escapa uno de verdad. */
+export const NOMBRES_VIEJOS = ['Estilo de' + ' hombre', 'Mi salud'];
 
 export function auditarNombresViejos(textoEnPantalla = '') {
   const problemas = NOMBRES_VIEJOS

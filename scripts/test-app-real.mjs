@@ -5193,9 +5193,13 @@ almacen.horarioTop = baseGe2(
   [claseGe2('bg1', 'hg1', '08:00', '09:00', 'Mates'), claseGe2('bq1', 'hg2', '08:30', '09:30', 'Pesas')],
 );
 await abrirHorario_ge2();
-const ge2_choque = await esperarTexto(/choque/i);
+/* ⚠️ Con DOS horarios la pantalla pinta más cosas, y bajo carga esta espera se
+   quedaba corta: se le da margen. Y si aun así falla, **el mensaje dice lo que
+   había en pantalla**, porque un rojo que no se puede diagnosticar cuesta una
+   pasada entera — que es justo la lección de esta fase. */
+const ge2_choque = await esperarTexto(/choque/i, 15000);
 ok(/choque/i.test(ge2_choque),
-  'GE F2 - B) CASO E: un choque de VERDAD entre dos horarios se sigue detectando');
+  `GE F2 - B) CASO E: un choque de VERDAD entre dos horarios se sigue detectando${/choque/i.test(ge2_choque) ? '' : ` — en pantalla: ${ge2_choque.slice(0, 200).replace(/\s+/g, ' ')}`}`);
 /* Y lo que hacia este fallo indescifrable: el numero a secas. Ahora dice QUE
    choca y DE QUE horario viene cada lado. */
 ok(/Mates \(Curso 25-26\)/.test(ge2_choque) && /Pesas \(Gimnasio\)/.test(ge2_choque),
@@ -5336,7 +5340,13 @@ for (const [area, modulo] of [['Bienestar', 'Imagen personal'], ['Bienestar', 'S
 const todo_d2 = barrido_d2.join(' ');
 ok(!/Estilo de hombre/i.test(todo_d2),
   '🚨 DIST F2 — «Estilo de hombre» NO se lee en ninguna de las pantallas visitadas');
-ok(!/Mi salud/i.test(todo_d2), '🏷️ …ni «Mi salud»: el módulo es «Salud física»');
+/* 🐛 **Y esta comprobación mía saltó con la pantalla bien.** El botón
+   «Analizar mi salud» contiene la frase y es legítimo —la E3 F30 lo exige:
+   *"no eliminarla, no esconderla"*—, así que se descuenta, igual que ya hacía
+   la comprobación de aquella fase. **Antes de negar una palabra, mirar qué la
+   contiene de verdad.** */
+ok(!/Mi salud/i.test(todo_d2.replace(/Analizar mi salud/gi, '')),
+  '🏷️ …ni «Mi salud» como nombre de módulo: es «Salud física»');
 ok(!/\bNúmeros\b/.test(todo_d2), '🏷️ …ni «Números»: el apartado es «Progreso»');
 
 await page.setViewportSize({ width: 1280, height: 900 });
