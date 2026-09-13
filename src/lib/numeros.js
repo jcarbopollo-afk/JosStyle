@@ -65,6 +65,17 @@ export const APPS_NUMEROS = [
 
 export const IDS_APPS_NUMEROS = APPS_NUMEROS.map((a) => a.id);
 
+/* 🏷️ DIST F1 — **el apartado se llama «Progreso»**, y el nombre vive aquí, no
+   escrito a mano en la pantalla. Josué: *"El antiguo agrupamiento/nombre que
+   pueda existir para estas funciones debe adaptarse a Progreso."*
+   ⚠️ **El id sigue siendo `numeros`**, y el archivo también: son la clave que
+   leen los presets de `tokens.js`, `experienciaReal.js`, `auditoriaFinal.js` y
+   `resumenesHub.js`. Renombrar lo que se ve y renombrar lo que se guarda son
+   dos cosas distintas (E3 F30) — y ésa es la razón de que esta constante exista
+   en vez de tres literales sueltos: el próximo renombrado llega solo. */
+export const NOMBRE_PROGRESO = 'Progreso';
+export const SUBTITULO_PROGRESO = 'Todo lo que se puede medir de lo que haces.';
+
 export function appNumeros(id) {
   return APPS_NUMEROS.find((a) => a.id === id) || null;
 }

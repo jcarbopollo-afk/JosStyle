@@ -5159,6 +5159,8 @@ const baseGe2 = (horarios, bloques) => ({
 const abrirHorario_ge2 = async () => {
   await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
   await pulsar('Gestión');
+  // DIST F1 — el Horario vive dentro de Organización (Gestión → Organización).
+  await pulsar('Organización');
   await pulsar('Horario');
 };
 

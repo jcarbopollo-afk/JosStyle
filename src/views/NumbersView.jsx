@@ -19,7 +19,7 @@ import { COLORS } from '../tokens';
 // ⚠️ `hexToRgba` vive en `helpers.js`, no en `tokens.js`. Lo cazó el build.
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle } from '../components/ui';
-import { APPS_NUMEROS, appNumeros, panelNumeros } from '../lib/numeros';
+import { APPS_NUMEROS, appNumeros, panelNumeros, NOMBRE_PROGRESO, SUBTITULO_PROGRESO } from '../lib/numeros';
 import { ICONOS_NUMEROS } from '../components/iconosNumeros';
 import StatsView from './StatsView';
 import PredictionsView from './PredictionsView';
@@ -69,10 +69,10 @@ export default function NumbersView(props) {
           onClick={() => setAbierta(null)}
           className="back-bar inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
           style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
-          aria-label="Volver a Números"
+          aria-label={`Volver a ${NOMBRE_PROGRESO}`}
         >
           <ArrowLeft size={15} />
-          Números
+          {NOMBRE_PROGRESO}
         </button>
 
         {/* 🚨 Las tres vistas, TAL CUAL. Ni una línea de su contenido vive aquí. */}
@@ -109,10 +109,8 @@ export default function NumbersView(props) {
   return (
     <div className="space-y-4 pb-4">
       <div>
-        <SectionTitle>Números</SectionTitle>
-        <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
-          Todo lo que se puede medir de lo que haces.
-        </p>
+        <SectionTitle>{NOMBRE_PROGRESO}</SectionTitle>
+        <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{SUBTITULO_PROGRESO}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
