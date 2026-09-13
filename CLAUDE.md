@@ -295,11 +295,15 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 | **NAVO F1** | **Atrás vuelve de donde viniste**, no al área del módulo | ✅ **v3.81.0** |
 | **SF F1** | 🍎 El **barrido de Safari** (ésta no la pidió él: sale de la SC F1) | ✅ **v3.82.0** |
 
-- 🚨 **UN `className` NO ES UNA PRUEBA DE NADA, Y ESTO COSTÓ CARO** (SF F1). La lupa y el botón de
-  sugerencias se declaran `fixed`… y **nunca lo han estado**: `.toque-44` —el área táctil de la
-  E3 F1— pone `position: relative`, misma especificidad, y `index.css` va después de las utilidades
-  de Tailwind. Desde entonces **se iban con el scroll** (lo que Josué reportó, y que yo di por bueno
-  leyendo el `className`) y **ocupaban 36 px que empujaban el contenido de TODAS las pantallas**.
+- 🚨 **UN `className` NO ES UNA PRUEBA DE NADA, Y ESTO COSTÓ CARO** (SF F1). La lupa se declara
+  `fixed`… y **nunca lo ha estado**: `.toque-44` —el área táctil de la E3 F1— pone
+  `position: relative`, misma especificidad, y `index.css` va después de las utilidades de Tailwind.
+  Desde entonces **se iba con el scroll** (lo que Josué reportó, y que yo di por bueno leyendo el
+  `className`) y **ocupaba 36 px que empujaban el contenido de TODAS las pantallas**.
+  ⚠️ **Y solo la lupa, no el botón de sugerencias**: aquél pone su `fixed` en un `<div>` envoltorio
+  que no lleva `.toque-44`. Escribí primero que eran los dos —medí uno y extrapolé al otro—, que es
+  el mismo error que esta fase denuncia. **Lo que decide no es usar las dos clases, sino tenerlas en
+  el MISMO elemento.**
   ⚠️ Lo destapó **medirlo**: `getComputedStyle(lupa).position` decía `relative`. Arreglado con
   `:where(.toque-44)`, que tiene especificidad cero. **Antes de afirmar que algo está posicionado,
   preguntárselo al navegador, no al atributo.**

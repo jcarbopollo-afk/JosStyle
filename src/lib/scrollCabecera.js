@@ -57,7 +57,7 @@ export const CAPAS_SUPERIORES = [
     que: 'El botón de sugerencias de la IA',
     comoSeQuedaQuieto: 'fixed',
     z: 30,
-    nota: 'Tenía el mismo fallo y por el mismo motivo, porque comparte la clase `.toque-44`. Sigue siendo otra cosa distinta de la lupa (apartado 2: "no interfiera con el botón de la Guía"): lo único que cambia es que ahora los dos se quedan donde dicen que se quedan.',
+    nota: 'ÉSTE SÍ ESTABA BIEN, y la diferencia enseña dónde estaba el fallo de verdad: su `fixed` va en un `<div>` envoltorio que NO lleva `.toque-44` (la clase está en el botón de dentro), así que nada la pisaba. En la lupa las dos clases están en el MISMO elemento, y ahí es donde chocaban. No se toca: sigue siendo otra cosa distinta de la lupa (apartado 2, "no interfiera con el botón de la Guía").',
   },
   {
     que: 'La cabecera del área (ÁREA / Vida)',
@@ -81,9 +81,17 @@ export const Z_ACCESOS_FIJOS = 30;
    `.toque-44` —la clase que amplía el área táctil a 44 px, de la E3 F1— declaraba
    `position: relative`. Las dos reglas tienen la misma especificidad (una clase),
    así que **gana la que va después en la hoja, y `index.css` va después de las
-   utilidades de Tailwind**. Resultado: desde la E3 F1, los DOS accesos de arriba
-   se han desplazado con la página. Y además, al estar en el flujo, ocupaban 36 px
-   que empujaban hacia abajo todo el contenido de todas las pantallas.
+   utilidades de Tailwind**. Resultado: desde la E3 F1, **la lupa** se ha
+   desplazado con la página. Y además, al estar en el flujo, ocupaba 36 px que
+   empujaban hacia abajo todo el contenido de todas las pantallas.
+
+   ⚠️ **Y UNA CORRECCIÓN QUE ME HICE A MÍ MISMO, porque es la misma trampa otra
+   vez:** escribí primero que *"los DOS accesos de arriba"* estaban rotos. Es
+   falso. **Solo la lupa.** El botón de sugerencias declara su `fixed` en un
+   `<div>` envoltorio que NO lleva `.toque-44` —la clase va en el botón de
+   dentro—, así que nada lo pisaba. Medí la lupa y extrapolé al otro sin mirarlo:
+   exactamente el error que esta misma sección denuncia. Lo que decide no es
+   *"usa esas dos clases"*, sino **si están en el MISMO elemento**.
 
    ⚠️ **MEDIDO, NO SUPUESTO**, que es lo único que lo sacó a la luz:
    `getComputedStyle(lupa).position` devolvía `relative`, y al desplazar 169 px su
@@ -100,9 +108,11 @@ export const FIXED_QUE_NO_LO_ERA = {
   cuantoLlevaba: 'Desde la E3 F1, cuando nació `.toque-44`',
   quienLoPisaba: '.toque-44 { position: relative }',
   porque: 'Misma especificidad que la utilidad `fixed` de Tailwind, y esta hoja se aplica después.',
-  seVeiaAsi: 'Los dos accesos de arriba se iban con el scroll, y su hueco de 36 px empujaba hacia abajo el contenido de TODAS las pantallas.',
+  aQuienAfectaba: 'SOLO a la lupa. El botón de sugerencias pone su `fixed` en un div envoltorio que no lleva `.toque-44`, así que estaba bien. Lo que decide no es usar las dos clases, sino tenerlas en el MISMO elemento.',
+  seVeiaAsi: 'La lupa se iba con el scroll, y su hueco de 36 px empujaba hacia abajo el contenido de TODAS las pantallas.',
   arreglo: ':where(.toque-44), que tiene especificidad cero: sigue dando el ancestro posicionado que necesita el pseudoelemento de 44 px, y deja de pisar a quien declara su propia posición.',
-  loQueNoSeHizo: 'Tocar el `className` de las vistas. El fallo estaba en la hoja, así que se arregla ahí una vez, para los dos botones y para el que venga.',
+  loQueNoSeHizo: 'Tocar el `className` de las vistas. El fallo estaba en la hoja, así que se arregla ahí una vez — y de paso queda cubierto cualquier botón futuro que ponga `.toque-44` junto a su propia posición.',
+  yMeEquivoqueAntes: 'Escribí que estaban rotos LOS DOS. Solo la lupa. Medí uno y extrapolé al otro sin mirarlo, que es el mismo error que esta fase denuncia.',
   loQueLoDestapo: 'Medirlo en el navegador. Leyendo el código parecía correcto, y de hecho esta misma librería llegó a afirmar que la lupa "ya estaba fija".',
 };
 

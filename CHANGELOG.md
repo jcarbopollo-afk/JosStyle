@@ -10,17 +10,22 @@ la aplicación **solo se usa en un iPhone**. Todo lo que los dos navegadores res
 verde en la verificación y mal en su pantalla. Así que esto es buscar **más casos de esa familia**
 antes de que los encuentre él.
 
-### 🚨 Y apareció uno mucho peor: LOS DOS ACCESOS DE ARRIBA NUNCA HAN ESTADO FIJOS
+### 🚨 Y apareció uno mucho peor: LA LUPA NUNCA HA ESTADO FIJA
 
-La lupa y el botón de sugerencias se declaran `className="accion-superior toque-44 fixed z-30"`. La
-clase `.toque-44` —la que amplía el área táctil a 44 px, de la E3 F1— declaraba `position: relative`.
-**Misma especificidad que la utilidad `fixed`, y esta hoja va después**, así que ganaba ella. Desde
-la E3 F1:
+La lupa se declara `className="accion-superior toque-44 fixed z-30"`. La clase `.toque-44` —la que
+amplía el área táctil a 44 px, de la E3 F1— declaraba `position: relative`. **Misma especificidad que
+la utilidad `fixed`, y esta hoja va después**, así que ganaba ella. Desde la E3 F1:
 
-- los dos botones **se iban con el scroll** — que es literalmente lo que Josué escribió: *"el icono
-  de Buscar… no desaparezca al hacer scroll"*;
-- y al estar en el flujo **ocupaban 36 px que empujaban hacia abajo el contenido de todas las
+- la lupa **se iba con el scroll** — que es literalmente lo que Josué escribió: *"el icono de
+  Buscar… no desaparezca al hacer scroll"*;
+- y al estar en el flujo **ocupaba 36 px que empujaban hacia abajo el contenido de todas las
   pantallas**.
+
+⚠️ **Y una corrección que me hice a mí mismo, porque es la misma trampa otra vez:** primero escribí
+que estaban rotos **los dos** accesos. Es falso: **solo la lupa**. El botón de sugerencias pone su
+`fixed` en un `<div>` envoltorio que **no lleva `.toque-44`**, así que nada lo pisaba. Medí uno y
+extrapolé al otro sin mirarlo. Lo que decide no es *usar esas dos clases*, sino **tenerlas en el
+mismo elemento**.
 
 ⚠️ **Y la lección más cara del día: un `className` no es una prueba de nada.** Leí `fixed` en el
 código y escribí en la propia librería de la SC F1 que la lupa *"ya estaba fija, no se toca"*. Lo
