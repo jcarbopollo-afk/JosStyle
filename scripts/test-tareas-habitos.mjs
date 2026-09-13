@@ -105,7 +105,10 @@ console.log('\n── 5. La llama sigue donde SÍ significa algo ──');
    (a) el icono del módulo **Rachas**, que es de donde viene el concepto, y
    (b) la marca que acompaña al número de racha DE UN HÁBITO.
    Las dos son correctas: la llama significa racha, y ahora solo significa eso. */
-ok(/\{ id: 'rachas', label: 'Rachas', icon: Flame \}/.test(APP),
+/* 🔓 DIST F1 — Rachas ya no es una línea de `MORE_NAV`: la absorbió
+   Productividad. **La llama sigue siendo suya**, que es lo que esta
+   comprobación protege; lo que ha cambiado es dónde vive esa línea. */
+ok(miniAppPR('rachas')?.icono === 'Flame',
   '⚠️ Rachas conserva su llama: el concepto no se ha movido, se ha dejado de repetir');
 ok(/<Flame size=\{11\} \/> \{racha\}/.test(CODIGO),
   '⚠️ …y la llama que acompaña a la racha de un hábito se queda: ahí SÍ es una racha');
@@ -114,7 +117,10 @@ console.log('\n── 6. Nada más ha cambiado ──');
 
 /* El encargo termina con *"No hagas ningún cambio adicional fuera de estos dos
    puntos"*, así que se comprueba que las otras cinco mini-apps siguen igual. */
-const esperados = { pomodoro: 'Timer', tareas: 'ListChecks', metas: 'Target', objetivos: 'Compass', rutinas: 'Repeat' };
+/* ⚠️ DIST F1 — `tareas` sale de esta lista porque **ya no es una mini-app de
+   Productividad**: vive en Organización, con su mismo icono (`ListChecks`, en
+   `ICONOS_AGRUPADORES`). Entra `rachas`, que es la que la sustituye. */
+const esperados = { pomodoro: 'Timer', rachas: 'Flame', metas: 'Target', objetivos: 'Compass', rutinas: 'Repeat' };
 for (const [id, icono] of Object.entries(esperados)) {
   const app = miniAppPR(id);
   ok(!!app && app.icono === icono, `⚠️ «${app?.nombre || id}» conserva su icono (${icono})`);

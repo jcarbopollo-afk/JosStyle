@@ -2718,8 +2718,8 @@ ok(/Construye constancia cada día/.test(lanzador_pr1),
 for (const nombre of ['Hábitos', 'Pomodoro', 'Rachas', 'Metas', 'Objetivos', 'Rutinas']) {
   ok(new RegExp(nombre, 'i').test(lanzador_pr1), `⚠️ y ${nombre} es una de ellas`);
 }
-ok(!/\bTareas\b/i.test(lanzador_pr1),
-  '🚨 DIST F1 — y Tareas YA NO está en Productividad: su sitio es Organización');
+ok(!/Organiza lo que tienes que hacer/i.test(lanzador_pr1),
+  '🚨 DIST F1 — y Tareas YA NO es una mini-app de aquí: su sitio es Organización');
 ok(/Concéntrate sin distracciones/.test(lanzador_pr1) && /Define hacia dónde quieres avanzar/.test(lanzador_pr1),
   '⚠️ cada una con la descripción del enunciado');
 /* Desde la E3 F29 cada cuadradito habla el idioma de SU mini-app —"0/1 hoy",
@@ -2748,8 +2748,12 @@ ok(await pulsar('Volver a Productividad'), 'y se vuelve al lanzador');
 const vuelta_pr1 = await esperarTexto(/Construye constancia cada día/);
 ok(/Construye constancia cada día/.test(vuelta_pr1), '⚠️ que sigue siendo el lanzador');
 
-/* Y una mini-app de las que ya existían, para comprobar que no se han tocado. */
-ok(await pulsar('Abrir Tareas'), 'se entra en Tareas');
+/* Y una de las listas de siempre, para comprobar que no se han tocado.
+   ⚠️ DIST F1 — Tareas se abre desde Gestión → Organización. Lo que esta sección
+   comprueba —que su contenido no se ha reescrito— sigue siendo lo mismo. */
+await pulsar('Gestión');
+await pulsar('Organización');
+ok(await pulsar('Tareas'), 'se entra en Tareas');
 const tareas_pr1 = await esperarTexto(/Estudiar mates/);
 ok(/Estudiar mates/.test(tareas_pr1),
   '🚨 Y LAS CINCO DE SIEMPRE SIGUEN INTACTAS: esta fase es la pantalla, no su contenido');
@@ -3261,11 +3265,17 @@ ok(/⭐ Mejorar mi físico/i.test(centro_pr7), '⚠️ y el de Objetivos destaca
 ok(/De tus objetivos a hoy/i.test(centro_pr7), '⚠️ y se ve la cadena Objetivo → Meta → Tarea');
 ok(/8 \/ 15/.test(centro_pr7), '⚠️ con el progreso de la meta');
 
-/* 🚨 Completar algo tiene que MOVER el número. */
-ok(await pulsar('Abrir Tareas'), 'se entra en Tareas');
+/* 🚨 Completar algo tiene que MOVER el número.
+   ⚠️ DIST F1 — la lista vive ahora en Organización, así que se va allí, se
+   completa y se vuelve al centro de control por la barra. **Que el número se
+   mueva es justo lo que demuestra que no hay copia**: es la misma tarea. */
+await pulsar('Gestión');
+await pulsar('Organización');
+ok(await pulsar('Tareas'), 'se entra en Tareas');
 ok(await pulsar('Completar Estudiar biología'), 'y se completa una tarea');
 await page.waitForTimeout(900);
-ok(await pulsar('Volver a Productividad'), 'se vuelve al centro de control');
+await pulsar('Vida');
+ok(await pulsar('Productividad'), 'se vuelve al centro de control');
 const trasCompletar_pr7 = await esperarTexto(/2 \/ 4 completado/i);
 ok(/2 \/ 4 completado/i.test(trasCompletar_pr7),
   '🚨 Y LA BARRA SUBE SIN QUE CAMBIE EL TOTAL: completar no puede sacar la tarea de los dos lados');
@@ -4844,7 +4854,12 @@ ok(await pulsar('Vida'), 'se vuelve a Vida');
 ok(await pulsar('Productividad'), 'se abre Productividad');
 const prod_n1 = await esperarTexto(/H[aá]bitos/i);
 ok(/Rachas/i.test(prod_n1), '🚨 DIST F1 — Rachas es ahora una mini-app de Productividad');
-ok(!/\bTareas\b/i.test(prod_n1), '🚨 …y Tareas ya NO está aquí: su sitio es Organización');
+/* ⚠️ Se busca **la plaquita**, no la palabra: el centro de control (E3 F29)
+   sigue informando del porcentaje de tareas, y eso es integración, no una copia
+   —al tocarlo lleva a Organización—. Lo que no puede haber es un cuadradito que
+   abra Tareas dentro de Productividad, y eso lo delata su descripción. */
+ok(!/Organiza lo que tienes que hacer/i.test(prod_n1),
+  '🚨 …y Tareas ya NO es una mini-app de aquí: su sitio es Organización');
 ok(await pulsar('Rachas'), 'se abre Rachas desde dentro de Productividad');
 const rachas_n1 = await esperarTexto(/Racha|racha/);
 ok(/Racha|racha/.test(rachas_n1), '🚨 …y es la pantalla de Rachas de siempre, con sus datos');

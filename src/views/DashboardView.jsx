@@ -18,7 +18,12 @@ import { resumenParaHoy } from '../lib/integracionPR';
    comentario decía literalmente *"misma fórmula exacta que ya usa SettingsView"*, que es la
    forma educada de decir «hay dos». Ahora hay una, y devuelve `null` en vez de un `Infinity`
    cuando falta la altura. */
-import { imcDe } from '../lib/salud';
+/* 🏷️ DIST F1 — el nombre del módulo se LEE del catálogo, no se escribe a mano.
+   Aquí ponía `titulo="Mi salud"` a pelo, y es exactamente el fallo que la E3 F30
+   pagó caro: un renombrado a medias dejó dos botones con el mismo nombre en la
+   misma pantalla y solo lo vio Chromium. Con la constante importada, el próximo
+   renombrado llega solo. */
+import { imcDe, NOMBRE_MODULO as NOMBRE_SALUD } from '../lib/salud';
 import { calidadDe } from '../lib/sueno';
 import { ResumenRachaHoy } from './RachasView';
 import { resumenDelDia, eventosDelDia } from '../lib/calendario';
@@ -642,7 +647,7 @@ export default function DashboardView({
     .filter((t) => !t.hecha)
     .sort((a, b) => (a.fecha || '9999').localeCompare(b.fecha || '9999'))[0] || null;
 
-  // Mi salud: peso/IMC — con el peso más reciente si existe, o el del Perfil si todavía no hay
+  // Salud física: peso/IMC — con el peso más reciente si existe, o el del Perfil si todavía no hay
   // ninguna medida registrada. El cálculo lo hace `imcDe` (E3 F30), que es el único sitio donde
   // vive esa fórmula.
   const ultimaMedida = ultimoPorFechaLocal(salud?.medidas);
@@ -826,7 +831,7 @@ export default function DashboardView({
           )}
           {!oculto('salud') && (
             <DashboardModuleCard
-              icon={HeartPulse} accent={accent} titulo="Mi salud"
+              icon={HeartPulse} accent={accent} titulo={NOMBRE_SALUD}
               vacio={!pesoActual}
               valor={pesoActual ? `${pesoActual} kg` : undefined}
               sub={imc ? `IMC ${imc.toFixed(1)}` : 'Toca para registrar una medida'}

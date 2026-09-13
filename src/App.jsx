@@ -2907,6 +2907,9 @@ export default function App() {
                puerta que los paneles de Mente y Organización: `renderModulo`.
                Una sola definición de sus props, no una copia aquí. */
             renderRachas={() => renderModulo('rachas')}
+            /* ⚠️ Y las rachas también como DATO: el contador de la plaquita lee
+               `datos[app.de]`, así que sin esto se pintaría sin decir cuántas hay. */
+            rachas={rachas}
             /* Y lo que ya no vive aquí (Tareas) se manda a su sitio en vez de
                abrirse en blanco. `setTab` basta: `areaDeModulo` sabe que Tareas
                cuelga de Organización, así que la barra de volver aparece. */

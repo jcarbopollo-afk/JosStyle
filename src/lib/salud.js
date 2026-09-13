@@ -52,7 +52,14 @@ import { todayISO, formatFecha } from './helpers';
    ══════════════════════════════════════════════════════════════════════════ */
 
 export const NOMBRE_APARTADO = 'Bienestar';
-export const NOMBRE_MODULO = 'Mi salud';
+/* 🏷️ DIST F1 — Josué: *"El módulo que actualmente corresponda a Salud debe
+   pasar a llamarse **Salud física**."* Era «Mi salud» desde la E3 F30, que lo
+   renombró para no repetir el nombre del área («Bienestar → Salud»); el nuevo
+   cumple lo mismo y además dice de qué salud habla. **El id `salud` NO se
+   toca**: es la clave de `app_data` donde viven sus medidas, sus fotos y su
+   historial. Renombrar lo que se ve y renombrar lo que se guarda son dos cosas
+   distintas (E3 F30). */
+export const NOMBRE_MODULO = 'Salud física';
 export const SUBTITULO_MODULO = 'Medidas, fotos e historial — entrada manual, y la IA lo interpreta';
 
 /* ⚠️ Una línea por sitio donde Josué VE el nombre (apartado 2), con lo que decía
@@ -61,9 +68,9 @@ export const SUBTITULO_MODULO = 'Medidas, fotos e historial — entrada manual, 
    demuestra nada (EH F42: una regla que no puede fallar no sirve). */
 export const RENOMBRADO = [
   { donde: 'Barra inferior y cabecera del área', archivo: 'src/App.jsx', antes: 'Salud', ahora: 'Bienestar' },
-  { donde: 'Tarjeta del módulo dentro del área', archivo: 'src/App.jsx', antes: 'Salud', ahora: 'Mi salud' },
-  { donde: 'Título de la pantalla', archivo: 'src/views/HealthView.jsx', antes: 'Salud', ahora: 'Mi salud' },
-  { donde: 'Tarjeta de Hoy', archivo: 'src/views/DashboardView.jsx', antes: 'Salud', ahora: 'Mi salud' },
+  { donde: 'Tarjeta del módulo dentro del área', archivo: 'src/App.jsx', antes: 'Mi salud', ahora: 'Salud física' },
+  { donde: 'Título de la pantalla', archivo: 'src/views/HealthView.jsx', antes: 'Mi salud', ahora: 'Salud física' },
+  { donde: 'Tarjeta de Hoy', archivo: 'src/views/DashboardView.jsx', antes: 'Mi salud', ahora: 'Salud física' },
   { donde: 'Etiqueta del módulo de tiempo de pantalla', archivo: 'src/App.jsx', antes: 'Bienestar', ahora: 'Bienestar digital' },
 ];
 
@@ -374,7 +381,7 @@ export function condicionBN({ salud, fotos, perfil, vista } = {}) {
 
   return [
     { id: 1, texto: 'Bienestar carga y su pantalla existe', ok: codigo.includes('export default function HealthView') },
-    { id: 2, texto: 'El apartado se llama Bienestar y el módulo Mi salud', ok: NOMBRE_APARTADO === 'Bienestar' && NOMBRE_MODULO === 'Mi salud' && codigo.includes(NOMBRE_MODULO) },
+    { id: 2, texto: 'El apartado se llama Bienestar y el módulo NO se llama igual', ok: NOMBRE_APARTADO === 'Bienestar' && NOMBRE_MODULO !== 'Salud' && codigo.includes(NOMBRE_MODULO) },
     { id: 3, texto: 'No se repite el nombre del área dentro de él', ok: !/>\s*Salud\s*</.test(codigo) },
     { id: 4, texto: 'Fotos sigue entera', ok: codigo.includes('onAddFoto') && codigo.includes('onDeleteFoto') },
     { id: 5, texto: 'Medidas sigue entera', ok: codigo.includes('onAddMedida') && codigo.includes('onDeleteMedida') },

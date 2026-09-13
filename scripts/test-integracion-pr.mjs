@@ -21,7 +21,7 @@ import {
   ACCIONES_RAPIDAS_PR, resumenParaHoy,
   AUDITORIA_PR, NO_EN_PR7, condicionPR7,
 } from '../src/lib/integracionPR.js';
-import { MINI_APPS_PR } from '../src/lib/productividad.js';
+import { MINI_APPS_PR, IDS_MINI_APPS_PR } from '../src/lib/productividad.js';
 import { crearTarea } from '../src/lib/tareas.js';
 import { crearObjetivo, crearMeta, vincularMeta, actualizarProgreso, marcarPrincipal } from '../src/lib/metasObjetivos.js';
 import { crearRutina, crearPaso, anadirPaso, editarRutina } from '../src/lib/rutinas.js';
@@ -80,8 +80,15 @@ const D = {
 const VACIO = { hoy: HOY, objetivos: { lista: [] }, productividad: { habitos: [], tareas: [], metas: [], rutinas: [], rutinaEjecuciones: [], pomodoroSesiones: [], pomodoros: {}, apuntes: [] } };
 
 console.log('\n── 1. 🚨 AQUÍ NO SE CALCULA NADA: SE PREGUNTA ──────────────────');
-eq(FUENTES_PR.map((f) => f.app), ['habitos', 'pomodoro', 'tareas', 'metas', 'objetivos', 'rutinas'],
-  'una línea por mini-app, las seis');
+/* 🔓 DIST F1 — **siete fuentes para seis mini-apps, y es correcto.** Rachas
+   entra como mini-app y Tareas sale a Organización, pero su fuente se queda
+   porque el centro de control sigue informando de las vencidas. Lo que hay que
+   comprobar es que **cada mini-app tenga la suya**, no cuántas hay: una cuenta
+   exacta en una prueba es una bomba de relojería (EH F21). */
+ok(IDS_MINI_APPS_PR.every((id) => FUENTES_PR.some((f) => f.app === id)),
+  'cada mini-app tiene su fuente: aquí no se calcula nada, se pregunta');
+ok(FUENTES_PR.some((f) => f.app === 'tareas'),
+  '⚠️ …y la de Tareas se queda aunque su pantalla viva ahora en Organización');
 ok(FUENTES_PR.every((f) => typeof f.leer === 'function'),
   '🚨 y `leer` son FUNCIONES IMPORTADAS de verdad: renombrar una en su módulo no compila (EH F39)');
 ok(FUENTES_PR.every((f) => f.clave && f.duenio),
@@ -107,8 +114,16 @@ ok(!/info\.racha\b/.test(CODIGO),
    pantalla se escribe en el idioma de Josué, singular incluido. */
 eq(panelDeMiniApp('habitos', { ...D, productividad: { ...D.productividad, habitos: [{ id: 'h1', nombre: 'Leer', activo: true, historial: { [HOY]: true } }] } }).secundaria,
   '🔥 1 día', '🐛 y con un solo día es *"1 día"*, no *"1 días"*');
-eq(panelDeMiniApp('tareas', D).principal, '3 pendientes', '*"✅ Tareas → 4 pendientes"*');
-eq(panelDeMiniApp('tareas', D).secundaria, 'Llamar', '*"y destacar las prioritarias"*: la vencida va primera');
+/* 🔓 DIST F1 — Tareas ya no es una mini-app de Productividad, así que no tiene
+   plaquita aquí: `panelDeMiniApp` devuelve `null` para lo que no es suyo, y eso
+   es lo correcto. Su fuente **sí se queda** (el centro de control sigue
+   informando de las vencidas), y eso se comprueba justo debajo. */
+ok(panelDeMiniApp('tareas', D) === null,
+  '🚨 DIST F1 — Tareas ya no tiene plaquita en Productividad: vive en Organización');
+ok(!!fuentePR('tareas'),
+  '⚠️ …pero su fuente se queda: el centro de control sigue integrándose con ella');
+eq(panelDeMiniApp('rachas', { ...D, rachas: { definiciones: [{ id: 'r1', nombre: 'Leer', activa: true }], eventos: [] } }).principal,
+  '1 racha', '🚨 DIST F1 — y Rachas SÍ tiene la suya, con sus números de `panelRachas`');
 eq(panelDeMiniApp('metas', D).principal, '1 activa', '*"🎯 Metas → 3 activas"*');
 eq(panelDeMiniApp('metas', D).secundaria, '53 % de media', '*"y progreso general"*');
 eq(panelDeMiniApp('objetivos', D).principal, '1 activo', '*"🗺️ Objetivos → 2 activos"*');

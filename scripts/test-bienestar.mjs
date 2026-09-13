@@ -75,22 +75,30 @@ console.log('\n══ E3 · Fase 30 (BN) — el apartado Bienestar ══');
 console.log('\n── 1. 🚨 Los nombres: apartados 2 y 3 ──────────────────────────');
 eq(NOMBRE_APARTADO, 'Bienestar', '*"SALUD → BIENESTAR"* (apartado 2)');
 ok(NOMBRE_MODULO !== 'Salud', '🚨 y el módulo de dentro NO se llama «Salud»: es la redundancia que prohíbe el apartado 3');
-eq(NOMBRE_MODULO, 'Mi salud', 'se llama «Mi salud»');
+/* 🏷️ DIST F1 — Josué lo renombró a «Salud física». La comprobación de arriba
+   —que NO se llame «Salud», la redundancia que prohíbe el apartado 3— sigue
+   siendo la que importa y sigue cumpliéndose. */
+eq(NOMBRE_MODULO, 'Salud física', 'se llama «Salud física»');
 ok(APP_CODIGO.includes("label: ''") === false || APP.includes("label: 'Bienestar'"),
   '🚨 el área de la barra inferior dice «Bienestar» en `App.jsx`');
 ok(APP.includes("{ id: 'area-salud', label: 'Bienestar'"),
   '⚠️ y con su id intacto: `area-salud` lo guarda la personalización de la Fase 19 (apartado 2)');
-ok(APP.includes("{ id: 'salud', label: 'Mi salud'"),
-  '🚨 y la tarjeta del módulo dice «Mi salud», con el id `salud` sin tocar');
+ok(APP.includes("{ id: 'salud', label: 'Salud física'"),
+  '🚨 y la tarjeta del módulo dice «Salud física», con el id `salud` sin tocar');
 ok(/Inicio/.test(APP) && APP.includes("label: 'Vida'") && APP.includes("label: 'Gestión'"),
-  '⚠️ la navegación queda Inicio · Bienestar · Vida · Gestión');
+  '⚠️ la navegación conserva Bienestar, Vida y Gestión (DIST F1 añade Ajustes como quinta)');
 
-/* 🚨 El choque de nombres que el enunciado no podía prever. */
-ok(APP.includes("{ id: 'bienestar', label: 'Bienestar digital'"),
-  '🚨 y el módulo del tiempo de pantalla pasa a «Bienestar digital»: con el área llamada Bienestar había DOS');
+/* 🚨 El choque de nombres que el enunciado no podía prever.
+   ⚠️ DIST F1 — el módulo dejó de tener línea en `MORE_NAV`: vive dentro de
+   **Mente**, así que su etiqueta la declara ahora `agrupadores.js`. El nombre
+   sigue siendo el mismo y el id tampoco se toca; lo que ha cambiado es dónde
+   está escrito. */
+const AGRUP = leer('src/lib/agrupadores.js');
+ok(AGRUP.includes("id: 'bienestar'") && AGRUP.includes("nombre: 'Bienestar digital'"),
+  '🚨 y el módulo del tiempo de pantalla se llama «Bienestar digital»: con el área llamada Bienestar había DOS');
 ok(leer('src/views/WellbeingView.jsx').includes('Bienestar digital'),
   '⚠️ que es como su propia pantalla se llamaba ya: lo que estaba corto era la etiqueta del menú');
-ok(APP.includes("id: 'bienestar'"), '⚠️ y su id tampoco se toca: es su clave guardada');
+ok(APP.includes("case 'bienestar'"), '⚠️ y su id tampoco se toca: es su clave guardada');
 
 /* La tabla de renombrados tiene que ser verdad, no una lista bonita. */
 ok(RENOMBRADO.length >= 5 && RENOMBRADO.every((r) => r.donde && r.archivo && r.antes && r.ahora),

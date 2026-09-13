@@ -41,6 +41,7 @@
 
 import { todayISO, addDays } from './helpers.js';
 import { normalizarRacha, resumenRacha } from './rachas.js';
+import { panelRachas } from './rachasServicio.js';
 
 import { MINI_APPS_PR, miniAppPR } from './productividad.js';
 /* 🐛 **`habitos.paraHoy()` DEVUELVE `pendientes` COMO UN NÚMERO**, y la racha en
@@ -94,8 +95,19 @@ export const FUENTES_PR = [
     leer: (d) => paraHoyPomodoro(d.productividad?.pomodoroSesiones, d.hoy),
   },
   {
+    /* ⚠️ DIST F1 — Tareas ya no es una mini-app de Productividad (vive en
+       Organización), pero **su fuente se queda**: el centro de control sigue
+       informando de las vencidas y de su porcentaje, y eso es integración, no
+       una copia — al tocarlo lleva a Organización. */
     app: 'tareas', clave: 'productividad.tareas', duenio: 'tareas.js',
     leer: (d) => paraHoyTareas(d.productividad?.tareas, d.hoy),
+  },
+  {
+    /* 🚨 DIST F1 — Rachas entra en Productividad. **Sus números salen de
+       `panelRachas`, la fuente de RA F1**, nunca de un cálculo nuevo: con dos
+       cálculos, esta plaquita y la pantalla de Rachas dirían números distintos. */
+    app: 'rachas', clave: 'rachas.definiciones', duenio: 'rachasServicio.js',
+    leer: (d) => panelRachas(d.rachas, d.hoy),
   },
   {
     app: 'metas', clave: 'productividad.metas', duenio: 'metasObjetivos.js',
@@ -113,7 +125,15 @@ export const FUENTES_PR = [
 
 export const fuentePR = (app) => FUENTES_PR.find((f) => f.app === app) || null;
 
-const datos = (d = {}) => ({ productividad: d.productividad || {}, objetivos: d.objetivos || { lista: [] }, hoy: d.hoy || todayISO() });
+/* ⚠️ DIST F1 — `rachas` entra aquí porque Rachas es ahora una mini-app y saca su
+   dato de su propia clave, como Objetivos. Sin esta línea su plaquita se
+   pintaría perfecta y no diría nada. */
+const datos = (d = {}) => ({
+  productividad: d.productividad || {},
+  objetivos: d.objetivos || { lista: [] },
+  rachas: d.rachas || { definiciones: [], eventos: [] },
+  hoy: d.hoy || todayISO(),
+});
 
 /* 🚨 **UNA BARRA DE PROGRESO NECESITA LO YA HECHO EN EL DENOMINADOR.** El filtro
    `'hoy'` de Tareas devuelve **solo lo pendiente** —correcto para *"qué me
@@ -147,6 +167,22 @@ export function panelDeMiniApp(app, d = {}) {
       principal: p.total ? `${p.hechos}/${p.total} hoy` : null,
       secundaria: info.rachaDestacada && info.rachaDestacada.dias > 0
         ? `🔥 ${info.rachaDestacada.dias} ${info.rachaDestacada.dias === 1 ? 'día' : 'días'}`
+        : null,
+    };
+  }
+
+  /* 🚨 DIST F1 — la plaquita de Rachas. Sin esta rama saldría **en blanco**:
+     `panelDeMiniApp` devuelve `null` para lo que no conoce, y la tarjeta se
+     pinta perfecta sin decir nada. Los dos números —la racha viva más larga y
+     cuántas hay— salen de `panelRachas`, no de una cuenta escrita aquí. */
+  if (app === 'rachas') {
+    const panel = f.leer(x);
+    const n = panel.rachas.length;
+    const mejor = panel.principal;
+    return {
+      principal: n ? `${n} ${n === 1 ? 'racha' : 'rachas'}` : null,
+      secundaria: mejor && mejor.actual > 0
+        ? `🔥 ${mejor.actual} ${mejor.actual === 1 ? 'día' : 'días'}`
         : null,
     };
   }
@@ -615,7 +651,13 @@ export function condicionPR7(d = {}) {
   const paneles = MINI_APPS_PR.map((m) => panelDeMiniApp(m.id, x));
 
   return [
-    { id: 1, texto: 'Las seis mini-apps funcionan como un ecosistema', ok: FUENTES_PR.length === 6 && MINI_APPS_PR.length === 6 },
+    /* ⚠️ DIST F1 — las mini-apps siguen siendo seis, pero **las fuentes son
+       siete**: la de Tareas se queda aunque su pantalla viva en Organización,
+       porque el centro de control sigue integrándose con ella. Lo que la casilla
+       comprueba es que **cada mini-app tenga su fuente**, que es lo que de
+       verdad significa «funcionar como un ecosistema» — contar dos listas y
+       exigir que midan lo mismo era una coincidencia, no una comprobación. */
+    { id: 1, texto: 'Las seis mini-apps funcionan como un ecosistema', ok: MINI_APPS_PR.length === 6 && MINI_APPS_PR.every((m) => !!fuentePR(m.id)) },
     { id: 2, texto: 'El launcher enseña información real', ok: paneles.every((p) => p !== null) },
     { id: 3, texto: 'Se puede responder qué queda por hacer hoy', ok: typeof queMeQueda(x).total === 'number' },
     { id: 4, texto: 'Hábitos se integra con Hoy', ok: !!fuentePR('habitos') },

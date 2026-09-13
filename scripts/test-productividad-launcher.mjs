@@ -65,15 +65,22 @@ const vacio = { productividad: DEFAULT_PRODUCTIVIDAD, objetivos: DEFAULT_OBJETIV
 
 console.log('\n═══ 1. SEIS MINI-APPS, NI UNA MÁS ═══\n');
 
-eq(IDS_MINI_APPS_PR, ['habitos', 'pomodoro', 'tareas', 'metas', 'objetivos', 'rutinas'],
-  'las seis del enunciado, en su orden');
+/* 🔓 DIST F1 — **siguen siendo seis, pero no las mismas seis.** Josué sacó
+   Tareas a Organización y metió Rachas aquí. La comprobación de la E3 F23 no se
+   borra: se le da la vuelta, porque lo que vigila —que el lanzador tenga una
+   lista cerrada y ordenada, ni una más ni una menos— sigue importando. */
+eq(IDS_MINI_APPS_PR, ['habitos', 'pomodoro', 'rachas', 'metas', 'objetivos', 'rutinas'],
+  'las seis de ahora, en su orden');
+ok(!IDS_MINI_APPS_PR.includes('tareas'),
+  '🚨 DIST F1 — y Tareas ya no es una de ellas: su sitio es Organización');
 eq(MINI_APPS_PR.length, 6, '🚨 exactamente seis: *"No crear una séptima aplicación"*');
 eq(new Set(IDS_MINI_APPS_PR).size, 6, '⚠️ y sin repetidas');
 ok(MINI_APPS_PR.every((m) => !!m.icono && !!m.emoji && !!m.descripcion && !!m.nombre),
   '🚨 cada una con identidad propia: icono, emoji, nombre y descripción (criterio 3)');
 eq(miniAppPR('habitos').descripcion, 'Construye constancia cada día.', 'la descripción literal de Hábitos');
 eq(miniAppPR('pomodoro').descripcion, 'Concéntrate sin distracciones.', 'la de Pomodoro');
-eq(miniAppPR('tareas').descripcion, 'Organiza lo que tienes que hacer.', 'la de Tareas');
+// DIST F1 — Tareas salió a Organización; su sitio en la lista lo ocupa Rachas.
+eq(miniAppPR('rachas').descripcion, 'No rompas la cadena.', 'la de Rachas');
 eq(miniAppPR('metas').descripcion, 'Convierte tus planes en resultados.', 'la de Metas');
 eq(miniAppPR('objetivos').descripcion, 'Define hacia dónde quieres avanzar.', 'la de Objetivos');
 eq(miniAppPR('rutinas').descripcion, 'Convierte tus acciones en rutina.', 'la de Rutinas');
@@ -174,8 +181,11 @@ console.log('\n═══ 6. LOS INDICADORES SALEN DE DATOS REALES ═══\n');
 eq(indicadorDePR('habitos', datos), '1 hábito', 'un hábito, en singular');
 eq(indicadorDePR('metas', datos), '1 meta', 'una meta');
 eq(indicadorDePR('objetivos', datos), '1 objetivo', '🚨 y el objetivo, leído de SU clave');
-eq(indicadorDePR('tareas', datos), '1 tarea',
-  '🚨 de Tareas se enseñan las PENDIENTES: una lista con doscientas hechas no dice 201');
+/* 🔓 DIST F1 — el indicador de Tareas ya no se pide desde aquí. Lo que sigue
+   importando es que **una mini-app que saca su dato de OTRA clave sepa
+   hacerlo**, que era el caso de Objetivos y ahora también el de Rachas. */
+eq(indicadorDePR('rachas', { ...datos, rachas: { definiciones: [{ id: 'r1' }], eventos: [] } }), '1 racha',
+  '🚨 y Rachas, leída de SU clave, como Objetivos');
 eq(indicadorDePR('pomodoro', datos), '2 sesiones hoy',
   '🚨 y Pomodoro NO es una lista: es un contador por día desde la Fase 6');
 eq(indicadorDePR('rutinas', datos), null,
@@ -185,7 +195,11 @@ ok(MINI_APPS_PR.every((m) => indicadorDePR(m.id, vacio) === null),
 eq(pomodorosDeHoy(datos, HOY), 2, 'las sesiones de hoy se leen del mapa por día');
 eq(pomodorosDeHoy(datos, '1999-01-01'), 0, '⚠️ y un día sin sesiones son cero');
 eq(pomodorosDeHoy({}, HOY), 0, '⚠️ y sin datos, cero');
-eq(totalProductividad(datos), 6, 'el total suma lo que hay de verdad');
+/* ⚠️ DIST F1 — el escenario tiene una tarea, y las tareas ya no cuentan aquí:
+   son de Organización. El total es lo que hay **en las seis de ahora**. */
+eq(totalProductividad(datos), 5, 'el total suma lo que hay de verdad');
+eq(totalProductividad({ ...datos, rachas: { definiciones: [{ id: 'r1' }], eventos: [] } }), 6,
+  '⚠️ …y una racha suma, porque Rachas es una de las seis');
 eq(totalProductividad(vacio), 0, '⚠️ y con todo vacío, cero');
 eq(elementosDePR('inventada', datos), [], '⚠️ una mini-app que no existe no tiene elementos');
 eq(elementosDePR('habitos', {}), [], '⚠️ ni sin datos');
@@ -197,9 +211,18 @@ console.log('\n═══ 7. ESTA FASE NO DESARROLLA NINGUNA DE LAS SEIS ══�
 /* 🚨 *"EN ESTA FASE NO DESARROLLES TODAVÍA LA LÓGICA INTERNA COMPLETA DE LAS 6
    MINI-APPS."* La comprobación honesta: la vista sigue usando los mismos
    componentes de antes, no unos nuevos. */
-for (const tab of ['HabitosTab', 'RutinasTab', 'PomodoroTab', 'TareasTab', 'MetasTab']) {
+for (const tab of ['HabitosTab', 'RutinasTab', 'PomodoroTab', 'MetasTab']) {
   ok(new RegExp(`<${tab}\\b`).test(VISTA_LIMPIA), `⚠️ ${tab} se reutiliza tal cual, no se ha reescrito`);
 }
+/* 🚨 DIST F1 — `TareasTab` ya no se pinta aquí: vive en Organización. Lo que
+   sigue importando —y es la razón de esta sección— es que **no se haya
+   reescrito**, así que se comprueba que se EXPORTA desde su archivo de siempre
+   y que quien la pinta la importa de ahí. Dos copias de una pantalla acaban
+   diciendo cosas distintas. */
+ok(/export function TareasTab\b/.test(VISTA),
+  '🚨 DIST F1 — `TareasTab` se EXPORTA desde su archivo de siempre, no se ha reescrito');
+ok(/import ProductivityView, \{ TareasTab \}/.test(leer('src/App.jsx')),
+  '⚠️ …y Organización la pinta importándola de ahí, no con una copia');
 ok(/<ObjectivesView/.test(VISTA_LIMPIA),
   '⚠️ y Objetivos se pinta con SU pantalla de siempre, sin tocarla');
 ok(!/function HabitosTab2|function NuevoPomodoro|function GestorTareas/.test(VISTA),
@@ -233,7 +256,9 @@ eq(atrasPR('lanzador'), 'lanzador',
   '🚨 **`atras()` nunca devuelve `null`** (EH F37): de la raíz se vuelve a la raíz');
 eq(atrasPR('inventado'), 'lanzador', '⚠️ y un nivel que no existe tampoco deja a nadie en el vacío');
 ok(NIVELES_PR.every((x) => !!nivelPR(x.id)), '⚠️ los dos se pueden consultar');
-eq(destinoPR('tareas'), { modulo: 'productividad', app: 'tareas' }, 'el destino de una mini-app');
+eq(destinoPR('rachas'), { modulo: 'productividad', app: 'rachas' }, 'el destino de una mini-app');
+ok(destinoPR('tareas') === null,
+  '🚨 DIST F1 — y Tareas ya no tiene destino DENTRO de Productividad: vive en Organización');
 eq(destinoPR('objetivos', { accion: 'nuevo' }), { modulo: 'productividad', app: 'objetivos', accion: 'nuevo' },
   '⚠️ con el extra que le pasen');
 eq(destinoPR('inventada'), null, '⚠️ y una que no existe no tiene destino');

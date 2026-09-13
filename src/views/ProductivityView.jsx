@@ -2609,7 +2609,7 @@ export default function ProductivityView({
   /* 🚨 DIST F1 — Rachas entra como mini-app y **llega pintada desde `App.jsx`**,
      igual que los paneles de Mente y Organización: una sola definición de props.
      `onIrAModulo` es la salida para lo que ya no vive aquí (Tareas). */
-  renderRachas = null, onIrAModulo = null,
+  renderRachas = null, onIrAModulo = null, rachas = null,
   accent, foco, onFocoConsumido,
 }) {
   /* `null` = el lanzador. *"Cuando el usuario entre en Productividad, **no se
@@ -2653,7 +2653,11 @@ export default function ProductivityView({
     if (destino) abrir(destino);
   }, [foco]);
 
-  const datos = { productividad, objetivos };
+  /* 🐛 DIST F1 — **`rachas` tiene que entrar aquí.** El contador de una mini-app
+     lee `datos[app.de]`, y Rachas saca el suyo de su propia clave (como
+     Objetivos). Sin esta línea la plaquita se pintaría perfecta y **no diría
+     cuántas rachas hay**, sin fallar en ninguna parte. */
+  const datos = { productividad, objetivos, rachas };
 
   // ── El lanzador ─────────────────────────────────────────────────────────
   if (!abierta) {

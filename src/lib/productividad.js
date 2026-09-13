@@ -123,7 +123,12 @@ export const MINI_APPS_PR = [
     /* 🚨 Como Objetivos: **no sale de la clave `productividad`.** Las rachas
        viven en su propia clave desde RA F1, y ahí se quedan. */
     de: 'rachas',
-    coleccion: 'lista',
+    /* 🐛 **La colección es `definiciones`, no `lista`.** Puse `lista` copiando a
+       Objetivos y el contador habría dado **cero siempre sin fallar en ninguna
+       parte**: la plaquita se pinta perfecta y simplemente no dice cuántas
+       rachas hay. Es la lección de la E3 F23 con Pomodoro —*un contador tiene
+       que saber qué forma tiene su dato*— por segunda vez, y la cazó la prueba. */
+    coleccion: 'definiciones',
     contador: ['racha', 'rachas'],
     fase: 'RA F1',
     nueva: false,
@@ -235,7 +240,14 @@ export const LO_QUE_HEREDA_DE_PRODUCTIVIDAD = [
 export function elementosDePR(id, datos = {}) {
   const app = miniAppPR(id);
   if (!app) return [];
-  const origen = app.de === 'objetivos' ? datos.objetivos : datos.productividad;
+  /* 🚨 DIST F1 — **el origen se lee del campo `de`, no de un `if` con el id
+     escrito a mano.** Aquí ponía `app.de === 'objetivos' ? datos.objetivos :
+     datos.productividad`, que funcionaba mientras solo hubiera UNA mini-app de
+     fuera. Al entrar Rachas —la segunda— habría caído en `datos.productividad`
+     y el contador daría **cero siempre sin fallar en ninguna parte**. Es la
+     lección de siempre: una función que pone un valor a pelo deja de ser
+     correcta en cuanto ese valor varía (E3 F24). */
+  const origen = datos[app.de];
   return lista((origen || {})[app.coleccion]);
 }
 
@@ -319,7 +331,8 @@ export function destinoPR(idMiniApp, extra = {}) {
 export const PARA_HOY = [
   { app: 'habitos', podraDecir: 'cuántos hábitos quedan por marcar hoy', saldriaDe: 'productividad.habitos', llega: 'PR F2' },
   { app: 'pomodoro', podraDecir: 'cuántas sesiones lleva hoy', saldriaDe: 'productividad.pomodoros', llega: 'PR F3' },
-  { app: 'tareas', podraDecir: 'cuántas tareas quedan pendientes', saldriaDe: 'productividad.tareas', llega: 'PR F4' },
+  // DIST F1 — Tareas salió a Organización; su línea la ocupa Rachas.
+  { app: 'rachas', podraDecir: 'qué rachas están vivas y cuál es la mejor', saldriaDe: 'rachas.definiciones', llega: 'RA F1' },
   { app: 'metas', podraDecir: 'el progreso de una meta', saldriaDe: 'productividad.metas', llega: 'PR F5' },
   { app: 'objetivos', podraDecir: 'si toca revisar los objetivos', saldriaDe: 'objetivos', llega: 'PR F5' },
   { app: 'rutinas', podraDecir: 'qué rutinas quedan por hacer hoy', saldriaDe: 'productividad.rutinas', llega: 'PR F6' },

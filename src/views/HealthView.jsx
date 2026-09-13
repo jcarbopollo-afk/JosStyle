@@ -453,8 +453,9 @@ export default function HealthView({ salud, fotos, perfil, onAddMedida, onDelete
 
   return (
     <div className="space-y-4 pb-4">
-      {/* 🚨 Apartado 3 — el área ya se llama Bienestar, así que aquí NO se repite:
-          la pantalla es «Mi salud». Antes ponía «Salud» dentro del área «Salud». */}
+      {/* 🚨 Apartado 3 — el área ya se llama Bienestar, así que aquí NO se repite.
+          El nombre sale de `NOMBRE_MODULO`, nunca escrito a mano: desde DIST F1 es
+          «Salud física», y esta pantalla se enteró sola. */}
       <SectionTitle sub={SUBTITULO_MODULO}>
         <span className="flex items-center gap-2"><HeartPulse size={18} style={{ color: accent }} /> {NOMBRE_MODULO}</span>
       </SectionTitle>
