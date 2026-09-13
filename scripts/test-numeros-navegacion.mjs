@@ -20,6 +20,8 @@ import {
   resumenNumeros, condicionNumeros, NO_EN_NUMEROS, NO_SE_GUARDA,
 } from '../src/lib/numeros.js';
 import { calcularResumenModulo } from '../src/lib/resumenesHub.js';
+import { agrupadorDeApp } from '../src/lib/agrupadores.js';
+import { IDS_MINI_APPS_PR } from '../src/lib/productividad.js';
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (rel) => fs.readFileSync(path.join(raiz, rel), 'utf8');
@@ -48,36 +50,60 @@ function idsDeMoreNav() {
   return [...bloque.matchAll(/\{\s*id:\s*'([^']+)'/g)].map((m) => m[1]);
 }
 
-console.log('\n── 1. Las cuatro áreas, con la lógica que pidió Josué ──');
+console.log('\n── 1. Las áreas, con la lógica que pidió Josué ──');
 
 const salud = modulosDelArea('area-salud');
 const vida = modulosDelArea('area-vida');
 const gestion = modulosDelArea('area-gestion');
-const mas = modulosDelArea('area-mas');
 
-ok(Array.isArray(salud) && Array.isArray(vida) && Array.isArray(gestion) && Array.isArray(mas),
-  'Se leen las cuatro áreas de `AREAS_NAV`');
+/* 🔓 DIST F1 — **«Además» ya no existe y las áreas son tres.** Josué lo pidió
+   con esas palabras: *"No debe existir una categoría principal llamada Más"*, y
+   Ajustes pasó a ser la quinta pestaña. Estas comprobaciones eran de NAV F1 y no
+   se borran: **se les da la vuelta**, porque lo que vigilaban sigue importando.
+   ⚠️ Y lo que vigilaban se cumple igual, solo que un nivel más abajo: Calendario
+   y Horario siguen siendo herramientas de organización temporal y siguen bajo
+   GESTIÓN — ahora dentro de **Organización**, que es lo que él pidió. */
+ok(Array.isArray(salud) && Array.isArray(vida) && Array.isArray(gestion),
+  'Se leen las tres áreas de `AREAS_NAV`');
+// `modulosDelArea` devuelve `null` cuando el área no está en `AREAS_NAV`, que es
+// justo lo que tiene que pasar ahora con «Además».
+ok(modulosDelArea('area-mas') === null,
+  '🔓 DIST F1 — el área «Además» ya no existe: Ajustes es la quinta pestaña');
 
-// 🚨 Lo que pidió literalmente: Calendario y Horario son herramientas de
-// organización temporal, así que van a Gestión.
-ok(gestion.includes('calendario'), '🚨 Calendario está en GESTIÓN (era de Vida)');
-ok(gestion.includes('horario'), '🚨 Horario está en GESTIÓN (era de Vida)');
+ok(gestion.includes('organizacion'), '🚨 Organización está en GESTIÓN');
+ok(agrupadorDeApp('calendario') === 'organizacion',
+  '🚨 Calendario sigue bajo Gestión, ahora dentro de Organización');
+ok(agrupadorDeApp('horario') === 'organizacion',
+  '🚨 Horario sigue bajo Gestión, ahora dentro de Organización');
 ok(!vida.includes('calendario') && !vida.includes('horario'),
-  '⚠️ …y NO se han quedado también en Vida: un módulo vive en UN área, o el hub lo enseña dos veces');
+  '⚠️ …y NO se han quedado también en Vida: un módulo vive en UN sitio, o el hub lo enseña dos veces');
+ok(!gestion.includes('calendario') && !gestion.includes('horario'),
+  '⚠️ …ni sueltos en Gestión además de dentro de Organización: eso serían dos accesos al mismo sitio');
 
 // Lo que ya estaba bien y no se toca.
 ok(gestion.includes('economia'), 'Economía sigue en Gestión');
-ok(vida.includes('diario') && vida.includes('biblioteca') && vida.includes('rachas'),
-  'Diario, Biblioteca y Rachas siguen en Vida');
+ok(vida.includes('diario') && vida.includes('biblioteca'),
+  'Diario y Biblioteca siguen en Vida');
+ok(vida.includes('productividad') && !vida.includes('rachas'),
+  '🚨 DIST F1 — Rachas ya no es un módulo suelto de Vida: la absorbió Productividad');
+ok(IDS_MINI_APPS_PR.includes('rachas'),
+  '⚠️ …y está de verdad dentro de Productividad, no simplemente quitada de en medio');
 
-console.log('\n── 2. Además: las áreas complementarias, sin ser un cajón ──');
+console.log('\n── 2. Lo que era «Además», repartido ──');
 
-ok(mas.includes('ajustes'), '🚨 Ajustes está dentro de Además');
-ok(mas.includes('relacion') && mas.includes('fe') && mas.includes('bienestar'),
-  'Relación, Fe y Bienestar digital siguen en Además');
-ok(mas.includes('numeros'), '🚨 Números está en Además');
-eq(mas.length, 5, '⚠️ Además tiene CINCO cosas, no un cajón de sastre');
-ok(!mas.includes('estilo-hombre'), '🚨 El apartado de estilo YA NO está en Además');
+/* 🔓 DIST F1 — esta sección entera vigilaba el contenido de «Además», que ya no
+   existe. **No se borra: se le da la vuelta.** Lo que hay que seguir
+   comprobando es que sus cinco cosas no se hayan perdido por el camino, y ahora
+   cada una tiene un sitio nuevo declarado por Josué. */
+ok(idsDeMoreNav().includes('ajustes'), '🚨 Ajustes sigue existiendo, ahora como quinta pestaña');
+ok(agrupadorDeApp('relacion') === 'mente' && agrupadorDeApp('fe') === 'mente'
+  && agrupadorDeApp('bienestar') === 'mente',
+  '🚨 Relación, Fe y Bienestar digital están ahora dentro de MENTE');
+ok(gestion.includes('numeros'), '🚨 Números —ahora «Progreso»— está en GESTIÓN');
+ok(APP.includes("{ id: 'numeros', label: 'Progreso'"),
+  "🏷️ …y se llama «Progreso», aunque su id siga siendo `numeros` (los presets de tokens.js lo leen)");
+ok(!salud.includes('numeros') && !vida.includes('numeros'),
+  '⚠️ …y en un solo área: un módulo vive en UN sitio');
 
 console.log('\n── 3. El apartado de estilo se muda a Bienestar ──');
 
@@ -187,15 +213,20 @@ console.log('\n── 10. Lo que NO entra, declarado con su motivo ──');
 ok(NO_EN_NUMEROS.length >= 3, 'Se declara lo que se ha dejado fuera');
 ok(NO_EN_NUMEROS.every((n) => n.que && n.porque && n.donde),
   '⚠️ …cada uno con su motivo y dónde vive de verdad, no solo omitido');
+/* ⚠️ NAV F1 declaró que Rachas NO entra en Números porque tiene pantalla propia
+   y se REGISTRA desde ella. Sigue siendo cierto y sigue declarado; lo que ha
+   cambiado con DIST F1 es dónde vive esa pantalla — dentro de Productividad, no
+   suelta en Vida—. El motivo por el que no entra aquí no ha cambiado. */
 ok(NO_EN_NUMEROS.some((n) => /Rachas/i.test(n.que)),
-  '⚠️ Rachas se queda en Vida: tiene pantalla propia y se REGISTRA desde ella');
+  '⚠️ Rachas sigue fuera de Números: tiene pantalla propia y se REGISTRA desde ella');
 
 console.log('\n── 11. La condición de la fase se calcula ──');
 
 const moreNav = idsDeMoreNav().map((id) => ({ id }));
+// DIST F1 — tres áreas: «Además» ya no existe.
 const areasNav = [
   { id: 'area-salud', modulos: salud }, { id: 'area-vida', modulos: vida },
-  { id: 'area-gestion', modulos: gestion }, { id: 'area-mas', modulos: mas },
+  { id: 'area-gestion', modulos: gestion },
 ];
 const cond = condicionNumeros({ moreNav, areasNav });
 ok(cond.ok, `🚨 La condición de finalización sale VERDE (${cond.casillas.filter((c) => c.ok).length}/${cond.casillas.length})`);

@@ -254,6 +254,47 @@ export function calcularResumenModulo(id, s) {
     // Y la línea del módulo nuevo, derivada como todas las demás.
     case 'numeros':
       return resumenNumeros(s);
+    /* 🚨 DIST F1 — Mente y Organización. **Sin estos dos `case` sus tarjetas del
+       hub saldrían con DOS LÍNEAS EN BLANCO** cayendo al `default`, que es el
+       fallo silencioso que NAV F1 ya describe tres comentarios más arriba.
+       ⚠️ Los `case` de los seis agrupados **se quedan todos**, por lo mismo de
+       siempre: sus ids siguen vivos en los presets de `tokens.js`, en la
+       personalización de la Fase 19 y en las auditorías. */
+    case 'mente': {
+      /* 🚨 **DE RELACIÓN NO SALE NI UNA PALABRA AQUÍ.** Su módulo está detrás del
+         PIN (regla 6), así que enseñar «Aniversario en 3 días» en una tarjeta del
+         hub —que se ve sin desbloquear nada— sería sacar fuera justo lo que el PIN
+         protege. Es el mismo criterio con el que el Calendario la deja fuera por
+         privacidad. Se dice que está, no lo que hay dentro. */
+      const hoy = todayISO();
+      const minutosHoy = (s.bienestar?.registros || []).filter((r) => r.fecha === hoy)
+        .reduce((a, r) => a + Number(r.minutos || 0), 0);
+      const ultimoServicio = ultimoPorFecha(s.fe?.servicio);
+      if (minutosHoy > 0) {
+        return { linea1: `${minutosHoy} min de pantalla hoy`, linea2: 'Fe, Relación y bienestar digital', estado: 'activo' };
+      }
+      if (ultimoServicio) {
+        return { linea1: `Último servicio: ${ultimoServicio.tipo}`, linea2: 'Fe, Relación y bienestar digital', estado: 'activo' };
+      }
+      return { linea1: 'Fe, Relación y bienestar digital', linea2: 'Toca para entrar', estado: 'vacio' };
+    }
+    case 'organizacion': {
+      /* Se deriva de las tres que contiene, sin guardar ni una cifra: las tareas
+         pendientes salen de `productividad.tareas` (la única fuente, E3 F26) y las
+         clases de hoy de `resumenHorario`, la misma función que usa el `case` del
+         Horario. Dos cuentas distintas sobre lo mismo acabarían discrepando. */
+      const pendientes = (s.productividad?.tareas || []).filter((t) => !t.hecha).length;
+      const r = resumenHorario(s.horarioTop, { asignaturas: s.estudios?.asignaturas || [] });
+      const clases = r.horarios ? r.hoy : 0;
+      if (!pendientes && !clases) {
+        return { linea1: 'Nada pendiente hoy', linea2: 'Tareas, calendario y horario', estado: 'vacio' };
+      }
+      return {
+        linea1: `${pendientes} ${plural(pendientes, 'tarea pendiente', 'tareas pendientes')}`,
+        linea2: clases > 0 ? `${clases} ${plural(clases, 'clase hoy', 'clases hoy')}` : 'Tareas, calendario y horario',
+        estado: 'activo',
+      };
+    }
     case 'ajustes':
       return { linea1: 'Cuenta, apariencia y seguridad', linea2: 'Notificaciones, privacidad y más', estado: 'info' };
     default:

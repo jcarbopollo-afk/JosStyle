@@ -591,7 +591,14 @@ export const DESCRIPCIONES_MODULOS = {
   calendario: 'Tus eventos y los que salen solos del resto de módulos.',
   estudios: 'Asignaturas, exámenes, horas de estudio y planes de repaso.',
   negocio: 'Ideas y proyectos personales, con ingresos y gastos.',
-  productividad: 'Hábitos con racha, rutinas, tareas, metas y Pomodoro.',
+  // DIST F1 — Tareas se fue a Organización y Rachas entró aquí.
+  productividad: 'Hábitos, rachas, rutinas, metas, objetivos y Pomodoro.',
+  // DIST F1 — las dos agrupadoras nuevas.
+  mente: 'Fe, Relación y bienestar digital, en un solo sitio.',
+  organizacion: 'Tus tareas, tu calendario y tu horario, juntos.',
+  /* ⚠️ `numeros` no tenía descripción desde NAV F1, así que el buscador la
+     dejaba vacía. Con la etiqueta nueva se aprovecha para ponerla. */
+  numeros: 'Estadísticas, predicciones y logros: tu progreso medido.',
   objetivos: 'Lo que quieres conseguir, de 30 días a 10 años.',
   diario: 'Una entrada al día: cómo estás y qué has aprendido.',
   fe: 'Servicio, calendario, diario espiritual y objetivos de fe.',

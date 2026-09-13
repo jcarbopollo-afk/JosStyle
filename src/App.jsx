@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, MoreHorizontal, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Heart, Church, Smartphone, Search, Lock, ArrowLeft, Calendar, Shirt, Flame, CalendarClock, UserRound, Sigma } from 'lucide-react';
+import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Search, Lock, ArrowLeft, Calendar, Shirt, UserRound, Sigma, Brain, FolderKanban } from 'lucide-react';
 import { normalizarEconomiaHucha } from './lib/hucha';
 import { anadirApunte, resumenDelDia, progresoDelDia, apuntesDe } from './lib/centroDelDia';
 /* 🚨 E3 F26 (PR F4) — Tareas. `normalizarTareasDe` es lo que MIGRA la fecha:
@@ -7,7 +7,7 @@ import { anadirApunte, resumenDelDia, progresoDelDia, apuntesDe } from './lib/ce
    Calendario y la vista semanal filtran por `fecha`, así que las tareas de
    Josué no salían en ninguna de las cuatro. Se migra al cargar, antes de que
    nada las lea. */
-import { completarTarea, normalizarTareasDe } from './lib/tareas';
+import { completarTarea, normalizarTareasDe, planConcentrarse } from './lib/tareas';
 /* 🚨 E3 F31 (SU F1) — la siesta dejó de ser «un número de minutos» y pasó a ser una
    pregunta de sí o no con sus minutos aparte. `normalizarSueno` MIGRA lo guardado al
    cargar, antes de que nadie lo lea (EH F46), y **no reescribe el campo viejo**: un
@@ -71,7 +71,7 @@ import { iniciarAudio, conectarAlBus, conectarLosToques, actualizarPreferencias 
 import { emitir } from './lib/eventos';
 /* E3 F25 (PR F3) — el contador por día se recalcula desde las sesiones, y la
    configuración se normaliza antes de guardarla. */
-import { contadorDesdeSesiones, normalizarConfig as normalizarConfigPomodoro } from './lib/pomodoro';
+import { contadorDesdeSesiones, normalizarConfig as normalizarConfigPomodoro, iniciarSesion as iniciarSesionPomodoro } from './lib/pomodoro';
 import { ESTADO_INICIAL, normalizarEstado, panelRachas, crearRacha as crearRachaServicio, completarDia as completarDiaServicio, deshacerDia as deshacerDiaServicio, eliminarRacha as eliminarRachaServicio } from './lib/rachasServicio';
 import { GAMIFICACION_INICIAL, normalizarGamificacion, evaluar as evaluarRachas, olvidarRacha as olvidarRachaGamificacion } from './lib/rachasGamificacion';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal, Esqueleto } from './components/ui';
@@ -85,7 +85,10 @@ import HealthView from './views/HealthView';
 import NutritionView from './views/NutritionView';
 import EstudiosView from './views/EstudiosView';
 import BusinessView from './views/BusinessView';
-import ProductivityView from './views/ProductivityView';
+/* 🚨 DIST F1 — `TareasTab` se **exporta**, no se copia: Organización pinta la
+   misma lista de la E3 F26, con sus mismos manejadores. Dos copias de una
+   pantalla acaban diciendo cosas distintas (NAV F1, E3 F23). */
+import ProductivityView, { TareasTab } from './views/ProductivityView';
 /* E3 F23 (PR F1) — `ObjectivesView` ya no se monta desde aquí: Objetivos dejó de
    ser un módulo y es una mini-app de Productividad, que es quien la pinta. Sus
    datos y sus manejadores siguen viviendo en este archivo, como los de las otras
@@ -103,6 +106,10 @@ import WellbeingView from './views/WellbeingView';
    ha comido cuatro casos (`onDeleteMovimiento`, `eliminarHorario`, `addApunte`,
    `FormExamen`). Siguen probándose una a una en `smoke-vistas.jsx`. */
 import NumbersView from './views/NumbersView';
+/* 🚨 DIST F1 — el lanzador que comparten Mente y Organización. **Una pantalla
+   para las dos**, no dos calcadas: ver `src/views/AgrupadorView.jsx`. */
+import AgrupadorView from './views/AgrupadorView';
+import { agrupador, appProtegida, agrupadorDeApp } from './lib/agrupadores';
 import SettingsView from './views/SettingsView';
 import { construirIndice } from './lib/indiceBusqueda';
 import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda, crearOutfit, actualizarOutfit, duplicarOutfit, crearUso, actualizarUso } from './lib/armario';
@@ -186,38 +193,49 @@ const MORE_NAV = [
      prohíbe con esas palabras. El id se queda como está — es la clave de `app_data` donde viven
      sus medidas, sus fotos y su historial, y el apartado 2 dice expresamente que no se tocan las
      estructuras internas. */
-  { id: 'salud', label: 'Mi salud', icon: HeartPulse },
+  /* DIST F1 — Josué: *"El módulo que actualmente corresponda a Salud debe pasar
+     a llamarse **Salud física**."* Es la tercera etiqueta que se le cambia sin
+     tocar el id (E3 F30 lo puso en «Mi salud»): `salud` sigue siendo la clave de
+     `app_data` donde viven sus medidas, sus fotos y su historial. */
+  { id: 'salud', label: 'Salud física', icon: HeartPulse },
   { id: 'sueno', label: 'Sueño', icon: Moon },
   { id: 'nutricion', label: 'Nutrición', icon: Apple },
   { id: 'entreno', label: 'Entrenamiento', icon: Dumbbell },
-  { id: 'calendario', label: 'Calendario', icon: Calendar },
   { id: 'estudios', label: 'Estudios', icon: GraduationCap },
   { id: 'negocio', label: 'Negocio', icon: Briefcase },
   { id: 'productividad', label: 'Productividad', icon: ListTodo },
   { id: 'diario', label: 'Diario', icon: BookOpen },
-  { id: 'fe', label: 'Fe', icon: Church },
   { id: 'biblioteca', label: 'Biblioteca', icon: Library },
-  { id: 'relacion', label: 'Relación', icon: Heart },
-  /* Entrega 3 · F30 (BN) — 🚨 **choque de nombres que el enunciado no podía saber.** Al pasar el
-     área a llamarse «Bienestar» había dos cosas con ese nombre en dos sitios distintos. Su propia
-     pantalla ya se titula «Bienestar digital» desde que se construyó: lo que estaba corto era la
-     etiqueta del menú, y es lo único que cambia. El id se queda. */
-  { id: 'bienestar', label: 'Bienestar digital', icon: Smartphone },
+  /* 🚨 DIST F1 — **MENTE Y ORGANIZACIÓN SON DOS AGRUPADORAS, NO DOS PANTALLAS
+     NUEVAS.** Mente contiene Fe, Relación y Bienestar digital; Organización
+     contiene Tareas, Calendario y Horario. Los seis **salen de `MORE_NAV` y de
+     `AREAS_NAV`** —como Objetivos en la E3 F23 y como Estadísticas, Predicciones
+     y Logros en NAV F1— y **sus datos no se mueven ni un milímetro**: `fe`,
+     `relacion`, `bienestar`, `productividad.tareas`, `calendario` y `horarioTop`
+     siguen siendo las claves de siempre.
+     ⚠️ Sus ids siguen vivos en la personalización de la Fase 19, en los presets
+     de `tokens.js`, en `resumenesHub.js` y en el catálogo de la papelera: **un id
+     puede sobrevivir a su módulo**, y navegación y datos son dos cosas distintas.
+     ⚠️ Y sus palabras de búsqueda se mudan a quien los contiene, no se borran. */
+  { id: 'mente', label: 'Mente', icon: Brain },
+  { id: 'organizacion', label: 'Organización', icon: FolderKanban },
   /* NAV F1 — 🚨 **Estadísticas, Predicciones y Logros dejan de ser tres módulos
-     y pasan a ser las tres sub-apps de NÚMEROS**, que es lo que pidió Josué.
-     Es exactamente lo que la E3 F23 hizo con Objetivos: **sale de `MORE_NAV`,
-     de `AREAS_NAV` y del switch, y sus datos no se mueven ni un milímetro** —
-     aquí ni siquiera hay datos que mover, porque las tres derivan sus cifras de
-     los módulos originales y no guardan nada.
+     y pasan a ser las tres sub-apps de este agrupador**, que es lo que pidió
+     Josué. Es exactamente lo que la E3 F23 hizo con Objetivos: **sale de
+     `MORE_NAV`, de `AREAS_NAV` y del switch, y sus datos no se mueven ni un
+     milímetro** — aquí ni siquiera hay datos que mover, porque las tres derivan
+     sus cifras de los módulos originales y no guardan nada.
      ⚠️ Sus ids siguen vivos en `resumenesHub.js`, en los presets de `tokens.js`
-     y en dos auditorías: navegación y datos son dos cosas distintas (E3 F23). */
-  { id: 'numeros', label: 'Números', icon: Sigma },
+     y en dos auditorías: navegación y datos son dos cosas distintas (E3 F23).
+     🏷️ DIST F1 — Josué: *"El antiguo agrupamiento/nombre que pueda existir para
+     estas funciones debe adaptarse a **Progreso**."* Cambia la etiqueta; **el id
+     `numeros` NO**, por lo mismo de siempre: lo leen los presets de `tokens.js`,
+     `experienciaReal.js`, `auditoriaFinal.js` y `resumenesHub.js`. */
+  { id: 'numeros', label: 'Progreso', icon: Sigma },
   { id: 'economia', label: 'Economía', icon: Wallet },
   { id: 'armario', label: 'Armario', icon: Shirt },
-  { id: 'rachas', label: 'Rachas', icon: Flame },
-  { id: 'horario', label: 'Horario', icon: CalendarClock },
-  // Entrega 2 · EH Fase 1 — Estilo de Hombre entra como UN módulo más del área
-  // "Más". La barra inferior sigue con cinco pestañas (regla 10): un apartado
+  // Entrega 2 · EH Fase 1 — Estilo de Hombre entra como UN módulo más de un área
+  // existente. La barra inferior sigue con cinco pestañas (regla 10): un apartado
   // nuevo va a un área existente, nunca a la barra.
   { id: 'estilo-hombre', label: 'Imagen personal', icon: UserRound },
   { id: 'ajustes', label: 'Ajustes', icon: Settings },
@@ -242,10 +260,24 @@ const AREAS_NAV = [
      guardado en `calendario`, `horario` o `estiloHombre` sigue exactamente donde
      estaba, y la personalización de la Fase 19 —orden y ocultos, indexada por id—
      tampoco se entera. */
+  /* 🚨 DIST F1 — **TRES ÁREAS, NO CUATRO, Y CADA UNA CON CINCO MÓDULOS EXACTOS.**
+     Josué dio el árbol entero escrito, y esto es ese árbol. Lo que cambia:
+       · **«Además» desaparece como categoría.** Sus cinco se reparten: Relación,
+         Fe y Bienestar digital entran en **Mente** (Vida), Números pasa a
+         **Progreso** (Gestión) y **Ajustes deja de ser un módulo dentro de un
+         área para ser la quinta pestaña**. Él lo pidió con esas palabras: *"No
+         debe existir una categoría principal llamada Más."*
+       · **Rachas sale de Vida**: la absorbe Productividad como una mini-app más.
+       · **Calendario y Horario salen de Gestión** al nivel de arriba: ahora se
+         entra por **Organización**, con Tareas.
+     ⚠️ La barra inferior **sigue teniendo cinco pestañas** (regla 10): lo que
+     antes era Inicio + 4 áreas ahora es Inicio + 3 áreas + Ajustes.
+     ⚠️ Y ni un id de módulo cambia, así que **ni un dato se mueve** y la
+     personalización de la Fase 19 —orden y ocultos, indexada por id— no se
+     entera (E3 F23, NAV F1). */
   { id: 'area-salud', label: 'Bienestar', icon: HeartPulse, modulos: ['salud', 'sueno', 'nutricion', 'entreno', 'estilo-hombre'] },
-  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['estudios', 'productividad', 'rachas', 'diario', 'biblioteca'] },
-  { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['calendario', 'horario', 'economia', 'negocio', 'armario'] },
-  { id: 'area-mas', label: 'Además', icon: MoreHorizontal, modulos: ['relacion', 'fe', 'bienestar', 'numeros', 'ajustes'] },
+  { id: 'area-vida', label: 'Vida', icon: BookOpen, modulos: ['estudios', 'productividad', 'mente', 'biblioteca', 'diario'] },
+  { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['organizacion', 'economia', 'negocio', 'armario', 'numeros'] },
 ];
 
 // Fase de Seguridad Centralizada — catálogo de "áreas protegibles" (apartado 1 de la
@@ -2092,6 +2124,23 @@ export default function App() {
   const cambiarSesionPomodoro = (sesion) =>
     guardarProductividadSinDeshacer({ ...productividad, pomodoroEnCurso: sesion || null });
 
+  /* 🚨 DIST F1 — «Concentrarme» desde Organización → Tareas.
+     Al sacar Tareas de Productividad, este botón se habría quedado sin el
+     `concentrarseEnTarea` que vivía dentro de `ProductivityView`. Quitarlo
+     habría sido perder una función que Josué ya tiene (regla 8: *"no elimines
+     funcionalidades existentes; reorganízalas"*), y escribir un temporizador
+     aquí habría sido el segundo motor que la E3 F25 prohíbe.
+     Así que hace **exactamente lo mismo que hacía**: arranca la sesión con el
+     `iniciarSesion` de siempre y lleva al Pomodoro que ya existe, ahora con un
+     `foco` porque está en otra pantalla. Una sola escritura (E3 F26). */
+  const concentrarseDesdeOrganizacion = (tarea) => {
+    const plan = planConcentrarse(tarea);
+    if (!plan) return;
+    const cfg = normalizarConfigPomodoro(productividad.pomodoroConfig);
+    cambiarSesionPomodoro(iniciarSesionPomodoro('focus', cfg, { tareaId: plan.tareaId }));
+    navegarDesdeHoy('productividad', { app: plan.miniApp });
+  };
+
   /* 🚨 E3 F26 — REGISTRAR LA SESIÓN Y CAMBIAR LA QUE ESTÁ EN CURSO SON **UNA
      SOLA ESCRITURA**, y esto era un fallo de verdad de la E3 F25 que solo cazó
      el recorrido en Chromium.
@@ -2421,7 +2470,21 @@ export default function App() {
   );
   // A qué área pertenece un módulo (para el botón "volver" y para resaltar el icono correcto de
   // la barra inferior mientras se está dentro de un módulo, no solo en el propio hub).
-  const areaDeModulo = (id) => AREAS_NAV.find((a) => a.modulos.includes(id));
+  /* 🚨 DIST F1 — **UN MÓDULO AGRUPADO SIGUE TENIENDO ÁREA, LA DE QUIEN LO
+     CONTIENE.** Fe, Relación, Bienestar digital, Tareas, Calendario, Horario y
+     Rachas ya no están en ningún `modulos` de `AREAS_NAV`, así que sin esto un
+     enlace directo del buscador o de Hoy los abriría **sin barra de volver y sin
+     pestaña resaltada**: el callejón sin salida que Josué prohíbe con esas
+     palabras. Se resuelve por su padre —la agrupadora, o Productividad en el
+     caso de Rachas— y de ahí sale el área. */
+  const PADRE_DE_MODULO = { rachas: 'productividad' };
+  const padreDeModulo = (id) => agrupadorDeApp(id) || PADRE_DE_MODULO[id] || null;
+  const areaDeModulo = (id) => {
+    const propia = AREAS_NAV.find((a) => a.modulos.includes(id));
+    if (propia) return propia;
+    const padre = padreDeModulo(id);
+    return padre ? AREAS_NAV.find((a) => a.modulos.includes(padre)) : undefined;
+  };
   const areaActual = tab.startsWith('area-') ? AREAS_NAV.find((a) => a.id === tab) : areaDeModulo(tab);
   // Resúmenes de todas las tarjetas, recalculados en cada render — son cálculos baratos (sumas,
   // últimas fechas) sobre datos que ya están en memoria, mismo criterio que calcularMetricas().
@@ -2510,21 +2573,18 @@ export default function App() {
     hasta: addDays(todayISO(), 365),
   });
 
-  const renderContent = () => {
-    // Fase N1 — hubs de área: al pulsar Salud/Vida/Gestión/Más en la barra inferior se llega
-    // aquí primero, nunca directo a un módulo (ver AREAS_NAV arriba). Las tarjetas llaman a
-    // setTab(id) con el id del módulo real, que sigue resolviendo exactamente igual que siempre
-    // en el resto de este switch, sin tocar ninguna vista existente.
-    if (tab.startsWith('area-')) {
-      const area = AREAS_NAV.find((a) => a.id === tab);
-      return (
-        <HubView
-          area={area} modulos={catalogoConIconos} personalizacion={personalizacion}
-          resumenes={resumenesTodos} accent={accent} onOpenModulo={setTab}
-        />
-      );
-    }
-    switch (tab) {
+  /* 🚨 DIST F1 — **ESTO ERA `renderContent()` Y AHORA RECIBE EL ID.**
+     Mente y Organización tienen que pintar Fe, Relación, Bienestar digital,
+     Tareas, Calendario y Horario **sin volver a escribir sus props**. Con dos
+     sitios donde se construye la misma pantalla acabarían recibiendo cosas
+     distintas —es el fallo que `test-borrados` existe para cazar: un manejador
+     que se pasa en un camino y no en el otro—, así que hay **una sola
+     definición** y dos llamadas: la pestaña y la agrupadora.
+     ⚠️ Y por eso los `case` de los seis módulos agrupados **se quedan**: ya no
+     tienen pestaña, pero un enlace directo del buscador o de Hoy sigue llegando
+     y tiene que resolver. Quitarlos habría dejado esos enlaces en blanco. */
+  const renderModulo = (id) => {
+    switch (id) {
       case 'hoy':
         return (
           <DashboardView
@@ -2843,8 +2903,40 @@ export default function App() {
             onAddObjetivo={addObjetivo} onUpdateObjetivo={updateObjetivo} onDeleteObjetivo={deleteObjetivo}
             onRevisionHecha={marcarRevisionHecha}
             onGuardarListaObjetivos={guardarListaObjetivos}
+            /* 🚨 DIST F1 — Rachas entra en Productividad y sale por la misma
+               puerta que los paneles de Mente y Organización: `renderModulo`.
+               Una sola definición de sus props, no una copia aquí. */
+            renderRachas={() => renderModulo('rachas')}
+            /* Y lo que ya no vive aquí (Tareas) se manda a su sitio en vez de
+               abrirse en blanco. `setTab` basta: `areaDeModulo` sabe que Tareas
+               cuelga de Organización, así que la barra de volver aparece. */
+            onIrAModulo={setTab}
             accent={accent}
             foco={focoPara('productividad')} onFocoConsumido={consumirFoco}
+          />
+        );
+      /* 🚨 DIST F1 — **TAREAS SALE DE PRODUCTIVIDAD Y ENTRA EN ORGANIZACIÓN**
+         (Josué: *"Tareas debe quedar dentro de Organización, no dentro de
+         Productividad"*), y 🔓 **eso cierra la C-31**, que llevaba abierta desde
+         el 2026-09-12 justo por no saber cómo partir ese lanzador sin romperlo.
+         ⚠️ **`TareasTab` NO se ha reescrito: se ha exportado.** Es la misma
+         pantalla de la E3 F26, con sus mismos manejadores, y sigue leyendo
+         `productividad.tareas` — la única fuente que miran Hoy, la Agenda, el
+         Calendario y la vista semanal. Lo que se mueve es por dónde se entra.
+         ⚠️ Y «Concentrarme» sigue existiendo: arranca **el Pomodoro que ya hay**
+         y lleva allí con un `foco`, en vez de un segundo temporizador (regla 8 —
+         quitar el botón habría sido perder una función que él tiene). */
+      case 'tareas':
+        return (
+          <TareasTab
+            tareas={productividad.tareas}
+            onAdd={addTarea} onUpdate={(t) => snapshotAndSave({
+              productividad: { ...productividad, tareas: productividad.tareas.map((x) => (x.id === t.id ? t : x)) },
+            })}
+            onToggle={toggleTarea} onDelete={deleteTarea}
+            onConcentrarse={concentrarseDesdeOrganizacion}
+            accent={accent}
+            foco={focoPara('tareas')} onFocoConsumido={consumirFoco}
           />
         );
       case 'calendario':
@@ -3083,6 +3175,63 @@ export default function App() {
     }
   };
 
+  /* 🚨 DIST F1 — **EL PIN DE RELACIÓN, AHORA QUE RELACIÓN NO TIENE PESTAÑA.**
+     Hasta esta fase lo ponía `areaProtegida` mirando `tab === 'relacion'` (ver
+     unas líneas más abajo). Al meterla dentro de Mente la pestaña pasa a ser
+     `mente`, así que **esa comprobación habría dejado de disparar y el módulo
+     privado de Josué se habría abierto solo**, sin que fallara nada visible:
+     la regla 6 rota en silencio, que es la peor forma de romperla.
+     Así que la protección se aplica **al panel**, con la misma clave de sesión
+     (`area:relacion`) y el mismo `PinGate` de siempre — ni un segundo sistema de
+     PIN, ni una segunda lista de desbloqueos. Y quien decide si hace falta es
+     `appProtegida()`, el catálogo: nadie lo deduce mirando el id. */
+  const protegerPanel = (appId, nodo) => {
+    if (!appProtegida(appId)) return nodo;
+    const clave = `area:${appId}`;
+    if (!seguridad.pinHash || estaDesbloqueado(clave)) return nodo;
+    return (
+      <PinGate
+        pinHash={seguridad.pinHash} pinSalt={seguridad.pinSalt} accent={accent}
+        desbloqueado={estaDesbloqueado(clave)}
+        onDesbloquear={() => registrarDesbloqueo(clave)}
+        onOlvidoPin={() => setRecuperandoPin(true)}
+      >
+        {nodo}
+      </PinGate>
+    );
+  };
+
+  const renderContent = () => {
+    // Fase N1 — hubs de área: al pulsar Bienestar/Vida/Gestión en la barra inferior se llega
+    // aquí primero, nunca directo a un módulo (ver AREAS_NAV arriba). Las tarjetas llaman a
+    // setTab(id) con el id del módulo real, que sigue resolviendo exactamente igual que siempre
+    // en `renderModulo`, sin tocar ninguna vista existente.
+    if (tab.startsWith('area-')) {
+      const area = AREAS_NAV.find((a) => a.id === tab);
+      return (
+        <HubView
+          area={area} modulos={catalogoConIconos} personalizacion={personalizacion}
+          resumenes={resumenesTodos} accent={accent} onOpenModulo={setTab}
+        />
+      );
+    }
+    /* 🚨 DIST F1 — Mente y Organización. **`panelDe` es `renderModulo`**, o sea
+       exactamente la misma definición que usa la pestaña: no hay una segunda
+       copia de las props de ninguna de las seis pantallas. */
+    const grupo = agrupador(tab);
+    if (grupo) {
+      return (
+        <AgrupadorView
+          grupo={grupo}
+          panelDe={renderModulo}
+          protegerPanel={protegerPanel}
+          accent={accent}
+        />
+      );
+    }
+    return renderModulo(tab);
+  };
+
   // Fase de Seguridad Centralizada — sustituye a "Fase 19: Relación siempre + personalizacion.
   // pinExtra" por la lista única `seguridad.protectedAreas` (más 'relacion', que sigue especial,
   // siempre protegida, sin poder quitarla — ni siquiera pasa por `toggleAreaProtegida`). La clave
@@ -3305,6 +3454,17 @@ export default function App() {
               </button>
             );
           })}
+          {/* 🚨 DIST F1 — **LA QUINTA PESTAÑA ES AJUSTES, Y NO ES UN ÁREA.**
+              Josué: *"La pestaña actual «Más» debe desaparecer como categoría
+              principal y pasar a llamarse directamente «Ajustes»."* Así que no
+              abre un hub de tarjetas: **abre Ajustes directamente**, que es lo
+              que él espera de ese botón. Por eso se pinta aquí y no dentro del
+              `map` de `AREAS_NAV` — un área agrupa módulos, y Ajustes es uno.
+              ⚠️ Siguen siendo cinco pestañas exactas (regla 10). */}
+          <button onClick={() => setTab('ajustes')} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
+            <Settings size={20} strokeWidth={tab === 'ajustes' ? 2.4 : 1.8} className="nav-tab-icon" style={{ color: tab === 'ajustes' ? accent : COLORS.textMuted }} />
+            <span className="nav-tab-label" style={{ fontSize: 10, fontWeight: 500, color: tab === 'ajustes' ? accent : COLORS.textMuted }}>Ajustes</span>
+          </button>
         </div>
       </nav>
     </div>

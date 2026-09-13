@@ -1811,7 +1811,7 @@ function DetalleTarea({ tarea, hoy, accent, onEditar, onCompletar, onReprogramar
   );
 }
 
-function TareasTab({ tareas, onAdd, onUpdate, onToggle, onDelete, onConcentrarse, accent, foco, onFocoConsumido }) {
+export function TareasTab({ tareas, onAdd, onUpdate, onToggle, onDelete, onConcentrarse, accent, foco, onFocoConsumido }) {
   const hoy = todayISO();
   const [crear, setCrear] = useState(false);
   const [abierta, setAbierta] = useState(null);
@@ -2320,7 +2320,12 @@ function MetasTab({ metas, objetivos = [], tareas = [], onAdd, onUpdate, onDelet
    ⚠️ Y si `ArrowUpRight` faltara en este mapa, la plaquita saldría con el icono
    por defecto **sin fallar en ninguna parte** — por eso hay una prueba que cruza
    `MINI_APPS_PR` con este catálogo (E3 F16). */
-const ICONOS_MINI_APP_PR = { ArrowUpRight, Timer, ListChecks, Target, Compass, Repeat };
+/* ⚠️ DIST F1 — entra `Flame`, el icono de Rachas. **Es el suyo de siempre**, el
+   que tenía en `MORE_NAV`, así que Josué la reconoce donde estaba; y sigue sin
+   chocar con Hábitos, que desde NAV F4 es la flecha ascendente justamente para
+   no repetirlo. `ListChecks` se queda porque es el respaldo de
+   `iconoDeMiniAppPR` cuando una app no declara icono. */
+const ICONOS_MINI_APP_PR = { ArrowUpRight, Timer, ListChecks, Target, Compass, Repeat, Flame };
 
 export const iconoDeMiniAppPR = (id) => {
   const app = miniAppPR(id);
@@ -2601,12 +2606,29 @@ export default function ProductivityView({
      **sus datos siguen en su clave de siempre**: lo que llega son la lista y sus
      manejadores, los mismos que tenía `case 'objetivos'`. */
   objetivos, onAddObjetivo, onUpdateObjetivo, onDeleteObjetivo, onRevisionHecha, onGuardarListaObjetivos,
+  /* 🚨 DIST F1 — Rachas entra como mini-app y **llega pintada desde `App.jsx`**,
+     igual que los paneles de Mente y Organización: una sola definición de props.
+     `onIrAModulo` es la salida para lo que ya no vive aquí (Tareas). */
+  renderRachas = null, onIrAModulo = null,
   accent, foco, onFocoConsumido,
 }) {
   /* `null` = el lanzador. *"Cuando el usuario entre en Productividad, **no se
      encuentre directamente con listas, formularios o bloques de información**."* */
   const [abierta, setAbierta] = useState(null);
   const hoy = todayISO();
+
+  /* 🚨 DIST F1 — **LO QUE YA NO ES DE PRODUCTIVIDAD SE MANDA A SU SITIO, NO SE
+     ABRE EN BLANCO.** El centro de control (E3 F29) tiene cuatro caminos que
+     llaman a `onAbrir(id)`: la acción rápida «+ Tarea», las plaquitas de «para
+     hoy», las estadísticas y la cuadrícula. Al sacar Tareas de `MINI_APPS_PR`,
+     tres de ellos seguirían pidiendo `'tareas'` y `miniAppPR` devolvería `null`:
+     la cabecera se quedaría sin nombre y **no se pintaría ningún panel**, o sea
+     una pantalla vacía sin un solo error. Así que lo que no es mío, sale fuera. */
+  const abrir = (id) => {
+    if (!id) return;
+    if (miniAppPR(id)) { setAbierta(id); return; }
+    onIrAModulo?.(id);
+  };
 
   /* 🚨 «Concentrarme» (E3 F26, apartado «INTEGRACIÓN CON POMODORO»): abre **el
      Pomodoro que ya existe** con el id de la tarea. Ni un temporizador nuevo, ni
@@ -2626,7 +2648,9 @@ export default function ProductivityView({
      `foco.sub` habría roto en silencio la acción rápida "+ Tarea". */
   useEffect(() => {
     const destino = foco?.app || foco?.sub;
-    if (destino && miniAppPR(destino)) setAbierta(destino);
+    /* ⚠️ DIST F1 — pasa por `abrir`, no por `setAbierta`: un `foco` que apunte a
+       Tareas ya no es de esta pantalla y tiene que salir a Organización. */
+    if (destino) abrir(destino);
   }, [foco]);
 
   const datos = { productividad, objetivos };
@@ -2640,7 +2664,7 @@ export default function ProductivityView({
     return (
       <CentroDeControlPR
         productividad={productividad} objetivos={objetivos} accent={accent}
-        onAbrir={setAbierta}
+        onAbrir={abrir}
         onToggleTarea={onToggleTarea}
         onUpdateHabito={onUpdateHabito}
       />
@@ -2684,13 +2708,13 @@ export default function ProductivityView({
           onFinalizar={onFinalizarSesionPomodoro}
         />
       )}
-      {abierta === 'tareas' && (
-        <TareasTab
-          tareas={productividad.tareas} onAdd={onAddTarea} onUpdate={onUpdateTarea}
-          onToggle={onToggleTarea} onDelete={onDeleteTarea} onConcentrarse={concentrarseEnTarea} accent={accent}
-          foco={foco} onFocoConsumido={onFocoConsumido}
-        />
-      )}
+      {/* 🚨 DIST F1 — **Rachas se pinta con `RachasView`, su pantalla de
+          siempre**, y llega ya construida desde `App.jsx` (`renderRachas`) por
+          lo mismo que las agrupadoras: una sola definición de sus props, no una
+          copia aquí que acabe recibiendo cosas distintas.
+          ⚠️ Y Tareas ya no está: vive en Organización (Gestión). Lo que había
+          aquí no se ha reescrito allí — es `TareasTab`, exportada. */}
+      {abierta === 'rachas' && renderRachas?.()}
       {abierta === 'metas' && (
         <MetasTab
           metas={productividad.metas} objetivos={objetivos?.lista || []} tareas={productividad.tareas}

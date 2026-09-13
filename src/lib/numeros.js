@@ -192,7 +192,13 @@ export function resumenNumeros(estado = {}) {
    --------------------------------------------------------------------------- */
 export function condicionNumeros({ moreNav = [], areasNav = [] } = {}) {
   const ids = moreNav.map((m) => m.id);
-  const mas = areasNav.find((a) => a.id === 'area-mas');
+  /* 🔓 DIST F1 — antes esta auditoría exigía que Números estuviera en `area-mas`,
+     y **`area-mas` ya no existe**: Josué la eliminó como categoría. Lo que
+     importaba no era esa área concreta sino que el apartado **viva dentro de
+     alguna**, o sea que se llegue a él desde la barra inferior en vez de quedar
+     flotando sin acceso. Así que la casilla pasa a comprobar eso, que es lo que
+     de verdad protegía. Ahora vive en Gestión, con el nombre «Progreso». */
+  const areaConNumeros = areasNav.find((a) => (a.modulos || []).includes('numeros'));
   const casillas = [
     {
       id: 'numeros_existe',
@@ -206,8 +212,8 @@ export function condicionNumeros({ moreNav = [], areasNav = [] } = {}) {
     },
     {
       id: 'numeros_en_mas',
-      texto: 'Números está en el área de áreas complementarias',
-      ok: !!mas && (mas.modulos || []).includes('numeros'),
+      texto: 'El apartado vive dentro de un área, así que se llega a él desde la barra',
+      ok: !!areaConNumeros,
     },
     {
       id: 'sin_almacen',

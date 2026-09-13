@@ -117,21 +117,40 @@ export const PALABRAS_MODULOS = {
   sueno: ['dormir', 'descanso', 'noche', 'siesta', 'despertar', 'insomnio', 'horas de sueno'],
   nutricion: ['comida', 'comer', 'calorias', 'dieta', 'agua', 'alimentacion', 'macros', 'desayuno', 'cena'],
   entreno: ['entrenar', 'entrenamiento', 'calistenia', 'gimnasio', 'ejercicio', 'futbol', 'deporte', 'habilidades', 'dominadas', 'partido'],
-  calendario: ['agenda', 'eventos', 'fechas', 'planificar', 'citas', 'mes'],
   estudios: ['estudiar', 'asignaturas', 'examenes', 'notas', 'clase', 'instituto', 'deberes', 'repaso'],
   negocio: ['proyectos', 'emprender', 'empresa', 'ingresos', 'clientes'],
   /* 🚨 E3 F23 (PR F1) — Objetivos dejó de ser un módulo y es una mini-app de
      Productividad, así que **sus palabras se mudan aquí**. Borrarlas sin más
      habría dejado a Josué sin poder encontrar sus objetivos buscando
      "objetivos", que es exactamente lo que D2-07 prohíbe. */
-  productividad: ['tareas', 'habitos', 'rutinas', 'pomodoro', 'metas', 'pendientes', 'organizar', 'lista',
-    'objetivos', 'propositos', 'retos', 'conseguir'],
+  /* 🚨 DIST F1 — **RACHAS SE MUDA AQUÍ**, porque desde esta fase Productividad la
+     absorbe. ⚠️ Y «tareas» **se va de aquí a Organización**, que es donde vive
+     desde esta fase: las palabras siguen al apartado, no se quedan donde
+     estaban. Buscar «tareas» sigue encontrando la lista de siempre; lo que
+     cambia es por dónde se entra. */
+  productividad: ['habitos', 'rutinas', 'pomodoro', 'metas', 'pendientes', 'organizar', 'lista',
+    'objetivos', 'propositos', 'retos', 'conseguir',
+    'racha', 'rachas', 'dias seguidos', 'constancia', 'cadena', 'no romper la racha', 'mejor racha'],
   diario: ['escribir', 'animo', 'reflexion', 'como me siento', 'emociones'],
-  fe: ['dios', 'oracion', 'iglesia', 'espiritual', 'biblia', 'servicio'],
   biblioteca: ['apuntes', 'archivos', 'enlaces', 'documentos', 'pdf', 'guardar', 'notas'],
-  relacion: ['pareja', 'novia', 'aniversario', 'privado'],
-  bienestar: ['movil', 'pantallas', 'tiempo de uso', 'digital', 'concentracion', 'desconectar',
-    'bienestar digital'],
+  /* 🚨 DIST F1 — **AL DEJAR DE SER MÓDULOS, SUS PALABRAS SE MUDAN: NO SE BORRAN**
+     (la lección de la E3 F23 con Objetivos y de NAV F1 con las tres de Números).
+     Buscar «dios», «pareja» o «tiempo de pantalla» tiene que seguir encontrando
+     algo, y ahora lleva a **Mente**, que es donde están de verdad. Si se hubieran
+     borrado, Josué escribiría «oración» y el buscador le diría que no existe
+     nada — teniéndolo a dos toques. */
+  mente: ['mente', 'mental', 'bienestar mental', 'salud mental',
+    'fe', 'dios', 'oracion', 'oración', 'iglesia', 'espiritual', 'biblia', 'servicio',
+    'relacion', 'relación', 'pareja', 'novia', 'aniversario', 'privado',
+    'movil', 'móvil', 'pantallas', 'tiempo de uso', 'tiempo de pantalla', 'digital', 'concentracion',
+    'concentración', 'desconectar', 'bienestar digital'],
+  /* 🚨 DIST F1 — lo mismo con Tareas, Calendario y Horario. «Qué tengo hoy»,
+     «clases» o «eventos» tienen que seguir llevando a alguna parte. */
+  organizacion: ['organizacion', 'organización', 'organizar',
+    'tareas', 'tarea', 'pendientes', 'to do', 'que tengo que hacer',
+    'calendario', 'agenda', 'eventos', 'fechas', 'planificar', 'citas', 'mes',
+    'horario', 'clases', 'clase', 'asignatura', 'cuadricula', 'franja',
+    'que tengo hoy', 'que tengo manana', 'instituto', 'colegio', 'aula'],
   /* NAV F1 — 🚨 **AL DEJAR DE SER MÓDULOS, SUS PALABRAS SE MUDAN: NO SE BORRAN**
      (la lección de la E3 F23 con Objetivos). Buscar «gráficas», «insignias» o
      «futuro» tiene que seguir encontrando algo, y ahora lleva a **Números**, que
@@ -152,8 +171,6 @@ export const PALABRAS_MODULOS = {
      mudanza. */
   'estilo-hombre': ['imagen', 'imagen personal', 'personal', 'estilo', 'hombre', 'estilo de hombre',
     'skincare', 'piel', 'cara', 'pelo', 'barba', 'higiene', 'cuidado', 'cuidado personal', 'aspecto', 'productos'],
-  rachas: ['racha', 'rachas', 'dias seguidos', 'constancia', 'cadena', 'hito', 'hitos', 'logro', 'logros', 'record', 'mejor racha', 'no romper la racha'],
-  horario: ['horario', 'clases', 'clase', 'asignatura', 'cuadricula', 'franja', 'que tengo hoy', 'que tengo manana', 'instituto', 'colegio', 'aula'],
   ajustes: ['configuracion', 'opciones', 'preferencias', 'settings'],
 };
 
@@ -168,22 +185,22 @@ export const SINONIMOS_MODULOS = {
   sueno: ['cansancio', 'energia', 'madrugar', 'trasnochar'],
   nutricion: ['alimento', 'nutrientes', 'proteina', 'hidratacion'],
   entreno: ['fuerza', 'musculo', 'rutina de entreno', 'sesion'],
-  calendario: ['horario', 'dia', 'semana', 'organizacion'],
   estudios: ['colegio', 'universidad', 'academico', 'aprender'],
   negocio: ['trabajo', 'dinero extra', 'facturar'],
-  productividad: ['eficiencia', 'concentracion', 'foco', 'planificar', 'objetivo', 'ambicion', 'lograr', 'progreso'],
+  productividad: ['eficiencia', 'concentracion', 'foco', 'planificar', 'objetivo', 'ambicion', 'lograr', 'progreso',
+    'seguidos', 'consecutivos', 'streak'],
+  // DIST F1 — los sinonimos de Fe, Relacion y Bienestar digital, mudados a Mente.
+  mente: ['religion', 'creencias', 'gratitud', 'amor', 'citas',
+    'descanso mental', 'adiccion', 'uso del movil', 'cabeza', 'calma'],
+  // DIST F1 — los de Calendario y Horario, mudados a Organizacion.
+  organizacion: ['dia', 'semana', 'timetable', 'horarios', 'planificacion', 'que hago hoy'],
   diario: ['pensamientos', 'sentimientos', 'desahogo'],
-  fe: ['religion', 'creencias', 'gratitud'],
   biblioteca: ['recursos', 'material', 'lectura', 'guardado'],
-  relacion: ['amor', 'citas'],
-  bienestar: ['descanso mental', 'salud mental', 'adiccion', 'uso del movil'],
   // NAV F1 — los sinónimos de las tres, mudados también a Números.
   numeros: ['resumen', 'tendencia', 'que pasara', 'qué pasará', 'recompensas', 'cuanto llevo', 'cuánto llevo'],
   economia: ['pagar', 'cobrar', 'euros', 'cuenta', 'economico'],
   armario: ['estilo', 'moda', 'vestuario', 'looks'],
   'estilo-hombre': ['apariencia', 'grooming', 'rutina facial', 'verse bien'],
-  rachas: ['seguidos', 'consecutivos', 'streak', 'progreso'],
-  horario: ['agenda', 'semana', 'timetable', 'horarios'],
   ajustes: ['ajuste', 'configurar', 'cambiar'],
 };
 

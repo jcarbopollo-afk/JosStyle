@@ -13,21 +13,23 @@
 import { readFileSync } from 'node:fs';
 import { construirIndice, buscar, pareceUnaPregunta, normalizar, normalizarRaiz, sugerenciaDeErrata, sugerenciasIniciales, analizarIntencion, nucleoDeConsulta, resolverConsulta } from '../src/lib/indiceBusqueda.js';
 
-// Copia de MORE_NAV (App.jsx). Solo id y label: el icono no se usa en el motor.
+/* Copia de MORE_NAV (App.jsx). Solo id y label: el icono no se usa en el motor.
+
+   🚨 **CUARTA VEZ QUE ESTA LISTA SE QUEDA VIEJA, Y LA ÚLTIMA.** Pasó con
+   Objetivos (E3 F23), con `cuerpo` (EH F18), con las tres de Números (NAV F1) y
+   ahora con los seis que DIST F1 mete dentro de Mente y Organización. El
+   comentario de antes lo avisaba y aun así volvió a pasar: un aviso no es un
+   guardián. Así que debajo hay una comprobación que **lee los ids de verdad de
+   `App.jsx`** y falla si esta copia no coincide. */
 const MODULOS = [
-  { id: 'salud', label: 'Mi salud' }, { id: 'sueno', label: 'Sueño' },
+  { id: 'salud', label: 'Salud física' }, { id: 'sueno', label: 'Sueño' },
   { id: 'nutricion', label: 'Nutrición' }, { id: 'entreno', label: 'Entrenamiento' },
-  { id: 'calendario', label: 'Calendario' }, { id: 'estudios', label: 'Estudios' },
-  { id: 'negocio', label: 'Negocio' }, { id: 'productividad', label: 'Productividad' },
-  { id: 'objetivos', label: 'Objetivos' }, { id: 'diario', label: 'Diario' },
-  { id: 'fe', label: 'Fe' }, { id: 'biblioteca', label: 'Biblioteca' },
-  { id: 'relacion', label: 'Relación' }, { id: 'bienestar', label: 'Bienestar digital' },
-  /* NAV F1 — Estadísticas, Predicciones y Logros dejaron de ser módulos: son las
-     tres sub-apps de **Números**. ⚠️ Esta lista está escrita a mano, así que se
-     queda vieja sola — es la tercera vez que pasa (E3 F23 con Objetivos, EH F18
-     con `cuerpo`). Lo que se comprueba abajo es que **la palabra siga
-     encontrando algo**, no a qué módulo concreto llevaba en su día. */
-  { id: 'numeros', label: 'Números' }, { id: 'economia', label: 'Economía' },
+  { id: 'estudios', label: 'Estudios' }, { id: 'negocio', label: 'Negocio' },
+  { id: 'productividad', label: 'Productividad' }, { id: 'diario', label: 'Diario' },
+  { id: 'biblioteca', label: 'Biblioteca' },
+  { id: 'mente', label: 'Mente' }, { id: 'organizacion', label: 'Organización' },
+  { id: 'numeros', label: 'Progreso' }, { id: 'economia', label: 'Economía' },
+  { id: 'armario', label: 'Armario' }, { id: 'estilo-hombre', label: 'Imagen personal' },
   { id: 'ajustes', label: 'Ajustes' },
 ];
 
@@ -37,11 +39,27 @@ const comprobar = (nombre, ok, detalle = '') => {
   else { console.error(`  ✗ ${nombre}${detalle ? ' → ' + detalle : ''}`); fallos++; }
 };
 
+/* 🚨 El guardián: los ids de MORE_NAV se leen de `App.jsx` y se comparan con la
+   copia de arriba. Si una fase futura añade, quita o renombra un módulo y no
+   toca esta lista, **esta comprobación se pone roja el mismo día** en vez de
+   dejar el buscador probándose contra una aplicación que ya no existe. */
+const fuenteApp = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+const desdeMoreNav = fuenteApp.slice(fuenteApp.indexOf('const MORE_NAV = ['));
+const bloqueMoreNav = desdeMoreNav.slice(0, desdeMoreNav.indexOf('\n];'));
+const idsReales = [...bloqueMoreNav.matchAll(/\{\s*id:\s*'([^']+)'/g)].map((m) => m[1]);
+const idsCopia = MODULOS.map((m) => m.id);
+
 const indice = construirIndice(MODULOS);
 const primero = (q) => buscar(indice, q)[0];
 const titulos = (q) => buscar(indice, q).map((r) => r.titulo);
 
 console.log('\n═══ BI Fases 2, 3 y 4 — buscador, motor e intención ═══\n');
+
+comprobar(
+  '🚨 La copia de MORE_NAV de esta prueba coincide con la de App.jsx',
+  idsReales.length > 0 && idsReales.join(',') === idsCopia.join(','),
+  `App.jsx: ${idsReales.join(', ')} | prueba: ${idsCopia.join(', ')}`,
+);
 
 // --- Índice ---
 {
@@ -87,9 +105,13 @@ console.log('\n═══ BI Fases 2, 3 y 4 — buscador, motor e intención ═�
 {
   const casos = [
     ['peso', 'salud'], ['comida', 'nutricion'], ['calistenia', 'entreno'],
-    ['tareas', 'productividad'], ['agenda', 'calendario'], ['examenes', 'estudios'],
+    /* 🚨 DIST F1 — cuatro destinos se mudan, y es la misma lección otra vez:
+       Tareas y Calendario están dentro de **Organización**, y Fe y Bienestar
+       digital dentro de **Mente**. Lo que esta tabla comprueba es que la palabra
+       **siga encontrando su apartado**, no a qué módulo llevaba en su día. */
+    ['tareas', 'organizacion'], ['agenda', 'organizacion'], ['examenes', 'estudios'],
     ['gastos', 'economia'], ['apuntes', 'biblioteca'],
-    ['oracion', 'fe'], ['pantallas', 'bienestar'],
+    ['oracion', 'mente'], ['pantallas', 'mente'],
     /* NAV F1 — 🚨 «gráficas» e «insignias» llevaban a `estadisticas` y `logros`,
        que **ya no son módulos**: son las dos sub-apps de Números. Esta prueba
        escribía el destino A MANO, así que se puso roja con el buscador bien —
@@ -154,7 +176,11 @@ console.log('\n═══ BI Fases 2, 3 y 4 — buscador, motor e intención ═�
 
 // --- Integración con ME: un módulo desactivado no se puede encontrar ---
 {
-  const reducido = construirIndice(MODULOS, { modulosDesactivados: ['diario', 'fe'] });
+  /* ⚠️ DIST F1 — se desactiva `mente`, no `fe`: Fe dejó de ser un módulo y sus
+     palabras viven ahora en Mente. Lo que se comprueba es **el mecanismo** —que
+     desactivar un módulo se lleve también sus sinónimos—, no qué módulo tenía
+     esa palabra en su día. */
+  const reducido = construirIndice(MODULOS, { modulosDesactivados: ['diario', 'mente'] });
   comprobar('Un módulo desactivado desaparece del índice', !reducido.some((e) => e.tab === 'diario'));
   comprobar('...y tampoco se encuentra por sinónimo', buscar(reducido, 'oracion').length === 0);
   comprobar('...pero el resto sigue encontrándose', buscar(reducido, 'dormir')[0]?.tab === 'sueno');
@@ -186,9 +212,15 @@ console.log('\n═══ BI Fases 2, 3 y 4 — buscador, motor e intención ═�
   comprobar('...y respeta las palabras cortas', normalizarRaiz('mes tres fe') === 'mes tres fe');
   comprobar('"color" en singular encuentra "Colores y tema"', primero('color')?.id === 'ajuste:apariencia');
   comprobar('"tarea" en singular encuentra las tareas', titulos('tarea').length > 0);
-  comprobar('"objetivos" en plural encuentra Objetivos', primero('objetivos')?.tab === 'objetivos');
+  /* 🚨 DIST F1 — **esta línea llevaba pasando en falso desde la E3 F23.** La
+     copia de MORE_NAV de esta prueba conservaba un módulo `objetivos` que ya no
+     existía, así que la comprobación encontraba ESE y daba verde. Lo destapó el
+     guardián de arriba. Objetivos es una mini-app de Productividad desde la
+     E3 F23, y ahí es donde tiene que llevar. */
+  comprobar('"objetivos" en plural sigue encontrando sus objetivos', primero('objetivos')?.tab === 'productividad', titulos('objetivos')[0] || 'sin resultados');
   // El plural no debe atropellar una palabra clave escrita literalmente.
-  comprobar('"pantallas" → Bienestar, no "Pantalla principal"', primero('pantallas')?.tab === 'bienestar', titulos('pantallas')[0]);
+  // DIST F1 — Bienestar digital vive dentro de Mente, así que ahí lleva ahora.
+  comprobar('"pantallas" → Mente, no "Pantalla principal"', primero('pantallas')?.tab === 'mente', titulos('pantallas')[0]);
 }
 
 // --- Apartado 18 y 22: erratas ---
@@ -205,12 +237,13 @@ console.log('\n═══ BI Fases 2, 3 y 4 — buscador, motor e intención ═�
 
 // --- Apartado 7: sinónimos, un escalón por debajo de las palabras clave ---
 {
-  comprobar('"religion" → Fe (sinónimo)', primero('religion')?.tab === 'fe', titulos('religion')[0] || 'sin resultados');
+  // DIST F1 — Fe vive dentro de Mente; el sinónimo se mudó con ella.
+  comprobar('"religion" → Mente (sinónimo)', primero('religion')?.tab === 'mente', titulos('religion')[0] || 'sin resultados');
   comprobar('"musculo" → Entrenamiento (sinónimo)', primero('musculo')?.tab === 'entreno', titulos('musculo')[0] || 'sin resultados');
   comprobar('"diseno" → Colores y tema (sinónimo)', primero('diseno')?.id === 'ajuste:apariencia', titulos('diseno')[0] || 'sin resultados');
-  // El escalón importa: "concentracion" es palabra clave de Bienestar y sinónimo de
-  // Productividad. Gana la palabra clave, no el sinónimo.
-  comprobar('Una palabra clave gana a un sinónimo', primero('concentracion')?.tab === 'bienestar', titulos('concentracion')[0]);
+  // El escalón importa: "concentracion" es palabra clave de Mente (por Bienestar
+  // digital) y sinónimo de Productividad. Gana la palabra clave, no el sinónimo.
+  comprobar('Una palabra clave gana a un sinónimo', primero('concentracion')?.tab === 'mente', titulos('concentracion')[0]);
   /* "ingresos" es palabra clave de LOS DOS (Negocio y Economía): ahí no hay escalón
      que decida, así que salen los dos y manda el desempate, no el azar.
 
@@ -239,7 +272,8 @@ console.log('\n═══ BI Fases 2, 3 y 4 — buscador, motor e intención ═�
 {
   const r = buscar(indice, 'objetivo');
   comprobar('"objetivo" devuelve varias opciones ordenadas', r.length >= 2, String(r.length));
-  comprobar('...con Objetivos el primero', r[0]?.tab === 'objetivos', r[0]?.titulo);
+  // DIST F1 — mismo caso que arriba: el destino de «objetivo» es Productividad.
+  comprobar('...con Productividad el primero', r[0]?.tab === 'productividad', r[0]?.titulo);
   // Determinista: dos búsquedas idénticas dan el mismo orden.
   comprobar('El orden es determinista',
     JSON.stringify(buscar(indice, 'objetivo').map((x) => x.id)) === JSON.stringify(r.map((x) => x.id)));

@@ -99,20 +99,35 @@ export const MINI_APPS_PR = [
     fase: 'PR F3',
     nueva: false,
   },
+  /* 🚨 DIST F1 — **RACHAS ENTRA Y TAREAS SALE.** Josué: *"Productividad debe
+     absorber la parte de Rachas […] Rachas deja de ser un módulo independiente
+     de la navegación principal"*, y en el mismo encargo: *"Tareas debe quedar
+     dentro de Organización, no dentro de Productividad."*
+
+     ⚠️ **Ni una de las dos pierde nada.** Rachas se pinta con `RachasView`, su
+     pantalla de siempre —el motor de RA F1 no se toca, y sigue sin guardar ni un
+     contador—; Tareas se pinta con `TareasTab`, la de la E3 F26, ahora desde
+     Organización. Las dos leen sus claves de siempre (`rachas` y
+     `productividad.tareas`), así que **no hay ni un dato que mover**.
+
+     ⚠️ Y los botones que llevaban a Tareas desde aquí siguen llevando a Tareas:
+     `ProductivityView` manda fuera lo que ya no es suyo en vez de quedarse en
+     blanco. Un enlace que deja de funcionar en silencio es peor que uno que no
+     existe. */
   {
-    id: 'tareas',
-    nombre: 'Tareas',
-    descripcion: 'Organiza lo que tienes que hacer.',
-    icono: 'ListChecks',
-    emoji: '✓',
-    de: 'productividad',
-    coleccion: 'tareas',
-    contador: ['tarea', 'tareas'],
-    /* Lo que se enseña de Tareas son **las pendientes**, no el total: una lista
-       con doscientas hechas y una pendiente no dice "201". */
-    soloPendientes: true,
-    fase: 'PR F4',
+    id: 'rachas',
+    nombre: 'Rachas',
+    descripcion: 'No rompas la cadena.',
+    icono: 'Flame',
+    emoji: '🔥',
+    /* 🚨 Como Objetivos: **no sale de la clave `productividad`.** Las rachas
+       viven en su propia clave desde RA F1, y ahí se quedan. */
+    de: 'rachas',
+    coleccion: 'lista',
+    contador: ['racha', 'rachas'],
+    fase: 'RA F1',
     nueva: false,
+    vieneDeFuera: true,
   },
   {
     id: 'metas',
