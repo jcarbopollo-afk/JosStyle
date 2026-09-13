@@ -22,7 +22,7 @@ ordena es **el trabajo**, no el documento.
 | | Fase | Líneas | Tamaño |
 |---|---|---|---|
 | **F1** ✅ **v3.83.0** | Fundación arquitectónica del módulo fitness | 32639–33252 | 614 |
-| **F2** | Sistema y catálogo maestro de ejercicios | 32042–32638 | 597 |
+| **F2** ✅ **v3.84.0** | Sistema y catálogo maestro de ejercicios | 32042–32638 | 597 |
 | **F3** | Constructor de entrenamientos | 31493–32041 | 549 |
 | **F4** | Gestión de entrenamientos y plantillas propias | 31018–31492 | 475 |
 | **F5** | Biblioteca de planificaciones | 30514–31017 | 504 |
@@ -117,3 +117,20 @@ y **está por decirle a Josué**.
 ⚠️ **Lo que la F1 NO construye** está enumerado en `NO_EN_FIT1`, con la fase que lo traerá. El
 apartado 27 lo pide expresamente: *"NO empieces automáticamente a construir el catálogo de
 ejercicios"*.
+
+## ✅ Lo que dejó la F2 (v3.84.0)
+
+**Cien ejercicios**, con la forma del dato que van a usar las 43 fases que quedan. Lo que hay que
+respetar a partir de aquí:
+
+- **El `Exercise` se amplía, nunca se sustituye.** Si una fase necesita un campo nuevo, se añade — y
+  se añade también a `crearEjercicioCompleto`, o el siguiente guardado se lo lleva (regla 5).
+- **Entorno ≠ equipamiento**, y los dos son listas. La adaptación de rutinas depende de eso.
+- **Los porcentajes suman 100 y llevan su papel.** `auditarCatalogo()` lo mide en cada pasada: un
+  ejercicio nuevo que no cuadre pone la verificación roja el mismo día.
+- **Los ids son ranuras estables**, nunca índices. Lo que se guarde en un plan, una sesión o un rango
+  apunta a ellos.
+- **La relación grupo → ejercicios se deriva.** Nunca una lista guardada por grupo.
+- **El catálogo no vive en `app_data`.** Son datos de la aplicación; lo del usuario va en
+  `fitness.ejercicios`, y `ejercicioPorId` mira en los dos sitios.
+- **Ni un enlace inventado** (apartado 22): hay una comprobación que barre el JSON entero.

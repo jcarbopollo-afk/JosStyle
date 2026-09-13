@@ -14,14 +14,15 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.83.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.84.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. Hecha la **F1 (fundación arquitectónica, v3.83.0)**.
+construye de la F1 a la F45**. Hechas la **F1 (fundación arquitectónica, v3.83.0)** y la
+**F2 (el catálogo maestro de ejercicios, v3.84.0)**.
 
 🚨 **Y la lección de la F1, que vale para las 44 que quedan: ENTRENAMIENTO YA EXISTÍA, y no era una
 cosa, eran tres.** El módulo es `entreno` + `calistenia` desde la Fase 2; **las fotos de progreso son
@@ -42,7 +43,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 44 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 43 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -319,8 +320,44 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 | **NAVO F1** | **Atrás vuelve de donde viniste**, no al área del módulo | ✅ **v3.81.0** |
 | **SF F1** | 🍎 El **barrido de Safari** (ésta no la pidió él: sale de la SC F1) | ✅ **v3.82.0** |
 
-🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, que empieza por la **FIT F1 (v3.83.0)**. Lo que
-dejó, y que vale para las 44 que quedan:
+🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, con la **FIT F1 (v3.83.0)** y la **FIT F2
+(v3.84.0)** hechas. Lo que dejaron, y que vale para las 43 que quedan:
+
+- 🚨 **EL `Exercise` SE AMPLÍA, NUNCA SE SUSTITUYE** (FIT F2, apartado 1). El de la F1 conserva todos
+  sus campos y suma los que faltaban; el `entorno` en singular **se absorbe** en `entornos` desde el
+  normalizador, como `programaIds` en AS F1 y `absorberColeccionId` en la BL F7. Si una fase futura
+  necesita un campo, **se añade también a `crearEjercicioCompleto`** o el siguiente guardado se lo
+  lleva (regla 5).
+- 🚨 **ENTORNO Y EQUIPAMIENTO SON DOS COSAS, Y LOS DOS SON LISTAS** (FIT F2, apartado 7, que se para
+  expresamente en ello). Unas dominadas son de **gimnasio** y de **calistenia**, y en los dos sitios
+  hacen falta **una barra**. De eso depende que una fase posterior pueda decir *"esto en casa no lo
+  puedes hacer, prueba con esto otro"*.
+- 🚨 **UN EJERCICIO NO ES SIEMPRE SERIES × REPETICIONES** (FIT F2, apartados 14 y 15): un L-sit y un
+  front lever se miden en **segundos**, así que cada uno declara sus `medidas`. Y **`explosivo` va
+  aparte de `tipos`** aunque lo parezca, para que el sistema no trate un muscle-up como hipertrofia
+  convencional.
+- 🚨 **LOS PORCENTAJES DE CADA EJERCICIO SUMAN 100, Y HAY UNA PRUEBA QUE LOS SUMA** (FIT F2,
+  apartados 5 y 29). No son verdad científica —el enunciado los llama *"una estimación funcional
+  coherente"*— pero de ahí saldrán la distribución muscular y los rangos, así que un ejercicio nuevo
+  que no cuadre pone la verificación roja el mismo día. Y cada implicación lleva su **papel**.
+- 🚨 **UN ID ES UNA RANURA ESTABLE, NUNCA UN ÍNDICE** (FIT F2, apartado 21): `press-banca-barra`. Lo
+  que se guarde en un plan, una sesión o un rango apunta ahí, así que **renombrar el ejercicio no
+  puede cambiarlo**.
+- ⚠️ **LA RELACIÓN GRUPO → EJERCICIOS SE DERIVA** (FIT F2): no hay ni una lista `ejerciciosDePecho`,
+  porque se quedaría vieja en cuanto se corrija un porcentaje. Es la lección de E3 F22 aplicada antes
+  de que pase.
+- ⚠️ **EL CATÁLOGO NO VIVE EN `app_data`** (FIT F2): son **datos de la aplicación**, como los grupos
+  musculares — guardarlos por usuario significaría que corregir un porcentaje no le llega nunca a
+  quien ya tiene cuenta. Lo que sí se guarda es lo que se cree Josué (`fitness.ejercicios`), y
+  `ejercicioPorId` mira en los dos sitios.
+- ⚠️ **NI UN ENLACE INVENTADO** (FIT F2, apartado 22, y es la regla 8 con D2-03): los vídeos, las
+  ilustraciones y la anatomía existen como campos y valen `null`. Hay una comprobación que barre el
+  JSON entero del catálogo buscando `http`, y en pantalla **se dice** que todavía no hay vídeo en vez
+  de dejar un reproductor que no reproduce nada.
+- ⚠️ **UN FILTRO SIN RECUENTO ES UN FILTRO QUE DEJA LA PANTALLA VACÍA SIN AVISAR** (FIT F2,
+  apartado 23): cada pastilla lleva cuántos ejercicios quedarían, y la que dejaría cero se apaga.
+- ⚠️ **EL NOMBRE VA EN ESPAÑOL Y EL TÉCNICO TAMBIÉN SE BUSCA** (FIT F2, apartado 20): en pantalla se
+  lee *Dominadas pronas*, y *«pull up»* las encuentra igual.
 
 - 🚨 **LO QUE PIDE UNA ENTREGA NUEVA PUEDE EXISTIR YA TRES VECES** (FIT F1, y es la lección más
   repetida del proyecto elevada a entrega entera). El enunciado pedía un módulo Fitness con un área
@@ -445,7 +482,7 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F2/45 — el catálogo maestro de ejercicios** (líneas 32 042–32 638 de
+1. 🏋️ **SEGUIR POR LA FIT F3/45 — el constructor de entrenamientos** (líneas 31 493–32 041 de
    `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). **Ya no hay que esperar a que él pase nada**:
    la Entrega 4 está entera encima de la mesa y se construye de la F1 a la F45, en orden,
    encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.

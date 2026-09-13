@@ -843,8 +843,15 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       rango, los siete modelos del apartado 13, persistencia sobre `app_data` y estados vacíos.
       🚨 **Sin duplicar nada**: el módulo ya era `entreno` + `calistenia`, las fotos de progreso ya
       eran `saludFotos` y la racha ya la llevaba el motor de rachas.
-- [ ] F2 — Sistema y catálogo maestro de ejercicios
-- [ ] F3–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F2 — Sistema y catálogo maestro de ejercicios** (v3.84.0): el `Exercise` de la F1 ampliado de
+      forma compatible, **100 ejercicios** de gimnasio, calistenia y casa con sus porcentajes
+      musculares sumando 100, entorno y equipamiento separados, dificultad, tipos, agarres, medidas
+      (repeticiones / peso / tiempo / distancia), explosivo, variantes con su base, progresiones y
+      sustitutos; más la pantalla con buscador, cinco filtros y el detalle reutilizable.
+      🚨 **Sin duplicar nada**: los grupos musculares son los de la F1 y el catálogo no vive en
+      `app_data`.
+- [ ] F3 — Constructor de entrenamientos
+- [ ] F4–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 ⏸ **C-33 pendiente de Josué**: los diez rangos del apartado 22 contra D2-02. Construido como medida
 física, nunca como premio; anotado en `docs/03` y **no bloquea ninguna fase**.

@@ -1,5 +1,83 @@
 # CHANGELOG.md
 
+## v3.84.0 — FIT F2/45: el catálogo maestro, cien ejercicios que suman 100
+
+La segunda de las cuarenta y cinco. El enunciado lo dice en su objetivo: este catálogo va a ser *"la
+fuente de verdad para prácticamente todo Fitness"* —rutinas, planes, sesiones, historial, rangos,
+sustituciones y la IA leerán de aquí—. Así que lo que importaba no era la cantidad, sino que **la
+forma del dato aguante las 43 fases que vienen detrás** sin tener que rehacerla.
+
+### El modelo se amplía, no se sustituye
+
+El `Exercise` de la F1 **conserva todos sus campos** y suma los que faltaban: nombre corto, nombre
+técnico, descripción, categoría, base, dificultad, tipos, agarre, medidas, explosivo, progresiones,
+sustitutos, variantes, tutorial, instrucciones y recursos.
+
+⚠️ Y el `entorno` en singular **se absorbe** en `entornos`, la lista, **desde el normalizador** — como
+`programaIds` en AS F1 y `absorberColeccionId` en la BL F7. Lo guardado no se pierde ni se mueve, y
+no quedan dos fuentes de verdad para lo mismo.
+
+### 🚨 Entorno y equipamiento son dos cosas, y el enunciado se para en ello
+
+*"No confundas entorno con equipamiento"* (apartado 7). Unas dominadas son de **gimnasio** y de
+**calistenia**, y en los dos sitios necesitan **una barra**. Un ejercicio de **casa** puede necesitar
+**mancuernas**. Son dos listas independientes, y es exactamente lo que permitirá, en una fase
+posterior, decir *"esto en casa no lo puedes hacer, prueba con esto otro"*.
+
+### 🚨 Un ejercicio no es siempre series × repeticiones
+
+*"NO diseñes el modelo pensando únicamente en repeticiones"* (apartado 14). Un L-sit, una plancha o
+un front lever se miden en **segundos**. Cada ejercicio declara sus `medidas` —repeticiones, peso,
+tiempo o distancia— y el entrenamiento en vivo sabrá qué campo pedir. ⚠️ Y **`explosivo` es un campo
+aparte de `tipos`** aunque lo parezca: el apartado 15 lo pide para que el sistema no trate un
+muscle-up como hipertrofia convencional.
+
+### Cien ejercicios, y la auditoría los mide uno a uno
+
+Gimnasio, calistenia y casa; barra, mancuernas, máquinas, poleas, anillas, bandas, silla, mochila y
+nada. Con las habilidades enteras —muscle-up, L-sit, planche, front lever, back lever, human flag,
+pino— y **sus progresiones**, que es lo que pide el apartado 13.
+
+`auditarCatalogo()` **ejecuta** las cuatro validaciones del apartado 29 que nadie puede mirar a ojo
+con cien fichas, y las cuatro salen limpias:
+
+- **ids únicos**, y ninguno es un índice de array (apartado 21): son ranuras estables
+  —`press-banca-barra`—, así que renombrar el ejercicio no rompe lo que ya apunte a él;
+- **los porcentajes de cada ejercicio suman 100** (apartado 5), con su papel: principal, secundario o
+  estabilizador;
+- **ni una referencia colgada** en sustitutos, progresiones, variantes o base;
+- **ni un enlace inventado** en todo el JSON (apartado 22).
+
+Y una más que no pedía el enunciado: **los dieciocho subgrupos musculares de la F1 tienen al menos un
+ejercicio**. Sin eso, un grupo del ranking se quedaría vacío para siempre y nadie se enteraría.
+
+### Lo que NO se ha duplicado
+
+- **Los grupos musculares son los de la F1**, importados, no redefinidos (apartado 6).
+- **La relación grupo → ejercicios se DERIVA** de las implicaciones. No hay ni una lista
+  `ejerciciosDePecho`: una lista guardada se queda vieja en cuanto se corrija un porcentaje.
+- **El catálogo no vive en `app_data`.** Son datos de la aplicación, como los grupos musculares:
+  guardarlos por usuario significaría que corregir un porcentaje no le llega nunca a quien ya tiene
+  cuenta. Lo que sí se guarda es lo que se cree Josué, y `ejercicioPorId` mira en los dos sitios.
+
+### La pantalla
+
+Buscador que ignora acentos y mayúsculas **y busca también el nombre técnico** —*"pull up"* encuentra
+las dominadas aunque en pantalla ponga *Dominadas pronas*, que es lo que pide el apartado 20—, cinco
+filtros **con su recuento al lado** —un filtro que deja la lista vacía sin avisar es peor que no
+tenerlo— y el detalle reutilizable del apartado 24: la distribución porcentual en barras, la técnica,
+los errores frecuentes, los consejos, el ejercicio base, sus variantes, sus progresiones y sus
+alternativas.
+
+⚠️ **Y el tutorial se declara, no se finge**: sin vídeo, una frase corta en vez de un reproductor que
+no reproduce nada (regla 8 y apartado 22).
+
+### 🐛 Y lo de siempre, por vigesimotercera vez
+
+Un barrido que comprueba que el código **no hace** algo tiene que quitar **los comentarios y las
+cadenas**: este archivo nombra `app_data`, `localStorage` y «ejerciciosDePecho» justamente para
+prometer que no están.
+
 ## v3.83.0 — FIT F1/45: la fundación de Fitness, y tres cosas que ya existían
 
 **Empieza la Entrega 4**, 45 fases para convertir Entrenamiento en una aplicación de fitness

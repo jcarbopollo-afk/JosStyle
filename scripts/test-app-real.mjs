@@ -5837,6 +5837,121 @@ const desborde_fit = await page.evaluate(() => ({
 ok(desborde_fit.ancho <= desborde_fit.ventana + 1,
   `🚨 FIT F1 — a 375 px no se desborda de lado (${desborde_fit.ancho} vs ${desborde_fit.ventana})`);
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F2 — el catálogo maestro de ejercicios (Entrega 4 · Fase 2/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El apartado 29 pide comprobar en el navegador que el catálogo carga, que la
+   búsqueda funciona, que los filtros funcionan, que el detalle funciona y que
+   los músculos y sus porcentajes aparecen. Eso es lo que hace esta sección.
+
+   🚨 Y lo que más importa: **los porcentajes que se ven en pantalla son los del
+   catálogo**, no una estimación que se invente la vista. Se abre un ejercicio
+   concreto y se mira su número. */
+console.log('\n── FIT F2 · El catálogo de ejercicios ──');
+ok(await pulsar('Bienestar'), 'FIT F2 — se abre el área Bienestar');
+ok(await pulsar('Fitness'), '…y Fitness');
+await esperarTexto(/Rangos/i);
+ok(await pulsar('Ejercicios'), '🚨 FIT F2 — se abre el catálogo desde Entrenamiento (apartado 23)');
+const catalogo_f2 = await esperarTexto(/Buscar un ejercicio/i);
+ok(/Buscar un ejercicio/i.test(catalogo_f2), '…con su buscador');
+ok(/ejercicios/i.test(catalogo_f2), '…y diciendo cuántos hay');
+
+/* El catálogo carga de verdad: al menos ochenta fichas (apartado 19). */
+const cuantos_f2 = await page.evaluate(() => {
+  const t = document.body.innerText.match(/(\d+)\s+ejercicios/);
+  return t ? Number(t[1]) : 0;
+});
+ok(cuantos_f2 >= 80, `🚨 FIT F2 — el catálogo carga entero: ${cuantos_f2} ejercicios (el apartado 19 pide 80-120)`);
+
+/* La búsqueda (apartado 29, punto 4). */
+const escribirBusqueda = async (texto) => page.evaluate((t) => {
+  const campo = [...document.querySelectorAll('input')]
+    .find((i) => /buscar un ejercicio/i.test(i.getAttribute('aria-label') || i.placeholder || ''));
+  if (!campo) return false;
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+  setter.call(campo, t);
+  campo.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}, texto);
+
+ok(await escribirBusqueda('dominadas'), 'se escribe «dominadas» en el buscador');
+await page.waitForTimeout(500);
+const buscado_f2 = await ver();
+ok(/Dominadas/i.test(buscado_f2), '🚨 FIT F2 — la búsqueda encuentra las dominadas');
+const trasBuscar_f2 = await page.evaluate(() => {
+  const t = document.body.innerText.match(/(\d+)\s+ejercicios?\s+de\s+(\d+)/);
+  return t ? { visibles: Number(t[1]), total: Number(t[2]) } : null;
+});
+ok(trasBuscar_f2 && trasBuscar_f2.visibles < trasBuscar_f2.total,
+  `⚠️ …y la lista se recorta de verdad (${trasBuscar_f2?.visibles} de ${trasBuscar_f2?.total})`);
+
+/* ⚠️ El apartado 20 dice que el usuario ve español, pero el nombre técnico
+   también se busca: es lo que hace que «pull up» sirva. */
+ok(await escribirBusqueda('pull up'), 'se busca «pull up», que no es como se llama en pantalla');
+await page.waitForTimeout(500);
+ok(/Dominadas/i.test(await ver()),
+  '⚠️ FIT F2 — y encuentra las dominadas igual: el nombre técnico también se busca');
+
+/* El detalle (apartados 24 y 29, punto 6). */
+ok(await escribirBusqueda('press de banca'), 'se busca el press de banca');
+await page.waitForTimeout(500);
+ok(await pulsar('Press de banca'), 'se abre su ficha');
+const detalle_f2 = await esperarTexto(/M[uú]sculos/i);
+ok(/Press de banca/i.test(detalle_f2), '🚨 FIT F2 — el detalle abre con su nombre');
+ok(/M[uú]sculos/i.test(detalle_f2), '…con sus músculos implicados (apartado 24)');
+ok(/50\s*%/.test(detalle_f2),
+  '🚨 FIT F2 — y con la distribución porcentual DEL CATÁLOGO, no inventada por la pantalla');
+ok(/T[eé]cnica|Ejecuci[oó]n/i.test(detalle_f2), '…y sus instrucciones (apartado 12)');
+ok(/Dificultad/i.test(detalle_f2) && /Material/i.test(detalle_f2),
+  '…y la ficha: dificultad, dónde y con qué');
+ok(/Alternativas|Variantes/i.test(detalle_f2),
+  '⚠️ …y sus sustitutos, que es lo que prepara el apartado 16');
+/* 🚨 El apartado 22, en pantalla: sin vídeo, se DICE, no se finge un reproductor. */
+ok(/Todav[ií]a no hay v[ií]deo/i.test(detalle_f2),
+  '🚨 FIT F2 — sin vídeo lo dice con una frase, no deja un reproductor muerto (regla 8)');
+
+/* Y se puede volver, que es lo que convierte el detalle en una pantalla y no en
+   un callejón. */
+ok(await pulsar('Catálogo'), 'se vuelve al catálogo desde la ficha');
+await esperarTexto(/Buscar un ejercicio/i);
+
+/* Los filtros (apartado 29, punto 5). */
+ok(await escribirBusqueda(''), 'se limpia la búsqueda');
+await page.waitForTimeout(400);
+ok(await pulsar('Filtros'), 'se abren los filtros');
+await esperarTexto(/Grupo muscular/i);
+ok(await pulsar('Calistenia'), 'se filtra por entorno: calistenia');
+await page.waitForTimeout(500);
+const filtrado_f2 = await page.evaluate(() => {
+  const t = document.body.innerText.match(/(\d+)\s+ejercicios?\s+de\s+(\d+)/);
+  return t ? { visibles: Number(t[1]), total: Number(t[2]) } : null;
+});
+ok(filtrado_f2 && filtrado_f2.visibles > 0 && filtrado_f2.visibles < filtrado_f2.total,
+  `🚨 FIT F2 — el filtro recorta la lista y deja algo (${filtrado_f2?.visibles} de ${filtrado_f2?.total})`);
+ok(await pulsar('Quitar los filtros'), 'y se pueden quitar de un toque');
+await page.waitForTimeout(400);
+const sinFiltro_f2 = await page.evaluate(() => {
+  const t = document.body.innerText.match(/(\d+)\s+ejercicios/);
+  return t ? Number(t[1]) : 0;
+});
+ok(sinFiltro_f2 === cuantos_f2, `⚠️ …y vuelven a salir todos (${sinFiltro_f2})`);
+
+/* Nada de esto ha guardado un solo dato: el catálogo son datos de la
+   aplicación, y buscar y filtrar es mirar. */
+const escrituras_f2 = guardado.length;
+await escribirBusqueda('curl');
+await page.waitForTimeout(500);
+ok(guardado.length === escrituras_f2,
+  '⚠️ FIT F2 — buscar y filtrar NO guarda nada: el catálogo no vive en app_data');
+
+/* Y a 375 px no se desborda, con cien tarjetas en la lista (apartado 25). */
+const desborde_f2 = await page.evaluate(() => ({
+  ancho: document.documentElement.scrollWidth, ventana: window.innerWidth,
+}));
+ok(desborde_f2.ancho <= desborde_f2.ventana + 1,
+  `🚨 FIT F2 — a 375 px el catálogo no se desborda de lado (${desborde_f2.ancho} vs ${desborde_f2.ventana})`);
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */
