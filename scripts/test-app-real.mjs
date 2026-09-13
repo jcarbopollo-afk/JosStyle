@@ -2939,9 +2939,12 @@ const hoy_pr4 = await esperarTexto(/Tarea guardada antes/i);
 ok(/Tarea guardada antes/i.test(hoy_pr4),
   '🚨 LA TAREA VIEJA SALE EN HOY: es el fallo que arregla la E3 F26, y solo se ve abriendo la aplicación');
 
-await pulsar('Vida');
-await pulsar('Productividad');
-ok(await pulsar('Abrir Tareas'), 'Tareas se abre');
+/* ⚠️ DIST F1 — Tareas se abre desde Gestión → Organización. Lo que esta
+   sección comprueba —el fallo de las dos fechas que arregló la E3 F26— es
+   exactamente el mismo: la tarea vieja tiene que salir. */
+await pulsar('Gestión');
+await pulsar('Organización');
+ok(await pulsar('Tareas'), 'Tareas se abre');
 
 const inicio_pr4 = await esperarTexto(/Organiza lo que tienes que hacer/i);
 ok(/Organiza lo que tienes que hacer/i.test(inicio_pr4), '⚠️ con la frase del enunciado');
