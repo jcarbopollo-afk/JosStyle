@@ -488,7 +488,7 @@ desglose real son 110?
 
 ---
 
-### C-31 — ⏸ PENDIENTE DE JOSUÉ · Productividad no se puede repartir entre Vida y Gestión
+### C-31 — 🔓 RESUELTA (DIST F1, v3.77.0) · Productividad no se puede repartir entre Vida y Gestión
 
 **Dónde:** su encargo de la reorganización de áreas (2026-09-12), puntos 1 y 2.
 
@@ -522,6 +522,31 @@ mueve a medias.
    rediseñar**.
 
 **No bloquea nada** (regla 49): se anota, se sigue con el resto y se le pregunta al cerrar el turno.
+
+---
+
+🔓 **RESUELTA POR JOSUÉ (2026-09-13, encargo «DISTRIBUCIÓN DE TODO» → DIST F1).** No eligió ninguna
+de las tres salidas que se le ofrecían: dio **una cuarta, mejor**, y lo hizo con precisión.
+
+> *"Organización — Crear este módulo como agrupador de: Tareas, Calendario, Horario. […] **Tareas
+> debe quedar dentro de Organización, no dentro de Productividad**."*
+
+> *"Productividad debe quedar preparada para contener funcionalidades como: Hábitos, Rachas,
+> Objetivos, Pomodoro, y otras herramientas relacionadas con productividad. **No elimines las
+> funcionalidades existentes; reorganízalas**."*
+
+**Por qué funciona y las tres salidas de arriba no:** el problema era que repartir las mini-apps
+exigía partir el lanzador. Él saca **una sola** —Tareas— y la mete en un **agrupador nuevo**
+(Organización), que es una pantalla más, no un trozo del lanzador. Productividad conserva las otras
+cinco **y gana Rachas**, así que sigue siendo seis y **no se parte nada**.
+
+⚠️ **Y no había que adivinarlo.** Si en NAV F1 se hubiera elegido por él —mover Productividad entera
+a Gestión, que era la opción 1 y parecía la más razonable— hoy habría que deshacerlo: Josué la quería
+en Vida. La regla 49 hizo su trabajo.
+
+**Qué se construyó:** `src/lib/agrupadores.js` declara Mente y Organización; `TareasTab` se
+**exporta** desde `ProductivityView` y la pinta Organización —no se ha reescrito—; y Rachas entra en
+`MINI_APPS_PR` con su `RachasView` de siempre. Ni un dato se movió.
 
 ---
 

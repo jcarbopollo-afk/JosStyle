@@ -1,5 +1,64 @@
 # CHANGELOG.md
 
+## v3.78.0 — DIST F2: la auditoría de la reorganización
+
+> *"Quiero que hagas una auditoría completa de lo realizado. No cambies la arquitectura definida en
+> la Fase 1. No añadas nuevas funcionalidades. El objetivo es detectar y corregir errores, enlaces
+> rotos, duplicados o funcionalidades que hayan quedado mal conectadas."*
+
+🚨 **Así que esta fase no construye nada: compara.** Y compara contra algo que no estaba escrito en
+ninguna parte — **el árbol que Josué pasó, literal**, ahora en `ARBOL_DIST`.
+
+### Por qué hacía falta, teniendo ya un comprobador de navegación
+
+`comprobar-navegacion.mjs` vigila que la navegación sea coherente **consigo misma**: que ningún
+módulo quede huérfano, que ningún `case` sea inalcanzable, que todo sea buscable. Eso es valioso y
+**seguiría en verde si mañana alguien moviera Armario a Vida**: sería perfectamente coherente y no
+sería lo que Josué pidió. Lo que faltaba era **el encargo escrito en alguna parte**, y eso es lo que
+esta fase añade.
+
+### Las seis casillas, todas calculadas
+
+| | |
+|---|---|
+| **arbol** | La navegación es exactamente la del encargo |
+| **reubicados** | Lo reubicado está donde él dijo, y en UN solo sitio |
+| **vuelta** | Ninguna ruta anidada es un callejón sin salida |
+| **claves** | Ni una de las 20 claves de `app_data` ha cambiado de nombre |
+| **nombres** | No queda ningún nombre retirado en pantalla |
+| **iconos** | Ningún icono se repite entre conceptos distintos |
+
+⚠️ **Cada una se prueba DOS veces: verde con la aplicación de verdad y ROJA con un caso construido
+para romperla** — meter un módulo donde no toca, devolver el área «Además», dejar Ajustes además
+dentro de un área, quitarle el área a un agrupador. *Una auditoría que no puede fallar no sirve*
+(EH F42), y una que **parece** vigilar algo es peor, porque nadie vuelve a mirarla.
+
+### Y una sección del recorrido a 375 px, que es lo único que no cubría nada
+
+Josué: *"La cuadrícula de módulos debe mantenerse limpia, no desbordarse"* y *"No conviertas las
+nuevas agrupaciones en callejones sin salida"*. Las pruebas de Node leen los catálogos y demuestran
+que la navegación está bien **escrita**; esto demuestra que se puede **andar** por ella con el dedo:
+
+- Las cinco pestañas caben y **ninguna se corta** en el ancho de su iPhone.
+- Las tres cuadrículas de área no desbordan y sus tarjetas **miden igual**.
+- La jerarquía andada entera: Gestión → Organización → Horario → **volver a Organización** → volver
+  a Gestión. Y lo mismo en Mente.
+- Ajustes conserva sus **seis categorías**.
+- Y un barrido: no se lee *«Estilo de hombre»*, *«Mi salud»* ni *«Números»* en ninguna pantalla
+  visitada.
+
+### Lo que la auditoría NO puede comprobar, declarado
+
+En `FUERA_DEL_ALCANCE`, con su motivo y **quién decide**: los datos reales de Supabase (R1), cómo se
+ve en un iPhone de verdad —Chromium da el ancho, no Safari ni su letra del sistema— y el botón atrás
+del móvil, pendiente desde la E3 F22. *Un informe que solo enumera lo verde miente por omisión*
+(E3 F46).
+
+- 🐛 **Y la decimoséptima vez de la lección de siempre, en mi propia comprobación:** la que exige que
+  el Dashboard ya no lleve el nombre escrito a mano **saltó con el código bien**, porque el
+  comentario que explica que el literal se quitó **contiene el literal**. Una prueba que busca si el
+  código HACE algo tiene que quitar los comentarios antes.
+
 ## v3.77.0 — DIST F1: la nueva arquitectura de navegación
 
 > *"La navegación principal debe quedar exactamente así: Pantalla principal, Bienestar, Vida,

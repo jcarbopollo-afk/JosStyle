@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.76.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.78.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **LA ENTREGA 3 ESTÁ CERRADA: 46 de 46** (ver `docs/11_ENTREGA3_ORDEN.md`). Los siete bloques
@@ -240,7 +240,8 @@ prompts** de una vez y dijo que se podían dividir; la división es ésta:
 
 🏁 **Las cuatro están hechas**, y Josué ya **ejecutó el bloque de SQL del bucket `relacion`**
 (*"ya lo he ejecutado, salió success"*, 2026-09-12), así que el Álbum sube fotos de verdad. ⏸ Lo
-único que sigue en sus manos de esta tanda es contestar **C-31**.
+único que quedaba en sus manos de esta tanda era **C-31**, y la contestó él mismo en DIST F1
+(ver más abajo).
 
 🗂️ **Y después pasó dos prompts más, divididos en GE F1 y GE F2:**
 
@@ -259,10 +260,32 @@ prompts** de una vez y dijo que se podían dividir; la división es ésta:
 ⚠️ **Él mismo separó las dos:** *"NO modifiques todavía el problema interno de solapamientos del
 Horario. Ese será la Fase 2."* 🏁 **Las dos están hechas y en `main`.**
 
-⚠️ **Y una contradicción suya que necesita respuesta, C-31 en `docs/03`:** pide **Tareas y Rutinas
-en Gestión** y **Objetivos y Hábitos en Vida**, pero las cuatro son **mini-apps de Productividad**,
-que es UNA pantalla (E3 F23-F29). Repartirlas exigiría partir ese lanzador — justo lo que su encargo
-prohíbe. **Productividad se queda entera en Vida** hasta que él conteste. No bloquea nada (regla 49).
+🧭 **Y después, LA REORGANIZACIÓN DE TODA LA NAVEGACIÓN, en dos prompts que él mismo separó:**
+
+| | Fase | Estado |
+|---|---|---|
+| **DIST F1** | La nueva arquitectura: **Inicio · Bienestar · Vida · Gestión · Ajustes** | ✅ **v3.77.0** |
+| **DIST F2** | La **auditoría** de esa reorganización | ✅ **v3.78.0** |
+
+Josué pasó el árbol entero escrito. **«Además» desaparece como categoría** y **Ajustes deja de ser
+un módulo dentro de un área para ser la quinta pestaña** (siguen siendo cinco, regla 10):
+
+| Área | Módulos |
+|---|---|
+| **Bienestar** | Salud física · Sueño · Nutrición · Entrenamiento · Imagen personal |
+| **Vida** | Estudios · Productividad · **Mente** · Biblioteca · Diario |
+| **Gestión** | **Organización** · Economía · Negocio · Armario · **Progreso** |
+
+**Mente** agrupa Fe, Relación y Bienestar digital. **Organización** agrupa Tareas, Calendario y
+Horario. **Progreso** es el «Números» de NAV F1 renombrado. Y **Rachas** deja de ser módulo suelto:
+la absorbe Productividad.
+
+🔓 **Y ESO CIERRA LA C-31, que llevaba abierta desde el 2026-09-12.** Él pedía Tareas y Rutinas en
+Gestión y Objetivos y Hábitos en Vida, y las cuatro eran mini-apps de Productividad —UNA pantalla
+(E3 F23-F29)—, así que repartirlas exigía partir ese lanzador, justo lo que su encargo prohibía. **Lo
+resolvió él mismo y con precisión:** *"Tareas debe quedar dentro de Organización, no dentro de
+Productividad"*, y Productividad conserva Hábitos, Rachas, Objetivos, Pomodoro, Metas y Rutinas. **No
+había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
