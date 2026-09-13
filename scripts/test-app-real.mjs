@@ -4905,10 +4905,21 @@ ok(typeof iconoHabitos_f4 === 'string' && /arrow-up-right/i.test(iconoHabitos_f4
    para el dedo**. Su queja era literalmente que no había forma de eliminar una
    tarea pendiente, y el botón estaba: escondido en el bloque de las tareas CON
    hora. */
-const HOY_GE1 = new Date().toLocaleDateString('sv-SE');
+/* 🐛 **UNA FECHA CAPTURADA UNA VEZ CADUCA A MEDIANOCHE, Y ESTE RECORRIDO DURA
+   QUINCE MINUTOS.** `HOY_GE1` se calculaba al llegar aquí y se reutilizaba en
+   los dos sembrados; la pasada del 2026-09-12 cruzó las 00:00 justo en esta
+   sección, así que la tarea se sembró con el día de ayer, la aplicación la vio
+   **vencida** y saltaron seis comprobaciones **con el código bien**. Y el rojo
+   no se podía diagnosticar: «Para hoy» la enseñaba, que es exactamente lo que
+   GE F1 construyó —una tarea vencida es la única que va ahí—, así que parecía
+   que la fase estaba rota. Se recalcula en cada sembrado, y al final se dice si
+   el día ha cambiado. Cualquier sección que siembre una fecha tiene el mismo
+   riesgo: **la fecha se pide justo antes de sembrarla, nunca al principio.** */
+const hoyGE1 = () => new Date().toLocaleDateString('sv-SE');
+const DIA_AL_EMPEZAR_GE1 = hoyGE1();
 almacen.productividad = {
   tareas: [
-    { id: 'ge-1', texto: 'Tarea de hoy sin hora', fecha: HOY_GE1, hecha: false, prioridad: 'media' },
+    { id: 'ge-1', texto: 'Tarea de hoy sin hora', fecha: hoyGE1(), hecha: false, prioridad: 'media' },
   ],
   habitos: [], rutinas: [], rutinaEjecuciones: [], metas: [], pomodoros: {}, pomodoroSesiones: [], apuntes: [],
 };
@@ -4963,7 +4974,7 @@ ok(agenda_ge1.length > 0, '⚠️ …y sigue funcionando: es lo PRÓXIMO, no una
 
 /* ── 9 · Productividad ya no duplica las tareas de hoy ───────────────────── */
 almacen.productividad = {
-  tareas: [{ id: 'ge-2', texto: 'Otra tarea de hoy', fecha: HOY_GE1, hecha: false, prioridad: 'alta' }],
+  tareas: [{ id: 'ge-2', texto: 'Otra tarea de hoy', fecha: hoyGE1(), hecha: false, prioridad: 'alta' }],
   habitos: [], rutinas: [], rutinaEjecuciones: [], metas: [], pomodoros: {}, pomodoroSesiones: [], apuntes: [],
 };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
@@ -4981,6 +4992,12 @@ ok(await pulsar('Tareas'), 'se abre la mini-app Tareas');
 const tareas_ge1 = await esperarTexto(/Otra tarea de hoy/i);
 ok(/Otra tarea de hoy/i.test(tareas_ge1),
   '🚨 …porque la tarea NO se ha tocado: sigue en `productividad.tareas`, que es la única fuente');
+
+/* ⚠️ Y lo último de la sección: que el día siga siendo el mismo. Si ha cambiado,
+   todo lo de arriba ha medido un día distinto del que sembró, y eso se dice aquí
+   en vez de dejar seis rojos sin explicación. */
+ok(DIA_AL_EMPEZAR_GE1 === hoyGE1(),
+  `⚠️ …y el día no ha cambiado a mitad de la sección (empezó el ${DIA_AL_EMPEZAR_GE1}): si cambia, lo de arriba mide otro día`);
 
 /* ── 10 · Nutrición: los tres macros en una fila ─────────────────────────── */
 await pulsar('Bienestar');
