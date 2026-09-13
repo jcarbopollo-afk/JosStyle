@@ -6129,7 +6129,18 @@ const vueltaF3 = await esperarTexto(/Tu Plan/i);
 ok(/Tus plantillas/i.test(vueltaF3), '🚨 FIT F3 — y hay una sección «Tus plantillas»');
 ok(/Push/i.test(vueltaF3), '…con el entrenamiento guardado dentro');
 ok(/2 ejercicios/i.test(vueltaF3), '…con lo que tiene dentro');
-ok(await pulsar('Editar Push'), '🚨 FIT F3 — y se puede volver a abrir para editarla (apartado 24)');
+/* ⚠️ **El camino para reabrirla lo cambió la FIT F4**, y esta comprobación se
+   quedó vieja con el código bien: la tarjeta del área ya no abre el
+   constructor, abre «Tus plantillas» —que es donde vive la gestión—, y desde
+   ahí se edita. Es la lección de la E3 F34: al cerrar una fase que cambia una
+   navegación, buscar las comprobaciones de la anterior. */
+const editarPush_f3 = async () => {
+  if (!await pulsar('Gestionarlas')) return false;
+  await esperarTexto(/plantilla/i);
+  if (!await pulsar('Acciones de Push')) return false;
+  return pulsar('Editar');
+};
+ok(await editarPush_f3(), '🚨 FIT F3 — y se puede volver a abrir para editarla (apartado 24)');
 const reabierta_f3 = await esperarTexto(/A[ñn]adir ejercicio/i);
 ok(/Press de banca/i.test(reabierta_f3), '…con sus ejercicios dentro');
 ok(/4 × /.test(reabierta_f3),
@@ -6142,7 +6153,7 @@ ok(/Tu Plan/i.test(await ver()),
   '🚨 FIT F3 — y NO pregunta nada: *"No muestres esta alerta si no existen cambios"* (apartado 26)');
 
 /* Y a 375 px el constructor no se desborda (apartado 29 y la lección de GE F1). */
-ok(await pulsar('Editar Push'), 'se abre otra vez para medirla');
+ok(await editarPush_f3(), 'se abre otra vez para medirla');
 await esperarTexto(/A[ñn]adir ejercicio/i);
 const desborde_f3 = await page.evaluate(() => ({
   ancho: document.documentElement.scrollWidth, ventana: window.innerWidth,
