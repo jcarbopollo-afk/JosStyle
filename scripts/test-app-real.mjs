@@ -5696,9 +5696,49 @@ ok(/Inicio/.test(barra_nv.join(' ')) && /Ajustes/.test(barra_nv.join(' ')),
   '…y son las mismas de siempre: no se ha tocado la navegación inferior');
 
 /* ── 6 · Desde Inicio a un módulo CUALQUIERA, sin condición para él ───────── */
+/* 🐛 ⚠️ **UN ACORDEÓN CERRADO SIGUE TENIENDO SU TEXTO EN LA PÁGINA, Y ESO DIO UN
+   ROJO FALSO.** Esta comprobación pulsaba `'Nutrición'` con `pulsar`, que cuando
+   no hay coincidencia exacta se queda con **el primer botón que CONTENGA la
+   palabra**. Y el primero no es la tarjeta del módulo: es **la tarjeta de
+   puntuación de Inicio**, que está más arriba y que en cuanto hay datos se
+   convierte en un botón con el desglose dentro —«Sueño», «Entrenamiento»,
+   «Nutrición», «Tareas»…, las `etiqueta` de `puntuacion.js`—. Ese desglose se
+   pliega con `grid-template-rows: 0fr` y `overflow: hidden`, **no con
+   `display: none`**, así que sigue contando para `innerText` aunque no se vea.
+   En una pasada limpia la tarjeta no tiene datos, no es un botón y no pasa
+   nada; en la pasada completa sí, y el resultado era el peor posible: `pulsar`
+   devolvía `true` habiendo pulsado **otra cosa** —abrir y cerrar el acordeón— y
+   la barra de atrás no aparecía nunca.
+
+   ⚠️ La lección va más allá de esta línea: **buscar por texto en Inicio
+   encuentra el desglose de la puntuación antes que cualquier tarjeta**. Toda
+   comprobación futura que abra un módulo desde Inicio tiene el mismo problema.
+
+   No se afloja la comprobación: se pulsa **lo que se quería pulsar**. La
+   tarjeta de un módulo del Inicio tiene el nombre en su PRIMERA línea, así que
+   se busca por ahí. Y antes se exige estar en Inicio **de verdad** —ni cabecera
+   de área ni barra de atrás—, para que un clic sobre la pantalla anterior no
+   pueda colarse. */
+const pulsarTarjetaInicio = async (titulo, tope = 6000) => {
+  const hasta = Date.now() + tope;
+  do {
+    const hecho = await page.evaluate((t) => {
+      const destino = [...document.querySelectorAll('button')]
+        .find((b) => (b.innerText || '').split('\n')[0].trim() === t);
+      if (!destino) return false;
+      destino.click();
+      return true;
+    }, titulo);
+    if (hecho) { await page.waitForTimeout(600); return true; }
+    await page.waitForTimeout(200);
+  } while (Date.now() < hasta);
+  return false;
+};
+
 ok(await pulsar('Inicio'), 'se vuelve a Inicio');
-await esperarTexto(/hoy/i);
-ok(await pulsar('Nutrición'), 'se abre Nutrición desde Inicio');
+const enInicio_nv = await sinRastro();
+ok(!enInicio_nv.hub && !enInicio_nv.back, 'se está en Inicio de verdad antes de abrir nada');
+ok(await pulsarTarjetaInicio('Nutrición'), 'se abre Nutrición desde su tarjeta de Inicio');
 /* ⚠️ Aquí NO vale `esperarTexto(/nutric/i)`: Inicio YA dice «Nutrición» en su tarjeta, así que
    encontraría el texto sin haber navegado y devolvería al instante. Se espera a la barra de atrás,
    que solo existe dentro de un módulo — `rotuloAtras` la sondea hasta que aparece. */
