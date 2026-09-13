@@ -5605,10 +5605,24 @@ await page.setViewportSize({ width: 375, height: 667 });
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 
-const rotuloAtras = async () => page.evaluate(() => {
-  const b = document.querySelector('button.back-bar');
-  return b ? b.innerText.trim() : null;
-});
+/* 🐛 **ESPERA, NO MIRA UNA VEZ.** La primera versión leía la barra de atrás justo después de un
+   `waitForTimeout` fijo, y bajo carga —con veinticinco minutos de recorrido por delante— llegaba
+   antes de que la pantalla se pintara: devolvía `null` con la aplicación perfecta. Es la lección de
+   EH F51 y EH F57, que ya costó dos cascadas de rojos falsos: **nunca esperar milisegundos fijos a
+   que aparezca algo; esperar a que aparezca.** Si de verdad no está, sigue devolviendo `null` y la
+   comprobación falla igual. */
+const rotuloAtras = async (tope = 5000) => {
+  const hasta = Date.now() + tope;
+  do {
+    const t = await page.evaluate(() => {
+      const b = document.querySelector('button.back-bar');
+      return b ? b.innerText.trim() : null;
+    });
+    if (t) return t;
+    await page.waitForTimeout(120);
+  } while (Date.now() < hasta);
+  return null;
+};
 
 /* ── 1 · Desde INICIO: el fallo que él reportó ─────────────────────────────── */
 ok(await pulsar('Economía'), 'NAVO F1 — se abre Economía desde Inicio');
@@ -5619,14 +5633,25 @@ ok(/inicio/i.test(desdeInicio_nv || ''),
   `🚨 NAVO F1 — abierta desde INICIO, atrás dice «Inicio» (decía «Gestión»): «${desdeInicio_nv}»`);
 ok(await pulsar(desdeInicio_nv), '…y se pulsa');
 await esperarTexto(/hoy|inicio/i);
-await page.waitForTimeout(500);
 /* ⚠️ Se comprueba con la ESTRUCTURA, no con una palabra suelta: un hub siempre pinta su cabecera
    pegada y un módulo siempre pinta su barra de atrás. Buscar «Área» en el texto era frágil —
-   cualquier pantalla podría llegar a decir esa palabra por otro motivo. */
-const dondeAcabo_nv = await page.evaluate(() => ({
-  hub: !!document.querySelector('.hub-sticky'),
-  back: !!document.querySelector('button.back-bar'),
-}));
+   cualquier pantalla podría llegar a decir esa palabra por otro motivo.
+   ⚠️ Y se ESPERA a que las dos desaparezcan en vez de mirar una vez tras un retardo fijo: bajo
+   carga, mirar pronto da un rojo falso (EH F51). */
+const sinRastro = async (tope = 5000) => {
+  const hasta = Date.now() + tope;
+  let ultimo = { hub: true, back: true };
+  do {
+    ultimo = await page.evaluate(() => ({
+      hub: !!document.querySelector('.hub-sticky'),
+      back: !!document.querySelector('button.back-bar'),
+    }));
+    if (!ultimo.hub && !ultimo.back) return ultimo;
+    await page.waitForTimeout(120);
+  } while (Date.now() < hasta);
+  return ultimo;
+};
+const dondeAcabo_nv = await sinRastro();
 ok(!dondeAcabo_nv.hub && !dondeAcabo_nv.back,
   '🚨 …y acaba en Inicio DE VERDAD: ni cabecera de área ni barra de atrás');
 
@@ -5674,8 +5699,9 @@ ok(/Inicio/.test(barra_nv.join(' ')) && /Ajustes/.test(barra_nv.join(' ')),
 ok(await pulsar('Inicio'), 'se vuelve a Inicio');
 await esperarTexto(/hoy/i);
 ok(await pulsar('Nutrición'), 'se abre Nutrición desde Inicio');
-await esperarTexto(/nutric/i);
-await page.waitForTimeout(500);
+/* ⚠️ Aquí NO vale `esperarTexto(/nutric/i)`: Inicio YA dice «Nutrición» en su tarjeta, así que
+   encontraría el texto sin haber navegado y devolvería al instante. Se espera a la barra de atrás,
+   que solo existe dentro de un módulo — `rotuloAtras` la sondea hasta que aparece. */
 const nutri_nv = await rotuloAtras();
 ok(/inicio/i.test(nutri_nv || ''),
   `🚨 NAVO F1 — y otro módulo distinto hace lo mismo sin una regla propia: «${nutri_nv}»`);
