@@ -161,6 +161,11 @@ import RelationView, { AlbumTab } from '../src/views/RelationView.jsx';
    antes de esta fase**, sin la clave `fitness`, que es como lo tiene quien ya
    usaba la aplicación. */
 import FitnessView, { AreaRangos, AreaProgreso } from '../src/views/FitnessView.jsx';
+/* FIT F2 — el catálogo de ejercicios y su detalle. ⚠️ El detalle va APARTE
+   porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
+   Relación (NAV F3), y sin estos casos no lo probaría nadie. */
+import EjerciciosView, { DetalleEjercicio, TarjetaEjercicio } from '../src/views/EjerciciosView.jsx';
+import { CATALOGO_EJERCICIOS } from '../src/lib/ejercicios.js';
 import WellbeingView from '../src/views/WellbeingView.jsx';
 import HealthView from '../src/views/HealthView.jsx';
 import NutritionView from '../src/views/NutritionView.jsx';
@@ -2903,6 +2908,20 @@ const CASOS = [
   ['AreaRangos', AreaRangos, () => ({ rangos: [], accent })],
   ['AreaRangos', AreaRangos, (e) => ({ rangos: (e.fitness || {}).rangos || [], accent })],
   ['AreaProgreso', AreaProgreso, () => ({ fotos: [], accent, onIr: noop })],
+  /* FIT F2 — el catálogo entero, su detalle y una tarjeta suelta. El caso que
+     más importa es el ejercicio SIN instrucciones ni progresiones: la pantalla
+     no puede pintar secciones vacías. */
+  ['EjerciciosView', EjerciciosView, () => ({ propios: [], accent, onVolver: noop })],
+  ['DetalleEjercicio', DetalleEjercicio, () => ({
+    ejercicio: CATALOGO_EJERCICIOS.find((e) => e.id === 'muscle-up'), accent, onVolver: noop, onAbrirOtro: noop,
+  })],
+  ['DetalleEjercicio', DetalleEjercicio, () => ({
+    ejercicio: CATALOGO_EJERCICIOS.find((e) => e.id === 'elevacion-talones'), accent,
+  })],
+  ['DetalleEjercicio', DetalleEjercicio, () => ({ ejercicio: null, accent })],
+  ['TarjetaEjercicio', TarjetaEjercicio, () => ({
+    ejercicio: CATALOGO_EJERCICIOS[0], accent, onAbrir: noop,
+  })],
   ['AreaProgreso', AreaProgreso, () => ({
     fotos: [{ id: 'f1', path: 'x', fecha: HOY, nota: '' }], accent, onIr: noop,
   })],

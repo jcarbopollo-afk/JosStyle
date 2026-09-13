@@ -892,6 +892,15 @@ else
   fallo "Falla la fundación de Fitness"; grep '✗' /tmp/jc_fitness.log
 fi
 
+# FIT F2 — el catálogo maestro de ejercicios. Las cuatro validaciones del
+# apartado 29 que no se pueden mirar a ojo con cien fichas: ids únicos,
+# porcentajes que suman 100, referencias que existen y ni un enlace inventado.
+if node --import ./scripts/resolver-vite.mjs scripts/test-ejercicios.mjs >/tmp/jc_ejercicios.log 2>&1; then
+  ok "Catálogo maestro de ejercicios (FIT F2) — $(grep -c '✓' /tmp/jc_ejercicios.log) comprobaciones"
+else
+  fallo "Falla el catálogo de ejercicios"; grep '✗' /tmp/jc_ejercicios.log
+fi
+
 # SC F1 — scroll, cabeceras fijas y el acordeón que dejaba un hueco en el iPhone.
 # Los tres los reportó Josué usando la aplicación, y los tres tenían una causa
 # real: la cabecera no era `sticky`, la banda no existía y al elemento de rejilla
