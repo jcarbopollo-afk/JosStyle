@@ -803,11 +803,16 @@ else
 fi
 
 # --- Regla 39: exactamente 5 pestañas en la barra inferior ---
+# 🚨 DIST F1 — el reparto cambió, la regla NO. Antes eran Inicio + 4 áreas; ahora
+# son Inicio + 3 áreas + Ajustes, porque Josué eliminó «Además» como categoría y
+# puso Ajustes directamente en la barra. Lo que la regla 10 protege es que sean
+# CINCO, no que haya cuatro áreas: se cuenta lo que de verdad importa.
 AREAS=$(grep -c "id: 'area-" src/App.jsx || echo 0)
-if [ "$AREAS" -eq 4 ]; then
-  ok "4 áreas + Inicio = 5 pestañas en la barra inferior"
+PESTANAS=$((AREAS + 2))   # + Inicio + Ajustes
+if [ "$PESTANAS" -eq 5 ]; then
+  ok "Inicio + $AREAS áreas + Ajustes = 5 pestañas en la barra inferior"
 else
-  fallo "AREAS_NAV tiene $AREAS áreas (deberían ser 4, para 5 pestañas con Inicio)"
+  fallo "La barra inferior tendría $PESTANAS pestañas ($AREAS áreas + Inicio + Ajustes); deben ser 5"
 fi
 
 # --- Coherencia: todo ajuste de Apariencia que se guarda como atributo data-* del <html>

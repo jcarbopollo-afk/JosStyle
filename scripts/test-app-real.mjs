@@ -1484,8 +1484,7 @@ await pulsar('Volver');
 await page.waitForTimeout(400);
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Además');
-await page.waitForTimeout(500);
+// DIST F1 — Ajustes es la quinta pestaña: se llega de un toque.
 await pulsar('Ajustes');
 await page.waitForTimeout(800);
 // El botón vive dentro de la categoría Seguridad, no en la portada de Ajustes.
@@ -1763,6 +1762,8 @@ almacen.productividad = {
 };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await pulsar('Gestión');
+// DIST F1 — Calendario vive dentro de Organización (Gestión → Organización → Calendario).
+await pulsar('Organización');
 await pulsar('Calendario');
 await esperarTexto(/Mes/);
 ok(await pulsar('Día'), '🚨 E3 F7 — el Calendario tiene un modo Día');
@@ -1793,6 +1794,8 @@ almacen.productividad = {
 };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await pulsar('Gestión');
+// DIST F1 — Calendario vive dentro de Organización (Gestión → Organización → Calendario).
+await pulsar('Organización');
 await pulsar('Calendario');
 await esperarTexto(/Mes/);
 ok(await pulsar('📊'), '🚨 E3 F13 — el Calendario tiene su acceso a Estadísticas (apartado 1)');
@@ -1815,7 +1818,7 @@ ok(!/deberías|vas bien|mejor que/i.test(stats_e3f13),
 
    ⚠️ Sufijo `_e3f12`, y `/i` en los rótulos. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
-await pulsar('Además');
+// DIST F1 — Ajustes es la quinta pestaña: se llega de un toque.
 await pulsar('Ajustes');
 await esperarTexto(/Integraciones|Apariencia/i);
 ok(await pulsar('Integraciones'), '🚨 E3 F12 — Ajustes tiene su apartado de Integraciones (apartado 1)');
@@ -1842,7 +1845,7 @@ ok(!/OAuth|token|API/i.test(integ_e3f12.split('Calendarios')[1] || ''),
 
    ⚠️ Sufijo `_e3f11`, y `/i` en los rótulos. */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
-await pulsar('Además');
+// DIST F1 — Ajustes es la quinta pestaña: se llega de un toque.
 await pulsar('Ajustes');
 await esperarTexto(/Notificaciones|Apariencia/i);
 ok(await pulsar('Notificaciones'), '🚨 E3 F11 — Ajustes tiene su apartado de Notificaciones (apartado 3)');
@@ -1874,6 +1877,8 @@ almacen.productividad = {
 };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await pulsar('Gestión');
+// DIST F1 — Calendario vive dentro de Organización (Gestión → Organización → Calendario).
+await pulsar('Organización');
 await pulsar('Calendario');
 await esperarTexto(/Mes/);
 
@@ -1962,6 +1967,8 @@ almacen.productividad = {
 almacen.calendario = { eventos: [] };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await pulsar('Gestión');
+// DIST F1 — Calendario vive dentro de Organización (Gestión → Organización → Calendario).
+await pulsar('Organización');
 await pulsar('Calendario');
 const mes_e3f8 = await esperarTexto(/Repasar Química/);
 
@@ -2053,6 +2060,8 @@ almacen.horarioTop = {
 };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await pulsar('Gestión');
+// DIST F1 — Horario vive dentro de Organización (Gestión → Organización → Horario).
+await pulsar('Organización');
 await pulsar('Horario');
 const hor_e3f5 = await esperarTexto(/Bachillerato/);
 
@@ -2703,9 +2712,14 @@ ok(await pulsar('Productividad'), 'Productividad se abre');
 const lanzador_pr1 = await esperarTexto(/Construye constancia cada día/);
 ok(/Construye constancia cada día/.test(lanzador_pr1),
   '🚨 Y ES UN LANZADOR: lo primero que se ve son las seis mini-apps, no una lista');
-for (const nombre of ['Hábitos', 'Pomodoro', 'Tareas', 'Metas', 'Objetivos', 'Rutinas']) {
+/* 🔓 DIST F1 — siguen siendo SEIS, pero **Tareas salió a Organización y Rachas
+   entró**. Esta comprobación era de la E3 F23 y no se borra: se le da la vuelta,
+   porque lo que vigila —que el lanzador enseñe sus mini-apps— sigue importando. */
+for (const nombre of ['Hábitos', 'Pomodoro', 'Rachas', 'Metas', 'Objetivos', 'Rutinas']) {
   ok(new RegExp(nombre, 'i').test(lanzador_pr1), `⚠️ y ${nombre} es una de ellas`);
 }
+ok(!/\bTareas\b/i.test(lanzador_pr1),
+  '🚨 DIST F1 — y Tareas YA NO está en Productividad: su sitio es Organización');
 ok(/Concéntrate sin distracciones/.test(lanzador_pr1) && /Define hacia dónde quieres avanzar/.test(lanzador_pr1),
   '⚠️ cada una con la descripción del enunciado');
 /* Desde la E3 F29 cada cuadradito habla el idioma de SU mini-app —"0/1 hoy",
@@ -4607,7 +4621,7 @@ ok(/Bu[eé]n[oa]s\s+(d[ií]as|tardes|noches), Josué/i.test(hoyAntes_fp),
    detrás, y dos de ellas hasta salieron VERDES por casualidad —«las iniciales
    desaparecen» se cumple trivialmente en una pantalla donde nunca hubo
    iniciales—. Un rojo en cascada esconde qué se está probando de verdad. */
-await pulsar('Además');
+// DIST F1 — Ajustes es la quinta pestaña: se llega de un toque.
 ok(await pulsar('Ajustes'), 'se abre Ajustes');
 await esperarTexto(/Apariencia/i);
 ok(await pulsar('Perfil'), 'y la categoría Perfil');
@@ -4668,7 +4682,7 @@ ok(pintada.ok, '🚨 Y la foto se PINTA en un <img>, no se queda solo en el dato
 /* ── 🚨 LO QUE MÁS PIDIÓ: que siga ahí después de recargar ─────────────────── */
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
-await pulsar('Además');
+// DIST F1 — Ajustes es la quinta pestaña: se llega de un toque.
 ok(await pulsar('Ajustes'), 'se recarga la aplicación entera y se vuelve a Ajustes');
 await esperarTexto(/Apariencia/i);
 ok(await pulsar('Perfil'), '…y a Perfil');
@@ -4707,7 +4721,7 @@ ok(/Bu[eé]n[oa]s\s+(d[ií]as|tardes|noches), Jos\b/i.test(hoyConMostrado),
 ok(!/, Josué/.test(hoyConMostrado), '…y ya no usa el nombre largo');
 
 /* ── Quitar la foto ───────────────────────────────────────────────────────── */
-await pulsar('Además');
+// DIST F1 — Ajustes es la quinta pestaña: se llega de un toque.
 ok(await pulsar('Ajustes'), 'se vuelve a Ajustes');
 await esperarTexto(/Apariencia/i);
 ok(await pulsar('Perfil'), 'y a Perfil');
@@ -4752,63 +4766,91 @@ ok(/Tema|Acento/i.test(apar), '…con su contenido de siempre, intacto');
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 
-/* ── Además, con sus cinco cosas y ni una más ─────────────────────────────── */
-ok(await pulsar('Además'), '🚨 NAV F1 — la pestaña se llama «Además»');
-const ademas_n1 = await esperarTexto(/Relaci[oó]n/i);
-for (const rotulo of [/Relaci[oó]n/i, /\bFe\b/, /Bienestar digital/i, /N[uú]meros/i, /Ajustes/i]) {
-  ok(rotulo.test(ademas_n1), `⚠️ Además tiene ${rotulo.source}`);
+/* ── DIST F1 · BIENESTAR: cinco módulos exactos ───────────────────────────── */
+ok(await pulsar('Bienestar'), '🚨 DIST F1 — se entra en BIENESTAR');
+const bien_n1 = await esperarTexto(/Salud f[ií]sica/i);
+for (const rotulo of [/Salud f[ií]sica/i, /Sue[nñ]o/i, /Nutrici[oó]n/i, /Entrenamiento/i, /Imagen personal/i]) {
+  ok(rotulo.test(bien_n1), `⚠️ Bienestar tiene ${rotulo.source}`);
 }
-// 🚨 Y el apartado de estilo YA NO está aquí: se ha mudado a Bienestar.
-ok(!/Imagen personal/i.test(ademas_n1),
-  '🚨 El apartado de estilo ya no está en Además — se ha mudado, no duplicado');
+// 🏷️ El módulo pasó de «Mi salud» a «Salud física», y su id NO se ha tocado.
+ok(!/Mi salud/i.test(bien_n1), '🏷️ …y ya no se llama «Mi salud»: es «Salud física»');
+// 🚨 Y no debe quedar ni una referencia visible al nombre viejo del apartado.
+ok(!/Estilo de hombre/i.test(bien_n1), '🚨 …ni «Estilo de hombre» por ninguna parte: es «Imagen personal»');
 
-/* ── Números: una puerta donde había tres ─────────────────────────────────── */
-ok(await pulsar('Números'), '🚨 se abre NÚMEROS');
-const num_n1 = await esperarTexto(/Estad[ií]sticas/i);
-for (const rotulo of [/Estad[ií]sticas/i, /Predicciones/i, /Logros/i]) {
-  ok(rotulo.test(num_n1), `⚠️ Números contiene ${rotulo.source}`);
+/* ── DIST F1 · VIDA: Mente entra, Rachas se va dentro de Productividad ────── */
+ok(await pulsar('Vida'), '🚨 se entra en VIDA');
+const vida_n1 = await esperarTexto(/Estudios/i);
+for (const rotulo of [/Estudios/i, /Productividad/i, /Mente/i, /Biblioteca/i, /Diario/i]) {
+  ok(rotulo.test(vida_n1), `⚠️ Vida tiene ${rotulo.source}`);
 }
+ok(!/Calendario/i.test(vida_n1) && !/Horario/i.test(vida_n1),
+  '⚠️ …y Calendario y Horario NO están en Vida: un módulo vive en un sitio, o se ve dos veces');
+ok(!/Rachas/i.test(vida_n1),
+  '🚨 …ni Rachas suelta: desde esta fase la absorbe Productividad');
 
-// 🚨 Y las tres ABREN DE VERDAD la pantalla de siempre, que es lo que ninguna
-// prueba de Node puede decir.
-ok(await pulsar('Logros'), 'se abre Logros desde dentro de Números');
-const logros_n1 = await esperarTexto(/Logros|Insignias|Mapa/i);
-ok(/Logros|Insignias|Mapa/i.test(logros_n1), '🚨 …y es la pantalla de Logros de siempre, no una copia');
-ok(await pulsar('Números'), 'y se vuelve a Números con su botón');
-await esperarTexto(/Predicciones/i);
+/* ── MENTE: agrupa las tres, y las abre de verdad ─────────────────────────── */
+ok(await pulsar('Mente'), '🚨 se abre MENTE');
+const mente_n1 = await esperarTexto(/Bienestar digital/i);
+for (const rotulo of [/\bFe\b/, /Relaci[oó]n/i, /Bienestar digital/i]) {
+  ok(rotulo.test(mente_n1), `⚠️ Mente contiene ${rotulo.source}`);
+}
+// 🚨 Y abre LA PANTALLA DE SIEMPRE, que es lo que ninguna prueba de Node dice.
+ok(await pulsar('Bienestar digital'), 'se abre Bienestar digital desde dentro de Mente');
+const bd_n1 = await esperarTexto(/pantalla|Tiempo|Concentraci/i);
+ok(/pantalla|Tiempo|Concentraci/i.test(bd_n1), '🚨 …y es la pantalla de siempre, no una copia');
+ok(await pulsar('Mente'), 'y se vuelve a Mente con su botón');
+await esperarTexto(/Relaci[oó]n/i);
 
-/* ── El apartado de estilo, ahora en Bienestar ────────────────────────────── */
-ok(await pulsar('Bienestar'), '🚨 se entra en el área BIENESTAR');
-const bien_n1 = await esperarTexto(/Mi salud/i);
-ok(/Imagen personal/i.test(bien_n1),
-  '🚨 NAV F1 — el apartado de estilo vive ahora en Bienestar');
-ok(/Mi salud/i.test(bien_n1) && /Sue[nñ]o/i.test(bien_n1) && /Nutrici[oó]n/i.test(bien_n1),
-  '⚠️ …sin haberse llevado por delante nada de lo que ya había ahí');
-
-/* ── Calendario y Horario, ahora en Gestión ───────────────────────────────── */
+/* ── DIST F1 · GESTIÓN: Organización y Progreso ───────────────────────────── */
 ok(await pulsar('Gestión'), '🚨 se entra en GESTIÓN');
 const ges_n1 = await esperarTexto(/Econom[ií]a/i);
-ok(/Calendario/i.test(ges_n1), '🚨 Calendario está en Gestión');
-ok(/Horario/i.test(ges_n1), '🚨 Horario está en Gestión');
+for (const rotulo of [/Organizaci[oó]n/i, /Econom[ií]a/i, /Negocio/i, /Armario/i, /Progreso/i]) {
+  ok(rotulo.test(ges_n1), `⚠️ Gestión tiene ${rotulo.source}`);
+}
+ok(!/N[uú]meros/i.test(ges_n1), '🏷️ …y ya no se llama «Números»: es «Progreso»');
 
-// 🚨 Y lo que más importa: **el dato sigue ahí**. Mover un módulo de área es
-// navegación; si esta fase hubiera tocado una clave, lo guardado se habría
-// quedado huérfano.
+/* ── ORGANIZACIÓN: Tareas, Calendario y Horario ───────────────────────────── */
+ok(await pulsar('Organización'), '🚨 se abre ORGANIZACIÓN');
+const org_n1 = await esperarTexto(/Calendario/i);
+for (const rotulo of [/Tareas/i, /Calendario/i, /Horario/i]) {
+  ok(rotulo.test(org_n1), `⚠️ Organización contiene ${rotulo.source}`);
+}
+/* 🚨 Y lo que más importa: **el dato sigue ahí**. Mover un módulo de sitio es
+   navegación; si esta fase hubiera tocado una clave, lo guardado se habría
+   quedado huérfano. */
 ok(await pulsar('Calendario'), 'se abre el Calendario desde su sitio nuevo');
 const cal_n1 = await esperarTexto(/HOY|Mes|Agenda/i);
 ok(/HOY|Mes|Agenda/i.test(cal_n1), '🚨 …y es el Calendario entero, con sus datos');
+/* ⚠️ Y se vuelve a Organización, no al área: la jerarquía que pidió Josué es
+   sección → módulo → submódulo, y no puede ser un callejón sin salida. */
+ok(await pulsar('Organización'), '⚠️ …y el volver devuelve a Organización, no a Gestión');
+await esperarTexto(/Horario/i);
 
-ok(await pulsar('Vida'), 'se entra en VIDA');
-const vida_n1 = await esperarTexto(/Diario|Biblioteca/i);
-ok(!/Calendario/i.test(vida_n1) && !/Horario/i.test(vida_n1),
-  '⚠️ …y Calendario y Horario NO siguen también en Vida: un módulo vive en un área, o se ve dos veces');
-ok(/Diario/i.test(vida_n1) && /Biblioteca/i.test(vida_n1) && /Rachas/i.test(vida_n1),
-  '⚠️ Vida conserva Diario, Biblioteca y Rachas');
+/* ── PROGRESO: el antiguo Números, con sus tres ───────────────────────────── */
+ok(await pulsar('Gestión'), 'se vuelve a Gestión');
+ok(await pulsar('Progreso'), '🚨 se abre PROGRESO');
+const num_n1 = await esperarTexto(/Estad[ií]sticas/i);
+for (const rotulo of [/Estad[ií]sticas/i, /Predicciones/i, /Logros/i]) {
+  ok(rotulo.test(num_n1), `⚠️ Progreso contiene ${rotulo.source}`);
+}
+ok(await pulsar('Logros'), 'se abre Logros desde dentro de Progreso');
+const logros_n1 = await esperarTexto(/Logros|Insignias|Mapa/i);
+ok(/Logros|Insignias|Mapa/i.test(logros_n1), '🚨 …y es la pantalla de Logros de siempre, no una copia');
+ok(await pulsar('Progreso'), 'y se vuelve a Progreso con su botón');
+await esperarTexto(/Predicciones/i);
 
-/* ── Ajustes sigue funcionando dentro de Además ───────────────────────────── */
-await pulsar('Además');
-await esperarTexto(/Ajustes/i);
-ok(await pulsar('Ajustes'), '🚨 Ajustes se abre desde Además');
+/* ── RACHAS, ahora dentro de Productividad ────────────────────────────────── */
+ok(await pulsar('Vida'), 'se vuelve a Vida');
+ok(await pulsar('Productividad'), 'se abre Productividad');
+const prod_n1 = await esperarTexto(/H[aá]bitos/i);
+ok(/Rachas/i.test(prod_n1), '🚨 DIST F1 — Rachas es ahora una mini-app de Productividad');
+ok(!/\bTareas\b/i.test(prod_n1), '🚨 …y Tareas ya NO está aquí: su sitio es Organización');
+ok(await pulsar('Rachas'), 'se abre Rachas desde dentro de Productividad');
+const rachas_n1 = await esperarTexto(/Racha|racha/);
+ok(/Racha|racha/.test(rachas_n1), '🚨 …y es la pantalla de Rachas de siempre, con sus datos');
+
+/* ── Ajustes, ahora como quinta pestaña ───────────────────────────────────── */
+ok(await pulsar('Ajustes'), '🚨 DIST F1 — Ajustes se abre directamente desde la barra');
 const aj_n1 = await esperarTexto(/Apariencia/i);
 ok(/Perfil/.test(aj_n1) && /Apariencia/.test(aj_n1) && /Preferencias generales/.test(aj_n1),
   '🚨 …y conserva TODAS sus categorías: mover no es recortar');
@@ -4834,9 +4876,12 @@ almacen.productividad = {
 };
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Vida');
-ok(await pulsar('Productividad'), 'se abre Productividad');
-ok(await pulsar('Tareas'), 'y la mini-app Tareas');
+/* DIST F1 — Tareas se abre desde Gestión → Organización, ya no desde
+   Productividad. La comprobación de borrar desde la fila (NAV F4) es la misma:
+   lo que ha cambiado es el camino, no la pantalla. */
+await pulsar('Gestión');
+ok(await pulsar('Organización'), 'se abre Organización');
+ok(await pulsar('Tareas'), 'y Tareas dentro de ella');
 const tareas_f4 = await esperarTexto(/Tarea que quiero borrar/i);
 ok(/Tarea que quiero borrar/i.test(tareas_f4), 'las dos tareas están ahí');
 
@@ -4863,19 +4908,21 @@ ok(prodTras_f4.tareas.some((x) => x.id === 'tf4-2'), '⚠️ …y la otra sigue 
 // ⚠️ Y sobrevive a recargar, que es lo que él pidió comprobar.
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
-await pulsar('Vida');
-await pulsar('Productividad');
+await pulsar('Gestión');
+await pulsar('Organización');
 await pulsar('Tareas');
 const tras_f4 = await esperarTexto(/Tarea que se queda/i);
 ok(!/Tarea que quiero borrar/i.test(tras_f4),
   '🚨 …y SIGUE BORRADA DESPUÉS DE RECARGAR: no era un ocultar visual');
 
 /* ── El icono de Hábitos ──────────────────────────────────────────────────── */
-/* 🐛 `pulsar('Productividad')` no vuelve al lanzador: dentro de una mini-app el
-   botón de volver es de solo icono y se llama **«Volver a Productividad»** —
-   `pulsar` compara el `aria-label` ENTERO, así que hay que darle el nombre
-   exacto. Tercera vez de la misma lección en dos fases. */
-ok(await pulsar('Volver a Productividad'), 'se vuelve al lanzador de Productividad');
+/* 🐛 El botón de volver es de solo icono y `pulsar` compara el `aria-label`
+   ENTERO, así que hay que darle el nombre exacto. Tercera vez de la misma
+   lección en dos fases.
+   ⚠️ DIST F1 — ahora se viene de Organización, así que se va a Productividad
+   por la barra: es el icono de Hábitos lo que se comprueba a continuación. */
+await pulsar('Vida');
+ok(await pulsar('Productividad'), 'se abre el lanzador de Productividad');
 await esperarTexto(/H[aá]bitos/i);
 // 🚨 Se mira el SVG de verdad, no que la clase esté escrita: `ArrowUpRight`
 // dibuja una línea diagonal y una punta; `Flame` no.
@@ -4928,6 +4975,8 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 
 await pulsar('Gestión');
+// DIST F1 — un nivel más: Gestión → Organización → Calendario.
+await pulsar('Organización');
 ok(await pulsar('Calendario'), 'se abre el Calendario');
 ok(await pulsar('Día'), 'y la vista Día');
 const dia_ge1 = await esperarTexto(/Tarea de hoy sin hora/i);
@@ -4987,8 +5036,12 @@ ok(!/Para hoy/i.test(prod_ge1) || !/Otra tarea de hoy/i.test(prod_ge1),
 ok(/H[aá]bitos/i.test(prod_ge1) && /Pomodoro/i.test(prod_ge1),
   '⚠️ …y sus herramientas siguen enteras: el encargo era quitar la copia, no vaciar la portada');
 
-// Y la tarea sigue existiendo: se puede abrir su mini-app y verla.
-ok(await pulsar('Tareas'), 'se abre la mini-app Tareas');
+/* Y la tarea sigue existiendo: se puede abrir su lista y verla.
+   ⚠️ DIST F1 — esa lista vive ahora en Gestión → Organización, no aquí. Lo que
+   la comprobación dice sigue siendo lo mismo: la tarea NO se ha tocado. */
+await pulsar('Gestión');
+await pulsar('Organización');
+ok(await pulsar('Tareas'), 'se abre Tareas desde Organización');
 const tareas_ge1 = await esperarTexto(/Otra tarea de hoy/i);
 ok(/Otra tarea de hoy/i.test(tareas_ge1),
   '🚨 …porque la tarea NO se ha tocado: sigue en `productividad.tareas`, que es la única fuente');

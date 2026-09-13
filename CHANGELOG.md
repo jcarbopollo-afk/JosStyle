@@ -1,5 +1,75 @@
 # CHANGELOG.md
 
+## v3.77.0 — DIST F1: la nueva arquitectura de navegación
+
+> *"La navegación principal debe quedar exactamente así: Pantalla principal, Bienestar, Vida,
+> Gestión, Ajustes."* — y *"La pestaña actual «Más» debe desaparecer como categoría principal."*
+
+Josué pasó el árbol entero escrito. La barra inferior pasa a ser **Inicio · Bienestar · Vida ·
+Gestión · Ajustes**: «Además» desaparece como categoría y **Ajustes deja de ser un módulo dentro de
+un área para ser la quinta pestaña**. Siguen siendo cinco (regla 10).
+
+| Área | Módulos |
+|---|---|
+| **Bienestar** | Salud física · Sueño · Nutrición · Entrenamiento · Imagen personal |
+| **Vida** | Estudios · Productividad · **Mente** · Biblioteca · Diario |
+| **Gestión** | **Organización** · Economía · Negocio · Armario · **Progreso** |
+
+**Mente** agrupa Fe, Relación y Bienestar digital. **Organización** agrupa Tareas, Calendario y
+Horario. **Progreso** es el «Números» de NAV F1 con su etiqueta nueva. Y **Rachas** deja de ser un
+módulo suelto: la absorbe Productividad.
+
+### Lo que hay que llevarse de esta fase
+
+- 🚨 **EL PIN DE RELACIÓN ERA EL RIESGO, Y NO SE VE VENIR.** Lo ponía `App.jsx` mirando la
+  **pestaña** (`tab === 'relacion'`). Al meter Relación dentro de Mente la pestaña pasa a ser
+  `mente`, así que **la comprobación habría dejado de disparar y el módulo privado de Josué se
+  habría abierto solo**, sin que fallara nada visible: la regla 6 rota en silencio, que es la peor
+  forma de romperla. Ahora protege **el panel**, con la misma clave de sesión (`area:relacion`) y el
+  mismo `PinGate` — ni un segundo sistema de PIN. **Al mover un módulo de sitio, mirar qué
+  comprobaciones dependían de dónde estaba.**
+- 🚨 **Y SI ALGUIEN OLVIDA EL PROTECTOR, LA PANTALLA SE NIEGA A PINTAR.** `AgrupadorView` mira el
+  campo `protegida` del catálogo: si una sub-app lo declara y nadie pasó `protegerPanel`, **no pinta
+  el panel y lo dice**. Fingir que está protegido sería la regla 8 al revés.
+- 🚨 **`renderContent()` PASÓ A SER `renderModulo(id)`.** Mente y Organización tienen que pintar seis
+  pantallas que ya existen; con las props escritas en dos sitios acabarían recibiendo cosas distintas
+  —es el fallo de `onDeleteMovimiento` que `test-borrados` existe para cazar—. **Una definición, dos
+  llamadas.** Y los `case` de los seis agrupados **se quedan**: ya no tienen pestaña, pero un enlace
+  directo del buscador o de Hoy sigue llegando.
+- 🚨 **LO QUE DEJA DE SER TUYO SE MANDA A SU SITIO, NO SE ABRE EN BLANCO.** El centro de control de
+  Productividad (E3 F29) tiene **cuatro caminos** que llaman a `onAbrir('tareas')`. Al sacar Tareas
+  de `MINI_APPS_PR`, tres de ellos habrían pedido una mini-app inexistente: cabecera sin nombre y
+  **ningún panel**, o sea una pantalla vacía sin un solo error.
+- ⚠️ **NI UN DATO SE MUEVE.** Un área es una lista de ids: reorganizarla es navegación, no datos
+  (E3 F23, NAV F1). Ni un id de módulo cambia, así que `fe`, `relacion`, `bienestar`,
+  `productividad.tareas`, `calendario`, `horarioTop` y `rachas` siguen donde estaban, y la
+  personalización de la Fase 19 —orden y ocultos, indexada por id— no se entera.
+- ⚠️ **UNA ETIQUETA SE CAMBIA, UN ID NO.** «Mi salud» → **Salud física** y «Números» → **Progreso**,
+  con los ids `salud` y `numeros` intactos: los leen los presets de `tokens.js`, `experienciaReal`,
+  `auditoriaFinal` y `resumenesHub`. Tercera vez de la lección de la E3 F30.
+- ⚠️ **UN MÓDULO SIN ÁREA ES UN CALLEJÓN SIN SALIDA.** Los siete que dejan `AREAS_NAV` se resuelven
+  ahora **por su padre** (`agrupadorDeApp`, o Productividad para Rachas), así que un enlace directo
+  sigue teniendo barra de volver y pestaña resaltada. Sin eso, entrar a Fe desde el buscador dejaba
+  a Josué sin salida — justo lo que él prohíbe con esas palabras.
+- ⚠️ **UNA AGRUPADORA SIN `case` EN `resumenesHub` SALE CON DOS LÍNEAS EN BLANCO.** Es el fallo
+  silencioso que NAV F1 ya describía. Mente y Organización derivan su línea de lo que contienen —y
+  **de Relación no sale ni una palabra**: su tarjeta se ve sin desbloquear nada, así que enseñar ahí
+  «Aniversario en 3 días» sería sacar fuera justo lo que el PIN protege.
+- 🔓 **Y ESTO CIERRA LA C-31.** Llevaba abierta desde el 2026-09-12: él pedía Tareas en Gestión sin
+  partir Productividad, y las cuatro eran mini-apps de una sola pantalla. Aquí lo resuelve él mismo
+  y con precisión: *"Tareas debe quedar dentro de Organización, no dentro de Productividad."*
+
+### Dos verdes en falso que destapó la fase
+
+- 🐛 **`test-buscador` tenía una copia a mano de `MORE_NAV` con un módulo `objetivos` que no existe
+  desde la E3 F23**, así que dos comprobaciones pasaban **encontrando ese fantasma**. Van **cuatro
+  veces** que esa lista se queda vieja (Objetivos, `cuerpo`, las tres de Números y ahora éstas), y su
+  propio comentario ya lo avisaba — **un aviso no es un guardián**. Ahora hay uno que lee los ids de
+  `App.jsx` y falla si la copia no coincide.
+- 🐛 **`condicionNumeros` exigía que el apartado estuviera en `area-mas`**, un área que ya no existe.
+  Lo que de verdad protegía era que **viviera dentro de alguna**, para que se llegue a él desde la
+  barra; eso es lo que comprueba ahora.
+
 ## v3.76.0 — AS F2: quitar no es eliminar
 
 > *"**Quitar una asignatura de un lugar NO es lo mismo que eliminar la asignatura del sistema.**"*
