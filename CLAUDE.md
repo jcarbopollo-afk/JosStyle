@@ -384,9 +384,13 @@ había que adivinarlo.**
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las 19 578 comprobaciones
    cubre (R1), y hay siete bloques rehechos que nadie ha tocado con el dedo.
 
-⏸ **Y las cuatro decisiones que siguen esperándole**, ninguna de ellas trabajo que yo pueda hacer
+⏸ **Y las cinco decisiones que siguen esperándole**, ninguna de ellas trabajo que yo pueda hacer
 solo: **DEP-29** (registrar JosStyle en Google y en Microsoft), **DEP-30** (el service worker),
-**C-27** (la fase de Notas que le falta al documento) y la **autenticación de `/api/ask-ai`**.
+**C-27** (la fase de Notas que le falta al documento), la **autenticación de `/api/ask-ai`** y
+**C-32** (SF F1): *¿al tocar un campo de texto se te hace zoom?* — los campos usan 14 px y en iOS eso
+dispara el zoom al enfocar; el `maximum-scale=1` del `viewport` intenta evitarlo **y de paso bloquea
+el pellizco para ampliar**, que es un problema de accesibilidad. Las dos están enganchadas y el
+arreglo cambia el aspecto de todos los formularios, así que **lo decide él**.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
 **Bienestar** y **Nutrición** el documento trae **dos fases de Sueño** —*"Sueño 2"*, el mismo

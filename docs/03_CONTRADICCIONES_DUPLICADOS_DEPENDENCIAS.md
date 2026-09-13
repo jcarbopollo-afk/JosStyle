@@ -11,7 +11,7 @@
 
 ---
 
-## PARTE A — CONTRADICCIONES (23)
+## PARTE A — CONTRADICCIONES (24)
 
 Formato: **qué choca con qué** → **cuál gana y por qué** → **qué hay que hacer**.
 Severidad: 🔴 rompe algo hoy · 🟠 engaña a quien lea la documentación · 🟡 tensión de diseño asumida
@@ -547,6 +547,35 @@ en Vida. La regla 49 hizo su trabajo.
 **Qué se construyó:** `src/lib/agrupadores.js` declara Mente y Organización; `TareasTab` se
 **exporta** desde `ProductivityView` y la pinta Organización —no se ha reescrito—; y Rachas entra en
 `MINI_APPS_PR` con su `RachasView` de siempre. Ni un dato se movió.
+
+---
+
+### C-32 — ⏸ PENDIENTE DE JOSUÉ (SF F1, v3.82.0) · El zoom al tocar un campo, y el pellizco bloqueado
+
+**Son dos cosas enganchadas, y por eso no se ha tocado ninguna: arreglar una sin la otra empeora
+algo.** Salió al barrer el código buscando lo que Safari hace distinto (SF F1).
+
+1. **`TextInput` usa `text-sm`, o sea 14 px.** En Safari de iOS, enfocar un campo con la letra por
+   debajo de 16 px **hace zoom a la página**: tocas para escribir y toda la pantalla se te acerca,
+   y hay que pellizcar para volver. Es de los detalles que más molestan en un móvil.
+2. **`index.html` lleva `maximum-scale=1` en el `viewport`.** Eso es justamente lo que se pone para
+   evitar ese zoom… y de paso **intenta bloquear el pellizco para ampliar**, que es un problema de
+   accesibilidad — y este proyecto tiene un revisor de accesibilidad desde EH F42. ⚠️ Además,
+   **Safari moderno lo ignora en parte**, así que puede que no esté ni evitando el zoom.
+
+**Por qué no se decide solo:** subir todos los campos a 16 px es el arreglo estándar y el que quita
+la causa de raíz, pero **cambia el aspecto de todos los formularios de la aplicación**, y eso no
+entra en ninguna fase que él haya pedido. Quitar el `maximum-scale` sin subir la letra reintroduce
+el zoom del que se quería escapar.
+
+**La pregunta, en una línea:** *¿al tocar un campo de texto se te hace zoom a la pantalla?*
+
+- **Si sí** → se sube la letra de los campos a 16 px y se quita `maximum-scale=1`. Queda mejor y más
+  accesible, con formularios algo más grandes.
+- **Si no** → se deja como está, y se anota que en su iPhone no ocurre.
+
+⚠️ **Y esto no se puede comprobar desde aquí**: el recorrido corre en Chromium, que no hace ese zoom.
+Es R1 puro.
 
 ---
 
