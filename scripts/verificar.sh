@@ -866,6 +866,24 @@ fi
 # ⚠️ Entrega 3 · F1, apartados 1 y 4-6 — la Safe Area del iPhone y los títulos
 # duplicados de los desplegables. Las dos son de presentación y solo se ven en
 # el móvil, que es donde no llega ninguna otra prueba.
+# NAVO F1 — atrás vuelve de donde viniste, no al área a la que pertenece el
+# módulo. Una pila real en vez de `areaActual.id`, que era la línea del fallo.
+if node --import ./scripts/resolver-vite.mjs scripts/test-navegacion.mjs >/tmp/jc_navorigen.log 2>&1; then
+  ok "Navegación por origen (NAVO F1) — $(grep -c '✓' /tmp/jc_navorigen.log) comprobaciones"
+else
+  fallo "Falla la navegación por origen"; grep '✗' /tmp/jc_navorigen.log
+fi
+
+# SC F1 — scroll, cabeceras fijas y el acordeón que dejaba un hueco en el iPhone.
+# Los tres los reportó Josué usando la aplicación, y los tres tenían una causa
+# real: la cabecera no era `sticky`, la banda no existía y al elemento de rejilla
+# del acordeón le faltaba `min-height: 0`.
+if node --import ./scripts/resolver-vite.mjs scripts/test-scroll-cabecera.mjs >/tmp/jc_scroll.log 2>&1; then
+  ok "Scroll, cabeceras y acordeones (SC F1) — $(grep -c '✓' /tmp/jc_scroll.log) comprobaciones"
+else
+  fallo "Falla el scroll/cabeceras"; grep '✗' /tmp/jc_scroll.log
+fi
+
 # DIST F2 — la auditoría de la reorganización: la aplicación se mide contra el
 # árbol que escribió Josué, no solo contra sí misma.
 if node --import ./scripts/resolver-vite.mjs scripts/test-auditoria-dist.mjs >/tmp/jc_auditdist.log 2>&1; then

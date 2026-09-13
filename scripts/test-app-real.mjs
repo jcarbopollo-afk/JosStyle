@@ -5428,6 +5428,256 @@ const perfil_pf = await esperarTexto(/foto de perfil/i);
 ok(/Quitar/i.test(perfil_pf), '🚨 …y sigue teniendo su «Quitar», que NO está en la cabecera a propósito');
 ok(/Datos básicos/i.test(perfil_pf), '⚠️ …y el resto de la categoría, intacto');
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   SC F1 — SCROLL, CABECERAS FIJAS Y EL ACORDEÓN DE INICIO
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Tres fallos que reportó Josué desde su iPhone. Esta sección **mide**, no mira:
+   posiciones en píxeles antes y después de desplazar, y el alto real de la
+   tarjeta cerrada. A 375 px, que es su pantalla.
+
+   ⚠️ Lo que NO puede demostrar, y está dicho en `FUERA_DEL_ALCANCE_SC`: que el
+   cuadrado vacío haya desaparecido **en Safari**. Chromium es justo el navegador
+   en el que ese fallo nunca se vio. Aquí se comprueba que el arreglo está y que
+   el cierre mide cero; el dedo lo pone él.
+   ═══════════════════════════════════════════════════════════════════════════ */
+console.log('\n── SC F1 · La cabecera se queda quieta y el acordeón cierra a cero ──');
+await page.setViewportSize({ width: 375, height: 667 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+/* ── 1 · Vida: la cabecera NO se mueve al desplazar, y las tarjetas SÍ ─────── */
+ok(await pulsar('Vida'), 'SC F1 — se abre el área Vida');
+await esperarTexto(/Área/i);
+const medirVida = async () => page.evaluate(() => {
+  const cab = document.querySelector('.hub-sticky');
+  const card = document.querySelector('.hub-card');
+  return {
+    cabecera: cab ? Math.round(cab.getBoundingClientRect().top) : null,
+    tarjeta: card ? Math.round(card.getBoundingClientRect().top) : null,
+    scroll: Math.round(window.scrollY),
+  };
+});
+const antes_sc = await medirVida();
+ok(antes_sc.cabecera !== null, 'la cabecera del área existe y se puede medir');
+await page.evaluate(() => window.scrollTo(0, 260));
+await page.waitForTimeout(420);
+const despues_sc = await medirVida();
+ok(despues_sc.scroll > 100, `⚠️ la página se ha desplazado de verdad (${despues_sc.scroll} px)`);
+/* 🚨 ÉSTE ES EL FALLO QUE REPORTÓ. La cabecera tiene que seguir exactamente donde
+   estaba, y las tarjetas tienen que haber subido. Si las dos se mueven, es el
+   comportamiento de antes. */
+ok(Math.abs(despues_sc.cabecera - antes_sc.cabecera) <= 1,
+  `🚨 SC F1 — la cabecera NO se mueve al desplazar (${antes_sc.cabecera} → ${despues_sc.cabecera})`);
+ok(antes_sc.tarjeta - despues_sc.tarjeta > 100,
+  `🚨 …y las tarjetas SÍ se desplazan por detrás (${antes_sc.tarjeta} → ${despues_sc.tarjeta})`);
+
+/* ── 2 · La lupa sigue fija, y la cabecera no la tapa ──────────────────────── */
+const lupa_sc = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button')]
+    .find((x) => /buscar funciones/i.test(x.getAttribute('aria-label') || ''));
+  if (!b) return null;
+  const r = b.getBoundingClientRect();
+  const cab = document.querySelector('.hub-sticky');
+  const zCab = cab ? Number(getComputedStyle(cab).zIndex) : null;
+  // ¿Quién responde al toque en el centro de la lupa? Si la banda la tapara,
+  // sería otro elemento — y el buscador dejaría de abrirse.
+  const enCima = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+  return { top: Math.round(r.top), zCab, laRecibe: !!(enCima && (enCima === b || b.contains(enCima))) };
+});
+ok(lupa_sc && lupa_sc.top >= 0 && lupa_sc.top < 120,
+  `🚨 SC F1 — la lupa sigue fija arriba y entera, sin cortarse (top ${lupa_sc?.top})`);
+ok(lupa_sc && lupa_sc.zCab !== null && lupa_sc.zCab < 30,
+  `⚠️ …y la banda de la cabecera va por DEBAJO de ella (z-index ${lupa_sc?.zCab} < 30)`);
+ok(lupa_sc && lupa_sc.laRecibe,
+  '🚨 …y el toque en la lupa lo sigue recibiendo la lupa: la banda no la ha tapado');
+
+/* ── 3 · Nada se sale de ancho, y las cinco filas caben ───────────────────── */
+const ancho_sc = await page.evaluate(() => ({
+  desborda: document.documentElement.scrollWidth > window.innerWidth,
+  scrollWidth: document.documentElement.scrollWidth,
+  filas: document.querySelectorAll('.hub-card').length,
+  alto: Math.round(document.querySelector('.hub-card')?.getBoundingClientRect().height || 0),
+}));
+ok(!ancho_sc.desborda, `⚠️ la pantalla no se arrastra de lado a 375 px (${ancho_sc.scrollWidth} px)`);
+ok(ancho_sc.filas === 5, `Vida sigue teniendo sus cinco módulos (${ancho_sc.filas})`);
+/* 🚨 Las filas encogieron, y se mide: antes de esta fase una tarjeta pasaba de
+   105 px. No se comprueba un número exacto —eso sería una bomba de relojería
+   (EH F21)— sino que está por debajo del listón que la hacía no caber. */
+ok(ancho_sc.alto > 0 && ancho_sc.alto < 102,
+  `🚨 SC F1 — las filas son más compactas que antes (${ancho_sc.alto} px por tarjeta)`);
+
+/* ── 4 · Y las dos líneas de resumen NO se han perdido por compactar ───────── */
+const lineas_sc = await page.evaluate(() => {
+  const card = document.querySelector('.hub-card');
+  return card ? card.innerText.split('\n').filter((x) => x.trim()).length : 0;
+});
+ok(lineas_sc >= 3,
+  `🚨 …y cada tarjeta sigue con su nombre y sus DOS líneas de resumen (${lineas_sc} líneas)`);
+
+/* ── 5 · Gestión se comporta igual que Vida ───────────────────────────────── */
+ok(await pulsar('Gestión'), 'se abre el área Gestión');
+await esperarTexto(/Área/i);
+await page.evaluate(() => window.scrollTo(0, 240));
+await page.waitForTimeout(420);
+const gestion_sc = await page.evaluate(() => {
+  const cab = document.querySelector('.hub-sticky');
+  return { top: Math.round(cab.getBoundingClientRect().top), texto: cab.innerText };
+});
+ok(Math.abs(gestion_sc.top - antes_sc.cabecera) <= 1,
+  `⚠️ SC F1 — Gestión se comporta EXACTAMENTE igual que Vida (top ${gestion_sc.top})`);
+ok(/gesti/i.test(gestion_sc.texto), '…y la cabecera sigue diciendo de qué área es');
+
+/* ── 6 · Inicio: la tarjeta desplegable cierra a cero de verdad ───────────── */
+await pulsar('Inicio');
+await esperarTexto(/hoy/i);
+const medirAcordeon = async () => page.evaluate(() => {
+  const panel = document.getElementById('panel-situacion-actual');
+  if (!panel) return null;
+  const item = panel.firstElementChild;
+  const tarjeta = panel.parentElement;
+  return {
+    panel: Math.round(panel.getBoundingClientRect().height),
+    item: item ? Math.round(item.getBoundingClientRect().height) : null,
+    tarjeta: Math.round(tarjeta.getBoundingClientRect().height),
+    minHeight: item ? getComputedStyle(item).minHeight : null,
+  };
+});
+const cerrado_sc = await medirAcordeon();
+ok(cerrado_sc !== null, 'SC F1 — la tarjeta desplegable de Inicio está en pantalla');
+/* 🚨 EL FALLO: cerrada tiene que medir CERO. Cualquier cosa por encima de un par
+   de píxeles es el cuadrado vacío que él veía debajo. */
+ok(cerrado_sc.panel <= 2,
+  `🚨 SC F1 — cerrada no ocupa NADA: ni un hueco vacío debajo (${cerrado_sc.panel} px)`);
+ok(cerrado_sc.minHeight === '0px',
+  `🚨 …y el elemento de rejilla lleva \`min-height: 0\`, que es la causa del fallo (${cerrado_sc.minHeight})`);
+const altoCerrada_sc = cerrado_sc.tarjeta;
+
+/* ── 7 · Y abierta se expande de verdad, empujando lo de abajo ────────────── */
+const antesDeAbrir_sc = await page.evaluate(() => {
+  const t = document.getElementById('panel-situacion-actual')?.parentElement;
+  let n = t?.nextElementSibling;
+  return n ? Math.round(n.getBoundingClientRect().top) : null;
+});
+await page.evaluate(() => {
+  const b = document.querySelector('[aria-controls="panel-situacion-actual"]');
+  if (b) b.click();
+});
+await page.waitForTimeout(520);
+const abierto_sc = await medirAcordeon();
+ok(abierto_sc.panel > 40,
+  `🚨 SC F1 — abierta se expande de verdad (${altoCerrada_sc} → ${abierto_sc.tarjeta} px de tarjeta)`);
+const trasAbrir_sc = await page.evaluate(() => {
+  const t = document.getElementById('panel-situacion-actual')?.parentElement;
+  let n = t?.nextElementSibling;
+  return n ? Math.round(n.getBoundingClientRect().top) : null;
+});
+ok(antesDeAbrir_sc !== null && trasAbrir_sc - antesDeAbrir_sc > 40,
+  `⚠️ …y lo de abajo baja de forma natural (${antesDeAbrir_sc} → ${trasAbrir_sc})`);
+
+/* ── 8 · Y al cerrarla vuelve EXACTAMENTE a su alto compacto ──────────────── */
+await page.evaluate(() => {
+  const b = document.querySelector('[aria-controls="panel-situacion-actual"]');
+  if (b) b.click();
+});
+await page.waitForTimeout(620);
+const recerrado_sc = await medirAcordeon();
+ok(recerrado_sc.panel <= 2,
+  `🚨 SC F1 — al cerrarla vuelve a cero, sin altura residual (${recerrado_sc.panel} px)`);
+ok(Math.abs(recerrado_sc.tarjeta - altoCerrada_sc) <= 2,
+  `⚠️ …y la tarjeta recupera su alto compacto de antes (${altoCerrada_sc} → ${recerrado_sc.tarjeta})`);
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAVO F1 — ATRÁS VUELVE DE DONDE VINISTE, NO AL ÁREA DEL MÓDULO
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Josué: *"Si entro desde Inicio a una funcionalidad… y después pulso atrás, la
+   aplicación puede devolverme a otra sección como Gestión."*
+
+   🚨 **ECONOMÍA ES EL CASO PERFECTO PARA MEDIRLO**, y por eso se usa aquí: vive
+   en Gestión y tiene una tarjeta en Inicio. Abierta desde Inicio, el botón de
+   atrás decía «Gestión» —un sitio por el que Josué no había pasado— y ahora dice
+   «Inicio». La MISMA pantalla, dos orígenes, dos vueltas distintas: eso es lo que
+   demuestra que atrás mira el recorrido y no el catálogo.
+   ═══════════════════════════════════════════════════════════════════════════ */
+console.log('\n── NAVO F1 · Atrás vuelve de donde viniste ──');
+await page.setViewportSize({ width: 375, height: 667 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+const rotuloAtras = async () => page.evaluate(() => {
+  const b = document.querySelector('button.back-bar');
+  return b ? b.innerText.trim() : null;
+});
+
+/* ── 1 · Desde INICIO: el fallo que él reportó ─────────────────────────────── */
+ok(await pulsar('Economía'), 'NAVO F1 — se abre Economía desde Inicio');
+await esperarTexto(/econom/i);
+const desdeInicio_nv = await rotuloAtras();
+ok(desdeInicio_nv !== null, 'hay un botón de atrás');
+ok(/inicio/i.test(desdeInicio_nv || ''),
+  `🚨 NAVO F1 — abierta desde INICIO, atrás dice «Inicio» (decía «Gestión»): «${desdeInicio_nv}»`);
+ok(await pulsar(desdeInicio_nv), '…y se pulsa');
+const volvioAInicio_nv = await esperarTexto(/hoy|inicio/i);
+ok(!/Área/i.test(volvioAInicio_nv),
+  '🚨 …y acaba en Inicio DE VERDAD, no en el hub de un área');
+
+/* ── 2 · La MISMA pantalla desde Gestión vuelve a Gestión ─────────────────── */
+ok(await pulsar('Gestión'), 'se entra en Gestión por la barra de abajo');
+await esperarTexto(/Área/i);
+ok(await pulsar('Economía'), '…y se abre Economía desde ahí');
+await esperarTexto(/econom/i);
+const desdeGestion_nv = await rotuloAtras();
+ok(/gesti/i.test(desdeGestion_nv || ''),
+  `🚨 NAVO F1 — la MISMA pantalla, abierta desde Gestión, vuelve a Gestión: «${desdeGestion_nv}»`);
+ok(desdeGestion_nv !== desdeInicio_nv,
+  '🚨 …y son destinos DISTINTOS: el origen manda, no el área a la que pertenece el módulo');
+ok(await pulsar(desdeGestion_nv), 'se pulsa atrás');
+ok(/Área/i.test(await esperarTexto(/Área/i)), '…y acaba en el hub de Gestión');
+
+/* ── 3 · Anidado: Gestión → Organización → Horario → atrás → Organización ── */
+ok(await pulsar('Organización'), 'se abre Organización');
+await esperarTexto(/horario/i);
+ok(await pulsar('Horario'), '…y dentro, Horario');
+await page.waitForTimeout(700);
+const dentroDeOrg_nv = await rotuloAtras();
+ok(/gesti/i.test(dentroDeOrg_nv || ''),
+  `⚠️ el botón de arriba sigue llevando a Gestión, que es de donde salió Organización («${dentroDeOrg_nv}»)`);
+
+/* ── 4 · La barra de abajo NO apila: cambia de sección ────────────────────── */
+ok(await pulsar('Vida'), 'se toca Vida en la barra de abajo');
+await esperarTexto(/Área/i);
+ok(await pulsar('Diario'), 'se abre Diario');
+await page.waitForTimeout(700);
+const enDiario_nv = await rotuloAtras();
+ok(/vida/i.test(enDiario_nv || ''),
+  `⚠️ NAVO F1 — atrás dice «Vida», no «Gestión»: tocar una pestaña reinicia el recorrido («${enDiario_nv}»)`);
+
+/* ── 5 · Y lo que él pidió que no cambiara, no ha cambiado ────────────────── */
+const barra_nv = await page.evaluate(() => {
+  const nav = document.querySelector('nav');
+  return nav ? [...nav.querySelectorAll('button')].map((b) => b.innerText.trim()).filter(Boolean) : [];
+});
+ok(barra_nv.length === 5, `⚠️ la barra inferior sigue teniendo sus cinco pestañas (${barra_nv.join(' · ')})`);
+ok(/Inicio/.test(barra_nv.join(' ')) && /Ajustes/.test(barra_nv.join(' ')),
+  '…y son las mismas de siempre: no se ha tocado la navegación inferior');
+
+/* ── 6 · Desde Inicio a un módulo CUALQUIERA, sin condición para él ───────── */
+ok(await pulsar('Inicio'), 'se vuelve a Inicio');
+await esperarTexto(/hoy/i);
+ok(await pulsar('Nutrición'), 'se abre Nutrición desde Inicio');
+await esperarTexto(/nutric/i);
+const nutri_nv = await rotuloAtras();
+ok(/inicio/i.test(nutri_nv || ''),
+  `🚨 NAVO F1 — y otro módulo distinto hace lo mismo sin una regla propia: «${nutri_nv}»`);
+
 await page.setViewportSize({ width: 1280, height: 900 });
+
+/* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+const escritorio_sc = await medirAcordeon();
+ok(escritorio_sc && escritorio_sc.panel <= 2,
+  `🚨 SC F1 — en escritorio la tarjeta cerrada también mide cero: no se ha roto lo que ya funcionaba (${escritorio_sc?.panel} px)`);
 
 await salir(browser);

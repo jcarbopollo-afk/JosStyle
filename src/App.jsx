@@ -110,6 +110,12 @@ import NumbersView from './views/NumbersView';
    para las dos**, no dos calcadas: ver `src/views/AgrupadorView.jsx`. */
 import AgrupadorView from './views/AgrupadorView';
 import { agrupador, appProtegida, agrupadorDeApp } from './lib/agrupadores';
+/* NAVO F1 — la pila real de por dónde ha pasado. Se importa con alias porque `actual` y `atras` son
+   nombres muy comunes y en este archivo ya hay variables locales llamadas así. */
+import {
+  RAIZ as RAIZ_NAV, tabDe, origen as origenNav, abrir as abrirNav,
+  irAPrincipal as irAPrincipalNav, atras as atrasNav, puedeVolver as puedeVolverNav,
+} from './lib/navegacion';
 import SettingsView from './views/SettingsView';
 import { construirIndice } from './lib/indiceBusqueda';
 import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda, crearOutfit, actualizarOutfit, duplicarOutfit, crearUso, actualizarUso } from './lib/armario';
@@ -364,7 +370,25 @@ const conFondoNormalizado = (ap) => ({ ...ap, fondo: normalizarFondo(ap.fondo) }
 
 export default function App() {
   const [session, setSession] = useState(undefined); // undefined = comprobando, null = sin sesión
-  const [tab, setTab] = useState('hoy');
+  /* 🚨 NAVO F1 — DÓNDE ESTÁS DEJA DE SER UN ID SUELTO Y PASA A SER LA LISTA DE POR DÓNDE HAS PASADO.
+     Josué: *"Si entro desde Inicio a una funcionalidad… y después pulso atrás, la aplicación puede
+     devolverme a otra sección como Gestión."* Tenía razón, y la causa era una sola línea: atrás no
+     sabía de dónde venías, **preguntaba a qué área pertenece el módulo** (`areaActual.id`).
+     Productividad pertenece a Vida, así que abrirla desde Inicio y volver te dejaba en Vida.
+
+     `tab` sigue existiendo y sigue significando lo mismo —la pantalla que se está viendo—, solo que
+     ahora es **el último de la pila**. Por eso las 22 ramas del `switch`, el buscador, el
+     deep-link y las vistas no se enteran de nada: la navegación es la misma, lo que cambia es que
+     además se recuerda el camino. Ni un router nuevo (su apartado 6), ni un `if` por módulo (su
+     apartado 2). La mecánica vive en `src/lib/navegacion.js`. */
+  const [pilaNav, setPilaNav] = useState(() => [{ id: RAIZ_NAV }]);
+  const tab = tabDe(pilaNav);
+  /* ⚠️ `setTab` se queda con el mismo nombre y la misma firma a propósito: es *entrar* en algo desde
+     donde estás, que es lo que significaba en todas partes. Lo único que cambia es que ahora apila.
+     Quien quiera cambiar de sección sin apilar usa `irAPestana` (la barra de abajo). */
+  const setTab = (destino, foco) => setPilaNav((p) => abrirNav(p, destino, foco));
+  const irAPestana = (destino) => setPilaNav((p) => irAPrincipalNav(p, destino));
+  const volverAtras = () => setPilaNav((p) => atrasNav(p));
   const [loaded, setLoaded] = useState(false);
   const [accent, setAccent] = useState(ACCENTS[0].value);
   // Fase A3 — Apariencia avanzada: tema (claro/oscuro/automático), tamaño de texto, densidad,
@@ -464,7 +488,6 @@ export default function App() {
   const [gamificacion, setGamificacion] = useState(GAMIFICACION_INICIAL);
   const [dashboardFoco, setDashboardFoco] = useState(null);
   // BI Fase 4 · apartado 11 — de dónde vino Josué al abrir algo desde el buscador.
-  const [vueltaBusqueda, setVueltaBusqueda] = useState(null);
 
   useEffect(() => {
     getSession().then(setSession);
@@ -893,13 +916,12 @@ export default function App() {
      Las funciones auxiliares que los usan (`irAResultado`, `recordarBusqueda`,
      `focoPara`…) siguen abajo: no son hooks y da igual dónde estén. */
 
-  // BI Fase 4 · apartado 11 — el rastro de "vuelve a donde estabas" solo vale para el
-  // módulo al que llevó el buscador. En cuanto Josué navega a cualquier otro sitio se
-  // borra, para que no reaparezca días después si vuelve a ese módulo por la barra de
-  // abajo. Un único efecto cubre TODAS las formas de navegar.
-  useEffect(() => {
-    setVueltaBusqueda((v) => (v && v.hacia !== tab ? null : v));
-  }, [tab]);
+  /* 🔓 NAVO F1 — AQUÍ HABÍA UN EFECTO QUE YA NO HACE FALTA, Y ES BUENA SEÑAL.
+     La BI F4 guardaba un rastro —`vueltaBusqueda`— para que al volver de un resultado del buscador
+     no te dejara en el hub del área, y necesitaba este efecto para borrarlo en cuanto navegaras a
+     otra parte, porque un rastro suelto caduca mal. Con la pila eso **no hay que programarlo**: el
+     origen no es un dato aparte que pueda quedarse viejo, es la propia posición anterior del
+     recorrido. Se va el estado, se va el efecto y se va la forma de que se desincronicen. */
 
   // BI Fase 2 — el índice del buscador se construye a partir de MORE_NAV, así que un
   // módulo que una fase futura añada ahí aparece solo (apartado 17). Se recalcula cuando
@@ -980,11 +1002,12 @@ export default function App() {
   const irAResultado = (entrada) => {
     if (!entrada) return;
     const foco = entrada.foco || (entrada.ajuste ? { categoria: entrada.ajuste } : undefined);
-    // BI Fase 4 · apartado 11 — "al volver, regresar al punto lógico anterior". Sin esto,
-    // buscar "colores" desde Inicio y pulsar atrás dejaba a Josué en el hub de "Más",
-    // que no es de donde venía. Se recuerda de dónde salió y adónde fue; en cuanto
-    // navegue a cualquier otro sitio, el rastro se borra solo (ver `renderConVuelta`).
-    if (entrada.tab !== tab) setVueltaBusqueda({ desde: tab, hacia: entrada.tab });
+    /* BI Fase 4 · apartado 11 — "al volver, regresar al punto lógico anterior". Sin eso, buscar
+       "colores" desde Inicio y pulsar atrás dejaba a Josué en el hub de "Más", que no es de donde
+       venía.
+       🔓 NAVO F1 — y eso **ya no necesita nada especial aquí**: abrir un resultado es abrir algo
+       desde donde estás, exactamente igual que tocar una tarjeta, así que la pila lo recuerda sola.
+       Lo que había —un rastro guardado a mano solo para este camino— era media solución. */
     navegarDesdeHoy(entrada.tab, foco);
   };
 
@@ -1299,7 +1322,7 @@ export default function App() {
       ? personalizacion.ocultos.filter((x) => x !== id)
       : [...personalizacion.ocultos, id];
     updatePersonalizacion({ ...personalizacion, ocultos });
-    if (tab === id && !personalizacion.ocultos.includes(id)) setTab('hoy'); // se acaba de ocultar la pestaña activa
+    if (tab === id && !personalizacion.ocultos.includes(id)) irAPestana('hoy'); // se acaba de ocultar la pestaña activa
   };
   // Entrega 2 · ME Fase 2 — "Mi pantalla de inicio". `dashboardOcultos` responde a una pregunta
   // distinta de `ocultos`: "sí uso este apartado, pero no quiero verlo nada más abrir la app"
@@ -1326,7 +1349,7 @@ export default function App() {
     updatePersonalizacion({ ...personalizacion, ocultos });
     // Si el perfil acaba de desactivar la pestaña abierta, volver a "Hoy" para no dejar a Josué
     // mirando una pantalla de un módulo que ya no está activo.
-    if (ocultos.includes(tab)) setTab('hoy');
+    if (ocultos.includes(tab)) irAPestana('hoy');
   };
 
   // ---------------------------------------------------------------------------
@@ -3262,26 +3285,38 @@ export default function App() {
         {renderContent()}
       </PinGate>
     ) : renderContent();
-    if (!enModulo || !areaActual) return contenido;
-    // BI Fase 4 · apartado 11 — si Josué llegó aquí desde el buscador, "atrás" lo
-    // devuelve a donde estaba, no al hub del área (que puede no haber pisado nunca).
-    // El rastro solo vale para el módulo al que le llevó el buscador; en cuanto se
-    // mueve a otro sitio deja de aplicarse.
-    const vueltaValida = vueltaBusqueda && vueltaBusqueda.hacia === tab ? vueltaBusqueda : null;
-    const destinoVuelta = vueltaValida ? vueltaValida.desde : areaActual.id;
-    const etiquetaVuelta = vueltaValida
-      ? (vueltaValida.desde === 'hoy'
-        ? 'Inicio'
-        : (AREAS_NAV.find((a) => a.id === vueltaValida.desde)?.label
-          || MORE_NAV.find((m) => m.id === vueltaValida.desde)?.label
-          || 'Atrás'))
-      : areaActual.label;
+    if (!enModulo || !puedeVolverNav(pilaNav)) return contenido;
+    /* 🚨 NAVO F1 — AQUÍ ESTABA EL FALLO QUE REPORTÓ JOSUÉ, Y ERA UNA LÍNEA:
+
+           const destinoVuelta = vueltaValida ? vueltaValida.desde : areaActual.id;
+           const etiquetaVuelta = … : areaActual.label;
+
+       O sea que atrás **no sabía de dónde venías**: salvo que hubieras llegado por el buscador,
+       preguntaba a qué ÁREA pertenece el módulo y te mandaba ahí. Productividad pertenece a Vida y
+       Tareas a Gestión, así que abrirlas desde Inicio y pulsar atrás te dejaba en un sitio por el
+       que no habías pasado. No era un fallo de esos dos módulos: era de todos a la vez, porque la
+       regla estaba escrita una sola vez y era la equivocada.
+
+       Ahora el destino es **el de verdad**: el anterior de la pila. Y fíjate en lo que desaparece
+       —`vueltaBusqueda`, el rastro que la BI F4 guardaba solo para el buscador—: era esta misma
+       idea a medias (un nivel y un solo camino). Se absorbe, no convive; dos memorias del origen
+       acabarían diciendo cosas distintas.
+
+       ⚠️ Y la etiqueta sale del catálogo, no de una lista escrita a mano: si mañana se añade un
+       módulo a `MORE_NAV` o un área a `AREAS_NAV`, su nombre aparece en el botón de atrás sin tocar
+       esto — que es el criterio 6 de su lista de aceptación. */
+    const desde = origenNav(pilaNav);
+    const etiquetaVuelta = desde.id === RAIZ_NAV
+      ? 'Inicio'
+      : (AREAS_NAV.find((a) => a.id === desde.id)?.label
+        || MORE_NAV.find((m) => m.id === desde.id)?.label
+        || 'Atrás');
     return (
       <div key={tab} className="module-enter">
         {/* Fase N4 — pasa de texto suelto a una píldora "glass" (fondo tenue + borde apenas
             visible), coherente con el resto del lenguaje visual del hub del que viene. */}
         <button
-          onClick={() => { setVueltaBusqueda(null); setTab(destinoVuelta); }}
+          onClick={volverAtras}
           className="back-bar inline-flex items-center gap-1.5 mb-4 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold active:opacity-60"
           style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
         >
@@ -3443,7 +3478,7 @@ export default function App() {
         style={{ background: COLORS.navBgAlpha || COLORS.surface, backdropFilter: 'blur(20px)', borderTop: `1px solid ${COLORS.border}` }}
       >
         <div className="max-w-md w-full flex px-2 py-2">
-          <button onClick={() => setTab('hoy')} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
+          <button onClick={() => irAPestana('hoy')} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
             <Home size={20} strokeWidth={tab === 'hoy' ? 2.4 : 1.8} className="nav-tab-icon" style={{ color: tab === 'hoy' ? accent : COLORS.textMuted }} />
             <span className="nav-tab-label" style={{ fontSize: 10, fontWeight: 500, color: tab === 'hoy' ? accent : COLORS.textMuted }}>Inicio</span>
           </button>
@@ -3451,7 +3486,7 @@ export default function App() {
             const Icon = area.icon;
             const active = areaActual?.id === area.id;
             return (
-              <button key={area.id} onClick={() => setTab(area.id)} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
+              <button key={area.id} onClick={() => irAPestana(area.id)} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
                 <Icon size={20} strokeWidth={active ? 2.4 : 1.8} className="nav-tab-icon" style={{ color: active ? accent : COLORS.textMuted }} />
                 <span className="nav-tab-label" style={{ fontSize: 10, fontWeight: 500, color: active ? accent : COLORS.textMuted }}>{area.label}</span>
               </button>
@@ -3464,7 +3499,7 @@ export default function App() {
               que él espera de ese botón. Por eso se pinta aquí y no dentro del
               `map` de `AREAS_NAV` — un área agrupa módulos, y Ajustes es uno.
               ⚠️ Siguen siendo cinco pestañas exactas (regla 10). */}
-          <button onClick={() => setTab('ajustes')} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
+          <button onClick={() => irAPestana('ajustes')} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
             <Settings size={20} strokeWidth={tab === 'ajustes' ? 2.4 : 1.8} className="nav-tab-icon" style={{ color: tab === 'ajustes' ? accent : COLORS.textMuted }} />
             <span className="nav-tab-label" style={{ fontSize: 10, fontWeight: 500, color: tab === 'ajustes' ? accent : COLORS.textMuted }}>Ajustes</span>
           </button>

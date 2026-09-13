@@ -287,6 +287,49 @@ Organización y Progreso. ⚠️ **La entrada de `DESVIACIONES` se queda escrita
 palabras y su fecha, en vez de borrarse**: borrarla dejaría la pregunta viva y la respuesta perdida,
 que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres sitios.
 
+📱🧭 **Y después, dos fases más que pasó de una vez (2026-09-13) y que él mismo dejó separadas:**
+
+| | Fase | Estado |
+|---|---|---|
+| **SC F1** | Scroll, cabeceras fijas y el acordeón que dejaba un hueco en el iPhone | ✅ **v3.80.0** |
+| **NAVO F1** | **Atrás vuelve de donde viniste**, no al área del módulo | ✅ **v3.81.0** |
+
+- 🚨 **EL CUADRADO VACÍO DE LA TARJETA DESPLEGABLE ERA `min-height: auto`, Y NINGUNA DE LAS 19 578
+  COMPROBACIONES PODÍA VERLO** (SC F1). Un elemento de rejilla se niega a encogerse por debajo de su
+  contenido, así que con la fila a `0fr` hay dos órdenes contradictorias: **Chromium resuelve a favor
+  de la fila y Safari a favor del contenido**. Por eso funcionaba en el ordenador y fallaba en el
+  iPhone —y **todas las pruebas corren en Chromium**—. `minHeight: 0` es la causa, no un parche. Hay
+  una **regla invariante nueva** que caza al siguiente acordeón que nazca sin él. ⚠️ Y la lección que
+  va más allá de este fallo: **cuando algo falla solo en el móvil, sospechar de dónde los dos
+  navegadores resuelven distinto**, no de un tamaño de pantalla.
+- 🚨 **QUIEN HACE SCROLL DECIDE CUÁL ES EL ARREGLO** (SC F1): aquí es **la página entera**, así que la
+  cabecera es `sticky` y no un contenedor con `overflow` propio — ése obliga a calcular una altura a
+  mano, y la del iPhone cambia con la barra de Safari. ⚠️ Y la banda **se sale de su caja** con margen
+  negativo y el mismo relleno de vuelta: tapa el hueco por el que subían las tarjetas **y la cabecera
+  no se mueve ni un píxel** al empezar a desplazar.
+- ⚠️ **UNA FASE DE SCROLL NO ENCOGE EN LA CLASE COMPARTIDA** (SC F1): `.hub-card` la usan las
+  plaquitas de otras pantallas (E3 F16), así que el compactado va en `HubView.jsx` — es la lección de
+  `ToggleTab` en GE F1.
+- 🚨 **ATRÁS PREGUNTABA A QUÉ ÁREA PERTENECE EL MÓDULO, NO DE DÓNDE VENÍAS** (NAVO F1, y era **una
+  línea**: `destinoVuelta = … : areaActual.id`). No era un fallo de Productividad ni de Tareas: era de
+  **todos los módulos a la vez**, porque la regla estaba escrita una sola vez y era la equivocada.
+  Ahora `src/lib/navegacion.js` guarda **la lista de por dónde has pasado** y `tab` es el último de
+  la pila, así que el `switch`, el buscador, el deep-link y las vistas no se enteran de nada.
+- 🚨 **LA BARRA DE ABAJO REINICIA EL RECORRIDO; ABRIR ALGO LO APILA** (NAVO F1). Son dos navegaciones
+  distintas: si la barra apilara, atrás desharía el recorrido de pestañas y se darían vueltas. Y
+  **abrir algo que ya está en la pila recorta en vez de duplicar**, que es como no hay bucles.
+- 🔓 **`vueltaBusqueda` DESAPARECE ABSORBIDO, Y ESO ES LA SEÑAL DE QUE LA PIEZA ERA LA CORRECTA**
+  (NAVO F1). La BI F4 guardaba **un** origen, solo para el buscador, con un efecto que lo borraba al
+  navegar porque un rastro suelto caduca mal. Con la pila no hay nada que borrar: el origen **es** la
+  posición anterior. **Dos memorias del origen acabarían diciendo cosas distintas.**
+- ⚠️ **NI EL RECORRIDO NI LA PANTALLA ABIERTA SE GUARDAN EN `app_data`** (NAVO F1, y EH F40 lo dijo
+  primero): por dónde has pasado es de la sesión. Guardarlo te devolvería a media ruta de anteayer al
+  abrir la aplicación.
+- 🐛 **Y LA VIGÉSIMA VEZ DE LA LECCIÓN DE SIEMPRE, dos veces en el mismo turno** (SC F1 y NAVO F1):
+  un barrido que comprueba que el código **no hace** algo tiene que quitar **los comentarios y las
+  cadenas**. Saltaron el comentario que promete que no hay ningún `@media` y la frase de `NO_HACE`
+  que dice *"No guarda nada en `app_data`"*.
+
 Josué pasó el árbol entero escrito. **«Además» desaparece como categoría** y **Ajustes deja de ser
 un módulo dentro de un área para ser la quinta pestaña** (siguen siendo cinco, regla 10):
 

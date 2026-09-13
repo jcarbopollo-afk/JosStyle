@@ -1,5 +1,99 @@
 # CHANGELOG.md
 
+## v3.81.0 — NAVO F1: atrás vuelve de donde viniste, no al área del módulo
+
+> *"Si entro desde Inicio a una funcionalidad, por ejemplo Tareas o Productividad, y después pulso
+> atrás, la aplicación puede devolverme a otra sección como Gestión. Esto no es el comportamiento
+> deseado."*
+
+🚨 **TENÍA RAZÓN, Y LA CAUSA ERA UNA LÍNEA.** En `App.jsx`:
+
+```js
+const destinoVuelta = vueltaValida ? vueltaValida.desde : areaActual.id;
+```
+
+O sea que **atrás no sabía de dónde venías: preguntaba a qué área pertenece el módulo**.
+Productividad pertenece a Vida y Economía a Gestión, así que abrirlas desde Inicio y pulsar atrás te
+dejaba en un sitio por el que no habías pasado. No era un fallo de esos módulos: era de **todos a la
+vez**, porque la regla estaba escrita una sola vez y era la equivocada.
+
+### Lo que hay que llevarse
+
+- 🚨 **DÓNDE ESTÁS DEJA DE SER UN ID SUELTO Y PASA A SER LA LISTA DE POR DÓNDE HAS PASADO.**
+  `src/lib/navegacion.js` es una pila de funciones puras; `tab` sigue existiendo y significando lo
+  mismo, solo que ahora es **el último de la pila**. Por eso las 22 ramas del `switch`, el buscador,
+  el deep-link y las vistas no se enteran de nada.
+- 🚨 **NI UN ROUTER NUEVO NI UN `if` POR MÓDULO**, que son sus apartados 6 y 2. JosStyle nunca tuvo
+  router —navega con estado de React— y no se le añade uno: lo que cambia es la **forma** de ese
+  estado. Hay una comprobación que barre el cálculo de atrás buscando ids de módulo escritos a mano.
+- 🚨 **Y EL CRITERIO 6 ES EL QUE DEMUESTRA QUE ES ARQUITECTURA:** un módulo **inventado**, que no
+  existe en ningún catálogo, abierto desde Inicio vuelve a Inicio; abierto desde Vida vuelve a Vida.
+  Ninguna funcionalidad futura necesita una condición propia.
+- ⚠️ **NAVEGACIÓN PRINCIPAL Y NAVEGACIÓN INTERNA SON DOS COSAS** (su apartado 4). La barra de abajo
+  no *entra* en nada: cambia de sección, así que **reinicia** la pila. Si apilara, atrás desharía el
+  recorrido de pestañas y se darían vueltas — justo lo que su apartado 8 prohíbe. La barra en sí
+  **no se toca**: mismas cinco pestañas, mismo diseño.
+- 🔓 **`vueltaBusqueda` DESAPARECE ABSORBIDO, Y ES LA MEJOR SEÑAL DE QUE LA PIEZA ERA LA CORRECTA.**
+  La BI F4 ya guardaba un origen —uno, y solo para el buscador— con un efecto que lo borraba al
+  navegar, porque un rastro suelto caduca mal. Con la pila **eso no hay que programarlo**: el origen
+  no es un dato aparte que pueda quedarse viejo, es la posición anterior del recorrido. Se va el
+  estado, se va el efecto y se va la forma de que se desincronicen. **Dos memorias del origen
+  acabarían diciendo cosas distintas.**
+- ⚠️ **ABRIR ALGO QUE YA ESTÁ EN EL RECORRIDO RECORTA, NO DUPLICA** (apartado 8): Inicio →
+  Productividad → Inicio → Productividad deja una pila de dos, no de cuatro. Ni bucles ni entradas
+  repetidas.
+- ⚠️ **LA PILA NO SE GUARDA EN `app_data`**: por dónde has pasado es de la sesión. Guardarlo te
+  devolvería a media ruta de anteayer al abrir la aplicación — es la lección de EH F40 (*"qué
+  pantalla está abierta ahora es de la pantalla"*).
+- ⏸ **Y EL BOTÓN ATRÁS DEL MÓVIL SIGUE SIENDO OTRA COSA**, declarado en `NO_HACE`: ése es el gesto
+  del sistema y necesita `history.pushState` en toda la app. Está pendiente desde la E3 F22 y lo
+  decide Josué. Esto es el botón de atrás **de la aplicación**, que es lo que él describe.
+- 🐛 **Y LA VIGÉSIMA VEZ DE LA LECCIÓN DE SIEMPRE, cazada por esta misma prueba en su primera
+  pasada**: para saber si un archivo **hace** algo hay que quitar los comentarios **y las cadenas**.
+  `NO_HACE` dice con todas las letras *"No guarda nada en `app_data`"* — o sea que **la frase que
+  hace la promesa hacía saltar el barrido que la comprueba**.
+
+## v3.80.0 — SC F1: la cabecera se queda quieta y el acordeón cierra a cero
+
+> *"al hacer scroll vertical dentro de estas pantallas, parte de la interfaz superior se desplaza
+> junto con las tarjetas… HEADER / CONTROLES SUPERIORES → FIJOS. CONTENIDO / TARJETAS → SCROLL"*, y
+> *"corregir la causa real y no hacer un parche superficial"*.
+
+Tres fallos que él encontró usando la aplicación en el iPhone, y los tres tenían una causa de verdad.
+
+### Lo que hay que llevarse
+
+- 🚨 **QUIEN HACE SCROLL ES LA PÁGINA ENTERA**, no un contenedor interno — y eso decide cuál es el
+  arreglo. Por eso la cabecera es `sticky` y no un contenedor con `overflow` propio: un scroll
+  interno obliga a calcular su altura a mano, y la del iPhone cambia con la barra de Safari.
+- 🚨 **LA BANDA SE SALE DE SU CAJA A PROPÓSITO.** Un `sticky` a secas dejaba dos agujeros: el
+  contenido subía por el hueco entre los dos botones de arriba y por los lados. El margen negativo
+  —hasta el borde de la pantalla y más allá del respiro lateral— con el mismo relleno de vuelta tapa
+  los dos **y deja la cabecera exactamente donde estaba**: ni un salto al empezar a desplazar.
+- ⚠️ **LA LUPA NO SE HA TOCADO**, que es lo que él pidió: ya era `fixed` desde la BI F2. Lo que
+  fallaba es que no tenía nada detrás. Va en z-index 30 y la banda en 20, con una comprobación en
+  Chromium de que **el toque en la lupa lo sigue recibiendo la lupa**.
+- 🚨 **EL CUADRADO VACÍO DEL ACORDEÓN ERA `min-height: auto`, Y LLEVABA AHÍ DESDE LA v1.21.0.** Un
+  elemento de rejilla nace con «no te encojas por debajo de tu contenido»; con la fila a `0fr` hay
+  dos órdenes contradictorias, **y Chromium resuelve a favor de la fila mientras Safari resuelve a
+  favor del contenido**. Por eso funcionaba en el ordenador, fallaba en el móvil, y **ninguna de las
+  19 578 comprobaciones podía verlo**: todas corren en Chromium. `minHeight: 0` es la causa, no un
+  parche — ni una altura fija, ni un `max-height`, ni un `@media`.
+- 🚨 **Y HAY UNA REGLA INVARIANTE NUEVA PARA EL SIGUIENTE**: `test-imports.mjs` caza en un segundo
+  cualquier acordeón `0fr` que nazca sin `minHeight: 0`. Probada quitándole el arreglo: se pone roja.
+- ⚠️ **LAS FILAS SON ALGO MÁS FINAS, Y NO PIERDEN NADA**: un punto de escala en el relleno, en el
+  hueco y en el círculo del icono, porque con cinco módulos por área la quinta fila quedaba cortada
+  a 375×667. **Las dos líneas de resumen de cada módulo siguen ahí**: encoge el aire, no la
+  información.
+- ⚠️ **Y SE ENCOGE EN `HubView.jsx`, NUNCA EN LA CLASE `.hub-card`**: esa clase la comparten las
+  plaquitas de otras pantallas (E3 F16), y tocarla desde una fase de los hubs las habría cambiado
+  todas — es la lección de `ToggleTab` en GE F1.
+- ⏸ **LO QUE ESTA FASE NO PUEDE DEMOSTRAR, DICHO**: que el hueco haya desaparecido **en Safari**. El
+  recorrido corre en Chromium, que es justo el navegador donde el fallo nunca se vio. Se comprueba
+  que el arreglo está y que el cierre mide cero; el dedo lo pone él.
+- 🐛 **Y LA DECIMOCTAVA VEZ DE LA LECCIÓN DE SIEMPRE**, en la primera pasada de la prueba nueva: el
+  barrido de «aquí no hay ningún `@media`» saltó **con el comentario que promete justamente eso**.
+
 ## v3.79.1 — La desviación de DIST F2, contestada por Josué
 
 > *"SE QUEDA COMO ESTA pq as mini apps las qria para los sub modulos q estsn dentro de los mudulos
