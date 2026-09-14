@@ -6631,6 +6631,13 @@ ok(reloj_a !== reloj_b,
   `🚨 FIT F7 — el cronómetro AVANZA en el navegador (${reloj_a} → ${reloj_b}, apartado 6)`);
 
 /* Apartados 15 y 16 — el peso y las repeticiones, escritos a mano. */
+/* 🐛 ⚠️ **React escucha `focusout`, no `blur`** (desde React 17 delega en la
+   raíz), así que un `new Event('blur')` **no dispara `onBlur`**. Esto salió
+   cuando cinco comprobaciones daban `null` con el campo enseñando 62.5 en
+   pantalla — y lo que destapó de verdad es que confirmar solo al salir del
+   campo **pierde el dato si se bloquea el iPhone escribiendo**, que es lo que
+   el apartado 29 prohíbe. Ahora el campo guarda al escribir, así que basta con
+   el `input`; el `focusout` va detrás para probar también ese camino. */
 const escribirSerie_fit7 = async (etiqueta, valor) => page.evaluate(([e, v]) => {
   const campo = [...document.querySelectorAll('input[aria-label]')]
     .find((i) => (i.getAttribute('aria-label') || '').startsWith(e));
@@ -6638,7 +6645,7 @@ const escribirSerie_fit7 = async (etiqueta, valor) => page.evaluate(([e, v]) => 
   const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
   set.call(campo, v);
   campo.dispatchEvent(new Event('input', { bubbles: true }));
-  campo.dispatchEvent(new Event('blur', { bubbles: true }));
+  campo.dispatchEvent(new Event('focusout', { bubbles: true }));
   return true;
 }, [etiqueta, valor]);
 

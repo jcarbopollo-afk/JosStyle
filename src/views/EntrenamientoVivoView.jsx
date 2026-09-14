@@ -243,15 +243,21 @@ function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal = fals
     if (!tocando) setTexto(valor === null || valor === undefined ? '' : String(valor));
   }, [valor, tocando]);
 
-  /* 🐛 **EL VALOR SE LEE DEL CAMPO, NO DEL ESTADO.** Leerlo de `texto` es leer
-     lo que había en el último render: si el `blur` llega en el mismo turno que
-     el cambio —cuando alguien pega un valor, cuando una prueba lo escribe, o
-     simplemente cuando React todavía no ha repintado— el cierre conserva el
-     texto VIEJO y se guarda `null` **con el campo enseñando 62,5 en pantalla**.
-     Lo cazó el recorrido en Chromium: el campo decía 62.5 y lo guardado era
-     `null`. `ev.target.value` es siempre lo que hay de verdad. */
+  /* 🚨 **SE GUARDA AL ESCRIBIR, NO AL SALIR DEL CAMPO** (apartado 29: *"Los
+     cambios importantes deben persistirse […] inmediatamente: peso,
+     repeticiones"*).
+
+     Confirmar solo en el `blur` parecía suficiente y **no lo es en un móvil**:
+     si escribe 62,5 y bloquea el iPhone sin tocar nada más, el campo nunca
+     pierde el foco y **ese peso no llega a guardarse jamás**. Lo destapó el
+     recorrido en Chromium —el campo decía 62.5 y lo guardado era `null`— y de
+     paso enseñó por qué: React escucha `focusout`, no `blur`.
+
+     ⚠️ Y el texto de lo que se está escribiendo **sigue siendo de la pantalla**:
+     un «62,» a medio teclear se pinta tal cual y se guarda como 62; al siguiente
+     carácter pasa a 62,5. Sin ese buffer, el punto decimal desaparecería al
+     escribirlo. */
   const confirmar = (valor) => {
-    setTocando(false);
     const v = String(valor ?? '').trim();
     onConfirmar(v === '' ? null : v.replace(',', '.'));
   };
@@ -266,8 +272,8 @@ function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal = fals
       aria-label={etiqueta}
       placeholder={placeholder}
       onFocus={() => setTocando(true)}
-      onChange={(ev) => setTexto(ev.target.value)}
-      onBlur={(ev) => confirmar(ev.target.value)}
+      onChange={(ev) => { setTexto(ev.target.value); confirmar(ev.target.value); }}
+      onBlur={(ev) => { setTocando(false); confirmar(ev.target.value); }}
       onKeyDown={(ev) => { if (ev.key === 'Enter') ev.currentTarget.blur(); }}
       className="w-full h-11 rounded-xl text-center text-base font-bold outline-none toque-44"
       style={{
