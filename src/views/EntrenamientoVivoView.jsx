@@ -623,7 +623,7 @@ export default function EntrenamientoVivoView({
           propios={propios}
           accent={accent}
           onVolver={cerrarPanel}
-          volverA="el entrenamiento"
+          volverA="Entrenamiento"
           onElegir={(id) => { guardar(sustituirEjercicio(sesion, ejercicio.id, id, propios)); cerrarPanel(); }}
           yaElegidos={ejercicio ? [ejercicio.exerciseId] : []}
         />

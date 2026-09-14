@@ -6744,10 +6744,14 @@ ok(carrusel_fit7.filter((c) => c.actual).length === 1, '…con UNO marcado como 
 ok(await pulsar(carrusel_fit7.at(-1).label), '…y se toca el último (apartado 9)');
 await page.waitForTimeout(400);
 ok(new RegExp(`Ejercicio ${carrusel_fit7.length} de`).test(await ver()), '…que abre ése');
-ok(await pulsar(carrusel_fit7[0].label), '…y se vuelve al primero');
-await page.waitForTimeout(400);
 
-/* Apartado 26 — sustituir, que SOLO toca la sesión. */
+/* 🚨 Apartado 26 — sustituir, que SOLO toca la sesión.
+   ⚠️ Se hace **en el último ejercicio, no en el primero**, y a propósito:
+   `sustituirEjercicio` **borra el peso registrado** —60 kg de barra no dicen
+   nada de unas mancuernas—, así que sustituir en el primero dejaría sin peso
+   justo la serie con la que después se comprueba que recargar no pierde nada.
+   Fue un rojo real de esta prueba: el producto estaba bien y la comprobación
+   pedía algo que el diseño no promete. */
 const planAntes_fit7 = JSON.stringify(
   (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {}).planActivo,
 );
@@ -6768,7 +6772,7 @@ if (sustituto_fit7) {
     '🚨 FIT F7 — y se DICE de cuál venía, «solo en este entrenamiento» (apartado 26)');
   ok(/solo en este entrenamiento/i.test(trasSustituir_fit7), '…con esas palabras');
 } else {
-  ok(await pulsar('Volver a el entrenamiento') || await pulsar('el entrenamiento'),
+  ok(await pulsar('Volver a Entrenamiento') || await pulsar('Entrenamiento'),
     'no había sustituto compatible: se vuelve');
 }
 const planDespues_fit7 = JSON.stringify(
@@ -6776,6 +6780,17 @@ const planDespues_fit7 = JSON.stringify(
 );
 ok(planAntes_fit7 === planDespues_fit7,
   '🚨 FIT F7 — y el PLAN ACTIVO no se ha tocado: sustituir es solo de la sesión (apartado 26)');
+
+/* Y se vuelve al primero, que es el que lleva los datos registrados. */
+ok(await pulsar(carrusel_fit7[0].label), 'se vuelve al primer ejercicio');
+await page.waitForTimeout(500);
+const peso1_fit7 = await page.evaluate(() => {
+  const c = [...document.querySelectorAll('input[aria-label]')]
+    .find((i) => (i.getAttribute('aria-label') || '').startsWith('Peso de la serie 1'));
+  return c ? c.value : '';
+});
+ok(peso1_fit7 === '62.5',
+  `🚨 FIT F7 — y el ejercicio que NO se sustituyó conserva sus 62,5 kg (${peso1_fit7})`);
 
 /* Apartado 31 — salir PREGUNTA, y no marca como completada. */
 ok(await pulsar('Salir del entrenamiento'), 'se intenta salir (apartado 31)');
