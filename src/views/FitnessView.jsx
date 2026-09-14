@@ -41,7 +41,13 @@ import EjerciciosView from './EjerciciosView';
 import ConstructorView from './ConstructorView';
 /* FIT F4 — la gestión de plantillas, renderizada entera aquí dentro (E3 F23). */
 import PlantillasView from './PlantillasView';
+/* FIT F5 — la biblioteca de planificaciones, renderizada entera aquí dentro. */
+import BibliotecaPlanesView from './BibliotecaPlanesView';
 import { duplicarPlantilla, fichaDePlantilla, ordenarPlantillas } from '../lib/plantillas';
+import {
+  CATALOGO_PLANES, fichaDePlan, planActivoResuelto, usarPlan, personalizarPreset,
+  alternarFavoritoPlan, quitarPlanActivo,
+} from '../lib/planes';
 import {
   crearRutina, planARutina, leerBorrador, borrarBorrador,
 } from '../lib/constructor';
@@ -362,6 +368,9 @@ export function AreaEntrenamiento({
   /* FIT F4, apartado 20: *"No llenar la pantalla de cards."* El área enseña las
      tres últimas y la gestión entera vive en su propia pantalla. */
   const ultimas = ordenarPlantillas(plantillas, 'recientes').slice(0, 3);
+  /* FIT F5 — el plan activo, resuelto contra la biblioteca (apartado 20). */
+  const planActivo = planActivoResuelto(fitness);
+  const fichaActiva = planActivo ? fichaDePlan(planActivo, propios) : null;
 
   if (dentro === 'ejercicios') {
     return (
@@ -393,6 +402,32 @@ export function AreaEntrenamiento({
     );
   }
 
+  /* FIT F5 — la biblioteca de planificaciones (apartado 20: *"Desde
+     Entrenamiento → Más planes debe poder accederse a esta biblioteca"*).
+     ⚠️ Escribir es de `App.jsx`: aquí solo se le pasa el `fitness` siguiente. */
+  if (dentro === 'planificaciones') {
+    return (
+      <BibliotecaPlanesView
+        fitness={fitness || {}}
+        accent={accent}
+        onVolver={() => setDentro(null)}
+        onUsar={onGuardarFitness ? (planId, opciones) => {
+          const r = usarPlan(fitness || {}, planId, opciones);
+          if (r.ok) onGuardarFitness(r.fitness);
+        } : null}
+        onPersonalizar={onGuardarFitness ? (planId) => {
+          const r = personalizarPreset(fitness || {}, planId);
+          /* Apartado 15: la copia aparece en Tus plantillas, así que se lleva
+             ahí directamente — si no, habría que buscarla a ciegas. */
+          if (r.ok) { onGuardarFitness(r.fitness); setDentro('plantillas'); }
+        } : null}
+        onFavorito={onGuardarFitness
+          ? (planId) => onGuardarFitness(alternarFavoritoPlan(fitness || {}, planId))
+          : null}
+      />
+    );
+  }
+
   return (
     <div className="space-y-5">
       {/* Apartado 25: *"si el usuario cierra accidentalmente, navega atrás,
@@ -415,9 +450,56 @@ export function AreaEntrenamiento({
 
       <div>
         <SectionTitle sub="Lo que estás entrenando ahora">Tu Plan</SectionTitle>
-        {/* ⚠️ El plan ACTIVO es otra cosa que las plantillas, y llega en una fase
-            posterior: aquí sigue el estado vacío de la F1. */}
-        <VacioFitness estado={ESTADOS_VACIOS.entrenamiento} accent={accent} />
+        {/* FIT F5, apartado 20: *"Cuando un plan se seleccione como activo,
+            Entrenamiento → Tu Plan debe poder consumir ese mismo dato."* ⚠️ Lo
+            que se lee es **el id**, resuelto contra la biblioteca: sin copia, así
+            que corregir un ejercicio del catálogo le llega al plan que tiene
+            puesto. Y si el plan ya no existiera, `planActivoResuelto` devuelve
+            `null` y vuelve el estado vacío en vez de dejar un hueco. */}
+        {planActivo ? (
+          <Card style={{ border: `1px solid ${accent}` }}>
+            <button
+              onClick={() => setDentro('planificaciones')}
+              aria-label={`Ver ${fichaActiva.nombre}`}
+              className="w-full flex items-center gap-3 text-left toque-44 active:opacity-70"
+            >
+              <span
+                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: hexToRgba(accent, 0.14), color: accent }}
+              >
+                <Dumbbell size={22} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+                  {fichaActiva.nombre}
+                </span>
+                <span className="block text-xs truncate" style={{ color: COLORS.textMuted }}>
+                  {[fichaActiva.entorno, fichaActiva.textoFrecuencia, fichaActiva.duracion].filter(Boolean).join(' · ')}
+                </span>
+              </span>
+              <ChevronRight size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />
+            </button>
+            {/* ⚠️ Y NADA de «Empezar entrenamiento»: el motor en vivo es una fase
+                posterior, y el apartado 14 lo prohíbe expresamente. Lo que sí se
+                puede es dejar de tenerlo puesto. */}
+            {onGuardarFitness && (
+              <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+                <GhostBtn icon={X} onClick={() => onGuardarFitness(quitarPlanActivo(fitness || {}))}>
+                  Quitar el plan
+                </GhostBtn>
+              </div>
+            )}
+          </Card>
+        ) : (
+          <>
+            <VacioFitness estado={ESTADOS_VACIOS.entrenamiento} accent={accent} />
+            <div className="mt-3">
+              <GhostBtn icon={ChevronRight} onClick={() => setDentro('planificaciones')}>
+                Ver más planes
+              </GhostBtn>
+            </div>
+          </>
+        )}
       </div>
 
       <div>

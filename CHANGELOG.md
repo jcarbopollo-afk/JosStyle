@@ -1,5 +1,99 @@
 # CHANGELOG.md
 
+## v3.87.0 — FIT F5/45: la biblioteca de planificaciones
+
+El criterio de finalización pide entrar en *Fitness → Entrenamiento → Más planes* y **sentir que se
+navega por una biblioteca real de planes de entrenamiento**, pudiendo *Explorar → Buscar → Filtrar →
+Abrir → Revisar → Seleccionar → Personalizar* **sin que ninguna de esas acciones sea un mockup**.
+
+### Diecisiete planes, con ejercicios de verdad
+
+Seis de gimnasio, seis de calistenia y cinco de casa, **compuestos por 297 líneas que apuntan a
+ejercicios que EXISTEN en el catálogo de la F2** — el apartado 2 lo pide con todas las letras: *"NO
+quiero que los planes sean simplemente nombres vacíos"*. Hay una comprobación que recorre las 297
+una a una.
+
+Y se diferencian de verdad: frecuencias de 3 a 6 días, seis objetivos, tres niveles, y **ni dos
+planes con los mismos ejercicios** (hay una comprobación que compara sus firmas).
+
+### 🚨 Lo que se deriva, y por qué no se escribe
+
+El apartado 10 es tajante: *"No quiero porcentajes escritos manualmente si pueden calcularse"*. Así
+que **ni la distribución muscular ni la duración están en el catálogo**: salen de
+`distribucionMuscular()` y `duracionEstimada()`, que son de la F3 y trabajan sobre una rutina. Un día
+de un plan **se convierte en una rutina del constructor**, y las dos funciones salen gratis — sin una
+segunda fórmula de minutos que se desviaría, y sin una segunda de porcentajes.
+
+Lo mismo con tres campos que el apartado 1 enumera y aquí no se escriben, cada uno con su motivo en
+la cabecera de `planes.js`: **`categoria`** (la categoría del apartado 3 **es** el entorno; dos
+campos con los mismos tres valores acaban diciendo cosas distintas), **`ordenDias`** (el orden **es**
+la posición en `dias`) y la propia distribución.
+
+### Un PresetPlan no es un WorkoutPlan, y de ahí sale todo
+
+El apartado 1 pide separar cinco conceptos sin mezclarlos, y el que faltaba es el que explica la
+fase: **un WorkoutPlan es UNA SESIÓN y un PresetPlan es UNA SEMANA de sesiones**. Por eso
+«Personalizar» **no genera una plantilla: genera una por día de entreno** — copiar una semana en una
+sola sesión habría metido los treinta ejercicios del PPL en el mismo entrenamiento.
+
+### Lo que se guarda, y lo que no
+
+Los diecisiete planes **son datos de la aplicación, en el código**, como el catálogo de ejercicios de
+la F2: guardarlos por usuario significaría que corregir un plan no le llega nunca a quien ya tiene
+cuenta. Lo que sí se guarda es **cuál ha elegido** (`fitness.planActivo`, por su id, nunca una copia)
+y **cuáles ha marcado** (`fitness.favoritosPlanes`, ids también).
+
+⚠️ Y con eso **`fitness.planes` se queda sin quien escriba**. La F1 la dejó para la biblioteca, y la
+biblioteca resultó no venir de `app_data`. No se borra —quitarla del normalizador se llevaría lo que
+alguien tuviera guardado ahí (regla 5)— pero **se declara** en `SIN_ESCRITOR`, en vez de dejarla como
+una lista que nadie sabe para qué es.
+
+### La puerta de carga pasa a ser la tercera
+
+Cada fase ha ampliado el normalizador de `fitness` una capa, siempre por lo mismo: **cada archivo
+solo puede limpiar lo que conoce**. `normalizarFitness` (F1) sabe de la forma, `normalizarFitnessCompleto`
+(F2) del catálogo de ejercicios, y ahora `normalizarFitnessConPlanes` (F5) **de la biblioteca**, que
+es la única que puede tirar un favorito o un plan activo que apunte a un plan que ya no existe.
+`App.jsx` llama a la última; hay una comprobación que lo lee.
+
+### 🐛 Y el fallo que costó las 297 líneas
+
+`crearDiaDePlan` construía sus líneas con `crearRutina`, que por dentro llama a **`normalizarLinea`**
+— y ése **exige un `id`**, porque es la puerta de *lo guardado*. Las líneas del catálogo son
+**fuente**, escritas a mano y sin id, así que **las descartaba todas en silencio**: los diecisiete
+planes salían con cero ejercicios, con la auditoría de ids en verde y la distribución vacía. La
+fábrica construye (`crearLinea`); el normalizador limpia lo que vuelve de disco.
+
+### 🐛 Y dos cosas más que cazó la verificación
+
+**La confirmación de cambio de plan se ponía y no se veía.** Vivía en el camino de pintado de la
+lista, y «Usar este plan» se pulsa desde el **detalle** —que devuelve antes—, así que `cambiando` se
+guardaba y la pantalla no enseñaba nada. Es la lección de GE F1 exacta: **una pantalla que se pinta
+por dos caminos tiene que repartir también sus avisos**, o la acción no existe para quien la usa. Lo
+encontró Chromium; el build, el renderizado y las 159 comprobaciones de Node estaban en verde.
+
+**Y la regla invariante de los overlays llevaba desde que existe dependiendo de un salto de línea.**
+Hacía `grep "fixed inset-0"` sobre el código **en bruto**, así que saltó con la cabecera de
+`BibliotecaPlanesView.jsx`, que explica que sus menús se despliegan dentro de la tarjeta *"sin `fixed
+inset-0` ni portal"* — y esa vista no tiene un solo overlay. ⚠️ `PlantillasView.jsx` dice lo mismo y
+**no saltaba solo porque el ajuste de línea le partía la frase**. Ahora quita los comentarios antes
+de barrer, y está comprobado que **sigue cazando un overlay de verdad**: una regla que no puede
+ponerse roja no sirve (EH F42). Vigesimosexta vez de esta lección.
+
+### Lo que NO se ha construido, y está declarado
+
+**«Empezar entrenamiento» no se pinta en ninguna parte** —ni en la biblioteca, ni en el detalle, ni
+en Tu Plan—: el apartado 14 dice *"no debe iniciar todavía el entrenamiento"*, y un botón que no hace
+nada es peor que no tenerlo. Con él van el cronómetro, el registro de series, Progreso, los rangos y
+la IA, todos en `NO_EN_FIT5` con su motivo. Y **ni una imagen inventada** (apartado 5): `thumbnail`
+vale `null` en los diecisiete y la tarjeta dibuja el grupo muscular que más pesa, derivado.
+
+### Archivos
+
+`src/lib/catalogoPlanes.js` (los datos), `src/lib/planes.js` (el modelo y la lógica) y
+`src/views/BibliotecaPlanesView.jsx` (la pantalla), con `scripts/test-planes.mjs` detrás — más el
+cableado en `fitness.js`, `FitnessView.jsx` y `App.jsx`.
+
 ## v3.86.0 — FIT F4/45: Tus plantillas, con todo funcionando de verdad
 
 El objetivo lo dice en una línea: *"No quiero simplemente una lista visual. Todas las acciones deben

@@ -2,6 +2,40 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.87.0 — FIT F5/45: la biblioteca de planificaciones):** Diecisiete planes
+> prediseñados —seis de gimnasio, seis de calistenia, cinco de casa— que se exploran, se buscan, se
+> filtran por entorno, objetivo, nivel y frecuencia, se abren, se eligen como plan activo y se
+> personalizan. 🚨 **Y están compuestos por ejercicios que EXISTEN**: 297 líneas apuntando al
+> catálogo de la F2, comprobadas una a una, porque el apartado 2 prohíbe que sean *"nombres
+> vacíos"*. 🚨 **Ni la distribución muscular ni la duración están escritas** (apartado 10, literal:
+> *"No quiero porcentajes escritos manualmente si pueden calcularse"*): un día de un plan **se
+> convierte en una rutina del constructor** y las dos salen de las funciones de la F3 — sin una
+> segunda fórmula que se desviaría. 🚨 **Un PresetPlan NO es un WorkoutPlan**: aquél es una SEMANA y
+> éste UNA SESIÓN, y de ahí sale que «Personalizar» genere **una plantilla por día de entreno** en
+> vez de meter los treinta ejercicios del PPL en un solo entrenamiento. 🚨 **Los planes viven en el
+> código, no en `app_data`** (como el catálogo de la F2): lo guardado es **cuál eligió**
+> (`fitness.planActivo`, por id) y **cuáles marcó** (`favoritosPlanes`) — ⚠️ y con eso
+> **`fitness.planes` se queda sin quien escriba**, declarado en `SIN_ESCRITOR` en vez de dejarlo como
+> una lista que nadie sabe para qué es. **La puerta de carga pasa a ser la tercera**
+> (`normalizarFitnessConPlanes`), que es la única que conoce la biblioteca y puede limpiar un
+> favorito colgado. 🐛 **Y el fallo que costó las 297 líneas:** `crearDiaDePlan` construía con
+> `crearRutina`, que llama a `normalizarLinea` — **la puerta de lo guardado, que exige un `id`**—, y
+> las líneas del catálogo son fuente y no lo tienen: **las descartaba todas en silencio**, con los
+> diecisiete planes a cero ejercicios y la auditoría de ids en verde. La fábrica construye
+> (`crearLinea`); el normalizador limpia lo que vuelve de disco. ⚠️ **«Empezar entrenamiento» no se
+> pinta en ninguna parte** —apartado 14—, con el cronómetro, el registro de series, Progreso, los
+> rangos y la IA, todos en `NO_EN_FIT5`. Vive en `src/lib/catalogoPlanes.js` (datos),
+> `src/lib/planes.js` (modelo) y `src/views/BibliotecaPlanesView.jsx` (pantalla), con
+> `scripts/test-planes.mjs` detrás.
+> 🐛 **Y dos cosas más que cazó la verificación:** la confirmación de cambio de plan vivía en el
+> camino de pintado de la **lista** y se pulsa desde el **detalle** —que devuelve antes—, así que se
+> guardaba y **no se veía nada** (GE F1 exacto: una pantalla con dos caminos reparte también sus
+> avisos); y **la regla invariante de los overlays llevaba desde que existe dependiendo de un salto
+> de línea** — hacía `grep "fixed inset-0"` sobre el código en bruto y saltó con la cabecera que
+> promete que ahí NO hay overlay, mientras `PlantillasView.jsx` decía lo mismo sin saltar solo porque
+> el ajuste de línea le partía la frase. Ya quita los comentarios, comprobado que sigue cazando uno
+> de verdad (EH F42).
+
 > **🏋️ ACTUALIZACIÓN (v3.86.0 — FIT F4/45: Tus plantillas):** La gestión completa de lo que se
 > construye: ver, buscar por nombre, filtrar por entorno con su recuento, ordenar (recientes /
 > antiguas / A-Z / Z-A), el detalle con su distribución muscular y sus ejercicios, duplicar y

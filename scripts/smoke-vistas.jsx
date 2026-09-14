@@ -172,6 +172,8 @@ import ConstructorView, { FilaEjercicio, EditorLinea, ResumenConstructor } from 
 /* FIT F4 — la gestión de plantillas. ⚠️ Sus tres piezas sueltas, porque el
    detalle y la confirmación **solo aparecen tras pulsar algo** (NAV F3). */
 import PlantillasView, { TarjetaPlantilla, DetallePlantilla, ConfirmarEliminarPlantilla } from '../src/views/PlantillasView.jsx';
+import BibliotecaPlanesView, { TarjetaPlan, DetallePlan, ConfirmarCambioDePlan } from '../src/views/BibliotecaPlanesView.jsx';
+import { CATALOGO_PLANES as PLANES_F5, planPorId as planPorIdF5 } from '../src/lib/planes.js';
 import { rutinaAPlan as rutinaAPlanF4 } from '../src/lib/constructor.js';
 import { crearRutina as crearRutinaF3, anadirEjercicio as anadirF3, editarLinea as editarF3 } from '../src/lib/constructor.js';
 import { CATALOGO_EJERCICIOS } from '../src/lib/ejercicios.js';
@@ -3023,6 +3025,50 @@ const CASOS = [
   ['ConfirmarEliminarPlantilla', ConfirmarEliminarPlantilla, () => ({
     plantilla: { ...rutinaAPlanF4(anadirF3(crearRutinaF3({ nombre: 'Push' }), 'press-banca-barra')), creadoEn: HOY, editadoEn: HOY },
     onCancelar: noop, onEliminar: noop,
+  })],
+  /* FIT F5 — la biblioteca de planificaciones. Los casos que más importan son
+     **el estado vacío de la búsqueda** (apartado 17) y **un plan activo que ya
+     no existe**: la pantalla tiene que seguir funcionando, no dejar un hueco. */
+  ['BibliotecaPlanesView', BibliotecaPlanesView, () => ({
+    fitness: {}, accent, onVolver: noop, onUsar: noop, onPersonalizar: noop, onFavorito: noop,
+  })],
+  ['BibliotecaPlanesView', BibliotecaPlanesView, () => ({
+    fitness: { planActivo: { planId: 'ppl-estetico', origen: 'preset', desde: HOY }, favoritosPlanes: ['core-abs'] },
+    accent, onVolver: noop, onUsar: noop, onPersonalizar: noop, onFavorito: noop,
+  })],
+  /* ⚠️ Con un plan activo que ya no está en la biblioteca: `planActivoDe` da su
+     id, pero ninguna tarjeta lo lleva — y la pantalla se pinta igual. */
+  ['BibliotecaPlanesView', BibliotecaPlanesView, () => ({
+    fitness: { planActivo: { planId: 'fantasma', origen: 'preset', desde: HOY }, favoritosPlanes: ['fantasma'] },
+    accent, onVolver: noop, onUsar: noop, onPersonalizar: noop, onFavorito: noop,
+  })],
+  ['TarjetaPlan', TarjetaPlan, () => ({
+    plan: PLANES_F5[0], accent, activo: false, favorito: false, onAbrir: noop, onFavorito: noop,
+  })],
+  ['TarjetaPlan', TarjetaPlan, () => ({
+    plan: planPorIdF5('core-abs'), accent, activo: true, favorito: true, onAbrir: noop, onFavorito: noop,
+  })],
+  /* ⚠️ Y sin `onFavorito`: la estrella no se pinta, pero la tarjeta sí. */
+  ['TarjetaPlan', TarjetaPlan, () => ({
+    plan: planPorIdF5('body-control'), accent, onAbrir: noop,
+  })],
+  ['DetallePlan', DetallePlan, () => ({
+    plan: planPorIdF5('ppl-estetico'), accent, activo: false, favorito: false,
+    onVolver: noop, onUsar: noop, onPersonalizar: noop, onFavorito: noop,
+  })],
+  /* ⚠️ Un plan de calistenia con isométricos, para que se pinte la línea de
+     segundos y no solo «× reps». */
+  ['DetallePlan', DetallePlan, () => ({
+    plan: planPorIdF5('body-control'), accent, activo: true, favorito: true,
+    onVolver: noop, onUsar: noop, onPersonalizar: noop, onFavorito: noop,
+  })],
+  /* ⚠️ Y el plan que no llega: el estado de error del apartado 17, con salida. */
+  ['DetallePlan', DetallePlan, () => ({
+    plan: null, accent, onVolver: noop, onUsar: noop, onPersonalizar: noop, onFavorito: noop,
+  })],
+  ['ConfirmarCambioDePlan', ConfirmarCambioDePlan, () => ({
+    actual: planPorIdF5('ppl-estetico'), nuevo: planPorIdF5('upper-lower'),
+    onCancelar: noop, onConfirmar: noop,
   })],
   ['AreaProgreso', AreaProgreso, () => ({
     fotos: [{ id: 'f1', path: 'x', fecha: HOY, nota: '' }], accent, onIr: noop,

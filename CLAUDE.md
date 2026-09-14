@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.86.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.87.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -23,7 +23,8 @@ para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
 construye de la F1 a la F45**. Hechas la **F1 (fundación arquitectónica, v3.83.0)**, la
 **F2 (el catálogo maestro de ejercicios, v3.84.0)**, la **F3 (el constructor de entrenamientos,
-v3.85.0)** y la **F4 (Tus plantillas, v3.86.0)**.
+v3.85.0)**, la **F4 (Tus plantillas, v3.86.0)** y la **F5 (la biblioteca de planificaciones,
+v3.87.0)**.
 
 🚨 **Y la lección de la F1, que vale para las 44 que quedan: ENTRENAMIENTO YA EXISTÍA, y no era una
 cosa, eran tres.** El módulo es `entreno` + `calistenia` desde la Fase 2; **las fotos de progreso son
@@ -44,7 +45,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 41 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 40 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -322,8 +323,52 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 | **SF F1** | 🍎 El **barrido de Safari** (ésta no la pidió él: sale de la SC F1) | ✅ **v3.82.0** |
 
 🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, con la **FIT F1 (v3.83.0)**, la **FIT F2
-(v3.84.0)**, la **FIT F3 (v3.85.0)** y la **FIT F4 (v3.86.0)** hechas. Lo que dejaron, y que vale
-para las 41 que quedan:
+(v3.84.0)**, la **FIT F3 (v3.85.0)**, la **FIT F4 (v3.86.0)** y la **FIT F5 (v3.87.0)** hechas. Lo
+que dejaron, y que vale para las 40 que quedan:
+
+- 🚨 **LA FÁBRICA CONSTRUYE; EL NORMALIZADOR LIMPIA LO QUE VUELVE DE DISCO, Y CONFUNDIRLOS BORRÓ LAS
+  297 LÍNEAS DEL CATÁLOGO** (FIT F5, y es un fallo real mío). `crearDiaDePlan` construía con
+  `crearRutina`, que por dentro llama a **`normalizarLinea`** — y ése **exige un `id`**, porque es la
+  puerta de *lo guardado*. Las líneas de un catálogo son **fuente**, escritas a mano y sin id, así
+  que **las descartaba todas en silencio**: los diecisiete planes salían con **cero ejercicios**, con
+  la auditoría de ids en verde y la distribución vacía. **Antes de pasar datos escritos a mano por un
+  normalizador, mirar qué exige** — lo que construye es `crearLinea`.
+- 🐛 **UNA PANTALLA QUE SE PINTA POR DOS CAMINOS TIENE QUE REPARTIR TAMBIÉN SUS AVISOS** (FIT F5, y
+  es GE F1 exacto). La confirmación de cambio de plan vivía en el camino de la **lista**, y «Usar
+  este plan» se pulsa desde el **detalle** —que devuelve antes—: `cambiando` se guardaba y **no se
+  veía nada**. Lo cazó Chromium con el build, el renderizado y las 159 comprobaciones de Node en
+  verde. **Al añadir un aviso a una pantalla, contar cuántos `return` tiene.**
+- 🐛 **LA REGLA DE LOS OVERLAYS LLEVABA DESDE QUE EXISTE DEPENDIENDO DE UN SALTO DE LÍNEA** (FIT F5,
+  y es la lección de siempre por vigesimosexta vez). Hacía `grep "fixed inset-0"` sobre el código
+  **en bruto**, así que saltó con la **cabecera** de `BibliotecaPlanesView.jsx`, que promete que sus
+  menús se despliegan dentro de la tarjeta *"sin `fixed inset-0` ni portal"* — y esa vista no tiene
+  un solo overlay. ⚠️ Y `PlantillasView.jsx` dice lo mismo **sin saltar, solo porque el ajuste de
+  línea le partía la frase**. Ya quita los comentarios, y está comprobado que **sigue cazando un
+  overlay de verdad** (EH F42).
+- 🚨 **UN PresetPlan ES UNA SEMANA Y UN WorkoutPlan UNA SESIÓN** (FIT F5, apartado 1, que pide separar
+  cinco conceptos sin mezclarlos). De esa distinción sale toda la fase: «Personalizar» **crea una
+  plantilla por día de entreno**, no una con la semana dentro — eso habría metido los treinta
+  ejercicios del PPL en el mismo entrenamiento.
+- 🚨 **LO QUE SE PUEDE DERIVAR NO SE ESCRIBE, AUNQUE EL APARTADO 1 LO ENUMERE** (FIT F5). El
+  apartado 10 es literal: *"No quiero porcentajes escritos manualmente si pueden calcularse"*. Así
+  que un día de un plan **se convierte en una rutina del constructor** y la distribución y la
+  duración salen de las funciones de la F3 — sin una segunda fórmula de minutos que se desviaría de
+  la del constructor. Lo mismo con `categoria` (**es** el entorno del apartado 3) y `ordenDias` (**es**
+  la posición en `dias`): dos campos para lo mismo acaban diciendo cosas distintas (E3 F44).
+- ⚠️ **UNA LISTA PUEDE QUEDARSE SIN QUIEN ESCRIBA, Y ENTONCES SE DECLARA** (FIT F5). La F1 dejó
+  `fitness.planes` para la biblioteca, y la biblioteca resultó ser **datos de la aplicación**, en el
+  código. No se borra —quitarla del normalizador se llevaría lo guardado (regla 5)— pero va a
+  `SIN_ESCRITOR` con su motivo, en vez de quedarse ahí sin que nadie sepa para qué es.
+- ⚠️ **CADA CAPA DEL NORMALIZADOR SOLO PUEDE LIMPIAR LO QUE CONOCE** (FIT F5, y ya son tres):
+  `normalizarFitness` (F1) sabe de la forma, `normalizarFitnessCompleto` (F2) del catálogo de
+  ejercicios y `normalizarFitnessConPlanes` (F5) **de la biblioteca** — la única que puede tirar un
+  favorito o un plan activo que apunten a un plan que ya no existe (EH F24). **`App.jsx` llama a la
+  última**, y hay una comprobación que lo lee.
+- ⚠️ **UNA PASTILLA DE FILTRO QUE SIEMPRE DEJARÍA LA PANTALLA VACÍA NO SE PINTA** (FIT F5,
+  apartado 7): enumera *"2 días"* y hoy ningún plan lo es, así que **las frecuencias se derivan de
+  los planes que hay** — el día que se añada uno de dos días la pastilla aparece sola. Y el recuento
+  de cada una se calcula **con los demás filtros puestos**: si no, diría «6» y al pulsarla saldrían
+  dos.
 
 - 🚨 **`UserTemplate` ES `fitness.plantillas`, Y EL IDA Y VUELTA CON EL CONSTRUCTOR YA ERA
   BIDIRECCIONAL** (FIT F4, apartado 2, y es la lección más repetida del proyecto por quinta vez en
@@ -566,14 +611,15 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F5/45 — la biblioteca de planificaciones** (líneas 30 514–31 017 de
+1. 🏋️ **SEGUIR POR LA FIT F6/45 — Tu Plan** (líneas 29 737–30 513 de
    `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). **Ya no hay que esperar a que él pase nada**:
    la Entrega 4 está entera encima de la mesa y se construye de la F1 a la F45, en orden,
    encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
-   ⚠️ **Y lo primero de esa fase es mirar lo que ya hay**: `fitness.planes` existe desde la F1 y
-   **está vacía a propósito** —es justo la biblioteca de esta fase—, mientras que lo que se crea
-   Josué vive en `fitness.plantillas`. Las dos son `WorkoutPlan`, así que la pantalla, el detalle y
-   el duplicado de la F4 ya saben leerlas.
+   ⚠️ **Y lo primero de esa fase es mirar lo que ya hay**: la F5 dejó **`fitness.planActivo`** —el id
+   del plan elegido, con su origen y su fecha—, `planActivoResuelto()` que lo resuelve contra la
+   biblioteca, y **la sección «Tu Plan» de `FitnessView` ya lo pinta**. Lo que la F6 desarrolla es esa
+   pantalla, no el dato. ⚠️ Y **«Empezar entrenamiento» sigue sin poder pintarse**: el motor en vivo
+   es la F7.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

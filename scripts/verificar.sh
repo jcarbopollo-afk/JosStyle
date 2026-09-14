@@ -768,10 +768,34 @@ fi
 # --- Regla 4: todo overlay 'fixed inset-0' debe montarse con createPortal ---
 # Si un archivo tiene un overlay a pantalla completa pero no importa createPortal,
 # reintroduce el bug del containing block (ver docs/01 §5.7).
-SINPORTAL=""
-for f in $(grep -rl "fixed inset-0" src/ --include=*.jsx 2>/dev/null); do
-  grep -q "createPortal" "$f" || SINPORTAL="$SINPORTAL $f"
-done
+# 🐛 ⚠️ Y LA LECCIÓN DE SIEMPRE, POR VIGESIMOSEXTA VEZ: una regla que comprueba
+# que el código NO hace algo tiene que quitar los COMENTARIOS antes de barrer, o
+# salta con la frase que promete justamente eso. Aquí lo hizo la cabecera de
+# `BibliotecaPlanesView.jsx` (FIT F5), que explica que sus menús se despliegan
+# dentro de la tarjeta "sin `fixed inset-0` ni portal" — y esa vista no tiene un
+# solo overlay. ⚠️ Y `PlantillasView.jsx` decía lo mismo sin saltar **solo porque
+# el salto de línea le partía la frase**: la regla llevaba desde que existe
+# dependiendo de dónde cayera el ajuste de línea de un comentario.
+SINPORTAL=$(node -e '
+  const { readdirSync, readFileSync, statSync } = require("fs");
+  const { join } = require("path");
+  const jsx = [];
+  (function recorrer(d) {
+    for (const e of readdirSync(d)) {
+      const p = join(d, e);
+      if (statSync(p).isDirectory()) recorrer(p);
+      else if (p.endsWith(".jsx")) jsx.push(p);
+    }
+  })("src");
+  const sinComentarios = (t) => t
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1 ");
+  const malos = jsx.filter((f) => {
+    const t = readFileSync(f, "utf8");
+    return /fixed inset-0/.test(sinComentarios(t)) && !/createPortal/.test(t);
+  });
+  process.stdout.write(malos.map((f) => " " + f).join(""));
+')
 if [ -n "$SINPORTAL" ]; then
   fallo "Overlays 'fixed inset-0' sin createPortal (bug de containing block):$SINPORTAL"
 else
@@ -919,6 +943,16 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-plantillas.mjs >/tmp/j
   ok "Tus plantillas (FIT F4) — $(grep -c '✓' /tmp/jc_plantillas.log) comprobaciones"
 else
   fallo "Falla la gestión de plantillas"; grep '✗' /tmp/jc_plantillas.log
+fi
+
+# FIT F5 — la biblioteca de planificaciones. Lo que más se vigila son dos cosas
+# que el enunciado subraya: que cada plan esté compuesto por ejercicios que
+# EXISTEN en el catálogo de la F2 (las 297 líneas, una a una) y que personalizar
+# uno no toque el original — lo que él llama "MUY IMPORTANTE".
+if node --import ./scripts/resolver-vite.mjs scripts/test-planes.mjs >/tmp/jc_planes.log 2>&1; then
+  ok "Biblioteca de planificaciones (FIT F5) — $(grep -c '✓' /tmp/jc_planes.log) comprobaciones"
+else
+  fallo "Falla la biblioteca de planificaciones"; grep '✗' /tmp/jc_planes.log
 fi
 
 # SC F1 — scroll, cabeceras fijas y el acordeón que dejaba un hueco en el iPhone.

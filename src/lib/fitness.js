@@ -616,7 +616,26 @@ export const DEFAULT_FITNESS = {
   plantillas: [],
   sesiones: [],
   rangos: [],
+  /* FIT F5 — cuál de los planes de la biblioteca ha elegido (apartado 14) y
+     cuáles ha marcado (apartado 16). ⚠️ Van **aquí, en el modelo**, no en
+     `planes.js`: este normalizador corre en cada carga, así que un campo que no
+     conozca se lo lleva el siguiente guardado (regla 5, y ya van más de veinte).
+     Y nacen vacíos: sin plan elegido es `null`, nunca un plan puesto de oficio
+     —el apartado 15 de la F1 pide el estado inicial limpio—. */
+  planActivo: null,
+  favoritosPlanes: [],
 };
+
+/* La forma de lo elegido. ⚠️ Se guarda **el id**, no una copia del plan: con una
+   copia, corregir un ejercicio del catálogo no le llegaría nunca al plan que
+   tiene activo. `origen` existe desde ya para que una fase futura pueda activar
+   una plantilla suya sin cambiar lo guardado. */
+function normalizarPlanActivoGuardado(g) {
+  if (!g || typeof g !== 'object') return null;
+  const planId = texto(g.planId);
+  if (!planId) return null;
+  return { planId, origen: texto(g.origen) || 'preset', desde: texto(g.desde) };
+}
 
 /* Regla 5: `loadData` no fusiona con el default y `saveData` sobrescribe, así
    que el normalizador devuelve **el objeto entero** y cada lista pasa por el
@@ -633,6 +652,13 @@ export function normalizarFitness(guardado) {
     plantillas: lista(g.plantillas).map(normalizarWorkoutPlan).filter(Boolean),
     sesiones: lista(g.sesiones).map(normalizarWorkoutSession).filter(Boolean),
     rangos: lista(g.rangos).map(normalizarMuscleRank).filter(Boolean),
+    planActivo: normalizarPlanActivoGuardado(g.planActivo),
+    /* Sin repetidos y sin vacíos. ⚠️ Aquí **no** se comprueba que el plan exista
+       todavía: este archivo no conoce la biblioteca, y adivinar desde aquí sería
+       el normalizador escondiendo datos sin poder saber si sobran. Quien limpia
+       los ids colgados es `normalizarFitnessConPlanes` (FIT F5), que sí la
+       conoce. */
+    favoritosPlanes: [...new Set(lista(g.favoritosPlanes).map(texto).filter(Boolean))],
   };
 }
 
@@ -711,7 +737,11 @@ export const CTA_CLASIFICAR = {
    esconde: se enseñan diciendo que llegan más adelante, que es lo contrario de
    un botón muerto. */
 export const ACCESOS_ENTRENAMIENTO = [
-  { id: 'planificaciones', nombre: 'Planificaciones', que: 'La biblioteca de planes.', existe: false, enFase: 'Una fase posterior de Fitness' },
+  /* FIT F5 — la biblioteca ya existe: diecisiete planes prediseñados con sus
+     ejercicios de verdad. ⚠️ Se llama «Más planes» porque es lo que dice el
+     apartado 20 del enunciado de esa fase (*"Entrenamiento → Más planes"*), y
+     porque «Planificaciones» al lado de «Tu Plan» parecían lo mismo. */
+  { id: 'planificaciones', nombre: 'Más planes', que: 'La biblioteca de planes prediseñados de JosStyle.', existe: true, enFase: null },
   /* FIT F3 — ya existen: son las rutinas que guarda el constructor, en la clave
      `plantillas`. ⚠️ **No se pinta como botón en «Secciones»**, igual que
      `habilidades`: tiene su propia sección en esta misma pantalla, y dos

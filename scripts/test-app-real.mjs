@@ -6307,6 +6307,166 @@ const desborde_fit4 = await page.evaluate(() => ({
 ok(desborde_fit4.ancho <= desborde_fit4.ventana + 1,
   `🚨 FIT F4 — a 375 px Tus plantillas no se desborda de lado (${desborde_fit4.ancho} vs ${desborde_fit4.ventana})`);
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F5 — la biblioteca de planificaciones (Entrega 4 · 5/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El criterio de finalización pide entrar en *Fitness → Entrenamiento → Más
+   planes* y poder **Explorar → Buscar → Filtrar → Abrir → Revisar →
+   Seleccionar → Personalizar** *"sin que ninguna de esas acciones sea
+   simplemente un mockup"*. Aquí se hacen las siete, tocando la pantalla.
+
+   ⚠️ Esta sección se apoya en la plantilla «Push» que dejaron las secciones de
+   la F3 y la F4: al final se comprueba que personalizar un plan **añade** a esa
+   lista, no la sustituye. */
+console.log('\n── FIT F5 · La biblioteca de planificaciones ──');
+ok(await pulsar('Volver a Entrenamiento'), 'FIT F5 — se vuelve al área de Entrenamiento');
+const area_fit5 = await esperarTexto(/Tu Plan/i);
+ok(/Más planes/i.test(area_fit5),
+  '🚨 FIT F5 — «Más planes» se ofrece desde Entrenamiento (apartado 20)');
+
+/* Apartado 20: sin plan elegido, Tu Plan lleva a la biblioteca. */
+ok(await pulsar('Ver más planes'), 'se entra a la biblioteca desde Tu Plan');
+const bib_fit5 = await esperarTexto(/PPL/i);
+ok(/PPL Est/i.test(bib_fit5), '🚨 FIT F5 — aparecen planes de verdad (apartado 24)');
+ok(/Gimnasio/i.test(bib_fit5) && /Calistenia/i.test(bib_fit5) && /Casa/i.test(bib_fit5),
+  '🚨 …con las categorías horizontales del apartado 3');
+ok(/≈ \d+ min/.test(bib_fit5), '…y cada tarjeta dice cuánto dura una sesión (apartado 4)');
+ok(/d[ií]as\/semana/i.test(bib_fit5), '…y su frecuencia');
+/* 🚨 Apartado 14: el motor en vivo es una fase posterior. */
+ok(!/Empezar entrenamiento/i.test(bib_fit5),
+  '🚨 FIT F5 — y SIN «Empezar entrenamiento»: sin motor sería una acción muerta (apartado 14)');
+
+/* Apartado 3 — las categorías filtran de verdad. */
+ok(await pulsar('Ver planes de calistenia'), 'se filtra por Calistenia (apartado 3)');
+await page.waitForTimeout(400);
+const soloCali_fit5 = await ver();
+ok(!/PPL Est/i.test(soloCali_fit5),
+  '🚨 FIT F5 — y el filtro filtra: el plan de gimnasio deja de verse');
+ok(/Calistenia/i.test(soloCali_fit5), '…y quedan los de calistenia');
+ok(await pulsar('Ver planes de todos'), 'se vuelve a Todos');
+await page.waitForTimeout(400);
+ok(/PPL Est/i.test(await ver()), '…y vuelven todos (apartado 3)');
+
+/* Apartado 6 — la búsqueda. */
+ok(await esperarCampo('Buscar un plan'), 'la biblioteca tiene su buscador (apartado 6)');
+ok(await escribirCampo('Buscar un plan', 'calistenia'), 'se busca «calistenia»');
+await page.waitForTimeout(500);
+ok(!/PPL Est/i.test(await ver()), '🚨 FIT F5 — la búsqueda por entorno encuentra (apartado 6)');
+ok(await escribirCampo('Buscar un plan', 'zzzz'), 'se busca algo que no existe');
+await page.waitForTimeout(500);
+const vacio_fit5 = await esperarTexto(/No encontramos planes/i);
+ok(/No encontramos planes/i.test(vacio_fit5),
+  '🚨 FIT F5 — y sin resultados se dice, con las palabras del apartado 17');
+ok(/Quitar los filtros/i.test(vacio_fit5),
+  '🚨 …y CON SALIDA: un vacío sin botón es una pantalla rota (EH F41)');
+ok(await pulsar('Quitar los filtros'), 'se quitan los filtros');
+await page.waitForTimeout(500);
+ok(/PPL Est/i.test(await ver()), '…y vuelven los planes');
+
+/* Apartados 11, 12 y 13 — el detalle. */
+ok(await pulsar('Abrir PPL Estético'), 'se abre un plan (apartado 11)');
+const det_fit5 = await esperarTexto(/Distribuci[oó]n muscular/i);
+ok(/Distribuci[oó]n muscular/i.test(det_fit5),
+  '🚨 FIT F5 — con la distribución muscular DERIVADA de sus ejercicios (apartado 10)');
+ok(/%/.test(det_fit5), '…con sus porcentajes');
+ok(/≈ \d+ min/.test(det_fit5), '…la duración estimada, con su «≈» (apartado 11)');
+ok(/La semana/i.test(det_fit5) && /Descanso/i.test(det_fit5),
+  '🚨 FIT F5 — y la semana entera, con sus días de descanso (apartados 9 y 12)');
+ok(!/Empezar entrenamiento/i.test(det_fit5),
+  '🚨 …y tampoco aquí hay «Empezar entrenamiento» (apartado 14)');
+
+ok(await pulsar('Ver los ejercicios de Push'), 'se toca un día (apartado 12)');
+const dia_fit5 = await esperarTexto(/Press de banca/i);
+ok(/Press de banca/i.test(dia_fit5),
+  '🚨 FIT F5 — y salen sus EJERCICIOS REALES, resueltos contra el catálogo de la F2 (apartado 13)');
+ok(/×/.test(dia_fit5), '…con sus series y repeticiones');
+
+/* Apartado 14 — elegir el plan. Con ninguno puesto NO pregunta. */
+const antesUsar_fit5 = guardado.filter((g) => g && g.key === 'fitness').length;
+ok(await pulsar('Usar este plan'), 'se elige el plan (apartado 14)');
+await page.waitForTimeout(800);
+const escrituras_fit5 = guardado.filter((g) => g && g.key === 'fitness');
+ok(escrituras_fit5.length > antesUsar_fit5, '…y se guarda de verdad en `app_data`');
+const activo_fit5 = escrituras_fit5.at(-1)?.value?.planActivo;
+ok(activo_fit5?.planId === 'ppl-estetico',
+  '🚨 FIT F5 — el plan elegido QUEDA PERSISTIDO, por su id (apartado 24)');
+ok(!activo_fit5?.dias && !activo_fit5?.nombre,
+  '🚨 …y se guarda el ID, no una copia del plan: con copia, corregir un ejercicio no le llegaría');
+
+/* Apartado 14 — y con otro ya puesto, SÍ pregunta. */
+ok(await pulsar('Volver a la biblioteca de planes'), 'se vuelve a la biblioteca');
+await esperarTexto(/PPL/i);
+ok(await pulsar('Abrir Upper / Lower'), 'se abre otro plan');
+await esperarTexto(/La semana/i);
+ok(await pulsar('Usar este plan'), 'se pulsa usarlo');
+const confirma_fit5 = await esperarTexto(/¿Cambiar tu plan actual\?/i);
+ok(/¿Cambiar tu plan actual\?/i.test(confirma_fit5),
+  '🚨 FIT F5 — con otro plan activo, pregunta antes de reemplazarlo (apartado 14)');
+ok(/PPL Est/i.test(confirma_fit5),
+  '⚠️ …diciendo CUÁL se va: «tu plan actual» a secas no deja decidir (EH F62)');
+ok(/sigue en la biblioteca/i.test(confirma_fit5),
+  '⚠️ …y que no se pierde nada, porque un plan prediseñado no se borra');
+ok(await pulsar('Cancelar'), 'se cancela el cambio (apartado 24)');
+await page.waitForTimeout(600);
+const trasCancelar_fit5 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.planActivo;
+ok(trasCancelar_fit5?.planId === 'ppl-estetico',
+  '🚨 FIT F5 — y al cancelar NO se ha cambiado nada: sigue el de antes');
+
+ok(await pulsar('Usar este plan'), 'se vuelve a pulsar');
+await esperarTexto(/¿Cambiar tu plan actual\?/i);
+ok(await pulsar('Confirmar cambiar a Upper / Lower'), 'y esta vez se confirma');
+await page.waitForTimeout(800);
+const trasCambiar_fit5 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.planActivo;
+ok(trasCambiar_fit5?.planId === 'upper-lower',
+  '🚨 FIT F5 — y ahora sí cambia el plan activo (apartado 24)');
+
+/* Apartado 16 — favoritos. */
+ok(await pulsar('Guardar Upper / Lower'), 'se guarda el plan como favorito (apartado 16)');
+await page.waitForTimeout(700);
+const favs_fit5 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.favoritosPlanes || [];
+ok(favs_fit5.includes('upper-lower'),
+  '🚨 FIT F5 — y el favorito se guarda como ID, no como copia (apartado 16)');
+
+/* 🚨 Apartado 15 — personalizar: *"la copia no modifica el original"*. */
+const plantillasAntes_fit5 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.plantillas || []).length;
+ok(await pulsar('Personalizar'), 'se pulsa Personalizar (apartado 15)');
+const pers_fit5 = await esperarTexto(/Personalizar este plan/i);
+ok(/plantillas tuyas/i.test(pers_fit5) || /plantilla tuya/i.test(pers_fit5),
+  '🚨 FIT F5 — y se dice cuántas plantillas van a aparecer antes de crearlas');
+ok(/original se queda/i.test(pers_fit5),
+  '🚨 …y que el plan ORIGINAL se queda como está (apartado 15)');
+ok(await pulsar('Crear mis plantillas'), 'se confirman');
+await esperarTexto(/Upper/i);
+await page.waitForTimeout(800);
+const plantillas_fit5 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.plantillas || [];
+ok(plantillas_fit5.length === plantillasAntes_fit5 + 4,
+  `🚨 FIT F5 — un plan de cuatro días de entreno crea CUATRO plantillas suyas (${plantillas_fit5.length - plantillasAntes_fit5})`);
+ok(plantillas_fit5.some((p) => /Upper \/ Lower · Upper A/.test(p.nombre)),
+  '…con el nombre del plan y el del día (apartado 15)');
+ok(plantillas_fit5.some((p) => p.nombre === 'Push'),
+  '🚨 …y la plantilla que ya tenía Josué SIGUE AHÍ: personalizar añade, no sustituye');
+ok(plantillas_fit5.every((p) => (p.ejercicios || []).every((e) => e.id)),
+  '🚨 FIT F5 — y cada línea copiada tiene su propio id: sin él editarla tocaría el plan original (apartado 15)');
+ok(/plantilla/i.test(await ver()),
+  '…y se acaba en Tus plantillas, que es donde el apartado 15 dice que aparecen');
+
+/* Apartado 20 — y Tu Plan consume el plan activo. */
+ok(await pulsar('Volver a Entrenamiento'), 'se vuelve al área');
+const tuPlan_fit5 = await esperarTexto(/Tu Plan/i);
+ok(/Upper \/ Lower/.test(tuPlan_fit5),
+  '🚨 FIT F5 — «Tu Plan» enseña el plan elegido, resuelto contra la biblioteca (apartado 20)');
+ok(/Quitar el plan/i.test(tuPlan_fit5), '…y se puede dejar de tenerlo puesto');
+ok(!/Empezar entrenamiento/i.test(tuPlan_fit5),
+  '🚨 …y tampoco aquí: el motor en vivo es una fase posterior (apartado 14)');
+
+/* Y a 375 px no se desborda (apartado 18). */
+const desborde_fit5 = await page.evaluate(() => ({
+  ancho: document.documentElement.scrollWidth, ventana: window.innerWidth,
+}));
+ok(desborde_fit5.ancho <= desborde_fit5.ventana + 1,
+  `🚨 FIT F5 — a 375 px la biblioteca no se desborda de lado (${desborde_fit5.ancho} vs ${desborde_fit5.ventana})`);
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */
