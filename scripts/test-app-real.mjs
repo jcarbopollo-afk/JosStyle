@@ -146,7 +146,20 @@ const page = await browser.newPage();
 const errores = [];
 const guardado = [];
 page.on('pageerror', (e) => errores.push(e.message));
-page.on('console', (m) => { if (m.type() === 'error' && !/ERR_CONNECTION/.test(m.text())) errores.push(m.text()); });
+/* ⚠️ Un RECURSO que no carga por red no es un error de JavaScript, y ya había
+   precedente con `ERR_CONNECTION`. Se amplía a toda la familia `net::ERR_`
+   porque `index.css` importa las tipografías de Google Fonts y **el proxy de
+   este contenedor no tiene una CA que Chromium se crea**
+   (`ERR_CERT_AUTHORITY_INVALID`): en el iPhone de Josué cargan, aquí no, y eso
+   no dice nada del código. 🚨 **Y no puede tapar un error de verdad**: las
+   excepciones de JavaScript llegan por `pageerror`, que es OTRO escuchador y no
+   filtra nada. */
+const esFalloDeRed = (t) => /Failed to load resource/i.test(t) && /net::ERR_/.test(t);
+page.on('console', (m) => {
+  if (m.type() !== 'error') return;
+  if (/ERR_CONNECTION/.test(m.text()) || esFalloDeRed(m.text())) return;
+  errores.push(m.text());
+});
 
 await page.route(`${SUPA}/**`, async (route) => {
   const url = route.request().url();
