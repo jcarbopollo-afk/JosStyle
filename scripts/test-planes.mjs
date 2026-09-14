@@ -393,8 +393,14 @@ ok(normalizarFitnessConPlanes({ ejercicios: [{ id: 'x', nombre: 'Mío', musculos
   '🚨 …y sigue haciendo lo de la F2: los ejercicios suyos pasan por el modelo completo');
 
 const appSrc = leer('src/App.jsx');
-ok(/normalizarFitnessConPlanes\s*\(/.test(appSrc),
-  '🚨 FIT F5 — y `App.jsx` llama a la ÚLTIMA puerta: llamar a la de en medio dejaría favoritos colgados');
+/* 🔓 Hasta la FIT F7, la última puerta era ésta y `App.jsx` la llamaba
+   directamente. La F7 añadió la cuarta capa —la del snapshot de una sesión—, así
+   que lo que se vigila sigue siendo lo mismo: **que se llame a la ÚLTIMA**, que
+   ahora es `normalizarFitnessConSesiones`, y que ésa siga llamando a ésta. */
+ok(/normalizarFitnessConSesiones\s*\(/.test(appSrc),
+  '🚨 FIT F5 → F7 — `App.jsx` llama a la ÚLTIMA puerta: la de en medio dejaría favoritos colgados');
+ok(/normalizarFitnessConPlanes\s*\(/.test(leer('src/lib/entrenamiento.js')),
+  '🚨 …y esa última llama a ésta, así que la cadena de cuatro capas sigue entera');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 10. Los estados vacíos, con salida (apartado 17) ──');

@@ -69,7 +69,11 @@ import { DEFAULT_FITNESS } from './lib/fitness';
 /* FIT F5 — y la puerta pasa a ser la de `planes.js`, que es la única que conoce
    la biblioteca: la de `ejercicios.js` no puede limpiar un favorito ni un plan
    activo que apunten a un plan que ya no existe, porque no sabe cuáles hay. */
-import { normalizarFitnessConPlanes } from './lib/planes';
+/* 🚨 FIT F7 — y la CUARTA capa es la del motor en vivo: sin ella el siguiente
+   guardado se llevaría el snapshot de la sesión entero (regla 5) — los pesos,
+   las repeticiones, las series marcadas y las notas. Se llama SIEMPRE a la
+   última. */
+import { normalizarFitnessConSesiones } from './lib/entrenamiento';
 import { eventosDerivados } from './lib/calendarioIntegracion';
 import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
 import { urlFirmada, urlEnCache } from './lib/imagenes';
@@ -759,7 +763,7 @@ export default function App() {
       /* FIT F1 — regla 5: `loadData` no fusiona con el valor por defecto, así que
          lo guardado antes de esta fase entra por su normalizador, que devuelve el
          objeto entero con todas sus claves. */
-      setFitness(normalizarFitnessConPlanes(fit));
+      setFitness(normalizarFitnessConSesiones(fit));
       setLoaded(true);
       /* SO — los datos ya estan en pantalla. Es el unico momento del ciclo en que
          'sincronizado' significa algo: antes de esto no hay nada que sincronizar,

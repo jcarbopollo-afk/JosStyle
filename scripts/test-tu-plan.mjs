@@ -322,10 +322,18 @@ ok(NO_EN_FIT6.every((x) => x.que && x.porque), '…cada línea con los dos');
 ok(NO_EN_FIT6.some((x) => /entrenamiento en vivo/i.test(x.que)),
   '🚨 …y el primero es el motor en vivo (apartado 28)');
 const vistaSrc = leer('src/views/TuPlanView.jsx');
-ok(!/Empezar entrenamiento|Comenzar entrenamiento/i.test(soloCodigo(vistaSrc)),
-  '🚨 FIT F6 — la pantalla NO pinta ningún botón que empiece un entrenamiento (apartado 6)');
+/* 🔓 Esta comprobación decía lo contrario hasta la FIT F7, y estaba escrita a
+   propósito para este momento (E3 F44): el apartado 6 prohibía el botón *"si
+   todavía no puede existir una acción funcional completa"*, no para siempre.
+   Con el motor construido, guardaba una promesa y pasa a vigilar que se cumpla.
+   ⚠️ Y solo se ofrece cuando hay quien lo atienda: sin `onEmpezar` no se pinta,
+   que es lo que impide que vuelva a ser un botón muerto (regla 8). */
+ok(/Empezar entrenamiento/.test(vistaSrc),
+  '🔓 FIT F6 → F7 — la pantalla YA pinta «Empezar entrenamiento»: el motor llegó');
+ok(/onEmpezar &&|onEmpezar \?|\{onEmpezar/.test(vistaSrc),
+  '…y solo si le dan con qué empezar: sin acción, no hay botón (regla 8)');
 ok(/Ver entrenamiento/.test(vistaSrc),
-  '…el CTA es «Ver entrenamiento», que abre el detalle y existe de verdad');
+  '…y «Ver entrenamiento» sigue estando: abrir el detalle no se ha perdido');
 ok(!/cron[oó]metro|timer|setInterval/i.test(soloCodigo(vistaSrc)),
   '⚠️ …ni un cronómetro (apartado 28)');
 ok(PREPARADO_PARA.length >= 4 && PREPARADO_PARA.every((x) => x.que && x.donde),

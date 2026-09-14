@@ -965,6 +965,17 @@ else
   fallo "Falla Tu Plan"; grep '✗' /tmp/jc_tuplan.log
 fi
 
+# FIT F7 — el motor de entrenamiento en vivo. Lo que más se vigila: que el
+# cronómetro salga de MARCAS DE TIEMPO (hay una comprobación que simula bloquear
+# el móvil diez minutos), que planificado y realizado no se pisen, que una serie
+# del plan se OMITA en vez de destruirse, y que sustituir un ejercicio no toque
+# ni el plan ni la plantilla — lo que el apartado 26 marca como MUY IMPORTANTE.
+if node --import ./scripts/resolver-vite.mjs scripts/test-entrenamiento.mjs >/tmp/jc_entreno.log 2>&1; then
+  ok "Entrenamiento en vivo (FIT F7) — $(grep -c '✓' /tmp/jc_entreno.log) comprobaciones"
+else
+  fallo "Falla el motor de entrenamiento en vivo"; grep '✗' /tmp/jc_entreno.log
+fi
+
 # SC F1 — scroll, cabeceras fijas y el acordeón que dejaba un hueco en el iPhone.
 # Los tres los reportó Josué usando la aplicación, y los tres tenían una causa
 # real: la cabecera no era `sticky`, la banda no existía y al elemento de rejilla

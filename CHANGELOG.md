@@ -1,5 +1,105 @@
 # CHANGELOG.md
 
+## v3.89.0 — FIT F7/45: el motor de entrenamiento en vivo
+
+El criterio de finalización no admite medias tintas: *"La fase está terminada cuando puedo iniciar
+una rutina real y hacer una sesión completa de prueba: Empezar → navegar ejercicios → introducir
+peso/reps → completar series → añadir series → descansar → añadir notas → sustituir un ejercicio →
+salir/reanudar **sin perder datos**. El usuario debe sentir que está utilizando un tracker de
+entrenamiento real, no una demo."*
+
+### Qué se puede hacer ahora
+
+Desde **Tu Plan → Empezar entrenamiento** —o desde el detalle de una plantilla— se abre una pantalla
+entera con el cronómetro corriendo: el carrusel de ejercicios arriba, el ejercicio actual con sus
+músculos, y la tabla **SERIE | KG | REPES | ✓**. Se escribe el peso con decimales, las repeticiones,
+se marca cada serie, se añaden series extra, se omiten las que no se han hecho, se descansa, se
+escriben notas y se sustituye un ejercicio sobre la marcha. Todo se guarda **en el momento**, así que
+salir y volver —incluso cerrar la aplicación y recargarla— devuelve el entrenamiento donde estaba.
+
+### 🚨 El snapshot: la única copia que este proyecto sí debe hacer
+
+El apartado 3 lo marca como **MUY IMPORTANTE**: *"Cuando comienza una sesión, no dependas
+exclusivamente de que el plan siga igual."* Y eso **no contradice las veinte fases que llevan
+prohibiendo copiar**: lo prohibido es duplicar un dato que puede cambiar y del que hay una fuente
+viva; una sesión es **historial**, y el historial se rompe si depende de algo que se edita después.
+Es la E3 F28 exacta — *"un registro histórico sí lleva copia, y es la única cosa que debe"*.
+
+⚠️ **Lo que el snapshot NO copia es el ejercicio**: guarda su `exerciseId`, como toda línea desde la
+F3, así que corregir un porcentaje del catálogo llega también a las sesiones viejas. Lo que se congela
+es la **estructura** —qué ejercicios, en qué orden, con cuántas series y qué decía el plan—.
+
+### 🚨 Planificado y realizado son dos objetos, no un campo que se pisa
+
+El apartado 20 lo explica con su caso: si el plan dice **8–12**, eso no son ocho repeticiones
+exactas. Él registra un 10, y la serie guarda `hecho.reps = 10` **conservando** `plan.reps = 8` y
+`plan.repsHasta = 12`. Con un solo campo, la F11 —progresión y comparación— no tendría con qué
+comparar.
+
+Y por lo mismo hay **tres clases de serie** (apartado 19): `origen` dice de dónde salió —del plan o
+añadida— y `estado` qué pasó con ella —pendiente, hecha u **omitida**—. Una del plan **nunca se
+destruye**: se omite, y la estructura original sigue entera.
+
+### 🚨 El cronómetro es de marcas de tiempo, y por eso sobrevive al iPhone bloqueado
+
+Los apartados 6 y 7 lo piden con todas las letras, y es la lección del Pomodoro (E3 F25): Safari
+**congela** los temporizadores de una pestaña que no se ve, así que un contador que resta segundos se
+queda diez minutos por detrás. Aquí se guarda cuándo empezó y cuánto tiempo lleva pausada, y lo que
+dura **se resta**. Hay una comprobación que simula bloquear el móvil diez minutos, y otra en Chromium
+que mira que el reloj avance de verdad en pantalla.
+
+### Lo que dejó esta fase
+
+- 🚨 **UNA CUARTA CAPA EN LA PUERTA DE CARGA, Y `App.jsx` LLAMA A LA ÚLTIMA.** `normalizarFitness`
+  (F1) sabe de la forma, `normalizarFitnessCompleto` (F2) del catálogo, `normalizarFitnessConPlanes`
+  (F5) de la biblioteca y **`normalizarFitnessConSesiones` (F7) del snapshot** — la única que conoce
+  una serie. Sin ella, el siguiente guardado se llevaría los pesos, las repeticiones, las series
+  marcadas y las notas (regla 5). Hay una comprobación que le cuela una serie sin id a la puerta de
+  la F5 y demuestra que ésta sí la descarta.
+- 🐛 **`musculosResumidos` DEVUELVE UNA CADENA, NO UNA LISTA, Y EL HUECO ANATÓMICO LE HACÍA `.map()`.**
+  Es la lección de siempre —antes de leer lo que devuelve una función de otra fase, mirar QUÉ
+  devuelve—, y aquí habría tumbado la pantalla entera del entrenamiento. Lo que hacía falta era
+  `musculosDe()`, que da los objetos con su grupo y su porcentaje. **Lo cazó el banco de
+  renderizado**, no el build.
+- 🚨 **«TERMINAR» NO PUEDE LLAMARSE IGUAL EN LA CABECERA Y EN SU CONFIRMACIÓN.** Dos botones con el
+  mismo nombre en la misma pantalla es el fallo de la E3 F30 y de la E3 F42 —y aquí, además, pulsar
+  el de arriba por error no confirmaría nada—. El de la confirmación es **«Terminar y guardar»**, que
+  de paso dice lo que pasa.
+- 🔓 **TRES PROMESAS DE FASES ANTERIORES SE DAN LA VUELTA, NO SE BORRAN** (E3 F44). La F4 y la F6
+  declararon que «Empezar entrenamiento» **no se pintaba** *"si todavía no puede existir una acción
+  funcional completa"*, con sus comprobaciones guardándolo. Eran una espera, no una exclusión: ahora
+  vigilan que el botón esté. ⚠️ Y en la **biblioteca de planes sigue sin haberlo**, por su razón de
+  verdad: allí se elige **un plan**, que es una semana; entrenar es un día, y eso se hace desde Tu
+  Plan (apartado 1).
+- 🐛 **UNA FÁBRICA DE ESCENARIOS QUE LLAMA A `uid()` DEVUELVE IDS DISTINTOS CADA VEZ** (GE F2, y ya
+  van dos): cinco comprobaciones mías pasaban los ids de una sesión a otra recién creada y fallaban
+  **con el código bien**. Lo que no varía se crea una vez.
+- ⚠️ **EL DESCANSO ES OTRO TEMPORIZADOR, Y NO SE GUARDA** (apartado 23). Es independiente del
+  cronómetro, también de marcas de tiempo, y vive en la pantalla: un descanso de 90 segundos no tiene
+  sentido recuperarlo tres horas después (EH F40). Y **no bloquea**: es una barra, se puede pausar,
+  reiniciar, sumar 30 s o saltar, con la tabla debajo funcionando.
+- ⚠️ **EL SONIDO DEL FIN DE DESCANSO ES UNO QUE YA EXISTE, EMITIDO AL BUS** (apartado 25, y E3 F25
+  palabra por palabra). La biblioteca de SO F4 no tiene ninguna campana de descanso, y declarar un
+  evento sin archivo es declarar un sonido que no suena. La vibración va en `try`: en un iPhone
+  `navigator.vibrate` no existe, y el apartado pide que *"degrade correctamente"*.
+- ⚠️ **EL SELECTOR DE EJERCICIOS ES `EjerciciosView`** (apartado 26, que pide filtrar por músculo,
+  entorno, equipo y dificultad — o sea, exactamente lo que ya hace). Un segundo buscador de
+  ejercicios sería el duplicado de la E3 F22.
+- ⚠️ **NI UNA URL INVENTADA EN EL HUECO ANATÓMICO** (apartado 11, literal, y regla 8): se dibuja el
+  grupo muscular que trabaja, que es un dato real del catálogo, y se dice que la ilustración todavía
+  no está. Hay un barrido que busca `http` y `<img` en la pantalla entera.
+- ⚠️ **TERMINAR PREGUNTA** (apartado 32, `aplicarPlan` por vigesimoprimera vez): sin confirmar no
+  escribe nada. Y **salir no termina** (apartado 31): la sesión se queda en curso y la tarjeta de
+  recuperación la vuelve a ofrecer.
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde. **244 comprobaciones nuevas** en
+`scripts/test-entrenamiento.mjs` —incluida la sesión completa del apartado 38, de punta a punta—,
+**una sección nueva del recorrido en Chromium** que hace ese mismo entrenamiento con el dedo y
+comprueba que el cronómetro avanza, que recargar no pierde nada y que a 375 px la tabla no se
+desborda, y casos de renderizado para las siete piezas de la pantalla.
+
 ## v3.88.0 — FIT F6/45: Tu Plan
 
 El criterio de finalización pide entrar en *Fitness → Entrenamiento* y encontrar **Tu Plan → Próximo

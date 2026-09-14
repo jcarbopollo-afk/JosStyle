@@ -504,11 +504,16 @@ export function normalizarWorkoutPlan(g) {
    ⚠️ **La duración NO se guarda.** Sale de la hora de inicio y la de fin, como
    la del sueño en la E3 F31: guardarla sería una copia que miente en cuanto
    corrija una hora. */
-export const ESTADOS_SESION = ['planificada', 'en_curso', 'completada', 'descartada'];
+/* ⚠️ FIT F7 — `pausada` es el cuarto estado que pide el apartado 2 de esa fase
+   (*"active, paused, completed, discarded"*). Los otros tres ya estaban con sus
+   nombres: `en_curso` es el activo. Renombrarlos habría roto lo guardado. */
+export const ESTADOS_SESION = ['planificada', 'en_curso', 'pausada', 'completada', 'descartada'];
 
 export function crearWorkoutSession({
   planId = null, nombre = '', fecha = todayISO(), inicio = null, fin = null,
   ejercicios = [], notas = '', descripcion = '', estado = 'planificada',
+  origen = null, iniciadaEn = null, terminadaEn = null, pausadaEn = null,
+  pausadoMs = 0, actual = 0,
 } = {}) {
   return {
     id: uid(),
@@ -521,6 +526,30 @@ export function crearWorkoutSession({
     notas: texto(notas),
     descripcion: texto(descripcion),
     estado: ESTADOS_SESION.includes(estado) ? estado : 'planificada',
+    /* ═══ FIT F7 — el motor de entrenamiento en vivo ═══════════════════════
+       🚨 Estos seis campos van **AQUÍ, en el modelo**, no en `entrenamiento.js`:
+       `App.jsx` normaliza `fitness` en cada carga, así que lo que este
+       normalizador no conozca **se lo lleva el siguiente guardado** (regla 5, y
+       es exactamente lo que le pasó a los cinco campos del constructor en la
+       F3: un L-sit guardado a 20 segundos volvía como repeticiones).
+
+       ⚠️ `ejercicios` NO se toca: la sesión guarda su **snapshot** en
+       `origen.ejercicios`, con sus series y lo que él va registrando. Este
+       campo es el que ya leía la F1, y se queda como estaba. */
+    /* De dónde salió la sesión y **la copia de la rutina al empezar**
+       (apartado 3): *"no dependas exclusivamente de que el plan siga igual"*. */
+    origen: origen && typeof origen === 'object' ? origen : null,
+    /* 🚨 Marcas de tiempo, nunca un contador (apartados 6 y 7, y es la lección
+       del Pomodoro en la E3 F25): Safari congela los temporizadores de una
+       pestaña que no se ve, así que un contador que resta segundos se queda
+       diez minutos por detrás al bloquear el iPhone. Se guarda CUÁNDO empezó y
+       la duración **se resta**. */
+    iniciadaEn: enteroONull(iniciadaEn),
+    terminadaEn: enteroONull(terminadaEn),
+    pausadaEn: enteroONull(pausadaEn),
+    pausadoMs: enteroONull(pausadoMs) ?? 0,
+    /* En qué ejercicio va (apartado 28: una sola fuente de verdad). */
+    actual: enteroONull(actual) ?? 0,
   };
 }
 

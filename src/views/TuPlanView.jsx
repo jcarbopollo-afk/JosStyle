@@ -24,7 +24,7 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  ChevronRight, Dumbbell, Plus, Repeat, Moon, Calendar, X,
+  ChevronRight, Dumbbell, Plus, Repeat, Moon, Calendar, X, Play,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
@@ -90,7 +90,7 @@ export function PlanPerdido({ accent, onExplorar }) {
    *"Hoy · Push · 6 ejercicios · ≈ 55 min"*, con sus músculos y su posición en
    la semana. ⚠️ El «fondo/imagen» del apartado 6 es **el grupo que más pesa**,
    derivado: ni una imagen inventada (la lección de la F5). */
-export function TarjetaProximo({ proximo, accent, onVer }) {
+export function TarjetaProximo({ proximo, accent, onVer, onEmpezar = null }) {
   if (!proximo) return null;
   const Icono = iconoDeGrupo(null);
   return (
@@ -123,14 +123,27 @@ export function TarjetaProximo({ proximo, accent, onVer }) {
       )}
       <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>{proximo.posicion}</p>
 
-      {/* 🚨 Apartado 6: el CTA **abre el detalle**, no empieza nada. El motor en
-          vivo es la FIT F7, y un botón que no hace lo que dice es peor que no
-          tenerlo (regla 8). */}
-      {onVer && (
-        <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
-          <PrimaryButton accent={accent} icon={ChevronRight} onClick={onVer}>
-            Ver entrenamiento
-          </PrimaryButton>
+      {/* 🚨 Apartado 6 de la F6: el CTA abría el detalle porque el motor no
+          existía —*"No crear botones muertos"*—. 🔓 **Con la FIT F7 el motor
+          existe**, así que el primario es **Empezar entrenamiento**, que es el
+          camino que pide su apartado 1: *"Tu Plan → entrenamiento → Empezar
+          entrenamiento"*. Ver el detalle sigue estando, de secundario. */}
+      {(onVer || onEmpezar) && (
+        <div className="mt-3 pt-3 flex gap-2 flex-wrap" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+          {onEmpezar && (
+            <PrimaryButton accent={accent} icon={Play} onClick={onEmpezar}>
+              Empezar entrenamiento
+            </PrimaryButton>
+          )}
+          {onVer && (
+            onEmpezar
+              ? <GhostBtn icon={ChevronRight} onClick={onVer}>Ver entrenamiento</GhostBtn>
+              : (
+                <PrimaryButton accent={accent} icon={ChevronRight} onClick={onVer}>
+                  Ver entrenamiento
+                </PrimaryButton>
+              )
+          )}
         </div>
       )}
     </Card>
@@ -206,7 +219,7 @@ export function SemanaCompacta({ semana, accent, seleccionado = null, onElegir =
 /* ── La sesión de un día (apartado 9) ──────────────────────────────────────
    ⚠️ Las filas son las de `lineasDeDia()`, las mismas que pinta la biblioteca:
    *"Reutilizar el detalle creado para planes/plantillas."* */
-export function SesionDelDia({ sesion, accent, onCerrar = null }) {
+export function SesionDelDia({ sesion, accent, onCerrar = null, onEmpezar = null }) {
   if (!sesion) return null;
   return (
     <Card style={{ border: `1px solid ${accent}` }}>
@@ -258,6 +271,16 @@ export function SesionDelDia({ sesion, accent, onCerrar = null }) {
           {sesion.distribucion.grupos.slice(0, 4).map((g) => `${g.nombre} ${g.porcentaje}%`).join(' · ')}
         </p>
       )}
+
+      {/* 🔓 FIT F7 — desde el detalle también se empieza: es el camino literal
+          del apartado 1, *"Tu Plan → entrenamiento → Empezar entrenamiento"*. */}
+      {onEmpezar && (
+        <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+          <PrimaryButton accent={accent} icon={Play} onClick={onEmpezar}>
+            Empezar entrenamiento
+          </PrimaryButton>
+        </div>
+      )}
     </Card>
   );
 }
@@ -268,7 +291,7 @@ export function SesionDelDia({ sesion, accent, onCerrar = null }) {
 export default function TuPlanView({
   fitness = {}, accent, hoy,
   onExplorar = null, onCrear = null, onVerPlantillas = null, onCambiarPlan = null,
-  onQuitar = null,
+  onQuitar = null, onEmpezar = null,
 }) {
   const [diaAbierto, setDiaAbierto] = useState(null);
   const v = useMemo(() => tuPlan(fitness, hoy ? { hoy } : {}), [fitness, hoy]);
@@ -307,6 +330,7 @@ export default function TuPlanView({
             proximo={v.proximo}
             accent={accent}
             onVer={v.proximo ? () => setDiaAbierto({ indice: v.proximo.indice, dia: v.proximo.dia }) : null}
+            onEmpezar={v.proximo && onEmpezar ? () => onEmpezar(v.proximo.indice) : null}
           />
         )}
         {/* ⚠️ Y si hoy descansa pero queda entrenamiento esta semana, se dice
@@ -317,6 +341,7 @@ export default function TuPlanView({
               proximo={v.proximo}
               accent={accent}
               onVer={() => setDiaAbierto({ indice: v.proximo.indice, dia: v.proximo.dia })}
+              onEmpezar={onEmpezar ? () => onEmpezar(v.proximo.indice) : null}
             />
           </div>
         )}
@@ -324,7 +349,12 @@ export default function TuPlanView({
 
       {/* La sesión abierta, justo debajo de lo que la abrió. */}
       {sesion && (
-        <SesionDelDia sesion={sesion} accent={accent} onCerrar={() => setDiaAbierto(null)} />
+        <SesionDelDia
+          sesion={sesion}
+          accent={accent}
+          onCerrar={() => setDiaAbierto(null)}
+          onEmpezar={onEmpezar && !sesion.descanso ? () => onEmpezar(diaAbierto.indice) : null}
+        />
       )}
 
       {/* 2 · El plan activo (apartado 3: sin sobrecargar la cabecera). */}

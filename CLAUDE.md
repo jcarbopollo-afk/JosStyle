@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.87.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.89.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -45,7 +45,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 40 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 38 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -323,8 +323,60 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 | **SF F1** | 🍎 El **barrido de Safari** (ésta no la pidió él: sale de la SC F1) | ✅ **v3.82.0** |
 
 🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, con la **FIT F1 (v3.83.0)**, la **FIT F2
-(v3.84.0)**, la **FIT F3 (v3.85.0)**, la **FIT F4 (v3.86.0)** y la **FIT F5 (v3.87.0)** hechas. Lo
-que dejaron, y que vale para las 40 que quedan:
+(v3.84.0)**, la **FIT F3 (v3.85.0)**, la **FIT F4 (v3.86.0)**, la **FIT F5 (v3.87.0)**, la **FIT F6
+(v3.88.0)** y la **FIT F7 (v3.89.0)** hechas. Lo que dejaron, y que vale para las 38 que quedan:
+
+- 🚨 **EL SNAPSHOT DE UNA SESIÓN ES LA ÚNICA COPIA QUE ESTE PROYECTO SÍ DEBE HACER** (FIT F7,
+  apartado 3, marcado como MUY IMPORTANTE). No contradice las veinte fases que llevan prohibiendo
+  copiar: lo prohibido es duplicar **un dato que puede cambiar y del que hay una fuente viva**; una
+  sesión es **historial**, y el historial se rompe si depende de algo que se edita después (E3 F28).
+  ⚠️ Y **no copia el ejercicio**: guarda su `exerciseId`, así que corregir un porcentaje del catálogo
+  llega también a las sesiones viejas. Lo que se congela es **la estructura**.
+- 🚨 **PLANIFICADO Y REALIZADO SON DOS OBJETOS, NO UN CAMPO QUE SE PISA** (FIT F7, apartados 14 y
+  20). Si el plan dice **8–12**, eso no son ocho repeticiones: él registra un 10 y la serie guarda
+  `hecho.reps = 10` **conservando** `plan.reps = 8` y `plan.repsHasta = 12`. Con uno solo, la F11
+  —progresión y comparación— no tendría con qué comparar.
+- 🚨 **Y TRES CLASES DE SERIE: UNA DEL PLAN SE OMITE, NUNCA SE DESTRUYE** (FIT F7, apartado 19).
+  `origen` dice de dónde salió y `estado` qué pasó con ella —`pendiente`, `hecha`, `omitida`—. Una
+  omitida además **sale del denominador del progreso**, que es `NO_TOCA` de la E3 F24.
+- 🚨 **UNA CUARTA CAPA EN LA PUERTA DE CARGA, Y `App.jsx` LLAMA A LA ÚLTIMA** (FIT F7, y ya son
+  cuatro): `normalizarFitness` (F1) sabe de la forma, `normalizarFitnessCompleto` (F2) del catálogo,
+  `normalizarFitnessConPlanes` (F5) de la biblioteca y **`normalizarFitnessConSesiones` (F7) del
+  snapshot** — la única que conoce una serie. Sin ella el siguiente guardado se llevaba los pesos,
+  las repeticiones, las series marcadas y las notas (regla 5).
+- 🐛 **`musculosResumidos` DEVUELVE UNA CADENA, NO UNA LISTA, Y EL HUECO ANATÓMICO LE HACÍA `.map()`**
+  (FIT F7, y es la lección de la FORMA de lo que devuelve una función, por enésima vez). Habría
+  tumbado la pantalla entera del entrenamiento; lo que hacía falta era `musculosDe()`. **Lo cazó el
+  banco de renderizado**, no el build.
+- 🚨 **«TERMINAR» NO PUEDE LLAMARSE IGUAL EN LA CABECERA Y EN SU CONFIRMACIÓN** (FIT F7, y es la
+  E3 F30 y la E3 F42 otra vez): dos botones con el mismo nombre en la misma pantalla, y aquí además
+  pulsar el de arriba por error no confirmaría nada. Es **«Terminar y guardar»**.
+- 🔓 **TRES PROMESAS DE FASES ANTERIORES SE DAN LA VUELTA, NO SE BORRAN** (FIT F7, y es la E3 F44).
+  La F4 y la F6 declararon que «Empezar entrenamiento» no se pintaba *"si todavía no puede existir
+  una acción funcional completa"*: era **una espera, no una exclusión**, y sus comprobaciones estaban
+  escritas para este momento. ⚠️ Y en la **biblioteca de planes sigue sin haberlo**, por su razón de
+  verdad: allí se elige **un plan**, que es una semana; entrenar es un día.
+- ⚠️ **EL DESCANSO ES OTRO TEMPORIZADOR, Y NO SE GUARDA** (FIT F7, apartado 23): independiente del
+  cronómetro, también de marcas de tiempo, y de la pantalla — uno de 90 segundos no tiene sentido
+  recuperarlo tres horas después (EH F40). Y **no bloquea**: es una barra, con la tabla funcionando
+  debajo.
+- ⚠️ **EL SONIDO DEL FIN DE DESCANSO ES UNO QUE YA EXISTE, EMITIDO AL BUS** (FIT F7, apartado 25, y
+  es E3 F25 palabra por palabra): la biblioteca de SO F4 no tiene ninguna campana de descanso, y un
+  evento sin archivo es un sonido que no suena.
+- 🐛 **UNA FÁBRICA DE ESCENARIOS QUE LLAMA A `uid()` DEVUELVE IDS DISTINTOS CADA VEZ** (FIT F7, y ya
+  van dos tras GE F2): cinco comprobaciones mías pasaban los ids de una sesión a otra recién creada y
+  fallaban **con el código bien**.
+
+- 🚨 **QUÉ DÍA DEL PLAN TOCA HOY SON DOS REGLAS, Y LAS DOS HONESTAS** (FIT F6). Un plan de siete días
+  **ES** la semana —su día 1 es el lunes, que es el dibujo del apartado 7, y los diecisiete de la
+  biblioteca lo son— y **cualquier otro cicla desde la fecha de activación**; sin esa fecha **no se
+  dibuja semana** y se dice por qué (apartado 16, literal).
+- 🚨 **EL ESTADO «COMPLETADO» ESTÁ DECLARADO Y APAGADO** (FIT F6, apartado 8, que lo enumera y en el
+  párrafo siguiente prohíbe inventarlo): existe con `disponible: false` y la fase en la que llega, y
+  ninguna casilla lo devuelve. Es el cero que no se pinta de EH F23 en otra forma.
+- 🐛 **UN DÍA ANTERIOR A LA ACTIVACIÓN NO ES UN DÍA DE DESCANSO** (FIT F6, y es un fallo real mío):
+  salía como «Descanso», inventándose que ese día tocaba descansar **cuando el plan todavía no
+  existía**.
 
 - 🚨 **LA FÁBRICA CONSTRUYE; EL NORMALIZADOR LIMPIA LO QUE VUELVE DE DISCO, Y CONFUNDIRLOS BORRÓ LAS
   297 LÍNEAS DEL CATÁLOGO** (FIT F5, y es un fallo real mío). `crearDiaDePlan` construía con
@@ -611,15 +663,15 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F6/45 — Tu Plan** (líneas 29 737–30 513 de
-   `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). **Ya no hay que esperar a que él pase nada**:
-   la Entrega 4 está entera encima de la mesa y se construye de la F1 a la F45, en orden,
-   encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
-   ⚠️ **Y lo primero de esa fase es mirar lo que ya hay**: la F5 dejó **`fitness.planActivo`** —el id
-   del plan elegido, con su origen y su fecha—, `planActivoResuelto()` que lo resuelve contra la
-   biblioteca, y **la sección «Tu Plan» de `FitnessView` ya lo pinta**. Lo que la F6 desarrolla es esa
-   pantalla, no el dato. ⚠️ Y **«Empezar entrenamiento» sigue sin poder pintarse**: el motor en vivo
-   es la F7.
+1. 🏋️ **SEGUIR POR LA FIT F8/45 — Finalización y guardado del entrenamiento** (líneas
+   28 456–29 052 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). **Ya no hay que esperar a que
+   él pase nada**: la Entrega 4 está entera encima de la mesa y se construye de la F1 a la F45, en
+   orden, encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+   ⚠️ **Y lo primero de esa fase es mirar lo que ya hay**: la F7 dejó la sesión **completa y
+   guardada** en `fitness.sesiones` —con `terminadaEn`, el snapshot entero, lo planificado y lo
+   realizado de cada serie—, `terminarSesion()` con su confirmación y `progresoSesion()`. Lo que la
+   F8 desarrolla es **la pantalla de resumen** que va en medio, no el dato: está declarado en
+   `NO_EN_FIT7` con esas palabras.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

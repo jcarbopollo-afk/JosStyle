@@ -34,7 +34,7 @@ para convertir Entrenamiento en una aplicación de fitness completa, con su espe
 
 | Track | Nombre | Origen | Numeración | Estado |
 |---|---|---|---|---|
-| **FIT** | Entrega 4 — Fitness | Documento propio de Josué, 33 251 líneas | Fases 1–45 | 🟡 **EN MARCHA** — F1 (v3.83.0), F2 (v3.84.0), F3 (v3.85.0), F4 (v3.86.0), F5 (v3.87.0) y F6 (v3.88.0) hechas |
+| **FIT** | Entrega 4 — Fitness | Documento propio de Josué, 33 251 líneas | Fases 1–45 | 🟡 **EN MARCHA** — F1 (v3.83.0), F2 (v3.84.0), F3 (v3.85.0), F4 (v3.86.0), F5 (v3.87.0), F6 (v3.88.0) y F7 (v3.89.0) hechas |
 
 ⚠️ **El documento va del revés y él lo avisó:** la F45 abre el archivo y la F1 lo cierra. **Se
 construye de la F1 a la F45**, en orden.

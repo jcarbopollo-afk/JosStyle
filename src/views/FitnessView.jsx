@@ -45,8 +45,18 @@ import PlantillasView from './PlantillasView';
 import BibliotecaPlanesView from './BibliotecaPlanesView';
 /* FIT F6 — «Tu Plan», el centro de control, renderizado entero aquí dentro. */
 import TuPlanView from './TuPlanView';
+/* FIT F7 — el entrenamiento en vivo, que es PANTALLA ENTERA (como el
+   constructor): con las pestañas debajo se podría uno ir a Rangos en mitad de
+   una serie, que es la puerta de atrás por la que se pierde el trabajo. */
+import EntrenamientoVivoView, { SesionRecuperable } from './EntrenamientoVivoView';
 import { duplicarPlantilla } from '../lib/plantillas';
-import { usarPlan, personalizarPreset, alternarFavoritoPlan, quitarPlanActivo } from '../lib/planes';
+import {
+  usarPlan, personalizarPreset, alternarFavoritoPlan, quitarPlanActivo, diaARutina,
+} from '../lib/planes';
+import { planActivoCompleto, sesionDelDia } from '../lib/tuPlan';
+import {
+  empezarSesion, guardarSesion, sesionActiva, descartarSesion,
+} from '../lib/entrenamiento';
 import {
   crearRutina, planARutina, leerBorrador, borrarBorrador,
 } from '../lib/constructor';
@@ -343,7 +353,8 @@ export function AreaProgreso({ fotos, accent, onIr = null }) {
    ninguna parte (regla 8). */
 export function AreaEntrenamiento({
   fitness, calistenia, accent, entrenoProps, onAbrirConstructor = null,
-  onGuardarFitness = null, onEliminarPlantilla = null,
+  onGuardarFitness = null, onEliminarPlantilla = null, onEmpezarSesion = null,
+  sesionEnCurso = null, onContinuarSesion = null, onDescartarSesion = null,
 }) {
   const resumen = resumenEntrenamiento(fitness, calistenia);
   const propios = (fitness || {}).ejercicios || [];
@@ -367,6 +378,43 @@ export function AreaEntrenamiento({
      calculaban aquí** hasta esta fase. Ahora los resuelve `TuPlanView` con
      `tuPlan()`, que es quien los pinta: dejarlos escritos sin que los llamara
      nadie sería la función muerta de siempre (E3 F1 y E3 F5). */
+
+  /* ── FIT F7 · empezar un entrenamiento ─────────────────────────────────
+     🚨 La sesión se construye con `empezarSesion()`, que hace el **snapshot**
+     del apartado 3: a partir de ahí la sesión ya no depende de que el plan o la
+     plantilla sigan igual. ⚠️ Y las líneas que se le pasan son **las de la
+     rutina**, no las de `lineasDeDia()`: aquéllas son texto para pintar —«4 × 8»,
+     «Pecho 45 %»— y aquí hacen falta las series, el modo y el descanso. */
+  const empezarDelPlan = (indice) => {
+    if (!onEmpezarSesion) return;
+    const resuelto = planActivoCompleto(fitness || {});
+    if (!resuelto || !resuelto.plan) return;
+    const ficha = sesionDelDia(resuelto.plan, indice, propios);
+    if (!ficha || ficha.descanso) return;
+    const rutina = diaARutina(resuelto.plan, indice, propios);
+    onEmpezarSesion(empezarSesion({
+      nombre: ficha.nombre,
+      lineas: (rutina && rutina.lineas) || [],
+      planId: resuelto.activo.planId,
+      origenTipo: resuelto.origen,
+      origenId: ficha.id,
+      propios,
+    }));
+  };
+
+  const empezarDePlantilla = (plantilla) => {
+    if (!onEmpezarSesion || !plantilla) return;
+    const rutina = planARutina(plantilla);
+    if (!rutina || !rutina.lineas.length) return;
+    onEmpezarSesion(empezarSesion({
+      nombre: plantilla.nombre || 'Entrenamiento',
+      lineas: rutina.lineas,
+      planId: plantilla.id,
+      origenTipo: 'plantilla',
+      origenId: plantilla.id,
+      propios,
+    }));
+  };
 
   if (dentro === 'ejercicios') {
     return (
@@ -394,6 +442,7 @@ export function AreaEntrenamiento({
           if (r.ok) onGuardarFitness({ ...(fitness || {}), plantillas: r.plantillas });
         } : null}
         onEliminar={onEliminarPlantilla ? (p) => onEliminarPlantilla(p.id) : null}
+        onEmpezar={onEmpezarSesion ? empezarDePlantilla : null}
       />
     );
   }
@@ -426,6 +475,18 @@ export function AreaEntrenamiento({
 
   return (
     <div className="space-y-5">
+      {/* 🚨 FIT F7, apartado 30 — *"Simplemente evitar que una sesión activa
+          desaparezca."* Se busca en lo guardado, así que sobrevive a recargar y
+          a cerrar la aplicación: la sesión ES el dato, no un rastro aparte. */}
+      {sesionEnCurso && onContinuarSesion && (
+        <SesionRecuperable
+          sesion={sesionEnCurso}
+          accent={accent}
+          onContinuar={onContinuarSesion}
+          onDescartar={onDescartarSesion || (() => {})}
+        />
+      )}
+
       {/* Apartado 25: *"si el usuario cierra accidentalmente, navega atrás,
           recarga, no debería perder todo el trabajo"*. */}
       {aMedias && onAbrirConstructor && (
@@ -460,6 +521,7 @@ export function AreaEntrenamiento({
         onVerPlantillas={() => setDentro('plantillas')}
         onCrear={onAbrirConstructor ? () => onAbrirConstructor(null) : null}
         onQuitar={onGuardarFitness ? () => onGuardarFitness(quitarPlanActivo(fitness || {})) : null}
+        onEmpezar={onEmpezarSesion ? empezarDelPlan : null}
       />
 
       <div>
@@ -539,6 +601,12 @@ export default function FitnessView({
   /* FIT F3 — qué se está construyendo es estado de la pantalla, nunca un dato
      guardado (EH F40). `null` = no se está construyendo nada. */
   const [creando, setCreando] = useState(null);
+  /* 🚨 FIT F7 — y lo mismo con el entrenamiento en vivo: lo que se guarda es
+     **la sesión** (en `fitness.sesiones`, apartado 29); lo que es de la pantalla
+     es **cuál está abierta**. Por eso aquí solo vive el id: la sesión se lee de
+     lo guardado, y así el cronómetro, los pesos y las series marcadas siguen
+     estando después de recargar (apartado 30). */
+  const [entrenando, setEntrenando] = useState(null);
 
   const racha = rachaDeFitness(rachas);
   const rangos = (fitness?.rangos) || [];
@@ -550,6 +618,44 @@ export default function FitnessView({
     calistenia, onUpdateSkill, futbol, onAddPartido, onDeletePartido,
     videos, onAddVideo, onDeleteVideo, onSetVideoFeedback, foco, onFocoConsumido,
   };
+
+  /* ⚠️ La sesión sale de lo GUARDADO, nunca de una copia en el estado de la
+     pantalla: con dos, marcar una serie escribiría en una y se pintaría la otra
+     (apartado 28, *"una fuente de verdad única"*). */
+  const sesiones = (fitness?.sesiones) || [];
+  const enVivo = entrenando ? sesiones.find((s) => s && s.id === entrenando) || null : null;
+  /* Apartado 30 — la que quedó a medias, para ofrecer continuarla. */
+  const pendiente = sesionActiva(fitness || {});
+
+  const guardarSesionViva = (sesion) => {
+    if (!onGuardarFitness) return;
+    onGuardarFitness(guardarSesion(fitness || {}, sesion));
+  };
+
+  const empezar = (sesion) => {
+    if (!sesion) return;
+    guardarSesionViva(sesion);
+    setEntrenando(sesion.id);
+  };
+
+  /* 🚨 FIT F7 — el entrenamiento en vivo es PANTALLA ENTERA, sin las pestañas
+     de Fitness, por el mismo motivo que el constructor: dejarlas debajo
+     permitiría irse a Rangos en mitad de una serie. Va DESPUÉS de todos los
+     hooks (regla 4). */
+  if (enVivo && (enVivo.estado === 'en_curso' || enVivo.estado === 'pausada')) {
+    return (
+      <EntrenamientoVivoView
+        sesion={enVivo}
+        propios={propios}
+        accent={accent}
+        onGuardar={guardarSesionViva}
+        /* Apartado 31 — salir NO la marca como completada: se queda en curso y
+           la tarjeta de recuperación la vuelve a ofrecer. */
+        onSalir={() => setEntrenando(null)}
+        onTerminada={() => setEntrenando(null)}
+      />
+    );
+  }
 
   /* 🚨 FIT F3 — el constructor es PANTALLA ENTERA, sin cabecera ni pestañas. El
      apartado 4 le da su propio encabezado —volver, título, guardar—, y dejar
@@ -584,6 +690,13 @@ export default function FitnessView({
           onAbrirConstructor={onGuardarFitness
             ? (rutina) => setCreando({ rutina: rutina || crearRutina({}) })
             : null}
+          onEmpezarSesion={onGuardarFitness ? empezar : null}
+          sesionEnCurso={pendiente}
+          onContinuarSesion={pendiente ? () => setEntrenando(pendiente.id) : null}
+          onDescartarSesion={pendiente && onGuardarFitness ? () => {
+            const r = descartarSesion(pendiente, { confirmado: true });
+            if (r.ok) onGuardarFitness(guardarSesion(fitness || {}, r.sesion));
+          } : null}
         />
       )}
     </div>

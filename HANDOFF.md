@@ -2,6 +2,31 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.89.0 — FIT F7/45: el motor de entrenamiento en vivo):** Ya se puede
+> **entrenar de verdad**. Desde *Tu Plan → Empezar entrenamiento* —o desde el detalle de una
+> plantilla— se abre una pantalla entera con el cronómetro corriendo: el carrusel de ejercicios, el
+> ejercicio actual con sus músculos, y la tabla **SERIE | KG | REPES | ✓**. Se escribe el peso con
+> decimales, las repeticiones, se marcan series, se añaden, se omiten, se descansa, se escriben notas
+> y se sustituye un ejercicio sobre la marcha; todo se guarda **en el momento**, así que salir,
+> cerrar la aplicación y recargar devuelve el entrenamiento donde estaba. 🚨 **El snapshot es la
+> única copia que este proyecto sí debe hacer** (apartado 3, MUY IMPORTANTE): una sesión es
+> historial, y el historial se rompe si depende de algo que se edita después (E3 F28) — ⚠️ pero
+> **no copia el ejercicio**, solo su `exerciseId`, así que corregir el catálogo llega también a las
+> sesiones viejas. 🚨 **Planificado y realizado son DOS objetos**: si el plan dice *8–12* y él hace
+> 10, se guarda `hecho.reps = 10` **conservando** `plan.reps = 8` y `plan.repsHasta = 12`, que es lo
+> que la F11 comparará. 🚨 **Y tres clases de serie**: una del plan **se omite, nunca se destruye**
+> (apartado 19); una añadida sí se quita. 🚨 **El cronómetro es de marcas de tiempo** (apartados 6 y
+> 7, la lección del Pomodoro): hay una comprobación que simula bloquear el móvil diez minutos y otra
+> en Chromium que mira que el reloj avance en pantalla. 🚨 **Y `App.jsx` pasa a llamar a la CUARTA
+> capa de la puerta de carga**, `normalizarFitnessConSesiones`: sin ella el siguiente guardado se
+> llevaba los pesos, las repeticiones, las series marcadas y las notas (regla 5). 🐛 **El fallo de la
+> fase:** `musculosResumidos` devuelve una **cadena**, no una lista, y el hueco anatómico le hacía
+> `.map()` — habría tumbado la pantalla entera; lo cazó el banco de renderizado. ⚠️ **La pantalla de
+> finalización es la F8**, y está declarada en `NO_EN_FIT7` con su motivo: aquí Terminar pregunta,
+> guarda la sesión completa y vuelve. Vive en `src/lib/entrenamiento.js` y
+> `src/views/EntrenamientoVivoView.jsx`, con `scripts/test-entrenamiento.mjs` detrás (244
+> comprobaciones) y su sección propia del recorrido en Chromium.
+
 > **🏋️ ACTUALIZACIÓN (v3.88.0 — FIT F6/45: Tu Plan):** La pantalla central de Entrenamiento: el
 > próximo entrenamiento con su día, sus ejercicios, su duración y sus músculos; el plan activo con su
 > nivel, su objetivo y **desde cuándo lo sigue**; la semana de lunes a domingo con hoy marcado; la

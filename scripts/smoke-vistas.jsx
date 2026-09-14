@@ -176,6 +176,20 @@ import BibliotecaPlanesView, { TarjetaPlan, DetallePlan, ConfirmarCambioDePlan }
 import { CATALOGO_PLANES as PLANES_F5, planPorId as planPorIdF5, usarPlan as usarPlanF5, personalizarPreset as personalizarF5 } from '../src/lib/planes.js';
 import TuPlanView, { SinPlan, PlanPerdido, TarjetaProximo, DescansoHoy, SemanaCompacta, SesionDelDia } from '../src/views/TuPlanView.jsx';
 import { tuPlan as tuPlanF6, sesionDelDia as sesionF6, semanaDelPlan as semanaF6 } from '../src/lib/tuPlan.js';
+/* FIT F7 — el entrenamiento en vivo. ⚠️ Sus piezas, sueltas: la tabla de series,
+   el carrusel, la barra de descanso, el hueco anatómico y los avisos **solo
+   aparecen tras pulsar algo**, que es el agujero del Álbum (NAV F3). */
+import EntrenamientoVivoView, {
+  CabeceraSesion, CarruselEjercicios, HuecoAnatomico, TablaSeries, BarraDescanso,
+  AvisoSesion, SesionRecuperable,
+} from '../src/views/EntrenamientoVivoView.jsx';
+import {
+  empezarSesion as empezarF7, ejerciciosDeSesion as ejsF7, filasDeSeries as filasF7,
+  carruselDeSesion as carruselF7, progresoSesion as progresoF7, fichaDeEjercicio as fichaF7,
+  crearDescanso as descansoF7, marcarSerie as marcarF7, editarSerie as editarF7,
+  quitarSerie as quitarF7, anadirSerie as anadirF7, AVISO_SALIR as AVISO_SALIR_F7,
+} from '../src/lib/entrenamiento.js';
+import { diaARutina as diaARutinaF5 } from '../src/lib/planes.js';
 import { rutinaAPlan as rutinaAPlanF4 } from '../src/lib/constructor.js';
 import { crearRutina as crearRutinaF3, anadirEjercicio as anadirF3, editarLinea as editarF3 } from '../src/lib/constructor.js';
 import { CATALOGO_EJERCICIOS } from '../src/lib/ejercicios.js';
@@ -223,6 +237,28 @@ const accent = ACCENTS[0].value;
 const noop = () => {};
 const datosPeloSmoke = (e5) => datosPelo(e5).rutinas[0].id;
 const HOY = new Date().toLocaleDateString('sv-SE'); // día local, no UTC
+
+/* FIT F7 — las dos sesiones que se renderizan: una recién empezada y otra a
+   mitad. ⚠️ Se construyen con funciones, no una vez: `empezarSesion` llama a
+   `uid()`, y compartir la misma instancia entre casos haría que un caso viera
+   lo que le hizo el anterior (GE F2). */
+const sesionVivaF7 = () => {
+  const plan = planPorIdF5('ppl-estetico');
+  const dia = diaARutinaF5(plan, 0, []);
+  return empezarF7({
+    nombre: dia.nombre, lineas: dia.lineas, planId: plan.id,
+    origenTipo: 'preset', origenId: dia.id,
+  });
+};
+const sesionUsadaF7 = () => {
+  let s = sesionVivaF7();
+  const e = ejsF7(s)[0];
+  s = editarF7(s, e.id, e.series[0].id, { peso: 62.5, reps: 10 });
+  s = marcarF7(s, e.id, e.series[0].id, true);
+  s = quitarF7(s, e.id, e.series[1].id);
+  s = anadirF7(s, e.id);
+  return s;
+};
 // RA Fase 1 — los dos días anteriores, para poder montar una racha de verdad en las
 // pruebas. Se calculan con el mismo `addDays` que usa el motor, no a mano.
 const AYER = addDays(HOY, -1);
@@ -3125,6 +3161,65 @@ const CASOS = [
     };
     return { sesion: sesionF6(roto, 0), accent, onCerrar: noop };
   }],
+  /* ══ FIT F7 — el entrenamiento en vivo ══════════════════════════════════
+     🚨 El caso que más importa es la pantalla ENTERA con una sesión de verdad
+     de un plan de verdad: si un componente hijo usa algo sin importar, o llama
+     a `.map()` sobre lo que no es una lista, revienta aquí (E3 F17 y E3 F36). */
+  ['EntrenamientoVivoView', EntrenamientoVivoView, () => ({
+    sesion: sesionVivaF7(), propios: [], accent,
+    onGuardar: noop, onSalir: noop, onTerminada: noop,
+  })],
+  /* ⚠️ Y con datos registrados: series marcadas, una añadida, una omitida y una
+     nota, que es como se ve a mitad de entrenamiento. */
+  ['EntrenamientoVivoView', EntrenamientoVivoView, () => ({
+    sesion: sesionUsadaF7(), propios: [], accent,
+    onGuardar: noop, onSalir: noop, onTerminada: noop,
+  })],
+  /* ⚠️ Una sesión de un isométrico: la tabla pide segundos, no repeticiones. */
+  ['EntrenamientoVivoView', EntrenamientoVivoView, () => ({
+    sesion: empezarF7({
+      nombre: 'Core', lineas: anadirF3(crearRutinaF3({ nombre: 'Core' }), 'l-sit').lineas,
+    }),
+    propios: [], accent, onGuardar: noop, onSalir: noop, onTerminada: noop,
+  })],
+  /* ⚠️ Y sin sesión, que no puede dejar la pantalla en blanco sin decir nada. */
+  ['EntrenamientoVivoView', EntrenamientoVivoView, () => ({
+    sesion: null, propios: [], accent, onGuardar: noop, onSalir: noop,
+  })],
+  ['CabeceraSesion', CabeceraSesion, () => ({
+    nombre: 'Push', tiempo: '12:34', progreso: progresoF7(sesionUsadaF7()),
+    accent, onSalir: noop, onTerminar: noop,
+  })],
+  ['CarruselEjercicios', CarruselEjercicios, () => ({
+    items: carruselF7(sesionUsadaF7(), []), accent, onElegir: noop,
+  })],
+  ['HuecoAnatomico', HuecoAnatomico, () => ({
+    ficha: fichaF7(ejsF7(sesionVivaF7())[0], []), accent,
+  })],
+  /* ⚠️ …y con un ejercicio que ya no está en el catálogo. */
+  ['HuecoAnatomico', HuecoAnatomico, () => ({
+    ficha: fichaF7({ id: 'x', exerciseId: 'ya-no-existe', series: [], modo: 'reps', notas: '' }, []), accent,
+  })],
+  ['TablaSeries', TablaSeries, () => ({
+    filas: filasF7(ejsF7(sesionUsadaF7())[0]), accent,
+    onEditar: noop, onMarcar: noop, onQuitar: noop, onRecuperar: noop, onAnadir: noop,
+  })],
+  ['BarraDescanso', BarraDescanso, () => ({
+    descanso: descansoF7({ segundos: 90, ahora: 0 }), ahora: 30000, accent,
+    onPausar: noop, onReanudar: noop, onReiniciar: noop, onCerrar: noop, onSumar: noop,
+  })],
+  /* ⚠️ Y el descanso terminado, que se ve distinto. */
+  ['BarraDescanso', BarraDescanso, () => ({
+    descanso: descansoF7({ segundos: 90, ahora: 0 }), ahora: 200000, accent,
+    onPausar: noop, onReanudar: noop, onReiniciar: noop, onCerrar: noop, onSumar: noop,
+  })],
+  ['AvisoSesion', AvisoSesion, () => ({
+    aviso: AVISO_SALIR_F7, accent,
+    acciones: [{ texto: 'Seguir entrenando', primaria: true, onClick: noop }, { texto: 'Salir', onClick: noop }],
+  })],
+  ['SesionRecuperable', SesionRecuperable, () => ({
+    sesion: sesionUsadaF7(), accent, onContinuar: noop, onDescartar: noop,
+  })],
   ['AreaProgreso', AreaProgreso, () => ({
     fotos: [{ id: 'f1', path: 'x', fecha: HOY, nota: '' }], accent, onIr: noop,
   })],

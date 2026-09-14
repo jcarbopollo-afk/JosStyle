@@ -6225,8 +6225,11 @@ ok(/Editar/i.test(menu_fit4) && /Duplicar/i.test(menu_fit4) && /Eliminar/i.test(
   '🚨 FIT F4 — con Editar, Duplicar y Eliminar (apartado 4)');
 /* 🚨 Apartado 19: *"Si esto genera una acción muerta, es preferible NO mostrar
    todavía el botón"*. El motor de entrenamiento es la FIT F7. */
+/* 🔓 FIT F7 — el apartado 19 de la F4 dejó «Empezar entrenamiento» pendiente del
+   motor, y ya existe: pero vive en el DETALLE de la plantilla, no en el menú de
+   tres acciones de la tarjeta, que el apartado 4 quiere corto. */
 ok(!/Empezar entrenamiento/i.test(menu_fit4),
-  '🚨 FIT F4 — y SIN «Empezar entrenamiento»: sin motor sería una acción muerta (apartado 19)');
+  '🚨 FIT F4 — el menú `⋯` sigue con sus tres acciones: el arranque vive en el detalle');
 
 /* Apartado 7 — duplicar, y que la copia sea independiente. */
 const antesDup_fit4 = guardado.filter((g) => g && g.key === 'fitness').length;
@@ -6343,8 +6346,12 @@ ok(/Gimnasio/i.test(bib_fit5) && /Calistenia/i.test(bib_fit5) && /Casa/i.test(bi
 ok(/≈ \d+ min/.test(bib_fit5), '…y cada tarjeta dice cuánto dura una sesión (apartado 4)');
 ok(/d[ií]as\/semana/i.test(bib_fit5), '…y su frecuencia');
 /* 🚨 Apartado 14: el motor en vivo es una fase posterior. */
+/* 🔓 FIT F7 — el motor ya existe, pero aquí sigue sin haber arranque, y ahora
+   por su razón de verdad: en la biblioteca **se elige un plan**, que es una
+   semana; entrenar es un día concreto, y eso se hace desde Tu Plan (apartado 1
+   de la F7: *"Tu Plan → entrenamiento → Empezar entrenamiento"*). */
 ok(!/Empezar entrenamiento/i.test(bib_fit5),
-  '🚨 FIT F5 — y SIN «Empezar entrenamiento»: sin motor sería una acción muerta (apartado 14)');
+  '🚨 FIT F5 — en la biblioteca se ELIGE un plan, no se entrena un día (apartado 14)');
 
 /* Apartado 3 — las categorías filtran de verdad. */
 ok(await pulsar('Ver planes de calistenia'), 'se filtra por Calistenia (apartado 3)');
@@ -6383,7 +6390,7 @@ ok(/≈ \d+ min/.test(det_fit5), '…la duración estimada, con su «≈» (apar
 ok(/La semana/i.test(det_fit5) && /Descanso/i.test(det_fit5),
   '🚨 FIT F5 — y la semana entera, con sus días de descanso (apartados 9 y 12)');
 ok(!/Empezar entrenamiento/i.test(det_fit5),
-  '🚨 …y tampoco aquí hay «Empezar entrenamiento» (apartado 14)');
+  '🚨 …y tampoco en el detalle de un plan: un plan es una semana, no una sesión');
 
 ok(await pulsar('Ver los ejercicios de Push'), 'se toca un día (apartado 12)');
 const dia_fit5 = await esperarTexto(/Press de banca/i);
@@ -6466,8 +6473,11 @@ const tuPlan_fit5 = await esperarTexto(/Tu Plan/i);
 ok(/Upper \/ Lower/.test(tuPlan_fit5),
   '🚨 FIT F5 — «Tu Plan» enseña el plan elegido, resuelto contra la biblioteca (apartado 20)');
 ok(/Quitar el plan/i.test(tuPlan_fit5), '…y se puede dejar de tenerlo puesto');
-ok(!/Empezar entrenamiento/i.test(tuPlan_fit5),
-  '🚨 …y tampoco aquí: el motor en vivo es una fase posterior (apartado 14)');
+/* 🔓 Esta comprobación decía lo contrario hasta la F7, y estaba escrita a
+   propósito para este momento: guardaba la promesa, ahora vigila que se cumpla
+   (E3 F44, y ya van varias). */
+ok(/Empezar entrenamiento/i.test(tuPlan_fit5),
+  '🔓 …y en Tu Plan YA está «Empezar entrenamiento»: el motor llegó con la FIT F7');
 
 /* Y a 375 px no se desborda (apartado 18). */
 const desborde_fit5 = await page.evaluate(() => ({
@@ -6503,11 +6513,13 @@ ok(/Activo desde el/i.test(tuplan_fit6),
   '🚨 FIT F6 — y la fecha de activación, que es lo que pide el apartado 17');
 ok(/Cambiar plan/i.test(tuplan_fit6), '…y se puede cambiar de plan (apartado 4)');
 
-/* 🚨 Apartado 6 y 28: ni un botón que empiece un entrenamiento. */
-ok(!/Empezar entrenamiento|Comenzar entrenamiento/i.test(tuplan_fit6),
-  '🚨 FIT F6 — y NI UN botón que empiece un entrenamiento: el motor es la F7 (apartado 6)');
+/* 🔓 El apartado 6 de la F6 pedía NO empezar nada *"si todavía no puede existir
+   una acción funcional completa"*. Con la FIT F7 existe, así que la promesa se
+   da la vuelta: era una espera, no una exclusión. */
+ok(/Empezar entrenamiento/i.test(tuplan_fit6) || /Hoy toca descansar/i.test(tuplan_fit6),
+  '🔓 FIT F6 → F7 — el CTA de Tu Plan es ya «Empezar entrenamiento»');
 ok(/Ver entrenamiento/i.test(tuplan_fit6) || /Hoy toca descansar/i.test(tuplan_fit6),
-  '…el CTA es «Ver entrenamiento», que abre el detalle y existe de verdad');
+  '…y «Ver entrenamiento» sigue estando, de secundario: abrir el detalle no se ha perdido');
 
 /* Apartado 7: la semana, con sus siete días y hoy marcado. */
 const diasSemana_fit6 = await page.evaluate(() => {
@@ -6578,6 +6590,271 @@ const desborde_fit6 = await page.evaluate(() => ({
 }));
 ok(desborde_fit6.ancho <= desborde_fit6.ventana + 1,
   `🚨 FIT F6 — a 375 px Tu Plan no se desborda de lado (${desborde_fit6.ancho} vs ${desborde_fit6.ventana})`);
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F7 — el entrenamiento en vivo (Entrega 4 · 7/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El criterio de finalización pide hacer **una sesión de verdad**: *Empezar →
+   navegar ejercicios → introducir peso/reps → completar series → añadir series
+   → descansar → añadir notas → sustituir un ejercicio → salir/reanudar* sin
+   perder datos. Eso es exactamente lo que hace esta sección, con el dedo, sobre
+   el plan que dejó activo la de la F5.
+
+   🚨 Y las dos cosas que SOLO se pueden ver aquí: que el cronómetro **corre de
+   verdad** en el navegador, y que al salir y volver la sesión **sigue estando**
+   con todo dentro. Ninguna prueba de Node puede afirmar eso. */
+console.log('\n── FIT F7 · El entrenamiento en vivo ──');
+
+ok(await pulsar('Empezar entrenamiento'),
+  '🚨 FIT F7 — se pulsa «Empezar entrenamiento» desde Tu Plan (apartado 1)');
+const vivo_fit7 = await esperarTexto(/Terminar/i);
+ok(/Terminar/i.test(vivo_fit7), '🚨 …y se abre el entrenamiento en vivo (apartado 4)');
+ok(/\d\d:\d\d/.test(vivo_fit7), '…con su cronómetro (apartado 6)');
+ok(/Serie/i.test(vivo_fit7) && /Repes|Seg/i.test(vivo_fit7) && /Kg/i.test(vivo_fit7),
+  '🚨 …y la tabla SERIE | KG | REPES | ✓ (apartado 13)');
+ok(/Tutorial/i.test(vivo_fit7) && /Reemplazar/i.test(vivo_fit7)
+  && /Notas/i.test(vivo_fit7) && /Descanso/i.test(vivo_fit7),
+'🚨 …con los cuatro botones del apartado 12');
+ok(/Ejercicio 1 de \d+/i.test(vivo_fit7), '…y dice por dónde va');
+
+/* 🚨 Apartado 4: la pantalla es ENTERA. Con las pestañas debajo se podría uno ir
+   a Rangos en mitad de una serie. */
+ok(!/Rangos/i.test(vivo_fit7) && !/Progreso[\s\S]{0,20}Entrenamiento/i.test(vivo_fit7),
+  '🚨 FIT F7 — y es pantalla ENTERA: ni las pestañas de Fitness ni el resto de la app');
+
+/* 🚨 Apartado 6 — el cronómetro CORRE de verdad. Esto no lo puede decir Node. */
+const reloj_a = await page.evaluate(() => (document.body.innerText.match(/\d\d:\d\d/) || [''])[0]);
+await page.waitForTimeout(2200);
+const reloj_b = await page.evaluate(() => (document.body.innerText.match(/\d\d:\d\d/) || [''])[0]);
+ok(reloj_a !== reloj_b,
+  `🚨 FIT F7 — el cronómetro AVANZA en el navegador (${reloj_a} → ${reloj_b}, apartado 6)`);
+
+/* Apartados 15 y 16 — el peso y las repeticiones, escritos a mano. */
+const escribirSerie_fit7 = async (etiqueta, valor) => page.evaluate(([e, v]) => {
+  const campo = [...document.querySelectorAll('input[aria-label]')]
+    .find((i) => (i.getAttribute('aria-label') || '').startsWith(e));
+  if (!campo) return false;
+  const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+  set.call(campo, v);
+  campo.dispatchEvent(new Event('input', { bubbles: true }));
+  campo.dispatchEvent(new Event('blur', { bubbles: true }));
+  return true;
+}, [etiqueta, valor]);
+
+ok(await escribirSerie_fit7('Peso de la serie 1', '62.5'),
+  '🚨 FIT F7 — se escribe el peso de la serie 1 (apartado 15)');
+ok(await escribirSerie_fit7('Repeticiones de la serie 1', '10'),
+  '…y sus repeticiones (apartado 16)');
+await page.waitForTimeout(500);
+
+/* 🚨 Apartado 29 — se guarda EN EL MOMENTO, no al final. */
+const guardadoTrasPeso_fit7 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {};
+const sesionGuardada_fit7 = (guardadoTrasPeso_fit7.sesiones || []).at(-1) || null;
+ok(!!sesionGuardada_fit7, '🚨 FIT F7 — la sesión se ha GUARDADO ya, sin esperar al final (apartado 29)');
+const primeraSerie_fit7 = sesionGuardada_fit7?.origen?.ejercicios?.[0]?.series?.[0] || {};
+ok(primeraSerie_fit7.hecho?.peso === 62.5,
+  `🚨 …con los 62,5 kg exactos, sin redondear (${primeraSerie_fit7.hecho?.peso}, apartado 15)`);
+ok(primeraSerie_fit7.hecho?.reps === 10, `…y las 10 repeticiones (${primeraSerie_fit7.hecho?.reps})`);
+
+/* Apartado 17 — marcar, desmarcar y volver a marcar. */
+ok(await pulsar('Marcar la serie 1 como hecha'), 'se marca la serie 1 (apartado 17)');
+await page.waitForTimeout(400);
+const marcada_fit7 = await ver();
+ok(/1 de \d+ series/i.test(marcada_fit7), '🚨 …y el progreso de la cabecera se mueve');
+/* Apartado 24 — y se ofrece el descanso, que NO bloquea. */
+ok(/Descanso/i.test(marcada_fit7) && /\d\d:\d\d/.test(marcada_fit7),
+  '🚨 FIT F7 — al marcarla arranca el descanso (apartado 24)');
+ok(await pulsar('Desmarcar la serie 1'), 'se desmarca');
+await page.waitForTimeout(400);
+const trasDesmarcar_fit7 = await page.evaluate(() => {
+  const c = [...document.querySelectorAll('input[aria-label]')]
+    .find((i) => (i.getAttribute('aria-label') || '').startsWith('Peso de la serie 1'));
+  return c ? c.value : '';
+});
+ok(trasDesmarcar_fit7 === '62.5',
+  `🚨 FIT F7 — desmarcar NO borra los datos (${trasDesmarcar_fit7}, apartado 17)`);
+ok(await pulsar('Marcar la serie 1 como hecha'), '…y se vuelve a marcar (marcar → desmarcar → marcar)');
+await page.waitForTimeout(400);
+
+/* Apartado 23 — el descanso se pausa, se reinicia y se salta, sin bloquear. */
+ok(await pulsar('Pausar el descanso'), 'se pausa el descanso (apartado 23)');
+ok(await pulsar('Reanudar el descanso'), '…se reanuda');
+ok(await pulsar('Sumar treinta segundos al descanso'), '…se le suman 30 s');
+ok(await pulsar('Reiniciar el descanso'), '…se reinicia');
+ok(await pulsar('Saltar el descanso'), '…y se salta, que es lo que pide el apartado 24');
+await page.waitForTimeout(300);
+
+/* Apartado 18 — añadir una serie. */
+const antesDeAnadir_fit7 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.sesiones || [])
+  .at(-1)?.origen?.ejercicios?.[0]?.series?.length || 0;
+ok(await pulsar('Añadir serie'), 'se añade una serie (apartado 18)');
+await page.waitForTimeout(500);
+const trasAnadir_fit7 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.sesiones || [])
+  .at(-1)?.origen?.ejercicios?.[0]?.series || [];
+ok(trasAnadir_fit7.length === antesDeAnadir_fit7 + 1,
+  `🚨 FIT F7 — la sesión pasa a tener ${trasAnadir_fit7.length} series (apartado 18)`);
+ok(trasAnadir_fit7.at(-1)?.origen === 'anadida', '…marcada como añadida, no como del plan');
+ok(trasAnadir_fit7.at(-1)?.hecho?.peso === 62.5, '…heredando los 62,5 kg que él ya había puesto');
+
+/* Apartado 27 — una nota, que persiste. */
+ok(await pulsar('Notas'), 'se abren las notas (apartado 27)');
+await page.waitForTimeout(400);
+ok(await page.evaluate(() => {
+  const t = [...document.querySelectorAll('textarea')].pop();
+  if (!t) return false;
+  const set = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+  set.call(t, 'Me costó la última serie.');
+  t.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}), 'se escribe la nota');
+ok(await pulsar('Guardar nota'), '…y se guarda');
+await page.waitForTimeout(500);
+ok(/Me costó la última serie/.test(await ver()), '🚨 FIT F7 — y la nota se ve en la pantalla');
+
+/* Apartado 9 — navegar sin perder nada. */
+ok(await pulsar('Siguiente'), 'se pasa al siguiente ejercicio (apartado 9)');
+await page.waitForTimeout(400);
+ok(/Ejercicio 2 de/i.test(await ver()), '…y se está en el 2');
+ok(await pulsar('Anterior'), '…se vuelve');
+await page.waitForTimeout(500);
+const alVolver_fit7 = await ver();
+ok(/Ejercicio 1 de/i.test(alVolver_fit7), '…al 1');
+ok(/Me costó la última serie/.test(alVolver_fit7), '🚨 FIT F7 — con la nota intacta (apartado 9)');
+const pesoAlVolver_fit7 = await page.evaluate(() => {
+  const c = [...document.querySelectorAll('input[aria-label]')]
+    .find((i) => (i.getAttribute('aria-label') || '').startsWith('Peso de la serie 1'));
+  return c ? c.value : '';
+});
+ok(pesoAlVolver_fit7 === '62.5', `🚨 …y con el peso intacto (${pesoAlVolver_fit7}, apartado 9)`);
+
+/* Apartado 8 — el carrusel, con sus estados. */
+const carrusel_fit7 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
+  .filter((b) => /^Ejercicio \d+:/.test(b.getAttribute('aria-label') || ''))
+  .map((b) => ({ label: b.getAttribute('aria-label'), actual: b.getAttribute('aria-current') === 'true' })));
+ok(carrusel_fit7.length >= 2, `🚨 FIT F7 — el carrusel enseña los ${carrusel_fit7.length} ejercicios (apartado 8)`);
+ok(carrusel_fit7.filter((c) => c.actual).length === 1, '…con UNO marcado como actual');
+ok(await pulsar(carrusel_fit7.at(-1).label), '…y se toca el último (apartado 9)');
+await page.waitForTimeout(400);
+ok(new RegExp(`Ejercicio ${carrusel_fit7.length} de`).test(await ver()), '…que abre ése');
+ok(await pulsar(carrusel_fit7[0].label), '…y se vuelve al primero');
+await page.waitForTimeout(400);
+
+/* Apartado 26 — sustituir, que SOLO toca la sesión. */
+const planAntes_fit7 = JSON.stringify(
+  (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {}).planActivo,
+);
+ok(await pulsar('Reemplazar'), 'se abre el selector de ejercicios (apartado 26)');
+const selector_fit7 = await esperarTexto(/Cambios r[aá]pidos|Buscar/i);
+ok(/Cambios r[aá]pidos/i.test(selector_fit7) || /Ejercicios/i.test(selector_fit7),
+  '🚨 FIT F7 — con sustitutos compatibles primero (apartado 26)');
+const sustituto_fit7 = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button[aria-label]')]
+    .find((x) => /^Cambiar por /.test(x.getAttribute('aria-label') || ''));
+  return b ? b.getAttribute('aria-label') : '';
+});
+if (sustituto_fit7) {
+  ok(await pulsar(sustituto_fit7), `se elige un sustituto (${sustituto_fit7})`);
+  await page.waitForTimeout(600);
+  const trasSustituir_fit7 = await ver();
+  ok(/En lugar de/i.test(trasSustituir_fit7),
+    '🚨 FIT F7 — y se DICE de cuál venía, «solo en este entrenamiento» (apartado 26)');
+  ok(/solo en este entrenamiento/i.test(trasSustituir_fit7), '…con esas palabras');
+} else {
+  ok(await pulsar('Volver a el entrenamiento') || await pulsar('el entrenamiento'),
+    'no había sustituto compatible: se vuelve');
+}
+const planDespues_fit7 = JSON.stringify(
+  (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {}).planActivo,
+);
+ok(planAntes_fit7 === planDespues_fit7,
+  '🚨 FIT F7 — y el PLAN ACTIVO no se ha tocado: sustituir es solo de la sesión (apartado 26)');
+
+/* Apartado 31 — salir PREGUNTA, y no marca como completada. */
+ok(await pulsar('Salir del entrenamiento'), 'se intenta salir (apartado 31)');
+await page.waitForTimeout(400);
+const avisoSalir_fit7 = await ver();
+ok(/¿Salir del entrenamiento\?/i.test(avisoSalir_fit7), '🚨 FIT F7 — y sale la protección del apartado 31');
+ok(/Tu sesión está en curso/i.test(avisoSalir_fit7), '…con sus palabras');
+ok(await pulsar('Seguir entrenando'), '…y se puede seguir entrenando');
+await page.waitForTimeout(400);
+ok(/Terminar/i.test(await ver()), '…que devuelve al entrenamiento');
+
+ok(await pulsar('Salir del entrenamiento'), 'ahora sí se sale');
+await page.waitForTimeout(300);
+ok(await pulsar('Salir'), '…confirmando');
+const fuera_fit7 = await esperarTexto(/Tu Plan/i);
+ok(/Tu Plan/i.test(fuera_fit7), '…y se vuelve a Entrenamiento');
+
+/* 🚨 Apartado 30 — y la sesión SIGUE AHÍ, ofrecida para continuar. */
+ok(/Tienes un entrenamiento en curso/i.test(fuera_fit7),
+  '🚨 FIT F7 — la sesión a medias se ofrece para continuar (apartado 30)');
+ok(/Continuar entrenamiento/i.test(fuera_fit7), '…con su botón');
+const sesionTrasSalir_fit7 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.sesiones || []).at(-1);
+ok(sesionTrasSalir_fit7?.estado === 'en_curso',
+  `🚨 …y NO se ha marcado como completada al salir (${sesionTrasSalir_fit7?.estado}, apartado 31)`);
+
+/* 🚨 Y lo que solo se ve aquí: recargar de verdad y encontrarlo todo. */
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(2500);
+ok(await pulsar('Bienestar'), 'FIT F7 — se recarga la aplicación');
+ok(await pulsar('Fitness'), '…y se vuelve a Fitness');
+const trasRecargar_fit7 = await esperarTexto(/entrenamiento en curso/i);
+ok(/Tienes un entrenamiento en curso/i.test(trasRecargar_fit7),
+  '🚨 FIT F7 — el entrenamiento a medias SOBREVIVE a recargar (apartado 30)');
+ok(await pulsar('Continuar entrenamiento'), '…y se continúa');
+const continuado_fit7 = await esperarTexto(/Terminar/i);
+ok(/Me costó la última serie/.test(continuado_fit7),
+  '🚨 FIT F7 — con la nota donde estaba (apartado 30: *"datos intactos"*)');
+const pesoTrasRecargar_fit7 = await page.evaluate(() => {
+  const c = [...document.querySelectorAll('input[aria-label]')]
+    .find((i) => (i.getAttribute('aria-label') || '').startsWith('Peso de la serie 1'));
+  return c ? c.value : '';
+});
+ok(pesoTrasRecargar_fit7 === '62.5',
+  `🚨 …y con los 62,5 kg (${pesoTrasRecargar_fit7}): el apartado 38, cumplido de punta a punta`);
+
+/* Apartado 32 — Terminar pregunta, y no completa sin confirmar. */
+ok(await pulsar('Terminar el entrenamiento'), 'se pulsa Terminar (apartado 32)');
+await page.waitForTimeout(400);
+ok(/¿Terminar el entrenamiento\?/i.test(await ver()), '🚨 FIT F7 — y PREGUNTA antes (apartado 32)');
+ok(await pulsar('Seguir entrenando'), '…se puede no terminar');
+await page.waitForTimeout(400);
+const sinTerminar_fit7 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.sesiones || []).at(-1);
+ok(sinTerminar_fit7?.estado === 'en_curso',
+  '🚨 …y SIN confirmar no se completa nada (`aplicarPlan`, y ya van más de veinte)');
+
+ok(await pulsar('Terminar el entrenamiento'), 'y ahora sí');
+await page.waitForTimeout(300);
+ok(await pulsar('Terminar y guardar'), '…confirmando');
+const terminado_fit7 = await esperarTexto(/Tu Plan/i);
+const sesionFinal_fit7 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.sesiones || []).at(-1);
+ok(sesionFinal_fit7?.estado === 'completada',
+  `🚨 FIT F7 — la sesión queda completada (${sesionFinal_fit7?.estado}, apartado 32)`);
+ok(!!sesionFinal_fit7?.terminadaEn, '…con su hora de fin');
+ok((sesionFinal_fit7?.origen?.ejercicios || []).length > 0,
+  '🚨 …conservando TODOS los datos: *"preservar todos los datos"* (apartado 32)');
+ok(!/Tienes un entrenamiento en curso/i.test(terminado_fit7),
+  '…y ya no se ofrece continuarla');
+
+/* Y a 375 px no se desborda: es la pantalla que se usa entrenando (apartado 35). */
+ok(await pulsar('Empezar entrenamiento'), 'se empieza otra para medir el ancho');
+await esperarTexto(/Terminar/i);
+const desborde_fit7 = await page.evaluate(() => ({
+  ancho: document.documentElement.scrollWidth, ventana: window.innerWidth,
+}));
+ok(desborde_fit7.ancho <= desborde_fit7.ventana + 1,
+  `🚨 FIT F7 — a 375 px la tabla de series NO se desborda de lado (${desborde_fit7.ancho} vs ${desborde_fit7.ventana})`);
+/* Apartado 33 — botones grandes: la zona de toque del ✓ y de los campos. */
+const toques_fit7 = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button[aria-label], input[aria-label]')]
+    .filter((x) => /serie 1/i.test(x.getAttribute('aria-label') || ''));
+  return b.map((x) => Math.round(x.getBoundingClientRect().height));
+});
+ok(toques_fit7.length > 0 && toques_fit7.every((h) => h >= 40),
+  `🚨 FIT F7 — y los controles de una serie se pueden tocar entrenando (${toques_fit7.join(', ')} px, apartado 33)`);
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), 'se sale de la que sobraba');
+await page.waitForTimeout(400);
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

@@ -20,7 +20,7 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  ArrowLeft, Search, X, MoreHorizontal, Pencil, Copy, Trash2, Plus, ArrowUpDown,
+  ArrowLeft, Search, X, MoreHorizontal, Pencil, Copy, Trash2, Plus, ArrowUpDown, Play,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
@@ -158,11 +158,14 @@ export function ConfirmarEliminarPlantilla({ plantilla, onCancelar, onEliminar }
 }
 
 /* ── El detalle (apartado 9) ───────────────────────────────────────────────
-   Cabecera, información, distribución muscular y los ejercicios. ⚠️ Y **sin
-   «Empezar entrenamiento»**: el apartado 19 prefiere no enseñarlo a enseñarlo
-   muerto, y el motor es la FIT F7. */
+   Cabecera, información, distribución muscular y los ejercicios.
+
+   ⚠️ Nació **sin «Empezar entrenamiento»**, porque el apartado 19 prefiere no
+   enseñarlo a enseñarlo muerto y el motor no existía. 🔓 **Con la FIT F7 existe
+   de verdad**, así que el botón aparece: era una espera, no una exclusión. */
 export function DetallePlantilla({
   plantilla, propios = [], accent, hoy, onVolver, onEditar, onDuplicar, onEliminar,
+  onEmpezar = null,
 }) {
   const ficha = fichaDePlantilla(plantilla, propios, hoy);
   if (!ficha) {
@@ -205,6 +208,12 @@ export function DetallePlantilla({
           <p className="text-sm mt-2 leading-relaxed" style={{ color: COLORS.textMuted }}>{ficha.descripcion}</p>
         )}
         <div className="flex gap-2 flex-wrap mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+          {/* 🔓 FIT F7 — el apartado 19 de la F4 lo dejó pendiente del motor. */}
+          {onEmpezar && (
+            <PrimaryButton accent={accent} icon={Play} onClick={onEmpezar}>
+              Empezar entrenamiento
+            </PrimaryButton>
+          )}
           <GhostBtn icon={Pencil} onClick={onEditar}>Editar</GhostBtn>
           <GhostBtn icon={Copy} onClick={onDuplicar}>Duplicar</GhostBtn>
           <GhostBtn icon={Trash2} onClick={onEliminar}>Eliminar</GhostBtn>
@@ -302,6 +311,7 @@ export function DetallePlantilla({
 export default function PlantillasView({
   plantillas = [], propios = [], accent, hoy,
   onVolver = null, onCrear = null, onEditar = null, onDuplicar = null, onEliminar = null,
+  onEmpezar = null,
 }) {
   const [consulta, setConsulta] = useState('');
   const [entorno, setEntorno] = useState(FILTRO_TODOS);
@@ -330,6 +340,7 @@ export default function PlantillasView({
         onEditar={() => onEditar && onEditar(enPantalla)}
         onDuplicar={() => { onDuplicar && onDuplicar(enPantalla); setAbierta(null); }}
         onEliminar={() => { setBorrando(enPantalla); setAbierta(null); }}
+        onEmpezar={onEmpezar && enPantalla ? () => onEmpezar(enPantalla) : null}
       />
     );
   }
