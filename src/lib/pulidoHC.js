@@ -163,6 +163,12 @@ export const ANIMACIONES_HC = [
   /* E3 F33 (NU F1) — el progreso de los indicadores de Nutrición, por lo mismo. */
   { id: 'progreso_nutricion', apartado: 16, nombre: 'El progreso de un macro', ms: 420, clase: 'nu-progreso' },
   { id: 'rutina_fin', apartado: 16, nombre: 'Terminar una rutina', ms: 420, clase: 'rutina-fin' },
+  /* FIT F8 — la marca de la pantalla de éxito. Su apartado 31 pide *"una
+     microanimación elegante"* y a la vez *"no quiero confeti exagerado ni
+     gamificación infantil"*, así que es una sola marca que entra. Y entra aquí
+     por lo de siempre: la prueba de la E3 F14 recorre ESTA lista comprobando
+     que cada clase existe de verdad en el CSS. */
+  { id: 'entreno_guardado', apartado: 16, nombre: 'El entrenamiento guardado', ms: 420, clase: 'exito-entra' },
 ];
 
 export const animacionHC = (id) => ANIMACIONES_HC.find((a) => a.id === id) || null;

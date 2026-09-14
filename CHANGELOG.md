@@ -1,5 +1,90 @@
 # CHANGELOG.md
 
+## v3.90.0 — FIT F8/45: finalización y guardado del entrenamiento
+
+El criterio de finalización: *"Empezar entrenamiento → entrenar → Terminar → revisar resumen →
+modificar nombre/notas → guardar → cerrar aplicación → volver y encontrar la sesión correctamente
+guardada."* Y también *"entrenar parcialmente → guardar"* y *"entrenar → descartar"* **sin generar
+registros incorrectos**.
+
+### Qué pasa ahora al pulsar Terminar
+
+Ya no se guarda nada de golpe: se abre **el resumen**. El nombre llega relleno y se puede cambiar
+—*Push — Fuerza*—, se ve la fecha en largo, la franja horaria (*18:05 → 19:02*), la duración real, las
+series completadas y las omitidas, cada ejercicio con lo que de verdad hizo, el volumen cuando se
+puede calcular, y un campo para la nota general. Debajo, **Terminar entrenamiento** lo guarda,
+**Seguir entrenando** vuelve a la tabla de series y **Descartar** lo tira con su confirmación.
+
+### 🚨 «Finalizando» es un estado, y hace falta
+
+El apartado 28 pide que si la aplicación se cierra **en la pantalla de resumen** no se pierda nada.
+Sin un estado propio habría que elegir entre perder lo revisado o **darlo por completado sin que él
+lo confirme**, que es justo lo que prohíbe el apartado 16. Así que Terminar pasa la sesión a
+`finalizando` **y la guarda ahí mismo**: existe aunque se caiga la aplicación, y sigue sin contar como
+un entrenamiento hecho.
+
+⚠️ **Y el reloj se para al entrar, no al guardar.** `terminadaEn` es cuándo acabó de entrenar; si se
+sumara el rato que pasa escribiendo la nota, una sesión de 45 minutos saldría de 52 (apartado 22).
+
+### 🚨 Guardado idempotente, y sale de la forma del dato
+
+El apartado 17 está marcado como MUY IMPORTANTE: *"Evitar que pulsar dos veces rápidamente cree dos
+sesiones."* No hace falta un candado: **una sesión ya completada se devuelve tal cual**, sin tocar
+siquiera su hora de guardado, y `guardarSesion` sustituye por id desde la F7. Hay una comprobación que
+pulsa guardar **cinco veces** y verifica que queda una sola sesión, con el mismo id.
+
+### 🚨 Y ninguna métrica que no se pueda calcular
+
+Una serie cuenta **solo si él la marcó**, nunca por estar planificada (apartado 6); un ejercicio sin
+ninguna serie hecha es **No realizado** y con algunas, *«2/3 series»* (apartado 10). El **volumen**
+sale solo de las series que tienen peso **y** repeticiones, dice de cuántas, y si no hay ninguna
+**no se pinta**: unas dominadas a peso corporal no son «0 kg» ni «70 kg», es que no se miden así
+(apartado 9). Y ni una caloría quemada, que es el ejemplo que da el propio apartado 8.
+
+### 🔓 Y con esto se enciende el «Completado» que la F6 dejó apagado
+
+El apartado 8 de la F6 prohíbe inventarse entrenamientos completados, así que el estado nació
+declarado y **con `disponible: false`** esperando a que existieran sesiones guardadas. Ya existen: un
+día sale **Completado** cuando hay una sesión `completada` de esa fecha — lo dice **la sesión, no el
+plan**. ⚠️ Y una descartada no cuenta, y entrenar un **día de descanso** no lo convierte en completado:
+no tocaba, y decirlo afirmaría que cumplió algo que el plan no pedía.
+
+### Lo que dejó esta fase
+
+- 🔓 **`terminarSesion` DE LA F7 SE RETIRA, NO SE QUEDA SIN QUIEN LA LLAME.** Su confirmación existía
+  **porque no había pantalla de resumen** —el propio apartado 32 decía *"Debe llevar posteriormente a
+  la pantalla de finalización que construiremos en la siguiente fase"*—. Con el resumen construido,
+  preguntar antes de enseñarlo sería un aviso delante de un aviso (EH F61), y **la garantía queda más
+  fuerte**: desde el botón de la cabecera la sesión ya no puede llegar a `completada` de ninguna
+  manera. Una función que nadie llama no falla nunca, y este proyecto ya la ha pagado cuatro veces.
+- 🚨 **`notas` Y `descripcion` YA ERAN CAMPOS DE LA SESIÓN** desde la F1, así que la nota general del
+  apartado 13 es `notas` y no un campo nuevo: dos campos para lo mismo acaban diciendo cosas distintas
+  (E3 F44, con el `nombre` que un examen ya tenía).
+- ⚠️ **LA FOTO DEL APARTADO 14: EL CAMPO SÍ, EL BOTÓN NO.** JosStyle tiene cinco buckets y **ninguno
+  es de entrenamientos**; un sexto necesita que Josué ejecute su SQL, y hasta entonces «Añadir foto o
+  vídeo» fallaría en silencio en su iPhone — que es exactamente lo que pasó con la foto de perfil.
+  `media` existe y vale `null`, y está declarado en `MEDIA_PENDIENTE` con lo que le falta.
+- ⚠️ **LA VISIBILIDAD SE DECLARA ENTERA Y SOLO UNA EXISTE** (apartado 15). Las tres están en
+  `VISIBILIDADES`; «Seguidores» y «Público» llevan `existe: false` y **no se pintan**, porque un
+  selector con dos opciones que no hacen nada es el control decorativo de la regla 8. Y pedir una que
+  no existe no la aplica: se queda privada.
+- ⚠️ **EL MENSAJE DE LA PANTALLA DE ÉXITO ES UNA TABLA POR UMBRALES**, sin azar y sin juicio: ni
+  *"flojo"*, ni *"deberías"*. Es `FRASES_RESUMEN` de la E3 F29, y hay una prueba que barre los textos.
+- 🐛 **DOS ROJOS MÍOS, Y LOS DOS ERAN DE LA PRUEBA**: el escenario marcaba **tres** series del primer
+  ejercicio del PPL, que tiene **cuatro**, y luego exigía «realizado»; y las dos sesiones del descarte
+  **compartían id**, así que `guardarSesion` las fusionaba —correctamente— y la comprobación no medía
+  lo que decía medir. El escenario se construye ahora de lo que el plan trae de verdad.
+- 🐛 **Y LA PANTALLA SIN SESIÓN NO ENTRA EN EL BANCO DE RENDERIZADO** (FIT F3 con
+  `ResumenConstructor`): devuelve `null` a propósito —pintar un «0 series · 0 min» sería el cero
+  inventado de la regla 8— y el arnés cuenta un render vacío como fallo. Se comprueba en Node.
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde. **171 comprobaciones nuevas** en
+`scripts/test-finalizacion.mjs` —incluido el recorrido entero del apartado 38, cerrando la aplicación
+en mitad del resumen—, **una sección nueva del recorrido en Chromium** que hace ese mismo camino con
+el dedo, y casos de renderizado para las cinco piezas de la pantalla.
+
 ## v3.89.0 — FIT F7/45: el motor de entrenamiento en vivo
 
 El criterio de finalización no admite medias tintas: *"La fase está terminada cuando puedo iniciar

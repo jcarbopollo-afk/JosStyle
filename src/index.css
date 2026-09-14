@@ -532,3 +532,16 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* FIT F8 — la marca de «entrenamiento guardado» (apartado 31: *"Puede existir
+   una microanimación elegante de éxito"*, y en la misma línea *"no quiero
+   confeti exagerado ni gamificación infantil"*). Una sola marca que entra.
+   ⚠️ Vive aquí y no en un `style` de la vista para que respete «Reducir
+   movimiento» sola, como todas las demás (E3 F14). */
+@keyframes exitoEntra {
+  from { opacity: 0; transform: scale(0.82); }
+  to { opacity: 1; transform: scale(1); }
+}
+.exito-entra {
+  animation: exitoEntra 420ms var(--ease-premium) both;
+}

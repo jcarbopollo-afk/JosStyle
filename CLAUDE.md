@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.89.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.90.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -45,7 +45,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 38 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 37 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -324,7 +324,41 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 
 🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, con la **FIT F1 (v3.83.0)**, la **FIT F2
 (v3.84.0)**, la **FIT F3 (v3.85.0)**, la **FIT F4 (v3.86.0)**, la **FIT F5 (v3.87.0)**, la **FIT F6
-(v3.88.0)** y la **FIT F7 (v3.89.0)** hechas. Lo que dejaron, y que vale para las 38 que quedan:
+(v3.88.0)**, la **FIT F7 (v3.89.0)** y la **FIT F8 (v3.90.0)** hechas. Lo que dejaron, y que vale
+para las 37 que quedan:
+
+- 🚨 **UN ESTADO INTERMEDIO PUEDE SER LA ÚNICA FORMA DE NO PERDER NADA** (FIT F8, apartado 28).
+  Terminar no guarda: pasa la sesión a **`finalizando`** y la guarda ahí. Sin ese estado habría que
+  elegir entre **perder lo que ha revisado** o **darlo por completado sin que él lo confirme**, y el
+  apartado 16 prohíbe lo segundo. ⚠️ Y el reloj se para **al entrar**, no al guardar: sumar el rato
+  que pasa escribiendo la nota convertiría 45 minutos en 52 (apartado 22).
+- 🚨 **UN GUARDADO IDEMPOTENTE SALE DE LA FORMA DEL DATO, NO DE UN CANDADO** (FIT F8, apartado 17,
+  marcado como MUY IMPORTANTE): una sesión **ya completada se devuelve tal cual**, y `guardarSesion`
+  sustituye por id desde la F7. Pulsar cinco veces deja una sola sesión, y hay una comprobación que
+  lo pulsa cinco veces.
+- 🚨 **UNA SERIE CUENTA SI ÉL LA MARCÓ, NUNCA POR ESTAR PLANIFICADA** (FIT F8, apartado 6), y un
+  ejercicio sin ninguna hecha es **No realizado** aunque estuviera en el plan (apartado 10).
+- 🚨 **UNA MÉTRICA QUE NO SE PUEDE CALCULAR NO SE ENSEÑA** (FIT F8, apartados 8 y 9): el volumen sale
+  **solo** de las series con peso Y repeticiones, dice de cuántas, y sin ninguna vale `null` — unas
+  dominadas a peso corporal no son «0 kg» ni «70 kg», es que no se miden así. Y ni una caloría
+  quemada, que es el ejemplo del propio enunciado.
+- 🔓 **UN ESTADO DECLARADO Y APAGADO SE ENCIENDE CUANDO LLEGA SU FASE** (FIT F8, y es la E3 F44 otra
+  vez): el «Completado» de un día nació con `disponible: false` en la F6 porque no había sesiones que
+  lo afirmaran. Ya las hay. ⚠️ Y **lo dice la sesión, no el plan**: una descartada no cuenta, y
+  entrenar un día de descanso no lo convierte en completado — no tocaba.
+- 🔓 **UNA CONFIRMACIÓN QUE EXISTÍA POR FALTA DE PANTALLA SE RETIRA CON LA PANTALLA** (FIT F8).
+  `terminarSesion` y su aviso eran lo único que se podía poner entre pulsar Terminar y dar el
+  entrenamiento por hecho; con el resumen construido, preguntar antes de enseñarlo sería un aviso
+  delante de un aviso (EH F61) — y la garantía queda **más fuerte**: desde la cabecera la sesión ya
+  no puede llegar a `completada`. Se retira en vez de quedarse sin quien la llame.
+- ⚠️ **EL CAMPO SÍ Y EL BOTÓN NO, CUANDO NO HAY DÓNDE GUARDAR** (FIT F8, apartado 14): JosStyle tiene
+  cinco buckets y **ninguno es de entrenamientos**; un sexto necesita el SQL de Josué, y hasta
+  entonces «Añadir foto o vídeo» fallaría en silencio en su iPhone (Ajustes · Perfil, exacto).
+  `media` existe y vale `null`, declarado en `MEDIA_PENDIENTE`.
+- 🐛 **UN ESCENARIO DE PRUEBA SE CONSTRUYE DE LO QUE EL PLAN TRAE, NO DE LO QUE UNO SUPONE** (FIT F8,
+  y es EH F44): marcaba **tres** series del primer ejercicio del PPL, que tiene **cuatro**, y luego
+  exigía «realizado». Y dos sesiones del descarte **compartían id**, así que se fusionaban —bien— y la
+  comprobación no medía lo que decía medir.
 
 - 🚨 **EL SNAPSHOT DE UNA SESIÓN ES LA ÚNICA COPIA QUE ESTE PROYECTO SÍ DEBE HACER** (FIT F7,
   apartado 3, marcado como MUY IMPORTANTE). No contradice las veinte fases que llevan prohibiendo
@@ -663,15 +697,13 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F8/45 — Finalización y guardado del entrenamiento** (líneas
-   28 456–29 052 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). **Ya no hay que esperar a que
-   él pase nada**: la Entrega 4 está entera encima de la mesa y se construye de la F1 a la F45, en
-   orden, encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
-   ⚠️ **Y lo primero de esa fase es mirar lo que ya hay**: la F7 dejó la sesión **completa y
-   guardada** en `fitness.sesiones` —con `terminadaEn`, el snapshot entero, lo planificado y lo
-   realizado de cada serie—, `terminarSesion()` con su confirmación y `progresoSesion()`. Lo que la
-   F8 desarrolla es **la pantalla de resumen** que va en medio, no el dato: está declarado en
-   `NO_EN_FIT7` con esas palabras.
+1. 🏋️ **SEGUIR POR LA FIT F9/45 — UX avanzada del entrenamiento en vivo** (líneas 27 781–28 455 de
+   `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). **Ya no hay que esperar a que él pase nada**:
+   la Entrega 4 está entera encima de la mesa y se construye de la F1 a la F45, en orden, encadenando
+   sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+   ⚠️ **Y lo primero de esa fase es mirar lo que ya hay**: la F7 dejó la pantalla en vivo entera
+   —cronómetro, carrusel, tabla de series, descanso, notas, sustitución— y la F8 el resumen y el
+   guardado. Lo que la F9 desarrolla es **cómo se usa eso mientras entrena**, no el motor.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

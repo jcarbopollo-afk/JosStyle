@@ -152,19 +152,50 @@ ok(desdeMartes[0].estado === 'pasado', '…se queda como un día de la semana qu
 console.log('\n── 3. Los estados, y el que NO se puede afirmar (apartado 8) ──');
 
 ok(ESTADOS_DIA.length >= 5, `Los estados están declarados (${ESTADOS_DIA.length})`);
-ok(estadoDia('completado')?.disponible === false,
-  '🚨 FIT F6 — «Completado» existe DECLARADO Y APAGADO: sin historial no se puede afirmar (apartado 8)');
-ok(!!estadoDia('completado')?.enFase,
-  '⚠️ …y dice en qué fase llega, para que la siguiente no escriba un sexto estado sin verlo');
-ok(!ESTADOS_DISPONIBLES.includes('completado'), '…y no está entre los que se usan');
+/* 🔓 **ESTAS CUATRO DECÍAN LO CONTRARIO HASTA LA FIT F8**, y estaban escritas a
+   propósito para este momento (E3 F44). El apartado 8 prohíbe *inventarse*
+   entrenamientos completados, no el estado: mientras no había ni una sesión
+   guardada, afirmarlo habría sido inventarlo. La F8 las guarda, así que el
+   estado se enciende y lo que se vigila ahora es que **solo lo diga una sesión**.
+   ⚠️ La de más abajo es la que no cambia: sin sesiones, ni un día lo devuelve. */
+ok(estadoDia('completado')?.disponible === true,
+  '🔓 FIT F6 → F8 — «Completado» ya está disponible: hay sesiones guardadas que lo pueden afirmar');
+ok(!!estadoDia('completado')?.desdeFase,
+  '⚠️ …y dice desde qué fase, para que se sepa de dónde salió');
+ok(ESTADOS_DISPONIBLES.includes('completado'), '…y está entre los que se usan');
 const todosLosEstados = new Set();
 for (const id of CATALOGO_PLANES.map((p) => p.id)) {
   for (const d of semanaDelPlan(planPorId(id), { hoy: MIER, desde: LUNES })) todosLosEstados.add(d.estado);
 }
 ok(!todosLosEstados.has('completado'),
-  '🚨 …y NINGUNO de los diecisiete planes devuelve «completado» en ningún día');
+  '🚨 …pero SIN sesiones ni un día lo devuelve: el plan dice lo que toca, no lo que se hizo');
 ok([...todosLosEstados].every((e) => ESTADOS_DISPONIBLES.includes(e)),
   `…todos los que salen se pueden afirmar (${[...todosLosEstados].sort().join(', ')})`);
+
+/* 🔓 Y con una sesión guardada de ese día, SÍ lo dice — que es la mitad que
+   faltaba: sin esto, la comprobación de arriba no podría ponerse roja jamás
+   (EH F42). */
+const conSesion = semanaDelPlan(planPorId('ppl-estetico'), {
+  hoy: MIER, desde: LUNES,
+  sesiones: [{ id: 's1', estado: 'completada', fecha: LUNES }],
+});
+ok(conSesion.find((d) => d.fecha === LUNES)?.estado === 'completado',
+  '🔓 FIT F8 — con una sesión GUARDADA de ese día, el día sale «Completado»');
+ok(conSesion.find((d) => d.fecha === LUNES)?.entrenado === true, '…y la casilla lo dice');
+const conDescartada = semanaDelPlan(planPorId('ppl-estetico'), {
+  hoy: MIER, desde: LUNES,
+  sesiones: [{ id: 's2', estado: 'descartada', fecha: LUNES }],
+});
+ok(conDescartada.find((d) => d.fecha === LUNES)?.estado !== 'completado',
+  '🚨 …y una DESCARTADA no cuenta: no es un entrenamiento hecho');
+const enDescanso = semanaDelPlan(planPorId('ppl-estetico'), {
+  hoy: MIER, desde: LUNES,
+  sesiones: semanaDelPlan(planPorId('ppl-estetico'), { hoy: MIER, desde: LUNES })
+    .filter((d) => d.descanso)
+    .map((d, i) => ({ id: `d${i}`, estado: 'completada', fecha: d.fecha })),
+});
+ok(!enDescanso.some((d) => d.descanso && d.estado === 'completado'),
+  '⚠️ …y entrenar un día de DESCANSO no lo convierte en completado: no tocaba');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 4. El próximo entrenamiento (apartados 5 y 6) ──');

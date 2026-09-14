@@ -507,13 +507,33 @@ export function normalizarWorkoutPlan(g) {
 /* ⚠️ FIT F7 — `pausada` es el cuarto estado que pide el apartado 2 de esa fase
    (*"active, paused, completed, discarded"*). Los otros tres ya estaban con sus
    nombres: `en_curso` es el activo. Renombrarlos habría roto lo guardado. */
-export const ESTADOS_SESION = ['planificada', 'en_curso', 'pausada', 'completada', 'descartada'];
+/* ⚠️ `pausada` la añadió la F7 (apartado 7: el móvil bloqueado) y `finalizando`
+   la F8: la sesión ya no se está entrenando **pero todavía no está guardada**,
+   y ese estado es el que permite recuperarla si cierra la aplicación en la
+   pantalla de resumen (F8, apartado 28). Sin él habría que elegir entre perder
+   lo revisado o darlo por completado sin que él lo confirmara. */
+export const ESTADOS_SESION = [
+  'planificada', 'en_curso', 'pausada', 'finalizando', 'completada', 'descartada',
+];
+
+/* 🚨 FIT F8, apartado 15 — la visibilidad, con **una sola disponible**. El
+   enunciado enumera tres y a continuación dice *"si el sistema social todavía no
+   existe: usar por ahora Privado y dejar el modelo preparado"*. Así que las
+   otras dos se declaran con `existe: false` y su fase, y **no se pintan**: un
+   selector con dos opciones que no hacen nada es el control decorativo de la
+   regla 8. */
+export const VISIBILIDADES = [
+  { id: 'privado', nombre: 'Privado', que: 'Solo lo ves tú.', existe: true },
+  { id: 'seguidores', nombre: 'Seguidores', que: 'Lo verían quienes te siguen.', existe: false, enFase: 'El sistema social, que todavía no existe' },
+  { id: 'publico', nombre: 'Público', que: 'Lo vería cualquiera.', existe: false, enFase: 'El sistema social, que todavía no existe' },
+];
 
 export function crearWorkoutSession({
   planId = null, nombre = '', fecha = todayISO(), inicio = null, fin = null,
   ejercicios = [], notas = '', descripcion = '', estado = 'planificada',
   origen = null, iniciadaEn = null, terminadaEn = null, pausadaEn = null,
   pausadoMs = 0, actual = 0,
+  visibilidad = 'privado', media = null, diaDePlan = null, guardadaEn = null,
 } = {}) {
   return {
     id: uid(),
@@ -550,6 +570,28 @@ export function crearWorkoutSession({
     pausadoMs: enteroONull(pausadoMs) ?? 0,
     /* En qué ejercicio va (apartado 28: una sola fuente de verdad). */
     actual: enteroONull(actual) ?? 0,
+    /* ═══ FIT F8 — la finalización ═════════════════════════════════════════
+       ⚠️ Los cuatro van **aquí también**, y por lo mismo de siempre: lo que este
+       normalizador no conozca se lo lleva el siguiente guardado (regla 5). Y lo
+       guardado antes de la F8 no pierde nada, porque sin el campo salen con su
+       valor por defecto (apartado 35: *"usar valores por defecto seguros"*).
+
+       🚨 `notas` y `descripcion` **ya existían** desde la F1, así que la nota
+       general de la sesión (apartado 13) es `notas` y no un campo nuevo: dos
+       campos para lo mismo acaban diciendo cosas distintas (E3 F44). */
+    /* Apartado 15 — nace privada, y las demás no existen todavía. */
+    visibilidad: VISIBILIDADES.some((v) => v.id === visibilidad) ? visibilidad : 'privado',
+    /* Apartado 14 — la estructura, preparada y **vacía**: no hay dónde guardar
+       un archivo de entrenamiento, y un botón que no guarda nada es peor que no
+       tenerlo (Ajustes · Perfil, con el bucket que no existía). */
+    media: media && typeof media === 'object' ? media : null,
+    /* Apartado 21 — qué día del plan se completó. */
+    diaDePlan: diaDePlan && typeof diaDePlan === 'object' ? diaDePlan : null,
+    /* Apartado 16 — cuándo la guardó. ⚠️ **No es lo mismo que `terminadaEn`**:
+       el entrenamiento acaba al pulsar Terminar y el reloj se para ahí; guardar
+       puede tardar lo que tarde en escribir una nota, y sumar ese rato a la
+       duración sería mentir (apartado 22). */
+    guardadaEn: enteroONull(guardadaEn),
   };
 }
 

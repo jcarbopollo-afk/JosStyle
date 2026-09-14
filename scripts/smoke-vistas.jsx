@@ -190,6 +190,17 @@ import {
   quitarSerie as quitarF7, anadirSerie as anadirF7, AVISO_SALIR as AVISO_SALIR_F7,
 } from '../src/lib/entrenamiento.js';
 import { diaARutina as diaARutinaF5 } from '../src/lib/planes.js';
+/* FIT F8 — el resumen y el guardado. ⚠️ Sus piezas sueltas: la pantalla de
+   éxito solo aparece DESPUÉS de guardar, así que renderizar la vista no pinta ni
+   una línea de ella (NAV F3). */
+import FinalizacionView, {
+  DatoResumen, FilaEjercicioFinal, PantallaExito, ResumenSesion,
+} from '../src/views/FinalizacionView.jsx';
+import {
+  pasarAFinalizacion as pasarF8, resumenDeSesion as resumenF8,
+  pantallaDeExito as exitoF8, guardarEntrenamiento as guardarF8,
+} from '../src/lib/finalizacion.js';
+import { Clock as Clock8Smoke } from 'lucide-react';
 import { rutinaAPlan as rutinaAPlanF4 } from '../src/lib/constructor.js';
 import { crearRutina as crearRutinaF3, anadirEjercicio as anadirF3, editarLinea as editarF3 } from '../src/lib/constructor.js';
 import { CATALOGO_EJERCICIOS } from '../src/lib/ejercicios.js';
@@ -3185,6 +3196,46 @@ const CASOS = [
   /* ⚠️ Y sin sesión, que no puede dejar la pantalla en blanco sin decir nada. */
   ['EntrenamientoVivoView', EntrenamientoVivoView, () => ({
     sesion: null, propios: [], accent, onGuardar: noop, onSalir: noop,
+  })],
+  /* ══ FIT F8 — la finalización ══════════════════════════════════════════ */
+  ['FinalizacionView', FinalizacionView, () => ({
+    sesion: pasarF8(sesionUsadaF7()), propios: [], accent,
+    onGuardar: noop, onDescartar: noop, onSeguir: noop, onVolver: noop,
+  })],
+  /* ⚠️ Y el caso del apartado 26: un entrenamiento sin ni una serie marcada. */
+  ['FinalizacionView', FinalizacionView, () => ({
+    sesion: pasarF8(sesionVivaF7()), propios: [], accent,
+    onGuardar: noop, onDescartar: noop, onSeguir: noop, onVolver: noop,
+  })],
+  /* 🐛 ⚠️ **Sin sesión NO entra aquí**, y es la lección de la FIT F3 con
+     `ResumenConstructor`: este arnés cuenta un render vacío como fallo, y
+     `FinalizacionView` devuelve `null` a propósito cuando no hay nada que
+     resumir —pintar un «0 series · 0 min» sería el cero inventado de la regla
+     8—. Eso se comprueba en `test-finalizacion.mjs`, no aquí. */
+  ['ResumenSesion', ResumenSesion, () => ({
+    resumen: resumenF8(pasarF8(sesionUsadaF7())), accent,
+  })],
+  /* ⚠️ Un resumen SIN volumen: una rutina de peso corporal no lleva esa sección. */
+  ['ResumenSesion', ResumenSesion, () => ({
+    resumen: resumenF8(pasarF8(empezarF7({
+      nombre: 'Calistenia',
+      lineas: anadirF3(crearRutinaF3({ nombre: 'Calistenia' }), 'dominada-prona').lineas,
+    }))),
+    accent,
+  })],
+  ['DatoResumen', DatoResumen, () => ({
+    icono: Clock8Smoke, etiqueta: 'Duración', valor: '57 min', accent,
+  })],
+  ['FilaEjercicioFinal', FilaEjercicioFinal, () => ({
+    ejercicio: resumenF8(pasarF8(sesionUsadaF7())).ejercicios[0], accent,
+  })],
+  /* ⚠️ Y uno NO REALIZADO, que se pinta distinto (apartado 10). */
+  ['FilaEjercicioFinal', FilaEjercicioFinal, () => ({
+    ejercicio: resumenF8(pasarF8(sesionVivaF7())).ejercicios[0], accent,
+  })],
+  ['PantallaExito', PantallaExito, () => ({
+    datos: exitoF8(guardarF8(pasarF8(sesionUsadaF7()), { confirmado: true }).sesion),
+    accent, onVer: noop, onVolver: noop,
   })],
   ['CabeceraSesion', CabeceraSesion, () => ({
     nombre: 'Push', tiempo: '12:34', progreso: progresoF7(sesionUsadaF7()),

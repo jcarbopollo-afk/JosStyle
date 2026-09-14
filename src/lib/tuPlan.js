@@ -99,15 +99,17 @@ export const ESTADOS_DIA = [
   { id: 'descanso', nombre: 'Descanso', disponible: true, que: 'Un día sin entrenamiento.' },
   { id: 'futuro', nombre: 'Más adelante', disponible: true, que: 'Un día de entrenamiento que todavía no toca.' },
   { id: 'pasado', nombre: 'Ya pasó', disponible: true, que: 'Un día de esta semana que ya quedó atrás.' },
-  /* 🚨 El quinto del enunciado, declarado y APAGADO: sin historial de sesiones
-     no se puede afirmar que entrenó, y el apartado 8 lo prohíbe expresamente.
-     La F8 es la que guardará las sesiones; ese día esto se enciende. */
+  /* 🔓 **EL QUINTO, ENCENDIDO POR LA FIT F8.** Nació `disponible: false` porque
+     el apartado 8 de la F6 prohíbe inventarse entrenamientos completados y
+     entonces no había ni una sesión guardada. Ya las hay, así que el estado se
+     enciende — y **sigue sin inventarse nada**: solo lo dice una sesión con
+     estado `completada` de ese día. Era una espera, no una exclusión. */
   {
     id: 'completado',
     nombre: 'Completado',
-    disponible: false,
-    que: 'Que un entrenamiento se HIZO solo lo puede decir una sesión guardada.',
-    enFase: 'Finalización y guardado del entrenamiento (FIT F8)',
+    disponible: true,
+    que: 'Ese día hay un entrenamiento guardado. Lo dice la sesión, no el plan.',
+    desdeFase: 'Finalización y guardado del entrenamiento (FIT F8)',
   },
 ];
 
@@ -203,7 +205,20 @@ export function posicionDelDia(plan, fecha, desde = '') {
 
 /** Las siete casillas de la semana, cada una con su día del plan y su estado.
  *  ⚠️ Siempre **la semana que contiene hoy**, empezando en lunes (E3 F10). */
-export function semanaDelPlan(plan, { hoy = todayISO(), desde = '', propios = [] } = {}) {
+/** 🔓 FIT F8 — qué días tienen un entrenamiento guardado. ⚠️ **Se pregunta a las
+ *  sesiones, no al plan**: el plan dice lo que TOCA, y que algo se hiciera solo
+ *  lo puede decir un registro suyo (apartado 8 de la F6). Y solo cuentan las
+ *  `completada`: una descartada no es un entrenamiento hecho. */
+export function diasEntrenados(sesiones = []) {
+  const dias = new Set();
+  for (const s of lista(sesiones)) {
+    if (s && s.estado === 'completada' && s.fecha) dias.add(s.fecha);
+  }
+  return dias;
+}
+
+export function semanaDelPlan(plan, { hoy = todayISO(), desde = '', propios = [], sesiones = [] } = {}) {
+  const entrenados = diasEntrenados(sesiones);
   const dias = lista(plan?.dias);
   if (!dias.length) return [];
   const diaHoy = diaDeFecha(hoy);
@@ -230,9 +245,17 @@ export function semanaDelPlan(plan, { hoy = todayISO(), desde = '', propios = []
        plan activado un martes, el lunes de esa semana salía como descanso. */
     const antesDeEmpezar = !!desde && fecha < desde;
 
+    /* 🔓 FIT F8 — un día con entrenamiento guardado es «Completado», y eso gana
+       a «Hoy» y a «Ya pasó»: es lo único que se sabe de cierto de ese día.
+       ⚠️ Pero **no gana a «Descanso» ni a un día anterior a la activación**: si
+       entrenó un día que el plan no pedía, ese día sigue siendo descanso del
+       plan, y decir «Completado» afirmaría que cumplió algo que no tocaba. */
+    const entrenado = entrenados.has(fecha);
+
     let estado;
     if (antesDeEmpezar) estado = 'pasado';
     else if (!dia || dia.descanso) estado = 'descanso';
+    else if (entrenado) estado = 'completado';
     else if (esHoy) estado = 'hoy';
     else if (pasado) estado = 'pasado';
     else if (!yaHayProximo) { estado = 'proximo'; yaHayProximo = true; }
@@ -244,6 +267,7 @@ export function semanaDelPlan(plan, { hoy = todayISO(), desde = '', propios = []
       corto: d.corto,
       etiqueta: d.label,
       esHoy,
+      entrenado,
       fueraDelPlan: antesDeEmpezar,
       indice: antesDeEmpezar ? null : pos,
       nombre: antesDeEmpezar || !dia ? '' : dia.nombre,
@@ -269,8 +293,14 @@ export const DESCANSO_HOY = {
  *  siguiente día de entreno de la semana. ⚠️ Devuelve `null` si esta semana no
  *  queda ninguno — inventarse el de la semana que viene sería adivinar cuándo
  *  vuelve a empezar el ciclo. */
-export function proximoEntrenamiento(plan, { hoy = todayISO(), desde = '', propios = [] } = {}) {
-  const semana = semanaDelPlan(plan, { hoy, desde, propios });
+export function proximoEntrenamiento(plan, { hoy = todayISO(), desde = '', propios = [], sesiones = [] } = {}) {
+  /* 🔓 FIT F8 — recibe las sesiones **por el mismo motivo que la semana**: si
+     no, las dos dirían cosas distintas del mismo día. Con el entrenamiento de
+     hoy ya guardado, ese día pasa a «Completado» y lo siguiente que toca es el
+     día de después — que es lo que hace un tracker de verdad, y lo contrario
+     —ofrecerle «Empezar» el que acaba de terminar— sería raro.
+     ⚠️ Y no le impide entrenar otra vez: la semana sigue siendo pulsable. */
+  const semana = semanaDelPlan(plan, { hoy, desde, propios, sesiones });
   const casilla = semana.find((d) => d.estado === 'hoy') || semana.find((d) => d.estado === 'proximo');
   if (!casilla || casilla.indice === null) return null;
 
@@ -437,8 +467,9 @@ export function tuPlan(fitness, { hoy = todayISO(), planes = CATALOGO_PLANES } =
 
   const { plan, activo, origen } = resuelto;
   const desde = texto(activo.desde);
-  const semana = semanaDelPlan(plan, { hoy, desde, propios });
-  const proximo = proximoEntrenamiento(plan, { hoy, desde, propios });
+  const sesiones = lista((fitness || {}).sesiones);
+  const semana = semanaDelPlan(plan, { hoy, desde, propios, sesiones });
+  const proximo = proximoEntrenamiento(plan, { hoy, desde, propios, sesiones });
   const casillaHoy = semana.find((d) => d.esHoy) || null;
 
   return {
@@ -480,7 +511,11 @@ export function sesionDelDia(plan, indice, propios = []) {
 
 export const NO_EN_FIT6 = [
   { que: 'El entrenamiento en vivo, el cronómetro y el registro de series', porque: 'Apartado 28. El CTA del apartado 6 es *"Ver entrenamiento"* y abre el detalle: *"No crear botones muertos."*' },
-  { que: 'El estado «Completado» de un día', porque: 'Apartado 8: sin historial de sesiones no se puede afirmar que entrenó. Está en `ESTADOS_DIA` con `disponible: false` y llega con la FIT F8.' },
+  /* 🔓 Cumplido por la FIT F8: se queda escrito con su fecha, como la entrada de
+     `DESVIACIONES` de DIST F2 — borrarlo dejaría la pregunta viva y la respuesta
+     perdida, que es cómo este proyecto acabó con la mentira de los sonidos
+     escrita en tres sitios. */
+  { que: 'El estado «Completado» de un día', porque: 'Apartado 8: sin historial de sesiones no se puede afirmar que entrenó.', resueltoEn: 'FIT F8 — ya hay sesiones guardadas, así que el estado se encendió.' },
   { que: 'La semana del plan, el progreso y la adherencia', porque: 'Apartado 16: *"No implementar todavía lógica avanzada de progresión."* La fecha de activación ya está guardada para cuando toque.' },
   { que: 'El historial de sesiones y las fotos de progreso', porque: 'Apartado 28. Las fotos, además, ya existen en Salud (`saludFotos`, FIT F1): no se duplican.' },
   { que: 'Rangos, Progreso, IA y recomendaciones automáticas', porque: 'Apartado 28, y la regla 7: la IA nunca se dispara sola.' },

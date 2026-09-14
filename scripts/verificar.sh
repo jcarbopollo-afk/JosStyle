@@ -1014,6 +1014,17 @@ else
   fallo "Falla el motor de entrenamiento en vivo"; grep '✗' /tmp/jc_entreno.log
 fi
 
+# FIT F8 — la finalización y el guardado. Lo que más se vigila: que el guardado
+# sea IDEMPOTENTE (se pulsa cinco veces y hay UNA sesión), que una serie cuente
+# solo si él la marcó, que el volumen NO salga cuando no se puede calcular —unas
+# dominadas a peso corporal no son 0 kg— y que completar un entrenamiento no
+# toque ni el plan ni la plantilla (apartado 24).
+if node --import ./scripts/resolver-vite.mjs scripts/test-finalizacion.mjs >/tmp/jc_final.log 2>&1; then
+  ok "Finalización del entrenamiento (FIT F8) — $(grep -c '✓' /tmp/jc_final.log) comprobaciones"
+else
+  fallo "Falla la finalización del entrenamiento"; grep '✗' /tmp/jc_final.log
+fi
+
 # SC F1 — scroll, cabeceras fijas y el acordeón que dejaba un hueco en el iPhone.
 # Los tres los reportó Josué usando la aplicación, y los tres tenían una causa
 # real: la cabecera no era `sticky`, la banda no existía y al elemento de rejilla

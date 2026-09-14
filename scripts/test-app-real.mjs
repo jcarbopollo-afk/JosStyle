@@ -6850,27 +6850,119 @@ ok(pesoTrasRecargar_fit7 === '62.5',
   `🚨 …y con los 62,5 kg (${pesoTrasRecargar_fit7}): el apartado 38, cumplido de punta a punta`);
 
 /* Apartado 32 — Terminar pregunta, y no completa sin confirmar. */
-ok(await pulsar('Terminar el entrenamiento'), 'se pulsa Terminar (apartado 32)');
-await page.waitForTimeout(400);
-ok(/¿Terminar el entrenamiento\?/i.test(await ver()), '🚨 FIT F7 — y PREGUNTA antes (apartado 32)');
-ok(await pulsar('Seguir entrenando'), '…se puede no terminar');
-await page.waitForTimeout(400);
-const sinTerminar_fit7 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.sesiones || []).at(-1);
-ok(sinTerminar_fit7?.estado === 'en_curso',
-  '🚨 …y SIN confirmar no se completa nada (`aplicarPlan`, y ya van más de veinte)');
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F8 — la finalización y el guardado (Entrega 4 · 8/45)
+   ══════════════════════════════════════════════════════════════════════════
 
-ok(await pulsar('Terminar el entrenamiento'), 'y ahora sí');
-await page.waitForTimeout(300);
-ok(await pulsar('Terminar y guardar'), '…confirmando');
+   🔓 **AQUÍ LA F7 TERMINABA LA SESIÓN CON UNA CONFIRMACIÓN**, porque no había
+   pantalla de resumen: su propio apartado 32 decía *"Debe llevar posteriormente
+   a la pantalla de finalización que construiremos en la siguiente fase"*. Ya
+   existe, así que Terminar lleva al resumen y la comprobación se da la vuelta.
+
+   El criterio del apartado 38: *"Empezar → entrenar → Terminar → revisar
+   resumen → modificar nombre/notas → guardar → cerrar aplicación → volver"*. */
+console.log('\n── FIT F8 · La finalización ──');
+
+ok(await pulsar('Terminar el entrenamiento'), 'se pulsa Terminar (apartado 1)');
+const resumen_fit8 = await esperarTexto(/Entrenamiento completado/i);
+ok(/¡Entrenamiento completado!/i.test(resumen_fit8),
+  '🚨 FIT F8 — y lleva al RESUMEN, no a completada (apartado 1)');
+ok(/Revisa lo que has hecho/i.test(resumen_fit8), '…que invita a revisar antes de guardar');
+const trasTerminar_fit8 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.sesiones || []).at(-1);
+ok(trasTerminar_fit8?.estado === 'finalizando',
+  `🚨 FIT F8 — la sesión queda en «finalizando», ni entrenando ni guardada (${trasTerminar_fit8?.estado})`);
+ok(!!trasTerminar_fit8?.terminadaEn, '…con el reloj ya parado (apartado 22)');
+
+/* Apartados 2, 4, 5 y 6 — lo que el resumen tiene que enseñar. */
+ok(/Duraci[oó]n/i.test(resumen_fit8), '…enseña la duración (apartado 5)');
+ok(/\d+ min/.test(resumen_fit8), '…en minutos');
+ok(/Fecha/i.test(resumen_fit8) && /septiembre|octubre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|noviembre|diciembre/i.test(resumen_fit8),
+  '…la fecha en largo (apartado 4)');
+ok(/\d\d:\d\d → \d\d:\d\d/.test(resumen_fit8), '…y la franja horaria (apartado 4, su ejemplo)');
+ok(/\d+\/\d+ series completadas/.test(resumen_fit8),
+  '🚨 …y «16/20 series completadas» (apartados 6 y 25)');
+ok(/Ejercicios/i.test(resumen_fit8), '…con el desglose por ejercicio (apartado 7)');
+ok(/No realizado/i.test(resumen_fit8),
+  '🚨 FIT F8 — y un ejercicio sin series marcadas sale «No realizado» (apartado 10)');
+ok(/Volumen/i.test(resumen_fit8), '…y el volumen, que aquí SÍ se puede calcular (apartado 9)');
+ok(!/calor[ií]a/i.test(resumen_fit8),
+  '🚨 …y NI UNA caloría quemada: no hay modelo fiable (apartado 8, literal)');
+ok(!/Compartir/i.test(resumen_fit8),
+  '🚨 …ni un «Compartir»: sin sistema social sería un botón muerto (apartado 20)');
+ok(/Privado/i.test(resumen_fit8), '…y se dice que es privado (apartado 15)');
+
+/* Apartado 3 — el nombre, editable. */
+const escribirEn_fit8 = async (etiqueta, valor, etiquetaHTML = 'input') => page.evaluate(([e, v, tag]) => {
+  const campo = [...document.querySelectorAll(`${tag}[aria-label]`)]
+    .find((i) => (i.getAttribute('aria-label') || '').startsWith(e));
+  if (!campo) return false;
+  const proto = tag === 'textarea' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, 'value').set.call(campo, v);
+  campo.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}, [etiqueta, valor, etiquetaHTML]);
+
+ok(await escribirEn_fit8('Nombre del entrenamiento', 'Push — Fuerza'),
+  '🚨 FIT F8 — se cambia el nombre del entrenamiento (apartado 3)');
+ok(await escribirEn_fit8('Notas del entrenamiento', 'Me noté fuerte en los presses.', 'textarea'),
+  '…y se escribe la nota general (apartado 13)');
+await page.waitForTimeout(400);
+
+/* 🚨 Apartado 28 — se cierra la aplicación AQUÍ, en el resumen, sin guardar. */
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(2500);
+ok(await pulsar('Bienestar'), 'FIT F8 — se recarga la aplicación en mitad del resumen');
+ok(await pulsar('Fitness'), '…y se vuelve a Fitness');
+const recuperable_fit8 = await esperarTexto(/sin guardar/i);
+ok(/Te quedó un entrenamiento sin guardar/i.test(recuperable_fit8),
+  '🚨 FIT F8 — el entrenamiento TERMINADO y sin guardar se ofrece (apartado 28)');
+ok(!/Tienes un entrenamiento en curso/i.test(recuperable_fit8),
+  '🚨 …y NO como «en curso»: ya no se entrena, se guarda');
+ok(await pulsar('Terminar de guardarlo'), '…y se sigue donde lo dejó');
+const vuelta_fit8 = await esperarTexto(/Entrenamiento completado/i);
+ok(/\d+\/\d+ series completadas/.test(vuelta_fit8), '…con sus series intactas (apartado 28)');
+
+/* Apartados 16, 17 y 18 — guardar, una sola vez. */
+const antesDeGuardar_fit8 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.sesiones || []).length;
+ok(await pulsar('Terminar entrenamiento'), '🚨 FIT F8 — se guarda (apartado 16)');
+await page.waitForTimeout(700);
+const exito_fit8 = await ver();
+ok(/¡Entrenamiento completado!/i.test(exito_fit8), '…y sale la pantalla de éxito (apartado 19)');
+ok(/Ver entrenamiento/i.test(exito_fit8) && /Volver a Tu Plan/i.test(exito_fit8),
+  '🚨 …con las dos acciones del apartado 20');
+ok(!/Compartir/i.test(exito_fit8), '…y sin «Compartir» (apartado 20, literal)');
+
+const sesiones_fit8 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.sesiones || [];
+const sesionFinal_fit8 = sesiones_fit8.at(-1);
+ok(sesionFinal_fit8?.estado === 'completada',
+  `🚨 FIT F8 — la sesión queda COMPLETADA (${sesionFinal_fit8?.estado}, apartado 16)`);
+ok(sesionFinal_fit8?.nombre === 'Push — Fuerza',
+  `🚨 …con el nombre que él escribió (${sesionFinal_fit8?.nombre}, apartado 3)`);
+ok(/fuerte en los presses/.test(sesionFinal_fit8?.notas || ''), '…y su nota general (apartado 13)');
+ok(!!sesionFinal_fit8?.guardadaEn, '…apuntando cuándo la guardó');
+ok(sesionFinal_fit8?.visibilidad === 'privado', '…privada (apartado 15)');
+ok((sesionFinal_fit8?.origen?.ejercicios || []).length > 0,
+  '🚨 …conservando TODO el snapshot: se podrá enseñar en el historial (apartado 23)');
+ok(!!sesionFinal_fit8?.diaDePlan,
+  '🚨 FIT F8 — y qué día del plan se completó, para la adherencia de fases futuras (apartado 21)');
+ok(!!sesionFinal_fit8?.diaDePlan?.nombre,
+  '⚠️ …con el NOMBRE, no solo el id: si borra el plan, la sesión sigue sabiendo cuál era');
+ok(sesiones_fit8.length === antesDeGuardar_fit8,
+  `🚨 FIT F8 — y NO se ha creado una sesión nueva al guardar (${sesiones_fit8.length}, apartado 17)`);
+
+ok(await pulsar('Volver a Tu Plan'), 'se vuelve a Tu Plan (apartado 20)');
 const terminado_fit7 = await esperarTexto(/Tu Plan/i);
-const sesionFinal_fit7 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.sesiones || []).at(-1);
-ok(sesionFinal_fit7?.estado === 'completada',
-  `🚨 FIT F7 — la sesión queda completada (${sesionFinal_fit7?.estado}, apartado 32)`);
-ok(!!sesionFinal_fit7?.terminadaEn, '…con su hora de fin');
-ok((sesionFinal_fit7?.origen?.ejercicios || []).length > 0,
-  '🚨 …conservando TODOS los datos: *"preservar todos los datos"* (apartado 32)');
 ok(!/Tienes un entrenamiento en curso/i.test(terminado_fit7),
   '…y ya no se ofrece continuarla');
+ok(!/sin guardar/i.test(terminado_fit7), '…ni terminar de guardarla');
+
+/* 🔓 FIT F6 → F8 — el estado «Completado» de un día, que nació apagado. */
+const semana_fit8 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
+  .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo):/.test(b.getAttribute('aria-label') || ''))
+  .map((b) => b.getAttribute('aria-label')));
+ok(semana_fit8.length === 7, 'la semana sigue teniendo sus siete días');
+ok(!semana_fit8.some((e) => /descanso/i.test(e) && /completado/i.test(e)),
+  '🚨 FIT F8 — y entrenar NO convierte un día de DESCANSO en «Completado»: no tocaba');
 
 /* Y a 375 px no se desborda: es la pantalla que se usa entrenando (apartado 35). */
 ok(await pulsar('Empezar entrenamiento'), 'se empieza otra para medir el ancho');

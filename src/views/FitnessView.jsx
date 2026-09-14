@@ -49,6 +49,9 @@ import TuPlanView from './TuPlanView';
    constructor): con las pestañas debajo se podría uno ir a Rangos en mitad de
    una serie, que es la puerta de atrás por la que se pierde el trabajo. */
 import EntrenamientoVivoView, { SesionRecuperable } from './EntrenamientoVivoView';
+/* FIT F8 — el resumen y el guardado, también pantalla entera: se llega desde el
+   entrenamiento en vivo y se sale guardando o descartando. */
+import FinalizacionView from './FinalizacionView';
 import { duplicarPlantilla } from '../lib/plantillas';
 import {
   usarPlan, personalizarPreset, alternarFavoritoPlan, quitarPlanActivo, diaARutina,
@@ -57,6 +60,9 @@ import { planActivoCompleto, sesionDelDia } from '../lib/tuPlan';
 import {
   empezarSesion, guardarSesion, sesionActiva, descartarSesion,
 } from '../lib/entrenamiento';
+import {
+  sesionEnFinalizacion, AVISO_RECUPERAR_FINAL, descartarEntrenamiento,
+} from '../lib/finalizacion';
 import {
   crearRutina, planARutina, leerBorrador, borrarBorrador,
 } from '../lib/constructor';
@@ -355,6 +361,7 @@ export function AreaEntrenamiento({
   fitness, calistenia, accent, entrenoProps, onAbrirConstructor = null,
   onGuardarFitness = null, onEliminarPlantilla = null, onEmpezarSesion = null,
   sesionEnCurso = null, onContinuarSesion = null, onDescartarSesion = null,
+  sesionSinGuardar = null, onSeguirGuardando = null, onDescartarSinGuardar = null,
 }) {
   const resumen = resumenEntrenamiento(fitness, calistenia);
   const propios = (fitness || {}).ejercicios || [];
@@ -484,6 +491,21 @@ export function AreaEntrenamiento({
           accent={accent}
           onContinuar={onContinuarSesion}
           onDescartar={onDescartarSesion || (() => {})}
+        />
+      )}
+
+      {/* 🚨 FIT F8, apartado 28 — *"Si la aplicación se cierra en la pantalla de
+          finalización antes de guardar: la información debe seguir
+          recuperable."* ⚠️ Y **se dice distinto** que la de arriba: ésta ya no
+          se entrena, se guarda. «Continuar entrenamiento» aquí le devolvería a
+          la tabla de series algo que ya había terminado. */}
+      {sesionSinGuardar && onSeguirGuardando && (
+        <SesionRecuperable
+          sesion={sesionSinGuardar}
+          accent={accent}
+          textos={AVISO_RECUPERAR_FINAL}
+          onContinuar={onSeguirGuardando}
+          onDescartar={onDescartarSinGuardar || (() => {})}
         />
       )}
 
@@ -624,8 +646,13 @@ export default function FitnessView({
      (apartado 28, *"una fuente de verdad única"*). */
   const sesiones = (fitness?.sesiones) || [];
   const enVivo = entrenando ? sesiones.find((s) => s && s.id === entrenando) || null : null;
-  /* Apartado 30 — la que quedó a medias, para ofrecer continuarla. */
+  /* Apartado 30 de la F7 — la que quedó a medias entrenando; y el 28 de la F8
+     —la que quedó TERMINADA y sin guardar—. ⚠️ **Son dos cosas distintas y se
+     dicen distinto**: a una se vuelve a entrenar, a la otra se vuelve a
+     guardar. Con un solo aviso, «Continuar entrenamiento» le devolvería a la
+     tabla de series un entrenamiento que ya había terminado. */
   const pendiente = sesionActiva(fitness || {});
+  const sinGuardar = sesionEnFinalizacion(fitness || {});
 
   const guardarSesionViva = (sesion) => {
     if (!onGuardarFitness) return;
@@ -652,7 +679,27 @@ export default function FitnessView({
         /* Apartado 31 — salir NO la marca como completada: se queda en curso y
            la tarjeta de recuperación la vuelve a ofrecer. */
         onSalir={() => setEntrenando(null)}
-        onTerminada={() => setEntrenando(null)}
+        /* 🔓 FIT F8 — Terminar deja la sesión en `finalizando` y **se queda en
+           esta pantalla**: el `if` de abajo la recoge y pinta el resumen. */
+        onTerminada={(s) => setEntrenando(s.id)}
+      />
+    );
+  }
+
+  /* 🚨 FIT F8 — el resumen. Es pantalla entera por lo mismo que el
+     entrenamiento: con las pestañas debajo se podría uno ir a Rangos con una
+     sesión terminada y sin guardar. */
+  if (enVivo && enVivo.estado === 'finalizando') {
+    return (
+      <FinalizacionView
+        sesion={enVivo}
+        propios={propios}
+        accent={accent}
+        onGuardar={guardarSesionViva}
+        onDescartar={(s) => { guardarSesionViva(s); setEntrenando(null); }}
+        /* Apartados 25 y 26 — se puede volver a entrenar en vez de guardar. */
+        onSeguir={() => guardarSesionViva({ ...enVivo, estado: 'en_curso', terminadaEn: null })}
+        onVolver={() => setEntrenando(null)}
       />
     );
   }
@@ -691,6 +738,12 @@ export default function FitnessView({
             ? (rutina) => setCreando({ rutina: rutina || crearRutina({}) })
             : null}
           onEmpezarSesion={onGuardarFitness ? empezar : null}
+          sesionSinGuardar={sinGuardar}
+          onSeguirGuardando={sinGuardar ? () => setEntrenando(sinGuardar.id) : null}
+          onDescartarSinGuardar={sinGuardar && onGuardarFitness ? () => {
+            const r = descartarEntrenamiento(sinGuardar, { confirmado: true });
+            if (r.ok) onGuardarFitness(guardarSesion(fitness || {}, r.sesion));
+          } : null}
           sesionEnCurso={pendiente}
           onContinuarSesion={pendiente ? () => setEntrenando(pendiente.id) : null}
           onDescartarSesion={pendiente && onGuardarFitness ? () => {

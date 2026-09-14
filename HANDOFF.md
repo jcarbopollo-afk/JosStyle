@@ -2,6 +2,29 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.90.0 — FIT F8/45: finalización y guardado del entrenamiento):** Terminar ya
+> no guarda de golpe: **abre el resumen**. El nombre llega relleno y se puede cambiar, se ve la fecha
+> en largo, la franja horaria (*18:05 → 19:02*), la duración real, las series completadas y las
+> omitidas, cada ejercicio con lo que de verdad hizo, el volumen cuando se puede calcular y un campo
+> para la nota general; debajo, **Terminar entrenamiento** lo guarda, **Seguir entrenando** vuelve a
+> la tabla y **Descartar** lo tira con su confirmación. 🚨 **«Finalizando» es un estado, y hace
+> falta** (apartado 28): sin él habría que elegir entre perder lo revisado o darlo por completado sin
+> que él lo confirme — así que Terminar pasa la sesión a `finalizando` **y la guarda ahí mismo**.
+> ⚠️ **Y el reloj se para al entrar, no al guardar**: si se sumara el rato escribiendo la nota, 45
+> minutos saldrían 52 (apartado 22). 🚨 **El guardado es IDEMPOTENTE** (apartado 17, MUY IMPORTANTE) y
+> sale de la forma del dato, no de un candado: una sesión ya completada se devuelve tal cual, y hay
+> una comprobación que pulsa guardar **cinco veces** y verifica que queda una sola. 🚨 **Una serie
+> cuenta solo si él la marcó** (apartado 6) y **el volumen solo si se puede calcular** (apartado 9):
+> unas dominadas a peso corporal no son «0 kg», es que no se miden así — y ni una caloría quemada.
+> 🔓 **Con esto se enciende el «Completado» que la F6 dejó apagado**: un día sale completado cuando
+> hay una sesión guardada de esa fecha, y lo dice **la sesión, no el plan** — una descartada no
+> cuenta, y entrenar un día de descanso no lo convierte en completado. 🔓 **`terminarSesion` de la F7
+> se RETIRA**: su confirmación existía porque no había resumen, y con el resumen la garantía es más
+> fuerte —desde la cabecera la sesión ya no puede llegar a `completada` de ninguna manera—. ⚠️ **La
+> foto del apartado 14: el campo sí, el botón no** (no hay bucket de entrenamientos, y uno que falla
+> en silencio es peor que ninguno). Vive en `src/lib/finalizacion.js` y
+> `src/views/FinalizacionView.jsx`, con `scripts/test-finalizacion.mjs` detrás (171 comprobaciones).
+
 > **🏋️ ACTUALIZACIÓN (v3.89.0 — FIT F7/45: el motor de entrenamiento en vivo):** Ya se puede
 > **entrenar de verdad**. Desde *Tu Plan → Empezar entrenamiento* —o desde el detalle de una
 > plantilla— se abre una pantalla entera con el cronómetro corriendo: el carrusel de ejercicios, el

@@ -47,10 +47,12 @@ import {
   sustituirEjercicio, sustitutosSugeridos, notaDeEjercicio,
   crearDescanso, restanteDescanso, descansoTerminado, pausarDescanso,
   reanudarDescanso, reiniciarDescanso, vibrarSiSePuede, EVENTO_FIN_DESCANSO,
-  AVISO_SALIR, AVISO_TERMINAR, AVISO_DESCARTAR, terminarSesion,
+  AVISO_SALIR, AVISO_DESCARTAR,
   fichaDeEjercicio, filasDeSeries, progresoSesion, carruselDeSesion,
   avisoDeRecuperacion,
 } from '../lib/entrenamiento';
+/* 🔓 FIT F8 — Terminar ya no completa: lleva al resumen (su apartado 1). */
+import { pasarAFinalizacion } from '../lib/finalizacion';
 /* 🚨 Se EMITE al bus; ninguna pantalla reproduce por su cuenta (SO F1). */
 import { emitir } from '../lib/eventos';
 
@@ -475,11 +477,15 @@ export function AvisoSesion({ aviso, accent, acciones }) {
 
 /* ── La tarjeta de recuperación (apartado 30) ──────────────────────────────
    Se pinta en Entrenamiento, no aquí dentro: es la puerta de vuelta. */
-export function SesionRecuperable({ sesion, accent, onContinuar, onDescartar }) {
+export function SesionRecuperable({ sesion, accent, onContinuar, onDescartar, textos = null }) {
   const [confirmando, setConfirmando] = useState(false);
   const ahora = useAhora(true, 1000);
-  const datos = avisoDeRecuperacion(sesion, { ahora });
-  if (!datos) return null;
+  const base = avisoDeRecuperacion(sesion, { ahora });
+  if (!base) return null;
+  /* ⚠️ La FIT F8 reutiliza esta tarjeta para la sesión TERMINADA y sin guardar,
+     que no se continúa entrenando: se termina de guardar. Los textos se pasan
+     desde fuera en vez de escribir una segunda tarjeta igual. */
+  const datos = textos ? { ...base, ...textos } : base;
   return (
     <Card style={{ border: `1px solid ${accent}` }}>
       <div className="flex items-center gap-3">
@@ -650,7 +656,16 @@ export default function EntrenamientoVivoView({
         progreso={progreso}
         accent={accent}
         onSalir={() => setAviso('salir')}
-        onTerminar={() => setAviso('terminar')}
+        /* 🔓 FIT F8, apartado 1: *"Entrenamiento en vivo → Terminar → Resumen →
+           Guardar entrenamiento"*. Terminar **para el reloj y lleva al
+           resumen**; no completa nada, y por eso ya no pregunta: el resumen ES
+           la revisión, y un aviso delante de un aviso enseña a no leerlos
+           (EH F61). */
+        onTerminar={() => {
+          const cerrada = pasarAFinalizacion(sesion);
+          onGuardar(cerrada);
+          if (onTerminada) onTerminada(cerrada);
+        }}
       />
 
       {/* Apartado 31 — salir pregunta, y NO marca como completada. */}
@@ -661,25 +676,6 @@ export default function EntrenamientoVivoView({
           acciones={[
             { texto: AVISO_SALIR.seguir, primaria: true, onClick: () => setAviso(null) },
             { texto: AVISO_SALIR.salir, onClick: () => { setAviso(null); onSalir(); } },
-          ]}
-        />
-      )}
-
-      {/* 🚨 Apartado 32 — Terminar **pregunta**; sin confirmar no escribe nada. */}
-      {aviso === 'terminar' && (
-        <AvisoSesion
-          aviso={AVISO_TERMINAR}
-          accent={accent}
-          acciones={[
-            { texto: AVISO_TERMINAR.seguir, primaria: true, onClick: () => setAviso(null) },
-            {
-              texto: AVISO_TERMINAR.terminar,
-              onClick: () => {
-                const r = terminarSesion(sesion, { confirmado: true });
-                setAviso(null);
-                if (r.ok) { onGuardar(r.sesion); if (onTerminada) onTerminada(r.sesion); }
-              },
-            },
           ]}
         />
       )}

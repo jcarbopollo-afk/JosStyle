@@ -562,35 +562,27 @@ export const AVISO_SALIR = {
   salir: 'Salir',
 };
 
-/* 🚨 Apartado 32: *"NO debe guardar automáticamente como completada sin
-   confirmación."* Así que Terminar **pregunta**, y es el patrón `aplicarPlan`
-   del proyecto, que ya va por más de veinte: sin `confirmado` no escribe nada.
+/* 🔓 **AQUÍ VIVÍA `terminarSesion`, Y LA FIT F8 SE LO LLEVÓ A `finalizacion.js`
+   COMO `pasarAFinalizacion`.** No es un capricho de nombre: lo que hace es otra
+   cosa.
 
-   ⚠️ Y la pantalla de finalización —el resumen, la sensación, las notas de la
-   sesión— **es la FIT F8**. Lo que esta fase hace es dejar la sesión guardada y
-   completa; aquélla se mete en medio sin cambiar nada de esto. */
-export const AVISO_TERMINAR = {
-  titulo: '¿Terminar el entrenamiento?',
-  texto: 'Se guardará lo que has registrado y podrás verlo después.',
-  seguir: 'Seguir entrenando',
-  /* ⚠️ **No se llama «Terminar»**, que es el botón de la cabecera: dos botones
-     con el mismo nombre en la misma pantalla es el fallo de la E3 F30 y de la
-     E3 F42 —y aquí, además, pulsar el de arriba por error no confirmaría nada—.
-     Y de paso dice lo que pasa al pulsarlo. */
-  terminar: 'Terminar y guardar',
-};
+   El apartado 32 de esta fase decía *"NO debe guardar automáticamente como
+   completada sin confirmación"* **y** *"Debe llevar posteriormente a la pantalla
+   de finalización que construiremos en la siguiente fase"*. La confirmación
+   existía **porque no había pantalla**: era lo único que se podía poner entre
+   pulsar Terminar y dar el entrenamiento por hecho.
 
-export function terminarSesion(sesion, { confirmado = false, ahora = Date.now() } = {}) {
-  if (!sesion) return { ok: false, motivo: 'No hay ninguna sesión.', aviso: null, sesion: null };
-  if (!confirmado) return { ok: false, motivo: 'confirmacion', aviso: AVISO_TERMINAR, sesion };
-  const enCurso = sesion.estado === 'pausada' ? reanudarSesion(sesion, ahora) : sesion;
-  return {
-    ok: true,
-    motivo: null,
-    aviso: null,
-    sesion: { ...enCurso, estado: 'completada', terminadaEn: ahora },
-  };
-}
+   Con la F8 esa pantalla existe, y el apartado 1 fija el camino: *"Entrenamiento
+   en vivo → Terminar → Resumen → Guardar entrenamiento"*. El resumen **es** la
+   revisión, así que preguntar antes de enseñarlo sería un aviso delante de un
+   aviso —lo que EH F61 llama enseñar a no leer los avisos— y la garantía queda
+   **más fuerte que antes**: desde el botón de la cabecera la sesión ya no puede
+   llegar a `completada` de ninguna manera. Pasa a `finalizando`, que se guarda,
+   y solo «Terminar entrenamiento» la completa.
+
+   ⚠️ Se retira en vez de quedarse sin quien la llame: una función que nadie
+   llama no falla nunca, y este proyecto ya la ha pagado cuatro veces (E3 F1,
+   E3 F5, E3 F16 y E3 F44). */
 
 /* Apartado 31 — descartar. ⚠️ **No borra la sesión**: la marca, para que no
    vuelva a ofrecerse como activa y siga estando en el historial de la F10. */

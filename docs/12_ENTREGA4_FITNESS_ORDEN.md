@@ -28,7 +28,7 @@ ordena es **el trabajo**, no el documento.
 | **F5** ✅ **v3.87.0** | Biblioteca de planificaciones | 30514–31017 | 504 |
 | **F6** ✅ **v3.88.0** | Tu plan | 29737–30513 | 777 |
 | **F7** ✅ **v3.89.0** | Motor de entrenamiento en vivo | 29053–29736 | 684 |
-| **F8** | Finalización y guardado del entrenamiento | 28456–29052 | 597 |
+| **F8** ✅ **v3.90.0** | Finalización y guardado del entrenamiento | 28456–29052 | 597 |
 | **F9** | Ux avanzada del entrenamiento en vivo | 27781–28455 | 675 |
 | **F10** | Historial de entrenamientos y detalle de sesiones | 27177–27780 | 604 |
 | **F11** | Progresión y comparación del rendimiento | 26534–27176 | 643 |
