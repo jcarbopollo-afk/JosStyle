@@ -955,6 +955,16 @@ else
   fallo "Falla la biblioteca de planificaciones"; grep '✗' /tmp/jc_planes.log
 fi
 
+# FIT F6 — Tu Plan. Lo que más se vigila: que el estado «Completado» NO salga de
+# ningún día (sin historial de sesiones no se puede afirmar, apartado 8), que la
+# semana funcione con planes de 2 a 7 días y con una plantilla suya de una sola
+# sesión, y que sin fecha de activación no se invente una semana (apartado 16).
+if node --import ./scripts/resolver-vite.mjs scripts/test-tu-plan.mjs >/tmp/jc_tuplan.log 2>&1; then
+  ok "Tu Plan (FIT F6) — $(grep -c '✓' /tmp/jc_tuplan.log) comprobaciones"
+else
+  fallo "Falla Tu Plan"; grep '✗' /tmp/jc_tuplan.log
+fi
+
 # SC F1 — scroll, cabeceras fijas y el acordeón que dejaba un hueco en el iPhone.
 # Los tres los reportó Josué usando la aplicación, y los tres tenían una causa
 # real: la cabecera no era `sticky`, la banda no existía y al elemento de rejilla

@@ -468,7 +468,16 @@ export const planActivoDe = (fitness) => normalizarPlanActivo((fitness || {}).pl
  *  desapareciera del catálogo no puede dejar la pantalla con un hueco. */
 export function planActivoResuelto(fitness, planes = CATALOGO_PLANES) {
   const activo = planActivoDe(fitness);
-  if (!activo || activo.origen !== 'preset') return null;
+  if (!activo) return null;
+  /* FIT F6, apartado 18 — el plan activo puede ser **una plantilla suya**. Se
+     busca donde vive, y lo que se devuelve es la entidad tal cual: quien la
+     lee aquí solo necesita su nombre (el aviso de cambio). ⚠️ Envolverla como
+     plan de un día es de `tuPlan.js`; hacerlo aquí sería un ciclo de imports, y
+     `planes.js` no tiene por qué saber cómo se pinta una semana. */
+  if (activo.origen === 'plantilla') {
+    return lista((fitness || {}).plantillas).find((p) => p && p.id === activo.planId) || null;
+  }
+  if (activo.origen !== 'preset') return null;
   return planPorId(activo.planId, planes);
 }
 
@@ -487,10 +496,25 @@ export function avisoDeCambioDePlan(actual, nuevo) {
   };
 }
 
-export function usarPlan(fitness, planId, { confirmado = false, hoy = todayISO(), planes = CATALOGO_PLANES } = {}) {
+export function usarPlan(fitness, planId, {
+  confirmado = false, hoy = todayISO(), planes = CATALOGO_PLANES, origen = 'preset',
+} = {}) {
   const f = fitness && typeof fitness === 'object' ? fitness : {};
-  const nuevo = planPorId(planId, planes);
-  if (!nuevo) return { ok: false, motivo: 'Ese plan ya no está en la biblioteca.', aviso: null, fitness: f };
+  /* 🚨 FIT F6, apartado 18: *"Si el usuario selecciona como plan activo una
+     plantilla propia: también debe funcionar. No asumir que los planes activos
+     siempre son presets."* Lo único que cambia es **dónde se busca**; lo
+     guardado sigue siendo el id y el origen, nunca una copia. */
+  const nuevo = origen === 'plantilla'
+    ? lista(f.plantillas).find((p) => p && p.id === planId) || null
+    : planPorId(planId, planes);
+  if (!nuevo) {
+    return {
+      ok: false,
+      motivo: origen === 'plantilla' ? 'Esa plantilla ya no está.' : 'Ese plan ya no está en la biblioteca.',
+      aviso: null,
+      fitness: f,
+    };
+  }
 
   const actual = planActivoResuelto(f, planes);
   const yaEsEse = planActivoDe(f)?.planId === nuevo.id;
@@ -505,7 +529,7 @@ export function usarPlan(fitness, planId, { confirmado = false, hoy = todayISO()
     ok: true,
     motivo: null,
     aviso: null,
-    fitness: { ...f, planActivo: crearPlanActivo({ planId: nuevo.id, origen: 'preset', desde: hoy }) },
+    fitness: { ...f, planActivo: crearPlanActivo({ planId: nuevo.id, origen, desde: hoy }) },
   };
 }
 

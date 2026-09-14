@@ -2,6 +2,27 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.88.0 — FIT F6/45: Tu Plan):** La pantalla central de Entrenamiento: el
+> próximo entrenamiento con su día, sus ejercicios, su duración y sus músculos; el plan activo con su
+> nivel, su objetivo y **desde cuándo lo sigue**; la semana de lunes a domingo con hoy marcado; la
+> sesión de cualquier día al tocarlo; la distribución semanal; y Tus plantillas sin duplicar su
+> gestión. 🚨 **Qué día toca hoy son DOS reglas, y las dos honestas**: un plan de siete días **ES** la
+> semana —su día 1 es el lunes, que es el dibujo del apartado 7, y los diecisiete de la biblioteca lo
+> son— y **cualquier otro cicla desde la fecha de activación**; sin esa fecha **no se dibuja semana** y
+> se dice por qué (apartado 16 literal). 🚨 **El estado «Completado» está declarado y APAGADO**: el
+> apartado 8 lo enumera y en el párrafo siguiente prohíbe inventarlo, así que existe con
+> `disponible: false` y la fase en la que llega (F8), y ninguna casilla lo devuelve — hay una
+> comprobación que recorre los diecisiete planes buscándolo. 🚨 **Una plantilla suya también puede ser
+> el plan activo** (apartado 18): `usarPlan` acepta el origen y la plantilla **se envuelve** como plan
+> de un día al leerla, sin copiarla y sin inventarle seis días de descanso. 🐛 **Y el fallo de la
+> fase, cazado por su propia prueba:** un día **anterior** a la activación salía como «Descanso»,
+> inventándose que ese día tocaba descansar cuando el plan todavía no existía. ⚠️ Ni un botón que
+> empiece un entrenamiento —el CTA es *Ver entrenamiento* y abre el detalle—, con el cronómetro, el
+> historial, los rangos y la IA en `NO_EN_FIT6`; y lo que el apartado 16 pide dejar preparado está en
+> `PREPARADO_PARA` diciendo dónde vive ya. ⚠️ Y **«Quitar el plan» no se pierde al rediseñar**:
+> reorganizar no es eliminar (GE F1). Vive en `src/lib/tuPlan.js` y `src/views/TuPlanView.jsx`, con
+> `scripts/test-tu-plan.mjs` detrás.
+
 > **🏋️ ACTUALIZACIÓN (v3.87.0 — FIT F5/45: la biblioteca de planificaciones):** Diecisiete planes
 > prediseñados —seis de gimnasio, seis de calistenia, cinco de casa— que se exploran, se buscan, se
 > filtran por entorno, objetivo, nivel y frecuencia, se abren, se eligen como plan activo y se

@@ -43,11 +43,10 @@ import ConstructorView from './ConstructorView';
 import PlantillasView from './PlantillasView';
 /* FIT F5 — la biblioteca de planificaciones, renderizada entera aquí dentro. */
 import BibliotecaPlanesView from './BibliotecaPlanesView';
-import { duplicarPlantilla, fichaDePlantilla, ordenarPlantillas } from '../lib/plantillas';
-import {
-  CATALOGO_PLANES, fichaDePlan, planActivoResuelto, usarPlan, personalizarPreset,
-  alternarFavoritoPlan, quitarPlanActivo,
-} from '../lib/planes';
+/* FIT F6 — «Tu Plan», el centro de control, renderizado entero aquí dentro. */
+import TuPlanView from './TuPlanView';
+import { duplicarPlantilla } from '../lib/plantillas';
+import { usarPlan, personalizarPreset, alternarFavoritoPlan, quitarPlanActivo } from '../lib/planes';
 import {
   crearRutina, planARutina, leerBorrador, borrarBorrador,
 } from '../lib/constructor';
@@ -355,7 +354,6 @@ export function AreaEntrenamiento({
      planificaciones de una fase posterior y habría dejado lo suyo mezclado con
      lo que no es suyo. */
   const plantillas = (fitness || {}).plantillas || [];
-  const hayPlantillas = plantillas.length > 0;
   /* ⚠️ Qué subpantalla está abierta es estado de la pantalla, no un dato
      (EH F40): `DEFAULT_FITNESS` no tiene el campo, y volver a Fitness siempre
      te deja donde se entra, no donde lo dejaste hace dos semanas. */
@@ -365,12 +363,10 @@ export function AreaEntrenamiento({
      sin preguntar, le pondría delante algo que quizá ya no quiere. */
   const [borrador, setBorrador] = useState(() => leerBorrador());
   const aMedias = borrador && borrador.lineas.length > 0;
-  /* FIT F4, apartado 20: *"No llenar la pantalla de cards."* El área enseña las
-     tres últimas y la gestión entera vive en su propia pantalla. */
-  const ultimas = ordenarPlantillas(plantillas, 'recientes').slice(0, 3);
-  /* FIT F5 — el plan activo, resuelto contra la biblioteca (apartado 20). */
-  const planActivo = planActivoResuelto(fitness);
-  const fichaActiva = planActivo ? fichaDePlan(planActivo, propios) : null;
+  /* ⚠️ FIT F6 — las tres últimas plantillas, el plan activo y su ficha **se
+     calculaban aquí** hasta esta fase. Ahora los resuelve `TuPlanView` con
+     `tuPlan()`, que es quien los pinta: dejarlos escritos sin que los llamara
+     nadie sería la función muerta de siempre (E3 F1 y E3 F5). */
 
   if (dentro === 'ejercicios') {
     return (
@@ -448,130 +444,23 @@ export function AreaEntrenamiento({
         </Card>
       )}
 
-      <div>
-        <SectionTitle sub="Lo que estás entrenando ahora">Tu Plan</SectionTitle>
-        {/* FIT F5, apartado 20: *"Cuando un plan se seleccione como activo,
-            Entrenamiento → Tu Plan debe poder consumir ese mismo dato."* ⚠️ Lo
-            que se lee es **el id**, resuelto contra la biblioteca: sin copia, así
-            que corregir un ejercicio del catálogo le llega al plan que tiene
-            puesto. Y si el plan ya no existiera, `planActivoResuelto` devuelve
-            `null` y vuelve el estado vacío en vez de dejar un hueco. */}
-        {planActivo ? (
-          <Card style={{ border: `1px solid ${accent}` }}>
-            <button
-              onClick={() => setDentro('planificaciones')}
-              aria-label={`Ver ${fichaActiva.nombre}`}
-              className="w-full flex items-center gap-3 text-left toque-44 active:opacity-70"
-            >
-              <span
-                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: hexToRgba(accent, 0.14), color: accent }}
-              >
-                <Dumbbell size={22} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-                  {fichaActiva.nombre}
-                </span>
-                <span className="block text-xs truncate" style={{ color: COLORS.textMuted }}>
-                  {[fichaActiva.entorno, fichaActiva.textoFrecuencia, fichaActiva.duracion].filter(Boolean).join(' · ')}
-                </span>
-              </span>
-              <ChevronRight size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />
-            </button>
-            {/* ⚠️ Y NADA de «Empezar entrenamiento»: el motor en vivo es una fase
-                posterior, y el apartado 14 lo prohíbe expresamente. Lo que sí se
-                puede es dejar de tenerlo puesto. */}
-            {onGuardarFitness && (
-              <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
-                <GhostBtn icon={X} onClick={() => onGuardarFitness(quitarPlanActivo(fitness || {}))}>
-                  Quitar el plan
-                </GhostBtn>
-              </div>
-            )}
-          </Card>
-        ) : (
-          <>
-            <VacioFitness estado={ESTADOS_VACIOS.entrenamiento} accent={accent} />
-            <div className="mt-3">
-              <GhostBtn icon={ChevronRight} onClick={() => setDentro('planificaciones')}>
-                Ver más planes
-              </GhostBtn>
-            </div>
-          </>
-        )}
-      </div>
-
-      <div>
-        <SectionTitle sub="Las rutinas que te has creado tú">Tus plantillas</SectionTitle>
-        {hayPlantillas
-          ? (
-            /* Apartado 24: *"una rutina guardada puede volver a abrirse y
-               editarse"*. Esto NO es la gestión completa de plantillas —menú de
-               acciones, duplicar, buscar, filtrar, ordenar—, que es la FIT F4:
-               es la lista mínima que impide que lo guardado quede encerrado. */
-            <div className="space-y-2">
-              {ultimas.map((p) => {
-                const res = fichaDePlantilla(p, propios) || { ejercicios: 0, duracion: '' };
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => setDentro('plantillas')}
-                    aria-label={`Ver ${p.nombre || 'entrenamiento sin nombre'}`}
-                    className="hub-card w-full text-left rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99]"
-                    style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: hexToRgba(accent, 0.14), color: accent }}
-                    >
-                      <Dumbbell size={20} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-                        {p.nombre || 'Sin nombre'}
-                      </p>
-                      <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
-                        {res.ejercicios} {res.ejercicios === 1 ? 'ejercicio' : 'ejercicios'}
-                        {res.duracion ? ` · ${res.duracion}` : ''}
-                      </p>
-                    </div>
-                    <ChevronRight size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />
-                  </button>
-                );
-              })}
-              {/* ⚠️ «Ver las N» solo si queda algo fuera: un botón que lleva a la
-                  lista que ya estás viendo no hace nada (E3 F46, regla 8). */}
-              {plantillas.length > ultimas.length && (
-                <GhostBtn icon={ChevronRight} onClick={() => setDentro('plantillas')}>
-                  Ver las {plantillas.length}
-                </GhostBtn>
-              )}
-              <GhostBtn icon={Pencil} onClick={() => setDentro('plantillas')}>Gestionarlas</GhostBtn>
-            </div>
-          )
-          : (
-            <Card>
-              <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-                Todavía no te has creado ninguna
-              </p>
-              <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
-                La que construyas aparecerá aquí, y podrás volver a abrirla.
-              </p>
-            </Card>
-          )}
-
-        {/* 🚨 El CTA del apartado 2, y lleva de verdad al constructor. Si nadie
-            puede guardar no se pinta: sería el control decorativo de la
-            regla 8. */}
-        {onAbrirConstructor && (
-          <div className="mt-3">
-            <PrimaryButton accent={accent} icon={Plus} onClick={() => onAbrirConstructor(null)}>
-              Crear entrenamiento
-            </PrimaryButton>
-          </div>
-        )}
-      </div>
+      {/* FIT F6 — «Tu Plan» entero: el plan activo, el próximo entrenamiento, la
+          semana con sus estados, la sesión de un día, la distribución semanal y
+          el acceso a Tus plantillas. 🚨 **Se renderiza, no se copia** (E3 F23):
+          la pantalla vive en su archivo y aquí solo se le pasan las acciones.
+          ⚠️ Y sustituye a las dos secciones que dejaron la F4 y la F5 —«Tu Plan»
+          con su tarjeta y «Tus plantillas» con sus tres últimas—: mantenerlas
+          habría dejado **dos listas de plantillas en la misma pantalla**, que es
+          la redundancia de la E3 F30. */}
+      <TuPlanView
+        fitness={fitness || {}}
+        accent={accent}
+        onExplorar={() => setDentro('planificaciones')}
+        onCambiarPlan={() => setDentro('planificaciones')}
+        onVerPlantillas={() => setDentro('plantillas')}
+        onCrear={onAbrirConstructor ? () => onAbrirConstructor(null) : null}
+        onQuitar={onGuardarFitness ? () => onGuardarFitness(quitarPlanActivo(fitness || {})) : null}
+      />
 
       <div>
         <SectionTitle sub="Lo que vendrá y lo que ya puedes usar">Secciones</SectionTitle>

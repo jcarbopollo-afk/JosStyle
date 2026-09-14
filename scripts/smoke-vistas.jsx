@@ -173,7 +173,9 @@ import ConstructorView, { FilaEjercicio, EditorLinea, ResumenConstructor } from 
    detalle y la confirmación **solo aparecen tras pulsar algo** (NAV F3). */
 import PlantillasView, { TarjetaPlantilla, DetallePlantilla, ConfirmarEliminarPlantilla } from '../src/views/PlantillasView.jsx';
 import BibliotecaPlanesView, { TarjetaPlan, DetallePlan, ConfirmarCambioDePlan } from '../src/views/BibliotecaPlanesView.jsx';
-import { CATALOGO_PLANES as PLANES_F5, planPorId as planPorIdF5 } from '../src/lib/planes.js';
+import { CATALOGO_PLANES as PLANES_F5, planPorId as planPorIdF5, usarPlan as usarPlanF5, personalizarPreset as personalizarF5 } from '../src/lib/planes.js';
+import TuPlanView, { SinPlan, PlanPerdido, TarjetaProximo, DescansoHoy, SemanaCompacta, SesionDelDia } from '../src/views/TuPlanView.jsx';
+import { tuPlan as tuPlanF6, sesionDelDia as sesionF6, semanaDelPlan as semanaF6 } from '../src/lib/tuPlan.js';
 import { rutinaAPlan as rutinaAPlanF4 } from '../src/lib/constructor.js';
 import { crearRutina as crearRutinaF3, anadirEjercicio as anadirF3, editarLinea as editarF3 } from '../src/lib/constructor.js';
 import { CATALOGO_EJERCICIOS } from '../src/lib/ejercicios.js';
@@ -3070,6 +3072,59 @@ const CASOS = [
     actual: planPorIdF5('ppl-estetico'), nuevo: planPorIdF5('upper-lower'),
     onCancelar: noop, onConfirmar: noop,
   })],
+  /* FIT F6 — Tu Plan. Los casos que más importan son **sin plan**, **con un
+     plan que ya no existe** (apartado 25) y **con una plantilla suya de plan
+     activo** (apartado 18): los tres se pintan distinto y los tres son reales. */
+  ['TuPlanView', TuPlanView, () => ({
+    fitness: {}, accent, hoy: HOY,
+    onExplorar: noop, onCrear: noop, onVerPlantillas: noop, onCambiarPlan: noop,
+  })],
+  ['TuPlanView', TuPlanView, () => ({
+    fitness: usarPlanF5({}, 'ppl-estetico', { hoy: HOY }).fitness, accent, hoy: HOY,
+    onExplorar: noop, onCrear: noop, onVerPlantillas: noop, onCambiarPlan: noop,
+  })],
+  ['TuPlanView', TuPlanView, () => ({
+    fitness: { planActivo: { planId: 'fantasma', origen: 'preset', desde: HOY } }, accent, hoy: HOY,
+    onExplorar: noop, onCrear: noop, onVerPlantillas: noop, onCambiarPlan: noop,
+  })],
+  ['TuPlanView', TuPlanView, () => {
+    const base = personalizarF5({}, 'core-abs').fitness;
+    return {
+      fitness: usarPlanF5(base, base.plantillas[0].id, { origen: 'plantilla', hoy: HOY, confirmado: true }).fitness,
+      accent, hoy: HOY, onExplorar: noop, onCrear: noop, onVerPlantillas: noop, onCambiarPlan: noop,
+    };
+  }],
+  ['SinPlan', SinPlan, () => ({ accent, onExplorar: noop, onCrear: noop })],
+  ['PlanPerdido', PlanPerdido, () => ({ accent, onExplorar: noop })],
+  ['DescansoHoy', DescansoHoy, () => ({ accent })],
+  ['TarjetaProximo', TarjetaProximo, () => ({
+    proximo: tuPlanF6(usarPlanF5({}, 'ppl-estetico', { hoy: HOY }).fitness, { hoy: HOY }).proximo
+      || tuPlanF6(usarPlanF5({}, 'hipertrofia-6', { hoy: HOY }).fitness, { hoy: HOY }).proximo,
+    accent, onVer: noop,
+  })],
+  ['SemanaCompacta', SemanaCompacta, () => ({
+    semana: semanaF6(planPorIdF5('ppl-estetico'), { hoy: HOY, desde: HOY }),
+    accent, seleccionado: null, onElegir: noop,
+  })],
+  /* ⚠️ Y una semana con un día ANTERIOR a la activación, que no es descanso. */
+  ['SemanaCompacta', SemanaCompacta, () => ({
+    semana: semanaF6(planPorIdF5('core-abs'), { hoy: HOY, desde: HOY }),
+    accent, seleccionado: 1, onElegir: noop,
+  })],
+  ['SesionDelDia', SesionDelDia, () => ({
+    sesion: sesionF6(planPorIdF5('ppl-estetico'), 0), accent, onCerrar: noop,
+  })],
+  /* ⚠️ Y una sesión con un ejercicio que ya no está (apartado 25). */
+  ['SesionDelDia', SesionDelDia, () => {
+    const plan = planPorIdF5('core-abs');
+    const roto = {
+      ...plan,
+      dias: plan.dias.map((d, i) => (i === 0 && d.lineas.length
+        ? { ...d, lineas: [{ ...d.lineas[0], exerciseId: 'ya-no-existe' }, ...d.lineas.slice(1)] }
+        : d)),
+    };
+    return { sesion: sesionF6(roto, 0), accent, onCerrar: noop };
+  }],
   ['AreaProgreso', AreaProgreso, () => ({
     fotos: [{ id: 'f1', path: 'x', fecha: HOY, nota: '' }], accent, onIr: noop,
   })],

@@ -1,5 +1,75 @@
 # CHANGELOG.md
 
+## v3.88.0 — FIT F6/45: Tu Plan
+
+El criterio de finalización pide entrar en *Fitness → Entrenamiento* y encontrar **Tu Plan → Próximo
+entrenamiento → Semana → Tus plantillas** *"realmente conectados"*, pudiendo *elegir un plan → verlo
+→ consultar su semana → abrir sus sesiones → cambiar de plan → acceder a sus plantillas* **sin que
+ninguna de esas acciones sea un simple mockup**.
+
+### Qué se ve ahora al entrar en Entrenamiento
+
+Por el orden que fija el apartado 21: **el próximo entrenamiento** —con su día, su nombre, sus
+ejercicios, su duración, sus músculos principales y su posición en la semana—, **el plan activo** con
+su entorno, su nivel, su objetivo y **desde cuándo lo sigue**, **la semana** de lunes a domingo con el
+día de hoy marcado, y **Tus plantillas**, sin duplicar su gestión.
+
+Tocar un día abre su sesión entera: ejercicios, series, repeticiones, descanso y distribución
+muscular. Y son **los mismos componentes y el mismo cálculo** que la biblioteca — el apartado 9 lo
+pide con esas palabras: *"No crear un tercer sistema diferente para representar ejercicios."*
+
+### 🚨 Qué día toca hoy: dos reglas, y las dos honestas
+
+Ésta es la pieza de la que cuelga la pantalla, y el enunciado pide dos cosas que no se resuelven
+igual: el apartado 7 dibuja la semana como *"L — Push · M — Pull · X — Descanso…"*, y el 14 exige que
+funcione con **2, 3, 4, 5, 6 o 7 días** y con una *"rutina personal"* de una sola sesión.
+
+**Un plan de siete días ES la semana** —su día 1 es el lunes, que es exactamente el dibujo del
+apartado 7, y los diecisiete de la biblioteca lo son—; **cualquier otro cicla desde la fecha de
+activación**. ⚠️ Y el ciclo **necesita esa fecha**: sin ella no se dibuja semana y se dice por qué, que
+es el apartado 16 literal (*"No inventar una semana si todavía no existe una fecha de inicio"*).
+
+### 🚨 El estado que el enunciado enumera y prohíbe a la vez
+
+El apartado 8 lista cinco estados —próximo, actual, **completado**, descanso, futuro— y en el párrafo
+siguiente prohíbe uno: *"todavía no existe el historial completo de entrenamientos. Por tanto, no
+inventes entrenamientos completados."*
+
+Así que `completado` **existe declarado y apagado** (`disponible: false`), con la fase en la que
+llega, y ninguna casilla de la semana lo devuelve jamás — hay una comprobación que recorre los
+diecisiete planes buscándolo. Declararlo es lo que impide que la fase siguiente escriba un sexto
+estado sin enterarse de que éste ya estaba pensado.
+
+### Una plantilla suya también puede ser el plan activo
+
+El apartado 18 lo pide y ya funciona: `usarPlan` acepta el origen, y una plantilla **se envuelve**
+como plan de un día en el momento de leerla. No se copia, no se le inventan seis días de descanso
+alrededor, y editarla en el constructor cambia el plan activo sola. ⚠️ Y **no se le inventa una
+frecuencia**: cuántos días a la semana la hace lo decide él (regla 8).
+
+### 🐛 El fallo de esta fase, cazado por su propia prueba
+
+Un día **anterior** a la fecha de activación salía como **«Descanso»** — inventándose que ese día
+tocaba descansar cuando lo que pasaba es que el plan todavía no existía. Ahora se marca como fuera
+del plan, no afirma nada y se pinta con un guion.
+
+### Lo que NO se construye, declarado
+
+Ni un botón que empiece un entrenamiento (el CTA es *Ver entrenamiento*, y abre el detalle), ni
+cronómetro, ni registro de series, ni historial, ni rangos, ni IA: todo en `NO_EN_FIT6` con su
+motivo. Y lo que el apartado 16 pide **dejar preparado** —sesión actual, día del plan, próxima
+sesión, semanas desde el inicio— está en `PREPARADO_PARA` diciendo dónde vive ya cada pieza.
+
+⚠️ **Y «Quitar el plan» no se pierde al rediseñar la pantalla**: existía desde la F5 y sigue ahí.
+Reorganizar no es eliminar (GE F1).
+
+### Archivos
+
+`src/lib/tuPlan.js` (el modelo y la lógica) y `src/views/TuPlanView.jsx` (la pantalla), con
+`scripts/test-tu-plan.mjs` detrás — más el cableado en `planes.js` (el origen del plan activo) y en
+`FitnessView.jsx`, donde «Tu Plan» pasa a renderizarse entera en lugar de las dos secciones que
+dejaron la F4 y la F5.
+
 ## v3.87.0 — FIT F5/45: la biblioteca de planificaciones
 
 El criterio de finalización pide entrar en *Fitness → Entrenamiento → Más planes* y **sentir que se

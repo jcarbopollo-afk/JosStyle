@@ -6134,9 +6134,17 @@ ok(/2 ejercicios/i.test(vueltaF3), '…con lo que tiene dentro');
    constructor, abre «Tus plantillas» —que es donde vive la gestión—, y desde
    ahí se edita. Es la lección de la E3 F34: al cerrar una fase que cambia una
    navegación, buscar las comprobaciones de la anterior. */
+/* ⚠️ **Y LA FIT F6 LO VOLVIÓ A CAMBIAR**, que es la misma lección por segunda
+   vez seguida: «Tu Plan» pasó a ser la pantalla entera y con ella se fue el
+   botón «Gestionarlas» — ahora se entra **tocando la plantilla**, que es lo que
+   hace quien la usa. Al cerrar una fase que cambia una navegación, buscar las
+   comprobaciones de las anteriores (E3 F34). */
+const abrirPlantillas_fit = async () => {
+  if (!await pulsar('Ver Push')) return false;
+  return !!await esperarTexto(/plantilla/i);
+};
 const editarPush_f3 = async () => {
-  if (!await pulsar('Gestionarlas')) return false;
-  await esperarTexto(/plantilla/i);
+  if (!await abrirPlantillas_fit()) return false;
   if (!await pulsar('Acciones de Push')) return false;
   return pulsar('Editar');
 };
@@ -6203,8 +6211,8 @@ ok(await pulsar('Fitness'), '…y Fitness');
 const area_fit4 = await esperarTexto(/Tus plantillas/i);
 ok(/Push/i.test(area_fit4), 'FIT F4 — la plantilla guardada se ve en el área');
 
-ok(await pulsar('Gestionarlas'), 'se abre la gestión de plantillas');
-const lista_fit4 = await esperarTexto(/plantilla/i);
+ok(await abrirPlantillas_fit(), 'se abre la gestión de plantillas');
+const lista_fit4 = await ver();
 ok(/Push/i.test(lista_fit4), '…con la plantilla dentro');
 ok(/Editado hoy/i.test(lista_fit4),
   '🚨 FIT F4 — con su fecha de última modificación (apartado 3)');
@@ -6271,8 +6279,7 @@ ok(copia_fit4?.editadoEn, '…y la copia lleva su fecha de edición actualizada'
 /* Apartado 8 — eliminar, con confirmación de verdad. */
 ok(await pulsar('Volver a Entrenamiento'), 'se vuelve de la copia');
 await page.waitForTimeout(400);
-ok(await pulsar('Gestionarlas'), 'se vuelve a la gestión');
-await esperarTexto(/plantilla/i);
+ok(await abrirPlantillas_fit(), 'se vuelve a la gestión');
 ok(await pulsar('Acciones de Push — Copia'), 'se abre el menú de la copia');
 ok(await pulsar('Eliminar'), 'se pulsa eliminar (apartado 8)');
 const confirma_fit4 = await esperarTexto(/¿Eliminar esta plantilla\?/i);
@@ -6326,7 +6333,9 @@ ok(/Más planes/i.test(area_fit5),
   '🚨 FIT F5 — «Más planes» se ofrece desde Entrenamiento (apartado 20)');
 
 /* Apartado 20: sin plan elegido, Tu Plan lleva a la biblioteca. */
-ok(await pulsar('Ver más planes'), 'se entra a la biblioteca desde Tu Plan');
+/* ⚠️ Y desde la FIT F6 el botón del estado vacío se llama «Explorar planes»,
+   que son las palabras del apartado 2 de esa fase. */
+ok(await pulsar('Explorar planes'), 'se entra a la biblioteca desde Tu Plan');
 const bib_fit5 = await esperarTexto(/PPL/i);
 ok(/PPL Est/i.test(bib_fit5), '🚨 FIT F5 — aparecen planes de verdad (apartado 24)');
 ok(/Gimnasio/i.test(bib_fit5) && /Calistenia/i.test(bib_fit5) && /Casa/i.test(bib_fit5),
@@ -6466,6 +6475,109 @@ const desborde_fit5 = await page.evaluate(() => ({
 }));
 ok(desborde_fit5.ancho <= desborde_fit5.ventana + 1,
   `🚨 FIT F5 — a 375 px la biblioteca no se desborda de lado (${desborde_fit5.ancho} vs ${desborde_fit5.ventana})`);
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F6 — Tu Plan (Entrega 4 · 6/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El criterio de finalización pide encontrar **Tu Plan → Próximo entrenamiento
+   → Semana → Tus plantillas** *"realmente conectados"*, y poder *elegir un plan
+   → verlo → consultar su semana → abrir sus sesiones → cambiar de plan →
+   acceder a sus plantillas* *"sin que ninguna de estas acciones sea un simple
+   mockup"*.
+
+   ⚠️ Se apoya en el plan que dejó activo la sección de la F5 (Upper / Lower) y
+   en las plantillas que creó al personalizar: probar sobre lo que de verdad hay
+   es la lección de EH F44. */
+console.log('\n── FIT F6 · Tu Plan ──');
+const tuplan_fit6 = await ver();
+ok(/Pr[oó]ximo entrenamiento/i.test(tuplan_fit6) || /Hoy toca descansar/i.test(tuplan_fit6),
+  '🚨 FIT F6 — Tu Plan abre con lo siguiente que toca, o con el descanso de hoy (apartado 21)');
+ok(/Tu semana/i.test(tuplan_fit6), '…y enseña la semana (apartado 7)');
+ok(/Distribuci[oó]n semanal/i.test(tuplan_fit6),
+  '🚨 …con la distribución muscular DERIVADA del plan (apartado 10)');
+ok(/%/.test(tuplan_fit6), '…con sus porcentajes');
+ok(/Tus plantillas/i.test(tuplan_fit6),
+  '🚨 …y el acceso a Tus plantillas, en la misma pantalla (apartado 11)');
+ok(/Activo desde el/i.test(tuplan_fit6),
+  '🚨 FIT F6 — y la fecha de activación, que es lo que pide el apartado 17');
+ok(/Cambiar plan/i.test(tuplan_fit6), '…y se puede cambiar de plan (apartado 4)');
+
+/* 🚨 Apartado 6 y 28: ni un botón que empiece un entrenamiento. */
+ok(!/Empezar entrenamiento|Comenzar entrenamiento/i.test(tuplan_fit6),
+  '🚨 FIT F6 — y NI UN botón que empiece un entrenamiento: el motor es la F7 (apartado 6)');
+ok(/Ver entrenamiento/i.test(tuplan_fit6) || /Hoy toca descansar/i.test(tuplan_fit6),
+  '…el CTA es «Ver entrenamiento», que abre el detalle y existe de verdad');
+
+/* Apartado 7: la semana, con sus siete días y hoy marcado. */
+const diasSemana_fit6 = await page.evaluate(() => {
+  const botones = [...document.querySelectorAll('button[aria-label]')]
+    .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo):/.test(b.getAttribute('aria-label') || ''));
+  return {
+    cuantos: botones.length,
+    hoy: botones.filter((b) => b.getAttribute('aria-current') === 'date').length,
+    etiquetas: botones.map((b) => b.getAttribute('aria-label')),
+  };
+});
+ok(diasSemana_fit6.cuantos === 7,
+  `🚨 FIT F6 — la semana tiene sus siete días (${diasSemana_fit6.cuantos}, apartado 7)`);
+ok(diasSemana_fit6.hoy === 1,
+  `🚨 …y UNO solo marcado como hoy (${diasSemana_fit6.hoy}, apartado 29)`);
+ok(diasSemana_fit6.etiquetas.some((e) => /descanso/i.test(e)),
+  '🚨 …y los días de descanso se identifican (apartado 29)');
+ok(!diasSemana_fit6.etiquetas.some((e) => /completado/i.test(e)),
+  '🚨 FIT F6 — y NINGUNO dice «completado»: sin historial no se puede afirmar (apartado 8)');
+
+/* Apartado 9 — tocar un día abre su sesión, con los ejercicios de siempre. */
+const diaConEntreno_fit6 = diasSemana_fit6.etiquetas
+  .find((e) => !/descanso|antes de empezar/i.test(e)) || '';
+ok(!!diaConEntreno_fit6, `hay un día con entrenamiento (${diaConEntreno_fit6})`);
+ok(await pulsar(diaConEntreno_fit6), 'se toca ese día (apartado 9)');
+await page.waitForTimeout(600);
+const sesion_fit6 = await ver();
+ok(/× /.test(sesion_fit6),
+  '🚨 FIT F6 — y sale su sesión con series y repeticiones, las de la F5 (apartado 9)');
+ok(/s descanso/i.test(sesion_fit6), '…con el descanso de cada ejercicio');
+ok(await pulsar('Cerrar la sesión'), 'se cierra la sesión');
+await page.waitForTimeout(400);
+
+/* 🚨 Apartado 18 — una plantilla suya puede ser el plan activo. Se comprueba
+   sobre el dato, porque la pantalla que lo activa es de una fase posterior:
+   aquí lo que importa es que Tu Plan sepa enseñarla. */
+const plantillasGuardadas_fit6 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.plantillas || [];
+ok(plantillasGuardadas_fit6.length > 0, 'siguen estando sus plantillas (apartado 19)');
+ok(/Upper \/ Lower · Upper A/.test(tuplan_fit6) || /plantilla/i.test(tuplan_fit6),
+  '…y se ven en Tu Plan, sin duplicar su gestión (apartado 11)');
+
+/* Apartado 19: cambiar de plan no borra ni el anterior ni las plantillas. */
+ok(await pulsar('Cambiar plan'), 'se pulsa «Cambiar plan» (apartado 4)');
+const bibVuelta_fit6 = await esperarTexto(/PPL/i);
+ok(/PPL Est/i.test(bibVuelta_fit6), '🚨 FIT F6 — y lleva a la biblioteca (apartado 4)');
+ok(await pulsar('Volver a Entrenamiento'), 'se vuelve');
+await esperarTexto(/Tu Plan/i);
+const trasVolver_fit6 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {};
+ok((trasVolver_fit6.plantillas || []).length === plantillasGuardadas_fit6.length,
+  '🚨 FIT F6 — y NO se ha borrado ninguna plantilla por el camino (apartado 19)');
+ok(trasVolver_fit6.planActivo?.planId === 'upper-lower',
+  '…ni ha cambiado el plan activo sin confirmarlo (apartado 20)');
+
+/* Apartado 24 — y todo sobrevive a una recarga de verdad. */
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(2500);
+ok(await pulsar('Bienestar'), 'FIT F6 — se recarga la aplicación y se vuelve a entrar');
+ok(await pulsar('Fitness'), '…y a Fitness');
+const trasRecargar_fit6 = await esperarTexto(/Tu Plan/i);
+ok(/Upper \/ Lower/.test(trasRecargar_fit6),
+  '🚨 FIT F6 — el plan activo SIGUE AHÍ tras recargar (apartado 24)');
+ok(/Activo desde el/i.test(trasRecargar_fit6), '…con su fecha de activación');
+ok(/Tu semana/i.test(trasRecargar_fit6), '…y su semana');
+
+/* Y a 375 px no se desborda (apartado 22). */
+const desborde_fit6 = await page.evaluate(() => ({
+  ancho: document.documentElement.scrollWidth, ventana: window.innerWidth,
+}));
+ok(desborde_fit6.ancho <= desborde_fit6.ventana + 1,
+  `🚨 FIT F6 — a 375 px Tu Plan no se desborda de lado (${desborde_fit6.ancho} vs ${desborde_fit6.ventana})`);
 
 await page.setViewportSize({ width: 1280, height: 900 });
 
