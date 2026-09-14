@@ -37,8 +37,8 @@ import {
   sustituirEjercicio, sustitutosSugeridos, notaDeEjercicio,
   crearDescanso, restanteDescanso, descansoTerminado, pausarDescanso,
   reanudarDescanso, reiniciarDescanso, EVENTO_FIN_DESCANSO, SONIDO_DESCANSO,
-  vibrarSiSePuede, AVISO_SALIR, AVISO_TERMINAR, AVISO_DESCARTAR,
-  terminarSesion, descartarSesion, sesionActiva, avisoDeRecuperacion,
+  vibrarSiSePuede, AVISO_SALIR, AVISO_DESCARTAR,
+  descartarSesion, sesionActiva, avisoDeRecuperacion,
   guardarSesion, fichaDeEjercicio, filasDeSeries, progresoSesion,
   estadoDeEjercicio, carruselDeSesion, NO_EN_FIT7, PREPARADO_PARA_FIT7,
   auditarSesion, normalizarSesionCompleta, normalizarFitnessConSesiones,
@@ -54,6 +54,13 @@ import {
   crearRutina, anadirEjercicio, rutinaAPlan, planARutina, MAX_SERIES,
 } from '../src/lib/constructor.js';
 import { ejercicioPorId } from '../src/lib/ejercicios.js';
+/* 🔓 FIT F8 — Terminar ya no completa: pasa la sesión al resumen. `terminarSesion`
+   y su aviso se retiraron con la pantalla que los hacía falta, así que las
+   comprobaciones de esta fase pasan a usar lo que de verdad hace el botón. */
+import { pasarAFinalizacion, guardarEntrenamiento } from '../src/lib/finalizacion.js';
+const terminarYGuardar = (ses, { ahora } = {}) => guardarEntrenamiento(
+  pasarAFinalizacion(ses, { ahora }), { confirmado: true, ahora },
+);
 
 const RAIZ_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (p) => readFileSync(join(RAIZ_DIR, p), 'utf8');
@@ -466,7 +473,7 @@ ok(AVISO.continuar === 'Continuar entrenamiento' && AVISO.descartar === 'Descart
   '…y las dos salidas que pide el apartado');
 ok(avisoDeRecuperacion(null) === null, '…y sin sesión no se inventa la tarjeta');
 
-const F_TERMINADA = guardarSesion(F2, terminarSesion(S0, { confirmado: true, ahora: min(40) }).sesion);
+const F_TERMINADA = guardarSesion(F2, terminarYGuardar(S0, { ahora: min(40) }).sesion);
 ok(sesionActiva(F_TERMINADA) === null, '⚠️ …y una terminada YA NO se ofrece como activa');
 ok(sesionActiva({}) === null && sesionActiva(null) === null, '…ni sin sesiones');
 
@@ -512,19 +519,36 @@ ok(AVISO_SALIR.titulo === '¿Salir del entrenamiento?',
 ok(AVISO_SALIR.seguir === 'Seguir entrenando' && AVISO_SALIR.salir === 'Salir',
   '…y sus dos opciones, también literales');
 
-const SIN_CONFIRMAR = terminarSesion(S0);
-ok(SIN_CONFIRMAR.ok === false, '🚨 Terminar SIN confirmar no escribe nada (apartado 32, `aplicarPlan`)');
-ok(SIN_CONFIRMAR.aviso === AVISO_TERMINAR, '…devuelve el aviso');
-ok(SIN_CONFIRMAR.sesion.estado === 'en_curso', '…y la sesión sigue en curso');
+/* 🔓 **ESTO DECÍA OTRA COSA HASTA LA FIT F8**, y estaba escrito a propósito para
+   este momento. El apartado 32 pedía dos cosas: *"NO debe guardar automáticamente
+   como completada sin confirmación"* **y** *"Debe llevar posteriormente a la
+   pantalla de finalización que construiremos en la siguiente fase"*. La
+   confirmación era lo único que se podía poner mientras esa pantalla no
+   existiera; ya existe, y la garantía es **más fuerte**: desde el botón de la
+   cabecera la sesión ya no puede llegar a `completada` de ninguna manera. */
+const SIN_CONFIRMAR = pasarAFinalizacion(S0, { ahora: min(45) });
+ok(SIN_CONFIRMAR.estado !== 'completada',
+  '🔓 FIT F7 → F8 — Terminar NO completa nada: lleva al resumen (apartado 32)');
+ok(SIN_CONFIRMAR.estado === 'finalizando', '…dejándola «finalizando», ni entrenando ni guardada');
+/* ⚠️ Un `||` que casi siempre es verdad no comprueba nada: lo que importa es
+   **quién** la completa, y son dos llamadas distintas. */
+ok(ejerciciosDeSesion(SIN_CONFIRMAR).length === EJS0.length,
+  '…con todo lo registrado intacto, listo para revisarlo');
+/* ⚠️ `S0` no tiene ni una serie marcada, así que guardar **pregunta primero**:
+   es el apartado 26 de la F8 funcionando, no un fallo. Confirmando, se completa. */
+ok(guardarEntrenamiento(SIN_CONFIRMAR).motivo === 'vacio',
+  '…y guardar sin ni una serie marcada pregunta antes (FIT F8, apartado 26)');
+ok(guardarEntrenamiento(SIN_CONFIRMAR, { confirmado: true }).sesion.estado === 'completada',
+  '…y quien la completa es «Terminar entrenamiento», ya en el resumen (FIT F8)');
 
-const TERMINADA = terminarSesion(S0, { confirmado: true, ahora: min(45) });
-ok(TERMINADA.ok === true && TERMINADA.sesion.estado === 'completada', 'Confirmando, se completa');
+const TERMINADA = terminarYGuardar(S0, { ahora: min(45) });
+ok(TERMINADA.ok === true && TERMINADA.sesion.estado === 'completada', 'Y desde el resumen se completa');
 ok(TERMINADA.sesion.terminadaEn === min(45), '…apuntando cuándo');
 ok(duracionSesion(TERMINADA.sesion, min(90)) === 2700000,
   '🚨 …y la duración se congela en 45 minutos: terminar para el reloj');
 ok(ejerciciosDeSesion(TERMINADA.sesion).length === EJS0.length,
   '⚠️ …conservando TODOS los datos: *"preservar todos los datos"* (apartado 32)');
-const TERM_PAUSADA = terminarSesion(PAUSADA, { confirmado: true, ahora: min(45) });
+const TERM_PAUSADA = terminarYGuardar(PAUSADA, { ahora: min(45) });
 ok(TERM_PAUSADA.sesion.pausadoMs > 0,
   '⚠️ …y terminar desde pausa no se come el rato parado: se cierra la pausa antes');
 
@@ -534,7 +558,7 @@ const DESC2 = descartarSesion(S0, { confirmado: true, ahora: min(5) });
 ok(DESC2.sesion.estado === 'descartada', '…y confirmando la marca como descartada');
 ok(ejerciciosDeSesion(DESC2.sesion).length === EJS0.length,
   '⚠️ …sin BORRARLA: se marca, para que el historial de la F10 la siga viendo');
-ok(terminarSesion(null).ok === false && descartarSesion(null).ok === false,
+ok(pasarAFinalizacion(null) === null && descartarSesion(null).ok === false,
   '…y sin sesión las dos contestan que no hay nada que hacer');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
@@ -695,7 +719,7 @@ ok(PROG.porcentaje > 0 && PROG.porcentaje < 100, `…y va por el ${PROG.porcenta
 ok(estadoDeEjercicio(R, 0) === 'completado', '…el primer ejercicio, completado (apartado 8)');
 ok(estadoDeEjercicio(R, 2) === 'pendiente', '…y los que no ha tocado, pendientes');
 
-const FINAL = terminarSesion(R, { confirmado: true, ahora: min(52) });
+const FINAL = terminarYGuardar(R, { ahora: min(52) });
 ok(FINAL.ok && FINAL.sesion.estado === 'completada', '🚨 …y Terminar la cierra, con confirmación (apartado 32)');
 ok(sesionActiva(guardarSesion(VUELTA, FINAL.sesion)) === null, '…y deja de ofrecerse como activa');
 ok(auditarSesion(FINAL.sesion, []).ok === true, '…con la auditoría en verde de punta a punta');
