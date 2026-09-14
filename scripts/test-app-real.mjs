@@ -6902,13 +6902,11 @@ const escribirEn_fit8 = async (etiqueta, valor, etiquetaHTML = 'input') => page.
   return true;
 }, [etiqueta, valor, etiquetaHTML]);
 
-ok(await escribirEn_fit8('Nombre del entrenamiento', 'Push — Fuerza'),
-  '🚨 FIT F8 — se cambia el nombre del entrenamiento (apartado 3)');
-ok(await escribirEn_fit8('Notas del entrenamiento', 'Me noté fuerte en los presses.', 'textarea'),
-  '…y se escribe la nota general (apartado 13)');
-await page.waitForTimeout(400);
-
-/* 🚨 Apartado 28 — se cierra la aplicación AQUÍ, en el resumen, sin guardar. */
+/* 🚨 Apartado 28 — se cierra la aplicación AQUÍ, en el resumen, sin guardar.
+   ⚠️ **Antes de escribir nada**, y a propósito: lo que tiene que sobrevivir es
+   **el entrenamiento**, no un nombre a medio teclear que nunca se guardó. Fue un
+   rojo mío: escribía el nombre, recargaba y luego lo exigía — el formulario se
+   monta de cero con lo que hay en la sesión, que es lo correcto. */
 await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(2500);
 ok(await pulsar('Bienestar'), 'FIT F8 — se recarga la aplicación en mitad del resumen');
@@ -6921,6 +6919,13 @@ ok(!/Tienes un entrenamiento en curso/i.test(recuperable_fit8),
 ok(await pulsar('Terminar de guardarlo'), '…y se sigue donde lo dejó');
 const vuelta_fit8 = await esperarTexto(/Entrenamiento completado/i);
 ok(/\d+\/\d+ series completadas/.test(vuelta_fit8), '…con sus series intactas (apartado 28)');
+
+/* Apartados 3 y 13 — y ahora sí, el nombre y la nota. */
+ok(await escribirEn_fit8('Nombre del entrenamiento', 'Push — Fuerza'),
+  '🚨 FIT F8 — se cambia el nombre del entrenamiento (apartado 3)');
+ok(await escribirEn_fit8('Notas del entrenamiento', 'Me noté fuerte en los presses.', 'textarea'),
+  '…y se escribe la nota general (apartado 13)');
+await page.waitForTimeout(400);
 
 /* Apartados 16, 17 y 18 — guardar, una sola vez. */
 const antesDeGuardar_fit8 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.sesiones || []).length;
@@ -6949,6 +6954,17 @@ ok(!!sesionFinal_fit8?.diaDePlan?.nombre,
   '⚠️ …con el NOMBRE, no solo el id: si borra el plan, la sesión sigue sabiendo cuál era');
 ok(sesiones_fit8.length === antesDeGuardar_fit8,
   `🚨 FIT F8 — y NO se ha creado una sesión nueva al guardar (${sesiones_fit8.length}, apartado 17)`);
+
+/* Apartado 20 — «Ver entrenamiento» enseña el resumen guardado. */
+ok(await pulsar('Ver entrenamiento'), 'se pulsa «Ver entrenamiento» (apartado 20)');
+await page.waitForTimeout(500);
+const verGuardado_fit8 = await ver();
+ok(/Push — Fuerza/.test(verGuardado_fit8),
+  '🚨 FIT F8 — y se ve el resumen GUARDADO, con el nombre que le puso');
+ok(/fuerte en los presses/.test(verGuardado_fit8), '…y su nota general');
+ok(/\d+\/\d+ series completadas/.test(verGuardado_fit8), '…y sus series');
+ok(await pulsar('Volver al resumen final'), '…y se puede volver');
+await page.waitForTimeout(400);
 
 ok(await pulsar('Volver a Tu Plan'), 'se vuelve a Tu Plan (apartado 20)');
 const terminado_fit7 = await esperarTexto(/Tu Plan/i);

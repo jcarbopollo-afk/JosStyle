@@ -688,8 +688,15 @@ export default function FitnessView({
 
   /* 🚨 FIT F8 — el resumen. Es pantalla entera por lo mismo que el
      entrenamiento: con las pestañas debajo se podría uno ir a Rangos con una
-     sesión terminada y sin guardar. */
-  if (enVivo && enVivo.estado === 'finalizando') {
+     sesión terminada y sin guardar.
+
+     🐛 **Y la condición incluye `completada`, que es un fallo real que cazó el
+     recorrido.** Al guardar, la sesión pasa a `completada`, `fitness` cambia y
+     este `if` dejaba de cumplirse: `FinalizacionView` **se desmontaba antes de
+     poder pintar su pantalla de éxito**, así que el apartado 19 no se veía
+     nunca — y la sesión quedaba guardada, con la pantalla volviendo sola a
+     Entrenamiento. Se sale de aquí **pulsando**, no porque cambie el dato. */
+  if (enVivo && (enVivo.estado === 'finalizando' || enVivo.estado === 'completada')) {
     return (
       <FinalizacionView
         sesion={enVivo}

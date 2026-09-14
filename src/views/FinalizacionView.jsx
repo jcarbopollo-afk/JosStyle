@@ -20,7 +20,7 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  Check, ChevronRight, X, Trash2, Clock, Dumbbell, Calendar, StickyNote,
+  Check, ChevronRight, ChevronLeft, Trash2, Clock, Dumbbell, Calendar,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
@@ -153,8 +153,10 @@ export function PantallaExito({ datos, accent, onVer, onVolver }) {
 }
 
 /* ── El resumen, de solo lectura ──────────────────────────────────────────
-   Se usa en la finalización y, con `soloLectura`, para ver una sesión ya
-   guardada (apartado 20: *"Ver entrenamiento"*). */
+   ⚠️ **El mismo componente** en los dos sitios: en la finalización, y al pulsar
+   «Ver entrenamiento» sobre la ya guardada (apartado 20). Escribir un segundo
+   resumen sería el duplicado de siempre — y acabarían diciendo cosas distintas
+   del mismo entrenamiento. */
 export function ResumenSesion({ resumen, accent }) {
   if (!resumen) return null;
   return (
@@ -223,8 +225,43 @@ export default function FinalizacionView({
   const [aviso, setAviso] = useState(null); // 'vacio' | 'descartar'
   const [guardando, setGuardando] = useState(false);
   const [guardada, setGuardada] = useState(null);
+  /* ⚠️ Si está mirando el resumen guardado es **de la pantalla** (EH F40). */
+  const [viendo, setViendo] = useState(false);
+  const resumenGuardado = useMemo(
+    () => (guardada ? resumenDeSesion(guardada, { propios }) : null),
+    [guardada, propios],
+  );
 
   if (!resumen) return null;
+
+  /* Apartado 20 — *"Ver entrenamiento: permite consultar el resumen guardado."*
+     ⚠️ Es **el mismo `ResumenSesion`**, de solo lectura: escribir una segunda
+     pantalla de resumen sería el duplicado de siempre. El historial completo es
+     la F10; esto es poder volver a mirar la que acaba de guardar. */
+  if (guardada && viendo) {
+    return (
+      <div className="space-y-4 pb-6">
+        <button
+          onClick={() => setViendo(false)}
+          aria-label="Volver al resumen final"
+          className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
+          style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
+        >
+          <ChevronLeft size={16} /> Atrás
+        </button>
+        <SectionTitle sub={resumenGuardado.fechaTexto}>{resumenGuardado.nombre}</SectionTitle>
+        <ResumenSesion resumen={resumenGuardado} accent={accent} />
+        {resumenGuardado.notas && (
+          <Card>
+            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
+              Notas del entrenamiento
+            </p>
+            <p className="text-sm mt-1" style={{ color: COLORS.text }}>{resumenGuardado.notas}</p>
+          </Card>
+        )}
+      </div>
+    );
+  }
 
   /* 🚨 Apartado 19 — cuando ya está guardada, la pantalla de éxito. */
   if (guardada) {
@@ -232,7 +269,7 @@ export default function FinalizacionView({
       <PantallaExito
         datos={pantallaDeExito(guardada, { propios })}
         accent={accent}
-        onVer={onVolver ? () => onVolver('ver') : null}
+        onVer={() => setViendo(true)}
         onVolver={onVolver ? () => onVolver('plan') : null}
       />
     );
