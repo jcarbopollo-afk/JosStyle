@@ -6851,8 +6851,8 @@ const toques_fit7 = await page.evaluate(() => {
     .filter((x) => /serie 1/i.test(x.getAttribute('aria-label') || ''));
   return b.map((x) => Math.round(x.getBoundingClientRect().height));
 });
-ok(toques_fit7.length > 0 && toques_fit7.every((h) => h >= 40),
-  `🚨 FIT F7 — y los controles de una serie se pueden tocar entrenando (${toques_fit7.join(', ')} px, apartado 33)`);
+ok(toques_fit7.length > 0 && toques_fit7.every((h) => h >= 44),
+  `🚨 FIT F7 — y los controles de una serie miden los 44 px de EH F42 (${toques_fit7.join(', ')} px, apartado 33)`);
 ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), 'se sale de la que sobraba');
 await page.waitForTimeout(400);
 

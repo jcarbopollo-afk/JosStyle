@@ -697,11 +697,49 @@ fi
 # ⚠️ Y desde EH F48 tampoco cuenta una REGLA: `auditoriaFinal.js` lleva ese
 # patrón escrito para BUSCARLO, y buscarlo no es hacerlo. Son las líneas que
 # declaran `prohibido:`.
-if grep -rEn 'new Audio\(|AudioContext|webkitAudioContext' src/ --include=*.js --include=*.jsx \
-   | grep -v 'src/lib/audioEngine.js' \
-   | grep -v 'prohibido:' \
-   | grep -vE ':[[:space:]]*(//|\*|/\*)' >/tmp/jc_r10.log 2>&1; then
-  fallo "Alguien toca el audio fuera de audioEngine.js:"; cat /tmp/jc_r10.log
+# 🐛 ⚠️ **Y desde FIT F7 se quitan los comentarios DE VERDAD, no por el principio
+# de la línea.** Esto excluía las líneas que EMPIEZAN por `//`, `*` o `/*`, así
+# que una línea intermedia de un bloque `/* … */` sin asterisco al margen —el
+# estilo que usa medio proyecto— hacía saltar la regla **con el código bien**:
+# la cabecera de `entrenamiento.js` promete que ninguna pantalla hace
+# `new Audio(...)`, y era justamente esa promesa la que la ponía roja. Es el
+# mismo fallo que el barrido de hex en NAV F3 y el de los portales en FIT F5, por
+# vigesimonovena vez. Ahora lo hace Node, que sí sabe dónde empieza y acaba un
+# comentario — y también quita las CADENAS, porque `sonidoProduccion.js` NOMBRA
+# el patrón dentro de un texto para prometer que no está, y nombrarlo no es
+# hacerlo (la misma distinción de EH F48).
+# 🚨 ⚠️ **Y de paso se descubrió que la exclusión vieja valía para CUALQUIER
+# sitio de la línea, no para su principio**: `:[[:space:]]*(//|\*|/\*)` encajaba
+# con un `: **negrita` o con un `http://` en mitad de un texto, así que una
+# línea con un `new Audio()` DE VERDAD y una URL al lado se habría colado.
+# ⚠️ Comprobado que la nueva **sigue cazando un `new Audio()` de verdad**.
+MALAUDIO=$(node -e '
+  import("node:fs").then(({ readdirSync, readFileSync, statSync }) => {
+    const walk = (d) => readdirSync(d).flatMap((f) => {
+      const p = d + "/" + f;
+      return statSync(p).isDirectory() ? walk(p) : [p];
+    });
+    /* Quita comentarios y cadenas: nombrar el patron no es hacerlo. */
+    const soloCodigo = (t) => t
+      .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
+      .replace(/(^|[^:])\/\/.*$/gm, "$1 ")
+      .replace(/\x27(?:[^\x27\\\n]|\\.)*\x27/g, "\x27\x27")
+      .replace(/"(?:[^"\\\n]|\\.)*"/g, "\"\"")
+      .replace(/`(?:[^`\\]|\\.)*`/g, "``");
+    const malos = [];
+    for (const f of walk("src").filter((x) => /\.jsx?$/.test(x))) {
+      if (f.includes("audioEngine.js")) continue;
+      soloCodigo(readFileSync(f, "utf8")).split("\n").forEach((l, i) => {
+        if (!/new Audio\(|AudioContext|webkitAudioContext/.test(l)) return;
+        if (/prohibido:/.test(l)) return;
+        malos.push(" " + f + ":" + (i + 1) + ":" + l.trim());
+      });
+    }
+    process.stdout.write(malos.join("\n"));
+  });
+')
+if [ -n "$MALAUDIO" ]; then
+  fallo "Alguien toca el audio fuera de audioEngine.js:"; echo "$MALAUDIO"
 else
   ok "El audio solo se toca en audioEngine.js"
 fi

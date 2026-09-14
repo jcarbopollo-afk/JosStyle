@@ -243,9 +243,17 @@ function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal = fals
     if (!tocando) setTexto(valor === null || valor === undefined ? '' : String(valor));
   }, [valor, tocando]);
 
-  const confirmar = () => {
+  /* 🐛 **EL VALOR SE LEE DEL CAMPO, NO DEL ESTADO.** Leerlo de `texto` es leer
+     lo que había en el último render: si el `blur` llega en el mismo turno que
+     el cambio —cuando alguien pega un valor, cuando una prueba lo escribe, o
+     simplemente cuando React todavía no ha repintado— el cierre conserva el
+     texto VIEJO y se guarda `null` **con el campo enseñando 62,5 en pantalla**.
+     Lo cazó el recorrido en Chromium: el campo decía 62.5 y lo guardado era
+     `null`. `ev.target.value` es siempre lo que hay de verdad. */
+  const confirmar = (valor) => {
     setTocando(false);
-    onConfirmar(texto.trim() === '' ? null : texto.replace(',', '.'));
+    const v = String(valor ?? '').trim();
+    onConfirmar(v === '' ? null : v.replace(',', '.'));
   };
 
   return (
@@ -259,7 +267,7 @@ function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal = fals
       placeholder={placeholder}
       onFocus={() => setTocando(true)}
       onChange={(ev) => setTexto(ev.target.value)}
-      onBlur={confirmar}
+      onBlur={(ev) => confirmar(ev.target.value)}
       onKeyDown={(ev) => { if (ev.key === 'Enter') ev.currentTarget.blur(); }}
       className="w-full h-11 rounded-xl text-center text-base font-bold outline-none toque-44"
       style={{
@@ -334,7 +342,7 @@ export function TablaSeries({ filas, accent, onEditar, onMarcar, onQuitar, onRec
                 <button
                   onClick={() => onRecuperar(f.id)}
                   aria-label={`Recuperar la serie omitida`}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center toque-44 active:scale-90"
+                  className="w-11 h-11 rounded-xl flex items-center justify-center toque-44 active:scale-90"
                   style={{ background: hexToRgba(COLORS.border, 0.5), color: COLORS.textMuted }}
                 >
                   <Undo2 size={16} />
@@ -344,7 +352,7 @@ export function TablaSeries({ filas, accent, onEditar, onMarcar, onQuitar, onRec
                   onClick={() => onMarcar(f.id, !hecha)}
                   aria-label={hecha ? `Desmarcar la serie ${f.numero}` : `Marcar la serie ${f.numero} como hecha`}
                   aria-pressed={hecha}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center toque-44 active:scale-90"
+                  className="w-11 h-11 rounded-xl flex items-center justify-center toque-44 active:scale-90"
                   style={{
                     background: hecha ? accent : hexToRgba(COLORS.border, 0.5),
                     color: hecha ? COLORS.textOnAccent : COLORS.textMuted,

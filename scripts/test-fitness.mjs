@@ -206,7 +206,12 @@ console.log('\n── 11. WorkoutSession ──');
 const ses = crearWorkoutSession({ nombre: 'Lunes', fecha: '2026-09-13', inicio: '18:00', fin: '19:30' });
 ok(ses.estado === 'planificada', 'Nace planificada');
 ok(crearWorkoutSession({ estado: 'inventado' }).estado === 'planificada', 'Un estado que no existe cae en el de partida');
-ok(ESTADOS_SESION.length === 4, 'Cuatro estados de sesión');
+/* 🐛 ⚠️ Esto decía `ESTADOS_SESION.length === 4`, y la FIT F7 añadió `pausada`
+   con todo el derecho (apartado 7: el móvil bloqueado). Es la bomba de relojería
+   de `MODULOS_EH.length === 13`, por enésima vez: **se comprueba que estén los
+   que tienen que estar**, no cuántos hay. */
+ok(['planificada', 'en_curso', 'completada', 'descartada'].every((e) => ESTADOS_SESION.includes(e)),
+  'Los cuatro estados de sesión de la F1 siguen estando');
 ok(ses.planId === null, 'Una sesión suelta, sin plan, puede existir');
 ok(!Object.keys(ses).includes('duracion'),
   '🚨 La duración NO se guarda: se deriva de las horas, como la del sueño (E3 F31)');
