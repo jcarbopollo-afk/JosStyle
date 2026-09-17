@@ -4,6 +4,8 @@ import { resumenDeSesion, fechaLarga, volumenDeSesion } from './finalizacion';
 import { resumenPlanificado, resumenRealizado, cabeceraDeEjercicio } from './entrenamientoUx';
 import { ENTORNOS } from './ejercicios';
 import { planPorId, planActivoDe, CATALOGO_PLANES } from './planes';
+/* 🔓 FIT F11 — la comparación con la vez anterior, discreta (su apartado 34). */
+import { comparacionEnSesion } from './progresion';
 
 /* Entrega 4 · Fase 10/45 — «Historial de entrenamientos y detalle de sesiones».
    ═══════════════════════════════════════════════════════════════════════════
@@ -337,6 +339,17 @@ export function realizadoEnDetalle(ejercicioSesion) {
     });
 }
 
+/** 🔓 FIT F11, apartado 34 — *"+2 reps respecto a la última vez"*, y **solo si
+ *  hay una vez anterior comparable**. Un primer registro o un cambio de medida no
+ *  dicen nada: no convertir el historial en una pantalla de estadísticas. */
+export function comparacionDiscreta(c) {
+  if (!c || !['mejora', 'estable', 'descenso'].includes(c.estado)) return null;
+  return {
+    estado: c.estado,
+    texto: c.estado === 'estable' ? 'Igual que la última vez' : `${c.texto} respecto a la última vez`,
+  };
+}
+
 export function detalleDeSesion(sesion, { fitness = {}, propios = [], planes = CATALOGO_PLANES, hoy = todayISO() } = {}) {
   if (!sesion) return null;
   const r = resumenDeSesion(sesion, { propios, ahora: momento(sesion) || Date.now() });
@@ -365,6 +378,7 @@ export function detalleDeSesion(sesion, { fitness = {}, propios = [], planes = C
       original: res.original || '',
       existe: res.existe !== false,
       filas: filasDeSeries(e).map((f) => filaDeSerieHistorial(f, { corporal })),
+      comparacion: comparacionDiscreta(comparacionEnSesion(fitness, sesion.id, e.exerciseId, { propios })),
     };
   });
 

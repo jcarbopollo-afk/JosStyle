@@ -1024,6 +1024,15 @@ else
   fallo "Falla la UX del entrenamiento en vivo"; grep '✗' /tmp/jc_entreno_ux.log
 fi
 
+# FIT F11 — la progresión. Lo que más se vigila: los siete casos del apartado 38,
+# que variantes y medidas distintas NO se comparen, que las series incompletas no
+# penalicen y que ningún cálculo toque las sesiones guardadas.
+if node --import ./scripts/resolver-vite.mjs scripts/test-progresion.mjs >/tmp/jc_progresion.log 2>&1; then
+  ok "Progresión del rendimiento (FIT F11) — $(grep -c '✓' /tmp/jc_progresion.log) comprobaciones"
+else
+  fallo "Falla la progresión del rendimiento"; grep '✗' /tmp/jc_progresion.log
+fi
+
 # FIT F10 — el historial. Lo que más se vigila: que solo entren las sesiones
 # completadas, que no cuente nada por su cuenta (dice lo mismo que la F8), que los
 # filtros se combinen y se limpien, y que eliminar vaya a la papelera.

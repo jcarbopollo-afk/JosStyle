@@ -2,6 +2,20 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.93.0 — FIT F11/45: progresión y comparación del rendimiento):** La lógica
+> para saber **si mejora**, en `src/lib/progresion.js`: última marca, la anterior comparable, la mejor
+> histórica y la tendencia (mejora, estable, descenso, sin datos) por ejercicio, con
+> `progresoDeEjercicio(fitness, exerciseId)`. 🚨 **Todo derivado**: sale de las sesiones completadas y
+> no guarda nada; hay una comprobación de que las sesiones quedan idénticas. Comparable = **mismo
+> ejercicio y misma clase** (carga, lastre, repeticiones, tiempo): variantes, sustitutos, y el mismo
+> ejercicio con y sin lastre **no se comparan** («No comparable»). Mejor serie: más peso y luego más
+> repeticiones; más repeticiones a peso corporal; más segundos en un isométrico. Tendencia: mejor serie
+> contra mejor serie (menos peso y más reps lo desempata el volumen), y si empatan serie a serie **solo
+> hasta las que hay en las dos**, así que hacer 2 de 3 no penaliza. Datos corruptos se ignoran dato a
+> dato. Lo único visible: bajo cada ejercicio del historial, *↑ +2 reps respecto a la última vez*, solo
+> si hubo una vez anterior comparable. ⚠️ `ultimaVez()` deja preparado el «Última vez» del
+> entrenamiento en vivo. Pruebas en `scripts/test-progresion.mjs`.
+
 > **🏋️ ACTUALIZACIÓN (v3.92.0 — FIT F10/45: historial de entrenamientos):** **Fitness →
 > Entrenamiento → Historial**. La lista de los entrenamientos **completados** —ni en curso, ni sin
 > guardar, ni descartados—, de más reciente a más antiguo y agrupada por *Hoy*, *Ayer* o la fecha, con

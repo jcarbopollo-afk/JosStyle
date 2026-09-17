@@ -7248,6 +7248,8 @@ ok(/\d+\/\d+ series completadas/.test(detalle_fit10), '…las series completadas
 ok(/Planificado/i.test(detalle_fit10) && /Realizado/i.test(detalle_fit10),
   '🚨 FIT F10 — planificado y realizado, por separado (apartado 25)');
 ok(/fuerte en los presses/.test(detalle_fit10), '…y la nota general que escribió en la F8 (apartado 24)');
+/* 🔓 FIT F11, apartado 34 — es su primer entrenamiento de estos ejercicios: la comparación con «la última vez» NO puede salir. */
+ok(!/respecto a la última vez/.test(detalle_fit10), '🚨 FIT F11 — y como es la primera vez, NO dice «respecto a la última vez»: no hay con qué comparar');
 ok(/No realizado/i.test(detalle_fit10), '⚠️ …y el ejercicio que no hizo dice «No realizado»');
 ok(await page.evaluate(() => document.querySelectorAll('input[aria-label^="Peso de la serie"], input[aria-label^="Repeticiones de la serie"]').length === 0),
   '🚨 FIT F10 — y es de CONSULTA: ni un campo para cambiar un peso o una repetición (apartado 30)');

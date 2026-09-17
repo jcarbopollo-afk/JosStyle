@@ -284,6 +284,13 @@ export function EjercicioHistorial({ ejercicio, accent, abierto = false, onAlter
           {e.realizadoDetalle.join(' · ')}
         </p>
       )}
+      {/* 🔓 FIT F11, apartado 34 — la comparación con la vez anterior, discreta y
+          solo si la hay. La flecha acompaña a la palabra, no la sustituye. */}
+      {e.comparacion && (
+        <p className="text-[11px] mt-1.5 font-semibold" style={{ color: e.comparacion.estado === 'mejora' ? accent : COLORS.textMuted }}>
+          {e.comparacion.estado === 'mejora' ? '↑ ' : e.comparacion.estado === 'descenso' ? '↓ ' : '= '}{e.comparacion.texto}
+        </p>
+      )}
       {/* Apartado 23 — la nota, y sin bloque vacío si no la hay. */}
       {e.notas && (
         <p className="text-xs mt-2" style={{ color: COLORS.text }}>📝 {e.notas}</p>

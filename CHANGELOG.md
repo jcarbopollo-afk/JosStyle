@@ -1,5 +1,92 @@
 # CHANGELOG.md
 
+## v3.93.0 — FIT F11/45: progresión y comparación del rendimiento
+
+El criterio: poder responder *"¿Cuál fue mi última marca en este ejercicio? ¿Cuál fue la anterior?
+¿Cuál fue mi mejor resultado? ¿He mejorado, empeorado o me he mantenido?"* **sin modificar los datos
+históricos**.
+
+Es una fase de **lógica**, en `src/lib/progresion.js`. Lo único visible es discreto: en el detalle
+de una sesión del historial, bajo cada ejercicio, *↑ +2 reps respecto a la última vez* — y **solo si
+hubo una vez anterior comparable** (apartado 34).
+
+### 🚨 Todo es derivado
+
+La fuente son las sesiones **completadas** de `fitness.sesiones`, las mismas del historial. No se
+guarda nada: ni récords, ni mejoras, ni un campo nuevo en la sesión. Hay una comprobación que lo calcula
+todo y exige que las sesiones queden **idénticas byte a byte** (apartado 36).
+
+### Qué es comparable
+
+**El mismo ejercicio y la misma clase de medida.** El id del ejercicio ya separa variante, agarre y
+material, porque en el catálogo cada uno es un ejercicio propio: dominada prona, supina y lastrada son
+tres. Y la clase separa lo que el id no ve:
+
+| Clase | Qué se compara |
+|---|---|
+| **carga** | peso externo y repeticiones, con volumen auxiliar |
+| **lastre** | peso **añadido** y repeticiones, sin volumen (el peso corporal no está en el número) |
+| **repeticiones** | peso corporal y explosivos: repeticiones y series |
+| **tiempo** | isométricos: segundos |
+
+Ser sustitutos o de la misma familia **no los hace comparables** (apartado 4). Las mismas dominadas con
+lastre y sin él tampoco: se dice **«No comparable»** y se registra el cambio (apartado 18).
+
+### La mejor serie, sin fórmulas absurdas
+
+Con carga, **más peso** y, a igual peso, **más repeticiones**; a peso corporal, **más repeticiones**; en
+un isométrico, **más segundos** (apartado 14). De *20×8 · 20×10 · 17,5×12* la mejor es **20 kg × 10**.
+
+### Cómo se decide la tendencia
+
+1. **Mejor serie contra mejor serie.** Más peso es mejora aunque salgan menos repeticiones —y se dice
+   que fueron menos—. El único caso que esa regla no resuelve, **menos peso y más repeticiones**, lo
+   desempata el volumen de esa serie, como métrica auxiliar (apartado 11).
+2. **Si empatan, serie a serie**, y solo hasta las series que hay en las dos: 10/9/8 → 10/10/9 es una
+   mejora (apartado 25), y hacer **2 de 3** con los mismos números **no es un descenso** (apartado 26).
+3. Si todo empata: **estable**.
+
+Tolerancia: una repetición o un segundo ya son un cambio; en el peso, menos de 0,01 kg es ruido de coma
+flotante (apartado 22). Y 22,5 kg sigue siendo 22,5 (apartado 33).
+
+### Lo que devuelve
+
+- `progresoDeEjercicio(fitness, exerciseId)` — el `getExerciseProgress` del apartado 20: última
+  marca, la anterior **comparable** (aunque haya muchas sesiones de otros ejercicios en medio), la
+  mejor histórica, la tendencia (mejora, estable, descenso, sin datos) y la comparación.
+- `compararApariciones(anterior, actual)` — *Anterior → Actual* con los cambios de peso, repeticiones,
+  segundos, volumen y series, cada uno con su porcentaje **solo si hay denominador**; la diferencia de
+  cada serie; y la frase: *+2,5 kg*, *+2 reps*, **+1 rep en cada serie** (la prueba real del apartado
+  44), *Igual que la última vez*, *Primer registro*.
+- `aparicionesDeEjercicio`, `mejorHistorico`, `mejorSerie`, `comparacionEnSesion` y `ultimaVez` —
+  esta última deja preparado el *"Última vez: 20 kg × 10"* del entrenamiento en vivo (apartado 35).
+
+### Datos corruptos
+
+Un peso negativo, unas repeticiones negativas o no numéricas, unos segundos negativos: se ignora **ese
+dato**, no la serie ni la sesión (apartado 32). Un peso que no se apuntó **no se inventa** (apartado 17).
+
+### Rendimiento
+
+El índice de apariciones se construye **una vez por lista de sesiones** y se reutiliza mientras no
+cambie; guardar una sesión crea una lista nueva y se recalcula solo (apartado 31).
+
+### Limitaciones, dichas
+
+- **Dos máquinas del mismo ejercicio** (apartado 19): barra, mancuernas, polea o máquina son ejercicios
+  distintos en el catálogo y se respetan, pero dos máquinas de dos gimnasios con el mismo id no se
+  pueden distinguir, porque la sesión no guarda cuál era.
+- **Menos peso y más repeticiones** es el único caso que decide el volumen: es una convención, y está
+  escrita en el código y aquí.
+- Sin gráficas, pantalla de récords, rangos, 1RM ni IA (apartado 41), en `NO_EN_FIT11`.
+
+### Pruebas
+
+`scripts/test-progresion.mjs` (77) sobre sesiones de verdad (constructor → en vivo → guardado): los
+siete casos del apartado 38, los del 37, la prueba real del 44, datos corruptos, precisión, caché, la
+integración con el historial y que nada toque lo guardado. Comprobado que se pone roja si se comparan
+medidas distintas o si se cuentan series que solo están en una de las dos sesiones.
+
 ## v3.92.0 — FIT F10/45: historial de entrenamientos y detalle de sesiones
 
 El criterio de finalización: *"Completar un entrenamiento → guardarlo → abrir Historial → encontrarlo
