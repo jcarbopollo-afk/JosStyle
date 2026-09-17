@@ -1024,6 +1024,15 @@ else
   fallo "Falla la UX del entrenamiento en vivo"; grep '✗' /tmp/jc_entreno_ux.log
 fi
 
+# FIT F14 — los objetivos de rendimiento. Lo que más se vigila: el criterio literal
+# (15 dominadas hasta «✓ Objetivo conseguido»), que sin datos no sea 0 %, que la
+# unidad dependa del ejercicio y que eliminar un objetivo no toque entrenamientos.
+if node --import ./scripts/resolver-vite.mjs scripts/test-objetivos-progreso.mjs >/tmp/jc_objetivos.log 2>&1; then
+  ok "Objetivos de rendimiento (FIT F14) — $(grep -c '✓' /tmp/jc_objetivos.log) comprobaciones"
+else
+  fallo "Fallan los objetivos de rendimiento"; grep '✗' /tmp/jc_objetivos.log
+fi
+
 # FIT F13 — el progreso por grupos musculares. Lo que más se vigila: que un grupo
 # sin entrenar sea «Sin datos» y nunca «Descenso», que cada ejercicio cuente según
 # su porcentaje, que un solo ejercicio no decida un grupo con varios, y que no se

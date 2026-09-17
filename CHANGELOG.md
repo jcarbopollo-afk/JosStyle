@@ -1,5 +1,58 @@
 # CHANGELOG.md
 
+## v3.96.0 — FIT F14/45: objetivos y metas de progreso
+
+El criterio, literal: *"Fitness → Progreso → Mis objetivos → + Crear objetivo → Dominadas → 15
+repeticiones"*, y registrar entrenamientos reales hasta ver **15 / 15 · ✓ Objetivo conseguido**, sin
+inventar datos ni tocar el historial.
+
+### Cómo es
+
+Progreso gana la pestaña **Objetivos**. Vacía dice *Sin objetivos todavía* con **+ Crear objetivo**, sin
+ningún objetivo de ejemplo. Crear uno: se elige el ejercicio **con el catálogo de siempre**, se elige qué
+medir entre lo que ese ejercicio admite, se escribe el número y, si se quiere, una fecha y una nota.
+Cada tarjeta dice *11 / 15 reps · 73 %* con su barra, su estado (● En progreso, ✓ Objetivo conseguido,
+— Cancelado), la tendencia de la F11 y *Fecha superada* si toca. El detalle añade el mejor resultado, la
+última sesión, las fechas, la nota y **Ver progreso del ejercicio**, que abre la pantalla de la F12. Se
+puede **editar** (mismo id), **cancelar** y **eliminar**, que va a la papelera.
+
+### 🚨 Sin datos no es 0 %
+
+*"0 % ≠ sin datos"* (apartado 23). Un objetivo sin ninguna sesión válida dice **Sin datos todavía**, su
+porcentaje es `null` y la tarjeta **no dibuja ni una barra vacía**. Hay una comprobación que rompe eso a
+propósito y exige que la suite se ponga roja.
+
+### Qué se mide
+
+Una métrica por objetivo (apartado 7): **peso** (el mayor peso de una serie hecha), **repeticiones** (las
+de la mejor serie, nunca la suma de la sesión) y **tiempo** (el mayor tiempo). La unidad la decide el
+ejercicio: un isométrico solo admite segundos, y «L-sit en repeticiones» no se puede crear. Qué va
+primero lo decide el material: con barra de discos, mancuernas, máquina o polea, el peso; si no, las
+repeticiones. 🚨 Y todo sale de la F11 (`aparicionesDeEjercicio`, `mejorHistorico`): una sola fuente
+de verdad del mejor resultado (apartado 10). Las variantes no se mezclan: 20 dominadas supinas no cuentan
+para un objetivo de pronas.
+
+### 🚨 Conseguido se deduce, no se guarda
+
+Lo único guardado es el objetivo (`fitness.objetivos`, con su normalizador en la puerta de carga). Si
+está conseguido se calcula cada vez de las sesiones: un «conseguido» guardado se quedaría viejo el día que
+él borrara la sesión que lo consiguió. Lo único que se escribe a mano es cancelar. Y queda preparado
+`objetivosQueConsigueLaSesion`, que dice qué sesión lo consiguió, para que el entrenamiento en vivo lo
+use en una fase futura — sin celebraciones ahora (apartado 28).
+
+### Fechas sin predicciones
+
+La fecha objetivo se enseña tal cual. Si pasa sin conseguirlo: *Fecha superada*, y el objetivo **sigue
+activo** — nunca «fallido» (apartado 18). Ni un *"lo conseguirás en 42 días"* (apartado 17).
+
+### Pruebas
+
+`scripts/test-objetivos-progreso.mjs` (69): el criterio de punta a punta, el modelo y la persistencia,
+unidades y validación, peso, isométricos y variantes, fechas, edición, cancelación y eliminación por la
+papelera, lista y filtros, y la pantalla. Y en **Chromium**: el estado vacío, crear desde el formulario
+con el catálogo, el rechazo del 0, *11 / 15 reps · 73 %*, guardado, ir al progreso del ejercicio, y tras
+un entrenamiento de 15 y una recarga, *15 / 15 reps · ✓ Objetivo conseguido*.
+
 ## v3.95.0 — FIT F13/45: progreso por grupos musculares
 
 El criterio, literal: *"Fitness → Progreso → Progreso muscular → Espalda → Dorsales → Dominadas → Ver

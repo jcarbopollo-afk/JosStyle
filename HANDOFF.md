@@ -2,6 +2,16 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.96.0 — FIT F14/45: objetivos y metas de progreso):** Progreso tiene
+> **Objetivos**: crear uno eligiendo el ejercicio con el catálogo, la métrica que ese ejercicio admite
+> (peso, repeticiones o tiempo), el número y, si se quiere, fecha y nota; cada tarjeta dice *11 / 15 reps
+> · 73 %* con su estado y la tendencia; el detalle lleva al progreso del ejercicio; se edita (mismo id),
+> se cancela y se elimina (papelera). 🚨 **Sin datos no es 0 %**: «Sin datos todavía», `porcentaje:
+> null` y sin barra. 🚨 **Conseguido se deduce** de las sesiones con la F11 y no se guarda; lo guardado
+> (`fitness.objetivos`) es solo el objetivo. Fecha pasada → «Fecha superada» y sigue activo, sin
+> predicciones. `objetivosQueConsigueLaSesion` queda preparado para el entrenamiento en vivo. Pruebas en
+> `test-objetivos-progreso.mjs` y en Chromium con el criterio literal hasta *✓ Objetivo conseguido*.
+
 > **🏋️ ACTUALIZACIÓN (v3.95.0 — FIT F13/45: progreso por grupos musculares):** Progreso tiene la
 > pestaña **Músculos**: los siete grupos con su estado, *"2 de 3 ejercicios mejoran"* y una barra que
 > sale de contar; al abrir uno, su rendimiento general, sus subgrupos y sus ejercicios con su implicación

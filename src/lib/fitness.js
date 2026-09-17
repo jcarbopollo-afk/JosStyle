@@ -629,6 +629,48 @@ function normalizarDescansoGuardado(d) {
   };
 }
 
+/* ── ProgressGoal (FIT F14) ────────────────────────────────────────────────
+   Un objetivo de rendimiento sobre UN ejercicio: *"10 dominadas"*, *"60 s de
+   L-sit"*, *"100 kg en sentadilla"*. ⚠️ Va aquí, en el modelo, por la regla 5:
+   la puerta de carga normaliza `fitness` entero, y un campo que no conozca se lo
+   lleva el siguiente guardado. Lo que NO va aquí es si está conseguido: eso se
+   calcula de las sesiones (`objetivosProgreso.js`), porque un «conseguido»
+   guardado se quedaría viejo al borrar la sesión que lo consiguió. */
+export const TIPOS_OBJETIVO = [
+  { id: 'peso', nombre: 'Peso', unidad: 'kg', decimales: true, maximo: 1000 },
+  { id: 'reps', nombre: 'Repeticiones', unidad: 'reps', decimales: false, maximo: 1000 },
+  { id: 'duracion', nombre: 'Tiempo', unidad: 's', decimales: false, maximo: 7200 },
+];
+export const tipoObjetivo = (id) => TIPOS_OBJETIVO.find((t) => t.id === id) || null;
+/* ⚠️ `completado` existe porque el modelo lo pide, pero no se escribe solo: lo
+   único que él escribe a mano es `cancelado`. */
+export const ESTADOS_OBJETIVO = ['activo', 'completado', 'cancelado'];
+
+export function crearObjetivo({
+  id = null, exerciseId = '', tipo = 'reps', valor = null, creadoEn = null, actualizadoEn = null,
+  fechaObjetivo = '', estado = 'activo', nota = '',
+} = {}) {
+  const t = tipoObjetivo(texto(tipo)) ? texto(tipo) : 'reps';
+  const n = typeof valor === 'string' ? numeroONull(valor.replace(',', '.')) : numeroONull(valor);
+  return {
+    id: texto(id) || uid(),
+    exerciseId: texto(exerciseId),
+    tipo: t,
+    valor: n,
+    unidad: tipoObjetivo(t).unidad,
+    creadoEn: numeroONull(creadoEn) ?? Date.now(),
+    actualizadoEn: numeroONull(actualizadoEn),
+    fechaObjetivo: /^\d{4}-\d{2}-\d{2}$/.test(texto(fechaObjetivo)) ? texto(fechaObjetivo) : '',
+    estado: ESTADOS_OBJETIVO.includes(estado) ? estado : 'activo',
+    nota: texto(nota),
+  };
+}
+
+export function normalizarObjetivo(g) {
+  if (!g || !texto(g.id) || !texto(g.exerciseId)) return null;
+  return crearObjetivo(g);
+}
+
 export function normalizarWorkoutSession(g) {
   if (!g || !g.id) return null;
   return { ...crearWorkoutSession(g), id: g.id };
@@ -729,6 +771,9 @@ export const DEFAULT_FITNESS = {
      —el apartado 15 de la F1 pide el estado inicial limpio—. */
   planActivo: null,
   favoritosPlanes: [],
+  /* FIT F14 — los objetivos de rendimiento. Nacen vacíos: ni uno de ejemplo
+     (apartado 22). */
+  objetivos: [],
 };
 
 /* La forma de lo elegido. ⚠️ Se guarda **el id**, no una copia del plan: con una
@@ -764,6 +809,7 @@ export function normalizarFitness(guardado) {
        los ids colgados es `normalizarFitnessConPlanes` (FIT F5), que sí la
        conoce. */
     favoritosPlanes: [...new Set(lista(g.favoritosPlanes).map(texto).filter(Boolean))],
+    objetivos: lista(g.objetivos).map(normalizarObjetivo).filter(Boolean),
   };
 }
 

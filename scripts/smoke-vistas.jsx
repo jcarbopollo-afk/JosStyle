@@ -166,11 +166,13 @@ import FitnessView, { AreaRangos, AreaProgreso } from '../src/views/FitnessView.
 import ProgresoView, {
   TarjetaProgreso, ResumenProgreso, DetalleProgreso, GraficaProgreso, EtiquetaEstado as EtiquetaEstadoF12,
   TarjetaMusculo, DetalleMusculo, MusculosProgreso, EstadoMuscular,
+  TarjetaObjetivo, FormularioObjetivo, DetalleObjetivo, ObjetivosProgreso,
 } from '../src/views/ProgresoView.jsx';
 import {
   tarjetasDeProgreso as tarjetasF12, resumenDeProgreso as resumenF12, detalleDeProgreso as detalleF12,
 } from '../src/lib/progresoEjercicios.js';
 import { resumenMuscular as resumenMuscularF13, ejerciciosDeMusculo as ejerciciosMusculoF13 } from '../src/lib/progresoMuscular.js';
+import { anadirObjetivo as anadirObjetivoF14, listaDeObjetivos as listaObjetivosF14, progresoDeObjetivo as progresoObjetivoF14 } from '../src/lib/objetivosProgreso.js';
 /* FIT F2 — el catálogo de ejercicios y su detalle. ⚠️ El detalle va APARTE
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
    Relación (NAV F3), y sin estos casos no lo probaría nadie. */
@@ -291,6 +293,13 @@ const fitnessConProgresoF12 = () => [60, 62.5, 65].reduce((f, peso, i) => {
   s = marcarF7(editarF7(s, e.id, e.series[0].id, { peso, reps: 8 }), e.id, e.series[0].id, true);
   return guardarSesionF10(f, guardarF8(pasarF8(s), { confirmado: true }).sesion);
 }, {});
+
+/* FIT F14 — dos objetivos sobre el press sembrado: uno conseguido y otro no. */
+const fitnessConObjetivosF14 = () => {
+  let f = fitnessConProgresoF12();
+  f = anadirObjetivoF14(f, { exerciseId: 'press-banca-barra', tipo: 'peso', valor: 60 }).fitness;
+  return anadirObjetivoF14(f, { exerciseId: 'press-banca-barra', tipo: 'peso', valor: 100, fechaObjetivo: '2026-01-01', nota: 'Con calma' }).fitness;
+};
 
 const fitnessConHistorialF10 = () => guardarSesionF10({}, guardarF8(pasarF8(sesionUsadaF7()), { confirmado: true }).sesion);
 
@@ -3024,6 +3033,15 @@ const CASOS = [
   }],
   /* ⚠️ Y un músculo sin ejercicios. */
   ['DetalleMusculo', DetalleMusculo, () => ({ musculo: resumenMuscularF13({}).grupos[6], ejercicios: [], accent, volverA: 'Progreso', onVolver: noop })],
+  /* ══ FIT F14 — objetivos ═════════════════════════════════════════════ */
+  ['ObjetivosProgreso', ObjetivosProgreso, () => ({ resultado: listaObjetivosF14(fitnessConObjetivosF14()), filtro: 'todos', onFiltro: noop, grupo: 'todos', onGrupo: noop, accent, onAbrir: noop, onCrear: noop })],
+  ['ObjetivosProgreso', ObjetivosProgreso, () => ({ resultado: listaObjetivosF14({}), filtro: 'todos', onFiltro: noop, grupo: 'todos', onGrupo: noop, accent, onAbrir: noop, onCrear: noop })],
+  ['TarjetaObjetivo', TarjetaObjetivo, () => ({ objetivo: listaObjetivosF14(fitnessConObjetivosF14()).objetivos[0], accent, onAbrir: noop })],
+  /* ⚠️ Y uno sin datos: sin barra y sin «0 %». */
+  ['TarjetaObjetivo', TarjetaObjetivo, () => ({ objetivo: progresoObjetivoF14({}, { id: 'x', exerciseId: 'l-sit', tipo: 'duracion', valor: 30, estado: 'activo', creadoEn: 0, fechaObjetivo: '2026-01-01', nota: '' }), accent, onAbrir: noop })],
+  ['DetalleObjetivo', DetalleObjetivo, () => ({ objetivo: listaObjetivosF14(fitnessConObjetivosF14()).objetivos[0], accent, onVolver: noop, onVerProgreso: noop, onEditar: noop, onCancelarObjetivo: noop, onEliminar: noop })],
+  ['FormularioObjetivo', FormularioObjetivo, () => ({ ejercicio: null, accent, onElegirEjercicio: noop, onGuardar: noop, onCancelar: noop })],
+  ['FormularioObjetivo', FormularioObjetivo, () => ({ ejercicio: CATALOGO_EJERCICIOS.find((e) => e.id === 'press-banca-barra'), accent, onElegirEjercicio: noop, onGuardar: noop, onCancelar: noop })],
   ['EstadoMuscular', EstadoMuscular, () => ({ estado: 'mejora', nombre: 'Mejorando', simbolo: '↗', accent, pocaInformacion: true })],
   ['EtiquetaEstado (Progreso)', EtiquetaEstadoF12, () => ({ estado: 'mejora', nombre: 'Mejorando', simbolo: '↗', accent })],
   /* FIT F2 — el catálogo entero, su detalle y una tarjeta suelta. El caso que

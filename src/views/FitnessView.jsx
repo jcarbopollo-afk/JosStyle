@@ -326,7 +326,7 @@ export function AreaRangos({ rangos = [], accent }) {
    Fotos (su apartado 2). ⚠️ **Las fotos no se pierden**: siguen contándose de
    Salud física y llevando allí, ahora en su propia pestaña, porque la F12 pide
    dejar la estructura lista para el sistema de fotos sin construirlo. */
-export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null }) {
+export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null }) {
   const resumen = resumenProgreso(fotos);
   return (
     <ProgresoView
@@ -338,6 +338,9 @@ export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEnt
          ninguna parte es peor que no ofrecerlo (regla 8). */
       onIrAFotos={onIr ? () => onIr(ESTADOS_VACIOS.progreso.accion.lleva) : null}
       resumenFotos={resumen}
+      /* FIT F14 — los objetivos se guardan por la puerta de siempre. */
+      onGuardarFitness={onGuardarFitness}
+      onEliminarObjetivo={onEliminarObjetivo}
     />
   );
 }
@@ -627,7 +630,7 @@ export default function FitnessView({
   fitness, calistenia, onUpdateSkill, futbol, onAddPartido, onDeletePartido,
   videos, onAddVideo, onDeleteVideo, onSetVideoFeedback,
   fotos = [], rachas, accent, foco, onFocoConsumido, onIr, onGuardarFitness = null,
-  onEliminarPlantilla = null, onEliminarSesion = null,
+  onEliminarPlantilla = null, onEliminarSesion = null, onEliminarObjetivo = null,
 }) {
   const [area, setArea] = useState(AREA_INICIAL);
 
@@ -762,6 +765,8 @@ export default function FitnessView({
           onIr={onIr}
           /* FIT F12, apartado 5 — «Entrenar ahora» lleva a Entrenamiento, donde se empieza. */
           onEntrenar={() => setArea('entrenamiento')}
+          onGuardarFitness={onGuardarFitness}
+          onEliminarObjetivo={onEliminarObjetivo}
         />
       )}
       {area === 'entrenamiento' && (

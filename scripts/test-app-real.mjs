@@ -7477,6 +7477,71 @@ const filtradosEsp_fit13 = await page.evaluate(() => [...document.querySelectorA
 ok(filtradosEsp_fit13.length === 1 && /Dominada/.test(filtradosEsp_fit13[0]),
   `🚨 FIT F13 — deja solo las dominadas: el press y el L-sit no trabajan la espalda (${filtradosEsp_fit13.length})`);
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F14 — Objetivos de rendimiento (Entrega 4 · 14/45)
+   ══════════════════════════════════════════════════════════════════════════
+   El criterio del apartado 31, literal: *"Fitness → Progreso → Mis objetivos →
+   + Crear objetivo → Dominadas → 15 repeticiones"*, y registrar entrenamientos
+   hasta ver *15 / 15 · ✓ Objetivo conseguido*. Las dominadas sembradas en la F13
+   llegan a 11; después se siembra una sesión con 15. */
+console.log('\n── FIT F14 · Objetivos ──');
+
+ok(await pulsar('Objetivos'), 'FIT F14 — Progreso → Mis objetivos');
+const vacioObj_fit14 = await esperarTexto(/Sin objetivos todav[ií]a/i);
+ok(/Sin objetivos todav[ií]a/i.test(vacioObj_fit14) && /\+ Crear objetivo/.test(vacioObj_fit14),
+  '🚨 FIT F14 — el estado vacío, sin un solo objetivo de ejemplo (apartado 22)');
+ok(await pulsar('+ Crear objetivo'), 'FIT F14 — + Crear objetivo');
+ok(await pulsar('Elegir ejercicio'), '…se elige el ejercicio con el catálogo de siempre (apartado 4)');
+ok(await page.evaluate(() => {
+  const c = document.querySelector('input[aria-label="Buscar un ejercicio"]');
+  if (!c) return false;
+  Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(c, 'dominada prona');
+  c.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}), '…se busca «dominada prona»');
+ok(await pulsar('Añadir Dominadas pronas · Agarre prono'), '…→ Dominadas');
+const form_fit14 = await esperarTexto(/Qué quieres medir/i);
+ok(/Dominadas pronas/.test(form_fit14) && /Repeticiones/.test(form_fit14), '🚨 FIT F14 — con la métrica que admite: repeticiones (apartado 3)');
+const escribirObjetivo_fit14 = (valor) => page.evaluate((v) => {
+  const c = [...document.querySelectorAll('input[aria-label]')].find((i) => /^Objetivo en /.test(i.getAttribute('aria-label')));
+  if (!c) return false;
+  Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(c, v);
+  c.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}, valor);
+ok(await escribirObjetivo_fit14('0') && await pulsar('Crear objetivo'), 'FIT F14 — se intenta crear con 0');
+ok(/mayor que cero/i.test(await esperarTexto(/mayor que cero/i)), '🚨 …y NO deja: «tiene que ser mayor que cero» (apartado 5)');
+ok(await escribirObjetivo_fit14('15') && await pulsar('Crear objetivo'), 'FIT F14 — → 15 repeticiones → Crear objetivo');
+const detalleObj_fit14 = await esperarTexto(/11 \/ 15 reps/);
+ok(/11 \/ 15 reps/.test(detalleObj_fit14) && /73 %/.test(detalleObj_fit14),
+  '🚨 FIT F14 — «11 / 15 reps · 73 %»: la mejor serie real de las sesiones (apartados 6 y 9)');
+ok(/En progreso/.test(detalleObj_fit14), '…en progreso');
+await page.waitForTimeout(500);
+const objGuardado_fit14 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.objetivos || []);
+ok(objGuardado_fit14.length === 1 && objGuardado_fit14[0].valor === 15 && objGuardado_fit14[0].exerciseId === 'dominada-prona' && objGuardado_fit14[0].unidad === 'reps',
+  '🚨 FIT F14 — el objetivo está GUARDADO: dominada-prona, 15 reps (apartado 24)');
+ok(await pulsar('Ver progreso del ejercicio'), 'FIT F14 — «Ver progreso del ejercicio» (apartado 16)');
+ok(/Última vez/i.test(await esperarTexto(/Última vez/i)), '…abre la pantalla de la F12');
+ok(await pulsar('Volver a Progreso'), '…y se vuelve');
+ok(/11 \/ 15 reps/.test(await esperarTexto(/11 \/ 15 reps/)), '…al objetivo');
+
+/* Y ahora un entrenamiento real con una serie de 15. */
+almacen.fitness = {
+  ...almacen.fitness,
+  sesiones: [...almacen.fitness.sesiones, dominada_fit13('f14-a', 0, 15)],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso') && await pulsar('Objetivos'),
+  'FIT F14 — tras entrenar 15 dominadas se vuelve a Mis objetivos (y a recargar: persistencia)');
+const conseguido_fit14 = await esperarTexto(/15 \/ 15 reps/);
+ok(/15 \/ 15 reps/.test(conseguido_fit14) && /✓ Objetivo conseguido/.test(conseguido_fit14),
+  '🚨 FIT F14 — «15 / 15 reps · ✓ Objetivo conseguido» (apartado 31, literal)');
+ok(!/confeti|\bXP\b|medalla|recompensa/i.test(conseguido_fit14), '…sin recompensas ni gamificación (apartado 29)');
+const objTrasConseguir_fit14 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.objetivos || []);
+ok(objTrasConseguir_fit14.length === 1 && objTrasConseguir_fit14[0].estado === 'activo',
+  '⚠️ …y «conseguido» se DEDUCE: lo guardado no se ha reescrito solo');
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

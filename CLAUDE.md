@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.95.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.96.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -325,8 +325,12 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, con la **FIT F1 (v3.83.0)**, la **FIT F2
 (v3.84.0)**, la **FIT F3 (v3.85.0)**, la **FIT F4 (v3.86.0)**, la **FIT F5 (v3.87.0)**, la **FIT F6
 (v3.88.0)**, la **FIT F7 (v3.89.0)**, la **FIT F8 (v3.90.0)**, la **FIT F9 (v3.91.0)**, la **FIT F10
-(v3.92.0)** , la **FIT F11 (v3.93.0)**, la **FIT F12 (v3.94.0)** y la **FIT F13 (v3.95.0)** hechas. Lo que dejaron, y que vale
-para las 32 que quedan:
+(v3.92.0)** , la **FIT F11 (v3.93.0)**, la **FIT F12 (v3.94.0)**, la **FIT F13 (v3.95.0)** y la **FIT F14 (v3.96.0)** hechas. Lo que dejaron, y
+que vale para las 31 que quedan:
+
+- 🚨 **`fitness.objetivos` guarda SOLO el objetivo** (FIT F14): conseguido, porcentaje y valor actual
+  se deducen de las sesiones con la F11. **Sin datos es `porcentaje: null`, nunca 0.** Una fase que
+  celebre objetivos en el entrenamiento en vivo usa `objetivosQueConsigueLaSesion`.
 
 - 🚨 **EL PROGRESO MUSCULAR REPARTE Y VOTA, NO COMPARA** (FIT F13, `progresoMuscular.js`): peso =
   porcentaje del catálogo; votan solo los comparables de la F11; sin datos nunca es descenso; uno solo

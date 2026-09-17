@@ -22,9 +22,14 @@ import { COLORS } from '../tokens';
 import { hexToRgba, todayISO } from '../lib/helpers';
 import { Card, GhostBtn, PrimaryButton, EmptyHint, SectionTitle } from '../components/ui';
 import { iconoDeGrupo } from '../components/iconosFitness';
-import { DetalleEjercicio } from './EjerciciosView';
+import EjerciciosView, { DetalleEjercicio } from './EjerciciosView';
 import { DetalleSesionHistorial } from './HistorialView';
-import { ejercicioPorId } from '../lib/ejercicios';
+import { ejercicioPorId, nombreCompleto } from '../lib/ejercicios';
+/* 🔓 FIT F14 — los objetivos de rendimiento. */
+import {
+  listaDeObjetivos, progresoDeObjetivo, metricasDeEjercicio, tipoObjetivo, anadirObjetivo, editarObjetivo,
+  cancelarObjetivo, FILTROS_OBJETIVOS, OBJETIVOS_VACIO, AVISO_CANCELAR_OBJETIVO, AVISO_ELIMINAR_OBJETIVO,
+} from '../lib/objetivosProgreso';
 import { detalleDeSesion, sesionDelHistorial } from '../lib/historial';
 import {
   tarjetasDeProgreso, consultarProgreso, resumenDeProgreso, detalleDeProgreso, geometriaGrafica,
@@ -41,6 +46,8 @@ export const SECCIONES_PROGRESO = [
   /* FIT F13, apartado 7 — el progreso muscular, entre el resumen y los ejercicios. */
   { id: 'musculos', nombre: 'Músculos' },
   { id: 'ejercicios', nombre: 'Ejercicios' },
+  /* FIT F14, apartado 15 — «Mis objetivos». */
+  { id: 'objetivos', nombre: 'Objetivos' },
   { id: 'fotos', nombre: 'Fotos' },
 ];
 
@@ -553,10 +560,306 @@ export function MusculosProgreso({ resumen, periodo, onPeriodo, accent, onAbrir,
   );
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🔓 FIT F14 — MIS OBJETIVOS
+   ═══════════════════════════════════════════════════════════════════════════
+   *"Fitness → Progreso → Mis objetivos → + Crear objetivo → Dominadas → 15
+   repeticiones"*. ⚠️ La pantalla no calcula nada: valor actual, porcentaje, si
+   está conseguido y la tendencia salen de `objetivosProgreso.js`, que usa la
+   F11. Y **sin datos no es 0 %** (apartado 23). */
+
+/* ── Una tarjeta de objetivo (apartados 11, 15 y 23) ───────────────────── */
+export function TarjetaObjetivo({ objetivo, accent, onAbrir }) {
+  const o = objetivo;
+  const Icono = iconoDeGrupo(o.grupoId);
+  const conseguidoYa = o.estado === 'completado';
+  return (
+    <button
+      onClick={() => onAbrir(o.id)}
+      aria-label={`Objetivo ${o.nombre}: ${o.objetivoTexto}. ${o.progresoTexto}. ${o.estadoNombre}`}
+      className="hub-card w-full text-left rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99]"
+      style={{ background: COLORS.surface, border: `1px solid ${conseguidoYa ? accent : COLORS.border}`, opacity: o.estado === 'cancelado' ? 0.65 : 1 }}
+    >
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: hexToRgba(accent, 0.14), color: accent }}>
+        <Icono size={19} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{o.nombre}</p>
+        <p className="text-sm font-extrabold tabular-nums" style={{ color: o.sinDatos ? COLORS.textMuted : COLORS.text }}>
+          {o.progresoTexto}
+          {o.porcentaje !== null && <span className="text-xs font-semibold ml-1.5" style={{ color: COLORS.textMuted }}>{o.porcentaje} %</span>}
+        </p>
+        {/* 🚨 Apartado 23 — sin datos NO se dibuja una barra vacía: 0 % no es «sin datos». */}
+        {o.porcentaje !== null && (
+          <div className="h-1.5 rounded-full overflow-hidden mt-1.5" style={{ background: hexToRgba(COLORS.border, 0.6) }} aria-hidden="true">
+            <div className="h-full rounded-full" style={{ width: `${o.porcentaje}%`, background: accent }} />
+          </div>
+        )}
+        <p className="text-[11px] mt-1.5 flex flex-wrap gap-x-2" style={{ color: COLORS.textMuted }}>
+          <span style={{ color: conseguidoYa ? accent : COLORS.textMuted, fontWeight: 700 }}>{o.simbolo} {o.estadoNombre}</span>
+          {!o.sinDatos && o.estado === 'activo' && <span>{o.tendenciaSimbolo} {o.tendenciaNombre}</span>}
+          {o.fechaSuperada && <span>Fecha superada</span>}
+        </p>
+      </div>
+      <ChevronRight size={18} style={{ color: COLORS.textMuted }} aria-hidden="true" />
+    </button>
+  );
+}
+
+/* ── El formulario de crear y editar (apartados 4, 5 y 13) ─────────────── */
+export function FormularioObjetivo({ inicial = null, ejercicio, accent, onElegirEjercicio, onGuardar, onCancelar }) {
+  const metricas = ejercicio ? metricasDeEjercicio(ejercicio) : [];
+  const [tipo, setTipo] = useState(inicial ? inicial.tipo : (metricas[0] || 'reps'));
+  const [valor, setValor] = useState(inicial && inicial.valor !== null ? String(inicial.valor).replace('.', ',') : '');
+  const [fecha, setFecha] = useState(inicial ? inicial.fechaObjetivo : '');
+  const [nota, setNota] = useState(inicial ? inicial.nota : '');
+  const [motivo, setMotivo] = useState('');
+  const t = tipoObjetivo(metricas.includes(tipo) ? tipo : metricas[0]) || null;
+  const editando = !!inicial;
+  return (
+    <div className="space-y-4">
+      <button
+        onClick={onCancelar}
+        aria-label="Volver a Mis objetivos"
+        className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
+        style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
+      >
+        <ChevronLeft size={16} /> Mis objetivos
+      </button>
+      <h2 className="text-2xl font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+        {editando ? 'Editar objetivo' : 'Nuevo objetivo'}
+      </h2>
+
+      <Card>
+        <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>1 · Ejercicio</p>
+        {ejercicio ? (
+          <p className="text-base font-bold mt-1" style={{ color: COLORS.text }}>{nombreCompleto(ejercicio)}</p>
+        ) : (
+          <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>Todavía no has elegido ninguno.</p>
+        )}
+        {!editando && (
+          <div className="mt-2.5">
+            <GhostBtn icon={Dumbbell} onClick={onElegirEjercicio}>{ejercicio ? 'Cambiar ejercicio' : 'Elegir ejercicio'}</GhostBtn>
+          </div>
+        )}
+      </Card>
+
+      {ejercicio && (
+        <Card>
+          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>2 · Qué quieres medir</p>
+          {editando ? (
+            <p className="text-sm font-bold mt-1" style={{ color: COLORS.text }}>{t ? t.nombre : ''}</p>
+          ) : (
+            <div className="mt-2">
+              <Chips
+                opciones={metricas.map((m) => ({ id: m, nombre: tipoObjetivo(m).nombre }))}
+                valor={t ? t.id : null}
+                onCambiar={setTipo}
+                accent={accent}
+                etiqueta="Métrica del objetivo"
+              />
+            </div>
+          )}
+
+          <p className="text-[10px] font-bold uppercase tracking-wider mt-4" style={{ color: COLORS.textMuted }}>3 · Objetivo</p>
+          <div className="flex items-center gap-2 mt-1.5">
+            <input
+              type="text"
+              inputMode={t && t.decimales ? 'decimal' : 'numeric'}
+              value={valor}
+              onChange={(ev) => { setValor(ev.target.value); setMotivo(''); }}
+              placeholder={t && t.id === 'peso' ? '100' : t && t.id === 'duracion' ? '60' : '15'}
+              aria-label={`Objetivo en ${t ? t.unidad : ''}`}
+              className="h-11 w-28 rounded-xl px-3 text-base font-bold outline-none toque-44"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
+            />
+            <span className="text-sm font-semibold" style={{ color: COLORS.textMuted }}>{t ? (t.id === 'duracion' ? 'segundos' : t.unidad === 'reps' ? 'repeticiones' : 'kg') : ''}</span>
+          </div>
+
+          <p className="text-[10px] font-bold uppercase tracking-wider mt-4" style={{ color: COLORS.textMuted }}>Fecha objetivo · opcional</p>
+          <input
+            type="date"
+            value={fecha}
+            onChange={(ev) => setFecha(ev.target.value)}
+            aria-label="Fecha objetivo, opcional"
+            className="h-11 rounded-xl px-3 text-base outline-none mt-1.5"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
+          />
+
+          <p className="text-[10px] font-bold uppercase tracking-wider mt-4" style={{ color: COLORS.textMuted }}>Nota · opcional</p>
+          <textarea
+            value={nota}
+            onChange={(ev) => setNota(ev.target.value)}
+            rows={2}
+            aria-label="Nota del objetivo, opcional"
+            className="w-full rounded-xl px-3 py-2 text-base outline-none mt-1.5"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
+          />
+
+          {motivo && <p className="text-xs mt-2" role="alert" style={{ color: COLORS.negative }}>{motivo}</p>}
+          <div className="mt-3">
+            <PrimaryButton
+              accent={accent}
+              onClick={() => {
+                const r = onGuardar({ exerciseId: ejercicio.id, tipo: t ? t.id : tipo, valor, fechaObjetivo: fecha, nota });
+                if (r && !r.ok) setMotivo(r.motivo);
+              }}
+            >
+              {editando ? 'Guardar cambios' : 'Crear objetivo'}
+            </PrimaryButton>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+/* ── El detalle de un objetivo (apartados 12, 14, 16, 17 y 18) ─────────── */
+export function DetalleObjetivo({ objetivo, accent, onVolver, onVerProgreso, onEditar, onCancelarObjetivo, onEliminar }) {
+  const [aviso, setAviso] = useState(null); // 'cancelar' | 'eliminar'
+  const o = objetivo;
+  const fila = (etiqueta, valor) => (valor ? (
+    <div className="flex items-start justify-between gap-3 py-1.5" style={{ borderTop: `1px solid ${hexToRgba(COLORS.border, 0.5)}` }}>
+      <span className="text-xs shrink-0" style={{ color: COLORS.textMuted }}>{etiqueta}</span>
+      <span className="text-xs font-semibold text-right" style={{ color: COLORS.text }}>{valor}</span>
+    </div>
+  ) : null);
+  const textosAviso = aviso === 'cancelar' ? AVISO_CANCELAR_OBJETIVO : AVISO_ELIMINAR_OBJETIVO;
+  return (
+    <div className="space-y-4">
+      <button
+        onClick={onVolver}
+        aria-label="Volver a Mis objetivos"
+        className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
+        style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
+      >
+        <ChevronLeft size={16} /> Mis objetivos
+      </button>
+      <div>
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>Objetivo</p>
+        <h2 className="text-2xl font-extrabold leading-tight" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{o.nombre}</h2>
+        <p className="text-base font-bold mt-1" style={{ color: COLORS.text }}>{o.objetivoTexto}</p>
+      </div>
+
+      <Card style={o.estado === 'completado' ? { border: `1px solid ${accent}` } : undefined}>
+        {/* 🚨 Apartado 12 — «Objetivo conseguido», sin confeti ni recompensa. */}
+        <p className="text-sm font-bold" style={{ color: o.estado === 'completado' ? accent : COLORS.text }}>{o.simbolo} {o.estadoNombre}</p>
+        <p className="text-3xl font-extrabold tabular-nums mt-1" style={{ color: o.sinDatos ? COLORS.textMuted : COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+          {o.progresoTexto}
+        </p>
+        {o.porcentaje !== null && (
+          <>
+            <div className="h-2 rounded-full overflow-hidden mt-2" style={{ background: hexToRgba(COLORS.border, 0.6) }} role="img" aria-label={`${o.porcentaje} % del objetivo`}>
+              <div className="h-full rounded-full" style={{ width: `${o.porcentaje}%`, background: accent }} />
+            </div>
+            {/* Apartado 6 — el porcentaje es actual / objetivo, y se dice. */}
+            <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>{o.porcentaje} % del objetivo: tu mejor resultado entre lo que te propusiste.</p>
+          </>
+        )}
+        {o.fechaSuperada && <p className="text-xs mt-2 font-semibold" style={{ color: COLORS.textMuted }}>Fecha superada · puedes seguir intentándolo</p>}
+      </Card>
+
+      <Card>
+        {fila('Métrica', o.metrica)}
+        {fila('Mejor resultado', o.mejor)}
+        {fila('Tendencia', o.sinDatos ? '' : `${o.tendenciaSimbolo} ${o.tendenciaNombre}`)}
+        {fila('Última sesión', o.ultimaSesion)}
+        {fila('Conseguido el', o.conseguidoEn)}
+        {fila('Creado el', o.creadoEn)}
+        {fila('Fecha objetivo', o.fechaObjetivo)}
+        {fila('Nota', o.nota)}
+      </Card>
+
+      {o.existe && onVerProgreso && (
+        <PrimaryButton accent={accent} icon={ChevronRight} onClick={onVerProgreso}>Ver progreso del ejercicio</PrimaryButton>
+      )}
+
+      {aviso ? (
+        <AvisoObjetivo
+          textos={textosAviso}
+          accent={accent}
+          onNo={() => setAviso(null)}
+          onSi={() => { const a = aviso; setAviso(null); if (a === 'cancelar') onCancelarObjetivo(); else onEliminar(); }}
+        />
+      ) : (
+        <div className="flex gap-2 flex-wrap">
+          {o.estado !== 'cancelado' && onEditar && <GhostBtn onClick={onEditar}>Editar</GhostBtn>}
+          {o.estado !== 'cancelado' && onCancelarObjetivo && <GhostBtn onClick={() => setAviso('cancelar')}>Cancelar objetivo</GhostBtn>}
+          {onEliminar && <GhostBtn onClick={() => setAviso('eliminar')}>Eliminar</GhostBtn>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AvisoObjetivo({ textos, accent, onNo, onSi }) {
+  return (
+    <Card style={{ border: `1px solid ${accent}` }}>
+      <p className="text-sm font-bold" style={{ color: COLORS.text }}>{textos.titulo}</p>
+      <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{textos.texto}</p>
+      <div className="flex gap-2 mt-3 flex-wrap">
+        <GhostBtn onClick={onNo}>{textos.cancelar}</GhostBtn>
+        <button
+          onClick={onSi}
+          aria-label={textos.confirmar}
+          className="h-10 px-3.5 rounded-xl text-sm font-bold toque-44 active:scale-95"
+          style={{ background: hexToRgba(COLORS.negative, 0.14), color: COLORS.negative }}
+        >
+          {textos.confirmar}
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+/* ── La lista (apartados 15, 21 y 22) ──────────────────────────────────── */
+export function ObjetivosProgreso({ resultado, filtro, onFiltro, grupo, onGrupo, accent, onAbrir, onCrear }) {
+  const r = resultado;
+  if (r.total === 0) {
+    return (
+      <Card>
+        <div className="py-4 text-center">
+          <p className="text-base font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{OBJETIVOS_VACIO.titulo}</p>
+          <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>{OBJETIVOS_VACIO.texto}</p>
+          {onCrear && (
+            <div className="mt-4 max-w-xs mx-auto">
+              <PrimaryButton accent={accent} onClick={onCrear}>{OBJETIVOS_VACIO.cta}</PrimaryButton>
+            </div>
+          )}
+        </div>
+      </Card>
+    );
+  }
+  /* Apartado 21 — «Cancelados» solo si los hay, y el filtro por grupo solo con
+     bastantes objetivos para que sirva de algo. */
+  const opciones = FILTROS_OBJETIVOS.filter((f) => f.id !== 'cancelado' || r.cancelados > 0);
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <SectionTitle sub={`${r.activos} activos · ${r.completados} conseguidos`}>Mis objetivos</SectionTitle>
+      </div>
+      {onCrear && <GhostBtn onClick={onCrear}>+ Añadir objetivo</GhostBtn>}
+      <Chips opciones={opciones} valor={filtro} onCambiar={onFiltro} accent={accent} etiqueta="Filtrar objetivos" />
+      {r.total >= 4 && <Chips opciones={FILTROS_GRUPO} valor={grupo} onCambiar={onGrupo} accent={accent} etiqueta="Filtrar objetivos por grupo muscular" />}
+      {r.objetivos.length === 0 ? (
+        <EmptyHint text="No hay objetivos con este filtro." />
+      ) : (
+        <div className="space-y-2">
+          {r.objetivos.map((o) => <TarjetaObjetivo key={o.id} objetivo={o} accent={accent} onAbrir={onAbrir} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    LA PANTALLA
    ═══════════════════════════════════════════════════════════════════════════ */
-export default function ProgresoView({ fitness, fotos = [], accent, onEntrenar = null, onIrAFotos = null, resumenFotos = null }) {
+export default function ProgresoView({
+  fitness, fotos = [], accent, onEntrenar = null, onIrAFotos = null, resumenFotos = null,
+  onGuardarFitness = null, onEliminarObjetivo = null,
+}) {
   const [seccion, setSeccion] = useState('resumen');
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState('todos');
@@ -569,6 +872,12 @@ export default function ProgresoView({ fitness, fotos = [], accent, onEntrenar =
   const [musculo, setMusculo] = useState(null);
   const [subgrupo, setSubgrupo] = useState(null);
   const [filtroGrupo, setFiltroGrupo] = useState('todos');
+  /* FIT F14 — qué objetivo está abierto, si se crea o se edita, y el ejercicio
+     elegido en el formulario: estado de pantalla, nunca un dato (EH F40). */
+  const [objetivoAbierto, setObjetivoAbierto] = useState(null);
+  const [formulario, setFormulario] = useState(null); // { modo: 'crear' | 'editar', exerciseId, eligiendo }
+  const [filtroObjetivos, setFiltroObjetivos] = useState('todos');
+  const [grupoObjetivos, setGrupoObjetivos] = useState('todos');
   const f = fitness || {};
   const propios = f.ejercicios || [];
   const hoy = todayISO();
@@ -586,6 +895,10 @@ export default function ProgresoView({ fitness, fotos = [], accent, onEntrenar =
        el MISMO criterio que el detalle del músculo. */
     return filtroGrupo === 'todos' ? c : { ...c, tarjetas: c.tarjetas.filter((t) => ejercicioEnGrupo(t.exerciseId, filtroGrupo, propios)) };
   }, [tarjetas, busqueda, filtro, filtroGrupo, propios]);
+  /* FIT F14, apartado 27 — los objetivos, una vez por sesiones y objetivos. */
+  const objetivos = useMemo(() => listaDeObjetivos(f, { filtro: filtroObjetivos, grupo: grupoObjetivos, propios, hoy }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [f.sesiones, f.objetivos, filtroObjetivos, grupoObjetivos, propios, hoy]);
   /* FIT F13, apartado 19 — el resumen muscular, una vez por sesiones y periodo. */
   const muscular = useMemo(() => resumenMuscular(f, { rango: periodo, hoy, propios }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -625,6 +938,68 @@ export default function ProgresoView({ fitness, fotos = [], accent, onEntrenar =
         <DetalleEjercicio ejercicio={ejercicioPorId(vista.id, propios)} accent={accent} />
       </div>
     );
+  }
+
+  /* ── FIT F14 · crear, editar y ver un objetivo ───────────────────────── */
+  if (!detalle && !vista && formulario) {
+    if (formulario.eligiendo) {
+      /* Apartado 4 — *"La selección de ejercicio debe utilizar el catálogo
+         existente"*: es `EjerciciosView` en modo elegir, como en el constructor. */
+      return (
+        <EjerciciosView
+          propios={propios}
+          accent={accent}
+          volverA="Nuevo objetivo"
+          onVolver={() => setFormulario({ ...formulario, eligiendo: false })}
+          onElegir={(id) => setFormulario({ ...formulario, exerciseId: id, eligiendo: false })}
+          yaElegidos={formulario.exerciseId ? [formulario.exerciseId] : []}
+        />
+      );
+    }
+    const inicial = formulario.modo === 'editar' ? (f.objetivos || []).find((o) => o.id === formulario.id) || null : null;
+    return (
+      <div className="max-w-2xl mx-auto">
+        <FormularioObjetivo
+          key={formulario.exerciseId || 'sin'}
+          inicial={inicial}
+          ejercicio={ejercicioPorId(formulario.exerciseId, propios)}
+          accent={accent}
+          onElegirEjercicio={() => setFormulario({ ...formulario, eligiendo: true })}
+          onCancelar={() => setFormulario(null)}
+          onGuardar={(datos) => {
+            if (!onGuardarFitness) return { ok: false, motivo: 'No se puede guardar ahora.' };
+            const r = inicial ? editarObjetivo(f, inicial.id, datos, { propios }) : anadirObjetivo(f, datos, { propios });
+            if (r.ok) {
+              onGuardarFitness(r.fitness);
+              setFormulario(null);
+              setObjetivoAbierto(r.objetivo.id);
+            }
+            return r;
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (!detalle && !vista && objetivoAbierto) {
+    const guardado = (f.objetivos || []).find((o) => o.id === objetivoAbierto) || null;
+    if (guardado) {
+      const datos = progresoDeObjetivo(f, guardado, { propios, hoy });
+      return (
+        <div className="max-w-2xl mx-auto">
+          <DetalleObjetivo
+            objetivo={datos}
+            accent={accent}
+            onVolver={() => setObjetivoAbierto(null)}
+            /* Apartado 16 — «Ver progreso del ejercicio» es la pantalla de la F12. */
+            onVerProgreso={() => setAbierto(guardado.exerciseId)}
+            onEditar={onGuardarFitness ? () => setFormulario({ modo: 'editar', id: guardado.id, exerciseId: guardado.exerciseId }) : null}
+            onCancelarObjetivo={onGuardarFitness ? () => onGuardarFitness(cancelarObjetivo(f, guardado.id)) : null}
+            onEliminar={onEliminarObjetivo ? () => { onEliminarObjetivo(guardado.id); setObjetivoAbierto(null); } : null}
+          />
+        </div>
+      );
+    }
   }
 
   if (!detalle && musculo) {
@@ -688,6 +1063,19 @@ export default function ProgresoView({ fitness, fotos = [], accent, onEntrenar =
 
       {seccion === 'resumen' && (
         <ResumenProgreso resumen={resumen} accent={accent} onEntrenar={onEntrenar} onAbrir={setAbierto} />
+      )}
+
+      {seccion === 'objetivos' && (
+        <ObjetivosProgreso
+          resultado={objetivos}
+          filtro={filtroObjetivos}
+          onFiltro={setFiltroObjetivos}
+          grupo={grupoObjetivos}
+          onGrupo={setGrupoObjetivos}
+          accent={accent}
+          onAbrir={setObjetivoAbierto}
+          onCrear={onGuardarFitness ? () => setFormulario({ modo: 'crear', exerciseId: null }) : null}
+        />
       )}
 
       {seccion === 'musculos' && (

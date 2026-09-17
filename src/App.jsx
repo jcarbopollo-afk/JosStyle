@@ -1743,6 +1743,8 @@ export default function App() {
   const deletePlantillaFitness = (id) => eliminarConPapelera('fitness', 'plantillas', id);
   // FIT F10 — un entrenamiento del historial, por la papelera como todo lo demás.
   const deleteSesionFitness = (id) => eliminarConPapelera('fitness', 'sesiones', id);
+  // FIT F14 — un objetivo de rendimiento, también por la papelera.
+  const deleteObjetivoFitness = (id) => eliminarConPapelera('fitness', 'objetivos', id);
   const deleteMedida = (id) => eliminarConPapelera('salud', 'medidas', id);
   const deleteHistorialMedico = (id) => eliminarConPapelera('salud', 'historial', id);
   const deleteComida = (id) => eliminarConPapelera('nutricion', 'comidas', id);
@@ -2734,6 +2736,7 @@ export default function App() {
             onGuardarFitness={guardarFitness}
             onEliminarPlantilla={deletePlantillaFitness}
             onEliminarSesion={deleteSesionFitness}
+            onEliminarObjetivo={deleteObjetivoFitness}
             accent={accent} onIr={setTab}
             foco={focoPara('entreno')} onFocoConsumido={consumirFoco}
           />
