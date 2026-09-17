@@ -1741,6 +1741,8 @@ export default function App() {
   /* FIT F4 — y por la misma puerta que todo lo demás (ME F3): la plantilla va a
      Eliminados recientes y vuelve entera, con sus ejercicios y su orden. */
   const deletePlantillaFitness = (id) => eliminarConPapelera('fitness', 'plantillas', id);
+  // FIT F10 — un entrenamiento del historial, por la papelera como todo lo demás.
+  const deleteSesionFitness = (id) => eliminarConPapelera('fitness', 'sesiones', id);
   const deleteMedida = (id) => eliminarConPapelera('salud', 'medidas', id);
   const deleteHistorialMedico = (id) => eliminarConPapelera('salud', 'historial', id);
   const deleteComida = (id) => eliminarConPapelera('nutricion', 'comidas', id);
@@ -2731,6 +2733,7 @@ export default function App() {
             fotos={saludFotos} rachas={rachas}
             onGuardarFitness={guardarFitness}
             onEliminarPlantilla={deletePlantillaFitness}
+            onEliminarSesion={deleteSesionFitness}
             accent={accent} onIr={setTab}
             foco={focoPara('entreno')} onFocoConsumido={consumirFoco}
           />

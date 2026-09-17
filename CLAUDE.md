@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.91.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.92.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -324,8 +324,18 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 
 🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, con la **FIT F1 (v3.83.0)**, la **FIT F2
 (v3.84.0)**, la **FIT F3 (v3.85.0)**, la **FIT F4 (v3.86.0)**, la **FIT F5 (v3.87.0)**, la **FIT F6
-(v3.88.0)**, la **FIT F7 (v3.89.0)**, la **FIT F8 (v3.90.0)** y la **FIT F9 (v3.91.0)** hechas. Lo
-que dejaron, y que vale para las 36 que quedan:
+(v3.88.0)**, la **FIT F7 (v3.89.0)**, la **FIT F8 (v3.90.0)**, la **FIT F9 (v3.91.0)** y la **FIT F10
+(v3.92.0)** hechas. Lo que dejaron, y que vale para las 35 que quedan:
+
+- 🚨 **EL HISTORIAL NO CUENTA NADA** (FIT F10): `src/lib/historial.js` lee `fitness.sesiones` con
+  `estado === 'completada'` y saca duración, series y volumen de `resumenDeSesion` (F8) y
+  planificado/realizado de la F9. **Las fases de progresión (F11-F14) leen de ahí**, no de una lista
+  nueva: si una fase cuenta series por su cuenta, el historial y ella acabarán diciendo dos números.
+- ⚠️ **`sesion.entorno` existe desde la F10** y se guarda al empezar. `entornoDeSesion()` lo lee y,
+  para las sesiones de antes, lo deduce del plan si sigue existiendo; si no, `null`.
+- ⚠️ **Borrar una sesión va por la papelera** (`'fitness.sesiones'` en `CATALOGO_PAPELERA`,
+  `deleteSesionFitness` en `App.jsx`). Una fase que borre sesiones de otra forma rompe la promesa del
+  aviso.
 
 - 🚨 **EL DESCANSO VIVE EN LA SESIÓN** (FIT F9, contra lo que decidió la F7): `sesion.descanso` y
   `sesion.descansoAuto`, normalizados en `crearWorkoutSession`. La F9 lo pide como *"única fuente de

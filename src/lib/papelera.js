@@ -66,6 +66,9 @@ export const CATALOGO_PAPELERA = {
      `plantillas`, no `planes`: son dos listas distintas del mismo módulo, y
      la papelera se indexa por `módulo.colección` (EH F22). */
   'fitness.plantillas': { modulo: 'fitness', coleccion: 'plantillas', tipo: 'Plantilla de entrenamiento', campos: ['nombre'], icono: 'entreno' },
+  /* 🔓 FIT F10 — eliminar un entrenamiento del historial. Sin esta línea iría a
+     ninguna parte y el aviso mentiría al prometer la papelera. */
+  'fitness.sesiones': { modulo: 'fitness', coleccion: 'sesiones', tipo: 'Entrenamiento', campos: ['nombre', 'fecha'], icono: 'entreno' },
   /* 🚨 E3 F37 (NU F5) — **toda lista que se pueda borrar va aquí** (EH F45): sin
      esta línea, eliminar un alimento propio lo borraría **para siempre**, y la
      auditoría de ME F4 no lo vería porque solo mira lo que se CREA desde

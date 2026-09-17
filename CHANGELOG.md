@@ -1,5 +1,98 @@
 # CHANGELOG.md
 
+## v3.92.0 — FIT F10/45: historial de entrenamientos y detalle de sesiones
+
+El criterio de finalización: *"Completar un entrenamiento → guardarlo → abrir Historial → encontrarlo
+→ abrirlo → consultar exactamente lo que hice."* Y *"Buscar → filtrar → abrir → eliminar"*.
+
+### Cómo se consulta
+
+**Fitness → Entrenamiento → Historial**, en «Secciones», al lado de Más planes y Ejercicios (apartado
+2: ni una navegación nueva). La lista va de más reciente a más antiguo, **agrupada por fecha** —*Hoy*,
+*Ayer*, *12 septiembre 2026*— y cada tarjeta dice nombre, hora, duración, ejercicios y series. Si la
+sesión fue parcial dice *16/20 series*, sin tono de reproche (apartado 7).
+
+Arriba, **búsqueda por nombre** que ignora mayúsculas y acentos («piernas» encuentra «Piérnas»), y
+**Filtros**: fecha (esta semana, este mes, últimos 3 meses o un rango con dos fechas), plan (activo,
+otros, independientes), entorno (gimnasio, calistenia, casa) y orden (recientes, antiguos, mayor y
+menor duración). **Se combinan**, el contador dice cuántos quedan (*6 entrenamientos de 24*) y
+**Limpiar filtros** lo devuelve todo.
+
+Al tocar una tarjeta, **el detalle**: fecha en largo, inicio, final, duración, ejercicios, series, el
+volumen **solo si es fiable**, la nota general, y cada ejercicio con **Planificado** y **Realizado**
+por separado, lo que hizo serie a serie (*8 × 60 kg*, *8 × peso corporal*), su nota, y **de cuál venía
+si lo sustituyó**. Al desplegarlo, cada serie con su peso, sus repeticiones —o sus **segundos**, en un
+isométrico— y su estado: *Hecha*, *Omitida*, *Sin hacer*, y *Extra* si fue añadida.
+
+### 🚨 Solo las completadas, y sin una segunda cuenta
+
+Solo entran las sesiones **completadas** (apartado 4): ni en curso, ni terminadas sin guardar, ni
+descartadas. Una parcial guardada sí. Y **no hay un modelo nuevo ni una cuenta nueva** (apartado 3): el
+historial lee `fitness.sesiones`, y duración, series y volumen salen de `resumenDeSesion` de la F8 —
+así el resumen al guardar y el historial **no pueden dar dos números distintos** del mismo
+entrenamiento. Lo que la F8 guarda aparece solo (apartado 37).
+
+### Los filtros solo ofrecen lo que tiene datos
+
+*"No crear filtros que no tengan datos reales"* (apartado 12). Un grupo de filtros aparece si hay al
+menos dos opciones con sesiones, y las opciones se calculan sobre **todas** las sesiones: si se
+calcularan sobre las ya filtradas, elegir «Casa» haría desaparecer «Gimnasio» del selector. Una sesión
+sin entorno no desaparece con «Todos» y no entra en uno concreto (apartado 13).
+
+### El entorno se guarda al empezar
+
+`sesion.entorno` nace con el snapshot de la F7, sacado del plan o la plantilla. Deducirlo solo al leer
+se rompería el día que él borre el plan — la lección del snapshot. Las sesiones de antes lo deducen del
+plan si todavía existe, y si no, no tienen entorno: no se inventa.
+
+### El volumen, solo si es matemáticamente válido
+
+El de la F8 (apartado 26): solo las series con peso **y** repeticiones. Un entrenamiento de isométricos
+no tiene volumen, y no sale un «0 kg». Si una parte de la sesión no se mide en kilos, se dice de cuántas
+series sale el número.
+
+### Eliminar va a la papelera, y es idempotente
+
+*"¿Eliminar este entrenamiento?"* con Cancelar y Eliminar (apartado 28). Va a la **Papelera**, como
+todo lo que se borra en la aplicación, y el aviso lo promete porque lo hace (`fitness.sesiones` está
+ahora en `CATALOGO_PAPELERA`). No toca ni el plan, ni las plantillas, ni las demás sesiones. Pulsar
+dos veces no hace nada la segunda (apartado 29), y una sesión que ya no existe tiene su estado.
+
+### Es de consulta
+
+Ni un campo para cambiar un peso o una nota (apartado 30), y ningún «Compartir» sin función (31).
+
+### Lo que no se ha construido
+
+- **La foto o el vídeo de la sesión** (apartado 27: «si existe»). No puede existir: no hay dónde
+  guardarla (`MEDIA_PENDIENTE` de la F8), así que no se pinta ni un bloque vacío.
+- **Un estado de carga y de error con «Reintentar»** (apartado 35). El historial no hace una lectura
+  aparte: lee `fitness`, que la aplicación ya cargó al entrar. Un «Reintentar» sin nada que reintentar
+  sería un control decorativo. Los estados **vacío** y **sin resultados** sí están, y son distintos.
+- Gráficas, récords, evolución, rangos e IA (apartado 45).
+
+Todo en `NO_EN_FIT10`, y las decisiones en `DECISIONES_FIT10`.
+
+### Rendimiento
+
+Las tarjetas se calculan **una vez por cambio en las sesiones**, no en cada tecla de la búsqueda; el
+detalle, solo al abrirlo; y la lista pinta **de 30 en 30** con «Ver más». Hay una comprobación que
+consulta 400 sesiones con tres filtros a la vez (apartado 32).
+
+### Pruebas
+
+- `scripts/test-historial.mjs` (nuevo, 112): qué sesiones entran, las fechas, la tarjeta contra el
+  resumen de la F8, entorno y plan, búsqueda con acentos, cada filtro y sus combinaciones, el orden y
+  los grupos, el detalle (isométricos en segundos, sustituciones, series extra y omitidas, volumen
+  fiable), eliminar por la papelera y que la pantalla no escriba nada. Comprobado que se pone roja si
+  entran sesiones no completadas o si el filtro de entorno pierde las sesiones sin entorno.
+- **Recorrido en Chromium, sección FIT F10**, sobre el entrenamiento que acaba de guardar la F8 y con
+  otro en curso al lado: aparece solo él, buscar, «sin resultados», limpiar, filtros combinados,
+  recargar, abrir el detalle, desplegar un ejercicio con sus 62,5 kg, cancelar y confirmar la
+  eliminación, y comprobar que está en la papelera y que la sesión en curso y el plan siguen igual.
+- El banco de renderizado pinta la pantalla con datos, vacía y con solo una sesión en curso, y cada
+  pieza suelta (filtros, tarjeta, detalle, ejercicio desplegado).
+
 ## v3.91.0 — FIT F9/45: UX avanzada del entrenamiento en vivo
 
 El criterio de finalización: *"La fase estará terminada cuando el entrenamiento en vivo sea cómodo

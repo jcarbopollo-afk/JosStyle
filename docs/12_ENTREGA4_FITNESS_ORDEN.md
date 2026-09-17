@@ -30,7 +30,7 @@ ordena es **el trabajo**, no el documento.
 | **F7** ✅ **v3.89.0** | Motor de entrenamiento en vivo | 29053–29736 | 684 |
 | **F8** ✅ **v3.90.0** | Finalización y guardado del entrenamiento | 28456–29052 | 597 |
 | **F9** ✅ **v3.91.0** | Ux avanzada del entrenamiento en vivo | 27781–28455 | 675 |
-| **F10** | Historial de entrenamientos y detalle de sesiones | 27177–27780 | 604 |
+| **F10** ✅ **v3.92.0** | Historial de entrenamientos y detalle de sesiones | 27177–27780 | 604 |
 | **F11** | Progresión y comparación del rendimiento | 26534–27176 | 643 |
 | **F12** | Pantalla de progreso por ejercicio | 25916–26533 | 618 |
 | **F13** | Progreso por grupos musculares | 25198–25915 | 718 |

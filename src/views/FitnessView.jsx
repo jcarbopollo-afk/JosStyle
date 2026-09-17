@@ -49,6 +49,8 @@ import TuPlanView from './TuPlanView';
    constructor): con las pestañas debajo se podría uno ir a Rangos en mitad de
    una serie, que es la puerta de atrás por la que se pierde el trabajo. */
 import EntrenamientoVivoView, { SesionRecuperable } from './EntrenamientoVivoView';
+/* FIT F10 — el historial, dentro de Entrenamiento (su apartado 2). */
+import HistorialView from './HistorialView';
 /* FIT F8 — el resumen y el guardado, también pantalla entera: se llega desde el
    entrenamiento en vivo y se sale guardando o descartando. */
 import FinalizacionView from './FinalizacionView';
@@ -56,7 +58,7 @@ import { duplicarPlantilla } from '../lib/plantillas';
 import {
   usarPlan, personalizarPreset, alternarFavoritoPlan, quitarPlanActivo, diaARutina,
 } from '../lib/planes';
-import { planActivoCompleto, sesionDelDia } from '../lib/tuPlan';
+import { planActivoCompleto, sesionDelDia, tuPlan } from '../lib/tuPlan';
 import {
   empezarSesion, guardarSesion, sesionActiva, descartarSesion,
 } from '../lib/entrenamiento';
@@ -362,6 +364,7 @@ export function AreaEntrenamiento({
   onGuardarFitness = null, onEliminarPlantilla = null, onEmpezarSesion = null,
   sesionEnCurso = null, onContinuarSesion = null, onDescartarSesion = null,
   sesionSinGuardar = null, onSeguirGuardando = null, onDescartarSinGuardar = null,
+  onEliminarSesion = null,
 }) {
   const resumen = resumenEntrenamiento(fitness, calistenia);
   const propios = (fitness || {}).ejercicios || [];
@@ -406,6 +409,7 @@ export function AreaEntrenamiento({
       origenTipo: resuelto.origen,
       origenId: ficha.id,
       propios,
+      entorno: resuelto.plan.entorno,
     }));
   };
 
@@ -420,8 +424,34 @@ export function AreaEntrenamiento({
       origenTipo: 'plantilla',
       origenId: plantilla.id,
       propios,
+      entorno: plantilla.entorno,
     }));
   };
+
+  /* 🔓 FIT F10 — el historial (apartado 2: *"Entrenamiento → Historial"*).
+     ⚠️ El botón del estado vacío (apartado 9) **lleva al flujo real**: si hoy
+     toca entrenar, empieza el de hoy; si no, vuelve a Tu Plan, que es donde se
+     elige qué entrenar. Nunca un botón que no hace nada. */
+  if (dentro === 'historial') {
+    const empezarDesdeHistorial = () => {
+      const tp = tuPlan(fitness || {});
+      if (tp.proximo && tp.proximo.esHoy && tp.proximo.indice !== null && onEmpezarSesion) {
+        empezarDelPlan(tp.proximo.indice);
+      } else {
+        setDentro(null);
+      }
+    };
+    return (
+      <HistorialView
+        fitness={fitness || {}}
+        propios={propios}
+        accent={accent}
+        onVolver={() => setDentro(null)}
+        onEmpezar={empezarDesdeHistorial}
+        onEliminar={onEliminarSesion}
+      />
+    );
+  }
 
   if (dentro === 'ejercicios') {
     return (
@@ -608,7 +638,7 @@ export default function FitnessView({
   fitness, calistenia, onUpdateSkill, futbol, onAddPartido, onDeletePartido,
   videos, onAddVideo, onDeleteVideo, onSetVideoFeedback,
   fotos = [], rachas, accent, foco, onFocoConsumido, onIr, onGuardarFitness = null,
-  onEliminarPlantilla = null,
+  onEliminarPlantilla = null, onEliminarSesion = null,
 }) {
   const [area, setArea] = useState(AREA_INICIAL);
 
@@ -741,6 +771,7 @@ export default function FitnessView({
           fitness={fitness} calistenia={calistenia} accent={accent} entrenoProps={entrenoProps}
           onGuardarFitness={onGuardarFitness}
           onEliminarPlantilla={onEliminarPlantilla}
+          onEliminarSesion={onEliminarSesion}
           onAbrirConstructor={onGuardarFitness
             ? (rutina) => setCreando({ rutina: rutina || crearRutina({}) })
             : null}

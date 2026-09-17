@@ -247,7 +247,7 @@ export function seriesDeLinea(linea, propios = []) {
  *  depende de ella. */
 export function empezarSesion({
   nombre = '', lineas = [], planId = null, origenTipo = 'plan', origenId = null,
-  ahora = Date.now(), hoy = todayISO(), propios = [],
+  ahora = Date.now(), hoy = todayISO(), propios = [], entorno = '',
 } = {}) {
   const ls = lista(lineas);
   const ejercicios = ls.map((l, i) => crearEjercicioDeSesion({
@@ -277,6 +277,9 @@ export function empezarSesion({
       /* El snapshot vive aquí, no en `ejercicios`: aquél es el campo de la F1 y
          lo leen el historial y la exportación con su forma de siempre. */
       origen: { tipo: texto(origenTipo) || 'plan', id: texto(origenId) || null, ejercicios },
+      /* 🔓 FIT F10, apartado 13 — el entorno va con el snapshot: un historial que
+         lo dedujera del plan se rompería el día que él borre el plan. */
+      entorno: texto(entorno),
     }),
   };
 }

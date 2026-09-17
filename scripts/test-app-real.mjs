@@ -7167,6 +7167,125 @@ ok(toques_fit7.length > 0 && toques_fit7.every((h) => h >= 44),
 ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), 'se sale de la que sobraba');
 await page.waitForTimeout(400);
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F10 — el historial de entrenamientos (Entrega 4 · 10/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El criterio del apartado 45, con la sesión que la F8 acaba de guardar:
+   *"Completar un entrenamiento → guardarlo → abrir Historial → encontrarlo →
+   abrirlo → consultar exactamente lo que hice."* Y *"Buscar → filtrar → abrir →
+   eliminar"*. ⚠️ Y hay una sesión EN CURSO recién dejada a medias (la del ancho
+   de pantalla): es justo la que el apartado 38 prohíbe que aparezca. */
+console.log('\n── FIT F10 · El historial ──');
+
+const fitness_fit10 = () => guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {};
+const guardada_fit10 = (fitness_fit10().sesiones || []).find((x) => x && x.estado === 'completada' && x.nombre === 'Push — Fuerza');
+ok(!!guardada_fit10, 'FIT F10 — la sesión de la F8 está guardada como completada');
+ok((fitness_fit10().sesiones || []).some((x) => x && x.estado === 'en_curso'), '…y hay otra EN CURSO, la del ancho de pantalla');
+const escribirBusqueda_fit10 = (valor) => page.evaluate((v) => {
+  const c = document.querySelector('input[aria-label="Buscar entrenamientos por nombre"]');
+  if (!c) return false;
+  Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(c, v);
+  c.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}, valor);
+const pulsarQueEmpiece_fit10 = (empieza) => page.evaluate((e) => {
+  const b = [...document.querySelectorAll('button[aria-label]')].find((x) => (x.getAttribute('aria-label') || '').startsWith(e));
+  if (!b) return false;
+  b.click();
+  return true;
+}, empieza);
+
+/* Apartado 2 — Entrenamiento → Historial. */
+ok(await pulsar('Abrir Historial'), 'FIT F10 — se abre Entrenamiento → Historial (apartado 2)');
+const lista_fit10 = await esperarTexto(/entrenamientos? *$|\d+ entrenamiento/im);
+ok(/Push — Fuerza/.test(lista_fit10), '🚨 FIT F10 — el entrenamiento guardado APARECE solo, sin ningún paso más (apartado 37)');
+ok(/\b1 entrenamiento\b/.test(lista_fit10), `🚨 …y es el ÚNICO: la sesión en curso NO aparece (apartado 38)`);
+ok(/\bhoy\b/i.test(lista_fit10), '…agrupado bajo «Hoy» (apartados 5 y 39)');
+ok(/\d+ min|menos de 1 min/.test(lista_fit10) && /\d+ series?|\d+\/\d+ series/.test(lista_fit10),
+  '…con su duración y sus series en la tarjeta (apartado 6)');
+
+/* Apartado 10 — buscar, y el «sin resultados». */
+ok(await escribirBusqueda_fit10('FUERZA'), 'FIT F10 — se busca «FUERZA» en mayúsculas (apartado 10)');
+await page.waitForTimeout(400);
+ok(/Push — Fuerza/.test(await ver()), '…y lo encuentra igual');
+ok(await escribirBusqueda_fit10('zzzz'), '…se busca algo que no existe');
+const sinResultados_fit10 = await esperarTexto(/No hay entrenamientos que coincidan/i);
+ok(/No hay entrenamientos que coincidan/i.test(sinResultados_fit10),
+  '🚨 FIT F10 — y dice que no hay coincidencias, NO que no tenga entrenamientos (apartado 35)');
+ok(await pulsar('Limpiar filtros'), '…y se limpian los filtros (apartado 34)');
+await page.waitForTimeout(400);
+ok(/Push — Fuerza/.test(await ver()), '🚨 …y vuelve la lista entera');
+
+/* Apartados 11, 14 y 33 — filtrar y ordenar, combinados. */
+ok(await pulsar('Mostrar filtros'), 'FIT F10 — se abren los filtros');
+ok(await pulsar('Esta semana'), '…«Esta semana» (apartado 11)');
+ok(await pulsar('Más antiguos'), '…y «Más antiguos», a la vez (apartados 14 y 33)');
+await page.waitForTimeout(400);
+const filtrado_fit10 = await ver();
+ok(/Push — Fuerza/.test(filtrado_fit10) && /\b1 entrenamiento\b/.test(filtrado_fit10),
+  '🚨 FIT F10 — los filtros combinados siguen encontrando el de hoy');
+ok(await page.evaluate(() => [...document.querySelectorAll('button[aria-pressed="true"]')].some((b) => /Esta semana/.test(b.innerText))),
+  '…y el filtro elegido se anuncia como pulsado, no solo con color (apartado 42)');
+ok(await pulsar('Limpiar filtros'), '…se limpian');
+await page.waitForTimeout(300);
+
+/* Apartado 36 — sobrevive a recargar. */
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(2500);
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F10 — se recarga la aplicación');
+ok(await pulsar('Abrir Historial'), '…y se vuelve al historial');
+ok(/Push — Fuerza/.test(await esperarTexto(/Push — Fuerza/)), '🚨 FIT F10 — y el entrenamiento sigue ahí (apartado 36)');
+
+/* Apartados 16-25 — el detalle. */
+ok(await pulsarQueEmpiece_fit10('Abrir Push — Fuerza'), 'FIT F10 — se abre el entrenamiento (apartado 16)');
+const detalle_fit10 = await esperarTexto(/Planificado/i);
+ok(/Push — Fuerza/.test(detalle_fit10) && /(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre) \d{4}/i.test(detalle_fit10),
+  '🚨 FIT F10 — con su nombre y la fecha en largo (apartados 16 y 39)');
+ok(/Inicio/i.test(detalle_fit10) && /Final/i.test(detalle_fit10) && /Duraci[oó]n/i.test(detalle_fit10),
+  '…inicio, final y duración (apartado 17)');
+ok(/\d+\/\d+ series completadas/.test(detalle_fit10), '…las series completadas');
+ok(/Planificado/i.test(detalle_fit10) && /Realizado/i.test(detalle_fit10),
+  '🚨 FIT F10 — planificado y realizado, por separado (apartado 25)');
+ok(/fuerte en los presses/.test(detalle_fit10), '…y la nota general que escribió en la F8 (apartado 24)');
+ok(/No realizado/i.test(detalle_fit10), '⚠️ …y el ejercicio que no hizo dice «No realizado»');
+ok(await page.evaluate(() => document.querySelectorAll('input[aria-label^="Peso de la serie"], input[aria-label^="Repeticiones de la serie"]').length === 0),
+  '🚨 FIT F10 — y es de CONSULTA: ni un campo para cambiar un peso o una repetición (apartado 30)');
+ok(!/Compartir/i.test(detalle_fit10), '…ni un «Compartir» sin función (apartado 31)');
+
+ok(await pulsarQueEmpiece_fit10('Ver las series de'), 'FIT F10 — se despliega un ejercicio (apartado 19)');
+await page.waitForTimeout(400);
+const series_fit10 = await ver();
+ok(/Serie/i.test(series_fit10) && /Hecha/i.test(series_fit10), '🚨 …y enseña cada serie con su estado');
+ok(/62,5 kg/.test(series_fit10), '🚨 …con los 62,5 kg que registró en la F7, en español');
+ok(await page.evaluate(() => !!document.querySelector('button[aria-expanded="true"][aria-label^="Ocultar las series de"]')),
+  '…y anuncia que está desplegado');
+
+/* Apartados 28 y 29 — eliminar. */
+const papeleraAntes_fit10 = (guardado.filter((g) => g && g.key === 'papelera').at(-1)?.value?.elementos || []).length;
+const planAntes_fit10 = JSON.stringify(fitness_fit10().planActivo);
+ok(await pulsar('Eliminar entrenamiento'), 'FIT F10 — se pulsa «Eliminar entrenamiento» (apartado 28)');
+const aviso_fit10 = await esperarTexto(/¿Eliminar este entrenamiento\?/);
+ok(/¿Eliminar este entrenamiento\?/.test(aviso_fit10) && /Papelera/.test(aviso_fit10), '🚨 …y pregunta, diciendo que va a la papelera');
+ok(await pulsar('Cancelar'), '…se cancela');
+await page.waitForTimeout(400);
+ok((fitness_fit10().sesiones || []).some((x) => x && x.id === guardada_fit10?.id), '…y el entrenamiento sigue');
+ok(await pulsar('Eliminar entrenamiento'), 'ahora sí');
+ok(await pulsar('Eliminar este entrenamiento del historial'), '…se confirma');
+const trasEliminar_fit10 = await esperarTexto(/Aún no tienes entrenamientos/i);
+ok(/Aún no tienes entrenamientos/i.test(trasEliminar_fit10),
+  '🚨 FIT F10 — sale del historial, que se queda con su estado vacío (apartados 9 y 28)');
+ok(/Empezar entrenamiento/.test(trasEliminar_fit10), '…con el botón para empezar (apartado 9)');
+await page.waitForTimeout(500);
+ok(!(fitness_fit10().sesiones || []).some((x) => x && x.id === guardada_fit10?.id), '🚨 …la sesión ya no está en lo guardado');
+ok((guardado.filter((g) => g && g.key === 'papelera').at(-1)?.value?.elementos || []).length === papeleraAntes_fit10 + 1,
+  '🚨 …y está en la PAPELERA, recuperable');
+ok((fitness_fit10().sesiones || []).some((x) => x && x.estado === 'en_curso'), '…sin tocar las demás sesiones (apartado 28)');
+ok(JSON.stringify(fitness_fit10().planActivo) === planAntes_fit10, '…ni el plan');
+
+ok(await pulsar('Volver a Entrenamiento'), 'FIT F10 — se vuelve a Entrenamiento');
+ok(/Tu Plan/i.test(await esperarTexto(/Tu Plan/i)), '…a Tu Plan');
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

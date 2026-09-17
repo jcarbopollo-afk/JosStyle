@@ -201,6 +201,17 @@ import {
   pantallaDeExito as exitoF8, guardarEntrenamiento as guardarF8,
 } from '../src/lib/finalizacion.js';
 import { Clock as Clock8Smoke } from 'lucide-react';
+/* FIT F10 — el historial. ⚠️ Con sus piezas sueltas: el detalle y un ejercicio
+   desplegado solo aparecen DESPUÉS de tocar, así que renderizar la vista no los
+   pinta nunca (NAV F3). */
+import HistorialView, {
+  FiltrosHistorial, TarjetaHistorial, HistorialVacio, EjercicioHistorial, DetalleSesionHistorial,
+} from '../src/views/HistorialView.jsx';
+import {
+  sesionesDelHistorial as historialF10, fichaDeHistorial as fichaF10,
+  consultarHistorial as consultaF10, detalleDeSesion as detalleF10, FILTROS_POR_DEFECTO as FILTROS_F10,
+} from '../src/lib/historial.js';
+import { guardarSesion as guardarSesionF10 } from '../src/lib/entrenamiento.js';
 import { rutinaAPlan as rutinaAPlanF4 } from '../src/lib/constructor.js';
 import { crearRutina as crearRutinaF3, anadirEjercicio as anadirF3, editarLinea as editarF3 } from '../src/lib/constructor.js';
 import { CATALOGO_EJERCICIOS } from '../src/lib/ejercicios.js';
@@ -261,6 +272,10 @@ const sesionVivaF7 = () => {
     origenTipo: 'preset', origenId: dia.id,
   });
 };
+/* FIT F10 — un fitness con una sesión GUARDADA de verdad (F7 → F8), que es lo
+   único que el historial enseña. */
+const fitnessConHistorialF10 = () => guardarSesionF10({}, guardarF8(pasarF8(sesionUsadaF7()), { confirmado: true }).sesion);
+
 const sesionUsadaF7 = () => {
   let s = sesionVivaF7();
   const e = ejsF7(s)[0];
@@ -3198,6 +3213,33 @@ const CASOS = [
     sesion: null, propios: [], accent, onGuardar: noop, onSalir: noop,
   })],
   /* ══ FIT F8 — la finalización ══════════════════════════════════════════ */
+  /* ══ FIT F10 — el historial ═══════════════════════════════════════════ */
+  ['HistorialView', HistorialView, () => ({
+    fitness: fitnessConHistorialF10(), propios: [], accent, onVolver: noop, onEmpezar: noop, onEliminar: noop,
+  })],
+  /* ⚠️ Sin ninguna sesión: el estado vacío con su botón. */
+  ['HistorialView', HistorialView, () => ({
+    fitness: {}, propios: [], accent, onVolver: noop, onEmpezar: noop, onEliminar: noop,
+  })],
+  /* ⚠️ Y solo con sesiones que NO son del historial (en curso): también vacío. */
+  ['HistorialView', HistorialView, () => ({
+    fitness: { sesiones: [sesionUsadaF7()] }, propios: [], accent, onVolver: noop,
+  })],
+  ['FiltrosHistorial', FiltrosHistorial, () => ({
+    filtros: { ...FILTROS_F10, fecha: 'rango', entorno: 'gym' }, accent, abiertos: true,
+    consulta: consultaF10(historialF10(fitnessConHistorialF10()).map((x) => fichaF10(x)), { fecha: 'rango' }),
+    onAbrir: noop, onCambiar: noop, onLimpiar: noop,
+  })],
+  ['TarjetaHistorial', TarjetaHistorial, () => ({
+    ficha: fichaF10(historialF10(fitnessConHistorialF10())[0]), agrupado: false, accent, onAbrir: noop,
+  })],
+  ['HistorialVacio', HistorialVacio, () => ({ accent, onEmpezar: noop })],
+  ['EjercicioHistorial', EjercicioHistorial, () => ({
+    ejercicio: detalleF10(historialF10(fitnessConHistorialF10())[0]).ejercicios[0], accent, abierto: true, onAlternar: noop,
+  })],
+  ['DetalleSesionHistorial', DetalleSesionHistorial, () => ({
+    detalle: detalleF10(historialF10(fitnessConHistorialF10())[0]), accent, onVolver: noop, onEliminar: noop,
+  })],
   ['FinalizacionView', FinalizacionView, () => ({
     sesion: pasarF8(sesionUsadaF7()), propios: [], accent,
     onGuardar: noop, onDescartar: noop, onSeguir: noop, onVolver: noop,

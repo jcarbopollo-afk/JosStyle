@@ -534,7 +534,7 @@ export function crearWorkoutSession({
   origen = null, iniciadaEn = null, terminadaEn = null, pausadaEn = null,
   pausadoMs = 0, actual = 0,
   visibilidad = 'privado', media = null, diaDePlan = null, guardadaEn = null,
-  descanso = null, descansoAuto = true,
+  descanso = null, descansoAuto = true, entorno = '',
 } = {}) {
   return {
     id: uid(),
@@ -606,6 +606,12 @@ export function crearWorkoutSession({
     /* Apartado 16 — si al completar una serie empieza el descanso solo. Nace
        encendido, que es lo que ya hacía la F7: apagarlo es decisión suya. */
     descansoAuto: descansoAuto !== false,
+    /* ═══ FIT F10 — el entorno de la sesión (gym, calistenia, casa) ════════
+       Para el filtro del historial (apartado 13). Se guarda al empezar, con el
+       snapshot. ⚠️ Aquí solo se guarda el texto: validar contra `ENTORNOS`
+       obligaría a importar `ejercicios.js`, que es un ciclo; lo valida quien lo
+       lee (`entornoDeSesion`), y una sesión de antes lo tiene vacío. */
+    entorno: texto(entorno),
   };
 }
 
@@ -850,6 +856,9 @@ export const ACCESOS_ENTRENAMIENTO = [
   /* FIT F2 — el catálogo maestro. Es el primero de los accesos nuevos que
      existe de verdad, así que se pinta como un botón y no como una frase. */
   { id: 'ejercicios', nombre: 'Ejercicios', que: 'El catálogo completo, con sus músculos, su material y su técnica.', existe: true, enFase: null },
+  /* 🔓 FIT F10 — *"Entrenamiento → Historial"* (apartado 2). Va aquí, con Más
+     planes y Ejercicios: ni una navegación nueva. */
+  { id: 'historial', nombre: 'Historial', que: 'Los entrenamientos que ya has hecho, serie a serie.', existe: true, enFase: null },
 ];
 
 /* El resumen del área PROGRESO. Cuenta las fotos que hay de verdad, así que la

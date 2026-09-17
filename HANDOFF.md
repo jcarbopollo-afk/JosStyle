@@ -2,6 +2,22 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.92.0 — FIT F10/45: historial de entrenamientos):** **Fitness →
+> Entrenamiento → Historial**. La lista de los entrenamientos **completados** —ni en curso, ni sin
+> guardar, ni descartados—, de más reciente a más antiguo y agrupada por *Hoy*, *Ayer* o la fecha, con
+> búsqueda que ignora mayúsculas y acentos y filtros combinables de fecha (semana, mes, 3 meses o
+> rango), plan, entorno y orden; los grupos de filtros solo aparecen si tienen datos. El **detalle**
+> dice inicio, final, duración, series, el volumen **solo si es fiable**, la nota general y cada
+> ejercicio con Planificado y Realizado, lo que hizo serie a serie, de cuál venía si lo sustituyó, y al
+> desplegarlo cada serie con peso, repeticiones o **segundos** y su estado (*Hecha*, *Omitida*, *Sin
+> hacer*, *Extra*). Es **de consulta**: se puede eliminar, que pregunta y va a la **papelera**
+> (`fitness.sesiones` está en `CATALOGO_PAPELERA`), y nada más. 🚨 **Ni modelo ni cuentas nuevas**:
+> todo sale de `resumenDeSesion` (F8) y de la F9, así que el resumen al guardar y el historial no
+> pueden decir dos números distintos. ⚠️ **`sesion.entorno` nace en esta fase**, guardado al empezar
+> con el snapshot. ⚠️ Sin foto ni vídeo (no hay dónde guardarlos) y sin «Reintentar» (el historial no
+> hace una lectura aparte), en `NO_EN_FIT10`. Vive en `src/lib/historial.js` y
+> `src/views/HistorialView.jsx`, con `scripts/test-historial.mjs` y su sección del recorrido.
+
 > **🏋️ ACTUALIZACIÓN (v3.91.0 — FIT F9/45: UX avanzada del entrenamiento en vivo):** El
 > entrenamiento en vivo **se usa de verdad desde el móvil**. La tarjeta del ejercicio dice nombre,
 > variante, agarre, tipo y el objetivo (*4 × 8–12*), con **Planificado** y **Realizado** en dos
