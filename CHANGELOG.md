@@ -1,5 +1,48 @@
 # CHANGELOG.md
 
+## v3.95.0 — FIT F13/45: progreso por grupos musculares
+
+El criterio, literal: *"Fitness → Progreso → Progreso muscular → Espalda → Dorsales → Dominadas → Ver
+evolución del ejercicio"*, todo con datos reales.
+
+### Cómo es
+
+Progreso gana la pestaña **Músculos**, entre Resumen y Ejercicios. Una tarjeta por cada uno de los siete
+grupos del catálogo con su icono, su estado con símbolo y palabra, *"2 de 3 ejercicios mejoran"* y una
+barra que sale de **contar** eso. Arriba, el periodo (7 días, 30 días, 3 meses, todo) y una frase que no
+se quita: **"Esto mide el rendimiento de tus ejercicios, no el tamaño del músculo."** (apartado 2).
+
+Al tocar un grupo: *Rendimiento general*, sus **subgrupos** con el mismo cálculo, y **sus ejercicios**,
+cada uno con su última marca, su tendencia y **su implicación en ese músculo**. Un subgrupo se abre en
+sus ejercicios, y un ejercicio en la pantalla de la F12. En Ejercicios hay además un filtro por grupo.
+
+### Cómo se calcula
+
+🚨 **Ni una comparación nueva**: la tendencia de cada ejercicio es la de la F11 y su tarjeta la de la F12.
+`src/lib/progresoMuscular.js` solo **reparte y vota**:
+
+- **Cada ejercicio cuenta según su porcentaje del catálogo** (apartado 9): un press de banca con pecho
+  50 %, tríceps 25 % y deltoide anterior 20 % vota con 0,5 en Pecho, 0,25 en Brazos y 0,2 en Hombros.
+- **Solo votan los ejercicios que la F11 puede comparar.** Un primer registro no vota.
+- **Sin ninguno → Sin datos.** 🚨 Nunca «Descenso» por no entrenarlo (apartado 11, MUY IMPORTANTE).
+- **Con uno → su tendencia**, marcada **«Poca información»**.
+- **Con varios → mayoría ponderada**: mejora si su peso supera al del resto junto; descenso igual; si
+  nadie tiene mayoría o hay empate, **Estable**. Así un solo ejercicio no decide el grupo.
+- **Periodo** (apartado 13): con «30 días» solo cuentan las sesiones de esos días, y si dentro no hay con
+  qué comparar, es «Sin datos» — no se usan en silencio datos viejos.
+- **Recencia** (apartado 14): con «Todo», una comparación de hace más de 90 días ya no dice «mejorando».
+- Un ejercicio que **ya no está en el catálogo no se atribuye a ningún grupo** (apartado 12): sin su
+  ficha no se sabe qué trabaja.
+
+### Pruebas
+
+`scripts/test-progreso-muscular.mjs` (51): sin datos, uno y varios; los porcentajes exactos del
+catálogo; mayoría, empate y descenso; subgrupos; periodo y recencia; series incompletas; ejercicios
+eliminados; historial roto; el filtro; que nada toque las sesiones; y que la pantalla no afirme nada del
+músculo. Comprobado que se pone roja si un solo ejercicio decide el grupo o si se quita la recencia.
+Y una **sección en Chromium** con el camino literal del criterio sobre sesiones sembradas, el Cuello
+«Sin datos», el Pecho con poca información, el periodo de 7 días y el filtro por grupo.
+
 ## v3.94.0 — FIT F12/45: pantalla de progreso por ejercicio
 
 El criterio: entrar en **Fitness → Progreso** y ver una representación real de cómo evoluciona, con

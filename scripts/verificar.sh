@@ -1024,6 +1024,16 @@ else
   fallo "Falla la UX del entrenamiento en vivo"; grep '✗' /tmp/jc_entreno_ux.log
 fi
 
+# FIT F13 — el progreso por grupos musculares. Lo que más se vigila: que un grupo
+# sin entrenar sea «Sin datos» y nunca «Descenso», que cada ejercicio cuente según
+# su porcentaje, que un solo ejercicio no decida un grupo con varios, y que no se
+# afirme nada del músculo con datos de rendimiento.
+if node --import ./scripts/resolver-vite.mjs scripts/test-progreso-muscular.mjs >/tmp/jc_progreso_mus.log 2>&1; then
+  ok "Progreso por grupos musculares (FIT F13) — $(grep -c '✓' /tmp/jc_progreso_mus.log) comprobaciones"
+else
+  fallo "Falla el progreso por grupos musculares"; grep '✗' /tmp/jc_progreso_mus.log
+fi
+
 # FIT F12 — Fitness → Progreso. Lo que más se vigila: que la pantalla no tenga
 # matemática propia (todo sale de la F11), que diga lo mismo que el historial, y
 # que la gráfica no mezcle métricas ni rompa con 0, 1, 2 o muchos puntos.

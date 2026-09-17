@@ -30,10 +30,16 @@ import {
   tarjetasDeProgreso, consultarProgreso, resumenDeProgreso, detalleDeProgreso, geometriaGrafica,
   FILTROS_PROGRESO, RANGOS_GRAFICA, PROGRESO_VACIO,
 } from '../lib/progresoEjercicios';
+/* 🔓 FIT F13 — el progreso por grupos musculares. */
+import {
+  resumenMuscular, ejerciciosDeMusculo, ejercicioEnGrupo, FILTROS_GRUPO, AVISO_RENDIMIENTO,
+} from '../lib/progresoMuscular';
 
 /* Las secciones de Progreso (apartado 2). */
 export const SECCIONES_PROGRESO = [
   { id: 'resumen', nombre: 'Resumen' },
+  /* FIT F13, apartado 7 — el progreso muscular, entre el resumen y los ejercicios. */
+  { id: 'musculos', nombre: 'Músculos' },
   { id: 'ejercicios', nombre: 'Ejercicios' },
   { id: 'fotos', nombre: 'Fotos' },
 ];
@@ -392,6 +398,161 @@ export function DetalleProgreso({ detalle, accent, rango, onRango, onVolver, onV
   );
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🔓 FIT F13 — PROGRESO MUSCULAR
+   ═══════════════════════════════════════════════════════════════════════════
+   *"Qué grupos musculares están progresando, cuáles están estables y cuáles
+   todavía no tienen suficientes datos."* 🚨 Y mide RENDIMIENTO, no músculo
+   (apartado 2): la pantalla lo dice.
+
+   ⚠️ Como el resto de Progreso, no calcula nada: el reparto por porcentajes y el
+   voto salen de `progresoMuscular.js`, que usa la F11 y la F12. */
+
+/* ── El estado de un músculo, con símbolo y palabra (apartados 15 y 21) ── */
+export function EstadoMuscular({ estado, nombre, simbolo, accent, pocaInformacion = false }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 flex-wrap">
+      <EtiquetaEstado estado={estado} nombre={nombre} simbolo={simbolo} accent={accent} />
+      {pocaInformacion && (
+        <span className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>Poca información</span>
+      )}
+    </span>
+  );
+}
+
+/* ── La barra de un músculo: cuántos de los que tienen datos mejoran ────── */
+function BarraMuscular({ fraccion, accent, etiqueta }) {
+  return (
+    <div
+      className="h-1.5 rounded-full overflow-hidden mt-2"
+      style={{ background: hexToRgba(COLORS.border, 0.6) }}
+      role="img"
+      aria-label={etiqueta}
+    >
+      <div className="h-full rounded-full transition-all" style={{ width: `${Math.round(fraccion * 100)}%`, background: accent }} />
+    </div>
+  );
+}
+
+/* ── Una tarjeta de grupo o de subgrupo (apartados 3 y 6) ─────────────── */
+export function TarjetaMusculo({ musculo, accent, onAbrir, conIcono = true }) {
+  const m = musculo;
+  const Icono = iconoDeGrupo(m.icono || null);
+  return (
+    <button
+      onClick={() => onAbrir(m.id)}
+      aria-label={`${m.nombre}: ${m.estadoNombre}. ${m.resumen}`}
+      className="hub-card w-full text-left rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99]"
+      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+    >
+      {conIcono && (
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: hexToRgba(accent, 0.14), color: accent }}>
+          <Icono size={19} />
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{m.nombre}</p>
+          <EstadoMuscular estado={m.estado} nombre={m.estadoNombre} simbolo={m.simbolo} accent={accent} />
+        </div>
+        <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{m.resumen}</p>
+        {m.ejerciciosConDatos > 0 && (
+          <BarraMuscular fraccion={m.fraccion} accent={accent} etiqueta={`${m.mejoran} de ${m.ejerciciosConDatos} ejercicios con datos mejoran`} />
+        )}
+      </div>
+      <ChevronRight size={18} style={{ color: COLORS.textMuted }} aria-hidden="true" />
+    </button>
+  );
+}
+
+/* ── Los ejercicios de un músculo (apartado 6) ─────────────────────────── */
+export function EjerciciosDeMusculo({ ejercicios, accent, onAbrir }) {
+  if (!ejercicios.length) {
+    return <EmptyHint text="Ninguno de tus ejercicios trabaja este músculo en este periodo." />;
+  }
+  return (
+    <div className="space-y-2">
+      {ejercicios.map((t) => (
+        <div key={t.exerciseId}>
+          <TarjetaProgreso tarjeta={t} accent={accent} onAbrir={onAbrir} />
+          <p className="text-[10px] mt-0.5 px-2" style={{ color: COLORS.textMuted }}>
+            Implicación en este músculo: {t.implicacion} %{t.fecha ? ` · ${t.fecha.split('-').reverse().join('/')}` : ''}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── El detalle de un grupo o de un subgrupo (apartados 6 y 9) ─────────── */
+export function DetalleMusculo({ musculo, subgrupos = null, ejercicios, accent, onVolver, volverA, onSubgrupo, onEjercicio }) {
+  const m = musculo;
+  return (
+    <div className="space-y-4">
+      <button
+        onClick={onVolver}
+        aria-label={`Volver a ${volverA}`}
+        className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
+        style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
+      >
+        <ChevronLeft size={16} /> {volverA}
+      </button>
+      <div>
+        <h2 className="text-2xl font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{m.nombre}</h2>
+        <p className="text-sm mt-1 flex items-center gap-1.5 flex-wrap" style={{ color: COLORS.textMuted }}>
+          Rendimiento general:
+          <EstadoMuscular estado={m.estado} nombre={m.estadoNombre} simbolo={m.simbolo} accent={accent} pocaInformacion={m.pocaInformacion} />
+        </p>
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{m.resumen}</p>
+        <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>{AVISO_RENDIMIENTO}</p>
+      </div>
+
+      {subgrupos && (
+        <div>
+          <SectionTitle sub="Cada ejercicio cuenta según su implicación">Subgrupos</SectionTitle>
+          <div className="space-y-2">
+            {subgrupos.map((s) => <TarjetaMusculo key={s.id} musculo={s} accent={accent} onAbrir={onSubgrupo} conIcono={false} />)}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <SectionTitle sub="Toca uno para ver su evolución">Ejercicios</SectionTitle>
+        <EjerciciosDeMusculo ejercicios={ejercicios} accent={accent} onAbrir={onEjercicio} />
+      </div>
+    </div>
+  );
+}
+
+/* ── La sección «Músculos» de Progreso (apartados 3, 7, 11 y 13) ───────── */
+export function MusculosProgreso({ resumen, periodo, onPeriodo, accent, onAbrir, onEntrenar }) {
+  return (
+    <div className="space-y-3">
+      <Chips opciones={RANGOS_GRAFICA} valor={periodo} onCambiar={onPeriodo} accent={accent} etiqueta="Periodo del progreso muscular" />
+      <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{AVISO_RENDIMIENTO}</p>
+      {!resumen.hayEjercicios ? (
+        periodo === 'todo'
+          ? <ResumenProgreso resumen={{ suficiente: false }} accent={accent} onEntrenar={onEntrenar} onAbrir={() => {}} />
+          : <Card><p className="text-sm" style={{ color: COLORS.textMuted }}>Datos insuficientes: no entrenaste en este periodo.</p></Card>
+      ) : (
+        <>
+          {!resumen.hayDatos && (
+            <Card>
+              <p className="text-sm" style={{ color: COLORS.textMuted }}>
+                Datos insuficientes: en este periodo ningún ejercicio tiene con qué compararse todavía.
+              </p>
+            </Card>
+          )}
+          <div className="space-y-2">
+            {resumen.grupos.map((g) => <TarjetaMusculo key={g.id} musculo={g} accent={accent} onAbrir={onAbrir} />)}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    LA PANTALLA
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -402,6 +563,12 @@ export default function ProgresoView({ fitness, fotos = [], accent, onEntrenar =
   const [abierto, setAbierto] = useState(null); // exerciseId
   const [rango, setRango] = useState('todo');
   const [vista, setVista] = useState(null); // { tipo: 'sesion' | 'ejercicio', id }
+  /* FIT F13 — el periodo del progreso muscular, el grupo y el subgrupo abiertos,
+     y el filtro por grupo de la lista de ejercicios (apartados 6, 8 y 13). */
+  const [periodo, setPeriodo] = useState('todo');
+  const [musculo, setMusculo] = useState(null);
+  const [subgrupo, setSubgrupo] = useState(null);
+  const [filtroGrupo, setFiltroGrupo] = useState('todos');
   const f = fitness || {};
   const propios = f.ejercicios || [];
   const hoy = todayISO();
@@ -413,7 +580,16 @@ export default function ProgresoView({ fitness, fotos = [], accent, onEntrenar =
   const resumen = useMemo(() => resumenDeProgreso(f, tarjetas),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [f.sesiones, tarjetas]);
-  const consulta = useMemo(() => consultarProgreso(tarjetas, { busqueda, filtro, propios }), [tarjetas, busqueda, filtro, propios]);
+  const consulta = useMemo(() => {
+    const c = consultarProgreso(tarjetas, { busqueda, filtro, propios });
+    /* FIT F13, apartado 8 — el filtro por grupo usa la implicación del catálogo,
+       el MISMO criterio que el detalle del músculo. */
+    return filtroGrupo === 'todos' ? c : { ...c, tarjetas: c.tarjetas.filter((t) => ejercicioEnGrupo(t.exerciseId, filtroGrupo, propios)) };
+  }, [tarjetas, busqueda, filtro, filtroGrupo, propios]);
+  /* FIT F13, apartado 19 — el resumen muscular, una vez por sesiones y periodo. */
+  const muscular = useMemo(() => resumenMuscular(f, { rango: periodo, hoy, propios }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [f.sesiones, periodo, hoy, propios]);
   const detalle = useMemo(() => (abierto ? detalleDeProgreso(f, abierto, { propios, rango, hoy }) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [abierto, f.sesiones, propios, rango, hoy]);
@@ -451,6 +627,39 @@ export default function ProgresoView({ fitness, fotos = [], accent, onEntrenar =
     );
   }
 
+  if (!detalle && musculo) {
+    /* FIT F13 — Progreso → Músculos → grupo → subgrupo (apartados 6 y 9). */
+    const grupo = muscular.grupos.find((g) => g.id === musculo) || null;
+    const sub = grupo && subgrupo ? grupo.subgrupos.find((s) => s.id === subgrupo) || null : null;
+    if (grupo) {
+      return (
+        <div className="max-w-2xl mx-auto">
+          {sub ? (
+            <DetalleMusculo
+              musculo={sub}
+              ejercicios={ejerciciosDeMusculo(muscular.senales, { subgrupoId: sub.id })}
+              accent={accent}
+              volverA={grupo.nombre}
+              onVolver={() => setSubgrupo(null)}
+              onEjercicio={setAbierto}
+            />
+          ) : (
+            <DetalleMusculo
+              musculo={grupo}
+              subgrupos={grupo.subgrupos}
+              ejercicios={ejerciciosDeMusculo(muscular.senales, { grupoId: grupo.id })}
+              accent={accent}
+              volverA="Progreso"
+              onVolver={() => setMusculo(null)}
+              onSubgrupo={setSubgrupo}
+              onEjercicio={setAbierto}
+            />
+          )}
+        </div>
+      );
+    }
+  }
+
   if (detalle) {
     return (
       <div className="max-w-2xl mx-auto">
@@ -481,6 +690,17 @@ export default function ProgresoView({ fitness, fotos = [], accent, onEntrenar =
         <ResumenProgreso resumen={resumen} accent={accent} onEntrenar={onEntrenar} onAbrir={setAbierto} />
       )}
 
+      {seccion === 'musculos' && (
+        <MusculosProgreso
+          resumen={muscular}
+          periodo={periodo}
+          onPeriodo={setPeriodo}
+          accent={accent}
+          onAbrir={(id) => { setSubgrupo(null); setMusculo(id); }}
+          onEntrenar={onEntrenar}
+        />
+      )}
+
       {seccion === 'ejercicios' && (
         tarjetas.length === 0 ? (
           <ResumenProgreso resumen={{ ...resumen, suficiente: false }} accent={accent} onEntrenar={onEntrenar} onAbrir={setAbierto} />
@@ -499,12 +719,14 @@ export default function ProgresoView({ fitness, fotos = [], accent, onEntrenar =
               />
             </label>
             <Chips opciones={FILTROS_PROGRESO} valor={filtro} onCambiar={setFiltro} accent={accent} etiqueta="Filtrar por tendencia" />
+            {/* FIT F13, apartado 8 — y por grupo muscular. */}
+            <Chips opciones={FILTROS_GRUPO} valor={filtroGrupo} onCambiar={setFiltroGrupo} accent={accent} etiqueta="Filtrar por grupo muscular" />
 
             {consulta.tarjetas.length === 0 && consulta.nuncaHechos.length === 0 && (
               <Card>
                 <p className="text-sm" style={{ color: COLORS.textMuted }}>No hay ejercicios que coincidan.</p>
                 <div className="mt-2">
-                  <GhostBtn icon={X} onClick={() => { setBusqueda(''); setFiltro('todos'); }}>Limpiar</GhostBtn>
+                  <GhostBtn icon={X} onClick={() => { setBusqueda(''); setFiltro('todos'); setFiltroGrupo('todos'); }}>Limpiar</GhostBtn>
                 </div>
               </Card>
             )}

@@ -7407,6 +7407,76 @@ await page.waitForTimeout(2500);
 ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F12 — se recarga la aplicación');
 ok(/62,5 kg × 8 → 62,5 kg × 10/.test(await esperarTexto(/Progreso reciente/i)), '🚨 …y el progreso se reconstruye igual desde las sesiones guardadas (apartado 41)');
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F13 — Progreso por grupos musculares (Entrega 4 · 13/45)
+   ══════════════════════════════════════════════════════════════════════════
+   El criterio del apartado 27, literal: *"Fitness → Progreso → Progreso
+   muscular → Espalda → Dorsales → Dominadas → Ver evolución del ejercicio"*.
+   Se siembran dos sesiones de dominadas con una mejora, sobre las de la F12. */
+console.log('\n── FIT F13 · Progreso muscular ──');
+
+const dominada_fit13 = (id, dias, reps) => {
+  const base = sesionSembrada_fit12(id, dias, [{ id: `${id}-1`, origen: 'planificada', estado: 'hecha', modo: 'reps', plan: { reps: 8, repsHasta: null, duracion: null, peso: null }, hecho: { reps, peso: null, duracion: null } }], 'dominada-prona');
+  base.origen.ejercicios[0].linea.tipoCarga = 'corporal';
+  base.nombre = 'Pull sembrado';
+  return base;
+};
+almacen.fitness = { ...almacen.fitness, sesiones: [...almacen.fitness.sesiones, dominada_fit13('f13-a', 9, 8), dominada_fit13('f13-b', 1, 11)] };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F13 — Fitness → Progreso');
+ok(await pulsar('Músculos'), '…→ Progreso muscular (apartado 3)');
+const musculos_fit13 = await esperarTexto(/Espalda/);
+ok(['Brazos', 'Piernas', 'Espalda', 'Pecho', 'Hombros', 'Abdominales', 'Cuello'].every((g) => musculos_fit13.includes(g)),
+  '🚨 FIT F13 — aparecen los siete grupos (26.2)');
+ok(/no el tamaño del músculo/i.test(musculos_fit13), '🚨 …diciendo que mide rendimiento, no el músculo (apartado 2)');
+const tarjetasMusculo_fit13 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
+  .map((b) => b.getAttribute('aria-label')).filter((a) => /^(Brazos|Piernas|Espalda|Pecho|Hombros|Abdominales|Cuello):/.test(a)));
+ok(tarjetasMusculo_fit13.some((a) => /^Cuello: Sin datos/.test(a)), '🚨 FIT F13 — el Cuello, que no ha entrenado, dice «Sin datos», NO «Descenso» (apartado 11)');
+ok(tarjetasMusculo_fit13.some((a) => /^Pecho: Mejorando\. Poca información/.test(a)),
+  '🚨 …y el Pecho, con un solo ejercicio, su tendencia con «Poca información» (26.4)');
+
+ok(await pulsarQueEmpiece_fit10('Espalda:'), 'FIT F13 — → Espalda (apartado 6)');
+const espalda_fit13 = await esperarTexto(/Rendimiento general/i);
+ok(/Rendimiento general/i.test(espalda_fit13) && /Subgrupos/i.test(espalda_fit13) && /Dorsales/.test(espalda_fit13),
+  '🚨 …con su rendimiento general y sus subgrupos');
+ok(/Implicación en este músculo: \d+ %/.test(espalda_fit13), '🚨 …y cada ejercicio con su implicación del catálogo (apartado 9)');
+ok(await pulsarQueEmpiece_fit10('Dorsales:'), 'FIT F13 — → Dorsales (apartado 9)');
+const dorsales_fit13 = await esperarTexto(/Implicación en este músculo/i);
+ok(/Dominada/i.test(dorsales_fit13), '…que lista las dominadas');
+ok(await pulsarQueEmpiece_fit10('Ver el progreso de Dominada'), 'FIT F13 — → Dominadas');
+const evol_fit13 = await esperarTexto(/Última vez/i);
+ok(/11 reps/.test(evol_fit13) && /\+3 reps/.test(evol_fit13),
+  '🚨 FIT F13 — → «Ver evolución del ejercicio»: la pantalla de la F12, con 8 → 11 reps y «+3 reps» (apartado 27)');
+ok(!/\bkg\b/.test(evol_fit13.split('Mejor resultado')[0]), '…y a peso corporal, sin un solo kg inventado (apartado 5)');
+ok(await pulsar('Volver a Progreso'), '…se vuelve');
+ok(/Dorsales/.test(await esperarTexto(/Implicación en este músculo/i)), '🚨 …al subgrupo de donde venía');
+ok(await pulsar('Volver a Espalda'), '…a Espalda');
+ok(await pulsar('Volver a Progreso'), '…y a Progreso');
+
+/* Apartado 13 — el periodo cambia el resumen muscular. */
+ok(await pulsar('7 días'), 'FIT F13 — periodo «7 días» (apartado 13)');
+await page.waitForTimeout(500);
+const siete_fit13 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
+  .map((b) => b.getAttribute('aria-label')).filter((a) => /^(Espalda|Pecho):/.test(a)));
+ok(siete_fit13.some((a) => /^Pecho: Sin datos/.test(a)),
+  '🚨 FIT F13 — en 7 días el Pecho NO tiene con qué comparar (la sesión anterior es de hace 10): «Sin datos», sin usar datos viejos');
+
+/* Apartado 8 — filtrar la lista de ejercicios por grupo. */
+ok(await pulsar('Todo'), '…se vuelve a «Todo»');
+ok(await pulsar('Ejercicios'), 'FIT F13 — Ejercicios');
+ok(await page.evaluate(() => {
+  const g = document.querySelector('[aria-label="Filtrar por grupo muscular"]');
+  const b = g && [...g.querySelectorAll('button')].find((x) => x.innerText.trim() === 'Espalda');
+  if (!b) return false;
+  b.click();
+  return true;
+}), '…filtro «Espalda» (apartado 8)');
+await page.waitForTimeout(400);
+const filtradosEsp_fit13 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Ver el progreso de"]')].map((b) => b.getAttribute('aria-label')));
+ok(filtradosEsp_fit13.length === 1 && /Dominada/.test(filtradosEsp_fit13[0]),
+  `🚨 FIT F13 — deja solo las dominadas: el press y el L-sit no trabajan la espalda (${filtradosEsp_fit13.length})`);
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

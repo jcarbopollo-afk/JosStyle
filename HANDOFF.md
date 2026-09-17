@@ -2,6 +2,17 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.95.0 — FIT F13/45: progreso por grupos musculares):** Progreso tiene la
+> pestaña **Músculos**: los siete grupos con su estado, *"2 de 3 ejercicios mejoran"* y una barra que
+> sale de contar; al abrir uno, su rendimiento general, sus subgrupos y sus ejercicios con su implicación
+> en ese músculo; y el periodo. Siempre con *"Esto mide el rendimiento de tus ejercicios, no el tamaño
+> del músculo"*. 🚨 La lógica (`progresoMuscular.js`) **no compara**: reparte la tendencia de la F11
+> según el porcentaje del catálogo y vota — sin datos es **Sin datos** y nunca Descenso, uno solo lleva
+> **Poca información**, varios deciden por mayoría ponderada (empate → Estable). Con un periodo solo
+> cuentan sus sesiones; con «Todo», una recencia de 90 días. Un ejercicio borrado del catálogo no se
+> atribuye a ningún grupo. En Ejercicios, filtro por grupo. Pruebas en `test-progreso-muscular.mjs`
+> y en Chromium con el camino del criterio.
+
 > **🏋️ ACTUALIZACIÓN (v3.94.0 — FIT F12/45: pantalla de progreso por ejercicio):** **Fitness →
 > Progreso** con **Resumen** (cuatro cifras reales y el progreso reciente, o *Tu progreso aparecerá
 > aquí* con *Entrenar ahora* si no hay nada comparable), **Ejercicios** (una tarjeta por ejercicio con

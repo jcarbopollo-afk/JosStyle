@@ -165,10 +165,12 @@ import FitnessView, { AreaRangos, AreaProgreso } from '../src/views/FitnessView.
    aparecen al tocar una tarjeta (NAV F3). */
 import ProgresoView, {
   TarjetaProgreso, ResumenProgreso, DetalleProgreso, GraficaProgreso, EtiquetaEstado as EtiquetaEstadoF12,
+  TarjetaMusculo, DetalleMusculo, MusculosProgreso, EstadoMuscular,
 } from '../src/views/ProgresoView.jsx';
 import {
   tarjetasDeProgreso as tarjetasF12, resumenDeProgreso as resumenF12, detalleDeProgreso as detalleF12,
 } from '../src/lib/progresoEjercicios.js';
+import { resumenMuscular as resumenMuscularF13, ejerciciosDeMusculo as ejerciciosMusculoF13 } from '../src/lib/progresoMuscular.js';
 /* FIT F2 — el catálogo de ejercicios y su detalle. ⚠️ El detalle va APARTE
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
    Relación (NAV F3), y sin estos casos no lo probaría nadie. */
@@ -3010,6 +3012,19 @@ const CASOS = [
   ['DetalleProgreso', DetalleProgreso, () => ({ detalle: detalleF12({}, 'l-sit'), accent, rango: 'todo', onRango: noop, onVolver: noop })],
   ['GraficaProgreso', GraficaProgreso, () => ({ grafica: detalleF12(fitnessConProgresoF12(), 'press-banca-barra').grafica, accent, onVerSesion: noop })],
   ['GraficaProgreso', GraficaProgreso, () => ({ grafica: { puntos: [], mostrar: false, motivo: 'No hay registros en este periodo.', etiqueta: '', unidad: '' }, accent })],
+  /* ══ FIT F13 — progreso muscular ══════════════════════════════════════ */
+  ['MusculosProgreso', MusculosProgreso, () => ({ resumen: resumenMuscularF13(fitnessConProgresoF12(), { hoy: '2026-09-05' }), periodo: 'todo', onPeriodo: noop, accent, onAbrir: noop, onEntrenar: noop })],
+  ['MusculosProgreso', MusculosProgreso, () => ({ resumen: resumenMuscularF13({}), periodo: 'todo', onPeriodo: noop, accent, onAbrir: noop, onEntrenar: noop })],
+  ['MusculosProgreso', MusculosProgreso, () => ({ resumen: resumenMuscularF13({}), periodo: '7d', onPeriodo: noop, accent, onAbrir: noop })],
+  ['TarjetaMusculo', TarjetaMusculo, () => ({ musculo: resumenMuscularF13(fitnessConProgresoF12(), { hoy: '2026-09-05' }).grupos[3], accent, onAbrir: noop })],
+  ['DetalleMusculo', DetalleMusculo, () => {
+    const res = resumenMuscularF13(fitnessConProgresoF12(), { hoy: '2026-09-05' });
+    const g = res.grupos.find((x) => x.id === 'pecho');
+    return { musculo: g, subgrupos: g.subgrupos, ejercicios: ejerciciosMusculoF13(res.senales, { grupoId: 'pecho' }), accent, volverA: 'Progreso', onVolver: noop, onSubgrupo: noop, onEjercicio: noop };
+  }],
+  /* ⚠️ Y un músculo sin ejercicios. */
+  ['DetalleMusculo', DetalleMusculo, () => ({ musculo: resumenMuscularF13({}).grupos[6], ejercicios: [], accent, volverA: 'Progreso', onVolver: noop })],
+  ['EstadoMuscular', EstadoMuscular, () => ({ estado: 'mejora', nombre: 'Mejorando', simbolo: '↗', accent, pocaInformacion: true })],
   ['EtiquetaEstado (Progreso)', EtiquetaEstadoF12, () => ({ estado: 'mejora', nombre: 'Mejorando', simbolo: '↗', accent })],
   /* FIT F2 — el catálogo entero, su detalle y una tarjeta suelta. El caso que
      más importa es el ejercicio SIN instrucciones ni progresiones: la pantalla
