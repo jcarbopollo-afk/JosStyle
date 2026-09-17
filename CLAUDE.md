@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.93.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.94.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -325,7 +325,14 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, con la **FIT F1 (v3.83.0)**, la **FIT F2
 (v3.84.0)**, la **FIT F3 (v3.85.0)**, la **FIT F4 (v3.86.0)**, la **FIT F5 (v3.87.0)**, la **FIT F6
 (v3.88.0)**, la **FIT F7 (v3.89.0)**, la **FIT F8 (v3.90.0)**, la **FIT F9 (v3.91.0)**, la **FIT F10
-(v3.92.0)** y la **FIT F11 (v3.93.0)** hechas. Lo que dejaron, y que vale para las 34 que quedan:
+(v3.92.0)** , la **FIT F11 (v3.93.0)** y la **FIT F12 (v3.94.0)** hechas. Lo que dejaron, y que vale para
+las 33 que quedan:
+
+- 🚨 **FITNESS → PROGRESO ES `ProgresoView`** (FIT F12), con Resumen, Ejercicios y Fotos. El progreso
+  por grupo muscular (F13) y las metas (F14) **van ahí**, sin otra navegación. Y su librería,
+  `progresoEjercicios.js`, **no compara nada**: todo sale de la F11.
+- 🚨 **Una pantalla que enseña series de una sesión las numera como el historial** (omitidas fuera):
+  la F11 guarda `numero` en cada serie. Numerar por posición contradice al historial.
 
 - 🚨 **LA PROGRESIÓN VIVE EN `src/lib/progresion.js` Y NO SE GUARDA** (FIT F11). Progreso por
   ejercicio (F12), por músculo (F13), metas (F14), récords y rangos **llaman a

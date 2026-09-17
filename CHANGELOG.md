@@ -1,5 +1,69 @@
 # CHANGELOG.md
 
+## v3.94.0 — FIT F12/45: pantalla de progreso por ejercicio
+
+El criterio: entrar en **Fitness → Progreso** y ver una representación real de cómo evoluciona, con
+*Progreso → Ejercicio → Comparación → Historial → Sesión* y **todos los datos coincidiendo**.
+
+### Cómo es
+
+Progreso tiene tres pestañas (apartado 2): **Resumen**, **Ejercicios** y **Fotos**.
+
+- **Resumen** — *Tu progreso · Evolución de tu rendimiento*, con cuatro cifras reales (mejorando,
+  estables, descenso, entrenamientos) y **Progreso reciente**: las últimas mejoras con su antes y su
+  después (*62,5 kg × 8 → 62,5 kg × 10*). 🚨 **Sin ningún ejercicio comparable no hay cifras**: sale
+  *Tu progreso aparecerá aquí* con **Entrenar ahora**, porque «0 mejorando» con un solo entrenamiento
+  sería una estadística falsa (apartado 5).
+- **Ejercicios** — una tarjeta por ejercicio hecho: nombre, última marca, el cambio y su estado con
+  **símbolo y palabra** (↗ Mejorando, → Estable, ↘ Descenso, • Primer registro, ≠ No comparable).
+  Primero lo que tiene comparación y, dentro, lo más reciente (apartado 8). Búsqueda y cinco filtros;
+  un ejercicio que **nunca ha hecho** sale **aparte**, como «Sin datos» (apartado 9).
+- **Fotos** — la estructura, lista para el sistema de fotos: cuenta las de Salud física y lleva allí.
+
+Al abrir un ejercicio: **Última vez** destacada, **Anterior → Resultado**, **Mejor resultado** (o
+*Primer registro* si solo hay una), la **gráfica** con su periodo (7 días, 30 días, 3 meses, todo) y el
+**historial del ejercicio**, sesión a sesión, que se despliega en *Serie 1 — 62,5 kg × 10*. Desde ahí,
+**Ver entrenamiento** abre la pantalla de la F10 y **Ver ejercicio** la ficha del catálogo: ninguna de
+las dos se duplica (apartados 29 y 30).
+
+### 🚨 Ni una comparación propia
+
+La pantalla no compara nada (apartado 38): tendencias, mejores series y cambios salen de la F11
+(`progresoDeEjercicio`), y `src/lib/progresoEjercicios.js` solo ordena, filtra y prepara. Hay una
+comprobación que exige que el resultado del detalle sea **exactamente** el texto de la F11, y otra que
+barre la librería y la pantalla buscando comparaciones de pesos o repeticiones hechas a mano.
+
+### 🚨 Progreso y historial dicen lo mismo
+
+*"Si el historial dice 20 kg × 10, Progreso no debe decir 20 kg × 9"* (apartado 31). Una comprobación
+monta la línea de una sesión desde el historial de la F10 y desde Progreso y exige que sean idénticas.
+🐛 **Y destapó un fallo antes de llegar a Josué**: Progreso numeraba las series por posición, así que con
+la serie 2 sin hacer, la tercera salía como «Serie 2» mientras el historial decía «Serie 3». Ahora la
+F11 guarda en cada serie su número, contado igual que el historial.
+
+### La gráfica
+
+Una línea, una métrica y su nombre (apartado 22): **mejor peso por sesión** con carga, **mejores
+repeticiones** a peso corporal, **mejor tiempo** en un isométrico. 🚨 **Solo de la forma de medir de la
+última vez**: si antes lo hacía sin lastre y ahora con lastre, mezclar repeticiones y kilos en una línea
+sería dibujar dos cosas como una. Con uno o dos registros **no hay gráfica** y se dice por qué (con dos
+ya lo dice la comparación); en un periodo sin datos, lo mismo (apartados 23 y 24). Se toca un punto y
+dice fecha y resultado, con *Ver entrenamiento* (apartado 25). Línea de 2 px, puntos con zona de toque
+mayor que el punto, alcanzables con el teclado, y escala con el ancho: a 375 px no desborda.
+
+### Pruebas
+
+- `scripts/test-progreso-ejercicios.mjs` (73): sin entrenamientos, uno, dos y muchos; historial y
+  mejor resultado; la gráfica con 0, 1, 2, iguales y 100 puntos; rangos; isométricos en segundos; peso
+  corporal sin un solo «kg»; variantes separadas; lastre que no se mezcla en la gráfica; orden, filtros
+  y búsqueda; datos rotos y ejercicios eliminados; la coherencia con el historial; y que no haya
+  matemática propia. Comprobado que se pone roja si se numeran las series por posición.
+- **Recorrido en Chromium, sección FIT F12**, con cuatro sesiones sembradas: cifras y progreso
+  reciente, estados y orden, filtro, el detalle con la comparación y la gráfica, tocar un punto, las
+  series de una sesión, **Ver entrenamiento** con los mismos números y la comparación de la F11,
+  buscar un ejercicio que nunca hizo, y recargar.
+- El banco de renderizado pinta cada pieza, con datos y sin ellos.
+
 ## v3.93.0 — FIT F11/45: progresión y comparación del rendimiento
 
 El criterio: poder responder *"¿Cuál fue mi última marca en este ejercicio? ¿Cuál fue la anterior?

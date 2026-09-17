@@ -2,6 +2,18 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.94.0 — FIT F12/45: pantalla de progreso por ejercicio):** **Fitness →
+> Progreso** con **Resumen** (cuatro cifras reales y el progreso reciente, o *Tu progreso aparecerá
+> aquí* con *Entrenar ahora* si no hay nada comparable), **Ejercicios** (una tarjeta por ejercicio con
+> su última marca, su cambio y su estado con símbolo y palabra; búsqueda, cinco filtros, y lo que nunca
+> hizo aparte) y **Fotos** (cuenta las de Salud física y lleva allí). El detalle: última vez, anterior →
+> resultado, mejor resultado o primer registro, la **gráfica** de una sola métrica con su nombre y su
+> periodo, y el historial del ejercicio con sus series, desde donde se abre la sesión de la F10 o la
+> ficha del catálogo. 🚨 **Ni una comparación propia**: todo de la F11. 🚨 **Dice lo mismo que el
+> historial**, serie a serie — y eso destapó que Progreso numeraba las series por posición; ahora la F11
+> guarda el número. Vive en `src/lib/progresoEjercicios.js` y `src/views/ProgresoView.jsx`, con
+> `scripts/test-progreso-ejercicios.mjs` y su sección del recorrido con sesiones sembradas.
+
 > **🏋️ ACTUALIZACIÓN (v3.93.0 — FIT F11/45: progresión y comparación del rendimiento):** La lógica
 > para saber **si mejora**, en `src/lib/progresion.js`: última marca, la anterior comparable, la mejor
 > histórica y la tendencia (mejora, estable, descenso, sin datos) por ejercicio, con

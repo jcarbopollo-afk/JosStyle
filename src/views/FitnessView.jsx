@@ -51,6 +51,8 @@ import TuPlanView from './TuPlanView';
 import EntrenamientoVivoView, { SesionRecuperable } from './EntrenamientoVivoView';
 /* FIT F10 — el historial, dentro de Entrenamiento (su apartado 2). */
 import HistorialView from './HistorialView';
+/* FIT F12 — Progreso: resumen, ejercicios y fotos. */
+import ProgresoView from './ProgresoView';
 /* FIT F8 — el resumen y el guardado, también pantalla entera: se llega desde el
    entrenamiento en vivo y se sale guardando o descartando. */
 import FinalizacionView from './FinalizacionView';
@@ -320,36 +322,23 @@ export function AreaRangos({ rangos = [], accent }) {
    **las cuenta y lleva allí**; no las copia, no las vuelve a subir y no se
    salta su protección. Decirle *"todavía no has añadido fotografías"* a alguien
    que tiene cinco sería mentirle en su propia pantalla. */
-export function AreaProgreso({ fotos, accent, onIr = null }) {
+/* 🔓 FIT F12 — el área entera es ahora `ProgresoView`: Resumen, Ejercicios y
+   Fotos (su apartado 2). ⚠️ **Las fotos no se pierden**: siguen contándose de
+   Salud física y llevando allí, ahora en su propia pestaña, porque la F12 pide
+   dejar la estructura lista para el sistema de fotos sin construirlo. */
+export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null }) {
   const resumen = resumenProgreso(fotos);
-  if (resumen.vacio) {
-    /* ⚠️ Sin `onIr` no se pinta el botón: un «Añadir foto» que no lleva a
-       ninguna parte es peor que no ofrecerlo (regla 8). */
-    return (
-      <VacioFitness
-        estado={ESTADOS_VACIOS.progreso}
-        accent={accent}
-        onAccion={onIr ? (a) => onIr(a.lleva) : null}
-      />
-    );
-  }
   return (
-    <div className="space-y-4">
-      <Card>
-        <p className="text-base font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-          Tu progreso
-        </p>
-        <p className="text-sm mt-1.5" style={{ color: COLORS.textMuted }}>{resumen.texto}</p>
-        {onIr && (
-          <div className="mt-4">
-            <GhostBtn icon={Camera} onClick={() => onIr('salud')}>Ver y añadir fotos</GhostBtn>
-          </div>
-        )}
-      </Card>
-      <p className="text-xs px-1" style={{ color: COLORS.textMuted }}>
-        La línea de tiempo y la comparación entre dos fotos llegan en una fase posterior.
-      </p>
-    </div>
+    <ProgresoView
+      fitness={fitness || {}}
+      fotos={fotos}
+      accent={accent}
+      onEntrenar={onEntrenar}
+      /* ⚠️ Sin `onIr` no se pinta el botón: un «Añadir foto» que no lleva a
+         ninguna parte es peor que no ofrecerlo (regla 8). */
+      onIrAFotos={onIr ? () => onIr(ESTADOS_VACIOS.progreso.accion.lleva) : null}
+      resumenFotos={resumen}
+    />
   );
 }
 
@@ -765,7 +754,16 @@ export default function FitnessView({
       <PestanasFitness areas={AREAS_FITNESS} activa={area} onCambiar={setArea} accent={accent} />
 
       {area === 'rangos' && <AreaRangos rangos={rangos} accent={accent} />}
-      {area === 'progreso' && <AreaProgreso fotos={fotos} accent={accent} onIr={onIr} />}
+      {area === 'progreso' && (
+        <AreaProgreso
+          fitness={fitness}
+          fotos={fotos}
+          accent={accent}
+          onIr={onIr}
+          /* FIT F12, apartado 5 — «Entrenar ahora» lleva a Entrenamiento, donde se empieza. */
+          onEntrenar={() => setArea('entrenamiento')}
+        />
+      )}
       {area === 'entrenamiento' && (
         <AreaEntrenamiento
           fitness={fitness} calistenia={calistenia} accent={accent} entrenoProps={entrenoProps}

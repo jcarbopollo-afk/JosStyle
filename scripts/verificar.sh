@@ -1024,6 +1024,15 @@ else
   fallo "Falla la UX del entrenamiento en vivo"; grep '✗' /tmp/jc_entreno_ux.log
 fi
 
+# FIT F12 — Fitness → Progreso. Lo que más se vigila: que la pantalla no tenga
+# matemática propia (todo sale de la F11), que diga lo mismo que el historial, y
+# que la gráfica no mezcle métricas ni rompa con 0, 1, 2 o muchos puntos.
+if node --import ./scripts/resolver-vite.mjs scripts/test-progreso-ejercicios.mjs >/tmp/jc_progreso_ej.log 2>&1; then
+  ok "Progreso por ejercicio (FIT F12) — $(grep -c '✓' /tmp/jc_progreso_ej.log) comprobaciones"
+else
+  fallo "Falla el progreso por ejercicio"; grep '✗' /tmp/jc_progreso_ej.log
+fi
+
 # FIT F11 — la progresión. Lo que más se vigila: los siete casos del apartado 38,
 # que variantes y medidas distintas NO se comparen, que las series incompletas no
 # penalicen y que ningún cálculo toque las sesiones guardadas.

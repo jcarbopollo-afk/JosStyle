@@ -5816,7 +5816,10 @@ ok(!/0 restantes/i.test(enRangos),
 
 /* Área PROGRESO, sin fotos: estado vacío con salida, no una pantalla en blanco. */
 ok(await pulsar('Progreso'), 'se cambia al área de Progreso');
-const enProgreso_fit = await esperarTexto(/Tu progreso/i);
+/* 🔓 FIT F12 — Progreso se abre en «Resumen»; las fotos tienen ahora su pestaña. */
+await esperarTexto(/Tu progreso/i);
+ok(await pulsar('Fotos'), 'FIT F12 — se abre la pestaña Fotos de Progreso');
+const enProgreso_fit = await esperarTexto(/fotograf/i);
 ok(/Todavía no has añadido fotograf/i.test(enProgreso_fit),
   '🚨 FIT F1 — el estado vacío de Progreso, con las palabras del apartado 11');
 ok(/Añadir foto/i.test(enProgreso_fit),
@@ -7287,6 +7290,122 @@ ok(JSON.stringify(fitness_fit10().planActivo) === planAntes_fit10, '…ni el pla
 
 ok(await pulsar('Volver a Entrenamiento'), 'FIT F10 — se vuelve a Entrenamiento');
 ok(/Tu Plan/i.test(await esperarTexto(/Tu Plan/i)), '…a Tu Plan');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F12 — Fitness → Progreso (Entrega 4 · 12/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El criterio del apartado 45: *"Progreso → Ejercicio → Comparación → Historial
+   → Sesión, y todos los datos deben coincidir."* Hace falta más de una sesión
+   del mismo ejercicio para que haya comparación, así que **se siembran**: tres
+   de press de banca con una mejora real al final, y un L-sit de una sola vez.
+   ⚠️ Van DESPUÉS de la F10, que deja el historial vacío al eliminar, para no
+   cambiar lo que aquélla cuenta. La sesión en curso que había se conserva. */
+console.log('\n── FIT F12 · Progreso por ejercicio ──');
+
+const hoy_fit12 = new Date().toLocaleDateString('sv-SE');
+const haceDias_fit12 = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('sv-SE'); };
+const serie_fit12 = (id, reps, peso) => ({ id, origen: 'planificada', estado: 'hecha', modo: 'reps', plan: { reps: 8, repsHasta: 10, duracion: null, peso: null }, hecho: { reps, peso, duracion: null } });
+const sesionSembrada_fit12 = (id, dias, series, exerciseId = 'press-banca-barra', modo = 'reps') => {
+  const fecha = haceDias_fit12(dias);
+  const inicio = new Date(`${fecha}T18:00:00`).getTime();
+  return {
+    id, nombre: 'Push sembrado', fecha, estado: 'completada', iniciadaEn: inicio, terminadaEn: inicio + 50 * 60000,
+    guardadaEn: inicio + 51 * 60000, pausadoMs: 0, actual: 0, visibilidad: 'privado', notas: '', entorno: 'gym',
+    origen: { tipo: 'plantilla', id: null, ejercicios: [{ id: `${id}-e`, exerciseId, orden: 0, modo, notas: '', descanso: 90, sustituyeA: null, linea: { series: series.length, tipoCarga: 'externo' }, series }] },
+  };
+};
+almacen.fitness = {
+  ...(almacen.fitness || {}),
+  sesiones: [
+    ...((almacen.fitness && almacen.fitness.sesiones) || []).filter((x) => x && x.estado !== 'completada'),
+    sesionSembrada_fit12('f12-a', 20, [serie_fit12('a1', 8, 60), serie_fit12('a2', 8, 60)]),
+    sesionSembrada_fit12('f12-b', 10, [serie_fit12('b1', 8, 62.5), serie_fit12('b2', 8, 62.5)]),
+    sesionSembrada_fit12('f12-c', 2, [serie_fit12('c1', 10, 62.5), serie_fit12('c2', 9, 62.5)]),
+    sesionSembrada_fit12('f12-d', 5, [{ id: 'd1', origen: 'planificada', estado: 'hecha', modo: 'tiempo', plan: { reps: null, repsHasta: null, duracion: 15, peso: null }, hecho: { reps: null, peso: null, duracion: 12 } }], 'l-sit', 'tiempo'),
+  ],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F12 — se entra en Fitness con cuatro sesiones sembradas');
+ok(await pulsar('Progreso'), '…y en Progreso (apartado 1)');
+const resumen_fit12 = await esperarTexto(/Mejorando/i);
+ok(/Tu progreso/i.test(resumen_fit12) && /Evoluci[oó]n de tu rendimiento/i.test(resumen_fit12), '🚨 FIT F12 — la cabecera «Tu progreso» (apartado 3)');
+ok(/Mejorando/i.test(resumen_fit12) && /Entrenamientos/i.test(resumen_fit12), '🚨 …con las cifras reales: hay un ejercicio comparable (apartado 4)');
+ok(/Progreso reciente/i.test(resumen_fit12) && /62,5 kg × 8 → 62,5 kg × 10/.test(resumen_fit12),
+  '🚨 FIT F12 — «Progreso reciente» con el cambio REAL: 62,5 kg × 8 → 62,5 kg × 10 (apartado 26)');
+ok(!/confeti|\bXP\b|monedas/i.test(resumen_fit12), '…sin gamificación (apartado 27)');
+
+ok(await pulsar('Ejercicios'), 'FIT F12 — la pestaña Ejercicios');
+const lista_fit12 = await esperarTexto(/Primer registro|Mejorando/i);
+ok(/Primer registro/i.test(lista_fit12) && /Mejorando/i.test(lista_fit12),
+  '🚨 …con el press «Mejorando» y el L-sit como «Primer registro»: estados distintos (apartado 36)');
+const orden_fit12 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Ver el progreso de"]')].map((b) => b.getAttribute('aria-label')));
+ok(orden_fit12.length >= 2 && /Mejorando/.test(orden_fit12[0]) && /Primer registro/.test(orden_fit12[orden_fit12.length - 1]),
+  '🚨 FIT F12 — lo que tiene comparación va DELANTE de lo que no, aunque el L-sit sea más reciente (apartado 8)');
+ok(await pulsar('Sin datos'), 'FIT F12 — filtro «Sin datos» (apartado 10)');
+await page.waitForTimeout(400);
+const sinDatos_fit12 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Ver el progreso de"]')].map((b) => b.getAttribute('aria-label')));
+ok(sinDatos_fit12.length === 1 && /Primer registro/.test(sinDatos_fit12[0]), '…deja solo el de una vez');
+ok(await pulsar('Todos'), '…se vuelve a «Todos»');
+
+/* Progreso → Ejercicio → Comparación → Historial → Sesión. */
+ok(await pulsarQueEmpiece_fit10('Ver el progreso de Press'), 'FIT F12 — se abre el progreso del press de banca (apartado 11)');
+const detalle_fit12 = await esperarTexto(/Última vez/i);
+ok(/Última vez/i.test(detalle_fit12) && /62,5 kg × 10/.test(detalle_fit12), '🚨 FIT F12 — «Última vez: 62,5 kg × 10», destacada (apartado 12)');
+ok(/Anterior/i.test(detalle_fit12) && /62,5 kg × 8/.test(detalle_fit12) && /\+2 reps/.test(detalle_fit12),
+  '🚨 FIT F12 — la comparación: anterior 62,5 kg × 8 → +2 reps (apartado 13)');
+ok(/Mejor resultado/i.test(detalle_fit12), '…el mejor resultado (apartado 14)');
+ok(/Mejor peso por sesi[oó]n/i.test(detalle_fit12), '🚨 …y la gráfica, diciendo QUÉ mide (apartado 22)');
+ok(await page.evaluate(() => document.querySelectorAll('svg circle[role="button"]').length === 3), '…con un punto por sesión: tres (apartado 21)');
+const desborde_fit12 = await page.evaluate(() => ({ a: document.documentElement.scrollWidth, v: window.innerWidth }));
+ok(desborde_fit12.a <= desborde_fit12.v + 1, `🚨 FIT F12 — a 375 px la gráfica NO desborda de lado (${desborde_fit12.a} vs ${desborde_fit12.v}, apartado 40)`);
+
+ok(await page.evaluate(() => {
+  const puntos = document.querySelectorAll('svg circle[role="button"]');
+  if (!puntos.length) return false;
+  puntos[puntos.length - 1].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  return true;
+}), 'FIT F12 — se toca el último punto de la gráfica (apartado 25)');
+await page.waitForTimeout(400);
+ok(/Ver entrenamiento/.test(await ver()), '…y dice su fecha y su resultado, con «Ver entrenamiento»');
+
+ok(await pulsarQueEmpiece_fit10('Ver las series del'), 'FIT F12 — se despliega una sesión del historial del ejercicio (apartado 17)');
+await page.waitForTimeout(400);
+ok(/Serie 1 — 62,5 kg × 10/.test(await ver()) && /Serie 2 — 62,5 kg × 9/.test(await ver()),
+  '🚨 FIT F12 — «Serie 1 — 62,5 kg × 10 · Serie 2 — 62,5 kg × 9»');
+ok(await pulsar('Ver entrenamiento'), 'FIT F12 — «Ver entrenamiento» (apartado 30)');
+const sesion_fit12 = await esperarTexto(/Planificado/i);
+ok(/Push sembrado/.test(sesion_fit12), '🚨 …abre la pantalla de la F10, la misma del historial');
+ok(await pulsarQueEmpiece_fit10('Ver las series de'), '…se despliega el ejercicio');
+await page.waitForTimeout(400);
+const seriesF10_fit12 = await ver();
+ok(/62,5 kg/.test(seriesF10_fit12) && /\b10\b/.test(seriesF10_fit12) && /\b9\b/.test(seriesF10_fit12),
+  '🚨 FIT F12 — y el historial dice LO MISMO que Progreso: 62,5 kg, 10 y 9 (apartado 31)');
+ok(/\+2 reps respecto a la última vez/.test(seriesF10_fit12), '🚨 …incluida la comparación de la F11: «+2 reps respecto a la última vez»');
+ok(await pulsar('Volver al historial'), '…se vuelve');
+await page.waitForTimeout(400);
+
+/* Apartado 9 — buscar un ejercicio que nunca ha hecho. */
+ok(await pulsar('Volver a Progreso'), 'FIT F12 — se vuelve a Progreso');
+await page.waitForTimeout(300);
+ok(await pulsar('Ejercicios'), '…a Ejercicios');
+ok(await page.evaluate(() => {
+  const c = document.querySelector('input[aria-label="Buscar ejercicio en tu progreso"]');
+  if (!c) return false;
+  Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(c, 'planche');
+  c.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}), 'FIT F12 — se busca «planche», que nunca ha hecho');
+const busca_fit12 = await esperarTexto(/Sin datos/i);
+ok(/Todavía no los has registrado/i.test(busca_fit12) && /planche/i.test(busca_fit12),
+  '🚨 FIT F12 — sale APARTE, como «Sin datos», sin mezclarse con su progreso (apartado 9)');
+
+/* Apartado 41 — recargar y que se reconstruya. */
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(2500);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F12 — se recarga la aplicación');
+ok(/62,5 kg × 8 → 62,5 kg × 10/.test(await esperarTexto(/Progreso reciente/i)), '🚨 …y el progreso se reconstruye igual desde las sesiones guardadas (apartado 41)');
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

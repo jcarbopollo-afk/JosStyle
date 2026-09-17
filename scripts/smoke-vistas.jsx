@@ -161,6 +161,14 @@ import RelationView, { AlbumTab } from '../src/views/RelationView.jsx';
    antes de esta fase**, sin la clave `fitness`, que es como lo tiene quien ya
    usaba la aplicación. */
 import FitnessView, { AreaRangos, AreaProgreso } from '../src/views/FitnessView.jsx';
+/* FIT F12 — Progreso. ⚠️ Con sus piezas sueltas: el detalle y la gráfica solo
+   aparecen al tocar una tarjeta (NAV F3). */
+import ProgresoView, {
+  TarjetaProgreso, ResumenProgreso, DetalleProgreso, GraficaProgreso, EtiquetaEstado as EtiquetaEstadoF12,
+} from '../src/views/ProgresoView.jsx';
+import {
+  tarjetasDeProgreso as tarjetasF12, resumenDeProgreso as resumenF12, detalleDeProgreso as detalleF12,
+} from '../src/lib/progresoEjercicios.js';
 /* FIT F2 — el catálogo de ejercicios y su detalle. ⚠️ El detalle va APARTE
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
    Relación (NAV F3), y sin estos casos no lo probaría nadie. */
@@ -274,6 +282,14 @@ const sesionVivaF7 = () => {
 };
 /* FIT F10 — un fitness con una sesión GUARDADA de verdad (F7 → F8), que es lo
    único que el historial enseña. */
+/* FIT F12 — tres sesiones guardadas del mismo ejercicio, para que haya gráfica. */
+const fitnessConProgresoF12 = () => [60, 62.5, 65].reduce((f, peso, i) => {
+  let s = empezarF7({ nombre: 'Push', lineas: anadirF3(crearRutinaF3({ nombre: 'Push' }), 'press-banca-barra').lineas, hoy: `2026-09-0${i + 1}`, ahora: Date.UTC(2026, 8, i + 1, 18) });
+  const e = ejsF7(s)[0];
+  s = marcarF7(editarF7(s, e.id, e.series[0].id, { peso, reps: 8 }), e.id, e.series[0].id, true);
+  return guardarSesionF10(f, guardarF8(pasarF8(s), { confirmado: true }).sesion);
+}, {});
+
 const fitnessConHistorialF10 = () => guardarSesionF10({}, guardarF8(pasarF8(sesionUsadaF7()), { confirmado: true }).sesion);
 
 const sesionUsadaF7 = () => {
@@ -2983,6 +2999,18 @@ const CASOS = [
   ['AreaRangos', AreaRangos, () => ({ rangos: [], accent })],
   ['AreaRangos', AreaRangos, (e) => ({ rangos: (e.fitness || {}).rangos || [], accent })],
   ['AreaProgreso', AreaProgreso, () => ({ fotos: [], accent, onIr: noop })],
+  /* ══ FIT F12 — Progreso ════════════════════════════════════════════════ */
+  ['ProgresoView', ProgresoView, () => ({ fitness: fitnessConProgresoF12(), fotos: [], accent, onEntrenar: noop, onIrAFotos: noop })],
+  ['ProgresoView', ProgresoView, () => ({ fitness: {}, fotos: [], accent })],
+  ['TarjetaProgreso', TarjetaProgreso, () => ({ tarjeta: tarjetasF12(fitnessConProgresoF12())[0], accent, onAbrir: noop })],
+  ['ResumenProgreso', ResumenProgreso, () => ({ resumen: resumenF12(fitnessConProgresoF12(), tarjetasF12(fitnessConProgresoF12())), accent, onEntrenar: noop, onAbrir: noop })],
+  ['ResumenProgreso', ResumenProgreso, () => ({ resumen: resumenF12({}, []), accent, onEntrenar: noop, onAbrir: noop })],
+  ['DetalleProgreso', DetalleProgreso, () => ({ detalle: detalleF12(fitnessConProgresoF12(), 'press-banca-barra'), accent, rango: 'todo', onRango: noop, onVolver: noop, onVerEjercicio: noop, onVerSesion: noop })],
+  /* ⚠️ Y un ejercicio que nunca ha hecho: sin última vez, sin gráfica. */
+  ['DetalleProgreso', DetalleProgreso, () => ({ detalle: detalleF12({}, 'l-sit'), accent, rango: 'todo', onRango: noop, onVolver: noop })],
+  ['GraficaProgreso', GraficaProgreso, () => ({ grafica: detalleF12(fitnessConProgresoF12(), 'press-banca-barra').grafica, accent, onVerSesion: noop })],
+  ['GraficaProgreso', GraficaProgreso, () => ({ grafica: { puntos: [], mostrar: false, motivo: 'No hay registros en este periodo.', etiqueta: '', unidad: '' }, accent })],
+  ['EtiquetaEstado (Progreso)', EtiquetaEstadoF12, () => ({ estado: 'mejora', nombre: 'Mejorando', simbolo: '↗', accent })],
   /* FIT F2 — el catálogo entero, su detalle y una tarjeta suelta. El caso que
      más importa es el ejercicio SIN instrucciones ni progresiones: la pantalla
      no puede pintar secciones vacías. */

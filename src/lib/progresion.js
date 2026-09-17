@@ -164,7 +164,16 @@ function aparicionesDeSesion(sesion, propios = []) {
   for (const e of ejerciciosDeSesion(sesion)) {
     const id = texto(e?.exerciseId);
     if (!id) continue;
-    const hechas = lista(e.series).filter((s) => s && s.estado === 'hecha').map(serieLimpia);
+    /* 🔓 FIT F12 — cada serie lleva su NÚMERO, contado igual que el historial
+       (`filasDeSeries`: las omitidas no cuentan). Sin él, «Serie 2» en Progreso
+       podía ser la «Serie 3» del historial, y las dos pantallas se contradirían. */
+    let n = 0;
+    const hechas = [];
+    for (const s of lista(e.series)) {
+      if (!s) continue;
+      if (s.estado !== 'omitida') n += 1;
+      if (s.estado === 'hecha') hechas.push({ ...serieLimpia(s), numero: n });
+    }
     if (!porEjercicio.has(id)) {
       porEjercicio.set(id, { modo: e.modo === 'tiempo' ? 'tiempo' : 'reps', tipoCarga: texto(e.linea?.tipoCarga), series: [] });
     }
