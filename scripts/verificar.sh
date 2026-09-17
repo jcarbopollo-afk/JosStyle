@@ -1024,6 +1024,15 @@ else
   fallo "Falla la UX del entrenamiento en vivo"; grep '✗' /tmp/jc_entreno_ux.log
 fi
 
+# FIT F15 — la base de Rangos. Lo que más se vigila: que sin datos sea «Sin Rango»
+# y no el rango 1, que un grupo sin entrenar no cuente como cero, que un ejercicio
+# aislado no dé rango global, y que un mal día no baje el rango.
+if node --import ./scripts/resolver-vite.mjs scripts/test-rangos.mjs >/tmp/jc_rangos.log 2>&1; then
+  ok "Sistema base de rangos (FIT F15) — $(grep -c '✓' /tmp/jc_rangos.log) comprobaciones"
+else
+  fallo "Falla el sistema de rangos"; grep '✗' /tmp/jc_rangos.log
+fi
+
 # FIT F14 — los objetivos de rendimiento. Lo que más se vigila: el criterio literal
 # (15 dominadas hasta «✓ Objetivo conseguido»), que sin datos no sea 0 %, que la
 # unidad dependa del ejercicio y que eliminar un objetivo no toque entrenamientos.

@@ -33,6 +33,8 @@ import {
   rachaDeFitness, resumenProgreso, resumenEntrenamiento,
 } from '../lib/fitness';
 import { iconoDeArea, iconoDeGrupo } from '../components/iconosFitness';
+/* FIT F15 — la insignia hexagonal de los rangos, una sola en toda la aplicación. */
+import { RankBadge } from '../components/rangos';
 import TrainingView from './TrainingView';
 /* FIT F2 — el catálogo se renderiza entero aquí dentro, como `TrainingView`:
    agrupar pantallas es renderizarlas, nunca copiarlas (E3 F23). */
@@ -177,21 +179,21 @@ export function VacioFitness({ estado, accent, onAccion = null }) {
 
    ⚠️ El candado va **además** del color, no en su lugar. */
 export function InsigniaRango({ nivel, estado, accent }) {
-  const activa = estado !== 'bloqueado';
+  /* 🔓 FIT F15 — el hexágono lo dibuja `RankBadge` (`src/components/rangos.jsx`):
+     dos dibujos del mismo rango acabarían separándose (apartado 27). ⚠️ Los
+     estados de la F1 —completado, actual, bloqueado— son los de la F15 con otro
+     nombre, así que se traducen aquí en vez de renombrarlos por todas partes. */
+  const estadoF15 = estado === 'completado' ? 'conseguido' : estado;
   return (
     <div className="flex flex-col items-center gap-1 shrink-0" style={{ width: 56 }}>
-      <div
-        className="w-11 h-11 flex items-center justify-center"
-        style={{
-          clipPath: 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)',
-          background: estado === 'actual' ? accent : hexToRgba(COLORS.border, activa ? 0.9 : 0.45),
-          color: estado === 'actual' ? COLORS.textOnAccent : COLORS.textMuted,
-        }}
-      >
-        {activa
-          ? <span className="text-sm font-extrabold">{nivel.orden}</span>
-          : <Lock size={14} aria-hidden="true" />}
-      </div>
+      <RankBadge
+        rank={nivel.orden}
+        size="md"
+        state={estadoF15}
+        locked={estado === 'bloqueado'}
+        accent={accent}
+        etiqueta={`Rango ${nivel.nombre}`}
+      />
       <span
         className="text-[10px] font-semibold text-center leading-tight"
         style={{ color: estado === 'actual' ? COLORS.text : COLORS.textMuted }}

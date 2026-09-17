@@ -1,5 +1,64 @@
 # CHANGELOG.md
 
+## v3.97.0 — FIT F15/45: sistema base de rangos y clasificación
+
+Empieza el bloque de Rangos, y esta fase es **solo la base**: lógica, configuración y componentes. La
+pantalla llega en las siguientes (apartado 30).
+
+### Qué se puede preguntar ya
+
+`src/lib/rangos.js` responde el rango de un **ejercicio**, de un **subgrupo**, de un **grupo** y el
+**global**, calculándolo al pedirlo desde las sesiones (F11), el reparto muscular (F13) y el peso del
+perfil. 🚨 **No se guarda nada**: la fuente de verdad siguen siendo ejercicio + sesiones + perfil
+(apartado 28).
+
+### 🚨 Un rango es una métrica interna, y se dice
+
+*"No deben presentarse como nivel físico real ni nivel atlético científico"* (apartado 1). Las
+referencias que convierten una marca en puntuación son **una convención de la aplicación**, escrita en
+un único sitio (`REFERENCIAS`, `RANK_THRESHOLDS`) para poder cambiarla sin tocar código. Hay una
+comprobación que barre las pantallas buscando un `if (score > 100)` suelto.
+
+### La fórmula, en cinco pasos
+
+1. **La marca** de cada sesión según la clase de la F11: repeticiones, segundos, o —con carga— una
+   estimación para poner en la misma escala *80 × 5* y *70 × 8*, dividida por el peso corporal si el
+   perfil lo tiene. ⚠️ Esa estimación **no se enseña**.
+2. **La puntuación** (0–1000) comparando la marca con la referencia de su clase **y su dificultad**: 10
+   muscle-ups (experto) puntúan mucho más que 10 dominadas (intermedio) (apartado 9).
+3. **Estabilidad**: cuenta la mejor de las últimas cinco sesiones, no la última. 🚨 Un mal día **no
+   baja el rango**; solo baja si el bajón se sostiene (apartado 23).
+4. **Músculos**: media ponderada por la implicación del catálogo. Un press que es 50 % pecho pesa el
+   doble en Pecho que en Tríceps, y nadie cuenta al 100 % en todo (apartados 17 y 18).
+5. **Global**: media de los grupos **con datos**, y solo con cobertura suficiente.
+
+### Lo que no se inventa
+
+- **Sin datos es «Sin Rango»**, nunca el rango 1 (apartados 3 y 12).
+- **Con una sola sesión**, el rango sale marcado como **Clasificación provisional** (apartado 12), y la
+  confianza (poca / suficiente / mucha) dice cuántos datos hay detrás sin tocar la puntuación.
+- 🐛 **Un ejercicio aislado NO da rango global**, y eso lo destapó la prueba: unas dominadas tocan
+  espalda, brazos y abdominales, así que **cubrían los tres grupos del mínimo ellas solas**. Ahora hacen
+  falta las dos cosas: tres grupos **y** tres ejercicios (apartado 20).
+- **Un grupo sin entrenar no cuenta como cero**: el cuello sigue «Sin Rango» y no baja el global
+  (apartado 22).
+- **Sets sin marcar no cuentan** (apartado 16), y las **variantes no se mezclan** (apartado 14).
+
+### Componentes
+
+`src/components/rangos.jsx`: **RankBadge** (el hexágono, con `rank`, `size`, `state`, `locked` y
+`selected`), **RankLabel**, **RankStatus** y **RankProgress**. ⚠️ La insignia que la F1 ya dibujaba en
+Fitness pasa a usar `RankBadge`: dos hexágonos distintos del mismo rango acabarían separándose. Ninguno
+enseña la puntuación.
+
+### Pruebas
+
+`scripts/test-rangos.mjs` (58): los quince casos del apartado 25 —sin datos, un dato, varios,
+creciente, estable, descendente, isométricos, peso corporal, peso externo, ejercicios difíciles,
+variantes, sesiones incompletas, grupos, subgrupos y cobertura—, con números exactos para fijar la
+fórmula. Comprobado que se pone roja si se quita la ventana de estabilidad o si un ejercicio sin datos
+recibe rango.
+
 ## v3.96.0 — FIT F14/45: objetivos y metas de progreso
 
 El criterio, literal: *"Fitness → Progreso → Mis objetivos → + Crear objetivo → Dominadas → 15

@@ -2,6 +2,19 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.97.0 — FIT F15/45: sistema base de rangos):** La base del bloque de Rangos,
+> **sin pantalla** (la traen las fases 16 a 25). `src/lib/rangos.js` calcula al pedirlo el rango de un
+> ejercicio, un subgrupo, un grupo y el global: marca de cada sesión según la clase de la F11 →
+> puntuación 0-1000 contra una referencia que depende de la **dificultad** del ejercicio → la mejor de
+> las últimas cinco sesiones (así un mal día no baja el rango) → media ponderada por implicación del
+> catálogo → global con los grupos que tienen datos. 🚨 **Nada se guarda** y **nada se inventa**: sin
+> datos es «Sin Rango» (no el rango 1), con una sesión la clasificación es **provisional**, un grupo sin
+> entrenar **no cuenta como cero**, y un ejercicio aislado no da rango global (hacen falta tres grupos y
+> tres ejercicios — lo destapó la prueba: unas dominadas tocan tres grupos ellas solas). Los límites y
+> las referencias viven en `RANK_THRESHOLDS` y `REFERENCIAS`, en un único sitio. Componentes en
+> `src/components/rangos.jsx`: **RankBadge** (el hexágono, que ahora usa también la insignia de la F1),
+> RankLabel, RankStatus y RankProgress. Pruebas en `scripts/test-rangos.mjs`.
+
 > **🏋️ ACTUALIZACIÓN (v3.96.0 — FIT F14/45: objetivos y metas de progreso):** Progreso tiene
 > **Objetivos**: crear uno eligiendo el ejercicio con el catálogo, la métrica que ese ejercicio admite
 > (peso, repeticiones o tiempo), el número y, si se quiere, fecha y nota; cada tarjeta dice *11 / 15 reps

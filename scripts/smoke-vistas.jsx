@@ -173,6 +173,9 @@ import {
 } from '../src/lib/progresoEjercicios.js';
 import { resumenMuscular as resumenMuscularF13, ejerciciosDeMusculo as ejerciciosMusculoF13 } from '../src/lib/progresoMuscular.js';
 import { anadirObjetivo as anadirObjetivoF14, listaDeObjetivos as listaObjetivosF14, progresoDeObjetivo as progresoObjetivoF14 } from '../src/lib/objetivosProgreso.js';
+/* FIT F15 — los componentes de rangos: hexágono, etiqueta, estado y progreso. */
+import { RankBadge, RankLabel, RankStatus, RankProgress } from '../src/components/rangos.jsx';
+import { rangoDeEjercicio as rangoEjF15, progresoHaciaSiguiente as haciaF15 } from '../src/lib/rangos.js';
 /* FIT F2 — el catálogo de ejercicios y su detalle. ⚠️ El detalle va APARTE
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
    Relación (NAV F3), y sin estos casos no lo probaría nadie. */
@@ -3042,6 +3045,21 @@ const CASOS = [
   ['DetalleObjetivo', DetalleObjetivo, () => ({ objetivo: listaObjetivosF14(fitnessConObjetivosF14()).objetivos[0], accent, onVolver: noop, onVerProgreso: noop, onEditar: noop, onCancelarObjetivo: noop, onEliminar: noop })],
   ['FormularioObjetivo', FormularioObjetivo, () => ({ ejercicio: null, accent, onElegirEjercicio: noop, onGuardar: noop, onCancelar: noop })],
   ['FormularioObjetivo', FormularioObjetivo, () => ({ ejercicio: CATALOGO_EJERCICIOS.find((e) => e.id === 'press-banca-barra'), accent, onElegirEjercicio: noop, onGuardar: noop, onCancelar: noop })],
+  /* ══ FIT F15 — rangos ═════════════════════════════════════════════════ */
+  ['RankBadge', RankBadge, () => ({ rank: 5, size: 'lg', state: 'actual', accent })],
+  ['RankBadge', RankBadge, () => ({ rank: 8, size: 'sm', state: 'bloqueado', locked: true, accent })],
+  ['RankBadge', RankBadge, () => ({ rank: 2, state: 'conseguido', selected: true, accent })],
+  /* ⚠️ Y sin rango: ni un número inventado. */
+  ['RankBadge', RankBadge, () => ({ rank: null, accent })],
+  ['RankLabel', RankLabel, () => ({ rank: 7 })],
+  ['RankLabel', RankLabel, () => ({ rank: null })],
+  ['RankStatus', RankStatus, () => ({ resultado: rangoEjF15(fitnessConProgresoF12(), 'press-banca-barra', { perfil: { peso: 72 } }) })],
+  ['RankStatus', RankStatus, () => ({ resultado: rangoEjF15({}, 'press-banca-barra') })],
+  ['RankProgress', RankProgress, () => ({ siguiente: haciaF15(430), accent })],
+  ['RankProgress', RankProgress, () => ({ siguiente: haciaF15(980), accent })],
+  /* ⚠️ `RankProgress` sin rango no pinta NADA a propósito —una barra a 0 diría
+     que va mal cuando lo que pasa es que no hay datos—, y este banco marca los
+     render vacíos. Ese caso lo cubre `test-rangos.mjs`. */
   ['EstadoMuscular', EstadoMuscular, () => ({ estado: 'mejora', nombre: 'Mejorando', simbolo: '↗', accent, pocaInformacion: true })],
   ['EtiquetaEstado (Progreso)', EtiquetaEstadoF12, () => ({ estado: 'mejora', nombre: 'Mejorando', simbolo: '↗', accent })],
   /* FIT F2 — el catálogo entero, su detalle y una tarjeta suelta. El caso que

@@ -35,7 +35,7 @@ ordena es **el trabajo**, no el documento.
 | **F12** ✅ **v3.94.0** | Pantalla de progreso por ejercicio | 25916–26533 | 618 |
 | **F13** ✅ **v3.95.0** | Progreso por grupos musculares | 25198–25915 | 718 |
 | **F14** ✅ **v3.96.0** | Objetivos y metas de progreso | 24481–25197 | 717 |
-| **F15** | Sistema base de rangos y clasificación | 23746–24480 | 735 |
+| **F15** ✅ **v3.97.0** | Sistema base de rangos y clasificación | 23746–24480 | 735 |
 | **F16** | Pantalla principal de rangos | 23042–23745 | 704 |
 | **F17** | Clasificación de ejercicios mediante cuestionario | 22318–23041 | 724 |
 | **F18** | Detalle de rankings musculares | 21573–22317 | 745 |
