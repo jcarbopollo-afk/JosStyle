@@ -2,6 +2,27 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.91.0 — FIT F9/45: UX avanzada del entrenamiento en vivo):** El
+> entrenamiento en vivo **se usa de verdad desde el móvil**. La tarjeta del ejercicio dice nombre,
+> variante, agarre, tipo y el objetivo (*4 × 8–12*), con **Planificado** y **Realizado** en dos
+> casillas (*8 / 9 / 8*, solo de las series marcadas). **Deslizarla** cambia de ejercicio —solo si el
+> gesto es claramente horizontal, así que el scroll no lo dispara—. La serie activa se resalta con
+> «Ahora» y lleva **− y +** (2,5 kg, 1 repetición, 5 s); un «+» sobre un campo vacío parte del plan.
+> Pendiente es ○ y hecha es ✓. El **descanso** es grande, con pausa, +15 s, +30 s y Terminar, y se
+> configura sin salir (30-180 s o propio, y el automático); cambia **este ejercicio de esta sesión** y
+> el plan no se entera. El **tutorial y el reemplazo** se abren bajo la cabecera, con el cronómetro y
+> Terminar a la vista, y **reemplazar con datos pregunta**; los sustitutos salen por compatibilidad
+> (familia, sustitutos del catálogo y el resto del mismo grupo muscular). 🚨 **El descanso pasa a la
+> sesión** (`sesion.descanso`, `sesion.descansoAuto`), contra lo que decidió la F7: la F9 lo pide
+> como única fuente de verdad y para que la tarjeta de sesión en curso diga «Descansando». 🐛 **Dos
+> fallos de la F7 destapados**: el fin del descanso emitía `'success'` en minúsculas —un evento que
+> no existe, así que **no sonó nunca**, con una prueba que exigía ese texto—, y la vibración llamaba a
+> `navigator.vibrate` saltándose el interruptor de Ajustes. Ahora se emiten `ACTION_COMPLETED` y
+> `SUCCESS` y vibra el motor de audio. ⚠️ Sin barra flotante de minimizar, sin métricas de explosivos
+> y sin reproductor de vídeo, todo en `NO_EN_FIT9`. Vive en `src/lib/entrenamientoUx.js` (encima de
+> la F7, sin rehacerla) y en `EntrenamientoVivoView.jsx`, con `scripts/test-entrenamiento-ux.mjs` y
+> su sección del recorrido en Chromium.
+
 > **🏋️ ACTUALIZACIÓN (v3.90.0 — FIT F8/45: finalización y guardado del entrenamiento):** Terminar ya
 > no guarda de golpe: **abre el resumen**. El nombre llega relleno y se puede cambiar, se ve la fecha
 > en largo, la franja horaria (*18:05 → 19:02*), la duración real, las series completadas y las

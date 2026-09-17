@@ -37,12 +37,14 @@ import {
   sustituirEjercicio, sustitutosSugeridos, notaDeEjercicio,
   crearDescanso, restanteDescanso, descansoTerminado, pausarDescanso,
   reanudarDescanso, reiniciarDescanso, EVENTO_FIN_DESCANSO, SONIDO_DESCANSO,
-  vibrarSiSePuede, AVISO_SALIR, AVISO_DESCARTAR,
+  AVISO_SALIR, AVISO_DESCARTAR,
   descartarSesion, sesionActiva, avisoDeRecuperacion,
   guardarSesion, fichaDeEjercicio, filasDeSeries, progresoSesion,
   estadoDeEjercicio, carruselDeSesion, NO_EN_FIT7, PREPARADO_PARA_FIT7,
   auditarSesion, normalizarSesionCompleta, normalizarFitnessConSesiones,
 } from '../src/lib/entrenamiento.js';
+import * as ENTRENAMIENTO_F7 from '../src/lib/entrenamiento.js';
+import { definicionEvento } from '../src/lib/audio.js';
 import {
   DEFAULT_FITNESS, ESTADOS_SESION, crearWorkoutSession, normalizarFitness,
 } from '../src/lib/fitness.js';
@@ -439,16 +441,27 @@ ok(reanudarDescanso(D, seg(50)) === D, '…ni reanudar lo que no está pausado')
 ok(restanteDescanso(null) === 0, '…y sin descanso el restante es cero');
 
 /* 🚨 Apartado 25 — el sonido es uno que YA existe, emitido al bus. */
-ok(EVENTO_FIN_DESCANSO === 'success',
-  '🚨 El aviso del fin de descanso EMITE un evento que ya existe, no uno inventado (SO F4)');
+/* 🐛 FIT F9 — esto comprobaba `=== 'success'`, en minúsculas, y **fijaba el
+   fallo como si fuera la especificación**: el motor de audio no conoce ningún
+   evento `'success'` (el canónico es `SUCCESS`), así que el fin de cada
+   descanso se emitía y no sonaba. Lo que hay que comprobar no es el texto, es
+   que el motor lo reconozca. */
+ok(!!definicionEvento(EVENTO_FIN_DESCANSO),
+  '🚨 El aviso del fin de descanso EMITE un evento que el motor CONOCE, no uno inventado (SO F4)');
 ok(SONIDO_DESCANSO.propio === false && SONIDO_DESCANSO.porQueNoUnoNuevo,
   '…declarado con su motivo: un evento sin archivo es un sonido que no suena (E3 F25)');
-ok(vibrarSiSePuede() === false,
-  '⚠️ Sin `navigator.vibrate` la vibración devuelve `false` y NO lanza (apartado 25)');
+/* 🔓 FIT F9 — `vibrarSiSePuede` se retiró: llamaba a `navigator.vibrate`
+   saltándose el interruptor 📳 de Ajustes. Ahora vibra el motor de audio al
+   recibir el evento. */
+ok(!Object.prototype.hasOwnProperty.call(ENTRENAMIENTO_F7, 'vibrarSiSePuede'),
+  '🔓 FIT F9 — ya no hay un segundo camino para vibrar que se salte Ajustes');
 
-/* El descanso es de la pantalla, no del dato. */
-ok(!('descanso' in DEFAULT_FITNESS) && !JSON.stringify(nueva()).includes('"pausadoEn"'),
-  '⚠️ Y el descanso NO se guarda en la sesión: dura lo que dura (EH F40)');
+/* 🔓 FIT F9 — el descanso PASA a la sesión (apartados 31 y 41 de la F9, contra
+   lo que decidió la F7). Lo que la F7 protegía —que no salga uno de hace tres
+   horas— lo cuida `descansoVisible`, y se prueba en test-entrenamiento-ux. */
+ok(!('descanso' in DEFAULT_FITNESS), 'El descanso no es un ajuste general de Fitness');
+ok(nueva().descanso === null && nueva().descansoAuto === true,
+  '🔓 FIT F9 — una sesión nace sin descanso y con el descanso automático puesto');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 10. Persistencia y recuperación (apartados 29 y 30) ──');

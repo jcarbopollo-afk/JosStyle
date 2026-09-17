@@ -388,9 +388,12 @@ export const ASIGNACIONES_POR_DEFECTO = {
  * volver a colar en silencio.
  */
 export const SIN_EMISOR_TODAVIA = {
-  // Alias que quedaron sueltos al dar evento propio a cada sonido (2026-09-04).
-  SUCCESS: 'Genérico. Cada acción que sale bien tiene ya su evento propio (TASK, HABIT, GOAL, STUDY, SLEEP).',
-  ACTION_COMPLETED: 'Genérico, mismo caso que SUCCESS. Se conserva porque el apartado 4 lo nombra.',
+  /* 🔓 FIT F9 — `SUCCESS` y `ACTION_COMPLETED` estuvieron aquí hasta el
+     2026-09-17. Ahora los emite el entrenamiento en vivo: una serie completada
+     y el fin de un descanso. ⚠️ Y el fin de descanso **ya se emitía desde la
+     F7**… como `'success'` en minúsculas, que no es ningún evento: por eso esta
+     lista lo daba por mudo, y tenía razón. */
+  // Alias que quedó suelto al dar evento propio a cada sonido (2026-09-04).
   UI_SUCCESS: 'Genérico de interfaz. `sync_complete` y `connection_restored` ya tienen el suyo.',
 
   // Funciones que no existen, y no se van a fingir.

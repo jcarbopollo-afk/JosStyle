@@ -534,6 +534,7 @@ export function crearWorkoutSession({
   origen = null, iniciadaEn = null, terminadaEn = null, pausadaEn = null,
   pausadoMs = 0, actual = 0,
   visibilidad = 'privado', media = null, diaDePlan = null, guardadaEn = null,
+  descanso = null, descansoAuto = true,
 } = {}) {
   return {
     id: uid(),
@@ -592,6 +593,33 @@ export function crearWorkoutSession({
        puede tardar lo que tarde en escribir una nota, y sumar ese rato a la
        duración sería mentir (apartado 22). */
     guardadaEn: enteroONull(guardadaEn),
+    /* ═══ FIT F9 — el descanso pasa a la sesión ═══════════════════════════
+       🚨 La F7 lo dejó como estado de pantalla (*"un descanso de 90 s no tiene
+       sentido recuperarlo tres horas después"*). La F9 lo contradice con todas
+       las letras en su apartado 41 —*"una única fuente de verdad para […]
+       descanso"*— y el 31 pide que el estado minimizado **enseñe el descanso**,
+       cosa imposible si muere al salir de la pantalla. Gana la fase posterior,
+       y lo de la F7 se sigue cumpliendo por otro lado: un descanso que acabó
+       hace rato **no se pinta** (`descansoVisible`), aunque esté guardado.
+       ⚠️ Y va aquí, en el modelo, por la regla 5 de siempre. */
+    descanso: normalizarDescansoGuardado(descanso),
+    /* Apartado 16 — si al completar una serie empieza el descanso solo. Nace
+       encendido, que es lo que ya hacía la F7: apagarlo es decisión suya. */
+    descansoAuto: descansoAuto !== false,
+  };
+}
+
+/** El descanso tal y como se guarda: marcas de tiempo, nunca un contador. */
+function normalizarDescansoGuardado(d) {
+  if (!d || typeof d !== 'object') return null;
+  const segundos = enteroONull(d.segundos);
+  const desde = enteroONull(d.desde);
+  if (!segundos || segundos < 1 || !desde) return null;
+  return {
+    segundos,
+    desde,
+    pausadoEn: enteroONull(d.pausadoEn),
+    pausadoMs: Math.max(0, enteroONull(d.pausadoMs) ?? 0),
   };
 }
 

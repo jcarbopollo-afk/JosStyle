@@ -6702,7 +6702,8 @@ ok(await pulsar('Pausar el descanso'), 'se pausa el descanso (apartado 23)');
 ok(await pulsar('Reanudar el descanso'), '…se reanuda');
 ok(await pulsar('Sumar treinta segundos al descanso'), '…se le suman 30 s');
 ok(await pulsar('Reiniciar el descanso'), '…se reinicia');
-ok(await pulsar('Saltar el descanso'), '…y se salta, que es lo que pide el apartado 24');
+/* 🔓 FIT F9 — el botón se llama «Terminar el descanso» (su apartado 15). */
+ok(await pulsar('Terminar el descanso'), '…y se termina a mano, que es lo que pide el apartado 24');
 await page.waitForTimeout(300);
 
 /* Apartado 18 — añadir una serie. */
@@ -6848,6 +6849,173 @@ const pesoTrasRecargar_fit7 = await page.evaluate(() => {
 });
 ok(pesoTrasRecargar_fit7 === '62.5',
   `🚨 …y con los 62,5 kg (${pesoTrasRecargar_fit7}): el apartado 38, cumplido de punta a punta`);
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F9 — la UX avanzada del entrenamiento en vivo (Entrega 4 · 9/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El apartado 43 pide *"un entrenamiento simulado"* de punta a punta. Aquí se
+   hace con la aplicación de verdad y sobre la MISMA sesión de la F7, que es la
+   que después termina la F8: así se comprueba también lo que pide su apartado
+   45 —*"Comprueba que Fase 8 sigue funcionando"*— sin montar nada aparte.
+   ⚠️ No se marca ningún ejercicio entero: la F8 necesita uno «No realizado». */
+console.log('\n── FIT F9 · UX avanzada del entrenamiento en vivo ──');
+
+const sesion_fit9 = () => (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.sesiones || []).at(-1) || null;
+const ejActual_fit9 = () => {
+  const ses = sesion_fit9();
+  return ses?.origen?.ejercicios?.[ses?.actual ?? 0] || null;
+};
+const pulsarEtiqueta_fit9 = async (empieza) => page.evaluate((e) => {
+  const b = [...document.querySelectorAll('button[aria-label]')]
+    .find((x) => (x.getAttribute('aria-label') || '').startsWith(e));
+  if (!b) return false;
+  b.click();
+  return true;
+}, empieza);
+const etiquetaActiva_fit9 = () => page.evaluate(() => {
+  const b = document.querySelector('[data-serie-activa="true"] button[aria-label^="Marcar la serie"]');
+  return b ? b.getAttribute('aria-label') : '';
+});
+
+ok(await pulsar(carrusel_fit7[0].label), 'FIT F9 — se está en el primer ejercicio, el que lleva datos');
+await page.waitForTimeout(400);
+const iniciada_fit9 = sesion_fit9()?.iniciadaEn;
+
+/* Apartados 3 y 24 — planificado frente a realizado. */
+const vista_fit9 = await ver();
+ok(/Planificado/i.test(vista_fit9) && /Realizado/i.test(vista_fit9),
+  '🚨 FIT F9 — el ejercicio enseña PLANIFICADO y REALIZADO por separado (apartado 24)');
+ok(/\d+ × /.test(vista_fit9), '…con el objetivo como «4 × 8–12» (apartado 3)');
+ok(/\b10\b/.test(vista_fit9.split(/Realizado/i)[1] || ''),
+  '…y en realizado, las 10 repeticiones de la serie marcada');
+
+/* Apartado 7 — la serie activa, reconocible. */
+const activa_fit9 = await etiquetaActiva_fit9();
+ok(!!activa_fit9, `🚨 FIT F9 — hay una serie ACTIVA resaltada (${activa_fit9}, apartado 7)`);
+/* ⚠️ Con /i: la etiqueta va con `uppercase`, y Chromium devuelve «AHORA» en innerText. */
+ok(/ahora/i.test(vista_fit9), '…que lo dice con palabra, no solo con color');
+const numActiva_fit9 = (activa_fit9.match(/serie (\d+)/) || [])[1];
+ok(await page.evaluate(() => !!document.querySelector('button[aria-label^="Marcar la serie"] svg.lucide-circle')),
+  '🚨 FIT F9 — una serie pendiente es ○, no un ✓ gris: el estado no depende del color (apartado 38)');
+
+/* Apartados 9 y 10 — − y +. */
+ok(await pulsarEtiqueta_fit9(`Sumar 2,5 kg a la serie ${numActiva_fit9}`), 'FIT F9 — se pulsa «+2,5 kg» (apartado 10)');
+await page.waitForTimeout(500);
+ok(await pulsarEtiqueta_fit9(`Sumar 2,5 kg a la serie ${numActiva_fit9}`), '…otra vez');
+await page.waitForTimeout(500);
+ok(await pulsarEtiqueta_fit9(`Restar 2,5 kg a la serie ${numActiva_fit9}`), '…y «−2,5 kg»');
+await page.waitForTimeout(600);
+const serieActiva_fit9 = () => (ejActual_fit9()?.series || []).filter((x) => x.estado !== 'omitida')[Number(numActiva_fit9) - 1] || null;
+const pesoPasos_fit9 = serieActiva_fit9()?.hecho?.peso;
+ok(typeof pesoPasos_fit9 === 'number' && pesoPasos_fit9 > 0 && Math.round(pesoPasos_fit9 * 10) % 25 === 0,
+  `🚨 FIT F9 — los pasos GUARDAN el peso, de 2,5 en 2,5 (${pesoPasos_fit9} kg, apartados 10 y 41)`);
+ok(await pulsarEtiqueta_fit9(`Sumar una repetición a la serie ${numActiva_fit9}`), 'FIT F9 — «+1 repetición» (apartado 9)');
+await page.waitForTimeout(600);
+ok((serieActiva_fit9()?.hecho?.reps || 0) > 0,
+  `…y sobre un campo vacío parte de lo que decía el plan (${serieActiva_fit9()?.hecho?.reps} repes)`);
+
+/* Apartados 11 y 16 — completar arranca el descanso, que vive en la sesión. */
+ok(await pulsar(activa_fit9), `FIT F9 — se completa la serie ${numActiva_fit9} (apartado 11)`);
+const conDescanso_fit9 = await esperarTexto(/Terminar el descanso|Descanso en pausa|DESCANSO/i);
+ok(/\d\d:\d\d/.test(conDescanso_fit9), '…y arranca el descanso automático (apartado 16)');
+await page.waitForTimeout(400);
+const descanso1_fit9 = sesion_fit9()?.descanso;
+ok(!!descanso1_fit9 && descanso1_fit9.segundos > 0,
+  `🚨 FIT F9 — el descanso está GUARDADO en la sesión: una sola fuente de verdad (${descanso1_fit9?.segundos} s, apartado 41)`);
+
+/* Apartado 14 — +15 s. */
+ok(await pulsar('Sumar quince segundos al descanso'), 'FIT F9 — «+15 s» (apartado 14)');
+await page.waitForTimeout(500);
+ok(sesion_fit9()?.descanso?.segundos === (descanso1_fit9?.segundos || 0) + 15,
+  `🚨 …y suma quince de verdad (${descanso1_fit9?.segundos} → ${sesion_fit9()?.descanso?.segundos})`);
+
+/* Apartado 31 — el estado compacto enseña el descanso. */
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), 'FIT F9 — se sale con el descanso corriendo');
+const compacto_fit9 = await esperarTexto(/entrenamiento en curso/i);
+ok(/Descansando \d\d:\d\d/.test(compacto_fit9),
+  '🚨 FIT F9 — la tarjeta de sesión en curso dice que está DESCANSANDO y cuánto le queda (apartado 31)');
+ok(await pulsar('Continuar entrenamiento'), '…se vuelve');
+const vuelta_fit9 = await esperarTexto(/Terminar el descanso|Descanso/i);
+ok(/\d\d:\d\d/.test(vuelta_fit9) && !!sesion_fit9()?.descanso,
+  '🚨 …y el descanso sigue corriendo donde estaba: no se perdió al salir');
+
+/* Apartado 15 — terminarlo a mano, sin tocar el cronómetro general. */
+ok(await pulsar('Terminar el descanso'), 'FIT F9 — se termina el descanso a mano (apartado 15)');
+await page.waitForTimeout(600);
+ok(sesion_fit9()?.descanso === null, '…y se quita de la sesión');
+ok(sesion_fit9()?.iniciadaEn === iniciada_fit9,
+  '🚨 FIT F9 — y el cronómetro general NO se ha reiniciado (apartados 15 y 30)');
+
+/* Apartado 17 — configurar el descanso sin tocar el plan. */
+const planAntes_fit9 = JSON.stringify((guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {}).planActivo);
+ok(await pulsar('Descanso'), 'FIT F9 — se abre la configuración del descanso (apartado 17)');
+const panelDescanso_fit9 = await esperarTexto(/Descanso de este ejercicio/i);
+ok(/Solo cambia en este entrenamiento/i.test(panelDescanso_fit9), '…que dice que el plan no se toca');
+ok(await pulsar('Descanso de 60 segundos'), '…se elige 60 s');
+await page.waitForTimeout(600);
+ok(ejActual_fit9()?.descanso === 60, `🚨 FIT F9 — el ejercicio de la SESIÓN pasa a 60 s (${ejActual_fit9()?.descanso})`);
+ok(JSON.stringify((guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {}).planActivo) === planAntes_fit9,
+  '🚨 …y el PLAN no se ha modificado (apartado 17, literal)');
+ok(await pulsar('Descanso automático al completar una serie'), 'FIT F9 — se apaga el descanso automático (apartado 16)');
+await page.waitForTimeout(600);
+ok(sesion_fit9()?.descansoAuto === false, '…y queda guardado');
+ok(await pulsar('Cerrar'), '…se cierra el panel');
+await page.waitForTimeout(300);
+const otraActiva_fit9 = await etiquetaActiva_fit9();
+if (otraActiva_fit9) {
+  ok(await pulsar(otraActiva_fit9), `FIT F9 — se completa otra serie con el automático apagado (${otraActiva_fit9})`);
+  await page.waitForTimeout(600);
+  ok(sesion_fit9()?.descanso === null, '🚨 FIT F9 — y esta vez NO arranca ningún descanso (apartado 16)');
+}
+
+/* Apartados 19, 20 y 33 — el tutorial, sin abandonar la sesión. */
+ok(await pulsar('Tutorial'), 'FIT F9 — se abre el tutorial (apartado 19)');
+const tutorial_fit9 = await esperarTexto(/Volver a la serie/i);
+ok(/Terminar/.test(tutorial_fit9) && /\d\d:\d\d/.test(tutorial_fit9),
+  '🚨 FIT F9 — con el cronómetro y «Terminar» a la vista: no se abandona el entrenamiento (apartados 20 y 33)');
+ok(await pulsar('Volver al entrenamiento'), '…se cierra');
+const trasTutorial_fit9 = await esperarTexto(/Ejercicio \d+ de/i);
+ok(/Ejercicio 1 de/i.test(trasTutorial_fit9), '🚨 …y se vuelve EXACTAMENTE al mismo ejercicio (apartado 20)');
+ok(sesion_fit9()?.iniciadaEn === iniciada_fit9, '…sin reiniciar el cronómetro');
+
+/* Apartado 6 — deslizar para cambiar de ejercicio, y que el scroll no lo haga. */
+const deslizar_fit9 = (dx, dy) => page.evaluate(([x, y]) => {
+  const zona = [...document.querySelectorAll('div')].find((d) => d.style && d.style.touchAction === 'pan-y');
+  if (!zona) return false;
+  const r = zona.getBoundingClientRect();
+  const x0 = r.left + r.width / 2;
+  const y0 = r.top + Math.min(40, r.height / 2);
+  zona.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x0, clientY: y0, pointerType: 'touch' }));
+  zona.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x0 + x, clientY: y0 + y, pointerType: 'touch' }));
+  return true;
+}, [dx, dy]);
+ok(await deslizar_fit9(-140, 6), 'FIT F9 — se desliza la tarjeta hacia la izquierda (apartado 6)');
+const trasDeslizar_fit9 = await esperarTexto(/Ejercicio 2 de/i);
+ok(/Ejercicio 2 de/i.test(trasDeslizar_fit9), '🚨 FIT F9 — y pasa al SIGUIENTE ejercicio');
+ok(await deslizar_fit9(140, -4), '…se desliza hacia la derecha');
+const trasVolver_fit9 = await esperarTexto(/Ejercicio 1 de/i);
+ok(/Ejercicio 1 de/i.test(trasVolver_fit9), '…y vuelve al anterior');
+ok(await deslizar_fit9(-60, 240), 'FIT F9 — un gesto hacia abajo, como el de hacer scroll');
+await page.waitForTimeout(500);
+ok(/Ejercicio 1 de/i.test(await ver()), '🚨 FIT F9 — y NO cambia de ejercicio: el gesto no se pelea con el scroll (apartado 6)');
+ok(sesion_fit9()?.iniciadaEn === iniciada_fit9, '…y cambiar de ejercicio tampoco tocó el cronómetro (apartado 5)');
+
+/* Apartado 22 — reemplazar un ejercicio CON datos pregunta. */
+const exerciseAntes_fit9 = ejActual_fit9()?.exerciseId;
+ok(await pulsar('Reemplazar'), 'FIT F9 — se intenta reemplazar el ejercicio que tiene datos (apartado 22)');
+await esperarTexto(/Cambios r[aá]pidos|Buscar/i);
+ok(await pulsarEtiqueta_fit9('Cambiar por '), '…se elige un sustituto');
+const confirmar_fit9 = await esperarTexto(/Reemplazar ejercicio por/i);
+ok(/Reemplazar ejercicio por/i.test(confirmar_fit9) && /Ya has registrado datos/i.test(confirmar_fit9),
+  '🚨 FIT F9 — y PREGUNTA antes, porque ya había datos (apartado 22, literal)');
+ok(await pulsar('Cancelar'), '…se cancela');
+await page.waitForTimeout(500);
+ok(ejActual_fit9()?.exerciseId === exerciseAntes_fit9,
+  '🚨 …y el ejercicio sigue siendo el mismo, con sus datos: no se perdió nada por accidente');
+ok(await pulsar('Volver a Entrenamiento') || await pulsar('Entrenamiento'), '…y se vuelve al entrenamiento');
+const final_fit9 = await esperarTexto(/Ejercicio \d+ de/i);
+ok(/Ejercicio 1 de/i.test(final_fit9), '…al mismo ejercicio');
 
 /* Apartado 32 — Terminar pregunta, y no completa sin confirmar. */
 /* ══════════════════════════════════════════════════════════════════════════

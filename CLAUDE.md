@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.90.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.91.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -324,8 +324,24 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 
 🏋️ **Y después, la ENTREGA 4 — FITNESS, 45 fases**, con la **FIT F1 (v3.83.0)**, la **FIT F2
 (v3.84.0)**, la **FIT F3 (v3.85.0)**, la **FIT F4 (v3.86.0)**, la **FIT F5 (v3.87.0)**, la **FIT F6
-(v3.88.0)**, la **FIT F7 (v3.89.0)** y la **FIT F8 (v3.90.0)** hechas. Lo que dejaron, y que vale
-para las 37 que quedan:
+(v3.88.0)**, la **FIT F7 (v3.89.0)**, la **FIT F8 (v3.90.0)** y la **FIT F9 (v3.91.0)** hechas. Lo
+que dejaron, y que vale para las 36 que quedan:
+
+- 🚨 **EL DESCANSO VIVE EN LA SESIÓN** (FIT F9, contra lo que decidió la F7): `sesion.descanso` y
+  `sesion.descansoAuto`, normalizados en `crearWorkoutSession`. La F9 lo pide como *"única fuente de
+  verdad"* y para que la tarjeta de sesión en curso diga «Descansando». Uno acabado hace más de un
+  minuto no se pinta (`descansoVisible`).
+- 🚨 **UN EVENTO DE SONIDO SE EMITE POR SU NOMBRE CANÓNICO, Y SE COMPRUEBA QUE EXISTE** (FIT F9). La
+  F7 emitía `'success'` en minúsculas: el motor no lo conocía y el fin del descanso no sonó nunca, con
+  una prueba que exigía justo ese texto. Ahora `test-audio.mjs` lee la constante y exige
+  `definicionEvento(valor)`. ⚠️ **Y ninguna pantalla vibra por su cuenta**: se emite, y el motor
+  decide respetando 📳 de Ajustes.
+- ⚠️ **La F9 NO rehízo el motor de la F7**: `entrenamientoUx.js` llama a `marcarSerie`,
+  `crearDescanso`… y hay una comprobación de que no guarda nada por su cuenta. Cualquier fase que
+  retoque el entrenamiento en vivo hace lo mismo.
+- ⚠️ **El gesto de cambiar de ejercicio vive solo en la tarjeta del ejercicio**, con `touch-action:
+  pan-y` y un umbral que exige que sea claramente horizontal. Meterlo en la tabla de series haría
+  que deslizar para escribir un peso cambiara de ejercicio.
 
 - 🚨 **UN ESTADO INTERMEDIO PUEDE SER LA ÚNICA FORMA DE NO PERDER NADA** (FIT F8, apartado 28).
   Terminar no guarda: pasa la sesión a **`finalizando`** y la guarda ahí. Sin ese estado habría que

@@ -1,5 +1,109 @@
 # CHANGELOG.md
 
+## v3.91.0 — FIT F9/45: UX avanzada del entrenamiento en vivo
+
+El criterio de finalización: *"La fase estará terminada cuando el entrenamiento en vivo sea cómodo
+para utilizar realmente desde un móvil."* Y el camino que tiene que poder hacerse sin perder nada:
+*abrir → registrar series → descansar → cambiar ejercicio → editar datos → añadir series → reemplazar
+→ añadir notas → continuar → terminar*.
+
+⚠️ **No se ha reconstruido el motor.** Lo pide el enunciado y es lo que se ha hecho: marcar, editar,
+añadir, omitir, sustituir y el cronómetro siguen siendo de la F7 (`entrenamiento.js`). Lo nuevo vive
+en `src/lib/entrenamientoUx.js` y **llama** a la F7 en vez de rehacerla, y la pantalla es la misma
+`EntrenamientoVivoView.jsx`, mejorada.
+
+### Lo que cambia en la pantalla
+
+- **El ejercicio activo** dice lo importante y nada más: nombre, variante, agarre, tipo y el objetivo
+  como *4 × 8–12* (apartado 3).
+- 🚨 **Planificado y Realizado, en dos casillas con su nombre** (apartado 24): *4 × 8–12* frente a
+  *8 / 9 / 8*. Lo realizado sale **solo de las series marcadas**, y omitir una no cambia lo que estaba
+  planificado.
+- **El carrusel**: el actual es una tarjeta ancha con contraste; los demás, píldoras con número y
+  estado (apartado 4).
+- **Deslizar la tarjeta del ejercicio** cambia de ejercicio (apartado 6). 🚨 La zona del gesto es
+  **esa tarjeta**, que no tiene ni un campo ni un botón, y un gesto solo cuenta si es **claramente
+  horizontal**: un dedo que baja para hacer scroll no cambia nada. La zona lleva `touch-action:
+  pan-y`, que deja el desplazamiento vertical al navegador.
+- **La serie activa se resalta**, con la palabra «Ahora», y debajo lleva **− y +**: 2,5 kg para el
+  peso, 1 repetición, o 5 s en un isométrico (apartados 7, 9 y 10). ⚠️ Un «+» sobre un campo vacío
+  **parte de lo que decía el plan**, no de cero: con el plan en 8, da 8.
+- 🚨 **Pendiente es ○ y hecha es ✓** (apartado 38): antes los dos eran el mismo icono en otro color.
+- **Quitar ESTA serie** desde la activa (apartado 29): una añadida se quita, una del plan se omite.
+  Las añadidas llevan la etiqueta «Extra» (apartado 28).
+- **El descanso es grande**, con pausa, **+15 s**, **+30 s**, reiniciar y **Terminar** (apartados
+  13-15). Al terminarlo, la pantalla vuelve a la serie que toca.
+- **Configurar el descanso sin salir** (apartados 16 y 17): 30, 60, 90, 120, 180 s o uno propio, y el
+  **descanso automático** que se enciende y se apaga. 🚨 Cambia **este ejercicio de esta sesión**: la
+  pantalla lo dice, y hay una comprobación que mira que el plan no se toque.
+- **El tutorial y el reemplazo se abren debajo de la cabecera de la sesión** (apartados 20 y 33): el
+  cronómetro sigue a la vista y «Terminar» se puede pulsar. En la F7 tapaban la pantalla entera.
+- 🚨 **Reemplazar un ejercicio con datos PREGUNTA** (apartado 22), y los sustitutos salen **por
+  compatibilidad** (apartado 21): primero la familia del mismo ejercicio, luego los sustitutos que
+  declara el catálogo, y luego el resto del **mismo grupo muscular** ordenado por función, entorno,
+  equipo y dificultad. Uno de otro grupo no es un sustituto.
+- **Las notas se guardan solas** al dejar de escribir (apartado 23).
+- **El campo que se edita se centra** cuando sube el teclado del iPhone (apartado 37).
+- **La tarjeta de «entrenamiento en curso» dice si está descansando** y cuánto le queda (apartado 31).
+
+### 🚨 La contradicción con la F7: el descanso pasa a la sesión
+
+La F7 dejó el descanso como **estado de pantalla** a propósito (*"un descanso de 90 s no tiene
+sentido recuperarlo tres horas después"*). La F9 pide lo contrario en dos sitios: el apartado 41 lo
+pone entre las cosas con *"una única fuente de verdad"*, y el 31 quiere que el estado minimizado
+**enseñe si está descansando**, cosa imposible si el descanso muere al salir de la pantalla.
+
+Gana la fase posterior, anotado y sin parar (regla 49): el descanso vive en `sesion.descanso`, con
+su normalizador en `crearWorkoutSession` (regla 5) — sin él, el siguiente guardado se lo llevaría. Y
+lo que la F7 quería evitar se sigue cumpliendo: **un descanso que acabó hace más de un minuto no se
+pinta** (`descansoVisible`).
+
+### 🐛 Dos fallos de la F7 que ha destapado esta fase
+
+**1 · El fin del descanso no sonó nunca.** La F7 emitía `'success'`, **en minúsculas**. El motor de
+audio conoce `SUCCESS`, no `'success'`, así que lo trataba como un evento desconocido y se callaba
+—que es lo correcto con un evento que no existe—. Y **la prueba de la F7 exigía `=== 'success'`**:
+fijaba el fallo como si fuera la especificación. Tampoco lo vio la invariante de sonido, porque solo
+leía tres archivos. Ahora el fin del descanso es `ACTION_COMPLETED` y una serie completada es
+`SUCCESS`, los dos con su archivo en SO F4, y la invariante lee la pantalla y **exige que el evento
+exista**: un nombre mal escrito ya no puede pasar por emitido.
+
+**2 · La vibración se saltaba el interruptor de Ajustes.** `vibrarSiSePuede` llamaba a
+`navigator.vibrate` directamente: con 📳 Vibración apagado, el móvil vibraba igual al acabar cada
+descanso. Se retira. Desde el 2026-09-07 el motor de audio vibra al recibir un evento respetando ese
+interruptor, el ritmo y el patrón de cada categoría (apartado 18), así que emitir basta. Con el
+sonido apagado y la vibración puesta, **vibra**: el caso del gimnasio.
+
+### Lo que no se ha construido
+
+- **Una barra flotante para minimizar** (apartado 31: *"Si la aplicación permite minimizar"*). No lo
+  permite, y una barra fija encima de todas las pantallas choca con la zona segura del iPhone
+  (apartado 36) y con las cinco pestañas. El estado compacto es la tarjeta de sesión en curso, que ya
+  recupera la sesión exacta y ahora enseña el descanso.
+- **Métricas de explosivos** (apartado 26: *"No crear métricas inventadas"*).
+- **Un reproductor de vídeo** (apartado 19): el catálogo no trae vídeos, y *"NO mostrar un reproductor
+  falso"*.
+- Historial, gráficas, récords, rangos, fotos, IA y lo social (apartado 44).
+
+Todo declarado en `NO_EN_FIT9`, y las decisiones en `DECISIONES_FIT9`.
+
+### Pruebas
+
+- `scripts/test-entrenamiento-ux.mjs` (nuevo): planificado frente a realizado, la serie activa, los
+  pasos, completar y desmarcar sin perder datos, el descanso automático, el descanso guardado y
+  recargado, los márgenes de `descansoVisible`, el gesto frente al scroll, la confirmación y el orden
+  de los sustitutos, y que la pantalla no vibre ni suene por su cuenta. Comprobado que se pone roja
+  si se rompe el descanso automático, el filtro del gesto o el normalizador.
+- **Recorrido en Chromium, sección FIT F9**: el apartado 43 entero sobre la misma sesión que luego
+  termina la F8 — pasos que guardan, descanso guardado en la sesión, +15 s, salir y ver «Descansando»
+  en la tarjeta, terminar el descanso sin tocar el cronómetro, cambiar a 60 s sin tocar el plan,
+  apagar el automático, tutorial con la cabecera a la vista, **deslizar** a los lados y hacia abajo,
+  y reemplazar con datos que pregunta y se cancela sin perder nada.
+- `test-entrenamiento.mjs` (F7) y `test-audio.mjs`, corregidos donde fijaban los dos fallos.
+
+⚠️ **Lo que no se puede probar desde aquí**: el tacto real del gesto en un iPhone, el teclado de iOS
+subiendo sobre un campo y si se nota la vibración. Son de Josué (R1).
+
 ## v3.90.0 — FIT F8/45: finalización y guardado del entrenamiento
 
 El criterio de finalización: *"Empezar entrenamiento → entrenar → Terminar → revisar resumen →

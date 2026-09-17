@@ -1014,6 +1014,16 @@ else
   fallo "Falla el motor de entrenamiento en vivo"; grep '✗' /tmp/jc_entreno.log
 fi
 
+# FIT F9 — la UX avanzada del entrenamiento en vivo. Lo que más se vigila: que
+# no rehaga el motor de la F7, que el descanso (ahora dentro de la sesión)
+# sobreviva al guardado, que planificado y realizado sigan separados y que el
+# sonido y la vibración pasen por el motor de audio y no por la pantalla.
+if node --import ./scripts/resolver-vite.mjs scripts/test-entrenamiento-ux.mjs >/tmp/jc_entreno_ux.log 2>&1; then
+  ok "UX del entrenamiento en vivo (FIT F9) — $(grep -c '✓' /tmp/jc_entreno_ux.log) comprobaciones"
+else
+  fallo "Falla la UX del entrenamiento en vivo"; grep '✗' /tmp/jc_entreno_ux.log
+fi
+
 # FIT F8 — la finalización y el guardado. Lo que más se vigila: que el guardado
 # sea IDEMPOTENTE (se pulsa cinco veces y hay UNA sesión), que una serie cuente
 # solo si él la marcó, que el volumen NO salga cuando no se puede calcular —unas

@@ -27,6 +27,9 @@ import { CATALOGO as CATALOGO_F3 } from '../src/lib/audioEventos.js';
 /* Los patrones de vibración y la lectura de los dos interruptores viven en la
    SO F2, donde está el resto de la especificación. */
 import { patronDe, queHaceElEvento } from '../src/lib/sonidoProduccion.js';
+/* FIT F9 — los dos eventos que emite el entrenamiento en vivo, leídos de su
+   constante y no copiados aquí: si alguien los cambia, se prueba lo nuevo. */
+import { EVENTO_SERIE_HECHA, EVENTO_FIN_DESCANSO } from '../src/lib/entrenamiento.js';
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
@@ -448,7 +451,21 @@ console.log('\n═══ Evento ≠ sonido, y el fallback ═══\n');
     });
   }
 
-  ['TASK_COMPLETED', 'STUDY_COMPLETED', 'ACTION_ERROR', 'CONNECTION_LOST', 'CONNECTION_RESTORED']
+  /* 🐛 FIT F9 — **esta prueba solo miraba tres archivos**, y el entrenamiento
+     en vivo emite desde su pantalla con una constante, no con un literal. Así se
+     coló durante dos fases un `emitir('success')` —en minúsculas, un evento que
+     no existe— sin que nada lo viera. Ahora se leen las constantes de verdad y
+     se exige que (1) la pantalla las emita y (2) sean eventos que el motor
+     conoce. Un nombre mal escrito ya no puede pasar por emitido. */
+  const vivoSrc = readFileSync(join(RAIZ, 'src/views/EntrenamientoVivoView.jsx'), 'utf8');
+  for (const [constante, valor] of [['EVENTO_SERIE_HECHA', EVENTO_SERIE_HECHA], ['EVENTO_FIN_DESCANSO', EVENTO_FIN_DESCANSO]]) {
+    const loEmite = new RegExp(`emitir\\(\\s*${constante}\\b`).test(vivoSrc);
+    comprobar(`🚨 CLAVE · El entrenamiento en vivo emite ${constante} (${valor}), y es un evento que existe`,
+      loEmite && !!definicionEvento(valor), `emite: ${loEmite} · existe: ${!!definicionEvento(valor)}`);
+    if (loEmite && definicionEvento(valor)) emitidos.add(eventoCanonico(valor));
+  }
+
+  ['TASK_COMPLETED', 'STUDY_COMPLETED', 'ACTION_ERROR', 'CONNECTION_LOST', 'CONNECTION_RESTORED', 'SUCCESS', 'ACTION_COMPLETED']
     .forEach((e) => comprobar(`CLAVE · Alguien emite ${e}`, emitidos.has(e)));
 
   comprobar('🚨 CLAVE · Un guardado que falla se oye', /emitir\('ACTION_ERROR'[^)]*guardar/.test(supaSrc));

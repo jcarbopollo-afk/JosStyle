@@ -528,27 +528,35 @@ export const reiniciarDescanso = (d, ahora = Date.now()) =>
    declarar un sonido que no suena (E3 F25, con el Pomodoro, palabra por
    palabra). Quien decide si suena, a qué volumen y si está silenciado es el
    motor de audio: ninguna pantalla hace `new Audio(...)` (SO F1). */
-export const EVENTO_FIN_DESCANSO = 'success';
+/* 🐛 **FIT F9 — ESTO VALÍA `'success'`, EN MINÚSCULAS, Y NO SONÓ NUNCA.**
+   El motor de audio busca los eventos por su nombre canónico —`SUCCESS`—, y
+   `'success'` no es ninguno: `decidirReproduccion` lo trataba como
+   `evento_desconocido` y se callaba, que es exactamente lo que tiene que hacer
+   con un evento que no existe. Desde la F7, el fin de cada descanso emitía un
+   evento mudo. Y la prueba de la F7 **exigía** `=== 'success'`: fijaba el fallo
+   como si fuera la especificación.
+
+   Ahora son dos, porque la F9 (apartado 18) pide aviso en dos momentos:
+   · fin del descanso  → `ACTION_COMPLETED` («Hecho»);
+   · serie completada  → `SUCCESS` (la otra toma de «Hecho»).
+   Ninguno es nuevo: los dos existen en SO F4 con su archivo. */
+export const EVENTO_FIN_DESCANSO = 'ACTION_COMPLETED';
+export const EVENTO_SERIE_HECHA = 'SUCCESS';
 
 export const SONIDO_DESCANSO = {
   propio: false,
   evento: EVENTO_FIN_DESCANSO,
-  quienDecide: 'El motor de audio (SO F1): volumen, silencio y activación son suyos.',
+  quienDecide: 'El motor de audio (SO F1): volumen, silencio, vibración y activación son suyos.',
   porQueNoUnoNuevo: 'La biblioteca de SO F4 no tiene ninguna campana de descanso. Un evento sin archivo es un sonido que no suena.',
 };
 
-/* Apartado 25 — y la vibración, **si el dispositivo la tiene**. ⚠️ Cada acceso
-   en `try`: en un iPhone `navigator.vibrate` no existe, y el apartado pide que
-   *"degrade correctamente. No debe generar errores."* */
-export function vibrarSiSePuede(ms = 120) {
-  try {
-    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
-      navigator.vibrate(ms);
-      return true;
-    }
-  } catch { /* vacío: que no haya vibración no es un error */ }
-  return false;
-}
+/* 🔓 **AQUÍ VIVÍA `vibrarSiSePuede`, Y LA FIT F9 LA RETIRA.** Llamaba a
+   `navigator.vibrate` directamente, así que **se saltaba el interruptor 📳
+   Vibración de Ajustes**: con la vibración apagada, el móvil vibraba igual al
+   acabar cada descanso. Desde el 2026-09-07 el motor de audio vibra por su
+   cuenta al recibir un evento —respetando ese interruptor, el ritmo y el patrón
+   de cada categoría—, así que emitir el evento ya lo hace todo. Dos caminos para
+   vibrar serían dos reglas distintas sobre lo mismo. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    14 · TERMINAR, SALIR Y RECUPERAR (apartados 30, 31 y 32)
@@ -613,10 +621,14 @@ export function sesionActiva(fitness) {
 export function avisoDeRecuperacion(sesion, { ahora = Date.now(), propios = [] } = {}) {
   if (!sesion) return null;
   const ej = ejercicioActual(sesion);
+  /* FIT F9, apartado 31 — el estado compacto enseña también el descanso. Solo si
+     sigue corriendo: uno acabado no es un estado, es algo que ya pasó. */
+  const restante = sesion.descanso ? restanteDescanso(sesion.descanso, ahora) : 0;
   return {
     titulo: 'Tienes un entrenamiento en curso',
     nombre: texto(sesion.nombre) || 'Entrenamiento',
     duracion: reloj(duracionSesion(sesion, ahora)),
+    descanso: restante > 0 ? `Descansando ${reloj(restante)}` : '',
     ejercicio: ej ? nombreDeLinea(ej, propios) : '',
     continuar: 'Continuar entrenamiento',
     descartar: 'Descartar sesión',
