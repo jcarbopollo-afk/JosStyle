@@ -307,7 +307,15 @@ export function RankHistory({ fitness, destino, propios = [], perfil = null, acc
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: hexToRgba('#000000', 0.6) }}
+      /* ⚠️ El velo va como `rgba()` literal, igual que el de `RankExplanation`:
+         un negro escrito en hexadecimal sería un color suelto fuera de
+         `tokens.js` (regla 2) aunque solo sirva para oscurecer, y no es un
+         color del tema: es la sombra de la hoja.
+         ⚠️ Y el motivo está dicho CON PALABRAS a propósito: el barrido de la
+         regla 2 solo se salta las líneas que EMPIEZAN por `*` o `//`, así que
+         un comentario que cite el literal la hace saltar con el código bien
+         (NAV F3). */
+      style={{ background: 'rgba(0,0,0,0.6)' }}
       onClick={onCerrar}
     >
       <div
