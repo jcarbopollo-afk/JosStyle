@@ -223,7 +223,11 @@ ok(/export function RankBadge\(\{ rank = null, size = 'md', state = null, locked
 ok(/export function RankLabel/.test(COMP) && /export function RankStatus/.test(COMP) && /export function RankProgress/.test(COMP), '…y están RankLabel, RankStatus y RankProgress');
 ok(/role="img"/.test(COMP) && /<Lock/.test(COMP), 'La insignia se anuncia y lleva candado además del color');
 ok(!/score/.test(COMP.replace(/siguiente/g, '')), '…y ningún componente enseña la puntuación (apartado 5)');
-ok(/<RankBadge/.test(leer('src/views/FitnessView.jsx')), '🚨 La insignia de la F1 dibuja con `RankBadge`: un solo hexágono en la aplicación');
+const vistasConHexagono = readdirSync(join(RAIZ, 'src/views'))
+  .filter((f) => f.endsWith('.jsx') && /clipPath|polygon\(50%/.test(leer(`src/views/${f}`)));
+ok(vistasConHexagono.length === 0,
+  `🚨 Ninguna pantalla dibuja su propio hexágono: se usa \`RankBadge\` (${vistasConHexagono.join(', ') || 'ninguna lo hace'})`);
+ok(/<RankBadge/.test(leer('src/views/RangosView.jsx')), '…y la pantalla de Rangos lo usa');
 ok(NO_EN_FIT15.length >= 4, 'Lo que no se construye, dicho');
 
 console.log(`\n  ${total - fallos}/${total} comprobaciones correctas.`);

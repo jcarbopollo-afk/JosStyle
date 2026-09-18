@@ -7542,6 +7542,87 @@ const objTrasConseguir_fit14 = (guardado.filter((g) => g && g.key === 'fitness')
 ok(objTrasConseguir_fit14.length === 1 && objTrasConseguir_fit14[0].estado === 'activo',
   '⚠️ …y «conseguido» se DEDUCE: lo guardado no se ha reescrito solo');
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F16 — La pantalla de Rangos (Entrega 4 · 16/45)
+   ══════════════════════════════════════════════════════════════════════════
+   El criterio del apartado 28: abrir Fitness → Rangos y ver el rango global,
+   la cobertura, el progreso al siguiente, los diez rangos, los ejercicios
+   clasificados, el cuerpo y los rankings musculares — **todo con datos reales**
+   (apartado 25). Se aprovecha lo que ya han sembrado la F12, la F13 y la F14.
+
+   ⚠️ Lo que se comprueba aquí es lo que **no depende** de cuántas sesiones haya
+   dejado el recorrido antes: los números exactos (dos ejercicios no dan rango
+   global, tres sí) se fijan en `scripts/test-pantalla-rangos.mjs`, donde los
+   datos se controlan. Una prueba de recorrido que fije un número que otra
+   sección puede cambiar se vuelve roja sin que nada esté roto. */
+console.log('\n── FIT F16 · Rangos ──');
+
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F16 — Fitness → Rangos');
+const rangos_fit16 = await esperarTexto(/Rango Predicho/i);
+ok(/Rango Predicho/i.test(rangos_fit16), 'FIT F16 — la tarjeta principal (apartado 3)');
+ok(/de 7 grupos con datos/.test(rangos_fit16),
+  '⚠️ FIT F16 — la cobertura, contada de verdad (apartado 5)');
+ok(/no tu forma física/i.test(rangos_fit16),
+  '🚨 …diciendo que mide información disponible, no forma física (apartado 5)');
+const clasificados_fit16 = /(\d+) de (\d+) clasificados/.exec(rangos_fit16);
+ok(clasificados_fit16 && Number(clasificados_fit16[1]) > 0 && Number(clasificados_fit16[2]) > 40,
+  `🚨 FIT F16 — «N de M clasificados» sobre el catálogo real (${clasificados_fit16 ? clasificados_fit16[0] : 'no sale'}, apartado 9)`);
+ok(!/0 restantes/i.test(rangos_fit16) && !/próximamente/i.test(rangos_fit16),
+  '⚠️ …sin contadores falsos ni pantallas «próximamente» (regla 8)');
+ok(/Tu cuerpo/i.test(rangos_fit16) && /Rankings musculares/i.test(rangos_fit16),
+  'FIT F16 — «Tu cuerpo» y los rankings musculares (apartados 10 y 11)');
+ok(/Cuello/.test(rangos_fit16) && /Sin datos/.test(rangos_fit16),
+  '🚨 FIT F16 — el grupo que no ha entrenado dice «Sin datos», no un rango de consolación (apartado 12)');
+ok(!/\bXP\b|leaderboard|medalla|recompensa/i.test(rangos_fit16),
+  '⚠️ FIT F16 — sin gamificación (apartado 26)');
+
+const anchoRangos_fit16 = await page.evaluate(() => ({
+  desborda: document.documentElement.scrollWidth > window.innerWidth + 2,
+  ancho: document.documentElement.scrollWidth,
+}));
+ok(!anchoRangos_fit16.desborda,
+  `⚠️ FIT F16 — los diez hexágonos no arrastran la pantalla de lado (${anchoRangos_fit16.ancho} px, apartado 19)`);
+
+/* Apartado 8 — tocar un rango abre su hoja, sin abrir media aplicación. */
+ok(await pulsar('Élite'), 'FIT F16 — se toca el rango Élite');
+const hoja_fit16 = await esperarTexto(/Empieza en/i);
+ok(/Élite/.test(hoja_fit16) && /Continúa mejorando/i.test(hoja_fit16),
+  '🚨 FIT F16 — la hoja dice qué es y cómo se alcanza (apartado 8)');
+ok(/Empieza en 950 de 1000/.test(hoja_fit16),
+  '⚠️ FIT F16 — con el umbral de la escala, que es igual para todos…');
+ok(await pulsar('Cerrar'), '…y se cierra donde estaba');
+
+/* Y ahora, con sentadillas sembradas, tiene que haber rango global: tres
+   ejercicios y tres grupos, que es el mínimo de la F15. */
+almacen.fitness = {
+  ...almacen.fitness,
+  sesiones: [
+    ...almacen.fitness.sesiones,
+    sesionSembrada_fit12('f16-a', 12, [serie_fit12('s1', 6, 80), serie_fit12('s2', 6, 80)], 'sentadilla-barra'),
+    sesionSembrada_fit12('f16-b', 3, [serie_fit12('s3', 6, 90), serie_fit12('s4', 5, 90)], 'sentadilla-barra'),
+  ],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F16 — se siembran sentadillas y se vuelve a Rangos');
+const conRango_fit16 = await esperarTexto(/Cobertura/i);
+ok(/Próximo rango/i.test(conRango_fit16),
+  '🚨 FIT F16 — con tres ejercicios de tres zonas ya hay rango global y camino al siguiente (apartado 6)');
+const destacado_fit16 = await page.evaluate(() => [...document.querySelectorAll('button')]
+  .filter((b) => /\bActual\b/.test(b.innerText || ''))
+  .map((b) => (b.innerText || '').replace(/\s+/g, ' ').trim()));
+ok(destacado_fit16.length === 1,
+  `🚨 FIT F16 — exactamente UN rango está marcado como actual (${destacado_fit16.join(' · ') || 'ninguno'}, apartado 7)`);
+const grupos_fit16 = (t) => Number((/(\d+) de 7 grupos con datos/.exec(t) || [])[1] || 0);
+ok(grupos_fit16(conRango_fit16) >= grupos_fit16(rangos_fit16) && grupos_fit16(conRango_fit16) >= 3,
+  `⚠️ FIT F16 — y la cobertura ha subido con el ejercicio nuevo (${grupos_fit16(rangos_fit16)} → ${grupos_fit16(conRango_fit16)} de 7)`);
+
+/* Apartado 15 — el grupo muscular lleva al detalle de la F13, no a una copia. */
+ok(await pulsarQueEmpiece_fit10('Espalda:'), 'FIT F16 — se toca Espalda en los rankings musculares');
+const detalle_fit16 = await esperarTexto(/Dorsales/i);
+ok(/Dorsales/.test(detalle_fit16),
+  '🚨 FIT F16 — abre el detalle muscular de la F13, sin duplicar pantalla (apartado 15)');
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

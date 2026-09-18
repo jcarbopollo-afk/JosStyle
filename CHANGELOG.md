@@ -1,5 +1,60 @@
 # CHANGELOG.md
 
+## v3.98.0 — FIT F16/45: la pantalla de Rangos
+
+**Fitness → Rangos** deja de ser el hueco que dejó la F1 y pasa a ser la pantalla del apartado 1:
+Rango Predicho, los diez rangos, clasificar ejercicios, tu cuerpo y los rankings musculares.
+
+### 🚨 La pantalla no calcula nada
+
+*"NO vuelvas a implementar la lógica de rangos"* (apartado 0). Todo sale de la F15: `src/lib/
+pantallaRangos.js` pide `rangoGlobal` **una vez** y solo ordena y redacta lo que se ve, y
+`src/views/RangosView.jsx` dibuja. Hay una comprobación que se pone roja si en la vista aparece un
+umbral, una fórmula o la palabra `score`.
+
+### Lo que se ve, y lo que NO se inventa
+
+- **Rango Predicho** con su hexágono grande, su descripción y —cuando lo hay— el camino al siguiente.
+  En el rango diez dice «Rango máximo de la escala»: no hay un once.
+- **Sin datos es «Sin Rango»**, y con motivo: *"Completa ejercicios…"* si no ha entrenado, y
+  *"Necesitas más ejercicios clasificados para obtener un rango global"* si ha entrenado **uno solo**
+  cien veces. 🚨 Son dos cosas distintas y se dicen distinto.
+- **Cobertura** («5 de 7 grupos con datos») diciendo expresamente que mide cuánta información hay,
+  **no** forma física (apartado 5).
+- **Los diez rangos** en cuadrícula, con icono y palabra además del color —Conseguido, Actual,
+  Bloqueado (apartado 20)—, y una hoja al tocarlos con el umbral de la escala. ⚠️ El umbral es una
+  propiedad del rango, igual para todos; **la puntuación de Josué sigue sin enseñarse**.
+- **Clasificar ejercicios** con el recuento real («3 de 40 clasificados»). 🚨 Un ejercicio con las
+  series **sin marcar** no cuenta: sería el dato falso del apartado 25. Y **sin botón**: el
+  cuestionario es de la fase siguiente, y un botón que no clasifica nada es la regla 8.
+- **Rankings musculares** en orden anatómico fijo (Brazos, Piernas, Espalda, Pecho, Hombros,
+  Abdominales, Cuello). 🚨 Nunca por puntuación: una lista que se reordena sola esconde el grupo
+  flojo. El cuello sin entrenar dice «Sin datos», no un rango de consolación, y no baja el global.
+
+### Decisiones que conviene saber
+
+- **Tocar un grupo abre el detalle de la F13**, dentro de Progreso: Rangos manda el foco y Progreso
+  lo abre (apartado 15, *"no duplicar pantallas"*).
+- **No hay ilustración anatómica en el proyecto**, y el apartado 10 dice de usar *la existente*. No
+  existe, así que «Tu cuerpo» son los siete iconos reales del catálogo, y cada uno lleva al detalle:
+  entrada de verdad, no un dibujo decorativo.
+- 🐛 **`CTA_CLASIFICAR` decía una frase falsa** desde la F2: *"Disponible cuando el catálogo de
+  ejercicios esté construido"*, y el catálogo existe desde entonces. Ahora dice cómo se clasifica un
+  ejercicio hoy: entrenándolo y marcando sus series.
+- **El peso corporal llega de Salud** (su última medida con peso), donde vive, en vez de duplicarse
+  en Fitness. Sin ninguna medida, la F15 mide en carga absoluta: no se inventa un peso medio.
+- ⚠️ **Se retiran `InsigniaRango` y `TarjetaGrupoMuscular`**, los dos huecos que dejó preparados la
+  F1: sus sustitutos son `RankBadge` (F15) y `MuscleRankCard`. Y `fitness.rangos` ya no se pinta —
+  los rangos se calculan, no se leen de una copia vieja—.
+
+### Pruebas
+
+`scripts/test-pantalla-rangos.mjs`: sin datos, un solo ejercicio, tres ejercicios, la escala, la
+hoja, el recuento de clasificados, el orden anatómico, el grupo sin datos, los datos corruptos y el
+escaneo que impide que la vista calcule. Más el recorrido real en Chromium: Fitness → Rangos sin
+rango global con dos ejercicios → tocar Élite → entrenar un tercero → rango, «Próximo rango» y un
+solo rango marcado como actual → Espalda → el detalle de la F13.
+
 ## v3.97.0 — FIT F15/45: sistema base de rangos y clasificación
 
 Empieza el bloque de Rangos, y esta fase es **solo la base**: lógica, configuración y componentes. La

@@ -2,6 +2,19 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.98.0 — FIT F16/45: la pantalla de Rangos):** Fitness → Rangos ya es la
+> pantalla entera (`src/views/RangosView.jsx`): Rango Predicho con cobertura y camino al siguiente,
+> los diez rangos en cuadrícula con su hoja, «Clasificar ejercicios» con el recuento real, «Tu
+> cuerpo» y los rankings musculares en orden anatómico. 🚨 **No calcula nada**: `src/lib/
+> pantallaRangos.js` pide `rangoGlobal` (F15) una vez y solo ordena y redacta. Sin datos es «Sin
+> Rango» —y con dos ejercicios lo dice distinto: le falta variedad, no esfuerzo—; un grupo sin
+> entrenar dice «Sin datos» y no baja el global; un ejercicio con series sin marcar **no** cuenta
+> como clasificado. No hay botón de clasificar (el cuestionario es la F17) ni ilustración anatómica
+> (no existe en el proyecto: van los iconos reales, que sí llevan al detalle de la F13). Tocar un
+> grupo abre ese detalle **dentro de Progreso**, sin duplicar pantalla. El peso corporal llega de
+> Salud. Se retiran `InsigniaRango` y `TarjetaGrupoMuscular`, y `fitness.rangos` deja de pintarse.
+> Pruebas en `scripts/test-pantalla-rangos.mjs` y en el recorrido de Chromium.
+
 > **🏋️ ACTUALIZACIÓN (v3.97.0 — FIT F15/45: sistema base de rangos):** La base del bloque de Rangos,
 > **sin pantalla** (la traen las fases 16 a 25). `src/lib/rangos.js` calcula al pedirlo el rango de un
 > ejercicio, un subgrupo, un grupo y el global: marca de cada sesión según la clase de la F11 →

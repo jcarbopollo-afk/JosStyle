@@ -1024,6 +1024,16 @@ else
   fallo "Falla la UX del entrenamiento en vivo"; grep '✗' /tmp/jc_entreno_ux.log
 fi
 
+# FIT F16 — la pantalla de Rangos. Lo que más se vigila: que la pantalla NO calcule
+# (ni umbrales ni fórmulas dentro de la vista) y que no aparezca un dato falso —un rango
+# global con dos ejercicios, un grupo sin datos con rango, o un contador de clasificados
+# que cuente series sin marcar.
+if node --import ./scripts/resolver-vite.mjs scripts/test-pantalla-rangos.mjs >/tmp/jc_pantalla_rangos.log 2>&1; then
+  ok "Pantalla de Rangos (FIT F16) — $(grep -c '✓' /tmp/jc_pantalla_rangos.log) comprobaciones"
+else
+  fallo "Falla la pantalla de Rangos"; grep '✗' /tmp/jc_pantalla_rangos.log
+fi
+
 # FIT F15 — la base de Rangos. Lo que más se vigila: que sin datos sea «Sin Rango»
 # y no el rango 1, que un grupo sin entrenar no cuente como cero, que un ejercicio
 # aislado no dé rango global, y que un mal día no baje el rango.

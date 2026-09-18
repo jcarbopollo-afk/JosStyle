@@ -873,15 +873,24 @@ export const ESTADOS_VACIOS = {
    datos ficticios"*, porque *"la funcionalidad real de clasificación se
    construirá en una fase posterior"*.
 
-   Así que existe y **se ve**, pero declarado: sin catálogo de ejercicios, el
-   *"· 0 restantes"* sería un contador de una lista que no existe todavía, y un
-   botón que abre la nada es el control decorativo de la regla 8. Es lo mismo
-   que hace `RAMAS_ESTUDIOS` en la E3 F41 con Trabajos y Progreso. */
+   Así que existe y **se ve**, pero declarado: el *"· 0 restantes"* sería un
+   contador de una lista que no existía todavía, y un botón que abre la nada es
+   el control decorativo de la regla 8. Es lo mismo que hace `RAMAS_ESTUDIOS` en
+   la E3 F41 con Trabajos y Progreso.
+
+   🔓 **FIT F16 — el contador ya es real** y lo pinta la pantalla de Rangos
+   («12 de 35 clasificados», su apartado 9): el catálogo existe desde la F2 y la
+   F15 sabe qué ejercicios tienen rango. ⚠️ Lo que sigue sin existir es el
+   **cuestionario** de clasificación (fase siguiente), así que `existe` continúa
+   en `false` y no hay botón; lo que se dice es **cómo** se clasifica un
+   ejercicio hoy: entrenándolo y marcando sus series. «Cuando el catálogo esté
+   construido» era falso desde la F2, y una frase falsa en pantalla hace el
+   mismo daño que un fallo. */
 export const CTA_CLASIFICAR = {
   texto: 'Clasificar ejercicios',
   existe: false,
-  porque: 'La clasificación necesita el catálogo de ejercicios, que es la fase siguiente.',
-  mientrasTanto: 'Disponible cuando el catálogo de ejercicios esté construido.',
+  porque: 'El cuestionario de clasificación es de una fase posterior; el recuento de clasificados sí es real desde la FIT F16.',
+  mientrasTanto: 'Un ejercicio se clasifica al entrenarlo y marcar sus series.',
 };
 
 /* Los accesos del área de Entrenamiento (apartado 12). `existe: false` no los

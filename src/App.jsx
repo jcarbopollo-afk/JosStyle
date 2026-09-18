@@ -986,6 +986,17 @@ export default function App() {
     MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop })])
   ), [sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop]);
 
+  // FIT F16 — el peso corporal que usan los rangos de Fitness. Vive en Salud (sus medidas), no
+  // en Fitness: duplicarlo daría dos pesos distintos, y el de los rangos sería el viejo. Se manda
+  // el ÚLTIMO por fecha —no el último apuntado—, que es el criterio que ya usa prediccionPeso().
+  // Sin ninguna medida con peso va `null`, y la F15 mide entonces en carga absoluta: no se
+  // inventa un peso "medio" para poder dar un número.
+  const perfilFitness = useMemo(() => {
+    const conPeso = (salud.medidas || []).filter((m) => m && m.peso).sort((a, b) => (a.fecha < b.fecha ? -1 : 1));
+    const ultima = conPeso[conPeso.length - 1];
+    return ultima ? { peso: Number(ultima.peso) } : null;
+  }, [salud.medidas]);
+
   if (session === undefined) return <LoadingScreen />;
   if (!session) return <Auth />;
   if (!loaded) return <LoadingScreen />;
@@ -2738,6 +2749,7 @@ export default function App() {
             onEliminarSesion={deleteSesionFitness}
             onEliminarObjetivo={deleteObjetivoFitness}
             accent={accent} onIr={setTab}
+            perfil={perfilFitness}
             foco={focoPara('entreno')} onFocoConsumido={consumirFoco}
           />
         );

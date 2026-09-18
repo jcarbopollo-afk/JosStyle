@@ -175,6 +175,16 @@ import { resumenMuscular as resumenMuscularF13, ejerciciosDeMusculo as ejercicio
 import { anadirObjetivo as anadirObjetivoF14, listaDeObjetivos as listaObjetivosF14, progresoDeObjetivo as progresoObjetivoF14 } from '../src/lib/objetivosProgreso.js';
 /* FIT F15 — los componentes de rangos: hexágono, etiqueta, estado y progreso. */
 import { RankBadge, RankLabel, RankStatus, RankProgress } from '../src/components/rangos.jsx';
+/* FIT F16 — la pantalla de Rangos y sus secciones. */
+/* ⚠️ `HojaDeRango` no se importa aquí: sale por `createPortal` a `document.body`
+   (regla 3), así que este banco —que mide lo que hay dentro del contenedor— la
+   vería vacía y daría un rojo falso. La abre el recorrido de Chromium, que sí
+   puede tocarla. */
+import RangosView, {
+  RankOverviewCard, RankList, RankItem, RankClassificationCard, AnatomyPreview,
+  MuscleRankings, MuscleRankCard,
+} from '../src/views/RangosView.jsx';
+import { pantallaDeRangos as pantallaF16, detalleDeRango as detalleRangoF16 } from '../src/lib/pantallaRangos.js';
 import { rangoDeEjercicio as rangoEjF15, progresoHaciaSiguiente as haciaF15 } from '../src/lib/rangos.js';
 /* FIT F2 — el catálogo de ejercicios y su detalle. ⚠️ El detalle va APARTE
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
@@ -3010,8 +3020,23 @@ const CASOS = [
   /* 🚨 **Las otras dos áreas se prueban APARTE, y hace falta.** `FitnessView`
      arranca en Entrenamiento, así que renderizarla NO pinta ni una línea de
      Rangos ni de Progreso — es el agujero del Álbum de Relación (NAV F3). */
-  ['AreaRangos', AreaRangos, () => ({ rangos: [], accent })],
-  ['AreaRangos', AreaRangos, (e) => ({ rangos: (e.fitness || {}).rangos || [], accent })],
+  ['AreaRangos', AreaRangos, () => ({ fitness: null, accent })],
+  ['AreaRangos', AreaRangos, () => ({ fitness: fitnessConProgresoF12(), accent, onMusculo: noop, onEntrenar: noop })],
+  /* ══ FIT F16 — la pantalla de Rangos ═══════════════════════════════════ */
+  /* ⚠️ Las dos situaciones que más se rompen: sin una sola sesión (todo «Sin
+     Rango») y con sesiones de verdad (rango, cobertura y rankings). */
+  ['RangosView', RangosView, () => ({ fitness: {}, accent })],
+  ['RangosView', RangosView, () => ({ fitness: fitnessConProgresoF12(), perfil: { peso: 72 }, accent, onMusculo: noop, onEntrenar: noop })],
+  ['RankOverviewCard', RankOverviewCard, () => ({ datos: pantallaF16({}), accent })],
+  ['RankOverviewCard', RankOverviewCard, () => ({ datos: pantallaF16(fitnessConProgresoF12()), accent })],
+  ['RankList', RankList, () => ({ escala: pantallaF16({}).escala, accent, onAbrir: noop })],
+  ['RankItem', RankItem, () => ({ nivel: pantallaF16({}).escala[0], accent, onAbrir: noop })],
+  ['RankClassificationCard', RankClassificationCard, () => ({ clasificacion: pantallaF16({}).clasificacion, accent, onEntrenar: noop })],
+  ['RankClassificationCard', RankClassificationCard, () => ({ clasificacion: pantallaF16({}).clasificacion, accent })],
+  ['AnatomyPreview', AnatomyPreview, () => ({ musculos: pantallaF16({}).musculos, accent, onMusculo: noop })],
+  ['AnatomyPreview', AnatomyPreview, () => ({ musculos: pantallaF16(fitnessConProgresoF12()).musculos, accent })],
+  ['MuscleRankings', MuscleRankings, () => ({ musculos: pantallaF16(fitnessConProgresoF12()).musculos, accent, onMusculo: noop })],
+  ['MuscleRankCard', MuscleRankCard, () => ({ musculo: pantallaF16(fitnessConProgresoF12()).musculos[0], accent })],
   ['AreaProgreso', AreaProgreso, () => ({ fotos: [], accent, onIr: noop })],
   /* ══ FIT F12 — Progreso ════════════════════════════════════════════════ */
   ['ProgresoView', ProgresoView, () => ({ fitness: fitnessConProgresoF12(), fotos: [], accent, onEntrenar: noop, onIrAFotos: noop })],

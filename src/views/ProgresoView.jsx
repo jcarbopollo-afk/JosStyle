@@ -14,7 +14,7 @@
    ⚠️ Sin confeti, sin puntos, sin niveles (apartado 27): deportivo y serio.
    =========================================================================== */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search, Dumbbell, Camera, Play, X,
 } from 'lucide-react';
@@ -859,6 +859,8 @@ export function ObjetivosProgreso({ resultado, filtro, onFiltro, grupo, onGrupo,
 export default function ProgresoView({
   fitness, fotos = [], accent, onEntrenar = null, onIrAFotos = null, resumenFotos = null,
   onGuardarFitness = null, onEliminarObjetivo = null,
+  /* FIT F16, apartado 15 — el grupo muscular que llega desde Rangos. */
+  focoMusculo = null, onFocoMusculoConsumido = null,
 }) {
   const [seccion, setSeccion] = useState('resumen');
   const [busqueda, setBusqueda] = useState('');
@@ -906,6 +908,21 @@ export default function ProgresoView({
   const detalle = useMemo(() => (abierto ? detalleDeProgreso(f, abierto, { propios, rango, hoy }) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [abierto, f.sesiones, propios, rango, hoy]);
+
+  /* 🚨 FIT F16, apartado 15 — el grupo que llega desde Rangos abre **este**
+     detalle, el de la F13. ⚠️ Y hay que abrir también su sección: llegar con el
+     detalle puesto pero con «Resumen» debajo dejaría a Josué, al volver, en una
+     pantalla distinta de la que esperaba. El foco se consume en cuanto se usa,
+     como el de Inicio: si se quedara puesto, volver a Progreso reabriría Espalda
+     una semana después (la lección de la EH F40). */
+  useEffect(() => {
+    if (!focoMusculo) return;
+    setSeccion('musculos');
+    setSubgrupo(null);
+    setMusculo(focoMusculo);
+    if (onFocoMusculoConsumido) onFocoMusculoConsumido();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focoMusculo]);
 
   /* Apartado 30 — «Ver entrenamiento» es la pantalla de la F10. */
   if (vista && vista.tipo === 'sesion') {

@@ -23,18 +23,15 @@
    =========================================================================== */
 
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Lock, Camera, Flame, Dumbbell, Plus, Pencil, X } from 'lucide-react';
+import { ChevronRight, Camera, Flame, Dumbbell, Pencil, X } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, GhostBtn, PrimaryButton } from '../components/ui';
 import {
-  AREAS_FITNESS, AREA_INICIAL, GRUPOS_MUSCULARES, NIVELES_RANGO, SIN_RANGO,
-  estadoDeNivel, nombreDeRango, ESTADOS_VACIOS, CTA_CLASIFICAR, ACCESOS_ENTRENAMIENTO,
+  AREAS_FITNESS, AREA_INICIAL, ESTADOS_VACIOS, ACCESOS_ENTRENAMIENTO,
   rachaDeFitness, resumenProgreso, resumenEntrenamiento,
 } from '../lib/fitness';
-import { iconoDeArea, iconoDeGrupo } from '../components/iconosFitness';
-/* FIT F15 — la insignia hexagonal de los rangos, una sola en toda la aplicación. */
-import { RankBadge } from '../components/rangos';
+import { iconoDeArea } from '../components/iconosFitness';
 import TrainingView from './TrainingView';
 /* FIT F2 — el catálogo se renderiza entero aquí dentro, como `TrainingView`:
    agrupar pantallas es renderizarlas, nunca copiarlas (E3 F23). */
@@ -55,6 +52,8 @@ import EntrenamientoVivoView, { SesionRecuperable } from './EntrenamientoVivoVie
 import HistorialView from './HistorialView';
 /* FIT F12 — Progreso: resumen, ejercicios y fotos. */
 import ProgresoView from './ProgresoView';
+/* FIT F16 — Rangos: la pantalla entera, que consume la lógica de la F15. */
+import RangosView from './RangosView';
 /* FIT F8 — el resumen y el guardado, también pantalla entera: se llega desde el
    entrenamiento en vivo y se sale guardando o descartando. */
 import FinalizacionView from './FinalizacionView';
@@ -171,150 +170,30 @@ export function VacioFitness({ estado, accent, onAccion = null }) {
   );
 }
 
-/* ── La insignia de un nivel (apartados 9 y 16) ────────────────────────────
-   *"Debe existir una estructura visual para las insignias de los 10 niveles,
-   pero todavía no debe mostrar progreso ficticio"*. Hexagonal, como pide el
-   apartado, y con los tres estados del apartado 8: completado, actual y
-   bloqueado.
-
-   ⚠️ El candado va **además** del color, no en su lugar. */
-export function InsigniaRango({ nivel, estado, accent }) {
-  /* 🔓 FIT F15 — el hexágono lo dibuja `RankBadge` (`src/components/rangos.jsx`):
-     dos dibujos del mismo rango acabarían separándose (apartado 27). ⚠️ Los
-     estados de la F1 —completado, actual, bloqueado— son los de la F15 con otro
-     nombre, así que se traducen aquí en vez de renombrarlos por todas partes. */
-  const estadoF15 = estado === 'completado' ? 'conseguido' : estado;
-  return (
-    <div className="flex flex-col items-center gap-1 shrink-0" style={{ width: 56 }}>
-      <RankBadge
-        rank={nivel.orden}
-        size="md"
-        state={estadoF15}
-        locked={estado === 'bloqueado'}
-        accent={accent}
-        etiqueta={`Rango ${nivel.nombre}`}
-      />
-      <span
-        className="text-[10px] font-semibold text-center leading-tight"
-        style={{ color: estado === 'actual' ? COLORS.text : COLORS.textMuted }}
-      >
-        {nivel.nombre}
-      </span>
-    </div>
-  );
-}
-
-/* ── La tarjeta de un grupo muscular (apartado 9) ──────────────────────────
-   *"Cada tarjeta debe estar preparada para posteriormente mostrar: icono,
-   nombre, rango, progreso, chevron, subgrupos"*. Las seis cosas están; lo que
-   todavía no hay es el **cálculo**, así que el rango se enseña como `SIN_RANGO`
-   —que es la verdad— y no como un porcentaje inventado.
-
-   ⚠️ **Y el chevron solo aparece si hay a dónde ir.** La pantalla de un grupo
-   es de una fase posterior, así que en la FIT F1 la tarjeta no es un botón: un
-   chevron promete navegación, y una flecha que no lleva a ninguna parte es el
-   control decorativo de la regla 8. El componente ya acepta `onAbrir`, de forma
-   que la fase que construya esa pantalla solo tiene que pasárselo. */
-export function TarjetaGrupoMuscular({ grupo, rango, accent, onAbrir = null }) {
-  const Icono = iconoDeGrupo(grupo.id);
-  const subgrupos = grupo.subgrupos || [];
-  const dentro = (
-    <>
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: hexToRgba(accent, 0.14), color: accent }}
-      >
-        <Icono size={20} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-          {grupo.nombre}
-        </p>
-        <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
-          {nombreDeRango(rango?.nivel ?? null)} · {subgrupos.length} {subgrupos.length === 1 ? 'zona' : 'zonas'}
-        </p>
-      </div>
-      {onAbrir && <ChevronRight size={18} style={{ color: COLORS.textMuted }} aria-hidden="true" />}
-    </>
-  );
-  const clases = 'hub-card w-full text-left rounded-2xl p-3.5 flex items-center gap-3';
-  const estilo = { background: COLORS.surface, border: `1px solid ${COLORS.border}` };
-  if (!onAbrir) return <div className={clases} style={estilo}>{dentro}</div>;
-  return (
-    <button
-      onClick={onAbrir}
-      aria-label={`Ver ${grupo.nombre}`}
-      className={`${clases} active:scale-[0.99]`}
-      style={estilo}
-    >
-      {dentro}
-    </button>
-  );
-}
-
 /* ── Área: RANGOS (apartados 9 y 10) ─────────────────────────────────────── */
-/* ⚠️ Las tres áreas se EXPORTAN a propósito: solo una se pinta a la vez, así que
+/* 🔓 **FIT F16 — el área entera es ahora `RangosView`**, igual que Progreso es
+   `ProgresoView`: Rango Predicho, los diez rangos, clasificar ejercicios, tu
+   cuerpo y los rankings musculares, todo calculado por la F15.
+
+   ⚠️ Se llevó por delante `InsigniaRango` y `TarjetaGrupoMuscular`, los dos
+   componentes con los que la F1 dejó el hueco preparado: sus sustitutos son
+   `RankBadge` (F15) y `MuscleRankCard` (F16), y dejarlos ahí sin usar habría
+   dejado dos formas distintas de pintar el mismo rango.
+
+   ⚠️ Las tres áreas se EXPORTAN a propósito: solo una se pinta a la vez, así que
    renderizar `FitnessView` no prueba las otras dos. Es la lección del Álbum de
    Relación (NAV F3) — *si lo que tocas solo aparece tras pulsar algo,
    exportarlo y probarlo aparte*. */
-export function AreaRangos({ rangos = [], accent }) {
-  const lista = Array.isArray(rangos) ? rangos : [];
-  const general = lista.find((r) => r.nivel !== null) || null;
+export function AreaRangos({ fitness = null, perfil = null, accent, onMusculo = null, onEntrenar = null }) {
   return (
-    <div className="space-y-5">
-      <Card>
-        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
-          Rango Predicho
-        </p>
-        <p
-          className="text-3xl font-extrabold mt-1"
-          style={{ color: general ? accent : COLORS.text, fontFamily: "'Manrope', sans-serif" }}
-        >
-          {nombreDeRango(general?.nivel ?? null)}
-        </p>
-        <p className="text-sm mt-1.5" style={{ color: COLORS.textMuted }}>
-          {general ? 'Calculado con los ejercicios que has clasificado.' : SIN_RANGO.que}
-        </p>
-
-        {/* Las diez insignias. En un iPhone pequeño no caben diez de una vez, así
-            que van en su propio carril horizontal: la página nunca se desplaza
-            de lado, solo esta tira. */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 mt-4 -mx-1 px-1">
-          {NIVELES_RANGO.map((n) => (
-            <InsigniaRango
-              key={n.id}
-              nivel={n}
-              estado={estadoDeNivel(n, general?.nivel ?? null)}
-              accent={accent}
-            />
-          ))}
-        </div>
-
-        {/* El CTA del apartado 9. Existe y se ve, pero dice la verdad: sin
-            catálogo de ejercicios no hay nada que clasificar todavía. */}
-        <p
-          className="text-xs mt-4 pt-3"
-          style={{ color: COLORS.textMuted, borderTop: `1px solid ${COLORS.border}` }}
-        >
-          <span className="font-semibold" style={{ color: COLORS.text }}>{CTA_CLASIFICAR.texto}</span>
-          {' — '}{CTA_CLASIFICAR.mientrasTanto}
-        </p>
-      </Card>
-
-      <div>
-        <SectionTitle sub="Tu nivel en cada zona del cuerpo">Rankings musculares</SectionTitle>
-        <div className="space-y-2">
-          {GRUPOS_MUSCULARES.map((g) => (
-            <TarjetaGrupoMuscular
-              key={g.id}
-              grupo={g}
-              rango={lista.find((r) => r.grupoId === g.id) || null}
-              accent={accent}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
+    <RangosView
+      fitness={fitness}
+      propios={(fitness && fitness.ejercicios) || []}
+      perfil={perfil}
+      accent={accent}
+      onMusculo={onMusculo}
+      onEntrenar={onEntrenar}
+    />
   );
 }
 
@@ -328,7 +207,7 @@ export function AreaRangos({ rangos = [], accent }) {
    Fotos (su apartado 2). ⚠️ **Las fotos no se pierden**: siguen contándose de
    Salud física y llevando allí, ahora en su propia pestaña, porque la F12 pide
    dejar la estructura lista para el sistema de fotos sin construirlo. */
-export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null }) {
+export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoMusculo = null, onFocoMusculoConsumido = null }) {
   const resumen = resumenProgreso(fotos);
   return (
     <ProgresoView
@@ -343,6 +222,9 @@ export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEnt
       /* FIT F14 — los objetivos se guardan por la puerta de siempre. */
       onGuardarFitness={onGuardarFitness}
       onEliminarObjetivo={onEliminarObjetivo}
+      /* FIT F16 — el grupo muscular que llega desde Rangos (su apartado 15). */
+      focoMusculo={focoMusculo}
+      onFocoMusculoConsumido={onFocoMusculoConsumido}
     />
   );
 }
@@ -633,8 +515,15 @@ export default function FitnessView({
   videos, onAddVideo, onDeleteVideo, onSetVideoFeedback,
   fotos = [], rachas, accent, foco, onFocoConsumido, onIr, onGuardarFitness = null,
   onEliminarPlantilla = null, onEliminarSesion = null, onEliminarObjetivo = null,
+  perfil = null,
 }) {
   const [area, setArea] = useState(AREA_INICIAL);
+  /* 🚨 FIT F16, apartado 15 — *"no duplicar pantallas"*. El detalle de un grupo
+     muscular ya existe (F13, dentro de Progreso), así que Rangos **manda el
+     foco** y Progreso lo abre, exactamente como el foco de Inicio abre
+     Entrenamiento. Un segundo detalle de Espalda acabaría diciendo otra cosa
+     que el primero. */
+  const [focoMusculo, setFocoMusculo] = useState(null);
 
   /* ⚠️ Un foco que llega apuntando a una habilidad no puede quedarse escondido
      detrás del área que estuviera abierta: es la lección de la E3 F24 —un
@@ -655,7 +544,10 @@ export default function FitnessView({
   const [entrenando, setEntrenando] = useState(null);
 
   const racha = rachaDeFitness(rachas);
-  const rangos = (fitness?.rangos) || [];
+  /* 🔓 FIT F16 — `fitness.rangos` ya no se lee aquí. Los rangos **se calculan**
+     desde las sesiones (F15); el campo sigue en el modelo porque lo escribió la
+     F1 y borrarlo sin migración rompería datos guardados, pero pintarlo sería
+     enseñar una copia vieja de algo que se sabe calcular ahora mismo. */
   /* 🚨 Lo que se crea Josué vive en `plantillas`, no en `planes`: la F1 dejó esa
      división escrita, y `planes` es la biblioteca de una fase posterior. */
   const plantillas = (fitness?.plantillas) || [];
@@ -758,13 +650,23 @@ export default function FitnessView({
       <CabeceraFitness titulo="Fitness" racha={racha} accent={accent} />
       <PestanasFitness areas={AREAS_FITNESS} activa={area} onCambiar={setArea} accent={accent} />
 
-      {area === 'rangos' && <AreaRangos rangos={rangos} accent={accent} />}
+      {area === 'rangos' && (
+        <AreaRangos
+          fitness={fitness}
+          perfil={perfil}
+          accent={accent}
+          onMusculo={(id) => { setFocoMusculo(id); setArea('progreso'); }}
+          onEntrenar={() => setArea('entrenamiento')}
+        />
+      )}
       {area === 'progreso' && (
         <AreaProgreso
           fitness={fitness}
           fotos={fotos}
           accent={accent}
           onIr={onIr}
+          focoMusculo={focoMusculo}
+          onFocoMusculoConsumido={() => setFocoMusculo(null)}
           /* FIT F12, apartado 5 — «Entrenar ahora» lleva a Entrenamiento, donde se empieza. */
           onEntrenar={() => setArea('entrenamiento')}
           onGuardarFitness={onGuardarFitness}
