@@ -195,6 +195,12 @@ import {
   cuestionario as cuestionarioF17, preguntaDeEjercicio as preguntaF17,
   clasificarEjercicio as clasificarF17, musculosQueRecibe as musculosF17, resumenFinal as resumenF17,
 } from '../src/lib/clasificacion.js';
+/* FIT F18 — el detalle de un grupo muscular, dentro de Rangos. */
+import DetalleMuscularView, {
+  MuscleRankHeader, MuscleProgressSummary, MuscleSubgroupList, MuscleSubgroupCard,
+  MuscleSubgroupDetail, MuscleExerciseList, MuscleExerciseCard, MuscleContribution,
+} from '../src/views/DetalleMuscularView.jsx';
+import { detalleDeGrupo as grupoF18, detalleDeSubgrupo as subgrupoF18 } from '../src/lib/detalleMuscular.js';
 import { rangoDeEjercicio as rangoEjF15, progresoHaciaSiguiente as haciaF15 } from '../src/lib/rangos.js';
 /* FIT F2 — el catálogo de ejercicios y su detalle. ⚠️ El detalle va APARTE
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
@@ -3054,6 +3060,23 @@ const CASOS = [
   ['AnatomyPreview', AnatomyPreview, () => ({ musculos: pantallaF16(fitnessConProgresoF12()).musculos, accent })],
   ['MuscleRankings', MuscleRankings, () => ({ musculos: pantallaF16(fitnessConProgresoF12()).musculos, accent, onMusculo: noop })],
   ['MuscleRankCard', MuscleRankCard, () => ({ musculo: pantallaF16(fitnessConProgresoF12()).musculos[0], accent })],
+  /* ══ FIT F18 — el detalle muscular ═════════════════════════════════════ */
+  /* ⚠️ Las dos situaciones que se rompen: un grupo entrenado y uno que no ha
+     tocado nunca (el cuello), donde todo tiene que decir «Sin datos». */
+  ['DetalleMuscularView', DetalleMuscularView, () => ({ fitness: fitnessConProgresoF12(), grupoId: 'pecho', accent, onVolver: noop, onEjercicio: noop })],
+  ['DetalleMuscularView', DetalleMuscularView, () => ({ fitness: {}, grupoId: 'cuello', accent, onVolver: noop })],
+  ['MuscleRankHeader', MuscleRankHeader, () => ({ detalle: grupoF18(fitnessConProgresoF12(), 'pecho', {}), accent, onVolver: noop })],
+  ['MuscleRankHeader', MuscleRankHeader, () => ({ detalle: grupoF18({}, 'cuello', {}), accent })],
+  ['MuscleProgressSummary', MuscleProgressSummary, () => ({ resumen: grupoF18(fitnessConProgresoF12(), 'pecho', {}).resumen, accent })],
+  ['MuscleSubgroupList', MuscleSubgroupList, () => ({ subgrupos: grupoF18(fitnessConProgresoF12(), 'pecho', {}).subgrupos, accent, onAbrir: noop })],
+  ['MuscleSubgroupCard', MuscleSubgroupCard, () => ({ subgrupo: grupoF18({}, 'cuello', {}).subgrupos[0], accent })],
+  ['MuscleSubgroupDetail', MuscleSubgroupDetail, () => ({ detalle: subgrupoF18(fitnessConProgresoF12(), 'pectoral-medio', {}), accent, onVolver: noop, onEjercicio: noop })],
+  ['MuscleExerciseList', MuscleExerciseList, () => ({ ejercicios: grupoF18(fitnessConProgresoF12(), 'pecho', {}).ejercicios, filtro: 'todos', onFiltro: noop, accent, onAbrir: noop })],
+  /* Un filtro que no deja nada: tiene que decirlo, no quedarse en blanco. */
+  ['MuscleExerciseList', MuscleExerciseList, () => ({ ejercicios: grupoF18(fitnessConProgresoF12(), 'pecho', {}).ejercicios, filtro: 'descenso', accent })],
+  ['MuscleExerciseCard', MuscleExerciseCard, () => ({ ejercicio: grupoF18(fitnessConProgresoF12(), 'pecho', {}).ejercicios[0], accent, onAbrir: noop })],
+  ['MuscleContribution', MuscleContribution, () => ({ texto: 'Dorsales · 50 %' })],
+
   /* ══ FIT F17 — el cuestionario ═════════════════════════════════════════ */
   ['ClasificacionView', ClasificacionView, () => ({ fitness: {}, accent, onGuardarFitness: noop, onVolver: noop })],
   ['ClasificacionView', ClasificacionView, () => ({ fitness: fitnessClasificadoF17(), accent, onGuardarFitness: noop, onVolver: noop })],

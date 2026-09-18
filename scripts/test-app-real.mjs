@@ -7730,6 +7730,62 @@ const trasRecargar_fit17 = await esperarTexto(/Pregunta \d+ de/i);
 ok(/Pregunta 2 de/i.test(trasRecargar_fit17),
   '🚨 FIT F17 — sigue por donde iba tras recargar: lo guardado ES el progreso (apartado 24)');
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F18 — El detalle de un grupo muscular (Entrega 4 · 18/45)
+   ══════════════════════════════════════════════════════════════════════════
+   El criterio del apartado 34, literal: *"Rangos → Espalda → Dorsales →
+   Dominadas → Progreso de Dominadas"*. Se apoya en las dominadas que sembró la
+   F13 y en las sentadillas de la F16, que ya están guardadas. */
+console.log('\n── FIT F18 · Detalle muscular ──');
+
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F18 — Fitness → Rangos');
+await esperarTexto(/Rangos musculares|Rankings musculares/i);
+ok(await pulsarQueEmpiece_fit10('Espalda:'), 'FIT F18 — → Espalda (apartado 34)');
+const espalda_fit18 = await esperarTexto(/Subgrupos/i);
+ok(/Espalda/i.test(espalda_fit18) && /Subgrupos/i.test(espalda_fit18),
+  '🚨 FIT F18 — se abre el detalle del grupo, con sus subgrupos (apartados 2 y 5)');
+ok(/Dorsales/i.test(espalda_fit18) && /Trapecio/i.test(espalda_fit18),
+  '…que son los del catálogo, no una lista escrita a mano (apartado 8)');
+ok(/ejercicios? clasificados?/i.test(espalda_fit18) && /subgrupos con datos/i.test(espalda_fit18),
+  '⚠️ FIT F18 — y la cabecera dice de dónde sale el rango (apartado 2)');
+ok(/ejercicios con datos/i.test(espalda_fit18),
+  '…con la cobertura en palabras (apartado 13)');
+ok(/no el tamaño del músculo/i.test(espalda_fit18),
+  '🚨 …recordando que mide rendimiento, no músculo');
+ok(/Mejorando|Estable|Sin datos/i.test(espalda_fit18),
+  '⚠️ FIT F18 — los estados llevan palabra, no solo color (apartado 29)');
+
+const anchoF18 = await page.evaluate(() => ({
+  desborda: document.documentElement.scrollWidth > window.innerWidth + 2,
+  ancho: document.documentElement.scrollWidth,
+}));
+ok(!anchoF18.desborda, `⚠️ FIT F18 — a 375 px el detalle no se arrastra de lado (${anchoF18.ancho} px, apartado 28)`);
+
+/* Apartado 20 — los filtros por estado. */
+ok(await pulsar('Sin datos'), 'FIT F18 — se filtra por «Sin datos» (apartado 20)');
+await esperarTexto(/Ejercicios/i);
+const conTendencia_fit18 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
+  .filter((b) => /: (Mejorando|Estable|Descenso)./.test(b.getAttribute('aria-label') || '')).length);
+ok(conTendencia_fit18 === 0,
+  `🚨 …y deja fuera los que sí tienen tendencia (${conTendencia_fit18} tarjetas con tendencia)`);
+ok(await pulsar('Todos'), '…y se vuelve a verlos todos');
+
+/* Apartado 6 — el subgrupo. */
+ok(await pulsarQueEmpiece_fit10('Dorsales:'), 'FIT F18 — → Dorsales (apartado 6)');
+const dorsales_fit18 = await esperarTexto(/Ejercicios/i);
+ok(/Dorsales/i.test(dorsales_fit18) && /Espalda/i.test(dorsales_fit18),
+  '🚨 FIT F18 — el detalle del subgrupo, sabiendo de qué grupo viene');
+ok(/Dominadas/i.test(dorsales_fit18),
+  '…con los ejercicios que lo trabajan de verdad (apartado 6)');
+ok(/Dorsales · \d+ %/.test(dorsales_fit18),
+  '🚨 FIT F18 — diciendo CUÁNTO aporta cada uno, no que «pertenezca» (apartado 7)');
+
+/* Apartado 11 — y el ejercicio lleva a la pantalla de progreso de la F12. */
+ok(await pulsarQueEmpiece_fit10('Dominadas pronas:'), 'FIT F18 — → Dominadas');
+const progresoEj_fit18 = await esperarTexto(/Historial|Progreso reciente|Evolución/i);
+ok(/Dominadas/i.test(progresoEj_fit18),
+  '🚨 FIT F18 — se abre la pantalla de progreso de la F12, no otra nueva (apartado 11)');
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

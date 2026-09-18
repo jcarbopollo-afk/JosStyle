@@ -1024,6 +1024,15 @@ else
   fallo "Falla la UX del entrenamiento en vivo"; grep '✗' /tmp/jc_entreno_ux.log
 fi
 
+# FIT F18 — el detalle de un grupo muscular. Lo que más se vigila: que los ejercicios
+# salgan del CATÁLOGO (no de una lista a mano), que la tendencia sea la de la F11, que un
+# subgrupo sin datos no reciba rango, y que un ejercicio borrado no rompa la pantalla.
+if node --import ./scripts/resolver-vite.mjs scripts/test-detalle-muscular.mjs >/tmp/jc_detalle_muscular.log 2>&1; then
+  ok "Detalle de rankings musculares (FIT F18) — $(grep -c '✓' /tmp/jc_detalle_muscular.log) comprobaciones"
+else
+  fallo "Falla el detalle muscular"; grep '✗' /tmp/jc_detalle_muscular.log
+fi
+
 # FIT F17 — el cuestionario de clasificación. Lo que más se vigila: que una estimación
 # NO gane a una sesión real (ni siquiera cuando la sesión sale peor), que no toque el
 # historial, y que la confianza de contestar una pregunta nunca sea alta.

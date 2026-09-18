@@ -859,8 +859,9 @@ export function ObjetivosProgreso({ resultado, filtro, onFiltro, grupo, onGrupo,
 export default function ProgresoView({
   fitness, fotos = [], accent, onEntrenar = null, onIrAFotos = null, resumenFotos = null,
   onGuardarFitness = null, onEliminarObjetivo = null,
-  /* FIT F16, apartado 15 — el grupo muscular que llega desde Rangos. */
-  focoMusculo = null, onFocoMusculoConsumido = null,
+  /* FIT F18, apartado 11 — y el ejercicio, para no crear otra pantalla de
+     progreso: se abre ESTA, la de la F12. */
+  focoEjercicio = null, onFocoEjercicioConsumido = null,
 }) {
   const [seccion, setSeccion] = useState('resumen');
   const [busqueda, setBusqueda] = useState('');
@@ -909,20 +910,19 @@ export default function ProgresoView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [abierto, f.sesiones, propios, rango, hoy]);
 
-  /* 🚨 FIT F16, apartado 15 — el grupo que llega desde Rangos abre **este**
-     detalle, el de la F13. ⚠️ Y hay que abrir también su sección: llegar con el
-     detalle puesto pero con «Resumen» debajo dejaría a Josué, al volver, en una
-     pantalla distinta de la que esperaba. El foco se consume en cuanto se usa,
-     como el de Inicio: si se quedara puesto, volver a Progreso reabriría Espalda
-     una semana después (la lección de la EH F40). */
+  /* 🚨 FIT F18, apartado 11 — el ejercicio que llega desde el detalle muscular
+     de Rangos abre **esta** pantalla, la de la F12: *"no crear otra pantalla de
+     progreso"*. ⚠️ Y se abre también su sección, porque al volver de la ficha
+     hay que caer en la lista de ejercicios y no en otro sitio. El foco se
+     consume en cuanto se usa, como el de Inicio: si se quedara puesto, volver a
+     Progreso reabriría el mismo ejercicio una semana después (EH F40). */
   useEffect(() => {
-    if (!focoMusculo) return;
-    setSeccion('musculos');
-    setSubgrupo(null);
-    setMusculo(focoMusculo);
-    if (onFocoMusculoConsumido) onFocoMusculoConsumido();
+    if (!focoEjercicio) return;
+    setSeccion('ejercicios');
+    setAbierto(focoEjercicio);
+    if (onFocoEjercicioConsumido) onFocoEjercicioConsumido();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focoMusculo]);
+  }, [focoEjercicio]);
 
   /* Apartado 30 — «Ver entrenamiento» es la pantalla de la F10. */
   if (vista && vista.tipo === 'sesion') {

@@ -28,6 +28,8 @@ import { RankBadge, RankLabel } from '../components/rangos';
 import { iconoDeGrupo } from '../components/iconosFitness';
 import { CTA_CLASIFICAR, SIN_RANGO, nivelRango } from '../lib/fitness';
 import { pantallaDeRangos, detalleDeRango } from '../lib/pantallaRangos';
+/* FIT F18 — el detalle de un grupo muscular, dentro de Rangos. */
+import DetalleMuscularView from './DetalleMuscularView';
 
 /* Los estados del apartado 20: **nunca solo color**. Cada uno lleva su icono y
    su palabra, porque un hexágono gris y otro azul no se distinguen con una
@@ -354,7 +356,7 @@ export function MuscleRankings({ musculos = [], accent, onMusculo }) {
 }
 
 /* ── La pantalla ─────────────────────────────────────────────────────────── */
-export default function RangosView({ fitness = null, propios = [], perfil = null, accent, onMusculo = null, onEntrenar = null, onClasificar = null }) {
+export default function RangosView({ fitness = null, propios = [], perfil = null, accent, onEntrenar = null, onClasificar = null, onEjercicio = null }) {
   /* 🚨 Apartado 22 — **una sola vez por cambio en las sesiones**. `rangoGlobal`
      recorre todas las sesiones y todos los ejercicios: pedirlo por sección lo
      haría ocho veces en cada render. */
@@ -363,9 +365,32 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [fitness && fitness.sesiones, propios, perfil],
   );
-  /* Qué rango está abierto en la hoja: estado de pantalla, nunca un dato. */
+  /* Qué rango está abierto en la hoja, y qué grupo muscular se está mirando:
+     estado de pantalla, nunca un dato. */
   const [abierto, setAbierto] = useState(null);
+  /* 🔓 FIT F18 — tocar un grupo abre **aquí** su detalle de rangos (su
+     apartado 1: *"Rangos → Espalda → Dorsales → Dominadas"*). ⚠️ La F16 mandaba
+     a la pantalla muscular de Progreso para no duplicar; son preguntas
+     distintas —«qué nivel tengo y de dónde sale» frente a «cómo evoluciona mi
+     rendimiento»— y las dos siguen existiendo, cada una en su sitio. Lo que no
+     se duplica es el cálculo. */
+  const [musculo, setMusculo] = useState(null);
   const detalle = abierto ? detalleDeRango(abierto, datos.global.sinRango ? null : datos.global.rango) : null;
+
+  /* Va DESPUÉS de los hooks (regla 4). */
+  if (musculo) {
+    return (
+      <DetalleMuscularView
+        fitness={fitness}
+        propios={propios}
+        perfil={perfil}
+        grupoId={musculo}
+        accent={accent}
+        onVolver={() => setMusculo(null)}
+        onEjercicio={onEjercicio}
+      />
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
@@ -385,9 +410,9 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
         onEntrenar={datos.clasificacion.restantes > 0 ? onEntrenar : null}
       />
 
-      <AnatomyPreview musculos={datos.musculos} accent={accent} onMusculo={onMusculo} />
+      <AnatomyPreview musculos={datos.musculos} accent={accent} onMusculo={setMusculo} />
 
-      <MuscleRankings musculos={datos.musculos} accent={accent} onMusculo={onMusculo} />
+      <MuscleRankings musculos={datos.musculos} accent={accent} onMusculo={setMusculo} />
 
       <HojaDeRango detalle={detalle} accent={accent} onCerrar={() => setAbierto(null)} />
     </div>

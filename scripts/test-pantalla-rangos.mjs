@@ -244,13 +244,17 @@ ok(/<RangosView/.test(fitnessView) && !/InsigniaRango|TarjetaGrupoMuscular/.test
   '⚠️ Fitness renderiza la pantalla entera, y los dos componentes que sustituye ya no están sueltos');
 ok(!/fitness\?\.rangos|fitness\.rangos/.test(fitnessView),
   '🚨 Y no pinta `fitness.rangos`: los rangos se calculan, no se leen de una copia vieja');
-ok(/onMusculo=/.test(fitnessView) && /setFocoMusculo/.test(fitnessView),
-  'Tocar un grupo manda el foco a Progreso (apartado 15)');
+/* 🔓 FIT F18 — tocar un grupo abre su detalle **dentro de Rangos** (el de
+   rangos), no el de Progreso. Lo que se sigue vigilando es que no haya dos
+   pantallas calculando lo mismo: el detalle nuevo consume la F15 y la F13, y la
+   ficha de un ejercicio sigue siendo la de la F12. */
+ok(/<DetalleMuscularView/.test(vista) && /onMusculo=\{setMusculo\}/.test(vista),
+  '🔓 Tocar un grupo abre su detalle de rangos, dentro de Rangos (FIT F18)');
 const progreso = sinComentarios(leer('src/views/ProgresoView.jsx'));
-ok(/focoMusculo/.test(progreso) && /setMusculo\(focoMusculo\)/.test(progreso),
-  '🚨 …y Progreso abre el detalle de la F13: no se duplica la pantalla del músculo');
-ok(/onFocoMusculoConsumido/.test(progreso),
-  '…y el foco se consume, para que volver a Progreso no reabra Espalda una semana después');
+ok(/focoEjercicio/.test(progreso) && /setAbierto\(focoEjercicio\)/.test(progreso),
+  '🚨 …y un ejercicio abre la pantalla de progreso de la F12: no se duplica');
+ok(/onFocoEjercicioConsumido/.test(progreso),
+  '…y el foco se consume, para que volver a Progreso no reabra el mismo ejercicio una semana después');
 ok(/perfil=\{perfilFitness\}/.test(leer('src/App.jsx')),
   'El peso corporal llega desde Salud, donde vive, en vez de duplicarse en Fitness');
 

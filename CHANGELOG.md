@@ -1,5 +1,60 @@
 # CHANGELOG.md
 
+## v3.100.0 — FIT F18/45: el detalle de cada grupo muscular
+
+**Rangos → Espalda → Dorsales → Dominadas → su progreso.** Cada grupo muscular tiene ahora su
+pantalla, y contesta lo que pide el enunciado: *"¿qué nivel tengo en este grupo y de dónde sale?"*.
+
+### Qué se ve
+
+- **Cabecera** con el hexágono del grupo, su rango, cuántos ejercicios lo sostienen, cuántos
+  subgrupos tienen datos y el camino al siguiente rango (o «Rango máximo», sin inventar un once).
+- **Subgrupos** con su propio rango (`getMuscleSubgroupRank`, F15) y su barra. 🚨 El que no ha
+  entrenado dice **«Sin datos»**: ni «Novato», ni «0 %», ni barra — un cero se lee como suspenso y
+  lo que pasa es que no lo ha tocado.
+- **Progreso reciente**: cuántos mejoran, cuántos están estables y cuántos bajan, con la cobertura
+  («4 de 18 ejercicios con datos») dicha en palabras.
+- **Ejercicios**, con su tendencia (F11), su última marca en la unidad que toque —reps, segundos o
+  kilos—, el cambio respecto a la vez anterior y **cuánto aporta al músculo** («Espalda · 50 %»):
+  un ejercicio no «pertenece» a un músculo, contribuye a varios.
+- **Filtros** por estado (Todos · Mejorando · Estables · Descenso · Sin datos) y orden útil:
+  primero lo que tiene datos, después lo estimado, y al final lo que no ha tocado nunca.
+
+### 🚨 La lista sale del catálogo, siempre
+
+*"No mantener listas manuales por grupo. Esto es obligatorio para evitar inconsistencias"*
+(apartado 8). Y salen **todos** los que tocan el músculo, no solo los entrenados: es lo que permite
+decir «4 de 18 con datos» sin inventarse el denominador, y lo que convierte la pantalla en una lista
+de por dónde seguir.
+
+### Transparencia
+
+Con un solo ejercicio detrás, se dice: **«Clasificación basada en 1 ejercicio»**. Si el rango se
+sostiene solo en el cuestionario de la F17, también: **«Basado en tu clasificación inicial»**. Una
+línea discreta, no una pantalla llena de advertencias.
+
+### Decisiones
+
+- **Rangos → grupo abre este detalle, no el de Progreso.** Contradicción con la F16 anotada y
+  resuelta: contestan preguntas distintas —«qué nivel tengo» frente a «cómo evoluciona mi
+  rendimiento»— y las dos pantallas siguen existiendo, cada una en su sitio. Lo que **no** se
+  duplica es el cálculo: éste consume la F11, la F13 y la F15.
+- **Tocar un ejercicio abre la pantalla de progreso de la F12** (apartado 11: *"no crear otra
+  pantalla de progreso"*), y por eso el foco muscular que la F16 mandaba a Progreso se retira: ya
+  no lo usa nadie.
+- **Nada se guarda**: el detalle se recalcula de ejercicios, catálogo, sesiones, clasificaciones y
+  perfil, y solo del grupo que se abre (apartados 25 y 31).
+- Un ejercicio borrado del catálogo **no rompe la pantalla** y **no recibe un músculo inventado**:
+  sin catálogo no se sabe cuál es.
+
+### Pruebas
+
+`scripts/test-detalle-muscular.mjs` (62): rango del grupo y del subgrupo contra la F15, subgrupos
+sin datos, lista desde el catálogo, contribuciones, tendencias de la F11, métrica correcta, filtros,
+orden, transparencia, ejercicio borrado y datos corruptos. Comprobado que se pone roja si un
+subgrupo sin datos recibe rango o si la lista se queda solo con lo entrenado. Y el recorrido en
+Chromium hace el camino del apartado 34 completo.
+
 ## v3.99.0 — FIT F17/45: clasificar ejercicios con un cuestionario
 
 Desde **Rangos → «Clasificar ejercicios · N restantes»** se abre un cuestionario que estima el nivel

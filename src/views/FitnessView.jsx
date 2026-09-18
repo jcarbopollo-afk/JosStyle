@@ -186,16 +186,16 @@ export function VacioFitness({ estado, accent, onAccion = null }) {
    renderizar `FitnessView` no prueba las otras dos. Es la lección del Álbum de
    Relación (NAV F3) — *si lo que tocas solo aparece tras pulsar algo,
    exportarlo y probarlo aparte*. */
-export function AreaRangos({ fitness = null, perfil = null, accent, onMusculo = null, onEntrenar = null, onClasificar = null }) {
+export function AreaRangos({ fitness = null, perfil = null, accent, onEntrenar = null, onClasificar = null, onEjercicio = null }) {
   return (
     <RangosView
       fitness={fitness}
       propios={(fitness && fitness.ejercicios) || []}
       perfil={perfil}
       accent={accent}
-      onMusculo={onMusculo}
       onEntrenar={onEntrenar}
       onClasificar={onClasificar}
+      onEjercicio={onEjercicio}
     />
   );
 }
@@ -210,7 +210,7 @@ export function AreaRangos({ fitness = null, perfil = null, accent, onMusculo = 
    Fotos (su apartado 2). ⚠️ **Las fotos no se pierden**: siguen contándose de
    Salud física y llevando allí, ahora en su propia pestaña, porque la F12 pide
    dejar la estructura lista para el sistema de fotos sin construirlo. */
-export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoMusculo = null, onFocoMusculoConsumido = null }) {
+export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoEjercicio = null, onFocoEjercicioConsumido = null }) {
   const resumen = resumenProgreso(fotos);
   return (
     <ProgresoView
@@ -225,9 +225,9 @@ export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEnt
       /* FIT F14 — los objetivos se guardan por la puerta de siempre. */
       onGuardarFitness={onGuardarFitness}
       onEliminarObjetivo={onEliminarObjetivo}
-      /* FIT F16 — el grupo muscular que llega desde Rangos (su apartado 15). */
-      focoMusculo={focoMusculo}
-      onFocoMusculoConsumido={onFocoMusculoConsumido}
+      /* FIT F18 — el ejercicio que llega desde el detalle muscular de Rangos. */
+      focoEjercicio={focoEjercicio}
+      onFocoEjercicioConsumido={onFocoEjercicioConsumido}
     />
   );
 }
@@ -521,12 +521,14 @@ export default function FitnessView({
   perfil = null,
 }) {
   const [area, setArea] = useState(AREA_INICIAL);
-  /* 🚨 FIT F16, apartado 15 — *"no duplicar pantallas"*. El detalle de un grupo
-     muscular ya existe (F13, dentro de Progreso), así que Rangos **manda el
-     foco** y Progreso lo abre, exactamente como el foco de Inicio abre
-     Entrenamiento. Un segundo detalle de Espalda acabaría diciendo otra cosa
-     que el primero. */
-  const [focoMusculo, setFocoMusculo] = useState(null);
+  /* 🔓 **FIT F18 — el foco muscular se retira.** La F16 mandaba el grupo a
+     Progreso para abrir allí el detalle de la F13; la F18 construye el detalle
+     de rangos **dentro de Rangos** (su apartado 1), así que ese viaje ya no
+     ocurre. El de Progreso sigue donde estaba, entrando por Progreso →
+     Músculos: son dos preguntas distintas sobre el mismo músculo. */
+  /* FIT F18 — y el ejercicio que se abre desde el detalle muscular de Rangos:
+     lleva a la pantalla de progreso de la F12, que ya existe (su apartado 11). */
+  const [focoEjercicio, setFocoEjercicio] = useState(null);
   /* FIT F17 — si está contestando el cuestionario. Estado de pantalla: lo que se
      guarda son las respuestas, una a una, según las contesta. */
   const [clasificando, setClasificando] = useState(false);
@@ -678,7 +680,10 @@ export default function FitnessView({
           fitness={fitness}
           perfil={perfil}
           accent={accent}
-          onMusculo={(id) => { setFocoMusculo(id); setArea('progreso'); }}
+          /* 🔓 FIT F18 — el detalle de un grupo se abre dentro de Rangos, así
+             que esto ya no manda a Progreso; el foco muscular sigue existiendo
+             para quien quiera la pantalla de la F13. */
+          onEjercicio={(id) => { setFocoEjercicio(id); setArea('progreso'); }}
           onEntrenar={() => setArea('entrenamiento')}
           /* ⚠️ Sin `onGuardarFitness` no se ofrece: un cuestionario que no puede
              guardar la respuesta sería un control decorativo (regla 8). */
@@ -691,8 +696,8 @@ export default function FitnessView({
           fotos={fotos}
           accent={accent}
           onIr={onIr}
-          focoMusculo={focoMusculo}
-          onFocoMusculoConsumido={() => setFocoMusculo(null)}
+          focoEjercicio={focoEjercicio}
+          onFocoEjercicioConsumido={() => setFocoEjercicio(null)}
           /* FIT F12, apartado 5 — «Entrenar ahora» lleva a Entrenamiento, donde se empieza. */
           onEntrenar={() => setArea('entrenamiento')}
           onGuardarFitness={onGuardarFitness}

@@ -2,6 +2,18 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.100.0 — FIT F18/45: el detalle de cada grupo muscular):** Rangos → Espalda
+> → Dorsales → Dominadas → su progreso. Cada grupo tiene su pantalla
+> (`src/views/DetalleMuscularView.jsx`): cabecera con el rango del grupo y de dónde sale, subgrupos
+> con su rango propio, «Progreso reciente», y la lista de ejercicios con tendencia (F11), última
+> marca en su unidad, cambio y **cuánto aporta al músculo** («Espalda · 50 %»). 🚨 La lista sale del
+> **catálogo** —también los que no ha entrenado, para que «4 de 18 con datos» sea real— y un
+> subgrupo sin entrenar dice «Sin datos», nunca «Novato» ni «0 %». Con un solo ejercicio detrás se
+> dice; si el rango se sostiene en el cuestionario (F17), también. Tocar un ejercicio abre la
+> pantalla de progreso de la F12, no una nueva, y por eso el foco muscular de la F16 se retira. Nada
+> se guarda y solo se calcula el grupo que se abre. Lógica en `src/lib/detalleMuscular.js`, pruebas
+> en `scripts/test-detalle-muscular.mjs` y en el recorrido.
+
 > **🏋️ ACTUALIZACIÓN (v3.99.0 — FIT F17/45: clasificar ejercicios con un cuestionario):** Desde
 > Rangos → «Clasificar ejercicios · N restantes» se abre `ClasificacionView`: una pregunta por
 > pantalla sobre los ejercicios que todavía no ha entrenado, adaptada al tipo (repeticiones para las
