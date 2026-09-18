@@ -23,6 +23,9 @@ import { todosLosEjercicios } from './ejercicios.js';
 import {
   RANK_THRESHOLDS, estadoDeRango, progresoHaciaSiguiente, rangoGlobal,
 } from './rangos.js';
+/* FIT F17 — cuántos va a preguntar el cuestionario, que NO es lo mismo que
+   cuántos quedan sin clasificar del catálogo entero. */
+import { cuestionario } from './clasificacion.js';
 
 const lista = (x) => (Array.isArray(x) ? x : []);
 
@@ -121,13 +124,20 @@ export function detalleDeRango(orden, actual = null) {
    que la F11 sabe medir. No vale contar los que aparecen en alguna sesión: un
    ejercicio apuntado y no hecho no está clasificado, y decir que sí sería
    exactamente el «dato falso» que prohíbe el apartado 25. */
-export function clasificacionDeEjercicios(global, propios = []) {
+export function clasificacionDeEjercicios(global, propios = [], fitness = null) {
   const total = todosLosEjercicios(lista(propios)).length;
   const clasificados = lista(global && global.ejercicios).length;
+  /* 🐛 FIT F17 — **lo que ofrece el botón no es «todo lo que falta»**. El
+     cuestionario pregunta una tanda de catorce, así que anunciar «100
+     restantes» prometía cien preguntas que no existen. El recuento de arriba
+     («0 de 100 clasificados») sí es del catálogo entero: son dos números
+     distintos y miden cosas distintas. */
+  const pendientesCuestionario = fitness ? cuestionario(fitness, { propios: lista(propios) }).restantes : 0;
   return {
     clasificados,
     total,
     restantes: Math.max(0, total - clasificados),
+    pendientesCuestionario,
     texto: `${clasificados} de ${total} clasificados`,
   };
 }
@@ -187,7 +197,7 @@ export function pantallaDeRangos(fitness, { propios = [], perfil = null } = {}) 
     /* Apartado 6 — el camino al siguiente solo existe si hay rango. */
     siguiente: global.sinRango ? null : progresoHaciaSiguiente(global.score),
     escala: escalaDeRangos(global.sinRango ? null : global.rango),
-    clasificacion: clasificacionDeEjercicios(global, propios),
+    clasificacion: clasificacionDeEjercicios(global, propios, fitness || {}),
     musculos: rankingsMusculares(global),
   };
 }

@@ -20,10 +20,10 @@
 
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronRight, Check, Star, Lock, X, Dumbbell } from 'lucide-react';
+import { ChevronRight, Check, Star, Lock, X, Dumbbell, ClipboardList } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
-import { Card, SectionTitle, PrimaryButton } from '../components/ui';
+import { Card, SectionTitle, PrimaryButton, GhostBtn } from '../components/ui';
 import { RankBadge, RankLabel } from '../components/rangos';
 import { iconoDeGrupo } from '../components/iconosFitness';
 import { CTA_CLASIFICAR, SIN_RANGO, nivelRango } from '../lib/fitness';
@@ -228,7 +228,7 @@ export function HojaDeRango({ detalle, accent, onCerrar }) {
    NO construir todavía el cuestionario"*), y la regla 8 del proyecto prohíbe un
    control que no hace nada. Lo que sí es real es el recuento —y cómo se
    clasifica un ejercicio: entrenándolo—, así que eso es lo que se dice. */
-export function RankClassificationCard({ clasificacion, accent, onEntrenar }) {
+export function RankClassificationCard({ clasificacion, accent, onEntrenar, onClasificar = null }) {
   const c = clasificacion || { clasificados: 0, total: 0, restantes: 0, texto: '' };
   const fraccion = c.total > 0 ? c.clasificados / c.total : 0;
   return (
@@ -241,11 +241,21 @@ export function RankClassificationCard({ clasificacion, accent, onEntrenar }) {
         <Barra fraccion={fraccion} accent={accent} etiqueta="Ejercicios con rango" />
       </div>
       <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>{CTA_CLASIFICAR.mientrasTanto}</p>
-      {onEntrenar && (
-        <div className="mt-3">
-          <PrimaryButton onClick={onEntrenar} accent={accent} icon={Dumbbell}>Entrenar ahora</PrimaryButton>
-        </div>
-      )}
+      {/* 🔓 FIT F17 — el CTA del apartado 1 de esa fase, con los que faltan. Ya
+          no es una frase declarada: abre el cuestionario de verdad. */}
+      <div className="mt-3 flex flex-col gap-2">
+        {onClasificar && (
+          <PrimaryButton onClick={onClasificar} accent={accent} icon={ClipboardList}>
+            {CTA_CLASIFICAR.texto}
+            {clasificacion.pendientesCuestionario > 0 ? ` · ${clasificacion.pendientesCuestionario} restantes` : ''}
+          </PrimaryButton>
+        )}
+        {onEntrenar && (
+          onClasificar
+            ? <GhostBtn onClick={onEntrenar} icon={Dumbbell}>Entrenar ahora</GhostBtn>
+            : <PrimaryButton onClick={onEntrenar} accent={accent} icon={Dumbbell}>Entrenar ahora</PrimaryButton>
+        )}
+      </div>
     </Card>
   );
 }
@@ -344,7 +354,7 @@ export function MuscleRankings({ musculos = [], accent, onMusculo }) {
 }
 
 /* ── La pantalla ─────────────────────────────────────────────────────────── */
-export default function RangosView({ fitness = null, propios = [], perfil = null, accent, onMusculo = null, onEntrenar = null }) {
+export default function RangosView({ fitness = null, propios = [], perfil = null, accent, onMusculo = null, onEntrenar = null, onClasificar = null }) {
   /* 🚨 Apartado 22 — **una sola vez por cambio en las sesiones**. `rangoGlobal`
      recorre todas las sesiones y todos los ejercicios: pedirlo por sección lo
      haría ocho veces en cada render. */
@@ -369,6 +379,7 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
       <RankClassificationCard
         clasificacion={datos.clasificacion}
         accent={accent}
+        onClasificar={onClasificar}
         /* El único botón de la pantalla, y hace lo que dice: entrenar es
            literalmente cómo se clasifica un ejercicio. */
         onEntrenar={datos.clasificacion.restantes > 0 ? onEntrenar : null}

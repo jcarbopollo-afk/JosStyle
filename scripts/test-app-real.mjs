@@ -5174,12 +5174,28 @@ const claseGe2 = (id, horarioId, inicio, fin, titulo) => ({
 const baseGe2 = (horarios, bloques) => ({
   horarios, bloques, actividades: [], excepciones: [], confirmaciones: [], avisos: [], mochila: [],
 });
-const abrirHorario_ge2 = async () => {
+const irAlHorario_ge2 = async () => {
   await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
   await pulsar('Gestión');
   // DIST F1 — el Horario vive dentro de Organización (Gestión → Organización).
   await pulsar('Organización');
   await pulsar('Horario');
+};
+
+/* 🐛 **Carrera al cambiar de escenario, y solo con una clase EN CURSO.** Entre
+   las 09:00 y las 10:00 la clase de las nueve está sonando, el motor temporal
+   del horario guarda su estado, y ese guardado de la página vieja pisaba el
+   escenario que la prueba acababa de dejar en el almacén: la pantalla seguía
+   enseñando las clases del caso anterior y tres comprobaciones se ponían rojas
+   **a ciertas horas del día**. Se vuelve a dejar el escenario con la página
+   nueva ya cargada —la vieja ya no puede escribir— y se recarga. */
+const abrirHorario_ge2 = async () => {
+  const escenario = almacen.horarioTop;
+  /* Primera carga: la página anterior se va y suelta lo que tuviera pendiente
+     de guardar. Segunda: con el escenario repuesto, que ya nadie puede pisar. */
+  await irAlHorario_ge2();
+  almacen.horarioTop = escenario;
+  await irAlHorario_ge2();
 };
 
 /* A) Un horario, dos clases SEGUIDAS. Tocarse no es solaparse: si aqui saliera
@@ -5811,8 +5827,13 @@ ok(/Brazos/i.test(enRangos) && /Piernas/i.test(enRangos) && /Cuello/i.test(enRan
   '⚠️ y los siete rankings musculares están (apartado 9)');
 ok(/Clasificar ejercicios/i.test(enRangos),
   '⚠️ el CTA de clasificar existe y se ve…');
-ok(!/0 restantes/i.test(enRangos),
-  '🚨 …pero sin «0 restantes»: sería el contador de una lista que todavía no existe (regla 8)');
+/* 🔓 FIT F17 — el contador ES real y el botón lleva a un cuestionario que
+   existe, así que lo que se vigila ya no es que no haya contador, sino que no
+   anuncie CERO preguntas: un botón que ofrece clasificar nada sería el control
+   decorativo de siempre. ⚠️ Con el separador delante, porque «100 restantes»
+   contiene «0 restantes» y eso ponía la prueba roja sin motivo. */
+ok(!/·\s*0 restantes/i.test(enRangos),
+  '🚨 …y el CTA no ofrece «0 restantes»: nunca lleva a un cuestionario vacío (regla 8)');
 
 /* Área PROGRESO, sin fotos: estado vacío con salida, no una pantalla en blanco. */
 ok(await pulsar('Progreso'), 'se cambia al área de Progreso');
@@ -7152,7 +7173,23 @@ ok(!semana_fit8.some((e) => /descanso/i.test(e) && /completado/i.test(e)),
   '🚨 FIT F8 — y entrenar NO convierte un día de DESCANSO en «Completado»: no tocaba');
 
 /* Y a 375 px no se desborda: es la pantalla que se usa entrenando (apartado 35). */
-ok(await pulsar('Empezar entrenamiento'), 'se empieza otra para medir el ancho');
+/* 🐛 **Esta parte dependía del día de la semana.** Tras completar el
+   entrenamiento del día, Tu Plan solo sigue ofreciendo «Empezar entrenamiento»
+   si al siguiente día del plan le toca entrenar; un viernes con sábado de
+   descanso lo dejaba sin CTA y cuatro comprobaciones se ponían rojas **sin que
+   nada estuviera roto** (comprobado: fallan igual en el commit anterior). Lo
+   que aquí se mide es el ancho de la pantalla de series, no de dónde se
+   arranca, así que si Tu Plan no ofrece empezar se arranca desde una plantilla
+   —la otra puerta real, F4 apartado 19—. */
+const empezarComoSea_fit7 = async () => {
+  if (await pulsar('Empezar entrenamiento', 2500)) return true;
+  if (!await pulsar('Bienestar') || !await pulsar('Fitness')) return false;
+  if (!await abrirPlantillas_fit()) return false;
+  if (await pulsar('Empezar entrenamiento', 2500)) return true;
+  if (!await pulsar('Ver Push')) return false;
+  return pulsar('Empezar entrenamiento');
+};
+ok(await empezarComoSea_fit7(), 'se empieza otra para medir el ancho (desde Tu Plan o desde una plantilla)');
 await esperarTexto(/Terminar/i);
 const desborde_fit7 = await page.evaluate(() => ({
   ancho: document.documentElement.scrollWidth, ventana: window.innerWidth,
@@ -7622,6 +7659,76 @@ ok(await pulsarQueEmpiece_fit10('Espalda:'), 'FIT F16 — se toca Espalda en los
 const detalle_fit16 = await esperarTexto(/Dorsales/i);
 ok(/Dorsales/.test(detalle_fit16),
   '🚨 FIT F16 — abre el detalle muscular de la F13, sin duplicar pantalla (apartado 15)');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F17 — Clasificar ejercicios (Entrega 4 · 17/45)
+   ══════════════════════════════════════════════════════════════════════════
+   El criterio del apartado 37, literal: *"Rangos → Clasificar ejercicios →
+   Dominadas → ¿Cuántas puedes hacer? → Seleccionar respuesta → Continuar → …
+   → Clasificación completada → Ver mis rangos"*.
+
+   🚨 Y lo que de verdad hay que ver funcionando: que **salir y volver no pierde
+   nada** (se guarda al contestar) y que una estimación **no sobrevive a un
+   entrenamiento real** (apartados 24 y 27). */
+console.log('\n── FIT F17 · Clasificar ejercicios ──');
+
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F17 — Fitness → Rangos');
+const antesClasificar_fit17 = await esperarTexto(/Clasificar ejercicios/i);
+ok(/Clasificar ejercicios/.test(antesClasificar_fit17) && /restantes/.test(antesClasificar_fit17),
+  '🚨 FIT F17 — el CTA lleva los que faltan: «Clasificar ejercicios · N restantes» (apartado 1)');
+
+ok(await pulsar('Clasificar ejercicios'), 'FIT F17 — se abre el cuestionario');
+const pregunta1_fit17 = await esperarTexto(/Clasifica tus ejercicios/i);
+ok(/Responde unas preguntas rápidas/.test(pregunta1_fit17),
+  'FIT F17 — con el subtítulo del apartado 1…');
+/* ⚠️ Con /i: la etiqueta lleva `uppercase` de CSS, así que `innerText` la
+   devuelve como «PREGUNTA 1 DE 14». Sin la /i, la prueba se ponía roja por un
+   estilo. */
+ok(/Pregunta 1 de \d+/i.test(pregunta1_fit17), '…y el progreso del cuestionario (apartado 22)');
+ok(/\?/.test(pregunta1_fit17), 'FIT F17 — hay una pregunta de verdad, adaptada al ejercicio (apartado 5)');
+
+/* Se contesta la primera: la respuesta se guarda AL TOCARLA. */
+const opcion_fit17 = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button')].find((x) => /^(6 – 9|3 – 5|10 – 14|1 – 2|Ninguna todavía|Menos de 10 s|10 – 20 s|20 – 30 s|Progresión intermedia|No puedo realizarlo|\d+ kg)$/.test((x.innerText || '').trim()));
+  if (!b) return null;
+  const t = (b.innerText || '').trim();
+  b.click();
+  return t;
+});
+ok(!!opcion_fit17, `FIT F17 — se elige una respuesta (${opcion_fit17 || 'ninguna encontrada'})`);
+const estimado_fit17 = await esperarTexto(/Nivel estimado/i);
+ok(/Nivel estimado/i.test(estimado_fit17),
+  '🚨 FIT F17 — sale el NIVEL estimado, no una puntuación (apartado 7)');
+ok(!/\b[0-9]{3}\b\s*puntos|score/i.test(estimado_fit17),
+  '🚨 …sin «tu score exacto es 638» por ningún lado');
+ok(/se actualizará con tus entrenamientos/i.test(estimado_fit17),
+  '⚠️ …diciendo que los entrenamientos lo van a sustituir (apartado 8)');
+
+const guardadoClas_fit17 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.clasificaciones || []);
+ok(guardadoClas_fit17.length === 1 && guardadoClas_fit17[0].fuente === 'cuestionario',
+  '🚨 FIT F17 — la respuesta YA está guardada al contestarla (apartado 24)');
+ok(guardadoClas_fit17[0].confianza !== 'alta',
+  '⚠️ …con confianza baja o media, nunca alta (apartado 28)');
+
+/* Apartados 9 y 23 — salir a mitad y volver: no se pierde nada. */
+ok(await pulsar('Continuar'), 'FIT F17 — Continuar');
+await esperarTexto(/Pregunta 2 de/i);
+ok(await pulsar('Salir de la clasificación'), 'FIT F17 — se intenta salir a mitad…');
+const salir_fit17 = await esperarTexto(/¿Salir de la clasificación\?/i);
+ok(/ya está guardado/i.test(salir_fit17),
+  '🚨 FIT F17 — y el aviso dice la verdad: lo contestado está guardado (apartado 23)');
+ok(await pulsar('Salir'), 'FIT F17 — se sale');
+const volviendo_fit17 = await esperarTexto(/Rango Predicho/i);
+ok(/Clasificar ejercicios/.test(volviendo_fit17), 'FIT F17 — se vuelve a Rangos');
+
+/* Y recargando: el progreso sobrevive (apartado 24). */
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(2500);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F17 — se recarga la aplicación');
+ok(await pulsar('Clasificar ejercicios'), 'FIT F17 — y se vuelve al cuestionario');
+const trasRecargar_fit17 = await esperarTexto(/Pregunta \d+ de/i);
+ok(/Pregunta 2 de/i.test(trasRecargar_fit17),
+  '🚨 FIT F17 — sigue por donde iba tras recargar: lo guardado ES el progreso (apartado 24)');
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

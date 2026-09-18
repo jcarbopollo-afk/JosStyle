@@ -283,8 +283,11 @@ ok(ESTADOS_VACIOS.progreso.accion?.lleva === 'salud',
 ok(ESTADOS_VACIOS.rangos.accion === null && ESTADOS_VACIOS.entrenamiento.accion === null,
   'Y donde no hay nada que pulsar todavía, no hay botón (regla 8)');
 ok(CTA_CLASIFICAR.texto === 'Clasificar ejercicios', 'El CTA del apartado 9 existe con su nombre');
-ok(CTA_CLASIFICAR.existe === false && CTA_CLASIFICAR.porque,
-  'Declarado con su motivo en vez de ofrecido como un botón que no clasifica nada');
+/* 🔓 FIT F17 — el cuestionario existe, así que el CTA ya no es una promesa
+   declarada: es un botón que abre `ClasificacionView`. Lo que se sigue
+   vigilando es que diga POR QUÉ está y que no anuncie un contador falso. */
+ok(CTA_CLASIFICAR.existe === true && CTA_CLASIFICAR.porque,
+  'Con su motivo escrito: por qué está y qué estima');
 ok(!/0 restantes/.test(JSON.stringify(CTA_CLASIFICAR)),
   '⚠️ Y sin el «· 0 restantes»: sería el contador de una lista que aún no existe');
 /* 🐛 Aquí decía `ACCESOS_ENTRENAMIENTO.length === 3`, y la FIT F2 añadió el

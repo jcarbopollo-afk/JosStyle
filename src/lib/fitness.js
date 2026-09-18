@@ -671,6 +671,48 @@ export function normalizarObjetivo(g) {
   return crearObjetivo(g);
 }
 
+/* ── ExerciseClassification (FIT F17) ──────────────────────────────────────
+   Lo que Josué **estima** de un ejercicio que todavía no ha entrenado, para
+   tener un punto de partida (su apartado 3).
+
+   🚨 **Es un modelo aparte, y a propósito** (apartado 3: *"no mezclar ambos
+   tipos de información"*). Una estimación no es una sesión: no se escribe en
+   `sesiones`, no toca el historial y **pierde siempre contra los datos
+   reales** (apartados 4 y 27). Por eso guarda de dónde viene (`fuente`) y con
+   cuánta confianza, que nunca es alta por contestar una pregunta (apartado 28).
+
+   ⚠️ Se guarda la **respuesta** además de la puntuación: si mañana cambia la
+   escala, una respuesta se puede volver a puntuar; una puntuación suelta, no. */
+export const FUENTES_CLASIFICACION = ['cuestionario', 'entrenamiento'];
+/* Apartado 28: contestar una pregunta da confianza baja; media solo cuando la
+   respuesta es una progresión completa u otra señal más firme. **Nunca alta.** */
+export const CONFIANZAS_CLASIFICACION = ['baja', 'media'];
+
+export function crearClasificacion({
+  id = null, exerciseId = '', respuesta = '', puntuacion = null, rango = null,
+  fuente = 'cuestionario', confianza = 'baja', creadoEn = null, actualizadoEn = null,
+} = {}) {
+  return {
+    id: texto(id) || uid(),
+    exerciseId: texto(exerciseId),
+    respuesta: texto(respuesta),
+    puntuacion: enteroONull(puntuacion),
+    rango: enteroONull(rango),
+    fuente: FUENTES_CLASIFICACION.includes(fuente) ? fuente : 'cuestionario',
+    confianza: CONFIANZAS_CLASIFICACION.includes(confianza) ? confianza : 'baja',
+    creadoEn: numeroONull(creadoEn) ?? Date.now(),
+    actualizadoEn: numeroONull(actualizadoEn),
+  };
+}
+
+export function normalizarClasificacion(g) {
+  if (!g || !texto(g.id) || !texto(g.exerciseId)) return null;
+  const c = crearClasificacion(g);
+  /* Sin puntuación no hay clasificación: un registro con `null` daría un rango
+     que no se ha estimado. Se tira, no se rellena con un cero. */
+  return c.puntuacion === null ? null : c;
+}
+
 export function normalizarWorkoutSession(g) {
   if (!g || !g.id) return null;
   return { ...crearWorkoutSession(g), id: g.id };
@@ -774,6 +816,9 @@ export const DEFAULT_FITNESS = {
   /* FIT F14 — los objetivos de rendimiento. Nacen vacíos: ni uno de ejemplo
      (apartado 22). */
   objetivos: [],
+  /* FIT F17 — las estimaciones del cuestionario. Nacen vacías: nadie tiene un
+     nivel estimado hasta que lo dice él. */
+  clasificaciones: [],
 };
 
 /* La forma de lo elegido. ⚠️ Se guarda **el id**, no una copia del plan: con una
@@ -810,6 +855,10 @@ export function normalizarFitness(guardado) {
        conoce. */
     favoritosPlanes: [...new Set(lista(g.favoritosPlanes).map(texto).filter(Boolean))],
     objetivos: lista(g.objetivos).map(normalizarObjetivo).filter(Boolean),
+    /* FIT F17 — una sola clasificación por ejercicio: la última gana
+       («reclasificar» sustituye, no acumula, su apartado 11). */
+    clasificaciones: [...new Map(lista(g.clasificaciones).map(normalizarClasificacion)
+      .filter(Boolean).map((c) => [c.exerciseId, c])).values()],
   };
 }
 
@@ -878,19 +927,17 @@ export const ESTADOS_VACIOS = {
    el control decorativo de la regla 8. Es lo mismo que hace `RAMAS_ESTUDIOS` en
    la E3 F41 con Trabajos y Progreso.
 
-   🔓 **FIT F16 — el contador ya es real** y lo pinta la pantalla de Rangos
-   («12 de 35 clasificados», su apartado 9): el catálogo existe desde la F2 y la
-   F15 sabe qué ejercicios tienen rango. ⚠️ Lo que sigue sin existir es el
-   **cuestionario** de clasificación (fase siguiente), así que `existe` continúa
-   en `false` y no hay botón; lo que se dice es **cómo** se clasifica un
-   ejercicio hoy: entrenándolo y marcando sus series. «Cuando el catálogo esté
-   construido» era falso desde la F2, y una frase falsa en pantalla hace el
-   mismo daño que un fallo. */
+   🔓 **FIT F16 — el contador se hizo real** («12 de 35 clasificados»), y
+   🔓 **FIT F17 — el botón también**: el cuestionario existe y lleva a
+   `ClasificacionView`. Así que `existe` pasa a `true` y este registro deja de
+   ser una disculpa para ser lo que la pantalla enseña. ⚠️ `mientrasTanto` se
+   queda porque sigue siendo cierto y hace falta decirlo: contestar es una
+   **estimación**, y lo que de verdad clasifica un ejercicio es entrenarlo. */
 export const CTA_CLASIFICAR = {
   texto: 'Clasificar ejercicios',
-  existe: false,
-  porque: 'El cuestionario de clasificación es de una fase posterior; el recuento de clasificados sí es real desde la FIT F16.',
-  mientrasTanto: 'Un ejercicio se clasifica al entrenarlo y marcar sus series.',
+  existe: true,
+  porque: 'FIT F17: el cuestionario estima tu nivel de partida en los ejercicios que todavía no has entrenado.',
+  mientrasTanto: 'Un ejercicio se clasifica del todo al entrenarlo: la estimación es solo el punto de partida.',
 };
 
 /* Los accesos del área de Entrenamiento (apartado 12). `existe: false` no los

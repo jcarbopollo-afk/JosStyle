@@ -2,6 +2,18 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.99.0 — FIT F17/45: clasificar ejercicios con un cuestionario):** Desde
+> Rangos → «Clasificar ejercicios · N restantes» se abre `ClasificacionView`: una pregunta por
+> pantalla sobre los ejercicios que todavía no ha entrenado, adaptada al tipo (repeticiones para las
+> dominadas, carga para el press, tiempo para la plancha, **progresión** para las habilidades), con
+> la respuesta convertida en marca y puntuada por la F15. 🚨 **Una estimación no es un dato**: los
+> datos reales mandan en cuanto existe UNA sesión —aunque salga peor que lo estimado—, no se toca el
+> historial, no se enseña la puntuación («Nivel estimado») y la confianza nunca es alta. Cada
+> respuesta se guarda al contestarla, así que salir a mitad o recargar no pierde nada y no hay
+> progreso guardado aparte. Lo estimado reparte a sus músculos con los porcentajes del catálogo y la
+> cobertura se recalcula. Modelo en `fitness.clasificaciones` (con normalizador), lógica en
+> `src/lib/clasificacion.js`, pruebas en `scripts/test-clasificacion.mjs` y en el recorrido.
+
 > **🏋️ ACTUALIZACIÓN (v3.98.0 — FIT F16/45: la pantalla de Rangos):** Fitness → Rangos ya es la
 > pantalla entera (`src/views/RangosView.jsx`): Rango Predicho con cobertura y camino al siguiente,
 > los diez rangos en cuadrícula con su hoja, «Clasificar ejercicios» con el recuento real, «Tu

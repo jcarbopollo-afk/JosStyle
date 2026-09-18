@@ -54,6 +54,8 @@ import HistorialView from './HistorialView';
 import ProgresoView from './ProgresoView';
 /* FIT F16 — Rangos: la pantalla entera, que consume la lógica de la F15. */
 import RangosView from './RangosView';
+/* FIT F17 — el cuestionario de clasificación, que se abre desde Rangos. */
+import ClasificacionView from './ClasificacionView';
 /* FIT F8 — el resumen y el guardado, también pantalla entera: se llega desde el
    entrenamiento en vivo y se sale guardando o descartando. */
 import FinalizacionView from './FinalizacionView';
@@ -184,7 +186,7 @@ export function VacioFitness({ estado, accent, onAccion = null }) {
    renderizar `FitnessView` no prueba las otras dos. Es la lección del Álbum de
    Relación (NAV F3) — *si lo que tocas solo aparece tras pulsar algo,
    exportarlo y probarlo aparte*. */
-export function AreaRangos({ fitness = null, perfil = null, accent, onMusculo = null, onEntrenar = null }) {
+export function AreaRangos({ fitness = null, perfil = null, accent, onMusculo = null, onEntrenar = null, onClasificar = null }) {
   return (
     <RangosView
       fitness={fitness}
@@ -193,6 +195,7 @@ export function AreaRangos({ fitness = null, perfil = null, accent, onMusculo = 
       accent={accent}
       onMusculo={onMusculo}
       onEntrenar={onEntrenar}
+      onClasificar={onClasificar}
     />
   );
 }
@@ -524,6 +527,9 @@ export default function FitnessView({
      Entrenamiento. Un segundo detalle de Espalda acabaría diciendo otra cosa
      que el primero. */
   const [focoMusculo, setFocoMusculo] = useState(null);
+  /* FIT F17 — si está contestando el cuestionario. Estado de pantalla: lo que se
+     guarda son las respuestas, una a una, según las contesta. */
+  const [clasificando, setClasificando] = useState(false);
 
   /* ⚠️ Un foco que llega apuntando a una habilidad no puede quedarse escondido
      detrás del área que estuviera abierta: es la lección de la E3 F24 —un
@@ -645,6 +651,23 @@ export default function FitnessView({
     );
   }
 
+  /* 🚨 FIT F17 — el cuestionario es PANTALLA ENTERA, por el mismo motivo que el
+     constructor y el entrenamiento en vivo: con las pestañas debajo, media
+     pregunta contestada se pierde de un toque. Va después de todos los hooks
+     (regla 4). */
+  if (clasificando) {
+    return (
+      <ClasificacionView
+        fitness={fitness}
+        propios={propios}
+        perfil={perfil}
+        accent={accent}
+        onGuardarFitness={onGuardarFitness}
+        onVolver={() => setClasificando(false)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-1">
       <CabeceraFitness titulo="Fitness" racha={racha} accent={accent} />
@@ -657,6 +680,9 @@ export default function FitnessView({
           accent={accent}
           onMusculo={(id) => { setFocoMusculo(id); setArea('progreso'); }}
           onEntrenar={() => setArea('entrenamiento')}
+          /* ⚠️ Sin `onGuardarFitness` no se ofrece: un cuestionario que no puede
+             guardar la respuesta sería un control decorativo (regla 8). */
+          onClasificar={onGuardarFitness ? () => setClasificando(true) : null}
         />
       )}
       {area === 'progreso' && (

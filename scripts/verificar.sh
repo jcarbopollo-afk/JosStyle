@@ -1024,6 +1024,15 @@ else
   fallo "Falla la UX del entrenamiento en vivo"; grep '✗' /tmp/jc_entreno_ux.log
 fi
 
+# FIT F17 — el cuestionario de clasificación. Lo que más se vigila: que una estimación
+# NO gane a una sesión real (ni siquiera cuando la sesión sale peor), que no toque el
+# historial, y que la confianza de contestar una pregunta nunca sea alta.
+if node --import ./scripts/resolver-vite.mjs scripts/test-clasificacion.mjs >/tmp/jc_clasificacion.log 2>&1; then
+  ok "Clasificación por cuestionario (FIT F17) — $(grep -c '✓' /tmp/jc_clasificacion.log) comprobaciones"
+else
+  fallo "Falla la clasificación de ejercicios"; grep '✗' /tmp/jc_clasificacion.log
+fi
+
 # FIT F16 — la pantalla de Rangos. Lo que más se vigila: que la pantalla NO calcule
 # (ni umbrales ni fórmulas dentro de la vista) y que no aparezca un dato falso —un rango
 # global con dos ejercicios, un grupo sin datos con rango, o un contador de clasificados

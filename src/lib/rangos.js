@@ -205,13 +205,48 @@ export function puntuacionDeEjercicio(ejercicio, apariciones, perfil = null) {
   };
 }
 
+/* 🔓 FIT F17 — la estimación del cuestionario, si la hay. ⚠️ Se lee el dato
+   guardado tal cual (`fitness.clasificaciones`, modelo de `fitness.js`) y **no**
+   se importa `clasificacion.js`: ese archivo ya usa éste para puntuar, y
+   llamarse el uno al otro sería un círculo. */
+const estimacionDe = (fitness, exerciseId) =>
+  lista(fitness?.clasificaciones).find((c) => c && c.exerciseId === texto(exerciseId) && c.puntuacion !== null) || null;
+
 /** El `getExerciseRank` del apartado 13. */
 export function rangoDeEjercicio(fitness, exerciseId, { propios = [], perfil = null } = {}) {
   const ej = ejercicioPorId(texto(exerciseId), propios);
   const apariciones = aparicionesDeEjercicio(fitness, exerciseId, propios);
   const p = ej ? puntuacionDeEjercicio(ej, apariciones, perfil) : null;
   if (!p) {
-    return { exerciseId: texto(exerciseId), existe: !!ej, sinRango: true, rango: null, nombre: SIN_RANGO.nombre, score: null, confianza: null, provisional: false, dataPoints: 0 };
+    /* 🚨 FIT F17, apartados 4 y 27 — **el orden de prioridad**. Sin datos reales
+       vale la estimación del cuestionario; en cuanto hay UNA serie marcada, la
+       rama de arriba gana y esto no se mira. La estimación no se borra —sigue
+       guardada, y si él borra la sesión vuelve a valer—, simplemente pierde. */
+    const estimada = ej ? estimacionDe(fitness, exerciseId) : null;
+    if (estimada) {
+      const ordenEstimado = rangoDePuntuacion(estimada.puntuacion);
+      return {
+        exerciseId: texto(exerciseId),
+        existe: true,
+        sinRango: false,
+        rango: ordenEstimado,
+        nombre: nivelRango(ordenEstimado).nombre,
+        score: estimada.puntuacion,
+        metrica: 'estimacion',
+        usaPesoCorporal: false,
+        fuente: 'cuestionario',
+        confianza: estimada.confianza === 'media' ? 'media' : 'baja',
+        confianzaNombre: (CONFIANZA.find((c) => c.id === (estimada.confianza === 'media' ? 'media' : 'baja')) || {}).nombre || null,
+        /* Apartado 28: una estimación es SIEMPRE provisional. */
+        provisional: true,
+        dataPoints: 0,
+        mejorMarca: null,
+        tendencia: null,
+        siguiente: progresoHaciaSiguiente(estimada.puntuacion),
+        ultimaActualizacion: null,
+      };
+    }
+    return { exerciseId: texto(exerciseId), existe: !!ej, sinRango: true, rango: null, nombre: SIN_RANGO.nombre, score: null, confianza: null, provisional: false, dataPoints: 0, fuente: null };
   }
   const orden = rangoDePuntuacion(p.score);
   const conf = confianzaDe(p.dataPoints);
@@ -224,6 +259,8 @@ export function rangoDeEjercicio(fitness, exerciseId, { propios = [], perfil = n
     score: p.score,
     metrica: p.metrica,
     usaPesoCorporal: p.usaPesoCorporal,
+    /* FIT F17 — de dónde sale este rango. Los datos reales mandan siempre. */
+    fuente: 'entrenamiento',
     confianza: conf.id,
     confianzaNombre: conf.nombre,
     /* Apartado 12 — con poca información, provisional. */
@@ -244,7 +281,11 @@ export function rangoDeEjercicio(fitness, exerciseId, { propios = [], perfil = n
 /** Los rangos de todos los ejercicios que ha hecho, con su reparto muscular. */
 export function rangosDeEjercicios(fitness, { propios = [], perfil = null } = {}) {
   const indice = indiceDeProgresion(fitness, propios);
-  return [...indice.keys()]
+  /* FIT F17, apartado 16 — un ejercicio estimado también reparte a sus músculos:
+     de eso va clasificar. ⚠️ Se unen por id, no se suman: uno entrenado Y
+     estimado cuenta UNA vez, con su rango real. */
+  const ids = [...new Set([...indice.keys(), ...lista(fitness?.clasificaciones).map((c) => texto(c && c.exerciseId)).filter(Boolean)])];
+  return ids
     .map((id) => ({ r: rangoDeEjercicio(fitness, id, { propios, perfil }), ej: ejercicioPorId(id, propios) }))
     .filter((x) => !x.r.sinRango && x.ej)
     .map((x) => ({ ...x.r, reparto: repartoMuscular(x.ej) }));
@@ -257,7 +298,12 @@ function rangoPonderado(ejercicios, pesoDe) {
   const score = Math.round(conPeso.reduce((n, x) => n + x.e.score * x.w, 0) / sumaW);
   const dataPoints = conPeso.reduce((n, x) => n + x.e.dataPoints, 0);
   const orden = rangoDePuntuacion(score);
-  const conf = confianzaDe(dataPoints);
+  /* 🐛 FIT F17 — `confianzaDe(0)` es `null`: la tabla empieza en una aparición,
+     y hasta ahora un grupo sin apariciones nunca llegaba aquí. Con el
+     cuestionario sí llega —un grupo puede tener rango con CERO sesiones—, y
+     leer `conf.id` tiraba la pantalla entera. Sin datos reales, la confianza es
+     la más baja que hay, que es exactamente lo que significa. */
+  const conf = confianzaDe(dataPoints) || CONFIANZA[0];
   return {
     sinRango: false,
     rango: orden,
@@ -266,7 +312,9 @@ function rangoPonderado(ejercicios, pesoDe) {
     ejercicios: conPeso.length,
     dataPoints,
     confianza: conf.id,
-    provisional: conf.id === 'baja' || conPeso.length === 1,
+    /* FIT F17 — sin una sola sesión detrás, provisional siempre. */
+    provisional: conf.id === 'baja' || conPeso.length === 1 || dataPoints === 0,
+    estimado: dataPoints === 0,
   };
 }
 

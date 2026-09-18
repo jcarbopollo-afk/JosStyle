@@ -171,7 +171,11 @@ const propio = crearEjercicio({ nombre: 'Remo en anillas', grupos: [{ id: 'espal
 ok(clasificacionDeEjercicios(rangoGlobal(fit, { propios: [propio] }), [propio]).total === todosLosEjercicios().length + 1,
   'Un ejercicio propio de Josué también cuenta en el total');
 
-ok(CTA_CLASIFICAR.existe === false, '⚠️ El cuestionario sigue sin existir (es la fase siguiente)…');
+/* 🔓 FIT F17 — el cuestionario ya existe, así que lo que se comprueba cambia:
+   antes, que la F16 no prometiera un botón; ahora, que ese botón lleve a algo
+   real. Lo que NO cambia es la regla 8, y sigue vigilada abajo: el CTA nunca
+   ofrece cero preguntas. */
+ok(CTA_CLASIFICAR.existe === true, '🔓 El cuestionario de clasificación existe desde la FIT F17…');
 ok(!/catálogo de ejercicios esté construido/i.test(CTA_CLASIFICAR.mientrasTanto),
   '🐛 …y ya no se dice que falta el catálogo, que existe desde la F2: era una frase falsa en pantalla');
 ok(/entrenarlo|marcar/i.test(CTA_CLASIFICAR.mientrasTanto),
@@ -230,8 +234,10 @@ ok(/createPortal/.test(vista), 'La hoja del apartado 8 va con `createPortal` (re
 ok(/Conseguido/.test(vista) && /Bloqueado/.test(vista) && /Actual/.test(vista),
   '🚨 Los estados llevan palabra además de color (apartado 20)');
 ok(/aria-label/.test(vista) && /role="img"/.test(vista), 'Las barras y las insignias se leen con lector de pantalla');
-ok(!/onClasificar|Próximamente|próximamente/.test(vista),
-  '🚨 No hay botón de clasificar ni pantalla «próximamente»: sería el control decorativo de la regla 8');
+ok(!/Próximamente|próximamente/.test(vista),
+  '🚨 Sin pantallas «próximamente»: sería el control decorativo de la regla 8');
+ok(/onClasificar/.test(vista) && /pendientesCuestionario > 0/.test(vista),
+  '🔓 FIT F17 — y el botón de clasificar solo se ofrece con preguntas que hacer, nunca «0 restantes»');
 
 const fitnessView = sinComentarios(leer('src/views/FitnessView.jsx'));
 ok(/<RangosView/.test(fitnessView) && !/InsigniaRango|TarjetaGrupoMuscular/.test(fitnessView),

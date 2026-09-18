@@ -185,6 +185,16 @@ import RangosView, {
   MuscleRankings, MuscleRankCard,
 } from '../src/views/RangosView.jsx';
 import { pantallaDeRangos as pantallaF16, detalleDeRango as detalleRangoF16 } from '../src/lib/pantallaRangos.js';
+/* FIT F17 — el cuestionario de clasificación. ⚠️ Los dos diálogos salen por
+   `createPortal`, así que no van en este banco (los abre el recorrido). */
+import ClasificacionView, {
+  ClassificationProgress, ClassificationQuestion, ClassificationOption, ClassificationResult,
+  ClassificationSummary, YaClasificados,
+} from '../src/views/ClasificacionView.jsx';
+import {
+  cuestionario as cuestionarioF17, preguntaDeEjercicio as preguntaF17,
+  clasificarEjercicio as clasificarF17, musculosQueRecibe as musculosF17, resumenFinal as resumenF17,
+} from '../src/lib/clasificacion.js';
 import { rangoDeEjercicio as rangoEjF15, progresoHaciaSiguiente as haciaF15 } from '../src/lib/rangos.js';
 /* FIT F2 — el catálogo de ejercicios y su detalle. ⚠️ El detalle va APARTE
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
@@ -306,6 +316,13 @@ const fitnessConProgresoF12 = () => [60, 62.5, 65].reduce((f, peso, i) => {
   s = marcarF7(editarF7(s, e.id, e.series[0].id, { peso, reps: 8 }), e.id, e.series[0].id, true);
   return guardarSesionF10(f, guardarF8(pasarF8(s), { confirmado: true }).sesion);
 }, {});
+
+/* FIT F17 — dos ejercicios estimados por el cuestionario, sin una sola sesión. */
+const fitnessClasificadoF17 = () => {
+  let f = {};
+  f = clasificarF17(f, 'dominada-prona', 'reps-14', {}).fitness;
+  return clasificarF17(f, 'plancha-frontal', 'tiempo-30', {}).fitness;
+};
 
 /* FIT F14 — dos objetivos sobre el press sembrado: uno conseguido y otro no. */
 const fitnessConObjetivosF14 = () => {
@@ -3037,6 +3054,26 @@ const CASOS = [
   ['AnatomyPreview', AnatomyPreview, () => ({ musculos: pantallaF16(fitnessConProgresoF12()).musculos, accent })],
   ['MuscleRankings', MuscleRankings, () => ({ musculos: pantallaF16(fitnessConProgresoF12()).musculos, accent, onMusculo: noop })],
   ['MuscleRankCard', MuscleRankCard, () => ({ musculo: pantallaF16(fitnessConProgresoF12()).musculos[0], accent })],
+  /* ══ FIT F17 — el cuestionario ═════════════════════════════════════════ */
+  ['ClasificacionView', ClasificacionView, () => ({ fitness: {}, accent, onGuardarFitness: noop, onVolver: noop })],
+  ['ClasificacionView', ClasificacionView, () => ({ fitness: fitnessClasificadoF17(), accent, onGuardarFitness: noop, onVolver: noop })],
+  /* ⚠️ Y sin poder guardar: no se ofrece contestar lo que no se puede guardar. */
+  ['ClasificacionView', ClasificacionView, () => ({ fitness: {}, accent })],
+  ['ClassificationProgress', ClassificationProgress, () => ({ posicion: 3, total: 14, fraccion: 3 / 14, accent })],
+  ['ClassificationQuestion', ClassificationQuestion, () => {
+    const c = cuestionarioF17({}, {});
+    return { ejercicio: c.pendientes[0], pregunta: preguntaF17(c.pendientes[0], {}), elegida: null, accent, onElegir: noop };
+  }],
+  ['ClassificationOption', ClassificationOption, () => ({ opcion: { id: 'reps-9', texto: '6 – 9' }, elegida: true, accent, onElegir: noop })],
+  ['ClassificationResult', ClassificationResult, () => ({
+    clasificacion: clasificarF17({}, 'dominada-prona', 'reps-14', {}).clasificacion,
+    musculos: musculosF17('dominada-prona', {}), accent, onContinuar: noop,
+  })],
+  ['ClassificationSummary', ClassificationSummary, () => ({ resumen: resumenF17(fitnessClasificadoF17(), {}), accent, onVerRangos: noop })],
+  ['YaClasificados', YaClasificados, () => ({ fitness: fitnessClasificadoF17(), accent, onReclasificar: noop })],
+  /* ⚠️ Sin nada clasificado, `YaClasificados` no pinta NADA a propósito —no hay
+     sección vacía con título— y este banco cuenta el render vacío como fallo. Ese
+     caso se comprueba en scripts/test-clasificacion.mjs. */
   ['AreaProgreso', AreaProgreso, () => ({ fotos: [], accent, onIr: noop })],
   /* ══ FIT F12 — Progreso ════════════════════════════════════════════════ */
   ['ProgresoView', ProgresoView, () => ({ fitness: fitnessConProgresoF12(), fotos: [], accent, onEntrenar: noop, onIrAFotos: noop })],

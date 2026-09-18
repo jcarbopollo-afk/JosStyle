@@ -1,5 +1,60 @@
 # CHANGELOG.md
 
+## v3.99.0 — FIT F17/45: clasificar ejercicios con un cuestionario
+
+Desde **Rangos → «Clasificar ejercicios · N restantes»** se abre un cuestionario que estima el nivel
+de partida en los ejercicios que Josué todavía no ha entrenado. Una pregunta por pantalla, opciones
+grandes, y al contestar: el **nivel estimado** con su hexágono.
+
+### 🚨 Una estimación no es un dato
+
+Es lo que gobierna toda la fase, y está comprobado con pruebas:
+
+- **Los datos reales mandan** (apartados 4 y 27). En cuanto hay **una** sesión con series marcadas,
+  el rango sale de ella — **aunque salga peor que lo estimado**. La estimación no se borra: pierde,
+  y si borra la sesión vuelve a valer.
+- **No toca el historial.** `WorkoutSession` no se modifica jamás; las estimaciones viven en su
+  propio modelo (`fitness.clasificaciones`, con su normalizador en la puerta de carga).
+- **No se finge precisión** (apartado 7): se enseña «Nivel estimado», nunca «tu score es 638».
+- **La confianza nunca es alta** por contestar una pregunta (apartado 28), y el modelo rechaza ese
+  valor aunque se lo escriban a mano.
+
+### Las preguntas salen del catálogo real
+
+`src/lib/clasificacion.js` decide qué se pregunta y cómo se puntúa:
+
+- **Repeticiones** para las dominadas (el ejemplo del apartado 5), **carga** para el press de banca,
+  **tiempo** para la plancha y **progresión** para las habilidades —muscle-up, planche, front
+  lever—, porque *"no asumir que una habilidad se puede medir simplemente con repeticiones"*.
+- 🐛 **Qué se pregunta lo decide el material, no que el ejercicio admita peso.** Unas dominadas
+  aceptan lastre, así que preguntaban kilos; se reutiliza la decisión que ya tomó la F14
+  (`metricasDeEjercicio`) en vez de escribir otra que diría cosas distintas.
+- **La respuesta se convierte en marca y la puntúa la F15**, con la referencia de la **dificultad**
+  del ejercicio: 14 dominadas puntúan más que 14 flexiones. Ni una escala paralela.
+- **«No lo sé»** en las de carga no clasifica: sin dato no se inventa un peso.
+- Se ofrecen **14 ejercicios**, elegidos cubriendo primero un grupo muscular de cada: ordenando solo
+  por relevancia salían seis de empuje seguidos y el cuello sin cubrir.
+
+### Salir a mitad no pierde nada
+
+Cada respuesta se guarda **al contestarla**, así que no hay progreso «del cuestionario» guardado
+aparte (apartado 24: *"no crear almacenamiento paralelo"*) y el aviso de salida puede decir la
+verdad. Al terminar: «Clasificación completada», con cuántos ejercicios y cuántos grupos musculares
+tienen información nueva, y «Ver mis rangos».
+
+Lo estimado **reparte a sus músculos** con los porcentajes del catálogo (apartado 16) y la cobertura
+se recalcula (apartado 17), así que un grupo puede tener rango sin una sola sesión — marcado como
+provisional, siempre. 🐛 Eso destapó que `confianzaDe(0)` era `null` y tiraba la pantalla: hasta
+ahora un grupo sin apariciones nunca llegaba a calcularse.
+
+### Pruebas
+
+`scripts/test-clasificacion.mjs` (79): selección, preguntas por tipo, puntuación, guardado,
+reclasificación, prioridad de los datos reales, músculos, cobertura, recarga y datos corruptos.
+Comprobado que se pone roja si la estimación gana a una sesión real. Y el recorrido en Chromium hace
+el criterio del apartado 37: Rangos → Clasificar → responder → nivel estimado → salir a mitad →
+recargar → seguir por donde iba.
+
 ## v3.98.0 — FIT F16/45: la pantalla de Rangos
 
 **Fitness → Rangos** deja de ser el hueco que dejó la F1 y pasa a ser la pantalla del apartado 1:
