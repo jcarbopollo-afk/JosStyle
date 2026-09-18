@@ -42,7 +42,7 @@ ordena es **el trabajo**, no el documento.
 | **F19** ✅ **v3.101.0** | Actualización dinámica y evolución de rangos | 20856–21572 | 717 |
 | **F20** ✅ **v3.102.0** | Explicación y comparación de rangos | 20159–20855 | 697 |
 | **F21** ✅ **v3.103.0** | Contribución de ejercicios a rangos musculares | 19476–20158 | 683 |
-| **F22** | Historial y evolución de rangos | 18745–19475 | 731 |
+| **F22** ✅ **v3.104.0** | Historial y evolución de rangos | 18745–19475 | 731 |
 | **F23** | Objetivo del siguiente rango | 18070–18744 | 675 |
 | **F24** | Priorización inteligente de clasificación | 17422–18069 | 648 |
 | **F25** | Resumen inteligente de rangos | 16772–17421 | 650 |

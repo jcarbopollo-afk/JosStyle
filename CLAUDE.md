@@ -21,10 +21,12 @@ serverless en Vercel que hace de proxy a Anthropic.
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. Hechas la **F1 (fundación arquitectónica, v3.83.0)**, la
-**F2 (el catálogo maestro de ejercicios, v3.84.0)**, la **F3 (el constructor de entrenamientos,
-v3.85.0)**, la **F4 (Tus plantillas, v3.86.0)** y la **F5 (la biblioteca de planificaciones,
-v3.87.0)**.
+construye de la F1 a la F45**. **Hechas las 22 primeras (v3.83.0 → v3.104.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
+(progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
+(el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
+🚨 **Antes de construir nada, `git fetch origin main`**: esta sesión llegó a tener una F9 entera
+escrita **que ya estaba hecha y mejor** —la suya destapó dos fallos reales de mi F7—, y se descartó.
 
 🚨 **Y la lección de la F1, que vale para las 44 que quedan: ENTRENAMIENTO YA EXISTÍA, y no era una
 cosa, eran tres.** El módulo es `entreno` + `calistenia` desde la Fase 2; **las fotos de progreso son
@@ -415,6 +417,37 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
   pan-y` y un umbral que exige que sea claramente horizontal. Meterlo en la tabla de series haría
   que deslizar para escribir un peso cambiara de ejercicio.
 
+- 🚨 **LO QUE SE PUEDE DERIVAR NO SE GUARDA, Y ESO RESUELVE APARTADOS ENTEROS SIN CÓDIGO** (FIT F22).
+  El apartado 3 describe un `RankHistoryEntry` y en la línea siguiente prohíbe duplicar lo
+  calculable. El motor de la F19 no guarda nada, así que **el rango que había el 28 de agosto es el
+  que sale de darle los datos que existían el 28 de agosto**. Con eso, **editar una sesión (17),
+  borrarla (18) y añadir una nueva (19) no necesitan una línea**: un historial guardado habría
+  tenido que hacer justo lo que el apartado 18 prohíbe —limpiar eventos falsos—.
+- 🚨 **UN CAMBIO EXISTE SOLO SI CAMBIÓ EL RANGO, NUNCA EL SCORE** (FIT F22, apartado 7, literal):
+  *"480 → 520, si ambos siguen siendo Intermedio, NO crear un evento de subida"*. Subir dentro del
+  mismo rango es **otra cosa** y va en **otro campo** —«Has progresado dentro de este rango»—, no en
+  un texto que se pueda leer de dos maneras (apartado 8).
+- 🚨 **EL PASADO NO SE REESCRIBE, Y SALE DE LA FORMA DEL CÁLCULO** (FIT F22, apartado 12): cada punto
+  se calcula **solo con lo que había hasta ese día**, así que un rango que salió de un cuestionario
+  conserva su confianza baja para siempre. No es presentación: es que los datos de después no entran.
+- 🚨 **UN PERIODO FILTRA LO QUE SE VE, NUNCA LO QUE SE CALCULA** (FIT F22, apartado 23), y es lo
+  contrario de `fitnessEnPeriodo` (F13), donde recortar las sesiones sí es correcto. La puntuación es
+  la mejor de las últimas cinco, así que **el rango de septiembre depende de las sesiones de julio**:
+  recortando la entrada, el primer punto del periodo saldría con un rango que él nunca ha tenido.
+- 🐛 **`rangoDeGrupo` NO DEVUELVE `fuente`, Y LLEVABA ASÍ DESDE LA F15** (FIT F22): agrega
+  puntuaciones, no procedencias, así que el historial de Espalda no podía decir si un cambio venía de
+  entrenamientos o de una clasificación. La regla **ya existía**, escrita dentro de
+  `rangoGlobalEfectivo`: se sacó a **`fuenteCombinada()`** y ahora la llaman los dos. **Antes de
+  escribir una regla que ya se aplica en otro sitio, sacarla de donde está.**
+- 🐛 **UNA FÁBRICA DE ESCENARIOS TIENE QUE FALLAR DICIENDO QUÉ ESTÁ MAL** (FIT F22, y costó dos
+  veces en la misma fase): con un `exerciseId` que no está en el catálogo, `anadirEjercicio` no añade
+  nada y la línea siguiente revienta con `Cannot read properties of undefined` doce llamadas más
+  abajo. Ahora lanza con el nombre del ejercicio. **Y el id sale del catálogo, no de la memoria**:
+  eran `dominadas-pronas` y `sentadilla-trasera`, y se llaman `dominada-prona` y `sentadilla-barra`.
+- 🐛 **UNA PRUEBA QUE «DEMUESTRA» ALGO CON EL ESCENARIO EQUIVOCADO PASA SIN MEDIR NADA** (FIT F22).
+  La que debía enseñar que recortar las sesiones cambia el rango usaba una lista **cuya primera
+  sesión era la peor**: quitarla no cambiaba nada. Se rehízo con la mejor sesión **fuera** del
+  periodo, que es el único caso donde se nota.
 - 🚨 **UN ESTADO INTERMEDIO PUEDE SER LA ÚNICA FORMA DE NO PERDER NADA** (FIT F8, apartado 28).
   Terminar no guarda: pasa la sesión a **`finalizando`** y la guarda ahí. Sin ese estado habría que
   elegir entre **perder lo que ha revisado** o **darlo por completado sin que él lo confirme**, y el
@@ -785,13 +818,14 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F9/45 — UX avanzada del entrenamiento en vivo** (líneas 27 781–28 455 de
-   `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). **Ya no hay que esperar a que él pase nada**:
-   la Entrega 4 está entera encima de la mesa y se construye de la F1 a la F45, en orden, encadenando
-   sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
-   ⚠️ **Y lo primero de esa fase es mirar lo que ya hay**: la F7 dejó la pantalla en vivo entera
-   —cronómetro, carrusel, tabla de series, descanso, notas, sustitución— y la F8 el resumen y el
-   guardado. Lo que la F9 desarrolla es **cómo se usa eso mientras entrena**, no el motor.
+1. 🏋️ **SEGUIR POR LA FIT F23/45 — Objetivo del siguiente rango** (líneas 18 070–18 744 de
+   `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). Se construye de la F1 a la F45, en orden,
+   encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+   🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
+   y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
+   ⚠️ **Lo segundo es mirar lo que ya hay**: el sistema de rangos está completo de la F15 a la F22
+   —motor, pantalla, cuestionario, detalle muscular, explicación, contribución e historial—, así que
+   la F23 se apoya en `motorRangos.js` y `rangos.js`, no escribe un segundo cálculo.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

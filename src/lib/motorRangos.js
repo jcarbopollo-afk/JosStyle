@@ -206,6 +206,24 @@ export function rangoEfectivoDeSubgrupo(fitness, subgrupoId, { propios = [], per
 }
 
 /**
+ * De dónde sale el rango de un CONJUNTO de ejercicios: si alguno todavía se
+ * apoya en la estimación, el conjunto no es solo entrenamiento (apartado 6).
+ *
+ * ⚠️ **Estaba escrita dentro de `rangoGlobalEfectivo` y la sacó la F22.** El
+ * rango de un grupo muscular sale de `rangoDeGrupo`, que **no devuelve
+ * `fuente`** —agrega scores, no procedencias—, así que el historial de Espalda
+ * no podía decir si un cambio venía de entrenamientos o de una clasificación,
+ * que es justo lo que piden los apartados 11 y 14 de esa fase. La regla es la
+ * misma que ya usaba el global: se escribe **una vez** y la llaman los dos.
+ */
+export function fuenteCombinada(fuentes) {
+  const s = new Set(lista(fuentes).filter(Boolean));
+  if (!s.size) return null;
+  if (s.has('cuestionario') || s.has('combinado')) return s.has('entrenamiento') ? 'combinado' : 'cuestionario';
+  return 'entrenamiento';
+}
+
+/**
  * El rango global con las fuentes ya resueltas (apartado 12).
  *
  * 🚨 *"Pecho mejora no significa automáticamente rango global +1"*: se recalcula
@@ -233,12 +251,7 @@ export function rangoGlobalEfectivo(fitness, { propios = [], perfil = null } = {
   }
   const score = Math.round(conDatos.reduce((n, g) => n + g.score, 0) / conDatos.length);
   const orden = rangoDePuntuacion(score);
-  /* De dónde sale el global: si algún ejercicio todavía se apoya en la
-     estimación, el conjunto no es solo entrenamiento (apartado 6). */
-  const fuentes = new Set(ejercicios.map((e) => e.fuente));
-  const fuente = fuentes.has('cuestionario') || fuentes.has('combinado')
-    ? (fuentes.has('entrenamiento') ? 'combinado' : 'cuestionario')
-    : 'entrenamiento';
+  const fuente = fuenteCombinada(ejercicios.map((e) => e.fuente));
   return {
     sinRango: false,
     rango: orden,

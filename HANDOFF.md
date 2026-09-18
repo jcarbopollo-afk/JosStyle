@@ -2,6 +2,24 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.104.0 — FIT F22/45: historial y evolución de rangos):** Desde el rango
+> global, el de un músculo y el de un ejercicio se abre **de dónde viene**: qué rango tenía antes,
+> cuándo cambió, y si fue por datos reales o por una clasificación. 🚨 **El historial se DERIVA,
+> como el rango**: el motor de la F19 no guarda nada, así que el rango que había el 28 de agosto es
+> el que sale de darle los datos que existían ese día. De ahí salen tres apartados enteros sin una
+> línea escrita para ellos — **editar** una sesión, **borrarla** (si sostenía una subida, esa subida
+> deja de existir) y **añadir** una nueva—. ⚠️ Y **el pasado no se reescribe**: cada punto se calcula
+> solo con lo que había hasta ese día, así que un rango salido de un cuestionario conserva su
+> confianza baja aunque hoy haya diez sesiones. 🚨 **Un cambio existe solo si cambió el RANGO**: de
+> 480 a 520 dentro de Intermedio no es una subida, es «Has progresado dentro de este rango», en un
+> campo aparte. Lo que no se puede saber está escrito: `sessionEdited` y `sessionDeleted` no son
+> observables, y la estimación anterior a una reclasificación **no existe** (una clasificación
+> guarda una respuesta). El gráfico coloca cada punto por su **fecha**, no por su posición, y no
+> interpola. 🐛 Y destapó un hueco real de la F19: `rangoDeGrupo` no devuelve `fuente`, así que la
+> regla que ya vivía dentro de `rangoGlobalEfectivo` se ha sacado a `fuenteCombinada()` y ahora la
+> llaman los dos. `src/lib/historialRangos.js` + `src/components/historialRango.jsx`, con
+> `scripts/test-historial-rangos.mjs` (153 comprobaciones) detrás.
+
 > **🏋️ ACTUALIZACIÓN (v3.103.0 — FIT F21/45: qué ejercicios sostienen cada rango muscular):** En el
 > detalle de un músculo, cada ejercicio dice **cuánto aporta**: participación del catálogo, papel
 > (principal, secundario, estabilizador), rango, tendencia, última marca en su unidad y sesiones

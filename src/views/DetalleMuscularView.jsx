@@ -29,6 +29,9 @@ import {
 /* FIT F20 — la misma explicación que usa Rangos, aquí para el músculo y para
    cada ejercicio (su apartado 2: un solo componente). */
 import { RankExplanation, BotonPorQue } from '../components/explicacionRango';
+/* FIT F22 — el historial de un rango, el mismo componente en los tres sitios
+   (su apartado 30: nada de una sección independiente). */
+import { RankHistory, BotonHistorial } from '../components/historialRango';
 import { explicacionDeMusculo, explicacionDeEjercicio } from '../lib/explicacionRangos';
 /* 🔓 FIT F21 — la lista de ejercicios pasa a decir **cuánto aporta cada uno** a
    este músculo, y separa los que todavía no tienen datos. Sustituye a la de la
@@ -62,7 +65,7 @@ function Barra({ fraccion, accent, etiqueta }) {
 }
 
 /* ── 2, 3 y 4 · La cabecera ──────────────────────────────────────────────── */
-export function MuscleRankHeader({ detalle, accent, onVolver, volverA = 'Rangos', onPorQue = null }) {
+export function MuscleRankHeader({ detalle, accent, onVolver, volverA = 'Rangos', onPorQue = null, onHistorial = null }) {
   const d = detalle;
   const Icono = iconoDeGrupo(d.grupoId || d.id);
   const siguiente = d.siguiente;
@@ -88,7 +91,10 @@ export function MuscleRankHeader({ detalle, accent, onVolver, volverA = 'Rangos'
               <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
                 {d.grupoNombre ? `${d.grupoNombre} · ${d.nombre}` : d.nombre}
               </p>
-              <BotonPorQue onAbrir={onPorQue} etiqueta={`Por qué tu rango en ${d.nombre}`} />
+              <div className="flex items-center gap-1.5 shrink-0">
+                <BotonPorQue onAbrir={onPorQue} etiqueta={`Por qué tu rango en ${d.nombre}`} />
+                <BotonHistorial onAbrir={onHistorial} etiqueta={`Historial de tu rango en ${d.nombre}`} />
+              </div>
             </div>
             <p className="text-2xl font-extrabold leading-tight" style={{ color: d.sinRango ? COLORS.text : accent, fontFamily: "'Manrope', sans-serif" }}>
               {d.sinRango ? SIN_RANGO.nombre : d.rango.nombre}
@@ -223,12 +229,12 @@ export function MuscleContribution({ texto: t }) {
    cambie. */
 
 /* ── El detalle de un subgrupo (apartado 6) ──────────────────────────────── */
-export function MuscleSubgroupDetail({ detalle, contribuciones, accent, onVolver, onEjercicio, onPorQue = null, onPorQueEjercicio = null }) {
+export function MuscleSubgroupDetail({ detalle, contribuciones, accent, onVolver, onEjercicio, onPorQue = null, onPorQueEjercicio = null, onHistorial = null }) {
   const [filtro, setFiltro] = useState('todos');
   if (!detalle) return null;
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <MuscleRankHeader detalle={detalle} accent={accent} onVolver={onVolver} volverA={detalle.grupoNombre || 'Volver'} onPorQue={onPorQue} />
+      <MuscleRankHeader detalle={detalle} accent={accent} onVolver={onVolver} volverA={detalle.grupoNombre || 'Volver'} onPorQue={onPorQue} onHistorial={onHistorial} />
       <MuscleProgressSummary resumen={detalle.resumen} accent={accent} />
       <MuscleContributionList
         contribuciones={contribuciones}
@@ -252,6 +258,9 @@ export default function DetalleMuscularView({
   const [filtro, setFiltro] = useState('todos');
   /* FIT F20 — qué se está explicando: `{ tipo, id }` o nada. */
   const [porQue, setPorQue] = useState(null);
+  /* FIT F22 — qué historial está abierto. Estado de PANTALLA, nunca un dato
+     guardado (EH F40): por dónde va el dedo no se guarda en `app_data`. */
+  const [historial, setHistorial] = useState(null);
 
   /* 🚨 Apartado 31 — **solo el grupo que se ha pedido**, y una vez por cambio
      en las sesiones: recorrer los siete grupos aquí sería calcular seis de más. */
@@ -297,6 +306,31 @@ export default function DetalleMuscularView({
       accent={accent}
       onCerrar={() => setPorQue(null)}
       onProgreso={porQue.tipo === 'ejercicio' && onEjercicio ? () => { const id = porQue.id; setPorQue(null); onEjercicio(id); } : null}
+      /* 🔓 FIT F22 — desde la explicación se pasa al historial, y esta hoja se
+         CIERRA al hacerlo: dos overlays apilados dejan el de abajo pulsable
+         por los bordes. Es el único sitio desde el que se llega al historial
+         de un EJERCICIO, que es donde se pregunta (su apartado 30). */
+      onHistorial={() => {
+        const tipo = { ejercicio: 'exercise', grupo: 'muscleGroup', subgrupo: 'subgroup' }[porQue.tipo];
+        const id = porQue.id;
+        setPorQue(null);
+        setHistorial({ tipo, id });
+      }}
+    />
+  ) : null;
+
+  /* FIT F22 — y el historial, que es el mismo componente para las tres cosas
+     (su apartado 30). ⚠️ Los tipos son los de `TIPOS_ENTIDAD`, no los de
+     `porQue`: «grupo» aquí es `muscleGroup` allí. */
+  const hojaHistorial = historial ? (
+    <RankHistory
+      fitness={fitness || {}}
+      destino={historial}
+      propios={propios}
+      perfil={perfil}
+      accent={accent}
+      onCerrar={() => setHistorial(null)}
+      onProgreso={historial.tipo === 'exercise' && onEjercicio ? () => { const id = historial.id; setHistorial(null); onEjercicio(id); } : null}
     />
   ) : null;
 
@@ -311,8 +345,10 @@ export default function DetalleMuscularView({
           onEjercicio={onEjercicio}
           onPorQue={() => setPorQue({ tipo: 'subgrupo', id: detalleSub.id })}
           onPorQueEjercicio={(id) => setPorQue({ tipo: 'ejercicio', id })}
+          onHistorial={() => setHistorial({ tipo: 'subgroup', id: detalleSub.id })}
         />
         {hoja}
+        {hojaHistorial}
       </>
     );
   }
@@ -325,6 +361,7 @@ export default function DetalleMuscularView({
         onVolver={onVolver}
         volverA="Rangos"
         onPorQue={() => setPorQue({ tipo: 'grupo', id: detalle.id })}
+        onHistorial={() => setHistorial({ tipo: 'muscleGroup', id: detalle.id })}
       />
       <MuscleProgressSummary resumen={detalle.resumen} accent={accent} />
       <MuscleSubgroupList subgrupos={detalle.subgrupos} accent={accent} onAbrir={setSubgrupo} />
@@ -338,6 +375,7 @@ export default function DetalleMuscularView({
       />
       <MuscleContributionBySubgroup subgrupos={porSubgrupo} accent={accent} onSubgrupo={setSubgrupo} />
       {hoja}
+      {hojaHistorial}
     </div>
   );
 }

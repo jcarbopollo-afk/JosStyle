@@ -19,6 +19,8 @@ import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { PrimaryButton, GhostBtn } from './ui';
 import { RankBadge, RankLabel } from './rangos';
+/* FIT F22 — el botón que lleva al historial, definido con su componente. */
+import { BotonHistorial as BotonHistorialRango } from './historialRango';
 
 /* ── El botón que la abre, igual en los tres sitios ──────────────────────── */
 export function BotonPorQue({ onAbrir, etiqueta = 'Por qué este rango' }) {
@@ -151,7 +153,7 @@ export function RankPath({ camino = [], accent }) {
 
 /* ── La explicación entera ───────────────────────────────────────────────── */
 /* 🚨 Va con `createPortal` (regla 3 del proyecto), como todas las hojas. */
-export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = null, onClasificar = null, onProgreso = null }) {
+export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = null, onClasificar = null, onProgreso = null, onHistorial = null }) {
   if (!explicacion || typeof document === 'undefined') return null;
   const e = explicacion;
   const nivelSiguiente = e.siguiente && e.siguiente.siguiente ? e.siguiente : null;
@@ -190,6 +192,16 @@ export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = nu
               {e.nombre}
             </p>
             <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{e.descripcion}</p>
+            {/* 🔓 FIT F22, apartado 30 — de «por qué tengo este rango» se pasa a
+                «cómo ha evolucionado» sin salir de aquí. ⚠️ Quien lo reciba
+                **cierra esta hoja antes de abrir la otra**: dos overlays
+                `fixed inset-0` apilados dejan el de abajo pulsable por los
+                bordes, y en un iPhone eso es un toque perdido. */}
+            {onHistorial && (
+              <div className="mt-2">
+                <BotonHistorialRango onAbrir={onHistorial} etiqueta={`Historial de tu rango en ${e.titulo}`} />
+              </div>
+            )}
           </div>
           <button onClick={onCerrar} className="p-2 rounded-full shrink-0 toque-44" style={{ background: COLORS.surface2 }} aria-label="Cerrar">
             <X size={16} style={{ color: COLORS.text }} />

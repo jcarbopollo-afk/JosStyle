@@ -1,5 +1,80 @@
 # CHANGELOG.md
 
+## v3.104.0 — FIT F22/45: historial y evolución de rangos
+
+Desde el rango global, el de un músculo y el de un ejercicio se puede abrir **de dónde viene**: qué
+rango tenía antes, cuándo cambió y si fue por datos reales o por una clasificación.
+
+### 🚨 El historial se DERIVA, como el rango
+
+El apartado 3 describe un `RankHistoryEntry` y en la línea siguiente dice *"No duplicar
+innecesariamente datos que puedan calcularse"*. Se puede calcular: el motor de la F19 no guarda
+nada, así que **el rango que había el 28 de agosto es el que sale de darle los datos que existían el
+28 de agosto**. El historial es eso, repetido día a día.
+
+De ahí salen tres apartados enteros **sin una línea escrita para ellos**:
+
+- **Editar una sesión** (17) y **eliminarla** (18): no hay nada que invalidar. Borrar la sesión que
+  causó una subida hace que esa subida **deje de existir** — que es justo lo que el apartado 18
+  exige, y lo que un historial guardado habría tenido que limpiar a mano.
+- **Una sesión nueva** (19): un punto más, al final, sin tocar los anteriores.
+
+### Y el pasado no se reescribe
+
+Cada punto se calcula **solo con lo que había hasta ese día**, así que un rango que salió de un
+cuestionario **conserva su confianza baja para siempre** aunque hoy haya diez sesiones (apartado 12).
+No es una decisión de presentación: es que los datos de después no entran en el cálculo de antes.
+
+### Un cambio existe solo si cambió el RANGO
+
+*"480 → 520, si ambos siguen siendo Intermedio, NO crear un evento de subida"* (apartado 7, literal).
+Subir de score dentro del mismo rango es **otra cosa** y se dice con otras palabras: «Sigues en
+Intermedio alto» + «Has progresado dentro de este rango», en dos campos separados y no en un texto
+que se pueda leer de dos maneras (apartados 8 y 27).
+
+### Lo que no se puede saber, escrito
+
+- **`sessionEdited` y `sessionDeleted`** son dos de los cinco `trigger` del apartado 3 y **no son
+  observables**: como no se guarda nada, tampoco se guarda que una sesión fue editada o borrada.
+  Están en `NO_OBSERVABLE` con su motivo, no fingidos.
+- **La estimación anterior a una reclasificación no existe**: una clasificación guarda **una**
+  respuesta, así que al recontestar la vieja desaparece. Ese tramo se declara como hueco en vez de
+  dibujarse con la puntuación de hoy (apartado 9).
+
+### El gráfico no interpola, y se puede demostrar
+
+Cada punto se coloca por su **fecha**, no por su posición en la lista: entre el 12 de julio y el 30
+de agosto no hay nada, y el hueco se ve. Con 0-1 puntos no hay gráfico, con pocos basta el timeline
+(apartados 24 y 25). Hay una comprobación que exige que **todos** los puntos del gráfico existan en
+el historial.
+
+### Un periodo filtra lo que se VE, nunca lo que se calcula
+
+Es la diferencia con `fitnessEnPeriodo` de la F13, donde recortar las sesiones sí es correcto. Aquí
+sería un fallo: la puntuación es la mejor de las últimas cinco sesiones, así que **el rango de
+septiembre depende de las de julio**. Hay una comprobación con la mejor sesión fuera del periodo que
+mide los dos caminos y demuestra que dan rangos distintos.
+
+### 🐛 Un hueco real de la F19 que esta fase destapó
+
+`rangoDeGrupo` **no devuelve `fuente`** —agrega puntuaciones, no procedencias—, así que el historial
+de Espalda no podía decir si un cambio venía de entrenamientos o de una clasificación, que es lo que
+piden los apartados 11 y 14. La regla para combinar fuentes **ya existía**, escrita dentro de
+`rangoGlobalEfectivo`: se ha sacado a `fuenteCombinada()` y la llaman los dos. Una regla, un sitio.
+
+### ⚠️ Y `GhostBtn` sigue sin repartir `aria-label`
+
+Los dos botones de cerrar de esta fase son de solo icono, así que hechos con `GhostBtn` habrían
+salido **sin nombre accesible**. Van como `<button>` crudo, como en la F4.
+
+### Pruebas
+
+`scripts/test-historial-rangos.mjs` con **153 comprobaciones** —las veinte del apartado 34 más lo que
+esta fase tiene que demostrar que no hace—, sus casos en el banco de renderizado y su sección en el
+recorrido de Chromium. La auditoría se ha partido en `casillasDeHistorial()` para poder **ponerla
+roja** con un historial inventado: una auditoría que no puede fallar no sirve, y una que lo parece es
+peor.
+
 ## v3.103.0 — FIT F21/45: qué ejercicios sostienen cada rango muscular
 
 En el detalle de un músculo, la lista de ejercicios pasa a explicar **cuánto aporta cada uno** a ese

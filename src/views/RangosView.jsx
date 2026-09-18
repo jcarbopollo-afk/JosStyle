@@ -30,9 +30,15 @@ import { CTA_CLASIFICAR, SIN_RANGO, nivelRango } from '../lib/fitness';
 import { pantallaDeRangos, detalleDeRango } from '../lib/pantallaRangos';
 /* FIT F20 — la explicación de un rango, la misma en los tres sitios. */
 import { RankExplanation, BotonPorQue } from '../components/explicacionRango';
+/* FIT F22 — el historial del rango, colgando del rango global (su apartado 30). */
+import { RankHistory, BotonHistorial } from '../components/historialRango';
 import { explicacionGlobal } from '../lib/explicacionRangos';
 /* FIT F18 — el detalle de un grupo muscular, dentro de Rangos. */
 import DetalleMuscularView from './DetalleMuscularView';
+
+/* El destino del historial global, fuera del componente: un objeto nuevo en
+   cada render invalidaría el `useMemo` de `RankHistory` en cada pintado. */
+const DESTINO_GLOBAL = { tipo: 'overall', id: '' };
 
 /* Los estados del apartado 20: **nunca solo color**. Cada uno lleva su icono y
    su palabra, porque un hexágono gris y otro azul no se distinguen con una
@@ -64,7 +70,7 @@ function Barra({ fraccion, accent, etiqueta }) {
 }
 
 /* ── 3, 4, 5 y 6 · La tarjeta grande ─────────────────────────────────────── */
-export function RankOverviewCard({ datos, accent, onPorQue = null }) {
+export function RankOverviewCard({ datos, accent, onPorQue = null, onHistorial = null }) {
   const d = datos || {};
   const sin = d.sinRango || null;
   const cobertura = d.cobertura || { texto: '', fraccion: 0 };
@@ -76,8 +82,12 @@ export function RankOverviewCard({ datos, accent, onPorQue = null }) {
         <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
           Rango Predicho
         </p>
-        {/* FIT F20, apartado 2 — desde aquí se abre la explicación del global. */}
-        <BotonPorQue onAbrir={onPorQue} etiqueta="Por qué tu rango general" />
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* FIT F20, apartado 2 — desde aquí se abre la explicación del global. */}
+          <BotonPorQue onAbrir={onPorQue} etiqueta="Por qué tu rango general" />
+          {/* FIT F22, apartado 30 — y aquí mismo, su historial. */}
+          <BotonHistorial onAbrir={onHistorial} etiqueta="Historial de tu rango general" />
+        </div>
       </div>
 
       <div className="flex items-center gap-4 mt-3">
@@ -384,6 +394,8 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
   const [musculo, setMusculo] = useState(null);
   /* FIT F20 — si está abierta la explicación del rango general. */
   const [porQue, setPorQue] = useState(false);
+  /* FIT F22 — y si está abierto su historial. Estado de pantalla (EH F40). */
+  const [historial, setHistorial] = useState(false);
   const detalle = abierto ? detalleDeRango(abierto, datos.global.sinRango ? null : datos.global.rango) : null;
 
   /* Va DESPUÉS de los hooks (regla 4). */
@@ -403,7 +415,18 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-      <RankOverviewCard datos={datos} accent={accent} onPorQue={() => setPorQue(true)} />
+      <RankOverviewCard datos={datos} accent={accent} onPorQue={() => setPorQue(true)} onHistorial={() => setHistorial(true)} />
+
+      {historial && (
+        <RankHistory
+          fitness={fitness || {}}
+          destino={DESTINO_GLOBAL}
+          propios={propios}
+          perfil={perfil}
+          accent={accent}
+          onCerrar={() => setHistorial(false)}
+        />
+      )}
 
       {porQue && (
         <RankExplanation

@@ -1027,6 +1027,16 @@ fi
 # FIT F21 — qué ejercicios sostienen un rango muscular. Lo que más se vigila: que se
 # use el porcentaje DEL MÚSCULO que se mira (no el del ejercicio entero), que la
 # participación no se sume entre ejercicios, y que los que no tienen datos vayan aparte.
+# FIT F22 — el historial de rangos. Lo que más se vigila: que no se invente ni un
+# punto, que un cambio solo exista si cambió el RANGO (no el score), que el pasado
+# conserve su confianza baja, y que borrar la sesión que causó una subida se lleve
+# esa subida por delante — sin una línea de invalidación, porque no se guarda nada.
+if node --import ./scripts/resolver-vite.mjs scripts/test-historial-rangos.mjs >/tmp/jc_historial_rangos.log 2>&1; then
+  ok "Historial y evolución de rangos (FIT F22) — $(grep -c '✓' /tmp/jc_historial_rangos.log) comprobaciones"
+else
+  fallo "Falla el historial de rangos"; grep '✗' /tmp/jc_historial_rangos.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-contribucion-muscular.mjs >/tmp/jc_contribucion.log 2>&1; then
   ok "Contribución a los rangos musculares (FIT F21) — $(grep -c '✓' /tmp/jc_contribucion.log) comprobaciones"
 else

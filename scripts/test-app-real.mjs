@@ -7881,6 +7881,93 @@ const progresoF21 = await esperarTexto(/Historial|Progreso reciente|Evolución/i
 ok(/Dominadas/i.test(progresoF21),
   '🚨 FIT F21 — abre la pantalla de progreso de la F12, no una nueva (apartado 14)');
 
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F22 — El historial de un rango (Entrega 4 · 22/45)
+   ══════════════════════════════════════════════════════════════════════════
+   El criterio del apartado 37: entender de dónde viene el rango actual, cuál
+   tenía antes, cuándo cambió y si fue por datos reales o por clasificación. Y
+   lo que más importa comprobar con el dedo, porque ninguna prueba de Node lo
+   ve: que **no se inventa un evento**. Con las pocas sesiones que lleva este
+   recorrido, lo honesto es decir «Historial insuficiente» — y eso es
+   exactamente lo que tiene que salir. */
+console.log('\n── FIT F22 · El historial del rango ──');
+
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F22 — Fitness → Rangos');
+await esperarTexto(/Rango Predicho/i);
+ok(await pulsar('Historial de tu rango general'), 'FIT F22 — se abre el historial del rango general (apartado 30)');
+const histGlobal_fit22 = await esperarTexto(/HISTORIAL/i);
+ok(/HISTORIAL/i.test(histGlobal_fit22),
+  '🚨 FIT F22 — la hoja se abre desde el propio rango, sin una sección aparte (apartado 30)');
+/* 🚨 Lo uno o lo otro, nunca las dos ni ninguna: o hay evolución de verdad, o
+   se dice que no hay bastante. Un timeline con puntos inventados sería lo que
+   prohíben los apartados 2 y 37. */
+const hayTimeline_fit22 = /Clasificación inicial|Primer dato registrado|desde /i.test(histGlobal_fit22);
+const hayVacio_fit22 = /Historial insuficiente/i.test(histGlobal_fit22);
+ok(hayTimeline_fit22 !== hayVacio_fit22,
+  `🚨 FIT F22 — o hay historial o se dice que no lo hay, nunca las dos cosas (timeline: ${hayTimeline_fit22}, vacío: ${hayVacio_fit22})`);
+ok(!/confeti|¡Enhorabuena|¡Felicidades|has desbloqueado|nivel \d/i.test(histGlobal_fit22),
+  '🚨 FIT F22 — ni celebración, ni niveles, ni recompensas (apartados 13 y 36, y D2-02)');
+ok(!/\bXP\b|puntos ganados|insignia/i.test(histGlobal_fit22),
+  '…ni una sola palabra de gamificación');
+const anchoF22 = await page.evaluate(() => ({
+  desborda: document.documentElement.scrollWidth > window.innerWidth + 2,
+  ancho: document.documentElement.scrollWidth,
+}));
+ok(!anchoF22.desborda, `⚠️ FIT F22 — a 375 px la hoja no desborda a lo ancho (${anchoF22.ancho} px, apartado 32)`);
+ok(await pulsar('Cerrar el historial'), '…y se cierra donde estaba');
+
+/* Apartado 30 — el mismo componente desde un músculo. */
+ok(await pulsarQueEmpiece_fit10('Espalda:'), 'FIT F22 — → Espalda');
+await esperarTexto(/Subgrupos/i);
+ok(await pulsar('Historial de tu rango en Espalda'), 'FIT F22 — y desde un músculo se abre el mismo historial (apartado 30)');
+const histMusculo_fit22 = await esperarTexto(/HISTORIAL/i);
+ok(/Espalda/i.test(histMusculo_fit22),
+  '🚨 FIT F22 — con el músculo que se estaba mirando, no el global');
+/* Apartado 23 — los cuatro periodos, y solo cuando hay algo que filtrar. */
+if (!/Historial insuficiente/i.test(histMusculo_fit22)) {
+  ok(/Todo/.test(histMusculo_fit22) && /3 meses/.test(histMusculo_fit22) && /1 año/.test(histMusculo_fit22),
+    '🚨 FIT F22 — con los cuatro periodos del apartado 23');
+  ok(await pulsar('3 meses'), '…y se puede cambiar de periodo');
+  const tresMeses_fit22 = await esperarTexto(/HISTORIAL/i);
+  ok(/No hay cambios en este periodo|desde |Clasificación inicial|Primer dato/i.test(tresMeses_fit22),
+    '🚨 FIT F22 — y si en ese periodo no cambió nada, se dice (apartado 23, literal)');
+} else {
+  ok(!/Todo\s*3 meses/.test(histMusculo_fit22),
+    '⚠️ FIT F22 — sin historial no se pintan unos filtros que no filtrarían nada (regla 8)');
+  ok(/Historial insuficiente|todavía no tiene suficiente historial/i.test(histMusculo_fit22),
+    '🚨 FIT F22 — se dice «Historial insuficiente» en vez de dibujar una evolución falsa (apartado 2)');
+}
+ok(await pulsar('Cerrar el historial'), '…y se cierra');
+
+/* Apartado 30 — y desde un EJERCICIO, que se llega por su explicación. */
+const abrioEj_fit22 = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button[aria-label]')]
+    .find((x) => /^Por qué tu rango en (?!Espalda)/.test(x.getAttribute('aria-label') || ''));
+  if (!b) return null;
+  const t = b.getAttribute('aria-label');
+  b.click();
+  return t;
+});
+ok(!!abrioEj_fit22, `FIT F22 — se abre la explicación de un ejercicio (${abrioEj_fit22 || 'ninguna'})`);
+await esperarTexto(/En qué se basa/i);
+const pasoAlHistorial_fit22 = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button[aria-label]')]
+    .find((x) => /^Historial de tu rango en (?!Espalda)/.test(x.getAttribute('aria-label') || ''));
+  if (!b) return false;
+  b.click();
+  return true;
+});
+ok(pasoAlHistorial_fit22, '🚨 FIT F22 — desde «por qué este rango» se pasa a su historial (apartado 30)');
+const histEj_fit22 = await esperarTexto(/HISTORIAL/i);
+/* 🚨 Y la explicación se ha CERRADO: dos overlays apilados dejan el de abajo
+   pulsable por los bordes, y en un iPhone eso es un toque perdido. */
+ok(!/En qué se basa/i.test(histEj_fit22),
+  '🚨 FIT F22 — y la explicación se cierra al hacerlo: no quedan dos hojas apiladas');
+ok(!/Historial insuficiente/i.test(histEj_fit22) ? /desde |Primer dato registrado|Sigues en/i.test(histEj_fit22) : true,
+  '⚠️ FIT F22 — con su evolución, o con el vacío que dice que todavía no la hay');
+ok(await pulsar('Cerrar el historial'), '…y se cierra');
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

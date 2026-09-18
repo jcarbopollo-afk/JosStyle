@@ -218,6 +218,17 @@ import {
   explicacionGlobal as explGlobalF20,
 } from '../src/lib/explicacionRangos.js';
 import { rangoDeEjercicio as rangoEjF15, progresoHaciaSiguiente as haciaF15 } from '../src/lib/rangos.js';
+/* FIT F22 — el historial de un rango. ⚠️ `RankHistory` sale por `createPortal`,
+   así que van sus piezas; la hoja entera la abre el recorrido de Chromium —
+   igual que `RankExplanation` en la F20. */
+import {
+  BotonHistorial, RankHistoryFilters, RankHistorySummary, RankTimeline,
+  RankTimelineItem, RankScoreHistory, RankChangeCard, RankHistoryEmpty,
+} from '../src/components/historialRango.jsx';
+import {
+  pantallaDeHistorial as pantHistF22, historialDeRango as histF22,
+  detalleDeCambio as detCambioF22,
+} from '../src/lib/historialRangos.js';
 /* FIT F2 — el catálogo de ejercicios y su detalle. ⚠️ El detalle va APARTE
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
    Relación (NAV F3), y sin estos casos no lo probaría nadie. */
@@ -352,6 +363,21 @@ const fitnessConObjetivosF14 = () => {
   f = anadirObjetivoF14(f, { exerciseId: 'press-banca-barra', tipo: 'peso', valor: 60 }).fitness;
   return anadirObjetivoF14(f, { exerciseId: 'press-banca-barra', tipo: 'peso', valor: 100, fechaObjetivo: '2026-01-01', nota: 'Con calma' }).fitness;
 };
+
+/* FIT F22 — cuatro sesiones cada vez mejores, repartidas en tres meses: da
+   varios cambios de rango y los puntos suficientes para el gráfico. ⚠️ Con las
+   tres del escenario de la F12 no llegaría al mínimo, y los casos del timeline
+   saldrían vacíos sin que nada lo dijera. */
+const fitnessConHistorialF22 = () => ['2026-06-10', '2026-07-10', '2026-08-09', '2026-09-08']
+  .reduce((f, fecha, i) => {
+    let s = empezarF7({ nombre: 'Tirón', lineas: anadirF3(crearRutinaF3({ nombre: 'Tirón' }), 'dominada-prona').lineas, hoy: fecha, ahora: Date.parse(`${fecha}T18:00:00`) });
+    const e = ejsF7(s)[0];
+    s = marcarF7(editarF7(s, e.id, e.series[0].id, { reps: 3 + i * 6 }), e.id, e.series[0].id, true);
+    return guardarSesionF10(f, guardarF8(pasarF8(s), { confirmado: true }).sesion);
+  }, {});
+const DESTINO_EJ_F22 = { tipo: 'exercise', id: 'dominada-prona' };
+const histEjF22 = () => histF22(fitnessConHistorialF22(), DESTINO_EJ_F22, {});
+const pantEjF22 = () => pantHistF22(fitnessConHistorialF22(), DESTINO_EJ_F22, {});
 
 const fitnessConHistorialF10 = () => guardarSesionF10({}, guardarF8(pasarF8(sesionUsadaF7()), { confirmado: true }).sesion);
 
@@ -3118,6 +3144,31 @@ const CASOS = [
   ['RankNextStep', RankNextStep, () => ({ paso: explGlobalF20({}, {}).paso, accent, onEntrenar: noop })],
   ['RankNextStep', RankNextStep, () => ({ paso: explEjF20(fitnessConProgresoF12(), 'press-banca-barra', {}).paso, accent })],
   ['RankPath', RankPath, () => ({ camino: explEjF20(fitnessConProgresoF12(), 'press-banca-barra', {}).camino, accent })],
+
+  /* ══ FIT F22 — el historial de un rango ════════════════════════════════ */
+  ['BotonHistorial', BotonHistorial, () => ({ onAbrir: noop })],
+  ['RankHistoryFilters', RankHistoryFilters, () => ({ periodo: 'todo', accent, onElegir: noop })],
+  ['RankHistoryFilters', RankHistoryFilters, () => ({ periodo: '6m', accent, onElegir: noop })],
+  ['RankHistorySummary', RankHistorySummary, () => ({ resumen: pantEjF22().resumen, accent })],
+  ['RankTimeline', RankTimeline, () => ({ lineas: pantEjF22().timeline, accent, onAbrir: noop })],
+  /* Sin poder abrir el detalle: las filas son texto, no botones. */
+  ['RankTimeline', RankTimeline, () => ({ lineas: pantEjF22().timeline, accent })],
+  ['RankTimelineItem', RankTimelineItem, () => ({ linea: pantEjF22().timeline[0], accent, onAbrir: noop })],
+  /* 🚨 Y la línea MÁS ANTIGUA, que es la única que no puede decir «↑ desde»:
+     no había desde. Sin este caso, ese texto no lo pinta nadie. */
+  ['RankTimelineItem', RankTimelineItem, () => {
+    const l = pantEjF22().timeline;
+    return { linea: l[l.length - 1], accent };
+  }],
+  ['RankScoreHistory', RankScoreHistory, () => ({ grafica: pantEjF22().grafica, accent })],
+  ['RankChangeCard', RankChangeCard, () => {
+    const h = histEjF22();
+    return { detalle: detCambioF22(fitnessConHistorialF22(), DESTINO_EJ_F22, h.cambios[h.cambios.length - 1], {}), accent, onCerrar: noop };
+  }],
+  /* El vacío de un ejercicio sin historial, con su «Ver progreso» (apartado 26). */
+  ['RankHistoryEmpty', RankHistoryEmpty, () => ({ vacio: pantHistF22({}, DESTINO_EJ_F22, {}).vacio, accent, onProgreso: noop })],
+  /* Y el del rango global, que NO lleva CTA porque no hay a dónde mandarle. */
+  ['RankHistoryEmpty', RankHistoryEmpty, () => ({ vacio: pantHistF22({}, { tipo: 'overall', id: '' }, {}).vacio, accent })],
 
   /* ══ FIT F17 — el cuestionario ═════════════════════════════════════════ */
   ['ClasificacionView', ClasificacionView, () => ({ fitness: {}, accent, onGuardarFitness: noop, onVolver: noop })],
