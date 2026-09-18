@@ -18,7 +18,14 @@ import {
   olvidarClasificacion, estadoDeClasificacion, clasificacionDe, cuestionario, resumenFinal,
   musculosQueRecibe, AVISO_RECLASIFICAR, AVISO_ESTIMACION, NO_EN_FIT17, DECISIONES_FIT17,
 } from '../src/lib/clasificacion.js';
-import { rangoDeEjercicio, rangoGlobal, rangoDeGrupo, rangosDeEjercicios, puntuacionDeMarca } from '../src/lib/rangos.js';
+import { puntuacionDeMarca } from '../src/lib/rangos.js';
+/* 🔓 FIT F19 — quién manda entre la estimación y los entrenamientos lo decide el
+   motor, no `rangos.js`. Estas comprobaciones siguen siendo las de la F17: lo
+   que cambia es a quién se le pregunta. */
+import {
+  rangoEfectivoDeEjercicio, rangoGlobalEfectivo, rangoEfectivoDeGrupo, rangosEfectivos,
+  UMBRALES_FUENTE,
+} from '../src/lib/motorRangos.js';
 import { DEFAULT_FITNESS, normalizarFitness, crearClasificacion, CTA_CLASIFICAR } from '../src/lib/fitness.js';
 import { ejercicioPorId, todosLosEjercicios } from '../src/lib/ejercicios.js';
 import {
@@ -195,7 +202,7 @@ ok(normalizarFitness({ clasificaciones: [
 console.log('\n\x1b[1m5 · LOS DATOS REALES MANDAN (apartados 4 y 27)\x1b[0m');
 
 const soloEstimado = clasificarEjercicio({ ...DEFAULT_FITNESS }, 'dominada-prona', 'reps-15', {}).fitness;
-const rEstimado = rangoDeEjercicio(soloEstimado, 'dominada-prona', {});
+const rEstimado = rangoEfectivoDeEjercicio(soloEstimado, 'dominada-prona', {});
 ok(!rEstimado.sinRango && rEstimado.fuente === 'cuestionario',
   '🚨 Sin entrenamientos, la estimación SÍ da un punto de partida (apartado 4)');
 ok(rEstimado.provisional === true && rEstimado.dataPoints === 0,
@@ -203,11 +210,19 @@ ok(rEstimado.provisional === true && rEstimado.dataPoints === 0,
 
 /* El ejemplo literal del apartado 27: estima avanzado, entrena y sale peor. */
 const conAmbos = guardarSesion(soloEstimado, sesion('dominada-prona', [{ reps: 4 }, { reps: 3 }]));
-const rReal = rangoDeEjercicio(conAmbos, 'dominada-prona', {});
-ok(rReal.fuente === 'entrenamiento',
-  '🚨 En cuanto hay UNA sesión real, el rango sale de ella (apartado 27)');
+const rReal = rangoEfectivoDeEjercicio(conAmbos, 'dominada-prona', {});
+/* 🔓 FIT F19 — con UNA sesión el rango ya hace caso a la realidad, pero sin dar
+   el salto entero: es la mezcla del apartado 4 de esa fase. Con tres, la
+   estimación deja de contar. Lo que la F17 pedía —que el cuestionario no
+   sostenga un rango inflado— se sigue cumpliendo, y mejor. */
+ok(rReal.fuente === 'combinado',
+  '🚨 Con una sesión real el rango ya no es solo la estimación (apartado 27)');
 ok(rReal.rango < rEstimado.rango,
-  '🚨 …aunque el resultado real sea PEOR que lo que estimó: el cuestionario no sostiene un rango inflado');
+  '🚨 …y baja hacia lo real aunque el resultado sea PEOR que lo que estimó');
+const conTresSesiones = [1, 2].reduce((f) => guardarSesion(f, sesion('dominada-prona', [{ reps: 4 }, { reps: 3 }])), conAmbos);
+const rTres = rangoEfectivoDeEjercicio(conTresSesiones, 'dominada-prona', {});
+ok(rTres.fuente === 'entrenamiento' && rTres.dataPoints >= UMBRALES_FUENTE.entrenamiento,
+  '🚨 …y con tres sesiones la estimación ya no cuenta para nada');
 ok(clasificacionDe(conAmbos, 'dominada-prona') !== null,
   '⚠️ Y la estimación no se borra: pierde, pero sigue guardada (si borra la sesión, vuelve a valer)');
 ok(estadoDeClasificacion(conAmbos, 'dominada-prona', {}).estado === 'entrenamiento'
@@ -220,18 +235,18 @@ console.log('\n\x1b[1m6 · LO QUE LLEGA A LOS MÚSCULOS Y A LA COBERTURA (aparta
 const musculos = musculosQueRecibe('dominada-prona', {});
 ok(musculos.length >= 3 && musculos.every((m) => m.peso > 0 && m.nombre),
   'Los músculos que reciben información son los del catálogo, con su porcentaje (apartado 16)');
-ok(rangosDeEjercicios(soloEstimado, {}).some((x) => x.exerciseId === 'dominada-prona'),
+ok(rangosEfectivos(soloEstimado, {}).some((x) => x.exerciseId === 'dominada-prona'),
   '🚨 Un ejercicio estimado cuenta para los grupos: de eso va clasificar');
-const espaldaEstimada = rangoDeGrupo(rangosDeEjercicios(soloEstimado, {}), 'espalda');
+const espaldaEstimada = rangoEfectivoDeGrupo(soloEstimado, 'espalda', {});
 ok(!espaldaEstimada.sinRango && espaldaEstimada.estimado === true,
   '…y el grupo lo dice: tiene rango, pero sin una sola sesión detrás');
 ok(espaldaEstimada.provisional === true, '…así que es provisional, siempre');
-const globalVacio = rangoGlobal({ ...DEFAULT_FITNESS }, {});
+const globalVacio = rangoGlobalEfectivo({ ...DEFAULT_FITNESS }, {});
 let conTres = { ...DEFAULT_FITNESS };
 for (const [id, op] of [['dominada-prona', 'reps-14'], ['press-banca-barra', 'carga-50'], ['sentadilla-barra', 'carga-50']]) {
   conTres = clasificarEjercicio(conTres, id, op, {}).fitness;
 }
-const globalTres = rangoGlobal(conTres, {});
+const globalTres = rangoGlobalEfectivo(conTres, {});
 ok(globalVacio.cobertura.ejercicios === 0 && globalTres.cobertura.ejercicios === 3,
   '🚨 La cobertura se recalcula con lo clasificado, no se queda vieja (apartado 17)');
 ok(!globalTres.sinRango && globalTres.provisional === true,

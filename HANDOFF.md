@@ -2,6 +2,19 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.101.0 — FIT F19/45: el motor de rangos):** Fase de lógica, sin pantalla
+> nueva. `src/lib/motorRangos.js` concentra **quién manda** en cada rango: sin sesiones, la
+> estimación del cuestionario; con una o dos, una **mezcla** que corrige la estimación con lo real
+> (lo real pesa `sesiones / 3`); con tres o más, solo el entrenamiento. 🐛 Corrige a la F17, donde
+> una sola sesión sustituía la estimación de golpe. La **estabilidad** es la ventana de la F15 y es
+> asimétrica: la puntuación es la mejor de las últimas cinco sesiones, así que subir necesita una
+> sesión buena y bajar necesita cinco peores seguidas — una mala sesión no baja el rango, un bajón
+> sostenido sí, y un dato atípico se diluye sin borrarse. 🚨 **Nada se guarda**, así que borrar,
+> editar o restaurar una sesión, reclasificar o cambiar el peso del perfil se nota en la siguiente
+> lectura: no hay caché ni hace falta un sistema de eventos. `rangos.js` vuelve a ser solo escala y
+> rendimiento real; `pantallaRangos.js` y `detalleMuscular.js` leen del motor. Pruebas en
+> `scripts/test-motor-rangos.mjs` (los 19 casos del apartado 31).
+
 > **🏋️ ACTUALIZACIÓN (v3.100.0 — FIT F18/45: el detalle de cada grupo muscular):** Rangos → Espalda
 > → Dorsales → Dominadas → su progreso. Cada grupo tiene su pantalla
 > (`src/views/DetalleMuscularView.jsx`): cabecera con el rango del grupo y de dónde sale, subgrupos

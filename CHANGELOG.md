@@ -1,5 +1,61 @@
 # CHANGELOG.md
 
+## v3.101.0 — FIT F19/45: el motor de rangos
+
+Fase de **lógica**, sin pantalla nueva: la cadena *clasificación inicial → entrenamientos →
+progresión → score → rango → músculos → rango global* pasa a estar en un único sitio,
+`src/lib/motorRangos.js` (el `rankEngine` que pide el apartado 28).
+
+### Quién manda, y cuándo cambia
+
+| Sesiones del ejercicio | Fuente | Qué se enseña |
+|---|---|---|
+| 0 | `cuestionario` | La estimación de la F17, marcada como provisional |
+| 1 – 2 | `combinado` | La estimación **corrigiéndose** con lo real |
+| 3 o más | `entrenamiento` | Solo los datos reales; la estimación deja de contar |
+
+🐛 **Corrige a la F17**: allí, una sola sesión sustituía la estimación de golpe. El apartado 4 de
+esta fase lo prohíbe expresamente —*"no debe producir un salto absurdo simplemente porque exista una
+sola sesión"*—, así que ahora lo real pesa `sesiones / 3` y la estimación se apaga sola. Los dos
+umbrales viven en `UMBRALES_FUENTE`, y hay una comprobación que barre `src/lib` buscando un
+`if sesiones > 3` suelto.
+
+### Estabilidad: subir es fácil, bajar cuesta
+
+No se añade un segundo mecanismo: **es la ventana de la F15**, y es asimétrica a propósito. La
+puntuación de un ejercicio es la **mejor de las últimas cinco sesiones**, así que:
+
+- para **subir** basta una sesión buena dentro de la ventana;
+- para **bajar** hacen falta cinco seguidas peores.
+
+🚨 Una mala sesión **no baja el rango** —fatiga, sueño, un mal día—, y un bajón sostenido **sí**.
+Un dato atípico (cien dominadas cuando hace diez) no se borra ni se juzga: entra como cualquier
+otra sesión y deja de sostener el rango en cuanto sale de la ventana.
+
+### Nada se guarda, así que nada se queda viejo
+
+No hace falta invalidar caché ni un sistema de eventos (apartados 29 y 30): el rango se calcula al
+leerlo. Guardar una sesión, **borrarla**, editarla, restaurarla, reclasificar o cambiar el peso del
+perfil se nota en la siguiente lectura. Y lo que no cambia: las sesiones antiguas **no se
+reescriben** con el peso corporal de hoy, conseguir un objetivo **no** sube el rango, y una variante
+no hereda el historial de otra.
+
+### Lo que se movió
+
+`rangos.js` vuelve a ser la escala y el rendimiento real; la decisión de fuente sale de ahí y se
+concentra en el motor. `pantallaRangos.js` y `detalleMuscular.js` leen del motor, así que Rangos y
+el detalle muscular enseñan lo mismo por construcción. También hay `evolucionDeRango`, que calcula
+qué rango habría dado el sistema después de cada sesión: no se enseña todavía, pero es lo que
+permite **demostrar** la estabilidad en las pruebas.
+
+### Pruebas
+
+`scripts/test-motor-rangos.mjs` (60): los diecinueve casos del apartado 31 —solo cuestionario, una
+sesión, varias, mejora, descenso temporal, descenso sostenido, borrar, editar, reclasificar, cambiar
+el perfil, variantes, isométricos, peso corporal y externo, grupo, global, datos insuficientes,
+atípicos y objetivos—. Comprobado que se pone roja si una sesión sustituye de golpe la estimación o
+si un mal día baja el rango.
+
 ## v3.100.0 — FIT F18/45: el detalle de cada grupo muscular
 
 **Rangos → Espalda → Dorsales → Dominadas → su progreso.** Cada grupo muscular tiene ahora su

@@ -1024,6 +1024,15 @@ else
   fallo "Falla la UX del entrenamiento en vivo"; grep '✗' /tmp/jc_entreno_ux.log
 fi
 
+# FIT F19 — el motor de rangos. Lo que más se vigila: que una mala sesión NO baje el
+# rango, que una sola sesión no sustituya de golpe la estimación, y que borrar o editar
+# una sesión se note en la siguiente lectura (no hay rangos guardados).
+if node --import ./scripts/resolver-vite.mjs scripts/test-motor-rangos.mjs >/tmp/jc_motor_rangos.log 2>&1; then
+  ok "Motor de rangos (FIT F19) — $(grep -c '✓' /tmp/jc_motor_rangos.log) comprobaciones"
+else
+  fallo "Falla el motor de rangos"; grep '✗' /tmp/jc_motor_rangos.log
+fi
+
 # FIT F18 — el detalle de un grupo muscular. Lo que más se vigila: que los ejercicios
 # salgan del CATÁLOGO (no de una lista a mano), que la tendencia sea la de la F11, que un
 # subgrupo sin datos no reciba rango, y que un ejercicio borrado no rompa la pantalla.

@@ -205,47 +205,18 @@ export function puntuacionDeEjercicio(ejercicio, apariciones, perfil = null) {
   };
 }
 
-/* 🔓 FIT F17 — la estimación del cuestionario, si la hay. ⚠️ Se lee el dato
-   guardado tal cual (`fitness.clasificaciones`, modelo de `fitness.js`) y **no**
-   se importa `clasificacion.js`: ese archivo ya usa éste para puntuar, y
-   llamarse el uno al otro sería un círculo. */
-const estimacionDe = (fitness, exerciseId) =>
-  lista(fitness?.clasificaciones).find((c) => c && c.exerciseId === texto(exerciseId) && c.puntuacion !== null) || null;
-
-/** El `getExerciseRank` del apartado 13. */
+/** El `getExerciseRank` del apartado 13: **el rango que sale de entrenar**.
+ *
+ * 🔓 **FIT F19 — quién manda entre la estimación y lo real ya no se decide
+ * aquí.** La F17 metió en esta función la rama del cuestionario; la F19 se la
+ * lleva a `src/lib/motorRangos.js` (su apartado 28), que es el único sitio
+ * donde se elige fuente y donde viven los umbrales. Esta función sigue siendo
+ * lo que era: la puntuación del rendimiento real contra la escala. */
 export function rangoDeEjercicio(fitness, exerciseId, { propios = [], perfil = null } = {}) {
   const ej = ejercicioPorId(texto(exerciseId), propios);
   const apariciones = aparicionesDeEjercicio(fitness, exerciseId, propios);
   const p = ej ? puntuacionDeEjercicio(ej, apariciones, perfil) : null;
   if (!p) {
-    /* 🚨 FIT F17, apartados 4 y 27 — **el orden de prioridad**. Sin datos reales
-       vale la estimación del cuestionario; en cuanto hay UNA serie marcada, la
-       rama de arriba gana y esto no se mira. La estimación no se borra —sigue
-       guardada, y si él borra la sesión vuelve a valer—, simplemente pierde. */
-    const estimada = ej ? estimacionDe(fitness, exerciseId) : null;
-    if (estimada) {
-      const ordenEstimado = rangoDePuntuacion(estimada.puntuacion);
-      return {
-        exerciseId: texto(exerciseId),
-        existe: true,
-        sinRango: false,
-        rango: ordenEstimado,
-        nombre: nivelRango(ordenEstimado).nombre,
-        score: estimada.puntuacion,
-        metrica: 'estimacion',
-        usaPesoCorporal: false,
-        fuente: 'cuestionario',
-        confianza: estimada.confianza === 'media' ? 'media' : 'baja',
-        confianzaNombre: (CONFIANZA.find((c) => c.id === (estimada.confianza === 'media' ? 'media' : 'baja')) || {}).nombre || null,
-        /* Apartado 28: una estimación es SIEMPRE provisional. */
-        provisional: true,
-        dataPoints: 0,
-        mejorMarca: null,
-        tendencia: null,
-        siguiente: progresoHaciaSiguiente(estimada.puntuacion),
-        ultimaActualizacion: null,
-      };
-    }
     return { exerciseId: texto(exerciseId), existe: !!ej, sinRango: true, rango: null, nombre: SIN_RANGO.nombre, score: null, confianza: null, provisional: false, dataPoints: 0, fuente: null };
   }
   const orden = rangoDePuntuacion(p.score);
@@ -279,13 +250,12 @@ export function rangoDeEjercicio(fitness, exerciseId, { propios = [], perfil = n
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /** Los rangos de todos los ejercicios que ha hecho, con su reparto muscular. */
+/** ⚠️ **Solo lo entrenado.** Quien quiera la lista con las estimaciones ya
+ *  resueltas usa `rangosEfectivos` (FIT F19, `motorRangos.js`): meter aquí el
+ *  cuestionario dejaba dos sitios decidiendo la misma cosa. */
 export function rangosDeEjercicios(fitness, { propios = [], perfil = null } = {}) {
   const indice = indiceDeProgresion(fitness, propios);
-  /* FIT F17, apartado 16 — un ejercicio estimado también reparte a sus músculos:
-     de eso va clasificar. ⚠️ Se unen por id, no se suman: uno entrenado Y
-     estimado cuenta UNA vez, con su rango real. */
-  const ids = [...new Set([...indice.keys(), ...lista(fitness?.clasificaciones).map((c) => texto(c && c.exerciseId)).filter(Boolean)])];
-  return ids
+  return [...indice.keys()]
     .map((id) => ({ r: rangoDeEjercicio(fitness, id, { propios, perfil }), ej: ejercicioPorId(id, propios) }))
     .filter((x) => !x.r.sinRango && x.ej)
     .map((x) => ({ ...x.r, reparto: repartoMuscular(x.ej) }));

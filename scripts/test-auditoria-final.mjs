@@ -219,6 +219,13 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
        funcionando — estrecharla hasta que calle sola es como se le escapa una
        de verdad. La cabecera de `fotoPerfil.js` avisa de que esto pasaría. */
     && f !== 'fotoPerfil'
+    /* ⚠️ Y `motorRangos` es de **Fitness** (FIT F19), no de Imagen personal: lo
+       caza `motor`, que esta expresión busca por `motorRutinas`,
+       `motorRecomendaciones` y `motorProductos`. **Octava** exclusión a mano, y
+       por el mismo motivo de siempre: la regla identifica los módulos por su
+       NOMBRE. Sigue siendo mejor que salte y se excluya a mano que estrecharla
+       hasta que calle sola. */
+    && f !== 'motorRangos'
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],

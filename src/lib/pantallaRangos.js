@@ -20,9 +20,10 @@
 import { GRUPOS_MUSCULARES, NIVELES_RANGO, SIN_RANGO, nivelRango } from './fitness.js';
 /* El catálogo entero —el de siempre más los suyos— para poder decir «3 de 40». */
 import { todosLosEjercicios } from './ejercicios.js';
-import {
-  RANK_THRESHOLDS, estadoDeRango, progresoHaciaSiguiente, rangoGlobal,
-} from './rangos.js';
+import { RANK_THRESHOLDS, estadoDeRango, progresoHaciaSiguiente } from './rangos.js';
+/* 🔓 FIT F19 — el global sale del motor, que es quien decide si un ejercicio
+   cuenta por su estimación, por sus entrenamientos o por los dos. */
+import { rangoGlobalEfectivo } from './motorRangos.js';
 /* FIT F17 — cuántos va a preguntar el cuestionario, que NO es lo mismo que
    cuántos quedan sin clasificar del catálogo entero. */
 import { cuestionario } from './clasificacion.js';
@@ -184,7 +185,7 @@ export function rankingsMusculares(global) {
  * *"mostrar únicamente los elementos válidos"*).
  */
 export function pantallaDeRangos(fitness, { propios = [], perfil = null } = {}) {
-  const global = rangoGlobal(fitness || {}, { propios: lista(propios), perfil });
+  const global = rangoGlobalEfectivo(fitness || {}, { propios: lista(propios), perfil });
   const nivel = global.sinRango ? null : nivelRango(global.rango);
   return {
     global,

@@ -24,7 +24,10 @@ import { GRUPOS_MUSCULARES, subgrupoMuscular } from './fitness.js';
 import { todayISO } from './helpers.js';
 import { ejercicioPorId, todosLosEjercicios } from './ejercicios.js';
 import { senalesDeEjercicios, ejerciciosDeMusculo, repartoMuscular } from './progresoMuscular.js';
-import { progresoHaciaSiguiente, rangoDeGrupo, rangoDeSubgrupo, rangosDeEjercicios } from './rangos.js';
+import { progresoHaciaSiguiente } from './rangos.js';
+/* 🔓 FIT F19 — los rangos que se enseñan son los EFECTIVOS: el motor ya ha
+   decidido si mandan los entrenamientos, la estimación o los dos. */
+import { rangosEfectivos, rangoEfectivoDeGrupo, rangoEfectivoDeSubgrupo } from './motorRangos.js';
 
 const lista = (x) => (Array.isArray(x) ? x : []);
 const texto = (v) => (typeof v === 'string' ? v.trim() : '');
@@ -88,7 +91,7 @@ export function ejerciciosDelMusculo(fitness, { grupoId = null, subgrupoId = nul
     }))
     .sort((a, b) => b.implicacion - a.implicacion || a.nombre.localeCompare(b.nombre));
 
-  const conRango = new Map(rangosDeEjercicios(fitness || {}, { propios: lista(propios), perfil }).map((r) => [r.exerciseId, r]));
+  const conRango = new Map(rangosEfectivos(fitness || {}, { propios: lista(propios), perfil }).map((r) => [r.exerciseId, r]));
 
   return [...conDatos, ...sinDatos].map((x) => {
     const ej = ejercicioPorId(x.exerciseId, lista(propios));
@@ -105,7 +108,8 @@ export function ejerciciosDelMusculo(fitness, { grupoId = null, subgrupoId = nul
       rango: r && !r.sinRango ? r.rango : null,
       /* De dónde sale ese rango: entrenándolo o estimándolo (F17). */
       fuente: r ? r.fuente : null,
-      estimado: !!(r && !r.sinRango && r.fuente === 'cuestionario'),
+      /* FIT F19 — «estimado» mientras la estimación siga contando para algo. */
+      estimado: !!(r && !r.sinRango && (r.fuente === 'cuestionario' || r.fuente === 'combinado')),
     };
   })
     /* ⚠️ Estable y con un criterio: primero lo que tiene tendencia (ya venía
@@ -181,12 +185,12 @@ export function detalleDeGrupo(fitness, grupoId, { propios = [], perfil = null, 
   if (!grupo) return null;
   /* 🚨 Apartado 31 — los rangos de los ejercicios se piden UNA vez y de ahí
      salen el del grupo y los de sus subgrupos. */
-  const conRango = rangosDeEjercicios(fitness || {}, { propios: lista(propios), perfil });
-  const rango = rangoDeGrupo(conRango, grupo.id);
+  const conRango = rangosEfectivos(fitness || {}, { propios: lista(propios), perfil });
+  const rango = rangoEfectivoDeGrupo(fitness, grupo.id, { propios, perfil, efectivos: conRango });
   const ejercicios = ejerciciosDelMusculo(fitness, { grupoId: grupo.id }, { propios, perfil, hoy });
   const resumen = resumenDeTendencias(ejercicios);
   const subgrupos = lista(grupo.subgrupos).map((sg) => {
-    const r = rangoDeSubgrupo(conRango, sg.id);
+    const r = rangoEfectivoDeSubgrupo(fitness, sg.id, { propios, perfil, efectivos: conRango });
     return {
       id: sg.id,
       nombre: sg.nombre,
@@ -230,8 +234,8 @@ export function detalleDeSubgrupo(fitness, subgrupoId, { propios = [], perfil = 
   const sg = subgrupoMuscular(subgrupoId);
   if (!sg) return null;
   const grupo = GRUPOS_MUSCULARES.find((g) => lista(g.subgrupos).some((s) => s.id === sg.id)) || null;
-  const conRango = rangosDeEjercicios(fitness || {}, { propios: lista(propios), perfil });
-  const rango = rangoDeSubgrupo(conRango, sg.id);
+  const conRango = rangosEfectivos(fitness || {}, { propios: lista(propios), perfil });
+  const rango = rangoEfectivoDeSubgrupo(fitness, sg.id, { propios, perfil, efectivos: conRango });
   const ejercicios = ejerciciosDelMusculo(fitness, { subgrupoId: sg.id }, { propios, perfil, hoy });
   const resumen = resumenDeTendencias(ejercicios);
   return {
