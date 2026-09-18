@@ -201,6 +201,16 @@ import DetalleMuscularView, {
   MuscleSubgroupDetail, MuscleExerciseList, MuscleExerciseCard, MuscleContribution,
 } from '../src/views/DetalleMuscularView.jsx';
 import { detalleDeGrupo as grupoF18, detalleDeSubgrupo as subgrupoF18 } from '../src/lib/detalleMuscular.js';
+/* FIT F20 — la explicación de un rango. ⚠️ `RankExplanation` sale por
+   `createPortal`, así que va el contenido por piezas; la hoja entera la abre el
+   recorrido de Chromium. */
+import {
+  BotonPorQue, RankConfidence, RankCoverage, RankEvidence, RankNextStep, RankPath,
+} from '../src/components/explicacionRango.jsx';
+import {
+  explicacionDeEjercicio as explEjF20, explicacionDeMusculo as explMusF20,
+  explicacionGlobal as explGlobalF20,
+} from '../src/lib/explicacionRangos.js';
 import { rangoDeEjercicio as rangoEjF15, progresoHaciaSiguiente as haciaF15 } from '../src/lib/rangos.js';
 /* FIT F2 — el catálogo de ejercicios y su detalle. ⚠️ El detalle va APARTE
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
@@ -3076,6 +3086,19 @@ const CASOS = [
   ['MuscleExerciseList', MuscleExerciseList, () => ({ ejercicios: grupoF18(fitnessConProgresoF12(), 'pecho', {}).ejercicios, filtro: 'descenso', accent })],
   ['MuscleExerciseCard', MuscleExerciseCard, () => ({ ejercicio: grupoF18(fitnessConProgresoF12(), 'pecho', {}).ejercicios[0], accent, onAbrir: noop })],
   ['MuscleContribution', MuscleContribution, () => ({ texto: 'Dorsales · 50 %' })],
+
+  /* ══ FIT F20 — la explicación de un rango ══════════════════════════════ */
+  ['BotonPorQue', BotonPorQue, () => ({ onAbrir: noop })],
+  ['RankConfidence', RankConfidence, () => ({ texto: explEjF20(fitnessConProgresoF12(), 'press-banca-barra', {}).confianzaTexto })],
+  ['RankCoverage', RankCoverage, () => ({ cobertura: explMusF20(fitnessConProgresoF12(), { grupoId: 'pecho' }, {}).cobertura, accent })],
+  ['RankEvidence', RankEvidence, () => ({ evidencias: explEjF20(fitnessConProgresoF12(), 'press-banca-barra', {}).evidencias })],
+  ['RankEvidence', RankEvidence, () => {
+    const e = explMusF20(fitnessConProgresoF12(), { grupoId: 'pecho' }, {});
+    return { evidencias: e.evidencias, relevantes: e.relevantes };
+  }],
+  ['RankNextStep', RankNextStep, () => ({ paso: explGlobalF20({}, {}).paso, accent, onEntrenar: noop })],
+  ['RankNextStep', RankNextStep, () => ({ paso: explEjF20(fitnessConProgresoF12(), 'press-banca-barra', {}).paso, accent })],
+  ['RankPath', RankPath, () => ({ camino: explEjF20(fitnessConProgresoF12(), 'press-banca-barra', {}).camino, accent })],
 
   /* ══ FIT F17 — el cuestionario ═════════════════════════════════════════ */
   ['ClasificacionView', ClasificacionView, () => ({ fitness: {}, accent, onGuardarFitness: noop, onVolver: noop })],

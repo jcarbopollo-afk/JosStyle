@@ -7786,6 +7786,61 @@ const progresoEj_fit18 = await esperarTexto(/Historial|Progreso reciente|Evoluci
 ok(/Dominadas/i.test(progresoEj_fit18),
   '🚨 FIT F18 — se abre la pantalla de progreso de la F12, no otra nueva (apartado 11)');
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F20 — Por qué tengo este rango (Entrega 4 · 20/45)
+   ══════════════════════════════════════════════════════════════════════════
+   El criterio del apartado 33: pulsar el rango y entender qué rango tengo, de
+   dónde sale, qué lo sustenta y qué me acercaría al siguiente. Se comprueba en
+   los tres sitios que pide el apartado 2 —global, músculo y ejercicio— y, sobre
+   todo, que **no se promete una cifra** (apartado 9). */
+console.log('\n── FIT F20 · Por qué este rango ──');
+
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F20 — Fitness → Rangos');
+await esperarTexto(/Rango Predicho/i);
+ok(await pulsar('Por qué tu rango general'), 'FIT F20 — se abre la explicación del rango general (apartado 2)');
+const expGlobal_fit20 = await esperarTexto(/En qué se basa/i);
+ok(/Basado en:/i.test(expGlobal_fit20),
+  '🚨 FIT F20 — dice de dónde sale el rango (apartados 11 a 13)');
+ok(/grupos con datos/i.test(expGlobal_fit20),
+  '…con la cobertura en palabras (apartado 15)');
+ok(/Qué te acerca al siguiente/i.test(expGlobal_fit20),
+  '…y qué haría falta para subir (apartado 9)');
+ok(!/te faltan \d+|en \d+ días|\d+ kg para/i.test(expGlobal_fit20),
+  '🚨 FIT F20 — y NO promete cifras ni plazos: el sistema no puede garantizarlos (apartados 9 y 31)');
+ok(/Iniciación/i.test(expGlobal_fit20) && /Élite/i.test(expGlobal_fit20),
+  '⚠️ FIT F20 — con la escala entera y el suyo marcado (apartado 16)');
+ok(await pulsar('Cerrar'), '…y se cierra donde estaba');
+
+/* Apartado 2 — la misma explicación desde un músculo. */
+ok(await pulsarQueEmpiece_fit10('Espalda:'), 'FIT F20 — → Espalda');
+await esperarTexto(/Subgrupos/i);
+ok(await pulsar('Por qué tu rango en Espalda'), 'FIT F20 — se abre la explicación del músculo (apartado 5)');
+const expMusculo_fit20 = await esperarTexto(/En qué se basa/i);
+ok(/Espalda/i.test(expMusculo_fit20) && /ejercicios con datos/i.test(expMusculo_fit20),
+  '🚨 FIT F20 — con los ejercicios que lo sostienen (apartado 5)');
+ok(/Confianza/i.test(expMusculo_fit20),
+  '…y con qué confianza, dicho con palabras (apartado 14)');
+ok(!/%\s*de confianza/i.test(expMusculo_fit20),
+  '⚠️ …sin porcentajes de confianza inventados (apartado 14)');
+ok(await pulsar('Cerrar'), '…y se cierra');
+
+/* Y desde un ejercicio: el hexágono de su tarjeta. */
+const abrioEjercicio_fit20 = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button[aria-label]')]
+    .find((x) => /^Por qué tu rango en (?!Espalda)/.test(x.getAttribute('aria-label') || ''));
+  if (!b) return null;
+  const t = b.getAttribute('aria-label');
+  b.click();
+  return t;
+});
+ok(!!abrioEjercicio_fit20, `FIT F20 — se abre la explicación de un ejercicio (${abrioEjercicio_fit20 || 'ninguna'}, apartado 6)`);
+const expEjercicio_fit20 = await esperarTexto(/En qué se basa/i);
+ok(/Mejor resultado/i.test(expEjercicio_fit20) && /Tendencia/i.test(expEjercicio_fit20),
+  '🚨 FIT F20 — con su mejor resultado y su tendencia (apartado 6)');
+ok(/Ver su progreso/i.test(expEjercicio_fit20),
+  '…y con la salida a la pantalla de progreso, sin rutas nuevas (apartado 21)');
+ok(await pulsar('Cerrar'), '…y se cierra');
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

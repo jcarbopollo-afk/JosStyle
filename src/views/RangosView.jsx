@@ -28,6 +28,9 @@ import { RankBadge, RankLabel } from '../components/rangos';
 import { iconoDeGrupo } from '../components/iconosFitness';
 import { CTA_CLASIFICAR, SIN_RANGO, nivelRango } from '../lib/fitness';
 import { pantallaDeRangos, detalleDeRango } from '../lib/pantallaRangos';
+/* FIT F20 — la explicación de un rango, la misma en los tres sitios. */
+import { RankExplanation, BotonPorQue } from '../components/explicacionRango';
+import { explicacionGlobal } from '../lib/explicacionRangos';
 /* FIT F18 — el detalle de un grupo muscular, dentro de Rangos. */
 import DetalleMuscularView from './DetalleMuscularView';
 
@@ -61,7 +64,7 @@ function Barra({ fraccion, accent, etiqueta }) {
 }
 
 /* ── 3, 4, 5 y 6 · La tarjeta grande ─────────────────────────────────────── */
-export function RankOverviewCard({ datos, accent }) {
+export function RankOverviewCard({ datos, accent, onPorQue = null }) {
   const d = datos || {};
   const sin = d.sinRango || null;
   const cobertura = d.cobertura || { texto: '', fraccion: 0 };
@@ -69,9 +72,13 @@ export function RankOverviewCard({ datos, accent }) {
   const nivelSiguiente = siguiente && siguiente.siguiente ? nivelRango(siguiente.siguiente) : null;
   return (
     <Card>
-      <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
-        Rango Predicho
-      </p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
+          Rango Predicho
+        </p>
+        {/* FIT F20, apartado 2 — desde aquí se abre la explicación del global. */}
+        <BotonPorQue onAbrir={onPorQue} etiqueta="Por qué tu rango general" />
+      </div>
 
       <div className="flex items-center gap-4 mt-3">
         {/* 🚨 Apartado 4 — sin datos, el hexágono va bloqueado y vacío. No hay
@@ -375,6 +382,8 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
      rendimiento»— y las dos siguen existiendo, cada una en su sitio. Lo que no
      se duplica es el cálculo. */
   const [musculo, setMusculo] = useState(null);
+  /* FIT F20 — si está abierta la explicación del rango general. */
+  const [porQue, setPorQue] = useState(false);
   const detalle = abierto ? detalleDeRango(abierto, datos.global.sinRango ? null : datos.global.rango) : null;
 
   /* Va DESPUÉS de los hooks (regla 4). */
@@ -394,7 +403,17 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-      <RankOverviewCard datos={datos} accent={accent} />
+      <RankOverviewCard datos={datos} accent={accent} onPorQue={() => setPorQue(true)} />
+
+      {porQue && (
+        <RankExplanation
+          explicacion={explicacionGlobal(fitness || {}, { propios, perfil })}
+          accent={accent}
+          onCerrar={() => setPorQue(false)}
+          onEntrenar={onEntrenar ? () => { setPorQue(false); onEntrenar(); } : null}
+          onClasificar={onClasificar ? () => { setPorQue(false); onClasificar(); } : null}
+        />
+      )}
 
       <div>
         <SectionTitle sub="Los diez niveles de la escala">Rangos</SectionTitle>

@@ -1024,6 +1024,15 @@ else
   fallo "Falla la UX del entrenamiento en vivo"; grep '✗' /tmp/jc_entreno_ux.log
 fi
 
+# FIT F20 — la explicación de un rango. Lo que más se vigila: que NO se prometa una
+# cifra («te faltan 5 kg»), que no se compare con un pasado que no existe, y que la
+# métrica sea la del ejercicio (segundos en un isométrico, nunca kilos).
+if node --import ./scripts/resolver-vite.mjs scripts/test-explicacion-rangos.mjs >/tmp/jc_explicacion_rangos.log 2>&1; then
+  ok "Explicación de rangos (FIT F20) — $(grep -c '✓' /tmp/jc_explicacion_rangos.log) comprobaciones"
+else
+  fallo "Falla la explicación de rangos"; grep '✗' /tmp/jc_explicacion_rangos.log
+fi
+
 # FIT F19 — el motor de rangos. Lo que más se vigila: que una mala sesión NO baje el
 # rango, que una sola sesión no sustituya de golpe la estimación, y que borrar o editar
 # una sesión se note en la siguiente lectura (no hay rangos guardados).

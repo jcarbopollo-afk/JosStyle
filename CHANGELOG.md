@@ -1,5 +1,46 @@
 # CHANGELOG.md
 
+## v3.102.0 — FIT F20/45: por qué tengo este rango
+
+Tocar un rango —el general, el de un músculo o el de un ejercicio— abre **la misma** explicación:
+qué rango tienes, de dónde sale, qué datos lo sustentan y qué te acerca al siguiente.
+
+### Qué dice
+
+- **De dónde sale**, en una frase y sin tecnicismos: «Tus entrenamientos», «Clasificación inicial ·
+  se actualizará con tus entrenamientos» o «Tu clasificación inicial y tu rendimiento reciente».
+- **En qué se basa**: mejor resultado, tendencia y sesiones comparables en un ejercicio; ejercicios
+  con datos y cuántos mejoran en un músculo; cobertura y mayores contribuciones en el general.
+- **Dónde estás dentro de tu rango**: «Empezando», «Progresando» o «Cerca del siguiente rango»
+  dentro de Avanzado. Se puede mejorar sin cambiar de rango, y se nota.
+- **Comparación con antes**, si la hay: subida, bajada o «Rango estable». 🚨 Una bajada se dice del
+  **rendimiento reciente**, nunca del cuerpo: rendimiento ≠ composición física.
+- **La escala entera** con el tuyo marcado, sin fechas inventadas.
+
+### 🚨 Lo que NO dice
+
+*"No decir «te faltan 5 kg» si el sistema no puede garantizarlo"* (apartado 9). Y no puede: la
+puntuación mezcla la mejor de cinco sesiones, la dificultad del ejercicio y —en los de carga— el
+peso corporal. Así que lo que se dice es **qué** falta —entrenar, variedad o rendimiento—, nunca
+cuánto. Tampoco hay predicciones, ni comparación con otros, ni la puntuación a la vista.
+
+### Decisiones
+
+- **Un solo componente** (`RankExplanation`) para los tres sitios, y **no calcula nada**: recibe lo
+  que `src/lib/explicacionRangos.js` ya ha redactado leyendo el motor (F19) y la progresión (F11).
+- **La comparación se recalcula**, no se guarda: `evolucionDeRango` (F19) dice qué rango había antes
+  de la última sesión con las reglas de hoy. Con una sola sesión, no se compara.
+- En el detalle muscular, el hexágono de cada ejercicio abre su explicación y el resto de la tarjeta
+  sigue llevando a su progreso: **dos botones hermanos**, nunca uno dentro de otro.
+- La hoja tiene tope de altura y scroll interno: con textos largos se quedaba cortada en un iPhone.
+
+### Pruebas
+
+`scripts/test-explicacion-rangos.mjs` (61): las tres explicaciones, las tres fuentes, la métrica
+correcta por tipo de ejercicio, dentro del rango, camino, comparación (subida, bajada, estable y sin
+datos), cobertura, confianza y el escaneo que impide que el componente calcule. Comprobado que se
+pone roja si la explicación promete una cifra o si compara con una sola sesión.
+
 ## v3.101.0 — FIT F19/45: el motor de rangos
 
 Fase de **lógica**, sin pantalla nueva: la cadena *clasificación inicial → entrenamientos →

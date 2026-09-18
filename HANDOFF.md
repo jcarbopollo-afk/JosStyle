@@ -2,6 +2,17 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.102.0 — FIT F20/45: por qué tengo este rango):** Tocar un rango —el
+> general, el de un músculo o el de un ejercicio— abre **la misma** explicación
+> (`src/components/explicacionRango.jsx`, con la lógica en `src/lib/explicacionRangos.js`): de dónde
+> sale («Tus entrenamientos», «Clasificación inicial», o las dos cosas), en qué se basa (mejor
+> resultado, tendencia, sesiones; ejercicios con datos; cobertura y mayores contribuciones), dónde
+> estás **dentro** de tu rango, la comparación con antes —subida, bajada o estable— y la escala con
+> el tuyo marcado. 🚨 **No promete cifras**: nunca «te faltan 5 kg», porque el sistema no lo puede
+> garantizar; dice qué falta, no cuánto. Una bajada se dice del **rendimiento reciente**, no del
+> cuerpo. La comparación se recalcula con `evolucionDeRango` (F19), no se guarda, y con una sola
+> sesión no se compara. Pruebas en `scripts/test-explicacion-rangos.mjs`.
+
 > **🏋️ ACTUALIZACIÓN (v3.101.0 — FIT F19/45: el motor de rangos):** Fase de lógica, sin pantalla
 > nueva. `src/lib/motorRangos.js` concentra **quién manda** en cada rango: sin sesiones, la
 > estimación del cuestionario; con una o dos, una **mezcla** que corrige la estimación con lo real

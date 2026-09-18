@@ -26,6 +26,10 @@ import { AVISO_RENDIMIENTO } from '../lib/progresoMuscular';
 import {
   detalleDeGrupo, detalleDeSubgrupo, filtrarEjercicios, FILTROS_EJERCICIOS,
 } from '../lib/detalleMuscular';
+/* FIT F20 — la misma explicación que usa Rangos, aquí para el músculo y para
+   cada ejercicio (su apartado 2: un solo componente). */
+import { RankExplanation, BotonPorQue } from '../components/explicacionRango';
+import { explicacionDeMusculo, explicacionDeEjercicio } from '../lib/explicacionRangos';
 
 /* Los cuatro estados del apartado 9, **con icono y con palabra**: el color solo
    no vale (apartado 29). Son los mismos que enseña Progreso. */
@@ -52,7 +56,7 @@ function Barra({ fraccion, accent, etiqueta }) {
 }
 
 /* ── 2, 3 y 4 · La cabecera ──────────────────────────────────────────────── */
-export function MuscleRankHeader({ detalle, accent, onVolver, volverA = 'Rangos' }) {
+export function MuscleRankHeader({ detalle, accent, onVolver, volverA = 'Rangos', onPorQue = null }) {
   const d = detalle;
   const Icono = iconoDeGrupo(d.grupoId || d.id);
   const siguiente = d.siguiente;
@@ -73,10 +77,13 @@ export function MuscleRankHeader({ detalle, accent, onVolver, volverA = 'Rangos'
             locked={d.sinRango}
             accent={accent}
           />
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
-              {d.grupoNombre ? `${d.grupoNombre} · ${d.nombre}` : d.nombre}
-            </p>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
+                {d.grupoNombre ? `${d.grupoNombre} · ${d.nombre}` : d.nombre}
+              </p>
+              <BotonPorQue onAbrir={onPorQue} etiqueta={`Por qué tu rango en ${d.nombre}`} />
+            </div>
             <p className="text-2xl font-extrabold leading-tight" style={{ color: d.sinRango ? COLORS.text : accent, fontFamily: "'Manrope', sans-serif" }}>
               {d.sinRango ? SIN_RANGO.nombre : d.rango.nombre}
             </p>
@@ -203,7 +210,7 @@ export function MuscleContribution({ texto: t }) {
 }
 
 /* ── 6, 9, 10 y 11 · Los ejercicios ──────────────────────────────────────── */
-export function MuscleExerciseCard({ ejercicio, accent, onAbrir }) {
+export function MuscleExerciseCard({ ejercicio, accent, onAbrir, onPorQue = null }) {
   const e = ejercicio;
   const est = estadoDe(e.estado);
   const Icono = est.icono;
@@ -227,28 +234,47 @@ export function MuscleExerciseCard({ ejercicio, accent, onAbrir }) {
           {e.aviso && <span className="text-[11px]" style={{ color: COLORS.textMuted }}>{e.aviso}</span>}
         </div>
       </div>
-      {e.rango ? <RankBadge rank={e.rango} size="sm" state="actual" accent={accent} /> : null}
       {onAbrir && <ChevronRight size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />}
     </>
   );
   const clases = 'hub-card w-full text-left rounded-2xl p-3.5 flex items-center gap-3';
   const estilo = { background: COLORS.surface, border: `1px solid ${COLORS.border}` };
+  /* FIT F20 — el hexágono abre la explicación del rango de ESE ejercicio.
+     ⚠️ Va **al lado** del botón grande, no dentro: un `<button>` dentro de otro
+     no se puede pulsar en iOS, y el banco de humo lo vigila. */
+  const insignia = e.rango ? (
+    onPorQue
+      ? (
+        <button
+          onClick={() => onPorQue(e.exerciseId)}
+          aria-label={`Por qué tu rango en ${e.nombre}`}
+          className="shrink-0 toque-44 flex items-center"
+        >
+          <RankBadge rank={e.rango} size="sm" state="actual" accent={accent} />
+        </button>
+      )
+      : <RankBadge rank={e.rango} size="sm" state="actual" accent={accent} />
+  ) : null;
   /* ⚠️ Un ejercicio que ya no está en el catálogo no lleva a ninguna parte: la
      pantalla de progreso necesita el ejercicio (apartado 27). */
-  if (!onAbrir || !e.existe) return <div className={clases} style={estilo}>{dentro}</div>;
+  if (!onAbrir || !e.existe) {
+    return <div className={clases} style={estilo}>{dentro}{insignia}</div>;
+  }
   return (
-    <button
-      onClick={() => onAbrir(e.exerciseId)}
-      aria-label={`${e.nombre}: ${est.palabra}. Ver su progreso`}
-      className={`${clases} active:scale-[0.99]`}
-      style={estilo}
-    >
-      {dentro}
-    </button>
+    <div className={clases} style={estilo}>
+      <button
+        onClick={() => onAbrir(e.exerciseId)}
+        aria-label={`${e.nombre}: ${est.palabra}. Ver su progreso`}
+        className="flex-1 min-w-0 text-left flex items-center gap-3 active:scale-[0.99]"
+      >
+        {dentro}
+      </button>
+      {insignia}
+    </div>
   );
 }
 
-export function MuscleExerciseList({ ejercicios = [], filtro = 'todos', onFiltro = null, accent, onAbrir }) {
+export function MuscleExerciseList({ ejercicios = [], filtro = 'todos', onFiltro = null, accent, onAbrir, onPorQue = null }) {
   const visibles = filtrarEjercicios(ejercicios, filtro);
   return (
     <div>
@@ -280,7 +306,7 @@ export function MuscleExerciseList({ ejercicios = [], filtro = 'todos', onFiltro
         <EmptyHint text="Ningún ejercicio de este músculo está en ese estado." />
       ) : (
         <div className="space-y-2">
-          {visibles.map((e) => <MuscleExerciseCard key={e.exerciseId} ejercicio={e} accent={accent} onAbrir={onAbrir} />)}
+          {visibles.map((e) => <MuscleExerciseCard key={e.exerciseId} ejercicio={e} accent={accent} onAbrir={onAbrir} onPorQue={onPorQue} />)}
         </div>
       )}
     </div>
@@ -288,12 +314,12 @@ export function MuscleExerciseList({ ejercicios = [], filtro = 'todos', onFiltro
 }
 
 /* ── El detalle de un subgrupo (apartado 6) ──────────────────────────────── */
-export function MuscleSubgroupDetail({ detalle, accent, onVolver, onEjercicio }) {
+export function MuscleSubgroupDetail({ detalle, accent, onVolver, onEjercicio, onPorQue = null, onPorQueEjercicio = null }) {
   const [filtro, setFiltro] = useState('todos');
   if (!detalle) return null;
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <MuscleRankHeader detalle={detalle} accent={accent} onVolver={onVolver} volverA={detalle.grupoNombre || 'Volver'} />
+      <MuscleRankHeader detalle={detalle} accent={accent} onVolver={onVolver} volverA={detalle.grupoNombre || 'Volver'} onPorQue={onPorQue} />
       <MuscleProgressSummary resumen={detalle.resumen} accent={accent} />
       <MuscleExerciseList
         ejercicios={detalle.ejercicios}
@@ -301,6 +327,7 @@ export function MuscleSubgroupDetail({ detalle, accent, onVolver, onEjercicio })
         onFiltro={setFiltro}
         accent={accent}
         onAbrir={onEjercicio}
+        onPorQue={onPorQueEjercicio}
       />
     </div>
   );
@@ -314,6 +341,8 @@ export default function DetalleMuscularView({
   /* Qué subgrupo está abierto: estado de pantalla, nunca un dato. */
   const [subgrupo, setSubgrupo] = useState(null);
   const [filtro, setFiltro] = useState('todos');
+  /* FIT F20 — qué se está explicando: `{ tipo, id }` o nada. */
+  const [porQue, setPorQue] = useState(null);
 
   /* 🚨 Apartado 31 — **solo el grupo que se ha pedido**, y una vez por cambio
      en las sesiones: recorrer los siete grupos aquí sería calcular seis de más. */
@@ -337,20 +366,43 @@ export default function DetalleMuscularView({
     );
   }
 
+  /* La explicación, que es la misma para las tres cosas (F20, apartado 2). */
+  const hoja = porQue ? (
+    <RankExplanation
+      explicacion={porQue.tipo === 'ejercicio'
+        ? explicacionDeEjercicio(fitness || {}, porQue.id, { propios, perfil })
+        : explicacionDeMusculo(fitness || {}, porQue.tipo === 'grupo' ? { grupoId: porQue.id } : { subgrupoId: porQue.id }, { propios, perfil })}
+      accent={accent}
+      onCerrar={() => setPorQue(null)}
+      onProgreso={porQue.tipo === 'ejercicio' && onEjercicio ? () => { const id = porQue.id; setPorQue(null); onEjercicio(id); } : null}
+    />
+  ) : null;
+
   if (detalleSub) {
     return (
-      <MuscleSubgroupDetail
-        detalle={detalleSub}
-        accent={accent}
-        onVolver={() => setSubgrupo(null)}
-        onEjercicio={onEjercicio}
-      />
+      <>
+        <MuscleSubgroupDetail
+          detalle={detalleSub}
+          accent={accent}
+          onVolver={() => setSubgrupo(null)}
+          onEjercicio={onEjercicio}
+          onPorQue={() => setPorQue({ tipo: 'subgrupo', id: detalleSub.id })}
+          onPorQueEjercicio={(id) => setPorQue({ tipo: 'ejercicio', id })}
+        />
+        {hoja}
+      </>
     );
   }
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <MuscleRankHeader detalle={detalle} accent={accent} onVolver={onVolver} volverA="Rangos" />
+      <MuscleRankHeader
+        detalle={detalle}
+        accent={accent}
+        onVolver={onVolver}
+        volverA="Rangos"
+        onPorQue={() => setPorQue({ tipo: 'grupo', id: detalle.id })}
+      />
       <MuscleProgressSummary resumen={detalle.resumen} accent={accent} />
       <MuscleSubgroupList subgrupos={detalle.subgrupos} accent={accent} onAbrir={setSubgrupo} />
       <MuscleExerciseList
@@ -359,7 +411,9 @@ export default function DetalleMuscularView({
         onFiltro={setFiltro}
         accent={accent}
         onAbrir={onEjercicio}
+        onPorQue={(id) => setPorQue({ tipo: 'ejercicio', id })}
       />
+      {hoja}
     </div>
   );
 }
