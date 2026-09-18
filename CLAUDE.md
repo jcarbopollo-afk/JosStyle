@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.103.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.104.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -329,7 +329,8 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 (v3.88.0)**, la **FIT F7 (v3.89.0)**, la **FIT F8 (v3.90.0)**, la **FIT F9 (v3.91.0)**, la **FIT F10
 (v3.92.0)** , la **FIT F11 (v3.93.0)**, la **FIT F12 (v3.94.0)**, la **FIT F13 (v3.95.0)**, la **FIT F14 (v3.96.0)**, la **FIT F15 (v3.97.0)**, la **FIT F16 (v3.98.0)**, la
 **FIT F17 (v3.99.0)**, la **FIT F18 (v3.100.0)**, la **FIT F19 (v3.101.0)**, la **FIT F20
-(v3.102.0)** y la **FIT F21 (v3.103.0)** hechas. Lo que dejaron, y que vale para las 24 que quedan:
+(v3.102.0)**, la **FIT F21 (v3.103.0)** y la **FIT F22 (v3.104.0)** hechas. Lo que dejaron, y que
+vale para las 23 que quedan:
 
 - 🚨 **PARTICIPACIÓN ≠ PESO EN EL CÁLCULO** (FIT F21, `src/lib/contribucionMuscular.js`). La
   participación es la del catálogo (50 % dorsales) y **no se suma entre ejercicios**; el peso
