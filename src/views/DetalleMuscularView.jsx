@@ -24,12 +24,18 @@ import { iconoDeGrupo } from '../components/iconosFitness';
 import { nivelRango, SIN_RANGO } from '../lib/fitness';
 import { AVISO_RENDIMIENTO } from '../lib/progresoMuscular';
 import {
-  detalleDeGrupo, detalleDeSubgrupo, filtrarEjercicios, FILTROS_EJERCICIOS,
+  detalleDeGrupo, detalleDeSubgrupo,
 } from '../lib/detalleMuscular';
 /* FIT F20 — la misma explicación que usa Rangos, aquí para el músculo y para
    cada ejercicio (su apartado 2: un solo componente). */
 import { RankExplanation, BotonPorQue } from '../components/explicacionRango';
 import { explicacionDeMusculo, explicacionDeEjercicio } from '../lib/explicacionRangos';
+/* 🔓 FIT F21 — la lista de ejercicios pasa a decir **cuánto aporta cada uno** a
+   este músculo, y separa los que todavía no tienen datos. Sustituye a la de la
+   F18 (que era la misma lista con menos información): dos listas de lo mismo en
+   la misma pantalla acabarían diciendo cosas distintas. */
+import { MuscleContributionList, MuscleContributionBySubgroup } from '../components/contribucionMuscular';
+import { contribucionesDeMusculo, contribucionesPorSubgrupo } from '../lib/contribucionMuscular';
 
 /* Los cuatro estados del apartado 9, **con icono y con palabra**: el color solo
    no vale (apartado 29). Son los mismos que enseña Progreso. */
@@ -209,125 +215,28 @@ export function MuscleContribution({ texto: t }) {
   return <span className="text-[10px] px-1.5 py-0.5 rounded-md" style={{ background: COLORS.surface2, color: COLORS.textMuted }}>{t}</span>;
 }
 
-/* ── 6, 9, 10 y 11 · Los ejercicios ──────────────────────────────────────── */
-export function MuscleExerciseCard({ ejercicio, accent, onAbrir, onPorQue = null }) {
-  const e = ejercicio;
-  const est = estadoDe(e.estado);
-  const Icono = est.icono;
-  const dentro = (
-    <>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{e.nombre}</p>
-          <MuscleContribution texto={e.contribucion} />
-        </div>
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span className="flex items-center gap-1 text-[11px]" style={{ color: COLORS.textMuted }}>
-            <Icono size={11} aria-hidden="true" />
-            {est.palabra}
-          </span>
-          {/* Apartado 10 — la última marca, con la unidad que toque (la pone la F11). */}
-          {e.ultima && <span className="text-[11px] font-semibold" style={{ color: COLORS.text }}>{e.ultima}</span>}
-          {e.cambio && <span className="text-[11px]" style={{ color: COLORS.textMuted }}>{e.cambio}</span>}
-          {/* FIT F17 — si el nivel es una estimación suya, se dice. */}
-          {e.estimado && <span className="text-[10px]" style={{ color: COLORS.textMuted }}>Nivel estimado</span>}
-          {e.aviso && <span className="text-[11px]" style={{ color: COLORS.textMuted }}>{e.aviso}</span>}
-        </div>
-      </div>
-      {onAbrir && <ChevronRight size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />}
-    </>
-  );
-  const clases = 'hub-card w-full text-left rounded-2xl p-3.5 flex items-center gap-3';
-  const estilo = { background: COLORS.surface, border: `1px solid ${COLORS.border}` };
-  /* FIT F20 — el hexágono abre la explicación del rango de ESE ejercicio.
-     ⚠️ Va **al lado** del botón grande, no dentro: un `<button>` dentro de otro
-     no se puede pulsar en iOS, y el banco de humo lo vigila. */
-  const insignia = e.rango ? (
-    onPorQue
-      ? (
-        <button
-          onClick={() => onPorQue(e.exerciseId)}
-          aria-label={`Por qué tu rango en ${e.nombre}`}
-          className="shrink-0 toque-44 flex items-center"
-        >
-          <RankBadge rank={e.rango} size="sm" state="actual" accent={accent} />
-        </button>
-      )
-      : <RankBadge rank={e.rango} size="sm" state="actual" accent={accent} />
-  ) : null;
-  /* ⚠️ Un ejercicio que ya no está en el catálogo no lleva a ninguna parte: la
-     pantalla de progreso necesita el ejercicio (apartado 27). */
-  if (!onAbrir || !e.existe) {
-    return <div className={clases} style={estilo}>{dentro}{insignia}</div>;
-  }
-  return (
-    <div className={clases} style={estilo}>
-      <button
-        onClick={() => onAbrir(e.exerciseId)}
-        aria-label={`${e.nombre}: ${est.palabra}. Ver su progreso`}
-        className="flex-1 min-w-0 text-left flex items-center gap-3 active:scale-[0.99]"
-      >
-        {dentro}
-      </button>
-      {insignia}
-    </div>
-  );
-}
-
-export function MuscleExerciseList({ ejercicios = [], filtro = 'todos', onFiltro = null, accent, onAbrir, onPorQue = null }) {
-  const visibles = filtrarEjercicios(ejercicios, filtro);
-  return (
-    <div>
-      <SectionTitle sub="Los que tocan este músculo, según el catálogo">Ejercicios</SectionTitle>
-      {/* Apartado 20 — los cinco filtros por estado, y ninguno más. */}
-      {onFiltro && (
-        <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1" role="group" aria-label="Filtros de ejercicios">
-          {FILTROS_EJERCICIOS.map((f) => {
-            const activo = f.id === filtro;
-            return (
-              <button
-                key={f.id}
-                onClick={() => onFiltro(f.id)}
-                aria-pressed={activo}
-                className="text-xs font-semibold px-3 py-1.5 rounded-full shrink-0"
-                style={{
-                  background: activo ? hexToRgba(accent, 0.16) : COLORS.surface,
-                  color: activo ? COLORS.text : COLORS.textMuted,
-                  border: `1px solid ${activo ? accent : COLORS.border}`,
-                }}
-              >
-                {f.nombre}
-              </button>
-            );
-          })}
-        </div>
-      )}
-      {visibles.length === 0 ? (
-        <EmptyHint text="Ningún ejercicio de este músculo está en ese estado." />
-      ) : (
-        <div className="space-y-2">
-          {visibles.map((e) => <MuscleExerciseCard key={e.exerciseId} ejercicio={e} accent={accent} onAbrir={onAbrir} onPorQue={onPorQue} />)}
-        </div>
-      )}
-    </div>
-  );
-}
+/* 🔓 **FIT F21 — `MuscleExerciseCard` y `MuscleExerciseList` se retiran.** La
+   lista de contribución (`src/components/contribucionMuscular.jsx`) enseña lo
+   mismo y además cuánto aporta cada ejercicio al músculo, separa los que no
+   tienen datos y hereda estos filtros. Dejar las dos habría dejado dos listas
+   del mismo músculo, una al lado de la otra, que se contradicen en cuanto una
+   cambie. */
 
 /* ── El detalle de un subgrupo (apartado 6) ──────────────────────────────── */
-export function MuscleSubgroupDetail({ detalle, accent, onVolver, onEjercicio, onPorQue = null, onPorQueEjercicio = null }) {
+export function MuscleSubgroupDetail({ detalle, contribuciones, accent, onVolver, onEjercicio, onPorQue = null, onPorQueEjercicio = null }) {
   const [filtro, setFiltro] = useState('todos');
   if (!detalle) return null;
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       <MuscleRankHeader detalle={detalle} accent={accent} onVolver={onVolver} volverA={detalle.grupoNombre || 'Volver'} onPorQue={onPorQue} />
       <MuscleProgressSummary resumen={detalle.resumen} accent={accent} />
-      <MuscleExerciseList
-        ejercicios={detalle.ejercicios}
-        filtro={filtro}
-        onFiltro={setFiltro}
+      <MuscleContributionList
+        contribuciones={contribuciones}
         accent={accent}
         onAbrir={onEjercicio}
         onPorQue={onPorQueEjercicio}
+        filtro={filtro}
+        onFiltro={setFiltro}
       />
     </div>
   );
@@ -356,6 +265,19 @@ export default function DetalleMuscularView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [fitness && fitness.sesiones, fitness && fitness.clasificaciones, subgrupo, propios, perfil],
   );
+  /* 🚨 FIT F21, apartado 31 — solo el músculo que se está mirando, y una vez
+     por cambio en las sesiones: el grupo si no hay subgrupo abierto, el
+     subgrupo si lo hay. */
+  const contribuciones = useMemo(
+    () => contribucionesDeMusculo(fitness || {}, subgrupo ? { subgrupoId: subgrupo } : { grupoId }, { propios, perfil }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fitness && fitness.sesiones, fitness && fitness.clasificaciones, grupoId, subgrupo, propios, perfil],
+  );
+  const porSubgrupo = useMemo(
+    () => (subgrupo ? [] : contribucionesPorSubgrupo(fitness || {}, grupoId, { propios, perfil })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fitness && fitness.sesiones, fitness && fitness.clasificaciones, grupoId, subgrupo, propios, perfil],
+  );
 
   if (!detalle) {
     return (
@@ -383,6 +305,7 @@ export default function DetalleMuscularView({
       <>
         <MuscleSubgroupDetail
           detalle={detalleSub}
+          contribuciones={contribuciones}
           accent={accent}
           onVolver={() => setSubgrupo(null)}
           onEjercicio={onEjercicio}
@@ -405,14 +328,15 @@ export default function DetalleMuscularView({
       />
       <MuscleProgressSummary resumen={detalle.resumen} accent={accent} />
       <MuscleSubgroupList subgrupos={detalle.subgrupos} accent={accent} onAbrir={setSubgrupo} />
-      <MuscleExerciseList
-        ejercicios={detalle.ejercicios}
-        filtro={filtro}
-        onFiltro={setFiltro}
+      <MuscleContributionList
+        contribuciones={contribuciones}
         accent={accent}
         onAbrir={onEjercicio}
         onPorQue={(id) => setPorQue({ tipo: 'ejercicio', id })}
+        filtro={filtro}
+        onFiltro={setFiltro}
       />
+      <MuscleContributionBySubgroup subgrupos={porSubgrupo} accent={accent} onSubgrupo={setSubgrupo} />
       {hoja}
     </div>
   );

@@ -1,5 +1,56 @@
 # CHANGELOG.md
 
+## v3.103.0 — FIT F21/45: qué ejercicios sostienen cada rango muscular
+
+En el detalle de un músculo, la lista de ejercicios pasa a explicar **cuánto aporta cada uno** a ese
+rango: participación del catálogo, papel (principal, secundario o estabilizador), rango, tendencia,
+última marca en su unidad y cuántas sesiones hay detrás.
+
+### 🚨 Dos números que no son lo mismo
+
+- **Participación** — lo que dice el catálogo: unas dominadas son **50 % dorsales**. Es una
+  propiedad del ejercicio y **no se suma entre ejercicios**: tres al 60, 50 y 40 no hacen «150 % de
+  tu espalda» (apartado 16). La barra lo lleva escrito al lado y en su etiqueta accesible.
+- **Peso en el cálculo** — `puntuación × participación`, normalizado entre los que tienen datos
+  (apartado 17). Ordena la lista y dice cuál manda, y **se queda dentro**: dos porcentajes en la
+  misma tarjeta se leerían como el mismo número mal sumado.
+
+### Y el porcentaje es el del músculo que se está mirando
+
+Unas dominadas cuentan por su **50 %** en Espalda y por su **30 %** en Brazos, con papel principal
+en una y secundario en la otra (apartado 4). Un ejercicio multiarticular aparece en cada grupo con
+lo suyo, con la misma puntuación pero distinto peso.
+
+### Los que todavía no cuentan, aparte
+
+Un ejercicio del grupo sin entrenar **no influye en el rango**, así que no puede aparecer como si lo
+sostuviera: va en su propio bloque, «Todavía sin datos», que es por donde seguir (apartado 10). Con
+un solo ejercicio detrás, se dice «Confianza limitada» — no se esconde (apartado 11).
+
+### Y el desglose por subgrupos
+
+«Por subgrupo» enseña, para cada uno, los ejercicios que de verdad lo trabajan: desde Dorsales no
+sale toda la espalda (apartado 26).
+
+### ⚠️ Esto no es hipertrofia
+
+*"No utilizar lenguaje de hipertrofia"* (apartado 6). La sección lleva escrito qué mide: **cuánto
+pesa cada ejercicio en este rango, no cuál desarrolla más músculo**. Y no hay recomendaciones ni
+«ejercicios óptimos».
+
+### Lo que se movió
+
+La lista de ejercicios de la F18 **se retira**: la nueva enseña lo mismo y más, hereda sus filtros
+por estado y separa los que no tienen datos. Dos listas del mismo músculo, una al lado de la otra,
+acabarían contradiciéndose.
+
+### Pruebas
+
+`scripts/test-contribucion-muscular.mjs` (60): los veinte casos del apartado 33 —un músculo, varios,
+porcentajes, sin datos, pocos, muchos, tendencia, variantes, equipamiento, isométricos, peso
+corporal, multiarticulares, subgrupo, grupo, borrar y añadir sesiones—. Comprobado que se pone roja
+si se usa el porcentaje del ejercicio entero o si los que no tienen datos se mezclan con los demás.
+
 ## v3.102.0 — FIT F20/45: por qué tengo este rango
 
 Tocar un rango —el general, el de un músculo o el de un ejercicio— abre **la misma** explicación:

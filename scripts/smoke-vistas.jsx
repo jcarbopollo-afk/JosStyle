@@ -198,8 +198,14 @@ import {
 /* FIT F18 — el detalle de un grupo muscular, dentro de Rangos. */
 import DetalleMuscularView, {
   MuscleRankHeader, MuscleProgressSummary, MuscleSubgroupList, MuscleSubgroupCard,
-  MuscleSubgroupDetail, MuscleExerciseList, MuscleExerciseCard, MuscleContribution,
+  MuscleSubgroupDetail, MuscleContribution,
 } from '../src/views/DetalleMuscularView.jsx';
+/* FIT F21 — la lista de contribución, que sustituye a la de ejercicios de la F18. */
+import {
+  MuscleContributionList, MuscleContributionCard, MuscleContributionBar,
+  MuscleContributionMeta, MuscleContributionEmpty, MuscleContributionBySubgroup,
+} from '../src/components/contribucionMuscular.jsx';
+import { contribucionesDeMusculo as contribF21, contribucionesPorSubgrupo as porSubgrupoF21 } from '../src/lib/contribucionMuscular.js';
 import { detalleDeGrupo as grupoF18, detalleDeSubgrupo as subgrupoF18 } from '../src/lib/detalleMuscular.js';
 /* FIT F20 — la explicación de un rango. ⚠️ `RankExplanation` sale por
    `createPortal`, así que va el contenido por piezas; la hoja entera la abre el
@@ -3080,12 +3086,25 @@ const CASOS = [
   ['MuscleProgressSummary', MuscleProgressSummary, () => ({ resumen: grupoF18(fitnessConProgresoF12(), 'pecho', {}).resumen, accent })],
   ['MuscleSubgroupList', MuscleSubgroupList, () => ({ subgrupos: grupoF18(fitnessConProgresoF12(), 'pecho', {}).subgrupos, accent, onAbrir: noop })],
   ['MuscleSubgroupCard', MuscleSubgroupCard, () => ({ subgrupo: grupoF18({}, 'cuello', {}).subgrupos[0], accent })],
-  ['MuscleSubgroupDetail', MuscleSubgroupDetail, () => ({ detalle: subgrupoF18(fitnessConProgresoF12(), 'pectoral-medio', {}), accent, onVolver: noop, onEjercicio: noop })],
-  ['MuscleExerciseList', MuscleExerciseList, () => ({ ejercicios: grupoF18(fitnessConProgresoF12(), 'pecho', {}).ejercicios, filtro: 'todos', onFiltro: noop, accent, onAbrir: noop })],
-  /* Un filtro que no deja nada: tiene que decirlo, no quedarse en blanco. */
-  ['MuscleExerciseList', MuscleExerciseList, () => ({ ejercicios: grupoF18(fitnessConProgresoF12(), 'pecho', {}).ejercicios, filtro: 'descenso', accent })],
-  ['MuscleExerciseCard', MuscleExerciseCard, () => ({ ejercicio: grupoF18(fitnessConProgresoF12(), 'pecho', {}).ejercicios[0], accent, onAbrir: noop })],
+  ['MuscleSubgroupDetail', MuscleSubgroupDetail, () => ({
+    detalle: subgrupoF18(fitnessConProgresoF12(), 'pectoral-medio', {}),
+    contribuciones: contribF21(fitnessConProgresoF12(), { subgrupoId: 'pectoral-medio' }, {}),
+    accent, onVolver: noop, onEjercicio: noop,
+  })],
   ['MuscleContribution', MuscleContribution, () => ({ texto: 'Dorsales · 50 %' })],
+
+  /* ══ FIT F21 — qué ejercicios sostienen el rango ═══════════════════════ */
+  ['MuscleContributionList', MuscleContributionList, () => ({ contribuciones: contribF21(fitnessConProgresoF12(), { grupoId: 'pecho' }, {}), accent, onAbrir: noop, onPorQue: noop, filtro: 'todos', onFiltro: noop })],
+  /* Un músculo que no ha entrenado: la lista lo dice, no se queda en blanco. */
+  ['MuscleContributionList', MuscleContributionList, () => ({ contribuciones: contribF21({}, { grupoId: 'cuello' }, {}), accent, onAbrir: noop })],
+  /* Y un filtro que no deja nada. */
+  ['MuscleContributionList', MuscleContributionList, () => ({ contribuciones: contribF21(fitnessConProgresoF12(), { grupoId: 'pecho' }, {}), accent, filtro: 'descenso', onFiltro: noop })],
+  ['MuscleContributionCard', MuscleContributionCard, () => ({ contribucion: contribF21(fitnessConProgresoF12(), { grupoId: 'pecho' }, {}).conDatos[0], accent, onAbrir: noop, onPorQue: noop })],
+  ['MuscleContributionCard', MuscleContributionCard, () => ({ contribucion: contribF21({}, { grupoId: 'pecho' }, {}).sinDatos[0], accent })],
+  ['MuscleContributionBar', MuscleContributionBar, () => ({ porcentaje: 60, nombre: 'Dominadas', accent })],
+  ['MuscleContributionMeta', MuscleContributionMeta, () => ({ contribucion: contribF21(fitnessConProgresoF12(), { grupoId: 'pecho' }, {}).conDatos[0] })],
+  ['MuscleContributionEmpty', MuscleContributionEmpty, () => ({ ejercicios: contribF21({}, { grupoId: 'cuello' }, {}).sinDatos.slice(0, 3), accent, onAbrir: noop, vacio: 'Entrena ejercicios de este grupo.' })],
+  ['MuscleContributionBySubgroup', MuscleContributionBySubgroup, () => ({ subgrupos: porSubgrupoF21(fitnessConProgresoF12(), 'pecho', {}), accent, onSubgrupo: noop })],
 
   /* ══ FIT F20 — la explicación de un rango ══════════════════════════════ */
   ['BotonPorQue', BotonPorQue, () => ({ onAbrir: noop })],

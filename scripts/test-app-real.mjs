@@ -7777,8 +7777,8 @@ ok(/Dorsales/i.test(dorsales_fit18) && /Espalda/i.test(dorsales_fit18),
   '🚨 FIT F18 — el detalle del subgrupo, sabiendo de qué grupo viene');
 ok(/Dominadas/i.test(dorsales_fit18),
   '…con los ejercicios que lo trabajan de verdad (apartado 6)');
-ok(/Dorsales · \d+ %/.test(dorsales_fit18),
-  '🚨 FIT F18 — diciendo CUÁNTO aporta cada uno, no que «pertenezca» (apartado 7)');
+ok(/% de participación/i.test(dorsales_fit18),
+  '🚨 FIT F18 → F21 — diciendo CUÁNTO aporta cada uno, no que «pertenezca» (apartado 7)');
 
 /* Apartado 11 — y el ejercicio lleva a la pantalla de progreso de la F12. */
 ok(await pulsarQueEmpiece_fit10('Dominadas pronas:'), 'FIT F18 — → Dominadas');
@@ -7840,6 +7840,46 @@ ok(/Mejor resultado/i.test(expEjercicio_fit20) && /Tendencia/i.test(expEjercicio
 ok(/Ver su progreso/i.test(expEjercicio_fit20),
   '…y con la salida a la pantalla de progreso, sin rutas nuevas (apartado 21)');
 ok(await pulsar('Cerrar'), '…y se cierra');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F21 — Qué ejercicios sostienen el rango (Entrega 4 · 21/45)
+   ══════════════════════════════════════════════════════════════════════════
+   El flujo del apartado 27: Rangos → Espalda → «Ejercicios que contribuyen» →
+   Dominadas → su progreso. Y lo que más importa comprobar con el dedo: que la
+   participación se enseña **con su etiqueta** (no como «el 60 % de tu
+   espalda») y que los que no tienen datos salen aparte. */
+console.log('\n── FIT F21 · Contribución al rango ──');
+
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F21 — Fitness → Rangos');
+await esperarTexto(/Rangos musculares|Rankings musculares/i);
+ok(await pulsarQueEmpiece_fit10('Espalda:'), 'FIT F21 — → Espalda');
+const contrib_fit21 = await esperarTexto(/Ejercicios que contribuyen/i);
+ok(/Ejercicios que contribuyen/i.test(contrib_fit21),
+  '🚨 FIT F21 — la sección existe en el detalle del músculo (apartado 25)');
+ok(/% de participación/i.test(contrib_fit21),
+  '🚨 FIT F21 — con cuánto participa cada ejercicio en ESTE grupo (apartados 4 y 8)');
+ok(/Participación estimada en este grupo muscular/i.test(contrib_fit21),
+  '🚨 …y diciendo qué significa ese porcentaje: no es «el 60 % de tu desarrollo» (apartado 15)');
+ok(/no cuál desarrolla más músculo/i.test(contrib_fit21),
+  '🚨 FIT F21 — y que esto mide rendimiento, no hipertrofia (apartado 6)');
+ok(/Principal|Secundario|Estabilizador/.test(contrib_fit21),
+  '⚠️ FIT F21 — con el papel que tiene el ejercicio en ese músculo');
+ok(/Todavía sin datos/i.test(contrib_fit21),
+  '🚨 FIT F21 — y los que no ha entrenado van aparte, no mezclados (apartado 10)');
+ok(/Por subgrupo/i.test(contrib_fit21),
+  '⚠️ FIT F21 — con el desglose por subgrupos (apartado 7)');
+
+const anchoF21 = await page.evaluate(() => ({
+  desborda: document.documentElement.scrollWidth > window.innerWidth + 2,
+  ancho: document.documentElement.scrollWidth,
+}));
+ok(!anchoF21.desborda, `⚠️ FIT F21 — a 375 px las tarjetas no se desbordan (${anchoF21.ancho} px, apartado 29)`);
+
+/* Apartado 14 — y desde un ejercicio se sigue llegando a su progreso. */
+ok(await pulsarQueEmpiece_fit10('Dominadas pronas:'), 'FIT F21 — → Dominadas (apartado 27)');
+const progresoF21 = await esperarTexto(/Historial|Progreso reciente|Evolución/i);
+ok(/Dominadas/i.test(progresoF21),
+  '🚨 FIT F21 — abre la pantalla de progreso de la F12, no una nueva (apartado 14)');
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

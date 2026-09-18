@@ -223,8 +223,12 @@ ok(!/\.score\b/.test(vista),
   '🚨 La puntuación no se enseña (apartado 3: preferiblemente no mostrarla)');
 ok(/Mejorando/.test(vista) && /Descenso/.test(vista) && /Sin datos/.test(vista),
   '🚨 Los estados llevan palabra además de icono y color (apartado 29)');
-ok(/aria-label/.test(vista) && /aria-pressed/.test(vista),
-  'Todo lo que se toca tiene etiqueta y estado (apartado 29)');
+/* 🔓 FIT F21 — los filtros por estado se mudaron con la lista de ejercicios a
+   `src/components/contribucionMuscular.jsx`, que la sustituye. Lo que se
+   comprueba es lo mismo, donde ahora vive. */
+ok(/aria-label/.test(vista), 'Todo lo que se toca tiene etiqueta (apartado 29)');
+ok(/aria-pressed/.test(sinComentarios(leer('src/components/contribucionMuscular.jsx'))),
+  '…y los filtros dicen cuál está puesto');
 ok(/<RankBadge/.test(vista) && !/clipPath/.test(vista),
   '⚠️ El hexágono sigue siendo `RankBadge`: uno solo en la aplicación');
 ok(!/\bXP\b|leaderboard|logro|competici/i.test(vista), 'Sin gamificación ni comparación social (apartado 32)');

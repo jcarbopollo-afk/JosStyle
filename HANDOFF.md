@@ -2,6 +2,19 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.103.0 — FIT F21/45: qué ejercicios sostienen cada rango muscular):** En el
+> detalle de un músculo, cada ejercicio dice **cuánto aporta**: participación del catálogo, papel
+> (principal, secundario, estabilizador), rango, tendencia, última marca en su unidad y sesiones
+> detrás. 🚨 **Participación y peso en el cálculo son cosas distintas**: la participación es del
+> catálogo (50 % dorsales) y **no se suma entre ejercicios** —tres al 60, 50 y 40 no hacen 150 %—;
+> el peso (`puntuación × participación`, normalizado) ordena la lista y **no se enseña**. Y se usa
+> el porcentaje **del músculo que se está mirando**: unas dominadas cuentan 50 % en Espalda y 30 %
+> en Brazos. Los ejercicios sin datos van en su propio bloque, porque no sostienen el rango pero son
+> por donde seguir. Hay desglose «Por subgrupo» (desde Dorsales no sale toda la espalda) y el aviso
+> de que esto mide rendimiento, **no hipertrofia**. La lista de ejercicios de la F18 se retira: ésta
+> la sustituye y hereda sus filtros. Lógica en `src/lib/contribucionMuscular.js`, componentes en
+> `src/components/contribucionMuscular.jsx`, pruebas en `scripts/test-contribucion-muscular.mjs`.
+
 > **🏋️ ACTUALIZACIÓN (v3.102.0 — FIT F20/45: por qué tengo este rango):** Tocar un rango —el
 > general, el de un músculo o el de un ejercicio— abre **la misma** explicación
 > (`src/components/explicacionRango.jsx`, con la lógica en `src/lib/explicacionRangos.js`): de dónde

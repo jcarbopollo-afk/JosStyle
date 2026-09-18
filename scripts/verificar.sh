@@ -1024,6 +1024,15 @@ else
   fallo "Falla la UX del entrenamiento en vivo"; grep '✗' /tmp/jc_entreno_ux.log
 fi
 
+# FIT F21 — qué ejercicios sostienen un rango muscular. Lo que más se vigila: que se
+# use el porcentaje DEL MÚSCULO que se mira (no el del ejercicio entero), que la
+# participación no se sume entre ejercicios, y que los que no tienen datos vayan aparte.
+if node --import ./scripts/resolver-vite.mjs scripts/test-contribucion-muscular.mjs >/tmp/jc_contribucion.log 2>&1; then
+  ok "Contribución a los rangos musculares (FIT F21) — $(grep -c '✓' /tmp/jc_contribucion.log) comprobaciones"
+else
+  fallo "Falla la contribución muscular"; grep '✗' /tmp/jc_contribucion.log
+fi
+
 # FIT F20 — la explicación de un rango. Lo que más se vigila: que NO se prometa una
 # cifra («te faltan 5 kg»), que no se compare con un pasado que no existe, y que la
 # métrica sea la del ejercicio (segundos en un isométrico, nunca kilos).
