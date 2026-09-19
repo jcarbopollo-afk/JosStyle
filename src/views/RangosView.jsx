@@ -269,7 +269,7 @@ export function RankClassificationCard({ clasificacion, accent, onEntrenar, onCl
         {onClasificar && (
           <PrimaryButton onClick={onClasificar} accent={accent} icon={ClipboardList}>
             {CTA_CLASIFICAR.texto}
-            {clasificacion.pendientesCuestionario > 0 ? ` · ${clasificacion.pendientesCuestionario} restantes` : ''}
+            {clasificacion.recomendados > 0 ? ` · ${clasificacion.recomendados} recomendados` : ''}
           </PrimaryButton>
         )}
         {onEntrenar && (

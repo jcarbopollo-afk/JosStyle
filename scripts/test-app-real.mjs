@@ -7732,17 +7732,27 @@ console.log('\n── FIT F17 · Clasificar ejercicios ──');
 
 ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F17 — Fitness → Rangos');
 const antesClasificar_fit17 = await esperarTexto(/Clasificar ejercicios/i);
-ok(/Clasificar ejercicios/.test(antesClasificar_fit17) && /restantes/.test(antesClasificar_fit17),
-  '🚨 FIT F17 — el CTA lleva los que faltan: «Clasificar ejercicios · N restantes» (apartado 1)');
+ok(/Clasificar ejercicios/.test(antesClasificar_fit17) && /recomendados/.test(antesClasificar_fit17),
+  '🔓 FIT F17 → F24 — el CTA lleva los RECOMENDADOS, no «87 restantes» (F24, apartado 18)');
 
-ok(await pulsar('Clasificar ejercicios'), 'FIT F17 — se abre el cuestionario');
-const pregunta1_fit17 = await esperarTexto(/Clasifica tus ejercicios/i);
-ok(/Responde unas preguntas rápidas/.test(pregunta1_fit17),
+ok(await pulsar('Clasificar ejercicios'), 'FIT F17 — se abre la clasificación');
+const hub_fit17 = await esperarTexto(/Clasifica tus ejercicios/i);
+ok(/Responde unas preguntas rápidas/.test(hub_fit17),
   'FIT F17 — con el subtítulo del apartado 1…');
+/* 🔓 **FIT F24 — la entrada ya NO es la pregunta: es la cola priorizada.** Su
+   apartado 34 dibuja el recorrido entero: *«Clasificar ejercicios → Cola
+   priorizada → Seleccionar ejercicio → Cuestionario»*. Esta comprobación decía
+   lo contrario y pasa a vigilar lo de después, que es lo que toca cuando una
+   fase construye lo que otra dejó apuntado (E3 F44, y ya van varias). */
+ok(/Te recomendamos empezar por estos ejercicios/i.test(hub_fit17),
+  '🚨 FIT F24 — y lo primero es la cola recomendada (apartado 17)');
+ok(await pulsarQueEmpiece_fit10('Clasificar '), 'FIT F24 — se elige un ejercicio de la cola');
+const pregunta1_fit17 = await esperarTexto(/\?/);
 /* ⚠️ Con /i: la etiqueta lleva `uppercase` de CSS, así que `innerText` la
    devuelve como «PREGUNTA 1 DE 14». Sin la /i, la prueba se ponía roja por un
    estilo. */
-ok(/Pregunta 1 de \d+/i.test(pregunta1_fit17), '…y el progreso del cuestionario (apartado 22)');
+ok(/\d+ \/ \d+ recomendados/i.test(pregunta1_fit17),
+  '…y el progreso, «N / M recomendados» (F24, apartado 19)');
 ok(/\?/.test(pregunta1_fit17), 'FIT F17 — hay una pregunta de verdad, adaptada al ejercicio (apartado 5)');
 
 /* Se contesta la primera: la respuesta se guarda AL TOCARLA. */
@@ -7770,7 +7780,9 @@ ok(guardadoClas_fit17[0].confianza !== 'alta',
 
 /* Apartados 9 y 23 — salir a mitad y volver: no se pierde nada. */
 ok(await pulsar('Continuar'), 'FIT F17 — Continuar');
-await esperarTexto(/Pregunta 2 de/i);
+const vuelta_fit17 = await esperarTexto(/Te recomendamos|completa/i);
+ok(/1 \/ \d+ recomendados/i.test(vuelta_fit17),
+  '🚨 FIT F24 — al volver, la cola se ha RECALCULADO y el progreso lo dice (apartados 20 y 21)');
 ok(await pulsar('Salir de la clasificación'), 'FIT F17 — se intenta salir a mitad…');
 const salir_fit17 = await esperarTexto(/¿Salir de la clasificación\?/i);
 ok(/ya está guardado/i.test(salir_fit17),
@@ -7783,10 +7795,107 @@ ok(/Clasificar ejercicios/.test(volviendo_fit17), 'FIT F17 — se vuelve a Rango
 await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(2500);
 ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F17 — se recarga la aplicación');
-ok(await pulsar('Clasificar ejercicios'), 'FIT F17 — y se vuelve al cuestionario');
-const trasRecargar_fit17 = await esperarTexto(/Pregunta \d+ de/i);
-ok(/Pregunta 2 de/i.test(trasRecargar_fit17),
+ok(await pulsar('Clasificar ejercicios'), 'FIT F17 — y se vuelve a la clasificación');
+const trasRecargar_fit17 = await esperarTexto(/recomendados/i);
+ok(/1 \/ \d+ recomendados/i.test(trasRecargar_fit17),
   '🚨 FIT F17 — sigue por donde iba tras recargar: lo guardado ES el progreso (apartado 24)');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F24 — Priorización inteligente de clasificación (Entrega 4 · 24/45)
+   ══════════════════════════════════════════════════════════════════════════
+   El apartado 34, literal: *"Clasificar ejercicios → Cola priorizada →
+   Seleccionar ejercicio → Cuestionario → Resultado → RankEngine → Actualizar
+   cobertura → Recalcular cola"*.
+
+   🚨 Y lo que de verdad hay que ver funcionando en el navegador: que el
+   contador NO diga «87 restantes» (apartado 18), que cada tarjeta explique por
+   qué está (apartado 16), que saltar uno **no le asigne un nivel** (apartado
+   24) y que la cola **se recalcule sola** al clasificar (apartado 21). */
+console.log('\n── FIT F24 · Cola priorizada de clasificación ──');
+
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F24 — Fitness → Rangos');
+await esperarTexto(/Clasificar ejercicios/i);
+ok(await pulsar('Clasificar ejercicios'), 'FIT F24 — se abre la clasificación');
+const hub_fit24 = await esperarTexto(/Te recomendamos empezar/i);
+
+ok(/Te recomendamos empezar por estos ejercicios/i.test(hub_fit24),
+  '🚨 FIT F24 — la frase del apartado 17, literal');
+const contador_fit24 = /(\d+) ejercicios? recomendados?/i.exec(hub_fit24);
+ok(contador_fit24 && Number(contador_fit24[1]) > 0 && Number(contador_fit24[1]) <= 8,
+  `🚨 FIT F24 — el contador que manda es el de recomendados (${contador_fit24 ? contador_fit24[0] : 'no sale'}, apartado 18)`);
+ok(!/\d{2,} restantes/i.test(hub_fit24),
+  '🚨 …y NO dice «87 restantes»: eso es lo que esta fase viene a quitar');
+ok(/sin clasificación/i.test(hub_fit24),
+  '⚠️ FIT F24 — la cifra secundaria existe, detrás y en pequeño (apartado 18)');
+ok(/\d+ \/ \d+ recomendados/i.test(hub_fit24),
+  '🚨 FIT F24 — el progreso es un recuento, jamás XP (apartado 19 y D2-02)');
+ok(!/\bXP\b|logro|recompensa/i.test(hub_fit24),
+  '🚨 …y no aparece ni una palabra de juego en la pantalla (apartado 35)');
+
+/* Apartado 16 — cada tarjeta dice por qué está ahí, en palabras. */
+const razones_fit24 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Clasificar "]')]
+  .map((b) => (b.getAttribute('aria-label') || '')));
+ok(razones_fit24.length > 0, `FIT F24 — la cola trae tarjetas de verdad (${razones_fit24.length})`);
+ok(razones_fit24.every((a) => /Sin clasificación|Mejora tu cobertura|Subgrupo sin datos|Ejercicio representativo|Datos insuficientes/.test(a)),
+  '🚨 FIT F24 — y TODAS explican por qué, con una de las razones del apartado 16');
+ok(!/priorityScore|puntuación/i.test(hub_fit24),
+  '🚨 FIT F24 — el score técnico no se enseña (apartado 16)');
+
+/* Apartado 15 — no diez seguidos del mismo grupo. */
+const gruposCola_fit24 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Clasificar "]')]
+  .map((b) => ((b.innerText || '').split('\n')[1] || '').split(' · ')[0]));
+const seguidos_fit24 = gruposCola_fit24.reduce((acc, g, i) => (i && g === gruposCola_fit24[i - 1] ? Math.max(acc, 2) : acc), 1);
+ok(seguidos_fit24 <= 2,
+  `⚠️ FIT F24 — la cola está repartida, no diez de espalda seguidos (apartado 15)`);
+
+/* Apartado 24 — saltar deja el ejercicio PENDIENTE, sin inventarle un nivel. */
+const antesSaltar_fit24 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.clasificaciones || []).length;
+const primero_fit24 = (razones_fit24[0] || '').replace(/^Clasificar /, '').split('.')[0];
+ok(await pulsarQueEmpiece_fit10('Clasificar '), `FIT F24 — se abre «${primero_fit24}»`);
+await esperarTexto(/\?/);
+ok(await pulsar('Saltar este ejercicio'), 'FIT F24 — y se salta sin contestar (apartado 24)');
+const trasSaltar_fit24 = await esperarTexto(/Te recomendamos empezar/i);
+const despuesSaltar_fit24 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.clasificaciones || []).length;
+ok(despuesSaltar_fit24 === antesSaltar_fit24,
+  '🚨 FIT F24 — saltar NO le asigna un nivel arbitrario: no se ha guardado nada (apartado 24)');
+ok(!new RegExp(`Clasificar ${primero_fit24.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.`)
+  .test(await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Clasificar "]')]
+    .map((b) => b.getAttribute('aria-label')).join(' | '))),
+  `⚠️ …y sale de la cola, que es lo que significa saltarlo («${primero_fit24}»)`);
+ok(/Te recomendamos empezar/i.test(trasSaltar_fit24), '…y se vuelve a la cola, con otro delante');
+
+/* Apartados 20 y 21 — clasificar uno recalcula la cola. */
+const antesClasificar_fit24 = await page.evaluate(() => (document.querySelector('button[aria-label^="Clasificar "]') || {}).ariaLabel || '');
+ok(await pulsarQueEmpiece_fit10('Clasificar '), 'FIT F24 — se abre el siguiente de la cola');
+await esperarTexto(/\?/);
+const opcion_fit24 = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button')].find((x) => /^(6 – 9|3 – 5|10 – 14|1 – 2|Ninguna todavía|Menos de 10 s|10 – 20 s|20 – 30 s|30 s o más|No puedo mantenerlo|Progresión intermedia|Progresión avanzada|No puedo realizarlo|\d+ kg)$/.test((x.innerText || '').trim()));
+  if (!b) return null;
+  const t = (b.innerText || '').trim();
+  b.click();
+  return t;
+});
+ok(!!opcion_fit24, `FIT F24 — se contesta (${opcion_fit24 || 'ninguna encontrada'})`);
+await esperarTexto(/Nivel estimado/i);
+ok(await pulsar('Continuar'), 'FIT F24 — Continuar');
+const recalculada_fit24 = await esperarTexto(/Te recomendamos empezar|completa/i);
+const despuesClasificar_fit24 = await page.evaluate(() => (document.querySelector('button[aria-label^="Clasificar "]') || {}).ariaLabel || '');
+ok(despuesClasificar_fit24 !== antesClasificar_fit24,
+  '🚨 FIT F24 — la cola se ha RECALCULADO: el primero ya no es el mismo (apartado 21)');
+ok(/\d+ \/ \d+ recomendados/i.test(recalculada_fit24),
+  '…y el progreso ha subido con él');
+
+/* 🐛 ⚠️ **Y AQUÍ NO SE COMPRUEBA EL AVISO DE COBERTURA DEL APARTADO 29**, que es
+   lo que había escrito primero y falló: a esta altura del recorrido ya se han
+   entrenado y clasificado ejercicios de varios grupos, así que la cobertura
+   **ya no está baja** y la aplicación acierta al no insistir. Era una
+   comprobación que dependía de cuánto hubieran entrenado las secciones
+   anteriores — la misma clase de bomba de relojería que la del día de la
+   semana. Que el aviso salga **solo** por debajo del umbral lo demuestra
+   `test-cola-clasificacion.mjs`, que además puede ponerse roja.
+   Lo que sí se mira aquí es lo que tiene que ser verdad SIEMPRE. */
+ok(!/deberías|tienes que|obligatorio/i.test(recalculada_fit24),
+  '🚨 FIT F24 — la pantalla no le da una orden: se recomienda, no se manda');
 
 /* ══════════════════════════════════════════════════════════════════════════
    FIT F18 — El detalle de un grupo muscular (Entrega 4 · 18/45)

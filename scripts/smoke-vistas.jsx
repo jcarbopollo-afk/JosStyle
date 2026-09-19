@@ -235,6 +235,14 @@ import {
   RankNextLevelCard, RankNextLevelBar, RankRelevantExercises,
 } from '../src/components/siguienteRango.jsx';
 import { tarjetaSiguienteRango as tarjF23 } from '../src/lib/siguienteRango.js';
+/* FIT F24 — el hub de clasificación. ⚠️ Sus tarjetas **solo aparecen en el
+   hub**, y la pregunta solo tras pulsar una: son dos pantallas, así que cada
+   pieza entra suelta (la lección del Álbum de Relación, NAV F3). */
+import {
+  ClassificationHub, ClassificationQueue, ClassificationQueueCard,
+  ClassificationReason, ClassificationEmpty,
+} from '../src/components/colaClasificacion.jsx';
+import { pantallaDeClasificacion as pantF24, VACIOS_COLA as VACIOS_F24 } from '../src/lib/colaClasificacion.js';
 /* FIT F2 — el catálogo de ejercicios y su detalle. ⚠️ El detalle va APARTE
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
    Relación (NAV F3), y sin estos casos no lo probaría nadie. */
@@ -3201,6 +3209,33 @@ const CASOS = [
     const t = tarjF23(fitnessConHistorialF22(), DESTINO_GRUPO_F23, {});
     return { relevantes: t.relevantes, etiqueta: t.etiquetaRelevantes, accent };
   }],
+
+  /* ══ FIT F24 — la cola priorizada de clasificación ═════════════════════ */
+  ['ClassificationHub', ClassificationHub, () => ({
+    pantalla: pantF24({}), accent, onClasificar: noop, onVolver: noop,
+  })],
+  /* Con dos ya clasificados: el contador y el progreso cambian. */
+  ['ClassificationHub', ClassificationHub, () => ({
+    pantalla: pantF24(fitnessClasificadoF17()), accent, onClasificar: noop,
+  })],
+  /* 🚨 Sin cola: el vacío del apartado 28, que es lo que se ve al terminar. */
+  ['ClassificationHub', ClassificationHub, () => ({
+    pantalla: pantF24({}, { limite: 0 }), accent, onClasificar: noop, onVolver: noop,
+  })],
+  ['ClassificationQueue', ClassificationQueue, () => ({
+    cola: pantF24({}).cola, accent, onClasificar: noop,
+  })],
+  ['ClassificationQueueCard', ClassificationQueueCard, () => ({
+    item: pantF24({}).cola[0], accent, onClasificar: noop,
+  })],
+  /* ⚠️ Uno con datos parciales: enseña «Datos limitados» además de su razón. */
+  ['ClassificationQueueCard', ClassificationQueueCard, () => ({
+    item: { ...pantF24({}).cola[0], currentDataState: 'datos_parciales', reason: 'Datos insuficientes' },
+    accent, onClasificar: noop,
+  })],
+  ['ClassificationReason', ClassificationReason, () => ({ reason: 'Mejora tu cobertura de cuello', accent })],
+  ['ClassificationEmpty', ClassificationEmpty, () => ({ vacio: { id: 'completa', ...VACIOS_F24.completa }, accent, onVolver: noop })],
+  ['ClassificationEmpty', ClassificationEmpty, () => ({ vacio: { id: 'todo_saltado', ...VACIOS_F24.todo_saltado }, accent })],
 
   /* ══ FIT F17 — el cuestionario ═════════════════════════════════════════ */
   ['ClasificacionView', ClasificacionView, () => ({ fitness: {}, accent, onGuardarFitness: noop, onVolver: noop })],

@@ -44,7 +44,7 @@ ordena es **el trabajo**, no el documento.
 | **F21** ✅ **v3.103.0** | Contribución de ejercicios a rangos musculares | 19476–20158 | 683 |
 | **F22** ✅ **v3.104.0** | Historial y evolución de rangos | 18745–19475 | 731 |
 | **F23** ✅ **v3.105.0** | Objetivo del siguiente rango | 18070–18744 | 675 |
-| **F24** | Priorización inteligente de clasificación | 17422–18069 | 648 |
+| **F24** ✅ **v3.106.0** | Priorización inteligente de clasificación | 17422–18069 | 648 |
 | **F25** | Resumen inteligente de rangos | 16772–17421 | 650 |
 | **F26** | Sistema de progreso físico mediante fotos | 16079–16771 | 693 |
 | **F27** | Comparador avanzado de progreso físico | 15567–16078 | 512 |

@@ -236,8 +236,14 @@ ok(/Conseguido/.test(vista) && /Bloqueado/.test(vista) && /Actual/.test(vista),
 ok(/aria-label/.test(vista) && /role="img"/.test(vista), 'Las barras y las insignias se leen con lector de pantalla');
 ok(!/Próximamente|próximamente/.test(vista),
   '🚨 Sin pantallas «próximamente»: sería el control decorativo de la regla 8');
-ok(/onClasificar/.test(vista) && /pendientesCuestionario > 0/.test(vista),
-  '🔓 FIT F17 — y el botón de clasificar solo se ofrece con preguntas que hacer, nunca «0 restantes»');
+/* 🔓 **FIT F24 — el contador pasa a ser el de RECOMENDADOS** (su apartado 18:
+   «3 ejercicios recomendados», no «87 restantes»). La promesa que guardaba esta
+   comprobación —que el botón no se ofrezca sin nada que preguntar— sigue en pie;
+   lo que ha cambiado es qué número lo acompaña. */
+ok(/onClasificar/.test(vista) && /recomendados > 0/.test(vista),
+  '🔓 FIT F17 → F24 — el botón de clasificar solo se ofrece con ejercicios recomendados, nunca «0»');
+ok(!/restantes`/.test(vista),
+  '🚨 FIT F24, apartado 18 — y el CTA ya no promete «N restantes»');
 
 const fitnessView = sinComentarios(leer('src/views/FitnessView.jsx'));
 ok(/<RangosView/.test(fitnessView) && !/InsigniaRango|TarjetaGrupoMuscular/.test(fitnessView),

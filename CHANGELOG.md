@@ -1,5 +1,90 @@
 # CHANGELOG.md
 
+## v3.106.0 — FIT F24/45: priorización inteligente de clasificación
+
+«Clasificar ejercicios» ya no ofrece el catálogo entero por orden: ofrece **ocho**, los
+que de verdad aportan información, y cada uno dice **por qué está ahí**.
+
+### 🚨 Esto no es IA, y el enunciado lo dice dos veces
+
+El contexto abre con *«Esto NO es IA»* y el apartado 35 vuelve a excluirla. Toda la
+prioridad sale de multiplicar **constantes declaradas en `PESOS`** por datos que ya
+existen: el catálogo de la F2, las sesiones de la F8 y las clasificaciones de la F17.
+Cualquier ejercicio de la cola puede explicar su puesto factor a factor.
+
+### 🚨 Los umbrales no son nuevos: son los de la F19
+
+El apartado 6 habla de *«suficientes datos reales»* y el 7 de *«pocos datos»*, y eso ya
+estaba decidido: `UMBRALES_FUENTE` dice que con **tres** sesiones manda el entrenamiento
+y con **una** empieza a contar. Escribir aquí un «3» a mano habría creado un segundo
+criterio, y el día que uno cambiara, la cola y el rango dirían cosas distintas del mismo
+ejercicio.
+
+### 🚨 La cola no se guarda
+
+El apartado 21 lo pide literal —*«No guardar una cola rígida»*— y el 32 quiere que se
+invalide cuando cambien clasificaciones, sesiones, catálogo o cobertura. Calculándola al
+leer **no hay nada que invalidar**: es la misma decisión que la F15 con los rangos y la
+F22 con el historial. Por eso *«recalcular la cola»* (apartado 20) no necesita una línea.
+
+### 🐛 Un peso para «movilidad» no se habría aplicado nunca
+
+El apartado 14 le da menor prioridad a la movilidad, así que nació un multiplicador para
+ella… y la **F17 ya devuelve `null`** en `claseDePregunta` para cualquier ejercicio de
+movilidad: *«cuánta movilidad tienes» no tiene una referencia razonable*. Un face-pull no
+baja de prioridad, **es que no entra en la cola**. El multiplicador era un control
+decorativo (regla 8) y se retiró, con su motivo escrito y una comprobación que lo
+demuestra.
+
+### 🐛 Y el ejemplo del propio enunciado EMPATABA
+
+El apartado 11 pone de ejemplo pull-up / chin-up / neutral pull-up y pide *«elegir primero
+el ejercicio más representativo»*. Las tres tienen **los mismos cinco subgrupos, la misma
+dificultad y las dos son compuestas**: la relevancia y la riqueza las dejan exactamente
+iguales, y el desempate por id habría elegido la **neutra**, que no es la representativa
+de nada. Lo que sí las distingue está en el catálogo: **a cuántos ejercicios está
+conectada**. La prona tiene grado **9** —supina, neutra, lastrada, jalón, remo invertido,
+remo en anillas…— frente a 5, 2 y 2. Es el movimiento al que sustituyen los demás.
+
+### 🐛 Y un hallazgo en la relevancia de la F17
+
+Su `relevancia` dice sumar *«lo que implica del catálogo»* para medir cuánta información
+muscular aporta un ejercicio… pero `repartoMuscular` **normaliza los pesos a 1**, así que
+esa suma vale exactamente 1 para todos y el término no distingue nada: lo único que acaba
+pesando es si es compuesto y su dificultad. No se toca allí —cambiarlo movería el orden
+del cuestionario de la F17 y sus comprobaciones—, así que **la riqueza la aporta esta
+fase**, contando los subgrupos de verdad.
+
+### ⚠️ De los seis componentes del apartado 27, uno ya existía
+
+`ClassificationProgress` lo escribió la F17. El apartado dice *«Crear/reutilizar»* y a
+continuación *«No duplicar»*, así que se reutiliza con una **etiqueta opcional** —el hub
+cuenta «recomendados» y el cuestionario cuenta «preguntas», y eso es un rótulo, no una
+barra nueva—.
+
+### 🔓 Y la entrada de «Clasificar ejercicios» pasa a ser el hub
+
+El apartado 34 dibuja el recorrido entero: *«Clasificar ejercicios → Cola priorizada →
+Seleccionar ejercicio → Cuestionario»*. Hasta ahora se entraba directamente a la primera
+pregunta de una tanda de catorce; ahora se entra a la cola y **elige él**. ⚠️ El
+cuestionario de la F17 **no se ha tocado**: las preguntas, las opciones, la puntuación y
+el guardado siguen siendo suyos (apartado 8: *«No crear otro sistema de preguntas»*).
+
+### ⚠️ Lo que se dice y lo que no
+
+- El contador que manda es **el de recomendados** (apartado 18); «N sin clasificación» va
+  detrás y en pequeño, porque *«no debe dominar la interfaz»*.
+- El progreso es **«3 / 8 recomendados»**, un recuento. Ni XP, ni niveles, ni logros
+  (apartados 19 y 35, y D2-02).
+- El `priorityScore` **no se pinta en ninguna parte** (apartado 16).
+- El impacto se mide **en cobertura**, nunca en puntos de rango: traducir un score a
+  kilos o repeticiones es lo que prohíben los apartados 12 y 13 de la F23.
+- Saltar un ejercicio lo deja **pendiente**, sin asignarle un nivel (apartado 24), y los
+  saltados son de la sesión: mañana vuelven a ofrecerse.
+- Reclasificar **se puede siempre**; con datos reales de sobra se avisa de que *«tus
+  entrenamientos reales tienen prioridad sobre esta clasificación»* (apartado 23). El
+  aviso informa, no bloquea.
+
 ## Recorrido — el fin de semana tumbaba las secciones de Fitness
 
 **Lo que pasó.** La verificación de la FIT F23 salió con **45 comprobaciones rojas**

@@ -275,7 +275,7 @@ export function estadoDeClasificacion(fitness, exerciseId, { propios = [] } = {}
 /* Cuánto aporta un ejercicio a la información muscular: la suma de lo que
    implica del catálogo, con más peso si es compuesto (apartado 18: *"priorizar
    ejercicios que aporten mucha información muscular"*). */
-function relevancia(ej) {
+export function relevanciaDeEjercicio(ej) {
   const reparto = repartoMuscular(ej);
   const suma = reparto.reduce((n, x) => n + x.peso, 0);
   const compuesto = lista(ej.tipos).includes('compuesto') ? 1.5 : 1;
@@ -298,7 +298,7 @@ export function ejerciciosParaClasificar(fitness, { propios = [], limite = LIMIT
     .filter((ej) => claseDePregunta(ej))
     .filter((ej) => !tieneDatosReales(fitness, ej.id, lista(propios)))
     .filter((ej) => !clasificacionDe(fitness, ej.id))
-    .map((ej) => ({ ej, r: relevancia(ej) }))
+    .map((ej) => ({ ej, r: relevanciaDeEjercicio(ej) }))
     /* Orden estable: por relevancia y, a igualdad, por id. Sin el desempate, dos
        ejecuciones podían ofrecer listas distintas. */
     .sort((a, b) => (b.r - a.r) || a.ej.id.localeCompare(b.ej.id));

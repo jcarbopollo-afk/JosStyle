@@ -1027,6 +1027,16 @@ fi
 # FIT F21 — qué ejercicios sostienen un rango muscular. Lo que más se vigila: que se
 # use el porcentaje DEL MÚSCULO que se mira (no el del ejercicio entero), que la
 # participación no se sume entre ejercicios, y que los que no tienen datos vayan aparte.
+# FIT F24 — la priorización de la clasificación. Lo que más se vigila: que la cola no
+# la calcule ninguna pantalla ni se guarde en `fitness`, que los umbrales de «datos
+# suficientes» sean los de la F19 y no unos nuevos, que un ejercicio con sesiones reales
+# NO se pida clasificar, y que saltar uno no le asigne un nivel arbitrario.
+if node --import ./scripts/resolver-vite.mjs scripts/test-cola-clasificacion.mjs >/tmp/jc_cola_clasificacion.log 2>&1; then
+  ok "Priorización de la clasificación (FIT F24) — $(grep -c '✓' /tmp/jc_cola_clasificacion.log) comprobaciones"
+else
+  fallo "Falla la priorización de la clasificación"; grep '✗' /tmp/jc_cola_clasificacion.log
+fi
+
 # FIT F23 — el objetivo del siguiente rango. Lo que más se vigila: que el progreso se
 # mida ENTRE los dos umbrales (no score/máximo), que los puntos que faltan solo se
 # afirmen con datos reales detrás, y que NINGÚN texto convierta esos puntos en kilos

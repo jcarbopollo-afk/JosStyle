@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.105.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.106.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 22 primeras (v3.83.0 → v3.104.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 24 primeras (v3.83.0 → v3.106.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 37 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 21 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -329,8 +329,8 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 (v3.88.0)**, la **FIT F7 (v3.89.0)**, la **FIT F8 (v3.90.0)**, la **FIT F9 (v3.91.0)**, la **FIT F10
 (v3.92.0)** , la **FIT F11 (v3.93.0)**, la **FIT F12 (v3.94.0)**, la **FIT F13 (v3.95.0)**, la **FIT F14 (v3.96.0)**, la **FIT F15 (v3.97.0)**, la **FIT F16 (v3.98.0)**, la
 **FIT F17 (v3.99.0)**, la **FIT F18 (v3.100.0)**, la **FIT F19 (v3.101.0)**, la **FIT F20
-(v3.102.0)**, la **FIT F21 (v3.103.0)** la **FIT F22 (v3.104.0)** y la **FIT F23
-(v3.105.0)** hechas. Lo que dejaron, y que vale para las 22 que quedan:
+(v3.102.0)**, la **FIT F21 (v3.103.0)**, la **FIT F22 (v3.104.0)**, la **FIT F23
+(v3.105.0)** y la **FIT F24 (v3.106.0)** hechas. Lo que dejaron, y que vale para las 21 que quedan:
 
 - 🚨 **PARTICIPACIÓN ≠ PESO EN EL CÁLCULO** (FIT F21, `src/lib/contribucionMuscular.js`). La
   participación es la del catálogo (50 % dorsales) y **no se suma entre ejercicios**; el peso
@@ -470,6 +470,49 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
   `MuscleSubgroupDetail`, que es **otro componente** y no tenía `siguiente` en su ámbito — reventaba
   con `siguiente is not defined`. **Lo cazó el banco de renderizado**, no el build. Le llega como
   **prop**, calculada por quien sabe qué subgrupo está abierto.
+- 🚨 **ESTO NO ES IA, Y LOS UMBRALES TAMPOCO SON NUEVOS** (FIT F24, `src/lib/colaClasificacion.js`).
+  El contexto abre con *"Esto NO es IA"* y el apartado 35 vuelve a excluirla: toda la prioridad sale
+  de multiplicar **constantes declaradas en `PESOS`** por datos que ya existen. Y *"suficientes datos
+  reales"* (apartado 6) y *"pocos datos"* (7) **ya estaban decididos**: son `UMBRALES_FUENTE` de la
+  F19 —tres sesiones y una—. Un «3» escrito a mano aquí habría sido un segundo criterio, y el día que
+  uno cambiara la cola y el rango dirían cosas distintas del mismo ejercicio.
+- 🚨 **LA COLA NO SE GUARDA, Y ESO RESUELVE EL APARTADO 20 SIN CÓDIGO** (FIT F24, apartados 21 y 32):
+  *"No guardar una cola rígida"*. Calculándola al leer **no hay nada que invalidar**, así que
+  «recalcular la cola» al clasificar sale de no tener copia. Es la F15 con los rangos y la F22 con el
+  historial, por tercera vez en esta entrega.
+- 🐛 **UN PESO QUE NO SE PUEDE APLICAR NUNCA ES UN CONTROL DECORATIVO** (FIT F24, regla 8): el
+  apartado 14 baja la prioridad de la **movilidad**, y la F17 ya devuelve `null` en `claseDePregunta`
+  para esos ejercicios —*"«cuánta movilidad tienes» no tiene una referencia razonable"*—. Un face-pull
+  no baja de prioridad: **no entra en la cola**. El multiplicador se retiró, con su motivo en
+  `NO_EN_FIT24` y una comprobación que lo demuestra. ⚠️ Y *"calentamiento"* **no es un tipo del
+  catálogo**: decidir por mi cuenta qué ejercicio lo es sería inventarme una clasificación.
+- 🐛 **EL EJEMPLO DEL PROPIO ENUNCIADO EMPATABA** (FIT F24, apartado 11). Las tres dominadas —prona,
+  supina y neutra— tienen **los mismos cinco subgrupos, la misma dificultad y las dos son
+  compuestas**, así que el desempate por id habría elegido la **neutra**, que no es la representativa
+  de nada. Lo que sí las distingue está en el catálogo: **a cuántos ejercicios está conectada** por
+  `sustitutos` y `variantes`. La prona tiene **grado 9** frente a 5, 2 y 2 — es el movimiento al que
+  sustituyen los demás. **Antes de desempatar por el id, buscar la señal que el catálogo ya tiene.**
+- 🐛 **Y UN HALLAZGO EN LA `relevancia` DE LA F17** (FIT F24): dice sumar *"lo que implica del
+  catálogo"* para medir la riqueza muscular, pero **`repartoMuscular` normaliza los pesos a 1**, así
+  que esa suma vale exactamente 1 para todos y el término no distingue nada — lo único que pesa es si
+  es compuesto y su dificultad. No se toca allí (movería el orden del cuestionario y sus
+  comprobaciones): **la riqueza la aporta la F24**, contando subgrupos de verdad.
+- ⚠️ **DE LOS SEIS COMPONENTES DEL APARTADO 27, UNO YA EXISTÍA** (FIT F24, y es la F23 otra vez):
+  `ClassificationProgress` es de la F17. El apartado dice *"Crear/reutilizar"* y a continuación *"No
+  duplicar"*, así que se reutiliza **con una etiqueta opcional** — el hub cuenta «recomendados» y el
+  cuestionario cuenta «preguntas», y eso es un rótulo, no una barra nueva.
+- 🔓 **Y LA ENTRADA DE «CLASIFICAR EJERCICIOS» PASA A SER EL HUB** (FIT F24, apartado 34, literal:
+  *"Clasificar ejercicios → Cola priorizada → Seleccionar ejercicio → Cuestionario"*). Se entraba
+  directamente a la primera pregunta de una tanda de catorce; ahora se entra a la cola y **elige él**.
+  ⚠️ El cuestionario de la F17 **no se ha tocado**: preguntas, opciones, puntuación y guardado siguen
+  siendo suyos (apartado 8).
+- ⚠️ **UNA BARRA QUE LLEGA COMO COMPONENTE EN UNA PROP HACE SALTAR `test-imports`** (FIT F24): un JSX
+  en mayúscula que no se importa en ese archivo. Y no se puede importar, porque vive en
+  `ClasificacionView.jsx`, que a su vez importa el hub — sería un **ciclo**. Se le pasa **ya
+  pintada**.
+- 🐛 **`toque-44` VIVE DENTRO DE UNA CADENA** (FIT F24, y es `sinComentarios` de EH F39 otra vez):
+  quitar las cadenas para comprobar lo que el código **no hace** también se lleva lo que el código
+  **dice**. Para comprobar que algo SÍ está, se mira el archivo **en bruto**.
 - 🚨 **UNA COMPROBACIÓN QUE SOLO PASA DE LUNES A VIERNES ES UNA BOMBA DE RELOJERÍA** (recorrido,
   y costó **45 rojos en cascada** que parecían de la FIT F23 y no lo eran). Los **diecisiete** planes
   de la biblioteca tienen **siete días**, así que el plan **es** la semana y su día 1 es el lunes
@@ -867,14 +910,16 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F24/45 — Priorización inteligente de clasificación** (líneas 17 422–18 069 de
+1. 🏋️ **SEGUIR POR LA FIT F25/45 — Resumen inteligente de rangos** (líneas 16 772–17 421 de
    `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). Se construye de la F1 a la F45, en orden,
    encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Lo segundo es mirar lo que ya hay**: el sistema de rangos está completo de la F15 a la F22
-   —motor, pantalla, cuestionario, detalle muscular, explicación, contribución e historial—, así que
-   la F23 se apoya en `motorRangos.js` y `rangos.js`, no escribe un segundo cálculo.
+   ⚠️ **Lo segundo es mirar lo que ya hay**: el sistema de rangos está completo de la F15 a la F24
+   —motor, pantalla, cuestionario, detalle muscular, explicación, contribución, historial, objetivo
+   del siguiente y cola de clasificación—, así que la F25 **resume lo que ya calculan**
+   `motorRangos.js`, `rangos.js`, `siguienteRango.js` y `colaClasificacion.js`: no escribe un
+   segundo cálculo ni una segunda redacción.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

@@ -30,24 +30,31 @@ import {
   cuestionario, preguntaDeEjercicio, clasificarEjercicio, estadoDeClasificacion,
   musculosQueRecibe, resumenFinal, AVISO_ESTIMACION, AVISO_RECLASIFICAR,
 } from '../lib/clasificacion';
+/* FIT F24 — la cola priorizada y su hub. ⚠️ La pantalla NO calcula ninguna
+   prioridad: se la dan resuelta (apartado 32). */
+import { pantallaDeClasificacion, avisoDeReclasificar, VACIOS_COLA } from '../lib/colaClasificacion';
+import { ClassificationHub } from '../components/colaClasificacion';
 
 /* ── 22 · El progreso del cuestionario ───────────────────────────────────── */
 /* ⚠️ *"La barra representa progreso del cuestionario. NO representa progreso
    físico"*. Por eso lleva el número al lado y la palabra «preguntas». */
-export function ClassificationProgress({ posicion, total, fraccion, accent }) {
+/* 🔓 **FIT F24 — y gana una `etiqueta` opcional.** Su apartado 27 pide
+   reutilizar este componente y su 19 quiere «3 / 8 recomendados»: eso es un
+   rótulo, no una barra nueva. Sin `etiqueta` dice lo de siempre. */
+export function ClassificationProgress({ posicion, total, fraccion, accent, etiqueta = null }) {
   const pct = Math.max(0, Math.min(100, Math.round((Number(fraccion) || 0) * 100)));
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2 mb-1.5">
         <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
-          Pregunta {posicion} de {total}
+          {etiqueta || `Pregunta ${posicion} de ${total}`}
         </span>
       </div>
       <div
         className="h-1.5 rounded-full overflow-hidden"
         style={{ background: hexToRgba(COLORS.border, 0.6) }}
         role="img"
-        aria-label={`Cuestionario: ${pct} % respondido`}
+        aria-label={etiqueta ? `${etiqueta}: ${pct} %` : `Cuestionario: ${pct} % respondido`}
       >
         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: accent }} />
       </div>
@@ -181,7 +188,7 @@ export function ClassificationExitDialog({ accent, onSeguir, onSalir }) {
 }
 
 /* ── 11 · Reclasificar ───────────────────────────────────────────────────── */
-export function AvisoReclasificar({ accent, onConfirmar, onCancelar }) {
+export function AvisoReclasificar({ accent, onConfirmar, onCancelar, aviso = null }) {
   if (typeof document === 'undefined') return null;
   return createPortal(
     <div
@@ -199,6 +206,9 @@ export function AvisoReclasificar({ accent, onConfirmar, onCancelar }) {
       >
         <p className="text-base font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Reclasificar</p>
         <p className="text-sm" style={{ color: COLORS.textMuted }}>{AVISO_RECLASIFICAR}</p>
+        {/* 🔓 FIT F24, apartado 23 — con datos reales de sobra se dice que la
+            estimación ya no es lo que manda. Informa, NO bloquea. */}
+        {aviso && <p className="text-sm" style={{ color: COLORS.textMuted }}>{aviso}</p>}
         <div className="flex gap-2">
           <PrimaryButton onClick={onConfirmar} accent={accent}>Reclasificar</PrimaryButton>
           <GhostBtn onClick={onCancelar}>Cancelar</GhostBtn>
@@ -210,13 +220,17 @@ export function AvisoReclasificar({ accent, onConfirmar, onCancelar }) {
 }
 
 /* ── 25 · El final ───────────────────────────────────────────────────────── */
-export function ClassificationSummary({ resumen, accent, onVerRangos, onSeguir }) {
+export function ClassificationSummary({ resumen, accent, onVerRangos, onSeguir, extra = null }) {
   return (
     <Card>
       <p className="text-lg font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
         Clasificación completada
       </p>
       <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>{resumen.texto}</p>
+      {/* ⚠️ La segunda frase del apartado 28 de la F24 viaja aquí en vez de en
+          un segundo «ya has terminado»: dos avisos de lo mismo en la misma
+          pantalla es el aviso delante del aviso (EH F61). */}
+      {extra && <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{extra}</p>}
       <div className="mt-4 flex flex-col gap-2">
         <PrimaryButton onClick={onVerRangos} accent={accent}>Ver mis rangos</PrimaryButton>
         {onSeguir && <GhostBtn onClick={onSeguir}>Clasificar más ejercicios</GhostBtn>}
@@ -226,23 +240,42 @@ export function ClassificationSummary({ resumen, accent, onVerRangos, onSeguir }
 }
 
 /* ── El flujo ────────────────────────────────────────────────────────────── */
+/**
+ * 🔓 **FIT F24 — LA ENTRADA YA NO ES LA PREGUNTA, ES EL HUB.** El apartado 34
+ * de la F24 dibuja el recorrido entero: *"Clasificar ejercicios → Cola
+ * priorizada → Seleccionar ejercicio → Cuestionario"*. Hasta ahora se entraba
+ * directamente a la primera pregunta de una tanda de catorce; ahora se entra a
+ * la cola priorizada y **elige él**. ⚠️ Y el cuestionario de la F17 no se ha
+ * tocado: las preguntas, las opciones, la puntuación y el guardado siguen
+ * siendo suyos (apartado 8: *"No crear otro sistema de preguntas"*).
+ */
 export default function ClasificacionView({
   fitness = null, propios = [], perfil = null, accent,
   onGuardarFitness = null, onVolver = null,
 }) {
   const f = fitness || {};
-  /* ⚠️ Nada de esto es un dato: es dónde está en el cuestionario (EH F40). */
+  /* ⚠️ Nada de esto es un dato: es dónde está en la pantalla (EH F40). */
+  const [activo, setActivo] = useState(null);      // el ejercicio que está contestando
+  /* Apartado 24 — saltar deja el ejercicio **pendiente**, no le asigna un
+     nivel. Por eso los saltados son de la sesión y no se guardan: mañana
+     vuelven a ofrecerse, que es lo que significa «dejar pendiente». */
+  const [saltados, setSaltados] = useState([]);
   const [elegida, setElegida] = useState(null);
   const [hecha, setHecha] = useState(null);      // la clasificación recién guardada
   const [saliendo, setSaliendo] = useState(false);
   const [reclasificando, setReclasificando] = useState(null);
-  const [terminado, setTerminado] = useState(false);
   const [error, setError] = useState(null);
 
-  const estado = cuestionario(f, { propios });
-  const actual = estado.pendientes[0] || null;
+  /* 🚨 Apartado 32 — **una sola llamada**, y aquí no se calcula ninguna
+     prioridad: la cola, las razones, los contadores y la cobertura vienen
+     resueltos de `colaClasificacion.js`. */
+  const pantalla = pantallaDeClasificacion(f, { propios, saltados });
+  const actual = activo ? ejercicioPorId(activo, propios) : null;
   const pregunta = actual ? preguntaDeEjercicio(actual, { perfil }) : null;
   const resumen = resumenFinal(f, { propios });
+  /* Apartado 23 — con datos reales de sobra, el aviso extra. */
+  const avisoRe = reclasificando ? avisoDeReclasificar(f, reclasificando, { propios }) : null;
+  const hechos = pantalla.progreso ? pantalla.progreso.hechos : 0;
 
   const responder = (opcionId) => {
     setElegida(opcionId);
@@ -250,8 +283,8 @@ export default function ClasificacionView({
     if (!onGuardarFitness || !actual) return;
     const r = clasificarEjercicio(f, actual.id, opcionId, { propios, perfil });
     if (!r.ok) {
-      /* «No lo sé» no clasifica: se pasa al siguiente sin inventar un peso
-         (apartado 14), y se dice por qué. */
+      /* «No lo sé» no clasifica: se puede saltar sin inventar un nivel
+         (apartado 24 de la F24 y 14 de la F17), y se dice por qué. */
       setError(r.error);
       setHecha({ omitido: true, exerciseId: actual.id });
       return;
@@ -260,13 +293,30 @@ export default function ClasificacionView({
     setHecha(r.clasificacion);
   };
 
-  const siguiente = () => {
+  /* Apartados 20 y 21 — al volver, la cola se recalcula sola: no hay nada
+     guardado que invalidar, así que el siguiente ejercicio puede cambiar. */
+  const volverAlHub = () => {
     setHecha(null);
     setElegida(null);
     setError(null);
-    /* Si era el último, el resumen del apartado 25. */
-    if (estado.restantes <= 1) setTerminado(true);
+    setActivo(null);
   };
+
+  const saltar = () => {
+    if (activo) setSaltados((s) => (s.includes(activo) ? s : [...s, activo]));
+    volverAlHub();
+  };
+
+  /* Apartado 19 — «3 / 8 recomendados», con la barra que ya existía (F17). */
+  const barra = pantalla.progreso ? (
+    <ClassificationProgress
+      posicion={pantalla.progreso.hechos}
+      total={pantalla.progreso.total}
+      fraccion={pantalla.progreso.total ? pantalla.progreso.hechos / pantalla.progreso.total : 0}
+      etiqueta={pantalla.progreso.texto}
+      accent={accent}
+    />
+  ) : null;
 
   const cabecera = (
     <div className="flex items-center justify-between gap-2">
@@ -283,7 +333,7 @@ export default function ClasificacionView({
            guarda al instante eso no pasaba NUNCA: se salía sin decir nada. El
            apartado 23 quiere justo lo contrario —que se le diga que su progreso
            está guardado—, así que se pregunta cuando hay algo contestado. */
-        onClick={() => (hecha || elegida || estado.hechos > 0 ? setSaliendo(true) : onVolver && onVolver())}
+        onClick={() => (hecha || elegida || hechos > 0 ? setSaliendo(true) : onVolver && onVolver())}
         className="p-2 rounded-full shrink-0 toque-44"
         style={{ background: COLORS.surface2 }}
         aria-label="Salir de la clasificación"
@@ -293,64 +343,83 @@ export default function ClasificacionView({
     </div>
   );
 
-  /* Apartado 34 — sin ejercicios que clasificar, se dice; no una pantalla en
-     blanco ni una pregunta inventada. */
-  if (!actual || terminado) {
+  const dialogos = (
+    <>
+      {saliendo && (
+        <ClassificationExitDialog
+          accent={accent}
+          onSeguir={() => setSaliendo(false)}
+          onSalir={() => { setSaliendo(false); if (onVolver) onVolver(); }}
+        />
+      )}
+      {reclasificando && (
+        <AvisoReclasificar
+          accent={accent}
+          aviso={avisoRe && avisoRe.aviso}
+          onCancelar={() => setReclasificando(null)}
+          onConfirmar={() => {
+            /* La estimación se quita y el ejercicio vuelve a la cola: así se
+               contesta otra vez con la misma pregunta de siempre. */
+            if (onGuardarFitness) {
+              onGuardarFitness({
+                ...f,
+                clasificaciones: (f.clasificaciones || []).filter((c) => c && c.exerciseId !== reclasificando),
+              });
+            }
+            setReclasificando(null);
+            setActivo(null);
+          }}
+        />
+      )}
+    </>
+  );
+
+  /* ── El hub (apartados 17, 18, 19, 28 y 29) ───────────────────────────── */
+  if (!actual) {
+    /* ⚠️ Dos mensajes de «ya has terminado» en la misma pantalla serían el
+       aviso delante del aviso de EH F61: si el resumen de la F17 está, el
+       vacío de la F24 sobra — y su segunda frase, que es la del apartado 28,
+       se le pasa al resumen para no perderla. */
+    const conResumen = resumen.ejercicios > 0 && !!pantalla.vacio;
     return (
       <div className="max-w-2xl mx-auto space-y-4">
         {cabecera}
-        {resumen.ejercicios > 0 ? (
+        <ClassificationHub
+          pantalla={conResumen ? { ...pantalla, vacio: null } : pantalla}
+          accent={accent}
+          onClasificar={(id) => { setActivo(id); setElegida(null); setHecha(null); setError(null); }}
+          onVolver={onVolver}
+          barra={barra}
+        />
+        {conResumen && (
           <ClassificationSummary
             resumen={resumen}
             accent={accent}
             onVerRangos={onVolver}
-            onSeguir={actual ? () => setTerminado(false) : null}
+            extra={VACIOS_COLA.completa.que}
           />
-        ) : (
-          <Card>
-            <EmptyHint text="No queda nada que estimar: los ejercicios que puedes clasificar ya tienen entrenamientos de verdad detrás." />
-            <div className="mt-3">
-              <GhostBtn icon={ChevronLeft} onClick={onVolver}>Volver a Rangos</GhostBtn>
-            </div>
-          </Card>
         )}
         {resumen.ejercicios > 0 && (
           <YaClasificados fitness={f} propios={propios} accent={accent} onReclasificar={setReclasificando} />
         )}
-        {reclasificando && (
-          <AvisoReclasificar
-            accent={accent}
-            onCancelar={() => setReclasificando(null)}
-            onConfirmar={() => {
-              /* La estimación se quita y el ejercicio vuelve a la cola: así se
-                 contesta otra vez con la misma pregunta de siempre. */
-              if (onGuardarFitness) {
-                onGuardarFitness({
-                  ...f,
-                  clasificaciones: (f.clasificaciones || []).filter((c) => c && c.exerciseId !== reclasificando),
-                });
-              }
-              setReclasificando(null);
-              setTerminado(false);
-            }}
-          />
-        )}
+        {dialogos}
       </div>
     );
   }
 
+  /* ── El cuestionario de la F17, para el que él ha elegido ─────────────── */
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       {cabecera}
-      <ClassificationProgress posicion={estado.posicion} total={estado.total} fraccion={estado.fraccion} accent={accent} />
+      {barra}
 
       {hecha && !hecha.omitido ? (
         <ClassificationResult
           clasificacion={hecha}
           musculos={musculosQueRecibe(hecha.exerciseId, { propios })}
           accent={accent}
-          ultima={estado.restantes <= 1}
-          onContinuar={siguiente}
+          ultima={pantalla.cola.length <= 1}
+          onContinuar={volverAlHub}
         />
       ) : (
         <>
@@ -365,20 +434,21 @@ export default function ClasificacionView({
             <Card>
               <p className="text-xs" style={{ color: COLORS.textMuted }}>{error}</p>
               <div className="mt-2">
-                <GhostBtn onClick={siguiente}>Saltar este ejercicio</GhostBtn>
+                <GhostBtn onClick={saltar}>Saltar este ejercicio</GhostBtn>
               </div>
             </Card>
+          )}
+          {/* Apartado 24 — se puede dejar pendiente sin contestar nada. */}
+          {!error && (
+            <div className="flex gap-2">
+              <GhostBtn icon={ChevronLeft} onClick={volverAlHub}>Ver la lista</GhostBtn>
+              <GhostBtn onClick={saltar}>Saltar este ejercicio</GhostBtn>
+            </div>
           )}
         </>
       )}
 
-      {saliendo && (
-        <ClassificationExitDialog
-          accent={accent}
-          onSeguir={() => setSaliendo(false)}
-          onSalir={() => { setSaliendo(false); if (onVolver) onVolver(); }}
-        />
-      )}
+      {dialogos}
     </div>
   );
 }

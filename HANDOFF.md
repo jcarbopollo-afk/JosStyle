@@ -2,6 +2,27 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.106.0 — FIT F24/45: priorización inteligente de clasificación):**
+> «Clasificar ejercicios» ya no ofrece el catálogo entero: ofrece **ocho**, y cada uno dice **por
+> qué está ahí** («Sin clasificación», «Mejora tu cobertura de cuello», «Subgrupo sin datos»…).
+> 🚨 **No es IA** —el contexto y el apartado 35 la excluyen—: toda la prioridad sale de constantes
+> declaradas en `PESOS` por datos que ya existen. 🚨 **Los umbrales son los de la F19**
+> (`UMBRALES_FUENTE`: tres sesiones = datos suficientes, una = parciales), no unos nuevos. 🚨 **Y la
+> cola NO se guarda** (apartados 21 y 32): se calcula al leer, así que «recalcular la cola» no
+> necesita una línea. 🐛 Dos hallazgos: un peso para «movilidad» **no se habría aplicado nunca**
+> —la F17 ya la deja fuera de la clasificación—, y el ejemplo del propio enunciado **empataba**: las
+> tres dominadas tienen los mismos cinco subgrupos y la misma dificultad, así que lo que las separa
+> es que la prona es el **centro del grafo de equivalencias** del catálogo (grado 9 frente a 5, 2
+> y 2). 🔓 La entrada de «Clasificar ejercicios» pasa a ser el **hub**, que es el recorrido literal
+> del apartado 34; el cuestionario de la F17 no se ha tocado.
+>
+> **🔧 Y antes, un arreglo del recorrido:** sus secciones de Fitness **solo pasaban de lunes a
+> viernes**. Los diecisiete planes tienen siete días, así que el plan ES la semana y su día 1 es el
+> lunes; activándolo hoy, un sábado la semana entera queda en «antes de empezar» o «descanso» y no
+> hay ni un día que abrir — y solo dos planes entrenan el sábado y **ninguno el domingo**. La
+> aplicación estaba bien: la pasada verde de la F22 fue un viernes y la siguiente un sábado, y
+> cayeron 45 comprobaciones que parecían de la F23.
+
 > **🏋️ ACTUALIZACIÓN (v3.105.0 — FIT F23/45: el objetivo del siguiente rango):** Desde el rango
 > global y desde el de un músculo se ve **qué falta para el siguiente**: progreso dentro del rango,
 > puntos que quedan y con qué fiabilidad. 🚨 **Cuatro de los cinco componentes del apartado 29 ya

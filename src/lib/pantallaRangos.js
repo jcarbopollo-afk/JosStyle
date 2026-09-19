@@ -24,9 +24,9 @@ import { RANK_THRESHOLDS, estadoDeRango, progresoHaciaSiguiente } from './rangos
 /* 🔓 FIT F19 — el global sale del motor, que es quien decide si un ejercicio
    cuenta por su estimación, por sus entrenamientos o por los dos. */
 import { rangoGlobalEfectivo } from './motorRangos.js';
-/* FIT F17 — cuántos va a preguntar el cuestionario, que NO es lo mismo que
-   cuántos quedan sin clasificar del catálogo entero. */
-import { cuestionario } from './clasificacion.js';
+/* FIT F24 — cuántos RECOMIENDA clasificar la cola priorizada, que no es lo
+   mismo que cuántos quedan sin clasificar del catálogo entero (apartado 18). */
+import { colaDeClasificacion } from './colaClasificacion.js';
 
 const lista = (x) => (Array.isArray(x) ? x : []);
 
@@ -128,17 +128,18 @@ export function detalleDeRango(orden, actual = null) {
 export function clasificacionDeEjercicios(global, propios = [], fitness = null) {
   const total = todosLosEjercicios(lista(propios)).length;
   const clasificados = lista(global && global.ejercicios).length;
-  /* 🐛 FIT F17 — **lo que ofrece el botón no es «todo lo que falta»**. El
-     cuestionario pregunta una tanda de catorce, así que anunciar «100
-     restantes» prometía cien preguntas que no existen. El recuento de arriba
-     («0 de 100 clasificados») sí es del catálogo entero: son dos números
+  /* 🔓 **FIT F24, apartado 18 — el contador pasa a ser el de RECOMENDADOS.** La
+     F17 ya lo había acotado a la tanda de catorce para no prometer cien
+     preguntas; el apartado 18 va un paso más allá: el número que se enseña es
+     el que el sistema **espera** que conteste, no lo que queda. El recuento de
+     arriba («0 de 100 clasificados») sí es del catálogo entero: son dos números
      distintos y miden cosas distintas. */
-  const pendientesCuestionario = fitness ? cuestionario(fitness, { propios: lista(propios) }).restantes : 0;
+  const recomendados = fitness ? colaDeClasificacion(fitness, { propios: lista(propios) }).cola.length : 0;
   return {
     clasificados,
     total,
     restantes: Math.max(0, total - clasificados),
-    pendientesCuestionario,
+    recomendados,
     texto: `${clasificados} de ${total} clasificados`,
   };
 }
