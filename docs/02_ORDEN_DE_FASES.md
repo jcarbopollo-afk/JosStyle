@@ -34,7 +34,7 @@ para convertir Entrenamiento en una aplicación de fitness completa, con su espe
 
 | Track | Nombre | Origen | Numeración | Estado |
 |---|---|---|---|---|
-| **FIT** | Entrega 4 — Fitness | Documento propio de Josué, 33 251 líneas | Fases 1–45 | 🟡 **EN MARCHA** — F1 (v3.83.0), F2 (v3.84.0), F3 (v3.85.0), F4 (v3.86.0), F5 (v3.87.0), F6 (v3.88.0), F7 (v3.89.0) y F8 (v3.90.0) hechas |
+| **FIT** | Entrega 4 — Fitness | Documento propio de Josué, 33 251 líneas | Fases 1–45 | 🟡 **EN MARCHA** — **25 de 45 hechas** (v3.83.0 → v3.107.0). 🏁 El sistema de rangos entero está cerrado, F15 a F25: motor, pantalla, cuestionario, detalle muscular, explicación, contribución, historial, siguiente rango, cola de clasificación y resumen. **La siguiente es la F26 (progreso físico mediante fotos)**, y el estado fase a fase está en `docs/12_ENTREGA4_FITNESS_ORDEN.md` |
 
 ⚠️ **El documento va del revés y él lo avisó:** la F45 abre el archivo y la F1 lo cierra. **Se
 construye de la F1 a la F45**, en orden.

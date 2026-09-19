@@ -235,6 +235,13 @@ import {
   RankNextLevelCard, RankNextLevelBar, RankRelevantExercises,
 } from '../src/components/siguienteRango.jsx';
 import { tarjetaSiguienteRango as tarjF23 } from '../src/lib/siguienteRango.js';
+/* FIT F25 — el resumen de la pantalla de Rangos. Seis de sus nueve componentes
+   ya existían, así que aquí solo entran los tres nuevos y los dos estados. */
+import {
+  RankDashboard, RankMuscleHighlights, RankRecentChange, RankEvolutionLine,
+  RankClassificationPrompt, RankDashboardError, RankDashboardSkeleton,
+} from '../src/components/resumenRangos.jsx';
+import { resumenDeRangos as resF25, ERROR_RANGOS as ERR_F25 } from '../src/lib/resumenRangos.js';
 /* FIT F24 — el hub de clasificación. ⚠️ Sus tarjetas **solo aparecen en el
    hub**, y la pregunta solo tras pulsar una: son dos pantallas, así que cada
    pieza entra suelta (la lección del Álbum de Relación, NAV F3). */
@@ -389,6 +396,22 @@ const fitnessConHistorialF22 = () => ['2026-06-10', '2026-07-10', '2026-08-09', 
     s = marcarF7(editarF7(s, e.id, e.series[0].id, { reps: 3 + i * 6 }), e.id, e.series[0].id, true);
     return guardarSesionF10(f, guardarF8(pasarF8(s), { confirmado: true }).sesion);
   }, {});
+/* FIT F25 — un fitness con rango GLOBAL de verdad. ⚠️ Hacen falta **tres grupos
+   y tres ejercicios** (F15), así que el escenario de la F22 —un solo ejercicio—
+   sale «Sin Rango» y los casos del resumen quedarían vacíos sin que nada lo
+   dijera. Es la lección de la F22 sobre las fábricas de escenarios. */
+const fitnessGlobalF25 = () => ['2026-06-10', '2026-07-10', '2026-08-09', '2026-09-08']
+  .reduce((f, fecha, i) => [
+    ['dominada-prona', { reps: 4 + i * 5 }],
+    ['press-banca-barra', { peso: 45 + i * 8, reps: 8 }],
+    ['sentadilla-barra', { peso: 60 + i * 10, reps: 8 }],
+  ].reduce((g, [id, valores]) => {
+    let s = empezarF7({ nombre: id, lineas: anadirF3(crearRutinaF3({ nombre: id }), id).lineas, hoy: fecha, ahora: Date.parse(`${fecha}T18:00:00`) });
+    const e = ejsF7(s)[0];
+    s = marcarF7(editarF7(s, e.id, e.series[0].id, valores), e.id, e.series[0].id, true);
+    return guardarSesionF10(g, guardarF8(pasarF8(s), { confirmado: true }).sesion);
+  }, f), {});
+
 const DESTINO_EJ_F22 = { tipo: 'exercise', id: 'dominada-prona' };
 const DESTINO_GRUPO_F23 = { tipo: 'muscleGroup', id: 'espalda' };
 const DESTINO_ISO_F23 = { tipo: 'exercise', id: 'plancha-frontal' };
@@ -3108,6 +3131,9 @@ const CASOS = [
      Rango») y con sesiones de verdad (rango, cobertura y rankings). */
   ['RangosView', RangosView, () => ({ fitness: {}, accent })],
   ['RangosView', RangosView, () => ({ fitness: fitnessConProgresoF12(), perfil: { peso: 72 }, accent, onMusculo: noop, onEntrenar: noop })],
+  /* 🚨 FIT F25 — la pantalla entera CON rango global: es el único caso donde se
+     pintan los destacados, la confianza, la evolución y los relevantes. */
+  ['RangosView', RangosView, () => ({ fitness: fitnessGlobalF25(), perfil: { peso: 72 }, accent, onEntrenar: noop, onClasificar: noop, onEjercicio: noop })],
   ['RankOverviewCard', RankOverviewCard, () => ({ datos: pantallaF16({}), accent })],
   ['RankOverviewCard', RankOverviewCard, () => ({ datos: pantallaF16(fitnessConProgresoF12()), accent })],
   ['RankList', RankList, () => ({ escala: pantallaF16({}).escala, accent, onAbrir: noop })],
@@ -3233,6 +3259,60 @@ const CASOS = [
     item: { ...pantF24({}).cola[0], currentDataState: 'datos_parciales', reason: 'Datos insuficientes' },
     accent, onClasificar: noop,
   })],
+  /* ══ FIT F25 — el resumen de la pantalla de Rangos ═════════════════════ */
+  /* 🚨 El caso que importa: con rango global de verdad. Sin él, los destacados,
+     la confianza y los ejercicios relevantes salen vacíos y el banco no mide
+     nada (la lección de las fábricas de escenarios, F22). */
+  ['RankMuscleHighlights', RankMuscleHighlights, () => ({
+    destacados: resF25(fitnessGlobalF25(), {}).destacados, accent, onMusculo: noop,
+  })],
+  /* Sin poder abrir: las filas son texto, no botones. */
+  ['RankMuscleHighlights', RankMuscleHighlights, () => ({
+    destacados: resF25(fitnessGlobalF25(), {}).destacados, accent,
+  })],
+  /* ⚠️ Un destacado SIN tendencia: la línea de la tendencia desaparece, y no
+     dice «Sin datos» al lado de un rango que sí tiene datos (apartado 11). */
+  ['RankMuscleHighlights', RankMuscleHighlights, () => ({
+    destacados: resF25(fitnessGlobalF25(), {}).destacados.map((d) => ({ ...d, tendenciaNombre: null, simbolo: '' })),
+    accent,
+    onMusculo: noop,
+  })],
+  ['RankEvolutionLine', RankEvolutionLine, () => ({
+    evolucion: resF25(fitnessGlobalF25(), {}).evolucion, accent, onHistorial: noop,
+  })],
+  /* Apartado 8 — sin historial se dice, no se inventa una tendencia. */
+  ['RankEvolutionLine', RankEvolutionLine, () => ({ evolucion: resF25({}, {}).evolucion, accent })],
+  ['RankRecentChange', RankRecentChange, () => ({
+    evolucion: {
+      hay: true,
+      texto: 'Subiste de Básico a Intermedio',
+      tarjeta: { titulo: 'Nuevo rango', desde: 'Básico', hasta: 'Intermedio', fecha: '2026-08-09', sentido: 'subida' },
+      dentro: null,
+    },
+    accent,
+  })],
+  ['RankClassificationPrompt', RankClassificationPrompt, () => ({
+    clasificacion: resF25({}, {}).clasificacion, accent, onClasificar: noop,
+  })],
+  /* 🚨 Apartado 15 — con la cola vacía, una línea y NO una tarjeta con botón. */
+  ['RankClassificationPrompt', RankClassificationPrompt, () => ({
+    clasificacion: { hay: false, pendiente: false, texto: 'Clasificación inicial completa', cta: null, cuantos: 0 },
+    accent,
+    onClasificar: noop,
+  })],
+  /* Apartados 31 y 32 — el error y la carga. */
+  ['RankDashboardError', RankDashboardError, () => ({ error: ERR_F25, accent, onReintentar: noop })],
+  ['RankDashboardSkeleton', RankDashboardSkeleton, () => ({})],
+  ['RankDashboard', RankDashboard, () => ({
+    resumen: resF25(fitnessGlobalF25(), {}),
+    bloques: { global: <p>Rango general</p>, musculos: <p>Rangos musculares</p> },
+    accent,
+  })],
+  /* ⚠️ Y el contenedor con el estado de error: se pinta el aviso, no el orden. */
+  ['RankDashboard', RankDashboard, () => ({
+    resumen: { error: ERR_F25, bloques: [] }, bloques: {}, accent, onReintentar: noop,
+  })],
+
   ['ClassificationReason', ClassificationReason, () => ({ reason: 'Mejora tu cobertura de cuello', accent })],
   ['ClassificationEmpty', ClassificationEmpty, () => ({ vacio: { id: 'completa', ...VACIOS_F24.completa }, accent, onVolver: noop })],
   ['ClassificationEmpty', ClassificationEmpty, () => ({ vacio: { id: 'todo_saltado', ...VACIOS_F24.todo_saltado }, accent })],

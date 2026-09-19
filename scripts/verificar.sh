@@ -1027,6 +1027,17 @@ fi
 # FIT F21 — qué ejercicios sostienen un rango muscular. Lo que más se vigila: que se
 # use el porcentaje DEL MÚSCULO que se mira (no el del ejercicio entero), que la
 # participación no se sume entre ejercicios, y que los que no tienen datos vayan aparte.
+# FIT F25 — el resumen de la pantalla de Rangos. Lo que más se vigila: que no se guarde
+# ningún «dashboard summary», que la cobertura y la confianza sean las del motor y no
+# una segunda fórmula, que sin historial no se invente una tendencia, que con la cola
+# vacía no quede una tarjeta de tarea pendiente, y que un grupo destacado NUNCA diga
+# «Sin datos» de tendencia —eso es lo que se reserva para un grupo sin datos—.
+if node --import ./scripts/resolver-vite.mjs scripts/test-resumen-rangos.mjs >/tmp/jc_resumen_rangos.log 2>&1; then
+  ok "Resumen inteligente de rangos (FIT F25) — $(grep -c '✓' /tmp/jc_resumen_rangos.log) comprobaciones"
+else
+  fallo "Falla el resumen de rangos"; grep '✗' /tmp/jc_resumen_rangos.log
+fi
+
 # FIT F24 — la priorización de la clasificación. Lo que más se vigila: que la cola no
 # la calcule ninguna pantalla ni se guarde en `fitness`, que los umbrales de «datos
 # suficientes» sean los de la F19 y no unos nuevos, que un ejercicio con sesiones reales

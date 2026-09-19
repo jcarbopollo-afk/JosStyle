@@ -2,6 +2,35 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.107.0 — FIT F25/45: resumen inteligente de rangos):**
+> Fitness → Rangos deja de ser una colección de números y contesta *«¿cómo estoy?»* de arriba
+> abajo: **rango general → siguiente → cobertura y confianza → evolución → destacados y rankings
+> musculares → ejercicios relevantes → clasificación pendiente**, el orden literal del apartado 2.
+> 🚨 **Aquí no se calcula ni un rango** (apartados 23 y 35) y **no se guarda ningún «dashboard
+> summary»**: se junta lo que ya resuelven la F16, la F13, la F22, la F23 y la F24, con **una
+> llamada por motor** (apartado 24) — antes la vista pedía dos instantáneas y cada una recorre las
+> sesiones enteras. Por eso el *refresh* del apartado 25 no necesita una línea.
+> 🐛 **Y por el camino, tres fallos reales.** El primero llevaba vivo desde la F20: el rango
+> **global** no devolvía su confianza —el de un ejercicio sí, el de un grupo también—, así que
+> `confianzaExplicada(undefined)` daba `null` y **el bloque de confianza del rango general no se ha
+> enseñado nunca**. No fallaba: callaba. Se arregla con `confianzaCombinada()` en el motor, el
+> precedente exacto de `fuenteCombinada` (F22): **ni un score se mueve** y las ocho suites de rangos
+> siguen verdes sin tocar una comprobación (**C-34** en `docs/03`).
+> 🐛 El segundo: **los ejercicios relevantes del rango global salían SIEMPRE vacíos**, porque
+> `ejerciciosRelevantes` devuelve `null` para `overall` **a propósito** —el global no tiene músculo
+> del que repartir—. Ahora salen de los **grupos destacados**, con la lógica de la F21 (apartado 12),
+> y cada uno se atribuye al grupo donde **más participa**: si no, un press de banca salía como
+> «Abdominales» teniendo Pecho dos líneas arriba.
+> 🐛 El tercero: **hay dos coberturas y las dos tienen `texto`** —la cruda del motor dice «5/7» y
+> **no trae `fraccion`**—, así que la barra se habría pintado a `NaN %` con la pantalla entera
+> renderizándose.
+> 🚨 **Y un destacado no puede decir «Sin datos»**: entra ahí porque TIENE rango, y ese texto es lo
+> que el apartado 11 reserva para un grupo sin datos. Sin tendencia, la línea desaparece.
+> ⚠️ **Seis de los nueve componentes del apartado 21 ya estaban escritos** —`RankOverviewCard`
+> (F16), `RankCoverage` y `RankConfidence` (F20), `RankHistorySummary` (F22), `RankRelevantExercises`
+> y `RankNextLevelCard` (F23)—, y la prueba **abre cada archivo**. `src/lib/resumenRangos.js` +
+> `src/components/resumenRangos.jsx`, con `scripts/test-resumen-rangos.mjs` (170 comprobaciones).
+
 > **🏋️ ACTUALIZACIÓN (v3.106.0 — FIT F24/45: priorización inteligente de clasificación):**
 > «Clasificar ejercicios» ya no ofrece el catálogo entero: ofrece **ocho**, y cada uno dice **por
 > qué está ahí** («Sin clasificación», «Mejora tu cobertura de cuello», «Subgrupo sin datos»…).

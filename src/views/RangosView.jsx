@@ -38,10 +38,20 @@ import { tarjetaSiguienteRango } from '../lib/siguienteRango';
 import { explicacionGlobal } from '../lib/explicacionRangos';
 /* FIT F18 — el detalle de un grupo muscular, dentro de Rangos. */
 import DetalleMuscularView from './DetalleMuscularView';
+/* 🔓 FIT F25 — la pantalla deja de pedir sus datos por trozos: una instantánea
+   (apartado 24) y la jerarquía del apartado 2, que vive en `BLOQUES`. */
+import { resumenDeRangos, DESTINO_GLOBAL } from '../lib/resumenRangos';
+import { RankConfidence, RankCoverage } from '../components/explicacionRango';
+import { RankRelevantExercises } from '../components/siguienteRango';
+import {
+  RankDashboard, RankMuscleHighlights, RankRecentChange, RankEvolutionLine,
+  RankClassificationPrompt,
+} from '../components/resumenRangos';
 
-/* El destino del historial global, fuera del componente: un objeto nuevo en
-   cada render invalidaría el `useMemo` de `RankHistory` en cada pintado. */
-const DESTINO_GLOBAL = { tipo: 'overall', id: '' };
+/* ⚠️ **`DESTINO_GLOBAL` se importa, ya no se declara aquí** (FIT F25). Estaba
+   escrito en esta vista y otra vez dentro de `resumenRangos.js`: dos objetos que
+   significan lo mismo acaban separándose, y además un objeto nuevo en cada
+   render invalidaría el `useMemo` de `RankHistory` en cada pintado. */
 
 /* Los estados del apartado 20: **nunca solo color**. Cada uno lleva su icono y
    su palabra, porque un hexágono gris y otro azul no se distinguen con una
@@ -73,7 +83,7 @@ function Barra({ fraccion, accent, etiqueta }) {
 }
 
 /* ── 3, 4, 5 y 6 · La tarjeta grande ─────────────────────────────────────── */
-export function RankOverviewCard({ datos, accent, onPorQue = null, onHistorial = null }) {
+export function RankOverviewCard({ datos, accent, onPorQue = null, onHistorial = null, confianza = null }) {
   const d = datos || {};
   const sin = d.sinRango || null;
   const cobertura = d.cobertura || { texto: '', fraccion: 0 };
@@ -126,6 +136,14 @@ export function RankOverviewCard({ datos, accent, onPorQue = null, onHistorial =
         <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
           Mide cuánta información tiene el cálculo, no tu forma física.
         </p>
+        {/* 🔓 FIT F25, apartado 6 — la confianza, al lado de la cobertura porque
+            las dos hablan de lo mismo: de cuántos datos hay, no de su cuerpo.
+            ⚠️ Es **la del motor**; aquí solo se enseña. */}
+        {confianza && (
+          <p className="text-[11px] font-semibold mt-2" style={{ color: COLORS.text }}>
+            {confianza.etiqueta}
+          </p>
+        )}
       </div>
 
       {/* Apartado 6 — el camino al siguiente, solo si hay rango. */}
@@ -380,11 +398,19 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
   /* 🚨 Apartado 22 — **una sola vez por cambio en las sesiones**. `rangoGlobal`
      recorre todas las sesiones y todos los ejercicios: pedirlo por sección lo
      haría ocho veces en cada render. */
-  const datos = useMemo(
-    () => pantallaDeRangos(fitness || {}, { propios, perfil }),
+  /* 🔓 **FIT F25 — una instantánea, no dos** (apartado 24: *"Evitar múltiples
+     llamadas repetidas […] obtener una instantánea de datos del RankEngine y
+     derivar el dashboard"*). Hasta aquí la pantalla pedía `pantallaDeRangos` y
+     `tarjetaSiguienteRango` por separado, y cada una recorre las sesiones
+     enteras; ahora sale todo de `resumenDeRangos`. ⚠️ Y el `useMemo` depende
+     también de `clasificaciones`, porque la cola de la F24 y el rango efectivo
+     de la F19 cambian al clasificar (apartado 25). */
+  const resumen = useMemo(
+    () => resumenDeRangos(fitness || {}, { propios, perfil }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fitness && fitness.sesiones, propios, perfil],
+    [fitness && fitness.sesiones, fitness && fitness.clasificaciones, propios, perfil],
   );
+  const datos = resumen.datos;
   /* Qué rango está abierto en la hoja, y qué grupo muscular se está mirando:
      estado de pantalla, nunca un dato. */
   const [abierto, setAbierto] = useState(null);
@@ -399,13 +425,10 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
   const [porQue, setPorQue] = useState(false);
   /* FIT F22 — y si está abierto su historial. Estado de pantalla (EH F40). */
   const [historial, setHistorial] = useState(false);
-  const detalle = abierto ? detalleDeRango(abierto, datos.global.sinRango ? null : datos.global.rango) : null;
-  /* FIT F23 — una vez por cambio en las sesiones, como el resto de la pantalla. */
-  const siguiente = useMemo(
-    () => tarjetaSiguienteRango(fitness || {}, DESTINO_GLOBAL, { propios, perfil }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fitness && fitness.sesiones, fitness && fitness.clasificaciones, propios, perfil],
-  );
+  const detalle = abierto && datos
+    ? detalleDeRango(abierto, datos.global.sinRango ? null : datos.global.rango)
+    : null;
+  const siguiente = resumen.siguiente;
 
   /* Va DESPUÉS de los hooks (regla 4). */
   if (musculo) {
@@ -422,9 +445,95 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
     );
   }
 
+  /* 🚨 **Apartado 31 — si el motor falla, no se pinta media pantalla.** */
+  if (resumen.error || !datos) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <RankDashboard resumen={resumen} accent={accent} onReintentar={onEntrenar} />
+      </div>
+    );
+  }
+
+  /* 🚨 **La jerarquía del apartado 2, y la decide `BLOQUES`, no este JSX.**
+     Cada bloque llega ya pintado y `RankDashboard` los ordena; uno que no tenga
+     nada que decir llega como `null` y desaparece solo (apartado 18). */
+  const bloques = {
+    global: (
+      <RankOverviewCard
+        datos={datos}
+        accent={accent}
+        confianza={resumen.confianza}
+        onPorQue={() => setPorQue(true)}
+        onHistorial={() => setHistorial(true)}
+      />
+    ),
+    /* Apartado 16 — *"No crear otra fórmula"*: es la tarjeta de la F23. */
+    siguiente: <RankNextLevelCard tarjeta={siguiente} accent={accent} onPorQue={() => setPorQue(true)} />,
+    /* Apartados 5 y 6 — cobertura y confianza, con los componentes de la F20. */
+    cobertura: (resumen.cobertura || resumen.confianza) ? (
+      <Card>
+        <div className="space-y-3">
+          <RankCoverage cobertura={resumen.cobertura} accent={accent} />
+          <RankConfidence texto={resumen.confianza ? resumen.confianza.texto : null} />
+        </div>
+      </Card>
+    ) : null,
+    /* Apartados 7, 8, 17 y 18. */
+    evolucion: (
+      <div className="space-y-3">
+        <RankRecentChange evolucion={resumen.evolucion} accent={accent} />
+        <RankEvolutionLine evolucion={resumen.evolucion} accent={accent} onHistorial={() => setHistorial(true)} />
+      </div>
+    ),
+    /* Apartados 9, 10 y 11 — los destacados suben; la lista de los siete se
+       queda debajo, porque la F16 prometió en su apartado 14 que siempre se
+       reconoce dónde está cada grupo. */
+    musculos: (
+      <div className="space-y-5">
+        <RankMuscleHighlights destacados={resumen.destacados} accent={accent} onMusculo={setMusculo} />
+        <AnatomyPreview musculos={datos.musculos} accent={accent} onMusculo={setMusculo} />
+        <MuscleRankings musculos={datos.musculos} accent={accent} onMusculo={setMusculo} />
+      </div>
+    ),
+    /* Apartados 12 y 13 — los ejercicios de los grupos destacados. */
+    ejercicios: resumen.ejercicios.hay ? (
+      <Card>
+        <RankRelevantExercises
+          relevantes={resumen.ejercicios.relevantes}
+          etiqueta={resumen.ejercicios.etiqueta}
+          accent={accent}
+          onAbrir={onEjercicio}
+        />
+      </Card>
+    ) : null,
+    /* Apartados 14 y 15. */
+    clasificacion: (
+      <div className="space-y-5">
+        <RankClassificationPrompt clasificacion={resumen.clasificacion} accent={accent} onClasificar={onClasificar} />
+        <RankClassificationCard
+          clasificacion={datos.clasificacion}
+          accent={accent}
+          onClasificar={onClasificar}
+          /* El único botón de la pantalla, y hace lo que dice: entrenar es
+             literalmente cómo se clasifica un ejercicio. */
+          onEntrenar={datos.clasificacion.restantes > 0 ? onEntrenar : null}
+        />
+      </div>
+    ),
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-      <RankOverviewCard datos={datos} accent={accent} onPorQue={() => setPorQue(true)} onHistorial={() => setHistorial(true)} />
+      <RankDashboard resumen={resumen} bloques={bloques} accent={accent} />
+
+      {/* ⚠️ La escala de los diez rangos **no es uno de los siete bloques** del
+          apartado 2: es material de referencia, y el apartado 27 quiere que la
+          principal sea un resumen. Sigue entera, debajo de lo que contesta
+          «¿cómo estoy?». */}
+      <div>
+        <SectionTitle sub="Los diez niveles de la escala">Rangos</SectionTitle>
+        <RankList escala={datos.escala} accent={accent} onAbrir={setAbierto} />
+      </div>
 
       {historial && (
         <RankHistory
@@ -446,32 +555,6 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
           onClasificar={onClasificar ? () => { setPorQue(false); onClasificar(); } : null}
         />
       )}
-
-      {/* FIT F23, apartado 1 — qué falta para el siguiente, con su cobertura
-          y su fiabilidad al lado (apartados 18 y 19). */}
-      <RankNextLevelCard
-        tarjeta={siguiente}
-        accent={accent}
-        onPorQue={() => setPorQue(true)}
-      />
-
-      <div>
-        <SectionTitle sub="Los diez niveles de la escala">Rangos</SectionTitle>
-        <RankList escala={datos.escala} accent={accent} onAbrir={setAbierto} />
-      </div>
-
-      <RankClassificationCard
-        clasificacion={datos.clasificacion}
-        accent={accent}
-        onClasificar={onClasificar}
-        /* El único botón de la pantalla, y hace lo que dice: entrenar es
-           literalmente cómo se clasifica un ejercicio. */
-        onEntrenar={datos.clasificacion.restantes > 0 ? onEntrenar : null}
-      />
-
-      <AnatomyPreview musculos={datos.musculos} accent={accent} onMusculo={setMusculo} />
-
-      <MuscleRankings musculos={datos.musculos} accent={accent} onMusculo={setMusculo} />
 
       <HojaDeRango detalle={detalle} accent={accent} onCerrar={() => setAbierto(null)} />
     </div>

@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.106.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.107.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 24 primeras (v3.83.0 → v3.106.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 25 primeras (v3.83.0 → v3.107.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 21 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 20 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -330,7 +330,8 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 (v3.92.0)** , la **FIT F11 (v3.93.0)**, la **FIT F12 (v3.94.0)**, la **FIT F13 (v3.95.0)**, la **FIT F14 (v3.96.0)**, la **FIT F15 (v3.97.0)**, la **FIT F16 (v3.98.0)**, la
 **FIT F17 (v3.99.0)**, la **FIT F18 (v3.100.0)**, la **FIT F19 (v3.101.0)**, la **FIT F20
 (v3.102.0)**, la **FIT F21 (v3.103.0)**, la **FIT F22 (v3.104.0)**, la **FIT F23
-(v3.105.0)** y la **FIT F24 (v3.106.0)** hechas. Lo que dejaron, y que vale para las 21 que quedan:
+(v3.105.0)**, la **FIT F24 (v3.106.0)** y la **FIT F25 (v3.107.0)** hechas. Lo que dejaron, y que
+vale para las 20 que quedan:
 
 - 🚨 **PARTICIPACIÓN ≠ PESO EN EL CÁLCULO** (FIT F21, `src/lib/contribucionMuscular.js`). La
   participación es la del catálogo (50 % dorsales) y **no se suma entre ejercicios**; el peso
@@ -470,6 +471,52 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
   `MuscleSubgroupDetail`, que es **otro componente** y no tenía `siguiente` en su ámbito — reventaba
   con `siguiente is not defined`. **Lo cazó el banco de renderizado**, no el build. Le llega como
   **prop**, calculada por quien sabe qué subgrupo está abierto.
+- 🐛 **EL RANGO GLOBAL NO DEVOLVÍA SU CONFIANZA, Y LLEVABA ASÍ DESDE LA F20** (FIT F25, y es la
+  lección de la FORMA de lo que devuelve una función otra vez). `base()`, en `explicacionRangos.js`,
+  lee `r.confianza`: el rango de un **ejercicio** la devuelve y el de un **grupo** también, pero el
+  **global** no — así que `confianzaExplicada(undefined)` daba `null` y **el bloque de confianza del
+  rango general no se ha enseñado nunca**. No fallaba: callaba. El arreglo es **`confianzaCombinada`
+  en `motorRangos.js`**, el precedente exacto de `fuenteCombinada` (F22): agrega **el eslabón más
+  flojo** con el catálogo `CONFIANZA` de la F15, **ni un score se mueve**, y las ocho suites de
+  rangos siguen verdes sin tocar una comprobación. **Antes de leer un campo de un rango, mirar si
+  ESE ámbito lo devuelve** — los tres no devuelven lo mismo.
+- 🔓 **«NO MODIFICAR EL RANKENGINE» PROTEGE EL CÁLCULO, NO LA FORMA DE LO QUE DEVUELVE** (FIT F25,
+  **C-34**). El apartado 6 pide *"la confianza real del RankEngine"* y el 35 dice *"NO modificar el
+  RankEngine"*: se resolvió con la lectura que respeta las dos —ni una fórmula, ni un umbral, ni un
+  cuarto nivel— y se anotó en `docs/03` sin parar.
+- 🐛 **LOS EJERCICIOS RELEVANTES DEL RANGO GLOBAL SALÍAN SIEMPRE VACÍOS** (FIT F25, apartado 12).
+  `ejerciciosRelevantes` devuelve `null` para `overall` **a propósito** —la F23 lo escribió: *"un
+  ejercicio y el rango global no tienen músculo del que repartir"*—, así que pedírselos a la tarjeta
+  del siguiente rango habría dejado la sección desaparecida **para siempre y sin un solo fallo**. Lo
+  que sí tiene músculo son **los destacados**, que es justo el dibujo del apartado 13. ⚠️ Y cada uno
+  se atribuye al grupo donde **MÁS participa**: `contribucionesDeMusculo` devuelve a todo el que
+  tenga *algo* de ese músculo, así que la pantalla llegó a decir *«Press de banca · Abdominales»*
+  teniendo Pecho dos líneas arriba.
+- 🐛 **HAY DOS COBERTURAS, LAS DOS CON `texto`, Y UNA NO TRAE `fraccion`** (FIT F25): la cruda del
+  motor dice *«5/7»*; la que pasó por la F16 dice *«5 de 7 grupos con datos»* **y sí la trae**.
+  Reenviando la cruda, `RankCoverage` habría pintado su barra a `NaN%` con la pantalla entera
+  renderizándose. Hay una casilla de auditoría que se pone roja con ella.
+- 🚨 **UN DESTACADO NO PUEDE DECIR «SIN DATOS»** (FIT F25, apartado 11): entra en los destacados
+  **porque tiene rango**, pero con una sola sesión la F11 no puede comparar y la F13 devuelve
+  `sin_datos` —correcto para ella—, dejando *«Espalda · Intermedio · Sin datos»*, que es lo que ese
+  apartado reserva para un grupo **sin** datos. Sin tendencia, la línea desaparece; el texto se
+  queda donde significa algo, en la lista de los siete.
+- 🚨 **DE LOS NUEVE COMPONENTES DEL APARTADO 21, SEIS YA ESTABAN ESCRITOS** (FIT F25, y es la F23 y
+  la F24 por tercera vez): `RankOverviewCard` (F16), `RankCoverage` y `RankConfidence` (F20),
+  `RankHistorySummary` (F22), `RankRelevantExercises` y `RankNextLevelCard` (F23). Solo nacen
+  `RankDashboard`, `RankMuscleHighlights` y `RankClassificationPrompt`. ⚠️ Y la prueba **abre cada
+  archivo**: una tabla que solo se cuenta a sí misma no demuestra nada (EH F42).
+- ⚠️ **`RankDashboard` RECIBE LOS BLOQUES YA PINTADOS** (FIT F25, y es `ClassificationHub` de la F24
+  otra vez): la tarjeta grande y los rankings viven en la vista, e importarlos desde `components/`
+  sería un ciclo. Lo que aporta es **el orden**, que lee de `BLOQUES` — así la jerarquía del
+  apartado 2 está escrita una sola vez y ninguna pantalla la decide.
+- ⚠️ **UN `className` CON `p-0` NO GANA A UN `p-5` DEL COMPONENTE** (FIT F25, y es SF F1 otra vez):
+  son la misma propiedad y decide el orden **en la hoja**, no en el atributo. El botón va dentro de
+  la `Card`, con su relleno.
+- 🐛 **Y UN BARRIDO NO PUEDE MIRAR LA TABLA QUE DECLARA LO QUE BUSCA** (FIT F25, enésima vez):
+  `NO_EN_FIT25` **nombra** XP, logros y recompensas justamente para declarar que no se construyen,
+  así que se queda fuera del barrido de palabras de juego —y se comprueba aparte que sí los nombre—.
+  Lo que se barre es lo que ve Josué.
 - 🚨 **ESTO NO ES IA, Y LOS UMBRALES TAMPOCO SON NUEVOS** (FIT F24, `src/lib/colaClasificacion.js`).
   El contexto abre con *"Esto NO es IA"* y el apartado 35 vuelve a excluirla: toda la prioridad sale
   de multiplicar **constantes declaradas en `PESOS`** por datos que ya existen. Y *"suficientes datos
@@ -910,16 +957,21 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F25/45 — Resumen inteligente de rangos** (líneas 16 772–17 421 de
-   `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). Se construye de la F1 a la F45, en orden,
-   encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+1. 🏋️ **SEGUIR POR LA FIT F26/45 — Sistema de progreso físico mediante fotos** (líneas
+   16 079–16 771 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). Se construye de la F1 a la
+   F45, en orden, encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Lo segundo es mirar lo que ya hay**: el sistema de rangos está completo de la F15 a la F24
-   —motor, pantalla, cuestionario, detalle muscular, explicación, contribución, historial, objetivo
-   del siguiente y cola de clasificación—, así que la F25 **resume lo que ya calculan**
-   `motorRangos.js`, `rangos.js`, `siguienteRango.js` y `colaClasificacion.js`: no escribe un
-   segundo cálculo ni una segunda redacción.
+   🚨 **Y lo segundo, en ESTA fase más que en ninguna: LAS FOTOS DE PROGRESO YA EXISTEN.** Son
+   **`saludFotos`**, la función que las sube se llama **`uploadProgressPhoto()`** y el estado vacío
+   de Salud dice literalmente *"Todavía no has subido ninguna foto de progreso"* — está en
+   `MAPEO_EXISTENTE` de `src/lib/fitness.js` desde la FIT F1, con una comprobación por línea. Una
+   lista nueva dejaría **invisibles las fotos que Josué ya tiene**. Y ojo con el almacenamiento:
+   JosStyle tiene cinco buckets y el de las fotos de salud es uno de ellos; **un sexto necesita el
+   SQL de Josué** (es lo que dejó `MEDIA_PENDIENTE` sin construir en la F8).
+   🏁 **Y el sistema de rangos está CERRADO, F15 a F25** —motor, pantalla, cuestionario, detalle
+   muscular, explicación, contribución, historial, siguiente rango, cola de clasificación y
+   resumen—: lo que venga después **lee de ahí**, no escribe un segundo cálculo.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

@@ -224,6 +224,28 @@ export function fuenteCombinada(fuentes) {
 }
 
 /**
+ * Cuánta información sostiene el rango de un CONJUNTO: **la del eslabón más
+ * flojo**. Un rango global no puede ser más fiable que el grupo peor medido
+ * que entra en su media.
+ *
+ * 🐛 **Y esto tapaba un fallo vivo desde la F20** (FIT F25). `rangoDeEjercicio`
+ * devuelve `confianza` y `rangoDeGrupo` también —se la pone `rangoPonderado`—,
+ * pero **`rangoGlobalEfectivo` no la devolvía**, igual que no devolvía `fuente`
+ * hasta la F22. Así que `base()` de la explicación leía `r.confianza` →
+ * `undefined`, `confianzaExplicada(undefined)` → `null`, y **el bloque de
+ * confianza del rango general no se ha enseñado nunca**. No fallaba: callaba.
+ *
+ * ⚠️ Es una agregación, **no un criterio nuevo**: los tres niveles y sus
+ * umbrales siguen siendo los de `CONFIANZA` (F15) y ni un score se mueve.
+ */
+export function confianzaCombinada(confianzas) {
+  const ids = lista(confianzas).filter(Boolean).map((c) => texto(c));
+  const niveles = ids.map((id) => CONFIANZA.find((c) => c.id === id)).filter(Boolean);
+  if (!niveles.length) return null;
+  return niveles.reduce((peor, c) => (c.desde < peor.desde ? c : peor));
+}
+
+/**
  * El rango global con las fuentes ya resueltas (apartado 12).
  *
  * 🚨 *"Pecho mejora no significa automáticamente rango global +1"*: se recalcula
@@ -247,11 +269,16 @@ export function rangoGlobalEfectivo(fitness, { propios = [], perfil = null } = {
       provisional: false,
       motivo: ejercicios.length === 0 ? 'sin_datos' : 'poca_cobertura',
       fuente: null,
+      confianza: null,
+      confianzaNombre: null,
     };
   }
   const score = Math.round(conDatos.reduce((n, g) => n + g.score, 0) / conDatos.length);
   const orden = rangoDePuntuacion(score);
   const fuente = fuenteCombinada(ejercicios.map((e) => e.fuente));
+  /* 🐛 FIT F25 — la confianza es de los grupos **que entran en la media**: uno
+     sin datos no baja la confianza porque tampoco baja el score (F15). */
+  const conf = confianzaCombinada(conDatos.map((g) => g.confianza)) || CONFIANZA[0];
   return {
     sinRango: false,
     rango: orden,
@@ -262,6 +289,8 @@ export function rangoGlobalEfectivo(fitness, { propios = [], perfil = null } = {
     ejercicios,
     fuente,
     fuenteNombre: fuenteRango(fuente).nombre,
+    confianza: conf.id,
+    confianzaNombre: conf.nombre,
     provisional: conDatos.some((g) => g.provisional) || conDatos.length < GRUPOS_MUSCULARES.length / 2 || fuente !== 'entrenamiento',
     motivo: null,
   };

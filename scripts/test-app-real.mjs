@@ -7712,6 +7712,100 @@ const grupos_fit16 = (t) => Number((/(\d+) de 7 grupos con datos/.exec(t) || [])
 ok(grupos_fit16(conRango_fit16) >= grupos_fit16(rangos_fit16) && grupos_fit16(conRango_fit16) >= 3,
   `⚠️ FIT F16 — y la cobertura ha subido con el ejercicio nuevo (${grupos_fit16(rangos_fit16)} → ${grupos_fit16(conRango_fit16)} de 7)`);
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F25 — El resumen de la pantalla de Rangos (Entrega 4 · 25/45)
+   ══════════════════════════════════════════════════════════════════════════
+   Se comprueba **aquí**, con el rango global que la F16 acaba de sembrar: es el
+   único punto del recorrido donde existe, y sin él los destacados, la confianza
+   y los ejercicios relevantes saldrían vacíos y esto no mediría nada (la lección
+   de las fábricas de escenarios, FIT F22).
+
+   ⚠️ Y **no se afirma un rango concreto**: depende de las sesiones sembradas más
+   arriba, y una comprobación atada a «Intermedio» se pondría roja el día que
+   alguien cambie un peso de ese escenario. Lo que se mide es **la jerarquía y
+   lo que se puede decir**. */
+console.log('\n── FIT F25 · El resumen de Rangos ──');
+
+const resumen_fit25 = conRango_fit16;
+/* Apartado 2 — el orden: primero el rango, y la escala de los diez DESPUÉS.
+   🐛 **En minúsculas, y con el rótulo que de verdad se lee** (dos rojos míos):
+   «Rango Predicho» lleva la clase `uppercase`, así que `innerText` lo devuelve
+   **renderizado** —«RANGO PREDICHO»— y un `indexOf` con mayúsculas y minúsculas
+   daba −1 (la lección de la E3 F8). Y la sección de los siete grupos **se llama
+   «Rankings musculares»**, no «Rangos musculares», que es el nombre del bloque
+   en `BLOQUES`: el rótulo de pantalla y el del catálogo no tienen por qué
+   coincidir, y aquí se busca el de pantalla. */
+const enMinusculas_fit25 = resumen_fit25.toLowerCase();
+const orden_fit25 = (t) => ['rango predicho', 'cobertura', 'destacados', 'rankings musculares']
+  .map((x) => t.indexOf(x));
+const pos_fit25 = orden_fit25(enMinusculas_fit25);
+ok(pos_fit25.every((p) => p >= 0),
+  `🚨 FIT F25 — los bloques del apartado 2 están todos en la pantalla (${pos_fit25.join(', ')})`);
+ok(pos_fit25[0] < pos_fit25[1] && pos_fit25[1] < pos_fit25[2] && pos_fit25[2] < pos_fit25[3],
+  '🚨 FIT F25 — y en ese orden: rango → cobertura → destacados → rankings (apartado 2)');
+const escala_fit25 = enMinusculas_fit25.indexOf('los diez niveles de la escala');
+ok(escala_fit25 > pos_fit25[0],
+  '⚠️ FIT F25 — la escala de los diez baja: es referencia, no la respuesta a «¿cómo estoy?» (apartado 27)');
+
+/* 🔓 Apartado 6 — la confianza, que hasta esta fase NO se enseñaba en ninguna
+   parte del rango general: el motor no la devolvía y callaba. */
+ok(/Confianza alta|Confianza media|Datos limitados/.test(resumen_fit25),
+  `🔓 FIT F25 — se enseña la confianza real del motor (${(/Confianza alta|Confianza media|Datos limitados/.exec(resumen_fit25) || ['no sale'])[0]}, apartado 6)`);
+
+/* Apartados 9 y 10 — «Destacados», y su frase diciendo qué NO significa. */
+ok(/Destacados/.test(resumen_fit25) && /no los que tienes más desarrollados/i.test(resumen_fit25),
+  '🚨 FIT F25 — «Destacados», con la frase que niega que midan desarrollo físico (apartado 10)');
+ok(!/mejores músculos/i.test(resumen_fit25), '🚨 FIT F25 — y en ningún sitio dice «mejores músculos»');
+
+/* 🚨 Apartado 11 — y un destacado NO puede decir «Sin datos» de tendencia.
+   ⚠️ Se mide sobre los botones de los destacados, no sobre la página entera:
+   «Cuello · Sin datos» de los rankings es correcto y está más abajo. */
+const destacados_fit25 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
+  .map((b) => b.getAttribute('aria-label') || '')
+  .filter((l) => /Ver su detalle$/.test(l)));
+ok(destacados_fit25.length > 0 && destacados_fit25.length <= 3,
+  `🚨 FIT F25 — entre uno y tres destacados, nunca los siete (${destacados_fit25.length}, apartado 9)`);
+ok(destacados_fit25.every((l) => !/Sin datos/.test(l)),
+  `🐛 FIT F25 — ningún destacado dice «Sin datos» (${destacados_fit25.join(' | ') || 'ninguno'})`);
+/* Apartado 29 — y su nombre accesible lleva el rango en PALABRAS, no solo color. */
+ok(destacados_fit25.every((l) => /: .+\. Ver su detalle$/.test(l)),
+  '⚠️ FIT F25 — cada destacado dice su rango en palabras en el nombre accesible (apartado 29)');
+
+/* Apartado 11, el otro lado: un grupo sin datos SÍ lo dice, y sigue en la lista. */
+ok(/Cuello/.test(resumen_fit25) && /Sin datos/.test(resumen_fit25),
+  '🚨 FIT F25 — el grupo sin entrenar sigue ahí y dice «Sin datos», no un 0 % (apartado 11)');
+
+/* Apartados 12 y 13 — los ejercicios relevantes, sin afirmar causalidad. */
+ok(/Ejercicios relevantes/.test(resumen_fit25),
+  '🔓 FIT F25 — hay ejercicios relevantes en el rango GLOBAL (la F23 los daba solo por músculo)');
+ok(!/gracias a|porque has|te ha hecho/i.test(resumen_fit25),
+  '🚨 FIT F25 — y ningún texto afirma una causa (apartado 13)');
+
+/* Apartados 14 y 15 — la clasificación pendiente, con su número de verdad. */
+ok(/Clasifica algunos ejercicios/.test(resumen_fit25) && /recomendados?/.test(resumen_fit25),
+  '⚠️ FIT F25 — la clasificación pendiente dice cuántos recomendados hay (apartado 14)');
+
+/* Apartado 35 y D2-02 — ni XP, ni niveles, ni logros. */
+ok(!/\bXP\b/.test(resumen_fit25) && !/\bNivel \d/.test(resumen_fit25) && !/\bLogros?\b/.test(resumen_fit25),
+  '🚨 FIT F25 — sin gamificación en el resumen (apartado 35)');
+
+/* Apartado 28 — y en el iPhone pequeño no se arrastra de lado. */
+const anchoResumen_fit25 = await page.evaluate(() => ({
+  ancho: document.documentElement.scrollWidth, ventana: window.innerWidth,
+}));
+ok(anchoResumen_fit25.ancho <= anchoResumen_fit25.ventana + 1,
+  `⚠️ FIT F25 — el resumen no arrastra la pantalla de lado (${anchoResumen_fit25.ancho} px, apartado 28)`);
+
+/* Apartado 22 — cada bloque abre su detalle. Desde un destacado, el muscular. */
+const nombreDestacado_fit25 = (destacados_fit25[0] || '').split(':')[0];
+ok(nombreDestacado_fit25 && await pulsarQueEmpiece_fit10(`${nombreDestacado_fit25}:`),
+  `FIT F25 — se toca el destacado «${nombreDestacado_fit25}»`);
+const desdeDestacado_fit25 = await esperarTexto(new RegExp(nombreDestacado_fit25, 'i'));
+ok(new RegExp(nombreDestacado_fit25, 'i').test(desdeDestacado_fit25),
+  '🚨 FIT F25 — y abre su detalle muscular, sin pantalla nueva (apartado 22)');
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F25 — se vuelve a Rangos');
+await esperarTexto(/Cobertura/i);
+
 /* Apartado 15 — el grupo muscular lleva al detalle de la F13, no a una copia. */
 ok(await pulsarQueEmpiece_fit10('Espalda:'), 'FIT F16 — se toca Espalda en los rankings musculares');
 const detalle_fit16 = await esperarTexto(/Dorsales/i);

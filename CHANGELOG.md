@@ -1,5 +1,101 @@
 # CHANGELOG.md
 
+## v3.107.0 — FIT F25/45: resumen inteligente de rangos
+
+Fitness → Rangos deja de ser una colección de números y pasa a contestar *«¿cómo estoy?»*
+de arriba abajo: **rango general → progreso al siguiente → cobertura y confianza →
+evolución reciente → destacados y rankings musculares → ejercicios relevantes →
+clasificación pendiente**, que es exactamente el orden del apartado 2.
+
+### 🚨 Aquí no se calcula ni un rango
+
+El apartado 23 lo pide literal —*«No almacenar un dashboard summary»*— y el 35 remata con
+*«NO modificar el RankEngine»*. Así que `src/lib/resumenRangos.js` **junta y ordena** lo
+que ya resuelven la F16, la F13, la F22, la F23 y la F24, y **cada motor se llama una
+sola vez** (apartado 24). Antes esta pantalla pedía `pantallaDeRangos` y
+`tarjetaSiguienteRango` por separado, y cada una recorre las sesiones enteras.
+
+Y como no se guarda nada, el *refresh* del apartado 25 —después de entrenar, de clasificar,
+de editar o de borrar una sesión— **no necesita una línea**: es la F15 con los rangos, la
+F22 con el historial y la F24 con la cola, otra vez.
+
+### 🐛 El rango general no devolvía su confianza, y llevaba así desde la F20
+
+El apartado 6 pide enseñar *«la confianza real del RankEngine»*. `base()`, en
+`explicacionRangos.js`, lee `r.confianza`: el rango de un **ejercicio** la devuelve, el de
+un **grupo** también… y el **global** no. Así que `confianzaExplicada(undefined)` daba
+`null` y **el bloque de confianza del rango general no se ha enseñado nunca**. No fallaba:
+callaba — la familia de fallos de *la FORMA de lo que devuelve una función*, que este
+proyecto lleva contando desde la FIT F7.
+
+El arreglo es el precedente exacto de la **FIT F22** con `fuenteCombinada`:
+`confianzaCombinada()` agrega **la del eslabón más flojo** entre los grupos que entran en
+la media, con el catálogo `CONFIANZA` de la F15. **Ni un score se mueve** y las ocho suites
+de rangos siguen en verde sin tocar una comprobación. Queda anotado como **C-34** en
+`docs/03`, porque el apartado 35 dice «no modificar el RankEngine» y el 6 obliga a hacerlo:
+lo que ese apartado protege es **el cálculo**, y el cálculo no se ha tocado.
+
+### 🐛 Y los ejercicios relevantes del rango global salían SIEMPRE vacíos
+
+El apartado 12 los pide *«utilizando la lógica de Fase 21»*, y lo natural era pedírselos a
+la tarjeta de la F23 — pero `ejerciciosRelevantes` devuelve `null` para `overall`, **y a
+propósito**: *«un ejercicio y el rango global no tienen músculo del que repartir»*. La
+sección habría desaparecido para siempre sin un solo fallo.
+
+Lo que sí tiene músculo son **los destacados**, y el apartado 13 lo dibuja así: *«Espalda
+está mejorando»* y debajo *«Dominadas y remo muestran evolución reciente»*. Así que se le
+pregunta a la F21 por cada grupo destacado. ⚠️ **Y cada ejercicio se atribuye al grupo donde
+MÁS participa**, no al primero que lo nombre: `contribucionesDeMusculo` devuelve a todo el
+que tenga *algo* de ese músculo, así que un press de banca sale también en abdominales, y
+la pantalla llegó a decir *«Press de banca · Abdominales»* teniendo Pecho dos líneas arriba.
+
+### 🐛 Y una cobertura que se habría pintado a `NaN %`
+
+Hay **dos** coberturas y las dos tienen `texto`: la cruda del motor dice *«5/7»* y **no trae
+`fraccion`**; la que pasó por la F16 dice *«5 de 7 grupos con datos»* y sí. Reenviando la
+cruda, `RankCoverage` habría dibujado su barra a `NaN%` —con la pantalla entera
+renderizándose— y el texto en la forma corta que el apartado 5 no quiere. Hay una casilla de
+auditoría nueva que se pone roja con la cruda.
+
+### 🚨 Un destacado no puede decir «Sin datos»
+
+Un grupo entra en los destacados **porque tiene rango**. Pero con una sola sesión la F11
+todavía no puede comparar, así que la F13 devuelve `sin_datos` —correcto para ella— y la
+línea quedaba *«Espalda · Intermedio · Sin datos»*: justo lo que el apartado 11 reserva para
+un grupo **sin** datos. Sin tendencia, la línea desaparece (apartado 13: *«Solo si los datos
+lo permiten»*). El texto *«Sin datos»* sigue donde significa algo, en la lista de los siete.
+
+### ⚠️ De los nueve componentes del apartado 21, seis ya estaban escritos
+
+`OverallRankSummary` es `RankOverviewCard` (F16), `RankCoverageSummary` es `RankCoverage` y
+`RankConfidenceBadge` es `RankConfidence` (F20), `RankEvolutionSummary` es
+`RankHistorySummary` (F22), `RankExerciseHighlights` es `RankRelevantExercises` y
+`RankNextRankCard` es `RankNextLevelCard` (F23). El apartado dice *«Crear/reutilizar»* y a
+continuación *«Evitar componentes duplicados»*, así que solo nacen tres —`RankDashboard`,
+`RankMuscleHighlights` y `RankClassificationPrompt`— más el error y el esqueleto. La tabla
+que lo dice es `COMPONENTES_FIT25`, y **la prueba abre cada archivo**: una lista que solo se
+cuenta a sí misma no demuestra nada.
+
+⚠️ Y `RankDashboard` **recibe los bloques ya pintados**, como `ClassificationHub` en la F24:
+la tarjeta grande y los rankings viven en la vista, e importarlos desde `components/` sería
+un ciclo. Lo que aporta es **el orden**, que lee de `BLOQUES`.
+
+### ⚠️ Lo que se dice y lo que no
+
+- La **escala de los diez rangos baja** en la pantalla: no es uno de los siete bloques del
+  apartado 2, es material de referencia, y el 27 quiere que la principal sea un resumen.
+  Sigue entera y se abre igual.
+- **Los destacados se añaden; los siete grupos se quedan.** La F16 prometió en su apartado
+  14 que siempre se reconoce dónde está cada grupo. No se esconde nada.
+- Se llama **«Destacados»**, nunca «mejores músculos» (apartado 10), y debajo va la frase
+  que dice que **no miden desarrollo físico**.
+- **Sin cambio reciente no hay tarjeta vacía** (apartado 18) y **sin historial no se inventa
+  una tendencia** (apartado 8).
+- **Con la cola vacía no queda una tarjeta de tarea pendiente** (apartado 15): una línea
+  secundaria, o nada.
+- **Ni confeti, ni vibración, ni sonido** (apartado 30): la tarjeta de cambio entra con la
+  animación que ya está en `index.css` y respeta «Reducir movimiento» sola.
+
 ## v3.106.0 — FIT F24/45: priorización inteligente de clasificación
 
 «Clasificar ejercicios» ya no ofrece el catálogo entero por orden: ofrece **ocho**, los

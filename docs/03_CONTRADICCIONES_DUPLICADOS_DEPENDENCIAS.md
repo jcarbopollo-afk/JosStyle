@@ -614,6 +614,39 @@ la regla 49 se cumple dejándolo escrito y contándoselo al cerrar, nunca deteni
 **Si algún día cambia de opinión**, se cambia `NIVELES_RANGO` en `src/lib/fitness.js` y ya está: es
 un catálogo, no una arquitectura.
 
+### C-34 — ✅ RESUELTA AL CONSTRUIR (FIT F25, v3.107.0) · La confianza del rango general
+
+**El apartado 6 de la FIT F25 pide enseñar la confianza del rango global —*"Utilizar la confianza
+real del RankEngine. No crear una puntuación de confianza nueva"*— y el apartado 35 dice, en la
+misma fase, *"NO modificar el RankEngine"*. Y el rango global no devolvía su confianza**, así que
+cumplir el 6 sin tocar el motor era imposible.
+
+**La lectura con la que se ha construido, que respeta las dos:**
+
+Lo que el apartado 35 protege es **el cálculo**: la fórmula de la puntuación, los umbrales de los
+diez rangos, el peso de lo estimado frente a lo real. Nada de eso se toca — ni un score cambia, y
+las ocho suites de rangos siguen en verde sin editar una sola comprobación. Lo que se ha añadido es
+**una agregación** de valores que el motor ya tenía: `confianzaCombinada()` devuelve **la del
+eslabón más flojo** entre los grupos que entran en la media, usando el catálogo `CONFIANZA` de la
+F15 y sin inventar un cuarto nivel ni un umbral nuevo.
+
+🔁 **Y es exactamente el precedente de la FIT F22**, que sacó `fuenteCombinada()` por el mismo
+motivo: `rangoDeGrupo` agregaba puntuaciones y no procedencias, así que el historial de Espalda no
+podía decir de dónde venía un cambio. La regla ya se aplicaba dentro de `rangoGlobalEfectivo`; se
+escribió una vez y la llamaron los dos.
+
+🐛 **Y por el camino apareció un fallo real, vivo desde la FIT F20.** `base()`, en
+`explicacionRangos.js`, lee `r.confianza` para componer el bloque de confianza de la explicación. El
+rango de un **ejercicio** la devuelve y el de un **grupo** también, pero el **global** no: así que
+`confianzaExplicada(undefined)` daba `null` y **el bloque de confianza del rango general no se ha
+enseñado nunca**. No fallaba: callaba — la familia de fallos que este proyecto lleva contando desde
+la FIT F7 (*la FORMA de lo que devuelve una función*). Hay dos comprobaciones en
+`test-resumen-rangos.mjs` que lo miden, y una tercera que exige que sin rango siga sin enseñarse.
+
+**Si algún día se quiere otra agregación** —la media en vez del mínimo, o ponderar por cobertura—
+se cambia `confianzaCombinada` en `src/lib/motorRangos.js` y ya está: son cuatro líneas, y los tres
+niveles siguen siendo los de la F15.
+
 ---
 
 ## PARTE B — DUPLICADOS (15)
