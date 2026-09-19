@@ -6513,7 +6513,12 @@ ok(/Quitar el plan/i.test(tuPlan_fit5), '…y se puede dejar de tenerlo puesto')
 /* 🔓 Esta comprobación decía lo contrario hasta la F7, y estaba escrita a
    propósito para este momento: guardaba la promesa, ahora vigila que se cumpla
    (E3 F44, y ya van varias). */
-ok(/Empezar entrenamiento/i.test(tuPlan_fit5),
+/* 🐛 ⚠️ **Y con «Hoy toca descansar», como ya hacía la sección de la F6.** Este
+   botón es el de HOY, y de los diecisiete planes de la biblioteca **dos
+   entrenan el sábado y ninguno el domingo**: un fin de semana no puede existir,
+   y es correcto que no exista. Sin esta alternativa, la comprobación solo
+   pasaba de lunes a viernes. */
+ok(/Empezar entrenamiento/i.test(tuPlan_fit5) || /Hoy toca descansar/i.test(tuPlan_fit5),
   '🔓 …y en Tu Plan YA está «Empezar entrenamiento»: el motor llegó con la FIT F7');
 
 /* Y a 375 px no se desborda (apartado 18). */
@@ -6577,8 +6582,47 @@ ok(diasSemana_fit6.etiquetas.some((e) => /descanso/i.test(e)),
 ok(!diasSemana_fit6.etiquetas.some((e) => /completado/i.test(e)),
   '🚨 FIT F6 — y NINGUNO dice «completado»: sin historial no se puede afirmar (apartado 8)');
 
+/* 🐛 🚨 **UNA COMPROBACIÓN QUE SOLO PASA DE LUNES A VIERNES ES UNA BOMBA DE
+   RELOJERÍA, Y ÉSTA LLEVABA SIÉNDOLO DESDE QUE EXISTE.** La pasada verde de la
+   FIT F22 fue un **viernes**; la siguiente, un **sábado**, y cayeron cuarenta y
+   cinco comprobaciones de golpe en las secciones de la F6, la F7 y la F8.
+   La causa no era ninguna de esas fases: **los diecisiete planes de la
+   biblioteca tienen siete días**, así que el plan ES la semana y su día 1 es el
+   lunes (F6, apartado 7). El recorrido activa el plan HOY, y los días
+   anteriores de esta misma semana salen entonces como «antes de empezar» —que
+   es correcto, y lo arregló la propia F6—, así que un sábado la semana entera
+   es «antes de empezar» o «descanso» y **no queda ni un día que abrir**.
+   La aplicación está bien: lo que estaba mal era dar por hecho que esto se
+   ejecuta entre semana.
+   Se retrasa la activación al lunes de esta semana, que además es el caso
+   normal —alguien que lleva ya unos días con su plan puesto— y hasta hoy no lo
+   probaba nadie. ⚠️ La fecha se construye en **local**, nunca con
+   `toISOString()`: en España resta un día (la lección de siempre, y van
+   varias). */
+const lunesDeLaSemana_fit6 = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.toLocaleDateString('sv-SE');
+})();
+almacen.fitness = {
+  ...(almacen.fitness || {}),
+  planActivo: { ...((almacen.fitness || {}).planActivo || {}), desde: lunesDeLaSemana_fit6 },
+};
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(2500);
+ok(await pulsar('Bienestar') && await pulsar('Fitness'),
+  `FIT F6 — se vuelve con el plan activado el lunes (${lunesDeLaSemana_fit6})`);
+await esperarTexto(/Tu semana/i);
+const semanaDesdeLunes_fit6 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
+  .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo):/.test(b.getAttribute('aria-label') || ''))
+  .map((b) => b.getAttribute('aria-label')));
+ok(semanaDesdeLunes_fit6.length === 7,
+  `🚨 FIT F6 — la semana sigue teniendo siete días (${semanaDesdeLunes_fit6.length})`);
+ok(!semanaDesdeLunes_fit6.some((e) => /antes de empezar/i.test(e)),
+  '🚨 FIT F6 — y con el plan empezado el lunes ya no hay ningún día «antes de empezar»');
+
 /* Apartado 9 — tocar un día abre su sesión, con los ejercicios de siempre. */
-const diaConEntreno_fit6 = diasSemana_fit6.etiquetas
+const diaConEntreno_fit6 = semanaDesdeLunes_fit6
   .find((e) => !/descanso|antes de empezar/i.test(e)) || '';
 ok(!!diaConEntreno_fit6, `hay un día con entrenamiento (${diaConEntreno_fit6})`);
 ok(await pulsar(diaConEntreno_fit6), 'se toca ese día (apartado 9)');
@@ -6643,7 +6687,21 @@ ok(desborde_fit6.ancho <= desborde_fit6.ventana + 1,
    con todo dentro. Ninguna prueba de Node puede afirmar eso. */
 console.log('\n── FIT F7 · El entrenamiento en vivo ──');
 
-ok(await pulsar('Empezar entrenamiento'),
+/* 🐛 **Y EL MISMO FIN DE SEMANA TUMBABA LA SESIÓN EN VIVO ENTERA.** El botón de
+   la cabecera es el de HOY, y **ninguno de los diecisiete planes entrena el
+   domingo**: ese día no puede existir, y es correcto que no exista. El
+   apartado 1 pide *"Tu Plan → entrenamiento → Empezar entrenamiento"*, que es
+   exactamente el camino del **detalle de un día** —el que construyó esta misma
+   fase, `TuPlanView` §detalle— y ése está cualquier día. Así que se intenta por
+   la cabecera y, si hoy toca descansar, se entra por la semana: la sesión se
+   prueba igual un martes que un domingo. */
+let empezado_fit7 = await pulsar('Empezar entrenamiento', 1500);
+if (!empezado_fit7) {
+  await pulsar(diaConEntreno_fit6);
+  await page.waitForTimeout(600);
+  empezado_fit7 = await pulsar('Empezar entrenamiento', 3000);
+}
+ok(empezado_fit7,
   '🚨 FIT F7 — se pulsa «Empezar entrenamiento» desde Tu Plan (apartado 1)');
 const vivo_fit7 = await esperarTexto(/Terminar/i);
 ok(/Terminar/i.test(vivo_fit7), '🚨 …y se abre el entrenamiento en vivo (apartado 4)');
@@ -7762,12 +7820,26 @@ const anchoF18 = await page.evaluate(() => ({
 ok(!anchoF18.desborda, `⚠️ FIT F18 — a 375 px el detalle no se arrastra de lado (${anchoF18.ancho} px, apartado 28)`);
 
 /* Apartado 20 — los filtros por estado. */
+/* 🐛 🚨 **ESTA COMPROBACIÓN NO PODÍA FALLAR, Y POR ESO NADIE VIO QUE MEDÍA
+   OTRA COSA** (EH F42, enésima vez). Buscaba «: Mejorando.» en cualquier botón
+   de la página, y las tarjetas de la lista de contribución —que son justo las
+   que el filtro recorta— se llaman «Remo: Principiante, Mejorando. Ver su
+   progreso», **con el rango en medio**: jamás encajaban. Contaba cero con el
+   filtro puesto y cero sin él.
+   Lo destapó la tarjeta de la FIT F23, cuyos ejercicios relevantes sí tienen
+   esa forma — y **siguen ahí con el filtro puesto, que es lo correcto**: esa
+   tarjeta habla del rango del músculo, no de la lista, y el filtro es de la
+   lista. Ahora se mide la lista de verdad, y se exige que el número BAJE. */
+const conTendencia_fit18 = () => page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
+  .filter((b) => /, (Mejorando|Estable|Descenso)\. Ver su progreso$/.test(b.getAttribute('aria-label') || '')).length);
+const antesDeFiltrar_fit18 = await conTendencia_fit18();
+ok(antesDeFiltrar_fit18 > 0,
+  `⚠️ FIT F18 — y la comprobación PUEDE verlos: sin filtro hay ${antesDeFiltrar_fit18} con tendencia`);
 ok(await pulsar('Sin datos'), 'FIT F18 — se filtra por «Sin datos» (apartado 20)');
 await esperarTexto(/Ejercicios/i);
-const conTendencia_fit18 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
-  .filter((b) => /: (Mejorando|Estable|Descenso)./.test(b.getAttribute('aria-label') || '')).length);
-ok(conTendencia_fit18 === 0,
-  `🚨 …y deja fuera los que sí tienen tendencia (${conTendencia_fit18} tarjetas con tendencia)`);
+const filtrados_fit18 = await conTendencia_fit18();
+ok(filtrados_fit18 === 0,
+  `🚨 …y deja fuera los que sí tienen tendencia (${antesDeFiltrar_fit18} → ${filtrados_fit18})`);
 ok(await pulsar('Todos'), '…y se vuelve a verlos todos');
 
 /* Apartado 6 — el subgrupo. */

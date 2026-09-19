@@ -1,5 +1,42 @@
 # CHANGELOG.md
 
+## Recorrido — el fin de semana tumbaba las secciones de Fitness
+
+**Lo que pasó.** La verificación de la FIT F23 salió con **45 comprobaciones rojas**
+en las secciones de la F6, la F7 y la F8. Ninguna era de la F23: la pasada verde de
+la F22 fue un **viernes** y la siguiente, un **sábado**.
+
+**Por qué.** Los diecisiete planes de la biblioteca tienen **siete días**, así que
+—por la regla de la F6, apartado 7— el plan **es** la semana y su día 1 es el lunes.
+El recorrido activa el plan **hoy**, y entonces los días anteriores de esa misma
+semana salen como «antes de empezar», que es correcto y lo arregló la propia F6. Un
+sábado eso deja la semana entera en «antes de empezar» o «descanso» y **no queda ni
+un día que abrir**; y como solo **dos** planes entrenan el sábado y **ninguno** el
+domingo, el «Empezar entrenamiento» de la cabecera tampoco puede existir.
+
+**La aplicación está bien.** Lo que estaba mal era dar por hecho que el recorrido se
+ejecuta entre semana.
+
+- La semana se prueba ahora con el plan activado el **lunes de esta semana**, que
+  además es el caso normal —alguien que ya lleva días con su plan puesto— y hasta hoy
+  no lo probaba nadie. ⚠️ La fecha se construye en **local**, nunca con
+  `toISOString()`: en España resta un día.
+- La sesión en vivo se empieza por el **detalle de un día** cuando hoy toca
+  descansar. Es el camino literal del apartado 1 de la F7 —*«Tu Plan → entrenamiento
+  → Empezar entrenamiento»*— y existe cualquier día.
+- Y el «Empezar entrenamiento» de la sección de la F5 admite «Hoy toca descansar»,
+  como ya hacía la de la F6.
+
+🐛 **Y al arreglarlo saltó una comprobación que no podía fallar** (EH F42, enésima
+vez). La del filtro «Sin datos» de la F18 buscaba `«: Mejorando.»` en cualquier botón
+de la página, y las tarjetas de la lista de contribución —las que el filtro recorta—
+se llaman `«Remo: Principiante, Mejorando. Ver su progreso»`, **con el rango en
+medio**: no encajaban jamás. Contaba cero con el filtro puesto y cero sin él. Lo
+destapó la tarjeta de la FIT F23, cuyos ejercicios relevantes sí tienen esa forma
+—y **siguen ahí con el filtro puesto, que es lo correcto**: esa tarjeta habla del
+rango del músculo, no de la lista—. Ahora se mide la lista de verdad y se exige que
+el número **baje**, con una comprobación que dice si de verdad puede verlos.
+
 ## v3.105.0 — FIT F23/45: el objetivo del siguiente rango
 
 Desde el rango global y desde el de un músculo se ve **qué falta para el siguiente**: el progreso

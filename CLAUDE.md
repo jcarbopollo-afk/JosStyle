@@ -470,6 +470,24 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
   `MuscleSubgroupDetail`, que es **otro componente** y no tenía `siguiente` en su ámbito — reventaba
   con `siguiente is not defined`. **Lo cazó el banco de renderizado**, no el build. Le llega como
   **prop**, calculada por quien sabe qué subgrupo está abierto.
+- 🚨 **UNA COMPROBACIÓN QUE SOLO PASA DE LUNES A VIERNES ES UNA BOMBA DE RELOJERÍA** (recorrido,
+  y costó **45 rojos en cascada** que parecían de la FIT F23 y no lo eran). Los **diecisiete** planes
+  de la biblioteca tienen **siete días**, así que el plan **es** la semana y su día 1 es el lunes
+  (F6, apartado 7); el recorrido lo activa **hoy**, y entonces los días anteriores de esa semana
+  salen como «antes de empezar». Un **sábado** eso deja la semana entera sin un día que abrir, y como
+  **solo dos planes entrenan el sábado y ninguno el domingo**, «Empezar entrenamiento» tampoco puede
+  existir. **La aplicación estaba bien**: la pasada verde de la F22 fue un viernes y la siguiente un
+  sábado. Ahora la semana se prueba con el plan activado **el lunes** —que además es el caso normal y
+  no lo probaba nadie— y la sesión en vivo se empieza por **el detalle de un día**, que existe
+  cualquier día. ⚠️ **Antes de dar por buena una fase por un rojo del recorrido, mirar si lo que
+  falla depende de la FECHA.**
+- 🐛 **Y AL ARREGLARLO SALTÓ UNA COMPROBACIÓN QUE NO PODÍA FALLAR** (EH F42, enésima vez): la del
+  filtro «Sin datos» de la F18 buscaba `«: Mejorando.»` en **cualquier** botón de la página, y las
+  tarjetas de la lista de contribución se llaman `«Remo: Principiante, Mejorando. Ver su progreso»`
+  —con el rango en medio—, así que **no encajaban jamás**: contaba cero con el filtro y sin él. La
+  destapó la tarjeta de la F23, cuyos ejercicios relevantes sí tienen esa forma **y siguen ahí con el
+  filtro puesto, que es lo correcto** (la tarjeta es del músculo, el filtro es de la lista). Ahora
+  mide la lista de verdad y exige que el número **baje**.
 - 🐛 **UNA FÁBRICA DE ESCENARIOS TIENE QUE FALLAR DICIENDO QUÉ ESTÁ MAL** (FIT F22, y costó dos
   veces en la misma fase): con un `exerciseId` que no está en el catálogo, `anadirEjercicio` no añade
   nada y la línea siguiente revienta con `Cannot read properties of undefined` doce llamadas más
