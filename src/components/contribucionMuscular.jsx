@@ -25,13 +25,19 @@ import { FILTROS_EJERCICIOS, filtrarEjercicios } from '../lib/detalleMuscular';
 
 /* Los mismos cuatro estados que el resto de Fitness, con icono **y** palabra
    (apartado 30: nunca solo el color). */
-const ESTADOS = {
+/* ⚠️ Se EXPORTAN desde la FIT F23: la tarjeta del siguiente rango enseña los
+   mismos ejercicios con la misma tendencia, y un segundo catálogo acabaría
+   llamando «Mejorando» a lo que aquí es otra cosa (apartado 29 de esa fase:
+   *"Evitar duplicaciones"*). */
+export const ESTADOS_CONTRIBUCION = {
   mejora: { icono: TrendingUp, palabra: 'Mejorando' },
   estable: { icono: Minus, palabra: 'Estable' },
   descenso: { icono: TrendingDown, palabra: 'Descenso' },
   sin_datos: { icono: Circle, palabra: 'Sin datos' },
 };
-const estadoDe = (id) => ESTADOS[id] || ESTADOS.sin_datos;
+export const estadoDeContribucion = (id) => ESTADOS_CONTRIBUCION[id] || ESTADOS_CONTRIBUCION.sin_datos;
+const ESTADOS = ESTADOS_CONTRIBUCION;
+const estadoDe = estadoDeContribucion;
 
 /* ── 15 · La barra de participación ──────────────────────────────────────── */
 export function MuscleContributionBar({ porcentaje, nombre, accent }) {

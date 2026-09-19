@@ -1027,6 +1027,16 @@ fi
 # FIT F21 — qué ejercicios sostienen un rango muscular. Lo que más se vigila: que se
 # use el porcentaje DEL MÚSCULO que se mira (no el del ejercicio entero), que la
 # participación no se sume entre ejercicios, y que los que no tienen datos vayan aparte.
+# FIT F23 — el objetivo del siguiente rango. Lo que más se vigila: que el progreso se
+# mida ENTRE los dos umbrales (no score/máximo), que los puntos que faltan solo se
+# afirmen con datos reales detrás, y que NINGÚN texto convierta esos puntos en kilos
+# ni en repeticiones — el score combina varias métricas.
+if node --import ./scripts/resolver-vite.mjs scripts/test-siguiente-rango.mjs >/tmp/jc_siguiente_rango.log 2>&1; then
+  ok "Objetivo del siguiente rango (FIT F23) — $(grep -c '✓' /tmp/jc_siguiente_rango.log) comprobaciones"
+else
+  fallo "Falla el objetivo del siguiente rango"; grep '✗' /tmp/jc_siguiente_rango.log
+fi
+
 # FIT F22 — el historial de rangos. Lo que más se vigila: que no se invente ni un
 # punto, que un cambio solo exista si cambió el RANGO (no el score), que el pasado
 # conserve su confianza baja, y que borrar la sesión que causó una subida se lleve

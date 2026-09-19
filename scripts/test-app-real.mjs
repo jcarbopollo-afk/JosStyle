@@ -7968,6 +7968,78 @@ ok(!/Historial insuficiente/i.test(histEj_fit22) ? /desde |Primer dato registrad
   '⚠️ FIT F22 — con su evolución, o con el vacío que dice que todavía no la hay');
 ok(await pulsar('Cerrar el historial'), '…y se cierra');
 
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F23 — El objetivo del siguiente rango (Entrega 4 · 23/45)
+   ══════════════════════════════════════════════════════════════════════════
+   El criterio del apartado 37: abrir un rango y entender qué tengo, cuál es el
+   siguiente, cuánto llevo dentro y cuántos puntos faltan **si son fiables**. Y
+   lo que solo se ve con el dedo: que la tarjeta **no traduce los puntos a kilos
+   ni a repeticiones** (apartados 12 y 13) y que no enseña un `NaN`. */
+console.log('\n── FIT F23 · El siguiente rango ──');
+
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F23 — Fitness → Rangos');
+const rangos_fit23 = await esperarTexto(/Rango Predicho/i);
+/* 🚨 Lo uno o lo otro: o hay rango y se dice qué falta, o se dice que todavía
+   no lo hay. Nunca un 0 % ni un «te falta X» sin rango (apartado 7). */
+const conRango_fit23 = /Siguiente:|Rango máximo alcanzado/i.test(rangos_fit23);
+const sinRango_fit23 = /Completa o clasifica ejercicios/i.test(rangos_fit23);
+ok(conRango_fit23 !== sinRango_fit23,
+  `🚨 FIT F23 — o hay siguiente rango o se dice que aún no hay rango (con: ${conRango_fit23}, sin: ${sinRango_fit23})`);
+ok(!/NaN|Infinity|undefined/.test(rangos_fit23),
+  '🚨 FIT F23 — y ni un NaN, Infinity o undefined en pantalla (apartado 33)');
+ok(!/\d+\s*kg para|levanta \d+|necesitas \d+ repeticion/i.test(rangos_fit23),
+  '🚨 FIT F23 — los puntos NO se traducen a kilos ni a repeticiones (apartados 12 y 13)');
+ok(!/en \d+ (días|semanas|meses)|tardarás/i.test(rangos_fit23),
+  '🚨 FIT F23 — ni una predicción de cuánto tardará (apartado 36)');
+
+if (conRango_fit23 && !/Rango máximo alcanzado/i.test(rangos_fit23)) {
+  ok(/\d+\s*%/.test(rangos_fit23), '🚨 FIT F23 — con rango se ve el porcentaje dentro del rango (apartado 1)');
+  ok(/Estás a \d+ puntos? de |Necesitas mejorar tu rendimiento/i.test(rangos_fit23),
+    '🚨 FIT F23 — y qué falta: los puntos si son fiables, o la frase honesta si no (apartados 1 y 11)');
+} else {
+  ok(!/\d+\s*%\s*$/m.test(rangos_fit23) || sinRango_fit23,
+    '⚠️ FIT F23 — sin rango o en el máximo no se pinta un porcentaje suelto');
+}
+
+const anchoF23 = await page.evaluate(() => ({
+  desborda: document.documentElement.scrollWidth > window.innerWidth + 2,
+  ancho: document.documentElement.scrollWidth,
+}));
+ok(!anchoF23.desborda, `⚠️ FIT F23 — a 375 px la tarjeta no desborda (${anchoF23.ancho} px, apartado 35)`);
+
+/* Apartado 30 — «Ver por qué» abre la explicación de la F20, sin pantalla nueva. */
+const hayPorQue_fit23 = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button')].find((x) => /^Ver por qué$/.test((x.innerText || '').trim()));
+  if (!b) return false;
+  b.click();
+  return true;
+});
+if (hayPorQue_fit23) {
+  const exp_fit23 = await esperarTexto(/En qué se basa/i);
+  ok(/En qué se basa/i.test(exp_fit23),
+    '🚨 FIT F23 — «Ver por qué» abre la explicación que YA existe (apartado 30)');
+  ok(await pulsar('Cerrar'), '…y se cierra donde estaba');
+} else {
+  ok(sinRango_fit23, '⚠️ FIT F23 — sin rango no hay «Ver por qué» que ofrecer (regla 8)');
+}
+
+/* Apartado 16 — la misma tarjeta en un músculo, con sus ejercicios debajo. */
+ok(await pulsarQueEmpiece_fit10('Espalda:'), 'FIT F23 — → Espalda');
+const musculo_fit23 = await esperarTexto(/Subgrupos/i);
+ok(/Siguiente:|Rango máximo alcanzado|Completa o clasifica ejercicios/i.test(musculo_fit23),
+  '🚨 FIT F23 — apartado 16: el músculo también dice qué falta para el siguiente');
+ok(!/NaN|Infinity|undefined/.test(musculo_fit23),
+  '…sin un solo número roto (apartado 33)');
+if (/Ejercicios relevantes/i.test(musculo_fit23)) {
+  ok(/Estos ejercicios tienen mayor contribución actualmente/i.test(musculo_fit23),
+    '🚨 FIT F23 — apartado 22: se dice lo único afirmable, no «debes entrenar X»');
+  ok(!/debes entrenar|tienes que entrenar/i.test(musculo_fit23),
+    '…y no hay ni una orden en la pantalla');
+} else {
+  ok(true, '⚠️ FIT F23 — sin ejercicios con datos no se pinta la lista (regla 8)');
+}
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

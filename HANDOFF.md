@@ -2,6 +2,23 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.105.0 — FIT F23/45: el objetivo del siguiente rango):** Desde el rango
+> global y desde el de un músculo se ve **qué falta para el siguiente**: progreso dentro del rango,
+> puntos que quedan y con qué fiabilidad. 🚨 **Cuatro de los cinco componentes del apartado 29 ya
+> existían** (`RankProgress` de la F15; `RankNextStep`, `RankCoverage` y `RankConfidence` de la F20),
+> y **la fórmula del apartado 4 también**: `progresoHaciaSiguiente` mide entre los DOS umbrales, no
+> `score / 1000` — hay una prueba que calcula las dos y enseña 0,567 frente a 0,448. Lo nuevo son
+> los **puntos que faltan**, `getNextRankProgress` para las cuatro entidades y **qué se puede
+> afirmar**: la cifra exacta solo con entrenamientos detrás; de una estimación se dice «Estimación
+> inicial». 🚨 **Ni kilos ni repeticiones** (apartados 12 y 13): un score combina métricas, y hay un
+> barrido sobre todos los textos. Sin rango no hay barra ni 0 %; en el máximo tampoco hay barra; y
+> con poca cobertura el global lo dice **antes** que el progreso. 🐛 Dos campos que no existían y
+> habrían callado: `progresoDeEjercicio` no devuelve `clase` (el isométrico lo dice el catálogo) y la
+> contribución devuelve `tendencia`, no `tendenciaNombre`. 🐛 Y un reemplazo se coló en los **dos**
+> caminos de pintado de `DetalleMuscularView`: `MuscleSubgroupDetail` reventaba, y lo cazó el banco
+> de renderizado. `src/lib/siguienteRango.js` + `src/components/siguienteRango.jsx`, con
+> `scripts/test-siguiente-rango.mjs` (117 comprobaciones).
+
 > **🏋️ ACTUALIZACIÓN (v3.104.0 — FIT F22/45: historial y evolución de rangos):** Desde el rango
 > global, el de un músculo y el de un ejercicio se abre **de dónde viene**: qué rango tenía antes,
 > cuándo cambió, y si fue por datos reales o por una clasificación. 🚨 **El historial se DERIVA,

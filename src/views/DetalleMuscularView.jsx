@@ -32,6 +32,10 @@ import { RankExplanation, BotonPorQue } from '../components/explicacionRango';
 /* FIT F22 — el historial de un rango, el mismo componente en los tres sitios
    (su apartado 30: nada de una sección independiente). */
 import { RankHistory, BotonHistorial } from '../components/historialRango';
+/* FIT F23 — qué falta para el siguiente rango de ESTE músculo, con los
+   ejercicios que más contribuyen debajo (su apartado 16). */
+import { RankNextLevelCard } from '../components/siguienteRango';
+import { tarjetaSiguienteRango } from '../lib/siguienteRango';
 import { explicacionDeMusculo, explicacionDeEjercicio } from '../lib/explicacionRangos';
 /* 🔓 FIT F21 — la lista de ejercicios pasa a decir **cuánto aporta cada uno** a
    este músculo, y separa los que todavía no tienen datos. Sustituye a la de la
@@ -229,12 +233,18 @@ export function MuscleContribution({ texto: t }) {
    cambie. */
 
 /* ── El detalle de un subgrupo (apartado 6) ──────────────────────────────── */
-export function MuscleSubgroupDetail({ detalle, contribuciones, accent, onVolver, onEjercicio, onPorQue = null, onPorQueEjercicio = null, onHistorial = null }) {
+export function MuscleSubgroupDetail({ detalle, contribuciones, accent, onVolver, onEjercicio, onPorQue = null, onPorQueEjercicio = null, onHistorial = null, siguiente = null }) {
   const [filtro, setFiltro] = useState('todos');
   if (!detalle) return null;
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       <MuscleRankHeader detalle={detalle} accent={accent} onVolver={onVolver} volverA={detalle.grupoNombre || 'Volver'} onPorQue={onPorQue} onHistorial={onHistorial} />
+      {/* 🐛 FIT F23 — ESTA pantalla es OTRO camino de pintado, y el reemplazo
+          que puso la tarjeta se coló en los dos: aquí `siguiente` no existía y
+          `MuscleSubgroupDetail` reventaba con `siguiente is not defined`. La
+          tarjeta llega como PROP, calculada por quien conoce el subgrupo
+          abierto. Es la lección de los dos caminos de pintado (FIT F5). */}
+      <RankNextLevelCard tarjeta={siguiente} accent={accent} onPorQue={onPorQue} onEjercicio={onEjercicio} />
       <MuscleProgressSummary resumen={detalle.resumen} accent={accent} />
       <MuscleContributionList
         contribuciones={contribuciones}
@@ -279,6 +289,16 @@ export default function DetalleMuscularView({
      subgrupo si lo hay. */
   const contribuciones = useMemo(
     () => contribucionesDeMusculo(fitness || {}, subgrupo ? { subgrupoId: subgrupo } : { grupoId }, { propios, perfil }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fitness && fitness.sesiones, fitness && fitness.clasificaciones, grupoId, subgrupo, propios, perfil],
+  );
+  /* FIT F23 — una sola vez por cambio en las sesiones, como el resto. */
+  const siguiente = useMemo(
+    () => tarjetaSiguienteRango(
+      fitness || {},
+      subgrupo ? { tipo: 'subgroup', id: subgrupo } : { tipo: 'muscleGroup', id: grupoId },
+      { propios, perfil },
+    ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [fitness && fitness.sesiones, fitness && fitness.clasificaciones, grupoId, subgrupo, propios, perfil],
   );
@@ -346,6 +366,7 @@ export default function DetalleMuscularView({
           onPorQue={() => setPorQue({ tipo: 'subgrupo', id: detalleSub.id })}
           onPorQueEjercicio={(id) => setPorQue({ tipo: 'ejercicio', id })}
           onHistorial={() => setHistorial({ tipo: 'subgroup', id: detalleSub.id })}
+          siguiente={siguiente}
         />
         {hoja}
         {hojaHistorial}
@@ -362,6 +383,14 @@ export default function DetalleMuscularView({
         volverA="Rangos"
         onPorQue={() => setPorQue({ tipo: 'grupo', id: detalle.id })}
         onHistorial={() => setHistorial({ tipo: 'muscleGroup', id: detalle.id })}
+      />
+      {/* FIT F23, apartado 16 — «ESPALDA · Avanzado · 72 % hacia Experto», con
+          los ejercicios que más contribuyen justo debajo. */}
+      <RankNextLevelCard
+        tarjeta={siguiente}
+        accent={accent}
+        onPorQue={() => setPorQue({ tipo: 'grupo', id: detalle.id })}
+        onEjercicio={onEjercicio}
       />
       <MuscleProgressSummary resumen={detalle.resumen} accent={accent} />
       <MuscleSubgroupList subgrupos={detalle.subgrupos} accent={accent} onAbrir={setSubgrupo} />

@@ -229,6 +229,12 @@ import {
   pantallaDeHistorial as pantHistF22, historialDeRango as histF22,
   detalleDeCambio as detCambioF22,
 } from '../src/lib/historialRangos.js';
+/* FIT F23 — la tarjeta del siguiente rango. Cuatro de sus cinco componentes ya
+   existían (F15/F20), así que aquí solo entran los suyos. */
+import {
+  RankNextLevelCard, RankNextLevelBar, RankRelevantExercises,
+} from '../src/components/siguienteRango.jsx';
+import { tarjetaSiguienteRango as tarjF23 } from '../src/lib/siguienteRango.js';
 /* FIT F2 — el catálogo de ejercicios y su detalle. ⚠️ El detalle va APARTE
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
    Relación (NAV F3), y sin estos casos no lo probaría nadie. */
@@ -376,6 +382,8 @@ const fitnessConHistorialF22 = () => ['2026-06-10', '2026-07-10', '2026-08-09', 
     return guardarSesionF10(f, guardarF8(pasarF8(s), { confirmado: true }).sesion);
   }, {});
 const DESTINO_EJ_F22 = { tipo: 'exercise', id: 'dominada-prona' };
+const DESTINO_GRUPO_F23 = { tipo: 'muscleGroup', id: 'espalda' };
+const DESTINO_ISO_F23 = { tipo: 'exercise', id: 'plancha-frontal' };
 const histEjF22 = () => histF22(fitnessConHistorialF22(), DESTINO_EJ_F22, {});
 const pantEjF22 = () => pantHistF22(fitnessConHistorialF22(), DESTINO_EJ_F22, {});
 
@@ -3169,6 +3177,30 @@ const CASOS = [
   ['RankHistoryEmpty', RankHistoryEmpty, () => ({ vacio: pantHistF22({}, DESTINO_EJ_F22, {}).vacio, accent, onProgreso: noop })],
   /* Y el del rango global, que NO lleva CTA porque no hay a dónde mandarle. */
   ['RankHistoryEmpty', RankHistoryEmpty, () => ({ vacio: pantHistF22({}, { tipo: 'overall', id: '' }, {}).vacio, accent })],
+
+  /* ══ FIT F23 — el objetivo del siguiente rango ═════════════════════════ */
+  ['RankNextLevelCard', RankNextLevelCard, () => ({ tarjeta: tarjF23(fitnessConHistorialF22(), DESTINO_EJ_F22, {}), accent, onPorQue: noop })],
+  /* 🚨 El caso SIN RANGO: ni barra, ni 0 %, ni «te falta X» (apartado 7). */
+  ['RankNextLevelCard', RankNextLevelCard, () => ({ tarjeta: tarjF23({}, DESTINO_EJ_F22, {}), accent })],
+  /* Un grupo muscular, que SÍ trae los ejercicios que más contribuyen. */
+  ['RankNextLevelCard', RankNextLevelCard, () => ({ tarjeta: tarjF23(fitnessConHistorialF22(), DESTINO_GRUPO_F23, {}), accent, onPorQue: noop, onEjercicio: noop })],
+  /* Y el mismo en compacta: sin cobertura ni lista, para caber en una columna. */
+  ['RankNextLevelCard', RankNextLevelCard, () => ({ tarjeta: tarjF23(fitnessConHistorialF22(), DESTINO_GRUPO_F23, {}), accent, compacta: true })],
+  /* ⚠️ Un isométrico: su línea dice con qué se mide (apartado 14). */
+  ['RankNextLevelCard', RankNextLevelCard, () => ({ tarjeta: tarjF23(fitnessConHistorialF22(), DESTINO_ISO_F23, {}), accent })],
+  ['RankNextLevelBar', RankNextLevelBar, () => ({ barra: { fraccion: 0.72, porcentaje: 72 }, accent, hacia: 'Avanzado' })],
+  /* Los extremos, que son donde se ven los números rotos (apartado 33). */
+  ['RankNextLevelBar', RankNextLevelBar, () => ({ barra: { fraccion: 0, porcentaje: 0 }, accent, hacia: 'Novato' })],
+  ['RankNextLevelBar', RankNextLevelBar, () => ({ barra: { fraccion: 1, porcentaje: 100 }, accent })],
+  ['RankRelevantExercises', RankRelevantExercises, () => {
+    const t = tarjF23(fitnessConHistorialF22(), DESTINO_GRUPO_F23, {});
+    return { relevantes: t.relevantes, etiqueta: t.etiquetaRelevantes, accent, onAbrir: noop };
+  }],
+  /* Sin poder abrir: las filas son texto, no botones. */
+  ['RankRelevantExercises', RankRelevantExercises, () => {
+    const t = tarjF23(fitnessConHistorialF22(), DESTINO_GRUPO_F23, {});
+    return { relevantes: t.relevantes, etiqueta: t.etiquetaRelevantes, accent };
+  }],
 
   /* ══ FIT F17 — el cuestionario ═════════════════════════════════════════ */
   ['ClasificacionView', ClasificacionView, () => ({ fitness: {}, accent, onGuardarFitness: noop, onVolver: noop })],

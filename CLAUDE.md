@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.104.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.105.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -329,8 +329,8 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 (v3.88.0)**, la **FIT F7 (v3.89.0)**, la **FIT F8 (v3.90.0)**, la **FIT F9 (v3.91.0)**, la **FIT F10
 (v3.92.0)** , la **FIT F11 (v3.93.0)**, la **FIT F12 (v3.94.0)**, la **FIT F13 (v3.95.0)**, la **FIT F14 (v3.96.0)**, la **FIT F15 (v3.97.0)**, la **FIT F16 (v3.98.0)**, la
 **FIT F17 (v3.99.0)**, la **FIT F18 (v3.100.0)**, la **FIT F19 (v3.101.0)**, la **FIT F20
-(v3.102.0)**, la **FIT F21 (v3.103.0)** y la **FIT F22 (v3.104.0)** hechas. Lo que dejaron, y que
-vale para las 23 que quedan:
+(v3.102.0)**, la **FIT F21 (v3.103.0)** la **FIT F22 (v3.104.0)** y la **FIT F23
+(v3.105.0)** hechas. Lo que dejaron, y que vale para las 22 que quedan:
 
 - 🚨 **PARTICIPACIÓN ≠ PESO EN EL CÁLCULO** (FIT F21, `src/lib/contribucionMuscular.js`). La
   participación es la del catálogo (50 % dorsales) y **no se suma entre ejercicios**; el peso
@@ -440,6 +440,36 @@ vale para las 23 que quedan:
   entrenamientos o de una clasificación. La regla **ya existía**, escrita dentro de
   `rangoGlobalEfectivo`: se sacó a **`fuenteCombinada()`** y ahora la llaman los dos. **Antes de
   escribir una regla que ya se aplica en otro sitio, sacarla de donde está.**
+- 🚨 **LO QUE PIDE UN APARTADO PUEDE ESTAR YA ESCRITO CUATRO QUINTAS PARTES** (FIT F23, apartado 29).
+  De los cinco componentes que enumera, **cuatro existían**: `RankProgressBar` es `RankProgress`
+  (F15), y `RankNextStep`, `RankCoverage` y `RankConfidence` son de la F20. Y **la fórmula del
+  apartado 4 también estaba resuelta**: `progresoHaciaSiguiente` mide **entre los dos umbrales**, no
+  `score / 1000` —que es justo lo que ese apartado prohíbe—. Hay una comprobación que calcula las dos
+  y enseña **0,567 frente a 0,448**. Lo único nuevo es la tarjeta, los puntos que faltan y qué se
+  puede afirmar.
+- 🚨 **UNA CIFRA EXACTA SOLO SE DICE SI EL DATO LA SOSTIENE** (FIT F23, apartados 9 y 11): la barra y
+  el porcentaje se ven siempre que haya rango, pero *"Estás a 84 puntos"* **solo con entrenamientos
+  detrás**. De una estimación se enseña el progreso **etiquetado** «Estimación inicial» y la frase
+  honesta. ⚠️ Y no es esconder información (apartado 8): es no prometer una precisión que no hay.
+- 🚨 **UN SCORE NO SE TRADUCE A KILOS NI A REPETICIONES** (FIT F23, apartados 12 y 13): combina
+  varias métricas, así que *"necesitas exactamente 3 repeticiones más"* se inventa la precisión y
+  *"levanta X kg"* se inventa el ejercicio. Hay un barrido sobre **todos** los textos que genera la
+  fase, buscando también plazos y órdenes.
+- ⚠️ **NI SIN RANGO NI EN EL MÁXIMO SE PINTA UNA BARRA** (FIT F23, apartados 6 y 7): sin rango no hay
+  0 % ni «te falta X»; en el máximo, ni vacía ni llena — lo que hay que leer es «Rango máximo
+  alcanzado». Y **el progreso nunca va sin la cobertura** (apartado 18): un 68 % suelto *"parece una
+  medición física absoluta"*.
+- 🐛 **DOS CAMPOS QUE NO EXISTÍAN Y HABRÍAN CALLADO** (FIT F23, y es la lección de la FORMA de lo que
+  devuelve una función, otra vez): `progresoDeEjercicio` **no devuelve `clase`**, así que decidir si
+  un ejercicio es isométrico leyéndola daba `undefined` siempre —un L-sit con la frase de
+  repeticiones—; lo dice el **catálogo** (`medidas`, F2). Y la contribución devuelve **`tendencia`,
+  no `tendenciaNombre`**: la línea de cada ejercicio relevante se habría quedado muda. El catálogo de
+  tendencias de la F21 pasa a exportarse, en vez de escribir un segundo.
+- 🐛 **UN REEMPLAZO POR TEXTO ALCANZA TODOS LOS CAMINOS DE PINTADO DEL ARCHIVO** (FIT F23, y es
+  FIT F5 y GE F1 otra vez): poner la tarjeta debajo del resumen muscular la metió también en
+  `MuscleSubgroupDetail`, que es **otro componente** y no tenía `siguiente` en su ámbito — reventaba
+  con `siguiente is not defined`. **Lo cazó el banco de renderizado**, no el build. Le llega como
+  **prop**, calculada por quien sabe qué subgrupo está abierto.
 - 🐛 **UNA FÁBRICA DE ESCENARIOS TIENE QUE FALLAR DICIENDO QUÉ ESTÁ MAL** (FIT F22, y costó dos
   veces en la misma fase): con un `exerciseId` que no está en el catálogo, `anadirEjercicio` no añade
   nada y la línea siguiente revienta con `Cannot read properties of undefined` doce llamadas más
@@ -819,7 +849,7 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F23/45 — Objetivo del siguiente rango** (líneas 18 070–18 744 de
+1. 🏋️ **SEGUIR POR LA FIT F24/45 — Priorización inteligente de clasificación** (líneas 17 422–18 069 de
    `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). Se construye de la F1 a la F45, en orden,
    encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez

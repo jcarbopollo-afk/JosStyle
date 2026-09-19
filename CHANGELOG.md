@@ -1,5 +1,76 @@
 # CHANGELOG.md
 
+## v3.105.0 — FIT F23/45: el objetivo del siguiente rango
+
+Desde el rango global y desde el de un músculo se ve **qué falta para el siguiente**: el progreso
+dentro del rango actual, cuántos puntos quedan y con qué fiabilidad está calculado.
+
+### 🚨 Casi todo lo que pedía el apartado 29 ya existía
+
+De los cinco componentes que enumera, **cuatro estaban escritos**: `RankProgressBar` es
+`RankProgress` (F15), `RankNextStep` es `siguientePaso()` (F20), y `RankCoverage` y `RankConfidence`
+son los de la F20. Lo único nuevo es `RankNextLevelCard`.
+
+Y sobre todo: **la fórmula del apartado 4 también estaba resuelta.** `progresoHaciaSiguiente` (F15)
+mide la fracción **entre el umbral del rango actual y el del siguiente**, que es exactamente lo que
+el apartado pide y lo contrario de `score / 1000`. Hay una comprobación que calcula las dos y
+demuestra que dan números distintos: **0,567 frente a 0,448** sobre el mismo score.
+
+Lo que de verdad faltaba eran tres cosas: **los puntos que faltan**, **una sola función para las
+cuatro entidades** (`getNextRankProgress`) y **qué se puede afirmar** con la confianza y la cobertura
+que hay.
+
+### La cifra exacta solo se dice con datos reales detrás
+
+El apartado 11 la condiciona a que *"la confianza permita mostrarlo"* y el 9 deja enseñar el progreso
+del cuestionario **etiquetado**. Así que la barra y el porcentaje se ven siempre que haya rango, y
+*"Estás a 84 puntos de Avanzado"* **solo cuando hay entrenamientos detrás**. De una estimación se
+dice *"Estimación inicial"* y la frase honesta, no un número que esa estimación no sostiene.
+
+### Ni kilos, ni repeticiones, ni plazos
+
+Un score combina varias métricas, así que **no se traduce**: nada de *"necesitas exactamente 3
+repeticiones más"* (apartado 12) ni de *"levanta X kg"* (apartado 13). Hay un barrido sobre **todos**
+los textos que genera la fase buscando kilos, repeticiones, plazos y órdenes.
+
+### Los estados que no son un cero
+
+- **Sin rango** → *"Completa o clasifica ejercicios para obtener tu primer rango."* Nunca un 0 %,
+  nunca un «te falta X», y **sin barra** (apartado 7).
+- **Rango máximo** → *"Rango máximo alcanzado"*, y **sin barra vacía ni llena** (apartado 6): lo que
+  hay que leer es eso, no un 100 % que no significa nada.
+- **Poca cobertura en el global** → se dice *"Datos insuficientes para una estimación sólida."*
+  **antes** que el progreso (apartado 17).
+
+### El progreso nunca va solo
+
+Apartado 18: sin la cobertura al lado, un 68 % *"parece una medición física absoluta"*. Van juntos, y
+cuando la confianza y la cobertura flojean a la vez se dice *"Progreso provisional · Cobertura
+limitada"* (apartado 19).
+
+### 🐛 Dos campos que no existían, y habrían callado
+
+- **`progresoDeEjercicio` no devuelve `clase`**, así que decidir si un ejercicio es isométrico
+  leyendo ese campo daba `undefined` siempre: un L-sit habría salido con la frase de repeticiones sin
+  que fallara nada. Lo decide el **catálogo** (`medidas`, de la F2).
+- **La contribución devuelve `tendencia`, no `tendenciaNombre`**: la línea de cada ejercicio relevante
+  se habría quedado muda. El catálogo de tendencias de la F21 pasa a exportarse y se usa el mismo —
+  un segundo catálogo acabaría llamando «Mejorando» a otra cosa.
+
+### 🐛 Y un reemplazo que se coló en dos pantallas
+
+Poner la tarjeta debajo del resumen muscular tocó **los dos caminos de pintado** del mismo archivo,
+y `MuscleSubgroupDetail` —que es otro componente— reventó con `siguiente is not defined`. Lo cazó el
+banco de renderizado. La tarjeta le llega como **prop**, calculada por quien sabe qué subgrupo está
+abierto. Es la lección de los dos caminos de pintado (FIT F5, GE F1).
+
+### Pruebas
+
+`scripts/test-siguiente-rango.mjs` con **117 comprobaciones** —las veintidós del apartado 34 más los
+barridos de lo que no se puede decir—, sus casos en el banco de renderizado y su sección en el
+recorrido de Chromium. La auditoría se parte en `casillasDelSiguiente()` para poder **ponerla roja**
+con una tarjeta inventada: un 140 %, −3 puntos restantes y un score `NaN` la tumban entera.
+
 ## v3.104.0 — FIT F22/45: historial y evolución de rangos
 
 Desde el rango global, el de un músculo y el de un ejercicio se puede abrir **de dónde viene**: qué

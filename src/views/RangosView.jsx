@@ -32,6 +32,9 @@ import { pantallaDeRangos, detalleDeRango } from '../lib/pantallaRangos';
 import { RankExplanation, BotonPorQue } from '../components/explicacionRango';
 /* FIT F22 — el historial del rango, colgando del rango global (su apartado 30). */
 import { RankHistory, BotonHistorial } from '../components/historialRango';
+/* FIT F23 — qué falta para el siguiente rango, debajo del rango general. */
+import { RankNextLevelCard } from '../components/siguienteRango';
+import { tarjetaSiguienteRango } from '../lib/siguienteRango';
 import { explicacionGlobal } from '../lib/explicacionRangos';
 /* FIT F18 — el detalle de un grupo muscular, dentro de Rangos. */
 import DetalleMuscularView from './DetalleMuscularView';
@@ -397,6 +400,12 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
   /* FIT F22 — y si está abierto su historial. Estado de pantalla (EH F40). */
   const [historial, setHistorial] = useState(false);
   const detalle = abierto ? detalleDeRango(abierto, datos.global.sinRango ? null : datos.global.rango) : null;
+  /* FIT F23 — una vez por cambio en las sesiones, como el resto de la pantalla. */
+  const siguiente = useMemo(
+    () => tarjetaSiguienteRango(fitness || {}, DESTINO_GLOBAL, { propios, perfil }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fitness && fitness.sesiones, fitness && fitness.clasificaciones, propios, perfil],
+  );
 
   /* Va DESPUÉS de los hooks (regla 4). */
   if (musculo) {
@@ -437,6 +446,14 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
           onClasificar={onClasificar ? () => { setPorQue(false); onClasificar(); } : null}
         />
       )}
+
+      {/* FIT F23, apartado 1 — qué falta para el siguiente, con su cobertura
+          y su fiabilidad al lado (apartados 18 y 19). */}
+      <RankNextLevelCard
+        tarjeta={siguiente}
+        accent={accent}
+        onPorQue={() => setPorQue(true)}
+      />
 
       <div>
         <SectionTitle sub="Los diez niveles de la escala">Rangos</SectionTitle>
