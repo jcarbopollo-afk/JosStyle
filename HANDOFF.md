@@ -34,6 +34,18 @@
 > ⚠️ **Y las acciones del onboarding que no pueden funcionar no se pintan** (regla 8).
 > 🐛 **El barrido de «ni IA» saltaba con la tabla que declara que no hay IA** — la lección de la
 > FIT F25 y de «experto contiene xp»: lo que se barre es el código, no la tabla.
+> 🔓 **Y el cambio real no se pierde al rediseñar**: el Resumen de la F12 enseñaba «62,5 kg × 8 →
+> 62,5 kg × 10» y el apartado 4 solo pide nombre y tendencia — se enseñan **las dos cosas**, desde
+> la MISMA tarjeta de la F12 (E3 F43: *"retirar una pantalla no puede llevarse sus funciones"*), y
+> las dos comprobaciones que lo vigilaban **se mudan en vez de borrarse**.
+> 🐛 **Y mi sección del recorrido heredaba las fotos de la vecina** (E3 F6): la F27 recorta
+> `saludFotos` a UNA para probar su «falta otra foto», así que cinco comprobaciones daban rojo
+> diciendo que «Comparar progreso» no existía **con la aplicación bien** — con una foto ese botón
+> NO debe pintarse (regla 8). Ahora siembra las suyas.
+>
+> 📊 **Cifras recontadas de la pasada verde de la v3.110.0:** **19 942 pruebas de Node en 188
+> suites, 3192 casos de renderizado, 11 reglas invariantes y 2355 comprobaciones en Chromium —
+> 25 500 en total.**
 
 > **🏋️ ACTUALIZACIÓN (v3.109.0 — FIT F27/45: el comparador de progreso físico):**
 > Progreso → Fotos → **Comparar** es una pantalla entera: dos momentos elegidos por fecha, lado a

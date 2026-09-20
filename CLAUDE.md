@@ -184,15 +184,15 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **19 789 pruebas unitarias** con Node repartidas en **187 suites** (5 de ellas de auditoría),
-**3096 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2316
-comprobaciones sobre la aplicación de verdad en Chromium** — **25 212 comprobaciones**.
+Vite, **19 942 pruebas unitarias** con Node repartidas en **188 suites** (5 de ellas de auditoría),
+**3192 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2355
+comprobaciones sobre la aplicación de verdad en Chromium** — **25 500 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.109.0, una a una**, con la suma del
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.110.0, una a una**, con la suma del
 propio log. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
-⚠️ Y las anteriores —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
+⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
 
 Eso ya ha encontrado **cien bugs reales** que la revisión a mano no vio. Los dos últimos: un
 `GhostBtn` que **repartía `disabled` sin usarlo** —así que un «Cancelar» llevaba tiempo siendo
