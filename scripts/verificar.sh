@@ -1027,6 +1027,17 @@ fi
 # FIT F21 — qué ejercicios sostienen un rango muscular. Lo que más se vigila: que se
 # use el porcentaje DEL MÚSCULO que se mira (no el del ejercicio entero), que la
 # participación no se sume entre ejercicios, y que los que no tienen datos vayan aparte.
+# FIT F29 — el análisis avanzado por ejercicio. Lo que más se vigila: que NO se cree una
+# lógica de progreso nueva (todo sale de la F11 y llega por la F12), que no se guarde
+# nada, que el periodo filtre la gráfica y NO el historial ni el rango, que el selector de
+# métrica no aparezca con una sola métrica y que al cambiarla cambie la unidad, y que un
+# ejercicio archivado conserve sus resultados y sus fechas.
+if node --import ./scripts/resolver-vite.mjs scripts/test-detalle-ejercicio.mjs >/tmp/jc_detalle_ejercicio.log 2>&1; then
+  ok "Análisis por ejercicio (FIT F29) — $(grep -c '✓' /tmp/jc_detalle_ejercicio.log) comprobaciones"
+else
+  fallo "Falla el análisis por ejercicio"; grep '✗' /tmp/jc_detalle_ejercicio.log
+fi
+
 # FIT F28 — la integración completa del progreso físico. Lo que más se vigila: que NO
 # exista ninguna métrica que mezcle dos sistemas —«fotos + fuerza + rangos = 82 %» es el
 # ejemplo que prohíbe el apartado 10—, que cada bloque lea de UN solo motor, que el

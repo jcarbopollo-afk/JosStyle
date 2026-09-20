@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import {
   ESTADOS_PROGRESO, estadoProgreso, estadoDe, FILTROS_PROGRESO, tarjetaDeProgreso, tarjetasDeProgreso,
   ordenarTarjetas, consultarProgreso, PROGRESO_VACIO, CAMBIOS_RECIENTES, resumenDeProgreso,
-  RANGOS_GRAFICA, PUNTOS_MINIMOS_GRAFICA, graficaDeProgreso, geometriaGrafica, detalleDeProgreso, NO_EN_FIT12,
+  RANGOS_GRAFICA, PERIODOS, periodo, PUNTOS_MINIMOS_GRAFICA, graficaDeProgreso, geometriaGrafica, detalleDeProgreso, NO_EN_FIT12,
 } from '../src/lib/progresoEjercicios.js';
 import { progresoDeEjercicio } from '../src/lib/progresion.js';
 import { detalleDeSesion, sesionDelHistorial } from '../src/lib/historial.js';
@@ -130,6 +130,11 @@ ok(g7.puntos.length === 1 && g7.mostrar === false && g7.motivo, '…y en 7 días
 const gVacia = detalleDeProgreso(MUCHOS, 'press-banca-barra', { hoy: '2027-06-01', rango: '7d' }).grafica;
 ok(gVacia.puntos.length === 0 && /No hay registros/.test(gVacia.motivo), '…y con ninguno, lo dice');
 ok(RANGOS_GRAFICA.map((x) => x.id).join() === '7d,30d,3m,todo' && PUNTOS_MINIMOS_GRAFICA === 3, 'Los cuatro rangos del apartado 24');
+/* 🔓 FIT F29 — el catálogo de periodos pasa a tener SEIS y los cuatro de aquí
+   se declaran por ids: un solo sitio donde vive «3 meses = 91 días». */
+ok(PERIODOS.map((x) => x.id).join() === '7d,30d,3m,6m,1a,todo', '🔓 …que son un SUBCONJUNTO de los seis de PERIODOS (FIT F29)');
+ok(RANGOS_GRAFICA.every((r) => PERIODOS.includes(r)), '…y son los MISMOS objetos, no una copia que pueda desviarse');
+ok(periodo('loquesea').id === 'todo' && periodo('6m').dias === 182, '…y se buscan por id, nunca por posición');
 
 /* Apartado 40 — la geometría con 0, 1, 2 y muchos puntos. */
 ok(geometriaGrafica([]).length === 0, '🚨 La gráfica no rompe con 0 puntos');
@@ -157,7 +162,16 @@ const CORP = con(
 );
 const dc = detalleDeProgreso(CORP, 'dominada-prona', { hoy: HOY });
 ok(dc.grafica.etiqueta === 'Mejores repeticiones por sesión' && dc.grafica.unidad === 'reps', '🚨 Peso corporal: la gráfica cuenta repeticiones');
-ok(!/kg/.test(JSON.stringify(dc)), '🚨 …y en todo el detalle NO aparece ni un «kg»: sin volumen artificial (apartado 19)');
+/* 🐛 **SIN LOS IDS**, que son `uid()` = `Math.random().toString(36)`: un id de
+   ocho caracteres contiene «kg» el 0,5 % de las veces, y un detalle trae cuatro,
+   así que **una de cada cincuenta pasadas salía roja con el código perfecto**.
+   Es la lección de EH F40 —«experto» contiene «xp»— con otra subcadena, y costó
+   una verificación entera. Una prueba nunca mira dentro de un id aleatorio. */
+const sinIds_f12 = (o) => JSON.stringify(o).replace(/"(sesionId|id)":"[^"]*"/g, '""');
+ok(!/kg/.test(sinIds_f12(dc)), '🚨 …y en todo el detalle NO aparece ni un «kg»: sin volumen artificial (apartado 19)');
+/* …y el arreglo no tapa un «kg» de verdad (EH F42). */
+ok(/kg/.test(sinIds_f12({ ...dc, ultima: { texto: '60 kg × 8' } })),
+  '…y el barrido SIGUE cazando un «kg» de verdad si apareciera en un texto');
 
 const VAR = con(
   sesion('dominada-prona', [r(8)], '2026-09-01', { tipoCarga: 'corporal' }),

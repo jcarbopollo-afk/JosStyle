@@ -8875,6 +8875,167 @@ ok(!/Comparar progreso/i.test(parcial_fit28),
   '…y sin fotos no se ofrece comparar (regla 8)');
 almacen.saludFotos = fotosDeAntes_fit28;
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F29 — El análisis avanzado por ejercicio (Entrega 4 · 29/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   La pantalla tiene que contestar *"¿Cómo estoy progresando realmente en este
+   ejercicio?"*. Lo que de verdad hay que ver funcionando, y que ninguna prueba
+   de Node puede: que la cabecera, el rango, el objetivo, la gráfica, las
+   variantes y el historial caben **en una sola pantalla**, que el selector de
+   métrica aparece **solo** cuando hay dos de verdad, y que al cambiarla cambia
+   la unidad del gráfico (apartados 10 y 11).
+
+   🐛 **Y siembra lo suyo, sin heredar el escenario del vecino** (E3 F6, y es el
+   fallo que costó cinco rojos en la F28): hace falta un ejercicio hecho **de
+   dos formas** —con lastre y sin él—, y eso no lo deja ninguna sección
+   anterior. */
+console.log('\n── FIT F29 · El análisis por ejercicio ──');
+
+const serie_fit29 = (id, reps, peso) => ({
+  id, origen: 'planificada', estado: 'hecha', modo: 'reps',
+  plan: { reps: 8, repsHasta: 10, duracion: null, peso: null },
+  hecho: { reps, peso, duracion: null },
+});
+const sesion_fit29 = (id, dias, series, exerciseId, tipoCarga, nota = '') => {
+  const fecha = haceDias_fit12(dias);
+  const inicio = new Date(`${fecha}T18:00:00`).getTime();
+  return {
+    id, nombre: 'Pull sembrado', fecha, estado: 'completada', iniciadaEn: inicio, terminadaEn: inicio + 45 * 60000,
+    guardadaEn: inicio + 46 * 60000, pausadoMs: 0, actual: 0, visibilidad: 'privado', notas: nota, entorno: 'gym',
+    origen: { tipo: 'plantilla', id: null, ejercicios: [{ id: `${id}-e`, exerciseId, orden: 0, modo: 'reps', notas: '', descanso: 90, sustituyeA: null, linea: { series: series.length, tipoCarga }, series }] },
+  };
+};
+const fitnessDeAntes_fit29 = almacen.fitness;
+almacen.fitness = {
+  ...almacen.fitness,
+  sesiones: [
+    ...(almacen.fitness.sesiones || []),
+    /* 🐛 **TRES por clase, no dos**: la gráfica necesita `PUNTOS_MINIMOS_GRAFICA`
+       (3) para dibujarse, así que con dos por métrica no había ni etiqueta que
+       leer y el rojo no era del código — es «un escenario se construye de lo
+       que el motor pide» (FIT F8) otra vez. */
+    sesion_fit29('f29-a', 90, [serie_fit29('a1', 8, null), serie_fit29('a2', 7, null)], 'dominada-lastrada', 'corporal'),
+    sesion_fit29('f29-b', 75, [serie_fit29('b1', 9, null), serie_fit29('b2', 8, null)], 'dominada-lastrada', 'corporal'),
+    sesion_fit29('f29-c', 60, [serie_fit29('c1', 10, null), serie_fit29('c2', 9, null)], 'dominada-lastrada', 'corporal'),
+    sesion_fit29('f29-d', 40, [serie_fit29('d1', 5, 10), serie_fit29('d2', 4, 10)], 'dominada-lastrada', 'adicional'),
+    sesion_fit29('f29-e', 20, [serie_fit29('e1', 6, 10), serie_fit29('e2', 5, 10)], 'dominada-lastrada', 'adicional'),
+    sesion_fit29('f29-f', 4, [serie_fit29('f1', 7, 10), serie_fit29('f2', 6, 10)], 'dominada-lastrada', 'adicional', 'Me sentí fuerte hoy.'),
+    /* Una HERMANA con historial propio, para los apartados 20 y 21: la lastrada
+       y la supina comparten base, y es justo el caso que el aviso tiene que
+       cubrir —estar EN una variante— y que la primera pasada destapó roto. */
+    sesion_fit29('f29-g', 12, [serie_fit29('g1', 12, null)], 'dominada-supina', 'corporal'),
+  ],
+  objetivos: [
+    ...(almacen.fitness.objetivos || []),
+    { id: 'f29-obj', exerciseId: 'dominada-lastrada', tipo: 'reps', valor: 12, unidad: 'reps', creadoEn: Date.parse('2026-07-01T12:00:00'), actualizadoEn: null, fechaObjetivo: '', estado: 'activo', nota: '' },
+  ],
+};
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F29 — se entra en Progreso');
+ok(await pulsar('Ejercicios'), '…y en la pestaña Ejercicios');
+await page.waitForTimeout(500);
+ok(await pulsarQueEmpiece_fit10('Ver el progreso de Dominadas lastradas'), 'FIT F29 — se abre el detalle de las dominadas lastradas');
+const det_fit29 = await esperarTexto(/Última vez/i);
+
+/* Apartado 2 — la cabecera: nombre, agarre/equipamiento y grupo muscular. */
+ok(/Dominadas lastradas/i.test(det_fit29) && /Espalda/i.test(det_fit29),
+  '🚨 FIT F29 — la cabecera con el ejercicio y su grupo muscular principal (apartado 2)');
+ok(/Agarre|Lastre|Barra/i.test(det_fit29), '…y su línea de agarre y equipamiento');
+
+/* Apartados 4, 5 y 6 — último, anterior y mejor, en una lectura. */
+ok(/Última vez/i.test(det_fit29) && /Anterior/i.test(det_fit29) && /Mejor resultado/i.test(det_fit29),
+  '🚨 FIT F29 — último, anterior y mejor resultado, los tres (apartados 4, 5 y 6)');
+ok(/Cambio/i.test(det_fit29), '…con el cambio entre los dos comparables (apartado 5)');
+
+/* Apartados 3 y 25 — el rango, y su camino al siguiente. */
+ok(/Rango/i.test(det_fit29), '🚨 FIT F29 — el rango del ejercicio, del RankEngine (apartado 3)');
+ok(/Ver evolución del rango/i.test(det_fit29),
+  '🚨 …y «Ver evolución del rango», que lleva al historial de la F22 (apartado 26)');
+
+/* Apartados 23 y 24 — el objetivo. */
+ok(/Objetivo/i.test(det_fit29), '🚨 FIT F29 — el objetivo del ejercicio, de la F14 (apartado 23)');
+
+/* Apartados 20 y 21 — las variantes, con su aviso. */
+ok(/Esta variante tiene un historial separado/i.test(det_fit29),
+  '🚨 FIT F29 — «Esta variante tiene un historial separado.» (apartado 21)');
+ok(/Dominadas supinas/i.test(det_fit29), '…y se ofrece ir a la que sí tiene registros');
+
+/* 🚨 Apartado 11 — el selector de métrica, que SOLO existe porque este
+   ejercicio se ha hecho de dos formas. */
+const metricas_fit29 = await page.evaluate(() => {
+  const g = [...document.querySelectorAll('[role="group"]')].find((x) => /Métrica del gráfico/.test(x.getAttribute('aria-label') || ''));
+  return g ? [...g.querySelectorAll('button')].map((b) => b.textContent.trim()) : [];
+});
+ok(metricas_fit29.length === 2,
+  `🚨 FIT F29 — el selector de métrica con las DOS que tiene de verdad (${metricas_fit29.join(' / ')}, apartado 11)`);
+
+/* ⚠️ La etiqueta se lee del `aria-label` del gráfico, NO de `innerText`: el
+   rótulo lleva la clase `uppercase`, así que el texto renderizado llega en
+   mayúsculas (E3 F8) — y además el `aria-label` trae **la unidad**, que es lo
+   que de verdad demuestra el apartado 10. */
+const etiquetaGrafica_fit29 = () => page.evaluate(() => {
+  const svg = document.querySelector('svg[role="img"]');
+  return svg ? svg.getAttribute('aria-label') || '' : '';
+});
+const unidadAntes_fit29 = await etiquetaGrafica_fit29();
+ok(!!unidadAntes_fit29, `…y la gráfica dice qué mide y en qué unidad: «${unidadAntes_fit29}»`);
+/* ⚠️ Se pulsa por `aria-pressed`, no por texto: «Repeticiones» es subcadena de
+   «Peso añadido y repeticiones», así que buscar por nombre pulsaría la
+   equivocada — el fallo de «Más» dentro de «Además» (NAV F1). */
+ok(await page.evaluate(() => {
+  const g = [...document.querySelectorAll('[role="group"]')].find((x) => /Métrica del gráfico/.test(x.getAttribute('aria-label') || ''));
+  const otra = g && [...g.querySelectorAll('button')].find((b) => b.getAttribute('aria-pressed') === 'false');
+  if (!otra) return false;
+  otra.click();
+  return true;
+}), 'FIT F29 — se cambia a la otra métrica (apartado 11)');
+await page.waitForTimeout(500);
+const unidadDespues_fit29 = await etiquetaGrafica_fit29();
+ok(!!unidadDespues_fit29 && unidadDespues_fit29 !== unidadAntes_fit29,
+  `🚨 FIT F29 — al cambiar de métrica cambia lo que mide el gráfico: «${unidadAntes_fit29}» → «${unidadDespues_fit29}» (apartado 10)`);
+/* 🚨 Y cada clase conserva SU unidad: kg para el lastre, reps sin él. */
+ok(/\bkg\b/.test(`${unidadAntes_fit29} ${unidadDespues_fit29}`) && /\breps\b/.test(`${unidadAntes_fit29} ${unidadDespues_fit29}`),
+  '🚨 FIT F29 — y las dos métricas van en SU unidad —kg y reps—, sin sumarlas (apartado 10)');
+
+/* 🚨 Apartado 35 — la alternativa textual del gráfico. */
+ok(/mejor resultado fue/i.test(await ver()),
+  '🚨 FIT F29 — el gráfico tiene alternativa textual: «No depender únicamente del gráfico» (apartado 35)');
+
+/* Apartado 12 — los seis periodos. */
+const periodos_fit29 = await page.evaluate(() => {
+  const g = [...document.querySelectorAll('[role="group"]')].find((x) => /Periodo de la gráfica/.test(x.getAttribute('aria-label') || ''));
+  return g ? [...g.querySelectorAll('button')].map((b) => b.textContent.trim()) : [];
+});
+ok(periodos_fit29.length === 6,
+  `🚨 FIT F29 — los seis periodos del apartado 12 (${periodos_fit29.join(', ')})`);
+
+/* 🚨 Apartados 18, 19 y 27 — el desglose de una sesión: series, parcial y nota. */
+ok(await pulsarQueEmpiece_fit10('Ver las series del'), 'FIT F29 — se despliega una sesión del historial (apartado 17)');
+await page.waitForTimeout(400);
+const desglose_fit29 = await ver();
+ok(/Serie 1 —/.test(desglose_fit29), '…con sus series numeradas como el historial (apartado 17)');
+ok(/\d+\/\d+ series/.test(desglose_fit29),
+  '🚨 FIT F29 — y el desglose de cuántas se hicieron (apartado 18)');
+ok(/Me sentí fuerte hoy/.test(desglose_fit29),
+  '🚨 FIT F29 — la nota de la sesión, TAL CUAL: «No analizar automáticamente el texto» (apartado 27)');
+
+/* 🚨 Y lo que NO puede aparecer (apartado 39). */
+const textoFinal_fit29 = await ver();
+ok(!/\bXP\b|predicci[oó]n|hipertrofia estimada|leaderboard/i.test(textoFinal_fit29),
+  '🚨 FIT F29 — ni XP, ni predicciones, ni estimaciones, ni comparación social (apartado 39)');
+ok(!/\bPR\b|récord personal/i.test(textoFinal_fit29),
+  '🚨 …ni un sistema de récords aparte: el mejor es el de la F11 (apartado 7)');
+
+/* Apartado 34 — y a 375 px no se desborda de lado. */
+const ancho_fit29 = await page.evaluate(() => ({ a: document.documentElement.scrollWidth, v: window.innerWidth }));
+ok(ancho_fit29.a <= ancho_fit29.v + 1,
+  `🚨 FIT F29 — a 375 px la pantalla NO desborda de lado (${ancho_fit29.a} vs ${ancho_fit29.v}, apartado 34)`);
+
+almacen.fitness = fitnessDeAntes_fit29;
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

@@ -178,6 +178,17 @@ import {
   EtiquetaEstado as EtiquetaEstadoF12, EstadoMuscular,
 } from '../src/components/resumenProgreso.jsx';
 import { centroDeProgreso as centroF28, bloqueFotos as bloqueFotosF28 } from '../src/lib/resumenProgreso.js';
+/* 🔓 FIT F29 — el análisis avanzado por ejercicio. Las nueve piezas nuevas del
+   apartado 31; las otras cinco ya estaban y se prueban donde viven. */
+import {
+  ExerciseProgressHeader, ExercisePerformanceSummary, ExerciseLatestResult,
+  ExercisePreviousResult, ExerciseBestResult, ExerciseMetricSelector, ExerciseHistory,
+  ExerciseSetBreakdown, ExerciseGoalPreview, ExerciseRankPreview, ExerciseVariants,
+} from '../src/components/detalleEjercicio.jsx';
+import {
+  detalleCompletoDeEjercicio as detalleF29, cabeceraDeEjercicio as cabeceraF29,
+  historialDelEjercicio as histF29,
+} from '../src/lib/detalleEjercicio.js';
 import {
   tarjetasDeProgreso as tarjetasF12, resumenDeProgreso as resumenF12, detalleDeProgreso as detalleF12,
 } from '../src/lib/progresoEjercicios.js';
@@ -488,6 +499,17 @@ const fitnessTodoF28 = () => {
 const bloqueF28 = (id, f) => centroF28(f, [], { hoy: HOY_F28 }).bloques[id];
 const fotosF28 = (fotos, extra = {}) => bloqueFotosF28(fotos, extra);
 const timelineF28 = (f, fotos, extra = {}) => centroF28(f, fotos, { hoy: HOY_F28, ...extra }).timeline;
+
+/* FIT F29 — el detalle de un ejercicio. ⚠️ Mismo escenario que la F28: si esta
+   fase necesitara uno propio sería que está calculando por su cuenta. */
+const detF29 = (id, extra = {}) => detalleF29(fitnessTodoF28(), id, { hoy: HOY_F28, ...extra });
+const detVacioF29 = (id = 'dominada-prona') => detalleF29({}, id, { hoy: HOY_F28 });
+/* Un `fitness` que revienta al leerlo, para el estado de error del apartado 36. */
+const fitnessRotoF29 = () => {
+  const f = {};
+  Object.defineProperty(f, 'sesiones', { get() { throw new Error('dato ilegible'); } });
+  return f;
+};
 
 const DESTINO_EJ_F22 = { tipo: 'exercise', id: 'dominada-prona' };
 const DESTINO_GRUPO_F23 = { tipo: 'muscleGroup', id: 'espalda' };
@@ -3498,6 +3520,66 @@ const CASOS = [
     onIrASeccion: noop, onAbrirEjercicio: noop, onAbrirMusculo: noop, onAbrirObjetivo: noop, onVerSesion: noop,
     onIrAHistorial: noop, onIrARangos: noop, onComparar: noop, onEntrenar: noop, onAnadirFoto: noop, onCrearObjetivo: noop,
   })],
+  /* ══ FIT F29 — el análisis avanzado por ejercicio ══════════════════════
+     ⚠️ Cada pieza con datos Y sin ellos: el caso que más importa es el vacío,
+     porque es el que devuelve `null` a propósito y el que más se rompe. */
+  ['ExerciseProgressHeader', ExerciseProgressHeader, () => ({
+    cabecera: cabeceraF29('press-banca-barra'), tendencia: detF29('press-banca-barra').tendencia, accent,
+  })],
+  /* 🚨 Apartado 28 — archivado: sin ficha en el catálogo, con su aviso. */
+  ['ExerciseProgressHeader (archivado)', ExerciseProgressHeader, () => ({
+    cabecera: cabeceraF29('ya-no-existe', { apariciones: [] }), tendencia: null, accent,
+  })],
+  /* ⚠️ Sin agarre: la línea no puede quedarse con un «·» suelto (regla 8). */
+  ['ExerciseProgressHeader (sin agarre)', ExerciseProgressHeader, () => ({
+    cabecera: cabeceraF29('plancha-frontal'), tendencia: null, accent,
+  })],
+  ['ExercisePerformanceSummary', ExercisePerformanceSummary, () => ({
+    progreso: detF29('press-banca-barra').progreso, accent,
+  })],
+  /* ⚠️ `ExercisePerformanceSummary` y `ExerciseGoalPreview` SIN datos devuelven
+     `null` a propósito —no hay última marca ni objetivo que enseñar—, y el
+     arnés cuenta un render vacío como fallo: eso se comprueba en la prueba de
+     Node, no aquí (FIT F3, con `ResumenConstructor`). */
+  ['ExerciseLatestResult', ExerciseLatestResult, () => ({ ultima: detF29('press-banca-barra').progreso.ultima })],
+  ['ExercisePreviousResult', ExercisePreviousResult, () => ({
+    comparacion: detF29('press-banca-barra').progreso.comparacion,
+    estado: detF29('press-banca-barra').progreso.estado, avisoMedida: '', accent,
+  })],
+  /* ⚠️ Sin comparación pero CON aviso de medida: se dice por qué no se compara. */
+  ['ExercisePreviousResult (no comparable)', ExercisePreviousResult, () => ({
+    comparacion: null, estado: 'no_comparable', accent,
+    avisoMedida: 'La última vez lo hiciste de otra forma (con otro peso o sin él), así que no se compara con la anterior.',
+  })],
+  ['ExerciseBestResult', ExerciseBestResult, () => ({
+    mejor: detF29('press-banca-barra').progreso.mejor, soloUna: false, esElUltimo: true, accent,
+  })],
+  ['ExerciseBestResult (primer registro)', ExerciseBestResult, () => ({ mejor: null, soloUna: true, accent })],
+  ['ExerciseMetricSelector', ExerciseMetricSelector, () => ({
+    metricas: [{ id: 'carga', nombre: 'Peso y repeticiones', registros: 4 }, { id: 'lastre', nombre: 'Peso añadido y repeticiones', registros: 2 }],
+    valor: 'carga', accent, onElegir: noop,
+  })],
+  ['ExerciseHistory', ExerciseHistory, () => ({
+    filas: detF29('press-banca-barra').historial, veces: detF29('press-banca-barra').veces, children: 'x',
+  })],
+  ['ExerciseHistory (vacío)', ExerciseHistory, () => ({ filas: [], veces: 0 })],
+  ['ExerciseSetBreakdown', ExerciseSetBreakdown, () => ({
+    fila: { seriesTexto: '2/3 series', omitidas: 1, anadidas: 1, parcial: true, avisoParcial: 'Entrenamiento parcial', nota: 'Me sentí fuerte hoy.' },
+    accent,
+  })],
+  /* ⚠️ Un cero no se pinta: «0 omitidas» es el cero inventado de siempre. */
+  ['ExerciseSetBreakdown (sin nada que decir)', ExerciseSetBreakdown, () => ({
+    fila: { seriesTexto: '3/3 series', omitidas: 0, anadidas: 0, parcial: false, nota: '' }, accent,
+  })],
+  ['ExerciseGoalPreview', ExerciseGoalPreview, () => ({ objetivo: detF29('dominada-prona').objetivo, accent })],
+  ['ExerciseRankPreview', ExerciseRankPreview, () => ({ rango: detF29('dominada-prona').rango, accent, onHistorial: noop })],
+  /* 🚨 Sin datos es «Sin Rango», nunca el rango 1 (FIT F15). */
+  ['ExerciseRankPreview (sin rango)', ExerciseRankPreview, () => ({ rango: detVacioF29().rango, accent, onHistorial: noop })],
+  ['ExerciseVariants', ExerciseVariants, () => ({
+    variantes: { hay: true, aviso: 'Esta variante tiene un historial separado.', otras: [{ exerciseId: 'dominada-supina', nombre: 'Dominadas supinas', registros: 3 }] },
+    accent, onAbrir: noop,
+  })],
+
   ['ProgressSummaryCard', ProgressSummaryCard, () => ({ titulo: 'Ejercicios en progreso', accent, hayMas: true, onVerTodo: noop, children: 'x' })],
   ['ProgressMetricCard', ProgressMetricCard, () => ({ valor: 12, nombre: 'Entrenamientos registrados', sub: '3 en los últimos 7 días', accent, onClick: noop })],
   ['ProgressMetricCard (sin destino)', ProgressMetricCard, () => ({ valor: 0, nombre: 'Objetivos activos', accent })],
@@ -3552,9 +3634,16 @@ const CASOS = [
   ['TarjetaProgreso', TarjetaProgreso, () => ({ tarjeta: tarjetasF12(fitnessConProgresoF12())[0], accent, onAbrir: noop })],
   ['ResumenProgreso', ResumenProgreso, () => ({ resumen: resumenF12(fitnessConProgresoF12(), tarjetasF12(fitnessConProgresoF12())), accent, onEntrenar: noop, onAbrir: noop })],
   ['ResumenProgreso', ResumenProgreso, () => ({ resumen: resumenF12({}, []), accent, onEntrenar: noop, onAbrir: noop })],
-  ['DetalleProgreso', DetalleProgreso, () => ({ detalle: detalleF12(fitnessConProgresoF12(), 'press-banca-barra'), accent, rango: 'todo', onRango: noop, onVolver: noop, onVerEjercicio: noop, onVerSesion: noop })],
+  /* 🔓 FIT F29 — `DetalleProgreso` recibe ahora el detalle COMPLETO, que
+     contiene el de la F12 en `d.progreso`. Estos casos pasaban el de la F12 a
+     secas y el banco los puso rojos con `d.cabecera` a `undefined`: es
+     exactamente para lo que está. */
+  ['DetalleProgreso', DetalleProgreso, () => ({ detalle: detalleF29(fitnessConProgresoF12(), 'press-banca-barra', { hoy: HOY_F28 }), accent, rango: 'todo', onRango: noop, onVolver: noop, onVerEjercicio: noop, onVerSesion: noop, onMetrica: noop, onHistorialRango: noop, onVariante: noop })],
   /* ⚠️ Y un ejercicio que nunca ha hecho: sin última vez, sin gráfica. */
-  ['DetalleProgreso', DetalleProgreso, () => ({ detalle: detalleF12({}, 'l-sit'), accent, rango: 'todo', onRango: noop, onVolver: noop })],
+  ['DetalleProgreso (sin datos)', DetalleProgreso, () => ({ detalle: detalleF29({}, 'l-sit', { hoy: HOY_F28 }), accent, rango: 'todo', onRango: noop, onVolver: noop })],
+  /* 🚨 Y el estado de error del apartado 36, que devuelve una forma completa
+     para que la vista no reviente leyendo un campo que falta. */
+  ['DetalleProgreso (error)', DetalleProgreso, () => ({ detalle: detalleF29(fitnessRotoF29(), 'press-banca-barra', { hoy: HOY_F28 }), accent, rango: 'todo', onRango: noop, onVolver: noop })],
   ['GraficaProgreso', GraficaProgreso, () => ({ grafica: detalleF12(fitnessConProgresoF12(), 'press-banca-barra').grafica, accent, onVerSesion: noop })],
   ['GraficaProgreso', GraficaProgreso, () => ({ grafica: { puntos: [], mostrar: false, motivo: 'No hay registros en este periodo.', etiqueta: '', unidad: '' }, accent })],
   /* ══ FIT F13 — progreso muscular ══════════════════════════════════════ */

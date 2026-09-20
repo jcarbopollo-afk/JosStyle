@@ -877,7 +877,19 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       comprueba recorriendo `BLOQUES`. 🚨 **No se guarda nada**, así que «el resumen debe
       actualizarse» sale de no tener copia. 🚨 **Un periodo filtra lo que se ve, nunca el rango ni
       los objetivos** (apartado 16).
-- [ ] F29–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F29 — Análisis avanzado de rendimiento por ejercicio** (v3.111.0): el detalle de un
+      ejercicio contesta *«¿Cómo estoy progresando realmente en este ejercicio?»* — cabecera con
+      agarre y equipamiento, rango con su camino al siguiente, objetivo, variantes, selector de
+      métrica, seis periodos, historial con series omitidas y añadidas, y la nota de la sesión.
+      Con ella empieza el bloque de **Inteligencia** (F29–F35).
+      🚨 **Ni una lógica de progreso nueva** (contexto y apartados 8 y 39): todo sale de la F11 y
+      llega por la F12, con `YA_LO_RESUELVE` guardando **las funciones importadas**. 🚨 **No se
+      guarda nada** (apartado 32). 🚨 **De los catorce componentes del apartado 31, cinco ya
+      estaban escritos**, así que `DetalleProgreso` se amplía en vez de reescribirse. 🚨 **Un
+      periodo filtra la gráfica, nunca el historial ni el rango** (apartado 12). ⏸ **C-36**: el
+      «nombre histórico» del apartado 28 no existe —la F3 decidió que una línea guarda solo
+      `exerciseId`—, así que se enseña su id con la etiqueta «Ejercicio archivado».
+- [ ] F30–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

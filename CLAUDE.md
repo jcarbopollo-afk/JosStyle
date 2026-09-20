@@ -21,7 +21,7 @@ serverless en Vercel que hace de proxy a Anthropic.
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 28 primeras (v3.83.0 → v3.110.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 29 primeras (v3.83.0 → v3.111.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 17 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 16 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -333,7 +333,76 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 (v3.102.0)**, la **FIT F21 (v3.103.0)**, la **FIT F22 (v3.104.0)**, la **FIT F23
 (v3.105.0)**, la **FIT F24 (v3.106.0)**, la **FIT F25 (v3.107.0)**, la **FIT F26 (v3.108.0)** y la
 **FIT F27 (v3.109.0)** y la
-**FIT F28 (v3.110.0)**, que 🏁 **CERRÓ EL BLOQUE DE PROGRESO FÍSICO** —F26, F27 y F28—, hechas. Lo que dejaron, y que vale para las 18 que quedan:
+**FIT F28 (v3.110.0)**, que 🏁 **CERRÓ EL BLOQUE DE PROGRESO FÍSICO** —F26, F27 y F28— y la
+**FIT F29 (v3.111.0)**, con la que empieza el bloque de **Inteligencia** (F29–F35), hechas. Lo que dejaron, y que vale para las 16 que quedan:
+
+- 🚨 **«NO CREAR UNA LÓGICA NUEVA» SE CUMPLE GUARDANDO LAS FUNCIONES, NO SUS NOMBRES** (FIT F29, y es
+  la F23, la F24, la F25 y la F28 por quinta vez). El contexto abre con *"No crear una nueva lógica
+  de progreso. Utilizar la lógica central de Fase 11"*, y de los nueve datos del apartado 1
+  **cinco ya los daba la F12**. `YA_LO_RESUELVE` guarda **las ocho funciones importadas**, con una
+  comprobación de que `y.es.name === y.nombre`: renombrar una rompe la compilación (FIT F27).
+- 🚨 **Y DE LOS CATORCE COMPONENTES DEL APARTADO 31, CINCO YA ESTABAN ESCRITOS** (FIT F29):
+  `DetalleProgreso`, `GraficaProgreso` y `FilaHistoria` son de la F12 y `EtiquetaEstado` de la F28.
+  Así que **`DetalleProgreso` se amplía, no se reescribe**: recibe el detalle completo, que
+  **contiene** el de la F12 en `d.progreso`. ⚠️ Y la prueba **abre cada archivo**: una tabla que solo
+  se cuenta a sí misma no demuestra nada (EH F42).
+- 🚨 **UN PERIODO FILTRA LA GRÁFICA, NUNCA EL HISTORIAL NI EL RANGO** (FIT F29, apartado 12, y es la
+  F22 y la F28 otra vez). Los **seis** de aquí y los **cuatro** de la F28 son **dos subconjuntos por
+  ids de UN SOLO catálogo** (`PERIODOS` en `progresoEjercicios.js`): con dos catálogos, el día que
+  uno cambiara «3 meses» valdría 91 días en una pantalla y otra cosa en la otra.
+- ⚠️ **Y «SUFICIENTES DATOS» PARA ENTRAR POR 3 MESES SON LOS DE LA GRÁFICA** (FIT F29,
+  `PUNTOS_MINIMOS_GRAFICA`), no un número nuevo: entrar y ver el hueco de «hacen falta tres
+  registros» sería empezar por la pantalla vacía.
+- 🚨 **EL SELECTOR DE MÉTRICA SOLO EXISTE CON DOS MÉTRICAS DE VERDAD** (FIT F29, apartado 11:
+  *"No mostrar selectores inútiles"*), y cada clase conserva **su unidad**: sumar kg + reps +
+  segundos sería dibujar tres cosas distintas como si fueran una (apartado 10). `graficaDeProgreso`
+  **acepta ahora una `clase`**; omitida sigue usando la de la última vez, que es lo que decidió la
+  F12 — se amplía la firma, no se cambia lo que ya hacía (C-34).
+- 🐛 **`resumenDeEjercicio` DEVUELVE `estado`, NO `estadoNombre`** (FIT F29, y es la lección de la
+  FORMA de lo que devuelve una función por enésima vez, tras `fuente` en la F22 y `confianza` en la
+  F25): el nombre vive en el catálogo `ESTADOS_EJERCICIO` de la F8. Leerlo del resumen daba
+  `undefined` y la etiqueta de cada sesión **se habría quedado muda para siempre**.
+- 🐛 **UN PESO INVÁLIDO NO LLEGA NUNCA A LA GRÁFICA COMO `NaN`** (FIT F29, medido): `numeroONull` lo
+  deja en `null`, así que la aparición **se reclasifica** de «carga» a «repeticiones» y el registro
+  **no se pierde: cambia de métrica**. Es mejor que descartarlo — y deja el aviso de descartes como
+  lo que es, **defensivo**, declarado con su motivo y con una prueba que lo pone rojo a mano.
+- 🐛 **`variantesDe` SOLO BAJA, ASÍ QUE EL AVISO DE VARIANTES NO SALÍA DONDE IMPORTA** (FIT F29, y
+  **lo cazó el recorrido**). De las dominadas **lastradas** devuelve **nada** —su `base` es la prona
+  y ella no tiene hijas—, así que *«Esta variante tiene un historial separado»* aparecía estando en
+  la **base** y no estando **en una variante**, que es literalmente el apartado 21: *"Si el usuario
+  cambia de variante"*. La familia es **la raíz (`baseDe(ej) || ej`) más sus variantes**: «Dominadas
+  / neutras / lastradas» son **hermanas**, no madre e hijas — el propio ejemplo del apartado 20.
+  ⚠️ **Y la suite de Node no lo vio porque solo miraba desde la base.** Al probar una relación,
+  **recorrerla en los DOS sentidos**.
+- 🐛 **UNA PRUEBA QUE BARRE UN JSON ENTERO ESTÁ MIRANDO DENTRO DE LOS IDS ALEATORIOS** (FIT F29, y es
+  EH F40 —«experto» contiene «xp»— con otra subcadena). La de la F12 buscaba «kg» en
+  `JSON.stringify(detalle)` para demostrar que el peso corporal no inventa volumen, y ahí van los
+  `sesionId`: `uid()` es `Math.random().toString(36)`, un id de ocho caracteres contiene «kg» el
+  **0,5 %** de las veces y un detalle trae cuatro — **una de cada cincuenta pasadas en rojo con el
+  código perfecto**, y tumbó una verificación entera. Se quitan los ids antes de barrer, con una
+  comprobación de que el arreglo no tapa un «kg» de verdad.
+- 🐛 **UNA GRÁFICA CON DOS PUNTOS NO SE DIBUJA, ASÍ QUE NO TIENE ETIQUETA QUE LEER** (FIT F29):
+  `PUNTOS_MINIMOS_GRAFICA` son **tres**, y mi escenario del recorrido sembraba **dos por métrica**.
+  El rojo no era del código. ⚠️ Y la etiqueta se lee del **`aria-label` del `<svg>`**, no de
+  `innerText`: el rótulo lleva `uppercase` (E3 F8) y el `aria-label` además **trae la unidad**, que
+  es lo que de verdad demuestra el apartado 10.
+- 🐛 **LOS EJERCICIOS DE UNA SESIÓN VIVEN EN `sesion.origen.ejercicios`** (FIT F29, el snapshot de la
+  F7), y **`sesion.ejercicios` existe y está VACÍO**. Dos escenarios míos tocaron el equivocado: uno
+  dio tres rojos y el otro salió **verde sin haber corrompido nada**, que es peor (NAV F4). Lo dice
+  `ejerciciosDeSesion`, que es quien lo lee. **Antes de fabricar un escenario a mano, preguntarle al
+  lector de dónde saca el dato** — y comprobar que se ha construido antes de medir sobre él.
+- ⏸ **EL «NOMBRE HISTÓRICO» DE UN EJERCICIO ARCHIVADO NO EXISTE, Y ES A PROPÓSITO** (FIT F29,
+  apartado 28, **C-36**). La **F3** decidió que una línea guarda `exerciseId` *"y nada más del
+  ejercicio — ni el nombre, ni los músculos, ni el equipamiento"*, que es lo que hace que renombrar
+  uno llegue a las veinte rutinas donde esté (AS F1); y la F11 hace `nombre: ej ? ej.nombre :
+  exerciseId`. Lo que ese apartado protege de verdad —los resultados y las fechas— **se conserva
+  entero**; el nombre se enseña como **su id**, con la etiqueta «Ejercicio archivado». Inventarle uno
+  ahora sería reescribir el pasado (F22).
+- 🐛 **Y EL BARRIDO DE «NO GUARDA NADA» SALTABA CON LA TABLA QUE DICE DE DÓNDE VIENE «CARGANDO»**
+  (FIT F29, y es `NO_EN_FIT28` con la IA y `NO_EN_FIT25` con XP por cuarta vez): `ESTADOS_DETALLE`
+  **nombra** `app_data` justamente para declarar que ese estado es de la pantalla de carga de la
+  aplicación. **Lo que se barre es el código, no la declaración**, y hay una comprobación de que el
+  arreglo sigue cazando una escritura de verdad.
 
 - 🚨 **CONECTAR NO ES MEZCLAR, Y ESO SE DEMUESTRA RECORRIENDO UNA TABLA** (FIT F28, apartado 10, con
   su ejemplo prohibido: *"Fotos + fuerza + rangos = progreso físico 82 %. Eso sería una métrica
@@ -1111,21 +1180,24 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F29/45 — Análisis avanzado de rendimiento por ejercicio** (líneas
-   14 154–14 874 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), con la que empieza el bloque
-   de **Inteligencia** (F29–F35). Se construye de la F1 a la F45, en orden, encadenando sin parar.
+1. 🏋️ **SEGUIR POR LA FIT F30/45 — Sistema avanzado de objetivos fitness** (líneas
+   13 244–14 153 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la segunda del bloque de
+   **Inteligencia** (F29–F35). Se construye de la F1 a la F45, en orden, encadenando sin parar.
    El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: la comparación de un ejercicio ya está hecha y es la F11**
-   (`progresion.js`), y la pantalla que la enseña es la **F12** (`progresoEjercicios.js`). Un
-   análisis nuevo **lee de ahí**: *"no crear una métrica nueva de progreso"* lo dijo ya el apartado 4
-   de la F28.
+   ⚠️ **Y lo segundo, en ESTA: LOS OBJETIVOS YA EXISTEN Y SON LA F14** (`objetivosProgreso.js`,
+   clave `fitness.objetivos`). Guardan **solo el objetivo**: conseguido, porcentaje y valor actual
+   **se deducen de las sesiones** con la F11, y sin datos el porcentaje es `null`, nunca 0. Una
+   segunda lista de objetivos dejaría los que Josué ya tiene invisibles en su propia pantalla — es
+   la lección más repetida del proyecto, y la F29 acaba de vivirla otra vez con los componentes.
    🏁 **Y hay dos bloques CERRADOS de los que se lee, nunca se recalcula:** el sistema de rangos
    entero (**F15–F25**) —motor, pantalla, cuestionario, detalle muscular, explicación, contribución,
    historial, siguiente rango, cola y resumen— y el **progreso físico (F26–F28)**: las fotos son
    `saludFotos`, la galería la F26, el comparador la F27 y el centro de seguimiento la **F28**
-   (`resumenProgreso.js` / `.jsx`), donde **cada bloque declara UNA fuente**.
+   (`resumenProgreso.js` / `.jsx`), donde **cada bloque declara UNA fuente**. Y el **detalle de un
+   ejercicio es la F29** (`detalleEjercicio.js` / `.jsx`), que no calcula nada: pide a la F11, la
+   F12, la F19, la F23, la F14 y la F8, y **no guarda una línea**.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

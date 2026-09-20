@@ -179,12 +179,28 @@ function lineasDeSeries(clase, series) {
   return lista(series).map((s, i) => `Serie ${s.numero || i + 1} — ${textoSerie(clase, s)}`);
 }
 
-export const RANGOS_GRAFICA = [
+/* 🚨 **UN SOLO CATÁLOGO DE PERIODOS, Y CADA PANTALLA DECLARA SU SUBCONJUNTO**
+   (FIT F29, y es `TAGS_ORIENTACION` de la F27 otra vez). El apartado 12 de la
+   F29 pide **seis** periodos en el detalle de un ejercicio, y el apartado 16 de
+   la F28 pide **cuatro** en el resumen. Con dos catálogos, el día que uno
+   cambiara los dos dirían cosas distintas de «3 meses»; con uno solo y dos
+   subconjuntos **por ids**, no puede pasar. */
+export const PERIODOS = [
   { id: '7d', nombre: '7 días', dias: 7 },
   { id: '30d', nombre: '30 días', dias: 30 },
   { id: '3m', nombre: '3 meses', dias: 91 },
+  { id: '6m', nombre: '6 meses', dias: 182 },
+  { id: '1a', nombre: '1 año', dias: 365 },
   { id: 'todo', nombre: 'Todo', dias: null },
 ];
+export const PERIODO_TODO = 'todo';
+/** ⚠️ Por id, nunca por posición: una lista que crece deja un índice mintiendo. */
+export const periodo = (id) => PERIODOS.find((p) => p.id === id)
+  || PERIODOS.find((p) => p.id === PERIODO_TODO);
+
+/** Los cuatro de la gráfica del progreso muscular (F13) y del resumen (F28). */
+export const IDS_RANGOS_GRAFICA = ['7d', '30d', '3m', 'todo'];
+export const RANGOS_GRAFICA = PERIODOS.filter((p) => IDS_RANGOS_GRAFICA.includes(p.id));
 
 /* Apartado 22 — qué mide la gráfica, según la clase. Una sola métrica por
    gráfica, con su etiqueta. */
@@ -204,14 +220,18 @@ export const PUNTOS_MINIMOS_GRAFICA = 3;
  * lo hacía sin lastre y ahora con lastre, mezclar repeticiones y kilos en una
  * línea sería dibujar dos cosas distintas como si fueran una (apartado 22).
  */
-export function graficaDeProgreso(progreso, { rango = 'todo', hoy = todayISO() } = {}) {
+export function graficaDeProgreso(progreso, { rango = 'todo', hoy = todayISO(), clase = null } = {}) {
   const ultima = progreso?.apariciones?.[0];
   if (!ultima) return { puntos: [], mostrar: false, etiqueta: '', unidad: '' };
-  const m = METRICA_GRAFICA[ultima.clase];
-  const r = RANGOS_GRAFICA.find((x) => x.id === rango) || RANGOS_GRAFICA[3];
-  const desde = r.dias ? addDays(hoy, -r.dias) : null;
+  /* 🔓 FIT F29, apartado 11 — la clase se puede **pedir**, para el selector de
+     métrica de un ejercicio que se ha hecho de dos formas (con lastre y sin
+     él). Omitida, sigue siendo **la de la última vez**, que es lo que decidió
+     la F12: esto amplía, no cambia lo que ya hacía. */
+  const elegida = clase && METRICA_GRAFICA[clase] ? clase : ultima.clase;
+  const m = METRICA_GRAFICA[elegida];
+  const desde = periodo(rango).dias ? addDays(hoy, -periodo(rango).dias) : null;
   const puntos = progreso.apariciones
-    .filter((a) => a.clase === ultima.clase && a.mejor && (!desde || a.fecha >= desde))
+    .filter((a) => a.clase === elegida && a.mejor && (!desde || a.fecha >= desde))
     .map((a) => ({
       sesionId: a.sesionId,
       fecha: a.fecha,
@@ -226,7 +246,7 @@ export function graficaDeProgreso(progreso, { rango = 'todo', hoy = todayISO() }
     mostrar: puntos.length >= PUNTOS_MINIMOS_GRAFICA,
     etiqueta: m.etiqueta,
     unidad: m.unidad,
-    clase: ultima.clase,
+    clase: elegida,
     /* Para decir por qué no hay gráfica, en vez de dejar un hueco. */
     motivo: puntos.length === 0 ? 'No hay registros en este periodo.'
       : puntos.length < PUNTOS_MINIMOS_GRAFICA ? 'Hacen falta al menos tres registros para ver la evolución.' : '',

@@ -682,6 +682,37 @@ proyecto acabó con la mentira de los sonidos escrita en tres sitios.
 **Si algún día quiere la galería de Fitness sin PIN**, la respuesta no es tocar esto: es quitar
 `fotos_privadas` de las acciones protegidas en Ajustes, que es donde esa decisión vive.
 
+### C-36 — ✅ RESUELTA AL CONSTRUIR (FIT F29, v3.111.0) · El «nombre histórico» de un ejercicio archivado
+
+**El apartado 28 de la FIT F29 pide que, si un ejercicio se borra del catálogo pero existe en
+sesiones guardadas, se conserven *"nombre histórico, resultados y fechas"*. Los resultados y las
+fechas están. El nombre histórico NO EXISTE EN NINGUNA PARTE, y es a propósito.**
+
+Lo decidió la **FIT F3**, y está escrito en `crearWorkoutExercise`: una línea guarda `exerciseId`
+*"y nada más del ejercicio — ni el nombre, ni los músculos, ni el equipamiento"*, y
+`nombreDeLinea()` **le pregunta al catálogo**. Esa decisión es la que hace que renombrar un
+ejercicio lo renombre en las veinte rutinas donde esté (AS F1 con las asignaturas, exactamente lo
+mismo). Y la **F11** hace `nombre: ej ? ej.nombre : exerciseId`, así que al desaparecer del catálogo
+lo único que sobrevive es **el id**.
+
+**La lectura con la que se ha construido, que respeta las dos partes:**
+
+- Lo que ese apartado protege de verdad —*"NO eliminar los datos históricos"*— **se cumple entero**:
+  los resultados, las series y las fechas siguen ahí, y el detalle se abre con normalidad. Hay
+  comprobaciones que lo miden sobre un ejercicio que no está en el catálogo.
+- El nombre **no se inventa**. Guardarlo ahora sería crear la segunda fuente de verdad que la F3
+  quitó, y escribirle uno a posteriori sería **reescribir el pasado** (FIT F22, apartado 12).
+- Se enseña **su id**, que es el único identificador que sobrevive, con la etiqueta **«Ejercicio
+  archivado»** y su frase. Esconderlo dejaría varios archivados indistinguibles entre sí.
+
+⚠️ **Por qué no se arregla guardando el nombre en la sesión.** Se podría —el snapshot de la F7 es
+*"la única copia que este proyecto sí debe hacer"*—, pero cambiaría `crearWorkoutExercise`, que es
+el modelo que normaliza **cada carga**, y la F3 dejó escrito por qué no lleva nombre. Hacerlo desde
+una fase de *lectura* como la F29 sería cambiar cómo se guardan sus entrenamientos por la puerta de
+atrás (AS F1, apartado 10). **Si algún día Josué quiere el nombre histórico**, es una fase suya: se
+añade a `crearWorkoutExercise`, se normaliza y **solo vale para lo que entrene a partir de ese
+día** — lo de antes ya no se puede recuperar.
+
 ---
 
 ## PARTE B — DUPLICADOS (15)

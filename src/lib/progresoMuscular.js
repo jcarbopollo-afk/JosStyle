@@ -3,7 +3,7 @@ import { GRUPOS_MUSCULARES } from './fitness';
 import { ejercicioPorId, musculosDe } from './ejercicios';
 import { indiceDeProgresion, progresoDeEjercicio } from './progresion';
 import {
-  tarjetaDeProgreso, estadoDe, estadoProgreso, RANGOS_GRAFICA,
+  tarjetaDeProgreso, estadoDe, estadoProgreso, periodo,
 } from './progresoEjercicios';
 
 /* Entrega 4 · Fase 13/45 — «Progreso por grupos musculares».
@@ -62,7 +62,9 @@ const CACHE_PERIODO = new WeakMap();
 export function fitnessEnPeriodo(fitness, rango = 'todo', hoy = todayISO()) {
   const f = fitness || {};
   const sesiones = lista(f.sesiones);
-  const r = RANGOS_GRAFICA.find((x) => x.id === rango) || RANGOS_GRAFICA[3];
+  /* ⚠️ Por id, nunca por posición (FIT F29): el catálogo de periodos creció a
+     seis y un `RANGOS_GRAFICA[3]` se habría quedado señalando otra cosa. */
+  const r = periodo(rango);
   if (!r.dias) return f;
   const desde = addDays(hoy, -r.dias);
   let porClave = CACHE_PERIODO.get(sesiones);

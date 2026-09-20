@@ -38,13 +38,25 @@ import {
 } from '../lib/objetivosProgreso';
 import { detalleDeSesion, sesionDelHistorial } from '../lib/historial';
 import {
-  tarjetasDeProgreso, consultarProgreso, resumenDeProgreso, detalleDeProgreso, geometriaGrafica,
+  tarjetasDeProgreso, consultarProgreso, resumenDeProgreso, geometriaGrafica,
   FILTROS_PROGRESO, RANGOS_GRAFICA, PROGRESO_VACIO,
 } from '../lib/progresoEjercicios';
 /* 🔓 FIT F13 — el progreso por grupos musculares. */
 import {
   resumenMuscular, ejerciciosDeMusculo, ejercicioEnGrupo, FILTROS_GRUPO, AVISO_RENDIMIENTO,
 } from '../lib/progresoMuscular';
+/* 🔓 FIT F29 — el análisis avanzado por ejercicio: las nueve piezas nuevas del
+   apartado 31 y la librería que las alimenta. Las otras cinco ya vivían aquí
+   (`DetalleProgreso`, `GraficaProgreso`, `FilaHistoria`) o en la F28
+   (`EtiquetaEstado`), y por eso no se importa ninguna segunda versión. */
+import {
+  ExerciseProgressHeader, ExercisePerformanceSummary, ExerciseMetricSelector,
+  ExerciseHistory, ExerciseSetBreakdown, ExerciseGoalPreview, ExerciseRankPreview,
+  ExerciseVariants,
+} from '../components/detalleEjercicio';
+import { detalleCompletoDeEjercicio } from '../lib/detalleEjercicio';
+/* Apartado 26 — el historial de rango es el de la FIT F22, no uno nuevo. */
+import { RankHistory } from '../components/historialRango';
 
 /* Las secciones de Progreso (apartado 2). */
 export const SECCIONES_PROGRESO = [
@@ -263,7 +275,12 @@ export function GraficaProgreso({ grafica, accent, onVerSesion }) {
   );
 }
 
-/* ── Una sesión en la historia del ejercicio (apartados 16, 17 y 30) ────── */
+/* ── Una sesión en la historia del ejercicio (apartados 16, 17 y 30) ──────
+   🔓 FIT F29 — es el `ExerciseSessionEntry` del apartado 31, y **no se
+   reescribe**: se le añade el desglose de series omitidas y añadidas, el aviso
+   de sesión parcial y la nota (apartados 18, 19 y 27), que llegan en la misma
+   fila porque la librería de la F29 **enriquece** las de la F12 en vez de
+   redactar unas segundas. */
 function FilaHistoria({ fila, accent, abierta, onAlternar, onVerSesion }) {
   return (
     <div style={{ borderTop: `1px solid ${hexToRgba(COLORS.border, 0.6)}` }}>
@@ -273,7 +290,11 @@ function FilaHistoria({ fila, accent, abierta, onAlternar, onVerSesion }) {
         aria-label={`${abierta ? 'Ocultar' : 'Ver'} las series del ${fila.fechaTexto}`}
         className="w-full flex items-center gap-2 py-2.5 text-left"
       >
-        <span className="text-xs min-w-0 flex-1" style={{ color: COLORS.textMuted }}>{fila.fechaTexto}</span>
+        <span className="text-xs min-w-0 flex-1" style={{ color: COLORS.textMuted }}>
+          {fila.fechaTexto}
+          {/* Apartado 19 — se ve sin abrir: es lo que explica un número bajo. */}
+          {fila.parcial && <span className="ml-1.5" style={{ color: COLORS.warning }}>·&nbsp;Parcial</span>}
+        </span>
         <span className="text-sm font-bold tabular-nums" style={{ color: COLORS.text }}>{fila.resumen}</span>
         {abierta ? <ChevronUp size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" /> : <ChevronDown size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />}
       </button>
@@ -282,6 +303,9 @@ function FilaHistoria({ fila, accent, abierta, onAlternar, onVerSesion }) {
           {fila.series.map((s) => (
             <p key={s} className="text-xs tabular-nums" style={{ color: COLORS.text }}>{s}</p>
           ))}
+          <div className="pt-1.5">
+            <ExerciseSetBreakdown fila={fila} accent={accent} />
+          </div>
           {onVerSesion && (
             <button onClick={() => onVerSesion(fila.sesionId)} className="text-xs font-bold mt-1.5 py-1.5 toque-44" style={{ color: accent }}>
               Ver entrenamiento
@@ -293,15 +317,53 @@ function FilaHistoria({ fila, accent, abierta, onAlternar, onVerSesion }) {
   );
 }
 
-/* ── El detalle de un ejercicio (apartados 11-20, 29 y 30) ─────────────── */
-export function DetalleProgreso({ detalle, accent, rango, onRango, onVolver, onVerEjercicio, onVerSesion }) {
+/* ── El detalle de un ejercicio ──────────────────────────────────────────
+   Es el `ExerciseProgressDetail` del apartado 31 de la FIT F29, y nació en la
+   F12 con la última marca, la comparación, el mejor resultado, la gráfica y el
+   historial.
+
+   🔓 **La F29 lo amplía, no lo reescribe** (apartado 31: *"No duplicar
+   componentes existentes"*). Lo que recibe ahora es el detalle **completo** de
+   `detalleCompletoDeEjercicio`, que **contiene** el de la F12 en `d.progreso`:
+   así las cinco piezas que ya estaban siguen dibujando exactamente lo mismo y
+   alrededor caben la cabecera con su agarre, el rango, el objetivo, las
+   variantes, el selector de métrica y los seis periodos.
+
+   🚨 Y aquí no se calcula nada: hasta el orden de los bloques llega decidido. */
+export function DetalleProgreso({
+  detalle, accent, rango, onRango, onVolver, onVerEjercicio, onVerSesion,
+  metrica = null, onMetrica = null, onHistorialRango = null, onVariante = null,
+}) {
   const [abiertas, setAbiertas] = useState(() => new Set());
   const d = detalle;
+  const p = d.progreso;
   const alternar = (id) => setAbiertas((prev) => {
     const s = new Set(prev);
     if (s.has(id)) s.delete(id); else s.add(id);
     return s;
   });
+
+  /* Apartado 36 — el estado de error se dice entero y no se pinta nada más:
+     media pantalla con números a medias es peor que una frase honesta. */
+  if (d.error) {
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={onVolver}
+          aria-label="Volver a Progreso"
+          className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
+          style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
+        >
+          <ChevronLeft size={16} /> Progreso
+        </button>
+        <Card>
+          <p className="text-sm font-bold" style={{ color: COLORS.text }}>{d.error.titulo}</p>
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{d.error.texto}</p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <button
@@ -313,72 +375,56 @@ export function DetalleProgreso({ detalle, accent, rango, onRango, onVolver, onV
         <ChevronLeft size={16} /> Progreso
       </button>
 
-      <div>
-        <p className="text-xs" style={{ color: COLORS.textMuted }}>Progreso</p>
-        <h2 className="text-2xl font-extrabold leading-tight" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{d.nombre}</h2>
-        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{[d.tipo, d.grupo, d.medida].filter(Boolean).join(' · ')}</p>
-        {!d.existe && (
-          <p className="text-[11px] mt-1" style={{ color: COLORS.warning }}>Este ejercicio ya no está en el catálogo. Su historia se conserva.</p>
+      {/* Apartado 2 — nombre, variante, agarre, equipamiento y grupo. */}
+      <ExerciseProgressHeader cabecera={d.cabecera} tendencia={d.tendencia} accent={accent}>
+        {/* Apartado 8 — la tendencia es `EtiquetaEstado`, la de la F12. */}
+        {d.tendencia && (
+          <EtiquetaEstado estado={d.tendencia.estado} nombre={d.tendencia.nombre} simbolo={d.tendencia.simbolo} accent={accent} />
         )}
-        <div className="mt-2">
-          <EtiquetaEstado estado={d.estado} nombre={d.estadoNombre} simbolo={d.simbolo} accent={accent} />
-        </div>
-      </div>
+      </ExerciseProgressHeader>
 
-      {!d.ultima ? (
-        <EmptyHint text="Todavía no has hecho este ejercicio." />
+      {!p || !p.ultima ? (
+        <EmptyHint text={d.vacio || 'Todavía no has hecho este ejercicio.'} />
       ) : (
         <>
-          {/* Apartado 12 — la última marca, destacada. */}
-          <Card>
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Última vez · {d.ultima.fechaTexto}</p>
-            <p className="text-3xl font-extrabold tabular-nums mt-1" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{d.ultima.texto}</p>
+          {/* Apartados 4, 5 y 6 — último, anterior y mejor, en una lectura. */}
+          <ExercisePerformanceSummary progreso={p} accent={accent} />
 
-            {/* Apartado 13 — Anterior ↓ Actual, con la lógica de la F11. */}
-            {d.comparacion && (
-              <div className="mt-3 pt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2" style={{ borderTop: `1px solid ${COLORS.border}` }}>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Anterior · {d.comparacion.antesFecha}</p>
-                  <p className="text-base font-bold tabular-nums" style={{ color: COLORS.text }}>{d.comparacion.antes}</p>
-                </div>
-                <span aria-hidden="true" style={{ color: COLORS.textMuted }}>→</span>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Resultado</p>
-                  <p className="text-base font-bold tabular-nums" style={{ color: d.estado === 'mejora' ? accent : COLORS.text }}>{d.comparacion.resultado}</p>
-                  {d.comparacion.porcentaje !== null && (
-                    <p className="text-[10px] tabular-nums" style={{ color: COLORS.textMuted }}>{d.comparacion.porcentaje > 0 ? '+' : ''}{String(d.comparacion.porcentaje).replace('.', ',')} % de peso</p>
-                  )}
-                </div>
-              </div>
-            )}
-            {d.avisoMedida && <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>{d.avisoMedida}</p>}
-          </Card>
+          {/* Apartados 3, 25 y 26 — el rango, con su siguiente y su historial. */}
+          <ExerciseRankPreview rango={d.rango} accent={accent} onHistorial={onHistorialRango} />
 
-          {/* Apartado 14 — el mejor resultado, o «Primer registro». */}
-          <Card>
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Mejor resultado</p>
-            {d.soloUna ? (
-              <p className="text-sm font-bold mt-1" style={{ color: COLORS.text }}>Primer registro</p>
-            ) : d.mejor && (
-              <p className="text-base font-bold tabular-nums mt-1" style={{ color: COLORS.text }}>
-                {d.mejor.texto} <span className="text-xs font-normal" style={{ color: COLORS.textMuted }}>· {d.mejor.fecha}</span>
-              </p>
-            )}
-          </Card>
+          {/* Apartados 23 y 24 — el objetivo, si lo hay. */}
+          <ExerciseGoalPreview objetivo={d.objetivo} accent={accent} />
 
-          {/* Apartados 21-25 — la gráfica, con su rango. */}
+          {/* Apartados 9 a 12 — la gráfica, su métrica y sus seis periodos. */}
           {d.veces >= 2 && (
             <Card>
-              <Chips opciones={RANGOS_GRAFICA} valor={rango} onCambiar={onRango} accent={accent} etiqueta="Periodo de la gráfica" />
+              <Chips opciones={d.periodos} valor={rango} onCambiar={onRango} accent={accent} etiqueta="Periodo de la gráfica" />
+              {/* Apartado 11 — el selector solo si hay dos métricas de verdad. */}
+              {d.hayselector && (
+                <div className="mt-2">
+                  <ExerciseMetricSelector metricas={d.metricas} valor={metrica || d.metrica} accent={accent} onElegir={onMetrica} />
+                </div>
+              )}
               <div className="mt-3">
                 <GraficaProgreso grafica={d.grafica} accent={accent} onVerSesion={onVerSesion} />
               </div>
+              {/* 🚨 Apartado 35 — la alternativa textual: no depender del gráfico. */}
+              {d.alternativa && (
+                <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>{d.alternativa}</p>
+              )}
+              {/* Apartado 29 — un punto descartado se dice, no desaparece. */}
+              {d.descartados.significativo && (
+                <p className="text-[11px] mt-1.5" style={{ color: COLORS.warning }}>{d.descartados.aviso}</p>
+              )}
             </Card>
           )}
 
-          {/* Apartados 16 y 17 — la historia del ejercicio. */}
-          <Card>
-            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: COLORS.textMuted }}>Historial · {d.veces} {d.veces === 1 ? 'sesión' : 'sesiones'}</p>
+          {/* Apartados 20 y 21 — las variantes, con su historial separado. */}
+          <ExerciseVariants variantes={d.variantes} accent={accent} onAbrir={onVariante} />
+
+          {/* Apartados 16, 17, 18, 19 y 27 — la historia del ejercicio. */}
+          <ExerciseHistory filas={d.historial} veces={d.veces}>
             {d.historial.map((f) => (
               <FilaHistoria
                 key={f.sesionId}
@@ -389,12 +435,12 @@ export function DetalleProgreso({ detalle, accent, rango, onRango, onVolver, onV
                 onVerSesion={onVerSesion}
               />
             ))}
-          </Card>
+          </ExerciseHistory>
         </>
       )}
 
-      {/* Apartado 29 — la ficha del catálogo, sin duplicarla. */}
-      {d.existe && onVerEjercicio && (
+      {/* La ficha del catálogo, sin duplicarla. */}
+      {d.cabecera.existe && onVerEjercicio && (
         <GhostBtn icon={Dumbbell} onClick={onVerEjercicio}>Ver ejercicio</GhostBtn>
       )}
     </div>
@@ -883,7 +929,13 @@ export default function ProgresoView({
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState('todos');
   const [abierto, setAbierto] = useState(null); // exerciseId
-  const [rango, setRango] = useState('todo');
+  /* 🔓 FIT F29, apartado 12 — `null` significa *"decídelo tú"*: la librería
+     elige **3 meses si hay datos suficientes y Todo si no**, que es lo que pide
+     ese apartado. Fijarlo aquí a «todo» haría que entrar a un ejercicio muy
+     entrenado empezara por el periodo más ancho. */
+  const [rango, setRango] = useState(null);
+  /* Apartado 11 — la métrica pedida; `null` es la de la última vez (F12). */
+  const [metrica, setMetrica] = useState(null);
   const [vista, setVista] = useState(null); // { tipo: 'sesion' | 'ejercicio', id }
   /* FIT F13 — el periodo del progreso muscular, el grupo y el subgrupo abiertos,
      y el filtro por grupo de la lista de ejercicios (apartados 6, 8 y 13). */
@@ -922,9 +974,14 @@ export default function ProgresoView({
   const muscular = useMemo(() => resumenMuscular(f, { rango: periodo, hoy, propios }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [f.sesiones, periodo, hoy, propios]);
-  const detalle = useMemo(() => (abierto ? detalleDeProgreso(f, abierto, { propios, rango, hoy }) : null),
+  /* 🔓 FIT F29 — el detalle **completo**: lo que daba la F12 más la cabecera, el
+     rango, el objetivo, las variantes, la métrica y los periodos. Sigue sin
+     guardarse nada: se deriva en cada render de las sesiones (apartado 32). */
+  const detalle = useMemo(() => (abierto
+    ? detalleCompletoDeEjercicio(f, abierto, { propios, perfil, rango, metrica, hoy })
+    : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [abierto, f.sesiones, propios, rango, hoy]);
+    [abierto, f.sesiones, f.objetivos, f.clasificaciones, propios, perfil, rango, metrica, hoy]);
 
   /* 🚨 FIT F18, apartado 11 — el ejercicio que llega desde el detalle muscular
      de Rangos abre **esta** pantalla, la de la F12: *"no crear otra pantalla de
@@ -953,6 +1010,23 @@ export default function ProgresoView({
             <GhostBtn icon={ChevronLeft} onClick={() => setVista(null)}>Volver</GhostBtn>
           </div>
         )}
+      </div>
+    );
+  }
+  /* 🔓 FIT F29, apartado 26 — *"→ RankHistory. No crear otro historial"*: es el
+     de la F22, con el destino del ejercicio, y se abre aquí mismo en vez de
+     sacarle de Progreso a mitad de una lectura. */
+  if (vista && vista.tipo === 'historialRango') {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <RankHistory
+          fitness={f}
+          destino={vista.destino}
+          propios={propios}
+          perfil={perfil}
+          accent={accent}
+          onCerrar={() => setVista(null)}
+        />
       </div>
     );
   }
@@ -1074,11 +1148,20 @@ export default function ProgresoView({
         <DetalleProgreso
           detalle={detalle}
           accent={accent}
-          rango={rango}
+          /* ⚠️ El periodo que se pinta marcado es **el efectivo**, no el estado:
+             al entrar el estado es `null` y la librería ha elegido 3 meses. Con
+             `rango` a secas no se vería ninguna pastilla marcada. */
+          rango={detalle.periodo}
           onRango={setRango}
-          onVolver={() => { setAbierto(null); setRango('todo'); }}
+          metrica={detalle.metrica}
+          onMetrica={setMetrica}
+          onVolver={() => { setAbierto(null); setRango(null); setMetrica(null); }}
           onVerEjercicio={() => setVista({ tipo: 'ejercicio', id: detalle.exerciseId })}
           onVerSesion={(id) => setVista({ tipo: 'sesion', id })}
+          /* Apartado 26 — el historial de rango es el de la F22, no otro. */
+          onHistorialRango={() => setVista({ tipo: 'historialRango', destino: detalle.rango.destinoHistorial })}
+          /* Apartados 20 y 21 — ir a la variante, que tiene su propio historial. */
+          onVariante={(id) => { setAbierto(id); setRango(null); setMetrica(null); }}
         />
       </div>
     );

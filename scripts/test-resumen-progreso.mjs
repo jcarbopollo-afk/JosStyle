@@ -259,7 +259,11 @@ ok(timelineDeProgreso([], { hoy: HOY }).vacio === SIN_EVENTOS, '…y sin nada re
 console.log('\n── 9. Periodos (apartado 16) ──');
 
 ok(PERIODOS_RESUMEN.map((p) => p.nombre).join(', ') === '7 días, 30 días, 3 meses, Todo', 'Los cuatro periodos del apartado 16');
-ok(PERIODOS_RESUMEN === (await import('../src/lib/progresoEjercicios.js')).RANGOS_GRAFICA, '⚠️ …y son EXACTAMENTE los de la F12: ni un segundo catálogo que se desvíe');
+const f12 = await import('../src/lib/progresoEjercicios.js');
+ok(PERIODOS_RESUMEN === f12.RANGOS_GRAFICA, '⚠️ …y son EXACTAMENTE los de la F12: ni un segundo catálogo que se desvíe');
+/* 🔓 FIT F29 — el catálogo creció a seis para el detalle de un ejercicio, y el
+   resumen sigue ofreciendo CUATRO: un subconjunto por ids, no una copia. */
+ok(PERIODOS_RESUMEN.every((p) => f12.PERIODOS.includes(p)) && f12.PERIODOS.length === 6, '🔓 …y los cuatro salen de los seis de PERIODOS, sin copiarlos (FIT F29)');
 ok(periodoResumen('loquesea').id === PERIODO_POR_DEFECTO, 'Un periodo que no existe cae en «Todo»');
 
 const c7 = centroDeProgreso(TODO, FOTOS, { hoy: HOY, periodo: '7d' });

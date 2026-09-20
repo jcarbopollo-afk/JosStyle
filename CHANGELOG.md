@@ -1,5 +1,110 @@
 # CHANGELOG.md
 
+## v3.111.0 — FIT F29/45: el análisis avanzado por ejercicio
+
+El detalle de un ejercicio pasa a contestar la pregunta del enunciado: *«¿Cómo estoy
+progresando realmente en este ejercicio?»*. Donde antes había la última marca, la
+comparación y el historial, ahora caben también la cabecera con su agarre y su
+equipamiento, el rango con su camino al siguiente, el objetivo, las variantes, el
+selector de métrica y seis periodos en vez de cuatro. Con esto empieza el bloque de
+**Inteligencia** (F29–F35).
+
+### 🚨 No se crea ni una lógica de progreso nueva
+
+El contexto lo abre y los apartados 8 y 39 lo repiten: *«No crear una nueva lógica de
+progreso. Utilizar la lógica central de Fase 11»*. `YA_LO_RESUELVE` guarda **las ocho
+funciones importadas** que ya contestaban cinco de los nueve datos del apartado 1 — de la
+F11, la F12, la F19, la F23, la F14, la F8 y la F2 —, así que renombrar una rompe la
+compilación. Y no se guarda nada: el detalle se deriva de `WorkoutSession` +
+`ExerciseProgress` + `RankEngine` + `ProgressGoal` (apartado 32). Es la F15, la F22, la
+F24 y la F28 por quinta vez en esta entrega.
+
+### 🚨 De los catorce componentes del apartado 31, cinco ya estaban escritos
+
+`DetalleProgreso`, `GraficaProgreso` y `FilaHistoria` son de la F12; `EtiquetaEstado`, de
+la F28. El apartado dice *«Crear/reutilizar»* y a continuación *«No duplicar componentes
+existentes»*, así que `DetalleProgreso` **se amplía, no se reescribe**: recibe ahora el
+detalle completo, que **contiene** el de la F12 en `d.progreso`. Y la prueba **abre cada
+archivo**: una tabla que solo se cuenta a sí misma no demuestra nada.
+
+### 🚨 Un periodo filtra la gráfica, nunca el historial ni el rango
+
+Seis periodos aquí y cuatro en la F28, **sobre un solo catálogo** con dos subconjuntos por
+ids: con dos catálogos, el día que uno cambiara «3 meses» valdría 91 días en una pantalla
+y otra cosa en la otra. Y *«suficientes datos»* para entrar por 3 meses son **los que hace
+falta para la gráfica**, no un número nuevo: entrar y ver el hueco de «hacen falta tres
+registros» sería empezar por la pantalla vacía.
+
+### 🚨 Y el selector de métrica solo existe cuando hay dos de verdad
+
+*«Pero solo cuando ambas existan realmente. No mostrar selectores inútiles»* (apartado 11).
+Cada clase de la F11 conserva **su unidad**, porque sumar kg + reps + segundos sería
+dibujar tres cosas distintas como si fueran una (apartado 10).
+
+### 🐛 Y el recorrido destapó que el aviso de variantes no salía donde importa
+
+`variantesDe` **solo baja**: de las dominadas lastradas devuelve **nada**, porque
+su `base` es la prona y ella no tiene hijas. Así que *«Esta variante tiene un
+historial separado»* aparecía estando en la **base** y no estando **en una
+variante**, que es literalmente el caso del apartado 21 (*«Si el usuario cambia de
+variante»*). La familia es la **raíz más sus variantes** —«Dominadas / neutras /
+lastradas» son **hermanas**, no madre e hijas, que es el propio ejemplo del
+apartado 20—. ⚠️ Y la suite de Node no lo cazó porque **solo miraba desde la
+base**: ahora hay tres comprobaciones que entran por la variante.
+
+### 🐛 Y una prueba que llevaba saliendo roja una de cada cincuenta veces
+
+La de la F12 barría `JSON.stringify(detalle)` buscando «kg» para demostrar que un
+ejercicio a peso corporal no inventa volumen — **y eso incluye los `sesionId`**,
+que son `uid()` = `Math.random().toString(36)`. Un id de ocho caracteres contiene
+«kg» el **0,5 %** de las veces y un detalle trae cuatro: **una de cada cincuenta
+pasadas en rojo con el código perfecto**, y ésta fue la que tocó. Es la lección de
+EH F40 —«experto» contiene «xp»— con otra subcadena. Ahora se quitan los ids, con
+una comprobación de que el arreglo no tapa un «kg» de verdad.
+
+### 🐛 Y dos hallazgos más de los que se miden, no se suponen
+
+- **`resumenDeEjercicio` devuelve `estado`, no `estadoNombre`.** Leerlo del resumen daba
+  `undefined` y la etiqueta de cada sesión se habría quedado muda para siempre — el
+  nombre vive en el catálogo `ESTADOS_EJERCICIO` de la F8. Es la lección de la FORMA de lo
+  que devuelve una función, por enésima vez (F22 con `fuente`, F25 con `confianza`).
+- **Un peso inválido NO llega nunca a la gráfica como `NaN`.** `numeroONull` lo deja en
+  `null`, así que la aparición **se reclasifica** de «carga» a «repeticiones» y el registro
+  no se pierde: cambia de métrica, y sale bajo la otra. Es mejor que descartarlo, y deja el
+  aviso de datos descartados como lo que es —defensivo—, declarado y con una prueba que lo
+  pone rojo a mano.
+
+### ⏸ C-36 — el «nombre histórico» de un ejercicio archivado no existe
+
+El apartado 28 pide conservar *«nombre histórico, resultados y fechas»*. Los resultados y
+las fechas están enteros. El nombre **no existe en ninguna parte**, y es a propósito: la
+F3 decidió que una línea guarda `exerciseId` *«y nada más del ejercicio»*, que es lo que
+hace que renombrar uno llegue a las veinte rutinas donde esté. Así que se enseña su id con
+la etiqueta «Ejercicio archivado», en vez de inventarle un nombre ahora —que sería
+reescribir el pasado—. Anotado en `docs/03` con el arreglo, si algún día lo quiere.
+
+### 🐛 Y tres fallos de mis propias comprobaciones
+
+- Dos escenarios tocaban `sesion.ejercicios`, que **existe y está vacío**: los ejercicios
+  de una sesión viven en `sesion.origen.ejercicios`, el snapshot de la F7. Uno de los dos
+  salía **verde sin haber corrompido nada**, que es peor que un rojo.
+- El barrido de «no guarda nada» saltaba con `ESTADOS_DETALLE`, la tabla que **nombra**
+  `app_data` justamente para declarar que «cargando» es de la pantalla de carga. Lo que se
+  barre es el código, no la declaración — y hay una comprobación de que el arreglo no tapa
+  una escritura de verdad.
+- Y el banco de renderizado puso rojos los casos de `DetalleProgreso`, que seguían pasando
+  la forma vieja. Para eso está.
+
+Lo que NO se construye, con su motivo en `NO_EN_FIT29`: un sistema de récords aparte, un
+gráfico de «rendimiento total», el dato de «última vez» duplicado en el entrenamiento en
+vivo, conversión automática de unidades, IA, predicciones, recomendaciones automáticas y
+gamificación.
+
+Archivos: `src/lib/detalleEjercicio.js` y `src/components/detalleEjercicio.jsx` (nuevos),
+`src/views/ProgresoView.jsx`, `src/lib/progresoEjercicios.js`, `src/lib/progresoMuscular.js`,
+`scripts/test-detalle-ejercicio.mjs` (nuevo), `scripts/smoke-vistas.jsx`,
+`scripts/test-app-real.mjs` y `scripts/verificar.sh`.
+
 ## v3.110.0 — FIT F28/45: el centro de seguimiento del progreso
 
 **Fitness → Progreso** pasa a ser lo que el apartado 34 pide que sea: *«un verdadero centro

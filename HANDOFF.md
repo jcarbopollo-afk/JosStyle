@@ -2,7 +2,53 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
-> **🏋️ ACTUALIZACIÓN (v3.110.0 — FIT F28/45: el centro de seguimiento del progreso):**
+> **🏋️ ACTUALIZACIÓN (v3.111.0 — FIT F29/45: el análisis avanzado por ejercicio):**
+> El detalle de un ejercicio pasa a contestar la pregunta del enunciado: *"¿Cómo estoy progresando
+> realmente en este ejercicio?"*. Donde antes había la última marca, la comparación y el historial,
+> ahora caben también **la cabecera con su agarre y su equipamiento**, **el rango con su camino al
+> siguiente**, **el objetivo**, **las variantes**, **el selector de métrica** y **seis periodos** en
+> vez de cuatro. Con ella empieza el bloque de **Inteligencia** (F29–F35).
+> 🚨 **NO se crea ni una lógica de progreso nueva.** El contexto lo abre y los apartados 8 y 39 lo
+> repiten: *"Utilizar la lógica central de Fase 11"*. `YA_LO_RESUELVE` guarda **las ocho funciones
+> importadas** que ya contestaban cinco de los nueve datos del apartado 1, así que renombrar una
+> rompe la compilación. Y **no se guarda nada**: se deriva de `WorkoutSession` + `ExerciseProgress`
+> + `RankEngine` + `ProgressGoal` (apartado 32) — la F15, la F22, la F24 y la F28 por quinta vez.
+> 🚨 **De los catorce componentes del apartado 31, CINCO ya estaban escritos**: `DetalleProgreso`,
+> `GraficaProgreso` y `FilaHistoria` son de la F12 y `EtiquetaEstado` de la F28. Así que
+> `DetalleProgreso` **se amplía, no se reescribe**: recibe el detalle completo, que **contiene** el
+> de la F12 en `d.progreso`. Y la prueba **abre cada archivo**.
+> 🚨 **Un periodo filtra la gráfica, nunca el historial ni el rango** (apartado 12). Los seis de
+> aquí y los cuatro de la F28 son **dos subconjuntos por ids de un solo catálogo**: con dos
+> catálogos, «3 meses» acabaría valiendo una cosa en una pantalla y otra en la otra.
+> 🚨 **El selector de métrica solo aparece cuando hay dos de verdad** (apartado 11), y cada clase
+> conserva **su unidad**: sumar kg + reps + segundos sería dibujar tres cosas como si fueran una.
+> 🐛 **`resumenDeEjercicio` devuelve `estado`, NO `estadoNombre`** — leerlo del resumen daba
+> `undefined` y la etiqueta de cada sesión se habría quedado muda para siempre. Es la lección de la
+> FORMA de lo que devuelve una función, por enésima vez.
+> 🐛 **Y un peso inválido no llega nunca a la gráfica como `NaN`**: `numeroONull` lo deja en `null`,
+> así que la aparición **se reclasifica** de «carga» a «repeticiones» y el registro no se pierde,
+> cambia de métrica. Eso deja el aviso de descartes como lo que es —defensivo—, declarado.
+> ⏸ **C-36**: el «nombre histórico» que pide el apartado 28 **no existe en ninguna parte**, y es a
+> propósito — la F3 decidió que una línea guarda `exerciseId` *"y nada más del ejercicio"*, que es
+> lo que hace que renombrar uno llegue a las veinte rutinas donde esté. Se enseña su id con la
+> etiqueta «Ejercicio archivado»; los resultados y las fechas se conservan enteros.
+> 🐛 **Y EL RECORRIDO DESTAPÓ UN FALLO REAL: el aviso de variantes no salía donde importa.**
+> `variantesDe` **solo baja**, así que de las dominadas **lastradas** devuelve nada —su base es la
+> prona y ella no tiene hijas— y *«Esta variante tiene un historial separado»* aparecía estando en la
+> **base**, no estando **en una variante**, que es literalmente el apartado 21. La familia es **la
+> raíz más sus variantes**: «Dominadas / neutras / lastradas» son **hermanas**. ⚠️ Y la suite de Node
+> no lo vio **porque solo miraba desde la base** — al probar una relación, recorrerla en los DOS
+> sentidos.
+> 🐛 **Y una prueba de la F12 llevaba saliendo roja una de cada cincuenta veces**: barría
+> `JSON.stringify(detalle)` buscando «kg», y ahí van los `sesionId` —`uid()` es
+> `Math.random().toString(36)`, y un id de ocho caracteres contiene «kg» el 0,5 % de las veces—. Es
+> EH F40 («experto» contiene «xp») con otra subcadena, y tumbó una verificación entera.
+> 🐛 **Y tres fallos de mis propias comprobaciones**: dos escenarios tocaban `sesion.ejercicios`,
+> que **existe y está vacío** —los ejercicios viven en `sesion.origen.ejercicios`, el snapshot de la
+> F7—, y uno de los dos salía **verde sin haber corrompido nada**; y el barrido de «no guarda nada»
+> saltaba con la tabla que **nombra** `app_data` para declarar de dónde viene «cargando».
+>
+> **🏋️ ACTUALIZACIÓN ANTERIOR (v3.110.0 — FIT F28/45: el centro de seguimiento del progreso):**
 > **Fitness → Progreso** es ya lo que pide el apartado 34: *"un verdadero centro de seguimiento
 > personal"*. En una pantalla están el rango actual, los entrenamientos registrados, los ejercicios
 > que mejoran, las fotos con su comparación rápida, el progreso muscular, los objetivos activos y
