@@ -2,6 +2,31 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.108.0 — FIT F26/45: el progreso físico en fotos):**
+> Fitness → Progreso → **Fotos** es ya un diario visual: varias de una vez, fecha editable,
+> agrupadas por día, visor y comparación A/B.
+> 🚨 **Y no hay una segunda lista de fotos**: son `saludFotos` desde la Fase 3, con su bucket
+> privado `progreso`, su subida y su borrado de siempre. Una lista nueva habría dejado las fotos
+> que Josué ya tiene **invisibles en la pantalla que se llama Progreso**. ✅ **Tampoco hace falta
+> ningún SQL suyo**, al revés que el `media` de la FIT F8: ese bucket está creado y en uso.
+> 🔓 **La FIT F12 dejó esta pestaña esperando** —*"dejar la estructura lista para el sistema de
+> fotos sin construirlo"*—: era una espera, no una exclusión.
+> 🚨 **Tres de los nueve campos del apartado 2 ya existían con otro nombre** (`imageReference` es
+> `path`, `photoDate` es `fecha`, `note` es `nota`), y los leen tres sitios: se conservan.
+> 🚨 **Y `saludFotos` estrena normalizador**, porque se cargaba sin normalizar nada y los cinco
+> campos nuevos se los habría llevado el siguiente guardado (regla 5). Lo subido antes no pierde
+> nada: su `createdAt` se deduce de su fecha, que es lo único que se sabe de ella.
+> 🚨 **ANTES y DESPUÉS los decide la FECHA, no el orden en que las elige** (apartado 14), y lo
+> único que se afirma es cuánto tiempo pasó: ni una palabra sobre su cuerpo (apartado 41).
+> 🚨 **Una foto que no se puede leer no rompe la galería** (apartado 29) — y se prueba con TODAS
+> las imágenes rotas, porque en el recorrido el stub de Supabase no firma ninguna URL.
+> ⚠️ **La orientación no se rota a mano** (apartado 7): Safari y Chromium ya aplican el EXIF, así
+> que rotarla aquí la giraría dos veces en su iPhone.
+> ⚠️ **Y la galería lleva el MISMO PIN que la de Salud** (C-35): con `fotos_privadas` puesto y la
+> sesión bloqueada, la pestaña se queda como la dejó la F12. Una puerta sin PIN sería saltarse su
+> propia seguridad. `src/lib/fotosProgreso.js` + `src/components/fotosProgreso.jsx`, con
+> `scripts/test-fotos-progreso.mjs` (152 comprobaciones).
+
 > **🏋️ ACTUALIZACIÓN (v3.107.0 — FIT F25/45: resumen inteligente de rangos):**
 > Fitness → Rangos deja de ser una colección de números y contesta *«¿cómo estoy?»* de arriba
 > abajo: **rango general → siguiente → cobertura y confianza → evolución → destacados y rankings

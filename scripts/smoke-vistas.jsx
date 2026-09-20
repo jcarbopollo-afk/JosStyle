@@ -242,6 +242,13 @@ import {
   RankClassificationPrompt, RankDashboardError, RankDashboardSkeleton,
 } from '../src/components/resumenRangos.jsx';
 import { resumenDeRangos as resF25, ERROR_RANGOS as ERR_F25 } from '../src/lib/resumenRangos.js';
+/* FIT F26 — el diario visual de fotos. ⚠️ El visor sale por `createPortal`, así
+   que no entra en este banco (lo abre el recorrido); sus piezas, sí. */
+import {
+  ProgressPhotoEmpty, ProgressPhotoGrid, ProgressPhotoCard, ProgressPhotoComparison,
+  ProgressPhotoDateSelector, ProgressPhotoCompareHint, ProgressPhotos,
+} from '../src/components/fotosProgreso.jsx';
+import { pantallaDeFotos as pantF26, compararFotos as compF26 } from '../src/lib/fotosProgreso.js';
 /* FIT F24 — el hub de clasificación. ⚠️ Sus tarjetas **solo aparecen en el
    hub**, y la pregunta solo tras pulsar una: son dos pantallas, así que cada
    pieza entra suelta (la lección del Álbum de Relación, NAV F3). */
@@ -348,6 +355,22 @@ const accent = ACCENTS[0].value;
 const noop = () => {};
 const datosPeloSmoke = (e5) => datosPelo(e5).rutinas[0].id;
 const HOY = new Date().toLocaleDateString('sv-SE'); // día local, no UTC
+/* 🚨 **UN ESCENARIO DE PLAN SE ACTIVA UN LUNES, NUNCA «HOY»** (FIT F26, y es la
+   bomba de relojería de la FIT F24 por segunda vez — allí costó 45 rojos en el
+   recorrido y aquí cuatro en el banco). Los diecisiete planes de la biblioteca
+   tienen SIETE días, así que el plan **es** la semana y su día 1 es el lunes
+   (F6, apartado 7). Activándolo «hoy», **un domingo no hay ningún día de
+   entreno por delante** —ninguno de los diecisiete entrena en domingo—, así que
+   `proximo` es `null`, `TarjetaProximo` devuelve `null` a propósito y el banco
+   lo cuenta como render vacío. **El componente está bien**: lo que fallaba era
+   el escenario, y llevaba así desde la F6 sin que ningún domingo lo ejecutara.
+   ⚠️ Al sembrar un plan en una prueba, activarlo el LUNES: además es el caso
+   normal, y hasta ahora no lo probaba nadie. */
+const LUNES_F6 = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.toLocaleDateString('sv-SE');
+})();
 
 /* FIT F7 — las dos sesiones que se renderizan: una recién empezada y otra a
    mitad. ⚠️ Se construyen con funciones, no una vez: `empezarSesion` llama a
@@ -411,6 +434,14 @@ const fitnessGlobalF25 = () => ['2026-06-10', '2026-07-10', '2026-08-09', '2026-
     s = marcarF7(editarF7(s, e.id, e.series[0].id, valores), e.id, e.series[0].id, true);
     return guardarSesionF10(g, guardarF8(pasarF8(s), { confirmado: true }).sesion);
   }, f), {});
+
+/* FIT F26 — fotos con la forma que de VERDAD tiene lo guardado desde la Fase 3:
+   sin los cinco campos que añade esa fase. Así el banco prueba la migración. */
+const FOTOS_F26 = [
+  { id: 'f1', path: 'usuario/1.jpg', fecha: '2026-06-12', nota: 'Inicio del verano' },
+  { id: 'f2', path: 'usuario/2.jpg', fecha: '2026-09-12', nota: '' },
+  { id: 'f3', path: 'usuario/3.jpg', fecha: '2026-09-12', nota: 'Inicio de curso' },
+];
 
 const DESTINO_EJ_F22 = { tipo: 'exercise', id: 'dominada-prona' };
 const DESTINO_GRUPO_F23 = { tipo: 'muscleGroup', id: 'espalda' };
@@ -3134,6 +3165,10 @@ const CASOS = [
   /* 🚨 FIT F25 — la pantalla entera CON rango global: es el único caso donde se
      pintan los destacados, la confianza, la evolución y los relevantes. */
   ['RangosView', RangosView, () => ({ fitness: fitnessGlobalF25(), perfil: { peso: 72 }, accent, onEntrenar: noop, onClasificar: noop, onEjercicio: noop })],
+  /* 🔓 FIT F26 — Progreso con la pestaña de Fotos de verdad, que la F12 dejó
+     esperando. ⚠️ Sin `onAddFoto` se queda como estaba: cuenta y lleva a Salud. */
+  ['ProgresoView', ProgresoView, () => ({ fitness: {}, fotos: FOTOS_F26, accent, onAddFoto: noop, onDeleteFoto: noop })],
+  ['ProgresoView', ProgresoView, () => ({ fitness: {}, fotos: FOTOS_F26, accent, onIrAFotos: noop })],
   ['RankOverviewCard', RankOverviewCard, () => ({ datos: pantallaF16({}), accent })],
   ['RankOverviewCard', RankOverviewCard, () => ({ datos: pantallaF16(fitnessConProgresoF12()), accent })],
   ['RankList', RankList, () => ({ escala: pantallaF16({}).escala, accent, onAbrir: noop })],
@@ -3312,6 +3347,42 @@ const CASOS = [
   ['RankDashboard', RankDashboard, () => ({
     resumen: { error: ERR_F25, bloques: [] }, bloques: {}, accent, onReintentar: noop,
   })],
+
+  /* ══ FIT F26 — el diario visual de fotos ═══════════════════════════════ */
+  ['ProgressPhotoEmpty', ProgressPhotoEmpty, () => ({ accent, onAnadir: noop })],
+  /* Sin poder añadir: el vacío se dice igual, sin un botón muerto (regla 8). */
+  ['ProgressPhotoEmpty', ProgressPhotoEmpty, () => ({ accent })],
+  ['ProgressPhotoGrid', ProgressPhotoGrid, () => ({
+    dias: pantF26(FOTOS_F26).dias, urls: {}, fallidas: {}, accent, onAbrir: noop,
+  })],
+  /* 🚨 Apartado 29 — una foto que ya no está NO rompe la galería. */
+  ['ProgressPhotoGrid', ProgressPhotoGrid, () => ({
+    dias: pantF26(FOTOS_F26).dias, urls: {}, fallidas: { f2: true }, accent, onAbrir: noop,
+  })],
+  ['ProgressPhotoCard', ProgressPhotoCard, () => ({
+    foto: pantF26(FOTOS_F26).orden[0], url: null, fallida: false, accent, onAbrir: noop,
+  })],
+  /* Con etiquetas, que es lo que pinta la pastilla de abajo. */
+  ['ProgressPhotoCard', ProgressPhotoCard, () => ({
+    foto: { ...pantF26(FOTOS_F26).orden[0], tags: ['frontal'] }, url: null, fallida: true, accent, onAbrir: noop,
+  })],
+  ['ProgressPhotoComparison', ProgressPhotoComparison, () => ({
+    comparacion: compF26(FOTOS_F26, 'f1', 'f3'), urls: {}, fallidas: {}, accent,
+  })],
+  ['ProgressPhotoDateSelector', ProgressPhotoDateSelector, () => ({
+    opciones: pantF26(FOTOS_F26).comparacion.opciones, elegida: 'f1', urls: {}, etiqueta: 'Primera foto', onElegir: noop,
+  })],
+  /* Apartado 25 — con una sola foto se DICE, en vez de desaparecer. */
+  ['ProgressPhotoCompareHint', ProgressPhotoCompareHint, () => ({ aviso: pantF26([FOTOS_F26[0]]).comparacion.aviso })],
+  ['ProgressPhotos', ProgressPhotos, () => ({
+    pantalla: pantF26(FOTOS_F26), accent, hoy: '2026-09-19', onAddFoto: noop, onDeleteFoto: noop,
+  })],
+  /* 🚨 El vacío, que es por donde entra alguien que no ha subido ninguna. */
+  ['ProgressPhotos', ProgressPhotos, () => ({
+    pantalla: pantF26([]), accent, hoy: '2026-09-19', onAddFoto: noop, onDeleteFoto: noop,
+  })],
+  /* ⚠️ Y de solo lectura: con el PIN puesto no se ofrece añadir ni borrar. */
+  ['ProgressPhotos', ProgressPhotos, () => ({ pantalla: pantF26(FOTOS_F26), accent, hoy: '2026-09-19' })],
 
   ['ClassificationReason', ClassificationReason, () => ({ reason: 'Mejora tu cobertura de cuello', accent })],
   ['ClassificationEmpty', ClassificationEmpty, () => ({ vacio: { id: 'completa', ...VACIOS_F24.completa }, accent, onVolver: noop })],
@@ -3564,8 +3635,8 @@ const CASOS = [
   ['PlanPerdido', PlanPerdido, () => ({ accent, onExplorar: noop })],
   ['DescansoHoy', DescansoHoy, () => ({ accent })],
   ['TarjetaProximo', TarjetaProximo, () => ({
-    proximo: tuPlanF6(usarPlanF5({}, 'ppl-estetico', { hoy: HOY }).fitness, { hoy: HOY }).proximo
-      || tuPlanF6(usarPlanF5({}, 'hipertrofia-6', { hoy: HOY }).fitness, { hoy: HOY }).proximo,
+    proximo: tuPlanF6(usarPlanF5({}, 'ppl-estetico', { hoy: LUNES_F6 }).fitness, { hoy: LUNES_F6 }).proximo
+      || tuPlanF6(usarPlanF5({}, 'hipertrofia-6', { hoy: LUNES_F6 }).fitness, { hoy: LUNES_F6 }).proximo,
     accent, onVer: noop,
   })],
   ['SemanaCompacta', SemanaCompacta, () => ({

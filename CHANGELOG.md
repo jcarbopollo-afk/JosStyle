@@ -1,5 +1,91 @@
 # CHANGELOG.md
 
+## v3.108.0 — FIT F26/45: el progreso físico en fotos
+
+Fitness → Progreso → **Fotos** pasa a ser un diario visual de verdad: varias fotos de
+una vez, fecha editable, agrupadas por día, con su visor y comparación A/B.
+
+### 🚨 Las fotos de progreso YA EXISTÍAN, y no hay una segunda lista
+
+Son **`saludFotos`** desde la Fase 3: las sube `uploadProgressPhoto()`, el archivo vive en
+el bucket privado **`progreso`**, se firman con `getSignedPhotoUrl()` y se borran con
+`deleteProgressPhoto()`. Estaba declarado en `MAPEO_EXISTENTE` desde la FIT F1. Una lista
+nueva habría dejado **las fotos que Josué ya tiene invisibles en la pantalla que se llama
+Progreso** — la lección más repetida de este proyecto.
+
+🚨 **Y no hace falta ningún SQL suyo**, al revés que el `media` de la FIT F8: ese bucket
+está creado y se usa todos los días.
+
+### 🔓 Y la FIT F12 dejó esta pestaña esperando
+
+Su comentario lo decía con estas palabras: *«la F12 pide dejar la estructura lista para el
+sistema de fotos sin construirlo»*. Era **una espera, no una exclusión** — la F4 y la F6
+con «Empezar entrenamiento» otra vez.
+
+### 🚨 Tres de los nueve campos del apartado 2 ya existían con otro nombre
+
+El enunciado propone `imageReference`, `photoDate` y `note`; lo guardado desde la Fase 3 es
+`path`, `fecha` y `nota` — y **ésos los leen `deleteFoto(id, path)`, `getSignedPhotoUrl` y
+el bloque de Salud**. Renombrarlos habría roto las tres cosas para no ganar nada. El
+apartado dice *«utilizar o adaptar»*: adaptarlo es conservar los nombres que funcionan. Lo
+nuevo es `createdAt`, `tags`, `createdFromWorkoutId`, `visibility` y `actualizadaEn`.
+
+### 🚨 Y `saludFotos` estrena normalizador, porque hacía falta
+
+Se cargaba con `loadData(uid, 'saludFotos', [])` **sin normalizar nada**, así que los cinco
+campos nuevos se los habría llevado el siguiente guardado: la regla 5, el fallo del
+normalizador por enésima vez. ⚠️ Y lo subido antes **no pierde nada**: conserva su id, su
+camino, su fecha y su nota, y `createdAt` **se deduce de su `fecha`** — lo único que se
+sabe de ella. No se inventa una hora que nadie registró.
+
+### 🚨 ANTES y DESPUÉS los decide la fecha, no el orden de selección
+
+Apartado 14. Si marca primero la de septiembre y luego la de junio, **junio sigue siendo el
+«antes»**: al revés, la comparación diría que ha ido hacia atrás en el tiempo. Hay una
+comprobación en Chromium que las elige justamente al revés.
+
+Y lo único que se afirma es **cuánto tiempo pasó entre las dos**. Ni una palabra sobre su
+cuerpo: el apartado 41 excluye el análisis corporal, la estimación de grasa, la de masa
+muscular y las recomendaciones físicas, y hay un barrido sobre todos los textos.
+
+### 🚨 Una foto que no se puede leer no se lleva la galería por delante
+
+Apartado 29. Cada foto lleva su estado por separado, así que una que ya no esté en Storage
+sale con su aviso **y las demás siguen**. ⚠️ Y esto se prueba de verdad: en el recorrido el
+stub de Supabase no firma ninguna URL, así que la galería se mide **con todas las imágenes
+rotas** — si solo aguantara con las fotos cargadas, no serviría de nada el día que a él le
+falle una.
+
+### ⚠️ La orientación NO se rota a mano
+
+Apartado 7. Safari de iOS y Chromium ya aplican el EXIF por su cuenta, así que un rotador
+propio **la giraría dos veces** en el único dispositivo donde esto se usa. Lo que sí hace
+falta es no perderla al reducir: `createImageBitmap(file, { imageOrientation: 'from-image' })`,
+y si el navegador no puede, **se sube el original tal cual**. Peor una foto sin comprimir
+que una foto girada.
+
+### ⚠️ Y la galería lleva el MISMO PIN que la de Salud (C-35)
+
+Las fotos están detrás de `fotos_privadas` porque lo eligió Josué. La fase no menciona el
+PIN, pero su apartado 38 dice *«no exponer fotografías»*: una segunda puerta sin protección
+sería saltarse su propia seguridad por la espalda. Con el PIN puesto y la sesión bloqueada,
+la pestaña se queda **como la dejó la F12** —cuenta y lleva a Salud, que es donde se
+desbloquea—, y la decisión se lee **de un solo sitio**.
+
+### ⚠️ Lo que se dice y lo que no
+
+- **Confirmación sí, papelera no** (apartados 22 y 23): las fotos están fuera del sistema de
+  deshacer **desde la Fase 3** —implican un archivo real en Storage y deshacer dejaría un
+  huérfano—, así que el aviso dice la verdad: *no se puede deshacer*.
+- **Borrar una no se lleva el grupo del día** (apartado 22): sale gratis de que cada foto sea
+  un registro independiente (apartado 6).
+- **Con una sola foto, la comparación lo DICE** en vez de desaparecer (apartado 25).
+- **`visibility` nace privada y no hay ninguna función que la cambie** (apartados 21 y 41): un
+  selector con un solo valor sería un control decorativo (regla 8).
+- **Ni una URL firmada guardada**: caducan en una hora (E3 F17 y NAV F3), y si alguien guardara
+  una, el normalizador se la lleva.
+- **No se firman las 120 de golpe** (apartados 26 y 37): por tandas, y con `loading="lazy"`.
+
 ## v3.107.0 — FIT F25/45: resumen inteligente de rangos
 
 Fitness → Rangos deja de ser una colección de números y pasa a contestar *«¿cómo estoy?»*

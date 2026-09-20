@@ -24,6 +24,9 @@ import { Card, GhostBtn, PrimaryButton, EmptyHint, SectionTitle } from '../compo
 import { iconoDeGrupo } from '../components/iconosFitness';
 import EjerciciosView, { DetalleEjercicio } from './EjerciciosView';
 import { DetalleSesionHistorial } from './HistorialView';
+/* FIT F26 — el diario visual de fotos, que la F12 dejó esperando. */
+import { ProgressPhotos } from '../components/fotosProgreso';
+import { pantallaDeFotos } from '../lib/fotosProgreso';
 import { ejercicioPorId, nombreCompleto } from '../lib/ejercicios';
 /* 🔓 FIT F14 — los objetivos de rendimiento. */
 import {
@@ -859,11 +862,22 @@ export function ObjetivosProgreso({ resultado, filtro, onFiltro, grupo, onGrupo,
 export default function ProgresoView({
   fitness, fotos = [], accent, onEntrenar = null, onIrAFotos = null, resumenFotos = null,
   onGuardarFitness = null, onEliminarObjetivo = null,
+  /* FIT F26 — las fotos de progreso, que son las de Salud. Sin estas dos la
+     pestaña se queda como la dejó la F12: cuenta y lleva allí. */
+  onAddFoto = null, onDeleteFoto = null,
   /* FIT F18, apartado 11 — y el ejercicio, para no crear otra pantalla de
      progreso: se abre ESTA, la de la F12. */
   focoEjercicio = null, onFocoEjercicioConsumido = null,
 }) {
   const [seccion, setSeccion] = useState('resumen');
+  /* FIT F26 — una sola llamada, como el resto de la pantalla. ⚠️ Solo hay
+     galería si se puede escribir: de lo contrario, `null` y se conserva el
+     acceso a Salud que dejó la F12 (regla 8). */
+  const pantallaFotos = useMemo(
+    () => (onAddFoto ? pantallaDeFotos(fotos) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fotos, onAddFoto],
+  );
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState('todos');
   const [abierto, setAbierto] = useState(null); // exerciseId
@@ -1162,24 +1176,42 @@ export default function ProgresoView({
         )
       )}
 
-      {/* Apartado 2 — Fotos: la estructura, compatible con el sistema que llegará.
-          Cuenta las de Salud física y lleva allí, que es donde viven. */}
+      {/* 🔓 **FIT F26 — LA PESTAÑA QUE LA F12 DEJÓ ESPERANDO.** Su comentario lo
+          decía con estas palabras: *"la F12 pide dejar la estructura lista para
+          el sistema de fotos sin construirlo"*. Era una espera, no una
+          exclusión — la F4 y la F6 con «Empezar entrenamiento» otra vez.
+          ⚠️ **Y siguen siendo las de Salud** (`saludFotos`): la misma lista, el
+          mismo bucket y las mismas funciones. Lo que cambia es que aquí se
+          pueden ver por días, abrir, comparar y fechar.
+          ⚠️ Sin `onAddFoto` esto es de solo lectura y **el acceso a Salud se
+          mantiene**: un «Añadir» que no puede guardar sería un botón muerto. */}
       {seccion === 'fotos' && (
-        <Card>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: hexToRgba(accent, 0.14), color: accent }}>
-              <Camera size={19} />
+        pantallaFotos ? (
+          <ProgressPhotos
+            pantalla={pantallaFotos}
+            fitness={fitness}
+            accent={accent}
+            hoy={todayISO()}
+            onAddFoto={onAddFoto}
+            onDeleteFoto={onDeleteFoto}
+          />
+        ) : (
+          <Card>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: hexToRgba(accent, 0.14), color: accent }}>
+                <Camera size={19} />
+              </div>
+              <p className="text-sm min-w-0 flex-1" style={{ color: COLORS.text }}>
+                {resumenFotos ? resumenFotos.texto : `${(fotos || []).length} fotos de progreso`}
+              </p>
             </div>
-            <p className="text-sm min-w-0 flex-1" style={{ color: COLORS.text }}>
-              {resumenFotos ? resumenFotos.texto : `${(fotos || []).length} fotos de progreso`}
-            </p>
-          </div>
-          {onIrAFotos && (
-            <div className="mt-3">
-              <GhostBtn icon={Camera} onClick={onIrAFotos}>{resumenFotos && resumenFotos.vacio ? 'Añadir foto' : 'Ver y añadir fotos'}</GhostBtn>
-            </div>
-          )}
-        </Card>
+            {onIrAFotos && (
+              <div className="mt-3">
+                <GhostBtn icon={Camera} onClick={onIrAFotos}>{resumenFotos && resumenFotos.vacio ? 'Añadir foto' : 'Ver y añadir fotos'}</GhostBtn>
+              </div>
+            )}
+          </Card>
+        )
       )}
     </div>
   );

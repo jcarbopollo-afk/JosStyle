@@ -647,6 +647,29 @@ la FIT F7 (*la FORMA de lo que devuelve una función*). Hay dos comprobaciones e
 se cambia `confianzaCombinada` en `src/lib/motorRangos.js` y ya está: son cuatro líneas, y los tres
 niveles siguen siendo los de la F15.
 
+### C-35 — ✅ RESUELTA AL CONSTRUIR (FIT F26, v3.108.0) · El PIN de las fotos de progreso
+
+**La FIT F26 dibuja una galería de fotos en Fitness → Progreso y no menciona el PIN en ningún
+apartado. Pero las fotos de progreso de Josué están detrás de `fotos_privadas`** desde la fase de
+Seguridad Centralizada, porque él lo configuró así. Son **la misma lista** (`saludFotos`), así que
+una galería nueva sin protección habría sido una segunda puerta a lo mismo, sin PIN.
+
+**La lectura con la que se ha construido:** el apartado 38 de esa misma fase dice *"No exponer
+fotografías públicamente"* y el 21 *"Por defecto: Private"*. Saltarse una protección que el usuario
+eligió es exactamente lo contrario de lo que piden, así que la galería de Fitness lleva **la misma**,
+leída **del mismo sitio**: `seguridad.protectedActions.includes('fotos_privadas')` y
+`estaDesbloqueado('accion:fotos_privadas')`, en una sola constante (`fotosDesbloqueadas`) de
+`App.jsx`. Con el PIN puesto y la sesión bloqueada, `onAddFoto` y `onDeleteFoto` llegan `null` y la
+pestaña se queda **como la dejó la F12**: cuenta las fotos y lleva a Salud, que es donde se
+desbloquean.
+
+⚠️ **Y se escribe una vez, no dos.** Un segundo criterio aquí habría sido dos decisiones de
+seguridad sobre la misma lista, y el día que una cambiara dirían cosas distintas — que es cómo este
+proyecto acabó con la mentira de los sonidos escrita en tres sitios.
+
+**Si algún día quiere la galería de Fitness sin PIN**, la respuesta no es tocar esto: es quitar
+`fotos_privadas` de las acciones protegidas en Ajustes, que es donde esa decisión vive.
+
 ---
 
 ## PARTE B — DUPLICADOS (15)

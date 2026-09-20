@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.107.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.108.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 25 primeras (v3.83.0 → v3.107.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 26 primeras (v3.83.0 → v3.108.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 20 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 19 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -330,8 +330,8 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 (v3.92.0)** , la **FIT F11 (v3.93.0)**, la **FIT F12 (v3.94.0)**, la **FIT F13 (v3.95.0)**, la **FIT F14 (v3.96.0)**, la **FIT F15 (v3.97.0)**, la **FIT F16 (v3.98.0)**, la
 **FIT F17 (v3.99.0)**, la **FIT F18 (v3.100.0)**, la **FIT F19 (v3.101.0)**, la **FIT F20
 (v3.102.0)**, la **FIT F21 (v3.103.0)**, la **FIT F22 (v3.104.0)**, la **FIT F23
-(v3.105.0)**, la **FIT F24 (v3.106.0)** y la **FIT F25 (v3.107.0)** hechas. Lo que dejaron, y que
-vale para las 20 que quedan:
+(v3.105.0)**, la **FIT F24 (v3.106.0)**, la **FIT F25 (v3.107.0)** y la **FIT F26 (v3.108.0)**
+hechas. Lo que dejaron, y que vale para las 19 que quedan:
 
 - 🚨 **PARTICIPACIÓN ≠ PESO EN EL CÁLCULO** (FIT F21, `src/lib/contribucionMuscular.js`). La
   participación es la del catálogo (50 % dorsales) y **no se suma entre ejercicios**; el peso
@@ -471,6 +471,56 @@ vale para las 20 que quedan:
   `MuscleSubgroupDetail`, que es **otro componente** y no tenía `siguiente` en su ámbito — reventaba
   con `siguiente is not defined`. **Lo cazó el banco de renderizado**, no el build. Le llega como
   **prop**, calculada por quien sabe qué subgrupo está abierto.
+- 🚨 **LAS FOTOS DE PROGRESO YA EXISTÍAN, Y LA F12 DEJÓ SU PESTAÑA ESPERANDO** (FIT F26). Son
+  **`saludFotos`** desde la Fase 3, con el bucket privado **`progreso`**, `uploadProgressPhoto()`,
+  `getSignedPhotoUrl()` y `deleteProgressPhoto()` — declarado en `MAPEO_EXISTENTE` desde la FIT F1.
+  ✅ **Y ese bucket está creado y en uso**, así que esta fase **no necesitaba ningún SQL de Josué**,
+  al revés que el `media` de la F8. 🔓 El comentario de la F12 lo decía: *"dejar la estructura lista
+  para el sistema de fotos sin construirlo"* — una espera, no una exclusión (la F4 y la F6 otra vez).
+- 🚨 **TRES DE LOS NUEVE CAMPOS DE UN MODELO PUEDEN EXISTIR YA CON OTRO NOMBRE** (FIT F26,
+  apartado 2): `imageReference` es **`path`**, `photoDate` es **`fecha`** y `note` es **`nota`**, y
+  los leen `deleteFoto(id, path)`, `getSignedPhotoUrl` y el bloque de Salud. El apartado dice
+  *"utilizar o adaptar"*: **adaptarlo es conservar los nombres que ya funcionan**. Están en
+  `CAMPOS_QUE_YA_EXISTIAN` con su porqué.
+- 🚨 **Y `saludFotos` ESTRENÓ NORMALIZADOR EN LA F26** (regla 5, enésima vez): se cargaba con
+  `loadData(uid, 'saludFotos', [])` **sin normalizar nada**, así que los cinco campos nuevos se los
+  habría llevado el siguiente guardado. ⚠️ Y lo subido antes no pierde nada: su `createdAt` **se
+  deduce de su `fecha`**, que es lo único que se sabe de ella — no se inventa una hora.
+- 🚨 **UN SEGUNDO ARGUMENTO PUEDE ADMITIR DOS FORMAS, Y A VECES ES LO CORRECTO** (FIT F26): el
+  bloque de Salud lleva desde la Fase 3 llamando `onAddFoto(file, nota)` con una **cadena**, y la
+  galería necesita fecha, etiquetas y sesión. Cambiar la firma a secas habría roto Salud en silencio
+  (E3 F29, *"antes de llamar a la cuarta hermana, mirar su firma"*), así que una cadena sigue siendo
+  la nota y un objeto trae lo demás.
+- 🚨 **ANTES Y DESPUÉS LOS DECIDE LA FECHA, NO EL ORDEN DE SELECCIÓN** (FIT F26, apartado 14): si
+  marca primero la de septiembre y luego la de junio, **junio sigue siendo el «antes»** — al revés
+  la comparación diría que ha ido hacia atrás en el tiempo. Hay una comprobación en Chromium que las
+  elige justamente al revés. ⚠️ Y lo **único** que se afirma es cuánto tiempo pasó: ni análisis
+  corporal, ni grasa, ni masa muscular (apartado 41, con barrido sobre todos los textos).
+- 🚨 **UNA FOTO ILEGIBLE NO PUEDE LLEVARSE LA GALERÍA POR DELANTE** (FIT F26, apartado 29), y eso
+  **se prueba con todas rotas**: en el recorrido el stub de Supabase no firma ninguna URL, así que
+  la pantalla se mide en el peor caso. Si solo aguantara con las fotos cargadas, no serviría de nada
+  el día que a Josué le falle una.
+- ⚠️ **LA ORIENTACIÓN NO SE ROTA A MANO** (FIT F26, apartado 7): Safari de iOS y Chromium ya aplican
+  el EXIF, así que un rotador propio **la giraría dos veces** en el único dispositivo donde se usa
+  esto. Al redimensionar se conserva con `imageOrientation: 'from-image'`, y si el navegador no
+  puede, **se sube el original**: peor sin comprimir que girada.
+- ⚠️ **CONFIRMACIÓN SÍ, PAPELERA NO** (FIT F26, apartados 22 y 23): las fotos están **fuera del
+  sistema de deshacer desde la Fase 3** —implican un archivo real en Storage y deshacer dejaría un
+  huérfano—, así que el aviso dice la verdad. Y borrar una **no se lleva el grupo del día**, que
+  sale gratis de que cada foto sea un registro (apartado 6).
+- 🔒 **UNA PANTALLA NUEVA SOBRE DATOS PROTEGIDOS HEREDA SU PROTECCIÓN** (FIT F26, **C-35**): las
+  fotos están detrás de `fotos_privadas` porque lo eligió Josué, y la fase no menciona el PIN. Con
+  la sesión bloqueada, la pestaña se queda **como la dejó la F12**. Y la decisión se lee **de un
+  solo sitio** (`fotosDesbloqueadas`): dos criterios sobre la misma lista acaban diciendo cosas
+  distintas.
+- 🐛 **Y LA BOMBA DE RELOJERÍA POR FECHA, OTRA VEZ — AHORA EN EL BANCO DE RENDERIZADO** (FIT F26, y
+  es la FIT F24 por segunda vez). `TarjetaProximo` salió con **cuatro renders vacíos** el primer
+  **domingo** que se ejecutó: el escenario activa un plan «hoy», y como los diecisiete planes tienen
+  siete días —el plan **es** la semana— **ninguno entrena en domingo**, así que no hay día siguiente
+  y el componente devuelve `null` a propósito. **El componente estaba bien y llevaba así desde la
+  F6.** Ahora se activa el **lunes**, que además es el caso normal. ⚠️ **Antes de dar un rojo por
+  tuyo, mirar si depende del DÍA DE LA SEMANA.**
+
 - 🐛 **EL RANGO GLOBAL NO DEVOLVÍA SU CONFIANZA, Y LLEVABA ASÍ DESDE LA F20** (FIT F25, y es la
   lección de la FORMA de lo que devuelve una función otra vez). `base()`, en `explicacionRangos.js`,
   lee `r.confianza`: el rango de un **ejercicio** la devuelve y el de un **grupo** también, pero el
@@ -957,18 +1007,15 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F26/45 — Sistema de progreso físico mediante fotos** (líneas
-   16 079–16 771 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). Se construye de la F1 a la
+1. 🏋️ **SEGUIR POR LA FIT F27/45 — Comparador avanzado de progreso físico** (líneas
+   15 567–16 078 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). Se construye de la F1 a la
    F45, en orden, encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   🚨 **Y lo segundo, en ESTA fase más que en ninguna: LAS FOTOS DE PROGRESO YA EXISTEN.** Son
-   **`saludFotos`**, la función que las sube se llama **`uploadProgressPhoto()`** y el estado vacío
-   de Salud dice literalmente *"Todavía no has subido ninguna foto de progreso"* — está en
-   `MAPEO_EXISTENTE` de `src/lib/fitness.js` desde la FIT F1, con una comprobación por línea. Una
-   lista nueva dejaría **invisibles las fotos que Josué ya tiene**. Y ojo con el almacenamiento:
-   JosStyle tiene cinco buckets y el de las fotos de salud es uno de ellos; **un sexto necesita el
-   SQL de Josué** (es lo que dejó `MEDIA_PENDIENTE` sin construir en la F8).
+   ⚠️ **Y lo segundo, en ESTA: la comparación básica YA EXISTE**, la hizo la F26. `compararFotos`,
+   `opcionesParaComparar` y `ProgressPhotoComparison` están en `fotosProgreso.js` / `.jsx`, con
+   ANTES y DESPUÉS decididos **por la fecha** y sin una palabra sobre el cuerpo. Lo que la F27
+   añada se apoya en eso; **no escribe una segunda comparación**.
    🏁 **Y el sistema de rangos está CERRADO, F15 a F25** —motor, pantalla, cuestionario, detalle
    muscular, explicación, contribución, historial, siguiente rango, cola de clasificación y
    resumen—: lo que venga después **lee de ahí**, no escribe un segundo cálculo.

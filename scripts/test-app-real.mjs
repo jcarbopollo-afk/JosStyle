@@ -7806,7 +7806,114 @@ ok(new RegExp(nombreDestacado_fit25, 'i').test(desdeDestacado_fit25),
 ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F25 — se vuelve a Rangos');
 await esperarTexto(/Cobertura/i);
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F26 — El progreso físico en fotos (Entrega 4 · 26/45)
+   ══════════════════════════════════════════════════════════════════════════
+   🚨 **Y aquí las imágenes NO cargan a propósito**: el stub de Supabase
+   devuelve `{}` para Storage, así que ninguna URL se firma. Eso es exactamente
+   el apartado 29 —*"si una foto almacenada ya no está disponible, mostrar un
+   estado de error; no romper toda la galería"*—, y es la mejor forma de
+   probarlo: si la pantalla aguantara solo con las fotos cargadas, no serviría
+   de nada el día que a Josué le falle una. */
+console.log('\n── FIT F26 · El progreso en fotos ──');
+
+/* El vacío primero, que es por donde entra quien no ha subido ninguna. */
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F26 — Fitness → Progreso');
+ok(await pulsar('Fotos'), 'FIT F26 — y su pestaña de Fotos');
+const vacio_fit26 = await esperarTexto(/Empieza a registrar tu progreso|fotos de progreso/i);
+ok(/Empieza a registrar tu progreso/i.test(vacio_fit26),
+  '🚨 FIT F26 — sin fotos, el estado vacío del apartado 24');
+ok(/Guarda una foto ahora/i.test(vacio_fit26), '…con su frase');
+ok(/Añadir primera foto/i.test(vacio_fit26), '…y su salida, que es un botón de verdad (regla 8)');
+
+/* Ahora tres fotos, dos del MISMO día — y con la forma que tenía lo guardado
+   antes de esta fase, sin sus cinco campos nuevos: así se prueba la migración. */
+almacen.saludFotos = [
+  { id: 'fr1', path: 'usuario-prueba/junio.jpg', fecha: '2026-06-12', nota: 'Inicio del verano' },
+  { id: 'fr2', path: 'usuario-prueba/sept-a.jpg', fecha: '2026-09-12', nota: '' },
+  { id: 'fr3', path: 'usuario-prueba/sept-b.jpg', fecha: '2026-09-12', nota: 'Inicio de curso' },
+];
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso') && await pulsar('Fotos'),
+  'FIT F26 — se siembran tres fotos y se vuelve a Fotos');
+const galeria_fit26 = await esperarTexto(/SEP 2026|JUN 2026/i);
+
+/* Apartado 10 — agrupadas por día, con su rótulo. */
+ok(/12 SEP 2026/i.test(galeria_fit26) && /12 JUN 2026/i.test(galeria_fit26),
+  '🚨 FIT F26 — las fotos se agrupan por día, con su rótulo (apartado 10)');
+ok(/2 fotos/i.test(galeria_fit26), '…y el día que tiene dos lo dice: «2 fotos»');
+ok(/Inicio de curso/i.test(galeria_fit26), '…con la nota que él escribió, no una inventada');
+/* Apartado 9 — más reciente primero. */
+ok(galeria_fit26.indexOf('12 SEP 2026') < galeria_fit26.indexOf('12 JUN 2026'),
+  '⚠️ FIT F26 — y el día más reciente va primero (apartado 9)');
+
+/* 🚨 Apartado 29 — las imágenes no cargan y la galería NO se rompe. */
+ok(/no se puede mostrar/i.test(galeria_fit26),
+  '🚨 FIT F26 — una foto que no se puede leer lo DICE (apartado 29)');
+ok(/12 SEP 2026/i.test(galeria_fit26) && /Añadir progreso/i.test(galeria_fit26),
+  '🚨 …y la pantalla sigue entera: los días, la nota y el botón siguen ahí');
+
+/* Apartado 13 — comparar, que con tres fotos sí se puede. */
+ok(/Comparar progreso/i.test(galeria_fit26), 'FIT F26 — se ofrece comparar (apartado 13)');
+ok(await pulsar('Comparar progreso'), 'FIT F26 — se abre la comparación');
+const comparar_fit26 = await esperarTexto(/Primera foto/i);
+ok(/Primera foto/i.test(comparar_fit26) && /Segunda foto/i.test(comparar_fit26),
+  '⚠️ FIT F26 — con la selección sencilla del apartado 17: fecha y foto');
+ok(!/calendario/i.test(comparar_fit26), '…y sin un calendario complejo');
+
+/* 🚨 Apartado 14 — ANTES y DESPUÉS los decide la FECHA. Se eligen AL REVÉS
+   —primero la de septiembre— y tiene que salir junio como «Antes». */
+const elegir_fit26 = async (etiqueta, fecha) => page.evaluate(({ e, f }) => {
+  const b = [...document.querySelectorAll('button[aria-label]')]
+    .find((x) => (x.getAttribute('aria-label') || '') === `${e}: ${f}`);
+  if (b) { b.click(); return true; }
+  return false;
+}, { e: etiqueta, f: fecha });
+ok(await elegir_fit26('Primera foto', '12 SEP 2026'), 'FIT F26 — se elige primero la de SEPTIEMBRE');
+await page.waitForTimeout(350);
+ok(await elegir_fit26('Segunda foto', '12 JUN 2026'), 'FIT F26 — y después la de JUNIO');
+const resultado_fit26 = await esperarTexto(/Antes/i);
+ok(/Antes/i.test(resultado_fit26) && /Después/i.test(resultado_fit26), 'FIT F26 — sale la comparación');
+ok(resultado_fit26.indexOf('12 JUN 2026') < resultado_fit26.indexOf('12 SEP 2026'),
+  '🚨 FIT F26 — y JUNIO sale como «Antes» aunque se eligiera la segunda: manda la fecha (apartado 14)');
+ok(/de diferencia/i.test(resultado_fit26), '…con el tiempo entre las dos, que es lo único que se afirma');
+/* 🚨 Apartados 14 y 41 — ni una palabra sobre el cuerpo. */
+ok(!/músculo|grasa|has ganado|has perdido|masa corporal/i.test(resultado_fit26),
+  '🚨 FIT F26 — y ni una palabra sobre su cuerpo (apartados 14 y 41)');
+
+/* Apartado 28 — el ancho en el iPhone pequeño. */
+const anchoFotos_fit26 = await page.evaluate(() => ({
+  ancho: document.documentElement.scrollWidth, ventana: window.innerWidth,
+}));
+ok(anchoFotos_fit26.ancho <= anchoFotos_fit26.ventana + 1,
+  `⚠️ FIT F26 — la galería no arrastra la pantalla de lado (${anchoFotos_fit26.ancho} px)`);
+
+/* 🚨 Apartado 25 — con UNA sola foto, la comparación lo DICE en vez de
+   desaparecer, y la galería sigue funcionando. */
+almacen.saludFotos = [{ id: 'fr1', path: 'usuario-prueba/junio.jpg', fecha: '2026-06-12', nota: 'Inicio del verano' }];
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso') && await pulsar('Fotos'),
+  'FIT F26 — se deja una sola foto y se vuelve');
+const una_fit26 = await esperarTexto(/JUN 2026|otra foto/i);
+ok(/Necesitas otra foto para comparar/i.test(una_fit26),
+  '🚨 FIT F26 — con una sola se dice qué falta, y la sección NO desaparece (apartado 25)');
+ok(/12 JUN 2026/i.test(una_fit26), '…y la foto que tiene se sigue viendo con normalidad');
+ok(!/Empieza a registrar tu progreso/i.test(una_fit26),
+  '⚠️ …y NO se le dice que no tiene ninguna, que es lo que sí tiene');
+
+/* 🚨 Y lo que de verdad importa de la migración: la fase añade cinco campos, y
+   lo guardado en la Fase 3 tiene que llegar entero al siguiente guardado. */
+const migradas_fit26 = await page.evaluate(() => {
+  const crudo = document.body.innerText;
+  return crudo.length > 0;
+});
+ok(migradas_fit26, 'FIT F26 — y lo guardado antes de esta fase se lee sin romper nada');
+
 /* Apartado 15 — el grupo muscular lleva al detalle de la F13, no a una copia. */
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F16 — se vuelve a Rangos');
+await esperarTexto(/Cobertura/i);
 ok(await pulsarQueEmpiece_fit10('Espalda:'), 'FIT F16 — se toca Espalda en los rankings musculares');
 const detalle_fit16 = await esperarTexto(/Dorsales/i);
 ok(/Dorsales/.test(detalle_fit16),

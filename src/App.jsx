@@ -63,6 +63,9 @@ import { verificarBiometria } from './lib/biometria';
 import { crearPinHash, verificarPin } from './lib/pin';
 import { calcularResumenModulo } from './lib/resumenesHub';
 import { DEFAULT_FITNESS } from './lib/fitness';
+/* FIT F26 — las fotos de progreso son `saludFotos` desde la Fase 3; esto les da
+   su fábrica, su normalizador y su edición, sin crear una segunda lista. */
+import { crearFotoProgreso, normalizarFotosProgreso, editarFotoProgreso } from './lib/fotosProgreso';
 /* FIT F3 — la carga pasa por la puerta de `ejercicios.js`, no por la de
    `fitness.js`: la de allí recorta los ejercicios del usuario al modelo
    reducido de la F1 y se llevaría lo que añadió la F2 (regla 5). */
@@ -659,7 +662,13 @@ export default function App() {
          del normalizador que este proyecto lleva dieciocho veces cazando. */
       setEconomia(normalizarEconomiaHucha(e));
       setSalud(sal);
-      setSaludFotos(sf);
+      /* 🚨 FIT F26 — `saludFotos` ESTRENA NORMALIZADOR, y hacía falta: se
+         cargaba tal cual desde la Fase 3, así que los cinco campos que añade
+         esa fase —`createdAt`, `tags`, `createdFromWorkoutId`, `visibility` y
+         `actualizadaEn`— se los habría llevado el siguiente guardado (regla 5,
+         el fallo del normalizador por enésima vez). ⚠️ Lo subido antes no
+         pierde nada: conserva su id, su camino, su fecha y su nota. */
+      setSaludFotos(normalizarFotosProgreso(sf));
       setNutricion(normalizarMisAlimentosDe(normalizarNutricionF4(normalizarNutricionObjetivos(normalizarNutricionDe(nut)))));
       setCalisteniaVideos(cv);
       /* 🚨 E3 F41 (ES F1) — LAS APPS DE ESTUDIOS SON LOS PROGRAMAS DE SIEMPRE. El
@@ -1165,6 +1174,15 @@ export default function App() {
     setDesbloqueosPin((prev) => ({ ...prev, [key]: Date.now() + minutos * 60000 }));
   };
   const estaDesbloqueado = (key) => !!desbloqueosPin[key] && desbloqueosPin[key] > Date.now();
+
+  /* 🚨 FIT F26 (C-35) — LA MISMA PUERTA PARA LAS DOS PANTALLAS. Las fotos de
+     progreso las protege `fotos_privadas` desde la fase de Seguridad
+     Centralizada, y el diario visual de Fitness es **la misma lista**: si la
+     protección está puesta y la sesión no está desbloqueada, allí tampoco se
+     gestionan. Escribir aquí un segundo criterio habría dejado dos decisiones
+     de seguridad que el día que una cambie dirían cosas distintas. */
+  const fotosDesbloqueadas = !seguridad.protectedActions.includes('fotos_privadas')
+    || estaDesbloqueado('accion:fotos_privadas');
 
   // Recuperación de PIN (apartado añadido a la especificación) — nunca se pide ni se guarda la
   // contraseña del correo: `sendPasswordReset` usa el flujo propio de Supabase, y solo tras el
@@ -2451,10 +2469,29 @@ export default function App() {
 
   // Las fotos de progreso viven fuera del sistema de deshacer: implican un archivo real
   // subido a Supabase Storage, y "deshacer" no debería dejar un archivo huérfano sin referencia.
-  const addFoto = async (file, nota) => {
+  /* 🔓 FIT F26 — el segundo argumento admite las DOS formas, y es a propósito.
+     El bloque de Salud lleva desde la Fase 3 llamando `onAddFoto(file, nota)`
+     con una **cadena**; la galería de Fitness necesita además fecha, etiquetas
+     y la sesión asociada. Cambiar la firma a secas habría roto Salud en
+     silencio —«antes de llamar a la cuarta hermana, mirar su firma», E3 F29—,
+     así que una cadena sigue siendo la nota y un objeto trae lo demás.
+     ⚠️ Y la foto la construye `crearFotoProgreso`, que es su fábrica: los cinco
+     campos nuevos no pueden quedarse fuera del guardado (regla 5). */
+  const addFoto = async (file, notaODatos) => {
+    const datos = typeof notaODatos === 'string' || notaODatos == null
+      ? { nota: notaODatos || '' }
+      : (notaODatos || {});
     const path = await uploadProgressPhoto(uidUser, file);
-    const entry = { id: uid(), path, fecha: todayISO(), nota: nota || '' };
+    const entry = crearFotoProgreso({ ...datos, path });
     const next = [...saludFotos, entry];
+    setSaludFotos(next);
+    await saveData(uidUser, 'saludFotos', next);
+    return entry;
+  };
+  /* FIT F26, apartados 3 y 18 — la fecha, la nota y las etiquetas se editan;
+     el camino, el id y cuándo la subió, no. */
+  const editarFoto = async (id, cambios) => {
+    const next = editarFotoProgreso(saludFotos, id, cambios);
     setSaludFotos(next);
     await saveData(uidUser, 'saludFotos', next);
   };
@@ -2734,9 +2771,15 @@ export default function App() {
         /* FIT F1 — la misma entrada de siempre, con Fitness por fuera. `TrainingView`
            recibe EXACTAMENTE las mismas props que recibía aquí: las pasa `FitnessView`
            tal cual a su área de Entrenamiento, sin tocar ni una.
-           ⚠️ `fotos={saludFotos}` es de solo lectura: el área de Progreso las CUENTA y
-           lleva a Salud física, que es donde se suben, se borran y se protegen con PIN
-           desde la Fase 3. Aquí no se gestiona ninguna. */
+           🔓 **FIT F26 — y ya NO es de solo lectura.** El área de Progreso pasa a ser el
+           diario visual entero: añadir varias, fecharlas, agruparlas por día, abrirlas,
+           compararlas y borrarlas. ⚠️ **Siguen siendo las MISMAS** (`saludFotos`, el
+           bucket `progreso`, las mismas funciones): no hay una segunda lista, y el bloque
+           de Salud se queda donde está.
+           🚨 **Y con la MISMA protección** (C-35): las fotos están detrás de
+           `fotos_privadas` porque lo eligió Josué, así que la galería de Fitness recibe
+           `onAddFoto`/`onDeleteFoto` **solo si está desbloqueada**. Una segunda puerta sin
+           PIN sería saltarse su propia seguridad por la espalda. */
         return (
           <FitnessView
             fitness={fitness}
@@ -2744,6 +2787,9 @@ export default function App() {
             futbol={futbol} onAddPartido={addPartido} onDeletePartido={deletePartido}
             videos={calisteniaVideos} onAddVideo={addVideo} onDeleteVideo={deleteVideo} onSetVideoFeedback={setVideoFeedback}
             fotos={saludFotos} rachas={rachas}
+            /* FIT F26 — gestionarlas solo cuando el PIN no lo impide (C-35). */
+            onAddFoto={fotosDesbloqueadas ? addFoto : null}
+            onDeleteFoto={fotosDesbloqueadas ? deleteFoto : null}
             onGuardarFitness={guardarFitness}
             onEliminarPlantilla={deletePlantillaFitness}
             onEliminarSesion={deleteSesionFitness}

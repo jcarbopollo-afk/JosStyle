@@ -1027,6 +1027,17 @@ fi
 # FIT F21 — qué ejercicios sostienen un rango muscular. Lo que más se vigila: que se
 # use el porcentaje DEL MÚSCULO que se mira (no el del ejercicio entero), que la
 # participación no se sume entre ejercicios, y que los que no tienen datos vayan aparte.
+# FIT F26 — el progreso físico en fotos. Lo que más se vigila: que NO exista una
+# segunda lista de fotos (son `saludFotos` desde la Fase 3), que no se guarde ninguna
+# URL firmada —caducan en una hora—, que toda foto sea privada y ninguna salga hacia
+# una API externa, que la comparación diga solo las dos fechas y el tiempo entre ellas,
+# y que una foto que no se puede leer NO se lleve por delante la galería entera.
+if node --import ./scripts/resolver-vite.mjs scripts/test-fotos-progreso.mjs >/tmp/jc_fotos_progreso.log 2>&1; then
+  ok "Progreso físico en fotos (FIT F26) — $(grep -c '✓' /tmp/jc_fotos_progreso.log) comprobaciones"
+else
+  fallo "Falla el progreso en fotos"; grep '✗' /tmp/jc_fotos_progreso.log
+fi
+
 # FIT F25 — el resumen de la pantalla de Rangos. Lo que más se vigila: que no se guarde
 # ningún «dashboard summary», que la cobertura y la confianza sean las del motor y no
 # una segunda fórmula, que sin historial no se invente una tendencia, que con la cola
