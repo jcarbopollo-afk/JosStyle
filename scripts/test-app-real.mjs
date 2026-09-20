@@ -161,6 +161,12 @@ page.on('console', (m) => {
   errores.push(m.text());
 });
 
+/* Un PNG de 1x1 transparente: lo mínimo que un `<img>` carga de verdad. */
+const PNG_DE_PRUEBA = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
+
 await page.route(`${SUPA}/**`, async (route) => {
   const url = route.request().url();
   if (url.includes('/auth/v1/')) {
@@ -192,6 +198,32 @@ await page.route(`${SUPA}/**`, async (route) => {
       status: 200, contentType: 'application/json',
       body: JSON.stringify(valor ? { value: valor } : null),
     });
+  }
+  /* 🚨 **Y EL ALMACENAMIENTO SIRVE FOTOS DE VERDAD** (FIT F26/F27). Antes este
+     doble contestaba `{}` a todo, así que `createSignedUrl` devolvía una URL
+     **válida como cadena y rota como dirección** (`…/storage/v1undefined`) y
+     TODAS las fotos salían ilegibles: el recorrido solo probaba el caso malo y
+     no podía ver ni una galería. Ahora firma bien y devuelve un PNG, **salvo
+     la foto cuyo camino dice `rota`**, que es la que prueba el apartado 29. */
+  if (url.includes('/storage/v1/')) {
+    const metodo = route.request().method();
+    if (metodo === 'POST' && url.includes('/object/sign/')) {
+      const camino = url.split('/object/sign/')[1];
+      if (/rota/.test(camino)) {
+        return route.fulfill({
+          status: 400, contentType: 'application/json',
+          body: JSON.stringify({ statusCode: '404', error: 'Not found', message: 'Object not found' }),
+        });
+      }
+      return route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ signedURL: `/object/sign/${camino}?token=recorrido` }),
+      });
+    }
+    if (metodo === 'GET') {
+      return route.fulfill({ status: 200, contentType: 'image/png', body: PNG_DE_PRUEBA });
+    }
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   }
   return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
 });
@@ -5867,19 +5899,22 @@ ok(await pulsar('Progreso'), 'se cambia al área de Progreso');
 /* 🔓 FIT F12 — Progreso se abre en «Resumen»; las fotos tienen ahora su pestaña. */
 await esperarTexto(/Tu progreso/i);
 ok(await pulsar('Fotos'), 'FIT F12 — se abre la pestaña Fotos de Progreso');
-const enProgreso_fit = await esperarTexto(/fotograf/i);
-ok(/Todavía no has añadido fotograf/i.test(enProgreso_fit),
-  '🚨 FIT F1 — el estado vacío de Progreso, con las palabras del apartado 11');
-ok(/Añadir foto/i.test(enProgreso_fit),
-  '⚠️ y con su salida: el botón lleva a donde las fotos se suben de verdad');
-
-/* 🚨 Y eso es lo que más importa de esta área: **las fotos de progreso ya
-   existen**, en Salud física, con su archivo y su PIN. El botón no finge una
-   subida: lleva allí. */
-ok(await pulsar('Añadir foto'), 'se pulsa «Añadir foto»');
-const trasFoto = await esperarTexto(/Medidas|Fotos|Historial/i);
-ok(/Medidas/i.test(trasFoto) || /Fotos/i.test(trasFoto),
-  '🚨 FIT F1 — …y acaba en Salud física, donde las fotos se gestionan de verdad');
+/* 🔓 **ESTAS COMPROBACIONES SE DAN LA VUELTA CON LA FIT F26/F27** (E3 F44 y
+   SU F1 → SU F2). Lo que vigilaban era la promesa del apartado 11 de la F1:
+   *"esta área no finge una subida; lleva a donde las fotos viven de verdad"*, y
+   entonces eso era Salud. **Desde la F26 las fotos viven TAMBIÉN aquí**, así
+   que la promesa se cumple de otra forma: la pestaña es la galería, detrás del
+   **mismo PIN que Salud** (C-35). En una cuenta recién estrenada
+   `fotos_privadas` está protegida, así que lo que sale es la puerta.
+   ⚠️ Y lo que NO cambia es lo que de verdad importaba: **ni un callejón sin
+   salida**. Aquí se mide justamente eso. */
+const enProgreso_fit = await esperarTexto(/PIN|fotograf/i);
+ok(/PIN/i.test(enProgreso_fit),
+  '🔓 FIT F1 → F26 — la pestaña de Fotos pide el PIN, que es la puerta de Salud (C-35)');
+ok(/Ajustes|Seguridad/i.test(enProgreso_fit),
+  '⚠️ …y dice dónde se abre: nunca un callejón sin salida (apartado 11 de la F1)');
+ok(!/Añadir progreso/i.test(enProgreso_fit),
+  '🚨 …y la galería NO se ve mientras tanto');
 
 /* Nada de esto ha escrito un solo dato: entrar y mirar es mirar. */
 const escrituras_fit = guardado.length;
@@ -7880,6 +7915,10 @@ almacen.saludFotos = [
   { id: 'fr1', path: 'usuario-prueba/junio.jpg', fecha: '2026-06-12', nota: 'Inicio del verano' },
   { id: 'fr2', path: 'usuario-prueba/sept-a.jpg', fecha: '2026-09-12', nota: '' },
   { id: 'fr3', path: 'usuario-prueba/sept-b.jpg', fecha: '2026-09-12', nota: 'Inicio de curso' },
+  /* 🚨 Y UNA que no se puede leer, en su propio día, para el apartado 29: las
+     otras tres cargan de verdad, así que lo que se mide es que **una** rota no
+     se lleve la galería por delante — no que fallen todas. */
+  { id: 'fr4', path: 'usuario-prueba/rota.jpg', fecha: '2026-07-15', nota: 'La que no carga' },
 ];
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
@@ -7896,10 +7935,15 @@ ok(/Inicio de curso/i.test(galeria_fit26), '…con la nota que él escribió, no
 ok(galeria_fit26.indexOf('12 SEP 2026') < galeria_fit26.indexOf('12 JUN 2026'),
   '⚠️ FIT F26 — y el día más reciente va primero (apartado 9)');
 
-/* 🚨 Apartado 29 — las imágenes no cargan y la galería NO se rompe. */
-ok(/no se puede mostrar/i.test(galeria_fit26),
+/* 🚨 Apartado 29 — las imágenes no cargan y la galería NO se rompe.
+   ⚠️ **Y hay que ESPERAR a que la firma falle** (EH F51): `galeria_fit26` se
+   leyó en cuanto salieron los rótulos de los días, y firmar tres fotos es un
+   viaje asíncrono que todavía no había terminado. Un `innerText` leído pronto
+   no dice que no esté: dice que aún no. */
+const rotas_fit26 = await esperarTexto(/no se puede mostrar/i);
+ok(/no se puede mostrar/i.test(rotas_fit26),
   '🚨 FIT F26 — una foto que no se puede leer lo DICE (apartado 29)');
-ok(/12 SEP 2026/i.test(galeria_fit26) && /Añadir progreso/i.test(galeria_fit26),
+ok(/12 SEP 2026/i.test(rotas_fit26) && /Añadir progreso/i.test(rotas_fit26),
   '🚨 …y la pantalla sigue entera: los días, la nota y el botón siguen ahí');
 
 /* Apartado 13 — comparar, que con tres fotos sí se puede.
@@ -7930,11 +7974,35 @@ await page.waitForTimeout(350);
 ok(await elegir_fit26('Final', '12 JUN 2026'), 'FIT F27 — y después la de JUNIO');
 const resultado_fit26 = await esperarTexto(/Antes/i);
 ok(/Antes/i.test(resultado_fit26) && /Después/i.test(resultado_fit26), 'FIT F27 — sale la comparación');
-ok(resultado_fit26.indexOf('12 JUN 2026') < resultado_fit26.indexOf('12 SEP 2026'),
+
+/* 🐛 ⚠️ **Y LO QUE SE MIDE ES EL COMPARADOR, NO LA PÁGINA ENTERA** (E3 F11
+   otra vez). El comparador va por `createPortal` al final del `body`, así que
+   `innerText` trae **primero la galería de detrás** —que lista septiembre
+   arriba, porque el día más reciente va primero— y las dos comprobaciones de
+   abajo salían rojas con la pantalla bien: una encontraba «12 SEP 2026» en la
+   galería antes que el «12 JUN 2026» del comparador, y la otra encontraba
+   «músculo» en la pestaña **Músculos** de Progreso. Un overlay tapa lo de
+   detrás: lo que hay que leer es lo que se ve. */
+const enComparador_fit27 = () => page.evaluate(() => {
+  const d = [...document.querySelectorAll('[role="dialog"]')].pop();
+  return d ? d.innerText : '';
+});
+const comparado_fit27 = await enComparador_fit27();
+ok(comparado_fit27.length > 0, 'FIT F27 — y se mide DENTRO del comparador, no la página de detrás');
+/* ⚠️ **Y se mide por el PAPEL de cada foto, no por el orden del texto**: el
+   `alt` dice «Foto anterior» o «Foto posterior» con su fecha, que es
+   exactamente lo que afirma el apartado 4 — y no se mueve aunque se
+   intercambien los lados (apartado 21). Un `indexOf` sobre el texto mediría
+   la posición, que es justo lo que esta fase separa del tiempo. */
+const papeles_fit27 = await page.evaluate(() => [...document.querySelectorAll('[role="dialog"] img[alt]')]
+  .map((i) => i.getAttribute('alt')).filter((a) => /Foto (anterior|posterior)/.test(a)));
+ok(papeles_fit27.some((a) => /Foto anterior: 12 JUN 2026/.test(a)),
   '🚨 FIT F27 — y JUNIO sale como «Antes» aunque se eligiera la segunda: manda la fecha (apartado 4)');
-ok(/de diferencia/i.test(resultado_fit26), '…con el tiempo entre las dos, que es lo único que se afirma');
+ok(papeles_fit27.some((a) => /Foto posterior: 12 SEP 2026/.test(a)),
+  '…y SEPTIEMBRE como «Después», que es lo que dice el calendario');
+ok(/de diferencia/i.test(comparado_fit27), '…con el tiempo entre las dos, que es lo único que se afirma');
 /* 🚨 Apartados 14 y 41 de la F26, y 34 de la F27 — ni una palabra sobre el cuerpo. */
-ok(!/músculo|grasa|has ganado|has perdido|masa corporal/i.test(resultado_fit26),
+ok(!/músculo|grasa|has ganado|has perdido|masa corporal/i.test(comparado_fit27),
   '🚨 FIT F27 — y ni una palabra sobre su cuerpo (apartado 34)');
 
 /* ══════════════════════════════════════════════════════════════════════════

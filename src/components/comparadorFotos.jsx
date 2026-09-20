@@ -140,7 +140,7 @@ export function ComparisonMeta({ meta, claro = false }) {
 /* ═══ Apartados 10, 11 y 25 · Una imagen ═══════════════════════════════════
    🚨 `object-contain` (apartado 11): con proporciones distintas se adapta,
    **nunca se estira**. Y el zoom es de ESTA imagen (apartado 10). */
-export function ComparisonImage({ lado, url, zoom: z = null, alineacion: ali, onMover = null, alto = null }) {
+export function ComparisonImage({ lado, url, zoom: z = null, alineacion: ali, onMover = null, alto = null, onFallo = null }) {
   const arrastre = useRef(null);
   const zoom = z && typeof z === 'object' ? z : { escala: 1, x: 0, y: 0 };
   const ampliada = hayZoom(zoom);
@@ -190,6 +190,8 @@ export function ComparisonImage({ lado, url, zoom: z = null, alineacion: ali, on
           alt={`${lado.aria}: ${lado.etiqueta}`}
           className="w-full h-full object-contain"
           draggable={false}
+          /* Apartado 25 — el placeholder es SOLO de esta foto. */
+          onError={onFallo ? () => onFallo(lado.foto.id) : undefined}
           style={{
             objectPosition: ali.css,
             transform: `translate(${Math.min(lim, Math.max(-lim, zoom.x))}%, ${Math.min(lim, Math.max(-lim, zoom.y))}%) scale(${zoom.escala})`,
@@ -235,7 +237,7 @@ export function ComparisonZoom({ zoom, aria, onZoom }) {
 }
 
 /* ═══ Apartados 6 y 7 · Lado a lado ════════════════════════════════════════ */
-export function ComparisonSideBySide({ pantalla, urls = {}, onZoom = null, onMover = null }) {
+export function ComparisonSideBySide({ pantalla, urls = {}, onZoom = null, onMover = null, onFallo = null }) {
   const enFila = pantalla.disposicion === 'fila';
   return (
     <div className={enFila ? 'flex gap-3' : 'space-y-3'}>
@@ -247,6 +249,7 @@ export function ComparisonSideBySide({ pantalla, urls = {}, onZoom = null, onMov
             zoom={pantalla.zoom[lado.papel]}
             alineacion={pantalla.alineacion}
             onMover={onMover ? (dx, dy) => onMover(lado.papel, dx, dy) : null}
+            onFallo={onFallo}
           />
           <div className="mt-1.5 flex items-start justify-between gap-2">
             <ComparisonMeta meta={lado.meta} />
@@ -262,7 +265,7 @@ export function ComparisonSideBySide({ pantalla, urls = {}, onZoom = null, onMov
    🚨 *"Debe ser una herramienta de comparación visual, no un efecto
    decorativo"*: llega a los dos extremos, se arrastra con el dedo **y se mueve
    con el teclado** (apartado 21). */
-export function ComparisonSlider({ pantalla, urls = {}, onSlider }) {
+export function ComparisonSlider({ pantalla, urls = {}, onSlider, onFallo = null }) {
   const caja = useRef(null);
   const arrastrando = useRef(false);
   const [izquierda, derecha] = pantalla.lados || [];
@@ -298,6 +301,7 @@ export function ComparisonSlider({ pantalla, urls = {}, onSlider }) {
       alt={`${lado.aria}: ${lado.etiqueta}`}
       className="w-full h-full object-contain"
       draggable={false}
+      onError={onFallo ? () => onFallo(lado.foto.id) : undefined}
       style={{ objectPosition: pantalla.alineacion.css }}
     />
   ) : (
@@ -438,11 +442,11 @@ export function ComparisonControls({ pantalla, onModo, onAlineacion, onInvertir,
 }
 
 /* ═══ Apartados 6, 7 y 8 · Lo que se ve, según el modo ═════════════════════ */
-export function ComparisonViewport({ pantalla, urls = {}, onSlider, onZoom = null, onMover = null }) {
+export function ComparisonViewport({ pantalla, urls = {}, onSlider, onZoom = null, onMover = null, onFallo = null }) {
   if (!pantalla.hay) return null;
   return pantalla.modo.id === 'deslizar'
-    ? <ComparisonSlider pantalla={pantalla} urls={urls} onSlider={onSlider} />
-    : <ComparisonSideBySide pantalla={pantalla} urls={urls} onZoom={onZoom} onMover={onMover} />;
+    ? <ComparisonSlider pantalla={pantalla} urls={urls} onSlider={onSlider} onFallo={onFallo} />
+    : <ComparisonSideBySide pantalla={pantalla} urls={urls} onZoom={onZoom} onMover={onMover} onFallo={onFallo} />;
 }
 
 /* ═══ Apartados 1, 2 y 26 · El comparador entero ═══════════════════════════
@@ -452,7 +456,7 @@ export function ComparisonViewport({ pantalla, urls = {}, onSlider, onZoom = nul
 export function ProgressComparison({
   pantalla, urls = {}, accent,
   onElegir, onModo, onAlineacion, onInvertir, onSlider, onZoom, onMover,
-  onCerrar, onAnadir = null,
+  onCerrar, onAnadir = null, onFalloFoto = null,
 }) {
   const [ancho, setAncho] = useState(null);
   const marco = useRef(null);
@@ -531,6 +535,7 @@ export function ProgressComparison({
                   onSlider={onSlider}
                   onZoom={onZoom}
                   onMover={onMover}
+                  onFallo={onFalloFoto}
                 />
                 {/* 🚨 Apartado 14 — lo ÚNICO que se afirma es el tiempo entre las
                     dos, y el encuadre solo si las dos lo tienen etiquetado. */}

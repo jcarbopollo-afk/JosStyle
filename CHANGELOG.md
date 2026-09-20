@@ -70,6 +70,23 @@ verdad: **una sola decisión de seguridad, leída de un solo sitio, y con salida
 comprueba por los dos lados —sin protección se ve la galería; con protección sale el PIN **y no el
 acceso mudo**—, que es la comprobación que faltaba.
 
+### 🚨 Firmar bien no es cargar bien, y el apartado 29 habla de CARGAR
+
+Segundo fallo real de la F26, y de los que le van a pasar a Josué: una foto solo contaba como
+ilegible si **`getSignedPhotoUrl` fallaba**. Pero el caso normal es el contrario — la firma sale y
+**la imagen no llega**: el archivo ya no está, la firma caducó, se quedó sin cobertura a media
+galería. Entonces quedaba un `<img>` roto y la pantalla **no decía nada**, que es justo lo que
+prohíbe ese apartado. Ahora la propia imagen lo avisa (`onError`) y el aviso es **solo de esa
+foto**, en la galería, en el visor y en los dos lados del comparador (apartado 25 de la F27).
+
+🐛 **Y lo destapó el recorrido, por una razón que merece quedar escrita:** el doble de Supabase
+contestaba `{}` a todo, así que `createSignedUrl` devolvía `…/storage/v1undefined` —una URL
+**válida como cadena y rota como dirección**— y **todas** las fotos salían ilegibles. O sea que el
+recorrido llevaba desde la F26 **probando solo el caso malo** y sin haber visto nunca una galería.
+Ahora el doble **firma bien y sirve un PNG de verdad**, y la foto rota es **una**, declarada por su
+camino: lo que se mide es que una rota no se lleve por delante a las otras tres, que es lo que dice
+el apartado.
+
 ### 🐛 «diferencia» contiene «ia», y el barrido se puso rojo con el código bien
 
 El barrido de palabras prohibidas buscaba `'ia '` como subcadena para vigilar que esta

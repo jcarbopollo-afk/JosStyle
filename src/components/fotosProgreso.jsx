@@ -10,7 +10,7 @@
    tandas de `FOTOS_POR_TANDA`, según se van necesitando.
    =========================================================================== */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Camera, X, ChevronLeft, ChevronRight, GitCompareArrows, Dumbbell } from 'lucide-react';
 import { COLORS } from '../tokens';
@@ -58,7 +58,22 @@ export function useUrlsFirmadas(fotos, { porTanda = FOTOS_POR_TANDA } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids, cuantas]);
 
-  return { urls, fallidas, cuantas, verMas: () => setCuantas((n) => n + porTanda), hayMas: cuantas < fotos.length };
+  /* 🚨 **FIRMAR BIEN NO ES CARGAR BIEN, Y EL APARTADO 29 HABLA DE CARGAR.**
+     Hasta aquí una foto solo contaba como ilegible si `getSignedPhotoUrl`
+     fallaba — pero el caso que le va a pasar a Josué es el contrario: la firma
+     sale, y **la imagen no llega** (el archivo ya no está, la firma caducó, se
+     quedó sin cobertura a media galería). Entonces el `<img>` se quedaba roto
+     y la pantalla no decía nada, que es justo lo que ese apartado prohíbe.
+     Lo cazó el recorrido: el doble de Supabase devuelve una URL **válida como
+     cadena** y rota como dirección, que es exactamente el caso real. */
+  const marcarFallida = useCallback((id) => {
+    setFallidas((v) => (v[id] ? v : { ...v, [id]: true }));
+  }, []);
+
+  return {
+    urls, fallidas, cuantas, marcarFallida,
+    verMas: () => setCuantas((n) => n + porTanda), hayMas: cuantas < fotos.length,
+  };
 }
 
 /* ═══ Apartado 8 · Reducir sin destruir ════════════════════════════════════
@@ -235,7 +250,7 @@ export function ProgressPhotoForm({ accent, hoy, onGuardar, onCancelar, guardand
 }
 
 /* ═══ Apartado 9 · Una foto de la galería ══════════════════════════════════ */
-export function ProgressPhotoCard({ foto, url, fallida, accent, onAbrir }) {
+export function ProgressPhotoCard({ foto, url, fallida, accent, onAbrir, onFallo = null }) {
   const nombre = `Foto de progreso del ${etiquetaDeDia(foto.fecha)}${foto.nota ? `. ${foto.nota}` : ''}`;
   return (
     <button
@@ -250,7 +265,14 @@ export function ProgressPhotoCard({ foto, url, fallida, accent, onAbrir }) {
           <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{ERRORES_FOTO.leer.titulo}</p>
         </div>
       ) : url ? (
-        <img src={url} alt={nombre} loading="lazy" className="w-full aspect-square object-cover" />
+        <img
+          src={url}
+          alt={nombre}
+          loading="lazy"
+          className="w-full aspect-square object-cover"
+          /* Apartado 29 — y si no llega, lo dice ella sola. */
+          onError={onFallo ? () => onFallo(foto.id) : undefined}
+        />
       ) : (
         <div className="w-full aspect-square esqueleto" />
       )}
@@ -267,7 +289,7 @@ export function ProgressPhotoCard({ foto, url, fallida, accent, onAbrir }) {
 }
 
 /* ═══ Apartado 10 · La rejilla, agrupada por día ═══════════════════════════ */
-export function ProgressPhotoGrid({ dias = [], urls = {}, fallidas = {}, accent, onAbrir }) {
+export function ProgressPhotoGrid({ dias = [], urls = {}, fallidas = {}, accent, onAbrir, onFallo = null }) {
   if (!dias.length) return null;
   return (
     <div className="space-y-5">
@@ -279,7 +301,7 @@ export function ProgressPhotoGrid({ dias = [], urls = {}, fallidas = {}, accent,
           </div>
           <div className="grid grid-cols-3 gap-2">
             {d.fotos.map((f) => (
-              <ProgressPhotoCard key={f.id} foto={f} url={urls[f.id]} fallida={!!fallidas[f.id]} accent={accent} onAbrir={onAbrir} />
+              <ProgressPhotoCard key={f.id} foto={f} url={urls[f.id]} fallida={!!fallidas[f.id]} accent={accent} onAbrir={onAbrir} onFallo={onFallo} />
             ))}
           </div>
           {d.nota && <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>{d.nota}</p>}
@@ -292,7 +314,7 @@ export function ProgressPhotoGrid({ dias = [], urls = {}, fallidas = {}, accent,
 /* ═══ Apartados 11 y 12 · El visor ═════════════════════════════════════════
    🚨 `createPortal` (regla 3 del proyecto): un `fixed inset-0` dentro de un
    contenedor con transformaciones se ancla al contenedor, no al iPhone. */
-export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitness, onCerrar, onIr, onBorrar, onSesion = null, onComparar = null }) {
+export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitness, onCerrar, onIr, onBorrar, onSesion = null, onComparar = null, onFallo = null }) {
   if (!foto || typeof document === 'undefined') return null;
   const sesion = sesionDeFoto(foto, fitness);
   return createPortal(
@@ -319,7 +341,12 @@ export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitne
         {fallida ? (
           <p className="text-sm text-center" style={{ color: 'rgba(255,255,255,0.75)' }}>{ERRORES_FOTO.leer.titulo}</p>
         ) : url ? (
-          <img src={url} alt={foto.nota || `Foto del ${etiquetaDeDia(foto.fecha)}`} className="max-w-full max-h-full object-contain" />
+          <img
+            src={url}
+            alt={foto.nota || `Foto del ${etiquetaDeDia(foto.fecha)}`}
+            className="max-w-full max-h-full object-contain"
+            onError={onFallo ? () => onFallo(foto.id) : undefined}
+          />
         ) : (
           <div className="w-full h-48 esqueleto rounded-2xl" />
         )}
@@ -454,7 +481,7 @@ export function ProgressPhotos({
      apartado 28) y **no se guarda**: al cerrar, desaparece. */
   const comparador = useComparador(pantalla.orden);
 
-  const { urls, fallidas, verMas, hayMas } = useUrlsFirmadas(pantalla.orden);
+  const { urls, fallidas, verMas, hayMas, marcarFallida } = useUrlsFirmadas(pantalla.orden);
   const foto = abierta ? pantalla.orden.find((f) => f.id === abierta) || null : null;
   const vecinas = foto ? vecinasDeFoto(pantalla.orden, foto.id) : { anterior: null, siguiente: null, posicion: 0, total: 0 };
   /* 🚨 Y las URL que necesita el comparador **son las que ya están firmadas**:
@@ -531,6 +558,9 @@ export function ProgressPhotos({
         <ProgressComparison
           pantalla={pantallaComparar}
           urls={urls}
+          /* Apartado 25 de la F27 — y si una de las dos no carga, el aviso es
+             solo de ese lado; la otra se sigue viendo. */
+          onFalloFoto={marcarFallida}
           accent={accent}
           onElegir={comparador.elegir}
           onModo={comparador.setModo}
@@ -545,7 +575,7 @@ export function ProgressPhotos({
       )}
 
       {pantalla.dias.length > 0 && (
-        <ProgressPhotoGrid dias={pantalla.dias} urls={urls} fallidas={fallidas} accent={accent} onAbrir={setAbierta} />
+        <ProgressPhotoGrid dias={pantalla.dias} urls={urls} fallidas={fallidas} accent={accent} onAbrir={setAbierta} onFallo={marcarFallida} />
       )}
 
       {/* Apartado 26 — con muchas fotos no se cargan todas de golpe. */}
@@ -563,6 +593,7 @@ export function ProgressPhotos({
         onBorrar={borrar}
         onSesion={onSesion}
         onComparar={(id) => { comparador.desdeFoto(id); setAbierta(null); setComparando(true); }}
+        onFallo={marcarFallida}
       />
     </div>
   );
