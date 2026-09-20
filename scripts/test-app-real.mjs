@@ -7844,6 +7844,27 @@ await esperarTexto(/Cobertura/i);
    de nada el día que a Josué le falle una. */
 console.log('\n── FIT F26 · El progreso en fotos ──');
 
+/* 🚨 **Y PRIMERO, EL PIN — porque esto tumbó la sección TRES PASADAS SEGUIDAS
+   y yo se lo achaqué a las bombas de relojería del domingo y del horario.**
+   `fotos_privadas` entra en `protectedActions` **en la primera carga de toda
+   cuenta** (la migración de Seguridad Centralizada), así que la galería estaba
+   detrás de un PIN **que Fitness no ofrecía**: se quedaba en el acceso de la
+   F12 y ninguna de estas comprobaciones podía pasar jamás.
+   Aquí se siembra la cuenta de quien **ha desprotegido** las fotos —con la
+   migración ya hecha, para que no se las vuelva a poner— y unas líneas más
+   abajo se comprueba el caso contrario: con la protección puesta, la MISMA
+   puerta de Salud (C-35). */
+almacen.ajustes = {
+  ...(almacen.ajustes || {}),
+  seguridad: {
+    ...((almacen.ajustes || {}).seguridad || {}),
+    protectedActions: [], protectedAreas: [],
+    migradoAcciones: true, migradoAreas: true,
+  },
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
 /* El vacío primero, que es por donde entra quien no ha subido ninguna. */
 ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F26 — Fitness → Progreso');
 ok(await pulsar('Fotos'), 'FIT F26 — y su pestaña de Fotos');
@@ -8054,6 +8075,40 @@ const migradas_fit26 = await page.evaluate(() => {
   return crudo.length > 0;
 });
 ok(migradas_fit26, 'FIT F26 — y lo guardado antes de esta fase se lee sin romper nada');
+
+/* 🚨 **C-35 — CON LA PROTECCIÓN PUESTA, LA MISMA PUERTA QUE SALUD.** Esto es
+   lo que faltaba: la F26 escondía la galería y no ofrecía nada, así que no se
+   podía llegar a ella **ni desbloqueándola**. Ahora sale el `PinGate` de
+   siempre, que es lo que ve quien tiene las fotos protegidas. */
+almacen.ajustes = {
+  ...(almacen.ajustes || {}),
+  seguridad: {
+    ...((almacen.ajustes || {}).seguridad || {}),
+    protectedActions: ['fotos_privadas'], migradoAcciones: true, migradoAreas: true,
+  },
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso') && await pulsar('Fotos'),
+  'FIT F26 — se protegen las fotos y se vuelve a la pestaña');
+const protegido_fit26 = await esperarTexto(/PIN/i);
+ok(/PIN/i.test(protegido_fit26),
+  '🚨 FIT F26 (C-35) — con la protección puesta, la pestaña pide el PIN…');
+ok(!/Añadir progreso/i.test(protegido_fit26),
+  '…y la galería NO se ve mientras tanto');
+ok(!/Todavía no has añadido fotograf/i.test(protegido_fit26),
+  '🚨 …pero tampoco se queda en el acceso mudo de la F12: hay una puerta que abrir');
+
+/* Se devuelve la cuenta a su estado de antes para lo que viene. */
+almacen.ajustes = {
+  ...(almacen.ajustes || {}),
+  seguridad: {
+    ...((almacen.ajustes || {}).seguridad || {}),
+    protectedActions: [], migradoAcciones: true, migradoAreas: true,
+  },
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
 
 /* Apartado 15 — el grupo muscular lleva al detalle de la F13, no a una copia. */
 ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F16 — se vuelve a Rangos');

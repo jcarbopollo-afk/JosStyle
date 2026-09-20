@@ -2787,9 +2787,21 @@ export default function App() {
             futbol={futbol} onAddPartido={addPartido} onDeletePartido={deletePartido}
             videos={calisteniaVideos} onAddVideo={addVideo} onDeleteVideo={deleteVideo} onSetVideoFeedback={setVideoFeedback}
             fotos={saludFotos} rachas={rachas}
-            /* FIT F26 — gestionarlas solo cuando el PIN no lo impide (C-35). */
-            onAddFoto={fotosDesbloqueadas ? addFoto : null}
-            onDeleteFoto={fotosDesbloqueadas ? deleteFoto : null}
+            /* 🚨 FIT F26 (C-35), CORREGIDO EN LA F27 — **la misma puerta que
+               Salud, y eso incluye poder abrirla**. Antes se pasaba `null` con
+               el PIN puesto, así que la galería no se pintaba **y no había
+               forma de desbloquearla desde aquí**: una pantalla a la que no se
+               puede llegar nunca es exactamente lo que prohíbe la regla 8, y
+               por eso el recorrido llevaba tres pasadas en rojo sin que se
+               viera. Ahora Fitness recibe **las mismas cinco props que
+               `HealthView`** y enseña su `PinGate`: una sola decisión de
+               seguridad, leída de un solo sitio, y con salida. */
+            onAddFoto={addFoto} onDeleteFoto={deleteFoto}
+            protegidoFotos={seguridad.protectedActions.includes('fotos_privadas')}
+            pinHash={seguridad.pinHash} pinSalt={seguridad.pinSalt}
+            desbloqueadoFotos={estaDesbloqueado('accion:fotos_privadas')}
+            onDesbloquearFotos={() => registrarDesbloqueo('accion:fotos_privadas')}
+            onOlvidoPin={() => setRecuperandoPin(true)}
             onGuardarFitness={guardarFitness}
             onEliminarPlantilla={deletePlantillaFitness}
             onEliminarSesion={deleteSesionFitness}

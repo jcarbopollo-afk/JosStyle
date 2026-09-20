@@ -210,7 +210,7 @@ export function AreaRangos({ fitness = null, perfil = null, accent, onEntrenar =
    Fotos (su apartado 2). ⚠️ **Las fotos no se pierden**: siguen contándose de
    Salud física y llevando allí, ahora en su propia pestaña, porque la F12 pide
    dejar la estructura lista para el sistema de fotos sin construirlo. */
-export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoEjercicio = null, onFocoEjercicioConsumido = null, onAddFoto = null, onDeleteFoto = null }) {
+export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoEjercicio = null, onFocoEjercicioConsumido = null, onAddFoto = null, onDeleteFoto = null, protegidoFotos = false, pinHash = null, pinSalt = null, desbloqueadoFotos = false, onDesbloquearFotos = null, onOlvidoPin = null }) {
   const resumen = resumenProgreso(fotos);
   return (
     <ProgresoView
@@ -226,6 +226,14 @@ export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEnt
          ellas se queda como la dejó la F12 (cuenta y lleva a Salud). */
       onAddFoto={onAddFoto}
       onDeleteFoto={onDeleteFoto}
+      /* 🚨 Y su PIN, el MISMO de Salud (C-35). Sin estas props la galería se
+         quedaba escondida sin puerta que abrir. */
+      protegidoFotos={protegidoFotos}
+      pinHash={pinHash}
+      pinSalt={pinSalt}
+      desbloqueadoFotos={desbloqueadoFotos}
+      onDesbloquearFotos={onDesbloquearFotos}
+      onOlvidoPin={onOlvidoPin}
       /* FIT F14 — los objetivos se guardan por la puerta de siempre. */
       onGuardarFitness={onGuardarFitness}
       onEliminarObjetivo={onEliminarObjetivo}
@@ -523,9 +531,13 @@ export default function FitnessView({
   fotos = [], rachas, accent, foco, onFocoConsumido, onIr, onGuardarFitness = null,
   onEliminarPlantilla = null, onEliminarSesion = null, onEliminarObjetivo = null,
   perfil = null,
-  /* FIT F26 — las fotos de progreso, que son las de Salud. Llegan `null` si el
-     PIN de `fotos_privadas` está puesto y la sesión no está desbloqueada. */
+  /* 🚨 FIT F26 (C-35), CORREGIDO EN LA F27 — las fotos de progreso son las de
+     Salud, y **su protección también**: las cinco props del PIN son las mismas
+     que recibe `HealthView`. Antes llegaba `onAddFoto: null` con el PIN puesto
+     y la galería simplemente no se pintaba, **sin forma de desbloquearla**. */
   onAddFoto = null, onDeleteFoto = null,
+  protegidoFotos = false, pinHash = null, pinSalt = null,
+  desbloqueadoFotos = false, onDesbloquearFotos = null, onOlvidoPin = null,
 }) {
   const [area, setArea] = useState(AREA_INICIAL);
   /* 🔓 **FIT F18 — el foco muscular se retira.** La F16 mandaba el grupo a
@@ -711,6 +723,12 @@ export default function FitnessView({
           onEliminarObjetivo={onEliminarObjetivo}
           onAddFoto={onAddFoto}
           onDeleteFoto={onDeleteFoto}
+          protegidoFotos={protegidoFotos}
+          pinHash={pinHash}
+          pinSalt={pinSalt}
+          desbloqueadoFotos={desbloqueadoFotos}
+          onDesbloquearFotos={onDesbloquearFotos}
+          onOlvidoPin={onOlvidoPin}
         />
       )}
       {area === 'entrenamiento' && (

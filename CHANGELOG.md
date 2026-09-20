@@ -49,6 +49,27 @@ negativo. Sin las dos etiquetas, esa línea no se pinta. ⚠️ Y las orientacio
 —frontal, lateral y espalda—: `TAGS_FOTO` tiene cinco, porque *pose* y *relajado* no dicen
 desde dónde está hecha la foto. El subconjunto se declara **por sus ids**.
 
+### 🚨 Y un fallo REAL de la F26: la galería no se podía abrir, y el recorrido llevaba TRES pasadas en rojo diciéndolo
+
+`fotos_privadas` entra en `protectedActions` **en la primera carga de toda cuenta** —lo hace la
+migración de Seguridad Centralizada, porque Salud ya protegía esa pestaña siempre—, así que la
+galería de Fitness nacía **detrás de un PIN que Fitness no ofrecía**: la F26 pasaba `onAddFoto:
+null` y la pestaña se quedaba en el acceso mudo de la F12. **Una pantalla a la que no se puede
+llegar nunca es exactamente lo que prohíbe la regla 8.**
+
+⚠️ **Y lo peor no es el fallo: es que ya lo estaba diciendo.** La sección FIT F26 del recorrido
+estuvo roja **las tres pasadas** desde que se escribió, y yo se la achaqué dos veces a las bombas
+de relojería del domingo y del horario —que eran reales, pero de otras secciones— y una tercera a
+que yo mismo había tocado `package.json` en mitad del recorrido. **Antes de dar un rojo por
+heredado, mirar si la sección que falla es la que acabas de escribir.**
+
+El arreglo es **la misma puerta que Salud, con su llave**: Fitness recibe las **mismas cinco
+props** que `HealthView` —`protegidoFotos`, `pinHash`, `pinSalt`, `desbloqueadoFotos`,
+`onDesbloquearFotos`, `onOlvidoPin`— y enseña el `PinGate` de siempre. Eso es C-35 cumplido de
+verdad: **una sola decisión de seguridad, leída de un solo sitio, y con salida.** El recorrido lo
+comprueba por los dos lados —sin protección se ve la galería; con protección sale el PIN **y no el
+acceso mudo**—, que es la comprobación que faltaba.
+
 ### 🐛 «diferencia» contiene «ia», y el barrido se puso rojo con el código bien
 
 El barrido de palabras prohibidas buscaba `'ia '` como subcadena para vigilar que esta

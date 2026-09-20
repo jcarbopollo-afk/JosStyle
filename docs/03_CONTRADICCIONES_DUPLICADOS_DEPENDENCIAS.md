@@ -658,10 +658,22 @@ una galería nueva sin protección habría sido una segunda puerta a lo mismo, s
 fotografías públicamente"* y el 21 *"Por defecto: Private"*. Saltarse una protección que el usuario
 eligió es exactamente lo contrario de lo que piden, así que la galería de Fitness lleva **la misma**,
 leída **del mismo sitio**: `seguridad.protectedActions.includes('fotos_privadas')` y
-`estaDesbloqueado('accion:fotos_privadas')`, en una sola constante (`fotosDesbloqueadas`) de
-`App.jsx`. Con el PIN puesto y la sesión bloqueada, `onAddFoto` y `onDeleteFoto` llegan `null` y la
-pestaña se queda **como la dejó la F12**: cuenta las fotos y lleva a Salud, que es donde se
-desbloquean.
+`estaDesbloqueado('accion:fotos_privadas')`.
+
+🐛 **Y LA PRIMERA IMPLEMENTACIÓN ESTABA MAL — corregida en la FIT F27 (v3.109.0).** La F26 leía
+bien la decisión, pero la aplicaba pasando `onAddFoto: null`, así que con el PIN puesto la pestaña
+se quedaba en el acceso mudo de la F12 **y no había forma de desbloquearla desde Fitness**. Y
+`fotos_privadas` entra en `protectedActions` **en la primera carga de toda cuenta** —lo hace la
+migración de Seguridad Centralizada, porque Salud ya protegía esa pestaña siempre—, o sea que la
+galería **no se podía abrir nunca**: una pantalla inalcanzable es la regla 8 exacta. La sección del
+recorrido llevaba **tres pasadas en rojo** diciéndolo y se achacó dos veces a las bombas de
+relojería de otras secciones y una tercera a un `package.json` tocado a media pasada.
+
+**Heredar una protección es heredarla ENTERA: la puerta y su llave.** Fitness recibe ahora las
+**mismas cinco props** que `HealthView` —`protegidoFotos`, `pinHash`, `pinSalt`,
+`desbloqueadoFotos`, `onDesbloquearFotos`, `onOlvidoPin`— y enseña el **mismo `PinGate`**. Con la
+protección quitada se ve la galería; con ella puesta se pide el PIN, no un hueco. El recorrido lo
+comprueba **por los dos lados**, que es la comprobación que faltaba.
 
 ⚠️ **Y se escribe una vez, no dos.** Un segundo criterio aquí habría sido dos decisiones de
 seguridad sobre la misma lista, y el día que una cambiara dirían cosas distintas — que es cómo este

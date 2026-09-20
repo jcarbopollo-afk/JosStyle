@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba, todayISO } from '../lib/helpers';
-import { Card, GhostBtn, PrimaryButton, EmptyHint, SectionTitle } from '../components/ui';
+import { Card, GhostBtn, PrimaryButton, EmptyHint, SectionTitle, PinGate } from '../components/ui';
 import { iconoDeGrupo } from '../components/iconosFitness';
 import EjerciciosView, { DetalleEjercicio } from './EjerciciosView';
 import { DetalleSesionHistorial } from './HistorialView';
@@ -865,6 +865,12 @@ export default function ProgresoView({
   /* FIT F26 — las fotos de progreso, que son las de Salud. Sin estas dos la
      pestaña se queda como la dejó la F12: cuenta y lleva allí. */
   onAddFoto = null, onDeleteFoto = null,
+  /* 🚨 FIT F26 (C-35), CORREGIDO EN LA F27 — y su PIN, que es **el mismo de
+     Salud**: `protectedActions` trae `fotos_privadas` de serie, así que sin
+     este `PinGate` la galería no se pintaba nunca y no había forma de abrirla
+     desde Fitness. La protección se hereda entera: la puerta **y su llave**. */
+  protegidoFotos = false, pinHash = null, pinSalt = null,
+  desbloqueadoFotos = false, onDesbloquearFotos = null, onOlvidoPin = null,
   /* FIT F18, apartado 11 — y el ejercicio, para no crear otra pantalla de
      progreso: se abre ESTA, la de la F12. */
   focoEjercicio = null, onFocoEjercicioConsumido = null,
@@ -878,6 +884,9 @@ export default function ProgresoView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [fotos, onAddFoto],
   );
+  /* ⚠️ El PIN decide si se **enseña** la galería, no si existe: con la sesión
+     bloqueada sale el mismo `PinGate` que en Salud, no un hueco. */
+  const fotosALaVista = !protegidoFotos || desbloqueadoFotos;
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState('todos');
   const [abierto, setAbierto] = useState(null); // exerciseId
@@ -1187,14 +1196,33 @@ export default function ProgresoView({
           mantiene**: un «Añadir» que no puede guardar sería un botón muerto. */}
       {seccion === 'fotos' && (
         pantallaFotos ? (
-          <ProgressPhotos
-            pantalla={pantallaFotos}
-            fitness={fitness}
-            accent={accent}
-            hoy={todayISO()}
-            onAddFoto={onAddFoto}
-            onDeleteFoto={onDeleteFoto}
-          />
+          fotosALaVista ? (
+            <ProgressPhotos
+              pantalla={pantallaFotos}
+              fitness={fitness}
+              accent={accent}
+              hoy={todayISO()}
+              onAddFoto={onAddFoto}
+              onDeleteFoto={onDeleteFoto}
+            />
+          ) : (
+            /* 🚨 La MISMA puerta que Salud (C-35), con su llave. */
+            <PinGate
+              pinHash={pinHash} pinSalt={pinSalt} accent={accent}
+              desbloqueado={desbloqueadoFotos}
+              onDesbloquear={onDesbloquearFotos}
+              onOlvidoPin={onOlvidoPin}
+            >
+              <ProgressPhotos
+                pantalla={pantallaFotos}
+                fitness={fitness}
+                accent={accent}
+                hoy={todayISO()}
+                onAddFoto={onAddFoto}
+                onDeleteFoto={onDeleteFoto}
+              />
+            </PinGate>
+          )
         ) : (
           <Card>
             <div className="flex items-center gap-3">
