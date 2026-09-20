@@ -184,20 +184,24 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **19 942 pruebas unitarias** con Node repartidas en **188 suites** (5 de ellas de auditoría),
-**3192 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2355
-comprobaciones sobre la aplicación de verdad en Chromium** — **25 500 comprobaciones**.
+Vite, **20 101 pruebas unitarias** con Node repartidas en **189 suites** (5 de ellas de auditoría),
+**3268 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2381
+comprobaciones sobre la aplicación de verdad en Chromium** — **25 761 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.110.0, una a una**, con la suma del
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.111.0, una a una**, con la suma del
 propio log. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
 
-Eso ya ha encontrado **cien bugs reales** que la revisión a mano no vio. Los dos últimos: un
-`GhostBtn` que **repartía `disabled` sin usarlo** —así que un «Cancelar» llevaba tiempo siendo
-pulsable en mitad de una subida— y el campo «Nombre mostrado», que **no lo leía ninguna pantalla**
-desde la Fase A2. Antes de ésos, una
+Eso ya ha encontrado **ciento tres bugs reales** que la revisión a mano no vio. Los tres últimos
+son de la FIT F29: **`resumenDeEjercicio` devuelve `estado`, no `estadoNombre`** —la etiqueta de
+cada sesión se habría quedado muda para siempre—, **el aviso de variantes no salía estando EN una
+variante**, que es justo el caso que pide su apartado 21, y **una prueba de la F12 que llevaba
+saliendo roja una de cada cincuenta veces** porque barría los `sesionId`, que son aleatorios. Antes
+de ésos, un `GhostBtn` que **repartía `disabled` sin usarlo** —así que un «Cancelar» llevaba tiempo
+siendo pulsable en mitad de una subida— y el campo «Nombre mostrado», que **no lo leía ninguna
+pantalla** desde la Fase A2. Y antes, una
 notificación falsa (`null < 7` es `true` en JavaScript), nueve módulos que dejaban crear y no borrar,
 dos fechas en UTC que en España devolvían el día equivocado (`todayISO`, `addDays`), una
 comparación contra `undefined` que anulaba entera la penalización por prendas no disponibles, una
