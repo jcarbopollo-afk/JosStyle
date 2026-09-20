@@ -2,6 +2,40 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.109.0 — FIT F27/45: el comparador de progreso físico):**
+> Progreso → Fotos → **Comparar** es una pantalla entera: dos momentos elegidos por fecha, lado a
+> lado o con un divisor que se arrastra, zoom independiente en cada foto, alineación, y las fotos
+> se cambian sin salir.
+> 🚨 **La comparación ya existía, la hizo la F26: se amplía, no se reescribe.** `compararFotos` y
+> las suyas **se importan**, y `YA_LO_HIZO_LA_F26` guarda las funciones, no sus nombres.
+> 🔓 **Y el bloque de comparación de dentro de la galería se retira**: existía por falta de
+> pantalla, como la confirmación de «Terminar» antes del resumen (FIT F8).
+> 🚨 **Al intercambiar los lados, «Antes» y «Después» viajan con la FOTO** (apartados 4 y 21): si
+> el rótulo se quedara en el hueco, invertir diría que junio es posterior a septiembre.
+> 🚨 **El swipe no existe en el modo deslizar**: ahí el arrastre horizontal **es** el divisor.
+> 🚨 **Sin etiqueta de orientación no se afirma ni que los encuadres coinciden ni que no**
+> (apartado 13: *"si no existe, no inventarlo"*).
+> ⚠️ **Ni miniaturas ni pellizco**: solo existe una versión de cada foto (1600 px), y el pellizco
+> depende de la **C-32**, que decide Josué. El zoom va por botones (apartado 10).
+>
+> **Y DOS FALLOS REALES DE LA F26, corregidos aquí:**
+> 🚨 **1. La galería no se podía abrir.** `fotos_privadas` entra en `protectedActions` **en la
+> primera carga de toda cuenta**, así que nacía detrás de un PIN **que Fitness no ofrecía**: una
+> pantalla inalcanzable, la regla 8 exacta. Ahora recibe **las mismas cinco props que
+> `HealthView`** y enseña el mismo `PinGate` — heredar una protección es heredar **la puerta y su
+> llave** (C-35). ⚠️ El recorrido llevaba **tres pasadas en rojo** diciéndolo, y se achacó a bombas
+> de relojería de otras secciones: **antes de dar un rojo por heredado, mirar si la sección que
+> falla es la que acabas de escribir.**
+> 🚨 **2. Una foto que no carga no lo decía.** Solo contaba como ilegible si fallaba la firma, y el
+> caso real es el contrario: la firma sale y **la imagen no llega**. Lo avisa ahora la propia
+> imagen, y **solo esa foto**. 🐛 Lo destapó el doble de Supabase, que devolvía
+> `…/storage/v1undefined` —válida como cadena, rota como dirección— y hacía que **todas** salieran
+> ilegibles: el recorrido llevaba desde la F26 **sin haber visto ni una galería**.
+>
+> 📊 **Y los números de la verificación se han vuelto a contar** (eran de la v3.68.0, cuarenta
+> fases atrás): **19 789 pruebas de Node en 187 suites, 3096 casos de renderizado, 11 reglas
+> invariantes y 2316 comprobaciones en Chromium — 25 212 en total.**
+
 > **🏋️ ACTUALIZACIÓN (v3.108.0 — FIT F26/45: el progreso físico en fotos):**
 > Fitness → Progreso → **Fotos** es ya un diario visual: varias de una vez, fecha editable,
 > agrupadas por día, visor y comparación A/B.

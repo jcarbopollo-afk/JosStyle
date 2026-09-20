@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.108.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.109.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 26 primeras (v3.83.0 → v3.108.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 27 primeras (v3.83.0 → v3.109.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 19 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 18 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -184,14 +184,15 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **16 117 pruebas unitarias** con Node repartidas en **148 suites** (5 de ellas de auditoría),
-**2132 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **1318
-comprobaciones sobre la aplicación de verdad en Chromium** — **19 578 comprobaciones**.
+Vite, **19 789 pruebas unitarias** con Node repartidas en **187 suites** (5 de ellas de auditoría),
+**3096 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2316
+comprobaciones sobre la aplicación de verdad en Chromium** — **25 212 comprobaciones**.
 
-⚠️ **Estas cifras están contadas del `verificar.sh` de v3.68.0, una a una**, como las de v3.67.0. Y
-se vuelven a contar cada vez por lo que pasó antes de aquélla: las que había aquí —*"17 207 en 145
-suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un número de
-este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.109.0, una a una**, con la suma del
+propio log. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
+145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
+número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
+⚠️ Y las anteriores —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
 
 Eso ya ha encontrado **cien bugs reales** que la revisión a mano no vio. Los dos últimos: un
 `GhostBtn` que **repartía `disabled` sin usarlo** —así que un «Cancelar» llevaba tiempo siendo
@@ -330,8 +331,8 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 (v3.92.0)** , la **FIT F11 (v3.93.0)**, la **FIT F12 (v3.94.0)**, la **FIT F13 (v3.95.0)**, la **FIT F14 (v3.96.0)**, la **FIT F15 (v3.97.0)**, la **FIT F16 (v3.98.0)**, la
 **FIT F17 (v3.99.0)**, la **FIT F18 (v3.100.0)**, la **FIT F19 (v3.101.0)**, la **FIT F20
 (v3.102.0)**, la **FIT F21 (v3.103.0)**, la **FIT F22 (v3.104.0)**, la **FIT F23
-(v3.105.0)**, la **FIT F24 (v3.106.0)**, la **FIT F25 (v3.107.0)** y la **FIT F26 (v3.108.0)**
-hechas. Lo que dejaron, y que vale para las 19 que quedan:
+(v3.105.0)**, la **FIT F24 (v3.106.0)**, la **FIT F25 (v3.107.0)**, la **FIT F26 (v3.108.0)** y la
+**FIT F27 (v3.109.0)** hechas. Lo que dejaron, y que vale para las 18 que quedan:
 
 - 🚨 **PARTICIPACIÓN ≠ PESO EN EL CÁLCULO** (FIT F21, `src/lib/contribucionMuscular.js`). La
   participación es la del catálogo (50 % dorsales) y **no se suma entre ejercicios**; el peso
@@ -471,6 +472,61 @@ hechas. Lo que dejaron, y que vale para las 19 que quedan:
   `MuscleSubgroupDetail`, que es **otro componente** y no tenía `siguiente` en su ámbito — reventaba
   con `siguiente is not defined`. **Lo cazó el banco de renderizado**, no el build. Le llega como
   **prop**, calculada por quien sabe qué subgrupo está abierto.
+- 🚨 **HEREDAR UNA PROTECCIÓN ES HEREDARLA ENTERA: LA PUERTA **Y SU LLAVE**** (FIT F27, y es un
+  fallo real de la F26 que costó **tres pasadas en rojo**). `fotos_privadas` entra en
+  `protectedActions` **en la primera carga de toda cuenta** —lo hace la migración de Seguridad
+  Centralizada, porque Salud ya protegía esa pestaña siempre—, así que la galería de Fitness nacía
+  detrás de un PIN **que Fitness no ofrecía**: la F26 pasaba `onAddFoto: null` y la pestaña se
+  quedaba en el acceso mudo de la F12. **Una pantalla a la que no se puede llegar nunca es la
+  regla 8 exacta.** Ahora recibe **las mismas cinco props que `HealthView`** y enseña el mismo
+  `PinGate`. ⚠️ **Y antes de dar un rojo por heredado, mirar si la sección que falla es la que
+  acabas de escribir**: la achaqué dos veces a bombas de relojería de OTRAS secciones y una tercera
+  a un `package.json` que toqué yo a media pasada.
+- 🚨 **FIRMAR BIEN NO ES CARGAR BIEN** (FIT F27, y es el segundo fallo real de la F26). Una foto
+  solo contaba como ilegible si **`getSignedPhotoUrl` fallaba**, y el caso que le pasa a Josué es el
+  contrario: la firma sale y **la imagen no llega** —archivo borrado, firma caducada, sin cobertura
+  a media galería—. Quedaba un `<img>` roto y la pantalla **callaba**. Lo avisa ahora la propia
+  imagen (`onError` → `marcarFallida`), y **solo esa foto**: galería, visor y los dos lados del
+  comparador.
+- 🐛 **UN DOBLE QUE CONTESTA `{}` A TODO PUEDE ESTAR PROBANDO SOLO EL CASO MALO** (FIT F27). El de
+  Supabase devolvía `…/storage/v1undefined` —**una URL válida como cadena y rota como dirección**—,
+  así que **todas** las fotos salían ilegibles y el recorrido llevaba desde la F26 sin haber visto
+  **ni una galería**. Ahora firma bien y sirve un PNG, y la foto rota es **una**, declarada por su
+  camino: lo que se mide es que una rota no se lleve por delante a las otras tres.
+- 🚨 **LA COMPARACIÓN SE AMPLÍA, NO SE REESCRIBE** (FIT F27). `compararFotos`,
+  `opcionesParaComparar`, `diasEntreFechas`, `textoDeDistancia` y `puedeComparar` son de la F26 y se
+  **importan**; `YA_LO_HIZO_LA_F26` guarda **las funciones**, no sus nombres. Una segunda
+  `compararFotos` acabaría decidiendo el ANTES de otra manera que la primera.
+- 🔓 **Y EL BLOQUE DE COMPARACIÓN DE DENTRO DE LA GALERÍA SE RETIRA** (FIT F27, y es la FIT F8 otra
+  vez): existía **por falta de pantalla**, como la confirmación de «Terminar» antes del resumen. Con
+  el comparador hecho, dejar los dos sería la misma función por dos puertas, y la de dentro es la
+  peor. ⚠️ Y la tira de fechas **se muda** con él (E3 F17): importarla de vuelta sería un **ciclo**
+  entre los dos archivos (FIT F24). Una sola dirección: la galería llama al comparador.
+- 🚨 **AL INTERCAMBIAR LOS LADOS, «ANTES» Y «DESPUÉS» VIAJAN CON LA FOTO** (FIT F27, apartados 4 y
+  21). El 4 pide poder intercambiarlas y el 21 pide no depender de la posición: solo caben juntos si
+  el rótulo **no se queda pegado al hueco**. Si se quedara, invertir diría que junio es posterior a
+  septiembre. ⚠️ Y **una comprobación lo mide por el `alt` de cada foto, nunca por el orden del
+  texto** — el orden es justo lo que esta fase separa del tiempo.
+- 🚨 **EL SWIPE NO EXISTE EN EL MODO DESLIZAR** (FIT F27, apartado 22, y es la FIT F9): ahí el
+  arrastre horizontal **es** el divisor, y con el zoom puesto arrastrar **es** desplazar la imagen.
+  Lo decide `gestosActivos()` en un solo sitio.
+- 🚨 **SIN ETIQUETA DE ORIENTACIÓN NO SE AFIRMA NI QUE COINCIDEN NI QUE NO** (FIT F27, apartado 13:
+  *"si no existe, no inventarlo"*): decir que los encuadres difieren **sin saberlo** es inventarlo en
+  negativo. ⚠️ Y las orientaciones son **tres** —frontal, lateral, espalda—: `TAGS_FOTO` tiene cinco,
+  porque *pose* y *relajado* no dicen desde dónde está hecha la foto. El subconjunto va **por ids**.
+- 🐛 **UN PORTAL PONE SU CONTENIDO AL FINAL DEL `body`, ASÍ QUE `innerText` TRAE PRIMERO LO DE
+  DETRÁS** (FIT F27, y es la E3 F11 otra vez). Dos comprobaciones mías salieron rojas con la
+  pantalla bien: una encontraba «12 SEP 2026» en la **galería** antes que el «12 JUN» del
+  comparador, y otra encontraba «músculo» en la pestaña **Músculos** de Progreso. **Lo que se mide
+  es lo que se ve**: `[role="dialog"]`, no el documento.
+- 🐛 **«DIFERENCIA» CONTIENE «IA»** (FIT F27, y es «experto» contiene «xp» por segunda vez): el
+  barrido buscaba `'ia '` como subcadena y ponía roja la fase entera con el código bien. Con límite
+  de palabra, y con dos comprobaciones que demuestran que el arreglo **no tapa nada**.
+- ⚠️ **NI MINIATURAS NI PELLIZCO** (FIT F27, apartados 30 y 22): la F26 sube **una sola** versión, ya
+  reducida a 1600 px, así que decir que se usan miniaturas sería decir que existe algo que no existe
+  (regla 8); y el pellizco lo bloquea el `maximum-scale=1` del viewport, que es la **C-32** que tiene
+  que decidir Josué. El zoom va por botones, que además es lo que pide el apartado 10.
+
 - 🚨 **LAS FOTOS DE PROGRESO YA EXISTÍAN, Y LA F12 DEJÓ SU PESTAÑA ESPERANDO** (FIT F26). Son
   **`saludFotos`** desde la Fase 3, con el bucket privado **`progreso`**, `uploadProgressPhoto()`,
   `getSignedPhotoUrl()` y `deleteProgressPhoto()` — declarado en `MAPEO_EXISTENTE` desde la FIT F1.
@@ -1022,15 +1078,17 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F27/45 — Comparador avanzado de progreso físico** (líneas
-   15 567–16 078 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`). Se construye de la F1 a la
-   F45, en orden, encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+1. 🏋️ **SEGUIR POR LA FIT F28/45 — Integración completa del progreso físico** (líneas
+   14 875–15 566 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), que **cierra el bloque de
+   fotos** (F26–F28). Se construye de la F1 a la F45, en orden, encadenando sin parar. El índice
+   está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: la comparación básica YA EXISTE**, la hizo la F26. `compararFotos`,
-   `opcionesParaComparar` y `ProgressPhotoComparison` están en `fotosProgreso.js` / `.jsx`, con
-   ANTES y DESPUÉS decididos **por la fecha** y sin una palabra sobre el cuerpo. Lo que la F27
-   añada se apoya en eso; **no escribe una segunda comparación**.
+   ⚠️ **Y lo segundo, en ESTA: una fase de integración REPARTE lo que hay, no añade un sistema**
+   (E3 F46, apartado 21). Las fotos son **`saludFotos`**, la galería es la **F26**
+   (`fotosProgreso.js` / `.jsx`) y el comparador la **F27** (`comparadorFotos.js` / `.jsx`), con
+   ANTES y DESPUÉS decididos **por la fecha** y sin una palabra sobre el cuerpo. Todo lo que la F28
+   enseñe **lee de ahí**.
    🏁 **Y el sistema de rangos está CERRADO, F15 a F25** —motor, pantalla, cuestionario, detalle
    muscular, explicación, contribución, historial, siguiente rango, cola de clasificación y
    resumen—: lo que venga después **lee de ahí**, no escribe un segundo cálculo.
