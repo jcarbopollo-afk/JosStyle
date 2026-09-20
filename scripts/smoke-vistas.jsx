@@ -245,10 +245,23 @@ import { resumenDeRangos as resF25, ERROR_RANGOS as ERR_F25 } from '../src/lib/r
 /* FIT F26 — el diario visual de fotos. ⚠️ El visor sale por `createPortal`, así
    que no entra en este banco (lo abre el recorrido); sus piezas, sí. */
 import {
-  ProgressPhotoEmpty, ProgressPhotoGrid, ProgressPhotoCard, ProgressPhotoComparison,
-  ProgressPhotoDateSelector, ProgressPhotoCompareHint, ProgressPhotos,
+  ProgressPhotoEmpty, ProgressPhotoGrid, ProgressPhotoCard,
+  ProgressPhotoCompareHint, ProgressPhotos,
 } from '../src/components/fotosProgreso.jsx';
-import { pantallaDeFotos as pantF26, compararFotos as compF26 } from '../src/lib/fotosProgreso.js';
+import { pantallaDeFotos as pantF26 } from '../src/lib/fotosProgreso.js';
+/* ⚠️ **`ProgressComparison` NO entra en el banco, y es a propósito** (la
+   lección de `ResumenConstructor`, FIT F3): va por `createPortal` y devuelve
+   `null` sin `document`, así que aquí contaría como un render vacío. Se prueba
+   en Chromium, que es donde existe. Sus nueve piezas de dentro sí entran. */
+import {
+  ComparisonSelector, ComparisonViewport, ComparisonSideBySide,
+  ComparisonSlider, ComparisonImage, ComparisonMeta, ComparisonControls, ComparisonEmpty,
+  ComparisonZoom, ProgressPhotoDateSelector,
+} from '../src/components/comparadorFotos.jsx';
+import {
+  pantallaComparador as pantF27, crearZoom as zoomF27, aplicarZoom as ampliarF27,
+  ZOOM_PASO as PASO_F27, alineacion as aliF27,
+} from '../src/lib/comparadorFotos.js';
 /* FIT F24 — el hub de clasificación. ⚠️ Sus tarjetas **solo aparecen en el
    hub**, y la pregunta solo tras pulsar una: son dos pantallas, así que cada
    pieza entra suelta (la lección del Álbum de Relación, NAV F3). */
@@ -442,6 +455,15 @@ const FOTOS_F26 = [
   { id: 'f2', path: 'usuario/2.jpg', fecha: '2026-09-12', nota: '' },
   { id: 'f3', path: 'usuario/3.jpg', fecha: '2026-09-12', nota: 'Inicio de curso' },
 ];
+
+/* FIT F27 — el comparador. ⚠️ Los escenarios se construyen desde la MISMA
+   lista que la F26: si el comparador necesitara fotos con otra forma sería que
+   está pidiendo una segunda entidad, que es justo lo que no hace. */
+const FOTOS_F27 = FOTOS_F26.concat([
+  { id: 'f4', path: 'usuario/4.jpg', fecha: '2026-07-01', nota: '', tags: ['frontal'] },
+  { id: 'f5', path: 'usuario/5.jpg', fecha: '2026-08-01', nota: 'De espalda', tags: ['espalda'] },
+]);
+const pantCompF27 = (extra = {}) => pantF27(FOTOS_F27, { antesId: 'f1', despuesId: 'f3', ...extra });
 
 const DESTINO_EJ_F22 = { tipo: 'exercise', id: 'dominada-prona' };
 const DESTINO_GRUPO_F23 = { tipo: 'muscleGroup', id: 'espalda' };
@@ -3366,11 +3388,8 @@ const CASOS = [
   ['ProgressPhotoCard', ProgressPhotoCard, () => ({
     foto: { ...pantF26(FOTOS_F26).orden[0], tags: ['frontal'] }, url: null, fallida: true, accent, onAbrir: noop,
   })],
-  ['ProgressPhotoComparison', ProgressPhotoComparison, () => ({
-    comparacion: compF26(FOTOS_F26, 'f1', 'f3'), urls: {}, fallidas: {}, accent,
-  })],
   ['ProgressPhotoDateSelector', ProgressPhotoDateSelector, () => ({
-    opciones: pantF26(FOTOS_F26).comparacion.opciones, elegida: 'f1', urls: {}, etiqueta: 'Primera foto', onElegir: noop,
+    opciones: pantF26(FOTOS_F26).comparacion.opciones, elegida: 'f1', urls: {}, etiqueta: 'Inicial', onElegir: noop,
   })],
   /* Apartado 25 — con una sola foto se DICE, en vez de desaparecer. */
   ['ProgressPhotoCompareHint', ProgressPhotoCompareHint, () => ({ aviso: pantF26([FOTOS_F26[0]]).comparacion.aviso })],
@@ -3383,6 +3402,47 @@ const CASOS = [
   })],
   /* ⚠️ Y de solo lectura: con el PIN puesto no se ofrece añadir ni borrar. */
   ['ProgressPhotos', ProgressPhotos, () => ({ pantalla: pantF26(FOTOS_F26), accent, hoy: '2026-09-19' })],
+
+  /* ══ FIT F27 — el comparador ═══════════════════════════════════════════ */
+  ['ComparisonEmpty', ComparisonEmpty, () => ({ accent, onAnadir: noop })],
+  /* ⚠️ Sin `onAnadir`, que es como se ve con el PIN puesto: sin botón muerto. */
+  ['ComparisonEmpty', ComparisonEmpty, () => ({ accent })],
+  ['ComparisonMeta', ComparisonMeta, () => ({ meta: pantCompF27().lados[0].meta })],
+  ['ComparisonMeta', ComparisonMeta, () => ({ meta: pantCompF27().lados[1].meta, claro: true })],
+  ['ComparisonZoom', ComparisonZoom, () => ({ zoom: zoomF27(), aria: 'Foto anterior', onZoom: noop })],
+  ['ComparisonZoom', ComparisonZoom, () => ({ zoom: ampliarF27(zoomF27(), PASO_F27), aria: 'Foto anterior', onZoom: noop })],
+  ['ComparisonImage', ComparisonImage, () => ({
+    lado: pantCompF27().lados[0], url: null, zoom: zoomF27(), alineacion: aliF27('centro'),
+  })],
+  /* 🚨 Una foto que no carga: el placeholder es SOLO de ese lado (apartado 25). */
+  ['ComparisonImage', ComparisonImage, () => ({
+    lado: { ...pantCompF27().lados[0], fallida: true }, url: null, zoom: zoomF27(), alineacion: aliF27('arriba'),
+  })],
+  ['ComparisonSideBySide', ComparisonSideBySide, () => ({ pantalla: pantCompF27(), urls: {}, onZoom: noop, onMover: noop })],
+  /* ⚠️ Apartado 7 — apilado, que es como se ve en un iPhone estrecho. */
+  ['ComparisonSideBySide', ComparisonSideBySide, () => ({
+    pantalla: { ...pantCompF27(), disposicion: 'columna' }, urls: {}, onZoom: noop, onMover: noop,
+  })],
+  ['ComparisonSlider', ComparisonSlider, () => ({ pantalla: pantCompF27({ modo: 'deslizar' }), urls: {}, onSlider: noop })],
+  /* El divisor en los dos extremos: es lo que lo hace una herramienta. */
+  ['ComparisonSlider', ComparisonSlider, () => ({ pantalla: pantCompF27({ modo: 'deslizar', slider: 0 }), urls: {}, onSlider: noop })],
+  ['ComparisonSlider', ComparisonSlider, () => ({ pantalla: pantCompF27({ modo: 'deslizar', slider: 100, invertida: true }), urls: {}, onSlider: noop })],
+  ['ComparisonControls', ComparisonControls, () => ({
+    pantalla: pantCompF27(), onModo: noop, onAlineacion: noop, onInvertir: noop, onZoom: noop,
+  })],
+  /* Con el zoom puesto aparece «Escala normal», y sin él no (regla 8). */
+  ['ComparisonControls', ComparisonControls, () => ({
+    pantalla: pantCompF27({ zoom: { antes: ampliarF27(zoomF27(), PASO_F27), despues: zoomF27() } }),
+    onModo: noop, onAlineacion: noop, onInvertir: noop, onZoom: noop,
+  })],
+  ['ComparisonViewport', ComparisonViewport, () => ({ pantalla: pantCompF27(), urls: {}, onSlider: noop, onZoom: noop, onMover: noop })],
+  ['ComparisonViewport', ComparisonViewport, () => ({ pantalla: pantCompF27({ modo: 'deslizar' }), urls: {}, onSlider: noop })],
+  ['ComparisonSelector', ComparisonSelector, () => ({ pantalla: pantCompF27(), urls: {}, onElegir: noop })],
+  /* Eligiendo: falta la final, y la lista no ofrece la que ya está puesta. */
+  ['ComparisonSelector', ComparisonSelector, () => ({
+    pantalla: pantF27(FOTOS_F27, { antesId: 'f1' }), urls: {}, onElegir: noop,
+  })],
+  ['ComparisonSelector', ComparisonSelector, () => ({ pantalla: pantF27(FOTOS_F27, {}), urls: {}, onElegir: noop })],
 
   ['ClassificationReason', ClassificationReason, () => ({ reason: 'Mejora tu cobertura de cuello', accent })],
   ['ClassificationEmpty', ClassificationEmpty, () => ({ vacio: { id: 'completa', ...VACIOS_F24.completa }, accent, onVolver: noop })],

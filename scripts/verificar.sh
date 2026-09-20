@@ -1027,6 +1027,18 @@ fi
 # FIT F21 — qué ejercicios sostienen un rango muscular. Lo que más se vigila: que se
 # use el porcentaje DEL MÚSCULO que se mira (no el del ejercicio entero), que la
 # participación no se sume entre ejercicios, y que los que no tienen datos vayan aparte.
+# FIT F27 — el comparador. Lo que más se vigila: que NO se escriba una segunda
+# comparación (la de la F26 se importa), que el rótulo «Antes» viaje con la foto al
+# intercambiar los lados, que sin etiqueta de orientación no se afirme nada del encuadre,
+# que el swipe no se coma el divisor, que el zoom de un lado no mueva el otro, que una
+# foto borrada cierre la comparación en vez de romperla, y que ni un texto hable del
+# cuerpo. Y que el comparador NO vuelva a firmar las URLs que la galería ya tiene.
+if node --import ./scripts/resolver-vite.mjs scripts/test-comparador-fotos.mjs >/tmp/jc_comparador_fotos.log 2>&1; then
+  ok "Comparador de progreso físico (FIT F27) — $(grep -c '✓' /tmp/jc_comparador_fotos.log) comprobaciones"
+else
+  fallo "Falla el comparador de fotos"; grep '✗' /tmp/jc_comparador_fotos.log
+fi
+
 # FIT F26 — el progreso físico en fotos. Lo que más se vigila: que NO exista una
 # segunda lista de fotos (son `saludFotos` desde la Fase 3), que no se guarde ninguna
 # URL firmada —caducan en una hora—, que toda foto sea privada y ninguna salga hacia

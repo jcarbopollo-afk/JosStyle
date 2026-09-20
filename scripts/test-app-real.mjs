@@ -7881,33 +7881,150 @@ ok(/no se puede mostrar/i.test(galeria_fit26),
 ok(/12 SEP 2026/i.test(galeria_fit26) && /Añadir progreso/i.test(galeria_fit26),
   '🚨 …y la pantalla sigue entera: los días, la nota y el botón siguen ahí');
 
-/* Apartado 13 — comparar, que con tres fotos sí se puede. */
+/* Apartado 13 — comparar, que con tres fotos sí se puede.
+   🔓 **Y estas comprobaciones se dan la vuelta con la FIT F27** (E3 F44 y
+   SU F1 → SU F2): la F26 pintaba la comparación DENTRO de la galería, con
+   «Primera foto» y «Segunda foto», porque todavía no existía la pantalla de
+   comparar. La F27 la construye, ese bloque se retira, y lo que estas líneas
+   vigilan ahora es que el botón lleve al comparador entero. Lo que NO cambia
+   es lo que de verdad importaba: que **manda la fecha**, no el orden en que
+   las elige. */
 ok(/Comparar progreso/i.test(galeria_fit26), 'FIT F26 — se ofrece comparar (apartado 13)');
-ok(await pulsar('Comparar progreso'), 'FIT F26 — se abre la comparación');
-const comparar_fit26 = await esperarTexto(/Primera foto/i);
-ok(/Primera foto/i.test(comparar_fit26) && /Segunda foto/i.test(comparar_fit26),
-  '⚠️ FIT F26 — con la selección sencilla del apartado 17: fecha y foto');
+ok(await pulsar('Comparar progreso'), 'FIT F27 — se abre el comparador');
+const comparar_fit26 = await esperarTexto(/Inicial/i);
+ok(/Inicial/i.test(comparar_fit26) && /Final/i.test(comparar_fit26),
+  '⚠️ FIT F27 — con la selección sencilla del apartado 3: una inicial y una final');
 ok(!/calendario/i.test(comparar_fit26), '…y sin un calendario complejo');
 
-/* 🚨 Apartado 14 — ANTES y DESPUÉS los decide la FECHA. Se eligen AL REVÉS
-   —primero la de septiembre— y tiene que salir junio como «Antes». */
+/* 🚨 Apartado 4 — ANTES y DESPUÉS los decide la FECHA. Se eligen AL REVÉS
+   —primero la de septiembre como inicial— y tiene que salir junio como «Antes». */
 const elegir_fit26 = async (etiqueta, fecha) => page.evaluate(({ e, f }) => {
   const b = [...document.querySelectorAll('button[aria-label]')]
     .find((x) => (x.getAttribute('aria-label') || '') === `${e}: ${f}`);
   if (b) { b.click(); return true; }
   return false;
 }, { e: etiqueta, f: fecha });
-ok(await elegir_fit26('Primera foto', '12 SEP 2026'), 'FIT F26 — se elige primero la de SEPTIEMBRE');
+ok(await elegir_fit26('Inicial', '12 SEP 2026'), 'FIT F27 — se elige primero la de SEPTIEMBRE');
 await page.waitForTimeout(350);
-ok(await elegir_fit26('Segunda foto', '12 JUN 2026'), 'FIT F26 — y después la de JUNIO');
+ok(await elegir_fit26('Final', '12 JUN 2026'), 'FIT F27 — y después la de JUNIO');
 const resultado_fit26 = await esperarTexto(/Antes/i);
-ok(/Antes/i.test(resultado_fit26) && /Después/i.test(resultado_fit26), 'FIT F26 — sale la comparación');
+ok(/Antes/i.test(resultado_fit26) && /Después/i.test(resultado_fit26), 'FIT F27 — sale la comparación');
 ok(resultado_fit26.indexOf('12 JUN 2026') < resultado_fit26.indexOf('12 SEP 2026'),
-  '🚨 FIT F26 — y JUNIO sale como «Antes» aunque se eligiera la segunda: manda la fecha (apartado 14)');
+  '🚨 FIT F27 — y JUNIO sale como «Antes» aunque se eligiera la segunda: manda la fecha (apartado 4)');
 ok(/de diferencia/i.test(resultado_fit26), '…con el tiempo entre las dos, que es lo único que se afirma');
-/* 🚨 Apartados 14 y 41 — ni una palabra sobre el cuerpo. */
+/* 🚨 Apartados 14 y 41 de la F26, y 34 de la F27 — ni una palabra sobre el cuerpo. */
 ok(!/músculo|grasa|has ganado|has perdido|masa corporal/i.test(resultado_fit26),
-  '🚨 FIT F26 — y ni una palabra sobre su cuerpo (apartados 14 y 41)');
+  '🚨 FIT F27 — y ni una palabra sobre su cuerpo (apartado 34)');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F27 — El comparador (Entrega 4 · 27/45)
+   ══════════════════════════════════════════════════════════════════════════
+   El criterio del apartado 35, con el comparador ya abierto: verlas lado a
+   lado, cambiar al modo deslizar, hacer zoom, cambiar las fotos y volver. */
+console.log('\n── FIT F27 · El comparador ──');
+
+/* 🚨 Apartado 21 — cada lado se entiende SIN depender de dónde está. */
+const lados_fit27 = await page.evaluate(() => [...document.querySelectorAll('img[alt]')]
+  .map((i) => i.getAttribute('alt')).filter((a) => /Foto (anterior|posterior)/.test(a)));
+ok(lados_fit27.length >= 2,
+  `🚨 FIT F27 — cada foto se llama «Foto anterior» o «Foto posterior» (${lados_fit27.length})`);
+
+/* 🚨 Apartado 11 — con proporciones distintas NO se deforma ninguna. */
+const ajuste_fit27 = await page.evaluate(() => [...document.querySelectorAll('img[alt]')]
+  .filter((i) => /Foto (anterior|posterior)/.test(i.getAttribute('alt') || ''))
+  .map((i) => getComputedStyle(i).objectFit));
+ok(ajuste_fit27.length > 0 && ajuste_fit27.every((v) => v === 'contain'),
+  `🚨 FIT F27 — y ninguna se estira: object-fit «contain» medido en el navegador (${ajuste_fit27.join(', ')})`);
+
+/* 🚨 Apartado 4 — intercambiar cambia la POSICIÓN, nunca el rótulo. */
+const ordenAntes_fit27 = await page.evaluate(() => [...document.querySelectorAll('img[alt]')]
+  .map((i) => i.getAttribute('alt')).filter((a) => /Foto (anterior|posterior)/.test(a))[0]);
+ok(await pulsar('Intercambiar lados'), 'FIT F27 — se intercambian los lados');
+await page.waitForTimeout(400);
+const ordenDespues_fit27 = await page.evaluate(() => [...document.querySelectorAll('img[alt]')]
+  .map((i) => i.getAttribute('alt')).filter((a) => /Foto (anterior|posterior)/.test(a))[0]);
+ok(ordenAntes_fit27 !== ordenDespues_fit27,
+  '🚨 FIT F27 — la primera imagen pasa a ser la otra: el intercambio hace algo de verdad');
+ok(/12 SEP 2026/.test(ordenDespues_fit27) && /posterior/.test(ordenDespues_fit27),
+  '🚨 …y la de SEPTIEMBRE sigue llamándose «posterior» estando a la izquierda (apartado 21)');
+ok(await pulsar('Intercambiar lados'), 'FIT F27 — y se deshace');
+await page.waitForTimeout(300);
+
+/* 🚨 Apartado 8 — el divisor existe, se anuncia y se mueve con el teclado. */
+ok(await pulsar('Modo Deslizar'), 'FIT F27 — se cambia al modo deslizar (apartado 9)');
+await page.waitForTimeout(400);
+const divisor_fit27 = await page.evaluate(() => {
+  const s = document.querySelector('[role="slider"]');
+  if (!s) return null;
+  return {
+    valor: Number(s.getAttribute('aria-valuenow')),
+    min: Number(s.getAttribute('aria-valuemin')),
+    max: Number(s.getAttribute('aria-valuemax')),
+    nombre: s.getAttribute('aria-label'),
+    enfocable: s.tabIndex >= 0,
+  };
+});
+ok(!!divisor_fit27, 'FIT F27 — hay un divisor de verdad, anunciado como deslizador');
+ok(divisor_fit27 && divisor_fit27.valor === 50 && divisor_fit27.min === 0 && divisor_fit27.max === 100,
+  '…que empieza en el centro y llega a los dos extremos (apartado 8)');
+ok(divisor_fit27 && divisor_fit27.enfocable && /Divisor/i.test(divisor_fit27.nombre),
+  '🚨 …y se puede enfocar con el teclado, con su nombre (apartado 21)');
+await page.evaluate(() => document.querySelector('[role="slider"]').focus());
+await page.keyboard.press('ArrowRight');
+await page.waitForTimeout(250);
+const movido_fit27 = await page.evaluate(() => Number(document.querySelector('[role="slider"]').getAttribute('aria-valuenow')));
+ok(movido_fit27 > 50, `🚨 FIT F27 — y la flecha derecha lo MUEVE de verdad (${movido_fit27})`);
+await page.keyboard.press('End');
+await page.waitForTimeout(250);
+const alBorde_fit27 = await page.evaluate(() => Number(document.querySelector('[role="slider"]').getAttribute('aria-valuenow')));
+ok(alBorde_fit27 === 100,
+  '🚨 FIT F27 — y llega al borde: sin eso no se puede ver ninguna de las dos entera (apartado 8)');
+
+/* Apartado 19 y 31 — ni compartir, ni exportar, ni una palabra de IA. */
+const textoComp_fit27 = await page.evaluate(() => document.body.innerText);
+ok(!/compartir|exportar|descargar|publicar/i.test(textoComp_fit27),
+  '🚨 FIT F27 — ni compartir, ni exportar, ni publicar (apartados 19, 20 y 31)');
+ok(!/inteligencia artificial|analizar tu cuerpo|% de grasa/i.test(textoComp_fit27),
+  '🚨 FIT F27 — y ni análisis corporal ni IA (apartado 34)');
+
+/* Apartado 10 — el zoom, en lado a lado, y con su vuelta. */
+ok(await pulsar('Modo Lado a lado'), 'FIT F27 — se vuelve a lado a lado');
+await page.waitForTimeout(400);
+ok(await pulsar('Acercar: Foto anterior'), 'FIT F27 — se amplía UNA de las dos fotos (apartado 10)');
+await page.waitForTimeout(400);
+const escalas_fit27 = await page.evaluate(() => [...document.querySelectorAll('img[alt]')]
+  .filter((i) => /Foto (anterior|posterior)/.test(i.getAttribute('alt') || ''))
+  .map((i) => getComputedStyle(i).transform));
+ok(escalas_fit27.filter((t) => t !== 'none' && !/matrix\(1, 0, 0, 1/.test(t)).length === 1,
+  `🚨 FIT F27 — y SOLO esa se amplía: las dos imágenes son independientes (apartado 10)`);
+const vuelta_fit27 = await page.evaluate(() => document.body.innerText);
+ok(/Escala normal/i.test(vuelta_fit27),
+  '⚠️ FIT F27 — con un botón claro para volver, que solo aparece cuando hay zoom (regla 8)');
+ok(await pulsar('Escala normal'), 'FIT F27 — y se vuelve a escala normal');
+await page.waitForTimeout(400);
+
+/* Apartado 7 — el ancho: dos mitades en un iPhone de 375 px sin arrastrar. */
+const ancho_fit27 = await page.evaluate(() => ({
+  ancho: document.documentElement.scrollWidth, ventana: window.innerWidth,
+}));
+ok(ancho_fit27.ancho <= ancho_fit27.ventana + 1,
+  `⚠️ FIT F27 — el comparador no arrastra la pantalla de lado (${ancho_fit27.ancho} px)`);
+
+/* Apartado 17 — cambiar una foto SIN salir del flujo. Y de paso el caso 14 del
+   apartado 32: el escenario tiene DOS fotos del 12 de septiembre, así que al
+   poner la otra como final quedan **las dos del mismo día**. */
+ok(await elegir_fit26('Final', '12 SEP 2026'), 'FIT F27 — se cambia la foto final sin salir (apartado 17)');
+await page.waitForTimeout(400);
+const cambiada_fit27 = await esperarTexto(/mismo día/i);
+ok(/12 SEP 2026/.test(cambiada_fit27), 'FIT F27 — y la comparación se rehace con la nueva');
+ok(/mismo día/i.test(cambiada_fit27) && !/0 días/.test(cambiada_fit27),
+  '🚨 FIT F27 — con dos del mismo día dice «El mismo día», no «0 días de diferencia»');
+
+/* Apartado 35 — volver a la galería. */
+ok(await pulsar('Volver a la galería'), 'FIT F27 — se vuelve a la galería (apartado 35)');
+const galeriaVuelta_fit27 = await esperarTexto(/Añadir progreso/i);
+ok(/Añadir progreso/i.test(galeriaVuelta_fit27) && !/Intercambiar lados/i.test(galeriaVuelta_fit27),
+  '🚨 FIT F27 — y el comparador se cierra entero: la galería vuelve a ser la galería');
 
 /* Apartado 28 — el ancho en el iPhone pequeño. */
 const anchoFotos_fit26 = await page.evaluate(() => ({

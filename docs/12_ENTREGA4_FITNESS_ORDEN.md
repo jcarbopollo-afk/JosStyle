@@ -47,7 +47,7 @@ ordena es **el trabajo**, no el documento.
 | **F24** ✅ **v3.106.0** | Priorización inteligente de clasificación | 17422–18069 | 648 |
 | **F25** ✅ **v3.107.0** | Resumen inteligente de rangos | 16772–17421 | 650 |
 | **F26** ✅ **v3.108.0** | Sistema de progreso físico mediante fotos | 16079–16771 | 693 |
-| **F27** | Comparador avanzado de progreso físico | 15567–16078 | 512 |
+| **F27** ✅ **v3.109.0** | Comparador avanzado de progreso físico | 15567–16078 | 512 |
 | **F28** | Integración completa del progreso físico | 14875–15566 | 692 |
 | **F29** | Análisis avanzado de rendimiento por ejercicio | 14154–14874 | 721 |
 | **F30** | Sistema avanzado de objetivos fitness | 13244–14153 | 910 |

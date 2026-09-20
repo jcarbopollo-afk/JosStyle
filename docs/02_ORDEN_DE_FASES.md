@@ -34,7 +34,7 @@ para convertir Entrenamiento en una aplicación de fitness completa, con su espe
 
 | Track | Nombre | Origen | Numeración | Estado |
 |---|---|---|---|---|
-| **FIT** | Entrega 4 — Fitness | Documento propio de Josué, 33 251 líneas | Fases 1–45 | 🟡 **EN MARCHA** — **26 de 45 hechas** (v3.83.0 → v3.108.0). 🏁 El sistema de rangos entero está cerrado, F15 a F25. Y la **F26** abrió el bloque de progreso físico: las fotos son `saludFotos` desde la Fase 3, con su bucket ya creado — no hizo falta SQL de Josué. **La siguiente es la F27 (comparador avanzado)**, y el estado fase a fase está en `docs/12_ENTREGA4_FITNESS_ORDEN.md` |
+| **FIT** | Entrega 4 — Fitness | Documento propio de Josué, 33 251 líneas | Fases 1–45 | 🟡 **EN MARCHA** — **27 de 45 hechas** (v3.83.0 → v3.109.0). 🏁 El sistema de rangos entero está cerrado, F15 a F25. La **F26** abrió el bloque de progreso físico —las fotos son `saludFotos` desde la Fase 3, con su bucket ya creado: no hizo falta SQL de Josué— y la **F27** le puso el comparador, **ampliando la comparación de la F26 en vez de escribir una segunda**. **La siguiente es la F28 (integración completa del progreso físico)**, y el estado fase a fase está en `docs/12_ENTREGA4_FITNESS_ORDEN.md` |
 
 ⚠️ **El documento va del revés y él lo avisó:** la F45 abre el archivo y la F1 lo cierra. **Se
 construye de la F1 a la F45**, en orden.

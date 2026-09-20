@@ -1,5 +1,89 @@
 # CHANGELOG.md
 
+## v3.109.0 — FIT F27/45: el comparador de progreso físico
+
+Progreso → Fotos → **Comparar** pasa a ser una pantalla entera: dos momentos elegidos por
+fecha, lado a lado o con un divisor que se arrastra, con zoom independiente en cada foto,
+alineación y la posibilidad de cambiarlas sin salir.
+
+### 🚨 La comparación ya existía, y la hizo la F26 — así que se amplía, no se reescribe
+
+El contexto de la fase lo dice con todas las letras: *«Ya existe el sistema de Progreso
+mediante fotografías de la Fase 26. Ahora vamos a **mejorar específicamente** la
+experiencia de comparación»*. `compararFotos`, `opcionesParaComparar`, `diasEntreFechas`,
+`textoDeDistancia` y `puedeComparar` **se importan tal cual**, y `YA_LO_HIZO_LA_F26`
+guarda **las funciones**, no sus nombres: renombrar una rompe la compilación. Una segunda
+`compararFotos` acabaría decidiendo el ANTES de otra manera que la primera.
+
+### 🔓 Y el bloque de comparación de dentro de la galería se retira, no se queda al lado
+
+La F26 pintaba una comparación **dentro** de la pestaña de Fotos. Existía porque no había
+pantalla de comparación —exactamente como la confirmación de «Terminar» antes de que la
+FIT F8 construyera el resumen—, y con el comparador hecho dejar las dos sería **la misma
+función por dos puertas**, siendo la de dentro la peor: sin modos, sin zoom y sin
+alineación. Se retira con su motivo escrito, y las comprobaciones del recorrido que la
+vigilaban **se dan la vuelta en vez de borrarse** (E3 F44, SU F1 → SU F2).
+
+### 🚨 Al intercambiar los lados, «Antes» y «Después» viajan con la foto
+
+El apartado 4 pide poder intercambiarlas a mano y el 21 pide que el comparador *«pueda
+entenderse sin depender exclusivamente de la posición»*. Las dos cosas solo caben juntas si
+el rótulo **no se queda pegado al hueco**: al invertir, la de junio se va a la derecha
+llevándose su «Antes». Si el rótulo se quedara en su sitio, invertir diría que la foto de
+junio es posterior a la de septiembre.
+
+### 🚨 El swipe no existe en el modo deslizar
+
+Apartado 22: *«los gestos no deben interferir con scroll, botones, slider»*. Aquí el choque
+es directo — en el modo deslizar, arrastrar en horizontal **es** el divisor—, así que el
+gesto de cambiar de foto solo vive en lado a lado, y con el zoom puesto arrastrar pasa a
+ser desplazar la imagen. Es la lección de la FIT F9 (*el gesto vive solo donde le toca*),
+y `gestosActivos()` lo decide en un solo sitio.
+
+### 🚨 Sin etiqueta de orientación no se afirma NI que coinciden NI que no
+
+El apartado 14 quiere *«Frontal · Antes / Después»* con el mismo tag y *«Las fotografías
+tienen encuadres diferentes»* con tags distintos. Pero el apartado 13 dice *«Si no existe:
+no inventarlo»*, y decir que los encuadres difieren **sin saberlo** es inventarlo en
+negativo. Sin las dos etiquetas, esa línea no se pinta. ⚠️ Y las orientaciones son **tres**
+—frontal, lateral y espalda—: `TAGS_FOTO` tiene cinco, porque *pose* y *relajado* no dicen
+desde dónde está hecha la foto. El subconjunto se declara **por sus ids**.
+
+### 🐛 «diferencia» contiene «ia», y el barrido se puso rojo con el código bien
+
+El barrido de palabras prohibidas buscaba `'ia '` como subcadena para vigilar que esta
+fase no mencione la IA, y *«3 meses de **diferencia** »* la contiene. **Es «experto»
+contiene «xp» por segunda vez** (FIT F1). Ahora va con límite de palabra, y hay dos
+comprobaciones que demuestran que el arreglo **no tapa nada**: una busca una palabra que
+sí está, y otra deja escrito que «diferencia» sigue en los textos.
+
+### 🐛 Y una comprobación mía afirmaba lo contrario de lo que había que afirmar
+
+Exigía que el comparador firmara sus URLs con `useUrlsFirmadas`. Firmarlas otra vez sería
+pedir a Supabase **las dos fotos que la galería ya tiene cargadas** — justo la carga
+innecesaria que prohíbe el apartado 30. Llegan como prop, y lo que se comprueba ahora es
+que el comparador **no** firme ninguna.
+
+### ⚠️ Lo que no se construye, y por qué
+
+**Miniaturas** (apartado 30): la F26 sube **una sola** versión, ya reducida a 1600 px de
+lado, y no existe un segundo tamaño — decir que se usan miniaturas sería decir que existe
+algo que no existe (regla 8). **Pinch para ampliar** (apartado 22, *«si la implementación
+existente lo permite»*): no lo permite, porque el `maximum-scale=1` del viewport bloquea el
+pellizco en todo JosStyle, que es la **C-32** que tiene que decidir Josué; el zoom va por
+botones, que además es lo que pide el apartado 10. **Compartir** (19) y **exportar como
+imagen** (20) quedan fuera por el propio enunciado. Y **la comparación no se guarda**
+(18 y 29): es una vista derivada de dos fotos, sin entidad, sin clave y sin normalizador.
+
+### Archivos
+
+`src/lib/comparadorFotos.js` y `src/components/comparadorFotos.jsx` (nuevos),
+`src/components/fotosProgreso.jsx` (la galería abre el comparador y retira su bloque),
+`scripts/test-comparador-fotos.mjs` (nuevo), `scripts/smoke-vistas.jsx`,
+`scripts/test-app-real.mjs` y `scripts/verificar.sh`.
+
+---
+
 ## v3.108.0 — FIT F26/45: el progreso físico en fotos
 
 Fitness → Progreso → **Fotos** pasa a ser un diario visual de verdad: varias fotos de

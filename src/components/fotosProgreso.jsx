@@ -19,8 +19,13 @@ import { Card, Field, TextInput, PrimaryButton, GhostBtn, BotonBorrarDefinitivo,
 import { getSignedPhotoUrl } from '../lib/supabase';
 import {
   TAGS_FOTO, tagFoto, VACIO_FOTOS, ERRORES_FOTO, FOTOS_POR_TANDA, LADO_MAXIMO, CALIDAD_JPEG,
-  dimensionesOptimizadas, etiquetaDeDia, sesionDeFoto, vecinasDeFoto, compararFotos,
+  dimensionesOptimizadas, etiquetaDeDia, sesionDeFoto, vecinasDeFoto,
 } from '../lib/fotosProgreso';
+/* 🚨 **UNA SOLA DIRECCIÓN: la galería llama al comparador** (FIT F27). Él no
+   importa nada de este archivo, y por eso no hay ciclo (la lección de la
+   FIT F24 con el hub de clasificación). */
+import { ProgressComparison, useComparador } from './comparadorFotos';
+import { pantallaComparador, seleccionDesdeFoto, ENTRADAS_COMPARADOR } from '../lib/comparadorFotos';
 
 /* ═══ Las URLs firmadas, por tandas ════════════════════════════════════════
    🚨 Apartado 26 — *"No cargar todas las imágenes de máxima resolución
@@ -287,7 +292,7 @@ export function ProgressPhotoGrid({ dias = [], urls = {}, fallidas = {}, accent,
 /* ═══ Apartados 11 y 12 · El visor ═════════════════════════════════════════
    🚨 `createPortal` (regla 3 del proyecto): un `fixed inset-0` dentro de un
    contenedor con transformaciones se ancla al contenedor, no al iPhone. */
-export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitness, onCerrar, onIr, onBorrar, onSesion = null }) {
+export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitness, onCerrar, onIr, onBorrar, onSesion = null, onComparar = null }) {
   if (!foto || typeof document === 'undefined') return null;
   const sesion = sesionDeFoto(foto, fitness);
   return createPortal(
@@ -359,6 +364,22 @@ export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitne
             <ChevronLeft size={18} style={{ color: '#fff' }} />
           </button>
 
+          {/* 🚨 FIT F27, apartado 2 — *"También debe poder iniciarse desde el
+              detalle de una fotografía"*. Ésta se queda puesta en el lado que le
+              toca **por su fecha**, y solo falta elegir la otra.
+              ⚠️ Y no se ofrece si es la única que hay: un botón que llevaría a
+              «necesitas al menos dos fotos» es un botón muerto (regla 8). */}
+          {onComparar && vecinas.total > 1 && (
+            <button
+              onClick={() => onComparar(foto.id)}
+              aria-label={`${ENTRADAS_COMPARADOR[1].etiqueta}, desde el ${etiquetaDeDia(foto.fecha)}`}
+              className="rounded-full px-4 py-2.5 text-xs font-semibold toque-44"
+              style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }}
+            >
+              {ENTRADAS_COMPARADOR[1].etiqueta}
+            </button>
+          )}
+
           {/* Apartado 22 — la foto se borra de verdad de Storage y no vuelve, así
               que el aviso lo dice: no se puede deshacer. */}
           <BotonBorrarDefinitivo
@@ -386,71 +407,22 @@ export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitne
   );
 }
 
-/* ═══ Apartado 17 · Elegir qué se compara ══════════════════════════════════ */
-export function ProgressPhotoDateSelector({ opciones = [], elegida, urls = {}, etiqueta, onElegir }) {
-  return (
-    <div>
-      <p className="text-[11px] font-semibold mb-1.5" style={{ color: COLORS.textMuted }}>{etiqueta}</p>
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {opciones.map((o) => {
-          const puesta = o.id === elegida;
-          return (
-            <button
-              key={o.id}
-              onClick={() => onElegir(o.id)}
-              aria-pressed={puesta}
-              aria-label={`${etiqueta}: ${o.etiqueta}`}
-              className="shrink-0 rounded-xl overflow-hidden toque-44"
-              style={{ border: `2px solid ${puesta ? COLORS.text : COLORS.border}`, width: 64 }}
-            >
-              {urls[o.id]
-                ? <img src={urls[o.id]} alt="" className="w-16 h-16 object-cover" />
-                : <div className="w-16 h-16 esqueleto" />}
-              <span className="block text-[9px] py-1" style={{ color: COLORS.textMuted }}>{o.etiqueta}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+/* 🔓 **AQUÍ VIVÍAN `ProgressPhotoDateSelector` Y `ProgressPhotoComparison`, Y
+   LOS DOS SE VAN CON LA FIT F27** — no se borran por gusto: se van con su
+   motivo, que es el precedente de la FIT F8 (*una confirmación que existía por
+   falta de pantalla se retira con la pantalla*).
 
-/* ═══ Apartados 13, 14 y 16 · La comparación ═══════════════════════════════ */
-export function ProgressPhotoComparison({ comparacion, urls = {}, fallidas = {}, accent }) {
-  if (!comparacion || !comparacion.hay) return null;
-  const lado = (foto, rotulo) => (
-    <div className="flex-1 min-w-0">
-      <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: COLORS.textMuted }}>{rotulo}</p>
-      <div className="rounded-xl overflow-hidden" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
-        {fallidas[foto.id] ? (
-          <div className="w-full aspect-[3/4] flex items-center justify-center p-2">
-            <p className="text-[10px] text-center" style={{ color: COLORS.textMuted }}>{ERRORES_FOTO.leer.titulo}</p>
-          </div>
-        ) : urls[foto.id] ? (
-          /* 🚨 Apartado 15 — `object-contain`: si tienen proporciones distintas
-             se adaptan, **nunca se estira una para que encaje**. */
-          <img src={urls[foto.id]} alt={`${rotulo}: ${etiquetaDeDia(foto.fecha)}`} className="w-full aspect-[3/4] object-contain" />
-        ) : (
-          <div className="w-full aspect-[3/4] esqueleto" />
-        )}
-      </div>
-      <p className="text-xs font-semibold mt-1.5" style={{ color: COLORS.text }}>{etiquetaDeDia(foto.fecha)}</p>
-      {foto.nota && <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{foto.nota}</p>}
-    </div>
-  );
-  return (
-    <Card>
-      {/* Apartado 16 — lado a lado; en una pantalla estrecha caben igual porque
-          cada lado es la mitad y la imagen se adapta sin deformarse. */}
-      <div className="flex gap-3">
-        {lado(comparacion.antes, 'Antes')}
-        {lado(comparacion.despues, 'Después')}
-      </div>
-      {/* 🚨 Apartado 14 — lo ÚNICO que se afirma es el tiempo entre las dos. */}
-      <p className="text-[11px] text-center mt-3" style={{ color: COLORS.textMuted }}>{comparacion.texto}</p>
-    </Card>
-  );
-}
+   La comparación que esta fase pintaba **dentro** de la galería existía porque
+   no había pantalla de comparar. La F27 la construye —con modos, zoom,
+   alineación y encuadre—, así que dejar las dos sería **la misma función por
+   dos puertas**, y la de dentro es la peor. Lo que se ofrece desde aquí es el
+   comparador entero.
+
+   Y la tira de fechas **se muda** a `comparadorFotos.jsx` (E3 F17: *se muda, no
+   se duplica*), porque al retirarse este bloque su único usuario pasa a ser el
+   comparador — e importarla de vuelta desde allí sería un ciclo entre los dos
+   archivos (FIT F24). Una sola dirección: la galería llama al comparador. */
+
 
 /* ═══ Apartado 25 · Cuando todavía no se puede comparar ════════════════════ */
 export function ProgressPhotoCompareHint({ aviso }) {
@@ -478,13 +450,18 @@ export function ProgressPhotos({
   const [error, setError] = useState(null);
   const [abierta, setAbierta] = useState(null);
   const [comparando, setComparando] = useState(false);
-  const [a, setA] = useState(null);
-  const [b, setB] = useState(null);
+  /* ⚠️ Todo el estado del comparador vive en su propio enganche (FIT F27,
+     apartado 28) y **no se guarda**: al cerrar, desaparece. */
+  const comparador = useComparador(pantalla.orden);
 
   const { urls, fallidas, verMas, hayMas } = useUrlsFirmadas(pantalla.orden);
   const foto = abierta ? pantalla.orden.find((f) => f.id === abierta) || null : null;
   const vecinas = foto ? vecinasDeFoto(pantalla.orden, foto.id) : { anterior: null, siguiente: null, posicion: 0, total: 0 };
-  const comparacion = a && b ? compararFotos(pantalla.orden, a, b) : null;
+  /* 🚨 Y las URL que necesita el comparador **son las que ya están firmadas**:
+     volver a pedirlas sería la carga innecesaria del apartado 30. */
+  const pantallaComparar = comparando
+    ? pantallaComparador(pantalla.orden, { ...comparador.estado, fallidas })
+    : null;
 
   const guardar = async ({ files, fecha, nota, tags }) => {
     if (!onAddFoto) return;
@@ -506,10 +483,11 @@ export function ProgressPhotos({
     }
   };
 
+  /* ⚠️ Borrar NO limpia la selección del comparador a mano: si una de las dos
+     elegidas deja de existir, `pantallaComparador` lo dice y ofrece otra
+     (FIT F27, apartado 24). Limpiarla aquí escondería el aviso. */
   const borrar = async (id, path) => {
     setAbierta(null);
-    if (a === id) setA(null);
-    if (b === id) setB(null);
     if (onDeleteFoto) await onDeleteFoto(id, path);
   };
 
@@ -533,10 +511,12 @@ export function ProgressPhotos({
         <div className="flex flex-col gap-2">
           <PrimaryButton onClick={() => setAnadiendo(true)} accent={accent} icon={Camera}>+ Añadir progreso</PrimaryButton>
           {/* Apartado 25 — la sección de comparar existe siempre: o se usa, o
-              dice qué falta. Nunca desaparece. */}
+              dice qué falta. Nunca desaparece.
+              🔓 Y desde la FIT F27 abre **el comparador entero** (su apartado 2:
+              *"Desde la galería: botón «Comparar»"*), no un bloque aquí dentro. */}
           {pantalla.comparacion.disponible ? (
-            <GhostBtn icon={GitCompareArrows} onClick={() => setComparando((v) => !v)}>
-              {comparando ? 'Cerrar la comparación' : 'Comparar progreso'}
+            <GhostBtn icon={GitCompareArrows} onClick={() => setComparando(true)}>
+              Comparar progreso
             </GhostBtn>
           ) : null}
         </div>
@@ -546,21 +526,22 @@ export function ProgressPhotos({
         <ProgressPhotoCompareHint aviso={pantalla.comparacion.aviso} />
       )}
 
-      {comparando && pantalla.comparacion.disponible && (
-        <Card>
-          <p className="text-sm font-bold mb-3" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Comparar progreso</p>
-          <div className="space-y-3">
-            <ProgressPhotoDateSelector opciones={pantalla.comparacion.opciones} elegida={a} urls={urls} etiqueta="Primera foto" onElegir={setA} />
-            <ProgressPhotoDateSelector opciones={pantalla.comparacion.opciones} elegida={b} urls={urls} etiqueta="Segunda foto" onElegir={setB} />
-          </div>
-          {comparacion && !comparacion.hay && comparacion.motivo === 'misma' && (
-            <p className="text-[11px] mt-3" style={{ color: COLORS.textMuted }}>Elige dos fotos distintas.</p>
-          )}
-        </Card>
-      )}
-
-      {comparando && comparacion && comparacion.hay && (
-        <ProgressPhotoComparison comparacion={comparacion} urls={urls} fallidas={fallidas} accent={accent} />
+      {/* 🚨 FIT F27 — el comparador, a pantalla completa y por portal. */}
+      {pantallaComparar && (
+        <ProgressComparison
+          pantalla={pantallaComparar}
+          urls={urls}
+          accent={accent}
+          onElegir={comparador.elegir}
+          onModo={comparador.setModo}
+          onAlineacion={comparador.setAlineacion}
+          onInvertir={comparador.invertir}
+          onSlider={comparador.setSlider}
+          onZoom={comparador.cambiarZoom}
+          onMover={comparador.mover}
+          onCerrar={() => setComparando(false)}
+          onAnadir={onAddFoto ? () => { setComparando(false); setAnadiendo(true); } : null}
+        />
       )}
 
       {pantalla.dias.length > 0 && (
@@ -581,6 +562,7 @@ export function ProgressPhotos({
         onIr={setAbierta}
         onBorrar={borrar}
         onSesion={onSesion}
+        onComparar={(id) => { comparador.desdeFoto(id); setAbierta(null); setComparando(true); }}
       />
     </div>
   );
