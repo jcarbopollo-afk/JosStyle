@@ -513,6 +513,21 @@ hechas. Lo que dejaron, y que vale para las 19 que quedan:
   la sesión bloqueada, la pestaña se queda **como la dejó la F12**. Y la decisión se lee **de un
   solo sitio** (`fotosDesbloqueadas`): dos criterios sobre la misma lista acaban diciendo cosas
   distintas.
+- 🐛 **Y LA MISMA BOMBA, PERO POR LA HORA: UNA CLASE EN CURSO PISA EL ESCENARIO** (FIT F26, y son
+  **cuatro rojos de GE F2 que no eran de esta fase**). El motor temporal del horario **guarda su
+  estado mientras una clase suena**, y ese guardado de la página que se va pisa el escenario que la
+  prueba acaba de dejar: la pantalla se queda con las clases del caso ANTERIOR —que sí tenía
+  choque— y el caso C) se pone rojo. La doble carga de `abrirHorario_ge2` lo tapaba para la ventana
+  de las 09:00; **a las 08:35, con las clases de las 08:00 y las 08:30 sonando a la vez, volvió a
+  caer**. ⚠️ Se atacó **la raíz**: si ninguna clase está en curso no hay nada que guardar, así que la
+  franja del escenario se elige entre dos que **no contienen la hora actual** — y hay una
+  comprobación que recorre **las 24 horas** para demostrarlo. **Lo que se mide es si se solapan, no
+  a qué hora.**
+- 🐛 **Y ANTES DE TOCAR NADA, SE REPRODUJO EN NODE** (FIT F26): `conflictosDelDia` con el horario
+  archivado devuelve **0 choques** y `resolverDia` no saca la clase del archivado. **El motor estaba
+  bien**, así que el rojo era de la pantalla —la carrera—, no del dato. Cuatro minutos de sonda
+  ahorraron media hora de recorrido y evitaron «arreglar» algo que funcionaba.
+
 - 🐛 **Y LA BOMBA DE RELOJERÍA POR FECHA, OTRA VEZ — AHORA EN EL BANCO DE RENDERIZADO** (FIT F26, y
   es la FIT F24 por segunda vez). `TarjetaProximo` salió con **cuatro renders vacíos** el primer
   **domingo** que se ejecutó: el escenario activa un plan «hoy», y como los diecisiete planes tienen

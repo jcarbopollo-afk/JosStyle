@@ -5163,13 +5163,40 @@ ok(!desborda, '⚠️ …sin desbordar a lo ancho (y aquí saltó el desbordamie
 await page.setViewportSize({ width: 1280, height: 900 });
 const hoyISO_ge2 = new Date().toLocaleDateString('sv-SE');
 const diaHoy_ge2 = ((new Date().getDay() + 6) % 7) + 1;
+/* 🚨 **LA FRANJA DEL ESCENARIO SE ELIGE PARA QUE NINGUNA CLASE ESTÉ EN CURSO**
+   (FIT F26, y es la carrera de abajo atacada por la raíz). El motor temporal del
+   horario **guarda su estado mientras una clase suena**, y ese guardado de la
+   página que se va pisa el escenario recién puesto: la pantalla se queda con las
+   clases del caso ANTERIOR y las comprobaciones se ponen rojas **a ciertas horas
+   del día**. La doble carga de `abrirHorario_ge2` lo tapaba para la ventana de
+   las 09:00; a las 08:35 —con las clases de las 08:00 y las 08:30 sonando a la
+   vez— volvió a caer, y cayeron cuatro del caso C).
+   ⚠️ **Si ninguna clase está en curso, no hay nada que guardar y no hay carrera**,
+   así que la franja se elige entre dos que no contienen la hora actual. Las horas
+   concretas dan igual: lo que se mide es si se solapan, no cuándo. */
+const FRANJAS_GE2 = [
+  { base: 3, fila: ['03:00', '05:00'] },
+  { base: 15, fila: ['15:00', '17:00'] },
+];
+const franjaGe2 = (() => {
+  const ahora = new Date().getHours();
+  return FRANJAS_GE2.find((f) => ahora < f.base - 1 || ahora > f.base + 3) || FRANJAS_GE2[1];
+})();
+/* «08:00» pasa a ser la base, «09:00» una hora más tarde, y así: se conserva
+   exactamente la misma forma del escenario, movida de sitio. */
+const horaGe2 = (etiqueta) => {
+  const [h, m] = etiqueta.split(':').map(Number);
+  return `${String(franjaGe2.base + (h - 8)).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
 const horarioGe2 = (id, nombre, extra = {}) => ({
   id, nombre, activo: true, archivado: false, creadoEn: hoyISO_ge2, ...extra,
   columnas: [{ id: `c_${id}`, horarioId: id, nombre: 'Hoy', dia: diaHoy_ge2, posicion: 0, visible: true }],
-  filas: [{ id: `f_${id}`, tipo: 'hora', inicio: '08:00', fin: '10:00', posicion: 0 }],
+  filas: [{ id: `f_${id}`, tipo: 'hora', inicio: franjaGe2.fila[0], fin: franjaGe2.fila[1], posicion: 0 }],
 });
 const claseGe2 = (id, horarioId, inicio, fin, titulo) => ({
-  id, horarioId, columnaId: `c_${horarioId}`, filaId: `f_${horarioId}`, inicio, fin, titulo,
+  id, horarioId, columnaId: `c_${horarioId}`, filaId: `f_${horarioId}`,
+  inicio: horaGe2(inicio), fin: horaGe2(fin), titulo,
 });
 const baseGe2 = (horarios, bloques) => ({
   horarios, bloques, actividades: [], excepciones: [], confirmaciones: [], avisos: [], mochila: [],
