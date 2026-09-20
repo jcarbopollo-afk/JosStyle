@@ -27,6 +27,9 @@ import { DetalleSesionHistorial } from './HistorialView';
 /* FIT F26 — el diario visual de fotos, que la F12 dejó esperando. */
 import { ProgressPhotos } from '../components/fotosProgreso';
 import { pantallaDeFotos } from '../lib/fotosProgreso';
+/* 🔓 FIT F28 — el centro de seguimiento, y las dos etiquetas que se mudaron
+   con él para que no hubiera un ciclo entre la vista y sus vistas previas. */
+import { ProgressOverview, EtiquetaEstado, EstadoMuscular } from '../components/resumenProgreso';
 import { ejercicioPorId, nombreCompleto } from '../lib/ejercicios';
 /* 🔓 FIT F14 — los objetivos de rendimiento. */
 import {
@@ -79,21 +82,11 @@ function Chips({ opciones, valor, onCambiar, accent, etiqueta }) {
   );
 }
 
-/* ── El estado, con símbolo y palabra (apartados 15 y 34) ───────────────── */
-export function EtiquetaEstado({ estado, nombre, simbolo, accent }) {
-  const destacado = estado === 'mejora';
-  return (
-    <span
-      className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg"
-      style={{
-        background: destacado ? hexToRgba(accent, 0.14) : hexToRgba(COLORS.border, 0.45),
-        color: destacado ? accent : COLORS.textMuted,
-      }}
-    >
-      <span aria-hidden="true">{simbolo}</span>{nombre}
-    </span>
-  );
-}
+/* ⚠️ `EtiquetaEstado` y `EstadoMuscular` se mudaron a
+   `src/components/resumenProgreso.jsx` en la FIT F28: las vistas previas del
+   resumen las necesitan y esta vista importa esas vistas previas, así que
+   dejarlas aquí habría sido un ciclo entre los dos archivos (FIT F24 y F27).
+   Una sola dirección, y ni una copia. */
 
 /* ── La tarjeta de un ejercicio (apartado 7) ───────────────────────────── */
 export function TarjetaProgreso({ tarjeta, accent, onAbrir }) {
@@ -419,17 +412,9 @@ export function DetalleProgreso({ detalle, accent, rango, onRango, onVolver, onV
    ⚠️ Como el resto de Progreso, no calcula nada: el reparto por porcentajes y el
    voto salen de `progresoMuscular.js`, que usa la F11 y la F12. */
 
-/* ── El estado de un músculo, con símbolo y palabra (apartados 15 y 21) ── */
-export function EstadoMuscular({ estado, nombre, simbolo, accent, pocaInformacion = false }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 flex-wrap">
-      <EtiquetaEstado estado={estado} nombre={nombre} simbolo={simbolo} accent={accent} />
-      {pocaInformacion && (
-        <span className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>Poca información</span>
-      )}
-    </span>
-  );
-}
+/* ── El estado de un músculo, con símbolo y palabra (apartados 15 y 21) ──
+   ⚠️ `EstadoMuscular` vive en `src/components/resumenProgreso.jsx` desde la
+   FIT F28, por el mismo motivo que `EtiquetaEstado`. */
 
 /* ── La barra de un músculo: cuántos de los que tienen datos mejoran ────── */
 function BarraMuscular({ fraccion, accent, etiqueta }) {
@@ -862,6 +847,11 @@ export function ObjetivosProgreso({ resultado, filtro, onFiltro, grupo, onGrupo,
 export default function ProgresoView({
   fitness, fotos = [], accent, onEntrenar = null, onIrAFotos = null, resumenFotos = null,
   onGuardarFitness = null, onEliminarObjetivo = null,
+  /* 🔓 FIT F28 — el rango y el historial viven fuera de esta pantalla, así que
+     el centro de seguimiento los abre desde Fitness (apartado 19). Y `perfil`
+     es el del usuario: el motor de rangos lo necesita para las marcas de peso
+     corporal, y se **lee**, nunca se copia (EH F4). */
+  perfil = null, onIrAHistorial = null, onIrARangos = null,
   /* FIT F26 — las fotos de progreso, que son las de Salud. Sin estas dos la
      pestaña se queda como la dejó la F12: cuenta y lleva allí. */
   onAddFoto = null, onDeleteFoto = null,
@@ -876,6 +866,9 @@ export default function ProgresoView({
   focoEjercicio = null, onFocoEjercicioConsumido = null,
 }) {
   const [seccion, setSeccion] = useState('resumen');
+  /* FIT F28, apartado 7 — las dos fotos que llegan ya elegidas desde el
+     resumen. ⚠️ Estado de pantalla, nunca un dato: al salir, desaparece. */
+  const [comparacionInicial, setComparacionInicial] = useState(null);
   /* FIT F26 — una sola llamada, como el resto de la pantalla. ⚠️ Solo hay
      galería si se puede escribir: de lo contrario, `null` y se conserva el
      acceso a Salud que dejó la F12 (regla 8). */
@@ -1101,8 +1094,33 @@ export default function ProgresoView({
 
       <Chips opciones={SECCIONES_PROGRESO} valor={seccion} onCambiar={setSeccion} accent={accent} etiqueta="Secciones de Progreso" />
 
+      {/* 🔓 **FIT F28 — EL RESUMEN PASA A SER EL CENTRO DE SEGUIMIENTO.**
+          Junta los seis sistemas —entrenamientos, ejercicios, músculos, rangos,
+          objetivos y fotos— **sin mezclarlos**: cada bloque lee de su motor y
+          lleva a su sección (apartados 10 y 19). Lo que había aquí, las cifras
+          de la F12, sigue vivo en la pestaña de Ejercicios, que es su sitio. */}
       {seccion === 'resumen' && (
-        <ResumenProgreso resumen={resumen} accent={accent} onEntrenar={onEntrenar} onAbrir={setAbierto} />
+        <ProgressOverview
+          fitness={f}
+          fotos={fotos}
+          propios={propios}
+          perfil={perfil}
+          accent={accent}
+          hoy={hoy}
+          onIrASeccion={setSeccion}
+          onAbrirEjercicio={(id) => { setSeccion('ejercicios'); setAbierto(id); }}
+          onAbrirMusculo={(id) => { setSeccion('musculos'); setSubgrupo(null); setMusculo(id); }}
+          onAbrirObjetivo={(id) => { setSeccion('objetivos'); setObjetivoAbierto(id); }}
+          onVerSesion={(id) => setVista({ tipo: 'sesion', id })}
+          onIrAHistorial={onIrAHistorial}
+          onIrARangos={onIrARangos}
+          /* Apartado 7 — la comparación rápida abre el comparador de la F27 con
+             las dos fotos ya elegidas; no hay una segunda pantalla (apartado 19). */
+          onComparar={pantallaFotos && fotosALaVista ? (c) => { setSeccion('fotos'); setComparacionInicial({ antesId: c.antesId, despuesId: c.despuesId }); } : null}
+          onEntrenar={onEntrenar}
+          onAnadirFoto={pantallaFotos && fotosALaVista ? () => setSeccion('fotos') : null}
+          onCrearObjetivo={onGuardarFitness ? () => { setSeccion('objetivos'); setFormulario({ modo: 'crear', exerciseId: null }); } : null}
+        />
       )}
 
       {seccion === 'objetivos' && (
@@ -1204,6 +1222,8 @@ export default function ProgresoView({
               hoy={todayISO()}
               onAddFoto={onAddFoto}
               onDeleteFoto={onDeleteFoto}
+              comparacionInicial={comparacionInicial}
+              onComparacionConsumida={() => setComparacionInicial(null)}
             />
           ) : (
             /* 🚨 La MISMA puerta que Salud (C-35), con su llave. */
@@ -1220,6 +1240,8 @@ export default function ProgresoView({
                 hoy={todayISO()}
                 onAddFoto={onAddFoto}
                 onDeleteFoto={onDeleteFoto}
+                comparacionInicial={comparacionInicial}
+                onComparacionConsumida={() => setComparacionInicial(null)}
               />
             </PinGate>
           )

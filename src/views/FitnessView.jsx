@@ -210,7 +210,7 @@ export function AreaRangos({ fitness = null, perfil = null, accent, onEntrenar =
    Fotos (su apartado 2). ⚠️ **Las fotos no se pierden**: siguen contándose de
    Salud física y llevando allí, ahora en su propia pestaña, porque la F12 pide
    dejar la estructura lista para el sistema de fotos sin construirlo. */
-export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoEjercicio = null, onFocoEjercicioConsumido = null, onAddFoto = null, onDeleteFoto = null, protegidoFotos = false, pinHash = null, pinSalt = null, desbloqueadoFotos = false, onDesbloquearFotos = null, onOlvidoPin = null }) {
+export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoEjercicio = null, onFocoEjercicioConsumido = null, onAddFoto = null, onDeleteFoto = null, protegidoFotos = false, pinHash = null, pinSalt = null, desbloqueadoFotos = false, onDesbloquearFotos = null, onOlvidoPin = null, perfil = null, onIrAHistorial = null, onIrARangos = null }) {
   const resumen = resumenProgreso(fotos);
   return (
     <ProgresoView
@@ -240,6 +240,11 @@ export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEnt
       /* FIT F18 — el ejercicio que llega desde el detalle muscular de Rangos. */
       focoEjercicio={focoEjercicio}
       onFocoEjercicioConsumido={onFocoEjercicioConsumido}
+      /* 🔓 FIT F28 — el centro de seguimiento lleva a los dos sitios que viven
+         fuera de esta pantalla: el historial y los rangos (apartado 19). */
+      perfil={perfil}
+      onIrAHistorial={onIrAHistorial}
+      onIrARangos={onIrARangos}
     />
   );
 }
@@ -715,6 +720,11 @@ export default function FitnessView({
           fotos={fotos}
           accent={accent}
           onIr={onIr}
+          /* FIT F28 — el motor de rangos necesita el perfil para las marcas de
+             peso corporal, y los dos destinos de fuera de Progreso. */
+          perfil={perfil}
+          onIrAHistorial={() => setDentro('historial')}
+          onIrARangos={() => setArea('rangos')}
           focoEjercicio={focoEjercicio}
           onFocoEjercicioConsumido={() => setFocoEjercicio(null)}
           /* FIT F12, apartado 5 — «Entrenar ahora» lleva a Entrenamiento, donde se empieza. */

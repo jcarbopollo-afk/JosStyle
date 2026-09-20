@@ -2,6 +2,39 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🏋️ ACTUALIZACIÓN (v3.110.0 — FIT F28/45: el centro de seguimiento del progreso):**
+> **Fitness → Progreso** es ya lo que pide el apartado 34: *"un verdadero centro de seguimiento
+> personal"*. En una pantalla están el rango actual, los entrenamientos registrados, los ejercicios
+> que mejoran, las fotos con su comparación rápida, el progreso muscular, los objetivos activos y
+> una **línea temporal** con lo que ha pasado, con sus cinco filtros y sus cuatro periodos.
+> 🏁 **Y cierra el bloque de progreso físico: F26, F27 y F28.**
+> 🚨 **Conectar NO es mezclar** (apartado 10, con su ejemplo prohibido: *"fotos + fuerza + rangos =
+> progreso físico 82 %"*). La garantía no es una promesa en un comentario: **cada bloque declara en
+> `BLOQUES` de qué motor sale, y solo de uno**, así que no puede existir un número que mezcle dos
+> sistemas. Y `mezclaFuentes()` barre las claves buscando una cifra combinada — con una prueba que
+> la pone roja al darle una.
+> 🚨 **Los seis motores ya estaban, y la navegación también**: las cinco secciones de Progreso las
+> creó la F12. Lo que faltaba era el centro que las junta (la F23, la F24 y la F25 por cuarta vez).
+> 🚨 **Ni una puntuación de rango aquí**: un número suelto de 0 a 1000 en un resumen de seis
+> sistemas se leería como *"mi progreso va por 520"*, que es la métrica que prohíbe el apartado 10.
+> 🚨 **Un periodo filtra lo que se VE, nunca el rango ni los objetivos** (apartado 16, literal). Y
+> hay dos casos, los dos correctos: recortar sesiones es lo suyo en Ejercicios y Músculos —ahí se
+> mide la actividad del periodo, F13— y sería un fallo en Rangos, porque la puntuación es la mejor
+> de las últimas cinco y el rango de septiembre depende de las sesiones de julio (F22).
+> 🚨 **La línea temporal se DERIVA y no se guarda**, así que el apartado 23 —*"el resumen debe
+> actualizarse"*— no necesita una línea de código: no hay nada que invalidar porque no hay copia.
+> 🚨 **La comparación rápida no elige fotos incompatibles** (apartado 7): la más antigua **de la
+> misma orientación** cuando la hay, y sin etiqueta no se afirma incompatibilidad (F27). Abre el
+> comparador de la F27 con las dos puestas, no una pantalla nueva.
+> 🚨 **Un error en Fotos no esconde los entrenamientos** (apartado 30): cada bloque va envuelto en
+> `bloqueSeguro`, como `panelSeguro` en Productividad.
+> ⚠️ **Un grupo muscular sin datos no ocupa un hueco de la vista previa**: el apartado 5 lo enseña
+> en su ejemplo, pero el 2 manda *"no mostrar métricas vacías"* y el 26 acota a cuatro. Los siete
+> están en la sección Músculos, a un toque.
+> ⚠️ **Y las acciones del onboarding que no pueden funcionar no se pintan** (regla 8).
+> 🐛 **El barrido de «ni IA» saltaba con la tabla que declara que no hay IA** — la lección de la
+> FIT F25 y de «experto contiene xp»: lo que se barre es el código, no la tabla.
+
 > **🏋️ ACTUALIZACIÓN (v3.109.0 — FIT F27/45: el comparador de progreso físico):**
 > Progreso → Fotos → **Comparar** es una pantalla entera: dos momentos elegidos por fecha, lado a
 > lado o con un divisor que se arrastra, zoom independiente en cada foto, alineación, y las fotos

@@ -46,7 +46,10 @@ export function estadoDe(progreso) {
   if (e === 'mejora' || e === 'estable' || e === 'descenso' || e === 'primer_registro' || e === 'no_comparable') return e;
   return 'sin_datos';
 }
-const COMPARABLES = ['mejora', 'estable', 'descenso'];
+/* ⚠️ Se exporta desde la FIT F28: el resumen del progreso necesita saber qué
+   estados son comparables, y escribir una segunda lista allí sería el día que
+   una de las dos se quedara vieja. La regla vive aquí, donde se decidió. */
+export const COMPARABLES = ['mejora', 'estable', 'descenso'];
 
 /* Apartado 10 — los filtros. «Sin datos» junta lo que no se puede comparar
    todavía: una sola vez o un cambio de medida. */

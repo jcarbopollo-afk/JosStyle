@@ -471,6 +471,11 @@ export function ProgressPhotoCompareHint({ aviso }) {
 export function ProgressPhotos({
   pantalla, fitness = null, accent, hoy,
   onAddFoto = null, onDeleteFoto = null, onSesion = null,
+  /* 🔓 FIT F28, apartado 7 — la comparación rápida del resumen llega con sus
+     dos fotos ya elegidas y abre **este** comparador, no una pantalla nueva
+     (apartado 19). Se consume al usarla, como el foco de la F18: si se quedara
+     puesta, volver a Fotos reabriría la misma comparación (EH F40). */
+  comparacionInicial = null, onComparacionConsumida = null,
 }) {
   const [anadiendo, setAnadiendo] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -482,6 +487,17 @@ export function ProgressPhotos({
   const comparador = useComparador(pantalla.orden);
 
   const { urls, fallidas, verMas, hayMas, marcarFallida } = useUrlsFirmadas(pantalla.orden);
+
+  /* FIT F28 — entrar desde el resumen con las dos fotos puestas. */
+  useEffect(() => {
+    if (!comparacionInicial || !comparacionInicial.antesId || !comparacionInicial.despuesId) return;
+    comparador.elegir('antes', comparacionInicial.antesId);
+    comparador.elegir('despues', comparacionInicial.despuesId);
+    setComparando(true);
+    if (onComparacionConsumida) onComparacionConsumida();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comparacionInicial]);
+
   const foto = abierta ? pantalla.orden.find((f) => f.id === abierta) || null : null;
   const vecinas = foto ? vecinasDeFoto(pantalla.orden, foto.id) : { anterior: null, siguiente: null, posicion: 0, total: 0 };
   /* 🚨 Y las URL que necesita el comparador **son las que ya están firmadas**:

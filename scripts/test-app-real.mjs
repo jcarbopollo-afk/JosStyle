@@ -7489,8 +7489,14 @@ ok(await pulsar('Progreso'), '…y en Progreso (apartado 1)');
 const resumen_fit12 = await esperarTexto(/Mejorando/i);
 ok(/Tu progreso/i.test(resumen_fit12) && /Evoluci[oó]n de tu rendimiento/i.test(resumen_fit12), '🚨 FIT F12 — la cabecera «Tu progreso» (apartado 3)');
 ok(/Mejorando/i.test(resumen_fit12) && /Entrenamientos/i.test(resumen_fit12), '🚨 …con las cifras reales: hay un ejercicio comparable (apartado 4)');
-ok(/Progreso reciente/i.test(resumen_fit12) && /62,5 kg × 8 → 62,5 kg × 10/.test(resumen_fit12),
-  '🚨 FIT F12 — «Progreso reciente» con el cambio REAL: 62,5 kg × 8 → 62,5 kg × 10 (apartado 26)');
+/* 🔓 **ESTA COMPROBACIÓN SE MUDA CON LA FIT F28, NO SE BORRA** (E3 F44 y la
+   SU F1 → SU F2 otra vez). El Resumen pasó a ser el centro de seguimiento, así
+   que el bloque ya no se llama «Progreso reciente» sino «Ejercicios en
+   progreso» (apartado 4, literal) — pero **el cambio real sigue ahí**, que es
+   lo que esta comprobación guardaba: retirar una pantalla no puede llevarse
+   una función (E3 F43). */
+ok(/Ejercicios en progreso/i.test(resumen_fit12) && /62,5 kg × 8 → 62,5 kg × 10/.test(resumen_fit12),
+  '🚨 FIT F12 — el cambio REAL sigue en el resumen: 62,5 kg × 8 → 62,5 kg × 10 (apartado 26)');
 ok(!/confeti|\bXP\b|monedas/i.test(resumen_fit12), '…sin gamificación (apartado 27)');
 
 ok(await pulsar('Ejercicios'), 'FIT F12 — la pestaña Ejercicios');
@@ -7562,7 +7568,7 @@ ok(/Todavía no los has registrado/i.test(busca_fit12) && /planche/i.test(busca_
 await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(2500);
 ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F12 — se recarga la aplicación');
-ok(/62,5 kg × 8 → 62,5 kg × 10/.test(await esperarTexto(/Progreso reciente/i)), '🚨 …y el progreso se reconstruye igual desde las sesiones guardadas (apartado 41)');
+ok(/62,5 kg × 8 → 62,5 kg × 10/.test(await esperarTexto(/Ejercicios en progreso/i)), '🚨 …y el progreso se reconstruye igual desde las sesiones guardadas (apartado 41)');
 
 /* ══════════════════════════════════════════════════════════════════════════
    FIT F13 — Progreso por grupos musculares (Entrega 4 · 13/45)
@@ -8688,6 +8694,186 @@ if (/Ejercicios relevantes/i.test(musculo_fit23)) {
 } else {
   ok(true, '⚠️ FIT F23 — sin ejercicios con datos no se pinta la lista (regla 8)');
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F28 — Integración completa del progreso físico (Entrega 4 · 28/45)
+   ══════════════════════════════════════════════════════════════════════════
+   Se comprueba **aquí y no antes**, a propósito: en este punto del recorrido el
+   almacén ya tiene sesiones de tres grupos (F12, F13 y F16), las cuatro fotos
+   de la F26 —tres que cargan y una rota— y un rango global de verdad. Con el
+   escenario vacío de más arriba, la mitad de los bloques saldría sin datos y
+   esto no mediría nada (la lección de las fábricas de escenarios, FIT F22).
+
+   🚨 Lo que de verdad hay que ver funcionando: que los seis sistemas están en
+   una sola pantalla **sin una cifra que los mezcle** (apartado 10), que el
+   periodo filtra lo que se ve y **no toca el rango** (apartado 16), y que
+   «Comparar progreso» abre el comparador de la F27 con las dos fotos ya
+   elegidas, sin una pantalla nueva (apartado 19). */
+console.log('\n── FIT F28 · El centro de seguimiento ──');
+
+/* 🐛 **Y SUS PROPIAS FOTOS, PORQUE LA F27 DEJÓ UNA SOLA** (E3 F6: *"un
+   escenario que hereda el del vecino no prueba lo que dice"*). Aquella sección
+   recorta `saludFotos` a una para probar su caso de «falta otra foto», así que
+   aquí no había con qué comparar — y la primera pasada dio cinco rojos
+   diciendo que «Comparar progreso» no existía **cuando la aplicación estaba
+   bien**: con una foto, ese botón NO debe pintarse (regla 8). */
+almacen.saludFotos = [
+  { id: 'f28-a', path: 'usuario-prueba/junio.jpg', fecha: '2026-06-12', nota: 'Inicio del verano', tags: ['frontal'] },
+  { id: 'f28-b', path: 'usuario-prueba/agosto.jpg', fecha: '2026-08-01', nota: '', tags: ['espalda'] },
+  { id: 'f28-c', path: 'usuario-prueba/sept.jpg', fecha: '2026-09-12', nota: 'Inicio de curso', tags: ['frontal'] },
+];
+/* Un objetivo, para que el bloque de objetivos tenga algo que enseñar. */
+almacen.fitness = {
+  ...almacen.fitness,
+  objetivos: [
+    { id: 'f28-obj', exerciseId: 'sentadilla-barra', tipo: 'peso', valor: 120, unidad: 'kg', creadoEn: Date.parse('2026-08-15T12:00:00'), actualizadoEn: null, fechaObjetivo: '', estado: 'activo', nota: '' },
+  ],
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F28 — Fitness → Progreso');
+const resumen_fit28 = await esperarTexto(/entrenamientos registrados/i);
+
+/* Apartado 34 — los seis sistemas, en una sola pantalla. */
+ok(/entrenamientos registrados/i.test(resumen_fit28), '🚨 FIT F28 — «N entrenamientos registrados» (apartado 3)');
+ok(/Ejercicios en progreso/i.test(resumen_fit28), '…«Ejercicios en progreso» (apartado 4)');
+ok(/Progreso muscular/i.test(resumen_fit28), '…«Progreso muscular» (apartado 5)');
+ok(/Progreso físico/i.test(resumen_fit28), '…«Progreso físico», las fotos (apartado 6)');
+ok(/Tus objetivos/i.test(resumen_fit28), '…«Tus objetivos» (apartado 8)');
+ok(/Tu rango/i.test(resumen_fit28), '…y «Tu rango» (apartado 9)');
+ok(/Línea temporal/i.test(resumen_fit28), '…con la línea temporal debajo (apartado 12)');
+/* Apartado 28 — símbolo Y palabra. */
+ok(/[↗→↘]\s*(Mejorando|Estable|Descenso)/.test(resumen_fit28),
+  '🚨 FIT F28 — las tendencias llevan símbolo Y palabra, no solo el color (apartado 28)');
+
+/* 🚨 Apartado 10 — ni una métrica que mezcle los seis sistemas. */
+ok(!/progreso f[ií]sico\s*[:·-]?\s*\d+\s*%/i.test(resumen_fit28),
+  '🚨 FIT F28 — ni un «progreso físico 82 %»: eso sería la métrica inventada del apartado 10');
+ok(!/desde que|gracias a|ha hecho que/i.test(resumen_fit28),
+  '🚨 FIT F28 — ni una correlación automática (apartado 11)');
+ok(!/NaN|Infinity|undefined|\[object/.test(resumen_fit28),
+  '🚨 FIT F28 — y ni un número roto en pantalla');
+
+/* 🚨 Apartado 16 — el periodo filtra lo que se ve y NO toca el rango. */
+const rangoDeLaPantalla = (t) => (/Tu rango\s*\n?\s*([A-Za-zÁÉÍÓÚáéíóúñ ]+)/.exec(t) || [])[1] || '';
+const rangoAntes_fit28 = rangoDeLaPantalla(resumen_fit28);
+const eventosVisibles = async () => page.evaluate(() => [...document.querySelectorAll('li button')].length);
+const eventosTodo_fit28 = await eventosVisibles();
+ok(await pulsar('7 días'), 'FIT F28 — se pone el periodo de 7 días');
+const siete_fit28 = await esperarTexto(/entrenamientos registrados/i);
+const eventos7_fit28 = await eventosVisibles();
+ok(rangoDeLaPantalla(siete_fit28) === rangoAntes_fit28 && !!rangoAntes_fit28,
+  `🚨 FIT F28 — el periodo NO cambia el rango actual (${rangoAntes_fit28 || 'sin rango'}, apartado 16)`);
+ok(eventos7_fit28 <= eventosTodo_fit28,
+  `🚨 FIT F28 — …pero SÍ recorta la línea temporal (${eventosTodo_fit28} → ${eventos7_fit28})`);
+ok(/\d+ en los últimos 7 días/.test(siete_fit28),
+  '…y aparece la segunda línea del periodo, que sin periodo no existía (apartado 3)');
+ok(!/esta semana/i.test(siete_fit28),
+  '⚠️ FIT F28 — y dice «en los últimos 7 días», no «esta semana», que es otra cosa');
+ok(await pulsar('Todo'), 'FIT F28 — se vuelve a «Todo»');
+await page.waitForTimeout(500);
+
+/* Apartado 15 — los filtros de la línea temporal, con su recuento.
+   ⚠️ Las pastillas se pulsan por su TEXTO, no por `aria-label`: son chips, y
+   `pulsar('Fotos')` a secas se llevaría la pestaña «Fotos» de Progreso, que se
+   llama exactamente igual (el fallo de Ajustes · Perfil otra vez). */
+const pulsarChip_fit28 = (empieza) => page.evaluate((e) => {
+  const b = [...document.querySelectorAll('button')].find((x) => (x.innerText || '').trim().startsWith(e));
+  if (!b) return false;
+  b.click();
+  return true;
+}, empieza);
+const conFiltros_fit28 = await esperarTexto(/Línea temporal/i);
+ok(/Fotos \d+/.test(conFiltros_fit28) && /Entrenamientos \d+/.test(conFiltros_fit28),
+  '🚨 FIT F28 — cada pastilla del filtro dice cuántos hay (para no vaciar la pantalla sin avisar)');
+const antesDelFiltro_fit28 = await eventosVisibles();
+ok(await pulsarChip_fit28('Fotos '), 'FIT F28 — se filtra la línea temporal por Fotos');
+await page.waitForTimeout(500);
+const soloFotos_fit28 = await eventosVisibles();
+ok(soloFotos_fit28 > 0 && soloFotos_fit28 < antesDelFiltro_fit28,
+  `🚨 FIT F28 — el filtro deja menos eventos y no ninguno (${antesDelFiltro_fit28} → ${soloFotos_fit28}, apartado 15)`);
+ok(await pulsarChip_fit28('Todos '), 'FIT F28 — y se quita el filtro');
+await page.waitForTimeout(500);
+
+/* Apartado 27 — a 375 px no se sale nada. */
+const anchoF28 = await page.evaluate(() => ({
+  desborda: document.documentElement.scrollWidth > window.innerWidth + 2,
+  ancho: document.documentElement.scrollWidth,
+}));
+ok(!anchoF28.desborda, `⚠️ FIT F28 — a 375 px el resumen no desborda (${anchoF28.ancho} px, apartado 27)`);
+
+/* 🚨 Apartado 7 — «Comparar progreso» abre el comparador de la F27, con las dos
+   fotos ya elegidas. ⚠️ Y se mide DENTRO del diálogo: un portal pone su
+   contenido al final del `body`, así que `innerText` trae primero lo de detrás
+   (FIT F27 y E3 F11). */
+ok(await pulsar('Comparar progreso'), 'FIT F28 — se toca «Comparar progreso» desde el resumen');
+await page.waitForTimeout(900);
+const comparador_fit28 = await page.evaluate(() => {
+  const d = [...document.querySelectorAll('[role="dialog"]')].pop();
+  return d ? (d.innerText || '').replace(/\s+/g, ' ') : '';
+});
+ok(/Comparar/i.test(comparador_fit28),
+  '🚨 FIT F28 — abre el comparador de la F27, no una pantalla nueva (apartado 19)');
+ok(/Antes/i.test(comparador_fit28) && /Después/i.test(comparador_fit28),
+  '…con sus dos lados ya puestos: no hay que volver a elegirlas (apartado 7)');
+const fotosDelComparador_fit28 = await page.evaluate(() => [...document.querySelectorAll('[role="dialog"] img[alt]')]
+  .map((i) => i.getAttribute('alt')));
+ok(fotosDelComparador_fit28.length >= 1,
+  `⚠️ FIT F28 — y las fotos elegidas son las de la galería (${fotosDelComparador_fit28.join(' | ') || 'ninguna legible'})`);
+ok(!/ganado|grasa|masa muscular|composición/i.test(comparador_fit28),
+  '🚨 FIT F28 — y ni una palabra sobre el cuerpo (F26, apartado 41)');
+ok(await pulsar('Volver a la galería'), 'FIT F28 — se cierra el comparador');
+await page.waitForTimeout(600);
+
+/* Apartado 19 — «Ver todo» cambia de sección, sin duplicar pantalla. */
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F28 — se vuelve al resumen');
+await esperarTexto(/Ejercicios en progreso/i);
+/* ⚠️ Por su `aria-label`, que dice DE QUÉ bloque es: hay un «Ver todo» por
+   sección y pulsar «el primero» depende del orden, no de lo que se quiere
+   medir. */
+const hayVerTodo_fit28 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
+  .some((b) => (b.getAttribute('aria-label') || '') === 'Ver todo: Ejercicios en progreso'));
+if (hayVerTodo_fit28) {
+  ok(await pulsar('Ver todo: Ejercicios en progreso'), 'FIT F28 — se toca el «Ver todo» de los ejercicios');
+  const seccion_fit28 = await esperarTexto(/Buscar ejercicio/i);
+  ok(/Buscar ejercicio/i.test(seccion_fit28),
+    '🚨 FIT F28 — «Ver todo» lleva a la sección de siempre, no a una pantalla nueva (apartado 19)');
+} else {
+  ok(true, '⚠️ FIT F28 — sin nada que quede fuera, «Ver todo» NO se pinta (regla 8)');
+}
+
+/* 🚨 Apartado 17 — y el onboarding: con la cuenta recién estrenada, «Tu
+   progreso empieza aquí» con sus salidas, y ni un bloque vacío de relleno. */
+const fitnessDeAntes_fit28 = almacen.fitness;
+const fotosDeAntes_fit28 = almacen.saludFotos;
+almacen.fitness = { ...almacen.fitness, sesiones: [], objetivos: [], clasificaciones: [] };
+almacen.saludFotos = [];
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F28 — se vacía la cuenta y se entra a Progreso');
+const vacio_fit28 = await esperarTexto(/Tu progreso empieza aquí/i);
+ok(/Tu progreso empieza aquí/i.test(vacio_fit28),
+  '🚨 FIT F28 — sin datos, el onboarding del apartado 17, literal');
+ok(/Añadir entrenamiento/i.test(vacio_fit28) && /Añadir foto/i.test(vacio_fit28) && /Crear objetivo/i.test(vacio_fit28),
+  '…con sus tres salidas de verdad');
+ok(!/0 entrenamientos registrados/i.test(vacio_fit28),
+  '🚨 FIT F28 — y NO se llena la pantalla de ceros: «No llenar la pantalla de estados vacíos» (apartado 17)');
+ok(!/Línea temporal/i.test(vacio_fit28),
+  '…ni una línea temporal vacía debajo');
+
+/* Apartado 18 — datos parciales: hay entrenamientos y no hay fotos. */
+almacen.fitness = fitnessDeAntes_fit28;
+almacen.saludFotos = [];
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F28 — con entrenamientos y sin fotos');
+const parcial_fit28 = await esperarTexto(/entrenamientos registrados/i);
+ok(/entrenamientos registrados/i.test(parcial_fit28) && /Empieza a registrar tu progreso visual/i.test(parcial_fit28),
+  '🚨 FIT F28 — se enseña lo que hay y Fotos dice su frase: «No ocultar todo por falta de una fuente» (apartado 18)');
+ok(!/Comparar progreso/i.test(parcial_fit28),
+  '…y sin fotos no se ofrece comparar (regla 8)');
+almacen.saludFotos = fotosDeAntes_fit28;
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

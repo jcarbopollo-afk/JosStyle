@@ -1,5 +1,125 @@
 # CHANGELOG.md
 
+## v3.110.0 — FIT F28/45: el centro de seguimiento del progreso
+
+**Fitness → Progreso** pasa a ser lo que el apartado 34 pide que sea: *«un verdadero centro
+de seguimiento personal»*. En una pantalla están el rango actual, los entrenamientos
+registrados, los ejercicios que van mejorando, las fotos con su comparación rápida, el
+progreso muscular, los objetivos activos y una línea temporal con todo lo que ha pasado.
+🏁 **Y cierra el bloque de progreso físico: F26, F27 y F28.**
+
+### 🚨 Conectar no es mezclar, y eso se demuestra recorriendo una tabla
+
+El apartado 10 lo dice con el ejemplo prohibido: *«Fotos + fuerza + rangos = progreso
+físico 82 %. Eso sería una métrica inventada.»* La forma de garantizarlo no es prometerlo
+en un comentario: **cada bloque declara en `BLOQUES` de qué motor sale, y solo de uno**.
+Si ningún bloque lee de dos sitios, no puede existir un número que mezcle dos sistemas. Hay
+una comprobación que recorre la tabla y otra, `mezclaFuentes()`, que barre las claves del
+resumen buscando un `progresoFisico`, un `puntuacionGlobal` o un `score` — y se pone roja
+si se le da uno, que es lo que hace que sirva de algo (EH F42).
+
+Los seis motores estaban todos: `historial.js` (F10), `progresoEjercicios.js` (F12),
+`progresoMuscular.js` (F13), `objetivosProgreso.js` (F14), `motorRangos.js` +
+`historialRangos.js` (F19 y F22) y `fotosProgreso.js` + `comparadorFotos.js` (F26 y F27).
+**Y la navegación del apartado 1 también**: las cinco secciones de Progreso —Resumen,
+Músculos, Ejercicios, Objetivos, Fotos— las creó la F12. Lo que faltaba era el centro que
+las junta. Es la lección de la F23, la F24 y la F25 por cuarta vez.
+
+### 🚨 Y ni una puntuación de rango en el resumen
+
+El score existe en el motor y se enseña en su pantalla (F16 y F25). Aquí no: en un resumen
+que junta seis sistemas, un número suelto de 0 a 1000 se leería exactamente como *«mi
+progreso físico va por 520»*, que es la métrica que el apartado 10 prohíbe. Lo que se
+enseña es el nombre del rango y la frase de evolución que ya redactaba la F25.
+
+### 🚨 Un periodo filtra lo que se ve; nunca el rango ni los objetivos
+
+Apartado 16, literal: *«Los filtros temporales afectan a la visualización del resumen. NO
+modifican: Rangos actuales, objetivos, datos históricos.»* Y hay dos casos, los dos
+correctos: **recortar las sesiones es lo suyo** en Ejercicios y Músculos —ahí se mide la
+actividad del periodo, y `fitnessEnPeriodo` de la F13 es justo eso— y **sería un fallo** en
+Rangos, porque la puntuación es la mejor de las últimas cinco sesiones y el rango de
+septiembre depende de las de julio (F22, apartado 23). `LO_QUE_EL_PERIODO_NO_TOCA` lo deja
+escrito con su motivo, y dos pruebas comparan «7 días» con «Todo» para demostrarlo.
+
+### 🚨 La línea temporal se deriva, y por eso no hay nada que invalidar
+
+Apartado 13: *«No almacenar necesariamente una timeline duplicada. Derivarla de las fuentes
+existentes.»* Aquí no es «no necesariamente»: **no se almacena nada**. Cada evento sale del
+registro que ya existe —foto, sesión, cambio de rango de la F22, objetivo creado y objetivo
+conseguido—, así que borrar una sesión lo quita de la línea sin que nadie limpie nada. Con
+eso, el apartado 23 —*«después de guardar un entrenamiento… el resumen debe actualizarse»*—
+**no necesita una línea de código**: es la F15 con los rangos, la F22 con el historial y la
+F24 con la cola, por cuarta vez en esta entrega.
+
+⚠️ **Y una fecha posterior a hoy no se descarta.** Josué puede fechar una foto a mano, y un
+registro suyo es un registro: esconderlo sería quitarle de la línea algo que sí existe.
+
+### 🚨 La comparación rápida no elige dos fotos incompatibles
+
+Apartado 7: por defecto, la más antigua y la más reciente. Pero también *«No seleccionar
+automáticamente fotos incompatibles»*, y lo único que se sabe del encuadre es la etiqueta de
+orientación de la F26 —frontal, lateral o espalda—. Así que si la más reciente declara la
+suya, el «antes» es la más antigua **con esa misma orientación**; y si ninguna la declara,
+la más antigua a secas, porque **sin etiqueta no se afirma ni que coinciden ni que no**
+(F27, apartado 13: *«si no existe, no inventarlo»*). Al tocar «Comparar progreso» se abre
+**el comparador de la F27** con las dos ya puestas, no una pantalla nueva (apartado 19).
+
+### 🚨 Un error en Fotos no esconde los entrenamientos
+
+Apartado 30. Cada bloque se calcula **por separado y envuelto** en `bloqueSeguro`, como
+`panelSeguro` en Productividad (E3 F29): el que reviente se queda con su aviso y los otros
+cinco siguen enteros. Y el estado general distingue *vacío*, *parcial*, *completo*, *error
+parcial* y *error general* — el de carga se declara de quién es (la pantalla de carga de la
+E3 F14) en vez de inventarlo aquí.
+
+⚠️ **Con datos parciales se enseña lo que hay** (apartado 18): con entrenamientos y sin
+fotos, el resumen sale entero y Fotos dice su frase —*«Empieza a registrar tu progreso
+visual»*—, que es la del propio enunciado.
+
+### ⚠️ Un grupo muscular sin datos no ocupa un hueco de la vista previa
+
+El apartado 5 lo enseña en su ejemplo («Cuello · Sin datos»), pero el 2 manda *«no mostrar
+métricas vacías»* y el 26 acota a cuatro: gastar uno de los cuatro en un grupo que no dice
+nada deja fuera uno que sí. Los siete están enteros en la sección Músculos, a un toque.
+
+### ⚠️ Y las acciones del onboarding que no pueden funcionar no se pintan
+
+Apartado 17: *«Tu progreso empieza aquí.»*, con «Añadir entrenamiento», «Añadir foto» y
+«Crear objetivo». Pero «Añadir foto» necesita que la galería pueda escribir y «Crear
+objetivo» que se pueda guardar: sin eso serían dos botones muertos en el iPhone de Josué
+(regla 8). Y sin datos **no se llena la pantalla de ceros**, que es lo que ese mismo
+apartado pide evitar.
+
+### ⚠️ Dos etiquetas se mudan, para que no haya un ciclo
+
+`EtiquetaEstado` y `EstadoMuscular` vivían en `ProgresoView.jsx`. Las vistas previas del
+resumen las necesitan, y la vista importa las vistas previas: dejarlas allí habría sido un
+ciclo entre los dos archivos. Se mudan a `src/components/resumenProgreso.jsx` y la vista
+las importa de ahí — una sola dirección, y ni una copia (FIT F24 y F27).
+
+### 🐛 Y el barrido de «ni IA» saltaba con la tabla que declara que no hay IA
+
+`NO_EN_FIT28` **nombra** la IA justamente para decir que no se construye, y la casilla de
+auditoría también. Es la lección de la FIT F25 (`NO_EN_FIT25` con XP y los logros) y la de
+«experto contiene xp»: **lo que se barre es el código, no la tabla que declara lo que se
+busca**. Con dos comprobaciones que demuestran que el arreglo no está tapando otra
+aparición.
+
+### Lo que NO se ha construido, y por qué
+
+Ni una métrica global de progreso físico, ni correlaciones automáticas (*«desde que
+entrenas más has ganado músculo»* no se puede afirmar con estos datos, apartado 11), ni
+predicciones, ni análisis corporal, ni IA, ni comparación social, ni XP. Todo está en
+`NO_EN_FIT28`, con su motivo y su apartado. Y aquí **no se crean objetivos** (apartado 8):
+se ven, se tocan y se abre el suyo, en su sección.
+
+**Archivos:** `src/lib/resumenProgreso.js` y `src/components/resumenProgreso.jsx` (nuevos),
+`src/views/ProgresoView.jsx`, `src/views/FitnessView.jsx`, `src/components/fotosProgreso.jsx`,
+`src/lib/progresoEjercicios.js` (exporta `COMPARABLES`),
+`scripts/test-resumen-progreso.mjs` (nuevo, **153 comprobaciones**),
+`scripts/smoke-vistas.jsx`, `scripts/test-app-real.mjs` y `scripts/verificar.sh`.
+
 ## v3.109.0 — FIT F27/45: el comparador de progreso físico
 
 Progreso → Fotos → **Comparar** pasa a ser una pantalla entera: dos momentos elegidos por

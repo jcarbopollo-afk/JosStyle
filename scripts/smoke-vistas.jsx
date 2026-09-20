@@ -164,10 +164,20 @@ import FitnessView, { AreaRangos, AreaProgreso } from '../src/views/FitnessView.
 /* FIT F12 — Progreso. ⚠️ Con sus piezas sueltas: el detalle y la gráfica solo
    aparecen al tocar una tarjeta (NAV F3). */
 import ProgresoView, {
-  TarjetaProgreso, ResumenProgreso, DetalleProgreso, GraficaProgreso, EtiquetaEstado as EtiquetaEstadoF12,
-  TarjetaMusculo, DetalleMusculo, MusculosProgreso, EstadoMuscular,
+  TarjetaProgreso, ResumenProgreso, DetalleProgreso, GraficaProgreso,
+  TarjetaMusculo, DetalleMusculo, MusculosProgreso,
   TarjetaObjetivo, FormularioObjetivo, DetalleObjetivo, ObjetivosProgreso,
 } from '../src/views/ProgresoView.jsx';
+/* 🔓 FIT F28 — `EtiquetaEstado` y `EstadoMuscular` se mudaron aquí con las
+   vistas previas del resumen: la vista las importa, así que dejarlas allí era
+   un ciclo. */
+import {
+  ProgressOverview, ProgressSummaryCard, ProgressMetricCard, ProgressRankPreview,
+  ProgressExercisePreview, ProgressMusclePreview, ProgressGoalPreview, ProgressPhotoPreview,
+  ProgressTimeline, ProgressTimelineItem,
+  EtiquetaEstado as EtiquetaEstadoF12, EstadoMuscular,
+} from '../src/components/resumenProgreso.jsx';
+import { centroDeProgreso as centroF28, bloqueFotos as bloqueFotosF28 } from '../src/lib/resumenProgreso.js';
 import {
   tarjetasDeProgreso as tarjetasF12, resumenDeProgreso as resumenF12, detalleDeProgreso as detalleF12,
 } from '../src/lib/progresoEjercicios.js';
@@ -464,6 +474,20 @@ const FOTOS_F27 = FOTOS_F26.concat([
   { id: 'f5', path: 'usuario/5.jpg', fecha: '2026-08-01', nota: 'De espalda', tags: ['espalda'] },
 ]);
 const pantCompF27 = (extra = {}) => pantF27(FOTOS_F27, { antesId: 'f1', despuesId: 'f3', ...extra });
+
+/* FIT F28 — el centro de seguimiento. ⚠️ Se construye sobre el escenario de
+   rango global de la F25 **más dos objetivos**: con el de la F12 no habría ni
+   rango ni músculos y los casos saldrían vacíos sin que nada lo dijera (la
+   lección de la F22 sobre las fábricas de escenarios, por tercera vez). */
+const HOY_F28 = '2026-09-17';
+const fitnessTodoF28 = () => {
+  let f = fitnessGlobalF25();
+  f = anadirObjetivoF14(f, { exerciseId: 'dominada-prona', tipo: 'reps', valor: 25 }).fitness;
+  return anadirObjetivoF14(f, { exerciseId: 'press-banca-barra', tipo: 'peso', valor: 60 }).fitness;
+};
+const bloqueF28 = (id, f) => centroF28(f, [], { hoy: HOY_F28 }).bloques[id];
+const fotosF28 = (fotos, extra = {}) => bloqueFotosF28(fotos, extra);
+const timelineF28 = (f, fotos, extra = {}) => centroF28(f, fotos, { hoy: HOY_F28, ...extra }).timeline;
 
 const DESTINO_EJ_F22 = { tipo: 'exercise', id: 'dominada-prona' };
 const DESTINO_GRUPO_F23 = { tipo: 'muscleGroup', id: 'espalda' };
@@ -3443,6 +3467,59 @@ const CASOS = [
     pantalla: pantF27(FOTOS_F27, { antesId: 'f1' }), urls: {}, onElegir: noop,
   })],
   ['ComparisonSelector', ComparisonSelector, () => ({ pantalla: pantF27(FOTOS_F27, {}), urls: {}, onElegir: noop })],
+
+  /* ══ FIT F28 — el centro de seguimiento ════════════════════════════════
+     ⚠️ Los escenarios son los MISMOS de las fases que lee: el de rango global
+     de la F25, las fotos de la F27 y los objetivos de la F14. Si esta fase
+     necesitara un escenario propio sería que está calculando por su cuenta. */
+  ['ProgressOverview (vacío)', ProgressOverview, () => ({
+    fitness: {}, fotos: [], accent, hoy: HOY_F28,
+    onIrASeccion: noop, onAbrirEjercicio: noop, onAbrirMusculo: noop, onAbrirObjetivo: noop, onVerSesion: noop,
+    onEntrenar: noop, onAnadirFoto: noop, onCrearObjetivo: noop,
+  })],
+  /* 🚨 Regla 8 — sin con qué guardar, el onboarding pierde esas dos salidas. */
+  ['ProgressOverview (vacío, sin escritura)', ProgressOverview, () => ({
+    fitness: {}, fotos: [], accent, hoy: HOY_F28,
+    onIrASeccion: noop, onAbrirEjercicio: noop, onAbrirMusculo: noop, onAbrirObjetivo: noop, onVerSesion: noop,
+    onEntrenar: noop,
+  })],
+  ['ProgressOverview (solo entrenamientos)', ProgressOverview, () => ({
+    fitness: fitnessGlobalF25(), fotos: [], accent, hoy: HOY_F28,
+    onIrASeccion: noop, onAbrirEjercicio: noop, onAbrirMusculo: noop, onAbrirObjetivo: noop, onVerSesion: noop,
+    onIrAHistorial: noop, onIrARangos: noop, onEntrenar: noop,
+  })],
+  ['ProgressOverview (solo fotos)', ProgressOverview, () => ({
+    fitness: {}, fotos: FOTOS_F27, accent, hoy: HOY_F28,
+    onIrASeccion: noop, onAbrirEjercicio: noop, onAbrirMusculo: noop, onAbrirObjetivo: noop, onVerSesion: noop,
+    onComparar: noop, onAnadirFoto: noop,
+  })],
+  ['ProgressOverview (todo)', ProgressOverview, () => ({
+    fitness: fitnessTodoF28(), fotos: FOTOS_F27, accent, hoy: HOY_F28, perfil: { peso: 72 },
+    onIrASeccion: noop, onAbrirEjercicio: noop, onAbrirMusculo: noop, onAbrirObjetivo: noop, onVerSesion: noop,
+    onIrAHistorial: noop, onIrARangos: noop, onComparar: noop, onEntrenar: noop, onAnadirFoto: noop, onCrearObjetivo: noop,
+  })],
+  ['ProgressSummaryCard', ProgressSummaryCard, () => ({ titulo: 'Ejercicios en progreso', accent, hayMas: true, onVerTodo: noop, children: 'x' })],
+  ['ProgressMetricCard', ProgressMetricCard, () => ({ valor: 12, nombre: 'Entrenamientos registrados', sub: '3 en los últimos 7 días', accent, onClick: noop })],
+  ['ProgressMetricCard (sin destino)', ProgressMetricCard, () => ({ valor: 0, nombre: 'Objetivos activos', accent })],
+  ['ProgressRankPreview', ProgressRankPreview, () => ({ bloque: bloqueF28('rango', fitnessTodoF28()), accent, onIr: noop })],
+  /* Sin cobertura no hay rango, y se dice en vez de pintar un nivel 1. */
+  ['ProgressRankPreview (sin rango)', ProgressRankPreview, () => ({ bloque: bloqueF28('rango', {}), accent, onIr: noop })],
+  ['ProgressExercisePreview', ProgressExercisePreview, () => ({ bloque: bloqueF28('ejercicios', fitnessTodoF28()), accent, onAbrir: noop, onVerTodo: noop })],
+  ['ProgressExercisePreview (vacío)', ProgressExercisePreview, () => ({ bloque: bloqueF28('ejercicios', {}), accent, onAbrir: noop, onVerTodo: noop })],
+  ['ProgressMusclePreview', ProgressMusclePreview, () => ({ bloque: bloqueF28('musculos', fitnessTodoF28()), accent, onAbrir: noop, onVerTodo: noop })],
+  ['ProgressMusclePreview (vacío)', ProgressMusclePreview, () => ({ bloque: bloqueF28('musculos', {}), accent, onAbrir: noop, onVerTodo: noop })],
+  ['ProgressGoalPreview', ProgressGoalPreview, () => ({ bloque: bloqueF28('objetivos', fitnessTodoF28()), accent, onAbrir: noop, onVerTodo: noop })],
+  ['ProgressGoalPreview (vacío)', ProgressGoalPreview, () => ({ bloque: bloqueF28('objetivos', {}), accent, onAbrir: noop, onVerTodo: noop })],
+  ['ProgressPhotoPreview', ProgressPhotoPreview, () => ({ bloque: fotosF28(FOTOS_F27), accent, onIr: noop, onComparar: noop })],
+  ['ProgressPhotoPreview (vacío)', ProgressPhotoPreview, () => ({ bloque: fotosF28([]), accent, onIr: noop, onComparar: noop })],
+  /* 🚨 Apartado 30 — las fotos no se pueden leer, y se dice. */
+  ['ProgressPhotoPreview (error)', ProgressPhotoPreview, () => ({ bloque: fotosF28(FOTOS_F27, { error: true }), accent, onIr: noop, onComparar: noop })],
+  /* Con una sola foto no se ofrece comparar: sería un botón muerto (regla 8). */
+  ['ProgressPhotoPreview (una foto)', ProgressPhotoPreview, () => ({ bloque: fotosF28([FOTOS_F27[0]]), accent, onIr: noop, onComparar: noop })],
+  ['ProgressTimeline', ProgressTimeline, () => ({ timeline: timelineF28(fitnessTodoF28(), FOTOS_F27), accent, filtro: 'todos', onFiltro: noop, onAbrir: noop })],
+  ['ProgressTimeline (filtrada)', ProgressTimeline, () => ({ timeline: timelineF28(fitnessTodoF28(), FOTOS_F27, { filtro: 'fotos' }), accent, filtro: 'fotos', onFiltro: noop, onAbrir: noop })],
+  ['ProgressTimeline (vacía)', ProgressTimeline, () => ({ timeline: timelineF28({}, []), accent, filtro: 'todos', onFiltro: noop, onAbrir: noop })],
+  ['ProgressTimelineItem', ProgressTimelineItem, () => ({ evento: timelineF28(fitnessTodoF28(), FOTOS_F27).eventos[0], accent, onAbrir: noop })],
 
   ['ClassificationReason', ClassificationReason, () => ({ reason: 'Mejora tu cobertura de cuello', accent })],
   ['ClassificationEmpty', ClassificationEmpty, () => ({ vacio: { id: 'completa', ...VACIOS_F24.completa }, accent, onVolver: noop })],

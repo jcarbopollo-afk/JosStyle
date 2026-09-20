@@ -1027,6 +1027,18 @@ fi
 # FIT F21 — qué ejercicios sostienen un rango muscular. Lo que más se vigila: que se
 # use el porcentaje DEL MÚSCULO que se mira (no el del ejercicio entero), que la
 # participación no se sume entre ejercicios, y que los que no tienen datos vayan aparte.
+# FIT F28 — la integración completa del progreso físico. Lo que más se vigila: que NO
+# exista ninguna métrica que mezcle dos sistemas —«fotos + fuerza + rangos = 82 %» es el
+# ejemplo que prohíbe el apartado 10—, que cada bloque lea de UN solo motor, que el
+# periodo filtre lo que se ve y no toque ni el rango ni los objetivos, que la línea
+# temporal se derive y no se guarde, y que un error en Fotos no esconda los
+# entrenamientos.
+if node --import ./scripts/resolver-vite.mjs scripts/test-resumen-progreso.mjs >/tmp/jc_resumen_progreso.log 2>&1; then
+  ok "Integración del progreso físico (FIT F28) — $(grep -c '✓' /tmp/jc_resumen_progreso.log) comprobaciones"
+else
+  fallo "Falla la integración del progreso"; grep '✗' /tmp/jc_resumen_progreso.log
+fi
+
 # FIT F27 — el comparador. Lo que más se vigila: que NO se escriba una segunda
 # comparación (la de la F26 se importa), que el rótulo «Antes» viaje con la foto al
 # intercambiar los lados, que sin etiqueta de orientación no se afirme nada del encuadre,

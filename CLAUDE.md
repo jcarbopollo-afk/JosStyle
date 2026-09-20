@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.109.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.110.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 27 primeras (v3.83.0 → v3.109.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 28 primeras (v3.83.0 → v3.110.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 18 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 17 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -332,7 +332,40 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 **FIT F17 (v3.99.0)**, la **FIT F18 (v3.100.0)**, la **FIT F19 (v3.101.0)**, la **FIT F20
 (v3.102.0)**, la **FIT F21 (v3.103.0)**, la **FIT F22 (v3.104.0)**, la **FIT F23
 (v3.105.0)**, la **FIT F24 (v3.106.0)**, la **FIT F25 (v3.107.0)**, la **FIT F26 (v3.108.0)** y la
-**FIT F27 (v3.109.0)** hechas. Lo que dejaron, y que vale para las 18 que quedan:
+**FIT F27 (v3.109.0)** y la
+**FIT F28 (v3.110.0)**, que 🏁 **CERRÓ EL BLOQUE DE PROGRESO FÍSICO** —F26, F27 y F28—, hechas. Lo que dejaron, y que vale para las 18 que quedan:
+
+- 🚨 **CONECTAR NO ES MEZCLAR, Y ESO SE DEMUESTRA RECORRIENDO UNA TABLA** (FIT F28, apartado 10, con
+  su ejemplo prohibido: *"Fotos + fuerza + rangos = progreso físico 82 %. Eso sería una métrica
+  inventada"*). La garantía no es una promesa en un comentario: **cada bloque declara en `BLOQUES` de
+  qué motor sale, y solo de uno**, así que no puede existir un número que mezcle dos sistemas. Y
+  `mezclaFuentes()` barre las claves del resumen buscando una cifra combinada, con una prueba que la
+  pone roja al darle una. ⚠️ **Ni una puntuación de rango en el resumen**: un número suelto de 0 a
+  1000 entre seis sistemas se leería como *«mi progreso va por 520»*.
+- 🚨 **LOS SEIS MOTORES YA ESTABAN, Y LA NAVEGACIÓN TAMBIÉN** (FIT F28, y es la F23, la F24 y la F25
+  por cuarta vez): las cinco secciones de Progreso —Resumen, Músculos, Ejercicios, Objetivos,
+  Fotos— las creó la **F12**, y los cuatro periodos del apartado 16 **son `RANGOS_GRAFICA`**. Lo que
+  faltaba era el centro que las junta. Una fase que enseñe progreso **llama a
+  `centroDeProgreso`**, no escribe un séptimo bloque.
+- 🚨 **UN PERIODO FILTRA LO QUE SE VE, NUNCA EL RANGO NI LOS OBJETIVOS** (FIT F28, apartado 16,
+  literal), y hay **dos casos, los dos correctos**: recortar las sesiones es lo suyo en Ejercicios y
+  Músculos —ahí se mide la actividad del periodo, y `fitnessEnPeriodo` de la F13 es justo eso— y
+  **sería un fallo** en Rangos, porque la puntuación es la mejor de las últimas cinco y el rango de
+  septiembre depende de las sesiones de julio (F22, apartado 23). Está escrito en
+  `LO_QUE_EL_PERIODO_NO_TOCA` con su motivo.
+- 🚨 **LA LÍNEA TEMPORAL SE DERIVA, Y POR ESO NO HAY NADA QUE INVALIDAR** (FIT F28, apartados 13 y
+  23): cinco tipos de evento —foto, entrenamiento, cambio de rango, objetivo creado y conseguido—,
+  cada uno sacado del registro que ya existe. Borrar una sesión la quita de la línea sin que nadie
+  limpie nada. Es la F15 con los rangos, la F22 con el historial y la F24 con la cola, por **cuarta
+  vez en esta entrega**. ⚠️ Y **una fecha posterior a hoy no se descarta**: Josué puede fechar una
+  foto a mano, y esconder un registro suyo sería la regla 8 al revés.
+- ⚠️ **UN GRUPO MUSCULAR SIN DATOS NO OCUPA UN HUECO DE LA VISTA PREVIA** (FIT F28): el apartado 5 lo
+  enseña en su ejemplo («Cuello · Sin datos»), pero el 2 manda *"no mostrar métricas vacías"* y el 26
+  acota a cuatro. Los siete están enteros en la sección Músculos, a un toque.
+- 🐛 **Y EL BARRIDO DE «NI IA» SALTABA CON LA TABLA QUE DECLARA QUE NO HAY IA** (FIT F28, y es
+  `NO_EN_FIT25` con XP y «experto contiene xp» por tercera vez): `NO_EN_FIT28` **nombra** la IA
+  justamente para decir que no se construye. **Lo que se barre es el código, no la tabla que declara
+  lo que se busca**, y hay dos comprobaciones de que el arreglo no tapa otra aparición.
 
 - 🚨 **PARTICIPACIÓN ≠ PESO EN EL CÁLCULO** (FIT F21, `src/lib/contribucionMuscular.js`). La
   participación es la del catálogo (50 % dorsales) y **no se suma entre ejercicios**; el peso
@@ -1078,20 +1111,21 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F28/45 — Integración completa del progreso físico** (líneas
-   14 875–15 566 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), que **cierra el bloque de
-   fotos** (F26–F28). Se construye de la F1 a la F45, en orden, encadenando sin parar. El índice
-   está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+1. 🏋️ **SEGUIR POR LA FIT F29/45 — Análisis avanzado de rendimiento por ejercicio** (líneas
+   14 154–14 874 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), con la que empieza el bloque
+   de **Inteligencia** (F29–F35). Se construye de la F1 a la F45, en orden, encadenando sin parar.
+   El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: una fase de integración REPARTE lo que hay, no añade un sistema**
-   (E3 F46, apartado 21). Las fotos son **`saludFotos`**, la galería es la **F26**
-   (`fotosProgreso.js` / `.jsx`) y el comparador la **F27** (`comparadorFotos.js` / `.jsx`), con
-   ANTES y DESPUÉS decididos **por la fecha** y sin una palabra sobre el cuerpo. Todo lo que la F28
-   enseñe **lee de ahí**.
-   🏁 **Y el sistema de rangos está CERRADO, F15 a F25** —motor, pantalla, cuestionario, detalle
-   muscular, explicación, contribución, historial, siguiente rango, cola de clasificación y
-   resumen—: lo que venga después **lee de ahí**, no escribe un segundo cálculo.
+   ⚠️ **Y lo segundo, en ESTA: la comparación de un ejercicio ya está hecha y es la F11**
+   (`progresion.js`), y la pantalla que la enseña es la **F12** (`progresoEjercicios.js`). Un
+   análisis nuevo **lee de ahí**: *"no crear una métrica nueva de progreso"* lo dijo ya el apartado 4
+   de la F28.
+   🏁 **Y hay dos bloques CERRADOS de los que se lee, nunca se recalcula:** el sistema de rangos
+   entero (**F15–F25**) —motor, pantalla, cuestionario, detalle muscular, explicación, contribución,
+   historial, siguiente rango, cola y resumen— y el **progreso físico (F26–F28)**: las fotos son
+   `saludFotos`, la galería la F26, el comparador la F27 y el centro de seguimiento la **F28**
+   (`resumenProgreso.js` / `.jsx`), donde **cada bloque declara UNA fuente**.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

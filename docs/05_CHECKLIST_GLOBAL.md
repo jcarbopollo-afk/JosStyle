@@ -863,7 +863,21 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       🚨 **Sin duplicar nada**: `UserTemplate` ya era `fitness.plantillas` y el ida y vuelta con el
       constructor ya era bidireccional. 🚨 Y eliminar **va a la papelera**, así que el aviso promete
       que se recupera en vez de mentir.
-- [ ] F5–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F5–F27** (v3.87.0 → v3.109.0): biblioteca de planificaciones, «Tu Plan», el motor de
+      entrenamiento en vivo, el guardado al terminar, la UX de la sesión, el historial, la
+      progresión, el progreso por ejercicio y por músculo, las metas, **el sistema de rangos entero
+      (F15–F25)** y el progreso físico en fotos con su comparador (F26 y F27). El detalle fase a
+      fase está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+- [x] **F28 — Integración completa del progreso físico** (v3.110.0): Fitness → Progreso pasa a ser
+      el centro de seguimiento —entrenamientos, ejercicios, músculos, rangos, objetivos y fotos en
+      una pantalla—, con línea temporal derivada, sus cinco filtros, los cuatro periodos, el
+      onboarding de quien empieza y los errores parciales. 🏁 **Cierra el bloque de progreso
+      físico (F26–F28)**.
+      🚨 **Conectar no es mezclar** (apartado 10): cada bloque lee de **un solo motor**, y eso se
+      comprueba recorriendo `BLOQUES`. 🚨 **No se guarda nada**, así que «el resumen debe
+      actualizarse» sale de no tener copia. 🚨 **Un periodo filtra lo que se ve, nunca el rango ni
+      los objetivos** (apartado 16).
+- [ ] F29–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción
