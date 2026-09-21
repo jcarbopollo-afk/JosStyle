@@ -87,6 +87,16 @@ export function validarObjetivo({ exerciseId, tipo, valor, fechaObjetivo = '' } 
   if (!ej) return { ok: false, motivo: 'Elige un ejercicio del catálogo.' };
   const t = tipoObjetivo(texto(tipo));
   if (!t) return { ok: false, motivo: 'Elige qué quieres medir.' };
+  /* 🔓 FIT F30, apartado 3 — una **habilidad** no se valida como una medida:
+     no lleva número y solo existe *"cuando el ejercicio tenga una progresión
+     estructurada"*, que en este catálogo es tener `progresiones`. */
+  if (t.numerico === false) {
+    if (!lista(ej.progresiones).length) {
+      return { ok: false, motivo: `${ej.nombre} no tiene una progresión con la que medir una habilidad.` };
+    }
+    if (fechaObjetivo && !esISO(fechaObjetivo)) return { ok: false, motivo: 'La fecha no es válida.' };
+    return { ok: true, motivo: null, valor: null };
+  }
   if (!metricasDeEjercicio(ej).includes(t.id)) {
     return { ok: false, motivo: `${ej.nombre} no se mide en ${t.unidad === 's' ? 'segundos' : t.unidad === 'kg' ? 'kilos' : 'repeticiones'}.` };
   }
@@ -111,6 +121,13 @@ export function validarObjetivo({ exerciseId, tipo, valor, fechaObjetivo = '' } 
 export function valorActual(fitness, objetivo, { propios = [], excluirSesion = null } = {}) {
   const todas = aparicionesDeEjercicio(fitness, objetivo.exerciseId, propios);
   const apariciones = excluirSesion ? todas.filter((a) => a.sesionId !== excluirSesion) : todas;
+  /* 🔓 FIT F30 — una habilidad se consigue **haciéndola**: la primera sesión
+     real del ejercicio objetivo. No hay valor que comparar, así que se devuelve
+     la aparición más antigua —la vez que lo logró—, no la mejor. */
+  if (objetivo.tipo === 'skill') {
+    const primera = apariciones[apariciones.length - 1];
+    return primera ? { valor: 1, fecha: primera.fecha, sesionId: primera.sesionId } : null;
+  }
   if (objetivo.tipo === 'duracion') {
     const m = mejorHistorico(apariciones, 'tiempo');
     return m ? { valor: m.serie.duracion, fecha: m.fecha, sesionId: m.sesionId } : null;
@@ -132,7 +149,10 @@ export function valorActual(fitness, objetivo, { propios = [], excluirSesion = n
   return mejor;
 }
 
-export const conseguido = (actual, objetivo) => !!actual && typeof objetivo?.valor === 'number' && actual.valor >= objetivo.valor;
+export const conseguido = (actual, objetivo) => (objetivo?.tipo === 'skill'
+  /* Una habilidad se consigue con hacerla una vez: no hay umbral que superar. */
+  ? !!actual
+  : !!actual && typeof objetivo?.valor === 'number' && actual.valor >= objetivo.valor);
 
 /** El `getGoalStatus` del apartado 26: cancelado > conseguido > activo. */
 export function estadoDeObjetivo(objetivo, actual) {
@@ -158,6 +178,7 @@ const conUnidad = (valor, tipo) => {
 /** El `getGoalProgress` del apartado 26: todo lo que enseña una tarjeta. */
 export function progresoDeObjetivo(fitness, objetivo, { propios = [], hoy = todayISO() } = {}) {
   const ej = ejercicioPorId(objetivo.exerciseId, propios);
+  const esSkill = objetivo.tipo === 'skill';
   const actual = valorActual(fitness, objetivo, { propios });
   const estado = estadoDeObjetivo(objetivo, actual);
   const p = progresoDeEjercicio(fitness, objetivo.exerciseId, { propios });
@@ -172,16 +193,26 @@ export function progresoDeObjetivo(fitness, objetivo, { propios = [], hoy = toda
     tipo: objetivo.tipo,
     metrica: tipoObjetivo(objetivo.tipo).nombre,
     objetivo: objetivo.valor,
-    objetivoTexto: conUnidad(objetivo.valor, objetivo.tipo),
+    /* 🔓 FIT F30 — una habilidad se rotula con su NOMBRE, no con un número. */
+    objetivoTexto: esSkill ? (ej ? nombreCompleto(ej) : 'Esa habilidad') : conUnidad(objetivo.valor, objetivo.tipo),
     actual: actual ? actual.valor : null,
     /* 🚨 Apartado 23 — sin datos NO es «0 %». */
     sinDatos: !actual,
-    progresoTexto: actual
-      ? `${decimal(actual.valor)} / ${conUnidad(objetivo.valor, objetivo.tipo)}`
-      : 'Sin datos todavía',
+    progresoTexto: esSkill
+      ? (actual ? 'Conseguida' : 'Todavía no la has hecho')
+      : (actual
+        ? `${decimal(actual.valor)} / ${conUnidad(objetivo.valor, objetivo.tipo)}`
+        : 'Sin datos todavía'),
     /* Apartado 6 — *"simplemente actual / objetivo"*, y acotado a 100: pasarse no
-       es un 130 %, es conseguido. */
-    porcentaje: actual && objetivo.valor > 0 ? Math.min(100, Math.round((actual.valor / objetivo.valor) * 100)) : null,
+       es un 130 %, es conseguido.
+       🚨 FIT F30, apartado 14 — **una habilidad NO tiene porcentaje**: *"No
+       mostrar «73 % completado» si no existe una escala válida"*. `null`, que es
+       lo que ya significa «no se puede medir» aquí desde la F14. */
+    porcentaje: !esSkill && actual && objetivo.valor > 0
+      ? Math.min(100, Math.round((actual.valor / objetivo.valor) * 100))
+      : null,
+    /* Quien pinte una barra pregunta esto, en vez de mirar el tipo. */
+    numerico: !esSkill,
     estado,
     estadoNombre: ESTADOS_VISIBLES[estado].nombre,
     simbolo: ESTADOS_VISIBLES[estado].simbolo,

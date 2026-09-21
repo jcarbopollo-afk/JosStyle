@@ -189,6 +189,15 @@ import {
   detalleCompletoDeEjercicio as detalleF29, cabeceraDeEjercicio as cabeceraF29,
   historialDelEjercicio as histF29,
 } from '../src/lib/detalleEjercicio.js';
+/* 🔓 FIT F30 — los objetivos avanzados. Las cinco piezas nuevas del apartado
+   39 más las tres del 14, el 32 y el 36; las otras cuatro son de la F14 y
+   viven en `ProgresoView.jsx`, que es donde se prueban. */
+import {
+  GoalProgress, GoalStatus, GoalHistory, GoalEmpty, GoalCompletion,
+  GoalChart, GoalSkillSteps, GoalLiveHint,
+} from '../src/components/objetivosFitness.jsx';
+import { detalleDeObjetivo as detalleObjetivoF30, objetivoEnVivo as enVivoF30 } from '../src/lib/objetivosFitness.js';
+import { OBJETIVOS_VACIO as VACIO_F14 } from '../src/lib/objetivosProgreso.js';
 import {
   tarjetasDeProgreso as tarjetasF12, resumenDeProgreso as resumenF12, detalleDeProgreso as detalleF12,
 } from '../src/lib/progresoEjercicios.js';
@@ -509,6 +518,21 @@ const fitnessRotoF29 = () => {
   const f = {};
   Object.defineProperty(f, 'sesiones', { get() { throw new Error('dato ilegible'); } });
   return f;
+};
+
+/* FIT F30 — los objetivos avanzados. ⚠️ Mismo escenario que la F28 y la F29:
+   los objetivos **son los de la F14**, así que si esta fase necesitara su
+   propio `fitness` sería que ha escrito una segunda lista. */
+const objF30 = (tipo) => (fitnessTodoF28().objetivos || []).find((o) => o.tipo === tipo) || null;
+const detF30 = (tipo) => detalleObjetivoF30(fitnessTodoF28(), objF30(tipo), { hoy: HOY_F28 });
+/* 🚨 Una habilidad: ni porcentaje (apartado 14) ni gráfico (apartado 32). */
+const fitnessSkillF30 = () => anadirObjetivoF14(fitnessTodoF28(), { exerciseId: 'muscle-up', tipo: 'skill' }).fitness;
+const objSkillF30 = () => (fitnessSkillF30().objetivos || []).find((o) => o.tipo === 'skill') || null;
+const detSkillF30 = () => detalleObjetivoF30(fitnessSkillF30(), objSkillF30(), { hoy: HOY_F28 });
+/* Y uno sin un solo registro detrás: el caso del apartado 25. */
+const detVacioF30 = () => {
+  const f = anadirObjetivoF14({}, { exerciseId: 'remo-barra', tipo: 'peso', valor: 70 }).fitness;
+  return detalleObjetivoF30(f, f.objetivos[0], { hoy: HOY_F28 });
 };
 
 const DESTINO_EJ_F22 = { tipo: 'exercise', id: 'dominada-prona' };
@@ -3579,6 +3603,39 @@ const CASOS = [
     variantes: { hay: true, aviso: 'Esta variante tiene un historial separado.', otras: [{ exerciseId: 'dominada-supina', nombre: 'Dominadas supinas', registros: 3 }] },
     accent, onAbrir: noop,
   })],
+  /* ══ FIT F30 — los objetivos avanzados ═════════════════════════════════
+     ⚠️ Cada pieza con datos, sin ellos y con una HABILIDAD, que es el caso que
+     el apartado 14 separa: ni porcentaje ni gráfico. */
+  ['GoalProgress', GoalProgress, () => ({ progreso: detF30('reps'), accent, distancia: detF30('reps').distancia })],
+  /* 🚨 Apartado 14 — una habilidad NO pinta una barra al 0 %: lo dice. */
+  ['GoalProgress (habilidad)', GoalProgress, () => ({ progreso: detSkillF30(), accent })],
+  /* 🚨 Apartado 25 — sin un solo registro, ni porcentaje ni «te faltan X». */
+  ['GoalProgress (sin datos)', GoalProgress, () => ({ progreso: detVacioF30(), accent, distancia: detVacioF30().distancia })],
+  /* 🐛 El símbolo se llama `simbolo`, NO `estadoSimbolo` (la FORMA de lo que
+     devuelve una función, otra vez): con el nombre mal el `<span>` sale vacío y
+     el arnés lo daría por bueno — la pieza se pinta igual. */
+  ['GoalStatus', GoalStatus, () => ({
+    estado: detF30('reps').estado, nombre: detF30('reps').estadoNombre,
+    simbolo: detF30('reps').simbolo, accent,
+  })],
+  /* 🚨 Apartado 28 — la fecha vencida se DICE y el objetivo sigue en progreso. */
+  ['GoalStatus (fecha superada)', GoalStatus, () => ({
+    estado: 'activo', nombre: 'En progreso', simbolo: '◦', accent, avisoFecha: 'Fecha objetivo superada',
+  })],
+  ['GoalHistory', GoalHistory, () => ({ filas: detF30('reps').historial, accent, unidad: 'reps', onVerSesion: noop })],
+  /* ⚠️ `GoalHistory`, `GoalEmpty`, `GoalCompletion`, `GoalChart`,
+     `GoalSkillSteps` y `GoalLiveHint` SIN su dato devuelven `null` a propósito,
+     y el arnés cuenta un render vacío como fallo: eso va en la prueba de Node
+     (FIT F3, con `ResumenConstructor`). */
+  ['GoalEmpty', GoalEmpty, () => ({ vacio: VACIO_F14, accent, onCrear: noop })],
+  ['GoalCompletion', GoalCompletion, () => ({ objetivo: detF30('peso'), accent, onCerrar: noop })],
+  ['GoalChart', GoalChart, () => ({ grafica: detF30('reps').grafica, accent })],
+  /* 🚨 Apartado 32 — para una habilidad no se dibuja nada, y se dice por qué. */
+  ['GoalChart (habilidad)', GoalChart, () => ({ grafica: detSkillF30().grafica, accent })],
+  /* Con menos de tres puntos tampoco: se dice cuántos hacen falta. */
+  ['GoalChart (pocos datos)', GoalChart, () => ({ grafica: detVacioF30().grafica, accent })],
+  ['GoalSkillSteps', GoalSkillSteps, () => ({ skill: detSkillF30().skill, accent })],
+  ['GoalLiveHint', GoalLiveHint, () => ({ enVivo: enVivoF30(fitnessTodoF28(), 'dominada-prona', { hoy: HOY_F28 }), accent })],
 
   ['ProgressSummaryCard', ProgressSummaryCard, () => ({ titulo: 'Ejercicios en progreso', accent, hayMas: true, onVerTodo: noop, children: 'x' })],
   ['ProgressMetricCard', ProgressMetricCard, () => ({ valor: 12, nombre: 'Entrenamientos registrados', sub: '3 en los últimos 7 días', accent, onClick: noop })],

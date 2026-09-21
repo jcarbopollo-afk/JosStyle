@@ -73,6 +73,8 @@ import {
 import {
   crearRutina, planARutina, leerBorrador, borrarBorrador,
 } from '../lib/constructor';
+/* 🔓 FIT F30, apartado 36 — el objetivo activo del ejercicio en curso. */
+import { objetivoEnVivo } from '../lib/objetivosFitness';
 
 /* ── La cabecera (apartado 6) ──────────────────────────────────────────────
    *"El header debe poder utilizarse posteriormente en todas las pantallas del
@@ -630,6 +632,12 @@ export default function FitnessView({
         /* 🔓 FIT F8 — Terminar deja la sesión en `finalizando` y **se queda en
            esta pantalla**: el `if` de abajo la recoge y pinta el resumen. */
         onTerminada={(s) => setEntrenando(s.id)}
+        /* 🔓 FIT F30, apartado 36 — el objetivo del ejercicio que está haciendo,
+           **como función**: la pantalla cambia de ejercicio sola y la vista no
+           recibe `fitness` (ni lo necesita, porque aquí no se calcula nada).
+           ⚠️ Y devuelve solo dos textos: *"No interferir con la tabla de
+           series. El objetivo no debe modificar automáticamente la rutina."* */
+        objetivoActivoDe={(exerciseId) => objetivoEnVivo(fitness, exerciseId, { propios })}
       />
     );
   }

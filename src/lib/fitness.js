@@ -637,9 +637,16 @@ function normalizarDescansoGuardado(d) {
    calcula de las sesiones (`objetivosProgreso.js`), porque un «conseguido»
    guardado se quedaría viejo al borrar la sesión que lo consiguió. */
 export const TIPOS_OBJETIVO = [
-  { id: 'peso', nombre: 'Peso', unidad: 'kg', decimales: true, maximo: 1000 },
-  { id: 'reps', nombre: 'Repeticiones', unidad: 'reps', decimales: false, maximo: 1000 },
-  { id: 'duracion', nombre: 'Tiempo', unidad: 's', decimales: false, maximo: 7200 },
+  { id: 'peso', nombre: 'Peso', unidad: 'kg', decimales: true, maximo: 1000, numerico: true },
+  { id: 'reps', nombre: 'Repeticiones', unidad: 'reps', decimales: false, maximo: 1000, numerico: true },
+  { id: 'duracion', nombre: 'Tiempo', unidad: 's', decimales: false, maximo: 7200, numerico: true },
+  /* 🔓 FIT F30, apartados 3 y 14 — el cuarto tipo: una **habilidad**. No lleva
+     valor, y eso es lo que pide el enunciado: *"No inventar valores numéricos
+     para skills"* y *"No mostrar «73 % completado» si no existe una escala
+     válida"*. El objetivo **es el ejercicio**: se consigue cuando hay una sesión
+     real suya. Por eso `numerico: false`, y quien pinte una barra o un
+     porcentaje tiene que preguntarlo antes. */
+  { id: 'skill', nombre: 'Habilidad', unidad: '', decimales: false, maximo: null, numerico: false },
 ];
 export const tipoObjetivo = (id) => TIPOS_OBJETIVO.find((t) => t.id === id) || null;
 /* ⚠️ `completado` existe porque el modelo lo pide, pero no se escribe solo: lo
@@ -656,7 +663,10 @@ export function crearObjetivo({
     id: texto(id) || uid(),
     exerciseId: texto(exerciseId),
     tipo: t,
-    valor: n,
+    /* ⚠️ Una habilidad NO tiene valor (FIT F30): el objetivo es el ejercicio.
+       Guardarle un número sería inventarle la escala que el apartado 14
+       prohíbe — y además haría que `conseguido()` comparase contra ella. */
+    valor: tipoObjetivo(t).numerico === false ? null : n,
     unidad: tipoObjetivo(t).unidad,
     creadoEn: numeroONull(creadoEn) ?? Date.now(),
     actualizadoEn: numeroONull(actualizadoEn),

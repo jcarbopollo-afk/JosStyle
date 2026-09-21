@@ -11,7 +11,7 @@
 
 ---
 
-## PARTE A — CONTRADICCIONES (24)
+## PARTE A — CONTRADICCIONES (25)
 
 Formato: **qué choca con qué** → **cuál gana y por qué** → **qué hay que hacer**.
 Severidad: 🔴 rompe algo hoy · 🟠 engaña a quien lea la documentación · 🟡 tensión de diseño asumida
@@ -712,6 +712,34 @@ una fase de *lectura* como la F29 sería cambiar cómo se guardan sus entrenamie
 atrás (AS F1, apartado 10). **Si algún día Josué quiere el nombre histórico**, es una fase suya: se
 añade a `crearWorkoutExercise`, se normaliza y **solo vale para lo que entrene a partir de ese
 día** — lo de antes ya no se puede recuperar.
+
+---
+
+### C-37 — ✅ RESUELTA AL CONSTRUIR (FIT F30, v3.112.0) · El `completedAt` que el apartado 15 pide guardar
+
+**El apartado 15 de la FIT F30 enumera los campos de un objetivo e incluye `completedAt`. La
+FIT F14 decidió lo contrario: `fitness.objetivos` guarda SOLO el objetivo, y todo lo demás
+—conseguido, porcentaje, valor actual— se deduce de las sesiones con la F11.**
+
+Y no es una decisión suelta: es la misma que tomaron la **F15** con los rangos (*"los rangos se
+calculan, no se guardan"*), la **F22** con el historial de rangos, la **F24** con la cola de
+clasificación y la **F28** con la línea temporal. Cinco veces en esta entrega.
+
+**La lectura con la que se ha construido, que respeta las dos partes:**
+
+- **La fecha existe y se enseña**: `conseguidoEn` sale de **la sesión que superó el objetivo**, que
+  es el dato que lo sostiene. Lo que pide el apartado 15 —saber cuándo se consiguió— se cumple
+  entero, y se ve en el detalle y en la microcelebración.
+- **No se guarda**, porque una copia **mentiría en cuanto él borrara esa sesión**: el objetivo
+  seguiría diciendo «conseguido el 14 de septiembre» sin una sola marca detrás, que es exactamente
+  lo que prohíbe el **apartado 17** del mismo enunciado (*"Debe existir evidencia real"*). Los dos
+  apartados no pueden cumplirse a la vez con un campo guardado.
+- Y de paso resuelve el **apartado 41** sin una línea: *"si se borra una sesión, recalcular"* sale
+  gratis cuando no hay nada que invalidar.
+
+⚠️ **Lo que sí se comprueba es que una sesión posterior PEOR no lo descomplete** (apartado 27, con
+su ejemplo exacto): sale gratis también, porque `valorActual` devuelve la **mejor marca histórica**
+y un máximo no baja al añadir. Está medido en la suite, con el ejemplo del enunciado.
 
 ---
 

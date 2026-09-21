@@ -2,6 +2,48 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **🎯 ACTUALIZACIÓN (v3.112.0 — FIT F30/45: el sistema avanzado de objetivos fitness):**
+> Los objetivos dejan de ser una lista con su porcentaje y pasan a tener **el ciclo entero**: crear,
+> seguir, conseguir y recuperar. Suman **cuánto falta** en palabras (*«Te faltan 3 reps»*), **el
+> historial de las sesiones que lo sostienen**, **la evolución con su línea de objetivo**, un cuarto
+> tipo —**habilidad**— con sus peldaños, **el aviso de duplicado**, **el objetivo visible durante el
+> entrenamiento** y **una microcelebración** al conseguirlo. Segunda del bloque de **Inteligencia**.
+> 🚨 **LOS OBJETIVOS YA EXISTÍAN, Y SON LA F14.** El apartado 2 es literal: *"Si el proyecto ya tiene
+> campos equivalentes: REUTILIZARLOS. No crear duplicados."* Y los tiene: `fitness.objetivos` existe
+> desde la F14, con `tipo`, `valor`, `unidad`, `creadoEn`, `fechaObjetivo`, `estado` y `nota` — que
+> **son** los siete campos del apartado 15 con otro nombre. `YA_LO_RESUELVE_LA_F14` guarda **las diez
+> funciones importadas**. Una segunda lista habría dejado los objetivos de Josué **invisibles en su
+> propia pantalla**. Y de los **nueve componentes del apartado 39, CUATRO ya estaban escritos**, así
+> que `DetalleObjetivo` **se amplía**: recibe el detalle completo, que **contiene** el de la F14.
+> 🚨 **NO SE PREDICE NADA, Y ESO SE MIDE.** El contexto lo abre y el apartado 34 lo repite **tres
+> veces**: ni *«te quedan 3 semanas»*, ni una fecha, ni una velocidad. Lo único que se dice es
+> **aritmética sobre lo que ya hay**, con un barrido sobre todos los textos y otro sobre el código.
+> 🚨 **UNA HABILIDAD NO TIENE PORCENTAJE NI GRÁFICO** (apartados 14 y 32): las progresiones del
+> catálogo son **peldaños, no una escala**, así que se enseñan **como una lista** y `porcentaje` es
+> `null`, nunca 0 — un 0 % se leería como «vas fatal» cuando lo que pasa es que no hay término medio
+> que medir. ⚠️ Y las progresiones **apuntan hacia abajo**: son lo que ya ha hecho para llegar ahí.
+> 🚨 **UNA SESIÓN POSTERIOR PEOR NO DESCOMPLETA UN OBJETIVO** (apartado 27, con su ejemplo exacto), y
+> **sale gratis**: `valorActual` devuelve la **mejor marca histórica**, y un máximo no baja al
+> añadir. ⏸ **C-37**: el `completedAt` del apartado 15 **se deriva de la sesión que lo superó**.
+> Guardarlo mentiría en cuanto él borrara esa sesión —el objetivo diría «conseguido» sin evidencia,
+> que es lo que prohíbe el **apartado 17**—, y de paso resuelve el **apartado 41** sin una línea: no
+> hay nada que invalidar porque no hay copia. La F15, la F22, la F24 y la F28 por **quinta vez**.
+> 🚨 **Y CREAR UN OBJETIVO NO MUEVE NI UN PUNTO DEL RANGO** (apartado 37, literal), comprobado de dos
+> formas: calculando el rango **antes y después**, y barriendo la librería para ver que **ni conoce**
+> el motor de rangos.
+> 🐛 **DOS HERMANAS QUE NO TENÍAN LA MISMA FORMA.** `cancelarObjetivo` devuelve **el `fitness`
+> directamente**, no un `{ ok, fitness }` como el resto de la F14 —así que `reactivarObjetivo` se
+> escribió igual que ella—, y **`listaDeObjetivos` devuelve *progresos*, no los objetivos guardados**:
+> `objetivoParaEjercicio` devuelve **los dos**, porque el formulario necesita el guardado y la
+> pantalla el progreso. Leer el campo equivocado no fallaba: dejaba la línea del entrenamiento en
+> vivo vacía. Es **la FORMA de lo que devuelve una función**, por enésima vez.
+> 🐛 **Y TRES BARRIDOS QUE SALTABAN CON LA TABLA QUE DECLARA LO QUE BUSCAN**: `completedAt`,
+> `motorRangos` y «predicciones» están nombrados **a propósito** en `DECISIONES_FIT30`,
+> `EL_OBJETIVO_NO_TOCA_EL_RANGO` y `NO_EN_FIT30`, justamente para declarar que no se construyen. Los
+> tres ponían roja la fase **con el código bien**. Lo que se barre es el código, no la declaración
+> (FIT F25, F28 y F29), y cada barrido lleva ahora su comprobación de que **sigue cazando uno de
+> verdad**.
+
 > **🏋️ ACTUALIZACIÓN (v3.111.0 — FIT F29/45: el análisis avanzado por ejercicio):**
 > El detalle de un ejercicio pasa a contestar la pregunta del enunciado: *"¿Cómo estoy progresando
 > realmente en este ejercicio?"*. Donde antes había la última marca, la comparación y el historial,

@@ -21,7 +21,7 @@ serverless en Vercel que hace de proxy a Anthropic.
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 29 primeras (v3.83.0 → v3.111.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 30 primeras (v3.83.0 → v3.112.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 16 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 15 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -338,7 +338,48 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 (v3.105.0)**, la **FIT F24 (v3.106.0)**, la **FIT F25 (v3.107.0)**, la **FIT F26 (v3.108.0)** y la
 **FIT F27 (v3.109.0)** y la
 **FIT F28 (v3.110.0)**, que 🏁 **CERRÓ EL BLOQUE DE PROGRESO FÍSICO** —F26, F27 y F28— y la
-**FIT F29 (v3.111.0)**, con la que empieza el bloque de **Inteligencia** (F29–F35), hechas. Lo que dejaron, y que vale para las 16 que quedan:
+**FIT F29 (v3.111.0)**, con la que empieza el bloque de **Inteligencia** (F29–F35), y la
+**FIT F30 (v3.112.0)**, hechas. Lo que dejaron, y que vale para las 15 que quedan:
+
+- 🚨 **LOS OBJETIVOS YA EXISTÍAN, Y SON LA F14** (FIT F30, apartado 2, literal: *"Si el proyecto ya
+  tiene campos equivalentes: REUTILIZARLOS. No crear duplicados."*). `fitness.objetivos` existe desde
+  la F14 con `tipo`, `valor`, `unidad`, `creadoEn`, `fechaObjetivo`, `estado` y `nota` — que **son**
+  los siete campos del apartado 15 con otro nombre. `YA_LO_RESUELVE_LA_F14` guarda **las diez
+  funciones importadas**. Y **de los nueve componentes del apartado 39, cuatro ya estaban escritos**,
+  así que `DetalleObjetivo` **se amplía**: recibe el detalle completo, que **contiene** el de la F14.
+- 🚨 **NO SE PREDICE NADA, Y ESO SE MIDE SOBRE LOS TEXTOS Y SOBRE EL CÓDIGO** (FIT F30, contexto y
+  apartado 34, **tres veces**): ni *«te quedan 3 semanas»*, ni una fecha, ni una velocidad. Lo que sí
+  se dice es *«Te faltan 3 reps»*, que **no es lo mismo**: es aritmética sobre lo que ya hay. Decir
+  *cuándo* llegará es lo que prohíbe.
+- 🚨 **UNA HABILIDAD NO TIENE PORCENTAJE NI GRÁFICO** (FIT F30, apartados 14 y 32): las progresiones
+  del catálogo son **peldaños, no una escala**, así que contar «2 de 3 = 67 %» sería inventarse la
+  escala que el apartado prohíbe. Se enseñan **como una lista** y `porcentaje` es `null`, nunca 0 —
+  un 0 % se leería como «vas fatal» cuando lo que pasa es que no hay término medio que medir.
+  ⚠️ Y **las progresiones apuntan HACIA ABAJO**: son lo que ya ha hecho para llegar ahí, no metas
+  más duras. Antes de leer una relación del catálogo, mirar en qué sentido va.
+- 🚨 **UNA SESIÓN POSTERIOR PEOR NO DESCOMPLETA UN OBJETIVO, Y SALE GRATIS** (FIT F30, apartado 27,
+  con su ejemplo exacto): `valorActual` devuelve la **mejor marca histórica**, y un máximo no baja al
+  añadir. ⏸ **C-36 tiene hermana: la C-37** — el `completedAt` del apartado 15 **se deriva de la
+  sesión que lo superó**. Guardarlo mentiría al borrarla —el objetivo diría «conseguido» sin
+  evidencia, que es lo que prohíbe el **apartado 17**— y de paso resuelve el **apartado 41** sin una
+  línea: no hay nada que invalidar porque no hay copia (la F15, la F22, la F24 y la F28, quinta vez).
+- 🚨 **CREAR UN OBJETIVO NO MUEVE NI UN PUNTO DEL RANGO** (FIT F30, apartado 37, literal), y se
+  comprueba **de dos formas**: calculando el rango antes y después, y barriendo la librería para ver
+  que **ni siquiera conoce** el motor de rangos. Una promesa en un comentario no es una garantía.
+- 🐛 **DOS HERMANAS DE LA F14 QUE NO TIENEN LA MISMA FORMA** (FIT F30, y es la lección de la FORMA de
+  lo que devuelve una función por enésima vez): **`cancelarObjetivo` devuelve el `fitness`
+  directamente**, no un `{ ok, fitness }` como el resto, así que `reactivarObjetivo` se escribió
+  igual que ella; y **`listaDeObjetivos` devuelve *progresos*, no los objetivos guardados**, así que
+  `objetivoParaEjercicio` devuelve **los dos** —el formulario necesita el guardado y la pantalla el
+  progreso—. Leer el campo equivocado no fallaba: dejaba la línea del entrenamiento en vivo **vacía**.
+- 🐛 **Y TRES BARRIDOS QUE SALTABAN CON LA TABLA QUE DECLARA LO QUE BUSCAN, EN LA MISMA FASE**
+  (FIT F30, y es `NO_EN_FIT25`, `NO_EN_FIT28` y `ESTADOS_DETALLE` por quinta vez): `completedAt`,
+  `motorRangos` y «predicciones» están nombrados **a propósito** en `DECISIONES_FIT30`,
+  `EL_OBJETIVO_NO_TOCA_EL_RANGO` y `NO_EN_FIT30`, justamente para declarar que no se construyen. Los
+  tres ponían roja la fase **con el código bien**. ⚠️ Y el cuarto —`sin_prediccion`, el id de una
+  casilla de auditoría— **se excluye a mano y con su motivo**, como `cierreNutricion` y
+  `appsAprendizaje`: estrechar la expresión hasta que calle sola es como se le escapa una de verdad.
+  **Cada barrido lleva su comprobación de que sigue cazando uno de verdad.**
 
 - 🚨 **«NO CREAR UNA LÓGICA NUEVA» SE CUMPLE GUARDANDO LAS FUNCIONES, NO SUS NOMBRES** (FIT F29, y es
   la F23, la F24, la F25 y la F28 por quinta vez). El contexto abre con *"No crear una nueva lógica
@@ -1184,24 +1225,28 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F30/45 — Sistema avanzado de objetivos fitness** (líneas
-   13 244–14 153 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la segunda del bloque de
+1. 🏋️ **SEGUIR POR LA FIT F31/45 — Consistencia y actividad de entrenamiento** (líneas
+   12 540–13 243 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la tercera del bloque de
    **Inteligencia** (F29–F35). Se construye de la F1 a la F45, en orden, encadenando sin parar.
    El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: LOS OBJETIVOS YA EXISTEN Y SON LA F14** (`objetivosProgreso.js`,
-   clave `fitness.objetivos`). Guardan **solo el objetivo**: conseguido, porcentaje y valor actual
-   **se deducen de las sesiones** con la F11, y sin datos el porcentaje es `null`, nunca 0. Una
-   segunda lista de objetivos dejaría los que Josué ya tiene invisibles en su propia pantalla — es
-   la lección más repetida del proyecto, y la F29 acaba de vivirla otra vez con los componentes.
-   🏁 **Y hay dos bloques CERRADOS de los que se lee, nunca se recalcula:** el sistema de rangos
+   ⚠️ **Y lo segundo, en ESTA: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
+   motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
+   deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único
+   sitio**. Está declarado en `MAPEO_EXISTENTE` desde la FIT F1. Un segundo contador de días
+   seguidos diría un número distinto del de la pantalla de Rachas el primer día. Y el historial de
+   sesiones es **`historial.js` (F10)**, que tampoco cuenta nada por su cuenta: lee
+   `fitness.sesiones` con `estado === 'completada'` y saca duración, series y volumen de
+   `resumenDeSesion` (F8) — si una fase cuenta series aparte, acabarán diciendo dos números.
+   🏁 **Y hay tres bloques CERRADOS de los que se lee, nunca se recalcula:** el sistema de rangos
    entero (**F15–F25**) —motor, pantalla, cuestionario, detalle muscular, explicación, contribución,
-   historial, siguiente rango, cola y resumen— y el **progreso físico (F26–F28)**: las fotos son
+   historial, siguiente rango, cola y resumen—, el **progreso físico (F26–F28)** —las fotos son
    `saludFotos`, la galería la F26, el comparador la F27 y el centro de seguimiento la **F28**
-   (`resumenProgreso.js` / `.jsx`), donde **cada bloque declara UNA fuente**. Y el **detalle de un
-   ejercicio es la F29** (`detalleEjercicio.js` / `.jsx`), que no calcula nada: pide a la F11, la
-   F12, la F19, la F23, la F14 y la F8, y **no guarda una línea**.
+   (`resumenProgreso.js` / `.jsx`), donde **cada bloque declara UNA fuente**— y el **detalle de un
+   ejercicio (F29)** (`detalleEjercicio.js` / `.jsx`), que no calcula nada: pide a la F11, la F12,
+   la F19, la F23, la F14 y la F8. Y los **objetivos son la F14 ampliada por la F30**
+   (`objetivosFitness.js` / `.jsx`): guardan **solo el objetivo** y **no predicen nada**.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

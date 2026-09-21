@@ -1,5 +1,91 @@
 # CHANGELOG.md
 
+## v3.112.0 — FIT F30/45: el sistema avanzado de objetivos fitness
+
+Los objetivos dejan de ser una lista con su porcentaje y pasan a tener el ciclo entero:
+crear, seguir, conseguir y recuperar. Suman **cuánto falta** en palabras, el historial de
+las sesiones que lo sostienen, la evolución **con su línea de objetivo**, un cuarto tipo
+—**habilidad**— con sus peldaños, el aviso de duplicado, el objetivo visible **durante el
+entrenamiento** y una microcelebración al conseguirlo. Segunda fase del bloque de
+**Inteligencia** (F29–F35).
+
+### 🚨 Los objetivos YA existían, y son la F14
+
+El apartado 2 lo dice con todas las letras: *«Si el proyecto ya tiene campos equivalentes:
+REUTILIZARLOS. No crear duplicados.»* Y los tiene: `fitness.objetivos` existe desde la
+**F14**, con `tipo`, `valor`, `unidad`, `creadoEn`, `fechaObjetivo`, `estado` y `nota` —que
+son exactamente los siete campos del apartado 15 con otro nombre—. `YA_LO_RESUELVE_LA_F14`
+guarda **las diez funciones importadas**, así que renombrar una rompe la compilación. Una
+segunda lista de objetivos habría dejado los que Josué ya tiene **invisibles en su propia
+pantalla**, que es el fallo de la E3 F16, la E3 F36 y la E3 F41 por enésima vez.
+
+Y de los **nueve componentes del apartado 39, cuatro ya estaban escritos**
+—`ObjetivosProgreso`, `TarjetaObjetivo`, `DetalleObjetivo` y `FormularioObjetivo`—, así que
+`DetalleObjetivo` **se amplía**: recibe el detalle completo, que **contiene** el progreso de
+la F14. Es la F23, la F25 y la F29 otra vez.
+
+### 🚨 No se predice nada, y eso se mide
+
+El contexto lo abre y el apartado 34 lo repite **tres veces**: ni *«te quedan 3 semanas»*,
+ni una fecha estimada, ni una velocidad de progreso. Lo único que se dice es **aritmética
+sobre lo que ya hay** —*«Te faltan 3 reps»*—, y hay un barrido sobre **todos** los textos
+que genera la fase, más otro sobre el código, con su comprobación de que sigue cazando una
+predicción de verdad si alguien la mete.
+
+### 🚨 Una habilidad no tiene porcentaje ni gráfico
+
+El cuarto tipo del apartado 3 es una habilidad —muscle-up, front lever—, y el apartado 14 es
+literal: *«No mostrar "73 % completado" si no existe una escala válida»*. No existe: las
+progresiones del catálogo son **peldaños**, no una escala, así que se enseñan **como una
+lista** —lo que ya ha hecho para llegar ahí— y `porcentaje` vale `null`, nunca 0. Un 0 % se
+leería como «vas fatal» cuando lo que pasa es que no hay término medio que medir. Y el
+apartado 32 dice lo mismo del gráfico: *«Para skills: no crear gráfico artificial»*, así que
+lo decide la librería y la pantalla solo lo dice.
+
+### 🚨 Una sesión posterior PEOR no descompleta un objetivo
+
+Es el apartado 27, con su ejemplo exacto: si consiguió 15 repeticiones y la semana siguiente
+hace 11, el objetivo **sigue conseguido**. Y sale gratis, sin un `completedAt` guardado:
+`valorActual` devuelve la **mejor marca histórica**, y un máximo no baja al añadir. Ésa es la
+**C-37** del `docs/03`: el apartado 15 pide guardar `completedAt` y la F14 decidió que el
+objetivo guarda **solo el objetivo**. La fecha existe y se enseña —sale de la sesión que lo
+superó—, pero guardarla mentiría en cuanto él borrara esa sesión, y entonces el objetivo
+diría «conseguido» sin evidencia: justo lo que prohíbe el **apartado 17**.
+
+Y de paso resuelve el **apartado 41** sin una línea: *«si se borra una sesión, recalcular»*
+sale de no tener nada que invalidar. Es la F15 con los rangos, la F22 con el historial, la
+F24 con la cola y la F28 con la línea temporal, por **quinta vez** en esta entrega.
+
+### 🚨 Y crear un objetivo no mueve ni un punto del rango
+
+Apartado 37, literal: *«EL OBJETIVO NO MODIFICA EL RANGO. El rango sigue dependiendo
+exclusivamente de RankEngine.»* Se comprueba de dos formas: calculando el rango **antes y
+después** de crear un objetivo y comparándolos, y barriendo la librería para demostrar que
+**ni siquiera conoce** el motor de rangos.
+
+### 🐛 Dos hermanas que no tenían la misma forma
+
+`cancelarObjetivo` devuelve **el `fitness` directamente**, no un `{ ok, fitness }` como el
+resto de la F14 — así que `reactivarObjetivo` se escribió igual que ella, y no al revés. Y
+`listaDeObjetivos` devuelve **progresos**, no los objetivos guardados: `objetivoParaEjercicio`
+devuelve **los dos**, porque el formulario necesita el guardado y la pantalla el progreso.
+Leer el campo equivocado no fallaba: dejaba la línea del entrenamiento en vivo vacía. Es la
+lección de **la FORMA de lo que devuelve una función** por enésima vez.
+
+### 🐛 Y tres barridos que saltaban con la tabla que declara lo que buscan
+
+`completedAt`, `motorRangos` y «predicciones» están **nombrados a propósito** en
+`DECISIONES_FIT30`, `EL_OBJETIVO_NO_TOCA_EL_RANGO` y `NO_EN_FIT30` — justamente para declarar
+que no se construyen. Los tres ponían roja la fase **con el código bien**. Lo que se barre es
+el código, no la declaración (FIT F25, F28 y F29), y cada barrido lleva ahora su comprobación
+de que **sigue cazando uno de verdad**.
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde. **123 comprobaciones nuevas** en
+`scripts/test-objetivos-fitness.mjs` —las 22 pruebas del apartado 42 y los casos límite del
+43—, **52 casos de renderizado** nuevos y una sección nueva del recorrido en Chromium.
+
 ## v3.111.0 — FIT F29/45: el análisis avanzado por ejercicio
 
 El detalle de un ejercicio pasa a contestar la pregunta del enunciado: *«¿Cómo estoy

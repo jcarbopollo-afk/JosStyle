@@ -1038,6 +1038,17 @@ else
   fallo "Falla el análisis por ejercicio"; grep '✗' /tmp/jc_detalle_ejercicio.log
 fi
 
+# FIT F30 — el sistema avanzado de objetivos. Lo que más se vigila: que NO se prediga
+# nada —ni «te quedan 3 semanas», ni una fecha, ni una velocidad—, que una HABILIDAD no
+# tenga porcentaje ni gráfico, que una sesión posterior PEOR no descomplete un objetivo,
+# que el duplicado avise y sin confirmar no escriba, y que crear un objetivo NO mueva ni
+# un punto del rango.
+if node --import ./scripts/resolver-vite.mjs scripts/test-objetivos-fitness.mjs >/tmp/jc_objetivos_fitness.log 2>&1; then
+  ok "Objetivos avanzados (FIT F30) — $(grep -c '✓' /tmp/jc_objetivos_fitness.log) comprobaciones"
+else
+  fallo "Fallan los objetivos avanzados"; grep '✗' /tmp/jc_objetivos_fitness.log
+fi
+
 # FIT F28 — la integración completa del progreso físico. Lo que más se vigila: que NO
 # exista ninguna métrica que mezcle dos sistemas —«fotos + fuerza + rangos = 82 %» es el
 # ejemplo que prohíbe el apartado 10—, que cada bloque lea de UN solo motor, que el

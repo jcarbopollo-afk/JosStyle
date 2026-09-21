@@ -9036,6 +9036,139 @@ ok(ancho_fit29.a <= ancho_fit29.v + 1,
 
 almacen.fitness = fitnessDeAntes_fit29;
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F30 — Sistema avanzado de objetivos fitness (Entrega 4 · 30/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   Los objetivos son los de la **F14** y esta fase les añade el ciclo entero:
+   progreso derivado, historial, gráfica con su línea, habilidades sin
+   porcentaje, el aviso de duplicado y recuperar uno cancelado.
+
+   Lo que solo se puede ver aquí: que el detalle de un objetivo **cabe en una
+   pantalla** con sus cuatro bloques, que una HABILIDAD no pinta ni un
+   porcentaje ni un gráfico (apartados 14 y 32), que crear uno repetido
+   **avisa y sin confirmar no escribe** (apartado 24) y que un cancelado se
+   recupera (apartado 20).
+
+   🐛 Y siembra lo suyo: el escenario de la F29 se acaba de deshacer, así que
+   hacen falta **tres registros** del mismo ejercicio —`PUNTOS_MINIMOS_OBJETIVO`
+   es 3— o la gráfica no se dibujaría y el rojo no sería del código. */
+console.log('\n── FIT F30 · Los objetivos avanzados ──');
+
+const fitnessDeAntes_fit30 = almacen.fitness;
+almacen.fitness = {
+  ...almacen.fitness,
+  sesiones: [
+    ...(almacen.fitness.sesiones || []),
+    sesion_fit29('f30-a', 70, [serie_fit29('h1', 8, null), serie_fit29('h2', 7, null)], 'dominada-prona', 'corporal'),
+    sesion_fit29('f30-b', 45, [serie_fit29('h3', 10, null), serie_fit29('h4', 9, null)], 'dominada-prona', 'corporal'),
+    sesion_fit29('f30-c', 10, [serie_fit29('h5', 12, null), serie_fit29('h6', 11, null)], 'dominada-prona', 'corporal'),
+    /* Un peldaño de la progresión del muscle-up, para el apartado 14. */
+    sesion_fit29('f30-d', 30, [serie_fit29('h7', 6, null)], 'dominada-explosiva', 'corporal'),
+  ],
+  objetivos: [
+    ...(almacen.fitness.objetivos || []),
+    { id: 'f30-obj', exerciseId: 'dominada-prona', tipo: 'reps', valor: 15, unidad: 'reps', creadoEn: Date.parse('2026-07-01T12:00:00'), actualizadoEn: null, fechaObjetivo: '', estado: 'activo', nota: '' },
+    /* 🚨 Apartado 14 — una habilidad: sin `valor` y sin porcentaje posible. */
+    { id: 'f30-skill', exerciseId: 'muscle-up', tipo: 'skill', valor: null, unidad: '', creadoEn: Date.parse('2026-07-02T12:00:00'), actualizadoEn: null, fechaObjetivo: '', estado: 'activo', nota: '' },
+    /* Y uno cancelado, para el apartado 20. */
+    { id: 'f30-cancel', exerciseId: 'press-banca-barra', tipo: 'peso', valor: 80, unidad: 'kg', creadoEn: Date.parse('2026-07-03T12:00:00'), actualizadoEn: null, fechaObjetivo: '', estado: 'cancelado', nota: '' },
+  ],
+};
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F30 — se entra en Progreso');
+ok(await pulsar('Objetivos'), '…y en la pestaña Objetivos');
+await page.waitForTimeout(500);
+
+const lista_fit30 = await ver();
+ok(/Mis objetivos/i.test(lista_fit30), '🚨 FIT F30 — la lista de objetivos, la de la F14 (apartado 2: *"REUTILIZARLOS"*)');
+/* Apartado 21 — «Cancelados» solo aparece porque HAY uno cancelado. */
+ok(/Cancelad/i.test(lista_fit30),
+  '🚨 FIT F30 — el filtro «Cancelados» existe porque hay uno: no es una pastilla que dejaría la pantalla vacía (apartado 21)');
+
+/* ── El detalle de un objetivo numérico: los cuatro bloques juntos ───────── */
+ok(await pulsarQueEmpiece_fit10('Objetivo Dominadas pronas'), 'FIT F30 — se abre el detalle del objetivo de dominadas');
+const det_fit30 = await esperarTexto(/Lo que has hecho/i);
+
+/* Apartados 10 y 33 — el progreso derivado y cuánto falta, nunca cuándo. */
+ok(/12\s*\/\s*15\s*reps/i.test(det_fit30),
+  '🚨 FIT F30 — el progreso sale de los entrenamientos: «12 / 15 reps», sin que nadie lo escriba (apartado 10)');
+ok(/faltan?\s*3/i.test(det_fit30),
+  '🚨 FIT F30 — «Te faltan 3 reps»: aritmética sobre lo que hay, no una predicción (apartado 33)');
+ok(!/quedan \d+ (d[ií]as|semanas)|conseguir[aá]s|a este ritmo/i.test(det_fit30),
+  '🚨 FIT F30 — y NI UNA predicción de cuándo llegará (apartado 34, tres veces)');
+
+/* Apartado 31 — las sesiones que han contribuido, del historial que ya existe. */
+ok(/Lo que has hecho/i.test(det_fit30),
+  '🚨 FIT F30 — las sesiones que han contribuido, sin duplicar el historial (apartado 31)');
+
+/* Apartado 32 — la gráfica CON su línea de objetivo, y con alternativa textual. */
+const graficaObj_fit30 = await page.evaluate(() => {
+  const g = [...document.querySelectorAll('svg[role="img"]')].map((s) => s.getAttribute('aria-label') || '');
+  return g.find((t) => /objetivo/i.test(t)) || '';
+});
+ok(/objetivo en 15/i.test(graficaObj_fit30),
+  `🚨 FIT F30 — la gráfica lleva la LÍNEA del objetivo, que es lo único que añade a la de la F12 («${graficaObj_fit30}», apartado 32)`);
+
+/* ── Apartado 14 · Una HABILIDAD: peldaños, y ni un porcentaje ───────────── */
+ok(await pulsar('Volver a Mis objetivos'), 'FIT F30 — se vuelve a la lista');
+await page.waitForTimeout(400);
+ok(await pulsarQueEmpiece_fit10('Objetivo Muscle-up'), 'FIT F30 — se abre el objetivo de habilidad');
+const skill_fit30 = await esperarTexto(/Progresi[oó]n/i);
+ok(/Dominadas explosivas/i.test(skill_fit30),
+  '🚨 FIT F30 — una habilidad enseña sus PELDAÑOS, que salen del catálogo (apartado 14)');
+ok(!/%/.test(skill_fit30),
+  '🚨 FIT F30 — y NI UN porcentaje: *"No mostrar «73 % completado» si no existe una escala válida"* (apartado 14)');
+ok(/no se dibuja en una l[ií]nea|habilidad se consigue o no/i.test(skill_fit30),
+  '🚨 FIT F30 — ni un gráfico artificial: se dice por qué (apartado 32)');
+
+/* ── Apartado 20 · Recuperar uno cancelado ──────────────────────────────── */
+ok(await pulsar('Volver a Mis objetivos'), 'FIT F30 — se vuelve otra vez a la lista');
+await page.waitForTimeout(400);
+ok(await pulsar('Cancelados'), 'FIT F30 — se filtra por cancelados');
+await page.waitForTimeout(400);
+ok(await pulsarQueEmpiece_fit10('Objetivo Press de banca'), 'FIT F30 — se abre el cancelado');
+await esperarTexto(/Recuperar objetivo/i);
+ok(await pulsar('Recuperar objetivo'), '🚨 FIT F30 — un objetivo cancelado se RECUPERA, no hay que crearlo otra vez (apartado 20)');
+await page.waitForTimeout(700);
+ok((almacen.fitness.objetivos || []).find((o) => o.id === 'f30-cancel')?.estado === 'activo',
+  '🚨 FIT F30 — …y queda guardado como activo, con el MISMO id (apartado 20)');
+
+/* ── Apartado 24 · El duplicado avisa, y sin confirmar NO escribe ────────── */
+const cuantosAntes_fit30 = (almacen.fitness.objetivos || []).length;
+ok(await pulsar('Volver a Mis objetivos'), 'FIT F30 — de vuelta a la lista');
+await page.waitForTimeout(400);
+ok(await pulsar('+ Añadir objetivo'), 'FIT F30 — se abre el formulario');
+await esperarTexto(/Nuevo objetivo/i);
+ok(await pulsar('Elegir ejercicio'), 'FIT F30 — se abre el catálogo para elegir');
+await page.waitForTimeout(600);
+await page.fill('input[aria-label="Buscar un ejercicio"]', 'Dominadas pronas');
+await page.waitForTimeout(600);
+ok(await pulsar('Añadir Dominadas pronas'), 'FIT F30 — se elige el ejercicio que YA tiene objetivo');
+await esperarTexto(/Nuevo objetivo/i);
+await page.fill('input[aria-label="Objetivo en reps"]', '15');
+await page.waitForTimeout(300);
+ok(await pulsar('Crear objetivo'), 'FIT F30 — se intenta guardar el mismo objetivo otra vez');
+const aviso_fit30 = await esperarTexto(/Ya tienes un objetivo igual/i);
+ok(/Ya tienes un objetivo igual/i.test(aviso_fit30),
+  '🚨 FIT F30 — «Ya tienes un objetivo igual»: avisa en vez de crear dos (apartado 24)');
+ok((almacen.fitness.objetivos || []).length === cuantosAntes_fit30,
+  '🚨 FIT F30 — …y SIN confirmar NO ha escrito nada, que es el patrón `aplicarPlan` de siempre (apartado 24)');
+
+/* Apartado 44 — y todo esto a 375 px, sin desbordar de lado. */
+const ancho_fit30 = await page.evaluate(() => ({ a: document.documentElement.scrollWidth, v: window.innerWidth }));
+ok(ancho_fit30.a <= ancho_fit30.v + 1,
+  `🚨 FIT F30 — a 375 px la pantalla NO desborda de lado (${ancho_fit30.a} vs ${ancho_fit30.v}, apartado 44)`);
+
+/* Apartado 16 y D2-02 — ni XP, ni monedas, ni leaderboard en toda la pantalla. */
+const textoFinal_fit30 = await ver();
+ok(!/\bXP\b|monedas|leaderboard|ranking social/i.test(textoFinal_fit30),
+  '🚨 FIT F30 — ni XP, ni monedas, ni leaderboard: esto mide, no premia (apartado 16 y D2-02)');
+
+almacen.fitness = fitnessDeAntes_fit30;
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

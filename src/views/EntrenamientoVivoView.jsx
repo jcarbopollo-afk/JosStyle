@@ -66,6 +66,8 @@ import {
   DESCANSOS_RAPIDOS, SUMAS_DESCANSO, DESCANSO_MINIMO, DESCANSO_MAXIMO,
   direccionDeGesto, tieneDatosRegistrados, AVISO_REEMPLAZAR, sustitutosCompatibles,
 } from '../lib/entrenamientoUx';
+/* 🔓 FIT F30, apartado 36 — el objetivo activo, discreto, encima de la tabla. */
+import { GoalLiveHint } from '../components/objetivosFitness';
 /* 🔓 FIT F8 — Terminar ya no completa: lleva al resumen (su apartado 1). */
 import { pasarAFinalizacion } from '../lib/finalizacion';
 /* 🚨 Se EMITE al bus; ninguna pantalla reproduce ni vibra por su cuenta (SO F1). */
@@ -719,6 +721,10 @@ export function SesionRecuperable({ sesion, accent, onContinuar, onDescartar, te
 export default function EntrenamientoVivoView({
   sesion, propios = [], accent,
   onGuardar, onSalir, onTerminada = null,
+  /* 🔓 FIT F30, apartado 36 — llega como FUNCIÓN porque el ejercicio activo
+     cambia dentro de esta pantalla. Aquí no se calcula nada: quien sabe de
+     objetivos es `objetivosFitness.js`, y quien tiene el `fitness` es Fitness. */
+  objetivoActivoDe = null,
 }) {
   /* Qué panel está abierto: estado de la pantalla, jamás un dato (EH F40). */
   const [panel, setPanel] = useState(null); // 'tutorial' | 'reemplazar' | 'notas' | 'descanso'
@@ -737,6 +743,11 @@ export default function EntrenamientoVivoView({
   const ejercicio = useMemo(() => ejercicioActual(sesion), [sesion]);
   const ficha = useMemo(() => fichaDeEjercicio(ejercicio, propios), [ejercicio, propios]);
   const cabecera = useMemo(() => cabeceraDeEjercicio(ejercicio, propios), [ejercicio, propios]);
+  /* 🔓 FIT F30, apartado 36 — el objetivo del ejercicio que está haciendo. */
+  const objetivoVivo = useMemo(
+    () => (objetivoActivoDe && ejercicio ? objetivoActivoDe(ejercicio.exerciseId) : null),
+    [objetivoActivoDe, ejercicio],
+  );
   const filas = useMemo(() => filasDeSeries(ejercicio), [ejercicio]);
   const activaId = useMemo(() => serieActiva(ejercicio), [ejercicio]);
   const carrusel = useMemo(() => carruselDeSesion(sesion, propios), [sesion, propios]);
@@ -1004,6 +1015,13 @@ export default function EntrenamientoVivoView({
                   <p className="text-[11px] mt-1" style={{ color: COLORS.warning }}>
                     En lugar de {ficha.sustituyeA} · solo en este entrenamiento
                   </p>
+                )}
+                {/* 🔓 FIT F30, apartado 36 — el objetivo activo, discreto y
+                    encima de la tabla: *"No interferir con la tabla de series.
+                    El objetivo no debe modificar automáticamente la rutina."*
+                    Es solo texto: ni un botón, ni una serie sugerida. */}
+                {objetivoVivo && (
+                  <div className="mt-2"><GoalLiveHint enVivo={objetivoVivo} accent={accent} /></div>
                 )}
                 {!ficha.existe && (
                   <p className="text-[11px] mt-1" style={{ color: COLORS.negative }}>

@@ -283,8 +283,30 @@ export function ExerciseHistory({ filas = [], veces, children }) {
    nada**, ni siquiera ofrece crearlo — eso es la F14 y vive en su sección.
    ⚠️ Y un objetivo conseguido se enseña **con su fecha real**, la de la sesión
    en la que lo superó, no la de hoy. */
-export function ExerciseGoalPreview({ objetivo, accent, onAbrir = null }) {
-  if (!objetivo || !objetivo.hay) return null;
+export function ExerciseGoalPreview({ objetivo, accent, onAbrir = null, onCrear = null }) {
+  /* 🔓 FIT F30, apartado 35 — sin objetivo se ofrece **crearlo**, en vez de
+     dejar el hueco: *"Si no existe: «Crear objetivo»"*. Y solo si hay con qué
+     crearlo, que si no sería un botón muerto (regla 8). */
+  if (!objetivo || !objetivo.hay) {
+    return onCrear ? (
+      <Card>
+        <div className="flex items-center gap-2">
+          <Target size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />
+          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Objetivo</p>
+        </div>
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+          Todavía no te has puesto un objetivo con este ejercicio.
+        </p>
+        <button
+          onClick={onCrear}
+          className="mt-2 text-xs font-bold py-2 px-1 toque-44"
+          style={{ color: accent }}
+        >
+          Crear objetivo
+        </button>
+      </Card>
+    ) : null;
+  }
   const hecho = objetivo.conseguido;
   const Cuerpo = (
     <>

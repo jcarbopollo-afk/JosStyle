@@ -55,6 +55,15 @@ import {
   ExerciseVariants,
 } from '../components/detalleEjercicio';
 import { detalleCompletoDeEjercicio } from '../lib/detalleEjercicio';
+/* 🔓 FIT F30 — el sistema avanzado de objetivos. Las cinco piezas nuevas del
+   apartado 39; las otras cuatro son de la F14 y viven en este mismo archivo. */
+import {
+  GoalProgress, GoalHistory, GoalStatus, GoalEmpty, GoalCompletion, GoalChart, GoalSkillSteps,
+} from '../components/objetivosFitness';
+import {
+  detalleDeObjetivo, crearObjetivoConAviso, reactivarObjetivo, tiposDeObjetivoPara,
+  objetivoParaEjercicio, AVISO_DUPLICADO, CTA_CREAR_OBJETIVO,
+} from '../lib/objetivosFitness';
 /* Apartado 26 — el historial de rango es el de la FIT F22, no uno nuevo. */
 import { RankHistory } from '../components/historialRango';
 
@@ -333,6 +342,8 @@ function FilaHistoria({ fila, accent, abierta, onAlternar, onVerSesion }) {
 export function DetalleProgreso({
   detalle, accent, rango, onRango, onVolver, onVerEjercicio, onVerSesion,
   metrica = null, onMetrica = null, onHistorialRango = null, onVariante = null,
+  /* 🔓 FIT F30, apartado 35 — ver el objetivo de este ejercicio, o crearlo. */
+  onVerObjetivo = null, onCrearObjetivo = null,
 }) {
   const [abiertas, setAbiertas] = useState(() => new Set());
   const d = detalle;
@@ -393,8 +404,14 @@ export function DetalleProgreso({
           {/* Apartados 3, 25 y 26 — el rango, con su siguiente y su historial. */}
           <ExerciseRankPreview rango={d.rango} accent={accent} onHistorial={onHistorialRango} />
 
-          {/* Apartados 23 y 24 — el objetivo, si lo hay. */}
-          <ExerciseGoalPreview objetivo={d.objetivo} accent={accent} />
+          {/* Apartados 23 y 24 — el objetivo, si lo hay.
+              🔓 FIT F30, apartado 35 — y si no lo hay, la puerta para crearlo. */}
+          <ExerciseGoalPreview
+            objetivo={d.objetivo}
+            accent={accent}
+            onAbrir={onVerObjetivo}
+            onCrear={onCrearObjetivo}
+          />
 
           {/* Apartados 9 a 12 — la gráfica, su métrica y sus seis periodos. */}
           {d.veces >= 2 && (
@@ -750,7 +767,15 @@ export function FormularioObjetivo({ inicial = null, ejercicio, accent, onElegir
 }
 
 /* ── El detalle de un objetivo (apartados 12, 14, 16, 17 y 18) ─────────── */
-export function DetalleObjetivo({ objetivo, accent, onVolver, onVerProgreso, onEditar, onCancelarObjetivo, onEliminar }) {
+/* 🔓 FIT F30 — recibe ahora el detalle COMPLETO de `detalleDeObjetivo`, que
+   **contiene** el progreso de la F14 y le suma la distancia (33), el historial
+   que lo sostiene (31), la evolución con su línea (32) y los peldaños de una
+   habilidad (14). Los campos de la F14 siguen leyéndose igual, así que lo de
+   antes no cambia de sitio. */
+export function DetalleObjetivo({
+  objetivo, accent, onVolver, onVerProgreso, onEditar, onCancelarObjetivo, onEliminar,
+  onReactivar = null, onVerSesion = null,
+}) {
   const [aviso, setAviso] = useState(null); // 'cancelar' | 'eliminar'
   const o = objetivo;
   const fila = (etiqueta, valor) => (valor ? (
@@ -791,8 +816,34 @@ export function DetalleObjetivo({ objetivo, accent, onVolver, onVerProgreso, onE
             <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>{o.porcentaje} % del objetivo: tu mejor resultado entre lo que te propusiste.</p>
           </>
         )}
-        {o.fechaSuperada && <p className="text-xs mt-2 font-semibold" style={{ color: COLORS.textMuted }}>Fecha superada · puedes seguir intentándolo</p>}
+        {/* 🚨 FIT F30, apartado 28 — «Fecha objetivo superada», y sigue EN
+            PROGRESO: ni «fallido», ni un estado nuevo (apartado 29). */}
+        {o.avisoFecha ? (
+          <div className="mt-2"><GoalStatus estado={o.estado} nombre={o.estadoNombre} simbolo={o.simbolo} accent={accent} avisoFecha={o.avisoFecha} /></div>
+        ) : o.fechaSuperada && (
+          <p className="text-xs mt-2 font-semibold" style={{ color: COLORS.textMuted }}>Fecha superada · puedes seguir intentándolo</p>
+        )}
+        {/* 🚨 Apartado 33 — cuánto falta. Nunca cuándo llegará (apartado 34). */}
+        {o.distancia && (
+          <p className="text-sm font-semibold mt-2" style={{ color: COLORS.textMuted }}>{o.distancia}</p>
+        )}
       </Card>
+
+      {/* 🚨 Apartado 14 — una habilidad enseña sus peldaños, no un porcentaje. */}
+      {o.skill && <GoalSkillSteps skill={o.skill} accent={accent} />}
+
+      {/* Apartado 32 — la evolución, con la línea del objetivo. */}
+      {o.grafica && (o.grafica.mostrar || o.grafica.motivo) && (
+        <Card>
+          <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: COLORS.textMuted }}>Evolución</p>
+          <GoalChart grafica={o.grafica} accent={accent} />
+        </Card>
+      )}
+
+      {/* Apartado 31 — las sesiones que han contribuido, sin duplicarlas. */}
+      {o.historial && (
+        <GoalHistory filas={o.historial} accent={accent} unidad={o.grafica ? o.grafica.unidad : ''} onVerSesion={onVerSesion} />
+      )}
 
       <Card>
         {fila('Métrica', o.metrica)}
@@ -820,6 +871,10 @@ export function DetalleObjetivo({ objetivo, accent, onVolver, onVerProgreso, onE
         <div className="flex gap-2 flex-wrap">
           {o.estado !== 'cancelado' && onEditar && <GhostBtn onClick={onEditar}>Editar</GhostBtn>}
           {o.estado !== 'cancelado' && onCancelarObjetivo && <GhostBtn onClick={() => setAviso('cancelar')}>Cancelar objetivo</GhostBtn>}
+          {/* 🔓 FIT F30, apartado 20 — recuperar uno cancelado: *"volver a active
+              sin modificar su historial original"*, que sale gratis porque el
+              historial son las sesiones y esto solo cambia el estado. */}
+          {o.estado === 'cancelado' && onReactivar && <GhostBtn onClick={onReactivar}>Recuperar objetivo</GhostBtn>}
           {onEliminar && <GhostBtn onClick={() => setAviso('eliminar')}>Eliminar</GhostBtn>}
         </div>
       )}
@@ -947,6 +1002,9 @@ export default function ProgresoView({
      elegido en el formulario: estado de pantalla, nunca un dato (EH F40). */
   const [objetivoAbierto, setObjetivoAbierto] = useState(null);
   const [formulario, setFormulario] = useState(null); // { modo: 'crear' | 'editar', exerciseId, eligiendo }
+  /* 🔓 FIT F30, apartado 24 — el duplicado detectado y si él ya lo ha aceptado. */
+  const [duplicado, setDuplicado] = useState(null);
+  const [duplicadoOk, setDuplicadoOk] = useState(false);
   const [filtroObjetivos, setFiltroObjetivos] = useState('todos');
   const [grupoObjetivos, setGrupoObjetivos] = useState('todos');
   const f = fitness || {};
@@ -1065,7 +1123,19 @@ export default function ProgresoView({
     }
     const inicial = formulario.modo === 'editar' ? (f.objetivos || []).find((o) => o.id === formulario.id) || null : null;
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto space-y-3">
+        {/* 🚨 FIT F30, apartado 24 — «Ya tienes un objetivo igual», y se puede
+            crear igualmente: *"solo si el usuario confirma"*. */}
+        {duplicado && (
+          <Card style={{ border: `1px solid ${accent}` }}>
+            <p className="text-sm font-bold" style={{ color: COLORS.text }}>{AVISO_DUPLICADO.titulo}</p>
+            <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{AVISO_DUPLICADO.texto}</p>
+            <div className="flex gap-2 mt-3 flex-wrap">
+              <PrimaryButton accent={accent} onClick={() => setDuplicadoOk(true)}>{AVISO_DUPLICADO.si}</PrimaryButton>
+              <GhostBtn onClick={() => { setDuplicado(null); setFormulario(null); }}>{AVISO_DUPLICADO.no}</GhostBtn>
+            </div>
+          </Card>
+        )}
         <FormularioObjetivo
           key={formulario.exerciseId || 'sin'}
           inicial={inicial}
@@ -1075,10 +1145,18 @@ export default function ProgresoView({
           onCancelar={() => setFormulario(null)}
           onGuardar={(datos) => {
             if (!onGuardarFitness) return { ok: false, motivo: 'No se puede guardar ahora.' };
-            const r = inicial ? editarObjetivo(f, inicial.id, datos, { propios }) : anadirObjetivo(f, datos, { propios });
+            /* 🔓 FIT F30, apartado 24 — al CREAR se avisa del duplicado y, sin
+               confirmar, NO se escribe nada. Editar no lo necesita: el objetivo
+               ya existe y no se está añadiendo otro igual. */
+            const r = inicial
+              ? editarObjetivo(f, inicial.id, datos, { propios })
+              : crearObjetivoConAviso(f, datos, { propios, confirmado: duplicadoOk });
+            if (r.duplicado) { setDuplicado(r); return { ok: false, motivo: r.aviso.titulo }; }
             if (r.ok) {
               onGuardarFitness(r.fitness);
               setFormulario(null);
+              setDuplicado(null);
+              setDuplicadoOk(false);
               setObjetivoAbierto(r.objetivo.id);
             }
             return r;
@@ -1091,13 +1169,18 @@ export default function ProgresoView({
   if (!detalle && !vista && objetivoAbierto) {
     const guardado = (f.objetivos || []).find((o) => o.id === objetivoAbierto) || null;
     if (guardado) {
-      const datos = progresoDeObjetivo(f, guardado, { propios, hoy });
+      /* 🔓 FIT F30 — el detalle COMPLETO: el de la F14 más la distancia, el
+         historial que lo sostiene, la evolución con su línea y los peldaños. */
+      const datos = detalleDeObjetivo(f, guardado, { propios, hoy });
       return (
         <div className="max-w-2xl mx-auto">
           <DetalleObjetivo
             objetivo={datos}
             accent={accent}
             onVolver={() => setObjetivoAbierto(null)}
+            onVerSesion={(id) => setVista({ tipo: 'sesion', id })}
+            /* Apartado 20 — recuperar uno cancelado. */
+            onReactivar={onGuardarFitness ? () => onGuardarFitness(reactivarObjetivo(f, guardado.id)) : null}
             /* Apartado 16 — «Ver progreso del ejercicio» es la pantalla de la F12. */
             onVerProgreso={() => setAbierto(guardado.exerciseId)}
             onEditar={onGuardarFitness ? () => setFormulario({ modo: 'editar', id: guardado.id, exerciseId: guardado.exerciseId }) : null}
@@ -1162,6 +1245,9 @@ export default function ProgresoView({
           onHistorialRango={() => setVista({ tipo: 'historialRango', destino: detalle.rango.destinoHistorial })}
           /* Apartados 20 y 21 — ir a la variante, que tiene su propio historial. */
           onVariante={(id) => { setAbierto(id); setRango(null); setMetrica(null); }}
+          /* 🔓 FIT F30, apartado 35 — «Ver objetivo» / «Crear objetivo». */
+          onVerObjetivo={detalle.objetivo.hay ? () => { setAbierto(null); setSeccion('objetivos'); setObjetivoAbierto(detalle.objetivo.objetivo.id); } : null}
+          onCrearObjetivo={onGuardarFitness ? () => { setAbierto(null); setSeccion('objetivos'); setFormulario({ modo: 'crear', exerciseId: detalle.exerciseId, eligiendo: false }); } : null}
         />
       </div>
     );

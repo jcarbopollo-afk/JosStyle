@@ -98,8 +98,18 @@ const o = crearObjetivo({ exerciseId: 'l-sit', tipo: 'duracion', valor: '60', fe
 ok(['id', 'exerciseId', 'tipo', 'valor', 'unidad', 'creadoEn', 'actualizadoEn', 'fechaObjetivo', 'estado', 'nota'].every((k) => k in o),
   'El `ProgressGoal` tiene todos los campos del apartado 2');
 ok(o.unidad === 's' && o.valor === 60 && o.nota === 'Con calma' && o.estado === 'activo', '…con la unidad según el tipo, el número limpio y la nota recortada');
-ok(ESTADOS_OBJETIVO.join() === 'activo,completado,cancelado' && TIPOS_OBJETIVO.map((t) => t.id).join() === 'peso,reps,duracion',
-  'Tres estados y tres tipos, ni uno más (apartado 2)');
+/* 🔓 **ESTA COMPROBACIÓN SE DA LA VUELTA CON LA FIT F30, NO SE BORRA** (SU F1 →
+   SU F2 y E3 F44 otra vez). La F14 afirmaba «tres tipos» y su apartado 2 tenía
+   razón entonces; el apartado 3 de la F30 añade el cuarto —**habilidad**—, así
+   que lo que se vigila ahora es que **los tres numéricos sigan intactos** y que
+   el nuevo NO sea numérico. Los ESTADOS siguen siendo tres: el apartado 29 de la
+   F30 es literal, *"No añadir failed todavía"*. */
+ok(ESTADOS_OBJETIVO.join() === 'activo,completado,cancelado',
+  'Tres estados, ni uno más: «failed» sigue sin existir (F14 apartado 2, F30 apartado 29)');
+ok(TIPOS_OBJETIVO.filter((t) => t.numerico).map((t) => t.id).join() === 'peso,reps,duracion',
+  '…y los tres tipos NUMÉRICOS de la F14 siguen siendo los mismos');
+ok(TIPOS_OBJETIVO.filter((t) => !t.numerico).map((t) => t.id).join() === 'skill',
+  '🔓 …más la habilidad de la FIT F30, declarada como NO numérica (su apartado 14)');
 ok(normalizarObjetivo({ id: 'x' }) === null && normalizarObjetivo(null) === null, 'Un objetivo sin ejercicio no se carga');
 ok(crearObjetivo({ exerciseId: 'a', fechaObjetivo: 'mañana' }).fechaObjetivo === '', 'Una fecha rota se queda vacía');
 ok(Array.isArray(DEFAULT_FITNESS.objetivos) && DEFAULT_FITNESS.objetivos.length === 0, '🚨 Nace sin NINGÚN objetivo de ejemplo (apartado 22)');

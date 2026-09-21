@@ -889,7 +889,21 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       periodo filtra la gráfica, nunca el historial ni el rango** (apartado 12). ⏸ **C-36**: el
       «nombre histórico» del apartado 28 no existe —la F3 decidió que una línea guarda solo
       `exerciseId`—, así que se enseña su id con la etiqueta «Ejercicio archivado».
-- [ ] F30–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F30 — Sistema avanzado de objetivos fitness** (v3.112.0): el ciclo entero de un objetivo
+      —crear, seguir, conseguir y recuperar— sobre los objetivos **que ya eran de la F14**. Suma la
+      distancia (*«Te faltan 3 reps»*), el historial de las sesiones que lo sostienen, la gráfica
+      con su **línea de objetivo**, un cuarto tipo —**habilidad**— con sus peldaños, el aviso de
+      duplicado, el objetivo visible **durante el entrenamiento** y la microcelebración.
+      🚨 **No se predice NADA** (contexto y apartado 34, tres veces): ni «te quedan 3 semanas», ni
+      una fecha, ni una velocidad — solo aritmética sobre lo que ya hay. 🚨 **Una habilidad no
+      tiene porcentaje ni gráfico** (apartados 14 y 32): una lista de peldaños, porque contar
+      «2 de 3 = 67 %» sería inventarse la escala que el apartado prohíbe. 🚨 **Una sesión
+      posterior PEOR no descompleta un objetivo** (apartado 27, su ejemplo exacto), y sale gratis:
+      `valorActual` devuelve la mejor marca histórica. 🚨 **Crear un objetivo NO mueve ni un punto
+      del rango** (apartado 37), con un barrido que comprueba que la librería ni conoce el motor.
+      ⏸ **C-37**: el `completedAt` del apartado 15 **se deriva de la sesión que lo superó**, porque
+      guardarlo mentiría al borrar esa sesión — y eso es lo que prohíbe el apartado 17.
+- [ ] F31–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción
