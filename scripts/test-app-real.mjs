@@ -9056,10 +9056,19 @@ almacen.fitness = fitnessDeAntes_fit29;
 console.log('\n── FIT F30 · Los objetivos avanzados ──');
 
 const fitnessDeAntes_fit30 = almacen.fitness;
+/* 🐛 **Y LIMPIA LO QUE VA A MIRAR** (E3 F6, y lo escribí en el comentario de
+   arriba antes de saltármelo): la sección de la F12/F14 siembra sus propias
+   dominadas pronas **con una de 15 repeticiones**, que es justo el valor del
+   objetivo de aquí — así que el objetivo salía **ya conseguido** y «Te faltan
+   3 reps» no podía aparecer. La aplicación estaba bien; el escenario heredaba
+   el del vecino. Se quitan las sesiones de ESE ejercicio, no todas. */
+const sinEseEjercicio_fit30 = (sesiones, exerciseId) => (sesiones || []).filter(
+  (s) => !((s.origen && s.origen.ejercicios) || []).some((e) => e.exerciseId === exerciseId),
+);
 almacen.fitness = {
   ...almacen.fitness,
   sesiones: [
-    ...(almacen.fitness.sesiones || []),
+    ...sinEseEjercicio_fit30(almacen.fitness.sesiones, 'dominada-prona'),
     sesion_fit29('f30-a', 70, [serie_fit29('h1', 8, null), serie_fit29('h2', 7, null)], 'dominada-prona', 'corporal'),
     sesion_fit29('f30-b', 45, [serie_fit29('h3', 10, null), serie_fit29('h4', 9, null)], 'dominada-prona', 'corporal'),
     sesion_fit29('f30-c', 10, [serie_fit29('h5', 12, null), serie_fit29('h6', 11, null)], 'dominada-prona', 'corporal'),
@@ -9067,7 +9076,10 @@ almacen.fitness = {
     sesion_fit29('f30-d', 30, [serie_fit29('h7', 6, null)], 'dominada-explosiva', 'corporal'),
   ],
   objetivos: [
-    ...(almacen.fitness.objetivos || []),
+    /* Y lo mismo con los objetivos: la F14 dejó el SUYO sobre dominada-prona a
+       15 reps, así que sin esto habría **dos tarjetas idénticas** y
+       `pulsarQueEmpiece` abriría una cualquiera de las dos. */
+    ...(almacen.fitness.objetivos || []).filter((o) => o.exerciseId !== 'dominada-prona'),
     { id: 'f30-obj', exerciseId: 'dominada-prona', tipo: 'reps', valor: 15, unidad: 'reps', creadoEn: Date.parse('2026-07-01T12:00:00'), actualizadoEn: null, fechaObjetivo: '', estado: 'activo', nota: '' },
     /* 🚨 Apartado 14 — una habilidad: sin `valor` y sin porcentaje posible. */
     { id: 'f30-skill', exerciseId: 'muscle-up', tipo: 'skill', valor: null, unidad: '', creadoEn: Date.parse('2026-07-02T12:00:00'), actualizadoEn: null, fechaObjetivo: '', estado: 'activo', nota: '' },
@@ -9117,7 +9129,9 @@ ok(await pulsar('Volver a Mis objetivos'), 'FIT F30 — se vuelve a la lista');
 await page.waitForTimeout(400);
 ok(await pulsarQueEmpiece_fit10('Objetivo Muscle-up'), 'FIT F30 — se abre el objetivo de habilidad');
 const skill_fit30 = await esperarTexto(/Progresi[oó]n/i);
-ok(/Dominadas explosivas/i.test(skill_fit30),
+/* 🐛 Es «Dominada explosiva», en SINGULAR: el nombre sale del catálogo, no de
+   cómo suene. Escribirlo de memoria costó un rojo con la pantalla bien. */
+ok(/Dominada explosiva/i.test(skill_fit30),
   '🚨 FIT F30 — una habilidad enseña sus PELDAÑOS, que salen del catálogo (apartado 14)');
 ok(!/%/.test(skill_fit30),
   '🚨 FIT F30 — y NI UN porcentaje: *"No mostrar «73 % completado» si no existe una escala válida"* (apartado 14)');
@@ -9146,7 +9160,10 @@ ok(await pulsar('Elegir ejercicio'), 'FIT F30 — se abre el catálogo para eleg
 await page.waitForTimeout(600);
 await page.fill('input[aria-label="Buscar un ejercicio"]', 'Dominadas pronas');
 await page.waitForTimeout(600);
-ok(await pulsar('Añadir Dominadas pronas'), 'FIT F30 — se elige el ejercicio que YA tiene objetivo');
+/* 🐛 `pulsar()` compara el `aria-label` ENTERO (Ajustes · Perfil), y el de una
+   tarjeta del catálogo es «Añadir Dominadas pronas · Agarre prono»: el nombre
+   completo lleva su agarre. Por prefijo, que es lo que esto necesita. */
+ok(await pulsarQueEmpiece_fit10('Añadir Dominadas pronas'), 'FIT F30 — se elige el ejercicio que YA tiene objetivo');
 await esperarTexto(/Nuevo objetivo/i);
 await page.fill('input[aria-label="Objetivo en reps"]', '15');
 await page.waitForTimeout(300);
