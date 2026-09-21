@@ -184,11 +184,11 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **20 101 pruebas unitarias** con Node repartidas en **189 suites** (5 de ellas de auditoría),
-**3268 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2381
-comprobaciones sobre la aplicación de verdad en Chromium** — **25 761 comprobaciones**.
+Vite, **20 226 pruebas unitarias** con Node repartidas en **190 suites** (5 de ellas de auditoría),
+**3320 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2410
+comprobaciones sobre la aplicación de verdad en Chromium** — **25 967 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.111.0, una a una**, con la suma del
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.112.0, una a una**, con la suma del
 propio log. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
@@ -372,6 +372,21 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
   igual que ella; y **`listaDeObjetivos` devuelve *progresos*, no los objetivos guardados**, así que
   `objetivoParaEjercicio` devuelve **los dos** —el formulario necesita el guardado y la pantalla el
   progreso—. Leer el campo equivocado no fallaba: dejaba la línea del entrenamiento en vivo **vacía**.
+- 🐛 **UNA COMPROBACIÓN CON UN RESPALDO FLOJO ES UNA COMPROBACIÓN QUE NO PUEDE PONERSE ROJA**
+  (FIT F30, y es EH F42 otra vez). La del progreso del recorrido exigía «12 / 15 reps» **o, si no,
+  un «12» suelto en cualquier parte de la página** — y por ese `||` salió **verde con el escenario
+  roto**: el objetivo estaba ya conseguido y la página traía un «12» de otro sitio. La de al lado,
+  que sí medía, fue la que lo destapó. **Un respaldo en un `ok()` casi siempre es la comprobación
+  rindiéndose.**
+- 🐛 **Y EL ESCENARIO DEL RECORRIDO HEREDABA EL DEL VECINO, POR ENÉSIMA VEZ** (FIT F30, E3 F6): la
+  sección de la F12/F14 siembra sus propias dominadas pronas **con una de 15 repeticiones**, que es
+  justo el valor del objetivo de aquí, así que el objetivo nacía **conseguido** y *«Te faltan 3
+  reps»* no podía existir. **La aplicación estaba bien.** Cada sección limpia **las sesiones Y los
+  objetivos del ejercicio que va a mirar** — con los objetivos sin limpiar había además dos tarjetas
+  idénticas y se abría una cualquiera. ⚠️ Y los otros dos rojos fueron **el nombre escrito de
+  memoria** —es «Dominada explosiva», en singular, y lo dice el catálogo— y **`pulsar()` comparando
+  el `aria-label` entero** (Ajustes · Perfil): el de una tarjeta del catálogo es «Añadir Dominadas
+  pronas · Agarre prono», porque el nombre completo lleva su agarre.
 - 🐛 **Y TRES BARRIDOS QUE SALTABAN CON LA TABLA QUE DECLARA LO QUE BUSCAN, EN LA MISMA FASE**
   (FIT F30, y es `NO_EN_FIT25`, `NO_EN_FIT28` y `ESTADOS_DETALLE` por quinta vez): `completedAt`,
   `motorRangos` y «predicciones» están nombrados **a propósito** en `DECISIONES_FIT30`,
