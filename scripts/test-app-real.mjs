@@ -7546,7 +7546,9 @@ const seriesF10_fit12 = await ver();
 ok(/62,5 kg/.test(seriesF10_fit12) && /\b10\b/.test(seriesF10_fit12) && /\b9\b/.test(seriesF10_fit12),
   '🚨 FIT F12 — y el historial dice LO MISMO que Progreso: 62,5 kg, 10 y 9 (apartado 31)');
 ok(/\+2 reps respecto a la última vez/.test(seriesF10_fit12), '🚨 …incluida la comparación de la F11: «+2 reps respecto a la última vez»');
-ok(await pulsar('Volver al historial'), '…se vuelve');
+/* 🔓 FIT F31 — abierta desde Progreso, el botón dice adónde vuelve: antes
+   decía «Volver al historial» y volvía a Progreso. */
+ok(await pulsar('Volver a Progreso'), '…se vuelve (a Progreso, y lo dice)');
 await page.waitForTimeout(400);
 
 /* Apartado 9 — buscar un ejercicio que nunca ha hecho. */
@@ -9185,6 +9187,201 @@ ok(!/\bXP\b|monedas|leaderboard|ranking social/i.test(textoFinal_fit30),
   '🚨 FIT F30 — ni XP, ni monedas, ni leaderboard: esto mide, no premia (apartado 16 y D2-02)');
 
 almacen.fitness = fitnessDeAntes_fit30;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F31 — Consistencia y actividad de entrenamiento (Entrega 4 · 31/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   Lo que solo se puede ver aquí: que Progreso → Resumen dice **cuándo** entrenó,
+   **cuánto**, **cómo se reparte** y **cómo va el plan** (apartado 41), que un
+   día sin sesión dice «sin entrenamiento registrado» y NUNCA «descanso» sin plan
+   (apartados 28 y 29), que la actividad lleva al detalle de la sesión y al
+   Historial (apartados 17, 18 y 30) y que Tu Plan enseña «Esta semana» con la
+   misma función (apartado 31).
+
+   🚨 **ESTE ESCENARIO NO DEPENDE DEL DÍA DE LA SEMANA** (FIT F23 y F26, dos
+   bombas de relojería). Cada etiqueta esperada **se calcula aquí** a partir de
+   lo que se siembra y de hoy, con su propia cuenta: la de un lunes y la de un
+   domingo son distintas y las dos se comprueban enteras.
+
+   🐛 **Y LIMPIA LO QUE VA A MIRAR** (E3 F6 y FIT F30): se quitan TODAS las
+   sesiones y el plan activo de las secciones de antes. Esta fase cuenta
+   sesiones, así que una sola heredada cambiaría cada número. */
+console.log('\n── FIT F31 · La actividad de entrenamiento ──');
+
+const fitnessDeAntes_fit31 = almacen.fitness;
+const MESES_fit31 = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const iso_fit31 = (d) => d.toLocaleDateString('sv-SE');
+const hoy_fit31 = iso_fit31(new Date());
+const masDias_fit31 = (isoBase, n) => { const d = new Date(`${isoBase}T12:00:00`); d.setDate(d.getDate() + n); return iso_fit31(d); };
+const lunes_fit31 = masDias_fit31(hoy_fit31, -((new Date(`${hoy_fit31}T12:00:00`).getDay() + 6) % 7));
+const diaYMes_fit31 = (f) => `${Number(f.slice(8, 10))} de ${MESES_fit31[Number(f.slice(5, 7)) - 1]}`;
+/* Una sesión con UN ejercicio y sus series; `pendientes` la deja parcial. */
+const sesion_fit31 = (id, nombre, diasAtras, hora, minutos, pendientes = 0) => {
+  const fecha = masDias_fit31(hoy_fit31, -diasAtras);
+  const inicio = new Date(`${fecha}T${String(hora).padStart(2, '0')}:00:00`).getTime();
+  const series = [serie_fit29(`${id}-1`, 8, null), serie_fit29(`${id}-2`, 7, null)];
+  for (let i = 0; i < pendientes; i += 1) series.push({ ...serie_fit29(`${id}-p${i}`, null, null), estado: 'pendiente', hecho: { reps: null, peso: null, duracion: null } });
+  return {
+    id, nombre, fecha, estado: 'completada', iniciadaEn: inicio, terminadaEn: inicio + minutos * 60000,
+    guardadaEn: inicio + (minutos + 1) * 60000, pausadoMs: 0, actual: 0, visibilidad: 'privado', notas: '', entorno: 'gym',
+    origen: { tipo: 'plantilla', id: null, ejercicios: [{ id: `${id}-e`, exerciseId: 'dominada-prona', orden: 0, modo: 'reps', notas: '', descanso: 90, sustituyeA: null, linea: { series: series.length, tipoCarga: 'corporal' }, series }] },
+  };
+};
+const SEMBRADAS_fit31 = [
+  sesion_fit31('f31-push', 'Push F31', 0, 18, 58),
+  /* Dos el mismo día: el día los lleva a los dos (apartado 39). Y parcial. */
+  sesion_fit31('f31-core', 'Core F31', 0, 8, 25, 2),
+  sesion_fit31('f31-legs', 'Legs F31', 3, 18, 60),
+  sesion_fit31('f31-pull', 'Pull F31', 10, 18, 45),
+];
+almacen.fitness = {
+  ...almacen.fitness,
+  sesiones: [
+    ...SEMBRADAS_fit31,
+    /* 🚨 Apartado 24 — una sin NINGUNA marca de tiempo: la puerta de carga ya
+       no la muda a hoy (era un fallo de la F1/F7), así que no cae en ningún día. */
+    { id: 'f31-sin-fecha', nombre: 'Sin fecha F31', estado: 'completada', origen: { tipo: 'plantilla', id: null, ejercicios: [] } },
+  ],
+  planActivo: null,
+};
+
+/* Lo esperado, calculado aquí y no leído de la aplicación. */
+const porDia_fit31 = new Map();
+for (const x of SEMBRADAS_fit31) porDia_fit31.set(x.fecha, [...(porDia_fit31.get(x.fecha) || []), x]);
+const etiquetasEsperadas_fit31 = (conPlan) => Array.from({ length: 7 }, (_, i) => {
+  const f = masDias_fit31(lunes_fit31, i);
+  const del = (porDia_fit31.get(f) || []).sort((a, b) => b.iniciadaEn - a.iniciadaEn);
+  /* El plan PPL descansa el jueves (4) y el domingo (7). */
+  const descansaElPlan = conPlan && (i === 3 || i === 6);
+  let que;
+  if (del.length > 1) que = `${del.length} entrenamientos: ${[...del].sort((a, b) => a.iniciadaEn - b.iniciadaEn).map((x) => x.nombre).join(' y ')}`;
+  else if (del.length === 1) que = `entrenamiento ${del[0].nombre}`;
+  else if (f > hoy_fit31) que = 'todavía no ha llegado';
+  else if (descansaElPlan) que = 'descanso del plan';
+  else que = 'sin entrenamiento registrado';
+  return `${diaYMes_fit31(f)} — ${que}`;
+});
+const etiquetasSemana_fit31 = () => page.evaluate(() => {
+  const grupo = document.querySelector('[aria-label="Actividad de esta semana"]');
+  return grupo ? [...grupo.children].map((el) => el.getAttribute('aria-label') || (el.querySelector('.sr-only') || {}).textContent || '') : [];
+});
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso'), 'FIT F31 — se entra en Progreso → Resumen');
+const resumen_fit31 = await esperarTexto(/Último entrenamiento/i);
+
+/* 1 · Cuándo (apartado 3). */
+ok(/Hoy · Push F31/.test(resumen_fit31) && /58 min/.test(resumen_fit31),
+  '🚨 FIT F31 — «Último entrenamiento: Hoy · Push F31 · 58 min» — el más reciente, aunque no sea el primero de la lista (apartado 3)');
+
+/* 2 · Cuánto, esta semana (apartados 4 y 10). */
+const enSemana_fit31 = SEMBRADAS_fit31.filter((x) => x.fecha >= lunes_fit31 && x.fecha <= hoy_fit31).length;
+const pasada_fit31 = SEMBRADAS_fit31.filter((x) => x.fecha >= masDias_fit31(lunes_fit31, -7) && x.fecha < lunes_fit31).length;
+const cuenta_fit31 = (n0) => `${n0} ${n0 === 1 ? 'entrenamiento' : 'entrenamientos'}`;
+ok(resumen_fit31.includes(`${cuenta_fit31(enSemana_fit31)} · semana en curso`),
+  `🚨 FIT F31 — «${cuenta_fit31(enSemana_fit31)} · semana en curso»: el número real, y dicho que la semana no ha terminado (apartados 4 y 10)`);
+ok(resumen_fit31.includes(`La semana pasada: ${cuenta_fit31(pasada_fit31)}`),
+  `FIT F31 — …y «La semana pasada: ${cuenta_fit31(pasada_fit31)}» (prueba 5)`);
+
+/* 3 · Cómo se reparte (apartados 6, 28, 29 y 37), día a día. */
+const semana_fit31 = await etiquetasSemana_fit31();
+eqReal(semana_fit31, etiquetasEsperadas_fit31(false),
+  '🚨 FIT F31 — los siete días, CON PALABRAS, tal y como salen del escenario (apartados 6 y 37)');
+ok(semana_fit31.length === 7 && !semana_fit31.some((e) => /descanso/i.test(e)),
+  '🚨 FIT F31 — …y sin plan NINGÚN día dice «descanso»: sin registro no es descanso (apartados 28 y 29)');
+
+/* 4 · Constancia (apartado 8), con «Todo»: empezó hace 10 días. */
+const diasActivos_fit31 = porDia_fit31.size;
+ok(resumen_fit31.includes(`Entrenaste ${diasActivos_fit31} de los 11 días desde tu primer entrenamiento.`),
+  `🚨 FIT F31 — «Entrenaste ${diasActivos_fit31} de los 11 días desde tu primer entrenamiento.»: una frase, no un porcentaje (apartado 8)`);
+ok(/sin fecha y no aparece|no tiene fecha y no aparece/i.test(resumen_fit31),
+  '🚨 FIT F31 — la sesión sin fecha se DICE, en vez de caer en hoy o desaparecer (apartado 24)');
+
+/* 5 · El periodo es el del resumen (apartado 5). */
+ok(await pulsar('7 días'), 'FIT F31 — se elige «7 días» en el selector del resumen');
+await page.waitForTimeout(500);
+const siete_fit31 = await ver();
+const activos7_fit31 = [...porDia_fit31.keys()].filter((f) => f >= masDias_fit31(hoy_fit31, -6)).length;
+ok(siete_fit31.includes(`Entrenaste ${activos7_fit31} de los últimos 7 días.`),
+  `🚨 FIT F31 — «Entrenaste ${activos7_fit31} de los últimos 7 días.»: siete días de verdad, no ocho (apartado 5 y el arreglo de la F12)`);
+const sesiones7_fit31 = SEMBRADAS_fit31.filter((x) => x.fecha >= masDias_fit31(hoy_fit31, -6)).length;
+ok(siete_fit31.includes(`${sesiones7_fit31} en los últimos 7 días`),
+  `🚨 FIT F31 — …y el bloque de la F28 dice el MISMO número: «${sesiones7_fit31} en los últimos 7 días»`);
+ok(await pulsar('Todo'), '…y se vuelve a «Todo»');
+await page.waitForTimeout(400);
+
+/* 6 · Actividad reciente (apartados 15 y 17). */
+const recientes_fit31 = await ver();
+ok(/Actividad reciente/i.test(recientes_fit31) && /Parcial/.test(recientes_fit31) && /Completa/.test(recientes_fit31),
+  '🚨 FIT F31 — «Actividad reciente», con la parcial marcada «Parcial» y las demás «Completa» (apartados 15 y 17)');
+ok(!/%/.test(recientes_fit31.slice(recientes_fit31.search(/Último entrenamiento/i), recientes_fit31.search(/Actividad reciente/i) + 400)),
+  '🚨 FIT F31 — ni un «%» en toda la actividad (apartados 8, 14 y 40)');
+
+/* 7 · Un día con dos sesiones enseña las dos (apartado 30). */
+ok(await pulsarQueEmpiece_fit10(`${diaYMes_fit31(hoy_fit31)} — 2 entrenamientos`), 'FIT F31 — se toca hoy, que tiene dos entrenamientos');
+await page.waitForTimeout(400);
+const dosHoy_fit31 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Ver el entrenamiento: Hoy"]')].length);
+ok(dosHoy_fit31 === 4,
+  `🚨 FIT F31 — …y salen los dos para elegir, además de en la actividad reciente (${dosHoy_fit31} botones «Ver» de hoy)`);
+
+/* 8 · De la actividad al detalle, y vuelta (apartados 17 y 30). */
+const legs_fit31 = masDias_fit31(hoy_fit31, -3);
+ok(await pulsarQueEmpiece_fit10(`Ver el entrenamiento: ${Number(legs_fit31.slice(8, 10))} ${MESES_fit31[Number(legs_fit31.slice(5, 7)) - 1]} ${legs_fit31.slice(0, 4)}, Legs F31`),
+  'FIT F31 — «Ver» en la tarjeta de Legs');
+const detalle_fit31 = await esperarTexto(/Planificado/i);
+ok(/Legs F31/.test(detalle_fit31), '🚨 FIT F31 — abre el detalle de ESA sesión, el de la F10 (apartado 17: «→ detalle de sesión»)');
+ok(await pulsar('Ver su progreso'), '🚨 FIT F31 — y desde la sesión, al progreso del ejercicio (apartado 30)');
+const progresoEj_fit31 = await esperarTexto(/Dominadas pronas/i);
+ok(/Dominadas pronas/i.test(progresoEj_fit31) && !/Planificado/.test(progresoEj_fit31),
+  '…que es el detalle del ejercicio en Progreso, no otra pantalla');
+ok(await pulsar('Volver a Progreso'), '…y se vuelve a Progreso');
+await page.waitForTimeout(500);
+if (!/Último entrenamiento/i.test(await ver())) { await pulsar('Resumen'); await page.waitForTimeout(400); }
+
+/* 9 · La vista mensual (apartado 7). */
+ok(await pulsarQueEmpiece_fit10('Ver el mes entero'), 'FIT F31 — se abre el mes');
+await page.waitForTimeout(400);
+const mesVisible_fit31 = await page.evaluate(() => {
+  const g = [...document.querySelectorAll('[role="group"]')].find((x) => /^Actividad de [A-ZÁÉÍÓÚ]/.test(x.getAttribute('aria-label') || '') && !/esta semana/.test(x.getAttribute('aria-label')));
+  return g ? { nombre: g.getAttribute('aria-label'), dias: g.querySelectorAll('button[aria-label]').length } : null;
+});
+const diasMes_fit31 = [...porDia_fit31.keys()].filter((f) => f.slice(0, 7) === hoy_fit31.slice(0, 7)).length;
+ok(mesVisible_fit31 && mesVisible_fit31.dias === diasMes_fit31,
+  `🚨 FIT F31 — el mes, con una marca por día con entrenamiento (${mesVisible_fit31 && mesVisible_fit31.dias} de ${diasMes_fit31}) (apartado 7)`);
+ok(await pulsarQueEmpiece_fit10('Ver solo esta semana'), '…y se vuelve a la semana');
+
+/* 10 · «Ver historial» → la misma sesión, en el Historial (apartados 18 y 34). */
+ok(await pulsar('Ver historial'), 'FIT F31 — «Ver historial» (apartado 18)');
+const historial_fit31 = await esperarTexto(/Legs F31/);
+ok(['Push F31', 'Core F31', 'Legs F31', 'Pull F31'].every((x) => historial_fit31.includes(x)),
+  '🚨 FIT F31 — toda sesión de la actividad EXISTE en el Historial: no hay una segunda lista (apartado 34)');
+
+/* 11 · Tu Plan: «Esta semana», con el PPL activo desde hace dos semanas (apartado 31). */
+almacen.fitness = { ...almacen.fitness, planActivo: { planId: 'ppl-estetico', origen: 'preset', desde: masDias_fit31(lunes_fit31, -14) } };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F31 — se vuelve a Fitness con el PPL activo');
+const tuPlan_fit31 = await esperarTexto(/sesiones planificadas|planificados/i);
+const planTexto_fit31 = enSemana_fit31 > 5 ? `${cuenta_fit31(enSemana_fit31)} · 5 planificados` : `${enSemana_fit31} / 5 sesiones planificadas`;
+ok(tuPlan_fit31.includes(planTexto_fit31),
+  `🚨 FIT F31 — Tu Plan: «${planTexto_fit31}», sin nota ni porcentaje (apartados 11 y 31)`);
+ok(/L Push · M Pull · X Legs · V Upper · S Lower/.test(tuPlan_fit31),
+  '🚨 FIT F31 — …con la estructura REAL del plan: «L Push · M Pull · X Legs · V Upper · S Lower» (apartado 12)');
+ok(await pulsar('Progreso'), '…y en Progreso, con el plan');
+await esperarTexto(/Último entrenamiento/i);
+eqReal(await etiquetasSemana_fit31(), etiquetasEsperadas_fit31(true),
+  '🚨 FIT F31 — con plan, SOLO el jueves y el domingo ya pasados pueden decir «descanso del plan» (apartado 28)');
+
+/* Apartado 36 — a 375 px, sin arrastrar la página de lado. */
+const ancho_fit31 = await page.evaluate(() => ({ a: document.documentElement.scrollWidth, v: window.innerWidth }));
+ok(ancho_fit31.a <= ancho_fit31.v + 1,
+  `🚨 FIT F31 — a 375 px la actividad NO desborda de lado (${ancho_fit31.a} vs ${ancho_fit31.v}, apartado 36)`);
+ok(!/\bXP\b|racha de entrenamiento nueva|leaderboard|recompensa/i.test(await ver()),
+  '🚨 FIT F31 — ni XP, ni recompensas, ni una racha nueva (apartados 16 y 40)');
+
+almacen.fitness = fitnessDeAntes_fit31;
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

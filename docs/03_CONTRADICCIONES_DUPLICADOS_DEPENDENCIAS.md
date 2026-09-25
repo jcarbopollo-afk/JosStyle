@@ -11,7 +11,7 @@
 
 ---
 
-## PARTE A — CONTRADICCIONES (25)
+## PARTE A — CONTRADICCIONES (26)
 
 Formato: **qué choca con qué** → **cuál gana y por qué** → **qué hay que hacer**.
 Severidad: 🔴 rompe algo hoy · 🟠 engaña a quien lea la documentación · 🟡 tensión de diseño asumida
@@ -740,6 +740,41 @@ clasificación y la **F28** con la línea temporal. Cinco veces en esta entrega.
 ⚠️ **Lo que sí se comprueba es que una sesión posterior PEOR no lo descomplete** (apartado 27, con
 su ejemplo exacto): sale gratis también, porque `valorActual` devuelve la **mejor marca histórica**
 y un máximo no baja al añadir. Está medido en la suite, con el ejemplo del enunciado.
+
+### C-38 — ✅ RESUELTA AL CONSTRUIR (FIT F31, v3.113.0) · «Las mismas convenciones temporales» cuando la convención contaba un día de más
+
+**El apartado 5 de la FIT F31 pide *"utilizar las mismas convenciones temporales del resto de
+Fitness"*, y el apartado 8 pide una frase exacta: *"Entrenaste 8 de los últimos 14 días"*. Las dos
+cosas no cabían juntas, porque la convención de Fitness contaba N + 1 días**: cada pantalla
+calculaba el primer día de un periodo a mano con `addDays(hoy, -p.dias)` —siete veces en seis
+archivos: F12, F13, F22, F28 y F29—, y eso es de hoy hacia atrás **ocho** fechas para «7 días».
+Reutilizarla tal cual habría escrito *«Entrenaste 15 de los últimos 14 días»* el día que entrenara
+todos.
+
+Y había un segundo choque dentro del primero: la F29 dejó escrito que hay *"un solo catálogo de
+periodos"*, y el historial de rangos de la **F22 tenía el suyo**, con **90** días para «3 meses» y
+**180** para «6 meses», donde el catálogo único dice 91 y 182.
+
+**La lectura con la que se ha construido, que respeta las dos partes:**
+
+- **Una sola convención, y la correcta**: `inicioDePeriodo(dias, hoy)` en `progresoEjercicios.js`
+  (el archivo del catálogo único), con hoy como uno de los N. **Las siete llamadas pasan a usarla**,
+  así que «las mismas convenciones» se cumple **literalmente**: ya no hay dos.
+- **Un solo catálogo**: `PERIODOS_HISTORIAL` es ahora un subconjunto **por ids** de `PERIODOS`.
+- ⚠️ **Lo que cambia para Josué, y es poco**: en las gráficas del progreso, el progreso muscular,
+  el detalle de un ejercicio y el resumen, **cada periodo empieza un día más tarde** —el día que
+  sobraba—. En el historial de rangos «3 meses» **empieza el mismo día que antes** (90 días atrás),
+  «6 meses» uno antes (181 en vez de 180, porque ahora vale 182 como en todas partes) y «1 año» uno
+  después. Ninguna suite de las cinco fases se puso roja: ninguna comprobación medía el día de más.
+- Y la **semana** (apartado 22) empieza el **lunes** porque **ya era así** (`diaDeFecha`, HT F1; la
+  F10; RA F1): *"Si Jos Style ya tiene una configuración global: REUTILIZARLA"*.
+
+⚠️ **La F31 destapó otros tres fallos de antes, que no son contradicciones sino fallos, y se
+arreglaron donde nacían**: la «última sesión» del bloque de entrenamientos de la F28 era **la más
+antigua** (se guardan al final de la lista); una sesión guardada **sin fecha se mudaba a hoy en cada
+carga** (la fábrica ponía `todayISO()` y el normalizador la llamaba igual al cargar); y una sesión
+**repetida por id contaba dos veces** (nada la quitaba en la puerta de carga). Están en el CHANGELOG
+de la v3.113.0, cada uno con su comprobación.
 
 ---
 

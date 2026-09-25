@@ -2,6 +2,35 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.113.0 — FIT F31/45: la consistencia y la actividad de entrenamiento):**
+> Fitness contesta de un vistazo **cuándo entrenó, cuánto, cómo se reparte y cómo va el plan**. En
+> Progreso → Resumen: el **último entrenamiento** (*«Hoy · Push · 58 min»*), **esta semana** con
+> *«semana en curso»* y la semana pasada, un **calendario de siete días** con el **mes a un toque**, la
+> **constancia en una frase** (*«Entrenaste 8 de los últimos 14 días»*), la **media semanal** solo
+> con dos semanas completas, y la **actividad reciente** con su «Ver» y su «Ver historial». En Tu
+> Plan, *«3 / 5 sesiones planificadas»* con la estructura real del plan. Tercera del bloque de
+> **Inteligencia**. Todo en `src/lib/actividadEntrenamiento.js` y su `.jsx`.
+> 🚨 **«SIN REGISTRO» NO ES «DESCANSO»** (apartados 28 y 29): un día sin sesión dice *«sin
+> entrenamiento registrado»*, con un guion apagado; solo **el plan** autoriza a decir descanso, y
+> se dice *«descanso del plan»*. Sin plan, ningún día se llama descanso — con una casilla de
+> auditoría que se pone roja si alguno lo hace.
+> 🚨 **NI UN PORCENTAJE NI UNA PUNTUACIÓN**: *«6 entrenamientos · 5 planificados»*, nunca «120 %»
+> (apartado 14), y sin barra. **La racha no es de aquí** (apartado 16): la librería ni importa el
+> motor de rachas. Y la constancia **no cuenta días de antes de su primer entrenamiento**: sería
+> verdad y engañaría.
+> 🚨 **NADA GUARDADO**: es una lectura del historial de la F10 —por su misma puerta— y del plan
+> activo de la F6, así que se actualiza sola al guardar una sesión y **toda sesión de la actividad
+> está en el Historial**. `YA_LO_RESUELVE` guarda nueve funciones importadas.
+> 🐛 **Y DESTAPÓ CUATRO FALLOS DE ANTES, arreglados donde nacían**: **«7 días» eran ocho en toda
+> Fitness** —siete `addDays(hoy, -p.dias)` en F12, F13, F22, F28 y F29— y ahora lo decide
+> `inicioDePeriodo` (**C-38**); el historial de rangos tenía **un segundo catálogo de periodos**
+> (90 días para «3 meses»); la **«última sesión» de la F28 era la más antigua** —se guardan al final
+> de la lista—; y una sesión **sin fecha se mudaba a hoy en cada carga**, y una **repetida contaba
+> doble** — las dos se arreglan en la puerta de carga (`fechaDeSesionGuardada`,
+> `sinDuplicadosPorId`). De paso, una sesión sin marcas ya no dice «menos de 1 min».
+> ⚠️ **Y el detalle de una sesión abierto desde Progreso decía «Volver al historial» y volvía a
+> Progreso**: ahora dice adónde vuelve, y lleva al progreso de cada ejercicio (apartado 30).
+
 > **🎯 ACTUALIZACIÓN (v3.112.0 — FIT F30/45: el sistema avanzado de objetivos fitness):**
 > Los objetivos dejan de ser una lista con su porcentaje y pasan a tener **el ciclo entero**: crear,
 > seguir, conseguir y recuperar. Suman **cuánto falta** en palabras (*«Te faltan 3 reps»*), **el

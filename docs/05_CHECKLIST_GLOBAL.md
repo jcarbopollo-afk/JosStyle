@@ -903,7 +903,20 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       del rango** (apartado 37), con un barrido que comprueba que la librería ni conoce el motor.
       ⏸ **C-37**: el `completedAt` del apartado 15 **se deriva de la sesión que lo superó**, porque
       guardarlo mentiría al borrar esa sesión — y eso es lo que prohíbe el apartado 17.
-- [ ] F31–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F31 — Consistencia y actividad de entrenamiento** (v3.113.0): **cuándo entrenó, cuánto,
+      cómo se reparte y cómo va el plan**, en Progreso → Resumen y en Tu Plan. Último
+      entrenamiento, «esta semana» con *«semana en curso»*, calendario de siete días (y el mes a un
+      toque), la constancia en una frase, la media semanal solo con dos semanas completas, la
+      actividad reciente con «Ver» y «Ver historial», y *«3 / 5 sesiones planificadas»*.
+      🚨 **«Sin registro» NO es «descanso»** (apartados 28 y 29): solo el plan autoriza a decir
+      descanso, y se dice *«descanso del plan»*. 🚨 **Ni un porcentaje ni una puntuación**, tampoco
+      *«133 %»* con sesiones de más (apartado 14), y **la racha no es de aquí** (apartado 16).
+      🚨 **Nada guardado**: es una lectura del historial de la F10, así que se actualiza sola y toda
+      sesión de la actividad está en el Historial. 🐛 **Y cuatro fallos de antes, arreglados donde
+      nacían**: «7 días» eran ocho en toda Fitness (`inicioDePeriodo`, **C-38**), un segundo
+      catálogo de periodos en la F22, la «última sesión» de la F28 era la más antigua, y una sesión
+      sin fecha se mudaba a hoy en cada carga (o, repetida, contaba doble).
+- [ ] F32–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

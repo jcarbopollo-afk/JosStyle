@@ -1049,6 +1049,18 @@ else
   fallo "Fallan los objetivos avanzados"; grep '✗' /tmp/jc_objetivos_fitness.log
 fi
 
+# FIT F31 — la consistencia y la actividad de entrenamiento. Lo que más se vigila: que un
+# día sin sesión diga «sin entrenamiento registrado» y NUNCA «descanso» sin que lo diga el
+# plan, que no haya ni un porcentaje ni una puntuación (tampoco «133 %» con sesiones de
+# más), que la racha NO sea de aquí, y los cuatro fallos de antes que destapó: «7 días»
+# que eran ocho, un segundo catálogo de periodos, la «última» sesión que era la primera
+# y una sesión sin fecha que se mudaba a hoy (o que, repetida, contaba doble).
+if node --import ./scripts/resolver-vite.mjs scripts/test-actividad-entrenamiento.mjs >/tmp/jc_actividad_entrenamiento.log 2>&1; then
+  ok "Actividad de entrenamiento (FIT F31) — $(grep -c '✓' /tmp/jc_actividad_entrenamiento.log) comprobaciones"
+else
+  fallo "Falla la actividad de entrenamiento"; grep '✗' /tmp/jc_actividad_entrenamiento.log
+fi
+
 # FIT F28 — la integración completa del progreso físico. Lo que más se vigila: que NO
 # exista ninguna métrica que mezcle dos sistemas —«fotos + fuerza + rangos = 82 %» es el
 # ejemplo que prohíbe el apartado 10—, que cada bloque lea de UN solo motor, que el

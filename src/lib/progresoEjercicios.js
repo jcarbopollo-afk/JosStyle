@@ -198,6 +198,26 @@ export const PERIODO_TODO = 'todo';
 export const periodo = (id) => PERIODOS.find((p) => p.id === id)
   || PERIODOS.find((p) => p.id === PERIODO_TODO);
 
+/**
+ * 🐛🔓 **FIT F31 — EL PRIMER DÍA DE UN PERIODO, EN UN SOLO SITIO.** Hasta la F31
+ * cada pantalla lo calculaba a mano con `addDays(hoy, -p.dias)` —siete veces en
+ * seis archivos— y eso son **N + 1 días**: «7 días» cogía de hoy hacia atrás
+ * **ocho** fechas. No se notaba en una gráfica, pero la F31 dice *«Entrenaste 8
+ * de los últimos 14 días»* (su apartado 8), y con la cuenta vieja podía salir
+ * **«15 de los últimos 14»**. Y su apartado 5 pide *"las mismas convenciones
+ * temporales del resto de Fitness"*: con dos, el bloque de entrenamientos de la
+ * F28 y el de actividad de la F31 dirían dos números distintos de «7 días» en
+ * la misma pantalla.
+ *
+ * Hoy cuenta como uno de los N, en local (la fecha de una sesión es la del
+ * dispositivo, F7). `null` = sin límite («Todo»).
+ */
+export function inicioDePeriodo(dias, hoy = todayISO()) {
+  const n = Number(dias);
+  if (!Number.isInteger(n) || n < 1) return null;
+  return addDays(hoy, -(n - 1));
+}
+
 /** Los cuatro de la gráfica del progreso muscular (F13) y del resumen (F28). */
 export const IDS_RANGOS_GRAFICA = ['7d', '30d', '3m', 'todo'];
 export const RANGOS_GRAFICA = PERIODOS.filter((p) => IDS_RANGOS_GRAFICA.includes(p.id));
@@ -229,7 +249,7 @@ export function graficaDeProgreso(progreso, { rango = 'todo', hoy = todayISO(), 
      la F12: esto amplía, no cambia lo que ya hacía. */
   const elegida = clase && METRICA_GRAFICA[clase] ? clase : ultima.clase;
   const m = METRICA_GRAFICA[elegida];
-  const desde = periodo(rango).dias ? addDays(hoy, -periodo(rango).dias) : null;
+  const desde = inicioDePeriodo(periodo(rango).dias, hoy);
   const puntos = progreso.apariciones
     .filter((a) => a.clase === elegida && a.mejor && (!desde || a.fecha >= desde))
     .map((a) => ({

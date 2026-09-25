@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.110.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.113.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 30 primeras (v3.83.0 → v3.112.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 31 primeras (v3.83.0 → v3.113.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 15 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 14 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -339,7 +339,44 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 **FIT F27 (v3.109.0)** y la
 **FIT F28 (v3.110.0)**, que 🏁 **CERRÓ EL BLOQUE DE PROGRESO FÍSICO** —F26, F27 y F28— y la
 **FIT F29 (v3.111.0)**, con la que empieza el bloque de **Inteligencia** (F29–F35), y la
-**FIT F30 (v3.112.0)**, hechas. Lo que dejaron, y que vale para las 15 que quedan:
+**FIT F30 (v3.112.0)** y la **FIT F31 (v3.113.0)**, hechas. Lo que dejaron, y que vale para las 14
+que quedan:
+
+- 🚨 **«SIN REGISTRO» NO ES «DESCANSO»** (FIT F31, apartados 28 y 29, dos veces): un día sin sesión
+  **no se sabe qué fue**, así que dice *«sin entrenamiento registrado»* con un guion apagado. Solo
+  **el plan** autoriza a decir descanso, y se dice *«descanso del plan»*. ⚠️ **Y la F32 va más
+  lejos** (su apartado 5): ni siquiera un día de descanso del plan se afirma como «Descanso»,
+  *"porque puede haber entrenamiento libre"* — así que la F32 tiene que cambiar esa palabra **en
+  los dos sitios donde vive**: `ESTADOS_ACTIVIDAD` (F31) y `ESTADOS_DIA`/`SemanaCompacta` (F6).
+- 🚨 **NI UN PORCENTAJE, NI UNA PUNTUACIÓN, NI UNA RACHA NUEVA** (FIT F31, apartados 8, 14, 16 y
+  40): *«Entrenaste 8 de los últimos 14 días»*, nunca «82 %»; *«6 entrenamientos · 5
+  planificados»*, nunca «120 %», y sin barra. La media semanal, solo con **dos semanas completas**
+  y **sin la semana en curso**; y la constancia **no cuenta días de antes de su primer
+  entrenamiento** — sería verdad y engañaría.
+- 🚨 **LA ACTIVIDAD ES UNA LECTURA DEL HISTORIAL** (FIT F31, `actividadEntrenamiento.js`): misma
+  puerta que la F10, así que se actualiza sola y **toda sesión de la actividad está en el
+  Historial**. Una fase que cuente entrenamientos de un periodo llama a
+  **`entrenamientosEnPeriodo`** —el bloque de la F28 ya lo hace—, y una que compare con el plan, a
+  **`adherenciaDelPlan`**: solo con frecuencia definida (una plantilla activada como plan **no** la
+  tiene) y contando **sus entrenamientos de la semana**, no las casillas exactas (apartado 12).
+- 🐛 **«7 DÍAS» ERAN OCHO EN TODA FITNESS** (FIT F31, **C-38**): siete `addDays(hoy, -p.dias)` en
+  F12, F13, F22, F28 y F29 cogían N + 1 fechas, y la frase de la constancia habría podido decir
+  *«15 de los últimos 14 días»*. Ahora el primer día de un periodo lo decide **`inicioDePeriodo`**
+  (`progresoEjercicios.js`), y hay un barrido que caza la forma vieja. ⚠️ Y el historial de rangos
+  tenía **un segundo catálogo** (90 días para «3 meses»): ahora es un subconjunto por ids.
+- 🐛 **LA «ÚLTIMA SESIÓN» DE LA F28 ERA LA MÁS ANTIGUA** (FIT F31): `guardarSesion` añade **al
+  final**, y se cogía `sesiones[0]`. No se pintaba, así que no se vio. **«La última» se ordena, no
+  se lee de una posición**: `historialPorReciente` / `ultimaDelHistorial`, en `historial.js`.
+- 🐛 **UNA SESIÓN SIN FECHA SE MUDABA A HOY EN CADA CARGA, Y UNA REPETIDA CONTABA DOBLE** (FIT F31,
+  apartados 23 y 24): la fábrica pone `todayISO()` —bien al crear— y el normalizador la llamaba
+  igual **al cargar**. `fechaDeSesionGuardada` deduce el día de la marca más fiable (el inicio) y
+  sin ninguna deja `''`; `sinDuplicadosPorId` quita las repetidas. **Las dos en la puerta de
+  carga**, no en cada pantalla que cuenta. **La fábrica construye; el normalizador limpia lo que
+  vuelve de disco** — la F5 otra vez.
+- ⚠️ **UNA ETIQUETA ESPERADA DEL RECORRIDO SE CALCULA DEL ESCENARIO, NO DEL DÍA** (FIT F31): la
+  sección de la F31 compara los siete días de la semana **enteros** con los que calcula a partir
+  de lo que siembra y de hoy, así que pasa igual un lunes que un domingo y los dos casos se miden
+  de verdad (la F23 y la F26 fueron bombas de relojería por la fecha).
 
 - 🚨 **LOS OBJETIVOS YA EXISTÍAN, Y SON LA F14** (FIT F30, apartado 2, literal: *"Si el proyecto ya
   tiene campos equivalentes: REUTILIZARLOS. No crear duplicados."*). `fitness.objetivos` existe desde
@@ -1240,13 +1277,20 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F31/45 — Consistencia y actividad de entrenamiento** (líneas
-   12 540–13 243 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la tercera del bloque de
+1. 🏋️ **SEGUIR POR LA FIT F32/45 — Planificación semanal avanzada de entrenamiento** (líneas
+   11 860–12 539 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la cuarta del bloque de
    **Inteligencia** (F29–F35). Se construye de la F1 a la F45, en orden, encadenando sin parar.
    El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
+   ⚠️ **Y lo segundo, en ESTA: LA SEMANA DEL PLAN YA EXISTE DOS VECES, Y NO PUEDE HABER UNA
+   TERCERA.** Su apartado 2 lo pide: *"derivarse de activePlan… No crear una segunda planificación
+   independiente"*. La semana del plan es **`semanaDelPlan`** (F6, `tuPlan.js`, con sus estados y
+   su `SemanaCompacta`), y la de la actividad es **`resumenDeActividad`** (F31), con
+   `adherenciaDelPlan` y `diaDeActividad`. **Se amplían esas**, no se escribe otra. ⚠️ Y su apartado
+   5 cambia una palabra que vive en esos dos sitios: un día sin entrenamiento en el plan es
+   *«Sin entrenamiento planificado»*, **no «Descanso»** — hay que cambiarla en los dos a la vez.
+   ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único
    sitio**. Está declarado en `MAPEO_EXISTENTE` desde la FIT F1. Un segundo contador de días
@@ -1261,7 +1305,9 @@ había que adivinarlo.**
    (`resumenProgreso.js` / `.jsx`), donde **cada bloque declara UNA fuente**— y el **detalle de un
    ejercicio (F29)** (`detalleEjercicio.js` / `.jsx`), que no calcula nada: pide a la F11, la F12,
    la F19, la F23, la F14 y la F8. Y los **objetivos son la F14 ampliada por la F30**
-   (`objetivosFitness.js` / `.jsx`): guardan **solo el objetivo** y **no predicen nada**.
+   (`objetivosFitness.js` / `.jsx`): guardan **solo el objetivo** y **no predicen nada**. Y la
+   **actividad es la F31** (`actividadEntrenamiento.js` / `.jsx`): una lectura del historial, sin
+   porcentajes y sin inventar descansos.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

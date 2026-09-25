@@ -1,8 +1,9 @@
-import { todayISO, addDays } from './helpers';
-import { sesionesDelHistorial, contadorTexto, etiquetaDeFecha } from './historial';
+import { todayISO } from './helpers';
+import { sesionesDelHistorial, contadorTexto, etiquetaDeFecha, ultimaDelHistorial } from './historial';
+import { entrenamientosEnPeriodo } from './actividadEntrenamiento';
 import {
   tarjetasDeProgreso, ordenarTarjetas, estadoProgreso, COMPARABLES as ESTADOS_COMPARABLES,
-  RANGOS_GRAFICA,
+  RANGOS_GRAFICA, inicioDePeriodo,
 } from './progresoEjercicios';
 import { resumenMuscular, fitnessEnPeriodo, AVISO_RENDIMIENTO } from './progresoMuscular';
 import { listaDeObjetivos, valorActual } from './objetivosProgreso';
@@ -177,11 +178,13 @@ export function bloqueEntrenamientos(fitness, { periodo = PERIODO_POR_DEFECTO, h
   const sesiones = sesionesDelHistorial(fitness);
   const total = sesiones.length;
   const p = periodoResumen(periodo);
-  const desde = p.dias ? addDays(hoy, -p.dias) : null;
   /* Apartado 3 — *"Opcionalmente «3 esta semana» solo si el periodo está
-     claramente definido"*. Con «Todo» no hay segunda línea: no hay periodo. */
-  const enPeriodo = desde ? sesiones.filter((s) => texto(s.fecha) >= desde).length : null;
-  const ultima = sesiones[0] || null;
+     claramente definido"*. Con «Todo» no hay segunda línea: no hay periodo.
+     🔓 FIT F31 — y el recuento es **el de la actividad**: dos recuentos del mismo
+     «7 días» en la misma pantalla acabarían diciendo dos números. */
+  const enPeriodo = p.dias ? entrenamientosEnPeriodo(fitness, { periodo: p.id, hoy }).length : null;
+  /* 🐛 FIT F31 — era `sesiones[0]`, que es la MÁS ANTIGUA: se guardan al final. */
+  const ultima = ultimaDelHistorial(fitness);
   return {
     id: 'entrenamientos',
     hay: total > 0,
@@ -598,7 +601,7 @@ export function timelineDeProgreso(eventos, {
 } = {}) {
   const todos = lista(eventos);
   const p = periodoResumen(periodo);
-  const desde = p.dias ? addDays(hoy, -p.dias) : null;
+  const desde = inicioDePeriodo(p.dias, hoy);
   const enPeriodo = desde ? todos.filter((e) => e.fecha >= desde) : todos;
   const filtrados = filtro === 'todos'
     ? enPeriodo

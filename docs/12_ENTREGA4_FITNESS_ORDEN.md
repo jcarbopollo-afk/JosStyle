@@ -51,7 +51,7 @@ ordena es **el trabajo**, no el documento.
 | **F28** ✅ **v3.110.0** | Integración completa del progreso físico | 14875–15566 | 692 |
 | **F29** ✅ **v3.111.0** | Análisis avanzado de rendimiento por ejercicio | 14154–14874 | 721 |
 | **F30** ✅ **v3.112.0** | Sistema avanzado de objetivos fitness | 13244–14153 | 910 |
-| **F31** | Consistencia y actividad de entrenamiento | 12540–13243 | 704 |
+| **F31** ✅ **v3.113.0** | Consistencia y actividad de entrenamiento | 12540–13243 | 704 |
 | **F32** | Planificación semanal avanzada de entrenamiento | 11860–12539 | 680 |
 | **F33** | Sistema avanzado de sustitución de ejercicios | 11529–11859 | 331 |
 | **F34** | Biblioteca y detalle avanzado de ejercicios | 10709–11528 | 820 |
@@ -77,7 +77,7 @@ ordena es **el trabajo**, no el documento.
 | **Mirar atrás** | F10–F14 | Historial, progresión, progreso por ejercicio y por grupo muscular, metas |
 | **Rangos** | F15–F25 | Clasificación muscular, rankings, evolución, comparación y resumen |
 | **Progreso físico** 🏁 | F26–F28 | Fotos, comparador e integración con el resto del progreso — **cerrado en la v3.110.0** |
-| **Inteligencia** 🟡 | F29–F35 | Análisis por ejercicio, objetivos, consistencia, planificación semanal, sustituciones, biblioteca y calidad del catálogo — **F29 (v3.111.0) y F30 (v3.112.0) hechas; quedan F31–F35** |
+| **Inteligencia** 🟡 | F29–F35 | Análisis por ejercicio, objetivos, consistencia, planificación semanal, sustituciones, biblioteca y calidad del catálogo — **F29 (v3.111.0), F30 (v3.112.0) y F31 (v3.113.0) hechas; quedan F32–F35** |
 | **Acabado** | F36–F42 | Integración global, microinteracciones, UX de iPhone, accesibilidad, rendimiento, persistencia y acabado visual |
 | **Cierre** | F43–F45 | Auditoría funcional, limpieza de deuda técnica y release |
 

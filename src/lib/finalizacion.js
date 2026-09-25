@@ -77,7 +77,7 @@ const lista = (v) => (Array.isArray(v) ? v : []);
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+export const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 /* ⚠️ En LOCAL, con `T00:00:00`: la trampa del UTC ya va por muchas, y aquí

@@ -48,6 +48,7 @@ import {
   fuenteRango, fuenteCombinada, rangosEfectivos, rangoEfectivoDeEjercicio,
   rangoEfectivoDeGrupo, rangoEfectivoDeSubgrupo, rangoGlobalEfectivo,
 } from './motorRangos.js';
+import { PERIODOS, inicioDePeriodo } from './progresoEjercicios.js';
 
 const lista = (v) => (Array.isArray(v) ? v : []);
 const texto = (v) => (typeof v === 'string' ? v.trim() : '');
@@ -112,12 +113,14 @@ export const NO_OBSERVABLE = [
  * Recortando la entrada, el primer punto del periodo saldría con un rango que
  * Josué no ha tenido nunca.
  */
-export const PERIODOS_HISTORIAL = [
-  { id: 'todo', nombre: 'Todo', dias: null },
-  { id: '3m', nombre: '3 meses', dias: 90 },
-  { id: '6m', nombre: '6 meses', dias: 180 },
-  { id: '1a', nombre: '1 año', dias: 365 },
-];
+/* 🐛 **FIT F31 — Y ERA UN SEGUNDO CATÁLOGO.** La F29 dejó escrito que hay *"un
+   solo catálogo de periodos"* (`PERIODOS`, en `progresoEjercicios.js`), y éste,
+   que es anterior, decía **90** días para «3 meses» y **180** para «6 meses»
+   donde aquél dice 91 y 182: el mismo nombre, dos duraciones. Ahora es un
+   subconjunto **por ids**, en el orden de este apartado, y el primer día lo
+   decide `inicioDePeriodo` — el mismo que en el resto de Fitness. */
+export const IDS_PERIODOS_HISTORIAL = ['todo', '3m', '6m', '1a'];
+export const PERIODOS_HISTORIAL = IDS_PERIODOS_HISTORIAL.map((id) => PERIODOS.find((p) => p.id === id));
 export const PERIODO_POR_DEFECTO = 'todo';
 export const periodoHistorial = (id) =>
   PERIODOS_HISTORIAL.find((p) => p.id === texto(id)) || PERIODOS_HISTORIAL.find((p) => p.id === PERIODO_POR_DEFECTO);
@@ -425,7 +428,7 @@ export function enPeriodo(historial, periodoId = PERIODO_POR_DEFECTO, hoy = toda
   const h = historial || vacio('', '', 'sin_historial');
   const p = periodoHistorial(periodoId);
   if (!p.dias) return { ...h, periodo: p.id, desde: null, vacioEnPeriodo: !h.puntos.length };
-  const desde = addDays(hoy, -p.dias);
+  const desde = inicioDePeriodo(p.dias, hoy);
   const puntos = h.puntos.filter((x) => x.fecha >= desde);
   const cambios = h.cambios.filter((x) => x.fecha >= desde);
   return {

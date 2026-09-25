@@ -1,4 +1,4 @@
-import { uid, todayISO } from './helpers';
+import { uid, todayISO, fechaValida, fechaLocalISO } from './helpers';
 import { rachaActual } from './rachas';
 
 /* Entrega 4 · Fase 1/45 — «Fundación arquitectónica del módulo Fitness».
@@ -723,9 +723,36 @@ export function normalizarClasificacion(g) {
   return c.puntuacion === null ? null : c;
 }
 
+/** 🐛 **FIT F31 — LO QUE VUELVE DE DISCO SIN FECHA NO ES DE HOY.** La fábrica
+ *  pone `todayISO()` cuando no le dan fecha, que es lo correcto **al crear** —
+ *  una sesión empieza hoy—, y este normalizador la llamaba igual **al cargar**:
+ *  una sesión guardada sin fecha (o con una imposible, `'2026-13-45'`) se
+ *  mudaba a HOY en cada carga, y el calendario de actividad de la F31 habría
+ *  dicho que entrenó hoy sin haberlo hecho. Su apartado 24 lo pide literal:
+ *  *"usar el timestamp disponible más fiable. Si no existe ninguno: no incluir
+ *  la sesión en cálculos temporales"*.
+ *
+ *  El más fiable es **cuándo empezó**, porque la fecha de una sesión es el día
+ *  local en que empezó (`empezarSesion`, F7): así una que cruzó la medianoche
+ *  sigue siendo del día en que la empezó, igual que las demás. Luego cuándo
+ *  terminó y cuándo la guardó. Sin ninguno, `''`: **no se le inventa un día**, y
+ *  quien lee fechas la deja fuera sin romperse. */
+export function fechaDeSesionGuardada(g) {
+  const propia = texto(g && g.fecha);
+  if (fechaValida(propia)) return propia;
+  for (const marca of [g && g.iniciadaEn, g && g.terminadaEn, g && g.guardadaEn]) {
+    const ms = enteroONull(marca);
+    if (ms !== null && ms > 0) {
+      const iso = fechaLocalISO(ms);
+      if (fechaValida(iso)) return iso;
+    }
+  }
+  return '';
+}
+
 export function normalizarWorkoutSession(g) {
   if (!g || !g.id) return null;
-  return { ...crearWorkoutSession(g), id: g.id };
+  return { ...crearWorkoutSession(g), id: g.id, fecha: fechaDeSesionGuardada(g) };
 }
 
 /* Minutos entre el inicio y el fin, o `null` si falta alguno. No inventa una
@@ -842,6 +869,20 @@ function normalizarPlanActivoGuardado(g) {
   return { planId, origen: texto(g.origen) || 'preset', desde: texto(g.desde) };
 }
 
+/** 🐛 **FIT F31 (apartado 23): una sesión guardada dos veces no son dos.**
+ *  `guardarSesion` (F7) sustituye por id, así que desde la aplicación no puede
+ *  pasar; pero lo guardado puede traerlo (dos dispositivos, una restauración
+ *  de la papelera sobre una copia vieja), y entonces el historial la pintaba
+ *  dos veces **con la misma `key`**, el resumen la contaba doble y la
+ *  progresión la comparaba consigo misma. Se limpia **en la puerta de carga**,
+ *  que es donde nace el problema, y no en cada pantalla que cuenta. Gana la
+ *  última copia —la más reciente en guardarse—, en el sitio de la primera. */
+export function sinDuplicadosPorId(elementos) {
+  const porId = new Map();
+  for (const e of lista(elementos)) if (e && e.id) porId.set(e.id, e);
+  return [...porId.values()];
+}
+
 /* Regla 5: `loadData` no fusiona con el default y `saveData` sobrescribe, así
    que el normalizador devuelve **el objeto entero** y cada lista pasa por el
    normalizador de su modelo. Un campo nuevo que no esté aquí se lo lleva el
@@ -855,7 +896,7 @@ export function normalizarFitness(guardado) {
     ejercicios: lista(g.ejercicios).map(normalizarEjercicio).filter(Boolean),
     planes: lista(g.planes).map(normalizarWorkoutPlan).filter(Boolean),
     plantillas: lista(g.plantillas).map(normalizarWorkoutPlan).filter(Boolean),
-    sesiones: lista(g.sesiones).map(normalizarWorkoutSession).filter(Boolean),
+    sesiones: sinDuplicadosPorId(lista(g.sesiones).map(normalizarWorkoutSession).filter(Boolean)),
     rangos: lista(g.rangos).map(normalizarMuscleRank).filter(Boolean),
     planActivo: normalizarPlanActivoGuardado(g.planActivo),
     /* Sin repetidos y sin vacíos. ⚠️ Aquí **no** se comprueba que el plan exista

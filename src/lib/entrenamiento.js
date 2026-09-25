@@ -1,5 +1,5 @@
 import { uid, todayISO } from './helpers';
-import { crearWorkoutSession, normalizarWorkoutSession, ESTADOS_SESION } from './fitness';
+import { crearWorkoutSession, normalizarWorkoutSession, ESTADOS_SESION, sinDuplicadosPorId } from './fitness';
 import {
   ejercicioPorId, nombreCompleto, musculoPrincipal, musculosDe,
 } from './ejercicios';
@@ -865,6 +865,7 @@ export function normalizarFitnessConSesiones(guardado, planes = CATALOGO_PLANES)
        aquélla ya recortó el snapshot con el modelo reducido de la F1, así que
        leerlo de ahí no encontraría nunca nada (EH F41 y EH F45). Y por índice
        tampoco: esa capa puede haber descartado una sesión y correrlos todos. */
-    sesiones: lista((guardado || {}).sesiones).map(normalizarSesionCompleta).filter(Boolean),
+    /* 🐛 FIT F31 — y sin repetidas por id (apartado 23), igual que la capa de la F1. */
+    sesiones: sinDuplicadosPorId(lista((guardado || {}).sesiones).map(normalizarSesionCompleta).filter(Boolean)),
   };
 }

@@ -1,5 +1,79 @@
 # CHANGELOG.md
 
+## v3.113.0 — FIT F31/45: la consistencia y la actividad de entrenamiento
+
+Fitness contesta ya, de un vistazo, **cuándo entrenó, cuánto, cómo se reparte y cómo va el
+plan**: el último entrenamiento, «esta semana» con la semana en curso dicha, un calendario
+compacto de siete días —con el mes a un toque—, una frase de constancia, la media semanal
+cuando hay historial para ella, la actividad reciente con su «Ver» y su «Ver historial», y en
+Tu Plan *«3 / 5 sesiones planificadas»*. Tercera fase del bloque de **Inteligencia** (F29–F35).
+
+### 🚨 «Sin registro» no es «descanso»
+
+Los apartados 28 y 29 lo dicen dos veces: un día sin sesión **no se sabe qué fue**. Se dice
+*«sin entrenamiento registrado»*, con un guion apagado y nunca en rojo; y **«descanso»** solo
+cuando **el plan** marca descanso ese día, y aun así dicho como *«descanso del plan»*, que es de
+quién es la información. Sin plan, ningún día se llama descanso, y hay una casilla de auditoría
+que se pone roja si alguno lo hace. Cada día se lee con palabras: *«12 de septiembre —
+entrenamiento Push»* (apartado 37).
+
+### 🚨 Ni un porcentaje, ni una puntuación, ni una racha nueva
+
+*«Entrenaste 8 de los últimos 14 días»*, nunca *«Consistencia 82 %»* (apartado 8). Con más
+sesiones que planificadas, *«6 entrenamientos · 5 planificados»*, nunca *«120 %»* (apartado
+14), y sin barra: una barra de 3/5 se lee como una nota. La **media semanal** solo sale con
+**dos semanas completas** o más y **sin la semana en curso** (apartado 9). La constancia **no
+cuenta los días anteriores a su primer entrenamiento**: *«2 de los 5 días desde tu primer
+entrenamiento»* en vez de *«2 de los últimos 30»*, que sería verdad y engañaría. Y la **racha no
+es de aquí** (apartado 16): la lleva el motor de rachas y esta librería ni lo importa.
+
+### 🚨 Nada nuevo guardado: es una lectura del historial
+
+`src/lib/actividadEntrenamiento.js` lee `fitness.sesiones` **por la misma puerta que el
+historial de la F10** —completadas, con las parciales dentro y las descartadas fuera— y el plan
+activo de la F6. Así *«al terminar una sesión, el resumen se actualiza al momento»* (apartado
+33) no hay que programarlo, y toda sesión de la actividad **está en el Historial** (apartado 34).
+`YA_LO_RESUELVE` guarda **nueve funciones importadas**. Los periodos son **los de la F28**, del
+catálogo único; la semana empieza el **lunes**, que ya era la convención; y el día de una
+sesión es **el día local en que empezó**, así que un entrenamiento de las 23:50 es de ese día
+aunque se guarde a las 00:40.
+
+El plan solo se compara **con una frecuencia definida** (apartado 13): una plantilla suya
+activada como plan no anuncia cuántos días, así que ahí el bloque no existe. Y «realizadas»
+son **sus entrenamientos de la semana**, no las casillas exactas del plan: entrenar el martes
+en vez del lunes no es un incumplimiento (apartado 12).
+
+### 🐛 Y la F31 destapó cuatro fallos de antes, arreglados donde nacían
+
+- **«7 días» eran ocho, en toda Fitness.** Siete llamadas en seis archivos —F12, F13, F22, F28 y
+  F29— calculaban el primer día con `addDays(hoy, -p.dias)`, que son N + 1 fechas. Con eso la
+  frase del apartado 8 habría podido decir *«15 de los últimos 14 días»*. Ahora lo decide
+  **`inicioDePeriodo`**, en un solo sitio (**C-38**).
+- **Un segundo catálogo de periodos.** El historial de rangos (F22) tenía el suyo, con 90 días
+  para «3 meses» donde el único dice 91. Ahora es un subconjunto por ids.
+- **La «última sesión» de la F28 era la más antigua**: las sesiones se guardan al final de la
+  lista y se cogía la primera. No se pintaba, así que no se vio; la F31 la enseña. Lo arregla
+  `historialPorReciente`, en el historial.
+- **Una sesión guardada sin fecha se mudaba a HOY en cada carga** —la fábrica pone
+  `todayISO()`, y el normalizador la llamaba igual al cargar—, y **una repetida por id contaba
+  dos veces**. Las dos se arreglan en la puerta de carga (`fechaDeSesionGuardada` y
+  `sinDuplicadosPorId`): la fecha se deduce de la marca más fiable, y sin ninguna **no se le
+  inventa un día** (apartados 23 y 24). De paso, una sesión sin marcas de tiempo ya no dice
+  *«menos de 1 min»* en el historial: no se midió.
+
+Y dos detalles de navegación: el detalle de una sesión abierto desde Progreso **decía «Volver
+al historial» y volvía a Progreso** —ahora dice adónde vuelve—, y lleva al **progreso de cada
+ejercicio** (apartado 30).
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde. **158 comprobaciones nuevas** en
+`scripts/test-actividad-entrenamiento.mjs` —las 21 pruebas del apartado 38, los casos límite
+del 39 (medianoche, cambio de mes, de año y de semana) y los cuatro arreglos, cada uno con su
+comprobación de que el arreglo se nota—, **76 casos de renderizado** nuevos y una sección nueva
+del recorrido en Chromium que **calcula cada etiqueta esperada** a partir de lo que siembra: no
+depende del día de la semana en que se ejecute.
+
 ## v3.112.0 — FIT F30/45: el sistema avanzado de objetivos fitness
 
 Los objetivos dejan de ser una lista con su porcentaje y pasan a tener el ciclo entero:

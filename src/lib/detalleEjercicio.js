@@ -1,7 +1,7 @@
-import { todayISO, addDays } from './helpers';
+import { todayISO } from './helpers';
 import {
   detalleDeProgreso, graficaDeProgreso, PERIODOS, periodo, PERIODO_TODO,
-  PUNTOS_MINIMOS_GRAFICA,
+  PUNTOS_MINIMOS_GRAFICA, inicioDePeriodo,
 } from './progresoEjercicios';
 import {
   progresoDeEjercicio, aparicionesDeEjercicio, CLASES,
@@ -78,7 +78,7 @@ export const PERIODO_PREFERIDO = '3m';
  */
 export function periodoPorDefecto(apariciones, { hoy = todayISO() } = {}) {
   const p = periodo(PERIODO_PREFERIDO);
-  const desde = addDays(hoy, -p.dias);
+  const desde = inicioDePeriodo(p.dias, hoy);
   const dentro = lista(apariciones).filter((a) => texto(a.fecha) >= desde).length;
   return dentro >= PUNTOS_MINIMOS_GRAFICA ? PERIODO_PREFERIDO : PERIODO_TODO;
 }
@@ -367,7 +367,7 @@ export const CORRUPTOS_SIGNIFICATIVOS = 1;
  */
 export function descartadosDelGrafico(apariciones, grafica, { rango = PERIODO_TODO, hoy = todayISO() } = {}) {
   const p = periodo(rango);
-  const desde = p.dias ? addDays(hoy, -p.dias) : null;
+  const desde = inicioDePeriodo(p.dias, hoy);
   const candidatos = lista(apariciones)
     .filter((a) => a && a.clase === grafica.clase && a.mejor && (!desde || a.fecha >= desde)).length;
   const fuera = Math.max(0, candidatos - lista(grafica.puntos).length);

@@ -237,7 +237,7 @@ function FilaSerie({ fila, accent }) {
 }
 
 /* ── Un ejercicio del detalle, desplegable (apartados 18-25) ───────────── */
-export function EjercicioHistorial({ ejercicio, accent, abierto = false, onAlternar }) {
+export function EjercicioHistorial({ ejercicio, accent, abierto = false, onAlternar, onVerProgreso = null }) {
   const e = ejercicio;
   const nada = e.estado === 'no_realizado';
   return (
@@ -295,6 +295,19 @@ export function EjercicioHistorial({ ejercicio, accent, abierto = false, onAlter
       {e.notas && (
         <p className="text-xs mt-2" style={{ color: COLORS.text }}>📝 {e.notas}</p>
       )}
+      {/* 🔓 FIT F31, apartado 30 — al progreso del ejercicio, **si corresponde**:
+          solo si existe en el catálogo y se hizo algo. Un ejercicio archivado
+          o no realizado no tiene progreso que enseñar. */}
+      {onVerProgreso && e.exerciseId && e.existe && !nada && (
+        <button
+          onClick={() => onVerProgreso(e.exerciseId)}
+          aria-label={`Ver el progreso de ${e.nombre}`}
+          className="text-xs font-bold mt-2 py-1.5 toque-44"
+          style={{ color: accent }}
+        >
+          Ver su progreso
+        </button>
+      )}
 
       {abierto && (
         <div className="mt-3">
@@ -312,7 +325,12 @@ export function EjercicioHistorial({ ejercicio, accent, abierto = false, onAlter
 }
 
 /* ── El detalle de una sesión (apartados 16-29) ────────────────────────── */
-export function DetalleSesionHistorial({ detalle, accent, onVolver, onEliminar }) {
+export function DetalleSesionHistorial({
+  detalle, accent, onVolver, onEliminar,
+  /* 🔓 FIT F31 — se abre también desde Progreso, y entonces «← Historial»
+     mentía: volvía a Progreso. El botón dice adónde vuelve. */
+  volverTexto = 'Historial', volverEtiqueta = 'Volver al historial', onVerEjercicio = null,
+}) {
   const [abiertos, setAbiertos] = useState(() => new Set());
   const [confirmando, setConfirmando] = useState(false);
   const d = detalle;
@@ -326,11 +344,11 @@ export function DetalleSesionHistorial({ detalle, accent, onVolver, onEliminar }
     <div className="space-y-4">
       <button
         onClick={onVolver}
-        aria-label="Volver al historial"
+        aria-label={volverEtiqueta}
         className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
         style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
       >
-        <ChevronLeft size={16} /> Historial
+        <ChevronLeft size={16} /> {volverTexto}
       </button>
 
       <div>
@@ -352,7 +370,7 @@ export function DetalleSesionHistorial({ detalle, accent, onVolver, onEliminar }
         <div className="grid grid-cols-2 gap-3">
           <DatoResumen icono={Clock} etiqueta="Inicio" valor={d.inicio} accent={accent} />
           <DatoResumen icono={Clock} etiqueta="Final" valor={d.fin} accent={accent} />
-          <DatoResumen icono={Calendar} etiqueta="Duración" valor={d.duracion} accent={accent} />
+          <DatoResumen icono={Calendar} etiqueta="Duración" valor={d.duracion || '—'} accent={accent} />
           <DatoResumen icono={Dumbbell} etiqueta="Ejercicios" valor={d.ejerciciosTexto} accent={accent} />
           <DatoResumen icono={Layers} etiqueta="Series" valor={d.seriesTexto} accent={accent} />
           {d.volumen && <DatoResumen icono={Weight} etiqueta="Volumen" valor={d.volumen.texto} accent={accent} />}
@@ -379,6 +397,7 @@ export function DetalleSesionHistorial({ detalle, accent, onVolver, onEliminar }
             accent={accent}
             abierto={abiertos.has(e.id)}
             onAlternar={() => alternar(e.id)}
+            onVerProgreso={onVerEjercicio}
           />
         ))}
       </div>

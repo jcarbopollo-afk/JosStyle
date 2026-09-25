@@ -9,6 +9,7 @@ import { iconoDeGrupo } from './iconosFitness';
 import { RankBadge } from './rangos';
 import { useUrlsFirmadas } from './fotosProgreso';
 import { fotosEnOrden } from '../lib/fotosProgreso';
+import { TrainingPeriodSelector, TrainingActivitySummary } from './actividadEntrenamiento';
 import {
   centroDeProgreso, FILTROS_TIMELINE, PERIODOS_RESUMEN, VER_TODO, FOTOS_RESUMEN_MAX,
 } from '../lib/resumenProgreso';
@@ -563,7 +564,8 @@ export function ProgressOverview({
       />
     ),
     entrenamientos: b.entrenamientos && !b.entrenamientos.error ? (
-      <div key="entrenamientos" className="grid grid-cols-2 gap-2">
+      <div key="entrenamientos" className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
         <ProgressMetricCard
           valor={b.entrenamientos.total}
           nombre={b.entrenamientos.total === 1 ? 'Entrenamiento registrado' : 'Entrenamientos registrados'}
@@ -579,6 +581,18 @@ export function ProgressOverview({
           accent={accent}
           onClick={irA('objetivos')}
         />
+      </div>
+      {/* 🔓 FIT F31, apartado 32 — *"En Progreso → Resumen: Actividad reciente
+          y Esta semana"*. Lee del historial (F10) por su propia función, con
+          **el periodo de este resumen**: ni una cuenta aquí dentro. */}
+      <TrainingActivitySummary
+        fitness={fitness}
+        periodo={resumen.periodo}
+        hoy={hoy}
+        accent={accent}
+        onVerSesion={onVerSesion}
+        onVerHistorial={onIrAHistorial}
+      />
       </div>
     ) : null,
     ejercicios: (
@@ -608,22 +622,11 @@ export function ProgressOverview({
     <div className="space-y-5">
       {/* Apartado 16 — el periodo, que filtra lo que se ve y **no toca** ni el
           rango ni los objetivos. */}
-      <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-0.5" role="group" aria-label="Periodo del resumen">
-        {PERIODOS_RESUMEN.map((p) => {
-          const activo = resumen.periodo === p.id;
-          return (
-            <button
-              key={p.id}
-              onClick={() => setPeriodo(p.id)}
-              aria-pressed={activo}
-              className="h-9 px-3 rounded-xl text-xs font-semibold shrink-0 toque-44 active:scale-95"
-              style={{ background: activo ? accent : hexToRgba(COLORS.border, 0.45), color: activo ? COLORS.textOnAccent : COLORS.text }}
-            >
-              {p.nombre}
-            </button>
-          );
-        })}
-      </div>
+      {/* 🔓 FIT F31 — el selector se mudó a `TrainingPeriodSelector` para que
+          la actividad lo **reutilice** (su apartado 35): es este mismo, con sus
+          cuatro periodos y su etiqueta, y lo lee también la tarjeta de
+          actividad. Un segundo selector en la misma pantalla diría dos cosas. */}
+      <TrainingPeriodSelector periodos={PERIODOS_RESUMEN} valor={resumen.periodo} onCambiar={setPeriodo} accent={accent} />
 
       {/* Apartado 30 — lo que no se ha podido calcular se dice, y lo demás sigue. */}
       {resumen.avisos.length > 0 && (

@@ -1,4 +1,4 @@
-import { todayISO, addDays } from './helpers';
+import { todayISO, addDays, fechaValida } from './helpers';
 import { ejerciciosDeSesion, filasDeSeries } from './entrenamiento';
 import { resumenDeSesion, fechaLarga, volumenDeSesion } from './finalizacion';
 import { resumenPlanificado, resumenRealizado, cabeceraDeEjercicio } from './entrenamientoUx';
@@ -64,6 +64,22 @@ export function etiquetaDeFecha(iso, hoy = todayISO()) {
 
 /** Cuándo acabó, para ordenar dos sesiones del mismo día. */
 const momento = (s) => s?.terminadaEn || s?.iniciadaEn || 0;
+
+/** 🐛 **FIT F31 — «LA ÚLTIMA» SE ORDENA, NO SE LEE DE UNA POSICIÓN.**
+ *  `guardarSesion` (F7) añade al **final** de la lista, así que el primer
+ *  elemento del historial es **el más antiguo**. El bloque de entrenamientos de
+ *  la F28 cogía `sesiones[0]` como «la última» — no se pintaba en ninguna parte y
+ *  por eso no se vio, pero la F31 enseña *«Último entrenamiento»* (su apartado
+ *  3) y habría dicho la primera que hizo. Por fecha y, el mismo día, por hora.
+ *  ⚠️ Una sesión sin fecha válida no puede ser «la última» de nada (apartado 24
+ *  de la F31): no se sabe cuándo fue. */
+export function historialPorReciente(fitness) {
+  return sesionesDelHistorial(fitness)
+    .filter((s) => fechaValida(s.fecha))
+    .sort((a, b) => (a.fecha === b.fecha ? momento(b) - momento(a) : (a.fecha < b.fecha ? 1 : -1)));
+}
+
+export const ultimaDelHistorial = (fitness) => historialPorReciente(fitness)[0] || null;
 
 /* ═══════════════════════════════════════════════════════════════════════════
    3 · ENTORNO Y PLAN (apartados 12 y 13)
@@ -179,6 +195,18 @@ export function rangoDeFecha(id, hoy = todayISO(), { desde = '', hasta = '' } = 
 
 const nombreEntorno = (id) => ENTORNOS.find((e) => e.id === id)?.nombre || '';
 
+/** 🐛 **FIT F31 (apartado 39: *"sesión sin duración válida"*).** Sin marca de
+ *  inicio, o con un fin anterior al inicio, `duracionSesion` (F7) devuelve 0 —
+ *  lo correcto para un reloj— y la tarjeta decía **«menos de 1 min»**, que es
+ *  afirmar una duración que nadie midió. Una duración se enseña solo si hay las
+ *  dos marcas y van en orden; si no, no se dice nada (la regla 8, y es el «—»
+ *  de una serie sin registrar). */
+export function duracionConocida(sesion) {
+  const a = Number(sesion?.iniciadaEn);
+  const b = Number(sesion?.terminadaEn);
+  return Number.isFinite(a) && a > 0 && Number.isFinite(b) && b >= a;
+}
+
 export function fichaDeHistorial(sesion, { fitness = {}, propios = [], planes = CATALOGO_PLANES, hoy = todayISO() } = {}) {
   if (!sesion) return null;
   const r = resumenDeSesion(sesion, { propios, ahora: momento(sesion) || Date.now() });
@@ -191,8 +219,8 @@ export function fichaDeHistorial(sesion, { fitness = {}, propios = [], planes = 
     fecha: sesion.fecha,
     etiquetaFecha: etiquetaDeFecha(sesion.fecha, hoy),
     hora: r.inicio,
-    duracion: r.duracion,
-    duracionMs: r.duracionMs,
+    duracion: duracionConocida(sesion) ? r.duracion : '',
+    duracionMs: duracionConocida(sesion) ? r.duracionMs : 0,
     momento: momento(sesion),
     ejercicios: n,
     ejerciciosTexto: `${n} ${n === 1 ? 'ejercicio' : 'ejercicios'}`,
@@ -362,6 +390,9 @@ export function detalleDeSesion(sesion, { fitness = {}, propios = [], planes = C
     const corporal = e.linea?.tipoCarga === 'corporal';
     return {
       id: e.id,
+      /* 🔓 FIT F31, apartado 30 — *"Desde una sesión → ExerciseProgress si
+         corresponde"*: hace falta saber cuál es. */
+      exerciseId: e.exerciseId,
       nombre: cab.nombre || res.nombre || e.exerciseId,
       variante: [cab.variante, cab.agarre].filter(Boolean).join(' · '),
       estado: res.estado,
@@ -391,7 +422,7 @@ export function detalleDeSesion(sesion, { fitness = {}, propios = [], planes = C
     etiquetaFecha: etiquetaDeFecha(sesion.fecha, hoy),
     inicio: r.inicio,
     fin: r.fin,
-    duracion: r.duracion,
+    duracion: duracionConocida(sesion) ? r.duracion : '',
     ejerciciosTexto: `${r.ejerciciosHechos} de ${r.ejercicios.length} ${r.ejercicios.length === 1 ? 'ejercicio' : 'ejercicios'}`,
     seriesTexto: r.seriesTexto,
     /* 🚨 Apartado 26 — solo cuando es matemáticamente válido. Es el de la F8,

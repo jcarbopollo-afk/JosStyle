@@ -33,6 +33,8 @@ import { iconoDeGrupo } from '../components/iconosFitness';
 import {
   tuPlan, sesionDelDia, SIN_PLAN, PLAN_PERDIDO, DESCANSO_HOY,
 } from '../lib/tuPlan';
+import { resumenDeActividad } from '../lib/actividadEntrenamiento';
+import { TrainingPlanAdherence } from '../components/actividadEntrenamiento';
 
 /* ── El estado sin plan (apartado 2) ───────────────────────────────────────
    *"mostrar un estado vacío premium"*, con sus dos salidas reales: la
@@ -295,6 +297,10 @@ export default function TuPlanView({
 }) {
   const [diaAbierto, setDiaAbierto] = useState(null);
   const v = useMemo(() => tuPlan(fitness, hoy ? { hoy } : {}), [fitness, hoy]);
+  /* 🔓 FIT F31, apartado 31 — *"Esta semana: realizadas / planificadas […] No
+     duplicar la lógica. Utilizar getTrainingActivitySummary()"*. ⚠️ Antes de
+     los `return` de abajo: es un hook (regla 4). */
+  const actividad = useMemo(() => resumenDeActividad(fitness, hoy ? { hoy } : {}), [fitness, hoy]);
 
   if (v.estado === 'sin_plan') {
     return (
@@ -412,6 +418,13 @@ export default function TuPlanView({
                 diaAbierto?.dia === d.dia ? null : { indice: d.indice, dia: d.dia },
               )}
             />
+            {/* 🔓 FIT F31 — lo hecho frente a lo planificado, sin nota (apartados
+                11-14). Sin frecuencia definida el bloque no existe (13). */}
+            {actividad.plan && (
+              <div className="mt-3">
+                <TrainingPlanAdherence plan={actividad.plan} accent={accent} />
+              </div>
+            )}
             {/* La distribución semanal (apartado 10), resumida y derivada. */}
             {v.distribucion.grupos.length > 0 && (
               <Card className="mt-3">

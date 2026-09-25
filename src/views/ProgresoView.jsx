@@ -1061,7 +1061,15 @@ export default function ProgresoView({
     return (
       <div className="max-w-2xl mx-auto">
         {s ? (
-          <DetalleSesionHistorial detalle={detalleDeSesion(s, { fitness: f, propios, hoy })} accent={accent} onVolver={() => setVista(null)} onEliminar={null} />
+          <DetalleSesionHistorial
+            detalle={detalleDeSesion(s, { fitness: f, propios, hoy })}
+            accent={accent}
+            onVolver={() => setVista(null)}
+            onEliminar={null}
+            volverTexto="Progreso"
+            volverEtiqueta="Volver a Progreso"
+            onVerEjercicio={(id) => { setVista(null); setSeccion('ejercicios'); setAbierto(id); }}
+          />
         ) : (
           <div className="space-y-3">
             <EmptyHint text="Ese entrenamiento ya no está." />

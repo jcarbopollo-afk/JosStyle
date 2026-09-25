@@ -197,6 +197,17 @@ import {
   GoalChart, GoalSkillSteps, GoalLiveHint,
 } from '../src/components/objetivosFitness.jsx';
 import { detalleDeObjetivo as detalleObjetivoF30, objetivoEnVivo as enVivoF30 } from '../src/lib/objetivosFitness.js';
+/* 🔓 FIT F31 — la actividad de entrenamiento: los ocho componentes del
+   apartado 35. ⚠️ `TrainingFrequencyCard`, `TrainingPlanAdherence` y
+   `TrainingRecentSessions` SIN su dato devuelven `null` a propósito: eso se
+   prueba en Node (FIT F3), aquí solo con dato. */
+import {
+  TrainingActivitySummary, TrainingActivityCalendar, TrainingActivityDay, TrainingFrequencyCard,
+  TrainingRecentSessions, TrainingRecentSessionCard, TrainingPlanAdherence, TrainingPeriodSelector,
+} from '../src/components/actividadEntrenamiento.jsx';
+import {
+  resumenDeActividad as resumenActividadF31, mesDeActividad as mesActividadF31, PERIODOS_ACTIVIDAD as PERIODOS_F31,
+} from '../src/lib/actividadEntrenamiento.js';
 import { OBJETIVOS_VACIO as VACIO_F14 } from '../src/lib/objetivosProgreso.js';
 import {
   tarjetasDeProgreso as tarjetasF12, resumenDeProgreso as resumenF12, detalleDeProgreso as detalleF12,
@@ -534,6 +545,26 @@ const detVacioF30 = () => {
   const f = anadirObjetivoF14({}, { exerciseId: 'remo-barra', tipo: 'peso', valor: 70 }).fitness;
   return detalleObjetivoF30(f, f.objetivos[0], { hoy: HOY_F28 });
 };
+
+/* FIT F31 — la actividad. Un jueves, con dos semanas completas detrás (para
+   que haya media), dos entrenamientos el mismo día y el PPL activo: así el
+   calendario tiene los cuatro estados —entrenado, descanso DEL PLAN, sin
+   registro y futuro— y la adherencia tiene algo que contar. */
+const HOY_F31 = '2026-09-17';
+const sesionF31 = (id, fecha, nombre, hora = 18, minutos = 55) => {
+  const ini = new Date(`${fecha}T${String(hora).padStart(2, '0')}:00:00`).getTime();
+  return { id, fecha, nombre, estado: 'completada', iniciadaEn: ini, terminadaEn: ini + minutos * 60000, origen: { tipo: 'plan', id: null, ejercicios: [] } };
+};
+const fitnessF31 = () => ({
+  sesiones: [
+    sesionF31('a1', '2026-08-31', 'Push'), sesionF31('a2', '2026-09-02', 'Legs'), sesionF31('a3', '2026-09-04', 'Upper'),
+    sesionF31('b1', '2026-09-07', 'Push'), sesionF31('b2', '2026-09-08', 'Pull'), sesionF31('b3', '2026-09-11', 'Upper'),
+    sesionF31('c1', '2026-09-14', 'Push'), sesionF31('c2', '2026-09-16', 'Legs', 8, 40), sesionF31('c3', '2026-09-16', 'Core', 19, 25),
+  ],
+  planActivo: { planId: 'ppl-estetico', origen: 'preset', desde: '2026-08-31' },
+});
+const resumenF31 = (extra = {}) => resumenActividadF31(fitnessF31(), { hoy: HOY_F31, ...extra });
+const diaF31 = (estado) => resumenF31().semana.dias.find((d) => d.estado === estado);
 
 const DESTINO_EJ_F22 = { tipo: 'exercise', id: 'dominada-prona' };
 const DESTINO_GRUPO_F23 = { tipo: 'muscleGroup', id: 'espalda' };
@@ -3637,6 +3668,43 @@ const CASOS = [
   ['GoalSkillSteps', GoalSkillSteps, () => ({ skill: detSkillF30().skill, accent })],
   ['GoalLiveHint', GoalLiveHint, () => ({ enVivo: enVivoF30(fitnessTodoF28(), 'dominada-prona', { hoy: HOY_F28 }), accent })],
 
+  /* ══ FIT F31 — la actividad de entrenamiento ═══════════════════════════
+     ⚠️ Con datos, SIN datos (apartado 3: «Sin entrenamientos todavía», que
+     aquí SÍ pinta algo) y sin plan (el bloque del plan no existe). */
+  ['TrainingActivitySummary', TrainingActivitySummary, () => ({
+    fitness: fitnessF31(), hoy: HOY_F31, accent, onVerSesion: noop, onVerHistorial: noop,
+  })],
+  ['TrainingActivitySummary (7 días)', TrainingActivitySummary, () => ({
+    fitness: fitnessF31(), periodo: '7d', hoy: HOY_F31, accent, onVerSesion: noop, onVerHistorial: noop,
+  })],
+  ['TrainingActivitySummary (sin entrenamientos)', TrainingActivitySummary, () => ({ fitness: {}, hoy: HOY_F31, accent })],
+  ['TrainingActivitySummary (sin plan)', TrainingActivitySummary, () => ({
+    fitness: { sesiones: fitnessF31().sesiones }, hoy: HOY_F31, accent, onVerSesion: noop,
+  })],
+  ['TrainingActivityCalendar (semana)', TrainingActivityCalendar, () => ({ dias: resumenF31().semana.dias, accent, onVista: noop, onElegir: noop })],
+  ['TrainingActivityCalendar (mes)', TrainingActivityCalendar, () => ({
+    dias: resumenF31().semana.dias, mes: mesActividadF31(fitnessF31(), { hoy: HOY_F31 }), vista: 'mes',
+    accent, onVista: noop, onMes: noop, onElegir: noop,
+  })],
+  ['TrainingActivityDay (entrenado)', TrainingActivityDay, () => ({ dia: diaF31('entrenado'), accent, onElegir: noop })],
+  /* 🚨 Apartados 28 y 29 — los dos «sin entrenar», y NO son lo mismo. */
+  ['TrainingActivityDay (sin registro)', TrainingActivityDay, () => ({ dia: diaF31('sin_registro'), accent, onElegir: noop })],
+  ['TrainingActivityDay (descanso del plan)', TrainingActivityDay, () => ({ dia: diaF31('descanso'), accent })],
+  ['TrainingActivityDay (futuro)', TrainingActivityDay, () => ({ dia: diaF31('futuro'), accent })],
+  ['TrainingFrequencyCard', TrainingFrequencyCard, () => ({ constancia: resumenF31().constancia, frecuencia: resumenF31().frecuencia, accent })],
+  ['TrainingFrequencyCard (sin media)', TrainingFrequencyCard, () => ({ constancia: resumenF31({ periodo: '7d' }).constancia, frecuencia: null, accent })],
+  ['TrainingPlanAdherence', TrainingPlanAdherence, () => ({ plan: resumenF31().plan, accent })],
+  /* 🚨 Apartado 14 — más de las planificadas: dos números, nunca «133 %». */
+  ['TrainingPlanAdherence (sesiones extra)', TrainingPlanAdherence, () => ({
+    plan: { ...resumenF31().plan, realizadas: 6, hechasDelPlan: 5, extra: 1, texto: '6 entrenamientos · 5 planificados' }, accent,
+  })],
+  ['TrainingRecentSessions', TrainingRecentSessions, () => ({ tarjetas: resumenF31().recientes, accent, onVer: noop, onVerHistorial: noop })],
+  ['TrainingRecentSessionCard (parcial)', TrainingRecentSessionCard, () => ({
+    tarjeta: { id: 'p', nombre: 'Pull', etiquetaFecha: 'Ayer', duracion: '40 min', parcial: true, estado: 'Parcial', etiqueta: 'Ayer, Pull, 40 min, parcial' },
+    accent, onVer: noop,
+  })],
+  ['TrainingPeriodSelector', TrainingPeriodSelector, () => ({ periodos: PERIODOS_F31, valor: '30d', onCambiar: noop, accent })],
+
   ['ProgressSummaryCard', ProgressSummaryCard, () => ({ titulo: 'Ejercicios en progreso', accent, hayMas: true, onVerTodo: noop, children: 'x' })],
   ['ProgressMetricCard', ProgressMetricCard, () => ({ valor: 12, nombre: 'Entrenamientos registrados', sub: '3 en los últimos 7 días', accent, onClick: noop })],
   ['ProgressMetricCard (sin destino)', ProgressMetricCard, () => ({ valor: 0, nombre: 'Objetivos activos', accent })],
@@ -3903,6 +3971,12 @@ const CASOS = [
     fitness: usarPlanF5({}, 'ppl-estetico', { hoy: HOY }).fitness, accent, hoy: HOY,
     onExplorar: noop, onCrear: noop, onVerPlantillas: noop, onCambiarPlan: noop,
   })],
+  /* 🔓 FIT F31, apartado 31 — con sesiones esta semana: «Esta semana» sale
+     debajo de los días, con la función central de la actividad. */
+  ['TuPlanView (con la semana en marcha)', TuPlanView, () => ({
+    fitness: fitnessF31(), accent, hoy: HOY_F31,
+    onExplorar: noop, onCrear: noop, onVerPlantillas: noop, onCambiarPlan: noop,
+  })],
   ['TuPlanView', TuPlanView, () => ({
     fitness: { planActivo: { planId: 'fantasma', origen: 'preset', desde: HOY } }, accent, hoy: HOY,
     onExplorar: noop, onCrear: noop, onVerPlantillas: noop, onCambiarPlan: noop,
@@ -3997,6 +4071,12 @@ const CASOS = [
   })],
   ['DetalleSesionHistorial', DetalleSesionHistorial, () => ({
     detalle: detalleF10(historialF10(fitnessConHistorialF10())[0]), accent, onVolver: noop, onEliminar: noop,
+  })],
+  /* 🔓 FIT F31 — abierto desde Progreso: dice adónde vuelve y lleva al progreso
+     de cada ejercicio (apartado 30). */
+  ['DetalleSesionHistorial (desde Progreso)', DetalleSesionHistorial, () => ({
+    detalle: detalleF10(historialF10(fitnessConHistorialF10())[0]), accent, onVolver: noop, onEliminar: null,
+    volverTexto: 'Progreso', volverEtiqueta: 'Volver a Progreso', onVerEjercicio: noop,
   })],
   ['FinalizacionView', FinalizacionView, () => ({
     sesion: pasarF8(sesionUsadaF7()), propios: [], accent,
