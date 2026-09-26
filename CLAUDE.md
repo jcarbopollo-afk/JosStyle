@@ -385,6 +385,17 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 - ⚠️ **UNA ACCIÓN SE LLAMA POR LO QUE HACE** (FIT F33): el buscador de la F2 en modo elegir decía
   «Añadir» también al sustituir. `EjerciciosView` recibe ahora `accionElegir`, y al sustituir dice
   «Cambiar por».
+- 🐛 **LO SEMBRADO EN CRUDO NUNCA ES IGUAL A LO GUARDADO** (FIT F33, y costó una pasada en rojo):
+  la puerta de carga le pone a una sesión sus campos por defecto (`planId: null`, `descansoAuto`,
+  `media`…), así que `JSON.stringify(sembrada) === JSON.stringify(guardada)` sale rojo **con el
+  historial intacto**. Se compara **el contenido que se protege** (fecha, estado, ejercicios, lo
+  registrado) o **lo guardado antes contra lo guardado después**, nunca la semilla contra el disco.
+- 🐛 **`pulsar('')` PULSA EL PRIMER BOTÓN QUE HAYA, Y SALE VERDE** (FIT F33): una etiqueta que se
+  busca y no aparece deja una cadena vacía, y `innerText.includes('')` es siempre verdad. «Se
+  eligen las flexiones» salió verde **sin tarjeta de flexiones**. Toda etiqueta calculada se
+  exige antes de pulsarla: `ok(!!etiqueta && await pulsar(etiqueta), …)`.
+- ⚠️ **UN `aria-label` NO ESTÁ EN `innerText`** (FIT F33): «Volver a Reemplazar» es la etiqueta del
+  botón y en pantalla se lee «← Reemplazar». Lo que no se ve se busca con `querySelector`.
 - ⚠️ **LA HOJA DEL CONSTRUCTOR NO ENTRA EN EL BANCO DE RENDERIZADO** (FIT F33): es un portal, como
   `quickAdd`. Lo que lleva dentro (`ExerciseReplacement`) sí, con sus cuatro estados, y el
   recorrido comprueba que la hoja está **sobre el `body`**.
