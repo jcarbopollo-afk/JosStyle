@@ -8783,8 +8783,17 @@ ok(eventos7_fit28 <= eventosTodo_fit28,
   `🚨 FIT F28 — …pero SÍ recorta la línea temporal (${eventosTodo_fit28} → ${eventos7_fit28})`);
 ok(/\d+ en los últimos 7 días/.test(siete_fit28),
   '…y aparece la segunda línea del periodo, que sin periodo no existía (apartado 3)');
-ok(!/esta semana/i.test(siete_fit28),
+/* 🐛 **FIT F31 — esta comprobación miraba la PÁGINA ENTERA**, y la F31 puso en la
+   misma pantalla el bloque de actividad, cuyo título es —con todo el derecho—
+   «Esta semana»: es la semana en curso, que no cambia con el periodo (su
+   DECISIONES_FIT31). La aplicación estaba bien. Lo que la F28 prohíbe es una
+   CIFRA de su línea de periodo dicha como semana —«3 esta semana»—, así que se
+   mide eso: un número seguido de «esta semana». */
+const cifraComoSemana_fit28 = /\d+ esta semana/i;
+ok(!cifraComoSemana_fit28.test(siete_fit28),
   '⚠️ FIT F28 — y dice «en los últimos 7 días», no «esta semana», que es otra cosa');
+ok(cifraComoSemana_fit28.test('3 esta semana') && !cifraComoSemana_fit28.test('ESTA SEMANA\n3 entrenamientos · semana en curso'),
+  '…(y la comprobación sí caza «3 esta semana», sin confundirlo con el título del bloque de la F31)');
 ok(await pulsar('Todo'), 'FIT F28 — se vuelve a «Todo»');
 await page.waitForTimeout(500);
 
