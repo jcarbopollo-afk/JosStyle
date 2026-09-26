@@ -69,7 +69,15 @@ que es lo que su apartado 62 prohíbe. Están en `NO_EN_FIT36`.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde. **147 comprobaciones nuevas** en
+`scripts/test-integracion-fitness.mjs` —cada puerta se busca en el archivo que la cablea y se pone
+roja al quitar el cable, y el flujo entero se recorre sin dejar un derivado guardado—. ⚠️ **La
+primera pasada entera salió roja, y el fallo era mío, no de la aplicación**: el escenario del
+recorrido sembraba el peso en `perfil.peso` cuando Fitness lo lee de la última medida de Salud
+(`perfilFitness`, F15), y abría la plantilla con un toque cuando desde Tu Plan son dos. Arreglado
+el escenario, la sección se relanzó sola hasta verla verde y después la pasada entera. Cifras de la
+pasada verde (`═══ TODO CORRECTO ═══`): **21 073** de Node en **196 suites** (+147), **3656** de
+renderizado (+16), **11** invariantes y **2655** en Chromium (+36) — **27 395**.
 
 ## v3.117.0 — FIT F35/45: calidad, validación y administración del catálogo fitness
 

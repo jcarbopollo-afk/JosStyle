@@ -10203,7 +10203,11 @@ const fitnessDeAntes_fit36 = almacen.fitness;
 const perfilDeAntes_fit36 = almacen.perfil;
 const ajustesDeAntes_fit36 = almacen.ajustes;
 const fotosDeAntes_fit36 = almacen.saludFotos;
-almacen.perfil = { ...(perfilDeAntes_fit36 || {}), peso: 70 };
+const saludDeAntes_fit36 = almacen.salud;
+/* 🐛 El peso de Fitness NO es `perfil.peso`: es la última medida de Salud
+   (`perfilFitness` en App.jsx, desde la F15 — el peso se registra allí). Con
+   el del perfil la sesión guardaba `null` y la comprobación lo cazó. */
+almacen.salud = { ...(saludDeAntes_fit36 || {}), medidas: [{ id: 'm-f36', fecha: hoy_fit31, peso: 70 }] };
 /* Las fotos sin PIN, como en la F26: lo que se mide es la puerta, no el PIN. */
 almacen.ajustes = {
   ...(ajustesDeAntes_fit36 || {}),
@@ -10261,7 +10265,14 @@ ok(!(await page.evaluate(() => !!document.querySelector('[aria-label^="Foto del 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F36 — de vuelta a Entrenamiento');
-ok(await pulsar('Ver Integración F36') && !!await esperarTexto(/plantilla/i), '…a la plantilla «Integración F36»');
+/* 🐛 Desde Tu Plan, tocar una plantilla abre «Tus plantillas» (FIT F6) y el
+   SEGUNDO toque abre esa, con su «Empezar entrenamiento» — es lo que hace
+   `empezarComoSea_fit7`. Con un solo toque, `esperarTexto(/plantilla/i)` salía
+   verde con la lista y el resto de la sección caía en cascada. */
+ok(await pulsar('Ver Integración F36'), '…a «Tus plantillas»');
+await page.waitForTimeout(400);
+ok(await pulsar('Ver Integración F36') && /Empezar entrenamiento/i.test(await esperarTexto(/Empezar entrenamiento/i)),
+  '…y a la plantilla «Integración F36»');
 ok(await pulsar('Empezar entrenamiento'), '…y se empieza');
 await esperarTexto(/Terminar/i);
 await page.waitForTimeout(600);
@@ -10316,6 +10327,7 @@ almacen.fitness = fitnessDeAntes_fit36;
 almacen.perfil = perfilDeAntes_fit36;
 almacen.ajustes = ajustesDeAntes_fit36;
 almacen.saludFotos = fotosDeAntes_fit36;
+almacen.salud = saludDeAntes_fit36;
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

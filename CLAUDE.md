@@ -184,13 +184,13 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **20 926 pruebas unitarias** con Node repartidas en **195 suites** (5 de ellas de auditoría),
-**3640 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2619
-comprobaciones sobre la aplicación de verdad en Chromium** — **27 196 comprobaciones**.
+Vite, **21 073 pruebas unitarias** con Node repartidas en **196 suites** (5 de ellas de auditoría),
+**3656 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2655
+comprobaciones sobre la aplicación de verdad en Chromium** — **27 395 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.117.0, una a una**, con la suma del
-propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.116.0 es exactamente lo que
-añadió la F35: +128 de Node en su suite, +16 de renderizado y +24 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.118.0, una a una**, con la suma del
+propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.117.0 es exactamente lo que
+añadió la F36: +147 de Node en su suite, +16 de renderizado y +36 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
@@ -383,6 +383,14 @@ INTELIGENCIA** —F29 a F35—, y la **FIT F36 (v3.118.0)**, con la que empieza 
 - 🔓 **AÑADIR A LA SESIÓN EN CURSO ES `anadirEjercicioASesion`** (FIT F36, apartado 17), en
   `entrenamiento.js`: al final, con la configuración del constructor y las series **«añadida»**, sin
   tocar plantilla ni catálogo, y nunca a una sesión terminada ni con un archivado.
+- 🐛 **EL PESO CORPORAL DE FITNESS NO ES `perfil.peso`: ES LA ÚLTIMA MEDIDA DE SALUD** (FIT F36, y
+  costó una pasada en rojo): `perfilFitness`, en `App.jsx`, lo saca de `salud.medidas` desde la F15,
+  porque el peso se registra allí. Mi escenario del recorrido sembraba `perfil.peso` y la sesión
+  guardaba `null` **con la aplicación bien**. Y el mismo escenario abría la plantilla con **un**
+  toque: desde Tu Plan el primero abre «Tus plantillas» y el segundo esa plantilla (F6, es
+  `empezarComoSea_fit7`), y `esperarTexto(/plantilla/i)` salía verde con la lista — el resto de la
+  sección cayó en cascada. **Antes de sembrar un dato, preguntarle a quien lo lee de dónde lo saca**
+  (la F29 lo dijo con `sesion.origen.ejercicios`).
 
 - 🚨 **EL CATÁLOGO SE VALIDA EN BRUTO, PORQUE EL NORMALIZADOR CORRIGE EN SILENCIO** (FIT F35,
   `src/lib/validacionCatalogo.js`). `crearEjercicioCompleto` convierte «beginner» en
