@@ -1109,6 +1109,18 @@ else
   fallo "Falla la validación del catálogo"; grep '✗' /tmp/jc_validacion_catalogo.log
 fi
 
+# FIT F36 — la integración global del sistema fitness. Lo que más se vigila: que cada
+# pregunta tenga UNA función (y ningún nombre dos significados), que cada puerta entre
+# pantallas esté cableada de verdad —historial → ejercicio y foto → entrenamiento no lo
+# estaban—, que la sesión guarde el peso corporal de su día para no reescribir el rango
+# del pasado, que un archivado conserve progreso, rango, objetivos y reparto muscular,
+# y que guardar recalcule todo sin dejar ni un derivado guardado.
+if node --import ./scripts/resolver-vite.mjs scripts/test-integracion-fitness.mjs >/tmp/jc_integracion_fitness.log 2>&1; then
+  ok "Integración global de Fitness (FIT F36) — $(grep -c '✓' /tmp/jc_integracion_fitness.log) comprobaciones"
+else
+  fallo "Falla la integración de Fitness"; grep '✗' /tmp/jc_integracion_fitness.log
+fi
+
 # FIT F28 — la integración completa del progreso físico. Lo que más se vigila: que NO
 # exista ninguna métrica que mezcle dos sistemas —«fotos + fuerza + rangos = 82 %» es el
 # ejemplo que prohíbe el apartado 10—, que cada bloque lea de UN solo motor, que el

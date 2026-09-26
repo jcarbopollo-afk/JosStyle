@@ -16,7 +16,7 @@ import {
   normalizarFitnessConSesiones, EVENTO_SERIE_HECHA, EVENTO_FIN_DESCANSO,
 } from '../src/lib/entrenamiento.js';
 import {
-  resumenPlanificado, resumenRealizado, cabeceraDeEjercicio, serieActiva,
+  resumenPlanificado, resumenRealizado, cabeceraEnSesion, serieActiva,
   PASOS, ajustarValor, completarSerie, desmarcarSerie, alternarDescansoAuto,
   DESCANSOS_RAPIDOS, SUMAS_DESCANSO, DESCANSO_MINIMO, DESCANSO_MAXIMO,
   iniciarDescanso, pausarDescansoSesion, reanudarDescansoSesion, terminarDescanso,
@@ -85,15 +85,15 @@ const Somit = quitarSerie(S, BANCA.id, BANCA.series[3].id);
 ok(resumenPlanificado(ejerciciosDeSesion(Somit)[0]) === '4 × 8–12',
   '⚠️ Omitir una serie no cambia lo PLANIFICADO: el plan decía cuatro');
 
-const cab = cabeceraDeEjercicio(BANCA, []);
+const cab = cabeceraEnSesion(BANCA, []);
 ok(cab.nombre === ejercicioPorId('press-banca-barra').nombre, 'La cabecera lleva el nombre del catálogo, no una copia');
 ok(/^Agarre /.test(cab.agarre), `…el agarre, porque este ejercicio lo tiene (${cab.agarre})`);
 ok(!!cab.tipo, `…y el tipo (${cab.tipo})`);
-ok(cabeceraDeEjercicio(LSIT, []).agarre === '' || !ejercicioPorId('l-sit').agarre,
+ok(cabeceraEnSesion(LSIT, []).agarre === '' || !ejercicioPorId('l-sit').agarre,
   '⚠️ Sin agarre en el catálogo no se inventa uno (apartado 39)');
-ok(cabeceraDeEjercicio(LSIT, []).porTiempo === true, '…y un L-sit se declara por tiempo (apartado 25)');
-ok(cabeceraDeEjercicio(null) === null, 'Sin ejercicio no revienta');
-ok(cabeceraDeEjercicio({ id: 'x', exerciseId: 'ya-no-existe', series: [] }, []).nombre === 'ya-no-existe',
+ok(cabeceraEnSesion(LSIT, []).porTiempo === true, '…y un L-sit se declara por tiempo (apartado 25)');
+ok(cabeceraEnSesion(null) === null, 'Sin ejercicio no revienta');
+ok(cabeceraEnSesion({ id: 'x', exerciseId: 'ya-no-existe', series: [] }, []).nombre === 'ya-no-existe',
   '⚠️ Un ejercicio que ya no está en el catálogo se sigue pudiendo pintar (apartado 39)');
 
 /* ═════════════════════════════════════════════════════════════════════════ */

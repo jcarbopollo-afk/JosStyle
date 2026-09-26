@@ -2,6 +2,18 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.118.0 — FIT F36/45: integración global del sistema fitness):**
+> Ni una pantalla nueva: **se recorrieron las puertas entre pantallas de Fitness y se arreglaron las
+> que faltaban**. 🐛 **Historial → ejercicio** y **foto → entrenamiento** no estaban cableadas (sus
+> componentes sabían hacerlo; quien los pintaba no les pasaba la función); 🔓 desde la ficha de un
+> ejercicio se puede **añadir a la sesión en curso**; 🐛 **la sesión guarda el peso corporal de su
+> día**, porque con el de hoy cambiar de peso reescribía los rangos del pasado; y 🐛 **no había ni un
+> límite de error**: ahora cada área de Fitness tiene el suyo (`AreaSegura`). `integracionFitness.js`
+> declara las fuentes de verdad y las conexiones **con el archivo que las cablea**, y su prueba las
+> abre. ⚠️ Tres nombres con dos significados se renombraron (`filtrarPorTendencia`,
+> `cabeceraEnSesion`, `auditarDatosFitness`). Sin bus de eventos —no hace falta, y se demuestra— y
+> sin SQL nuevo. Lo siguiente es la **FIT F37** (microinteracciones).
+
 > **📅 ACTUALIZACIÓN (v3.117.0 — FIT F35/45: calidad, validación y administración del catálogo):**
 > **`validateExerciseCatalog()`** (`src/lib/validacionCatalogo.js`) devuelve `{ errors, warnings,
 > valid }` con **36 reglas** y su gravedad en un solo sitio: un **error** (id repetido, referencia

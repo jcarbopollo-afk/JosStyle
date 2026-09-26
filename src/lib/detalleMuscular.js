@@ -129,7 +129,7 @@ export const FILTROS_EJERCICIOS = [
   { id: 'sin_datos', nombre: 'Sin datos' },
 ];
 
-export function filtrarEjercicios(ejercicios, filtro = 'todos') {
+export function filtrarPorTendencia(ejercicios, filtro = 'todos') {
   const f = texto(filtro) || 'todos';
   if (f === 'todos') return lista(ejercicios);
   /* ⚠️ «Sin datos» junta todo lo que no se puede comparar —nuevo, una sola vez,

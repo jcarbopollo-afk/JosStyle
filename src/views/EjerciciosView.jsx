@@ -48,7 +48,7 @@ import {
 import {
   consultarBiblioteca, opcionesDeFiltroBiblioteca, paginaDeBiblioteca, POR_PAGINA_BIBLIOTECA,
   bloquesDeBiblioteca, fichaDeBiblioteca, favoritosDeEjercicios, alternarFavoritoEjercicio,
-  entrenamientosParaAnadir, anadirAEntrenamiento, rutinaNuevaCon, ejerciciosDeBiblioteca, TEXTO_LIMPIAR_FILTROS,
+  entrenamientosParaAnadir, anadirAEntrenamiento, rutinaNuevaCon, sesionParaAnadir, anadirALaSesionEnCurso, ejerciciosDeBiblioteca, TEXTO_LIMPIAR_FILTROS,
 } from '../lib/bibliotecaEjercicios';
 
 /* ── La tarjeta de la F2, que desde la F34 vive en los componentes ─────────
@@ -65,6 +65,8 @@ export function DetalleEjercicio({
   onFavorito = null, onAnadir = null, onCrearNuevo = null,
   onVerProgreso = null, onVerObjetivo = null, onCrearObjetivo = null, onClasificar = null,
   exerciseId = null,
+  /* 🔓 FIT F36, apartado 17 — añadir a la sesión en curso, si la hay. */
+  onAnadirASesion = null,
 }) {
   const [anadiendo, setAnadiendo] = useState(false);
   const id = ejercicio ? ejercicio.id : exerciseId;
@@ -115,7 +117,8 @@ export function DetalleEjercicio({
   }
 
   const abrir = onAbrirOtro || null;
-  const puedeAnadir = !!(onAnadir || onCrearNuevo);
+  const sesionEnCurso = onAnadirASesion ? sesionParaAnadir(fitness) : null;
+  const puedeAnadir = !!(onAnadir || onCrearNuevo || sesionEnCurso);
   return (
     <div className="space-y-4">
       {volver}
@@ -144,6 +147,8 @@ export function DetalleEjercicio({
           onAnadir={onAnadir ? (plantillaId) => onAnadir(plantillaId, ficha.id) : null}
           onCrearNuevo={onCrearNuevo ? () => onCrearNuevo(ficha.id) : null}
           onCerrar={() => setAnadiendo(false)}
+          sesion={sesionEnCurso}
+          onAnadirASesion={sesionEnCurso ? () => onAnadirASesion(ficha.id) : null}
         />
       )}
 
@@ -230,6 +235,11 @@ export default function EjerciciosView({
           return r.ok;
         } : null}
         onCrearNuevo={onAbrirConstructor ? (id) => { const r = rutinaNuevaCon(id, { propios }); if (r) onAbrirConstructor(r); } : null}
+        onAnadirASesion={guardar ? (id) => {
+          const r = anadirALaSesionEnCurso(fitness, id, { propios });
+          if (r.ok) guardar(r.fitness);
+          return r.ok;
+        } : null}
         onVerProgreso={onVerProgreso}
         onVerObjetivo={onVerObjetivo}
         onCrearObjetivo={onCrearObjetivo}

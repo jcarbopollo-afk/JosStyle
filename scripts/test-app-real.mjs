@@ -10182,6 +10182,141 @@ ok(/Historial · 1 sesi[oó]n/i.test(det_fit35), '…con su sesión intacta');
 page.off('console', oyente_fit35);
 almacen.fitness = fitnessDeAntes_fit35;
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F36 — la integración global del sistema fitness (Entrega 4 · 36/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El apartado 54 pide un flujo de punta a punta y el 55 sus casos de borde.
+   Las piezas de ese flujo ya las recorren sus fases (constructor, en vivo,
+   guardado, historial, progreso, rangos…); lo que aquí se mide son **las
+   puertas que la F36 encontró sin cablear** y que ninguna sección podía ver,
+   porque cada una miraba su pantalla:
+
+   · Historial → sesión → ejercicio → su progreso (apartado 13).
+   · Foto → su entrenamiento (apartado 30).
+   · Ficha de un ejercicio → la sesión EN CURSO (apartado 17).
+   · La sesión guarda el peso corporal de su día (apartado 39).
+   · Y todo sigue ahí al recargar (apartados 42 y 43). */
+console.log('\n── FIT F36 · Integración global ──');
+
+const fitnessDeAntes_fit36 = almacen.fitness;
+const perfilDeAntes_fit36 = almacen.perfil;
+const ajustesDeAntes_fit36 = almacen.ajustes;
+const fotosDeAntes_fit36 = almacen.saludFotos;
+almacen.perfil = { ...(perfilDeAntes_fit36 || {}), peso: 70 };
+/* Las fotos sin PIN, como en la F26: lo que se mide es la puerta, no el PIN. */
+almacen.ajustes = {
+  ...(ajustesDeAntes_fit36 || {}),
+  seguridad: {
+    ...((ajustesDeAntes_fit36 || {}).seguridad || {}),
+    protectedActions: [], protectedAreas: [], migradoAcciones: true, migradoAreas: true,
+  },
+};
+const sesionHecha_fit36 = { ...sesion_fit34('f36-a', 3, [serie_fit34('f36-a1', 8, 60), serie_fit34('f36-a2', 8, 60)]), nombre: 'Pecho F36' };
+const plantilla_fit36 = {
+  id: 'pl-f36', nombre: 'Integración F36', descripcion: '', entorno: 'gym', duracion: 20,
+  ejercicios: [lineaPl_fit33('pl-f36-l1', 'press-banca-barra', { repeticiones: 8, peso: 60 })],
+  meta: { entornos: ['gym'], bloques: [] }, creadoEn: hoy_fit31, editadoEn: hoy_fit31,
+};
+almacen.fitness = {
+  ...(fitnessDeAntes_fit36 || {}),
+  sesiones: [sesionHecha_fit36], plantillas: [plantilla_fit36], objetivos: [],
+  favoritosEjercicios: [], planActivo: null, ejercicios: [],
+};
+almacen.saludFotos = [{
+  id: 'foto-f36', path: 'usuario-prueba/pecho-f36.jpg', fecha: sesionHecha_fit36.fecha, nota: 'Tras el pecho F36',
+  createdFromWorkoutId: 'f36-a',
+}];
+const sinFalloDeArea_fit36 = async () => !/No se ha podido cargar/.test(await ver());
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+/* 1 · HISTORIAL → EJERCICIO (apartado 13). */
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F36 — se entra en Fitness');
+ok(await pulsar('Abrir Historial'), '…y en el historial');
+ok(await pulsarQueEmpiece_fit10('Abrir Pecho F36'), '…se abre el entrenamiento');
+await esperarTexto(/Planificado/i);
+ok(await pulsarQueEmpiece_fit10('Ver el progreso de Press de banca'),
+  '🐛 FIT F36 — el ejercicio de una sesión del HISTORIAL lleva a su progreso: antes solo desde Progreso (apartado 13)');
+const desdeHistorial_fit36 = await esperarTexto(/Historial ·/i);
+ok(/Press de banca/.test(desdeHistorial_fit36) && /Historial · 1 sesi[oó]n/i.test(desdeHistorial_fit36),
+  '…y abre el detalle de la F29, con su sesión');
+ok(await sinFalloDeArea_fit36(), '…sin que ningún área caiga en su límite de error (apartado 47)');
+
+/* 2 · FOTO → ENTRENAMIENTO (apartado 30). */
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso') && await pulsar('Fotos'),
+  'FIT F36 — Progreso → Fotos');
+await esperarTexto(/Tras el pecho F36/);
+ok(await pulsarQueEmpiece_fit10('Foto de progreso del'), '…se abre la foto que se hizo tras entrenar');
+await esperarTexto(/Después de entrenamiento/i);
+ok(await pulsar('Después de entrenamiento'),
+  '🐛 FIT F36 — y su entrenamiento es un ENLACE: antes era un texto muerto (apartado 30)');
+const desdeFoto_fit36 = await esperarTexto(/Planificado/i);
+ok(/Pecho F36/.test(desdeFoto_fit36) && /Planificado/i.test(desdeFoto_fit36),
+  '…que abre ESA sesión, con su planificado y su realizado');
+ok(!(await page.evaluate(() => !!document.querySelector('[aria-label^="Foto del "]'))), '…y el visor se ha cerrado');
+
+/* 3 · LA SESIÓN GUARDA SU PESO CORPORAL (apartado 39). */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F36 — de vuelta a Entrenamiento');
+ok(await pulsar('Ver Integración F36') && !!await esperarTexto(/plantilla/i), '…a la plantilla «Integración F36»');
+ok(await pulsar('Empezar entrenamiento'), '…y se empieza');
+await esperarTexto(/Terminar/i);
+await page.waitForTimeout(600);
+const enCurso_fit36 = () => (ultimo_fit34().sesiones || []).find((x) => x && x.estado === 'en_curso');
+ok(enCurso_fit36() && enCurso_fit36().pesoCorporal === 70,
+  `🐛 FIT F36 — la sesión guarda el peso corporal de HOY (${enCurso_fit36()?.pesoCorporal} kg): cambiarlo mañana no reescribe su rango (apartado 39)`);
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), '…se sale sin terminarla');
+await esperarTexto(/Continuar entrenamiento/i);
+
+/* 4 · FICHA → SESIÓN EN CURSO (apartado 17). */
+ok(await pulsar('Abrir Ejercicios'), 'FIT F36 — a la biblioteca de ejercicios');
+ok(await esperarCampo('Buscar un ejercicio'), '…con su buscador');
+ok(await escribir_fit34('curl con barra'), '…se busca el curl con barra');
+await page.waitForTimeout(500);
+ok(await pulsarQueEmpiece_fit10('Ver Curl con barra'), '…y se abre su ficha');
+await esperarTexto(/C[oó]mo hacerlo/i);
+ok(await pulsar('Añadir a entrenamiento'), '…«Añadir a entrenamiento»');
+const opciones_fit36 = await esperarTexto(/A la sesi[oó]n en curso/i);
+ok(/A la sesi[oó]n en curso/i.test(opciones_fit36) && /Integración F36/.test(opciones_fit36),
+  '🔓 FIT F36 — con una sesión en curso, se ofrece añadirlo A ELLA, la primera (apartado 17)');
+ok(await pulsar('Añadir a la sesión en curso: Integración F36'), '…se elige');
+await esperarTexto(/Añadido a «Integración F36», en curso/);
+const ejs_fit36 = () => ((enCurso_fit36() || {}).origen || {}).ejercicios || [];
+ok(ejs_fit36().map((e) => e.exerciseId).join() === 'press-banca-barra,curl-barra',
+  '🚨 FIT F36 — y se GUARDA al final de la sesión en curso');
+ok((ejs_fit36()[1]?.series || []).length > 0 && ejs_fit36()[1].series.every((x) => x.origen === 'anadida' && x.estado === 'pendiente'),
+  '…con sus series «añadida» y sin marcar: el plan no las pedía (F9)');
+const plantillaDespues_fit36 = (ultimo_fit34().plantillas || []).find((p) => p.id === 'pl-f36') || {};
+ok((plantillaDespues_fit36.ejercicios || []).map((l) => l.exerciseId).join() === 'press-banca-barra',
+  '🚨 …y la plantilla NO se toca: lo que cambia es la sesión de hoy (F7)');
+ok((ultimo_fit34().sesiones || []).filter((x) => x.estado === 'en_curso').length === 1, '…ni se crea una segunda sesión');
+
+/* 5 · Y AL RECARGAR, TODO SIGUE AHÍ (apartados 42 y 43). */
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(2500);
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F36 — se recarga la aplicación');
+await esperarTexto(/Continuar entrenamiento/i);
+ok(await pulsar('Continuar entrenamiento'), '…y se continúa la sesión');
+await esperarTexto(/Terminar/i);
+ok(await page.evaluate(() => !!document.querySelector('button[aria-label="Ejercicio 2: Curl con barra"]')),
+  '🚨 FIT F36 — el curl añadido desde la ficha sigue en la sesión tras recargar (apartado 43)');
+ok(enCurso_fit36()?.pesoCorporal === 70, '…y su peso corporal también');
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), '…se sale');
+await esperarTexto(/Continuar entrenamiento/i);
+ok(await pulsar('Abrir Historial'), '…y al historial');
+const hist_fit36 = await esperarTexto(/Pecho F36/);
+ok(/Pecho F36/.test(hist_fit36) && /\b1 entrenamiento\b/.test(hist_fit36),
+  '🚨 …que sigue teniendo SOLO la sesión terminada: la de hoy está en curso y no cuenta (F10, apartado 38)');
+ok(await sinFalloDeArea_fit36(), '…y ni un área en su límite de error');
+
+almacen.fitness = fitnessDeAntes_fit36;
+almacen.perfil = perfilDeAntes_fit36;
+almacen.ajustes = ajustesDeAntes_fit36;
+almacen.saludFotos = fotosDeAntes_fit36;
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

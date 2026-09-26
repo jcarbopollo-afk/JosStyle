@@ -490,7 +490,7 @@ export function ExerciseAlternatives({ alternativas, accent, onAbrir }) {
 
 /* ── Añadir a entrenamiento (apartado 21) ──────────────────────────────────
    Elegir uno que ya existe o crear uno nuevo, **sin empezar a entrenar**. */
-export function ExerciseAddToWorkout({ entrenamientos = [], accent, onAnadir, onCrearNuevo, onCerrar }) {
+export function ExerciseAddToWorkout({ entrenamientos = [], accent, onAnadir, onCrearNuevo, onCerrar, sesion = null, onAnadirASesion = null }) {
   const [hecho, setHecho] = useState(null);
   return (
     <Card>
@@ -508,6 +508,18 @@ export function ExerciseAddToWorkout({ entrenamientos = [], accent, onAnadir, on
         </p>
       ) : (
         <>
+          {/* 🔓 FIT F36, apartado 17 — la sesión en curso, la primera: es la que
+              está entrenando ahora. */}
+          {sesion && onAnadirASesion && (
+            <button
+              onClick={() => { if (onAnadirASesion()) setHecho(`«${sesion.nombre}», en curso`); }}
+              aria-label={`Añadir a la sesión en curso: ${sesion.nombre}`}
+              className="w-full flex items-center gap-2 text-left rounded-xl px-3 py-2 mt-2 toque-44"
+              style={{ background: hexToRgba(accent, 0.12), border: `1px solid ${hexToRgba(accent, 0.4)}` }}>
+              <span className="text-sm font-semibold min-w-0 flex-1 truncate" style={{ color: COLORS.text }}>A la sesión en curso</span>
+              <span className="text-[11px] shrink-0 truncate max-w-[45%]" style={{ color: COLORS.textMuted }}>{sesion.nombre}</span>
+            </button>
+          )}
           {entrenamientos.length === 0 ? (
             <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>Todavía no tienes entrenamientos guardados.</p>
           ) : (

@@ -90,7 +90,7 @@ export function resumenRealizado(ejSesion) {
 
 /** Lo que enseña la tarjeta del ejercicio (apartado 3): nombre, variante,
  *  agarre, tipo y objetivo — y nada de lo secundario. */
-export function cabeceraDeEjercicio(ejSesion, propios = []) {
+export function cabeceraEnSesion(ejSesion, propios = []) {
   if (!ejSesion) return null;
   const ej = ejercicioPorId(ejSesion.exerciseId, propios);
   const ag = ej?.agarre ? agarrePorId(ej.agarre) : null;

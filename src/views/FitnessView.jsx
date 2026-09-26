@@ -37,6 +37,8 @@ import TrainingView from './TrainingView';
    agrupar pantallas es renderizarlas, nunca copiarlas (E3 F23). */
 import EjerciciosView from './EjerciciosView';
 import { esDesarrollo } from '../components/diagnosticoCatalogo';
+/* 🔓 FIT F36, apartado 47 — un fallo al pintar un área se queda en su área. */
+import { AreaSegura } from '../components/areaSegura';
 /* FIT F3 — el constructor, renderizado entero aquí dentro (E3 F23). */
 import ConstructorView from './ConstructorView';
 /* FIT F4 — la gestión de plantillas, renderizada entera aquí dentro (E3 F23). */
@@ -326,6 +328,7 @@ export function AreaEntrenamiento({
       origenId: ficha.id,
       propios,
       entorno: resuelto.plan.entorno,
+      pesoCorporal: perfil ? perfil.peso : null,
     }));
   };
 
@@ -341,6 +344,7 @@ export function AreaEntrenamiento({
       origenId: plantilla.id,
       propios,
       entorno: plantilla.entorno,
+      pesoCorporal: perfil ? perfil.peso : null,
     }));
   };
 
@@ -365,6 +369,7 @@ export function AreaEntrenamiento({
         onVolver={() => setDentro(null)}
         onEmpezar={empezarDesdeHistorial}
         onEliminar={onEliminarSesion}
+        onVerEjercicio={onVerProgresoEjercicio}
       />
     );
   }
@@ -384,6 +389,7 @@ export function AreaEntrenamiento({
             onEliminar={null}
             volverTexto="Tu Plan"
             volverEtiqueta="Volver a Tu Plan"
+            onVerEjercicio={onVerProgresoEjercicio}
           />
         ) : (
           <div className="space-y-3">
@@ -602,7 +608,19 @@ export function AreaEntrenamiento({
 }
 
 /* ── La pantalla ─────────────────────────────────────────────────────────── */
-export default function FitnessView({
+/* 🔓 FIT F36, apartado 47 — y un límite para Fitness entero, por encima de las
+   áreas: el entrenamiento en vivo, el constructor y el cuestionario se pintan a
+   pantalla completa, antes de las pestañas, y un fallo en uno de ellos tampoco
+   puede llevarse la aplicación. Dentro, cada área tiene el suyo. */
+export default function FitnessView(props) {
+  return (
+    <AreaSegura clave="fitness" nombre="Fitness" accent={props.accent}>
+      <FitnessViewContenido {...props} />
+    </AreaSegura>
+  );
+}
+
+function FitnessViewContenido({
   fitness, calistenia, onUpdateSkill, futbol, onAddPartido, onDeletePartido,
   videos, onAddVideo, onDeleteVideo, onSetVideoFeedback,
   fotos = [], rachas, accent, foco, onFocoConsumido, onIr, onGuardarFitness = null,
@@ -797,6 +815,7 @@ export default function FitnessView({
       <PestanasFitness areas={AREAS_FITNESS} activa={area} onCambiar={setArea} accent={accent} />
 
       {area === 'rangos' && (
+        <AreaSegura clave="rangos" nombre="Rangos" accent={accent}>
         <AreaRangos
           fitness={fitness}
           perfil={perfil}
@@ -810,8 +829,10 @@ export default function FitnessView({
              guardar la respuesta sería un control decorativo (regla 8). */
           onClasificar={onGuardarFitness ? () => setClasificando(true) : null}
         />
+        </AreaSegura>
       )}
       {area === 'progreso' && (
+        <AreaSegura clave="progreso" nombre="Progreso" accent={accent}>
         <AreaProgreso
           fitness={fitness}
           fotos={fotos}
@@ -841,8 +862,10 @@ export default function FitnessView({
           onDesbloquearFotos={onDesbloquearFotos}
           onOlvidoPin={onOlvidoPin}
         />
+        </AreaSegura>
       )}
       {area === 'entrenamiento' && (
+        <AreaSegura clave="entrenamiento" nombre="Entrenamiento" accent={accent}>
         <AreaEntrenamiento
           fitness={fitness} calistenia={calistenia} accent={accent} entrenoProps={entrenoProps}
           onGuardarFitness={onGuardarFitness}
@@ -871,6 +894,7 @@ export default function FitnessView({
           onCrearObjetivoEjercicio={onGuardarFitness ? (id) => { setFocoObjetivo(id); setArea('progreso'); } : null}
           onClasificarEjercicio={onGuardarFitness ? (id) => setClasificando(id) : null}
         />
+        </AreaSegura>
       )}
     </div>
   );

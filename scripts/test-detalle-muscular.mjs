@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  detalleDeGrupo, detalleDeSubgrupo, ejerciciosDelMusculo, filtrarEjercicios,
+  detalleDeGrupo, detalleDeSubgrupo, ejerciciosDelMusculo, filtrarPorTendencia,
   FILTROS_EJERCICIOS, implicacionEn, textoContribucion, notaDeConfianza,
   resumenDeTendencias, grupoMuscular, NO_EN_FIT18, DECISIONES_FIT18,
 } from '../src/lib/detalleMuscular.js';
@@ -152,12 +152,12 @@ ok(posiciones.join('') === [...posiciones].sort().join(''),
   '🚨 Primero lo que tiene datos, después lo que no: nunca solo alfabético (apartado 21)');
 ok(FILTROS_EJERCICIOS.length === 5 && FILTROS_EJERCICIOS[0].id === 'todos',
   'Los cinco filtros por estado del apartado 20, y ninguno más');
-ok(filtrarEjercicios(lista, 'todos').length === lista.length, 'El filtro «Todos» no esconde nada');
-ok(filtrarEjercicios(lista, 'mejora').every((e) => e.estado === 'mejora')
-  && filtrarEjercicios(lista, 'mejora').length >= 1, 'El de «Mejorando» deja solo los que mejoran');
-ok(filtrarEjercicios(lista, 'sin_datos').every((e) => !['mejora', 'estable', 'descenso'].includes(e.estado)),
+ok(filtrarPorTendencia(lista, 'todos').length === lista.length, 'El filtro «Todos» no esconde nada');
+ok(filtrarPorTendencia(lista, 'mejora').every((e) => e.estado === 'mejora')
+  && filtrarPorTendencia(lista, 'mejora').length >= 1, 'El de «Mejorando» deja solo los que mejoran');
+ok(filtrarPorTendencia(lista, 'sin_datos').every((e) => !['mejora', 'estable', 'descenso'].includes(e.estado)),
   '…y el de «Sin datos» junta todo lo que no se puede comparar');
-ok(filtrarEjercicios(lista, 'descenso').length === 0, 'Y si no hay ninguno en descenso, la lista queda vacía');
+ok(filtrarPorTendencia(lista, 'descenso').length === 0, 'Y si no hay ninguno en descenso, la lista queda vacía');
 
 const resumen = espalda.resumen;
 ok(resumen.mejorando + resumen.estables + resumen.descenso === resumen.conDatos,

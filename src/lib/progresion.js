@@ -208,6 +208,9 @@ function aparicionesDeSesion(sesion, propios = []) {
          peso corporal no está en el número) ni sin peso: 72 kg × 10 sería
          inventárselo. */
       volumen,
+      /* 🔓 FIT F36, apartado 39 — el peso corporal de ESE día, si la sesión lo
+         guardó: lo lee el rango (F15) para no medir el pasado con el de hoy. */
+      pesoCorporal: sesion.pesoCorporal ?? null,
     });
   }
   return salida;

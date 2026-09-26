@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.117.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.118.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 35 primeras (v3.83.0 → v3.117.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 36 primeras (v3.83.0 → v3.118.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 10 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 9 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -348,7 +348,41 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 **FIT F29 (v3.111.0)**, con la que empieza el bloque de **Inteligencia** (F29–F35), y la
 **FIT F30 (v3.112.0)**, la **FIT F31 (v3.113.0)**, la **FIT F32 (v3.114.0)**, la **FIT F33
 (v3.115.0)**, la **FIT F34 (v3.116.0)** y la **FIT F35 (v3.117.0)**, que 🏁 **CERRÓ EL BLOQUE DE
-INTELIGENCIA** —F29 a F35—, hechas. Lo que dejaron, y que vale para las 10 que quedan:
+INTELIGENCIA** —F29 a F35—, y la **FIT F36 (v3.118.0)**, con la que empieza el bloque de **Acabado**
+(F36–F42), hechas. Lo que dejaron, y que vale para las 9 que quedan:
+
+- 🚨 **UNA PUERTA ENTRE PANTALLAS SE COMPRUEBA ABRIENDO EL ARCHIVO QUE LA CABLEA** (FIT F36,
+  `src/lib/integracionFitness.js`). Dos puertas llevaban fases sin existir sin que nada fallara: el
+  detalle de una sesión sabía llevar al progreso de un ejercicio (F31) y el visor de una foto sabía
+  abrir su entrenamiento (F26), pero **quien las pintaba no les pasaba la función** desde el
+  Historial, Tu Plan y Progreso. Cada fase probó su pantalla con la prop puesta a mano. `CONEXIONES`
+  guarda una línea por puerta con el archivo y el trozo que la cablea, y la prueba lo busca — con su
+  comprobación de que se pone roja al quitar el cable. Es `onDeleteMovimiento` (E3 F1) otra vez.
+- 🚨 **LA SESIÓN GUARDA EL PESO CORPORAL DE SU DÍA** (FIT F36, apartado 39): las marcas con carga se
+  miden relativas al peso corporal (F15), y con el del perfil de hoy **cambiar de peso reescribía los
+  rangos de hace meses**. `pesoCorporal` va con el snapshot (F7); una sesión de antes usa el del
+  perfil. ⚠️ **Y la regla de «qué peso es un dato» vive UNA vez**, en `fitness.js`
+  (`pesoCorporalValido`): estaba copiada en la F15 y la F17.
+- 🚨 **UN LÍMITE DE ERROR POR ÁREA, Y NO ESCONDE NADA** (FIT F36, apartado 47): no había ni uno en
+  toda la aplicación, así que un fallo al pintar Rangos se llevaba Fitness y la barra de abajo.
+  `AreaSegura` (`src/components/areaSegura.jsx`) envuelve cada área y Fitness entero, manda el error
+  a `console.error` —que el recorrido cuenta— y se limpia al cambiar de área (`clave`). ⚠️ **El banco
+  de renderizado no ejecuta límites de error** (`react-dom/server` no los soporta): el aspecto del
+  fallo se pinta desde la instancia con el estado de `getDerivedStateFromError`.
+- ⚠️ **UN NOMBRE, UNA RESPONSABILIDAD** (FIT F36, apartado 52): no había lógica duplicada, pero sí
+  **tres nombres con dos significados** en las librerías de Fitness —y uno era mío, de esa misma
+  fase—. Importar el que no era devuelve otra forma sin fallar. Ahora son `filtrarPorTendencia`
+  (F18), `cabeceraEnSesion` (F9) y `auditarDatosFitness` (F36), y la prueba barre **todos** los
+  `export function` de Fitness buscando un nombre repetido.
+- 🔓 **NO HACE FALTA UN BUS DE EVENTOS, Y SE DEMUESTRA EJECUTÁNDOLO** (FIT F36, apartado 44): nada
+  derivado se guarda y cada guardado crea un `fitness` nuevo, así que las cachés en `WeakMap` se
+  invalidan solas. La prueba guarda, borra y recorre un flujo entero, y mira lo que cambia y lo que
+  queda guardado. ⚠️ **Y la puerta de carga CONSERVA las claves que no conoce** (`...g`) a propósito:
+  un campo de una versión más nueva desde otro dispositivo no puede perderse (regla 5). La garantía
+  contra un derivado guardado no es que se borre: es que **nadie lo escribe** y la auditoría lo canta.
+- 🔓 **AÑADIR A LA SESIÓN EN CURSO ES `anadirEjercicioASesion`** (FIT F36, apartado 17), en
+  `entrenamiento.js`: al final, con la configuración del constructor y las series **«añadida»**, sin
+  tocar plantilla ni catálogo, y nunca a una sesión terminada ni con un archivado.
 
 - 🚨 **EL CATÁLOGO SE VALIDA EN BRUTO, PORQUE EL NORMALIZADOR CORRIGE EN SILENCIO** (FIT F35,
   `src/lib/validacionCatalogo.js`). `crearEjercicioCompleto` convierte «beginner» en
@@ -1482,22 +1516,24 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F36/45 — Integración global del sistema fitness** (líneas
-   8 963–10 007 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **primera** del bloque de
+1. 🏋️ **SEGUIR POR LA FIT F37/45 — Microinteracciones y feedback premium de fitness** (líneas
+   8 083–8 962 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **segunda** del bloque de
    **Acabado** (F36–F42). Se construye de la F1 a la F45, en orden, encadenando sin parar. El índice
    está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: su contexto dice *"NO queremos crear nuevas funcionalidades grandes.
-   Queremos conectar correctamente las existentes"*.** Las 35 fases de antes ya tienen una función
-   por pregunta —catálogo (F2), plantilla (F3), plan (F5), sesión (F7), guardado (F8), historial
-   (F10), progreso (F11), rango (F19), sustitución (F33), ficha (F34), validación (F35)—, así que la
-   fase es **comprobar las puertas entre pantallas** y arreglar las que falten, no escribir una capa
-   nueva. ⚠️ Su apartado 44 pide *"fitnessDataChanged() o equivalente"* y a continuación *"no crear
-   un event bus complejo si no es necesario"*: **no hace falta**, porque nada derivado se guarda y
-   cada guardado crea un `fitness` nuevo — las cachés van en `WeakMap` por objeto y se invalidan
-   solas. ⚠️ Y *editar una sesión histórica* (38) y *los enlaces por URL* (49) **no se añaden**: el
-   primero lo dice el propio apartado, el segundo es la decisión pendiente del botón atrás (E3 F22).
+   ⚠️ **Y lo segundo, en ESTA: su contexto dice *"NO cambiar la lógica de datos, fórmulas ni
+   modelos; NO rehacer pantallas"*, y la infraestructura de animación YA EXISTE.** Las animaciones
+   viven en **`index.css`** y se declaran en **`ANIMACIONES_HC`** con su tope **`MAX_ANIMACION_MS`**
+   (`src/lib/pulidoHC.js`, E3 F14), y por vivir ahí respetan **solas** *"Reducir movimiento"* —el
+   `prefers-reduced-motion` y el `data-reducir-movimiento` de Ajustes—, que es el apartado 40. El
+   feedback al tocar es de **`ui.jsx`** (EH F50: la escalera `0.96` / `95` / `90`), y una vista no
+   pone su propio `active:scale`. El aviso con «Deshacer» ya existe (**`AvisoAccion`**, en
+   `quickAdd.jsx`, E3 F9) — si la fase pide toasts, se mira primero ése. ⚠️ **Y el sonido y la
+   vibración se EMITEN al bus** (`emitir`, F9): ninguna pantalla vibra ni suena por su cuenta, y un
+   evento se emite por su nombre canónico, que la prueba comprueba que existe.
+   ⚠️ **Toda animación nueva se declara en `ANIMACIONES_HC`**: hay una prueba que comprueba que cada
+   clase declarada existe en el CSS (E3 F14), y un catálogo que declara lo que no hay miente.
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único

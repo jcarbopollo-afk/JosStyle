@@ -1424,6 +1424,7 @@ export default function ProgresoView({
               onDeleteFoto={onDeleteFoto}
               comparacionInicial={comparacionInicial}
               onComparacionConsumida={() => setComparacionInicial(null)}
+              onSesion={(id) => setVista({ tipo: 'sesion', id })}
             />
           ) : (
             /* 🚨 La MISMA puerta que Salud (C-35), con su llave. */
@@ -1442,6 +1443,7 @@ export default function ProgresoView({
                 onDeleteFoto={onDeleteFoto}
                 comparacionInicial={comparacionInicial}
                 onComparacionConsumida={() => setComparacionInicial(null)}
+                onSesion={(id) => setVista({ tipo: 'sesion', id })}
               />
             </PinGate>
           )

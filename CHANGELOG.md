@@ -1,5 +1,76 @@
 # CHANGELOG.md
 
+## v3.118.0 — FIT F36/45: integración global del sistema fitness
+
+*"NO queremos crear nuevas funcionalidades grandes. Queremos conectar correctamente las
+existentes."* Así que la fase no añade ninguna pantalla: **recorre cada puerta entre pantallas de
+Fitness y arregla las que estaban sin cablear**. Las encontró revisándolas una a una, y ahora
+**`src/lib/integracionFitness.js`** las declara con el archivo y el trozo de código que las cablea
+—la prueba abre cada archivo y lo busca—, junto a **una función por pregunta** (`FUENTES_DE_VERDAD`,
+veintiuna, importadas) y la auditoría de los datos de un extremo a otro. Primera fase del bloque de
+**Acabado** (F36–F42).
+
+### 🐛 Cinco puertas que no estaban
+
+- **Historial → ejercicio** (apartado 13). El detalle de una sesión sabía llevar al progreso de un
+  ejercicio desde la F31, pero *Entrenamiento → Historial* y la sesión abierta desde *Tu Plan* **no
+  le pasaban la función**: el botón «Ver su progreso» solo existía entrando por Progreso.
+- **Foto → entrenamiento** (apartado 30). El visor de la F26 enseña el entrenamiento de una foto
+  como enlace **si le llega `onSesion`**, y Progreso no se lo pasaba: «Después de entrenamiento»
+  era un texto muerto.
+- **Ficha → la sesión en curso** (apartado 17). Desde la ficha de un ejercicio se podía añadir a
+  una plantilla o empezar uno nuevo, **no a lo que está entrenando**. Ahora, con una sesión en
+  curso, es la primera opción: `anadirEjercicioASesion` (F7) lo pone al final con sus series
+  **«añadida»** —el plan no las pedía, y decir «planificada» falsearía el planificado frente a
+  realizado de la F9—, sin tocar ni la plantilla ni el catálogo.
+- **Un fallo al pintar una pestaña se llevaba la aplicación** (apartado 47). No había **ni un límite
+  de error** en todo JosStyle: una excepción en Rangos desmontaba el árbol entero y dejaba a Josué
+  sin la barra de abajo para salir. Ahora cada área de Fitness tiene el suyo (`AreaSegura`), que
+  **no esconde el fallo** —lo manda a la consola, y el recorrido lo cuenta— y ofrece «Reintentar».
+- **El rango medía el pasado con el peso corporal de hoy** (apartado 39). Las marcas con carga se
+  miden relativas al peso corporal, y se usaba siempre el del perfil: adelgazar cinco kilos
+  **reescribía los rangos de hace meses** y la evolución de la F22. La sesión guarda ahora
+  **`pesoCorporal`** con su snapshot (F7) y cada marca usa el suyo; una sesión de antes, sin él, usa
+  el del perfil, que es lo único que se sabe.
+
+### 🚨 La regla del peso corporal estaba escrita dos veces
+
+`rangos.js` (F15) y `clasificacion.js` (F17) decidían por su cuenta qué peso corporal es un dato,
+con el mismo código copiado. Vive ahora **una vez** en `fitness.js` (`pesoCorporalValido`), que es lo
+único que pueden importar los tres sin un ciclo, y `rangos.js` sigue exportando su constante con su
+nombre de siempre. Hay un barrido que caza la próxima copia.
+
+### ⚠️ Un nombre, una responsabilidad (apartado 52)
+
+El barrido de funciones repetidas en las 36 librerías de Fitness no encontró lógica duplicada, pero
+sí **tres nombres con dos significados**: `filtrarEjercicios` (el catálogo en la F2, las tendencias
+en la F18), `cabeceraDeEjercicio` (un ejercicio de una sesión en la F9, un `exerciseId` en la F29) y
+el `auditarIntegracion` que yo mismo acababa de escribir y ya existía en la F28. Importar el que no
+era devuelve otra forma **sin fallar** —la lección de la FORMA de lo que devuelve una función—, así
+que ahora son `filtrarPorTendencia`, `cabeceraEnSesion` y `auditarDatosFitness`.
+
+### 🔓 Sin bus de eventos, y es lo correcto
+
+El apartado 44 pide *"fitnessDataChanged() o equivalente"* y *"no crear un event bus complejo si no
+es necesario"*. **No lo es**: nada derivado se guarda —ni progreso, ni rango, ni actividad, ni
+racha— y cada guardado crea un `fitness` nuevo, así que las cachés, que van en `WeakMap` por objeto,
+se invalidan solas. La prueba no lo promete: **lo ejecuta** —guarda una sesión y mira que cambien
+historial, progreso, actividad y rango; la borra y mira que vuelvan; recorre un flujo entero y
+comprueba que no queda ni un derivado guardado—.
+
+### ⚠️ Lo que no se hace, dicho
+
+Editar una sesión histórica (el apartado 38 dice *"no añadirlo ahora"*), los enlaces por URL
+(apartado 49, que depende de la decisión del botón atrás, E3 F22) y **avisar de una pérdida de
+persistencia** (apartado 55): la sesión en curso se guarda en cada cambio y sobrevive a recargar,
+pero avisar si un guardado falla es de toda la aplicación —`saveData` ya devuelve `{ ok, error }`
+desde EH F52 y nadie lo lee—, y hacerlo aquí sería esconder un cambio grande dentro de esta fase,
+que es lo que su apartado 62 prohíbe. Están en `NO_EN_FIT36`.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.117.0 — FIT F35/45: calidad, validación y administración del catálogo fitness
 
 El catálogo de ejercicios ya no se puede romper sin que se note: **`validateExerciseCatalog()`**

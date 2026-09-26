@@ -528,13 +528,25 @@ export const VISIBILIDADES = [
   { id: 'publico', nombre: 'Público', que: 'Lo vería cualquiera.', existe: false, enFase: 'El sistema social, que todavía no existe' },
 ];
 
+/* 🔓 FIT F36, apartados 39 y 52 — **qué peso corporal es un dato**. Vivía en
+   `rangos.js` (F15) y `clasificacion.js` (F17) escrito dos veces, idéntico; se
+   muda aquí porque ahora lo necesita también la sesión, y `fitness.js` es el
+   único sitio que pueden importar los tres sin un ciclo. `rangos.js` lo sigue
+   exportando con su nombre de siempre. */
+export const PESO_CORPORAL_VALIDO = { min: 30, max: 250 };
+export function pesoCorporalValido(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const p = Number(v);
+  return Number.isFinite(p) && p >= PESO_CORPORAL_VALIDO.min && p <= PESO_CORPORAL_VALIDO.max ? p : null;
+}
+
 export function crearWorkoutSession({
   planId = null, nombre = '', fecha = todayISO(), inicio = null, fin = null,
   ejercicios = [], notas = '', descripcion = '', estado = 'planificada',
   origen = null, iniciadaEn = null, terminadaEn = null, pausadaEn = null,
   pausadoMs = 0, actual = 0,
   visibilidad = 'privado', media = null, diaDePlan = null, guardadaEn = null,
-  descanso = null, descansoAuto = true, entorno = '',
+  descanso = null, descansoAuto = true, entorno = '', pesoCorporal = null,
 } = {}) {
   return {
     id: uid(),
@@ -612,6 +624,14 @@ export function crearWorkoutSession({
        obligaría a importar `ejercicios.js`, que es un ciclo; lo valida quien lo
        lee (`entornoDeSesion`), y una sesión de antes lo tiene vacío. */
     entorno: texto(entorno),
+    /* ═══ FIT F36, apartado 39 — el peso corporal DE ESE DÍA ═══════════════
+       🚨 Los rangos de un ejercicio con carga o lastre se miden **relativos al
+       peso corporal**, y hasta aquí se usaba siempre el del perfil de HOY: si
+       Josué adelgazaba cinco kilos, sus marcas de hace tres meses valían otra
+       cosa y la evolución de la F22 **reescribía el pasado**. Se guarda con el
+       snapshot al empezar (F7) y cada marca usa el suyo. Una sesión de antes no
+       lo tiene (`null`) y usa el del perfil, que es lo único que se sabe. */
+    pesoCorporal: pesoCorporalValido(pesoCorporal),
   };
 }
 

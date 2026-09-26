@@ -59,7 +59,7 @@ import {
   avisoDeRecuperacion,
 } from '../lib/entrenamiento';
 import {
-  cabeceraDeEjercicio, serieActiva, ajustarValor, PASOS,
+  cabeceraEnSesion, serieActiva, ajustarValor, PASOS,
   completarSerie, desmarcarSerie, alternarDescansoAuto,
   iniciarDescanso, pausarDescansoSesion, reanudarDescansoSesion, terminarDescanso,
   sumarDescanso, cambiarDescansoEjercicio, descansoVisible,
@@ -747,7 +747,7 @@ export default function EntrenamientoVivoView({
 
   const ejercicio = useMemo(() => ejercicioActual(sesion), [sesion]);
   const ficha = useMemo(() => fichaDeEjercicio(ejercicio, propios), [ejercicio, propios]);
-  const cabecera = useMemo(() => cabeceraDeEjercicio(ejercicio, propios), [ejercicio, propios]);
+  const cabecera = useMemo(() => cabeceraEnSesion(ejercicio, propios), [ejercicio, propios]);
   /* 🔓 FIT F30, apartado 36 — el objetivo del ejercicio que está haciendo. */
   const objetivoVivo = useMemo(
     () => (objetivoActivoDe && ejercicio ? objetivoActivoDe(ejercicio.exerciseId) : null),

@@ -21,7 +21,7 @@ import { RankBadge, RankLabel } from './rangos';
 import { ETIQUETA_PARTICIPACION } from '../lib/contribucionMuscular';
 /* 🔓 Los filtros por estado son los de la F18: esta lista la sustituye, así que
    se los queda en vez de dejar dos listas de lo mismo en la misma pantalla. */
-import { FILTROS_EJERCICIOS, filtrarEjercicios } from '../lib/detalleMuscular';
+import { FILTROS_EJERCICIOS, filtrarPorTendencia } from '../lib/detalleMuscular';
 
 /* Los mismos cuatro estados que el resto de Fitness, con icono **y** palabra
    (apartado 30: nunca solo el color). */
@@ -153,7 +153,7 @@ export function MuscleContributionList({
   const c = contribuciones || { conDatos: [], sinDatos: [], aviso: '', vacio: '' };
   /* El filtro de la F18 mira la TENDENCIA, que aquí se llama `tendencia`. */
   const paraFiltrar = c.conDatos.map((x) => ({ ...x, estado: x.tendencia || 'sin_datos' }));
-  const visibles = onFiltro ? filtrarEjercicios(paraFiltrar, filtro) : paraFiltrar;
+  const visibles = onFiltro ? filtrarPorTendencia(paraFiltrar, filtro) : paraFiltrar;
   const conSinDatos = mostrarSinDatos && (!onFiltro || filtro === 'todos' || filtro === 'sin_datos');
   return (
     <div>

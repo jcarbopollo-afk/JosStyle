@@ -21,13 +21,13 @@
    cómo se guarda y en qué estado está cada ejercicio.
    =========================================================================== */
 
-import { crearClasificacion, GRUPOS_MUSCULARES, subgrupoMuscular } from './fitness.js';
+import { crearClasificacion, GRUPOS_MUSCULARES, subgrupoMuscular, pesoCorporalValido } from './fitness.js';
 import { todosLosEjercicios, ejercicioPorId } from './ejercicios.js';
 import { aparicionesDeEjercicio } from './progresion.js';
 import { metricasDeEjercicio } from './objetivosProgreso.js';
 import { repartoMuscular } from './progresoMuscular.js';
 import {
-  PUNTUACION_MAXIMA, REFERENCIAS, puntuacionDeMarca, rangoDePuntuacion, PESO_CORPORAL_VALIDO,
+  PUNTUACION_MAXIMA, REFERENCIAS, puntuacionDeMarca, rangoDePuntuacion,
 } from './rangos.js';
 
 const lista = (x) => (Array.isArray(x) ? x : []);
@@ -121,10 +121,8 @@ export const OPCION_NO_LO_SE = { id: 'no-lo-se', texto: 'No lo sé', omite: true
    las dos cosas sería el formulario largo que prohíbe el apartado 19. */
 export const REPS_DE_REFERENCIA_CARGA = 5;
 
-const pesoCorporalDe = (perfil) => {
-  const p = Number(perfil?.peso);
-  return Number.isFinite(p) && p >= PESO_CORPORAL_VALIDO.min && p <= PESO_CORPORAL_VALIDO.max ? p : null;
-};
+/* 🔓 FIT F36 — la misma regla que el rango, de un solo sitio (apartado 52). */
+const pesoCorporalDe = (perfil) => pesoCorporalValido(perfil?.peso);
 
 const redondear5 = (kg) => Math.max(5, Math.round(kg / 5) * 5);
 

@@ -10,7 +10,7 @@ import {
 import { crearRutina, anadirEjercicio, planARutina, guardarRutina, variantesDeLinea } from './constructor';
 import { getExerciseReplacements, NIVELES_VISIBLES, relacionDeVariante, raizDe } from './sustitucion';
 import { historialPorReciente } from './historial';
-import { ejerciciosDeSesion } from './entrenamiento';
+import { ejerciciosDeSesion, sesionActiva, anadirEjercicioASesion, guardarSesion } from './entrenamiento';
 import { aparicionesDeEjercicio } from './progresion';
 import {
   detalleCompletoDeEjercicio, EJERCICIO_ARCHIVADO, TEXTO_ARCHIVADO, TEXTO_ARCHIVADO_EN_CATALOGO,
@@ -398,6 +398,25 @@ export function anadirAEntrenamiento(fitness, plantillaId, exerciseId, { propios
   const r = guardarRutina(plantillas, rutina, propios, hoy);
   if (!r.ok) return { ok: false, motivo: 'No se ha podido guardar el entrenamiento.', fitness: f };
   return { ok: true, motivo: null, fitness: { ...f, plantillas: r.planes }, plantilla: r.plan };
+}
+
+/** 🔓 FIT F36, apartado 17 — *"entrenamiento nuevo, plantilla existente,
+ *  sesión actual si existe"*. La sesión en curso, si la hay: la misma de la
+ *  tarjeta de recuperación (F7), no otra búsqueda. */
+export function sesionParaAnadir(fitness) {
+  const s = sesionActiva(fitness);
+  return s ? { id: s.id, nombre: texto(s.nombre) || 'Entrenamiento', ejercicios: ejerciciosDeSesion(s).length } : null;
+}
+
+/** Y añadirlo a ella, **guardando la sesión por su puerta** (`guardarSesion`,
+ *  que sustituye por id: pulsar dos veces no duplica la sesión). */
+export function anadirALaSesionEnCurso(fitness, exerciseId, { propios = [] } = {}) {
+  const f = fitness && typeof fitness === 'object' ? fitness : {};
+  const s = sesionActiva(f);
+  if (!s) return { ok: false, motivo: 'No hay ningún entrenamiento en curso.', fitness: f };
+  const despues = anadirEjercicioASesion(s, exerciseId, propios);
+  if (despues === s) return { ok: false, motivo: 'Ese ejercicio no se puede añadir.', fitness: f };
+  return { ok: true, motivo: null, fitness: guardarSesion(f, despues), sesion: despues };
 }
 
 /** «Crear uno nuevo»: una rutina sin guardar, con este ejercicio. La guarda él

@@ -331,6 +331,16 @@ import {
    producción nadie lo pintaría: aquí se pinta con el catálogo de verdad y con
    uno roto, que es cuando más tiene que decir. */
 import { CatalogDiagnostics, CatalogDiagnosticsEntry } from '../src/components/diagnosticoCatalogo.jsx';
+import { AreaSegura } from '../src/components/areaSegura.jsx';
+
+/* FIT F36 — el límite de error de un área. `react-dom/server` no ejecuta los
+   límites de error, así que el aspecto del fallo se pinta desde la propia
+   instancia, con el estado que le pondría React al capturar uno. */
+function AreaSeguraConFallo({ accent: a }) {
+  const i = new AreaSegura({ clave: 'rangos', nombre: 'Rangos', accent: a, children: null });
+  i.state = { ...i.state, ...AreaSegura.getDerivedStateFromError(new Error('prueba')) };
+  return i.render();
+}
 import { diagnosticoCatalogo as diagnosticoF35 } from '../src/lib/validacionCatalogo.js';
 /* FIT F3 — el constructor. ⚠️ Sus tres piezas se importan sueltas porque **solo
    aparecen tras pulsar algo**: renderizar `ConstructorView` no pinta ni una
@@ -3967,6 +3977,16 @@ const CASOS = [
     ]),
   })],
   ['CatalogDiagnosticsEntry', CatalogDiagnosticsEntry, () => ({ accent })],
+  /* ══ FIT F36 — integración: el límite de error y la sesión en curso ══════ */
+  ['AreaSegura (sin fallo)', AreaSegura, () => ({ clave: 'progreso', nombre: 'Progreso', accent, children: <p>Contenido del área</p> })],
+  ['AreaSegura (con un fallo)', AreaSeguraConFallo, () => ({ accent })],
+  ['ExerciseAddToWorkout (con sesión en curso)', ExerciseAddToWorkout, () => ({
+    entrenamientos: [{ id: 'p', nombre: 'Push', ejercicios: 4 }], accent, onAnadir: () => true, onCrearNuevo: noop, onCerrar: noop,
+    sesion: { id: 's', nombre: 'Pierna' }, onAnadirASesion: () => true,
+  })],
+  ['ExerciseAddToWorkout (solo la sesión)', ExerciseAddToWorkout, () => ({
+    entrenamientos: [], accent, onCrearNuevo: noop, sesion: { id: 's', nombre: 'Pierna' }, onAnadirASesion: () => true,
+  })],
   ['EjerciciosView (con diagnóstico)', EjerciciosView, () => ({ propios: [], accent, onVolver: noop, fitness: fitnessF34(), diagnostico: true })],
   /* FIT F3 — el constructor. El caso que más importa es el de **una rutina con
      un isométrico dentro**: se mide en segundos, así que la fila y el editor

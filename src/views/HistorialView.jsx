@@ -439,6 +439,10 @@ export function DetalleSesionHistorial({
    ═══════════════════════════════════════════════════════════════════════════ */
 export default function HistorialView({
   fitness, propios = [], accent, onVolver, onEmpezar = null, onEliminar = null,
+  /* 🔓 FIT F36, apartados 13 y 14 — desde una sesión, al ejercicio: su progreso,
+     su objetivo y su rango (el detalle de la F29). Existía la puerta en
+     `DetalleSesionHistorial` y aquí no se le pasaba, así que el botón no salía. */
+  onVerEjercicio = null,
 }) {
   const [filtros, setFiltros] = useState(FILTROS_POR_DEFECTO);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
@@ -488,6 +492,7 @@ export default function HistorialView({
           accent={accent}
           onVolver={() => setAbierta(null)}
           onEliminar={onEliminar ? (id) => { onEliminar(id); setAbierta(null); } : null}
+          onVerEjercicio={onVerEjercicio}
         />
       </div>
     );

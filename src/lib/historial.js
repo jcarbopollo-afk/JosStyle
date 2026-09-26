@@ -1,7 +1,7 @@
 import { todayISO, addDays, fechaValida } from './helpers';
 import { ejerciciosDeSesion, filasDeSeries } from './entrenamiento';
 import { resumenDeSesion, fechaLarga, volumenDeSesion } from './finalizacion';
-import { resumenPlanificado, resumenRealizado, cabeceraDeEjercicio } from './entrenamientoUx';
+import { resumenPlanificado, resumenRealizado, cabeceraEnSesion } from './entrenamientoUx';
 import { ENTORNOS } from './ejercicios';
 import { planPorId, planActivoDe, CATALOGO_PLANES } from './planes';
 /* 🔓 FIT F11 — la comparación con la vez anterior, discreta (su apartado 34). */
@@ -404,7 +404,7 @@ export function detalleDeSesion(sesion, { fitness = {}, propios = [], planes = C
 
   const ejercicios = ejerciciosDeSesion(sesion).map((e) => {
     const res = porId.get(e.id) || {};
-    const cab = cabeceraDeEjercicio(e, propios) || {};
+    const cab = cabeceraEnSesion(e, propios) || {};
     const corporal = e.linea?.tipoCarga === 'corporal';
     return {
       id: e.id,

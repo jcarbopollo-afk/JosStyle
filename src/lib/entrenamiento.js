@@ -4,7 +4,7 @@ import {
   ejercicioPorId, nombreCompleto, musculoPrincipal, musculosDe,
 } from './ejercicios';
 import {
-  nombreDeLinea, variantesDeLinea, DESCANSO_POR_DEFECTO, MAX_SERIES,
+  nombreDeLinea, variantesDeLinea, DESCANSO_POR_DEFECTO, MAX_SERIES, crearLinea,
 } from './constructor';
 /* 🔓 FIT F33 — la medida al sustituir la decide un solo sitio. */
 import { configuracionRecomendada } from './sustitucion';
@@ -250,6 +250,8 @@ export function seriesDeLinea(linea, propios = []) {
 export function empezarSesion({
   nombre = '', lineas = [], planId = null, origenTipo = 'plan', origenId = null,
   ahora = Date.now(), hoy = todayISO(), propios = [], entorno = '',
+  /* 🔓 FIT F36, apartado 39 — el peso corporal de hoy, con el snapshot. */
+  pesoCorporal = null,
 } = {}) {
   const ls = lista(lineas);
   const ejercicios = ls.map((l, i) => crearEjercicioDeSesion({
@@ -282,6 +284,7 @@ export function empezarSesion({
       /* 🔓 FIT F10, apartado 13 — el entorno va con el snapshot: un historial que
          lo dedujera del plan se rompería el día que él borre el plan. */
       entorno: texto(entorno),
+      pesoCorporal,
     }),
   };
 }
@@ -420,6 +423,33 @@ export function anadirSerie(sesion, ejercicioId) {
       })],
     };
   });
+}
+
+/**
+ * 🔓 FIT F36, apartado 17 — añadir un ejercicio a **la sesión en curso** desde
+ * su ficha. Entra al final, con la configuración por defecto del constructor
+ * (`crearLinea`: el modo lo propone el catálogo, igual que al construir), y con
+ * sus series marcadas **«añadida»**, no «planificada»: el plan no las pedía, y
+ * decir lo contrario falsearía el «planificado frente a realizado» de la F9.
+ * Por lo mismo su `linea` es `null`. ⚠️ No toca el catálogo ni la plantilla de
+ * la que salió la sesión (el snapshot, F7), y **un archivado no entra** (F35).
+ * Solo una sesión en curso o en pausa: una terminada es historial.
+ */
+export function anadirEjercicioASesion(sesion, exerciseId, propios = []) {
+  if (!sesion || (sesion.estado !== 'en_curso' && sesion.estado !== 'pausada')) return sesion;
+  const ej = ejercicioPorId(texto(exerciseId), propios);
+  if (!ej || ej.archivado === true) return sesion;
+  const ejs = ejerciciosDeSesion(sesion);
+  const l = crearLinea({ exerciseId: ej.id, propios });
+  const nuevo = crearEjercicioDeSesion({
+    exerciseId: ej.id,
+    orden: ejs.length,
+    modo: l.modo === 'tiempo' ? 'tiempo' : 'reps',
+    descanso: enteroONull(l.descanso) ?? DESCANSO_POR_DEFECTO,
+    series: seriesDeLinea(l, propios).map((x) => ({ ...x, origen: 'anadida' })),
+    linea: null,
+  });
+  return { ...sesion, origen: { ...(sesion.origen || {}), ejercicios: [...ejs, nuevo] } };
 }
 
 /** Apartado 19 — quitar. 🚨 **Una planificada no se destruye: se omite**, y así

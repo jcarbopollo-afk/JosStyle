@@ -963,7 +963,15 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       biblioteca, la búsqueda y las sustituciones, y su historial **con su nombre**; y
       `ejerciciosParaLeer` lo mantiene en el reparto de su músculo y en el «X de Y» de Rangos.
       ⚠️ Los tipos del `Exercise`, en JSDoc. 🏁 **Cierra el bloque de Inteligencia (F29–F35).**
-- [ ] F36–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F36 — Integración global del sistema fitness** (v3.118.0): ni una pantalla nueva. 🐛
+      **Historial → ejercicio** y **foto → entrenamiento** estaban sin cablear; 🔓 la ficha añade a
+      la **sesión en curso** (`anadirEjercicioASesion`, series «añadida»); 🐛 la sesión guarda su
+      **peso corporal** y el rango del pasado ya no cambia con el de hoy; 🐛 un **límite de error
+      por área** (`AreaSegura`) —no había ninguno—. `integracionFitness.js` declara fuentes de verdad,
+      conexiones con el archivo que las cablea y la auditoría de los datos. ⚠️ La regla del peso
+      corporal vivía dos veces y tres nombres tenían dos significados. Sin bus de eventos (no hace
+      falta, y se demuestra) y sin SQL.
+- [ ] F37–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

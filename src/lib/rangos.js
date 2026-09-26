@@ -1,4 +1,6 @@
-import { GRUPOS_MUSCULARES, NIVELES_RANGO, SIN_RANGO, nivelRango, subgrupoMuscular } from './fitness';
+import {
+  GRUPOS_MUSCULARES, NIVELES_RANGO, SIN_RANGO, nivelRango, subgrupoMuscular, PESO_CORPORAL_VALIDO, pesoCorporalValido,
+} from './fitness';
 import { ejercicioPorId } from './ejercicios';
 import { indiceDeProgresion, aparicionesDeEjercicio, progresoDeEjercicio, textoSerie } from './progresion';
 import { repartoMuscular } from './progresoMuscular';
@@ -105,8 +107,9 @@ export const CONFIANZA = [
 export const COBERTURA_MINIMA_GLOBAL = 3;
 export const EJERCICIOS_MINIMOS_GLOBAL = 3;
 
-/** El peso corporal solo se usa si es un número razonable. */
-export const PESO_CORPORAL_VALIDO = { min: 30, max: 250 };
+/** El peso corporal solo se usa si es un número razonable. 🔓 FIT F36 — la
+ *  regla vive en `fitness.js` y aquí se reexporta con su nombre de siempre. */
+export { PESO_CORPORAL_VALIDO };
 
 /* ═══════════════════════════════════════════════════════════════════════════
    2 · DE PUNTUACIÓN A RANGO
@@ -145,10 +148,7 @@ export const confianzaDe = (n) => [...CONFIANZA].reverse().find((c) => n >= c.de
    3 · EL RANGO DE UN EJERCICIO (apartados 6-16)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const pesoCorporalDe = (perfil) => {
-  const p = Number(perfil?.peso);
-  return Number.isFinite(p) && p >= PESO_CORPORAL_VALIDO.min && p <= PESO_CORPORAL_VALIDO.max ? p : null;
-};
+const pesoCorporalDe = (perfil) => pesoCorporalValido(perfil?.peso);
 
 /** Paso 1 — la marca de una aparición, o `null` si no hay dato válido. */
 export function marcaDeAparicion(aparicion, pesoCorporal = null) {
@@ -186,9 +186,13 @@ export function puntuacionDeEjercicio(ejercicio, apariciones, perfil = null) {
      sin él (F11 y apartado 14). */
   const clase = l[0].clase;
   const pesoCorporal = pesoCorporalDe(perfil);
+  /* 🔓 FIT F36, apartado 39 — cada marca con el peso corporal DE SU DÍA, si la
+     sesión lo guardó; si no (las de antes), el del perfil. Así cambiar de peso
+     no reescribe el rango de hace tres meses. */
+  const pesoDe = (a) => pesoCorporalValido(a?.pesoCorporal) ?? pesoCorporal;
   const puntuadas = l
     .filter((a) => a.clase === clase)
-    .map((a) => ({ a, p: puntuacionDeMarca(clase, marcaDeAparicion(a, pesoCorporal), ejercicio.dificultad) }))
+    .map((a) => ({ a, p: puntuacionDeMarca(clase, marcaDeAparicion(a, pesoDe(a)), ejercicio.dificultad) }))
     .filter((x) => x.p !== null);
   if (!puntuadas.length) return null;
   /* Paso 3 — la mejor de las últimas, para que un mal día no baje el rango. */
@@ -198,7 +202,7 @@ export function puntuacionDeEjercicio(ejercicio, apariciones, perfil = null) {
     score: mejor.p,
     clase,
     metrica: clase,
-    usaPesoCorporal: (clase === 'carga' || clase === 'lastre') && !!pesoCorporal,
+    usaPesoCorporal: (clase === 'carga' || clase === 'lastre') && !!pesoDe(mejor.a),
     dataPoints: puntuadas.length,
     mejorMarca: textoSerie(clase, mejor.a.mejor),
     fechaMarca: mejor.a.fecha,
