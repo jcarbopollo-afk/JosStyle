@@ -26,10 +26,10 @@
 
 import { subgrupoMuscular } from './fitness.js';
 import { todayISO } from './helpers.js';
-import { ejercicioPorId, todosLosEjercicios } from './ejercicios.js';
+import { ejercicioPorId, ejerciciosParaLeer, PAPELES as PAPELES_CATALOGO } from './ejercicios.js';
 import { repartoMuscular } from './progresoMuscular.js';
 import { rangoEfectivoDeEjercicio } from './motorRangos.js';
-import { progresoDeEjercicio } from './progresion.js';
+import { progresoDeEjercicio, indiceDeProgresion } from './progresion.js';
 import { grupoMuscular } from './detalleMuscular.js';
 
 const lista = (x) => (Array.isArray(x) ? x : []);
@@ -38,11 +38,11 @@ const texto = (v) => (typeof v === 'string' ? v.trim() : '');
 /* Los papeles que el catálogo ya distingue (F2). ⚠️ Se enseñan porque explican
    por qué un ejercicio pesa poco: en las dominadas, el antebrazo es
    estabilizador, no el objetivo. */
-export const PAPELES = {
-  principal: 'Principal',
-  secundario: 'Secundario',
-  estabilizador: 'Estabilizador',
-};
+export const PAPELES = Object.fromEntries(PAPELES_CATALOGO.map((p) => [p.id, p.nombre]));
+/* 🔓 FIT F35, apartado 34 — *"No repetir arrays equivalentes en distintos
+   archivos"*: este mapa estaba escrito a mano con los tres papeles de la F2.
+   Ahora se **deriva** de `PAPELES` de `ejercicios.js`, y se sigue exportando con
+   el mismo nombre porque lo leen la pantalla y su prueba. */
 
 /* La etiqueta del apartado 15: lo que significa esa barra, dicho al lado. 🚨 No
    es «el 60 % de tu desarrollo». */
@@ -70,7 +70,10 @@ export function contribucionDeEjercicio(fitness, exerciseId, { grupoId = null, s
   const participacion = reparto.reduce((n, x) => n + x.peso, 0);
   /* El papel más importante de los que toca en este músculo. */
   const papeles = lista(ej.musculos).filter((m) => reparto.some((r) => r.subgrupoId === m.subgrupoId));
-  const papel = ['principal', 'secundario', 'estabilizador'].find((p) => papeles.some((m) => m.papel === p)) || null;
+  /* 🔓 FIT F35, apartado 34 — el orden sale de `PAPELES` de la F2, la lista
+     central: aquí había una copia escrita a mano, y el día que se añadiera un
+     papel esta línea no se habría enterado. */
+  const papel = PAPELES_CATALOGO.map((x) => x.id).find((p) => papeles.some((m) => m.papel === p)) || null;
 
   const r = rangoEfectivoDeEjercicio(fitness || {}, exerciseId, { propios, perfil });
   const p = r.sinRango ? null : progresoDeEjercicio(fitness || {}, exerciseId, { propios: lista(propios) });
@@ -122,7 +125,10 @@ const PESO_TENDENCIA = { mejora: 2, estable: 1, descenso: 0 };
  * catálogo, que es lo único que se puede afirmar sin interpretar.
  */
 export function contribucionesDeMusculo(fitness, { grupoId = null, subgrupoId = null } = {}, { propios = [], perfil = null, orden = 'reciente', hoy = todayISO() } = {}) {
-  const todas = todosLosEjercicios(lista(propios))
+  /* 🔓 FIT F35, apartado 37: un archivado con datos sigue en el reparto de su
+     músculo, porque sigue contando en su rango. */
+  const conHistoria = [...indiceDeProgresion(fitness, lista(propios)).keys()];
+  const todas = ejerciciosParaLeer(lista(propios), conHistoria)
     .map((ej) => contribucionDeEjercicio(fitness, ej.id, { grupoId, subgrupoId }, { propios, perfil }))
     .filter(Boolean);
 

@@ -327,6 +327,11 @@ import {
   fichaDeBiblioteca as fichaF34, consultarBiblioteca as consultarF34, opcionesDeFiltroBiblioteca as opcionesF34,
   paginaDeBiblioteca as paginaF34,
 } from '../src/lib/bibliotecaEjercicios.js';
+/* FIT F35 — el diagnóstico del catálogo. Solo se ve en desarrollo, así que en
+   producción nadie lo pintaría: aquí se pinta con el catálogo de verdad y con
+   uno roto, que es cuando más tiene que decir. */
+import { CatalogDiagnostics, CatalogDiagnosticsEntry } from '../src/components/diagnosticoCatalogo.jsx';
+import { diagnosticoCatalogo as diagnosticoF35 } from '../src/lib/validacionCatalogo.js';
 /* FIT F3 — el constructor. ⚠️ Sus tres piezas se importan sueltas porque **solo
    aparecen tras pulsar algo**: renderizar `ConstructorView` no pinta ni una
    línea del editor de un ejercicio, que es el agujero del Álbum (NAV F3). */
@@ -3953,6 +3958,16 @@ const CASOS = [
   ['TarjetaEjercicio', TarjetaEjercicio, () => ({
     ejercicio: CATALOGO_EJERCICIOS[0], accent, onAbrir: noop,
   })],
+  /* ══ FIT F35 — el diagnóstico del catálogo (solo desarrollo) ════════════ */
+  ['CatalogDiagnostics (catálogo real)', CatalogDiagnostics, () => ({ diagnostico: diagnosticoF35() })],
+  ['CatalogDiagnostics (catálogo roto)', CatalogDiagnostics, () => ({
+    diagnostico: diagnosticoF35([
+      { id: 'dup', nombre: 'Uno', entornos: ['Casa'], musculos: [{ subgrupoId: 'biceps', porcentaje: 115, papel: 'principal' }] },
+      { id: 'dup', nombre: '', musculos: [] },
+    ]),
+  })],
+  ['CatalogDiagnosticsEntry', CatalogDiagnosticsEntry, () => ({ accent })],
+  ['EjerciciosView (con diagnóstico)', EjerciciosView, () => ({ propios: [], accent, onVolver: noop, fitness: fitnessF34(), diagnostico: true })],
   /* FIT F3 — el constructor. El caso que más importa es el de **una rutina con
      un isométrico dentro**: se mide en segundos, así que la fila y el editor
      tienen que pintar otra cosa que con un ejercicio de repeticiones. */

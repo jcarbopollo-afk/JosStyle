@@ -36,6 +36,7 @@ import TrainingView from './TrainingView';
 /* FIT F2 — el catálogo se renderiza entero aquí dentro, como `TrainingView`:
    agrupar pantallas es renderizarlas, nunca copiarlas (E3 F23). */
 import EjerciciosView from './EjerciciosView';
+import { esDesarrollo } from '../components/diagnosticoCatalogo';
 /* FIT F3 — el constructor, renderizado entero aquí dentro (E3 F23). */
 import ConstructorView from './ConstructorView';
 /* FIT F4 — la gestión de plantillas, renderizada entera aquí dentro (E3 F23). */
@@ -412,6 +413,7 @@ export function AreaEntrenamiento({
         onVerObjetivo={onVerObjetivo}
         onCrearObjetivo={onCrearObjetivoEjercicio}
         onClasificar={onClasificarEjercicio}
+        diagnostico={esDesarrollo()}
       />
     );
   }

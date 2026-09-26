@@ -55,7 +55,7 @@ ordena es **el trabajo**, no el documento.
 | **F32** ✅ **v3.114.0** | Planificación semanal avanzada de entrenamiento | 11860–12539 | 680 |
 | **F33** ✅ **v3.115.0** | Sistema avanzado de sustitución de ejercicios | 11529–11859 | 331 |
 | **F34** ✅ **v3.116.0** | Biblioteca y detalle avanzado de ejercicios | 10709–11528 | 820 |
-| **F35** | Calidad, validación y administración del catálogo fitness | 10008–10708 | 701 |
+| **F35** ✅ **v3.117.0** | Calidad, validación y administración del catálogo fitness | 10008–10708 | 701 |
 | **F36** | Integración global del sistema fitness | 8963–10007 | 1045 |
 | **F37** | Microinteracciones y feedback premium de fitness | 8083–8962 | 880 |
 | **F38** | Ux móvil extrema y optimización para iphone | 7164–8082 | 919 |
@@ -77,7 +77,7 @@ ordena es **el trabajo**, no el documento.
 | **Mirar atrás** | F10–F14 | Historial, progresión, progreso por ejercicio y por grupo muscular, metas |
 | **Rangos** | F15–F25 | Clasificación muscular, rankings, evolución, comparación y resumen |
 | **Progreso físico** 🏁 | F26–F28 | Fotos, comparador e integración con el resto del progreso — **cerrado en la v3.110.0** |
-| **Inteligencia** 🟡 | F29–F35 | Análisis por ejercicio, objetivos, consistencia, planificación semanal, sustituciones, biblioteca y calidad del catálogo — **F29 (v3.111.0), F30 (v3.112.0), F31 (v3.113.0), F32 (v3.114.0), F33 (v3.115.0) y F34 (v3.116.0) hechas; queda la F35** |
+| **Inteligencia** 🏁 | F29–F35 | Análisis por ejercicio, objetivos, consistencia, planificación semanal, sustituciones, biblioteca y calidad del catálogo — **las siete hechas: F29 (v3.111.0), F30 (v3.112.0), F31 (v3.113.0), F32 (v3.114.0), F33 (v3.115.0), F34 (v3.116.0) y F35 (v3.117.0)** |
 | **Acabado** | F36–F42 | Integración global, microinteracciones, UX de iPhone, accesibilidad, rendimiento, persistencia y acabado visual |
 | **Cierre** | F43–F45 | Auditoría funcional, limpieza de deuda técnica y release |
 

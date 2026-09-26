@@ -1098,6 +1098,17 @@ else
   fallo "Falla la biblioteca de ejercicios"; grep '✗' /tmp/jc_biblioteca_ejercicios.log
 fi
 
+# FIT F35 — la calidad del catálogo. Lo que más se vigila: que se valide EN BRUTO (el
+# normalizador corrige en silencio: «beginner» pasa a principiante y «Casa» desaparece), que
+# cada una de las 36 reglas pueda saltar con su caso, que el build PARE con un error y NO con un
+# aviso, que la validación no reciba los datos del usuario, que un ejercicio archivado siga en el
+# histórico con su nombre y no se proponga, y que no haya copias de las listas centrales.
+if node --import ./scripts/resolver-vite.mjs scripts/test-validacion-catalogo.mjs >/tmp/jc_validacion_catalogo.log 2>&1; then
+  ok "Calidad y validación del catálogo (FIT F35) — $(grep -c '✓' /tmp/jc_validacion_catalogo.log) comprobaciones"
+else
+  fallo "Falla la validación del catálogo"; grep '✗' /tmp/jc_validacion_catalogo.log
+fi
+
 # FIT F28 — la integración completa del progreso físico. Lo que más se vigila: que NO
 # exista ninguna métrica que mezcle dos sistemas —«fotos + fuerza + rangos = 82 %» es el
 # ejemplo que prohíbe el apartado 10—, que cada bloque lea de UN solo motor, que el

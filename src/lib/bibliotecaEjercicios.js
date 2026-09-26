@@ -13,7 +13,7 @@ import { historialPorReciente } from './historial';
 import { ejerciciosDeSesion } from './entrenamiento';
 import { aparicionesDeEjercicio } from './progresion';
 import {
-  detalleCompletoDeEjercicio, EJERCICIO_ARCHIVADO, TEXTO_ARCHIVADO,
+  detalleCompletoDeEjercicio, EJERCICIO_ARCHIVADO, TEXTO_ARCHIVADO, TEXTO_ARCHIVADO_EN_CATALOGO,
 } from './detalleEjercicio';
 import { claseDePregunta } from './clasificacion';
 import { estadoDeDato } from './colaClasificacion';
@@ -461,15 +461,17 @@ export function fichaDeBiblioteca(fitness, exerciseId, { propios = [], perfil = 
   const ej = ejercicioPorId(id, propios);
   const seguro = (fn, def) => { try { return fn(); } catch { return def; } };
   const apariciones = seguro(() => aparicionesDeEjercicio(fitness || {}, id, propios), []);
-  if (!ej) {
+  /* 🔓 FIT F35, apartado 37 — un archivado del catálogo (`archivado: true`)
+     se enseña igual que uno que ya no está, pero **con su nombre**. */
+  if (!ej || ej.archivado === true) {
     if (!apariciones.length) return { estado: 'no_existe', id, archivado: false };
     return {
       estado: 'archivado',
       id,
       archivado: true,
-      nombre: id,
+      nombre: ej ? nombreCompleto(ej) : id,
       etiquetaArchivado: EJERCICIO_ARCHIVADO,
-      avisoArchivado: TEXTO_ARCHIVADO,
+      avisoArchivado: ej ? TEXTO_ARCHIVADO_EN_CATALOGO : TEXTO_ARCHIVADO,
       personal: seguro(() => personalDeFicha(fitness, id, { propios, perfil, hoy }), null),
       acciones: accionesDeFicha({ existe: false, conDatos: true, objetivo: false }),
     };

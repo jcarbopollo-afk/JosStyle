@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.116.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.117.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 34 primeras (v3.83.0 → v3.116.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 35 primeras (v3.83.0 → v3.117.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 11 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 10 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -195,8 +195,10 @@ añadió la F34: +113 de Node en su suite, +100 de renderizado y +57 del recorri
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
 
-Eso ya ha encontrado **ciento ocho bugs reales** que la revisión a mano no vio. Los dos últimos
-son de la FIT F34: **la biblioteca se salía 61 px de lado en el iPhone** —una rejilla sin columna
+Eso ya ha encontrado **ciento nueve bugs reales** que la revisión a mano no vio. El último es de
+la FIT F35, y lo cazó la propia validación del catálogo al estrenarse: **la esterilla se perdía
+desde la F2** —nueve ejercicios la declaraban y, como no estaba en `EQUIPAMIENTO`, el normalizador
+la tiraba sin decir nada—. Los dos de antes, de la FIT F34: **la biblioteca se salía 61 px de lado en el iPhone** —una rejilla sin columna
 base crecía con el nombre entero de cada tarjeta— y **el mismo patrón, latente, en la lista de
 alternativas de la F33**. Los de antes, de la FIT F33: **una plancha cambiada por un encogimiento seguía midiéndose en segundos** (F7),
 **el «+» del peso de unas mancuernas empezaba en los 60 kg de la barra** (F9, **C-40**) y **el
@@ -345,7 +347,55 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 **FIT F28 (v3.110.0)**, que 🏁 **CERRÓ EL BLOQUE DE PROGRESO FÍSICO** —F26, F27 y F28— y la
 **FIT F29 (v3.111.0)**, con la que empieza el bloque de **Inteligencia** (F29–F35), y la
 **FIT F30 (v3.112.0)**, la **FIT F31 (v3.113.0)**, la **FIT F32 (v3.114.0)**, la **FIT F33
-(v3.115.0)** y la **FIT F34 (v3.116.0)**, hechas. Lo que dejaron, y que vale para las 11 que quedan:
+(v3.115.0)**, la **FIT F34 (v3.116.0)** y la **FIT F35 (v3.117.0)**, que 🏁 **CERRÓ EL BLOQUE DE
+INTELIGENCIA** —F29 a F35—, hechas. Lo que dejaron, y que vale para las 10 que quedan:
+
+- 🚨 **EL CATÁLOGO SE VALIDA EN BRUTO, PORQUE EL NORMALIZADOR CORRIGE EN SILENCIO** (FIT F35,
+  `src/lib/validacionCatalogo.js`). `crearEjercicioCompleto` convierte «beginner» en
+  «principiante», tira un entorno «Casa» y descarta un subgrupo que no existe —es su trabajo—, así
+  que **validar lo normalizado no vería nada jamás** (EH F41 y F45 otra vez). `validateExerciseCatalog`
+  mira `CATALOGO_BRUTO` y devuelve `{ errors, warnings, valid }`; la gravedad de cada una de sus
+  **36 reglas** vive **solo** en `REGLAS_CATALOGO`. ⚠️ **Y amplía `auditarCatalogo()` de la F2: la
+  LLAMA para sus ocho comprobaciones**, no las copia —hay una prueba de que todo lo que caza la F2
+  lo caza la F35—.
+- 🐛 **LA ESTERILLA SE PERDÍA DESDE LA F2** (FIT F35): nueve ejercicios la declaraban y no estaba en
+  `EQUIPAMIENTO`, así que el normalizador la tiraba sin decir nada. Es una superficie
+  (`sinMaterial`, como el suelo): con un material normal habría salido un «No tengo esterilla» que
+  no cambiaría nada, porque la sustitución ya trata «suelo» como sin material (regla 8). **Un
+  ejercicio nuevo del catálogo con un material que no está en la lista pone el build rojo.**
+- 🚨 **UN ERROR DE CATÁLOGO PARA EL BUILD DE VERCEL; UN AVISO, NUNCA** (FIT F35, apartados 26 y 27):
+  el plugin `validarCatalogoAlCompilar` de `vite.config.js` corre antes de compilar, y es **el único
+  sitio que puede comprobar que una ruta de `public/` existe**. En desarrollo lo hace `main.jsx` en
+  la consola —un error como `console.error`, que **el recorrido de Chromium cuenta como fallo**—.
+  ⚠️ `validacionCatalogo.js` **no lee `import.meta`**: la importa también la configuración de Vite.
+- 🚨 **UN EJERCICIO ARCHIVADO ES `archivado: true`, Y SIGUE EN EL CATÁLOGO** (FIT F35, apartado 37):
+  `todosLosEjercicios` —la lista de lo que se puede elegir— lo deja fuera, así que desaparece de la
+  biblioteca, la búsqueda y las sustituciones; `ejercicioPorId` lo sigue encontrando, así que **su
+  historial se enseña con su nombre**, que es lo que la **C-36** no podía dar. Lo que ya no está en
+  el catálogo sigue siendo archivado como antes. ⚠️ Y **una lista no se recorta por la longitud de
+  otra**: la F33 sacaba los propios con `todosLosEjercicios(l).slice(CATALOGO_EJERCICIOS.length)`, y
+  sin los archivados ese corte se habría desplazado. Ahora sale de su propia lista.
+- ⚠️ **EL DIAGNÓSTICO ES SOLO DE DESARROLLO, Y POR ESO NO ES UNA PANTALLA** (FIT F35, apartado 29):
+  un plegable al final de la biblioteca, detrás de `esDesarrollo()` (`import.meta.env?.DEV`, con la
+  interrogación porque en el banco de renderizado no existe). Una ruta que Josué pudiera abrir sería
+  lo que el apartado prohíbe, y no hay ni un botón de «arreglar»: **informa, no corrige**.
+- ⚠️ **UNA LISTA CENTRAL, NI UNA COPIA** (FIT F35, apartado 34): el barrido encontró el mapa de
+  papeles de la F21 escrito a mano —y su orden—; ahora se derivan de `PAPELES`. Las listas de tipos
+  de la F33 y la F34 son **subconjuntos por ids** de `TIPOS_EJERCICIO`, con su comprobación.
+- ⚠️ **JAVASCRIPT, NO TYPESCRIPT** (FIT F35, apartado 35 contra el 40): los tipos del `Exercise` van en
+  JSDoc (`@typedef` en `ejercicios.js`). Migrar el proyecto sería el «sobreingenierizar» prohibido.
+- 🐛 **UNA SUITE VERDE A LA PRIMERA SE REVISA** (FIT F35): de 120 comprobaciones, una pasaba sin mirar
+  —`esDesarrollo === null || …`: en Node el `.jsx` no se puede importar, así que el respaldo era
+  siempre verdad— y otra fijaba «296 avisos», una cuenta exacta que el primer ejercicio nuevo habría
+  roto (EH F21). Y el plugin del build **se prueba con un catálogo roto**, no solo con el bueno: una
+  garantía que solo se mide cuando no hay nada que parar no está medida.
+- 🐛 **LA LISTA DE LO QUE SE ELIGE NO ES LA LISTA DE LO QUE SE LEE** (FIT F35, y lo destapó la F36
+  antes de subirla): `todosLosEjercicios` deja fuera a los archivados —es lo elegible—, y la
+  contribución a un músculo (F21) y el «X de Y» de Rangos (F16) **recorrían el catálogo con ella**.
+  Un archivado con sesiones seguía en el rango de bíceps y **desaparecía de la lista de los que lo
+  sostienen**. Una pantalla que LEE historia recorre **`ejerciciosParaLeer(propios, idsConHistoria)`**:
+  lo elegible más los archivados que tienen algo registrado. ⚠️ **Al quitar algo de una lista
+  compartida, mirar quién la usa para elegir y quién para leer** — son dos preguntas.
 
 - 🚨 **LA BIBLIOTECA Y LA FICHA DE UN EJERCICIO YA EXISTÍAN, Y SE AMPLÍAN** (FIT F34, y es la
   lección de la F1 otra vez): `EjerciciosView` (F2) **es** la `ExerciseLibrary` del apartado 31 y
@@ -1432,31 +1482,22 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F35/45 — Calidad, validación y administración del catálogo fitness**
-   (líneas 10 008–10 708 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **séptima y
-   última** del bloque de **Inteligencia** (F29–F35). Se construye de la F1 a la F45, en orden,
-   encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+1. 🏋️ **SEGUIR POR LA FIT F36/45 — Integración global del sistema fitness** (líneas
+   8 963–10 007 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **primera** del bloque de
+   **Acabado** (F36–F42). Se construye de la F1 a la F45, en orden, encadenando sin parar. El índice
+   está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: LA VALIDACIÓN DEL CATÁLOGO YA EXISTE, Y SE LLAMA `auditarCatalogo()`**
-   (F2, en `ejercicios.js`): ids repetidos, porcentajes que no suman 100, referencias colgadas
-   (`sustitutos`, `progresiones`, `variantes`, `base`), sin entorno, sin músculos, sin principal,
-   subgrupos huérfanos y ni un enlace inventado — y `test-ejercicios.mjs` ya la ejecuta en cada
-   `verificar.sh`. La F33 añadió que **todo ejercicio lleva `patron`**, y la F34 que el catálogo
-   se lee con `ejerciciosDeBiblioteca`, que ya **quita ids repetidos y fichas sin nombre** sin tumbar
-   la pantalla. Su apartado 34 lo dice: *"Crear o reutilizar constantes"* —`GRUPOS_MUSCULARES`,
-   `EQUIPAMIENTO`, `ENTORNOS`, `TIPOS_EJERCICIO`, `DIFICULTADES`, `PAPELES` **ya existen** en
-   `ejercicios.js`—. **Se amplía `auditarCatalogo`** hacia el `{ errors, warnings, valid }` del
-   apartado 28 (error frente a aviso, apartado 27), no se escribe un segundo validador.
-   ⚠️ **El proyecto es JavaScript, no TypeScript** (apartado 35): lo que se puede hacer sin
-   cambiar la cadena de compilación son tipos en JSDoc; migrar a TS sería el «sobreingenierizar»
-   que prohíbe su apartado 40 — se anota en `docs/03` y se sigue.
-   ⚠️ **La herramienta de diagnóstico (apartado 29) es solo de desarrollo**: detrás de
-   `import.meta.env.DEV`, nunca en la pantalla de Josué. Y **fallar el build** (apartado 26) solo
-   con errores críticos: un aviso no puede parar un despliegue de Vercel.
-   ⚠️ **Un ejercicio que ya no está en el catálogo es un ARCHIVADO, no un error** (apartados 36 y
-   37, y es la **C-36**): las sesiones guardan solo su `exerciseId` (F3) y la F29 y la F34 ya lo
-   enseñan con «Ejercicio archivado». Validar lo del usuario no es validar el catálogo.
+   ⚠️ **Y lo segundo, en ESTA: su contexto dice *"NO queremos crear nuevas funcionalidades grandes.
+   Queremos conectar correctamente las existentes"*.** Las 35 fases de antes ya tienen una función
+   por pregunta —catálogo (F2), plantilla (F3), plan (F5), sesión (F7), guardado (F8), historial
+   (F10), progreso (F11), rango (F19), sustitución (F33), ficha (F34), validación (F35)—, así que la
+   fase es **comprobar las puertas entre pantallas** y arreglar las que falten, no escribir una capa
+   nueva. ⚠️ Su apartado 44 pide *"fitnessDataChanged() o equivalente"* y a continuación *"no crear
+   un event bus complejo si no es necesario"*: **no hace falta**, porque nada derivado se guarda y
+   cada guardado crea un `fitness` nuevo — las cachés van en `WeakMap` por objeto y se invalidan
+   solas. ⚠️ Y *editar una sesión histórica* (38) y *los enlaces por URL* (49) **no se añaden**: el
+   primero lo dice el propio apartado, el segundo es la decisión pendiente del botón atrás (E3 F22).
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único

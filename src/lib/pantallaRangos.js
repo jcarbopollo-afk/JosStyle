@@ -19,7 +19,7 @@
 
 import { GRUPOS_MUSCULARES, NIVELES_RANGO, SIN_RANGO, nivelRango } from './fitness.js';
 /* El catálogo entero —el de siempre más los suyos— para poder decir «3 de 40». */
-import { todosLosEjercicios } from './ejercicios.js';
+import { ejerciciosParaLeer } from './ejercicios.js';
 import { RANK_THRESHOLDS, estadoDeRango, progresoHaciaSiguiente } from './rangos.js';
 /* 🔓 FIT F19 — el global sale del motor, que es quien decide si un ejercicio
    cuenta por su estimación, por sus entrenamientos o por los dos. */
@@ -126,8 +126,10 @@ export function detalleDeRango(orden, actual = null) {
    ejercicio apuntado y no hecho no está clasificado, y decir que sí sería
    exactamente el «dato falso» que prohíbe el apartado 25. */
 export function clasificacionDeEjercicios(global, propios = [], fitness = null) {
-  const total = todosLosEjercicios(lista(propios)).length;
   const clasificados = lista(global && global.ejercicios).length;
+  /* 🔓 FIT F35, apartado 37: un archivado con rango se sigue contando, así que
+     también entra en el total — si no, «101 de 100». */
+  const total = ejerciciosParaLeer(lista(propios), lista(global && global.ejercicios).map((e) => e && e.exerciseId)).length;
   /* 🔓 **FIT F24, apartado 18 — el contador pasa a ser el de RECOMENDADOS.** La
      F17 ya lo había acotado a la tanda de catorce para no prometer cien
      preguntas; el apartado 18 va un paso más allá: el número que se enseña es

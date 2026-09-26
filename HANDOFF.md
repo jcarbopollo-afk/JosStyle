@@ -2,6 +2,21 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.117.0 — FIT F35/45: calidad, validación y administración del catálogo):**
+> **`validateExerciseCatalog()`** (`src/lib/validacionCatalogo.js`) devuelve `{ errors, warnings,
+> valid }` con **36 reglas** y su gravedad en un solo sitio: un **error** (id repetido, referencia
+> que no existe, porcentaje imposible, grupo inexistente, ciclo de progresiones) **para el build**
+> de Vercel; un **aviso** (sin imagen, contenido incompleto, posible duplicado, poca cobertura) no.
+> En desarrollo se valida al arrancar y la biblioteca lleva un «Diagnóstico del catálogo» que en
+> producción no existe. 🏁 **Cierra el bloque de Inteligencia (F29–F35).**
+> 🚨 **Amplía `auditarCatalogo()` de la F2** —la llama, no la copia— y **valida el catálogo en
+> bruto**, porque el normalizador corrige en silencio. 🐛 **Y cazó un fallo de la F2**: nueve
+> ejercicios declaraban `esterilla`, que no estaba en `EQUIPAMIENTO`, y se tiraba sin avisar.
+> 🚨 **`archivado: true`**: fuera de la biblioteca, la búsqueda y las sustituciones, pero su
+> historial sigue **con su nombre**, y `ejerciciosParaLeer` lo mantiene en el reparto de su músculo
+> y en el «X de Y» de Rangos (lo destapó la F36 antes de subirla). ⚠️ Los tipos del `Exercise` van
+> en JSDoc: el proyecto es JavaScript. **Sin SQL nuevo.** Lo siguiente es la **FIT F36**.
+
 > **📅 ACTUALIZACIÓN (v3.116.0 — FIT F34/45: la biblioteca y el detalle avanzado de ejercicios):**
 > *Fitness → Ejercicios* es una biblioteca: **Recientes** (del historial), **Favoritos** (si hay),
 > **Explorar** por grupo y habilidades, y el catálogo **de veinte en veinte**; la búsqueda mira

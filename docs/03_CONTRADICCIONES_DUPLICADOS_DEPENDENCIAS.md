@@ -843,6 +843,22 @@ considerar *"rango de movimiento"*, que el catálogo **no guarda**: se usa lo ú
 el ejercicio es estático) y el límite está escrito en `CRITERIOS_COMPATIBILIDAD`, sin inventar un
 recorrido que nadie ha medido (regla 8).
 
+### C-41 — ✅ RESUELTA AL CONSTRUIR (FIT F35, v3.117.0) · Tipos estrictos (apartado 35) en un proyecto sin TypeScript, contra *"no sobreingenierizar"* (apartado 40)
+
+**El apartado 35 pide *"tipos o interfaces claros"* para el `Exercise` —*"si el proyecto usa
+TypeScript"*— y el 40 prohíbe *"sobreingenierizar"*.** JosStyle es JavaScript de principio a fin:
+migrarlo cambiaría la cadena de compilación de las 70 vistas para ganar lo que ya da el editor.
+
+**La lectura con la que se ha construido, que respeta las dos partes:** los tipos van en **JSDoc**
+(`@typedef Exercise` y sus ids en `ejercicios.js`, y `@returns {Exercise}` en la fábrica). El editor
+avisa de un campo mal escrito, **la compilación no cambia** y el contrato real lo hace cumplir la
+validación de la F35, que es lo que el apartado quería proteger. Declarado en `NO_EN_FIT35`.
+
+⚠️ **Y la C-36 se cierra del todo aquí:** el apartado 37 da el `isArchived` que la F29 no tenía, así
+que un ejercicio que se archiva **conserva su nombre** en el historial. Lo que ya no está en el
+catálogo sigue siendo «Ejercicio archivado» con su id, como decidió la C-36: inventarle un nombre
+seguiría siendo reescribir el pasado.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

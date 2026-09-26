@@ -1,5 +1,89 @@
 # CHANGELOG.md
 
+## v3.117.0 — FIT F35/45: calidad, validación y administración del catálogo fitness
+
+El catálogo de ejercicios ya no se puede romper sin que se note: **`validateExerciseCatalog()`**
+devuelve `{ errors, warnings, valid }` con **36 reglas**, cada una con su gravedad escrita en un
+solo sitio (`REGLAS_CATALOGO`). Un **error** —id repetido, referencia que no existe, porcentaje
+imposible, grupo muscular inexistente, ciclo de progresiones— **para el build**; un **aviso** —sin
+imagen, contenido incompleto, posible duplicado, grupo con pocos ejercicios— se cuenta y no para
+nada. En desarrollo se valida al arrancar y la biblioteca lleva un **«Diagnóstico del catálogo»**
+que Josué no verá nunca. Séptima y **última** del bloque de **Inteligencia** (F29–F35), que 🏁
+**queda cerrado**.
+
+### 🚨 La validación ya existía, y se amplía
+
+`auditarCatalogo()` es de la **F2** y ya miraba ids repetidos, porcentajes que no suman 100,
+referencias colgadas, entornos, músculos, músculo principal, subgrupos sin ejercicio y enlaces
+inventados. **No se escribe otra vez**: la validación de la F35 **la llama** para esas ocho y
+convierte lo que encuentra en errores y avisos. Lo nuevo es lo que la F2 no miraba: ids estables,
+papeles, patrones (F33), medidas y su coherencia (un isométrico tiene que poder medirse en segundos),
+ciclos de bases y de progresiones, a sí mismo, variantes de otra familia, recursos, contenido,
+cobertura y posibles duplicados. Hay una comprobación de que **todo lo que caza la F2 lo caza la
+F35**, y otra de que **las 36 reglas saltan** con su caso.
+
+### 🚨 Se valida el catálogo en bruto, porque el normalizador corrige en silencio
+
+`crearEjercicioCompleto` hace su trabajo: una dificultad «beginner» pasa a «principiante», un
+entorno «Casa» desaparece y un subgrupo que no existe se descarta. Validando lo normalizado **no se
+vería nada de eso jamás** —el apartado 5 lo dice: *"No corregir automáticamente
+silenciosamente"*—, así que se valida `CATALOGO_BRUTO` tal como está escrito. Y la validación **no
+modifica ni guarda nada**: informa.
+
+### 🐛 Y lo primero que cazó fue un fallo de la F2
+
+**Nueve ejercicios** —la plancha, la plancha lateral, el crunch, la rueda abdominal, el hollow body,
+el puente de glúteo y los tres de cuello— declaraban **`esterilla`** desde la F2, y como no estaba
+en `EQUIPAMIENTO` el normalizador **la tiraba sin decir nada**. Ahora es una superficie, como el
+suelo (`sinMaterial`): una plancha se hace sin ella, así que no aparece un «No tengo esterilla» que
+no cambiaría nada (regla 8).
+
+### 🚨 El build para con un error, y nunca con un aviso
+
+Un plugin de `vite.config.js` valida el catálogo **antes de compilar**: con un error, el build falla
+y **Vercel no publica un catálogo roto** (apartado 26); con avisos, sigue (apartado 27). Es el único
+sitio que puede comprobar que una ruta de `public/` existe de verdad. En desarrollo lo hace
+`main.jsx` en la consola —los errores como error, los avisos en una línea—, y el recorrido de
+Chromium lo lee.
+
+### 🚨 Un ejercicio archivado sigue en el catálogo y en su historial
+
+El apartado 37 pide `isArchived`: es **`archivado: true`** en el ejercicio. Sale de la biblioteca,
+de la búsqueda y de las sustituciones (`todosLosEjercicios` lo deja fuera), pero `ejercicioPorId`
+lo sigue encontrando, así que **su historial se enseña con su nombre** y la etiqueta «Ejercicio
+archivado» — que es lo que el apartado 28 de la F29 pedía y la **C-36** no podía dar. Lo que ya no
+está en el catálogo sigue siendo archivado como antes. ⚠️ Y de paso, la F33 recortaba los ejercicios
+propios con `todosLosEjercicios(l).slice(CATALOGO_EJERCICIOS.length)`: sin los archivados ese corte
+se habría desplazado, así que ahora los saca **de su propia lista**.
+
+### 🐛 Y un archivado con rango salía del reparto de su músculo
+
+Lo destapó la **F36** al leer su apartado 41 —*"un ejercicio archivado mantiene progreso y rangos"*—,
+**antes de subir esta fase**, así que va con ella. `todosLosEjercicios` es la lista de lo **elegible**,
+y dos pantallas de **lectura** recorrían el catálogo con ella: la contribución a un músculo (F21) y
+el «X de Y clasificados» de Rangos (F16). Un archivado con sesiones **seguía contando en el rango de
+bíceps y desaparecía de la lista de los ejercicios que lo sostienen**, y el recuento podía decir «101
+de 100». Ahora leen con **`ejerciciosParaLeer`**: lo elegible más los archivados **que tienen
+historia**. Uno archivado sin nada registrado sigue fuera — ofrecerlo como «todavía sin datos» sería
+proponerlo.
+
+### ⚠️ Una lista central, ninguna copia (apartado 34)
+
+El barrido encontró **una**: el mapa de papeles de la F21 (`contribucionMuscular.js`) estaba escrito
+a mano con los tres de la F2, y su orden también. Ahora se derivan de `PAPELES`. Los tipos de la
+F33 y la F34 son subconjuntos por ids de `TIPOS_EJERCICIO`, y hay una comprobación de que lo siguen
+siendo.
+
+### ⚠️ JavaScript, no TypeScript (apartado 35)
+
+El proyecto es JavaScript. Migrarlo sería el «sobreingenierizar» que prohíbe el apartado 40, así
+que los tipos del `Exercise` van en **JSDoc** (`@typedef` en `ejercicios.js`): el editor avisa de
+un campo mal escrito sin cambiar la compilación.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.116.0 — FIT F34/45: la biblioteca y el detalle avanzado de ejercicios
 
 *Fitness → Ejercicios* ya es una biblioteca: la cabecera **«Ejercicios»** con el buscador siempre a

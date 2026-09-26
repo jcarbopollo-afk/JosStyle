@@ -954,7 +954,16 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       favoritos nacen aquí** (`fitness.favoritosEjercicios`, ids, con normalizador y limpieza en la
       puerta de carga); **los recientes no se guardan**. ⚠️ Ni vídeo falso, ni «final del
       movimiento» inventado, ni nombre histórico para un archivado (C-36).
-- [ ] F35–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F35 — Calidad, validación y administración del catálogo** (v3.117.0):
+      `validateExerciseCatalog()` con **36 reglas** y su gravedad en `REGLAS_CATALOGO` —un
+      **error** para el build de Vercel, un **aviso** no—, **en bruto** porque el normalizador
+      corrige en silencio, y **ampliando `auditarCatalogo()` de la F2** en vez de copiarla. Se
+      valida al arrancar en desarrollo y hay un **«Diagnóstico del catálogo»** que en producción no
+      existe. 🐛 La **esterilla** se perdía desde la F2. 🚨 **`archivado: true`**: fuera de la
+      biblioteca, la búsqueda y las sustituciones, y su historial **con su nombre**; y
+      `ejerciciosParaLeer` lo mantiene en el reparto de su músculo y en el «X de Y» de Rangos.
+      ⚠️ Los tipos del `Exercise`, en JSDoc. 🏁 **Cierra el bloque de Inteligencia (F29–F35).**
+- [ ] F36–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

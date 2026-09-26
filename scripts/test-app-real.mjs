@@ -10092,6 +10092,96 @@ ok(/Historial · 2 sesiones/i.test(progreso_fit34),
 
 almacen.fitness = fitnessDeAntes_fit34;
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F35 — la calidad y la validación del catálogo (Entrega 4 · 35/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El recorrido corre sobre el servidor de desarrollo de Vite, así que aquí se
+   ve lo que Josué NO verá nunca: la validación al arrancar (apartado 25) y el
+   diagnóstico (apartado 29). Y lo que sí verá: que un ejercicio ARCHIVADO no
+   sale al buscar y su historial sigue ahí con su nombre (apartado 37). */
+console.log('\n── FIT F35 · Calidad y validación del catálogo ──');
+
+const fitnessDeAntes_fit35 = almacen.fitness;
+const avisos_fit35 = [];
+const erroresCatalogo_fit35 = [];
+const oyente_fit35 = (m) => {
+  if (m.type() === 'warning' && /Catálogo de ejercicios/.test(m.text())) avisos_fit35.push(m.text());
+  if (m.type() === 'error' && /catálogo de ejercicios/i.test(m.text())) erroresCatalogo_fit35.push(m.text());
+};
+page.on('console', oyente_fit35);
+const archivado_fit35 = {
+  id: 'mi-archivado-f35', nombre: 'Curl viejo F35', archivado: true, entornos: ['gym'], equipamiento: ['mancuernas'],
+  dificultad: 'principiante', tipos: ['aislamiento'], medidas: ['reps', 'peso'], patron: 'flexion-codo',
+  musculos: [{ subgrupoId: 'biceps', porcentaje: 100, papel: 'principal' }],
+};
+const sesion_fit35 = sesion_fit34('f35-a', 3, [serie_fit34('f35-a1', 10, 12), serie_fit34('f35-a2', 9, 12)]);
+sesion_fit35.nombre = 'Brazo F35';
+sesion_fit35.origen.ejercicios[0].exerciseId = 'mi-archivado-f35';
+almacen.fitness = {
+  ...(fitnessDeAntes_fit35 || {}),
+  ejercicios: [archivado_fit35],
+  sesiones: [sesion_fit35],
+  objetivos: [],
+  favoritosEjercicios: [],
+  planActivo: null,
+};
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+/* 1 · AL ARRANCAR EN DESARROLLO (apartado 25). */
+ok(avisos_fit35.some((t) => /Catálogo de ejercicios: 100 · 0 errores/.test(t)),
+  `🚨 FIT F35 — al arrancar en desarrollo se valida el catálogo: «${(avisos_fit35[0] || '').split('\n')[0]}» (apartado 25)`);
+ok(erroresCatalogo_fit35.length === 0, '…y ni un error de catálogo en la consola');
+
+/* 2 · EL DIAGNÓSTICO, SOLO EN DESARROLLO (apartados 29-31). */
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F35 — se entra en Fitness');
+ok(await pulsar('Abrir Ejercicios'), '…y en Ejercicios');
+ok(await esperarCampo('Buscar un ejercicio'), '…con su buscador');
+const entrada_fit35 = 'Diagnóstico del catálogo (solo en desarrollo)';
+ok(await page.evaluate((l) => !!document.querySelector(`button[aria-label="${l}"]`), entrada_fit35),
+  '🚨 FIT F35 — en desarrollo, la biblioteca lleva el diagnóstico del catálogo (apartado 29)');
+const escrituras_fit35 = guardado.length;
+ok(await pulsar(entrada_fit35), '…y se abre');
+await page.waitForTimeout(400);
+const diag_fit35 = await page.evaluate(() => document.querySelector('[role="region"][aria-label="Diagnóstico del catálogo"]')?.innerText || '');
+ok(/Ejercicios totales\s*100/.test(diag_fit35), `…con los cien ejercicios del catálogo`);
+ok(/Errores\s*0/.test(diag_fit35), '🚨 …y cero errores');
+ok(/Gimnasio\s*\d+/.test(diag_fit35) && /Calistenia\s*\d+/.test(diag_fit35) && /Casa\s*\d+/.test(diag_fit35),
+  '…contados por entorno (apartado 30)');
+ok(/Principiante\s*\d+/.test(diag_fit35) && /Experto\s*\d+/.test(diag_fit35), '…por dificultad');
+ok(/Cuello\s*3/.test(diag_fit35), '🚨 …y la cobertura: «Cuello 3», el ejemplo del apartado 31');
+ok(/Sin imagen\s*100/.test(diag_fit35) && /Contenido incompleto\s*\d+/.test(diag_fit35),
+  '…y lo que falta, dicho: sin imagen y contenido incompleto (apartado 32)');
+ok(guardado.length === escrituras_fit35, '…y mirar el diagnóstico no guarda nada');
+
+/* 3 · UN ARCHIVADO NO SE PROPONE… (apartado 37). */
+ok(await escribir_fit34('curl viejo'), 'FIT F35 — se busca «curl viejo», que está archivado');
+await page.waitForTimeout(500);
+const busca_fit35 = await cuenta_fit34();
+ok(busca_fit35 && busca_fit35.visibles === 0 && busca_fit35.total === 100,
+  `🚨 FIT F35 — un ejercicio ARCHIVADO no sale al buscar (${busca_fit35?.visibles} de ${busca_fit35?.total})`);
+ok(!(await page.evaluate((l) => !!document.querySelector(`button[aria-label="${l}"]`), entrada_fit35)),
+  '…y mientras se busca, el diagnóstico no estorba');
+ok(await escribir_fit34(''), '…se limpia la búsqueda');
+await page.waitForTimeout(300);
+
+/* 4 · …PERO SU HISTORIAL SIGUE AHÍ, CON SU NOMBRE. */
+ok(await pulsar('Volver a Fitness'), 'FIT F35 — se vuelve a Fitness');
+ok(await pulsar('Progreso'), '…a Progreso');
+ok(await pulsar('Ejercicios'), '…y a sus ejercicios');
+await page.waitForTimeout(500);
+ok(await pulsarQueEmpiece_fit10('Ver el progreso de Curl viejo F35'),
+  '🚨 FIT F35 — el archivado sigue en el historial, con SU NOMBRE (no su id)');
+const det_fit35 = await esperarTexto(/Curl viejo F35/);
+ok(/Ejercicio archivado/i.test(det_fit35) && /ya no se propone/i.test(det_fit35),
+  '…marcado «Ejercicio archivado», diciendo que ya no se propone y que lo suyo sigue aquí');
+ok(/Historial · 1 sesi[oó]n/i.test(det_fit35), '…con su sesión intacta');
+
+page.off('console', oyente_fit35);
+almacen.fitness = fitnessDeAntes_fit35;
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

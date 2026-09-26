@@ -89,6 +89,9 @@ export function periodoPorDefecto(apariciones, { hoy = todayISO() } = {}) {
 
 export const EJERCICIO_ARCHIVADO = 'Ejercicio archivado';
 export const TEXTO_ARCHIVADO = 'Este ejercicio ya no está en el catálogo, pero tus entrenamientos siguen aquí.';
+/* 🔓 FIT F35, apartado 37 — el otro archivado: sigue en el catálogo con su
+   nombre, marcado `archivado: true`, pero ya no se propone. */
+export const TEXTO_ARCHIVADO_EN_CATALOGO = 'Este ejercicio está archivado: ya no se propone para entrenamientos nuevos, pero tus entrenamientos siguen aquí.';
 
 /**
  * *"DOMINADAS / Agarre pronado · Peso corporal / Espalda"* (apartado 2).
@@ -136,17 +139,20 @@ export function cabeceraDeEjercicio(exerciseId, { propios = [], apariciones = []
     elAgarre ? `Agarre ${elAgarre.nombre.toLowerCase()}` : '',
     elEquipo.map((e) => e.nombre).join(', '),
   ].filter(Boolean);
+  /* 🔓 FIT F35 — uno archivado en el catálogo conserva su nombre de verdad:
+     es justo lo que el apartado 28 de la F29 pedía y la C-36 no podía dar. */
+  const archivado = ej.archivado === true;
   return {
     exerciseId: id,
     existe: true,
-    archivado: false,
+    archivado,
     nombre: nombreCompleto(ej),
     variante: texto(ej.variante),
     linea: trozos.join(' · '),
     grupo: principal ? principal.grupo : '',
     grupoId: principal ? principal.grupoId : null,
-    aviso: '',
-    avisoTexto: '',
+    aviso: archivado ? EJERCICIO_ARCHIVADO : '',
+    avisoTexto: archivado ? TEXTO_ARCHIVADO_EN_CATALOGO : '',
   };
 }
 
@@ -455,7 +461,7 @@ export function detalleCompletoDeEjercicio(fitness, exerciseId, {
     const p = progresoDeEjercicio(fitness, id, { propios });
     const grafica = graficaDeProgreso(p, { rango: elegido, hoy, clase });
     const metricas = metricasDisponibles(apariciones);
-    const estado = estadoDelDetalle(apariciones.length, { archivado: !cabecera.existe && apariciones.length > 0 });
+    const estado = estadoDelDetalle(apariciones.length, { archivado: cabecera.archivado && apariciones.length > 0 });
     return {
       error: null,
       exerciseId: id,

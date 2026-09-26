@@ -117,6 +117,13 @@ export const EQUIPAMIENTO = [
      puede hacer sin nada más. */
   { id: 'ninguno', nombre: 'Nada', casero: true, sinMaterial: true, sinonimos: ['peso corporal'] },
   { id: 'suelo', nombre: 'Suelo', casero: true, sinMaterial: true, sinonimos: ['peso corporal'] },
+  /* 🐛 FIT F35 — nueve ejercicios del catálogo (plancha, crunch, puente de
+     glúteo, los tres de cuello…) declaraban `esterilla` desde la F2, y como no
+     estaba en esta lista `crearEjercicioCompleto` la **tiraba en silencio**. Lo
+     cazó la validación del catálogo en bruto. Es una superficie, como el suelo:
+     `sinMaterial`, porque una plancha se hace sin ella —y así no aparece un «No
+     tengo esterilla» que no cambiaría nada (regla 8)—. */
+  { id: 'esterilla', nombre: 'Esterilla', casero: true, sinMaterial: true, sinonimos: ['colchoneta'] },
   { id: 'barra', nombre: 'Barra', casero: false, grupo: 'carga-libre' },
   /* ⚠️ Los discos NO son del grupo de la barra: la acompañan, no la sustituyen.
      Con ellos dentro, «no tengo barra» dejaba el press de banca disponible
@@ -335,13 +342,40 @@ export function normalizarImplicacionCompleta(musculos) {
     .filter((m) => m.subgrupoId && subgrupoMuscular(m.subgrupoId));
 }
 
+/** 🔓 FIT F35, apartado 35 — los tipos del `Exercise`, en JSDoc. El proyecto es
+   JavaScript: migrarlo a TypeScript sería el «sobreingenierizar» de su
+   apartado 40. Así el editor ya avisa de un campo mal escrito, sin cambiar la
+   compilación, y los valores permitidos salen de las listas de arriba —que son
+   las que `validateExerciseCatalog` (validacionCatalogo.js) comprueba—.
+
+   @typedef {'gym' | 'calistenia' | 'casa'} EntornoId
+   @typedef {'principiante' | 'intermedio' | 'avanzado' | 'experto'} DificultadId
+   @typedef {'compuesto' | 'aislamiento' | 'fuerza' | 'hipertrofia' | 'isometrico' | 'explosivo' | 'movilidad' | 'habilidad'} TipoId
+   @typedef {'principal' | 'secundario' | 'estabilizador'} PapelId
+   @typedef {'reps' | 'peso' | 'tiempo' | 'distancia'} MedidaId
+   @typedef {{ subgrupoId: string, porcentaje: number, papel: PapelId }} ImplicacionMuscular
+   @typedef {{
+     id: string, nombre: string, nombreCorto: string, nombreTecnico: string,
+     descripcion: string, categoria: string, variante: string, base: string | null,
+     entornos: EntornoId[], equipamiento: string[], dificultad: DificultadId,
+     tipos: TipoId[], musculos: ImplicacionMuscular[], agarre: string | null,
+     medidas: MedidaId[], explosivo: boolean, patron: string | null,
+     unilateral: boolean, archivado: boolean, progresiones: string[],
+     sustitutos: string[], variantes: string[],
+     tutorial: { video: string | null, animacion: string | null, notas: string },
+     instrucciones: { preparacion: string, ejecucion: string, respiracion: string, errores: string[], consejos: string[] },
+     recursos: { thumbnail: string | null, ilustracion: string | null, anatomia: string | null },
+   }} Exercise
+*/
+
+/** @returns {Exercise} */
 export function crearEjercicioCompleto({
   id = null, nombre = '', nombreCorto = '', descripcion = '', categoria = '', variante = '',
   base = null, entornos = [], entorno: entornoViejo = '', equipamiento = [],
   dificultad: dif = 'principiante', tipos = [], musculos = [], agarre: ag = null,
   medidas = ['reps'], explosivo = false, progresiones = [], sustitutos = [], variantes = [],
   tutorial = null, instrucciones = null, recursos = null, nombreTecnico = '',
-  patron = null, unilateral = false,
+  patron = null, unilateral = false, archivado = false,
 } = {}) {
   return {
     id: texto(id) || ranura(nombre) || uid(),
@@ -377,6 +411,11 @@ export function crearEjercicioCompleto({
        sin patrón se compara por sus músculos, que es menos y es verdad. */
     patron: patronMovimiento(texto(patron)) ? texto(patron) : null,
     unilateral: unilateral === true,
+    /* 🔓 FIT F35, apartado 37 — un ejercicio **archivado** sigue en el
+       catálogo para que el histórico lo lea con su nombre, pero no sale en la
+       biblioteca, ni en las búsquedas, ni se propone como sustituto. Solo
+       `true` lo archiva: sin el campo, lo guardado antes sigue activo. */
+    archivado: archivado === true,
     progresiones: lista(progresiones).map(texto).filter(Boolean),
     sustitutos: lista(sustitutos).map(texto).filter(Boolean),
     variantes: lista(variantes).map(texto).filter(Boolean),
@@ -439,9 +478,36 @@ export function ejercicioPorId(id, propios = []) {
     || null;
 }
 
-/** Todo el catálogo más lo que se haya creado Josué (la F1 dejó la lista). */
+/** Todo el catálogo más lo que se haya creado Josué (la F1 dejó la lista).
+ *  🔓 FIT F35, apartado 37 — **sin los archivados**: esta es la lista de lo que
+ *  se puede elegir (biblioteca, sustitutos, ejercicios de un músculo…). Un
+ *  archivado se sigue encontrando por su id con `ejercicioPorId`, que es lo que
+ *  usa el histórico. */
 export function todosLosEjercicios(propios = []) {
-  return [...CATALOGO_EJERCICIOS, ...lista(propios).map(normalizarEjercicioCompleto).filter(Boolean)];
+  return [...CATALOGO_EJERCICIOS, ...lista(propios).map(normalizarEjercicioCompleto).filter(Boolean)]
+    .filter((e) => e.archivado !== true);
+}
+
+/** 🔓 FIT F35, apartado 37 — lo que se LEE, no lo que se elige.
+ *
+ *  Un archivado *"desaparece de nuevas búsquedas, permanece en históricos,
+ *  mantiene progreso y mantiene rangos"* (lo repite la F36, apartado 41).
+ *  `todosLosEjercicios` es la lista de lo elegible, y dos pantallas de LECTURA
+ *  la usaban para recorrer el catálogo —la contribución a un músculo (F21) y el
+ *  «X de Y» de Rangos (F16)—, así que al archivar un ejercicio con rango
+ *  **salía del reparto de su músculo** mientras seguía contando en el rango de
+ *  ese músculo: dos pantallas diciendo cosas distintas del mismo dato.
+ *
+ *  Esto es lo elegible **más los archivados que se piden por id**: los que
+ *  tienen historia. Un archivado sin nada registrado sigue fuera. */
+export function ejerciciosParaLeer(propios = [], conHistoria = []) {
+  const activos = todosLosEjercicios(propios);
+  const vistos = new Set(activos.map((e) => e.id));
+  const archivados = [...new Set(lista(conHistoria).map(texto).filter(Boolean))]
+    .filter((id) => !vistos.has(id))
+    .map((id) => ejercicioPorId(id, propios))
+    .filter(Boolean);
+  return [...activos, ...archivados];
 }
 
 /** Qué músculos trabaja, con su nombre y su grupo ya resueltos. */

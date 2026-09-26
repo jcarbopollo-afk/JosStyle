@@ -1,5 +1,5 @@
 import {
-  ejercicioPorId, todosLosEjercicios, CATALOGO_EJERCICIOS, musculoPrincipal, baseDe,
+  ejercicioPorId, CATALOGO_EJERCICIOS, normalizarEjercicioCompleto, musculoPrincipal, baseDe,
   variantesDe, nombreCompleto, ranura, materialDe, sinMaterial,
   ENTORNOS, EQUIPAMIENTO, DIFICULTADES, TIPOS_EJERCICIO,
   PATRONES_MOVIMIENTO, FAMILIAS_PATRON, patronMovimiento, familiaPatron,
@@ -670,11 +670,17 @@ function construirIndice(ejercicios) {
   return { porPatron, porFamilia, porSubgrupo, total: ejercicios.length };
 }
 
+/* 🔓 FIT F35, apartado 37 — un ejercicio archivado no se propone: sale de los
+   dos índices. ⚠️ Y los propios se sacan de SU lista, no recortando
+   `todosLosEjercicios` por la longitud del catálogo: sin los archivados, ese
+   corte se habría desplazado y un ejercicio del catálogo habría entrado como
+   propio (o uno propio se habría quedado fuera). */
+const activo = (e) => e && e.archivado !== true;
 export function indiceDeSustitucion(propios = []) {
-  if (!indiceCatalogo) indiceCatalogo = construirIndice(CATALOGO_EJERCICIOS);
+  if (!indiceCatalogo) indiceCatalogo = construirIndice(CATALOGO_EJERCICIOS.filter(activo));
   const l = lista(propios);
   if (!l.length) return { catalogo: indiceCatalogo, propios: null };
-  if (!indicesPropios.has(l)) indicesPropios.set(l, construirIndice(todosLosEjercicios(l).slice(CATALOGO_EJERCICIOS.length)));
+  if (!indicesPropios.has(l)) indicesPropios.set(l, construirIndice(l.map(normalizarEjercicioCompleto).filter(activo)));
   return { catalogo: indiceCatalogo, propios: indicesPropios.get(l) };
 }
 
@@ -696,7 +702,7 @@ function candidatosDe(original, propios = []) {
   const raiz = raizDe(original, propios);
   if (raiz) variantesDe(raiz, propios).forEach((v) => ids.add(v.id));
   ids.delete(original?.id);
-  return [...ids].map((id) => ejercicioPorId(id, propios)).filter(Boolean);
+  return [...ids].map((id) => ejercicioPorId(id, propios)).filter(activo);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

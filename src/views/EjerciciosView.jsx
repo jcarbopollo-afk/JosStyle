@@ -38,6 +38,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Search, X, Plus } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
+import { CatalogDiagnosticsEntry } from '../components/diagnosticoCatalogo';
 import { Card, SectionTitle, GhostBtn, EmptyHint } from '../components/ui';
 import {
   ExerciseSearchBar, ExerciseFilters, ExerciseGrid, ExerciseCard, ExerciseHeader, ExerciseMuscleBreakdown,
@@ -181,6 +182,9 @@ export default function EjerciciosView({
      favoritos y lo personal de la ficha; cada acción, solo si llega su función. */
   fitness = null, perfil = null, onGuardarFitness = null, onAbrirConstructor = null,
   onVerProgreso = null, onVerObjetivo = null, onCrearObjetivo = null, onClasificar = null,
+  /* 🔓 FIT F35, apartado 29 — el diagnóstico del catálogo. Lo decide quien
+     monta la biblioteca con `esDesarrollo()`: en producción no llega. */
+  diagnostico = false,
 }) {
   const [consulta, setConsulta] = useState('');
   const [filtros, setFiltros] = useState({});
@@ -324,6 +328,8 @@ export default function EjerciciosView({
           onMas={() => setVisibles((v) => v + POR_PAGINA_BIBLIOTECA)}
         />
       )}
+
+      {diagnostico && !onElegir && !buscando && <CatalogDiagnosticsEntry accent={accent} />}
     </div>
   );
 }
