@@ -8248,10 +8248,22 @@ ok(!/\b[0-9]{3}\b\s*puntos|score/i.test(estimado_fit17),
 ok(/se actualizará con tus entrenamientos/i.test(estimado_fit17),
   '⚠️ …diciendo que los entrenamientos lo van a sustituir (apartado 8)');
 
-const guardadoClas_fit17 = (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.clasificaciones || []);
+/* 🐛 FIT F31 — **LA ESCRITURA LLEGA POR LA RED, Y LA RED ES ASÍNCRONA.** La
+   tarjeta del nivel se pinta en el mismo toque que `saveData` sale, pero el
+   `POST` pasa por el cliente de Supabase y por la ruta simulada antes de caer
+   en `guardado`. Leerlo en el instante en que aparece «Nivel estimado» era una
+   carrera: en una máquina cargada salió **rojo con la aplicación bien**, y el
+   `[0].confianza` de debajo **tumbó el recorrido entero** con un `TypeError`
+   —ninguna sección de después llegó a ejecutarse—. Se espera a que la
+   escritura aparezca, con un tope (EH F51: esperar a que algo aparezca, nunca
+   milisegundos fijos); si de verdad no se guarda, sigue saliendo rojo. */
+const clasificacionesGuardadas_fit17 = () => (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.clasificaciones || []);
+const topeEscritura_fit17 = Date.now() + 8000;
+while (!clasificacionesGuardadas_fit17().length && Date.now() < topeEscritura_fit17) await page.waitForTimeout(100);
+const guardadoClas_fit17 = clasificacionesGuardadas_fit17();
 ok(guardadoClas_fit17.length === 1 && guardadoClas_fit17[0].fuente === 'cuestionario',
-  '🚨 FIT F17 — la respuesta YA está guardada al contestarla (apartado 24)');
-ok(guardadoClas_fit17[0].confianza !== 'alta',
+  `🚨 FIT F17 — la respuesta YA está guardada al contestarla (apartado 24) — ${guardadoClas_fit17.length} guardada(s)`);
+ok(!!guardadoClas_fit17[0] && guardadoClas_fit17[0].confianza !== 'alta',
   '⚠️ …con confianza baja o media, nunca alta (apartado 28)');
 
 /* Apartados 9 y 23 — salir a mitad y volver: no se pierde nada. */
