@@ -82,7 +82,11 @@ un campo mal escrito sin cambiar la compilación.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde. **128 comprobaciones nuevas** en
+`scripts/test-validacion-catalogo.mjs` —las 36 reglas saltan con su caso, el plugin del build se
+prueba con un catálogo roto y la corrección de los archivados se pone roja sin su arreglo—. Cifras de
+la pasada verde (`═══ TODO CORRECTO ═══`): **20 926** de Node en **195 suites** (+128), **3640** de
+renderizado (+16), **11** invariantes y **2619** en Chromium (+24) — **27 196**.
 
 ## v3.116.0 — FIT F34/45: la biblioteca y el detalle avanzado de ejercicios
 
