@@ -72,7 +72,14 @@ ejercicio** (apartado 30).
 del 39 (medianoche, cambio de mes, de año y de semana) y los cuatro arreglos, cada uno con su
 comprobación de que el arreglo se nota—, **76 casos de renderizado** nuevos y una sección nueva
 del recorrido en Chromium que **calcula cada etiqueta esperada** a partir de lo que siembra: no
-depende del día de la semana en que se ejecute.
+depende del día de la semana en que se ejecute. Cifras de la pasada verde: **20 384** de Node en
+**191 suites**, **3396** de renderizado, **11** invariantes y **2444** en Chromium — **26 235**.
+
+⚠️ La pasada completa tuvo **dos rojos del recorrido que no eran de la aplicación**, y se
+arreglaron en la prueba: la comprobación de la F17 leía lo guardado **antes** de que llegara la
+escritura (ahora espera a que llegue), y la de la F28 prohibía «esta semana» **en toda la
+página**, donde la F31 puso con todo el derecho su bloque «Esta semana» (ahora mide la cifra de su
+línea de periodo, con una comprobación de que sigue cazando «3 esta semana»).
 
 ## v3.112.0 — FIT F30/45: el sistema avanzado de objetivos fitness
 
