@@ -31,6 +31,7 @@
    =========================================================================== */
 
 import React, { useState, useMemo } from 'react';
+import { useScrollAlVolver } from '../components/scrollAlVolver';
 import { ArrowLeft, Search, Star, Check, Copy, SlidersHorizontal, X } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
@@ -44,6 +45,7 @@ import {
   planActivoDe, esFavorito,
   ESTADO_SIN_RESULTADOS, ESTADO_SIN_FAVORITOS, ESTADO_ERROR_PLANES,
 } from '../lib/planes';
+import { PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
 
 /* Los tres filtros de detalle del apartado 7 que no son la barra de categorías.
    ⚠️ Es una lista, no tres bloques de JSX repetidos: así el día que haya un
@@ -411,6 +413,8 @@ export default function BibliotecaPlanesView({
   const [soloGuardados, setSoloGuardados] = useState(false);
   const [abierto, setAbierto] = useState(null);
   const [cambiando, setCambiando] = useState(null);
+  /* 🔓 FIT F38, apartado 32 — plan → volver: la biblioteca, donde estaba. */
+  useScrollAlVolver(abierto);
 
   const activoId = planActivoDe(fitness)?.planId || null;
 
@@ -498,6 +502,7 @@ export default function BibliotecaPlanesView({
             onChange={(ev) => setConsulta(ev.target.value)}
             placeholder="Buscar un plan"
             aria-label="Buscar un plan"
+            {...PROPS_CAMPO_BUSQUEDA}
           />
         </div>
         <GhostBtn icon={verFiltros ? X : SlidersHorizontal} onClick={() => setVerFiltros((v) => !v)}>

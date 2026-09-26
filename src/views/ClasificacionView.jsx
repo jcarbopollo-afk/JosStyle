@@ -166,7 +166,7 @@ export function ClassificationExitDialog({ accent, onSeguir, onSalir }) {
       aria-label="Salir de la clasificación"
     >
       <div
-        className="w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra"
+        className="w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra hoja-movil"
         style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >
@@ -202,7 +202,7 @@ export function AvisoReclasificar({ accent, onConfirmar, onCancelar, aviso = nul
       aria-label="Reclasificar ejercicio"
     >
       <div
-        className="w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra"
+        className="w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra hoja-movil"
         style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >

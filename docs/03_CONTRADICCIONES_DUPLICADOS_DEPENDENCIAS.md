@@ -577,6 +577,12 @@ el zoom del que se quería escapar.
 ⚠️ **Y esto no se puede comprobar desde aquí**: el recorrido corre en Chromium, que no hace ese zoom.
 Es R1 puro.
 
+🔓 **La FIT F38 (v3.120.0) cayó encima —sus apartados 8, 9, 26 y 27— y no hizo falta tocarla.** Los
+campos que más se usan con el dedo, los del **entrenamiento en vivo**, **ya van a 16 px** (el
+recorrido lo mide) y no hacen zoom; lo que añadió la fase son las props de teclado (sin
+autocorrector ni autocompletado y con la tecla de Intro que toca), que no cambian el aspecto. Subir
+el resto de formularios sigue siendo **su** decisión, y está declarado en `NO_EN_FIT38`.
+
 ---
 
 ### C-33 — 🔓 RESUELTA POR JOSUÉ (FIT F1, v3.83.0) · Los diez rangos de Fitness contra D2-02

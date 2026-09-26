@@ -75,6 +75,7 @@ import { GoalLiveHint } from '../components/objetivosFitness';
 import { pasarAFinalizacion } from '../lib/finalizacion';
 /* 🚨 Se EMITE al bus; ninguna pantalla reproduce ni vibra por su cuenta (SO F1). */
 import { emitir } from '../lib/eventos';
+import { PROPS_CAMPO_NUMERICO } from '../lib/movilFitness';
 
 /* ⚠️ Cada cuánto se redibuja el reloj. **Solo redibuja**: la cuenta la lleva
    `duracionSesion()` restando marcas de tiempo (E3 F25). */
@@ -279,6 +280,7 @@ function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal: conDe
     <input
       type="text"
       inputMode={conDecimal ? 'decimal' : 'numeric'}
+      {...PROPS_CAMPO_NUMERICO}
       value={texto}
       aria-label={etiqueta}
       placeholder={placeholder}
@@ -602,6 +604,7 @@ function PanelDescanso({ ejercicio, sesion, accent, onGuardar, onEmpezar, onCerr
         <input
           type="text"
           inputMode="numeric"
+          {...PROPS_CAMPO_NUMERICO}
           value={propio}
           onChange={(ev) => setPropio(ev.target.value)}
           onKeyDown={(ev) => { if (ev.key === 'Enter') { usarPropio(); ev.currentTarget.blur(); } }}
@@ -738,6 +741,10 @@ export default function EntrenamientoVivoView({
   /* 🔓 FIT F33, apartado 21 — las dos opciones del objetivo que escriben. Sin
      ellas solo se ofrece «Mantener», que es lo que pasa por defecto. */
   onCancelarObjetivo = null, onCrearObjetivo = null,
+  /* 🔓 FIT F38, apartado 12 — «Última vez: 20 kg × 10», también como FUNCIÓN
+     por lo mismo que el objetivo: el ejercicio cambia dentro de esta pantalla
+     y quien tiene el historial es Fitness. */
+  ultimaVezDe = null,
 }) {
   /* Qué panel está abierto: estado de la pantalla, jamás un dato (EH F40). */
   const [panel, setPanel] = useState(null); // 'tutorial' | 'reemplazar' | 'notas' | 'descanso'
@@ -759,6 +766,10 @@ export default function EntrenamientoVivoView({
   const objetivoVivo = useMemo(
     () => (objetivoActivoDe && ejercicio ? objetivoActivoDe(ejercicio.exerciseId) : null),
     [objetivoActivoDe, ejercicio],
+  );
+  const ultima = useMemo(
+    () => (ultimaVezDe && ejercicio ? ultimaVezDe(ejercicio.exerciseId) : null),
+    [ultimaVezDe, ejercicio],
   );
   const filas = useMemo(() => filasDeSeries(ejercicio), [ejercicio]);
   const activaId = useMemo(() => serieActiva(ejercicio), [ejercicio]);
@@ -1023,6 +1034,14 @@ export default function EntrenamientoVivoView({
                     Es solo texto: ni un botón, ni una serie sugerida. */}
                 {objetivoVivo && (
                   <div className="mt-2"><GoalLiveHint enVivo={objetivoVivo} accent={accent} /></div>
+                )}
+                {/* 🔓 FIT F38, apartado 12 — *"solo como referencia. No
+                    introducir automáticamente un dato como realizado"*: es
+                    texto, y la tabla de series no se entera. */}
+                {ultima && (
+                  <p className="text-[11px] mt-1.5 tabular-nums" style={{ color: COLORS.textMuted }}>
+                    {ultima.texto}{ultima.cuando ? ` · ${ultima.cuando}` : ''}
+                  </p>
                 )}
                 {!ficha.existe && (
                   <p className="text-[11px] mt-1" style={{ color: COLORS.negative }}>

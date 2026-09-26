@@ -35,6 +35,7 @@
    =========================================================================== */
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { useScrollAlVolver } from '../components/scrollAlVolver';
 import { ArrowLeft, Search, X, Plus } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
@@ -196,6 +197,8 @@ export default function EjerciciosView({
   const [abierto, setAbierto] = useState(null);
   const [verFiltros, setVerFiltros] = useState(false);
   const [visibles, setVisibles] = useState(POR_PAGINA_BIBLIOTECA);
+  /* 🔓 FIT F38, apartado 32 — ficha → volver: la lista, donde estaba. */
+  useScrollAlVolver(abierto);
 
   const q = useMemo(() => consultarBiblioteca({ consulta, filtros, propios }), [consulta, filtros, propios]);
   const opciones = useMemo(() => opcionesDeFiltroBiblioteca(q.cuenta), [q.cuenta]);

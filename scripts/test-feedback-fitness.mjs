@@ -246,8 +246,10 @@ ok(velos.length >= 7 && sinEntrada.length === 0,
 ok(velosEn({ x: '<div className="fixed inset-0 z-50">' }).filter(([, c]) => !/fondo-entra/.test(c)).length === 1
   && velosEn({ x: '/* className="fixed inset-0" */' }).length === 0,
   '…y el barrido caza un velo sin entrada y no se confunde con un comentario');
-ok(/max-h-\[85vh\] overflow-y-auto hoja-entra/.test(leer('src/components/historialRango.jsx'))
-  && /space-y-4 overflow-y-auto hoja-entra/.test(leer('src/components/explicacionRango.jsx')),
+/* ⚠️ FIT F38 — su tope de altura pasó a `hoja-movil`; lo que se mira aquí es
+   que sigan entrando. */
+ok(/space-y-4 hoja-entra hoja-movil/.test(leer('src/components/historialRango.jsx'))
+  && /space-y-4 hoja-entra hoja-movil/.test(leer('src/components/explicacionRango.jsx')),
   '🐛 …incluidas las dos hojas de Rangos que se habían quedado sin ella');
 const cla = leer('src/views/ClasificacionView.jsx');
 ok(/<Card className="fit-entra">/.test(cla) && /key=\{`\$\{actual\.id\}-\$\{pregunta \? pregunta\.id : ""\}`\}/.test(cla),

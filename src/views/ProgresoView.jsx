@@ -15,6 +15,7 @@
    =========================================================================== */
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { useScrollAlVolver } from '../components/scrollAlVolver';
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search, Dumbbell, Camera, Play, X,
 } from 'lucide-react';
@@ -66,6 +67,7 @@ import {
 } from '../lib/objetivosFitness';
 /* Apartado 26 — el historial de rango es el de la FIT F22, no uno nuevo. */
 import { RankHistory } from '../components/historialRango';
+import { PROPS_CAMPO_NUMERICO, PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
 
 /* Las secciones de Progreso (apartado 2). */
 export const SECCIONES_PROGRESO = [
@@ -718,6 +720,7 @@ export function FormularioObjetivo({ inicial = null, ejercicio, accent, onElegir
             <input
               type="text"
               inputMode={t && t.decimales ? 'decimal' : 'numeric'}
+              {...PROPS_CAMPO_NUMERICO}
               value={valor}
               onChange={(ev) => { setValor(ev.target.value); setMotivo(''); }}
               placeholder={t && t.id === 'peso' ? '100' : t && t.id === 'duracion' ? '60' : '15'}
@@ -1017,6 +1020,10 @@ export default function ProgresoView({
   const f = fitness || {};
   const propios = f.ejercicios || [];
   const hoy = todayISO();
+  /* 🔓 FIT F38, apartado 32 — cualquier detalle de Progreso → volver: la
+     sección, donde estaba. La clave es QUÉ está abierto, así que pasar de un
+     detalle a otro también empieza arriba. */
+  useScrollAlVolver(abierto || vista || formulario || objetivoAbierto || musculo);
 
   /* 🚨 Apartado 32 — las tarjetas, una vez por cambio en las sesiones. */
   const tarjetas = useMemo(() => tarjetasDeProgreso(f, { propios }),
@@ -1360,6 +1367,7 @@ export default function ProgresoView({
                 onChange={(ev) => setBusqueda(ev.target.value)}
                 placeholder="Buscar ejercicio"
                 aria-label="Buscar ejercicio en tu progreso"
+                {...PROPS_CAMPO_BUSQUEDA}
                 className="flex-1 min-w-0 bg-transparent outline-none text-base"
                 style={{ color: COLORS.text }}
               />

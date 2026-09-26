@@ -74,7 +74,7 @@ export function ProgressPhotoDateSelector({ opciones = [], elegida, urls = {}, e
               style={{ border: `2px solid ${puesta ? COLORS.text : COLORS.border}`, width: 64 }}
             >
               {urls[o.id]
-                ? <img src={urls[o.id]} alt="" className="w-16 h-16 object-cover" />
+                ? <img src={urls[o.id]} alt="" loading="lazy" decoding="async" className="w-16 h-16 object-cover" />
                 : <div className="w-16 h-16 esqueleto" />}
               <span className="block text-[9px] py-1" style={{ color: COLORS.textMuted }}>{o.etiqueta}</span>
             </button>

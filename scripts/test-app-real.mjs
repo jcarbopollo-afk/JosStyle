@@ -10458,6 +10458,164 @@ await page.emulateMedia({ reducedMotion: null });
 almacen.fitness = fitnessDeAntes_fit37;
 almacen.salud = saludDeAntes_fit37;
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F38 — UX móvil extrema y optimización para iPhone (Entrega 4 · 38/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   · «Última vez: 20 kg × 10» en el entrenamiento en vivo, sin rellenar nada
+     (apartado 12), y sus campos sin autocorrector y a 16 px (8, 27 y 28).
+   · Ficha → volver: la biblioteca, donde estaba (32).
+   · En un iPhone pequeño, la hoja de un rango cabe y hace scroll (22 y 23).
+   · Y cinco pantallas de Fitness en siete tamaños, del iPhone pequeño al
+     escritorio y en horizontal, sin salirse de lado (29 y 51). */
+console.log('\n── FIT F38 · UX móvil e iPhone ──');
+
+const fitnessDeAntes_fit38 = almacen.fitness;
+const saludDeAntes_fit38 = almacen.salud;
+almacen.salud = { ...(saludDeAntes_fit38 || {}), medidas: [{ id: 'm-f38', fecha: hoy_fit31, peso: 70 }] };
+const previa_fit38 = { ...sesion_fit34('f38-a', 3, [serie_fit34('f38-a1', 10, 20), serie_fit34('f38-a2', 8, 20)]), nombre: 'Pecho F38' };
+const plantilla_fit38 = {
+  id: 'pl-f38', nombre: 'Móvil F38', descripcion: '', entorno: 'gym', duracion: 20,
+  ejercicios: [lineaPl_fit33('pl-f38-l1', 'press-banca-barra', { repeticiones: 10, peso: 20 })],
+  meta: { entornos: ['gym'], bloques: [] }, creadoEn: hoy_fit31, editadoEn: hoy_fit31,
+};
+almacen.fitness = {
+  ...(fitnessDeAntes_fit38 || {}),
+  sesiones: [previa_fit38], plantillas: [plantilla_fit38], objetivos: [],
+  favoritosEjercicios: [], planActivo: null, planesAnteriores: [], ejercicios: [],
+};
+await page.setViewportSize({ width: 375, height: 812 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+/* 1 · «ÚLTIMA VEZ» Y LOS CAMPOS (apartados 8, 12, 27 y 28). */
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F38 — se entra en Fitness');
+ok(await pulsar('Ver Móvil F38'), '…a «Tus plantillas»');
+await page.waitForTimeout(400);
+ok(await pulsar('Ver Móvil F38') && /Empezar entrenamiento/i.test(await esperarTexto(/Empezar entrenamiento/i)), '…a la plantilla «Móvil F38»');
+ok(await pulsar('Empezar entrenamiento'), '…y se empieza');
+const vivo_fit38 = await esperarTexto(/Última vez/);
+ok(/Última vez: 20 kg × 10/.test(vivo_fit38),
+  '🔓 FIT F38 — el entrenamiento en vivo dice «Última vez: 20 kg × 10», la mejor serie de la vez anterior (apartado 12)');
+await page.waitForTimeout(500);
+const serie_fit38 = () => ((((ultimo_fit34().sesiones || []).find((x) => x && x.estado === 'en_curso') || {}).origen || {}).ejercicios || [])[0]?.series || [];
+ok(serie_fit38().length > 0 && serie_fit38().every((x) => x.estado === 'pendiente' && (x.hecho?.reps ?? null) === null && (x.hecho?.peso ?? null) === null),
+  '🚨 …y es SOLO una referencia: ninguna serie sale marcada ni rellena (apartado 12, literal)');
+const campos_fit38 = await page.evaluate(() => [...document.querySelectorAll('input[inputmode="decimal"], input[inputmode="numeric"]')]
+  .map((i) => ({ corrige: i.getAttribute('autocorrect'), completa: i.getAttribute('autocomplete'), ortografia: i.getAttribute('spellcheck'), intro: i.getAttribute('enterkeyhint'), letra: parseFloat(getComputedStyle(i).fontSize) })));
+ok(campos_fit38.length >= 2 && campos_fit38.every((c) => c.corrige === 'off' && c.completa === 'off' && c.ortografia === 'false' && c.intro === 'done'),
+  `🔓 FIT F38 — los ${campos_fit38.length} campos de número, sin autocorrector ni autocompletado y con «OK» en el teclado (apartados 27 y 28)`);
+ok(campos_fit38.every((c) => c.letra >= 16), '…y a 16 px o más: en el iPhone uno de menos hace zoom al tocarlo');
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), '…se sale sin terminarlo');
+await esperarTexto(/Continuar entrenamiento/i);
+
+/* 2 · FICHA → VOLVER: LA BIBLIOTECA, DONDE ESTABA (apartado 32). */
+ok(await pulsar('Abrir Ejercicios'), 'FIT F38 — a la biblioteca de ejercicios');
+ok(await esperarCampo('Buscar un ejercicio'), '…con su buscador');
+const buscador_fit38 = await page.evaluate(() => {
+  const i = document.querySelector('input[aria-label="Buscar un ejercicio"]');
+  return i ? { corrige: i.getAttribute('autocorrect'), mayus: i.getAttribute('autocapitalize'), intro: i.getAttribute('enterkeyhint') } : null;
+});
+ok(buscador_fit38 && buscador_fit38.corrige === 'off' && buscador_fit38.mayus === 'off' && buscador_fit38.intro === 'search',
+  '🔓 FIT F38 — el buscador no corrige «L-sit» ni pone mayúscula, y su tecla dice «Buscar» (apartado 28)');
+await page.evaluate(() => window.scrollTo(0, 900));
+await page.waitForTimeout(400);
+const antes_fit38 = await page.evaluate(() => Math.round(window.scrollY));
+ok(antes_fit38 >= 600, `…se baja por la lista (${antes_fit38} px)`);
+const tarjeta_fit38 = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button[aria-label^="Ver "]')]
+    .find((x) => { const r = x.getBoundingClientRect(); return r.top > 60 && r.bottom < window.innerHeight - 90; });
+  return b ? b.getAttribute('aria-label') : '';
+});
+ok(!!tarjeta_fit38 && await pulsar(tarjeta_fit38), `…se abre una ficha que se estaba viendo («${tarjeta_fit38}»)`);
+await esperarTexto(/C[oó]mo hacerlo/i);
+await page.waitForTimeout(300);
+ok(await page.evaluate(() => Math.round(window.scrollY)) <= 2,
+  '🔓 FIT F38 — la ficha empieza ARRIBA: su cabecera no se queda fuera de la pantalla');
+/* ⚠️ Se baja un poco por la ficha antes de volver: si no, la lista «seguiría
+   donde estaba» también SIN arreglo, porque nadie habría movido la página. Lo
+   comprobé quitando el hook: sin esta línea, esa comprobación salía verde. */
+await page.evaluate(() => window.scrollTo(0, 300));
+await page.waitForTimeout(300);
+ok(await pulsar('Volver a Ejercicios'), '…y se vuelve');
+await esperarCampo('Buscar un ejercicio');
+await page.waitForTimeout(400);
+const despues_fit38 = await page.evaluate(() => Math.round(window.scrollY));
+ok(Math.abs(despues_fit38 - antes_fit38) <= 4,
+  `🔓 FIT F38 — y la lista sigue DONDE ESTABA (${antes_fit38} → ${despues_fit38} px), no arriba del todo (apartado 32)`);
+
+/* 3 · EN UN iPHONE PEQUEÑO, LA HOJA DE UN RANGO CABE (apartados 22 y 23). */
+await page.setViewportSize({ width: 320, height: 568 });
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Rangos'), 'FIT F38 — a Rangos, en un iPhone de 320 × 568');
+await esperarTexto(/Rango/);
+ok(await pulsarQueEmpiece_fit10('Rango Élite'), '…se abre la hoja del rango más alto');
+await page.waitForTimeout(500);
+const hoja_fit38 = await page.evaluate(() => {
+  const d = document.querySelector('[role="dialog"][aria-label^="Rango "]');
+  const h = d && d.firstElementChild;
+  if (!h) return null;
+  const r = h.getBoundingClientRect();
+  const cs = getComputedStyle(h);
+  return { alto: Math.round(r.height), arriba: Math.round(r.top), ventana: window.innerHeight, scroll: cs.overflowY, maximo: cs.maxHeight };
+});
+ok(hoja_fit38 && hoja_fit38.alto <= Math.ceil(hoja_fit38.ventana * 0.88) + 1 && hoja_fit38.arriba >= 0,
+  `FIT F38 — la hoja cabe: ${hoja_fit38 && hoja_fit38.alto} px de ${hoja_fit38 && hoja_fit38.ventana}, sin salirse por arriba (apartado 22)`);
+/* ⚠️ Con este texto cabe de sobra, así que lo de arriba pasaría también sin el
+   arreglo. Lo que lo demuestra es que TENGA tope y scroll: sin ellos, con la
+   letra grande del sistema se saldría sin forma de leer el final. */
+ok(hoja_fit38 && hoja_fit38.maximo !== 'none' && parseFloat(hoja_fit38.maximo) <= hoja_fit38.ventana * 0.88 + 1,
+  `🐛 FIT F38 — y tiene TOPE: la altura visible del iPhone (${hoja_fit38 && hoja_fit38.maximo}); no tenía ninguno (apartado 22)`);
+ok(hoja_fit38 && hoja_fit38.scroll === 'auto', '…y lo que no cabe se lee haciendo scroll DENTRO de ella (apartado 23)');
+await page.keyboard.press('Escape');
+await page.mouse.click(160, 10);
+await page.waitForTimeout(300);
+
+/* 4 · SIETE TAMAÑOS, CINCO PANTALLAS, NI UN DESBORDAMIENTO (apartados 29 y 51).
+   La lista de tamaños la da la aplicación —no se escribe dos veces—, cargada
+   por el mismo servidor que sirve la página. */
+const dispositivos_fit38 = await page.evaluate(async () => (await import('/src/lib/movilFitness.js')).DISPOSITIVOS_DE_PRUEBA);
+ok(Array.isArray(dispositivos_fit38) && dispositivos_fit38.length >= 6, `FIT F38 — ${dispositivos_fit38.length} tamaños de pantalla (apartado 51)`);
+/* Cada pantalla se abre DESDE la entrada de Fitness: la barra de abajo reinicia
+   el recorrido (NAVO F1), así que ninguna depende de dónde dejó la anterior. */
+const aFitness_fit38 = async () => (await pulsar('Bienestar')) && pulsar('Fitness');
+const pantallas_fit38 = [
+  ['Tu Plan', async () => aFitness_fit38()],
+  ['Historial', async () => (await aFitness_fit38()) && pulsar('Abrir Historial')],
+  ['Ejercicios', async () => (await aFitness_fit38()) && pulsar('Abrir Ejercicios')],
+  ['Progreso', async () => (await aFitness_fit38()) && pulsar('Progreso')],
+  ['Rangos', async () => (await aFitness_fit38()) && pulsar('Rangos')],
+];
+/* Y si algo se sale, se dice QUÉ: el primer elemento con texto que pasa del
+   borde derecho. Un «326 de 320» a secas no se puede arreglar. */
+const quienSeSale_fit38 = () => page.evaluate(() => {
+  const w = window.innerWidth;
+  const fuera = [...document.querySelectorAll('body *')]
+    .filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.right > w + 1; })
+    .filter((el) => ![...el.children].some((c) => c.getBoundingClientRect().right > w + 1));
+  const el = fuera[0];
+  if (!el) return '';
+  const r = el.getBoundingClientRect();
+  return `<${el.tagName.toLowerCase()} class="${String(el.className).slice(0, 60)}"> «${(el.innerText || el.getAttribute('aria-label') || '').trim().slice(0, 30)}» hasta ${Math.round(r.right)} px`;
+});
+for (const d of dispositivos_fit38) {
+  await page.setViewportSize({ width: d.ancho, height: d.alto });
+  await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1200);
+  const desbordan = [];
+  let llegadas = 0;
+  for (const [nombre, ir] of pantallas_fit38) {
+    if (await ir()) llegadas += 1; else { desbordan.push(`${nombre}: no se llega`); continue; }
+    await page.waitForTimeout(500);
+    const m = await page.evaluate(() => ({ ancho: document.documentElement.scrollWidth, ventana: window.innerWidth }));
+    if (m.ancho > m.ventana + 1) desbordan.push(`${nombre}: ${m.ancho} de ${m.ventana} px, ${await quienSeSale_fit38()}`);
+  }
+  ok(llegadas === pantallas_fit38.length && desbordan.length === 0,
+    `FIT F38 — ${d.nombre} (${d.ancho} × ${d.alto}): las cinco pantallas de Fitness sin salirse de lado${desbordan.length ? ` — ${desbordan.join('; ')}` : ''}`);
+}
+
+almacen.fitness = fitnessDeAntes_fit38;
+almacen.salud = saludDeAntes_fit38;
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

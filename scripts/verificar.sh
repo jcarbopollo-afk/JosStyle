@@ -1109,6 +1109,17 @@ else
   fallo "Falla la validación del catálogo"; grep '✗' /tmp/jc_validacion_catalogo.log
 fi
 
+# FIT F38 — la UX móvil e iPhone. Lo que más se vigila: que cada campo de número abra su
+# teclado sin autocorrector, que cada hoja quepa en la pantalla visible del iPhone y deje
+# sitio a la barra de inicio, que las miniaturas se carguen cuando se ven, que no haya
+# gestos escondidos, que el revisor de accesibilidad pase también por los componentes, y que
+# «Última vez» salga de la F11 sin rellenar ni una serie.
+if node --import ./scripts/resolver-vite.mjs scripts/test-movil-fitness.mjs >/tmp/jc_movil_fitness.log 2>&1; then
+  ok "UX móvil e iPhone de Fitness (FIT F38) — $(grep -c '✓' /tmp/jc_movil_fitness.log) comprobaciones"
+else
+  fallo "Falla la UX móvil de Fitness"; grep '✗' /tmp/jc_movil_fitness.log
+fi
+
 # FIT F37 — las microinteracciones de Fitness. Lo que más se vigila: que cada duración
 # declarada sea la escrita en index.css y caiga en el rango del apartado 2, una sola curva,
 # ni un rastro de transform, ni un exceso (duraciones largas, `transition-all`, rebotes,

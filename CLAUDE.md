@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.119.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.120.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 37 primeras (v3.83.0 → v3.119.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 38 primeras (v3.83.0 → v3.120.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 8 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 7 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -350,7 +350,60 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 **FIT F30 (v3.112.0)**, la **FIT F31 (v3.113.0)**, la **FIT F32 (v3.114.0)**, la **FIT F33
 (v3.115.0)**, la **FIT F34 (v3.116.0)** y la **FIT F35 (v3.117.0)**, que 🏁 **CERRÓ EL BLOQUE DE
 INTELIGENCIA** —F29 a F35—, y la **FIT F36 (v3.118.0)**, con la que empieza el bloque de **Acabado**
-(F36–F42), y la **FIT F37 (v3.119.0)**, hechas. Lo que dejaron, y que vale para las 8 que quedan:
+(F36–F42), la **FIT F37 (v3.119.0)** y la **FIT F38 (v3.120.0)**, hechas. Lo que dejaron, y que vale para las 7 que quedan:
+
+- 🚨 **LO QUE PIDE LA F38 YA ESTABA CASI ENTERO, Y ESTÁ DICHO DÓNDE** (FIT F38, `src/lib/movilFitness.js`):
+  `YA_EXISTIA_F38` es una línea por apartado con quién lo resuelve —Safe Area (E3 F1), 44 px
+  (EH F42), el gesto que no se pelea con el scroll (F9), temporizadores con marcas de tiempo (E3 F25
+  y F7), la sesión que se recupera (F7), sonido y vibración del bus (F9), movimiento reducido (F37)—.
+  Lo nuevo es poco: **«Última vez»** en el entrenamiento en vivo (la `ultimaVez()` que la F11 dejó
+  escrita *"para una fase futura"*), **las props de teclado** de los campos, **las hojas que caben**,
+  **volver a una lista donde estaba** y **las miniaturas perezosas**. Y `auditarMovil()` lee los
+  archivos de Fitness para que nada de eso se pierda al tocar una pantalla.
+- 🚨 **«ÚLTIMA VEZ» ES TEXTO, NUNCA UN VALOR PUESTO EN LA SERIE** (FIT F38, apartado 12, literal:
+  *"No introducir automáticamente un dato como realizado"*). La serie sigue vacía y pendiente, y el
+  recorrido lo comprueba. Sin vez anterior, `null`: no se inventa ninguna.
+- 🚨 **UN CAMPO DE FITNESS LLEVA `PROPS_CAMPO_NUMERICO` O `PROPS_CAMPO_BUSQUEDA`** (FIT F38, apartados 8,
+  27 y 28): sin autocorrector, sin autocompletado, sin mayúscula y con la tecla de Intro que toca.
+  El `inputMode` ya lo ponía cada campo; lo que faltaba es lo que el iPhone añade por su cuenta. Un
+  objeto compartido y congelado, y la auditoría caza el campo nuevo que nazca sin él.
+- 🚨 **UNA HOJA DE FITNESS LLEVA `hoja-movil`** (FIT F38, apartados 22 y 23, `index.css`): tope de
+  `88dvh` —la altura **visible** del iPhone— con `88vh` delante como respaldo, scroll dentro y
+  `overscroll-behavior: contain`. ⚠️ **Los dos valores van en CSS**: en un `style={{}}` la segunda
+  clave borra a la primera (SF F1). 🐛 **La hoja de un rango no tenía ni tope ni scroll** y **la del
+  historial de un rango era la única sin sitio para la barra de inicio del iPhone** (apartado 47).
+- 🔓 **VOLVER A UNA LISTA DEJA DONDE ESTABA: `useScrollAlVolver(abierto)`** (FIT F38, apartado 32,
+  `src/components/scrollAlVolver.js`). En Fitness el detalle se abre **dentro** de la pantalla, así
+  que la lista se repintaba con la página donde la dejó el detalle. Apunta `window.scrollY` mientras
+  se ve la lista (quien hace scroll es la página, SC F1), empieza el detalle **arriba** y al cerrarlo
+  lo devuelve. Está en la biblioteca, el historial, los planes y Progreso. ⚠️ **Lo guardado es un
+  `ref`, nunca `app_data`** (EH F40). 🐛 **Y solo se apunta mientras se ve la lista**: el
+  `scrollTo(0)` de abrir el detalle dispara un `scroll` que puede llegar antes de quitar el
+  escuchador y apuntaría un 0 encima de la posición buena.
+- 🐛 **FITNESS SE SALÍA 6 px DE LADO EN UN iPHONE DE 320** (FIT F38, apartado 51), y la FIT F34 solo
+  medía a 375. Lo cazó **la matriz de dispositivos del recorrido** (`DISPOSITIVOS_DE_PRUEBA`: 320,
+  375, 393, 430, el iPhone en horizontal, iPad y escritorio): «Entrenamiento» con su icono no cabe
+  en un tercio de la barra de pestañas. **Se acorta en el catálogo** (`corto: 'Entreno'` en
+  `AREAS_FITNESS`, GE F1), solo por debajo de 360 px (`min-[360px]:`), con el nombre entero en el
+  `aria-label`, y el botón lleva **`min-w-0`**: un `flex-1` sin él no encoge por debajo de su texto.
+- ⚠️ **CADA PANTALLA DE LA MATRIZ SE ABRE DESDE LA ENTRADA DE FITNESS** (FIT F38): desde el Historial
+  no hay pestaña de Entrenamiento, así que encadenar pantallas dejaba la segunda sin abrir y la
+  medida se hacía sobre la que no era. Y el diagnóstico (`quienSeSale_fit38`) **dice qué elemento
+  se sale**: un «se sale» a secas no se puede arreglar.
+- 🐛 **UNA COMPROBACIÓN DE SCROLL QUE PASARÍA SIN EL ARREGLO NO MIDE NADA** (FIT F38): volver de la
+  ficha sin haberse movido dentro deja la página donde estaba **con o sin el hook**. Ahora se hace
+  scroll dentro de la ficha antes de volver, y **quitando el hook se ponen rojas las dos** —«el
+  detalle empieza arriba» y «vuelve donde estaba (900 → 300)»—.
+- 🔓 **UNA COMPROBACIÓN QUE GUARDA UNA PROMESA SE MUDA CON ELLA** (FIT F38 → F20): la de la F20 buscaba
+  `maxHeight` en la hoja de la explicación de un rango, y el tope pasó a ser la clase. Ahora exige
+  la clase **y** que el CSS la cumpla (`88dvh` y `overflow-y: auto`), con su comprobación de que se
+  pone roja al quitarla. La promesa es la misma, y ahora más fuerte.
+- ⚠️ **UNA AUDITORÍA QUE QUITA COMENTARIOS TIENE QUE CONSERVAR LOS SALTOS DE LÍNEA** (FIT F38): si no,
+  el número de línea que devuelve apunta a otro sitio. El `sinComentarios` de `movilFitness.js`
+  **es local**: exportarlo habría sido un segundo nombre con otro significado (FIT F36).
+- ⏸ **LA C-32 SIGUE SIENDO DE JOSUÉ, Y LA F38 NO LA NECESITABA** (apartados 8, 9, 26 y 27): los campos
+  del entrenamiento en vivo **ya van a 16 px** —el recorrido lo mide— y no hacen zoom. Cambiar la
+  letra del resto de formularios es lo que él tiene que decidir; está en `NO_EN_FIT38` y en `docs/03`.
 
 - 🚨 **UN GUARDADO QUE NADIE LEE ES UN GUARDADO QUE PUEDE MENTIR** (FIT F37, apartado 25): `saveData`
   devuelve `{ ok, error }` desde la EH F52 y en Fitness no lo leía nadie, así que la pantalla de
@@ -1572,34 +1625,33 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F38/45 — UX móvil extrema y optimización para iPhone** (líneas
-   7 164–8 082 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **tercera** del bloque de
+1. 🏋️ **SEGUIR POR LA FIT F39/45 — Accesibilidad, estados límite y robustez de fitness** (líneas
+   6 176–7 163 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **cuarta** del bloque de
    **Acabado** (F36–F42). Se construye de la F1 a la F45, en orden, encadenando sin parar. El índice
    está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: su contexto dice *"Esta fase NO añade funcionalidades grandes"*, y
-   casi toda la infraestructura del iPhone YA EXISTE.** La Safe Area vive en **`index.css`**
-   (`--safe-top`, `--safe-bottom`, `.accion-superior`, `.pantalla-segura`, `.nav-segura`,
-   `.toque-44`, E3 F1) —apartados 2, 47 y 48—; lo que Safari resuelve distinto que Chromium está en
-   **`src/lib/safari.js`** (SF F1), **con lo que ya se miró y estaba bien**; los 44 px de área táctil
-   los revisa **`revisarPantalla()`** en cada pasada (EH F42, apartados 15 y 33); el gesto de cambiar
-   de ejercicio ya distingue el scroll (`touch-action: pan-y` y umbral horizontal, FIT F9, apartados
-   13 y 14); el descanso y el cronómetro son **marcas de tiempo** y sobreviven a bloquear el iPhone
-   (E3 F25 y FIT F7, apartados 30 y 31); la sesión en curso se recupera al volver (F7); el sonido y
-   la vibración se **emiten al bus** y respetan 📳 de Ajustes (F9, apartados 37 y 38); y el
-   movimiento reducido es de la F37 (apartado 46).
-   ⚠️ **C-32 SE TOCA AQUÍ, Y ESTÁ ESPERANDO A JOSUÉ**: los campos usan 14 px, en iOS eso dispara el
-   zoom al enfocar, y el `maximum-scale=1` del `viewport` lo evita **bloqueando el pellizco**. Los
-   apartados 8, 9, 26 y 27 (teclado numérico, peso, foco, `inputmode`) caen encima. Si hace falta
-   tocarlo, **la lectura que respeta las dos partes** es arreglarlo en los campos de Fitness —sin
-   cambiar el aspecto del resto de formularios, que es lo que él tiene que decidir— y anotarlo en
-   `docs/03`.
-   ⚠️ **Y lo que ya se aprendió midiendo a 375 px:** una rejilla sin columna base crece con su
-   contenido (`grid-cols-1`, FIT F34), un desbordamiento no se arregla recortando el texto
-   (`flex-wrap`, GE F1) y `ToggleTab` se toca en el contenedor, nunca en `ui.jsx` (diez vistas lo
-   usan). **El recorrido mide `scrollWidth > innerWidth`**: al cambiar una lista por una rejilla, se
-   mide en el móvil.
+   ⚠️ **Y lo segundo, en ESTA: su apartado 62 dice *"NO cambiar funcionalidad"*, y de sus 64
+   apartados una buena parte YA ESTÁ RESUELTA, cada una en su fase.** Rango sin cobertura,
+   provisional y confianza (5-7) son la **F15, la F19, la F20 y la F25**; el objetivo sin datos,
+   vencido y completado (9-11) es la **F14 y la F30** (`porcentaje: null`, nunca 0; la **C-37**
+   deriva el completado); la sesión descartada y el **doble guardado** (13 y 15) son la **F8** —un
+   guardado idempotente por la forma del dato—; el **error de guardado** (16 y 17) es la **F37**
+   (`guardado_fallido`, con «Reintentar»); la sesión en curso que se recupera (18 y 19) es la
+   **F7**; el ejercicio archivado (20) es la **F35** (`archivado: true`, y su historial se sigue
+   leyendo con `ejerciciosParaLeer`); la imagen o el tutorial que no están (22 y 23) son la **F2**
+   y la **F34** (un recurso propio que no carga lo dice); los datos corruptos y las fechas
+   inválidas (24 y 25) son la **F36** (`auditarDatosFitness`) y la **F31**
+   (`fechaDeSesionGuardada`, `sinDuplicadosPorId`); el volumen que no se puede calcular (27) es la
+   **F8**; el peso corporal (28) la **F15 y la F36** (`pesoCorporalValido`, una sola regla); los
+   porcentajes musculares suman 100 desde la **F2**; el movimiento reducido (45) es la **F37**; y el
+   **límite de error** (53) es **`AreaSegura`** de la F36. Antes de escribir un estado vacío o un
+   aviso, **mirar si ya existe** — y para accesibilidad, **`revisarPantalla()`** (EH F42) ya revisa
+   cada vista en cada pasada, y `auditarMovil()` (F38) lo pasa por todos los archivos de Fitness.
+   ⚠️ **Y lo que ya se aprendió en el Acabado:** una puerta entre pantallas se comprueba abriendo el
+   archivo que la cablea (F36), un guardado que nadie lee puede mentir (F37), una hoja lleva
+   `hoja-movil` y un campo sus props de teclado (F38), y **el recorrido mide a 320 px** —lo que no
+   cabe se acorta en el catálogo, nunca con un `if` en el JSX—.
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único

@@ -500,7 +500,7 @@ export function ultimaVez(fitness, exerciseId, { propios = [], antesDe = null } 
 export const NO_EN_FIT11 = [
   { que: 'Gráficas, pantalla de récords, rankings y rangos', porque: 'Apartado 41. Aquí está la lógica que usarán: `aparicionesDeEjercicio`, `mejorHistorico` y `progresoDeEjercicio`.' },
   { que: 'Estimación de 1RM', porque: 'Apartado 41, y el 14: nada de fórmulas que conviertan repeticiones en kilos.' },
-  { que: '«Última vez» durante el entrenamiento en vivo', porque: 'Apartado 35: solo se prepara. `ultimaVez()` ya lo devuelve.' },
+  { que: '«Última vez» durante el entrenamiento en vivo', porque: 'Apartado 35: solo se prepara. `ultimaVez()` ya lo devuelve. 🔓 La FIT F38 lo enseña, con esta misma función (`ultimaVezEnVivo`).' },
   { que: 'Distinguir dos máquinas distintas del mismo ejercicio', porque: 'Apartado 19. El catálogo separa barra, mancuernas, polea o máquina en ejercicios distintos, y eso sí se respeta; pero dos máquinas de dos gimnasios con el mismo id no se pueden distinguir, porque la sesión no guarda cuál era. Se dice en vez de fingirlo.' },
   { que: 'Porcentajes en primer plano', porque: 'Apartado 24: son secundarios, y solo existen cuando hay denominador.' },
 ];

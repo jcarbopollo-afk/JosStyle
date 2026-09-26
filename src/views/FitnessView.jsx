@@ -86,6 +86,7 @@ import {
 import { objetivoEnVivo } from '../lib/objetivosFitness';
 /* 🔓 FIT F33 — cancelar el objetivo del ejercicio sustituido (F14). */
 import { cancelarObjetivo } from '../lib/objetivosProgreso';
+import { ultimaVezEnVivo } from '../lib/movilFitness';
 
 /* ── La cabecera (apartado 6) ──────────────────────────────────────────────
    *"El header debe poder utilizarse posteriormente en todas las pantallas del
@@ -142,15 +143,26 @@ export function PestanasFitness({ areas, activa, onCambiar, accent }) {
             role="tab"
             aria-selected={esta}
             aria-current={esta ? 'page' : undefined}
+            /* 🐛 FIT F38 — el nombre entero, aunque se vea el corto. */
+            aria-label={a.label}
             onClick={() => onCambiar(a.id)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-sm font-bold transition-colors toque-44 active:scale-[0.98]"
+            /* 🐛 FIT F38 (apartado 51) — `min-w-0`: sin él, un `flex-1` no
+               encoge por debajo de su texto y la página se sale de lado. */
+            className="flex-1 min-w-0 flex items-center justify-center gap-1.5 py-2 px-1 rounded-xl text-sm font-bold transition-colors toque-44 active:scale-[0.98]"
             style={{
               background: esta ? accent : 'transparent',
               color: esta ? COLORS.textOnAccent : COLORS.textMuted,
             }}
           >
-            <Icono size={15} />
-            <span className="truncate">{a.label}</span>
+            <Icono size={15} aria-hidden="true" className="shrink-0" />
+            {a.corto ? (
+              <>
+                <span className="truncate hidden min-[360px]:inline">{a.label}</span>
+                <span className="truncate min-[360px]:hidden">{a.corto}</span>
+              </>
+            ) : (
+              <span className="truncate">{a.label}</span>
+            )}
           </button>
         );
       })}
@@ -772,6 +784,9 @@ function FitnessViewContenido({
            ⚠️ Y devuelve solo dos textos: *"No interferir con la tabla de
            series. El objetivo no debe modificar automáticamente la rutina."* */
         objetivoActivoDe={(exerciseId) => objetivoEnVivo(fitness, exerciseId, { propios })}
+        /* 🔓 FIT F38, apartado 12 — la última vez de ese ejercicio, sin contar
+           la sesión que se está haciendo. Es `ultimaVez()` de la F11. */
+        ultimaVezDe={(exerciseId) => ultimaVezEnVivo(fitness || {}, exerciseId, { propios, sesionId: enVivo.id })}
         /* 🔓 FIT F33, apartado 21 — al sustituir un ejercicio con objetivo.
            🚨 Cancelarlo va **en la misma escritura** que la sesión: dos
            guardados seguidos parten del mismo `fitness` y el segundo borraría

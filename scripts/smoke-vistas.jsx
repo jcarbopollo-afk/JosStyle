@@ -4261,6 +4261,16 @@ const CASOS = [
   ['EntrenamientoVivoView', EntrenamientoVivoView, () => ({
     sesion: null, propios: [], accent, onGuardar: noop, onSalir: noop,
   })],
+  /* FIT F38, apartado 12 — con «Última vez», y con una función que no tiene
+     ninguna (un ejercicio nuevo): los dos tienen que pintarse. */
+  ['EntrenamientoVivoView (con última vez)', EntrenamientoVivoView, () => ({
+    sesion: sesionVivaF7(), propios: [], accent, onGuardar: noop, onSalir: noop, onTerminada: noop,
+    ultimaVezDe: () => ({ texto: 'Última vez: 20 kg × 10', cuando: 'Ayer', series: '20×10 · 20×8', fecha: HOY }),
+  })],
+  ['EntrenamientoVivoView (sin última vez)', EntrenamientoVivoView, () => ({
+    sesion: sesionVivaF7(), propios: [], accent, onGuardar: noop, onSalir: noop, onTerminada: noop,
+    ultimaVezDe: () => null,
+  })],
   /* ══ FIT F33 — la sustitución de ejercicios ═════════════════════════════
      🚨 La pantalla entera en sus cuatro formas: en el gimnasio, en casa con
      datos y un objetivo, un isométrico, y un ejercicio que ya no existe. */

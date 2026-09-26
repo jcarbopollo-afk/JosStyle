@@ -2,6 +2,18 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.120.0 — FIT F38/45: UX móvil extrema y optimización para iPhone):**
+> Casi todo lo que pedía **ya estaba** (Safe Area, 44 px, temporizadores que sobreviven a bloquear
+> el iPhone, la sesión que se recupera), y está dicho en `YA_EXISTIA_F38`. Lo nuevo: 🔓 **«Última
+> vez: 20 kg × 10 · Ayer»** debajo de cada ejercicio del entrenamiento en vivo —solo texto: la serie
+> sigue vacía—; 🔓 **los campos con su teclado** y sin autocorrector ni autocompletado; 🔓 **las
+> hojas caben en la pantalla** (`hoja-movil`, con la altura visible del iPhone); 🔓 **volver a una
+> lista deja donde estaba** (`useScrollAlVolver`) en la biblioteca, el historial, los planes y
+> Progreso; y las miniaturas se cargan al verse. 🐛 **Fitness se salía 6 px de lado a 320 px** —lo
+> cazó la matriz de siete pantallas del recorrido— y dos hojas de Rangos no cabían o quedaban bajo
+> la barra de inicio. C-32 sigue siendo de Josué. Lo siguiente es la **FIT F39** (accesibilidad,
+> estados límite y robustez).
+
 > **📅 ACTUALIZACIÓN (v3.119.0 — FIT F37/45: microinteracciones y feedback premium):**
 > Ni un cálculo nuevo: **movimiento donde ayuda a entender qué ha pasado** —las pantallas y las
 > hojas entran, una serie marcada hace aparecer su ✓, las barras van del valor anterior al nuevo, el

@@ -663,3 +663,16 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
   animation: calendarSheetIn 240ms var(--ease-premium) backwards;
 }
 
+/* FIT F38 (apartados 22 y 23) — una hoja cabe en la pantalla VISIBLE del
+   iPhone. En Safari `vh` es la altura con la barra escondida, así que una hoja
+   de 88vh se salía por debajo con la barra a la vista: `dvh` es la que se ve.
+   ⚠️ Las dos alturas van AQUÍ y en este orden —la segunda gana donde existe—,
+   nunca en un `style` de React, donde la segunda clave borraría a la primera
+   (SF F1). Y el scroll de dentro no arrastra la página de detrás. */
+.hoja-movil {
+  max-height: 88vh;
+  max-height: 88dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+

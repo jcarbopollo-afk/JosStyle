@@ -165,6 +165,11 @@ export const AREAS_FITNESS = [
   {
     id: 'entrenamiento',
     label: 'Entrenamiento',
+    /* 🐛 FIT F38 (apartado 51) — en un iPhone de 320 px, «Entrenamiento» con
+       su icono no cabe en un tercio de la pestaña y la página se salía 6 px de
+       lado. Un rótulo que no cabe se acorta EN EL CATÁLOGO (GE F1), y el nombre
+       entero sigue siendo el de la pestaña para el lector de pantalla. */
+    corto: 'Entreno',
     icono: 'entrenamiento',
     que: 'Planes, plantillas y sesiones: el centro del módulo.',
   },

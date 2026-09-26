@@ -979,7 +979,14 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       retira el error. 🔓 `subidasDeRango()`, solo con una subida de verdad. 🐛 Dos duraciones del
       catálogo eran falsas, dos hojas de Rangos no entraban y los servidores de prueba se quedaban
       vivos. `scripts/recorrido-parcial.mjs` lanza una sección del recorrido sola.
-- [ ] F38–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F38 — UX móvil extrema y optimización para iPhone** (v3.120.0): «Última vez» en el
+      entrenamiento en vivo, solo como texto; `PROPS_CAMPO_NUMERICO` y `PROPS_CAMPO_BUSQUEDA` en los
+      campos de Fitness; `.hoja-movil` (tope con `dvh` y scroll dentro) en las seis hojas;
+      `useScrollAlVolver` en la biblioteca, el historial, los planes y Progreso; miniaturas
+      perezosas; y `auditarMovil()` leyendo los archivos. 🐛 Fitness se salía 6 px a 320 px (las
+      pestañas), la hoja de un rango no tenía tope y la de su historial quedaba bajo la barra de
+      inicio. El recorrido mide siete pantallas (`DISPOSITIVOS_DE_PRUEBA`).
+- [ ] F39–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

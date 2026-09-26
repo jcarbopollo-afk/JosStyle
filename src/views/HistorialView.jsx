@@ -21,6 +21,7 @@
    =========================================================================== */
 
 import React, { useState, useMemo } from 'react';
+import { useScrollAlVolver } from '../components/scrollAlVolver';
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search, SlidersHorizontal, X,
   Clock, Calendar, Dumbbell, Layers, Weight, Check, Minus, Trash2, Play,
@@ -34,6 +35,7 @@ import {
   FILTROS_FECHA, ORDENES_HISTORIAL, FILTROS_POR_DEFECTO, PAGINA_HISTORIAL,
   HISTORIAL_VACIO, SIN_RESULTADOS, AVISO_ELIMINAR_SESION, SESION_YA_NO_ESTA,
 } from '../lib/historial';
+import { PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
 
 /* ── Un grupo de chips con su nombre (apartados 11-14 y 42) ────────────────
    ⚠️ `aria-pressed` y un ✓: el filtro elegido no se distingue solo por color. */
@@ -79,6 +81,7 @@ export function FiltrosHistorial({ filtros, consulta, accent, abiertos, onAbrir,
             onChange={(ev) => cambiar('busqueda')(ev.target.value)}
             placeholder="Buscar por nombre"
             aria-label="Buscar entrenamientos por nombre"
+            {...PROPS_CAMPO_BUSQUEDA}
             className="flex-1 min-w-0 bg-transparent outline-none text-base"
             style={{ color: COLORS.text }}
           />
@@ -450,6 +453,8 @@ export default function HistorialView({
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const [abierta, setAbierta] = useState(null);
   const [pagina, setPagina] = useState(1);
+  /* 🔓 FIT F38, apartado 32 — sesión → volver: el historial, donde estaba. */
+  useScrollAlVolver(abierta);
   const hoy = todayISO();
   const f = fitness || {};
 

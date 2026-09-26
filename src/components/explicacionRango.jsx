@@ -169,10 +169,9 @@ export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = nu
       {/* ⚠️ Con scroll interno y tope de altura: en un iPhone pequeño, con
           textos largos, la hoja se quedaba cortada por abajo (apartado 28). */}
       <div
-        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 overflow-y-auto hoja-entra"
+        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 hoja-entra hoja-movil"
         style={{
           background: COLORS.surface,
-          maxHeight: '85vh',
           paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)',
         }}
         onClick={(ev) => ev.stopPropagation()}

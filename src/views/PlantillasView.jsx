@@ -34,6 +34,7 @@ import {
   avisoDeEliminar, ESTADO_VACIO_PLANTILLAS,
 } from '../lib/plantillas';
 import { textoDeSeries, textoDeCarga, musculosResumidos } from '../lib/constructor';
+import { PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
 
 function Pastilla({ activa, children, cuantos = null, accent, onClick, label }) {
   const apagada = cuantos === 0;
@@ -396,6 +397,7 @@ export default function PlantillasView({
                   onChange={(ev) => setConsulta(ev.target.value)}
                   placeholder="Buscar una plantilla"
                   aria-label="Buscar una plantilla"
+                  {...PROPS_CAMPO_BUSQUEDA}
                 />
               </div>
               <GhostBtn icon={verOrden ? X : ArrowUpDown} onClick={() => setVerOrden((v) => !v)}>

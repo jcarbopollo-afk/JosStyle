@@ -204,7 +204,11 @@ ok(/RankExplanation/.test(comp) && /RankConfidence/.test(comp) && /RankCoverage/
 ok(!/RANK_THRESHOLDS|rangoEfectivo|puntuacion|\.score\b/.test(comp),
   '🚨 Y el componente NO calcula nada: recibe la explicación hecha (apartado 3)');
 ok(/createPortal/.test(comp), 'La hoja va con `createPortal` (regla 3 del proyecto)');
-ok(/maxHeight/.test(comp),
+/* 🔓 FIT F38 — el tope ya no es un `maxHeight: '85vh'` en el estilo: es la
+   clase `hoja-movil`, con la altura VISIBLE del iPhone (`dvh`). La promesa es
+   la misma y se mide en los dos sitios: la hoja la lleva y el CSS la cumple. */
+const reglaHojaMovil = (leer('src/index.css').match(/\.hoja-movil\s*\{[^}]*\}/) || [''])[0];
+ok(/hoja-movil/.test(comp) && /max-height:\s*88dvh/.test(reglaHojaMovil) && /overflow-y:\s*auto/.test(reglaHojaMovil),
   '⚠️ …con tope de altura y scroll interno: en un iPhone pequeño se quedaba cortada (apartado 28)');
 ok(/aria-modal/.test(comp) && /aria-label/.test(comp) && /Cerrar/.test(comp),
   'Y se puede cerrar y leer con lector de pantalla (apartado 29)');

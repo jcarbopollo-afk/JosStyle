@@ -30,6 +30,7 @@ import {
 import {
   imagenDeFicha, FILAS_FILTRO_BIBLIOTECA, TEXTO_LIMPIAR_FILTROS, SIN_TUTORIAL, TUTORIAL_ROTO,
 } from '../lib/bibliotecaEjercicios';
+import { PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
 
 /* ── ExerciseSearch (apartado 3) ───────────────────────────────────────────
    Siempre a la vista (apartado 34). */
@@ -40,6 +41,7 @@ export function ExerciseSearch({ valor = '', onCambiar }) {
       onChange={(ev) => onCambiar && onCambiar(ev.target.value)}
       placeholder="Buscar por nombre, músculo o material"
       aria-label="Buscar un ejercicio"
+      {...PROPS_CAMPO_BUSQUEDA}
     />
   );
 }
@@ -109,7 +111,7 @@ export function ExerciseVisual({ ejercicio, accent, grande = false }) {
   const Icono = iconoDeGrupo(musculoPrincipal(ejercicio)?.grupoId);
   const lado = grande ? 'w-16 h-16' : 'w-10 h-10';
   if (src) {
-    return <img src={src} alt={nombreCompleto(ejercicio)} className={`${lado} rounded-xl object-cover shrink-0`} />;
+    return <img src={src} alt={nombreCompleto(ejercicio)} loading="lazy" decoding="async" className={`${lado} rounded-xl object-cover shrink-0`} />;
   }
   return (
     <div

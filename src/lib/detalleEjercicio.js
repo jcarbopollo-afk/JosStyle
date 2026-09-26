@@ -526,7 +526,7 @@ export function detalleCompletoDeEjercicio(fitness, exerciseId, {
 export const NO_EN_FIT29 = [
   { que: 'Un sistema de récords personales aparte', porque: 'Apartado 7, literal: «No crear un sistema de PR separado». El mejor histórico es el de la F11, y si coincide se dice «Mejor marca registrada».' },
   { que: 'Un gráfico de «rendimiento total»', porque: 'Apartado 10: sumar kg + reps + segundos es dibujar tres cosas distintas como si fueran una. Cada clase conserva su unidad.' },
-  { que: 'Un dato de «última vez» dentro del entrenamiento en vivo', porque: 'Apartado 22: la fuente es el historial, y la F11 ya tiene `ultimaVez()`. Duplicarlo sería la segunda verdad de siempre.' },
+  { que: 'Un dato de «última vez» dentro del entrenamiento en vivo', porque: 'Apartado 22: la fuente es el historial, y la F11 ya tiene `ultimaVez()`. Duplicarlo sería la segunda verdad de siempre. 🔓 La FIT F38 lo enseña en el entrenamiento en vivo llamando a esa misma función.' },
   { que: 'Conversión automática de unidades', porque: 'Apartado 30: si él trabaja en kg, se enseñan kg. Convertir sin necesidad es cambiarle el dato que escribió.' },
   { que: 'IA, predicciones y estimación de hipertrofia', porque: 'Apartado 39.' },
   { que: 'Recomendaciones automáticas', porque: 'Apartado 39, y regla 7: la IA sugiere a un toque, nunca sola.' },

@@ -230,7 +230,7 @@ export function HojaDeRango({ detalle, accent, onCerrar }) {
       aria-label={`Rango ${detalle.nombre}`}
     >
       <div
-        className="w-full max-w-md rounded-t-3xl p-5 space-y-4 hoja-entra"
+        className="w-full max-w-md rounded-t-3xl p-5 space-y-4 hoja-entra hoja-movil"
         style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >

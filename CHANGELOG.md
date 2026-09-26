@@ -1,5 +1,80 @@
 # CHANGELOG.md
 
+## v3.120.0 — FIT F38/45: UX móvil extrema y optimización para iPhone
+
+*"Esta fase NO añade funcionalidades grandes. […] NO rediseñar Fitness desde cero."* Y casi todo lo
+que pide **ya estaba**: la Safe Area (E3 F1), las zonas de toque de 44 px (EH F42), el gesto de
+cambiar de ejercicio que no se pelea con el scroll (F9), los temporizadores con marcas de tiempo que
+sobreviven a bloquear el iPhone (E3 F25 y F7), el entrenamiento que se recupera al volver (F7), el
+sonido y la vibración del bus (F9), el movimiento reducido (F37) y la lista de veinte en veinte
+(F34). Está en **`YA_EXISTIA_F38`**, una línea por apartado con dónde vive. Lo que faltaba era poco
+y concreto, y vive en **`src/lib/movilFitness.js`** y **`src/components/scrollAlVolver.js`**, con
+una auditoría que **lee los archivos de Fitness** para que no se pierda la próxima vez que alguien
+toque una pantalla. Tercera fase del bloque de **Acabado** (F36–F42).
+
+### 🔓 «Última vez: 20 kg × 10» en el entrenamiento en vivo (apartado 12)
+
+La F11 dejó escrita `ultimaVez()` *"para una fase futura"*, y es ésta. Debajo del ejercicio sale lo
+que hizo la última vez —*«Última vez: 22,5 kg × 10 · Ayer»*—, sacado de la F11 (que ya deja fuera
+la sesión en curso) con la fecha de `etiquetaDeFecha()` (F10). ⚠️ **Es solo una referencia**: la
+serie sigue vacía y pendiente, porque el apartado dice *"No introducir automáticamente un dato como
+realizado"*. Sin vez anterior, no sale nada: no se inventa una.
+
+### 🔓 Los campos, con el teclado que toca (apartados 8, 27 y 28)
+
+El `inputMode` ya lo ponía cada campo. Lo que faltaba es lo que el iPhone añade por su cuenta: el
+autocorrector, el autocompletado encima del teclado y la mayúscula automática. `PROPS_CAMPO_NUMERICO`
+y `PROPS_CAMPO_BUSQUEDA` —un objeto compartido, para que el siguiente campo no se los deje— van en
+los números del entrenamiento en vivo, el descanso, el peso del constructor y el objetivo, y en los
+cinco buscadores de Fitness, con la tecla de Intro que corresponde (*Hecho* o *Buscar*).
+
+### 🔓 Las hojas caben en la pantalla (apartados 22, 23 y 47)
+
+`.hoja-movil` (`index.css`): tope de altura con la altura **visible** del iPhone (`88dvh`, y `88vh`
+delante como respaldo —dos valores **en CSS**, porque en un objeto de estilo de React la segunda
+clave borra a la primera, SF F1—), scroll dentro y sin arrastrar la página de detrás. Va en las seis
+hojas de Fitness. 🐛 **La de un rango no tenía ni tope ni scroll**: con la letra grande del sistema o
+un texto largo se habría salido por arriba sin forma de leer el final. 🐛 **La del historial de un
+rango era la única sin sitio para la barra de inicio del iPhone**: su última fila quedaba debajo.
+
+### 🔓 Volver a una lista deja donde estaba (apartado 32)
+
+En Fitness el detalle se abre **dentro** de la misma pantalla, así que al volver la lista se pintaba
+con la página donde la hubiera dejado el detalle. **`useScrollAlVolver`** apunta dónde está la lista
+mientras se ve, empieza el detalle **arriba** y al cerrarlo devuelve la lista **a donde estaba** —en
+la biblioteca de ejercicios, el historial, los planes y Progreso—. Quien hace scroll es la página
+(SC F1), y lo guardado es **de la pantalla** (un `ref`), nunca de `app_data`: te devolvería a media
+lista de anteayer (EH F40).
+
+### 🐛 Fitness se salía 6 px de lado en un iPhone de 320 px (apartado 51)
+
+Lo cazó la matriz de dispositivos nueva del recorrido —320, 375, 393 y 430 de ancho, el iPhone en
+horizontal, el iPad y el escritorio—: «Entrenamiento» con su icono no cabe en un tercio de la barra
+de pestañas. Un rótulo que no cabe **se acorta en el catálogo** (GE F1): `AREAS_FITNESS` lleva
+`corto: 'Entreno'`, que solo se ve por debajo de 360 px, y el nombre entero sigue siendo el de la
+pestaña para el lector de pantalla.
+
+### Lo demás
+
+- **Las miniaturas se cargan cuando se ven** (40 y 41): `loading="lazy"` en la tira del comparador,
+  la biblioteca y el resumen de Progreso.
+- **La auditoría** (`auditarMovil`, siete casillas): campos sin sus props, buscadores sin las suyas,
+  hojas que no caben o sin Safe Area, miniaturas sin carga perezosa, gestos sin botón visible, y el
+  revisor de accesibilidad de la EH F42 sobre todos los archivos de Fitness. Cada casilla tiene su
+  prueba que la pone roja.
+
+### Lo que no se hace, dicho
+
+Miniaturas de verdad (serían otra subida a Storage), **el tamaño de letra de los formularios** —es la
+**C-32** y la decide Josué; los campos del entrenamiento en vivo ya van a 16 px—, cerrar una hoja
+arrastrándola (no existe en la aplicación), bloquear la orientación (una web no puede en iPhone),
+mantener la pantalla encendida (el apartado 30 dice lo contrario) y dos columnas en iPad (sería
+rediseñar). Están en `NO_EN_FIT38`, cada una con su motivo.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.119.0 — FIT F37/45: microinteracciones y feedback premium de fitness
 
 *"NO cambiar la lógica de datos, fórmulas ni modelos. NO rehacer pantallas."* Así que la fase no

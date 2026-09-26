@@ -319,8 +319,10 @@ export function RankHistory({ fitness, destino, propios = [], perfil = null, acc
       onClick={onCerrar}
     >
       <div
-        className="w-full max-w-lg rounded-t-3xl p-5 space-y-4 max-h-[85vh] overflow-y-auto hoja-entra"
-        style={{ background: COLORS.surface, minHeight: 0 }}
+        className="w-full max-w-lg rounded-t-3xl p-5 space-y-4 hoja-entra hoja-movil"
+        /* 🐛 FIT F38 (apartado 47) — era la única hoja de Fitness sin sitio para
+           la barra de inicio del iPhone: su última fila quedaba debajo. */
+        style={{ background: COLORS.surface, minHeight: 0, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-2">

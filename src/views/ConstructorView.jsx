@@ -43,6 +43,7 @@ import {
 } from '../lib/constructor';
 /* 🔓 FIT F33 — sustituir un ejercicio del borrador o de la plantilla. */
 import { ExerciseReplacementModal } from '../components/sustitucion';
+import { PROPS_CAMPO_NUMERICO } from '../lib/movilFitness';
 
 /* ── Un botón redondo de icono ─────────────────────────────────────────────
    ⚠️ Siempre con `aria-label` y con `toque-44`: un botón de solo icono sin
@@ -298,6 +299,7 @@ export function EditorLinea({
             <TextInput
               value={linea.peso === null ? '' : String(linea.peso)}
               inputMode="decimal"
+              {...PROPS_CAMPO_NUMERICO}
               placeholder="Sin poner"
               aria-label="Kilos"
               onChange={(ev) => set({ peso: ev.target.value === '' ? null : ev.target.value })}

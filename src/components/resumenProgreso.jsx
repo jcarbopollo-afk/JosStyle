@@ -355,6 +355,8 @@ export function ProgressPhotoPreview({ bloque, urls = {}, fallidas = {}, accent,
                   <img
                     src={urls[f.id]}
                     alt={`Foto de progreso del ${f.etiqueta}`}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                     onError={onFallo ? () => onFallo(f.id) : undefined}
                   />
