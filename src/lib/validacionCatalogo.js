@@ -125,6 +125,9 @@ const texto = (v) => (typeof v === 'string' ? v.trim() : '');
 const lista = (v) => (Array.isArray(v) ? v : []);
 const esNumero = (v) => typeof v === 'number' && Number.isFinite(v);
 const conocido = (catalogo, id) => catalogo.some((c) => c.id === id);
+/* 🐛 FIT F39 (apartado 2) — un campo que falta se escribía tal cual, y el
+   diagnóstico decía «la dificultad «undefined» no existe». Lo que falta se dice. */
+const legible = (v) => (v === null || v === undefined || v === '' ? '(ninguno)' : String(v));
 const ESTABLE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 function problema(reglaId, id, mensaje, extra = {}) {
@@ -271,19 +274,19 @@ export function validateExerciseCatalog(bruto = CATALOGO_BRUTO, { existeRecurso 
       if (!esNumero(m?.porcentaje) || m.porcentaje <= 0 || m.porcentaje > 100) {
         add('porcentaje_imposible', id, `«${id}»: el porcentaje de ${texto(m?.subgrupoId) || '?'} es ${JSON.stringify(m?.porcentaje)}`);
       }
-      if (!PAPELES.some((p) => p.id === m?.papel)) add('papel_invalido', id, `«${id}»: el papel «${m?.papel}» no existe`);
+      if (!PAPELES.some((p) => p.id === m?.papel)) add('papel_invalido', id, `«${id}»: el papel «${legible(m?.papel)}» no existe`);
     });
 
     lista(e.entornos).filter((x) => !conocido(ENTORNOS, x))
       .forEach((x) => add('entorno_invalido', id, `«${id}»: el entorno «${x}» no existe (son ${ENTORNOS.map((z) => z.id).join(', ')})`));
     lista(e.equipamiento).filter((x) => !conocido(EQUIPAMIENTO, x))
       .forEach((x) => add('equipo_invalido', id, `«${id}»: el material «${x}» no existe`));
-    if (!conocido(DIFICULTADES, e.dificultad)) add('dificultad_invalida', id, `«${id}»: la dificultad «${e.dificultad}» no existe`);
+    if (!conocido(DIFICULTADES, e.dificultad)) add('dificultad_invalida', id, `«${id}»: la dificultad «${legible(e.dificultad)}» no existe`);
     if (!lista(e.tipos).length) add('tipo_invalido', id, `«${id}» no tiene ningún tipo`);
     lista(e.tipos).filter((x) => !conocido(TIPOS_EJERCICIO, x))
       .forEach((x) => add('tipo_invalido', id, `«${id}»: el tipo «${x}» no existe`));
     if (e.agarre !== null && e.agarre !== undefined && !conocido(AGARRES, e.agarre)) add('agarre_invalido', id, `«${id}»: el agarre «${e.agarre}» no existe`);
-    if (!conocido(PATRONES_MOVIMIENTO, e.patron)) add('patron_invalido', id, `«${id}»: el patrón «${e.patron ?? '(ninguno)'}» no existe`);
+    if (!conocido(PATRONES_MOVIMIENTO, e.patron)) add('patron_invalido', id, `«${id}»: el patrón «${legible(e.patron)}» no existe`);
 
     const medidas = lista(e.medidas);
     if (!medidas.length) add('medida_invalida', id, `«${id}» no dice cómo se mide`);

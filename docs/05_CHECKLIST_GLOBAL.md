@@ -986,7 +986,13 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       perezosas; y `auditarMovil()` leyendo los archivos. 🐛 Fitness se salía 6 px a 320 px (las
       pestañas), la hoja de un rango no tenía tope y la de su historial quedaba bajo la barra de
       inicio. El recorrido mide siete pantallas (`DISPOSITIVOS_DE_PRUEBA`).
-- [ ] F39–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F39 — Accesibilidad, estados límite y robustez de fitness** (v3.121.0): `textoRoto()` en el
+      banco de renderizado entero y `test-robustez-fitness.jsx` con datos corruptos por la puerta de
+      carga; 🐛 un entrenamiento abierto días ya no «dura» 72 h y ofrece Finalizar; un ejercicio borrado
+      se llama por lo que se lee de su id; `useDialogoAccesible` en las ocho hojas y el anillo de foco
+      de Fitness; `MissingImage` y `MissingData`; la matriz de estados de las quince pantallas; y tres
+      pantallas fuera de Fitness (Negocio, Sueño, Tiempo de uso) que enseñaban basura.
+- [ ] F40–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

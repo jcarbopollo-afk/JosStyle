@@ -317,15 +317,18 @@ ok(darch.veces === 1 && darch.historial.length === 1 && darch.historial[0].fecha
 /* 🚨 C-36 — el apartado 28 pide conservar el «nombre histórico» y **no existe**:
    la FIT F3 decidió que una línea guarda solo `exerciseId`, para que renombrar
    un ejercicio llegue a las veinte rutinas donde esté (AS F1). Lo único que
-   sobrevive es el id, y es lo que se enseña. */
-ok(darch.cabecera.nombre === 'press-antiguo',
-  `🚨 …identificado por su id, que es lo ÚNICO que sobrevive: «${darch.cabecera.nombre}» (C-36)`);
+   sobrevive es el id.
+   🔓 FIT F39 (apartados 21 y 55) — y lo que se enseña es lo que se LEE de él:
+   el id pelado es un id técnico, que el apartado 55 prohíbe enseñar. */
+ok(darch.cabecera.nombre === 'Press antiguo',
+  `🚨 …identificado por su id LEÍDO, que es lo ÚNICO que sobrevive: «${darch.cabecera.nombre}» (C-36, FIT F39)`);
 ok(!('nombre' in crearWorkoutExercise({ exerciseId: 'press-banca-barra' })),
   '⚠️ …porque `crearWorkoutExercise` NO guarda nombre, a propósito (FIT F3)');
-ok(aparicionesDeEjercicio(ARCH, 'press-antiguo')[0].nombre === 'press-antiguo',
-  '…y la F11 tampoco lo guarda: `nombre: ej ? ej.nombre : exerciseId`');
-ok(cabeceraDeEjercicio('lo-que-sea', { apariciones: [] }).nombre === 'lo-que-sea',
-  '…y sin ni una aparición se cae al id igual, nunca a un nombre inventado');
+ok(aparicionesDeEjercicio(ARCH, 'press-antiguo')[0].nombre === 'Press antiguo',
+  '…y la F11 tampoco lo guarda: lo lee del id (`nombreSinCatalogo`, FIT F39)');
+ok(cabeceraDeEjercicio('lo-que-sea', { apariciones: [] }).nombre === 'Lo que sea'
+  && cabeceraDeEjercicio('k3j9x2ab', { apariciones: [] }).nombre === 'Ejercicio no disponible',
+  '…y sin ni una aparición se lee del id igual, y uno aleatorio es «Ejercicio no disponible» — nunca un nombre inventado');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 8. Datos corruptos (prueba 20, apartado 29) ──');

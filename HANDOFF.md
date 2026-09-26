@@ -2,6 +2,18 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.121.0 — FIT F39/45: accesibilidad, estados límite y robustez):**
+> Fitness se pinta ahora con datos **corruptos** —fechas imposibles, ejercicios que ya no existen,
+> porcentajes de 145 %— sin enseñar nada roto, y `textoRoto()` vigila **toda la aplicación** desde el
+> banco de renderizado: cazó *«Invalid Date»* en Negocio, *«undefined → undefined»* en Sueño y
+> *«NaN %»* en Tiempo de uso. 🐛 **Un entrenamiento abierto hace días decía «72:00:00»**: ahora dice
+> *«Hay un entrenamiento sin terminar»*, cuándo empezó, y ofrece Continuar, Finalizar y Descartar,
+> sin inventar una duración. 🐛 **Un ejercicio borrado se llamaba por su id** («k3j9x2ab»): se lee
+> del id («Dominada pronada antigua») o es «Ejercicio no disponible». 🔓 **Las ocho hojas se usan
+> con el teclado** (foco dentro, Escape, el foco vuelve) y los campos de Fitness enseñan dónde está
+> el foco. La matriz de estados cubre las quince pantallas del apartado 57. Lo siguiente es la
+> **FIT F40** (rendimiento y optimización técnica).
+
 > **📅 ACTUALIZACIÓN (v3.120.0 — FIT F38/45: UX móvil extrema y optimización para iPhone):**
 > Casi todo lo que pedía **ya estaba** (Safe Area, 44 px, temporizadores que sobreviven a bloquear
 > el iPhone, la sesión que se recupera), y está dicho en `YA_EXISTIA_F38`. Lo nuevo: 🔓 **«Última

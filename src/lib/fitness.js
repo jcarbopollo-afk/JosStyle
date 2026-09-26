@@ -695,7 +695,10 @@ export function crearObjetivo({
     unidad: tipoObjetivo(t).unidad,
     creadoEn: numeroONull(creadoEn) ?? Date.now(),
     actualizadoEn: numeroONull(actualizadoEn),
-    fechaObjetivo: /^\d{4}-\d{2}-\d{2}$/.test(texto(fechaObjetivo)) ? texto(fechaObjetivo) : '',
+    /* 🐛 FIT F39 (apartado 25) — la forma no basta (E3 F9): «2026-02-30» pasaba
+       la expresión y se pintaba como el 2 de marzo. Una fecha que no existe no
+       es una fecha objetivo. */
+    fechaObjetivo: fechaValida(texto(fechaObjetivo)) ? texto(fechaObjetivo) : '',
     estado: ESTADOS_OBJETIVO.includes(estado) ? estado : 'activo',
     nota: texto(nota),
   };

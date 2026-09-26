@@ -13,6 +13,7 @@
    =========================================================================== */
 
 import React from 'react';
+import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
 import { X, ChevronRight, Info } from 'lucide-react';
 import { COLORS } from '../tokens';
@@ -154,6 +155,8 @@ export function RankPath({ camino = [], accent }) {
 /* ── La explicación entera ───────────────────────────────────────────────── */
 /* 🚨 Va con `createPortal` (regla 3 del proyecto), como todas las hojas. */
 export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = null, onClasificar = null, onProgreso = null, onHistorial = null }) {
+  /* FIT F39 (apartados 36-38) — foco dentro, Escape y vuelta al botón que lo abrió. */
+  const caja = useDialogoAccesible(!!explicacion, onCerrar);
   if (!explicacion || typeof document === 'undefined') return null;
   const e = explicacion;
   const nivelSiguiente = e.siguiente && e.siguiente.siguiente ? e.siguiente : null;
@@ -169,7 +172,9 @@ export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = nu
       {/* ⚠️ Con scroll interno y tope de altura: en un iPhone pequeño, con
           textos largos, la hoja se quedaba cortada por abajo (apartado 28). */}
       <div
-        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 hoja-entra hoja-movil"
+        ref={caja}
+        tabIndex={-1}
+        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 hoja-entra hoja-movil dialogo-caja"
         style={{
           background: COLORS.surface,
           paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)',

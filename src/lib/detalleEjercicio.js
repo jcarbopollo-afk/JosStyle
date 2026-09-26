@@ -7,7 +7,7 @@ import {
   progresoDeEjercicio, aparicionesDeEjercicio, CLASES,
 } from './progresion';
 import {
-  ejercicioPorId, nombreCompleto, musculoPrincipal, variantesDe, baseDe, equipo, agarre,
+  ejercicioPorId, nombreCompleto, musculoPrincipal, variantesDe, baseDe, equipo, agarre, nombreSinCatalogo,
 } from './ejercicios';
 import { sesionDelHistorial, etiquetaDeFecha } from './historial';
 import { ejerciciosDeSesion } from './entrenamiento';
@@ -119,7 +119,7 @@ export function cabeceraDeEjercicio(exerciseId, { propios = [], apariciones = []
       existe: false,
       archivado: true,
       /* El nombre que tenía cuando lo entrenó, nunca el id pelado. */
-      nombre: (historica && texto(historica.nombre)) || id,
+      nombre: (historica && texto(historica.nombre)) || nombreSinCatalogo(id),
       variante: (historica && texto(historica.variante)) || '',
       linea: '',
       grupo: '',
@@ -499,7 +499,7 @@ export function detalleCompletoDeEjercicio(fitness, exerciseId, {
       estado: 'error',
       estadoNombre: estadoDetalle('error').nombre,
       vacio: '',
-      cabecera: { exerciseId: id, existe: false, archivado: false, nombre: id, variante: '', linea: '', grupo: '', grupoId: null, aviso: '', avisoTexto: '' },
+      cabecera: { exerciseId: id, existe: false, archivado: false, nombre: nombreSinCatalogo(id), variante: '', linea: '', grupo: '', grupoId: null, aviso: '', avisoTexto: '' },
       progreso: null,
       tendencia: null,
       periodo: PERIODO_TODO,

@@ -676,3 +676,21 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
   overscroll-behavior: contain;
 }
 
+
+/* FIT F39 (apartado 37) — *"Nunca eliminar completamente el indicador de focus.
+   Puede estilizarse."* Los campos de Fitness llevan `outline-none` para que el
+   borde del navegador no rompa el diseño, y con eso un teclado no veía dónde
+   estaba. Se pone uno con el acento, SOLO con `:focus-visible` (el que el
+   navegador enseña al usar el teclado y al escribir en un campo) y solo en
+   Fitness y sus hojas: el resto de formularios no cambia de aspecto.
+   ⚠️ Especificidad: `.fit-foco :focus-visible` (dos clases) gana a
+   `.outline-none` (una), y este archivo va después de las utilidades. */
+.fit-foco { display: contents; }
+.fit-foco :focus-visible,
+.dialogo-caja :focus-visible {
+  outline: 2px solid var(--accent, currentColor);
+  outline-offset: 2px;
+}
+/* La caja de un diálogo recibe el foco al abrirse —para que el lector de
+   pantalla lo lea desde arriba— pero no es un control: no lleva anillo. */
+.dialogo-caja:focus { outline: none; }

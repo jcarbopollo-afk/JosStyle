@@ -17,6 +17,8 @@
 // ---------------------------------------------------------------------------
 import React from 'react';
 import { renderToString } from 'react-dom/server';
+import { textoRoto } from '../src/lib/robustezFitness.js';
+import { MissingImage, MissingData } from '../src/components/estadosFitness.jsx';
 
 import DashboardView from '../src/views/DashboardView.jsx';
 import SleepView from '../src/views/SleepView.jsx';
@@ -4419,6 +4421,16 @@ const CASOS = [
   ['SesionRecuperable', SesionRecuperable, () => ({
     sesion: sesionUsadaF7(), accent, onContinuar: noop, onDescartar: noop,
   })],
+  /* 🔓 FIT F39, apartado 19 — la que se quedó abierta hace tres días: «Hay un
+     entrenamiento sin terminar», cuándo empezó y Finalizar, sin reloj de días. */
+  ['SesionRecuperable (sin terminar hace días)', SesionRecuperable, () => ({
+    sesion: { ...sesionUsadaF7(), iniciadaEn: Date.now() - 3 * 86400000 }, accent, onContinuar: noop, onDescartar: noop, onFinalizar: noop,
+  })],
+  /* 🔓 FIT F39, apartado 52 — los dos respaldos que nacen: la imagen que no está
+     y el dato que no se sabe. */
+  ['MissingImage (sin imagen)', MissingImage, () => ({ src: null, alt: 'Press de banca', className: 'w-10 h-10 rounded-xl' })],
+  ['MissingImage (con respaldo)', MissingImage, () => ({ src: '', respaldo: React.createElement('span', null, '🏋️') })],
+  ['MissingData', MissingData, () => ({ que: 'Duración' })],
   ['AreaProgreso', AreaProgreso, () => ({
     fotos: [{ id: 'f1', path: 'x', fecha: HOY, nota: '' }], accent, onIr: noop,
   })],
@@ -4504,6 +4516,16 @@ for (const [nombre, Componente, props] of CASOS) {
       const html = renderToString(React.createElement(Componente, props(estado)));
       if (typeof html !== 'string' || html.length === 0) throw new Error('render vacío');
       if (botonesAnidados(html)) throw new Error('tiene un <button> dentro de otro <button>');
+      /* 🐛 FIT F39 (apartado 2) — y nada roto a la vista, en TODAS las pantallas:
+         ni `NaN`, ni «undefined», ni «null», ni «[object Object]», ni «Invalid
+         Date», ni en el texto ni en un estilo (un `width: NaN%` rompe una barra
+         sin que se lea nada). Al estrenarse cazó tres fuera de Fitness: un
+         proyecto de Negocio sin fecha («Idea · Invalid Date»), una noche de Sueño
+         sin horas («undefined → undefined») y un registro de Tiempo de uso sin
+         minutos («Productividad NaN %»). Los porcentajes se miran solo en
+         Fitness: un zoom al 180 % existe. */
+      const rotos = textoRoto(html, { porcentajes: false });
+      if (rotos.length) throw new Error(`enseña algo roto: ${rotos.join(' | ')}`);
       console.log(`  ✓ ${nombre} (${etiqueta})`);
     } catch (e) {
       console.error(`  ✗ ${nombre} (${etiqueta}) → ${e.message}`);

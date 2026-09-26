@@ -17,6 +17,7 @@
    =========================================================================== */
 
 import React, { useState } from 'react';
+import { useDialogoAccesible } from '../components/dialogoAccesible';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, Check, X } from 'lucide-react';
 import { COLORS } from '../tokens';
@@ -25,7 +26,7 @@ import { Card, SectionTitle, GhostBtn, PrimaryButton, EmptyHint } from '../compo
 import { RankBadge, RankLabel } from '../components/rangos';
 import { iconoDeGrupo } from '../components/iconosFitness';
 import { nivelRango } from '../lib/fitness';
-import { ejercicioPorId } from '../lib/ejercicios';
+import { ejercicioPorId, nombreSinCatalogo } from '../lib/ejercicios';
 import {
   cuestionario, preguntaDeEjercicio, clasificarEjercicio, estadoDeClasificacion,
   musculosQueRecibe, resumenFinal, AVISO_ESTIMACION, AVISO_RECLASIFICAR,
@@ -155,6 +156,8 @@ export function ClassificationResult({ clasificacion, musculos = [], accent, onC
 
 /* ── 23 · Salir ──────────────────────────────────────────────────────────── */
 export function ClassificationExitDialog({ accent, onSeguir, onSalir }) {
+  /* FIT F39 (apartados 36-38) — foco dentro, Escape y vuelta al botón que lo abrió. */
+  const caja = useDialogoAccesible(true, onSeguir);
   if (typeof document === 'undefined') return null;
   return createPortal(
     <div
@@ -166,7 +169,9 @@ export function ClassificationExitDialog({ accent, onSeguir, onSalir }) {
       aria-label="Salir de la clasificación"
     >
       <div
-        className="w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra hoja-movil"
+        ref={caja}
+        tabIndex={-1}
+        className="w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra hoja-movil dialogo-caja"
         style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >
@@ -191,6 +196,8 @@ export function ClassificationExitDialog({ accent, onSeguir, onSalir }) {
 
 /* ── 11 · Reclasificar ───────────────────────────────────────────────────── */
 export function AvisoReclasificar({ accent, onConfirmar, onCancelar, aviso = null }) {
+  /* FIT F39 (apartados 36-38) — foco dentro, Escape y vuelta al botón que lo abrió. */
+  const caja = useDialogoAccesible(true, onCancelar);
   if (typeof document === 'undefined') return null;
   return createPortal(
     <div
@@ -202,7 +209,9 @@ export function AvisoReclasificar({ accent, onConfirmar, onCancelar, aviso = nul
       aria-label="Reclasificar ejercicio"
     >
       <div
-        className="w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra hoja-movil"
+        ref={caja}
+        tabIndex={-1}
+        className="w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra hoja-movil dialogo-caja"
         style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >
@@ -484,7 +493,7 @@ export function YaClasificados({ fitness, propios = [], accent, onReclasificar =
               <RankBadge rank={c.rango} size="sm" state="actual" accent={accent} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>
-                  {ej ? ej.nombre : c.exerciseId}
+                  {ej ? ej.nombre : nombreSinCatalogo(c.exerciseId)}
                 </p>
                 <div className="flex items-baseline gap-2">
                   <RankLabel rank={c.rango} className="text-xs font-bold" />
@@ -498,7 +507,7 @@ export function YaClasificados({ fitness, propios = [], accent, onReclasificar =
                   onClick={() => onReclasificar(c.exerciseId)}
                   className="text-xs font-semibold px-3 py-2 rounded-xl toque-44 shrink-0"
                   style={{ background: COLORS.surface2, color: COLORS.text }}
-                  aria-label={`Reclasificar ${ej ? ej.nombre : c.exerciseId}`}
+                  aria-label={`Reclasificar ${ej ? ej.nombre : nombreSinCatalogo(c.exerciseId)}`}
                 >
                   Reclasificar
                 </button>

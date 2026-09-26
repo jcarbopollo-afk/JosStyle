@@ -3,7 +3,7 @@ import { VISIBILIDADES, ESTADOS_SESION } from './fitness';
 import { ejercicioPorId } from './ejercicios';
 import { nombreDeLinea } from './constructor';
 import {
-  ejerciciosDeSesion, duracionSesion, reloj, reanudarSesion, guardarSesion,
+  ejerciciosDeSesion, duracionSesion, duracionCreible, reloj, reanudarSesion, guardarSesion,
 } from './entrenamiento';
 
 /* Entrega 4 · Fase 8/45 — «Finalización y guardado del entrenamiento».
@@ -237,7 +237,9 @@ export function resumenDeSesion(sesion, { propios = [], ahora = Date.now() } = {
     omitidas += e.omitidas;
     anadidas += e.anadidas;
   }
-  const ms = duracionSesion(sesion, ahora);
+  /* 🐛 FIT F39 (apartados 19 y 26) — una sesión que se quedó abierta días no
+     «duró» 72 h: sin una duración creíble no se dice ninguna. */
+  const ms = duracionCreible(sesion, ahora);
 
   return {
     id: sesion.id,
@@ -250,9 +252,9 @@ export function resumenDeSesion(sesion, { propios = [], ahora = Date.now() } = {
        flecha: media franja horaria no dice nada. */
     franja: horaDe(sesion.iniciadaEn) && horaDe(sesion.terminadaEn)
       ? `${horaDe(sesion.iniciadaEn)} → ${horaDe(sesion.terminadaEn)}` : '',
-    duracion: duracionEnMinutos(ms),
-    duracionMs: ms,
-    reloj: reloj(ms),
+    duracion: ms === null ? '' : duracionEnMinutos(ms),
+    duracionMs: ms === null ? 0 : ms,
+    reloj: ms === null ? '' : reloj(ms),
     ejercicios,
     ejerciciosHechos: ejercicios.filter((e) => e.estado !== 'no_realizado').length,
     seriesCompletadas: hechas,
@@ -433,7 +435,9 @@ export function pantallaDeExito(sesion, { propios = [], ahora = Date.now() } = {
   return {
     titulo: '¡Entrenamiento completado!',
     nombre: r.nombre,
-    duracion: r.duracion,
+    /* FIT F39, apartado 26 — sin duración creíble, «—», nunca un hueco bajo el
+       rótulo «Duración». */
+    duracion: r.duracion || '—',
     series: r.seriesCompletadas,
     seriesTexto: `${r.seriesCompletadas} ${r.seriesCompletadas === 1 ? 'serie' : 'series'}`,
     mensaje: mensajeFinal(r.seriesCompletadas),

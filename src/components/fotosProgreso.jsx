@@ -11,6 +11,8 @@
    =========================================================================== */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useDialogoAccesible } from './dialogoAccesible';
+import { MissingImage } from './estadosFitness';
 import { createPortal } from 'react-dom';
 import { Camera, X, ChevronLeft, ChevronRight, GitCompareArrows, Dumbbell } from 'lucide-react';
 import { COLORS } from '../tokens';
@@ -171,7 +173,9 @@ export function ProgressPhotoForm({ accent, hoy, onGuardar, onCancelar, guardand
           {elegidas.map((e) => (
             <div key={e.id} className="relative rounded-xl overflow-hidden" style={{ background: COLORS.surface2 }}>
               {/* Apartado 15 — `object-contain`: nunca se estira una imagen. */}
-              <img src={e.vista} alt="Foto elegida, sin guardar todavía" className="w-full aspect-square object-contain" />
+              {/* 🐛 FIT F39 (apartado 22) — un archivo que el navegador no sabe
+                  enseñar dejaba la imagen rota: se dice sin romper la selección. */}
+              <MissingImage src={e.vista} alt="Foto elegida, sin guardar todavía" className="w-full aspect-square object-contain" />
               <button
                 onClick={() => quitar(e.id)}
                 aria-label="Quitar esta foto de la selección"
@@ -315,11 +319,15 @@ export function ProgressPhotoGrid({ dias = [], urls = {}, fallidas = {}, accent,
    🚨 `createPortal` (regla 3 del proyecto): un `fixed inset-0` dentro de un
    contenedor con transformaciones se ancla al contenedor, no al iPhone. */
 export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitness, onCerrar, onIr, onBorrar, onSesion = null, onComparar = null, onFallo = null }) {
+  /* FIT F39 (apartados 36-38) — foco dentro, Escape y vuelta al botón que lo abrió. */
+  const caja = useDialogoAccesible(!!foto, onCerrar);
   if (!foto || typeof document === 'undefined') return null;
   const sesion = sesionDeFoto(foto, fitness);
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex flex-col fondo-entra"
+      ref={caja}
+      tabIndex={-1}
+      className="fixed inset-0 z-50 flex flex-col fondo-entra dialogo-caja"
       style={{ background: 'rgba(0,0,0,0.92)' }}
       role="dialog"
       aria-modal="true"

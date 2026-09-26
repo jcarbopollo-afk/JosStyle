@@ -1,7 +1,7 @@
 import { uid, todayISO } from './helpers';
 import { crearWorkoutSession, normalizarWorkoutSession, ESTADOS_SESION, sinDuplicadosPorId } from './fitness';
 import {
-  ejercicioPorId, nombreCompleto, musculoPrincipal, musculosDe,
+  ejercicioPorId, nombreCompleto, musculoPrincipal, musculosDe, nombreSinCatalogo,
 } from './ejercicios';
 import {
   nombreDeLinea, variantesDeLinea, DESCANSO_POR_DEFECTO, MAX_SERIES, crearLinea,
@@ -327,6 +327,54 @@ export function duracionSesion(sesion, ahora = Date.now()) {
   if (!s.iniciadaEn) return 0;
   const hasta = s.terminadaEn || (s.estado === 'pausada' && s.pausadaEn ? s.pausadaEn : ahora);
   return Math.max(0, hasta - s.iniciadaEn - (s.pausadoMs || 0));
+}
+
+/* 🐛 FIT F39 (apartados 19 y 26) — **UN ENTRENAMIENTO QUE SE QUEDÓ ABIERTO NO
+   DURA TRES DÍAS.** El reloj resta marcas de tiempo, que es lo correcto (E3 F25),
+   así que una sesión que Josué dejó a medias el lunes decía el jueves
+   «72:00:00» en la tarjeta de recuperación, y si la terminaba, el resumen y el
+   historial se quedaban con «72 h» para siempre. Eso no es una duración: es el
+   rato que pasó sin cerrarla. Las series no guardan cuándo se marcaron, así que
+   no se puede saber cuándo paró de verdad — y lo que no se sabe no se dice
+   (regla 8, y es el «—» de una serie sin registrar).
+
+   ⚠️ **Una sola regla, aquí**, porque es quien lleva el cronómetro desde la F7:
+   la tarjeta, el entrenamiento en vivo, el resumen y el historial la leen. Seis
+   horas es más de lo que dura cualquier entrenamiento y menos que una noche. */
+export const HORAS_SESION_ANTIGUA = 6;
+const MS_SESION_ANTIGUA = HORAS_SESION_ANTIGUA * 3600000;
+
+/** Lo que duró, si es una duración que alguien pueda haber entrenado; `null`
+ *  si pasa de `HORAS_SESION_ANTIGUA` (se quedó abierta, no se entrenó). */
+export function duracionCreible(sesion, ahora = Date.now()) {
+  const ms = duracionSesion(sesion, ahora);
+  return ms > MS_SESION_ANTIGUA ? null : ms;
+}
+
+/* «Empezado ayer», «Empezado el 23 sept»: cuándo se quedó abierta, en palabras.
+   ⚠️ Aquí y no en `historial.js`, que importa este archivo (sería un ciclo). */
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic'];
+export function desdeCuando(sesion, ahora = Date.now()) {
+  const inicio = Number(sesion?.iniciadaEn);
+  if (!Number.isFinite(inicio) || inicio <= 0) return '';
+  const d = new Date(inicio);
+  const h = new Date(ahora);
+  const dia = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const dias = Math.round((dia(h) - dia(d)) / 86400000);
+  const dd = (n) => String(n).padStart(2, '0');
+  if (dias <= 0) return `Empezado hoy a las ${dd(d.getHours())}:${dd(d.getMinutes())}`;
+  if (dias === 1) return 'Empezado ayer';
+  return `Empezado el ${d.getDate()} ${MESES_CORTOS[d.getMonth()]}`;
+}
+
+/** Apartado 19 — una sesión en curso o en pausa que empezó hace más de
+ *  `HORAS_SESION_ANTIGUA`. Se mira desde que EMPEZÓ, no lo que lleva
+ *  entrenado: una pausa de toda la noche también la deja olvidada. */
+export function sesionAntigua(sesion, ahora = Date.now()) {
+  const s = sesion || {};
+  if (s.estado !== 'en_curso' && s.estado !== 'pausada') return false;
+  const inicio = Number(s.iniciadaEn);
+  return Number.isFinite(inicio) && inicio > 0 && ahora - inicio > MS_SESION_ANTIGUA;
 }
 
 /** `00:00`, `01:24`, y con horas `1:02:03` (apartado 6). */
@@ -669,13 +717,35 @@ export function avisoDeRecuperacion(sesion, { ahora = Date.now(), propios = [] }
   /* FIT F9, apartado 31 — el estado compacto enseña también el descanso. Solo si
      sigue corriendo: uno acabado no es un estado, es algo que ya pasó. */
   const restante = sesion.descanso ? restanteDescanso(sesion.descanso, ahora) : 0;
+  /* 🐛 FIT F39, apartado 19 — *"Si hay una sesión activa de hace mucho tiempo:
+     «Hay un entrenamiento sin terminar», con Continuar, Finalizar y Descartar.
+     No decidir automáticamente por el usuario."* En vez de un reloj de días se
+     dice cuándo empezó, y se ofrece terminarla (el resumen de la F8, donde él
+     decide si se guarda). */
+  if (sesionAntigua(sesion, ahora)) {
+    return {
+      titulo: 'Hay un entrenamiento sin terminar',
+      antigua: true,
+      nombre: texto(sesion.nombre) || 'Entrenamiento',
+      duracion: '',
+      desde: desdeCuando(sesion, ahora),
+      descanso: '',
+      ejercicio: ej ? nombreDeLinea(ej, propios) : '',
+      continuar: 'Continuar',
+      finalizar: 'Finalizar',
+      descartar: 'Descartar',
+    };
+  }
   return {
     titulo: 'Tienes un entrenamiento en curso',
+    antigua: false,
     nombre: texto(sesion.nombre) || 'Entrenamiento',
     duracion: reloj(duracionSesion(sesion, ahora)),
+    desde: '',
     descanso: restante > 0 ? `Descansando ${reloj(restante)}` : '',
     ejercicio: ej ? nombreDeLinea(ej, propios) : '',
     continuar: 'Continuar entrenamiento',
+    finalizar: '',
     descartar: 'Descartar sesión',
   };
 }
@@ -714,7 +784,7 @@ export function fichaDeEjercicio(ejercicioSesion, propios = []) {
   return {
     id: e.id,
     exerciseId: e.exerciseId,
-    nombre: ej ? ej.nombre : e.exerciseId,
+    nombre: ej ? ej.nombre : nombreSinCatalogo(e.exerciseId),
     /* ⚠️ Si el ejercicio ya no está, se dice — no se rompe la sesión (E3 F25 y
        la F5 con las líneas de un plan). */
     existe: !!ej,

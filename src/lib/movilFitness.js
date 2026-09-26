@@ -140,7 +140,9 @@ export function hojasQueNoCaben(src) {
 /** Apartados 40 y 41 — una miniatura (`object-cover`) se carga cuando se ve.
  *  ⚠️ La foto que se ABRE (`object-contain`) no: es la que se quiere ya. */
 export function miniaturasSinPerezosa(src) {
-  return etiquetas(src, 'img')
+  /* 🔓 FIT F39 — y `MissingImage`, que es una `<img>` con respaldo: la miniatura
+     de la biblioteca y la tira del comparador pasaron a serlo. */
+  return [...etiquetas(src, 'img'), ...etiquetas(src, 'MissingImage')]
     .filter(({ tag }) => /object-cover/.test(tag) && !/loading="lazy"/.test(tag))
     .map(({ linea }) => linea);
 }

@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.120.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.121.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 38 primeras (v3.83.0 → v3.120.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 39 primeras (v3.83.0 → v3.121.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 7 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 6 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -349,7 +349,67 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 **FIT F30 (v3.112.0)**, la **FIT F31 (v3.113.0)**, la **FIT F32 (v3.114.0)**, la **FIT F33
 (v3.115.0)**, la **FIT F34 (v3.116.0)** y la **FIT F35 (v3.117.0)**, que 🏁 **CERRÓ EL BLOQUE DE
 INTELIGENCIA** —F29 a F35—, y la **FIT F36 (v3.118.0)**, con la que empieza el bloque de **Acabado**
-(F36–F42), la **FIT F37 (v3.119.0)** y la **FIT F38 (v3.120.0)**, hechas. Lo que dejaron, y que vale para las 7 que quedan:
+(F36–F42), la **FIT F37 (v3.119.0)**, la **FIT F38 (v3.120.0)** y la **FIT F39 (v3.121.0)**, hechas. Lo que dejaron, y que vale para las 6 que quedan:
+
+- 🚨 **NADA ROTO A LA VISTA, EN TODA LA APLICACIÓN: `textoRoto()`** (FIT F39, apartado 2,
+  `src/lib/robustezFitness.js`). Busca en lo que se PINTA `NaN`, `undefined`, `null`, `[object
+  Object]`, `Invalid Date` e `Infinity`, en el texto **y en los estilos** (un `width: NaN%` rompe una
+  barra sin que se lea nada). **El banco de renderizado la pasa por sus 3684 casos** (sin
+  porcentajes: un zoom al 180 % existe), y al estrenarse cazó tres pantallas **fuera de Fitness**:
+  Negocio (*«Idea · Invalid Date»*), Sueño (*«undefined → undefined»*) y Tiempo de uso
+  (*«Productividad NaN %»*). ⚠️ **Una comprobación nueva sobre pantallas viejas encuentra lo que
+  llevaba ahí** (GE F1): se arregla la causa, no se afloja la regla.
+- 🚨 **FITNESS SE PINTA CON DATOS CORRUPTOS, Y SE PRUEBA ASÍ** (FIT F39, apartado 60,
+  `scripts/test-robustez-fitness.jsx`, que corre con `node scripts/smoke.mjs`): fechas imposibles,
+  marcas que no son números, ejercicios que ya no existen, porcentajes de 145 %, objetivos de un tipo
+  inventado, huecos `null` en las listas… **pasados por la puerta de carga de verdad**
+  (`normalizarFitnessConSesiones`) y pintados en las pantallas principales y sus detalles, más
+  cuatro **sin normalizar** (apartado 51). Ni `NaN`, ni un id técnico, ni una duración imposible.
+- 🚨 **UN EJERCICIO QUE YA NO EXISTE SE LLAMA POR LO QUE SE LEE DE SU ID, NUNCA POR SU ID**
+  (FIT F39, apartados 21 y 55, y matiza la **C-36**): `nombreSinCatalogo()` (`ejercicios.js`) lee
+  *«dominada-pronada-antigua»* como **«Dominada pronada antigua»** y un `uid()` de uno propio como
+  **«Ejercicio no disponible»**. Estaba el id pelado en **ocho** sitios —`progresion.js`,
+  `entrenamiento.js`, `entrenamientoUx.js`, `historial.js`, `detalleEjercicio.js`,
+  `explicacionRangos.js`, `ClasificacionView` y `sustitucion.jsx`—. **Al escribir un nombre de
+  ejercicio con respaldo, `nombreDeEjercicio(id, propios)`**, nunca `ej ? ej.nombre : id`.
+- 🚨 **UNA SESIÓN ABIERTA MÁS DE SEIS HORAS NO TIENE DURACIÓN** (FIT F39, apartados 19 y 26,
+  `HORAS_SESION_ANTIGUA` en `entrenamiento.js`). Las series no guardan cuándo se marcaron, así que
+  no se sabe cuándo paró: `duracionCreible()` devuelve `null` y el resumen, el historial y el reloj
+  en vivo dicen «—» o nada. La tarjeta dice **«Hay un entrenamiento sin terminar»**, cuándo empezó y
+  **Continuar · Finalizar · Descartar** (`sesionAntigua`, `desdeCuando`). ⚠️ **Nada se decide
+  solo**: la puerta de carga no la toca, y «Finalizar» lleva al resumen de la F8.
+- 🚨 **UNA HOJA DE FITNESS LLEVA `useDialogoAccesible(abierto, onCerrar)`** (FIT F39, apartados
+  36-38, `src/components/dialogoAccesible.js`): foco dentro, el tabulador encerrado, Escape y **el
+  foco de vuelta al botón que la abrió**; con dos abiertas, **solo la de arriba** escucha (una pila).
+  La caja lleva `ref`, `tabIndex={-1}` y `dialogo-caja`, y el velo `role="dialog"`, `aria-modal` y
+  `aria-label`. `dialogosSinTeclado()` caza el velo que nazca sin ello. ⚠️ **El hook va ANTES del
+  `return null`** de la hoja (regla de los hooks, y la regla 4).
+- 🔓 **EL ANILLO DE FOCO DE FITNESS ES `.fit-foco :focus-visible`** (FIT F39, apartado 37): los
+  campos llevan `outline-none` y un teclado no veía dónde estaba. Solo en Fitness (envuelto con
+  `display: contents`, que no añade caja) y en sus hojas (`.dialogo-caja`), para no cambiar el
+  aspecto del resto de formularios —la C-32 es de Josué—. Dos clases ganan a `.outline-none`.
+- ⚠️ **LA MATRIZ DE ESTADOS DICE DÓNDE SE RESUELVE CADA UNO, Y LA PRUEBA LO BUSCA** (FIT F39,
+  apartados 56 y 57): quince pantallas por seis estados; cada casilla es un texto importado de un
+  catálogo, un texto que la prueba encuentra en su archivo, o `noAplica` con su motivo. **Una
+  casilla que dice resolverse y no se encuentra pone la suite roja.**
+- ⚠️ **DE LOS SIETE RESPALDOS DEL APARTADO 52, CINCO YA EXISTÍAN** (FIT F39): `AreaSegura`,
+  `EmptyHint`, `Esqueleto`, `guardado_fallido` y `FECHA_NO_DISPONIBLE`. Solo nacen `MissingImage` y
+  `MissingData` (`src/components/estadosFitness.jsx`). **Una imagen nueva de Fitness va con
+  `MissingImage`** o con su `onError`: `imagenesSinRespaldo()` la caza.
+- 🐛 **UNA LISTA DE ARCHIVOS QUE LAS AUDITORÍAS RECORREN SE QUEDA CORTA SIN QUE NADIE LO NOTE**
+  (FIT F39): `ARCHIVOS_FITNESS` (F37) no tenía la actividad (F31), la semana planificada (F32) ni la
+  cola (F24), así que la F37 y la F38 **no los miraron nunca**. **Al crear un componente de Fitness,
+  añadirlo a `ARCHIVOS_FITNESS`.**
+- 🐛 **UNA REGLA DE LA CARGA SE APLICA TAMBIÉN A QUIEN LEE SIN CARGAR** (FIT F39, apartado 51):
+  `listaDeObjetivos` se caía con un objetivo a medias. En vez de parchear campo a campo —se probó, y
+  cada guardia destapaba el siguiente `null`—, **se le pasa la regla de la puerta de carga**
+  (`normalizarObjetivo`), que con lo ya normalizado no cambia nada.
+- ⚠️ **UN BARRIDO DE ETIQUETAS JSX SE CORTA EN EL `=>` DE UN `onChange`** (FIT F39): el primero que
+  escribí daba por «sin nombre» campos que tenían su `aria-label` después del manejador.
+  `etiquetasJsx()` cuenta llaves y comillas. Y la regla de «dentro de un `<label>`» se mira por la
+  **posición** de la etiqueta, no por su línea.
+- ⚠️ **`toLocaleDateString` NO ES IGUAL EN TODOS LOS NODE** (FIT F39): «14/09» en el iPhone y
+  «14/9» con un ICU pequeño. Se comprueba la fecha, no sus ceros.
 
 - 🚨 **LO QUE PIDE LA F38 YA ESTABA CASI ENTERO, Y ESTÁ DICHO DÓNDE** (FIT F38, `src/lib/movilFitness.js`):
   `YA_EXISTIA_F38` es una línea por apartado con quién lo resuelve —Safe Area (E3 F1), 44 px
@@ -1624,33 +1684,28 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F39/45 — Accesibilidad, estados límite y robustez de fitness** (líneas
-   6 176–7 163 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **cuarta** del bloque de
+1. 🏋️ **SEGUIR POR LA FIT F40/45 — Rendimiento y optimización técnica de fitness** (líneas
+   5 219–6 175 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **quinta** del bloque de
    **Acabado** (F36–F42). Se construye de la F1 a la F45, en orden, encadenando sin parar. El índice
    está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: su apartado 62 dice *"NO cambiar funcionalidad"*, y de sus 64
-   apartados una buena parte YA ESTÁ RESUELTA, cada una en su fase.** Rango sin cobertura,
-   provisional y confianza (5-7) son la **F15, la F19, la F20 y la F25**; el objetivo sin datos,
-   vencido y completado (9-11) es la **F14 y la F30** (`porcentaje: null`, nunca 0; la **C-37**
-   deriva el completado); la sesión descartada y el **doble guardado** (13 y 15) son la **F8** —un
-   guardado idempotente por la forma del dato—; el **error de guardado** (16 y 17) es la **F37**
-   (`guardado_fallido`, con «Reintentar»); la sesión en curso que se recupera (18 y 19) es la
-   **F7**; el ejercicio archivado (20) es la **F35** (`archivado: true`, y su historial se sigue
-   leyendo con `ejerciciosParaLeer`); la imagen o el tutorial que no están (22 y 23) son la **F2**
-   y la **F34** (un recurso propio que no carga lo dice); los datos corruptos y las fechas
-   inválidas (24 y 25) son la **F36** (`auditarDatosFitness`) y la **F31**
-   (`fechaDeSesionGuardada`, `sinDuplicadosPorId`); el volumen que no se puede calcular (27) es la
-   **F8**; el peso corporal (28) la **F15 y la F36** (`pesoCorporalValido`, una sola regla); los
-   porcentajes musculares suman 100 desde la **F2**; el movimiento reducido (45) es la **F37**; y el
-   **límite de error** (53) es **`AreaSegura`** de la F36. Antes de escribir un estado vacío o un
-   aviso, **mirar si ya existe** — y para accesibilidad, **`revisarPantalla()`** (EH F42) ya revisa
-   cada vista en cada pasada, y `auditarMovil()` (F38) lo pasa por todos los archivos de Fitness.
+   ⚠️ **Y lo segundo, en ESTA: sus apartados 60 y 61 dicen *"NO cambiar UX sin motivo"* y *"NO
+   sobreingenierizar"*, y parte de lo que pide YA EXISTE.** El retardo de las búsquedas y la
+   paginación son de **`src/lib/rendimiento.js`** (EH F44: `DEBOUNCE_BUSQUEDA_MS`, `paginar()` y
+   `PRESUPUESTOS`, medidos en `test-rendimiento`); el texto buscable de cada ejercicio se guarda en un
+   **`WeakMap`** sobre el objeto (F34, apartados 7 y 8) y las cachés de la F36 se invalidan solas
+   porque cada guardado crea un `fitness` nuevo (apartado 12); los rangos, el progreso y la actividad
+   **se calculan, no se guardan** (F15, F11, F31); la biblioteca va de veinte en veinte (F34,
+   apartado 37); las fotos se cargan al verse (F38, apartados 18 y 21) y se suben reducidas a 1600 px
+   (F26); el cronómetro y el descanso son **marcas de tiempo** (E3 F25 y F7, apartados 27 y 28); y el
+   movimiento es de la F37. **Antes de optimizar algo, medirlo**: un número de `PRESUPUESTOS` que
+   empeora es un rojo; una optimización sin medida es una suposición.
    ⚠️ **Y lo que ya se aprendió en el Acabado:** una puerta entre pantallas se comprueba abriendo el
    archivo que la cablea (F36), un guardado que nadie lee puede mentir (F37), una hoja lleva
-   `hoja-movil` y un campo sus props de teclado (F38), y **el recorrido mide a 320 px** —lo que no
-   cabe se acorta en el catálogo, nunca con un `if` en el JSX—.
+   `hoja-movil` y `useDialogoAccesible` (F38 y F39), nada roto a la vista (`textoRoto`, F39, en todo
+   el banco de renderizado), y **al crear un componente de Fitness, a `ARCHIVOS_FITNESS`** o las
+   auditorías no lo miran.
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único

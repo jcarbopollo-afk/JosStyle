@@ -10616,6 +10616,224 @@ for (const d of dispositivos_fit38) {
 almacen.fitness = fitnessDeAntes_fit38;
 almacen.salud = saludDeAntes_fit38;
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F39 — Accesibilidad, estados límite y robustez (Entrega 4 · 39/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   · Un usuario recién llegado hace los diez pasos del apartado 58 sin
+     encontrarse una pantalla rota ni un «NaN».
+   · Con datos CORRUPTOS (apartado 60) cada pantalla se pinta, no enseña nada
+     roto ni un id técnico y no salta ningún límite de error.
+   · Un entrenamiento abierto hace tres días dice «Hay un entrenamiento sin
+     terminar», sin reloj de días, y ofrece Finalizar (apartado 19).
+   · Una hoja se usa con el teclado: foco dentro, Tab que no se escapa, Escape
+     y el foco de vuelta al botón que la abrió (36-38); y el anillo se ve (37).
+   · Girar el iPhone en mitad de una serie no pierde nada (47). */
+console.log('\n── FIT F39 · Robustez y accesibilidad ──');
+
+const fitnessDeAntes_fit39 = almacen.fitness;
+const saludDeAntes_fit39 = almacen.salud;
+const aFitness_fit39 = async () => (await pulsar('Bienestar')) && pulsar('Fitness');
+/* Lo roto se busca con la MISMA función que usan las pruebas de Node y el
+   banco de renderizado, cargada por el servidor que sirve la página. */
+const roto_fit39 = () => page.evaluate(async () => (await import('/src/lib/robustezFitness.js')).textoRoto(document.body.innerHTML));
+const IDS_FIT39 = ['k3j9x2ab', 'dominada-pronada-antigua', 'olvidada-f39', 'rota-f39'];
+const idsVisibles_fit39 = async () => { const t = await ver(); return IDS_FIT39.filter((id) => t.includes(id)); };
+
+/* 1 · USUARIO NUEVO (apartado 58): los diez pasos. */
+almacen.fitness = {};
+almacen.salud = { ...(saludDeAntes_fit39 || {}), medidas: [] };
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+const erroresAntes_fit39 = errores.length;
+ok(await aFitness_fit39(), 'FIT F39 — 1 · un usuario recién llegado entra en Fitness');
+ok(/Aún no tienes un plan/.test(await esperarTexto(/Aún no tienes un plan/)) && (await roto_fit39()).length === 0,
+  '…y la pantalla dice qué hacer, sin un «NaN» ni un «undefined» (apartados 2 y 3)');
+ok(await pulsar('Rangos') && /Sin Rango/.test(await esperarTexto(/Sin Rango/)), 'FIT F39 — 2 · ve Rangos sin datos: «Sin Rango»');
+ok((await roto_fit39()).length === 0, '…sin nada roto');
+ok(await aFitness_fit39() && await pulsar('Abrir Ejercicios') && await esperarCampo('Buscar un ejercicio'), 'FIT F39 — 3 · explora los ejercicios');
+ok(await aFitness_fit39() && await pulsar('Crear entrenamiento'), 'FIT F39 — 4 · crea un entrenamiento');
+await esperarTexto(/Nombre/i);
+ok(await escribirCampo('Nombre del entrenamiento', 'Primero F39'), '…le pone nombre');
+ok(await pulsar('Añadir ejercicio') && await esperarCampo('Buscar un ejercicio'), '…abre el catálogo');
+ok(await pulsar('Press de banca'), '…añade el press de banca');
+ok(await pulsar('Volver a Entrenamiento'), '…vuelve al constructor');
+ok(await pulsar('Guardar') && /Entrenamiento guardado/i.test(await esperarTexto(/Entrenamiento guardado/i)), 'FIT F39 — 5 · lo guarda');
+ok(await aFitness_fit39() && await pulsar('Ver Primero F39'), 'FIT F39 — 6 · lo busca en Tu Plan');
+await page.waitForTimeout(400);
+ok(await pulsar('Ver Primero F39') && await pulsar('Empezar entrenamiento'), '…y lo empieza');
+await esperarTexto(/Marcar la serie|Serie/i);
+ok(await pulsar('Marcar la serie 1 como hecha'), 'FIT F39 — 7 · completa una serie');
+ok(await pulsar('Terminar el entrenamiento') && await esperarTexto(/Terminar entrenamiento/i), '…termina');
+ok(await pulsar('Terminar entrenamiento') && /Entrenamiento completado/i.test(await esperarTexto(/Entrenamiento completado/i)), '…y lo guarda');
+ok((await roto_fit39()).length === 0, '…con una pantalla de éxito sin nada roto');
+ok(await aFitness_fit39() && await pulsar('Abrir Historial') && /Primero F39/.test(await esperarTexto(/Primero F39/)), 'FIT F39 — 8 · lo ve en el historial');
+ok((await roto_fit39()).length === 0, '…sin nada roto');
+ok(await aFitness_fit39() && await pulsar('Progreso'), 'FIT F39 — 9 · ve su progreso');
+await page.waitForTimeout(600);
+ok((await roto_fit39()).length === 0, '…con un solo entrenamiento y nada roto');
+ok(await pulsar('Objetivos') && await pulsar('+ Crear objetivo') && await pulsar('Elegir ejercicio'), 'FIT F39 — 10 · crea un objetivo');
+ok(await page.evaluate(() => {
+  const c = document.querySelector('input[aria-label="Buscar un ejercicio"]');
+  if (!c) return false;
+  Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(c, 'press de banca');
+  c.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}), '…busca el ejercicio');
+ok(await pulsarQueEmpiece_fit10('Añadir Press de banca'), '…lo elige');
+await esperarTexto(/Qué quieres medir/i);
+ok(await escribirObjetivo_fit14('40') && await pulsar('Crear objetivo'), '…pone 40 y lo crea');
+await esperarTexto(/En progreso|40/);
+ok((await roto_fit39()).length === 0, '…y su detalle no enseña nada roto');
+ok(errores.length === erroresAntes_fit39, `🚨 FIT F39 — los diez pasos sin un solo error en la consola${errores.length > erroresAntes_fit39 ? `: ${errores.slice(erroresAntes_fit39).join(' | ').slice(0, 200)}` : ''}`);
+
+/* 2 · DATOS CORRUPTOS (apartado 60), y el entrenamiento olvidado (19). */
+const hace_fit39 = (d) => Date.now() - d * 86400000;
+const serieRota_fit39 = (id, hecho) => ({ id, numero: 1, origen: 'planificada', estado: 'hecha', modo: 'reps', plan: { reps: 10, peso: 20 }, hecho });
+almacen.fitness = {
+  sesiones: [
+    null, 'basura',
+    { id: 'rota-f39', estado: 'completada', fecha: '2026-13-45', iniciadaEn: 'abc', terminadaEn: 'def', nombre: 'Rota',
+      origen: { tipo: 'plan', ejercicios: [
+        { id: 'e1-f39', exerciseId: 'dominada-pronada-antigua', series: [serieRota_fit39('s1-f39', { reps: 8 })] },
+        { id: 'e2-f39', exerciseId: 'k3j9x2ab', series: [serieRota_fit39('s2-f39', { reps: 'diez', peso: 'mucho' })] },
+      ] } },
+    { id: 'olvidada-f39', estado: 'en_curso', fecha: hoy_fit31, iniciadaEn: hace_fit39(3), terminadaEn: null, nombre: 'Olvidada',
+      origen: { tipo: 'plan', ejercicios: [{ id: 'e3-f39', exerciseId: 'press-banca-barra', series: [serieRota_fit39('s3-f39', { reps: 10, peso: 40 })] }] } },
+  ],
+  objetivos: [null, { id: 'o1-f39', exerciseId: 'dominada-prona', tipo: 'reps', valor: 'x', fechaObjetivo: '2026-02-30' }, { id: 'o2-f39', tipo: 'inventado' }],
+  plantillas: [{ id: 'p1-f39', nombre: 'Con un ejercicio borrado', lineas: [{ id: 'l1-f39', exerciseId: 'ejercicio-borrado', series: -3 }] }],
+  ejercicios: [{ id: 'propio-f39', nombre: 'Mi raro', musculos: [{ subgrupoId: 'pecho-medio', porcentaje: 145 }] }],
+  favoritosEjercicios: ['no-existe', 42, null], planActivo: { planId: 'plan-que-no-existe', desde: 'nunca' },
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+const erroresCorruptos_fit39 = errores.length;
+ok(await aFitness_fit39(), 'FIT F39 — con datos corruptos, se entra en Fitness');
+const olvidada_fit39 = await esperarTexto(/sin terminar/i);
+ok(/Hay un entrenamiento sin terminar/.test(olvidada_fit39) && /Empezado el /.test(olvidada_fit39),
+  '🐛 FIT F39 — el de hace tres días dice «Hay un entrenamiento sin terminar» y cuándo empezó (apartado 19)');
+ok(!/\b\d{2,}:\d{2}:\d{2}\b/.test(olvidada_fit39), '🐛 …sin el reloj de «72:00:00» que salía antes');
+ok(await page.evaluate(() => ['Continuar', 'Finalizar', 'Descartar'].every((t) => [...document.querySelectorAll('button')].some((b) => b.innerText.trim() === t))),
+  '…con Continuar, Finalizar y Descartar: no se decide nada solo');
+const pantallasRotas_fit39 = [
+  ['Tu Plan', async () => aFitness_fit39()],
+  ['Historial', async () => (await aFitness_fit39()) && pulsar('Abrir Historial')],
+  ['Progreso', async () => (await aFitness_fit39()) && pulsar('Progreso')],
+  ['Objetivos', async () => (await aFitness_fit39()) && (await pulsar('Progreso')) && pulsar('Objetivos')],
+  ['Rangos', async () => (await aFitness_fit39()) && pulsar('Rangos')],
+  ['Ejercicios', async () => (await aFitness_fit39()) && pulsar('Abrir Ejercicios')],
+];
+for (const [nombre, ir] of pantallasRotas_fit39) {
+  const llega = await ir();
+  await page.waitForTimeout(600);
+  const rotos = await roto_fit39();
+  const ids = await idsVisibles_fit39();
+  const caida = /No se ha podido cargar/.test(await ver());
+  ok(llega && rotos.length === 0 && ids.length === 0 && !caida,
+    `FIT F39 — ${nombre} con datos corruptos: se pinta, sin nada roto, sin ids técnicos y sin caerse${rotos.length || ids.length || caida ? ` — ${[...rotos, ...ids, caida ? 'límite de error' : ''].filter(Boolean).join(' | ').slice(0, 220)}` : ''}`);
+}
+ok(await aFitness_fit39() && await pulsar('Abrir Historial') && await pulsar('Abrir Rota, Fecha no disponible'), '🐛 FIT F39 — la sesión sin fecha dice «Fecha no disponible», y se abre (apartado 25)');
+await page.waitForTimeout(600);
+const detalleRoto_fit39 = await ver();
+ok(/Dominada pronada antigua/.test(detalleRoto_fit39) && /Ejercicio no disponible/.test(detalleRoto_fit39) && (await idsVisibles_fit39()).length === 0,
+  '🐛 FIT F39 — sus ejercicios borrados se llaman «Dominada pronada antigua» y «Ejercicio no disponible», nunca por su id (apartados 21 y 55)');
+ok((await roto_fit39()).length === 0, '…y no enseña nada roto');
+ok(errores.length === erroresCorruptos_fit39, `🚨 FIT F39 — y ni un límite de error ni un error en la consola con los datos corruptos${errores.length > erroresCorruptos_fit39 ? `: ${errores.slice(erroresCorruptos_fit39).join(' | ').slice(0, 200)}` : ''}`);
+ok(await aFitness_fit39() && await pulsar('Finalizar'), 'FIT F39 — «Finalizar» el entrenamiento olvidado');
+const resumen_fit39 = await esperarTexto(/Terminar entrenamiento/i);
+ok(/Terminar entrenamiento/i.test(resumen_fit39) && !/\b\d{2,} h\b/.test(resumen_fit39),
+  '🐛 …lleva al resumen de la F8 SIN «72 h» de duración (apartado 26)');
+ok(await pulsar('Descartar') && await pulsar('Confirmar descartar el entrenamiento'), '…y él decide: lo descarta');
+await page.waitForTimeout(700);
+ok(!/sin terminar/i.test(await ver()), '…y la tarjeta desaparece');
+
+/* 3 · EL TECLADO EN UNA HOJA (apartados 36-38) y el anillo de foco (37). */
+await page.setViewportSize({ width: 1280, height: 900 });
+almacen.fitness = fitnessDeAntes_fit39;
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+ok(await aFitness_fit39() && await pulsar('Rangos'), 'FIT F39 — a Rangos, con el teclado');
+await esperarTexto(/Rango/);
+const abrio_fit39 = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button[aria-label]')].find((x) => x.getAttribute('aria-label').startsWith('Rango Élite'));
+  if (!b) return '';
+  b.focus();
+  return b.getAttribute('aria-label');
+});
+ok(!!abrio_fit39, '…el foco está en «Rango Élite»');
+await page.keyboard.press('Enter');
+await page.waitForTimeout(500);
+ok(await page.evaluate(() => { const d = document.querySelector('[role="dialog"][aria-label^="Rango "]'); return !!d && d.contains(document.activeElement); }),
+  '🔓 FIT F39 — Intro abre la hoja y el foco entra EN ella (apartado 38)');
+let dentro_fit39 = true;
+for (let i = 0; i < 8; i += 1) {
+  await page.keyboard.press('Tab');
+  dentro_fit39 = dentro_fit39 && await page.evaluate(() => { const d = document.querySelector('[role="dialog"][aria-label^="Rango "]'); return !!d && d.contains(document.activeElement); });
+}
+ok(dentro_fit39, '🔓 …y el tabulador no se escapa a la pantalla de detrás (apartado 38)');
+/* ⚠️ Hacia atrás se prueba DESDE EL PRIMERO de la hoja: tras ocho Tab el foco
+   puede estar en cualquier sitio de dentro, y un Mayús+Tab desde ahí se queda
+   dentro también SIN el arreglo (se comprobó quitándolo: salía verde). */
+await page.evaluate(() => {
+  const d = document.querySelector('[role="dialog"][aria-label^="Rango "]');
+  const primero = d && d.querySelector('button:not([disabled]), a[href], input:not([disabled])');
+  if (primero) primero.focus();
+});
+await page.keyboard.press('Shift+Tab');
+ok(await page.evaluate(() => { const d = document.querySelector('[role="dialog"][aria-label^="Rango "]'); return !!d && d.contains(document.activeElement); }),
+  '…ni hacia atrás: Mayús+Tab desde el primero vuelve al último, no a la pantalla de detrás');
+const anillo_fit39 = await page.evaluate(() => { const cs = getComputedStyle(document.activeElement); return { estilo: cs.outlineStyle, color: cs.outlineColor }; });
+ok(anillo_fit39.estilo === 'solid' && !/rgba\(0, 0, 0, 0\)|transparent/.test(anillo_fit39.color),
+  `🔓 FIT F39 — y se ve dónde está: un anillo de ${anillo_fit39.color} (apartado 37)`);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(400);
+ok(await page.evaluate(() => !document.querySelector('[role="dialog"][aria-label^="Rango "]')), '🔓 FIT F39 — Escape la cierra (apartado 38)');
+ok(await page.evaluate((a) => (document.activeElement && document.activeElement.getAttribute('aria-label')) === a, abrio_fit39),
+  '🔓 …y el foco VUELVE al botón que la abrió (apartado 38)');
+/* ⚠️ Un campo que existe SIEMPRE: el buscador del historial solo se pinta si hay
+   sesiones, y con este escenario no las hay (salió rojo por eso, no por el foco). */
+ok(await aFitness_fit39() && await pulsar('Abrir Ejercicios') && await esperarCampo('Buscar un ejercicio'), 'FIT F39 — a la biblioteca, con su buscador');
+const campoFoco_fit39 = await page.evaluate(() => {
+  const i = document.querySelector('input[aria-label="Buscar un ejercicio"]');
+  if (!i) return null;
+  i.focus();
+  const cs = getComputedStyle(i);
+  return { estilo: cs.outlineStyle, color: cs.outlineColor };
+});
+ok(campoFoco_fit39 && campoFoco_fit39.estilo === 'solid' && !/rgba\(0, 0, 0, 0\)|transparent/.test(campoFoco_fit39.color),
+  `🐛 FIT F39 — un campo con \`outline-none\` ya enseña dónde está el foco (apartado 37: «nunca eliminarlo») — ${JSON.stringify(campoFoco_fit39)}`);
+
+/* 4 · GIRAR EL iPHONE EN MITAD DE UNA SERIE (apartado 47). */
+almacen.fitness = { ...(fitnessDeAntes_fit39 || {}), sesiones: [], plantillas: [plantilla_fit38], planActivo: null, objetivos: [] };
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+ok(await aFitness_fit39() && await pulsar('Ver Móvil F38'), 'FIT F39 — se empieza un entrenamiento');
+await page.waitForTimeout(400);
+ok(await pulsar('Ver Móvil F38') && await pulsar('Empezar entrenamiento'), '…el de siempre');
+await esperarTexto(/Marcar la serie/i);
+ok(await escribirCampo('Repeticiones de la serie 1', '12'), '…se escriben 12 repeticiones');
+await page.waitForTimeout(600);
+await page.setViewportSize({ width: 844, height: 390 });
+await page.waitForTimeout(600);
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(600);
+const tras_fit39 = await page.evaluate(() => {
+  const i = document.querySelector('input[aria-label="Repeticiones de la serie 1"]');
+  return i ? i.value : null;
+});
+const guardada_fit39 = ((((ultimo_fit34().sesiones || []).find((x) => x && x.estado === 'en_curso') || {}).origen || {}).ejercicios || [])[0]?.series?.[0]?.hecho?.reps;
+ok(tras_fit39 === '12' && Number(guardada_fit39) === 12,
+  `🔓 FIT F39 — girar a horizontal y volver no pierde nada: el campo dice ${tras_fit39} y la sesión guardada ${guardada_fit39} (apartado 47)`);
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), '…se sale');
+await esperarTexto(/Continuar entrenamiento/i);
+ok(await pulsar('Descartar sesión') && await pulsar('Descartar el entrenamiento en curso'), '…y se descarta para no dejarlo a medias');
+
+almacen.fitness = fitnessDeAntes_fit39;
+almacen.salud = saludDeAntes_fit39;
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

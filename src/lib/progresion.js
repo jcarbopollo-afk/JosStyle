@@ -1,5 +1,5 @@
 import { ejerciciosDeSesion } from './entrenamiento';
-import { ejercicioPorId } from './ejercicios';
+import { ejercicioPorId, nombreSinCatalogo } from './ejercicios';
 
 /* Entrega 4 · Fase 11/45 — «Progresión y comparación del rendimiento».
    ═══════════════════════════════════════════════════════════════════════════
@@ -197,7 +197,7 @@ function aparicionesDeSesion(sesion, propios = []) {
       exerciseId,
       /* Apartado 3 — lo que identifica al ejercicio, conservado aunque se compare
          por id: para decirlo en pantalla y por si una fase futura lo necesita. */
-      nombre: ej ? ej.nombre : exerciseId,
+      nombre: ej ? ej.nombre : nombreSinCatalogo(exerciseId),
       variante: ej?.variante || '',
       agarre: ej?.agarre || null,
       equipamiento: ej ? lista(ej.equipamiento) : [],
@@ -460,7 +460,7 @@ export function progresoDeEjercicio(fitness, exerciseId, { propios = [] } = {}) 
   const cambioDeMedida = !!(ultima && inmediata && inmediata.clase !== ultima.clase);
   return {
     exerciseId: texto(exerciseId),
-    nombre: ultima ? ultima.nombre : (ejercicioPorId(texto(exerciseId), propios)?.nombre || texto(exerciseId)),
+    nombre: ultima ? ultima.nombre : (ejercicioPorId(texto(exerciseId), propios)?.nombre || nombreSinCatalogo(exerciseId)),
     /* Apartado 27 — sin ninguna aparición: «Nuevo ejercicio». */
     nuevo: apariciones.length === 0,
     veces: apariciones.length,

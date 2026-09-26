@@ -19,7 +19,7 @@ import {
   rangoEfectivoDeEjercicio, rangoEfectivoDeGrupo, rangoEfectivoDeSubgrupo,
   rangoGlobalEfectivo, rangosEfectivos, evolucionDeRango, fuenteRango,
 } from './motorRangos.js';
-import { ejercicioPorId } from './ejercicios.js';
+import { ejercicioPorId, nombreSinCatalogo } from './ejercicios.js';
 import { ejerciciosDelMusculo, resumenDeTendencias, grupoMuscular } from './detalleMuscular.js';
 
 const lista = (x) => (Array.isArray(x) ? x : []);
@@ -201,7 +201,7 @@ export function explicacionDeEjercicio(fitness, exerciseId, { propios = [], perf
   return {
     ...base({
       ambito: 'ejercicio',
-      titulo: ej ? ej.nombre : texto(exerciseId),
+      titulo: ej ? ej.nombre : nombreSinCatalogo(exerciseId),
       r,
       /* 🚨 Apartado 7 — la métrica que corresponde al ejercicio y ninguna más:
          nada de «18 kg» en algo que solo se mide en segundos. La escribe la

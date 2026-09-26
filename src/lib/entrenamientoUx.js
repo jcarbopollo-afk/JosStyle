@@ -3,7 +3,7 @@ import {
   restanteDescanso, textoPlanificado,
 } from './entrenamiento';
 import {
-  ejercicioPorId,
+  ejercicioPorId, nombreSinCatalogo,
   agarre as agarrePorId, tipoEjercicio,
 } from './ejercicios';
 /* 🔓 FIT F33 — el motor de sustitución, uno para toda la aplicación. */
@@ -96,7 +96,7 @@ export function cabeceraEnSesion(ejSesion, propios = []) {
   const ag = ej?.agarre ? agarrePorId(ej.agarre) : null;
   const tipo = ej ? tipoEjercicio(lista(ej.tipos)[0]) : null;
   return {
-    nombre: ej ? ej.nombre : ejSesion.exerciseId,
+    nombre: ej ? ej.nombre : nombreSinCatalogo(ejSesion.exerciseId),
     variante: ej?.variante || '',
     agarre: ag ? `Agarre ${ag.nombre.toLowerCase()}` : '',
     tipo: tipo ? tipo.nombre : '',

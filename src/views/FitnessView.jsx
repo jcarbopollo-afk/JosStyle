@@ -77,7 +77,7 @@ import {
   empezarSesion, guardarSesion, sesionActiva, descartarSesion,
 } from '../lib/entrenamiento';
 import {
-  sesionEnFinalizacion, AVISO_RECUPERAR_FINAL, descartarEntrenamiento,
+  sesionEnFinalizacion, AVISO_RECUPERAR_FINAL, descartarEntrenamiento, pasarAFinalizacion,
 } from '../lib/finalizacion';
 import {
   crearRutina, planARutina, leerBorrador, borrarBorrador,
@@ -289,7 +289,7 @@ export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEnt
 export function AreaEntrenamiento({
   fitness, calistenia, accent, entrenoProps, onAbrirConstructor = null,
   onGuardarFitness = null, onEliminarPlantilla = null, onEmpezarSesion = null,
-  sesionEnCurso = null, onContinuarSesion = null, onDescartarSesion = null,
+  sesionEnCurso = null, onContinuarSesion = null, onDescartarSesion = null, onFinalizarSesion = null,
   sesionSinGuardar = null, onSeguirGuardando = null, onDescartarSinGuardar = null,
   onEliminarSesion = null,
   /* 🔓 FIT F34 — desde la ficha de un ejercicio se va a Progreso, a un objetivo
@@ -498,6 +498,7 @@ export function AreaEntrenamiento({
           accent={accent}
           onContinuar={onContinuarSesion}
           onDescartar={onDescartarSesion || (() => {})}
+          onFinalizar={onFinalizarSesion}
         />
       )}
 
@@ -658,13 +659,15 @@ export default function FitnessView(props) {
       return g;
     }, (error) => { setAviso('guardado_fallido'); return { ok: false, error }; });
   } : null;
+  /* 🔓 FIT F39 (apartado 37) — `fit-foco` es el anillo de foco de Fitness
+     (`index.css`). Con `display: contents`: no añade una caja al diseño. */
   return (
-    <>
+    <div className="fit-foco">
       <AreaSegura clave="fitness" nombre="Fitness" accent={accent}>
         <FitnessViewContenido {...props} onGuardarFitness={guardarF} />
       </AreaSegura>
       {aviso && <AvisoAccion accion={aviso} accent={accent} onCerrar={() => setAviso(null)} />}
-    </>
+    </div>
   );
 }
 
@@ -948,6 +951,14 @@ function FitnessViewContenido({
           onDescartarSesion={pendiente && guardarF ? () => {
             const r = descartarSesion(pendiente, { confirmado: true });
             if (r.ok) guardarF(guardarSesion(fitness || {}, r.sesion));
+          } : null}
+          /* 🔓 FIT F39, apartado 19 — la que se quedó abierta hace días:
+             Finalizar la lleva al resumen de la F8, que es donde él decide. */
+          onFinalizarSesion={pendiente && guardarF ? () => {
+            const s = pasarAFinalizacion(pendiente);
+            if (!s) return;
+            guardarSesionViva(s);
+            setEntrenando(s.id);
           } : null}
           /* 🔓 FIT F34 — las cuatro puertas de la ficha de un ejercicio. */
           perfil={perfil}

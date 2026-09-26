@@ -134,6 +134,12 @@ export const ARCHIVOS_FITNESS = [
   'src/components/historialRango.jsx', 'src/components/bibliotecaEjercicios.jsx', 'src/components/detalleEjercicio.jsx',
   'src/components/resumenProgreso.jsx', 'src/components/siguienteRango.jsx', 'src/components/explicacionRango.jsx',
   'src/components/contribucionMuscular.jsx', 'src/components/resumenRangos.jsx', 'src/components/areaSegura.jsx',
+  /* 🐛 FIT F39 — tres componentes de Fitness se habían quedado fuera de esta
+     lista, así que las auditorías de la F37 y la F38 no los miraban nunca:
+     la actividad (F31), la semana planificada (F32) y la cola de
+     clasificación (F24). Y los dos respaldos de la F39. */
+  'src/components/actividadEntrenamiento.jsx', 'src/components/planificacionSemanal.jsx',
+  'src/components/colaClasificacion.jsx', 'src/components/estadosFitness.jsx',
 ];
 
 /* ═══════════════════════════════════════════════════════════════════════════

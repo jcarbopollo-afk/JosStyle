@@ -719,6 +719,15 @@ atrás (AS F1, apartado 10). **Si algún día Josué quiere el nombre histórico
 añade a `crearWorkoutExercise`, se normaliza y **solo vale para lo que entrene a partir de ese
 día** — lo de antes ya no se puede recuperar.
 
+🔓 **Y la FIT F39 (v3.121.0) lo matiza sin reabrirlo.** Su apartado 21 pide *"mostrar snapshot
+histórico si existe"* —y no existe, por lo de arriba— y su apartado 55 prohíbe enseñar *"IDs
+técnicos"*, que es justo lo que se enseñaba: «k3j9x2ab» si el ejercicio era uno propio. **La lectura
+que respeta las tres cosas**: se sigue sin guardar nombre (C-36 en pie), y lo que se enseña es lo que
+se **lee** del id — uno del catálogo es una ranura en español, así que *«dominada-pronada-antigua»*
+se lee **«Dominada pronada antigua»** (el ejemplo del propio apartado 21); uno propio lo pone
+`uid()`, no dice nada, y es **«Ejercicio no disponible»**. Vive en `nombreSinCatalogo()`
+(`ejercicios.js`), y las comprobaciones de la F29 que exigían el id pelado **se dieron la vuelta**.
+
 ---
 
 ### C-37 — ✅ RESUELTA AL CONSTRUIR (FIT F30, v3.112.0) · El `completedAt` que el apartado 15 pide guardar

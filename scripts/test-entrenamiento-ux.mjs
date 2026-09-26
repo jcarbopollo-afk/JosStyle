@@ -93,8 +93,9 @@ ok(cabeceraEnSesion(LSIT, []).agarre === '' || !ejercicioPorId('l-sit').agarre,
   '⚠️ Sin agarre en el catálogo no se inventa uno (apartado 39)');
 ok(cabeceraEnSesion(LSIT, []).porTiempo === true, '…y un L-sit se declara por tiempo (apartado 25)');
 ok(cabeceraEnSesion(null) === null, 'Sin ejercicio no revienta');
-ok(cabeceraEnSesion({ id: 'x', exerciseId: 'ya-no-existe', series: [] }, []).nombre === 'ya-no-existe',
-  '⚠️ Un ejercicio que ya no está en el catálogo se sigue pudiendo pintar (apartado 39)');
+/* 🔓 FIT F39 — con el nombre que se LEE de su id, nunca el id pelado (apartado 55). */
+ok(cabeceraEnSesion({ id: 'x', exerciseId: 'ya-no-existe', series: [] }, []).nombre === 'Ya no existe',
+  '⚠️ Un ejercicio que ya no está en el catálogo se sigue pudiendo pintar (apartado 39), leído de su id');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 2. La serie activa (apartado 7) ──');

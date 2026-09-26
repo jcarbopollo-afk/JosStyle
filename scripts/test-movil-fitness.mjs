@@ -136,9 +136,10 @@ const hojas = Object.values(archivos).reduce((n, src) => n + (src.match(/\bhoja-
 ok(hojas >= 6, `Las hojas que entran (F37) son ${hojas}, y todas pasan`);
 ok(!Object.entries(archivos).some(([, src]) => /maxHeight:\s*'8\dvh'|max-h-\[8\dvh\]/.test(src)),
   '🐛 …y ninguna guarda su tope viejo en `vh`: con la barra de Safari a la vista se salían por debajo');
-ok(/hoja-entra hoja-movil"[\s\S]{0,300}paddingBottom: 'calc\(var\(--safe-bottom\) \+ 1\.25rem\)'/.test(leer('src/components/historialRango.jsx')),
+/* 🔓 FIT F39 — las hojas llevan además `dialogo-caja` (el foco y Escape). */
+ok(/hoja-entra hoja-movil[^"]*"[\s\S]{0,300}paddingBottom: 'calc\(var\(--safe-bottom\) \+ 1\.25rem\)'/.test(leer('src/components/historialRango.jsx')),
   '🐛 El historial de un rango deja sitio a la barra de inicio: era la única hoja que no (apartado 47)');
-ok(/hoja-entra hoja-movil"/.test(leer('src/views/RangosView.jsx')),
+ok(/hoja-entra hoja-movil\b/.test(leer('src/views/RangosView.jsx')),
   '🐛 …y la hoja de un rango tiene tope y scroll: no tenía ninguno de los dos (apartado 22)');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
@@ -150,7 +151,7 @@ ok(miniaturasSinPerezosa('<img src={u} alt="" className="w-16 object-cover" />')
   'Una miniatura sin `loading="lazy"` se caza; la foto que se ABRE (`object-contain`) se carga ya');
 ok(/loading="lazy"[\s\S]{0,160}object-cover/.test(leer('src/components/resumenProgreso.jsx')),
   '🐛 Las fotos del resumen de Progreso se cargaban todas de golpe; ahora cuando se ven');
-ok(/<img src=\{urls\[o\.id\]\} alt="" loading="lazy"/.test(leer('src/components/comparadorFotos.jsx')),
+ok(/<(?:img|MissingImage) src=\{urls\[o\.id\]\} alt="" loading="lazy"/.test(leer('src/components/comparadorFotos.jsx')),
   '🐛 …y la tira de fechas del comparador, igual');
 ok(gestosEscondidos('<div onContextMenu={f} />').includes('pulsacion_larga')
   && gestosEscondidos('<li draggable onDragStart={f} />').includes('arrastrar')

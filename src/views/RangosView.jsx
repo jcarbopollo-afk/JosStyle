@@ -19,6 +19,7 @@
    =========================================================================== */
 
 import React, { useMemo, useState } from 'react';
+import { useDialogoAccesible } from '../components/dialogoAccesible';
 import { createPortal } from 'react-dom';
 import { ChevronRight, Check, Star, Lock, X, Dumbbell, ClipboardList } from 'lucide-react';
 import { COLORS } from '../tokens';
@@ -217,6 +218,8 @@ export function RankList({ escala = [], accent, onAbrir }) {
  *  `createPortal` (regla 3 del proyecto): un `fixed inset-0` dentro de un
  *  contenedor con transformaciones se ancla al contenedor, no al iPhone. */
 export function HojaDeRango({ detalle, accent, onCerrar }) {
+  /* FIT F39 (apartados 36-38) — foco dentro, Escape y vuelta al botón que lo abrió. */
+  const caja = useDialogoAccesible(!!detalle, onCerrar);
   if (!detalle || typeof document === 'undefined') return null;
   const e = ESTADOS[detalle.estado] || ESTADOS.no_disponible;
   const Icono = e.icono;
@@ -230,7 +233,9 @@ export function HojaDeRango({ detalle, accent, onCerrar }) {
       aria-label={`Rango ${detalle.nombre}`}
     >
       <div
-        className="w-full max-w-md rounded-t-3xl p-5 space-y-4 hoja-entra hoja-movil"
+        ref={caja}
+        tabIndex={-1}
+        className="w-full max-w-md rounded-t-3xl p-5 space-y-4 hoja-entra hoja-movil dialogo-caja"
         style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >

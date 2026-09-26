@@ -59,7 +59,7 @@ ordena es **el trabajo**, no el documento.
 | **F36** ✅ **v3.118.0** | Integración global del sistema fitness | 8963–10007 | 1045 |
 | **F37** ✅ **v3.119.0** | Microinteracciones y feedback premium de fitness | 8083–8962 | 880 |
 | **F38** ✅ **v3.120.0** | Ux móvil extrema y optimización para iphone | 7164–8082 | 919 |
-| **F39** | Accesibilidad, estados límite y robustez de fitness | 6176–7163 | 988 |
+| **F39** ✅ **v3.121.0** | Accesibilidad, estados límite y robustez de fitness | 6176–7163 | 988 |
 | **F40** | Rendimiento y optimización técnica de fitness | 5219–6175 | 957 |
 | **F41** | Persistencia, recuperación y resiliencia de datos de fitness | 4287–5218 | 932 |
 | **F42** | Auditoría visual y acabado premium de fitness | 3281–4286 | 1006 |
@@ -78,7 +78,7 @@ ordena es **el trabajo**, no el documento.
 | **Rangos** | F15–F25 | Clasificación muscular, rankings, evolución, comparación y resumen |
 | **Progreso físico** 🏁 | F26–F28 | Fotos, comparador e integración con el resto del progreso — **cerrado en la v3.110.0** |
 | **Inteligencia** 🏁 | F29–F35 | Análisis por ejercicio, objetivos, consistencia, planificación semanal, sustituciones, biblioteca y calidad del catálogo — **las siete hechas: F29 (v3.111.0), F30 (v3.112.0), F31 (v3.113.0), F32 (v3.114.0), F33 (v3.115.0), F34 (v3.116.0) y F35 (v3.117.0)** |
-| **Acabado** 🟡 | F36–F42 | Integración global, microinteracciones, UX de iPhone, accesibilidad, rendimiento, persistencia y acabado visual — **F36 (v3.118.0), F37 (v3.119.0) y F38 (v3.120.0) hechas** |
+| **Acabado** 🟡 | F36–F42 | Integración global, microinteracciones, UX de iPhone, accesibilidad, rendimiento, persistencia y acabado visual — **F36 (v3.118.0), F37 (v3.119.0), F38 (v3.120.0) y F39 (v3.121.0) hechas** |
 | **Cierre** | F43–F45 | Auditoría funcional, limpieza de deuda técnica y release |
 
 ## ⚠️ Antes de escribir una línea de la F1

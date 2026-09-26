@@ -244,7 +244,15 @@ export const FILTROS_OBJETIVOS = [
 /** Activos primero (los más avanzados arriba), luego conseguidos; los
  *  cancelados, solo si se piden (apartado 15). */
 export function listaDeObjetivos(fitness, { filtro = 'todos', grupo = 'todos', propios = [], hoy = todayISO() } = {}) {
-  const todos = lista((fitness || {}).objetivos).map((o) => progresoDeObjetivo(fitness, o, { propios, hoy }));
+  /* 🐛 FIT F39 (apartado 51) — un objetivo a medias (un hueco, uno sin
+     ejercicio, uno de un tipo que no existe) tumbaba Progreso entero con
+     «Cannot read properties of null». Lo guardado pasa por la puerta de carga,
+     que ya los limpia; pero esta función la llama quien tenga un `fitness`,
+     normalizado o no. **La regla es la de la carga** (`normalizarObjetivo`), no
+     una segunda: con lo ya normalizado no cambia nada. */
+  const todos = lista((fitness || {}).objetivos)
+    .map(normalizarObjetivo).filter(Boolean)
+    .map((o) => progresoDeObjetivo(fitness, o, { propios, hoy }));
   const orden = { activo: 0, completado: 1, cancelado: 2 };
   const visibles = todos
     .filter((o) => (filtro === 'todos' ? o.estado !== 'cancelado' : o.estado === filtro))

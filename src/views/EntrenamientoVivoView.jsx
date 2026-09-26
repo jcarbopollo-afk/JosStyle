@@ -49,7 +49,7 @@ import { iconoDeGrupo } from '../components/iconosFitness';
 import EjerciciosView, { DetalleEjercicio } from './EjerciciosView';
 import { ejercicioPorId } from '../lib/ejercicios';
 import {
-  ejerciciosDeSesion, ejercicioActual, duracionSesion, reloj,
+  ejerciciosDeSesion, ejercicioActual, duracionSesion, duracionCreible, reloj,
   irAEjercicio, siguienteEjercicio, anteriorEjercicio,
   editarSerie, anadirSerie, quitarSerie, recuperarSerie,
   sustituirEjercicio, notaDeEjercicio, restanteDescanso,
@@ -674,7 +674,7 @@ export function AvisoSesion({ aviso, accent, acciones }) {
 /* ── La tarjeta de sesión en curso (F7 apartado 30 · F9 apartado 31) ───────
    🚨 F9: es el **estado compacto**. Enseña nombre, tiempo, ejercicio y, desde
    que el descanso vive en la sesión, si está descansando. */
-export function SesionRecuperable({ sesion, accent, onContinuar, onDescartar, textos = null }) {
+export function SesionRecuperable({ sesion, accent, onContinuar, onDescartar, textos = null, onFinalizar = null }) {
   const [confirmando, setConfirmando] = useState(false);
   const ahora = useAhora(true, 1000);
   const base = avisoDeRecuperacion(sesion, { ahora });
@@ -696,6 +696,11 @@ export function SesionRecuperable({ sesion, accent, onContinuar, onDescartar, te
           <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
             {[datos.nombre, datos.duracion, datos.ejercicio].filter(Boolean).join(' · ')}
           </p>
+          {/* 🔓 FIT F39, apartado 19 — la que se quedó abierta: cuándo empezó,
+              no un reloj de días. */}
+          {datos.desde && (
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>{datos.desde}</p>
+          )}
           {datos.descanso && (
             <p className="text-xs font-bold tabular-nums" style={{ color: accent }}>{datos.descanso}</p>
           )}
@@ -719,6 +724,11 @@ export function SesionRecuperable({ sesion, accent, onContinuar, onDescartar, te
       ) : (
         <div className="flex gap-2 mt-3 flex-wrap">
           <PrimaryButton accent={accent} icon={ChevronRight} onClick={onContinuar}>{datos.continuar}</PrimaryButton>
+          {/* 🔓 FIT F39, apartado 19 — Finalizar lleva al resumen de la F8: ahí
+              revisa lo que hizo y decide si se guarda. Nada se decide solo. */}
+          {datos.finalizar && onFinalizar && (
+            <GhostBtn icon={Check} onClick={onFinalizar}>{datos.finalizar}</GhostBtn>
+          )}
           <GhostBtn icon={X} onClick={() => setConfirmando(true)}>{datos.descartar}</GhostBtn>
         </div>
       )}
@@ -882,7 +892,9 @@ export default function EntrenamientoVivoView({
     <>
       <CabeceraSesion
         nombre={sesion.nombre}
-        tiempo={reloj(duracionSesion(sesion, ahora))}
+        /* 🐛 FIT F39 (apartado 26) — una sesión retomada días después no lleva
+           «72:00:00» entrenando: sin una duración creíble, «—». */
+        tiempo={duracionCreible(sesion, ahora) === null ? '—' : reloj(duracionSesion(sesion, ahora))}
         progreso={progreso}
         accent={accent}
         onSalir={() => setAviso('salir')}

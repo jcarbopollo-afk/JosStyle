@@ -1109,6 +1109,24 @@ else
   fallo "Falla la validación del catálogo"; grep '✗' /tmp/jc_validacion_catalogo.log
 fi
 
+# FIT F39 — accesibilidad, estados límite y robustez. Lo que más se vigila: que ninguna pantalla
+# de Fitness enseñe NaN, undefined, Invalid Date, un porcentaje imposible o un id técnico con
+# datos de un usuario nuevo o CORRUPTOS (pasados por la puerta de carga de verdad), que un
+# entrenamiento que se quedó abierto días no «dure» 72 horas, que cada una de las quince
+# pantallas del apartado 57 diga qué hace con sus seis estados, y que cada hoja se use con el
+# teclado. ⚠️ Lo de «nada roto a la vista» vale además para TODA la aplicación: lo comprueba
+# el banco de renderizado entero (smoke-vistas.jsx).
+if node --import ./scripts/resolver-vite.mjs scripts/test-robustez-fitness.mjs >/tmp/jc_robustez_fitness.log 2>&1; then
+  ok "Robustez y accesibilidad de Fitness (FIT F39) — $(grep -c '✓' /tmp/jc_robustez_fitness.log) comprobaciones"
+else
+  fallo "Falla la robustez de Fitness"; grep '✗' /tmp/jc_robustez_fitness.log
+fi
+if node scripts/smoke.mjs test-robustez-fitness.jsx >/tmp/jc_robustez_render.log 2>&1; then
+  ok "Fitness con datos corruptos, pintado (FIT F39) — $(grep -c '✓' /tmp/jc_robustez_render.log) comprobaciones"
+else
+  fallo "Alguna pantalla de Fitness se rompe con datos corruptos"; grep '✗' /tmp/jc_robustez_render.log
+fi
+
 # FIT F38 — la UX móvil e iPhone. Lo que más se vigila: que cada campo de número abra su
 # teclado sin autocorrector, que cada hoja quepa en la pantalla visible del iPhone y deje
 # sitio a la barra de inicio, que las miniaturas se carguen cuando se ven, que no haya

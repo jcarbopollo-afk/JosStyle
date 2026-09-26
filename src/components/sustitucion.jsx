@@ -17,13 +17,14 @@
    · Cada tarjeta dice **nombre, compatibilidad, motivo y acción** con
      palabras (apartado 37): el nivel es una palabra, nunca solo un color. */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
 import { ChevronRight, Search, SlidersHorizontal, X, Check, Repeat } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { PrimaryButton, GhostBtn } from './ui';
-import { nombreCompleto } from '../lib/ejercicios';
+import { nombreCompleto, nombreSinCatalogo } from '../lib/ejercicios';
 import {
   pantallaDeSustitucion, sustitucionElegida, necesitaConfirmar, nivelCompatibilidad,
   TEXTOS_SUSTITUCION, AVISO_OBJETIVO,
@@ -389,7 +390,7 @@ export function ExerciseReplacement({
             {TEXTOS_SUSTITUCION.titulo}
           </p>
           <p className="text-xs" style={{ color: COLORS.textMuted }}>
-            {pantalla.original ? nombreCompleto(pantalla.original) : exerciseId}
+            {pantalla.original ? nombreCompleto(pantalla.original) : nombreSinCatalogo(exerciseId)}
           </p>
           <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>
             {ambito === 'sesion' ? TEXTOS_SUSTITUCION.soloSesion : TEXTOS_SUSTITUCION.soloBorrador}
@@ -458,12 +459,9 @@ export function ExerciseReplacement({
 /** Apartado 38 — la hoja inferior del constructor. Portal (regla 3), Escape
  *  para cerrar y la Safe Area de abajo; en una pantalla ancha, más ancha. */
 export function ExerciseReplacementModal({ abierto = true, onCerrar, ...props }) {
-  useEffect(() => {
-    if (!abierto) return undefined;
-    const alPulsar = (ev) => { if (ev.key === 'Escape' && onCerrar) onCerrar(); };
-    document.addEventListener('keydown', alPulsar);
-    return () => document.removeEventListener('keydown', alPulsar);
-  }, [abierto, onCerrar]);
+  /* 🔓 FIT F39 — su Escape propio (F33) pasa a ser el de todas las hojas, que
+     además mete el foco dentro y lo devuelve al cerrar (apartados 36-38). */
+  const caja = useDialogoAccesible(abierto, onCerrar);
   if (!abierto || typeof document === 'undefined') return null;
   return createPortal(
     <div
@@ -475,7 +473,9 @@ export function ExerciseReplacementModal({ abierto = true, onCerrar, ...props })
       aria-label={TEXTOS_SUSTITUCION.titulo}
     >
       <div
-        className="w-full max-w-md sm:max-w-2xl rounded-t-3xl sm:rounded-3xl p-5 hoja-entra hoja-movil"
+        ref={caja}
+        tabIndex={-1}
+        className="w-full max-w-md sm:max-w-2xl rounded-t-3xl sm:rounded-3xl p-5 hoja-entra hoja-movil dialogo-caja"
         style={{ background: COLORS.bg, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >

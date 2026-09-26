@@ -478,6 +478,32 @@ export function ejercicioPorId(id, propios = []) {
     || null;
 }
 
+/* 🐛 FIT F39 (apartados 21 y 55) — **el nombre de un ejercicio que ya no está en
+   ninguna parte.** Desde la F11 se enseñaba su id tal cual (`nombre: ej ?
+   ej.nombre : exerciseId`, C-36), y eso pone en la pantalla de Josué un id
+   técnico —«k3j9x2ab» si era uno suyo—, que es lo que el apartado 55 prohíbe.
+   No hay «nombre histórico» que recuperar: una sesión guarda solo el
+   `exerciseId` (F3, C-36), y eso no cambia. Lo que sí se puede es LEER el id:
+   · uno del catálogo es una ranura escrita en español (F2): «dominada-prona»
+     se lee «Dominada prona», que es lo que era;
+   · uno propio lo pone `uid()` —ocho caracteres al azar, sin guiones— y no
+     dice nada: «Ejercicio no disponible». */
+export const EJERCICIO_NO_DISPONIBLE = 'Ejercicio no disponible';
+
+export function nombreSinCatalogo(exerciseId) {
+  const id = texto(exerciseId);
+  if (!/^[a-z]+(?:-[a-z0-9]+)+$/.test(id)) return EJERCICIO_NO_DISPONIBLE;
+  const legible = id.replace(/-/g, ' ');
+  return legible.charAt(0).toUpperCase() + legible.slice(1);
+}
+
+/** El nombre que se enseña de un ejercicio por su id: el suyo si existe y, si
+ *  no, el que se lee de su id. Nunca el id pelado. */
+export const nombreDeEjercicio = (id, propios = []) => {
+  const ej = ejercicioPorId(id, propios);
+  return ej ? ej.nombre : nombreSinCatalogo(id);
+};
+
 /** Todo el catálogo más lo que se haya creado Josué (la F1 dejó la lista).
  *  🔓 FIT F35, apartado 37 — **sin los archivados**: esta es la lista de lo que
  *  se puede elegir (biblioteca, sustitutos, ejercicios de un músculo…). Un

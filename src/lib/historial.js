@@ -1,8 +1,8 @@
-import { todayISO, addDays, fechaValida } from './helpers';
-import { ejerciciosDeSesion, filasDeSeries } from './entrenamiento';
+import { todayISO, addDays, fechaValida, FECHA_NO_DISPONIBLE } from './helpers';
+import { ejerciciosDeSesion, filasDeSeries, duracionCreible } from './entrenamiento';
 import { resumenDeSesion, fechaLarga, volumenDeSesion } from './finalizacion';
 import { resumenPlanificado, resumenRealizado, cabeceraEnSesion } from './entrenamientoUx';
-import { ENTORNOS } from './ejercicios';
+import { ENTORNOS, nombreSinCatalogo } from './ejercicios';
 import { planPorId, planActivoDe, CATALOGO_PLANES } from './planes';
 /* 🔓 FIT F11 — la comparación con la vez anterior, discreta (su apartado 34). */
 import { comparacionEnSesion } from './progresion';
@@ -79,6 +79,13 @@ export function etiquetaDeFecha(iso, hoy = todayISO()) {
   if (iso === addDays(hoy, -1)) return 'Ayer';
   return fechaLarga(iso);
 }
+
+/* 🐛 FIT F39 (apartado 25) — una sesión sin fecha válida (la F31 deja `''`
+   cuando no hay marca de la que deducirla) se pintaba sin nada donde va la
+   fecha, y su tarjeta se llamaba «Abrir Rota, ». Donde se ENSEÑA una fecha se
+   dice «Fecha no disponible»; `etiquetaDeFecha` sigue devolviendo `''`, que es
+   lo que esperan quienes la usan para decidir si pintar algo. */
+const etiquetaParaVer = (iso, hoy) => etiquetaDeFecha(iso, hoy) || FECHA_NO_DISPONIBLE;
 
 /** Cuándo acabó, para ordenar dos sesiones del mismo día. */
 const momento = (s) => s?.terminadaEn || s?.iniciadaEn || 0;
@@ -222,7 +229,9 @@ const nombreEntorno = (id) => ENTORNOS.find((e) => e.id === id)?.nombre || '';
 export function duracionConocida(sesion) {
   const a = Number(sesion?.iniciadaEn);
   const b = Number(sesion?.terminadaEn);
-  return Number.isFinite(a) && a > 0 && Number.isFinite(b) && b >= a;
+  /* 🐛 FIT F39 — y creíble: una sesión que se quedó abierta días y se terminó
+     después no duró 72 h (`duracionCreible`, la regla de la F7). */
+  return Number.isFinite(a) && a > 0 && Number.isFinite(b) && b >= a && duracionCreible(sesion, b) !== null;
 }
 
 export function fichaDeHistorial(sesion, { fitness = {}, propios = [], planes = CATALOGO_PLANES, hoy = todayISO() } = {}) {
@@ -235,7 +244,7 @@ export function fichaDeHistorial(sesion, { fitness = {}, propios = [], planes = 
     id: sesion.id,
     nombre: r.nombre,
     fecha: sesion.fecha,
-    etiquetaFecha: etiquetaDeFecha(sesion.fecha, hoy),
+    etiquetaFecha: etiquetaParaVer(sesion.fecha, hoy),
     hora: r.inicio,
     duracion: duracionConocida(sesion) ? r.duracion : '',
     duracionMs: duracionConocida(sesion) ? r.duracionMs : 0,
@@ -315,7 +324,7 @@ export function consultarHistorial(fichas, filtros = {}, { hoy = todayISO() } = 
     for (const x of ordenadas) {
       const ultimo = grupos[grupos.length - 1];
       if (ultimo && ultimo.fecha === x.fecha) ultimo.fichas.push(x);
-      else grupos.push({ fecha: x.fecha, etiqueta: etiquetaDeFecha(x.fecha, hoy), fichas: [x] });
+      else grupos.push({ fecha: x.fecha, etiqueta: etiquetaParaVer(x.fecha, hoy), fichas: [x] });
     }
   }
 
@@ -411,7 +420,7 @@ export function detalleDeSesion(sesion, { fitness = {}, propios = [], planes = C
       /* 🔓 FIT F31, apartado 30 — *"Desde una sesión → ExerciseProgress si
          corresponde"*: hace falta saber cuál es. */
       exerciseId: e.exerciseId,
-      nombre: cab.nombre || res.nombre || e.exerciseId,
+      nombre: cab.nombre || res.nombre || nombreSinCatalogo(e.exerciseId),
       variante: [cab.variante, cab.agarre].filter(Boolean).join(' · '),
       estado: res.estado,
       /* *"3/4 series"* (apartado 18). */
@@ -436,8 +445,8 @@ export function detalleDeSesion(sesion, { fitness = {}, propios = [], planes = C
     id: sesion.id,
     nombre: r.nombre,
     fecha: sesion.fecha,
-    fechaTexto: fechaLarga(sesion.fecha),
-    etiquetaFecha: etiquetaDeFecha(sesion.fecha, hoy),
+    fechaTexto: fechaLarga(sesion.fecha) || FECHA_NO_DISPONIBLE,
+    etiquetaFecha: etiquetaParaVer(sesion.fecha, hoy),
     inicio: r.inicio,
     fin: r.fin,
     duracion: duracionConocida(sesion) ? r.duracion : '',

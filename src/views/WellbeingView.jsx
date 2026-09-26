@@ -10,8 +10,13 @@ import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, 
 function calcularIndices(registros) {
   const desde = addDays(todayISO(), -6);
   const enRango = registros.filter((r) => r.fecha >= desde);
-  const total = enRango.reduce((s, r) => s + r.minutos, 0);
-  const minutosDe = (cat) => enRango.filter((r) => r.categoria === cat).reduce((s, r) => s + r.minutos, 0);
+  /* 🐛 FIT F39 (apartado 2) — un registro sin minutos hacía el total `NaN`, y la
+     pantalla decía «Productividad NaN %» con la barra rota. Los registros de
+     Tiempo de uso no pasan por ningún normalizador al cargar, así que se cuenta
+     aquí solo lo que es un número de verdad. */
+  const minutos = (r) => (Number.isFinite(Number(r.minutos)) && Number(r.minutos) > 0 ? Number(r.minutos) : 0);
+  const total = enRango.reduce((s, r) => s + minutos(r), 0);
+  const minutosDe = (cat) => enRango.filter((r) => r.categoria === cat).reduce((s, r) => s + minutos(r), 0);
   const pct = (cat) => (total === 0 ? 0 : Math.round((minutosDe(cat) / total) * 100));
   return {
     total,

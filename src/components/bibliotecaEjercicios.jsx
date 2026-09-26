@@ -21,6 +21,7 @@ import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, TextInput, GhostBtn, PrimaryButton } from './ui';
 import { iconoDeGrupo } from './iconosFitness';
+import { MissingImage } from './estadosFitness';
 import { ExercisePerformanceSummary, ExerciseRankPreview, ExerciseGoalPreview } from './detalleEjercicio';
 import { ReplacementCompatibility } from './sustitucion';
 import {
@@ -110,8 +111,20 @@ export function ExerciseVisual({ ejercicio, accent, grande = false }) {
   const src = imagenDeFicha(ejercicio);
   const Icono = iconoDeGrupo(musculoPrincipal(ejercicio)?.grupoId);
   const lado = grande ? 'w-16 h-16' : 'w-10 h-10';
+  const icono = (
+    <div
+      className={`${lado} rounded-xl flex items-center justify-center shrink-0`}
+      style={{ background: hexToRgba(accent, 0.14), color: accent }}
+      aria-hidden="true"
+    >
+      <Icono size={grande ? 30 : 20} />
+    </div>
+  );
+  /* 🐛 FIT F39 (apartado 22) — una imagen propia que no carga dejaba el icono
+     de imagen rota del navegador: ahora vuelve al icono de su grupo, que es el
+     mismo hueco que sin imagen. */
   if (src) {
-    return <img src={src} alt={nombreCompleto(ejercicio)} loading="lazy" decoding="async" className={`${lado} rounded-xl object-cover shrink-0`} />;
+    return <MissingImage src={src} alt={nombreCompleto(ejercicio)} loading="lazy" decoding="async" className={`${lado} rounded-xl object-cover shrink-0`} respaldo={icono} />;
   }
   return (
     <div

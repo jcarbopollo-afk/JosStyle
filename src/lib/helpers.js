@@ -50,7 +50,16 @@ export function formatHoras(horas) {
   return horas === null || horas === undefined ? '—' : String(horas);
 }
 
+/* 🐛 FIT F39 (apartados 2 y 25) — una fecha que falta o está rota se pintaba como el
+   literal «Invalid Date»: un proyecto de Negocio sin fecha decía «Idea · Invalid
+   Date». Lo cazó el barrido nuevo del banco de renderizado, que busca en TODAS las
+   pantallas lo que nunca debe verse (`NaN`, `undefined`, `Invalid Date`…). Se dice
+   con palabras, y es texto —no vacío— porque ningún sitio contaba con que esto
+   pudiera ser falso: todos lo pintan sin mirar. */
+export const FECHA_NO_DISPONIBLE = 'Fecha no disponible';
+
 export function formatFecha(iso) {
+  if (!fechaValida(iso)) return FECHA_NO_DISPONIBLE;
   return new Date(iso + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
 }
 

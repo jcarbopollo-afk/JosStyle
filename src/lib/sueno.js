@@ -209,7 +209,11 @@ export function resumenNoche(r) {
   if (r.siestaAyer) extras.push(r.siestaMinutos > 0 ? `siesta de ${r.siestaMinutos} min` : 'con siesta');
   return {
     duracion: textoDuracion(r),
-    horas: `${r.horaDormir} → ${r.horaDespertar}`,
+    /* 🐛 FIT F39 (apartado 2) — sin una de las dos horas salía «undefined →
+       undefined». Lo que viene del disco pasa por `normalizarRegistro`, que las
+       rellena, así que en la aplicación no llegaba a verse; pero esta función la
+       llama quien tenga un registro, normalizado o no. */
+    horas: r.horaDormir && r.horaDespertar ? `${r.horaDormir} → ${r.horaDespertar}` : '—',
     calidad: cal,
     extras: extras.length ? extras.join(' · ') : null,
   };

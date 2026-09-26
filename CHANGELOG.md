@@ -1,5 +1,87 @@
 # CHANGELOG.md
 
+## v3.121.0 — FIT F39/45: accesibilidad, estados límite y robustez de fitness
+
+*"Fitness debe funcionar correctamente no solo con datos perfectos. […] La interfaz nunca debe
+quedar rota."* Y a la vez: *"NO añadir funcionalidades grandes. NO cambiar las fórmulas de
+progreso/rangos. NO cambiar el modelo de datos salvo que sea estrictamente necesario"*. Así que la
+fase no construye pantallas: **mide las que hay con datos que no son perfectos y arregla lo que
+encuentra**. Para medir nació **`textoRoto()`** (`src/lib/robustezFitness.js`), que busca en lo que
+se pinta lo que el apartado 2 prohíbe ver —`NaN`, `undefined`, `null`, `[object Object]`, `Invalid
+Date`, `Infinity`, un porcentaje imposible—, en el texto **y en los estilos**. Cuarta fase del bloque
+de **Acabado** (F36–F42).
+
+### 🐛 Lo que encontró, y dónde nacía
+
+- **Un entrenamiento que se quedó abierto días decía «72:00:00»** (apartados 19 y 26). El reloj
+  resta marcas de tiempo (E3 F25), así que una sesión dejada a medias el lunes llevaba el jueves 72
+  horas «entrenando», y si se terminaba, el resumen y el historial se quedaban con «72 h» para
+  siempre. Ahora, pasadas **seis horas** (`HORAS_SESION_ANTIGUA`, en `entrenamiento.js`, que es quien
+  lleva el reloj desde la F7), la tarjeta dice **«Hay un entrenamiento sin terminar»**, cuándo
+  empezó —*«Empezado el 14 sept»*— y ofrece **Continuar, Finalizar y Descartar**: Finalizar lleva al
+  resumen de la F8, donde él decide. Y la duración que no se puede saber **no se dice**
+  (`duracionCreible`): «—» en la pantalla de éxito, nada en el historial.
+- **Un ejercicio que ya no existe se llamaba por su id** (apartados 21 y 55): «k3j9x2ab» en el
+  detalle de una sesión, que es justo el id técnico que el apartado 55 prohíbe enseñar. No hay nombre
+  histórico que recuperar (la sesión guarda solo el `exerciseId`, F3 y **C-36**), así que se **lee**
+  el id: uno del catálogo es una ranura en español, y *«dominada-pronada-antigua»* se lee **«Dominada
+  pronada antigua»** —el ejemplo del propio apartado—; uno propio borrado (un `uid()`) no dice nada, y
+  es **«Ejercicio no disponible»**. `nombreSinCatalogo()` vive junto a `ejercicioPorId` y la usan los
+  **ocho** sitios que caían al id.
+- **Fuera de Fitness, tres pantallas enseñaban basura**, y las cazó la regla nueva del banco de
+  renderizado: un proyecto de **Negocio** sin fecha decía *«Idea · Invalid Date»* (`formatFecha`, que
+  ahora dice **«Fecha no disponible»**), una noche de **Sueño** sin horas *«undefined → undefined»* y
+  un registro de **Tiempo de uso** sin minutos *«Productividad NaN %»*, con la barra rota.
+- **Progreso se caía entero con un objetivo a medias** (apartado 51): un hueco en la lista o un tipo
+  que no existe. `listaDeObjetivos` aplica ahora **la regla de la carga** (`normalizarObjetivo`), no
+  una segunda. Y una **fecha objetivo imposible** —«30 de febrero»— ya no se guarda: la forma no basta
+  (E3 F9).
+- **Una sesión sin fecha válida** no decía nada donde va la fecha, y su tarjeta se llamaba *«Abrir
+  Rota, »*: ahora dice **«Fecha no disponible»** (apartado 25).
+- **Tres imágenes se quedaban rotas si no cargaban** (apartado 22): la miniatura de un ejercicio, la
+  tira del comparador y la vista previa al subir una foto. Nace **`MissingImage`**, y la miniatura
+  vuelve al icono de su grupo.
+- **El diagnóstico del catálogo decía «la dificultad «undefined» no existe»**: dice «(ninguno)».
+- **La lista de archivos de Fitness de la F37 se había dejado fuera tres componentes** —la actividad
+  (F31), la semana planificada (F32) y la cola de clasificación (F24)—, así que las auditorías de la
+  F37 y la F38 **no los miraban nunca**. Ya están, y pasan.
+
+### 🔓 El teclado y el foco (apartados 36-38 y 37)
+
+Las ocho hojas de Fitness se cerraban tocando fuera y ya está: con un teclado **el foco se quedaba
+detrás** y el tabulador recorría la pantalla tapada; solo la de sustituir (F33) cerraba con Escape.
+**`useDialogoAccesible`** (`src/components/dialogoAccesible.js`) mete el foco en la hoja, **no deja
+que el tabulador se escape**, cierra con **Escape** y **devuelve el foco al botón que la abrió**; con
+dos abiertas, solo manda la de arriba. 🐛 **La hoja del historial de un rango** era además la única
+sin `role="dialog"` ni nombre. Y los campos de Fitness, que llevan `outline-none`, **no enseñaban
+dónde estaba el foco**: ahora hay un anillo con el acento (`.fit-foco :focus-visible`), **solo en
+Fitness y sus hojas**, para no cambiar el aspecto de formularios que esta fase no toca (la C-32 es
+de Josué).
+
+### La matriz de estados y los respaldos (apartados 52, 56 y 57)
+
+`MATRIZ_ESTADOS` recorre **las quince pantallas del apartado 57** con sus **seis estados**
+—LOADING, READY, EMPTY, NO_RESULTS, PARTIAL, ERROR— y dice para cada uno **dónde se resuelve**: un
+texto de un catálogo (importado: renombrarlo rompe la compilación), un texto de una pantalla (la
+prueba abre el archivo y lo busca) o **por qué ese estado no existe ahí**. De los siete respaldos del
+apartado 52, **cinco ya existían** (`AreaSegura`, `EmptyHint`, `Esqueleto`, `guardado_fallido` y
+`FECHA_NO_DISPONIBLE`) y solo nacen dos: `MissingImage` y `MissingData`. Y **`YA_RESUELTO_F39`**
+declara los veintitrés apartados que ya resolvía otra fase —el rango sin cobertura, el «Primer
+registro», el objetivo vencido sin «fallido», el doble guardado, el error de guardado…—.
+
+### Lo que no se hace, dicho
+
+Medir el contraste de cada tema (es una auditoría de la aplicación entera, y lo tiene que ver Josué
+en su iPhone), confirmar al salir del constructor o de un objetivo (el constructor ya guarda un
+borrador, la clasificación guarda cada respuesta y la sesión no se pierde: un aviso delante de algo
+que no se pierde enseña a no leerlos, EH F61), rebautizar «Marcar la serie 2 como hecha» (ya es un
+nombre accesible) y guardar el formulario al girar (girar no desmonta nada, y el recorrido lo
+comprueba). Están en `NO_EN_FIT39`.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.120.0 — FIT F38/45: UX móvil extrema y optimización para iPhone
 
 *"Esta fase NO añade funcionalidades grandes. […] NO rediseñar Fitness desde cero."* Y casi todo lo

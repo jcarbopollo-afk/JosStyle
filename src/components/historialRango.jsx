@@ -19,6 +19,7 @@
    =========================================================================== */
 
 import React, { useMemo, useState } from 'react';
+import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
 import { X, History, ChevronRight } from 'lucide-react';
 import { COLORS } from '../tokens';
@@ -301,6 +302,9 @@ export function RankHistory({ fitness, destino, propios = [], perfil = null, acc
     [fitness && fitness.sesiones, fitness && fitness.clasificaciones, destino.tipo, destino.id, propios, perfil, periodo],
   );
   const detalle = cambio ? detalleDeCambio(fitness || {}, destino, cambio, { propios, perfil }) : null;
+  /* FIT F39 (apartados 36-38) — foco dentro, Escape y vuelta al botón que lo abrió.
+     Con un cambio abierto, Escape cierra el cambio y no la hoja entera. */
+  const caja = useDialogoAccesible(true, cambio ? () => setCambio(null) : onCerrar);
 
   /* Regla 3 — todo overlay `fixed inset-0` va con `createPortal`, o se ancla al
      contenedor de `.module-enter` y aparece abajo del todo. */
@@ -317,9 +321,16 @@ export function RankHistory({ fitness, destino, propios = [], perfil = null, acc
          (NAV F3). */
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onClick={onCerrar}
+      /* 🐛 FIT F39 (apartado 39) — era la única hoja de Fitness sin `role` ni
+         nombre: un lector de pantalla no sabía que se había abierto nada. */
+      role="dialog"
+      aria-modal="true"
+      aria-label="Historial del rango"
     >
       <div
-        className="w-full max-w-lg rounded-t-3xl p-5 space-y-4 hoja-entra hoja-movil"
+        ref={caja}
+        tabIndex={-1}
+        className="w-full max-w-lg rounded-t-3xl p-5 space-y-4 hoja-entra hoja-movil dialogo-caja"
         /* 🐛 FIT F38 (apartado 47) — era la única hoja de Fitness sin sitio para
            la barra de inicio del iPhone: su última fila quedaba debajo. */
         style={{ background: COLORS.surface, minHeight: 0, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}

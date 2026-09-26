@@ -12,6 +12,7 @@
    =========================================================================== */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
 import {
   X, Camera, ArrowLeftRight, Columns2, SlidersHorizontal,
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { Card, PrimaryButton } from './ui';
+import { MissingImage } from './estadosFitness';
 import {
   MODOS_COMPARACION, ALINEACIONES, SLIDER_MIN, SLIDER_MAX, SLIDER_PASO, SLIDER_PASO_GRANDE,
   ARIA_SLIDER, posicionSlider, moverSlider,
@@ -74,7 +76,9 @@ export function ProgressPhotoDateSelector({ opciones = [], elegida, urls = {}, e
               style={{ border: `2px solid ${puesta ? COLORS.text : COLORS.border}`, width: 64 }}
             >
               {urls[o.id]
-                ? <img src={urls[o.id]} alt="" loading="lazy" decoding="async" className="w-16 h-16 object-cover" />
+                /* 🐛 FIT F39 (apartado 22) — si la miniatura no llega, un hueco, no
+                   el icono de imagen rota del navegador. */
+                ? <MissingImage src={urls[o.id]} alt="" loading="lazy" decoding="async" className="w-16 h-16 object-cover" />
                 : <div className="w-16 h-16 esqueleto" />}
               <span className="block text-[9px] py-1" style={{ color: COLORS.textMuted }}>{o.etiqueta}</span>
             </button>
@@ -460,6 +464,8 @@ export function ProgressComparison({
 }) {
   const [ancho, setAncho] = useState(null);
   const marco = useRef(null);
+  /* FIT F39 (apartados 36-38) — foco dentro, Escape y vuelta al botón que lo abrió. */
+  const caja = useDialogoAccesible(true, onCerrar);
 
   /* Apartado 7 — quien decide si caben los dos es **el ancho medido**, no una
      media query a ojo: dentro de un portal la caja no es la de la ventana. */
@@ -475,7 +481,9 @@ export function ProgressComparison({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex flex-col fondo-entra"
+      ref={caja}
+      tabIndex={-1}
+      className="fixed inset-0 z-50 flex flex-col fondo-entra dialogo-caja"
       style={{ background: COLORS.bg }}
       role="dialog"
       aria-modal="true"
