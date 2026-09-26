@@ -211,17 +211,24 @@ ok(/Día \d+ de \d+/.test(px.posicion), `…y su posición en la semana (${px.po
 /* El día siguiente a hoy se llama «Mañana», no «Jueves». */
 const jueves = tuPlan(conPlan('ppl-estetico', LUNES), { hoy: '2026-09-17' });
 ok(jueves.descansoHoy === true, '🚨 El jueves toca descanso, y se dice (apartado 15)');
-ok(/Recupera/.test(DESCANSO_HOY.texto), '…con las palabras del apartado 15');
+/* 🔓 FIT F32, apartado 5 — decía «Hoy toca descansar · Recupera y prepárate»,
+   que es justo lo que ese apartado prohíbe afirmar: puede entrenar por su
+   cuenta. La comprobación pasa a vigilar la palabra nueva. */
+ok(/no hay entrenamiento planificado/i.test(DESCANSO_HOY.titulo) && !/descans/i.test(`${DESCANSO_HOY.titulo} ${DESCANSO_HOY.texto}`),
+  '…y se dice sin afirmar «descanso»: «Hoy no hay entrenamiento planificado» (F32, apartado 5)');
 ok(jueves.proximo?.cuando === 'Mañana',
   `⚠️ …y el siguiente entrenamiento es «Mañana», no «Viernes» (${jueves.proximo?.cuando})`);
 ok(jueves.proximo?.sesion?.nombre === 'Upper', '…y dice cuál es, en vez de esconderlo');
 
-/* Sin ningún entrenamiento por delante esta semana, `null` — no se inventa el
-   de la semana que viene. */
+/* 🔓 FIT F32, apartado 9 — la F6 devolvía `null` el domingo para no inventarse
+   el de la semana siguiente. Pero no hay nada que inventar: un plan de siete
+   días ES la semana, así que el lunes que viene toca Push. La F32 pide *"buscar
+   el siguiente día planificado"*, y la comprobación se da la vuelta. */
 const domingo = tuPlan(conPlan('ppl-estetico', LUNES), { hoy: '2026-09-20' });
-ok(domingo.proximo === null,
-  '⚠️ El domingo ya no queda entrenamiento esta semana: `null`, no uno inventado de la que viene');
-ok(domingo.descansoHoy === true, '…y se dice que hoy toca descansar');
+ok(domingo.proximo && domingo.proximo.sesion.nombre === 'Push' && domingo.proximo.cuando === 'Mañana'
+  && domingo.proximo.fecha === '2026-09-21',
+  `🔓 El domingo, el próximo es el lunes de la semana que viene: «Mañana · Push» (F32, apartado 9)`);
+ok(domingo.descansoHoy === true, '…y hoy no hay entrenamiento planificado');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 5. La sesión de un día, que es la de la F5 (apartado 9) ──');

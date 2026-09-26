@@ -1,5 +1,5 @@
-import { uid, todayISO } from './helpers';
-import { GRUPOS_MUSCULARES, grupoMuscular } from './fitness';
+import { uid, todayISO, fechaValida } from './helpers';
+import { GRUPOS_MUSCULARES, grupoMuscular, normalizarPlanAnterior } from './fitness';
 import {
   ENTORNOS, DIFICULTADES, entorno as entornoDe, dificultad as dificultadDe,
   ranura, ejercicioPorId, normalizarFitnessCompleto,
@@ -172,9 +172,22 @@ export function crearPresetPlan({
   entorno = '', objetivo = '', dificultad = '', frecuencia = null,
   paraQuien = '', tags = [], dias = [], thumbnail = null,
 } = {}) {
-  const diasN = lista(dias).map(crearDiaDePlan);
+  const planId = texto(id) || uid();
+  /* 🐛 FIT F32 — **los días de un preset nacían con `uid()` en cada carga**:
+     el catálogo es código y no trae ids, así que `crearDiaDePlan` les ponía uno
+     aleatorio al arrancar la aplicación. Una sesión empezada desde el Push del
+     PPL guardaba en su `origen` (F7) y en su `diaDePlan` (F8) un id que **al
+     recargar ya no existía**, y el apartado 19 de la F32 —relacionar la sesión
+     con su día por `planId + dayId`— no podía cumplirse jamás. Es la lección de
+     la F2 —*"un id es una ranura estable"*— en un sitio que nadie miró porque
+     nada lo leía todavía. La ranura de un día de un preset es **su sitio en la
+     semana**: el plan ES la semana (F6), y el día 1 es el lunes. */
+  const diasN = lista(dias).map((d, i) => crearDiaDePlan({
+    ...(d && typeof d === 'object' ? d : {}),
+    id: texto(d?.id) || `${planId}-dia-${i + 1}`,
+  }));
   return {
-    id: texto(id) || uid(),
+    id: planId,
     nombre: texto(nombre),
     subtitulo: texto(subtitulo),
     descripcion: texto(descripcion),
@@ -496,6 +509,62 @@ export function avisoDeCambioDePlan(actual, nuevo) {
   };
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   9b · LOS PLANES ANTERIORES (FIT F32, apartado 22 — C-39)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   🚨 *"Las semanas históricas mantienen la información original. No reescribir
+   el pasado."* Qué plan seguía en junio **no se puede derivar** de nada —es un
+   hecho que pasó—, así que al cambiar de plan (o quitarlo) se apunta el tramo
+   que se cierra: el plan, desde cuándo, hasta cuándo y **la estructura de sus
+   días** —nombre y si descansaba—. Es la copia que este proyecto sí hace de lo
+   que es historia (el snapshot de la F7): sin ella, un plan borrado o una
+   plantilla editada cambiarían lo que dice el pasado.
+   ⚠️ Solo la estructura: los ejercicios de lo que hizo de verdad ya los
+   congela cada sesión. */
+
+/** El id del día de una plantilla usada como plan. Lo lee la F6 al envolverla
+ *  y la F32 al apuntarla: escrito una vez. */
+export const idDiaDePlantilla = (id) => `${texto(id)}-dia`;
+
+/** Nombre y días de un plan, para el historial. Recibe la entidad tal cual la
+ *  devuelve `planActivoResuelto`: un preset, o la plantilla suya. */
+export function estructuraDelPlan(plan, origen = 'preset') {
+  if (!plan || typeof plan !== 'object' || !texto(plan.id)) return null;
+  if (origen === 'plantilla') {
+    return {
+      nombre: texto(plan.nombre) || 'Sin nombre',
+      dias: [{ id: idDiaDePlantilla(plan.id), nombre: texto(plan.nombre) || 'Entrenamiento', descanso: false }],
+    };
+  }
+  return {
+    nombre: texto(plan.nombre) || 'Sin nombre',
+    dias: lista(plan.dias).filter((d) => d && texto(d.id)).map((d) => ({
+      id: texto(d.id), nombre: texto(d.nombre), descanso: !!d.descanso,
+    })),
+  };
+}
+
+/** Los tramos cerrados, ya limpios. La forma la decide `normalizarPlanAnterior`
+ *  (`fitness.js`), que es la de la puerta de carga. */
+export function planesAnterioresDe(fitness) {
+  return lista((fitness || {}).planesAnteriores).map(normalizarPlanAnterior).filter(Boolean);
+}
+
+/** La lista de tramos con el del plan activo cerrado **hoy**. ⚠️ No se apunta
+ *  nada si no hay fecha de activación —no se sabe desde cuándo lo seguía— ni si
+ *  lo activó hoy mismo: ese tramo no cubre ni un día. */
+function conElTramoCerrado(f, hoy, planes) {
+  const anteriores = planesAnterioresDe(f);
+  const activo = planActivoDe(f);
+  if (!activo || !fechaValida(activo.desde) || !fechaValida(hoy) || !(activo.desde < hoy)) return anteriores;
+  const e = estructuraDelPlan(planActivoResuelto(f, planes), activo.origen);
+  if (!e || !e.dias.length) return anteriores;
+  return [...anteriores, {
+    planId: activo.planId, origen: activo.origen, desde: activo.desde, hasta: hoy, nombre: e.nombre, dias: e.dias,
+  }];
+}
+
 export function usarPlan(fitness, planId, {
   confirmado = false, hoy = todayISO(), planes = CATALOGO_PLANES, origen = 'preset',
 } = {}) {
@@ -529,15 +598,22 @@ export function usarPlan(fitness, planId, {
     ok: true,
     motivo: null,
     aviso: null,
-    fitness: { ...f, planActivo: crearPlanActivo({ planId: nuevo.id, origen, desde: hoy }) },
+    fitness: {
+      ...f,
+      planActivo: crearPlanActivo({ planId: nuevo.id, origen, desde: hoy }),
+      /* 🔓 FIT F32 — el plan que se va queda apuntado (apartado 22). */
+      planesAnteriores: conElTramoCerrado(f, hoy, planes),
+    },
   };
 }
 
 /** Quitar el plan activo sin poner otro. ⚠️ No borra nada más: el plan sigue en
  *  la biblioteca y sus plantillas personalizadas, si las hizo, se quedan. */
-export function quitarPlanActivo(fitness) {
+export function quitarPlanActivo(fitness, { hoy = todayISO(), planes = CATALOGO_PLANES } = {}) {
   const f = fitness && typeof fitness === 'object' ? fitness : {};
-  return { ...f, planActivo: null };
+  /* 🔓 FIT F32 — quitarlo también cierra su tramo: si no, las semanas que lo
+     siguió dirían «Sin datos del plan» (apartado 22). */
+  return { ...f, planActivo: null, planesAnteriores: conElTramoCerrado(f, hoy, planes) };
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

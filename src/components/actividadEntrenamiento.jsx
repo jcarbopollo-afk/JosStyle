@@ -182,7 +182,7 @@ export function TrainingActivityCalendar({
       )}
       {/* La leyenda, con palabras (apartado 37): el guion no es un fallo. */}
       <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>
-        ● entrenamiento · ○ descanso del plan · — sin entrenamiento registrado
+        ● entrenamiento · ○ sin entrenamiento planificado · — sin entrenamiento registrado
       </p>
     </div>
   );

@@ -2,6 +2,20 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.114.0 — FIT F32/45: la planificación semanal avanzada de entrenamiento):**
+> Tu Plan contesta **qué toca hoy, qué toca después, qué hizo y qué está planificado**. Arriba, **hoy**
+> cuando no es lo siguiente (hecho, extra o sin nada en el plan) y el **próximo entrenamiento**, que
+> ahora se busca **más allá de la semana** (el domingo ya dice «Mañana · Push»). Debajo, **la semana
+> del plan**, que se **recorre** con ← y →: cada día dice lo que el plan tenía y lo que hizo, y al
+> tocarlo se amplía con su rutina, sus sesiones, «Ver entrenamiento» y «Repetir». Cuarta del bloque
+> de **Inteligencia**. Todo en `src/lib/planificacionSemanal.js` y su `.jsx`.
+> 🚨 **Ni un día dice «Descanso»** (apartado 5): es *«Sin entrenamiento planificado»*, en la F6 y en
+> la F31 a la vez. 🚨 **El pasado no se reescribe (C-39)**: al cambiar de plan se apunta el tramo que
+> se cierra en `fitness.planesAnteriores` (plan, fechas y estructura de sus días, sin ejercicios).
+> 🐛 **Y un fallo de la F5**: los días de un plan de la biblioteca nacían con un id aleatorio en cada
+> carga, así que una sesión no podía relacionarse nunca con su día. Ahora es su ranura en la semana.
+> **Sin SQL nuevo.** Lo siguiente es la **FIT F33**.
+
 > **📅 ACTUALIZACIÓN (v3.113.0 — FIT F31/45: la consistencia y la actividad de entrenamiento):**
 > Fitness contesta de un vistazo **cuándo entrenó, cuánto, cómo se reparte y cómo va el plan**. En
 > Progreso → Resumen: el **último entrenamiento** (*«Hoy · Push · 58 min»*), **esta semana** con

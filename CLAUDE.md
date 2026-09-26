@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.113.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.114.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 31 primeras (v3.83.0 → v3.113.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 32 primeras (v3.83.0 → v3.114.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 14 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 13 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -342,15 +342,47 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 **FIT F27 (v3.109.0)** y la
 **FIT F28 (v3.110.0)**, que 🏁 **CERRÓ EL BLOQUE DE PROGRESO FÍSICO** —F26, F27 y F28— y la
 **FIT F29 (v3.111.0)**, con la que empieza el bloque de **Inteligencia** (F29–F35), y la
-**FIT F30 (v3.112.0)** y la **FIT F31 (v3.113.0)**, hechas. Lo que dejaron, y que vale para las 14
-que quedan:
+**FIT F30 (v3.112.0)**, la **FIT F31 (v3.113.0)** y la **FIT F32 (v3.114.0)**, hechas. Lo que
+dejaron, y que vale para las 13 que quedan:
+
+- 🚨 **UN DÍA SIN SESIÓN EN EL PLAN NO ES «DESCANSO»** (FIT F32, apartado 5): *"puede haber
+  entrenamiento libre"*. Es **«Sin entrenamiento planificado»**, y la palabra vivía en **dos
+  sitios** —`ESTADOS_DIA`/`DESCANSO_HOY` (F6) y `ESTADOS_ACTIVIDAD` (F31)— que se cambiaron a la
+  vez. **Los ids (`descanso`) no cambian**: se renombra por fuera (FIT F1). Y los seis estados del
+  apartado 31 salen **sin una palabra negativa**: *«Planificado · Sin entrenamiento registrado»*,
+  *«Otro entrenamiento realizado · Planificado: Push»*, *«Entrenamiento extra»*.
+- 🚨 **EL PASADO NO SE REESCRIBE, Y ESO SÍ NECESITÓ UN DATO (C-39)**: `planActivo` guarda **uno**,
+  así que cambiar de plan reescribía la semana pasada. `usarPlan` y `quitarPlanActivo` —las dos
+  únicas puertas— apuntan el tramo que se cierra en **`fitness.planesAnteriores`** (plan, desde,
+  hasta y la **estructura** de sus días, sin ejercicios), y cada día se lee con **el plan que había
+  ese día** (`tramoEnFecha` / `planificadoEnFecha`, en `tuPlan.js`). Antes del primer tramo apuntado,
+  **`unknown`**: no se inventa.
+- 🚨 **NO HAY UNA TERCERA SEMANA** (FIT F32, apartado 2): `planificacionSemanal.js` pide los días a
+  **`semanaDelPlan`** (F6), ampliada con `lunes`, `anteriores`, `planificado` y `realizadas`, y la
+  F31 lee cada fecha con el **mismo** `planificadoEnFecha`. Las sesiones de un día se agrupan con
+  **`sesionesPorDia`** (`historial.js`), la de la F31 mudada: con dos agrupaciones, el mismo día
+  diría una cosa en Progreso y otra en Tu Plan. Hay una comprobación que caza un recorrido propio.
+- 🚨 **UNA SESIÓN SE RELACIONA CON SU DÍA POR IDS** (FIT F32, apartados 19 y 20): `planId` + el id
+  del día, del `origen` (F7) o del `diaDePlan` (F8). `relacionConElDia` da `coincide`, `otro` o
+  `desconocida`, y **no es `relacionConPlan` de la F10**: aquélla dice de qué plan salió, ésta si
+  era el entrenamiento de ese día. ⚠️ Una plantilla suya **como plan no tiene días fijos**: sus días
+  no se llaman «Planificado» —la F31 ya se negó a contarle siete a la semana—.
+- 🐛 **LOS DÍAS DE UN PLAN DE LA BIBLIOTECA TENÍAN UN ID ALEATORIO EN CADA CARGA** (F5, destapado por
+  la F32): `crearDiaDePlan` les ponía `uid()` porque el catálogo es código y no trae ids, así que el
+  día que guardaba una sesión **ya no existía al recargar**. Es *"un id es una ranura estable"* (F2)
+  en un sitio que nadie miró porque nada lo leía. Ahora es `ppl-estetico-dia-1`, su sitio en la
+  semana. Lo guardado con un id viejo dice «Entrenamiento realizado»: no se sabe qué día fue.
+- 🔓 **EL PRÓXIMO ENTRENAMIENTO BUSCA MÁS ALLÁ DE LA SEMANA** (FIT F32, apartado 9): la F6 devolvía
+  `null` el domingo para no adivinar el ciclo, y **no hay nada que adivinar**. Su comprobación **se
+  dio la vuelta**, igual que los respaldos «o Hoy toca descansar» del recorrido: ya no hace falta.
 
 - 🚨 **«SIN REGISTRO» NO ES «DESCANSO»** (FIT F31, apartados 28 y 29, dos veces): un día sin sesión
   **no se sabe qué fue**, así que dice *«sin entrenamiento registrado»* con un guion apagado. Solo
-  **el plan** autoriza a decir descanso, y se dice *«descanso del plan»*. ⚠️ **Y la F32 va más
-  lejos** (su apartado 5): ni siquiera un día de descanso del plan se afirma como «Descanso»,
-  *"porque puede haber entrenamiento libre"* — así que la F32 tiene que cambiar esa palabra **en
-  los dos sitios donde vive**: `ESTADOS_ACTIVIDAD` (F31) y `ESTADOS_DIA`/`SemanaCompacta` (F6).
+  **el plan** autoriza a decir descanso, y se dice *«descanso del plan»*. 🔓 **Y la F32 fue más
+  lejos** (su apartado 5): ni siquiera un día sin sesión en el plan se afirma como «Descanso»,
+  *"porque puede haber entrenamiento libre"* — así que ahora dice **«sin entrenamiento
+  planificado»**, en los dos sitios donde vivía la palabra: `ESTADOS_ACTIVIDAD` (F31) y
+  `ESTADOS_DIA`/`DESCANSO_HOY` (F6).
 - 🚨 **NI UN PORCENTAJE, NI UNA PUNTUACIÓN, NI UNA RACHA NUEVA** (FIT F31, apartados 8, 14, 16 y
   40): *«Entrenaste 8 de los últimos 14 días»*, nunca «82 %»; *«6 entrenamientos · 5
   planificados»*, nunca «120 %», y sin barra. La media semanal, solo con **dos semanas completas**
@@ -1286,19 +1318,22 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F32/45 — Planificación semanal avanzada de entrenamiento** (líneas
-   11 860–12 539 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la cuarta del bloque de
+1. 🏋️ **SEGUIR POR LA FIT F33/45 — Sistema avanzado de sustitución de ejercicios** (líneas
+   11 529–11 859 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la quinta del bloque de
    **Inteligencia** (F29–F35). Se construye de la F1 a la F45, en orden, encadenando sin parar.
    El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: LA SEMANA DEL PLAN YA EXISTE DOS VECES, Y NO PUEDE HABER UNA
-   TERCERA.** Su apartado 2 lo pide: *"derivarse de activePlan… No crear una segunda planificación
-   independiente"*. La semana del plan es **`semanaDelPlan`** (F6, `tuPlan.js`, con sus estados y
-   su `SemanaCompacta`), y la de la actividad es **`resumenDeActividad`** (F31), con
-   `adherenciaDelPlan` y `diaDeActividad`. **Se amplían esas**, no se escribe otra. ⚠️ Y su apartado
-   5 cambia una palabra que vive en esos dos sitios: un día sin entrenamiento en el plan es
-   *«Sin entrenamiento planificado»*, **no «Descanso»** — hay que cambiarla en los dos a la vez.
+   ⚠️ **Y lo segundo, en ESTA: SUSTITUIR UN EJERCICIO YA EXISTE, Y LOS SUSTITUTOS TAMBIÉN.** Cada
+   ejercicio del catálogo trae sus **`sustitutos`** y sus **`variantes`** desde la **F2**; el
+   entrenamiento en vivo ya **reemplaza** con `sustituirEjercicio` (F7, `entrenamiento.js`, con
+   `sustituyeA` en el ejercicio de la sesión); la F24 cuenta el **grado** de cada ejercicio por esas relaciones, y la F29 dejó escrito
+   que **la familia es la raíz más sus variantes** (`baseDe(ej) || ej`) y que una relación **se
+   recorre en los dos sentidos**. Su apartado 4 lo dice: *"Si el ejercicio actual ya dispone de un
+   patrón equivalente: REUTILIZARLO"*. **Se amplía eso** —niveles de compatibilidad, explicación,
+   filtro por equipamiento y entorno—, no se escribe un segundo buscador de sustitutos.
+   ⚠️ Y su apartado 10: **nunca «es exactamente igual»** — la F11 ya decidió que la familia y los
+   sustitutos **no son comparables** para la progresión.
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único

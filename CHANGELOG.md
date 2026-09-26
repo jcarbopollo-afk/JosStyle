@@ -1,5 +1,71 @@
 # CHANGELOG.md
 
+## v3.114.0 — FIT F32/45: la planificación semanal avanzada de entrenamiento
+
+Tu Plan contesta ya las cuatro preguntas del criterio de finalización: **qué toca hoy, qué toca
+después, qué hizo y qué está planificado**. Arriba, **hoy** —cuando no es lo siguiente: ya hecho,
+un entrenamiento extra o un día sin nada en el plan— y el **próximo entrenamiento**, que ahora se
+busca **más allá de la semana**. Debajo, la **semana del plan**, que se **recorre** hacia atrás y
+hacia delante: cada día dice lo que el plan tenía **y** lo que hizo, y al tocarlo se amplía con su
+rutina, sus sesiones, «Ver entrenamiento» y «Repetir». Cuarta fase del bloque de **Inteligencia**
+(F29–F35).
+
+### 🚨 Ni un día dice «Descanso»
+
+El apartado 5 lo pide con su motivo: un día sin sesión en el plan es *«Sin entrenamiento
+planificado»*, **no «Descanso»**, *"porque puede haber entrenamiento libre"*. La palabra vivía en
+**dos sitios** y se cambia en los dos: los estados de la semana de la **F6** (y su *«Hoy toca
+descansar · Recupera…»*, que pasa a *«Hoy no hay entrenamiento planificado»*) y los de la actividad
+de la **F31** (*«descanso del plan»*). Los ids no cambian: son la forma del dato.
+
+Los seis estados del apartado 31 —`planned`, `completed`, `planned_not_completed`, `unplanned`,
+`completed_extra` y `unknown`— salen **sin una palabra negativa**: un día planificado que pasó sin
+registro dice *«Planificado · Sin entrenamiento registrado»* (apartados 7 y 16); otra rutina el día
+del Push dice *«Otro entrenamiento realizado · Planificado: Push»* y conserva los dos (17 y 18); y
+entrenar un día sin plan es *«Entrenamiento extra»* (32). Cada día lleva su descripción completa
+para VoiceOver: *«Viernes 12 de septiembre. Push. Planificado y completado.»* (39).
+
+### 🚨 El pasado no se reescribe (C-39)
+
+Cambiar de plan reescribía la semana pasada con el plan nuevo: `planActivo` guarda **uno**. Ahora
+`usarPlan` y `quitarPlanActivo` apuntan el tramo que se cierra en `fitness.planesAnteriores` —qué
+plan, desde y hasta cuándo y **la estructura de sus días**, sin un solo ejercicio— y cada día se
+lee **con el plan que había ese día**. Lo que no se puede saber no se inventa: antes del primer
+plan apuntado, *«Sin datos del plan»*.
+
+### 🚨 La semana del plan ya existía dos veces, y no hay una tercera
+
+`src/lib/planificacionSemanal.js` **no recorre ni un día por su cuenta**: pide la semana a
+`semanaDelPlan` (F6) —ampliada para cualquier semana, los planes anteriores y lo realizado de cada
+día— y las sesiones a la puerta de la F31, que es la del Historial. Lo que añade es la lectura: los
+estados, los textos y la navegación. Las cuatro funciones del apartado 30 —`getWeekPlan`,
+`getNextPlannedWorkout`, `getPlannedWorkoutForDay`, `getDayTrainingStatus`— reciben el `fitness`
+entero, porque el pasado no está en el plan activo. Una sesión se relaciona con su día **por ids**
+(`planId` + el id del día, F7 y F8), nunca por el nombre, y una rutina de «Tus plantillas»
+**conserva su origen** (apartado 20). Abrir una sesión hecha es el detalle del Historial, con
+«Volver a Tu Plan» (37). ⚠️ Una plantilla suya usada como plan **no tiene días fijos**: sus días
+no se llaman «Planificado» —sería inventarle siete a la semana, lo que la F31 ya se negó a hacer—.
+
+### 🐛 Y un fallo de la F5 que impedía el apartado 19
+
+**Los días de un plan de la biblioteca nacían con un id ALEATORIO en cada carga**: el catálogo es
+código y no trae ids, así que `crearDiaDePlan` les ponía un `uid()` al arrancar. Una sesión
+empezada desde el Push del PPL guardaba un id de día que **al recargar ya no existía**, y la
+relación sesión–día no podía cumplirse jamás. Ahora el id es la ranura del día en la semana
+(`ppl-estetico-dia-1`). Lo guardado antes con un id aleatorio dice *«Entrenamiento realizado»*: no
+se sabe qué día fue, y decir «otro» sería afirmar que no era ése.
+
+### Verificación
+
+`bash scripts/verificar.sh` en verde. **145 comprobaciones nuevas** en
+`scripts/test-planificacion-semanal.mjs` —las 18 pruebas del apartado 41, los casos límite del 40
+(cambio de semana, de mes y de año, lunes y domingo, plan de 2 y de 7 días, irregular, cambiado,
+corrupto, extra, dos sesiones y parcial) y el arreglo de la F5, con su comprobación de que se nota—,
+**casos de renderizado** para los ocho componentes y una sección nueva del recorrido en Chromium
+que **recorre la semana con sus flechas, abre una sesión en el detalle del Historial, cambia de plan
+desde la biblioteca y recarga** para comprobar que la semana pasada dice exactamente lo mismo. Sus
+etiquetas esperadas se calculan del escenario y de hoy: no depende del día en que se ejecute.
+
 ## v3.113.0 — FIT F31/45: la consistencia y la actividad de entrenamiento
 
 Fitness contesta ya, de un vistazo, **cuándo entrenó, cuánto, cómo se reparte y cómo va el

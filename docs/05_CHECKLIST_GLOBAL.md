@@ -916,7 +916,18 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       nacían**: «7 días» eran ocho en toda Fitness (`inicioDePeriodo`, **C-38**), un segundo
       catálogo de periodos en la F22, la «última sesión» de la F28 era la más antigua, y una sesión
       sin fecha se mudaba a hoy en cada carga (o, repetida, contaba doble).
-- [ ] F32–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F32 — Planificación semanal avanzada de entrenamiento** (v3.114.0): Tu Plan contesta
+      **qué toca hoy, qué toca después, qué hizo y qué está planificado**. Hoy aparte cuando no es
+      lo siguiente, el próximo entrenamiento buscado **más allá de la semana**, y la semana del plan
+      **recorrible** (← →), con cada día ampliable: su rutina, sus sesiones, «Ver entrenamiento» y
+      «Repetir». 🚨 **Ningún día dice «Descanso»** (apartado 5): «Sin entrenamiento planificado», en
+      la F6 y en la F31 a la vez. 🚨 **Los seis estados del apartado 31, sin una palabra negativa**.
+      🚨 **El pasado no se reescribe** (apartado 22, **C-39**): `planesAnteriores`, que apuntan
+      `usarPlan` y `quitarPlanActivo`. 🚨 **Sin una tercera semana**: la librería pide los días a
+      `semanaDelPlan` (F6). 🚨 **Sesión y día se relacionan por ids** y una rutina de «Tus
+      plantillas» conserva su origen. 🐛 **Y los días de un plan de la biblioteca tenían un id
+      aleatorio en cada carga** (F5): ahora es su ranura en la semana.
+- [ ] F33–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

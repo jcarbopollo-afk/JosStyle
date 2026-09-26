@@ -20,11 +20,21 @@
 
    ⚠️ **El orden lo fija el apartado 21**: próximo entrenamiento, plan activo,
    semana, plantillas. *"No quiero una página llena de widgets."*
+
+   🔓 **FIT F32 — la planificación semanal avanzada.** Su criterio: entrar aquí y
+   entender *qué toca hoy, qué toca después, qué hizo y qué está planificado*.
+   Así que **hoy** se enseña aparte cuando no es el próximo (hecho, extra o sin
+   nada en el plan), la semana se puede **recorrer** hacia atrás y hacia
+   delante, y cada día dice lo que el plan tenía **y** lo que hizo. Todo sale de
+   `src/lib/planificacionSemanal.js`, que pide la semana a `semanaDelPlan` (F6):
+   ni una tercera semana. ⚠️ `SemanaCompacta` se **retira**: la sustituye
+   `TrainingWeekView`, que es la misma semana con los estados del apartado 31 —
+   dejarla escrita sin que la llamara nadie sería la función muerta de siempre.
    =========================================================================== */
 
 import React, { useState, useMemo } from 'react';
 import {
-  ChevronRight, Dumbbell, Plus, Repeat, Moon, Calendar, X, Play,
+  ChevronRight, Dumbbell, Plus, Repeat, Calendar, X, Play,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
@@ -35,6 +45,11 @@ import {
 } from '../lib/tuPlan';
 import { resumenDeActividad } from '../lib/actividadEntrenamiento';
 import { TrainingPlanAdherence } from '../components/actividadEntrenamiento';
+/* 🔓 FIT F32 — la planificación semanal: la lectura y los componentes. */
+import { planificacionDeTuPlan, PLAN_INVALIDO } from '../lib/planificacionSemanal';
+import {
+  TrainingWeekView, WeekNavigation, TrainingDayCard, PlanSinPlanificacion,
+} from '../components/planificacionSemanal';
 
 /* ── El estado sin plan (apartado 2) ───────────────────────────────────────
    *"mostrar un estado vacío premium"*, con sus dos salidas reales: la
@@ -105,15 +120,17 @@ export function TarjetaProximo({ proximo, accent, onVer, onEmpezar = null }) {
           <Icono size={28} />
         </div>
         <div className="min-w-0 flex-1">
+          {/* 🔓 FIT F32, apartado 10 — el día **y el estado**: «Hoy · Planificado». */}
           <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: accent }}>
-            {proximo.cuando}
+            {[proximo.cuando, proximo.estado].filter(Boolean).join(' · ')}
           </p>
           <p className="text-lg font-extrabold leading-tight truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
             {proximo.sesion.nombre}
           </p>
+          {/* ⚠️ Sin duración estimada, se dice — no se inventa (F32, apartado 26). */}
           <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
             {[`${proximo.sesion.ejercicios} ${proximo.sesion.ejercicios === 1 ? 'ejercicio' : 'ejercicios'}`,
-              proximo.sesion.duracion].filter(Boolean).join(' · ')}
+              proximo.sesion.duracion || 'Duración no disponible'].join(' · ')}
           </p>
         </div>
       </div>
@@ -152,8 +169,10 @@ export function TarjetaProximo({ proximo, accent, onVer, onEmpezar = null }) {
   );
 }
 
-/* ── Hoy toca descansar (apartado 15) ──────────────────────────────────────
-   ⚠️ Y **sin CTA de entrenamiento**, que es lo que el apartado prohíbe. */
+/* ── Hoy no hay entrenamiento planificado (apartado 15) ─────────────────────
+   ⚠️ Y **sin CTA de entrenamiento**, que es lo que el apartado prohíbe.
+   🔓 FIT F32, apartado 5 — ya no dice «Hoy toca descansar» ni lleva una luna:
+   el plan no tiene sesión, pero él puede entrenar por su cuenta. */
 export function DescansoHoy({ accent }) {
   return (
     <Card>
@@ -162,7 +181,7 @@ export function DescansoHoy({ accent }) {
           className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
           style={{ background: hexToRgba(COLORS.border, 0.5), color: COLORS.textMuted }}
         >
-          <Moon size={24} />
+          <Calendar size={24} />
         </div>
         <div className="min-w-0">
           <p className="text-base font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
@@ -172,49 +191,6 @@ export function DescansoHoy({ accent }) {
         </div>
       </div>
     </Card>
-  );
-}
-
-/* ── La semana (apartados 7 y 8) ───────────────────────────────────────────
-   *"L M X J V S D […] No utilizar un calendario gigante. Quiero una
-   visualización compacta y premium."* Y **el día actual queda claramente
-   marcado**. ⚠️ El `overflow-x` va en SU contenedor: la página no se arrastra
-   de lado (apartado 22, y es la lección de GE F1). */
-export function SemanaCompacta({ semana, accent, seleccionado = null, onElegir = null }) {
-  if (!semana || !semana.length) return null;
-  return (
-    <div className="flex gap-1.5 overflow-x-auto pb-1">
-      {semana.map((d) => {
-        const activo = seleccionado === d.dia;
-        const entrena = !d.descanso && !d.fueraDelPlan;
-        const fondo = activo
-          ? accent
-          : (d.esHoy ? hexToRgba(accent, 0.18) : hexToRgba(COLORS.border, 0.45));
-        const color = activo ? COLORS.textOnAccent : (d.esHoy ? accent : COLORS.textMuted);
-        return (
-          <button
-            key={d.fecha}
-            onClick={() => onElegir && onElegir(d)}
-            disabled={!entrena || !onElegir}
-            aria-label={entrena
-              ? `${d.etiqueta}: ${d.nombre}`
-              : `${d.etiqueta}: ${d.fueraDelPlan ? 'antes de empezar el plan' : 'descanso'}`}
-            aria-current={d.esHoy ? 'date' : undefined}
-            className="flex-1 min-w-[44px] rounded-xl py-2 px-1 toque-44 active:scale-[0.97]"
-            style={{ background: fondo, color, opacity: entrena ? 1 : 0.65 }}
-          >
-            <span className="block text-[11px] font-bold" style={{ textDecoration: d.esHoy ? 'underline' : 'none' }}>
-              {d.corto}
-            </span>
-            {/* ⚠️ Un día anterior a la activación no dice «Descanso»: ese día el
-                plan no existía, y afirmarlo sería inventárselo. */}
-            <span className="block text-[10px] truncate mt-0.5">
-              {d.fueraDelPlan ? '—' : (entrena ? d.nombre : 'Descanso')}
-            </span>
-          </button>
-        );
-      })}
-    </div>
   );
 }
 
@@ -289,18 +265,31 @@ export function SesionDelDia({ sesion, accent, onCerrar = null, onEmpezar = null
 
 /* ── La pantalla (apartado 21: ese orden, y sin llenarla de widgets) ───────
    ⚠️ Qué día está abierto es **estado de la pantalla**, no un dato (EH F40):
-   volver a Entrenamiento te deja donde se entra, no donde lo dejaste. */
+   volver a Entrenamiento te deja donde se entra, no donde lo dejaste.
+   🔓 FIT F32 — y también qué semana se está mirando: navegar es mirar, y no se
+   guarda ni crea nada (apartado 14). */
 export default function TuPlanView({
   fitness = {}, accent, hoy,
   onExplorar = null, onCrear = null, onVerPlantillas = null, onCambiarPlan = null,
   onQuitar = null, onEmpezar = null,
+  /* 🔓 FIT F32 — abrir una sesión hecha (su detalle del Historial, apartado 37)
+     y arreglar un plan que no se puede repartir (apartado 23). */
+  onVerSesion = null, onEditarPlan = null,
 }) {
-  const [diaAbierto, setDiaAbierto] = useState(null);
+  const [rutinaDelProximo, setRutinaDelProximo] = useState(false);
+  const [semanaVista, setSemanaVista] = useState(null);
+  const [diaElegido, setDiaElegido] = useState(null);
   const v = useMemo(() => tuPlan(fitness, hoy ? { hoy } : {}), [fitness, hoy]);
   /* 🔓 FIT F31, apartado 31 — *"Esta semana: realizadas / planificadas […] No
      duplicar la lógica. Utilizar getTrainingActivitySummary()"*. ⚠️ Antes de
      los `return` de abajo: es un hook (regla 4). */
   const actividad = useMemo(() => resumenDeActividad(fitness, hoy ? { hoy } : {}), [fitness, hoy]);
+  /* 🔓 FIT F32 — hoy, lo siguiente y la semana que se esté mirando. También
+     antes de los `return` (regla 4). */
+  const p = useMemo(
+    () => planificacionDeTuPlan(fitness, { ...(hoy ? { hoy } : {}), semana: semanaVista }),
+    [fitness, hoy, semanaVista],
+  );
 
   if (v.estado === 'sin_plan') {
     return (
@@ -322,85 +311,119 @@ export default function TuPlanView({
     );
   }
 
-  const sesion = diaAbierto === null ? null : sesionDelDia(v.plan, diaAbierto.indice, v.propios);
+  /* 2 · El plan activo (apartado 3: sin sobrecargar la cabecera). Se escribe
+     una vez porque sale también con un plan que no se puede repartir. */
+  const cabecera = (
+    <div>
+      {/* Apartado 3: la cabecera **se llama «Tu Plan»**, que es como la nombra
+          el enunciado y por donde se entra desde Entrenamiento. */}
+      <SectionTitle sub="Tu planificación activa">Tu Plan</SectionTitle>
+      <Card>
+        <p className="text-lg font-extrabold leading-tight" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+          {v.cabecera.nombre}
+        </p>
+        <p className="text-xs mt-0.5" style={{ color: accent }}>
+          {[v.cabecera.entorno, v.cabecera.textoFrecuencia, v.cabecera.dificultad]
+            .filter(Boolean).join(' · ') || v.cabecera.subtitulo}
+        </p>
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+          {[v.cabecera.objetivo, v.cabecera.duracion,
+            `${v.cabecera.ejercicios} ${v.cabecera.ejercicios === 1 ? 'ejercicio' : 'ejercicios'}`]
+            .filter(Boolean).join(' · ')}
+        </p>
+        {/* Apartado 17: desde cuándo lo sigue. Sin fecha no se dice nada. */}
+        {v.cabecera.textoDesde && (
+          <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>{v.cabecera.textoDesde}</p>
+        )}
+        {(onCambiarPlan || onQuitar) && (
+          <div className="flex gap-2 flex-wrap mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+            {onCambiarPlan && <GhostBtn icon={Repeat} onClick={onCambiarPlan}>Cambiar plan</GhostBtn>}
+            {/* ⚠️ «Quitar el plan» existe desde la F5 y **no se pierde al
+                rediseñar esta pantalla**: reorganizar no es eliminar (GE F1).
+                El apartado 19 solo prohíbe borrar el plan o las plantillas, y
+                esto no borra nada: deja de estar activo. */}
+            {onQuitar && <GhostBtn icon={X} onClick={onQuitar}>Quitar el plan</GhostBtn>}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+
+  /* 🔓 FIT F32, apartado 23 — *"Si un plan está corrupto o no tiene días:
+     «Este plan no tiene una planificación válida.» CTA «Editar plan». No romper
+     Tu Plan."* Se dice, con su salida, y el resto de la pantalla sigue. */
+  if (v.invalido) {
+    return (
+      <div className="space-y-5">
+        <PlanSinPlanificacion textos={PLAN_INVALIDO} accent={accent} onEditar={onEditarPlan} />
+        {cabecera}
+        <SeccionPlantillas datos={v.plantillas} accent={accent} onVerTodas={onVerPlantillas} onCrear={onCrear} />
+      </div>
+    );
+  }
+
+  const proximo = p.proximo;
+  const rutinaProximo = rutinaDelProximo && proximo ? sesionDelDia(v.plan, proximo.indice, v.propios) : null;
+  const semana = p.semana;
+  const diaSel = diaElegido ? (semana.dias || []).find((d) => d.fecha === diaElegido) || null : null;
+  /* Un día del plan activo que no se ha hecho enseña su rutina entera, con
+     «Empezar entrenamiento» — el camino de la F6 y la F7. Ya hecho, lo que se
+     enseña es lo que hizo, con «Ver entrenamiento» y «Repetir» (apartado 12). */
+  const rutinaSel = diaSel && diaSel.acciones.verRutina && diaSel.relacion !== 'coincide'
+    ? sesionDelDia(v.plan, diaSel.planificado.indice, v.propios)
+    : null;
+  const empezarDia = (d) => (onEmpezar && d && d.planificado && d.planificado.indice !== null
+    ? () => onEmpezar(d.planificado.indice)
+    : null);
+  const irASemana = (lunes) => { setSemanaVista(lunes); setDiaElegido(null); };
 
   return (
     <div className="space-y-5">
-      {/* 1 · Lo primero es el próximo entrenamiento (apartado 21). */}
-      <div>
-        <SectionTitle sub={v.descansoHoy ? 'Hoy no toca' : 'Lo siguiente que te toca'}>
-          {v.descansoHoy ? 'Hoy' : 'Próximo entrenamiento'}
-        </SectionTitle>
-        {v.descansoHoy ? <DescansoHoy accent={accent} /> : (
-          <TarjetaProximo
-            proximo={v.proximo}
-            accent={accent}
-            onVer={v.proximo ? () => setDiaAbierto({ indice: v.proximo.indice, dia: v.proximo.dia }) : null}
-            onEmpezar={v.proximo && onEmpezar ? () => onEmpezar(v.proximo.indice) : null}
-          />
-        )}
-        {/* ⚠️ Y si hoy descansa pero queda entrenamiento esta semana, se dice
-            cuál: esconderlo dejaría la pantalla sin lo siguiente que hacer. */}
-        {v.descansoHoy && v.proximo && (
-          <div className="mt-3">
-            <TarjetaProximo
-              proximo={v.proximo}
+      {/* 1 · Hoy, cuando no es lo siguiente (FIT F32, apartados 10 y 12): si ya
+          lo hizo, si entrenó sin plan o si el plan no tiene nada hoy. */}
+      {p.hoyAparte && p.hoy && (
+        <div>
+          <SectionTitle sub="Lo que dice tu plan de hoy">Hoy</SectionTitle>
+          {p.hoy.estado === 'unplanned' ? <DescansoHoy accent={accent} /> : (
+            <TrainingDayCard
+              dia={p.hoy}
               accent={accent}
-              onVer={() => setDiaAbierto({ indice: v.proximo.indice, dia: v.proximo.dia })}
-              onEmpezar={onEmpezar ? () => onEmpezar(v.proximo.indice) : null}
+              onVerSesion={onVerSesion}
+              onRepetir={p.hoy.acciones.repetir ? empezarDia(p.hoy) : null}
             />
-          </div>
-        )}
-      </div>
-
-      {/* La sesión abierta, justo debajo de lo que la abrió. */}
-      {sesion && (
-        <SesionDelDia
-          sesion={sesion}
-          accent={accent}
-          onCerrar={() => setDiaAbierto(null)}
-          onEmpezar={onEmpezar && !sesion.descanso ? () => onEmpezar(diaAbierto.indice) : null}
-        />
+          )}
+        </div>
       )}
 
-      {/* 2 · El plan activo (apartado 3: sin sobrecargar la cabecera). */}
-      <div>
-        {/* Apartado 3: la cabecera **se llama «Tu Plan»**, que es como la nombra
-            el enunciado y por donde se entra desde Entrenamiento. */}
-        <SectionTitle sub="Tu planificación activa">Tu Plan</SectionTitle>
-        <Card>
-          <p className="text-lg font-extrabold leading-tight" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-            {v.cabecera.nombre}
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: accent }}>
-            {[v.cabecera.entorno, v.cabecera.textoFrecuencia, v.cabecera.dificultad]
-              .filter(Boolean).join(' · ') || v.cabecera.subtitulo}
-          </p>
-          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
-            {[v.cabecera.objetivo, v.cabecera.duracion,
-              `${v.cabecera.ejercicios} ${v.cabecera.ejercicios === 1 ? 'ejercicio' : 'ejercicios'}`]
-              .filter(Boolean).join(' · ')}
-          </p>
-          {/* Apartado 17: desde cuándo lo sigue. Sin fecha no se dice nada. */}
-          {v.cabecera.textoDesde && (
-            <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>{v.cabecera.textoDesde}</p>
-          )}
-          {(onCambiarPlan || onQuitar) && (
-            <div className="flex gap-2 flex-wrap mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
-              {onCambiarPlan && <GhostBtn icon={Repeat} onClick={onCambiarPlan}>Cambiar plan</GhostBtn>}
-              {/* ⚠️ «Quitar el plan» existe desde la F5 y **no se pierde al
-                  rediseñar esta pantalla**: reorganizar no es eliminar (GE F1).
-                  El apartado 19 solo prohíbe borrar el plan o las plantillas, y
-                  esto no borra nada: deja de estar activo. */}
-              {onQuitar && <GhostBtn icon={X} onClick={onQuitar}>Quitar el plan</GhostBtn>}
+      {/* 2 · Lo siguiente que toca (apartado 21 de la F6 y 9-10 de la F32). */}
+      {proximo && (
+        <div>
+          <SectionTitle sub="Lo siguiente que te toca">Próximo entrenamiento</SectionTitle>
+          <TarjetaProximo
+            proximo={proximo}
+            accent={accent}
+            onVer={() => setRutinaDelProximo(!rutinaDelProximo)}
+            onEmpezar={onEmpezar ? () => onEmpezar(proximo.indice) : null}
+          />
+          {/* La sesión abierta, justo debajo de lo que la abrió. */}
+          {rutinaProximo && (
+            <div className="mt-3">
+              <SesionDelDia
+                sesion={rutinaProximo}
+                accent={accent}
+                onCerrar={() => setRutinaDelProximo(false)}
+                onEmpezar={onEmpezar ? () => onEmpezar(proximo.indice) : null}
+              />
             </div>
           )}
-        </Card>
-      </div>
+        </div>
+      )}
 
-      {/* 3 · La semana (apartados 7 y 8). */}
+      {cabecera}
+
+      {/* 3 · La semana (apartados 7 y 8 de la F6; 3, 14-16 y 22 de la F32). */}
       <div>
-        <SectionTitle sub="Toca un día para ver su entrenamiento">Tu semana</SectionTitle>
+        <SectionTitle sub="Toca un día para ver qué tenía el plan y qué hiciste">Tu semana</SectionTitle>
         {v.sinSemana ? (
           <Card>
             <p className="text-sm font-bold" style={{ color: COLORS.text }}>Todavía no se puede repartir la semana</p>
@@ -410,17 +433,41 @@ export default function TuPlanView({
           </Card>
         ) : (
           <>
-            <SemanaCompacta
-              semana={v.semana}
+            <WeekNavigation
+              semana={semana}
               accent={accent}
-              seleccionado={diaAbierto?.dia ?? null}
-              onElegir={(d) => setDiaAbierto(
-                diaAbierto?.dia === d.dia ? null : { indice: d.indice, dia: d.dia },
-              )}
+              onAnterior={() => irASemana(semana.anterior)}
+              onSiguiente={() => irASemana(semana.siguiente)}
+              onEstaSemana={() => irASemana(null)}
             />
+            <TrainingWeekView
+              semana={semana}
+              accent={accent}
+              seleccionado={diaElegido}
+              onElegir={(d) => setDiaElegido(diaElegido === d.fecha ? null : d.fecha)}
+            />
+            {diaSel && (
+              <div className="mt-3">
+                <TrainingDayCard
+                  dia={diaSel}
+                  accent={accent}
+                  onVerSesion={onVerSesion}
+                  onRepetir={diaSel.acciones.repetir ? empezarDia(diaSel) : null}
+                  rutina={rutinaSel ? (
+                    <SesionDelDia
+                      sesion={rutinaSel}
+                      accent={accent}
+                      onCerrar={() => setDiaElegido(null)}
+                      onEmpezar={diaSel.acciones.empezar ? empezarDia(diaSel) : null}
+                    />
+                  ) : null}
+                />
+              </div>
+            )}
             {/* 🔓 FIT F31 — lo hecho frente a lo planificado, sin nota (apartados
-                11-14). Sin frecuencia definida el bloque no existe (13). */}
-            {actividad.plan && (
+                11-14). Sin frecuencia definida el bloque no existe (13). ⚠️ Es
+                el de la semana EN CURSO: en otra semana no se enseña. */}
+            {semana.esActual && actividad.plan && (
               <div className="mt-3">
                 <TrainingPlanAdherence plan={actividad.plan} accent={accent} />
               </div>

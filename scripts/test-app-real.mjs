@@ -6580,7 +6580,10 @@ ok(/Quitar el plan/i.test(tuPlan_fit5), '…y se puede dejar de tenerlo puesto')
    entrenan el sábado y ninguno el domingo**: un fin de semana no puede existir,
    y es correcto que no exista. Sin esta alternativa, la comprobación solo
    pasaba de lunes a viernes. */
-ok(/Empezar entrenamiento/i.test(tuPlan_fit5) || /Hoy toca descansar/i.test(tuPlan_fit5),
+/* 🔓 FIT F32, apartado 9 — el próximo entrenamiento existe SIEMPRE que el plan
+   tenga alguno (lo busca más allá de la semana), así que su «Empezar» también:
+   el respaldo de «Hoy toca descansar» sobra, y esa frase ya no existe. */
+ok(/Empezar entrenamiento/i.test(tuPlan_fit5),
   '🔓 …y en Tu Plan YA está «Empezar entrenamiento»: el motor llegó con la FIT F7');
 
 /* Y a 375 px no se desborda (apartado 18). */
@@ -6605,8 +6608,10 @@ ok(desborde_fit5.ancho <= desborde_fit5.ventana + 1,
    es la lección de EH F44. */
 console.log('\n── FIT F6 · Tu Plan ──');
 const tuplan_fit6 = await ver();
-ok(/Pr[oó]ximo entrenamiento/i.test(tuplan_fit6) || /Hoy toca descansar/i.test(tuplan_fit6),
-  '🚨 FIT F6 — Tu Plan abre con lo siguiente que toca, o con el descanso de hoy (apartado 21)');
+/* 🔓 FIT F32, apartado 9 — ya no hay «o con el descanso de hoy»: el próximo se
+   busca más allá de la semana, así que existe cualquier día. */
+ok(/Pr[oó]ximo entrenamiento/i.test(tuplan_fit6),
+  '🚨 FIT F6 — Tu Plan abre con lo siguiente que toca (apartado 21, y la F32 lo garantiza cualquier día)');
 ok(/Tu semana/i.test(tuplan_fit6), '…y enseña la semana (apartado 7)');
 ok(/Distribuci[oó]n semanal/i.test(tuplan_fit6),
   '🚨 …con la distribución muscular DERIVADA del plan (apartado 10)');
@@ -6620,15 +6625,18 @@ ok(/Cambiar plan/i.test(tuplan_fit6), '…y se puede cambiar de plan (apartado 4
 /* 🔓 El apartado 6 de la F6 pedía NO empezar nada *"si todavía no puede existir
    una acción funcional completa"*. Con la FIT F7 existe, así que la promesa se
    da la vuelta: era una espera, no una exclusión. */
-ok(/Empezar entrenamiento/i.test(tuplan_fit6) || /Hoy toca descansar/i.test(tuplan_fit6),
+ok(/Empezar entrenamiento/i.test(tuplan_fit6),
   '🔓 FIT F6 → F7 — el CTA de Tu Plan es ya «Empezar entrenamiento»');
-ok(/Ver entrenamiento/i.test(tuplan_fit6) || /Hoy toca descansar/i.test(tuplan_fit6),
+ok(/Ver entrenamiento/i.test(tuplan_fit6),
   '…y «Ver entrenamiento» sigue estando, de secundario: abrir el detalle no se ha perdido');
 
-/* Apartado 7: la semana, con sus siete días y hoy marcado. */
+/* Apartado 7: la semana, con sus siete días y hoy marcado.
+   🔓 FIT F32, apartado 39 — cada día lleva ahora su descripción COMPLETA
+   («Lunes 21 de septiembre. Push. Planificado.»), que empieza igual por su
+   nombre: se buscan por el nombre seguido del número del día. */
 const diasSemana_fit6 = await page.evaluate(() => {
   const botones = [...document.querySelectorAll('button[aria-label]')]
-    .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo):/.test(b.getAttribute('aria-label') || ''));
+    .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo) \d/.test(b.getAttribute('aria-label') || ''));
   return {
     cuantos: botones.length,
     hoy: botones.filter((b) => b.getAttribute('aria-current') === 'date').length,
@@ -6639,8 +6647,11 @@ ok(diasSemana_fit6.cuantos === 7,
   `🚨 FIT F6 — la semana tiene sus siete días (${diasSemana_fit6.cuantos}, apartado 7)`);
 ok(diasSemana_fit6.hoy === 1,
   `🚨 …y UNO solo marcado como hoy (${diasSemana_fit6.hoy}, apartado 29)`);
-ok(diasSemana_fit6.etiquetas.some((e) => /descanso/i.test(e)),
-  '🚨 …y los días de descanso se identifican (apartado 29)');
+/* 🔓 FIT F32, apartado 5 — un día sin sesión en el plan ya no se afirma como
+   «descanso»: es «Sin entrenamiento planificado». */
+ok(diasSemana_fit6.etiquetas.some((e) => /Sin entrenamiento planificado/.test(e))
+  && !diasSemana_fit6.etiquetas.some((e) => /descanso/i.test(e)),
+  '🚨 …y los días sin sesión en el plan se identifican, sin afirmar «descanso» (apartado 29 y F32)');
 ok(!diasSemana_fit6.etiquetas.some((e) => /completado/i.test(e)),
   '🚨 FIT F6 — y NINGUNO dice «completado»: sin historial no se puede afirmar (apartado 8)');
 
@@ -6676,16 +6687,18 @@ ok(await pulsar('Bienestar') && await pulsar('Fitness'),
   `FIT F6 — se vuelve con el plan activado el lunes (${lunesDeLaSemana_fit6})`);
 await esperarTexto(/Tu semana/i);
 const semanaDesdeLunes_fit6 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
-  .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo):/.test(b.getAttribute('aria-label') || ''))
+  .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo) \d/.test(b.getAttribute('aria-label') || ''))
   .map((b) => b.getAttribute('aria-label')));
 ok(semanaDesdeLunes_fit6.length === 7,
   `🚨 FIT F6 — la semana sigue teniendo siete días (${semanaDesdeLunes_fit6.length})`);
-ok(!semanaDesdeLunes_fit6.some((e) => /antes de empezar/i.test(e)),
+/* 🔓 FIT F32 — un día antes de cualquier plan conocido dice «Sin datos del plan». */
+ok(!semanaDesdeLunes_fit6.some((e) => /Sin datos del plan/i.test(e)),
   '🚨 FIT F6 — y con el plan empezado el lunes ya no hay ningún día «antes de empezar»');
 
 /* Apartado 9 — tocar un día abre su sesión, con los ejercicios de siempre. */
+/* Un día con entrenamiento en el plan: su descripción dice «. Planificado». */
 const diaConEntreno_fit6 = semanaDesdeLunes_fit6
-  .find((e) => !/descanso|antes de empezar/i.test(e)) || '';
+  .find((e) => /\. Planificado/.test(e)) || '';
 ok(!!diaConEntreno_fit6, `hay un día con entrenamiento (${diaConEntreno_fit6})`);
 ok(await pulsar(diaConEntreno_fit6), 'se toca ese día (apartado 9)');
 await page.waitForTimeout(600);
@@ -7286,11 +7299,12 @@ ok(!/sin guardar/i.test(terminado_fit7), '…ni terminar de guardarla');
 
 /* 🔓 FIT F6 → F8 — el estado «Completado» de un día, que nació apagado. */
 const semana_fit8 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
-  .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo):/.test(b.getAttribute('aria-label') || ''))
+  .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo) \d/.test(b.getAttribute('aria-label') || ''))
   .map((b) => b.getAttribute('aria-label')));
 ok(semana_fit8.length === 7, 'la semana sigue teniendo sus siete días');
-ok(!semana_fit8.some((e) => /descanso/i.test(e) && /completado/i.test(e)),
-  '🚨 FIT F8 — y entrenar NO convierte un día de DESCANSO en «Completado»: no tocaba');
+/* 🔓 FIT F32 — ese día, si el plan no tenía sesión, es «Entrenamiento extra». */
+ok(!semana_fit8.some((e) => /Sin entrenamiento planificado/.test(e) && /completado/i.test(e)),
+  '🚨 FIT F8 — y entrenar NO convierte un día sin sesión en el plan en «Completado»: no tocaba');
 
 /* Y a 375 px no se desborda: es la pantalla que se usa entrenando (apartado 35). */
 /* 🐛 **Esta parte dependía del día de la semana.** Tras completar el
@@ -9279,7 +9293,8 @@ const etiquetasEsperadas_fit31 = (conPlan) => Array.from({ length: 7 }, (_, i) =
   if (del.length > 1) que = `${del.length} entrenamientos: ${[...del].sort((a, b) => a.iniciadaEn - b.iniciadaEn).map((x) => x.nombre).join(' y ')}`;
   else if (del.length === 1) que = `entrenamiento ${del[0].nombre}`;
   else if (f > hoy_fit31) que = 'todavía no ha llegado';
-  else if (descansaElPlan) que = 'descanso del plan';
+  /* 🔓 FIT F32, apartado 5 — antes «descanso del plan». */
+  else if (descansaElPlan) que = 'sin entrenamiento planificado';
   else que = 'sin entrenamiento registrado';
   return `${diaYMes_fit31(f)} — ${que}`;
 });
@@ -9393,7 +9408,7 @@ ok(/L Push · M Pull · X Legs · V Upper · S Lower/.test(tuPlan_fit31),
 ok(await pulsar('Progreso'), '…y en Progreso, con el plan');
 await esperarTexto(/Último entrenamiento/i);
 eqReal(await etiquetasSemana_fit31(), etiquetasEsperadas_fit31(true),
-  '🚨 FIT F31 — con plan, SOLO el jueves y el domingo ya pasados pueden decir «descanso del plan» (apartado 28)');
+  '🚨 FIT F31 — con plan, SOLO el jueves y el domingo ya pasados pueden decir «sin entrenamiento planificado» (apartado 28 y F32)');
 
 /* Apartado 36 — a 375 px, sin arrastrar la página de lado. */
 const ancho_fit31 = await page.evaluate(() => ({ a: document.documentElement.scrollWidth, v: window.innerWidth }));
@@ -9403,6 +9418,192 @@ ok(!/\bXP\b|racha de entrenamiento nueva|leaderboard|recompensa/i.test(await ver
   '🚨 FIT F31 — ni XP, ni recompensas, ni una racha nueva (apartados 16 y 40)');
 
 almacen.fitness = fitnessDeAntes_fit31;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F32 — Planificación semanal avanzada (Entrega 4 · 32/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El criterio de finalización: entrar en Tu Plan y entender *qué toca hoy, qué
+   toca después, qué hizo y qué está planificado*, **sin perder información
+   histórica**: el plan futuro puede cambiar, el pasado no.
+
+   Lo que aquí se mide y no puede medir Node: que la semana se RECORRE de verdad
+   con sus flechas, que cada día lleva su descripción completa para VoiceOver,
+   que una sesión hecha se abre en el detalle del Historial y se vuelve a Tu
+   Plan, que navegar NO escribe nada, y —lo más importante— que **cambiar de
+   plan desde la biblioteca no reescribe la semana pasada, ni al recargar**.
+
+   ⚠️ Las etiquetas esperadas se CALCULAN del escenario y de hoy (la lección de
+   la F31): la semana de un lunes y la de un domingo son distintas y las dos se
+   comprueban enteras. Y el escenario se limpia: sesiones y plan, todo nuevo. */
+console.log('\n── FIT F32 · La planificación semanal ──');
+
+const fitnessDeAntes_fit32 = almacen.fitness;
+const hoy_fit32 = hoy_fit31;
+const lunes_fit32 = lunes_fit31;
+const mas_fit32 = masDias_fit31;
+const DIAS_fit32 = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const PPL_fit32 = ['Push', 'Pull', 'Legs', null, 'Upper', 'Lower', null];
+const UL_fit32 = ['Upper A', 'Lower A', null, 'Upper B', 'Lower B', null, null];
+const diasAtras_fit32 = (f) => Math.round((new Date(`${hoy_fit32}T12:00:00`) - new Date(`${f}T12:00:00`)) / 86400000);
+/* Una sesión de verdad (la de la F31) con su enlace a un día: `planId` y el id
+   del día en su `origen` (F7) y en su `diaDePlan` (F8). */
+const enlazada_fit32 = (id, nombre, fecha, planId, diaId, tipo) => {
+  const base = sesion_fit31(id, nombre, diasAtras_fit32(fecha), 18, 50);
+  return {
+    ...base, planId,
+    origen: { ...base.origen, tipo, id: diaId },
+    diaDePlan: { planId, tipo, diaId, nombre },
+  };
+};
+const lunesPasado_fit32 = mas_fit32(lunes_fit32, -7);
+almacen.fitness = {
+  ...(fitnessDeAntes_fit32 || {}),
+  sesiones: [
+    /* La semana pasada: el Push del plan (completado), otra rutina el día del
+       Pull (otro entrenamiento) y una el jueves, que el PPL no tiene (extra). */
+    enlazada_fit32('f32-push', 'Push F32', lunesPasado_fit32, 'ppl-estetico', 'ppl-estetico-dia-1', 'preset'),
+    enlazada_fit32('f32-fb', 'Full Body F32', mas_fit32(lunesPasado_fit32, 1), 'pl-f32', 'pl-f32', 'plantilla'),
+    enlazada_fit32('f32-core', 'Core F32', mas_fit32(lunesPasado_fit32, 3), 'pl-f32-core', 'pl-f32-core', 'plantilla'),
+  ],
+  planActivo: { planId: 'ppl-estetico', origen: 'preset', desde: mas_fit32(lunes_fit32, -14) },
+  planesAnteriores: [],
+};
+
+/* Lo esperado, calculado aquí y no leído de la aplicación (apartado 39). */
+const cabeza_fit32 = (f, i) => `${DIAS_fit32[i]} ${diaYMes_fit31(f)}${f === hoy_fit32 ? ' (hoy)' : ''}.`;
+const sinSesion_fit32 = (f, i, nombre) => {
+  if (!nombre) return `${cabeza_fit32(f, i)} Sin entrenamiento planificado.`;
+  return f < hoy_fit32
+    ? `${cabeza_fit32(f, i)} ${nombre}. Planificado. Sin entrenamiento registrado.`
+    : `${cabeza_fit32(f, i)} ${nombre}. Planificado.`;
+};
+const semanaSinSesiones_fit32 = (lunes, nombresDe) => DIAS_fit32.map((_, i) => {
+  const f = mas_fit32(lunes, i);
+  return sinSesion_fit32(f, i, nombresDe(f, i));
+});
+const pasadaEsperada_fit32 = DIAS_fit32.map((_, i) => {
+  const f = mas_fit32(lunesPasado_fit32, i);
+  if (i === 0) return `${cabeza_fit32(f, i)} Push. Planificado y completado.`;
+  if (i === 1) return `${cabeza_fit32(f, i)} Planificado: Pull. Realizado: Full Body F32.`;
+  if (i === 3) return `${cabeza_fit32(f, i)} Sin entrenamiento planificado. Entrenamiento extra: Core F32.`;
+  return sinSesion_fit32(f, i, PPL_fit32[i]);
+});
+/* Las siete casillas de la semana que se esté mirando, por su grupo. */
+const etiquetasDeLaSemana_fit32 = (titulo) => page.evaluate((t) => {
+  const g = [...document.querySelectorAll('[role="group"]')].find((x) => (x.getAttribute('aria-label') || '').startsWith(`${t}:`));
+  return g ? [...g.querySelectorAll('button[aria-label]')].map((b) => b.getAttribute('aria-label')) : null;
+}, titulo);
+const escriturasFitness_fit32 = () => guardado.filter((g) => g && g.key === 'fitness').length;
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F32 — se entra en Fitness → Tu Plan, con el PPL desde hace dos semanas');
+const tuPlan_fit32 = await esperarTexto(/Tu semana/i);
+
+/* 1 · QUÉ TOCA HOY Y QUÉ TOCA DESPUÉS (apartados 9 y 10). */
+const iHoy_fit32 = DIAS_fit32.findIndex((_, i) => mas_fit32(lunes_fit32, i) === hoy_fit32);
+ok(/Pr[oó]ximo entrenamiento/i.test(tuPlan_fit32) && /· Planificado/i.test(tuPlan_fit32),
+  '🚨 FIT F32 — «Próximo entrenamiento», con su estado «Planificado», cualquier día de la semana (apartados 9 y 10)');
+if (PPL_fit32[iHoy_fit32]) {
+  ok(/Hoy · Planificado/i.test(tuPlan_fit32) && tuPlan_fit32.includes(PPL_fit32[iHoy_fit32]),
+    `🚨 FIT F32 — hoy toca ${PPL_fit32[iHoy_fit32]} y está pendiente, así que el próximo ES el de hoy (apartado 9)`);
+} else {
+  ok(/Hoy no hay entrenamiento planificado/i.test(tuPlan_fit32) && !/Hoy toca descansar/i.test(tuPlan_fit32),
+    '🚨 FIT F32 — hoy el PPL no tiene sesión y se dice «Hoy no hay entrenamiento planificado», NO «descansar» (apartado 5)');
+}
+
+/* 2 · LA SEMANA EN CURSO, día a día (apartados 3, 7, 8 y 39). */
+const actual_fit32 = await etiquetasDeLaSemana_fit32('Esta semana');
+eqReal(actual_fit32, semanaSinSesiones_fit32(lunes_fit32, (f, i) => PPL_fit32[i]),
+  '🚨 FIT F32 — los siete días de esta semana, con su descripción completa (apartados 3, 7 y 39)');
+ok(actual_fit32 && !actual_fit32.some((e) => /descanso/i.test(e)),
+  '🚨 FIT F32 — …y NINGUNO dice «descanso» (apartado 5)');
+const hoyMarcado_fit32 = await page.evaluate(() => [...document.querySelectorAll('[aria-current="date"]')].map((b) => b.getAttribute('aria-label')));
+ok(hoyMarcado_fit32.length === 1 && hoyMarcado_fit32[0].includes('(hoy)'),
+  `FIT F32 — un solo día marcado como hoy, y su descripción lo dice (${hoyMarcado_fit32.length}, apartado 8)`);
+
+/* 3 · LA SEMANA PASADA (apartados 14, 16, 17, 18 y 32). Navegar no escribe. */
+const escriturasAntes_fit32 = escriturasFitness_fit32();
+ok(await pulsar('Semana anterior'), 'FIT F32 — «Semana anterior» (apartado 14)');
+await esperarTexto(/Semana pasada/i);
+const pasada_fit32 = await etiquetasDeLaSemana_fit32('Semana pasada');
+eqReal(pasada_fit32, pasadaEsperada_fit32,
+  '🚨 FIT F32 — la semana pasada: el Push COMPLETADO, OTRO entrenamiento el día del Pull, un EXTRA el jueves y lo planificado sin registro — sin una palabra negativa (apartados 16-18 y 32)');
+ok(await pulsar('Semana siguiente') && await pulsar('Semana siguiente'), 'FIT F32 — y dos semanas hacia delante');
+await esperarTexto(/Próxima semana/i);
+const proxima_fit32 = await etiquetasDeLaSemana_fit32('Próxima semana');
+eqReal(proxima_fit32, semanaSinSesiones_fit32(mas_fit32(lunes_fit32, 7), (f, i) => PPL_fit32[i]),
+  '🚨 FIT F32 — la próxima semana enseña la planificación del plan, sin sesiones (apartado 15)');
+ok(escriturasFitness_fit32() === escriturasAntes_fit32,
+  `🚨 FIT F32 — recorrer las semanas NO escribe nada: ni una sesión creada (${escriturasAntes_fit32} → ${escriturasFitness_fit32()}, apartados 14 y 15)`);
+ok(await pulsar('Volver a esta semana'), 'FIT F32 — «Volver a esta semana»');
+await esperarTexto(/Esta semana/i);
+
+/* 4 · UN DÍA HECHO → SU DETALLE DEL HISTORIAL, Y VUELTA (apartados 6, 21 y 37). */
+ok(await pulsar('Semana anterior'), 'FIT F32 — otra vez a la semana pasada');
+await esperarTexto(/Semana pasada/i);
+ok(await pulsar(pasadaEsperada_fit32[1]), 'FIT F32 — se toca el martes, el del otro entrenamiento');
+await page.waitForTimeout(400);
+const martes_fit32 = await ver();
+ok(/Otro entrenamiento realizado/i.test(martes_fit32) && /Planificado: Pull/.test(martes_fit32) && /Full Body F32/.test(martes_fit32),
+  '🚨 FIT F32 — el día dice «Otro entrenamiento realizado», qué tocaba y qué hizo (apartados 17 y 18)');
+const numMartes_fit32 = Number(mas_fit32(lunesPasado_fit32, 1).slice(8, 10));
+ok(await pulsar(`Ver el entrenamiento: Full Body F32, martes ${numMartes_fit32}`), 'FIT F32 — «Ver» esa sesión (apartado 37)');
+await page.waitForTimeout(700);
+/* ⚠️ «Full Body F32» y «Planificado» también están en la tarjeta del día de Tu
+   Plan: lo que prueba que se abrió el detalle es que Tu Plan ya NO está y que
+   está su botón de vuelta (EH F42: una comprobación que pasa en la pantalla de
+   antes no mide nada). */
+const detalle_fit32 = await ver();
+const enDetalle_fit32 = await page.evaluate(() => !!document.querySelector('button[aria-label="Volver a Tu Plan"]'));
+ok(enDetalle_fit32 && /Full Body F32/.test(detalle_fit32) && !/Tu semana/i.test(detalle_fit32),
+  '🚨 FIT F32 — abre el detalle de la F10, el mismo del Historial: no hay otra pantalla (apartado 37)');
+ok(await pulsar('Volver a Tu Plan'), '…y el botón dice adónde vuelve: «Volver a Tu Plan»');
+await esperarTexto(/Tu semana/i);
+
+/* 5 · CAMBIAR DE PLAN NO REESCRIBE EL PASADO (apartado 22 — C-39). */
+ok(await pulsar('Cambiar plan'), 'FIT F32 — «Cambiar plan»');
+await esperarTexto(/PPL/i);
+ok(await pulsar('Abrir Upper / Lower'), '…se abre Upper / Lower');
+await esperarTexto(/La semana/i);
+ok(await pulsar('Usar este plan'), '…«Usar este plan»');
+await esperarTexto(/¿Cambiar tu plan actual\?/i);
+ok(await pulsar('Confirmar cambiar a Upper / Lower'), '…y se confirma');
+await page.waitForTimeout(900);
+const trasCambio_fit32 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {};
+const tramo_fit32 = (trasCambio_fit32.planesAnteriores || [])[0] || {};
+ok(trasCambio_fit32.planActivo?.planId === 'upper-lower' && tramo_fit32.planId === 'ppl-estetico'
+  && tramo_fit32.desde === mas_fit32(lunes_fit32, -14) && tramo_fit32.hasta === hoy_fit32,
+  `🚨 FIT F32 — al cambiar, el PPL queda apuntado con sus fechas: del ${tramo_fit32.desde} al ${tramo_fit32.hasta} (C-39)`);
+ok(Array.isArray(tramo_fit32.dias) && tramo_fit32.dias.length === 7 && tramo_fit32.dias[0].id === 'ppl-estetico-dia-1'
+  && tramo_fit32.dias.every((d) => !('lineas' in d)),
+  '…con la estructura de sus días —ids estables, nombre y descanso— y NI UN ejercicio copiado');
+
+/* Se recarga: lo que se mide es lo GUARDADO (apartado 41, persistencia). */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F32 — se recarga y se vuelve a Tu Plan');
+await esperarTexto(/Tu semana/i);
+const cambiada_fit32 = await etiquetasDeLaSemana_fit32('Esta semana');
+eqReal(cambiada_fit32, semanaSinSesiones_fit32(lunes_fit32, (f, i) => (f < hoy_fit32 ? PPL_fit32[i] : UL_fit32[i])),
+  '🚨 FIT F32 — esta semana: lo que ya pasó sigue con el PPL y desde hoy manda Upper / Lower (apartado 22)');
+const aviso_fit32 = /Esta semana cambiaste de plan: «PPL Estético» y después «Upper \/ Lower»\./.test(await ver());
+ok(hoy_fit32 === lunes_fit32 ? !aviso_fit32 : aviso_fit32,
+  `FIT F32 — ${hoy_fit32 === lunes_fit32 ? 'hoy es lunes: la semana entera es del plan nuevo y no hay aviso' : 'y la semana dice que cambió de plan'} (apartado 22)`);
+ok(await pulsar('Semana anterior'), 'FIT F32 — y la semana pasada, tras el cambio y tras recargar…');
+await esperarTexto(/Semana pasada/i);
+eqReal(await etiquetasDeLaSemana_fit32('Semana pasada'), pasada_fit32,
+  '🚨 FIT F32 — …dice EXACTAMENTE lo mismo que antes de cambiar de plan: el pasado no se reescribe (apartado 22)');
+
+/* 6 · A 375 px, sin arrastrar la página de lado (apartado 38), y sin juego. */
+const ancho_fit32 = await page.evaluate(() => ({ a: document.documentElement.scrollWidth, v: window.innerWidth }));
+ok(ancho_fit32.a <= ancho_fit32.v + 1,
+  `🚨 FIT F32 — a 375 px la semana cabe entera, sin desbordar (${ancho_fit32.a} vs ${ancho_fit32.v}, apartado 38)`);
+ok(!/\bXP\b|puntuaci[oó]n|recompensa|\d+\s*% (de )?(cumplimiento|adherencia)/i.test(await ver()),
+  '🚨 FIT F32 — ni XP, ni puntuación, ni un porcentaje de adherencia (apartado 42)');
+
+almacen.fitness = fitnessDeAntes_fit32;
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

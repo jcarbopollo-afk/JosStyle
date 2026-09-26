@@ -1,4 +1,4 @@
-import { todayISO, addDays } from './helpers';
+import { todayISO, addDays, fechaValida } from './helpers';
 /* ⚠️ Los días de la semana y «qué día cae esta fecha» ya existen desde HT F1, y
    se calculan **en local** —que es la trampa del UTC por séptima vez—. Escribir
    aquí una segunda lista de lunes-a-domingo sería la de siempre: dos catálogos
@@ -12,8 +12,12 @@ import { planARutina, distribucionMuscular, duracionEstimada } from './construct
 import { fichaDePlantilla } from './plantillas';
 import {
   CATALOGO_PLANES, planPorId, planActivoDe, fichaDePlan, fichaDeDia, lineasDeDia,
-  rutinaDelPlan, diasDeEntreno,
+  rutinaDelPlan, diasDeEntreno, idDiaDePlantilla, planesAnterioresDe,
 } from './planes';
+/* 🔓 FIT F32 — las sesiones de cada día, agrupadas y en el orden en que las
+   hizo. Es la de la F31, que pasó a `historial.js` para que la semana del plan
+   y la actividad no las agruparan cada una a su manera. */
+import { sesionesPorDia } from './historial';
 
 /* Entrega 4 · Fase 6/45 — «Tu Plan».
    ═══════════════════════════════════════════════════════════════════════════
@@ -96,7 +100,12 @@ const lista = (v) => (Array.isArray(v) ? v : []);
 export const ESTADOS_DIA = [
   { id: 'hoy', nombre: 'Hoy', disponible: true, que: 'El entrenamiento que toca hoy.' },
   { id: 'proximo', nombre: 'Próximo', disponible: true, que: 'El siguiente día de entrenamiento.' },
-  { id: 'descanso', nombre: 'Descanso', disponible: true, que: 'Un día sin entrenamiento.' },
+  /* 🔓 FIT F32, apartado 5 — *"Si el plan no tiene entrenamiento: mostrar «Sin
+     entrenamiento planificado». No afirmar «Descanso» porque puede haber
+     entrenamiento libre."* Cambia la palabra, **no el id**: `descanso` es la
+     forma del dato (lo lee la semana, el próximo y la auditoría), y renombrarlo
+     por dentro no aclararía nada a nadie (FIT F1). */
+  { id: 'descanso', nombre: 'Sin entrenamiento planificado', disponible: true, que: 'El plan no tiene entrenamiento ese día. No se afirma que descanse: puede entrenar por su cuenta.' },
   { id: 'futuro', nombre: 'Más adelante', disponible: true, que: 'Un día de entrenamiento que todavía no toca.' },
   { id: 'pasado', nombre: 'Ya pasó', disponible: true, que: 'Un día de esta semana que ya quedó atrás.' },
   /* 🔓 **EL QUINTO, ENCENDIDO POR LA FIT F8.** Nació `disponible: false` porque
@@ -152,7 +161,10 @@ export function planDePlantilla(plantilla, propios = []) {
     thumbnail: null,
     propia: true,
     dias: [{
-      id: `${p.id}-dia`,
+      /* ⚠️ El id del día lo escribe `planes.js` —la F32 lo apunta en el
+         historial de planes—, así que se pide allí en vez de escribirlo dos
+         veces. */
+      id: idDiaDePlantilla(p.id),
       nombre: texto(p.nombre) || 'Entrenamiento',
       descanso: false,
       lineas: lista(rutina?.lineas),
@@ -217,7 +229,108 @@ export function diasEntrenados(sesiones = []) {
   return dias;
 }
 
-export function semanaDelPlan(plan, { hoy = todayISO(), desde = '', propios = [], sesiones = [] } = {}) {
+/* ═══════════════════════════════════════════════════════════════════════════
+   6b · QUÉ PLAN HABÍA UN DÍA (FIT F32, apartados 22 y 23)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   🚨 *"Si el usuario cambia activePlan: las semanas futuras utilizan el nuevo
+   plan. Las semanas históricas mantienen la información original. No reescribir
+   el pasado."* Con un solo `planActivo`, cambiar de plan reescribía todas las
+   semanas pasadas. Desde la F32 `usarPlan` apunta el tramo que se cierra en
+   `fitness.planesAnteriores` (C-39), y un día se lee **con el plan que había ese
+   día**: el activo desde su activación, y antes, el tramo que lo cubría. */
+
+const lunesDeLaFecha = (fecha) => {
+  const d = diaDeFecha(fecha);
+  return d ? addDays(fecha, -(d - 1)) : null;
+};
+
+/** Un plan que se puede repartir (apartado 23 de la F32): al menos un día con
+ *  ejercicios. Una plantilla vaciada o un plan sin días no lo es, y Tu Plan lo
+ *  dice en vez de romperse. */
+export function planValido(plan) {
+  return lista(plan?.dias).some((d) => d && !d.descanso && lista(d.lineas).length > 0);
+}
+
+/** El tramo de plan que cubre una fecha: el activo, uno anterior, `sinPlan` si
+ *  se sabe que no había ninguno, o `null` si no se sabe. */
+export function tramoEnFecha(fecha, {
+  plan = null, desde = '', planId = '', origen = '', anteriores = [], hoy = todayISO(),
+} = {}) {
+  if (!fechaValida(fecha)) return null;
+  if (plan && lista(plan.dias).length) {
+    /* ⚠️ Sin fecha de activación, el plan activo cubre desde la semana en curso:
+       de antes no se sabe cuándo empezó, y proyectarlo hacia atrás sin fin
+       sería inventarse que lo seguía (F6, apartado 16). */
+    const inicio = fechaValida(desde) ? desde : lunesDeLaFecha(hoy);
+    if (inicio && fecha >= inicio) {
+      return {
+        plan, desde: fechaValida(desde) ? desde : '', planId: texto(planId) || texto(plan.id),
+        origen: texto(origen), actual: true,
+      };
+    }
+  }
+  const previos = lista(anteriores);
+  for (let i = previos.length - 1; i >= 0; i -= 1) {
+    const a = previos[i];
+    if (a && fecha >= a.desde && fecha < a.hasta) {
+      return {
+        plan: { id: a.planId, nombre: a.nombre, dias: a.dias }, desde: a.desde,
+        planId: a.planId, origen: a.origen, actual: false,
+      };
+    }
+  }
+  /* Desde el primer plan apuntado, un día que no cubre ningún tramo es un día
+     en que **no había plan** —lo quitó—; antes del primero, no se sabe. */
+  const primero = previos.map((a) => a.desde).filter(fechaValida).sort()[0];
+  if (primero && fecha >= primero) return { sinPlan: true };
+  return null;
+}
+
+/** Lo que el plan tenía un día: el nombre y el id del día, si descansaba, de
+ *  qué plan y si ése es el activo. `null` si no se sabe. */
+export function planificadoEnFecha(fecha, contexto = {}) {
+  const t = tramoEnFecha(fecha, contexto);
+  if (!t) return null;
+  if (t.sinPlan) {
+    return {
+      sinPlan: true, libre: false, descanso: false, nombre: '', diaId: '', planId: '', origen: '',
+      planNombre: '', anterior: true, indice: null,
+    };
+  }
+  const pos = posicionDelDia(t.plan, fecha, t.desde);
+  if (pos === null) return null;
+  const dia = lista(t.plan.dias)[pos];
+  if (!dia) return null;
+  return {
+    sinPlan: false,
+    /* ⚠️ Una plantilla suya usada como plan **no tiene días fijos**: la F6 la
+       hace tocar cada día porque es lo único que se puede ofrecer, pero la F31
+       se negó a contarla como «siete planificadas a la semana» —sería
+       inventarle un compromiso (su apartado 13)—. Así que el día sabe qué
+       rutina es y que no tiene día: la F32 no lo llama «Planificado». */
+    libre: t.origen === 'plantilla',
+    descanso: !!dia.descanso,
+    nombre: dia.descanso ? '' : (texto(dia.nombre) || 'Entrenamiento'),
+    diaId: texto(dia.id),
+    planId: t.planId,
+    origen: t.origen,
+    planNombre: texto(t.plan.nombre),
+    anterior: !t.actual,
+    indice: t.actual ? pos : null,
+    /* Los ids de todos sus días: con ellos se sabe si el día que guardó una
+       sesión sigue existiendo en ese plan (F32, apartado 19). */
+    idsDelPlan: lista(t.plan.dias).map((d) => texto(d?.id)).filter(Boolean),
+  };
+}
+
+export function semanaDelPlan(plan, {
+  hoy = todayISO(), desde = '', propios = [], sesiones = [],
+  /* 🔓 FIT F32 — cualquier semana (apartados 14-16), los planes que hubo antes
+     (22) y de qué plan es el activo, para poder relacionar cada día con sus
+     sesiones (19). Sin ellos, la semana de hoy es exactamente la de la F6. */
+  lunes = '', anteriores = [], planId = '', origen = '',
+} = {}) {
   const entrenados = diasEntrenados(sesiones);
   const dias = lista(plan?.dias);
   if (!dias.length) return [];
@@ -228,13 +341,19 @@ export function semanaDelPlan(plan, { hoy = todayISO(), desde = '', propios = []
      repartir ciclando desde que lo activó, así que sin esa fecha no hay semana
      que dibujar — y la pantalla lo dice en vez de pintar siete huecos. */
   if (dias.length !== 7 && !desde) return [];
-  const lunes = addDays(hoy, -(diaHoy - 1));
+  const lunesDeHoy = addDays(hoy, -(diaHoy - 1));
+  const inicio = fechaValida(texto(lunes)) ? lunesDeLaFecha(texto(lunes)) : lunesDeHoy;
+  const contexto = { plan, desde, planId: texto(planId) || texto(plan?.id), origen, anteriores, hoy };
+  /* Las sesiones de cada día, **solo las completadas**: una descartada no es un
+     entrenamiento hecho (F8). */
+  const porFecha = sesionesPorDia(lista(sesiones).filter((s) => s && s.estado === 'completada'));
 
   /* El primer día de entreno que queda por delante es «Próximo»; los demás,
-     «Más adelante». Se calcula recorriendo, no adivinando. */
-  let yaHayProximo = false;
+     «Más adelante». Se calcula recorriendo, no adivinando. ⚠️ Y solo en la
+     semana de hoy: en otra semana no hay un «próximo» que señalar. */
+  let yaHayProximo = inicio !== lunesDeHoy;
   return DIAS_SEMANA.map((d, i) => {
-    const fecha = addDays(lunes, i);
+    const fecha = addDays(inicio, i);
     const pos = posicionDelDia(plan, fecha, desde);
     const dia = pos === null ? null : dias[pos];
     const esHoy = fecha === hoy;
@@ -242,8 +361,10 @@ export function semanaDelPlan(plan, { hoy = todayISO(), desde = '', propios = []
     /* 🚨 Un día ANTERIOR a la activación no es un descanso: es un día en el que
        este plan todavía no existía, y llamarlo «Descanso» sería inventarse que
        ese día tocaba descansar. Fue un fallo real de esta misma fase: con un
-       plan activado un martes, el lunes de esa semana salía como descanso. */
-    const antesDeEmpezar = !!desde && fecha < desde;
+       plan activado un martes, el lunes de esa semana salía como descanso.
+       ⚠️ Sin fecha de activación, lo que queda antes de la semana en curso
+       tampoco es de este plan (FIT F32): no se sabe cuándo empezó. */
+    const antesDeEmpezar = desde ? fecha < desde : fecha < lunesDeHoy;
 
     /* 🔓 FIT F8 — un día con entrenamiento guardado es «Completado», y eso gana
        a «Hoy» y a «Ya pasó»: es lo único que se sabe de cierto de ese día.
@@ -278,30 +399,57 @@ export function semanaDelPlan(plan, { hoy = todayISO(), desde = '', propios = []
         ? duracionEstimada({ lineas: dia.lineas }, propios).texto
         : '',
       estado,
+      /* 🔓 FIT F32 — lo que el plan tenía ese día, **con el plan de entonces**
+         (apartado 22), y lo que hizo de verdad, en el orden en que lo hizo
+         (apartado 21). La F6 decía qué día del plan activo caía; esto dice
+         también qué había antes de activarlo. */
+      planificado: planificadoEnFecha(fecha, contexto),
+      realizadas: porFecha.get(fecha) || [],
     };
   });
 }
 
 /* Apartado 15: *"Los días sin entrenamiento deben representarse claramente […]
    No mostrar un CTA de entrenamiento en un día de descanso."* */
+/* 🔓 FIT F32, apartado 5 — decía *«Hoy toca descansar · Recupera y prepárate
+   para la próxima sesión»*, que es exactamente lo que ese apartado prohíbe
+   afirmar: el plan no tiene sesión, pero él puede entrenar por su cuenta. Y lo
+   que pasa entonces se dice con las palabras del apartado 32. */
 export const DESCANSO_HOY = {
-  titulo: 'Hoy toca descansar',
-  texto: 'Recupera y prepárate para la próxima sesión.',
+  titulo: 'Hoy no hay entrenamiento planificado',
+  texto: 'Tu plan no tiene sesión hoy. Si entrenas por tu cuenta, contará como entrenamiento extra.',
 };
 
 /** El próximo entrenamiento (apartado 5): el de hoy si hoy toca, y si no el
  *  siguiente día de entreno de la semana. ⚠️ Devuelve `null` si esta semana no
  *  queda ninguno — inventarse el de la semana que viene sería adivinar cuándo
  *  vuelve a empezar el ciclo. */
-export function proximoEntrenamiento(plan, { hoy = todayISO(), desde = '', propios = [], sesiones = [] } = {}) {
+export function proximoEntrenamiento(plan, {
+  hoy = todayISO(), desde = '', propios = [], sesiones = [], anteriores = [], planId = '', origen = '',
+} = {}) {
   /* 🔓 FIT F8 — recibe las sesiones **por el mismo motivo que la semana**: si
      no, las dos dirían cosas distintas del mismo día. Con el entrenamiento de
      hoy ya guardado, ese día pasa a «Completado» y lo siguiente que toca es el
      día de después — que es lo que hace un tracker de verdad, y lo contrario
      —ofrecerle «Empezar» el que acaba de terminar— sería raro.
      ⚠️ Y no le impide entrenar otra vez: la semana sigue siendo pulsable. */
-  const semana = semanaDelPlan(plan, { hoy, desde, propios, sesiones });
-  const casilla = semana.find((d) => d.estado === 'hoy') || semana.find((d) => d.estado === 'proximo');
+  const opciones = { hoy, desde, propios, sesiones, anteriores, planId, origen };
+  const semana = semanaDelPlan(plan, opciones);
+  let casilla = semana.find((d) => d.estado === 'hoy') || semana.find((d) => d.estado === 'proximo') || null;
+  /* 🔓 FIT F32, apartado 9 — *"buscar el siguiente día planificado"*, y no solo
+     en esta semana. La F6 devolvía `null` el domingo para no adivinar cuándo
+     vuelve a empezar el ciclo, pero **no hay nada que adivinar**: un plan de
+     siete días ES la semana y cualquier otro cicla desde su fecha de
+     activación (§2). Se mira como mucho lo que dura el ciclo, más una semana. */
+  let estaSemana = true;
+  if (!casilla && semana.length) {
+    estaSemana = false;
+    const semanas = Math.ceil(lista(plan.dias).length / 7) + 1;
+    for (let k = 1; k <= semanas && !casilla; k += 1) {
+      const otra = semanaDelPlan(plan, { ...opciones, lunes: addDays(semana[0].fecha, 7 * k) });
+      casilla = otra.find((d) => !d.fueraDelPlan && !d.descanso && d.indice !== null) || null;
+    }
+  }
   if (!casilla || casilla.indice === null) return null;
 
   const ficha = fichaDeDia(plan, casilla.indice, propios);
@@ -311,7 +459,10 @@ export function proximoEntrenamiento(plan, { hoy = todayISO(), desde = '', propi
     ...casilla,
     /* *"Hoy"* o *"Mañana"* o el nombre del día: el apartado 5 pide el día, y
        decir «martes» cuando es mañana se lee peor que «Mañana». */
-    cuando: casilla.esHoy ? 'Hoy' : (casilla.fecha === addDays(hoy, 1) ? 'Mañana' : casilla.etiqueta),
+    cuando: casilla.esHoy ? 'Hoy'
+      : (casilla.fecha === addDays(hoy, 1) ? 'Mañana'
+        /* La semana que viene, «Lunes» a secas sería ambiguo: lleva su fecha. */
+        : (estaSemana ? casilla.etiqueta : `${casilla.etiqueta}, ${formatoCorto(casilla.fecha)}`)),
     sesion: ficha,
     /* Los músculos principales del apartado 5, derivados. */
     musculos: distribucion.grupos.slice(0, 3).map((g) => g.nombre),
@@ -468,8 +619,14 @@ export function tuPlan(fitness, { hoy = todayISO(), planes = CATALOGO_PLANES } =
   const { plan, activo, origen } = resuelto;
   const desde = texto(activo.desde);
   const sesiones = lista((fitness || {}).sesiones);
-  const semana = semanaDelPlan(plan, { hoy, desde, propios, sesiones });
-  const proximo = proximoEntrenamiento(plan, { hoy, desde, propios, sesiones });
+  /* 🔓 FIT F32 — la misma semana lleva ahora los planes de antes y de qué plan
+     es el activo: con eso cada día sabe qué tenía planificado y qué hizo. */
+  const opciones = {
+    hoy, desde, propios, sesiones,
+    anteriores: planesAnterioresDe(fitness), planId: activo.planId, origen,
+  };
+  const semana = semanaDelPlan(plan, opciones);
+  const proximo = proximoEntrenamiento(plan, opciones);
   const casillaHoy = semana.find((d) => d.esHoy) || null;
 
   return {
@@ -488,6 +645,8 @@ export function tuPlan(fitness, { hoy = todayISO(), planes = CATALOGO_PLANES } =
     /* ⚠️ Sin fecha de activación y con un plan que no sea de siete días, la
        semana sale vacía — y se dice por qué en vez de dejar un hueco. */
     sinSemana: semana.length === 0,
+    /* 🔓 FIT F32, apartado 23 — un plan sin ningún día con ejercicios. */
+    invalido: !planValido(plan),
   };
 }
 

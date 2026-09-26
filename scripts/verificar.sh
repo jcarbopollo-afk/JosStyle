@@ -1061,6 +1061,19 @@ else
   fallo "Falla la actividad de entrenamiento"; grep '✗' /tmp/jc_actividad_entrenamiento.log
 fi
 
+# FIT F32 — la planificación semanal avanzada. Lo que más se vigila: que ningún día diga
+# «Descanso» (apartado 5, y la palabra cambia también en la F6 y la F31), que un día
+# planificado sin registro no sea un fallo, que cambiar de plan NO reescriba la semana pasada
+# (C-39, `planesAnteriores`), que una sesión se relacione con su día POR IDS y conserve su
+# origen, que la librería no recorra la semana por su cuenta (la pide a `semanaDelPlan`, F6)
+# y el fallo de la F5 que lo impedía: los días de un plan de la biblioteca nacían con un id
+# ALEATORIO en cada carga.
+if node --import ./scripts/resolver-vite.mjs scripts/test-planificacion-semanal.mjs >/tmp/jc_planificacion_semanal.log 2>&1; then
+  ok "Planificación semanal (FIT F32) — $(grep -c '✓' /tmp/jc_planificacion_semanal.log) comprobaciones"
+else
+  fallo "Falla la planificación semanal"; grep '✗' /tmp/jc_planificacion_semanal.log
+fi
+
 # FIT F28 — la integración completa del progreso físico. Lo que más se vigila: que NO
 # exista ninguna métrica que mezcle dos sistemas —«fotos + fuerza + rangos = 82 %» es el
 # ejemplo que prohíbe el apartado 10—, que cada bloque lea de UN solo motor, que el

@@ -2,11 +2,12 @@ import { todayISO, addDays, fechaValida } from './helpers';
 import { sinDuplicadosPorId } from './fitness';
 import {
   sesionesDelHistorial, fichaDeHistorial, historialPorReciente, etiquetaDeFecha, contadorTexto,
+  sesionesPorDia,
 } from './historial';
 import { RANGOS_GRAFICA, periodo as periodoDelCatalogo, inicioDePeriodo } from './progresoEjercicios';
-import { planActivoCompleto, posicionDelDia } from './tuPlan';
+import { planActivoCompleto, posicionDelDia, planificadoEnFecha } from './tuPlan';
 import { DIAS_SEMANA, diaDeFecha } from './horario';
-import { CATALOGO_PLANES } from './planes';
+import { CATALOGO_PLANES, planesAnterioresDe } from './planes';
 import { celdasMes } from './calendario';
 import { MESES } from './finalizacion';
 
@@ -129,18 +130,10 @@ export const conFecha = (s) => fechaValida(texto(s && s.fecha));
 
 /** Las sesiones agrupadas por su día y, dentro de él, **en el orden en que
  *  las hizo** — no en el que estén guardadas: *«Core y Push»* si hizo Core por
- *  la mañana, aunque Push se guardara antes. */
-function porDia(sesiones) {
-  const m = new Map();
-  for (const s of sesiones) {
-    if (!conFecha(s)) continue;
-    if (!m.has(s.fecha)) m.set(s.fecha, []);
-    m.get(s.fecha).push(s);
-  }
-  const cuando = (s) => Number(s.iniciadaEn) || Number(s.terminadaEn) || 0;
-  for (const lista of m.values()) lista.sort((a, b) => cuando(a) - cuando(b));
-  return m;
-}
+ *  la mañana, aunque Push se guardara antes. 🔓 FIT F32 — la agrupación se mudó
+ *  a `historial.js` (`sesionesPorDia`) para que la semana del plan use la
+ *  misma: dos agrupaciones acabarían ordenando distinto el mismo día. */
+const porDia = (sesiones) => sesionesPorDia(sesiones);
 
 /* ═══════════════════════════════════════════════════════════════════════════
    4 · CADA DÍA (apartados 6, 12, 28, 29 y 37)
@@ -155,24 +148,47 @@ function porDia(sesiones) {
 
 export const ESTADOS_ACTIVIDAD = [
   { id: 'entrenado', nombre: 'Entrenamiento', simbolo: '●', que: 'Hay al menos un entrenamiento guardado ese día.' },
-  { id: 'descanso', nombre: 'Descanso del plan', simbolo: '○', que: 'Tu plan marcaba descanso y no hay entrenamiento guardado. Lo dice el plan, no se supone.' },
+  /* 🔓 FIT F32, apartado 5 — decía «Descanso del plan». La F32 va más lejos:
+     ni siquiera un día sin sesión en el plan se afirma como descanso, *"porque
+     puede haber entrenamiento libre"*. El id no cambia: es la forma del dato. */
+  { id: 'descanso', nombre: 'Sin entrenamiento planificado', simbolo: '○', que: 'Tu plan no tenía entrenamiento ese día y no hay ninguno guardado. Lo dice el plan, y no afirma que descansaras.' },
   { id: 'sin_registro', nombre: 'Sin entrenamiento registrado', simbolo: '—', que: 'No hay ningún entrenamiento guardado. No significa que descansaras.' },
   { id: 'futuro', nombre: 'Todavía no ha llegado', simbolo: '·', que: 'Un día que aún no ha pasado: no se afirma nada de él.' },
 ];
 export const estadoActividad = (id) => ESTADOS_ACTIVIDAD.find((e) => e.id === id) || null;
 
 /** Qué dice el plan de una fecha: su nombre si toca entrenar, `descanso` si
- *  marca descanso, o nada si no se puede saber. ⚠️ Un día anterior a su
- *  activación **no es un descanso del plan**: el plan no existía (FIT F6). */
+ *  no tiene sesión, o nada si no se puede saber. ⚠️ Un día anterior a su
+ *  activación **no es un día sin plan**: el plan no existía (FIT F6).
+ *  🔓 FIT F32 — la respuesta es la de `planificadoEnFecha` (`tuPlan.js`), la
+ *  misma que usa la semana del plan: con dos, el mismo día diría una cosa en
+ *  Progreso y otra en Tu Plan. Y ahora lee también **el plan que había
+ *  entonces** (apartado 22 de la F32), no solo el activo. */
 function planDeLaFecha(contexto, fecha) {
-  if (!contexto) return { nombre: '', descanso: false };
-  const { plan, desde } = contexto;
-  if (desde && fecha < desde) return { nombre: '', descanso: false };
-  const pos = posicionDelDia(plan, fecha, desde);
-  if (pos === null) return { nombre: '', descanso: false };
-  const dia = lista(plan.dias)[pos];
-  if (!dia) return { nombre: '', descanso: false };
-  return dia.descanso ? { nombre: '', descanso: true } : { nombre: texto(dia.nombre), descanso: false };
+  const p = contexto ? planificadoEnFecha(fecha, contexto) : null;
+  /* Una plantilla como plan no tiene días fijos: no se dice que tocara (apartado 13). */
+  if (!p || p.libre) return { nombre: '', descanso: false };
+  /* Un tramo en el que se sabe que no había plan tampoco tenía sesión. */
+  if (p.sinPlan || p.descanso) return { nombre: '', descanso: true };
+  return { nombre: p.nombre, descanso: false };
+}
+
+/** 🔓 FIT F32 — el contexto con el que se lee **cada fecha**: el plan activo
+ *  —sea de la biblioteca o suyo— y los anteriores. ⚠️ No es `contextoDelPlan`:
+ *  aquél solo existe con una frecuencia definida, porque es el del bloque de
+ *  seguimiento (apartado 13); para decir qué tenía el plan un día basta con
+ *  saber qué plan había. */
+function contextoDeFechas(fitness, planes, hoy) {
+  const r = planActivoCompleto(fitness, planes);
+  const vale = !!r && !r.perdido && !!r.plan;
+  return {
+    plan: vale ? r.plan : null,
+    desde: vale && fechaValida(texto(r.activo.desde)) ? texto(r.activo.desde) : '',
+    planId: vale ? r.activo.planId : '',
+    origen: vale ? r.origen : '',
+    anteriores: planesAnterioresDe(fitness),
+    hoy,
+  };
 }
 
 export function diaDeActividad(fecha, { sesionesDelDia = [], hoy = todayISO(), contextoPlan = null } = {}) {
@@ -250,7 +266,7 @@ export function contextoDelPlan(fitness, planes = CATALOGO_PLANES) {
   /* Un plan que no es de siete días solo se reparte ciclando desde que lo
      activó; sin esa fecha no hay semana (F6, apartado 16). */
   if (lista(r.plan.dias).length !== 7 && !desde) return null;
-  return { plan: r.plan, origen: r.origen, desde, nombre: texto(r.plan.nombre) };
+  return { plan: r.plan, origen: r.origen, desde, nombre: texto(r.plan.nombre), planId: r.activo.planId };
 }
 
 /** El seguimiento del plan en una semana, o `null` si no se puede calcular. */
@@ -262,7 +278,9 @@ export function adherenciaDelPlan(contexto, { lunes, hoy, porFecha }) {
 
   const dias = [];
   for (let f = desde; f <= domingo; f = addDays(f, 1)) {
-    const p = planDeLaFecha(contexto, f);
+    /* ⚠️ Con su `hoy`: sin fecha de activación, el plan cubre desde la semana
+       de HOY, y el reloj del dispositivo no es el hoy que se le pasa (F32). */
+    const p = planDeLaFecha({ ...contexto, hoy }, f);
     if (p.nombre) dias.push({ fecha: f, nombre: p.nombre, corto: DIAS_SEMANA[diaDeFecha(f) - 1].corto });
   }
   if (!dias.length) return null;
@@ -397,6 +415,9 @@ export function tarjetaDeSesion(sesion, { fitness = {}, planes = CATALOGO_PLANES
     nombre: texto(f.nombre) || 'Entrenamiento',
     fecha: f.fecha,
     etiquetaFecha: f.etiquetaFecha,
+    /* 🔓 FIT F32 — la hora a la que empezó (la de la ficha del historial): con
+       dos sesiones el mismo día es lo que las distingue (su apartado 21). */
+    hora: f.hora || '',
     /* ⚠️ Sin duración fiable, vacío: la F31 arregló que dijera «menos de 1 min»
        de una sesión sin marcas (apartado 39). */
     duracion: f.duracion,
@@ -443,12 +464,13 @@ export function resumenDeActividad(fitness, {
   const inicio = inicioDePeriodo(periodoDelCatalogo(p.id).dias, hoy);
   const primera = fechadas.reduce((m, s) => (!m || s.fecha < m ? s.fecha : m), null);
   const contexto = contextoDelPlan(f, planes);
+  const fechas = contextoDeFechas(f, planes, hoy);
 
   /* Apartado 6 — la semana que contiene hoy, de lunes a domingo. */
   const lunes = lunesDe(hoy);
   const dias = DIAS_SEMANA.map((_, i) => {
     const fecha = addDays(lunes, i);
-    return diaDeActividad(fecha, { sesionesDelDia: porFecha.get(fecha) || [], hoy, contextoPlan: contexto });
+    return diaDeActividad(fecha, { sesionesDelDia: porFecha.get(fecha) || [], hoy, contextoPlan: fechas });
   });
   const enSemana = (desde, hasta) => fechadas.filter((s) => s.fecha >= desde && s.fecha <= hasta).length;
   const estaSemana = enSemana(lunes, hoy);
@@ -529,9 +551,9 @@ export function mesDeActividad(fitness, { mes = null, hoy = todayISO(), planes =
   const clave = /^\d{4}-\d{2}$/.test(texto(mes)) ? texto(mes) : hoy.slice(0, 7);
   const [anio, m] = clave.split('-').map(Number);
   const porFecha = porDia(sesionesDeActividad(f).filter(conFecha));
-  const contexto = contextoDelPlan(f, planes);
+  const fechas = contextoDeFechas(f, planes, hoy);
   const celdas = celdasMes(anio, m - 1).map((c) => (c
-    ? diaDeActividad(c.fecha, { sesionesDelDia: porFecha.get(c.fecha) || [], hoy, contextoPlan: contexto })
+    ? diaDeActividad(c.fecha, { sesionesDelDia: porFecha.get(c.fecha) || [], hoy, contextoPlan: fechas })
     : null));
   const entrenados = celdas.filter((c) => c && c.estado === 'entrenado').length;
   const anterior = m === 1 ? `${anio - 1}-12` : `${anio}-${String(m - 1).padStart(2, '0')}`;
@@ -599,7 +621,10 @@ export function auditarActividad(fitness, opciones = {}, resumen = null) {
     ...r.semana.dias.flatMap((d) => d.sesiones.map((s) => s.id)),
   ];
   const masReciente = delHistorial.filter(conFecha).reduce((m, s) => (!m || s.fecha > m ? s.fecha : m), null);
-  const sinPlan = !contextoDelPlan(fitness, opciones.planes || CATALOGO_PLANES);
+  /* 🔓 FIT F32 — un día sin sesión en el plan puede venir del activo o de uno
+     anterior; lo que no puede es salir sin ningún plan del que venir. */
+  const ctx = contextoDeFechas(fitness || {}, opciones.planes || CATALOGO_PLANES, opciones.hoy || todayISO());
+  const sinPlan = !ctx.plan && !ctx.anteriores.length;
   const casillas = [
     { id: 'cuando', texto: 'Cuándo entrenó: la última es la más reciente', ok: !masReciente || (!!r.ultimo && r.ultimo.fecha === masReciente) },
     { id: 'cuanto', texto: 'Cuánto: una sesión, una vez', ok: r.total === ids.size },
@@ -608,7 +633,7 @@ export function auditarActividad(fitness, opciones = {}, resumen = null) {
     { id: 'sin_puntuacion', texto: 'Ni un porcentaje ni una puntuación', ok: !/%/.test(JSON.stringify(
       [r.semana.texto, r.periodo.texto, r.constancia?.frase, r.frecuencia?.texto, r.plan?.texto],
     )) },
-    { id: 'sin_descanso_inventado', texto: 'Sin plan, ningún día se llama «descanso»', ok: !sinPlan || r.semana.dias.every((d) => d.estado !== 'descanso') },
+    { id: 'sin_descanso_inventado', texto: 'Sin ningún plan, ningún día dice «sin entrenamiento planificado»', ok: !sinPlan || r.semana.dias.every((d) => d.estado !== 'descanso') },
   ];
   return { casillas, ok: casillas.every((c) => c.ok) };
 }

@@ -324,8 +324,15 @@ import ConstructorView, { FilaEjercicio, EditorLinea, ResumenConstructor } from 
 import PlantillasView, { TarjetaPlantilla, DetallePlantilla, ConfirmarEliminarPlantilla } from '../src/views/PlantillasView.jsx';
 import BibliotecaPlanesView, { TarjetaPlan, DetallePlan, ConfirmarCambioDePlan } from '../src/views/BibliotecaPlanesView.jsx';
 import { CATALOGO_PLANES as PLANES_F5, planPorId as planPorIdF5, usarPlan as usarPlanF5, personalizarPreset as personalizarF5 } from '../src/lib/planes.js';
-import TuPlanView, { SinPlan, PlanPerdido, TarjetaProximo, DescansoHoy, SemanaCompacta, SesionDelDia } from '../src/views/TuPlanView.jsx';
-import { tuPlan as tuPlanF6, sesionDelDia as sesionF6, semanaDelPlan as semanaF6 } from '../src/lib/tuPlan.js';
+import TuPlanView, { SinPlan, PlanPerdido, TarjetaProximo, DescansoHoy, SesionDelDia } from '../src/views/TuPlanView.jsx';
+/* FIT F32 — la planificación semanal. ⚠️ `SemanaCompacta` (F6) se retiró: la
+   sustituye `TrainingWeekView`, y sus dos casos pasaron a ser de ella. */
+import {
+  TrainingWeekView, TrainingWeekDay, TrainingDayCard, TrainingDayStatus, WorkoutDayHeader,
+  PlannedWorkoutCard, WeekNavigation, PlanSinPlanificacion,
+} from '../src/components/planificacionSemanal.jsx';
+import { getWeekPlan as semanaF32, PLAN_INVALIDO as PLAN_INVALIDO_F32 } from '../src/lib/planificacionSemanal.js';
+import { tuPlan as tuPlanF6, sesionDelDia as sesionF6 } from '../src/lib/tuPlan.js';
 /* FIT F7 — el entrenamiento en vivo. ⚠️ Sus piezas, sueltas: la tabla de series,
    el carrusel, la barra de descanso, el hueco anatómico y los avisos **solo
    aparecen tras pulsar algo**, que es el agujero del Álbum (NAV F3). */
@@ -565,6 +572,34 @@ const fitnessF31 = () => ({
 });
 const resumenF31 = (extra = {}) => resumenActividadF31(fitnessF31(), { hoy: HOY_F31, ...extra });
 const diaF31 = (estado) => resumenF31().semana.dias.find((d) => d.estado === estado);
+
+/* FIT F32 — la planificación semanal. Un jueves, con el PPL desde el 7 y un
+   cambio a Upper / Lower el miércoles 23: así la semana tiene días del plan
+   ANTERIOR (lunes y martes) y del nuevo, y los seis estados salen de verdad —
+   completado con la sesión del plan, otro entrenamiento, extra, planificado,
+   planificado sin registro y sin plan—. */
+const HOY_F32 = '2026-09-24';
+const sesionF32 = (id, fecha, nombre, planId, diaId, tipo = 'preset', hora = 18) => {
+  const ini = new Date(`${fecha}T${String(hora).padStart(2, '0')}:00:00`).getTime();
+  return {
+    id, fecha, nombre, estado: 'completada', planId, iniciadaEn: ini, terminadaEn: ini + 50 * 60000,
+    origen: { tipo, id: diaId, ejercicios: [] }, diaDePlan: { planId, tipo, diaId, nombre },
+  };
+};
+const fitnessF32 = () => {
+  const base = {
+    planActivo: { planId: 'ppl-estetico', origen: 'preset', desde: '2026-09-07' },
+    sesiones: [
+      sesionF32('f1', '2026-09-14', 'Push', 'ppl-estetico', 'ppl-estetico-dia-1'),
+      sesionF32('f2', '2026-09-21', 'Push', 'ppl-estetico', 'ppl-estetico-dia-1'),
+      sesionF32('f3', '2026-09-22', 'Full Body', 'pl-fb', 'pl-fb', 'plantilla'),
+      sesionF32('f4', '2026-09-23', 'Core', 'pl-core', 'pl-core', 'plantilla', 8),
+    ],
+  };
+  return usarPlanF5(base, 'upper-lower', { hoy: '2026-09-23', confirmado: true }).fitness;
+};
+const semanaDeF32 = (fecha = HOY_F32) => semanaF32(fecha, fitnessF32(), { hoy: HOY_F32 });
+const diaDeF32 = (fecha) => semanaDeF32().dias.find((d) => d.fecha === fecha);
 
 const DESTINO_EJ_F22 = { tipo: 'exercise', id: 'dominada-prona' };
 const DESTINO_GRUPO_F23 = { tipo: 'muscleGroup', id: 'espalda' };
@@ -3981,6 +4016,19 @@ const CASOS = [
     fitness: { planActivo: { planId: 'fantasma', origen: 'preset', desde: HOY } }, accent, hoy: HOY,
     onExplorar: noop, onCrear: noop, onVerPlantillas: noop, onCambiarPlan: noop,
   })],
+  /* 🔓 FIT F32 — con un cambio de plan esta semana (días del plan anterior y
+     del nuevo) y con un plan que no se puede repartir (apartado 23). */
+  ['TuPlanView (con un cambio de plan)', TuPlanView, () => ({
+    fitness: fitnessF32(), accent, hoy: HOY_F32,
+    onExplorar: noop, onCrear: noop, onVerPlantillas: noop, onCambiarPlan: noop, onVerSesion: noop, onEmpezar: noop,
+  })],
+  ['TuPlanView (plan sin planificación válida)', TuPlanView, () => ({
+    fitness: {
+      plantillas: [{ id: 'vacia', nombre: 'Vacía', ejercicios: [] }],
+      planActivo: { planId: 'vacia', origen: 'plantilla', desde: HOY_F32 },
+    },
+    accent, hoy: HOY_F32, onEditarPlan: noop, onCambiarPlan: noop,
+  })],
   ['TuPlanView', TuPlanView, () => {
     const base = personalizarF5({}, 'core-abs').fitness;
     return {
@@ -3996,15 +4044,31 @@ const CASOS = [
       || tuPlanF6(usarPlanF5({}, 'hipertrofia-6', { hoy: LUNES_F6 }).fitness, { hoy: LUNES_F6 }).proximo,
     accent, onVer: noop,
   })],
-  ['SemanaCompacta', SemanaCompacta, () => ({
-    semana: semanaF6(planPorIdF5('ppl-estetico'), { hoy: HOY, desde: HOY }),
-    accent, seleccionado: null, onElegir: noop,
+  /* 🔓 FIT F32 — la semana es `TrainingWeekView` (la de la F6 se retiró). Los
+     casos que importan: la semana en curso con un cambio de plan dentro, una
+     pasada, una futura, y una con días ANTERIORES a cualquier plan conocido. */
+  ['TrainingWeekView', TrainingWeekView, () => ({ semana: semanaDeF32(), accent, seleccionado: null, onElegir: noop })],
+  ['TrainingWeekView (semana pasada)', TrainingWeekView, () => ({ semana: semanaDeF32('2026-09-14'), accent, seleccionado: '2026-09-14', onElegir: noop })],
+  ['TrainingWeekView (semana siguiente)', TrainingWeekView, () => ({ semana: semanaDeF32('2026-09-28'), accent })],
+  ['TrainingWeekView (antes de cualquier plan)', TrainingWeekView, () => ({ semana: semanaDeF32('2026-08-31'), accent, onElegir: noop })],
+  ['TrainingWeekDay', TrainingWeekDay, () => ({ dia: diaDeF32('2026-09-21'), accent, seleccionado: true, onElegir: noop })],
+  ['TrainingWeekDay (hoy, sin plan)', TrainingWeekDay, () => ({ dia: diaDeF32(HOY_F32), accent, onElegir: noop })],
+  ['WeekNavigation', WeekNavigation, () => ({ semana: semanaDeF32(), accent, onAnterior: noop, onSiguiente: noop, onEstaSemana: noop })],
+  ['WeekNavigation (otra semana)', WeekNavigation, () => ({ semana: semanaDeF32('2026-09-07'), accent, onAnterior: noop, onSiguiente: noop, onEstaSemana: noop })],
+  ['TrainingDayStatus', TrainingDayStatus, () => ({ dia: diaDeF32('2026-09-22'), accent })],
+  ['WorkoutDayHeader', WorkoutDayHeader, () => ({ dia: diaDeF32(HOY_F32), accent })],
+  ['PlannedWorkoutCard', PlannedWorkoutCard, () => ({ planificado: diaDeF32('2026-09-25').planificado, accent })],
+  ['PlannedWorkoutCard (del plan anterior)', PlannedWorkoutCard, () => ({ planificado: diaDeF32('2026-09-21').planificado, accent })],
+  /* El día elegido: completado con la sesión del plan (con Repetir), otro
+     entrenamiento, un extra, y uno planificado con su rutina ya pintada. */
+  ['TrainingDayCard (completado)', TrainingDayCard, () => ({ dia: semanaDeF32('2026-09-14').dias[0], accent, onVerSesion: noop, onRepetir: noop })],
+  ['TrainingDayCard (otro entrenamiento)', TrainingDayCard, () => ({ dia: diaDeF32('2026-09-22'), accent, onVerSesion: noop })],
+  ['TrainingDayCard (extra)', TrainingDayCard, () => ({ dia: diaDeF32('2026-09-23'), accent, onVerSesion: noop })],
+  ['TrainingDayCard (planificado, con su rutina)', TrainingDayCard, () => ({
+    dia: diaDeF32('2026-09-25'), accent,
+    rutina: <SesionDelDia sesion={sesionF6(planPorIdF5('upper-lower'), 4)} accent={accent} onCerrar={noop} onEmpezar={noop} />,
   })],
-  /* ⚠️ Y una semana con un día ANTERIOR a la activación, que no es descanso. */
-  ['SemanaCompacta', SemanaCompacta, () => ({
-    semana: semanaF6(planPorIdF5('core-abs'), { hoy: HOY, desde: HOY }),
-    accent, seleccionado: 1, onElegir: noop,
-  })],
+  ['PlanSinPlanificacion', PlanSinPlanificacion, () => ({ textos: PLAN_INVALIDO_F32, accent, onEditar: noop })],
   ['SesionDelDia', SesionDelDia, () => ({
     sesion: sesionF6(planPorIdF5('ppl-estetico'), 0), accent, onCerrar: noop,
   })],

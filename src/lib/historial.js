@@ -48,6 +48,24 @@ export function sesionesDelHistorial(fitness) {
   return lista((fitness || {}).sesiones).filter((s) => s && s.id && s.estado === ESTADO_DEL_HISTORIAL);
 }
 
+/** 🔓 FIT F31 → F32 — las sesiones agrupadas por su día y, dentro de él, **en el
+ *  orden en que las hizo**, no en el que estén guardadas: *«Core y Push»* si
+ *  hizo Core por la mañana aunque Push se guardara antes. Nació en la F31 y se
+ *  mudó aquí para que la semana del plan (F6, F32) la use sin un ciclo: dos
+ *  agrupaciones de lo mismo acabarían ordenando distinto el mismo día. ⚠️ Una
+ *  sesión sin fecha válida no cae en ningún día (F31, apartado 24). */
+export function sesionesPorDia(sesiones) {
+  const m = new Map();
+  for (const s of lista(sesiones)) {
+    if (!s || !fechaValida(texto(s.fecha))) continue;
+    if (!m.has(s.fecha)) m.set(s.fecha, []);
+    m.get(s.fecha).push(s);
+  }
+  const cuando = (s) => Number(s.iniciadaEn) || Number(s.terminadaEn) || 0;
+  for (const dia of m.values()) dia.sort((a, b) => cuando(a) - cuando(b));
+  return m;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    2 · FECHAS (apartados 5 y 39)
    ═══════════════════════════════════════════════════════════════════════════ */

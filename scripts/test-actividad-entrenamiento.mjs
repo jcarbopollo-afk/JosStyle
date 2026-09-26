@@ -355,8 +355,12 @@ ok(rPl.plan.detalle === 'L Push · M Pull · X Legs · V Upper · S Lower',
   '🚨 La estructura REAL del plan: «L Push · M Pull · X Legs · V Upper · S Lower» (apartado 12)');
 ok(rPl.campos.sesionesPlanificadas === 5 && rPl.campos.sesionesPlanificadasHechas === 2,
   '…y los dos campos del apartado 19, porque ahora sí se pueden calcular');
-ok(rPl.semana.dias[3].estado === 'descanso' && rPl.semana.dias[3].etiqueta === '24 de septiembre — descanso del plan',
-  '🚨 El jueves es DESCANSO porque el plan lo dice — y lo dice así: «descanso del plan» (apartado 28)');
+/* 🔓 FIT F32, apartado 5 — decía «descanso del plan». La F32 va más lejos: ni
+   un día sin sesión en el plan se afirma como descanso, porque puede haber
+   entrenamiento libre. El estado sigue siendo `descanso` —lo autoriza el plan—;
+   cambia la palabra. */
+ok(rPl.semana.dias[3].estado === 'descanso' && rPl.semana.dias[3].etiqueta === '24 de septiembre — sin entrenamiento planificado',
+  '🚨 El jueves no tiene entrenamiento porque el plan lo dice — y lo dice así: «sin entrenamiento planificado» (apartado 28 y F32)');
 ok(rPl.semana.dias[1].estado === 'sin_registro' && rPl.semana.dias[1].planificado === 'Pull',
   '🚨 El martes tocaba Pull y no hay sesión: «sin registro», NUNCA un «incumplido» (apartados 6 y 12)');
 ok(!/incumpl|fall|perd|%/i.test(JSON.stringify(rPl.plan)), '…ni una palabra de reproche ni un porcentaje');

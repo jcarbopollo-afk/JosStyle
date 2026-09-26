@@ -856,7 +856,28 @@ export const DEFAULT_FITNESS = {
   /* FIT F17 — las estimaciones del cuestionario. Nacen vacías: nadie tiene un
      nivel estimado hasta que lo dice él. */
   clasificaciones: [],
+  /* FIT F32 — los planes que siguió antes del activo, con desde y hasta cuándo
+     y la estructura de sus días (apartado 22: *"Las semanas históricas
+     mantienen la información original"*). Nace vacío: el primero lo apunta
+     `usarPlan` al cambiar de plan. */
+  planesAnteriores: [],
 };
+
+/** FIT F32 — un tramo de plan ya cerrado (C-39). ⚠️ Sin fechas válidas, o con
+ *  un «hasta» que no va después del «desde», no cubre ningún día: se descarta
+ *  en vez de dejar un tramo que no se puede leer. */
+export function normalizarPlanAnterior(g) {
+  if (!g || typeof g !== 'object') return null;
+  const planId = texto(g.planId);
+  const desde = texto(g.desde);
+  const hasta = texto(g.hasta);
+  if (!planId || !fechaValida(desde) || !fechaValida(hasta) || !(desde < hasta)) return null;
+  const dias = lista(g.dias)
+    .filter((d) => d && typeof d === 'object' && texto(d.id))
+    .map((d) => ({ id: texto(d.id), nombre: texto(d.nombre), descanso: !!d.descanso }));
+  if (!dias.length) return null;
+  return { planId, origen: texto(g.origen) || 'preset', desde, hasta, nombre: texto(g.nombre) || 'Sin nombre', dias };
+}
 
 /* La forma de lo elegido. ⚠️ Se guarda **el id**, no una copia del plan: con una
    copia, corregir un ejercicio del catálogo no le llegaría nunca al plan que
@@ -897,6 +918,9 @@ export function normalizarFitness(guardado) {
     planes: lista(g.planes).map(normalizarWorkoutPlan).filter(Boolean),
     plantillas: lista(g.plantillas).map(normalizarWorkoutPlan).filter(Boolean),
     sesiones: sinDuplicadosPorId(lista(g.sesiones).map(normalizarWorkoutSession).filter(Boolean)),
+    /* FIT F32 — regla 5: lo que este normalizador no conozca se lo lleva el
+       siguiente guardado. */
+    planesAnteriores: lista(g.planesAnteriores).map(normalizarPlanAnterior).filter(Boolean),
     rangos: lista(g.rangos).map(normalizarMuscleRank).filter(Boolean),
     planActivo: normalizarPlanActivoGuardado(g.planActivo),
     /* Sin repetidos y sin vacíos. ⚠️ Aquí **no** se comprueba que el plan exista

@@ -23,10 +23,10 @@
    =========================================================================== */
 
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Camera, Flame, Dumbbell, Pencil, X } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Camera, Flame, Dumbbell, Pencil, X } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
-import { Card, SectionTitle, GhostBtn, PrimaryButton } from '../components/ui';
+import { Card, SectionTitle, GhostBtn, PrimaryButton, EmptyHint } from '../components/ui';
 import {
   AREAS_FITNESS, AREA_INICIAL, ESTADOS_VACIOS, ACCESOS_ENTRENAMIENTO,
   rachaDeFitness, resumenProgreso, resumenEntrenamiento,
@@ -49,7 +49,10 @@ import TuPlanView from './TuPlanView';
    una serie, que es la puerta de atrás por la que se pierde el trabajo. */
 import EntrenamientoVivoView, { SesionRecuperable } from './EntrenamientoVivoView';
 /* FIT F10 — el historial, dentro de Entrenamiento (su apartado 2). */
-import HistorialView from './HistorialView';
+import HistorialView, { DetalleSesionHistorial } from './HistorialView';
+/* 🔓 FIT F32, apartado 37 — una sesión hecha, abierta desde Tu Plan, es el
+   detalle del Historial: *"No duplicar pantallas"*. */
+import { detalleDeSesion, sesionDelHistorial } from '../lib/historial';
 /* FIT F12 — Progreso: resumen, ejercicios y fotos. */
 import ProgresoView from './ProgresoView';
 /* FIT F16 — Rangos: la pantalla entera, que consume la lógica de la F15. */
@@ -277,6 +280,8 @@ export function AreaEntrenamiento({
      (EH F40): `DEFAULT_FITNESS` no tiene el campo, y volver a Fitness siempre
      te deja donde se entra, no donde lo dejaste hace dos semanas. */
   const [dentro, setDentro] = useState(null);
+  /* 🔓 FIT F32 — la sesión hecha que se ha abierto desde Tu Plan. */
+  const [sesionAbierta, setSesionAbierta] = useState(null);
   /* FIT F3, apartado 25 — el borrador se LEE al entrar y se OFRECE. Guardarlo
      y no volver a mencionarlo sería guardarlo para nada; y recuperarlo solo,
      sin preguntar, le pondría delante algo que quizá ya no quiere. */
@@ -348,6 +353,32 @@ export function AreaEntrenamiento({
         onEmpezar={empezarDesdeHistorial}
         onEliminar={onEliminarSesion}
       />
+    );
+  }
+
+  /* 🔓 FIT F32, apartado 37 — *"Desde cada sesión: → detalle histórico […] No
+     duplicar pantallas."* Es el de la F10, con el botón que dice adónde vuelve
+     (la lección de la F31 con Progreso). */
+  if (sesionAbierta) {
+    const s = sesionDelHistorial(fitness || {}, sesionAbierta);
+    return (
+      <div className="max-w-2xl mx-auto">
+        {s ? (
+          <DetalleSesionHistorial
+            detalle={detalleDeSesion(s, { fitness: fitness || {}, propios })}
+            accent={accent}
+            onVolver={() => setSesionAbierta(null)}
+            onEliminar={null}
+            volverTexto="Tu Plan"
+            volverEtiqueta="Volver a Tu Plan"
+          />
+        ) : (
+          <div className="space-y-3">
+            <EmptyHint text="Ese entrenamiento ya no está." />
+            <GhostBtn icon={ChevronLeft} onClick={() => setSesionAbierta(null)}>Volver</GhostBtn>
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -472,6 +503,19 @@ export function AreaEntrenamiento({
         onCrear={onAbrirConstructor ? () => onAbrirConstructor(null) : null}
         onQuitar={onGuardarFitness ? () => onGuardarFitness(quitarPlanActivo(fitness || {})) : null}
         onEmpezar={onEmpezarSesion ? empezarDelPlan : null}
+        onVerSesion={(id) => setSesionAbierta(id)}
+        /* 🔓 FIT F32, apartado 23 — «Editar plan»: una plantilla suya se abre en
+           el constructor; un plan de la biblioteca no se edita, así que se
+           lleva a elegir otro. */
+        onEditarPlan={(() => {
+          const r = planActivoCompleto(fitness || {});
+          if (!r) return null;
+          if (r.origen === 'plantilla') {
+            const pl = ((fitness || {}).plantillas || []).find((x) => x && x.id === r.activo.planId);
+            return pl && onAbrirConstructor ? () => onAbrirConstructor(planARutina(pl)) : null;
+          }
+          return () => setDentro('planificaciones');
+        })()}
       />
 
       <div>

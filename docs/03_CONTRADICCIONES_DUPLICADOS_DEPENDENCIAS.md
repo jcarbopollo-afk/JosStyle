@@ -11,7 +11,7 @@
 
 ---
 
-## PARTE A — CONTRADICCIONES (26)
+## PARTE A — CONTRADICCIONES (27)
 
 Formato: **qué choca con qué** → **cuál gana y por qué** → **qué hay que hacer**.
 Severidad: 🔴 rompe algo hoy · 🟠 engaña a quien lea la documentación · 🟡 tensión de diseño asumida
@@ -777,6 +777,43 @@ carga** (la fábrica ponía `todayISO()` y el normalizador la llamaba igual al c
 de la v3.113.0, cada uno con su comprobación.
 
 ---
+
+### C-39 — ✅ RESUELTA AL CONSTRUIR (FIT F32, v3.114.0) · «El pasado no se reescribe» con un plan activo que solo guarda uno
+
+**El apartado 2 de la FIT F32 pide que la planificación *"se derive de activePlan y su estructura
+de días. No crear una segunda planificación independiente"*, y el apartado 22 pide que, al cambiar
+de plan, *"las semanas históricas mantengan la información original. No reescribir el pasado"*.
+Con lo que había, las dos cosas no cabían juntas**: `fitness.planActivo` (F5) guarda **un** plan y
+desde cuándo, así que derivar la semana pasada del plan activo la reescribía con el plan nuevo en
+cuanto él cambiara —justo lo que prohíbe el 22—. Y el plan que seguía antes **no se puede derivar
+de nada**: es un hecho que pasó.
+
+**La lectura con la que se ha construido, que respeta las dos partes:**
+
+- **Lo planificado se sigue derivando del plan** —del activo desde su activación y, antes, del que
+  había entonces—, sin una segunda planificación: ni una semana guardada, ni una sesión creada al
+  navegar. Toda la lectura pasa por `semanaDelPlan` (F6), ampliada.
+- **Lo único nuevo que se guarda es el tramo que se cierra al cambiar de plan**, en
+  `fitness.planesAnteriores`: qué plan, desde y hasta cuándo, y **la estructura de sus días**
+  —nombre y si descansaba—. Lo apuntan `usarPlan` y `quitarPlanActivo` (`planes.js`), las dos
+  únicas puertas que cambian el plan activo, y tiene su normalizador en la puerta de carga (regla 5).
+  Es la copia que este proyecto sí hace de lo que es **historia** (el snapshot de una sesión, F7):
+  sin ella, un plan borrado o una plantilla editada cambiarían lo que dice el pasado.
+- ⚠️ **Solo la estructura, ni un ejercicio**: lo que hizo de verdad ya lo congela cada sesión. Por
+  eso de un día de un plan anterior se enseña su nombre y no se ofrece «Ver entrenamiento» ni
+  «Empezar» (está declarado en `NO_EN_FIT32`).
+- ⚠️ **Lo que no puede saberse, no se inventa**: antes del primer tramo apuntado —lo guardado antes
+  de la F32 no tenía historial de planes— un día es `unknown` («Sin datos del plan»). Entre quitar un
+  plan y poner otro sí se sabe: no había plan.
+
+⚠️ **Y la F32 destapó un fallo de la F5 que no es una contradicción, y se arregló donde nacía:
+los días de un plan de la biblioteca nacían con un id ALEATORIO en cada carga** (`crearDiaDePlan`
+con `uid()`, porque el catálogo es código y no trae ids). Una sesión empezada desde el Push del
+PPL guardaba en su `origen` y en su `diaDePlan` un id que al recargar ya no existía, así que el
+apartado 19 —relacionar la sesión con su día por `planId + dayId`— no podía cumplirse. Ahora el id
+es la ranura del día en la semana (`ppl-estetico-dia-1` es el lunes). Lo guardado antes con un id
+aleatorio no se da por «otro entrenamiento»: se dice **«Entrenamiento realizado»**, porque no se
+sabe qué día fue.
 
 ## PARTE B — DUPLICADOS (15)
 
