@@ -1,6 +1,6 @@
 import {
   ejercicioPorId, todosLosEjercicios, CATALOGO_EJERCICIOS, musculoPrincipal, baseDe,
-  variantesDe, nombreCompleto, ranura,
+  variantesDe, nombreCompleto, ranura, materialDe, sinMaterial,
   ENTORNOS, EQUIPAMIENTO, DIFICULTADES, TIPOS_EJERCICIO,
   PATRONES_MOVIMIENTO, FAMILIAS_PATRON, patronMovimiento, familiaPatron,
   entorno as entornoPorId, equipo as equipoPorId, dificultad as dificultadPorId,
@@ -222,10 +222,10 @@ export const modoPropuesto = (ej) => (
 
 const admiteModo = (ej, modo) => lista(ej?.medidas).includes(modo === 'tiempo' ? 'tiempo' : 'reps');
 
-/** El material que de verdad hace falta: fuera «nada» y «suelo». */
-export const materialDe = (ej) => lista(ej?.equipamiento).filter((e) => !equipoPorId(e)?.sinMaterial);
-export const sinMaterial = (ej) => lista(ej?.equipamiento).some((e) => equipoPorId(e)?.sinMaterial)
-  || materialDe(ej).length === 0;
+/* El material que de verdad hace falta vive en `ejercicios.js` desde la F34
+   (lo usa también el filtro «Peso corporal»). Se reexporta con `export { }`:
+   `export … from` no crea binding local, y aquí se usa (EH F17). */
+export { materialDe, sinMaterial };
 const grupoDeEquipo = (id) => equipoPorId(id)?.grupo || id;
 
 /** La raíz de la familia de variantes: **la base, o el propio ejercicio**. La

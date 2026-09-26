@@ -1086,6 +1086,18 @@ else
   fallo "Falla la sustitución de ejercicios"; grep '✗' /tmp/jc_sustitucion.log
 fi
 
+# FIT F34 — la biblioteca y la ficha de un ejercicio. Lo que más se vigila: que la búsqueda
+# encuentre por músculo, material y agarre con acentos o sin ellos, que los filtros se combinen
+# y «Limpiar filtros» devuelva todo, que la progresión de la planche salga como la del
+# enunciado, que las alternativas SEAN las de la F33 y lo personal el de la F29 (sin recalcular
+# nada), que un ejercicio sin datos no invente rango ni progreso, que los favoritos no pasen a
+# las variantes, que un archivado no se pueda añadir y que un dato corrupto no rompa la lista.
+if node --import ./scripts/resolver-vite.mjs scripts/test-biblioteca-ejercicios.mjs >/tmp/jc_biblioteca_ejercicios.log 2>&1; then
+  ok "Biblioteca de ejercicios (FIT F34) — $(grep -c '✓' /tmp/jc_biblioteca_ejercicios.log) comprobaciones"
+else
+  fallo "Falla la biblioteca de ejercicios"; grep '✗' /tmp/jc_biblioteca_ejercicios.log
+fi
+
 # FIT F28 — la integración completa del progreso físico. Lo que más se vigila: que NO
 # exista ninguna métrica que mezcle dos sistemas —«fotos + fuerza + rangos = 82 %» es el
 # ejemplo que prohíbe el apartado 10—, que cada bloque lea de UN solo motor, que el

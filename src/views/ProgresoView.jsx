@@ -969,6 +969,9 @@ export default function ProgresoView({
      objetivo: llega el ejercicio nuevo y se abre el formulario de la F14 con él
      puesto. Se consume igual que `focoEjercicio`. */
   focoObjetivo = null, onFocoObjetivoConsumido = null,
+  /* 🔓 FIT F34 — «Ver objetivo» desde la ficha de un ejercicio: se abre ESE
+     objetivo en su sección, y se consume como los otros dos focos. */
+  focoVerObjetivo = null, onFocoVerObjetivoConsumido = null,
 }) {
   const [seccion, setSeccion] = useState('resumen');
   /* FIT F28, apartado 7 — las dos fotos que llegan ya elegidas desde el
@@ -1058,6 +1061,14 @@ export default function ProgresoView({
     if (onFocoEjercicioConsumido) onFocoEjercicioConsumido();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focoEjercicio]);
+
+  useEffect(() => {
+    if (!focoVerObjetivo) return;
+    setSeccion('objetivos');
+    setObjetivoAbierto(focoVerObjetivo);
+    if (onFocoVerObjetivoConsumido) onFocoVerObjetivoConsumido();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focoVerObjetivo]);
 
   useEffect(() => {
     if (!focoObjetivo) return;

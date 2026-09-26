@@ -252,10 +252,13 @@ export function ClassificationSummary({ resumen, accent, onVerRangos, onSeguir, 
 export default function ClasificacionView({
   fitness = null, propios = [], perfil = null, accent,
   onGuardarFitness = null, onVolver = null,
+  /* 🔓 FIT F34, apartado 25 — «Clasificar» desde la ficha de un ejercicio abre
+     SU pregunta, sin pasar por la cola. */
+  ejercicioInicial = null,
 }) {
   const f = fitness || {};
   /* ⚠️ Nada de esto es un dato: es dónde está en la pantalla (EH F40). */
-  const [activo, setActivo] = useState(null);      // el ejercicio que está contestando
+  const [activo, setActivo] = useState(() => (ejercicioInicial && ejercicioPorId(ejercicioInicial, propios) ? ejercicioInicial : null)); // el ejercicio que está contestando
   /* Apartado 24 — saltar deja el ejercicio **pendiente**, no le asigna un
      nivel. Por eso los saltados son de la sesión y no se guardan: mañana
      vuelven a ofrecerse, que es lo que significa «dejar pendiente». */

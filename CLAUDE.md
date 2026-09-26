@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.115.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.116.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 33 primeras (v3.83.0 → v3.115.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 34 primeras (v3.83.0 → v3.116.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 12 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 11 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -342,8 +342,55 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 **FIT F27 (v3.109.0)** y la
 **FIT F28 (v3.110.0)**, que 🏁 **CERRÓ EL BLOQUE DE PROGRESO FÍSICO** —F26, F27 y F28— y la
 **FIT F29 (v3.111.0)**, con la que empieza el bloque de **Inteligencia** (F29–F35), y la
-**FIT F30 (v3.112.0)**, la **FIT F31 (v3.113.0)**, la **FIT F32 (v3.114.0)** y la **FIT F33
-(v3.115.0)**, hechas. Lo que dejaron, y que vale para las 12 que quedan:
+**FIT F30 (v3.112.0)**, la **FIT F31 (v3.113.0)**, la **FIT F32 (v3.114.0)**, la **FIT F33
+(v3.115.0)** y la **FIT F34 (v3.116.0)**, hechas. Lo que dejaron, y que vale para las 11 que quedan:
+
+- 🚨 **LA BIBLIOTECA Y LA FICHA DE UN EJERCICIO YA EXISTÍAN, Y SE AMPLÍAN** (FIT F34, y es la
+  lección de la F1 otra vez): `EjerciciosView` (F2) **es** la `ExerciseLibrary` del apartado 31 y
+  `DetalleEjercicio` (F2) **es** la `ExerciseDetail`, exportadas con esos nombres. Las piezas nuevas
+  viven en `src/components/bibliotecaEjercicios.jsx` y la lógica en `src/lib/bibliotecaEjercicios.js`.
+  ⚠️ **Las acciones de la ficha solo existen si se le pasan**: sin `fitness` ni `onAnadir`/`onFavorito`,
+  la ficha es la de consulta —así la siguen usando el selector del constructor (F3) y «Reemplazar»
+  (F33)—, y un botón sin quien lo escuche sería la regla 8.
+- 🚨 **LA FICHA NO CALCULA NADA** (FIT F34, apartados 20, 23-26 y 32): «Tu progreso», el objetivo,
+  el rango y los últimos entrenamientos salen de **`detalleCompletoDeEjercicio`** (F29); las
+  alternativas, de **`getExerciseReplacements`** (F33) —**no** de la lista cruda `sustitutos` de la
+  F2, que sigue siendo el dato que lee el motor—; añadir a un entrenamiento es **`anadirEjercicio` +
+  `guardarRutina`** (F3) y **no crea sesión** (apartado 21). `YA_LO_RESUELVE` guarda las funciones.
+- 🚨 **LOS FAVORITOS DE EJERCICIOS NACEN EN LA F34, Y LOS RECIENTES NO SE GUARDAN** (apartados 2 y
+  22): `fitness.favoritosEjercicios` es una lista de **ids** —como `favoritosPlanes`—, con su línea en
+  `DEFAULT_FITNESS` y en `normalizarFitness` (regla 5), y los que apuntan a un ejercicio que ya no
+  existe se limpian en **`normalizarFitnessCompleto`**, que es quien conoce el catálogo (EH F24).
+  Pertenecen al ejercicio: cada variante es otro id. **Los recientes se derivan del historial**
+  (`historialPorReciente`, F10): guardados, uno de una sesión borrada seguiría saliendo (E3 F37).
+- 🚨 **BUSCAR MIRA TODO LO QUE SABE EL CATÁLOGO, UNA VEZ POR EJERCICIO** (FIT F34, apartados 3 y
+  33): `textoBuscable` junta nombre, agarre, material (con los `sinonimos` de `EQUIPAMIENTO`:
+  «cable», «peso corporal»), músculos y grupo, tipos, patrón y entorno, lo pasa por `ranura` (sin
+  acentos) y lo guarda en un **`WeakMap` sobre el objeto**: si el ejercicio cambia es otro objeto y
+  el texto se rehace solo. ⚠️ **«Peso corporal» es un filtro de material que no es un material**
+  (`FILTRO_PESO_CORPORAL`): lo decide `sinMaterial`, **mudada de `sustitucion.js` a
+  `ejercicios.js`** para que la sustitución y el filtro no puedan decir cosas distintas —y
+  `sustitucion.js` la reexporta con `export { }`, nunca `export … from` (EH F17)—.
+- ⚠️ **LA CADENA DE PROGRESIÓN SE ORDENA POR LO QUE PIDE CADA PASO, SIN RECORRER EL GRAFO** (FIT
+  F34, apartado 18): solo para las **skills**, con la familia de `raizDe` (F33) y **cuántos
+  requisitos de la familia pide cada uno** (la dificultad desempata). Así un catálogo con un ciclo
+  no cuelga la pantalla —hay una comprobación con uno—. Lo que conviene dominar antes y no es de la
+  familia va aparte («Antes conviene dominar»), porque las progresiones **apuntan hacia abajo** (F30).
+- ⚠️ **LO QUE EL CATÁLOGO NO TIENE ESCRITO NO SE PINTA** (FIT F34, apartados 14, 17 y 28): ni el
+  «final del movimiento» —ninguna ficha lo trae—, ni un reproductor sin vídeo, ni una imagen de
+  fuera (solo rutas propias). Un recurso propio que no carga **lo dice** (`onError`, la F27).
+- 🐛 **Y DOS COMPROBACIONES MÍAS QUE NO PODÍAN PONERSE ROJAS** (FIT F34, y son EH F42 y la F30):
+  el barrido de palabras de juego miraba `COMPONENTES_FIT34`, **la tabla que declara lo que no
+  hay** —la séptima vez—, y la del ciclo de progresión aceptaba `pc === null || …`, un respaldo que
+  la dejaba verde sin mirar nada. Ahora la primera barre el catálogo por ids con su comprobación de
+  que sigue cazando uno, y la segunda exige la cadena entera y la misma desde los dos lados.
+- ⚠️ **AL RENOMBRAR LO QUE SE VE, SE BARRE EL RECORRIDO** (FIT F34, y es NAV F1): la biblioteca pasó
+  a llamarse «Ejercicios», la fila del grupo «Músculo» y quitar filtros «Limpiar filtros» —el texto
+  literal de los apartados 2, 4 y 6—, así que tres comprobaciones de la F2 y una de la F33 (la lista
+  ya se pinta de veinte en veinte) **se dieron la vuelta antes de lanzar el recorrido**, no después.
+- ⚠️ **LA F34 SE CONSTRUYÓ EN UN `git worktree` MIENTRAS CORRÍA EL RECORRIDO DE LA F33**: tocar
+  `src/` con Vite sirviendo la aplicación la recarga a media pasada (HMR) y da rojos que no son de
+  nadie. Una copia aparte deja trabajar sin tocar lo que se está midiendo.
 
 - 🚨 **SUSTITUIR ES UN SOLO MOTOR, Y LO LLAMAN TRES** (FIT F33, `src/lib/sustitucion.js`): la F7
   (`sustituirEjercicio` le pide la medida), la F9 (`sustitutosCompatibles` le pide la lista y ya
@@ -1376,27 +1423,31 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F34/45 — Biblioteca y detalle avanzado de ejercicios** (líneas
-   10 709–11 528 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la sexta del bloque de
-   **Inteligencia** (F29–F35). Se construye de la F1 a la F45, en orden, encadenando sin parar.
-   El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+1. 🏋️ **SEGUIR POR LA FIT F35/45 — Calidad, validación y administración del catálogo fitness**
+   (líneas 10 008–10 708 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **séptima y
+   última** del bloque de **Inteligencia** (F29–F35). Se construye de la F1 a la F45, en orden,
+   encadenando sin parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: LA BIBLIOTECA DE EJERCICIOS YA EXISTE, Y EL DETALLE TAMBIÉN, DOS
-   VECES.** El catálogo con buscador, filtros con recuento y navegación es **`EjerciciosView`**
-   (F2), que el constructor y la sustitución ya usan en modo elegir; su ficha es
-   **`DetalleEjercicio`** (F2: instrucciones, músculos, equipamiento, variantes, progresiones, los
-   `sustitutos` declarados en la ficha y el vídeo que no existe, dicho en pantalla) — ⚠️ sus
-   sustitutos son **la lista cruda de la F2**, y los de la F33 salen de `getExerciseReplacements`
-   con su nivel: si la F34 los enseña en el detalle, que los pida al motor y no deje dos listas; y **el detalle de progreso de un ejercicio es la F29**
-   (`detalleEjercicio.js` / `.jsx`, que no calcula nada: pide a la F11, F12, F19, F23, F14 y F8).
-   Su contexto lo dice: *"El catálogo es la fuente de verdad de los ejercicios. No duplicar
-   información"*. **Se amplía eso** —recientes, «explorar por categorías», el detalle con sus
-   progresiones, sus sustituciones (**que son la F33: `getExerciseReplacements`**) y su progreso—,
-   no se escribe una segunda biblioteca ni un tercer detalle. ⚠️ **Y los ejercicios NO tienen
-   favoritos** (lo dejó escrito la F33): si la fase los pide, es un campo nuevo con su normalizador
-   (regla 5), no una lista que se invente. ⚠️ Y el patrón de movimiento **ya existe** desde la F33
-   (`patron`, `PATRONES_MOVIMIENTO`): si la F34 filtra por patrón, lo lee de ahí.
+   ⚠️ **Y lo segundo, en ESTA: LA VALIDACIÓN DEL CATÁLOGO YA EXISTE, Y SE LLAMA `auditarCatalogo()`**
+   (F2, en `ejercicios.js`): ids repetidos, porcentajes que no suman 100, referencias colgadas
+   (`sustitutos`, `progresiones`, `variantes`, `base`), sin entorno, sin músculos, sin principal,
+   subgrupos huérfanos y ni un enlace inventado — y `test-ejercicios.mjs` ya la ejecuta en cada
+   `verificar.sh`. La F33 añadió que **todo ejercicio lleva `patron`**, y la F34 que el catálogo
+   se lee con `ejerciciosDeBiblioteca`, que ya **quita ids repetidos y fichas sin nombre** sin tumbar
+   la pantalla. Su apartado 34 lo dice: *"Crear o reutilizar constantes"* —`GRUPOS_MUSCULARES`,
+   `EQUIPAMIENTO`, `ENTORNOS`, `TIPOS_EJERCICIO`, `DIFICULTADES`, `PAPELES` **ya existen** en
+   `ejercicios.js`—. **Se amplía `auditarCatalogo`** hacia el `{ errors, warnings, valid }` del
+   apartado 28 (error frente a aviso, apartado 27), no se escribe un segundo validador.
+   ⚠️ **El proyecto es JavaScript, no TypeScript** (apartado 35): lo que se puede hacer sin
+   cambiar la cadena de compilación son tipos en JSDoc; migrar a TS sería el «sobreingenierizar»
+   que prohíbe su apartado 40 — se anota en `docs/03` y se sigue.
+   ⚠️ **La herramienta de diagnóstico (apartado 29) es solo de desarrollo**: detrás de
+   `import.meta.env.DEV`, nunca en la pantalla de Josué. Y **fallar el build** (apartado 26) solo
+   con errores críticos: un aviso no puede parar un despliegue de Vercel.
+   ⚠️ **Un ejercicio que ya no está en el catálogo es un ARCHIVADO, no un error** (apartados 36 y
+   37, y es la **C-36**): las sesiones guardan solo su `exerciseId` (F3) y la F29 y la F34 ya lo
+   enseñan con «Ejercicio archivado». Validar lo del usuario no es validar el catálogo.
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único

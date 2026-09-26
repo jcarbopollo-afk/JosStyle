@@ -217,7 +217,7 @@ export function AreaRangos({ fitness = null, perfil = null, accent, onEntrenar =
    Fotos (su apartado 2). ⚠️ **Las fotos no se pierden**: siguen contándose de
    Salud física y llevando allí, ahora en su propia pestaña, porque la F12 pide
    dejar la estructura lista para el sistema de fotos sin construirlo. */
-export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoEjercicio = null, onFocoEjercicioConsumido = null, focoObjetivo = null, onFocoObjetivoConsumido = null, onAddFoto = null, onDeleteFoto = null, protegidoFotos = false, pinHash = null, pinSalt = null, desbloqueadoFotos = false, onDesbloquearFotos = null, onOlvidoPin = null, perfil = null, onIrAHistorial = null, onIrARangos = null }) {
+export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoEjercicio = null, onFocoEjercicioConsumido = null, focoObjetivo = null, onFocoObjetivoConsumido = null, focoVerObjetivo = null, onFocoVerObjetivoConsumido = null, onAddFoto = null, onDeleteFoto = null, protegidoFotos = false, pinHash = null, pinSalt = null, desbloqueadoFotos = false, onDesbloquearFotos = null, onOlvidoPin = null, perfil = null, onIrAHistorial = null, onIrARangos = null }) {
   const resumen = resumenProgreso(fotos);
   return (
     <ProgresoView
@@ -250,6 +250,9 @@ export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEnt
       /* 🔓 FIT F33, apartado 21 — el objetivo nuevo tras una sustitución. */
       focoObjetivo={focoObjetivo}
       onFocoObjetivoConsumido={onFocoObjetivoConsumido}
+      /* 🔓 FIT F34 — y el objetivo que se abre desde la ficha de un ejercicio. */
+      focoVerObjetivo={focoVerObjetivo}
+      onFocoVerObjetivoConsumido={onFocoVerObjetivoConsumido}
       /* 🔓 FIT F28 — el centro de seguimiento lleva a los dos sitios que viven
          fuera de esta pantalla: el historial y los rangos (apartado 19). */
       perfil={perfil}
@@ -271,6 +274,10 @@ export function AreaEntrenamiento({
   sesionEnCurso = null, onContinuarSesion = null, onDescartarSesion = null,
   sesionSinGuardar = null, onSeguirGuardando = null, onDescartarSinGuardar = null,
   onEliminarSesion = null,
+  /* 🔓 FIT F34 — desde la ficha de un ejercicio se va a Progreso, a un objetivo
+     o a clasificarlo: lo abre quien tiene esas pantallas, que es Fitness. */
+  perfil = null, onVerProgresoEjercicio = null, onVerObjetivo = null,
+  onCrearObjetivoEjercicio = null, onClasificarEjercicio = null,
 }) {
   const resumen = resumenEntrenamiento(fitness, calistenia);
   const propios = (fitness || {}).ejercicios || [];
@@ -388,11 +395,23 @@ export function AreaEntrenamiento({
   }
 
   if (dentro === 'ejercicios') {
+    /* 🔓 FIT F34 — la biblioteca, con lo que necesita para ser útil: sus datos
+       (recientes, favoritos, su progreso) y las puertas de la ficha. «Crear uno
+       nuevo» abre el constructor con el ejercicio dentro; no empieza a entrenar
+       (apartado 21). */
     return (
       <EjerciciosView
         propios={propios}
         accent={accent}
         onVolver={() => setDentro(null)}
+        fitness={fitness}
+        perfil={perfil}
+        onGuardarFitness={onGuardarFitness}
+        onAbrirConstructor={onAbrirConstructor}
+        onVerProgreso={onVerProgresoEjercicio}
+        onVerObjetivo={onVerObjetivo}
+        onCrearObjetivo={onCrearObjetivoEjercicio}
+        onClasificar={onClasificarEjercicio}
       />
     );
   }
@@ -607,6 +626,8 @@ export default function FitnessView({
   /* 🔓 FIT F33, apartado 21 — el ejercicio para el que crear un objetivo nuevo
      al sustituir. Estado de pantalla: se consume al abrir el formulario. */
   const [focoObjetivo, setFocoObjetivo] = useState(null);
+  /* 🔓 FIT F34 — el objetivo que se abre desde la ficha de un ejercicio. */
+  const [focoVerObjetivo, setFocoVerObjetivo] = useState(null);
   /* FIT F17 — si está contestando el cuestionario. Estado de pantalla: lo que se
      guarda son las respuestas, una a una, según las contesta. */
   const [clasificando, setClasificando] = useState(false);
@@ -761,6 +782,9 @@ export default function FitnessView({
         accent={accent}
         onGuardarFitness={onGuardarFitness}
         onVolver={() => setClasificando(false)}
+        /* 🔓 FIT F34, apartado 25 — «Clasificar» desde la ficha de un ejercicio
+           entra directamente a su pregunta. */
+        ejercicioInicial={typeof clasificando === 'string' ? clasificando : null}
       />
     );
   }
@@ -800,6 +824,8 @@ export default function FitnessView({
           onFocoEjercicioConsumido={() => setFocoEjercicio(null)}
           focoObjetivo={focoObjetivo}
           onFocoObjetivoConsumido={() => setFocoObjetivo(null)}
+          focoVerObjetivo={focoVerObjetivo}
+          onFocoVerObjetivoConsumido={() => setFocoVerObjetivo(null)}
           /* FIT F12, apartado 5 — «Entrenar ahora» lleva a Entrenamiento, donde se empieza. */
           onEntrenar={() => setArea('entrenamiento')}
           onGuardarFitness={onGuardarFitness}
@@ -836,6 +862,12 @@ export default function FitnessView({
             const r = descartarSesion(pendiente, { confirmado: true });
             if (r.ok) onGuardarFitness(guardarSesion(fitness || {}, r.sesion));
           } : null}
+          /* 🔓 FIT F34 — las cuatro puertas de la ficha de un ejercicio. */
+          perfil={perfil}
+          onVerProgresoEjercicio={(id) => { setFocoEjercicio(id); setArea('progreso'); }}
+          onVerObjetivo={(objetivoId) => { setFocoVerObjetivo(objetivoId); setArea('progreso'); }}
+          onCrearObjetivoEjercicio={onGuardarFitness ? (id) => { setFocoObjetivo(id); setArea('progreso'); } : null}
+          onClasificarEjercicio={onGuardarFitness ? (id) => setClasificando(id) : null}
         />
       )}
     </div>

@@ -942,7 +942,19 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       de antes**: una plancha cambiada por un encogimiento seguía midiéndose en segundos (F7), el
       «+» del peso de unas mancuernas empezaba en los 60 kg de la barra (F9) y la F9 ordenaba los
       sustitutos con un segundo motor.
-- [ ] F34–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F34 — Biblioteca y detalle avanzado de ejercicios** (v3.116.0): *Fitness → Ejercicios* es
+      una biblioteca —**Recientes** del historial, **Favoritos** si los hay, **Explorar** por grupo
+      y habilidades y el catálogo **de veinte en veinte**—, con búsqueda por material, músculos,
+      patrón y entorno **con y sin acentos**, filtros combinados con **«Peso corporal»** y
+      **«Limpiar filtros»**. La ficha: músculos con papel y porcentaje, **«Cómo hacerlo» en pasos**,
+      errores, consejos, la **progresión de una skill** que se recorre tocándola, variantes, **las
+      alternativas de la F33 con su nivel**, «Añadir a entrenamiento» (sin crear sesión) y **«Tu
+      progreso»** de la F29. 🚨 **La biblioteca y la ficha ya existían** (F2) y se amplían: son
+      `ExerciseLibrary` y `ExerciseDetail`. 🚨 **La ficha no calcula**: F29, F33, F3 y F14. 🚨 **Los
+      favoritos nacen aquí** (`fitness.favoritosEjercicios`, ids, con normalizador y limpieza en la
+      puerta de carga); **los recientes no se guardan**. ⚠️ Ni vídeo falso, ni «final del
+      movimiento» inventado, ni nombre histórico para un archivado (C-36).
+- [ ] F35–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

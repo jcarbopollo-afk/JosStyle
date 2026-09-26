@@ -1,5 +1,91 @@
 # CHANGELOG.md
 
+## v3.116.0 — FIT F34/45: la biblioteca y el detalle avanzado de ejercicios
+
+*Fitness → Ejercicios* ya es una biblioteca: la cabecera **«Ejercicios»** con el buscador siempre a
+la vista, **Recientes** (lo que ha entrenado), **Favoritos** (solo si tiene), **Explorar** por grupo
+muscular y habilidades, y el catálogo entero **de veinte en veinte**. Y cada ficha lleva, en este
+orden: el hueco de la imagen, el nombre, los músculos con su grupo, su papel y su porcentaje, el
+material, **«Cómo hacerlo» en pasos**, los errores y los consejos, la progresión, las variantes,
+**las alternativas de la F33 con su nivel**, «Añadir a entrenamiento», el favorito y **«Tu
+progreso»** —último y mejor resultado, objetivo activo, rango y los tres últimos entrenamientos—.
+Sexta fase del bloque de **Inteligencia** (F29–F35).
+
+### 🚨 La biblioteca y la ficha ya existían: se amplían
+
+`EjerciciosView` (F2) **es** la `ExerciseLibrary` del apartado 31 y `DetalleEjercicio` (F2) **es**
+la `ExerciseDetail`: se exportan con esos nombres y se amplían, no se escribe una tercera pantalla
+al lado. Los componentes nuevos —la tarjeta, la rejilla, los filtros, la técnica, la progresión, las
+alternativas, «Tu progreso»— viven en `src/components/bibliotecaEjercicios.jsx`, y la lógica en
+`src/lib/bibliotecaEjercicios.js`. Lo que la ficha usa desde el selector del constructor (F3) y
+desde «Reemplazar» (F33) sigue funcionando igual: sin `fitness` ni acciones, la ficha es la de
+consulta.
+
+### 🚨 La ficha no calcula nada: pregunta
+
+«Tu progreso», el objetivo, el rango y los últimos entrenamientos salen de
+**`detalleCompletoDeEjercicio`** (F29), que a su vez pide a la F11, la F12, la F14, la F19 y la F23.
+Las alternativas son **`getExerciseReplacements`** (F33) —el apartado 20 lo dice: *"Utilizar la
+lógica de Fase 33"*—, las variantes `variantesDeLinea` (F29) y añadir a un entrenamiento es
+**`anadirEjercicio` + `guardarRutina`** (F3). `YA_LO_RESUELVE` guarda las funciones, no sus
+nombres. Sin datos, *«Sin datos de rendimiento todavía.»* y **«Sin clasificación»**: ni un rango
+ficticio (apartado 25).
+
+### 🚨 Buscar mira todo lo que el catálogo sabe, con y sin acentos
+
+La búsqueda de la F2 miraba el nombre, la variante y la descripción. Ahora mira también **el agarre,
+el material** —con sus sinónimos: la polea se encuentra por *«cable»*, lo que no necesita nada por
+*«peso corporal»*—, **los músculos y su grupo, los tipos, el patrón de movimiento (F33) y dónde se
+hace** (apartado 3). *«cuadriceps»* y *«cuádriceps»* encuentran lo mismo. Y el texto buscable **se
+calcula una vez por ejercicio** (`textoBuscable`, en un `WeakMap`), así que escribir una letra no
+vuelve a montar cien cadenas (apartado 33).
+
+### 🚨 Los filtros se combinan, y «Limpiar filtros» los quita todos
+
+Dónde, material —con **«Peso corporal»**, que no es un material: es no necesitar ninguno—, dificultad,
+tipo y músculo, todos a la vez y **cada pastilla con su recuento** (apartados 4-6). El «Peso
+corporal» lo decide `sinMaterial`, la de la F33, **mudada a `ejercicios.js`**: con una copia en cada
+sitio, un ejercicio podría ser «sin material» para la sustitución y no para el filtro.
+
+### 🚨 Los favoritos existen desde esta fase, y los recientes no se guardan
+
+El apartado 22 dice *"si existe o se decide"*, y no existían (lo dejó escrito la F33). Se decide que
+sí: **`fitness.favoritosEjercicios`**, una lista de ids con la forma de `favoritosPlanes`, con su
+normalizador y con la limpieza de los que apuntan a algo que ya no existe **en la puerta de carga**
+(`normalizarFitnessCompleto`, que es quien conoce el catálogo). Y pertenecen al ejercicio: cada
+variante es otro id. **Los recientes, en cambio, se derivan del historial** (`historialPorReciente`,
+F10): guardarlos haría que un ejercicio de una sesión borrada siguiera saliendo (E3 F37).
+
+### 🚨 La progresión de una skill se recorre tocándola
+
+Para las habilidades, la ficha enseña **la cadena de la familia**, de la más fácil a la completa,
+con **«aquí»** en la que se mira: *Tuck planche → Advanced tuck planche → Straddle planche →
+Planche*. Tocar un paso abre **su** ficha (apartado 19: cada una mantiene su identidad). Lo que
+conviene dominar antes y no es de la familia —el L-sit, el pino contra la pared— va aparte. El orden
+sale de **cuántos requisitos de la familia pide cada paso**, sin recorrer el grafo: un catálogo con
+un ciclo no cuelga la pantalla.
+
+### ⚠️ Añadir a un entrenamiento no empieza a entrenar
+
+«Añadir a entrenamiento» ofrece **sus entrenamientos** y «Crear uno nuevo»; elegir uno lo añade **al
+final**, con la configuración por defecto del constructor, y **no crea ninguna sesión** (apartado
+21, literal). Y cada acción lleva a la pantalla que ya existe: «Ver progreso» al detalle de la F29,
+«Ver objetivo» al objetivo abierto en Progreso, «Crear objetivo» al formulario de la F14 y
+«Clasificar» **directamente a ese ejercicio** del cuestionario de la F17.
+
+### ⚠️ Lo que no se inventa
+
+- **El «final del movimiento»** del apartado 14: ninguna ficha del catálogo lo tiene escrito.
+- **Imágenes y vídeos**: no existen todavía (F2), así que se pinta un hueco con el icono del grupo y
+  *«Todavía no hay vídeo»*, nunca un reproductor falso (apartados 17 y 28). Si un recurso propio no
+  carga, la ficha lo dice.
+- **El nombre de un ejercicio archivado**: la sesión guarda su id (F3, **C-36**), así que la ficha
+  enseña el id con **«Ejercicio archivado»** y su historial entero.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.115.0 — FIT F33/45: el sistema avanzado de sustitución de ejercicios
 
 «Reemplazar» ya no es una lista de parecidos: enseña las alternativas **por niveles de

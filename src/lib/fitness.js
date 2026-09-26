@@ -850,6 +850,12 @@ export const DEFAULT_FITNESS = {
      —el apartado 15 de la F1 pide el estado inicial limpio—. */
   planActivo: null,
   favoritosPlanes: [],
+  /* 🔓 FIT F34, apartado 22 — los ejercicios que ha marcado. El apartado dice
+     *"Si existe o se decide utilizar favoritos"*, y **no existían** (lo dejó
+     escrito la F33): se decide que sí, con la forma de `favoritosPlanes` —una
+     lista de ids— para que **pertenezcan al ejercicio** y no se transfieran a
+     sus variantes (cada variante es otro id). Nace vacía. */
+  favoritosEjercicios: [],
   /* FIT F14 — los objetivos de rendimiento. Nacen vacíos: ni uno de ejemplo
      (apartado 22). */
   objetivos: [],
@@ -929,6 +935,10 @@ export function normalizarFitness(guardado) {
        los ids colgados es `normalizarFitnessConPlanes` (FIT F5), que sí la
        conoce. */
     favoritosPlanes: [...new Set(lista(g.favoritosPlanes).map(texto).filter(Boolean))],
+    /* 🔓 FIT F34 — lo mismo: sin repetidos y sin vacíos. Los que apuntan a un
+       ejercicio que ya no existe los limpia `normalizarFitnessCompleto`, que es
+       quien conoce el catálogo. */
+    favoritosEjercicios: [...new Set(lista(g.favoritosEjercicios).map(texto).filter(Boolean))],
     objetivos: lista(g.objetivos).map(normalizarObjetivo).filter(Boolean),
     /* FIT F17 — una sola clasificación por ejercicio: la última gana
        («reclasificar» sustituye, no acumula, su apartado 11). */

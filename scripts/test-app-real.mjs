@@ -6029,14 +6029,17 @@ ok(/Todav[ií]a no hay v[ií]deo/i.test(detalle_f2),
 
 /* Y se puede volver, que es lo que convierte el detalle en una pantalla y no en
    un callejón. */
-ok(await pulsar('Catálogo'), 'se vuelve al catálogo desde la ficha');
+/* 🔓 FIT F34 — la ficha vuelve a «Ejercicios», que es como se llama ahora la
+   biblioteca (su apartado 2). */
+ok(await pulsar('Volver a Ejercicios'), 'se vuelve al catálogo desde la ficha');
 await esperarCampo('Buscar un ejercicio');
 
 /* Los filtros (apartado 29, punto 5). */
 ok(await escribirBusqueda(''), 'se limpia la búsqueda');
 await page.waitForTimeout(400);
 ok(await pulsar('Filtros'), 'se abren los filtros');
-await esperarTexto(/Grupo muscular/i);
+/* 🔓 FIT F34 — la fila del grupo se llama «Músculo», como en su apartado 4. */
+await esperarTexto(/M[uú]sculo/i);
 ok(await pulsar('Calistenia'), 'se filtra por entorno: calistenia');
 await page.waitForTimeout(500);
 const filtrado_f2 = await page.evaluate(() => {
@@ -6045,7 +6048,8 @@ const filtrado_f2 = await page.evaluate(() => {
 });
 ok(filtrado_f2 && filtrado_f2.visibles > 0 && filtrado_f2.visibles < filtrado_f2.total,
   `🚨 FIT F2 — el filtro recorta la lista y deja algo (${filtrado_f2?.visibles} de ${filtrado_f2?.total})`);
-ok(await pulsar('Quitar los filtros'), 'y se pueden quitar de un toque');
+/* 🔓 FIT F34 — «Limpiar filtros», el texto literal de su apartado 6. */
+ok(await pulsar('Limpiar filtros'), 'y se pueden quitar de un toque');
 await page.waitForTimeout(400);
 const sinFiltro_f2 = await page.evaluate(() => {
   const t = document.body.innerText.match(/(\d+)\s+ejercicios/);
@@ -9828,8 +9832,11 @@ const enBuscador_fit33 = await page.evaluate(() => ({
   volver: !!document.querySelector('button[aria-label="Volver a Reemplazar"]'),
   tarjetas: document.querySelectorAll('button[aria-label^="Cambiar por "]').length,
 }));
-ok(enBuscador_fit33.volver && enBuscador_fit33.tarjetas > 20,
-  `🚨 FIT F33 — abre el catálogo entero de la F2 para elegir cualquiera: control total (${enBuscador_fit33.tarjetas} ejercicios, apartado 25)`);
+/* 🔓 FIT F34 — la lista se pinta de 20 en 20 (su apartado 33), así que «el
+   catálogo entero» son 20 tarjetas y su «Ver 20 más». */
+const verMas_fit33 = await page.evaluate(() => [...document.querySelectorAll('button')].some((b) => /^Ver \d+ más$/.test(b.innerText.trim())));
+ok(enBuscador_fit33.volver && enBuscador_fit33.tarjetas >= 20 && verMas_fit33,
+  `🚨 FIT F33 — abre el catálogo entero de la F2 para elegir cualquiera: control total (${enBuscador_fit33.tarjetas} ejercicios y «Ver más», apartado 25)`);
 ok((await page.evaluate(() => document.querySelectorAll('button[aria-label^="Añadir "]').length)) === 0,
   '…y sus tarjetas dicen «Cambiar por», no «Añadir»: elegir aquí sustituye');
 ok(await pulsar('Volver a Reemplazar'), '…y se vuelve a las alternativas');
@@ -9891,6 +9898,199 @@ ok(!!otraDespues_fit33 && JSON.stringify(otraDespues_fit33) === otraAntes_fit33
 ok(!/\bXP\b|recompensa/i.test(await ver()), '…y ni XP ni recompensas');
 
 almacen.fitness = fitnessDeAntes_fit33;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F34 — la biblioteca y el detalle avanzado de ejercicios (Entrega 4 · 34/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El criterio de finalización: entrar en *Fitness → Ejercicios*, buscar
+   cualquier ejercicio y encontrar una ficha útil, y pasar de ella a la técnica,
+   las variantes, las alternativas, añadirlo a un entrenamiento y su progreso,
+   **sin duplicar datos ni lógica**.
+
+   Lo que aquí se mide y no puede medir Node: que los recientes salen del
+   historial al entrar, que buscar con y sin acento dice lo mismo, que los
+   filtros se combinan y «Limpiar filtros» devuelve todo, que la ficha enseña
+   su técnica en pasos y las alternativas de la F33 con su nivel, que el
+   favorito y «Añadir a entrenamiento» se GUARDAN (y que añadir no empieza a
+   entrenar), que la cadena de la planche se recorre tocándola y que «Ver
+   progreso» lleva al detalle de la F29. */
+console.log('\n── FIT F34 · Biblioteca y detalle avanzado de ejercicios ──');
+
+const fitnessDeAntes_fit34 = almacen.fitness;
+const serie_fit34 = (id, reps, peso) => ({
+  id, origen: 'planificada', estado: 'hecha', modo: 'reps',
+  plan: { reps: 8, repsHasta: null, duracion: null, peso: null }, hecho: { reps, peso, duracion: null },
+});
+const sesion_fit34 = (id, diasAtras, series) => {
+  const fecha = masDias_fit31(hoy_fit31, -diasAtras);
+  const inicio = new Date(`${fecha}T18:00:00`).getTime();
+  return {
+    id, nombre: 'Pecho F34', fecha, estado: 'completada', iniciadaEn: inicio, terminadaEn: inicio + 2400000,
+    guardadaEn: inicio + 2460000, pausadoMs: 0, actual: 0, visibilidad: 'privado', notas: '', entorno: 'gym',
+    origen: { tipo: 'plantilla', id: null, ejercicios: [{ id: `${id}-e`, exerciseId: 'press-banca-barra', orden: 0, modo: 'reps', notas: '', descanso: 90, sustituyeA: null, linea: { series: series.length, tipoCarga: 'externo' }, series }] },
+  };
+};
+const plantilla_fit34 = {
+  id: 'pl-f34', nombre: 'Pecho F34', descripcion: '', entorno: 'gym', duracion: 20,
+  ejercicios: [lineaPl_fit33('pl-f34-l1', 'aperturas-mancuernas', { repeticiones: 12, peso: 14 })],
+  meta: { entornos: ['gym'], bloques: [] }, creadoEn: hoy_fit31, editadoEn: hoy_fit31,
+};
+almacen.fitness = {
+  ...(fitnessDeAntes_fit34 || {}),
+  sesiones: [
+    sesion_fit34('f34-a', 9, [serie_fit34('f34-a1', 8, 60), serie_fit34('f34-a2', 8, 60)]),
+    sesion_fit34('f34-b', 2, [serie_fit34('f34-b1', 8, 62.5), serie_fit34('f34-b2', 7, 62.5)]),
+  ],
+  plantillas: [plantilla_fit34],
+  objetivos: [{ id: 'obj-f34', exerciseId: 'press-banca-barra', tipo: 'peso', valor: 90, unidad: 'kg', creadoEn: Date.now() - 86400000, actualizadoEn: null, fechaObjetivo: '', estado: 'activo', nota: '' }],
+  favoritosEjercicios: [],
+  planActivo: null,
+};
+const ultimo_fit34 = () => guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {};
+const cuenta_fit34 = () => page.evaluate(() => {
+  const t = document.body.innerText.match(/(\d+)\s+ejercicios?(?:\s+de\s+(\d+))?/);
+  return t ? { visibles: Number(t[1]), total: t[2] ? Number(t[2]) : null } : null;
+});
+const escribir_fit34 = (t) => page.evaluate((txt) => {
+  const campo = document.querySelector('input[aria-label="Buscar un ejercicio"]');
+  if (!campo) return false;
+  Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(campo, txt);
+  campo.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}, t);
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F34 — se entra en Fitness');
+ok(await pulsar('Abrir Ejercicios'), '…y en «Ejercicios» (apartado 1: Fitness → Ejercicios)');
+ok(await esperarCampo('Buscar un ejercicio'), '…con el buscador a la vista (apartado 34)');
+const biblio_fit34 = await ver();
+
+/* 1 · LA PANTALLA PRINCIPAL (apartado 2). */
+ok(/^Ejercicios$/m.test(biblio_fit34), '🚨 FIT F34 — la cabecera «Ejercicios» (apartado 2)');
+ok(/Recientes/i.test(biblio_fit34) && /Press de banca/.test(biblio_fit34),
+  '🚨 …con «Recientes», sacados del historial: el press de banca que acaba de entrenar');
+ok(!/Favoritos/i.test(biblio_fit34), '…sin un bloque de favoritos vacío (apartado 2: no demasiados bloques)');
+ok(/Explorar/i.test(biblio_fit34) && /Espalda/.test(biblio_fit34) && /Habilidades/.test(biblio_fit34),
+  '…y «Explorar» por grupo y habilidades');
+const todos_fit34 = await cuenta_fit34();
+ok(todos_fit34 && todos_fit34.visibles >= 100, `…y el catálogo entero (${todos_fit34?.visibles})`);
+const tarjetas_fit34 = await page.evaluate(() => document.querySelectorAll('button[aria-label^="Ver "]').length);
+const verMasLista_fit34 = await page.evaluate(() => [...document.querySelectorAll('button')].some((b) => /^Ver \d+ más$/.test(b.innerText.trim())));
+ok(verMasLista_fit34 && tarjetas_fit34 < 60, `🚨 FIT F34 — la lista se pinta por partes, con «Ver 20 más» (${tarjetas_fit34} tarjetas, apartado 33)`);
+
+/* 2 · BUSCAR, CON Y SIN ACENTOS (apartado 3). */
+ok(await escribir_fit34('cuádriceps'), 'FIT F34 — se busca «cuádriceps», un músculo');
+await page.waitForTimeout(500);
+const conAcento_fit34 = await cuenta_fit34();
+ok(await escribir_fit34('cuadriceps'), '…y «cuadriceps», sin acento');
+await page.waitForTimeout(500);
+const sinAcento_fit34 = await cuenta_fit34();
+ok(conAcento_fit34 && sinAcento_fit34 && conAcento_fit34.visibles > 0 && conAcento_fit34.visibles === sinAcento_fit34.visibles,
+  `🚨 FIT F34 — con acento y sin él, lo mismo: ${conAcento_fit34?.visibles} y ${sinAcento_fit34?.visibles} (apartado 3)`);
+ok(/Sentadilla/.test(await ver()), '…y por músculo encuentra las sentadillas');
+ok(await escribir_fit34(''), '…se limpia la búsqueda');
+await page.waitForTimeout(400);
+
+/* 3 · FILTROS COMBINADOS Y «LIMPIAR FILTROS» (apartados 4, 5 y 6). */
+ok(await pulsar('Filtros'), 'FIT F34 — se abren los filtros');
+await esperarTexto(/M[uú]sculo/i);
+ok(await pulsar('Calistenia') && await pulsar('Espalda') && await pulsar('Avanzado'),
+  '…calistenia + espalda + avanzado (su ejemplo)');
+await page.waitForTimeout(500);
+const comb_fit34 = await cuenta_fit34();
+ok(comb_fit34 && comb_fit34.visibles > 0 && comb_fit34.visibles < 20,
+  `🚨 FIT F34 — los tres a la vez, y quedan ${comb_fit34?.visibles} de ${comb_fit34?.total} (apartado 5)`);
+ok(await pulsar('Limpiar filtros'), '…«Limpiar filtros»');
+await page.waitForTimeout(500);
+const limpio_fit34 = await cuenta_fit34();
+ok(limpio_fit34 && limpio_fit34.visibles === todos_fit34.visibles,
+  `🚨 …y vuelven TODOS los ejercicios (${limpio_fit34?.visibles}, apartado 6)`);
+ok(await pulsar('Cerrar'), '…y se cierran los filtros');
+
+/* 4 · LA FICHA (apartados 8-20). */
+ok(await escribir_fit34('press de banca'), 'FIT F34 — se busca el press de banca');
+await page.waitForTimeout(500);
+ok(await pulsar('Ver Press de banca · Con barra'), '…y se abre su ficha');
+const ficha_fit34 = await esperarTexto(/C[oó]mo hacerlo/i);
+ok(/Press de banca/.test(ficha_fit34) && /Con barra/.test(ficha_fit34), '🚨 FIT F34 — la ficha, con su nombre');
+ok(/Pecho · Pectoral medio/.test(ficha_fit34) && /Principal · 50 %/.test(ficha_fit34),
+  '🚨 …los músculos con grupo, subgrupo, papel y porcentaje (apartado 9)');
+ok(/no una medici[oó]n/i.test(ficha_fit34), '…con la nota de que es una estimación, no una medición');
+ok(/C[oó]mo hacerlo/i.test(ficha_fit34) && /Posici[oó]n inicial/.test(ficha_fit34) && /Ejecuci[oó]n/.test(ficha_fit34)
+  && !/Final del movimiento/.test(ficha_fit34),
+'🚨 …«Cómo hacerlo» en pasos, con lo escrito y SIN inventar el final del movimiento (apartado 14)');
+ok(/Errores frecuentes/i.test(ficha_fit34) && /Consejos/i.test(ficha_fit34), '…con errores frecuentes y consejos (15 y 16)');
+ok(/Todav[ií]a no hay v[ií]deo/i.test(ficha_fit34) && !(await page.evaluate(() => !!document.querySelector('video'))),
+  '🚨 …y sin vídeo, una frase: ni un reproductor falso (apartado 17)');
+ok(/Alternativas/i.test(ficha_fit34) && /Muy similar/i.test(ficha_fit34) && /Con mancuernas/.test(ficha_fit34),
+  '🚨 …las alternativas de la F33, con su nivel (apartado 20)');
+ok(/Variantes/i.test(ficha_fit34), '…y sus variantes (apartado 19)');
+ok(/Tu progreso/i.test(ficha_fit34) && /[UÚ]ltima vez/i.test(ficha_fit34) && /Mejor resultado/i.test(ficha_fit34),
+  '🚨 …y «Tu progreso»: último y mejor resultado (apartado 23)');
+ok(/Objetivo activo/i.test(ficha_fit34) && /90/.test(ficha_fit34), '…su objetivo activo (apartado 24)');
+ok(/Rango|Sin clasificaci[oó]n/i.test(ficha_fit34), '…su rango o «Sin clasificación» (apartado 25)');
+ok(/[UÚ]ltimos entrenamientos/i.test(ficha_fit34), '…y sus últimos entrenamientos, no el historial entero (apartado 26)');
+
+/* 5 · FAVORITO Y AÑADIR A ENTRENAMIENTO (apartados 21 y 22). */
+ok(await pulsar('Añadir a favoritos'), 'FIT F34 — «Añadir a favoritos»');
+await page.waitForTimeout(600);
+ok((ultimo_fit34().favoritosEjercicios || []).join() === 'press-banca-barra',
+  '🚨 FIT F34 — y se GUARDA: `favoritosEjercicios` tiene el press de banca, y solo él (apartado 22)');
+ok(/En favoritos/.test(await ver()), '…y el botón dice «En favoritos»');
+const sesionesAntes_fit34 = (ultimo_fit34().sesiones || []).length;
+ok(await pulsar('Añadir a entrenamiento'), 'FIT F34 — «Añadir a entrenamiento»');
+await esperarTexto(/Pecho F34/);
+ok(await pulsar('Añadir a Pecho F34'), '…se elige «Pecho F34»');
+await esperarTexto(/Añadido a Pecho F34/);
+const pl_fit34 = (ultimo_fit34().plantillas || []).find((p) => p.id === 'pl-f34') || {};
+ok((pl_fit34.ejercicios || []).map((l) => l.exerciseId).join() === 'aperturas-mancuernas,press-banca-barra',
+  '🚨 FIT F34 — y se GUARDA al final de ese entrenamiento (apartado 21)');
+ok((ultimo_fit34().sesiones || []).length === sesionesAntes_fit34 && !(ultimo_fit34().sesiones || []).some((x) => x.estado === 'en_curso'),
+  '🚨 …y NO empieza a entrenar: ni una sesión nueva (apartado 21, literal)');
+
+/* 6 · LA PROGRESIÓN DE UNA SKILL (apartado 18). */
+ok(await pulsar('Volver a Ejercicios'), 'FIT F34 — se vuelve a la biblioteca');
+await esperarCampo('Buscar un ejercicio');
+ok(await escribir_fit34('tuck planche'), '…se busca la tuck planche');
+await page.waitForTimeout(500);
+ok(await pulsar('Ver Tuck planche · Rodillas recogidas'), '…y se abre');
+await esperarTexto(/Progresi[oó]n/i);
+const cadena_fit34 = await page.evaluate(() => {
+  const ol = document.querySelector('ol[aria-label="Progresión"]');
+  return ol ? [...ol.querySelectorAll('button')].map((b) => b.innerText.trim()) : [];
+});
+ok(cadena_fit34.length === 4 && /^Tuck planche/.test(cadena_fit34[0]) && /aquí$/.test(cadena_fit34[0]) && /^Planche/.test(cadena_fit34[3]),
+  `🚨 FIT F34 — la cadena de la planche, de la tuck a la completa, con «aquí» en la actual (${cadena_fit34.join(' ↓ ')})`);
+ok(/Antes conviene dominar/i.test(await ver()) && /L-sit/.test(await ver()), '…y lo que conviene dominar antes, aparte');
+ok(await pulsar('Ver la ficha de Advanced tuck planche · Espalda plana'), '…se toca el siguiente paso');
+await page.waitForTimeout(500);
+ok(/Advanced tuck planche/.test(await ver()) && /Advanced tuck planche · Espalda plana · aquí/.test(await ver()),
+  '🚨 …y se abre SU ficha, marcada como el paso actual (apartado 19: cada una mantiene su identidad)');
+
+/* 7 · FAVORITOS EN LA PANTALLA PRINCIPAL. */
+ok(await pulsar('Volver a Ejercicios'), 'FIT F34 — de vuelta a la biblioteca');
+await esperarCampo('Buscar un ejercicio');
+ok(await escribir_fit34(''), '…sin búsqueda');
+await page.waitForTimeout(500);
+ok(/Favoritos/i.test(await ver()), '🚨 FIT F34 — y ahora sale el bloque «Favoritos» (apartado 2)');
+const ancho_fit34 = await page.evaluate(() => ({ a: document.documentElement.scrollWidth, v: window.innerWidth }));
+ok(ancho_fit34.a <= ancho_fit34.v + 1,
+  `🚨 FIT F34 — a 375 px la biblioteca no se desborda de lado (${ancho_fit34.a} vs ${ancho_fit34.v}, apartado 34)`);
+ok(!/\bXP\b|leaderboard|recompensa/i.test(await ver()), '…y ni XP ni clasificaciones sociales (apartado 40)');
+
+/* 8 · «VER PROGRESO» LLEVA A LA F29 (apartado 23). */
+ok(await escribir_fit34('press de banca'), 'FIT F34 — otra vez el press de banca');
+await page.waitForTimeout(500);
+ok(await pulsar('Ver Press de banca · Con barra'), '…su ficha');
+await esperarTexto(/Tu progreso/i);
+ok(await pulsar('Ver progreso'), '…«Ver progreso»');
+const progreso_fit34 = await esperarTexto(/Historial ·/i);
+ok(/Historial · 2 sesiones/i.test(progreso_fit34),
+  '🚨 FIT F34 — y abre el detalle de progreso de la F29, con sus dos sesiones: no hay otra pantalla');
+
+almacen.fitness = fitnessDeAntes_fit34;
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

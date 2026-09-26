@@ -315,6 +315,18 @@ import { pantallaDeClasificacion as pantF24, VACIOS_COLA as VACIOS_F24 } from '.
    porque solo aparece tras pulsar una tarjeta: es el agujero del Álbum de
    Relación (NAV F3), y sin estos casos no lo probaría nadie. */
 import EjerciciosView, { DetalleEjercicio, TarjetaEjercicio } from '../src/views/EjerciciosView.jsx';
+/* FIT F34 — la biblioteca y la ficha. ⚠️ Los componentes que devuelven `null` a
+   propósito (una técnica vacía, un ejercicio sin progresión) no entran: este
+   banco cuenta un render vacío como fallo, y eso lo prueba la suite de Node. */
+import {
+  ExerciseSearchBar, ExerciseFilters, ExerciseFilterChip, ExerciseGrid, ExerciseCard, ExerciseHeader,
+  ExerciseMuscleBreakdown, ExerciseEquipment, ExerciseTechnique, ExerciseTutorial, ExerciseProgressions,
+  ExerciseVariantsList, ExerciseAlternatives, ExercisePersonalProgress, ExerciseAddToWorkout, ExerciseFavoriteButton,
+} from '../src/components/bibliotecaEjercicios.jsx';
+import {
+  fichaDeBiblioteca as fichaF34, consultarBiblioteca as consultarF34, opcionesDeFiltroBiblioteca as opcionesF34,
+  paginaDeBiblioteca as paginaF34,
+} from '../src/lib/bibliotecaEjercicios.js';
 /* FIT F3 — el constructor. ⚠️ Sus tres piezas se importan sueltas porque **solo
    aparecen tras pulsar algo**: renderizar `ConstructorView` no pinta ni una
    línea del editor de un ejercicio, que es el agujero del Álbum (NAV F3). */
@@ -590,6 +602,32 @@ const diaF31 = (estado) => resumenF31().semana.dias.find((d) => d.estado === est
    ANTERIOR (lunes y martes) y del nuevo, y los seis estados salen de verdad —
    completado con la sesión del plan, otro entrenamiento, extra, planificado,
    planificado sin registro y sin plan—. */
+/* FIT F34 — un fitness con dos press de banca hechos, un objetivo, un favorito
+   y una sesión de un ejercicio que ya no existe (archivado). */
+const serieF34 = (id, reps, peso) => ({
+  id, origen: 'planificada', estado: 'hecha', modo: 'reps',
+  plan: { reps: 8, repsHasta: null, duracion: null, peso: null }, hecho: { reps, peso, duracion: null },
+});
+const sesionF34 = (id, fecha, exerciseId, series) => {
+  const inicio = new Date(`${fecha}T18:00:00`).getTime();
+  return {
+    id, nombre: 'Push F34', fecha, estado: 'completada', iniciadaEn: inicio, terminadaEn: inicio + 2400000,
+    guardadaEn: inicio + 2460000, pausadoMs: 0, actual: 0, visibilidad: 'privado', notas: '', entorno: 'gym',
+    origen: { tipo: 'plantilla', id: null, ejercicios: [{ id: `${id}-e`, exerciseId, orden: 0, modo: 'reps', notas: '', descanso: 90, sustituyeA: null, linea: { series: series.length, tipoCarga: 'externo' }, series }] },
+  };
+};
+const fitnessF34 = () => ({
+  ...DEFAULT_FITNESS,
+  sesiones: [
+    sesionF34('f34-a', '2026-09-10', 'press-banca-barra', [serieF34('f34-a1', 8, 60), serieF34('f34-a2', 8, 60)]),
+    sesionF34('f34-b', '2026-09-17', 'press-banca-barra', [serieF34('f34-b1', 8, 62.5), serieF34('f34-b2', 7, 62.5)]),
+    sesionF34('f34-c', '2026-09-18', 'mi-borrado-f34', [serieF34('f34-c1', 10, 20)]),
+  ],
+  objetivos: [{ id: 'f34-obj', exerciseId: 'press-banca-barra', tipo: 'peso', valor: 80, unidad: 'kg', creadoEn: 1, actualizadoEn: null, fechaObjetivo: '', estado: 'activo', nota: '' }],
+  favoritosEjercicios: ['flexion'],
+  plantillas: [],
+});
+
 const HOY_F32 = '2026-09-24';
 const sesionF32 = (id, fecha, nombre, planId, diaId, tipo = 'preset', hora = 18) => {
   const ini = new Date(`${fecha}T${String(hora).padStart(2, '0')}:00:00`).getTime();
@@ -3867,6 +3905,51 @@ const CASOS = [
     ejercicio: CATALOGO_EJERCICIOS.find((e) => e.id === 'elevacion-talones'), accent,
   })],
   ['DetalleEjercicio', DetalleEjercicio, () => ({ ejercicio: null, accent })],
+  /* ══ FIT F34 — la biblioteca y la ficha completa ═════════════════════════
+     🚨 Con `fitness`, con datos y sin ellos, archivado y con todas sus
+     acciones: si una pieza usa algo sin importar, revienta aquí. */
+  ['EjerciciosView (biblioteca con datos)', EjerciciosView, () => ({
+    propios: [], accent, onVolver: noop, fitness: fitnessF34(), onGuardarFitness: noop, onAbrirConstructor: noop,
+    onVerProgreso: noop, onVerObjetivo: noop, onCrearObjetivo: noop, onClasificar: noop,
+  })],
+  ['EjerciciosView (selector)', EjerciciosView, () => ({ propios: [], accent, onElegir: noop, yaElegidos: ['press-banca-barra'], accionElegir: 'Cambiar por' })],
+  ['DetalleEjercicio (ficha con datos)', DetalleEjercicio, () => ({
+    exerciseId: 'press-banca-barra', accent, onVolver: noop, onAbrirOtro: noop, volverA: 'Ejercicios',
+    fitness: fitnessF34(), onFavorito: noop, onAnadir: () => true, onCrearNuevo: noop,
+    onVerProgreso: noop, onVerObjetivo: noop, onCrearObjetivo: noop, onClasificar: noop,
+  })],
+  ['DetalleEjercicio (ficha sin datos, skill)', DetalleEjercicio, () => ({
+    exerciseId: 'tuck-planche', accent, fitness: { ...DEFAULT_FITNESS }, onFavorito: noop, onClasificar: noop,
+  })],
+  ['DetalleEjercicio (archivado)', DetalleEjercicio, () => ({
+    exerciseId: 'mi-borrado-f34', accent, onVolver: noop, fitness: fitnessF34(),
+  })],
+  ['ExerciseSearchBar', ExerciseSearchBar, () => ({ consulta: 'dom', onConsulta: noop, verFiltros: false, onVerFiltros: noop })],
+  ['ExerciseFilters', ExerciseFilters, () => ({
+    opciones: opcionesF34(consultarF34({}).cuenta), filtros: { entorno: 'calistenia' }, accent, onAlternar: noop, onLimpiar: noop,
+  })],
+  ['ExerciseFilterChip', ExerciseFilterChip, () => ({ activa: true, cuantos: 12, accent, onClick: noop, children: 'Espalda' })],
+  ['ExerciseGrid', ExerciseGrid, () => ({ pagina: paginaF34(consultarF34({}).resultado), accent, onAbrir: noop, onMas: noop, favoritos: ['flexion'] })],
+  ['ExerciseCard', ExerciseCard, () => ({ ejercicio: CATALOGO_EJERCICIOS[0], accent, onAbrir: noop, favorito: true })],
+  ['ExerciseHeader', ExerciseHeader, () => ({ ficha: fichaF34({}, 'dominada-prona'), accent })],
+  ['ExerciseMuscleBreakdown', ExerciseMuscleBreakdown, () => ({ musculos: fichaF34({}, 'press-banca-barra').musculos, nota: 'Estimación', accent })],
+  ['ExerciseMuscleBreakdown (sin músculos)', ExerciseMuscleBreakdown, () => ({ musculos: [], nota: '', accent })],
+  ['ExerciseEquipment', ExerciseEquipment, () => ({ equipamiento: ['Peso corporal', 'Mancuernas'], accent })],
+  ['ExerciseTechnique', ExerciseTechnique, () => ({ tecnica: fichaF34({}, 'press-banca-barra').tecnica, accent })],
+  ['ExerciseTutorial (sin recurso)', ExerciseTutorial, () => ({ tutorial: null, nombre: 'Press' })],
+  ['ExerciseTutorial (vídeo)', ExerciseTutorial, () => ({ tutorial: { tipo: 'video', src: '/tutoriales/x.mp4' }, nombre: 'Press' })],
+  ['ExerciseProgressions', ExerciseProgressions, () => ({ progresion: fichaF34({}, 'straddle-planche').progresion, accent, onAbrir: noop })],
+  ['ExerciseVariantsList', ExerciseVariantsList, () => ({ variantes: fichaF34({}, 'dominada-neutra').variantes, accent, onAbrir: noop })],
+  ['ExerciseAlternatives', ExerciseAlternatives, () => ({ alternativas: fichaF34({}, 'press-banca-barra').alternativas, accent, onAbrir: noop })],
+  ['ExercisePersonalProgress (con datos)', ExercisePersonalProgress, () => ({
+    personal: fichaF34(fitnessF34(), 'press-banca-barra').personal, accent, onVerProgreso: noop, onVerObjetivo: noop, onCrearObjetivo: noop,
+  })],
+  ['ExercisePersonalProgress (sin datos)', ExercisePersonalProgress, () => ({
+    personal: fichaF34({ ...DEFAULT_FITNESS }, 'press-banca-barra').personal, accent, onClasificar: noop, onCrearObjetivo: noop,
+  })],
+  ['ExerciseAddToWorkout', ExerciseAddToWorkout, () => ({ entrenamientos: [{ id: 'p', nombre: 'Push', ejercicios: 4 }], accent, onAnadir: () => true, onCrearNuevo: noop, onCerrar: noop })],
+  ['ExerciseAddToWorkout (sin entrenamientos)', ExerciseAddToWorkout, () => ({ entrenamientos: [], accent, onCrearNuevo: noop })],
+  ['ExerciseFavoriteButton', ExerciseFavoriteButton, () => ({ favorito: true, accent, onAlternar: noop })],
   ['TarjetaEjercicio', TarjetaEjercicio, () => ({
     ejercicio: CATALOGO_EJERCICIOS[0], accent, onAbrir: noop,
   })],

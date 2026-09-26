@@ -2,6 +2,22 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.116.0 — FIT F34/45: la biblioteca y el detalle avanzado de ejercicios):**
+> *Fitness → Ejercicios* es una biblioteca: **Recientes** (del historial), **Favoritos** (si hay),
+> **Explorar** por grupo y habilidades, y el catálogo **de veinte en veinte**; la búsqueda mira
+> también el material, los músculos, el patrón y dónde se hace, **con y sin acentos**, y los filtros
+> se combinan —con **«Peso corporal»**— y se quitan con **«Limpiar filtros»**. La ficha: músculos con
+> su porcentaje, **«Cómo hacerlo» en pasos**, errores, consejos, la **progresión de una skill** que
+> se recorre tocándola, variantes, **las alternativas de la F33 con su nivel**, «Añadir a
+> entrenamiento» (sin empezar a entrenar) y **«Tu progreso»** (F29). Sexta del bloque de
+> **Inteligencia**. Todo en `src/lib/bibliotecaEjercicios.js` y su `.jsx`.
+> 🚨 **La biblioteca y la ficha ya existían** (F2): `EjerciciosView` y `DetalleEjercicio` se amplían
+> y se exportan como `ExerciseLibrary` y `ExerciseDetail`. 🚨 **La ficha no calcula nada**: F29, F33,
+> F3 y F14. 🚨 **Los favoritos existen desde aquí** (`fitness.favoritosEjercicios`, ids, con su
+> normalizador y su limpieza); **los recientes no se guardan**. ⚠️ Ni vídeo falso, ni «final del
+> movimiento» inventado, ni nombre histórico para un archivado (C-36). **Sin SQL nuevo.** Lo
+> siguiente es la **FIT F35**.
+>
 > **📅 ACTUALIZACIÓN (v3.115.0 — FIT F33/45: el sistema avanzado de sustitución de ejercicios):**
 > «Reemplazar» enseña las alternativas **por niveles** —Muy similar, Similar, Alternativa y, solo si
 > se piden, Poco recomendable—, cada una con **por qué** en una frase, filtros plegados («No tengo»,

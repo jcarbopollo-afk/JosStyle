@@ -115,8 +115,8 @@ export const EQUIPAMIENTO = [
      dejar la búlgara si en su lista hay otra cosa del mismo grupo (la silla).
      `sinMaterial` marca lo que no es material: un ejercicio que lo lleva se
      puede hacer sin nada más. */
-  { id: 'ninguno', nombre: 'Nada', casero: true, sinMaterial: true },
-  { id: 'suelo', nombre: 'Suelo', casero: true, sinMaterial: true },
+  { id: 'ninguno', nombre: 'Nada', casero: true, sinMaterial: true, sinonimos: ['peso corporal'] },
+  { id: 'suelo', nombre: 'Suelo', casero: true, sinMaterial: true, sinonimos: ['peso corporal'] },
   { id: 'barra', nombre: 'Barra', casero: false, grupo: 'carga-libre' },
   /* ⚠️ Los discos NO son del grupo de la barra: la acompañan, no la sustituyen.
      Con ellos dentro, «no tengo barra» dejaba el press de banca disponible
@@ -125,7 +125,9 @@ export const EQUIPAMIENTO = [
   { id: 'mancuernas', nombre: 'Mancuernas', casero: true, grupo: 'carga-libre' },
   { id: 'kettlebell', nombre: 'Kettlebell', casero: true, grupo: 'carga-libre' },
   { id: 'banco', nombre: 'Banco', casero: false, grupo: 'apoyo' },
-  { id: 'polea', nombre: 'Polea', casero: false, grupo: 'resistencia-guiada' },
+  /* 🔓 FIT F34 — `sinonimos` son palabras con las que también se busca: el
+     apartado 4 llama «cable» a la polea. */
+  { id: 'polea', nombre: 'Polea', casero: false, grupo: 'resistencia-guiada', sinonimos: ['cable'] },
   { id: 'maquina', nombre: 'Máquina', casero: false, grupo: 'resistencia-guiada' },
   { id: 'anillas', nombre: 'Anillas', casero: false, grupo: 'suspension' },
   { id: 'barra-dominadas', nombre: 'Barra de dominadas', casero: true, grupo: 'suspension' },
@@ -244,6 +246,21 @@ export const agarre = (id) => AGARRES.find((a) => a.id === id) || null;
 export const papel = (id) => PAPELES.find((p) => p.id === id) || null;
 export const medida = (id) => MEDIDAS.find((m) => m.id === id) || null;
 export const patronMovimiento = (id) => PATRONES_MOVIMIENTO.find((p) => p.id === id) || null;
+
+/* 🔓 FIT F33, mudadas aquí en la F34 — el material que de verdad hace falta
+   (fuera «nada» y «suelo») y si se puede hacer sin ninguno. Las usan la
+   sustitución (F33) y el filtro «Peso corporal» de la biblioteca (F34): con una
+   copia en cada sitio, un ejercicio podría ser «sin material» en uno y no en el
+   otro. */
+export const materialDe = (ej) => (Array.isArray(ej?.equipamiento) ? ej.equipamiento : [])
+  .filter((e) => !equipo(e)?.sinMaterial);
+export const sinMaterial = (ej) => (Array.isArray(ej?.equipamiento) ? ej.equipamiento : [])
+  .some((e) => equipo(e)?.sinMaterial) || materialDe(ej).length === 0;
+
+/* 🔓 FIT F34, apartado 4 — «Peso corporal» es un filtro de material, y no es un
+   material: es no necesitar ninguno. Vive al lado de los de `EQUIPAMIENTO` con
+   su propio id, y `filtrarEjercicios` lo traduce a `sinMaterial`. */
+export const FILTRO_PESO_CORPORAL = { id: 'corporal', nombre: 'Peso corporal' };
 export const familiaPatron = (id) => FAMILIAS_PATRON.find((f) => f.id === id) || null;
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -392,11 +409,16 @@ export function normalizarEjercicioCompleto(g) {
    con que el campo esté en `crearEjercicioCompleto`. */
 export function normalizarFitnessCompleto(guardado) {
   const base = normalizarFitness(guardado);
+  const ejercicios = lista((guardado || {}).ejercicios)
+    .map(normalizarEjercicioCompleto)
+    .filter(Boolean);
   return {
     ...base,
-    ejercicios: lista((guardado || {}).ejercicios)
-      .map(normalizarEjercicioCompleto)
-      .filter(Boolean),
+    ejercicios,
+    /* 🔓 FIT F34 — un favorito que apunta a un ejercicio que ya no existe se
+       limpia AQUÍ, que es donde se conoce el catálogo (EH F24): guardar el id de
+       algo borrado es guardar una mentira. */
+    favoritosEjercicios: lista(base.favoritosEjercicios).filter((id) => !!ejercicioPorId(id, ejercicios)),
   };
 }
 
@@ -507,9 +529,36 @@ export function buscarEjercicios(consulta, propios = []) {
   if (!q) return todosLosEjercicios(propios);
   const trozos = q.split('-').filter(Boolean);
   return todosLosEjercicios(propios).filter((e) => {
-    const heno = ranura([e.nombre, e.variante, e.nombreCorto, e.nombreTecnico, e.descripcion, e.categoria].join(' '));
+    const heno = textoBuscable(e);
     return trozos.every((t) => heno.includes(t));
   });
+}
+
+/* 🔓 FIT F34, apartados 3 y 33 — la búsqueda mira también el agarre, el
+   material (con sus sinónimos: «cable», «peso corporal»), los músculos y su
+   grupo, los tipos, el patrón y dónde se hace. ⚠️ **Y se calcula una vez por
+   ejercicio**: el texto buscable se guarda en un `WeakMap` sobre el objeto, así
+   que con 1000 ejercicios escribir una letra no vuelve a montar mil cadenas. Si
+   el ejercicio cambia, es otro objeto y el texto se rehace solo. */
+const cacheBuscable = new WeakMap();
+export function textoBuscable(e) {
+  if (!e || typeof e !== 'object') return '';
+  if (cacheBuscable.has(e)) return cacheBuscable.get(e);
+  const partes = [
+    e.nombre, e.variante, e.nombreCorto, e.nombreTecnico, e.descripcion, e.categoria,
+    agarre(e.agarre)?.nombre,
+    ...lista(e.equipamiento).flatMap((x) => [equipo(x)?.nombre, ...lista(equipo(x)?.sinonimos)]),
+    ...lista(e.musculos).flatMap((m) => {
+      const s = subgrupoMuscular(m?.subgrupoId);
+      return s ? [s.nombre, s.grupo] : [];
+    }),
+    ...lista(e.tipos).map((t) => tipoEjercicio(t)?.nombre),
+    patronMovimiento(e.patron)?.nombre,
+    ...lista(e.entornos).map((x) => entorno(x)?.nombre),
+  ];
+  const heno = ranura(partes.filter(Boolean).join(' '));
+  cacheBuscable.set(e, heno);
+  return heno;
 }
 
 /* Los filtros del apartado 23. Cada uno es opcional y `null` significa «no
@@ -526,7 +575,8 @@ export function filtrarEjercicios(ejercicios, {
   })();
   return lista(ejercicios).filter((e) => {
     if (entornos && entornos.length && !entornos.some((x) => e.entornos.includes(x))) return false;
-    if (equipamiento && equipamiento.length && !equipamiento.some((x) => e.equipamiento.includes(x))) return false;
+    if (equipamiento && equipamiento.length
+      && !equipamiento.some((x) => (x === FILTRO_PESO_CORPORAL.id ? sinMaterial(e) : e.equipamiento.includes(x)))) return false;
     if (idsGrupo && !lista(e.musculos).some((m) => idsGrupo.has(m.subgrupoId))) return false;
     if (subgrupo && !lista(e.musculos).some((m) => m.subgrupoId === subgrupo)) return false;
     if (dif && e.dificultad !== dif) return false;
@@ -545,7 +595,8 @@ export function recuentos(ejercicios) {
   );
   return {
     entornos: contar('entornos', ENTORNOS),
-    equipamiento: contar('equipamiento', EQUIPAMIENTO),
+    /* 🔓 FIT F34 — y «Peso corporal», que no es un material de la lista. */
+    equipamiento: { ...contar('equipamiento', EQUIPAMIENTO), [FILTRO_PESO_CORPORAL.id]: l.filter(sinMaterial).length },
     tipos: contar('tipos', TIPOS_EJERCICIO),
     dificultades: Object.fromEntries(DIFICULTADES.map((d) => [d.id, l.filter((e) => e.dificultad === d.id).length])),
     grupos: Object.fromEntries(GRUPOS_MUSCULARES.map((g) => {
