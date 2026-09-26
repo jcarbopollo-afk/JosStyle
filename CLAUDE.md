@@ -390,6 +390,9 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
   `media`…), así que `JSON.stringify(sembrada) === JSON.stringify(guardada)` sale rojo **con el
   historial intacto**. Se compara **el contenido que se protege** (fecha, estado, ejercicios, lo
   registrado) o **lo guardado antes contra lo guardado después**, nunca la semilla contra el disco.
+  ⚠️ **Y campo a campo**: la segunda pasada roja fue el ORDEN de las claves de `hecho` —la fábrica
+  guarda `{ reps, duracion, peso }`— con el mismo contenido. Antes de relanzar 45 minutos de
+  recorrido, **reproducirlo en Node** con la puerta de carga de verdad (`normalizarFitnessConSesiones`).
 - 🐛 **`pulsar('')` PULSA EL PRIMER BOTÓN QUE HAYA, Y SALE VERDE** (FIT F33): una etiqueta que se
   busca y no aparece deja una cadena vacía, y `innerText.includes('')` es siempre verdad. «Se
   eligen las flexiones» salió verde **sin tarjeta de flexiones**. Toda etiqueta calculada se

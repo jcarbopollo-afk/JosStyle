@@ -9787,9 +9787,14 @@ ok((f_fit33.objetivos || [])[0]?.exerciseId === 'press-banca-barra' && (f_fit33.
    así que la sembrada en crudo no puede ser igual a la guardada ni con el
    historial intacto — la primera versión de esto salió roja por eso. Lo que el
    apartado 18 protege es qué se hizo: fecha, estado, ejercicios y lo registrado. */
+/* 🐛 ⚠️ **Y campo a campo, no un objeto entero**: la fábrica guarda `hecho`
+   como `{ reps, duracion, peso }` y la semilla lo escribía `{ reps, peso,
+   duracion }` — mismo contenido, otro orden de claves, y `JSON.stringify` los
+   ve distintos. Fue la segunda pasada roja de esta comprobación. */
 const contenido_fit33 = (x) => JSON.stringify(x && {
   fecha: x.fecha, estado: x.estado,
-  ejercicios: (x.origen?.ejercicios || []).map((e) => [e.exerciseId, e.sustituyeA, (e.series || []).map((sr) => [sr.estado, sr.hecho, sr.plan?.peso])]),
+  ejercicios: (x.origen?.ejercicios || []).map((e) => [e.exerciseId, e.sustituyeA || null, (e.series || [])
+    .map((sr) => [sr.estado, sr.hecho?.reps ?? null, sr.hecho?.peso ?? null, sr.hecho?.duracion ?? null, sr.plan?.peso ?? null])]),
 });
 const antesGuardada_fit33 = (f_fit33.sesiones || []).find((x) => x.id === 'f33-antes');
 ok(!!antesGuardada_fit33 && contenido_fit33(antesGuardada_fit33) === contenido_fit33(completada_fit33),
