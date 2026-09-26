@@ -306,7 +306,7 @@ export function RankHistory({ fitness, destino, propios = [], perfil = null, acc
      contenedor de `.module-enter` y aparece abajo del todo. */
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-50 flex items-end justify-center fondo-entra"
       /* ⚠️ El velo va como `rgba()` literal, igual que el de `RankExplanation`:
          un negro escrito en hexadecimal sería un color suelto fuera de
          `tokens.js` (regla 2) aunque solo sirva para oscurecer, y no es un
@@ -319,7 +319,7 @@ export function RankHistory({ fitness, destino, propios = [], perfil = null, acc
       onClick={onCerrar}
     >
       <div
-        className="w-full max-w-lg rounded-t-3xl p-5 space-y-4 max-h-[85vh] overflow-y-auto"
+        className="w-full max-w-lg rounded-t-3xl p-5 space-y-4 max-h-[85vh] overflow-y-auto hoja-entra"
         style={{ background: COLORS.surface, minHeight: 0 }}
         onClick={(ev) => ev.stopPropagation()}
       >

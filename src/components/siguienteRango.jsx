@@ -45,7 +45,7 @@ export function RankNextLevelBar({ barra, accent, hacia }) {
         aria-label={hacia ? `Progreso hacia ${hacia}: ${pct} %` : `Progreso: ${pct} %`}
       >
         <div
-          className="h-full rounded-full transition-all duration-700"
+          className="h-full rounded-full fit-barra"
           style={{ width: `${pct}%`, background: accent }}
         />
       </div>

@@ -49,7 +49,7 @@ export function MuscleContributionBar({ porcentaje, nombre, accent }) {
       role="img"
       aria-label={`${nombre}: ${pct} % de participación en este grupo muscular`}
     >
-      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: hexToRgba(accent, 0.75) }} />
+      <div className="h-full rounded-full fit-barra" style={{ width: `${pct}%`, background: hexToRgba(accent, 0.75) }} />
     </div>
   );
 }

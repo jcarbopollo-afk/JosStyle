@@ -238,6 +238,15 @@ export const AVISOS_ACCION = {
   fecha_cambiada: { texto: 'Fecha cambiada', deshacer: true },
   hora_cambiada: { texto: 'Hora cambiada', deshacer: true },
   eliminado: { texto: 'Elemento eliminado', deshacer: true },
+  /* 🔓 FIT F37, apartados 24 y 25 — los de Fitness entran en ESTE catálogo, no
+     en uno suyo: el aviso reutilizable ya existía. Solo donde la pantalla no
+     confirma ya lo que ha pasado (añadir un ejercicio lo dice en su sitio). */
+  plan_activado: { texto: 'Plan activado', deshacer: false },
+  cambios_guardados: { texto: 'Cambios guardados', deshacer: false },
+  plantilla_duplicada: { texto: 'Plantilla duplicada', deshacer: false },
+  /* ⚠️ `error: true` cambia el icono y el color, **y el texto dice qué hacer**
+     (EH F62): nunca «Error» a secas. */
+  guardado_fallido: { texto: 'No se ha podido guardar en tu cuenta. Vuelve a intentarlo.', deshacer: false, error: true },
 };
 
 export const avisoDe = (id) => AVISOS_ACCION[id] || null;

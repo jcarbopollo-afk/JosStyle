@@ -3987,6 +3987,29 @@ const CASOS = [
   ['ExerciseAddToWorkout (solo la sesión)', ExerciseAddToWorkout, () => ({
     entrenamientos: [], accent, onCrearNuevo: noop, sesion: { id: 's', nombre: 'Pierna' }, onAnadirASesion: () => true,
   })],
+  /* ══ FIT F37 — el guardado que falla y la subida de rango ════════════════
+     El aviso (`AvisoAccion`) es un portal y no entra aquí (el precedente de
+     `quickAdd`); lo que sí entra es la pantalla de éxito con sus dos estados
+     nuevos y el hexágono con su brillo. */
+  ['PantallaExito (guardado fallido)', PantallaExito, () => ({
+    datos: exitoF8(guardarF8(pasarF8(sesionUsadaF7()), { confirmado: true }).sesion),
+    accent, onVer: noop, onVolver: noop, fallo: true, onReintentar: noop,
+  })],
+  ['PantallaExito (reintentando)', PantallaExito, () => ({
+    datos: exitoF8(guardarF8(pasarF8(sesionUsadaF7()), { confirmado: true }).sesion),
+    accent, onVer: noop, onVolver: noop, fallo: true, reintentando: true, onReintentar: noop,
+  })],
+  ['PantallaExito (con subida de rango)', PantallaExito, () => ({
+    datos: exitoF8(guardarF8(pasarF8(sesionUsadaF7()), { confirmado: true }).sesion),
+    accent, onVer: noop, onVolver: noop,
+    subidas: {
+      hay: true,
+      global: { de: 3, a: 4, texto: 'de Principiante a Intermedio' },
+      ejercicios: [{ exerciseId: 'press-banca-barra', nombre: 'Press de banca con barra', de: 3, a: 4, texto: 'de Principiante a Intermedio' }],
+    },
+  })],
+  ['RankBadge (destacado)', RankBadge, () => ({ rank: 5, size: 'lg', state: 'actual', accent, destacado: true })],
+  ['RankBadge (acaba de subir)', RankBadge, () => ({ rank: 6, size: 'md', state: 'actual', accent, destacado: true, sube: true })],
   ['EjerciciosView (con diagnóstico)', EjerciciosView, () => ({ propios: [], accent, onVolver: noop, fitness: fitnessF34(), diagnostico: true })],
   /* FIT F3 — el constructor. El caso que más importa es el de **una rutina con
      un isométrico dentro**: se mide en segundos, así que la fila y el editor

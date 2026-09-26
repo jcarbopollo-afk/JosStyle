@@ -39,6 +39,9 @@ import EjerciciosView from './EjerciciosView';
 import { esDesarrollo } from '../components/diagnosticoCatalogo';
 /* 🔓 FIT F36, apartado 47 — un fallo al pintar un área se queda en su área. */
 import { AreaSegura } from '../components/areaSegura';
+/* 🔓 FIT F37 — el aviso reutilizable (E3 F9) y cómo leer un guardado. */
+import { AvisoAccion } from '../components/quickAdd';
+import { resultadoDeGuardado, subidasDeRango } from '../lib/feedbackFitness';
 /* FIT F3 — el constructor, renderizado entero aquí dentro (E3 F23). */
 import ConstructorView from './ConstructorView';
 /* FIT F4 — la gestión de plantillas, renderizada entera aquí dentro (E3 F23). */
@@ -437,7 +440,7 @@ export function AreaEntrenamiento({
         onEditar={onAbrirConstructor ? (p) => onAbrirConstructor(planARutina(p)) : null}
         onDuplicar={onGuardarFitness ? (p) => {
           const r = duplicarPlantilla(plantillas, p.id);
-          if (r.ok) onGuardarFitness({ ...(fitness || {}), plantillas: r.plantillas });
+          if (r.ok) onGuardarFitness({ ...(fitness || {}), plantillas: r.plantillas }, 'plantilla_duplicada');
         } : null}
         onEliminar={onEliminarPlantilla ? (p) => onEliminarPlantilla(p.id) : null}
         onEmpezar={onEmpezarSesion ? empezarDePlantilla : null}
@@ -456,7 +459,8 @@ export function AreaEntrenamiento({
         onVolver={() => setDentro(null)}
         onUsar={onGuardarFitness ? (planId, opciones) => {
           const r = usarPlan(fitness || {}, planId, opciones);
-          if (r.ok) onGuardarFitness(r.fitness);
+          /* 🔓 FIT F37, apartado 36 — cambiar de plan se confirma a la vista. */
+          if (r.ok) onGuardarFitness(r.fitness, 'plan_activado');
         } : null}
         onPersonalizar={onGuardarFitness ? (planId) => {
           const r = personalizarPreset(fitness || {}, planId);
@@ -613,10 +617,42 @@ export function AreaEntrenamiento({
    pantalla completa, antes de las pestañas, y un fallo en uno de ellos tampoco
    puede llevarse la aplicación. Dentro, cada área tiene el suyo. */
 export default function FitnessView(props) {
+  const { onGuardarFitness = null, accent } = props;
+  /* 🔓 FIT F37, apartados 24 y 25 — el aviso de Fitness es el de siempre
+     (`AvisoAccion`, E3 F9), no uno nuevo. Vive AQUÍ, por encima de las cinco
+     salidas de la pantalla (entrenando, terminando, construyendo,
+     clasificando y las áreas) y del límite de error: un guardado que falla se
+     dice aunque lo de dentro se haya caído. Estado de pantalla. */
+  const [aviso, setAviso] = useState(null);
+  /* 🔓 FIT F37 — y el guardado que por fin LEE si ha llegado a la cuenta
+     (`saveData` devuelve `{ ok, error }` desde EH F52 y nadie lo miraba en
+     Fitness). Si falla, se dice siempre; si va bien, solo se confirma donde
+     la pantalla no lo dice ya (apartado 25). */
+  const guardarF = onGuardarFitness ? (next, avisoSiVaBien = null) => {
+    let r;
+    try { r = onGuardarFitness(next); } catch (error) {
+      setAviso('guardado_fallido');
+      return Promise.resolve({ ok: false, error });
+    }
+    return Promise.resolve(r).then((res) => {
+      const g = resultadoDeGuardado(res);
+      if (!g.ok) setAviso('guardado_fallido');
+      else if (avisoSiVaBien) setAviso(avisoSiVaBien);
+      /* 🐛 Y si ESTE va bien, el error de antes se va: tras «Reintentar», el
+         aviso seguía diciendo «No se ha podido guardar» unos segundos más
+         sobre un entrenamiento que ya estaba en su cuenta. Lo cazó el
+         recorrido de la F37. */
+      else setAviso((a) => (a === 'guardado_fallido' ? null : a));
+      return g;
+    }, (error) => { setAviso('guardado_fallido'); return { ok: false, error }; });
+  } : null;
   return (
-    <AreaSegura clave="fitness" nombre="Fitness" accent={props.accent}>
-      <FitnessViewContenido {...props} />
-    </AreaSegura>
+    <>
+      <AreaSegura clave="fitness" nombre="Fitness" accent={accent}>
+        <FitnessViewContenido {...props} onGuardarFitness={guardarF} />
+      </AreaSegura>
+      {aviso && <AvisoAccion accion={aviso} accent={accent} onCerrar={() => setAviso(null)} />}
+    </>
   );
 }
 
@@ -669,6 +705,9 @@ function FitnessViewContenido({
      lo guardado, y así el cronómetro, los pesos y las series marcadas siguen
      estando después de recargar (apartado 30). */
   const [entrenando, setEntrenando] = useState(null);
+  /* 🔓 FIT F37 — el guardado que llega aquí ya es el que lee el resultado y
+     avisa (`FitnessView`, abajo): todo guardado de Fitness pasa por él. */
+  const guardarF = onGuardarFitness;
 
   const racha = rachaDeFitness(rachas);
   /* 🔓 FIT F16 — `fitness.rangos` ya no se lee aquí. Los rangos **se calculan**
@@ -697,9 +736,11 @@ function FitnessViewContenido({
   const pendiente = sesionActiva(fitness || {});
   const sinGuardar = sesionEnFinalizacion(fitness || {});
 
+  /* 🔓 FIT F37 — devuelve el resultado del guardado: la pantalla de éxito lo
+     espera para decir «Guardando…» y si ha llegado a la cuenta. */
   const guardarSesionViva = (sesion) => {
-    if (!onGuardarFitness) return;
-    onGuardarFitness(guardarSesion(fitness || {}, sesion));
+    if (!guardarF) return undefined;
+    return guardarF(guardarSesion(fitness || {}, sesion));
   };
 
   const empezar = (sesion) => {
@@ -736,10 +777,10 @@ function FitnessViewContenido({
            guardados seguidos parten del mismo `fitness` y el segundo borraría
            el primero (E3 F26). Y «Crear uno nuevo» deja la sesión en curso —la
            tarjeta de recuperación la ofrece al volver— y abre el formulario. */
-        onCancelarObjetivo={onGuardarFitness
-          ? (objetivoId, sesionNueva) => onGuardarFitness(cancelarObjetivo(guardarSesion(fitness || {}, sesionNueva), objetivoId))
+        onCancelarObjetivo={guardarF
+          ? (objetivoId, sesionNueva) => guardarF(cancelarObjetivo(guardarSesion(fitness || {}, sesionNueva), objetivoId))
           : null}
-        onCrearObjetivo={onGuardarFitness
+        onCrearObjetivo={guardarF
           ? (exerciseId) => { setEntrenando(null); setFocoObjetivo(exerciseId); setArea('progreso'); }
           : null}
       />
@@ -767,6 +808,9 @@ function FitnessViewContenido({
         /* Apartados 25 y 26 — se puede volver a entrenar en vez de guardar. */
         onSeguir={() => guardarSesionViva({ ...enVivo, estado: 'en_curso', terminadaEn: null })}
         onVolver={() => setEntrenando(null)}
+        /* 🔓 FIT F37, apartado 14 — subir de rango, preguntado al motor de la F19
+           con y sin esta sesión. Solo cuando ya está guardada. */
+        subidas={enVivo.estado === 'completada' ? subidasDeRango(fitness || {}, enVivo, { propios, perfil }) : null}
       />
     );
   }
@@ -783,7 +827,7 @@ function FitnessViewContenido({
         propios={propios}
         accent={accent}
         rutinaInicial={creando.rutina}
-        onGuardar={(siguientes) => onGuardarFitness && onGuardarFitness({ ...(fitness || {}), plantillas: siguientes })}
+        onGuardar={(siguientes) => guardarF && guardarF({ ...(fitness || {}), plantillas: siguientes }, 'cambios_guardados')}
         onVolver={() => setCreando(null)}
       />
     );
@@ -800,7 +844,7 @@ function FitnessViewContenido({
         propios={propios}
         perfil={perfil}
         accent={accent}
-        onGuardarFitness={onGuardarFitness}
+        onGuardarFitness={guardarF}
         onVolver={() => setClasificando(false)}
         /* 🔓 FIT F34, apartado 25 — «Clasificar» desde la ficha de un ejercicio
            entra directamente a su pregunta. */
@@ -814,6 +858,9 @@ function FitnessViewContenido({
       <CabeceraFitness titulo="Fitness" racha={racha} accent={accent} />
       <PestanasFitness areas={AREAS_FITNESS} activa={area} onCambiar={setArea} accent={accent} />
 
+      {/* 🔓 FIT F37, apartado 4 — cambiar de área: opacidad y seis píxeles,
+          220 ms. La `key` hace que cada área entre de nuevo. */}
+      <div key={area} className="fit-entra">
       {area === 'rangos' && (
         <AreaSegura clave="rangos" nombre="Rangos" accent={accent}>
         <AreaRangos
@@ -827,7 +874,7 @@ function FitnessViewContenido({
           onEntrenar={() => setArea('entrenamiento')}
           /* ⚠️ Sin `onGuardarFitness` no se ofrece: un cuestionario que no puede
              guardar la respuesta sería un control decorativo (regla 8). */
-          onClasificar={onGuardarFitness ? () => setClasificando(true) : null}
+          onClasificar={guardarF ? () => setClasificando(true) : null}
         />
         </AreaSegura>
       )}
@@ -851,7 +898,7 @@ function FitnessViewContenido({
           onFocoVerObjetivoConsumido={() => setFocoVerObjetivo(null)}
           /* FIT F12, apartado 5 — «Entrenar ahora» lleva a Entrenamiento, donde se empieza. */
           onEntrenar={() => setArea('entrenamiento')}
-          onGuardarFitness={onGuardarFitness}
+          onGuardarFitness={guardarF}
           onEliminarObjetivo={onEliminarObjetivo}
           onAddFoto={onAddFoto}
           onDeleteFoto={onDeleteFoto}
@@ -868,34 +915,35 @@ function FitnessViewContenido({
         <AreaSegura clave="entrenamiento" nombre="Entrenamiento" accent={accent}>
         <AreaEntrenamiento
           fitness={fitness} calistenia={calistenia} accent={accent} entrenoProps={entrenoProps}
-          onGuardarFitness={onGuardarFitness}
+          onGuardarFitness={guardarF}
           onEliminarPlantilla={onEliminarPlantilla}
           onEliminarSesion={onEliminarSesion}
-          onAbrirConstructor={onGuardarFitness
+          onAbrirConstructor={guardarF
             ? (rutina) => setCreando({ rutina: rutina || crearRutina({}) })
             : null}
-          onEmpezarSesion={onGuardarFitness ? empezar : null}
+          onEmpezarSesion={guardarF ? empezar : null}
           sesionSinGuardar={sinGuardar}
           onSeguirGuardando={sinGuardar ? () => setEntrenando(sinGuardar.id) : null}
-          onDescartarSinGuardar={sinGuardar && onGuardarFitness ? () => {
+          onDescartarSinGuardar={sinGuardar && guardarF ? () => {
             const r = descartarEntrenamiento(sinGuardar, { confirmado: true });
-            if (r.ok) onGuardarFitness(guardarSesion(fitness || {}, r.sesion));
+            if (r.ok) guardarF(guardarSesion(fitness || {}, r.sesion));
           } : null}
           sesionEnCurso={pendiente}
           onContinuarSesion={pendiente ? () => setEntrenando(pendiente.id) : null}
-          onDescartarSesion={pendiente && onGuardarFitness ? () => {
+          onDescartarSesion={pendiente && guardarF ? () => {
             const r = descartarSesion(pendiente, { confirmado: true });
-            if (r.ok) onGuardarFitness(guardarSesion(fitness || {}, r.sesion));
+            if (r.ok) guardarF(guardarSesion(fitness || {}, r.sesion));
           } : null}
           /* 🔓 FIT F34 — las cuatro puertas de la ficha de un ejercicio. */
           perfil={perfil}
           onVerProgresoEjercicio={(id) => { setFocoEjercicio(id); setArea('progreso'); }}
           onVerObjetivo={(objetivoId) => { setFocoVerObjetivo(objetivoId); setArea('progreso'); }}
-          onCrearObjetivoEjercicio={onGuardarFitness ? (id) => { setFocoObjetivo(id); setArea('progreso'); } : null}
-          onClasificarEjercicio={onGuardarFitness ? (id) => setClasificando(id) : null}
+          onCrearObjetivoEjercicio={guardarF ? (id) => { setFocoObjetivo(id); setArea('progreso'); } : null}
+          onClasificarEjercicio={guardarF ? (id) => setClasificando(id) : null}
         />
         </AreaSegura>
       )}
+      </div>
     </div>
   );
 }

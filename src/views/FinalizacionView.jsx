@@ -20,7 +20,7 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  Check, ChevronRight, ChevronLeft, Trash2, Clock, Dumbbell, Calendar,
+  Check, ChevronRight, ChevronLeft, Trash2, Clock, Dumbbell, Calendar, AlertTriangle, RotateCcw,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
@@ -28,6 +28,9 @@ import {
   Card, SectionTitle, GhostBtn, PrimaryButton, TextInput, Textarea, Field,
 } from '../components/ui';
 import { VISIBILIDADES } from '../lib/fitness';
+/* 🔓 FIT F37 — leer si el guardado ha llegado, y subir de rango. */
+import { resultadoDeGuardado, TEXTOS_GUARDADO, TEXTOS_SUBIDA } from '../lib/feedbackFitness';
+import { RankBadge } from '../components/rangos';
 import {
   resumenDeSesion, pantallaDeExito, guardarEntrenamiento, descartarEntrenamiento,
   AVISO_SIN_SERIES, AVISO_DESCARTAR_FINAL, TEXTO_GUARDANDO, MEDIA_PENDIENTE,
@@ -102,10 +105,37 @@ export function FilaEjercicioFinal({ ejercicio, accent }) {
    *"Priorizar: sensación de finalización, datos importantes, siguiente acción."*
    ⚠️ Y **sin confeti ni gamificación** (apartado 31): una marca, dos cifras y
    una frase corta de una tabla por umbrales, sin azar y sin juicio. */
-export function PantallaExito({ datos, accent, onVer, onVolver }) {
+export function PantallaExito({ datos, accent, onVer, onVolver, fallo = false, reintentando = false, onReintentar = null, subidas = null }) {
   if (!datos) return null;
   return (
     <div className="space-y-4">
+      {/* 🔓 FIT F37, apartados 18, 25 y 28 — si no ha llegado a la cuenta, se
+          dice AQUÍ, junto a la acción, con su «Reintentar»: un aviso abajo solo
+          se va y la pantalla seguiría diciendo que todo fue bien. */}
+      {fallo && (
+        <Card style={{ border: `1px solid ${COLORS.negative}` }}>
+          <div role="alert" className="flex items-start gap-3">
+            <AlertTriangle size={18} style={{ color: COLORS.negative }} aria-hidden="true" className="shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold" style={{ color: COLORS.text }}>{TEXTOS_GUARDADO.fallo}</p>
+              <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{TEXTOS_GUARDADO.detalle}</p>
+              {onReintentar && (
+                reintentando ? (
+                  <p className="text-xs font-bold mt-2" style={{ color: accent }}>{TEXTOS_GUARDADO.reintentando}</p>
+                ) : (
+                  <button
+                    onClick={onReintentar}
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold py-1.5 toque-44"
+                    style={{ color: accent }}
+                  >
+                    <RotateCcw size={13} aria-hidden="true" />{TEXTOS_GUARDADO.reintentar}
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
       <Card style={{ border: `1px solid ${accent}` }}>
         <div className="py-5 text-center">
           <div
@@ -141,6 +171,39 @@ export function PantallaExito({ datos, accent, onVer, onVolver }) {
           <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>{datos.mensaje}</p>
         </div>
       </Card>
+
+      {/* 🔓 FIT F37, apartados 14 y 41 — subir de rango: el hexágono nuevo entra
+          y el texto dice de cuál a cuál. Ni confeti ni puntos.
+          ⚠️ Y **no con el guardado fallido**: esa subida sale de una sesión que
+          todavía no está en su cuenta, y al recargar desaparecería. Se enseña
+          cuando «Reintentar» la deja guardada. */}
+      {!fallo && subidas && subidas.hay && (
+        <Card>
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
+            {TEXTOS_SUBIDA.titulo}
+          </p>
+          <div className="space-y-2.5 mt-2.5">
+            {subidas.global && (
+              <div className="flex items-center gap-3">
+                <RankBadge rank={subidas.global.a} size="md" state="actual" accent={accent} destacado sube />
+                <div className="min-w-0">
+                  <p className="text-sm font-bold" style={{ color: COLORS.text }}>{TEXTOS_SUBIDA.global}</p>
+                  <p className="text-xs" style={{ color: COLORS.textMuted }}>{subidas.global.texto}</p>
+                </div>
+              </div>
+            )}
+            {subidas.ejercicios.map((x) => (
+              <div key={x.exerciseId} className="flex items-center gap-3">
+                <RankBadge rank={x.a} size="sm" state="actual" accent={accent} sube />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{x.nombre}</p>
+                  <p className="text-xs" style={{ color: COLORS.textMuted }}>{x.texto}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <div className="flex gap-2 flex-wrap">
         {onVer && (
@@ -218,6 +281,8 @@ export function ResumenSesion({ resumen, accent }) {
 export default function FinalizacionView({
   sesion, propios = [], accent,
   onGuardar, onDescartar, onSeguir = null, onVolver = null,
+  /* 🔓 FIT F37, apartado 14 — lo calcula quien tiene el `fitness` entero. */
+  subidas = null,
 }) {
   const resumen = useMemo(() => resumenDeSesion(sesion, { propios }), [sesion, propios]);
   const [nombre, setNombre] = useState(() => (resumen ? resumen.nombre : ''));
@@ -225,12 +290,47 @@ export default function FinalizacionView({
   const [aviso, setAviso] = useState(null); // 'vacio' | 'descartar'
   const [guardando, setGuardando] = useState(false);
   const [guardada, setGuardada] = useState(null);
+  /* 🔓 FIT F37 — si el guardado NO ha llegado a la cuenta. */
+  const [fallo, setFallo] = useState(false);
   /* ⚠️ Si está mirando el resumen guardado es **de la pantalla** (EH F40). */
   const [viendo, setViendo] = useState(false);
   const resumenGuardado = useMemo(
     () => (guardada ? resumenDeSesion(guardada, { propios }) : null),
     [guardada, propios],
   );
+
+  /* 🚨 Apartados 17 y 18 — idempotente **y** con estado de carga: mientras
+     guarda, el botón no está, así que no se puede pulsar dos veces. Y la
+     idempotencia no depende de eso: `guardarEntrenamiento` devuelve la misma
+     sesión si ya estaba completada. */
+  /* 🔓 FIT F37, apartados 25, 28 y 29 — ahora ESPERA al guardado: el texto de
+     «Guardando…» se ve mientras sube (antes se encendía y se apagaba en el
+     mismo instante), el botón no está mientras tanto, y si no llega a la
+     cuenta la pantalla de éxito lo dice con su «Reintentar». */
+  const guardar = async (confirmado = false) => {
+    if (guardando) return;
+    const r = guardarEntrenamiento(sesion, { nombre, notas, confirmado });
+    if (!r.ok && r.motivo === 'vacio') { setAviso('vacio'); return; }
+    if (!r.ok) return;
+    setAviso(null);
+    setGuardando(true);
+    let res;
+    try { res = await onGuardar(r.sesion); } catch (error) { res = { ok: false, error }; }
+    setGuardada(r.sesion);
+    setFallo(!resultadoDeGuardado(res).ok);
+    setGuardando(false);
+  };
+
+  /* Reintentar es guardar la MISMA sesión: `guardarSesion` sustituye por id,
+     así que no puede dejar dos (F7 y F8). */
+  const reintentar = async () => {
+    if (guardando || !guardada) return;
+    setGuardando(true);
+    let res;
+    try { res = await onGuardar(guardada); } catch (error) { res = { ok: false, error }; }
+    setFallo(!resultadoDeGuardado(res).ok);
+    setGuardando(false);
+  };
 
   if (!resumen) return null;
 
@@ -269,27 +369,16 @@ export default function FinalizacionView({
       <PantallaExito
         datos={pantallaDeExito(guardada, { propios })}
         accent={accent}
+        fallo={fallo}
+        reintentando={guardando}
+        onReintentar={reintentar}
+        subidas={subidas}
         onVer={() => setViendo(true)}
         onVolver={onVolver ? () => onVolver('plan') : null}
       />
     );
   }
 
-  /* 🚨 Apartados 17 y 18 — idempotente **y** con estado de carga: mientras
-     guarda, el botón no está, así que no se puede pulsar dos veces. Y la
-     idempotencia no depende de eso: `guardarEntrenamiento` devuelve la misma
-     sesión si ya estaba completada. */
-  const guardar = (confirmado = false) => {
-    if (guardando) return;
-    const r = guardarEntrenamiento(sesion, { nombre, notas, confirmado });
-    if (!r.ok && r.motivo === 'vacio') { setAviso('vacio'); return; }
-    if (!r.ok) return;
-    setAviso(null);
-    setGuardando(true);
-    onGuardar(r.sesion);
-    setGuardada(r.sesion);
-    setGuardando(false);
-  };
 
   return (
     <div className="space-y-4 pb-6">

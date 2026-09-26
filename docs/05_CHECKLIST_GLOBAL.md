@@ -971,7 +971,15 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       conexiones con el archivo que las cablea y la auditoría de los datos. ⚠️ La regla del peso
       corporal vivía dos veces y tres nombres tenían dos significados. Sin bus de eventos (no hace
       falta, y se demuestra) y sin SQL.
-- [ ] F37–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F37 — Microinteracciones y feedback premium de fitness** (v3.119.0): once clases en
+      `index.css` con una sola curva y `backwards`, declaradas en `ANIMACIONES_HC`, y
+      `auditarMovimiento()` leyendo el CSS de verdad. 🚨 **Un guardado de Fitness que no llega a la
+      cuenta se dice** —en la pantalla de éxito con «Reintentar» y en el aviso de siempre, como
+      alerta—; con el guardado fallido no se celebra la subida de rango, y un guardado que va bien
+      retira el error. 🔓 `subidasDeRango()`, solo con una subida de verdad. 🐛 Dos duraciones del
+      catálogo eran falsas, dos hojas de Rangos no entraban y los servidores de prueba se quedaban
+      vivos. `scripts/recorrido-parcial.mjs` lanza una sección del recorrido sola.
+- [ ] F38–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

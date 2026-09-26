@@ -16,7 +16,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Plus, Check, Undo2 } from 'lucide-react';
+import { X, Plus, Check, Undo2, AlertTriangle } from 'lucide-react';
 import { COLORS } from '../tokens';
 import {
   contextoDeAdd, horaParaTipo, tipoQuickAdd,
@@ -254,14 +254,18 @@ export function AvisoAccion({ accion, accent, onDeshacer, onCerrar }) {
     <div
       className="fixed left-0 right-0 z-40 flex justify-center px-4 pointer-events-none"
       style={{ bottom: 'calc(var(--safe-bottom) + 5.5rem)' }}
-      role="status"
-      aria-live="polite"
+      role={aviso.error ? 'alert' : 'status'}
+      aria-live={aviso.error ? 'assertive' : 'polite'}
     >
       <div
         className="flex items-center gap-3 px-4 py-2.5 rounded-full shadow-lg pointer-events-auto aviso-entra"
-        style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+        style={{ background: COLORS.surface2, border: `1px solid ${aviso.error ? COLORS.negative : COLORS.border}` }}
       >
-        <Check size={15} style={{ color: accent }} aria-hidden="true" />
+        {/* 🔓 FIT F37, apartado 25 — un error tiene su icono y su color, además
+            de la frase (EH F42: el color nunca va solo). */}
+        {aviso.error
+          ? <AlertTriangle size={15} style={{ color: COLORS.negative }} aria-hidden="true" />
+          : <Check size={15} style={{ color: accent }} aria-hidden="true" />}
         <span className="text-sm font-semibold" style={{ color: COLORS.text }}>{aviso.texto}</span>
         {aviso.deshacer && onDeshacer && (
           <button onClick={() => { onDeshacer(); onCerrar(); }} className="flex items-center gap-1 text-sm font-bold toque-44" style={{ color: accent }}>

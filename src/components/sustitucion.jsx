@@ -467,7 +467,7 @@ export function ExerciseReplacementModal({ abierto = true, onCerrar, ...props })
   if (!abierto || typeof document === 'undefined') return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center fondo-entra"
       style={{ background: 'rgba(0,0,0,0.5)' }}
       onClick={onCerrar}
       role="dialog"
@@ -475,7 +475,7 @@ export function ExerciseReplacementModal({ abierto = true, onCerrar, ...props })
       aria-label={TEXTOS_SUSTITUCION.titulo}
     >
       <div
-        className="w-full max-w-md sm:max-w-2xl rounded-t-3xl sm:rounded-3xl p-5 overflow-y-auto"
+        className="w-full max-w-md sm:max-w-2xl rounded-t-3xl sm:rounded-3xl p-5 overflow-y-auto hoja-entra"
         style={{ background: COLORS.bg, maxHeight: '88vh', paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >

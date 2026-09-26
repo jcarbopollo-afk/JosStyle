@@ -470,7 +470,9 @@ export function detalleDeSesion(sesion, { fitness = {}, propios = [], planes = C
 
 export const AVISO_ELIMINAR_SESION = {
   titulo: '¿Eliminar este entrenamiento?',
-  texto: 'Esta acción eliminará la sesión del historial. Podrás recuperarla desde la Papelera.',
+  /* 🔓 FIT F37, apartado 30 — dice también lo que NO se borra: las fotos de
+     ese día se quedan (lo comprobó la F36, apartado 37). */
+  texto: 'Esta acción eliminará la sesión del historial. Podrás recuperarla desde la Papelera. Las fotos de progreso de ese día no se borran.',
   cancelar: 'Cancelar',
   eliminar: 'Eliminar',
 };

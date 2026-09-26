@@ -1028,7 +1028,10 @@ export default function App() {
      sobrescribe, no fusiona, así que guardar solo `planes` se llevaría por
      delante los ejercicios propios, las plantillas, las sesiones y los rangos
      (regla 5). */
-  const guardarFitness = async (next) => { setFitness(next); await saveData(uidUser, 'fitness', next); };
+  /* 🔓 FIT F37, apartados 18, 25 y 28 — devuelve lo que dice `saveData`
+     (`{ ok, error }`, EH F52) en vez de tragárselo: sin esto, Fitness no
+     puede saber si un entrenamiento ha llegado a la cuenta de Josué. */
+  const guardarFitness = async (next) => { setFitness(next); return saveData(uidUser, 'fitness', next); };
 
   // ---------- Ampliación del Dashboard — Centro de Control ----------
   // Única función de navegación con deep-link de toda la app (apartado 5: "utiliza la

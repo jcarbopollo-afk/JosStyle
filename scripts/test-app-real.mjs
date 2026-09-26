@@ -61,8 +61,16 @@ if (!existsSync('.env.local')) {
    shell da `EINVAL`. Los argumentos son fijos y sin espacios, así que no hay
    nada que escapar. */
 const ESWIN = process.platform === 'win32';
-const vite = spawn(ESWIN ? 'npx.cmd' : 'npx', ['vite', '--port', String(PUERTO), '--host', '127.0.0.1'],
-  { stdio: 'ignore', shell: ESWIN });
+/* 🐛 **Y EN LINUX TAMBIÉN SE QUEDABA VIVO** (FIT F37). `vite.kill()` mata a
+   `npx`, no al `node` de Vite que cuelga de él: tras varias pasadas había SIETE
+   servidores en el 5199, y una pasada lanzada desde otra copia del proyecto se
+   habría conectado a uno viejo —el fallo de la EH F47 en otro sistema—. Ahora
+   `npx` va en su propio grupo de procesos y se mata el GRUPO entero. Y antes de
+   arrancar se mira que el puerto esté libre: si ya contesta alguien, esta
+   pasada no estaría probando su código. */
+const puertoOcupado = await fetch(`http://127.0.0.1:${PUERTO}/`).then(() => true, () => false);
+const vite = spawn(ESWIN ? 'npx.cmd' : 'npx', ['vite', '--port', String(PUERTO), '--host', '127.0.0.1', '--strictPort'],
+  { stdio: 'ignore', shell: ESWIN, detached: !ESWIN });
 const esperarServidor = async () => {
   for (let i = 0; i < 40; i += 1) {
     try { const r = await fetch(`http://127.0.0.1:${PUERTO}/`); if (r.ok) return true; } catch { /* aún no */ }
@@ -83,6 +91,7 @@ const matarServidor = () => {
   if (process.platform === 'win32') {
     try { execSync(`taskkill /pid ${vite.pid} /T /F`, { stdio: 'ignore' }); return; } catch { /* ya no estaba */ }
   }
+  try { process.kill(-vite.pid, 'SIGTERM'); return; } catch { /* ya no estaba */ }
   vite.kill('SIGTERM');
 };
 
@@ -97,6 +106,7 @@ const salir = async (browser) => {
 process.on('exit', matarServidor);
 process.on('uncaughtException', (e) => { matarServidor(); console.error(e); process.exit(1); });
 
+ok(!puertoOcupado, `El puerto ${PUERTO} estaba libre: no hay un servidor de otra pasada sirviendo otro código`);
 ok(await esperarServidor(), 'El servidor de desarrollo arranca');
 
 /* ⚠️ Y que el servidor sea **el que acaba de arrancar**, no uno de una pasada
@@ -131,6 +141,9 @@ const ESTILO_GUARDADO = {
 /* Lo que "hay en Supabase" ahora mismo. Empieza con lo guardado y **se queda con
    lo que la app escriba**: así una recarga ve lo de antes, como en el móvil. */
 const almacen = { estiloHombre: ESTILO_GUARDADO };
+/* FIT F37 — las claves cuyo guardado se hace FALLAR a propósito (apartado 25):
+   el doble contesta 500 y no guarda nada, como una cuenta sin cobertura. */
+const FALLAR_ESCRITURA = new Set();
 
 /* 🐛 ⚠️ La ruta del navegador estaba **escrita a mano** (`/opt/pw-browsers/
    chromium`), que es donde lo tenía el entorno de aquellas sesiones. En Windows
@@ -183,6 +196,9 @@ await page.route(`${SUPA}/**`, async (route) => {
     if (route.request().method() !== 'GET') {
       try {
         const cuerpo = JSON.parse(route.request().postData() || '{}');
+        if (cuerpo && FALLAR_ESCRITURA.has(cuerpo.key)) {
+          return route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'fallo de prueba' }) });
+        }
         guardado.push(cuerpo);
         /* ⚠️ **Y se GUARDA de verdad**, para devolverlo en el siguiente GET. Sin
            esto, recargar volvía siempre al estado inicial y la prueba no podía
@@ -10328,6 +10344,119 @@ almacen.perfil = perfilDeAntes_fit36;
 almacen.ajustes = ajustesDeAntes_fit36;
 almacen.saludFotos = fotosDeAntes_fit36;
 almacen.salud = saludDeAntes_fit36;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F37 — microinteracciones y feedback premium (Entrega 4 · 37/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   Lo que solo se ve con la aplicación de verdad:
+   · Un área de Fitness ENTRA (`fit-entra`), y con «Reducir movimiento» no se
+     mueve (apartados 4 y 40).
+   · Un guardado que NO llega a la cuenta se DICE —en la pantalla y en el
+     aviso—, con su «Reintentar»; al reintentar se va el error y llega la
+     subida de rango, que antes no se celebra (apartados 13, 14, 25 y 28).
+   · Activar un plan se CONFIRMA con el aviso de siempre (apartados 24 y 36).
+   · Y ni un error de JavaScript por el camino, salvo el del guardado que
+     falla a propósito. */
+console.log('\n── FIT F37 · Microinteracciones y feedback ──');
+
+const fitnessDeAntes_fit37 = almacen.fitness;
+const saludDeAntes_fit37 = almacen.salud;
+almacen.salud = { ...(saludDeAntes_fit37 || {}), medidas: [{ id: 'm-f37', fecha: hoy_fit31, peso: 70 }] };
+const previa_fit37 = { ...sesion_fit34('f37-a', 6, [serie_fit34('f37-a1', 5, 50), serie_fit34('f37-a2', 5, 50)]), nombre: 'Pecho F37 previo' };
+const sinGuardar_fit37 = {
+  ...sesion_fit34('f37-b', 0, [serie_fit34('f37-b1', 5, 80), serie_fit34('f37-b2', 5, 80)]),
+  nombre: 'Pecho F37', estado: 'finalizando', iniciadaEn: Date.now() - 2400000, terminadaEn: Date.now() - 60000, guardadaEn: null,
+};
+almacen.fitness = {
+  ...(fitnessDeAntes_fit37 || {}),
+  sesiones: [previa_fit37, sinGuardar_fit37], plantillas: [], objetivos: [],
+  favoritosEjercicios: [], planActivo: null, planesAnteriores: [], ejercicios: [],
+};
+const erroresAntes_fit37 = errores.length;
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+/* 1 · UN ÁREA ENTRA, Y CON MOVIMIENTO REDUCIDO NO SE MUEVE (apartados 4 y 40). */
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F37 — se entra en Fitness');
+await esperarTexto(/sin guardar/i);
+const animacion_fit37 = () => page.evaluate(() => {
+  const el = document.querySelector('.fit-entra');
+  if (!el) return null;
+  const cs = getComputedStyle(el);
+  return { nombre: cs.animationName, dura: parseFloat(cs.animationDuration) };
+});
+const entra_fit37 = await animacion_fit37();
+ok(entra_fit37 && entra_fit37.nombre === 'fitEntra' && entra_fit37.dura === 0.22,
+  `🔓 FIT F37 — el área de Fitness ENTRA: opacidad y seis píxeles, en 220 ms (${JSON.stringify(entra_fit37)}, apartado 4)`);
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.waitForTimeout(200);
+const quieta_fit37 = await animacion_fit37();
+ok(quieta_fit37 && quieta_fit37.dura < 0.001,
+  `🚨 FIT F37 — y con «Reducir movimiento» del sistema, NO se mueve (${quieta_fit37 && quieta_fit37.dura} s, apartado 40)`);
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+/* 2 · EL GUARDADO QUE NO LLEGA A LA CUENTA (apartados 25 y 28). */
+ok(await pulsar('Terminar de guardarlo'), 'FIT F37 — se abre el entrenamiento terminado y sin guardar');
+await esperarTexto(/Entrenamiento completado/i);
+FALLAR_ESCRITURA.add('fitness');
+const escriturasAntes_fit37 = guardado.filter((g) => g && g.key === 'fitness').length;
+ok(await pulsar('Terminar entrenamiento'), 'FIT F37 — se guarda… y el guardado NO llega a la cuenta');
+const fallo_fit37 = await esperarTexto(/No se ha podido guardar en tu cuenta/i);
+ok(/No se ha podido guardar en tu cuenta/i.test(fallo_fit37) && /antes de cerrar la aplicaci[oó]n/i.test(fallo_fit37),
+  '🚨 FIT F37 — la pantalla de éxito LO DICE: no ha llegado a su cuenta, y qué hacer (apartado 25)');
+const alertas_fit37 = await page.evaluate(() => [...document.querySelectorAll('[role="alert"]')]
+  .filter((e) => /No se ha podido guardar/i.test(e.innerText)).length);
+ok(alertas_fit37 >= 2, `…como ALERTA, dos veces: junto a la acción y en el aviso de abajo (${alertas_fit37})`);
+ok(!/Has subido de rango/i.test(fallo_fit37),
+  '⚠️ FIT F37 — y NO celebra una subida de rango que al recargar desaparecería');
+ok(guardado.filter((g) => g && g.key === 'fitness').length === escriturasAntes_fit37
+  && (almacen.fitness.sesiones || []).find((x) => x.id === 'f37-b')?.estado === 'finalizando',
+  '…porque de verdad no se ha guardado: en la cuenta sigue terminado y sin guardar');
+
+/* 3 · REINTENTAR (apartados 13, 14 y 28). */
+FALLAR_ESCRITURA.delete('fitness');
+ok(await pulsar('Reintentar'), 'FIT F37 — «Reintentar», ya con conexión');
+const bien_fit37 = await esperarTexto(/Has subido de rango/i);
+ok(!/No se ha podido guardar/i.test(bien_fit37),
+  '🐛 FIT F37 — y el error se VA, también el aviso de abajo: ya está en su cuenta');
+const guardadas_fit37 = (ultimo_fit34().sesiones || []).filter((x) => x.id === 'f37-b');
+ok(guardadas_fit37.length === 1 && guardadas_fit37[0].estado === 'completada',
+  '🚨 …guardada de verdad, COMPLETADA y una sola vez: reintentar sustituye por id (F8)');
+ok(/Has subido de rango/i.test(bien_fit37) && /Press de banca/.test(bien_fit37) && /de Intermedio alto a Experto/.test(bien_fit37),
+  '🔓 FIT F37 — y AHORA llega la subida de rango: el ejercicio, de cuál a cuál (apartados 13 y 14)');
+const sube_fit37 = await page.evaluate(() => {
+  const el = document.querySelector('.fit-rango-sube');
+  return el ? getComputedStyle(el).animationName : null;
+});
+ok(sube_fit37 === 'fitRangoSube', `…con el hexágono nuevo entrando (${sube_fit37})`);
+ok(!/\bXP\b|puntos|confeti/i.test(bien_fit37), '…y sin XP, ni puntos, ni confeti (apartado 52)');
+
+/* 4 · ACTIVAR UN PLAN SE CONFIRMA (apartados 24 y 36). */
+ok(await pulsar('Volver a Tu Plan'), 'FIT F37 — de vuelta a Tu Plan');
+ok(await pulsar('Explorar planes'), '…a la biblioteca de planes');
+await esperarTexto(/PPL/i);
+ok(await pulsar('Abrir PPL Estético'), '…se abre uno');
+await esperarTexto(/La semana/i);
+ok(await pulsar('Usar este plan'), '…«Usar este plan»');
+const activado_fit37 = await esperarTexto(/Plan activado/);
+const anunciado_fit37 = await page.evaluate(() => [...document.querySelectorAll('[role="status"]')]
+  .some((e) => /Plan activado/.test(e.innerText)));
+ok(/Plan activado/.test(activado_fit37) && anunciado_fit37,
+  '🔓 FIT F37 — activar un plan se CONFIRMA con el aviso de siempre, y se anuncia (apartados 24 y 36)');
+ok(ultimo_fit34().planActivo?.planId === 'ppl-estetico', '…y el plan se ha guardado de verdad');
+
+/* 5 · Y NI UN ERROR DE JAVASCRIPT POR EL CAMINO. */
+const nuevos_fit37 = errores.splice(erroresAntes_fit37);
+const inesperados_fit37 = nuevos_fit37.filter((t) => !/status of 500|No se pudo guardar/i.test(t));
+ok(inesperados_fit37.length === 0,
+  `FIT F37 — y ni un error por el camino: solo el guardado que falla a propósito${inesperados_fit37.length ? ` — ${inesperados_fit37[0]}` : ''}`);
+
+FALLAR_ESCRITURA.clear();
+await page.emulateMedia({ reducedMotion: null });
+almacen.fitness = fitnessDeAntes_fit37;
+almacen.salud = saludDeAntes_fit37;
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

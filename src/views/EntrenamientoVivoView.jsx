@@ -140,7 +140,7 @@ export function CabeceraSesion({ nombre, tiempo, progreso, accent, onSalir, onTe
         <div className="mt-2">
           <div className="h-1 rounded-full overflow-hidden" style={{ background: hexToRgba(COLORS.border, 0.7) }}>
             <div
-              className="h-full rounded-full transition-all"
+              className="h-full rounded-full fit-barra"
               style={{ width: `${progreso.porcentaje ?? 0}%`, background: accent }}
             />
           </div>
@@ -183,7 +183,9 @@ export function CarruselEjercicios({ items, accent, onElegir }) {
               onClick={() => onElegir(i.indice)}
               aria-label={`Ejercicio ${i.numero}: ${i.nombre}`}
               aria-current={esActual ? 'true' : undefined}
-              className="rounded-2xl text-left shrink-0 toque-44 active:scale-95 transition-colors"
+              /* 🔓 FIT F37, apartado 10 — la miniatura crece y la anterior se
+                 encoge con suavidad, en vez de saltar de 92 a 168 píxeles. */
+              className="rounded-2xl text-left shrink-0 toque-44 active:scale-95 fit-miniatura"
               style={{
                 width: esActual ? 168 : 92,
                 padding: esActual ? '0.6rem 0.75rem' : '0.5rem 0.55rem',
@@ -424,7 +426,8 @@ export function TablaSeries({
                       color: hecha ? COLORS.textOnAccent : COLORS.textMuted,
                     }}
                   >
-                    {hecha ? <Check size={20} strokeWidth={3} /> : <Circle size={18} />}
+                    {/* 🔓 FIT F37, apartado 8 — la marca aparece, sin confeti. */}
+                    {hecha ? <Check size={20} strokeWidth={3} className="fit-serie-hecha" /> : <Circle size={18} />}
                   </button>
                 )}
               </div>
@@ -502,10 +505,14 @@ export function BarraDescanso({ descanso, ahora, accent, onPausar, onReanudar, o
     <div
       role="status"
       aria-live="polite"
-      className="rounded-2xl px-3 py-3"
+      /* 🔓 FIT F37, apartado 9 — al empezar, entra; al terminar, un solo pulso.
+         El sonido y la vibración siguen siendo los del bus (F9), que respetan
+         lo que él tenga puesto en Ajustes. */
+      className={`rounded-2xl px-3 py-3 ${fin ? 'fit-descanso-fin' : 'fit-entra'}`}
       style={{
         background: fin ? hexToRgba(accent, 0.2) : hexToRgba(accent, 0.1),
         border: `2px solid ${accent}`,
+        '--fit-brillo': hexToRgba(accent, 0.45),
       }}
     >
       <div className="flex items-center gap-2">
@@ -1006,7 +1013,7 @@ export default function EntrenamientoVivoView({
                   {[cabecera.tipo, ficha.musculo, cabecera.porTiempo ? 'Por tiempo' : ''].filter(Boolean).join(' · ')}
                 </p>
                 {ficha.sustituido && (
-                  <p className="text-[11px] mt-1" style={{ color: COLORS.warning }}>
+                  <p className="text-[11px] mt-1 fit-entra" style={{ color: COLORS.warning }}>
                     En lugar de {ficha.sustituyeA} · solo en este entrenamiento
                   </p>
                 )}

@@ -1,5 +1,106 @@
 # CHANGELOG.md
 
+## v3.119.0 — FIT F37/45: microinteracciones y feedback premium de fitness
+
+*"NO cambiar la lógica de datos, fórmulas ni modelos. NO rehacer pantallas."* Así que la fase no
+toca ni un cálculo: pone **movimiento donde ayuda a entender qué ha pasado** —una pantalla que
+entra, una serie que se marca, una barra que va del valor anterior al nuevo, un rango que sube— y
+**dice lo que antes callaba**: si un guardado no ha llegado a la cuenta. Todo vive en
+**`index.css`** y se declara en **`ANIMACIONES_HC`** (E3 F14), así que respeta *"Reducir
+movimiento"* **sin una línea más**; la lógica nueva es **`src/lib/feedbackFitness.js`**, con una
+auditoría que **lee el CSS de verdad**. Segunda fase del bloque de **Acabado** (F36–F42).
+
+### 🔓 El movimiento, con sus números del apartado 2
+
+Once clases nuevas —`fit-entra` (220 ms), `fit-pulsable` (140), `fit-contenido` (140), `fit-barra`
+(280), `fit-serie-hecha` (160), `fit-miniatura` (200), `fit-descanso-fin` (300), `fit-rango-brillo`,
+`fit-rango-sube` (300), `fondo-entra` (180) y `hoja-entra` (240)—, **todas con la misma curva**
+(`--ease-premium`, Fase N2) y **todas con `backwards`**: una animación que se queda con su último
+`transform` convierte a su caja en el bloque contenedor de todo `fixed` de dentro, que es el fallo
+de los overlays de la regla 3 por otra puerta. `auditarMovimiento()` comprueba **siete casillas
+contra el archivo real**: que cada duración declarada sea la escrita, que caiga en su rango (micro
+120-220, pantalla 180-300, tarjeta 200-300), una sola curva, ni un rastro de `transform`, que cada
+clase se use, **ni un exceso** (duraciones largas, `transition-all`, `animate-bounce/ping/pulse/
+spin`, confeti) en los **27 archivos** de Fitness, y las dos reglas del movimiento reducido. Y cada
+casilla tiene su prueba que la pone roja.
+
+- **Las pantallas y las pestañas entran** (apartado 4); **las hojas suben** y **el fondo se oscurece**
+  (22 y 23) en la sustitución, las fotos, el comparador, los rangos y la clasificación. 🐛 La
+  comprobación era una lista de cinco archivos escrita a mano y **se dejó fuera las dos hojas de
+  Rangos** —la explicación y el historial—; ahora barre **cada velo `fixed inset-0`** de Fitness.
+- **Marcar una serie** hace aparecer el ✓ (8); **la miniatura del ejercicio** cambia de ancho y de
+  color sin saltar (10); **el descanso que termina** se ilumina una vez (9).
+- **Todas las barras** de Fitness van del valor anterior al nuevo (15 y 16) — la prueba barre las
+  vistas buscando la que no lleve `fit-barra`, y encontró cuatro (la distribución muscular del
+  constructor, de las plantillas, de la biblioteca de planes y de Tu Plan) más dos de componentes.
+- **El rango actual destaca** con un brillo sutil y **el que acaba de subir entra** (13). ⚠️ El
+  brillo va en un **envoltorio**: el hexágono se recorta con `clip-path`, que se aplica **después**
+  del filtro, así que una sombra puesta en él mismo se recortaba con él.
+- **Los botones destructivos no escalan** (7): responden bajando la opacidad (`fit-contenido`).
+
+### 🚨 Un guardado que no llega a la cuenta, se dice (apartados 18, 25 y 28)
+
+`saveData` devuelve `{ ok, error }` desde la EH F52 y **en Fitness no lo leía nadie**: la pantalla
+de éxito decía «¡Entrenamiento completado!» aunque no hubiera llegado nada. Ahora `guardarFitness`
+devuelve ese resultado, `FitnessView` lo lee **por encima de sus cinco salidas y de su límite de
+error**, y si falla:
+
+- **la pantalla de éxito lo dice junto a la acción** —*«No se ha podido guardar en tu cuenta»*— con
+  su **«Reintentar»**, que guarda **la misma sesión** (sustituye por id: no puede dejar dos);
+- y **el aviso de siempre** (`AvisoAccion`, E3 F9) sale como **alerta**: con su icono, su color y
+  `role="alert"` —el color nunca va solo (EH F42)—.
+
+⚠️ **Con el guardado fallido no se celebra una subida de rango**: sale de una sesión que todavía no
+está en su cuenta y al recargar desaparecería. 🐛 **Y un guardado que va bien retira el error de
+antes**: tras «Reintentar» el aviso seguía diciendo *«No se ha podido guardar»* cinco segundos más
+sobre un entrenamiento que ya estaba guardado. **Lo cazó el recorrido**, y se comprobó que la
+comprobación se pone roja quitando el arreglo. 🔓 Es lo que la F36 dejó en `NO_EN_FIT36`, y se
+enciende **solo para Fitness**: el resto de la aplicación sigue sin leer el resultado.
+
+### 🔓 Subir de rango se enseña, y solo si se sube (apartados 13 y 14)
+
+`subidasDeRango()` compara el rango **sin** y **con** la sesión recién guardada, por ejercicio y el
+general, y en la pantalla de éxito sale *«Has subido de rango · Press de banca · de Intermedio alto a
+Experto»* con el hexágono nuevo entrando. **El primer rango de un ejercicio no cuenta** —saldría en
+cada primer entrenamiento— y **un cambio dentro del mismo rango tampoco** (F22). Sin XP, sin puntos,
+sin confeti (apartado 52). Y lo calcula el motor de la F19: esta fase no toca un umbral.
+
+### ⚠️ Los avisos que confirman
+
+*«Plan activado»* (36), *«Cambios guardados»* al guardar en el constructor y *«Plantilla
+duplicada»* son líneas nuevas de **`AVISOS_ACCION`**, no un segundo sistema de avisos. Y **no se
+confirma lo que la pantalla ya dice**: la pantalla de éxito no lleva además un aviso de «guardado».
+
+### 🐛 Dos catálogos que mentían
+
+`ANIMACIONES_HC` declaraba **420 ms** para `module-enter`, que dura **340** desde la Fase N2, y
+**260** para el cambio de mes del Calendario, que dura **220**. Nadie lo veía porque la prueba de la
+E3 F14 solo miraba que cada clase **existiera**; ahora se compara **la duración**. Y el aviso de
+borrar un entrenamiento dice ahora **lo que no se borra**: las fotos de progreso de ese día.
+
+### ⚠️ Y en el recorrido, dos cosas que no eran de esta fase
+
+- **El doble de Supabase sabe fallar**: `FALLAR_ESCRITURA` hace que una clave conteste 500 y no se
+  guarde, como una cuenta sin cobertura. Es lo que permite probar el apartado 25 de verdad.
+- 🐛 **Los servidores de Vite se quedaban vivos también en Linux**: `vite.kill()` mata a `npx` y no
+  al `node` de Vite, y tras varias pasadas había **siete** en el puerto 5199. Una pasada lanzada
+  desde otra copia del proyecto se habría conectado a uno viejo —el fallo de la EH F47 en otro
+  sistema—. Ahora `npx` va en su propio grupo de procesos y se mata el grupo, Vite arranca con
+  `--strictPort` y el recorrido **comprueba que el puerto estaba libre**.
+
+### Lo que no se hace, dicho
+
+Animar el **cierre** de hojas y diálogos (el apartado 50 pide aguantar un cierre a media transición y
+el 46 no retrasar nada), **arrastrar una hoja** para cerrarla (no existe en la aplicación), cabeceras
+que reaccionan al scroll, esqueletos dentro de Fitness, dibujar las gráficas al aparecer, conservar el
+scroll al volver, **animar la racha que sube** —habría que recordar el número de antes y la racha no
+guarda ni un contador (RA F1)—, las listas que se expanden —no hay ninguna en Fitness— y cambiar el
+`module-enter` de toda la aplicación. Están en `NO_EN_FIT37`, cada una con su motivo.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.118.0 — FIT F36/45: integración global del sistema fitness
 
 *"NO queremos crear nuevas funcionalidades grandes. Queremos conectar correctamente las

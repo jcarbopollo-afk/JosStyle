@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.118.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.119.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 36 primeras (v3.83.0 → v3.118.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 37 primeras (v3.83.0 → v3.119.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 9 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 8 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -349,7 +349,54 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 **FIT F30 (v3.112.0)**, la **FIT F31 (v3.113.0)**, la **FIT F32 (v3.114.0)**, la **FIT F33
 (v3.115.0)**, la **FIT F34 (v3.116.0)** y la **FIT F35 (v3.117.0)**, que 🏁 **CERRÓ EL BLOQUE DE
 INTELIGENCIA** —F29 a F35—, y la **FIT F36 (v3.118.0)**, con la que empieza el bloque de **Acabado**
-(F36–F42), hechas. Lo que dejaron, y que vale para las 9 que quedan:
+(F36–F42), y la **FIT F37 (v3.119.0)**, hechas. Lo que dejaron, y que vale para las 8 que quedan:
+
+- 🚨 **UN GUARDADO QUE NADIE LEE ES UN GUARDADO QUE PUEDE MENTIR** (FIT F37, apartado 25): `saveData`
+  devuelve `{ ok, error }` desde la EH F52 y en Fitness no lo leía nadie, así que la pantalla de
+  éxito celebraba un entrenamiento que quizá no había llegado a la cuenta. Ahora `guardarFitness`
+  (App.jsx) **devuelve** ese resultado y `FitnessView` lo lee **por encima de sus cinco salidas y de
+  su límite de error**: si falla, la pantalla de éxito lo dice junto a la acción con «Reintentar» y
+  sale el aviso de siempre como **alerta** (`guardado_fallido` en `AVISOS_ACCION`, con icono, color y
+  `role="alert"`). ⚠️ **Solo para Fitness**: el resto de la aplicación sigue sin leerlo, y sigue
+  declarado en `NO_EN_FIT36`. Y **un guardado que va bien retira el error de antes** —el aviso se
+  quedaba cinco segundos diciendo que había fallado un entrenamiento ya guardado; lo cazó el
+  recorrido, y se comprobó quitando el arreglo—.
+- 🚨 **TODA ANIMACIÓN DE FITNESS VIVE EN `index.css`, SE DECLARA EN `ANIMACIONES_HC` Y TERMINA CON
+  `backwards`** (FIT F37, `src/lib/feedbackFitness.js`). En `index.css` respeta *"Reducir
+  movimiento"* sola; con `backwards` no deja un `transform` puesto, que convertiría a su caja en el
+  bloque contenedor de todo `fixed` de dentro (la regla 3 por otra puerta). `auditarMovimiento()`
+  **lee el CSS de verdad**: duración declarada = escrita, dentro del rango del apartado 2 (micro
+  120-220, pantalla 180-300, tarjeta 200-300), una sola curva (`--ease-premium`), ni un rastro, cada
+  clase usada y ni un exceso en los 27 archivos de Fitness —`transition-all`, `duration-500`,
+  `animate-bounce`, confeti—. Las tarjetas que se tocan llevan `fit-pulsable` (0,98, apartado 5)
+  y **los botones destructivos no escalan**: `fit-contenido` baja la opacidad (apartado 7). Los
+  `active:scale` que ya había en los botones son la escalera de `ui.jsx` (EH F50) y se quedan.
+- 🐛 **UN CATÁLOGO DE DURACIONES QUE NADIE COMPARA SE QUEDA VIEJO** (FIT F37): `ANIMACIONES_HC`
+  decía 420 ms para `module-enter` (son 340 desde la Fase N2) y 260 para el cambio de mes (son 220).
+  La prueba de la E3 F14 solo miraba que la clase **existiera**. Ahora compara **la duración**, y
+  toda barra de Fitness con `width` calculado **tiene que llevar `fit-barra`** —el barrido encontró
+  seis sin ella—.
+- ⚠️ **EL BRILLO DEL HEXÁGONO VA EN UN ENVOLTORIO** (FIT F37, apartado 13): `RankBadge` se recorta
+  con `clip-path`, que se aplica **después** de `filter` y de `outline`, así que una sombra puesta
+  en el hexágono se recortaba con él. `destacado` y `sube` envuelven; sin ellos, el hexágono sale
+  exactamente como antes.
+- 🔓 **SUBIR DE RANGO SE ENSEÑA, SOLO SI SE SUBE Y SOLO SI ESTÁ GUARDADO** (FIT F37, apartados 13 y
+  14): `subidasDeRango()` compara el rango **sin** y **con** la sesión con el motor de la F19. **El
+  primer rango no cuenta** (saldría en cada primer entrenamiento), **subir dentro del mismo rango
+  tampoco** (F22) y **con el guardado fallido no se celebra**: al recargar desaparecería.
+- 🐛 **LOS SERVIDORES DE VITE SE QUEDABAN VIVOS TAMBIÉN EN LINUX** (FIT F37): `vite.kill()` mata a
+  `npx` y no al `node` de Vite; había **siete** en el 5199. Ahora `npx` va en su propio grupo y se
+  mata el grupo, Vite arranca con `--strictPort` y el recorrido **comprueba que el puerto estaba
+  libre** antes de empezar. ⚠️ Y `pgrep -f` se encuentra a sí mismo (E3 F8): para buscar un proceso,
+  `ps` y comparar el ejecutable.
+- ⚠️ **EL DOBLE DE SUPABASE SABE FALLAR** (FIT F37): `FALLAR_ESCRITURA` en `test-app-real.mjs` hace
+  que una clave conteste 500 y no se guarde, como una cuenta sin cobertura. Con eso se prueba de
+  verdad lo que pasa cuando un guardado no llega.
+- ⚠️ **UNA SECCIÓN DEL RECORRIDO SE PUEDE LANZAR SOLA: `scripts/recorrido-parcial.mjs`** (FIT F37).
+  Se queda con el arranque, las definiciones de las que depende la sección y todo lo que va desde el
+  marcador, en otro puerto. **No sustituye a `verificar.sh`**: es para iterar sin esperar cincuenta
+  minutos. ⚠️ Y en una copia aparte (`git worktree`), `node_modules` va con **`cp -al`**, no con un
+  enlace: dos Vite con la misma caché `.vite` se pisan, y uno puede estar midiendo la fase de verdad.
 
 - 🚨 **UNA PUERTA ENTRE PANTALLAS SE COMPRUEBA ABRIENDO EL ARCHIVO QUE LA CABLEA** (FIT F36,
   `src/lib/integracionFitness.js`). Dos puertas llevaban fases sin existir sin que nada fallara: el
@@ -1524,24 +1571,34 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F37/45 — Microinteracciones y feedback premium de fitness** (líneas
-   8 083–8 962 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **segunda** del bloque de
+1. 🏋️ **SEGUIR POR LA FIT F38/45 — UX móvil extrema y optimización para iPhone** (líneas
+   7 164–8 082 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **tercera** del bloque de
    **Acabado** (F36–F42). Se construye de la F1 a la F45, en orden, encadenando sin parar. El índice
    está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: su contexto dice *"NO cambiar la lógica de datos, fórmulas ni
-   modelos; NO rehacer pantallas"*, y la infraestructura de animación YA EXISTE.** Las animaciones
-   viven en **`index.css`** y se declaran en **`ANIMACIONES_HC`** con su tope **`MAX_ANIMACION_MS`**
-   (`src/lib/pulidoHC.js`, E3 F14), y por vivir ahí respetan **solas** *"Reducir movimiento"* —el
-   `prefers-reduced-motion` y el `data-reducir-movimiento` de Ajustes—, que es el apartado 40. El
-   feedback al tocar es de **`ui.jsx`** (EH F50: la escalera `0.96` / `95` / `90`), y una vista no
-   pone su propio `active:scale`. El aviso con «Deshacer» ya existe (**`AvisoAccion`**, en
-   `quickAdd.jsx`, E3 F9) — si la fase pide toasts, se mira primero ése. ⚠️ **Y el sonido y la
-   vibración se EMITEN al bus** (`emitir`, F9): ninguna pantalla vibra ni suena por su cuenta, y un
-   evento se emite por su nombre canónico, que la prueba comprueba que existe.
-   ⚠️ **Toda animación nueva se declara en `ANIMACIONES_HC`**: hay una prueba que comprueba que cada
-   clase declarada existe en el CSS (E3 F14), y un catálogo que declara lo que no hay miente.
+   ⚠️ **Y lo segundo, en ESTA: su contexto dice *"Esta fase NO añade funcionalidades grandes"*, y
+   casi toda la infraestructura del iPhone YA EXISTE.** La Safe Area vive en **`index.css`**
+   (`--safe-top`, `--safe-bottom`, `.accion-superior`, `.pantalla-segura`, `.nav-segura`,
+   `.toque-44`, E3 F1) —apartados 2, 47 y 48—; lo que Safari resuelve distinto que Chromium está en
+   **`src/lib/safari.js`** (SF F1), **con lo que ya se miró y estaba bien**; los 44 px de área táctil
+   los revisa **`revisarPantalla()`** en cada pasada (EH F42, apartados 15 y 33); el gesto de cambiar
+   de ejercicio ya distingue el scroll (`touch-action: pan-y` y umbral horizontal, FIT F9, apartados
+   13 y 14); el descanso y el cronómetro son **marcas de tiempo** y sobreviven a bloquear el iPhone
+   (E3 F25 y FIT F7, apartados 30 y 31); la sesión en curso se recupera al volver (F7); el sonido y
+   la vibración se **emiten al bus** y respetan 📳 de Ajustes (F9, apartados 37 y 38); y el
+   movimiento reducido es de la F37 (apartado 46).
+   ⚠️ **C-32 SE TOCA AQUÍ, Y ESTÁ ESPERANDO A JOSUÉ**: los campos usan 14 px, en iOS eso dispara el
+   zoom al enfocar, y el `maximum-scale=1` del `viewport` lo evita **bloqueando el pellizco**. Los
+   apartados 8, 9, 26 y 27 (teclado numérico, peso, foco, `inputmode`) caen encima. Si hace falta
+   tocarlo, **la lectura que respeta las dos partes** es arreglarlo en los campos de Fitness —sin
+   cambiar el aspecto del resto de formularios, que es lo que él tiene que decidir— y anotarlo en
+   `docs/03`.
+   ⚠️ **Y lo que ya se aprendió midiendo a 375 px:** una rejilla sin columna base crece con su
+   contenido (`grid-cols-1`, FIT F34), un desbordamiento no se arregla recortando el texto
+   (`flex-wrap`, GE F1) y `ToggleTab` se toca en el contenedor, nunca en `ui.jsx` (diez vistas lo
+   usan). **El recorrido mide `scrollWidth > innerWidth`**: al cambiar una lista por una rejilla, se
+   mide en el móvil.
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único

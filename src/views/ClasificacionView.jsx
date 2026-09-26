@@ -56,7 +56,7 @@ export function ClassificationProgress({ posicion, total, fraccion, accent, etiq
         role="img"
         aria-label={etiqueta ? `${etiqueta}: ${pct} %` : `Cuestionario: ${pct} % respondido`}
       >
-        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: accent }} />
+        <div className="h-full rounded-full fit-barra" style={{ width: `${pct}%`, background: accent }} />
       </div>
     </div>
   );
@@ -69,7 +69,7 @@ export function ClassificationOption({ opcion, elegida, accent, onElegir }) {
     <button
       onClick={() => onElegir(opcion.id)}
       aria-pressed={elegida}
-      className="w-full text-left rounded-2xl px-4 py-3.5 flex items-center gap-3 toque-44 active:scale-[0.99] transition-transform"
+      className="w-full text-left rounded-2xl px-4 py-3.5 flex items-center gap-3 toque-44 fit-pulsable"
       style={{
         background: elegida ? hexToRgba(accent, 0.14) : COLORS.surface,
         border: `1px solid ${elegida ? accent : COLORS.border}`,
@@ -89,8 +89,10 @@ export function ClassificationOption({ opcion, elegida, accent, onElegir }) {
 /* ── 19 y 21 · La pregunta de un ejercicio ───────────────────────────────── */
 export function ClassificationQuestion({ ejercicio, pregunta, elegida, accent, onElegir }) {
   const Icono = iconoDeGrupo(pregunta.grupoPrincipal || 'brazos');
+  /* 🔓 FIT F37, apartado 38 — al avanzar, una entrada corta: quien la pinta le
+     pone una `key` por pregunta, así que cada una entra de nuevo. */
   return (
-    <Card>
+    <Card className="fit-entra">
       <div className="flex items-start gap-3">
         {/* Apartado 21 — *"no inventar imágenes"*: el catálogo no tiene fotos, así
             que va el icono de su grupo, que es un recurso real. */}
@@ -131,7 +133,7 @@ export function ClassificationResult({ clasificacion, musculos = [], accent, onC
     <Card>
       <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Nivel estimado</p>
       <div className="flex items-center gap-4 mt-3">
-        <RankBadge rank={clasificacion?.rango ?? null} size="lg" state="actual" accent={accent} />
+        <RankBadge rank={clasificacion?.rango ?? null} size="lg" state="actual" destacado accent={accent} />
         <div className="min-w-0">
           <p className="text-xl font-extrabold" style={{ color: accent, fontFamily: "'Manrope', sans-serif" }}>
             {nivel ? nivel.nombre : '—'}
@@ -156,7 +158,7 @@ export function ClassificationExitDialog({ accent, onSeguir, onSalir }) {
   if (typeof document === 'undefined') return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0 fondo-entra"
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onClick={onSeguir}
       role="dialog"
@@ -164,7 +166,7 @@ export function ClassificationExitDialog({ accent, onSeguir, onSalir }) {
       aria-label="Salir de la clasificación"
     >
       <div
-        className="w-full max-w-sm rounded-3xl p-5 space-y-4"
+        className="w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra"
         style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >
@@ -192,7 +194,7 @@ export function AvisoReclasificar({ accent, onConfirmar, onCancelar, aviso = nul
   if (typeof document === 'undefined') return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0 fondo-entra"
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onClick={onCancelar}
       role="dialog"
@@ -200,7 +202,7 @@ export function AvisoReclasificar({ accent, onConfirmar, onCancelar, aviso = nul
       aria-label="Reclasificar ejercicio"
     >
       <div
-        className="w-full max-w-sm rounded-3xl p-5 space-y-4"
+        className="w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra"
         style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >
@@ -427,6 +429,7 @@ export default function ClasificacionView({
       ) : (
         <>
           <ClassificationQuestion
+            key={`${actual.id}-${pregunta ? pregunta.id : ""}`}
             ejercicio={actual}
             pregunta={{ ...pregunta, grupoPrincipal: (musculosQueRecibe(actual.id, { propios })[0] || {}).grupoId }}
             elegida={elegida}

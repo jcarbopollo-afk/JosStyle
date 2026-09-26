@@ -197,7 +197,9 @@ ok(!/onChange=\{set[A-Z]\w*\}/.test(QUICK_CODIGO),
 ok(/Escape/.test(QUICK), '⚠️ y Escape cierra la hoja (apartado 36)');
 ok(/aria-modal/.test(QUICK) && /role="dialog"/.test(QUICK),
   '⚠️ con su papel de diálogo para el lector de pantalla (apartado 36)');
-ok(/role="status"/.test(QUICK) && /aria-live/.test(QUICK),
+/* FIT F37 — el papel pasa a depender del aviso: `status` para lo normal y
+   `alert` para un guardado que falla. Se comprueba que sigan estando los dos. */
+ok(/role=(?:"status"|\{[^}]*'status'[^}]*\})/.test(QUICK) && /aria-live/.test(QUICK),
   '⚠️ y el aviso se anuncia, no solo se ve');
 
 console.log('\n═══ 10. UNA SOLA FUENTE DE VERDAD (apartados 10, 17, 18 y 29) ═══\n');

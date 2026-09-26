@@ -1109,6 +1109,17 @@ else
   fallo "Falla la validación del catálogo"; grep '✗' /tmp/jc_validacion_catalogo.log
 fi
 
+# FIT F37 — las microinteracciones de Fitness. Lo que más se vigila: que cada duración
+# declarada sea la escrita en index.css y caiga en el rango del apartado 2, una sola curva,
+# ni un rastro de transform, ni un exceso (duraciones largas, `transition-all`, rebotes,
+# confeti), que un guardado que falla se DIGA con su «Reintentar» y que subir de rango se
+# enseñe solo con una subida de verdad.
+if node --import ./scripts/resolver-vite.mjs scripts/test-feedback-fitness.mjs >/tmp/jc_feedback_fitness.log 2>&1; then
+  ok "Microinteracciones y feedback de Fitness (FIT F37) — $(grep -c '✓' /tmp/jc_feedback_fitness.log) comprobaciones"
+else
+  fallo "Fallan las microinteracciones de Fitness"; grep '✗' /tmp/jc_feedback_fitness.log
+fi
+
 # FIT F36 — la integración global del sistema fitness. Lo que más se vigila: que cada
 # pregunta tenga UNA función (y ningún nombre dos significados), que cada puerta entre
 # pantallas esté cableada de verdad —historial → ejercicio y foto → entrenamiento no lo

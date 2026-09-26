@@ -404,7 +404,7 @@ export function DetalleSesionHistorial({
 
       {/* Apartados 28 y 29 — eliminar, preguntando. */}
       {onEliminar && (confirmando ? (
-        <Card style={{ border: `1px solid ${COLORS.negative}` }}>
+        <Card className="fit-entra" style={{ border: `1px solid ${COLORS.negative}` }}>
           <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
             {AVISO_ELIMINAR_SESION.titulo}
           </p>
@@ -414,7 +414,9 @@ export function DetalleSesionHistorial({
             <button
               onClick={() => { setConfirmando(false); onEliminar(d.id); }}
               aria-label="Eliminar este entrenamiento del historial"
-              className="h-10 px-3.5 rounded-xl text-sm font-bold toque-44 active:scale-95"
+              /* 🔓 FIT F37, apartado 7 — lo destructivo responde más contenido:
+                 sin escala, solo un apagado. */
+              className="h-10 px-3.5 rounded-xl text-sm font-bold toque-44 fit-contenido"
               style={{ background: hexToRgba(COLORS.negative, 0.16), color: COLORS.negative }}
             >
               {AVISO_ELIMINAR_SESION.eliminar}
@@ -424,7 +426,7 @@ export function DetalleSesionHistorial({
       ) : (
         <button
           onClick={() => setConfirmando(true)}
-          className="w-full h-11 rounded-xl text-sm font-bold inline-flex items-center justify-center gap-2 toque-44"
+          className="w-full h-11 rounded-xl text-sm font-bold inline-flex items-center justify-center gap-2 toque-44 fit-contenido"
           style={{ color: COLORS.negative, background: hexToRgba(COLORS.negative, 0.08) }}
         >
           <Trash2 size={16} aria-hidden="true" /> Eliminar entrenamiento

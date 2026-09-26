@@ -77,7 +77,7 @@ function Barra({ fraccion, accent, etiqueta }) {
       role="img"
       aria-label={`${etiqueta}: ${pct} %`}
     >
-      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: accent }} />
+      <div className="h-full rounded-full fit-barra" style={{ width: `${pct}%`, background: accent }} />
     </div>
   );
 }
@@ -111,6 +111,8 @@ export function RankOverviewCard({ datos, accent, onPorQue = null, onHistorial =
           size="xl"
           state={sin ? 'no_disponible' : 'actual'}
           locked={!!sin}
+          /* 🔓 FIT F37, apartado 13 — el rango actual destaca con un brillo sutil. */
+          destacado={!sin}
           accent={accent}
         />
         <div className="min-w-0">
@@ -176,7 +178,7 @@ export function RankItem({ nivel, accent, onAbrir }) {
     <button
       onClick={() => onAbrir && onAbrir(nivel.orden)}
       aria-label={`Rango ${nivel.nombre}, ${e.palabra}`}
-      className="rounded-2xl p-3 flex flex-col items-center gap-1.5 active:scale-[0.98] transition-transform"
+      className="rounded-2xl p-3 flex flex-col items-center gap-1.5 fit-pulsable"
       style={{
         background: actual ? hexToRgba(accent, 0.12) : COLORS.surface,
         border: `1px solid ${actual ? accent : COLORS.border}`,
@@ -187,6 +189,7 @@ export function RankItem({ nivel, accent, onAbrir }) {
         size="md"
         state={nivel.estado}
         locked={nivel.estado === 'bloqueado' || nivel.estado === 'no_disponible'}
+        destacado={actual}
         accent={accent}
       />
       <span className="text-[11px] font-bold text-center leading-tight" style={{ color: actual ? COLORS.text : COLORS.textMuted }}>
@@ -219,7 +222,7 @@ export function HojaDeRango({ detalle, accent, onCerrar }) {
   const Icono = e.icono;
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-50 flex items-end justify-center fondo-entra"
       style={{ background: 'rgba(0,0,0,0.5)' }}
       onClick={onCerrar}
       role="dialog"
@@ -227,7 +230,7 @@ export function HojaDeRango({ detalle, accent, onCerrar }) {
       aria-label={`Rango ${detalle.nombre}`}
     >
       <div
-        className="w-full max-w-md rounded-t-3xl p-5 space-y-4"
+        className="w-full max-w-md rounded-t-3xl p-5 space-y-4 hoja-entra"
         style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >
@@ -330,7 +333,7 @@ export function AnatomyPreview({ musculos = [], accent, onMusculo }) {
             <button
               key={m.id}
               onClick={() => onMusculo(m.id)}
-              className={`${clases} active:scale-[0.98] transition-transform`}
+              className={`${clases} fit-pulsable`}
               style={estilo}
               aria-label={`${m.nombre}: ${m.nombreRango}`}
             >

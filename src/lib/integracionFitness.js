@@ -226,7 +226,7 @@ export const NO_EN_FIT36 = [
   { que: 'Enlaces directos por URL (apartado 49)', porque: 'JosStyle navega con estado, no con rutas: el botón atrás del móvil y las URLs son una decisión pendiente de Josué (E3 F22). Dentro, los focos ya existen: focoEjercicio (F12), focoObjetivo (F33), focoVerObjetivo y ejercicioInicial (F34).' },
   { que: 'Editar una sesión histórica (apartado 38)', porque: 'No se permite hoy, y el apartado dice "no añadirlo ahora". La arquitectura ya está preparada: todo se deriva de la sesión.' },
   { que: 'IA, predicciones, XP, fórmulas o métricas nuevas', porque: 'Apartado 61.' },
-  { que: 'Avisar de una pérdida temporal de persistencia (apartado 55)', porque: 'Lo que hay es de antes y aguanta: la sesión en curso se guarda en cada cambio y sobrevive a recargar (F7). Lo que falta es AVISAR si un guardado falla: `saveData` ya devuelve `{ ok, error }` (EH F52) y nadie lo lee todavía. Encenderlo es de toda la aplicación, no de Fitness, y hacerlo aquí sería esconder un cambio grande dentro de esta fase (apartado 62).' },
+  { que: 'Avisar de una pérdida temporal de persistencia (apartado 55)', porque: 'Lo que hay es de antes y aguanta: la sesión en curso se guarda en cada cambio y sobrevive a recargar (F7). Lo que falta es AVISAR si un guardado falla: `saveData` ya devuelve `{ ok, error }` (EH F52) y nadie lo lee todavía. Encenderlo es de toda la aplicación, no de Fitness, y hacerlo aquí sería esconder un cambio grande dentro de esta fase (apartado 62). 🔓 La FIT F37 lo enciende SOLO para Fitness, porque su apartado 25 lo pide: `guardarFitness` devuelve el resultado de `saveData` y la pantalla lo lee. El resto de la aplicación sigue sin leerlo.' },
 ];
 
 export const DECISIONES_FIT36 = [

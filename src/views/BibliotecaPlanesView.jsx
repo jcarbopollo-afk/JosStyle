@@ -317,7 +317,7 @@ export function DetallePlan({
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: hexToRgba(COLORS.border, 0.6) }}>
                   <div
-                    className="h-full rounded-full"
+                    className="h-full rounded-full fit-barra"
                     style={{ width: `${Math.max(0, Math.min(100, g.porcentaje))}%`, background: accent }}
                   />
                 </div>

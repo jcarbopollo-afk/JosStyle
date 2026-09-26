@@ -47,7 +47,7 @@ function Barra({ fraccion, accent, etiqueta }) {
       role="img"
       aria-label={`${etiqueta}: ${pct} %`}
     >
-      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: accent }} />
+      <div className="h-full rounded-full fit-barra" style={{ width: `${pct}%`, background: accent }} />
     </div>
   );
 }
@@ -159,7 +159,7 @@ export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = nu
   const nivelSiguiente = e.siguiente && e.siguiente.siguiente ? e.siguiente : null;
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center fondo-entra"
       style={{ background: 'rgba(0,0,0,0.55)' }}
       onClick={onCerrar}
       role="dialog"
@@ -169,7 +169,7 @@ export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = nu
       {/* ⚠️ Con scroll interno y tope de altura: en un iPhone pequeño, con
           textos largos, la hoja se quedaba cortada por abajo (apartado 28). */}
       <div
-        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 overflow-y-auto"
+        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 overflow-y-auto hoja-entra"
         style={{
           background: COLORS.surface,
           maxHeight: '85vh',

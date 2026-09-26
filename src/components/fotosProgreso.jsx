@@ -319,7 +319,7 @@ export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitne
   const sesion = sesionDeFoto(foto, fitness);
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex flex-col"
+      className="fixed inset-0 z-50 flex flex-col fondo-entra"
       style={{ background: 'rgba(0,0,0,0.92)' }}
       role="dialog"
       aria-modal="true"

@@ -166,7 +166,7 @@ ok(/getDerivedStateFromProps[\s\S]{0,200}props\.clave !== state\.clave/.test(are
 ['rangos', 'progreso', 'entrenamiento'].forEach((a) => {
   ok(new RegExp(`<AreaSegura clave="${a}"`).test(fitnessView), `El área «${a}» tiene su propio límite`);
 });
-ok(/export default function FitnessView\(props\)[\s\S]{0,300}<AreaSegura[\s\S]{0,200}<FitnessViewContenido/.test(fitnessView),
+ok(/export default function FitnessView\(props\)[\s\S]{0,2500}<AreaSegura[\s\S]{0,200}<FitnessViewContenido/.test(fitnessView),
   '…y Fitness entero tiene otro, para que un fallo de la cabecera no deje la aplicación en blanco');
 ok(/import \{ AreaSegura \} from '\.\.\/components\/areaSegura'/.test(fitnessView), '…importado, no copiado');
 

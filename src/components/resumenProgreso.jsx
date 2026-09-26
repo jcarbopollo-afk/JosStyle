@@ -291,7 +291,7 @@ export function ProgressGoalPreview({ bloque, accent, onAbrir, onVerTodo }) {
                 {/* 🚨 Sin datos NO se dibuja una barra vacía (F14, apartado 23). */}
                 {o.porcentaje !== null && (
                   <span className="block h-1.5 rounded-full overflow-hidden mt-1.5" style={{ background: hexToRgba(COLORS.border, 0.6) }} aria-hidden="true">
-                    <span className="block h-full rounded-full" style={{ width: `${o.porcentaje}%`, background: accent }} />
+                    <span className="block h-full rounded-full fit-barra" style={{ width: `${o.porcentaje}%`, background: accent }} />
                   </span>
                 )}
                 <span className="block text-[11px] mt-1" style={{ color: COLORS.textMuted }}>{o.progresoTexto}</span>

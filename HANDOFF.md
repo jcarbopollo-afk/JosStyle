@@ -2,6 +2,18 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.119.0 — FIT F37/45: microinteracciones y feedback premium):**
+> Ni un cálculo nuevo: **movimiento donde ayuda a entender qué ha pasado** —las pantallas y las
+> hojas entran, una serie marcada hace aparecer su ✓, las barras van del valor anterior al nuevo, el
+> rango actual brilla y el que sube entra— y todo vive en `index.css`, así que respeta «Reducir
+> movimiento» solo. 🚨 **Y lo que antes callaba: si un guardado de Fitness no llega a la cuenta**, la
+> pantalla de éxito lo dice con «Reintentar» y sale un aviso de error; con el guardado fallido **no se
+> celebra una subida de rango**, y al reintentar se va el error. 🔓 **Subir de rango se enseña**
+> —*«Has subido de rango · Press de banca · de Intermedio alto a Experto»*— solo si se sube de
+> verdad. Avisos nuevos: «Plan activado», «Cambios guardados», «Plantilla duplicada». 🐛 Dos
+> duraciones del catálogo de animaciones eran falsas y los servidores de prueba se quedaban vivos.
+> Lo siguiente es la **FIT F38** (UX móvil extrema e iPhone).
+
 > **📅 ACTUALIZACIÓN (v3.118.0 — FIT F36/45: integración global del sistema fitness):**
 > Ni una pantalla nueva: **se recorrieron las puertas entre pantallas de Fitness y se arreglaron las
 > que faltaban**. 🐛 **Historial → ejercicio** y **foto → entrenamiento** no estaban cableadas (sus

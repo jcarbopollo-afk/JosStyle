@@ -488,7 +488,7 @@ function BarraMuscular({ fraccion, accent, etiqueta }) {
       role="img"
       aria-label={etiqueta}
     >
-      <div className="h-full rounded-full transition-all" style={{ width: `${Math.round(fraccion * 100)}%`, background: accent }} />
+      <div className="h-full rounded-full fit-barra" style={{ width: `${Math.round(fraccion * 100)}%`, background: accent }} />
     </div>
   );
 }
@@ -644,7 +644,7 @@ export function TarjetaObjetivo({ objetivo, accent, onAbrir }) {
         {/* 🚨 Apartado 23 — sin datos NO se dibuja una barra vacía: 0 % no es «sin datos». */}
         {o.porcentaje !== null && (
           <div className="h-1.5 rounded-full overflow-hidden mt-1.5" style={{ background: hexToRgba(COLORS.border, 0.6) }} aria-hidden="true">
-            <div className="h-full rounded-full" style={{ width: `${o.porcentaje}%`, background: accent }} />
+            <div className="h-full rounded-full fit-barra" style={{ width: `${o.porcentaje}%`, background: accent }} />
           </div>
         )}
         <p className="text-[11px] mt-1.5 flex flex-wrap gap-x-2" style={{ color: COLORS.textMuted }}>
@@ -810,7 +810,7 @@ export function DetalleObjetivo({
         {o.porcentaje !== null && (
           <>
             <div className="h-2 rounded-full overflow-hidden mt-2" style={{ background: hexToRgba(COLORS.border, 0.6) }} role="img" aria-label={`${o.porcentaje} % del objetivo`}>
-              <div className="h-full rounded-full" style={{ width: `${o.porcentaje}%`, background: accent }} />
+              <div className="h-full rounded-full fit-barra" style={{ width: `${o.porcentaje}%`, background: accent }} />
             </div>
             {/* Apartado 6 — el porcentaje es actual / objetivo, y se dice. */}
             <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>{o.porcentaje} % del objetivo: tu mejor resultado entre lo que te propusiste.</p>

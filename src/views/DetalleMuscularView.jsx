@@ -63,7 +63,7 @@ function Barra({ fraccion, accent, etiqueta }) {
       role="img"
       aria-label={`${etiqueta}: ${pct} %`}
     >
-      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: accent }} />
+      <div className="h-full rounded-full fit-barra" style={{ width: `${pct}%`, background: accent }} />
     </div>
   );
 }

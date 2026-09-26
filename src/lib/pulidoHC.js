@@ -146,10 +146,13 @@ export function sinPalabrasTecnicas(texto) {
 export const MAX_ANIMACION_MS = 700;
 
 export const ANIMACIONES_HC = [
-  { id: 'entrada_pantalla', apartado: 14, nombre: 'Cambiar de vista', ms: 420, clase: 'module-enter' },
+  /* 🐛 FIT F37 — decía 420 y en `index.css` son 340 desde la Fase N2 (y el
+     cambio de mes decía 260 siendo 220): un catálogo que declara otra
+     duración que la escrita miente, y ahora una prueba compara las dos. */
+  { id: 'entrada_pantalla', apartado: 14, nombre: 'Cambiar de vista', ms: 340, clase: 'module-enter' },
   { id: 'completar', apartado: 16, nombre: 'Completar una tarea', ms: 300, clase: 'tarea-hecha' },
   { id: 'aviso', apartado: 17, nombre: 'El aviso de "añadido"', ms: 260, clase: 'aviso-entra' },
-  { id: 'cambio_mes', apartado: 19, nombre: 'Cambiar de mes', ms: 260, clase: 'calendar-month-grid' },
+  { id: 'cambio_mes', apartado: 19, nombre: 'Cambiar de mes', ms: 220, clase: 'calendar-month-grid' },
   { id: 'esqueleto', apartado: 23, nombre: 'El latido del esqueleto', ms: 1400, clase: 'esqueleto', repetida: true },
   /* E3 F24 (PR F2) — las dos de Hábitos. Entran aquí y no en un catálogo aparte
      porque la prueba de la E3 F14 recorre ESTA lista comprobando que cada clase
@@ -168,7 +171,21 @@ export const ANIMACIONES_HC = [
      gamificación infantil"*, así que es una sola marca que entra. Y entra aquí
      por lo de siempre: la prueba de la E3 F14 recorre ESTA lista comprobando
      que cada clase existe de verdad en el CSS. */
-  { id: 'entreno_guardado', apartado: 16, nombre: 'El entrenamiento guardado', ms: 420, clase: 'exito-entra' },
+  { id: 'entreno_guardado', apartado: 16, nombre: 'El entrenamiento guardado', ms: 280, clase: 'exito-entra', fitness: true, tipo: 'tarjeta' },
+  /* FIT F37 — las microinteracciones de Fitness. Entran en ESTA lista por lo
+     de siempre (la prueba de la E3 F14 comprueba que cada clase existe), y con
+     `tipo`: la F37 mide cada una contra el rango de duración de su clase
+     (`movimientoFitness.js`). */
+  { id: 'fit_entra', apartado: 4, nombre: 'Una pantalla de Fitness aparece', ms: 220, clase: 'fit-entra', fitness: true, tipo: 'pantalla' },
+  { id: 'fit_pulsar', apartado: 5, nombre: 'Pulsar una tarjeta', ms: 140, clase: 'fit-pulsable', fitness: true, tipo: 'micro' },
+  { id: 'fit_contenido', apartado: 7, nombre: 'Pulsar algo destructivo', ms: 140, clase: 'fit-contenido', fitness: true, tipo: 'micro' },
+  { id: 'fit_barra', apartado: 15, nombre: 'Una barra de progreso que avanza', ms: 280, clase: 'fit-barra', fitness: true, tipo: 'tarjeta' },
+  { id: 'fit_serie', apartado: 8, nombre: 'Marcar una serie', ms: 160, clase: 'fit-serie-hecha', fitness: true, tipo: 'micro' },
+  { id: 'fit_miniatura', apartado: 10, nombre: 'Cambiar de ejercicio', ms: 200, clase: 'fit-miniatura', fitness: true, tipo: 'micro' },
+  { id: 'fit_descanso', apartado: 9, nombre: 'Termina el descanso', ms: 300, clase: 'fit-descanso-fin', fitness: true, tipo: 'tarjeta' },
+  { id: 'fit_rango_sube', apartado: 14, nombre: 'Subir de rango', ms: 300, clase: 'fit-rango-sube', fitness: true, tipo: 'tarjeta' },
+  { id: 'fondo_entra', apartado: 22, nombre: 'El fondo de una hoja se oscurece', ms: 180, clase: 'fondo-entra', fitness: true, tipo: 'pantalla' },
+  { id: 'hoja_entra', apartado: 22, nombre: 'Una hoja entra desde abajo', ms: 240, clase: 'hoja-entra', fitness: true, tipo: 'pantalla' },
 ];
 
 export const animacionHC = (id) => ANIMACIONES_HC.find((a) => a.id === id) || null;

@@ -543,5 +543,123 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
   to { opacity: 1; transform: scale(1); }
 }
 .exito-entra {
-  animation: exitoEntra 420ms var(--ease-premium) both;
+  /* 🔓 FIT F37, apartado 47 — de 420 ms a 280: una marca de éxito es una
+     microinteracción, y el apartado 2 las quiere cortas. Y `backwards`, como
+     todas las de Fitness (ver el bloque de la F37, al final). */
+  animation: exitoEntra 280ms var(--ease-premium) backwards;
 }
+
+/* ===========================================================================
+   FIT F37 — Microinteracciones de Fitness
+   ===========================================================================
+   Una capa pequeña, no un framework (apartado 48): clases que se ponen donde
+   hace falta, con la curva de siempre (`--ease-premium`, apartado 3) y las
+   duraciones del apartado 2 —microinteracción 120-220 ms, pantalla 180-300,
+   tarjeta 200-300—. Están declaradas en `ANIMACIONES_HC` (pulidoHC.js) y una
+   prueba lee ESTE archivo para comprobar que la duración escrita aquí es la
+   declarada allí.
+
+   🚨 Todas terminan con `backwards`, no con `both`: con `both` se queda puesto
+   el `transform` del último fotograma, y un `transform` distinto de `none`
+   convierte el elemento en el bloque contenedor de sus hijos `fixed` (la nota
+   de `.module-enter`, más arriba). `backwards` aplica el primer fotograma
+   mientras espera y no deja nada al terminar.
+
+   ⚠️ Y respetan «Reducir movimiento» solas: las dos reglas de arriba
+   (`prefers-reduced-motion` y `data-reducir-movimiento`) llevan cualquier
+   animación y transición de la aplicación a 0,01 ms (apartado 40). */
+
+/* Apartado 4 — una pantalla aparece: opacidad y seis píxeles hacia arriba. */
+@keyframes fitEntra {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.fit-entra {
+  animation: fitEntra 220ms var(--ease-premium) backwards;
+}
+
+/* Apartado 5 — una tarjeta que se pulsa se encoge un pelo (0,98-0,99) y
+   vuelve: nunca parece que cambie de tamaño. ⚠️ Es el escalón de las FILAS de
+   la escalera de `ui.jsx` (EH F50: 0,96 / 0,95 / 0,98 / 0,90, deliberada), no
+   un valor nuevo; lo que aporta esta clase es la curva de la aplicación, que
+   la `transition-transform` de Tailwind no usa. */
+.fit-pulsable {
+  transition: transform 140ms var(--ease-premium);
+}
+.fit-pulsable:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Apartado 7 — lo destructivo responde, pero más contenido: sin escala. */
+.fit-contenido {
+  transition: opacity 140ms var(--ease-premium);
+}
+.fit-contenido:active:not(:disabled) {
+  opacity: 0.72;
+}
+
+/* Apartados 15 y 16 — una barra de progreso va DEL VALOR ANTERIOR AL NUEVO.
+   Una transición de CSS hace exactamente eso, y al montar no se dispara: no
+   hay un «desde cero» cada vez que se abre la pantalla. Solo `width`: un
+   `transition-all` animaría también lo que no debe moverse. */
+.fit-barra {
+  transition: width 280ms var(--ease-premium);
+}
+
+/* Apartado 8 — la marca de una serie hecha aparece, sin confeti. */
+@keyframes fitSerieHecha {
+  from { opacity: 0.35; transform: scale(0.6); }
+  to { opacity: 1; transform: none; }
+}
+.fit-serie-hecha {
+  animation: fitSerieHecha 160ms var(--ease-premium) backwards;
+}
+
+/* Apartado 10 — la miniatura del ejercicio actual crece y la anterior se
+   encoge suavemente, en vez de saltar. */
+.fit-miniatura {
+  transition: width 200ms var(--ease-premium), padding 200ms var(--ease-premium), background-color 200ms var(--ease-premium), border-color 200ms var(--ease-premium);
+}
+
+/* Apartado 9 — cuando el descanso termina, un solo pulso alrededor de la barra. */
+@keyframes fitDescansoFin {
+  from { box-shadow: 0 0 0 0 var(--fit-brillo, transparent); }
+  to { box-shadow: 0 0 0 12px transparent; }
+}
+.fit-descanso-fin {
+  animation: fitDescansoFin 300ms var(--ease-premium) backwards;
+}
+
+/* Apartado 13 — el rango actual destaca con un brillo sutil. ⚠️ El hexágono
+   se recorta con `clip-path`, que se aplica DESPUÉS del filtro: un
+   `drop-shadow` en el propio hexágono se recorta con él y no se ve. Por eso el
+   brillo va en un envoltorio (`RankBadge` con `destacado`). */
+.fit-rango-brillo {
+  filter: drop-shadow(0 0 10px var(--fit-brillo, transparent));
+}
+
+/* Apartado 14 — subir de rango: una entrada breve del hexágono nuevo. Ni
+   confeti ni explosiones; el texto dice qué ha pasado (apartado 41). */
+@keyframes fitRangoSube {
+  0% { opacity: 0.5; transform: scale(0.9); }
+  60% { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: none; }
+}
+.fit-rango-sube {
+  animation: fitRangoSube 300ms var(--ease-premium) backwards;
+}
+
+/* Apartado 22 — las hojas y los diálogos de Fitness entran desde abajo y el
+   fondo se oscurece. Reutiliza los fotogramas de las hojas del Calendario
+   (`calendarSheetIn`) en vez de escribir otros iguales. */
+@keyframes fondoEntra {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fondo-entra {
+  animation: fondoEntra 180ms var(--ease-premium) backwards;
+}
+.hoja-entra {
+  animation: calendarSheetIn 240ms var(--ease-premium) backwards;
+}
+

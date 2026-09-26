@@ -475,7 +475,7 @@ export function ProgressComparison({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex flex-col"
+      className="fixed inset-0 z-50 flex flex-col fondo-entra"
       style={{ background: COLORS.bg }}
       role="dialog"
       aria-modal="true"

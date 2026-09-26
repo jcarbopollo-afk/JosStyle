@@ -47,7 +47,7 @@ export function GoalProgress({ progreso, accent, distancia = '' }) {
           role="img"
           aria-label={`Progreso del objetivo: ${porcentaje} %`}
         >
-          <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent }} />
+          <div className="h-full rounded-full fit-barra" style={{ width: `${porcentaje}%`, background: accent }} />
         </div>
       )}
 
