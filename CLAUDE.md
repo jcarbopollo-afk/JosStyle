@@ -184,15 +184,13 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **20 384 pruebas unitarias** con Node repartidas en **191 suites** (5 de ellas de auditoría),
-**3396 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2444
-comprobaciones sobre la aplicación de verdad en Chromium** — **26 235 comprobaciones**.
+Vite, **20 529 pruebas unitarias** con Node repartidas en **192 suites** (5 de ellas de auditoría),
+**3464 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2475
+comprobaciones sobre la aplicación de verdad en Chromium** — **26 479 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.113.0, una a una**, con la suma del
-propio log. ⚠️ Y esa pasada tuvo **un rojo en el recorrido**, que no era de la aplicación: la
-comprobación de la F28 que prohibía «esta semana» miraba la página entera, y la F31 puso ahí su
-bloque «Esta semana». Se acotó a lo que protegía y **se repitió el recorrido**, que era lo único
-que había cambiado: 2444 en verde. Las de Node, render e invariantes son de la misma pasada. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.114.0, una a una**, con la suma del
+propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.113.0 es exactamente lo que
+añadió la F32: +145 de Node en su suite, +68 de renderizado y +31 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.

@@ -65,6 +65,8 @@ corrupto, extra, dos sesiones y parcial) y el arreglo de la F5, con su comprobac
 que **recorre la semana con sus flechas, abre una sesión en el detalle del Historial, cambia de plan
 desde la biblioteca y recarga** para comprobar que la semana pasada dice exactamente lo mismo. Sus
 etiquetas esperadas se calculan del escenario y de hoy: no depende del día en que se ejecute.
+Cifras de la pasada verde (`═══ TODO CORRECTO ═══`): **20 529** de Node en **192 suites**, **3464**
+de renderizado (+68), **11** invariantes y **2475** en Chromium (+31) — **26 479**.
 
 ## v3.113.0 — FIT F31/45: la consistencia y la actividad de entrenamiento
 
