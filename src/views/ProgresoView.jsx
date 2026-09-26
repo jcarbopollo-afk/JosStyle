@@ -965,6 +965,10 @@ export default function ProgresoView({
   /* FIT F18, apartado 11 — y el ejercicio, para no crear otra pantalla de
      progreso: se abre ESTA, la de la F12. */
   focoEjercicio = null, onFocoEjercicioConsumido = null,
+  /* 🔓 FIT F33, apartado 21 — «Crear uno nuevo» al sustituir un ejercicio con
+     objetivo: llega el ejercicio nuevo y se abre el formulario de la F14 con él
+     puesto. Se consume igual que `focoEjercicio`. */
+  focoObjetivo = null, onFocoObjetivoConsumido = null,
 }) {
   const [seccion, setSeccion] = useState('resumen');
   /* FIT F28, apartado 7 — las dos fotos que llegan ya elegidas desde el
@@ -1054,6 +1058,14 @@ export default function ProgresoView({
     if (onFocoEjercicioConsumido) onFocoEjercicioConsumido();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focoEjercicio]);
+
+  useEffect(() => {
+    if (!focoObjetivo) return;
+    setSeccion('objetivos');
+    setFormulario({ modo: 'crear', exerciseId: focoObjetivo, eligiendo: false });
+    if (onFocoObjetivoConsumido) onFocoObjetivoConsumido();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focoObjetivo]);
 
   /* Apartado 30 — «Ver entrenamiento» es la pantalla de la F10. */
   if (vista && vista.tipo === 'sesion') {

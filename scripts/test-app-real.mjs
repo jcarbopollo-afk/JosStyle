@@ -6927,8 +6927,12 @@ const planAntes_fit7 = JSON.stringify(
   (guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {}).planActivo,
 );
 ok(await pulsar('Reemplazar'), 'se abre el selector de ejercicios (apartado 26)');
-const selector_fit7 = await esperarTexto(/Cambios r[aá]pidos|Buscar/i);
-ok(/Cambios r[aá]pidos/i.test(selector_fit7) || /Ejercicios/i.test(selector_fit7),
+/* 🔓 FIT F33 — el selector es ya la pantalla de sustitución: «Cambios
+   rápidos» se llama ahora por sus niveles (Muy similar, Similar, Alternativa)
+   y la búsqueda a mano está a un toque. Lo que protege esta comprobación —que
+   los compatibles salgan primero— sigue en pie. */
+const selector_fit7 = await esperarTexto(/Reemplazar ejercicio/i);
+ok(/Reemplazar ejercicio/i.test(selector_fit7) && /Muy similar|Similar|Alternativa/i.test(selector_fit7),
   '🚨 FIT F7 — con sustitutos compatibles primero (apartado 26)');
 const sustituto_fit7 = await page.evaluate(() => {
   const b = [...document.querySelectorAll('button[aria-label]')]
@@ -6936,14 +6940,20 @@ const sustituto_fit7 = await page.evaluate(() => {
   return b ? b.getAttribute('aria-label') : '';
 });
 if (sustituto_fit7) {
-  ok(await pulsar(sustituto_fit7), `se elige un sustituto (${sustituto_fit7})`);
+  ok(await pulsar(sustituto_fit7), `se elige un sustituto (${sustituto_fit7.split('.')[0]})`);
   await page.waitForTimeout(600);
+  /* Si hay algo que decir (una medida que cambia, un peso que no se copia),
+     la F33 pregunta antes; se confirma, que es lo que se está probando aquí. */
+  if (/Reemplazar ejercicio por/i.test(await ver())) {
+    ok(await pulsar('Reemplazar'), '…y se confirma el cambio (F33)');
+    await page.waitForTimeout(600);
+  }
   const trasSustituir_fit7 = await ver();
   ok(/En lugar de/i.test(trasSustituir_fit7),
     '🚨 FIT F7 — y se DICE de cuál venía, «solo en este entrenamiento» (apartado 26)');
   ok(/solo en este entrenamiento/i.test(trasSustituir_fit7), '…con esas palabras');
 } else {
-  ok(await pulsar('Volver a Entrenamiento') || await pulsar('Entrenamiento'),
+  ok(await pulsar('Cerrar la sustitución'),
     'no había sustituto compatible: se vuelve');
 }
 const planDespues_fit7 = JSON.stringify(
@@ -7161,7 +7171,7 @@ ok(sesion_fit9()?.iniciadaEn === iniciada_fit9, '…y cambiar de ejercicio tampo
 /* Apartado 22 — reemplazar un ejercicio CON datos pregunta. */
 const exerciseAntes_fit9 = ejActual_fit9()?.exerciseId;
 ok(await pulsar('Reemplazar'), 'FIT F9 — se intenta reemplazar el ejercicio que tiene datos (apartado 22)');
-await esperarTexto(/Cambios r[aá]pidos|Buscar/i);
+await esperarTexto(/Reemplazar ejercicio/i);
 ok(await pulsarEtiqueta_fit9('Cambiar por '), '…se elige un sustituto');
 const confirmar_fit9 = await esperarTexto(/Reemplazar ejercicio por/i);
 ok(/Reemplazar ejercicio por/i.test(confirmar_fit9) && /Ya has registrado datos/i.test(confirmar_fit9),
@@ -7170,7 +7180,9 @@ ok(await pulsar('Cancelar'), '…se cancela');
 await page.waitForTimeout(500);
 ok(ejActual_fit9()?.exerciseId === exerciseAntes_fit9,
   '🚨 …y el ejercicio sigue siendo el mismo, con sus datos: no se perdió nada por accidente');
-ok(await pulsar('Volver a Entrenamiento') || await pulsar('Entrenamiento'), '…y se vuelve al entrenamiento');
+/* 🔓 FIT F33 — Cancelar vuelve a la lista de alternativas; salir de ella es
+   la ✕ de la pantalla de sustitución. */
+ok(await pulsar('Cerrar la sustitución'), '…y se vuelve al entrenamiento');
 const final_fit9 = await esperarTexto(/Ejercicio \d+ de/i);
 ok(/Ejercicio 1 de/i.test(final_fit9), '…al mismo ejercicio');
 
@@ -9604,6 +9616,251 @@ ok(!/\bXP\b|puntuaci[oó]n|recompensa|\d+\s*% (de )?(cumplimiento|adherencia)/i.
   '🚨 FIT F32 — ni XP, ni puntuación, ni un porcentaje de adherencia (apartado 42)');
 
 almacen.fitness = fitnessDeAntes_fit32;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F33 — la sustitución avanzada de ejercicios (Entrega 4 · 33/45)
+   ══════════════════════════════════════════════════════════════════════════
+
+   El criterio de finalización: *"REEMPLAZAR ↓ VER ALTERNATIVAS COMPATIBLES ↓
+   ENTENDER POR QUÉ ↓ ELEGIR ↓ CONSERVAR CONFIGURACIÓN CUANDO SEA VÁLIDA ↓
+   ADAPTARLA CUANDO NO LO SEA"*, y que el cambio **no rompa** planes,
+   plantillas, historial, progreso, objetivos ni rangos.
+
+   Lo que aquí se mide y no puede medir Node: que en un entrenamiento de CASA la
+   máquina no se proponga sola pero se pueda pedir, que «No tengo» quite de
+   verdad lo que no puede hacer, que la confirmación diga qué se conserva y qué
+   pasa con su objetivo, que al guardar solo cambie la sesión en curso, y que en
+   el constructor la hoja se abra encima y cambie ESA línea de ESA plantilla.
+
+   ⚠️ El escenario se siembra entero y se limpia al final: una sesión en curso
+   en casa (press de banca a 80 kg y una plancha), una plantilla suya, un
+   objetivo del press de banca y un press de banca completado de antes. */
+console.log('\n── FIT F33 · Sustitución avanzada de ejercicios ──');
+
+const fitnessDeAntes_fit33 = almacen.fitness;
+const hoy_fit33 = hoy_fit31;
+const serieViva_fit33 = (id, modo, plan) => ({
+  id, origen: 'planificada', estado: 'pendiente', modo,
+  plan: { reps: null, repsHasta: null, duracion: null, peso: null, ...plan },
+  hecho: { reps: null, duracion: null, peso: null },
+});
+const lineaPl_fit33 = (id, exerciseId, extra = {}) => ({
+  id, exerciseId, orden: 0, series: 3, modo: 'reps', repeticiones: 6, repsHasta: null, duracion: null,
+  peso: 80, tipoCarga: 'externo', descanso: 120, notas: '', bloqueId: null, config: {}, ...extra,
+});
+const plantilla_fit33 = {
+  id: 'pl-f33', nombre: 'Pecho F33', descripcion: '', entorno: 'casa', duracion: 30,
+  ejercicios: [
+    lineaPl_fit33('pl-f33-l1', 'press-banca-barra'),
+    lineaPl_fit33('pl-f33-l2', 'plancha-frontal', { orden: 1, modo: 'tiempo', repeticiones: null, duracion: 30, peso: null, tipoCarga: 'corporal', descanso: 60 }),
+  ],
+  meta: { entornos: ['casa'], bloques: [] }, creadoEn: hoy_fit33, editadoEn: hoy_fit33,
+};
+const otraPlantilla_fit33 = {
+  id: 'pl-f33-otra', nombre: 'Espalda F33', descripcion: '', entorno: 'gym', duracion: 20,
+  ejercicios: [lineaPl_fit33('pl-f33-o1', 'remo-barra', { repeticiones: 10, peso: 50 })],
+  meta: { entornos: ['gym'], bloques: [] }, creadoEn: hoy_fit33, editadoEn: hoy_fit33,
+};
+const antes_fit33 = masDias_fit31(hoy_fit33, -3);
+const inicioAntes_fit33 = new Date(`${antes_fit33}T18:00:00`).getTime();
+const completada_fit33 = {
+  id: 'f33-antes', nombre: 'Pecho de antes F33', fecha: antes_fit33, estado: 'completada', iniciadaEn: inicioAntes_fit33,
+  terminadaEn: inicioAntes_fit33 + 40 * 60000, guardadaEn: inicioAntes_fit33 + 41 * 60000, pausadoMs: 0, actual: 0,
+  visibilidad: 'privado', notas: '', entorno: 'gym',
+  origen: { tipo: 'plantilla', id: null, ejercicios: [{ id: 'f33-antes-e', exerciseId: 'press-banca-barra', orden: 0, modo: 'reps', notas: '', descanso: 90, sustituyeA: null, linea: { series: 1, tipoCarga: 'externo' }, series: [{ ...serieViva_fit33('f33-antes-s', 'reps', { reps: 8, peso: 60 }), estado: 'hecha', hecho: { reps: 8, peso: 60, duracion: null } }] }] },
+};
+const vivo_fit33 = {
+  id: 'f33-vivo', planId: 'pl-f33', nombre: 'Pecho F33', fecha: hoy_fit33, estado: 'en_curso',
+  iniciadaEn: Date.now() - 5 * 60000, terminadaEn: null, guardadaEn: null, pausadoMs: 0, actual: 0,
+  visibilidad: 'privado', notas: '', entorno: 'casa',
+  origen: {
+    tipo: 'plantilla', id: 'pl-f33',
+    ejercicios: [
+      { id: 'f33-e1', exerciseId: 'press-banca-barra', orden: 0, modo: 'reps', notas: 'Codos cerrados', descanso: 120, sustituyeA: null,
+        linea: { series: 3, repeticiones: 6, peso: 80, tipoCarga: 'externo' },
+        series: [1, 2, 3].map((n) => serieViva_fit33(`f33-s${n}`, 'reps', { reps: 6, peso: 80 })) },
+      { id: 'f33-e2', exerciseId: 'plancha-frontal', orden: 1, modo: 'tiempo', notas: '', descanso: 60, sustituyeA: null,
+        linea: { series: 3, duracion: 30, tipoCarga: 'corporal' },
+        series: [1, 2, 3].map((n) => serieViva_fit33(`f33-t${n}`, 'tiempo', { duracion: 30 })) },
+    ],
+  },
+};
+const objetivo_fit33 = {
+  id: 'obj-f33', exerciseId: 'press-banca-barra', tipo: 'peso', valor: 90, unidad: 'kg', creadoEn: Date.now() - 86400000,
+  actualizadoEn: null, fechaObjetivo: '', estado: 'activo', nota: '',
+};
+almacen.fitness = {
+  ...(fitnessDeAntes_fit33 || {}),
+  sesiones: [completada_fit33, vivo_fit33],
+  plantillas: [plantilla_fit33, otraPlantilla_fit33],
+  objetivos: [objetivo_fit33],
+  planActivo: null,
+  planesAnteriores: [],
+};
+const ultimoFitness_fit33 = () => guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {};
+const vivoGuardado_fit33 = () => (ultimoFitness_fit33().sesiones || []).find((x) => x.id === 'f33-vivo') || null;
+const etiquetasCambiar_fit33 = () => page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Cambiar por "]')]
+  .map((b) => b.getAttribute('aria-label')));
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F33 — se entra en Fitness, con un entrenamiento en curso en casa');
+await esperarTexto(/Continuar entrenamiento/i);
+ok(await pulsar('Continuar entrenamiento'), '…y se continúa');
+await esperarTexto(/Ejercicio 1 de/i);
+
+/* 1 · VER ALTERNATIVAS COMPATIBLES Y ENTENDER POR QUÉ (apartados 2, 6, 8 y 9). */
+ok(await pulsar('Reemplazar'), 'FIT F33 — «Reemplazar» el press de banca');
+const panel_fit33 = await esperarTexto(/Reemplazar ejercicio/i);
+ok(/muy similar/i.test(panel_fit33) && /alternativa/i.test(panel_fit33),
+  '🚨 FIT F33 — las alternativas salen por NIVELES: muy similar, similar, alternativa (apartados 2 y 8)');
+ok(/Solo cambia este entrenamiento/i.test(panel_fit33),
+  '…y dice que solo cambia este entrenamiento, no el plan ni la plantilla (apartado 14)');
+ok(/Buscar otro ejercicio/i.test(panel_fit33), '…con la búsqueda a mano a la vista (apartados 25 y 38)');
+const cartas_fit33 = await etiquetasCambiar_fit33();
+const mancuernas_fit33 = cartas_fit33.find((e) => e.startsWith('Cambiar por Press de banca · Con mancuernas.')) || '';
+ok(/\. Muy similar: .+/.test(mancuernas_fit33),
+  `🚨 FIT F33 — cada tarjeta dice acción, nombre, compatibilidad y motivo (apartado 37): «${mancuernas_fit33}»`);
+ok(cartas_fit33.some((e) => /^Cambiar por Flexiones · Clásicas\. Alternativa: /.test(e)),
+  '🚨 …las flexiones, como ALTERNATIVA (apartado 5, su ejemplo)');
+ok(!cartas_fit33.some((e) => /En máquina/.test(e)),
+  '🚨 FIT F33 — en un entrenamiento de CASA no se propone la máquina de gimnasio (apartado 6, literal)');
+ok(!/\d+\s*%/.test(panel_fit33), '🚨 …y ningún «87 % compatible»: la puntuación es interna (apartado 33)');
+ok(!/exactamente igual|id[eé]ntic/i.test(panel_fit33), '…ni un «es exactamente igual» (apartado 10)');
+ok(await pulsar('Ver también las poco recomendables', 6000) || await pulsarEtiqueta_fit9('Ver también'), 'FIT F33 — se piden también las poco recomendables');
+await page.waitForTimeout(500);
+const conPoco_fit33 = await etiquetasCambiar_fit33();
+const maquina_fit33 = conPoco_fit33.find((e) => /En máquina/.test(e)) || '';
+ok(/Poco recomendable: En casa no se puede hacer\./.test(maquina_fit33),
+  `🚨 …y ahí sí está la máquina, diciendo por qué no se le propone: «${maquina_fit33}»`);
+ok(await pulsar('Ocultar las poco recomendables'), '…y se vuelven a ocultar');
+await page.waitForTimeout(400);
+
+/* 2 · FILTROS: «No tengo» y «Solo disponible» (apartados 7 y 26). */
+ok(await pulsar('Filtros'), 'FIT F33 — se abren los filtros');
+await esperarTexto(/No tengo/i);
+ok(/No tengo/i.test(await ver()), '…con «No tengo» y el material de las propuestas');
+ok(await pulsar('No tengo mancuernas'), '…se marca «No tengo mancuernas»');
+await page.waitForTimeout(500);
+ok(!(await etiquetasCambiar_fit33()).some((e) => e.startsWith('Cambiar por Press de banca · Con mancuernas.')),
+  '🚨 FIT F33 — y el press con mancuernas deja de proponerse: no lo puede hacer (apartado 7)');
+ok(await pulsar('No tengo mancuernas'), '…se desmarca');
+await page.waitForTimeout(500);
+ok((await etiquetasCambiar_fit33()).some((e) => e.startsWith('Cambiar por Press de banca · Con mancuernas.')), '…y vuelve');
+const ancho_fit33 = await page.evaluate(() => ({ a: document.documentElement.scrollWidth, v: window.innerWidth }));
+ok(ancho_fit33.a <= ancho_fit33.v + 1,
+  `🚨 FIT F33 — a 375 px los filtros se desplazan dentro, sin arrastrar la página de lado (${ancho_fit33.a} vs ${ancho_fit33.v}, apartado 38)`);
+
+/* 3 · ELEGIR Y CONFIRMAR: qué se conserva y su objetivo (apartados 11 y 21). */
+const escriturasAntes_fit33 = guardado.filter((g) => g && g.key === 'fitness').length;
+ok(await pulsar(mancuernas_fit33), 'FIT F33 — se elige el press con mancuernas');
+const confirmar_fit33 = await esperarTexto(/Reemplazar ejercicio por/i);
+ok(/Este objetivo pertenece al ejercicio original\./.test(confirmar_fit33),
+  '🚨 FIT F33 — hay un objetivo en el press de banca, y lo dice con la frase del apartado 21');
+const opciones_fit33 = await page.evaluate(() => [...document.querySelectorAll('[role="radio"]')]
+  .map((b) => `${b.innerText.trim()}:${b.getAttribute('aria-checked')}`));
+ok(opciones_fit33.join('|') === 'Mantener objetivo:true|Cancelar objetivo:false|Crear uno nuevo:false',
+  `🚨 …con las tres opciones, y «Mantener» elegida por defecto (${opciones_fit33.join(' · ')})`);
+ok(/Se conserva: 3 series · 120 s de descanso · la nota · 6 repeticiones/.test(confirmar_fit33),
+  '🚨 …y dice qué se conserva: series, descanso, nota y repeticiones (apartado 11)');
+ok(/El peso no se copia: era de otro ejercicio\./.test(confirmar_fit33), '…y que el peso no viaja');
+ok(guardado.filter((g) => g && g.key === 'fitness').length === escriturasAntes_fit33,
+  '⚠️ …y hasta confirmar NO se ha escrito nada');
+ok(await pulsar('Reemplazar'), 'FIT F33 — se confirma');
+await esperarTexto(/En lugar de/i);
+const tras_fit33 = await ver();
+ok(/En lugar de Press de banca · solo en este entrenamiento/i.test(tras_fit33),
+  '🚨 FIT F33 — la sesión dice de cuál venía, «solo en este entrenamiento» (apartado 14)');
+const e1_fit33 = (vivoGuardado_fit33()?.origen?.ejercicios || [])[0] || {};
+ok(e1_fit33.exerciseId === 'press-banca-mancuernas' && e1_fit33.sustituyeA === 'press-banca-barra'
+  && e1_fit33.series.length === 3 && e1_fit33.descanso === 120 && e1_fit33.notas === 'Codos cerrados',
+'🚨 …y lo guardado: el ejercicio nuevo, de cuál venía, sus 3 series, su descanso y su nota');
+ok(e1_fit33.series.every((x) => x.plan.peso === null && x.plan.reps === 6),
+  '🚨 …con las repeticiones planificadas y SIN los 80 kg de la barra');
+const f_fit33 = ultimoFitness_fit33();
+ok(JSON.stringify((f_fit33.plantillas || []).find((p) => p.id === 'pl-f33')?.ejercicios?.map((l) => l.exerciseId)) === JSON.stringify(['press-banca-barra', 'plancha-frontal']),
+  '🚨 FIT F33 — la PLANTILLA no se ha tocado: sigue diciendo press de banca (apartado 14)');
+ok((f_fit33.objetivos || [])[0]?.exerciseId === 'press-banca-barra' && (f_fit33.objetivos || [])[0]?.estado === 'activo',
+  '🚨 …el OBJETIVO sigue en el ejercicio original, activo (apartado 21, por defecto)');
+ok(JSON.stringify((f_fit33.sesiones || []).find((x) => x.id === 'f33-antes')) === JSON.stringify(completada_fit33),
+  '🚨 …y la sesión de antes, INTACTA: el historial no se reescribe (apartado 18)');
+
+/* 4 · ADAPTAR CUANDO NO ES VÁLIDA: segundos → repeticiones (apartados 12 y 13). */
+ok(await pulsarEtiqueta_fit9('Ejercicio 2:'), 'FIT F33 — se pasa a la plancha, por el carrusel');
+await esperarTexto(/Ejercicio 2 de/i);
+ok(await pulsar('Reemplazar'), '…y se reemplaza');
+await esperarTexto(/Reemplazar ejercicio/i);
+const crunch_fit33 = (await etiquetasCambiar_fit33()).find((e) => e.startsWith('Cambiar por Encogimiento abdominal')) || '';
+ok(!!crunch_fit33, `…por un encogimiento abdominal (${crunch_fit33.split('.')[1] || ''})`);
+ok(await pulsar(crunch_fit33), '…que se mide en repeticiones');
+const adapta_fit33 = await esperarTexto(/Reemplazar ejercicio por/i);
+ok(/se mide en repeticiones: el tiempo no se ha copiado/i.test(adapta_fit33),
+  '🚨 FIT F33 — y AVISA: los 30 s no pasan a ser «30 repeticiones» (apartados 12 y 13)');
+ok(await pulsar('Reemplazar'), '…se confirma');
+await page.waitForTimeout(700);
+const e2_fit33 = (vivoGuardado_fit33()?.origen?.ejercicios || [])[1] || {};
+ok(e2_fit33.exerciseId === 'crunch' && e2_fit33.modo === 'reps',
+  '🐛 FIT F33 — y la tabla pasa a REPETICIONES (antes se quedaba midiendo segundos)');
+
+/* 5 · BUSCAR A MANO (apartado 25). */
+ok(await pulsar('Reemplazar'), 'FIT F33 — otra vez «Reemplazar»');
+await esperarTexto(/Buscar otro ejercicio/i);
+ok(await pulsar('Buscar otro ejercicio'), '…«Buscar otro ejercicio»');
+const buscador_fit33 = await esperarTexto(/Volver a Reemplazar/i);
+ok(/Volver a Reemplazar/i.test(buscador_fit33) && (await page.evaluate(() => document.querySelectorAll('button[aria-label^="Cambiar por "]').length)) > 20,
+  '🚨 FIT F33 — abre el catálogo entero de la F2 para elegir cualquiera: control total (apartado 25)');
+ok((await page.evaluate(() => document.querySelectorAll('button[aria-label^="Añadir "]').length)) === 0,
+  '…y sus tarjetas dicen «Cambiar por», no «Añadir»: elegir aquí sustituye');
+ok(await pulsar('Volver a Reemplazar'), '…y se vuelve a las alternativas');
+await esperarTexto(/Reemplazar ejercicio/i);
+ok(await pulsar('Cerrar la sustitución'), '…y se cierra sin cambiar nada');
+await esperarTexto(/Ejercicio \d+ de/i);
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), 'FIT F33 — se sale del entrenamiento (queda en curso)');
+await page.waitForTimeout(600);
+
+/* 6 · EN EL CONSTRUCTOR: la hoja, y cambia ESA línea de ESA plantilla (15 y 16). */
+ok(await pulsar('Ver Pecho F33'), 'FIT F33 — se abre la plantilla «Pecho F33»');
+await esperarTexto(/Editar/i);
+ok(await pulsar('Editar'), '…«Editar»: el constructor con la plantilla dentro');
+await esperarTexto(/A[ñn]adir ejercicio/i);
+ok(await pulsar('Configurar'), '…se configura el press de banca');
+await esperarTexto(/Reemplazar ejercicio/i);
+ok(await pulsar('Reemplazar ejercicio'), '…«Reemplazar ejercicio»');
+await page.waitForTimeout(600);
+const hoja_fit33 = await page.evaluate(() => {
+  const d = [...document.querySelectorAll('[role="dialog"]')].pop();
+  return d ? { etiqueta: d.getAttribute('aria-label'), texto: d.innerText, enBody: d.parentElement === document.body } : null;
+});
+ok(hoja_fit33 && hoja_fit33.etiqueta === 'Reemplazar ejercicio' && hoja_fit33.enBody,
+  '🚨 FIT F33 — se abre la hoja, en un portal sobre el body (regla 3, apartado 38)');
+ok(hoja_fit33 && /El ejercicio del catálogo no se toca/i.test(hoja_fit33.texto) && !/En máquina/.test(hoja_fit33.texto),
+  '…que dice que cambia el borrador y no el catálogo, y que en casa no propone la máquina');
+const flexion_fit33 = await page.evaluate(() => {
+  const d = [...document.querySelectorAll('[role="dialog"]')].pop();
+  const b = d && [...d.querySelectorAll('button[aria-label^="Cambiar por Flexiones · Clásicas"]')][0];
+  return b ? b.getAttribute('aria-label') : '';
+});
+ok(await pulsar(flexion_fit33), 'FIT F33 — se eligen las flexiones');
+await esperarTexto(/Reemplazar ejercicio por Flexiones/i);
+ok(/El peso no se copia/i.test(await ver()), '…avisando de que los 80 kg no viajan');
+ok(await pulsar('Reemplazar'), '…y se confirma');
+await page.waitForTimeout(600);
+ok(/Flexiones/i.test(await ver()) && !(await page.evaluate(() => !!document.querySelector('[role="dialog"]'))),
+  '…la hoja se cierra y la línea ya es de flexiones');
+ok(await pulsar('Hecho'), '…«Hecho»');
+await page.waitForTimeout(300);
+ok(await pulsar('Guardar'), '…y se guarda la plantilla');
+await page.waitForTimeout(700);
+const plantillas_fit33 = ultimoFitness_fit33().plantillas || [];
+const pl_fit33 = plantillas_fit33.find((p) => p.id === 'pl-f33') || {};
+const l1_fit33 = (pl_fit33.ejercicios || [])[0] || {};
+ok(l1_fit33.exerciseId === 'flexion' && l1_fit33.series === 3 && l1_fit33.repeticiones === 6 && l1_fit33.descanso === 120 && l1_fit33.peso === null,
+  '🚨 FIT F33 — ESA plantilla guarda las flexiones con sus series, reps y descanso, y sin el peso (apartado 16)');
+ok(JSON.stringify(plantillas_fit33.find((p) => p.id === 'pl-f33-otra')) === JSON.stringify(otraPlantilla_fit33),
+  '🚨 …y la OTRA plantilla no se ha tocado');
+ok(!/\bXP\b|recompensa/i.test(await ver()), '…y ni XP ni recompensas');
+
+almacen.fitness = fitnessDeAntes_fit33;
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

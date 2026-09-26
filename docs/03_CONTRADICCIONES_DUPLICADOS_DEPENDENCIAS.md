@@ -11,7 +11,7 @@
 
 ---
 
-## PARTE A — CONTRADICCIONES (27)
+## PARTE A — CONTRADICCIONES (28)
 
 Formato: **qué choca con qué** → **cuál gana y por qué** → **qué hay que hacer**.
 Severidad: 🔴 rompe algo hoy · 🟠 engaña a quien lea la documentación · 🟡 tensión de diseño asumida
@@ -814,6 +814,34 @@ apartado 19 —relacionar la sesión con su día por `planId + dayId`— no pod�
 es la ranura del día en la semana (`ppl-estetico-dia-1` es el lunes). Lo guardado antes con un id
 aleatorio no se da por «otro entrenamiento»: se dice **«Entrenamiento realizado»**, porque no se
 sabe qué día fue.
+
+### C-40 — ✅ RESUELTA AL CONSTRUIR (FIT F33, v3.115.0) · El plan de una serie se congela (F7) y el peso no puede viajar al sustituto (F33)
+
+**La FIT F7 congela lo planificado de cada serie al empezar la sesión** —su comentario lo dice con
+todas las letras: *"Lo que decía el plan. No se toca nunca después de crear la sesión"*— **y la
+FIT F33 manda conservar al sustituir *"series, repeticiones, descanso, notas"*** (su apartado 11),
+**que deja fuera el peso a propósito**. Con el plan congelado entero, el peso de la barra seguía en
+`plan.peso` de unas mancuernas, y el «+» de la F9 (su apartado 10) **parte de ese número**: sumar
+2,5 kg a unas mancuernas vacías daba 62,5.
+
+**La lectura con la que se ha construido, que respeta las dos partes:**
+
+- **El plan sigue congelado**: las repeticiones y la duración planificadas no se tocan al sustituir.
+  Si la medida cambia —un press por un L-sit—, las 10 repeticiones no se leen como 10 segundos,
+  porque `textoPlanificado` lee la duración, que está vacía: la serie queda «sin planificar», que es
+  la verdad (apartado 12).
+- **Lo único que se quita es `plan.peso`**, porque era del otro ejercicio (la F7 ya quitaba el peso
+  **registrado** por lo mismo). Lo que decía la plantilla sigue entero en `linea`, así que el
+  historial no pierde nada.
+- Está declarado en `DECISIONES_FIT33` y medido en `test-sustitucion.mjs` y en el recorrido.
+
+⚠️ **Y dos cosas del mismo apartado que no son contradicciones, dichas para que nadie las reabra:**
+el apartado 4 enumera *isométrico, explosivo y skill* entre los patrones y en la línea siguiente
+manda *"Si el ejercicio actual ya dispone de un patrón equivalente: REUTILIZARLO"* — ya existían en
+`tipos` y `explosivo`, así que son **modalidades**, no patrones nuevos. Y el apartado 3 pide
+considerar *"rango de movimiento"*, que el catálogo **no guarda**: se usa lo único que sí sabe (si
+el ejercicio es estático) y el límite está escrito en `CRITERIOS_COMPATIBILIDAD`, sin inventar un
+recorrido que nadie ha medido (regla 8).
 
 ## PARTE B — DUPLICADOS (15)
 

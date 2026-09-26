@@ -108,22 +108,81 @@ export const ENTORNOS = [
    libre: *"No uses simplemente un texto libre cuando sea posible utilizar
    valores estructurados"*. */
 export const EQUIPAMIENTO = [
-  { id: 'ninguno', nombre: 'Nada', casero: true },
-  { id: 'suelo', nombre: 'Suelo', casero: true },
-  { id: 'barra', nombre: 'Barra', casero: false },
+  /* 🔓 FIT F33 — `grupo` dice qué material puede ocupar el sitio de otro DENTRO
+     de la lista de un mismo ejercicio. La lista de la F2 mezcla lo
+     imprescindible con las alternativas —la búlgara pone «banco, silla,
+     mancuernas»— y no dice cuál es cuál, así que «no tengo banco» solo puede
+     dejar la búlgara si en su lista hay otra cosa del mismo grupo (la silla).
+     `sinMaterial` marca lo que no es material: un ejercicio que lo lleva se
+     puede hacer sin nada más. */
+  { id: 'ninguno', nombre: 'Nada', casero: true, sinMaterial: true },
+  { id: 'suelo', nombre: 'Suelo', casero: true, sinMaterial: true },
+  { id: 'barra', nombre: 'Barra', casero: false, grupo: 'carga-libre' },
+  /* ⚠️ Los discos NO son del grupo de la barra: la acompañan, no la sustituyen.
+     Con ellos dentro, «no tengo barra» dejaba el press de banca disponible
+     porque en su lista quedaban los discos. */
   { id: 'discos', nombre: 'Discos', casero: false },
-  { id: 'mancuernas', nombre: 'Mancuernas', casero: true },
-  { id: 'kettlebell', nombre: 'Kettlebell', casero: true },
-  { id: 'banco', nombre: 'Banco', casero: false },
-  { id: 'polea', nombre: 'Polea', casero: false },
-  { id: 'maquina', nombre: 'Máquina', casero: false },
-  { id: 'anillas', nombre: 'Anillas', casero: false },
-  { id: 'barra-dominadas', nombre: 'Barra de dominadas', casero: true },
+  { id: 'mancuernas', nombre: 'Mancuernas', casero: true, grupo: 'carga-libre' },
+  { id: 'kettlebell', nombre: 'Kettlebell', casero: true, grupo: 'carga-libre' },
+  { id: 'banco', nombre: 'Banco', casero: false, grupo: 'apoyo' },
+  { id: 'polea', nombre: 'Polea', casero: false, grupo: 'resistencia-guiada' },
+  { id: 'maquina', nombre: 'Máquina', casero: false, grupo: 'resistencia-guiada' },
+  { id: 'anillas', nombre: 'Anillas', casero: false, grupo: 'suspension' },
+  { id: 'barra-dominadas', nombre: 'Barra de dominadas', casero: true, grupo: 'suspension' },
   { id: 'paralelas', nombre: 'Paralelas', casero: false },
-  { id: 'banda', nombre: 'Banda elástica', casero: true },
-  { id: 'silla', nombre: 'Silla', casero: true },
+  { id: 'banda', nombre: 'Banda elástica', casero: true, grupo: 'resistencia-guiada' },
+  { id: 'silla', nombre: 'Silla', casero: true, grupo: 'apoyo' },
   { id: 'lastre', nombre: 'Lastre', casero: false },
   { id: 'mochila', nombre: 'Mochila', casero: true },
+];
+
+/* 🔓 FIT F33, apartado 4 — los patrones de movimiento. Cada ejercicio del
+   catálogo declara el suyo en `patron` (su línea de `catalogoEjercicios.js`).
+   `familia` agrupa los que se parecen sin ser iguales: unas dominadas y un
+   remo **son los dos de tirón, pero no equivalentes** (apartado 13).
+
+   ⚠️ **Isométrico, explosivo y skill no están aquí, y es a propósito**: el
+   apartado 4 los enumera, pero ya existen —`tipos` trae `isometrico` y
+   `habilidad`, y `explosivo` es un campo desde la F2—, y su propia línea
+   siguiente dice *"Si el ejercicio actual ya dispone de un patrón equivalente:
+   REUTILIZARLO. No duplicar información."* Son **modalidades**, que se cruzan
+   con un patrón: una planche es un empuje horizontal isométrico. Los lee
+   `modalidadesDe()`, en `sustitucion.js`. */
+export const FAMILIAS_PATRON = [
+  { id: 'empuje', nombre: 'empuje' },
+  { id: 'tiron', nombre: 'tirón' },
+  { id: 'pierna', nombre: 'pierna' },
+  { id: 'core', nombre: 'core' },
+  { id: 'brazo', nombre: 'brazo' },
+  { id: 'hombro', nombre: 'hombro' },
+  { id: 'cuello', nombre: 'cuello' },
+  { id: 'cuerpo', nombre: 'cuerpo entero' },
+];
+
+export const PATRONES_MOVIMIENTO = [
+  { id: 'empuje-horizontal', nombre: 'Empuje horizontal', familia: 'empuje' },
+  { id: 'empuje-vertical', nombre: 'Empuje vertical', familia: 'empuje' },
+  { id: 'aduccion-horizontal', nombre: 'Aperturas', familia: 'empuje' },
+  { id: 'tiron-horizontal', nombre: 'Tirón horizontal', familia: 'tiron' },
+  { id: 'tiron-vertical', nombre: 'Tirón vertical', familia: 'tiron' },
+  { id: 'encogimiento', nombre: 'Encogimiento', familia: 'tiron' },
+  { id: 'sentadilla', nombre: 'Sentadilla', familia: 'pierna' },
+  { id: 'unilateral-pierna', nombre: 'Pierna a una pierna', familia: 'pierna' },
+  { id: 'bisagra-cadera', nombre: 'Bisagra de cadera', familia: 'pierna' },
+  { id: 'extension-cadera', nombre: 'Extensión de cadera', familia: 'pierna' },
+  { id: 'flexion-rodilla', nombre: 'Flexión de rodilla', familia: 'pierna' },
+  { id: 'extension-rodilla', nombre: 'Extensión de rodilla', familia: 'pierna' },
+  { id: 'flexion-plantar', nombre: 'Elevación de talones', familia: 'pierna' },
+  { id: 'core-antiextension', nombre: 'Antiextensión del core', familia: 'core' },
+  { id: 'core-antirrotacion', nombre: 'Antirrotación del core', familia: 'core' },
+  { id: 'flexion-cadera', nombre: 'Flexión de cadera', familia: 'core' },
+  { id: 'flexion-tronco', nombre: 'Flexión de tronco', familia: 'core' },
+  { id: 'rotacion-tronco', nombre: 'Rotación de tronco', familia: 'core' },
+  { id: 'flexion-codo', nombre: 'Flexión de codo', familia: 'brazo' },
+  { id: 'extension-codo', nombre: 'Extensión de codo', familia: 'brazo' },
+  { id: 'elevacion-hombro', nombre: 'Elevación de hombro', familia: 'hombro' },
+  { id: 'cuello', nombre: 'Cuello', familia: 'cuello' },
+  { id: 'cuerpo-entero', nombre: 'Cuerpo entero', familia: 'cuerpo' },
 ];
 
 export const DIFICULTADES = [
@@ -184,6 +243,8 @@ export const tipoEjercicio = (id) => TIPOS_EJERCICIO.find((t) => t.id === id) ||
 export const agarre = (id) => AGARRES.find((a) => a.id === id) || null;
 export const papel = (id) => PAPELES.find((p) => p.id === id) || null;
 export const medida = (id) => MEDIDAS.find((m) => m.id === id) || null;
+export const patronMovimiento = (id) => PATRONES_MOVIMIENTO.find((p) => p.id === id) || null;
+export const familiaPatron = (id) => FAMILIAS_PATRON.find((f) => f.id === id) || null;
 
 /* ═══════════════════════════════════════════════════════════════════════════
    2 · EL MODELO, AMPLIADO DE FORMA COMPATIBLE (apartado 1)
@@ -263,6 +324,7 @@ export function crearEjercicioCompleto({
   dificultad: dif = 'principiante', tipos = [], musculos = [], agarre: ag = null,
   medidas = ['reps'], explosivo = false, progresiones = [], sustitutos = [], variantes = [],
   tutorial = null, instrucciones = null, recursos = null, nombreTecnico = '',
+  patron = null, unilateral = false,
 } = {}) {
   return {
     id: texto(id) || ranura(nombre) || uid(),
@@ -293,6 +355,11 @@ export function crearEjercicioCompleto({
       return l.length ? l : ['reps'];
     })(),
     explosivo: explosivo === true,
+    /* 🔓 FIT F33, apartado 4 — el patrón de movimiento. ⚠️ Uno que no está en
+       el catálogo se queda en `null`, nunca en uno parecido: un ejercicio suyo
+       sin patrón se compara por sus músculos, que es menos y es verdad. */
+    patron: patronMovimiento(texto(patron)) ? texto(patron) : null,
+    unilateral: unilateral === true,
     progresiones: lista(progresiones).map(texto).filter(Boolean),
     sustitutos: lista(sustitutos).map(texto).filter(Boolean),
     variantes: lista(variantes).map(texto).filter(Boolean),

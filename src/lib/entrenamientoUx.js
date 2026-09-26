@@ -1,11 +1,13 @@
 import {
   ejerciciosDeSesion, marcarSerie, crearDescanso, pausarDescanso, reanudarDescanso,
-  restanteDescanso, textoPlanificado, sustitutosSugeridos,
+  restanteDescanso, textoPlanificado,
 } from './entrenamiento';
 import {
-  ejercicioPorId, todosLosEjercicios, musculoPrincipal, sustitutosDe,
-  agarre as agarrePorId, tipoEjercicio, dificultad as dificultadPorId,
+  ejercicioPorId,
+  agarre as agarrePorId, tipoEjercicio,
 } from './ejercicios';
+/* 🔓 FIT F33 — el motor de sustitución, uno para toda la aplicación. */
+import { getExerciseReplacements, NIVELES_VISIBLES, nivelCompatibilidad } from './sustitucion';
 
 /* Entrega 4 · Fase 9/45 — «UX avanzada del entrenamiento en vivo».
    ═══════════════════════════════════════════════════════════════════════════
@@ -277,52 +279,29 @@ export const AVISO_REEMPLAZAR = {
 };
 
 /**
- * Los sustitutos, en el orden del apartado 21: *"1. mismo grupo muscular, 2.
- * misma función, 3. mismo entorno/equipamiento, 4. dificultad similar"*.
+ * Los sustitutos del apartado 21 de la F9.
  *
- * ⚠️ **No es una lista nueva inventada**: primero va la familia de la F3
- * (`sustitutosSugeridos`, las variantes del mismo ejercicio) y los sustitutos
- * que el catálogo declara (`sustitutosDe`, F2); después, el resto del catálogo
- * que trabaja **el mismo grupo muscular**, puntuado por los otros tres
- * criterios. Un ejercicio de otro grupo no es un sustituto, por parecido que
- * sea su equipo.
+ * 🔓 **FIT F33 — ya no los ordena aquí.** La F9 los sacaba de la familia (F3),
+ * de los declarados (F2) y del resto del grupo muscular, con su propia
+ * puntuación; la F33 *"perfecciona el sistema de sustitución"* con niveles de
+ * compatibilidad, patrón de movimiento y contexto, y **un segundo motor al
+ * lado diría otra cosa del mismo press de banca**. Así que esto le pide la
+ * lista a `getExerciseReplacements` y se queda con los niveles que se enseñan
+ * normalmente (el apartado 2 de la F33). La forma `{ ejercicio, motivo }` se
+ * conserva, y `motivo` es ahora el nivel —«Muy similar», «Similar»,
+ * «Alternativa»—, que es lo que dice por qué sale.
  */
-export function sustitutosCompatibles(ejSesion, propios = [], { limite = 12 } = {}) {
+export function sustitutosCompatibles(ejSesion, propios = [], { limite = 12, sesion = null } = {}) {
   const actual = ejSesion ? ejercicioPorId(ejSesion.exerciseId, propios) : null;
   if (!actual) return [];
-  const grupo = musculoPrincipal(actual)?.grupoId || null;
-  const funciones = new Set(lista(actual.tipos));
-  const entornos = new Set(lista(actual.entornos));
-  const equipos = new Set(lista(actual.equipamiento));
-  const nivel = dificultadPorId(actual.dificultad)?.orden ?? 1;
-
-  const puntuar = (e) => {
-    let p = 0;
-    if (lista(e.tipos).some((t) => funciones.has(t))) p += 4;
-    if (lista(e.entornos).some((t) => entornos.has(t))) p += 2;
-    if (lista(e.equipamiento).some((t) => equipos.has(t))) p += 1;
-    p -= Math.abs((dificultadPorId(e.dificultad)?.orden ?? 1) - nivel);
-    return p;
-  };
-
-  const salida = [];
-  const vistos = new Set([actual.id]);
-  const meter = (e, motivo) => {
-    if (!e || vistos.has(e.id) || salida.length >= limite) return;
-    vistos.add(e.id);
-    salida.push({ ejercicio: e, motivo });
-  };
-
-  sustitutosSugeridos(ejSesion, propios).forEach((e) => meter(e, 'Misma familia'));
-  sustitutosDe(actual, propios).forEach((e) => meter(e, 'Sustituto recomendado'));
-  if (grupo) {
-    todosLosEjercicios(propios)
-      .filter((e) => !vistos.has(e.id) && musculoPrincipal(e)?.grupoId === grupo)
-      .map((e) => ({ e, p: puntuar(e) }))
-      .sort((a, b) => b.p - a.p || a.e.nombre.localeCompare(b.e.nombre, 'es'))
-      .forEach(({ e }) => meter(e, 'Mismo músculo'));
-  }
-  return salida;
+  return getExerciseReplacements(actual.id, { propios, sesion })
+    .filter((x) => NIVELES_VISIBLES.includes(x.compatibilityLevel))
+    .slice(0, limite)
+    .map((x) => ({
+      ...x,
+      ejercicio: x.exercise,
+      motivo: nivelCompatibilidad(x.compatibilityLevel).nombre,
+    }));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

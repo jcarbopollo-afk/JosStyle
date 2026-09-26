@@ -2,6 +2,20 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.115.0 — FIT F33/45: el sistema avanzado de sustitución de ejercicios):**
+> «Reemplazar» enseña las alternativas **por niveles** —Muy similar, Similar, Alternativa y, solo si
+> se piden, Poco recomendable—, cada una con **por qué** en una frase, filtros plegados («No tengo»,
+> «Solo disponible», dónde, músculo, tipo, dificultad) y la búsqueda a mano. En el entrenamiento en
+> vivo va debajo de la cabecera de la sesión; en el constructor, en una hoja. Quinta del bloque de
+> **Inteligencia**. Todo en `src/lib/sustitucion.js` y su `.jsx`.
+> 🚨 **Un solo motor**: la F7, la F9 y el constructor le piden todo a éste. 🚨 **El ejemplo del
+> apartado 5 sale tal cual** (mancuernas muy similar, máquina similar, flexiones alternativa), y en
+> casa no se propone una máquina. 🚨 **3 × 10 no pasa a 3 × 10 s** sin avisar, y **el peso no
+> viaja**. 🚨 **Nada se transfiere**: historial, progreso, objetivo (se queda en el original por
+> defecto), rango ni clasificación. El dato que faltaba —el **patrón de movimiento**— va en la línea
+> de cada uno de los 100 ejercicios. 🐛 **C-40**: el plan congelado de una sesión arrastraba el peso
+> de la barra a las mancuernas. **Sin SQL nuevo.** Lo siguiente es la **FIT F34**.
+>
 > **📅 ACTUALIZACIÓN (v3.114.0 — FIT F32/45: la planificación semanal avanzada de entrenamiento):**
 > Tu Plan contesta **qué toca hoy, qué toca después, qué hizo y qué está planificado**. Arriba, **hoy**
 > cuando no es lo siguiente (hecho, extra o sin nada en el plan) y el **próximo entrenamiento**, que

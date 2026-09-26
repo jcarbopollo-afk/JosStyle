@@ -1074,6 +1074,18 @@ else
   fallo "Falla la planificación semanal"; grep '✗' /tmp/jc_planificacion_semanal.log
 fi
 
+# FIT F33 — la sustitución avanzada de ejercicios. Lo que más se vigila: los cuatro niveles
+# con el ejemplo del apartado 5 tal cual (mancuernas muy similar, máquina similar, flexiones
+# alternativa), que en casa no se proponga una máquina, que «no tengo barra» quite lo que la
+# necesita, que 3 × 10 no pase a 3 × 10 s sin avisar, que sustituir NO toque el plan, la
+# plantilla, el catálogo, el historial, el progreso, el objetivo ni el rango, y que la F7,
+# la F9 y el constructor le pidan todo a este motor en vez de tener el suyo.
+if node --import ./scripts/resolver-vite.mjs scripts/test-sustitucion.mjs >/tmp/jc_sustitucion.log 2>&1; then
+  ok "Sustitución de ejercicios (FIT F33) — $(grep -c '✓' /tmp/jc_sustitucion.log) comprobaciones"
+else
+  fallo "Falla la sustitución de ejercicios"; grep '✗' /tmp/jc_sustitucion.log
+fi
+
 # FIT F28 — la integración completa del progreso físico. Lo que más se vigila: que NO
 # exista ninguna métrica que mezcle dos sistemas —«fotos + fuerza + rangos = 82 %» es el
 # ejemplo que prohíbe el apartado 10—, que cada bloque lea de UN solo motor, que el

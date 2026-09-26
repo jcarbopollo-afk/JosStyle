@@ -1,5 +1,7 @@
 import { uid, todayISO } from './helpers';
 import { GRUPOS_MUSCULARES, subgrupoMuscular, crearWorkoutPlan, normalizarWorkoutPlan } from './fitness';
+/* 🔓 FIT F33 — la configuración al sustituir la decide un solo sitio. */
+import { configuracionRecomendada } from './sustitucion';
 import {
   ejercicioPorId, nombreCompleto, ENTORNOS, baseDe, variantesDe,
 } from './ejercicios';
@@ -360,9 +362,40 @@ export function cambiarVariante(rutina, lineaId, exerciseIdNuevo, propios = []) 
   /* 🚨 Un id que no es de la familia **no se acepta**: si no, ésta sería la
      puerta de atrás por la que un ejercicio se convierte en otro distinto. */
   if (!permitidas.includes(texto(exerciseIdNuevo))) return r;
+  /* 🔓 FIT F33 — y cambia por la misma puerta que una sustitución: con dos, una
+     variante que se mide en segundos se quedaría con las repeticiones puestas. */
+  return sustituirEnRutina(r, lineaId, exerciseIdNuevo, propios);
+}
+
+/** 🔓 FIT F33, apartados 15 y 16 — sustituir en el constructor (el borrador) o
+ *  en una plantilla que se está editando. 🚨 **Cambia ESA línea de ESA
+ *  rutina**: el ejercicio del catálogo no se toca —esto recibe una rutina y
+ *  devuelve una rutina—, y las otras plantillas tampoco, porque quien guarda es
+ *  `guardarRutina`, que sustituye por id.
+ *
+ *  A diferencia de `cambiarVariante`, **acepta cualquier ejercicio**: es la
+ *  puerta de delante, la que él elige con los niveles de compatibilidad
+ *  delante o buscando a mano (apartado 25). La configuración la decide
+ *  `configuracionRecomendada` (apartados 11-13): series, descanso y nota se
+ *  quedan; la medida y la carga se adaptan al nuevo, y el peso no viaja. */
+export function sustituirEnRutina(rutina, lineaId, exerciseIdNuevo, propios = []) {
+  const r = crearRutina(rutina || {});
+  const linea = r.lineas.find((l) => l.id === lineaId);
+  const nuevo = ejercicioPorId(texto(exerciseIdNuevo), propios);
+  if (!linea || !nuevo || nuevo.id === linea.exerciseId) return r;
+  const c = configuracionRecomendada(linea, ejercicioPorId(linea.exerciseId, propios), nuevo);
   return {
     ...r,
-    lineas: r.lineas.map((l) => (l.id === lineaId ? { ...l, exerciseId: texto(exerciseIdNuevo) } : l)),
+    lineas: r.lineas.map((l) => (l.id === lineaId ? {
+      ...l,
+      exerciseId: nuevo.id,
+      modo: c.modo,
+      repeticiones: c.repeticiones,
+      repsHasta: c.repsHasta,
+      duracion: c.duracion,
+      peso: null,
+      tipoCarga: c.tipoCarga,
+    } : l)),
   };
 }
 

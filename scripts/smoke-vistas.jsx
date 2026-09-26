@@ -333,6 +333,18 @@ import {
 } from '../src/components/planificacionSemanal.jsx';
 import { getWeekPlan as semanaF32, PLAN_INVALIDO as PLAN_INVALIDO_F32 } from '../src/lib/planificacionSemanal.js';
 import { tuPlan as tuPlanF6, sesionDelDia as sesionF6 } from '../src/lib/tuPlan.js';
+/* FIT F33 — la sustitución de ejercicios. ⚠️ La hoja del constructor
+   (`ExerciseReplacementModal`) no entra: es un portal, y el renderizado en el
+   servidor no los pinta (el precedente de `quickAdd`). Lo que lleva dentro,
+   `ExerciseReplacement`, sí, con todos sus estados. */
+import {
+  ExerciseReplacement, ReplacementCard, ReplacementCompatibility, ReplacementReason, ReplacementFilters,
+  ReplacementSearch, ReplacementEmpty, ReplacementConfirm,
+} from '../src/components/sustitucion.jsx';
+import {
+  getExerciseReplacements as reemplazosF33, sustitucionElegida as elegidaF33, opcionesDeFiltro as opcionesF33,
+  materialDeLasPropuestas as materialF33,
+} from '../src/lib/sustitucion.js';
 /* FIT F7 — el entrenamiento en vivo. ⚠️ Sus piezas, sueltas: la tabla de series,
    el carrusel, la barra de descanso, el hueco anatómico y los avisos **solo
    aparecen tras pulsar algo**, que es el agujero del Álbum (NAV F3). */
@@ -4107,6 +4119,47 @@ const CASOS = [
   /* ⚠️ Y sin sesión, que no puede dejar la pantalla en blanco sin decir nada. */
   ['EntrenamientoVivoView', EntrenamientoVivoView, () => ({
     sesion: null, propios: [], accent, onGuardar: noop, onSalir: noop,
+  })],
+  /* ══ FIT F33 — la sustitución de ejercicios ═════════════════════════════
+     🚨 La pantalla entera en sus cuatro formas: en el gimnasio, en casa con
+     datos y un objetivo, un isométrico, y un ejercicio que ya no existe. */
+  ['ExerciseReplacement', ExerciseReplacement, () => ({
+    exerciseId: 'press-banca-barra', contexto: { entorno: 'gym' }, propios: [], accent, onConfirmar: noop, onCancelar: noop,
+  })],
+  ['ExerciseReplacement (casa, con datos y objetivo)', ExerciseReplacement, () => ({
+    exerciseId: 'press-banca-barra', contexto: { entorno: 'casa', configuracion: { series: 4, modo: 'reps', repeticiones: 8, peso: 60 } },
+    propios: [], accent, conDatos: true, textoDatos: 'Ya has registrado datos.', objetivo: { id: 'o', objetivoTexto: '80 kg' },
+    opcionesObjetivo: ['mantener', 'cancelar', 'crear'], onConfirmar: noop, onCancelar: noop,
+    renderBuscador: () => <p>Buscador</p>,
+  })],
+  ['ExerciseReplacement (isométrico)', ExerciseReplacement, () => ({
+    exerciseId: 'l-sit', contexto: {}, propios: [], accent, ambito: 'borrador', onConfirmar: noop,
+  })],
+  ['ExerciseReplacement (ya no existe)', ExerciseReplacement, () => ({
+    exerciseId: 'ya-no-existe', contexto: {}, propios: [], accent, onConfirmar: noop, renderBuscador: () => <p>Buscador</p>,
+  })],
+  ['ReplacementCard', ReplacementCard, () => ({ item: reemplazosF33('press-banca-barra', { entorno: 'gym' })[0], accent, onElegir: noop })],
+  ['ReplacementCard (no disponible)', ReplacementCard, () => ({
+    item: reemplazosF33('press-banca-barra', { entorno: 'casa' }).find((x) => x.disponible === false), accent, onElegir: noop,
+  })],
+  ['ReplacementCompatibility', ReplacementCompatibility, () => ({ nivel: 'muy_similar' })],
+  ['ReplacementCompatibility', ReplacementCompatibility, () => ({ nivel: 'poco_recomendable' })],
+  ['ReplacementCompatibility (a mano)', ReplacementCompatibility, () => ({ nivel: null })],
+  ['ReplacementReason', ReplacementReason, () => ({ reasons: ['Es otra versión del mismo ejercicio.', 'Usa el mismo material.'] })],
+  ['ReplacementFilters', ReplacementFilters, () => {
+    const items = reemplazosF33('sentadilla-barra', { entorno: 'casa' });
+    return { opciones: opcionesF33(items), material: materialF33(items), filtros: {}, noTengo: ['barra'], hayNoDisponibles: true, accent, onFiltro: noop, onNoTengo: noop, onSoloDisponibles: noop };
+  }],
+  ['ReplacementSearch', ReplacementSearch, () => ({ onBuscar: noop })],
+  ['ReplacementEmpty', ReplacementEmpty, () => ({ onBuscar: noop, accent })],
+  ['ReplacementConfirm', ReplacementConfirm, () => ({
+    item: elegidaF33('press-banca-barra', 'l-sit', { configuracion: { series: 3, modo: 'reps', repeticiones: 10, descanso: 90, peso: 60 } }),
+    conDatos: true, textoDatos: 'Ya has registrado datos.', objetivo: { id: 'o', objetivoTexto: '80 kg' },
+    accent, onConfirmar: noop, onCancelar: noop, onOpcionObjetivo: noop,
+  })],
+  ['EditorLinea (con Reemplazar)', EditorLinea, () => ({
+    linea: anadirF3(crearRutinaF3({ nombre: 'X' }), 'press-banca-barra').lineas[0],
+    accent, onCambiar: noop, onCerrar: noop, onReemplazar: noop,
   })],
   /* ══ FIT F8 — la finalización ══════════════════════════════════════════ */
   /* ══ FIT F10 — el historial ═══════════════════════════════════════════ */

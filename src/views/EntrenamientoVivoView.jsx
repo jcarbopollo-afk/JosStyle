@@ -43,7 +43,7 @@ import {
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import {
-  Card, SectionTitle, GhostBtn, PrimaryButton, Textarea, EmptyHint, Switch,
+  Card, GhostBtn, PrimaryButton, Textarea, EmptyHint, Switch,
 } from '../components/ui';
 import { iconoDeGrupo } from '../components/iconosFitness';
 import EjerciciosView, { DetalleEjercicio } from './EjerciciosView';
@@ -64,8 +64,11 @@ import {
   iniciarDescanso, pausarDescansoSesion, reanudarDescansoSesion, terminarDescanso,
   sumarDescanso, cambiarDescansoEjercicio, descansoVisible,
   DESCANSOS_RAPIDOS, SUMAS_DESCANSO, DESCANSO_MINIMO, DESCANSO_MAXIMO,
-  direccionDeGesto, tieneDatosRegistrados, AVISO_REEMPLAZAR, sustitutosCompatibles,
+  direccionDeGesto, tieneDatosRegistrados, AVISO_REEMPLAZAR,
 } from '../lib/entrenamientoUx';
+/* 🔓 FIT F33 — la pantalla de sustitución, la misma que usa el constructor. */
+import { ExerciseReplacement } from '../components/sustitucion';
+import { configuracionDeSesion } from '../lib/sustitucion';
 /* 🔓 FIT F30, apartado 36 — el objetivo activo, discreto, encima de la tabla. */
 import { GoalLiveHint } from '../components/objetivosFitness';
 /* 🔓 FIT F8 — Terminar ya no completa: lleva al resumen (su apartado 1). */
@@ -725,11 +728,13 @@ export default function EntrenamientoVivoView({
      cambia dentro de esta pantalla. Aquí no se calcula nada: quien sabe de
      objetivos es `objetivosFitness.js`, y quien tiene el `fitness` es Fitness. */
   objetivoActivoDe = null,
+  /* 🔓 FIT F33, apartado 21 — las dos opciones del objetivo que escriben. Sin
+     ellas solo se ofrece «Mantener», que es lo que pasa por defecto. */
+  onCancelarObjetivo = null, onCrearObjetivo = null,
 }) {
   /* Qué panel está abierto: estado de la pantalla, jamás un dato (EH F40). */
   const [panel, setPanel] = useState(null); // 'tutorial' | 'reemplazar' | 'notas' | 'descanso'
   const [aviso, setAviso] = useState(null); // 'salir'
-  const [reemplazo, setReemplazo] = useState(null); // exerciseId pendiente de confirmar
   const [nota, setNota] = useState('');
   /* ⚠️ Que el aviso del fin de descanso se emita **una vez por descanso**: el
      reloj se redibuja dos veces por segundo. Se recuerda para QUÉ descanso sonó. */
@@ -752,12 +757,6 @@ export default function EntrenamientoVivoView({
   const activaId = useMemo(() => serieActiva(ejercicio), [ejercicio]);
   const carrusel = useMemo(() => carruselDeSesion(sesion, propios), [sesion, propios]);
   const progreso = useMemo(() => progresoSesion(sesion), [sesion]);
-  /* F9 apartado 40 — los sustitutos recorren el catálogo: solo cuando el panel
-     está abierto, no en cada pulsación de una serie. */
-  const sustitutos = useMemo(
-    () => (panel === 'reemplazar' ? sustitutosCompatibles(ejercicio, propios) : []),
-    [panel, ejercicio, propios],
-  );
   const total = ejerciciosDeSesion(sesion).length;
   const indice = sesion ? (sesion.actual ?? 0) : 0;
   const visible = descansoVisible(sesion, ahora);
@@ -825,18 +824,24 @@ export default function EntrenamientoVivoView({
     }, 60);
   };
 
-  /* F9 apartados 21 y 22 — reemplazar pregunta si ya había datos. */
-  const aplicarReemplazo = (id) => {
-    guardar(sustituirEjercicio(sesion, ejercicio.id, id, propios));
-    setReemplazo(null);
+  /* F9 apartados 21 y 22 — reemplazar pregunta si ya había datos (ahora lo
+     decide la pantalla de la F33). Y el apartado 21 de la F33: el objetivo del
+     original **se mantiene por defecto**; cancelarlo o crear uno nuevo son dos
+     puertas que abre quien tiene el `fitness`. */
+  const aplicarReemplazo = (id, opcionObjetivo = 'mantener') => {
+    const siguiente = sustituirEjercicio(sesion, ejercicio.id, id, propios);
     setPanel(null);
-  };
-  const elegirSustituto = (id) => {
-    if (tieneDatosRegistrados(ejercicio)) setReemplazo(id);
-    else aplicarReemplazo(id);
+    if (siguiente === sesion) return;
+    if (opcionObjetivo === 'cancelar' && objetivoVivo && onCancelarObjetivo) {
+      /* 🚨 En UNA escritura, la sesión y el objetivo (E3 F26). */
+      onCancelarObjetivo(objetivoVivo.id, siguiente);
+      return;
+    }
+    guardar(siguiente);
+    if (opcionObjetivo === 'crear' && onCrearObjetivo) onCrearObjetivo(id);
   };
 
-  const cerrarPanel = () => { setPanel(null); setReemplazo(null); };
+  const cerrarPanel = () => { setPanel(null); };
 
   /* F9 apartado 6 — el gesto, solo en la tarjeta del ejercicio. */
   const alEmpezarGesto = (ev) => {
@@ -898,57 +903,46 @@ export default function EntrenamientoVivoView({
     />
   );
 
-  /* ── Reemplazar (F7 apartado 26 · F9 apartados 21 y 22) ────────────────── */
+  /* ── Reemplazar (F7 apartado 26 · F9 apartados 21 y 22 · FIT F33) ──────── */
+  /* 🔓 FIT F33 — la lista ya no la ordena la F9: es la pantalla de sustitución,
+     con sus niveles, sus motivos y sus filtros. La cabecera de la sesión sigue
+     encima (F9, apartado 33), y la búsqueda a mano sigue siendo el catálogo de
+     la F2 (apartado 25). ⚠️ La confirmación sale **solo** si hay algo que decir:
+     datos registrados (F9), una medida que cambia, un peso que no se copia o un
+     objetivo del original (F33, apartados 12 y 21). */
   if (panel === 'reemplazar' && ejercicio) {
-    const pendiente = reemplazo ? ejercicioPorId(reemplazo, propios) : null;
     return (
       <div className="space-y-4 pb-6">
         {cabeceraSesion}
-        {pendiente && (
-          <AvisoSesion
-            aviso={{ ...AVISO_REEMPLAZAR, titulo: `${AVISO_REEMPLAZAR.titulo.replace('?', '')} por ${pendiente.nombre}?` }}
-            accent={accent}
-            acciones={[
-              { texto: AVISO_REEMPLAZAR.cancelar, onClick: () => setReemplazo(null) },
-              { texto: AVISO_REEMPLAZAR.reemplazar, primaria: true, onClick: () => aplicarReemplazo(pendiente.id) },
-            ]}
-          />
-        )}
-        {!pendiente && sustitutos.length > 0 && (
-          <div>
-            <SectionTitle sub="Mismo músculo primero, después la misma función, tu entorno y una dificultad parecida">
-              Cambios rápidos
-            </SectionTitle>
-            <div className="space-y-2">
-              {sustitutos.map(({ ejercicio: s, motivo }) => (
-                <button
-                  key={s.id}
-                  onClick={() => elegirSustituto(s.id)}
-                  aria-label={`Cambiar por ${s.nombre}`}
-                  className="hub-card w-full text-left rounded-2xl p-3 flex items-center gap-2.5 active:scale-[0.99]"
-                  style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-                >
-                  <Repeat size={16} style={{ color: accent }} aria-hidden="true" />
-                  <span className="min-w-0 flex-1">
-                    <span className="text-sm font-bold block truncate" style={{ color: COLORS.text }}>{s.nombre}</span>
-                    <span className="text-[11px] block truncate" style={{ color: COLORS.textMuted }}>{motivo}</span>
-                  </span>
-                  <ChevronRight size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {!pendiente && (
-          <EjerciciosView
-            propios={propios}
-            accent={accent}
-            onVolver={cerrarPanel}
-            volverA="Entrenamiento"
-            onElegir={elegirSustituto}
-            yaElegidos={[ejercicio.exerciseId]}
-          />
-        )}
+        <ExerciseReplacement
+          exerciseId={ejercicio.exerciseId}
+          contexto={{ sesion, configuracion: configuracionDeSesion(ejercicio) }}
+          propios={propios}
+          accent={accent}
+          ambito="sesion"
+          conDatos={tieneDatosRegistrados(ejercicio)}
+          textoDatos={AVISO_REEMPLAZAR.texto}
+          objetivo={objetivoVivo}
+          opcionesObjetivo={[
+            'mantener',
+            ...(onCancelarObjetivo ? ['cancelar'] : []),
+            ...(onCrearObjetivo ? ['crear'] : []),
+          ]}
+          onCancelar={cerrarPanel}
+          onConfirmar={(id, { opcionObjetivo }) => aplicarReemplazo(id, opcionObjetivo)}
+          renderBuscador={({ onElegir, onVolver }) => (
+            <EjerciciosView
+              propios={propios}
+              accent={accent}
+              onVolver={onVolver}
+              volverA="Reemplazar"
+              onElegir={onElegir}
+              accionElegir="Cambiar por"
+              marcaElegido="Es el actual"
+              yaElegidos={[ejercicio.exerciseId]}
+            />
+          )}
+        />
       </div>
     );
   }
@@ -1071,7 +1065,7 @@ export default function EntrenamientoVivoView({
               return (
                 <button
                   key={a.id}
-                  onClick={() => { setReemplazo(null); setPanel(abierto ? null : a.id); }}
+                  onClick={() => setPanel(abierto ? null : a.id)}
                   disabled={a.disabled}
                   aria-expanded={a.id === 'notas' || a.id === 'descanso' ? abierto : undefined}
                   className="rounded-xl py-2 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold toque-44 active:scale-95 disabled:opacity-50"

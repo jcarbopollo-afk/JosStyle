@@ -927,7 +927,22 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       `semanaDelPlan` (F6). 🚨 **Sesión y día se relacionan por ids** y una rutina de «Tus
       plantillas» conserva su origen. 🐛 **Y los días de un plan de la biblioteca tenían un id
       aleatorio en cada carga** (F5): ahora es su ranura en la semana.
-- [ ] F33–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F33 — Sistema avanzado de sustitución de ejercicios** (v3.115.0): «Reemplazar» enseña
+      las alternativas **por niveles** —Muy similar, Similar, Alternativa; la cuarta, Poco
+      recomendable, solo si se pide—, cada una con **por qué** en una frase, filtros plegados («No
+      tengo», «Solo disponible», dónde, músculo, tipo, dificultad) y la búsqueda a mano a la vista.
+      🚨 **El ejemplo del apartado 5 sale tal cual**: mancuernas muy similar, máquina similar,
+      flexiones alternativa — y el nivel sale de **puertas**, no de una suma. 🚨 **En casa no se
+      propone la máquina** (apartado 6). 🚨 **3 × 10 no pasa a 3 × 10 s** sin avisar (apartado 12):
+      se usa la configuración predeterminada y se dice. 🚨 **Un solo motor**: la F7 (en vivo), la F9
+      (sus sustitutos) y el constructor (y cambiar de variante, F3) le piden todo a
+      `sustitucion.js`. 🚨 **Nada se transfiere**: ni historial, ni progreso, ni objetivo (se
+      mantiene en el original por defecto), ni rango, ni clasificación. Y el dato que faltaba, el
+      **patrón de movimiento**, va en la línea de cada uno de los 100 ejercicios. 🐛 **Y tres fallos
+      de antes**: una plancha cambiada por un encogimiento seguía midiéndose en segundos (F7), el
+      «+» del peso de unas mancuernas empezaba en los 60 kg de la barra (F9) y la F9 ordenaba los
+      sustitutos con un segundo motor.
+- [ ] F34–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

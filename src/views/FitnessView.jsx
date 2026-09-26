@@ -78,6 +78,8 @@ import {
 } from '../lib/constructor';
 /* 🔓 FIT F30, apartado 36 — el objetivo activo del ejercicio en curso. */
 import { objetivoEnVivo } from '../lib/objetivosFitness';
+/* 🔓 FIT F33 — cancelar el objetivo del ejercicio sustituido (F14). */
+import { cancelarObjetivo } from '../lib/objetivosProgreso';
 
 /* ── La cabecera (apartado 6) ──────────────────────────────────────────────
    *"El header debe poder utilizarse posteriormente en todas las pantallas del
@@ -215,7 +217,7 @@ export function AreaRangos({ fitness = null, perfil = null, accent, onEntrenar =
    Fotos (su apartado 2). ⚠️ **Las fotos no se pierden**: siguen contándose de
    Salud física y llevando allí, ahora en su propia pestaña, porque la F12 pide
    dejar la estructura lista para el sistema de fotos sin construirlo. */
-export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoEjercicio = null, onFocoEjercicioConsumido = null, onAddFoto = null, onDeleteFoto = null, protegidoFotos = false, pinHash = null, pinSalt = null, desbloqueadoFotos = false, onDesbloquearFotos = null, onOlvidoPin = null, perfil = null, onIrAHistorial = null, onIrARangos = null }) {
+export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoEjercicio = null, onFocoEjercicioConsumido = null, focoObjetivo = null, onFocoObjetivoConsumido = null, onAddFoto = null, onDeleteFoto = null, protegidoFotos = false, pinHash = null, pinSalt = null, desbloqueadoFotos = false, onDesbloquearFotos = null, onOlvidoPin = null, perfil = null, onIrAHistorial = null, onIrARangos = null }) {
   const resumen = resumenProgreso(fotos);
   return (
     <ProgresoView
@@ -245,6 +247,9 @@ export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEnt
       /* FIT F18 — el ejercicio que llega desde el detalle muscular de Rangos. */
       focoEjercicio={focoEjercicio}
       onFocoEjercicioConsumido={onFocoEjercicioConsumido}
+      /* 🔓 FIT F33, apartado 21 — el objetivo nuevo tras una sustitución. */
+      focoObjetivo={focoObjetivo}
+      onFocoObjetivoConsumido={onFocoObjetivoConsumido}
       /* 🔓 FIT F28 — el centro de seguimiento lleva a los dos sitios que viven
          fuera de esta pantalla: el historial y los rangos (apartado 19). */
       perfil={perfil}
@@ -599,6 +604,9 @@ export default function FitnessView({
   /* FIT F18 — y el ejercicio que se abre desde el detalle muscular de Rangos:
      lleva a la pantalla de progreso de la F12, que ya existe (su apartado 11). */
   const [focoEjercicio, setFocoEjercicio] = useState(null);
+  /* 🔓 FIT F33, apartado 21 — el ejercicio para el que crear un objetivo nuevo
+     al sustituir. Estado de pantalla: se consume al abrir el formulario. */
+  const [focoObjetivo, setFocoObjetivo] = useState(null);
   /* FIT F17 — si está contestando el cuestionario. Estado de pantalla: lo que se
      guarda son las respuestas, una a una, según las contesta. */
   const [clasificando, setClasificando] = useState(false);
@@ -682,6 +690,17 @@ export default function FitnessView({
            ⚠️ Y devuelve solo dos textos: *"No interferir con la tabla de
            series. El objetivo no debe modificar automáticamente la rutina."* */
         objetivoActivoDe={(exerciseId) => objetivoEnVivo(fitness, exerciseId, { propios })}
+        /* 🔓 FIT F33, apartado 21 — al sustituir un ejercicio con objetivo.
+           🚨 Cancelarlo va **en la misma escritura** que la sesión: dos
+           guardados seguidos parten del mismo `fitness` y el segundo borraría
+           el primero (E3 F26). Y «Crear uno nuevo» deja la sesión en curso —la
+           tarjeta de recuperación la ofrece al volver— y abre el formulario. */
+        onCancelarObjetivo={onGuardarFitness
+          ? (objetivoId, sesionNueva) => onGuardarFitness(cancelarObjetivo(guardarSesion(fitness || {}, sesionNueva), objetivoId))
+          : null}
+        onCrearObjetivo={onGuardarFitness
+          ? (exerciseId) => { setEntrenando(null); setFocoObjetivo(exerciseId); setArea('progreso'); }
+          : null}
       />
     );
   }
@@ -779,6 +798,8 @@ export default function FitnessView({
           onIrARangos={() => setArea('rangos')}
           focoEjercicio={focoEjercicio}
           onFocoEjercicioConsumido={() => setFocoEjercicio(null)}
+          focoObjetivo={focoObjetivo}
+          onFocoObjetivoConsumido={() => setFocoObjetivo(null)}
           /* FIT F12, apartado 5 — «Entrenar ahora» lleva a Entrenamiento, donde se empieza. */
           onEntrenar={() => setArea('entrenamiento')}
           onGuardarFitness={onGuardarFitness}

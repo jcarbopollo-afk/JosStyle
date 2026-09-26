@@ -1,5 +1,83 @@
 # CHANGELOG.md
 
+## v3.115.0 — FIT F33/45: el sistema avanzado de sustitución de ejercicios
+
+«Reemplazar» ya no es una lista de parecidos: enseña las alternativas **por niveles de
+compatibilidad** —**Muy similar**, **Similar**, **Alternativa** y, solo si él las pide, **Poco
+recomendable**—, cada una con **por qué** en una frase (*«Trabaja principalmente el mismo patrón:
+empuje horizontal.»*, *«Alternativa con menor demanda de equipamiento.»*), unos filtros plegados
+(«No tengo», «Solo disponible», dónde, músculo, tipo y dificultad) y la búsqueda a mano siempre a la
+vista. Quinta fase del bloque de **Inteligencia** (F29–F35).
+
+### 🚨 Sustituir ya existía en tres sitios, y no hay un cuarto
+
+La F2 dejó en cada ejercicio sus `sustitutos`, sus `variantes` y su `base`; la F7 sustituía en la
+sesión en vivo; la F9 ordenaba los sustitutos **con su propia puntuación**, y la F3 cambiaba de
+variante en el constructor. `src/lib/sustitucion.js` es ahora **el motor de los tres**:
+`sustitutosCompatibles` (F9) le pide la lista a `getExerciseReplacements`, `sustituirEjercicio`
+(F7) le pide la medida, y el constructor sustituye con `sustituirEnRutina` —por donde pasa también
+`cambiarVariante`—. Con dos motores, el entrenamiento en vivo y el constructor habrían propuesto
+cosas distintas para el mismo press de banca.
+
+### 🚨 El nivel sale de puertas, no de una suma
+
+Con una puntuación sola, el press en máquina salía «Muy similar» al de barra —mismo patrón, mismo
+músculo, mismo tipo—, y el apartado 5 dice que es **Similar**. Lo que los separa es **qué
+comparten**: el de mancuernas es otra versión del mismo ejercicio y el de máquina no. Así que el
+nivel lo deciden condiciones que se leen, y **la puntuación solo ordena dentro de un nivel** y no se
+enseña nunca (apartado 33). El ejemplo del enunciado sale tal cual: **mancuernas muy similar,
+máquina similar, flexiones alternativa** — las flexiones, porque son tu peso y el press lleva carga
+externa (la clase de medida de la F11). Y una planche **nunca** sale como sustituto de un press de
+banca: una skill no sustituye a un ejercicio de fuerza.
+
+### 🚨 El dato que faltaba: el patrón de movimiento
+
+El músculo principal **no distingue** un press de banca de unos fondos, así que cada uno de los
+**100 ejercicios** del catálogo lleva ahora su `patron` —empuje horizontal, tirón vertical, bisagra
+de cadera…— **en su propia línea** (no en un mapa aparte, EH F30), y `unilateral` los que trabajan
+un lado cada vez. ⚠️ **Isométrico, explosivo y skill no son patrones**: el apartado 4 los enumera y
+en la línea siguiente manda reutilizar lo que ya exista, y ya existían en `tipos` y `explosivo`.
+
+### 🚨 El contexto: en casa no se propone una máquina
+
+Con el entrenamiento marcado en casa, lo que no se puede hacer allí **baja a «Poco
+recomendable»** y dice por qué (*«En casa no se puede hacer.»*): no se propone solo, pero está si él
+lo pide (apartado 6). «No tengo barra» quita lo que la necesita, y **la silla ocupa el sitio del
+banco** en la búlgara: `EQUIPAMIENTO` aprendió qué material es intercambiable, porque la lista de la
+F2 no dice qué es imprescindible. Y el material del entrenamiento **se detecta** de sus otros
+ejercicios (apartado 7).
+
+### 🚨 Conservar la configuración cuando vale, adaptarla cuando no
+
+Se quedan las series, el descanso, la nota y —con la misma medida— las repeticiones (apartado 11).
+**El peso no viaja**: 60 kg de barra no son 60 de mancuernas. Y **3 × 10 no pasa a ser 3 × 10 s**
+(apartado 12): si la medida cambia, se usa la configuración predeterminada —sin número, como el
+constructor desde la F3— y **se avisa** (apartado 13). La confirmación sale **solo cuando hay algo
+que decir**: datos registrados, una medida que cambia, un peso que no se copia o un objetivo.
+
+### 🚨 Cada sistema conserva su fuente de verdad
+
+Sustituir cambia **un `exerciseId`** —en la sesión en curso, en el borrador o en esa plantilla— y
+nada más. El historial, el progreso, el rango y la clasificación leen por `exerciseId` desde su
+fase, así que **ninguno se mezcla sin una línea de código**: el press del 12 sigue siendo de barra
+y el del 15, de mancuernas (apartados 18-23). El objetivo del original **se queda en el original**
+por defecto (*«Este objetivo pertenece al ejercicio original.»*), con «Cancelar objetivo» —en la
+misma escritura que la sesión— y «Crear uno nuevo», que abre el formulario de la F14 con el
+ejercicio nuevo (apartado 21). Un plan oficial se personaliza (F5) y se cambia **en la copia**.
+
+### 🐛 Y tres fallos de antes
+
+- **Una plancha cambiada por un encogimiento seguía midiéndose en segundos** (F7): la medida solo
+  pasaba a tiempo, nunca de vuelta.
+- **El «+» del peso de unas mancuernas empezaba en los 60 kg de la barra** (F9): el plan de la
+  sesión conservaba el peso del otro ejercicio. Se quita solo ese dato, y lo que decía la plantilla
+  sigue en `linea` (**C-40**).
+- **El buscador a mano decía «Añadir» cuando sustituía**: ahora sus tarjetas dicen «Cambiar por».
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.114.0 — FIT F32/45: la planificación semanal avanzada de entrenamiento
 
 Tu Plan contesta ya las cuatro preguntas del criterio de finalización: **qué toca hoy, qué toca

@@ -6,6 +6,8 @@ import {
 import {
   nombreDeLinea, variantesDeLinea, DESCANSO_POR_DEFECTO, MAX_SERIES,
 } from './constructor';
+/* 🔓 FIT F33 — la medida al sustituir la decide un solo sitio. */
+import { configuracionRecomendada } from './sustitucion';
 import { normalizarFitnessConPlanes, CATALOGO_PLANES } from './planes';
 
 /* Entrega 4 · Fase 7/45 — «Motor de entrenamiento en vivo».
@@ -459,7 +461,12 @@ export function sustituirEjercicio(sesion, ejercicioId, exerciseIdNuevo, propios
   const nuevo = ejercicioPorId(texto(exerciseIdNuevo), propios);
   if (!nuevo) return sesion;
   return mapEjercicio(sesion, ejercicioId, (e) => {
-    const modo = !nuevo.medidas.includes('reps') && nuevo.medidas.includes('tiempo') ? 'tiempo' : e.modo;
+    if (e.exerciseId === nuevo.id) return e;
+    /* 🐛 FIT F33, apartado 12 — la medida la decide `configuracionRecomendada`.
+       Aquí solo se pasaba a tiempo, nunca de vuelta: una plancha cambiada por un
+       encogimiento abdominal **seguía midiéndose en segundos**. Ahora se queda
+       la que había si el nuevo la admite y, si no, pasa a la suya. */
+    const { modo } = configuracionRecomendada(e, ejercicioPorId(e.exerciseId, propios), nuevo);
     return {
       ...e,
       exerciseId: nuevo.id,
@@ -470,7 +477,12 @@ export function sustituirEjercicio(sesion, ejercicioId, exerciseIdNuevo, propios
         origen: s.origen,
         estado: s.estado,
         modo,
-        plan: s.plan,
+        /* 🐛 FIT F33, apartado 11 — **el peso planificado tampoco viaja**. El
+           plan se congela al empezar (F7) y aquí solo se toca eso: el «+» del
+           peso parte de `plan.peso` (F9, apartado 10), así que unas mancuernas
+           empezaban a sumar desde los 60 kg de la barra. Lo que decía la
+           plantilla sigue entero en `linea`. */
+        plan: { ...s.plan, peso: null },
         /* El peso de un press de banca no dice nada del de mancuernas. */
         hecho: { reps: s.hecho.reps, duracion: s.hecho.duracion, peso: null },
       })),

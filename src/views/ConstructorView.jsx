@@ -23,7 +23,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  ArrowLeft, Plus, Check, ChevronUp, ChevronDown, Copy, Trash2, Pencil, X,
+  ArrowLeft, Plus, Check, ChevronUp, ChevronDown, Copy, Trash2, Pencil, X, Repeat,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
@@ -37,10 +37,12 @@ import {
   DESCANSOS, MODOS_LINEA, TIPOS_CARGA, MAX_SERIES,
   crearRutina, nombreDeLinea, textoDeSeries, textoDeCarga, musculosResumidos,
   anadirEjercicio, editarLinea, eliminarLinea, duplicarLinea, moverLinea,
-  variantesDeLinea, cambiarVariante,
+  variantesDeLinea, cambiarVariante, sustituirEnRutina,
   resumenRutina, guardarRutina, hayCambios,
   guardarBorrador, borrarBorrador,
 } from '../lib/constructor';
+/* 🔓 FIT F33 — sustituir un ejercicio del borrador o de la plantilla. */
+import { ExerciseReplacementModal } from '../components/sustitucion';
 
 /* ── Un botón redondo de icono ─────────────────────────────────────────────
    ⚠️ Siempre con `aria-label` y con `toque-44`: un botón de solo icono sin
@@ -184,6 +186,8 @@ function Pastilla({ activa, children, accent, onClick, label }) {
    🚨 Cambia **esa línea de esa rutina**, nunca el ejercicio del catálogo. */
 export function EditorLinea({
   linea, propios = [], accent, onCambiar, onCerrar, onCambiarVariante = null,
+  /* 🔓 FIT F33, apartado 15 — abre la hoja de sustitución. */
+  onReemplazar = null,
 }) {
   if (!linea) return <EmptyHint text="Ese ejercicio ya no está en la rutina." />;
   const nombre = nombreDeLinea(linea, propios);
@@ -208,6 +212,13 @@ export function EditorLinea({
         <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
           {musculosResumidos(linea, propios)}
         </p>
+        {/* 🔓 FIT F33, apartado 15 — cambia el ejercicio de ESTA línea; el del
+            catálogo no se entera. */}
+        {onReemplazar && (
+          <div className="mt-3">
+            <GhostBtn icon={Repeat} onClick={onReemplazar}>Reemplazar ejercicio</GhostBtn>
+          </div>
+        )}
       </Card>
 
       <Card>
@@ -401,6 +412,8 @@ export default function ConstructorView({
   const [original] = useState(() => rutinaInicial || crearRutina({}));
   const [eligiendo, setEligiendo] = useState(false);
   const [editando, setEditando] = useState(null);
+  /* 🔓 FIT F33 — qué línea se está sustituyendo (estado de la pantalla). */
+  const [reemplazando, setReemplazando] = useState(null);
   const [avisoSalir, setAvisoSalir] = useState(false);
   const [problemas, setProblemas] = useState([]);
   const [guardado, setGuardado] = useState(false);
@@ -452,14 +465,44 @@ export default function ConstructorView({
   if (editando) {
     const linea = rutina.lineas.find((l) => l.id === editando);
     return (
-      <EditorLinea
-        linea={linea}
-        propios={propios}
-        accent={accent}
-        onCambiar={(c) => cambiar(editarLinea(rutina, editando, c))}
-        onCambiarVariante={(id) => cambiar(cambiarVariante(rutina, editando, id, propios))}
-        onCerrar={() => setEditando(null)}
-      />
+      <>
+        <EditorLinea
+          linea={linea}
+          propios={propios}
+          accent={accent}
+          onCambiar={(c) => cambiar(editarLinea(rutina, editando, c))}
+          onCambiarVariante={(id) => cambiar(cambiarVariante(rutina, editando, id, propios))}
+          onReemplazar={linea ? () => setReemplazando(linea.id) : null}
+          onCerrar={() => setEditando(null)}
+        />
+        {/* 🔓 FIT F33, apartados 15 y 16 — la sustitución, en una hoja. El
+            contexto es ESTA rutina: su entorno y el material de sus otros
+            ejercicios. Aplicarla es `sustituirEnRutina`, que cambia esta línea
+            y nada más; guardar sigue siendo el «Guardar» de siempre. */}
+        {linea && reemplazando === linea.id && (
+          <ExerciseReplacementModal
+            exerciseId={linea.exerciseId}
+            contexto={{ rutina, configuracion: linea }}
+            propios={propios}
+            accent={accent}
+            ambito="borrador"
+            onCerrar={() => setReemplazando(null)}
+            onConfirmar={(id) => { cambiar(sustituirEnRutina(rutina, linea.id, id, propios)); setReemplazando(null); }}
+            renderBuscador={({ onElegir, onVolver }) => (
+              <EjerciciosView
+                propios={propios}
+                accent={accent}
+                onVolver={onVolver}
+                volverA="Reemplazar"
+                onElegir={onElegir}
+                accionElegir="Cambiar por"
+                marcaElegido="Es el actual"
+                yaElegidos={[linea.exerciseId]}
+              />
+            )}
+          />
+        )}
+      </>
     );
   }
 

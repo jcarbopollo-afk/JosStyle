@@ -237,12 +237,17 @@ const subs = sustitutosCompatibles(BANCA, []);
 const actual = ejercicioPorId('press-banca-barra');
 ok(subs.length > 0, `Hay sustitutos compatibles (${subs.length})`);
 ok(!subs.some((x) => x.ejercicio.id === actual.id), '…sin proponer el mismo ejercicio');
-ok(subs.every((x) => musculoPrincipal(x.ejercicio)?.grupoId === musculoPrincipal(actual).grupoId
-  || x.motivo !== 'Mismo músculo'),
-  '🚨 Los que salen por compatibilidad trabajan el MISMO grupo muscular (prioridad 1 del apartado 21)');
-ok(subs[0].motivo === 'Misma familia', '…y primero va la familia de la F3, que es el cambio más parecido');
-const idx = (motivo) => subs.findIndex((x) => x.motivo === motivo);
-ok(idx('Mismo músculo') === -1 || idx('Misma familia') < idx('Mismo músculo'), '…antes que el resto del grupo');
+/* 🔓 FIT F33 — estas tres se dan la vuelta: los sustitutos ya no los ordena la
+   F9 por su cuenta (familia, declarados y el resto del grupo), sino el motor de
+   la F33 por niveles de compatibilidad. Lo que protegían sigue en pie, dicho
+   con los niveles: el más parecido primero, y la familia de la F3 arriba. */
+const ORDEN_NIVEL = { 'Muy similar': 1, Similar: 2, Alternativa: 3 };
+ok(subs.every((x) => ORDEN_NIVEL[x.motivo]),
+  '🚨 Todos llevan su nivel de compatibilidad, y ninguno es «Poco recomendable» (F33, apartado 2)');
+ok(subs[0].motivo === 'Muy similar' && !!subs[0].relacion,
+  '…y primero va uno muy similar de la familia de la F3, que es el cambio más parecido');
+ok(subs.every((x, i) => i === 0 || ORDEN_NIVEL[subs[i - 1].motivo] <= ORDEN_NIVEL[x.motivo]),
+  '…con los niveles en orden: muy similares, después similares y después alternativas');
 ok(new Set(subs.map((x) => x.ejercicio.id)).size === subs.length, '⚠️ …sin repetir ninguno');
 ok(sustitutosCompatibles(BANCA, [], { limite: 3 }).length <= 3, 'Se puede acotar');
 ok(JSON.stringify(sustitutosCompatibles(BANCA, []).map((x) => x.ejercicio.id)) === JSON.stringify(subs.map((x) => x.ejercicio.id)),

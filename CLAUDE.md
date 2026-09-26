@@ -14,21 +14,21 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.114.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.115.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 32 primeras (v3.83.0 → v3.114.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 33 primeras (v3.83.0 → v3.115.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
 🚨 **Antes de construir nada, `git fetch origin main`**: esta sesión llegó a tener una F9 entera
 escrita **que ya estaba hecha y mejor** —la suya destapó dos fallos reales de mi F7—, y se descartó.
 
-🚨 **Y la lección de la F1, que vale para las 44 que quedan: ENTRENAMIENTO YA EXISTÍA, y no era una
+🚨 **Y la lección de la F1, que vale para todas las que quedan: ENTRENAMIENTO YA EXISTÍA, y no era una
 cosa, eran tres.** El módulo es `entreno` + `calistenia` desde la Fase 2; **las fotos de progreso son
 `saludFotos`** —la función que las sube se llama `uploadProgressPhoto()`—; y la racha la lleva el
 motor de rachas. **Fitness no nació al lado: nació SIENDO `entreno`**, con su id y su clave de datos
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 13 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 12 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -195,8 +195,10 @@ añadió la F32: +145 de Node en su suite, +68 de renderizado y +31 del recorrid
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
 
-Eso ya ha encontrado **ciento tres bugs reales** que la revisión a mano no vio. Los tres últimos
-son de la FIT F29: **`resumenDeEjercicio` devuelve `estado`, no `estadoNombre`** —la etiqueta de
+Eso ya ha encontrado **ciento seis bugs reales** que la revisión a mano no vio. Los tres últimos
+son de la FIT F33: **una plancha cambiada por un encogimiento seguía midiéndose en segundos** (F7),
+**el «+» del peso de unas mancuernas empezaba en los 60 kg de la barra** (F9, **C-40**) y **el
+buscador a mano decía «Añadir» cuando sustituía**. Los de antes, de la FIT F29: **`resumenDeEjercicio` devuelve `estado`, no `estadoNombre`** —la etiqueta de
 cada sesión se habría quedado muda para siempre—, **el aviso de variantes no salía estando EN una
 variante**, que es justo el caso que pide su apartado 21, y **una prueba de la F12 que llevaba
 saliendo roja una de cada cincuenta veces** porque barría los `sesionId`, que son aleatorios. Antes
@@ -340,8 +342,52 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 **FIT F27 (v3.109.0)** y la
 **FIT F28 (v3.110.0)**, que 🏁 **CERRÓ EL BLOQUE DE PROGRESO FÍSICO** —F26, F27 y F28— y la
 **FIT F29 (v3.111.0)**, con la que empieza el bloque de **Inteligencia** (F29–F35), y la
-**FIT F30 (v3.112.0)**, la **FIT F31 (v3.113.0)** y la **FIT F32 (v3.114.0)**, hechas. Lo que
-dejaron, y que vale para las 13 que quedan:
+**FIT F30 (v3.112.0)**, la **FIT F31 (v3.113.0)**, la **FIT F32 (v3.114.0)** y la **FIT F33
+(v3.115.0)**, hechas. Lo que dejaron, y que vale para las 12 que quedan:
+
+- 🚨 **SUSTITUIR ES UN SOLO MOTOR, Y LO LLAMAN TRES** (FIT F33, `src/lib/sustitucion.js`): la F7
+  (`sustituirEjercicio` le pide la medida), la F9 (`sustitutosCompatibles` le pide la lista y ya
+  **no recorre el catálogo por su cuenta**) y el constructor (`sustituirEnRutina`, por donde pasa
+  también `cambiarVariante` de la F3). Una fase que proponga ejercicios parecidos **llama a
+  `getExerciseReplacements`**, no escribe un quinto buscador.
+- 🚨 **EL NIVEL DE COMPATIBILIDAD SALE DE PUERTAS, NO DE UNA SUMA** (FIT F33, apartado 5): con una
+  puntuación sola, la máquina salía «muy similar» al press de barra. Lo que decide es **qué
+  comparten** —patrón, músculo principal, forma de medirse, familia o material—, y la puntuación
+  **solo ordena dentro del nivel y no se pinta nunca** (apartado 33). ⚠️ Y la forma de medirse es
+  la clase de la F11 vista desde el catálogo: **carga externa, tu peso (con lastre también) o
+  tiempo** (`claseDeMedida`). Por eso las flexiones son «alternativa» del press de banca.
+- 🚨 **EL CATÁLOGO TIENE PATRÓN DE MOVIMIENTO DESDE LA F33**, en la línea de cada ejercicio
+  (`patron`, y `unilateral`), con `PATRONES_MOVIMIENTO` y `FAMILIAS_PATRON` en `ejercicios.js`.
+  ⚠️ **Isométrico, explosivo y skill NO son patrones**: son modalidades que ya estaban en `tipos` y
+  `explosivo` (`modalidadesDe`). Un ejercicio nuevo del catálogo **necesita su patrón** o la
+  auditoría se pone roja.
+- ⚠️ **LA LISTA DE EQUIPAMIENTO DE LA F2 NO DICE QUÉ ES IMPRESCINDIBLE** (FIT F33): la búlgara pone
+  «banco, silla, mancuernas». Así que `EQUIPAMIENTO` lleva `grupo` —qué puede ocupar el sitio de
+  otro **dentro de la misma lista**: la silla por el banco— y `sinMaterial` (nada, suelo). ⚠️ **Los
+  discos no son del grupo de la barra**: la acompañan, no la sustituyen, y con ellos dentro «no
+  tengo barra» dejaba el press de banca disponible. Lo que no se puede decidir **se quita de más**.
+- 🚨 **LO QUE NO SE PUEDE HACER AQUÍ BAJA A «POCO RECOMENDABLE», NO DESAPARECE** (FIT F33,
+  apartados 2 y 6): en casa la máquina no se propone sola, pero está si él la pide y dice por qué.
+  ⚠️ El nivel de los dos ejercicios **no cambia**: lo que baja es el nivel **en contexto**.
+- 🚨 **AL SUSTITUIR: SE QUEDAN SERIES, DESCANSO Y NOTA; EL PESO NO VIAJA; SI CAMBIA LA MEDIDA, SIN
+  NÚMERO Y CON AVISO** (FIT F33, apartados 11-13, `configuracionRecomendada`). «Recalcular» **no
+  inventa un número**: con la misma medida, sus repeticiones siguen valiendo. ⚠️ Y la confirmación
+  sale **solo si hay algo que decir** (EH F61): datos registrados, una medida que cambia, un peso
+  que no se copia o un objetivo.
+- 🚨 **EL PLAN DE UNA SERIE SIGUE CONGELADO, SALVO EL PESO AL SUSTITUIR** (FIT F33, **C-40**): el
+  «+» de la F9 parte de `plan.peso`, así que unas mancuernas empezaban en los 60 kg de la barra.
+  Lo que decía la plantilla sigue en `linea`.
+- 🚨 **NADA SE TRANSFIERE AL SUSTITUIR, Y NO HACE FALTA CÓDIGO PARA ELLO** (FIT F33, apartados
+  18-24): historial, progreso, rango y clasificación leen por `exerciseId` desde su fase. El
+  objetivo **se queda en el original por defecto**; «Cancelar objetivo» va **en la misma
+  escritura** que la sesión (E3 F26) y «Crear uno nuevo» abre el formulario de la F14 con
+  `focoObjetivo`. ⚠️ **Los ejercicios no tienen favoritos**: los únicos son los de los planes (F5).
+- ⚠️ **UNA ACCIÓN SE LLAMA POR LO QUE HACE** (FIT F33): el buscador de la F2 en modo elegir decía
+  «Añadir» también al sustituir. `EjerciciosView` recibe ahora `accionElegir`, y al sustituir dice
+  «Cambiar por».
+- ⚠️ **LA HOJA DEL CONSTRUCTOR NO ENTRA EN EL BANCO DE RENDERIZADO** (FIT F33): es un portal, como
+  `quickAdd`. Lo que lleva dentro (`ExerciseReplacement`) sí, con sus cuatro estados, y el
+  recorrido comprueba que la hoja está **sobre el `body`**.
 
 - 🚨 **UN DÍA SIN SESIÓN EN EL PLAN NO ES «DESCANSO»** (FIT F32, apartado 5): *"puede haber
   entrenamiento libre"*. Es **«Sin entrenamiento planificado»**, y la palabra vivía en **dos
@@ -1316,22 +1362,27 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F33/45 — Sistema avanzado de sustitución de ejercicios** (líneas
-   11 529–11 859 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la quinta del bloque de
+1. 🏋️ **SEGUIR POR LA FIT F34/45 — Biblioteca y detalle avanzado de ejercicios** (líneas
+   10 709–11 528 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la sexta del bloque de
    **Inteligencia** (F29–F35). Se construye de la F1 a la F45, en orden, encadenando sin parar.
    El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: SUSTITUIR UN EJERCICIO YA EXISTE, Y LOS SUSTITUTOS TAMBIÉN.** Cada
-   ejercicio del catálogo trae sus **`sustitutos`** y sus **`variantes`** desde la **F2**; el
-   entrenamiento en vivo ya **reemplaza** con `sustituirEjercicio` (F7, `entrenamiento.js`, con
-   `sustituyeA` en el ejercicio de la sesión); la F24 cuenta el **grado** de cada ejercicio por esas relaciones, y la F29 dejó escrito
-   que **la familia es la raíz más sus variantes** (`baseDe(ej) || ej`) y que una relación **se
-   recorre en los dos sentidos**. Su apartado 4 lo dice: *"Si el ejercicio actual ya dispone de un
-   patrón equivalente: REUTILIZARLO"*. **Se amplía eso** —niveles de compatibilidad, explicación,
-   filtro por equipamiento y entorno—, no se escribe un segundo buscador de sustitutos.
-   ⚠️ Y su apartado 10: **nunca «es exactamente igual»** — la F11 ya decidió que la familia y los
-   sustitutos **no son comparables** para la progresión.
+   ⚠️ **Y lo segundo, en ESTA: LA BIBLIOTECA DE EJERCICIOS YA EXISTE, Y EL DETALLE TAMBIÉN, DOS
+   VECES.** El catálogo con buscador, filtros con recuento y navegación es **`EjerciciosView`**
+   (F2), que el constructor y la sustitución ya usan en modo elegir; su ficha es
+   **`DetalleEjercicio`** (F2: instrucciones, músculos, equipamiento, variantes, progresiones, los
+   `sustitutos` declarados en la ficha y el vídeo que no existe, dicho en pantalla) — ⚠️ sus
+   sustitutos son **la lista cruda de la F2**, y los de la F33 salen de `getExerciseReplacements`
+   con su nivel: si la F34 los enseña en el detalle, que los pida al motor y no deje dos listas; y **el detalle de progreso de un ejercicio es la F29**
+   (`detalleEjercicio.js` / `.jsx`, que no calcula nada: pide a la F11, F12, F19, F23, F14 y F8).
+   Su contexto lo dice: *"El catálogo es la fuente de verdad de los ejercicios. No duplicar
+   información"*. **Se amplía eso** —recientes, «explorar por categorías», el detalle con sus
+   progresiones, sus sustituciones (**que son la F33: `getExerciseReplacements`**) y su progreso—,
+   no se escribe una segunda biblioteca ni un tercer detalle. ⚠️ **Y los ejercicios NO tienen
+   favoritos** (lo dejó escrito la F33): si la fase los pide, es un campo nuevo con su normalizador
+   (regla 5), no una lista que se invente. ⚠️ Y el patrón de movimiento **ya existe** desde la F33
+   (`patron`, `PATRONES_MOVIMIENTO`): si la F34 filtra por patrón, lo lee de ahí.
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único

@@ -309,6 +309,9 @@ export function DetalleEjercicio({ ejercicio, accent, onVolver = null, onAbrirOt
 export default function EjerciciosView({
   propios = [], accent, onVolver = null, volverA = 'Fitness',
   onElegir = null, yaElegidos = [],
+  /* 🔓 FIT F33 — lo que hace elegir. En el constructor, añadir; al sustituir,
+     cambiar: una tarjeta que dice «Añadir» y reemplaza mentiría (regla 8). */
+  accionElegir = 'Añadir', marcaElegido = 'Ya está',
 }) {
   const [consulta, setConsulta] = useState('');
   const [filtros, setFiltros] = useState({});
@@ -455,8 +458,8 @@ export default function EjerciciosView({
               key={e.id}
               ejercicio={e}
               accent={accent}
-              accion={onElegir ? 'Añadir' : 'Ver'}
-              marca={onElegir && yaElegidos.includes(e.id) ? 'Ya está' : null}
+              accion={onElegir ? accionElegir : 'Ver'}
+              marca={onElegir && yaElegidos.includes(e.id) ? marcaElegido : null}
               onAbrir={() => (onElegir ? onElegir(e.id) : setAbierto(e.id))}
             />
           ))}
