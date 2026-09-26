@@ -73,7 +73,16 @@ rediseñar). Están en `NO_EN_FIT38`, cada una con su motivo.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde. **63 comprobaciones nuevas** en `scripts/test-movil-fitness.mjs`
+—los campos y los buscadores con sus props de teclado, las hojas con su tope y su Safe Area, las
+miniaturas perezosas, los gestos sin botón, el revisor de la EH F42 sobre los componentes de Fitness,
+«Última vez» que no rellena nada y el hook del scroll—, **ocho casos más** en el banco de
+renderizado (el entrenamiento en vivo con y sin «Última vez») y la sección de la F38 en el recorrido,
+con la matriz de siete pantallas. ⚠️ **La comprobación de volver a la lista se comprobó roja quitando
+el hook**: sin bajar dentro de la ficha antes de volver, salía verde también sin arreglo, porque nadie
+habría movido la página. Cifras de la pasada verde (`═══ TODO CORRECTO ═══`): **21 245** de Node en
+**198 suites** (+63), **3684** de renderizado (+8), **11** invariantes y **2708** en Chromium (+30) —
+**27 648**.
 
 ## v3.119.0 — FIT F37/45: microinteracciones y feedback premium de fitness
 
