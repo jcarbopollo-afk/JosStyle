@@ -5,7 +5,7 @@
    duplicar información en componentes, planes o sesiones."* — y que la ficha
    **reutiliza** la F2, la F29 y la F33 en vez de escribir otra. */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -356,6 +356,32 @@ ok(tutorialDeFicha(crearEjercicioCompleto({ id: 'r', nombre: 'R', tutorial: { vi
 'Recurso multimedia roto: si no es válido no se enseña, y si no carga, la pantalla lo dice');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
+/* 🐛 Apartado 34 — a 375 px la biblioteca se salía 61 px de lado, y lo cazó el
+   recorrido. La rejilla de tarjetas era `grid md:grid-cols-2` **sin columna
+   base**: en el móvil la pista es `auto`, crece hasta el ancho mínimo del
+   contenido —que cuenta el nombre entero en una línea, `truncate` no recorta
+   ahí— y cada tarjeta medía 420 px. `grid-cols-1` es `minmax(0, 1fr)` y deja
+   encoger. Y el mismo patrón estaba latente en la lista de alternativas de la
+   F33: se barre TODA la aplicación. */
+const JSX_TODOS = (() => {
+  const out = [];
+  const recorrer = (dir) => readdirSync(join(RAIZ, dir)).forEach((f) => {
+    const ruta = `${dir}/${f}`;
+    if (statSync(join(RAIZ, ruta)).isDirectory()) recorrer(ruta);
+    else if (f.endsWith('.jsx')) out.push(ruta);
+  });
+  recorrer('src');
+  return out;
+})();
+const rejillaSinBase = (codigo) => (codigo.match(/className="[^"]*\bgrid\b[^"]*"/g) || [])
+  .filter((c) => /(sm|md|lg|xl):grid-cols-/.test(c) && !/[" ]grid-cols-\d/.test(c));
+const sinBase = JSX_TODOS.flatMap((f) => rejillaSinBase(leer(f)).map((c) => `${f}: ${c}`));
+ok(JSX_TODOS.length > 50 && sinBase.length === 0,
+  `🐛 Ni una rejilla con columnas solo en pantalla ancha: en el iPhone la pista crecería con el contenido (${JSX_TODOS.length} vistas) — ${sinBase.join(' | ') || 'ninguna'}`);
+ok(rejillaSinBase('<div className="grid gap-2 md:grid-cols-2">').length === 1
+  && rejillaSinBase('<div className="grid grid-cols-1 gap-2 md:grid-cols-2">').length === 0,
+'…y el barrido caza la de antes y deja pasar la arreglada');
+
 console.log('\n── 12. Una sola fuente de verdad (apartados 32, 33 y 40) ──');
 
 ok(YA_LO_RESUELVE.filter((y) => typeof y.es === 'function').every((y) => y.es.name && typeof y.es === 'function'),

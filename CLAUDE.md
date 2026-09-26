@@ -195,8 +195,10 @@ añadió la F33: +156 de Node en su suite, +60 de renderizado y +63 del recorrid
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
 
-Eso ya ha encontrado **ciento seis bugs reales** que la revisión a mano no vio. Los tres últimos
-son de la FIT F33: **una plancha cambiada por un encogimiento seguía midiéndose en segundos** (F7),
+Eso ya ha encontrado **ciento ocho bugs reales** que la revisión a mano no vio. Los dos últimos
+son de la FIT F34: **la biblioteca se salía 61 px de lado en el iPhone** —una rejilla sin columna
+base crecía con el nombre entero de cada tarjeta— y **el mismo patrón, latente, en la lista de
+alternativas de la F33**. Los de antes, de la FIT F33: **una plancha cambiada por un encogimiento seguía midiéndose en segundos** (F7),
 **el «+» del peso de unas mancuernas empezaba en los 60 kg de la barra** (F9, **C-40**) y **el
 buscador a mano decía «Añadir» cuando sustituía**. Los de antes, de la FIT F29: **`resumenDeEjercicio` devuelve `estado`, no `estadoNombre`** —la etiqueta de
 cada sesión se habría quedado muda para siempre—, **el aviso de variantes no salía estando EN una
@@ -384,6 +386,13 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
   hay** —la séptima vez—, y la del ciclo de progresión aceptaba `pc === null || …`, un respaldo que
   la dejaba verde sin mirar nada. Ahora la primera barre el catálogo por ids con su comprobación de
   que sigue cazando uno, y la segunda exige la cadena entera y la misma desde los dos lados.
+- 🐛 **UNA REJILLA SIN COLUMNA BASE CRECE CON SU CONTENIDO EN EL iPHONE** (FIT F34, y lo cazó el
+  recorrido a 375 px: la página medía 436). `grid md:grid-cols-2` deja el móvil con una pista
+  `auto`, que crece hasta el ancho mínimo del contenido —y ese cálculo cuenta el nombre entero en
+  una línea: `truncate` no recorta ahí—, así que cada tarjeta medía 420 px. **`grid-cols-1`**
+  (`minmax(0, 1fr)`) deja encoger. El mismo patrón estaba latente en las alternativas de la F33, y
+  ahora `test-biblioteca-ejercicios` barre **todas las vistas** buscándolo. ⚠️ Y la F2 no lo tenía
+  porque era una lista: **al cambiar una lista por una rejilla, medir el ancho en el móvil**.
 - ⚠️ **AL RENOMBRAR LO QUE SE VE, SE BARRE EL RECORRIDO** (FIT F34, y es NAV F1): la biblioteca pasó
   a llamarse «Ejercicios», la fila del grupo «Músculo» y quitar filtros «Limpiar filtros» —el texto
   literal de los apartados 2, 4 y 6—, así que tres comprobaciones de la F2 y una de la F33 (la lista

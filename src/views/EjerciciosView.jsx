@@ -269,7 +269,7 @@ export default function EjerciciosView({
         <div key={b.id}>
           <SectionTitle sub={b.sub}>{b.titulo}</SectionTitle>
           {b.ejercicios ? (
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
               {b.ejercicios.map((e) => (
                 <ExerciseCard key={e.id} ejercicio={e} accent={accent} favorito={favoritos.includes(e.id)} onAbrir={() => setAbierto(e.id)} />
               ))}

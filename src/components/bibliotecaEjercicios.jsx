@@ -171,7 +171,7 @@ export function ExerciseGrid({ pagina, accent, onAbrir, onMas, accion = 'Ver', m
   if (!pagina) return null;
   return (
     <div>
-      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
         {pagina.items.map((e) => (
           <ExerciseCard
             key={e.id}

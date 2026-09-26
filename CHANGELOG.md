@@ -82,6 +82,16 @@ final**, con la configuración por defecto del constructor, y **no crea ninguna 
 - **El nombre de un ejercicio archivado**: la sesión guarda su id (F3, **C-36**), así que la ficha
   enseña el id con **«Ejercicio archivado»** y su historial entero.
 
+### 🐛 Y lo que cazó el recorrido: la biblioteca se salía 61 px en el iPhone
+
+Con los bloques de Recientes y Favoritos pintados, a 375 px **la página se arrastraba de lado**
+(436 px de ancho). La rejilla de tarjetas era `grid md:grid-cols-2` **sin columna base**: en el
+móvil la pista es `auto` y crece hasta el ancho mínimo de su contenido, que cuenta el nombre entero
+en una línea —`truncate` no recorta en ese cálculo—, así que cada tarjeta medía 420 px. `grid-cols-1`
+es `minmax(0, 1fr)` y deja encoger. ⚠️ **Y el mismo patrón estaba latente en la lista de
+alternativas de la F33**: ahora hay una comprobación que barre **las 71 vistas** de la aplicación
+buscando una rejilla con columnas solo en pantalla ancha, con su prueba de que sigue cazando una.
+
 ### Verificación
 
 {{VERIFICACION}}

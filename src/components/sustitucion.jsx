@@ -433,7 +433,7 @@ export function ExerciseReplacement({
               <p className="text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: colorDeNivel(g.nivel.id) }}>
                 {g.nivel.nombre}
               </p>
-              <div className="grid gap-2 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {g.items.map((x) => (
                   <ReplacementCard key={x.id} item={x} accent={accent} onElegir={elegir} />
                 ))}
