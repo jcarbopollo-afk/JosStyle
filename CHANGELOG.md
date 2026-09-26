@@ -99,7 +99,17 @@ guarda ni un contador (RA F1)—, las listas que se expanden —no hay ninguna e
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde. **99 comprobaciones nuevas** en
+`scripts/test-feedback-fitness.mjs` —lee el CSS de verdad: cada duración declarada es la escrita, cae
+en su rango del apartado 2, usa la única curva y ninguna clase deja un `transform` puesto; y barre los
+27 archivos de Fitness buscando excesos, barras sin `fit-barra` y overlays sin su entrada—, y **diez
+más en la del pulido de la E3 F14**, que ahora compara la **duración** de cada animación del catálogo
+y no solo que la clase exista. ⚠️ **El error que se quedaba cinco segundos después de un guardado
+bueno lo cazó el recorrido**, con el doble de Supabase fallando a propósito (`FALLAR_ESCRITURA`), y
+esa comprobación y la de «con el guardado fallido no se celebra» **se comprobaron rojas quitando cada
+arreglo** antes de dejarlos. Cifras de la pasada verde (`═══ TODO CORRECTO ═══`): **21 182** de Node
+en **197 suites** (+109), **3676** de renderizado (+20), **11** invariantes y **2678** en Chromium
+(+23) — **27 547**.
 
 ## v3.118.0 — FIT F36/45: integración global del sistema fitness
 
