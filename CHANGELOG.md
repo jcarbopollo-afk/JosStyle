@@ -76,7 +76,20 @@ ejercicio nuevo (apartado 21). Un plan oficial se personaliza (F5) y se cambia *
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde. **156 comprobaciones nuevas** en
+`scripts/test-sustitucion.mjs` —el ejemplo del apartado 5 tal cual, los niveles por puertas, el
+contexto (casa, «no tengo», material del entrenamiento), la configuración que se conserva o se
+adapta, lo que no se transfiere, el objetivo en la misma escritura y los tres fallos de antes, cada
+uno con su comprobación de que se nota—, **casos de renderizado** para los nueve componentes y una
+sección nueva del recorrido en Chromium que **sustituye en vivo en casa** —con la máquina en «Poco
+recomendable» y su porqué, el objetivo que se queda en el original y el peso que no viaja—, **cambia
+una plancha por un encogimiento** que pasa a medirse en repeticiones y **reemplaza en una
+plantilla** comprobando que la otra no se toca. Costó dos
+pasadas en rojo, **las dos del recorrido y ninguna del código**: comparaba una sesión sembrada en
+crudo con la guardada, y luego el orden de las claves de `hecho`. Las dos se reprodujeron en Node
+con la puerta de carga de verdad antes de relanzar. Cifras de la pasada verde (`═══ TODO CORRECTO
+═══`): **20 685** de Node en **193 suites** (+156), **3524** de renderizado (+60), **11**
+invariantes y **2538** en Chromium (+63) — **26 758**.
 
 ## v3.114.0 — FIT F32/45: la planificación semanal avanzada de entrenamiento
 
