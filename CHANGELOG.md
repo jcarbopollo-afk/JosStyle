@@ -94,7 +94,11 @@ buscando una rejilla con columnas solo en pantalla ancha, con su prueba de que s
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde, **a la segunda**: la primera pasada salió roja en el
+recorrido por la biblioteca que se salía de lado a 375 px, y ése es el fallo de arriba —de la
+aplicación, no de la prueba—. **113 comprobaciones nuevas** en `scripts/test-biblioteca-ejercicios.mjs`.
+Cifras de la pasada verde (`═══ TODO CORRECTO ═══`): **20 798** de Node en **194 suites** (+113),
+**3624** de renderizado (+100), **11** invariantes y **2595** en Chromium (+57) — **27 028**.
 
 ## v3.115.0 — FIT F33/45: el sistema avanzado de sustitución de ejercicios
 
