@@ -98,6 +98,14 @@ const LIBRERIAS_FITNESS = [
   'historialRangos', 'siguienteRango', 'colaClasificacion', 'resumenRangos', 'fotosProgreso', 'comparadorFotos',
   'resumenProgreso', 'detalleEjercicio', 'objetivosFitness', 'actividadEntrenamiento', 'planificacionSemanal',
   'sustitucion', 'bibliotecaEjercicios', 'validacionCatalogo', 'integracionFitness',
+  /* 🐛 FIT F40 — y las cuatro del bloque de Acabado (F37-F40), que se habían
+     quedado fuera de este barrido: es la lección de `ARCHIVOS_FITNESS` en la
+     F39, en otra lista. ⚠️ El barrido sigue DENTRO de Fitness: con el resto de
+     `src/lib` coinciden 19 nombres que ya eran ayudantes propios de cada módulo
+     (`crearObjetivo`, `lunesDe`…). El choque de la F40 —un
+     `auditarRendimiento` que ya era de la EH F44— se cazó buscándolo en todo
+     el proyecto, y ahora se llama `auditarRendimientoFitness`. */
+  'feedbackFitness', 'movilFitness', 'robustezFitness', 'rendimientoFitness',
 ].filter((n) => { try { leer(`src/lib/${n}.js`); return true; } catch { return false; } });
 ok(LIBRERIAS_FITNESS.length >= 30, `El barrido mira ${LIBRERIAS_FITNESS.length} librerías de Fitness que existen de verdad`);
 const exportadas = new Map();

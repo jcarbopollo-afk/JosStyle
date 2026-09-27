@@ -230,6 +230,26 @@ export function momentosDe(fitness, destino, { propios = [] } = {}) {
    4 · EL RANGO QUE HABÍA ESE DÍA
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/** 🔓 FIT F40 — qué ejercicios cambian cada día: los de sus sesiones terminadas
+ *  y los que se clasificaron. Con los mismos criterios que `fitnessHasta`: lo
+ *  que ella deja entrar un día es lo que aquí cuenta como cambio ese día. */
+function cambiosDeEjercicios(fitness) {
+  const porDia = new Map();
+  const anota = (fecha, ids) => {
+    if (!fecha) return;
+    if (!porDia.has(fecha)) porDia.set(fecha, new Set());
+    ids.forEach((x) => { if (x) porDia.get(fecha).add(x); });
+  };
+  lista(fitness.sesiones).forEach((s) => {
+    if (s && s.estado === 'completada' && texto(s.fecha)) anota(s.fecha, idsDeSesion(s));
+  });
+  lista(fitness.clasificaciones).forEach((c) => {
+    const m = momentoDeClasificacion(c);
+    if (m) anota(m.fecha, [m.exerciseId]);
+  });
+  return [...porDia.entries()].map(([fecha, ids]) => ({ fecha, ids })).sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0));
+}
+
 /** `fitness` recortado a lo que existía hasta ese día, inclusive. */
 function fitnessHasta(fitness, fecha) {
   const f = fitness && typeof fitness === 'object' ? fitness : {};
@@ -252,14 +272,18 @@ function fitnessHasta(fitness, fecha) {
  * una clasificación (apartados 11 y 14). Se calcula con `fuenteCombinada`, la
  * misma regla que usa el rango global — no una segunda.
  */
-export function rangoDeDestino(fitness, destino, { propios = [], perfil = null, efectivos = null } = {}) {
+export function rangoDeDestino(fitness, destino, { propios = [], perfil = null, efectivos = null, memo = null } = {}) {
   const t = texto(destino && destino.tipo);
   const id = texto(destino && destino.id);
   if (t === 'exercise') return rangoEfectivoDeEjercicio(fitness, id, { propios, perfil });
-  if (t === 'overall') return rangoGlobalEfectivo(fitness, { propios, perfil });
+  /* 🔓 FIT F40 — con `memo`, solo se recalculan los ejercicios que cambiaron
+     desde el punto anterior (la memoria de `rangosEfectivos`, en el motor). */
+  if (t === 'overall') {
+    return rangoGlobalEfectivo(fitness, { propios, perfil, efectivos: efectivos || (memo ? rangosEfectivos(fitness, { propios, perfil, memo }) : null) });
+  }
   if (t !== 'muscleGroup' && t !== 'subgroup') return null;
 
-  const todos = efectivos || rangosEfectivos(fitness, { propios, perfil });
+  const todos = efectivos || rangosEfectivos(fitness, { propios, perfil, memo });
   const r = t === 'muscleGroup'
     ? rangoEfectivoDeGrupo(fitness, id, { propios, perfil, efectivos: todos })
     : rangoEfectivoDeSubgrupo(fitness, id, { propios, perfil, efectivos: todos });
@@ -353,8 +377,33 @@ export const HISTORIAL_INSUFICIENTE = 'Historial insuficiente';
    recorre todos los ejercicios en cada punto, y la pantalla lo pide varias
    veces por render. ⚠️ Va colgado de la **lista de sesiones**, como el índice de
    la F11: guardar una sesión crea una lista nueva y el caché se cae solo — que
-   es la única invalidación que este proyecto se permite. */
+   es la única invalidación que este proyecto se permite.
+
+   🐛 FIT F40 (apartado 13: *"Nunca mostrar datos antiguos como actuales después
+   de una modificación"*) — **y NO se caía al clasificar un ejercicio.** Un rango
+   depende de las sesiones **y de las clasificaciones** (F17, F19), pero la
+   llave era solo la lista de sesiones: guardar una clasificación crea un
+   `fitness` nuevo **con la misma lista de sesiones**, así que el historial —y
+   su `actual`, que es lo que enseña el resumen de Rangos (F25) y el de Progreso
+   (F28)— seguía diciendo lo de antes de clasificar hasta el siguiente
+   entrenamiento o hasta recargar. Y con los propios pasaba igual: la llave
+   contaba cuántos había, no cuáles. Ahora la memoria se tira si cambia
+   cualquiera de las tres listas de las que sale un rango. */
 const CACHE = new WeakMap();
+
+function memoriaDe(f, propios) {
+  const sesiones = lista(f.sesiones);
+  const clasificaciones = Array.isArray(f.clasificaciones) ? f.clasificaciones : null;
+  let m = CACHE.get(sesiones);
+  /* ⚠️ Dos listas de propios vacías son la misma (el `[]` por defecto de cada
+     llamada es un objeto nuevo), como en el índice de la F11. */
+  const mismosPropios = m && (m.propios === propios || (!lista(m.propios).length && !lista(propios).length));
+  if (!m || m.clasificaciones !== clasificaciones || !mismosPropios) {
+    m = { clasificaciones, propios, porClave: new Map() };
+    if (sesiones.length) CACHE.set(sesiones, m);
+  }
+  return m.porClave;
+}
 
 /**
  * **La función central del apartado 21.** Devuelve los eventos ordenados, los
@@ -371,15 +420,30 @@ export function historialDeRango(fitness, destino, { propios = [], perfil = null
   if (!tipoEntidad(t)) return vacio(t, id, 'destino_desconocido');
 
   const sesiones = lista(f.sesiones);
-  const clave = `${t}|${id}|${lista(propios).length}|${(perfil && perfil.peso) || ''}`;
-  let porClave = CACHE.get(sesiones);
-  if (!porClave) { porClave = new Map(); CACHE.set(sesiones, porClave); }
+  const clave = `${t}|${id}|${(perfil && perfil.peso) || ''}`;
+  const porClave = memoriaDe(f, propios);
   if (porClave.has(clave)) return porClave.get(clave);
 
   const dias = momentosDe(f, { tipo: t, id }, { propios });
   const puntos = [];
+  /* 🐛 FIT F40 (apartados 11, 12 y 42) — **EL RANGO DE CADA DÍA SE CALCULABA
+     ENTERO, EJERCICIO A EJERCICIO**, y con 1 000 sesiones el resumen de Rangos
+     tardaba casi cinco segundos. El rango de un ejercicio solo depende de SUS
+     datos, así que entre un punto y el siguiente solo cambian los ejercicios
+     que se entrenaron o se clasificaron en medio: esos se recalculan y los
+     demás se reutilizan. **Cada punto sigue calculándose con lo que había
+     hasta ese día** (`fitnessHasta`, apartado 12) y con el mismo motor; hay
+     una prueba que compara punto a punto con el cálculo entero. */
+  const cambiosPorDia = cambiosDeEjercicios(f);
+  const memo = { filas: new Map(), afectados: new Set() };
+  let siguiente = 0;
   dias.forEach((d) => {
-    const p = puntoDe(d.fecha, rangoDeDestino(fitnessHasta(f, d.fecha), { tipo: t, id }, { propios, perfil }), d);
+    memo.afectados = new Set();
+    while (siguiente < cambiosPorDia.length && cambiosPorDia[siguiente].fecha <= d.fecha) {
+      cambiosPorDia[siguiente].ids.forEach((x) => memo.afectados.add(x));
+      siguiente += 1;
+    }
+    const p = puntoDe(d.fecha, rangoDeDestino(fitnessHasta(f, d.fecha), { tipo: t, id }, { propios, perfil, memo }), d);
     /* ⚠️ Un día que todavía no daba rango NO es un punto: pintarlo como
        «Sin Rango» en la línea inventaría un estado que nunca se enseñó. */
     if (!p) return;

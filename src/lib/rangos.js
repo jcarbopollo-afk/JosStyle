@@ -294,17 +294,42 @@ function rangoPonderado(ejercicios, pesoDe) {
 
 const SIN = (extra) => ({ sinRango: true, rango: null, nombre: SIN_RANGO.nombre, score: null, ejercicios: 0, dataPoints: 0, confianza: null, provisional: false, ...extra });
 
+/* 🔓 FIT F40 (apartados 11 y 42) — **cuánto pone cada ejercicio en cada grupo y
+   en cada subgrupo, sumado una vez por reparto.** Cada rango de grupo filtraba
+   el reparto de TODOS los ejercicios una vez por grupo y otra por cada uno de
+   sus subgrupos, y el historial de la F22 lo hace en cada día entrenado: con
+   1 000 sesiones era lo más caro de la pantalla de Rangos. La suma es la misma
+   y en el mismo orden (de 0, ejercicio a ejercicio del reparto), así que el
+   resultado es idéntico bit a bit. ⚠️ **Solo se memoriza un reparto congelado**
+   —el que da `repartoMuscular`, compartido y que nadie puede tocar—: uno
+   escrito a mano podría cambiar después, y ése se suma cada vez. */
+const PESOS_DE_REPARTO = new WeakMap();
+function pesosDeReparto(reparto) {
+  const r = lista(reparto);
+  const memorizable = Object.isFrozen(r);
+  if (memorizable && PESOS_DE_REPARTO.has(r)) return PESOS_DE_REPARTO.get(r);
+  const grupos = new Map();
+  const subgrupos = new Map();
+  for (const x of r) {
+    grupos.set(x.grupoId, (grupos.has(x.grupoId) ? grupos.get(x.grupoId) : 0) + x.peso);
+    subgrupos.set(x.subgrupoId, (subgrupos.has(x.subgrupoId) ? subgrupos.get(x.subgrupoId) : 0) + x.peso);
+  }
+  const pesos = { grupos, subgrupos };
+  if (memorizable) PESOS_DE_REPARTO.set(r, pesos);
+  return pesos;
+}
+
 /** El `getMuscleSubgroupRank` del apartado 19. */
 export function rangoDeSubgrupo(ejerciciosConRango, subgrupoId) {
   const s = subgrupoMuscular(subgrupoId);
-  const r = rangoPonderado(ejerciciosConRango, (e) => e.reparto.filter((x) => x.subgrupoId === subgrupoId).reduce((n, x) => n + x.peso, 0));
+  const r = rangoPonderado(ejerciciosConRango, (e) => pesosDeReparto(e.reparto).subgrupos.get(subgrupoId) || 0);
   return r ? { id: subgrupoId, nombreMusculo: s ? s.nombre : subgrupoId, ...r } : SIN({ id: subgrupoId, nombreMusculo: s ? s.nombre : subgrupoId });
 }
 
 /** El `getMuscleGroupRank` del apartado 17. */
 export function rangoDeGrupo(ejerciciosConRango, grupoId) {
   const g = GRUPOS_MUSCULARES.find((x) => x.id === grupoId);
-  const r = rangoPonderado(ejerciciosConRango, (e) => e.reparto.filter((x) => x.grupoId === grupoId).reduce((n, x) => n + x.peso, 0));
+  const r = rangoPonderado(ejerciciosConRango, (e) => pesosDeReparto(e.reparto).grupos.get(grupoId) || 0);
   const subgrupos = lista(g && g.subgrupos).map((sg) => rangoDeSubgrupo(ejerciciosConRango, sg.id));
   return r ? { id: grupoId, nombreMusculo: g ? g.nombre : grupoId, ...r, subgrupos } : SIN({ id: grupoId, nombreMusculo: g ? g.nombre : grupoId, subgrupos });
 }

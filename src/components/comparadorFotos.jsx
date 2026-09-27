@@ -473,8 +473,20 @@ export function ProgressComparison({
     const medir = () => { if (marco.current) setAncho(marco.current.clientWidth); };
     medir();
     if (typeof window === 'undefined') return undefined;
-    window.addEventListener('resize', medir);
-    return () => window.removeEventListener('resize', medir);
+    /* 🔓 FIT F40 (apartado 40: *"no recalcular en cada pixel de resize"*) — una
+       medida por fotograma como mucho: girar el iPhone o esconderse la barra de
+       Safari disparan varios `resize` seguidos, y cada uno repintaba el
+       comparador con sus dos fotos. */
+    let fotograma = null;
+    const alCambiar = () => {
+      if (fotograma !== null) return;
+      fotograma = window.requestAnimationFrame(() => { fotograma = null; medir(); });
+    };
+    window.addEventListener('resize', alCambiar);
+    return () => {
+      window.removeEventListener('resize', alCambiar);
+      if (fotograma !== null) window.cancelAnimationFrame(fotograma);
+    };
   }, [pantalla.modo.id]);
 
   if (typeof document === 'undefined') return null;

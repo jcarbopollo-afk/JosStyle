@@ -273,6 +273,36 @@ export function graficaDeProgreso(progreso, { rango = 'todo', hoy = todayISO(), 
   };
 }
 
+/* 🔓 FIT F40 (apartado 41: *"limitar puntos visibles si son demasiados,
+   mantener precisión suficiente, evitar cientos/miles de elementos DOM. No
+   perder información relevante"*). Un ejercicio de tres veces por semana pasa
+   de 150 registros en un año, y cada uno era un botón de dos círculos en 288 px:
+   trescientos elementos que se pisaban, con zonas de toque de 32 px encima unas
+   de otras —tocar uno era tocar cualquiera—. La **línea sigue pasando por todos**
+   (es UN solo `<path>`, así que la precisión no se pierde) y los que se pueden
+   tocar son, como mucho, `MARCAS_MAXIMAS_GRAFICA`, repartidos por igual, y
+   **siempre el primero, el último, el mejor y el peor**: lo que no se puede
+   perder de una gráfica de progreso. */
+export const MARCAS_MAXIMAS_GRAFICA = 40;
+
+/** Qué puntos llevan marca (índices sobre `puntos`, en orden). */
+export function indicesConMarca(puntos, max = MARCAS_MAXIMAS_GRAFICA) {
+  const l = lista(puntos);
+  if (l.length <= max) return l.map((_, i) => i);
+  const fijos = new Set([0, l.length - 1]);
+  let iMax = 0;
+  let iMin = 0;
+  l.forEach((p, i) => {
+    if (p.valor > l[iMax].valor) iMax = i;
+    if (p.valor < l[iMin].valor) iMin = i;
+  });
+  fijos.add(iMax);
+  fijos.add(iMin);
+  const huecos = Math.max(0, max - fijos.size);
+  for (let k = 1; k <= huecos; k += 1) fijos.add(Math.round((k * (l.length - 1)) / (huecos + 1)));
+  return [...fijos].sort((a, b) => a - b).slice(0, Math.max(max, 4));
+}
+
 /** Coordenadas de la gráfica, puras, para que el componente solo dibuje.
  *  ⚠️ Con todos los valores iguales, la línea va en medio en vez de dividir
  *  entre cero. */

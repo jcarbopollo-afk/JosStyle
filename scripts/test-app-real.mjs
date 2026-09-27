@@ -10834,6 +10834,139 @@ ok(await pulsar('Descartar sesión') && await pulsar('Descartar el entrenamiento
 almacen.fitness = fitnessDeAntes_fit39;
 almacen.salud = saludDeAntes_fit39;
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   FIT F40 — Rendimiento y optimización técnica (Entrega 4 · 40/45)
+   ═══════════════════════════════════════════════════════════════════════════
+   Lo que en Node no se ve: cuántas veces se GUARDA al escribir un peso tecla a
+   tecla (apartados 29 y 32), que escribir y tocar ✓ enseguida no pierda nada
+   ni espere (34), que esconder la página guarde lo pendiente (33), que la nota
+   cerrada antes del retardo no se pierda, y la navegación con el escenario
+   grande (53 y 54): cuánto tarda cada pantalla en tener su contenido, sin un
+   error en la consola, y la gráfica con 400 registros tocando como mucho 40. */
+console.log('\n── FIT F40 · Rendimiento ──');
+const fitnessDeAntes_fit40 = almacen.fitness;
+const fotosDeAntes_fit40 = almacen.saludFotos;
+const escrituras_fit40 = () => guardado.filter((g) => g && g.key === 'fitness').length;
+const enCurso_fit40 = () => ((ultimo_fit34().sesiones || []).find((x) => x && x.estado === 'en_curso') || null);
+const linea_fit40 = () => (((enCurso_fit40() || {}).origen || {}).ejercicios || [])[0] || {};
+const serie_fit40 = (n) => (linea_fit40().series || [])[n] || {};
+
+/* 1 · ESCRIBIR UN PESO TECLA A TECLA (apartados 29 y 32). */
+almacen.fitness = { ...(fitnessDeAntes_fit40 || {}), sesiones: [], plantillas: [plantilla_fit38], planActivo: null, objetivos: [] };
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+ok(await aFitness_fit39() && await pulsar('Ver Móvil F38'), 'FIT F40 — se abre la plantilla de siempre');
+await page.waitForTimeout(400);
+ok(await pulsar('Ver Móvil F38') && await pulsar('Empezar entrenamiento'), '…y se empieza el entrenamiento');
+await esperarTexto(/Marcar la serie/i);
+await page.waitForTimeout(1000);
+const antes_fit40 = escrituras_fit40();
+await page.click('input[aria-label="Peso de la serie 1"]');
+await page.keyboard.type('20.5', { delay: 110 });
+const durante_fit40 = escrituras_fit40() - antes_fit40;
+await page.waitForTimeout(1300);
+const despues_fit40 = escrituras_fit40() - antes_fit40;
+ok(durante_fit40 === 0,
+  `🐛 FIT F40 — escribir «20.5» tecla a tecla NO guarda Fitness en cada tecla (${durante_fit40} guardados mientras escribe; antes, cuatro de todo Fitness)`);
+ok(despues_fit40 === 1 && serie_fit40(0).hecho?.peso === 20.5,
+  `…y al dejar de escribir se guarda UNA vez, con los 20,5 kg exactos (${despues_fit40} guardado; peso ${serie_fit40(0).hecho?.peso})`);
+
+/* 2 · ESCRIBIR Y TOCAR ✓ ENSEGUIDA (apartado 34). Con `page.click`, que es un
+   toque de verdad: el campo pierde el foco antes de que llegue el clic. */
+await page.click('input[aria-label="Repeticiones de la serie 1"]');
+await page.keyboard.type('9', { delay: 40 });
+await page.click('button[aria-label="Marcar la serie 1 como hecha"]');
+await page.waitForTimeout(500);
+ok(serie_fit40(0).hecho?.reps === 9 && serie_fit40(0).estado === 'hecha',
+  `🚨 FIT F40 — escribir 9 y tocar ✓ al momento guarda las dos cosas: ${serie_fit40(0).hecho?.reps} repeticiones y la serie ${serie_fit40(0).estado} (marcar no espera, apartado 34)`);
+
+/* 3 · ESCONDER LA PÁGINA CON UN PESO A MEDIO GUARDAR (apartado 33): lo que
+   pasa al salir a la pantalla de inicio del iPhone. */
+await page.click('input[aria-label="Peso de la serie 2"]');
+await page.keyboard.type('30', { delay: 40 });
+const antesDeEsconder_fit40 = escrituras_fit40();
+await page.evaluate(() => {
+  Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+  document.dispatchEvent(new Event('visibilitychange'));
+});
+await page.waitForTimeout(200);
+const alEsconder_fit40 = escrituras_fit40() - antesDeEsconder_fit40;
+await page.evaluate(() => {
+  delete document.visibilityState;
+  document.dispatchEvent(new Event('visibilitychange'));
+});
+ok(alEsconder_fit40 === 1 && serie_fit40(1).hecho?.peso === 30,
+  `🚨 FIT F40 — al esconderse la página, lo escrito se guarda YA, sin esperar al retardo (${alEsconder_fit40} guardado; peso ${serie_fit40(1).hecho?.peso}, apartado 33)`);
+
+/* 4 · LA NOTA CERRADA ANTES DEL RETARDO (apartado 33). */
+await page.click('body');
+await page.waitForTimeout(900);
+ok(await pulsar('Notas') && await esperarCampo('Nota de este ejercicio'), 'Se abre la nota del ejercicio');
+ok(await escribirCampo('Nota de este ejercicio', 'Agarre más ancho hoy'), '…se escribe');
+ok(await pulsar('Cerrar'), '…y se cierra al momento, antes de que se guarde sola');
+await page.waitForTimeout(500);
+ok(linea_fit40().notas === 'Agarre más ancho hoy',
+  `🐛 FIT F40 — la nota NO se pierde al cerrar el panel enseguida (guardada: «${linea_fit40().notas || ''}»)`);
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), '…se sale');
+await esperarTexto(/Continuar entrenamiento/i);
+ok(await pulsar('Descartar sesión') && await pulsar('Descartar el entrenamiento en curso'), '…y se descarta');
+
+/* 5 · EL ESCENARIO GRANDE (apartados 53 y 54): 400 sesiones —todas con press de
+   banca, para que su gráfica tenga 400 registros—, 200 ejercicios propios, 100
+   objetivos, 30 estimaciones y 1 000 fotos, todo a la vez. */
+const grande_fit40 = await page.evaluate(async () => {
+  const m = await import('/src/lib/rendimientoFitness.js');
+  const e = m.escenarioGrande({ sesiones: 400, propios: 200, objetivos: 100, fotos: 1000, clasificaciones: 30, hoy: new Date().toLocaleDateString('sv-SE') });
+  e.fitness.sesiones.forEach((s) => { s.origen.ejercicios[0].exerciseId = 'press-banca-barra'; });
+  return e;
+});
+almacen.fitness = { ...(fitnessDeAntes_fit40 || {}), ...grande_fit40.fitness, plantillas: [], planActivo: null };
+almacen.saludFotos = grande_fit40.fotos;
+const erroresAntes_fit40 = errores.length;
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2500);
+const cronometro_fit40 = async (pasos, esperado) => {
+  const t0 = Date.now();
+  for (const p of pasos) { if (!(await pulsar(p, 15000))) return null; }
+  const texto = await esperarTexto(esperado, 20000);
+  return esperado.test(texto) ? Date.now() - t0 : null;
+};
+const TECHO_FIT40 = 8000;
+const msRangos_fit40 = await cronometro_fit40(['Bienestar', 'Fitness', 'Rangos'], /grupos con datos/i);
+ok(msRangos_fit40 !== null && msRangos_fit40 < TECHO_FIT40,
+  `FIT F40 — con 400 sesiones, Rangos tiene su contenido en ${msRangos_fit40} ms (techo ${TECHO_FIT40} ms en el servidor de desarrollo)`);
+const msProgreso_fit40 = await cronometro_fit40(['Bienestar', 'Fitness', 'Progreso'], /Línea temporal/i);
+ok(msProgreso_fit40 !== null && msProgreso_fit40 < TECHO_FIT40, `…Progreso, en ${msProgreso_fit40} ms`);
+const msHistorial_fit40 = await cronometro_fit40(['Bienestar', 'Fitness', 'Abrir Historial'], /Ver más/i);
+ok(msHistorial_fit40 !== null && msHistorial_fit40 < TECHO_FIT40, `…el Historial, en ${msHistorial_fit40} ms, y por páginas («Ver más»: no pinta las 400)`);
+const tarjetasHistorial_fit40 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Abrir "]')].length);
+ok(tarjetasHistorial_fit40 > 0 && tarjetasHistorial_fit40 < 100, `…con ${tarjetasHistorial_fit40} tarjetas pintadas de 400 sesiones (apartado 14)`);
+const msBiblioteca_fit40 = await cronometro_fit40(['Bienestar', 'Fitness', 'Abrir Ejercicios'], /Ver más|Mostrar más|ejercicios/i);
+ok(msBiblioteca_fit40 !== null && msBiblioteca_fit40 < TECHO_FIT40, `…la biblioteca con 200 propios, en ${msBiblioteca_fit40} ms`);
+
+/* La gráfica de un ejercicio con 400 registros (apartado 41). */
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso') && await pulsar('Ejercicios'), 'Progreso → Ejercicios');
+await page.waitForTimeout(600);
+ok(await pulsarQueEmpiece_fit10('Ver el progreso de Press de banca'), '…se abre el press de banca, con 400 registros');
+await esperarTexto(/Última vez/i, 15000);
+const grafica_fit40 = await page.evaluate(() => {
+  const svg = [...document.querySelectorAll('svg[role="img"]')].find((s) => /sesiones/.test(s.getAttribute('aria-label') || ''));
+  return svg ? { marcas: svg.querySelectorAll('circle[role="button"]').length, etiqueta: svg.getAttribute('aria-label') } : null;
+});
+ok(!!grafica_fit40 && grafica_fit40.marcas > 0 && grafica_fit40.marcas <= 40,
+  `🔓 FIT F40 — la gráfica toca como mucho 40 puntos (${grafica_fit40 && grafica_fit40.marcas}), no 400 botones encima unos de otros (apartado 41)`);
+/* ⚠️ La gráfica abre en su periodo por defecto (F29), así que no son las 400:
+   lo que se exige es que haya MÁS de 40 —si no, el límite no se estaría
+   probando— y que la etiqueta las cuente todas, porque la línea pasa por todas. */
+const registros_fit40 = Number(((grafica_fit40 && grafica_fit40.etiqueta) || '').match(/en (\d+) sesiones/)?.[1] || 0);
+ok(registros_fit40 > 40 && grafica_fit40.marcas < registros_fit40,
+  `…con ${registros_fit40} registros en el periodo, que la etiqueta sigue contando enteros: la línea pasa por todos (${grafica_fit40 && grafica_fit40.etiqueta})`);
+ok(errores.length === erroresAntes_fit40, `…y ni un error en la consola con todo el volumen a la vez (${errores.length - erroresAntes_fit40})`);
+
+almacen.fitness = fitnessDeAntes_fit40;
+almacen.saludFotos = fotosDeAntes_fit40;
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

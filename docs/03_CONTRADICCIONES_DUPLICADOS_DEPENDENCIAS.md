@@ -874,6 +874,28 @@ que un ejercicio que se archiva **conserva su nombre** en el historial. Lo que y
 catálogo sigue siendo «Ejercicio archivado» con su id, como decidió la C-36: inventarle un nombre
 seguiría siendo reescribir el pasado.
 
+### C-42 — ⏸ PENDIENTE DE JOSUÉ (FIT F40, v3.122.0) · Dividir el bundle en trozos (apartados 22 y 23) contra una aplicación que se publica en cada fase y se queda abierta en el iPhone
+
+**Los apartados 22 y 23 piden *"cargar determinadas partes de Fitness bajo demanda"* y revisar el
+bundle.** Revisado y medido: la aplicación es **un solo archivo de 4,4 MB** (1,18 MB comprimido),
+de los que Fitness son unos **670 KB**; lo más pesado **no es Fitness**: el lector de códigos de
+barras (`@zxing/library`, 408 KB, Nutrición), el de PDF (`pdfjs-dist`, 323 KB, Biblioteca) y el de
+Excel (`xlsx`, 285 KB, la exportación) suman **1 MB** y se descargan aunque no se usen.
+
+**Por qué no se hace en esta fase, sin preguntar y anotado:** partir el bundle funciona con
+`import()`, y **Vercel borra los trozos de una versión al publicar la siguiente**. Josué publica en
+cada fase y deja la aplicación abierta en su iPhone: la primera vez que abriera una parte partida
+después de una publicación, **fallaría al descargarla** hasta recargar. Arreglarlo exige decidir qué
+pasa con las versiones viejas —recargar sola, avisar, o el service worker—, que es exactamente la
+**DEP-30**, y este proyecto ya perdió meses con una aplicación congelada en una versión vieja. El
+apartado 66 lo dice: *"si aparece un problema que requiere una reestructuración arquitectónica: NO
+resolverlo improvisando. Documentarlo."*
+
+**Lo que sí queda hecho:** medido (`NO_EN_FIT40`), y lo que cuesta de verdad al abrir Fitness —el
+cálculo de Rangos y Progreso, 6,4 s con 1 000 sesiones— arreglado. **Si Josué lo decide**, lo más
+rentable es partir esas tres librerías (un `import()` en cada uno de sus tres sitios) con un aviso de
+«Hay una versión nueva: recargar» cuando falle la descarga.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

@@ -184,17 +184,35 @@ export function rangoEfectivoDeEjercicio(fitness, exerciseId, { propios = [], pe
    ⚠️ La mezcla ponderada por implicación **no se reescribe**: es la de la F15.
    Lo único que cambia es de dónde sale el rango de cada ejercicio. */
 
-/** Todos los ejercicios con rango efectivo, listos para agregar por músculo. */
-export function rangosEfectivos(fitness, { propios = [], perfil = null } = {}) {
+/**
+ * Todos los ejercicios con rango efectivo, listos para agregar por músculo.
+ *
+ * 🔓 FIT F40 (apartados 11 y 12) — `memo`: *"Al completar una serie NO
+ * recalcular todo Fitness. Actualizar únicamente las entidades afectadas."*
+ * El rango de un ejercicio depende SOLO de sus apariciones y de su estimación
+ * —ni del reloj ni de los demás ejercicios—, así que quien calcula muchos
+ * rangos seguidos (el historial de la F22, un punto por día entrenado) pasa
+ * una memoria `{ filas: Map, afectados: Set }` y solo se recalculan los ids de
+ * `afectados` y los que no estaban. ⚠️ **El orden y la fórmula son los de
+ * siempre**: la lista sale en el mismo orden que sin memoria, y cada fila la
+ * calcula `rangoEfectivoDeEjercicio`, la única que decide (apartado 5).
+ */
+export function rangosEfectivos(fitness, { propios = [], perfil = null, memo = null } = {}) {
   const f = fitness && typeof fitness === 'object' ? fitness : {};
   const conSesiones = [...indiceDeProgresion(f, lista(propios)).keys()];
   const clasificados = lista(f.clasificaciones).map((c) => texto(c && c.exerciseId)).filter(Boolean);
   /* Un ejercicio entrenado Y estimado cuenta UNA vez, con su rango efectivo. */
   const ids = [...new Set([...conSesiones, ...clasificados])];
-  return ids
-    .map((id) => ({ r: rangoEfectivoDeEjercicio(f, id, { propios, perfil }), ej: ejercicioPorId(id, lista(propios)) }))
-    .filter((x) => !x.r.sinRango && x.ej)
-    .map((x) => ({ ...x.r, reparto: repartoMuscular(x.ej) }));
+  const fila = (id) => {
+    const r = rangoEfectivoDeEjercicio(f, id, { propios, perfil });
+    const ej = ejercicioPorId(id, lista(propios));
+    return !r.sinRango && ej ? { ...r, reparto: repartoMuscular(ej) } : null;
+  };
+  if (!memo || !(memo.filas instanceof Map)) return ids.map(fila).filter(Boolean);
+  return ids.map((id) => {
+    if (!memo.filas.has(id) || (memo.afectados && memo.afectados.has(id))) memo.filas.set(id, fila(id));
+    return memo.filas.get(id);
+  }).filter(Boolean);
 }
 
 export function rangoEfectivoDeGrupo(fitness, grupoId, { propios = [], perfil = null, efectivos = null } = {}) {
@@ -252,8 +270,10 @@ export function confianzaCombinada(confianzas) {
  * con la fórmula de la F15 —media de los grupos CON datos— y sigue haciendo
  * falta cobertura suficiente.
  */
-export function rangoGlobalEfectivo(fitness, { propios = [], perfil = null } = {}) {
-  const ejercicios = rangosEfectivos(fitness, { propios, perfil });
+export function rangoGlobalEfectivo(fitness, { propios = [], perfil = null, efectivos = null } = {}) {
+  /* 🔓 FIT F40 — `efectivos`, como ya aceptaban el grupo y el subgrupo: quien
+     ya los tiene calculados no los pide otra vez. La fórmula no cambia. */
+  const ejercicios = efectivos || rangosEfectivos(fitness, { propios, perfil });
   const grupos = GRUPOS_MUSCULARES.map((g) => rangoDeGrupo(ejercicios, g.id));
   const conDatos = grupos.filter((g) => !g.sinRango);
   const cobertura = { grupos: conDatos.length, total: grupos.length, texto: `${conDatos.length}/${grupos.length}`, ejercicios: ejercicios.length };

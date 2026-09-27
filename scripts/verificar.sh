@@ -1109,6 +1109,18 @@ else
   fallo "Falla la validación del catálogo"; grep '✗' /tmp/jc_validacion_catalogo.log
 fi
 
+# FIT F40 — rendimiento. Lo que más se vigila: que el historial de rangos que ya no se calcula
+# entero día a día dé EXACTAMENTE lo mismo que calcularlo entero (apartado 59), que su caché se
+# tire al clasificar un ejercicio, que el panel de Rangos y el centro de Progreso quepan en su
+# presupuesto con 600 sesiones (antes, casi tres segundos), y que ningún campo del entrenamiento
+# en vivo vuelva a guardar Fitness entero en cada tecla. Cuántas veces se guarda al escribir un
+# peso, y la navegación con 400 sesiones y 1 000 fotos, lo mide el recorrido en Chromium.
+if node --import ./scripts/resolver-vite.mjs scripts/test-rendimiento-fitness.mjs >/tmp/jc_rendimiento_fitness.log 2>&1; then
+  ok "Rendimiento de Fitness (FIT F40) — $(grep -c '✓' /tmp/jc_rendimiento_fitness.log) comprobaciones"
+else
+  fallo "Falla el rendimiento de Fitness"; grep '✗' /tmp/jc_rendimiento_fitness.log
+fi
+
 # FIT F39 — accesibilidad, estados límite y robustez. Lo que más se vigila: que ninguna pantalla
 # de Fitness enseñe NaN, undefined, Invalid Date, un porcentaje imposible o un id técnico con
 # datos de un usuario nuevo o CORRUPTOS (pasados por la puerta de carga de verdad), que un

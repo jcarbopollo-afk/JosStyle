@@ -226,6 +226,11 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
        NOMBRE. Sigue siendo mejor que salte y se excluya a mano que estrecharla
        hasta que calle sola. */
     && f !== 'motorRangos'
+    /* ⚠️ Y `rendimientoFitness` es de **Fitness** (FIT F40), no de Imagen
+       personal: lo caza `rendimiento`, que esta expresión busca por el
+       `rendimiento.js` de la EH F44. **Novena** exclusión a mano, y la cabecera
+       de ese archivo no la necesitaba: la regla funciona así, y así se queda. */
+    && f !== 'rendimientoFitness'
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],

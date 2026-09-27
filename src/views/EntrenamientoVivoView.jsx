@@ -68,6 +68,7 @@ import {
 } from '../lib/entrenamientoUx';
 /* 🔓 FIT F33 — la pantalla de sustitución, la misma que usa el constructor. */
 import { ExerciseReplacement } from '../components/sustitucion';
+import { RETARDO_AUTOGUARDADO_MS } from '../lib/rendimientoFitness';
 import { configuracionDeSesion } from '../lib/sustitucion';
 /* 🔓 FIT F30, apartado 36 — el objetivo activo, discreto, encima de la tabla. */
 import { GoalLiveHint } from '../components/objetivosFitness';
@@ -266,15 +267,48 @@ export function HuecoAnatomico({ ficha, accent, compacto = false }) {
 function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal: conDecimal = false }) {
   const [texto, setTexto] = useState(valor === null || valor === undefined ? '' : String(valor));
   const [tocando, setTocando] = useState(false);
+  /* 🐛 FIT F40 (apartados 29, 32 y 33) — lo escrito se guarda UNA vez, no en
+     cada tecla: `pendiente` es lo que falta por confirmar y `reloj` su retardo.
+     ⚠️ `alConfirmar` es la función del último pintado: al confirmar tarde, la
+     sesión tiene que ser la de ahora, no la de cuando se escribió la tecla. */
+  const pendiente = useRef(null);
+  const reloj = useRef(null);
+  const alConfirmar = useRef(onConfirmar);
+  alConfirmar.current = onConfirmar;
 
   useEffect(() => {
     if (!tocando) setTexto(valor === null || valor === undefined ? '' : String(valor));
   }, [valor, tocando]);
 
   const confirmar = (v) => {
+    clearTimeout(reloj.current);
+    reloj.current = null;
+    pendiente.current = null;
     const t = String(v ?? '').trim();
-    onConfirmar(t === '' ? null : t.replace(',', '.'));
+    alConfirmar.current(t === '' ? null : t.replace(',', '.'));
   };
+  const confirmarLuego = (v) => {
+    pendiente.current = v;
+    clearTimeout(reloj.current);
+    reloj.current = setTimeout(() => confirmar(v), RETARDO_AUTOGUARDADO_MS);
+  };
+
+  /* 🚨 Apartado 33 — *"el usuario no debe perder pesos por cerrar
+     accidentalmente la aplicación"*. Lo pendiente se guarda al esconderse la
+     página (el iPhone al salir a la pantalla de inicio) y al desaparecer el
+     campo (pasar al ejercicio siguiente con el teclado abierto). */
+  useEffect(() => {
+    const vaciar = () => { if (reloj.current) confirmar(pendiente.current); };
+    const alEsconder = () => { if (document.visibilityState === 'hidden') vaciar(); };
+    document.addEventListener('visibilitychange', alEsconder);
+    window.addEventListener('pagehide', vaciar);
+    return () => {
+      document.removeEventListener('visibilitychange', alEsconder);
+      window.removeEventListener('pagehide', vaciar);
+      vaciar();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <input
@@ -292,8 +326,10 @@ function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal: conDe
         const el = ev.currentTarget;
         setTimeout(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch { /* da igual */ } }, 300);
       }}
-      onChange={(ev) => { setTexto(ev.target.value); confirmar(ev.target.value); }}
-      onBlur={(ev) => { setTocando(false); confirmar(ev.target.value); }}
+      onChange={(ev) => { setTexto(ev.target.value); confirmarLuego(ev.target.value); }}
+      /* Al salir del campo se guarda YA —y solo si hay algo pendiente: salir
+         sin haber escrito no es un cambio—. */
+      onBlur={(ev) => { setTocando(false); if (reloj.current) confirmar(ev.target.value); }}
       /* Intro guarda y cierra el teclado (apartado 37). */
       onKeyDown={(ev) => { if (ev.key === 'Enter') ev.currentTarget.blur(); }}
       className="w-full h-11 rounded-xl text-center text-base font-bold outline-none toque-44"
@@ -671,6 +707,56 @@ export function AvisoSesion({ aviso, accent, acciones }) {
   );
 }
 
+/* ── El reloj y el descanso, cada uno con SU tic (FIT F40) ─────────────────
+   🐛 **Apartados 25 a 27: *"El timer debe actualizar únicamente su
+   representación visual"*.** El tic de medio segundo vivía arriba del todo de
+   la pantalla, así que mientras se entrenaba se volvía a pintar ENTERA —la
+   tabla de series, sus campos, el carrusel— dos veces por segundo solo para
+   mover el reloj. Ahora el tic es de quien lo enseña: el reloj de la cabecera y
+   la barra de descanso. La cuenta sigue siendo la de siempre (marcas de tiempo,
+   E3 F25), y el aviso del fin del descanso sigue saliendo una sola vez: quién
+   ya sonó lo recuerda la pantalla (`sonadoPara`), no este componente, que se
+   monta y desmonta al abrir un panel. */
+export function RelojSesion({ sesion }) {
+  const ahora = useAhora(!!sesion && sesion.estado === 'en_curso');
+  /* 🐛 FIT F39 (apartado 26) — una sesión retomada días después no lleva
+     «72:00:00» entrenando: sin una duración creíble, «—». */
+  return duracionCreible(sesion, ahora) === null ? '—' : reloj(duracionSesion(sesion, ahora));
+}
+
+export function DescansoVivo({ sesion, sonadoPara, accent, onPausar, onReanudar, onReiniciar, onSumar, onCerrar }) {
+  const descanso = sesion ? sesion.descanso || null : null;
+  const ahora = useAhora(!!descanso);
+  const visible = descansoVisible(sesion, ahora);
+
+  /* F7 apartado 25 · F9 apartado 18 — el aviso al terminar el descanso. Se
+     EMITE: el motor decide si suena y si vibra, según Ajustes. */
+  useEffect(() => {
+    if (!descanso || !sonadoPara) return;
+    const clave = `${descanso.desde}-${descanso.segundos}`;
+    if (sonadoPara.current === clave) return;
+    if (restanteDescanso(descanso, ahora) > 0) return;
+    const fin = descanso.desde + (descanso.pausadoMs || 0) + descanso.segundos * 1000;
+    sonadoPara.current = clave;
+    if (ahora - fin <= AVISO_FIN_DESCANSO_MS) {
+      try { emitir(EVENTO_FIN_DESCANSO, { de: 'descanso' }); } catch { /* que no suene no es un error */ }
+    }
+  }, [descanso, ahora, sonadoPara]);
+
+  return (
+    <BarraDescanso
+      descanso={visible}
+      ahora={ahora}
+      accent={accent}
+      onPausar={onPausar}
+      onReanudar={onReanudar}
+      onReiniciar={() => onReiniciar(visible ? visible.segundos : null)}
+      onSumar={onSumar}
+      onCerrar={onCerrar}
+    />
+  );
+}
+
 /* ── La tarjeta de sesión en curso (F7 apartado 30 · F9 apartado 31) ───────
    🚨 F9: es el **estado compacto**. Enseña nombre, tiempo, ejercicio y, desde
    que el descanso vive en la sesión, si está descansando. */
@@ -765,9 +851,7 @@ export default function EntrenamientoVivoView({
   const sonadoPara = useRef(null);
   const inicioGesto = useRef(null);
 
-  const descanso = sesion ? sesion.descanso || null : null;
-  const corriendo = !!sesion && sesion.estado === 'en_curso';
-  const ahora = useAhora(corriendo || !!descanso);
+  /* 🔓 FIT F40 — sin tic aquí: lo tienen `RelojSesion` y `DescansoVivo`. */
 
   const ejercicio = useMemo(() => ejercicioActual(sesion), [sesion]);
   const ficha = useMemo(() => fichaDeEjercicio(ejercicio, propios), [ejercicio, propios]);
@@ -787,27 +871,47 @@ export default function EntrenamientoVivoView({
   const progreso = useMemo(() => progresoSesion(sesion), [sesion]);
   const total = ejerciciosDeSesion(sesion).length;
   const indice = sesion ? (sesion.actual ?? 0) : 0;
-  const visible = descansoVisible(sesion, ahora);
 
-  /* F7 apartado 25 · F9 apartado 18 — el aviso al terminar el descanso. Se
-     EMITE: el motor decide si suena y si vibra, según Ajustes. */
-  useEffect(() => {
-    if (!descanso) return;
-    const clave = `${descanso.desde}-${descanso.segundos}`;
-    if (sonadoPara.current === clave) return;
-    if (restanteDescanso(descanso, ahora) > 0) return;
-    const fin = descanso.desde + (descanso.pausadoMs || 0) + descanso.segundos * 1000;
-    sonadoPara.current = clave;
-    if (ahora - fin <= AVISO_FIN_DESCANSO_MS) {
-      try { emitir(EVENTO_FIN_DESCANSO, { de: 'descanso' }); } catch { /* que no suene no es un error */ }
-    }
-  }, [descanso, ahora]);
+  /* 🐛 FIT F40 (apartado 33: *"el usuario no debe perder notas por cerrar"*) —
+     **la nota escrita y cerrada antes del retardo se perdía**: al cerrar el
+     panel, al cambiar de ejercicio con él abierto o al salir, el efecto de
+     abajo cancelaba su reloj y nadie la guardaba. Es la lección de la E3 F20
+     —*un autoguardado con retardo tiene que guardar al cerrar*—, que aquí
+     faltaba. `notaPara` dice de QUÉ ejercicio es el texto, y
+     `guardarNotaPendiente` guarda lo que quede antes de cargar otra nota, al
+     cerrar y al salir. ⚠️ Con las referencias del último pintado: lo que se
+     guarda tarde va sobre la sesión de AHORA, no sobre la de cuando se
+     escribió (dos escrituras en el mismo turno se pisan, E3 F26). */
+  const sesionViva = useRef(sesion);
+  sesionViva.current = sesion;
+  const onGuardarVivo = useRef(onGuardar);
+  onGuardarVivo.current = onGuardar;
+  const notaPara = useRef(null);
+  const notaViva = useRef('');
+  notaViva.current = nota;
+  const guardarVivo = (siguiente) => {
+    if (siguiente && siguiente !== sesionViva.current) onGuardarVivo.current(siguiente);
+  };
+  const guardarNotaPendiente = () => {
+    const id = notaPara.current;
+    const s = sesionViva.current;
+    if (!id || !s) return;
+    const linea = ejerciciosDeSesion(s).find((e) => e && e.id === id);
+    if (!linea || String(notaViva.current || '').trim() === (linea.notas || '')) return;
+    guardarVivo(notaDeEjercicio(s, id, notaViva.current));
+  };
 
-  /* F9 apartado 23 — la nota se carga al abrir… */
+  /* F9 apartado 23 — la nota se carga al abrir… (y la anterior, si quedó algo
+     sin guardar, se guarda antes: F40) */
   useEffect(() => {
+    guardarNotaPendiente();
+    notaPara.current = panel === 'notas' && ejercicio ? ejercicio.id : null;
     if (panel === 'notas') setNota(ejercicio ? ejercicio.notas : '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panel, ejercicio ? ejercicio.id : null]);
+  useEffect(() => () => guardarNotaPendiente(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []);
 
   /* …y **se guarda sola** al dejar de escribir (*"Guardar automáticamente si es
      posible"*). ⚠️ Se compara con lo guardado ya recortado: si no, un espacio
@@ -815,7 +919,7 @@ export default function EntrenamientoVivoView({
   useEffect(() => {
     if (panel !== 'notas' || !ejercicio || !sesion) return undefined;
     if (nota.trim() === (ejercicio.notas || '')) return undefined;
-    const t = setTimeout(() => onGuardar(notaDeEjercicio(sesion, ejercicio.id, nota)), 700);
+    const t = setTimeout(() => onGuardar(notaDeEjercicio(sesion, ejercicio.id, nota)), RETARDO_AUTOGUARDADO_MS);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nota, panel, sesion]);
@@ -892,9 +996,8 @@ export default function EntrenamientoVivoView({
     <>
       <CabeceraSesion
         nombre={sesion.nombre}
-        /* 🐛 FIT F39 (apartado 26) — una sesión retomada días después no lleva
-           «72:00:00» entrenando: sin una duración creíble, «—». */
-        tiempo={duracionCreible(sesion, ahora) === null ? '—' : reloj(duracionSesion(sesion, ahora))}
+        /* 🔓 FIT F40 — el reloj se pinta a sí mismo: su tic no repinta la tabla. */
+        tiempo={<RelojSesion sesion={sesion} />}
         progreso={progreso}
         accent={accent}
         onSalir={() => setAviso('salir')}
@@ -921,13 +1024,13 @@ export default function EntrenamientoVivoView({
   );
 
   const barraDescanso = (
-    <BarraDescanso
-      descanso={visible}
-      ahora={ahora}
+    <DescansoVivo
+      sesion={sesion}
+      sonadoPara={sonadoPara}
       accent={accent}
       onPausar={() => guardar(pausarDescansoSesion(sesion, Date.now()))}
       onReanudar={() => guardar(reanudarDescansoSesion(sesion, Date.now()))}
-      onReiniciar={() => guardar(iniciarDescanso(sesion, visible ? visible.segundos : ejercicio?.descanso, Date.now()))}
+      onReiniciar={(segundos) => guardar(iniciarDescanso(sesion, segundos ?? ejercicio?.descanso, Date.now()))}
       onSumar={(s) => guardar(sumarDescanso(sesion, s, Date.now()))}
       onCerrar={acabarDescanso}
     />
@@ -1147,7 +1250,9 @@ export default function EntrenamientoVivoView({
               <div className="flex gap-2 mt-2 flex-wrap">
                 <PrimaryButton
                   accent={accent}
-                  onClick={() => { guardar(notaDeEjercicio(sesion, ejercicio.id, nota)); cerrarPanel(); }}
+                  /* Cerrar ya guarda lo pendiente (F40): guardar aquí también
+                     serían dos escrituras seguidas de la misma nota. */
+                  onClick={cerrarPanel}
                 >
                   Guardar nota
                 </PrimaryButton>
@@ -1166,7 +1271,10 @@ export default function EntrenamientoVivoView({
               filas={filas}
               accent={accent}
               activaId={activaId}
-              onEditar={(serieId, cambios) => guardar(editarSerie(sesion, ejercicio.id, serieId, cambios))}
+              /* 🔓 FIT F40 — lo escrito se confirma tarde (al salir del campo o
+                 al desaparecer), así que va sobre la sesión de AHORA. El id del
+                 ejercicio sí es el de esta tabla: el valor es de sus series. */
+              onEditar={(serieId, cambios) => guardarVivo(editarSerie(sesionViva.current, ejercicio.id, serieId, cambios))}
               onMarcar={marcar}
               onAjustar={ajustar}
               onQuitar={(serieId) => guardar(quitarSerie(sesion, ejercicio.id, serieId))}

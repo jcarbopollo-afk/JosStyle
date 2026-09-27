@@ -81,11 +81,23 @@ export function fitnessEnPeriodo(fitness, rango = 'todo', hoy = todayISO()) {
 
 /** Qué parte de un ejercicio va a cada subgrupo, sumando 1. ⚠️ Si el catálogo
  *  no suma 100, se reparte sobre lo que sume: los porcentajes son relativos. */
+/* 🔓 FIT F40 (apartados 10 y 35) — el reparto de un ejercicio se pide miles
+   de veces por pantalla (cada rango que se agrega, cada relevancia de la cola)
+   y solo depende de su ficha. Se calcula UNA vez por objeto: si la ficha
+   cambia, es otro objeto (el catálogo es código y lo propio se normaliza al
+   cargar). ⚠️ Y se CONGELA: compartido entre todos, un sitio que lo modificara
+   lanzaría un error en vez de estropear el reparto de los demás en silencio. */
+const REPARTOS = new WeakMap();
 export function repartoMuscular(ejercicio) {
+  const memorizable = ejercicio && typeof ejercicio === 'object';
+  if (memorizable && REPARTOS.has(ejercicio)) return REPARTOS.get(ejercicio);
   const ms = musculosDe(ejercicio).filter((m) => m.grupoId && (m.porcentaje || 0) > 0);
   const total = ms.reduce((n, m) => n + m.porcentaje, 0);
-  if (!total) return [];
-  return ms.map((m) => ({ subgrupoId: m.subgrupoId, grupoId: m.grupoId, peso: m.porcentaje / total, porcentaje: m.porcentaje }));
+  const reparto = Object.freeze(total
+    ? ms.map((m) => Object.freeze({ subgrupoId: m.subgrupoId, grupoId: m.grupoId, peso: m.porcentaje / total, porcentaje: m.porcentaje }))
+    : []);
+  if (memorizable) REPARTOS.set(ejercicio, reparto);
+  return reparto;
 }
 
 /**

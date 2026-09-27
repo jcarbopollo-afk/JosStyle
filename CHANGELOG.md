@@ -1,5 +1,95 @@
 # CHANGELOG.md
 
+## v3.122.0 — FIT F40/45: rendimiento y optimización técnica de fitness
+
+*"Esta fase NO añade funcionalidades nuevas. El objetivo es que todo Fitness siga siendo rápido
+cuando haya muchos datos."* Y su apartado 2 manda sobre todo lo demás: **"Primero medir. Después
+optimizar."** Así que lo primero fue un escenario grande de verdad —1 000 sesiones, 900 ejercicios
+propios, 100 objetivos y 1 000 fotos, el del apartado 53— y medir cada pantalla. Casi todo Fitness
+ya iba por debajo de los 50 ms, porque lo habían decidido fases anteriores (`YA_EXISTIA_F40`, 18
+apartados). **Salieron dos cuellos de botella de verdad, y ninguno se habría visto sin medir.**
+Quinta fase del bloque de **Acabado** (F36–F42).
+
+### 🐛 El panel de Rangos tardaba 6,4 segundos
+
+El historial de un rango (F22) calcula, para cada día entrenado, el rango con lo que había hasta
+ese día —así el pasado no se reescribe (apartado 12)—. Y lo calculaba **entero** cada día: todos los
+ejercicios, todos los grupos, el global. Con 1 000 sesiones, el panel de Rangos (F25) tardaba **6,4 s**
+la primera vez y el centro de Progreso (F28), que lee el mismo historial, **6,6 s**.
+
+- **El rango de un ejercicio solo depende de SUS datos**, así que entre un día y el siguiente solo
+  cambian los ejercicios que se entrenaron o se clasificaron en medio: esos se recalculan y los
+  demás se reutilizan (`memo` en `rangosEfectivos`, `cambiosDeEjercicios` en `historialRangos.js`).
+  Es el ejemplo literal del apartado 12: *completar curl → actualizar curl*.
+- **Cuánto pone cada ejercicio en cada grupo y subgrupo se suma una vez por reparto** (`rangos.js`),
+  en vez de filtrar el reparto de todos los ejercicios una vez por grupo y otra por subgrupo.
+- **Las apariciones de cada sesión, una vez por sesión** (`progresion.js`); **el reparto muscular y
+  la relevancia, una vez por ficha** (`progresoMuscular.js`, `clasificacion.js`), y el reparto
+  **congelado**: compartido entre todos, tocarlo lanza un error en vez de estropear los demás.
+
+**Resultado:** el panel de Rangos pasa de 6,4 s a **0,95 s** con 1 000 sesiones (de 2,8 s a medio
+segundo con 600, de 1,1 s a 0,47 s con 300), y el centro de Progreso de 6,6 s a **0,85 s**. 🚨 **Y ni una
+fórmula cambia (apartado 59):** una prueba compara el historial nuevo **punto a punto** con el
+cálculo entero de antes —el global, los siete grupos, subgrupos y ejercicios, con sesiones
+desordenadas, dos el mismo día, una sin fecha, una en curso, estimaciones y una reclasificación—:
+**858 puntos, idénticos**. Rompiendo la memoria a propósito, la prueba se pone roja.
+
+### 🐛 Y el historial de un rango se quedaba viejo al clasificar
+
+Al medir apareció un fallo que no era de rendimiento. La caché del historial (F22) iba colgada solo
+de la lista de sesiones, y guardar una clasificación deja **la misma lista**: tras contestar el
+cuestionario de un ejercicio, el panel de Rangos y el de Progreso seguían enseñando el historial —y
+el «rango actual»— de antes de clasificar, hasta el siguiente entrenamiento o hasta recargar. Es
+justo el apartado 13: *"Nunca mostrar datos antiguos como actuales después de una modificación"*.
+Ahora la caché se tira si cambian las sesiones, **las clasificaciones o los ejercicios propios** (la
+llave contaba cuántos propios había, no cuáles).
+
+### 🐛 Cada tecla de un peso guardaba TODO Fitness
+
+En el entrenamiento en vivo, el campo del peso confirmaba en cada pulsación: escribir «20.5» eran
+**cuatro guardados del `fitness` entero en Supabase** —460 KB con 100 sesiones, 1,4 MB con 300— y
+cuatro repintados de la aplicación entera por un campo (apartados 29 y 32). Ahora lo escrito vive en
+el campo y se guarda **una vez**: al salir de él, a los 700 ms de dejar de escribir
+(`RETARDO_AUTOGUARDADO_MS`, **el mismo que ya tenía la nota**), al esconderse la página o al
+desaparecer el campo. **Marcar la serie no espera** (apartado 34): tocar ✓ ya saca del campo y
+guarda lo escrito. Y lo que se confirma tarde va sobre la sesión de ahora, no sobre la de cuando se
+escribió la tecla (E3 F26).
+
+- 🐛 **Y la nota escrita y cerrada antes de 0,7 s se perdía**: al cerrar el panel, cambiar de ejercicio
+  o salir, el efecto cancelaba su reloj y nadie la guardaba (apartado 33, y la lección de la E3 F20:
+  *un autoguardado con retardo tiene que guardar al cerrar*).
+- **El reloj y el descanso ya no repintan la pantalla dos veces por segundo** (apartados 25-28): su
+  tic vive en `RelojSesion` y `DescansoVivo`, y solo cambia el número.
+
+### Lo demás
+
+- **La gráfica de progreso toca como mucho 40 puntos** (apartado 41): con 300 registros eran 600
+  círculos con zonas de toque encima unas de otras. La línea sigue pasando por todos —es un solo
+  `<path>`— y siempre llevan marca el primero, el último, **el mejor y el peor**.
+- **El comparador de fotos mide una vez por fotograma** al girar el iPhone (apartado 40).
+- **La auditoría del código** (`auditarRendimientoFitness`): intervalos, escuchadores y URL de archivos
+  que se limpian, `resize` por fotograma, ninguna lista con id que use la posición de `key`, el tic
+  del reloj solo en su sitio y ningún campo que guarde en cada tecla. **Sobre el código de antes se
+  pone roja justo en las tres cosas que arregla esta fase.**
+- La lista de librerías que barre la F36 buscando nombres repetidos **se había quedado sin las del
+  Acabado** (F37-F39); ya están, con la de la F40 —que nació con un `auditarRendimiento` que ya era de
+  la EH F44 y se renombró—.
+
+### Lo medido y descartado, y lo que no se hace
+
+Reutilizar el rango de un grupo muscular entero entre días ganaba **un 8 %** en rutinas divididas y
+nada en cuerpo completo: **no se quedó** (apartado 2). Tampoco se virtualizan listas —todas las
+largas ya van por páginas— ni hay miniaturas de fotos (la F26 sube una sola versión, F27). Y **el
+bundle se revisó** (apartado 23): 4,4 MB en un solo archivo, de los que Fitness son unos 670 KB y lo
+más pesado no es Fitness —el lector de códigos de barras, el de PDF y el de Excel suman 1 MB—.
+Dividirlo en trozos que se cargan al abrirlos tiene un riesgo concreto con Vercel —una pestaña
+abierta en su iPhone fallaría al abrir una parte tras publicar la versión siguiente—, que es la
+familia del service worker: **C-42**, en `docs/03`, y lo decide Josué.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.121.0 — FIT F39/45: accesibilidad, estados límite y robustez de fitness
 
 *"Fitness debe funcionar correctamente no solo con datos perfectos. […] La interfaz nunca debe

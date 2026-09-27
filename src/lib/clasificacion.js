@@ -273,7 +273,17 @@ export function estadoDeClasificacion(fitness, exerciseId, { propios = [] } = {}
 /* Cuánto aporta un ejercicio a la información muscular: la suma de lo que
    implica del catálogo, con más peso si es compuesto (apartado 18: *"priorizar
    ejercicios que aporten mucha información muscular"*). */
+/* 🔓 FIT F40 — una vez por ficha: la cola de la F24 la pide dentro de una
+   ordenación, o sea miles de veces por pasada. */
+const RELEVANCIAS = new WeakMap();
 export function relevanciaDeEjercicio(ej) {
+  if (ej && typeof ej === 'object' && RELEVANCIAS.has(ej)) return RELEVANCIAS.get(ej);
+  const r = relevanciaSinMemoria(ej);
+  if (ej && typeof ej === 'object') RELEVANCIAS.set(ej, r);
+  return r;
+}
+
+function relevanciaSinMemoria(ej) {
   const reparto = repartoMuscular(ej);
   const suma = reparto.reduce((n, x) => n + x.peso, 0);
   const compuesto = lista(ej.tipos).includes('compuesto') ? 1.5 : 1;

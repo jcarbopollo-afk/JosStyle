@@ -39,7 +39,7 @@ import {
 } from '../lib/objetivosProgreso';
 import { detalleDeSesion, sesionDelHistorial } from '../lib/historial';
 import {
-  tarjetasDeProgreso, consultarProgreso, resumenDeProgreso, geometriaGrafica,
+  tarjetasDeProgreso, consultarProgreso, resumenDeProgreso, geometriaGrafica, indicesConMarca,
   FILTROS_PROGRESO, RANGOS_GRAFICA, PROGRESO_VACIO,
 } from '../lib/progresoEjercicios';
 /* 🔓 FIT F13 — el progreso por grupos musculares. */
@@ -212,6 +212,9 @@ const ALTO = 150;
 export function GraficaProgreso({ grafica, accent, onVerSesion }) {
   const [elegido, setElegido] = useState(null);
   const puntos = useMemo(() => geometriaGrafica(grafica.puntos, { ancho: ANCHO, alto: ALTO, margen: 18 }), [grafica.puntos]);
+  /* 🔓 FIT F40, apartado 41 — la línea pasa por todos; se tocan, como mucho, 40
+     (siempre el primero, el último, el mejor y el peor). */
+  const marcas = useMemo(() => indicesConMarca(puntos), [puntos]);
   if (!grafica.mostrar) {
     return grafica.motivo ? <p className="text-xs" style={{ color: COLORS.textMuted }}>{grafica.motivo}</p> : null;
   }
@@ -240,7 +243,7 @@ export function GraficaProgreso({ grafica, accent, onVerSesion }) {
           <line key={y} x1="18" x2={ANCHO - 18} y1={y} y2={y} stroke={COLORS.border} strokeWidth="1" strokeDasharray="3 4" />
         ))}
         <path d={camino} fill="none" stroke={accent} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-        {puntos.map((p, i) => (
+        {marcas.map((i) => { const p = puntos[i]; return (
           <g key={p.sesionId + i}>
             <circle cx={p.x} cy={p.y} r={elegido === i ? 6.5 : 5} fill={accent} stroke={COLORS.surface} strokeWidth="2" />
             {/* Zona de toque mayor que la marca. */}
@@ -257,7 +260,7 @@ export function GraficaProgreso({ grafica, accent, onVerSesion }) {
               style={{ cursor: 'pointer', outline: 'none' }}
             />
           </g>
-        ))}
+        ); })}
       </svg>
       <div className="flex justify-between text-[10px] tabular-nums" style={{ color: COLORS.textMuted }}>
         <span>{puntos[0].fechaTexto}</span>

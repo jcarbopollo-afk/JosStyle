@@ -379,7 +379,7 @@ import {
    aparecen tras pulsar algo**, que es el agujero del Álbum (NAV F3). */
 import EntrenamientoVivoView, {
   CabeceraSesion, CarruselEjercicios, HuecoAnatomico, TablaSeries, BarraDescanso,
-  AvisoSesion, SesionRecuperable,
+  AvisoSesion, SesionRecuperable, RelojSesion, DescansoVivo,
 } from '../src/views/EntrenamientoVivoView.jsx';
 import {
   empezarSesion as empezarF7, ejerciciosDeSesion as ejsF7, filasDeSeries as filasF7,
@@ -4412,6 +4412,14 @@ const CASOS = [
   /* ⚠️ Y el descanso terminado, que se ve distinto. */
   ['BarraDescanso', BarraDescanso, () => ({
     descanso: descansoF7({ segundos: 90, ahora: 0 }), ahora: 200000, accent,
+    onPausar: noop, onReanudar: noop, onReiniciar: noop, onCerrar: noop, onSumar: noop,
+  })],
+  /* 🔓 FIT F40 (apartados 25-28) — el reloj y el descanso son sus propias
+     piezas: el tic de medio segundo repinta el número, no la pantalla. */
+  ['RelojSesion', RelojSesion, () => ({ sesion: { ...sesionUsadaF7(), iniciadaEn: Date.now() - 65000 } })],
+  ['RelojSesion (sin terminar hace días)', RelojSesion, () => ({ sesion: { ...sesionUsadaF7(), iniciadaEn: Date.now() - 3 * 86400000 } })],
+  ['DescansoVivo', DescansoVivo, () => ({
+    sesion: { ...sesionUsadaF7(), descanso: descansoF7({ segundos: 90, ahora: Date.now() - 10000 }) }, sonadoPara: { current: null }, accent,
     onPausar: noop, onReanudar: noop, onReiniciar: noop, onCerrar: noop, onSumar: noop,
   })],
   ['AvisoSesion', AvisoSesion, () => ({

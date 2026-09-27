@@ -992,7 +992,13 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       se llama por lo que se lee de su id; `useDialogoAccesible` en las ocho hojas y el anillo de foco
       de Fitness; `MissingImage` y `MissingData`; la matriz de estados de las quince pantallas; y tres
       pantallas fuera de Fitness (Negocio, Sueño, Tiempo de uso) que enseñaban basura.
-- [ ] F40–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F40 — Rendimiento y optimización técnica de fitness** (v3.122.0): medido con 1 000 sesiones;
+      el historial de un rango reutiliza lo que no cambió (panel de Rangos 6,4 s → 0,95 s, comparado
+      punto a punto con el cálculo de antes); 🐛 la caché del historial se tira al clasificar; un peso
+      se guarda una vez y no en cada tecla, sin perderse; 🐛 la nota cerrada deprisa ya no se pierde;
+      el reloj repinta solo su número; la gráfica toca 40 puntos como mucho; y la C-42 (dividir el
+      bundle) documentada para Josué.
+- [ ] F41–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

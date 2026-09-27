@@ -216,6 +216,26 @@ function aparicionesDeSesion(sesion, propios = []) {
   return salida;
 }
 
+/* 🔓 FIT F40 (apartados 11, 12 y 42) — **y las apariciones de cada sesión, una
+   vez por sesión.** El índice se reutilizaba por lista, pero el historial de
+   un rango (F22) calcula el rango de CADA día con las sesiones hasta ese día
+   —una lista nueva por punto—, así que volvía a leer, serie a serie, todas las
+   sesiones anteriores: con 1 000 sesiones el resumen de Rangos tardaba casi
+   cinco segundos. Una sesión guardada no cambia (editarla crea otro objeto,
+   como la lista), así que su objeto sirve de llave igual que la lista sirve
+   para el índice: si cambia, es otra sesión y se lee de nuevo. Mismo resultado,
+   ni una regla distinta. */
+const APARICIONES = new WeakMap();
+function aparicionesMemorizadas(sesion, propios = []) {
+  const guardado = APARICIONES.get(sesion);
+  const mismosPropios = guardado && (guardado.propios === propios
+    || (lista(guardado.propios).length === 0 && lista(propios).length === 0));
+  if (mismosPropios) return guardado.apariciones;
+  const apariciones = aparicionesDeSesion(sesion, propios);
+  APARICIONES.set(sesion, { propios, apariciones });
+  return apariciones;
+}
+
 /* 🚨 Apartado 31 — el índice se construye **una vez por lista de sesiones**. La
    lista de `fitness.sesiones` es inmutable (cada guardado crea una nueva), así
    que su referencia sirve de llave: mientras no cambie, se reutiliza. */
@@ -234,7 +254,7 @@ export function indiceDeProgresion(fitness, propios = []) {
   const indice = new Map();
   for (const s of sesiones) {
     if (!s || !s.id || s.estado !== 'completada') continue;
-    for (const a of aparicionesDeSesion(s, propios)) {
+    for (const a of aparicionesMemorizadas(s, propios)) {
       if (!indice.has(a.exerciseId)) indice.set(a.exerciseId, []);
       indice.get(a.exerciseId).push(a);
     }

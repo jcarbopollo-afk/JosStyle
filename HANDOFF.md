@@ -2,6 +2,18 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.122.0 — FIT F40/45: rendimiento y optimización técnica):**
+> Medido con un escenario de 1 000 sesiones: 🐛 **el panel de Rangos tardaba 6,4 s** la primera vez
+> (y el centro de Progreso 6,6 s) porque el historial de un rango calculaba cada día entero; ahora
+> reutiliza lo que no cambió y tarda **0,95 s**, con una prueba que compara los 858 puntos con el
+> cálculo de antes: idénticos. 🐛 **Tras clasificar un ejercicio, Rangos seguía enseñando el
+> historial de antes** (la caché solo miraba las sesiones). 🐛 **Cada tecla de un peso guardaba
+> TODO Fitness en Supabase** —«20.5» eran cuatro subidas de hasta 1,4 MB—: ahora se guarda una vez,
+> sin perderse al salir del campo, al esconder la app ni al tocar ✓. 🐛 **La nota cerrada antes de
+> 0,7 s se perdía.** Y el reloj ya no repinta la pantalla del entrenamiento dos veces por segundo.
+> ⏸ **Dividir el bundle es la C-42**: lo decide Josué. Lo siguiente es la **FIT F41** (persistencia,
+> recuperación y resiliencia).
+
 > **📅 ACTUALIZACIÓN (v3.121.0 — FIT F39/45: accesibilidad, estados límite y robustez):**
 > Fitness se pinta ahora con datos **corruptos** —fechas imposibles, ejercicios que ya no existen,
 > porcentajes de 145 %— sin enseñar nada roto, y `textoRoto()` vigila **toda la aplicación** desde el
