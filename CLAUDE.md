@@ -184,14 +184,15 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **21 729 pruebas unitarias** con Node repartidas en **202 suites** (5 de ellas de auditoría),
-**3720 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2851
-comprobaciones sobre la aplicación de verdad en Chromium** — **28 311 comprobaciones**.
+Vite, **21 942 pruebas unitarias** con Node repartidas en **203 suites** (5 de ellas de auditoría),
+**3736 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2875
+comprobaciones sobre la aplicación de verdad en Chromium** — **28 564 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.123.0, una a una**, con la suma del
-propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.122.0 es exactamente lo que
-añadió la F41: +109 de Node en su suite nueva (y la diferencia suite a suite es solo ésa), +8 de
-renderizado y +60 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.124.0, una a una**, con la suma del
+propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.123.0 es exactamente lo que
+añadió la F42: +213 de Node (101 de su suite nueva y 112 de la de datos corruptos pintados, que
+ahora busca términos que chocan y emojis en sus 56 pasadas; la diferencia suite a suite es solo
+ésa), +16 de renderizado y +24 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.

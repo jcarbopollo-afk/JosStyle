@@ -81,7 +81,25 @@ quedan en neutro a propósito: la foto es la protagonista (`EXCEPCIONES_PASTILLA
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` **en verde** (`═══ TODO CORRECTO ═══`, 0 fallos): **21 942 pruebas de
+Node en 203 suites**, **3736 casos de renderizado**, **11 reglas invariantes** y **2875
+comprobaciones en Chromium** — **28 564** en total. El salto desde la v3.123.0 es exactamente lo que
+añade esta fase: **+213 de Node** —su suite nueva, `test-acabado-fitness.mjs` (101: la escala medida,
+las dieciocho reglas con su ejemplo malo, el acento legible en los doce acentos y los dos temas, las
+piezas compartidas, `HOJA`, `CAPAS`, las fechas y los términos), y **+112 en la de datos corruptos
+pintados** (F39), que ahora busca en cada una de sus 56 pasadas una palabra que choque y un emoji
+haciendo de icono—, **+16 de renderizado** (las piezas nuevas: `PastillaFiltro` puesta y apagada,
+`OpcionSegmentada` y `BotonCerrarHoja`) y **+24 del recorrido** (el contraste medido sobre el fondo
+de verdad, la escala de las tres áreas y los términos en pantalla). **Ninguna otra suite cambió de
+cuenta.**
+
+🐛 **Y la primera pasada salió roja por algo que dejó esta misma fase**: cuatro comprobaciones del
+recorrido —de la F12, la F31 y la F36— seguían esperando «sesión» en textos que la F42 renombró a
+«entrenamiento» con todo el derecho (*«Mejor peso por entrenamiento»*, *«Historial · 1
+entrenamiento»*, *«Al entrenamiento en curso»* y el `aria-label` de la gráfica). No las encontró el
+barrido previo porque se buscaban con `[oó]` dentro de la expresión. Se dieron la vuelta —ahora
+guardan el nombre nuevo— y la segunda pasada salió entera en verde. **Al renombrar un texto, buscarlo
+también como expresión regular, no solo como literal.**
 
 ## v3.123.0 — FIT F41/45: persistencia, recuperación y resiliencia de fitness
 

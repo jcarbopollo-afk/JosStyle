@@ -7572,7 +7572,8 @@ ok(/Última vez/i.test(detalle_fit12) && /62,5 kg × 10/.test(detalle_fit12), '�
 ok(/Anterior/i.test(detalle_fit12) && /62,5 kg × 8/.test(detalle_fit12) && /\+2 reps/.test(detalle_fit12),
   '🚨 FIT F12 — la comparación: anterior 62,5 kg × 8 → +2 reps (apartado 13)');
 ok(/Mejor resultado/i.test(detalle_fit12), '…el mejor resultado (apartado 14)');
-ok(/Mejor peso por sesi[oó]n/i.test(detalle_fit12), '🚨 …y la gráfica, diciendo QUÉ mide (apartado 22)');
+/* 🔓 FIT F42 (apartado 57, C-44) — «por entrenamiento», nunca «por sesión». */
+ok(/Mejor peso por entrenamiento/i.test(detalle_fit12), '🚨 …y la gráfica, diciendo QUÉ mide (apartado 22)');
 ok(await page.evaluate(() => document.querySelectorAll('svg circle[role="button"]').length === 3), '…con un punto por sesión: tres (apartado 21)');
 const desborde_fit12 = await page.evaluate(() => ({ a: document.documentElement.scrollWidth, v: window.innerWidth }));
 ok(desborde_fit12.a <= desborde_fit12.v + 1, `🚨 FIT F12 — a 375 px la gráfica NO desborda de lado (${desborde_fit12.a} vs ${desborde_fit12.v}, apartado 40)`);
@@ -10267,7 +10268,7 @@ await esperarTexto(/Planificado/i);
 ok(await pulsarQueEmpiece_fit10('Ver el progreso de Press de banca'),
   '🐛 FIT F36 — el ejercicio de una sesión del HISTORIAL lleva a su progreso: antes solo desde Progreso (apartado 13)');
 const desdeHistorial_fit36 = await esperarTexto(/Historial ·/i);
-ok(/Press de banca/.test(desdeHistorial_fit36) && /Historial · 1 sesi[oó]n/i.test(desdeHistorial_fit36),
+ok(/Press de banca/.test(desdeHistorial_fit36) && /Historial · 1 entrenamiento\b/i.test(desdeHistorial_fit36),
   '…y abre el detalle de la F29, con su sesión');
 ok(await sinFalloDeArea_fit36(), '…sin que ningún área caiga en su límite de error (apartado 47)');
 
@@ -10313,8 +10314,9 @@ await page.waitForTimeout(500);
 ok(await pulsarQueEmpiece_fit10('Ver Curl con barra'), '…y se abre su ficha');
 await esperarTexto(/C[oó]mo hacerlo/i);
 ok(await pulsar('Añadir a entrenamiento'), '…«Añadir a entrenamiento»');
-const opciones_fit36 = await esperarTexto(/A la sesi[oó]n en curso/i);
-ok(/A la sesi[oó]n en curso/i.test(opciones_fit36) && /Integración F36/.test(opciones_fit36),
+/* 🔓 FIT F42 (C-44) — «Al entrenamiento en curso». */
+const opciones_fit36 = await esperarTexto(/Al entrenamiento en curso/i);
+ok(/Al entrenamiento en curso/i.test(opciones_fit36) && /Integración F36/.test(opciones_fit36),
   '🔓 FIT F36 — con una sesión en curso, se ofrece añadirlo A ELLA, la primera (apartado 17)');
 ok(await pulsar('Añadir al entrenamiento en curso: Integración F36'), '…se elige');
 await esperarTexto(/Añadido a «Integración F36», en curso/);
@@ -10958,7 +10960,7 @@ await page.waitForTimeout(600);
 ok(await pulsarQueEmpiece_fit10('Ver el progreso de Press de banca'), '…se abre el press de banca, con 400 registros');
 await esperarTexto(/Última vez/i, 15000);
 const grafica_fit40 = await page.evaluate(() => {
-  const svg = [...document.querySelectorAll('svg[role="img"]')].find((s) => /sesiones/.test(s.getAttribute('aria-label') || ''));
+  const svg = [...document.querySelectorAll('svg[role="img"]')].find((s) => /entrenamientos/.test(s.getAttribute('aria-label') || ''));
   return svg ? { marcas: svg.querySelectorAll('circle[role="button"]').length, etiqueta: svg.getAttribute('aria-label') } : null;
 });
 ok(!!grafica_fit40 && grafica_fit40.marcas > 0 && grafica_fit40.marcas <= 40,
@@ -10966,7 +10968,7 @@ ok(!!grafica_fit40 && grafica_fit40.marcas > 0 && grafica_fit40.marcas <= 40,
 /* ⚠️ La gráfica abre en su periodo por defecto (F29), así que no son las 400:
    lo que se exige es que haya MÁS de 40 —si no, el límite no se estaría
    probando— y que la etiqueta las cuente todas, porque la línea pasa por todas. */
-const registros_fit40 = Number(((grafica_fit40 && grafica_fit40.etiqueta) || '').match(/en (\d+) sesiones/)?.[1] || 0);
+const registros_fit40 = Number(((grafica_fit40 && grafica_fit40.etiqueta) || '').match(/en (\d+) entrenamientos/)?.[1] || 0);
 ok(registros_fit40 > 40 && grafica_fit40.marcas < registros_fit40,
   `…con ${registros_fit40} registros en el periodo, que la etiqueta sigue contando enteros: la línea pasa por todos (${grafica_fit40 && grafica_fit40.etiqueta})`);
 ok(errores.length === erroresAntes_fit40, `…y ni un error en la consola con todo el volumen a la vez (${errores.length - erroresAntes_fit40})`);
