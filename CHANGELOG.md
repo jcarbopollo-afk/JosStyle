@@ -88,7 +88,17 @@ familia del service worker: **C-42**, en `docs/03`, y lo decide Josué.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` **en verde** (`═══ TODO CORRECTO ═══`, 0 fallos): **21 620 pruebas de
+Node en 201 suites**, **3712 casos de renderizado**, **11 reglas invariantes** y **2791
+comprobaciones en Chromium** — **28 134** en total. El salto desde la v3.121.0 es exactamente lo que
+añade esta fase: **+69 de Node** en su suite nueva, `test-rendimiento-fitness.mjs` —el historial
+incremental comparado punto a punto con el cálculo entero (858 puntos, con su comprobación de que
+rompiendo la memoria se pone roja), la caché que se tira al clasificar, cada memoria nueva contra el
+cálculo sin ella, los presupuestos sobre 600 sesiones y la auditoría con su ejemplo malo por
+casilla—, **+12 de renderizado** (el reloj y el descanso aislados) y **+22 del recorrido** (el peso
+que se guarda una vez, ✓ al momento, la página que se esconde, la nota cerrada deprisa y el
+escenario grande con 400 sesiones y 1 000 fotos). **Ni una suite de antes cambió de cuenta**: la
+diferencia suite a suite con la pasada de la v3.121.0 es exactamente la suite nueva.
 
 ## v3.121.0 — FIT F39/45: accesibilidad, estados límite y robustez de fitness
 
