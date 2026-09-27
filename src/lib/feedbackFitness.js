@@ -184,6 +184,7 @@ export const AVISOS_FITNESS = [
   { id: 'cambios_guardados', donde: 'Al guardar un entrenamiento en el constructor' },
   { id: 'plantilla_duplicada', donde: 'Al duplicar una plantilla' },
   { id: 'guardado_fallido', donde: 'Cuando un guardado de Fitness no llega a tu cuenta (apartado 25)' },
+  { id: 'guardado_sin_espacio', donde: 'Cuando no llega porque no queda espacio (FIT F41, apartado 34)' },
 ];
 
 export const avisoFitness = (id) => (AVISOS_FITNESS.some((a) => a.id === id) ? avisoDe(id) : null);
@@ -243,6 +244,8 @@ export const TEXTOS_GUARDADO = {
   detalle: 'El entrenamiento sigue en esta pantalla. Vuelve a intentarlo antes de cerrar la aplicación.',
   reintentar: 'Reintentar',
   reintentando: 'Guardando…',
+  /* FIT F41, apartado 34 — si lo que falta es espacio, se dice eso. */
+  sinEspacio: AVISOS_ACCION.guardado_sin_espacio.texto,
 };
 
 export const TEXTOS_SUBIDA = {

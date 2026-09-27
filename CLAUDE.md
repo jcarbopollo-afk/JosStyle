@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.122.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.123.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 40 primeras (v3.83.0 → v3.122.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 41 primeras (v3.83.0 → v3.123.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 5 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 4 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -350,8 +350,60 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 **FIT F30 (v3.112.0)**, la **FIT F31 (v3.113.0)**, la **FIT F32 (v3.114.0)**, la **FIT F33
 (v3.115.0)**, la **FIT F34 (v3.116.0)** y la **FIT F35 (v3.117.0)**, que 🏁 **CERRÓ EL BLOQUE DE
 INTELIGENCIA** —F29 a F35—, y la **FIT F36 (v3.118.0)**, con la que empieza el bloque de **Acabado**
-(F36–F42), la **FIT F37 (v3.119.0)**, la **FIT F38 (v3.120.0)**, la **FIT F39 (v3.121.0)** y la **FIT F40 (v3.122.0)**, hechas. Lo que dejaron, y que vale para las 5 que quedan:
+(F36–F42), la **FIT F37 (v3.119.0)**, la **FIT F38 (v3.120.0)**, la **FIT F39 (v3.121.0)**, la **FIT F40 (v3.122.0)** y la **FIT F41 (v3.123.0)**, hechas. Lo que dejaron, y que vale para las 4 que quedan:
 
+- 🚨 **LO QUE LA PUERTA DE CARGA NO ENTIENDE SE APARTA, NUNCA SE TIRA** (FIT F41, apartados 28, 32, 35
+  y 36, `src/lib/persistenciaFitness.js`). Una sesión sin id, un objetivo sin ejercicio o dos copias
+  distintas de la misma sesión se quedaban fuera al cargar —bien— y **el siguiente guardado los
+  borraba de la cuenta** —mal—. `apartarLoQueNoCarga` compara lo que llegó con lo que dejó pasar la
+  puerta, **por id**, y lo que falta va a `fitness.cuarentena` con su original, el día y el motivo.
+  ⚠️ **No hay un segundo criterio de «qué es válido»**: la cuarentena sigue a la puerta sola. Y es
+  **idempotente** (se reconoce cada original por su firma).
+- 🚨 **`cuarentena` ES UN CAMPO DEL MODELO, EN `fitness.js`** (FIT F41, regla 5): el normalizador de la
+  F1 la conoce y `CAMPOS_GUARDADOS` (F36) la lista. Vive allí y no en la librería porque ésta importa
+  `fitness.js` —sería un ciclo—, y se reexporta con `export { }` (EH F17). ⚠️ **Solo las listas cuyos
+  elementos llevan `id`**: un tramo de `planesAnteriores` no lo lleva, y con él dentro se habrían
+  apartado todos.
+- ⚠️ **ANTES DE DECLARAR QUE ALGO NO EXISTE, MIRAR LA LÍNEA DE AL LADO** (FIT F41, y es la E3 F8 otra
+  vez): escribí que Fitness «no tenía versión» y `version: 1` estaba en `DEFAULT_FITNESS` desde la F1.
+  Lo que faltaba era quien la leyera: `migrarFitness`, sobre lo **crudo** y antes de la puerta de
+  carga, con copia, validando ids y **sin migrar hacia atrás** una versión más nueva. `VERSION_FITNESS`
+  **importa** la del default. Hoy `MIGRACIONES_FITNESS` está vacía, y es correcto: cada fase sumó
+  campos. **Una fase que cambie la forma o el significado de un campo guardado añade ahí su línea y
+  sube `DEFAULT_FITNESS.version`**; la prueba comprueba que la cadena cuadre.
+- ⚠️ **`versionDe` YA ERA DE LA EH F46** (FIT F41): la de Fitness es `versionDeFitness`. Se cazó
+  buscando el nombre en todo `src/lib`, que es lo que dejó dicho la F40.
+- 🐛 **UN VALOR POR DEFECTO QUE CAMBIA EN CADA CARGA NO ES UN VALOR POR DEFECTO** (FIT F41, apartados 43
+  y 46, y es la F31 con las sesiones): una foto sin id recibía `uid()` —otro en cada carga— y una sin
+  fecha, `todayISO()`. Ahora el id sale de su camino y la fecha de cuándo se subió. **Antes de poner
+  un respaldo en un normalizador, preguntarse si es el mismo mañana.**
+- 🐛 **`resumenDeSesion` DEVUELVE `seriesCompletadas`, Y UNA PLANTILLA GUARDA SUS LÍNEAS EN
+  `ejercicios`** (FIT F41, y es la lección de la FORMA de lo que devuelve una función, dos veces en la
+  misma fase): la exportación salía con «0 series» en cada entrenamiento y «0 ejercicios» en cada
+  plantilla. `lineas` es la rutina del constructor mientras se edita. Lo cazó la prueba de la fase.
+- 🚨 **FITNESS ENTRA EN LA EXPORTACIÓN GLOBAL, APARTE DE `currentState`** (FIT F41, apartado 29):
+  `filasDeFitnessParaExportar` y `buildExportRows({ …, fitness, fotosFitness })`, como Imagen personal
+  (EH F34). `currentState` es también el contexto de la IA. Las fotos, **solo referencia** (fecha,
+  etiquetas, nota: ni el camino ni una URL) y **solo si `fotos_privadas` no está puesto** (C-35).
+- ⚠️ **SIN ESPACIO NO ES SIN CONEXIÓN** (FIT F41, apartado 34): `motivoDeFallo` reconoce la cuota del
+  navegador y el 413 / «row is too big» del servidor, y `avisoDeFallo` devuelve `guardado_sin_espacio`
+  o el `guardado_fallido` de la F37 —**nunca nada**: sin saber por qué, sigue habiendo aviso—. El texto
+  vive una vez, en `AVISOS_ACCION`. Y el doble de Supabase del recorrido sabe contestar 413
+  (`LLENO_ESCRITURA`).
+- 🐛 **UN GUARDADO QUE DEVUELVE `false` TAMBIÉN HAY QUE LEERLO** (FIT F41, apartado 33, y es la F37 con
+  otro almacén): `guardarBorrador` lo devolvía desde la F3 en una ventana privada de Safari y el aviso
+  de salir prometía *«se queda como borrador»*. Ahora el constructor lo dice.
+- 🔓 **«FINALIZAR» TAMBIÉN EN LA SESIÓN RECIENTE AL VOLVER** (FIT F41, apartado 6, **C-43**). La F39 lo
+  dejó solo para la de hace horas («lo lleva la cabecera»), y al volver a la aplicación no hay
+  cabecera: hay tarjeta. Su comprobación **se dio la vuelta**, no se borró.
+- ⚠️ **UNA PANTALLA QUE DICE LO MISMO ANTES Y DESPUÉS DE RECARGAR SE COMPRUEBA COMPARANDO SU TEXTO
+  ENTERO** (FIT F41, apartado 51): el recorrido lee Tu Plan, Historial, Progreso y Rangos, recarga y
+  exige el mismo texto, con las horas quitadas. Y el recorrido del apartado 54 va de crear un
+  entrenamiento a comparar fotos **recargando entre paso y paso**.
+- ⚠️ **TRES TOQUES SÍNCRONOS PASAN LOS TRES LA GUARDA DE `guardando`** (FIT F41, apartado 56): el
+  estado de React no ha vuelto a pintar entre uno y otro. Lo que deja UNA sesión no es esa guarda:
+  es que terminar es idempotente y `guardarSesion` sustituye por id (F8). El recorrido pulsa tres
+  veces con `element.click()` seguidos y lo comprueba en la cuenta.
 - 🚨 **UNA OPTIMIZACIÓN DA EL MISMO RESULTADO, Y SE COMPRUEBA COMPARANDO** (FIT F40, apartado 59,
   `src/lib/rendimientoFitness.js` y `scripts/test-rendimiento-fitness.mjs`). El historial de rangos
   (F22) ya no calcula cada día entero: reutiliza los ejercicios que no se entrenaron ni se
@@ -1736,28 +1788,30 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F41/45 — Persistencia, recuperación y resiliencia de datos de fitness**
-   (líneas 4 287–5 218 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **sexta** del bloque
-   de **Acabado** (F36–F42). Se construye de la F1 a la F45, en orden, encadenando sin parar. El
-   índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+1. 🏋️ **SEGUIR POR LA FIT F42/45 — Auditoría visual y acabado premium de fitness**
+   (líneas 3 281–4 286 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **séptima y última**
+   del bloque de **Acabado** (F36–F42). Se construye de la F1 a la F45, en orden, encadenando sin
+   parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: su «IMPORTANTE» dice *"NO crear una nueva arquitectura de backend"*,
-   y muchísimo de lo que pide YA EXISTE.** La sesión en curso vive en `fitness.sesiones` y se
-   recupera con «Continuar entrenamiento» (F7), el guardado es idempotente por id y pulsar cinco
-   veces deja una (F8, apartado 17), descartar va por la papelera (F10), el pasado de un plan se
-   guarda en `planesAnteriores` (F32, C-39), las fotos se guardan como camino y firman al verse
-   (F26), el historial de rangos se deriva (F22), el borrador del constructor se ofrece (F3), las
-   migraciones y la copia son de la EH F46 y la F54, el guardado fallido se enseña con «Reintentar»
-   (F37), la sesión olvidada no «dura» días (F39) y **lo que se escribe se guarda una vez y no se
-   pierde al esconder la página (F40)**. ⚠️ **Y los conflictos entre dispositivos NO se pueden
-   detectar sin una columna nueva en `app_data`** (EH F41, F45, F46 y F54): prometerlo sería mentir.
-   Las fechas en local (`fechaLocalISO`, lección del UTC por siete veces) y los ids (`uid()`, F2).
+   ⚠️ **Y lo segundo, en ESTA: su «IMPORTANTE» dice *"NO cambiar: lógica, datos, fórmulas,
+   RankEngine, ProgressEngine, GoalEngine, persistencia"*, y buena parte de lo que pide YA EXISTE.**
+   Los colores son `COLORS` (`tokens.js`, un singleton mutable: **nunca `const { x } = COLORS`**, nunca
+   un hex suelto, regla 2) y el modo oscuro lo resuelve `aplicarTema()`; los radios, sombras y botones
+   son los de `ui.jsx` (con su escalera de `active:scale`, EH F50); el hexágono es **`RankBadge`**
+   (F15) y ninguna pantalla dibuja el suyo; las animaciones viven en `index.css` y se declaran en
+   `ANIMACIONES_HC` (F37); la Safe Area son `--safe-top`/`--safe-bottom` (E3 F1); el foco es
+   `.fit-foco :focus-visible` (F39); las hojas llevan `hoja-movil` y `useDialogoAccesible` (F38 y
+   F39); los vacíos y errores, `EmptyHint`, `MissingImage`, `MissingData` y `AreaSegura` (F39, F36);
+   y los textos de fecha y número tienen ya sus funciones. **Una auditoría visual se hace midiendo**
+   (el recorrido en Chromium y el banco de renderizado), no cambiando el aspecto de toda la aplicación
+   por gusto: la C-32 (el tamaño de letra de los formularios) sigue siendo de Josué.
    ⚠️ **Y lo que ya se aprendió en el Acabado:** una puerta entre pantallas se comprueba abriendo el
-   archivo que la cablea (F36), un guardado que nadie lee puede mentir (F37), una hoja lleva
-   `hoja-movil` y `useDialogoAccesible` (F38 y F39), nada roto a la vista (`textoRoto`, F39), **una
-   optimización se compara con el cálculo de antes y una caché se cuelga de todo lo que usa (F40)**,
-   y **al crear un componente de Fitness, a `ARCHIVOS_FITNESS`** o las auditorías no lo miran.
+   archivo que la cablea (F36), un guardado que nadie lee puede mentir (F37 y F41), una hoja lleva
+   `hoja-movil` y `useDialogoAccesible` (F38 y F39), nada roto a la vista (`textoRoto`, F39), una
+   optimización se compara con el cálculo de antes (F40), **lo que la puerta de carga no entiende se
+   aparta en la cuarentena y no se pinta (F41)**, y **al crear un componente de Fitness, a
+   `ARCHIVOS_FITNESS`** o las auditorías no lo miran.
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único

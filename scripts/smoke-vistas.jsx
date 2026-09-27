@@ -3997,6 +3997,11 @@ const CASOS = [
     datos: exitoF8(guardarF8(pasarF8(sesionUsadaF7()), { confirmado: true }).sesion),
     accent, onVer: noop, onVolver: noop, fallo: true, onReintentar: noop,
   })],
+  /* 🔓 FIT F41, apartado 34 — si lo que falta es espacio, se dice eso. */
+  ['PantallaExito (sin espacio)', PantallaExito, () => ({
+    datos: exitoF8(guardarF8(pasarF8(sesionUsadaF7()), { confirmado: true }).sesion),
+    accent, onVer: noop, onVolver: noop, fallo: 'sin_espacio', onReintentar: noop,
+  })],
   ['PantallaExito (reintentando)', PantallaExito, () => ({
     datos: exitoF8(guardarF8(pasarF8(sesionUsadaF7()), { confirmado: true }).sesion),
     accent, onVer: noop, onVolver: noop, fallo: true, reintentando: true, onReintentar: noop,
@@ -4428,6 +4433,10 @@ const CASOS = [
   })],
   ['SesionRecuperable', SesionRecuperable, () => ({
     sesion: sesionUsadaF7(), accent, onContinuar: noop, onDescartar: noop,
+  })],
+  /* 🔓 FIT F41, apartado 6 (C-43) — la reciente, al volver, también con Finalizar. */
+  ['SesionRecuperable (reciente, con Finalizar)', SesionRecuperable, () => ({
+    sesion: sesionUsadaF7(), accent, onContinuar: noop, onDescartar: noop, onFinalizar: noop,
   })],
   /* 🔓 FIT F39, apartado 19 — la que se quedó abierta hace tres días: «Hay un
      entrenamiento sin terminar», cuándo empezó y Finalizar, sin reloj de días. */

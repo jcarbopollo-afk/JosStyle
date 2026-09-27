@@ -122,8 +122,11 @@ ok(duracionCreible({ estado: 'en_curso', iniciadaEn: AHORA }, AHORA) === 0,
   ok(a.duracion === '' && a.desde === 'Empezado el 14 sept',
     '🐛 …y sin el reloj de «72:00:00»: dice cuándo empezó');
   const b = avisoDeRecuperacion(reciente, { ahora: AHORA });
-  ok(b.titulo === 'Tienes un entrenamiento en curso' && b.antigua === false && b.finalizar === '' && b.duracion === '40:00',
-    'Una reciente sigue como en la F7: su reloj y «Continuar entrenamiento», sin «Finalizar» (lo lleva la cabecera)');
+  /* 🔓 FIT F41 (C-43) — esta comprobación se DA LA VUELTA, no se borra: el
+     apartado 6 de la F41 pide Finalizar también en la reciente, al volver a la
+     aplicación. Lo que la F39 protegía —su reloj, no una fecha— sigue igual. */
+  ok(b.titulo === 'Tienes un entrenamiento en curso' && b.antigua === false && b.finalizar === 'Finalizar' && b.duracion === '40:00',
+    'Una reciente sigue con su reloj y «Continuar entrenamiento», y desde la F41 también con «Finalizar» (C-43)');
 }
 ok(desdeCuando({ iniciadaEn: AHORA - 2 * H }, AHORA) === 'Empezado hoy a las 16:00'
   && desdeCuando({ iniciadaEn: AHORA - DIA }, AHORA) === 'Empezado ayer'

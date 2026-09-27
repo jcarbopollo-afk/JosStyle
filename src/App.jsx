@@ -77,6 +77,7 @@ import { crearFotoProgreso, normalizarFotosProgreso, editarFotoProgreso } from '
    las repeticiones, las series marcadas y las notas. Se llama SIEMPRE a la
    última. */
 import { normalizarFitnessConSesiones } from './lib/entrenamiento';
+import { migrarFitness, apartarLoQueNoCarga } from './lib/persistenciaFitness';
 import { eventosDerivados } from './lib/calendarioIntegracion';
 import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
 import { urlFirmada, urlEnCache } from './lib/imagenes';
@@ -772,7 +773,21 @@ export default function App() {
       /* FIT F1 — regla 5: `loadData` no fusiona con el valor por defecto, así que
          lo guardado antes de esta fase entra por su normalizador, que devuelve el
          objeto entero con todas sus claves. */
-      setFitness(normalizarFitnessConSesiones(fit));
+      /* 🚨 FIT F41 — la misma puerta, con dos pasos alrededor. **Antes**, la
+         versión: se migra lo CRUDO, con copia y sin tocarlo si algo falla o si
+         viene de una versión más nueva (apartados 26-28, 57). **Después**, lo
+         que la puerta no entendió —una sesión sin id, un objetivo sin
+         ejercicio, dos copias distintas de la misma sesión— **se aparta** en
+         `fitness.cuarentena` con su original, en vez de perderse en el
+         siguiente guardado (apartados 28, 32, 35 y 36). No se pinta en ninguna
+         parte y no se guarda solo: viaja con el siguiente guardado de verdad. */
+      const migracionFit = migrarFitness(fit);
+      if (migracionFit.error) console.warn('[Fitness]', migracionFit.error);
+      const cargaFit = apartarLoQueNoCarga(migracionFit.fitness, normalizarFitnessConSesiones(migracionFit.fitness));
+      if (cargaFit.nuevos.length && import.meta.env?.DEV) {
+        console.warn(`[Fitness] ${cargaFit.nuevos.length} registro(s) apartados en la cuarentena al cargar.`);
+      }
+      setFitness(cargaFit.fitness);
       setLoaded(true);
       /* SO — los datos ya estan en pantalla. Es el unico momento del ciclo en que
          'sincronizado' significa algo: antes de esto no hay nada que sincronizar,
@@ -3264,7 +3279,11 @@ export default function App() {
            el perfil de piel tiene escrito que **no viaja a la IA** (EH F13,
            apartado 17). Meterlo en `currentState` habría sido más corto y habría
            filtrado a la IA todo Estilo de hombre de una vez. */
-        const paraExportar = { ...currentState, estiloHombre };
+        /* FIT F41, apartado 29 — Fitness entra igual, aparte. Las fotos de
+           progreso solo como referencia y **solo si no están detrás del PIN**
+           (C-35): con `fotos_privadas` puesto, la exportación no las nombra. */
+        const fotosExportables = seguridad.protectedActions.includes('fotos_privadas') ? null : saludFotos;
+        const paraExportar = { ...currentState, estiloHombre, fitness, fotosFitness: fotosExportables };
         const exportarCSVProtegido = () => {
           const ejecutar = () => exportCSV(paraExportar);
           if (exportarProtegido) pedirVerificacionPin('Confirma tu PIN para exportar tus datos.', ejecutar); else ejecutar();

@@ -178,7 +178,11 @@ console.log('\n🔒 EH · Fase 43/65 — Seguridad, privacidad y control de dato
   eq(puedeSalirEnUnAviso('inventado').puede, false, 'y lo que no está en el registro, no');
 
   // ⚠️ La decisión de la F34: `estiloHombre` va APARTE de `currentState`.
-  ok(/const paraExportar = \{ \.\.\.currentState, estiloHombre \};/.test(APP),
+  /* 🔓 FIT F41 — Fitness entra en la misma exportación, también aparte: la
+     promesa se muda con el código (F38 → F20). Lo que importa es que
+     `estiloHombre` vaya al lado de `currentState` y nunca dentro. */
+  ok(/const paraExportar = \{ \.\.\.currentState, estiloHombre(, [^}]*)? \};/.test(APP)
+    && !/const currentState = \{[^}]*\bestiloHombre\b/.test(APP),
     '⚠️ y `estiloHombre` va aparte de `currentState`, que es lo que se manda a la IA (F34)');
 }
 

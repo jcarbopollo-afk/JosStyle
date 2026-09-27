@@ -105,7 +105,7 @@ const LIBRERIAS_FITNESS = [
      (`crearObjetivo`, `lunesDe`…). El choque de la F40 —un
      `auditarRendimiento` que ya era de la EH F44— se cazó buscándolo en todo
      el proyecto, y ahora se llama `auditarRendimientoFitness`. */
-  'feedbackFitness', 'movilFitness', 'robustezFitness', 'rendimientoFitness',
+  'feedbackFitness', 'movilFitness', 'robustezFitness', 'rendimientoFitness', 'persistenciaFitness',
 ].filter((n) => { try { leer(`src/lib/${n}.js`); return true; } catch { return false; } });
 ok(LIBRERIAS_FITNESS.length >= 30, `El barrido mira ${LIBRERIAS_FITNESS.length} librerías de Fitness que existen de verdad`);
 const exportadas = new Map();

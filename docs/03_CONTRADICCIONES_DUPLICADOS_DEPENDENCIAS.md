@@ -896,6 +896,19 @@ cálculo de Rangos y Progreso, 6,4 s con 1 000 sesiones— arreglado. **Si Josu�
 rentable es partir esas tres librerías (un `import()` en cada uno de sus tres sitios) con un aviso de
 «Hay una versión nueva: recargar» cuando falle la descarga.
 
+### C-43 — ✅ RESUELTA AL CONSTRUIR (FIT F41, v3.123.0) · «Finalizar» en la sesión reciente al volver (apartado 6) contra la F39, que lo dejó solo para la de hace horas
+
+**El apartado 6 de la F41 pide**, al abrir la aplicación con una sesión activa, *"Continuar
+entrenamiento · Finalizar · Descartar"*. **La F39 decidió** que la tarjeta de una sesión reciente no
+llevara «Finalizar» —*"lo lleva la cabecera"*— y solo lo ofreciera en la que se quedó abierta horas.
+
+**La lectura que respeta las dos:** lo que la F39 protegía era que una sesión olvidada no «durara»
+72 horas y que no se decidiera nada solo; eso sigue igual. Pero **al volver a la aplicación no hay
+cabecera: hay tarjeta**, y es justo el momento que describe el apartado 6. Así que la reciente también
+lleva «Finalizar», que lleva al resumen de la F8 —donde él decide si se guarda—. Manda la fase que
+construye esa pantalla ahora. La comprobación de la F39 **se dio la vuelta**, no se borró
+(`test-robustez-fitness.mjs`).
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

@@ -247,6 +247,9 @@ export const AVISOS_ACCION = {
   /* ⚠️ `error: true` cambia el icono y el color, **y el texto dice qué hacer**
      (EH F62): nunca «Error» a secas. */
   guardado_fallido: { texto: 'No se ha podido guardar en tu cuenta. Vuelve a intentarlo.', deshacer: false, error: true },
+  /* FIT F41, apartado 34 — literal: *"Hay poco espacio disponible para guardar
+     estos datos."* Y **no se borra nada para hacer sitio**: se dice. */
+  guardado_sin_espacio: { texto: 'Hay poco espacio disponible para guardar estos datos.', deshacer: false, error: true },
 };
 
 export const avisoDe = (id) => AVISOS_ACCION[id] || null;

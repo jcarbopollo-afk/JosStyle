@@ -24,6 +24,7 @@ import {
   empezarSesion, ejerciciosDeSesion, editarSerie, marcarSerie,
 } from '../src/lib/entrenamiento.js';
 import { pasarAFinalizacion, guardarEntrenamiento } from '../src/lib/finalizacion.js';
+import { avisoDeFallo } from '../src/lib/persistenciaFitness.js';
 import { DEFAULT_FITNESS } from '../src/lib/fitness.js';
 import { crearRutina, anadirEjercicio, editarLinea } from '../src/lib/constructor.js';
 import { rangoEfectivoDeEjercicio } from '../src/lib/motorRangos.js';
@@ -159,14 +160,20 @@ const app = leer('src/App.jsx');
 ok(/const guardarFitness = async \(next\) => \{ setFitness\(next\); return saveData\(uidUser, 'fitness', next\); \};/.test(app),
   '🚨 `guardarFitness` de App.jsx DEVUELVE lo que dice `saveData` (antes se lo tragaba)');
 const fv = leer('src/views/FitnessView.jsx');
-ok(/export default function FitnessView\(props\)[\s\S]{0,2500}resultadoDeGuardado\(res\)[\s\S]{0,300}setAviso\('guardado_fallido'\)/.test(fv),
-  '…y FitnessView lo lee: si falla, aviso de error SIEMPRE');
+/* 🔓 FIT F41 — la promesa se muda con el código (F38 → F20): el aviso sale de
+   `avisoDeFallo`, que distingue «sin espacio», y SIEMPRE devuelve uno de los
+   dos avisos de error. */
+ok(/export default function FitnessView\(props\)[\s\S]{0,2500}resultadoDeGuardado\(res\)[\s\S]{0,300}if \(!g\.ok\) setAviso\(avisoDeFallo\(g\.error\)\)/.test(fv)
+  && ['guardado_fallido', 'guardado_sin_espacio'].includes(avisoDeFallo(null)) && avisoDeFallo({ name: 'QuotaExceededError' }) === 'guardado_sin_espacio'
+  && avisoDeFallo(new Error('Failed to fetch')) === 'guardado_fallido',
+  '…y FitnessView lo lee: si falla, aviso de error SIEMPRE (y desde la F41, «sin espacio» cuando es eso)');
 ok(/<AvisoAccion accion=\{aviso\}/.test(fv) && /onGuardarFitness=\{guardarF\} \/>\s*<\/AreaSegura>\s*\{aviso &&/.test(fv),
   '…con un solo aviso por encima de todas las salidas y del límite de error');
 ok(/'plan_activado'\)/.test(fv) && /'cambios_guardados'\)/.test(fv) && /'plantilla_duplicada'\)/.test(fv),
   '…y confirma el plan activado (apartado 36), los cambios del constructor y la plantilla duplicada');
 const fin = leer('src/views/FinalizacionView.jsx');
-ok(/res = await onGuardar\(r\.sesion\)/.test(fin) && /setFallo\(!resultadoDeGuardado\(res\)\.ok\)/.test(fin),
+ok(/res = await onGuardar\(r\.sesion\)/.test(fin) && /setFallo\(falloDe\(res\)\)/.test(fin)
+  && /const falloDe = \(res\) => \{ const g = resultadoDeGuardado\(res\); return g\.ok \? false : \(motivoDeFallo\(g\.error\) \|\| 'otro'\); \};/.test(fin),
   '🚨 La pantalla de éxito ESPERA al guardado: «Guardando…» se ve de verdad (apartado 28)');
 ok(fin.indexOf('const reintentar = async') > 0 && fin.indexOf('const reintentar = async') < fin.indexOf('if (guardada && viendo)'),
   '🐛 …y sus funciones se declaran ANTES de la primera salida: si no, `reintentar` estaría en la zona muerta de su `const` al pintar el éxito');
@@ -207,7 +214,7 @@ ok(TEXTOS_SUBIDA.titulo === 'Has subido de rango' && !/XP|puntos|nivel/i.test(JS
 ok(/subidas=\{enVivo\.estado === 'completada' \? subidasDeRango\(fitness \|\| \{\}, enVivo, \{ propios, perfil \}\) : null\}/.test(fv),
   'FitnessView se lo pasa a la pantalla de éxito solo cuando ya está guardada');
 ok(/destacado sube/.test(fin) && /TEXTOS_SUBIDA\.titulo/.test(fin), '…que pinta el hexágono nuevo con su entrada y su texto');
-ok(/else setAviso\(\(a\) => \(a === 'guardado_fallido' \? null : a\)\)/.test(fv),
+ok(/else setAviso\(\(a\) => \(a === 'guardado_fallido' \|\| a === 'guardado_sin_espacio' \? null : a\)\)/.test(fv),
   '🐛 Y un guardado que va bien RETIRA el error de antes: tras «Reintentar» no puede seguir diciendo que falló');
 ok(/\{!fallo && subidas && subidas\.hay && \(/.test(fin),
   '⚠️ …pero NO con el guardado fallido: esa subida desaparecería al recargar (apartado 25)');

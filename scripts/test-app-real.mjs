@@ -144,6 +144,9 @@ const almacen = { estiloHombre: ESTILO_GUARDADO };
 /* FIT F37 — las claves cuyo guardado se hace FALLAR a propósito (apartado 25):
    el doble contesta 500 y no guarda nada, como una cuenta sin cobertura. */
 const FALLAR_ESCRITURA = new Set();
+/* FIT F41 — y las que contestan «demasiado grande», como un servidor sin sitio
+   para la fila (apartado 34): 413, y tampoco se guarda. */
+const LLENO_ESCRITURA = new Set();
 
 /* 🐛 ⚠️ La ruta del navegador estaba **escrita a mano** (`/opt/pw-browsers/
    chromium`), que es donde lo tenía el entorno de aquellas sesiones. En Windows
@@ -198,6 +201,9 @@ await page.route(`${SUPA}/**`, async (route) => {
         const cuerpo = JSON.parse(route.request().postData() || '{}');
         if (cuerpo && FALLAR_ESCRITURA.has(cuerpo.key)) {
           return route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'fallo de prueba' }) });
+        }
+        if (cuerpo && LLENO_ESCRITURA.has(cuerpo.key)) {
+          return route.fulfill({ status: 413, contentType: 'application/json', body: JSON.stringify({ message: 'Request Entity Too Large' }) });
         }
         guardado.push(cuerpo);
         /* ⚠️ **Y se GUARDA de verdad**, para devolverlo en el siguiente GET. Sin
@@ -10966,6 +10972,237 @@ ok(errores.length === erroresAntes_fit40, `…y ni un error en la consola con to
 
 almacen.fitness = fitnessDeAntes_fit40;
 almacen.saludFotos = fotosDeAntes_fit40;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F41 — Persistencia, recuperación y resiliencia (Entrega 4 · 41/45)
+   ══════════════════════════════════════════════════════════════════════════
+   El apartado 54 entero, recargando entre paso y paso: crear un entrenamiento,
+   guardarlo, recargar, abrirlo, empezar, completar series, recargar A MEDIAS,
+   continuar, terminar, recargar, historial, progreso y rango, crear un
+   objetivo, recargar, fotos, recargar y comparar. Por el camino: las tres
+   salidas al volver (apartado 6, C-43), perder el foco y salir a otra pantalla
+   (55), pulsar Terminar tres veces (56), un guardado sin espacio (34 y 53),
+   una sesión rota que se aparta en vez de perderse (35 y 36), y que cada
+   pantalla diga lo MISMO antes y después de recargar (51 y 52). */
+console.log('\n── FIT F41 · Persistencia y recuperación ──');
+const fitnessDeAntes_fit41 = almacen.fitness;
+const fotosDeAntes_fit41 = almacen.saludFotos;
+const ajustesDeAntes_fit41 = almacen.ajustes;
+const erroresAntes_fit41 = errores.length;
+const clasificacion_fit41 = {
+  id: 'f41-c1', exerciseId: 'sentadilla-barra', respuesta: 'intermedio', puntuacion: 420,
+  fuente: 'cuestionario', confianza: 'baja', creadoEn: Date.now() - 86400000, actualizadoEn: null,
+};
+/* Las fotos, sin PIN (C-35): quien las ha desprotegido, con la migración hecha. */
+almacen.ajustes = {
+  ...(ajustesDeAntes_fit41 || {}),
+  seguridad: {
+    ...((ajustesDeAntes_fit41 || {}).seguridad || {}),
+    protectedActions: [], protectedAreas: [], migradoAcciones: true, migradoAreas: true,
+  },
+};
+almacen.fitness = {
+  ...(fitnessDeAntes_fit41 || {}),
+  sesiones: [], plantillas: [], planActivo: null, planesAnteriores: [], objetivos: [],
+  clasificaciones: [clasificacion_fit41], ejercicios: [], cuarentena: [], favoritosEjercicios: [],
+};
+almacen.saludFotos = [];
+await page.evaluate(() => { try { localStorage.removeItem('fitness-borrador-rutina'); } catch { /* vacío */ } });
+const recargar_fit41 = async () => {
+  await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(2000);
+};
+const cuenta_fit41 = () => almacen.fitness || {};
+const enCurso_fit41 = () => (cuenta_fit41().sesiones || []).find((x) => x && (x.estado === 'en_curso' || x.estado === 'pausada')) || null;
+const serie_fit41 = (n) => ((((enCurso_fit41() || {}).origen || {}).ejercicios || [])[0]?.series || [])[n] || {};
+const valorCampo_fit41 = (etiqueta) => page.evaluate((e) => document.querySelector(`input[aria-label="${e}"]`)?.value ?? null, etiqueta);
+await page.setViewportSize({ width: 390, height: 844 });
+await recargar_fit41();
+
+/* 1-2 · CREAR Y GUARDAR. */
+ok(await aFitness_fit39() && await pulsar('Crear entrenamiento'), 'FIT F41 · 1 — «Crear entrenamiento» (apartado 54)');
+await esperarTexto(/A[ñn]adir ejercicio/i);
+ok(await escribirCampo('Nombre del entrenamiento', 'Recupera F41'), '…se le pone nombre');
+await page.waitForTimeout(300);
+ok(await pulsar('Añadir ejercicio') && await esperarCampo('Buscar un ejercicio'), '…se abre el selector');
+ok(await buscarEnSelector('press de banca'), '…se busca el press de banca');
+await page.waitForTimeout(500);
+ok(await pulsar('Press de banca'), '…y se añade');
+await page.waitForTimeout(400);
+ok(await pulsar('Volver a Entrenamiento'), '…de vuelta al constructor');
+ok(/Press de banca/i.test(await esperarTexto(/Press de banca/i)), '…con su ejercicio');
+ok(await pulsar('Guardar') && /Entrenamiento guardado/i.test(await esperarTexto(/Entrenamiento guardado/i)), 'FIT F41 · 2 — Guardar');
+const plantilla_fit41 = (cuenta_fit41().plantillas || []).find((p) => p.nombre === 'Recupera F41');
+ok(!!plantilla_fit41 && (plantilla_fit41.ejercicios || []).length === 1, '…y está en la cuenta, con su ejercicio');
+ok(await pulsar('Volver a Entrenamiento'), '…se sale del constructor');
+
+/* 3-5 · RECARGAR, ABRIRLO Y EMPEZAR. */
+await recargar_fit41();
+ok(await aFitness_fit39() && await pulsar('Ver Recupera F41'), 'FIT F41 · 3 — se recarga y la plantilla sigue en Tu Plan');
+await page.waitForTimeout(400);
+ok(await pulsar('Ver Recupera F41') && /Empezar entrenamiento/i.test(await esperarTexto(/Empezar entrenamiento/i)), 'FIT F41 · 4 — se abre');
+/* «Marcar la serie» es un aria-label: no está en innerText (FIT F33). Se espera el botón. */
+const hayMarcar_fit41 = () => page.waitForSelector('button[aria-label^="Marcar la serie"]', { timeout: 8000 }).then(() => true, () => false);
+ok(await pulsar('Empezar entrenamiento') && await hayMarcar_fit41(), 'FIT F41 · 5 — se empieza');
+await page.waitForTimeout(600);
+
+/* 6 · COMPLETAR UNA SERIE, Y ESCRIBIR OTRA Y PERDER EL FOCO (apartado 55). */
+await page.click('input[aria-label="Peso de la serie 1"]');
+await page.keyboard.type('40', { delay: 40 });
+await page.click('input[aria-label="Repeticiones de la serie 1"]');
+await page.keyboard.type('10', { delay: 40 });
+await page.click('button[aria-label="Marcar la serie 1 como hecha"]');
+await page.waitForTimeout(700);
+ok(serie_fit41(0).estado === 'hecha' && serie_fit41(0).hecho?.peso === 40 && serie_fit41(0).hecho?.reps === 10,
+  `FIT F41 · 6 — la serie hecha está en la cuenta: ${serie_fit41(0).hecho?.peso} kg × ${serie_fit41(0).hecho?.reps}`);
+await page.click('input[aria-label="Repeticiones de la serie 2"]');
+await page.keyboard.type('8', { delay: 40 });
+/* Perder el foco sin tocar nada más: un clic en el centro de la página podría
+   caer sobre un botón (el ✓ de la serie, por ejemplo). */
+await page.evaluate(() => document.activeElement && document.activeElement.blur());
+await page.waitForTimeout(400);
+ok(serie_fit41(1).hecho?.reps === 8 && serie_fit41(1).estado !== 'hecha',
+  `🚨 FIT F41 — escribir y perder el foco guarda lo escrito, sin marcar nada (apartado 55; ${serie_fit41(1).hecho?.reps} reps, ${serie_fit41(1).estado})`);
+
+/* 7-8 · RECARGAR A MEDIAS Y CONTINUAR (apartados 5 y 6). */
+await recargar_fit41();
+ok(await aFitness_fit39(), 'FIT F41 · 7 — se recarga en mitad del entrenamiento');
+const tarjeta_fit41 = await esperarTexto(/Tienes un entrenamiento en curso/i);
+ok(/Tienes un entrenamiento en curso/i.test(tarjeta_fit41) && /Recupera F41/.test(tarjeta_fit41),
+  '…y al volver lo ofrece, con su nombre');
+const salidas_fit41 = await page.evaluate(() => ['Continuar entrenamiento', 'Finalizar', 'Descartar sesión']
+  .map((t) => [...document.querySelectorAll('button')].some((b) => b.innerText.trim() === t)));
+ok(salidas_fit41.every(Boolean),
+  `🔓 FIT F41 — con las TRES salidas del apartado 6: Continuar entrenamiento · Finalizar · Descartar (C-43; ${JSON.stringify(salidas_fit41)})`);
+ok(await pulsar('Continuar entrenamiento') && await hayMarcar_fit41(), 'FIT F41 · 8 — Continuar');
+await page.waitForTimeout(500);
+ok(await valorCampo_fit41('Peso de la serie 1') === '40' && await valorCampo_fit41('Repeticiones de la serie 1') === '10'
+  && await valorCampo_fit41('Repeticiones de la serie 2') === '8',
+  '🚨 FIT F41 — …y está TODO donde lo dejó: la serie hecha y lo escrito en la siguiente (apartados 4 y 5)');
+/* Salir a otra pantalla y volver (apartado 55). */
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), 'FIT F41 — se sale a otra pantalla en mitad del entrenamiento');
+await esperarTexto(/Continuar entrenamiento/i);
+ok(await pulsar('Continuar entrenamiento') && await valorCampo_fit41('Repeticiones de la serie 2') === '8',
+  '…y al volver sigue igual (apartado 55)');
+await page.click('button[aria-label="Marcar la serie 2 como hecha"]');
+await page.waitForTimeout(600);
+
+/* 9-10 · TERMINAR, SIN ESPACIO, TRES VECES (apartados 34, 53 y 56). */
+ok(await pulsar('Terminar el entrenamiento') && /Terminar entrenamiento/i.test(await esperarTexto(/Terminar entrenamiento/i)), 'FIT F41 · 9 — Terminar');
+LLENO_ESCRITURA.add('fitness');
+const tres_fit41 = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button')].find((x) => x.innerText.trim() === 'Terminar entrenamiento');
+  if (!b) return 0;
+  b.click(); b.click(); b.click();
+  return 3;
+});
+ok(tres_fit41 === 3, 'FIT F41 · 10 — «Terminar entrenamiento» se pulsa TRES veces seguidas… y la cuenta no tiene sitio');
+const lleno_fit41 = await esperarTexto(/poco espacio/i);
+ok(/Hay poco espacio disponible para guardar estos datos/.test(lleno_fit41),
+  '🚨 FIT F41 — dice «Hay poco espacio disponible para guardar estos datos.», el texto del apartado 34');
+ok(/antes de cerrar la aplicaci[oó]n/i.test(lleno_fit41) && /Reintentar/.test(lleno_fit41),
+  '…con el entrenamiento todavía en pantalla y su «Reintentar» (apartado 53: la aplicación sigue usable)');
+const alertasLleno_fit41 = await page.evaluate(() => [...document.querySelectorAll('[role="alert"]')]
+  .filter((e) => /poco espacio/i.test(e.innerText)).length);
+ok(alertasLleno_fit41 >= 1, `…como alerta (${alertasLleno_fit41})`);
+ok((cuenta_fit41().sesiones || []).every((x) => x.estado !== 'completada'),
+  '…y de verdad NO se ha guardado: ni éxito falso, ni nada borrado para hacer sitio (apartados 33 y 34)');
+LLENO_ESCRITURA.delete('fitness');
+ok(await pulsar('Reintentar'), 'FIT F41 — con sitio otra vez, «Reintentar»');
+const bien_fit41 = await esperarTexto(/^(?![\s\S]*poco espacio)/i);
+ok(!/poco espacio/i.test(bien_fit41), '…y el aviso se va');
+await page.waitForTimeout(500);
+const completadas_fit41 = (cuenta_fit41().sesiones || []).filter((x) => x && x.estado === 'completada');
+ok(completadas_fit41.length === 1 && (cuenta_fit41().sesiones || []).length === 1,
+  `🚨 FIT F41 — tres toques y un reintento dejan UNA sesión completada (apartado 56; ${completadas_fit41.length} de ${(cuenta_fit41().sesiones || []).length})`);
+
+/* 11-14 · RECARGAR, Y CADA PANTALLA DICE LO MISMO (apartados 51 y 52). */
+const pantalla_fit41 = async (pasos, espera) => {
+  for (const p of pasos) { if (!(await pulsar(p, 10000))) return `(no se pudo abrir ${p})`; }
+  const t = await esperarTexto(espera, 12000);
+  await page.waitForTimeout(700);
+  return (await ver()).replace(/\d{1,2}:\d{2}(:\d{2})?/g, 'H:M');
+};
+const PANTALLAS_FIT41 = [
+  ['Tu Plan', ['Bienestar', 'Fitness'], /Tu Plan/i],
+  ['Historial', ['Bienestar', 'Fitness', 'Abrir Historial'], /Recupera F41/],
+  ['Progreso', ['Bienestar', 'Fitness', 'Progreso'], /Línea temporal/i],
+  ['Rangos', ['Bienestar', 'Fitness', 'Rangos'], /Rango|rango/],
+];
+await recargar_fit41();
+const antes_fit41 = {};
+for (const [n, pasos, espera] of PANTALLAS_FIT41) antes_fit41[n] = await pantalla_fit41(pasos, espera);
+ok(/Recupera F41/.test(antes_fit41.Historial), 'FIT F41 · 11-12 — tras recargar, el historial tiene el entrenamiento');
+ok(/Recupera F41|Press de banca|entrenamiento/i.test(antes_fit41.Progreso), 'FIT F41 · 13 — …y Progreso lo cuenta');
+await recargar_fit41();
+for (const [n, pasos, espera] of PANTALLAS_FIT41) {
+  const despues = await pantalla_fit41(pasos, espera);
+  ok(despues === antes_fit41[n] && despues.length > 50,
+    `🚨 FIT F41 — ${n} dice EXACTAMENTE lo mismo antes y después de recargar (apartado 51)`);
+}
+
+/* UNA SESIÓN ROTA SE APARTA, NO SE PIERDE (apartados 35 y 36). */
+almacen.fitness = {
+  ...almacen.fitness,
+  sesiones: [...(almacen.fitness.sesiones || []), { nombre: 'Rota F41', estado: 'completada', fecha: '2026-09-01' }],
+};
+await recargar_fit41();
+const historialRoto_fit41 = await pantalla_fit41(['Bienestar', 'Fitness', 'Abrir Historial'], /Recupera F41/);
+ok(/Recupera F41/.test(historialRoto_fit41) && !/Rota F41/.test(historialRoto_fit41) && !/undefined|NaN|Invalid Date/.test(historialRoto_fit41),
+  '🚨 FIT F41 — con una sesión rota en la cuenta, el historial se abre igual, sin ella y sin nada roto a la vista (apartado 35)');
+
+/* 15-16 · CREAR UN OBJETIVO Y RECARGAR — y ese guardado se lleva la cuarentena. */
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso') && await pulsar('Objetivos'), 'FIT F41 · 15 — Progreso → Objetivos');
+ok(await pulsar('+ Crear objetivo') && await pulsar('Elegir ejercicio'), '…+ Crear objetivo → elegir ejercicio');
+ok(await buscarEnSelector('press de banca'), '…se busca');
+await page.waitForTimeout(500);
+ok(await pulsar('Añadir Press de banca · Con barra'), '…→ Press de banca');
+await esperarTexto(/Qué quieres medir/i);
+ok(await escribirObjetivo_fit14('60') && await pulsar('Crear objetivo'), '…→ 60 → Crear objetivo');
+const objetivo_fit41 = await esperarTexto(/\/ 60/);
+ok(/\/ 60/.test(objetivo_fit41), `…y sale su progreso sobre 60`);
+await page.waitForTimeout(500);
+ok((cuenta_fit41().objetivos || []).length === 1 && cuenta_fit41().objetivos[0].exerciseId === 'press-banca-barra',
+  '…guardado en la cuenta');
+const apartada_fit41 = (cuenta_fit41().cuarentena || []).find((x) => x && x.original && x.original.nombre === 'Rota F41');
+ok(!!apartada_fit41 && apartada_fit41.motivo === 'sin_id' && apartada_fit41.de === 'sesiones',
+  '🚨 FIT F41 — y la sesión rota viaja APARTADA con ese guardado, entera: antes, este guardado la borraba de la cuenta (apartados 28 y 36)');
+ok(!(cuenta_fit41().sesiones || []).some((x) => x && x.nombre === 'Rota F41'), '…fuera de la lista que se pinta');
+await recargar_fit41();
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso') && await pulsar('Objetivos'), 'FIT F41 · 16 — se recarga');
+ok(/\/ 60/.test(await esperarTexto(/\/ 60/)), '…y el objetivo sigue, con su progreso');
+ok((cuenta_fit41().cuarentena || []).length === 1, '…y la cuarentena no se duplica al recargar');
+
+/* 17-19 · FOTOS, RECARGAR Y COMPARAR. */
+almacen.saludFotos = [
+  { id: 'f41-f1', path: 'usuario-prueba/f41-junio.jpg', fecha: '2026-06-10', nota: 'Antes F41' },
+  { id: 'f41-f2', path: 'usuario-prueba/f41-sept.jpg', fecha: '2026-09-10', nota: 'Después F41' },
+];
+await recargar_fit41();
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso') && await pulsar('Fotos'), 'FIT F41 · 17 — las fotos');
+const fotos_fit41 = await esperarTexto(/10 SEP 2026/i);
+ok(/10 SEP 2026/i.test(fotos_fit41) && /10 JUN 2026/i.test(fotos_fit41), '…las dos');
+await recargar_fit41();
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso') && await pulsar('Fotos'), 'FIT F41 · 18 — se recarga');
+ok(/10 SEP 2026/i.test(await esperarTexto(/10 SEP 2026/i)), '…y siguen');
+ok(await pulsar('Comparar progreso'), 'FIT F41 · 19 — se abre el comparador');
+await esperarTexto(/Inicial/i);
+ok(await elegir_fit26('Inicial', '10 JUN 2026') && await elegir_fit26('Final', '10 SEP 2026'), '…se eligen las dos');
+ok(/de diferencia/i.test(await esperarTexto(/de diferencia/i)), '…y se comparan');
+
+/* Y AL FINAL, LO QUE NO SE TOCABA SIGUE (apartado 52). */
+ok((cuenta_fit41().clasificaciones || []).some((c) => c.id === 'f41-c1'),
+  '🚨 FIT F41 — la estimación sembrada al principio sigue en la cuenta tras todos estos guardados (apartado 52)');
+ok((cuenta_fit41().plantillas || []).some((p) => p.nombre === 'Recupera F41'), '…y la plantilla');
+const nuevos_fit41 = errores.slice(erroresAntes_fit41).filter((t) => !/status of 413|No se pudo guardar/i.test(t));
+ok(nuevos_fit41.length === 0,
+  `FIT F41 — y ni un error por el camino, salvo el guardado sin espacio provocado${nuevos_fit41.length ? ` — ${nuevos_fit41[0]}` : ''}`);
+errores.splice(erroresAntes_fit41);
+
+LLENO_ESCRITURA.clear();
+almacen.fitness = fitnessDeAntes_fit41;
+almacen.saludFotos = fotosDeAntes_fit41;
+almacen.ajustes = ajustesDeAntes_fit41;
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

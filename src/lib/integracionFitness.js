@@ -140,6 +140,9 @@ export const EVENTOS_FITNESS = [
 export const CAMPOS_GUARDADOS = [
   'version', 'ejercicios', 'plantillas', 'planes', 'sesiones', 'objetivos', 'clasificaciones', 'rangos',
   'planActivo', 'planesAnteriores', 'favoritosPlanes', 'favoritosEjercicios',
+  /* FIT F41 — lo que la puerta de carga apartó, con su original: un dato suyo,
+     no una cifra derivada. */
+  'cuarentena',
 ];
 
 /* Lo que JAMÁS se guarda, porque se deriva (apartados 32, 34, 36 y 51). */

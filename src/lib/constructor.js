@@ -627,6 +627,17 @@ export function hayCambios(rutina, original) {
    es que se lleva por delante lo que viniera después (SF F1). */
 export const CLAVE_BORRADOR = 'fitness-borrador-rutina';
 
+/* 🐛 FIT F41, apartado 33 — si el navegador no deja escribir (una ventana
+   privada de Safari, sin espacio), `guardarBorrador` devuelve `false` y no lo
+   leía nadie: el aviso de salir prometía *"se queda como
+   borrador"* sobre un borrador que no existía. */
+export const BORRADOR_NO_SE_GUARDA = 'Este dispositivo no deja guardar el borrador. Guarda el entrenamiento antes de salir.';
+export const SALIR_SIN_BORRADOR = 'Este dispositivo no ha dejado guardar el borrador: si sales, se pierde lo que llevas.';
+
+/** FIT F41, apartado 39 — un borrador sin ejercicios ni nombre no es trabajo
+ *  suyo: se limpia en vez de ofrecerlo. */
+export const borradorVacio = (r) => !r || ((!Array.isArray(r.lineas) || r.lineas.length === 0) && !String(r.nombre || '').trim());
+
 export function guardarBorrador(rutina) {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return false;
@@ -642,7 +653,12 @@ export function leerBorrador() {
     if (typeof window === 'undefined' || !window.localStorage) return null;
     const crudo = window.localStorage.getItem(CLAVE_BORRADOR);
     if (!crudo) return null;
-    return normalizarRutina(JSON.parse(crudo));
+    const r = normalizarRutina(JSON.parse(crudo));
+    /* Uno vacío se retira: ofrecer «un entrenamiento a medias» sin nada dentro
+       sería inventarse trabajo. Uno roto (que no se entiende) se deja donde
+       está: no se borra lo que no se sabe qué es. */
+    if (r && borradorVacio(r)) { window.localStorage.removeItem(CLAVE_BORRADOR); return null; }
+    return r;
   } catch {
     return null;
   }

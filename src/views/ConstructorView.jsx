@@ -39,7 +39,7 @@ import {
   anadirEjercicio, editarLinea, eliminarLinea, duplicarLinea, moverLinea,
   variantesDeLinea, cambiarVariante, sustituirEnRutina,
   resumenRutina, guardarRutina, hayCambios,
-  guardarBorrador, borrarBorrador,
+  guardarBorrador, borrarBorrador, BORRADOR_NO_SE_GUARDA, SALIR_SIN_BORRADOR,
 } from '../lib/constructor';
 /* 🔓 FIT F33 — sustituir un ejercicio del borrador o de la plantilla. */
 import { ExerciseReplacementModal } from '../components/sustitucion';
@@ -419,6 +419,8 @@ export default function ConstructorView({
   const [avisoSalir, setAvisoSalir] = useState(false);
   const [problemas, setProblemas] = useState([]);
   const [guardado, setGuardado] = useState(false);
+  /* FIT F41, apartado 33 — si el borrador no se ha podido escribir. */
+  const [sinBorrador, setSinBorrador] = useState(false);
   const primeraVez = useRef(true);
 
   /* Apartado 25: *"Implementa un borrador local mientras el entrenamiento está
@@ -426,7 +428,7 @@ export default function ConstructorView({
      salir sin tocar nada dejaría un borrador vacío que reaparecería mañana. */
   useEffect(() => {
     if (primeraVez.current) { primeraVez.current = false; return; }
-    guardarBorrador(rutina);
+    setSinBorrador(!guardarBorrador(rutina));
   }, [rutina]);
 
   const cambios = useMemo(() => hayCambios(rutina, original), [rutina, original]);
@@ -533,13 +535,17 @@ export default function ConstructorView({
         <Card style={{ border: `1px solid ${COLORS.negative}` }}>
           <p className="text-sm font-bold" style={{ color: COLORS.text }}>¿Salir sin guardar?</p>
           <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
-            Lo que llevas escrito se queda como borrador en este dispositivo.
+            {sinBorrador ? SALIR_SIN_BORRADOR : 'Lo que llevas escrito se queda como borrador en este dispositivo.'}
           </p>
           <div className="flex gap-2 mt-3">
             <GhostBtn onClick={() => setAvisoSalir(false)}>Seguir editando</GhostBtn>
             <GhostBtn icon={X} onClick={() => { setAvisoSalir(false); onVolver && onVolver(); }}>Salir</GhostBtn>
           </div>
         </Card>
+      )}
+
+      {sinBorrador && !guardado && (
+        <p role="status" className="text-xs px-1" style={{ color: COLORS.textMuted }}>{BORRADOR_NO_SE_GUARDA}</p>
       )}
 
       {guardado && (

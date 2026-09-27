@@ -2,6 +2,17 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.123.0 — FIT F41/45: persistencia, recuperación y resiliencia):**
+> 🐛 **Lo que la carga no entendía —una sesión sin id, dos copias distintas de la misma, un objetivo
+> sin ejercicio— se borraba de su cuenta en el siguiente guardado**: ahora se aparta en
+> `fitness.cuarentena` con su original, y no se pinta. La versión que la F1 ya guardaba tiene por fin
+> dónde migrar (con copia y sin tocar nada si falla). 🐛 **Una foto sin id o sin fecha cambiaba en
+> cada carga.** Un guardado sin espacio dice *«Hay poco espacio disponible para guardar estos
+> datos.»*; 🐛 el borrador del constructor callaba si Safari no le dejaba guardar; **Fitness entra por
+> fin en la exportación de datos** (las fotos solo sin PIN); y al volver con un entrenamiento en curso
+> hay **Continuar · Finalizar · Descartar** (C-43). Lo siguiente es la **FIT F42** (auditoría visual y
+> acabado premium), la última del bloque de Acabado.
+
 > **📅 ACTUALIZACIÓN (v3.122.0 — FIT F40/45: rendimiento y optimización técnica):**
 > Medido con un escenario de 1 000 sesiones: 🐛 **el panel de Rangos tardaba 6,4 s** la primera vez
 > (y el centro de Progreso 6,6 s) porque el historial de un rango calculaba cada día entero; ahora

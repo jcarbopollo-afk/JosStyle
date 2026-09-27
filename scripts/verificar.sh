@@ -1109,6 +1109,19 @@ else
   fallo "Falla la validación del catálogo"; grep '✗' /tmp/jc_validacion_catalogo.log
 fi
 
+# FIT F41 — persistencia, recuperación y resiliencia. Lo que más se vigila: que lo que la puerta
+# de carga no entiende —una sesión sin id, dos copias distintas de la misma, un objetivo sin
+# ejercicio— se APARTE con su original en vez de perderse en el siguiente guardado; que la
+# versión de la F1 tenga dónde migrar (con copia, validando ids y sin tocar lo que había si algo
+# falla); que un guardado sin espacio lo diga con el texto del apartado 34; que Fitness entre en
+# la exportación global (las fotos solo sin PIN); y que ninguna pantalla se caiga con datos
+# corruptos. Recargar, cerrar e interrumpir de verdad, en el recorrido de Chromium.
+if node --import ./scripts/resolver-vite.mjs scripts/test-persistencia-fitness.mjs >/tmp/jc_persistencia_fitness.log 2>&1; then
+  ok "Persistencia de Fitness (FIT F41) — $(grep -c '✓' /tmp/jc_persistencia_fitness.log) comprobaciones"
+else
+  fallo "Falla la persistencia de Fitness"; grep '✗' /tmp/jc_persistencia_fitness.log
+fi
+
 # FIT F40 — rendimiento. Lo que más se vigila: que el historial de rangos que ya no se calcula
 # entero día a día dé EXACTAMENTE lo mismo que calcularlo entero (apartado 59), que su caché se
 # tire al clasificar un ejercicio, que el panel de Rangos y el centro de Progreso quepan en su

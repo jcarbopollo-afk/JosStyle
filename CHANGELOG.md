@@ -1,5 +1,82 @@
 # CHANGELOG.md
 
+## v3.123.0 — FIT F41/45: persistencia, recuperación y resiliencia de fitness
+
+*"Que el usuario pueda cerrar, recargar, volver a abrir o experimentar un fallo sin perder
+información válida."* Y el «IMPORTANTE» que manda sobre todo lo demás: **"NO crear una nueva
+arquitectura de backend. Utilizar la capa de persistencia existente."** Así que lo primero fue mirar
+qué había, y era casi todo (`YA_EXISTIA_F41`, 35 apartados): Fitness es una clave de `app_data` que
+se sube entera —así que cada guardado ya es atómico—, la sesión en curso se recupera al volver (F7),
+terminar es idempotente (F8), los rangos y su historial se derivan (F15, F22), las fotos se guardan
+como camino (F26) y lo que se escribe se guarda una vez sin perderse (F40). **Faltaban cinco cosas,
+y tres eran fallos reales.** Sexta fase del bloque de **Acabado** (F36–F42).
+
+### 🐛 Lo que la puerta de carga no entendía se borraba de la cuenta
+
+Una sesión sin id, un objetivo sin ejercicio o dos copias de la misma sesión con distinto contenido
+(dos dispositivos, una restauración sobre una copia vieja): la puerta de carga los deja fuera —es
+correcto no pintarlos, no se pueden abrir ni borrar— y **el siguiente guardado los borraba de su
+cuenta para siempre**. Ahora **se apartan** en `fitness.cuarentena` con su original entero, el día y
+el motivo (sin id, no se entiende, repetido), y viajan con el siguiente guardado de verdad
+(apartados 28, 32, 35 y 36). No se pintan en ninguna parte —*"no crear una pantalla técnica"*— y en
+desarrollo se avisa en la consola.
+
+- **No hay un segundo criterio de «qué es válido»**: se compara lo que llegó con lo que dejó pasar la
+  puerta de carga, por id. El día que la puerta cambie, la cuarentena la sigue sola.
+- Dos copias **idénticas** no son un conflicto: sobra una y no se aparta nada. Dos clasificaciones
+  del mismo ejercicio se apartan como «repetido», no como rotas (la F17 se queda la última).
+- ⚠️ **Los tramos de `planesAnteriores` no entran**: no llevan id (son sus fechas), y con ellos
+  dentro se habrían apartado todos.
+- Y es **idempotente**: recargar, o recargar antes de guardar, no la duplica.
+
+### La versión existía desde la F1, y nada la leía
+
+`version: 1` está en `DEFAULT_FITNESS` desde la primera fase, pero no había dónde escribir una
+migración ni quién la corriera. Ahora `migrarFitness` corre sobre lo **crudo**, antes de la puerta de
+carga (la lección de la EH F46), con copia: si una migración falla, pierde o cambia un id, o no
+devuelve nada, **se devuelve lo que había, entero**; y una versión más nueva (otro dispositivo) no se
+migra hacia atrás, y la puerta de carga la conserva. **Hoy no hay ninguna migración que correr**
+—cada fase de la F2 a la F40 sumó campos que la puerta absorbe—, así que el mecanismo se prueba con
+migraciones de ensayo (apartado 57: datos preservados, estructura válida, ids intactos, mismos
+resultados). ⚠️ Escribí primero que Fitness «no tenía versión»: estaba en la línea de al lado.
+
+### 🐛 Una foto sin id o sin fecha cambiaba en cada carga
+
+`normalizarFotoProgreso` le ponía a una foto sin id **uno aleatorio en cada carga**, y a una sin fecha
+**la de hoy** —el fallo de las sesiones de la F31, aquí—. Ahora el id sale de su camino (único: un
+archivo por foto) y la fecha de cuándo se subió (`createdAt`, o la marca que lleva el propio nombre
+del archivo). A una foto con los dos no se le toca nada (apartados 43 y 46).
+
+### Sin espacio, el borrador y la exportación
+
+- **«Hay poco espacio disponible para guardar estos datos.»** (apartado 34, literal): la cuota del
+  navegador y el «demasiado grande» del servidor ya no se confunden con quedarse sin conexión. Lo dice
+  el aviso de siempre y, al terminar un entrenamiento, la pantalla de éxito junto a su «Reintentar»,
+  con el entrenamiento todavía en pantalla. **No se borra nada para hacer sitio.**
+- 🐛 **El borrador del constructor callaba si no se podía escribir** (una ventana privada de Safari,
+  sin espacio): `guardarBorrador` devolvía `false` y no lo leía nadie, y el aviso de salir prometía
+  *«se queda como borrador»* sobre un borrador que no existía. Ahora se dice. Y un borrador vacío se
+  retira en vez de ofrecerse (apartado 39).
+- **La exportación de datos no llevaba NADA de Fitness** (apartado 29): entra por la exportación
+  global de siempre, como Imagen personal —entrenamientos, plantillas, plan activo y anteriores,
+  objetivos, estimaciones y los cambios del rango global—, **aparte de `currentState`** (que es
+  también el contexto de la IA). Las fotos, solo como referencia (fecha, etiquetas y nota: ni el
+  camino ni una URL) y **solo si no están detrás del PIN** (C-35).
+- 🔓 **Al volver con un entrenamiento reciente faltaba «Finalizar»** (apartado 6, **C-43**): la F39 lo
+  ofrecía solo en uno de hace horas.
+
+### Lo que no se hace
+
+Detectar dos dispositivos o dos pestañas que escriben a la vez exige una columna de versión en
+`app_data` —una arquitectura de backend, que el «IMPORTANTE» prohíbe—, y en su iPhone la aplicación
+instalada y Safari ni siquiera comparten almacenamiento. JosStyle no tiene importación global. Y lo
+escrito en el último instante antes de que el sistema mate la aplicación puede no llegar a salir:
+no se promete (`NO_EN_FIT41`).
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.122.0 — FIT F40/45: rendimiento y optimización técnica de fitness
 
 *"Esta fase NO añade funcionalidades nuevas. El objetivo es que todo Fitness siga siendo rápido

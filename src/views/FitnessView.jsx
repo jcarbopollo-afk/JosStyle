@@ -42,6 +42,7 @@ import { AreaSegura } from '../components/areaSegura';
 /* 🔓 FIT F37 — el aviso reutilizable (E3 F9) y cómo leer un guardado. */
 import { AvisoAccion } from '../components/quickAdd';
 import { resultadoDeGuardado, subidasDeRango } from '../lib/feedbackFitness';
+import { avisoDeFallo } from '../lib/persistenciaFitness';
 /* FIT F3 — el constructor, renderizado entero aquí dentro (E3 F23). */
 import ConstructorView from './ConstructorView';
 /* FIT F4 — la gestión de plantillas, renderizada entera aquí dentro (E3 F23). */
@@ -644,20 +645,21 @@ export default function FitnessView(props) {
   const guardarF = onGuardarFitness ? (next, avisoSiVaBien = null) => {
     let r;
     try { r = onGuardarFitness(next); } catch (error) {
-      setAviso('guardado_fallido');
+      setAviso(avisoDeFallo(error));
       return Promise.resolve({ ok: false, error });
     }
     return Promise.resolve(r).then((res) => {
       const g = resultadoDeGuardado(res);
-      if (!g.ok) setAviso('guardado_fallido');
+      /* FIT F41, apartado 34 — sin espacio no es lo mismo que sin conexión. */
+      if (!g.ok) setAviso(avisoDeFallo(g.error));
       else if (avisoSiVaBien) setAviso(avisoSiVaBien);
       /* 🐛 Y si ESTE va bien, el error de antes se va: tras «Reintentar», el
          aviso seguía diciendo «No se ha podido guardar» unos segundos más
          sobre un entrenamiento que ya estaba en su cuenta. Lo cazó el
          recorrido de la F37. */
-      else setAviso((a) => (a === 'guardado_fallido' ? null : a));
+      else setAviso((a) => (a === 'guardado_fallido' || a === 'guardado_sin_espacio' ? null : a));
       return g;
-    }, (error) => { setAviso('guardado_fallido'); return { ok: false, error }; });
+    }, (error) => { setAviso(avisoDeFallo(error)); return { ok: false, error }; });
   } : null;
   /* 🔓 FIT F39 (apartado 37) — `fit-foco` es el anillo de foco de Fitness
      (`index.css`). Con `display: contents`: no añade una caja al diseño. */

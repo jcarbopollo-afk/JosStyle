@@ -30,6 +30,7 @@ import {
 import { VISIBILIDADES } from '../lib/fitness';
 /* 🔓 FIT F37 — leer si el guardado ha llegado, y subir de rango. */
 import { resultadoDeGuardado, TEXTOS_GUARDADO, TEXTOS_SUBIDA } from '../lib/feedbackFitness';
+import { motivoDeFallo } from '../lib/persistenciaFitness';
 import { RankBadge } from '../components/rangos';
 import {
   resumenDeSesion, pantallaDeExito, guardarEntrenamiento, descartarEntrenamiento,
@@ -118,6 +119,11 @@ export function PantallaExito({ datos, accent, onVer, onVolver, fallo = false, r
             <AlertTriangle size={18} style={{ color: COLORS.negative }} aria-hidden="true" className="shrink-0 mt-0.5" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold" style={{ color: COLORS.text }}>{TEXTOS_GUARDADO.fallo}</p>
+              {/* FIT F41, apartado 34 — si lo que falta es espacio, se dice eso;
+                  y el entrenamiento sigue aquí: no se borra nada para hacer sitio. */}
+              {fallo === 'sin_espacio' && (
+                <p className="text-xs mt-0.5" style={{ color: COLORS.text }}>{TEXTOS_GUARDADO.sinEspacio}</p>
+              )}
               <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{TEXTOS_GUARDADO.detalle}</p>
               {onReintentar && (
                 reintentando ? (
@@ -307,6 +313,9 @@ export default function FinalizacionView({
      «Guardando…» se ve mientras sube (antes se encendía y se apagaba en el
      mismo instante), el botón no está mientras tanto, y si no llega a la
      cuenta la pantalla de éxito lo dice con su «Reintentar». */
+  /* FIT F41 — `fallo` dice ADEMÁS por qué: `false` si llegó, y si no, el motivo
+     (`sin_espacio`, `sin_conexion` u `otro`), que sigue siendo verdadero. */
+  const falloDe = (res) => { const g = resultadoDeGuardado(res); return g.ok ? false : (motivoDeFallo(g.error) || 'otro'); };
   const guardar = async (confirmado = false) => {
     if (guardando) return;
     const r = guardarEntrenamiento(sesion, { nombre, notas, confirmado });
@@ -317,7 +326,7 @@ export default function FinalizacionView({
     let res;
     try { res = await onGuardar(r.sesion); } catch (error) { res = { ok: false, error }; }
     setGuardada(r.sesion);
-    setFallo(!resultadoDeGuardado(res).ok);
+    setFallo(falloDe(res));
     setGuardando(false);
   };
 
@@ -328,7 +337,7 @@ export default function FinalizacionView({
     setGuardando(true);
     let res;
     try { res = await onGuardar(guardada); } catch (error) { res = { ok: false, error }; }
-    setFallo(!resultadoDeGuardado(res).ok);
+    setFallo(falloDe(res));
     setGuardando(false);
   };
 

@@ -895,7 +895,33 @@ export const DEFAULT_FITNESS = {
      mantienen la información original"*). Nace vacío: el primero lo apunta
      `usarPlan` al cambiar de plan. */
   planesAnteriores: [],
+  /* 🚨 FIT F41 — lo que la puerta de carga no entendió, con su original entero
+     (`persistenciaFitness.js`). Nace vacía, no se pinta en ninguna parte y
+     existe para que nada se pierda en el siguiente guardado (apartados 28 y 36). */
+  cuarentena: [],
 };
+
+/* ── FIT F41 · la cuarentena ─────────────────────────────────────────────────
+   Vive AQUÍ, con el modelo, y no en `persistenciaFitness.js`: el normalizador
+   de abajo tiene que conocerla (regla 5) y aquella librería importa este
+   archivo —sería un ciclo—. Allí se reexporta. Solo las listas cuyos elementos
+   llevan `id`: un tramo de `planesAnteriores` no lo lleva (es sus fechas). */
+export const LISTAS_EN_CUARENTENA = ['sesiones', 'objetivos', 'clasificaciones', 'plantillas', 'ejercicios'];
+export const MOTIVOS_CUARENTENA = [
+  { id: 'sin_id', texto: 'No tenía identificador: no se podía abrir ni borrar.' },
+  { id: 'no_se_entiende', texto: 'Le faltaba algo imprescindible (un ejercicio, una fecha, su forma).' },
+  { id: 'repetido', texto: 'Había otra copia de lo mismo con distinto contenido, y se quedó la última.' },
+];
+export function normalizarCuarentena(v) {
+  return lista(v).filter((x) => x && typeof x === 'object' && LISTAS_EN_CUARENTENA.includes(x.de)
+    && x.original && typeof x.original === 'object' && !Array.isArray(x.original))
+    .map((x) => ({
+      de: x.de,
+      motivo: MOTIVOS_CUARENTENA.some((m) => m.id === x.motivo) ? x.motivo : 'no_se_entiende',
+      original: x.original,
+      desde: typeof x.desde === 'string' ? x.desde : '',
+    }));
+}
 
 /** FIT F32 — un tramo de plan ya cerrado (C-39). ⚠️ Sin fechas válidas, o con
  *  un «hasta» que no va después del «desde», no cubre ningún día: se descarta
@@ -972,6 +998,7 @@ export function normalizarFitness(guardado) {
        («reclasificar» sustituye, no acumula, su apartado 11). */
     clasificaciones: [...new Map(lista(g.clasificaciones).map(normalizarClasificacion)
       .filter(Boolean).map((c) => [c.exerciseId, c])).values()],
+    cuarentena: normalizarCuarentena(g.cuarentena),
   };
 }
 

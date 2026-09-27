@@ -3,6 +3,7 @@ import { resumenHabito } from './rachas';
 import Papa from 'papaparse';
 import { calcularDuracion, formatHoras, todayISO } from './helpers';
 import { filasParaExportar } from './preferenciasEstilo';
+import { filasDeFitnessParaExportar } from './persistenciaFitness';
 
 function downloadBlob(filename, content, mime) {
   const blob = new Blob([content], { type: mime });
@@ -16,7 +17,7 @@ function downloadBlob(filename, content, mime) {
   URL.revokeObjectURL(url);
 }
 
-function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, fe, bienestar, estiloHombre = null }) {
+export function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, fe, bienestar, estiloHombre = null, fitness = null, fotosFitness = null }) {
   const rows = [];
   /* ⚠️ **EH F34, apartado 14** — *"Estilo de hombre debe incluir sus datos dentro
      de esa exportación. **No crear otro sistema de exportación.**"* Así que entra
@@ -28,6 +29,13 @@ function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion
      la IA, y el perfil de piel tiene escrito que **no viaja a la IA** (EH F13,
      apartado 17). Se pasa aparte, solo a la exportación. */
   if (estiloHombre) rows.push(...filasParaExportar(estiloHombre));
+  /* 🚨 FIT F41, apartado 29 — *"Si el proyecto ya tiene exportación de datos:
+     Fitness debe integrarse con ella. No crear un exportador paralelo."* Y no
+     llevaba NADA de Fitness: ni un entrenamiento, ni una plantilla, ni un
+     objetivo. Entra igual que Imagen personal, **aparte de `currentState`**, y
+     las fotos solo como referencia y solo si no están detrás del PIN (C-35):
+     quien llama pasa `fotosFitness: null` si lo están. */
+  if (fitness) rows.push(...filasDeFitnessParaExportar(fitness, { fotos: fotosFitness }));
   sueno.forEach((e) =>
     rows.push({
       modulo: 'Sueño',

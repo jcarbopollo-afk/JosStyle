@@ -998,7 +998,14 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       se guarda una vez y no en cada tecla, sin perderse; 🐛 la nota cerrada deprisa ya no se pierde;
       el reloj repinta solo su número; la gráfica toca 40 puntos como mucho; y la C-42 (dividir el
       bundle) documentada para Josué.
-- [ ] F41–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F41 — Persistencia, recuperación y resiliencia de fitness** (v3.123.0): 🐛 lo que la carga
+      no entiende se aparta en `fitness.cuarentena` con su original en vez de borrarse en el
+      siguiente guardado; `migrarFitness` sobre la versión de la F1 (con copia, validando ids y sin
+      migrar hacia atrás); 🐛 la foto sin id o sin fecha ya no cambia en cada carga; «Hay poco
+      espacio…» cuando es eso; 🐛 el borrador del constructor dice si no se ha podido guardar;
+      Fitness en la exportación global (fotos solo sin PIN); y Continuar · Finalizar · Descartar al
+      volver (C-43).
+- [ ] F42–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

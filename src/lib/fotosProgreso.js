@@ -19,7 +19,7 @@
    se usa todos los días.
    =========================================================================== */
 
-import { fechaLocalISO, todayISO, uid } from './helpers.js';
+import { fechaLocalISO, todayISO, uid, fechaValida } from './helpers.js';
 
 const lista = (x) => (Array.isArray(x) ? x : []);
 const texto = (v) => (typeof v === 'string' ? v.trim() : '');
@@ -101,11 +101,32 @@ export function crearFotoProgreso({
  * `createdAt` **se deduce de su `fecha`**, que es lo único que se sabe: no se
  * inventa una hora que nadie registró.
  */
+/* 🐛 FIT F41, apartados 43 y 46 — una foto sin `id` recibía uno ALEATORIO en
+   cada carga, y una sin `fecha` se mudaba a HOY en cada carga (el fallo de las
+   sesiones de la F31, aquí). Ahora los dos salen de lo que ya es suyo: el id
+   de su camino —que es único: un archivo por foto— y la fecha de cuándo se
+   subió (`createdAt`, o la marca que lleva el propio nombre del archivo,
+   `uploadProgressPhoto`). Solo sin nada de eso queda hoy. */
+const idDesdeCamino = (path) => {
+  let h = 5381;
+  for (let i = 0; i < path.length; i += 1) h = ((h * 33) ^ path.charCodeAt(i)) >>> 0;
+  return `foto-${h.toString(36)}-${path.length.toString(36)}`;
+};
+function fechaDeFotoGuardada(o) {
+  const f = texto(o.fecha);
+  if (fechaValida(f)) return f;
+  const c = texto(o.createdAt);
+  if (c && Number.isFinite(Date.parse(c))) return fechaLocalISO(c);
+  const m = /(?:^|\/)(\d{13})-[^/]*$/.exec(texto(o.path));
+  if (m) return fechaLocalISO(Number(m[1]));
+  return f || todayISO();
+}
+
 export function normalizarFotoProgreso(f) {
   const o = f && typeof f === 'object' ? f : {};
-  const fecha = texto(o.fecha) || todayISO();
+  const fecha = fechaDeFotoGuardada(o);
   return {
-    id: texto(o.id) || uid(),
+    id: texto(o.id) || (texto(o.path) ? idDesdeCamino(texto(o.path)) : uid()),
     path: texto(o.path),
     fecha,
     nota: texto(o.nota),

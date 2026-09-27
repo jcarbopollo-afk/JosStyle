@@ -745,7 +745,12 @@ export function avisoDeRecuperacion(sesion, { ahora = Date.now(), propios = [] }
     descanso: restante > 0 ? `Descansando ${reloj(restante)}` : '',
     ejercicio: ej ? nombreDeLinea(ej, propios) : '',
     continuar: 'Continuar entrenamiento',
-    finalizar: '',
+    /* 🔓 FIT F41, apartado 6 (C-43) — *"Si existe una sesión activa al abrir la
+       aplicación: mostrar Continuar entrenamiento · Finalizar · Descartar"*. La
+       F39 lo dejó solo para la de hace horas («lo lleva la cabecera»), y al
+       volver a la aplicación la cabecera no está: está esta tarjeta. Finalizar
+       lleva al resumen de la F8, que es donde él decide si se guarda. */
+    finalizar: 'Finalizar',
     descartar: 'Descartar sesión',
   };
 }
