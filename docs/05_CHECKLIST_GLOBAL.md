@@ -1011,7 +1011,13 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       de cerrar → `piezasFitness.jsx` y `HOJA`; `CAPAS` en `tokens.js`; una fecha por papel
       (`fechasFitness.js`); «entrenamiento» y «plantilla» (C-44); la misma cabecera en las tres
       áreas; cifras tabulares; miniaturas cuadradas. 🏁 **Cierra el bloque de Acabado.**
-- [ ] F43–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F43 — Auditoría funcional integral de fitness** (v3.125.0): los cincuenta flujos con dónde
+      se prueba cada uno (`FLUJOS_F43`); la cadena del apartado 70 de punta a punta y las cinco
+      consistencias en `test-auditoria-fitness.mjs`; 🐛 P1 «Ver historial» en Progreso no hacía nada
+      (`setDentro` fuera de su ámbito, F28 y F31); 🐛 P1 «volver» siempre a la portada de Progreso →
+      `vueltaFitness.js`; P2 el volver que decía un sitio y llevaba a otro; P3 el agarre repetido y
+      «Fecha superada»; y ni un error de JavaScript en todo el recorrido.
+- [ ] F44–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

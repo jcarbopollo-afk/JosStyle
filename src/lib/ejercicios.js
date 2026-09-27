@@ -612,6 +612,18 @@ export function nombreCompleto(ejercicio) {
   return ejercicio.variante ? `${ejercicio.nombre} · ${ejercicio.variante}` : ejercicio.nombre;
 }
 
+/** 🐛 FIT F43 — el agarre como texto («Agarre prono»), o `''` si la variante ya
+    lo dice. En cuatro ejercicios del catálogo la variante ES el agarre —las
+    tres dominadas y el curl martillo—, y el entrenamiento en vivo y el detalle
+    de una sesión escribían «Agarre prono · Agarre prono». Una sola regla para
+    todas las pantallas que ponen la variante y el agarre juntos. */
+export function agarreQueAnadir(ejercicio) {
+  const ag = ejercicio && ejercicio.agarre ? agarre(ejercicio.agarre) : null;
+  if (!ag) return '';
+  if (ejercicio.variante && ranura(ejercicio.variante).includes(ranura(ag.nombre))) return '';
+  return `Agarre ${ag.nombre.toLowerCase()}`;
+}
+
 /* El buscador del apartado 23. Sin acentos y sin mayúsculas, porque nadie
    escribe «Dominadas pronas» con tilde en un iPhone. Busca en el nombre, la
    variante, el nombre corto, el técnico y la descripción — así «pull up»

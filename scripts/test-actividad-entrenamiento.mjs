@@ -594,8 +594,10 @@ ok(/<TrainingActivitySummary[\s\S]*?periodo=\{resumen\.periodo\}/.test(RESUMEN) 
 ok(!/role="group" aria-label="Periodo del resumen"/.test(RESUMEN),
   '…ya no queda un segundo selector escrito a mano en el resumen');
 const PROGRESO = sinComentarios(leer('src/views/ProgresoView.jsx'));
-ok(/volverEtiqueta="Volver a Progreso"/.test(PROGRESO) && /onVerEjercicio=/.test(PROGRESO),
-  '🚨 El detalle de sesión abierto desde Progreso dice adónde vuelve, y lleva al progreso del ejercicio (apartado 30)');
+/* 🔓 FIT F43 — lo que dice lo decide `vueltaDeSesion`: vuelve a la pantalla de
+   debajo, que casi nunca es la portada de Progreso. */
+ok(/volverEtiqueta=\{vueltaSesion\.etiqueta\}/.test(PROGRESO) && /vueltaDeSesion\(/.test(PROGRESO) && /onVerEjercicio=/.test(PROGRESO),
+  '🚨 El detalle de sesión abierto desde Progreso dice adónde vuelve, y lleva al progreso del ejercicio (apartado 30, F43)');
 ok(rV.recientes.every((t) => sesionesDelHistorial(VARIOS).some((s) => s.id === t.id)),
   '🚨 Toda sesión de la actividad existe en el Historial: no hay eventos de actividad aparte (prueba 21, apartado 34)');
 

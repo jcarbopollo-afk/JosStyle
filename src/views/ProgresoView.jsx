@@ -33,7 +33,8 @@ import { pantallaDeFotos } from '../lib/fotosProgreso';
 /* 🔓 FIT F28 — el centro de seguimiento, y las dos etiquetas que se mudaron
    con él para que no hubiera un ciclo entre la vista y sus vistas previas. */
 import { ProgressOverview, EtiquetaEstado, EstadoMuscular } from '../components/resumenProgreso';
-import { ejercicioPorId, nombreCompleto } from '../lib/ejercicios';
+import { ejercicioPorId, nombreCompleto, nombreDeEjercicio } from '../lib/ejercicios';
+import { origenVigente, vueltaDelDetalle, vueltaDeSesion } from '../lib/vueltaFitness';
 /* 🔓 FIT F14 — los objetivos de rendimiento. */
 import {
   listaDeObjetivos, progresoDeObjetivo, metricasDeEjercicio, tipoObjetivo, anadirObjetivo, editarObjetivo,
@@ -65,7 +66,7 @@ import {
 } from '../components/objetivosFitness';
 import {
   detalleDeObjetivo, crearObjetivoConAviso, reactivarObjetivo, tiposDeObjetivoPara,
-  objetivoParaEjercicio, AVISO_DUPLICADO, CTA_CREAR_OBJETIVO,
+  objetivoParaEjercicio, AVISO_DUPLICADO, CTA_CREAR_OBJETIVO, FECHA_SUPERADA,
 } from '../lib/objetivosFitness';
 /* Apartado 26 — el historial de rango es el de la FIT F22, no uno nuevo. */
 import { RankHistory } from '../components/historialRango';
@@ -342,6 +343,10 @@ export function DetalleProgreso({
   metrica = null, onMetrica = null, onHistorialRango = null, onVariante = null,
   /* 🔓 FIT F30, apartado 35 — ver el objetivo de este ejercicio, o crearlo. */
   onVerObjetivo = null, onCrearObjetivo = null,
+  /* 🔓 FIT F43 (apartado 47) — lo que dice el botón de volver. Decía siempre
+     «Progreso» y volvía al objetivo, al músculo, al ejercicio anterior o a otra
+     área: lo decide `vueltaDelDetalle` y aquí solo se pinta. */
+  volverTexto = 'Progreso', volverEtiqueta = 'Volver a Progreso',
 }) {
   const [abiertas, setAbiertas] = useState(() => new Set());
   const d = detalle;
@@ -359,11 +364,11 @@ export function DetalleProgreso({
       <div className="space-y-4">
         <button
           onClick={onVolver}
-          aria-label="Volver a Progreso"
+          aria-label={volverEtiqueta}
           className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
           style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
         >
-          <ChevronLeft size={16} /> Progreso
+          <ChevronLeft size={16} /> {volverTexto}
         </button>
         <Card>
           <p className="text-sm font-bold" style={{ color: COLORS.text }}>{d.error.titulo}</p>
@@ -377,11 +382,11 @@ export function DetalleProgreso({
     <div className="space-y-4">
       <button
         onClick={onVolver}
-        aria-label="Volver a Progreso"
+        aria-label={volverEtiqueta}
         className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
         style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
       >
-        <ChevronLeft size={16} /> Progreso
+        <ChevronLeft size={16} /> {volverTexto}
       </button>
 
       {/* Apartado 2 — nombre, variante, agarre, equipamiento y grupo. */}
@@ -648,7 +653,10 @@ export function TarjetaObjetivo({ objetivo, accent, onAbrir }) {
         <p className="text-[11px] mt-1.5 flex flex-wrap gap-x-2" style={{ color: COLORS.textMuted }}>
           <span style={{ color: conseguidoYa ? acentoLegible(accent) : COLORS.textMuted, fontWeight: 700 }}>{o.simbolo} {o.estadoNombre}</span>
           {!o.sinDatos && o.estado === 'activo' && <span>{o.tendenciaSimbolo} {o.tendenciaNombre}</span>}
-          {o.fechaSuperada && <span>Fecha superada</span>}
+          {/* 🐛 FIT F43 (apartado 57) — el mismo estado se llamaba «Fecha superada»
+              en la lista y «Fecha objetivo superada» en el detalle: una sola
+              frase, la del apartado 28 de la F30. */}
+          {o.fechaSuperada && <span>{FECHA_SUPERADA}</span>}
         </p>
       </div>
       <ChevronRight size={18} style={{ color: COLORS.textMuted }} aria-hidden="true" />
@@ -774,6 +782,9 @@ export function FormularioObjetivo({ inicial = null, ejercicio, accent, onElegir
 export function DetalleObjetivo({
   objetivo, accent, onVolver, onVerProgreso, onEditar, onCancelarObjetivo, onEliminar,
   onReactivar = null, onVerSesion = null,
+  /* 🔓 FIT F43 (apartado 47) — abierto desde la ficha de un ejercicio, vuelve a
+     ella y lo dice. */
+  volverTexto = 'Mis objetivos', volverEtiqueta = 'Volver a Mis objetivos',
 }) {
   const [aviso, setAviso] = useState(null); // 'cancelar' | 'eliminar'
   const o = objetivo;
@@ -788,11 +799,11 @@ export function DetalleObjetivo({
     <div className="space-y-4">
       <button
         onClick={onVolver}
-        aria-label="Volver a Mis objetivos"
+        aria-label={volverEtiqueta}
         className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
         style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
       >
-        <ChevronLeft size={16} /> Mis objetivos
+        <ChevronLeft size={16} /> {volverTexto}
       </button>
       <div>
         <p className="text-xs" style={{ color: COLORS.textMuted }}>Objetivo</p>
@@ -820,7 +831,7 @@ export function DetalleObjetivo({
         {o.avisoFecha ? (
           <div className="mt-2"><GoalStatus estado={o.estado} nombre={o.estadoNombre} simbolo={o.simbolo} accent={accent} avisoFecha={o.avisoFecha} /></div>
         ) : o.fechaSuperada && (
-          <p className="text-xs mt-2 font-semibold" style={{ color: COLORS.textMuted }}>Fecha superada · puedes seguir intentándolo</p>
+          <p className="text-xs mt-2 font-semibold" style={{ color: COLORS.textMuted }}>{FECHA_SUPERADA} · puedes seguir intentándolo</p>
         )}
         {/* 🚨 Apartado 33 — cuánto falta. Nunca cuándo llegará (apartado 34). */}
         {o.distancia && (
@@ -941,6 +952,16 @@ export function ObjetivosProgreso({ resultado, filtro, onFiltro, grupo, onGrupo,
   );
 }
 
+/* 🔓 FIT F43 — el nombre del músculo (o subgrupo) al que vuelve el detalle de
+   un ejercicio abierto desde la sección Músculos. Lo lee del resumen que ya se
+   ha calculado, no del catálogo: es el mismo nombre que se ve en esa pantalla. */
+function nombreDeMusculo(muscular, grupoId, subgrupoId) {
+  const grupo = ((muscular && muscular.grupos) || []).find((g) => g.id === grupoId) || null;
+  if (!grupo) return null;
+  const sub = subgrupoId ? (grupo.subgrupos || []).find((x) => x.id === subgrupoId) || null : null;
+  return sub ? sub.nombre : grupo.nombre;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    LA PANTALLA
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -971,6 +992,9 @@ export default function ProgresoView({
   /* 🔓 FIT F34 — «Ver objetivo» desde la ficha de un ejercicio: se abre ESE
      objetivo en su sección, y se consume como los otros dos focos. */
   focoVerObjetivo = null, onFocoVerObjetivoConsumido = null,
+  /* 🔓 FIT F43 (apartados 46 y 47) — de dónde viene el foco (`crearOrigen`) y
+     cómo se vuelve allí. Sin ellos, la pantalla vuelve a su portada como antes. */
+  focoOrigen = null, onVolverAOrigen = null,
 }) {
   const [seccion, setSeccion] = useState('resumen');
   /* FIT F28, apartado 7 — las dos fotos que llegan ya elegidas desde el
@@ -1013,6 +1037,12 @@ export default function ProgresoView({
   const [duplicadoOk, setDuplicadoOk] = useState(false);
   const [filtroObjetivos, setFiltroObjetivos] = useState('todos');
   const [grupoObjetivos, setGrupoObjetivos] = useState('todos');
+  /* 🔓 FIT F43 (apartados 46 y 47) — de dónde se llegó a la pantalla abierta
+     desde fuera de Progreso, y los ejercicios por los que se ha pasado dentro
+     del detalle (una variante, el ejercicio de una sesión): cada «volver»
+     deshace un paso. Estado de pantalla, nunca un dato (EH F40). */
+  const [origen, setOrigen] = useState(null);
+  const [previos, setPrevios] = useState([]);
   const f = fitness || {};
   const propios = f.ejercicios || [];
   const hoy = todayISO();
@@ -1061,6 +1091,8 @@ export default function ProgresoView({
     if (!focoEjercicio) return;
     setSeccion('ejercicios');
     setAbierto(focoEjercicio);
+    setPrevios([]);
+    setOrigen(onVolverAOrigen && focoOrigen && focoOrigen.tipo === 'ejercicio' && focoOrigen.id === focoEjercicio ? focoOrigen : null);
     if (onFocoEjercicioConsumido) onFocoEjercicioConsumido();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focoEjercicio]);
@@ -1069,6 +1101,7 @@ export default function ProgresoView({
     if (!focoVerObjetivo) return;
     setSeccion('objetivos');
     setObjetivoAbierto(focoVerObjetivo);
+    setOrigen(onVolverAOrigen && focoOrigen && focoOrigen.tipo === 'objetivo' && focoOrigen.id === focoVerObjetivo ? focoOrigen : null);
     if (onFocoVerObjetivoConsumido) onFocoVerObjetivoConsumido();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focoVerObjetivo]);
@@ -1077,9 +1110,51 @@ export default function ProgresoView({
     if (!focoObjetivo) return;
     setSeccion('objetivos');
     setFormulario({ modo: 'crear', exerciseId: focoObjetivo, eligiendo: false });
+    setOrigen(onVolverAOrigen && focoOrigen && focoOrigen.tipo === 'formulario' && focoOrigen.id === focoObjetivo ? focoOrigen : null);
     if (onFocoObjetivoConsumido) onFocoObjetivoConsumido();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focoObjetivo]);
+
+  /* 🔓 FIT F43 — el origen se pierde en cuanto se sale de su pantalla por otro
+     camino: si no, abrir ese ejercicio mañana desde la lista volvería a Rangos. */
+  const vigente = origenVigente(origen, { abierto, previos, objetivoAbierto, formulario });
+  useEffect(() => {
+    if (origen && !vigente) setOrigen(null);
+  }, [origen, vigente]);
+  /* Y la pila del detalle se vacía al cerrarlo. */
+  useEffect(() => {
+    if (!abierto && previos.length) setPrevios([]);
+  }, [abierto, previos.length]);
+  const irAOrigen = () => {
+    const o = origen;
+    setOrigen(null);
+    if (o && onVolverAOrigen) onVolverAOrigen(o);
+  };
+
+  /* 🔓 FIT F43 — a dónde vuelve el detalle de un ejercicio, y la sesión abierta
+     encima de él. */
+  const vuelta = vueltaDelDetalle({
+    previos, origen, vigente, objetivoAbierto, musculo,
+    nombreAnterior: previos.length ? nombreDeEjercicio(previos[previos.length - 1], propios) : null,
+    nombreMusculo: musculo ? nombreDeMusculo(muscular, musculo, subgrupo) : null,
+  });
+  const vueltaSesion = vueltaDeSesion({
+    nombreEjercicio: detalle && detalle.cabecera ? detalle.cabecera.nombre : null,
+    objetivoAbierto,
+  });
+  const cerrarDetalle = () => {
+    if (vuelta.accion === 'anterior') {
+      setPrevios((p) => p.slice(0, -1));
+      setAbierto(vuelta.id);
+    } else if (vuelta.accion === 'origen') {
+      setAbierto(null);
+      irAOrigen();
+    } else {
+      setAbierto(null);
+    }
+    setRango(null);
+    setMetrica(null);
+  };
 
   /* Apartado 30 — «Ver entrenamiento» es la pantalla de la F10. */
   if (vista && vista.tipo === 'sesion') {
@@ -1092,9 +1167,17 @@ export default function ProgresoView({
             accent={accent}
             onVolver={() => setVista(null)}
             onEliminar={null}
-            volverTexto="Progreso"
-            volverEtiqueta="Volver a Progreso"
-            onVerEjercicio={(id) => { setVista(null); setSeccion('ejercicios'); setAbierto(id); }}
+            /* 🔓 FIT F43 — vuelve a lo que había debajo, y lo dice. */
+            volverTexto={vueltaSesion.texto}
+            volverEtiqueta={vueltaSesion.etiqueta}
+            onVerEjercicio={(id) => {
+              setVista(null);
+              setSeccion('ejercicios');
+              /* Desde la sesión de un ejercicio a otro: volver deshace el paso. */
+              if (abierto && abierto !== id) setPrevios((p) => [...p, abierto]);
+              if (abierto !== id) { setRango(null); setMetrica(null); }
+              setAbierto(id);
+            }}
           />
         ) : (
           <div className="space-y-3">
@@ -1176,7 +1259,7 @@ export default function ProgresoView({
           ejercicio={ejercicioPorId(formulario.exerciseId, propios)}
           accent={accent}
           onElegirEjercicio={() => setFormulario({ ...formulario, eligiendo: true })}
-          onCancelar={() => setFormulario(null)}
+          onCancelar={() => { const volverFuera = vigente && origen.tipo === 'formulario'; setFormulario(null); if (volverFuera) irAOrigen(); }}
           onGuardar={(datos) => {
             if (!onGuardarFitness) return { ok: false, motivo: 'No se puede guardar ahora.' };
             /* 🔓 FIT F30, apartado 24 — al CREAR se avisa del duplicado y, sin
@@ -1192,6 +1275,8 @@ export default function ProgresoView({
               setDuplicado(null);
               setDuplicadoOk(false);
               setObjetivoAbierto(r.objetivo.id);
+              /* 🔓 FIT F43 — creado desde la ficha, el objetivo nuevo vuelve a ella. */
+              if (vigente && origen.tipo === 'formulario') setOrigen({ ...origen, tipo: 'objetivo', id: r.objetivo.id });
             }
             return r;
           }}
@@ -1211,7 +1296,9 @@ export default function ProgresoView({
           <DetalleObjetivo
             objetivo={datos}
             accent={accent}
-            onVolver={() => setObjetivoAbierto(null)}
+            onVolver={() => { setObjetivoAbierto(null); if (vigente && origen.tipo === 'objetivo') irAOrigen(); }}
+            volverTexto={vigente && origen.tipo === 'objetivo' ? origen.texto : 'Mis objetivos'}
+            volverEtiqueta={vigente && origen.tipo === 'objetivo' ? origen.etiqueta : 'Volver a Mis objetivos'}
             onVerSesion={(id) => setVista({ tipo: 'sesion', id })}
             /* Apartado 20 — recuperar uno cancelado. */
             onReactivar={onGuardarFitness ? () => onGuardarFitness(reactivarObjetivo(f, guardado.id)) : null}
@@ -1272,13 +1359,15 @@ export default function ProgresoView({
           onRango={setRango}
           metrica={detalle.metrica}
           onMetrica={setMetrica}
-          onVolver={() => { setAbierto(null); setRango(null); setMetrica(null); }}
+          onVolver={cerrarDetalle}
+          volverTexto={vuelta.texto}
+          volverEtiqueta={vuelta.etiqueta}
           onVerEjercicio={() => setVista({ tipo: 'ejercicio', id: detalle.exerciseId })}
           onVerSesion={(id) => setVista({ tipo: 'sesion', id })}
           /* Apartado 26 — el historial de rango es el de la F22, no otro. */
           onHistorialRango={() => setVista({ tipo: 'historialRango', destino: detalle.rango.destinoHistorial })}
           /* Apartados 20 y 21 — ir a la variante, que tiene su propio historial. */
-          onVariante={(id) => { setAbierto(id); setRango(null); setMetrica(null); }}
+          onVariante={(id) => { if (id !== abierto) setPrevios((p) => [...p, abierto]); setAbierto(id); setRango(null); setMetrica(null); }}
           /* 🔓 FIT F30, apartado 35 — «Ver objetivo» / «Crear objetivo». */
           onVerObjetivo={detalle.objetivo.hay ? () => { setAbierto(null); setSeccion('objetivos'); setObjetivoAbierto(detalle.objetivo.objetivo.id); } : null}
           onCrearObjetivo={onGuardarFitness ? () => { setAbierto(null); setSeccion('objetivos'); setFormulario({ modo: 'crear', exerciseId: detalle.exerciseId, eligiendo: false }); } : null}

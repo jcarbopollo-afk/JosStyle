@@ -3,8 +3,7 @@ import {
   restanteDescanso, textoPlanificado,
 } from './entrenamiento';
 import {
-  ejercicioPorId, nombreSinCatalogo,
-  agarre as agarrePorId, tipoEjercicio,
+  ejercicioPorId, nombreSinCatalogo, tipoEjercicio, agarreQueAnadir,
 } from './ejercicios';
 /* 🔓 FIT F33 — el motor de sustitución, uno para toda la aplicación. */
 import { getExerciseReplacements, NIVELES_VISIBLES, nivelCompatibilidad } from './sustitucion';
@@ -93,12 +92,12 @@ export function resumenRealizado(ejSesion) {
 export function cabeceraEnSesion(ejSesion, propios = []) {
   if (!ejSesion) return null;
   const ej = ejercicioPorId(ejSesion.exerciseId, propios);
-  const ag = ej?.agarre ? agarrePorId(ej.agarre) : null;
   const tipo = ej ? tipoEjercicio(lista(ej.tipos)[0]) : null;
   return {
     nombre: ej ? ej.nombre : nombreSinCatalogo(ejSesion.exerciseId),
     variante: ej?.variante || '',
-    agarre: ag ? `Agarre ${ag.nombre.toLowerCase()}` : '',
+    /* 🐛 FIT F43 — sin repetir el agarre cuando la variante ya lo es. */
+    agarre: agarreQueAnadir(ej),
     tipo: tipo ? tipo.nombre : '',
     objetivo: resumenPlanificado(ejSesion),
     realizado: resumenRealizado(ejSesion),

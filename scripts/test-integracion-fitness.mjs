@@ -106,6 +106,9 @@ const LIBRERIAS_FITNESS = [
      `auditarRendimiento` que ya era de la EH F44— se cazó buscándolo en todo
      el proyecto, y ahora se llama `auditarRendimientoFitness`. */
   'feedbackFitness', 'movilFitness', 'robustezFitness', 'rendimientoFitness', 'persistenciaFitness',
+  /* 🐛 FIT F43 — y las de la F42 (el acabado y las fechas), que se quedaron
+     fuera de la lista por tercera vez, más las dos de la F43. */
+  'acabadoFitness', 'fechasFitness', 'vueltaFitness', 'auditoriaFuncionalFitness',
 ].filter((n) => { try { leer(`src/lib/${n}.js`); return true; } catch { return false; } });
 ok(LIBRERIAS_FITNESS.length >= 30, `El barrido mira ${LIBRERIAS_FITNESS.length} librerías de Fitness que existen de verdad`);
 const exportadas = new Map();
@@ -148,7 +151,7 @@ ok(new Set(CONEXIONES.map((c) => c.apartado)).size >= 10, 'Las conexiones cubren
 /* Una comprobación que no puede ponerse roja no sirve: se le quita el cable. */
 const fitnessView = leer('src/views/FitnessView.jsx');
 const historial = CONEXIONES.find((c) => c.de === 'Historial · sesión');
-ok(historial && !historial.cableado.test(fitnessView.replace(/onEliminar=\{onEliminarSesion\}\s*onVerEjercicio=\{onVerProgresoEjercicio\}/, 'onEliminar={onEliminarSesion}')),
+ok(historial && !historial.cableado.test(fitnessView.replace(/onVerEjercicio=\{onVerProgresoEjercicio \? \(id, desde\) => onVerProgresoEjercicio\(id, \{/, 'onVerEjercicio={null && (')),
   '…y la del historial SE PONE ROJA si se desconecta (era la puerta que faltaba)');
 const foto = CONEXIONES.find((c) => c.de === 'Foto');
 ok(foto && !foto.cableado.test(leer('src/views/ProgresoView.jsx').replace(/onSesion=\{\(id\) => setVista\(\{ tipo: 'sesion', id \}\)\}/g, '')),
@@ -156,9 +159,10 @@ ok(foto && !foto.cableado.test(leer('src/views/ProgresoView.jsx').replace(/onSes
 
 /* 🐛 Historial → ejercicio: la prop llega de verdad al detalle de la sesión. */
 const historialView = leer('src/views/HistorialView.jsx');
-ok(/onVerEjercicio = null/.test(historialView) && /<DetalleSesionHistorial[\s\S]{0,400}onVerEjercicio=\{onVerEjercicio\}/.test(historialView),
-  '🐛 Apartado 13 · `HistorialView` recibe `onVerEjercicio` y se lo pasa al detalle de la sesión');
-ok(/<HistorialView[\s\S]{0,600}onVerEjercicio=\{onVerProgresoEjercicio\}/.test(fitnessView),
+/* 🔓 FIT F43 — y se lo pasa diciendo de qué sesión sale, para volver a ella. */
+ok(/onVerEjercicio = null/.test(historialView) && /<DetalleSesionHistorial[\s\S]{0,600}onVerEjercicio=\{onVerEjercicio \? \(id\) => onVerEjercicio\(id, \{ sesion: abierta/.test(historialView),
+  '🐛 Apartado 13 · `HistorialView` recibe `onVerEjercicio` y se lo pasa al detalle de la sesión (con la sesión de la que sale, F43)');
+ok(/<HistorialView[\s\S]{0,1200}onVerEjercicio=\{onVerProgresoEjercicio \? \(id, desde\) => onVerProgresoEjercicio\(id, \{/.test(fitnessView),
   '…y Fitness se lo da: tocar un ejercicio de una sesión del historial lleva a su progreso');
 
 /* ═════════════════════════════════════════════════════════════════════════ */

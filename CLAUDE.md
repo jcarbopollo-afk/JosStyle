@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.124.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.125.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 42 primeras (v3.83.0 → v3.124.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 43 primeras (v3.83.0 → v3.125.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 3 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 2 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -352,7 +352,44 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 (v3.115.0)**, la **FIT F34 (v3.116.0)** y la **FIT F35 (v3.117.0)**, que 🏁 **CERRÓ EL BLOQUE DE
 INTELIGENCIA** —F29 a F35—, y la **FIT F36 (v3.118.0)**, con la que empieza el bloque de **Acabado**
 (F36–F42), la **FIT F37 (v3.119.0)**, la **FIT F38 (v3.120.0)**, la **FIT F39 (v3.121.0)**, la **FIT F40 (v3.122.0)**, la **FIT F41 (v3.123.0)** y la **FIT F42 (v3.124.0)**, que 🏁 **CERRÓ EL BLOQUE DE
-ACABADO** —F36 a F42—, hechas. Lo que dejaron, y que vale para las 3 que quedan:
+ACABADO** —F36 a F42—, y la **FIT F43 (v3.125.0)**, la primera del bloque de **Cierre**, hechas. Lo
+que dejaron, y que vale para las 2 que quedan:
+
+- 🚨 **«VOLVER» LLEVA AL CONTEXTO ANTERIOR, Y LO DECIDE `vueltaFitness.js`** (FIT F43, apartados 46 y
+  47). El progreso de un ejercicio se abre desde cinco sitios y volvía siempre a la portada de
+  Progreso. Ahora **quien abre dice de dónde viene** (`crearOrigen`: área, lo que el área necesita para
+  pintarse como estaba —`inicio`— y el texto del botón) y la pantalla que se abre **sabe a dónde
+  vuelve** (`vueltaDelDetalle`, `vueltaDeSesion`), destino y texto a la vez. ⚠️ **No es una segunda pila
+  de navegación** (NAVO F1): es estado de pantalla, se consume al usarse, **las pestañas lo reinician**
+  y **caduca** si se sale de esa pantalla por otro camino. **Una pantalla nueva de Fitness que abra el
+  progreso, un objetivo o su formulario pasa un origen**, o volverá a la portada.
+- 🐛 **UN ENVOLTORIO DE ÁREA TIENE LISTA DE PROPS EXPLÍCITA, Y SE COME LO QUE NO REENVÍA** (FIT F43, y
+  lo cazó el recorrido antes de subir): `AreaProgreso` recibía el origen y no se lo pasaba a
+  `ProgresoView`, así que el volver seguía diciendo «Progreso» con todo lo demás bien. **Al añadir una
+  prop a una vista de Fitness, pasarla también por su `Area…`** — hay una comprobación por envoltorio.
+- 🐛 **UNA FUNCIÓN DE OTRO COMPONENTE NO EXISTE EN ÉSTE, Y EL BUILD NO LO VE** (FIT F43, P1): el
+  resumen de Progreso llamaba a `setDentro`, que vive dentro de `AreaEntrenamiento`; «Ver historial»
+  lanzaba un `ReferenceError` desde la F28 **dentro de un manejador**, así que ni el build, ni el
+  renderizado, ni `test-imports` lo veían. La suite de la F43 barre `FitnessView` buscándolo.
+- 🚨 **NI UN ERROR DE JAVASCRIPT EN TODO EL RECORRIDO** (FIT F43): la lista de errores de la consola
+  solo se comprobaba al arrancar y en las secciones de la F37 a la F42, y así se escondió el
+  anterior: la F31 pulsaba ese «Ver historial» y salía verde. Ahora se comprueba al final, con todo lo
+  que haya pasado. ⚠️ **Lo provocado a propósito lo retira su sección** (`errores.splice`), como la
+  F37 y la F41; lo que quede es un fallo.
+- 🚨 **LA CADENA ENTERA SE PRUEBA EN NODE, CON LA PUERTA DE CARGA ENTRE PASO Y PASO** (FIT F43,
+  `scripts/test-auditoria-fitness.mjs`): explorar → crear → planificar → entrenar → guardar →
+  historial → progreso → rango → objetivo → foto → comparar (apartado 70), **con las mismas funciones
+  que llaman las pantallas** (`empezarDelPlan` es `sesionDelDia` + `diaARutina` + `empezarSesion`), y
+  las cinco consistencias: **tres series se leen como tres en seis sitios**, el mismo `exerciseId` en
+  todas partes, ni un estado imposible. `FLUJOS_F43` dice dónde se prueba cada uno de los cincuenta
+  flujos, y la suite **busca esa comprobación** en su archivo.
+- 🐛 **LA VARIANTE Y EL AGARRE SE JUNTAN CON `agarreQueAnadir`** (FIT F43): en las tres dominadas y el
+  curl martillo la variante ES el agarre, y se leía «Agarre prono · Agarre prono». Una pantalla nueva
+  que ponga los dos juntos llama ahí; la suite barre el catálogo entero.
+- 🐛 **AL RENOMBRAR UN TEXTO, SE BARRE EL RECORRIDO — TAMBIÉN LAS EXPRESIONES CON `[oó]`** (FIT F42,
+  cazado en su pasada entera): la F42 cambió «sesión» por «entrenamiento» y cuatro comprobaciones
+  del recorrido (F12, F36 y F40) seguían buscando `/sesi[oó]n/`. Un `grep` del texto exacto no las
+  encuentra: hay que buscar la raíz de la palabra.
 
 - 🚨 **UNA AUDITORÍA VISUAL MIDE LA ESCALA QUE YA HAY, NO IMPONE UNA NUEVA** (FIT F42,
   `src/lib/acabadoFitness.js`). La escala de Fitness —ocho papeles de letra, cinco radios, cuatro
@@ -1848,26 +1885,29 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F43/45 — Auditoría funcional integral de fitness**
-   (líneas 2 183–3 280 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **primera** del
+1. 🏋️ **SEGUIR POR LA FIT F44/45 — Limpieza arquitectónica y deuda técnica de fitness**
+   (líneas 1 652–2 182 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **segunda** del
    bloque de **Cierre** (F43–F45). Se construye de la F1 a la F45, en orden, encadenando sin parar.
    El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: su «IMPORTANTE» dice *"Esta fase no consiste en añadir
-   funcionalidades nuevas. El objetivo es comprobar que TODO lo construido hasta ahora funciona
-   conjuntamente"*** —su regla principal: *"NO asumir que porque una función funciona
-   individualmente también funciona después de interactuar con otras. Probar flujos completos"*—.
-   Es exactamente lo que hacen el recorrido de Chromium (casi 3 000 comprobaciones, con los flujos de
-   la F36, la F39 y la F41 de punta a punta) y el banco de renderizado con datos corruptos (F39): **se
-   parte de ahí**, se añaden los flujos que pida y no estén, y cada fallo se arregla donde nace.
-   ⚠️ **Y lo que ya se aprendió en el Acabado:** una puerta entre pantallas se comprueba abriendo el
-   archivo que la cablea (F36), un guardado que nadie lee puede mentir (F37 y F41), una hoja lleva
-   `HOJA` y `useDialogoAccesible` (F38, F39 y F42), nada roto a la vista (`textoRoto`, F39), una
-   optimización se compara con el cálculo de antes (F40), lo que la carga no entiende se aparta en la
-   cuarentena (F41), **la escala visual se audita con `auditarAcabado` y el acento como texto es
-   `acentoLegible` (F42)**, y **al crear un componente de Fitness, a `ARCHIVOS_FITNESS`** o las
-   auditorías no lo miran.
+   ⚠️ **Y lo segundo, en ESTA: su «IMPORTANTE» dice *"NO hacer una reescritura completa. NO cambiar la
+   funcionalidad. NO cambiar las fórmulas. NO cambiar el diseño salvo correcciones necesarias. NO
+   introducir nuevas funcionalidades"***, y su regla principal: *"Primero INSPECCIONAR. No
+   refactorizar automáticamente solo porque algo «podría estar mejor»"*. Cada cambio se justifica por
+   claridad, seguridad, reutilización, mantenibilidad, rendimiento o duplicación, y **se demuestra
+   que no mueve un número** como en la F40 y la F42 (el mismo escenario por los motores antes y
+   después). La F43 dejó escrito qué NO se hizo por ser demasiado grande (`PENDIENTES_F43`, apartado
+   68): **una pila de navegación común a toda Fitness** es de las que se documentan, no se reescriben.
+   ⚠️ **Y lo que ya se aprendió:** una puerta entre pantallas se comprueba abriendo el archivo que la
+   cablea (F36) **y su envoltorio de área** (F43), un guardado que nadie lee puede mentir (F37 y F41),
+   una hoja lleva `HOJA` y `useDialogoAccesible` (F38, F39 y F42), nada roto a la vista (`textoRoto`,
+   F39), una optimización se compara con el cálculo de antes (F40), lo que la carga no entiende se
+   aparta en la cuarentena (F41), la escala visual se audita con `auditarAcabado` (F42), **«volver»
+   pasa un origen (`vueltaFitness.js`) y el recorrido no admite ni un error de JavaScript (F43)**, y
+   **al crear un componente de Fitness, a `ARCHIVOS_FITNESS`; al crear una librería, a
+   `LIBRERIAS_FITNESS`** o las auditorías no lo miran — la F42 y la F43 se quedaron fuera de la
+   segunda y la F43 lo arregló.
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único

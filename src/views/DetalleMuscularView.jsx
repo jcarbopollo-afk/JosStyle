@@ -263,9 +263,12 @@ export function MuscleSubgroupDetail({ detalle, contribuciones, accent, onVolver
 export default function DetalleMuscularView({
   fitness = null, propios = [], perfil = null, grupoId, accent,
   onVolver = null, onEjercicio = null,
+  /* 🔓 FIT F43 (apartados 46 y 47) — al volver del progreso de un ejercicio, el
+     subgrupo que estaba abierto: «atrás» lleva al contexto lógico anterior. */
+  subgrupoInicial = null,
 }) {
   /* Qué subgrupo está abierto: estado de pantalla, nunca un dato. */
-  const [subgrupo, setSubgrupo] = useState(null);
+  const [subgrupo, setSubgrupo] = useState(subgrupoInicial);
   const [filtro, setFiltro] = useState('todos');
   /* FIT F20 — qué se está explicando: `{ tipo, id }` o nada. */
   const [porQue, setPorQue] = useState(null);
@@ -309,6 +312,15 @@ export default function DetalleMuscularView({
     [fitness && fitness.sesiones, fitness && fitness.clasificaciones, grupoId, subgrupo, propios, perfil],
   );
 
+  /* 🔓 FIT F43 (apartado 47) — abrir un ejercicio dice DESDE DÓNDE: el subgrupo
+     abierto y su nombre, que es lo que dirá el botón de volver. */
+  const alEjercicio = onEjercicio
+    ? (id) => onEjercicio(id, {
+      subgrupo: subgrupo || null,
+      etiqueta: (subgrupo && detalleSub && detalleSub.nombre) || (detalle && detalle.nombre) || 'Rangos',
+    })
+    : null;
+
   if (!detalle) {
     return (
       <div className="max-w-2xl mx-auto space-y-3">
@@ -326,7 +338,7 @@ export default function DetalleMuscularView({
         : explicacionDeMusculo(fitness || {}, porQue.tipo === 'grupo' ? { grupoId: porQue.id } : { subgrupoId: porQue.id }, { propios, perfil })}
       accent={accent}
       onCerrar={() => setPorQue(null)}
-      onProgreso={porQue.tipo === 'ejercicio' && onEjercicio ? () => { const id = porQue.id; setPorQue(null); onEjercicio(id); } : null}
+      onProgreso={porQue.tipo === 'ejercicio' && onEjercicio ? () => { const id = porQue.id; setPorQue(null); alEjercicio(id); } : null}
       /* 🔓 FIT F22 — desde la explicación se pasa al historial, y esta hoja se
          CIERRA al hacerlo: dos overlays apilados dejan el de abajo pulsable
          por los bordes. Es el único sitio desde el que se llega al historial
@@ -351,7 +363,7 @@ export default function DetalleMuscularView({
       perfil={perfil}
       accent={accent}
       onCerrar={() => setHistorial(null)}
-      onProgreso={historial.tipo === 'exercise' && onEjercicio ? () => { const id = historial.id; setHistorial(null); onEjercicio(id); } : null}
+      onProgreso={historial.tipo === 'exercise' && onEjercicio ? () => { const id = historial.id; setHistorial(null); alEjercicio(id); } : null}
     />
   ) : null;
 
@@ -363,7 +375,7 @@ export default function DetalleMuscularView({
           contribuciones={contribuciones}
           accent={accent}
           onVolver={() => setSubgrupo(null)}
-          onEjercicio={onEjercicio}
+          onEjercicio={alEjercicio}
           onPorQue={() => setPorQue({ tipo: 'subgrupo', id: detalleSub.id })}
           onPorQueEjercicio={(id) => setPorQue({ tipo: 'ejercicio', id })}
           onHistorial={() => setHistorial({ tipo: 'subgroup', id: detalleSub.id })}
@@ -391,14 +403,14 @@ export default function DetalleMuscularView({
         tarjeta={siguiente}
         accent={accent}
         onPorQue={() => setPorQue({ tipo: 'grupo', id: detalle.id })}
-        onEjercicio={onEjercicio}
+        onEjercicio={alEjercicio}
       />
       <MuscleProgressSummary resumen={detalle.resumen} accent={accent} />
       <MuscleSubgroupList subgrupos={detalle.subgrupos} accent={accent} onAbrir={setSubgrupo} />
       <MuscleContributionList
         contribuciones={contribuciones}
         accent={accent}
-        onAbrir={onEjercicio}
+        onAbrir={alEjercicio}
         onPorQue={(id) => setPorQue({ tipo: 'ejercicio', id })}
         filtro={filtro}
         onFiltro={setFiltro}

@@ -446,10 +446,15 @@ export default function HistorialView({
      su objetivo y su rango (el detalle de la F29). Existía la puerta en
      `DetalleSesionHistorial` y aquí no se le pasaba, así que el botón no salía. */
   onVerEjercicio = null,
+  /* 🔓 FIT F43 (apartado 47) — al volver del progreso de un ejercicio, la sesión
+     de la que se salió: «atrás» lleva a ella, no a la lista ni a Entrenamiento. */
+  sesionInicial = null,
+  /* 🔓 FIT F43 — abierto desde Progreso, vuelve a Progreso y lo dice. */
+  volverTexto = 'Entrenamiento',
 }) {
   const [filtros, setFiltros] = useState(FILTROS_POR_DEFECTO);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
-  const [abierta, setAbierta] = useState(null);
+  const [abierta, setAbierta] = useState(sesionInicial);
   const [pagina, setPagina] = useState(1);
   /* 🔓 FIT F38, apartado 32 — sesión → volver: el historial, donde estaba. */
   useScrollAlVolver(abierta);
@@ -497,7 +502,8 @@ export default function HistorialView({
           accent={accent}
           onVolver={() => setAbierta(null)}
           onEliminar={onEliminar ? (id) => { onEliminar(id); setAbierta(null); } : null}
-          onVerEjercicio={onVerEjercicio}
+          /* 🔓 FIT F43 — el ejercicio se abre diciendo de qué sesión viene. */
+          onVerEjercicio={onVerEjercicio ? (id) => onVerEjercicio(id, { sesion: abierta, nombre: detalle.nombre || null }) : null}
         />
       </div>
     );
@@ -510,11 +516,11 @@ export default function HistorialView({
     <div className="max-w-2xl mx-auto space-y-4">
       <button
         onClick={onVolver}
-        aria-label="Volver a Entrenamiento"
+        aria-label={`Volver a ${volverTexto}`}
         className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
         style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
       >
-        <ChevronLeft size={16} /> Entrenamiento
+        <ChevronLeft size={16} /> {volverTexto}
       </button>
       <h2 className="text-2xl font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Historial</h2>
 

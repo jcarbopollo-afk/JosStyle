@@ -3410,6 +3410,9 @@ const CASOS = [
      tocado nunca (el cuello), donde todo tiene que decir «Sin datos». */
   ['DetalleMuscularView', DetalleMuscularView, () => ({ fitness: fitnessConProgresoF12(), grupoId: 'pecho', accent, onVolver: noop, onEjercicio: noop })],
   ['DetalleMuscularView', DetalleMuscularView, () => ({ fitness: {}, grupoId: 'cuello', accent, onVolver: noop })],
+  /* 🔓 FIT F43 — Rangos vuelve a abrir el músculo y el subgrupo de los que se salió. */
+  ['DetalleMuscularView (vuelve a un subgrupo)', DetalleMuscularView, () => ({ fitness: fitnessConProgresoF12(), grupoId: 'pecho', accent, onVolver: noop, onEjercicio: noop, subgrupoInicial: 'pectoral-superior' })],
+  ['RangosView (vuelve a un músculo)', RangosView, () => ({ fitness: fitnessConProgresoF12(), perfil: { peso: 72 }, accent, onEjercicio: noop, inicio: { musculo: 'pecho', subgrupo: null } })],
   ['MuscleRankHeader', MuscleRankHeader, () => ({ detalle: grupoF18(fitnessConProgresoF12(), 'pecho', {}), accent, onVolver: noop })],
   ['MuscleRankHeader', MuscleRankHeader, () => ({ detalle: grupoF18({}, 'cuello', {}), accent })],
   ['MuscleProgressSummary', MuscleProgressSummary, () => ({ resumen: grupoF18(fitnessConProgresoF12(), 'pecho', {}).resumen, accent })],
@@ -3868,6 +3871,8 @@ const CASOS = [
      exactamente para lo que está. */
   ['DetalleProgreso', DetalleProgreso, () => ({ detalle: detalleF29(fitnessConProgresoF12(), 'press-banca-barra', { hoy: HOY_F28 }), accent, rango: 'todo', onRango: noop, onVolver: noop, onVerEjercicio: noop, onVerSesion: noop, onMetrica: noop, onHistorialRango: noop, onVariante: noop })],
   /* ⚠️ Y un ejercicio que nunca ha hecho: sin última vez, sin gráfica. */
+  /* 🔓 FIT F43 (apartado 47) — con el volver que decide `vueltaDelDetalle`. */
+  ['DetalleProgreso (vuelve a Rangos)', DetalleProgreso, () => ({ detalle: detalleF29(fitnessConProgresoF12(), 'press-banca-barra', { hoy: HOY_F28 }), accent, rango: 'todo', onRango: noop, onVolver: noop, volverTexto: 'Pecho', volverEtiqueta: 'Volver a Pecho' })],
   ['DetalleProgreso (sin datos)', DetalleProgreso, () => ({ detalle: detalleF29({}, 'l-sit', { hoy: HOY_F28 }), accent, rango: 'todo', onRango: noop, onVolver: noop })],
   /* 🚨 Y el estado de error del apartado 36, que devuelve una forma completa
      para que la vista no reviente leyendo un campo que falta. */
@@ -3929,6 +3934,10 @@ const CASOS = [
   ['EjerciciosView (biblioteca con datos)', EjerciciosView, () => ({
     propios: [], accent, onVolver: noop, fitness: fitnessF34(), onGuardarFitness: noop, onAbrirConstructor: noop,
     onVerProgreso: noop, onVerObjetivo: noop, onCrearObjetivo: noop, onClasificar: noop,
+  })],
+  /* 🔓 FIT F43 — y al volver de Progreso, la ficha de la que se salió. */
+  ['EjerciciosView (vuelve a una ficha)', EjerciciosView, () => ({
+    propios: [], accent, onVolver: noop, fitness: fitnessF34(), onVerProgreso: noop, abiertoInicial: 'dominada-prona',
   })],
   ['EjerciciosView (selector)', EjerciciosView, () => ({ propios: [], accent, onElegir: noop, yaElegidos: ['press-banca-barra'], accionElegir: 'Cambiar por' })],
   ['DetalleEjercicio (ficha con datos)', DetalleEjercicio, () => ({
@@ -4333,6 +4342,17 @@ const CASOS = [
   /* ⚠️ Sin ninguna sesión: el estado vacío con su botón. */
   ['HistorialView', HistorialView, () => ({
     fitness: {}, propios: [], accent, onVolver: noop, onEmpezar: noop, onEliminar: noop,
+  })],
+  /* 🔓 FIT F43 (apartado 47) — al volver del progreso de un ejercicio, el
+     historial se abre EN la sesión de la que se salió, y abierto desde Progreso
+     su volver dice «Progreso». Y con una sesión que ya no existe: su aviso. */
+  ['HistorialView (vuelve a una sesión)', HistorialView, () => {
+    const f = fitnessConHistorialF10();
+    const id = ((f.sesiones || []).find((x) => x && x.estado === 'completada') || {}).id || null;
+    return { fitness: f, propios: [], accent, onVolver: noop, onEmpezar: noop, onEliminar: noop, onVerEjercicio: noop, sesionInicial: id, volverTexto: 'Progreso' };
+  }],
+  ['HistorialView (vuelve a una sesión borrada)', HistorialView, () => ({
+    fitness: fitnessConHistorialF10(), propios: [], accent, onVolver: noop, sesionInicial: 'ya-no-esta-f43',
   })],
   /* ⚠️ Y solo con sesiones que NO son del historial (en curso): también vacío. */
   ['HistorialView', HistorialView, () => ({

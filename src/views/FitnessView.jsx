@@ -61,6 +61,8 @@ import HistorialView, { DetalleSesionHistorial } from './HistorialView';
 /* 🔓 FIT F32, apartado 37 — una sesión hecha, abierta desde Tu Plan, es el
    detalle del Historial: *"No duplicar pantallas"*. */
 import { detalleDeSesion, sesionDelHistorial } from '../lib/historial';
+import { crearOrigen } from '../lib/vueltaFitness';
+import { nombreDeEjercicio } from '../lib/ejercicios';
 /* FIT F12 — Progreso: resumen, ejercicios y fotos. */
 import ProgresoView from './ProgresoView';
 /* FIT F16 — Rangos: la pantalla entera, que consume la lógica de la F15. */
@@ -213,7 +215,14 @@ export function VacioFitness({ estado, accent, onAccion = null }) {
    renderizar `FitnessView` no prueba las otras dos. Es la lección del Álbum de
    Relación (NAV F3) — *si lo que tocas solo aparece tras pulsar algo,
    exportarlo y probarlo aparte*. */
-export function AreaRangos({ fitness = null, perfil = null, accent, onEntrenar = null, onClasificar = null, onEjercicio = null }) {
+export function AreaRangos({ fitness = null, perfil = null, accent, onEntrenar = null, onClasificar = null, onEjercicio = null, inicio = null, onInicioConsumido = null }) {
+  /* 🔓 FIT F43 (apartado 47) — el músculo y el subgrupo a los que se vuelve se
+     leen al montar y se devuelven: si se quedaran puestos, entrar mañana por la
+     pestaña abriría Espalda (EH F40). */
+  useEffect(() => {
+    if (inicio && onInicioConsumido) onInicioConsumido();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <RangosView
       fitness={fitness}
@@ -222,7 +231,14 @@ export function AreaRangos({ fitness = null, perfil = null, accent, onEntrenar =
       accent={accent}
       onEntrenar={onEntrenar}
       onClasificar={onClasificar}
-      onEjercicio={onEjercicio}
+      /* 🔓 FIT F43 — el ejercicio se abre en Progreso diciendo desde qué músculo
+         y subgrupo, para que su «volver» traiga aquí. */
+      onEjercicio={onEjercicio ? (id, desde) => onEjercicio(id, desde ? {
+        area: 'rangos',
+        inicio: { musculo: desde.musculo || null, subgrupo: desde.subgrupo || null },
+        texto: desde.etiqueta || 'Rangos',
+      } : null) : null}
+      inicio={inicio}
     />
   );
 }
@@ -237,7 +253,7 @@ export function AreaRangos({ fitness = null, perfil = null, accent, onEntrenar =
    Fotos (su apartado 2). ⚠️ **Las fotos no se pierden**: siguen contándose de
    Salud física y llevando allí, ahora en su propia pestaña, porque la F12 pide
    dejar la estructura lista para el sistema de fotos sin construirlo. */
-export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoEjercicio = null, onFocoEjercicioConsumido = null, focoObjetivo = null, onFocoObjetivoConsumido = null, focoVerObjetivo = null, onFocoVerObjetivoConsumido = null, onAddFoto = null, onDeleteFoto = null, protegidoFotos = false, pinHash = null, pinSalt = null, desbloqueadoFotos = false, onDesbloquearFotos = null, onOlvidoPin = null, perfil = null, onIrAHistorial = null, onIrARangos = null }) {
+export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEntrenar = null, onGuardarFitness = null, onEliminarObjetivo = null, focoEjercicio = null, onFocoEjercicioConsumido = null, focoObjetivo = null, onFocoObjetivoConsumido = null, focoVerObjetivo = null, onFocoVerObjetivoConsumido = null, onAddFoto = null, onDeleteFoto = null, protegidoFotos = false, pinHash = null, pinSalt = null, desbloqueadoFotos = false, onDesbloquearFotos = null, onOlvidoPin = null, perfil = null, onIrAHistorial = null, onIrARangos = null, focoOrigen = null, onVolverAOrigen = null }) {
   const resumen = resumenProgreso(fotos);
   return (
     <ProgresoView
@@ -278,6 +294,9 @@ export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEnt
       perfil={perfil}
       onIrAHistorial={onIrAHistorial}
       onIrARangos={onIrARangos}
+      /* 🔓 FIT F43 (apartado 47) — de dónde llega el foco y cómo se vuelve allí. */
+      focoOrigen={focoOrigen}
+      onVolverAOrigen={onVolverAOrigen}
     />
   );
 }
@@ -298,6 +317,10 @@ export function AreaEntrenamiento({
      o a clasificarlo: lo abre quien tiene esas pantallas, que es Fitness. */
   perfil = null, onVerProgresoEjercicio = null, onVerObjetivo = null,
   onCrearObjetivoEjercicio = null, onClasificarEjercicio = null,
+  /* 🔓 FIT F43 (apartado 47) — la subpantalla a la que se vuelve (`dentro`, la
+     sesión del historial o de Tu Plan, la ficha de un ejercicio), y a qué área
+     vuelve el historial si se abrió desde Progreso. */
+  inicio = null, onInicioConsumido = null, onVolverAArea = null,
 }) {
   const resumen = resumenEntrenamiento(fitness, calistenia);
   const propios = (fitness || {}).ejercicios || [];
@@ -311,9 +334,31 @@ export function AreaEntrenamiento({
   /* ⚠️ Qué subpantalla está abierta es estado de la pantalla, no un dato
      (EH F40): `DEFAULT_FITNESS` no tiene el campo, y volver a Fitness siempre
      te deja donde se entra, no donde lo dejaste hace dos semanas. */
-  const [dentro, setDentro] = useState(null);
+  /* 🔓 FIT F43 — lo que llega en `inicio` se lee UNA vez, al montar, y se
+     devuelve (`onInicioConsumido`): es un «volver», no un sitio fijo. */
+  const [arranque] = useState(inicio);
+  useEffect(() => {
+    if (inicio && onInicioConsumido) onInicioConsumido();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const [dentro, setDentro] = useState((arranque && arranque.dentro) || null);
   /* 🔓 FIT F32 — la sesión hecha que se ha abierto desde Tu Plan. */
-  const [sesionAbierta, setSesionAbierta] = useState(null);
+  const [sesionAbierta, setSesionAbierta] = useState((arranque && arranque.sesionAbierta) || null);
+  /* 🔓 FIT F43 — de qué ficha de la biblioteca sale cada puerta, para volver a
+     ella: el progreso, un objetivo, uno nuevo o su clasificación. */
+  const desdeFicha = (desde) => {
+    const id = desde && desde.ejercicio;
+    if (!id) return null;
+    const nombre = nombreDeEjercicio(id, propios);
+    return {
+      area: 'entrenamiento',
+      inicio: { dentro: 'ejercicios', ejercicio: id },
+      texto: 'Ficha',
+      etiqueta: nombre ? `Volver a la ficha de ${nombre}` : 'Volver a la ficha del ejercicio',
+    };
+  };
+  /* El historial abierto desde Progreso vuelve a Progreso; si no, a Entrenamiento. */
+  const historialVuelveA = arranque && arranque.dentro === 'historial' && arranque.volverA && onVolverAArea ? arranque.volverA : null;
   /* FIT F3, apartado 25 — el borrador se LEE al entrar y se OFRECE. Guardarlo
      y no volver a mencionarlo sería guardarlo para nada; y recuperarlo solo,
      sin preguntar, le pondría delante algo que quizá ya no quiere. */
@@ -383,10 +428,18 @@ export function AreaEntrenamiento({
         fitness={fitness || {}}
         propios={propios}
         accent={accent}
-        onVolver={() => setDentro(null)}
+        onVolver={historialVuelveA ? () => onVolverAArea(historialVuelveA.area) : () => setDentro(null)}
+        volverTexto={historialVuelveA ? historialVuelveA.texto : 'Entrenamiento'}
         onEmpezar={empezarDesdeHistorial}
         onEliminar={onEliminarSesion}
-        onVerEjercicio={onVerProgresoEjercicio}
+        sesionInicial={(arranque && arranque.sesion) || null}
+        /* 🔓 FIT F43 — desde una sesión al progreso de un ejercicio, y volver a
+           ESA sesión del historial. */
+        onVerEjercicio={onVerProgresoEjercicio ? (id, desde) => onVerProgresoEjercicio(id, {
+          area: 'entrenamiento',
+          inicio: { dentro: 'historial', sesion: (desde && desde.sesion) || null, volverA: historialVuelveA },
+          texto: (desde && desde.nombre) || 'Historial',
+        }) : null}
       />
     );
   }
@@ -396,17 +449,23 @@ export function AreaEntrenamiento({
      (la lección de la F31 con Progreso). */
   if (sesionAbierta) {
     const s = sesionDelHistorial(fitness || {}, sesionAbierta);
+    const det = s ? detalleDeSesion(s, { fitness: fitness || {}, propios }) : null;
     return (
       <div className="max-w-2xl mx-auto">
         {s ? (
           <DetalleSesionHistorial
-            detalle={detalleDeSesion(s, { fitness: fitness || {}, propios })}
+            detalle={det}
             accent={accent}
             onVolver={() => setSesionAbierta(null)}
             onEliminar={null}
             volverTexto="Tu Plan"
             volverEtiqueta="Volver a Tu Plan"
-            onVerEjercicio={onVerProgresoEjercicio}
+            /* 🔓 FIT F43 — y del progreso del ejercicio se vuelve a esta sesión. */
+            onVerEjercicio={onVerProgresoEjercicio ? (id) => onVerProgresoEjercicio(id, {
+              area: 'entrenamiento',
+              inicio: { sesionAbierta },
+              texto: det.nombre || 'Tu Plan',
+            }) : null}
           />
         ) : (
           <div className="space-y-3">
@@ -432,10 +491,12 @@ export function AreaEntrenamiento({
         perfil={perfil}
         onGuardarFitness={onGuardarFitness}
         onAbrirConstructor={onAbrirConstructor}
-        onVerProgreso={onVerProgresoEjercicio}
-        onVerObjetivo={onVerObjetivo}
-        onCrearObjetivo={onCrearObjetivoEjercicio}
-        onClasificar={onClasificarEjercicio}
+        /* 🔓 FIT F43 — cada puerta dice de qué ficha sale, y volver la reabre. */
+        onVerProgreso={onVerProgresoEjercicio ? (id, desde) => onVerProgresoEjercicio(id, desdeFicha(desde)) : null}
+        onVerObjetivo={onVerObjetivo ? (id, desde) => onVerObjetivo(id, desdeFicha(desde)) : null}
+        onCrearObjetivo={onCrearObjetivoEjercicio ? (id, desde) => onCrearObjetivoEjercicio(id, desdeFicha(desde)) : null}
+        onClasificar={onClasificarEjercicio ? (id, desde) => onClasificarEjercicio(id, desdeFicha(desde)) : null}
+        abiertoInicial={(arranque && arranque.ejercicio) || null}
         diagnostico={esDesarrollo()}
       />
     );
@@ -705,6 +766,35 @@ function FitnessViewContenido({
   /* FIT F17 — si está contestando el cuestionario. Estado de pantalla: lo que se
      guarda son las respuestas, una a una, según las contesta. */
   const [clasificando, setClasificando] = useState(false);
+  /* 🔓 **FIT F43 (apartados 46 y 47) — «VOLVER» LLEVA AL CONTEXTO ANTERIOR.**
+     El progreso de un ejercicio se abre desde cinco sitios y volvía siempre a
+     la portada de Progreso. `origenProgreso` es de dónde se llega (se lo pasa a
+     Progreso con el foco) e `inicio`, lo que un área necesita para volver a
+     pintarse como estaba: el músculo y el subgrupo, la sesión, la ficha. Los
+     dos son estado de pantalla y se consumen al usarse (EH F40). */
+  const [origenProgreso, setOrigenProgreso] = useState(null);
+  const [inicio, setInicio] = useState(null);
+  const abrirEnProgreso = (tipo, id, desde = null) => {
+    setOrigenProgreso(desde ? crearOrigen({ ...desde, tipo, id }) : null);
+    if (tipo === 'ejercicio') setFocoEjercicio(id);
+    else if (tipo === 'objetivo') setFocoVerObjetivo(id);
+    else setFocoObjetivo(id);
+    setInicio(null);
+    setArea('progreso');
+  };
+  const volverAlOrigen = (o) => {
+    if (!o) return;
+    const { entrenando: sesionViva = null, ...resto } = o.inicio || {};
+    setInicio(Object.keys(resto).length ? { area: o.area, ...resto } : null);
+    setArea(o.area);
+    /* Desde el entrenamiento en vivo («Crear objetivo» al sustituir): se vuelve
+       a la tabla de series, que es donde estaba. */
+    if (sesionViva) setEntrenando(sesionViva);
+  };
+  /* ⚠️ Las pestañas REINICIAN el recorrido (NAVO F1): cambiar de área a mano
+     descarta cualquier vuelta pendiente. */
+  const cambiarArea = (a) => { setInicio(null); setOrigenProgreso(null); setArea(a); };
+  const inicioDe = (a) => (inicio && inicio.area === a ? inicio : null);
 
   /* ⚠️ Un foco que llega apuntando a una habilidad no puede quedarse escondido
      detrás del área que estuviera abierta: es la lección de la E3 F24 —un
@@ -802,7 +892,15 @@ function FitnessViewContenido({
           ? (objetivoId, sesionNueva) => guardarF(cancelarObjetivo(guardarSesion(fitness || {}, sesionNueva), objetivoId))
           : null}
         onCrearObjetivo={guardarF
-          ? (exerciseId) => { setEntrenando(null); setFocoObjetivo(exerciseId); setArea('progreso'); }
+          ? (exerciseId) => {
+            const sesionViva = enVivo.id;
+            setEntrenando(null);
+            /* 🔓 FIT F43 — crear o cancelar el objetivo devuelve a la tabla de series. */
+            abrirEnProgreso('formulario', exerciseId, {
+              area: 'entrenamiento', inicio: { entrenando: sesionViva },
+              texto: 'Entrenamiento', etiqueta: 'Volver al entrenamiento',
+            });
+          }
           : null}
       />
     );
@@ -877,7 +975,7 @@ function FitnessViewContenido({
   return (
     <div className="space-y-1">
       <CabeceraFitness titulo="Fitness" racha={racha} accent={accent} />
-      <PestanasFitness areas={AREAS_FITNESS} activa={area} onCambiar={setArea} accent={accent} />
+      <PestanasFitness areas={AREAS_FITNESS} activa={area} onCambiar={cambiarArea} accent={accent} />
 
       {/* 🔓 FIT F37, apartado 4 — cambiar de área: opacidad y seis píxeles,
           220 ms. La `key` hace que cada área entre de nuevo. */}
@@ -891,8 +989,10 @@ function FitnessViewContenido({
           /* 🔓 FIT F18 — el detalle de un grupo se abre dentro de Rangos, así
              que esto ya no manda a Progreso; el foco muscular sigue existiendo
              para quien quiera la pantalla de la F13. */
-          onEjercicio={(id) => { setFocoEjercicio(id); setArea('progreso'); }}
-          onEntrenar={() => setArea('entrenamiento')}
+          onEjercicio={(id, desde) => abrirEnProgreso('ejercicio', id, desde)}
+          onEntrenar={() => cambiarArea('entrenamiento')}
+          inicio={inicioDe('rangos')}
+          onInicioConsumido={() => setInicio(null)}
           /* ⚠️ Sin `onGuardarFitness` no se ofrece: un cuestionario que no puede
              guardar la respuesta sería un control decorativo (regla 8). */
           onClasificar={guardarF ? () => setClasificando(true) : null}
@@ -909,16 +1009,26 @@ function FitnessViewContenido({
           /* FIT F28 — el motor de rangos necesita el perfil para las marcas de
              peso corporal, y los dos destinos de fuera de Progreso. */
           perfil={perfil}
-          onIrAHistorial={() => setDentro('historial')}
-          onIrARangos={() => setArea('rangos')}
+          /* 🐛 FIT F43 — llamaba a `setDentro`, que vive en `AreaEntrenamiento` y
+             no aquí: «Ver historial» y la tarjeta de entrenamientos del resumen
+             (F28, F31) lanzaban un ReferenceError y no hacían nada. Ahora abren
+             el Historial, y su «volver» trae de vuelta a Progreso. */
+          onIrAHistorial={() => {
+            setOrigenProgreso(null);
+            setInicio({ area: 'entrenamiento', dentro: 'historial', volverA: { area: 'progreso', texto: 'Progreso' } });
+            setArea('entrenamiento');
+          }}
+          onIrARangos={() => cambiarArea('rangos')}
           focoEjercicio={focoEjercicio}
-          onFocoEjercicioConsumido={() => setFocoEjercicio(null)}
+          onFocoEjercicioConsumido={() => { setFocoEjercicio(null); setOrigenProgreso(null); }}
           focoObjetivo={focoObjetivo}
-          onFocoObjetivoConsumido={() => setFocoObjetivo(null)}
+          onFocoObjetivoConsumido={() => { setFocoObjetivo(null); setOrigenProgreso(null); }}
           focoVerObjetivo={focoVerObjetivo}
-          onFocoVerObjetivoConsumido={() => setFocoVerObjetivo(null)}
+          onFocoVerObjetivoConsumido={() => { setFocoVerObjetivo(null); setOrigenProgreso(null); }}
+          focoOrigen={origenProgreso}
+          onVolverAOrigen={volverAlOrigen}
           /* FIT F12, apartado 5 — «Entrenar ahora» lleva a Entrenamiento, donde se empieza. */
-          onEntrenar={() => setArea('entrenamiento')}
+          onEntrenar={() => cambiarArea('entrenamiento')}
           onGuardarFitness={guardarF}
           onEliminarObjetivo={onEliminarObjetivo}
           onAddFoto={onAddFoto}
@@ -965,10 +1075,18 @@ function FitnessViewContenido({
           } : null}
           /* 🔓 FIT F34 — las cuatro puertas de la ficha de un ejercicio. */
           perfil={perfil}
-          onVerProgresoEjercicio={(id) => { setFocoEjercicio(id); setArea('progreso'); }}
-          onVerObjetivo={(objetivoId) => { setFocoVerObjetivo(objetivoId); setArea('progreso'); }}
-          onCrearObjetivoEjercicio={guardarF ? (id) => { setFocoObjetivo(id); setArea('progreso'); } : null}
-          onClasificarEjercicio={guardarF ? (id) => setClasificando(id) : null}
+          onVerProgresoEjercicio={(id, desde) => abrirEnProgreso('ejercicio', id, desde)}
+          onVerObjetivo={(objetivoId, desde) => abrirEnProgreso('objetivo', objetivoId, desde)}
+          onCrearObjetivoEjercicio={guardarF ? (id, desde) => abrirEnProgreso('formulario', id, desde) : null}
+          /* 🔓 FIT F43 — el cuestionario es pantalla entera y desmonta el área:
+             al cerrarlo, la ficha de la que se salió. */
+          onClasificarEjercicio={guardarF ? (id, desde) => {
+            setInicio(desde && desde.inicio ? { area: 'entrenamiento', ...desde.inicio } : null);
+            setClasificando(id);
+          } : null}
+          inicio={inicioDe('entrenamiento')}
+          onInicioConsumido={() => setInicio(null)}
+          onVolverAArea={cambiarArea}
         />
         </AreaSegura>
       )}

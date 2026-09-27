@@ -95,15 +95,15 @@ export const FUENTES_DE_VERDAD = [
    pasar su función —como las dos que encontró esta fase— se pone roja el
    mismo día (la lección de `onDeleteMovimiento`, E3 F1). */
 export const CONEXIONES = [
-  { de: 'Historial · sesión', a: 'Progreso de un ejercicio', apartado: 13, archivo: 'src/views/FitnessView.jsx', cableado: /onEliminar=\{onEliminarSesion\}\s*onVerEjercicio=\{onVerProgresoEjercicio\}/, fase: 'F36' },
-  { de: 'Tu Plan · sesión', a: 'Progreso de un ejercicio', apartado: 13, archivo: 'src/views/FitnessView.jsx', cableado: /volverEtiqueta="Volver a Tu Plan"\s*onVerEjercicio=\{onVerProgresoEjercicio\}/, fase: 'F36' },
-  { de: 'Progreso · sesión', a: 'Progreso de un ejercicio', apartado: 14, archivo: 'src/views/ProgresoView.jsx', cableado: /volverEtiqueta="Volver a Progreso"\s*onVerEjercicio=/, fase: 'F29' },
+  { de: 'Historial · sesión', a: 'Progreso de un ejercicio', apartado: 13, archivo: 'src/views/FitnessView.jsx', cableado: /sesionInicial=\{\(arranque && arranque\.sesion\) \|\| null\}[\s\S]{0,300}onVerEjercicio=\{onVerProgresoEjercicio \? \(id, desde\) => onVerProgresoEjercicio\(id, \{/, fase: 'F36 + F43' },
+  { de: 'Tu Plan · sesión', a: 'Progreso de un ejercicio', apartado: 13, archivo: 'src/views/FitnessView.jsx', cableado: /volverEtiqueta="Volver a Tu Plan"[\s\S]{0,200}onVerEjercicio=\{onVerProgresoEjercicio \? \(id\) => onVerProgresoEjercicio\(id, \{/, fase: 'F36 + F43' },
+  { de: 'Progreso · sesión', a: 'Progreso de un ejercicio', apartado: 14, archivo: 'src/views/ProgresoView.jsx', cableado: /volverEtiqueta=\{vueltaSesion\.etiqueta\}\s*onVerEjercicio=/, fase: 'F29 + F43' },
   { de: 'Progreso de un ejercicio', a: 'La sesión de ese día', apartado: 15, archivo: 'src/views/ProgresoView.jsx', cableado: /onVerSesion=\{\(id\) => setVista\(\{ tipo: 'sesion', id \}\)\}/, fase: 'F29' },
   { de: 'Progreso de un ejercicio', a: 'Su ficha', apartado: 16, archivo: 'src/views/ProgresoView.jsx', cableado: /onVerEjercicio=\{\(\) => setVista\(\{ tipo: 'ejercicio'/, fase: 'F29' },
   { de: 'Ficha', a: 'Entrenamiento nuevo, plantilla o sesión en curso', apartado: 17, archivo: 'src/views/EjerciciosView.jsx', cableado: /onAnadirASesion=\{guardar/, fase: 'F34 + F36' },
-  { de: 'Ficha', a: 'Su objetivo, o crear uno', apartado: 18, archivo: 'src/views/EjerciciosView.jsx', cableado: /onCrearObjetivo=\{onCrearObjetivo\}/, fase: 'F34' },
-  { de: 'Ficha', a: 'Su progreso y su rango', apartado: 19, archivo: 'src/views/EjerciciosView.jsx', cableado: /onVerProgreso=\{onVerProgreso\}/, fase: 'F34' },
-  { de: 'Rango de un músculo', a: 'Progreso de un ejercicio', apartado: 22, archivo: 'src/views/FitnessView.jsx', cableado: /onEjercicio=\{\(id\) => \{ setFocoEjercicio\(id\); setArea\('progreso'\); \}\}/, fase: 'F18' },
+  { de: 'Ficha', a: 'Su objetivo, o crear uno', apartado: 18, archivo: 'src/views/EjerciciosView.jsx', cableado: /onCrearObjetivo=\{onCrearObjetivo \? \(id\) => onCrearObjetivo\(id, \{ ejercicio: abierto \}\) : null\}/, fase: 'F34 + F43' },
+  { de: 'Ficha', a: 'Su progreso y su rango', apartado: 19, archivo: 'src/views/EjerciciosView.jsx', cableado: /onVerProgreso=\{onVerProgreso \? \(id\) => onVerProgreso\(id, \{ ejercicio: abierto \}\) : null\}/, fase: 'F34 + F43' },
+  { de: 'Rango de un músculo', a: 'Progreso de un ejercicio', apartado: 22, archivo: 'src/views/FitnessView.jsx', cableado: /onEjercicio=\{\(id, desde\) => abrirEnProgreso\('ejercicio', id, desde\)\}/, fase: 'F18 + F43' },
   { de: 'Rango de un ejercicio', a: 'Su evolución', apartado: 26, archivo: 'src/views/ProgresoView.jsx', cableado: /onHistorialRango=\{\(\) => setVista\(\{ tipo: 'historialRango'/, fase: 'F29' },
   { de: 'Rango general', a: 'Su evolución', apartado: 26, archivo: 'src/views/RangosView.jsx', cableado: /onHistorial=\{\(\) => setHistorial\(true\)\}/, fase: 'F22' },
   { de: 'Objetivo', a: 'Las sesiones que contribuyeron', apartado: 33, archivo: 'src/views/ProgresoView.jsx', cableado: /<GoalHistory[^>]*onVerSesion=\{onVerSesion\}/, fase: 'F30' },

@@ -1109,6 +1109,17 @@ else
   fallo "Falla la validación del catálogo"; grep '✗' /tmp/jc_validacion_catalogo.log
 fi
 
+# FIT F43 — auditoría funcional integral. No prueba ningún motor por separado: los ENCADENA con las
+# mismas funciones que llaman las pantallas —explorar → crear → planificar → entrenar → guardar →
+# historial → progreso → rango → objetivo → foto → comparar— pasando por la puerta de carga entre
+# paso y paso; las cinco consistencias (53-57); cero, uno, pocos y muchos datos; y «volver» al
+# contexto anterior. Los flujos de pantalla (46-50), en el recorrido de Chromium.
+if node --import ./scripts/resolver-vite.mjs scripts/test-auditoria-fitness.mjs >/tmp/jc_auditoria_fitness.log 2>&1; then
+  ok "Auditoría funcional de Fitness (FIT F43) — $(grep -c '✓' /tmp/jc_auditoria_fitness.log) comprobaciones"
+else
+  fallo "Falla la auditoría funcional de Fitness"; grep '✗' /tmp/jc_auditoria_fitness.log
+fi
+
 # FIT F42 — auditoría visual y acabado. Lo que más se vigila: que ninguna pantalla de Fitness se
 # salga de su escala (letra, pesos, radios, espaciado, mayúsculas, un solo espaciado de letra); que
 # no haya un emoji haciendo de icono ni un color escrito a mano; que el acento como TEXTO llegue a

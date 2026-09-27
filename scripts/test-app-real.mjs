@@ -11406,6 +11406,215 @@ almacen.fitness = fitnessDeAntes_fit42;
 almacen.saludFotos = fotosDeAntes_fit42;
 almacen.ajustes = ajustesDeAntes_fit42;
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F43/45 — AUDITORÍA FUNCIONAL INTEGRAL: LOS FLUJOS DE PANTALLA
+   ══════════════════════════════════════════════════════════════════════════
+   Los flujos 46 a 50 solo se pueden probar tocando la aplicación: la
+   navegación profunda y «volver» (46 y 47), girar el iPhone (48) y el
+   movimiento reducido (50). El teclado (49) es de la F39. Y al final, lo que
+   destapó esta fase: **ni un error de JavaScript en TODO el recorrido** — el
+   ReferenceError de «Ver historial» (F28 y F31) llevaba ahí desde entonces
+   porque nadie leía los errores entre la F12 y la F37. */
+console.log('\n── FIT F43 · Navegación profunda, volver, orientación y movimiento reducido ──');
+const fitnessDeAntes_fit43 = almacen.fitness;
+const fotosDeAntes_fit43 = almacen.saludFotos;
+const ajustesDeAntes_fit43 = almacen.ajustes;
+/* Las fotos, sin PIN (C-35), como en la F41: cada sección limpia lo que mira. */
+almacen.ajustes = {
+  ...(ajustesDeAntes_fit43 || {}),
+  seguridad: {
+    ...((ajustesDeAntes_fit43 || {}).seguridad || {}),
+    protectedActions: [], protectedAreas: [], migradoAcciones: true, migradoAreas: true,
+  },
+};
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+/* Treinta entrenamientos de espalda: la primera línea, dominadas pronas; la
+   segunda, supinas (una variante con su propio historial, F29). Los nombres son
+   suyos y no dicen «Sesión» (F42). */
+const esc_fit43 = await page.evaluate(async () => {
+  const r = await import('/src/lib/rendimientoFitness.js');
+  const e = r.escenarioGrande({ sesiones: 30, hoy: new Date().toLocaleDateString('sv-SE') });
+  e.fitness.sesiones.forEach((x, i) => {
+    x.nombre = `Espalda ${i + 1}`;
+    x.origen.ejercicios[0].exerciseId = 'dominada-prona';
+    if (x.origen.ejercicios[1]) x.origen.ejercicios[1].exerciseId = 'dominada-supina';
+  });
+  return { ...e.fitness, planActivo: null, planesAnteriores: [], objetivos: [], clasificaciones: [] };
+});
+almacen.fitness = { ...esc_fit43, plantillas: [plantilla_fit38] };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+const volveres_fit43 = () => page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Volver"]')]
+  .filter((x) => x.offsetParent !== null).map((x) => x.getAttribute('aria-label')));
+const pulsarVolver_fit43 = (etiqueta) => page.evaluate((e) => {
+  const b = [...document.querySelectorAll('button[aria-label]')].find((x) => x.offsetParent !== null && x.getAttribute('aria-label') === e);
+  if (b) { b.click(); return true; }
+  return false;
+}, etiqueta);
+/* ⚠️ «Rangos» es a la vez la pestaña y el botón de volver del músculo: tocar la
+   pestaña del área en la que ya se está no cambia nada, así que el volver se
+   pulsa por su botón, nunca por la pestaña. */
+const pulsarBoton_fit43 = (texto) => page.evaluate((t) => {
+  const b = [...document.querySelectorAll('button')].find((x) => x.offsetParent !== null && x.getAttribute('role') !== 'tab' && x.innerText.trim() === t);
+  if (b) { b.click(); return true; }
+  return false;
+}, texto);
+const pestana_fit43 = () => page.evaluate(() => {
+  const t = document.querySelector('[role="tablist"][aria-label="Áreas de Fitness"] [role="tab"][aria-selected="true"]');
+  return t ? t.getAttribute('aria-label') : null;
+});
+const erroresAntes_fit43 = errores.length;
+
+/* 1 · RANGOS → MÚSCULO → SUBGRUPO → EJERCICIO → PROGRESO → SESIÓN → VOLVER (46). */
+ok(await aFitness_fit39() && await pulsar('Rangos'), 'FIT F43 — se entra en Rangos');
+await esperarTexto(/Tu rango/i);
+ok(await pulsarQueEmpiece_fit10('Espalda:'), 'FIT F43 — Rangos → músculo (Espalda)');
+await page.waitForTimeout(500);
+ok(await pulsarQueEmpiece_fit10('Dorsales:'), '…→ subgrupo (Dorsales)');
+await page.waitForTimeout(500);
+ok(await pulsarQueEmpiece_fit10('Dominadas pronas:'), '…→ ejercicio (Dominadas pronas)');
+await esperarTexto(/Última vez/i);
+const v1_fit43 = await volveres_fit43();
+ok(v1_fit43.includes('Volver a Dorsales'),
+  `🐛 FIT F43 — Rangos → músculo → subgrupo → ejercicio → progreso: su «volver» dice Dorsales, no Progreso (${v1_fit43.join(' / ')}) (apartados 46 y 47)`);
+ok(await pestana_fit43() === 'Progreso', '…y el progreso es la pantalla de siempre, la de Progreso (F12: no hay una segunda)');
+ok(await pulsarQueEmpiece_fit10('Ver las series del') && await pulsar('Ver entrenamiento'), '…→ la sesión de uno de esos días');
+await esperarTexto(/Planificado/i);
+const v2_fit43 = (await volveres_fit43()).find((a) => /^Volver al progreso de Dominadas pronas/.test(a)) || '';
+ok(!!v2_fit43, `🐛 FIT F43 — la sesión dice que vuelve AL EJERCICIO, no a Progreso («${v2_fit43}») (apartado 47)`);
+ok(!!v2_fit43 && await pulsarVolver_fit43(v2_fit43), 'FIT F43 — volver 1: de la sesión al progreso del ejercicio');
+await esperarTexto(/Última vez/i);
+ok((await volveres_fit43()).includes('Volver a Dorsales'), '…que sigue sabiendo de dónde venía');
+ok(await pulsarVolver_fit43('Volver a Dorsales'), 'FIT F43 — volver 2: del progreso a Rangos');
+await page.waitForTimeout(700);
+const sub_fit43 = await ver();
+const pestanaSub_fit43 = await pestana_fit43();
+/* ⚠️ El rótulo va en mayúsculas y `innerText` lo devuelve así (E3 F8): `/i`. */
+ok(pestanaSub_fit43 === 'Rangos' && /Espalda · Dorsales/i.test(sub_fit43) && /Dominadas pronas/.test(sub_fit43),
+  `🚨 FIT F43 — volver deja en RANGOS, con Dorsales abierto y su lista de ejercicios: no en la portada de Progreso (pestaña ${pestanaSub_fit43}; ${/Espalda · Dorsales/i.test(sub_fit43) ? 'Dorsales' : 'sin Dorsales'}; ${/Dominadas pronas/.test(sub_fit43) ? 'con' : 'sin'} las dominadas; ${sub_fit43.slice(0, 160).replace(/\n/g, ' ')}) (apartado 47)`);
+ok(await pulsarBoton_fit43('Espalda'), 'FIT F43 — volver 3: del subgrupo al músculo');
+await page.waitForTimeout(500);
+ok(await pulsarBoton_fit43('Rangos') && /Tu rango/i.test(await esperarTexto(/Tu rango/i)), 'FIT F43 — volver 4: del músculo a la portada de Rangos — cada volver deshace un paso (apartado 46)');
+
+/* 2 · HISTORIAL → SESIÓN → EJERCICIO → VOLVER A ESA SESIÓN (47). */
+ok(await pulsar('Entrenamiento') && await pulsar('Abrir Historial'), 'FIT F43 — Entrenamiento → Historial');
+ok(await pulsarQueEmpiece_fit10('Abrir Espalda 30'), '…→ la sesión «Espalda 30»');
+await esperarTexto(/Planificado/i);
+ok(await pulsarQueEmpiece_fit10('Ver el progreso de Dominadas pronas'), '…→ el progreso de las dominadas pronas (F36)');
+await esperarTexto(/Última vez/i);
+ok((await volveres_fit43()).includes('Volver a Espalda 30'), `🐛 FIT F43 — volver dice «Espalda 30», la sesión de la que se salió (${(await volveres_fit43()).join(' / ')})`);
+ok(await pulsarVolver_fit43('Volver a Espalda 30'), '…y vuelve');
+const deVuelta_fit43 = await esperarTexto(/Planificado/i);
+ok(await pestana_fit43() === 'Entrenamiento' && /Espalda 30/.test(deVuelta_fit43) && (await volveres_fit43()).includes('Volver al historial'),
+  '🚨 FIT F43 — a ESA sesión, dentro del historial de Entrenamiento: no a la portada de Progreso');
+ok(await pulsarVolver_fit43('Volver al historial') && /Historial/.test(await esperarTexto(/Historial/)), '…y de ahí, al historial');
+
+/* 3 · PROGRESO → «VER HISTORIAL» (el ReferenceError de la F28 y la F31). */
+ok(await pulsar('Progreso') && await pulsar('Resumen'), 'FIT F43 — Progreso → Resumen');
+await esperarTexto(/Último entrenamiento/i);
+ok(await pulsar('Ver historial'), 'FIT F43 — «Ver historial» desde el resumen');
+const hist_fit43 = await esperarTexto(/Abrir Espalda|Espalda 30/i);
+ok(await pestana_fit43() === 'Entrenamiento' && /Historial/.test(hist_fit43) && /Espalda 30/.test(hist_fit43),
+  '🐛 FIT F43 — abre el Historial: antes llamaba a `setDentro`, que no existe en FitnessView, y no hacía nada (F28 y F31)');
+ok((await volveres_fit43()).includes('Volver a Progreso') && await pulsarVolver_fit43('Volver a Progreso'),
+  '…y su volver dice «Progreso» y lleva allí');
+await esperarTexto(/Último entrenamiento/i);
+ok(await pestana_fit43() === 'Progreso', '…de vuelta al resumen de Progreso');
+
+/* 4 · LA FICHA → «VER PROGRESO» → VOLVER A LA FICHA (47). */
+ok(await pulsar('Entrenamiento') && await pulsar('Abrir Ejercicios'), 'FIT F43 — Entrenamiento → Ejercicios');
+ok(await esperarCampo('Buscar un ejercicio') && await escribir_fit34('dominadas pronas'), '…se buscan las dominadas pronas');
+await page.waitForTimeout(500);
+ok(await pulsarQueEmpiece_fit10('Ver Dominadas pronas'), '…→ su ficha');
+await esperarTexto(/C[oó]mo hacerlo/i);
+ok(await pulsar('Ver progreso'), '…→ «Ver progreso»');
+await esperarTexto(/Última vez/i);
+const vf_fit43 = (await volveres_fit43()).find((a) => /^Volver a la ficha de Dominadas pronas/.test(a)) || '';
+ok(!!vf_fit43, `🐛 FIT F43 — el progreso dice que vuelve a la ficha («${vf_fit43}»)`);
+ok(!!vf_fit43 && await pulsarVolver_fit43(vf_fit43), '…y vuelve');
+await esperarTexto(/C[oó]mo hacerlo/i);
+ok(await pestana_fit43() === 'Entrenamiento' && /C[oó]mo hacerlo/i.test(await ver()),
+  '🚨 FIT F43 — a la FICHA de la biblioteca, no a la portada de Entrenamiento');
+
+/* 5 · UNA VARIANTE DENTRO DEL PROGRESO: VOLVER AL EJERCICIO ANTERIOR (47). */
+ok(await pulsar('Progreso') && await pulsar('Ejercicios') && await pulsarQueEmpiece_fit10('Ver el progreso de Dominadas pronas'),
+  'FIT F43 — Progreso → Ejercicios → Dominadas pronas');
+await esperarTexto(/Última vez/i);
+ok(await pulsarQueEmpiece_fit10('Ver el progreso de Dominadas supinas'), '…→ su variante, las supinas (F29)');
+await page.waitForTimeout(600);
+const vv_fit43 = await volveres_fit43();
+ok(vv_fit43.some((a) => /^Volver a Dominadas pronas/.test(a)), `🐛 FIT F43 — desde la variante, volver dice el ejercicio anterior (${vv_fit43.join(' / ')})`);
+ok(await pulsarVolver_fit43(vv_fit43.find((a) => /^Volver a Dominadas pronas/.test(a))), '…y vuelve a él');
+await page.waitForTimeout(600);
+ok((await volveres_fit43()).includes('Volver a Progreso') && /Dominadas pronas/.test(await ver()),
+  '…a las pronas, que vuelven a la lista de Progreso como siempre');
+ok(await pulsarVolver_fit43('Volver a Progreso'), '…y a la lista');
+
+/* 6 · GIRAR EL iPHONE CON EL COMPARADOR ABIERTO (48). */
+almacen.saludFotos = [
+  { id: 'f43-f1', path: 'usuario-prueba/f43-junio.jpg', fecha: '2026-06-10', nota: 'Antes F43' },
+  { id: 'f43-f2', path: 'usuario-prueba/f43-sept.jpg', fecha: '2026-09-10', nota: 'Después F43' },
+];
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+ok(await aFitness_fit39() && await pulsar('Progreso') && await pulsar('Fotos'), 'FIT F43 — Progreso → Fotos');
+await esperarTexto(/10 SEP 2026/i);
+ok(await pulsar('Comparar progreso'), '…→ el comparador');
+await esperarTexto(/Inicial/i);
+ok(await elegir_fit26('Inicial', '10 JUN 2026') && await elegir_fit26('Final', '10 SEP 2026'), '…con junio y septiembre');
+await esperarTexto(/de diferencia/i);
+const comparando_fit43 = async () => page.evaluate(() => {
+  const d = document.querySelector('[role="dialog"]') || document.body;
+  const t = d.innerText;
+  return { diferencia: /de diferencia/i.test(t), junio: /10 JUN 2026/i.test(t), sept: /10 SEP 2026/i.test(t), ancho: document.documentElement.scrollWidth, vista: window.innerWidth };
+});
+await page.setViewportSize({ width: 844, height: 390 });
+await page.waitForTimeout(700);
+const girado_fit43 = await comparando_fit43();
+ok(girado_fit43.diferencia && girado_fit43.junio && girado_fit43.sept && girado_fit43.ancho <= girado_fit43.vista + 1,
+  `🚨 FIT F43 — girar el iPhone con el comparador abierto: siguen las dos fotos y su diferencia, sin salirse de lado (${JSON.stringify(girado_fit43)}) (apartado 48)`);
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(700);
+const vuelta_fit43 = await comparando_fit43();
+ok(vuelta_fit43.diferencia && vuelta_fit43.junio && vuelta_fit43.sept, 'FIT F43 — girar otra vez: nada se ha perdido (apartado 48)');
+
+/* 7 · CON MOVIMIENTO REDUCIDO (50): navegar, entrenar y comparar. */
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+ok(await aFitness_fit39() && await pulsar('Rangos') && await pulsarQueEmpiece_fit10('Espalda:') && await pulsarQueEmpiece_fit10('Dorsales:'),
+  'FIT F43 — movimiento reducido: la navegación profunda funciona igual (apartado 50)');
+ok(await pulsarQueEmpiece_fit10('Dominadas pronas:') && /Última vez/i.test(await esperarTexto(/Última vez/i)) && await pulsarVolver_fit43('Volver a Dorsales'),
+  '…y el volver también');
+ok(await pulsar('Entrenamiento') && await pulsar('Ver Móvil F38'), 'FIT F43 — movimiento reducido: se abre una plantilla');
+await page.waitForTimeout(400);
+ok(await pulsar('Ver Móvil F38') && await pulsar('Empezar entrenamiento'), '…y se empieza');
+await esperarTexto(/Marcar la serie/i);
+ok(await escribirCampo('Repeticiones de la serie 1', '9') && await pulsar('Marcar la serie 1 como hecha'), '…se registra y se marca una serie');
+await page.waitForTimeout(700);
+const hecha_fit43 = ((((almacen.fitness.sesiones || []).find((x) => x && x.estado === 'en_curso') || {}).origen || {}).ejercicios || [])[0]?.series?.[0];
+ok(hecha_fit43 && hecha_fit43.estado === 'hecha' && Number(hecha_fit43.hecho?.reps) === 9,
+  '🚨 FIT F43 — con movimiento reducido el entrenamiento en vivo sigue siendo usable: la serie se guarda hecha (apartado 50)');
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), '…y se sale sin perderla');
+ok(await pulsar('Progreso') && await pulsar('Fotos') && await pulsar('Comparar progreso'), 'FIT F43 — movimiento reducido: el comparador');
+await esperarTexto(/Inicial/i);
+ok(await elegir_fit26('Inicial', '10 JUN 2026') && await elegir_fit26('Final', '10 SEP 2026') && /de diferencia/i.test(await esperarTexto(/de diferencia/i)),
+  '…sigue comparando (apartado 50)');
+await page.emulateMedia({ reducedMotion: null });
+
+/* 8 · NI UN ERROR DE JAVASCRIPT EN TODO EL RECORRIDO. Los provocados a
+   propósito (la F37, la F41 y la F42) los retira cada sección; lo que quede
+   aquí es un fallo de verdad. */
+const nuevos_fit43 = errores.slice(erroresAntes_fit43);
+ok(nuevos_fit43.length === 0, `FIT F43 — la sección, sin un error en la consola${nuevos_fit43.length ? `: ${nuevos_fit43.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
+ok(errores.length === 0,
+  `🐛 FIT F43 — y NI UN ERROR en todo el recorrido que no se provocara a propósito${errores.length ? ` — ${errores.length}: ${[...new Set(errores)].slice(0, 4).join(' | ').slice(0, 400)}` : ''}`);
+almacen.fitness = fitnessDeAntes_fit43;
+almacen.saludFotos = fotosDeAntes_fit43;
+almacen.ajustes = ajustesDeAntes_fit43;
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */

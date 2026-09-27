@@ -927,6 +927,22 @@ guardada desde la F7, y un id se renombra por fuera, nunca por dentro (FIT F1). 
 guardaban el texto viejo **se dieron la vuelta**, no se borraron. Y de paso se cambió un texto que
 nadie había pedido: **«Cerrar la sesión»** en Tu Plan, que se leía como salir de la cuenta.
 
+### C-45 — 📝 DOCUMENTADA (FIT F43, v3.125.0) · «Completado» en Tu Plan y «Parcial» en Actividad para el mismo día
+
+**La F32 define** el estado «Completado» de un día como *«el plan tenía entrenamiento ese día y hay
+uno guardado»*; **la F31** describe cada sesión como completa o **parcial** según las series que se
+marcaron. Un día con un entrenamiento guardado a medias dice, por tanto, «Completado» en Tu Plan y
+«Parcial» en Actividad. **Las dos cosas son ciertas**, y juntarlas en una etiqueta («Completado a
+medias») sería un estado nuevo de la F32, que el apartado 66 de la F43 no deja añadir
+(*"NO añadir: métricas nuevas"*). Queda como **P3** en `BUGS_F43`, con su motivo.
+
+### C-46 — ✅ RESUELTA AL CONSTRUIR (FIT F43, v3.125.0) · «NO avances automáticamente a la Fase 44. ESPERA INSTRUCCIONES»
+
+El apartado 71 de la F43 termina así, como las fases anteriores. **Josué lo dejó dicho el
+2026-09-13**: *"no pares de currar… la cosa está en que literal puedas continuar sin que yo te diga
+nada"*, y *"no me preguntes, porque si no paras el flujo"*. Manda lo último que ha dicho: se entrega la
+F43 con la verificación en verde, se le cuenta al cerrar y se sigue con la F44.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

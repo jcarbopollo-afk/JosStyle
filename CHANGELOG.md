@@ -1,5 +1,97 @@
 # CHANGELOG.md
 
+## v3.125.0 — FIT F43/45: auditoría funcional integral de fitness
+
+*"Esta fase no consiste en añadir funcionalidades nuevas. El objetivo es comprobar que TODO lo
+construido hasta ahora funciona conjuntamente"*, con su regla principal: *"NO asumir que porque una
+función funciona individualmente también funciona después de interactuar con otras. Probar flujos
+completos."* Cada fase anterior probó SU pantalla y SU motor; ésta los **encadena**: explorar un
+ejercicio → crear un entrenamiento → guardarlo → planificarlo → hacerlo → guardarlo → verlo en el
+historial → su progreso → su rango → un objetivo → una foto → compararla (apartado 70), con las
+mismas funciones que llaman las pantallas y **pasando por la puerta de carga de verdad entre paso y
+paso**. Primera de las tres fases del bloque de **Cierre** (F43–F45).
+
+### 🐛 P1 · «Ver historial» en Progreso no hacía nada (desde la F28 y la F31)
+
+La tarjeta de «Entrenamientos registrados» y el «Ver historial» del resumen de Progreso llamaban a
+`setDentro('historial')`… que vive dentro de `AreaEntrenamiento` y **no existe en `FitnessView`**, así
+que tocarlos lanzaba un `ReferenceError` y la pantalla se quedaba igual. Ahora abren el Historial, y
+su «volver» dice «Progreso» y lleva allí.
+
+🐛 **Y el recorrido lo tenía delante y no lo veía.** La F31 pulsaba ese mismo «Ver historial» y salía
+verde porque la sesión que buscaba ya estaba escrita en el resumen; el error sí llegaba a la lista de
+errores de la consola, pero **esa lista solo se comprobaba al arrancar y en las secciones de la F37 a
+la F42**. Ahora, al final de la sección de la F43, **ni un error de JavaScript en todo el recorrido**
+que no se haya provocado a propósito (lo provocado lo retira cada sección).
+
+### 🐛 P1 · «Volver» llevaba siempre a la portada de Progreso (apartados 46 y 47)
+
+El progreso de un ejercicio se abre desde **cinco** sitios —el detalle muscular de Rangos, el
+Historial, una sesión de Tu Plan, la ficha de la biblioteca y el propio Progreso—, y su botón decía
+siempre «Volver a Progreso» y llevaba siempre allí. Desde Rangos → Espalda → Dorsales → Dominadas,
+volver perdía el músculo, el subgrupo **y el área**. Ahora quien abre dice **de dónde viene**
+(`crearOrigen`, en `src/lib/vueltaFitness.js`) y la pantalla que se abre sabe **a dónde vuelve**:
+
+- Rangos → Espalda → Dorsales → Dominadas → una sesión → **volver** a las dominadas → **volver** a
+  Dorsales, abierto, en Rangos → **volver** a Espalda → **volver** a Rangos. Cada volver deshace un paso.
+- Historial → «Espalda 30» → las dominadas → **volver a «Espalda 30»**, no a Progreso.
+- La ficha de la biblioteca → «Ver progreso» (o su objetivo, o crear uno, o clasificarlo) → **volver
+  a la ficha**.
+- «Crear objetivo» desde el entrenamiento en vivo → crearlo o cancelarlo **vuelve a la tabla de
+  series**.
+- Y dentro de Progreso, una variante → **volver al ejercicio anterior**, y de ahí a donde se venía.
+
+⚠️ **No es una segunda pila de navegación** (la de la aplicación es de NAVO F1): Fitness abre sus
+detalles con estado de React, y lo que faltaba era que cada destino supiera su origen. El origen es
+**estado de pantalla** y se consume al usarse (EH F40); **las pestañas lo reinician** (NAVO F1); y
+**caduca** en cuanto se sale de esa pantalla por otro camino —si no, abrir ese ejercicio mañana desde
+la lista volvería a Rangos—.
+
+🐛 **Y lo cazó el propio recorrido antes de subir**: `AreaProgreso`, el envoltorio del área, recibía el
+origen y **no se lo pasaba a `ProgresoView`** —la lista de props de un envoltorio es explícita—, así
+que el volver seguía diciendo «Progreso» con todo lo demás bien. Es la lección de la F36 (una puerta
+se comprueba abriendo el archivo que la cablea), y ahora hay una comprobación por envoltorio.
+
+### P2 · El botón de volver decía un sitio y llevaba a otro
+
+Dentro de Progreso, el detalle de un ejercicio decía «Progreso» y volvía **al objetivo** (si se abrió
+desde él), **al músculo** (desde la sección Músculos) o **al ejercicio anterior**; y la sesión abierta
+encima de un ejercicio decía «Volver a Progreso» y volvía **al ejercicio**. Ahora `vueltaDelDetalle` y
+`vueltaDeSesion` deciden el destino y el texto **a la vez**: el botón nunca promete un sitio distinto
+del que abre.
+
+### P3 · «Agarre prono · Agarre prono» y «Fecha superada»
+
+- En las tres dominadas y el curl martillo **la variante ES el agarre**, y el entrenamiento en vivo y
+  el detalle de una sesión escribían «Agarre prono · Agarre prono». `agarreQueAnadir` (en
+  `ejercicios.js`) es la única regla; la suite barre el catálogo entero.
+- El mismo estado se llamaba «Fecha superada» en la lista de objetivos y «Fecha objetivo superada» en
+  el detalle. Ahora las dos leen `FECHA_SUPERADA`, la frase literal del apartado 28 de la F30.
+
+### Lo que se probó, y dónde
+
+`scripts/test-auditoria-fitness.mjs` —155 comprobaciones— encadena los flujos 1-45 que se pueden
+medir sin navegador, las cinco consistencias (**tres series se leen como tres** en la sesión, el
+resumen, el historial, el progreso, la actividad y el rango; **el mismo `exerciseId`** en todas
+partes; variantes que no se mezclan; tiempos que no se intercambian; y **ni un estado imposible**),
+cero, uno, cuatro y ochenta entrenamientos, y datos parciales. La sección «FIT F43» del recorrido de
+Chromium prueba los flujos de pantalla: la navegación profunda y cada volver, el historial desde
+Progreso, la ficha, una variante, **girar el iPhone con el comparador abierto** y **Fitness entero con
+movimiento reducido** (navegar, marcar una serie en vivo y comparar). `FLUJOS_F43` dice, para cada uno
+de los cincuenta flujos, **en qué archivo se prueba y con qué marca**, y la suite comprueba que esa
+comprobación existe.
+
+### Documentado y no corregido
+
+- **P3**: un día con un entrenamiento guardado a medias dice «Completado» en Tu Plan y «Parcial» en
+  Actividad. Las dos cosas son ciertas —la F32 define «Completado» como «hay uno guardado»— y unirlas
+  sería una etiqueta nueva, que el apartado 66 no deja añadir.
+- Una pila de navegación común a toda Fitness (apartado 68: sería reescribir cinco pantallas).
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.124.0 — FIT F42/45: auditoría visual y acabado premium de fitness
 
 *"Fitness debe parecer diseñado como UN ÚNICO PRODUCTO y no como muchas pantallas desarrolladas

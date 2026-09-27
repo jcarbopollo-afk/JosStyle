@@ -7,7 +7,7 @@ import {
   progresoDeEjercicio, aparicionesDeEjercicio, CLASES,
 } from './progresion';
 import {
-  ejercicioPorId, nombreCompleto, musculoPrincipal, variantesDe, baseDe, equipo, agarre, nombreSinCatalogo,
+  ejercicioPorId, nombreCompleto, musculoPrincipal, variantesDe, baseDe, equipo, nombreSinCatalogo, agarreQueAnadir,
 } from './ejercicios';
 import { sesionDelHistorial, etiquetaDeFecha } from './historial';
 import { ejerciciosDeSesion } from './entrenamiento';
@@ -131,12 +131,13 @@ export function cabeceraDeEjercicio(exerciseId, { propios = [], apariciones = []
   const principal = musculoPrincipal(ej);
   /* ⚠️ `agarre` y `equipo` son los buscadores del catálogo de la F2: el
      ejercicio guarda **ids** (`ej.agarre`, `ej.equipamiento`), no las fichas. */
-  const elAgarre = agarre(texto(ej.agarre));
   const elEquipo = lista(ej.equipamiento).map((e) => equipo(texto(e))).filter(Boolean);
   /* ⚠️ Solo lo que de verdad tiene: un «· » suelto porque falta el agarre deja
-     la cabecera diciendo que hay un dato donde no lo hay (regla 8). */
+     la cabecera diciendo que hay un dato donde no lo hay (regla 8).
+     🐛 FIT F43 — y el agarre no se repite si el nombre (con su variante) ya lo
+     dice: «Dominadas pronas · Agarre prono» y debajo «Agarre prono». */
   const trozos = [
-    elAgarre ? `Agarre ${elAgarre.nombre.toLowerCase()}` : '',
+    agarreQueAnadir(ej),
     elEquipo.map((e) => e.nombre).join(', '),
   ].filter(Boolean);
   /* 🔓 FIT F35 — uno archivado en el catálogo conserva su nombre de verdad:

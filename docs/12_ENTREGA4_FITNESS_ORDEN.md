@@ -63,7 +63,7 @@ ordena es **el trabajo**, no el documento.
 | **F40** ✅ **v3.122.0** | Rendimiento y optimización técnica de fitness | 5219–6175 | 957 |
 | **F41** ✅ **v3.123.0** | Persistencia, recuperación y resiliencia de datos de fitness | 4287–5218 | 932 |
 | **F42** ✅ **v3.124.0** | Auditoría visual y acabado premium de fitness | 3281–4286 | 1006 |
-| **F43** | Auditoría funcional integral de fitness | 2183–3280 | 1098 |
+| **F43** ✅ **v3.125.0** | Auditoría funcional integral de fitness | 2183–3280 | 1098 |
 | **F44** | Limpieza arquitectónica y deuda técnica de fitness | 1652–2182 | 531 |
 | **F45** | Pulido final, qa extremo y release de fitness | 1–1651 | 1651 |
 
@@ -79,7 +79,7 @@ ordena es **el trabajo**, no el documento.
 | **Progreso físico** 🏁 | F26–F28 | Fotos, comparador e integración con el resto del progreso — **cerrado en la v3.110.0** |
 | **Inteligencia** 🏁 | F29–F35 | Análisis por ejercicio, objetivos, consistencia, planificación semanal, sustituciones, biblioteca y calidad del catálogo — **las siete hechas: F29 (v3.111.0), F30 (v3.112.0), F31 (v3.113.0), F32 (v3.114.0), F33 (v3.115.0), F34 (v3.116.0) y F35 (v3.117.0)** |
 | **Acabado** 🏁 | F36–F42 | Integración global, microinteracciones, UX de iPhone, accesibilidad, rendimiento, persistencia y acabado visual — **las siete hechas: F36 (v3.118.0), F37 (v3.119.0), F38 (v3.120.0), F39 (v3.121.0), F40 (v3.122.0), F41 (v3.123.0) y F42 (v3.124.0)** |
-| **Cierre** | F43–F45 | Auditoría funcional, limpieza de deuda técnica y release |
+| **Cierre** | F43–F45 | Auditoría funcional, limpieza de deuda técnica y release — **F43 hecha (v3.125.0)** |
 
 ## ⚠️ Antes de escribir una línea de la F1
 

@@ -402,7 +402,12 @@ export function MuscleRankings({ musculos = [], accent, onMusculo }) {
 }
 
 /* ── La pantalla ─────────────────────────────────────────────────────────── */
-export default function RangosView({ fitness = null, propios = [], perfil = null, accent, onEntrenar = null, onClasificar = null, onEjercicio = null }) {
+export default function RangosView({
+  fitness = null, propios = [], perfil = null, accent, onEntrenar = null, onClasificar = null, onEjercicio = null,
+  /* 🔓 FIT F43 (apartados 46 y 47) — al volver del progreso de un ejercicio, el
+     músculo y el subgrupo de donde se salió: `{ musculo, subgrupo }`. */
+  inicio = null,
+}) {
   /* 🚨 Apartado 22 — **una sola vez por cambio en las sesiones**. `rangoGlobal`
      recorre todas las sesiones y todos los ejercicios: pedirlo por sección lo
      haría ocho veces en cada render. */
@@ -428,7 +433,7 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
      distintas —«qué nivel tengo y de dónde sale» frente a «cómo evoluciona mi
      rendimiento»— y las dos siguen existiendo, cada una en su sitio. Lo que no
      se duplica es el cálculo. */
-  const [musculo, setMusculo] = useState(null);
+  const [musculo, setMusculo] = useState(inicio ? inicio.musculo || null : null);
   /* FIT F20 — si está abierta la explicación del rango general. */
   const [porQue, setPorQue] = useState(false);
   /* FIT F22 — y si está abierto su historial. Estado de pantalla (EH F40). */
@@ -448,7 +453,10 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
         grupoId={musculo}
         accent={accent}
         onVolver={() => setMusculo(null)}
-        onEjercicio={onEjercicio}
+        /* 🔓 FIT F43 — el ejercicio se abre en Progreso diciendo de dónde viene,
+           para que su «volver» traiga aquí y no a la portada de Progreso. */
+        onEjercicio={onEjercicio ? (id, desde) => onEjercicio(id, { musculo, subgrupo: desde ? desde.subgrupo : null, etiqueta: desde ? desde.etiqueta : 'Rangos' }) : null}
+        subgrupoInicial={inicio && inicio.musculo === musculo ? inicio.subgrupo || null : null}
       />
     );
   }
@@ -510,7 +518,7 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
           relevantes={resumen.ejercicios.relevantes}
           etiqueta={resumen.ejercicios.etiqueta}
           accent={accent}
-          onAbrir={onEjercicio}
+          onAbrir={onEjercicio ? (id) => onEjercicio(id, { musculo: null, subgrupo: null, etiqueta: 'Rangos' }) : null}
         />
       </Card>
     ) : null,

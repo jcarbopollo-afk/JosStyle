@@ -191,10 +191,13 @@ export default function EjerciciosView({
   /* 🔓 FIT F35, apartado 29 — el diagnóstico del catálogo. Lo decide quien
      monta la biblioteca con `esDesarrollo()`: en producción no llega. */
   diagnostico = false,
+  /* 🔓 FIT F43 (apartado 47) — al volver de Progreso o de clasificarlo, la ficha
+     de la que se salió. */
+  abiertoInicial = null,
 }) {
   const [consulta, setConsulta] = useState('');
   const [filtros, setFiltros] = useState({});
-  const [abierto, setAbierto] = useState(null);
+  const [abierto, setAbierto] = useState(abiertoInicial);
   const [verFiltros, setVerFiltros] = useState(false);
   const [visibles, setVisibles] = useState(POR_PAGINA_BIBLIOTECA);
   /* 🔓 FIT F38, apartado 32 — ficha → volver: la lista, donde estaba. */
@@ -243,10 +246,12 @@ export default function EjerciciosView({
           if (r.ok) guardar(r.fitness);
           return r.ok;
         } : null}
-        onVerProgreso={onVerProgreso}
-        onVerObjetivo={onVerObjetivo}
-        onCrearObjetivo={onCrearObjetivo}
-        onClasificar={onClasificar}
+        /* 🔓 FIT F43 — cada puerta de la ficha dice de qué ficha sale, para que
+           volver traiga aquí y no a la portada de Entrenamiento. */
+        onVerProgreso={onVerProgreso ? (id) => onVerProgreso(id, { ejercicio: abierto }) : null}
+        onVerObjetivo={onVerObjetivo ? (id) => onVerObjetivo(id, { ejercicio: abierto }) : null}
+        onCrearObjetivo={onCrearObjetivo ? (id) => onCrearObjetivo(id, { ejercicio: abierto }) : null}
+        onClasificar={onClasificar ? (id) => onClasificar(id, { ejercicio: abierto }) : null}
       />
     );
   }

@@ -2,6 +2,17 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.125.0 — FIT F43/45: auditoría funcional integral):**
+> Primera del bloque de **Cierre**. No añade funciones: **encadena** las que había —explorar, crear,
+> planificar, entrenar, guardar, historial, progreso, rango, objetivo, foto, comparar— y arregla lo
+> que no funcionaba junto. 🐛 **«Ver historial» en Progreso → Resumen no hacía nada** desde la F28:
+> llamaba a una función que no existe en esa pantalla. 🐛 **«Volver» llevaba siempre a la portada de
+> Progreso** desde Rangos, el Historial, Tu Plan y la ficha de un ejercicio: ahora vuelve a donde
+> venías (`vueltaFitness.js`), paso a paso. El botón de volver ya no dice un sitio y lleva a otro,
+> «Agarre prono · Agarre prono» ya no se repite y «Fecha objetivo superada» es una sola frase. Y el
+> recorrido de Chromium comprueba ahora que **no quede ni un error de JavaScript en todo el camino**:
+> así se había escondido el primero. Lo siguiente es la **FIT F44** (limpieza de deuda técnica).
+
 > **📅 ACTUALIZACIÓN (v3.124.0 — FIT F42/45: auditoría visual y acabado premium):**
 > 🏁 **Cierra el bloque de Acabado.** No se ha impuesto una estética nueva: se midió la escala que
 > Fitness ya usaba y se corrigió lo que se salía. 🐛 **El acento como texto no llegaba a 4,5:1 con la
