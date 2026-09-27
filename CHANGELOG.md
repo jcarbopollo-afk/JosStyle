@@ -75,7 +75,19 @@ no se promete (`NO_EN_FIT41`).
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` **en verde** (`═══ TODO CORRECTO ═══`, 0 fallos): **21 729 pruebas de
+Node en 202 suites**, **3720 casos de renderizado**, **11 reglas invariantes** y **2851
+comprobaciones en Chromium** — **28 311** en total. El salto desde la v3.122.0 es exactamente lo que
+añade esta fase: **+109 de Node** en su suite nueva, `test-persistencia-fitness.mjs` —dónde vive cada
+cosa, la versión y las migraciones de ensayo, la cuarentena (idempotente y sin un segundo criterio
+de «qué es válido»), el fallo sin espacio, el borrador que no se puede escribir, Fitness en la
+exportación, la foto que ya no cambia de id ni de fecha y los duplicados—, **+8 de renderizado** (sus
+dos casos nuevos: el aviso sin espacio y la tarjeta reciente con «Finalizar») y **+60 del recorrido**
+(el apartado 54 entero recargando entre paso y paso, las tres salidas al volver, perder el foco,
+Terminar tres veces, el guardado sin espacio y la sesión rota que viaja apartada). **Ni una suite de
+antes cambió de cuenta**: la diferencia suite a suite con la pasada de la v3.122.0 es exactamente la
+suite nueva. ⚠️ Y los dos rojos de la primera pasada de la sección eran de la prueba: «Marcar la
+serie» es un `aria-label`, que no está en `innerText` (la lección de la F33); ahora se espera el botón.
 
 ## v3.122.0 — FIT F40/45: rendimiento y optimización técnica de fitness
 

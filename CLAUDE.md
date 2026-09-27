@@ -184,14 +184,14 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **21 620 pruebas unitarias** con Node repartidas en **201 suites** (5 de ellas de auditoría),
-**3712 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2791
-comprobaciones sobre la aplicación de verdad en Chromium** — **28 134 comprobaciones**.
+Vite, **21 729 pruebas unitarias** con Node repartidas en **202 suites** (5 de ellas de auditoría),
+**3720 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2851
+comprobaciones sobre la aplicación de verdad en Chromium** — **28 311 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.122.0, una a una**, con la suma del
-propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.121.0 es exactamente lo que
-añadió la F40: +69 de Node en su suite nueva (y la diferencia suite a suite es solo ésa), +12 de
-renderizado y +22 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.123.0, una a una**, con la suma del
+propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.122.0 es exactamente lo que
+añadió la F41: +109 de Node en su suite nueva (y la diferencia suite a suite es solo ésa), +8 de
+renderizado y +60 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
